@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Microchip Technology Inc.
+ * Copyright (c) 2023 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1034,6 +1034,16 @@
 		pinmux = < MCHP_XEC_PINMUX(00, MCHP_AF1) >;
 	};
 
+	/omit-if-no-ref/ gpio000_gpio000: gpio000_gpio000 {
+		pinmux = < MCHP_XEC_PINMUX(000, MCHP_AF0) >;
+	};
+	/omit-if-no-ref/ gpio161_gpio161: gpio161_gpio161 {
+		pinmux = < MCHP_XEC_PINMUX(0161, MCHP_AF0) >;
+	};
+	/omit-if-no-ref/ gpio162_gpio162: gpio162_gpio162 {
+		pinmux = < MCHP_XEC_PINMUX(0162, MCHP_AF0) >;
+	};
+
 	/omit-if-no-ref/ sys_shdn_fw_n_gpio221: sys_shdn_fw_n_gpio221 {
 		pinmux = < MCHP_XEC_PINMUX(0221, MCHP_AF5) >;
 	};
@@ -1070,6 +1080,290 @@
 
 	/omit-if-no-ref/ cmp_vref1_gpio106: cmp_vref1_gpio106 {
 		pinmux = < MCHP_XEC_PINMUX(0106, MCHP_AF2) >;
+	};
+
+};
+
+/* Add Sleep Pin Control */
+&pinctrl {
+	adc00_gpio200_sleep: adc00_gpio200_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0200, MCHP_AF1) >;
+		low-power-enable;
+	};
+	adc03_gpio203_sleep: adc03_gpio203_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0203, MCHP_AF1) >;
+		low-power-enable;
+	};
+	adc04_gpio204_sleep: adc04_gpio204_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0204, MCHP_AF1) >;
+		low-power-enable;
+	};
+	adc05_gpio205_sleep: adc05_gpio205_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0205, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	peci_dat_gpio042_sleep: peci_dat_gpio042_sleep {
+		pinmux = < MCHP_XEC_PINMUX(042, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	vref_vtt_gpio044_sleep: vref_vtt_gpio044_sleep {
+		pinmux = < MCHP_XEC_PINMUX(044, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	ps2_clk0a_gpio114_sleep: ps2_clk0a_gpio114_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0114, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	ps2_dat0a_gpio115_sleep: ps2_dat0a_gpio115_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0115, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	/* PWM */
+	pwm0_gpio053_sleep: pwm0_gpio053_sleep {
+		pinmux = < MCHP_XEC_PINMUX(053, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	pwm0_alt_gpio241_sleep: pwm0_alt_gpio241_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0241, MCHP_AF4) >;
+		low-power-enable;
+	};
+
+	pwm1_gpio054_sleep: pwm1_gpio054_sleep {
+		pinmux = < MCHP_XEC_PINMUX(054, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	pwm2_gpio055_sleep: pwm2_gpio055_sleep {
+		pinmux = < MCHP_XEC_PINMUX(055, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	pwm2_alt_gpio045_sleep: pwm2_alt_gpio045_sleep {
+		pinmux = < MCHP_XEC_PINMUX(045, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	pwm3_gpio056_sleep: pwm3_gpio056_sleep {
+		pinmux = < MCHP_XEC_PINMUX(056, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	pwm3_alt_gpio047_sleep: pwm3_alt_gpio047_sleep {
+		pinmux = < MCHP_XEC_PINMUX(047, MCHP_AF2) >;
+		low-power-enable;
+	};
+	pwm4_gpio011_sleep: pwm4_gpio011_sleep {
+		pinmux = < MCHP_XEC_PINMUX(011, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	pwm5_gpio002_sleep: pwm5_gpio002_sleep {
+		pinmux = < MCHP_XEC_PINMUX(02, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	pwm6_gpio014_sleep: pwm6_gpio014_sleep {
+		pinmux = < MCHP_XEC_PINMUX(014, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	pwm6_alt_gpio063_sleep: pwm6_alt_gpio063_sleep {
+		pinmux = < MCHP_XEC_PINMUX(063, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	pwm7_gpio015_sleep: pwm7_gpio015_sleep {
+		pinmux = < MCHP_XEC_PINMUX(015, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	pwm8_gpio035_sleep: pwm8_gpio035_sleep {
+		pinmux = < MCHP_XEC_PINMUX(035, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	pwm8_alt_gpio175_sleep: pwm8_alt_gpio175_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0175, MCHP_AF3) >;
+		low-power-enable;
+	};
+
+	/* EEPROM */
+	eeprom_cs_gpio116_sleep: eeprom_cs_gpio116_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0116, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	eeprom_clk_gpio117_sleep: eeprom_clk_gpio117_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0117, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	eeprom_mosi_gpio074_sleep: eeprom_mosi_gpio074_sleep {
+		pinmux = < MCHP_XEC_PINMUX(074, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	eeprom_miso_gpio075_sleep: eeprom_miso_gpio075_sleep {
+		pinmux = < MCHP_XEC_PINMUX(075, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	/* Keyscan */
+	ksi0_gpio017_sleep: ksi0_gpio017_sleep {
+		pinmux = < MCHP_XEC_PINMUX(017, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	ksi1_gpio020_sleep: ksi1_gpio020_sleep {
+		pinmux = < MCHP_XEC_PINMUX(020, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	ksi2_gpio021_sleep: ksi2_gpio021_sleep {
+		pinmux = < MCHP_XEC_PINMUX(021, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	ksi3_gpio026_sleep: ksi3_gpio026_sleep {
+		pinmux = < MCHP_XEC_PINMUX(026, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	ksi4_gpio027_sleep: ksi4_gpio027_sleep {
+		pinmux = < MCHP_XEC_PINMUX(027, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	ksi5_gpio030_sleep: ksi5_gpio030_sleep {
+		pinmux = < MCHP_XEC_PINMUX(030, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	ksi6_gpio031_sleep: ksi6_gpio031_sleep {
+		pinmux = < MCHP_XEC_PINMUX(031, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	ksi7_gpio032_sleep: ksi7_gpio032_sleep {
+		pinmux = < MCHP_XEC_PINMUX(032, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	kso00_gpio040_sleep: kso00_gpio040_sleep {
+		pinmux = < MCHP_XEC_PINMUX(040, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	kso01_gpio045_sleep: kso01_gpio045_sleep {
+		pinmux = < MCHP_XEC_PINMUX(045, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	kso02_gpio046_sleep: kso02_gpio046_sleep {
+		pinmux = < MCHP_XEC_PINMUX(046, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	kso03_gpio047_sleep: kso03_gpio047_sleep {
+		pinmux = < MCHP_XEC_PINMUX(047, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	kso04_gpio107_sleep: kso04_gpio107_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0107, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	kso05_gpio112_sleep: kso05_gpio112_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0112, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	kso06_gpio113_sleep: kso06_gpio113_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0113, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	kso07_gpio120_sleep: kso07_gpio120_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0120, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	kso08_gpio121_sleep: kso08_gpio121_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0121, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	kso09_gpio122_sleep: kso09_gpio122_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0122, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	kso10_gpio123_sleep: kso10_gpio123_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0123, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	kso11_gpio124_sleep: kso11_gpio124_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0124, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	kso12_gpio125_sleep: kso12_gpio125_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0125, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	kso13_gpio126_sleep: kso13_gpio126_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0126, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	kso14_gpio152_sleep: kso14_gpio152_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0152, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	kso15_gpio151_sleep: kso15_gpio151_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0151, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	kso16_gpio132_sleep: kso16_gpio132_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0132, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	kso17_gpio140_sleep: kso17_gpio140_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0140, MCHP_AF3) >;
+		low-power-enable;
+	};
+
+	/* BBLED */
+	led0_gpio156_sleep: led0_gpio156_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0156, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	led1_gpio157_sleep: led1_gpio157_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0157, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	led2_gpio153_sleep: led2_gpio153_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0153, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	led3_gpio035_sleep: led3_gpio035_sleep {
+		pinmux = < MCHP_XEC_PINMUX(035, MCHP_AF4) >;
+		low-power-enable;
 	};
 
 };

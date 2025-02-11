@@ -9,6 +9,7 @@
 #include <zephyr/xen/public/xen.h>
 #include <zephyr/xen/public/event_channel.h>
 #include <zephyr/xen/events.h>
+#include <zephyr/sys/barrier.h>
 
 #include <errno.h>
 #include <zephyr/kernel.h>
@@ -45,6 +46,24 @@ int alloc_unbound_event_channel(domid_t remote_dom)
 
 	return rc;
 }
+
+#ifdef CONFIG_XEN_DOM0
+int alloc_unbound_event_channel_dom0(domid_t dom, domid_t remote_dom)
+{
+	int rc;
+	struct evtchn_alloc_unbound alloc = {
+		.dom = dom,
+		.remote_dom = remote_dom,
+	};
+
+	rc = HYPERVISOR_event_channel_op(EVTCHNOP_alloc_unbound, &alloc);
+	if (rc == 0) {
+		rc = alloc.port;
+	}
+
+	return rc;
+}
+#endif /* CONFIG_XEN_DOM0 */
 
 int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port,
 		evtchn_cb_t cb, void *data)
@@ -219,7 +238,7 @@ static void events_isr(void *data)
 	 */
 	vcpu->evtchn_upcall_pending = 0;
 
-	dmb();
+	barrier_dmem_fence_full();
 
 	/* Can not use system atomic_t/atomic_set() due to 32-bit casting */
 	pos_selector = __atomic_exchange_n(&vcpu->evtchn_pending_sel,

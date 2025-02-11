@@ -6,7 +6,8 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
+#include <zephyr/sys/barrier.h>
 
 static volatile int test_flag;
 static volatile int expected_reason = -1;
@@ -23,7 +24,7 @@ static struct k_thread esf_collection_thread;
 /**
  * Validates that pEsf matches state from set_regs_with_known_pattern()
  */
-static int check_esf_matches_expectations(const z_arch_esf_t *pEsf)
+static int check_esf_matches_expectations(const struct arch_esf *pEsf)
 {
 	const uint16_t expected_fault_instruction = 0xde5a; /* udf #90 */
 	const bool caller_regs_match_expected =
@@ -73,7 +74,7 @@ static int check_esf_matches_expectations(const z_arch_esf_t *pEsf)
 	 * is overwritten in fault.c)
 	 */
 	if (memcmp((void *)callee_regs->psp, pEsf,
-		offsetof(struct __esf, basic.xpsr)) != 0) {
+		offsetof(struct arch_esf, basic.xpsr)) != 0) {
 		printk("psp does not match __basic_sf provided\n");
 		return -1;
 	}
@@ -87,7 +88,7 @@ static int check_esf_matches_expectations(const z_arch_esf_t *pEsf)
 	return 0;
 }
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	TC_PRINT("Caught system error -- reason %d\n", reason);
 
@@ -124,8 +125,12 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
  * In k_sys_fatal_error_handler above we will check that the ESF provided
  * as a parameter matches these expectations.
  */
-void set_regs_with_known_pattern(void)
+void set_regs_with_known_pattern(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	__asm__ volatile(
 		"mov r1, #1\n"
 		"mov r2, #2\n"
@@ -177,7 +182,7 @@ ZTEST(arm_interrupt, test_arm_esf_collection)
 	TC_PRINT("Testing ESF Reporting\n");
 	k_thread_create(&esf_collection_thread, esf_collection_stack,
 			K_THREAD_STACK_SIZEOF(esf_collection_stack),
-			(k_thread_entry_t)set_regs_with_known_pattern,
+			set_regs_with_known_pattern,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 
@@ -292,8 +297,8 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 	NVIC_ClearPendingIRQ(i);
 	NVIC_EnableIRQ(i);
 	NVIC_SetPendingIRQ(i);
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	/* Verify that the spurious ISR has led to the fault and the
 	 * expected reason variable is reset.
@@ -320,8 +325,8 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 		 * Instruction barriers to make sure the NVIC IRQ is
 		 * set to pending state before 'test_flag' is checked.
 		 */
-		__DSB();
-		__ISB();
+		barrier_dsync_fence_full();
+		barrier_isync_fence_full();
 
 		/* Returning here implies the thread was not aborted. */
 
@@ -367,8 +372,8 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 #endif
 
 	__enable_irq();
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	/* No stack variable access below this point.
 	 * The IRQ will handle the verification.
@@ -377,7 +382,7 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 }
 
 #if defined(CONFIG_USERSPACE)
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include "test_syscalls.h"
 
 void z_impl_test_arm_user_interrupt_syscall(void)
@@ -410,7 +415,7 @@ static inline void z_vrfy_test_arm_user_interrupt_syscall(void)
 {
 	z_impl_test_arm_user_interrupt_syscall();
 }
-#include <syscalls/test_arm_user_interrupt_syscall_mrsh.c>
+#include <zephyr/syscalls/test_arm_user_interrupt_syscall_mrsh.c>
 
 ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 {

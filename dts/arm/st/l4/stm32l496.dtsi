@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32l496", "st,stm32l4", "simple-bus";
+
 		clocks {
 			clk_hsi48: clk-hsi48 {
 				#clock-cells = <0>;
@@ -46,13 +48,23 @@
 			};
 		};
 
-		adc3: adc@50040200 {
-			compatible = "st,stm32-adc";
-			reg = <0x50040200 0x100>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
-			interrupts = <47 0>;
+		can2: can@40006800 {
+			compatible = "st,stm32-bxcan";
+			reg = <0x40006800 0x400>;
+			interrupts = <86 0>, <87 0>, <88 0>, <89 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>; //RCC_APB1ENR1_CAN2EN
+			master-can-reg = <0x40006400>;
 			status = "disabled";
-			#io-channel-cells = <1>;
+		};
+
+		aes: aes@50060000 {
+			compatible = "st,stm32-aes";
+			reg = <0x50060000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
+			interrupts = <79 0>;
+			interrupt-names = "aes";
+			status = "disabled";
 		};
 
 		usbotg_fs: otgfs@50000000 {
@@ -68,5 +80,13 @@
 
 	die_temp: dietemp {
 		ts-cal2-temp = <130>;
+	};
+
+	smbus4: smbus4 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c4>;
+		status = "disabled";
 	};
 };

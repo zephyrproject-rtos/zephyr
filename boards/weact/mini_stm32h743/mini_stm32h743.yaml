@@ -1,0 +1,19 @@
+identifier: mini_stm32h743
+name: WeAct Studio MiniSTM32H743 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 2048
+supported:
+  - gpio
+  - counter
+  - spi
+  - backup_sram
+  - watchdog
+  - usb
+  - qspi
+vendor: weact

@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		/* first index must be a 32-Bit timer */
+		pwms = <&mcpwm0 0 0 PWM_POLARITY_NORMAL>,
+		       <&mcpwm0 6 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	mcpwm0_default: mcpwm0_default {
+		group1 {
+			pinmux = <MCPWM0_OUT0A_GPIO2>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <MCPWM0_CAP0_GPIO2>;
+			output-enable;
+		};
+	};
+};
+
+&mcpwm0 {
+	pinctrl-0 = <&mcpwm0_default>;
+	pinctrl-names = "default";
+	prescale = <255>;
+	prescale-timer0 = <103>;
+	status = "okay";
+};

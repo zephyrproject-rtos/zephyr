@@ -8,9 +8,10 @@
 
 extern void reloc(void);
 
-void main(void)
+int main(void)
 {
 	printk("%s location: %p\n", __func__, main);
 	printk("Calling relocated code\n");
 	reloc();
+	return 0;
 }

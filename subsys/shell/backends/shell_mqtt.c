@@ -564,7 +564,9 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 	case MQTT_EVT_PUBLISH: {
 		const struct mqtt_publish_param *pub = &evt->param.publish;
-		uint32_t size, payload_left;
+		uint32_t payload_left;
+		size_t size;
+		int rc;
 
 		payload_left = pub->message.payload.len;
 
@@ -581,18 +583,19 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 		while (payload_left > 0) {
 			/* Attempt to claim `payload_left` bytes of buffer in rb */
-			size = ring_buf_put_claim(&sh_mqtt->rx_rb, &sh_mqtt->rx_rb_ptr,
-						  payload_left);
+			size = (size_t)ring_buf_put_claim(&sh_mqtt->rx_rb, &sh_mqtt->rx_rb_ptr,
+							  payload_left);
 			/* Read `size` bytes of payload from mqtt */
-			size = mqtt_read_publish_payload_blocking(client, sh_mqtt->rx_rb_ptr, size);
+			rc = mqtt_read_publish_payload_blocking(client, sh_mqtt->rx_rb_ptr, size);
 
 			/* errno value, return */
-			if (size < 0) {
+			if (rc < 0) {
 				(void)ring_buf_put_finish(&sh_mqtt->rx_rb, 0U);
 				sh_mqtt_rx_rb_flush();
 				return;
 			}
 
+			size = (size_t)rc;
 			/* Indicate that `size` bytes of payload has been written into rb */
 			(void)ring_buf_put_finish(&sh_mqtt->rx_rb, size);
 			/* Update `payload_left` */
@@ -716,13 +719,13 @@ static int enable(const struct shell_transport *transport, bool blocking)
 
 	/* Listen for network connection status */
 	net_mgmt_add_event_callback(&sh_mqtt->mgmt_cb);
-	net_conn_mgr_resend_status();
+	conn_mgr_mon_resend_status();
 
 	return 0;
 }
 
-static int write(const struct shell_transport *transport, const void *data, size_t length,
-		 size_t *cnt)
+static int write_data(const struct shell_transport *transport, const void *data, size_t length,
+		      size_t *cnt)
 {
 	ARG_UNUSED(transport);
 	int rc = 0;
@@ -781,7 +784,8 @@ out:
 	return rc;
 }
 
-static int read(const struct shell_transport *transport, void *data, size_t length, size_t *cnt)
+static int read_data(const struct shell_transport *transport, void *data, size_t length,
+		     size_t *cnt)
 {
 	ARG_UNUSED(transport);
 
@@ -809,12 +813,11 @@ static int read(const struct shell_transport *transport, void *data, size_t leng
 const struct shell_transport_api shell_mqtt_transport_api = { .init = init,
 							      .uninit = uninit,
 							      .enable = enable,
-							      .write = write,
-							      .read = read };
+							      .write = write_data,
+							      .read = read_data };
 
-static int enable_shell_mqtt(const struct device *arg)
+static int enable_shell_mqtt(void)
 {
-	ARG_UNUSED(arg);
 
 	bool log_backend = CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > 0;
 	uint32_t level = (CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?

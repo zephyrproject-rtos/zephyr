@@ -95,14 +95,14 @@ ZTEST(log_link_order, test_log_only_local)
 	struct log_msg *log1;
 
 	log1 = z_log_msg_alloc(sizeof(struct log_msg) / sizeof(int));
-	log1->hdr.desc.type = Z_LOG_MSG2_LOG;
+	log1->hdr.desc.type = Z_LOG_MSG_LOG;
 	log1->hdr.desc.package_len = 0;
 	log1->hdr.desc.data_len = 0;
 
 	/* Commit local message. */
 	z_log_msg_commit(log1);
 
-	log2.hdr.desc.type = Z_LOG_MSG2_LOG;
+	log2.hdr.desc.type = Z_LOG_MSG_LOG;
 	log2.hdr.desc.package_len = 0;
 	log2.hdr.desc.data_len = 0;
 
@@ -136,7 +136,7 @@ ZTEST(log_link_order, test_log_local_unordered)
 	/* Simulate receiving of remote message. It is enqueued later but with
 	 * earlier timestamp.
 	 */
-	log2.hdr.desc.type = Z_LOG_MSG2_LOG;
+	log2.hdr.desc.type = Z_LOG_MSG_LOG;
 	log2.hdr.timestamp = t;
 	log2.hdr.desc.package_len = 0;
 	log2.hdr.desc.data_len = 0;
@@ -172,7 +172,7 @@ ZTEST(log_link_order, test_log_one_remote_ordering)
 	 */
 
 	log2.hdr.timestamp = t;
-	log2.hdr.desc.type = Z_LOG_MSG2_LOG;
+	log2.hdr.desc.type = Z_LOG_MSG_LOG;
 	log2.hdr.desc.package_len = 0;
 	log2.hdr.desc.data_len = 0;
 

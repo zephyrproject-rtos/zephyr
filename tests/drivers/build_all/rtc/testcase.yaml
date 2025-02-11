@@ -1,0 +1,13 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - rtc
+tests:
+  drivers.rtc.build.pcf8523:
+    depends_on:
+      - arduino_spi
+      - arduino_i2c
+      - arduino_gpio
+    extra_args: SHIELD=adafruit_data_logger
+    platform_allow: frdm_k64f

@@ -50,17 +50,70 @@
 #define NET_IPV4_IGMP_REPORT_V3 0x22 /* v3 Membership report */
 
 struct net_ipv4_igmp_v2_query {
+	/* IGMP message type */
 	uint8_t type;
+	/* Max response code */
 	uint8_t max_rsp;
+	/* 16-bit ones' complement of the entire message */
 	uint16_t chksum;
+	/* The multicast address being queried */
 	struct in_addr address;
 } __packed;
 
 struct net_ipv4_igmp_v2_report {
+	/* IGMP message type */
 	uint8_t type;
+	/* Max response code */
 	uint8_t max_rsp;
+	/* 16-bit ones' complement of the entire message */
 	uint16_t chksum;
+	/* The multicast address being queried */
 	struct in_addr address;
+} __packed;
+
+struct net_ipv4_igmp_v3_query {
+	/* IGMP message type */
+	uint8_t type;
+	/* Max response code */
+	uint8_t max_rsp;
+	/* 16-bit ones' complement of the entire message */
+	uint16_t chksum;
+	/* The multicast address being queried */
+	struct in_addr address;
+	/* Reserved field, ignore */
+	uint8_t reserved: 4;
+	/* Suppress Router-side Processing Flag */
+	uint8_t suppress: 1;
+	/* Querier's Robustness Variable */
+	uint8_t qrv: 3;
+	/* Querier's Query Interval Code */
+	uint8_t qqic;
+	/* Number of Source Addresses */
+	uint16_t sources_len;
+} __packed;
+
+struct net_ipv4_igmp_v3_group_record {
+	/* Record type */
+	uint8_t type;
+	/* Aux Data Len */
+	uint8_t aux_len;
+	/* Number of Source Addresses */
+	uint16_t sources_len;
+	/* The multicast address to report to*/
+	struct in_addr address;
+} __packed;
+
+struct net_ipv4_igmp_v3_report {
+	/* IGMP message type */
+	uint8_t type;
+	/* Reserved field, ignore */
+	uint8_t reserved_1;
+	/* 16-bit ones' complement of the entire message */
+	uint16_t chksum;
+	/* Reserved field, ignore */
+	uint16_t reserved_2;
+	/* Number of Group Records */
+	uint16_t groups_len;
 } __packed;
 
 /**
@@ -74,7 +127,6 @@ struct net_ipv4_igmp_v2_report {
  * @param id Fragment id
  * @param flags Fragmentation flags
  * @param offset Fragment offset
- * @param ttl Time-to-live value
  *
  * @return 0 on success, negative errno otherwise.
  */
@@ -85,8 +137,7 @@ int net_ipv4_create_full(struct net_pkt *pkt,
 			 uint8_t tos,
 			 uint16_t id,
 			 uint8_t flags,
-			 uint16_t offset,
-			 uint8_t ttl);
+			 uint16_t offset);
 #else
 static inline int net_ipv4_create_full(struct net_pkt *pkt,
 				       const struct in_addr *src,
@@ -94,8 +145,7 @@ static inline int net_ipv4_create_full(struct net_pkt *pkt,
 				       uint8_t tos,
 				       uint16_t id,
 				       uint8_t flags,
-				       uint16_t offset,
-				       uint8_t ttl)
+				       uint16_t offset)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(src);
@@ -104,7 +154,6 @@ static inline int net_ipv4_create_full(struct net_pkt *pkt,
 	ARG_UNUSED(id);
 	ARG_UNUSED(flags);
 	ARG_UNUSED(offset);
-	ARG_UNUSED(ttl);
 
 	return -ENOTSUP;
 }
@@ -232,6 +281,16 @@ static inline void net_ipv4_set_dscp(uint8_t *tos, uint8_t dscp)
 }
 
 /**
+ * @brief Convert DSCP value to priority.
+ *
+ * @param dscp DSCP value.
+ */
+static inline uint8_t net_ipv4_dscp_to_priority(uint8_t dscp)
+{
+	return dscp >> 3;
+}
+
+/**
  * @brief Decode ECN value from ToS field.
  *
  * @param tos ToS field value from the IPv4 header.
@@ -356,5 +415,54 @@ static inline void net_ipv4_setup_fragment_buffers(void)
 #else
 #define net_ipv4_init(...)
 #endif /* CONFIG_NET_NATIVE_IPV4 */
+
+/**
+ * @brief Starts address conflict detection for an IPv4 address.
+ *
+ * @param iface Network interface the address belongs to.
+ * @param ifaddr IPv4 address to probe.
+ *
+ * @return 0 on success, negative otherwise.
+ */
+int net_ipv4_acd_start(struct net_if *iface, struct net_if_addr *ifaddr);
+
+/**
+ * @brief Cancel address conflict detection for an IPv4 address.
+ *
+ * @param iface Network interface the address belongs to.
+ * @param ifaddr IPv4 address to probe.
+ */
+void net_ipv4_acd_cancel(struct net_if *iface, struct net_if_addr *ifaddr);
+
+/**
+ * @brief Notify no conflict was detected for an IPv4 address.
+ *
+ * @param iface Network interface the address belongs to.
+ * @param ifaddr IPv4 address.
+ */
+void net_if_ipv4_acd_succeeded(struct net_if *iface, struct net_if_addr *ifaddr);
+
+/**
+ * @brief Notify conflict for an IPv4 address.
+ *
+ * @param iface Network interface the address belongs to.
+ * @param ifaddr IPv4 address.
+ */
+void net_if_ipv4_acd_failed(struct net_if *iface, struct net_if_addr *ifaddr);
+
+/**
+ * @brief Initialize IPv4 address conflict detection module.
+ */
+void net_ipv4_acd_init(void);
+
+/**
+ * @brief Process ARP packet in terms of conflict detection.
+ *
+ * @param iface Network interface the packet was received on.
+ * @param pkt ARP packet to process.
+ *
+ * @return Return verdict about the packet.
+ */
+enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt);
 
 #endif /* __IPV4_H */

@@ -5,6 +5,7 @@
 '''Runner for debugging with J-Link.'''
 
 import argparse
+import ipaddress
 import logging
 import os
 from pathlib import Path
@@ -25,6 +26,13 @@ except ImportError:
 DEFAULT_JLINK_EXE = 'JLink.exe' if sys.platform == 'win32' else 'JLinkExe'
 DEFAULT_JLINK_GDB_PORT = 2331
 
+def is_ip(ip):
+    try:
+        ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return True
+
 class ToggleAction(argparse.Action):
 
     def __call__(self, parser, args, ignored, option):
@@ -35,7 +43,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, device, dev_id=None,
                  commander=DEFAULT_JLINK_EXE,
-                 dt_flash=True, erase=True, reset_after_load=False,
+                 dt_flash=True, erase=True, reset=False,
                  iface='swd', speed='auto',
                  loader=None,
                  gdbserver='JLinkGDBServer',
@@ -54,7 +62,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.commander = commander
         self.dt_flash = dt_flash
         self.erase = erase
-        self.reset_after_load = reset_after_load
+        self.reset = reset
         self.gdbserver = gdbserver
         self.iface = iface
         self.speed = speed
@@ -74,13 +82,14 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          dev_id=True, flash_addr=True, erase=True,
+                          dev_id=True, flash_addr=True, erase=True, reset=True,
                           tool_opt=True, file=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
         return '''Device identifier. Use it to select the J-Link Serial Number
-                  of the device connected over USB.'''
+                  of the device connected over USB. If the J-Link is connected over ip,
+                  the Device identifier is the ip.'''
 
     @classmethod
     def tool_opt_help(cls) -> str:
@@ -114,11 +123,11 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             help=f'''J-Link Commander, default is
                             {DEFAULT_JLINK_EXE}''')
         parser.add_argument('--reset-after-load', '--no-reset-after-load',
-                            dest='reset_after_load', nargs=0,
+                            dest='reset', nargs=0,
                             action=ToggleAction,
-                            help='reset after loading? (default: no)')
+                            help='obsolete synonym for --reset/--no-reset')
 
-        parser.set_defaults(reset_after_load=False)
+        parser.set_defaults(reset=False)
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -127,7 +136,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  commander=args.commander,
                                  dt_flash=args.dt_flash,
                                  erase=args.erase,
-                                 reset_after_load=args.reset_after_load,
+                                 reset=args.reset,
                                  iface=args.iface, speed=args.speed,
                                  gdbserver=args.gdbserver,
                                  loader=args.loader,
@@ -224,16 +233,18 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         rtos = self.thread_info_enabled and self.supports_thread_info
         plugin_dir = os.fspath(Path(self.commander).parent / 'GDBServer' /
                                'RTOSPlugin_Zephyr')
+        big_endian = self.build_conf.getboolean('CONFIG_BIG_ENDIAN')
 
         server_cmd = ([self.gdbserver] +
-                       # only USB connections supported
-                      ['-select', 'usb' + (f'={self.dev_id}'
-                                           if self.dev_id else ''),
+                      ['-select',
+                                           ('ip' if is_ip(self.dev_id) else 'usb') +
+                                           (f'={self.dev_id}' if self.dev_id else ''),
                        '-port', str(self.gdb_port),
                        '-if', self.iface,
                        '-speed', self.speed,
                        '-device', self.device,
                        '-silent',
+                       '-endian', 'big' if big_endian else 'little',
                        '-singlerun'] +
                       (['-nogui'] if self.supports_nogui else []) +
                       (['-rtos', plugin_dir] if rtos else []) +
@@ -266,7 +277,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 client_cmd += ['-ex', 'monitor halt',
                                '-ex', 'monitor reset',
                                '-ex', 'load']
-                if self.reset_after_load:
+                if self.reset:
                     client_cmd += ['-ex', 'monitor reset']
             if not self.gdb_host:
                 self.require(self.gdbserver)
@@ -281,6 +292,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         lines = [
             'ExitOnError 1',  # Treat any command-error as fatal
             'r',  # Reset and halt the target
+            'BE' if self.build_conf.getboolean('CONFIG_BIG_ENDIAN') else 'LE'
         ]
 
         if self.erase:
@@ -326,7 +338,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # Flash the selected build artifact
         lines.append(flash_cmd)
 
-        if self.reset_after_load:
+        if self.reset:
             lines.append('r') # Reset and halt the target
 
         lines.append('g') # Start the CPU
@@ -355,8 +367,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 loader_details = "?" + self.loader
 
             cmd = ([self.commander] +
-                    # only USB connections supported
-                   (['-USB', f'{self.dev_id}'] if self.dev_id else []) +
+                   (['-IP', f'{self.dev_id}'] if is_ip(self.dev_id) else (['-USB', f'{self.dev_id}'] if self.dev_id else [])) +
                    (['-nogui', '1'] if self.supports_nogui else []) +
                    ['-if', self.iface,
                     '-speed', self.speed,

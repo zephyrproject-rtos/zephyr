@@ -1,0 +1,29 @@
+# Microchip MEC MCU series configuration options
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MEC15XX
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	# All NVIC external sources.
+	default 174
+
+rsource "Kconfig.defconfig.mec1501*"
+
+if RTOS_TIMER
+
+config SOC_HAS_TIMING_FUNCTIONS
+	default y if !CORTEX_M_DWT
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
+endif # RTOS_TIMER
+
+config CORTEX_M_SYSTICK
+	depends on !RTOS_TIMER
+
+endif # SOC_SERIES_MEC15XX

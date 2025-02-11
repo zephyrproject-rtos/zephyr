@@ -1,0 +1,9 @@
+# Copyright 2023 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  mem_mgmt.mem_attr_heap:
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3

@@ -42,6 +42,9 @@
 #define IS_MINIMAL_LIBC_NOFP (IS_ENABLED(CONFIG_MINIMAL_LIBC) \
 	      && !IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT))
 
+#define IS_PICOLIBC_NOFP (IS_ENABLED(CONFIG_PICOLIBC) \
+	      && !IS_ENABLED(CONFIG_PICOLIBC_IO_FLOAT))
+
 /*
  * A really long string (330 characters + NULL).
  * The underlying sprintf() architecture will truncate it.
@@ -106,11 +109,11 @@ ZTEST(sprintf, test_sprintf_double)
 	/* Conversion not supported with minimal_libc without
 	 * CBPRINTF_FP_SUPPORT.
 	 *
-	 * Conversion not supported without FPU except on native POSIX.
+	 * Conversion not supported with picolibc without
+	 * PICOLIBC_IO_FLOAT
+	 *
 	 */
-	if (IS_MINIMAL_LIBC_NOFP
-	    || !(IS_ENABLED(CONFIG_FPU)
-		 || IS_ENABLED(CONFIG_BOARD_NATIVE_POSIX))) {
+	if (IS_MINIMAL_LIBC_NOFP || IS_PICOLIBC_NOFP) {
 		ztest_test_skip();
 		return;
 	}
@@ -751,8 +754,8 @@ ZTEST(sprintf, test_sprintf_string)
 		     "Expected 'short string', got '%s'\n", buffer);
 
 	sprintf(buffer, "%s", REALLY_LONG_STRING);
-	zassert_true((strcmp(buffer, REALLY_LONG_STRING) == 0),
-		     "sprintf(%%s) of REALLY_LONG_STRING doesn't match!\n");
+	zassert_str_equal(buffer, REALLY_LONG_STRING,
+			  "sprintf(%%s) of REALLY_LONG_STRING doesn't match!\n");
 }
 
 
@@ -791,10 +794,6 @@ ZTEST(sprintf, test_fprintf)
 	ret = fprintf(stdout, "");
 	zassert_equal(ret, 0, "fprintf failed!");
 
-#ifndef CONFIG_PICOLIBC	/* this is UB */
-	ret = fprintf(NULL, "%d", i);
-	zassert_equal(ret, EOF, "fprintf failed!");
-#endif
 }
 
 
@@ -823,10 +822,6 @@ ZTEST(sprintf, test_vfprintf)
 	ret = WriteFrmtd_vf(stdout,  "11\n");
 	zassert_equal(ret, 3, "vfprintf \"11\" failed");
 
-#ifndef CONFIG_PICOLIBC	/* this is UB */
-	ret = WriteFrmtd_vf(NULL,  "This %d", 3);
-	zassert_equal(ret, EOF, "vfprintf \"This 3\" failed");
-#endif
 }
 
 /**
@@ -883,29 +878,14 @@ ZTEST(sprintf, test_put)
 	ret = fputs("This 3\n", stderr);
 	zassert_equal(ret, 0, "fputs \"This 3\" failed");
 
-#ifndef CONFIG_PICOLIBC	/* this is UB */
-	ret = fputs("This 3", NULL);
-	zassert_equal(ret, EOF, "fputs \"This 3\" failed");
-#endif
-
 	ret = puts("This 3");
 	zassert_equal(ret, 0, "puts \"This 3\" failed");
 
 	ret = fputc('T', stdout);
 	zassert_equal(ret, 84, "fputc \'T\' failed");
 
-#ifndef CONFIG_PICOLIBC	/* this is UB */
-	ret = fputc('T', NULL);
-	zassert_equal(ret, EOF, "fputc \'T\' failed");
-#endif
-
 	ret = putc('T', stdout);
 	zassert_equal(ret, 84, "putc \'T\' failed");
-
-#ifndef CONFIG_PICOLIBC	/* this is UB */
-	ret = putc('T', NULL);
-	zassert_equal(ret, EOF, "putc \'T\' failed");
-#endif
 
 	ret = fputc('T', stderr);
 	zassert_equal(ret, 84, "fputc \'T\' failed");
@@ -929,10 +909,10 @@ ZTEST(sprintf, test_fwrite)
 	ret = fwrite("This 3", 0, 4, stdout);
 	zassert_equal(ret, 0, "fwrite failed!");
 
-	ret = fwrite("This 3", 4, 4, stdout);
+	ret = fwrite("This 3", 1, 4, stdout);
 	zassert_equal(ret, 4, "fwrite failed!");
 
-	ret = fwrite("This 3", 4, 4, stdin);
+	ret = fwrite("This 3", 1, 4, stdin);
 	zassert_equal(ret, 0, "fwrite failed!");
 }
 

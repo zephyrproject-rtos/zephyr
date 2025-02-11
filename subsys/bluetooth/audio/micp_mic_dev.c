@@ -6,22 +6,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
 
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "audio_internal.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_micp, CONFIG_BT_MICP_MIC_DEV_LOG_LEVEL);
 
@@ -30,6 +39,7 @@ struct bt_micp_server {
 	struct bt_micp_mic_dev_cb *cb;
 	struct bt_gatt_service *service_p;
 	struct bt_aics *aics_insts[CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT];
+	struct k_work_delayable notify_work;
 };
 
 static struct bt_micp_server micp_inst;
@@ -49,6 +59,28 @@ static ssize_t read_mute(struct bt_conn *conn,
 				 &micp_inst.mute, sizeof(micp_inst.mute));
 }
 
+static void notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_micp_server *server = CONTAINER_OF(d_work, struct bt_micp_server, notify_work);
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_MICS_MUTE, server->service_p->attrs, &server->mute,
+				  sizeof(server->mute));
+	if (err == 0 || err == -ENOTCONN) {
+		return;
+	}
+
+	if (err == -ENOMEM &&
+	    k_work_reschedule(d_work, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US)) >= 0) {
+		LOG_WRN("Out of buffers for mute state notification. Will retry in %dms",
+			BT_AUDIO_NOTIFY_RETRY_DELAY_US);
+		return;
+	}
+
+	LOG_ERR("Mute state notification err %d", err);
+}
+
 static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  const void *buf, uint16_t len, uint16_t offset,
 			  uint8_t flags)
@@ -65,7 +97,7 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	if ((conn != NULL && *val == BT_MICP_MUTE_DISABLED) ||
 	    *val > BT_MICP_MUTE_DISABLED) {
-		return BT_GATT_ERR(BT_MICP_ERR_VAL_OUT_OF_RANGE);
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
 	if (conn != NULL && micp_inst.mute == BT_MICP_MUTE_DISABLED) {
@@ -75,11 +107,14 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	LOG_DBG("%u", *val);
 
 	if (*val != micp_inst.mute) {
+		int err;
+
 		micp_inst.mute = *val;
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_MICS_MUTE,
-				    micp_inst.service_p->attrs,
-				    &micp_inst.mute, sizeof(micp_inst.mute));
+		err = k_work_reschedule(&micp_inst.notify_work, K_NO_WAIT);
+		if (err < 0) {
+			LOG_ERR("Failed to schedule mute state notification err %d", err);
+		}
 
 		if (micp_inst.cb != NULL && micp_inst.cb->mute != NULL) {
 			micp_inst.cb->mute(micp_inst.mute);
@@ -115,6 +150,10 @@ static int prepare_aics_inst(struct bt_micp_mic_dev_register_param *param)
 	int i;
 	int j;
 	int err;
+
+	if (CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT == 0) {
+		return 0;
+	}
 
 	for (j = 0, i = 0; i < ARRAY_SIZE(mics_attrs); i++) {
 		if (bt_uuid_cmp(mics_attrs[i].uuid, BT_UUID_GATT_INCLUDE) == 0) {
@@ -177,6 +216,8 @@ int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param)
 	}
 
 	micp_inst.cb = param->cb;
+
+	k_work_init_delayable(&micp_inst.notify_work, notify_work_handler);
 
 	registered = true;
 

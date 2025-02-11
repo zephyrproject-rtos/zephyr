@@ -6,7 +6,6 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
-#include "kconfig.h"
 
 #define ULL_LLCP_UNITTEST
 
@@ -49,12 +48,15 @@
 
 static struct ll_conn conn[CONFIG_BT_CTLR_LLCP_CONN];
 
-static void setup(void)
+static void alloc_setup(void *data)
 {
 	ull_conn_init();
-	test_setup(&conn[0]);
+	for (int i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+		test_setup(&conn[i]);
+	}
 }
-void test_tx_buffer_alloc(void)
+
+ZTEST(tx_buffer_alloc, test_tx_buffer_alloc)
 {
 	struct proc_ctx *ctxs[CONFIG_BT_CTLR_LLCP_CONN];
 	struct node_tx *tx[CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM +
@@ -76,18 +78,20 @@ void test_tx_buffer_alloc(void)
 		zassert_true(llcp_tx_alloc_peek(&conn[0], ctxs[0]));
 		tx[tx_alloc_idx] = llcp_tx_alloc(&conn[0], ctxs[0]);
 		zassert_equal(conn[0].llcp.tx_buffer_alloc, i + 1);
-		zassert_equal(common_tx_buffer_alloc_count(), 0);
+		zassert_equal(llcp_common_tx_buffer_alloc_count(), 0);
 		zassert_not_null(tx[tx_alloc_idx], NULL);
 		tx_alloc_idx++;
+
 	}
 	for (i = 0; i < CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM; i++) {
 		zassert_true(llcp_tx_alloc_peek(&conn[0], ctxs[0]));
 		tx[tx_alloc_idx] = llcp_tx_alloc(&conn[0], ctxs[0]);
 		zassert_equal(conn[0].llcp.tx_buffer_alloc,
 			      CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM + i + 1, NULL);
-		zassert_equal(common_tx_buffer_alloc_count(), i+1);
+		zassert_equal(llcp_common_tx_buffer_alloc_count(), i+1);
 		zassert_not_null(tx[tx_alloc_idx], NULL);
 		tx_alloc_idx++;
+
 	}
 	zassert_false(llcp_tx_alloc_peek(&conn[0], ctxs[0]));
 	zassert_equal(ctxs[0]->wait_reason, WAITING_FOR_TX_BUFFER);
@@ -98,7 +102,7 @@ void test_tx_buffer_alloc(void)
 			zassert_true(llcp_tx_alloc_peek(&conn[j], ctxs[j]));
 			tx[tx_alloc_idx] = llcp_tx_alloc(&conn[j], ctxs[j]);
 			zassert_not_null(tx[tx_alloc_idx], NULL);
-			zassert_equal(common_tx_buffer_alloc_count(),
+			zassert_equal(llcp_common_tx_buffer_alloc_count(),
 				      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM, NULL);
 			zassert_equal(conn[j].llcp.tx_buffer_alloc, i + 1);
 			tx_alloc_idx++;
@@ -107,9 +111,8 @@ void test_tx_buffer_alloc(void)
 		zassert_false(llcp_tx_alloc_peek(&conn[j], ctxs[j]));
 		zassert_equal(ctxs[j]->wait_reason, WAITING_FOR_TX_BUFFER);
 	}
-
 	ull_cp_release_tx(&conn[0], tx[1]);
-	zassert_equal(common_tx_buffer_alloc_count(),
+	zassert_equal(llcp_common_tx_buffer_alloc_count(),
 		      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM - 1, NULL);
 	zassert_equal(conn[0].llcp.tx_buffer_alloc, CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM +
 		      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM - 1, NULL);
@@ -120,15 +123,16 @@ void test_tx_buffer_alloc(void)
 	/* ... ctxs[0] is */
 	zassert_true(llcp_tx_alloc_peek(&conn[0], ctxs[0]));
 	tx[tx_alloc_idx] = llcp_tx_alloc(&conn[0], ctxs[0]);
-	zassert_equal(common_tx_buffer_alloc_count(), CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM,
-		      NULL);
-	zassert_equal(conn[0].llcp.tx_buffer_alloc, CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM +
+	zassert_equal(llcp_common_tx_buffer_alloc_count(),
+		      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM, NULL);
+	zassert_equal(conn[0].llcp.tx_buffer_alloc,
+		      CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM +
 		      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM, NULL);
 
 	zassert_not_null(tx[tx_alloc_idx], NULL);
 	tx_alloc_idx++;
 	ull_cp_release_tx(&conn[0], tx[tx_alloc_idx - 1]);
-	zassert_equal(common_tx_buffer_alloc_count(),
+	zassert_equal(llcp_common_tx_buffer_alloc_count(),
 		      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM - 1, NULL);
 	zassert_equal(conn[0].llcp.tx_buffer_alloc, CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM +
 		      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM - 1, NULL);
@@ -181,11 +185,4 @@ void test_tx_buffer_alloc(void)
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		tx_buffer_alloc, ztest_unit_test_setup_teardown(test_tx_buffer_alloc, setup,
-								unit_test_noop));
-
-	ztest_run_test_suite(tx_buffer_alloc);
-}
+ZTEST_SUITE(tx_buffer_alloc, NULL, NULL, alloc_setup, NULL, NULL);

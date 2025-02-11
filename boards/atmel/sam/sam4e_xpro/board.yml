@@ -1,0 +1,5 @@
+board:
+  name: sam4e_xpro
+  vendor: atmel
+  socs:
+    - name: sam4e16e

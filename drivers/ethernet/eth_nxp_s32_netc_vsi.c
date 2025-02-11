@@ -1,8 +1,10 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT nxp_s32_netc_vsi
 
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -18,7 +20,7 @@ LOG_MODULE_REGISTER(nxp_s32_eth_vsi);
 #include <zephyr/net/phy.h>
 #include <ethernet/eth_stats.h>
 
-#include <S32Z2.h>
+#include <soc.h>
 #include <Netc_Eth_Ip.h>
 #include <Netc_Eth_Ip_Irq.h>
 #include <Netc_EthSwt_Ip.h>
@@ -26,7 +28,6 @@ LOG_MODULE_REGISTER(nxp_s32_eth_vsi);
 #include "eth.h"
 #include "eth_nxp_s32_netc_priv.h"
 
-#define VSI_NODE(n)	DT_NODELABEL(enetc_vsi##n)
 #define TX_RING_IDX	0
 #define RX_RING_IDX	0
 
@@ -36,11 +37,6 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 	struct nxp_s32_eth_data *ctx = dev->data;
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	const struct nxp_s32_eth_msix *msix;
-#if defined(CONFIG_NET_IPV6)
-	static struct net_if_mcast_monitor mon;
-
-	net_if_mcast_mon_register(&mon, iface, nxp_s32_eth_mcast_cb);
-#endif /* CONFIG_NET_IPV6 */
 
 	/*
 	 * For VLAN, this value is only used to get the correct L2 driver.
@@ -65,9 +61,10 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 
 	for (int i = 0; i < NETC_MSIX_EVENTS_COUNT; i++) {
 		msix = &cfg->msix[i];
-		if (msix->mbox_channel.dev != NULL) {
-			if (mbox_set_enabled(&msix->mbox_channel, true)) {
-				LOG_ERR("Failed to enable MRU channel %u", msix->mbox_channel.id);
+		if (mbox_is_ready_dt(&msix->mbox_spec)) {
+			if (mbox_set_enabled_dt(&msix->mbox_spec, true)) {
+				LOG_ERR("Failed to enable MRU channel %u",
+					msix->mbox_spec.channel_id);
 			}
 		}
 	}
@@ -83,11 +80,16 @@ static const struct ethernet_api nxp_s32_eth_api = {
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nxp_s32_netc_vsi) == 1, "Only one VSI enabled supported");
 
 #define NETC_VSI_INSTANCE_DEFINE(n)								\
-	NETC_GENERATE_MAC_ADDRESS(VSI_NODE(n), n)						\
+	NETC_GENERATE_MAC_ADDRESS(n)								\
+												\
+	void nxp_s32_eth_vsi##n##_rx_event(uint8_t chan, const uint32_t *buf, uint8_t buf_size)	\
+	{											\
+		Netc_Eth_Ip_MSIX_Rx(NETC_SI_NXP_S32_HW_INSTANCE(n));				\
+	}											\
 												\
 	static void nxp_s32_eth##n##_rx_callback(const uint8_t unused, const uint8_t ring)	\
 	{											\
-		const struct device *dev = DEVICE_DT_GET(VSI_NODE(n));				\
+		const struct device *dev = DEVICE_DT_INST_GET(n);				\
 		const struct nxp_s32_eth_config *cfg = dev->config;				\
 		struct nxp_s32_eth_data *ctx = dev->data;					\
 												\
@@ -135,7 +137,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nxp_s32_netc_vsi) == 1, "Only one VSI enabl
 		.NumberOfRxBDR = 1,								\
 		.NumberOfTxBDR = 1,								\
 		.txMruMailboxAddr = NULL,							\
-		.rxMruMailboxAddr = (uint32_t *)MRU_MBOX_ADDR(VSI_NODE(n), rx),			\
+		.rxMruMailboxAddr = (uint32_t *)MRU_MBOX_ADDR(DT_DRV_INST(n), rx),		\
 		.RxInterrupts = (uint32_t)true,							\
 		.TxInterrupts = (uint32_t)false,						\
 		.MACFilterTableMaxNumOfEntries = CONFIG_ETH_NXP_S32_MAC_FILTER_TABLE_SIZE,	\
@@ -143,7 +145,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nxp_s32_netc_vsi) == 1, "Only one VSI enabl
 	};											\
 												\
 	static struct nxp_s32_eth_data nxp_s32_eth##n##_data = {				\
-		.mac_addr = DT_PROP_OR(VSI_NODE(n), local_mac_address, {0}),			\
+		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),				\
 	};											\
 												\
 	static const struct nxp_s32_eth_config nxp_s32_eth##n##_cfg = {				\
@@ -154,49 +156,23 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nxp_s32_netc_vsi) == 1, "Only one VSI enabl
 			.paCtrlRxRingConfig = &nxp_s32_eth##n##_rxring_cfg,			\
 			.paCtrlTxRingConfig = &nxp_s32_eth##n##_txring_cfg,			\
 		},										\
-		.si_idx = n,									\
+		.si_idx = NETC_SI_NXP_S32_HW_INSTANCE(n),					\
 		.tx_ring_idx = TX_RING_IDX,							\
 		.rx_ring_idx = RX_RING_IDX,							\
 		.msix = {									\
-			NETC_MSIX(VSI_NODE(n), rx, Netc_Eth_Ip_##n##_MSIX_RxEvent),		\
+			NETC_MSIX(DT_DRV_INST(n), rx, nxp_s32_eth_vsi##n##_rx_event),		\
 		},										\
 		.mac_filter_hash_table = &nxp_s32_eth##n##_mac_filter_hash_table[0],		\
 		.generate_mac = nxp_s32_eth##n##_generate_mac,					\
 	};											\
 												\
-	ETH_NET_DEVICE_DT_DEFINE(VSI_NODE(n),							\
+	ETH_NET_DEVICE_DT_INST_DEFINE(n,							\
 				nxp_s32_eth_initialize_common,					\
 				NULL,								\
 				&nxp_s32_eth##n##_data,						\
 				&nxp_s32_eth##n##_cfg,						\
 				CONFIG_ETH_NXP_S32_VSI_INIT_PRIORITY,				\
 				&nxp_s32_eth_api,						\
-				NET_ETH_MTU)
+				NET_ETH_MTU);
 
-#if DT_NODE_HAS_STATUS(VSI_NODE(1), okay)
-NETC_VSI_INSTANCE_DEFINE(1);
-#endif
-
-#if DT_NODE_HAS_STATUS(VSI_NODE(2), okay)
-NETC_VSI_INSTANCE_DEFINE(2);
-#endif
-
-#if DT_NODE_HAS_STATUS(VSI_NODE(3), okay)
-NETC_VSI_INSTANCE_DEFINE(3);
-#endif
-
-#if DT_NODE_HAS_STATUS(VSI_NODE(4), okay)
-NETC_VSI_INSTANCE_DEFINE(4);
-#endif
-
-#if DT_NODE_HAS_STATUS(VSI_NODE(5), okay)
-NETC_VSI_INSTANCE_DEFINE(5);
-#endif
-
-#if DT_NODE_HAS_STATUS(VSI_NODE(6), okay)
-NETC_VSI_INSTANCE_DEFINE(6);
-#endif
-
-#if DT_NODE_HAS_STATUS(VSI_NODE(7), okay)
-NETC_VSI_INSTANCE_DEFINE(7);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(NETC_VSI_INSTANCE_DEFINE)

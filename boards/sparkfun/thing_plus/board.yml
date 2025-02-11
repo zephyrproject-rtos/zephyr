@@ -1,0 +1,7 @@
+board:
+  name: sparkfun_thing_plus
+  vendor: sparkfun
+  socs:
+  - name: nrf9160
+    variants:
+    - name: 'ns'

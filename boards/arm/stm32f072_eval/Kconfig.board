@@ -1,8 +1,0 @@
-# STM32F072-EVAL board configuration
-
-# Copyright (c) 2017 BayLibre, SAS
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_STM32F072_EVAL
-	bool "STM32F072-EVAL Development Board"
-	depends on SOC_STM32F072XB

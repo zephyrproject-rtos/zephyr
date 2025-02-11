@@ -353,6 +353,8 @@ ZTEST(pipe_api, test_half_pipe_put_get)
 	size_t rd_byte = 0;
 	int ret;
 
+	memset(rx_data, 0, sizeof(rx_data));
+
 	/* TESTPOINT: min_xfer > bytes_to_read */
 	ret = k_pipe_put(&kpipe, &rx_data[0], 1, &rd_byte, 24, K_NO_WAIT);
 	zassert_true(ret == -EINVAL);
@@ -437,7 +439,6 @@ ZTEST(pipe_api, test_pipe_get_large)
  */
 ZTEST(pipe_api, test_pipe_reader_wait)
 {
-	/**TESTPOINT: test k_pipe_block_put with semaphore*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 					thread_handler, &kpipe1, NULL, NULL,
 					K_PRIO_PREEMPT(0), 0, K_NO_WAIT);

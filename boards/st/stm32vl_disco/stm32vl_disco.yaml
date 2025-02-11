@@ -1,0 +1,15 @@
+identifier: stm32vl_disco
+name: ST STM32VL Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 8
+flash: 128
+supported:
+  - gpio
+  - i2c
+  - spi
+vendor: st

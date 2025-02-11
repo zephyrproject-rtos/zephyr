@@ -105,7 +105,7 @@ static void min_alarm_handler(const struct device *dev,
 	(void)counter_get_value(dev, &time);
 
 	uint32_t uptime = k_uptime_get_32();
-	uint8_t us = uptime % 1000U;
+	uint16_t ms = uptime % 1000U;
 
 	uptime /= 1000U;
 	uint8_t se = uptime % 60U;
@@ -143,7 +143,7 @@ static void min_alarm_handler(const struct device *dev,
 	printk("%s: adj %d.%09lu, uptime %u:%02u:%02u.%03u, clk err %d ppm\n",
 	       format_time(time, -1),
 	       (uint32_t)(ts->tv_sec - time), ts->tv_nsec,
-	       hr, mn, se, us, err_ppm);
+	       hr, mn, se, ms, err_ppm);
 }
 
 struct maxim_ds3231_alarm sec_alarm;
@@ -227,13 +227,13 @@ static void set_aligned_clock(const struct device *ds3231)
 	       sp.syncclock);
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const ds3231 = DEVICE_DT_GET_ONE(maxim_ds3231);
 
 	if (!device_is_ready(ds3231)) {
 		printk("%s: device not ready.\n", ds3231->name);
-		return;
+		return 0;
 	}
 
 	uint32_t syncclock_Hz = maxim_ds3231_syncclock_frequency(ds3231);
@@ -247,7 +247,7 @@ void main(void)
 		       (rc & MAXIM_DS3231_REG_STAT_OSF) ? "" : " not");
 	} else {
 		printk("DS3231 stat fetch failed: %d\n", rc);
-		return;
+		return 0;
 	}
 
 	/* Show the DS3231 counter properties */
@@ -337,4 +337,5 @@ void main(void)
 	}
 
 	k_sleep(K_FOREVER);
+	return 0;
 }

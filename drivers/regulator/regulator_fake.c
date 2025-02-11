@@ -15,6 +15,7 @@
 
 struct regulator_fake_config {
 	struct regulator_common_config common;
+	bool is_enabled;
 };
 
 struct regulator_fake_data {
@@ -39,6 +40,10 @@ DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_mode, const struct device *,
 		       regulator_mode_t);
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_mode, const struct device *,
 		       regulator_mode_t *);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_active_discharge, const struct device *,
+		       bool);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_active_discharge, const struct device *,
+		       bool *);
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_error_flags,
 		       const struct device *, regulator_error_flags_t *);
 
@@ -53,14 +58,18 @@ static struct regulator_driver_api api = {
 	.get_current_limit = regulator_fake_get_current_limit,
 	.set_mode = regulator_fake_set_mode,
 	.get_mode = regulator_fake_get_mode,
+	.set_active_discharge = regulator_fake_set_active_discharge,
+	.get_active_discharge = regulator_fake_get_active_discharge,
 	.get_error_flags = regulator_fake_get_error_flags,
 };
 
 static int regulator_fake_init(const struct device *dev)
 {
+	const struct regulator_fake_config *config = dev->config;
+
 	regulator_common_data_init(dev);
 
-	return regulator_common_init(dev, false);
+	return regulator_common_init(dev, config->is_enabled);
 }
 
 /* parent regulator */
@@ -68,16 +77,13 @@ static int regulator_fake_init(const struct device *dev)
 DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_dvs_state_set,
 		       const struct device *, regulator_dvs_state_t);
 
+DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_ship_mode,
+		       const struct device *);
+
 static struct regulator_parent_driver_api parent_api = {
 	.dvs_state_set = regulator_parent_fake_dvs_state_set,
+	.ship_mode = regulator_parent_fake_ship_mode,
 };
-
-static int regulator_fake_common_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
 
 #define FAKE_DATA_NAME(node_id) _CONCAT(data_, DT_DEP_ORD(node_id))
 #define FAKE_CONF_NAME(node_id) _CONCAT(config_, DT_DEP_ORD(node_id))
@@ -87,6 +93,7 @@ static int regulator_fake_common_init(const struct device *dev)
                                                                                \
 	static const struct regulator_fake_config FAKE_CONF_NAME(node_id) = {  \
 		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),            \
+		.is_enabled = DT_PROP(node_id, fake_is_enabled_in_hardware),   \
 	};                                                                     \
                                                                                \
 	DEVICE_DT_DEFINE(node_id, regulator_fake_init, NULL,                   \
@@ -95,8 +102,7 @@ static int regulator_fake_common_init(const struct device *dev)
 			 &api);
 
 #define REGULATOR_FAKE_DEFINE_ALL(inst)                                        \
-	DEVICE_DT_INST_DEFINE(inst, regulator_fake_common_init, NULL, NULL,    \
-			      NULL, POST_KERNEL,                               \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL,       \
 			      CONFIG_REGULATOR_FAKE_COMMON_INIT_PRIORITY,      \
 			      &parent_api);                                    \
                                                                                \

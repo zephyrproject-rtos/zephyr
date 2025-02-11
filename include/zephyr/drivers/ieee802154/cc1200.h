@@ -23,7 +23,6 @@
  */
 struct cc1200_rf_registers_set {
 	uint32_t chan_center_freq0;
-	uint16_t channel_limit;
 	/* to fit in uint16_t, spacing is a multiple of 100 Hz,
 	 * 12.5KHz for instance will be 125.
 	 */

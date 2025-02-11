@@ -1,0 +1,23 @@
+# Copyright (c) 2023 Kenneth J. Miller <ken@miller.ec>
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 family VREF+ node
+
+compatible: "st,stm32-vref"
+
+include: sensor-device.yaml
+
+properties:
+  vrefint-cal-addr:
+    type: int
+    required: true
+    description: |
+      Device engineering bytes address containing the factory-measured
+      calibration bandgap voltage (VREFINT_CAL).
+
+  vrefint-cal-mv:
+    type: int
+    required: true
+    description: |
+      VDDA/VREF+ voltage in millivolts applied during manufacturing to determine
+      the internal bandgap voltage reference VREFINT.

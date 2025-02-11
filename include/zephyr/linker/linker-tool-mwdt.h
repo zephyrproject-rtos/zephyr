@@ -78,8 +78,7 @@
  * own parameter since it needs abstraction across the different toolchains.
  * If not required, the <options> and <align> parameters should be left blank.
  */
-
-#define SECTION_PROLOGUE(name, options, align) name options align :
+#define SECTION_PROLOGUE(name, options, align) name options : align
 
 /*
  * As for SECTION_PROLOGUE(), except that this one must (!) be used
@@ -90,9 +89,10 @@
  */
 #ifdef CONFIG_XIP
 #define SECTION_DATA_PROLOGUE(name, options, align) \
-	name options ALIGN(8) align :
+	name options ALIGN(8) : align
 #else
-#define SECTION_DATA_PROLOGUE(name, options, align) name options align :
+#define SECTION_DATA_PROLOGUE(name, options, align) name options : align
+
 #endif
 
 #define SORT_BY_NAME(x) SORT(x)

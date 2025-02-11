@@ -1,0 +1,95 @@
+# Bosch BMI08X inertial measurement configuration options
+
+# Copyright (c) 2022 Meta Platforms, Inc. and its affiliates
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMI08X
+	bool "Bosch BMI08X inertial measurement unit"
+	default y
+	depends on DT_HAS_BOSCH_BMI08X_ACCEL_ENABLED || DT_HAS_BOSCH_BMI08X_GYRO_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI08X_ACCEL),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI08X_GYRO),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI08X_ACCEL),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI08X_GYRO),spi)
+	help
+	  Enable Bosch BMI08X inertial measurement unit that provides acceleration
+	  and angular rate measurements.
+
+if BMI08X
+
+choice BMI08X_ACCEL_TRIGGER_MODE
+	prompt "Accelerometer trigger mode"
+	default BMI08X_ACCEL_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config BMI08X_ACCEL_TRIGGER_NONE
+	bool "No trigger"
+
+config BMI08X_ACCEL_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select BMI08X_ACCEL_TRIGGER
+
+config BMI08X_ACCEL_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select BMI08X_ACCEL_TRIGGER
+endchoice
+
+config BMI08X_ACCEL_TRIGGER
+	bool
+
+config BMI08X_ACCEL_THREAD_PRIORITY
+	int "Accelerometer own thread priority"
+	depends on BMI08X_ACCEL_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  The priority of the thread used for handling interrupts.
+
+config BMI08X_ACCEL_THREAD_STACK_SIZE
+	int "Accelerometer own thread stack size"
+	depends on BMI08X_ACCEL_TRIGGER_OWN_THREAD
+	default 1536
+	help
+	  The thread stack size.
+
+choice BMI08X_GYRO_TRIGGER_MODE
+	prompt "Gyroscope trigger mode"
+	default BMI08X_GYRO_TRIGGER_NONE
+	default BMI08X_GYRO_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config BMI08X_GYRO_TRIGGER_NONE
+	bool "No trigger"
+
+config BMI08X_GYRO_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select BMI08X_GYRO_TRIGGER
+
+config BMI08X_GYRO_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select BMI08X_GYRO_TRIGGER
+endchoice
+
+config BMI08X_GYRO_TRIGGER
+	bool
+
+config BMI08X_GYRO_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on BMI08X_GYRO_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  The priority of the thread used for handling interrupts.
+
+config BMI08X_GYRO_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on BMI08X_GYRO_TRIGGER_OWN_THREAD
+	default 1536
+	help
+	  The thread stack size.
+
+config BMI08X_I2C_WRITE_BURST_SIZE
+	int "Maximum length of single i2c write"
+	default 16
+
+endif # BMI08X

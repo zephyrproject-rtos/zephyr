@@ -306,10 +306,25 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 	/* reset test data to positive value */
 	data.val1 = -data.val1;
 	data.val2 = -data.val2;
-	/* Test struct sensor_value to double */
 #if defined(CONFIG_FPU)
+	/* Test struct sensor_value to double and float */
 	zassert_equal((long long)(sensor_value_to_double(&data) * 1000000LL),
 			SENSOR_PI, "the data does not match");
+	zassert_equal((long long)(sensor_value_to_float(&data) * 1000000LL),
+			SENSOR_PI, "the data does not match");
+
+	/* Test struct sensor_value from double and float */
+	sensor_value_from_double(&data, (double)(SENSOR_PI) / 1000000.0);
+	zassert_equal(data.val1, SENSOR_PI/1000000LL,
+			"the data does not match");
+	zassert_equal(data.val2, SENSOR_PI%(data.val1 * 1000000LL),
+			"the data does not match");
+
+	sensor_value_from_float(&data, (float)(SENSOR_PI) / 1000000.0f);
+	zassert_equal(data.val1, SENSOR_PI/1000000LL,
+			"the data does not match");
+	zassert_equal(data.val2, SENSOR_PI%(data.val1 * 1000000LL),
+			"the data does not match");
 #endif
 	/* reset test data to positive value */
 	data.val1 = 3;

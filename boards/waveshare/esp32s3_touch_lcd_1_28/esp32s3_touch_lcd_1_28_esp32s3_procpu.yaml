@@ -1,0 +1,22 @@
+identifier: esp32s3_touch_lcd_1_28/esp32s3/procpu
+name: ESP32-S3-Touch-LCD-1.28 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - regulator
+  - uart
+  - pwm
+  - pinmux
+  - nvs
+  - display
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: waveshare

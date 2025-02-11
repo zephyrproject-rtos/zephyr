@@ -1,0 +1,98 @@
+# Copyright 2022-2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_NXP_S32_GMAC
+	bool "NXP S32 GMAC driver"
+	default y
+	depends on DT_HAS_NXP_S32_GMAC_ENABLED
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select PINCTRL
+	imply MDIO
+	help
+	  Enable GMAC/EMAC Ethernet driver for NXP S32 SoCs.
+
+if ETH_NXP_S32_GMAC
+
+config ETH_NXP_S32_TX_RING_LEN
+	int "TX ring length"
+	default 4
+	range 4 128
+	help
+	  Length of the TX ring. ETH_NXP_S32_TX_RING_BUF_SIZE * ETH_NXP_S32_TX_RING_LEN
+	  must be a multiple of TX FIFO block size.
+
+config ETH_NXP_S32_TX_RING_BUF_SIZE
+	int "TX ring data buffer size"
+	default 1536
+	range 64 1536
+	help
+	  Size, in bytes, of the TX data buffer. The size must be big enough to
+	  store one complete Ethernet frame, and be a multiple of the data bus
+	  width.
+
+config ETH_NXP_S32_RX_RING_LEN
+	int "RX ring length"
+	default 4
+	range 4 128
+	help
+	  Length of the RX ring. ETH_NXP_S32_RX_RING_BUF_SIZE * ETH_NXP_S32_RX_RING_LEN
+	  must be a multiple of RX FIFO block size.
+
+config ETH_NXP_S32_RX_RING_BUF_SIZE
+	int "RX ring data buffer size"
+	default 1536
+	range 64 1536
+	help
+	  Size, in bytes, of the RX data buffer. The size must be big enough to
+	  store one complete Ethernet frame, and be a multiple of the data bus
+	  width.
+
+config ETH_NXP_S32_CLOCK_CONFIG_IDX
+	int
+	default 1
+	help
+	  This option specifies the zero-based index of the clock configuration
+	  used to initialize the GMAC/EMAC clocks.
+
+config ETH_NXP_S32_RX_THREAD_PRIO
+	int "RX thread priority"
+	default 2
+	help
+	  RX thread priority. RX thread is a cooperative thread.
+
+config ETH_NXP_S32_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 1500
+	help
+	  RX thread stack size.
+
+config ETH_NXP_S32_RX_BUDGET
+	int "RX thread budget"
+	default 128
+	range 1 1024
+	help
+	  The budget parameter places a limit on the amount of work the driver
+	  may do in the RX thread before yielding the processor, in case there
+	  is more work to do. This is to prevent the RX thread to starve other
+	  threads. Each received frame counts as one unit of work.
+
+config ETH_NXP_S32_LOOPBACK
+	bool "MAC loopback"
+	help
+	  MAC operates in loopback mode. The data is looped back through
+	  internal FIFO on to the internal MII/GMII interface, passing through
+	  the corresponding transmit PHY interface block.
+	  This mode requires the MII/GMII Rx clock input signal to function
+	  properly because the transmit clock is not internally looped back.
+
+config ETH_NXP_S32_MULTICAST_FILTER
+	bool "Multicast destination address filtering"
+	help
+	  Enable support for multicast destination address filtering in the MAC.
+	  MAC performs imperfect filtering using a 64-bit hash table. The upper
+	  6-bits CRC of the received multicast address is used as index to the
+	  content of the hash table. Only multicast with the computed hash set
+	  in the multicast table will be received and all other multicast is
+	  dropped by the MAC. If disabled, all multicast is received by the MAC.
+
+endif # ETH_NXP_S32_GMAC

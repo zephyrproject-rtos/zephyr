@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 Nikola Trifunovic <nikola@trifunovic.at>
+ * Copyright (c) 2023 Benjamin Cabé <benjamin@zephyrproject.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	grove_header: grove_header {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 26 0>,
+			   <1 0 &gpio1 0 0>;
+	};
+};
+
+grove_i2c1: &i2c1 {};

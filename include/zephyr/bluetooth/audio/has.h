@@ -1,5 +1,11 @@
+/**
+ * @file
+ * @brief Bluetooth Hearing Access Service (HAS) APIs.
+ */
+
 /*
  * Copyright (c) 2022 Codecoup
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,28 +18,38 @@
  *
  * @defgroup bt_has Hearing Access Service (HAS)
  *
+ * @since 3.1
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
  *
  * The Hearing Access Service is used to identify a hearing aid and optionally
  * to control hearing aid presets.
- *
- * [Experimental] Users should note that the APIs can change as a part of
- * ongoing development.
  */
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #include <zephyr/bluetooth/bluetooth.h>
-#include <sys/types.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** Preset index definitions */
+/**
+ * @name Preset index definitions
+ * @{
+ */
+/** No index */
 #define BT_HAS_PRESET_INDEX_NONE 0x00
+/** First preset index */
 #define BT_HAS_PRESET_INDEX_FIRST 0x01
+/** Last preset index */
 #define BT_HAS_PRESET_INDEX_LAST 0xFF
+/** @} */
 
 /** Preset name minimum length */
 #define BT_HAS_PRESET_NAME_MIN 1
@@ -45,8 +61,20 @@ struct bt_has;
 
 /** Hearing Aid device type */
 enum bt_has_hearing_aid_type {
+	/**
+	 * Two hearing aids that form a Coordinated Set, one for the right ear and one for the left
+	 * ear of the user. Typically used by a user with bilateral hearing loss.
+	 */
 	BT_HAS_HEARING_AID_TYPE_BINAURAL = 0x00,
+	/**
+	 * A single hearing aid for the left or the right ear. Typically used by a user with
+	 * unilateral hearing loss.
+	 */
 	BT_HAS_HEARING_AID_TYPE_MONAURAL = 0x01,
+	/**
+	 * Two hearing aids with a connection to one another that expose a single Bluetooth radio
+	 * interface.
+	 */
 	BT_HAS_HEARING_AID_TYPE_BANDED = 0x02,
 };
 
@@ -62,13 +90,14 @@ enum bt_has_properties {
 	BT_HAS_PROP_AVAILABLE = BIT(1),
 };
 
-/** Hearing Aid device capablilities */
+/** Hearing Aid device capabilities */
 enum bt_has_capabilities {
+	/** Indicate support for presets */
 	BT_HAS_PRESET_SUPPORT = BIT(0),
 };
 
-/** @brief Structure for registering a Hearing Access Service instance. */
-struct bt_has_register_param {
+/** @brief Structure for registering features of a Hearing Access Service instance. */
+struct bt_has_features_param {
 	/** Hearing Aid Type value */
 	enum bt_has_hearing_aid_type type;
 
@@ -188,11 +217,12 @@ struct bt_has_client_cb {
 				    bool is_last);
 };
 
-/** @brief Registers the callbacks used by the Hearing Access Service client.
+/**
+ * @brief Registers the callbacks used by the Hearing Access Service client.
  *
- *  @param cb The callback structure.
+ * @param cb The callback structure.
  *
- *  @return 0 in case of success or negative value in case of error.
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_has_client_cb_register(const struct bt_has_client_cb *cb);
 
@@ -340,11 +370,11 @@ struct bt_has_preset_register_param {
 /**
  * @brief Register the Hearing Access Service instance.
  *
- * @param param     Hearing Access Service register parameters.
+ * @param features     Hearing Access Service register parameters.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_has_register(const struct bt_has_register_param *param);
+int bt_has_register(const struct bt_has_features_param *features);
 
 /**
  * @brief Register preset.
@@ -393,8 +423,11 @@ int bt_has_preset_available(uint8_t index);
  */
 int bt_has_preset_unavailable(uint8_t index);
 
+/** Enum for return values for @ref bt_has_preset_func_t functions */
 enum {
+	/** Stop iterating */
 	BT_HAS_PRESET_ITER_STOP = 0,
+	/** Continue iterating */
 	BT_HAS_PRESET_ITER_CONTINUE,
 };
 
@@ -468,6 +501,17 @@ static inline int bt_has_preset_active_clear(void)
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_has_preset_name_change(uint8_t index, const char *name);
+
+/**
+ * @brief Change the Hearing Aid Features.
+ *
+ * Change the hearing aid features.
+ *
+ * @param features The features to be set.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_features_set(const struct bt_has_features_param *features);
 
 #ifdef __cplusplus
 }

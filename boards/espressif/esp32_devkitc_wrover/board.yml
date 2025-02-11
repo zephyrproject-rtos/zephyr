@@ -1,0 +1,5 @@
+board:
+  name: esp32_devkitc_wrover
+  vendor: espressif
+  socs:
+  - name: esp32

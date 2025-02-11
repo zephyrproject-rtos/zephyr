@@ -35,7 +35,7 @@ static const struct device *get_eeprom_device(void)
 	return dev;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *eeprom = get_eeprom_device();
 	size_t eeprom_size;
@@ -43,7 +43,7 @@ void main(void)
 	int rc;
 
 	if (eeprom == NULL) {
-		return;
+		return 0;
 	}
 
 	eeprom_size = eeprom_get_size(eeprom);
@@ -52,7 +52,7 @@ void main(void)
 	rc = eeprom_read(eeprom, EEPROM_SAMPLE_OFFSET, &values, sizeof(values));
 	if (rc < 0) {
 		printk("Error: Couldn't read eeprom: err: %d.\n", rc);
-		return;
+		return 0;
 	}
 
 	if (values.magic != EEPROM_SAMPLE_MAGIC) {
@@ -66,8 +66,9 @@ void main(void)
 	rc = eeprom_write(eeprom, EEPROM_SAMPLE_OFFSET, &values, sizeof(values));
 	if (rc < 0) {
 		printk("Error: Couldn't write eeprom: err:%d.\n", rc);
-		return;
+		return 0;
 	}
 
 	printk("Reset the MCU to see the increasing boot counter.\n\n");
+	return 0;
 }

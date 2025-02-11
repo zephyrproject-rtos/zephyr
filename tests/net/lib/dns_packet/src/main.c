@@ -14,8 +14,8 @@
 /* RFC 1035, 4.1.1. Header section format */
 #define DNS_HEADER_SIZE	12
 
-static uint8_t buf[MAX_BUF_SIZE];
-static uint16_t buf_len;
+static uint8_t dns_buf[MAX_BUF_SIZE];
+static uint16_t dns_buf_len;
 
 static uint8_t qname[MAX_BUF_SIZE];
 static uint16_t qname_len;
@@ -61,90 +61,90 @@ static int eval_query(const char *dname, uint16_t tid, enum dns_rr_type type,
 		goto lb_exit;
 	}
 
-	rc = dns_msg_pack_query(buf, &buf_len, MAX_BUF_SIZE, qname, qname_len,
+	rc = dns_msg_pack_query(dns_buf, &dns_buf_len, MAX_BUF_SIZE, qname, qname_len,
 				tid, type);
 	if (rc != 0) {
 		goto lb_exit;
 	}
 
-	if (dns_unpack_header_id(buf) != tid) {
+	if (dns_unpack_header_id(dns_buf) != tid) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* This is a query */
-	if (dns_header_qr(buf) != DNS_QUERY) {
+	if (dns_header_qr(dns_buf) != DNS_QUERY) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* This is a query (standard query) */
-	if (dns_header_opcode(buf) != DNS_QUERY) {
+	if (dns_header_opcode(dns_buf) != DNS_QUERY) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Authoritative Answer must be 0 for a Query */
-	if (dns_header_aa(buf) != 0) {
+	if (dns_header_aa(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* TrunCation is always 0 */
-	if (dns_header_tc(buf) != 0) {
+	if (dns_header_tc(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Recursion Desired is always 1 */
-	if (dns_header_rd(buf) != 1) {
+	if (dns_header_rd(dns_buf) != 1) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Recursion Available is always 0 */
-	if (dns_header_ra(buf) != 0) {
+	if (dns_header_ra(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Z is always 0 */
-	if (dns_header_z(buf) != 0) {
+	if (dns_header_z(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Response code must be 0 (no error) */
-	if (dns_header_rcode(buf) != DNS_HEADER_NOERROR) {
+	if (dns_header_rcode(dns_buf) != DNS_HEADER_NOERROR) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Question counter must be 1 */
-	if (dns_header_qdcount(buf) != 1) {
+	if (dns_header_qdcount(dns_buf) != 1) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Answer counter must be 0 */
-	if (dns_header_ancount(buf) != 0) {
+	if (dns_header_ancount(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Name server resource records counter must be 0 */
-	if (dns_header_nscount(buf) != 0) {
+	if (dns_header_nscount(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Additional records counter must be 0 */
-	if (dns_header_arcount(buf) != 0) {
+	if (dns_header_arcount(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
-	question = buf + DNS_HEADER_SIZE;
+	question = dns_buf + DNS_HEADER_SIZE;
 
 	/* QClass */
 	if (dns_unpack_query_qclass(question + qname_len) != DNS_CLASS_IN) {
@@ -159,12 +159,12 @@ static int eval_query(const char *dname, uint16_t tid, enum dns_rr_type type,
 	}
 
 	/* compare with the expected result */
-	if (buf_len != expected_len) {
+	if (dns_buf_len != expected_len) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
-	if (memcmp(expected, buf, buf_len) != 0) {
+	if (memcmp(expected, dns_buf, dns_buf_len) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
@@ -709,6 +709,24 @@ static uint8_t resp_truncated_response_ipv4_5[] = {
 	0x00, 0x04,
 };
 
+static uint8_t resp_truncated_response_ipv4_6[] = {
+	/* DNS msg header (12 bytes) */
+	/* Id (0) */
+	0x00, 0x00,
+	/* Flags (response, rcode = 1) */
+	0x80, 0x01,
+	/* Number of questions */
+	0x00, 0x01,
+	/* Number of answers */
+	0x00, 0x00,
+	/* Number of authority RRs */
+	0x00, 0x00,
+	/* Number of additional RRs */
+	0x00, 0x00,
+
+	/* Rest of the data is missing */
+};
+
 static uint8_t resp_valid_response_ipv4_6[] = {
 	/* DNS msg header (12 bytes) */
 	0xb0, 0x41, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01,
@@ -1093,8 +1111,13 @@ static void run_dns_malformed_response(const char *test_case,
 
 	dns_id = dns_unpack_header_id(dns_msg.msg);
 
-	setup_dns_context(&dns_ctx, 0, dns_id, query, sizeof(query),
-			  DNS_QUERY_TYPE_A);
+	/* If the message is longer than 12 bytes, it could be a valid DNS message
+	 * in which case setup the context for the reply.
+	 */
+	if (len > 12) {
+		setup_dns_context(&dns_ctx, 0, dns_id, query, sizeof(query),
+				  DNS_QUERY_TYPE_A);
+	}
 
 	ret = dns_validate_msg(&dns_ctx, &dns_msg, &dns_id, &query_idx,
 			       NULL, &query_hash);
@@ -1198,6 +1221,7 @@ static void test_dns_malformed_responses(void)
 	RUN_MALFORMED_TEST(resp_truncated_response_ipv4_3);
 	RUN_MALFORMED_TEST(resp_truncated_response_ipv4_4);
 	RUN_MALFORMED_TEST(resp_truncated_response_ipv4_5);
+	RUN_MALFORMED_TEST(resp_truncated_response_ipv4_6);
 }
 
 ZTEST(dns_packet, test_dns_malformed_and_valid_responses)
@@ -1240,6 +1264,27 @@ ZTEST(dns_packet, test_dns_flags_len)
 			       NULL, &query_hash);
 	zassert_equal(ret, DNS_EAI_FAIL,
 		      "DNS message length check failed (%d)", ret);
+}
+
+static uint8_t invalid_answer_resp_ipv4[18] = {
+	/* DNS msg header (12 bytes) */
+	0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x01, 0x00, 0x01,
+};
+
+ZTEST(dns_packet, test_dns_invalid_answer)
+{
+	struct dns_msg_t dns_msg = { 0 };
+	enum dns_rr_type type;
+	uint32_t ttl;
+	int ret;
+
+	dns_msg.msg = invalid_answer_resp_ipv4;
+	dns_msg.msg_size = sizeof(invalid_answer_resp_ipv4);
+	dns_msg.answer_offset = 12;
+
+	ret = dns_unpack_answer(&dns_msg, 0, &ttl, &type);
+	zassert_equal(ret, -EINVAL, "DNS message answer check succeed (%d)", ret);
 }
 
 ZTEST_SUITE(dns_packet, NULL, NULL, NULL, NULL, NULL);

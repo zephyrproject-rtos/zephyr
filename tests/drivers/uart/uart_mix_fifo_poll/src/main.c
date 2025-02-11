@@ -14,23 +14,25 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/counter.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 /* RX and TX pins have to be connected together*/
 
-#if defined(CONFIG_BOARD_NRF52840DK_NRF52840)
-#define UART_DEVICE_DEV DT_NODELABEL(uart0)
-#elif defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP)
-#define UART_DEVICE_DEV DT_NODELABEL(uart1)
-#elif defined(CONFIG_BOARD_NRF9160DK_NRF9160)
-#define UART_DEVICE_DEV DT_NODELABEL(uart1)
-#elif defined(CONFIG_BOARD_ATSAMD21_XPRO)
-#define UART_DEVICE_DEV DT_NODELABEL(sercom1)
-#elif defined(CONFIG_BOARD_ATSAMR21_XPRO)
-#define UART_DEVICE_DEV DT_NODELABEL(sercom3)
-#elif defined(CONFIG_BOARD_ATSAME54_XPRO)
-#define UART_DEVICE_DEV DT_NODELABEL(sercom1)
+#if DT_NODE_EXISTS(DT_NODELABEL(dut))
+#define UART_NODE DT_NODELABEL(dut)
+#elif defined(CONFIG_BOARD_SAMD21_XPRO)
+#define UART_NODE DT_NODELABEL(sercom1)
+#elif defined(CONFIG_BOARD_SAMR21_XPRO)
+#define UART_NODE DT_NODELABEL(sercom3)
+#elif defined(CONFIG_BOARD_SAME54_XPRO)
+#define UART_NODE DT_NODELABEL(sercom1)
 #else
-#define UART_DEVICE_DEV DT_CHOSEN(zephyr_console)
+#define UART_NODE DT_CHOSEN(zephyr_console)
+#endif
+
+#if DT_NODE_EXISTS(DT_NODELABEL(counter_dev))
+#define COUNTER_NODE DT_NODELABEL(counter_dev)
+#else
+#define COUNTER_NODE DT_NODELABEL(timer0)
 #endif
 
 struct rx_source {
@@ -63,9 +65,9 @@ static struct test_data test_data[3];
 static struct test_data int_async_data;
 
 static const struct device *const counter_dev =
-	DEVICE_DT_GET(DT_NODELABEL(timer0));
+	DEVICE_DT_GET(COUNTER_NODE);
 static const struct device *const uart_dev =
-	DEVICE_DT_GET(UART_DEVICE_DEV);
+	DEVICE_DT_GET(UART_NODE);
 
 static bool async;
 static bool int_driven;
@@ -262,6 +264,7 @@ static void int_async_thread_func(void *p_data, void *base, void *range)
 
 			int idx = data->cnt & 0xF;
 			size_t len = (idx < BUF_SIZE / 2) ? 5 : 1; /* Try various lengths */
+			len = MIN(len, data->max - data->cnt);
 
 			data->cnt += len;
 			err = uart_tx(uart_dev, &int_async_data.buf[idx],
@@ -291,7 +294,7 @@ static void poll_out_timer_handler(struct k_timer *timer)
 		k_timer_stop(timer);
 		k_sem_give(&data->sem);
 	} else {
-		k_timer_start(timer, K_USEC(250 + (sys_rand32_get() % 800)),
+		k_timer_start(timer, K_USEC(250 + (sys_rand16_get() % 800)),
 				K_NO_WAIT);
 	}
 }
@@ -315,7 +318,7 @@ static void init_test_data(struct test_data *data, const uint8_t *buf, int repea
 
 ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 {
-	int repeat = 10000;
+	int repeat = CONFIG_STRESS_TEST_REPS;
 	int err;
 	int num_of_contexts = ARRAY_SIZE(test_data);
 

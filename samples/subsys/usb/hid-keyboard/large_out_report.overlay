@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "large_in_report.overlay"
+
+/ {
+	hid_dev_0: hid_dev_0 {
+		compatible = "zephyr,hid-device";
+		out-report-size = <128>;
+		out-polling-period-us = <16000>;
+	};
+};

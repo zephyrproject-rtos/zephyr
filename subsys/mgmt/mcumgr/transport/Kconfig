@@ -48,19 +48,26 @@ config MCUMGR_TRANSPORT_NETBUF_SIZE
 	  In case when MCUMGR_TRANSPORT_SHELL is enabled this value should be set to
 	  at least MCUMGR_GRP_SHELL_BACKEND_DUMMY_BUF_SIZE + 32.
 
-config MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE
-	int "Size of mcumgr buffer user data"
-	default 24 if MCUMGR_TRANSPORT_UDP && MCUMGR_TRANSPORT_UDP_IPV6
+config MCUMGR_TRANSPORT_NETBUF_MIN_USER_DATA_SIZE
+	int
+	default 24 if MCUMGR_TRANSPORT_UDP && NET_IPV6
 	default 8 if MCUMGR_TRANSPORT_UDP && MCUMGR_TRANSPORT_UDP_IPV4
 	default 8 if MCUMGR_TRANSPORT_BT
 	default 4
+	help
+	  Hidden option to determine minimum user data size.
+
+config MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE
+	int "Size of mcumgr buffer user data"
+	range MCUMGR_TRANSPORT_NETBUF_MIN_USER_DATA_SIZE 128
+	default MCUMGR_TRANSPORT_NETBUF_MIN_USER_DATA_SIZE
 	help
 	  The size, in bytes, of user data to allocate for each mcumgr buffer.
 
 	  Different mcumgr transports impose different requirements for this
 	  setting. A value of 4 is sufficient for UART and shell, a value of 8
 	  is sufficient for Bluetooth. For UDP, the userdata must be large
-	  enough to hold a IPv4/IPv6 address.
+	  enough to hold IPv4/IPv6 addresses.
 
 module = MCUMGR_TRANSPORT
 module-str = mcumgr_transport

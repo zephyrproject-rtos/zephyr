@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
 #include <zephyr/dt-bindings/clock/kinetis_mcg.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -31,7 +32,7 @@
 
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
-		reg = <0x20000000 DT_SIZE_K(128)>;
+		reg = <0x20000000 DT_SIZE_K(96)>;
 	};
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */

@@ -9,6 +9,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_HCI_VS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_HCI_VS_H_
 
+#include <stdint.h>
+
 #include <zephyr/bluetooth/hci.h>
 
 #ifdef __cplusplus
@@ -45,6 +47,8 @@ extern "C" {
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF51X          0x0001
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF52X          0x0002
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF53X          0x0003
+#define BT_HCI_VS_HW_VAR_NORDIC_NRF54HX         0x0004
+#define BT_HCI_VS_HW_VAR_NORDIC_NRF54LX         0x0005
 
 #define BT_HCI_VS_FW_VAR_STANDARD_CTLR          0x0001
 #define BT_HCI_VS_FW_VAR_VS_CTLR                0x0002
@@ -447,7 +451,7 @@ struct bt_hci_evt_mesh_scanning_report {
 	struct bt_hci_evt_mesh_scan_report reports[0];
 } __packed;
 
-struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const z_arch_esf_t *esf);
+struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_esf *esf);
 struct net_buf *hci_vs_err_trace(const char *file, uint32_t line, uint64_t pc);
 struct net_buf *hci_vs_err_assert(const char *file, uint32_t line);
 

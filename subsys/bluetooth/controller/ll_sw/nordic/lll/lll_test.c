@@ -41,7 +41,7 @@
 #include "ull_df_internal.h"
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/debug.h"
 
@@ -151,7 +151,7 @@ static int create_iq_report(bool crc_ok)
 		return -ENOBUFS;
 	}
 
-	iq_report->hdr.type = NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT;
+	iq_report->rx.hdr.type = NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT;
 	iq_report->sample_count = sample_cnt;
 	iq_report->packet_status = ((crc_ok) ? BT_HCI_LE_CTE_CRC_OK :
 					       BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
@@ -160,11 +160,11 @@ static int create_iq_report(bool crc_ok)
 	iq_report->local_slot_durations = test_slot_duration;
 	iq_report->chan_idx = test_chan;
 
-	ftr = &iq_report->hdr.rx_ftr;
+	ftr = &iq_report->rx.rx_ftr;
 	ftr->param = NULL;
 	ftr->rssi = BT_HCI_LE_RSSI_NOT_AVAILABLE;
 
-	ull_rx_put(iq_report->hdr.link, iq_report);
+	ull_rx_put(iq_report->rx.hdr.link, iq_report);
 
 	return 0;
 }
@@ -478,7 +478,7 @@ static uint32_t calculate_tifs(uint8_t len)
 	 * LE Test packet interval: I(L) = ceil((L + 249) / 625) * 625 us
 	 * where L is an LE Test packet length in microseconds unit.
 	 */
-	interval = ceiling_fraction((transmit_time + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
+	interval = DIV_ROUND_UP((transmit_time + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
 
 	return interval - transmit_time;
 }

@@ -6,13 +6,13 @@
 
 #include <zephyr/drivers/gnss/gnss_publish.h>
 #include <zephyr/kernel.h>
-#include <zephyr/spinlock.h>
+#include <zephyr/sys/iterable_sections.h>
 
-static struct k_spinlock lock;
+static K_SEM_DEFINE(semlock, 1, 1);
 
 void gnss_publish_data(const struct device *dev, const struct gnss_data *data)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	(void)k_sem_take(&semlock, K_FOREVER);
 
 	STRUCT_SECTION_FOREACH(gnss_data_callback, callback) {
 		if (callback->dev == NULL || callback->dev == dev) {
@@ -20,14 +20,14 @@ void gnss_publish_data(const struct device *dev, const struct gnss_data *data)
 		}
 	}
 
-	k_spin_unlock(&lock, key);
+	k_sem_give(&semlock);
 }
 
 #if CONFIG_GNSS_SATELLITES
 void gnss_publish_satellites(const struct device *dev, const struct gnss_satellite *satellites,
 			     uint16_t size)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	(void)k_sem_take(&semlock, K_FOREVER);
 
 	STRUCT_SECTION_FOREACH(gnss_satellites_callback, callback) {
 		if (callback->dev == NULL || callback->dev == dev) {
@@ -35,6 +35,6 @@ void gnss_publish_satellites(const struct device *dev, const struct gnss_satelli
 		}
 	}
 
-	k_spin_unlock(&lock, key);
+	k_sem_give(&semlock);
 }
 #endif

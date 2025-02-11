@@ -1,0 +1,13 @@
+# UART Bluetooth HCI device
+
+description: Bluetooth HCI behind a 3-Wire UART device (H:5)
+
+compatible: "zephyr,bt-hci-3wire-uart"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "H:5"
+  bt-hci-bus:
+    default: "BT_HCI_BUS_UART"

@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(lora_send);
 
 char data[MAX_DATA_LEN] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
 
-void main(void)
+int main(void)
 {
 	const struct device *const lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
 	struct lora_modem_config config;
@@ -30,7 +30,7 @@ void main(void)
 
 	if (!device_is_ready(lora_dev)) {
 		LOG_ERR("%s Device not ready", lora_dev->name);
-		return;
+		return 0;
 	}
 
 	config.frequency = 865100000;
@@ -46,14 +46,14 @@ void main(void)
 	ret = lora_config(lora_dev, &config);
 	if (ret < 0) {
 		LOG_ERR("LoRa config failed");
-		return;
+		return 0;
 	}
 
 	while (1) {
 		ret = lora_send(lora_dev, data, MAX_DATA_LEN);
 		if (ret < 0) {
 			LOG_ERR("LoRa send failed");
-			return;
+			return 0;
 		}
 
 		LOG_INF("Data sent!");
@@ -61,4 +61,5 @@ void main(void)
 		/* Send data at 1s interval */
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }

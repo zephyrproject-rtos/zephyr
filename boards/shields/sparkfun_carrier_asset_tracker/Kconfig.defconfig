@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Jerónimo Agulló <jeronimoagullo97@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_SPARKFUN_CARRIER_ASSET_TRACKER
+
+config SERIAL
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+config UART_ASYNC_API
+	default y
+
+config I2C
+	default y
+
+config SPI
+	default y
+
+endif # SHIELD_SPARKFUN_CARRIER_ASSET_TRACKER

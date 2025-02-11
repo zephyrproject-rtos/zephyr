@@ -59,6 +59,7 @@
 
 #include <errno.h>
 #include <stddef.h>
+#include <bos_desc.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/init.h>
@@ -67,7 +68,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 #include <zephyr/usb/class/usb_audio.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_device, CONFIG_USB_DEVICE_LOG_LEVEL);
 
@@ -136,6 +137,8 @@ static struct usb_dev_priv {
 	bool remote_wakeup;
 	/** Tracks whether set_endpoint() had been called on an EP */
 	uint32_t ep_bm;
+	/** Maximum Packet Size (MPS) of control endpoint */
+	uint8_t mps0;
 } usb_dev;
 
 /* Setup packet definition used to read raw data from USB line */
@@ -255,7 +258,7 @@ static void usb_data_to_host(void)
 		if (!usb_dev.data_buf_residue && chunk &&
 		    usb_dev.setup.wLength > usb_dev.data_buf_len) {
 			/* Send less data as requested during the Setup stage */
-			if (!(usb_dev.data_buf_len % USB_MAX_CTRL_MPS)) {
+			if (!(usb_dev.data_buf_len % usb_dev.mps0)) {
 				/* Transfers a zero-length packet */
 				LOG_DBG("ZLP, requested %u , length %u ",
 					usb_dev.setup.wLength,
@@ -570,7 +573,9 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 	if (ep_bm & usb_dev.ep_bm) {
 		reset_endpoint(ep_desc);
 		/* allow any canceled transfers to terminate */
-		k_usleep(150);
+		if (!k_is_in_isr()) {
+			k_usleep(150);
+		}
 	}
 
 	ret = usb_dc_ep_configure(&ep_cfg);
@@ -1295,7 +1300,7 @@ static int usb_vbus_set(bool on)
 	int ret = 0;
 	struct gpio_dt_spec gpio_dev = GPIO_DT_SPEC_GET(USB_DEV_NODE, vbus_gpios);
 
-	if (!device_is_ready(gpio_dev.port)) {
+	if (!gpio_is_ready_dt(&gpio_dev)) {
 		LOG_DBG("USB requires GPIO. Device %s is not ready!", gpio_dev.port->name);
 		return -ENODEV;
 	}
@@ -1441,7 +1446,7 @@ int usb_wakeup_request(void)
 /*
  * The functions class_handler(), custom_handler() and vendor_handler()
  * go through the interfaces one after the other and compare the
- * bInterfaceNumber with the wIndex and and then call the appropriate
+ * bInterfaceNumber with the wIndex and then call the appropriate
  * callback of the USB function.
  * Note, a USB function can have more than one interface and the
  * request does not have to be directed to the first interface (unlikely).
@@ -1591,6 +1596,7 @@ int usb_enable(usb_dc_status_callback status_cb)
 {
 	int ret;
 	struct usb_dc_ep_cfg_data ep0_cfg;
+	struct usb_device_descriptor *dev_desc;
 
 	/* Prevent from calling usb_enable form different context.
 	 * This should only be called once.
@@ -1604,12 +1610,27 @@ int usb_enable(usb_dc_status_callback status_cb)
 		goto out;
 	}
 
+	/*
+	 * If usb_dev.descriptors is equal to NULL (usb_dev has static
+	 * specifier), then usb_get_device_descriptor() and usb_set_config()
+	 * are likely not called yet. If so, set the configuration here.
+	 */
+	if (usb_dev.descriptors == NULL) {
+		usb_set_config(usb_get_device_descriptor());
+		if (usb_dev.descriptors == NULL) {
+			LOG_ERR("Failed to configure USB device stack");
+			ret =  -1;
+			goto out;
+		}
+	}
+
 	/* Enable VBUS if needed */
 	ret = usb_vbus_set(true);
 	if (ret < 0) {
 		goto out;
 	}
 
+	dev_desc = (void *)usb_dev.descriptors;
 	usb_dev.user_status_callback = status_cb;
 	usb_register_status_callback(forward_status_cb);
 	usb_dc_set_status_callback(forward_status_cb);
@@ -1624,8 +1645,16 @@ int usb_enable(usb_dc_status_callback status_cb)
 		goto out;
 	}
 
+	if (dev_desc->bDescriptorType != USB_DESC_DEVICE ||
+	    dev_desc->bMaxPacketSize0 == 0) {
+		LOG_ERR("Erroneous device descriptor or bMaxPacketSize0");
+		ret = -EINVAL;
+		goto out;
+	}
+
 	/* Configure control EP */
-	ep0_cfg.ep_mps = USB_MAX_CTRL_MPS;
+	usb_dev.mps0 = dev_desc->bMaxPacketSize0;
+	ep0_cfg.ep_mps = usb_dev.mps0;
 	ep0_cfg.ep_type = USB_DC_EP_CONTROL;
 
 	ep0_cfg.ep_addr = USB_CONTROL_EP_OUT;
@@ -1680,32 +1709,11 @@ out:
 	return ret;
 }
 
-/*
- * This function configures the USB device stack based on USB descriptor and
- * usb_cfg_data.
- */
-static int usb_device_init(const struct device *dev)
+#if defined(CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT)
+static int usb_device_init(void)
 {
-	uint8_t *device_descriptor;
-
-	if (usb_dev.enabled == true) {
-		return -EALREADY;
-	}
-
-	/* register device descriptor */
-	device_descriptor = usb_get_device_descriptor();
-	if (!device_descriptor) {
-		LOG_ERR("Failed to configure USB device stack");
-		return -1;
-	}
-
-	usb_set_config(device_descriptor);
-
-	if (IS_ENABLED(CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT)) {
-		return usb_enable(NULL);
-	}
-
-	return 0;
+	return usb_enable(NULL);
 }
 
 SYS_INIT(usb_device_init, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
+#endif

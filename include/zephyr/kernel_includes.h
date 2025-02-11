@@ -13,6 +13,10 @@
 #ifndef ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_
 #define ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_
 
+#ifndef ZEPHYR_INCLUDE_KERNEL_H_
+#error  Please do not include kernel-specific headers directly, use <zephyr/kernel.h> instead
+#endif
+
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <limits.h>
@@ -20,13 +24,12 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/kernel/sched_priq.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/sflist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/kernel/obj_core.h>
 #include <zephyr/kernel_structs.h>
-#include <zephyr/kernel/mempool_heap.h>
 #include <zephyr/kernel_version.h>
 #include <zephyr/syscall.h>
 #include <zephyr/sys/printk.h>
@@ -40,5 +43,7 @@
 #include <zephyr/app_memory/mem_domain.h>
 #include <zephyr/sys/kobject.h>
 #include <zephyr/kernel/thread.h>
+/* FIXME This needs to be removed. Exposes some private APIs to SOF */
+#include <zephyr/kernel/internal/smp.h>
 
 #endif /* ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_ */

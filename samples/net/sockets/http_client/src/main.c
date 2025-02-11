@@ -356,7 +356,7 @@ static int run_queries(void)
 	return ret;
 }
 
-void main(void)
+int main(void)
 {
 	int iterations = CONFIG_NET_SAMPLE_SEND_ITERATIONS;
 	int i = 0;
@@ -383,4 +383,5 @@ void main(void)
 	}
 
 	exit(0);
+	return 0;
 }

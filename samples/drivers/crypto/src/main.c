@@ -25,13 +25,17 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT st_stm32_cryp
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
 #define CRYPTO_DEV_COMPAT st_stm32_aes
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_dcp)
+#define CRYPTO_DEV_COMPAT nxp_mcux_dcp
 #elif CONFIG_CRYPTO_NRF_ECB
 #define CRYPTO_DEV_COMPAT nordic_nrf_ecb
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_smartbond_crypto)
+#define CRYPTO_DEV_COMPAT renesas_smartbond_crypto
 #else
 #error "You need to enable one crypto device"
 #endif
 
-static uint8_t key[16] = {
+const static uint8_t key[16] __aligned(32) = {
 	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88,
 	0x09, 0xcf, 0x4f, 0x3c
 };
@@ -63,7 +67,7 @@ static void print_buffer_comparison(const uint8_t *wanted_result,
 		}
 	}
 
-	printk("\n But got:\n");
+	printk("\nBut got:\n");
 
 	for (i = 0, j = 1; i < length; i++, j++) {
 		printk("0x%02x ", result[i]);
@@ -109,7 +113,7 @@ int validate_hw_compatibility(const struct device *dev)
 void ecb_mode(const struct device *dev)
 {
 	/* from FIPS-197 test vectors */
-	uint8_t ecb_key[16] = {
+	const uint8_t ecb_key[16] = {
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 		0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
 	};
@@ -117,7 +121,7 @@ void ecb_mode(const struct device *dev)
 		0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
 		0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
 	};
-	const uint8_t ecb_ciphertext[16] = {
+	uint8_t ecb_ciphertext[16] = {
 		0x69, 0xC4, 0xE0, 0xD8, 0x6A, 0x7B, 0x04, 0x30,
 		0xD8, 0xCD, 0xB7, 0x80, 0x70, 0xB4, 0xC5, 0x5A
 	};
@@ -370,7 +374,7 @@ out:
 }
 
 /* RFC 3610 test vector #1 */
-static uint8_t ccm_key[16] = {
+const static uint8_t ccm_key[16] = {
 	0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb,
 	0xcc, 0xcd, 0xce, 0xcf
 };
@@ -482,7 +486,7 @@ out:
 }
 
 /*  MACsec GCM-AES test vector 2.4.1 */
-static uint8_t gcm_key[16] = {
+const static uint8_t gcm_key[16] = {
 	0x07, 0x1b, 0x11, 0x3b, 0x0c, 0xa7, 0x43, 0xfe, 0xcc, 0xcf, 0x3d, 0x05,
 	0x1f, 0x73, 0x73, 0x82
 };
@@ -603,21 +607,21 @@ struct mode_test {
 	void (*mode_func)(const struct device *dev);
 };
 
-void main(void)
+int main(void)
 {
 #ifdef CRYPTO_DRV_NAME
 	const struct device *dev = device_get_binding(CRYPTO_DRV_NAME);
 
 	if (!dev) {
 		LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
-		return;
+		return 0;
 	}
 #else
 	const struct device *const dev = DEVICE_DT_GET_ONE(CRYPTO_DEV_COMPAT);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Crypto device is not ready\n");
-		return;
+		return 0;
 	}
 #endif
 	const struct mode_test modes[] = {
@@ -632,7 +636,7 @@ void main(void)
 
 	if (validate_hw_compatibility(dev)) {
 		LOG_ERR("Incompatible h/w");
-		return;
+		return 0;
 	}
 
 	LOG_INF("Cipher Sample");
@@ -641,4 +645,5 @@ void main(void)
 		LOG_INF("%s", modes[i].mode);
 		modes[i].mode_func(dev);
 	}
+	return 0;
 }

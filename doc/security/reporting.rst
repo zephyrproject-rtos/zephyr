@@ -101,11 +101,15 @@ and 2. Exploitability of the issue.  Issues that the subcommittee
 decides do not need an embargo will be reproduced in the regular
 Zephyr project bug tracking system.
 
+.. _vulnerability_timeline:
+
 Security sensitive vulnerabilities shall be made public after an
 embargo period of at most 90 days.  The intent is to allow 30 days
 within the Zephyr project to fix the issues, and 60 days for external
 parties building products using Zephyr to be able to apply and
 distribute these fixes.
+
+.. _vulnerability_fix_recommendations:
 
 Fixes to the code shall be made through pull requests PR in the Zephyr
 project github.  Developers shall make an attempt to not reveal the
@@ -180,7 +184,12 @@ following releases:
 The developer of the fix shall be responsible for any necessary
 backports, and apply them to any of the above listed release branches,
 unless the fix does not apply (the vulnerability was introduced after
-this release was made).
+this release was made). All recommendations for
+:ref:`vulnerability fixes <vulnerability_fix_recommendations>` apply
+for backport pull requests (and associated issues). Additionally, it is
+recommended that the developer privately informs the responsible
+release manager that the backport pull request and issue are addressing
+a vulnerability.
 
 Backports will be tracked on the security advisory.
 

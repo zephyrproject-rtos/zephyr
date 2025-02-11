@@ -73,7 +73,7 @@ API Changes
 
 * ``<drivers/dma.h>`` has seen its callback normalized. It had its signature
   changed to add a struct device pointer as first parameter. Such callback
-  signature has been generalized throuh the addition of dma_callback_t.
+  signature has been generalized through the addition of dma_callback_t.
   'callback_arg' argument has been renamed to 'user_data. All user code have
   been modified accordingly.
 
@@ -98,7 +98,7 @@ API Changes
 * All device instances got a const qualifier. So this applies to all APIs
   manipulating ``struct device *`` (ADC, GPIO, I2C, ...). In order to avoid
   const qualifier loss on ISRs, all ISRs now take a ``const *void`` as a
-  paremeter as well.
+  parameter as well.
 
 * The ``_gatt_`` and ``_GATT_`` infixes have been removed for the HRS, DIS
   and BAS APIs and the Kconfig options.
@@ -400,7 +400,7 @@ Drivers and Sensors
 
 * DMA
 
-  * STM32: Number of changes including k_malloc removal, driver piority init
+  * STM32: Number of changes including k_malloc removal, driver priority init
     increase, get_status API addition and various cleanups.
   * Added MCUX EDMA driver for i.MX RT and Kinetis K6x SoCs.
   * Added MCUX LPC driver for LPC and i.MX RT6xx SoCs.
@@ -634,7 +634,7 @@ Networking
 * Added support for IPv6 multicast packet routing.
 * Added support to SOCK_DGRAM type sockets for AF_PACKET family.
 * Added support for using TLS sockets when using socket offloading.
-* Added additonal checks in IPv6 to ensure that multicasts are only passed to the
+* Added additional checks in IPv6 to ensure that multicasts are only passed to the
   upper layer if the originating interface actually joined the destination
   multicast group.
 * Allow user to specify TCP port number in HTTP request.

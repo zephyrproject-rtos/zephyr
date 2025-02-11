@@ -1,0 +1,330 @@
+# ARM core configuration options
+
+# Copyright (c) 2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CPU_CORTEX_M
+	bool
+	select CPU_CORTEX
+	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	select HAS_CMSIS_CORE
+	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_SINGLE_THREAD_SUPPORT
+	select ARCH_HAS_THREAD_ABORT
+	select ARCH_HAS_TRUSTED_EXECUTION if ARM_TRUSTZONE_M
+	select ARCH_HAS_STACK_PROTECTION if (ARM_MPU && !ARMV6_M_ARMV8_M_BASELINE) || CPU_CORTEX_M_HAS_SPLIM
+	select ARCH_HAS_USERSPACE if ARM_MPU
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_HAS_DCACHE
+	select ARCH_HAS_RAMFUNC_SUPPORT
+	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
+	select SWAP_NONATOMIC
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	select ARCH_HAS_TIMING_FUNCTIONS if CPU_CORTEX_M_HAS_DWT
+	select ARCH_SUPPORTS_ARCH_HW_INIT
+	select ARCH_HAS_SUSPEND_TO_RAM
+	select ARCH_HAS_CODE_DATA_RELOCATION
+	select ARCH_SUPPORTS_ROM_START
+	imply XIP
+	help
+	  This option signifies the use of a CPU of the Cortex-M family.
+
+config CPU_AARCH32_CORTEX_R
+	bool
+	select CPU_CORTEX
+	select HAS_CMSIS_CORE
+	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
+	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_USERSPACE if ARM_MPU && !USE_SWITCH
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO if !USE_SWITCH
+	select ARCH_HAS_CODE_DATA_RELOCATION
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_HAS_DCACHE
+	select ARCH_SUPPORTS_ROM_START
+	select USE_SWITCH_SUPPORTED
+	help
+	  This option signifies the use of a CPU of the Cortex-R family.
+
+config ARM_ZIMAGE_HEADER
+	bool "zImage Header"
+	depends on CPU_AARCH32_CORTEX_R || CPU_AARCH32_CORTEX_A || CPU_CORTEX_M_HAS_VTOR
+	help
+	  This option adds a zImage Header.
+
+config CPU_AARCH32_CORTEX_A
+	bool
+	select CPU_CORTEX
+	select CPU_HAS_MMU
+	select HAS_CMSIS_CORE
+	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO if !USE_SWITCH
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select USE_SWITCH_SUPPORTED
+	# GDBSTUB has not yet been tested on Cortex M or R SoCs
+	select ARCH_HAS_GDBSTUB
+	# GDB on ARM needs the extra registers
+	select EXTRA_EXCEPTION_INFO if GDBSTUB
+	help
+	  This option signifies the use of a CPU of the Cortex-A family.
+
+config GDBSTUB_BUF_SZ
+	# GDB for ARM expects up to 18 4-byte plus 8 12-byte
+	# registers - 336 HEX letters
+	default 350 if GDBSTUB
+
+config ISA_THUMB2
+	bool
+	help
+	  From: http://www.arm.com/products/processors/technologies/instruction-set-architectures.php
+
+	  Thumb-2 technology is the instruction set underlying the ARM Cortex
+	  architecture which provides enhanced levels of performance, energy
+	  efficiency, and code density for a wide range of embedded
+	  applications.
+
+	  Thumb-2 technology builds on the success of Thumb, the innovative
+	  high code density instruction set for ARM microprocessor cores, to
+	  increase the power of the ARM microprocessor core available to
+	  developers of low cost, high performance systems.
+
+	  The technology is backwards compatible with existing ARM and Thumb
+	  solutions, while significantly extending the features available to
+	  the Thumb instructions set. This allows more of the application to
+	  benefit from the best in class code density of Thumb.
+
+	  For performance optimized code Thumb-2 technology uses 31 percent
+	  less memory to reduce system cost, while providing up to 38 percent
+	  higher performance than existing high density code, which can be used
+	  to prolong battery-life or to enrich the product feature set. Thumb-2
+	  technology is featured in the  processor, and in all ARMv7
+	  architecture-based processors.
+
+config ISA_ARM
+	bool
+	help
+	  From: https://developer.arm.com/products/architecture/instruction-sets/a32-and-t32-instruction-sets
+
+	  A32 instructions, known as Arm instructions in pre-Armv8 architectures,
+	  are 32 bits wide, and are aligned on 4-byte boundaries. A32 instructions
+	  are supported by both A-profile and R-profile architectures.
+
+	  A32 was traditionally used in applications requiring the highest
+	  performance, or for handling hardware exceptions such as interrupts and
+	  processor start-up. Much of its functionality was subsumed into T32 with
+	  the introduction of Thumb-2 technology.
+
+config ASSEMBLER_ISA_THUMB2
+	bool
+	default y if ISA_THUMB2 && !ISA_ARM
+	depends on !ISA_ARM
+	help
+	  This helper symbol specifies the default target instruction set for
+	  the assembler.
+
+	  When only the Thumb-2 ISA is supported (i.e. on Cortex-M cores), the
+	  assembler must use the Thumb-2 instruction set.
+
+	  When both the Thumb-2 and ARM ISAs are supported (i.e. on Cortex-A
+	  and Cortex-R cores), the assembler must use the ARM instruction set
+	  because the architecture assembly code makes use of the ARM
+	  instructions.
+
+config COMPILER_ISA_THUMB2
+	bool "Compile C/C++ functions using Thumb-2 instruction set"
+	depends on ISA_THUMB2
+	default y
+	help
+	  This option configures the compiler to compile all C/C++ functions
+	  using the Thumb-2 instruction set.
+
+	  N.B. The scope of this symbol is not necessarily limited to the C and
+	       C++ languages; in fact, this symbol refers to all forms of
+	       "compiled" code.
+
+	       When an additional natively-compiled language support is added
+	       in the future, this symbol shall also specify the Thumb-2
+	       instruction set for that language.
+
+config NUM_IRQS
+	int
+
+config STACK_ALIGN_DOUBLE_WORD
+	bool "Align stacks on double-words (8 octets)"
+	default y
+	help
+	  This is needed to conform to AAPCS, the procedure call standard for
+	  the ARM. It wastes stack space. The option also enforces alignment
+	  of stack upon exception entry on Cortex-M3 and Cortex-M4 (ARMv7-M).
+	  Note that for ARMv6-M, ARMv8-M, and Cortex-M7 MCUs stack alignment
+	  on exception entry is enabled by default and it is not configurable.
+
+config RUNTIME_NMI
+	bool "Attach an NMI handler at runtime"
+	select REBOOT
+	help
+	  The kernel provides a simple NMI handler that simply hangs in a tight
+	  loop if triggered. This fills the requirement that there must be an
+	  NMI handler installed when the CPU boots. If a custom handler is
+	  needed, enable this option and attach it via z_arm_nmi_set_handler().
+
+config PLATFORM_SPECIFIC_INIT
+	bool "Platform (SOC) specific startup hook"
+	help
+	  The platform specific initialization code (z_arm_platform_init) is
+	  executed at the beginning of the startup code (__start).
+
+config FAULT_DUMP
+	int "Fault dump level"
+	default 2
+	range 0 2
+	help
+	  Different levels for display information when a fault occurs.
+
+	  2: The default. Display specific and verbose information. Consumes
+		the most memory (long strings).
+
+	  1: Display general and short information. Consumes less memory
+		(short strings).
+
+	  0: Off.
+
+config BUILTIN_STACK_GUARD
+	bool "Thread Stack Guards based on built-in ARM stack limit checking"
+	depends on CPU_CORTEX_M_HAS_SPLIM
+	select THREAD_STACK_INFO
+	help
+	  Enable Thread/Interrupt Stack Guards via built-in Stack Pointer
+	  limit checking. The functionality must be supported by HW.
+
+config ARM_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	imply BUILTIN_STACK_GUARD if CPU_CORTEX_M_HAS_SPLIM
+	select MPU_STACK_GUARD if (!BUILTIN_STACK_GUARD && ARM_MPU)
+	help
+	  This option enables either:
+	  - The built-in Stack Pointer limit checking, or
+	  - the MPU-based stack guard
+	  to cause a system fatal error
+	  if the bounds of the current process stack are overflowed.
+	  The two stack guard options are mutually exclusive. The
+	  selection of the built-in Stack Pointer limit checking is
+	  prioritized over the MPU-based stack guard. The developer
+	  still has the option to manually select the MPU-based
+	  stack guard, if this is desired.
+
+config ARM_SECURE_FIRMWARE
+	bool
+	depends on ARMV8_M_SE
+	default y if TRUSTED_EXECUTION_SECURE
+	help
+	  This option indicates that we are building a Zephyr image that
+	  is intended to execute in Secure state. The option is only
+	  applicable to ARMv8-M MCUs that implement the Security Extension.
+
+	  This option enables Zephyr to include code that executes in
+	  Secure state, as well as to exclude code that is designed to
+	  execute only in Non-secure state.
+
+	  Code executing in Secure state has access to both the Secure
+	  and Non-Secure resources of the Cortex-M MCU.
+
+	  Code executing in Non-Secure state may trigger Secure Faults,
+	  if Secure MCU resources are accessed from the Non-Secure state.
+	  Secure Faults may only be handled by code executing in Secure
+	  state.
+
+config ARM_NONSECURE_FIRMWARE
+	bool
+	depends on !ARM_SECURE_FIRMWARE
+	depends on ARMV8_M_SE
+	default y if TRUSTED_EXECUTION_NONSECURE
+	help
+	  This option indicates that we are building a Zephyr image that
+	  is intended to execute in Non-Secure state. Execution of this
+	  image is triggered by Secure firmware that executes in Secure
+	  state. The option is only applicable to ARMv8-M MCUs that
+	  implement the Security Extension.
+
+	  This option enables Zephyr to include code that executes in
+	  Non-Secure state only, as well as to exclude code that is
+	  designed to execute only in Secure state.
+
+	  Code executing in Non-Secure state has no access to Secure
+	  resources of the Cortex-M MCU, and, therefore, it shall avoid
+	  accessing them.
+
+config ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	bool "Allow secure function calls to be preempted"
+	depends on ARM_NONSECURE_FIRMWARE
+	help
+	  When enabled, this option indicates that preemptible Zephyr
+	  threads performing secure function calls, are allowed to be
+	  preempted. When disabled, the option indicates that such
+	  threads many not be context-switched-out while doing a Secure
+	  function call.
+
+config ARM_STORE_EXC_RETURN
+	bool
+	default y if CPU_CORTEX_M && (FPU_SHARING || ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
+	help
+	  Store the EXC_RETURN value when switching threads.
+	  This is needed when switching between threads that differ in either
+	  FPU usage or security domain.
+
+choice
+	prompt "Floating point ABI"
+	default FP_HARDABI
+	depends on FPU
+
+config FP_HARDABI
+	bool "Floating point Hard ABI"
+	help
+	  This option selects the Floating point ABI in which hardware floating
+	  point instructions are generated and uses FPU-specific calling
+	  conventions.
+
+config FP_SOFTABI
+	bool "Floating point Soft ABI"
+	help
+	  This option selects the Floating point ABI in which hardware floating
+	  point instructions are generated but soft-float calling conventions.
+
+endchoice
+
+config FP16
+	bool "Half-precision floating point support"
+	default y
+	help
+	  This option enables the half-precision (16-bit) floating point support
+	  via the `__fp16` (both IEEE and ARM alternative formats) and the
+	  `_Float16` (defined by ISO/IEC TS 18661-3:2015) types.
+
+choice
+	prompt "FP16 format"
+	default FP16_IEEE
+	depends on FP16
+
+config FP16_IEEE
+	bool "FP16 IEEE format"
+	help
+	  This option selects the IEEE 754-2008 format for FP16.  This format can
+	  represent normalized values in the range of 2^(-14) to 65504.  There are
+	  11 bits of significand precision, approximately 3 decimal digits.
+
+config FP16_ALT
+	bool "FP16 ARM alternative format"
+	help
+	  This option selects the ARM alternative format for FP16.  This
+	  representation is similar to the IEEE 754-2008 format, but does not
+	  support infinites or NaNs. Instead, the range of exponents is extended,
+	  so that this format can represent normalized values in the range of
+	  2^(-14) to 131008.
+
+	  Please note that Clang doesn't support the ARM alternative format.
+
+endchoice
+
+rsource "cortex_m/Kconfig"
+rsource "cortex_a_r/Kconfig"
+
+rsource "mpu/Kconfig"
+rsource "mmu/Kconfig"

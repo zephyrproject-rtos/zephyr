@@ -21,11 +21,9 @@
 #include "common/bt_str.h"
 
 #include "mesh.h"
-#include "adv.h"
 #include "net.h"
 #include "rpl.h"
 #include "transport.h"
-#include "host/ecc.h"
 #include "prov.h"
 #include "beacon.h"
 #include "foundation.h"
@@ -39,7 +37,7 @@ LOG_MODULE_REGISTER(bt_mesh_proxy);
 
 #define PDU_SAR(data)      (data[0] >> 6)
 
-/* Mesh Profile 1.0 Section 6.6:
+/* MshPRTv1.1: 6.3.2.2:
  * "The timeout for the SAR transfer is 20 seconds. When the timeout
  *  expires, the Proxy Server shall disconnect."
  */
@@ -77,6 +75,11 @@ ssize_t bt_mesh_proxy_msg_recv(struct bt_conn *conn,
 {
 	const uint8_t *data = buf;
 	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
+
+	if (net_buf_simple_tailroom(&role->buf) < len - 1) {
+		LOG_WRN("Proxy role buffer overflow");
+		return -EINVAL;
+	}
 
 	switch (PDU_SAR(data)) {
 	case SAR_COMPLETE:
@@ -192,12 +195,12 @@ int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 
 static void buf_send_end(struct bt_conn *conn, void *user_data)
 {
-	struct net_buf *buf = user_data;
+	struct bt_mesh_adv *adv = user_data;
 
-	net_buf_unref(buf);
+	bt_mesh_adv_unref(adv);
 }
 
-int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct net_buf *buf)
+int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
 {
 	int err;
 
@@ -207,12 +210,12 @@ int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct net_buf *buf)
 	 * so we need to make a copy.
 	 */
 	net_buf_simple_reserve(&msg, 1);
-	net_buf_simple_add_mem(&msg, buf->data, buf->len);
+	net_buf_simple_add_mem(&msg, adv->b.data, adv->b.len);
 
 	err = bt_mesh_proxy_msg_send(conn, BT_MESH_PROXY_NET_PDU,
-				     &msg, buf_send_end, net_buf_ref(buf));
+				     &msg, buf_send_end, bt_mesh_adv_ref(adv));
 
-	bt_mesh_adv_send_start(0, err, BT_MESH_ADV(buf));
+	bt_mesh_adv_send_start(0, err, &adv->ctx);
 	if (err) {
 		LOG_ERR("Failed to send proxy message (err %d)", err);
 
@@ -221,7 +224,7 @@ int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct net_buf *buf)
 		 * which is just opaque data to segment_and send) reference given
 		 * to segment_and_send() here.
 		 */
-		net_buf_unref(buf);
+		bt_mesh_adv_unref(adv);
 	}
 
 	return err;

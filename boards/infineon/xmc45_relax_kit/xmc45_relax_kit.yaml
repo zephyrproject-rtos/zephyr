@@ -1,0 +1,19 @@
+identifier: xmc45_relax_kit
+name: XMC45-RELAX-KIT
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - dma
+  - gpio
+  - spi
+  - uart
+  - watchdog
+  - netif:eth
+ram: 160
+flash: 1024
+vendor: infineon

@@ -9,7 +9,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/ppp.h>
 
 #include "net_private.h"
@@ -114,6 +114,8 @@ void ppp_link_authenticated(struct ppp_context *ctx)
 
 void ppp_link_terminated(struct ppp_context *ctx)
 {
+	k_sem_give(&ctx->wait_ppp_link_terminated);
+
 	if (ctx->phase == PPP_DEAD) {
 		return;
 	}
@@ -127,6 +129,8 @@ void ppp_link_terminated(struct ppp_context *ctx)
 
 void ppp_link_down(struct ppp_context *ctx)
 {
+	k_sem_give(&ctx->wait_ppp_link_down);
+
 	if (ctx->phase == PPP_DEAD) {
 		return;
 	}

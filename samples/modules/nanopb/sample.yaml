@@ -1,6 +1,5 @@
 sample:
-  description: Nanopb sample, with a simple proto
-    buffer
+  description: Nanopb sample, with a simple proto buffer
   name: Simple nanopb
 common:
   modules:
@@ -12,7 +11,9 @@ common:
       - "Your lucky number was 13!"
 tests:
   sample.modules.nanopb:
-    tags: samples nanopb
+    tags:
+      - samples
+      - nanopb
     integration_platforms:
-      - native_posix
-      - native_posix_64
+      - native_sim
+      - native_sim/native/64

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+
+if SOC_APOLLO4P_BLUE
+
+config NUM_IRQS
+	default 83
+
+endif # SOC_APOLLO4P_BLUE

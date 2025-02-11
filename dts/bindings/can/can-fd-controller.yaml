@@ -1,31 +1,26 @@
-# Common fields for CAN-FD controllers
+# Common fields for CAN FD controllers
 
 include: can-controller.yaml
 
 properties:
   bus-speed-data:
     type: int
-    required: true
-    description: data phase bus speed in Baud/s
-  sjw-data:
+    deprecated: true
+    description: |
+      Deprecated. This property has been renamed to bitrate-data.
+
+      Initial data phase bitrate in bit/s.  If this is unset, the initial data phase bitrate is set
+      to CONFIG_CAN_DEFAULT_BITRATE_DATA.
+  bitrate-data:
     type: int
-    required: true
-    description: Resynchronization jump width for the data phase. (ISO11898-1:2015)
-  prop-seg-data:
-    type: int
-    description: Time quantums of propagation segment for the data phase. (ISO11898-1:2015)
-  phase-seg1-data:
-    type: int
-    description: Time quantums of phase buffer 1 segment for the data phase. (ISO11898-1:2015)
-  phase-seg2-data:
-    type: int
-    description: Time quantums of phase buffer 2 segment for the data phase. (ISO11898-1:2015)
+    description: |
+      Initial data phase bitrate in bit/s.  If this is unset, the initial data phase bitrate is set
+      to CONFIG_CAN_DEFAULT_BITRATE_DATA.
   sample-point-data:
     type: int
-    description: >
-      Sample point in permille for the data phase.
-      This param is required if segments are not given.
-      If the sample point is given, the segments are ignored.
-  tx-delay-comp-offset:
-    type: int
-    default: 0
+    description: |
+      Initial data phase sample point in per mille (e.g. 875 equals 87.5%).
+
+      If this is unset (or if it is set to 0), the initial sample point will default to 75.0% for
+      bitrates over 800 kbit/s, 80.0% for bitrates over 500 kbit/s, and 87.5% for all other
+      bitrates.

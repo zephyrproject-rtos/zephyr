@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test string array unquoted property container
+
+compatible: "vnd,string-array-unquoted"
+
+properties:
+  val:
+    type: string-array
+    required: true

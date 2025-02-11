@@ -1,4 +1,4 @@
-.. _rtio_api:
+.. _rtio:
 
 Real Time I/O (RTIO)
 ####################
@@ -16,14 +16,8 @@ driven I/O. This section covers the RTIO API, queues, executor, iodev,
 and common usage patterns with peripheral devices.
 
 RTIO takes a lot of inspiration from Linux's io_uring in its operations and API
-as that API matches up well with hardware DMA transfer queues and descriptions.
-
-A quick sales pitch on why RTIO works well in many scenarios:
-
-1. API is DMA and interrupt friendly
-2. No buffer copying
-3. No callbacks
-4. Blocking or non-blocking operation
+as that API matches up well with hardware transfer queues and descriptions such as
+DMA transfer lists.
 
 Problem
 *******
@@ -60,8 +54,8 @@ sequence of operations in an asynchronous way directly relates
 to the way hardware typically works with interrupt driven state machines
 potentially involving multiple peripheral IPs like bus and DMA controllers.
 
-Submission Queue and Chaining
-*****************************
+Submission Queue
+****************
 
 The submission queue (sq), is the description of the operations
 to perform in concurrent chains.
@@ -105,327 +99,120 @@ sqe. A chain of sqe will however ensure ordering and failure cascading.
 Other potential schemes are possible but a completion queue is a well trod
 idea with io_uring and other similar operating system APIs.
 
-Executor and IODev
-******************
+Executor
+********
+
+The RTIO executor is a low overhead concurrent I/O task scheduler. It ensures
+certain request flags provide the expected behavior. It takes a list of
+submissions working through them in order. Various flags allow for changing the
+behavior of how submissions are worked through. Flags to form in order chains of
+submissions, transactional sets of submissions, or create multi-shot
+(continuously producing) requests are all possible!
+
+IO Device
+*********
 
 Turning submission queue entries (sqe) into completion queue events (cqe) is the
-job of objects implementing the executor and iodev APIs. These APIs enable
-coordination between themselves to enable things like DMA transfers.
-
-The end result of these APIs should be a method to resolve the request by
-deciding some of the following questions with heuristic/constraint
-based decision making.
-
-* Polling, Interrupt, or DMA transfer?
-* If DMA, are the requirements met (peripheral supported by DMAC, etc).
-
-The executor is meant to provide policy for when to use each transfer
-type, and provide the common code for walking through submission queue
-chains by providing calls the iodev may use to signal completion,
-error, or a need to suspend and wait.
-
-Outstanding Questions
-*********************
-
-RTIO is not a complete API and solution, and is currently evolving to best
-fit the nature of an RTOS. The general ideas behind a pair of queues to
-describe requests and completions seems sound and has been proven out in
-other contexts. Questions remain though.
-
-Timeouts and Deadlines
-======================
-
-Timeouts and deadlines are key to being Real-Time. Real-Time in Zephyr means
-being able to do things when an application wants them done. That could mean
-different things from a deadline with best effort attempts or a timeout and
-failure.
-
-These features would surely be useful in many cases, but would likely add some
-significant complexities. It's something to decide upon, and even if enabled
-would likely be a compile time optional feature leading to complex testing.
+job of objects implementing the iodev (IO device) API. This API accepts requests
+in the form of the iodev submit API call. It is the io devices job to work
+through its internal queue of submissions and convert them into completions. In
+effect every io device can be viewed as an independent, event driven actor like
+object, that accepts a never ending queue of I/O like requests. How the iodev
+does this work is up to the author of the iodev, perhaps the entire queue of
+operations can be converted to a set of DMA transfer descriptors, meaning the
+hardware does almost all of the real work.
 
 Cancellation
-============
+************
 
-Canceling an already queued operation could be possible with a small
-API addition to perhaps take both the RTIO context and a pointer to the
-submission queue entry. However, cancellation as an API induces many potential
-complexities that might not be appropriate. It's something to be decided upon.
+Canceling an already queued operation is possible but not guaranteed. If the
+SQE has not yet started, it's likely that a call to :c:func:`rtio_sqe_cancel`
+will remove the SQE and never run it. If, however, the SQE already started
+running, the cancel request will be ignored.
 
-Userspace Support
-=================
+Memory pools
+************
 
-RTIO with userspace is certainly plausible but would require the equivalent of
-a memory map call to map the shared ringbuffers and also potentially dma buffers.
+In some cases requests to read may not know how much data will be produced.
+Alternatively, a reader might be handling data from multiple io devices where
+the frequency of the data is unpredictable. In these cases it may be wasteful
+to bind memory to in flight read requests. Instead with memory pools the memory
+to read into is left to the iodev to allocate from a memory pool associated with
+the RTIO context that the read was associated with. To create such an RTIO
+context the :c:macro:`RTIO_DEFINE_WITH_MEMPOOL` can be used. It allows creating
+an RTIO context with a dedicated pool of "memory blocks" which can be consumed by
+the iodev. Below is a snippet setting up the RTIO context with a memory pool.
+The memory pool has 128 blocks, each block has the size of 16 bytes, and the data
+is 4 byte aligned.
 
-Additionally a DMA buffer interface would likely need to be provided for
-coherence and MMU usage.
+.. code-block:: C
 
-IODev and Executor API
-======================
+  #include <zephyr/rtio/rtio.h>
 
-Lastly the API between an executor and iodev is incomplete.
+  #define SQ_SIZE       4
+  #define CQ_SIZE       4
+  #define MEM_BLK_COUNT 128
+  #define MEM_BLK_SIZE  16
+  #define MEM_BLK_ALIGN 4
 
-There are certain interactions that should be supported. Perhaps things like
-expanding a submission queue entry into multiple submission queue entries in
-order to split up work that can be done by a device and work that can be done
-by a DMA controller.
+  RTIO_DEFINE_WITH_MEMPOOL(rtio_context,
+      SQ_SIZE, CQ_SIZE, MEM_BLK_COUNT, MEM_BLK_SIZE, MEM_BLK_ALIGN);
 
-In some SoCs only specific DMA channels may be used with specific devices. In
-others there are requirements around needing a DMA handshake or specific
-triggering setups to tell the DMA when to start its operation.
+When a read is needed, the caller simply needs to replace the call
+:c:func:`rtio_sqe_prep_read` (which takes a pointer to a buffer and a length)
+with a call to :c:func:`rtio_sqe_prep_read_with_pool`. The iodev requires
+only a small change which works with both pre-allocated data buffers as well as
+the mempool. When the read is ready, instead of getting the buffers directly
+from the :c:struct:`rtio_iodev_sqe`, the iodev should get the buffer and count
+by calling :c:func:`rtio_sqe_rx_buf` like so:
 
-None of that, from the outward facing API, is an issue.
+.. code-block:: C
 
-It is however an unresolved task and issue from an internal API between the
-executor and iodev. This requires some SoC specifics and enabling those
-generically isn't likely possible. That's ok, an iodev and dma executor should
-be vendor specific, but an API needs to be there between them that is not!
+  uint8_t *buf;
+  uint32_t buf_len;
+  int rc = rtio_sqe_rx_buff(iodev_sqe, MIN_BUF_LEN, DESIRED_BUF_LEN, &buf, &buf_len);
 
+  if (rc != 0) {
+    LOG_ERR("Failed to get buffer of at least %u bytes", MIN_BUF_LEN);
+    return;
+  }
 
-Special Hardware: Intel HDA
-===========================
+Finally, the consumer will be able to access the allocated buffer via
+:c:func:`rtio_cqe_get_mempool_buffer`.
 
-In some cases there's a need to always do things in a specific order
-with a specific buffer allocation strategy. Consider a DMA that *requires*
-the usage of a circular buffer segmented into blocks that may only be
-transferred one after another. This is the case of the Intel HDA stream for
-audio.
+.. code-block:: C
 
-In this scenario the above API can still work, but would require an additional
-buffer allocator to work with fixed sized segments.
+  uint8_t *buf;
+  uint32_t buf_len;
+  int rc = rtio_cqe_get_mempool_buffer(&rtio_context, &cqe, &buf, &buf_len);
+
+  if (rc != 0) {
+    LOG_ERR("Failed to get mempool buffer");
+    return rc;
+  }
+
+  /* Release the cqe events (note that the buffer is not released yet */
+  rtio_cqe_release_all(&rtio_context);
+
+  /* Do something with the memory */
+
+  /* Release the mempool buffer */
+  rtio_release_buffer(&rtio_context, buf);
 
 When to Use
 ***********
 
-It's important to understand when DMA like transfers are useful and when they
-are not. It's a poor idea to assume that something made for high throughput will
-work for you. There is a computational, memory, and latency cost to setup the
-description of transfers.
+RTIO is useful in cases where concurrent or batch like I/O flows are useful.
 
-Polling at 1Hz an air sensor will almost certainly result in a net negative
-result compared to ad-hoc sensor (i2c/spi) requests to get the sample.
+From the driver/hardware perspective the API enables batching of I/O requests, potentially in an optimal way.
+Many requests to the same SPI peripheral for example might be translated to hardware command queues or DMA transfer
+descriptors entirely. Meaning the hardware can potentially do more than ever.
 
-Continuous transfers, driven by timer or interrupt, of data from a peripheral's
-on board FIFO over I2C, I3C, SPI, MIPI, I2S, etc... maybe, but not always!
-
-Examples
-********
-
-Examples speak loudly about the intended uses and goals of an API. So several key
-examples are presented below. Some are entirely plausible today without a
-big leap. Others (the sensor example) would require additional work in other
-APIs outside of RTIO as a sub system and are theoretical.
-
-Chained Blocking Requests
-=========================
-
-A common scenario is needing to write the register address to then read from.
-This can be accomplished by chaining a write into a read operation.
-
-The transaction on i2c is implicit for each operation chain.
-
-.. code-block:: C
-
-	RTIO_I2C_IODEV(i2c_dev, I2C_DT_SPEC_INST(n));
-	RTIO_DEFINE(ez_io, 4, 4);
-	static uint16_t reg_addr;
-	static uint8_t buf[32];
-
-	int do_some_io(void)
-	{
-		struct rtio_sqe *write_sqe = rtio_spsc_acquire(ez_io.sq);
-		struct rtio_sqe *read_sqe = rtio_spsc_acquire(ez_io.sq);
-
-		rtio_sqe_prep_write(write_sqe, i2c_dev, RTIO_PRIO_LOW, &reg_addr, 2);
-		write_sqe->flags = RTIO_SQE_CHAINED; /* the next item in the queue will wait on this one */
-
-		rtio_sqe_prep_read(read_sqe, i2c_dev, RTIO_PRIO_LOW, buf, 32);
-
-		rtio_submit(rtio_inplace_executor, &ez_io, 2);
-
-		struct rtio_cqe *read_cqe = rtio_spsc_consume(ez_io.cq);
-		struct rtio_cqe *write_cqe = rtio_spsc_consume(ez_io.cq);
-
-		if(read_cqe->result < 0) {
-			LOG_ERR("read failed!");
-		}
-
-		if(write_cqe->result < 0) {
-			LOG_ERR("write failed!");
-		}
-
-		rtio_spsc_release(ez_io.cq);
-		rtio_spsc_release(ez_io.cq);
-	}
-
-Non blocking device to device
-=============================
-
-Imagine wishing to read from one device on an I2C bus and then write the same
-buffer  to a device on a SPI bus without blocking the thread or setting up
-callbacks or other IPC notification mechanisms.
-
-Perhaps an I2C temperature sensor and a SPI lowrawan module. The following is a
-simplified version of that potential operation chain.
-
-.. code-block:: C
-
-	RTIO_I2C_IODEV(i2c_dev, I2C_DT_SPEC_INST(n));
-	RTIO_SPI_IODEV(spi_dev, SPI_DT_SPEC_INST(m));
-
-	RTIO_DEFINE(ez_io, 4, 4);
-	static uint8_t buf[32];
-
-	int do_some_io(void)
-	{
-		uint32_t read, write;
-		struct rtio_sqe *read_sqe = rtio_spsc_acquire(ez_io.sq);
-		rtio_sqe_prep_read(read_sqe, i2c_dev, RTIO_PRIO_LOW, buf, 32);
-		read_sqe->flags = RTIO_SQE_CHAINED; /* the next item in the queue will wait on this one */
-
-		/* Safe to do as the chained operation *ensures* that if one fails all subsequent ops fail */
-		struct rtio_sqe *write_sqe = rtio_spsc_acquire(ez_io.sq);
-		rtio_sqe_prep_write(write_sqe, spi_dev, RTIO_PRIO_LOW, buf, 32);
-
-		/* call will return immediately without blocking if possible */
-		rtio_submit(rtio_inplace_executor, &ez_io, 0);
-
-		/* These calls might return NULL if the operations have not yet completed! */
-		for (int i = 0; i < 2; i++) {
-			struct rtio_cqe *cqe = rtio_spsc_consume(ez_io.cq);
-			while(cqe == NULL) {
-				cqe = rtio_spsc_consume(ez_io.cq);
-				k_yield();
-			}
-			if(cqe->userdata == &read && cqe->result < 0) {
-				LOG_ERR("read from i2c failed!");
-			}
-			if(cqe->userdata == &write && cqe->result < 0) {
-				LOG_ERR("write to spi failed!");
-			}
-			/* Must release the completion queue event after consume */
-			rtio_spsc_release(ez_io.cq);
-		}
-	}
-
-Nested iodevs for Devices on Buses (Sensors), Theoretical
-=========================================================
-
-Consider a device like a sensor or audio codec sitting on a bus.
-
-Its useful to consider that the sensor driver can use RTIO to do I/O on the SPI
-bus, while also being an RTIO device itself. The sensor iodev can set aside a
-small portion of the buffer in front or in back to store some metadata describing
-the format of the data. This metadata could then be used in creating a sensor
-readings iterator which lazily lets you map over each reading, doing
-calculations such as FIR/IIR filtering, or perhaps translating the readings into
-other numerical formats with useful measurement units such as SI. RTIO is a
-common movement API and allows for such uses while not deciding the mechanism.
-
-This same sort of setup could be done for other data streams such as audio or
-video.
-
-.. code-block:: C
-
-	/* Note that the sensor device itself can use RTIO to get data over I2C/SPI
-	 * potentially with DMA, but we don't need to worry about that here
-	 * All we need to know is the device tree node_id and that it can be an iodev
-	 */
-	RTIO_SENSOR_IODEV(sensor_dev, DEVICE_DT_GET(DT_NODE(super6axis));
-
-	RTIO_DEFINE(ez_io, 4, 4);
-
-
-	/* The sensor driver decides the minimum buffer size for us, we decide how
-	 * many bufs. This could be a typical multiple of a fifo packet the sensor
-	 * produces, ICM42688 for example produces a FIFO packet of 20 bytes in
-	 * 20bit mode at 32KHz so perhaps we'd like to get 4 buffers of 4ms of data
-	 * each in this setup to process on. and its already been defined here for us.
-	 */
-	#include <sensors/icm42688_p.h>
-	static uint8_t bufs[4][ICM42688_RTIO_BUF_SIZE];
-
-	int do_some_sensors(void) {
-		/* Obtain a dmac executor from the DMA device */
-		struct device *dma = DEVICE_DT_GET(DT_NODE(dma0));
-		const struct rtio_executor *rtio_dma_exec =
-				dma_rtio_executor(dma);
-
-		/*
-		 * Set the executor for our queue context
-		 */
-		 rtio_set_executor(ez_io, rtio_dma_exec);
-
-		/* Mostly we want to feed the sensor driver enough buffers to fill while
-		 * we wait and process! Small enough to process quickly with low latency,
-		 * big enough to not spend all the time setting transfers up.
-		 *
-		 * It's assumed here that the sensor has been configured already
-		 * and each FIFO watermark interrupt that occurs it attempts
-		 * to pull from the queue, fill the buffer with a small metadata
-		 * offset using its own rtio request to the SPI bus using DMA.
-		 */
-		for(int i = 0; i < 4; i++) {
-			struct rtio_sqe *read_sqe = rtio_spsc_acquire(ez_io.sq);
-
-			rtio_sqe_prep_read(read_sqe, sensor_dev, RTIO_PRIO_HIGH, bufs[i], ICM42688_RTIO_BUF_SIZE);
-		}
-		struct device *sensor = DEVICE_DT_GET(DT_NODE(super6axis));
-		struct sensor_reader reader;
-		struct sensor_channels channels[4] = {
-			SENSOR_TIMESTAMP_CHANNEL,
-			SENSOR_CHANNEL(int32_t, SENSOR_ACC_X, 0, SENSOR_RAW),
-			SENSOR_CHANNEL(int32_t SENSOR_ACC_Y, 0, SENSOR_RAW),
-			SENSOR_CHANNEL(int32_t, SENSOR_ACC_Z, 0, SENSOR_RAW),
-		};
-		while (true) {
-			/* call will wait for one completion event */
-			rtio_submit(ez_io, 1);
-			struct rtio_cqe *cqe = rtio_spsc_consume(ez_io.cq);
-			if(cqe->result < 0) {
-				LOG_ERR("read failed!");
-				goto next;
-			}
-
-			/* Bytes read into the buffer */
-			int32_t bytes_read = cqe->result;
-
-			/* Retrieve soon to be reusable buffer pointer from completion */
-			uint8_t *buf = cqe->userdata;
-
-
-			/* Get an iterator (reader) that obtains sensor readings in integer
-			 * form, 16 bit signed values in the native sensor reading format
-			 */
-			res = sensor_reader(sensor, buf, cqe->result, &reader, channels,
-							    sizeof(channels));
-			__ASSERT(res == 0);
-			while(sensor_reader_next(&reader)) {
-				printf("time(raw): %d, acc (x,y,z): (%d, %d, %d)\n",
-				channels[0].value.u32, channels[1].value.i32,
-				channels[2].value.i32, channels[3].value.i32);
-			}
-
-	next:
-			/* Release completion queue event */
-			rtio_spsc_release(ez_io.cq);
-
-			/* resubmit a read request with the newly freed buffer to the sensor */
-			struct rtio_sqe *read_sqe = rtio_spsc_acquire(ez_io.sq);
-			rtio_sqe_prep_read(read_sqe, sensor_dev, RTIO_PRIO_HIGH, buf, ICM20649_RTIO_BUF_SIZE);
-		}
-	}
+There is a small cost to each RTIO context and iodev. This cost could be weighed
+against using a thread for each concurrent I/O operation or custom queues and
+threads per peripheral. RTIO is much lower cost than that.
 
 API Reference
 *************
 
-RTIO API
-========
-
-.. doxygengroup:: rtio_api
-
-RTIO SPSC API
-=============
-
-.. doxygengroup:: rtio_spsc
+.. doxygengroup:: rtio

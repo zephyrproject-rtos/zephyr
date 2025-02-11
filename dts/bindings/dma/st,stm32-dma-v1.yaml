@@ -13,7 +13,7 @@ description: |
     2. slot: DMA periph request ID, which is written in the DMAREQ_ID of the DMAMUX_CxCR
     this value is 0 for Memory-to-memory transfers
     or a value between <1> .. <dma-generators> (not supported yet)
-    or a value beweeen <dma-generators>+1  ..  <dma-generators>+<dma-requests>
+    or a value between <dma-generators>+1  ..  <dma-generators>+<dma-requests>
     3. channel-config: A 32bit mask specifying the DMA channel configuration
     which is device dependent:
         -bit 6-7 : Direction  (see dma.h)

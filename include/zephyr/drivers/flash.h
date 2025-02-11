@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2024 Nordic Semiconductor ASA
  * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -45,6 +45,8 @@ struct flash_pages_layout {
 /**
  * @brief FLASH Interface
  * @defgroup flash_interface FLASH Interface
+ * @since 1.2
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -55,9 +57,64 @@ struct flash_pages_layout {
  * through a runtime.
  */
 struct flash_parameters {
+	/** Minimal write alignment and size */
 	const size_t write_block_size;
-	uint8_t erase_value; /* Byte value of erased flash */
+
+	/** @cond INTERNAL_HIDDEN */
+	/* User code should call flash_params_get_ functions on flash_parameters
+	 * to get capabilities, rather than accessing object contents directly.
+	 */
+	struct {
+		/* Device has no explicit erase, so it either erases on
+		 * write or does not require it at all.
+		 * This also includes devices that support erase but
+		 * do not require it.
+		 */
+		bool no_explicit_erase: 1;
+	} caps;
+	/** @endcond */
+	/** Value the device is filled in erased areas */
+	uint8_t erase_value;
 };
+
+/** Set for ordinary Flash where erase is needed before write of random data */
+#define FLASH_ERASE_C_EXPLICIT		0x01
+/** Reserved for users as initializer for variables that will later store
+ * capabilities.
+ */
+#define FLASH_ERASE_CAPS_UNSET		(int)-1
+/* The values below are now reserved but not used */
+#define FLASH_ERASE_C_SUPPORTED		0x02
+#define FLASH_ERASE_C_VAL_BIT		0x04
+#define FLASH_ERASE_UNIFORM_PAGE	0x08
+
+
+/* @brief Parser for flash_parameters for retrieving erase capabilities
+ *
+ * The functions parses flash_parameters type object and returns combination
+ * of erase capabilities of 0 if device does not have any.
+ * Not that in some cases availability of erase may be dependent on driver
+ * options, so even if by hardware design a device provides some erase
+ * capabilities, the function may return 0 if these been disabled or not
+ * implemented by driver.
+ *
+ * @param p		pointer to flash_parameters type object
+ *
+ * @return 0 or combination of FLASH_ERASE_C_ capabilities.
+ */
+static inline
+int flash_params_get_erase_cap(const struct flash_parameters *p)
+{
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+	return (p->caps.no_explicit_erase) ? 0 : FLASH_ERASE_C_EXPLICIT;
+#else
+	ARG_UNUSED(p);
+	return FLASH_ERASE_C_EXPLICIT;
+#endif
+#endif
+	return 0;
+}
 
 /**
  * @}
@@ -89,6 +146,11 @@ typedef int (*flash_api_write)(const struct device *dev, off_t offset,
  * the driver, with the driver responsible for ensuring the "erase-protect"
  * after the operation completes (successfully or not) matches the erase-protect
  * state when the operation was started.
+ *
+ * The callback is optional for RAM non-volatile devices, which do not
+ * require erase by design, but may be provided if it allows device to
+ * work more effectively, or if device has a support for internal fill
+ * operation the erase in driver uses.
  */
 typedef int (*flash_api_erase)(const struct device *dev, off_t offset,
 			       size_t size);
@@ -125,6 +187,8 @@ typedef void (*flash_api_pages_layout)(const struct device *dev,
 typedef int (*flash_api_sfdp_read)(const struct device *dev, off_t offset,
 				   void *data, size_t len);
 typedef int (*flash_api_read_jedec_id)(const struct device *dev, uint8_t *id);
+typedef int (*flash_api_ex_op)(const struct device *dev, uint16_t code,
+			       const uintptr_t in, void *out);
 
 __subsystem struct flash_driver_api {
 	flash_api_read read;
@@ -138,6 +202,9 @@ __subsystem struct flash_driver_api {
 	flash_api_sfdp_read sfdp_read;
 	flash_api_read_jedec_id read_jedec_id;
 #endif /* CONFIG_FLASH_JESD216_API */
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	flash_api_ex_op ex_op;
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
 };
 
 /**
@@ -221,12 +288,19 @@ static inline int z_impl_flash_write(const struct device *dev, off_t offset,
  *  Any necessary erase protection management is performed by the driver
  *  erase implementation itself.
  *
+ *  The function should be used only for devices that are really
+ *  explicit erase devices; in case when code relies on erasing
+ *  device, i.e. setting it to erase-value, prior to some operations,
+ *  but should work with explicit erase and RAM non-volatile devices,
+ *  then flash_flatten should rather be used.
+ *
  *  @param  dev             : flash device
  *  @param  offset          : erase area starting offset
  *  @param  size            : size of area to be erased
  *
  *  @return  0 on success, negative errno code on fail.
  *
+ *  @see flash_flatten()
  *  @see flash_get_page_info_by_offs()
  *  @see flash_get_page_info_by_idx()
  */
@@ -235,14 +309,73 @@ __syscall int flash_erase(const struct device *dev, off_t offset, size_t size);
 static inline int z_impl_flash_erase(const struct device *dev, off_t offset,
 				     size_t size)
 {
+	int rc = -ENOSYS;
+
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->api;
-	int rc;
 
-	rc = api->erase(dev, offset, size);
+	if (api->erase != NULL) {
+		rc = api->erase(dev, offset, size);
+	}
 
 	return rc;
 }
+
+/**
+ * @brief Fill selected range of device with specified value
+ *
+ * Utility function that allows to fill specified range on a device with
+ * provided value. The @p offset and @p size of range need to be aligned to
+ * a write block size of a device.
+ *
+ * @param  dev             : flash device
+ * @param  val             : value to use for filling the range
+ * @param  offset          : offset of the range to fill
+ * @param  size            : size of the range
+ *
+ * @return  0 on success, negative errno code on fail.
+ *
+ */
+__syscall int flash_fill(const struct device *dev, uint8_t val, off_t offset, size_t size);
+
+/**
+ *  @brief  Erase part or all of a flash memory or level it
+ *
+ *  If device is explicit erase type device or device driver provides erase
+ *  callback, the callback of the device is called, in which it behaves
+ *  the same way as flash_erase.
+ *  If a device does not require explicit erase, either because
+ *  it has no erase at all or has auto-erase/erase-on-write,
+ *  and does not provide erase callback then erase is emulated by
+ *  leveling selected device memory area with erase_value assigned to
+ *  device.
+ *
+ *  Erase page offset and size are constrains of paged, explicit erase devices,
+ *  but can be relaxed with devices without such requirement, which means that
+ *  it is up to user code to make sure they are correct as the function
+ *  will return on, if these constrains are not met, -EINVAL for
+ *  paged device, but may succeed on non-explicit erase devices.
+ *  For RAM non-volatile devices the erase pages are emulated,
+ *  at this point, to allow smooth transition for code relying on
+ *  device being paged to function properly; but this is completely
+ *  software constrain.
+ *
+ *  Generally: if your code previously required device to be erase
+ *  prior to some actions to work, replace flash_erase calls with this
+ *  function; but if your code can work with non-volatile RAM type devices,
+ *  without emulating erase, you should rather have different path
+ *  of execution for page-erase, i.e. Flash, devices and call
+ *  flash_erase for them.
+ *
+ *  @param  dev             : flash device
+ *  @param  offset          : erase area starting offset
+ *  @param  size            : size of area to be erased
+ *
+ *  @return  0 on success, negative errno code on fail.
+ *
+ *  @see flash_erase()
+ */
+__syscall int flash_flatten(const struct device *dev, off_t offset, size_t size);
 
 struct flash_pages_info {
 	off_t start_offset; /* offset from the base of flash address */
@@ -422,6 +555,82 @@ static inline const struct flash_parameters *z_impl_flash_get_parameters(const s
 	return api->get_parameters(dev);
 }
 
+/**
+ *  @brief Execute flash extended operation on given device
+ *
+ *  Besides of standard flash operations like write or erase, flash controllers
+ *  also support additional features like write protection or readout
+ *  protection. These features are not available in every flash controller,
+ *  what's more controllers can implement it in a different way.
+ *
+ *  It doesn't make sense to add a separate flash API function for every flash
+ *  controller feature, because it could be unique (supported on small number of
+ *  flash controllers) or the API won't be able to represent the same feature on
+ *  every flash controller.
+ *
+ *  @param dev Flash device
+ *  @param code Operation which will be executed on the device.
+ *  @param in Pointer to input data used by operation. If operation doesn't
+ *            need any input data it could be NULL.
+ *  @param out Pointer to operation output data. If operation doesn't produce
+ *             any output it could be NULL.
+ *
+ *  @retval 0 on success.
+ *  @retval -ENOTSUP if given device doesn't support extended operation.
+ *  @retval -ENOSYS if support for extended operations is not enabled in Kconfig
+ *  @retval negative value on extended operation errors.
+ */
+__syscall int flash_ex_op(const struct device *dev, uint16_t code,
+			  const uintptr_t in, void *out);
+
+/*
+ *  Extended operation interface provides flexible way for supporting flash
+ *  controller features. Code space is divided equally into Zephyr codes
+ *  (MSb == 0) and vendor codes (MSb == 1). This way we can easily add extended
+ *  operations to the drivers without cluttering the API or problems with API
+ *  incompatibility. Extended operation can be promoted from vendor codes to
+ *  Zephyr codes if the feature is available in most flash controllers and
+ *  can be represented in the same way.
+ *
+ *  It's not forbidden to have operation in Zephyr codes and vendor codes for
+ *  the same functionality. In this case, vendor operation could provide more
+ *  specific access when abstraction in Zephyr counterpart is insufficient.
+ */
+#define FLASH_EX_OP_VENDOR_BASE 0x8000
+#define FLASH_EX_OP_IS_VENDOR(c) ((c) & FLASH_EX_OP_VENDOR_BASE)
+
+/**
+ *  @brief Enumeration for extra flash operations
+ */
+enum flash_ex_op_types {
+	/*
+	 * Reset flash device.
+	 */
+	FLASH_EX_OP_RESET = 0,
+};
+
+static inline int z_impl_flash_ex_op(const struct device *dev, uint16_t code,
+				     const uintptr_t in, void *out)
+{
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	const struct flash_driver_api *api =
+		(const struct flash_driver_api *)dev->api;
+
+	if (api->ex_op == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->ex_op(dev, code, in, out);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(code);
+	ARG_UNUSED(in);
+	ARG_UNUSED(out);
+
+	return -ENOSYS;
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
+}
+
 #ifdef __cplusplus
 }
 #endif
@@ -430,6 +639,6 @@ static inline const struct flash_parameters *z_impl_flash_get_parameters(const s
  * @}
  */
 
-#include <syscalls/flash.h>
+#include <zephyr/syscalls/flash.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_H_ */

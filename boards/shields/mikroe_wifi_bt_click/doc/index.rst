@@ -89,13 +89,13 @@ initial log and last message should be the version of the AT firmware flashed.
 Build and Programming
 *********************
 
-Set ``-DSHIELD=<shield designation>`` when you invoke ``west build``.
+Set ``--shield <shield designation>`` when you invoke ``west build``.
 
 See the example below for lpcxpresso55s69 board using Mikrobus serial:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
-   :board: lpcxpresso55s69_cpu0
+   :board: lpcxpresso55s69/lpc55s69/cpu0
    :shield: mikroe_wifi_bt_click_mikrobus
    :goals: build flash
 

@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_pull_context.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_util.h"
 
 static K_SEM_DEFINE(lwm2m_pull_sem, 1, 1);
 
@@ -287,8 +288,15 @@ static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		LOG_DBG("total: %zd, current: %zd", context.block_ctx.total_size,
 			context.block_ctx.current);
 
+		struct lwm2m_obj_path path;
+
+		ret = lwm2m_string_to_path("5/0/0", &path, '/');
+		if (ret < 0) {
+			goto error;
+		}
+
 		/* look up firmware package resource */
-		ret = lwm2m_engine_get_resource("5/0/0", &res);
+		ret = lwm2m_get_resource(&path, &res);
 		if (ret < 0) {
 			goto error;
 		}
@@ -303,6 +311,8 @@ static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		}
 
 		if (context.write_cb) {
+			size_t offset = context.block_ctx.current;
+
 			/* flush incoming data to write_cb */
 			while (payload_len > 0) {
 				len = (payload_len > write_buflen) ? write_buflen : payload_len;
@@ -317,7 +327,8 @@ static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 
 				ret = context.write_cb(context.obj_inst_id, 0, 0, write_buf, len,
 						       last_block && (payload_len == 0U),
-						       context.block_ctx.total_size);
+						       context.block_ctx.total_size, offset);
+				offset += len;
 				if (ret < 0) {
 					goto error;
 				}

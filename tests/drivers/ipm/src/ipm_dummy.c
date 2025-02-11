@@ -120,12 +120,3 @@ struct ipm_driver_api ipm_dummy_api = {
 	.max_id_val_get = ipm_dummy_max_id_val_get,
 	.set_enabled = ipm_dummy_set_enabled
 };
-
-/* Dummy IPM driver initialization, will be bound at runtime
- * to high-level drivers under test
- */
-
-int ipm_dummy_init(const struct device *d)
-{
-	return 0;
-}

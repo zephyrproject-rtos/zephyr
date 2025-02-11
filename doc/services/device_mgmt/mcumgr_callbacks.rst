@@ -43,18 +43,19 @@ application code as per:
 
     struct mgmt_callback my_callback;
 
-    int32_t my_function(uint32_t event, int32_t rc, bool *abort_more, void *data,
-                        size_t data_size)
+    enum mgmt_cb_return my_function(uint32_t event, enum mgmt_cb_return prev_status,
+                                    int32_t *rc, uint16_t *group, bool *abort_more,
+                                    void *data, size_t data_size)
     {
         if (event == MGMT_EVT_OP_CMD_DONE) {
             /* This is the event we registered for */
         }
 
         /* Return OK status code to continue with acceptance to underlying handler */
-        return MGMT_ERR_EOK;
+        return MGMT_CB_OK;
     }
 
-    void main()
+    int main()
     {
         my_callback.callback = my_function;
         my_callback.event_id = MGMT_EVT_OP_CMD_DONE;
@@ -122,6 +123,8 @@ Events can be selected by enabling their corresponding Kconfig option:
     :c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED`)
  - :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_HOOK`
     os_mgmt reset check (:c:enumerator:`MGMT_EVT_OP_OS_MGMT_RESET`)
+ - :kconfig:option:`CONFIG_MCUMGR_GRP_SETTINGS_ACCESS_HOOK`
+    settings_mgmt access (:c:enumerator:`MGMT_EVT_OP_SETTINGS_MGMT_ACCESS`)
 
 Actions
 =======
@@ -142,35 +145,40 @@ An example of selectively denying file access:
 
     struct mgmt_callback my_callback;
 
-    int32_t my_function(uint32_t event, int32_t rc, bool *abort_more, void *data,
-                        size_t data_size)
+    enum mgmt_cb_return my_function(uint32_t event, enum mgmt_cb_return prev_status,
+                                    int32_t *rc, uint16_t *group, bool *abort_more,
+                                    void *data, size_t data_size)
     {
         /* Only run this handler if a previous handler has not failed */
-        if (event == MGMT_EVT_OP_FS_MGMT_FILE_ACCESS && rc == MGMT_ERR_EOK) {
+        if (event == MGMT_EVT_OP_FS_MGMT_FILE_ACCESS && prev_status == MGMT_CB_OK) {
             struct fs_mgmt_file_access *fs_data = (struct fs_mgmt_file_access *)data;
 
-            /* Check if this is an upload and deny access if it is, otherwise check the
+            /* Check if this is an upload and deny access if it is, otherwise check
              * the path and deny if is matches a name
              */
-            if (fs_data->upload == true) {
+            if (fs_data->access == FS_MGMT_FILE_ACCESS_WRITE) {
                 /* Return an access denied error code to the client and abort calling
                  * further handlers
                  */
                 *abort_more = true;
-                return MGMT_ERR_EACCESSDENIED;
+                *rc = MGMT_ERR_EACCESSDENIED;
+
+                return MGMT_CB_ERROR_RC;
             } else if (strcmp(fs_data->filename, "/lfs1/false_deny.txt") == 0) {
                 /* Return a no entry error code to the client, call additional handlers
                  * (which will have failed set to true)
                  */
-                return MGMT_ERR_ENOENT;
+                *rc = MGMT_ERR_ENOENT;
+
+                return MGMT_CB_ERROR_RC;
             }
         }
 
         /* Return OK status code to continue with acceptance to underlying handler */
-        return MGMT_ERR_EOK;
+        return MGMT_CB_OK;
     }
 
-    void main()
+    int main()
     {
         my_callback.callback = my_function;
         my_callback.event_id = MGMT_EVT_OP_FS_MGMT_FILE_ACCESS;
@@ -183,6 +191,11 @@ after a fs_mgmt file read/write command has been received to check if access to
 the file should be allowed or not, note that this requires that
 :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK` be enabled to receive
 this callback.
+Two types of errors can be returned, the ``rc`` parameter can be set to an
+:c:enum:`mcumgr_err_t` error code and :c:enumerator:`MGMT_CB_ERROR_RC`
+can be returned, or a group error code (introduced with version 2 of the MCUmgr
+protocol) can be set by setting the ``group`` value to the group and ``rc``
+value to the group error code and returning :c:enumerator:`MGMT_CB_ERROR_ERR`.
 
 MCUmgr Command Callback Usage/Adding New Event Types
 ====================================================
@@ -199,6 +212,7 @@ An example MCUmgr command handler:
     #include <zephyr/kernel.h>
     #include <zcbor_common.h>
     #include <zcbor_encode.h>
+    #include <zephyr/mgmt/mcumgr/smp/smp.h>
     #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
     #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 
@@ -222,6 +236,8 @@ An example MCUmgr command handler:
     static int test_command(struct mgmt_ctxt *ctxt)
     {
         int rc;
+        int err_rc;
+        uint16_t err_group;
         zcbor_state_t *zse = ctxt->cnbe->zs;
         bool ok;
         struct test_struct test_data = {
@@ -229,23 +245,28 @@ An example MCUmgr command handler:
         };
 
         rc = mgmt_callback_notify(MGMT_EVT_OP_USER_ONE_FIRST, &test_data,
-                                  sizeof(test_data));
+                                  sizeof(test_data), &err_rc, &err_group);
 
-        if (rc != MGMT_ERR_EOK) {
+        if (rc != MGMT_CB_OK) {
             /* A handler returned a failure code */
-            return rc;
+            if (rc == MGMT_CB_ERROR_RC) {
+                /* The failure code is the RC value */
+                return err_rc;
+            }
+
+            /* The failure is a group and ID error value */
+            ok = smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
+            goto end;
         }
 
         /* All handlers returned success codes */
-
         ok = zcbor_tstr_put_lit(zse, "output_value") &&
              zcbor_int32_put(zse, 1234);
 
-        if (!ok) {
-                return MGMT_ERR_EMSGSIZE;
-        }
+    end:
+        rc = (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
 
-        return MGMT_ERR_EOK;
+        return rc;
     }
 
 If no response is required for the callback, the function call be called and
@@ -309,4 +330,3 @@ API Reference
 *************
 
 .. doxygengroup:: mcumgr_callback_api
-    :inner:

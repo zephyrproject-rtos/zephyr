@@ -26,6 +26,12 @@ class Graph:
         self.__reverse_map = collections.defaultdict(set)
         self.__nodes = set()
 
+    def add_node(self, node):
+        """
+        Add a node without any target to the graph.
+        """
+        self.__nodes.add(node)
+
     def add_edge(self, source, target):
         """
         Add a directed edge from the C{source} to the C{target}.

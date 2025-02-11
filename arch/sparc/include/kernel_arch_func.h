@@ -43,7 +43,7 @@ static inline void arch_switch(void *switch_to, void **switched_from)
 }
 
 FUNC_NORETURN void z_sparc_fatal_error(unsigned int reason,
-				       const z_arch_esf_t *esf);
+				       const struct arch_esf *esf);
 
 static inline bool arch_is_in_isr(void)
 {

@@ -36,11 +36,19 @@
 #include "float_context.h"
 #include "test_common.h"
 
+#ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
+#define FP_TYPE		double
+#define FP_CONSTANT(x)	x
+#else
+#define FP_TYPE		float
+#define FP_CONSTANT(x)	x##f
+#endif
+
 /*
  * PI_NUM_ITERATIONS: This macro is defined in the project's Makefile and
  * is configurable from the command line.
  */
-static float reference_pi = 0.0f;
+static FP_TYPE reference_pi = FP_CONSTANT(0.0);
 
 /*
  * Test counters are "volatile" because GCC wasn't properly updating
@@ -64,31 +72,31 @@ static K_SEM_DEFINE(test_exit_sem, 0, 1);
  */
 static void calculate_pi_low(void)
 {
-	volatile float pi; /* volatile to avoid optimizing out of loop */
-	float divisor = 3.0f;
-	float sign = -1.0f;
+	volatile FP_TYPE pi; /* volatile to avoid optimizing out of loop */
+	FP_TYPE divisor = FP_CONSTANT(3.0);
+	FP_TYPE sign = FP_CONSTANT(-1.0);
 	unsigned int ix;
 
 	/* Loop until the test finishes, or an error is detected. */
 	for (calc_pi_low_count = 0; !test_exited; calc_pi_low_count++) {
 
-		sign = -1.0f;
-		pi = 1.0f;
-		divisor = 3.0f;
+		sign = FP_CONSTANT(-1.0);
+		pi = FP_CONSTANT(1.0);
+		divisor = FP_CONSTANT(3.0);
 
 		for (ix = 0; ix < PI_NUM_ITERATIONS; ix++) {
 			pi += sign / divisor;
-			divisor += 2.0f;
-			sign *= -1.0f;
+			divisor += FP_CONSTANT(2.0);
+			sign *= FP_CONSTANT(-1.0);
 		}
 
-		pi *= 4.0f;
+		pi *= FP_CONSTANT(4.0);
 
-		if (reference_pi == 0.0f) {
+		if (reference_pi == FP_CONSTANT(0.0)) {
 			reference_pi = pi;
 		} else if (reference_pi != pi) {
 			printf("Computed pi %1.6f, reference pi %1.6f\n",
-			       pi, reference_pi);
+			       (double)pi, (double)reference_pi);
 		}
 
 		zassert_equal(reference_pi, pi,
@@ -103,9 +111,9 @@ static void calculate_pi_low(void)
  */
 static void calculate_pi_high(void)
 {
-	volatile float pi; /* volatile to avoid optimizing out of loop */
-	float divisor = 3.0f;
-	float sign = -1.0f;
+	volatile FP_TYPE pi; /* volatile to avoid optimizing out of loop */
+	FP_TYPE divisor = FP_CONSTANT(3.0);
+	FP_TYPE sign = FP_CONSTANT(-1.0);
 	unsigned int ix;
 
 	/* Run the test until the specified maximum test count is reached */
@@ -113,14 +121,14 @@ static void calculate_pi_high(void)
 	     calc_pi_high_count <= MAX_TESTS;
 	     calc_pi_high_count++) {
 
-		sign = -1.0f;
-		pi = 1.0f;
-		divisor = 3.0f;
+		sign = FP_CONSTANT(-1.0);
+		pi = FP_CONSTANT(1.0);
+		divisor = FP_CONSTANT(3.0);
 
 		for (ix = 0; ix < PI_NUM_ITERATIONS; ix++) {
 			pi += sign / divisor;
-			divisor += 2.0f;
-			sign *= -1.0f;
+			divisor += FP_CONSTANT(2.0);
+			sign *= FP_CONSTANT(-1.0);
 		}
 
 		/*
@@ -135,13 +143,13 @@ static void calculate_pi_high(void)
 		 */
 		k_sleep(K_MSEC(10));
 
-		pi *= 4.0f;
+		pi *= FP_CONSTANT(4.0);
 
-		if (reference_pi == 0.0f) {
+		if (reference_pi == FP_CONSTANT(0.0)) {
 			reference_pi = pi;
 		} else if (reference_pi != pi) {
 			printf("Computed pi %1.6f, reference pi %1.6f\n",
-			       pi, reference_pi);
+			       (double)pi, (double)reference_pi);
 		}
 
 		zassert_equal(reference_pi, pi,
@@ -151,7 +159,7 @@ static void calculate_pi_high(void)
 		if ((calc_pi_high_count % 100) == 50) {
 			printf("Pi calculation OK after %u (high) +"
 			       " %u (low) tests (computed %1.6lf)\n",
-			       calc_pi_high_count, calc_pi_low_count, pi);
+			       calc_pi_high_count, calc_pi_low_count, (double)pi);
 		}
 	}
 

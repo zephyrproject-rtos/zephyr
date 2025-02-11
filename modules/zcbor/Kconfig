@@ -6,6 +6,7 @@ config ZEPHYR_ZCBOR_MODULE
 
 config ZCBOR
 	bool "zcbor CBOR library"
+	depends on ZEPHYR_ZCBOR_MODULE
 	help
 	  zcbor CBOR encoder/decoder library
 
@@ -31,5 +32,12 @@ config ZCBOR_ASSERT
 
 config ZCBOR_BIG_ENDIAN
 	def_bool BIG_ENDIAN
+
+config ZCBOR_MAX_STR_LEN
+	int "Default max length when calling zcbor_tstr_put_term()"
+	default 256
+	help
+	  This can be manually used if no other value is readily available, but
+	  using this is discouraged.
 
 endif # ZCBOR

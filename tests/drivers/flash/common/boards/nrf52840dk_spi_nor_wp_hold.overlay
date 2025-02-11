@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2023 Intercreate, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Build test for jedec,spi-nor compatible (drivers/flash/spi_nor.c) wp-gpios and hold-gpios
+ */
+
+/delete-node/ &mx25r64;
+
+&pinctrl {
+	spi0_default: spi0_default {
+		group1 {
+				psels = <NRF_PSEL(SPIM_SCK, 1, 9)>,
+						<NRF_PSEL(SPIM_MOSI, 0, 11)>,
+						<NRF_PSEL(SPIM_MISO, 0, 12)>;
+		};
+	};
+
+	spi0_sleep: spi0_sleep {
+		group1 {
+				psels = <NRF_PSEL(SPIM_SCK, 1, 9)>,
+						<NRF_PSEL(SPIM_MOSI, 0, 11)>,
+						<NRF_PSEL(SPIM_MISO, 0, 12)>;
+						low-power-enable;
+		};
+	};
+};
+
+&spi0 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;  // mx25v16
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	mx25v1635fzui: mx25v1635fzui@0 {
+		compatible = "jedec,spi-nor";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <8000000>;  // chip supports 80Mhz, SPI0 supports 8MHz
+		size = <0x1000000>;  // bits
+		hold-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		wp-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <45000>;
+		jedec-id = [ C2 23 15 ];
+		sfdp-bfp = [
+			e5 20 f1 ff  ff ff ff 00  44 eb 08 6b  08 3b 04 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff  23 72 f1 00  82 ec 04 c2  44 83 48 44
+			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
+		];
+	};
+};

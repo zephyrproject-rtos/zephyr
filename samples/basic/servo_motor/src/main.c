@@ -24,7 +24,7 @@ enum direction {
 	UP,
 };
 
-void main(void)
+int main(void)
 {
 	uint32_t pulse_width = min_pulse;
 	enum direction dir = UP;
@@ -32,16 +32,16 @@ void main(void)
 
 	printk("Servomotor control\n");
 
-	if (!device_is_ready(servo.dev)) {
+	if (!pwm_is_ready_dt(&servo)) {
 		printk("Error: PWM device %s is not ready\n", servo.dev->name);
-		return;
+		return 0;
 	}
 
 	while (1) {
 		ret = pwm_set_pulse_dt(&servo, pulse_width);
 		if (ret < 0) {
 			printk("Error %d: failed to set pulse width\n", ret);
-			return;
+			return 0;
 		}
 
 		if (dir == DOWN) {
@@ -62,4 +62,5 @@ void main(void)
 
 		k_sleep(K_SECONDS(1));
 	}
+	return 0;
 }

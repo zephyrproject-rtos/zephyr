@@ -24,8 +24,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
-#include <zephyr/bluetooth/rfcomm.h>
-#include <zephyr/bluetooth/sdp.h>
+#include <zephyr/bluetooth/classic/rfcomm.h>
+#include <zephyr/bluetooth/classic/sdp.h>
 
 #include <zephyr/shell/shell.h>
 
@@ -38,8 +38,8 @@
 #define L2CAP_POLICY_ALLOWLIST		0x01
 #define L2CAP_POLICY_16BYTE_KEY		0x02
 
-NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1,
-			  BT_L2CAP_SDU_BUF_SIZE(DATA_MTU), 8, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 NET_BUF_POOL_FIXED_DEFINE(data_rx_pool, 1, DATA_MTU, 8, NULL);
 
 static uint8_t l2cap_policy;
@@ -53,7 +53,8 @@ struct l2ch {
 	struct bt_l2cap_le_chan ch;
 };
 #define L2CH_CHAN(_chan) CONTAINER_OF(_chan, struct l2ch, ch.chan)
-#define L2CH_WORK(_work) CONTAINER_OF(_work, struct l2ch, recv_work)
+#define L2CH_WORK(_work) CONTAINER_OF(k_work_delayable_from_work(_work), \
+				      struct l2ch, recv_work)
 #define L2CAP_CHAN(_chan) _chan->ch.chan
 
 static bool metrics;
@@ -211,7 +212,8 @@ static int l2cap_accept_policy(struct bt_conn *conn)
 	return 0;
 }
 
-static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+			struct bt_l2cap_chan **chan)
 {
 	int err;
 

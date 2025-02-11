@@ -15,10 +15,6 @@ menuconfig BT
 
 if BT
 
-module = BT
-module-str = bt
-source "subsys/logging/Kconfig.template.log_config"
-
 choice BT_STACK_SELECTION
 	prompt "Bluetooth Stack Selection"
 	default BT_HCI
@@ -64,15 +60,6 @@ config BT_HCI_RAW_H4_ENABLE
 	help
 	  This option enables use of H:4 transport for HCI RAW access at
 	  build time.
-
-config BT_HCI_RAW_RESERVE
-	int "Buffer headroom needed for HCI transport"
-	depends on BT_HCI_RAW
-	default 1 if BT_HCI_RAW_H4
-	default 0
-	help
-	  This option is used by the HCI raw transport implementation to
-	  declare how much headroom it needs for any HCI transport headers.
 
 config BT_HCI_RAW_CMD_EXT
 	bool "RAW HCI Command Extension"
@@ -124,7 +111,7 @@ config BT_MAX_CONN
 
 config BT_CONN_TX
 	bool
-	default BT_CONN || BT_ISO_BROADCASTER
+	default BT_CONN || BT_ISO_TX
 	help
 	  Hidden configuration that is true if ACL or broadcast ISO is enabled
 
@@ -132,7 +119,7 @@ if BT_CONN
 config BT_HCI_ACL_FLOW_CONTROL
 	bool "Controller to Host ACL flow control support"
 	# Enable if building a Host-only build
-	default y if !BT_CTLR && !BT_STM32_IPM && !BT_ESP32
+	default y if !BT_CTLR && !BT_STM32_IPM && !BT_ESP32  && !BT_STM32WBA
 	# Enable if building a Controller-only build
 	default y if BT_HCI_RAW
 	select POLL
@@ -167,11 +154,11 @@ config BT_DATA_LEN_UPDATE
 
 config BT_PER_ADV_SYNC_TRANSFER_RECEIVER
 	bool "Periodic Advertising Sync Transfer receiver"
-	depends on !BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+	depends on BT_PER_ADV_SYNC && BT_CONN && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
 
 config BT_PER_ADV_SYNC_TRANSFER_SENDER
 	bool "Periodic Advertising Sync Transfer sender"
-	depends on !BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
+	depends on (BT_PER_ADV_SYNC || BT_PER_ADV) && BT_CONN && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT)
 
 config BT_SCA_UPDATE
 	bool "Sleep Clock Accuracy Update"
@@ -179,6 +166,21 @@ config BT_SCA_UPDATE
 	depends on !BT_CTLR || BT_CTLR_SCA_UPDATE_SUPPORT
 	help
 	  Enable support for Bluetooth 5.1 Sleep Clock Accuracy Update Procedure
+
+config BT_TRANSMIT_POWER_CONTROL
+	bool "LE Power Control"
+	depends on !BT_CTLR || BT_CTLR_LE_POWER_CONTROL_SUPPORT
+	help
+	  Enable support for LE Power Control Request feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.31.
+
+config BT_PATH_LOSS_MONITORING
+	bool "LE Path Loss Monitoring"
+	depends on !BT_CTLR || BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
+	help
+	  Enable support for LE Path Loss Monitoring feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.32.
+
 endif # BT_CONN
 
 rsource "Kconfig.iso"
@@ -187,6 +189,15 @@ rsource "host/Kconfig"
 rsource "controller/Kconfig"
 rsource "shell/Kconfig"
 rsource "crypto/Kconfig"
+rsource "lib/Kconfig"
+rsource "Kconfig.logging"
+
+config BT_USE_PSA_API
+	bool "Use PSA APIs instead of TinyCrypt for crypto operations"
+	depends on BT_CRYPTO || BT_HOST_CRYPTO || BT_ECC
+	depends on PSA_CRYPTO_CLIENT
+	help
+	  Use PSA APIs instead of TinyCrypt for crypto operations
 
 endif # BT_HCI
 

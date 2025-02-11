@@ -1,0 +1,13 @@
+identifier: pandora_stm32l475
+name: STM32L475 Pandora
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 512
+supported:
+  - gpio
+  - counter

@@ -15,6 +15,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_AUX_REGS_H_
 #define ZEPHYR_INCLUDE_ARCH_ARC_V2_AUX_REGS_H_
 
+#include <zephyr/sys/util_macro.h>
+
 #define _ARC_V2_LP_START 0x002
 #define _ARC_V2_LP_END 0x003
 #define _ARC_V2_IDENTITY 0x004
@@ -64,6 +66,8 @@
 #define _ARC_V2_BARREL_BUILD 0x07f
 #define _ARC_V2_ISA_CONFIG 0x0c1
 #define _ARC_V2_SEP_BUILD 0x0c7
+#define _ARC_V2_LPB_BUILD 0x0e9
+#define _ARC_V2_LPB_CTRL 0x488
 #define _ARC_V2_IRQ_BUILD 0x0f3
 #define _ARC_V2_PCT_BUILD 0x0f5
 #define _ARC_V2_CC_BUILD 0x0f6
@@ -122,6 +126,7 @@
 #define _ARC_V2_ACC0_HI 0x582
 #define _ARC_V2_ACC0_GLO 0x581
 #define _ARC_V2_ACC0_LO 0x580
+#define _ARC_V2_DSP_BUILD 0x7A
 #define _ARC_V2_DSP_CTRL 0x59f
 #define _ARC_V2_DSP_BFLY0 0x598
 #define _ARC_V2_DSP_FFT_CTRL 0x59e
@@ -170,6 +175,11 @@
 #define _ARC_V2_AGU_MOD21 0x5f5
 #define _ARC_V2_AGU_MOD22 0x5f6
 #define _ARC_V2_AGU_MOD23 0x5f7
+#define _ARC_HW_PF_BUILD 0xf70
+#define _ARC_HW_PF_CTRL 0x4f
+
+/* _ARC_HW_PF_CTRL bits */
+#define _ARC_HW_PF_CTRL_ENABLE BIT(0)
 
 /* STATUS32/STATUS32_P0 bits */
 #define _ARC_V2_STATUS32_H (1 << 0)

@@ -8,23 +8,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
 
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/audio/vocs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
 
 #include "audio_internal.h"
 #include "vcp_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_VCP_VOL_REND_LOG_LEVEL
-#include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(bt_vcp_vol_rend);
 
 #define VOLUME_DOWN(current_vol) \
@@ -33,6 +49,12 @@ LOG_MODULE_REGISTER(bt_vcp_vol_rend);
 	((uint8_t)MIN(UINT8_MAX, (int)current_vol + vol_rend.volume_step))
 
 #define VALID_VCP_OPCODE(opcode) ((opcode) <= BT_VCP_OPCODE_MUTE)
+
+enum vol_rend_notify {
+	NOTIFY_STATE,
+	NOTIFY_FLAGS,
+	NOTIFY_NUM,
+};
 
 struct bt_vcp_vol_rend {
 	struct vcs_state state;
@@ -43,6 +65,9 @@ struct bt_vcp_vol_rend {
 	struct bt_gatt_service *service_p;
 	struct bt_vocs *vocs_insts[CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT];
 	struct bt_aics *aics_insts[CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT];
+
+	ATOMIC_DEFINE(notify, NOTIFY_NUM);
+	struct k_work_delayable notify_work;
 };
 
 static struct bt_vcp_vol_rend vol_rend;
@@ -63,6 +88,68 @@ static ssize_t read_vol_state(struct bt_conn *conn,
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &vol_rend.state, sizeof(vol_rend.state));
+}
+
+static const char *vol_rend_notify_str(enum vol_rend_notify notify)
+{
+	switch (notify) {
+	case NOTIFY_STATE:
+		return "state";
+	case NOTIFY_FLAGS:
+		return "flags";
+	default:
+		return "unknown";
+	}
+}
+
+static void notify_work_reschedule(struct bt_vcp_vol_rend *inst, enum vol_rend_notify notify,
+				   k_timeout_t delay)
+{
+	int err;
+
+	atomic_set_bit(inst->notify, notify);
+
+	err = k_work_reschedule(&inst->notify_work, delay);
+	if (err < 0) {
+		LOG_ERR("Failed to reschedule %s notification err %d", vol_rend_notify_str(notify),
+			err);
+	} else if (!K_TIMEOUT_EQ(delay, K_NO_WAIT)) {
+		LOG_DBG("%s notification scheduled in %dms", vol_rend_notify_str(notify),
+			k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&inst->notify_work)));
+	}
+}
+
+static void notify(struct bt_vcp_vol_rend *inst, enum vol_rend_notify notify,
+		   const struct bt_uuid *uuid, const void *data, uint16_t len)
+{
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, uuid, inst->service_p->attrs, data, len);
+	if (err == -ENOMEM) {
+		notify_work_reschedule(inst, notify, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
+	} else if (err < 0 && err != -ENOTCONN) {
+		LOG_ERR("Notify %s err %d", vol_rend_notify_str(notify), err);
+	}
+}
+
+static void notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_vcp_vol_rend *inst = CONTAINER_OF(d_work, struct bt_vcp_vol_rend, notify_work);
+
+	if (atomic_test_and_clear_bit(inst->notify, NOTIFY_STATE)) {
+		notify(inst, NOTIFY_STATE, BT_UUID_VCS_STATE, &inst->state, sizeof(inst->state));
+	}
+
+	if (IS_ENABLED(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE) &&
+	    atomic_test_and_clear_bit(inst->notify, NOTIFY_FLAGS)) {
+		notify(inst, NOTIFY_FLAGS, BT_UUID_VCS_FLAGS, &inst->flags, sizeof(inst->flags));
+	}
+}
+
+static void value_changed(struct bt_vcp_vol_rend *inst, enum vol_rend_notify notify)
+{
+	notify_work_reschedule(inst, notify, K_NO_WAIT);
 }
 
 static ssize_t write_vcs_control(struct bt_conn *conn,
@@ -179,9 +266,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 			vol_rend.state.volume, vol_rend.state.mute,
 			vol_rend.state.change_counter);
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_VCS_STATE,
-				    vol_rend.service_p->attrs,
-				    &vol_rend.state, sizeof(vol_rend.state));
+		value_changed(&vol_rend, NOTIFY_STATE);
 
 		if (vol_rend.cb && vol_rend.cb->state) {
 			vol_rend.cb->state(0, vol_rend.state.volume,
@@ -192,9 +277,9 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	if (volume_change && !vol_rend.flags) {
 		vol_rend.flags = 1;
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_VCS_FLAGS,
-				    vol_rend.service_p->attrs,
-				    &vol_rend.flags, sizeof(vol_rend.flags));
+		if (IS_ENABLED(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)) {
+			value_changed(&vol_rend, NOTIFY_FLAGS);
+		}
 
 		if (vol_rend.cb && vol_rend.cb->flags) {
 			vol_rend.cb->flags(0, vol_rend.flags);
@@ -203,10 +288,12 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	return len;
 }
 
+#if defined(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)
 static void flags_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("value 0x%04x", value);
 }
+#endif /* CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE */
 
 static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  void *buf, uint16_t len, uint16_t offset)
@@ -220,26 +307,34 @@ static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 #define VOCS_INCLUDES(cnt) LISTIFY(cnt, DUMMY_INCLUDE, ())
 #define AICS_INCLUDES(cnt) LISTIFY(cnt, DUMMY_INCLUDE, ())
 
-#define BT_VCS_DEFINITION \
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_VCS), \
-	VOCS_INCLUDES(CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT) \
-	AICS_INCLUDES(CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT) \
-	BT_AUDIO_CHRC(BT_UUID_VCS_STATE, \
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-		      BT_GATT_PERM_READ_ENCRYPT, \
-		      read_vol_state, NULL, NULL), \
-	BT_AUDIO_CCC(volume_state_cfg_changed), \
-	BT_AUDIO_CHRC(BT_UUID_VCS_CONTROL, \
-		      BT_GATT_CHRC_WRITE, \
-		      BT_GATT_PERM_WRITE_ENCRYPT, \
-		      NULL, write_vcs_control, NULL), \
-	BT_AUDIO_CHRC(BT_UUID_VCS_FLAGS, \
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-		      BT_GATT_PERM_READ_ENCRYPT, \
-		      read_flags, NULL, NULL), \
+/* Volume Control Service GATT Attributes */
+static struct bt_gatt_attr vcs_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_VCS),
+	VOCS_INCLUDES(CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT)
+	AICS_INCLUDES(CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT)
+	BT_AUDIO_CHRC(BT_UUID_VCS_STATE,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      read_vol_state, NULL, NULL),
+	BT_AUDIO_CCC(volume_state_cfg_changed),
+	BT_AUDIO_CHRC(BT_UUID_VCS_CONTROL,
+		      BT_GATT_CHRC_WRITE,
+		      BT_GATT_PERM_WRITE_ENCRYPT,
+		      NULL, write_vcs_control, NULL),
+#if defined(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)
+	BT_AUDIO_CHRC(BT_UUID_VCS_FLAGS,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      read_flags, NULL, NULL),
 	BT_AUDIO_CCC(flags_cfg_changed)
+#else
+	BT_AUDIO_CHRC(BT_UUID_VCS_FLAGS,
+		      BT_GATT_CHRC_READ,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      read_flags, NULL, NULL)
+#endif /* CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE */
+};
 
-static struct bt_gatt_attr vcs_attrs[] = { BT_VCS_DEFINITION };
 static struct bt_gatt_service vcs_svc;
 
 static int prepare_vocs_inst(struct bt_vcp_vol_rend_register_param *param)
@@ -247,6 +342,10 @@ static int prepare_vocs_inst(struct bt_vcp_vol_rend_register_param *param)
 	int err;
 	int j;
 	int i;
+
+	if (CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT == 0) {
+		return 0;
+	}
 
 	__ASSERT(param, "NULL param");
 
@@ -290,6 +389,10 @@ static int prepare_aics_inst(struct bt_vcp_vol_rend_register_param *param)
 	int err;
 	int j;
 	int i;
+
+	if (CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT == 0) {
+		return 0;
+	}
 
 	__ASSERT(param, "NULL param");
 
@@ -384,6 +487,9 @@ int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param)
 	}
 
 	vol_rend.cb = param->cb;
+
+	atomic_clear(vol_rend.notify);
+	k_work_init_delayable(&vol_rend.notify_work, notify_work_handler);
 
 	registered = true;
 

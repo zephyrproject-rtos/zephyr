@@ -1,7 +1,8 @@
-.. _w1_scanner_sample:
+.. zephyr:code-sample:: w1-scanner
+   :name: 1-Wire scanner
+   :relevant-api: w1_interface
 
-1-Wire Scanner Sample
-#####################
+   Scan for 1-Wire devices and print their family ID and serial number.
 
 Overview
 ********
@@ -18,7 +19,7 @@ enable and configure the drivers.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/w1/scanner
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :gen-args: -DDTC_OVERLAY_FILE=w1_serial.overlay
    :goals: build flash
    :compact:

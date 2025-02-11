@@ -81,8 +81,8 @@ void test_event_flags_no_wait_timeout(void)
 		     "Invalid event Flags ID is unexpectedly working!");
 
 	name = osEventFlagsGetName(evt_id);
-	zassert_true(strcmp(event_flags_attrs.name, name) == 0,
-		     "Error getting event_flags object name");
+	zassert_str_equal(event_flags_attrs.name, name,
+			  "Error getting event_flags object name");
 
 	id1 = osThreadNew(thread1, evt_id, &thread1_attr);
 	zassert_true(id1 != NULL, "Failed creating thread1");

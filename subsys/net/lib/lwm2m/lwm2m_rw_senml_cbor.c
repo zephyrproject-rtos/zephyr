@@ -70,6 +70,9 @@ static union cbor_io_fmt_data{
 	struct cbor_out_fmt_data o;
 } fdio;
 
+static int path_to_string(char *buf, size_t buf_size, const struct lwm2m_obj_path *input,
+			 int level_max);
+
 /*
  * SEND is called from a different context than the rest of the LwM2M functionality
  */
@@ -78,12 +81,12 @@ K_MUTEX_DEFINE(fd_mtx);
 #define GET_CBOR_FD_NAME(fd) ((fd)->names[(fd)->name_cnt])
 /* Get the current record */
 #define GET_CBOR_FD_REC(fd) \
-	&((fd)->input._lwm2m_senml__record[(fd)->input._lwm2m_senml__record_count])
+	&((fd)->input.lwm2m_senml_record_m[(fd)->input.lwm2m_senml_record_m_count])
 /* Get a record */
-#define GET_IN_FD_REC_I(fd, i) &((fd)->dcd._lwm2m_senml__record[i])
+#define GET_IN_FD_REC_I(fd, i) &((fd)->dcd.lwm2m_senml_record_m[i])
 /* Consume the current record */
 #define CONSUME_CBOR_FD_REC(fd) \
-	&((fd)->input._lwm2m_senml__record[(fd)->input._lwm2m_senml__record_count++])
+	&((fd)->input.lwm2m_senml_record_m[(fd)->input.lwm2m_senml_record_m_count++])
 /* Get CBOR output formatter data */
 #define LWM2M_OFD_CBOR(octx) ((struct cbor_out_fmt_data *)engine_get_out_user_data(octx))
 
@@ -128,7 +131,7 @@ static int fmt_range_check(struct cbor_out_fmt_data *fd)
 {
 	if (fd->name_cnt >= CONFIG_LWM2M_RW_SENML_CBOR_RECORDS ||
 	    fd->objlnk_cnt >= CONFIG_LWM2M_RW_SENML_CBOR_RECORDS ||
-	    fd->input._lwm2m_senml__record_count >= CONFIG_LWM2M_RW_SENML_CBOR_RECORDS) {
+	    fd->input.lwm2m_senml_record_m_count >= CONFIG_LWM2M_RW_SENML_CBOR_RECORDS) {
 		LOG_ERR("CONFIG_LWM2M_RW_SENML_CBOR_RECORDS too small");
 		return -ENOMEM;
 	}
@@ -149,7 +152,7 @@ static int put_basename(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 
 	char *basename = GET_CBOR_FD_NAME(fd);
 
-	len = lwm2m_path_to_string(basename, fd->name_sz, path, LWM2M_PATH_LEVEL_OBJECT_INST);
+	len = path_to_string(basename, fd->name_sz, path, LWM2M_PATH_LEVEL_OBJECT_INST);
 
 	if (len < 0) {
 		return len;
@@ -158,9 +161,9 @@ static int put_basename(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 	/* Tell CBOR encoder where to find the name */
 	struct record *record = GET_CBOR_FD_REC(fd);
 
-	record->_record_bn._record_bn.value = basename;
-	record->_record_bn._record_bn.len = len;
-	record->_record_bn_present = 1;
+	record->record_bn.record_bn.value = basename;
+	record->record_bn.record_bn.len = len;
+	record->record_bn_present = 1;
 
 	if ((len < sizeof("/0/0") - 1) || (len >= SENML_MAX_NAME_SIZE)) {
 		__ASSERT_NO_MSG(false);
@@ -187,7 +190,7 @@ static int put_end(struct lwm2m_output_context *out, struct lwm2m_obj_path *path
 	size_t len;
 	struct lwm2m_senml *input = &(LWM2M_OFD_CBOR(out)->input);
 
-	if (!input->_lwm2m_senml__record_count) {
+	if (!input->lwm2m_senml_record_m_count) {
 		len = put_empty_array(out);
 
 		return len;
@@ -255,9 +258,9 @@ static int put_begin_r(struct lwm2m_output_context *out, struct lwm2m_obj_path *
 	/* Tell CBOR encoder where to find the name */
 	struct record *record = GET_CBOR_FD_REC(fd);
 
-	record->_record_n._record_n.value = name;
-	record->_record_n._record_n.len = len;
-	record->_record_n_present = 1;
+	record->record_n.record_n.value = name;
+	record->record_n.record_n.len = len;
+	record->record_n_present = 1;
 
 	/* Makes possible to use same slot for storing r/ri name combination.
 	 * No need to increase the name count if an existing name has been used
@@ -284,12 +287,12 @@ static int put_data_timestamp(struct lwm2m_output_context *out, time_t value)
 	out_record = GET_CBOR_FD_REC(fd);
 
 	if (fd->basetime) {
-		out_record->_record_t._record_t = value - fd->basetime;
-		out_record->_record_t_present = 1;
+		out_record->record_t.record_t = value - fd->basetime;
+		out_record->record_t_present = 1;
 	} else {
 		fd->basetime = value;
-		out_record->_record_bt._record_bt = value;
-		out_record->_record_bt_present = 1;
+		out_record->record_bt.record_bt = value;
+		out_record->record_bt_present = 1;
 	}
 
 	return 0;
@@ -329,9 +332,9 @@ static int put_begin_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 	}
 
 	/* Tell CBOR encoder where to find the name */
-	record->_record_n._record_n.value = name;
-	record->_record_n._record_n.len = len;
-	record->_record_n_present = 1;
+	record->record_n.record_n.value = name;
+	record->record_n.record_n.len = len;
+	record->record_n_present = 1;
 
 	/* No need to increase the name count if an existing name has been used */
 	if (name == GET_CBOR_FD_NAME(fd)) {
@@ -350,7 +353,7 @@ static int put_name_nth_ri(struct lwm2m_output_context *out, struct lwm2m_obj_pa
 	/* With the first ri the resource name (and ri name) are already in place*/
 	if (path->res_inst_id > 0) {
 		ret = put_begin_ri(out, path);
-	} else if (record && record->_record_t_present) {
+	} else if (record && record->record_t_present) {
 		/* Name need to be add for each time serialized record */
 		ret = put_begin_r(out, path);
 	}
@@ -369,9 +372,9 @@ static int put_value(struct lwm2m_output_context *out, struct lwm2m_obj_path *pa
 	struct record *record = CONSUME_CBOR_FD_REC(LWM2M_OFD_CBOR(out));
 
 	/* Write the value */
-	record->_record_union._record_union_choice = _union_vi;
-	record->_record_union._union_vi = value;
-	record->_record_union_present = 1;
+	record->record_union.record_union_choice = union_vi_c;
+	record->record_union.union_vi = value;
+	record->record_union_present = 1;
 
 	return 0;
 }
@@ -407,9 +410,9 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 	struct record *record = CONSUME_CBOR_FD_REC(LWM2M_OFD_CBOR(out));
 
 	/* Write the value */
-	record->_record_union._record_union_choice = _union_vi;
-	record->_record_union._union_vi = (int64_t)value;
-	record->_record_union_present = 1;
+	record->record_union.record_union_choice = union_vi_c;
+	record->record_union.union_vi = (int64_t)value;
+	record->record_union_present = 1;
 
 	return 0;
 }
@@ -425,9 +428,9 @@ static int put_float(struct lwm2m_output_context *out, struct lwm2m_obj_path *pa
 	struct record *record = CONSUME_CBOR_FD_REC(LWM2M_OFD_CBOR(out));
 
 	/* Write the value */
-	record->_record_union._record_union_choice = _union_vf;
-	record->_record_union._union_vf = *value;
-	record->_record_union_present = 1;
+	record->record_union.record_union_choice = union_vf_c;
+	record->record_union.union_vf = *value;
+	record->record_union_present = 1;
 
 	return 0;
 }
@@ -444,10 +447,10 @@ static int put_string(struct lwm2m_output_context *out, struct lwm2m_obj_path *p
 	struct record *record = CONSUME_CBOR_FD_REC(LWM2M_OFD_CBOR(out));
 
 	/* Write the value */
-	record->_record_union._record_union_choice = _union_vs;
-	record->_record_union._union_vs.value = buf;
-	record->_record_union._union_vs.len = buflen;
-	record->_record_union_present = 1;
+	record->record_union.record_union_choice = union_vs_c;
+	record->record_union.union_vs.value = buf;
+	record->record_union.union_vs.len = buflen;
+	record->record_union_present = 1;
 
 	return 0;
 }
@@ -463,9 +466,9 @@ static int put_bool(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 	struct record *record = CONSUME_CBOR_FD_REC(LWM2M_OFD_CBOR(out));
 
 	/* Write the value */
-	record->_record_union._record_union_choice = _union_vb;
-	record->_record_union._union_vb = value;
-	record->_record_union_present = 1;
+	record->record_union.record_union_choice = union_vb_c;
+	record->record_union.union_vb = value;
+	record->record_union_present = 1;
 
 	return 0;
 }
@@ -482,10 +485,10 @@ static int put_opaque(struct lwm2m_output_context *out, struct lwm2m_obj_path *p
 	struct record *record = CONSUME_CBOR_FD_REC(LWM2M_OFD_CBOR(out));
 
 	/* Write the value */
-	record->_record_union._record_union_choice = _union_vd;
-	record->_record_union._union_vd.value = buf;
-	record->_record_union._union_vd.len = buflen;
-	record->_record_union_present = 1;
+	record->record_union.record_union_choice = union_vd_c;
+	record->record_union.union_vd.value = buf;
+	record->record_union.union_vd.len = buflen;
+	record->record_union_present = 1;
 
 	return 0;
 }
@@ -519,10 +522,10 @@ static int put_objlnk(struct lwm2m_output_context *out, struct lwm2m_obj_path *p
 	struct record *record = CONSUME_CBOR_FD_REC(LWM2M_OFD_CBOR(out));
 
 	/* Write the value */
-	record->_record_union._record_union_choice = _union_vlo;
-	record->_record_union._union_vlo.value = objlink_buf;
-	record->_record_union._union_vlo.len = objlnk_len;
-	record->_record_union_present = 1;
+	record->record_union.record_union_choice = union_vlo_c;
+	record->record_union.union_vlo.value = objlink_buf;
+	record->record_union.union_vlo.len = objlnk_len;
+	record->record_union_present = 1;
 
 	fd->objlnk_cnt++;
 
@@ -545,14 +548,14 @@ static int get_opaque(struct lwm2m_input_context *in,
 			return -EINVAL;
 		}
 
-		opaque->len = fd->current->_record_union._union_vd.len;
+		opaque->len = fd->current->record_union.union_vd.len;
 
 		if (buflen < opaque->len) {
 			LOG_DBG("Write opaque failed, no buffer space");
 			return -ENOMEM;
 		}
 
-		dest = memcpy(value, fd->current->_record_union._union_vd.value, opaque->len);
+		dest = memcpy(value, fd->current->record_union.union_vd.value, opaque->len);
 		*last_block = true;
 	} else {
 		LOG_DBG("Blockwise transfer not supported with SenML CBOR");
@@ -571,7 +574,7 @@ static int get_s32(struct lwm2m_input_context *in, int32_t *value)
 		return -EINVAL;
 	}
 
-	*value = fd->current->_record_union._union_vi;
+	*value = fd->current->record_union.union_vi;
 	fd->current = NULL;
 
 	return 0;
@@ -586,7 +589,7 @@ static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 		return -EINVAL;
 	}
 
-	*value = fd->current->_record_union._union_vi;
+	*value = fd->current->record_union.union_vi;
 	fd->current = NULL;
 
 	return 0;
@@ -612,7 +615,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 		return -EINVAL;
 	}
 
-	*value = fd->current->_record_union._union_vf;
+	*value = fd->current->record_union.union_vf;
 	fd->current = NULL;
 
 	return 0;
@@ -628,9 +631,9 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *buf, size_t bufle
 		return -EINVAL;
 	}
 
-	len = MIN(buflen-1, fd->current->_record_union._union_vs.len);
+	len = MIN(buflen-1, fd->current->record_union.union_vs.len);
 
-	memcpy(buf, fd->current->_record_union._union_vs.value, len);
+	memcpy(buf, fd->current->record_union.union_vs.value, len);
 	buf[len] = '\0';
 
 	fd->current = NULL;
@@ -695,7 +698,7 @@ static int get_bool(struct lwm2m_input_context *in, bool *value)
 		return -EINVAL;
 	}
 
-	*value = fd->current->_record_union._union_vb;
+	*value = fd->current->record_union.union_vb;
 	fd->current = NULL;
 
 	return 0;
@@ -724,9 +727,9 @@ static int do_write_op_item(struct lwm2m_message *msg, struct record *rec)
 	}
 
 	/* If there's no name then the basename forms the path */
-	if (rec->_record_n_present) {
-		len = MIN(sizeof(name) - 1, rec->_record_n._record_n.len);
-		snprintk(name, len + 1, "%s", rec->_record_n._record_n.value);
+	if (rec->record_n_present) {
+		len = MIN(sizeof(name) - 1, rec->record_n.record_n.len);
+		snprintk(name, len + 1, "%s", rec->record_n.record_n.value);
 	}
 
 	/* Form fully qualified path name */
@@ -833,12 +836,15 @@ static uint8_t parse_composite_read_paths(struct lwm2m_message *msg,
 	uint_fast8_t dret;
 	int len;
 	int ret;
+	char *payload;
+	uint16_t in_len;
 
 	setup_in_fmt_data(msg);
 
 	fd = engine_get_in_user_data(&msg->in);
+	payload = (char *)coap_packet_get_payload(msg->in.in_cpkt, &in_len);
 
-	dret = cbor_decode_lwm2m_senml(ICTX_BUF_R_REGION(&msg->in), &fd->dcd, &isize);
+	dret = cbor_decode_lwm2m_senml(payload, in_len, &fd->dcd, &isize);
 
 	if (dret != ZCBOR_SUCCESS) {
 		__ASSERT_NO_MSG(false);
@@ -847,29 +853,29 @@ static uint8_t parse_composite_read_paths(struct lwm2m_message *msg,
 
 	msg->in.offset += isize;
 
-	for (int idx = 0; idx < fd->dcd._lwm2m_senml__record_count; idx++) {
+	for (int idx = 0; idx < fd->dcd.lwm2m_senml_record_m_count; idx++) {
 
 		/* Where to find the basenames and names */
 		struct record *record = GET_IN_FD_REC_I(fd, idx);
 
 		/* Set null terminated effective basename */
-		if (record->_record_bn_present) {
-			len = MIN(sizeof(basename)-1, record->_record_bn._record_bn.len);
-			snprintk(basename, len + 1, "%s", record->_record_bn._record_bn.value);
+		if (record->record_bn_present) {
+			len = MIN(sizeof(basename)-1, record->record_bn.record_bn.len);
+			snprintk(basename, len + 1, "%s", record->record_bn.record_bn.value);
 			basename[len] = '\0';
 		}
 
 		/* Best effort with read, skip if no proper name is available */
-		if (!record->_record_n_present) {
+		if (!record->record_n_present) {
 			if (strcmp(basename, "") == 0) {
 				continue;
 			}
 		}
 
 		/* Set null terminated name */
-		if (record->_record_n_present) {
-			len = MIN(sizeof(name)-1, record->_record_n._record_n.len);
-			snprintk(name, len + 1, "%s", record->_record_n._record_n.value);
+		if (record->record_n_present) {
+			len = MIN(sizeof(name)-1, record->record_n.record_n.len);
+			snprintk(name, len + 1, "%s", record->record_n.record_n.value);
 			name[len] = '\0';
 		}
 
@@ -934,9 +940,9 @@ int do_composite_read_op_senml_cbor(struct lwm2m_message *msg)
 
 	lwm2m_engine_clear_duplicate_path(&lwm_path_list, &lwm_path_free_list);
 
-	return do_composite_read_op_for_parsed_path_senml_cbor(msg, &lwm_path_list);
+	return do_composite_read_op_for_parsed_list(msg, LWM2M_FORMAT_APP_SENML_CBOR,
+						    &lwm_path_list);
 }
-
 
 int do_write_op_senml_cbor(struct lwm2m_message *msg)
 {
@@ -949,11 +955,11 @@ int do_write_op_senml_cbor(struct lwm2m_message *msg)
 	 * go directly to the message processing
 	 */
 	if (msg->in.block_ctx != NULL && msg->in.block_ctx->ctx.current > 0) {
-		msg->path.res_id = msg->in.block_ctx->res_id;
-		msg->path.level = msg->in.block_ctx->level;
+		msg->path.res_id = msg->in.block_ctx->path.res_id;
+		msg->path.level = msg->in.block_ctx->path.level;
 
 		if (msg->path.level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
-			msg->path.res_inst_id = msg->in.block_ctx->res_inst_id;
+			msg->path.res_inst_id = msg->in.block_ctx->path.res_inst_id;
 		}
 
 		return do_write_op_item(msg, NULL);
@@ -973,30 +979,30 @@ int do_write_op_senml_cbor(struct lwm2m_message *msg)
 
 	msg->in.offset += decoded_sz;
 
-	for (int idx = 0; idx < fd->dcd._lwm2m_senml__record_count; idx++) {
+	for (int idx = 0; idx < fd->dcd.lwm2m_senml_record_m_count; idx++) {
 
-		struct record *rec = &fd->dcd._lwm2m_senml__record[idx];
+		struct record *rec = &fd->dcd.lwm2m_senml_record_m[idx];
 
 		/* Basename applies for current and succeeding records */
-		if (rec->_record_bn_present) {
+		if (rec->record_bn_present) {
 			int len = MIN(sizeof(fd->basename) - 1,
-				rec->_record_bn._record_bn.len);
+				rec->record_bn.record_bn.len);
 
-			snprintk(fd->basename, len + 1, "%s", rec->_record_bn._record_bn.value);
+			snprintk(fd->basename, len + 1, "%s", rec->record_bn.record_bn.value);
 			goto write;
 		}
 
 		/* Keys' lexicographic order differ from the default */
-		for (int jdx = 0; jdx < rec->_record__key_value_pair_count; jdx++) {
+		for (int jdx = 0; jdx < rec->record_key_value_pair_m_count; jdx++) {
 			struct key_value_pair *kvp =
-				&(rec->_record__key_value_pair[jdx]._record__key_value_pair);
+				&(rec->record_key_value_pair_m[jdx].record_key_value_pair_m);
 
-			if (kvp->_key_value_pair_key == lwm2m_senml_cbor_key_bn) {
+			if (kvp->key_value_pair_key == lwm2m_senml_cbor_key_bn) {
 				int len = MIN(sizeof(fd->basename) - 1,
-					kvp->_key_value_pair._value_tstr.len);
+					kvp->key_value_pair.value_tstr.len);
 
 				snprintk(fd->basename, len + 1, "%s",
-					kvp->_key_value_pair._value_tstr.value);
+					kvp->key_value_pair.value_tstr.value);
 				break;
 			}
 		}
@@ -1054,4 +1060,55 @@ int do_send_op_senml_cbor(struct lwm2m_message *msg, sys_slist_t *lwm2m_path_lis
 	clear_out_fmt_data(msg);
 
 	return ret;
+}
+
+static int path_to_string(char *buf, size_t buf_size, const struct lwm2m_obj_path *input,
+			 int level_max)
+{
+	size_t fpl = 0; /* Length of the formed path */
+	int level;
+	int w;
+
+	if (!buf || buf_size < sizeof("/") || !input) {
+		return -EINVAL;
+	}
+
+	memset(buf, '\0', buf_size);
+
+	level = MIN(input->level, level_max);
+
+	/* Write path element at a time and leave space for the terminating NULL */
+	for (int idx = LWM2M_PATH_LEVEL_NONE; idx <= level; idx++) {
+		switch (idx) {
+		case LWM2M_PATH_LEVEL_NONE:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "/");
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "/", input->obj_id);
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT_INST:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "/",
+				     input->obj_inst_id);
+			break;
+		case LWM2M_PATH_LEVEL_RESOURCE:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "", input->res_id);
+			break;
+		case LWM2M_PATH_LEVEL_RESOURCE_INST:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "/%" PRIu16 "",
+				     input->res_inst_id);
+			break;
+		default:
+			__ASSERT_NO_MSG(false);
+			return -EINVAL;
+		}
+
+		if (w < 0 || w >= buf_size - fpl) {
+			return -ENOBUFS;
+		}
+
+		/* Next path element, overwrites terminating NULL */
+		fpl += w;
+	}
+
+	return fpl;
 }

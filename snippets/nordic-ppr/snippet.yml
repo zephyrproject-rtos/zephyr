@@ -1,0 +1,8 @@
+name: nordic-ppr
+append:
+  EXTRA_DTC_OVERLAY_FILE: nordic-ppr.overlay
+
+boards:
+  nrf54h20dk/nrf54h20/cpuapp:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/nrf54h20dk_nrf54h20_cpuapp.overlay

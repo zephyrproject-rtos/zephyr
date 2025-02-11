@@ -57,6 +57,9 @@ child-binding:
     pinmux:
       type: phandle
       description: Configurations of pinmux selection
+    dev-ctl:
+      type: array
+      description: Configurations of device control such as tri-state, io type and so on.
     periph-pupd:
       type: array
       description: |

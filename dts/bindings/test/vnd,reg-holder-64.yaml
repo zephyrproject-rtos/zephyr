@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Syntacore
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test 64-bit register property container
+
+compatible: "vnd,reg-holder-64"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true

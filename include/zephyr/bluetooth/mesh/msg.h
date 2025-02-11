@@ -86,6 +86,9 @@ struct bt_mesh_msg_ctx {
 	/** Destination address of a received message. Not used for sending. */
 	uint16_t recv_dst;
 
+	/** Label UUID if Remote address is Virtual address, or NULL otherwise. */
+	const uint8_t *uuid;
+
 	/** RSSI of received packet. Not used for sending. */
 	int8_t  recv_rssi;
 
@@ -95,12 +98,17 @@ struct bt_mesh_msg_ctx {
 	/** Force sending reliably by using segment acknowledgment */
 	bool  send_rel;
 
+	/** Send message with a random delay according to the Access layer transmitting rules. */
+	bool  rnd_delay;
+
 	/** TTL, or BT_MESH_TTL_DEFAULT for default TTL. */
 	uint8_t  send_ttl;
 };
 
 /**
  * @brief Helper for bt_mesh_msg_ctx structure initialization.
+ *
+ * @note If @c dst is a Virtual Address, Label UUID shall be initialized separately.
  *
  * @param net_key_idx NetKey Index of the subnet to send the message on. Only used if
  * @c app_key_idx points to devkey.
@@ -141,7 +149,12 @@ struct bt_mesh_msg_ctx {
  * @param pub Pointer to a model publication context.
  */
 #define BT_MESH_MSG_CTX_INIT_PUB(pub) \
-	BT_MESH_MSG_CTX_INIT(0, (pub)->key, (pub)->addr, (pub)->ttl)
+	{ \
+		.app_idx = (pub)->key, \
+		.addr = (pub)->addr, \
+		.send_ttl = (pub)->ttl, \
+		.uuid = (pub)->uuid, \
+	}
 
 /** @brief Initialize a model message.
  *

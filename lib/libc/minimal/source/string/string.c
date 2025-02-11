@@ -43,7 +43,7 @@ char *strncpy(char *ZRESTRICT d, const char *ZRESTRICT s, size_t n)
 {
 	char *dest = d;
 
-	while ((n > 0) && *s != '\0') {
+	while ((n > 0) && (*s != '\0')) {
 		*d = *s;
 		s++;
 		d++;
@@ -92,7 +92,7 @@ char *strrchr(const char *s, int c)
 		if (*s == (char)c) {
 			match = (char *)s;
 		}
-	} while (*s++);
+	} while (*s++ != '\0');
 
 	return match;
 }
@@ -109,25 +109,6 @@ size_t strlen(const char *s)
 	size_t n = 0;
 
 	while (*s != '\0') {
-		s++;
-		n++;
-	}
-
-	return n;
-}
-
-/**
- *
- * @brief Get fixed-size string length
- *
- * @return number of bytes in fixed-size string <s>
- */
-
-size_t strnlen(const char *s, size_t maxlen)
-{
-	size_t n = 0;
-
-	while (*s != '\0' && n < maxlen) {
 		s++;
 		n++;
 	}

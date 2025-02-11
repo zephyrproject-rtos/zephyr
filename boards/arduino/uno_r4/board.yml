@@ -1,0 +1,9 @@
+boards:
+  - name: arduino_uno_r4_minima
+    vendor: arduino
+    socs:
+      - name: r7fa4m1ab3cfm
+  - name: arduino_uno_r4_wifi
+    vendor: arduino
+    socs:
+      - name: r7fa4m1ab3cfm

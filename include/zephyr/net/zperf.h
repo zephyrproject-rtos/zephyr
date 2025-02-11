@@ -18,13 +18,17 @@
 #define ZEPHYR_INCLUDE_NET_ZPERF_H_
 
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
 enum zperf_status {
 	ZPERF_SESSION_STARTED,
+	ZPERF_SESSION_PERIODIC_RESULT,
 	ZPERF_SESSION_FINISHED,
 	ZPERF_SESSION_ERROR
 } __packed;
@@ -34,26 +38,35 @@ struct zperf_upload_params {
 	uint32_t duration_ms;
 	uint32_t rate_kbps;
 	uint16_t packet_size;
+	char if_name[IFNAMSIZ];
 	struct {
 		uint8_t tos;
+		int tcp_nodelay;
+		int priority;
+		uint32_t report_interval_ms;
 	} options;
 };
 
 struct zperf_download_params {
 	uint16_t port;
+	struct sockaddr addr;
+	char if_name[IFNAMSIZ];
 };
 
+/** @endcond */
+
+/** Performance results */
 struct zperf_results {
-	uint32_t nb_packets_sent;
-	uint32_t nb_packets_rcvd;
-	uint32_t nb_packets_lost;
-	uint32_t nb_packets_outorder;
-	uint32_t total_len;
-	uint32_t time_in_us;
-	uint32_t jitter_in_us;
-	uint32_t client_time_in_us;
-	uint32_t packet_size;
-	uint32_t nb_packets_errors;
+	uint32_t nb_packets_sent;     /**< Number of packets sent */
+	uint32_t nb_packets_rcvd;     /**< Number of packets received */
+	uint32_t nb_packets_lost;     /**< Number of packets lost */
+	uint32_t nb_packets_outorder; /**< Number of packets out of order */
+	uint64_t total_len;           /**< Total length of the transferred data */
+	uint64_t time_in_us;          /**< Total time of the transfer in microseconds */
+	uint32_t jitter_in_us;        /**< Jitter in microseconds */
+	uint64_t client_time_in_us;   /**< Client connection time in microseconds */
+	uint32_t packet_size;         /**< Packet size */
+	uint32_t nb_packets_errors;   /**< Number of packet errors */
 };
 
 /**

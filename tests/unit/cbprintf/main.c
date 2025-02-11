@@ -465,10 +465,10 @@ ZTEST(prf, test_d_length)
 	PRF_CHECK("3060399406/1876543210", rc);
 
 	if (!IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TEST_PRF(&rc, "%hd/%hd", min, max);
+		TEST_PRF(&rc, "%hd/%hd", (short) min, (short) max);
 		PRF_CHECK("-722/-14614", rc);
 
-		TEST_PRF(&rc, "%hhd/%hhd", min, max);
+		TEST_PRF(&rc, "%hhd/%hhd", (char) min, (char) max);
 		PRF_CHECK("46/-22", rc);
 	}
 
@@ -601,10 +601,10 @@ ZTEST(prf, test_x_length)
 		return;
 	}
 
-	TEST_PRF(&rc, "%hx/%hX", min, max);
+	TEST_PRF(&rc, "%hx/%hX", (short) min, (short) max);
 	PRF_CHECK("2c1c/2D1D", rc);
 
-	TEST_PRF(&rc, "%hhx/%hhX", min, max);
+	TEST_PRF(&rc, "%hhx/%hhX", (char) min, (char) max);
 	PRF_CHECK("1c/1D", rc);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {
@@ -1306,14 +1306,14 @@ ZTEST(prf, test_cbprintf_fsc_package)
 	cbpprintf(fsc_package_cb, &pout, package);
 	*pout = '\0';
 
-	zassert_equal(strcmp(out_str, exp_str1), 0);
+	zassert_str_equal(out_str, exp_str1);
 	zassert_true(strcmp(exp_str0, exp_str1) != 0);
 
 	/* FSC package contains original content. */
 	pout = out_str;
 	cbpprintf(fsc_package_cb, &pout, fsc_package);
 	*pout = '\0';
-	zassert_equal(strcmp(out_str, exp_str0), 0);
+	zassert_str_equal(out_str, exp_str0);
 }
 
 ZTEST(prf, test_cbpprintf)
@@ -1336,6 +1336,105 @@ ZTEST(prf, test_cbpprintf)
 
 ZTEST(prf, test_nop)
 {
+}
+
+ZTEST(prf, test_is_none_char_ptr)
+{
+	char c = 0;
+	const char cc = 0;
+	volatile char vc = 0;
+	volatile const char vcc = 0;
+
+	unsigned char uc = 0;
+	const unsigned char cuc = 0;
+	volatile unsigned char vuc = 0;
+	volatile const unsigned char vcuc = 0;
+
+	short s = 0;
+	unsigned short us = 0;
+
+	int i = 0;
+	unsigned int ui = 0;
+
+	long l = 0;
+	unsigned long ul = 0;
+
+	long long ll = 0;
+	unsigned long long ull = 0;
+
+	float f = 0.1;
+	double d = 0.1;
+
+	_Pragma("GCC diagnostic push")
+	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(c), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(cc), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(vc), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(vcc), 0);
+
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&c), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&cc), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&vc), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&vcc), 0);
+
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(uc), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(cuc), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(vuc), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(vcuc), 0);
+
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&uc), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&cuc), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&vuc), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&vcuc), 0);
+
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(s), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(us), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&s), 1);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&us), 1);
+
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(i), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(ui), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&i), 1);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&ui), 1);
+
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(l), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(ul), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&l), 1);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&ul), 1);
+
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(ll), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(ull), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&ll), 1);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&ull), 1);
+
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(f), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(d), 0);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&f), 1);
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(&d), 1);
+
+	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR((void *)&c), 1);
+
+	_Pragma("GCC diagnostic pop")
+}
+
+ZTEST(prf, test_p_count)
+{
+	zassert_equal(Z_CBPRINTF_P_COUNT("no pointers"), 0);
+	zassert_equal(Z_CBPRINTF_P_COUNT("no %%p pointers"), 0);
+
+	zassert_equal(Z_CBPRINTF_P_COUNT("%d %%p %x %s %p %f"), 1);
+	zassert_equal(Z_CBPRINTF_P_COUNT("%p %p %llx %p "), 3);
+}
+
+ZTEST(prf, test_pointers_validate)
+{
+	_Pragma("GCC diagnostic push")
+	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
+	zassert_equal(Z_CBPRINTF_POINTERS_VALIDATE("no arguments"), true);
+	/* const char fails validation */
+	zassert_equal(Z_CBPRINTF_POINTERS_VALIDATE("%p", "string"), false);
+	zassert_equal(Z_CBPRINTF_POINTERS_VALIDATE("%p", (void *)"string"), true);
+	_Pragma("GCC diagnostic pop")
 }
 
 static void *cbprintf_setup(void)

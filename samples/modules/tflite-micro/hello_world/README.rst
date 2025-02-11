@@ -34,10 +34,17 @@ Building and Running
 The sample should work on most boards since it does not rely
 on any sensors.
 
+Add the tflite-micro module to your West manifest and pull it:
+
+.. code-block:: console
+
+    west config manifest.project-filter -- +tflite-micro
+    west update
+
 The reference kernel application can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/modules/tensorflow/hello_world
+   :zephyr-app: samples/modules/tflite-micro/hello_world
    :host-os: unix
    :board: qemu_x86
    :goals: run
@@ -58,7 +65,7 @@ the `PATH` variable, then building and testing can be done with following
 commands.
 
 ```
-$ west build -p auto -b mps3_an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
+$ west build -p auto -b mps3/an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
 $ FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf
 ```
 
@@ -91,17 +98,17 @@ It is recommended that you copy and modify one of the two TensorFlow
 samples when creating your own TensorFlow project. To build with
 TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`:
 
-.. code-block:: kconfig
+.. code-block:: cfg
 
     CONFIG_CPP=y
-    CONFIG_NEWLIB_LIBC=y
+    CONFIG_REQUIRES_FULL_LIBC=y
     CONFIG_TENSORFLOW_LITE_MICRO=y
 
 Note that the CMSIS-NN kernel sample demonstrates how to use CMSIS-NN optimized kernels with
 TensorFlow Lite Micro, in that is sets below Kconfig option. Note also that this
 Kconfig option is only set for Arm Cortex-M cores, i.e. option CPU_CORTEX_M is set.
 
-.. code-block:: kconfig
+.. code-block:: cfg
 
     CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y
 

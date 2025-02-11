@@ -13,7 +13,7 @@
 #include <soc/apb_ctrl_reg.h>
 #include <esp_system.h>
 #include <soc.h>
-#include <hal/cpu_hal.h>
+#include <esp_cpu.h>
 #include <zephyr/drivers/entropy.h>
 
 static inline uint32_t entropy_esp32_get_u32(void)
@@ -33,7 +33,7 @@ static inline uint32_t entropy_esp32_get_u32(void)
 	uint32_t ccount;
 
 	do {
-		ccount = cpu_hal_get_cycle_count();
+		ccount = esp_cpu_get_cycle_count();
 	} while (ccount - last_ccount < cpu_to_apb_freq_ratio * 16);
 	last_ccount = ccount;
 
@@ -44,7 +44,7 @@ static int entropy_esp32_get_entropy(const struct device *dev, uint8_t *buf,
 				     uint16_t len)
 {
 	assert(buf != NULL);
-	uint8_t *buf_bytes = (uint8_t *)buf;
+	uint8_t *buf_bytes = buf;
 
 	while (len > 0) {
 		uint32_t word = entropy_esp32_get_u32();

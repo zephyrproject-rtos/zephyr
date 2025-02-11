@@ -99,7 +99,7 @@ Thread stack alignment
 Each Zephyr thread is defined with its own stack memory. By default, Cortex-M enforces a double word thread stack alignment, see
 :kconfig:option:`CONFIG_STACK_ALIGN_DOUBLE_WORD`. If MPU-based HW-assisted stack overflow detection (:kconfig:option:`CONFIG_MPU_STACK_GUARD`)
 is enabled, thread stacks need to be aligned with a larger value, reflected by :kconfig:option:`CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE`.
-In Arm v6-M and Arm v7-M architecture variants, thread stacks are additionally required to be align with a value equal to their size,
+In Arm v6-M and Arm v7-M architecture variants, thread stacks are additionally required to align with a value equal to their size,
 in applications that need to support user mode (:kconfig:option:`CONFIG_USERSPACE`). The thread stack sizes in that case need to be a power
 of two. This is all reflected by :kconfig:option:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT`, that is enforced in Arm v6-M and Arm v7-M
 builds with user mode support.
@@ -169,7 +169,7 @@ PendSV exception return sequence restores the new thread's caller-saved register
 return address, as part of unstacking the exception stack frame.
 
 The implementation of the context-switch mechanism is present in
-:file:`arch/arm/core/aarch32/swap_helper.S`.
+:file:`arch/arm/core/cortex_m/swap_helper.S`.
 
 Stack limit checking (Arm v8-M)
 -------------------------------
@@ -262,7 +262,7 @@ interrupt. If the ZLI feature is enabled in Mainline Cortex-M builds (see
 * Regular HW interrupts are assigned priority levels lower than SVC.
 
 The priority level configuration in Cortex-M is implemented in
-:file:`include/arch/arm/aarch32/exc.h`.
+:file:`include/zephyr/arch/arm/cortex_m/exception.h`.
 
 Locking and unlocking IRQs
 --------------------------
@@ -337,7 +337,7 @@ CPU Idling
 
 The Cortex-M architecture port implements both k_cpu_idle()
 and k_cpu_atomic_idle(). The implementation is present in
-:file:`arch/arm/core/aarch32/cpu_idle.S`.
+:file:`arch/arm/core/cortex_m/cpu_idle.c`.
 
 In both implementations, the processor
 will attempt to put the core to low power mode.
@@ -440,12 +440,11 @@ are programmed during system boot.
   SRAM. (An exception to this setting is when :kconfig:option:`CONFIG_MPU_GAP_FILLING` is disabled (Arm v8-M only);
   in that case no SRAM MPU programming is done so the access is determined by the default
   Arm memory map policies, allowing for privileged-only RWX permissions on SRAM).
-* All the memory regions defined in the devicetree with the compatible
-  :dtcompatible:`zephyr,memory-region` and at least the property
-  ``zephyr,memory-region-mpu`` defining the MPU permissions for the memory region.
+* All the memory regions defined in the devicetree with the property
+  ``zephyr,memory-attr`` defining the MPU permissions for the memory region.
   See the next section for more details.
 
-The above MPU regions are defined in :file:`soc/arm/common/cortex_m/arm_mpu_regions.c`.
+The above MPU regions are defined in :file:`arch/arm/core/mpu/arm_mpu_regions.c`.
 Alternative MPU configurations are allowed by enabling :kconfig:option:`CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS`.
 When enabled, this option signifies that the Cortex-M SoC will define and
 configure its own fixed MPU regions in the SoC definition.
@@ -453,15 +452,10 @@ configure its own fixed MPU regions in the SoC definition.
 Fixed MPU regions defined in devicetree
 ---------------------------------------
 
-The user can define memory regions to be allocated and created in the linker
-script using nodes with the :dtcompatible:`zephyr,memory-region` devicetree
-compatible. When the property ``zephyr,memory-region-mpu`` is present in such
-a node, a new MPU region will be allocated and programmed during system
-boot.
-
-The property ``zephyr,memory-region-mpu`` is a string carrying the attributes
-for the MPU region. It is converted to a C token for use defining the attributes
-of the MPU region.
+When the property ``zephyr,memory-attr`` is present in a memory node, a new MPU
+region will be allocated and programmed during system boot. When used with the
+:dtcompatible:`zephyr,memory-region` devicetree compatible, it will result in a
+linker section being generated associated to that MPU region.
 
 For example, to define a new non-cacheable memory region in devicetree:
 
@@ -471,13 +465,11 @@ For example, to define a new non-cacheable memory region in devicetree:
         compatible = "zephyr,memory-region", "mmio-sram";
         reg = <0x20300000 0x100000>;
         zephyr,memory-region = "SRAM_NO_CACHE";
-        zephyr,memory-region-mpu = "RAM_NOCACHE";
+        zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
    };
 
-This will automatically create a new MPU entry in
-:zephyr_file:`soc/arm/common/cortex_m/arm_mpu_regions.c` with the correct name, base,
-size and attributes gathered directly from the devicetree. See
-:zephyr_file:`include/zephyr/linker/devicetree_regions.h` for more details.
+This will automatically create a new MPU entry in with the correct name, base,
+size and attributes gathered directly from the devicetree.
 
 Static MPU regions
 ------------------
@@ -626,7 +618,7 @@ Linking Cortex-M applications
 *****************************
 
 Most Cortex-M platforms make use of the default Cortex-M
-GCC linker script in :file:`include/arch/arm/aarch32/cortex-m/scripts/linked.ld`,
+GCC linker script in :file:`include/zephyr/arch/arm/cortex_m/scripts/linker.ld`,
 although it is possible for platforms to use a custom linker
 script as well.
 

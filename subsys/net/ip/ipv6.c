@@ -74,11 +74,29 @@ int net_ipv6_create(struct net_pkt *pkt,
 	ipv6_hdr->len     = 0U;
 	ipv6_hdr->nexthdr = 0U;
 
-	/* User can tweak the default hop limit if needed */
+	/* Set the hop limit by default from net_pkt as that could
+	 * be set for example when sending NS. If the limit is 0,
+	 * then take the value from socket.
+	 */
 	ipv6_hdr->hop_limit = net_pkt_ipv6_hop_limit(pkt);
 	if (ipv6_hdr->hop_limit == 0U) {
-		ipv6_hdr->hop_limit =
-			net_if_ipv6_get_hop_limit(net_pkt_iface(pkt));
+		if (net_ipv6_is_addr_mcast(dst)) {
+			if (net_pkt_context(pkt) != NULL) {
+				ipv6_hdr->hop_limit =
+					net_context_get_ipv6_mcast_hop_limit(net_pkt_context(pkt));
+			} else {
+				ipv6_hdr->hop_limit =
+					net_if_ipv6_get_mcast_hop_limit(net_pkt_iface(pkt));
+			}
+		} else {
+			if (net_pkt_context(pkt) != NULL) {
+				ipv6_hdr->hop_limit =
+					net_context_get_ipv6_hop_limit(net_pkt_context(pkt));
+			} else {
+				ipv6_hdr->hop_limit =
+					net_if_ipv6_get_hop_limit(net_pkt_iface(pkt));
+			}
+		}
 	}
 
 	net_ipv6_addr_copy_raw(ipv6_hdr->dst, (uint8_t *)dst);
@@ -120,12 +138,12 @@ int net_ipv6_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&
 	    next_header_proto == IPPROTO_UDP) {
-		return net_udp_finalize(pkt);
+		return net_udp_finalize(pkt, false);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   next_header_proto == IPPROTO_TCP) {
-		return net_tcp_finalize(pkt);
+		return net_tcp_finalize(pkt, false);
 	} else if (next_header_proto == IPPROTO_ICMPV6) {
-		return net_icmpv6_finalize(pkt);
+		return net_icmpv6_finalize(pkt, false);
 	}
 
 	return 0;
@@ -393,12 +411,15 @@ static enum net_verdict ipv6_forward_mcast_packet(struct net_pkt *pkt,
 #if defined(CONFIG_NET_ROUTE_MCAST)
 	int routed;
 
-	/* check if routing loop could be created or if the destination is of
-	 * interface local scope or if from link local source
+	/* Continue processing without forwarding if:
+	 *   1. routing loop could be created
+	 *   2. the destination is of interface local scope
+	 *   3. is from link local source
+	 *   4. hop limit is or would become zero
 	 */
-	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->src)  ||
-	      net_ipv6_is_addr_mcast_iface((struct in6_addr *)hdr->dst) ||
-	       net_ipv6_is_ll_addr((struct in6_addr *)hdr->src)) {
+	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->src) ||
+	    net_ipv6_is_addr_mcast_iface((struct in6_addr *)hdr->dst) ||
+	    net_ipv6_is_ll_addr((struct in6_addr *)hdr->src) || hdr->hop_limit <= 1) {
 		return NET_CONTINUE;
 	}
 
@@ -448,7 +469,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	union net_ip_header ip;
 	int pkt_len;
 
-#if defined(CONFIG_NET_L2_VIRTUAL)
+#if defined(CONFIG_NET_L2_IPIP)
 	struct net_pkt_cursor hdr_start;
 
 	net_pkt_cursor_backup(pkt, &hdr_start);
@@ -487,6 +508,8 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	if (!is_loopback) {
+		struct net_if_addr *ifaddr;
+
 		if (net_ipv6_is_addr_loopback((struct in6_addr *)hdr->dst) ||
 		    net_ipv6_is_addr_loopback((struct in6_addr *)hdr->src)) {
 			NET_DBG("DROP: ::1 packet");
@@ -500,6 +523,16 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		     (net_ipv6_is_addr_mcast_site((struct in6_addr *)hdr->dst) ||
 		      net_ipv6_is_addr_mcast_org((struct in6_addr *)hdr->dst)))) {
 			NET_DBG("DROP: invalid scope multicast packet");
+			goto drop;
+		}
+
+		/* We need to pass the packet through in case our address is
+		 * tentative, as receiving a packet with a tentative address as
+		 * source means that duplicate address has been detected.
+		 */
+		ifaddr = net_if_ipv6_addr_lookup((struct in6_addr *)hdr->src, NULL);
+		if (ifaddr != NULL && ifaddr->addr_state != NET_ADDR_TENTATIVE) {
+			NET_DBG("DROP: src addr is %s", "mine");
 			goto drop;
 		}
 	}
@@ -520,8 +553,13 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
 	net_pkt_set_family(pkt, PF_INET6);
 
+	if (!net_pkt_filter_ip_recv_ok(pkt)) {
+		/* drop the packet */
+		return NET_DROP;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_ROUTE_MCAST) &&
-		net_ipv6_is_addr_mcast((struct in6_addr *)hdr->dst)) {
+		net_ipv6_is_addr_mcast((struct in6_addr *)hdr->dst) && !net_pkt_forwarding(pkt)) {
 		/* If the packet is a multicast packet and multicast routing
 		 * is activated, we give the packet to the routing engine.
 		 *
@@ -697,20 +735,28 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 			verdict = NET_OK;
 		}
 		break;
-#if defined(CONFIG_NET_L2_VIRTUAL)
+
+#if defined(CONFIG_NET_L2_IPIP)
 	case IPPROTO_IPV6:
 	case IPPROTO_IPIP: {
-		struct net_addr remote_addr;
+		struct sockaddr_in6 remote_addr = { 0 };
+		struct net_if *tunnel_iface;
 
-		remote_addr.family = AF_INET6;
-		net_ipv6_addr_copy_raw((uint8_t *)&remote_addr.in6_addr, hdr->src);
+		remote_addr.sin6_family = AF_INET6;
+		net_ipv6_addr_copy_raw((uint8_t *)&remote_addr.sin6_addr, hdr->src);
+
+		net_pkt_set_remote_address(pkt, (struct sockaddr *)&remote_addr,
+					   sizeof(struct sockaddr_in6));
 
 		/* Get rid of the old IP header */
 		net_pkt_cursor_restore(pkt, &hdr_start);
 		net_pkt_pull(pkt, net_pkt_ip_hdr_len(pkt) +
 			     net_pkt_ipv6_ext_len(pkt));
 
-		return net_virtual_input(pkt_iface, &remote_addr, pkt);
+		tunnel_iface = net_ipip_get_virtual_interface(net_pkt_iface(pkt));
+		if (tunnel_iface != NULL && net_if_l2(tunnel_iface)->recv != NULL) {
+			return net_if_l2(tunnel_iface)->recv(net_pkt_iface(pkt), pkt);
+		}
 	}
 #endif
 	}

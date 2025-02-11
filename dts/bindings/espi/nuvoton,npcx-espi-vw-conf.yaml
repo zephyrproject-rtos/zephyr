@@ -7,7 +7,7 @@ compatible: "nuvoton,npcx-espi-vw-conf"
 
 child-binding:
   description: |
-    Child node to to present the mapping between VW signal, its core register and input source of
+    Child node to present the mapping between VW signal, its core register and input source of
     MIWU
 
   properties:

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,10 +31,18 @@
 
 #include <zcbor_common.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** SMP MCUmgr protocol version, part of the SMP header */
+enum smp_mcumgr_version_t {
+	/** Version 1: the original protocol */
+	SMP_MCUMGR_VERSION_1 = 0,
+
+	/** Version 2: adds more detailed error reporting capabilities */
+	SMP_MCUMGR_VERSION_2,
+};
 
 struct cbor_nb_reader {
 	struct net_buf *nb;
@@ -45,7 +54,12 @@ struct cbor_nb_reader {
 
 struct cbor_nb_writer {
 	struct net_buf *nb;
-	zcbor_state_t zs[2];
+	zcbor_state_t zs[CONFIG_MCUMGR_SMP_CBOR_MAX_ENCODING_LEVELS + 2];
+
+#if defined(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+	uint16_t error_group;
+	uint16_t error_ret;
+#endif
 };
 
 /**
@@ -91,6 +105,38 @@ struct smp_streamer {
  * @return 0 on success, #mcumgr_err_t code on failure.
  */
 int smp_process_request_packet(struct smp_streamer *streamer, void *req);
+
+/**
+ * @brief Appends an "err" response
+ *
+ * This appends an err response to a pending outgoing response which contains a
+ * result code for a specific group. Note that error codes are specific to the
+ * command group they are emitted from).
+ *
+ * @param zse		The zcbor encoder to use.
+ * @param group		The group which emitted the error.
+ * @param ret		The command result code to add.
+ *
+ * @return true on success, false on failure (memory error).
+ */
+bool smp_add_cmd_err(zcbor_state_t *zse, uint16_t group, uint16_t ret);
+
+/** @deprecated Deprecated after Zephyr 3.4, use smp_add_cmd_err() instead */
+__deprecated inline bool smp_add_cmd_ret(zcbor_state_t *zse, uint16_t group, uint16_t ret)
+{
+	return smp_add_cmd_err(zse, group, ret);
+}
+
+#if defined(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+/** @typedef	smp_translate_error_fn
+ * @brief	Translates a SMP version 2 error response to a legacy SMP version 1 error code.
+ *
+ * @param ret	The SMP version 2 group error value.
+ *
+ * @return	#enum mcumgr_err_t Legacy SMP version 1 error code to return to client.
+ */
+typedef int (*smp_translate_error_fn)(uint16_t err);
+#endif
 
 #ifdef __cplusplus
 }

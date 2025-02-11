@@ -12,32 +12,28 @@ zephyr_library_sources_ifdef(CONFIG_MODEM_IFACE_UART_ASYNC modem_iface_uart_asyn
 zephyr_library_sources_ifdef(CONFIG_MODEM_CMD_HANDLER modem_cmd_handler.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_SOCKET modem_socket.c)
 
+zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
+zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/lib/sockets)
+
 if(CONFIG_MODEM_UBLOX_SARA)
-	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 	zephyr_library_sources(ublox-sara-r4.c)
 endif()
 
 if(CONFIG_MODEM_QUECTEL_BG9X)
-	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 	zephyr_library_sources(quectel-bg9x.c)
 endif()
 
 if(CONFIG_MODEM_WNCM14A2A)
-	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 	zephyr_library_sources(wncm14a2a.c)
 endif()
 
-if(CONFIG_MODEM_GSM_PPP)
-	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
-	zephyr_library_sources(gsm_ppp.c)
-endif()
-
 if (CONFIG_MODEM_HL7800)
-  zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
   zephyr_library_sources(hl7800.c)
 endif()
 
 if (CONFIG_MODEM_SIM7080)
-	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 	zephyr_library_sources(simcom-sim7080.c)
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_MODEM_CELLULAR modem_cellular.c)
+zephyr_library_sources_ifdef(CONFIG_MODEM_AT_SHELL modem_at_shell.c)

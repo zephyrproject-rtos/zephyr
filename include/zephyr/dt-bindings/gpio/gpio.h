@@ -14,6 +14,9 @@
  * @{
  */
 
+/** Mask for DT GPIO flags. */
+#define GPIO_DT_FLAGS_MASK 0x3F
+
 /**
  * @name GPIO pin active level flags
  * @{
@@ -75,6 +78,11 @@
 #define GPIO_PULL_DOWN          (1 << 5)
 
 /** @} */
+
+/**
+ * Configures GPIO interrupt to wakeup the system from low power mode.
+ */
+#define GPIO_INT_WAKEUP         (1 << 6)
 
 /* Note: Bits 15 downto 8 are reserved for SoC specific flags. */
 

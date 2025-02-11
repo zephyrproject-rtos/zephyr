@@ -14,28 +14,28 @@
  *
  * @param[in] uds_ctx Pointer to device context
  * @param[in] buf     Pointer to UDC request buffer
- * @param[in] err     Trasnfer status
+ * @param[in] err     Transfer status
  *
  * @return usbd_class_request() return value
  */
-int usbd_class_handle_xfer(struct usbd_contex *const uds_ctx,
+int usbd_class_handle_xfer(struct usbd_context *const uds_ctx,
 			   struct net_buf *const buf,
 			   const int err);
 
 /**
- * @brief Calculate the length of the class descriptor
+ * @brief Calculate the length of the class function descriptor
  *
- * Calculate the length of the class instance descriptor.
- * The descriptor must be terminated by a usb_desc_header structure
- * set to {bLength = 0, bDescriptorType = 0,}.
+ * Calculate the length of the class instance function descriptor.
  * Calculated length does not include any string descriptors that may be
  * used by the class instance.
  *
- * @param[in] node Pointer to a class node
+ * @param[in] c_data Pointer to a class data
+ * @param[in] speed Speed-dependent descriptor selector
  *
  * @return Length of the class descriptor
  */
-size_t usbd_class_desc_len(struct usbd_class_node *node);
+size_t usbd_class_desc_len(struct usbd_class_data *const c_data,
+			   const enum usbd_speed speed);
 
 /**
  * @brief Get class context by bInterfaceNumber value
@@ -45,21 +45,23 @@ size_t usbd_class_desc_len(struct usbd_class_node *node);
  * @param[in] uds_ctx Pointer to device context
  * @param[in] inum    Interface number
  *
- * @return Class node pointer or NULL
+ * @return Class c_nd pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_iface(struct usbd_contex *uds_ctx,
+struct usbd_class_node *usbd_class_get_by_iface(struct usbd_context *uds_ctx,
 						uint8_t i_n);
 
 /**
  * @brief Get class context by configuration and interface number
  *
  * @param[in] uds_ctx Pointer to device context
+ * @param[in] speed   Speed the configuration number refers to
  * @param[in] cnum    Configuration number
  * @param[in] inum    Interface number
  *
- * @return Class node pointer or NULL
+ * @return Class c_nd pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_config(struct usbd_contex *uds_ctx,
+struct usbd_class_node *usbd_class_get_by_config(struct usbd_context *uds_ctx,
+						 const enum usbd_speed speed,
 						 uint8_t cnum,
 						 uint8_t inum);
 
@@ -71,9 +73,9 @@ struct usbd_class_node *usbd_class_get_by_config(struct usbd_contex *uds_ctx,
  * @param[in] uds_ctx Pointer to device context
  * @param[in] ep      Endpoint address
  *
- * @return Class node pointer or NULL
+ * @return Class c_nd pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_ep(struct usbd_contex *uds_ctx,
+struct usbd_class_node *usbd_class_get_by_ep(struct usbd_context *uds_ctx,
 					     uint8_t ep);
 
 /**
@@ -88,9 +90,22 @@ struct usbd_class_node *usbd_class_get_by_ep(struct usbd_contex *uds_ctx,
  * @param[in] uds_ctx Pointer to device context
  * @param[in] request bRequest value
  *
- * @return Class node pointer or NULL
+ * @return Class c_nd pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_req(struct usbd_contex *uds_ctx,
+struct usbd_class_node *usbd_class_get_by_req(struct usbd_context *uds_ctx,
 					      uint8_t request);
+
+/**
+ * @brief Remove all registered class instances from a configuration
+ *
+ * @param[in] uds_ctx Pointer to device context
+ * @param[in] speed   Speed the configuration number applies to
+ * @param[in] cfg     Configuration number (bConfigurationValue)
+ *
+ * @return 0 on success, other values on fail.
+ */
+int usbd_class_remove_all(struct usbd_context *const uds_ctx,
+			  const enum usbd_speed speed,
+			  const uint8_t cfg);
 
 #endif /* ZEPHYR_INCLUDE_USBD_CLASS_H */

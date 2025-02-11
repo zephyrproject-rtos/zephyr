@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include <soc.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -112,23 +112,18 @@ void lll_df_cte_tx_enable(struct lll_adv_sync *lll_sync, const struct pdu_adv *p
 			*cte_len_us = CTE_LEN_US(df_cfg->cte_length);
 		} else {
 			if (lll_sync->cte_started) {
-				lll_df_conf_cte_tx_disable();
+				lll_df_cte_tx_disable();
 				lll_sync->cte_started = 0U;
 			}
 			*cte_len_us = 0U;
 		}
 	} else {
 		if (lll_sync->cte_started) {
-			lll_df_conf_cte_tx_disable();
+			lll_df_cte_tx_disable();
 			lll_sync->cte_started = 0U;
 		}
 		*cte_len_us = 0U;
 	}
-}
-
-void lll_df_conf_cte_tx_disable(void)
-{
-	radio_df_reset();
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
@@ -139,7 +134,7 @@ struct lll_df_sync_cfg *lll_df_sync_cfg_alloc(struct lll_df_sync *df_cfg,
 	uint8_t first, last;
 
 	/* TODO: Make this unique mechanism to update last element in double
-	 *       buffer a re-usable utility function.
+	 *       buffer a reusable utility function.
 	 */
 	first = df_cfg->first;
 	last = df_cfg->last;
@@ -299,7 +294,7 @@ int lll_df_iq_report_no_resources_prepare(struct lll_sync *sync_lll)
 			err = 0;
 		}
 
-		/* Do actual allocation and store the node for futher processing after a PDU
+		/* Do actual allocation and store the node for further processing after a PDU
 		 * reception,
 		 */
 		ull_df_iq_report_alloc();
@@ -397,5 +392,10 @@ void lll_df_cte_tx_configure(uint8_t cte_type, uint8_t cte_length, uint8_t num_a
 		radio_df_ant_switch_pattern_set(ant_ids, num_ant_ids);
 	}
 #endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX */
+}
+
+void lll_df_cte_tx_disable(void)
+{
+	radio_df_reset();
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX || CONFIG_BT_CTLR_DF_CONN_CTE_TX */

@@ -1,0 +1,300 @@
+# General configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUBOOT
+	bool
+	help
+	  Hidden option used to indicate that the current image is MCUBoot
+
+config BOOTLOADER_MCUBOOT
+	bool "MCUboot bootloader support"
+	select USE_DT_CODE_PARTITION
+	imply INIT_ARCH_HW_AT_BOOT if ARCH_SUPPORTS_ARCH_HW_INIT
+	depends on !MCUBOOT
+	help
+	  This option signifies that the target uses MCUboot as a bootloader,
+	  or in other words that the image is to be chain-loaded by MCUboot.
+	  This sets several required build system and Device Tree options in
+	  order for the image generated to be bootable using the MCUboot open
+	  source bootloader. Currently this includes:
+
+	    * Setting ROM_START_OFFSET to a default value that allows space
+	      for the MCUboot image header
+	    * Activating SW_VECTOR_RELAY_CLIENT on Cortex-M0
+	      (or Armv8-M baseline) targets with no built-in vector relocation
+	      mechanisms
+
+	  By default, this option instructs Zephyr to initialize the core
+	  architecture HW registers during boot, when this is supported by
+	  the application. This removes the need by MCUboot to reset
+	  the core registers' state itself.
+
+if BOOTLOADER_MCUBOOT
+
+config MCUBOOT_CMAKE_WEST_SIGN_PARAMS
+	string "Extra parameters to west sign"
+	default "--quiet"
+	help
+	  Parameters that are passed by cmake to west sign, just after
+	  the command, before all other parameters needed for image
+	  signing.
+	  By default this is set to "--quiet" to prevent extra, non-error,
+	  diagnostic messages from west sign. This does not affect signing
+	  tool for which extra parameters are passed with
+	  MCUBOOT_EXTRA_IMGTOOL_ARGS.
+
+config MCUBOOT_SIGNATURE_KEY_FILE
+	string "Path to the mcuboot signing key file"
+	default ""
+	depends on !MCUBOOT_GENERATE_UNSIGNED_IMAGE
+	help
+	  The file contains a key pair whose public half is verified
+	  by your target's MCUboot image. The file is in PEM format.
+
+	  If set to a non-empty value, the build system tries to
+	  sign the final binaries using a 'west sign -t imgtool' command.
+	  The signed binaries are placed in the build directory
+	  at zephyr/zephyr.signed.bin and zephyr/zephyr.signed.hex.
+
+	  The file names can be customized with CONFIG_KERNEL_BIN_NAME.
+	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
+	  and CONFIG_BUILD_OUTPUT_HEX.
+
+	  This option should contain a path to the same file as the
+	  BOOT_SIGNATURE_KEY_FILE option in your MCUboot .config. The path
+	  may be absolute or relative to the west workspace topdir. (The MCUboot
+	  config option is used for the MCUboot bootloader image; this option is
+	  for your application which is to be loaded by MCUboot. The MCUboot
+	  config option can be a relative path from the MCUboot repository
+	  root.)
+
+	  If left empty, you must sign the Zephyr binaries manually.
+
+config MCUBOOT_ENCRYPTION_KEY_FILE
+	string "Path to the mcuboot encryption key file"
+	default ""
+	depends on MCUBOOT_SIGNATURE_KEY_FILE != ""
+	help
+	  The file contains the public key that is used to encrypt the
+	  ephemeral key that encrypts the image. The corresponding
+	  private key is hard coded in the MCUboot source code and is
+	  used to decrypt the ephemeral key that is embedded in the
+	  image. The file is in PEM format.
+
+	  If set to a non-empty value, the build system tries to
+	  sign and encrypt the final binaries using a 'west sign -t imgtool'
+	  command. The binaries are placed in the build directory at
+	  zephyr/zephyr.signed.encrypted.bin and
+	  zephyr/zephyr.signed.encrypted.hex.
+
+	  The file names can be customized with CONFIG_KERNEL_BIN_NAME.
+	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
+	  and CONFIG_BUILD_OUTPUT_HEX.
+
+	  This option should either be an absolute path or a path relative to
+	  the west workspace topdir.
+	  Example: './bootloader/mcuboot/enc-rsa2048-pub.pem'
+
+	  If left empty, you must encrypt the Zephyr binaries manually.
+
+config MCUBOOT_IMGTOOL_SIGN_VERSION
+	string "Version to pass to imgtool when signing"
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != ""
+	default "0.0.0+0"
+	help
+	  When signing with imgtool then this setting will be passed as version
+	  argument to the tool.
+	  The format is major.minor.revision+build.
+
+config MCUBOOT_IMGTOOL_OVERWRITE_ONLY
+	bool "Use overwrite-only instead of swap upgrades"
+	help
+	  If enabled, --overwrite-only option passed to imgtool to avoid
+	  adding the swap status area size when calculating overflow.
+
+config MCUBOOT_EXTRA_IMGTOOL_ARGS
+	string "Extra arguments to pass to imgtool when signing"
+	default ""
+	help
+	  When signing (CONFIG_MCUBOOT_SIGNATURE_KEY_FILE is a non-empty
+	  string) you can use this option to pass extra options to
+	  imgtool. For example, you could set this to "--version 1.2".
+
+config MCUBOOT_GENERATE_UNSIGNED_IMAGE
+	bool "Generate unsigned binary image bootable with MCUboot"
+	help
+	  Enabling this configuration allows automatic unsigned binary image
+	  generation when MCUboot signing key is not provided,
+	  i.e., MCUBOOT_SIGNATURE_KEY_FILE is left empty.
+
+config MCUBOOT_GENERATE_CONFIRMED_IMAGE
+	bool "Also generate a padded, confirmed image"
+	help
+	  The signed, padded, and confirmed binaries are placed in the build
+	  directory at zephyr/zephyr.signed.confirmed.bin and
+	  zephyr/zephyr.signed.confirmed.hex.
+
+	  The file names can be customized with CONFIG_KERNEL_BIN_NAME.
+	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
+	  and CONFIG_BUILD_OUTPUT_HEX.
+
+menu "On board MCUboot operation mode"
+
+choice MCUBOOT_BOOTLOADER_MODE
+	prompt "Application assumed MCUboot mode of operation"
+	default MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH # MCUBOOT_BOOTLOADER_MODE
+	help
+	  Informs application build on assumed MCUboot mode of operation.
+	  This is important for validataing application against DT configuration,
+	  which is done by west sign.
+
+config MCUBOOT_BOOTLOADER_MODE_SINGLE_APP
+	bool "MCUboot has been configured for single slot execution"
+	select MCUBOOT_IMGTOOL_OVERWRITE_ONLY
+	help
+	  MCUboot will only boot slot0_partition placed application and does
+	  not care about other slots. In this mode application is not able
+	  to DFU its own update to secondary slot and all updates need to
+	  be performed using MCUboot serial recovery.
+
+config MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH
+	bool "MCUboot has been configured for swap without scratch operation"
+	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	help
+	  MCUboot expects slot0_partition and slot1_partition to be present
+	  in DT and application will boot from slot0_partition.
+	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
+	  if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
+config MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH
+	bool "MCUboot has been configured for swap using scratch operation"
+	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	help
+	  MCUboot expects slot0_partition, slot1_partition and scratch_partition
+	  to be present in DT, and application will boot from slot0_partition.
+	  In this mode scratch_partition is used as temporary storage when
+	  MCUboot swaps application from the secondary slot to the primary
+	  slot.
+	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
+	  if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
+config MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
+	bool "MCUboot has been configured to just overwrite primary slot"
+	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	select MCUBOOT_IMGTOOL_OVERWRITE_ONLY
+	help
+	  MCUboot will take contents of secondary slot of an image and will
+	  overwrite primary slot with it.
+	  In this mode it is not possible to revert back to previous version
+	  as it is not stored in the secondary slot.
+	  This mode supports MCUBOOT_BOOTLOADER_NO_DOWNGRADE which means
+	  that the overwrite will not happen unless the version of secondary
+	  slot is higher than the version in primary slot.
+
+config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+	bool "MCUboot has been configured for DirectXIP operation"
+	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	select MCUBOOT_BOOTLOADER_NO_DOWNGRADE
+	help
+	  MCUboot expects slot0_partition and slot1_partition to exist in DT.
+	  In this mode MCUboot can boot from either partition and will
+	  select one with higher application image version, which usually
+	  means major.minor.patch triple, unless BOOT_VERSION_CMP_USE_BUILD_NUMBER
+	  is also selected that enables comparison of build number.
+	  This option automatically selectes
+	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is not possible
+	  to swap back to older version of application.
+
+config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
+	bool "MCUboot has been configured for DirectXIP with revert"
+	select MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
+	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	select MCUBOOT_BOOTLOADER_NO_DOWNGRADE
+	help
+	  MCUboot expects slot0_partition and slot1_partition to exist in DT.
+	  In this mode MCUboot will boot the application with the higher version
+	  from either slot, as long as it has been marked to be boot
+	  next time for test or permanently. In case when application is marked
+	  for test it needs to confirm itself, on the first boot, or it will
+	  be removed and MCUboot will revert to booting previously approved
+	  application.
+	  This mode does not allow freely switching between application
+	  versions, as, once higher version application is approved, it is
+	  not possible to select lower version for boot.
+	  This mode selects MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is not possible
+	  to downgrade running application, but note that MCUboot may do that
+	  if application with higher version will not get confirmed.
+
+config MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER
+	bool "MCUboot has been configured in firmware updater mode"
+	select MCUBOOT_IMGTOOL_OVERWRITE_ONLY
+	help
+	  MCUboot will only boot slot0_partition for the main application but has
+	  an entrance mechanism defined for entering the slot1_partition which is
+	  a dedicated firmware updater application used to update the slot0_partition
+	  application.
+
+endchoice # MCUBOOT_BOOTLOADER_MODE
+
+config MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	bool
+	help
+	  Selected mode supports downgrade prevention, where you cannot switch to
+	  an application with lower version than the currently running application.
+
+if MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+config MCUBOOT_BOOTLOADER_NO_DOWNGRADE
+	bool "MCUboot mode has downgrade prevention enabled"
+	help
+	  Selected MCUboot mode has downgrade prevention enabled, where you are not
+	  able to change back to image with lower version number.
+	  This options should be selected when MCUboot has been built with
+	  MCUBOOT_DOWNGRADE_PREVENTION option enabled.
+endif
+
+endmenu # On board MCUboot operation mode
+
+endif # BOOTLOADER_MCUBOOT
+
+menuconfig MCUBOOT_BOOTUTIL_LIB
+	bool "MCUboot utility library"
+	help
+	  Enable MCUboot utility library which implements functions
+	  required by the chain-loaded application and the MCUboot.
+
+if MCUBOOT_BOOTUTIL_LIB
+
+# hidden option for disabling module-own log configuration
+# while building MCUboot bootloader
+config MCUBOOT_BOOTUTIL_LIB_OWN_LOG
+	bool
+	default y
+
+if MCUBOOT_BOOTUTIL_LIB_OWN_LOG
+module = MCUBOOT_UTIL
+module-str = MCUboot bootutil
+source "subsys/logging/Kconfig.template.log_config"
+endif
+
+config BOOT_IMAGE_ACCESS_HOOKS
+	bool "Hooks for overriding MCUboot's bootutil native routines"
+	help
+	  Allow to provide procedures for override or extend native
+	  MCUboot's routines required for access the image data.
+	  It is up to the application project to add source file which
+	  implements hooks to the build.
+
+if MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
+
+config MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
+	bool
+	help
+	  Adds support for setting for test and confirming images
+	  when bootloader is in DirectXIP-revert mode.
+endif
+
+endif # MCUBOOT_BOOTUTIL_LIB

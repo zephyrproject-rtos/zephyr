@@ -76,6 +76,7 @@
 			compatible = "ns16550";
 			clock-frequency = <16000000>;
 			reg = <0x80014000 0x100>;
+			io-mapped;
 			interrupts = <86 0>;
 			interrupt-parent = <&intc>;
 			dlf = <0x01>;
@@ -86,6 +87,7 @@
 			compatible = "ns16550";
 			clock-frequency = <16000000>;
 			reg = <0x80014100 0x100>;
+			io-mapped;
 			interrupts = <87 0>;
 			interrupt-parent = <&intc>;
 			reg-shift = <2>;
@@ -96,6 +98,7 @@
 			compatible = "ns16550";
 			clock-frequency = <16000000>;
 			reg = <0x80014200 0x1000>;
+			io-mapped;
 			interrupts = <88 0>;
 			interrupt-parent = <&intc>;
 			reg-shift = <2>;
@@ -106,6 +109,7 @@
 			compatible = "ns16550";
 			clock-frequency = <144000000>;
 			reg = <0x80014300 0x100>;
+			io-mapped;
 			interrupts = <89 0>;
 			interrupt-parent = <&intc>;
 			reg-shift = <2>;
@@ -229,6 +233,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010000 0x100>;
+			max-xfer-size = <16>;
 			clocks = <&sysclk>;
 			interrupts = <70 2>, <71 2>, <72 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
@@ -241,6 +246,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010100 0x100>;
+			max-xfer-size = <16>;
 			clocks = <&sysclk>;
 			interrupts = <74 2>, <75 2>, <76 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
@@ -253,6 +259,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010200 0x100>;
+			max-xfer-size = <16>;
 			clocks = <&sysclk>;
 			interrupts = <78 2>, <79 2>, <80 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";

@@ -8,7 +8,6 @@
 #include <string.h>
 
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
-#include <zephyr/mgmt/mcumgr/grp/img_mgmt/image.h>
 
 int
 img_mgmt_ver_str(const struct image_version *ver, char *dst)

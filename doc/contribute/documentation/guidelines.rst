@@ -3,6 +3,8 @@
 Documentation Guidelines
 ########################
 
+.. highlight:: rst
+
 .. note::
 
    For instructions on building the documentation, see :ref:`zephyr_doc`.
@@ -11,11 +13,10 @@ Zephyr Project content is written using the `reStructuredText`_ markup
 language (.rst file extension) with Sphinx extensions, and processed
 using Sphinx to create a formatted standalone website.  Developers can
 view this content either in its raw form as .rst markup files, or (with
-Sphinx installed) they can build the documentation using the Makefile
-on Linux systems, or make.bat on Windows, to
-generate the HTML content. The HTML content can then be viewed using a
-web browser. This same .rst content is also fed into the
-`Zephyr documentation`_ website (with a different theme applied).
+Sphinx installed) they can :ref:`build the documentation <zephyr_doc>` locally
+to generate the documentation in HTML or PDF format. The HTML content can
+then be viewed using a web browser. This same .rst content is served by the
+`Zephyr documentation`_ website.
 
 You can read details about `reStructuredText`_
 and about `Sphinx extensions`_ from their respective websites.
@@ -262,12 +263,12 @@ markup (double backticks) to indicate a ``filename``.
 For references to files that are in the Zephyr GitHub tree, a special
 role can be used that creates a hyperlink to that file.  For example a
 reference to the reST file used to create this document can be generated
-using ``:zephyr_file:`doc/contribute/documentation/index.rst```  that will
-show up as :zephyr_file:`doc/contribute/documentation/index.rst`, a link to
+using ``:zephyr_file:`doc/contribute/documentation/guidelines.rst```  that will
+show up as :zephyr_file:`doc/contribute/documentation/guidelines.rst`, a link to
 the "blob" file in the github repo.  There's also a
-``:zephyr_raw:`doc/guides/documentation/index.rst``` role that will
+``:zephyr_raw:`doc/contribute/documentation/guidelines.rst``` role that will
 link to the "raw" content,
-:zephyr_raw:`doc/contribute/documentation/index.rst`. (You can click on
+:zephyr_raw:`doc/contribute/documentation/guidelines.rst`. (You can click on
 these links to see the difference.)
 
 .. _internal-linking:
@@ -303,9 +304,7 @@ External Cross-Reference Linking
 With Sphinx's help, we can create
 link-references to any tagged text within the Zephyr Project documentation.
 
-Target locations in a document are defined with a label directive:
-
-   .. code-block:: rst
+Target locations in a document are defined with a label directive::
 
       .. _my label name:
 
@@ -326,10 +325,7 @@ To enable easy cross-page linking within the site, each file should have
 a reference label before its title so it can
 be referenced from another file. These reference labels must be unique
 across the whole site, so generic names such as "samples" should be
-avoided.  For example the top of this document's .rst file is:
-
-
-.. code-block:: rst
+avoided.  For example the top of this document's .rst file is::
 
    .. _doc_guidelines:
 
@@ -396,7 +392,7 @@ For example::
 
    .. code-block:: c
 
-      struct z_object {
+      struct k_object {
          char *name;
          uint8_t perms[CONFIG_MAX_THREAD_BYTES];
          uint8_t type;
@@ -412,7 +408,7 @@ This would be rendered as:
 
    .. code-block:: c
 
-      struct z_object {
+      struct k_object {
          char *name;
          uint8_t perms[CONFIG_MAX_THREAD_BYTES];
          uint8_t type;
@@ -421,10 +417,93 @@ This would be rendered as:
       } __packed;
 
 
-You can specify other languages for the ``code-block`` directive,
-including ``c``, ``python``, and ``rst``, and also ``console``,
-``bash``, or ``shell``. If you want no syntax highlighting, use the
-language ``none``,  for example::
+Other languages are of course supported (see `languages supported by Pygments`_), and in particular,
+you are encouraged to make use of the following when appropriate:
+
+.. _`languages supported by Pygments`: http://pygments.org/languages/
+
+* ``c`` for C code
+* ``cpp`` for C++ code
+* ``python`` for Python code
+* ``console`` for console output, i.e. interactive shell sessions where commands are prefixed by a
+  prompt (ex. ``$`` for Linux, or ``uart:~$`` for Zephyr's shell), and where the output is also
+  shown. The commands will be highlighted, and the output will not. What's more, copying code block
+  using the "copy" button will automatically copy just the commands, excluding the prompt and the
+  outputs of the commands.
+* ``shell`` or ``bash`` for shell commands. Both languages get highlighted the same but you may use
+  ``bash`` for conveying that the commands are bash-specific, and ``shell`` for generic shell
+  commands.
+
+  .. note::
+
+     Do not use ``bash`` or ``shell`` if your code block includes a prompt, use ``console`` instead.
+
+     Reciprocally, do not use ``console`` if your code block does not include a prompt and is not
+     showcasing an interactive session with command(s) and their output.
+
+     .. list-table:: When to use ``bash``/``shell`` vs. ``console``
+        :class: wrap-normal
+        :header-rows: 1
+        :widths: 20,40,40
+
+        * - Use case
+          - ``code-block`` snippet
+          - Expected output
+
+        * - One or several commands, no output
+
+          - .. code-block:: rst
+
+               .. code-block:: shell
+
+                  echo "Hello World!"
+
+          - .. code-block:: shell
+
+               echo "Hello World!"
+
+        * - An interactive shell session with command(s) and their output
+
+          - .. code-block:: rst
+
+               .. code-block:: console
+
+                  $ echo "Hello World!"
+                  Hello World!
+
+          - .. code-block:: console
+
+               $ echo "Hello World!"
+               Hello World!
+
+        * - An interactive Zephyr shell session, with commands and their outputs
+
+          - .. code-block:: rst
+
+               .. code-block:: console
+
+                  uart:~$ version
+                  Zephyr version 3.5.99
+                  uart:~$ kernel uptime
+                  Uptime: 20970 ms
+
+          - .. code-block:: console
+
+               uart:~$ version
+               Zephyr version 3.5.99
+               uart:~$ kernel uptime
+               Uptime: 20970 ms
+
+* ``bat`` for Windows batch files
+* ``cfg`` for config files with "KEY=value" entries (ex. Kconfig ``.conf`` files)
+* ``cmake`` for CMake
+* ``devicetree`` for Devicetree
+* ``kconfig`` for Kconfig
+* ``yaml`` for YAML
+* ``rst`` for reStructuredText
+
+When no language is specified, the language is set to ``none`` and the code block is not
+highlighted. You may also use ``none`` explicitly to achieve the same result; for example::
 
    .. code-block:: none
 
@@ -438,11 +517,11 @@ Would display as:
       This would be a block of text styled with a background
       and box, but with no syntax highlighting.
 
-There's a shorthand for writing code blocks too: end the introductory
-paragraph with a double colon (``::``) and indent the code block content
-by three spaces.  On output, only one colon will be shown.  The
-highlighting package makes a best guess at the type of content in the
-block and highlighting purposes.
+There's a shorthand for writing code blocks too: end the introductory paragraph with a double colon
+(``::``) and indent the code block content that follows it by three spaces.  On output, only one
+colon will be shown.  The code block will have no highlighting (i.e. ``none``). You may however use
+the ``.. highlight::`` directive to customize the default language used in your document (see for
+example how this is done at the beginning of this very document).
 
 Images
 ******
@@ -487,9 +566,7 @@ the first non-white space in the preceding line.  For example::
       The text within a directive block should align with the
       first character of the directive name.
 
-Keep the line length for documentation less than 80 characters to make
-it easier for reviewing in GitHub. Long lines because of URL references
-are an allowed exception.
+Refer to the Zephyr :ref:`coding_style` for additional requirements.
 
 zephyr-app-commands Directive
 *****************************
@@ -582,29 +659,3 @@ in the Zephyr setup.  Within a tab, you can have most any content *other
 than a heading* (code-blocks, ordered and unordered lists, pictures,
 paragraphs, and such).  You can read more about sphinx-tabs from the
 link above.
-
-Instruction Steps
-*****************
-
-Also introduced in the :ref:`getting_started` is a style that makes it
-easy to create tutorial guides with clearly identified steps. Add
-the ``.. rst-class:: numbered-step`` directive immediately before a
-second-level heading (by project convention, a heading underlined with
-asterisks ``******``, and it will be displayed as a numbered step,
-sequentially numbered within the document.  For example::
-
-   .. rst-class:: numbered-step
-
-   Put your right hand in
-   **********************
-
-.. rst-class:: numbered-step
-
-Put your right hand in
-**********************
-
-See the :zephyr_raw:`doc/develop/getting_started/index.rst` source file and
-compare with the :ref:`getting_started` to see a full example.  As implemented,
-only one set of numbered steps is intended per document.
-
-For instructions on building the documentation, see :ref:`zephyr_doc`.

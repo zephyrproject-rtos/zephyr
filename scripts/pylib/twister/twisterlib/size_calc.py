@@ -29,7 +29,6 @@ class SizeCalculator:
         "datas",
         "initlevel",
         "exceptions",
-        "initshell",
         "_static_thread_data_area",
         "k_timer_area",
         "k_mem_slab_area",
@@ -57,14 +56,12 @@ class SizeCalculator:
         "ccm_data",
         "usb_descriptor",
         "usb_data", "usb_bos_desc",
-        "uart_mux",
         'log_backends_sections',
         'log_dynamic_sections',
         'log_const_sections',
         "app_smem",
         'shell_root_cmds_sections',
         'log_const_sections',
-        "font_entry_sections",
         "priv_stacks_noinit",
         "_GCOV_BSS_SECTION_NAME",
         "gcov",
@@ -80,7 +77,7 @@ class SizeCalculator:
         "ctors",
         "init_array",
         "reset",
-        "z_object_assignment_area",
+        "k_object_assignment_area",
         "rodata",
         "net_l2",
         "vector",
@@ -220,7 +217,7 @@ class SizeCalculator:
             print(str(e))
             sys.exit(2)
 
-        self.is_xip = (len(is_xip_output) != 0)
+        self.is_xip = len(is_xip_output) != 0
 
     def _get_info_elf_sections(self) -> None:
         """Calculate RAM and ROM usage and information about issues by section"""
@@ -259,9 +256,9 @@ class SizeCalculator:
             # If build.log file exists, check errors (unrecognized sections
             # in ELF file).
             if self.buildlog_filename:
-                if name in SizeCalculator.alloc_sections or\
-                    SizeCalculator.rw_sections or\
-                    SizeCalculator.ro_sections:
+                if name in SizeCalculator.alloc_sections or \
+                   name in SizeCalculator.rw_sections or \
+                   name in SizeCalculator.ro_sections:
                     continue
                 else:
                     stype = "unknown"

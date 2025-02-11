@@ -13,7 +13,7 @@ class TwisterRuntimeError(TwisterException):
 
 class ConfigurationError(TwisterException):
     def __init__(self, cfile, message):
-        TwisterException.__init__(self, cfile + ": " + message)
+        TwisterException.__init__(self, str(cfile) + ": " + message)
 
 
 class BuildError(TwisterException):

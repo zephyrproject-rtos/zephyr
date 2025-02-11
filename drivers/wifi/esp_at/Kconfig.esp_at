@@ -11,6 +11,7 @@ menuconfig WIFI_ESP_AT
 	select MODEM_IFACE_UART
 	select NET_L2_WIFI_MGMT
 	select WIFI_OFFLOAD
+	imply UART_USE_RUNTIME_CONFIGURE
 	help
 	  Enable Espressif AT Command offloaded WiFi driver. It is supported on
 	  any serial capable platform and communicates with Espressif chips
@@ -159,5 +160,18 @@ config WIFI_ESP_AT_DNS_USE
 	help
 	  Fetch DNS servers from ESP chip with AT+CIPDNS? command and apply that
 	  list to system DNS resolver.
+
+config WIFI_ESP_AT_CIPDINFO_USE
+	bool "Use CIPDINFO to get peer ip and port"
+	help
+	  Enable AT+CIPDINFO got get peer ip-address and port.
+
+config WIFI_ESP_AT_FETCH_VERSION
+	bool "Fetch and log ESP-AT firmware version"
+	default y
+	depends on LOG
+	help
+	  Fetch information about ESP-AT firmware version. This includes AT
+	  command version, SDK (ESP-IDF), board and compile time.
 
 endif # WIFI_ESP_AT

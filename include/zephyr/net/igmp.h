@@ -27,22 +27,32 @@
 extern "C" {
 #endif
 
+/** IGMP parameters */
+struct igmp_param {
+	struct in_addr *source_list; /**< List of sources to include or exclude */
+	size_t sources_len;          /**< Length of source list */
+	bool include;                /**< Source list filter type */
+};
+
 /**
  * @brief Join a given multicast group.
  *
  * @param iface Network interface where join message is sent
  * @param addr Multicast group to join
+ * @param param Optional parameters
  *
  * @return Return 0 if joining was done, <0 otherwise.
  */
 #if defined(CONFIG_NET_IPV4_IGMP)
-int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr);
+int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
+		       const struct igmp_param *param);
 #else
-static inline int net_ipv4_igmp_join(struct net_if *iface,
-				     const struct in_addr *addr)
+static inline int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
+				     const struct igmp_param *param)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(addr);
+	ARG_UNUSED(param);
 
 	return -ENOSYS;
 }

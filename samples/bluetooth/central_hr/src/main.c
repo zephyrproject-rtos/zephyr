@@ -23,9 +23,11 @@ static void start_scan(void);
 
 static struct bt_conn *default_conn;
 
-static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
+static struct bt_uuid_16 discover_uuid = BT_UUID_INIT_16(0);
 static struct bt_gatt_discover_params discover_params;
 static struct bt_gatt_subscribe_params subscribe_params;
+
+uint64_t total_rx_count; /* This value is exposed to test code */
 
 static uint8_t notify_func(struct bt_conn *conn,
 			   struct bt_gatt_subscribe_params *params,
@@ -38,6 +40,8 @@ static uint8_t notify_func(struct bt_conn *conn,
 	}
 
 	printk("[NOTIFICATION] data %p length %u\n", data, length);
+
+	total_rx_count++;
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -57,8 +61,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 	printk("[ATTRIBUTE] handle %u\n", attr->handle);
 
 	if (!bt_uuid_cmp(discover_params.uuid, BT_UUID_HRS)) {
-		memcpy(&uuid, BT_UUID_HRS_MEASUREMENT, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		memcpy(&discover_uuid, BT_UUID_HRS_MEASUREMENT, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
@@ -68,8 +72,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 		}
 	} else if (!bt_uuid_cmp(discover_params.uuid,
 				BT_UUID_HRS_MEASUREMENT)) {
-		memcpy(&uuid, BT_UUID_GATT_CCC, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		memcpy(&discover_uuid, BT_UUID_GATT_CCC, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 2;
 		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 		subscribe_params.value_handle = bt_gatt_attr_value_handle(attr);
@@ -112,8 +116,9 @@ static bool eir_found(struct bt_data *data, void *user_data)
 		}
 
 		for (i = 0; i < data->data_len; i += sizeof(uint16_t)) {
+			struct bt_conn_le_create_param *create_param;
 			struct bt_le_conn_param *param;
-			struct bt_uuid *uuid;
+			const struct bt_uuid *uuid;
 			uint16_t u16;
 			int err;
 
@@ -129,12 +134,24 @@ static bool eir_found(struct bt_data *data, void *user_data)
 				continue;
 			}
 
+			printk("Creating connection with Coded PHY support\n");
 			param = BT_LE_CONN_PARAM_DEFAULT;
-			err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
-						param, &default_conn);
+			create_param = BT_CONN_LE_CREATE_CONN;
+			create_param->options |= BT_CONN_LE_OPT_CODED;
+			err = bt_conn_le_create(addr, create_param, param,
+						&default_conn);
 			if (err) {
-				printk("Create conn failed (err %d)\n", err);
-				start_scan();
+				printk("Create connection with Coded PHY support failed (err %d)\n",
+				       err);
+
+				printk("Creating non-Coded PHY connection\n");
+				create_param->options &= ~BT_CONN_LE_OPT_CODED;
+				err = bt_conn_le_create(addr, create_param,
+							param, &default_conn);
+				if (err) {
+					printk("Create connection failed (err %d)\n", err);
+					start_scan();
+				}
 			}
 
 			return false;
@@ -153,9 +170,12 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	printk("[DEVICE]: %s, AD evt type %u, AD data len %u, RSSI %i\n",
 	       dev, type, ad->len, rssi);
 
-	/* We're only interested in connectable events */
+	/* We're only interested in legacy connectable events or
+	 * possible extended advertising that are connectable.
+	 */
 	if (type == BT_GAP_ADV_TYPE_ADV_IND ||
-	    type == BT_GAP_ADV_TYPE_ADV_DIRECT_IND) {
+	    type == BT_GAP_ADV_TYPE_ADV_DIRECT_IND ||
+	    type == BT_GAP_ADV_TYPE_EXT_ADV) {
 		bt_data_parse(ad, eir_found, (void *)addr);
 	}
 }
@@ -168,15 +188,22 @@ static void start_scan(void)
 	 * devices that might update their advertising data at runtime. */
 	struct bt_le_scan_param scan_param = {
 		.type       = BT_LE_SCAN_TYPE_ACTIVE,
-		.options    = BT_LE_SCAN_OPT_NONE,
+		.options    = BT_LE_SCAN_OPT_CODED,
 		.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 		.window     = BT_GAP_SCAN_FAST_WINDOW,
 	};
 
 	err = bt_le_scan_start(&scan_param, device_found);
 	if (err) {
-		printk("Scanning failed to start (err %d)\n", err);
-		return;
+		printk("Scanning with Coded PHY support failed (err %d)\n", err);
+
+		printk("Scanning without Coded PHY\n");
+		scan_param.options &= ~BT_LE_SCAN_OPT_CODED;
+		err = bt_le_scan_start(&scan_param, device_found);
+		if (err) {
+			printk("Scanning failed to start (err %d)\n", err);
+			return;
+		}
 	}
 
 	printk("Scanning successfully started\n");
@@ -201,9 +228,11 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 
 	printk("Connected: %s\n", addr);
 
+	total_rx_count = 0U;
+
 	if (conn == default_conn) {
-		memcpy(&uuid, BT_UUID_HRS, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		memcpy(&discover_uuid, BT_UUID_HRS, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.func = discover_func;
 		discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 		discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
@@ -240,17 +269,18 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 	err = bt_enable(NULL);
 
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Bluetooth initialized\n");
 
 	start_scan();
+	return 0;
 }

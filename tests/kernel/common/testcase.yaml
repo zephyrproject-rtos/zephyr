@@ -1,6 +1,10 @@
 common:
-  tags: base kernel userspace
-  min_flash: 33
+  tags:
+    - base
+    - kernel
+    - userspace
+  min_flash: 32
+  min_ram: 32
   timeout: 120
 tests:
   kernel.common:
@@ -16,15 +20,24 @@ tests:
     # Some configurations are known-incompliant and won't build
     filter: not ((CONFIG_I2C or CONFIG_SPI) and CONFIG_USERSPACE)
     integration_platforms:
-      - native_posix
+      - native_sim
     extra_configs:
       - CONFIG_MISRA_SANE=y
+  kernel.common.minimallibc:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags: libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
   kernel.common.nano32:
+    tags:
+      - nano
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
       - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
   kernel.common.nano64:
+    tags:
+      - nano
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
@@ -34,3 +47,11 @@ tests:
     tags: picolibc
     extra_configs:
       - CONFIG_PICOLIBC=y
+  kernel.common.lto:
+    # CONFIG_CODE_DATA_RELOCATION causes a build error (issue #69730)
+    filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED and not CONFIG_CODE_DATA_RELOCATION
+    tags: lto
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+      - CONFIG_LTO=y

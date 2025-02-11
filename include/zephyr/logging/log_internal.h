@@ -64,7 +64,7 @@ void z_log_runtime_filters_init(void);
 void z_log_links_initiate(void);
 
 /* Activate links.
- * Attemp to activate links,
+ * Attempt to activate links,
  *
  * @param active_mask     Mask with links to activate. N bit set indicates that Nth
  * link should be activated.
@@ -86,13 +86,13 @@ void z_log_notify_backend_enabled(void);
  */
 static inline uint32_t *z_log_dynamic_filters_get(uint32_t source_id)
 {
-	return &__log_dynamic_start[source_id].filters;
+	return &TYPE_SECTION_START(log_dynamic)[source_id].filters;
 }
 
 /** @brief Get number of registered sources. */
 static inline uint32_t z_log_sources_count(void)
 {
-	return log_const_source_id(__log_const_end);
+	return log_const_source_id(TYPE_SECTION_END(log_const));
 }
 
 /** @brief Return number of external domains.
@@ -114,8 +114,6 @@ void z_log_msg_commit(struct log_msg *msg);
  *
  * @param[out] backoff Recommended backoff needed to maintain ordering of processed
  * messages. Used only when links are using dedicated buffers.
- *
- * @param Message or null if no pending messages.
  */
 union log_msg_generic *z_log_msg_claim(k_timeout_t *backoff);
 

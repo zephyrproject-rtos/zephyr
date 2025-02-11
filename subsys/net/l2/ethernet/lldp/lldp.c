@@ -199,6 +199,11 @@ static void lldp_start_timer(struct ethernet_context *ctx,
 			     struct net_if *iface,
 			     int slot)
 {
+	/* exit if started */
+	if (ctx->lldp[slot].tx_timer_start != 0) {
+		return;
+	}
+
 	ctx->lldp[slot].iface = iface;
 
 	sys_slist_append(&lldp_ifaces, &ctx->lldp[slot].node);
@@ -243,8 +248,10 @@ static int lldp_start(struct net_if *iface, uint32_t mgmt_event)
 	slot = ret;
 
 	if (mgmt_event == NET_EVENT_IF_DOWN) {
-		sys_slist_find_and_remove(&lldp_ifaces,
-					  &ctx->lldp[slot].node);
+		if (sys_slist_find_and_remove(&lldp_ifaces,
+					      &ctx->lldp[slot].node)) {
+			ctx->lldp[slot].tx_timer_start = 0;
+		}
 
 		if (sys_slist_is_empty(&lldp_ifaces)) {
 			k_work_cancel_delayable(&lldp_tx_timer);
@@ -260,7 +267,7 @@ static int lldp_start(struct net_if *iface, uint32_t mgmt_event)
 enum net_verdict net_lldp_recv(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct ethernet_context *ctx;
-	net_lldp_recv_cb_t cb;
+	net_lldp_recv_cb_t recv_cb;
 	int ret;
 
 	ret = lldp_check_iface(iface);
@@ -275,15 +282,15 @@ enum net_verdict net_lldp_recv(struct net_if *iface, struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	cb = ctx->lldp[ret].cb;
-	if (cb) {
-		return cb(iface, pkt);
+	recv_cb = ctx->lldp[ret].cb;
+	if (recv_cb) {
+		return recv_cb(iface, pkt);
 	}
 
 	return NET_DROP;
 }
 
-int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t cb)
+int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t recv_cb)
 {
 	struct ethernet_context *ctx;
 	int ret;
@@ -300,12 +307,12 @@ int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t cb)
 		return ret;
 	}
 
-	ctx->lldp[ret].cb = cb;
+	ctx->lldp[ret].cb = recv_cb;
 
 	return 0;
 }
 
-static void iface_event_handler(struct net_mgmt_event_callback *cb,
+static void iface_event_handler(struct net_mgmt_event_callback *evt_cb,
 				uint32_t mgmt_event, struct net_if *iface)
 {
 	lldp_start(iface, mgmt_event);

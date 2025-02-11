@@ -23,7 +23,7 @@ An ISR has the following key properties:
 
 * An **interrupt request (IRQ) signal** that triggers the ISR.
 * A **priority level** associated with the IRQ.
-* An **interrupt handler function** that is invoked to handle the interrupt.
+* An **interrupt service routine** that is invoked to handle the interrupt.
 * An **argument value** that is passed to that function.
 
 An :abbr:`IDT (Interrupt Descriptor Table)` or a vector table is used
@@ -44,10 +44,10 @@ in mid-execution if a higher priority interrupt is signaled. The lower
 priority ISR resumes execution once the higher priority ISR has completed
 its processing.
 
-An ISR's interrupt handler function executes in the kernel's **interrupt
-context**. This context has its own dedicated stack area (or, on some
-architectures, stack areas). The size of the interrupt context stack must be
-capable of handling the execution of multiple concurrent ISRs if interrupt
+An ISR executes in the kernel's **interrupt context**. This context has its
+own dedicated stack area (or, on some architectures, stack areas). The size
+of the interrupt context stack must be capable of handling the execution of
+multiple concurrent ISRs if interrupt
 nesting support is enabled.
 
 .. important::
@@ -59,7 +59,7 @@ nesting support is enabled.
 
 .. _multi_level_interrupts:
 
-Multi-level Interrupt handling
+Multi-level Interrupt Handling
 ==============================
 
 A hardware platform can support more interrupt lines than natively-provided
@@ -68,7 +68,7 @@ hardware interrupts are combined into one line that is then routed to
 the parent controller.
 
 If nested interrupt controllers are supported, :kconfig:option:`CONFIG_MULTI_LEVEL_INTERRUPTS`
-should be set to 1, and :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPTS` and
+should be enabled, and :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPTS` and
 :kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPTS` configured as well, based on the
 hardware architecture.
 
@@ -215,6 +215,38 @@ priority of the thread handling the offload, it is possible that
 the currently executing cooperative thread or other higher-priority threads
 may execute before the thread handling the offload is scheduled.
 
+Sharing interrupt lines
+=======================
+
+In the case of some hardware platforms, the same interrupt lines may be used
+by different IPs. For example, interrupt 17 may be used by a DMA controller to
+signal that a data transfer has been completed or by a DAI controller to signal
+that the transfer FIFO has reached its watermark. To make this work, one would
+have to either employ some special logic or find a workaround (for example, using
+the shared_irq interrupt controller), which doesn't scale very well.
+
+To solve this problem, one may use shared interrupts, which can be enabled using
+:kconfig:option:`CONFIG_SHARED_INTERRUPTS`. Whenever an attempt to register
+a second ISR/argument pair on the same interrupt line is made (using
+:c:macro:`IRQ_CONNECT` or :c:func:`irq_connect_dynamic`), the interrupt line will
+become shared, meaning the two ISR/argument pairs (previous one and the one that
+has just been registered) will be invoked each time the interrupt is triggered.
+The entities that make use of an interrupt line in the shared interrupt context
+are known as clients. The maximum number of allowed clients for an interrupt is
+controlled by :kconfig:option:`CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS`.
+
+Interrupt sharing is transparent to the user. As such, the user may register
+interrupts using :c:macro:`IRQ_CONNECT` and :c:func:`irq_connect_dynamic` as
+they normally would. The interrupt sharing is taken care of behind the scenes.
+
+Enabling the shared interrupt support and dynamic interrupt support will
+allow users to dynamically disconnect ISRs using :c:func:`irq_disconnect_dynamic`.
+After an ISR is disconnected, whenever the interrupt line for which it was
+register gets triggered, the ISR will no longer get invoked.
+
+Please note that enabling :kconfig:option:`CONFIG_SHARED_INTERRUPTS` will
+result in a non-negligible increase in the binary size. Use with caution.
+
 Implementation
 **************
 
@@ -326,12 +358,136 @@ architecture-specific basis. (The feature is currently implemented in
 ARM Cortex-M architecture variant. Dynamic direct interrupts feature is
 exposed to the user via an ARM-only API.)
 
+Sharing an interrupt line
+=========================
+
+The following code defines two ISRs using the same interrupt number.
+
+.. code-block:: c
+
+    #define MY_DEV_IRQ 24		/* device uses INTID 24 */
+    #define MY_DEV_IRQ_PRIO 2		/* device uses interrupt priority 2 */
+    /*  this argument may be anything */
+    #define MY_FST_ISR_ARG INT_TO_POINTER(1)
+    /*  this argument may be anything */
+    #define MY_SND_ISR_ARG INT_TO_POINTER(2)
+    #define MY_IRQ_FLAGS 0		/* IRQ flags */
+
+    void my_first_isr(void *arg)
+    {
+       ... /* some magic happens here */
+    }
+
+    void my_second_isr(void *arg)
+    {
+       ... /* even more magic happens here */
+    }
+
+    void my_isr_installer(void)
+    {
+       ...
+       IRQ_CONNECT(MY_DEV_IRQ, MY_DEV_IRQ_PRIO, my_first_isr, MY_FST_ISR_ARG, MY_IRQ_FLAGS);
+       IRQ_CONNECT(MY_DEV_IRQ, MY_DEV_IRQ_PRIO, my_second_isr, MY_SND_ISR_ARG, MY_IRQ_FLAGS);
+       ...
+    }
+
+The same restrictions regarding :c:macro:`IRQ_CONNECT` described in `Defining a regular ISR`_
+are applicable here. If :kconfig:option:`CONFIG_SHARED_INTERRUPTS` is disabled, the above
+code will generate a build error. Otherwise, the above code will result in the two ISRs
+being invoked each time interrupt 24 is triggered.
+
+If :kconfig:option:`CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS` is set to a value lower than 2
+(current number of clients), a build error will be generated.
+
+If dynamic interrupts are enabled, :c:func:`irq_connect_dynamic` will allow sharing interrupts
+during runtime. Exceeding the configured maximum number of allowed clients will result in
+a failed assertion.
+
+Dynamically disconnecting an ISR
+================================
+
+The following code defines two ISRs using the same interrupt number. The second
+ISR is disconnected during runtime.
+
+.. code-block:: c
+
+    #define MY_DEV_IRQ 24		/* device uses INTID 24 */
+    #define MY_DEV_IRQ_PRIO 2		/* device uses interrupt priority 2 */
+    /*  this argument may be anything */
+    #define MY_FST_ISR_ARG INT_TO_POINTER(1)
+    /*  this argument may be anything */
+    #define MY_SND_ISR_ARG INT_TO_POINTER(2)
+    #define MY_IRQ_FLAGS 0		/* IRQ flags */
+
+    void my_first_isr(void *arg)
+    {
+       ... /* some magic happens here */
+    }
+
+    void my_second_isr(void *arg)
+    {
+       ... /* even more magic happens here */
+    }
+
+    void my_isr_installer(void)
+    {
+       ...
+       IRQ_CONNECT(MY_DEV_IRQ, MY_DEV_IRQ_PRIO, my_first_isr, MY_FST_ISR_ARG, MY_IRQ_FLAGS);
+       IRQ_CONNECT(MY_DEV_IRQ, MY_DEV_IRQ_PRIO, my_second_isr, MY_SND_ISR_ARG, MY_IRQ_FLAGS);
+       ...
+    }
+
+    void my_isr_uninstaller(void)
+    {
+       ...
+       irq_disconnect_dynamic(MY_DEV_IRQ, MY_DEV_IRQ_PRIO, my_first_isr, MY_FST_ISR_ARG, MY_IRQ_FLAGS);
+       ...
+    }
+
+The :c:func:`irq_disconnect_dynamic` call will result in interrupt 24 becoming
+unshared, meaning the system will act as if the first :c:macro:`IRQ_CONNECT`
+call never happened. This behaviour is only allowed if
+:kconfig:option:`CONFIG_DYNAMIC_INTERRUPTS` is enabled, otherwise a linker
+error will be generated.
+
 Implementation Details
 ======================
 
 Interrupt tables are set up at build time using some special build tools.  The
 details laid out here apply to all architectures except x86, which are
 covered in the `x86 Details`_ section below.
+
+The invocation of :c:macro:`IRQ_CONNECT` will declare an instance of
+struct _isr_list which is placed in a special .intList section.
+This section is placed in compiled code on precompilation stages only.
+It is meant to be used by Zephyr script to generate interrupt tables
+and is removed from the final build.
+The script implements different parsers to process the data from .intList section
+and produce the required output.
+
+The default parser generates C arrays filled with arguments and interrupt
+handlers in a form of addresses directly taken from .intList section entries.
+It works with all the architectures and compilers (with the exception mentioned above).
+The limitation of this parser is the fact that after the arrays are generated
+it is expected for the code not to relocate.
+Any relocation on this stage may lead to the situation where the entry in the interrupt array
+is no longer pointing to the function that was expected.
+It means that this parser, being more compatible is limiting us from using Link Time Optimization.
+
+The local isr declaration parser uses different approach to construct
+the same arrays at binnary level.
+All the entries to the arrays are declared and defined locally,
+directly in the file where :c:macro:`IRQ_CONNECT` is used.
+They are placed in a section with the unique, synthesized name.
+The name of the section is then placed in .intList section and it is used to create linker script
+to properly place the created entry in the right place in the memory.
+This parser is now limited to the supported architectures and toolchains but in reward it keeps
+the information about object relations for linker thus allowing the Link Time Optimization.
+
+Implementation using C arrays
+-----------------------------
+
+This is the default configuration available for all Zephyr supported architectures.
 
 Any invocation of :c:macro:`IRQ_CONNECT` will declare an instance of
 struct _isr_list which is placed in a special .intList section:
@@ -376,7 +532,7 @@ do not support the notion of interrupt priority, in which case the priority
 argument is ignored.
 
 Vector Table
-------------
+~~~~~~~~~~~~
 A vector table is generated when :kconfig:option:`CONFIG_GEN_IRQ_VECTOR_TABLE` is
 enabled.  This data structure is used natively by the CPU and is simply an
 array of function pointers, where each element n corresponds to the IRQ handler
@@ -403,7 +559,7 @@ CONFIG_GEN_IRQ_START_VECTOR needs to be set to properly offset the indices
 in the table.
 
 SW ISR Table
-------------
+~~~~~~~~~~~~
 This is an array of struct _isr_table_entry:
 
 .. code-block:: c
@@ -416,6 +572,105 @@ This is an array of struct _isr_table_entry:
 This is used by the common software IRQ handler to look up the ISR and its
 argument and execute it. The active IRQ line is looked up in an interrupt
 controller register and used to index this table.
+
+Shared SW ISR Table
+~~~~~~~~~~~~~~~~~~~
+
+This is an array of struct z_shared_isr_table_entry:
+
+.. code-block:: c
+
+    struct z_shared_isr_table_entry {
+        struct _isr_table_entry clients[CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS];
+        size_t client_num;
+    };
+
+This table keeps track of the registered clients for each of the interrupt
+lines. Whenever an interrupt line becomes shared, :c:func:`z_shared_isr` will
+replace the currently registered ISR in _sw_isr_table. This special ISR will
+iterate through the list of registered clients and invoke the ISRs.
+
+Implementation using linker script
+----------------------------------
+
+This way of prepare and parse .isrList section to implement interrupt vectors arrays
+is called local isr declaration.
+The name comes from the fact that all the entries to the arrays that would create
+interrupt vectors are created locally in place of invocation of :c:macro:`IRQ_CONNECT` macro.
+Then automatically generated linker scripts are used to place it in the right place in the memory.
+
+This option requires enabling by the choose of :kconfig:option:`ISR_TABLES_LOCAL_DECLARATION`.
+If this configuration is supported by the used architecture and toolchaing the
+:kconfig:option:`ISR_TABLES_LOCAL_DECLARATION_SUPPORTED` is set.
+See details of this option for the information about currently supported configurations.
+
+Any invocation of :c:macro:`IRQ_CONNECT` or `IRQ_DIRECT_CONNECT` will declare an instance of struct
+_isr_list_sname which is placde in a special .intList section:
+
+.. code-block:: c
+
+    struct _isr_list_sname {
+        /** IRQ line number */
+        int32_t irq;
+        /** Flags for this IRQ, see ISR_FLAG_* definitions */
+        int32_t flags;
+        /** The section name */
+        const char sname[];
+    };
+
+Note that the section name is placed in flexible array member.
+It means that the size of the initialized structure will warry depending on the
+structure name length.
+The whole entry is used by the script during the build of the application
+and has all the information needed for proper interrupt placement.
+
+Beside of the _isr_list_sname the :c:macro:`IRQ_CONNECT` macro generates an entry
+that would be the part of the interrupt array:
+
+.. code-block:: c
+
+    struct _isr_table_entry {
+        const void *arg;
+        void (*isr)(const void *);
+    };
+
+This array is placed in a section with the name saved in _isr_list_sname structure.
+
+The values created by :c:macro:`IRQ_DIRECT_CONNECT` macro depends on the architecture.
+It can be changed to variable that points to a interrupt handler:
+
+.. code-block:: c
+
+    static uintptr_t <unique name> = ((uintptr_t)func);
+
+Or to actually naked function that implements a jump to the interrupt handler:
+
+.. code-block:: c
+
+    static void <unique name>(void)
+    {
+        __asm(ARCH_IRQ_VECTOR_JUMP_CODE(func));
+    }
+
+Similar like for :c:macro:`IRQ_CONNECT`, the created variable or function is placed
+in a section, saved in _isr_list_sname section.
+
+Files generated by the script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The interrupt tables generator script creates 3 files:
+isr_tables.c, isr_tables_swi.ld, and isr_tables_vt.ld.
+
+The isr_tables.c will contain all the structures for interrupts, direct interrupts and
+shared interrupts (if enabled). This file implements only all the structures that
+are not implemented by the application, leaving a comment where the interrupt
+not implemented here can be found.
+
+Then two linker files are used. The isr_tables_vt.ld file is included in place
+where the interrupt vectors are required to be placed in the selected architecture.
+The isr_tables_swi.ld file describes the placement of the software interrupt table
+elements. The separated file is required as it might be placed in writable on nonwritable
+section, depending on the current configuration.
 
 x86 Details
 -----------
@@ -454,6 +709,23 @@ by the :kconfig:option:`CONFIG_X86_DYNAMIC_IRQ_STUBS` option. Each stub pushes a
 unique identifier which is then used to fetch the appropriate handler function
 and parameter out of a table populated when the dynamic interrupt was
 connected.
+
+Going Beyond the Default Supported Number of Interrupts
+-------------------------------------------------------
+
+When generating interrupts in the multi-level configuration, 8-bits per level is the default
+mask used when determining which level a given interrupt code belongs to. This can become
+a problem when dealing with CPUs that support more than 255 interrupts per single
+aggregator. In this case it may be desirable to override these defaults and use a custom
+number of bits per level. Regardless of how many bits used for each level, the sum of
+the total bits used between all levels must sum to be less than or equal to 32-bits,
+fitting into a single 32-bit integer. To modify the bit total per level, override the
+default 8 in `Kconfig.multilevel` by setting :kconfig:option:`CONFIG_1ST_LEVEL_INTERRUPT_BITS`
+for the  first level, :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPT_BITS` for the second level and
+:kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPT_BITS` for the third level. These masks control the
+length of the bit masks and shift to apply when generating interrupt values, when checking the
+interrupts level and converting interrupts to a different level. The logic controlling
+this can be found in :file:`irq_multilevel.h`
 
 Suggested Uses
 **************

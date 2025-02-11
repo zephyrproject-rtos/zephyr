@@ -1,12 +1,12 @@
-.. _samples_fpga_controller:
+.. zephyr:code-sample:: fpga-controller
+   :name: FPGA Controller
 
-Zephyr FPGA controller
-######################
+   Load a bitstream into an FPGA and perform basic operations on it.
 
 Overview
 ********
 This module is an FPGA driver that can easily load a bitstream, reset it, check its status, enable or disable the FPGA.
-This sample demonstrates how to use the FPGA driver API and the the FPGA controller shell subsystem.
+This sample demonstrates how to use the FPGA driver API and the FPGA controller shell subsystem.
 Currently the sample works with `Quicklogic Quickfeather board`_.
 
 Requirements
@@ -83,7 +83,7 @@ To upload the bitstream again you need to reset the FPGA:
 
 You can also use your own bitstream.
 To load a bitstream into device memory, use `devmem load` command.
-It is important to use the -e option when sending a bistream via `xxd`:
+It is important to use the -e option when sending a bitstream via `xxd`:
 
 .. code-block:: console
 

@@ -9,7 +9,6 @@
 config BT_MPL
 	bool "Support for media player"
 	select BT_CCID
-	select EXPERIMENTAL
 	help
 	  Enables support for media player
 	  Note that the provided media player is a sample that only provides a
@@ -60,7 +59,7 @@ config BT_MPL_SEGMENT_NAME_MAX
 	default 25
 	range 1 255
 	help
-	  Sets the the maximum number of bytes (including the null termination)
+	  Sets the maximum number of bytes (including the null termination)
 	  of the name of any track segment in the media player.
 
 config BT_MPL_GROUP_TITLE_MAX
@@ -106,16 +105,5 @@ config BT_MPL_TRACK_MAX_SIZE
 	  This option sets the maximum size (in octets) of a track object.
 
 endif # BT_MPL_OBJECTS
-
-config BT_DEBUG_MPL
-	bool "Media player debug"
-	select DEPRECATED
-	help
-	  Enables debug logs for the media player
-
-module = BT_MPL
-legacy-debug-sym = BT_DEBUG_MPL
-module-str = "Media player"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_MPL

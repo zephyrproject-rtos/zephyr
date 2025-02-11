@@ -23,7 +23,7 @@ config USB_DEVICE_REMOTE_WAKEUP
 config USB_DW
 	bool "Designware USB Device Controller Driver"
 	default y
-	depends on DT_HAS_SNPS_DESIGNWARE_USB_ENABLED
+	depends on DT_HAS_SNPS_DWC2_ENABLED
 	help
 	  Designware USB Device Controller Driver.
 
@@ -73,6 +73,16 @@ config USB_DC_SAM0
 	help
 	  SAM0 family USB device controller Driver.
 
+config USB_DC_SMARTBOND
+	bool "SmartBond series USB Device Controller driver"
+	default y
+	select CLOCK_CONTROL_SMARTBOND
+	select CLOCK_CONTROL
+	select DMA
+	depends on DT_HAS_RENESAS_SMARTBOND_USBD_ENABLED
+	help
+	  SmartBond family USB device controller Driver.
+
 config USB_DC_SAM_USBC
 	bool "SAM4L USBC Device Controller driver"
 	default y
@@ -95,7 +105,7 @@ config USB_NRFX
 	bool "Nordic Semiconductor USB Device Controller Driver"
 	default y
 	depends on DT_HAS_NORDIC_NRF_USBD_ENABLED
-	select NRFX_USBD
+	select NRF_USBD_COMMON
 	select NRFX_POWER
 	imply USB_DEVICE_REMOTE_WAKEUP
 	help
@@ -138,7 +148,7 @@ config USB_KINETIS
 config USB_MCUX
 	bool "NXP MCUX USB Device Controller Driver"
 	default y
-	depends on DT_HAS_NXP_MCUX_USBD_ENABLED
+	depends on DT_HAS_NXP_EHCI_ENABLED || DT_HAS_NXP_LPCIP3511_ENABLED
 	help
 	  NXP MCUX USB Device Controller Driver for MXRT and LPC SoC's.
 
@@ -151,14 +161,15 @@ choice USB_MCUX_CONTROLLER_TYPE
 
 config USB_DC_NXP_EHCI
 	bool "MXRT EHCI USB Device Controller"
-	select NOCACHE_MEMORY if HAS_MCUX_CACHE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select USB_DC_HAS_HS_SUPPORT
 	help
 	  Kinetis and RT EHCI USB Device Controller Driver.
 
 config USB_DC_NXP_LPCIP3511
 	bool "LPC USB Device Controller"
-	select USB_DC_HAS_HS_SUPPORT
+	select USB_DC_HAS_HS_SUPPORT if "$(dt_nodelabel_enabled,usbhs)"
+	select PINCTRL
 	help
 	  LPC USB Device Controller Driver.
 
@@ -173,16 +184,62 @@ config USB_DC_MSG_QUEUE_LEN
 
 config USB_MCUX_THREAD_STACK_SIZE
 	int "Stack size for the USB driver"
+	default 2048 if USB_DEVICE_LOG_LEVEL_DBG
 	default 1024
 	help
 	  Size of the stack used for the internal USB thread.
 
 endif # USB_MCUX
 
+config USB_DC_IT82XX2
+	bool "ITE IT82XX2 USB Device Controller Driver"
+	default y
+	depends on DT_HAS_ITE_IT82XX2_USB_ENABLED
+	help
+	  ITE IT82XX2 USB Device Controller Driver
+
+config USB_DC_NUMAKER
+	bool "Nuvoton NuMaker USB 1.1 device controller"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_USBD_ENABLED
+	help
+	  Enable Nuvoton NuMaker USB 1.1 device controller driver
+
+if USB_DC_NUMAKER
+
+config USB_DC_NUMAKER_MSG_QUEUE_SIZE
+	int "USB DC message queue size"
+	default 32
+	help
+	  Maximum number of messages the driver can queue for interrupt bottom half processing
+
+config USB_DC_NUMAKER_MSG_HANDLER_THREAD_STACK_SIZE
+	int "USB DC message handler thread stack size"
+	default 1536
+	help
+	  Size of the stack for the message handler thread that is used in the driver
+	  for handling messages from the USB DC ISR, i.e. interrupt bottom half processing,
+	  including callbacks to the USB device stack.
+
+endif # USB_DC_NUMAKER
+
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"
+	depends on ARCH_POSIX && EXTERNAL_LIBC
+	default y if BOARD_NATIVE_SIM || BOARD_NATIVE_POSIX
 	help
 	  Native Posix USB Device Controller Driver.
+
+DT_ZEPHYR_UDC0 := $(dt_nodelabel_path,zephyr_udc0)
+DT_ZEPHYR_UDC0_HS_SPEED := $(dt_node_str_prop_equals,$(DT_ZEPHYR_UDC0),maximum-speed,high-speed)
+
+config USB_NATIVE_POSIX_HS
+	bool "High speed support"
+	select USB_DC_HAS_HS_SUPPORT
+	depends on USB_NATIVE_POSIX
+	default y if "$(DT_ZEPHYR_UDC0_HS_SPEED)"
+	help
+	  Enable high speed support in the Native Posix USB device controller driver.
 
 module = USB_DRIVER
 module-str = usb driver

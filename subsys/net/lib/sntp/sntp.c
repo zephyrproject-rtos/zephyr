@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_sntp, CONFIG_SNTP_LOG_LEVEL);
 
 #include <zephyr/net/sntp.h>
 #include "sntp_pkt.h"
+#include <limits.h>
 
 #define SNTP_LI_MAX 3
 #define SNTP_VERSION_NUMBER 3
@@ -24,45 +25,60 @@ static void sntp_pkt_dump(struct sntp_pkt *pkt)
 		return;
 	}
 
-	NET_DBG("li               %x", SNTP_GET_LI(pkt->lvm));
-	NET_DBG("vn               %x", SNTP_GET_VN(pkt->lvm));
-	NET_DBG("mode             %x", SNTP_GET_MODE(pkt->lvm));
+	NET_DBG("li               %x", pkt->li);
+	NET_DBG("vn               %x", pkt->vn);
+	NET_DBG("mode             %x", pkt->mode);
 	NET_DBG("stratum:         %x", pkt->stratum);
 	NET_DBG("poll:            %x", pkt->poll);
 	NET_DBG("precision:       %x", pkt->precision);
-	NET_DBG("root_delay:      %x", pkt->root_delay);
-	NET_DBG("root_dispersion: %x", pkt->root_dispersion);
-	NET_DBG("ref_id:          %x", pkt->ref_id);
-	NET_DBG("ref_tm_s:        %x", pkt->ref_tm_s);
-	NET_DBG("ref_tm_f:        %x", pkt->ref_tm_f);
-	NET_DBG("orig_tm_s:       %x", pkt->orig_tm_s);
-	NET_DBG("orig_tm_f:       %x", pkt->orig_tm_f);
-	NET_DBG("rx_tm_s:         %x", pkt->rx_tm_s);
-	NET_DBG("rx_tm_f:         %x", pkt->rx_tm_f);
-	NET_DBG("tx_tm_s:         %x", pkt->tx_tm_s);
-	NET_DBG("tx_tm_f:         %x", pkt->tx_tm_f);
+	NET_DBG("root_delay:      %x", ntohl(pkt->root_delay));
+	NET_DBG("root_dispersion: %x", ntohl(pkt->root_dispersion));
+	NET_DBG("ref_id:          %x", ntohl(pkt->ref_id));
+	NET_DBG("ref_tm_s:        %x", ntohl(pkt->ref_tm_s));
+	NET_DBG("ref_tm_f:        %x", ntohl(pkt->ref_tm_f));
+	NET_DBG("orig_tm_s:       %x", ntohl(pkt->orig_tm_s));
+	NET_DBG("orig_tm_f:       %x", ntohl(pkt->orig_tm_f));
+	NET_DBG("rx_tm_s:         %x", ntohl(pkt->rx_tm_s));
+	NET_DBG("rx_tm_f:         %x", ntohl(pkt->rx_tm_f));
+	NET_DBG("tx_tm_s:         %x", ntohl(pkt->tx_tm_s));
+	NET_DBG("tx_tm_f:         %x", ntohl(pkt->tx_tm_f));
 }
 
-static int32_t parse_response(uint8_t *data, uint16_t len, uint32_t orig_ts,
-			    struct sntp_time *time)
+#if defined(CONFIG_SNTP_UNCERTAINTY)
+static int64_t q16_16_s_to_ll_us(uint32_t t)
+{
+	return (int64_t)(t >> 16) * (int64_t)USEC_PER_SEC +
+	       (((int64_t)(t & 0xFFFF) * (int64_t)USEC_PER_SEC) >> 16);
+}
+
+static int64_t q32_32_s_to_ll_us(uint32_t t_s, uint32_t t_f)
+{
+	return (uint64_t)t_s * USEC_PER_SEC + (((uint64_t)t_f * (uint64_t)USEC_PER_SEC) >> 32);
+}
+#endif
+
+static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *expected_orig_ts,
+			      struct sntp_time *res)
 {
 	struct sntp_pkt *pkt = (struct sntp_pkt *)data;
 	uint32_t ts;
 
 	sntp_pkt_dump(pkt);
 
-	if (ntohl(pkt->orig_tm_s) != orig_ts) {
-		NET_DBG("Mismatch originate timestamp: %d, expect: %d",
-			ntohl(pkt->orig_tm_s), orig_ts);
+	if (ntohl(pkt->orig_tm_s) != expected_orig_ts->seconds ||
+	    ntohl(pkt->orig_tm_f) != expected_orig_ts->fraction) {
+		NET_DBG("Mismatch originate timestamp: %d.%09d, expect: %llu.%09u",
+			ntohl(pkt->orig_tm_s), ntohl(pkt->orig_tm_f), expected_orig_ts->seconds,
+			expected_orig_ts->fraction);
 		return -EINVAL;
 	}
 
-	if (SNTP_GET_MODE(pkt->lvm) != SNTP_MODE_SERVER) {
+	if (pkt->mode != SNTP_MODE_SERVER) {
 		/* For unicast and manycast, server should return 4.
 		 * For broadcast (which is not supported now), server should
 		 * return 5.
 		 */
-		NET_DBG("Unexpected mode: %d", SNTP_GET_MODE(pkt->lvm));
+		NET_DBG("Unexpected mode: %d", pkt->mode);
 		return -EINVAL;
 	}
 
@@ -76,7 +92,43 @@ static int32_t parse_response(uint8_t *data, uint16_t len, uint32_t orig_ts,
 		return -EINVAL;
 	}
 
-	time->fraction = ntohl(pkt->tx_tm_f);
+#if defined(CONFIG_SNTP_UNCERTAINTY)
+
+	int64_t dest_ts_us = k_ticks_to_us_near64(k_uptime_ticks());
+	int64_t orig_ts_us =
+		q32_32_s_to_ll_us(expected_orig_ts->seconds, expected_orig_ts->fraction);
+
+	int64_t rx_ts_us = q32_32_s_to_ll_us(ntohl(pkt->rx_tm_s), ntohl(pkt->rx_tm_f));
+	int64_t tx_ts_us = q32_32_s_to_ll_us(ntohl(pkt->tx_tm_s), ntohl(pkt->tx_tm_f));
+
+	if (rx_ts_us > tx_ts_us || orig_ts_us > dest_ts_us) {
+		NET_DBG("Invalid timestamps from SNTP server");
+		return -EINVAL;
+	}
+
+	int64_t d_us = (dest_ts_us - orig_ts_us) - (tx_ts_us - rx_ts_us);
+	int64_t clk_offset_us = ((rx_ts_us - orig_ts_us) + (tx_ts_us - dest_ts_us)) / 2;
+	int64_t root_dispersion_us = q16_16_s_to_ll_us(ntohl(pkt->root_dispersion));
+	int64_t root_delay_us = q16_16_s_to_ll_us(ntohl(pkt->root_delay));
+	uint32_t precision_us;
+
+	if (pkt->precision <= 0) {
+		precision_us = (uint32_t)(USEC_PER_SEC + USEC_PER_SEC / 2) >> -pkt->precision;
+	} else if (pkt->precision <= 10) {
+		precision_us = (uint32_t)(USEC_PER_SEC + USEC_PER_SEC / 2) << pkt->precision;
+	} else {
+		NET_DBG("SNTP packet precision out of range: %d", pkt->precision);
+		return -EINVAL;
+	}
+
+	res->uptime_us = dest_ts_us;
+	res->seconds = (res->uptime_us + clk_offset_us) / USEC_PER_SEC;
+	res->fraction = (res->uptime_us + clk_offset_us) % USEC_PER_SEC;
+	res->uncertainty_us = (d_us + root_delay_us + precision_us) / 2 + root_dispersion_us;
+#else
+	res->fraction = ntohl(pkt->tx_tm_f);
+	res->seconds = ntohl(pkt->tx_tm_s);
+#endif
 	ts = ntohl(pkt->tx_tm_s);
 
 	/* Check if most significant bit is set */
@@ -85,7 +137,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, uint32_t orig_ts,
 		 * on 1 January 1900.
 		 */
 		if (ts >= OFFSET_1970_JAN_1) {
-			time->seconds = ts - OFFSET_1970_JAN_1;
+			res->seconds -= OFFSET_1970_JAN_1;
 		} else {
 			return -EINVAL;
 		}
@@ -93,7 +145,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, uint32_t orig_ts,
 		/* UTC time is reckoned from 6h 28m 16s UTC
 		 * on 7 February 2036.
 		 */
-		time->seconds = ts + 0x100000000ULL - OFFSET_1970_JAN_1;
+		res->seconds += 0x100000000ULL - OFFSET_1970_JAN_1;
 	}
 
 	return 0;
@@ -126,18 +178,9 @@ static int sntp_recv_response(struct sntp_ctx *sntp, uint32_t timeout,
 	}
 
 	status = parse_response((uint8_t *)&buf, sizeof(buf),
-				sntp->expected_orig_ts,
+				&sntp->expected_orig_ts,
 				time);
 	return status;
-}
-
-static uint32_t get_uptime_in_sec(void)
-{
-	uint64_t time;
-
-	time = k_uptime_get_32();
-
-	return time / MSEC_PER_SEC;
 }
 
 int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
@@ -164,7 +207,7 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 	}
 
 	ctx->sock.fds[ctx->sock.nfds].fd = ctx->sock.fd;
-	ctx->sock.fds[ctx->sock.nfds].events = POLLIN;
+	ctx->sock.fds[ctx->sock.nfds].events = ZSOCK_POLLIN;
 	ctx->sock.nfds++;
 
 	return 0;
@@ -174,17 +217,21 @@ int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *time)
 {
 	struct sntp_pkt tx_pkt = { 0 };
 	int ret = 0;
+	int64_t ts_us = 0;
 
 	if (!ctx || !time) {
 		return -EFAULT;
 	}
 
 	/* prepare request pkt */
-	SNTP_SET_LI(tx_pkt.lvm, 0);
-	SNTP_SET_VN(tx_pkt.lvm, SNTP_VERSION_NUMBER);
-	SNTP_SET_MODE(tx_pkt.lvm, SNTP_MODE_CLIENT);
-	ctx->expected_orig_ts = get_uptime_in_sec() + OFFSET_1970_JAN_1;
-	tx_pkt.tx_tm_s = htonl(ctx->expected_orig_ts);
+	tx_pkt.li = 0;
+	tx_pkt.vn = SNTP_VERSION_NUMBER;
+	tx_pkt.mode = SNTP_MODE_CLIENT;
+	ts_us = k_ticks_to_us_near64(k_uptime_ticks());
+	ctx->expected_orig_ts.seconds = ts_us / USEC_PER_SEC;
+	ctx->expected_orig_ts.fraction = (ts_us % USEC_PER_SEC) * (UINT32_MAX / USEC_PER_SEC);
+	tx_pkt.tx_tm_s = htonl(ctx->expected_orig_ts.seconds);
+	tx_pkt.tx_tm_f = htonl(ctx->expected_orig_ts.fraction);
 
 	ret = zsock_send(ctx->sock.fd, (uint8_t *)&tx_pkt, sizeof(tx_pkt), 0);
 	if (ret < 0) {

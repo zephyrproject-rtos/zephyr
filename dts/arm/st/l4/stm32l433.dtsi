@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32l433", "st,stm32l4", "simple-bus";
+
 		pinctrl: pin-controller@48000000 {
 			gpiod: gpio@48000c00 {
 				compatible = "st,stm32-gpio";
@@ -56,5 +58,22 @@
 			interrupts = <39 0>;
 			status = "disabled";
 		};
+
+		sdmmc1: sdmmc@40012800 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x40012800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+			interrupts = <49 0>;
+			status = "disabled";
+		};
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
 	};
 };

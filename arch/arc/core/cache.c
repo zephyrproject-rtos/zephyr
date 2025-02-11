@@ -216,11 +216,9 @@ int arch_icache_flush_and_invd_range(void *addr, size_t size)
 	return -ENOTSUP;
 }
 
-static int init_dcache(const struct device *unused)
+static int init_dcache(void)
 {
-	ARG_UNUSED(unused);
-
-	arch_dcache_enable();
+	sys_cache_data_enable();
 
 #if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
 	init_dcache_line_size();

@@ -21,6 +21,7 @@ config SPI_STM32_INTERRUPT
 config SPI_STM32_DMA
 	bool "STM32 MCU SPI DMA Support"
 	select DMA
+	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
 	help
 	  Enable the SPI DMA mode for SPI instances
 	  that enable dma channels in their device tree node.
@@ -31,5 +32,21 @@ config SPI_STM32_USE_HW_SS
 	help
 	  Use Slave Select pin instead of software Slave Select.
 
+config SPI_STM32_ERRATA_BUSY
+	bool
+	default y
+	depends on SOC_SERIES_STM32F7X || SOC_SERIES_STM32L4X
+	help
+	  Handles erratum "BSY bit may stay high at the end of a data
+	  transfer in slave mode".
+	  Seen for instance in Errata Sheet 0290 §2.11.2
+
+if SPI_STM32_ERRATA_BUSY
+
+config SPI_STM32_BUSY_FLAG_TIMEOUT
+	int "timeout in us for the STM32 busy flag workaround"
+	default 10000
+
+endif # SPI_STM32_ERRATA_BUSY
 
 endif # SPI_STM32

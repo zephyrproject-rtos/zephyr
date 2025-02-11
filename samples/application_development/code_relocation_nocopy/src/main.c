@@ -15,7 +15,7 @@
  * to configure the region appropriately in arm_mpu_regions.c.
  */
 #ifdef CONFIG_ARM_MPU
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 void disable_mpu_rasr_xn(void)
 {
 	uint32_t index;
@@ -42,7 +42,7 @@ void disable_mpu_rasr_xn(void)
 extern void function_in_ext_flash(void);
 extern void function_in_sram(void);
 
-void main(void)
+int main(void)
 {
 #ifdef CONFIG_ARM_MPU
 	disable_mpu_rasr_xn();
@@ -54,4 +54,5 @@ void main(void)
 	function_in_sram();
 
 	printk("Hello World! %s\n", CONFIG_BOARD);
+	return 0;
 }

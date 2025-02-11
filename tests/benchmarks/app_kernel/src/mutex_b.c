@@ -8,29 +8,25 @@
 
 #include "master.h"
 
-#ifdef MUTEX_BENCH
-
 /**
- *
  * @brief Mutex lock/unlock test
- *
  */
 void mutex_test(void)
 {
 	uint32_t et; /* elapsed time */
 	int i;
+	timing_t  start;
+	timing_t  end;
 
-	PRINT_STRING(dashline, output_file);
-	et = BENCH_START();
+	PRINT_STRING(dashline);
+	start = timing_timestamp_get();
 	for (i = 0; i < NR_OF_MUTEX_RUNS; i++) {
 		k_mutex_lock(&DEMO_MUTEX, K_FOREVER);
 		k_mutex_unlock(&DEMO_MUTEX);
 	}
-	et = TIME_STAMP_DELTA_GET(et);
-	check_result();
+	end = timing_timestamp_get();
+	et = (uint32_t)timing_cycles_get(&start, &end);
 
-	PRINT_F(output_file, FORMAT, "average lock and unlock mutex",
+	PRINT_F(FORMAT, "average lock and unlock mutex",
 		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MUTEX_RUNS)));
 }
-
-#endif /* MUTEX_BENCH */

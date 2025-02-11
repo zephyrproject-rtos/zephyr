@@ -8,7 +8,8 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/drivers/gpio.h>
-#include "esp_sleep.h"
+#include <esp_sleep.h>
+#include <driver/gpio.h>
 
 /* Most development boards have "boot" button attached to GPIO0.
  * You can also change this to another pin.
@@ -27,11 +28,11 @@
 static const struct gpio_dt_spec button =
 	GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, {0});
 
-void main(void)
+int main(void)
 {
-	if (!device_is_ready(button.port)) {
+	if (!gpio_is_ready_dt(&button)) {
 		printk("Error: button device %s is not ready\n", button.port->name);
-		return;
+		return 0;
 	}
 
 	const int wakeup_level = (button.dt_flags & GPIO_ACTIVE_LOW) ? 0 : 1;
@@ -91,4 +92,5 @@ void main(void)
 				wakeup_reason, t_after_ms, (t_after_ms - t_before_ms));
 	}
 
+	return 0;
 }

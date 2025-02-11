@@ -1,0 +1,21 @@
+# Microchip MEC174X MCU core series
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MEC174X
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select HAS_SWO
+	select HAS_MEC5_HAL
+	select HAS_PM
+
+if SOC_SERIES_MEC174X
+
+config RTOS_TIMER
+	bool "MEC174x RTOS Timer(32KHz) as kernel timer"
+
+endif # SOC_SERIES_MEC174X

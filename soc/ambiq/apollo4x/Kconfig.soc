@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+
+config SOC_SERIES_APOLLO4X
+	bool
+	select SOC_FAMILY_AMBIQ
+	help
+	  Apollo4 Series MCU
+
+config SOC_APOLLO4P
+	bool
+	select SOC_SERIES_APOLLO4X
+	help
+	  Apollo4P
+
+config SOC_APOLLO4P_BLUE
+	bool
+	select SOC_SERIES_APOLLO4X
+	help
+	  Apollo4 Blue Plus
+
+config SOC_SERIES
+	default "apollo4x" if SOC_SERIES_APOLLO4X
+
+config SOC
+	default "apollo4p" if SOC_APOLLO4P
+	default "apollo4p_blue" if SOC_APOLLO4P_BLUE

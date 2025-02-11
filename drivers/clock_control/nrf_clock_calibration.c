@@ -44,7 +44,7 @@ static void cal_lf_callback(struct onoff_manager *mgr,
 			    struct onoff_client *cli,
 			    uint32_t state, int res);
 
-static struct onoff_client cli;
+static struct onoff_client client;
 static struct onoff_manager *mgrs;
 
 /* Temperature sensor is only needed if
@@ -87,12 +87,12 @@ static void clk_release(struct onoff_manager *mgr)
 
 static void hf_request(void)
 {
-	clk_request(&mgrs[CLOCK_CONTROL_NRF_TYPE_HFCLK], &cli, cal_hf_callback);
+	clk_request(&mgrs[CLOCK_CONTROL_NRF_TYPE_HFCLK], &client, cal_hf_callback);
 }
 
 static void lf_request(void)
 {
-	clk_request(&mgrs[CLOCK_CONTROL_NRF_TYPE_LFCLK], &cli, cal_lf_callback);
+	clk_request(&mgrs[CLOCK_CONTROL_NRF_TYPE_LFCLK], &client, cal_lf_callback);
 }
 
 static void hf_release(void)

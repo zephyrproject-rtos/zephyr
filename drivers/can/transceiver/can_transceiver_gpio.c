@@ -58,8 +58,10 @@ static int can_transceiver_gpio_set_state(const struct device *dev, bool enabled
 	return 0;
 }
 
-static int can_transceiver_gpio_enable(const struct device *dev)
+static int can_transceiver_gpio_enable(const struct device *dev, can_mode_t mode)
 {
+	ARG_UNUSED(mode);
+
 	return can_transceiver_gpio_set_state(dev, true);
 }
 
@@ -75,7 +77,7 @@ static int can_transceiver_gpio_init(const struct device *dev)
 
 #if ANY_INST_HAS_ENABLE_GPIOS
 	if (config->enable_gpio.port != NULL) {
-		if (!device_is_ready(config->enable_gpio.port)) {
+		if (!gpio_is_ready_dt(&config->enable_gpio)) {
 			LOG_ERR("enable pin GPIO device not ready");
 			return -EINVAL;
 		}
@@ -91,7 +93,7 @@ static int can_transceiver_gpio_init(const struct device *dev)
 
 #if ANY_INST_HAS_STANDBY_GPIOS
 	if (config->standby_gpio.port != NULL) {
-		if (!device_is_ready(config->standby_gpio.port)) {
+		if (!gpio_is_ready_dt(&config->standby_gpio)) {
 			LOG_ERR("standby pin GPIO device not ready");
 			return -EINVAL;
 		}
@@ -118,6 +120,11 @@ static const struct can_transceiver_driver_api can_transceiver_gpio_driver_api =
 		   (.name##_gpio = GPIO_DT_SPEC_INST_GET(inst, name##_gpios),))
 
 #define CAN_TRANSCEIVER_GPIO_INIT(inst)					\
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, enable_gpios) ||	\
+		     DT_INST_NODE_HAS_PROP(inst, standby_gpios),	\
+		     "Missing GPIO property on "			\
+		     DT_NODE_FULL_NAME(DT_DRV_INST(inst)));		\
+									\
 	static const struct can_transceiver_gpio_config	can_transceiver_gpio_config_##inst = { \
 		CAN_TRANSCEIVER_GPIO_COND(inst, enable)			\
 		CAN_TRANSCEIVER_GPIO_COND(inst, standby)		\

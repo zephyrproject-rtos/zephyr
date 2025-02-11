@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/dlist.h>
-
 #include <hal/nrf_rtc.h>
 
 #include "hal/cntr.h"
@@ -14,8 +12,12 @@
 #include "hal/debug.h"
 
 #ifndef NRF_RTC
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#define NRF_RTC NRF_RTC10
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 #define NRF_RTC NRF_RTC0
-#endif
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !NRF_RTC */
 
 static uint8_t _refcount;
 

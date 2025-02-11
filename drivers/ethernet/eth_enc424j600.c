@@ -442,8 +442,12 @@ done:
 	return 0;
 }
 
-static void enc424j600_rx_thread(struct enc424j600_runtime *context)
+static void enc424j600_rx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct enc424j600_runtime *context = p1;
 	uint16_t eir;
 	uint16_t estat;
 	uint8_t counter;
@@ -662,7 +666,7 @@ static int enc424j600_init(const struct device *dev)
 	}
 
 	/* Initialize GPIO */
-	if (!device_is_ready(config->interrupt.port)) {
+	if (!gpio_is_ready_dt(&config->interrupt)) {
 		LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
 		return -EINVAL;
 	}
@@ -767,7 +771,7 @@ static int enc424j600_init(const struct device *dev)
 	/* Start interruption-poll thread */
 	k_thread_create(&context->thread, context->thread_stack,
 			CONFIG_ETH_ENC424J600_RX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)enc424j600_rx_thread,
+			enc424j600_rx_thread,
 			context, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_ENC424J600_RX_THREAD_PRIO),
 			0, K_NO_WAIT);

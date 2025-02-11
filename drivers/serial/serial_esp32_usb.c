@@ -8,14 +8,36 @@
 
 #include <hal/usb_serial_jtag_ll.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#else
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#endif
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
+
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
+#define ISR_HANDLER isr_handler_t
+#else
+#define ISR_HANDLER intr_handler_t
+#endif
+
+/*
+ * Timeout after which the poll_out function stops waiting for space in the tx fifo.
+ *
+ * Without this timeout, the function would get stuck forever and block the processor if no host is
+ * connected to the USB port.
+ *
+ * USB full-speed uses a frame rate of 1 ms. Thus, a timeout of 50 ms provides plenty of safety
+ * margin even for a loaded bus. This is the same value as used in the ESP-IDF.
+ */
+#define USBSERIAL_POLL_OUT_TIMEOUT_MS (50U)
 
 struct serial_esp32_usb_config {
 	const struct device *clock_dev;
@@ -29,6 +51,7 @@ struct serial_esp32_usb_data {
 	void *irq_cb_data;
 #endif
 	int irq_line;
+	int64_t last_tx_time;
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -50,17 +73,20 @@ static int serial_esp32_usb_poll_in(const struct device *dev, unsigned char *p_c
 
 static void serial_esp32_usb_poll_out(const struct device *dev, unsigned char c)
 {
-	ARG_UNUSED(dev);
+	struct serial_esp32_usb_data *data = dev->data;
 
-	/* Wait for space in FIFO */
-	while (usb_serial_jtag_ll_txfifo_writable() == 0) {
-		;
-	}
-
-	/* Send a character */
-	usb_serial_jtag_ll_write_txfifo(&c, 1);
-
-	usb_serial_jtag_ll_txfifo_flush();
+	/*
+	 * If there is no USB host connected, this function will busy-wait once for the timeout
+	 * period, but return immediately for subsequent calls.
+	 */
+	do {
+		if (usb_serial_jtag_ll_txfifo_writable()) {
+			usb_serial_jtag_ll_write_txfifo(&c, 1);
+			usb_serial_jtag_ll_txfifo_flush();
+			data->last_tx_time = k_uptime_get();
+			return;
+		}
+	} while ((k_uptime_get() - data->last_tx_time) < USBSERIAL_POLL_OUT_TIMEOUT_MS);
 }
 
 static int serial_esp32_usb_err_check(const struct device *dev)
@@ -82,7 +108,7 @@ static int serial_esp32_usb_init(const struct device *dev)
 	int ret = clock_control_on(config->clock_dev, config->clock_subsys);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	data->irq_line = esp_intr_alloc(config->irq_source, 0, (isr_handler_t)serial_esp32_usb_isr,
+	data->irq_line = esp_intr_alloc(config->irq_source, 0, (ISR_HANDLER)serial_esp32_usb_isr,
 					(void *)dev, NULL);
 #endif
 	return ret;
@@ -110,10 +136,16 @@ static int serial_esp32_usb_fifo_read(const struct device *dev, uint8_t *rx_data
 
 static void serial_esp32_usb_irq_tx_enable(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct serial_esp32_usb_data *data = dev->data;
 
 	usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
 	usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+
+	if (data->irq_cb != NULL) {
+		unsigned int key = irq_lock();
+		data->irq_cb(dev, data->irq_cb_data);
+		arch_irq_unlock(key);
+	}
 }
 
 static void serial_esp32_usb_irq_tx_disable(const struct device *dev)
@@ -190,8 +222,8 @@ static void serial_esp32_usb_irq_callback_set(const struct device *dev,
 {
 	struct serial_esp32_usb_data *data = dev->data;
 
-	data->irq_cb = cb;
 	data->irq_cb_data = cb_data;
+	data->irq_cb = cb;
 }
 
 static void serial_esp32_usb_isr(void *arg)

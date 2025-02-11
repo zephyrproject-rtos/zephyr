@@ -47,6 +47,10 @@ enum prl_flags {
 	 * cleared when the message is sent to the TCPC layer.
 	 */
 	PRL_FLAGS_MSG_XMIT = 7,
+	/** Flag to track if first message in AMS is pending */
+	PRL_FLAGS_FIRST_MSG_PENDING = 8,
+	/* Flag to note that PRL requested to set SINK_NG CC state */
+	PRL_FLAGS_SINK_NG = 9,
 };
 
 /**
@@ -67,6 +71,10 @@ enum usbc_prl_tx_state_t {
 	PRL_TX_SNK_PENDING,
 	/** PRL_Tx_Discard_Message */
 	PRL_TX_DISCARD_MESSAGE,
+	/** PRL_TX_SRC_Source_Tx */
+	PRL_TX_SRC_SOURCE_TX,
+	/** PRL_TX_SRC_Pending */
+	PRL_TX_SRC_PENDING,
 
 	/** PRL_Tx_Suspend. Not part of the PD specification. */
 	PRL_TX_SUSPEND,
@@ -95,8 +103,8 @@ enum usbc_prl_hr_state_t {
 	PRL_HR_STATE_COUNT
 };
 
-static const struct smf_state prl_tx_states[];
-static const struct smf_state prl_hr_states[];
+static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT];
+static const struct smf_state prl_hr_states[PRL_HR_STATE_COUNT];
 
 static void prl_tx_construct_message(const struct device *dev);
 static void prl_rx_wait_for_phy_message(const struct device *dev);
@@ -268,6 +276,17 @@ void prl_reset(const struct device *dev)
 }
 
 /**
+ * @brief Inform the PRL that the first message in an AMS is being sent
+ */
+void prl_first_msg_notificaiton(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
+
+	atomic_set_bit(&prl_tx->flags, PRL_FLAGS_FIRST_MSG_PENDING);
+}
+
+/**
  * @brief Run the Protocol Layer state machines
  */
 void prl_run(const struct device *dev)
@@ -427,7 +446,7 @@ static void increment_msgid_counter(const struct device *dev)
 /**
  * @brief Get the SOP* header for the current received message
  */
-static uint32_t get_sop_star_header(const struct device *dev)
+static uint16_t get_sop_star_header(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
@@ -537,6 +556,7 @@ static void prl_init(const struct device *dev)
 		prl_tx->msg_id_counter[i] = 0;
 	}
 	usbc_timer_init(&prl_tx->pd_t_tx_timeout, PD_T_TX_TIMEOUT_MS);
+	usbc_timer_init(&prl_tx->pd_t_sink_tx, PD_T_SINK_TX_MAX_MS);
 	prl_tx_set_state(dev, PRL_TX_PHY_LAYER_RESET);
 
 	/* Initialize the PRL_RX state machine */
@@ -589,6 +609,12 @@ static void prl_tx_wait_for_message_request_run(void *obj)
 
 	/* Clear any AMS flags and state if we are no longer in an AMS */
 	if (pe_dpm_initiated_ams(dev) == false) {
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+		/* Note PRL_Tx_Src_Sink_Tx is embedded here. */
+		if (atomic_test_and_clear_bit(&prl_tx->flags, PRL_FLAGS_SINK_NG)) {
+			tc_select_src_collision_rp(dev, SINK_TX_OK);
+		}
+#endif
 		atomic_clear_bit(&prl_tx->flags, PRL_FLAGS_WAIT_SINK_OK);
 	}
 
@@ -597,24 +623,33 @@ static void prl_tx_wait_for_message_request_run(void *obj)
 	 * lines appropriately.
 	 */
 	if (data->rev[PD_PACKET_SOP] == PD_REV30 && pe_dpm_initiated_ams(dev)) {
-		if (atomic_test_bit(&prl_tx->flags, PRL_FLAGS_WAIT_SINK_OK)) {
+		if (atomic_test_bit(&prl_tx->flags, PRL_FLAGS_WAIT_SINK_OK) ||
+			atomic_test_bit(&prl_tx->flags, PRL_FLAGS_SINK_NG)) {
 			/*
 			 * If we are already in an AMS then allow the
 			 * multi-message AMS to continue.
+			 *
+			 * Fall Through using the current AMS
 			 */
 		} else {
 			/*
-			 * Start of SNK AMS notification received from
+			 * Start of AMS notification received from
 			 * Policy Engine
 			 */
-			atomic_set_bit(&prl_tx->flags, PRL_FLAGS_WAIT_SINK_OK);
-			prl_tx_set_state(dev, PRL_TX_SNK_START_AMS);
+			if (IS_ENABLED(CONFIG_USBC_CSM_SOURCE_ONLY) &&
+				pe_get_power_role(dev) == TC_ROLE_SOURCE) {
+				atomic_set_bit(&prl_tx->flags, PRL_FLAGS_SINK_NG);
+				prl_tx_set_state(dev, PRL_TX_SRC_SOURCE_TX);
+			} else {
+				atomic_set_bit(&prl_tx->flags, PRL_FLAGS_WAIT_SINK_OK);
+				prl_tx_set_state(dev, PRL_TX_SNK_START_AMS);
+			}
 			return;
 		}
 	}
 
 	/* Handle non Rev 3.0 or subsequent messages in AMS sequence */
-	if (atomic_test_bit(&prl_tx->flags, PRL_FLAGS_MSG_XMIT)) {
+	if (atomic_test_and_clear_bit(&prl_tx->flags, PRL_FLAGS_MSG_XMIT)) {
 		/*
 		 * Soft Reset Message pending
 		 */
@@ -731,6 +766,36 @@ static void prl_tx_wait_for_phy_response_exit(void *obj)
 	increment_msgid_counter(dev);
 }
 
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+/**
+ * @brief 6.11.2.2.2.1 PRL_Tx_Src_Source_Tx
+ */
+static void prl_tx_src_source_tx_entry(void *obj)
+{
+	struct protocol_layer_tx_t *prl_tx = (struct protocol_layer_tx_t *)obj;
+	const struct device *dev = prl_tx->dev;
+
+	LOG_INF("PRL_Tx_Src_Tx");
+
+	/* Set Rp = SinkTxNG */
+	tc_select_src_collision_rp(dev, SINK_TX_NG);
+}
+
+static void prl_tx_src_source_tx_run(void *obj)
+{
+	struct protocol_layer_tx_t *prl_tx = (struct protocol_layer_tx_t *)obj;
+	const struct device *dev = prl_tx->dev;
+
+	if (atomic_test_bit(&prl_tx->flags, PRL_FLAGS_MSG_XMIT)) {
+		/*
+		 * Don't clear pending XMIT flag here. Wait until we send so
+		 * we can detect if we dropped this message or not.
+		 */
+		prl_tx_set_state(dev, PRL_TX_SRC_PENDING);
+	}
+}
+#endif
+#if CONFIG_USBC_CSM_SINK_ONLY
 /**
  * @brief PRL_Tx_Snk_Start_of_AMS Entry State
  */
@@ -755,7 +820,67 @@ static void prl_tx_snk_start_ams_run(void *obj)
 		prl_tx_set_state(dev, PRL_TX_SNK_PENDING);
 	}
 }
+#endif
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+/**
+ * @brief PRL_Tx_Src_Pending Entry State
+ */
+static void prl_tx_src_pending_entry(void *obj)
+{
+	struct protocol_layer_tx_t *prl_tx = (struct protocol_layer_tx_t *)obj;
 
+	LOG_INF("PRL_Tx_Src_Pending");
+
+	/* Start SinkTxTimer */
+	usbc_timer_start(&prl_tx->pd_t_sink_tx);
+}
+
+/**
+ * @brief PRL_Tx_Src_Pending Run State
+ */
+static void prl_tx_src_pending_run(void *obj)
+{
+	struct protocol_layer_tx_t *prl_tx = (struct protocol_layer_tx_t *)obj;
+	const struct device *dev = prl_tx->dev;
+
+	if (usbc_timer_expired(&prl_tx->pd_t_sink_tx)) {
+		/*
+		 * We clear the pending XMIT flag here right before we send so
+		 * we can detect if we discarded this message or not
+		 */
+		atomic_clear_bit(&prl_tx->flags, PRL_FLAGS_MSG_XMIT);
+
+		/* Soft Reset Message pending & SinkTxTimer timeout */
+		if ((prl_tx->msg_type == PD_CTRL_SOFT_RESET) && (prl_tx->emsg.len == 0)) {
+			prl_tx_set_state(dev, PRL_TX_LAYER_RESET_FOR_TRANSMIT);
+		}
+		/* Message pending (except Soft Reset) & SinkTxTimer timeout */
+		else {
+			/* If this is the first AMS message, inform the PE that it's been sent */
+			if (atomic_test_bit(&prl_tx->flags, PRL_FLAGS_FIRST_MSG_PENDING)) {
+				atomic_clear_bit(&prl_tx->flags, PRL_FLAGS_FIRST_MSG_PENDING);
+				pe_first_msg_sent(dev);
+			}
+
+			prl_tx_construct_message(dev);
+			prl_tx_set_state(dev, PRL_TX_WAIT_FOR_PHY_RESPONSE);
+		}
+	}
+}
+
+/**
+ * @brief PRL_Tx_Src_Pending Exit State
+ */
+static void prl_tx_src_pending_exit(void *obj)
+{
+	struct protocol_layer_tx_t *prl_tx = (struct protocol_layer_tx_t *)obj;
+
+	/* Stop SinkTxTimer */
+	usbc_timer_stop(&prl_tx->pd_t_sink_tx);
+}
+#endif
+
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 /**
  * @brief PRL_Tx_Snk_Pending Entry State
  */
@@ -795,6 +920,12 @@ static void prl_tx_snk_pending_run(void *obj)
 	if ((prl_tx->msg_type == PD_CTRL_SOFT_RESET) && (prl_tx->emsg.len == 0)) {
 		prl_tx_set_state(dev, PRL_TX_LAYER_RESET_FOR_TRANSMIT);
 	} else if (cc1 == TC_CC_VOLT_RP_3A0 || cc2 == TC_CC_VOLT_RP_3A0) {
+		/* If this is the first AMS message, inform the PE that it's been sent */
+		if (atomic_test_bit(&prl_tx->flags, PRL_FLAGS_FIRST_MSG_PENDING)) {
+			atomic_clear_bit(&prl_tx->flags, PRL_FLAGS_FIRST_MSG_PENDING);
+			pe_first_msg_sent(dev);
+		}
+
 		/*
 		 * The Protocol Layer Shall transition to the PRL_Tx_Construct_Message
 		 * state when Rp is set to SinkTxOk and a Soft_Reset Message is not
@@ -809,6 +940,7 @@ static void prl_tx_snk_pending_run(void *obj)
 		prl_tx_set_state(dev, PRL_TX_WAIT_FOR_PHY_RESPONSE);
 	}
 }
+#endif
 
 static void prl_tx_suspend_entry(void *obj)
 {
@@ -1045,7 +1177,7 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 	uint8_t power_role;
 
 	/* Get the message */
-	if (tcpc_receive_data(tcpc, rx_emsg) <= 0) {
+	if (tcpc_get_rx_pending_msg(tcpc, rx_emsg) <= 0) {
 		/* No pending message or problem getting the message */
 		return;
 	}
@@ -1128,9 +1260,10 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 /**
  * @brief Protocol Layer Transmit State table
  */
-static const struct smf_state prl_tx_states[] = {
+static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT] = {
 	[PRL_TX_PHY_LAYER_RESET] = SMF_CREATE_STATE(
 		prl_tx_phy_layer_reset_entry,
+		NULL,
 		NULL,
 		NULL,
 		NULL),
@@ -1138,9 +1271,11 @@ static const struct smf_state prl_tx_states[] = {
 		prl_tx_wait_for_message_request_entry,
 		prl_tx_wait_for_message_request_run,
 		NULL,
+		NULL,
 		NULL),
 	[PRL_TX_LAYER_RESET_FOR_TRANSMIT] = SMF_CREATE_STATE(
 		prl_tx_layer_reset_for_transmit_entry,
+		NULL,
 		NULL,
 		NULL,
 		NULL),
@@ -1148,36 +1283,58 @@ static const struct smf_state prl_tx_states[] = {
 		prl_tx_wait_for_phy_response_entry,
 		prl_tx_wait_for_phy_response_run,
 		prl_tx_wait_for_phy_response_exit,
-		NULL),
-	[PRL_TX_SNK_START_AMS] = SMF_CREATE_STATE(
-		prl_tx_snk_start_ams_entry,
-		prl_tx_snk_start_ams_run,
-		NULL,
-		NULL),
-	[PRL_TX_SNK_PENDING] = SMF_CREATE_STATE(
-		prl_tx_snk_pending_entry,
-		prl_tx_snk_pending_run,
 		NULL,
 		NULL),
 	[PRL_TX_SUSPEND] = SMF_CREATE_STATE(
 		prl_tx_suspend_entry,
 		prl_tx_suspend_run,
 		NULL,
+		NULL,
 		NULL),
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
+	[PRL_TX_SNK_START_AMS] = SMF_CREATE_STATE(
+		prl_tx_snk_start_ams_entry,
+		prl_tx_snk_start_ams_run,
+		NULL,
+		NULL,
+		NULL),
+	[PRL_TX_SNK_PENDING] = SMF_CREATE_STATE(
+		prl_tx_snk_pending_entry,
+		prl_tx_snk_pending_run,
+		NULL,
+		NULL,
+		NULL),
+#endif
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+	[PRL_TX_SRC_SOURCE_TX] = SMF_CREATE_STATE(
+		prl_tx_src_source_tx_entry,
+		prl_tx_src_source_tx_run,
+		NULL,
+		NULL,
+		NULL),
+	[PRL_TX_SRC_PENDING] = SMF_CREATE_STATE(
+		prl_tx_src_pending_entry,
+		prl_tx_src_pending_run,
+		prl_tx_src_pending_exit,
+		NULL,
+		NULL),
+#endif
 };
 BUILD_ASSERT(ARRAY_SIZE(prl_tx_states) == PRL_TX_STATE_COUNT);
 
 /**
  * @brief Protocol Layer Hard Reset State table
  */
-static const struct smf_state prl_hr_states[] = {
+static const struct smf_state prl_hr_states[PRL_HR_STATE_COUNT] = {
 	[PRL_HR_WAIT_FOR_REQUEST] = SMF_CREATE_STATE(
 		prl_hr_wait_for_request_entry,
 		prl_hr_wait_for_request_run,
 		NULL,
+		NULL,
 		NULL),
 	[PRL_HR_RESET_LAYER] = SMF_CREATE_STATE(
 		prl_hr_reset_layer_entry,
+		NULL,
 		NULL,
 		NULL,
 		NULL),
@@ -1185,15 +1342,18 @@ static const struct smf_state prl_hr_states[] = {
 		prl_hr_wait_for_phy_hard_reset_complete_entry,
 		prl_hr_wait_for_phy_hard_reset_complete_run,
 		prl_hr_wait_for_phy_hard_reset_complete_exit,
+		NULL,
 		NULL),
 	[PRL_HR_WAIT_FOR_PE_HARD_RESET_COMPLETE] = SMF_CREATE_STATE(
 		prl_hr_wait_for_pe_hard_reset_complete_entry,
 		prl_hr_wait_for_pe_hard_reset_complete_run,
 		NULL,
+		NULL,
 		NULL),
 	[PRL_HR_SUSPEND] = SMF_CREATE_STATE(
 		prl_hr_suspend_entry,
 		prl_hr_suspend_run,
+		NULL,
 		NULL,
 		NULL),
 };

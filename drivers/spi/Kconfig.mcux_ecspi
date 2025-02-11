@@ -1,0 +1,11 @@
+# Copyright (c) 2024, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MCUX_ECSPI
+	bool "MCUX ECSPI driver"
+	default y
+	depends on DT_HAS_NXP_IMX_ECSPI_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable support for NXP's mcux ecspi driver.

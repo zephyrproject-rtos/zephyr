@@ -134,6 +134,6 @@ osStatus osTimerDelete(osTimerId timer_id)
 		timer->status = NOT_ACTIVE;
 	}
 
-	k_mem_slab_free(&cmsis_timer_slab, (void *) &timer);
+	k_mem_slab_free(&cmsis_timer_slab, (void *)timer);
 	return osOK;
 }

@@ -19,8 +19,22 @@ config DAC_MCUX_DAC32
 	help
 	  Enable the driver for the NXP Kinetis MCUX DAC32.
 
+config DAC_MCUX_LPDAC
+	bool "NXP MCUX LPDAC driver"
+	default y
+	depends on DT_HAS_NXP_LPDAC_ENABLED
+	help
+	  Enable the driver for the NXP MCUX LPDAC.
+
 config DAC_MCUX_DAC32_TESTOUT
 	bool "DAC test output"
 	depends on DAC_MCUX_DAC32
 	help
 	  Enable the DAC test output.
+
+config DAC_MCUX_GAU
+	bool "NXP GAU DAC driver"
+	default y
+	depends on DT_HAS_NXP_GAU_DAC_ENABLED
+	help
+	  Enable the driver for the NXP GAU DAC.

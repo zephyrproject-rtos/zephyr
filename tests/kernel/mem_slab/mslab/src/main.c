@@ -85,20 +85,20 @@ void helper_thread(void)
 		 "from alloc timeout\n", __func__);
 
 	TC_PRINT("%s: About to free a memory block\n", __func__);
-	k_mem_slab_free(&map_lgblks, &ptr[0]);
+	k_mem_slab_free(&map_lgblks, ptr[0]);
 	k_sem_give(&SEM_HELPERDONE);
 
 	/* Part 5 of test */
 	k_sem_take(&SEM_REGRESSDONE, K_FOREVER);
 	TC_PRINT("(5) <%s> freeing the next block\n", __func__);
 	TC_PRINT("%s: About to free another memory block\n", __func__);
-	k_mem_slab_free(&map_lgblks, &ptr[1]);
+	k_mem_slab_free(&map_lgblks, ptr[1]);
 
 	/*
 	 * Free all the other blocks.  The first 2 blocks are freed by this task
 	 */
 	for (int i = 2; i < NUMBLOCKS; i++) {
-		k_mem_slab_free(&map_lgblks, &ptr[i]);
+		k_mem_slab_free(&map_lgblks, ptr[i]);
 	}
 	TC_PRINT("%s: freed all blocks allocated by this task\n", __func__);
 
@@ -174,7 +174,7 @@ void test_slab_free_all_blocks(void **p)
 
 		TC_PRINT("  block ptr to free p[%d] = %p\n", i, p[i]);
 		/* Free memory block */
-		k_mem_slab_free(&map_lgblks, &p[i]);
+		k_mem_slab_free(&map_lgblks, p[i]);
 
 		TC_PRINT("map_lgblks freed %d block\n", i + 1);
 
@@ -267,7 +267,7 @@ ZTEST(memory_slab_1cpu, test_mslab)
 	/* Free memory block */
 	TC_PRINT("%s: Used %d block\n", __func__,
 		 k_mem_slab_num_used_get(&map_lgblks));
-	k_mem_slab_free(&map_lgblks, &b);
+	k_mem_slab_free(&map_lgblks, b);
 	TC_PRINT("%s: 1 block freed, used %d block\n",
 		 __func__,  k_mem_slab_num_used_get(&map_lgblks));
 }

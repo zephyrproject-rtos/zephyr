@@ -33,21 +33,21 @@ executed on MPS2+ AN521 and ST Nucleo L552ZE Q.
 On MPS2+ AN521:
 ===============
 
-#. Build Zephyr with a non-secure configuration (``-DBOARD=mps2_an521_ns``).
+#. Build Zephyr with a non-secure configuration (``-DBOARD=mps2/an521/cpu0/ns``).
 
    .. code-block:: bash
 
       cd $ZEPHYR_ROOT/samples/tfm_integration/tfm_ipc/
       mkdir build
       cd build
-      cmake -DBOARD=mps2_an521_ns ..
+      cmake -DBOARD=mps2/an521/cpu0/ns ..
       make
 
 You can also use west as follows:
 
    .. code-block:: bash
 
-      $ west build -p -b mps2_an521_ns zephyr/samples/tfm_integration/tfm_ipc
+      $ west build -p -b mps2/an521/cpu0/ns zephyr/samples/tfm_integration/tfm_ipc
 
 
 #. Copy application binary files (mcuboot.bin and tfm_sign.bin) to ``<MPS2 device name>/SOFTWARE/``.
@@ -82,7 +82,7 @@ folder to update the ``-DGNUARM_PATH=/opt/toolchain/arm-none-eabi`` path.
 On QEMU:
 ========
 
-The MPS2+ AN521 target (``mps2_an521_ns``), which is based on a
+The MPS2+ AN521 target (``mps2/an521/cpu0/ns``), which is based on a
 dual core ARM Cortex-M33 setup, also allows you to run TF-M tests using QEMU if
 you don't have access to a supported ARMv8-M development board.
 
@@ -91,7 +91,7 @@ be run via ``qemu-system-arm``. The binary can be executed as follows:
 
    .. code-block:: bash
 
-      qemu-system-arm -M mps2-an521 -device loader,file=tfm_merged.hex -serial stdio
+      qemu-system-arm -M mps2-an521 -device loader,file=build/zephyr/tfm_merged.hex -serial stdio
 
 You can also run the binary as part of the ``west`` build process by appending
 the ``-t run`` flag to the end of your build command, or in the case of
@@ -99,7 +99,7 @@ ninja or make, adding the ``run`` commands:
 
    .. code-block:: bash
 
-      $ west build -b mps2_an521_ns zephyr/samples/tfm_integration/tfm_ipc -t run
+      $ west build -b mps2/an521/cpu0/ns zephyr/samples/tfm_integration/tfm_ipc -t run
 
 Or, post build:
 
@@ -118,13 +118,13 @@ Build Zephyr with a non-secure configuration:
 
    .. code-block:: bash
 
-      $ west build -b nucleo_l552ze_q_ns samples/tfm_integration/tfm_ipc/
+      $ west build -b nucleo_l552ze_q/stm32l552xx/ns samples/tfm_integration/tfm_ipc/
 
    Example, for building non-secure configuration for STM32L562E-DK Discovery
 
    .. code-block:: bash
 
-      $ west build -b stm32l562e_dk_ns samples/tfm_integration/tfm_ipc/
+      $ west build -b stm32l562e_dk/stm32l562xx/ns samples/tfm_integration/tfm_ipc/
 
 The script to initialize the device is available in the ``build/tfm`` folder:
 
@@ -134,7 +134,7 @@ Run them in the following order to flash the board:
 
    .. code-block:: bash
 
-      $ ./build/tfm/regression.sh
+      $ ./build/tfm/api_ns/regression.sh
       $ west flash
 
  .. note::
@@ -160,7 +160,7 @@ J-Link as follows:
       JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
       J-Link>r
       J-Link>erase
-      J-Link>loadfile build/tfm_merged.bin
+      J-Link>loadfile build/zephyr/tfm_merged.bin
 
 Resetting the board and erasing it will unlock the board, this is useful in case
 it's in an unknown state and can't be flashed.
@@ -171,7 +171,7 @@ On nRF5340 and nRF9160:
 =======================
 
 Build Zephyr with a non-secure configuration
-(``-DBOARD=nrf5340dk_nrf5340_cpuapp_ns`` or ``-DBOARD=nrf9160dk_nrf9160_ns``).
+(``-DBOARD=nrf5340dk/nrf5340/cpuapp/ns`` or ``-DBOARD=nrf9160dk/nrf9160/ns``).
 
    Example, for nRF9160, using ``cmake`` and ``ninja``
 
@@ -180,7 +180,7 @@ Build Zephyr with a non-secure configuration
       cd <ZEPHYR_ROOT>/samples/tfm_integration/tfm_ipc/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=nrf9160dk_nrf9160_ns ..
+      cmake -GNinja -DBOARD=nrf9160dk/nrf9160/ns ..
 
 If building with BL2 (MCUboot bootloader) enabled, manually flash
 the MCUboot bootloader image binary (``bl2.hex``).
@@ -203,7 +203,7 @@ On BL5340:
 ==========
 
 Build Zephyr with a non-secure configuration
-(``-DBOARD=bl5340_dvk_cpuapp_ns``).
+(``-DBOARD=bl5340_dvk/nrf5340/cpuapp/ns``).
 
    Example using ``cmake`` and ``ninja``
 
@@ -212,7 +212,7 @@ Build Zephyr with a non-secure configuration
       cd <ZEPHYR_ROOT>/samples/tfm_integration/tfm_ipc/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=bl5340_dvk_cpuapp_ns ..
+      cmake -GNinja -DBOARD=bl5340_dvk/nrf5340/cpuapp/ns ..
 
 Flash the concatenated TF-M + Zephyr binary.
 
@@ -220,7 +220,7 @@ Flash the concatenated TF-M + Zephyr binary.
 
    .. code-block:: bash
 
-      west flash --hex-file tfm_merged.hex
+      west flash --hex-file zephyr/tfm_merged.hex
 
 Sample Output
 =============

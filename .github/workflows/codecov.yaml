@@ -2,7 +2,7 @@ name: Code Coverage with codecov
 
 on:
   schedule:
-    - cron: '25 */3 * * 1-5'
+    - cron: '25 06,18 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
@@ -10,19 +10,31 @@ concurrency:
 
 jobs:
   codecov:
-    if: github.repository == 'zephyrproject-rtos/zephyr'
-    runs-on: zephyr-runner-linux-x64-4xlarge
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.11
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
       options: '--entrypoint /bin/bash'
-      volumes:
-        - /repo-cache/zephyrproject:/github/cache/zephyrproject
     strategy:
       fail-fast: false
       matrix:
-        platform: ["native_posix", "qemu_x86", "unit_testing"]
+        platform: ["mps2/an385", "native_sim", "qemu_x86", "unit_testing"]
+        include:
+          - platform: 'mps2/an385'
+            normalized: 'mps2_an385'
+          - platform: 'native_sim'
+            normalized: 'native_sim'
+          - platform: 'qemu_x86'
+            normalized: 'qemu_x86'
+          - platform: 'unit_testing'
+            normalized: 'unit_testing'
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
+      CCACHE_DIR: /node-cache/ccache-zephyr
+      CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
+      CCACHE_REMOTE_ONLY: "true"
+      # `--specs` is ignored because ccache is unable to resovle the toolchain specs file path.
+      CCACHE_IGNOREOPTIONS: '--specs=*'
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -32,6 +44,12 @@ jobs:
           #        GitHub comes up with a fundamental fix for this problem.
           git config --global --add safe.directory ${GITHUB_WORKSPACE}
 
+      - name: Print cloud service information
+        run: |
+          echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+          echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+          echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
       - name: Update PATH for west
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -39,11 +57,11 @@ jobs:
       - name: Clone cached Zephyr repository
         continue-on-error: true
         run: |
-          git clone --shared /github/cache/zephyrproject/zephyr .
+          git clone --shared /repo-cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -52,34 +70,30 @@ jobs:
           west init -l . || true
           west update 1> west.update.log || west update 1> west.update-2.log
 
-      - name: Check Environment
+      - name: Environment Setup
         run: |
           cmake --version
           gcc --version
           ls -la
-      - name: Prepare ccache keys
-        id: ccache_cache_prop
-        shell: cmake -P {0}
-        run: |
-          string(REPLACE "/" "_" repo ${{github.repository}})
-          string(REPLACE "-" "_" repo2 ${repo})
-          file(APPEND $ENV{GITHUB_OUTPUT} "repo=${repo2}\n")
 
-      - name: use cache
-        id: cache-ccache
-        uses: zephyrproject-rtos/action-s3-cache@v1
-        with:
-          key: ${{ steps.ccache_cache_prop.outputs.repo }}-${{github.event_name}}-${{matrix.platform}}-codecov-ccache
-          path: /github/home/.ccache
-          aws-s3-bucket: ccache.zephyrproject.org
-          aws-access-key-id: ${{ secrets.CCACHE_S3_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.CCACHE_S3_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
-      - name: ccache stats initial
+      - name: Set up ccache
         run: |
-          test -d github/home/.ccache && mv github/home/.ccache /github/home/.ccache
-          ccache -M 10G -s
+          mkdir -p ${CCACHE_DIR}
+          ccache -M 10G
+          ccache -p
+          ccache -z -s -vv
+
+      - name: Update BabbleSim to manifest revision
+        run: |
+          export BSIM_VERSION=$( west list bsim -f {revision} )
+          echo "Manifest points to bsim sha $BSIM_VERSION"
+          cd /opt/bsim_west/bsim
+          git fetch -n origin ${BSIM_VERSION}
+          git -c advice.detachedHead=false checkout ${BSIM_VERSION}
+          west update
+          make everything -s -j 8
 
       - name: Run Tests with Twister (Push)
         continue-on-error: true
@@ -87,54 +101,63 @@ jobs:
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           mkdir -p coverage/reports
-          ./scripts/twister --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage -T tests
+          pip3 install gcovr==6.0
+          ./scripts/twister -E ${{matrix.normalized}}-testplan.json
+          ls -la
+          ./scripts/twister \
+            -i --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage \
+            -T tests --coverage-tool gcovr -xCONFIG_TEST_EXTRA_STACK_SIZE=4096 -e nano \
+            --timeout-multiplier 2
 
-      - name: Generate Coverage Report
+      - name: Print ccache stats
+        if: always()
         run: |
-          mv twister-out/coverage.info lcov.pre.info
-          lcov -q --remove lcov.pre.info mylib.c --remove lcov.pre.info tests/\* \
-            --remove lcov.pre.info samples/\* --remove lcov.pre.info ext/\* \
-            --remove lcov.pre.info *generated*  \
-            -o coverage/reports/${{ matrix.platform }}.info --rc lcov_branch_coverage=1
+          ccache -s -vv
 
-      - name: ccache stats post
+      - name: Rename coverage files
+        if: always()
         run: |
-          ccache -s
+          mv twister-out/coverage.json coverage/reports/${{matrix.normalized}}.json
 
       - name: Upload Coverage Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: Coverage Data (Subset ${{ matrix.platform }})
-          path: coverage/reports/${{ matrix.platform }}.info
+          name: Coverage Data (Subset ${{ matrix.normalized }})
+          path: |
+            coverage/reports/${{ matrix.normalized }}.json
+            ${{ matrix.normalized }}-testplan.json
 
   codecov-results:
     name: "Publish Coverage Results"
     needs: codecov
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     # the codecov job might be skipped, we don't need to run this job then
     if: success() || failure()
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Download Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           path: coverage/reports
 
       - name: Move coverage files
         run: |
-          mv ./coverage/reports/*/*.info ./coverage/reports
+          ls -lRt  ./coverage/reports
+          mv ./coverage/reports/*/*testplan.json .
+          mv ./coverage/reports/*/coverage/reports/*.json ./coverage/reports
           ls -la ./coverage/reports
 
       - name: Generate list of coverage files
         id: get-coverage-files
         shell: cmake -P {0}
         run: |
-          file(GLOB INPUT_FILES_LIST  "coverage/reports/*.info")
+          file(GLOB INPUT_FILES_LIST  "coverage/reports/*.json")
           set(MERGELIST "")
           set(FILELIST "")
           foreach(ITEM ${INPUT_FILES_LIST})
@@ -148,7 +171,7 @@ jobs:
           foreach(ITEM ${INPUT_FILES_LIST})
             get_filename_component(f ${ITEM} NAME)
             if(MERGELIST STREQUAL "")
-              set(MERGELIST "-a ${f}")
+              set(MERGELIST "--add-tracefile ${f}")
             else()
               set(MERGELIST "${MERGELIST} -a ${f}")
             endif()
@@ -158,17 +181,49 @@ jobs:
 
       - name: Merge coverage files
         run: |
-          sudo apt-get update
-          sudo apt-get install -y lcov
-          cd ./coverage/reports
-          lcov ${{ steps.get-coverage-files.outputs.mergefiles }} -o merged.info --rc lcov_branch_coverage=1
+          pushd ./coverage/reports
+          pip3 install gcovr==6.0
+          gcovr ${{ steps.get-coverage-files.outputs.mergefiles }}  --merge-mode-functions=separate --json merged.json
+          gcovr ${{ steps.get-coverage-files.outputs.mergefiles }} --merge-mode-functions=separate --cobertura merged.xml
+          popd
+
+      - name: Get current date
+        id: run_date
+        run: |
+            echo "run_date=$(date --iso-8601=minutes)" >> "$GITHUB_OUTPUT"
+            echo "run_date_short=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+            echo "run_date_year=$(date +'%Y')" >> "$GITHUB_OUTPUT"
+            echo "run_date_month=$(date +'%m')" >> "$GITHUB_OUTPUT"
+
+      - name: Generate Coverage Report
+        if: always()
+        run: |
+          pip install xlsxwriter ijson
+          python3 ./scripts/ci/coverage/coverage_analysis.py \
+            -t native_sim-testplan.json \
+            -m MAINTAINERS.yml \
+            -c coverage/reports/merged.json \
+            -o coverage-report-${{ steps.run_date.outputs.run_date_short }} \
+            -f all
+          cp coverage-report-* coverage/reports/
+
+      - name: Upload Merged Coverage Results and Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Coverage Data and report
+          path: |
+            coverage/reports/merged.json
+            coverage/reports/merged.xml
+            coverage/reports/coverage-report-${{ steps.run_date.outputs.run_date_short }}.json
+            coverage/reports/coverage-report-${{ steps.run_date.outputs.run_date_short }}.xlsx
 
       - name: Upload coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
         with:
-          directory: ./coverage/reports
           env_vars: OS,PYTHON
           fail_ci_if_error: false
           verbose: true
-          files: merged.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/reports/merged.xml

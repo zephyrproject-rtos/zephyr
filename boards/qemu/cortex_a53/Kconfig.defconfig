@@ -1,0 +1,46 @@
+# Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_CORTEX_A53
+
+config BUILD_OUTPUT_BIN
+	default y
+
+config MAX_THREAD_BYTES
+	default 3
+
+if NETWORKING
+
+choice NET_QEMU_NETWORKING
+	default NET_QEMU_ETHERNET if QEMU_CORTEX_A53_ETH_E1000
+endchoice
+
+config NET_DRIVERS
+	default n if QEMU_CORTEX_A53_ETH_E1000
+
+endif # NETWORKING
+
+# QEMU PCI requires at least 256M of virtual space
+config KERNEL_VM_SIZE
+	default 0x80000000 if PCIE
+
+# QEMU PCI requires physical addresses with more than 32 bits
+choice ARM64_VA_BITS
+	default ARM64_VA_BITS_40 if PCIE
+endchoice
+
+choice ARM64_PA_BITS
+	default ARM64_PA_BITS_40 if PCIE
+endchoice
+
+if QEMU_ICOUNT
+
+config QEMU_ICOUNT_SHIFT
+	default 4
+
+config QEMU_ICOUNT_SLEEP
+	default y
+
+endif # QEMU_ICOUNT
+
+endif # BOARD_QEMU_CORTEX_A53

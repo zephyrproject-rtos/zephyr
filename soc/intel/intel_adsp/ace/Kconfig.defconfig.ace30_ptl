@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+
+if SOC_INTEL_ACE30_PTL
+
+config MP_MAX_NUM_CPUS
+	default 5
+
+config CPU_HAS_MMU
+	def_bool y
+
+config XTENSA_MMU
+	def_bool y
+
+config XTENSA_MMU_NUM_L2_TABLES
+	# Need to have enough to accommodate samples and tests.
+	# Also need to have some room for future expansions or
+	# else we will be chasing changes all the time.
+	default 64
+
+endif

@@ -15,16 +15,20 @@
 
 struct counter_alarm_cfg alarm_cfg;
 
-#if defined(CONFIG_BOARD_ATSAMD20_XPRO)
+#if defined(CONFIG_BOARD_SAMD20_XPRO)
 #define TIMER DT_NODELABEL(tc4)
-#elif defined(CONFIG_SOC_FAMILY_SAM)
+#elif defined(CONFIG_SOC_FAMILY_ATMEL_SAM)
 #define TIMER DT_NODELABEL(tc0)
 #elif defined(CONFIG_COUNTER_MICROCHIP_MCP7940N)
 #define TIMER DT_NODELABEL(extrtc0)
-#elif defined(CONFIG_COUNTER_RTC0)
+#elif defined(CONFIG_COUNTER_NRF_RTC)
 #define TIMER DT_NODELABEL(rtc0)
+#elif defined(CONFIG_COUNTER_TIMER_STM32)
+#define TIMER DT_INST(0, st_stm32_counter)
 #elif defined(CONFIG_COUNTER_RTC_STM32)
 #define TIMER DT_INST(0, st_stm32_rtc)
+#elif defined(CONFIG_COUNTER_SMARTBOND_TIMER)
+#define TIMER DT_NODELABEL(timer3)
 #elif defined(CONFIG_COUNTER_NATIVE_POSIX)
 #define TIMER DT_NODELABEL(counter0)
 #elif defined(CONFIG_COUNTER_XLNX_AXI_TIMER)
@@ -41,6 +45,16 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(rtcc0)
 #elif defined(CONFIG_COUNTER_GECKO_STIMER)
 #define TIMER DT_NODELABEL(stimer0)
+#elif defined(CONFIG_COUNTER_INFINEON_CAT1)
+#define TIMER DT_NODELABEL(counter0_0)
+#elif defined(CONFIG_COUNTER_AMBIQ)
+#define TIMER DT_NODELABEL(counter0)
+#elif defined(CONFIG_COUNTER_SNPS_DW)
+#define TIMER DT_NODELABEL(timer0)
+#elif defined(CONFIG_COUNTER_TIMER_RPI_PICO)
+#define TIMER DT_NODELABEL(timer)
+#else
+#error Unable to find a counter device node in devicetree
 #endif
 
 static void test_counter_interrupt_fn(const struct device *counter_dev,
@@ -80,7 +94,7 @@ static void test_counter_interrupt_fn(const struct device *counter_dev,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const counter_dev = DEVICE_DT_GET(TIMER);
 	int err;
@@ -89,7 +103,7 @@ void main(void)
 
 	if (!device_is_ready(counter_dev)) {
 		printk("device not ready.\n");
-		return;
+		return 0;
 	}
 
 	counter_start(counter_dev);
@@ -117,4 +131,5 @@ void main(void)
 	while (1) {
 		k_sleep(K_FOREVER);
 	}
+	return 0;
 }

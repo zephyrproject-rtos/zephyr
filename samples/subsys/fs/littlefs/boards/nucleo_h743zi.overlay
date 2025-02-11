@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Lukasz Majewski, DENX Software Engineering GmbH
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,22 @@
 	pinctrl-names = "default";
 };
 
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			read-size = <32>;
+			prog-size = <32>;
+			cache-size = <256>;
+			lookahead-size = <64>;
+			block-cycles = <512>;
+			partition = <&storage_partition>;
+			mount-point = "/lfs1";
+		};
+	};
+};
+
 &quadspi {
 	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_bk2_ncs_pc11
 		     &quadspi_bk2_io0_pe7 &quadspi_bk2_io1_pe8
@@ -23,11 +40,10 @@
 	flash-id = <2>;
 	status = "okay";
 
-	mx25l25645g: qspi-nor-flash@0 {
+	mx25l25645g: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0>;
+		reg = <0x90000000 DT_SIZE_M(32)>; /* 256 Mbits */
 		qspi-max-frequency = <50000000>;
-		size = <DT_SIZE_M(32*8)>;
 		reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
 		reset-gpios-duration = <1>;
 		spi-bus-width = <4>;

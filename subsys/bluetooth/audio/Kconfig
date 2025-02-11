@@ -8,8 +8,7 @@
 #
 
 menuconfig BT_AUDIO
-	bool "Bluetooth Audio support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Bluetooth Audio support"
 	help
 	  This option enables Bluetooth Audio support. The specific
 	  features that are available may depend on other features
@@ -19,13 +18,34 @@ menuconfig BT_AUDIO
 
 if BT_AUDIO
 
+config BT_AUDIO_RX
+	bool
+	help
+	  This hidden option is enabled when any of the profiles/services
+	  enables support for receiving of audio data.
+
+config BT_AUDIO_TX
+	bool
+	help
+	  This hidden option is enabled when any of the profiles/services
+	  enables support for transmitting of audio data.
+
+config BT_AUDIO_NOTIFY_RETRY_DELAY
+	int "Delay for notification sending retried attempt in 1.25 ms units"
+	range 6 3200
+	default 20
+	help
+	  This option sets the time in 1.25 ms units before the stack will
+	  retry to send notification that failed due to lack of TX buffers
+	  available.
+
 config BT_CCID
 	bool
 	help
 	  This hidden option is enabled when any of the content control
 	  features are enabled.
 
-rsource "Kconfig.baps"
+rsource "Kconfig.bap"
 rsource "Kconfig.vocs"
 rsource "Kconfig.aics"
 rsource "Kconfig.vcp"
@@ -33,10 +53,16 @@ rsource "Kconfig.micp"
 rsource "Kconfig.csip"
 rsource "Kconfig.tbs"
 rsource "Kconfig.mcs"
-rsource "Kconfig.bass"
 rsource "Kconfig.has"
 rsource "Kconfig.mpl"
 rsource "Kconfig.mctl"
 rsource "Kconfig.cap"
+rsource "Kconfig.tmap"
+rsource "Kconfig.gmap"
+rsource "Kconfig.pbp"
+
+module = BT_AUDIO
+module-str = "Bluetooth Audio"
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # BT_AUDIO

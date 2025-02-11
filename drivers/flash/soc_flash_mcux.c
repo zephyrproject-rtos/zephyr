@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Linaro Limited
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,7 @@
 #include <errno.h>
 #include <zephyr/init.h>
 #include <soc.h>
+#include <zephyr/sys/barrier.h>
 #include "flash_priv.h"
 
 #include "fsl_common.h"
@@ -32,6 +34,9 @@ LOG_MODULE_REGISTER(flash_mcux);
 #elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc553), okay)
 #define DT_DRV_COMPAT nxp_iap_fmc553
 #define SOC_HAS_IAP 1
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_msf1), okay)
+#define DT_DRV_COMPAT nxp_iap_msf1
+#define SOC_HAS_IAP_MSF1 1
 #else
 #error No matching compatible for soc_flash_mcux.c
 #endif
@@ -68,8 +73,8 @@ static uint32_t get_cmd_status(uint32_t cmd, uint32_t addr, size_t len)
 	p_fmc->STARTA = (addr>>4) & 0x3FFFF;
 	p_fmc->STOPA = ((addr+len-1)>>4) & 0x3FFFF;
 	p_fmc->CMD = cmd;
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	/* wait for command to be done */
 	while (!(p_fmc->INT_STATUS & FMC_STATUS_DONE))
@@ -83,7 +88,7 @@ static uint32_t get_cmd_status(uint32_t cmd, uint32_t addr, size_t len)
 }
 
 /* This function prevents erroneous reading. Some ECC enabled devices will
- * crash when reading an erased or wrongly programmed area.
+ * crash when reading an erased area.
  */
 static status_t is_area_readable(uint32_t addr, size_t len)
 {
@@ -92,21 +97,13 @@ static status_t is_area_readable(uint32_t addr, size_t len)
 
 	key = irq_lock();
 
-	/* Check if the are is correctly programmed and can be read. */
-	status = get_cmd_status(FMC_CMD_MARGIN_CHECK, addr, len);
-	if (status & FMC_STATUS_FAILURES) {
-		/* If the area was erased, ECC errors are triggered on read. */
-		status = get_cmd_status(FMC_CMD_BLANK_CHECK, addr, len);
-		if (!(status & FMC_STATUS_FAIL)) {
-			LOG_DBG("read request on erased addr:0x%08x size:%d",
-				addr, len);
-			irq_unlock(key);
-			return -ENODATA;
-		}
-		LOG_DBG("read request error for addr:0x%08x size:%d",
+	/* If the area was erased, ECC errors are triggered on read. */
+	status = get_cmd_status(FMC_CMD_BLANK_CHECK, addr, len);
+	if (!(status & FMC_STATUS_FAIL)) {
+		LOG_DBG("read request on erased addr:0x%08x size:%d",
 			addr, len);
 		irq_unlock(key);
-		return -EIO;
+		return -ENODATA;
 	}
 
 	irq_unlock(key);
@@ -192,9 +189,18 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 
 #ifdef CONFIG_CHECK_BEFORE_READING
   #ifdef CONFIG_SOC_LPC55S36
+	/* Validates the given address range is loaded in the flash hiding region. */
 	rc = FLASH_IsFlashAreaReadable(&priv->config, addr, len);
 	if (rc != kStatus_FLASH_Success) {
 		rc = -EIO;
+	} else {
+		/* Check whether the flash is erased ("len" and "addr" must be word-aligned). */
+		rc = FLASH_VerifyErase(&priv->config, ((addr + 0x3) & ~0x3),  ((len + 0x3) & ~0x3));
+		if (rc == kStatus_FLASH_Success) {
+			rc = -ENODATA;
+		} else {
+			rc = 0;
+		}
 	}
   #else
 	rc = is_area_readable(addr, len);
@@ -283,7 +289,7 @@ static int flash_mcux_init(const struct device *dev)
 
 	rc = FLASH_Init(&priv->config);
 
-#ifdef SOC_HAS_IAP
+#if defined(SOC_HAS_IAP) || defined(SOC_HAS_IAP_MSF1)
 	FLASH_GetProperty(&priv->config, kFLASH_PropertyPflashBlockBaseAddr,
 			  &pflash_block_base);
 #else

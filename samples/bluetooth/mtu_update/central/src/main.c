@@ -12,7 +12,8 @@
 
 extern void run_central_sample(bt_gatt_notify_func_t cb);
 
-void main(void)
+int main(void)
 {
 	run_central_sample(NULL);
+	return 0;
 }

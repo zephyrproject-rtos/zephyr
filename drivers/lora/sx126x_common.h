@@ -15,6 +15,7 @@
 #include <zephyr/drivers/spi.h>
 
 #include <sx126x/sx126x.h>
+#include <sx126x-board.h>
 
 #if DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1261)
 #define DT_DRV_COMPAT semtech_sx1261
@@ -63,6 +64,8 @@ uint32_t sx126x_get_dio1_pin_state(struct sx126x_data *dev_data);
 void sx126x_dio1_irq_enable(struct sx126x_data *dev_data);
 
 void sx126x_dio1_irq_disable(struct sx126x_data *dev_data);
+
+void sx126x_set_tx_params(int8_t power, RadioRampTimes_t ramp_time);
 
 int sx126x_variant_init(const struct device *dev);
 

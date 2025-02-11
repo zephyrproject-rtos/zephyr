@@ -2,7 +2,11 @@ sample:
   name: UART driver sample
 tests:
   sample.drivers.uart:
-    tags: serial uart
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - serial
+      - uart
     filter: CONFIG_SERIAL and
             CONFIG_UART_INTERRUPT_DRIVEN and
             dt_chosen_enabled("zephyr,shell-uart")

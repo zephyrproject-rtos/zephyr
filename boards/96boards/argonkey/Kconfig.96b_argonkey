@@ -1,0 +1,5 @@
+# Copyright (c) 2018 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_96B_ARGONKEY
+	select SOC_STM32F412CX

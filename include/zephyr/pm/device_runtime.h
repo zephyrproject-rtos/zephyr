@@ -9,6 +9,7 @@
 #define ZEPHYR_INCLUDE_PM_DEVICE_RUNTIME_H_
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,6 +24,20 @@ extern "C" {
 
 #if defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
 /**
+ * @brief Automatically enable device runtime based on devicetree properties
+ *
+ * @note Must not be called from application code. See the
+ * zephyr,pm-device-runtime-auto property in pm.yaml and z_sys_init_run_level.
+ *
+ * @param dev Device instance.
+ *
+ * @retval 0 If the device runtime PM is enabled successfully or it has not
+ * been requested for this device in devicetree.
+ * @retval -errno Other negative errno, result of enabled device runtime PM.
+ */
+int pm_device_runtime_auto_enable(const struct device *dev);
+
+/**
  * @brief Enable device runtime PM
  *
  * This function will enable runtime PM on the given device. If the device is
@@ -33,9 +48,8 @@ extern "C" {
  * @param dev Device instance.
  *
  * @retval 0 If the device runtime PM is enabled successfully.
- * @retval -EPERM If device has power state locked.
+ * @retval -EBUSY If device is busy.
  * @retval -ENOTSUP If the device does not support PM.
- * @retval -ENOSYS If the functionality is not available.
  * @retval -errno Other negative errno, result of suspending the device.
  *
  * @see pm_device_init_suspended()
@@ -53,7 +67,6 @@ int pm_device_runtime_enable(const struct device *dev);
  *
  * @retval 0 If the device runtime PM is disabled successfully.
  * @retval -ENOTSUP If the device does not support PM.
- * @retval -ENOSYS If the functionality is not available.
  * @retval -errno Other negative errno, result of resuming the device.
  */
 int pm_device_runtime_disable(const struct device *dev);
@@ -69,13 +82,16 @@ int pm_device_runtime_disable(const struct device *dev);
  * pm_device_runtime_put_async(), this function will wait for the operation to
  * finish to then resume the device.
  *
+ * @note It is safe to use this function in contexts where blocking is not
+ * allowed, e.g. ISR, provided the device PM implementation does not block.
+ *
  * @funcprops \pre_kernel_ok
  *
  * @param dev Device instance.
  *
  * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
  * available this function will be a no-op and will also return 0.
- * @retval -ENOTSUP If the device does not support PM.
+ * @retval -EWOUDBLOCK If call would block but it is not allowed (e.g. in ISR).
  * @retval -errno Other negative errno, result of the PM action callback.
  */
 int pm_device_runtime_get(const struct device *dev);
@@ -94,7 +110,6 @@ int pm_device_runtime_get(const struct device *dev);
  *
  * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
  * available this function will be a no-op and will also return 0.
- * @retval -ENOTSUP If the device does not support PM.
  * @retval -EALREADY If device is already suspended (can only happen if get/put
  * calls are unbalanced).
  * @retval -errno Other negative errno, result of the action callback.
@@ -117,17 +132,17 @@ int pm_device_runtime_put(const struct device *dev);
  * @funcprops \pre_kernel_ok, \async, \isr_ok
  *
  * @param dev Device instance.
+ * @param delay Minimum amount of time before triggering the action.
  *
  * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
  * available this function will be a no-op and will also return 0.
- * @retval -ENOTSUP If the device does not support PM.
  * @retval -EBUSY If the device is busy.
  * @retval -EALREADY If device is already suspended (can only happen if get/put
  * calls are unbalanced).
  *
  * @see pm_device_runtime_put()
  */
-int pm_device_runtime_put_async(const struct device *dev);
+int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay);
 
 /**
  * @brief Check if device runtime is enabled for a given device.
@@ -143,7 +158,24 @@ int pm_device_runtime_put_async(const struct device *dev);
  */
 bool pm_device_runtime_is_enabled(const struct device *dev);
 
+/**
+ * @brief Return the current device usage counter.
+ *
+ * @param dev Device instance.
+ *
+ * @returns the current usage counter.
+ * @retval -ENOTSUP If the device is not using runtime PM.
+ * @retval -ENOSYS If the runtime PM is not enabled at all.
+ */
+int pm_device_runtime_usage(const struct device *dev);
+
 #else
+
+static inline int pm_device_runtime_auto_enable(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
 
 static inline int pm_device_runtime_enable(const struct device *dev)
 {
@@ -169,9 +201,11 @@ static inline int pm_device_runtime_put(const struct device *dev)
 	return 0;
 }
 
-static inline int pm_device_runtime_put_async(const struct device *dev)
+static inline int pm_device_runtime_put_async(const struct device *dev,
+		k_timeout_t delay)
 {
 	ARG_UNUSED(dev);
+	ARG_UNUSED(delay);
 	return 0;
 }
 
@@ -179,6 +213,12 @@ static inline bool pm_device_runtime_is_enabled(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return false;
+}
+
+static inline int pm_device_runtime_usage(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return -ENOSYS;
 }
 
 #endif

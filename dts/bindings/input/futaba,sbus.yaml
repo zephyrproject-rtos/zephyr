@@ -1,0 +1,70 @@
+# Copyright (c) 2024 NXP Semiconductors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SBUS input driver using
+  This driver implements the SBUS protocol used on RC radio's
+  to send out analogue joystick and switches output.
+  SBUS is an single-wire inverted serial protocol so either you need to use
+  the rx-invert feature of your serial driver or use an external signal inverter.
+  The driver binds this to the Zephyr input system using INPUT_EV_CODES.
+
+  The following examples defines a binding of 2 joysticks and a button using 5 channels.
+
+  &lpuart6 {
+    status = "okay";
+
+    sbus {
+        compatible = "futaba,sbus";
+        right_stick_x {
+            channel = <1>;
+            type = <INPUT_EV_ABS>;
+            zephyr,code = <INPUT_ABS_RX>;
+        };
+        right_stick_y {
+            channel = <2>;
+            type = <INPUT_EV_ABS>;
+            zephyr,code = <INPUT_ABS_RY>;
+        };
+        left_stick_x {
+            channel = <3>;
+            type = <INPUT_EV_ABS>;
+            zephyr,code = <INPUT_ABS_X>;
+        };
+        left_stick_y {
+            channel = <4>;
+            type = <INPUT_EV_ABS>;
+            zephyr,code = <INPUT_ABS_Y>;
+        };
+        kill_switch {
+            channel = <5>;
+            type = <INPUT_EV_KEY>;
+            zephyr,code = <INPUT_KEY_0>;
+        };
+    };
+  };
+
+compatible: "futaba,sbus"
+
+include: [base.yaml, uart-device.yaml]
+
+child-binding:
+  description: |
+    SBUS Channel to input-event-code binding
+    INPUT_EV_ABS & INPUT_EV_MSC gives raw input value
+    INPUT_EV_KEY emulates a key
+  properties:
+    channel:
+      type: int
+      required: true
+      description: |
+        SBUS input channel
+        Valid range: 1 - 16
+    type:
+      type: int
+      required: true
+      description: Input event types see INPUT_EV_CODES
+    zephyr,code:
+      type: int
+      required: true
+      description: Code to emit.

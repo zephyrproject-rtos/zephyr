@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2021 IoT.bzh
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <arm/renesas/rcar/gen3/r8a77951.dtsi>
+#include "rcar_h3ulcb_r8a77951_r7-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Renesas h3ulcb board";
+	compatible = "renesas,h3ulcb-cr7";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &scif1;
+		zephyr,shell-uart = &scif1;
+		zephyr,canbus = &can0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led: led_5 {
+			gpios = <&gpio6 12 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: sw3 {
+			gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
+			label = "User switch";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		pwm-0 = &pwm0;
+		led0 = &user_led;
+		sw0 = &user_button;
+	};
+};
+
+&cmt0 {
+	status = "okay";
+	clock-frequency = <32000>;
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&pwm0 {
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+};
+
+&can0 {
+	pinctrl-0 = <&can0_data_a_tx_default &can0_data_a_rx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&scif1 {
+	pinctrl-0 = <&scif1_data_a_tx_default &scif1_data_a_rx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+};
+
+&i2c4 {
+	status = "okay";
+};

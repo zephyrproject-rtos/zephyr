@@ -1,0 +1,5 @@
+board:
+  name: st25dv_mb1283_disco
+  vendor: st
+  socs:
+    - name: stm32f405xx

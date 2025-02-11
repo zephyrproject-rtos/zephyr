@@ -15,7 +15,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#define MY_PORT 5000
+#define VIDEO_DEV_SW     "VIDEO_SW_GENERATOR"
+#define MY_PORT          5000
 #define MAX_CLIENT_QUEUE 1
 
 static ssize_t sendall(int sock, const void *buf, size_t len)
@@ -33,15 +34,28 @@ static ssize_t sendall(int sock, const void *buf, size_t len)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	struct sockaddr_in addr, client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
 	struct video_buffer *buffers[2], *vbuf;
 	int i, ret, sock, client;
 	struct video_format fmt;
-	const struct device *const video = DEVICE_DT_GET_ONE(nxp_imx_csi);
+#if DT_HAS_CHOSEN(zephyr_camera)
+	const struct device *const video = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 
+	if (!device_is_ready(video)) {
+		LOG_ERR("%s: video device not ready.", video->name);
+		return 0;
+	}
+#else
+	const struct device *const video = device_get_binding(VIDEO_DEV_SW);
+
+	if (video == NULL) {
+		LOG_ERR("%s: video device not found or failed to initialized.", VIDEO_DEV_SW);
+		return 0;
+	}
+#endif
 	/* Prepare Network */
 	(void)memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
@@ -50,45 +64,39 @@ void main(void)
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0) {
 		LOG_ERR("Failed to create TCP socket: %d", errno);
-		return;
+		return 0;
 	}
 
 	ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
 	if (ret < 0) {
 		LOG_ERR("Failed to bind TCP socket: %d", errno);
 		close(sock);
-		return;
+		return 0;
 	}
 
 	ret = listen(sock, MAX_CLIENT_QUEUE);
 	if (ret < 0) {
 		LOG_ERR("Failed to listen on TCP socket: %d", errno);
 		close(sock);
-		return;
-	}
-
-	if (!device_is_ready(video)) {
-		LOG_ERR("%s: device not ready.\n", video->name);
-		return;
+		return 0;
 	}
 
 	/* Get default/native format */
 	if (video_get_format(video, VIDEO_EP_OUT, &fmt)) {
 		LOG_ERR("Unable to retrieve video format");
-		return;
+		return 0;
 	}
 
-	printk("Video device detected, format: %c%c%c%c %ux%u\n",
-	       (char)fmt.pixelformat, (char)(fmt.pixelformat >> 8),
-	       (char)(fmt.pixelformat >> 16), (char)(fmt.pixelformat >> 24),
-	       fmt.width, fmt.height);
+	printk("Video device detected, format: %c%c%c%c %ux%u\n", (char)fmt.pixelformat,
+	       (char)(fmt.pixelformat >> 8), (char)(fmt.pixelformat >> 16),
+	       (char)(fmt.pixelformat >> 24), fmt.width, fmt.height);
 
 	/* Alloc Buffers */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
 		buffers[i] = video_buffer_alloc(fmt.pitch * fmt.height);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
-			return;
+			return 0;
 		}
 	}
 
@@ -96,11 +104,10 @@ void main(void)
 	do {
 		printk("TCP: Waiting for client...\n");
 
-		client = accept(sock, (struct sockaddr *)&client_addr,
-				&client_addr_len);
+		client = accept(sock, (struct sockaddr *)&client_addr, &client_addr_len);
 		if (client < 0) {
 			printk("Failed to accept: %d\n", errno);
-			return;
+			return 0;
 		}
 
 		printk("TCP: Accepted connection\n");
@@ -113,7 +120,7 @@ void main(void)
 		/* Start video capture */
 		if (video_stream_start(video)) {
 			LOG_ERR("Unable to start video");
-			return;
+			return 0;
 		}
 
 		printk("Stream started\n");
@@ -121,14 +128,13 @@ void main(void)
 		/* Capture loop */
 		i = 0;
 		do {
-			ret = video_dequeue(video, VIDEO_EP_OUT, &vbuf,
-					    K_FOREVER);
+			ret = video_dequeue(video, VIDEO_EP_OUT, &vbuf, K_FOREVER);
 			if (ret) {
 				LOG_ERR("Unable to dequeue video buf");
-				return;
+				return 0;
 			}
 
-			printk("\rSending frame %d", i++);
+			printk("\rSending frame %d\n", i++);
 
 			/* Send video buffer to TCP client */
 			ret = sendall(client, vbuf->buffer, vbuf->bytesused);
@@ -144,13 +150,12 @@ void main(void)
 		/* stop capture */
 		if (video_stream_stop(video)) {
 			LOG_ERR("Unable to stop video");
-			return;
+			return 0;
 		}
 
 		/* Flush remaining buffers */
 		do {
-			ret = video_dequeue(video, VIDEO_EP_OUT,
-					    &vbuf, K_NO_WAIT);
+			ret = video_dequeue(video, VIDEO_EP_OUT, &vbuf, K_NO_WAIT);
 		} while (!ret);
 
 	} while (1);

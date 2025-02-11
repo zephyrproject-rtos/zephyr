@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include "log_cache.h"
 
 #define LOG_CACHE_DBG 0
@@ -28,6 +30,11 @@ int log_cache_init(struct log_cache *cache, const struct log_cache_config *confi
 				     sizeof(uintptr_t));
 	uint32_t entry_cnt = config->buf_len / entry_size;
 	struct log_cache_entry *entry = config->buf;
+
+	/* Ensure the cache has at least one entry */
+	if (entry_cnt == 0) {
+		return -EINVAL;
+	}
 
 	/* Add all entries to idle list */
 	for (uint32_t i = 0; i < entry_cnt; i++) {
@@ -89,7 +96,7 @@ bool log_cache_get(struct log_cache *cache, uintptr_t id, uint8_t **data)
 
 void log_cache_put(struct log_cache *cache, uint8_t *data)
 {
-	struct log_cache_entry *entry = CONTAINER_OF(data, struct log_cache_entry, data);
+	struct log_cache_entry *entry = CONTAINER_OF(data, struct log_cache_entry, data[0]);
 
 	LOG_CACHE_DBG_ENTRY("cache_put", entry);
 	sys_slist_prepend(&cache->active, &entry->node);
@@ -97,7 +104,7 @@ void log_cache_put(struct log_cache *cache, uint8_t *data)
 
 void log_cache_release(struct log_cache *cache, uint8_t *data)
 {
-	struct log_cache_entry *entry = CONTAINER_OF(data, struct log_cache_entry, data);
+	struct log_cache_entry *entry = CONTAINER_OF(data, struct log_cache_entry, data[0]);
 
 	LOG_CACHE_DBG_ENTRY("cache_release", entry);
 	sys_slist_prepend(&cache->idle, &entry->node);

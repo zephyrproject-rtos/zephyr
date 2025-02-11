@@ -1,18 +1,31 @@
 sample:
   description: FS shell sample
   name: FS shell
+common:
+  tags:
+    - shell
+    - filesystem
+  harness: keyboard
 tests:
   sample.filesystem.shell:
-    tags: shell filesystem
-    harness: keyboard
-    platform_allow: reel_board mimxrt1060_evk
+    platform_allow:
+      - reel_board
+      - mimxrt1060_evk
+      - mr_canhubk3
+      - native_sim
     integration_platforms:
       - reel_board
-
+  sample.filesystem.shell.fuse:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_FUSE_FS_ACCESS=y
+    # This test cannot be run in CI as we lack the fuse library
+    skip: true
   sample.filesystem.shell.flash_load:
-    tags: shell filesystem flash_load
-    harness: keyboard
-    platform_allow: nrf52dk_nrf52832
+    tags:
+      - flash_load
+    platform_allow: nrf52dk/nrf52832
     extra_args: CONF_FILE=prj_flash_load.conf
     integration_platforms:
-      - nrf52dk_nrf52832
+      - nrf52dk/nrf52832

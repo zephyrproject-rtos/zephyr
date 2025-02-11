@@ -25,11 +25,11 @@
 #include <zephyr/arch/cpu.h>
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <aarch32/cortex_m/stack.h>
-#include <aarch32/cortex_m/exc.h>
+#include <cortex_m/stack.h>
+#include <cortex_m/exception.h>
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
-#include <aarch32/cortex_a_r/stack.h>
-#include <aarch32/cortex_a_r/exc.h>
+#include <cortex_a_r/stack.h>
+#include <cortex_a_r/exception.h>
 #endif
 
 #ifndef _ASMLANGUAGE
@@ -42,7 +42,7 @@
 extern "C" {
 #endif
 
-typedef struct __esf _esf_t;
+typedef struct arch_esf _esf_t;
 typedef struct __basic_sf _basic_sf_t;
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 typedef struct __fpu_sf _fpu_sf_t;

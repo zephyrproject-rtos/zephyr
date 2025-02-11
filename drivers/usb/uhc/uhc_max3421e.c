@@ -177,7 +177,7 @@ static ALWAYS_INLINE int max3421e_hien_disable(const struct device *dev,
 }
 
 /* Set peripheral (device) address to be used in next transfer */
-static int ALWAYS_INLINE max3421e_peraddr(const struct device *dev,
+static ALWAYS_INLINE int max3421e_peraddr(const struct device *dev,
 					  const uint8_t addr)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
@@ -310,28 +310,19 @@ static int max3421e_xfer_control(const struct device *dev,
 				 const uint8_t hrsl)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
-	struct net_buf *buf;
+	struct net_buf *buf = xfer->buf;
 	int ret;
 
 	/* Just restart if device NAKed packet */
-	if (uhc_xfer_is_queued(xfer) && HRSLT_IS_NAK(hrsl)) {
+	if (HRSLT_IS_NAK(hrsl)) {
 		return max3421e_hxfr_start(dev, priv->hxfr);
 	}
 
-	buf = k_fifo_peek_head(&xfer->queue);
-	if (buf == NULL) {
-		LOG_ERR("No buffers to handle");
-		return -ENODATA;
-	}
 
-	if (!uhc_xfer_is_queued(xfer) && xfer->setup) {
-		return -EINVAL;
-	}
-
-	if (!xfer->setup) {
-		/* Handle SETUP stage */
+	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
+		LOG_DBG("Handle SETUP stage");
 		ret = max3421e_write(dev, MAX3421E_REG_SUDFIFO,
-				     buf->data, MIN(buf->len, 8));
+				     xfer->setup_pkt, sizeof(xfer->setup_pkt));
 		if (ret) {
 			return ret;
 		}
@@ -341,25 +332,26 @@ static int max3421e_xfer_control(const struct device *dev,
 			return ret;
 		}
 
-		uhc_xfer_setup(xfer);
-		uhc_xfer_queued(xfer);
-
 		return 0;
 	}
 
-	if (buf->size != 0) {
-		/* handle DATA stage */
-		ret = max3421e_xfer_data(dev, buf, xfer->ep);
-	} else {
-		/* handle ACK stage */
+	if (buf != NULL && xfer->stage == UHC_CONTROL_STAGE_DATA) {
+		LOG_DBG("Handle DATA stage");
+		return max3421e_xfer_data(dev, buf, xfer->ep);
+	}
+
+	if (xfer->stage == UHC_CONTROL_STAGE_STATUS) {
+		LOG_DBG("Handle STATUS stage");
 		if (USB_EP_DIR_IS_IN(xfer->ep)) {
 			ret = max3421e_hxfr_start(dev, MAX3421E_HXFR_HSOUT(0));
 		} else {
 			ret = max3421e_hxfr_start(dev, MAX3421E_HXFR_HSIN(0));
 		}
+
+		return ret;
 	}
 
-	return ret;
+	return -EINVAL;
 }
 
 static int max3421e_xfer_bulk(const struct device *dev,
@@ -367,26 +359,19 @@ static int max3421e_xfer_bulk(const struct device *dev,
 			      const uint8_t hrsl)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
-	struct net_buf *buf;
-	int ret;
+	struct net_buf *buf = xfer->buf;
 
 	/* Just restart if device NAKed packet */
-	if (uhc_xfer_is_queued(xfer) && HRSLT_IS_NAK(hrsl)) {
+	if (HRSLT_IS_NAK(hrsl)) {
 		return max3421e_hxfr_start(dev, priv->hxfr);
 	}
 
-	buf = k_fifo_peek_head(&xfer->queue);
 	if (buf == NULL) {
-		LOG_ERR("No buffers to handle");
+		LOG_ERR("No buffer to handle");
 		return -ENODATA;
 	}
 
-	ret = max3421e_xfer_data(dev, buf, xfer->ep);
-	if (!ret) {
-		uhc_xfer_queued(xfer);
-	}
-
-	return ret;
+	return max3421e_xfer_data(dev, buf, xfer->ep);
 }
 
 static int max3421e_schedule_xfer(const struct device *dev)
@@ -444,27 +429,27 @@ static int max3421e_hrslt_success(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	struct uhc_transfer *const xfer = priv->last_xfer;
-	struct net_buf *buf;
+	struct net_buf *buf = xfer->buf;
+	bool finished = false;
 	int err = 0;
 	size_t len;
 	uint8_t bc;
 
-	buf = k_fifo_peek_head(&xfer->queue);
-	if (buf == NULL) {
-		return -ENODATA;
-	}
-
 	switch (MAX3421E_HXFR_TYPE(priv->hxfr)) {
 	case MAX3421E_HXFR_TYPE_SETUP:
-		err = uhc_xfer_done(xfer);
+		if (xfer->buf != NULL) {
+			xfer->stage = UHC_CONTROL_STAGE_DATA;
+		} else {
+			xfer->stage = UHC_CONTROL_STAGE_STATUS;
+		}
 		break;
 	case MAX3421E_HXFR_TYPE_HSOUT:
 		LOG_DBG("HSOUT");
-		err = uhc_xfer_done(xfer);
+		finished = true;
 		break;
 	case MAX3421E_HXFR_TYPE_HSIN:
 		LOG_DBG("HSIN");
-		err = uhc_xfer_done(xfer);
+		finished = true;
 		break;
 	case MAX3421E_HXFR_TYPE_ISOOUT:
 		LOG_ERR("ISO OUT is not implemented");
@@ -477,7 +462,11 @@ static int max3421e_hrslt_success(const struct device *dev)
 	case MAX3421E_HXFR_TYPE_BULKOUT:
 		if (buf->len == 0) {
 			LOG_INF("hrslt bulk out %u", buf->len);
-			err = uhc_xfer_done(xfer);
+			if (xfer->ep == USB_CONTROL_EP_OUT) {
+				xfer->stage = UHC_CONTROL_STAGE_STATUS;
+			} else {
+				finished = true;
+			}
 		}
 		break;
 	case MAX3421E_HXFR_TYPE_BULKIN:
@@ -502,9 +491,23 @@ static int max3421e_hrslt_success(const struct device *dev)
 
 		if (bc < MAX3421E_MAX_EP_SIZE || !net_buf_tailroom(buf)) {
 			LOG_INF("hrslt bulk in %u, %u", bc, len);
-			err = uhc_xfer_done(xfer);
+			if (xfer->ep == USB_CONTROL_EP_IN) {
+				xfer->stage = UHC_CONTROL_STAGE_STATUS;
+			} else {
+				finished = true;
+			}
 		}
 		break;
+	}
+
+	if (finished) {
+		LOG_DBG("Transfer finished");
+		uhc_xfer_return(dev, xfer, 0);
+		priv->last_xfer = NULL;
+	}
+
+	if (err) {
+		max3421e_xfer_drop_active(dev, err);
 	}
 
 	return err;
@@ -515,24 +518,10 @@ static int max3421e_handle_hxfrdn(const struct device *dev)
 	struct max3421e_data *priv = uhc_get_private(dev);
 	struct uhc_transfer *const xfer = priv->last_xfer;
 	const uint8_t hrsl = priv->hrsl;
-	int ret;
+	int ret = 0;
 
 	if (xfer == NULL) {
 		LOG_ERR("No transfers to handle");
-		return -ENODATA;
-	}
-
-	/* If an active xfer is not marked then something has gone wrong */
-	if (!uhc_xfer_is_queued(xfer)) {
-		LOG_ERR("Active transfer not queued");
-		max3421e_xfer_drop_active(dev, -EINVAL);
-		return -EINVAL;
-	}
-
-	/* There should always be a buffer in the fifo when a xfer is active */
-	if (k_fifo_is_empty(&xfer->queue)) {
-		LOG_ERR("No buffers to handle");
-		max3421e_xfer_drop_active(dev, -ENODATA);
 		return -ENODATA;
 	}
 
@@ -549,27 +538,15 @@ static int max3421e_handle_hxfrdn(const struct device *dev)
 			max3421e_xfer_drop_active(dev, -ETIMEDOUT);
 		}
 
-		ret = 0;
 		break;
 	case MAX3421E_HR_STALL:
 		max3421e_xfer_drop_active(dev, -EPIPE);
-		ret = 0;
 		break;
 	case MAX3421E_HR_TOGERR:
 		LOG_WRN("Toggle error");
-		ret = 0;
 		break;
 	case MAX3421E_HR_SUCCESS:
 		ret = max3421e_hrslt_success(dev);
-		if (ret) {
-			max3421e_xfer_drop_active(dev, ret);
-		} else {
-			if (k_fifo_is_empty(&xfer->queue)) {
-				uhc_xfer_return(dev, xfer, 0);
-				priv->last_xfer = NULL;
-			}
-		}
-
 		break;
 	default:
 		/* TODO: Handle all reasonalbe result codes */
@@ -578,7 +555,7 @@ static int max3421e_handle_hxfrdn(const struct device *dev)
 		break;
 	}
 
-	return 0;
+	return ret;
 }
 
 static void max3421e_handle_condet(const struct device *dev)
@@ -607,7 +584,7 @@ static void max3421e_handle_condet(const struct device *dev)
 		type = UHC_EVT_DEV_CONNECTED_LS;
 	}
 
-	uhc_submit_event(dev, type, 0, NULL);
+	uhc_submit_event(dev, type, 0);
 }
 
 static void max3421e_bus_event(const struct device *dev)
@@ -617,13 +594,13 @@ static void max3421e_bus_event(const struct device *dev)
 	if (atomic_test_and_clear_bit(&priv->state,
 				      MAX3421E_STATE_BUS_RESUME)) {
 		/* Resume operation done event */
-		uhc_submit_event(dev, UHC_EVT_RESUMED, 0, NULL);
+		uhc_submit_event(dev, UHC_EVT_RESUMED, 0);
 	}
 
 	if (atomic_test_and_clear_bit(&priv->state,
 				      MAX3421E_STATE_BUS_RESET)) {
 		/* Reset operation done event */
-		uhc_submit_event(dev, UHC_EVT_RESETED, 0, NULL);
+		uhc_submit_event(dev, UHC_EVT_RESETED, 0);
 	}
 }
 
@@ -654,7 +631,7 @@ static int max3421e_handle_bus_irq(const struct device *dev)
 	/* Suspend operation Done Interrupt (bus suspended) */
 	if (hirq & MAX3421E_SUSDN) {
 		ret = max3421e_hien_disable(dev, MAX3421E_SUSDN);
-		uhc_submit_event(dev, UHC_EVT_SUSPENDED, 0, NULL);
+		uhc_submit_event(dev, UHC_EVT_SUSPENDED, 0);
 	}
 
 	/* Peripheral Connect/Disconnect Interrupt */
@@ -664,7 +641,7 @@ static int max3421e_handle_bus_irq(const struct device *dev)
 
 	/* Remote Wakeup Interrupt */
 	if (hirq & MAX3421E_RWU) {
-		uhc_submit_event(dev, UHC_EVT_RWUP, 0, NULL);
+		uhc_submit_event(dev, UHC_EVT_RWUP, 0);
 	}
 
 	/* Bus Reset or Bus Resume event */
@@ -675,8 +652,12 @@ static int max3421e_handle_bus_irq(const struct device *dev)
 	return ret;
 }
 
-static void uhc_max3421e_thread(const struct device *dev)
+static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct max3421e_data *priv = uhc_get_private(dev);
 
 	LOG_DBG("MAX3421E thread started");
@@ -695,7 +676,7 @@ static void uhc_max3421e_thread(const struct device *dev)
 		 */
 		err = max3421e_update_hrsl_hirq(dev);
 		if (unlikely(err)) {
-			uhc_submit_event(dev, UHC_EVT_ERROR, err, NULL);
+			uhc_submit_event(dev, UHC_EVT_ERROR, err);
 		}
 
 		/* Host Transfer Done Interrupt */
@@ -713,20 +694,20 @@ static void uhc_max3421e_thread(const struct device *dev)
 		if (priv->hirq & ~(MAX3421E_FRAME | MAX3421E_HXFRDN)) {
 			err = max3421e_handle_bus_irq(dev);
 			if (unlikely(err)) {
-				uhc_submit_event(dev, UHC_EVT_ERROR, err, NULL);
+				uhc_submit_event(dev, UHC_EVT_ERROR, err);
 			}
 		}
 
 		/* Clear interrupts and schedule new bus transfer */
 		err = max3421e_clear_hirq(dev, priv->hirq);
 		if (unlikely(err)) {
-			uhc_submit_event(dev, UHC_EVT_ERROR, err, NULL);
+			uhc_submit_event(dev, UHC_EVT_ERROR, err);
 		}
 
 		if (schedule) {
 			err = max3421e_schedule_xfer(dev);
 			if (unlikely(err)) {
-				uhc_submit_event(dev, UHC_EVT_ERROR, err, NULL);
+				uhc_submit_event(dev, UHC_EVT_ERROR, err);
 			}
 		}
 
@@ -1052,7 +1033,7 @@ static int max3421e_driver_init(const struct device *dev)
 	int ret;
 
 	if (config->dt_rst.port) {
-		if (!device_is_ready(config->dt_rst.port)) {
+		if (!gpio_is_ready_dt(&config->dt_rst)) {
 			LOG_ERR("GPIO device %s not ready",
 				config->dt_rst.port->name);
 			return -EIO;
@@ -1072,7 +1053,7 @@ static int max3421e_driver_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (!device_is_ready(config->dt_int.port)) {
+	if (!gpio_is_ready_dt(&config->dt_int)) {
 		LOG_ERR("GPIO device %s not ready", config->dt_int.port->name);
 		return -EIO;
 	}
@@ -1099,7 +1080,7 @@ static int max3421e_driver_init(const struct device *dev)
 	k_mutex_init(&data->mutex);
 	k_thread_create(&drv_stack_data, drv_stack,
 			K_KERNEL_STACK_SIZEOF(drv_stack),
-			(k_thread_entry_t)uhc_max3421e_thread,
+			uhc_max3421e_thread,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&drv_stack_data, "uhc_max3421e");

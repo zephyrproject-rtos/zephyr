@@ -103,6 +103,7 @@ bool label_is_valid(const char *label, size_t label_size)
 	size_t i;
 
 	if (label == NULL) {
+		NET_DBG("label is NULL");
 		return false;
 	}
 
@@ -113,16 +114,20 @@ bool label_is_valid(const char *label, size_t label_size)
 
 	if (label_size < DNS_LABEL_MIN_SIZE ||
 	    label_size > DNS_LABEL_MAX_SIZE) {
+		NET_DBG("label invalid size (%zu, min: %u, max: %u)",
+			 label_size,
+			 DNS_LABEL_MIN_SIZE,
+			 DNS_LABEL_MAX_SIZE);
 		return false;
 	}
 
 	for (i = 0; i < label_size; ++i) {
-		if (isalpha((int)label[i])) {
+		if (isalpha((int)label[i]) != 0) {
 			continue;
 		}
 
 		if (i > 0) {
-			if (isdigit((int)label[i])) {
+			if (isdigit((int)label[i]) != 0) {
 				continue;
 			}
 
@@ -131,6 +136,7 @@ bool label_is_valid(const char *label, size_t label_size)
 			}
 		}
 
+		NET_DBG("label '%s' contains illegal byte 0x%02x", label, label[i]);
 		return false;
 	}
 
@@ -143,20 +149,20 @@ static bool instance_is_valid(const char *instance)
 	size_t instance_size;
 
 	if (instance == NULL) {
-		NET_DBG("label is NULL");
+		NET_DBG("instance is NULL");
 		return false;
 	}
 
 	instance_size = strlen(instance);
 	if (instance_size < DNS_SD_INSTANCE_MIN_SIZE) {
-		NET_DBG("label '%s' is too small (%zu, min: %u)",
+		NET_DBG("instance '%s' is too small (%zu, min: %u)",
 			instance, instance_size,
 			DNS_SD_INSTANCE_MIN_SIZE);
 		return false;
 	}
 
 	if (instance_size > DNS_SD_INSTANCE_MAX_SIZE) {
-		NET_DBG("label '%s' is too big (%zu, max: %u)",
+		NET_DBG("instance '%s' is too big (%zu, max: %u)",
 			instance, instance_size,
 			DNS_SD_INSTANCE_MAX_SIZE);
 		return false;
@@ -181,19 +187,19 @@ static bool service_is_valid(const char *service)
 	size_t service_size;
 
 	if (service == NULL) {
-		NET_DBG("label is NULL");
+		NET_DBG("service is NULL");
 		return false;
 	}
 
 	service_size = strlen(service);
 	if (service_size < DNS_SD_SERVICE_MIN_SIZE) {
-		NET_DBG("label '%s' is too small (%zu, min: %u)",
+		NET_DBG("service '%s' is too small (%zu, min: %u)",
 			service, service_size, DNS_SD_SERVICE_MIN_SIZE);
 		return false;
 	}
 
 	if (service_size > DNS_SD_SERVICE_MAX_SIZE) {
-		NET_DBG("label '%s' is too big (%zu, max: %u)",
+		NET_DBG("service '%s' is too big (%zu, max: %u)",
 			service, service_size, DNS_SD_SERVICE_MAX_SIZE);
 		return false;
 	}
@@ -218,13 +224,13 @@ static bool proto_is_valid(const char *proto)
 	size_t proto_size;
 
 	if (proto == NULL) {
-		NET_DBG("label is NULL");
+		NET_DBG("proto is NULL");
 		return false;
 	}
 
 	proto_size = strlen(proto);
 	if (proto_size != DNS_SD_PROTO_SIZE) {
-		NET_DBG("label '%s' wrong size (%zu, exp: %u)",
+		NET_DBG("proto '%s' wrong size (%zu, exp: %u)",
 			proto, proto_size, DNS_SD_PROTO_SIZE);
 		return false;
 	}
@@ -245,19 +251,19 @@ static bool domain_is_valid(const char *domain)
 	size_t domain_size;
 
 	if (domain == NULL) {
-		NET_DBG("label is NULL");
+		NET_DBG("domain is NULL");
 		return false;
 	}
 
 	domain_size = strlen(domain);
 	if (domain_size < DNS_SD_DOMAIN_MIN_SIZE) {
-		NET_DBG("label '%s' is too small (%zu, min: %u)",
+		NET_DBG("domain '%s' is too small (%zu, min: %u)",
 			domain, domain_size, DNS_SD_DOMAIN_MIN_SIZE);
 		return false;
 	}
 
 	if (domain_size > DNS_SD_DOMAIN_MAX_SIZE) {
-		NET_DBG("label '%s' is too big (%zu, max: %u)",
+		NET_DBG("domain '%s' is too big (%zu, max: %u)",
 			domain, domain_size, DNS_SD_DOMAIN_MAX_SIZE);
 		return false;
 	}
@@ -661,33 +667,40 @@ static bool port_in_use_sockaddr(uint16_t proto, uint16_t port,
 		|| net_context_port_in_use(proto, port, anyp);
 }
 
-static bool port_in_use(uint16_t proto, uint16_t port, const struct in_addr *addr4,
-	const struct in6_addr *addr6)
+static bool port_in_use(uint16_t proto, uint16_t port,
+			const struct in_addr *addr4,
+			const struct in6_addr *addr6)
 {
-	bool r;
-	struct sockaddr sa;
+	bool ret = false;
 
 	if (addr4 != NULL) {
-		net_sin(&sa)->sin_family = AF_INET;
-		net_sin(&sa)->sin_addr = *addr4;
+		struct sockaddr_in sa = { 0 };
 
-		r = port_in_use_sockaddr(proto, port, &sa);
-		if (r) {
-			return true;
+		sa.sin_family = AF_INET;
+		sa.sin_addr = *addr4;
+
+		ret = port_in_use_sockaddr(proto, port,
+					   (struct sockaddr *)&sa);
+		if (ret) {
+			goto out;
 		}
 	}
 
 	if (addr6 != NULL) {
-		net_sin6(&sa)->sin6_family = AF_INET6;
-		net_sin6(&sa)->sin6_addr = *addr6;
+		struct sockaddr_in6 sa = { 0 };
 
-		r = port_in_use_sockaddr(proto, port, &sa);
-		if (r) {
-			return true;
+		sa.sin6_family = AF_INET6;
+		sa.sin6_addr = *addr6;
+
+		ret = port_in_use_sockaddr(proto, port,
+					   (struct sockaddr *)&sa);
+		if (ret) {
+			goto out;
 		}
 	}
 
-	return false;
+out:
+	return ret;
 }
 #else /* CONFIG_NET_TEST */
 static inline bool port_in_use(uint16_t proto, uint16_t port, const struct in_addr *addr4,
@@ -851,6 +864,7 @@ int dns_sd_handle_service_type_enum(const struct dns_sd_rec *inst,
 
 	if (!port_in_use(proto, ntohs(*(inst->port)), addr4, addr6)) {
 		/* Service is not yet bound, so do not advertise */
+		NET_DBG("service not bound");
 		return -EHOSTDOWN;
 	}
 
@@ -926,7 +940,7 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
 	};
 
 	if (!rec_is_valid(record)) {
-		LOG_WRN("DNS SD record at %p is invalid", record);
+		LOG_DBG("DNS SD record at %p is invalid", record);
 		return false;
 	}
 
@@ -1034,8 +1048,8 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 			return -EINVAL;
 		}
 
-		if (qsize > size[i]) {
-			NET_DBG("qsize %zu > size[%zu] %zu", qsize, i, size[i]);
+		if (qsize >= size[i]) {
+			NET_DBG("qsize %zu >= size[%zu] %zu", qsize, i, size[i]);
 			return -ENOBUFS;
 		}
 
@@ -1056,6 +1070,12 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 	for (*n = i; i < N; ++i) {
 		label[i] = NULL;
 		size[i] = 0;
+	}
+
+	if (qlabels > N) {
+		NET_DBG("too few buffers to extract query: qlabels: %zu, N: %zu",
+			qlabels, N);
+		return -ENOBUFS;
 	}
 
 	if (qlabels < DNS_SD_MIN_LABELS) {
@@ -1114,43 +1134,9 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 			NET_DBG("domain '%s' is invalid", record->domain);
 			return -EINVAL;
 		}
-	} else if (qlabels > N) {
-		NET_DBG("too few buffers to extract query: qlabels: %zu, N: %zu",
-			qlabels, N);
-		return -ENOBUFS;
 	}
 
 	return offset;
-}
-
-int dns_sd_extract_service_proto_domain(const uint8_t *query, size_t query_size,
-					struct dns_sd_rec *record, char *service,
-					size_t service_size, char *proto, size_t proto_size,
-					char *domain, size_t domain_size)
-{
-	char instance[DNS_SD_INSTANCE_MAX_SIZE + 1];
-	char *label[4];
-	size_t size[] = {
-		ARRAY_SIZE(instance),
-		service_size,
-		proto_size,
-		domain_size,
-	};
-	size_t n = ARRAY_SIZE(label);
-
-	BUILD_ASSERT(ARRAY_SIZE(label) == ARRAY_SIZE(size),
-		"label and size arrays are different size");
-
-	/*
-	 * work around for bug in compliance scripts which say that the array
-	 * should be static const (incorrect)
-	 */
-	label[0] = instance;
-	label[1] = service;
-	label[2] = proto;
-	label[3] = domain;
-
-	return dns_sd_query_extract(query, query_size, record, label, size, &n);
 }
 
 bool dns_sd_is_service_type_enumeration(const struct dns_sd_rec *rec)

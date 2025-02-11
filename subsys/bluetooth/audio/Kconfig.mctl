@@ -11,7 +11,6 @@
 
 config MCTL
 	bool "Support for media player control"
-	select EXPERIMENTAL
 	help
 	  Enables support for control of local and remote media players
 	  To enable support for control of a local media player, support for
@@ -56,16 +55,5 @@ config MCTL_REMOTE_PLAYER_CONTROL_OBJECTS
 	help
 	  This options enables support for accessing objects (tracks, groups,
 	  search results, ...) on a remote media player
-
-config MCTL_DEBUG
-	bool "Media control debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Media control debug logs
-
-module = MCTL
-legacy-debug-sym = MCTL_DEBUG
-module-str = "Media control"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # MCTL

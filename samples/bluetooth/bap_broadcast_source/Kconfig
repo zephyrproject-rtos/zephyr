@@ -1,0 +1,48 @@
+# Copyright (c) 2023 Demant A/S
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: Broadcast Audio Source"
+
+choice BAP_LC3_PRESET
+	prompt "The BAP LC3 Preset to be used"
+	default BAP_BROADCAST_16_2_1
+
+config BAP_BROADCAST_16_2_1
+	bool "BAP_LC3_BROADCAST_PRESET_16_2_1 preset"
+	help
+	  Using the BAP_LC3_BROADCAST_PRESET_16_2_1 preset.
+
+config BAP_BROADCAST_24_2_1
+	bool "BAP_LC3_BROADCAST_PRESET_24_2_1 preset"
+	help
+	  Using the BAP_LC3_BROADCAST_PRESET_24_2_1 preset.
+
+endchoice
+
+config ENABLE_LC3
+	bool "Enable the LC3 codec"
+	# By default let's enable it in the platforms we know are capable of supporting it
+	default y
+	depends on CPU_HAS_FPU && \
+		(ARCH_POSIX || SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF5340_CPUAPP)
+	select LIBLC3
+	select FPU
+
+config USE_USB_AUDIO_INPUT
+	bool "Use USB Audio as input"
+	# By default, use the USB Audio path is disabled.
+	default n
+	depends on ENABLE_LC3
+	select USB_DEVICE_STACK
+	select USB_DEVICE_AUDIO
+	select RING_BUFFER
+
+config BROADCAST_CODE
+	string "The broadcast code (if any) to use for encrypted broadcast"
+	default ""
+	help
+	   Setting a non-empty string for this option will encrypt the broadcast using this
+	   string as the broadcast code. The length of the string shall be between 1 and 16 octets.
+
+source "Kconfig.zephyr"

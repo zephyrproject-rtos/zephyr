@@ -568,6 +568,14 @@ ZTEST_USER(sys_sem_1cpu, test_sem_multiple_threads_wait)
  * @}
  */
 
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+{
+	printk("Caught system error -- reason %d\n", reason);
+	printk("Unexpected fault during test\n");
+	TC_END_REPORT(TC_FAIL);
+	k_fatal_halt(reason);
+}
+
 void *sys_sem_setup(void)
 {
 #ifdef CONFIG_USERSPACE

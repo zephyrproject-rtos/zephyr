@@ -1,0 +1,5 @@
+board:
+  name: heltec_wifi_lora32_v2
+  vendor: heltec
+  socs:
+  - name: esp32

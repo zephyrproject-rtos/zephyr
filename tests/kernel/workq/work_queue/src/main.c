@@ -20,9 +20,13 @@
 #include <zephyr/tc_util.h>
 #include <zephyr/sys/util.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(test);
+
 #define NUM_TEST_ITEMS          6
-/* Each work item takes 100ms */
-#define WORK_ITEM_WAIT          100
+
+/* Each work item takes 100ms by default. */
+#define WORK_ITEM_WAIT (CONFIG_TEST_WORK_ITEM_WAIT_MS)
 
 /* In fact, each work item could take up to this value */
 #define WORK_ITEM_WAIT_ALIGNED	\
@@ -32,7 +36,8 @@
  * Wait 50ms between work submissions, to ensure co-op and prempt
  * preempt thread submit alternatively.
  */
-#define SUBMIT_WAIT	50
+#define SUBMIT_WAIT	(CONFIG_TEST_SUBMIT_WAIT_MS)
+
 #define STACK_SIZE      (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 /* How long to wait for the full test suite to complete.  Allow for a
@@ -87,10 +92,11 @@ static struct triggered_from_msgq_test_item triggered_from_msgq_test;
 
 static void work_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct delayed_test_item *ti =
-			CONTAINER_OF(work, struct delayed_test_item, work);
+			CONTAINER_OF(dwork, struct delayed_test_item, work);
 
-	TC_PRINT(" - Running test item %d\n", ti->key);
+	LOG_DBG(" - Running test item %d", ti->key);
 	k_msleep(WORK_ITEM_WAIT);
 
 	results[num_results++] = ti->key;
@@ -121,18 +127,19 @@ static void reset_results(void)
 	num_results = 0;
 }
 
-static void coop_work_main(int arg1, int arg2)
+static void coop_work_main(void *p1, void *p2, void *p3)
 {
-	int i;
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
+	int i;
 
 	/* Let the preempt thread submit the first work item. */
 	k_msleep(SUBMIT_WAIT / 2);
 
 	for (i = 1; i < NUM_TEST_ITEMS; i += 2) {
-		TC_PRINT(" - Submitting work %d from coop thread\n", i + 1);
+		LOG_DBG(" - Submitting work %d from coop thread", i + 1);
 		k_work_schedule(&delayed_tests[i].work, K_NO_WAIT);
 		k_msleep(SUBMIT_WAIT);
 	}
@@ -147,11 +154,11 @@ static void delayed_test_items_submit(void)
 	int i;
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
-			(k_thread_entry_t)coop_work_main,
+			coop_work_main,
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
-		TC_PRINT(" - Submitting work %d from preempt thread\n", i + 1);
+		LOG_DBG(" - Submitting work %d from preempt thread", i + 1);
 		k_work_schedule(&delayed_tests[i].work, K_NO_WAIT);
 		k_msleep(SUBMIT_WAIT);
 	}
@@ -183,13 +190,13 @@ static void check_results(int num_tests)
  */
 static void test_sequence(void)
 {
-	TC_PRINT(" - Initializing test items\n");
+	LOG_DBG(" - Initializing test items");
 	delayed_test_items_init();
 
-	TC_PRINT(" - Submitting test items\n");
+	LOG_DBG(" - Submitting test items");
 	delayed_test_items_submit();
 
-	TC_PRINT(" - Waiting for work to finish\n");
+	LOG_DBG(" - Waiting for work to finish");
 	k_msleep(CHECK_WAIT);
 
 	check_results(NUM_TEST_ITEMS);
@@ -200,8 +207,9 @@ static void test_sequence(void)
 
 static void resubmit_work_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct delayed_test_item *ti =
-			CONTAINER_OF(work, struct delayed_test_item, work);
+			CONTAINER_OF(dwork, struct delayed_test_item, work);
 
 	k_msleep(WORK_ITEM_WAIT);
 
@@ -209,7 +217,7 @@ static void resubmit_work_handler(struct k_work *work)
 
 	if (ti->key < NUM_TEST_ITEMS) {
 		ti->key++;
-		TC_PRINT(" - Resubmitting work\n");
+		LOG_DBG(" - Resubmitting work");
 		k_work_submit(work);
 	}
 }
@@ -222,28 +230,29 @@ static void resubmit_work_handler(struct k_work *work)
  */
 ZTEST(workqueue_triggered, test_resubmit)
 {
-	TC_PRINT("Starting resubmit test\n");
+	LOG_DBG("Starting resubmit test");
 
 	delayed_tests[0].key = 1;
 	k_work_init_delayable(&delayed_tests[0].work, resubmit_work_handler);
 
-	TC_PRINT(" - Submitting work\n");
+	LOG_DBG(" - Submitting work");
 	k_work_schedule(&delayed_tests[0].work, K_NO_WAIT);
 
-	TC_PRINT(" - Waiting for work to finish\n");
+	LOG_DBG(" - Waiting for work to finish");
 	k_msleep(CHECK_WAIT);
 
-	TC_PRINT(" - Checking results\n");
+	LOG_DBG(" - Checking results");
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
 }
 
 static void delayed_work_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct delayed_test_item *ti =
-			CONTAINER_OF(work, struct delayed_test_item, work);
+			CONTAINER_OF(dwork, struct delayed_test_item, work);
 
-	TC_PRINT(" - Running delayed test item %d\n", ti->key);
+	LOG_DBG(" - Running delayed test item %d", ti->key);
 
 	results[num_results++] = ti->key;
 }
@@ -266,19 +275,20 @@ static void test_delayed_init(void)
 	}
 }
 
-static void coop_delayed_work_main(int arg1, int arg2)
+static void coop_delayed_work_main(void *p1, void *p2, void *p3)
 {
-	int i;
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
+	int i;
 
 	/* Let the preempt thread submit the first work item. */
 	k_msleep(SUBMIT_WAIT / 2);
 
 	for (i = 1; i < NUM_TEST_ITEMS; i += 2) {
-		TC_PRINT(" - Submitting delayed work %d from"
-			 " coop thread\n", i + 1);
+		LOG_DBG(" - Submitting delayed work %d from"
+			" coop thread", i + 1);
 		k_work_schedule(&delayed_tests[i].work,
 				K_MSEC((i + 1) * WORK_ITEM_WAIT));
 	}
@@ -296,26 +306,27 @@ static void test_delayed_submit(void)
 	int i;
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
-			(k_thread_entry_t)coop_delayed_work_main,
+			coop_delayed_work_main,
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
-		TC_PRINT(" - Submitting delayed work %d from"
-			 " preempt thread\n", i + 1);
+		LOG_DBG(" - Submitting delayed work %d from"
+			" preempt thread", i + 1);
 		zassert_true(k_work_reschedule(&delayed_tests[i].work,
 			     K_MSEC((i + 1) * WORK_ITEM_WAIT)) >= 0, NULL);
 	}
 
 }
 
-static void coop_delayed_work_cancel_main(int arg1, int arg2)
+static void coop_delayed_work_cancel_main(void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	k_work_schedule(&delayed_tests[1].work, K_MSEC(WORK_ITEM_WAIT));
 
-	TC_PRINT(" - Cancel delayed work from coop thread\n");
+	LOG_DBG(" - Cancel delayed work from coop thread");
 	k_work_cancel_delayable(&delayed_tests[1].work);
 }
 
@@ -329,52 +340,52 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
  */
 ZTEST(workqueue_delayed, test_delayed_cancel)
 {
-	TC_PRINT("Starting delayed cancel test\n");
+	LOG_DBG("Starting delayed cancel test");
 
 	k_work_schedule(&delayed_tests[0].work, K_MSEC(WORK_ITEM_WAIT));
 
-	TC_PRINT(" - Cancel delayed work from preempt thread\n");
+	LOG_DBG(" - Cancel delayed work from preempt thread");
 	k_work_cancel_delayable(&delayed_tests[0].work);
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
-			(k_thread_entry_t)coop_delayed_work_cancel_main,
+			coop_delayed_work_cancel_main,
 			NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
 
-	TC_PRINT(" - Waiting for work to finish\n");
+	LOG_DBG(" - Waiting for work to finish");
 	k_msleep(WORK_ITEM_WAIT_ALIGNED);
 
-	TC_PRINT(" - Checking results\n");
+	LOG_DBG(" - Checking results");
 	check_results(0);
 	reset_results();
 }
 
 ZTEST(workqueue_delayed, test_delayed_pending)
 {
-	TC_PRINT("Starting delayed pending test\n");
+	LOG_DBG("Starting delayed pending test");
 
 	k_work_init_delayable(&delayed_tests[0].work, delayed_work_handler);
 
 	zassert_false(k_work_delayable_is_pending(&delayed_tests[0].work));
 
-	TC_PRINT(" - Check pending delayed work when in workqueue\n");
+	LOG_DBG(" - Check pending delayed work when in workqueue");
 	k_work_schedule(&delayed_tests[0].work, K_NO_WAIT);
 	zassert_true(k_work_delayable_is_pending(&delayed_tests[0].work));
 
 	k_msleep(1);
 	zassert_false(k_work_delayable_is_pending(&delayed_tests[0].work));
 
-	TC_PRINT(" - Checking results\n");
+	LOG_DBG(" - Checking results");
 	check_results(1);
 	reset_results();
 
-	TC_PRINT(" - Check pending delayed work with timeout\n");
+	LOG_DBG(" - Check pending delayed work with timeout");
 	k_work_schedule(&delayed_tests[0].work, K_MSEC(WORK_ITEM_WAIT));
 	zassert_true(k_work_delayable_is_pending(&delayed_tests[0].work));
 
 	k_msleep(WORK_ITEM_WAIT_ALIGNED);
 	zassert_false(k_work_delayable_is_pending(&delayed_tests[0].work));
 
-	TC_PRINT(" - Checking results\n");
+	LOG_DBG(" - Checking results");
 	check_results(1);
 	reset_results();
 }
@@ -388,28 +399,29 @@ ZTEST(workqueue_delayed, test_delayed_pending)
  */
 ZTEST(workqueue_delayed, test_delayed)
 {
-	TC_PRINT("Starting delayed test\n");
+	LOG_DBG("Starting delayed test");
 
-	TC_PRINT(" - Initializing delayed test items\n");
+	LOG_DBG(" - Initializing delayed test items");
 	test_delayed_init();
 
-	TC_PRINT(" - Submitting delayed test items\n");
+	LOG_DBG(" - Submitting delayed test items");
 	test_delayed_submit();
 
-	TC_PRINT(" - Waiting for delayed work to finish\n");
+	LOG_DBG(" - Waiting for delayed work to finish");
 	k_msleep(CHECK_WAIT);
 
-	TC_PRINT(" - Checking results\n");
+	LOG_DBG(" - Checking results");
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
 }
 
 static void triggered_work_handler(struct k_work *work)
 {
+	struct k_work_poll *pwork = CONTAINER_OF(work, struct k_work_poll, work);
 	struct triggered_test_item *ti =
-			CONTAINER_OF(work, struct triggered_test_item, work);
+			CONTAINER_OF(pwork, struct triggered_test_item, work);
 
-	TC_PRINT(" - Running triggered test item %d\n", ti->key);
+	LOG_DBG(" - Running triggered test item %d", ti->key);
 
 	zassert_equal(ti->work.poll_result, expected_poll_result,
 		     "res %d expect %d", ti->work.poll_result, expected_poll_result);
@@ -453,7 +465,7 @@ static void test_triggered_submit(k_timeout_t timeout)
 	int i;
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
-		TC_PRINT(" - Submitting triggered work %d\n", i + 1);
+		LOG_DBG(" - Submitting triggered work %d", i + 1);
 		zassert_true(k_work_poll_submit(&triggered_tests[i].work,
 						&triggered_tests[i].event,
 						1, timeout) == 0, NULL);
@@ -470,7 +482,7 @@ static void test_triggered_trigger(void)
 	int i;
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
-		TC_PRINT(" - Triggering work %d\n", i + 1);
+		LOG_DBG(" - Triggering work %d", i + 1);
 		zassert_true(k_poll_signal_raise(&triggered_tests[i].signal,
 						 1) == 0, NULL);
 	}
@@ -485,24 +497,24 @@ static void test_triggered_trigger(void)
  */
 ZTEST(workqueue_triggered, test_triggered)
 {
-	TC_PRINT("Starting triggered test\n");
+	LOG_DBG("Starting triggered test");
 
 	/* As work items are triggered, they should indicate an event. */
 	expected_poll_result = 0;
 
-	TC_PRINT(" - Initializing triggered test items\n");
+	LOG_DBG(" - Initializing triggered test items");
 	test_triggered_init();
 
-	TC_PRINT(" - Submitting triggered test items\n");
+	LOG_DBG(" - Submitting triggered test items");
 	test_triggered_submit(K_FOREVER);
 
-	TC_PRINT(" - Triggering test items execution\n");
+	LOG_DBG(" - Triggering test items execution");
 	test_triggered_trigger();
 
 	/* Items should be executed when we will be sleeping. */
 	k_msleep(WORK_ITEM_WAIT);
 
-	TC_PRINT(" - Checking results\n");
+	LOG_DBG(" - Checking results");
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
 }
@@ -516,38 +528,39 @@ ZTEST(workqueue_triggered, test_triggered)
  */
 ZTEST(workqueue_triggered, test_already_triggered)
 {
-	TC_PRINT("Starting triggered test\n");
+	LOG_DBG("Starting triggered test");
 
 	/* As work items are triggered, they should indicate an event. */
 	expected_poll_result = 0;
 
-	TC_PRINT(" - Initializing triggered test items\n");
+	LOG_DBG(" - Initializing triggered test items");
 	test_triggered_init();
 
-	TC_PRINT(" - Triggering test items execution\n");
+	LOG_DBG(" - Triggering test items execution");
 	test_triggered_trigger();
 
-	TC_PRINT(" - Submitting triggered test items\n");
+	LOG_DBG(" - Submitting triggered test items");
 	test_triggered_submit(K_FOREVER);
 
 	/* Items should be executed when we will be sleeping. */
 	k_msleep(WORK_ITEM_WAIT);
 
-	TC_PRINT(" - Checking results\n");
+	LOG_DBG(" - Checking results");
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
 }
 
 static void triggered_resubmit_work_handler(struct k_work *work)
 {
+	struct k_work_poll *pwork = CONTAINER_OF(work, struct k_work_poll, work);
 	struct triggered_test_item *ti =
-			CONTAINER_OF(work, struct triggered_test_item, work);
+			CONTAINER_OF(pwork, struct triggered_test_item, work);
 
 	results[num_results++] = ti->key;
 
 	if (ti->key < NUM_TEST_ITEMS) {
 		ti->key++;
-		TC_PRINT(" - Resubmitting triggered work\n");
+		LOG_DBG(" - Resubmitting triggered work");
 
 		k_poll_signal_reset(&triggered_tests[0].signal);
 		zassert_true(k_work_poll_submit(&triggered_tests[0].work,
@@ -567,7 +580,7 @@ ZTEST(workqueue_triggered, test_triggered_resubmit)
 {
 	int i;
 
-	TC_PRINT("Starting triggered resubmit test\n");
+	LOG_DBG("Starting triggered resubmit test");
 
 	/* As work items are triggered, they should indicate an event. */
 	expected_poll_result = 0;
@@ -582,20 +595,19 @@ ZTEST(workqueue_triggered, test_triggered_resubmit)
 			  K_POLL_MODE_NOTIFY_ONLY,
 			  &triggered_tests[0].signal);
 
-	TC_PRINT(" - Submitting triggered work\n");
+	LOG_DBG(" - Submitting triggered work");
 	zassert_true(k_work_poll_submit(&triggered_tests[0].work,
 					&triggered_tests[0].event,
 					1, K_FOREVER) == 0, NULL);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
-		TC_PRINT(" - Triggering test item execution (iteration: %d)\n",
-									i + 1);
+		LOG_DBG(" - Triggering test item execution (iteration: %d)", i + 1);
 		zassert_true(k_poll_signal_raise(&triggered_tests[0].signal,
 						 1) == 0, NULL);
 		k_msleep(WORK_ITEM_WAIT);
 	}
 
-	TC_PRINT(" - Checking results\n");
+	LOG_DBG(" - Checking results");
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
 }
@@ -609,24 +621,24 @@ ZTEST(workqueue_triggered, test_triggered_resubmit)
  */
 ZTEST(workqueue_triggered, test_triggered_no_wait)
 {
-	TC_PRINT("Starting triggered test\n");
+	LOG_DBG("Starting triggered test");
 
 	/* As work items are triggered, they should indicate an event. */
 	expected_poll_result = 0;
 
-	TC_PRINT(" - Initializing triggered test items\n");
+	LOG_DBG(" - Initializing triggered test items");
 	test_triggered_init();
 
-	TC_PRINT(" - Triggering test items execution\n");
+	LOG_DBG(" - Triggering test items execution");
 	test_triggered_trigger();
 
-	TC_PRINT(" - Submitting triggered test items\n");
+	LOG_DBG(" - Submitting triggered test items");
 	test_triggered_submit(K_NO_WAIT);
 
 	/* Items should be executed when we will be sleeping. */
 	k_msleep(WORK_ITEM_WAIT);
 
-	TC_PRINT(" - Checking results\n");
+	LOG_DBG(" - Checking results");
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
 }
@@ -640,21 +652,21 @@ ZTEST(workqueue_triggered, test_triggered_no_wait)
  */
 ZTEST(workqueue_triggered, test_triggered_no_wait_expired)
 {
-	TC_PRINT("Starting triggered test\n");
+	LOG_DBG("Starting triggered test");
 
 	/* As work items are not triggered, they should be marked as expired. */
 	expected_poll_result = -EAGAIN;
 
-	TC_PRINT(" - Initializing triggered test items\n");
+	LOG_DBG(" - Initializing triggered test items");
 	test_triggered_init();
 
-	TC_PRINT(" - Submitting triggered test items\n");
+	LOG_DBG(" - Submitting triggered test items");
 	test_triggered_submit(K_NO_WAIT);
 
 	/* Items should be executed when we will be sleeping. */
 	k_msleep(WORK_ITEM_WAIT);
 
-	TC_PRINT(" - Checking results\n");
+	LOG_DBG(" - Checking results");
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
 }
@@ -668,24 +680,24 @@ ZTEST(workqueue_triggered, test_triggered_no_wait_expired)
  */
 ZTEST(workqueue_triggered, test_triggered_wait)
 {
-	TC_PRINT("Starting triggered test\n");
+	LOG_DBG("Starting triggered test");
 
 	/* As work items are triggered, they should indicate an event. */
 	expected_poll_result = 0;
 
-	TC_PRINT(" - Initializing triggered test items\n");
+	LOG_DBG(" - Initializing triggered test items");
 	test_triggered_init();
 
-	TC_PRINT(" - Triggering test items execution\n");
+	LOG_DBG(" - Triggering test items execution");
 	test_triggered_trigger();
 
-	TC_PRINT(" - Submitting triggered test items\n");
+	LOG_DBG(" - Submitting triggered test items");
 	test_triggered_submit(K_MSEC(2 * SUBMIT_WAIT));
 
 	/* Items should be executed when we will be sleeping. */
 	k_msleep(SUBMIT_WAIT);
 
-	TC_PRINT(" - Checking results\n");
+	LOG_DBG(" - Checking results");
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
 }
@@ -699,25 +711,25 @@ ZTEST(workqueue_triggered, test_triggered_wait)
  */
 ZTEST(workqueue_triggered, test_triggered_wait_expired)
 {
-	TC_PRINT("Starting triggered test\n");
+	LOG_DBG("Starting triggered test");
 
 	/* As work items are not triggered, they should time out. */
 	expected_poll_result = -EAGAIN;
 
-	TC_PRINT(" - Initializing triggered test items\n");
+	LOG_DBG(" - Initializing triggered test items");
 	test_triggered_init();
 
-	TC_PRINT(" - Submitting triggered test items\n");
+	LOG_DBG(" - Submitting triggered test items");
 	test_triggered_submit(K_MSEC(2 * SUBMIT_WAIT));
 
 	/* Items should not be executed when we will be sleeping here. */
 	k_msleep(SUBMIT_WAIT);
-	TC_PRINT(" - Checking results (before timeout)\n");
+	LOG_DBG(" - Checking results (before timeout)");
 	check_results(0);
 
 	/* Items should be executed when we will be sleeping here. */
 	k_msleep(SUBMIT_WAIT * 2);
-	TC_PRINT(" - Checking results (after timeout)\n");
+	LOG_DBG(" - Checking results (after timeout)");
 	check_results(NUM_TEST_ITEMS);
 
 	reset_results();
@@ -789,12 +801,12 @@ static void test_triggered_from_msgq_start(void)
  */
 ZTEST(workqueue_triggered, test_triggered_from_msgq)
 {
-	TC_PRINT("Starting triggered from msgq test\n");
+	LOG_DBG("Starting triggered from msgq test");
 
-	TC_PRINT(" - Initializing kernel objects\n");
+	LOG_DBG(" - Initializing kernel objects");
 	test_triggered_from_msgq_init();
 
-	TC_PRINT(" - Starting the thread\n");
+	LOG_DBG(" - Starting the thread");
 	test_triggered_from_msgq_start();
 
 	reset_results();
@@ -833,12 +845,12 @@ ZTEST(workqueue_triggered, test_triggered_cancel)
 {
 	int ret;
 
-	TC_PRINT("Starting triggered test\n");
+	LOG_DBG("Starting triggered test");
 
 	/* As work items are triggered, they should indicate an event. */
 	expected_poll_result = 0;
 
-	TC_PRINT(" - Initializing triggered test items\n");
+	LOG_DBG(" - Initializing triggered test items");
 	test_triggered_init();
 
 	test_triggered_submit(K_FOREVER);

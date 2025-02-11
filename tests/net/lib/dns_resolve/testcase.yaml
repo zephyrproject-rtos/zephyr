@@ -1,8 +1,13 @@
 common:
-  tags: dns net
+  tags:
+    - dns
+    - net
   depends_on: netif
   timeout: 600
   min_ram: 21
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
 tests:
   net.dns.resolve:
     extra_configs:

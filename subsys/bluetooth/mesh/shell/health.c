@@ -13,7 +13,7 @@
 #include "utils.h"
 #include <zephyr/bluetooth/mesh/shell.h>
 
-static struct bt_mesh_model *mod;
+static const struct bt_mesh_model *mod;
 
 static void show_faults(const struct shell *sh, uint8_t test_id, uint16_t cid, uint8_t *faults,
 			size_t fault_count)
@@ -40,7 +40,7 @@ static int cmd_fault_get(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t faults[32];
@@ -74,7 +74,7 @@ static int fault_clear(const struct shell *sh, size_t argc, char *argv[], bool a
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t test_id;
@@ -126,7 +126,7 @@ static int fault_test(const struct shell *sh, size_t argc, char *argv[], bool ac
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t test_id;
@@ -179,7 +179,7 @@ static int cmd_period_get(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t divisor;
@@ -201,7 +201,7 @@ static int period_set(const struct shell *sh, size_t argc, char *argv[], bool ac
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t divisor;
@@ -251,7 +251,7 @@ static int cmd_attention_get(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t attention;
@@ -273,7 +273,7 @@ static int attention_set(const struct shell *sh, size_t argc, char *argv[], bool
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t attention;
@@ -322,18 +322,18 @@ BT_MESH_SHELL_MDL_INSTANCE_CMDS(instance_cmds, BT_MESH_MODEL_ID_HEALTH_CLI, mod)
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	health_cli_cmds,
 	/* Health Client Model Operations */
-	SHELL_CMD_ARG(fault-get, NULL, "<Company ID>", cmd_fault_get, 2, 0),
-	SHELL_CMD_ARG(fault-clear, NULL, "<Company ID>", cmd_fault_clear, 2, 0),
-	SHELL_CMD_ARG(fault-clear-unack, NULL, "<Company ID>", cmd_fault_clear_unack, 2, 0),
-	SHELL_CMD_ARG(fault-test, NULL, "<Company ID> <Test ID>", cmd_fault_test, 3, 0),
-	SHELL_CMD_ARG(fault-test-unack, NULL, "<Company ID> <Test ID>", cmd_fault_test_unack, 3,
+	SHELL_CMD_ARG(fault-get, NULL, "<CID>", cmd_fault_get, 2, 0),
+	SHELL_CMD_ARG(fault-clear, NULL, "<CID>", cmd_fault_clear, 2, 0),
+	SHELL_CMD_ARG(fault-clear-unack, NULL, "<CID>", cmd_fault_clear_unack, 2, 0),
+	SHELL_CMD_ARG(fault-test, NULL, "<CID> <TestID>", cmd_fault_test, 3, 0),
+	SHELL_CMD_ARG(fault-test-unack, NULL, "<CID> <TestID>", cmd_fault_test_unack, 3,
 		      0),
 	SHELL_CMD_ARG(period-get, NULL, NULL, cmd_period_get, 1, 0),
-	SHELL_CMD_ARG(period-set, NULL, "<divisor>", cmd_period_set, 2, 0),
-	SHELL_CMD_ARG(period-set-unack, NULL, "<divisor>", cmd_period_set_unack, 2, 0),
+	SHELL_CMD_ARG(period-set, NULL, "<Divisor>", cmd_period_set, 2, 0),
+	SHELL_CMD_ARG(period-set-unack, NULL, "<Divisor>", cmd_period_set_unack, 2, 0),
 	SHELL_CMD_ARG(attention-get, NULL, NULL, cmd_attention_get, 1, 0),
-	SHELL_CMD_ARG(attention-set, NULL, "<timer>", cmd_attention_set, 2, 0),
-	SHELL_CMD_ARG(attention-set-unack, NULL, "<timer>", cmd_attention_set_unack, 2, 0),
+	SHELL_CMD_ARG(attention-set, NULL, "<Time(s)>", cmd_attention_set, 2, 0),
+	SHELL_CMD_ARG(attention-set-unack, NULL, "<Time(s)>", cmd_attention_set_unack, 2, 0),
 	SHELL_CMD(instance, &instance_cmds, "Instance commands", bt_mesh_shell_mdl_cmds_help),
 	SHELL_SUBCMD_SET_END);
 

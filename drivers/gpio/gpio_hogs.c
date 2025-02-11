@@ -38,7 +38,7 @@ struct gpio_hogs {
 #define GPIO_HOGS_NODE_IS_GPIO_CTLR(node_id)			\
 	DT_PROP_OR(node_id, gpio_controller, 0)
 
-/* Expands to to 1 if node_id is a GPIO hog, empty otherwise */
+/* Expands to 1 if node_id is a GPIO hog, empty otherwise */
 #define GPIO_HOGS_NODE_IS_GPIO_HOG(node_id)			\
 	IF_ENABLED(DT_PROP_OR(node_id, gpio_hog, 0), 1)
 
@@ -90,7 +90,7 @@ static const struct gpio_hogs gpio_hogs[] = {
 	DT_FOREACH_STATUS_OKAY_NODE(GPIO_HOGS_COND_INIT)
 };
 
-static int gpio_hogs_init(const struct device *dev)
+static int gpio_hogs_init(void)
 {
 	const struct gpio_hogs *hogs;
 	const struct gpio_hog_dt_spec *spec;
@@ -98,7 +98,6 @@ static int gpio_hogs_init(const struct device *dev)
 	int i;
 	int j;
 
-	ARG_UNUSED(dev);
 
 	for (i = 0; i < ARRAY_SIZE(gpio_hogs); i++) {
 		hogs = &gpio_hogs[i];

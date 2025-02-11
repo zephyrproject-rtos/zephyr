@@ -5,13 +5,11 @@
  */
 
 #include <stdint.h>
-
-#include <zephyr/toolchain.h>
-
-#include <soc.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -172,7 +170,7 @@ bool lll_scan_adva_check(const struct lll_scan *lll, uint8_t addr_type,
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	/* NOTE: This function to be used only to check AdvA when intiating,
+	/* NOTE: This function to be used only to check AdvA when initiating,
 	 *       hence, otherwise we should not use the return value.
 	 *       This function is referenced in lll_scan_ext_tgta_check, but
 	 *       is not used when not being an initiator, hence return false
@@ -231,9 +229,10 @@ bool lll_scan_ext_tgta_check(const struct lll_scan *lll, bool pri, bool is_init,
 
 #if defined(CONFIG_BT_CENTRAL)
 void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
-				  uint8_t phy, uint8_t adv_tx_addr,
-				  uint8_t *adv_addr, uint8_t init_tx_addr,
-				  uint8_t *init_addr, uint32_t *conn_space_us)
+				  uint8_t phy, uint8_t phy_flags_rx,
+				  uint8_t adv_tx_addr, uint8_t *adv_addr,
+				  uint8_t init_tx_addr, uint8_t *init_addr,
+				  uint32_t *conn_space_us)
 {
 	struct lll_conn *lll_conn;
 	uint32_t conn_interval_us;
@@ -263,7 +262,8 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 	conn_interval_us = (uint32_t)lll_conn->interval * CONN_INT_UNIT_US;
 	conn_offset_us = radio_tmr_end_get() + EVENT_IFS_US +
 			 PDU_AC_MAX_US(sizeof(struct pdu_adv_connect_ind),
-				       (phy == PHY_LEGACY) ? PHY_1M : phy);
+				       (phy == PHY_LEGACY) ? PHY_1M : phy) -
+			 radio_rx_chain_delay_get(phy, phy_flags_rx);
 
 	/* Add transmitWindowDelay to default calculated connection offset:
 	 * 1.25ms for a legacy PDU, 2.5ms for an LE Uncoded PHY and 3.75ms for
@@ -287,7 +287,9 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 		*conn_space_us = conn_offset_us;
 		pdu_tx->connect_ind.win_offset = sys_cpu_to_le16(0);
 	} else {
-		uint32_t win_offset_us = lll->conn_win_offset_us;
+		uint32_t win_offset_us =
+			lll->conn_win_offset_us +
+			radio_rx_ready_delay_get(phy, PHY_FLAGS_S8);
 
 		while ((win_offset_us & ((uint32_t)1 << 31)) ||
 		       (win_offset_us < conn_offset_us)) {
@@ -341,6 +343,7 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	struct lll_scan *lll;
 	struct ull_hdr *ull;
 	uint32_t remainder;
+	uint32_t ret;
 	uint32_t aa;
 
 	DEBUG_RADIO_START_O(1);
@@ -473,58 +476,51 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	uint32_t overhead;
+
+	overhead = lll_preempt_calc(ull, (TICKER_ID_SCAN_BASE + ull_scan_lll_handle_get(lll)),
+				    ticks_at_event);
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_SCAN_BASE +
-				   ull_scan_lll_handle_get(lll)),
-			     ticks_at_event)) {
+	if (overhead) {
+		LL_ASSERT_OVERHEAD(overhead);
+
 		radio_isr_set(isr_abort, lll);
 		radio_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED &&
-	* (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
-	*/
-	{
-		uint32_t ret;
 
-		if (!is_resume && lll->ticks_window) {
-			/* start window close timeout */
-			ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
-					   TICKER_USER_ID_LLL,
-					   TICKER_ID_SCAN_STOP,
-					   ticks_at_event, lll->ticks_window,
-					   TICKER_NULL_PERIOD,
-					   TICKER_NULL_REMAINDER,
-					   TICKER_NULL_LAZY, TICKER_NULL_SLOT,
-					   ticker_stop_cb, lll,
-					   ticker_op_start_cb,
-					   (void *)__LINE__);
-			LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-				  (ret == TICKER_STATUS_BUSY));
-		}
+		return -ECANCELED;
+	}
+#endif /* !CONFIG_BT_CTLR_XTAL_ADVANCED */
+
+	if (!is_resume && lll->ticks_window) {
+		/* start window close timeout */
+		ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL, TICKER_ID_SCAN_STOP,
+				   ticks_at_event, lll->ticks_window, TICKER_NULL_PERIOD,
+				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY, TICKER_NULL_SLOT,
+				   ticker_stop_cb, lll, ticker_op_start_cb, (void *)__LINE__);
+		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (ret == TICKER_STATUS_BUSY));
+	}
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-		/* calc next group in us for the anchor where first connection
-		 * event to be placed.
-		 */
-		if (lll->conn) {
-			static memq_link_t link;
-			static struct mayfly mfy_after_cen_offset_get = {
-				0, 0, &link, NULL,
-				ull_sched_mfy_after_cen_offset_get};
-			uint32_t retval;
+	/* calc next group in us for the anchor where first connection
+	 * event to be placed.
+	 */
+	if (lll->conn) {
+		static memq_link_t link;
+		static struct mayfly mfy_after_cen_offset_get = {
+			0U, 0U, &link, NULL, ull_sched_mfy_after_cen_offset_get};
+		uint32_t retval;
 
-			mfy_after_cen_offset_get.param = p;
+		mfy_after_cen_offset_get.param = p;
 
-			retval = mayfly_enqueue(TICKER_USER_ID_LLL,
-						TICKER_USER_ID_ULL_LOW, 1,
-						&mfy_after_cen_offset_get);
-			LL_ASSERT(!retval);
-		}
+		retval = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_LOW, 1U,
+					&mfy_after_cen_offset_get);
+		LL_ASSERT(!retval);
+	}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
-		ret = lll_prepare_done(lll);
-		LL_ASSERT(!ret);
-	}
+	ret = lll_prepare_done(lll);
+	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_START_O(1);
 
@@ -674,7 +670,7 @@ static void isr_rx(void *param)
 	uint8_t crc_ok;
 	uint8_t rl_idx;
 	bool has_adva;
-	int err;
+	int err = 0U;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
@@ -767,7 +763,12 @@ static void isr_rx(void *param)
 	}
 
 isr_rx_do_close:
-	radio_isr_set(isr_done, lll);
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && (err == -ECANCELED)) {
+		radio_isr_set(isr_done_cleanup, lll);
+	} else {
+		radio_isr_set(isr_done, lll);
+	}
+
 	radio_disable();
 }
 
@@ -804,8 +805,10 @@ static void isr_tx(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	/* +/- 2us active clock jitter, +1 us hcto compensation */
-	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 + 1;
+	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
+	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
+	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
+	       HAL_RADIO_TMR_START_DELAY_US;
 	hcto += radio_rx_chain_delay_get(0, 0);
 	hcto += addr_us_get(0);
 	hcto -= radio_tx_chain_delay_get(0, 0);
@@ -914,11 +917,11 @@ static void isr_window(void *param)
 	}
 	lll_chan_set(37 + lll->chan);
 
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CENTRAL)
 	bool is_sched_advanced = IS_ENABLED(CONFIG_BT_CTLR_SCHED_ADVANCED) &&
 				 lll->conn && lll->conn_win_offset_us;
 	uint32_t ticks_anchor_prev;
-	uint32_t ticks_at_start;
 
 	if (is_sched_advanced) {
 		/* Get the ticks_anchor when the offset to free time space for
@@ -931,14 +934,17 @@ static void isr_window(void *param)
 	} else {
 		ticks_anchor_prev = 0U;
 	}
+#endif /* CONFIG_BT_CENTRAL */
+
+	uint32_t ticks_at_start;
 
 	ticks_at_start = ticker_ticks_now_get() +
 			 HAL_TICKER_CNTR_CMP_OFFSET_MIN;
 	remainder_us = radio_tmr_start_tick(0, ticks_at_start);
-#else /* !CONFIG_BT_CENTRAL */
+#else /* !CONFIG_BT_CENTRAL && !CONFIG_BT_CTLR_ADV_EXT */
 
 	remainder_us = radio_tmr_start_now(0);
-#endif /* !CONFIG_BT_CENTRAL */
+#endif /* !CONFIG_BT_CENTRAL && !CONFIG_BT_CTLR_ADV_EXT */
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
 	 * central event.
@@ -1030,11 +1036,11 @@ static void isr_done_cleanup(void *param)
 	 * Deferred attempt to stop can fail as it would have
 	 * expired, hence ignore failure.
 	 */
-	ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
-		    TICKER_ID_SCAN_STOP, NULL, NULL);
+	(void)ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
+			  TICKER_ID_SCAN_STOP, NULL, NULL);
 
 #if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
-	struct node_rx_hdr *node_rx;
+	struct node_rx_pdu *node_rx;
 
 	/* Check if there are enough free node rx available:
 	 * 1. For generating this scan indication
@@ -1047,9 +1053,9 @@ static void isr_done_cleanup(void *param)
 		ull_pdu_rx_alloc();
 
 		/* TODO: add other info by defining a payload struct */
-		node_rx->type = NODE_RX_TYPE_SCAN_INDICATION;
+		node_rx->hdr.type = NODE_RX_TYPE_SCAN_INDICATION;
 
-		ull_rx_put_sched(node_rx->link, node_rx);
+		ull_rx_put_sched(node_rx->hdr.link, node_rx);
 	}
 #endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
 
@@ -1082,18 +1088,18 @@ static void isr_done_cleanup(void *param)
 	}
 
 	if (lll->is_aux_sched) {
-		struct node_rx_pdu *node_rx;
+		struct node_rx_pdu *node_rx2;
 
 		lll->is_aux_sched = 0U;
 
-		node_rx = ull_pdu_rx_alloc();
-		LL_ASSERT(node_rx);
+		node_rx2 = ull_pdu_rx_alloc();
+		LL_ASSERT(node_rx2);
 
-		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+		node_rx2->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
-		node_rx->hdr.rx_ftr.param = lll;
+		node_rx2->rx_ftr.param = lll;
 
-		ull_rx_put_sched(node_rx->hdr.link, node_rx);
+		ull_rx_put_sched(node_rx2->hdr.link, node_rx2);
 	}
 #endif  /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1176,7 +1182,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		pdu_tx = (void *)radio_pkt_scratch_get();
 
 		lll_scan_prepare_connect_req(lll, pdu_tx, PHY_LEGACY,
-					     pdu_adv_rx->tx_addr,
+					     PHY_FLAGS_S8, pdu_adv_rx->tx_addr,
 					     pdu_adv_rx->adv_ind.addr,
 					     init_tx_addr, init_addr,
 					     &conn_space_us);
@@ -1243,12 +1249,11 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		pdu_adv_rx = (void *)rx->pdu;
 		pdu_adv_rx->chan_sel = pdu_adv_rx_chan_sel;
 
-		ftr = &(rx->hdr.rx_ftr);
+		ftr = &(rx->rx_ftr);
 
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
-		ftr->radio_end_us = conn_space_us -
-				    radio_rx_chain_delay_get(PHY_1M, 0);
+		ftr->radio_end_us = conn_space_us;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
@@ -1267,6 +1272,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 	/* Active scanner */
 	} else if (((pdu_adv_rx->type == PDU_ADV_TYPE_ADV_IND) ||
 		    (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND)) &&
+		   (pdu_adv_rx->len >= offsetof(struct pdu_adv_adv_ind, data)) &&
 		   (pdu_adv_rx->len <= sizeof(struct pdu_adv_adv_ind)) &&
 		   lll->type && !lll->state &&
 #if defined(CONFIG_BT_CENTRAL)
@@ -1359,6 +1365,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 	else if (((((pdu_adv_rx->type == PDU_ADV_TYPE_ADV_IND) ||
 		    (pdu_adv_rx->type == PDU_ADV_TYPE_NONCONN_IND) ||
 		    (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND)) &&
+		   (pdu_adv_rx->len >= offsetof(struct pdu_adv_adv_ind, data)) &&
 		   (pdu_adv_rx->len <= sizeof(struct pdu_adv_adv_ind))) ||
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_DIRECT_IND) &&
 		   (pdu_adv_rx->len == sizeof(struct pdu_adv_direct_ind)) &&
@@ -1373,6 +1380,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 						       &dir_report)) ||
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
+		   (pdu_adv_rx->len >= offsetof(struct pdu_adv_scan_rsp, data)) &&
 		   (pdu_adv_rx->len <= sizeof(struct pdu_adv_scan_rsp)) &&
 		   (lll->state != 0U) &&
 		   isr_scan_rsp_adva_matches(pdu_adv_rx))) &&
@@ -1423,6 +1431,7 @@ static inline bool isr_scan_init_check(const struct lll_scan *lll,
 		lll_scan_adva_check(lll, pdu->tx_addr, pdu->adv_ind.addr,
 				    rl_idx)) &&
 		(((pdu->type == PDU_ADV_TYPE_ADV_IND) &&
+		  (pdu->len >= offsetof(struct pdu_adv_adv_ind, data)) &&
 		  (pdu->len <= sizeof(struct pdu_adv_adv_ind))) ||
 		 ((pdu->type == PDU_ADV_TYPE_DIRECT_IND) &&
 		  (pdu->len == sizeof(struct pdu_adv_direct_ind)) &&
@@ -1538,7 +1547,7 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 			{
 				struct node_rx_ftr *ftr;
 
-				ftr = &(node_rx->hdr.rx_ftr);
+				ftr = &(node_rx->rx_ftr);
 				ftr->param = lll;
 				ftr->ticks_anchor = radio_tmr_start_get();
 				ftr->radio_end_us =
@@ -1563,32 +1572,32 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 		node_rx->hdr.type = NODE_RX_TYPE_REPORT;
 	}
 
-	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ? radio_rssi_get() :
+	node_rx->rx_ftr.rssi = (rssi_ready) ? radio_rssi_get() :
 						  BT_HCI_LE_RSSI_NOT_AVAILABLE;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* save the resolving list index. */
-	node_rx->hdr.rx_ftr.rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
+	node_rx->rx_ftr.rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	node_rx->hdr.rx_ftr.direct_resolved = (rl_idx != FILTER_IDX_NONE);
+	node_rx->rx_ftr.direct_resolved = (rl_idx != FILTER_IDX_NONE);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	/* save the directed adv report flag */
-	node_rx->hdr.rx_ftr.direct = dir_report;
+	node_rx->rx_ftr.direct = dir_report;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
 	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
-	node_rx->hdr.rx_ftr.devmatch = devmatch_ok;
+	node_rx->rx_ftr.devmatch = devmatch_ok;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
 		/* save channel and anchor point ticks. */
-		node_rx->hdr.rx_ftr.chan = _radio.scanner.chan - 1;
-		node_rx->hdr.rx_ftr.ticks_anchor = _radio.ticks_anchor;
+		node_rx->rx_ftr.chan = _radio.scanner.chan - 1;
+		node_rx->rx_ftr.ticks_anchor = _radio.ticks_anchor;
 	}
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 

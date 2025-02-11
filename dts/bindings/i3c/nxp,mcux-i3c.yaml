@@ -36,3 +36,12 @@ properties:
     type: int
     description: Slow clock divider for I3C
     required: true
+
+  disable-open-drain-high-pp:
+    type: boolean
+    description: |
+      If false, open drain high time is 1 PPBAUD count,
+      which is short high and long low.
+      If true, open drain high time is same as ODBAUD
+      so that open drain clock is 50% duty cycle.
+      Default is false.

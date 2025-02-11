@@ -13,10 +13,16 @@
 
 #if !defined(_ASMLANGUAGE)
 
+#include <zephyr/linker/sections.h>
+
 #define __noinit		__in_section_unique(_NOINIT_SECTION_NAME)
 #define __noinit_named(name)	__in_section_unique_named(_NOINIT_SECTION_NAME, name)
 #define __irq_vector_table	Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME)
 #define __sw_isr_table		Z_GENERIC_SECTION(_SW_ISR_TABLE_SECTION_NAME)
+
+#ifdef CONFIG_SHARED_INTERRUPTS
+#define __shared_sw_isr_table	Z_GENERIC_SECTION(_SHARED_SW_ISR_TABLE_SECTION_NAME)
+#endif /* CONFIG_SHARED_INTERRUPTS */
 
 /* Attribute macros to place code and data into IMR memory */
 #define __imr __in_section_unique(imr)
@@ -45,14 +51,20 @@
 
 #if defined(CONFIG_NOCACHE_MEMORY)
 #define __nocache __in_section_unique(_NOCACHE_SECTION_NAME)
+#define __nocache_noinit __nocache
 #else
 #define __nocache
+#define __nocache_noinit __noinit
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 #if defined(CONFIG_KERNEL_COHERENCE)
 #define __incoherent __in_section_unique(cached)
+#if defined(CONFIG_USERSPACE)
+#define __stackmem Z_GENERIC_SECTION(.user_stacks)
+#else
 #define __stackmem __incoherent
-#define __kstackmem __stackmem
+#endif /* CONFIG_USERSPACE */
+#define __kstackmem __incoherent
 #else
 #define __incoherent
 #define __stackmem Z_GENERIC_SECTION(.user_stacks)
@@ -92,6 +104,12 @@
 #else
 #define __isr
 #endif
+
+/* Symbol table section */
+#if defined(CONFIG_SYMTAB)
+#define __symtab_info		Z_GENERIC_SECTION(_SYMTAB_INFO_SECTION_NAME)
+#define __symtab_entry		Z_GENERIC_SECTION(_SYMTAB_ENTRY_SECTION_NAME)
+#endif /* CONFIG_SYMTAB */
 
 #endif /* !_ASMLANGUAGE */
 

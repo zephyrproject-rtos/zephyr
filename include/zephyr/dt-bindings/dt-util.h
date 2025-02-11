@@ -9,8 +9,8 @@
 
 /*
  * This file exists to keep in-tree DTS clean.  This means, only
- * #include <dt-bindings/foo.h> form should be included.  The
- * <dt-bindings/dt-util.h> wraps <sys/util_macro.h> file exposing
+ * #include <zephyr/dt-bindings/foo.h> form should be included.  The
+ * <zephyr/dt-bindings/dt-util.h> wraps <zephyr/sys/util_macro.h> file exposing
  * all macro base definitions to DTS preprocessor.  It provides
  * necessary background to elaborate complex constructions like
  * variable length macros with zero or more elements.

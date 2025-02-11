@@ -7,7 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/busy_sim.h>
 
-static void test_busy_sim(void)
+ZTEST(busy_sim, test_busy_sim)
 {
 	uint32_t ms = 1000;
 	uint32_t delta = 80;
@@ -41,11 +41,4 @@ static void test_busy_sim(void)
 	zassert_true((t > (ms - delta)) && (t < (ms + delta)));
 }
 
-void test_main(void)
-{
-	ztest_test_suite(busy_sim_tests,
-			 ztest_unit_test(test_busy_sim)
-			 );
-
-	ztest_run_test_suite(busy_sim_tests);
-}
+ZTEST_SUITE(busy_sim, NULL, NULL, NULL, NULL, NULL);

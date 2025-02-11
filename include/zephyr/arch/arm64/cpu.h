@@ -7,7 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM64_CPU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM64_CPU_H_
 
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <stdbool.h>
 
 #define DAIFSET_FIQ_BIT		BIT(0)
 #define DAIFSET_IRQ_BIT		BIT(1)
@@ -51,6 +52,7 @@
 #define SCTLR_C_BIT		BIT(2)
 #define SCTLR_SA_BIT		BIT(3)
 #define SCTLR_I_BIT		BIT(12)
+#define SCTLR_BR_BIT		BIT(17)
 
 #define CPACR_EL1_FPEN_NOTRAP	(0x3 << 20)
 
@@ -62,11 +64,12 @@
 #define SCR_HCE_BIT		BIT(8)
 #define SCR_RW_BIT		BIT(10)
 #define SCR_ST_BIT		BIT(11)
+#define SCR_EEL2_BIT		BIT(18)
 
 #define SCR_RES1		(BIT(4) | BIT(5))
 
 /* MPIDR */
-#define MPIDR_AFFLVL_MASK	(0xff)
+#define MPIDR_AFFLVL_MASK	(0xffULL)
 
 #define MPIDR_AFF0_SHIFT	(0)
 #define MPIDR_AFF1_SHIFT	(8)
@@ -134,6 +137,7 @@
 #define HCR_FMO_BIT		BIT(3)
 #define HCR_IMO_BIT		BIT(4)
 #define HCR_AMO_BIT		BIT(5)
+#define HCR_TGE_BIT		BIT(27)
 #define HCR_RW_BIT		BIT(31)
 
 /* System register interface to GICv3 */
@@ -167,7 +171,7 @@
 #define SGIR_AFF1_SHIFT		(16)
 #define SGIR_AFF2_SHIFT		(32)
 #define SGIR_AFF3_SHIFT		(48)
-#define SGIR_AFF_MASK		(0xf)
+#define SGIR_AFF_MASK		(0xff)
 #define SGIR_INTID_SHIFT	(24)
 #define SGIR_INTID_MASK		(0xf)
 #define SGIR_IRM_SHIFT		(40)

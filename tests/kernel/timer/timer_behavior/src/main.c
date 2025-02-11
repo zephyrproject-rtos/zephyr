@@ -8,6 +8,8 @@
 
 void test_main(void)
 {
-	ztest_run_test_suite(timer_jitter_drift);
-	ztest_run_test_suite(timer_tick_train);
+	ztest_run_test_suite(timer_jitter_drift, false, 1, 1);
+#ifndef CONFIG_TIMER_EXTERNAL_TEST
+	ztest_run_test_suite(timer_tick_train, false, 1, 1);
+#endif
 }

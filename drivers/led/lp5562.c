@@ -81,6 +81,10 @@ LOG_MODULE_REGISTER(lp5562);
 #define LP5562_MIN_BRIGHTNESS 0
 #define LP5562_MAX_BRIGHTNESS 100
 
+/* Output current limits in 0.1 mA */
+#define LP5562_MIN_CURRENT_SETTING 0
+#define LP5562_MAX_CURRENT_SETTING 255
+
 /* Values for ENABLE register. */
 #define LP5562_ENABLE_CHIP_EN (1 << 6)
 #define LP5562_ENABLE_LOG_EN  (1 << 7)
@@ -159,6 +163,10 @@ enum lp5562_engine_fade_dirs {
 
 struct lp5562_config {
 	struct i2c_dt_spec bus;
+	uint8_t r_current;
+	uint8_t g_current;
+	uint8_t b_current;
+	uint8_t w_current;
 };
 
 struct lp5562_data {
@@ -895,11 +903,30 @@ static inline int lp5562_led_off(const struct device *dev, uint32_t led)
 	return lp5562_led_set_brightness(dev, led, dev_data->min_brightness);
 }
 
+static int lp5562_led_update_current(const struct device *dev)
+{
+	const struct lp5562_config *config = dev->config;
+	int ret;
+	uint8_t tx_buf[4] = {
+		LP5562_B_CURRENT,
+		config->b_current,
+		config->g_current,
+		config->r_current };
+
+	ret = i2c_write_dt(&config->bus, tx_buf, sizeof(tx_buf));
+	if (ret == 0) {
+		ret = i2c_reg_write_byte_dt(&config->bus, LP5562_W_CURRENT, config->w_current);
+	}
+
+	return ret;
+}
+
 static int lp5562_led_init(const struct device *dev)
 {
 	const struct lp5562_config *config = dev->config;
 	struct lp5562_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
+	int ret;
 
 	if (!device_is_ready(config->bus.bus)) {
 		LOG_ERR("I2C device not ready");
@@ -911,6 +938,12 @@ static int lp5562_led_init(const struct device *dev)
 	dev_data->max_period = LP5562_MAX_BLINK_PERIOD;
 	dev_data->min_brightness = LP5562_MIN_BRIGHTNESS;
 	dev_data->max_brightness = LP5562_MAX_BRIGHTNESS;
+
+	ret = lp5562_led_update_current(dev);
+	if (ret) {
+		LOG_ERR("Setting current setting LP5562 LED chip failed.");
+		return ret;
+	}
 
 	if (i2c_reg_write_byte_dt(&config->bus, LP5562_ENABLE,
 				  LP5562_ENABLE_CHIP_EN)) {
@@ -946,8 +979,20 @@ static const struct led_driver_api lp5562_led_api = {
 };
 
 #define LP5562_DEFINE(id)						\
+	BUILD_ASSERT(DT_INST_PROP(id, red_output_current) <= LP5562_MAX_CURRENT_SETTING,\
+		"Red channel current must be between 0 and 25.5 mA.");	\
+	BUILD_ASSERT(DT_INST_PROP(id, green_output_current) <= LP5562_MAX_CURRENT_SETTING,\
+		"Green channel current must be between 0 and 25.5 mA.");	\
+	BUILD_ASSERT(DT_INST_PROP(id, blue_output_current) <= LP5562_MAX_CURRENT_SETTING,\
+		"Blue channel current must be between 0 and 25.5 mA.");	\
+	BUILD_ASSERT(DT_INST_PROP(id, white_output_current) <= LP5562_MAX_CURRENT_SETTING,\
+		"White channel current must be between 0 and 25.5 mA.");	\
 	static const struct lp5562_config lp5562_config_##id = {	\
 		.bus = I2C_DT_SPEC_INST_GET(id),			\
+		.r_current = DT_INST_PROP(id, red_output_current),	\
+		.g_current = DT_INST_PROP(id, green_output_current),	\
+		.b_current = DT_INST_PROP(id, blue_output_current),	\
+		.w_current = DT_INST_PROP(id, white_output_current),	\
 	};								\
 									\
 	struct lp5562_data lp5562_data_##id;				\

@@ -3,7 +3,7 @@
 Configuration Client
 ####################
 
-The Configuration Client model is a foundation model defined by the Bluetooth mesh
+The Configuration Client model is a foundation model defined by the Bluetooth Mesh
 specification. It provides functionality for configuring most parameters of a
 mesh node, including encryption keys, model configuration and feature
 enabling.
@@ -17,8 +17,8 @@ All configuration functions in the Configuration Client API have ``net_idx``
 and ``addr`` as their first parameters. These should be set to the network
 index and primary unicast address that the target node was provisioned with.
 
-The Configuration Client model is optional, but should be instantiated on the
-first element if it is present in the composition data.
+The Configuration Client model is optional, and it must only be instantiated on the
+primary element if present in the Composition Data.
 
 API reference
 *************

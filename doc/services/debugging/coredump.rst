@@ -18,6 +18,8 @@ Configure this module using the following options.
 Here are the options to enable output backends for core dump:
 
 * ``DEBUG_COREDUMP_BACKEND_LOGGING``: use log module for core dump output.
+* ``DEBUG_COREDUMP_BACKEND_FLASH_PARTITION``: use flash partition for core
+  dump output.
 * ``DEBUG_COREDUMP_BACKEND_NULL``: fallback core dump backend if other
   backends cannot be enabled. All output is sent to null.
 
@@ -53,7 +55,8 @@ This usually involves the following steps:
 
 3. Start the custom GDB server using the script
    :zephyr_file:`scripts/coredump/coredump_gdbserver.py` with the core dump
-   binary log file, and the Zephyr ELF file as parameters.
+   binary log file, and the Zephyr ELF file as parameters. The GDB server
+   can also be started from within GDB, see below.
 
 4. Start the debugger corresponding to the target architecture.
 
@@ -61,6 +64,20 @@ This usually involves the following steps:
    Developers for Intel ADSP CAVS 15-25 platforms using
    ``ZEPHYR_TOOLCHAIN_VARIANT=zephyr`` should use the debugger in the
    ``xtensa-intel_apl_adsp`` toolchain of the SDK.
+
+5. When ``DEBUG_COREDUMP_BACKEND_FLASH_PARTITION`` is enabled the core dump
+   data is stored in the flash partition. The flash partition must be defined
+   in the device tree:
+
+	.. code-block:: devicetree
+
+		&flash0 {
+			partitions {
+				coredump_partition: partition@255000 {
+					label = "coredump-partition";
+					reg = <0x255000 DT_SIZE_K(4)>;
+				};
+		};
 
 Example
 -------
@@ -203,6 +220,25 @@ in :file:`coredump.log`:
       #1  0x00100477 in func_2 (addr=0x0) at zephyr/rtos/zephyr/samples/hello_world/src/main.c:21
       #2  0x00100492 in func_1 (addr=0x0) at zephyr/rtos/zephyr/samples/hello_world/src/main.c:28
       #3  0x001004c8 in main () at zephyr/rtos/zephyr/samples/hello_world/src/main.c:42
+
+Starting the GDB server from within GDB
+---------------------------------------
+
+You can use ``target remote |`` to start the custom GDB server from inside
+GDB, instead of in a separate shell.
+
+1. Start GDB:
+
+   .. code-block:: console
+
+      <path to SDK>/x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gdb build/zephyr/zephyr.elf
+
+2. Inside GDB, start the GDB server using the ``--pipe`` option:
+
+   .. code-block:: console
+
+      (gdb) target remote | ./scripts/coredump/coredump_gdbserver.py --pipe build/zephyr/zephyr.elf coredump.bin
+
 
 File Format
 ***********

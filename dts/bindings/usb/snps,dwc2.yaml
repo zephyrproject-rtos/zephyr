@@ -1,0 +1,53 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: DesignWare OTG USB 2.0 controller
+
+compatible: "snps,dwc2"
+
+include: [base.yaml]
+
+bus: usb
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  phys:
+    type: phandle
+
+  num-in-eps:
+    type: int
+    required: true
+    description: |
+      Number of configured OUT endpoints including control endpoint.
+
+  num-out-eps:
+    type: int
+    required: true
+    description: |
+      Number of configured IN endpoints including control endpoint.
+
+  ghwcfg1:
+    type: int
+    required: true
+    description: |
+      Value of the GHWCFG1 register. It is used to determine available endpoint
+      types during driver pre-initialization.
+
+  ghwcfg2:
+    type: int
+    required: true
+    description: |
+      Value of the GHWCFG2 register. It is used to determine available endpoint
+      types during driver pre-initialization.
+
+  ghwcfg4:
+    type: int
+    required: true
+    description: |
+      Value of the GHWCFG4 register. It is used to determine available endpoint
+      types during driver pre-initialization.

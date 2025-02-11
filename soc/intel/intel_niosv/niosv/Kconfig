@@ -1,0 +1,22 @@
+# Copyright (C) 2023-2024, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NIOSV
+	select RISCV
+	select RISCV_PRIVILEGED
+	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+
+config SOC_NIOSV_M
+	help
+	  Intel FPGA NIOSV Microcontroller Core Processor
+
+config SOC_NIOSV_G
+	select RISCV_ISA_EXT_M
+	help
+	  Intel FPGA NIOSV General Purpose Processor

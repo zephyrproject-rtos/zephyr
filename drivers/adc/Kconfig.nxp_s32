@@ -1,0 +1,9 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_NXP_S32_ADC_SAR
+	bool "NXP S32 ADC SAR driver"
+	default y
+	depends on DT_HAS_NXP_S32_ADC_SAR_ENABLED
+	help
+	  This option enables the NXP S32 ADC SAR driver.

@@ -1,0 +1,124 @@
+/*
+ * Copyright (c) 2021, ATL Electronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <gd/gd32f403/gd32f403zet6.dtsi>
+#include "gd32f403z_eval-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "GigaDevice GD32F403Z Evaluation Kit";
+	compatible = "gd,gd32f403z";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+		zephyr,flash-controller = &fmc;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led2: led2 {
+			gpios = <&gpiof 0 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+		led3: led3 {
+			gpios = <&gpiof 1 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+		led4: led4 {
+			gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
+			label = "LED4";
+		};
+		led5: led5 {
+			gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
+			label = "LED5";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		wakeup_key: wakeup_key {
+			label = "WAKEUP_KEY";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+		tamper_key: tamper_key {
+			label = "TAMPER_KEY";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_key1: user_key1 {
+			label = "USER_KEY1";
+			gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		user_key2: user_key2 {
+			label = "USER_KEY2";
+			gpios = <&gpiof 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		/* NOTE: bridge TIMER0_CH0 (PA8) and LED2 (PF0) */
+		pwm_led: pwm_led {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		led0 = &led2;
+		led1 = &led3;
+		sw0 = &user_key1;
+		pwm-led0 = &pwm_led;
+		watchdog0 = &fwdgt;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&usart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+};
+
+&timer0 {
+	status = "okay";
+	prescaler = <256>;
+
+	pwm0: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm0_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&fwdgt {
+	status = "okay";
+};

@@ -4,15 +4,20 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <zephyr/bluetooth/conn.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
 
 #define BT_BAP_BASS_SCAN_STATE_NOT_SCANNING   0x00
 #define BT_BAP_BASS_SCAN_STATE_SCANNING       0x01
@@ -33,9 +38,7 @@
 #define BT_BAP_BASS_PA_REQ_SYNC_PAST          0x01
 #define BT_BAP_BASS_PA_REQ_SYNC               0x02
 
-#define BT_BAP_BASS_VALID_OPCODE(opcode) \
-	((opcode) >= BT_BAP_BASS_OP_SCAN_STOP && \
-	 (opcode) <= BT_BAP_BASS_OP_REM_SRC)
+#define BT_BAP_BASS_VALID_OPCODE(opcode) ((opcode) <= BT_BAP_BASS_OP_REM_SRC)
 
 struct bt_bap_bass_cp_scan_stop {
 	uint8_t opcode;
@@ -91,3 +94,50 @@ union bt_bap_bass_cp {
 	struct bt_bap_bass_cp_broadcase_code broadcast_code;
 	struct bt_bap_bass_cp_rem_src rem_src;
 };
+
+static inline const char *bt_bap_pa_state_str(uint8_t state)
+{
+	switch (state) {
+	case BT_BAP_PA_STATE_NOT_SYNCED:
+		return "Not synchronized to PA";
+	case BT_BAP_PA_STATE_INFO_REQ:
+		return "SyncInfo Request";
+	case BT_BAP_PA_STATE_SYNCED:
+		return "Synchronized to PA";
+	case BT_BAP_PA_STATE_FAILED:
+		return "Failed to synchronize to PA";
+	case BT_BAP_PA_STATE_NO_PAST:
+		return "No PAST";
+	default:
+		return "unknown state";
+	}
+}
+
+static inline const char *bt_bap_big_enc_state_str(uint8_t state)
+{
+	switch (state) {
+	case BT_BAP_BIG_ENC_STATE_NO_ENC:
+		return "Not encrypted";
+	case BT_BAP_BIG_ENC_STATE_BCODE_REQ:
+		return "Broadcast_Code required";
+	case BT_BAP_BIG_ENC_STATE_DEC:
+		return "Decrypting";
+	case BT_BAP_BIG_ENC_STATE_BAD_CODE:
+		return "Bad_Code (incorrect encryption key)";
+	default:
+		return "unknown state";
+	}
+}
+
+static inline bool valid_bis_syncs(uint32_t bis_sync)
+{
+	if (bis_sync == BT_BAP_BIS_SYNC_NO_PREF) {
+		return true;
+	}
+
+	if (bis_sync > BIT_MASK(31)) { /* Max BIS index */
+		return false;
+	}
+
+	return true;
+}

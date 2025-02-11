@@ -1,25 +1,31 @@
-.. _samples_edac:
+.. zephyr:code-sample:: edac
+   :name: EDAC shell
+   :relevant-api: edac
 
-EDAC Shell Sample
-#################
+   Test error detection and correction (EDAC) using shell commands.
 
 Overview
 ********
 
-This sample demonstrates the EDAC driver API in a simple EDAC shell sample.
+This sample demonstrates the :ref:`EDAC driver API <edac_api>` in a simple EDAC shell sample.
 
 Building and Running
 ********************
 
-This project can be built and executed on as following example for the
-:ref:`ehl_crb` board:
+This sample can be found under :zephyr_file:`samples/subsys/edac` in the
+Zephyr tree.
+The sample can be built as follows for the :ref:`intel_ehl_crb` board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/edac
    :host-os: unix
-   :board: ehl_crb
-   :goals: run
+   :board: intel_ehl_crb
+   :goals: build
    :compact:
+
+The Zephyr image that's created can be run on the :ref:`intel_ehl_crb` board
+as per the instructions in the board documentation. Check out the
+:ref:`intel_ehl_crb` for details.
 
 Sample output
 *************
@@ -28,7 +34,9 @@ Getting help
 ============
 
 After the application has started help can be read with the following
-command::
+command:
+
+.. code-block:: console
 
    uart:~$ edac -h
    edac - EDAC information
@@ -38,7 +46,9 @@ command::
      inject  :Inject ECC error commands
               edac inject <subcommands>
 
-Help for subcommand info can be read with::
+Help for subcommand info can be read with:
+
+.. code-block:: console
 
    uart:~$ edac info -h
    info - Show EDAC information
@@ -47,7 +57,9 @@ Help for subcommand info can be read with::
      ecc_error     :ECC Error Show / Clear commands
      parity_error  :Parity Error Show / Clear commands
 
-Injection help can be received with::
+Injection help can be received with:
+
+.. code-block:: console
 
    uart:~$ edac inject -h
    inject - Inject ECC error commands
@@ -64,7 +76,9 @@ Injection help can be received with::
 Testing Error Injection
 =======================
 
-Set Error Injection parameters with::
+Set Error Injection parameters with:
+
+.. code-block:: console
 
    uart:~$ edac inject addr 0x1000
    Set injection address base to: 0x1000
@@ -75,13 +89,17 @@ Set Error Injection parameters with::
    uart:~$ edac inject error_type correctable
    Set injection error type: correctable
 
-Trigger injection with::
+Trigger injection with:
+
+.. code-block:: console
 
    uart:~$ edac inject trigger
    Triggering injection
 
 Now Read / Write to the injection address to trigger Error Injection with
-following devmem commands::
+following devmem commands:
+
+.. code-block:: console
 
    uart:~$ devmem 0x1000 32 0xabcd
    Mapped 0x1000 to 0x2ffcf000
@@ -95,6 +113,8 @@ following devmem commands::
    Using data width 32
    Read value 0xabcd
 
-We should get the following message on screen indicating an IBECC event::
+We should get the following message on screen indicating an IBECC event:
+
+.. code-block:: none
 
    Got notification about IBECC event

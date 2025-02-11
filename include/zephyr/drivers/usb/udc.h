@@ -40,6 +40,10 @@ struct udc_device_caps {
 	uint32_t rwup : 1;
 	/** Controller performs status OUT stage automatically */
 	uint32_t out_ack : 1;
+	/** Controller expects device address to be set before status stage */
+	uint32_t addr_before_status : 1;
+	/** Controller can detect the state change of USB supply VBUS.*/
+	uint32_t can_detect_vbus : 1;
 	/** Maximum packet size for control endpoint */
 	enum udc_mps0 mps0 : 2;
 };
@@ -158,11 +162,11 @@ struct udc_event {
 	union {
 		/** Event value */
 		uint32_t value;
+		/** Event status value, if any */
+		int status;
 		/** Pointer to request used only for UDC_EVT_EP_REQUEST */
 		struct net_buf *buf;
 	};
-	/** Event status, 0 on success, other values on error */
-	int status;
 	/** Pointer to device struct */
 	const struct device *dev;
 };
@@ -191,6 +195,8 @@ struct udc_buf_info {
 	unsigned int queued : 1;
 	/** Transfer owner (usually pointer to a class instance) */
 	void *owner;
+	/** Transfer result, 0 on success, other values on error */
+	int err;
 } __packed;
 
 /**
@@ -213,7 +219,7 @@ typedef int (*udc_event_cb_t)(const struct device *dev,
  * @brief UDC driver API
  * This is the mandatory API any USB device controller driver needs to expose
  * with exception of:
- *   device_speed() used by udc_device_speed(), not required for FS only devices
+ *   device_speed(), test_mode() are only required for HS controllers
  */
 struct udc_api {
 	enum udc_bus_speed (*device_speed)(const struct device *dev);
@@ -235,6 +241,8 @@ struct udc_api {
 	int (*host_wakeup)(const struct device *dev);
 	int (*set_address)(const struct device *dev,
 			   const uint8_t addr);
+	int (*test_mode)(const struct device *dev,
+			 const uint8_t mode, const bool dryrun);
 	int (*enable)(const struct device *dev);
 	int (*disable)(const struct device *dev);
 	int (*init)(const struct device *dev);
@@ -269,8 +277,10 @@ struct udc_data {
 	struct udc_device_caps caps;
 	/** Driver access mutex */
 	struct k_mutex mutex;
-	/** Callback to submit an UDC event to upper layer */
+	/** Callback to submit an UDC event to higher layer */
 	udc_event_cb_t event_cb;
+	/** Opaque pointer to store higher layer context */
+	const void *event_ctx;
 	/** USB device controller status */
 	atomic_t status;
 	/** Internal used Control Sequence Stage */
@@ -337,14 +347,16 @@ static inline bool udc_is_suspended(const struct device *dev)
  * After initialization controller driver should be able to detect
  * power state of the bus and signal power state changes.
  *
- * @param[in] dev      Pointer to device struct of the driver instance
- * @param[in] event_cb Event callback from the higher layer (USB device stack)
+ * @param[in] dev       Pointer to device struct of the driver instance
+ * @param[in] event_cb  Event callback from the higher layer (USB device stack)
+ * @param[in] event_ctx Opaque pointer to higher layer context
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EINVAL on parameter error (no callback is passed)
  * @retval -EALREADY already initialized
  */
-int udc_init(const struct device *dev, udc_event_cb_t event_cb);
+int udc_init(const struct device *dev,
+	     udc_event_cb_t event_cb, const void *const event_ctx);
 
 /**
  * @brief Enable USB device controller
@@ -443,6 +455,42 @@ static inline int udc_set_address(const struct device *dev, const uint8_t addr)
 }
 
 /**
+ * @brief Enable Test Mode.
+ *
+ * For compliance testing, high-speed controllers must support test modes.
+ * A particular test is enabled by a SetFeature(TEST_MODE) request.
+ * To disable a test mode, device needs to be power cycled.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] mode   Test mode
+ * @param[in] dryrun Verify that a particular mode can be enabled, but do not
+ *                   enable test mode
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -ENOTSUP Test mode is not supported
+ */
+static inline int udc_test_mode(const struct device *dev,
+				const uint8_t mode, const bool dryrun)
+{
+	const struct udc_api *api = dev->api;
+	int ret;
+
+	if (!udc_is_enabled(dev)) {
+		return -EPERM;
+	}
+
+	if (api->test_mode != NULL) {
+		api->lock(dev);
+		ret = api->test_mode(dev, mode, dryrun);
+		api->unlock(dev);
+	} else {
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+
+/**
  * @brief Initiate host wakeup procedure.
  *
  * Initiate host wakeup. Only possible when the bus is suspended.
@@ -476,7 +524,7 @@ static inline int udc_host_wakeup(const struct device *dev)
  * of the endpoint. All properties of the descriptor,
  * such as direction, and transfer type, should be set correctly.
  * If wMaxPacketSize value is zero, it will be
- * updated to maximum buffer size of the enpoint.
+ * updated to maximum buffer size of the endpoint.
  *
  * @param[in] dev        Pointer to device struct of the driver instance
  * @param[in] ep         Endpoint address (same as bEndpointAddress)
@@ -656,6 +704,24 @@ static inline struct udc_buf_info *udc_get_buf_info(const struct net_buf *const 
 {
 	__ASSERT_NO_MSG(buf);
 	return (struct udc_buf_info *)net_buf_user_data(buf);
+}
+
+
+/**
+ * @brief Get pointer to higher layer context
+ *
+ * The address of the context is passed as an argument to the udc_init()
+ * function and is stored in the UDC data.
+ *
+ * @param[in] dev Pointer to device struct of the driver instance
+ *
+ * @return Opaque pointer to higher layer context
+ */
+static inline const void *udc_get_event_ctx(const struct device *dev)
+{
+	struct udc_data *data = dev->data;
+
+	return data->event_ctx;
 }
 
 /**

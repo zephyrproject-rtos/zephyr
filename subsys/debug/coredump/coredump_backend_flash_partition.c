@@ -39,14 +39,25 @@ LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
 
 #else
 
+/* Note that currently external memories are not supported */
 #define FLASH_CONTROLLER	\
 	DT_PARENT(DT_PARENT(DT_NODELABEL(FLASH_PARTITION)))
 
 #define FLASH_WRITE_SIZE	DT_PROP(FLASH_CONTROLLER, write_block_size)
 #define FLASH_BUF_SIZE		FLASH_WRITE_SIZE
-#define FLASH_ERASE_SIZE	DT_PROP(FLASH_CONTROLLER, erase_block_size)
+#if DT_NODE_HAS_PROP(FLASH_CONTROLLER, erase_block_size)
+#define DEVICE_ERASE_BLOCK_SIZE DT_PROP(FLASH_CONTROLLER, erase_block_size)
+#else
+/* Device has no erase block size */
+#define DEVICE_ERASE_BLOCK_SIZE 1
+#endif
+
+#define HEADER_SCRAMBLE_SIZE	ROUND_UP(sizeof(struct flash_hdr_t),	\
+					 DEVICE_ERASE_BLOCK_SIZE)
 
 #define HDR_VER			1
+
+#define FLASH_BACKEND_SEM_TIMEOUT (k_is_in_isr() ? K_NO_WAIT : K_FOREVER)
 
 typedef int (*data_read_cb_t)(void *arg, uint8_t *buf, size_t len);
 
@@ -104,7 +115,7 @@ static int partition_open(void)
 {
 	int ret;
 
-	(void)k_sem_take(&flash_sem, K_FOREVER);
+	(void)k_sem_take(&flash_sem, FLASH_BACKEND_SEM_TIMEOUT);
 
 	ret = flash_area_open(FLASH_PARTITION_ID, &backend_ctx.flash_area);
 	if (ret != 0) {
@@ -342,9 +353,9 @@ out:
 }
 
 /**
- * @brief Erase the stored coredump header from flash partition.
+ * @brief Erase or scramble the stored coredump header from flash partition.
  *
- * This erases the stored coredump header from the flash partition,
+ * This erases or scrambles the stored coredump header from the flash partition,
  * invalidating the coredump data.
  *
  * @return 0 if successful; error otherwise
@@ -355,10 +366,9 @@ static int erase_coredump_header(void)
 
 	ret = partition_open();
 	if (ret == 0) {
-		/* Erase header block */
-		ret = flash_area_erase(backend_ctx.flash_area, 0,
-				       ROUND_UP(sizeof(struct flash_hdr_t),
-						FLASH_ERASE_SIZE));
+		/* Erase or scramble header block */
+		ret = flash_area_flatten(backend_ctx.flash_area, 0,
+					 HEADER_SCRAMBLE_SIZE);
 	}
 
 	partition_close();
@@ -380,8 +390,8 @@ static int erase_flash_partition(void)
 	ret = partition_open();
 	if (ret == 0) {
 		/* Erase whole flash partition */
-		ret = flash_area_erase(backend_ctx.flash_area, 0,
-				       backend_ctx.flash_area->fa_size);
+		ret = flash_area_flatten(backend_ctx.flash_area, 0,
+					 backend_ctx.flash_area->fa_size);
 	}
 
 	partition_close();
@@ -404,8 +414,8 @@ static void coredump_flash_backend_start(void)
 
 	if (ret == 0) {
 		/* Erase whole flash partition */
-		ret = flash_area_erase(backend_ctx.flash_area, 0,
-				       backend_ctx.flash_area->fa_size);
+		ret = flash_area_flatten(backend_ctx.flash_area, 0,
+					 backend_ctx.flash_area->fa_size);
 	}
 
 	if (ret == 0) {
@@ -525,6 +535,7 @@ static void coredump_flash_backend_buffer_output(uint8_t *buf, size_t buflen)
 					&backend_ctx.stream_ctx,
 					tmp_buf, copy_sz, false);
 		if (backend_ctx.error != 0) {
+			LOG_ERR("Flash write error: %d", backend_ctx.error);
 			break;
 		}
 
@@ -618,7 +629,6 @@ struct coredump_backend_api coredump_backend_flash_partition = {
 	.cmd = coredump_flash_backend_cmd,
 };
 
-
 #ifdef CONFIG_DEBUG_COREDUMP_SHELL
 #include <zephyr/shell/shell.h>
 
@@ -635,21 +645,21 @@ static off_t print_buf_ptr;
 /**
  * @brief Shell command to get backend error.
  *
- * @param shell shell instance
+ * @param sh shell instance
  * @param argc (not used)
  * @param argv (not used)
  * @return 0
  */
-static int cmd_coredump_error_get(const struct shell *shell,
+static int cmd_coredump_error_get(const struct shell *sh,
 				  size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	if (backend_ctx.error == 0) {
-		shell_print(shell, "No error.");
+		shell_print(sh, "No error.");
 	} else {
-		shell_print(shell, "Error: %d", backend_ctx.error);
+		shell_print(sh, "Error: %d", backend_ctx.error);
 	}
 
 	return 0;
@@ -658,17 +668,17 @@ static int cmd_coredump_error_get(const struct shell *shell,
 /**
  * @brief Shell command to clear backend error.
  *
- * @param shell shell instance
+ * @param sh shell instance
  * @param argc (not used)
  * @param argv (not used)
  * @return 0
  */
-static int cmd_coredump_error_clear(const struct shell *shell,
+static int cmd_coredump_error_clear(const struct shell *sh,
 				    size_t argc, char **argv)
 {
 	backend_ctx.error = 0;
 
-	shell_print(shell, "Error cleared.");
+	shell_print(sh, "Error cleared.");
 
 	return 0;
 }
@@ -676,12 +686,12 @@ static int cmd_coredump_error_clear(const struct shell *shell,
 /**
  * @brief Shell command to see if there is a stored coredump in flash.
  *
- * @param shell shell instance
+ * @param sh shell instance
  * @param argc (not used)
  * @param argv (not used)
  * @return 0
  */
-static int cmd_coredump_has_stored_dump(const struct shell *shell,
+static int cmd_coredump_has_stored_dump(const struct shell *sh,
 					size_t argc, char **argv)
 {
 	int ret;
@@ -693,11 +703,11 @@ static int cmd_coredump_has_stored_dump(const struct shell *shell,
 					   NULL);
 
 	if (ret == 1) {
-		shell_print(shell, "Stored coredump found.");
+		shell_print(sh, "Stored coredump found.");
 	} else if (ret == 0) {
-		shell_print(shell, "Stored coredump NOT found.");
+		shell_print(sh, "Stored coredump NOT found.");
 	} else {
-		shell_print(shell, "Failed to perform query: %d", ret);
+		shell_print(sh, "Failed to perform query: %d", ret);
 	}
 
 	return 0;
@@ -706,12 +716,12 @@ static int cmd_coredump_has_stored_dump(const struct shell *shell,
 /**
  * @brief Shell command to verify if the stored coredump is valid.
  *
- * @param shell shell instance
+ * @param sh shell instance
  * @param argc (not used)
  * @param argv (not used)
  * @return 0
  */
-static int cmd_coredump_verify_stored_dump(const struct shell *shell,
+static int cmd_coredump_verify_stored_dump(const struct shell *sh,
 					   size_t argc, char **argv)
 {
 	int ret;
@@ -723,12 +733,12 @@ static int cmd_coredump_verify_stored_dump(const struct shell *shell,
 					 NULL);
 
 	if (ret == 1) {
-		shell_print(shell, "Stored coredump verified.");
+		shell_print(sh, "Stored coredump verified.");
 	} else if (ret == 0) {
-		shell_print(shell, "Stored coredump verification failed "
+		shell_print(sh, "Stored coredump verification failed "
 				   "or there is no stored coredump.");
 	} else {
-		shell_print(shell, "Failed to perform verify command: %d",
+		shell_print(sh, "Failed to perform verify command: %d",
 			    ret);
 	}
 
@@ -740,11 +750,11 @@ static int cmd_coredump_verify_stored_dump(const struct shell *shell,
  *
  * This prints what is in the print buffer to the shell.
  *
- * @param shell shell instance.
+ * @param sh shell instance.
  */
-static void flush_print_buf(const struct shell *shell)
+static void flush_print_buf(const struct shell *sh)
 {
-	shell_print(shell, "%s%s", COREDUMP_PREFIX_STR, print_buf);
+	shell_print(sh, "%s%s", COREDUMP_PREFIX_STR, print_buf);
 	print_buf_ptr = 0;
 	(void)memset(print_buf, 0, sizeof(print_buf));
 }
@@ -765,11 +775,11 @@ static int cb_print_stored_dump(void *arg, uint8_t *buf, size_t len)
 	int ret = 0;
 	size_t i = 0;
 	size_t remaining = len;
-	const struct shell *shell = (const struct shell *)arg;
+	const struct shell *sh = (const struct shell *)arg;
 
 	if (len == 0) {
 		/* Flush print buffer */
-		flush_print_buf(shell);
+		flush_print_buf(sh);
 
 		goto out;
 	}
@@ -794,7 +804,7 @@ static int cb_print_stored_dump(void *arg, uint8_t *buf, size_t len)
 		i++;
 
 		if (print_buf_ptr == PRINT_BUF_SZ) {
-			flush_print_buf(shell);
+			flush_print_buf(sh);
 		}
 	}
 
@@ -805,12 +815,12 @@ out:
 /**
  * @brief Shell command to print stored coredump data to shell
  *
- * @param shell shell instance
+ * @param sh shell instance
  * @param argc (not used)
  * @param argv (not used)
  * @return 0
  */
-static int cmd_coredump_print_stored_dump(const struct shell *shell,
+static int cmd_coredump_print_stored_dump(const struct shell *sh,
 					  size_t argc, char **argv)
 {
 	int ret;
@@ -823,11 +833,11 @@ static int cmd_coredump_print_stored_dump(const struct shell *shell,
 					 NULL);
 
 	if (ret == 0) {
-		shell_print(shell, "Stored coredump verification failed "
+		shell_print(sh, "Stored coredump verification failed "
 				   "or there is no stored coredump.");
 		goto out;
 	} else if (ret != 1) {
-		shell_print(shell, "Failed to perform verify command: %d",
+		shell_print(sh, "Failed to perform verify command: %d",
 			    ret);
 		goto out;
 	}
@@ -836,27 +846,27 @@ static int cmd_coredump_print_stored_dump(const struct shell *shell,
 	print_buf_ptr = 0;
 	(void)memset(print_buf, 0, sizeof(print_buf));
 
-	shell_print(shell, "%s%s", COREDUMP_PREFIX_STR, COREDUMP_BEGIN_STR);
+	shell_print(sh, "%s%s", COREDUMP_PREFIX_STR, COREDUMP_BEGIN_STR);
 
-	ret = process_stored_dump(cb_print_stored_dump, (void *)shell);
+	ret = process_stored_dump(cb_print_stored_dump, (void *)sh);
 	if (print_buf_ptr != 0) {
-		shell_print(shell, "%s%s", COREDUMP_PREFIX_STR, print_buf);
+		shell_print(sh, "%s%s", COREDUMP_PREFIX_STR, print_buf);
 	}
 
 	if (backend_ctx.error != 0) {
-		shell_print(shell, "%s%s", COREDUMP_PREFIX_STR,
+		shell_print(sh, "%s%s", COREDUMP_PREFIX_STR,
 			    COREDUMP_ERROR_STR);
 	}
 
-	shell_print(shell, "%s%s", COREDUMP_PREFIX_STR, COREDUMP_END_STR);
+	shell_print(sh, "%s%s", COREDUMP_PREFIX_STR, COREDUMP_END_STR);
 
 	if (ret == 1) {
-		shell_print(shell, "Stored coredump printed.");
+		shell_print(sh, "Stored coredump printed.");
 	} else if (ret == 0) {
-		shell_print(shell, "Stored coredump verification failed "
+		shell_print(sh, "Stored coredump verification failed "
 				   "or there is no stored coredump.");
 	} else {
-		shell_print(shell, "Failed to print: %d", ret);
+		shell_print(sh, "Failed to print: %d", ret);
 	}
 
 out:
@@ -866,12 +876,12 @@ out:
 /**
  * @brief Shell command to erase stored coredump.
  *
- * @param shell shell instance
+ * @param sh shell instance
  * @param argc (not used)
  * @param argv (not used)
  * @return 0
  */
-static int cmd_coredump_erase_stored_dump(const struct shell *shell,
+static int cmd_coredump_erase_stored_dump(const struct shell *sh,
 					  size_t argc, char **argv)
 {
 	int ret;
@@ -883,9 +893,9 @@ static int cmd_coredump_erase_stored_dump(const struct shell *shell,
 					 NULL);
 
 	if (ret == 0) {
-		shell_print(shell, "Stored coredump erased.");
+		shell_print(sh, "Stored coredump erased.");
 	} else {
-		shell_print(shell, "Failed to perform erase command: %d", ret);
+		shell_print(sh, "Failed to perform erase command: %d", ret);
 	}
 
 	return 0;

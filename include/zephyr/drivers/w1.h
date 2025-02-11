@@ -26,6 +26,8 @@ extern "C" {
 /**
  * @brief 1-Wire Interface
  * @defgroup w1_interface 1-Wire Interface
+ * @since 3.2
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -93,6 +95,7 @@ typedef int (*w1_write_block_t)(const struct device *dev, const uint8_t *buffer,
 typedef size_t (*w1_get_slave_count_t)(const struct device *dev);
 typedef int (*w1_configure_t)(const struct device *dev,
 			      enum w1_settings_type type, uint32_t value);
+typedef int (*w1_change_bus_lock_t)(const struct device *dev, bool lock);
 
 __subsystem struct w1_driver_api {
 	w1_reset_bus_t reset_bus;
@@ -103,6 +106,7 @@ __subsystem struct w1_driver_api {
 	w1_read_block_t read_block;
 	w1_write_block_t write_block;
 	w1_configure_t configure;
+	w1_change_bus_lock_t change_bus_lock;
 };
 /** @endcond */
 
@@ -112,6 +116,11 @@ __syscall int w1_change_bus_lock(const struct device *dev, bool lock);
 static inline int z_impl_w1_change_bus_lock(const struct device *dev, bool lock)
 {
 	struct w1_master_data *ctrl_data = (struct w1_master_data *)dev->data;
+	const struct w1_driver_api *api = (const struct w1_driver_api *)dev->api;
+
+	if (api->change_bus_lock) {
+		return api->change_bus_lock(dev, lock);
+	}
 
 	if (lock) {
 		return k_mutex_lock(&ctrl_data->bus_lock, K_FOREVER);
@@ -341,13 +350,55 @@ static inline int z_impl_w1_configure(const struct device *dev,
  * @name 1-Wire ROM Commands
  * @{
  */
+
+/**
+ * This command allows the bus master to read the slave devices without
+ * providing their ROM code.
+ */
 #define W1_CMD_SKIP_ROM			0xCC
+
+/**
+ * This command allows the bus master to address a specific slave device by
+ * providing its ROM code.
+ */
 #define W1_CMD_MATCH_ROM		0x55
+
+/**
+ * This command allows the bus master to resume a previous read out from where
+ * it left off.
+ */
 #define W1_CMD_RESUME			0xA5
+
+/**
+ * This command allows the bus master to read the ROM code from a single slave
+ * device.
+ * This command should be used when there is only a single slave device on the
+ * bus.
+ */
 #define W1_CMD_READ_ROM			0x33
+
+/**
+ * This command allows the bus master to discover the addresses (i.e., ROM
+ * codes) of all slave devices on the bus.
+ */
 #define W1_CMD_SEARCH_ROM		0xF0
+
+/**
+ * This command allows the bus master to identify which devices have experienced
+ * an alarm condition.
+ */
 #define W1_CMD_SEARCH_ALARM		0xEC
+
+/**
+ * This command allows the bus master to address all devices on the bus and then
+ * switch them to overdrive speed.
+ */
 #define W1_CMD_OVERDRIVE_SKIP_ROM	0x3C
+
+/**
+ * This command allows the bus master to address a specific device and switch it
+ * to overdrive speed.
+ */
 #define W1_CMD_OVERDRIVE_MATCH_ROM	0x69
 
 /** @} */
@@ -371,7 +422,7 @@ static inline int z_impl_w1_configure(const struct device *dev,
 /** This flag can be passed to searches in order to not filter on family ID. */
 #define W1_SEARCH_ALL_FAMILIES		0x00
 
-/** Intitialize all w1_rom struct members to zero. */
+/** Initialize all w1_rom struct members to zero. */
 #define W1_ROM_INIT_ZERO					\
 	{							\
 		.family = 0, .serial = { 0 }, .crc = 0,		\
@@ -424,9 +475,9 @@ typedef void (*w1_search_callback_t)(struct w1_rom rom, void *user_data);
  *
  * This procedure allows the 1-Wire bus master to read the peripherals’
  * 64-bit ROM without using the Search ROM procedure.
- * This command can be used as long as not more than a sigle peripheral is
+ * This command can be used as long as not more than a single peripheral is
  * connected to the bus.
- * Otherwise data collisons occur and a faulty ROM is read.
+ * Otherwise data collisions occur and a faulty ROM is read.
  *
  * @param[in] dev  Pointer to the device structure for the driver instance.
  * @param[out] rom Pointer to the ROM structure.
@@ -461,7 +512,7 @@ int w1_read_rom(const struct device *dev, struct w1_rom *rom);
 int w1_match_rom(const struct device *dev, const struct w1_slave_config *config);
 
 /**
- * @brief Select the slave last addressed with a Match ROM or Search ROM commnad.
+ * @brief Select the slave last addressed with a Match ROM or Search ROM command.
  *
  * This routine allows the 1-Wire bus master to re-select a slave
  * device that was already addressed using a Match ROM or Search ROM command.
@@ -492,7 +543,7 @@ int w1_resume_command(const struct device *dev);
 int w1_skip_rom(const struct device *dev, const struct w1_slave_config *config);
 
 /**
- * @brief In single drop configurations use Skip Select command, otherweise use
+ * @brief In single drop configurations use Skip Select command, otherwise use
  *        Match ROM command.
  *
  * @param[in] dev    Pointer to the device structure for the driver instance.
@@ -669,6 +720,6 @@ static inline uint16_t w1_crc16(const uint16_t seed, const uint8_t *src,
 /**
  * @}
  */
-#include <syscalls/w1.h>
+#include <zephyr/syscalls/w1.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_W1_H_ */

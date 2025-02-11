@@ -8,7 +8,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel_version.h>
 #include <zephyr/sys/speculation.h>
-#include "version.h"
+#include <zephyr/version.h>
 
 /**
  * @defgroup kernel_common_tests Common Tests
@@ -17,13 +17,6 @@
  * @}
  *
  */
-
-#ifdef CONFIG_ARM
-ZTEST(bitfield, test_bitfield)
-{
-	ztest_test_skip();
-}
-#endif
 
 #ifndef CONFIG_PRINTK
 ZTEST(printk, test_printk)
@@ -73,7 +66,7 @@ ZTEST(common, test_bounds_check_mitigation)
 extern struct k_stack eno_stack;
 extern struct k_thread eno_thread;
 
-static void *common_setup(void)
+void *common_setup(void)
 {
 #if CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(), &eno_thread, &eno_stack);
@@ -83,28 +76,3 @@ static void *common_setup(void)
 }
 
 ZTEST_SUITE(common, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(atomic, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(bitarray, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(bitfield, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(boot_delay, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(byteorder, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(clock, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(common_errno, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(irq_offload, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(multilib, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(pow2, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(printk, NULL, common_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(common_1cpu, NULL, common_setup,
-		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

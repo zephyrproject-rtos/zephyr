@@ -1,0 +1,15 @@
+identifier: nrf9131ek/nrf9131/ns
+name: nRF9131-EK-NRF9131-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 128
+flash: 212
+supported:
+  - i2c
+  - pwm
+  - watchdog
+  - netif:modem

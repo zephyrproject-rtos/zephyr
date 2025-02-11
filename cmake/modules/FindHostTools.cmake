@@ -48,9 +48,9 @@ if(HostTools_FOUND)
   return()
 endif()
 
-find_package(Deprecated COMPONENTS XCC_USE_CLANG CROSS_COMPILE)
+find_package(Deprecated COMPONENTS CROSS_COMPILE)
 
-find_package(Zephyr-sdk 0.15)
+find_package(Zephyr-sdk 0.16...<0.17)
 
 # gperf is an optional dependency
 find_program(GPERF gperf)
@@ -65,8 +65,9 @@ find_program(BOSSAC bossac)
 # in the mcuboot repository if that's present in some cases)
 find_program(IMGTOOL imgtool)
 
-# Pick host system's toolchain if we are targeting posix
-if("${ARCH}" STREQUAL "posix" OR "${ARCH}" STREQUAL "unit_testing")
+# Default to the host system's toolchain if we are targeting a host based target
+if((${BOARD_DIR} MATCHES "boards\/native") OR ("${ARCH}" STREQUAL "posix")
+   OR ("${BOARD}" STREQUAL "unit_testing"))
   if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "llvm")
     set(ZEPHYR_TOOLCHAIN_VARIANT "host")
   endif()

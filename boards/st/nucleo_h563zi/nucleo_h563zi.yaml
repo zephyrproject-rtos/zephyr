@@ -1,0 +1,28 @@
+identifier: nucleo_h563zi
+name: ST Nucleo H563ZI
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 640
+flash: 2048
+supported:
+  - arduino_gpio
+  - gpio
+  - arduino_serial
+  - arduino_spi
+  - can
+  - gpio
+  - uart
+  - entropy
+  - adc
+  - dac
+  - pwm
+  - netif:eth
+  - counter
+  - spi
+  - usb_device
+  - usb
+  - rtc
+  - i2c
+vendor: st

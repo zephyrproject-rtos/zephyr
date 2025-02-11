@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LLL_CIS_FLUSH_NONE      0
+#define LLL_CIS_FLUSH_PENDING   1
+#define LLL_CIS_FLUSH_COMPLETE  2
+
 struct lll_conn_iso_stream_rxtx {
 	uint64_t payload_count:39; /* cisPayloadCounter */
 	uint64_t phy_flags:1;      /* S2 or S8 coding scheme */
@@ -11,7 +15,10 @@ struct lll_conn_iso_stream_rxtx {
 	uint64_t ft:8;             /* Flush timeout (FT) */
 	uint64_t bn:4;             /* Burst number (BN) */
 	uint64_t phy:3;            /* PHY */
-	uint64_t rfu:1;
+	uint64_t rfu0:1;
+
+	uint8_t bn_curr:4;        /* Current burst number */
+	uint8_t rfu1:4;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	struct ccm ccm;
@@ -39,10 +46,19 @@ struct lll_conn_iso_stream {
 	uint8_t sn:1;               /* Sequence number */
 	uint8_t nesn:1;             /* Next expected sequence number */
 	uint8_t cie:1;              /* Close isochronous event */
-	uint8_t empty:1;            /* 1 if CIS LLL has Tx-ed empty PDU */
-	uint8_t flushed:1;          /* 1 if CIS LLL has been flushed */
+	uint8_t npi:1;              /* 1 if CIS LLL has Tx-ed Null PDU Indicator */
+	uint8_t flush:2;            /* See states LLL_CIS_FLUSH_XXX */
 	uint8_t active:1;           /* 1 if CIS LLL is active */
 	uint8_t datapath_ready_rx:1;/* 1 if datapath for RX is ready */
+
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	/* Lazy at CIS active. Number of previously skipped CIG events that is
+	 * determined when CIS is made active and subtracted from total CIG
+	 * events that where skipped when this CIS gets to use radio for the
+	 * first time.
+	 */
+	uint16_t lazy_active;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Resumption information */
 	uint8_t next_subevent;      /* Next subevent to schedule */
@@ -53,16 +69,31 @@ struct lll_conn_iso_stream {
 	memq_link_t *link_tx_free;
 };
 
+#define LLL_CONN_ISO_EVENT_COUNT_MAX BIT64_MASK(39)
+
 struct lll_conn_iso_group {
 	struct lll_hdr hdr;
 
 	uint16_t handle;      /* CIG handle (internal) */
-	uint8_t  num_cis:5;   /* Number of CISes in this CIG */
-	uint8_t  role:1;      /* 0: CENTRAL, 1: PERIPHERAL*/
-	uint8_t  paused:1;    /* 1: CIG is paused */
 
 	/* Resumption information */
 	uint16_t resume_cis;  /* CIS handle to schedule at resume */
+
+	/* ISO group information */
+	uint32_t num_cis:5;   /* Number of CISes in this CIG */
+	uint32_t role:1;      /* 0: CENTRAL, 1: PERIPHERAL*/
+	uint32_t paused:1;    /* 1: CIG is paused */
+	uint32_t rfu0:1;
+
+	/* ISO interval to calculate timestamp under FT > 1,
+	 * maximum ISO interval of 4 seconds can be represented in 22-bits.
+	 */
+	uint32_t iso_interval_us:22;
+	uint32_t rfu1:2;
+
+	/* Accumulates LLL prepare callback latencies */
+	uint16_t latency_prepare;
+	uint16_t latency_event;
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	/* Window widening. Relies on vendor specific conversion macros, e.g.
@@ -91,8 +122,12 @@ void lll_conn_iso_flush(uint16_t handle, struct lll_conn_iso_stream *lll);
 extern struct lll_conn_iso_stream *
 ull_conn_iso_lll_stream_get_by_group(struct lll_conn_iso_group *cig_lll,
 				     uint16_t *handle_iter);
+extern struct lll_conn_iso_stream *
+ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
+					    uint16_t *handle_iter);
 extern struct lll_conn_iso_group *
 ull_conn_iso_lll_group_get_by_stream(struct lll_conn_iso_stream *cis_lll);
+extern struct lll_conn_iso_stream *ull_conn_iso_lll_stream_get(uint16_t handle);
 extern void
 ull_conn_iso_lll_cis_established(struct lll_conn_iso_stream *cis_lll);
 extern void ll_iso_rx_put(memq_link_t *link, void *rx);

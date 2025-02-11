@@ -1,0 +1,6 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF52840DK
+	select SOC_NRF52840_QIAA if BOARD_NRF52840DK_NRF52840
+	select SOC_NRF52811_QFAA if BOARD_NRF52840DK_NRF52811

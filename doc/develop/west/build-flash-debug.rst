@@ -177,8 +177,12 @@ it the value ``always``. For example, these commands are equivalent::
   west build -p -b reel_board samples/hello_world
   west build -p=always -b reel_board samples/hello_world
 
-By default, ``west build`` applies a heuristic to detect if the build directory
-needs to be made pristine. This is the same as using ``--pristine=auto``.
+By default, ``west build`` makes no attempt to detect if the build directory
+needs to be made pristine. This can lead to errors if you do something like
+try to reuse a build directory for a different ``--board``.
+
+Using ``--pristine=auto`` makes ``west build`` detect some of these situations
+and make the build directory pristine before trying the build.
 
 .. tip::
 
@@ -208,10 +212,15 @@ build``, pass them after a ``--`` at the end of the command line.
 .. important::
 
    Passing additional CMake arguments like this forces ``west build`` to re-run
-   CMake, even if a build system has already been generated.
+   the CMake build configuration step, even if a build system has already been
+   generated.  This will make incremental builds slower (but still much faster
+   than building from scratch).
 
    After using ``--`` once to generate the build directory, use ``west build -d
    <build-dir>`` on subsequent runs to do incremental builds.
+
+   Alternatively, make your CMake arguments permanent as described in the next
+   section; it will not slow down incremental builds.
 
 For example, to use the Unix Makefiles CMake generator instead of Ninja (which
 ``west build`` uses by default), run::
@@ -237,7 +246,7 @@ To set :ref:`DTC_OVERLAY_FILE <important-build-vars>` to
 To merge the :file:`file.conf` Kconfig fragment into your build's
 :file:`.config`::
 
-  west build -- -DOVERLAY_CONFIG=file.conf
+  west build -- -DEXTRA_CONF_FILE=file.conf
 
 .. _west-building-cmake-config:
 
@@ -349,6 +358,11 @@ The ``--domain`` argument can be combined with the ``--target`` argument to
 build the specific target for the target, for example::
 
   west build --sysbuild --domain hello_world --target help
+
+Use a snippet
+-------------
+
+See :ref:`using-snippets`.
 
 .. _west-building-config:
 
@@ -684,6 +698,87 @@ determined by the imported subclasses of ``ZephyrBinaryRunner``.
 runner implementations are in other submodules, such as ``runners.nrfjprog``,
 ``runners.openocd``, etc.
 
+Running Robot Framework tests: ``west robot``
+*********************************************
+
+.. tip:: Run ``west robot -h`` for additional help.
+
+Basics
+======
+
+Currently the command supports only one runner which is using ``renode-test``,
+(essentially a wrapper for running Robot tests in Renode), but can be
+easily extended by adding other runners.
+
+From a Zephyr build directory, to run a Robot test suite::
+
+  west robot --runner=renode-robot --testsuite path/to/testsuite.robot
+
+This will run all tests from testsuite.robot and print output provided
+by Robot Framework.
+
+To pass additional parameters to Renode use ``--renode-robot-args`` switch.
+For example to show Renode logs in addition to Robot Framework's output:
+
+  west robot --runner=renode-robot --testsuite path/to/testsuite.robot --renode-robot-arg="--show-log"
+
+Runner-Specific Overrides
+=========================
+
+To view all of the available options for the Robot runners your board
+supports, as well as their usage information, use ``--context`` (or
+``-H``)::
+
+  west robot --runner=renode-robot --context
+
+
+To view all available options "renode-test" runner supports, use::
+
+  west robot --runner=renode-robot --renode-robot-help
+
+Simulating a board with: ``west simulate``
+******************************************
+
+Basics
+======
+
+Currently the command supports only one runner which is using Renode,
+but can be easily extended by adding other runners.
+
+From a Zephyr build directory, to run the built binary::
+
+  west simulate --runner=renode
+
+This will start Renode and configure simulation based on a default ``.resc`` script
+for the current platform with the zephyr.elf file loaded by default. The simulation
+then can be started by typing "start" or "s" in Renode's Monitor. This can also be
+done by passing a command to Renode, using an argument provided by the runner:
+
+  west simulate --runner=renode --renode-command start
+
+To pass an argument to Renode itself, for example to start Renode in console mode
+instead of a separate window:
+
+  west simulate --runner=renode --renode-arg="--console"
+
+From that point on Renode can be used normally in both console and window modes.
+For details on using Renode see `Renode - documentation`_.
+
+.. _Renode - documentation:
+   http://docs.renode.io
+
+Runner-Specific Overrides
+=========================
+
+To view all of the available options supported by the runners, as well
+as their usage information, use ``--context`` (or``-H``)::
+
+  west simulate --runner=renode --context
+
+To view all available options Renode supports, use::
+
+  west simulate --runner=renode --renode-help
+
 Hacking
 *******
 
@@ -728,8 +823,6 @@ By default, these West commands rebuild binaries before flashing and
 debugging. This can of course also be accomplished using the usual
 targets provided by Zephyr's build system (in fact, that's how these
 commands do it).
-
-.. rubric:: Footnotes
 
 .. _cmake(1):
    https://cmake.org/cmake/help/latest/manual/cmake.1.html

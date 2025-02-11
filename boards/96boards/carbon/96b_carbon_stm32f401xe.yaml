@@ -1,0 +1,18 @@
+identifier: 96b_carbon/stm32f401xe
+name: 96Boards Carbon
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - ble
+  - i2c
+  - counter
+  - spi
+  - usb_device
+ram: 96
+flash: 512
+vendor: 96boards

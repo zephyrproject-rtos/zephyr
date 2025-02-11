@@ -5,23 +5,4 @@ description: STM32 I2S controller
 
 compatible: "st,stm32-i2s"
 
-include: [i2s-controller.yaml, pinctrl-device.yaml]
-
-properties:
-  reg:
-    required: true
-
-  interrupts:
-    required: true
-
-  dmas:
-    required: true
-
-  dma-names:
-    required: true
-
-  pinctrl-0:
-    required: true
-
-  pinctrl-names:
-    required: true
+include: st,stm32-i2s-common.yaml

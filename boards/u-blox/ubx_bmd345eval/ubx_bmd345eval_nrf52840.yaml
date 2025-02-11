@@ -1,0 +1,25 @@
+identifier: ubx_bmd345eval/nrf52840
+name: BMD-345-EVAL
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_i2c
+  - arduino_spi
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - qspi
+  - usb_device
+  - watchdog
+  - netif:openthread
+vendor: u-blox

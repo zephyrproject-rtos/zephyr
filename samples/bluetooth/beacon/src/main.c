@@ -74,7 +74,7 @@ static void bt_ready(int err)
 	printk("Beacon started, advertising as %s\n", addr_s);
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -85,4 +85,5 @@ void main(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
+	return 0;
 }

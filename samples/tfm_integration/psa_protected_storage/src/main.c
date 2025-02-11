@@ -13,7 +13,7 @@
 #define TEST_STRING_1 "The quick brown fox jumps over the lazy dog"
 #define TEST_STRING_2 "Lorem ipsum dolor sit amet"
 
-void main(void)
+int main(void)
 {
 	psa_status_t status = 0;
 
@@ -28,7 +28,7 @@ void main(void)
 	status = psa_ps_set(uid1, sizeof(TEST_STRING_1), TEST_STRING_1, uid1_flag);
 	if (status != PSA_SUCCESS) {
 		printk("Failed to store data! (%d)\n", status);
-		return;
+		return 0;
 	}
 
 	/* Get info on UID1 */
@@ -37,7 +37,7 @@ void main(void)
 	status = psa_ps_get_info(uid1, &uid1_info);
 	if (status != PSA_SUCCESS) {
 		printk("Failed to get info! (%d)\n", status);
-		return;
+		return 0;
 	}
 	printk("Info on data stored in UID1:\n");
 	printk("- Size: %d\n", uid1_info.size);
@@ -51,7 +51,7 @@ void main(void)
 	status = psa_ps_get(uid1, 0, sizeof(TEST_STRING_1), &stored_data, &bytes_read);
 	if (status != PSA_SUCCESS) {
 		printk("Failed to get data stored in UID1! (%d)\n", status);
-		return;
+		return 0;
 	}
 	printk("Data stored in UID1: %s\n", stored_data);
 
@@ -59,7 +59,7 @@ void main(void)
 	status = psa_ps_set(uid1, sizeof(TEST_STRING_2), TEST_STRING_2, uid1_flag);
 	if (status != PSA_SUCCESS) {
 		printk("Failed to overwrite UID1! (%d)\n", status);
-		return;
+		return 0;
 	}
 
 	printk("Writing data to UID2 with overwrite protection: %s\n", TEST_STRING_1);
@@ -69,14 +69,14 @@ void main(void)
 	status = psa_ps_set(uid2, sizeof(TEST_STRING_1), TEST_STRING_1, uid2_flag);
 	if (status != PSA_SUCCESS) {
 		printk("Failed to set write once flag! (%d)\n", status);
-		return;
+		return 0;
 	}
 
 	printk("Attempting to write '%s' to UID2\n", TEST_STRING_2);
 	status = psa_ps_set(uid2, sizeof(TEST_STRING_2), TEST_STRING_2, uid2_flag);
 	if (status != PSA_ERROR_NOT_PERMITTED) {
 		printk("Got unexpected status when overwriting! (%d)\n", status);
-		return;
+		return 0;
 	}
 	printk("Got expected error (PSA_ERROR_NOT_PERMITTED) when writing to protected UID\n");
 
@@ -84,6 +84,7 @@ void main(void)
 	status = psa_ps_remove(uid1);
 	if (status != PSA_SUCCESS) {
 		printk("Failed to remove UID1! (%d)\n", status);
-		return;
+		return 0;
 	}
+	return 0;
 }

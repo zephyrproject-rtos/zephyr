@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+
+config SOC_FAMILY_INFINEON_XMC
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select PLATFORM_SPECIFIC_INIT
+
+if SOC_FAMILY_INFINEON_XMC
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_INFINEON_XMC

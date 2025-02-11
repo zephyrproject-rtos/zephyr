@@ -8,7 +8,7 @@
 #include "dummy_driver.h"
 
 /* Application main Thread */
-void main(void)
+int main(void)
 {
 	const struct device *dev;
 	struct dummy_driver_api *api;
@@ -23,4 +23,5 @@ void main(void)
 	ret = api->read(dev, &val);
 	ret = api->close(dev);
 	printk("Device PM sample app complete\n");
+	return 0;
 }

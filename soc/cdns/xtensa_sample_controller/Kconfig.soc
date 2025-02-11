@@ -1,0 +1,12 @@
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_XTENSA_SAMPLE_CONTROLLER
+	bool
+
+config SOC
+	default "xtensa_sample_controller" if SOC_XTENSA_SAMPLE_CONTROLLER
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "sample_controller" if SOC_XTENSA_SAMPLE_CONTROLLER

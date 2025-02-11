@@ -6,24 +6,14 @@ if(CONFIG_NANOPB)
 
   set(NANOPB_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
 
-  find_program(PROTOC protoc)
-  if(NOT PROTOC)
-    message(FATAL_ERROR "'protoc' not found, please ensure protoc is installed\
- and in path. See https://docs.zephyrproject.org/latest/samples/modules/nanopb/README.html")
-  endif()
-
-  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${NANOPB_DIR}/extra)
-  find_package(Nanopb REQUIRED)
-
   zephyr_library()
-
-  zephyr_include_directories(${NANOPB_DIR})
-
   zephyr_library_sources(
     ${NANOPB_DIR}/pb_common.c
     ${NANOPB_DIR}/pb_encode.c
     ${NANOPB_DIR}/pb_decode.c
   )
+
+  zephyr_include_directories(${NANOPB_DIR})
 
   zephyr_compile_definitions(
     PB_MAX_REQUIRED_FIELDS=${CONFIG_NANOPB_MAX_REQUIRED_FIELDS})

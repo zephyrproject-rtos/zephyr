@@ -8,20 +8,17 @@
 
 / {
 	soc {
-		can {
-			can2: can@40006800 {
-				compatible = "st,stm32-fdcan";
-				reg = <0x40006800 0x400>, <0x4000A750 0x350>;
-				reg-names = "m_can", "message_ram";
-				interrupts = <86 0>, <87 0>;
-				interrupt-names = "LINE_0", "LINE_1";
-				clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
-				status = "disabled";
-				sjw = <1>;
-				sample-point = <875>;
-				sjw-data = <1>;
-				sample-point-data = <875>;
-			};
+		compatible = "st,stm32g491", "st,stm32g4", "simple-bus";
+
+		fdcan2: can@40006800 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x40006800 0x400>, <0x4000a400 0x6a0>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <86 0>, <87 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
+			status = "disabled";
 		};
 
 		timers20: timers@40015000 {
@@ -63,7 +60,12 @@
 			interrupts = <47 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			vref-channel = <18>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		uart5: serial@40005000 {

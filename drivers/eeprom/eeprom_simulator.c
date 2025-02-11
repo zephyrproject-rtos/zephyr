@@ -7,6 +7,20 @@
 
 #define DT_DRV_COMPAT zephyr_sim_eeprom
 
+#ifdef CONFIG_ARCH_POSIX
+#undef _POSIX_C_SOURCE
+/* Note: This is used only for interaction with the host C library, and is therefore exempt of
+ * coding guidelines rule A.4&5 which applies to the embedded code using embedded libraries
+ */
+#define _POSIX_C_SOURCE 200809L
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include "cmdline.h"
+#include "soc.h"
+#endif
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/eeprom.h>
 
@@ -16,15 +30,6 @@
 #include <zephyr/stats/stats.h>
 #include <string.h>
 #include <errno.h>
-
-#ifdef CONFIG_ARCH_POSIX
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <fcntl.h>
-#include "cmdline.h"
-#include "soc.h"
-#endif
 
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
 #include <zephyr/logging/log.h>

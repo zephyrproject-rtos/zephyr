@@ -16,7 +16,7 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "intel,apollo_lake";
+			compatible = "intel,apollo-lake";
 			d-cache-line-size = <64>;
 			reg = <0>;
 		};
@@ -30,15 +30,25 @@
 
 	intc: ioapic@fec00000  {
 		compatible = "intel,ioapic";
+		#address-cells = <1>;
+		#interrupt-cells = <3>;
 		reg = <0xfec00000 0x1000>;
 		interrupt-controller;
+	};
+
+	intc_loapic: loapic@fee00000  {
+		compatible = "intel,loapic";
+		reg = <0xfee00000 0x1000>;
+		interrupt-controller;
 		#interrupt-cells = <3>;
+		#address-cells = <1>;
 	};
 
 	pcie0: pcie0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "intel,pcie";
+		compatible = "pcie-controller";
+		acpi-hid = "PNP0A08";
 		ranges;
 
 		uart0: uart0 {
@@ -379,9 +389,12 @@
 			status = "okay";
 		};
 
-		counter: counter@70 {
+		rtc: counter: rtc@70 {
 			compatible = "motorola,mc146818";
 			reg = <0x70 0x0D 0x71 0x0D>;
+			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			alarms-count = <1>;
 
 			status = "okay";
 		};

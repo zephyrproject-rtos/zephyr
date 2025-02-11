@@ -1,0 +1,5 @@
+board:
+  name: gd32f407v_start
+  vendor: gd
+  socs:
+    - name: gd32f407

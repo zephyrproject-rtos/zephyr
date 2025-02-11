@@ -3,6 +3,204 @@
 West Release Notes
 ##################
 
+v1.2.0
+******
+
+Major changes:
+
+- New ``west grep`` command for running a "grep tool" in your west workspace's
+  repositories. Currently, ``git grep``, `ripgrep`_, and standard ``grep`` are
+  supported grep tools.
+
+  To run this command to get ``git grep foo`` results from all cloned,
+  active repositories, run:
+
+  .. code-block:: console
+
+     west grep foo
+
+  Here are some other examples for running different grep commands
+  with ``west grep``:
+
+  .. list-table::
+
+     * - ``git grep --untracked``
+       - ``west grep --untracked foo``
+     * - ``ripgrep``
+       - ``west grep --tool ripgrep foo``
+     * - ``grep --recursive``
+       - ``west grep --tool grep foo``
+
+  To switch the default grep tool in your workspace, run the appropriate
+  command in this table:
+
+  .. list-table::
+
+     * - ``ripgrep``
+       - ``west config grep.tool ripgrep``
+     * - ``grep``
+       - ``west config grep.tool grep``
+
+  For more details, run ``west help grep``.
+
+Other changes:
+
+- The manifest file format now supports a ``description`` field in each
+  ``projects:`` element. See :ref:`west-manifests-projects` for examples.
+
+- ``west list --format`` now accepts ``{description}`` in the format
+  string, which prints the project's ``description:`` value.
+
+- ``west compare`` now always prints information about
+  :ref:`west-manifest-rev`.
+
+Bug fixes:
+
+- ``west init`` aborts if the destination directory already exists.
+
+API changes:
+
+- ``west.commands.WestCommand`` methods ``check_call()`` and
+  ``check_output()`` now take any kwargs that can be passed on
+  to the underlying subprocess function.
+
+- ``west.commands.WestCommand.run_subprocess()``: new wrapper
+  around ``subprocess.run()``. This could not be named ``run()``
+  because ``WestCommand`` already had a method by this name.
+
+- ``west.commands.WestCommand`` methods ``dbg()``, ``inf()``,
+  ``wrn()``, and ``err()`` now all take an ``end`` kwarg, which
+  is passed on to the call to ``print()``.
+
+- ``west.manifest.Project`` now has a ``description`` attribute,
+  which contains the parsed value of the ``description:`` field
+  in the manifest data.
+
+.. _ripgrep: https://github.com/BurntSushi/ripgrep#readme
+
+v1.1.0
+******
+
+Major changes:
+
+- ``west compare``: new command that compares the state of the
+  workspace against the manifest.
+
+- Support for a new ``manifest.project-filter`` configuration option.
+  See :ref:`west-config-index` for details. The ``west manifest --freeze``
+  and ``west manifest --resolve`` commands currently cannot be used when
+  this option is set. This restriction can be removed in a later release.
+
+- Project names which contain comma (``,``) or whitespace now generate
+  warnings. These warnings are errors if the new ``manifest.project-filter``
+  configuration option is set. The warnings may be promoted to errors in a
+  future major version of west.
+
+Other changes:
+
+- ``west forall`` now takese a ``--group`` argument that can be used
+  to restrict the command to only run in one or more groups. Run
+  ``west help forall`` for details.
+
+- All west commands will now output log messages from west API modules at
+  warning level or higher. In addition, the ``--verbose`` argument to west
+  can be used once to include informational messages, or twice to include
+  debug messages, from all commands.
+
+Bug fixes:
+
+- Various improvements to error messages, debug logging, and error handling.
+
+API changes:
+
+- ``west.manifest.Manifest.is_active()`` now respects the
+  ``manifest.project-filter`` configuration option's value.
+
+v1.0.1
+******
+
+Major changes:
+
+- Manifest schema version "1.0" is now available for use in this release. This
+  is identical to the "0.13" schema version in terms of features, but can be
+  used by applications that do not wish to use a "0.x" manifest "version:"
+  field. See :ref:`west-manifest-schema-version` for details on this feature.
+
+Bug fixes:
+
+- West no longer exits with a successful error code when sent an
+  interrupt signal. Instead, it exits with a platform-specific
+  error code and signals to the calling environment that the
+  process was interrupted.
+
+v1.0.0
+******
+
+Major changes in this release:
+
+- The :ref:`west-apis` are now declared stable. Any breaking changes will be
+  communicated by a major version bump from v1.x.y to v2.x.y.
+
+- West v1.0 no longer works with the Zephyr v1.14 LTS releases. This LTS has
+  long been obsoleted by Zephyr v2.7 LTS. If you need to use Zephyr v1.14, you
+  must use west v0.14 or earlier.
+
+- Like the rest of Zephyr, west now requires Python v3.8 or later
+
+- West commands no longer accept abbreviated command line arguments. For
+  example, you must now specify ``west update --keep-descendants`` instead of
+  using an abbreviation like ``west update --keep-d``. This is part of a change
+  applied to all of Zephyr's Python scripts' command-line interfaces. The
+  abbreviations were causing problems in practice when commands were updated to
+  add new options with similar names but different behavior to existing ones.
+
+Other changes:
+
+- All built-in west functions have stopped using ``west.log``
+
+- ``west update``: new ``--submodule-init-config`` option.
+  See commit `9ba92b05`_ for details.
+
+Bug fixes:
+
+- West extension commands that failed to load properly sometimes dumped stack.
+  This has been fixed and west now prints a sensible error message in this case.
+
+- ``west config`` now fails on malformed configuration option arguments
+  which lack a ``.`` in the option name
+
+API changes:
+
+- The west package now contains the metadata files necessary for some static
+  analyzers (such as `mypy`_) to auto-detect its type annotations.
+  See commit `d9f00e24`_ for details.
+
+- the deprecated ``west.build`` module used for Zephyr v1.14 LTS compatibility was
+  removed
+
+- the deprecated ``west.cmake`` module used for Zephyr v1.14 LTS compatibility was
+  removed
+
+- the ``west.log`` module is now deprecated. This module uses global state,
+  which can make it awkward to use it as an API which multiple different python
+  modules may rely on.
+
+- The :ref:`west-apis-commands` module got some new APIs which lay groundwork
+  for a future change to add a global verbosity control to a command's output,
+  and work to remove global state from the ``west`` package's API:
+
+  - New ``west.commands.WestCommand.__init__()`` keyword argument: ``verbosity``
+  - New ``west.commands.WestCommand`` property: ``color_ui``
+  - New ``west.commands.WestCommand`` methods, which should be used to print output
+    from extension commands instead of writing directly to sys.stdout or
+    sys.stderr: ``inf()``, ``wrn()``, ``err()``, ``die()``, ``banner()``,
+    ``small_banner()``
+  - New ``west.commands.VERBOSITY`` enum
+
+.. _9ba92b05: https://github.com/zephyrproject-rtos/west/commit/9ba92b054500d75518ff4c4646590bfe134db523
+.. _d9f00e24: https://github.com/zephyrproject-rtos/west/commit/d9f00e242b8cb297b56e941982adf231281c6bae
+.. _mypy: https://www.mypy-lang.org/
+
 v0.14.0
 *******
 
@@ -225,6 +423,8 @@ New features:
   ``master`` to ``main`` without breaking scripts that do not provide this
   option.
 
+.. _west_0_10_0:
+
 v0.10.0
 *******
 
@@ -236,7 +436,7 @@ New features:
 Bug fixes:
 
 - West now checks that the manifest schema version is one of the explicitly
-  allowed vlaues documented in :ref:`west-manifest-schema-version`. The old
+  allowed values documented in :ref:`west-manifest-schema-version`. The old
   behavior was just to check that the schema version was newer than the west
   version where the ``manifest: version:`` key was introduced. This incorrectly
   allowed invalid schema versions, like ``0.8.2``.
@@ -273,6 +473,8 @@ Other changes:
 - West now warns if you combine ``import`` with ``group-filter``. Semantics for
   this combination have changed starting with v0.10.x. See the v0.10.0 release
   notes above for more information.
+
+.. _west_0_9_0:
 
 v0.9.0
 ******
@@ -467,7 +669,7 @@ The developer-visible changes to the :ref:`west-apis` are:
 
 West now requires Python 3.6 or later. Additionally, some features may rely on
 Python dictionaries being insertion-ordered; this is only an implementation
-detail in CPython 3.6, but is is part of the language specification as of
+detail in CPython 3.6, but it is part of the language specification as of
 Python 3.7.
 
 v0.6.3

@@ -26,6 +26,11 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
     parser.add_argument("-f", "--file", required=True, help="Input file")
+    parser.add_argument("-o", "--offset", type=lambda x: int(x, 0), default=0,
+                        help="Byte offset in the input file")
+    parser.add_argument("-l", "--length", type=lambda x: int(x, 0), default=-1,
+                        help="""Length in bytes to read from the input file.
+                        Defaults to reading till the end of the input file.""")
     parser.add_argument("-g", "--gzip", action="store_true",
                         help="Compress the file using gzip before output")
     parser.add_argument("-t", "--gzip-mtime", type=int, default=0,
@@ -53,18 +58,26 @@ def main():
     if args.gzip:
         with io.BytesIO() as content:
             with open(args.file, 'rb') as fg:
+                fg.seek(args.offset)
                 with gzip.GzipFile(fileobj=content, mode='w',
                                    mtime=args.gzip_mtime,
                                    compresslevel=9) as gz_obj:
-                    gz_obj.write(fg.read())
+                    gz_obj.write(fg.read(args.length))
 
             content.seek(0)
             for chunk in iter(lambda: content.read(8), b''):
                 make_hex(chunk)
     else:
         with open(args.file, "rb") as fp:
-            for chunk in iter(lambda: fp.read(8), b''):
-                make_hex(chunk)
+            fp.seek(args.offset)
+            if args.length < 0:
+                for chunk in iter(lambda: fp.read(8), b''):
+                    make_hex(chunk)
+            else:
+                remainder = args.length
+                for chunk in iter(lambda: fp.read(min(8, remainder)), b''):
+                    make_hex(chunk)
+                    remainder = remainder - len(chunk)
 
 
 if __name__ == "__main__":

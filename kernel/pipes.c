@@ -15,9 +15,9 @@
 
 #include <zephyr/toolchain.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <zephyr/init.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
 
@@ -31,6 +31,10 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 			     void *data, size_t bytes_to_read,
 			     size_t *bytes_read, size_t min_xfer,
 			     k_timeout_t timeout);
+#ifdef CONFIG_OBJ_CORE_PIPE
+static struct k_obj_type obj_type_pipe;
+#endif /* CONFIG_OBJ_CORE_PIPE */
+
 
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
@@ -48,8 +52,12 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&pipe->poll_events);
-#endif
-	z_object_init(pipe);
+#endif /* CONFIG_POLL */
+	k_object_init(pipe);
+
+#ifdef CONFIG_OBJ_CORE_PIPE
+	k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
+#endif /* CONFIG_OBJ_CORE_PIPE */
 }
 
 int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
@@ -81,12 +89,12 @@ int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 {
-	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
 
 	return z_impl_k_pipe_alloc_init(pipe, size);
 }
-#include <syscalls/k_pipe_alloc_init_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_pipe_alloc_init_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 static inline void handle_poll_events(struct k_pipe *pipe)
 {
@@ -94,7 +102,7 @@ static inline void handle_poll_events(struct k_pipe *pipe)
 	z_handle_obj_poll_events(&pipe->poll_events, K_POLL_STATE_PIPE_DATA_AVAILABLE);
 #else
 	ARG_UNUSED(pipe);
-#endif
+#endif /* CONFIG_POLL */
 }
 
 void z_impl_k_pipe_flush(struct k_pipe *pipe)
@@ -114,12 +122,12 @@ void z_impl_k_pipe_flush(struct k_pipe *pipe)
 #ifdef CONFIG_USERSPACE
 void z_vrfy_k_pipe_flush(struct k_pipe *pipe)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
 
 	z_impl_k_pipe_flush(pipe);
 }
-#include <syscalls/k_pipe_flush_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_pipe_flush_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 void z_impl_k_pipe_buffer_flush(struct k_pipe *pipe)
 {
@@ -142,11 +150,11 @@ void z_impl_k_pipe_buffer_flush(struct k_pipe *pipe)
 #ifdef CONFIG_USERSPACE
 void z_vrfy_k_pipe_buffer_flush(struct k_pipe *pipe)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
 
 	z_impl_k_pipe_buffer_flush(pipe);
 }
-#endif
+#endif /* CONFIG_USERSPACE */
 
 int k_pipe_cleanup(struct k_pipe *pipe)
 {
@@ -154,8 +162,8 @@ int k_pipe_cleanup(struct k_pipe *pipe)
 
 	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
 
-	CHECKIF(z_waitq_head(&pipe->wait_q.readers) != NULL ||
-			z_waitq_head(&pipe->wait_q.writers) != NULL) {
+	CHECKIF((z_waitq_head(&pipe->wait_q.readers) != NULL) ||
+			(z_waitq_head(&pipe->wait_q.writers) != NULL)) {
 		k_spin_unlock(&pipe->lock, key);
 
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, -EAGAIN);
@@ -300,7 +308,7 @@ static size_t pipe_buffer_list_populate(sys_dlist_t         *list,
 static int pipe_return_code(size_t min_xfer, size_t bytes_remaining,
 			     size_t bytes_requested)
 {
-	if (bytes_requested - bytes_remaining >= min_xfer) {
+	if ((bytes_requested - bytes_remaining) >= min_xfer) {
 		/*
 		 * At least the minimum number of requested
 		 * bytes have been transferred.
@@ -369,9 +377,9 @@ static size_t pipe_write(struct k_pipe *pipe, sys_dlist_t *src_list,
 	return num_bytes_written;
 }
 
-int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
-		     size_t *bytes_written, size_t min_xfer,
-		      k_timeout_t timeout)
+int z_impl_k_pipe_put(struct k_pipe *pipe, const void *data,
+		      size_t bytes_to_write, size_t *bytes_written,
+		      size_t min_xfer, k_timeout_t timeout)
 {
 	struct _pipe_desc  pipe_desc[2];
 	struct _pipe_desc  isr_desc;
@@ -386,7 +394,7 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, put, pipe, timeout);
 
-	CHECKIF((min_xfer > bytes_to_write) || bytes_written == NULL) {
+	CHECKIF((min_xfer > bytes_to_write) || (bytes_written == NULL)) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout,
 					       -EINVAL);
 
@@ -437,7 +445,7 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 
 	src_desc = k_is_in_isr() ? &isr_desc : &_current->pipe_desc;
 
-	src_desc->buffer        = data;
+	src_desc->buffer        = (unsigned char *)data;
 	src_desc->bytes_to_xfer = bytes_to_write;
 	src_desc->thread        = _current;
 	sys_dlist_append(&src_list, &src_desc->node);
@@ -505,20 +513,20 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 }
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
-		     size_t *bytes_written, size_t min_xfer,
-		      k_timeout_t timeout)
+int z_vrfy_k_pipe_put(struct k_pipe *pipe, const void *data,
+		      size_t bytes_to_write, size_t *bytes_written,
+		      size_t min_xfer, k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written)));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)data, bytes_to_write));
+	K_OOPS(K_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written)));
+	K_OOPS(K_SYSCALL_MEMORY_READ(data, bytes_to_write));
 
-	return z_impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,
-				bytes_to_write, bytes_written, min_xfer,
-				timeout);
+	return z_impl_k_pipe_put(pipe, data,
+				 bytes_to_write, bytes_written, min_xfer,
+				 timeout);
 }
-#include <syscalls/k_pipe_put_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_pipe_put_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 			     void *data, size_t bytes_to_read,
@@ -696,7 +704,7 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, get, pipe, timeout);
 
-	CHECKIF((min_xfer > bytes_to_read) || bytes_read == NULL) {
+	CHECKIF((min_xfer > bytes_to_read) || (bytes_read == NULL)) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe,
 					       timeout, -EINVAL);
 
@@ -717,16 +725,16 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 int z_vrfy_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		      size_t *bytes_read, size_t min_xfer, k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_read, sizeof(*bytes_read)));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE((void *)data, bytes_to_read));
+	K_OOPS(K_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(bytes_read, sizeof(*bytes_read)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(data, bytes_to_read));
 
-	return z_impl_k_pipe_get((struct k_pipe *)pipe, (void *)data,
+	return z_impl_k_pipe_get(pipe, data,
 				bytes_to_read, bytes_read, min_xfer,
 				timeout);
 }
-#include <syscalls/k_pipe_get_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_pipe_get_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 size_t z_impl_k_pipe_read_avail(struct k_pipe *pipe)
 {
@@ -734,7 +742,7 @@ size_t z_impl_k_pipe_read_avail(struct k_pipe *pipe)
 	k_spinlock_key_t key;
 
 	/* Buffer and size are fixed. No need to spin. */
-	if (pipe->buffer == NULL || pipe->size == 0U) {
+	if ((pipe->buffer == NULL) || (pipe->size == 0U)) {
 		res = 0;
 		goto out;
 	}
@@ -758,12 +766,12 @@ out:
 #ifdef CONFIG_USERSPACE
 size_t z_vrfy_k_pipe_read_avail(struct k_pipe *pipe)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
 
 	return z_impl_k_pipe_read_avail(pipe);
 }
-#include <syscalls/k_pipe_read_avail_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_pipe_read_avail_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 size_t z_impl_k_pipe_write_avail(struct k_pipe *pipe)
 {
@@ -771,7 +779,7 @@ size_t z_impl_k_pipe_write_avail(struct k_pipe *pipe)
 	k_spinlock_key_t key;
 
 	/* Buffer and size are fixed. No need to spin. */
-	if (pipe->buffer == NULL || pipe->size == 0U) {
+	if ((pipe->buffer == NULL) || (pipe->size == 0U)) {
 		res = 0;
 		goto out;
 	}
@@ -795,9 +803,30 @@ out:
 #ifdef CONFIG_USERSPACE
 size_t z_vrfy_k_pipe_write_avail(struct k_pipe *pipe)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
 
 	return z_impl_k_pipe_write_avail(pipe);
 }
-#include <syscalls/k_pipe_write_avail_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_pipe_write_avail_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_OBJ_CORE_PIPE
+static int init_pipe_obj_core_list(void)
+{
+	/* Initialize pipe object type */
+
+	z_obj_type_init(&obj_type_pipe, K_OBJ_TYPE_PIPE_ID,
+			offsetof(struct k_pipe, obj_core));
+
+	/* Initialize and link statically defined pipes */
+
+	STRUCT_SECTION_FOREACH(k_pipe, pipe) {
+		k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
+	}
+
+	return 0;
+}
+
+SYS_INIT(init_pipe_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+#endif /* CONFIG_OBJ_CORE_PIPE */

@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2011-2014, Wind River Systems, Inc.
+
+config SOC_ATOM
+	select X86
+	select CPU_ATOM
+	imply X86_MMU
+	select ARCH_HAS_RESERVED_PAGE_FRAMES

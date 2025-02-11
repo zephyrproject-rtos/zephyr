@@ -12,7 +12,9 @@
 
 #ifdef CONFIG_ASSERT
 #ifndef __ASSERT_ON
+#ifdef CONFIG_ASSERT_LEVEL
 #define __ASSERT_ON CONFIG_ASSERT_LEVEL
+#endif
 #endif
 #endif
 
@@ -21,12 +23,16 @@
 #define __ASSERT_ON 0
 #endif
 
+#ifndef __ASSERT_ON
+#define __ASSERT_ON 0
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Wrapper around printk to avoid including printk.h in assert.h */
-void assert_print(const char *fmt, ...);
+void __printf_like(1, 2) assert_print(const char *fmt, ...);
 
 #ifdef __cplusplus
 }

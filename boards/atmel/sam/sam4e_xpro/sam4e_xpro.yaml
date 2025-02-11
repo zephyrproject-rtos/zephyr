@@ -1,0 +1,27 @@
+identifier: sam4e_xpro
+name: SAM4E Xplained Pro
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+flash: 1024
+ram: 128
+supported:
+  - adc
+  - counter
+  - gpio
+  - hwinfo
+  - i2c
+  - netif:eth
+  - pwm
+  - sdhc
+  - spi
+  - uart
+  - watchdog
+  - xpro_gpio
+  - xpro_i2c
+  - xpro_serial
+  - xpro_spi
+vendor: atmel

@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Microchip MEC175x MCU series configuration options
+
+if SOC_SERIES_MEC175X
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	# All NVIC external sources.
+	default 198
+
+rsource "Kconfig.defconfig.mec175*"
+
+config CORTEX_M_SYSTICK
+	depends on !RTOS_TIMER
+
+endif # SOC_SERIES_MEC175X

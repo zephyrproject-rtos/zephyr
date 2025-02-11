@@ -25,3 +25,7 @@ properties:
     type: array
     required: true
     description: PS2 PCR register index and bit position
+
+  wakerx-gpios:
+    type: phandle-array
+    description: GPIO configured as PS2 DAT wake source

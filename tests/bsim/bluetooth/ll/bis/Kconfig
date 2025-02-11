@@ -1,0 +1,11 @@
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_LL_INTERFACE
+	bool "Test Broadcast ISO using internal LL interface"
+	help
+	  Test Broadcast ISO using internal LL interface.
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu

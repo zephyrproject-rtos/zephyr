@@ -41,8 +41,10 @@ NET_PKT_SLAB_DEFINE(capture_pkts, CONFIG_NET_CAPTURE_PKT_COUNT);
 NET_BUF_POOL_FIXED_DEFINE(capture_bufs, CONFIG_NET_CAPTURE_BUF_COUNT,
 			  CONFIG_NET_BUF_DATA_SIZE, 4, NULL);
 #else
+#define DATA_POOL_SIZE MAX(NET_PKT_BUF_RX_DATA_POOL_SIZE, NET_PKT_BUF_TX_DATA_POOL_SIZE)
+
 NET_BUF_POOL_VAR_DEFINE(capture_bufs, CONFIG_NET_CAPTURE_BUF_COUNT,
-			CONFIG_NET_BUF_DATA_POOL_SIZE, 4, NULL);
+			DATA_POOL_SIZE, 4, NULL);
 #endif
 
 static sys_slist_t net_capture_devlist;
@@ -230,7 +232,9 @@ static int setup_iface(struct net_if *iface, const char *ipaddr,
 		/* Set the netmask so that we do not get IPv4 traffic routed
 		 * into this interface.
 		 */
-		net_if_ipv4_set_netmask(iface, &netmask);
+		net_if_ipv4_set_netmask_by_addr(iface,
+						&net_sin(addr)->sin_addr,
+						&netmask);
 
 		*addr_len = sizeof(struct sockaddr_in);
 	} else {
@@ -421,7 +425,7 @@ int net_capture_setup(const char *remote_addr, const char *my_local_addr,
 		(void)net_capture_cleanup(ctx->dev);
 
 		/* net_context is cleared by the cleanup so no need to goto
-		 * to fail label.
+		 * the fail label.
 		 */
 		return ret;
 	}
@@ -482,6 +486,8 @@ static int capture_enable(const struct device *dev, struct net_if *iface)
 	ctx->capture_iface = iface;
 	ctx->is_enabled = true;
 
+	net_mgmt_event_notify(NET_EVENT_CAPTURE_STARTED, iface);
+
 	net_if_up(ctx->tunnel_iface);
 
 	return 0;
@@ -490,26 +496,31 @@ static int capture_enable(const struct device *dev, struct net_if *iface)
 static int capture_disable(const struct device *dev)
 {
 	struct net_capture *ctx = dev->data;
+	struct net_if *iface = ctx->capture_iface;
 
 	ctx->capture_iface = NULL;
 	ctx->is_enabled = false;
 
 	net_if_down(ctx->tunnel_iface);
 
+	net_mgmt_event_notify(NET_EVENT_CAPTURE_STOPPED, iface);
+
 	return 0;
 }
 
-void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
+int net_capture_pkt_with_status(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct k_mem_slab *orig_slab;
 	struct net_pkt *captured;
 	sys_snode_t *sn, *sns;
+	bool skip_clone = false;
+	int ret = -ENOENT;
 
 	/* We must prevent to capture network packet that is already captured
 	 * in order to avoid recursion.
 	 */
 	if (net_pkt_is_captured(pkt)) {
-		return;
+		return -EALREADY;
 	}
 
 	k_mutex_lock(&lock, K_FOREVER);
@@ -517,24 +528,36 @@ void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&net_capture_devlist, sn, sns) {
 		struct net_capture *ctx = CONTAINER_OF(sn, struct net_capture,
 						       node);
-		int ret;
 
 		if (!ctx->in_use || !ctx->is_enabled ||
 		    ctx->capture_iface != iface) {
 			continue;
 		}
 
-		orig_slab = pkt->slab;
-		pkt->slab = get_net_pkt();
+		/* If the packet is marked as "cooked", then it means that the
+		 * packet was directed here by "any" interface and was already
+		 * cooked mode captured. So no need to clone it here.
+		 */
+		if (net_pkt_is_cooked_mode(pkt)) {
+			skip_clone = true;
+		}
 
-		captured = net_pkt_clone(pkt, K_NO_WAIT);
+		if (skip_clone) {
+			captured = pkt;
+		} else {
+			orig_slab = pkt->slab;
+			pkt->slab = get_net_pkt();
 
-		pkt->slab = orig_slab;
+			captured = net_pkt_clone(pkt, K_NO_WAIT);
 
-		if (captured == NULL) {
-			NET_DBG("Captured pkt %s", "dropped");
-			/* TODO: update capture data statistics */
-			goto out;
+			pkt->slab = orig_slab;
+
+			if (captured == NULL) {
+				NET_DBG("Captured pkt %s", "dropped");
+				/* TODO: update capture data statistics */
+				ret = -ENOMEM;
+				goto out;
+			}
 		}
 
 		net_pkt_set_orig_iface(captured, iface);
@@ -543,14 +566,25 @@ void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
 
 		ret = net_capture_send(ctx->dev, ctx->tunnel_iface, captured);
 		if (ret < 0) {
-			net_pkt_unref(captured);
+			if (!skip_clone) {
+				net_pkt_unref(captured);
+			}
 		}
+
+		net_pkt_set_cooked_mode(pkt, false);
 
 		goto out;
 	}
 
 out:
 	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
+void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
+{
+	(void)net_capture_pkt_with_status(iface, pkt);
 }
 
 static int capture_dev_init(const struct device *dev)

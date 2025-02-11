@@ -37,6 +37,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
+#include "lwm2m_obj_server.h"
 
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 #include "lwm2m_rw_senml_json.h"
@@ -373,6 +374,7 @@ int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 				LOG_DBG("NOTIFY EVENT %u/%u/%u", path->obj_id, path->obj_inst_id,
 					path->res_id);
 				ret++;
+				lwm2m_engine_wake_up();
 			}
 		}
 	}
@@ -437,7 +439,7 @@ static void engine_observe_node_init(struct observe_node *obs, const uint8_t *to
 		obs->event_timestamp = 0;
 	}
 	obs->resource_update = false;
-	obs->active_tx_operation = false;
+	obs->active_notify = NULL;
 	obs->format = format;
 	obs->counter = OBSERVE_COUNTER_START;
 	sys_slist_append(&ctx->observer, &obs->node);
@@ -528,7 +530,7 @@ struct observe_node *engine_observe_node_discover(sys_slist_t *observe_node_list
 						  const uint8_t *token, uint8_t tkl)
 {
 	struct observe_node *obs;
-	int obs_list_size, path_list_size;
+	int obs_list_size, path_list_size = 0;
 
 	if (lwm2m_path_list) {
 		path_list_size = engine_path_list_size(lwm2m_path_list);
@@ -594,6 +596,12 @@ static int engine_add_observer(struct lwm2m_message *msg, const uint8_t *token, 
 	if (obs) {
 		memcpy(obs->token, token, tkl);
 		obs->tkl = tkl;
+
+		/* Cancel ongoing notification */
+		if (obs->active_notify != NULL) {
+			lwm2m_reset_message(obs->active_notify, true);
+			obs->active_notify = NULL;
+		}
 
 		LOG_DBG("OBSERVER DUPLICATE %u/%u/%u(%u) [%s]", msg->path.obj_id,
 			msg->path.obj_inst_id, msg->path.res_id, msg->path.level,
@@ -677,6 +685,12 @@ static int engine_add_composite_observer(struct lwm2m_message *msg, const uint8_
 	if (obs) {
 		memcpy(obs->token, token, tkl);
 		obs->tkl = tkl;
+
+		/* Cancel ongoing notification */
+		if (obs->active_notify != NULL) {
+			lwm2m_reset_message(obs->active_notify, true);
+			obs->active_notify = NULL;
+		}
 
 		LOG_DBG("OBSERVER Composite DUPLICATE [%s]",
 			lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
@@ -913,7 +927,7 @@ static int lwm2m_engine_observer_timestamp_update(sys_slist_t *observer,
 
 	/* update observe_node accordingly */
 	SYS_SLIST_FOR_EACH_CONTAINER(observer, obs, node) {
-		if (!obs->resource_update) {
+		if (obs->resource_update) {
 			/* Resource Update on going skip this*/
 			continue;
 		}
@@ -1033,20 +1047,6 @@ int lwm2m_update_observer_min_period(struct lwm2m_ctx *client_ctx,
 	return lwm2m_update_or_allocate_attribute(ref, LWM2M_ATTR_PMIN, &period_s);
 }
 
-int lwm2m_engine_update_observer_min_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
-					    uint32_t period_s)
-{
-	int ret;
-	struct lwm2m_obj_path path;
-
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return ret;
-	}
-
-	return lwm2m_update_observer_min_period(client_ctx, &path, period_s);
-}
-
 int lwm2m_update_observer_max_period(struct lwm2m_ctx *client_ctx,
 				     const struct lwm2m_obj_path *path, uint32_t period_s)
 {
@@ -1091,20 +1091,6 @@ int lwm2m_update_observer_max_period(struct lwm2m_ctx *client_ctx,
 	/* Update Observer timestamp */
 	return lwm2m_engine_observer_timestamp_update(&client_ctx->observer, path,
 						      client_ctx->srv_obj_inst);
-}
-
-int lwm2m_engine_update_observer_max_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
-					    uint32_t period_s)
-{
-	int ret;
-	struct lwm2m_obj_path path;
-
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return ret;
-	}
-
-	return lwm2m_update_observer_max_period(client_ctx, &path, period_s);
 }
 
 struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref, struct lwm2m_attr *prev)
@@ -1377,19 +1363,6 @@ bool lwm2m_path_is_observed(const struct lwm2m_obj_path *path)
 		}
 	}
 	return false;
-}
-
-bool lwm2m_engine_path_is_observed(const char *pathstr)
-{
-	int ret;
-	struct lwm2m_obj_path path;
-
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return false;
-	}
-
-	return lwm2m_path_is_observed(&path);
 }
 
 int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int observe, uint16_t accept,

@@ -1,0 +1,449 @@
+# Bluetooth logging configuration options
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_LOG
+	# convenience symbol, _no touchy_
+	bool
+	default y if LOG && BT
+
+if BT_LOG
+
+menu "Bluetooth logging"
+
+# (subsys/bluetooth/Kconfig)
+
+module = BT
+module-str = "Bluetooth"
+source "subsys/logging/Kconfig.template.log_config"
+
+# Set BT as the parent module for all the symbols that will use
+# `Kconfig.template.log_config_inherit`. This is more convenient to do it here
+# instead of setting it for every modules.
+#
+# The downside of doing that is that people need to be careful when adding a new
+# parent module because  all the following symbol will use it.
+parent-module = BT
+
+# COMMON (subsys/bluetooth/common/Kconfig)
+
+module = BT_HCI_DRIVER
+module-str = "Bluetooth HCI driver"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_RPA
+module-str = "Bluetooth Resolvable Private Address (RPA)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+menu "Audio"
+
+# AICS
+
+module = BT_AICS
+module-str = "Audio Input Control Service"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_AICS_CLIENT
+module-str = "Audio Input Control Service client"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# BAP
+
+module = BT_BAP_STREAM
+module-str = "Bluetooth Audio Stream"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_BAP_BASE
+module-str = "Bluetooth Basic Audio Profile Broadcast Audio Source Endpoint"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_AUDIO_CODEC
+module-str = "Bluetooth Audio Codec"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_ASCS
+module-str = "Audio Stream Control Service"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_BAP_UNICAST_SERVER
+module-str = "Bluetooth Audio Unicast Server"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_BAP_UNICAST_CLIENT
+module-str = "Basic Audio Profile"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_BAP_BROADCAST_SOURCE
+module-str = "Bluetooth Audio Broadcast Source"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_BAP_BROADCAST_SINK
+module-str = "Bluetooth Audio Broadcast Sink"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_BAP_SCAN_DELEGATOR
+module-str = "Broadcast Audio Scan Service"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_BAP_BROADCAST_ASSISTANT
+module-str = "Broadcast Audio Scan Service client debug"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_BAP_ISO
+module-str = "Bluetooth Audio ISO"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# CAP
+
+module = BT_CAP_ACCEPTOR
+module-str = "Common Audio Profile Acceptor"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_CAP_INITIATOR
+module-str = "Common Audio Profile Initiator"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_CAP_COMMANDER
+module-str = "Common Audio Profile Commander"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_CAP_COMMON
+module-str = "Common Audio Profile Common"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_CAP_STREAM
+module-str = "Common Audio Profile Stream"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# CSIP
+
+module = BT_CSIP_SET_MEMBER
+module-str = "Coordinated Set Identification Service"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_CSIP_SET_COORDINATOR
+module-str = "Coordinated Set Identification Profile Set Coordinator"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_CSIP_SET_MEMBER_CRYPTO
+module-str = "Coordinated Set Identification Profile crypto functions"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# HAS
+
+module = BT_HAS
+module-str = "Hearing Access Service"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_HAS_CLIENT
+module-str = "Hearing Access Service Client"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# MCS
+
+module = BT_MCS
+module-str = "Media Control Service"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MCC
+module-str = "Media Control Client"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# MCTL
+
+module = MCTL
+module-str = "Media control"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# MICP
+
+module = BT_MICP_MIC_DEV
+module-str = "Microphone Control Profile Microphone Device"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MICP_MIC_CTLR
+module-str = "Microphone Control Profile Microphone Controller"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# MPL
+
+module = BT_MPL
+module-str = "Media player"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# PACS
+
+module = BT_PACS
+module-str = "Published Audio Capabilities Service"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# TBS
+
+module = BT_TBS
+module-str = "Telephone Bearer Service"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_TBS_CLIENT
+module-str = "Telephone Bearer Service client"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# VCP
+
+module = BT_VCP_VOL_REND
+module-str = "Volume Control Profile Voluem Renderer"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_VCP_VOL_CTLR
+module-str = "Volume Control Profile Volume Controller"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# VOCS
+
+module = BT_VOCS
+module-str = "Volume Offset Control Service"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_VOCS_CLIENT
+module-str = "Volume Offset Control Service client"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# PBP
+
+module = BT_PBP
+module-str = "Public Broadcast Profile"
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endmenu # Audio
+
+menu "Others"
+
+# CRYPTO (subsys/bluetooth/crypto/Kconfig)
+
+module = BT_CRYPTO
+module-str = "Bluetooth Cryptographic Toolbox"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# GATT
+
+module = BT_ATT
+module-str = "Bluetooth Attribute Protocol (ATT)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_GATT
+module-str = "Bluetooth Generic Attribute Profile (GATT)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# L2CAP
+
+module = BT_L2CAP
+module-str = "Bluetooth L2CAP"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# LIB (subsys/bluetooth/lib/Kconfig)
+
+module = BT_EAD
+module-str = "Bluetooth Encrypted Advertising Data"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# HOST (subsys/bluetooth/host/Kconfig)
+
+module = BT_DF
+module-str = "Bluetooth Direction Finding"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_SETTINGS
+module-str = "Bluetooth storage"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_HCI_CORE
+module-str = "Bluetooth HCI core"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_CONN
+module-str = "Bluetooth connection"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_ISO
+module-str = "ISO channel"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_KEYS
+module-str = "Bluetooth security keys"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_SMP
+module-str = "Bluetooth Security Manager Protocol"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_SERVICE
+module-str = "Bluetooth Services"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# CONTROLLER (subsys/bluetooth/controller/Kconfig)
+
+module = BT_CTLR_ISOAL
+module-str = "Bluetooth Controller ISO-AL"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+endmenu # Others
+
+menu "BR/EDR"
+
+module = BT_RFCOMM
+module-str = "Bluetooth RFCOMM"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_HFP_HF
+module-str = "Bluetooth Hands Free Profile (HFP)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_HFP_AG
+module-str = "Bluetooth Hands Free Audio Gateway Profile (HFP AG)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_AVDTP
+module-str = "Bluetooth AVDTP debug"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_A2DP
+module-str = "Bluetooth A2DP"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_SDP
+module-str = "Bluetooth Service Discovery Protocol (SDP)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+endmenu # BR/EDR
+
+# MESH (subsys/bluetooth/mesh/Kconfig)
+
+menu "Mesh"
+
+module = BT_MESH
+module-str = "Debug logs"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_NET
+module-str = "Network layer"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_RPL
+module-str = "Replay protection list"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_TRANS
+module-str = "Transport layer"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_BEACON
+module-str = "Beacon"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_CRYPTO
+module-str = "Crypto"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_KEYS
+module-str = "Key management"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_PROV
+module-str = "Provisioning"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_PROVISIONER
+module-str = "Provisioner"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_PROVISIONEE
+module-str = "Provisioning device"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_ACCESS
+module-str = "Access layer"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_MODEL
+module-str = "Foundation model"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_DFU
+module-str = "DFU model"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_ADV
+module-str = "Advertising"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_LOW_POWER
+module-str = "Low Power"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_FRIEND
+module-str = "Friend"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_PROXY
+module-str = "Proxy"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_SETTINGS
+module-str = "Persistent settings"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_CDB
+module-str = "Configuration database"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_MESH_CFG
+module-str = "Configuration"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+endmenu # Mesh
+
+menu "Services"
+
+# BAS
+
+module = BT_BAS
+module-str = BAS
+source "subsys/logging/Kconfig.template.log_config"
+
+# HRS
+
+module = BT_HRS
+module-str = HRS
+source "subsys/logging/Kconfig.template.log_config"
+
+# TPS
+
+module = BT_TPS
+module-str = TPS
+source "subsys/logging/Kconfig.template.log_config"
+
+# IAS
+
+module = BT_IAS_CLIENT
+module-str = "Immediate Alert Service Client"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_IAS
+module-str = IAS
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+# OTS (subsys/bluetooth/services/ots/Kconfig)
+
+module = BT_OTS_CLIENT
+module-str = "Object Transfer Service Client"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_OTS
+module-str = BT_OTS
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endmenu # Services
+
+endmenu # Bluetooth logging
+
+endif # BT_LOG

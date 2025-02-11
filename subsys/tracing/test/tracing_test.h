@@ -366,10 +366,6 @@
 	sys_trace_k_pipe_get_blocking(pipe, data, bytes_to_read, bytes_read, min_xfer, timeout)
 #define sys_port_trace_k_pipe_get_exit(pipe, timeout, ret)                                         \
 	sys_trace_k_pipe_get_exit(pipe, data, bytes_to_read, bytes_read, min_xfer, timeout, ret)
-#define sys_port_trace_k_pipe_block_put_enter(pipe, sem)                                           \
-	sys_trace_k_pipe_block_put_enter(pipe, block, bytes_to_write, sem)
-#define sys_port_trace_k_pipe_block_put_exit(pipe, sem)                                            \
-	sys_trace_k_pipe_block_put_exit(pipe, block, bytes_to_write, sem)
 
 #define sys_port_trace_k_heap_init(h) sys_trace_k_heap_init(h, mem, bytes)
 #define sys_port_trace_k_heap_aligned_alloc_enter(h, timeout)                                      \
@@ -383,6 +379,10 @@
 #define sys_port_trace_k_heap_alloc_exit(h, timeout, ret)                                          \
 	sys_trace_k_heap_alloc_exit(h, bytes, timeout, ret)
 #define sys_port_trace_k_heap_free(h) sys_trace_k_heap_free(h, mem)
+#define sys_port_trace_k_heap_realloc_enter(h, ptr, bytes, timeout)                                \
+	sys_trace_k_heap_realloc_enter(h, ptr, bytes, timeout)
+#define sys_port_trace_k_heap_realloc_exit(h, ptr, bytes, timeout, ret)                            \
+	sys_trace_k_heap_realloc_exit(h, ptr, bytes, timeout, ret)
 #define sys_port_trace_k_heap_sys_k_aligned_alloc_enter(heap)                                      \
 	sys_trace_k_heap_sys_k_aligned_alloc_enter(heap, align, size)
 #define sys_port_trace_k_heap_sys_k_aligned_alloc_exit(heap, ret)                                  \
@@ -399,6 +399,10 @@
 	sys_trace_k_heap_sys_k_calloc_enter(heap, nmemb, size)
 #define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)                                         \
 	sys_trace_k_heap_sys_k_calloc_exit(heap, nmemb, size, ret)
+#define sys_port_trace_k_heap_sys_k_realloc_enter(heap, ptr)                                       \
+	sys_trace_k_heap_sys_k_realloc_enter(heap, ptr, size)
+#define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)                                   \
+	sys_trace_k_heap_sys_k_realloc_exit(heap, ptr, size, ret)
 
 #define sys_port_trace_k_mem_slab_init(slab, rc)                                                   \
 	sys_trace_k_mem_slab_init(slab, buffer, block_size, num_blocks, rc)
@@ -446,8 +450,8 @@
 #define sys_port_trace_pm_device_runtime_get_exit(dev, ret)
 #define sys_port_trace_pm_device_runtime_put_enter(dev)
 #define sys_port_trace_pm_device_runtime_put_exit(dev, ret)
-#define sys_port_trace_pm_device_runtime_put_async_enter(dev)
-#define sys_port_trace_pm_device_runtime_put_async_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_put_async_enter(dev, delay)
+#define sys_port_trace_pm_device_runtime_put_async_exit(dev, delay, ret)
 #define sys_port_trace_pm_device_runtime_enable_enter(dev)
 #define sys_port_trace_pm_device_runtime_enable_exit(dev, ret)
 #define sys_port_trace_pm_device_runtime_disable_enter(dev)
@@ -634,10 +638,6 @@ void sys_trace_k_pipe_get_blocking(struct k_pipe *pipe, void *data, size_t bytes
 				   size_t *bytes_read, size_t min_xfer, k_timeout_t timeout);
 void sys_trace_k_pipe_get_exit(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 			       size_t *bytes_read, size_t min_xfer, k_timeout_t timeout, int ret);
-void sys_trace_k_pipe_block_put_enter(struct k_pipe *pipe, struct k_mem_block *block, size_t size,
-				      struct k_sem *sem);
-void sys_trace_k_pipe_block_put_exit(struct k_pipe *pipe, struct k_mem_block *block, size_t size,
-				     struct k_sem *sem);
 
 void sys_trace_k_msgq_init(struct k_msgq *msgq);
 void sys_trace_k_msgq_alloc_init_enter(struct k_msgq *msgq, size_t msg_size, uint32_t max_msgs);
@@ -662,6 +662,9 @@ void sys_trace_k_heap_aligned_alloc_blocking(struct k_heap *h, size_t bytes, k_t
 void sys_trace_k_heap_aligned_alloc_exit(struct k_heap *h, size_t bytes, k_timeout_t timeout,
 					 void *ret);
 void sys_trace_k_heap_free(struct k_heap *h, void *mem);
+void sys_trace_k_heap_realloc_enter(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout);
+void sys_trace_k_heap_realloc_exit(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout,
+				   void *ret);
 void sys_trace_k_heap_sys_k_aligned_alloc_enter(struct k_heap *h, size_t align, size_t size);
 void sys_trace_k_heap_sys_k_aligned_alloc_exit(struct k_heap *h, size_t align, size_t size,
 					       void *ret);
@@ -671,6 +674,8 @@ void sys_trace_k_heap_sys_k_free_enter(struct k_heap *h, struct k_heap **heap_re
 void sys_trace_k_heap_sys_k_free_exit(struct k_heap *h, struct k_heap **heap_ref);
 void sys_trace_k_heap_sys_k_calloc_enter(struct k_heap *h, size_t nmemb, size_t size);
 void sys_trace_k_heap_sys_k_calloc_exit(struct k_heap *h, size_t nmemb, size_t size, void *ret);
+void sys_trace_k_heap_sys_k_realloc_enter(struct k_heap *h, void *ptr, size_t bytes);
+void sys_trace_k_heap_sys_k_realloc_exit(struct k_heap *h, void *ptr, size_t bytes, void *ret);
 
 void sys_trace_k_mem_slab_init(struct k_mem_slab *slab, void *buffer, size_t block_size,
 			       uint32_t num_blocks, int ret);
@@ -678,7 +683,7 @@ void sys_trace_k_mem_slab_alloc_enter(struct k_mem_slab *slab, void **mem, k_tim
 void sys_trace_k_mem_slab_alloc_blocking(struct k_mem_slab *slab, void **mem, k_timeout_t timeout);
 void sys_trace_k_mem_slab_alloc_exit(struct k_mem_slab *slab, void **mem, k_timeout_t timeout,
 				     int ret);
-void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab, void **mem);
+void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab, void *mem);
 
 void sys_trace_k_timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 			    k_timer_expiry_t stop_fn);
@@ -688,5 +693,46 @@ void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
 
 void sys_trace_k_event_init(struct k_event *event);
+
+#define sys_port_trace_socket_init(sock, family, type, proto)
+#define sys_port_trace_socket_close_enter(sock)
+#define sys_port_trace_socket_close_exit(sock, ret)
+#define sys_port_trace_socket_shutdown_enter(sock, how)
+#define sys_port_trace_socket_shutdown_exit(sock, ret)
+#define sys_port_trace_socket_bind_enter(sock, addr, addrlen)
+#define sys_port_trace_socket_bind_exit(sock, ret)
+#define sys_port_trace_socket_connect_enter(sock, addr, addrlen)
+#define sys_port_trace_socket_connect_exit(sock, ret)
+#define sys_port_trace_socket_listen_enter(sock, backlog)
+#define sys_port_trace_socket_listen_exit(sock, ret)
+#define sys_port_trace_socket_accept_enter(sock)
+#define sys_port_trace_socket_accept_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_sendto_enter(sock, len, flags, dest_addr, addrlen)
+#define sys_port_trace_socket_sendto_exit(sock, ret)
+#define sys_port_trace_socket_sendmsg_enter(sock, msg, flags)
+#define sys_port_trace_socket_sendmsg_exit(sock, ret)
+#define sys_port_trace_socket_recvfrom_enter(sock, max_len, flags, addr, addrlen)
+#define sys_port_trace_socket_recvfrom_exit(sock, src_addr, addrlen, ret)
+#define sys_port_trace_socket_recvmsg_enter(sock, msg, flags)
+#define sys_port_trace_socket_recvmsg_exit(sock, msg, ret)
+#define sys_port_trace_socket_fcntl_enter(sock, cmd, flags)
+#define sys_port_trace_socket_fcntl_exit(sock, ret)
+#define sys_port_trace_socket_ioctl_enter(sock, req)
+#define sys_port_trace_socket_ioctl_exit(sock, ret)
+#define sys_port_trace_socket_poll_enter(fds, nfds, timeout)
+#define sys_port_trace_socket_poll_exit(fds, nfds, ret)
+#define sys_port_trace_socket_getsockopt_enter(sock, level, optname)
+#define sys_port_trace_socket_getsockopt_exit(sock, level, optname, optval, optlen, ret)
+#define sys_port_trace_socket_setsockopt_enter(sock, level, optname, optval, optlen)
+#define sys_port_trace_socket_setsockopt_exit(sock, ret)
+#define sys_port_trace_socket_getpeername_enter(sock)
+#define sys_port_trace_socket_getpeername_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_getsockname_enter(sock)
+#define sys_port_trace_socket_getsockname_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_socketpair_enter(family, type, proto, sv)
+#define sys_port_trace_socket_socketpair_exit(sockA, sockB, ret)
+
+#define sys_trace_sys_init_enter(...)
+#define sys_trace_sys_init_exit(...)
 
 #endif /* ZEPHYR_TRACE_TEST_H */

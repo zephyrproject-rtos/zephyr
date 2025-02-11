@@ -34,13 +34,12 @@
 #include "ull_adv_internal.h"
 #include "ull_central_internal.h"
 
-/* Initial channel map indicating Used and Unused data channels.
- * The HCI LE Set Host Channel Classification command allows the Host to
+/* The HCI LE Set Host Channel Classification command allows the Host to
  * specify a channel classification for the data, secondary advertising,
  * periodic, and isochronous physical channels based on its local information.
  */
-static uint8_t map[5] = {0xFF, 0xFF, 0xFF, 0xFF, 0x1F};
-static uint8_t count = 37U;
+static uint8_t map[5];
+static uint8_t count;
 
 static void chan_map_set(uint8_t const *const chan_map);
 
@@ -70,17 +69,15 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 	return 0;
 }
 
-int ull_chan_reset(void)
+void ull_chan_reset(void)
 {
-	/* initialise connection channel map */
+	/* Initial channel map indicating Used and Unused data channels. */
 	map[0] = 0xFF;
 	map[1] = 0xFF;
 	map[2] = 0xFF;
 	map[3] = 0xFF;
 	map[4] = 0x1F;
 	count = 37U;
-
-	return 0;
 }
 
 uint8_t ull_chan_map_get(uint8_t *const chan_map)

@@ -39,16 +39,20 @@
 #include <zephyr/logging/log.h>
 
 #include <soc.h>
+#include "soc_dbg.h"
 LOG_MODULE_REGISTER(wdt_npcx, CONFIG_WDT_LOG_LEVEL);
 
 /* Watchdog operating frequency is fixed to LFCLK (32.768) kHz */
 #define NPCX_WDT_CLK LFCLK
 
 /*
- * Maximum watchdog window time. Since the watchdog counter is 8-bits, maximum
- * time supported by npcx watchdog is 256 * (32 * 32) / 32768 = 8 sec.
+ * Maximum watchdog window time. Keep the timer and watchdog clock prescaler
+ * (TWCP) to 0x5. Since the watchdog counter is 8-bits, maximum time supported
+ * by npcx watchdog is 256 * (32 * 32768) / 32768 = 8192 sec.
+ * The maximum time supported of T0OUT is 65536 * 32 / 32768 = 64 sec.
+ * Thus, the maximum time of watchdog set here is 64 sec.
  */
-#define NPCX_WDT_MAX_WND_TIME 8000UL
+#define NPCX_WDT_MAX_WND_TIME 64000UL
 
 /*
  * Minimum watchdog window time. Ensure we have waited at least 3 watchdog
@@ -82,7 +86,7 @@ struct wdt_npcx_data {
 	bool timeout_installed;
 };
 
-struct miwu_dev_callback miwu_cb;
+struct miwu_callback miwu_cb;
 
 /* Driver convenience defines */
 #define HAL_INSTANCE(dev) ((struct twd_reg *)((const struct wdt_npcx_config *)(dev)->config)->base)
@@ -138,7 +142,7 @@ static void wdt_t0out_isr(const struct device *dev, struct npcx_wui *wui)
 	ARG_UNUSED(wui);
 
 	LOG_DBG("WDT reset will issue after %d delay cycle! WUI(%d %d %d)",
-		CONFIG_WDT_NPCX_DELAY_CYCLES, wui->table, wui->group, wui->bit);
+		CONFIG_WDT_NPCX_WARNING_LEADING_TIME_MS, wui->table, wui->group, wui->bit);
 
 	/* Handle watchdog event here. */
 	if (data->cb) {
@@ -153,7 +157,7 @@ static void wdt_config_t0out_interrupt(const struct device *dev)
 	/* Initialize a miwu device input and its callback function */
 	npcx_miwu_init_dev_callback(&miwu_cb, &config->t0out, wdt_t0out_isr,
 			dev);
-	npcx_miwu_manage_dev_callback(&miwu_cb, true);
+	npcx_miwu_manage_callback(&miwu_cb, true);
 
 	/*
 	 * Configure the T0 wake-up event triggered from a rising edge
@@ -207,6 +211,9 @@ static int wdt_npcx_setup(const struct device *dev, uint8_t options)
 	struct twd_reg *const inst = HAL_INSTANCE(dev);
 	const struct wdt_npcx_config *const config = dev->config;
 	struct wdt_npcx_data *const data = dev->data;
+	uint32_t wd_cnt, pre_scal;
+	uint8_t wdcp;
+
 	int rv;
 
 	/* Disable irq of t0-out expired event first */
@@ -227,21 +234,38 @@ static int wdt_npcx_setup(const struct device *dev, uint8_t options)
 		return -ENOTSUP;
 	}
 
+	/* Stall the WDT counter when halted by debugger */
 	if ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) != 0) {
-		LOG_ERR("WDT_OPT_PAUSE_HALTED_BY_DBG is not supported");
-		return -ENOTSUP;
+		npcx_dbg_freeze_enable(true);
+	} else {
+		npcx_dbg_freeze_enable(false);
 	}
 
 	/*
 	 * One clock period of T0 timer is 32/32.768 KHz = 0.976 ms.
 	 * Then the counter value is timeout/0.976 - 1.
 	 */
-	inst->TWDT0 = MAX(ceiling_fraction(data->timeout * NPCX_WDT_CLK,
+	inst->TWDT0 = MAX(DIV_ROUND_UP(data->timeout * NPCX_WDT_CLK,
 				32 * 1000) - 1, 1);
 
-	/* Configure 8-bit watchdog counter */
-	inst->WDCNT = MIN(ceiling_fraction(data->timeout, 32) +
-					CONFIG_WDT_NPCX_DELAY_CYCLES, 0xff);
+	/* Configure 8-bit watchdog counter
+	 * Change the prescaler of watchdog clock for larger timeout
+	 */
+	wd_cnt = DIV_ROUND_UP((data->timeout + CONFIG_WDT_NPCX_WARNING_LEADING_TIME_MS) *
+				      NPCX_WDT_CLK,
+			      32 * 1000);
+
+	pre_scal = DIV_ROUND_UP(wd_cnt, 255);
+
+	/*
+	 * Find the smallest power of 2 greater than or equal to the
+	 * prescaler
+	 */
+	wdcp = LOG2(pre_scal - 1) + 1;
+	pre_scal = 1 << wdcp;
+
+	inst->WDCP = wdcp;
+	inst->WDCNT = wd_cnt / pre_scal;
 
 	LOG_DBG("WDT setup: TWDT0, WDCNT are %d, %d", inst->TWDT0, inst->WDCNT);
 
@@ -262,12 +286,14 @@ static int wdt_npcx_disable(const struct device *dev)
 	const struct wdt_npcx_config *const config = dev->config;
 	struct wdt_npcx_data *const data = dev->data;
 	struct twd_reg *const inst = HAL_INSTANCE(dev);
+	uint16_t min_wnd_t;
 
 	/*
 	 * Ensure we have waited at least 3 watchdog ticks before
 	 * stopping watchdog
 	 */
-	while (k_uptime_get() - data->last_watchdog_touch < NPCX_WDT_MIN_WND_TIME) {
+	min_wnd_t = DIV_ROUND_UP(3 * NPCX_WDT_CLK, 32 * (1 << inst->WDCP));
+	while (k_uptime_get() - data->last_watchdog_touch < min_wnd_t) {
 		continue;
 	}
 

@@ -62,17 +62,12 @@ static const struct w1_driver_api w1_vnd_api = {
 	.configure = w1_vnd_configure,
 };
 
-static int w1_vnd_init(const struct device *dev)
-{
-	return 0;
-}
-
 #define W1_VND_INIT(n)							\
 static const struct w1_vnd_config w1_vnd_cfg_##inst = {			\
 	.master_config.slave_count = W1_INST_SLAVE_COUNT(inst)		\
 };									\
 static struct w1_vnd_data w1_vnd_data_##inst = {};			\
-DEVICE_DT_INST_DEFINE(n, &w1_vnd_init, NULL, &w1_vnd_data_##inst,	\
+DEVICE_DT_INST_DEFINE(n, NULL, NULL, &w1_vnd_data_##inst,		\
 		      &w1_vnd_cfg_##inst, POST_KERNEL,			\
 		      CONFIG_W1_INIT_PRIORITY, &w1_vnd_api);
 

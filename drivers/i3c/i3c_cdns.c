@@ -12,155 +12,156 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
 
-#define DEV_ID		  0x0
+#define DEV_ID            0x0
 #define DEV_ID_I3C_MASTER 0x5034
 
-#define CONF_STATUS0		     0x4
+#define CONF_STATUS0                 0x4
 #define CONF_STATUS0_CMDR_DEPTH(x)   (4 << (((x)&GENMASK(31, 29)) >> 29))
-#define CONF_STATUS0_ECC_CHK	     BIT(28)
-#define CONF_STATUS0_INTEG_CHK	     BIT(27)
+#define CONF_STATUS0_ECC_CHK         BIT(28)
+#define CONF_STATUS0_INTEG_CHK       BIT(27)
 #define CONF_STATUS0_CSR_DAP_CHK     BIT(26)
 #define CONF_STATUS0_TRANS_TOUT_CHK  BIT(25)
 #define CONF_STATUS0_PROT_FAULTS_CHK BIT(24)
-#define CONF_STATUS0_GPO_NUM(x)	     (((x)&GENMASK(23, 16)) >> 16)
-#define CONF_STATUS0_GPI_NUM(x)	     (((x)&GENMASK(15, 8)) >> 8)
+#define CONF_STATUS0_GPO_NUM(x)      (((x)&GENMASK(23, 16)) >> 16)
+#define CONF_STATUS0_GPI_NUM(x)      (((x)&GENMASK(15, 8)) >> 8)
 #define CONF_STATUS0_IBIR_DEPTH(x)   (4 << (((x)&GENMASK(7, 6)) >> 7))
 #define CONF_STATUS0_SUPPORTS_DDR    BIT(5)
-#define CONF_STATUS0_SEC_MASTER	     BIT(4)
+#define CONF_STATUS0_SEC_MASTER      BIT(4)
 #define CONF_STATUS0_DEVS_NUM(x)     ((x)&GENMASK(3, 0))
 
-#define CONF_STATUS1			0x8
-#define CONF_STATUS1_IBI_HW_RES(x)	((((x)&GENMASK(31, 28)) >> 28) + 1)
-#define CONF_STATUS1_CMD_DEPTH(x)	(4 << (((x)&GENMASK(27, 26)) >> 26))
+#define CONF_STATUS1                    0x8
+#define CONF_STATUS1_IBI_HW_RES(x)      ((((x)&GENMASK(31, 28)) >> 28) + 1)
+#define CONF_STATUS1_CMD_DEPTH(x)       (4 << (((x)&GENMASK(27, 26)) >> 26))
 #define CONF_STATUS1_SLVDDR_RX_DEPTH(x) (8 << (((x)&GENMASK(25, 21)) >> 21))
 #define CONF_STATUS1_SLVDDR_TX_DEPTH(x) (8 << (((x)&GENMASK(20, 16)) >> 16))
-#define CONF_STATUS1_IBI_DEPTH(x)	(2 << (((x)&GENMASK(12, 10)) >> 10))
-#define CONF_STATUS1_RX_DEPTH(x)	(8 << (((x)&GENMASK(9, 5)) >> 5))
-#define CONF_STATUS1_TX_DEPTH(x)	(8 << ((x)&GENMASK(4, 0)))
+#define CONF_STATUS1_IBI_DEPTH(x)       (2 << (((x)&GENMASK(12, 10)) >> 10))
+#define CONF_STATUS1_RX_DEPTH(x)        (8 << (((x)&GENMASK(9, 5)) >> 5))
+#define CONF_STATUS1_TX_DEPTH(x)        (8 << ((x)&GENMASK(4, 0)))
 
-#define REV_ID		     0xc
-#define REV_ID_VID(id)	     (((id)&GENMASK(31, 20)) >> 20)
-#define REV_ID_PID(id)	     (((id)&GENMASK(19, 8)) >> 8)
-#define REV_ID_REV(id)	     ((id)&GENMASK(7, 0))
+#define REV_ID               0xc
+#define REV_ID_VID(id)       (((id)&GENMASK(31, 20)) >> 20)
+#define REV_ID_PID(id)       (((id)&GENMASK(19, 8)) >> 8)
+#define REV_ID_REV(id)       ((id)&GENMASK(7, 0))
 #define REV_ID_VERSION(m, n) ((m << 5) | (n))
 #define REV_ID_REV_MAJOR(id) (((id)&GENMASK(7, 5)) >> 5)
 #define REV_ID_REV_MINOR(id) ((id)&GENMASK(4, 0))
 
-#define CTRL			 0x10
-#define CTRL_DEV_EN		 BIT(31)
-#define CTRL_HALT_EN		 BIT(30)
-#define CTRL_MCS		 BIT(29)
-#define CTRL_MCS_EN		 BIT(28)
-#define CTRL_I3C_11_SUPP	 BIT(26)
-#define CTRL_THD_DELAY(x)	 (((x) << 24) & GENMASK(25, 24))
-#define CTRL_HJ_DISEC		 BIT(8)
-#define CTRL_MST_ACK		 BIT(7)
-#define CTRL_HJ_ACK		 BIT(6)
-#define CTRL_HJ_INIT		 BIT(5)
-#define CTRL_MST_INIT		 BIT(4)
-#define CTRL_AHDR_OPT		 BIT(3)
-#define CTRL_PURE_BUS_MODE	 0
+#define CTRL                     0x10
+#define CTRL_DEV_EN              BIT(31)
+#define CTRL_HALT_EN             BIT(30)
+#define CTRL_MCS                 BIT(29)
+#define CTRL_MCS_EN              BIT(28)
+#define CTRL_I3C_11_SUPP         BIT(26)
+#define CTRL_THD_DELAY(x)        (((x) << 24) & GENMASK(25, 24))
+#define CTRL_HJ_DISEC            BIT(8)
+#define CTRL_MST_ACK             BIT(7)
+#define CTRL_HJ_ACK              BIT(6)
+#define CTRL_HJ_INIT             BIT(5)
+#define CTRL_MST_INIT            BIT(4)
+#define CTRL_AHDR_OPT            BIT(3)
+#define CTRL_PURE_BUS_MODE       0
 #define CTRL_MIXED_FAST_BUS_MODE 2
 #define CTRL_MIXED_SLOW_BUS_MODE 3
-#define CTRL_BUS_MODE_MASK	 GENMASK(1, 0)
-#define THD_DELAY_MAX		 3
+#define CTRL_BUS_MODE_MASK       GENMASK(1, 0)
+#define THD_DELAY_MAX            3
 
-#define PRESCL_CTRL0	    0x14
+#define PRESCL_CTRL0        0x14
 #define PRESCL_CTRL0_I2C(x) ((x) << 16)
 #define PRESCL_CTRL0_I3C(x) (x)
 #define PRESCL_CTRL0_MAX    GENMASK(9, 0)
 
-#define PRESCL_CTRL1		 0x18
+#define PRESCL_CTRL1             0x18
 #define PRESCL_CTRL1_PP_LOW_MASK GENMASK(15, 8)
-#define PRESCL_CTRL1_PP_LOW(x)	 ((x) << 8)
+#define PRESCL_CTRL1_PP_LOW(x)   ((x) << 8)
 #define PRESCL_CTRL1_OD_LOW_MASK GENMASK(7, 0)
-#define PRESCL_CTRL1_OD_LOW(x)	 (x)
+#define PRESCL_CTRL1_OD_LOW(x)   (x)
 
-#define MST_IER		 0x20
-#define MST_IDR		 0x24
-#define MST_IMR		 0x28
-#define MST_ICR		 0x2c
-#define MST_ISR		 0x30
-#define MST_INT_HALTED	 BIT(18)
-#define MST_INT_MR_DONE	 BIT(17)
+#define MST_IER          0x20
+#define MST_IDR          0x24
+#define MST_IMR          0x28
+#define MST_ICR          0x2c
+#define MST_ISR          0x30
+#define MST_INT_HALTED   BIT(18)
+#define MST_INT_MR_DONE  BIT(17)
 #define MST_INT_IMM_COMP BIT(16)
-#define MST_INT_TX_THR	 BIT(15)
-#define MST_INT_TX_OVF	 BIT(14)
+#define MST_INT_TX_THR   BIT(15)
+#define MST_INT_TX_OVF   BIT(14)
 #define MST_INT_IBID_THR BIT(12)
 #define MST_INT_IBID_UNF BIT(11)
 #define MST_INT_IBIR_THR BIT(10)
 #define MST_INT_IBIR_UNF BIT(9)
 #define MST_INT_IBIR_OVF BIT(8)
-#define MST_INT_RX_THR	 BIT(7)
-#define MST_INT_RX_UNF	 BIT(6)
+#define MST_INT_RX_THR   BIT(7)
+#define MST_INT_RX_UNF   BIT(6)
 #define MST_INT_CMDD_EMP BIT(5)
 #define MST_INT_CMDD_THR BIT(4)
 #define MST_INT_CMDD_OVF BIT(3)
 #define MST_INT_CMDR_THR BIT(2)
 #define MST_INT_CMDR_UNF BIT(1)
 #define MST_INT_CMDR_OVF BIT(0)
-#define MST_INT_MASK	 GENMASK(18, 0)
+#define MST_INT_MASK     GENMASK(18, 0)
 
-#define MST_STATUS0		0x34
-#define MST_STATUS0_IDLE	BIT(18)
-#define MST_STATUS0_HALTED	BIT(17)
+#define MST_STATUS0             0x34
+#define MST_STATUS0_IDLE        BIT(18)
+#define MST_STATUS0_HALTED      BIT(17)
 #define MST_STATUS0_MASTER_MODE BIT(16)
-#define MST_STATUS0_TX_FULL	BIT(13)
-#define MST_STATUS0_IBID_FULL	BIT(12)
-#define MST_STATUS0_IBIR_FULL	BIT(11)
-#define MST_STATUS0_RX_FULL	BIT(10)
-#define MST_STATUS0_CMDD_FULL	BIT(9)
-#define MST_STATUS0_CMDR_FULL	BIT(8)
-#define MST_STATUS0_TX_EMP	BIT(5)
-#define MST_STATUS0_IBID_EMP	BIT(4)
-#define MST_STATUS0_IBIR_EMP	BIT(3)
-#define MST_STATUS0_RX_EMP	BIT(2)
-#define MST_STATUS0_CMDD_EMP	BIT(1)
-#define MST_STATUS0_CMDR_EMP	BIT(0)
+#define MST_STATUS0_TX_FULL     BIT(13)
+#define MST_STATUS0_IBID_FULL   BIT(12)
+#define MST_STATUS0_IBIR_FULL   BIT(11)
+#define MST_STATUS0_RX_FULL     BIT(10)
+#define MST_STATUS0_CMDD_FULL   BIT(9)
+#define MST_STATUS0_CMDR_FULL   BIT(8)
+#define MST_STATUS0_TX_EMP      BIT(5)
+#define MST_STATUS0_IBID_EMP    BIT(4)
+#define MST_STATUS0_IBIR_EMP    BIT(3)
+#define MST_STATUS0_RX_EMP      BIT(2)
+#define MST_STATUS0_CMDD_EMP    BIT(1)
+#define MST_STATUS0_CMDR_EMP    BIT(0)
 
-#define CMDR			0x38
-#define CMDR_NO_ERROR		0
+#define CMDR                    0x38
+#define CMDR_NO_ERROR           0
 #define CMDR_DDR_PREAMBLE_ERROR 1
-#define CMDR_DDR_PARITY_ERROR	2
-#define CMDR_DDR_RX_FIFO_OVF	3
-#define CMDR_DDR_TX_FIFO_UNF	4
-#define CMDR_M0_ERROR		5
-#define CMDR_M1_ERROR		6
-#define CMDR_M2_ERROR		7
-#define CMDR_MST_ABORT		8
-#define CMDR_NACK_RESP		9
-#define CMDR_INVALID_DA		10
-#define CMDR_DDR_DROPPED	11
-#define CMDR_ERROR(x)		(((x)&GENMASK(27, 24)) >> 24)
-#define CMDR_XFER_BYTES(x)	(((x)&GENMASK(19, 8)) >> 8)
-#define CMDR_CMDID_HJACK_DISEC	0xfe
+#define CMDR_DDR_PARITY_ERROR   2
+#define CMDR_DDR_RX_FIFO_OVF    3
+#define CMDR_DDR_TX_FIFO_UNF    4
+#define CMDR_M0_ERROR           5
+#define CMDR_M1_ERROR           6
+#define CMDR_M2_ERROR           7
+#define CMDR_MST_ABORT          8
+#define CMDR_NACK_RESP          9
+#define CMDR_INVALID_DA         10
+#define CMDR_DDR_DROPPED        11
+#define CMDR_ERROR(x)           (((x)&GENMASK(27, 24)) >> 24)
+#define CMDR_XFER_BYTES(x)      (((x)&GENMASK(19, 8)) >> 8)
+#define CMDR_CMDID_HJACK_DISEC  0xfe
 #define CMDR_CMDID_HJACK_ENTDAA 0xff
-#define CMDR_CMDID(x)		((x)&GENMASK(7, 0))
+#define CMDR_CMDID(x)           ((x)&GENMASK(7, 0))
 
-#define IBIR		   0x3c
-#define IBIR_ACKED	   BIT(12)
-#define IBIR_SLVID(x)	   (((x)&GENMASK(11, 8)) >> 8)
-#define IBIR_SLVID_INV	   0xF
-#define IBIR_ERROR	   BIT(7)
+#define IBIR               0x3c
+#define IBIR_ACKED         BIT(12)
+#define IBIR_SLVID(x)      (((x)&GENMASK(11, 8)) >> 8)
+#define IBIR_SLVID_INV     0xF
+#define IBIR_ERROR         BIT(7)
 #define IBIR_XFER_BYTES(x) (((x)&GENMASK(6, 2)) >> 2)
-#define IBIR_TYPE_IBI	   0
-#define IBIR_TYPE_HJ	   1
-#define IBIR_TYPE_MR	   2
-#define IBIR_TYPE(x)	   ((x)&GENMASK(1, 0))
+#define IBIR_TYPE_IBI      0
+#define IBIR_TYPE_HJ       1
+#define IBIR_TYPE_MR       2
+#define IBIR_TYPE(x)       ((x)&GENMASK(1, 0))
 
-#define SLV_IER		    0x40
-#define SLV_IDR		    0x44
-#define SLV_IMR		    0x48
-#define SLV_ICR		    0x4c
-#define SLV_ISR		    0x50
-#define SLV_INT_DEFSLVS	    BIT(21)
-#define SLV_INT_TM	    BIT(20)
-#define SLV_INT_ERROR	    BIT(19)
+#define SLV_IER             0x40
+#define SLV_IDR             0x44
+#define SLV_IMR             0x48
+#define SLV_ICR             0x4c
+#define SLV_ISR             0x50
+#define SLV_INT_DEFSLVS     BIT(21)
+#define SLV_INT_TM          BIT(20)
+#define SLV_INT_ERROR       BIT(19)
 #define SLV_INT_EVENT_UP    BIT(18)
-#define SLV_INT_HJ_DONE	    BIT(17)
-#define SLV_INT_MR_DONE	    BIT(16)
-#define SLV_INT_DA_UPD	    BIT(15)
+#define SLV_INT_HJ_DONE     BIT(17)
+#define SLV_INT_MR_DONE     BIT(16)
+#define SLV_INT_DA_UPD      BIT(15)
 #define SLV_INT_SDR_FAIL    BIT(14)
 #define SLV_INT_DDR_FAIL    BIT(13)
 #define SLV_INT_M_RD_ABORT  BIT(12)
@@ -176,73 +177,73 @@
 #define SLV_INT_DDR_WR_COMP BIT(2)
 #define SLV_INT_SDR_RD_COMP BIT(1)
 #define SLV_INT_SDR_WR_COMP BIT(0)
-#define SLV_INT_MASK	    GENMASK(20, 0)
+#define SLV_INT_MASK        GENMASK(20, 0)
 
-#define SLV_STATUS0		  0x54
-#define SLV_STATUS0_REG_ADDR(s)	  (((s)&GENMASK(23, 16)) >> 16)
+#define SLV_STATUS0               0x54
+#define SLV_STATUS0_REG_ADDR(s)   (((s)&GENMASK(23, 16)) >> 16)
 #define SLV_STATUS0_XFRD_BYTES(s) ((s)&GENMASK(15, 0))
 
-#define SLV_STATUS1		 0x58
-#define SLV_STATUS1_AS(s)	 (((s)&GENMASK(21, 20)) >> 20)
-#define SLV_STATUS1_VEN_TM	 BIT(19)
-#define SLV_STATUS1_HJ_DIS	 BIT(18)
-#define SLV_STATUS1_MR_DIS	 BIT(17)
-#define SLV_STATUS1_PROT_ERR	 BIT(16)
-#define SLV_STATUS1_DA(s)	 (((s)&GENMASK(15, 9)) >> 9)
-#define SLV_STATUS1_HAS_DA	 BIT(8)
-#define SLV_STATUS1_DDR_RX_FULL	 BIT(7)
-#define SLV_STATUS1_DDR_TX_FULL	 BIT(6)
+#define SLV_STATUS1              0x58
+#define SLV_STATUS1_AS(s)        (((s)&GENMASK(21, 20)) >> 20)
+#define SLV_STATUS1_VEN_TM       BIT(19)
+#define SLV_STATUS1_HJ_DIS       BIT(18)
+#define SLV_STATUS1_MR_DIS       BIT(17)
+#define SLV_STATUS1_PROT_ERR     BIT(16)
+#define SLV_STATUS1_DA(s)        (((s)&GENMASK(15, 9)) >> 9)
+#define SLV_STATUS1_HAS_DA       BIT(8)
+#define SLV_STATUS1_DDR_RX_FULL  BIT(7)
+#define SLV_STATUS1_DDR_TX_FULL  BIT(6)
 #define SLV_STATUS1_DDR_RX_EMPTY BIT(5)
 #define SLV_STATUS1_DDR_TX_EMPTY BIT(4)
-#define SLV_STATUS1_SDR_RX_FULL	 BIT(3)
-#define SLV_STATUS1_SDR_TX_FULL	 BIT(2)
+#define SLV_STATUS1_SDR_RX_FULL  BIT(3)
+#define SLV_STATUS1_SDR_TX_FULL  BIT(2)
 #define SLV_STATUS1_SDR_RX_EMPTY BIT(1)
 #define SLV_STATUS1_SDR_TX_EMPTY BIT(0)
 
-#define CMD0_FIFO		    0x60
-#define CMD0_FIFO_IS_DDR	    BIT(31)
-#define CMD0_FIFO_IS_CCC	    BIT(30)
-#define CMD0_FIFO_BCH		    BIT(29)
+#define CMD0_FIFO                   0x60
+#define CMD0_FIFO_IS_DDR            BIT(31)
+#define CMD0_FIFO_IS_CCC            BIT(30)
+#define CMD0_FIFO_BCH               BIT(29)
 #define XMIT_BURST_STATIC_SUBADDR   0
-#define XMIT_SINGLE_INC_SUBADDR	    1
+#define XMIT_SINGLE_INC_SUBADDR     1
 #define XMIT_SINGLE_STATIC_SUBADDR  2
 #define XMIT_BURST_WITHOUT_SUBADDR  3
 #define CMD0_FIFO_PRIV_XMIT_MODE(m) ((m) << 27)
-#define CMD0_FIFO_SBCA		    BIT(26)
-#define CMD0_FIFO_RSBC		    BIT(25)
-#define CMD0_FIFO_IS_10B	    BIT(24)
-#define CMD0_FIFO_PL_LEN(l)	    ((l) << 12)
-#define CMD0_FIFO_PL_LEN_MAX	    4095
-#define CMD0_FIFO_DEV_ADDR(a)	    ((a) << 1)
-#define CMD0_FIFO_RNW		    BIT(0)
+#define CMD0_FIFO_SBCA              BIT(26)
+#define CMD0_FIFO_RSBC              BIT(25)
+#define CMD0_FIFO_IS_10B            BIT(24)
+#define CMD0_FIFO_PL_LEN(l)         ((l) << 12)
+#define CMD0_FIFO_PL_LEN_MAX        4095
+#define CMD0_FIFO_DEV_ADDR(a)       ((a) << 1)
+#define CMD0_FIFO_RNW               BIT(0)
 
-#define CMD1_FIFO	     0x64
+#define CMD1_FIFO            0x64
 #define CMD1_FIFO_CMDID(id)  ((id) << 24)
 #define CMD1_FIFO_CSRADDR(a) (a)
 #define CMD1_FIFO_CCC(id)    (id)
 
 #define TX_FIFO 0x68
 
-#define IMD_CMD0	     0x70
+#define IMD_CMD0             0x70
 #define IMD_CMD0_PL_LEN(l)   ((l) << 12)
 #define IMD_CMD0_DEV_ADDR(a) ((a) << 1)
-#define IMD_CMD0_RNW	     BIT(0)
+#define IMD_CMD0_RNW         BIT(0)
 
-#define IMD_CMD1	 0x74
+#define IMD_CMD1         0x74
 #define IMD_CMD1_CCC(id) (id)
 
-#define IMD_DATA	0x78
-#define RX_FIFO		0x80
-#define IBI_DATA_FIFO	0x84
+#define IMD_DATA        0x78
+#define RX_FIFO         0x80
+#define IBI_DATA_FIFO   0x84
 #define SLV_DDR_TX_FIFO 0x88
 #define SLV_DDR_RX_FIFO 0x8c
 
 #define CMD_IBI_THR_CTRL 0x90
-#define IBIR_THR(t)	 ((t) << 24)
-#define CMDR_THR(t)	 ((t) << 16)
-#define CMDR_THR_MASK	 (GENMASK(20, 16))
-#define IBI_THR(t)	 ((t) << 8)
-#define CMD_THR(t)	 (t)
+#define IBIR_THR(t)      ((t) << 24)
+#define CMDR_THR(t)      ((t) << 16)
+#define CMDR_THR_MASK    (GENMASK(20, 16))
+#define IBI_THR(t)       ((t) << 8)
+#define CMD_THR(t)       (t)
 
 #define TX_RX_THR_CTRL 0x94
 #define RX_THR(t)      ((t) << 16)
@@ -254,91 +255,91 @@
 #define SLV_DDR_RX_THR(t)      ((t) << 16)
 #define SLV_DDR_TX_THR(t)      (t)
 
-#define FLUSH_CTRL	      0x9c
-#define FLUSH_IBI_RESP	      BIT(23)
-#define FLUSH_CMD_RESP	      BIT(22)
+#define FLUSH_CTRL            0x9c
+#define FLUSH_IBI_RESP        BIT(23)
+#define FLUSH_CMD_RESP        BIT(22)
 #define FLUSH_SLV_DDR_RX_FIFO BIT(22)
 #define FLUSH_SLV_DDR_TX_FIFO BIT(21)
-#define FLUSH_IMM_FIFO	      BIT(20)
-#define FLUSH_IBI_FIFO	      BIT(19)
-#define FLUSH_RX_FIFO	      BIT(18)
-#define FLUSH_TX_FIFO	      BIT(17)
-#define FLUSH_CMD_FIFO	      BIT(16)
+#define FLUSH_IMM_FIFO        BIT(20)
+#define FLUSH_IBI_FIFO        BIT(19)
+#define FLUSH_RX_FIFO         BIT(18)
+#define FLUSH_TX_FIFO         BIT(17)
+#define FLUSH_CMD_FIFO        BIT(16)
 
-#define TTO_PRESCL_CTRL0	       0xb0
+#define TTO_PRESCL_CTRL0               0xb0
 #define TTO_PRESCL_CTRL0_PRESCL_I2C(x) ((x) << 16)
 #define TTO_PRESCL_CTRL0_PRESCL_I3C(x) (x)
 
-#define TTO_PRESCL_CTRL1	   0xb4
+#define TTO_PRESCL_CTRL1           0xb4
 #define TTO_PRESCL_CTRL1_DIVB(x)   ((x) << 16)
 #define TTO_PRESCL_CTRL1_DIVA(x)   (x)
 #define TTO_PRESCL_CTRL1_PP_LOW(x) ((x) << 8)
 #define TTO_PRESCL_CTRL1_OD_LOW(x) (x)
 
-#define DEVS_CTRL		   0xb8
-#define DEVS_CTRL_DEV_CLR_SHIFT	   16
-#define DEVS_CTRL_DEV_CLR_ALL	   GENMASK(31, 16)
-#define DEVS_CTRL_DEV_CLR(dev)	   BIT(16 + (dev))
+#define DEVS_CTRL                  0xb8
+#define DEVS_CTRL_DEV_CLR_SHIFT    16
+#define DEVS_CTRL_DEV_CLR_ALL      GENMASK(31, 16)
+#define DEVS_CTRL_DEV_CLR(dev)     BIT(16 + (dev))
 #define DEVS_CTRL_DEV_ACTIVE(dev)  BIT(dev)
 #define DEVS_CTRL_DEVS_ACTIVE_MASK GENMASK(15, 0)
-#define MAX_DEVS		   16
+#define MAX_DEVS                   16
 
-#define DEV_ID_RR0(d)		   (0xc0 + ((d)*0x10))
-#define DEV_ID_RR0_LVR_EXT_ADDR	   BIT(11)
-#define DEV_ID_RR0_HDR_CAP	   BIT(10)
-#define DEV_ID_RR0_IS_I3C	   BIT(9)
+#define DEV_ID_RR0(d)              (0xc0 + ((d)*0x10))
+#define DEV_ID_RR0_LVR_EXT_ADDR    BIT(11)
+#define DEV_ID_RR0_HDR_CAP         BIT(10)
+#define DEV_ID_RR0_IS_I3C          BIT(9)
 #define DEV_ID_RR0_DEV_ADDR_MASK   (GENMASK(6, 0) | GENMASK(15, 13))
 #define DEV_ID_RR0_SET_DEV_ADDR(a) (((a)&GENMASK(6, 0)) | (((a)&GENMASK(9, 7)) << 6))
 #define DEV_ID_RR0_GET_DEV_ADDR(x) ((((x) >> 1) & GENMASK(6, 0)) | (((x) >> 6) & GENMASK(9, 7)))
 
-#define DEV_ID_RR1(d)		(0xc4 + ((d)*0x10))
+#define DEV_ID_RR1(d)           (0xc4 + ((d)*0x10))
 #define DEV_ID_RR1_PID_MSB(pid) (pid)
 
-#define DEV_ID_RR2(d)		(0xc8 + ((d)*0x10))
+#define DEV_ID_RR2(d)           (0xc8 + ((d)*0x10))
 #define DEV_ID_RR2_PID_LSB(pid) ((pid) << 16)
-#define DEV_ID_RR2_BCR(bcr)	((bcr) << 8)
-#define DEV_ID_RR2_DCR(dcr)	(dcr)
-#define DEV_ID_RR2_LVR(lvr)	(lvr)
+#define DEV_ID_RR2_BCR(bcr)     ((bcr) << 8)
+#define DEV_ID_RR2_DCR(dcr)     (dcr)
+#define DEV_ID_RR2_LVR(lvr)     (lvr)
 
-#define SIR_MAP(x)		 (0x180 + ((x)*4))
-#define SIR_MAP_DEV_REG(d)	 SIR_MAP((d) / 2)
+#define SIR_MAP(x)               (0x180 + ((x)*4))
+#define SIR_MAP_DEV_REG(d)       SIR_MAP((d) / 2)
 #define SIR_MAP_DEV_SHIFT(d, fs) ((fs) + (((d) % 2) ? 16 : 0))
 #define SIR_MAP_DEV_CONF_MASK(d) (GENMASK(15, 0) << (((d) % 2) ? 16 : 0))
-#define SIR_MAP_DEV_CONF(d, c)	 ((c) << (((d) % 2) ? 16 : 0))
-#define DEV_ROLE_SLAVE		 0
-#define DEV_ROLE_MASTER		 1
-#define SIR_MAP_DEV_ROLE(role)	 ((role) << 14)
-#define SIR_MAP_DEV_SLOW	 BIT(13)
-#define SIR_MAP_DEV_PL(l)	 ((l) << 8)
-#define SIR_MAP_PL_MAX		 GENMASK(4, 0)
-#define SIR_MAP_DEV_DA(a)	 ((a) << 1)
-#define SIR_MAP_DEV_ACK		 BIT(0)
+#define SIR_MAP_DEV_CONF(d, c)   ((c) << (((d) % 2) ? 16 : 0))
+#define DEV_ROLE_SLAVE           0
+#define DEV_ROLE_MASTER          1
+#define SIR_MAP_DEV_ROLE(role)   ((role) << 14)
+#define SIR_MAP_DEV_SLOW         BIT(13)
+#define SIR_MAP_DEV_PL(l)        ((l) << 8)
+#define SIR_MAP_PL_MAX           GENMASK(4, 0)
+#define SIR_MAP_DEV_DA(a)        ((a) << 1)
+#define SIR_MAP_DEV_ACK          BIT(0)
 
-#define GPIR_WORD(x)	 (0x200 + ((x)*4))
+#define GPIR_WORD(x)     (0x200 + ((x)*4))
 #define GPI_REG(val, id) (((val) >> (((id) % 4) * 8)) & GENMASK(7, 0))
 
-#define GPOR_WORD(x)	 (0x220 + ((x)*4))
+#define GPOR_WORD(x)     (0x220 + ((x)*4))
 #define GPO_REG(val, id) (((val) >> (((id) % 4) * 8)) & GENMASK(7, 0))
 
-#define ASF_INT_STATUS	      0x300
+#define ASF_INT_STATUS        0x300
 #define ASF_INT_RAW_STATUS    0x304
-#define ASF_INT_MASK	      0x308
-#define ASF_INT_TEST	      0x30c
+#define ASF_INT_MASK          0x308
+#define ASF_INT_TEST          0x30c
 #define ASF_INT_FATAL_SELECT  0x310
 #define ASF_INTEGRITY_ERR     BIT(6)
 #define ASF_PROTOCOL_ERR      BIT(5)
 #define ASF_TRANS_TIMEOUT_ERR BIT(4)
-#define ASF_CSR_ERR	      BIT(3)
-#define ASF_DAP_ERR	      BIT(2)
+#define ASF_CSR_ERR           BIT(3)
+#define ASF_DAP_ERR           BIT(2)
 #define ASF_SRAM_UNCORR_ERR   BIT(1)
 #define ASF_SRAM_CORR_ERR     BIT(0)
 
-#define ASF_SRAM_CORR_FAULT_STATUS	0x320
-#define ASF_SRAM_UNCORR_FAULT_STATUS	0x324
+#define ASF_SRAM_CORR_FAULT_STATUS      0x320
+#define ASF_SRAM_UNCORR_FAULT_STATUS    0x324
 #define ASF_SRAM_CORR_FAULT_INSTANCE(x) ((x) >> 24)
-#define ASF_SRAM_CORR_FAULT_ADDR(x)	((x)&GENMASK(23, 0))
+#define ASF_SRAM_CORR_FAULT_ADDR(x)     ((x)&GENMASK(23, 0))
 
-#define ASF_SRAM_FAULT_STATS	       0x328
+#define ASF_SRAM_FAULT_STATS           0x328
 #define ASF_SRAM_FAULT_UNCORR_STATS(x) ((x) >> 16)
 #define ASF_SRAM_FAULT_CORR_STATS(x)   ((x)&GENMASK(15, 0))
 
@@ -353,30 +354,32 @@
 #define ASF_TRANS_TOUT_FAULT_SCL_HIGH  BIT(1)
 #define ASF_TRANS_TOUT_FAULT_FSCL_HIGH BIT(0)
 
-#define ASF_PROTO_FAULT_MASK		0x340
-#define ASF_PROTO_FAULT_STATUS		0x344
+#define ASF_PROTO_FAULT_MASK            0x340
+#define ASF_PROTO_FAULT_STATUS          0x344
 #define ASF_PROTO_FAULT_SLVSDR_RD_ABORT BIT(31)
-#define ASF_PROTO_FAULT_SLVDDR_FAIL	BIT(30)
-#define ASF_PROTO_FAULT_S(x)		BIT(16 + (x))
+#define ASF_PROTO_FAULT_SLVDDR_FAIL     BIT(30)
+#define ASF_PROTO_FAULT_S(x)            BIT(16 + (x))
 #define ASF_PROTO_FAULT_MSTSDR_RD_ABORT BIT(15)
-#define ASF_PROTO_FAULT_MSTDDR_FAIL	BIT(14)
-#define ASF_PROTO_FAULT_M(x)		BIT(x)
+#define ASF_PROTO_FAULT_MSTDDR_FAIL     BIT(14)
+#define ASF_PROTO_FAULT_M(x)            BIT(x)
 
 /*******************************************************************************
  * Local Constants Definition
  ******************************************************************************/
-#define DIV_ROUND_UP(n, d) (((n) + (d)-1) / (d))
 
 /* TODO: this needs to be configurable in the dts...somehow */
 #define I3C_CONTROLLER_ADDR 0x08
 
 /* Maximum i3c devices that the IP can be built with */
-#define I3C_MAX_DEVS		  11
-#define I3C_MAX_MSGS		  10
-#define I3C_SIR_DEFAULT_DA	  0x7F
-#define I3C_MAX_IDLE_WAIT_RETRIES 50
-#define I3C_PRESCL_REG_SCALE	  (4)
-#define I2C_PRESCL_REG_SCALE	  (5)
+#define I3C_MAX_DEVS                     11
+#define I3C_MAX_MSGS                     10
+#define I3C_SIR_DEFAULT_DA               0x7F
+#define I3C_MAX_IDLE_CANCEL_WAIT_RETRIES 50
+#define I3C_PRESCL_REG_SCALE             (4)
+#define I2C_PRESCL_REG_SCALE             (5)
+#define I3C_WAIT_FOR_IDLE_STATE_US       100
+#define I3C_IDLE_TIMEOUT_CYC                                                                       \
+	(I3C_WAIT_FOR_IDLE_STATE_US * (sys_clock_hw_cycles_per_sec() / USEC_PER_SEC))
 
 /* Target T_LOW period in open-drain mode. */
 #define I3C_BUS_TLOW_OD_MIN_NS 200
@@ -430,6 +433,7 @@ struct cdns_i3c_cmd {
 	uint32_t cmd0;
 	uint32_t cmd1;
 	uint32_t len;
+	uint32_t *num_xfer;
 	void *buf;
 	uint32_t error;
 };
@@ -444,20 +448,18 @@ struct cdns_i3c_xfer {
 
 /* Driver config */
 struct cdns_i3c_config {
+	struct i3c_driver_config common;
 	/** base address of the controller */
 	uintptr_t base;
 	/** input frequency to the I3C Cadence */
 	uint32_t input_frequency;
 	/** Interrupt configuration function. */
 	void (*irq_config_func)(const struct device *dev);
-	/** I3C/I2C device list struct. */
-	struct i3c_dev_list device_list;
 };
 
 /* Driver instance data */
 struct cdns_i3c_data {
-	struct i3c_config_controller ctrl_config;
-	struct i3c_addr_slots addr_slots;
+	struct i3c_driver_data common;
 	struct cdns_i3c_hw_config hw_cfg;
 	struct k_mutex bus_lock;
 	struct cdns_i3c_i2c_dev_data cdns_i3c_i2c_priv_data[I3C_MAX_DEVS];
@@ -614,25 +616,20 @@ static int cdns_i3c_read_rx_fifo(const struct cdns_i3c_config *config, void *buf
 	return 0;
 }
 
-static int cdns_i3c_read_ibi_fifo(const struct cdns_i3c_config *config, void *buf, uint32_t len)
+static inline int cdns_i3c_wait_for_idle(const struct device *dev)
 {
-	uint32_t *ptr = buf;
-	uint32_t remain, val;
+	const struct cdns_i3c_config *config = dev->config;
+	uint32_t start_time = k_cycle_get_32();
 
-	for (remain = len; remain >= 4; remain -= 4) {
-		if (cdns_i3c_ibi_fifo_empty(config)) {
-			return -EIO;
+	/**
+	 * Spin waiting for device to go idle. It is unlikely that this will
+	 * actually take any time unless if the last transaction came immediately
+	 * after an error condition.
+	 */
+	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE)) {
+		if (k_cycle_get_32() - start_time > I3C_IDLE_TIMEOUT_CYC) {
+			return -EAGAIN;
 		}
-		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
-		*ptr++ = val;
-	}
-
-	if (remain > 0) {
-		if (cdns_i3c_ibi_fifo_empty(config)) {
-			return -EIO;
-		}
-		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
-		memcpy(ptr, &val, remain);
 	}
 
 	return 0;
@@ -642,7 +639,7 @@ static void cdns_i3c_set_prescalers(const struct device *dev)
 {
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
-	struct i3c_config_controller *ctrl_config = &data->ctrl_config;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 
 	/* These formulas are from section 6.2.1 of the Cadence I3C Master User Guide. */
 	uint32_t prescl_i3c = DIV_ROUND_UP(config->input_frequency,
@@ -715,126 +712,25 @@ static uint32_t prepare_rr0_dev_address(uint16_t addr)
 /**
  * @brief Program Retaining Registers with device lists
  *
- * This will reprogram all retaining registers with I3C devices, I2C devices,
- * and the controller itself.
+ * This will program the retaining register with the controller itself
  *
  * @param dev Pointer to controller device driver instance.
  */
-static void cdns_i3c_program_retaining_regs(const struct device *dev)
+static void cdns_i3c_program_controller_retaining_reg(const struct device *dev)
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
-
-	/* Clear all retaining regs */
-	sys_write32(DEVS_CTRL_DEV_CLR_ALL, config->base + DEVS_CTRL);
-
-	uint32_t dev_id_rr0;
-	uint32_t dev_id_rr1;
-	uint32_t dev_id_rr2;
-
-	/* program I2C devices */
-	for (int i = 0; i < config->device_list.num_i2c; i++) {
-		struct i3c_i2c_device_desc *i2c_device = &(config->device_list.i2c[i]);
-		struct cdns_i3c_i2c_dev_data *cdns_i2c_device_data = i2c_device->controller_priv;
-
-		if (cdns_i2c_device_data == NULL) {
-			LOG_ERR("%s: device not attached", dev->name);
-		}
-
-		/* Mark the address as I2C device */
-		i3c_addr_slots_mark_i2c(&data->addr_slots, i2c_device->addr);
-
-		dev_id_rr0 = prepare_rr0_dev_address(i2c_device->addr);
-		dev_id_rr2 = DEV_ID_RR2_LVR(i2c_device->lvr);
-
-		sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(cdns_i2c_device_data->id));
-		sys_write32(0, config->base + DEV_ID_RR1(cdns_i2c_device_data->id));
-		sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(cdns_i2c_device_data->id));
-
-		sys_write32(sys_read32(config->base + DEVS_CTRL) |
-				    DEVS_CTRL_DEV_ACTIVE(cdns_i2c_device_data->id),
-			    config->base + DEVS_CTRL);
-	}
-
-	/* program I3C devices */
-	for (int i = 0; i < config->device_list.num_i3c; i++) {
-		struct i3c_device_desc *i3c_device = &(config->device_list.i3c[i]);
-		struct cdns_i3c_i2c_dev_data *cdns_i3c_device_data = i3c_device->controller_priv;
-
-		if (cdns_i3c_device_data == NULL) {
-			LOG_ERR("%s: %s: device not attached", dev->name, i3c_device->dev->name);
-			continue;
-		}
-
-		/*
-		 * Use the desired dynamic address as the new dynamic address
-		 * if the slot is free.
-		 */
-		uint8_t dynamic_addr;
-
-		if (i3c_device->init_dynamic_addr != 0U) {
-			/* initial dynamic address is requested */
-			if (i3c_device->static_addr != 0) {
-				if (i3c_addr_slots_is_free(&data->addr_slots,
-							   i3c_device->init_dynamic_addr)) {
-					/* Set DA during ENTDAA */
-					dynamic_addr = i3c_device->init_dynamic_addr;
-				} else {
-					/* address is not free, get the next one */
-					dynamic_addr =
-						i3c_addr_slots_next_free_find(&data->addr_slots);
-				}
-			} else {
-				/* Use the init dynamic address as it's DA, but the RR will need to
-				 * be first set with it's SA to run SETDASA, the RR address will
-				 * need be updated after SETDASA with the request dynamic address
-				 */
-				dynamic_addr = i3c_device->static_addr;
-			}
-		} else {
-			/* no init dynamic address is requested */
-			if (i3c_device->static_addr != 0) {
-				/* static exists, set DA with same SA during SETDASA*/
-				dynamic_addr = i3c_device->static_addr;
-			} else {
-				/* pick a DA to use */
-				dynamic_addr = i3c_addr_slots_next_free_find(&data->addr_slots);
-			}
-		}
-		/* Mark the address as I3C device */
-		i3c_addr_slots_mark_i3c(&data->addr_slots, dynamic_addr);
-
-		dev_id_rr0 = DEV_ID_RR0_IS_I3C | prepare_rr0_dev_address(dynamic_addr);
-		dev_id_rr1 = DEV_ID_RR1_PID_MSB((i3c_device->pid & 0xFFFFFFFF0000) >> 16);
-		dev_id_rr2 = DEV_ID_RR2_PID_LSB(i3c_device->pid & 0xFFFF);
-
-		sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(cdns_i3c_device_data->id));
-		sys_write32(dev_id_rr1, config->base + DEV_ID_RR1(cdns_i3c_device_data->id));
-		sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(cdns_i3c_device_data->id));
-
-		/** Mark Devices as active, devices that will be found and marked active during DAA,
-		 * it will be given the exact DA programmed in it's RR if the PID matches and marked
-		 * as active duing ENTDAA, otherwise they get set as active here
-		 */
-		if (!((i3c_device->static_addr == 0) ||
-		      ((i3c_device->init_dynamic_addr != 0) &&
-		       (i3c_device->static_addr != i3c_device->init_dynamic_addr)))) {
-			sys_write32(sys_read32(config->base + DEVS_CTRL) |
-					    DEVS_CTRL_DEV_ACTIVE(cdns_i3c_device_data->id),
-				    config->base + DEVS_CTRL);
-		}
-	}
-
 	/* Set controller retaining register */
 	uint8_t controller_da = I3C_CONTROLLER_ADDR;
 
-	if (!i3c_addr_slots_is_free(&data->addr_slots, controller_da)) {
-		controller_da = i3c_addr_slots_next_free_find(&data->addr_slots);
+	if (!i3c_addr_slots_is_free(&data->common.attached_dev.addr_slots, controller_da)) {
+		controller_da =
+			i3c_addr_slots_next_free_find(&data->common.attached_dev.addr_slots, 0);
 		LOG_DBG("%s: 0x%02x DA selected for controller", dev->name, controller_da);
 	}
 	sys_write32(prepare_rr0_dev_address(controller_da), config->base + DEV_ID_RR0(0));
 	/* Mark the address as I3C device */
-	i3c_addr_slots_mark_i3c(&data->addr_slots, controller_da);
+	i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots, controller_da);
 }
 
 #ifdef CONFIG_I3C_USE_IBI
@@ -920,7 +816,7 @@ static int cdns_i3c_target_ibi_raise_hj(const struct device *dev)
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
-	struct i3c_config_controller *ctrl_config = &data->ctrl_config;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 
 	/* HJ requests should not be done by primary controllers */
 	if (!ctrl_config->is_secondary) {
@@ -978,8 +874,9 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	sys_write32(MST_INT_CMDD_EMP, config->base + MST_IDR);
 
 	/* Ignore if no pending transfer */
-	if (data->xfer.num_cmds == 0)
+	if (data->xfer.num_cmds == 0) {
 		return;
+	}
 
 	data->xfer.num_cmds = 0;
 
@@ -991,7 +888,7 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	 * actually take any time since we only get here if a transaction didn't
 	 * complete in a long time.
 	 */
-	retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
+	retry_count = I3C_MAX_IDLE_CANCEL_WAIT_RETRIES;
 	while (retry_count--) {
 		val = sys_read32(config->base + MST_STATUS0);
 		if (val & MST_STATUS0_IDLE) {
@@ -1120,6 +1017,12 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
+	/* wait for idle */
+	ret = cdns_i3c_wait_for_idle(dev);
+	if (ret != 0) {
+		goto error;
+	}
+
 	dcmd->cmd1 = CMD1_FIFO_CCC(payload->ccc.id);
 	dcmd->cmd0 = CMD0_FIFO_IS_CCC;
 	dcmd->len = 0;
@@ -1131,6 +1034,8 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 		dcmd->buf = payload->ccc.data;
 		dcmd->len = payload->ccc.data_len;
 		dcmd->cmd0 |= CMD0_FIFO_PL_LEN(payload->ccc.data_len);
+		/* write the address of num_xfer which is to be updated upon message completion */
+		dcmd->num_xfer = &(payload->ccc.num_xfer);
 	} else if (payload->targets.num_targets > 0) {
 		dcmd->buf = payload->targets.payloads[0].data;
 		dcmd->len = payload->targets.payloads[0].data_len;
@@ -1139,6 +1044,8 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 		if (payload->targets.payloads[0].rnw) {
 			dcmd->cmd0 |= CMD0_FIFO_RNW;
 		}
+		/* write the address of num_xfer which is to be updated upon message completion */
+		dcmd->num_xfer = &(payload->targets.payloads[0].num_xfer);
 		idx++;
 	}
 	num_cmds++;
@@ -1164,6 +1071,11 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 
 			cmd->buf = tgt_payload->data;
 			cmd->len = tgt_payload->data_len;
+			/*
+			 * write the address of num_xfer which is to be updated upon message
+			 * completion
+			 */
+			cmd->num_xfer = &(tgt_payload->num_xfer);
 
 			idx++;
 		}
@@ -1173,7 +1085,6 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	data->xfer.num_cmds = num_cmds;
 
 	cdns_i3c_start_transfer(dev);
-
 	if (k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
 		cdns_i3c_cancel_transfer(dev);
 	}
@@ -1183,6 +1094,7 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	}
 
 	ret = data->xfer.ret;
+error:
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
@@ -1201,7 +1113,7 @@ static int cdns_i3c_do_daa(const struct device *dev)
 {
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
-	struct i3c_config_controller *ctrl_config = &data->ctrl_config;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 
 	/* DAA should not be done by secondary controllers */
 	if (ctrl_config->is_secondary) {
@@ -1253,7 +1165,8 @@ static int cdns_i3c_do_daa(const struct device *dev)
 					LOG_INF("%s: PID 0x%012llx is not in registered device "
 						"list, given DA 0x%02x",
 						dev->name, pid, dyn_addr);
-					i3c_addr_slots_mark_i3c(&data->addr_slots, dyn_addr);
+					i3c_addr_slots_mark_i3c(
+						&data->common.attached_dev.addr_slots, dyn_addr);
 				} else {
 					target->dynamic_addr = dyn_addr;
 					target->bcr = bcr;
@@ -1297,7 +1210,7 @@ static int cdns_i3c_do_daa(const struct device *dev)
 static int cdns_i3c_i2c_api_configure(const struct device *dev, uint32_t config)
 {
 	struct cdns_i3c_data *data = dev->data;
-	struct i3c_config_controller *ctrl_config = &data->ctrl_config;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 
 	switch (I2C_SPEED_GET(config)) {
 	case I2C_SPEED_STANDARD:
@@ -1346,8 +1259,8 @@ static int cdns_i3c_configure(const struct device *dev, enum i3c_config_type typ
 		return -EINVAL;
 	}
 
-	data->ctrl_config.scl.i3c = ctrl_cfg->scl.i3c;
-	data->ctrl_config.scl.i2c = ctrl_cfg->scl.i2c;
+	data->common.ctrl_config.scl.i3c = ctrl_cfg->scl.i3c;
+	data->common.ctrl_config.scl.i2c = ctrl_cfg->scl.i2c;
 	cdns_i3c_set_prescalers(dev);
 
 	return 0;
@@ -1371,6 +1284,10 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 	uint32_t rx = 0;
 	int ret = 0;
 	struct cdns_i3c_cmd *cmd;
+	bool was_full;
+
+	/* Used only to determine in the case of a controller abort */
+	was_full = cdns_i3c_rx_fifo_full(config);
 
 	/* Disable further interrupts */
 	sys_write32(MST_INT_CMDD_EMP, config->base + MST_IDR);
@@ -1396,6 +1313,9 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 		/* Read any rx data into buffer */
 		if (cmd->cmd0 & CMD0_FIFO_RNW) {
 			rx = MIN(CMDR_XFER_BYTES(cmdr), cmd->len);
+			if (cmd->num_xfer != NULL) {
+				*cmd->num_xfer = rx;
+			}
 			ret = cdns_i3c_read_rx_fifo(config, cmd->buf, rx);
 		}
 
@@ -1404,16 +1324,70 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 	}
 
 	for (int i = 0; i < data->xfer.num_cmds; i++) {
-		switch (data->xfer.cmds->error) {
+		switch (data->xfer.cmds[i].error) {
 		case CMDR_NO_ERROR:
 			break;
 
+		case CMDR_MST_ABORT:
+			/*
+			 * A controller abort is forced if the RX FIFO fills up
+			 * There is also the case where the fifo can be full as
+			 * the len of the packet is the same length of the fifo
+			 * Check that the requested len is greater than the total
+			 * transferred to confirm that is not case. Otherwise the
+			 * abort was caused by the buffer length being meet and
+			 * the target did not give an End of Data (EoD) in the T
+			 * bit. Do not treat that condition as an error because
+			 * some targets will just auto-increment the read address
+			 * way beyond the buffer not giving an EoD.
+			 */
+			if ((was_full) && (data->xfer.cmds[i].len > *data->xfer.cmds[i].num_xfer)) {
+				ret = -ENOSPC;
+			} else {
+				LOG_DBG("%s: Controller Abort due to buffer length excedded with "
+					"no EoD from target",
+					dev->name);
+			}
+			break;
+
+		case CMDR_M0_ERROR: {
+			uint8_t ccc = data->xfer.cmds[i].cmd1 & 0xFF;
+			/*
+			 * The M0 is an illegally formatted CCC. i.e. the Controller
+			 * receives 1 byte instead of 2 with the GETMWL CCC. This can
+			 * be problematic for CCCs that can have variable length such
+			 * as GETMXDS and GETCAPS. Verify the number of bytes received matches
+			 * what's expected from the specification and ignore the error. The IP will
+			 * still retramsit the same CCC and theres nothing that can be done to
+			 * prevent this. It it still up to the application to read `num_xfer` to
+			 * determine the number of bytes returned.
+			 */
+			if (ccc == I3C_CCC_GETMXDS) {
+				/*
+				 * Whether GETMXDS format 1 and format 2 can't be known ahead of
+				 * time which will be returned.
+				 */
+				if ((*data->xfer.cmds[i].num_xfer !=
+				     sizeof(((union i3c_ccc_getmxds *)0)->fmt1)) &&
+				    (*data->xfer.cmds[i].num_xfer !=
+				     sizeof(((union i3c_ccc_getmxds *)0)->fmt2))) {
+					ret = -EIO;
+				}
+			} else if (ccc == I3C_CCC_GETCAPS) {
+				/* GETCAPS can only return 1-4 bytes */
+				if (*data->xfer.cmds[i].num_xfer > sizeof(union i3c_ccc_getcaps)) {
+					ret = -EIO;
+				}
+			} else {
+				ret = -EIO;
+			}
+			break;
+		}
+
 		case CMDR_DDR_PREAMBLE_ERROR:
 		case CMDR_DDR_PARITY_ERROR:
-		case CMDR_M0_ERROR:
 		case CMDR_M1_ERROR:
 		case CMDR_M2_ERROR:
-		case CMDR_MST_ABORT:
 		case CMDR_NACK_RESP:
 		case CMDR_DDR_DROPPED:
 			ret = -EIO;
@@ -1491,6 +1465,12 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
+	/* wait for idle */
+	ret = cdns_i3c_wait_for_idle(dev);
+	if (ret != 0) {
+		goto error;
+	}
+
 	for (unsigned int i = 0; i < num_msgs; i++) {
 		struct cdns_i3c_cmd *cmd = &data->xfer.cmds[i];
 
@@ -1513,6 +1493,9 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			cmd->cmd0 |= CMD0_FIFO_RNW;
 		}
+
+		/* i2c transfers are a don't care for num_xfer */
+		cmd->num_xfer = NULL;
 	}
 
 	data->xfer.ret = -ETIMEDOUT;
@@ -1524,6 +1507,7 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 	}
 
 	ret = data->xfer.ret;
+error:
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
@@ -1535,8 +1519,9 @@ static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_add
 	const struct cdns_i3c_config *config = dev->config;
 
 	if (dyn_addr == 0) {
-		if (!data->free_rr_slots)
+		if (!data->free_rr_slots) {
 			return -ENOSPC;
+		}
 
 		return find_lsb_set(data->free_rr_slots) - 1;
 	}
@@ -1560,10 +1545,11 @@ static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_add
 	return -EINVAL;
 }
 
-static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_desc *desc)
+static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_desc *desc,
+				  uint8_t addr)
 {
+	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
-
 	int slot = cdns_i3c_master_get_rr_slot(dev, desc->dynamic_addr);
 
 	if (slot < 0) {
@@ -1577,6 +1563,76 @@ static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_de
 	desc->controller_priv = &(data->cdns_i3c_i2c_priv_data[slot]);
 	data->free_rr_slots &= ~BIT(slot);
 
+	uint32_t dev_id_rr0 = DEV_ID_RR0_IS_I3C | prepare_rr0_dev_address(addr);
+	uint32_t dev_id_rr1 = DEV_ID_RR1_PID_MSB((desc->pid & 0xFFFFFFFF0000) >> 16);
+	uint32_t dev_id_rr2 = DEV_ID_RR2_PID_LSB(desc->pid & 0xFFFF);
+
+	sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(slot));
+	sys_write32(dev_id_rr1, config->base + DEV_ID_RR1(slot));
+	sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(slot));
+
+	/** Mark Devices as active, devices that will be found and marked active during DAA,
+	 * it will be given the exact DA programmed in it's RR if the PID matches and marked
+	 * as active duing ENTDAA, otherwise they get set as active here. If dynamic address
+	 * is set, then it assumed that it was already initialized by the primary controller.
+	 */
+	if ((desc->static_addr != 0) || (desc->dynamic_addr != 0)) {
+		sys_write32(sys_read32(config->base + DEVS_CTRL) | DEVS_CTRL_DEV_ACTIVE(slot),
+			    config->base + DEVS_CTRL);
+	}
+
+	k_mutex_unlock(&data->bus_lock);
+
+	return 0;
+}
+
+static int cdns_i3c_reattach_device(const struct device *dev, struct i3c_device_desc *desc,
+				    uint8_t old_dyn_addr)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
+	struct cdns_i3c_i2c_dev_data *cdns_i3c_device_data = desc->controller_priv;
+
+	if (cdns_i3c_device_data == NULL) {
+		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
+
+	uint32_t dev_id_rr0 = DEV_ID_RR0_IS_I3C | prepare_rr0_dev_address(desc->dynamic_addr);
+	uint32_t dev_id_rr1 = DEV_ID_RR1_PID_MSB((desc->pid & 0xFFFFFFFF0000) >> 16);
+	uint32_t dev_id_rr2 = DEV_ID_RR2_PID_LSB(desc->pid & 0xFFFF) | DEV_ID_RR2_BCR(desc->bcr) |
+			      DEV_ID_RR2_DCR(desc->dcr);
+
+	sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(cdns_i3c_device_data->id));
+	sys_write32(dev_id_rr1, config->base + DEV_ID_RR1(cdns_i3c_device_data->id));
+	sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(cdns_i3c_device_data->id));
+
+	k_mutex_unlock(&data->bus_lock);
+
+	return 0;
+}
+
+static int cdns_i3c_detach_device(const struct device *dev, struct i3c_device_desc *desc)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
+	struct cdns_i3c_i2c_dev_data *cdns_i3c_device_data = desc->controller_priv;
+
+	if (cdns_i3c_device_data == NULL) {
+		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
+
+	sys_write32(sys_read32(config->base + DEVS_CTRL) |
+			    DEVS_CTRL_DEV_CLR(cdns_i3c_device_data->id),
+		    config->base + DEVS_CTRL);
+	data->free_rr_slots |= BIT(cdns_i3c_device_data->id);
+	desc->controller_priv = NULL;
+
 	k_mutex_unlock(&data->bus_lock);
 
 	return 0;
@@ -1584,6 +1640,7 @@ static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_de
 
 static int cdns_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
 {
+	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
 
 	int slot = cdns_i3c_master_get_rr_slot(dev, 0);
@@ -1595,9 +1652,43 @@ static int cdns_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_d
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
+	uint32_t dev_id_rr0 = prepare_rr0_dev_address(desc->addr);
+	uint32_t dev_id_rr2 = DEV_ID_RR2_LVR(desc->lvr);
+
+	sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(slot));
+	sys_write32(0, config->base + DEV_ID_RR1(slot));
+	sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(slot));
+
 	data->cdns_i3c_i2c_priv_data[slot].id = slot;
 	desc->controller_priv = &(data->cdns_i3c_i2c_priv_data[slot]);
 	data->free_rr_slots &= ~BIT(slot);
+
+	sys_write32(sys_read32(config->base + DEVS_CTRL) | DEVS_CTRL_DEV_ACTIVE(slot),
+		    config->base + DEVS_CTRL);
+
+	k_mutex_unlock(&data->bus_lock);
+
+	return 0;
+}
+
+static int cdns_i3c_i2c_detach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
+	struct cdns_i3c_i2c_dev_data *cdns_i2c_device_data = desc->controller_priv;
+
+	if (cdns_i2c_device_data == NULL) {
+		LOG_ERR("%s: device not attached", dev->name);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
+
+	sys_write32(sys_read32(config->base + DEVS_CTRL) |
+			    DEVS_CTRL_DEV_CLR(cdns_i2c_device_data->id),
+		    config->base + DEVS_CTRL);
+	data->free_rr_slots |= BIT(cdns_i2c_device_data->id);
+	desc->controller_priv = NULL;
 
 	k_mutex_unlock(&data->bus_lock);
 
@@ -1660,6 +1751,12 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
+	/* wait for idle */
+	ret = cdns_i3c_wait_for_idle(dev);
+	if (ret != 0) {
+		goto error;
+	}
+
 	/*
 	 * Prepare transfer commands. Currently there is only a single transfer
 	 * in-flight but it would be possible to keep a queue of transfers. If so,
@@ -1700,6 +1797,9 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 		} else {
 			send_broadcast = true;
 		}
+
+		/* write the address of num_xfer which is to be updated upon message completion */
+		cmd->num_xfer = &(msgs[i].num_xfer);
 	}
 
 	data->xfer.ret = -ETIMEDOUT;
@@ -1712,14 +1812,41 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 	}
 
 	ret = data->xfer.ret;
+error:
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
 }
 
+#ifdef CONFIG_I3C_USE_IBI
+static int cdns_i3c_read_ibi_fifo(const struct cdns_i3c_config *config, void *buf, uint32_t len)
+{
+	uint32_t *ptr = buf;
+	uint32_t remain, val;
+
+	for (remain = len; remain >= 4; remain -= 4) {
+		if (cdns_i3c_ibi_fifo_empty(config)) {
+			return -EIO;
+		}
+		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
+		*ptr++ = val;
+	}
+
+	if (remain > 0) {
+		if (cdns_i3c_ibi_fifo_empty(config)) {
+			return -EIO;
+		}
+		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
+		memcpy(ptr, &val, remain);
+	}
+
+	return 0;
+}
+
 static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
 {
 	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
 
 	uint8_t ibi_data[CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE];
 
@@ -1735,7 +1862,8 @@ static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
 
 	uint32_t dev_id_rr0 = sys_read32(config->base + DEV_ID_RR0(slave_id + 1));
 	uint8_t dyn_addr = DEV_ID_RR0_GET_DEV_ADDR(dev_id_rr0);
-	struct i3c_device_desc *desc = i3c_dev_list_i3c_addr_find(&config->device_list, dyn_addr);
+	struct i3c_device_desc *desc =
+		i3c_dev_list_i3c_addr_find(&data->common.attached_dev, dyn_addr);
 
 	/*
 	 * Check for NAK or error conditions.
@@ -1809,6 +1937,7 @@ static void cdns_i3c_target_ibi_hj_complete(const struct device *dev)
 
 	k_sem_give(&data->ibi_hj_complete);
 }
+#endif
 
 static void cdns_i3c_irq_handler(const struct device *dev)
 {
@@ -1847,7 +1976,12 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 		/* In-band interrupt */
 		if (int_st & MST_INT_IBIR_THR) {
 			sys_write32(MST_INT_IBIR_THR, config->base + MST_ICR);
+#ifdef CONFIG_I3C_USE_IBI
 			cnds_i3c_master_demux_ibis(dev);
+#else
+			LOG_ERR("%s: IBI received - Kconfig for using IBIs is not enabled",
+				dev->name);
+#endif
 		}
 
 		/* In-band interrupt data */
@@ -1942,7 +2076,9 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 			/* HJ could send a DISEC which would trigger the SLV_INT_EVENT_UP bit,
 			 * but it's still expected to eventually send a DAA
 			 */
+#ifdef CONFIG_I3C_USE_IBI
 			cdns_i3c_target_ibi_hj_complete(dev);
+#endif
 		}
 
 		/* HJ complete and DA has been assigned */
@@ -2047,7 +2183,7 @@ static int cdns_i3c_config_get(const struct device *dev, enum i3c_config_type ty
 		goto out_configure;
 	}
 
-	(void)memcpy(config, &data->ctrl_config, sizeof(data->ctrl_config));
+	(void)memcpy(config, &data->common.ctrl_config, sizeof(data->common.ctrl_config));
 
 out_configure:
 	return ret;
@@ -2097,9 +2233,13 @@ static int cdns_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint
 	/* setup THR interrupt */
 	uint32_t thr_ctrl = sys_read32(config->base + TX_RX_THR_CTRL);
 
-	/* TODO: investigate if setting to THR to 1 is good enough */
+	/*
+	 * Interrupt at half of the data or FIFO depth to give it enough time to be
+	 * processed. The ISR will then callback to the function pointer
+	 * `read_processed_cb` to collect more data to transmit
+	 */
 	thr_ctrl &= ~TX_THR_MASK;
-	thr_ctrl |= TX_THR(MIN((data->hw_cfg.tx_mem_depth / 4) - 1, i - 1));
+	thr_ctrl |= TX_THR(MIN((data->hw_cfg.tx_mem_depth / 4) / 2, i / 2));
 	sys_write32(thr_ctrl, config->base + TX_RX_THR_CTRL);
 
 	k_mutex_unlock(&data->bus_lock);
@@ -2163,7 +2303,7 @@ static struct i3c_device_desc *cdns_i3c_device_find(const struct device *dev,
 {
 	const struct cdns_i3c_config *config = dev->config;
 
-	return i3c_dev_list_find(&config->device_list, id);
+	return i3c_dev_list_find(&config->common.dev_list, id);
 }
 
 /**
@@ -2181,9 +2321,9 @@ static struct i3c_device_desc *cdns_i3c_device_find(const struct device *dev,
  */
 static struct i3c_i2c_device_desc *cdns_i3c_i2c_device_find(const struct device *dev, uint16_t addr)
 {
-	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
 
-	return i3c_dev_list_i2c_addr_find(&config->device_list, addr);
+	return i3c_dev_list_i2c_addr_find(&data->common.attached_dev, addr);
 }
 
 /**
@@ -2228,18 +2368,18 @@ static enum i3c_bus_mode i3c_bus_mode(const struct i3c_dev_list *dev_list)
 	enum i3c_bus_mode mode = I3C_BUS_MODE_PURE;
 
 	for (int i = 0; i < dev_list->num_i2c; i++) {
-		switch (I3C_DCR_I2C_DEV_IDX(dev_list->i2c[i].lvr)) {
-		case I3C_DCR_I2C_DEV_IDX_0:
+		switch (I3C_LVR_I2C_DEV_IDX(dev_list->i2c[i].lvr)) {
+		case I3C_LVR_I2C_DEV_IDX_0:
 			if (mode < I3C_BUS_MODE_MIXED_FAST) {
 				mode = I3C_BUS_MODE_MIXED_FAST;
 			}
 			break;
-		case I3C_DCR_I2C_DEV_IDX_1:
+		case I3C_LVR_I2C_DEV_IDX_1:
 			if (mode < I3C_BUS_MODE_MIXED_LIMITED) {
 				mode = I3C_BUS_MODE_MIXED_LIMITED;
 			}
 			break;
-		case I3C_DCR_I2C_DEV_IDX_2:
+		case I3C_LVR_I2C_DEV_IDX_2:
 			if (mode < I3C_BUS_MODE_MIXED_SLOW) {
 				mode = I3C_BUS_MODE_MIXED_SLOW;
 			}
@@ -2282,13 +2422,10 @@ static int cdns_i3c_bus_init(const struct device *dev)
 {
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
-	struct i3c_config_controller *ctrl_config = &data->ctrl_config;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 
-	int ret = i3c_addr_slots_init(&data->addr_slots, &config->device_list);
-
-	if (ret != 0) {
-		return ret;
-	}
+	/* Clear all retaining regs */
+	sys_write32(DEVS_CTRL_DEV_CLR_ALL, config->base + DEVS_CTRL);
 
 	uint32_t conf0 = sys_read32(config->base + CONF_STATUS0);
 
@@ -2314,7 +2451,7 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	/* determine prescaler timings for i3c and i2c scl */
 	cdns_i3c_set_prescalers(dev);
 
-	enum i3c_bus_mode mode = i3c_bus_mode(&config->device_list);
+	enum i3c_bus_mode mode = i3c_bus_mode(&config->common.dev_list);
 
 	LOG_DBG("%s: i3c bus mode %d", dev->name, mode);
 	int cdns_mode;
@@ -2386,24 +2523,23 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	sys_write32(MST_INT_IBIR_THR | MST_INT_RX_UNF | MST_INT_HALTED | MST_INT_TX_OVF,
 		    config->base + MST_IER);
 
-	/* attach i3c devices */
-	for (int i = 0; i < config->device_list.num_i3c; i++) {
-		cdns_i3c_attach_device(dev, &config->device_list.i3c[i]);
-	}
-	/* attach i2c devices */
-	for (int i = 0; i < config->device_list.num_i2c; i++) {
-		cdns_i3c_i2c_attach_device(dev, &config->device_list.i2c[i]);
+	int ret = i3c_addr_slots_init(dev);
+
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* Program retaining regs. */
-	cdns_i3c_program_retaining_regs(dev);
+	cdns_i3c_program_controller_retaining_reg(dev);
 
 	/* only primary controllers are responsible for initializing the bus */
 	if (!ctrl_config->is_secondary) {
 		/* Perform bus initialization */
-		ret = i3c_bus_init(dev, &config->device_list);
+		ret = i3c_bus_init(dev, &config->common.dev_list);
+#ifdef CONFIG_I3C_USE_IBI
 		/* Bus Initialization Complete, allow HJ ACKs */
 		sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL), config->base + CTRL);
+#endif
 	}
 
 	return 0;
@@ -2415,6 +2551,12 @@ static struct i3c_driver_api api = {
 
 	.configure = cdns_i3c_configure,
 	.config_get = cdns_i3c_config_get,
+
+	.attach_i3c_device = cdns_i3c_attach_device,
+	.reattach_i3c_device = cdns_i3c_reattach_device,
+	.detach_i3c_device = cdns_i3c_detach_device,
+	.attach_i2c_device = cdns_i3c_i2c_attach_device,
+	.detach_i2c_device = cdns_i3c_i2c_detach_device,
 
 	.do_daa = cdns_i3c_do_daa,
 	.do_ccc = cdns_i3c_do_ccc,
@@ -2443,14 +2585,14 @@ static struct i3c_driver_api api = {
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.input_frequency = DT_INST_PROP(n, input_clock_frequency),                         \
 		.irq_config_func = cdns_i3c_config_func_##n,                                       \
-		.device_list.i3c = cdns_i3c_device_array_##n,                                      \
-		.device_list.num_i3c = ARRAY_SIZE(cdns_i3c_device_array_##n),                      \
-		.device_list.i2c = cdns_i3c_i2c_device_array_##n,                                  \
-		.device_list.num_i2c = ARRAY_SIZE(cdns_i3c_i2c_device_array_##n),                  \
+		.common.dev_list.i3c = cdns_i3c_device_array_##n,                                  \
+		.common.dev_list.num_i3c = ARRAY_SIZE(cdns_i3c_device_array_##n),                  \
+		.common.dev_list.i2c = cdns_i3c_i2c_device_array_##n,                              \
+		.common.dev_list.num_i2c = ARRAY_SIZE(cdns_i3c_i2c_device_array_##n),              \
 	};                                                                                         \
 	static struct cdns_i3c_data i3c_data_##n = {                                               \
-		.ctrl_config.scl.i3c = DT_INST_PROP_OR(n, i3c_scl_hz, 0),                          \
-		.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                          \
+		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(n, i3c_scl_hz, 0),                   \
+		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, cdns_i3c_bus_init, NULL, &i3c_data_##n, &i3c_config_##n,          \
 			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY, &api);             \

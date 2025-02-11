@@ -44,7 +44,7 @@ int sx9500_trigger_set(const struct device *dev,
 			return -EIO;
 		}
 		data->handler_drdy = handler;
-		data->trigger_drdy = *trig;
+		data->trigger_drdy = trig;
 		break;
 
 	case SENSOR_TRIG_NEAR_FAR:
@@ -55,7 +55,7 @@ int sx9500_trigger_set(const struct device *dev,
 			return -EIO;
 		}
 		data->handler_near_far = handler;
-		data->trigger_near_far = *trig;
+		data->trigger_near_far = trig;
 		break;
 
 	default:
@@ -77,11 +77,11 @@ static void sx9500_gpio_thread_cb(const struct device *dev)
 	}
 
 	if ((reg_val & SX9500_CONV_DONE_IRQ) && data->handler_drdy) {
-		data->handler_drdy(dev, &data->trigger_drdy);
+		data->handler_drdy(dev, data->trigger_drdy);
 	}
 
 	if ((reg_val & SX9500_NEAR_FAR_IRQ) && data->handler_near_far) {
-		data->handler_near_far(dev, &data->trigger_near_far);
+		data->handler_near_far(dev, data->trigger_near_far);
 	}
 }
 
@@ -98,8 +98,13 @@ static void sx9500_gpio_cb(const struct device *port,
 	k_sem_give(&data->sem);
 }
 
-static void sx9500_thread_main(struct sx9500_data *data)
+static void sx9500_thread_main(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct sx9500_data *data = p1;
+
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
 		sx9500_gpio_thread_cb(data->dev);
@@ -144,7 +149,7 @@ int sx9500_setup_interrupt(const struct device *dev)
 
 	data->dev = dev;
 
-	if (!device_is_ready(cfg->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name,
 			cfg->int_gpio.port->name);
 		return -ENODEV;
@@ -170,7 +175,7 @@ int sx9500_setup_interrupt(const struct device *dev)
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 	k_thread_create(&sx9500_thread, sx9500_thread_stack,
 			CONFIG_SX9500_THREAD_STACK_SIZE,
-			(k_thread_entry_t)sx9500_thread_main, data, 0, NULL,
+			sx9500_thread_main, data, 0, NULL,
 			K_PRIO_COOP(CONFIG_SX9500_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #endif

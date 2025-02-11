@@ -1,8 +1,0 @@
-# BMD-300-EVAL, BMD-301-EVAL, and BMD-350-EVAL board configuration
-
-# Copyright (c) 2021 u-blox AG
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_UBX_BMD300EVAL_NRF52832
-	bool "u-blox BMD-300-EVAL"
-	depends on SOC_NRF52832_QFAA

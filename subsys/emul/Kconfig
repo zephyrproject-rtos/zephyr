@@ -34,24 +34,6 @@ module = EMUL
 module-str = emul
 source "subsys/logging/Kconfig.template.log_config"
 
-config EMUL_BMI160
-	bool "Emulate a Bosch BMI160 accelerometer"
-	help
-	  This is an emulator for the Bosch BMI160 accelerometer.
-
-	  It provides readings which follow a simple sequence, thus allowing
-	  test code to check that things are working as expected.
-
-	  It supports both I2C and SPI which is why it is not in one of the
-	  i2c/ or spi/ directories.
-
-config EMUL_SBS_GAUGE
-	bool "Emulate an SBS 1.1 compliant smart battery fuel gauge"
-	help
-	  It provides readings which follow a simple sequence, thus allowing
-	  test code to check that things are working as expected.
-
-source "subsys/emul/i2c/Kconfig"
 source "subsys/emul/espi/Kconfig"
 
 endif

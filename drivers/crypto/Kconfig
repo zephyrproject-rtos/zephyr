@@ -7,7 +7,7 @@
 # CRYPTO options
 #
 menuconfig CRYPTO
-	bool "Crypto Drivers"
+	bool "Crypto drivers"
 
 if CRYPTO
 
@@ -52,6 +52,8 @@ config CRYPTO_MBEDTLS_SHIM
 	bool "MbedTLS shim driver [EXPERIMENTAL]"
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_SHA512
+	select MBEDTLS_CIPHER_AES_ENABLED
 	select EXPERIMENTAL
 	help
 	  Enable mbedTLS shim layer compliant with crypto APIs. You will need
@@ -77,5 +79,9 @@ source "drivers/crypto/Kconfig.stm32"
 source "drivers/crypto/Kconfig.nrf_ecb"
 source "drivers/crypto/Kconfig.intel"
 source "drivers/crypto/Kconfig.npcx"
+source "drivers/crypto/Kconfig.xec"
+source "drivers/crypto/Kconfig.it8xxx2"
+source "drivers/crypto/Kconfig.mcux_dcp"
+source "drivers/crypto/Kconfig.smartbond"
 
 endif # CRYPTO

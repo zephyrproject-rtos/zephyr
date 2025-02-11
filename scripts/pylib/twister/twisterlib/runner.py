@@ -15,13 +15,24 @@ import subprocess
 import sys
 import time
 import traceback
+import yaml
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
+from typing import List
+from packaging import version
 
 from colorama import Fore
 from domains import Domains
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
+from twisterlib.error import BuildError, ConfigurationError
+
+import elftools
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
+
+if version.parse(elftools.__version__) < version.parse('0.24'):
+    sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 # Job server only works on Linux for now.
 if sys.platform == 'linux':
@@ -29,6 +40,16 @@ if sys.platform == 'linux':
 
 from twisterlib.log_helper import log_command
 from twisterlib.testinstance import TestInstance
+from twisterlib.environment import TwisterEnv
+from twisterlib.testsuite import TestSuite
+from twisterlib.platform import Platform
+from twisterlib.testplan import change_skip_to_error_if_integration
+from twisterlib.harness import HarnessImporter, Pytest
+
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -49,6 +70,9 @@ class ExecutionCounter(object):
         # instances that go through the pipeline
         # updated by report_out()
         self._done = Value('i', 0)
+
+        # iteration
+        self._iteration = Value('i', 0)
 
         # instances that actually executed and passed
         # updated by report_out()
@@ -76,24 +100,24 @@ class ExecutionCounter(object):
         # initialized to number of test instances
         self._total = Value('i', total)
 
-        # updated in update_counting_after_pipeline()
+        # updated in report_out
         self._cases = Value('i', 0)
         self.lock = Lock()
 
     def summary(self):
-        logger.debug("--------------------------------")
-        logger.debug(f"Total test suites: {self.total}") # actually test instances
-        logger.debug(f"Total test cases: {self.cases}")
-        logger.debug(f"Executed test cases: {self.cases - self.skipped_cases}")
-        logger.debug(f"Skipped test cases: {self.skipped_cases}")
-        logger.debug(f"Completed test suites: {self.done}")
-        logger.debug(f"Passing test suites: {self.passed}")
-        logger.debug(f"Failing test suites: {self.failed}")
-        logger.debug(f"Skipped test suites: {self.skipped_configs}")
-        logger.debug(f"Skipped test suites (runtime): {self.skipped_runtime}")
-        logger.debug(f"Skipped test suites (filter): {self.skipped_filter}")
-        logger.debug(f"Errors: {self.error}")
-        logger.debug("--------------------------------")
+        print("--------------------------------")
+        print(f"Total test suites: {self.total}") # actually test instances
+        print(f"Total test cases: {self.cases}")
+        print(f"Executed test cases: {self.cases - self.skipped_cases}")
+        print(f"Skipped test cases: {self.skipped_cases}")
+        print(f"Completed test suites: {self.done}")
+        print(f"Passing test suites: {self.passed}")
+        print(f"Failing test suites: {self.failed}")
+        print(f"Skipped test suites: {self.skipped_configs}")
+        print(f"Skipped test suites (runtime): {self.skipped_runtime}")
+        print(f"Skipped test suites (filter): {self.skipped_filter}")
+        print(f"Errors: {self.error}")
+        print("--------------------------------")
 
     @property
     def cases(self):
@@ -124,6 +148,16 @@ class ExecutionCounter(object):
     def error(self, value):
         with self._error.get_lock():
             self._error.value = value
+
+    @property
+    def iteration(self):
+        with self._iteration.get_lock():
+            return self._iteration.value
+
+    @iteration.setter
+    def iteration(self, value):
+        with self._iteration.get_lock():
+            self._iteration.value = value
 
     @property
     def done(self):
@@ -194,7 +228,7 @@ class CMake:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
-    def __init__(self, testsuite, platform, source_dir, build_dir, jobserver):
+    def __init__(self, testsuite: TestSuite, platform: Platform, source_dir, build_dir, jobserver):
 
         self.cwd = None
         self.capture_output = True
@@ -212,7 +246,7 @@ class CMake:
         self.default_encoding = sys.getdefaultencoding()
         self.jobserver = jobserver
 
-    def parse_generated(self):
+    def parse_generated(self, filter_stages=[]):
         self.defconfig = {}
         return {}
 
@@ -234,27 +268,31 @@ class CMake:
         if self.cwd:
             kwargs['cwd'] = self.cwd
 
+        start_time = time.time()
         if sys.platform == 'linux':
             p = self.jobserver.popen(cmd, **kwargs)
         else:
             p = subprocess.Popen(cmd, **kwargs)
+        logger.debug(f'Running {" ".join(cmd)}')
 
         out, _ = p.communicate()
 
-        results = {}
+        ret = {}
+        duration = time.time() - start_time
+        self.instance.build_time += duration
         if p.returncode == 0:
-            msg = "Finished building %s for %s" % (self.source_dir, self.platform.name)
+            msg = f"Finished building {self.source_dir} for {self.platform.name} in {duration:.2f} seconds"
+            logger.debug(msg)
 
             self.instance.status = "passed"
             if not self.instance.run:
                 self.instance.add_missing_case_status("skipped", "Test was built only")
-            results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
+            ret = {"returncode": p.returncode}
 
             if out:
                 log_msg = out.decode(self.default_encoding)
                 with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
                     log.write(log_msg)
-
             else:
                 return None
         else:
@@ -266,49 +304,60 @@ class CMake:
                     log.write(log_msg)
 
             if log_msg:
-                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|dram0_1_seg)' overflowed by", log_msg)
+                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|dram\\d_\\d_seg)' overflowed by", log_msg)
                 imgtool_overflow_found = re.findall(r"Error: Image size \(.*\) \+ trailer \(.*\) exceeds requested size", log_msg)
                 if overflow_found and not self.options.overflow_as_errors:
                     logger.debug("Test skipped due to {} Overflow".format(overflow_found[0]))
                     self.instance.status = "skipped"
                     self.instance.reason = "{} overflow".format(overflow_found[0])
+                    change_skip_to_error_if_integration(self.options, self.instance)
                 elif imgtool_overflow_found and not self.options.overflow_as_errors:
                     self.instance.status = "skipped"
                     self.instance.reason = "imgtool overflow"
+                    change_skip_to_error_if_integration(self.options, self.instance)
                 else:
                     self.instance.status = "error"
                     self.instance.reason = "Build failure"
 
-            results = {
-                "returncode": p.returncode,
-                "instance": self.instance,
+            ret = {
+                "returncode": p.returncode
             }
 
-        return results
+        return ret
 
-    def run_cmake(self, args=""):
+    def run_cmake(self, args="", filter_stages=[]):
 
         if not self.options.disable_warnings_as_errors:
-            ldflags = "-Wl,--fatal-warnings"
-            cflags = "-Werror"
-            aflags = "-Werror -Wa,--fatal-warnings"
+            warnings_as_errors = 'y'
             gen_defines_args = "--edtlib-Werror"
         else:
-            ldflags = cflags = aflags = ""
+            warnings_as_errors = 'n'
             gen_defines_args = ""
+
+        warning_command = 'CONFIG_COMPILER_WARNINGS_AS_ERRORS'
+        if self.instance.sysbuild:
+            warning_command = 'SB_' + warning_command
 
         logger.debug("Running cmake on %s for %s" % (self.source_dir, self.platform.name))
         cmake_args = [
             f'-B{self.build_dir}',
             f'-DTC_RUNID={self.instance.run_id}',
-            f'-DEXTRA_CFLAGS={cflags}',
-            f'-DEXTRA_AFLAGS={aflags}',
-            f'-DEXTRA_LDFLAGS={ldflags}',
+            f'-D{warning_command}={warnings_as_errors}',
             f'-DEXTRA_GEN_DEFINES_ARGS={gen_defines_args}',
             f'-G{self.env.generator}'
         ]
 
-        if self.testsuite.sysbuild:
+        # If needed, run CMake using the package_helper script first, to only run
+        # a subset of all cmake modules. This output will be used to filter
+        # testcases, and the full CMake configuration will be run for
+        # testcases that should be built
+        if filter_stages:
+            cmake_filter_args = [
+                f'-DMODULES={",".join(filter_stages)}',
+                f'-P{canonical_zephyr_base}/cmake/package_helper.cmake',
+            ]
+
+        if self.instance.sysbuild and not filter_stages:
             logger.debug("Building %s using sysbuild" % (self.source_dir))
             source_args = [
                 f'-S{canonical_zephyr_base}/share/sysbuild',
@@ -325,8 +374,16 @@ class CMake:
         cmake_opts = ['-DBOARD={}'.format(self.platform.name)]
         cmake_args.extend(cmake_opts)
 
+        if self.instance.testsuite.required_snippets:
+            cmake_opts = ['-DSNIPPET={}'.format(';'.join(self.instance.testsuite.required_snippets))]
+            cmake_args.extend(cmake_opts)
+
         cmake = shutil.which('cmake')
         cmd = [cmake] + cmake_args
+
+        if filter_stages:
+            cmd += cmake_filter_args
+
         kwargs = dict()
 
         log_command(logger, "Calling cmake", cmd)
@@ -339,18 +396,24 @@ class CMake:
         if self.cwd:
             kwargs['cwd'] = self.cwd
 
+        start_time = time.time()
         if sys.platform == 'linux':
             p = self.jobserver.popen(cmd, **kwargs)
         else:
             p = subprocess.Popen(cmd, **kwargs)
         out, _ = p.communicate()
 
-        if p.returncode == 0:
-            filter_results = self.parse_generated()
-            msg = "Finished building %s for %s" % (self.source_dir, self.platform.name)
-            logger.debug(msg)
-            results = {'msg': msg, 'filter': filter_results}
+        duration = time.time() - start_time
+        self.instance.build_time += duration
 
+        if p.returncode == 0:
+            filter_results = self.parse_generated(filter_stages)
+            msg = f"Finished running cmake {self.source_dir} for {self.platform.name} in {duration:.2f} seconds"
+            logger.debug(msg)
+            ret = {
+                    'returncode': p.returncode,
+                    'filter': filter_results
+                    }
         else:
             self.instance.status = "error"
             self.instance.reason = "Cmake build failure"
@@ -359,53 +422,61 @@ class CMake:
                 tc.status = self.instance.status
 
             logger.error("Cmake build failure: %s for %s" % (self.source_dir, self.platform.name))
-            results = {"returncode": p.returncode}
+            ret = {"returncode": p.returncode}
 
         if out:
+            os.makedirs(self.build_dir, exist_ok=True)
             with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
                 log_msg = out.decode(self.default_encoding)
                 log.write(log_msg)
 
-        return results
+        return ret
+
 
 class FilterBuilder(CMake):
 
-    def __init__(self, testsuite, platform, source_dir, build_dir, jobserver):
+    def __init__(self, testsuite: TestSuite, platform: Platform, source_dir, build_dir, jobserver):
         super().__init__(testsuite, platform, source_dir, build_dir, jobserver)
 
         self.log = "config-twister.log"
 
-    def parse_generated(self):
+    def parse_generated(self, filter_stages=[]):
 
         if self.platform.name == "unit_testing":
             return {}
 
-        if self.testsuite.sysbuild:
+        if self.instance.sysbuild and not filter_stages:
             # Load domain yaml to get default domain build directory
             domain_path = os.path.join(self.build_dir, "domains.yaml")
             domains = Domains.from_file(domain_path)
             logger.debug("Loaded sysbuild domain data from %s" % (domain_path))
+            self.instance.domains = domains
             domain_build = domains.get_default_domain().build_dir
             cmake_cache_path = os.path.join(domain_build, "CMakeCache.txt")
             defconfig_path = os.path.join(domain_build, "zephyr", ".config")
             edt_pickle = os.path.join(domain_build, "zephyr", "edt.pickle")
         else:
             cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
-            defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
+            # .config is only available after kconfig stage in cmake. If only dt based filtration is required
+            # package helper call won't produce .config
+            if not filter_stages or "kconfig" in filter_stages:
+                defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
+            # dt is compiled before kconfig, so edt_pickle is available regardless of choice of filter stages
             edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
 
 
-        with open(defconfig_path, "r") as fp:
-            defconfig = {}
-            for line in fp.readlines():
-                m = self.config_re.match(line)
-                if not m:
-                    if line.strip() and not line.startswith("#"):
-                        sys.stderr.write("Unrecognized line %s\n" % line)
-                    continue
-                defconfig[m.group(1)] = m.group(2).strip()
+        if not filter_stages or "kconfig" in filter_stages:
+            with open(defconfig_path, "r") as fp:
+                defconfig = {}
+                for line in fp.readlines():
+                    m = self.config_re.match(line)
+                    if not m:
+                        if line.strip() and not line.startswith("#"):
+                            sys.stderr.write("Unrecognized line %s\n" % line)
+                        continue
+                    defconfig[m.group(1)] = m.group(2).strip()
 
-        self.defconfig = defconfig
+            self.defconfig = defconfig
 
         cmake_conf = {}
         try:
@@ -423,22 +494,17 @@ class FilterBuilder(CMake):
             "PLATFORM": self.platform.name
         }
         filter_data.update(os.environ)
-        filter_data.update(self.defconfig)
+        if not filter_stages or "kconfig" in filter_stages:
+            filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
 
-        if self.testsuite.sysbuild and self.env.options.device_testing:
+        if self.instance.sysbuild and self.env.options.device_testing:
             # Verify that twister's arguments support sysbuild.
             # Twister sysbuild flashing currently only works with west, so
-            # --west-flash must be passed. Additionally, erasing the DUT
-            # before each test with --west-flash=--erase will inherently not
-            # work with sysbuild.
+            # --west-flash must be passed.
             if self.env.options.west_flash is None:
                 logger.warning("Sysbuild test will be skipped. " +
                     "West must be used for flashing.")
-                return {os.path.join(self.platform.name, self.testsuite.name): True}
-            elif "--erase" in self.env.options.west_flash:
-                logger.warning("Sysbuild test will be skipped, " +
-                    "--erase is not supported with --west-flash")
                 return {os.path.join(self.platform.name, self.testsuite.name): True}
 
         if self.testsuite and self.testsuite.filter:
@@ -448,14 +514,14 @@ class FilterBuilder(CMake):
                         edt = pickle.load(f)
                 else:
                     edt = None
-                res = expr_parser.parse(self.testsuite.filter, filter_data, edt)
+                ret = expr_parser.parse(self.testsuite.filter, filter_data, edt)
 
             except (ValueError, SyntaxError) as se:
                 sys.stderr.write(
                     "Failed processing %s\n" % self.testsuite.yamlfile)
                 raise se
 
-            if not res:
+            if not ret:
                 return {os.path.join(self.platform.name, self.testsuite.name): True}
             else:
                 return {os.path.join(self.platform.name, self.testsuite.name): False}
@@ -466,7 +532,7 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
-    def __init__(self, instance, env, jobserver, **kwargs):
+    def __init__(self, instance: TestInstance, env: TwisterEnv, jobserver, **kwargs):
         super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir, jobserver)
 
         self.log = "build.log"
@@ -476,8 +542,7 @@ class ProjectBuilder(FilterBuilder):
         self.env = env
         self.duts = None
 
-    @staticmethod
-    def log_info(filename, inline_logs):
+    def log_info(self, filename, inline_logs, log_testcases=False):
         filename = os.path.abspath(os.path.realpath(filename))
         if inline_logs:
             logger.info("{:-^100}".format(filename))
@@ -488,23 +553,47 @@ class ProjectBuilder(FilterBuilder):
             except Exception as e:
                 data = "Unable to read log data (%s)\n" % (str(e))
 
+            # Remove any coverage data from the dumped logs
+            data = re.sub(
+                r"GCOV_COVERAGE_DUMP_START.*GCOV_COVERAGE_DUMP_END",
+                "GCOV_COVERAGE_DUMP_START\n...\nGCOV_COVERAGE_DUMP_END",
+                data,
+                flags=re.DOTALL,
+            )
             logger.error(data)
 
             logger.info("{:-^100}".format(filename))
+
+            if log_testcases:
+                for tc in self.instance.testcases:
+                    if not tc.reason:
+                        continue
+                    logger.info(
+                        f"\n{str(tc.name).center(100, '_')}\n"
+                        f"{tc.reason}\n"
+                        f"{100*'_'}\n"
+                        f"{tc.output}"
+                    )
         else:
             logger.error("see: " + Fore.YELLOW + filename + Fore.RESET)
 
     def log_info_file(self, inline_logs):
         build_dir = self.instance.build_dir
         h_log = "{}/handler.log".format(build_dir)
+        he_log = "{}/handler_stderr.log".format(build_dir)
         b_log = "{}/build.log".format(build_dir)
         v_log = "{}/valgrind.log".format(build_dir)
         d_log = "{}/device.log".format(build_dir)
+        pytest_log = "{}/twister_harness.log".format(build_dir)
 
         if os.path.exists(v_log) and "Valgrind" in self.instance.reason:
             self.log_info("{}".format(v_log), inline_logs)
+        elif os.path.exists(pytest_log) and os.path.getsize(pytest_log) > 0:
+            self.log_info("{}".format(pytest_log), inline_logs, log_testcases=True)
         elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
             self.log_info("{}".format(h_log), inline_logs)
+        elif os.path.exists(he_log) and os.path.getsize(he_log) > 0:
+            self.log_info("{}".format(he_log), inline_logs)
         elif os.path.exists(d_log) and os.path.getsize(d_log) > 0:
             self.log_info("{}".format(d_log), inline_logs)
         else:
@@ -516,9 +605,25 @@ class ProjectBuilder(FilterBuilder):
 
         self.instance.setup_handler(self.env)
 
+        if op == "filter":
+            ret = self.cmake(filter_stages=self.instance.filter_stages)
+            if self.instance.status in ["failed", "error"]:
+                pipeline.put({"op": "report", "test": self.instance})
+            else:
+                # Here we check the dt/kconfig filter results coming from running cmake
+                if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
+                    logger.debug("filtering %s" % self.instance.name)
+                    self.instance.status = "filtered"
+                    self.instance.reason = "runtime filter"
+                    results.skipped_runtime += 1
+                    self.instance.add_missing_case_status("skipped")
+                    pipeline.put({"op": "report", "test": self.instance})
+                else:
+                    pipeline.put({"op": "cmake", "test": self.instance})
+
         # The build process, call cmake and build with configured generator
-        if op == "cmake":
-            res = self.cmake()
+        elif op == "cmake":
+            ret = self.cmake()
             if self.instance.status in ["failed", "error"]:
                 pipeline.put({"op": "report", "test": self.instance})
             elif self.options.cmake_only:
@@ -527,7 +632,7 @@ class ProjectBuilder(FilterBuilder):
                 pipeline.put({"op": "report", "test": self.instance})
             else:
                 # Here we check the runtime filter results coming from running cmake
-                if self.instance.name in res['filter'] and res['filter'][self.instance.name]:
+                if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
                     logger.debug("filtering %s" % self.instance.name)
                     self.instance.status = "filtered"
                     self.instance.reason = "runtime filter"
@@ -539,8 +644,8 @@ class ProjectBuilder(FilterBuilder):
 
         elif op == "build":
             logger.debug("build test: %s" % self.instance.name)
-            res = self.build()
-            if not res:
+            ret = self.build()
+            if not ret:
                 self.instance.status = "error"
                 self.instance.reason = "Build Failure"
                 pipeline.put({"op": "report", "test": self.instance})
@@ -551,17 +656,27 @@ class ProjectBuilder(FilterBuilder):
                     results.skipped_runtime += 1
                     self.instance.add_missing_case_status("skipped", self.instance.reason)
 
-                if res.get('returncode', 1) > 0:
+                if ret.get('returncode', 1) > 0:
                     self.instance.add_missing_case_status("blocked", self.instance.reason)
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     logger.debug(f"Determine test cases for test instance: {self.instance.name}")
-                    self.determine_testcases(results)
-                    pipeline.put({"op": "gather_metrics", "test": self.instance})
+                    try:
+                        self.determine_testcases(results)
+                        pipeline.put({"op": "gather_metrics", "test": self.instance})
+                    except BuildError as e:
+                        logger.error(str(e))
+                        self.instance.status = "error"
+                        self.instance.reason = str(e)
+                        pipeline.put({"op": "report", "test": self.instance})
 
         elif op == "gather_metrics":
-            self.gather_metrics(self.instance)
-            if self.instance.run and self.instance.handler.ready:
+            ret = self.gather_metrics(self.instance)
+            if not ret or ret.get('returncode', 1) > 0:
+                self.instance.status = "error"
+                self.instance.reason = "Build Failure at gather_metrics."
+                pipeline.put({"op": "report", "test": self.instance})
+            elif self.instance.run and self.instance.handler.ready:
                 pipeline.put({"op": "run", "test": self.instance})
             else:
                 pipeline.put({"op": "report", "test": self.instance})
@@ -604,54 +719,60 @@ class ProjectBuilder(FilterBuilder):
             mode = message.get("mode")
             if mode == "device":
                 self.cleanup_device_testing_artifacts()
-            elif mode == "pass" or (mode == "all" and self.instance.reason != "Cmake build failure"):
+            elif mode == "passed" or (mode == "all" and self.instance.reason != "Cmake build failure"):
                 self.cleanup_artifacts()
 
     def determine_testcases(self, results):
-        symbol_file = os.path.join(self.build_dir, "zephyr", "zephyr.symbols")
-        if os.path.isfile(symbol_file):
-            logger.debug(f"zephyr.symbols found: {symbol_file}")
-        else:
-            # No zephyr.symbols file, cannot do symbol-based test case collection
-            logger.debug(f"zephyr.symbols NOT found: {symbol_file}")
-            return
-
         yaml_testsuite_name = self.instance.testsuite.id
         logger.debug(f"Determine test cases for test suite: {yaml_testsuite_name}")
 
-        with open(symbol_file, 'r') as fp:
-            symbols = fp.read()
-            logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
+        elf_file = self.instance.get_elf_file()
+        elf = ELFFile(open(elf_file, "rb"))
 
-            # It is only meant for new ztest fx because only new ztest fx exposes test functions
-            # precisely.
+        logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
+        new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]+?)__([^\s]*)")
+        detected_cases = []
+        for section in elf.iter_sections():
+            if isinstance(section, SymbolTableSection):
+                for sym in section.iter_symbols():
+                    # It is only meant for new ztest fx because only new ztest fx exposes test functions
+                    # precisely.
 
-            # The 1st capture group is new ztest suite name.
-            # The 2nd capture group is new ztest unit test name.
-            new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]*)__([^\s]*)")
-            matches = new_ztest_unit_test_regex.findall(symbols)
-            if matches:
-                # this is new ztest fx
-                self.instance.testcases.clear()
-                self.instance.testsuite.testcases.clear()
-                for m in matches:
-                    # new_ztest_suite = m[0] # not used for now
-                    test_func_name = m[1].replace("test_", "")
-                    testcase_id = f"{yaml_testsuite_name}.{test_func_name}"
-                    # When the old regex-based test case collection is fully deprecated,
-                    # this will be the sole place where test cases get added to the test instance.
-                    # Then we can further include the new_ztest_suite info in the testcase_id.
-                    self.instance.add_testcase(name=testcase_id)
-                    self.instance.testsuite.add_testcase(name=testcase_id)
+                    # The 1st capture group is new ztest suite name.
+                    # The 2nd capture group is new ztest unit test name.
+                    matches = new_ztest_unit_test_regex.findall(sym.name)
+                    if matches:
+                        for m in matches:
+                            # new_ztest_suite = m[0] # not used for now
+                            test_func_name = m[1].replace("test_", "", 1)
+                            testcase_id = f"{yaml_testsuite_name}.{test_func_name}"
+                            detected_cases.append(testcase_id)
 
-    def cleanup_artifacts(self, additional_keep=[]):
+        if detected_cases:
+            logger.debug(f"{', '.join(detected_cases)} in {elf_file}")
+            self.instance.testcases.clear()
+            self.instance.testsuite.testcases.clear()
+
+            # When the old regex-based test case collection is fully deprecated,
+            # this will be the sole place where test cases get added to the test instance.
+            # Then we can further include the new_ztest_suite info in the testcase_id.
+
+            for testcase_id in detected_cases:
+                self.instance.add_testcase(name=testcase_id)
+                self.instance.testsuite.add_testcase(name=testcase_id)
+
+
+    def cleanup_artifacts(self, additional_keep: List[str] = []):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
         allow = [
             os.path.join('zephyr', '.config'),
             'handler.log',
+            'handler_stderr.log',
             'build.log',
             'device.log',
             'recording.csv',
+            'rom.json',
+            'ram.json',
             # below ones are needed to make --test-only work as well
             'Makefile',
             'CMakeCache.txt',
@@ -682,57 +803,182 @@ class ProjectBuilder(FilterBuilder):
     def cleanup_device_testing_artifacts(self):
         logger.debug("Cleaning up for Device Testing {}".format(self.instance.build_dir))
 
-        sanitizelist = [
-            'CMakeCache.txt',
-            os.path.join('zephyr', 'runners.yaml'),
-        ]
+        files_to_keep = self._get_binaries()
+        files_to_keep.append(os.path.join('zephyr', 'runners.yaml'))
+
+        if self.instance.sysbuild:
+            files_to_keep.append('domains.yaml')
+            for domain in self.instance.domains.get_domains():
+                files_to_keep += self._get_artifact_allow_list_for_domain(domain.name)
+
+        self.cleanup_artifacts(files_to_keep)
+
+        self._sanitize_files()
+
+    def _get_artifact_allow_list_for_domain(self, domain: str) -> List[str]:
+        """
+        Return a list of files needed to test a given domain.
+        """
+        allow = [
+            os.path.join(domain, 'build.ninja'),
+            os.path.join(domain, 'CMakeCache.txt'),
+            os.path.join(domain, 'CMakeFiles', 'rules.ninja'),
+            os.path.join(domain, 'Makefile'),
+            os.path.join(domain, 'zephyr', '.config'),
+            os.path.join(domain, 'zephyr', 'runners.yaml')
+            ]
+        return allow
+
+    def _get_binaries(self) -> List[str]:
+        """
+        Get list of binaries paths (absolute or relative to the
+        self.instance.build_dir), basing on information from platform.binaries
+        or runners.yaml. If they are not found take default binaries like
+        "zephyr/zephyr.hex" etc.
+        """
+        binaries: List[str] = []
+
         platform = self.instance.platform
         if platform.binaries:
-            keep = []
             for binary in platform.binaries:
-                keep.append(os.path.join('zephyr', binary ))
-        else:
-            keep = [
+                binaries.append(os.path.join('zephyr', binary))
+
+        # Get binaries for a single-domain build
+        binaries += self._get_binaries_from_runners()
+        # Get binaries in the case of a multiple-domain build
+        if self.instance.sysbuild:
+            for domain in self.instance.domains.get_domains():
+                binaries += self._get_binaries_from_runners(domain.name)
+
+        # if binaries was not found in platform.binaries and runners.yaml take default ones
+        if len(binaries) == 0:
+            binaries = [
                 os.path.join('zephyr', 'zephyr.hex'),
                 os.path.join('zephyr', 'zephyr.bin'),
                 os.path.join('zephyr', 'zephyr.elf'),
-                ]
+                os.path.join('zephyr', 'zephyr.exe'),
+            ]
+        return binaries
 
-        keep += sanitizelist
+    def _get_binaries_from_runners(self, domain='') -> List[str]:
+        """
+        Get list of binaries paths (absolute or relative to the
+        self.instance.build_dir) from runners.yaml file. May be used for
+        multiple-domain builds by passing in one domain at a time.
+        """
 
-        self.cleanup_artifacts(keep)
+        runners_file_path: str = os.path.join(self.instance.build_dir,
+                                              domain, 'zephyr', 'runners.yaml')
+        if not os.path.exists(runners_file_path):
+            return []
 
-        # sanitize paths so files are relocatable
-        for file in sanitizelist:
-            file = os.path.join(self.instance.build_dir, file)
+        with open(runners_file_path, 'r') as file:
+            runners_content: dict = yaml.load(file, Loader=SafeLoader)
 
-            with open(file, "rt") as fin:
-                data = fin.read()
-                data = data.replace(canonical_zephyr_base+"/", "")
+        if 'config' not in runners_content:
+            return []
 
-            with open(file, "wt") as fin:
-                fin.write(data)
+        runners_config: dict = runners_content['config']
+        binary_keys: List[str] = ['elf_file', 'hex_file', 'bin_file']
+
+        binaries: List[str] = []
+        for binary_key in binary_keys:
+            binary_path = runners_config.get(binary_key)
+            if binary_path is None:
+                continue
+            if os.path.isabs(binary_path):
+                binaries.append(binary_path)
+            else:
+                binaries.append(os.path.join(domain, 'zephyr', binary_path))
+
+        return binaries
+
+    def _sanitize_files(self):
+        """
+        Sanitize files to make it possible to flash those file on different
+        computer/system.
+        """
+        self._sanitize_runners_file()
+        self._sanitize_zephyr_base_from_files()
+
+    def _sanitize_runners_file(self):
+        """
+        Replace absolute paths of binary files for relative ones. The base
+        directory for those files is f"{self.instance.build_dir}/zephyr"
+        """
+        runners_dir_path: str = os.path.join(self.instance.build_dir, 'zephyr')
+        runners_file_path: str = os.path.join(runners_dir_path, 'runners.yaml')
+        if not os.path.exists(runners_file_path):
+            return
+
+        with open(runners_file_path, 'rt') as file:
+            runners_content_text = file.read()
+            runners_content_yaml: dict = yaml.load(runners_content_text, Loader=SafeLoader)
+
+        if 'config' not in runners_content_yaml:
+            return
+
+        runners_config: dict = runners_content_yaml['config']
+        binary_keys: List[str] = ['elf_file', 'hex_file', 'bin_file']
+
+        for binary_key in binary_keys:
+            binary_path = runners_config.get(binary_key)
+            # sanitize only paths which exist and are absolute
+            if binary_path is None or not os.path.isabs(binary_path):
+                continue
+            binary_path_relative = os.path.relpath(binary_path, start=runners_dir_path)
+            runners_content_text = runners_content_text.replace(binary_path, binary_path_relative)
+
+        with open(runners_file_path, 'wt') as file:
+            file.write(runners_content_text)
+
+    def _sanitize_zephyr_base_from_files(self):
+        """
+        Remove Zephyr base paths from selected files.
+        """
+        files_to_sanitize = [
+            'CMakeCache.txt',
+            os.path.join('zephyr', 'runners.yaml'),
+        ]
+        for file_path in files_to_sanitize:
+            file_path = os.path.join(self.instance.build_dir, file_path)
+            if not os.path.exists(file_path):
+                continue
+
+            with open(file_path, "rt") as file:
+                data = file.read()
+
+            # add trailing slash at the end of canonical_zephyr_base if it does not exist:
+            path_to_remove = os.path.join(canonical_zephyr_base, "")
+            data = data.replace(path_to_remove, "")
+
+            with open(file_path, "wt") as file:
+                file.write(data)
 
     def report_out(self, results):
         total_to_do = results.total
         total_tests_width = len(str(total_to_do))
         results.done += 1
         instance = self.instance
+        if results.iteration == 1:
+            results.cases += len(instance.testcases)
 
         if instance.status in ["error", "failed"]:
             if instance.status == "error":
                 results.error += 1
+                txt = " ERROR "
             else:
                 results.failed += 1
+                txt = " FAILED "
             if self.options.verbose:
-                status = Fore.RED + "FAILED " + Fore.RESET + instance.reason
+                status = Fore.RED + txt + Fore.RESET + instance.reason
             else:
-                print("")
                 logger.error(
-                    "{:<25} {:<50} {}FAILED{}: {}".format(
+                    "{:<25} {:<50} {}{}{}: {}".format(
                         instance.platform.name,
                         instance.testsuite.name,
                         Fore.RED,
+                        txt,
                         Fore.RESET,
                         instance.reason))
             if not self.options.verbose:
@@ -762,6 +1008,8 @@ class ProjectBuilder(FilterBuilder):
                 if instance.handler.ready and instance.run:
                     more_info = instance.handler.type_str
                     htime = instance.execution_time
+                    if instance.dut:
+                        more_info += f": {instance.dut},"
                     if htime:
                         more_info += " {:.3f}s".format(htime)
                 else:
@@ -771,9 +1019,8 @@ class ProjectBuilder(FilterBuilder):
                      and hasattr(self.instance.handler, 'seed')
                      and self.instance.handler.seed is not None ):
                     more_info += "/seed: " + str(self.options.seed)
-
             logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
-                results.done + results.skipped_filter, total_tests_width, total_to_do , instance.platform.name,
+                results.done, total_tests_width, total_to_do , instance.platform.name,
                 instance.testsuite.name, status, more_info))
 
             if instance.status in ["error", "failed", "timeout"]:
@@ -781,11 +1028,11 @@ class ProjectBuilder(FilterBuilder):
         else:
             completed_perc = 0
             if total_to_do > 0:
-                completed_perc = int((float(results.done + results.skipped_filter) / total_to_do) * 100)
+                completed_perc = int((float(results.done) / total_to_do) * 100)
 
-            sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
+            sys.stdout.write("INFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s, error: %s%4d%s\r" % (
                 Fore.GREEN,
-                results.done + results.skipped_filter,
+                results.done,
                 total_to_do,
                 Fore.RESET,
                 completed_perc,
@@ -794,63 +1041,89 @@ class ProjectBuilder(FilterBuilder):
                 Fore.RESET,
                 Fore.RED if results.failed > 0 else Fore.RESET,
                 results.failed,
+                Fore.RESET,
+                Fore.RED if results.error > 0 else Fore.RESET,
+                results.error,
                 Fore.RESET
-            )
-                             )
+                )
+                )
         sys.stdout.flush()
 
-    def cmake(self):
+    @staticmethod
+    def cmake_assemble_args(extra_args, handler, extra_conf_files, extra_overlay_confs,
+                            extra_dtc_overlay_files, cmake_extra_args,
+                            build_dir):
+        # Retain quotes around config options
+        config_options = [arg for arg in extra_args if arg.startswith("CONFIG_")]
+        args = [arg for arg in extra_args if not arg.startswith("CONFIG_")]
 
-        instance = self.instance
-        args = self.testsuite.extra_args[:]
+        args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in config_options]
 
-        if instance.handler.ready:
-            args += instance.handler.args
+        if handler.ready:
+            args.extend(handler.args)
+
+        if extra_conf_files:
+            args.append(f"CONF_FILE=\"{';'.join(extra_conf_files)}\"")
+
+        if extra_dtc_overlay_files:
+            args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
 
         # merge overlay files into one variable
-        # overlays with prefixes won't be merged but pass to cmake as they are
-        def extract_overlays(args):
-            re_overlay = re.compile(r'^\s*OVERLAY_CONFIG=(.*)')
-            other_args = []
-            overlays = []
-            for arg in args:
-                match = re_overlay.search(arg)
-                if match:
-                    overlays.append(match.group(1).strip('\'"'))
-                else:
-                    other_args.append(arg)
+        overlays = extra_overlay_confs.copy()
 
-            args[:] = other_args
-            return overlays
-
-        overlays = extract_overlays(args)
-
-        if os.path.exists(os.path.join(instance.build_dir,
-                                       "twister", "testsuite_extra.conf")):
-            overlays.append(os.path.join(instance.build_dir,
-                                         "twister", "testsuite_extra.conf"))
+        additional_overlay_path = os.path.join(
+            build_dir, "twister", "testsuite_extra.conf"
+        )
+        if os.path.exists(additional_overlay_path):
+            overlays.append(additional_overlay_path)
 
         if overlays:
             args.append("OVERLAY_CONFIG=\"%s\"" % (" ".join(overlays)))
 
-        args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in self.options.extra_args]
-        args_expanded = args_expanded + ["-D{}".format(a.replace('"', '')) for a in args]
-        res = self.run_cmake(args_expanded)
-        return res
+        # Build the final argument list
+        args_expanded.extend(["-D{}".format(a.replace('"', '\"')) for a in cmake_extra_args])
+        args_expanded.extend(["-D{}".format(a.replace('"', '')) for a in args])
+
+        return args_expanded
+
+    def cmake(self, filter_stages=[]):
+        args = self.cmake_assemble_args(
+            self.testsuite.extra_args.copy(), # extra_args from YAML
+            self.instance.handler,
+            self.testsuite.extra_conf_files,
+            self.testsuite.extra_overlay_confs,
+            self.testsuite.extra_dtc_overlay_files,
+            self.options.extra_args, # CMake extra args
+            self.instance.build_dir,
+        )
+        return self.run_cmake(args,filter_stages)
 
     def build(self):
-        res = self.run_build(['--build', self.build_dir])
-        return res
+        harness = HarnessImporter.get_harness(self.instance.testsuite.harness.capitalize())
+        build_result = self.run_build(['--build', self.build_dir])
+        try:
+            if harness:
+                harness.instance = self.instance
+                harness.build()
+        except ConfigurationError as error:
+            self.instance.status = "error"
+            self.instance.reason = str(error)
+            logger.error(self.instance.reason)
+            return
+        return build_result
 
     def run(self):
 
         instance = self.instance
 
         if instance.handler.ready:
+            logger.debug(f"Reset instance status from '{instance.status}' to None before run.")
+            instance.status = None
+
             if instance.handler.type_str == "device":
                 instance.handler.duts = self.duts
 
-            if(self.options.seed is not None and instance.platform.name.startswith("native_posix")):
+            if(self.options.seed is not None and instance.platform.name.startswith("native_")):
                 self.parse_generated()
                 if('CONFIG_FAKE_ENTROPY_NATIVE_POSIX' in self.defconfig and
                     self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_POSIX'] == 'y'):
@@ -859,11 +1132,26 @@ class ProjectBuilder(FilterBuilder):
             if self.options.extra_test_args and instance.platform.arch == "posix":
                 instance.handler.extra_test_args = self.options.extra_test_args
 
-            instance.handler.handle()
+            harness = HarnessImporter.get_harness(instance.testsuite.harness.capitalize())
+            try:
+                harness.configure(instance)
+            except ConfigurationError as error:
+                instance.status = "error"
+                instance.reason = str(error)
+                logger.error(instance.reason)
+                return
+            #
+            if isinstance(harness, Pytest):
+                harness.pytest_run(instance.handler.get_test_timeout())
+            else:
+                instance.handler.handle(harness)
 
         sys.stdout.flush()
 
     def gather_metrics(self, instance: TestInstance):
+        build_result = {"returncode": 0}
+        if self.options.create_rom_ram_report:
+            build_result = self.run_build(['--build', self.build_dir, "--target", "footprint"])
         if self.options.enable_size_report and not self.options.cmake_only:
             self.calc_size(instance=instance, from_buildlog=self.options.footprint_from_buildlog)
         else:
@@ -872,6 +1160,7 @@ class ProjectBuilder(FilterBuilder):
             instance.metrics["available_rom"] = 0
             instance.metrics["available_ram"] = 0
             instance.metrics["unrecognized"] = []
+        return build_result
 
     @staticmethod
     def calc_size(instance: TestInstance, from_buildlog: bool):
@@ -892,7 +1181,6 @@ class ProjectBuilder(FilterBuilder):
                 instance.metrics["unrecognized"] = []
             instance.metrics["handler_time"] = instance.execution_time
 
-
 class TwisterRunner:
 
     def __init__(self, instances, suites, env=None) -> None:
@@ -909,13 +1197,13 @@ class TwisterRunner:
     def run(self):
 
         retries = self.options.retry_failed + 1
-        completed = 0
 
         BaseManager.register('LifoQueue', queue.LifoQueue)
         manager = BaseManager()
         manager.start()
 
         self.results = ExecutionCounter(total=len(self.instances))
+        self.iteration = 0
         pipeline = manager.LifoQueue()
         done_queue = manager.LifoQueue()
 
@@ -943,17 +1231,17 @@ class TwisterRunner:
         self.update_counting_before_pipeline()
 
         while True:
-            completed += 1
+            self.results.iteration += 1
 
-            if completed > 1:
-                logger.info("%d Iteration:" % (completed))
+            if self.results.iteration > 1:
+                logger.info("%d Iteration:" % (self.results.iteration))
                 time.sleep(self.options.retry_interval)  # waiting for the system to settle down
-                self.results.done = self.results.total - self.results.failed
+                self.results.done = self.results.total - self.results.failed - self.results.error
+                self.results.failed = 0
                 if self.options.retry_build_errors:
-                    self.results.failed = 0
                     self.results.error = 0
-                else:
-                    self.results.failed = self.results.error
+            else:
+                self.results.done = self.results.skipped_filter
 
             self.execute(pipeline, done_queue)
 
@@ -970,13 +1258,14 @@ class TwisterRunner:
 
             print("")
 
+            retry_errors = False
+            if self.results.error and self.options.retry_build_errors:
+                retry_errors = True
+
             retries = retries - 1
-            # There are cases where failed == error (only build failures),
-            # we do not try build failures.
-            if retries == 0 or (self.results.failed == self.results.error and not self.options.retry_build_errors):
+            if retries == 0 or ( self.results.failed == 0 and not retry_errors):
                 break
 
-        self.update_counting_after_pipeline()
         self.show_brief()
 
     def update_counting_before_pipeline(self):
@@ -990,18 +1279,9 @@ class TwisterRunner:
                 self.results.skipped_filter += 1
                 self.results.skipped_configs += 1
                 self.results.skipped_cases += len(instance.testsuite.testcases)
+                self.results.cases += len(instance.testsuite.testcases)
             elif instance.status == 'error':
                 self.results.error += 1
-
-    def update_counting_after_pipeline(self):
-        '''
-        Updating counting after pipeline is necessary because the number of test cases
-        of a test instance will be refined based on zephyr.symbols as it goes through the
-        pipeline. While the testsuite.testcases is obtained by scanning the source file.
-        The instance.testcases is more accurate and can only be obtained after pipeline finishes.
-        '''
-        for instance in self.instances.values():
-            self.results.cases += len(instance.testcases)
 
     def show_brief(self):
         logger.info("%d test scenarios (%d test instances) selected, "
@@ -1024,16 +1304,42 @@ class TwisterRunner:
                 logger.debug(f"adding {instance.name}")
                 if instance.status:
                     instance.retries += 1
-
                 instance.status = None
+
+                # Check if cmake package_helper script can be run in advance.
+                instance.filter_stages = []
+                if instance.testsuite.filter:
+                    instance.filter_stages = self.get_cmake_filter_stages(instance.testsuite.filter, expr_parser.reserved.keys())
+
                 if test_only and instance.run:
                     pipeline.put({"op": "run", "test": instance})
+                elif instance.filter_stages and "full" not in instance.filter_stages:
+                    pipeline.put({"op": "filter", "test": instance})
                 else:
-                    pipeline.put({"op": "cmake", "test": instance})
+                    cache_file = os.path.join(instance.build_dir, "CMakeCache.txt")
+                    if os.path.exists(cache_file) and self.env.options.aggressive_no_clean:
+                        pipeline.put({"op": "build", "test": instance})
+                    else:
+                        pipeline.put({"op": "cmake", "test": instance})
+
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
-        if sys.platform == 'linux':
-            with self.jobserver.get_job():
+        try:
+            if sys.platform == 'linux':
+                with self.jobserver.get_job():
+                    while True:
+                        try:
+                            task = pipeline.get_nowait()
+                        except queue.Empty:
+                            break
+                        else:
+                            instance = task['test']
+                            pb = ProjectBuilder(instance, self.env, self.jobserver)
+                            pb.duts = self.duts
+                            pb.process(pipeline, done_queue, task, lock, results)
+
+                    return True
+            else:
                 while True:
                     try:
                         task = pipeline.get_nowait()
@@ -1044,20 +1350,10 @@ class TwisterRunner:
                         pb = ProjectBuilder(instance, self.env, self.jobserver)
                         pb.duts = self.duts
                         pb.process(pipeline, done_queue, task, lock, results)
-
                 return True
-        else:
-            while True:
-                try:
-                    task = pipeline.get_nowait()
-                except queue.Empty:
-                    break
-                else:
-                    instance = task['test']
-                    pb = ProjectBuilder(instance, self.env, self.jobserver)
-                    pb.duts = self.duts
-                    pb.process(pipeline, done_queue, task, lock, results)
-            return True
+        except Exception as e:
+            logger.error(f"General exception: {e}")
+            sys.exit(1)
 
     def execute(self, pipeline, done):
         lock = Lock()
@@ -1068,16 +1364,56 @@ class TwisterRunner:
 
         processes = []
 
-        for job in range(self.jobs):
-            logger.debug(f"Launch process {job}")
+        for _ in range(self.jobs):
             p = Process(target=self.pipeline_mgr, args=(pipeline, done, lock, self.results, ))
             processes.append(p)
             p.start()
+        logger.debug(f"Launched {self.jobs} jobs")
 
         try:
             for p in processes:
                 p.join()
+                if p.exitcode != 0:
+                    logger.error(f"Process {p.pid} failed, aborting execution")
+                    for proc in processes:
+                        proc.terminate()
+                    sys.exit(1)
         except KeyboardInterrupt:
             logger.info("Execution interrupted")
             for p in processes:
                 p.terminate()
+
+    @staticmethod
+    def get_cmake_filter_stages(filt, logic_keys):
+        """ Analyze filter expressions from test yaml and decide if dts and/or kconfig based filtering will be needed."""
+        dts_required = False
+        kconfig_required = False
+        full_required = False
+        filter_stages = []
+
+        # Compress args in expressions like "function('x', 'y')" so they are not split when splitting by whitespaces
+        filt = filt.replace(", ", ",")
+        # Remove logic words
+        for k in logic_keys:
+            filt = filt.replace(f"{k} ", "")
+        # Remove brackets
+        filt = filt.replace("(", "")
+        filt = filt.replace(")", "")
+        # Splite by whitespaces
+        filt = filt.split()
+        for expression in filt:
+            if expression.startswith("dt_"):
+                dts_required = True
+            elif expression.startswith("CONFIG"):
+                kconfig_required = True
+            else:
+                full_required = True
+
+        if full_required:
+            return ["full"]
+        if dts_required:
+            filter_stages.append("dts")
+        if kconfig_required:
+            filter_stages.append("kconfig")
+
+        return filter_stages

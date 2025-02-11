@@ -28,6 +28,8 @@
  * @brief Abstraction for digital microphones
  *
  * @defgroup audio_dmic_interface Digital Microphone Interface
+ * @since 1.13
+ * @version 0.1.0
  * @ingroup audio_interface
  * @{
  */
@@ -43,110 +45,130 @@ extern "C" {
  * DMIC driver states
  */
 enum dmic_state {
-	DMIC_STATE_UNINIT,	/* Uninitialized */
-	DMIC_STATE_INITIALIZED,	/* Initialized */
-	DMIC_STATE_CONFIGURED,	/* Configured */
-	DMIC_STATE_ACTIVE,	/* Active */
-	DMIC_STATE_PAUSED,	/* Paused */
+	DMIC_STATE_UNINIT,	/**< Uninitialized */
+	DMIC_STATE_INITIALIZED,	/**< Initialized */
+	DMIC_STATE_CONFIGURED,	/**< Configured */
+	DMIC_STATE_ACTIVE,	/**< Active */
+	DMIC_STATE_PAUSED,	/**< Paused */
+	DMIC_STATE_ERROR,	/**< Error */
 };
 
 /**
  * DMIC driver trigger commands
  */
 enum dmic_trigger {
-	DMIC_TRIGGER_STOP,	/* stop stream */
-	DMIC_TRIGGER_START,	/* start stream */
-	DMIC_TRIGGER_PAUSE,	/* pause the stream */
-	DMIC_TRIGGER_RELEASE,	/* release paused stream */
-	DMIC_TRIGGER_RESET,	/* reset */
+	DMIC_TRIGGER_STOP,	/**< Stop stream */
+	DMIC_TRIGGER_START,	/**< Start stream */
+	DMIC_TRIGGER_PAUSE,	/**< Pause stream */
+	DMIC_TRIGGER_RELEASE,	/**< Release paused stream */
+	DMIC_TRIGGER_RESET,	/**< Reset stream */
 };
 
 /**
  * PDM Channels LEFT / RIGHT
  */
 enum pdm_lr {
-	PDM_CHAN_LEFT,
-	PDM_CHAN_RIGHT,
+	PDM_CHAN_LEFT,	/**< Left channel */
+	PDM_CHAN_RIGHT, /**< Right channel */
 };
 
 /**
  * PDM Input/Output signal configuration
  */
 struct pdm_io_cfg {
-	/* parameters global to all PDM controllers */
-
-	/* minimum clock frequency supported by the mic */
+	/**
+	 * @name Parameters common to all PDM controllers
+	 *@{
+	 */
+	/** Minimum clock frequency supported by the mic */
 	uint32_t	min_pdm_clk_freq;
-	/* maximum clock frequency supported by the mic */
+	/** Maximum clock frequency supported by the mic */
 	uint32_t	max_pdm_clk_freq;
-	/* minimum duty cycle in % supported by the mic */
+	/** Minimum duty cycle in % supported by the mic */
 	uint8_t	min_pdm_clk_dc;
-	/* maximum duty cycle in % supported by the mic */
+	/** Maximum duty cycle in % supported by the mic */
 	uint8_t	max_pdm_clk_dc;
+	/**
+	 * @}
+	 */
 
-	/* parameters unique to each PDM controller */
-
-	/* Bit mask to optionally invert PDM clock */
+	/**
+	 * @name Parameters unique to each PDM controller
+	 * @{
+	 */
+	/** Bit mask to optionally invert PDM clock */
 	uint8_t	pdm_clk_pol;
-	/* Bit mask to optionally invert mic data */
+	/** Bit mask to optionally invert mic data */
 	uint8_t	pdm_data_pol;
-	/* Collection of clock skew values for each PDM port */
+	/** Collection of clock skew values for each PDM port */
 	uint32_t	pdm_clk_skew;
+	/**
+	 * @}
+	 */
 };
 
 /**
  * Configuration of the PCM streams to be output by the PDM hardware
+ *
+ * @note if either \ref pcm_rate or \ref pcm_width is set to 0 for a stream,
+ * the stream would be disabled
  */
 struct pcm_stream_cfg {
-	/*
-	 * if either rate or width is set to 0 for a stream,
-	 * the stream would be disabled
-	 */
-
-	/* PCM sample rate of stream */
+	/** PCM sample rate of stream */
 	uint32_t			pcm_rate;
-	/* PCM sample width of stream */
+	/** PCM sample width of stream */
 	uint8_t			pcm_width;
-	/* PCM sample block size per transfer */
+	/** PCM sample block size per transfer */
 	uint16_t			block_size;
-	/* SLAB for DMIC driver to allocate buffers for stream */
+	/** SLAB for DMIC driver to allocate buffers for stream */
 	struct k_mem_slab	*mem_slab;
 };
 
 /**
  * Mapping/ordering of the PDM channels to logical PCM output channel
+ *
+ * Since each controller can have 2 audio channels (stereo),
+ * there can be a total of 8x2=16 channels. The actual number of channels
+ * shall be described in \ref act_num_chan.
+ *
+ * If 2 streams are enabled, the channel order will be the same for
+ * both streams.
+ *
+ * Each channel is described as a 4-bit number, the least significant
+ * bit indicates LEFT/RIGHT selection of the PDM controller.
+ *
+ * The most significant 3 bits indicate the PDM controller number:
+ *  - bits 0-3 are for channel 0, bit 0 indicates LEFT or RIGHT
+ *  - bits 4-7 are for channel 1, bit 4 indicates LEFT or RIGHT
+ * and so on.
+ *
+ * CONSTRAINT: The LEFT and RIGHT channels of EACH PDM controller needs
+ * to be adjacent to each other.
  */
 struct pdm_chan_cfg {
-	/*
-	 * mapping of PDM controller and mic channel to logical channel
-	 * since each controller can have 2 audio channels (stereo),
-	 * there can be total of 8x2=16 channels.
-	 * The actual number of channels shall be described in
-	 * pcm_stream_cfg.num_chan.
-	 * if 2 streams are enabled, the channel order will be the same for
-	 * both streams
-	 * Each channel is described as a 4 bit number, the least significant
-	 * bit indicates LEFT/RIGHT selection of the PDM controller.
-	 * The most significant 3 bits indicate the PDM controller number.
-	 *	bits 0-3 are for channel 0, bit 0 indicates LEFT or RIGHT
-	 *	bits 4-7 are for channel 1, bit 4 indicates LEFT or RIGHT
-	 *	and so on.
-	 * CONSTRAINT: The LEFT and RIGHT channels of EACH PDM controller needs
-	 * to be adjacent to each other.
+	/**
+	 * @name Requested channel map
+	 * @{
 	 */
-	/* Requested channel map */
-	uint32_t	req_chan_map_lo;	/* Channels 0 to 7 */
-	uint32_t	req_chan_map_hi;	/* Channels 8 to 15 */
-	/* Actual channel map that the driver could configure */
-	uint32_t	act_chan_map_lo;	/* Channels 0 to 7 */
-	uint32_t	act_chan_map_hi;	/* Channels 8 to 15 */
-	/* requested number of channels */
+	uint32_t	req_chan_map_lo;	/**< Channels 0 to 7 */
+	uint32_t	req_chan_map_hi;	/**< Channels 8 to 15 */
+	/** @} */
+
+	/**
+	 * @name Actual channel map that the driver could configure
+	 * @{
+	 */
+	uint32_t	act_chan_map_lo;	/**< Channels 0 to 7 */
+	uint32_t	act_chan_map_hi;	/**< Channels 8 to 15 */
+	/** @} */
+
+	/** Requested number of channels */
 	uint8_t	req_num_chan;
-	/* Actual number of channels that the driver could configure */
+	/** Actual number of channels that the driver could configure */
 	uint8_t	act_num_chan;
-	/* requested number of streams for each channel */
+	/** Requested number of streams for each channel */
 	uint8_t	req_num_streams;
-	/* Actual number of streams that the driver could configure */
+	/** Actual number of streams that the driver could configure */
 	uint8_t	act_num_streams;
 };
 
@@ -155,7 +177,7 @@ struct pdm_chan_cfg {
  */
 struct dmic_cfg {
 	struct pdm_io_cfg io;
-	/*
+	/**
 	 * Array of pcm_stream_cfg for application to provide
 	 * configuration for each stream
 	 */
@@ -212,8 +234,8 @@ static inline void dmic_parse_channel_map(uint32_t channel_map_lo,
 	channel_map = (channel < 8) ? channel_map_lo : channel_map_hi;
 	channel_map >>= ((channel & BIT_MASK(3)) * 4U);
 
-	*pdm = (channel >> 1) & BIT_MASK(3);
-	*lr = (enum pdm_lr) (channel & BIT(0));
+	*pdm = (channel_map >> 1) & BIT_MASK(3);
+	*lr = (enum pdm_lr) (channel_map & BIT(0));
 }
 
 /**

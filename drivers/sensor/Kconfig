@@ -1,10 +1,11 @@
 # Sensor configuration options
 
 # Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2024 Croxel Inc
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SENSOR
-	bool "Sensor Drivers"
+	bool "Sensor drivers"
 	help
 	  Include sensor drivers in system config
 
@@ -20,13 +21,39 @@ config SENSOR_INIT_PRIORITY
 	help
 	  Sensor initialization priority.
 
+config SENSOR_ASYNC_API
+	bool "Async Sensor API"
+	select RTIO
+	select RTIO_SYS_MEM_BLOCKS
+	select RTIO_CONSUME_SEM
+	select RTIO_WORKQ
+	help
+	  Enables the asynchronous sensor API by leveraging the RTIO subsystem.
+
 config SENSOR_SHELL
 	bool "Sensor shell"
 	depends on SHELL
 	select CBPRINTF_FP_SUPPORT
-	default y if !SHELL_MINIMAL
+	select SENSOR_ASYNC_API
 	help
 	  This shell provides access to basic sensor data.
+
+config SENSOR_SHELL_STREAM
+	bool "Sensor shell 'stream' command"
+	depends on SENSOR_SHELL
+	help
+	  Add the 'stream' subcommand to the sensor shell. When run on drivers that
+	  support streaming (usually hardware FIFO backed), the shell will continue
+	  to print new values as they come until the stream is closed.
+
+config SENSOR_SHELL_THREAD_STACK_SIZE
+	int "Stack size for the sensor shell data processing thread"
+	depends on SENSOR_SHELL_STREAM
+	default 1024
+	help
+	  The sensor shell uses a dedicated thread to process data coming from the
+	  sensors in either one-shot or streaming mode. Use this config to control
+	  the size of that thread's stack.
 
 config SENSOR_SHELL_BATTERY
 	bool "Sensor shell 'battery' command"
@@ -36,243 +63,91 @@ config SENSOR_SHELL_BATTERY
 	  in a convenient format. It makes use of a fuel gauge to read its
 	  information.
 
+config SENSOR_SHELL_TRIG_PRINT_TIMEOUT_MS
+	int "Timeout for printing the average sensor sample value"
+	default 5000
+	depends on SENSOR_SHELL
+	help
+	  Control the frequency of the sampling window over which the sensor
+	  interrupt handler will collect data.
+
+config SENSOR_SHELL_MAX_TRIGGER_DEVICES
+	int "Maximum number of sensor devices that can have enabled triggers in shell"
+	default 1
+	depends on SENSOR_SHELL
+	help
+	  Maximum number of sensor devices that the shell cmd can have
+	  enabled triggers for.
+
 config SENSOR_INFO
 	bool "Sensor Info iterable section"
 
 comment "Device Drivers"
 
-source "drivers/sensor/adt7420/Kconfig"
+# zephyr-keep-sorted-start
+source "drivers/sensor/adi/Kconfig"
+source "drivers/sensor/ams/Kconfig"
+source "drivers/sensor/aosong/Kconfig"
+source "drivers/sensor/asahi_kasei/Kconfig"
+source "drivers/sensor/bosch/Kconfig"
+source "drivers/sensor/espressif/Kconfig"
+source "drivers/sensor/honeywell/Kconfig"
+source "drivers/sensor/infineon/Kconfig"
+source "drivers/sensor/ite/Kconfig"
+source "drivers/sensor/maxim/Kconfig"
+source "drivers/sensor/meas/Kconfig"
+source "drivers/sensor/microchip/Kconfig"
+source "drivers/sensor/nordic/Kconfig"
+source "drivers/sensor/nuvoton/Kconfig"
+source "drivers/sensor/nxp/Kconfig"
+source "drivers/sensor/rohm/Kconfig"
+source "drivers/sensor/seeed/Kconfig"
+source "drivers/sensor/sensirion/Kconfig"
+source "drivers/sensor/silabs/Kconfig"
+source "drivers/sensor/st/Kconfig"
+source "drivers/sensor/ti/Kconfig"
+source "drivers/sensor/vishay/Kconfig"
+source "drivers/sensor/wsen/Kconfig"
+# zephyr-keep-sorted-stop
 
-source "drivers/sensor/adxl345/Kconfig"
-
-source "drivers/sensor/adxl362/Kconfig"
-
-source "drivers/sensor/adxl372/Kconfig"
-
-source "drivers/sensor/ak8975/Kconfig"
-
+source "drivers/sensor/a01nyub/Kconfig"
+source "drivers/sensor/amd_sb_tsi/Kconfig"
 source "drivers/sensor/amg88xx/Kconfig"
-
-source "drivers/sensor/ams_as5600/Kconfig"
-
-source "drivers/sensor/ams_iAQcore/Kconfig"
-
 source "drivers/sensor/apds9960/Kconfig"
-
-source "drivers/sensor/bma280/Kconfig"
-
-source "drivers/sensor/bmc150_magn/Kconfig"
-
-source "drivers/sensor/bme280/Kconfig"
-
-source "drivers/sensor/bme680/Kconfig"
-
-source "drivers/sensor/bmg160/Kconfig"
-
-source "drivers/sensor/bmi160/Kconfig"
-
-source "drivers/sensor/bmi270/Kconfig"
-
-source "drivers/sensor/bmm150/Kconfig"
-
-source "drivers/sensor/bmp388/Kconfig"
-
-source "drivers/sensor/bq274xx/Kconfig"
-
-source "drivers/sensor/ccs811/Kconfig"
-
-source "drivers/sensor/dht/Kconfig"
-
-source "drivers/sensor/dps310/Kconfig"
-
-source "drivers/sensor/ds18b20/Kconfig"
-
-source "drivers/sensor/ens210/Kconfig"
-
-source "drivers/sensor/fdc2x1x/Kconfig"
-
-source "drivers/sensor/fxas21002/Kconfig"
-
-source "drivers/sensor/fxos8700/Kconfig"
-
-source "drivers/sensor/grove/Kconfig"
-
+source "drivers/sensor/current_amp/Kconfig"
+source "drivers/sensor/ens160/Kconfig"
+source "drivers/sensor/explorir_m/Kconfig"
+source "drivers/sensor/f75303/Kconfig"
+source "drivers/sensor/fcx_mldx5/Kconfig"
 source "drivers/sensor/grow_r502a/Kconfig"
-
-source "drivers/sensor/ti_hdc/Kconfig"
-
-source "drivers/sensor/ti_hdc20xx/Kconfig"
-
-source "drivers/sensor/hmc5883l/Kconfig"
-
 source "drivers/sensor/hp206c/Kconfig"
-
-source "drivers/sensor/hts221/Kconfig"
-
-source "drivers/sensor/i3g4250d/Kconfig"
-
-source "drivers/sensor/icm42605/Kconfig"
-
-source "drivers/sensor/icm42670/Kconfig"
-
-source "drivers/sensor/icm42688/Kconfig"
-
-source "drivers/sensor/icp10125/Kconfig"
-
-source "drivers/sensor/iis2dh/Kconfig"
-
-source "drivers/sensor/iis2dlpc/Kconfig"
-
-source "drivers/sensor/iis2iclx/Kconfig"
-
-source "drivers/sensor/iis2mdc/Kconfig"
-
-source "drivers/sensor/iis3dhhc/Kconfig"
-
-source "drivers/sensor/ina23x/Kconfig"
-
+source "drivers/sensor/hs300x/Kconfig"
+source "drivers/sensor/tdk/icm42605/Kconfig"
+source "drivers/sensor/tdk/icm42670/Kconfig"
+source "drivers/sensor/tdk/icm42688/Kconfig"
+source "drivers/sensor/tdk/icp10125/Kconfig"
 source "drivers/sensor/isl29035/Kconfig"
-
-source "drivers/sensor/ina219/Kconfig"
-
-source "drivers/sensor/ism330dhcx/Kconfig"
-
-source "drivers/sensor/lis2dh/Kconfig"
-
-source "drivers/sensor/lis2ds12/Kconfig"
-
-source "drivers/sensor/lis2dw12/Kconfig"
-
-source "drivers/sensor/lis2mdl/Kconfig"
-
-source "drivers/sensor/lis3mdl/Kconfig"
-
+source "drivers/sensor/ist8310/Kconfig"
+source "drivers/sensor/lm35/Kconfig"
 source "drivers/sensor/lm75/Kconfig"
-
 source "drivers/sensor/lm77/Kconfig"
-
-source "drivers/sensor/lps22hb/Kconfig"
-
-source "drivers/sensor/lps22hh/Kconfig"
-
-source "drivers/sensor/lps25hb/Kconfig"
-
-source "drivers/sensor/lsm303dlhc_magn/Kconfig"
-
-source "drivers/sensor/lsm6ds0/Kconfig"
-
-source "drivers/sensor/lsm6dsl/Kconfig"
-
-source "drivers/sensor/lsm6dso/Kconfig"
-
-source "drivers/sensor/lsm9ds0_gyro/Kconfig"
-
-source "drivers/sensor/lsm9ds0_mfd/Kconfig"
-
-source "drivers/sensor/max17055/Kconfig"
-
-source "drivers/sensor/max17262/Kconfig"
-
-source "drivers/sensor/max30101/Kconfig"
-
-source "drivers/sensor/max31875/Kconfig"
-
-source "drivers/sensor/max44009/Kconfig"
-
-source "drivers/sensor/max6675/Kconfig"
-
-source "drivers/sensor/mchp_tach_xec/Kconfig"
-
-source "drivers/sensor/mcp9808/Kconfig"
-
+source "drivers/sensor/ltrf216a/Kconfig"
+source "drivers/sensor/mc3419/Kconfig"
 source "drivers/sensor/mhz19b/Kconfig"
-
-source "drivers/sensor/mpr/Kconfig"
-
-source "drivers/sensor/mpu6050/Kconfig"
-
-source "drivers/sensor/mpu9250/Kconfig"
-
-source "drivers/sensor/ms5837/Kconfig"
-
-source "drivers/sensor/ms5607/Kconfig"
-
-source "drivers/sensor/nrf5/Kconfig"
-
-source "drivers/sensor/opt3001/Kconfig"
-
+source "drivers/sensor/tdk/mpu6050/Kconfig"
+source "drivers/sensor/tdk/mpu9250/Kconfig"
+source "drivers/sensor/nct75/Kconfig"
+source "drivers/sensor/ntc_thermistor/Kconfig"
 source "drivers/sensor/pms7003/Kconfig"
-
-source "drivers/sensor/qdec_mcux/Kconfig"
-
-source "drivers/sensor/qdec_nrfx/Kconfig"
-
 source "drivers/sensor/qdec_sam/Kconfig"
-
-source "drivers/sensor/qdec_stm32/Kconfig"
-
-source "drivers/sensor/sbs_gauge/Kconfig"
-
-source "drivers/sensor/sgp40/Kconfig"
-
-source "drivers/sensor/shtcx/Kconfig"
-
-source "drivers/sensor/sht3xd/Kconfig"
-
-source "drivers/sensor/sht4x/Kconfig"
-
-source "drivers/sensor/si7006/Kconfig"
-
-source "drivers/sensor/si7055/Kconfig"
-
-source "drivers/sensor/si7060/Kconfig"
-
-source "drivers/sensor/si7210/Kconfig"
-
-source "drivers/sensor/sm351lt/Kconfig"
-
-source "drivers/sensor/stm32_temp/Kconfig"
-
-source "drivers/sensor/stm32_vbat/Kconfig"
-
-source "drivers/sensor/stts751/Kconfig"
-
-source "drivers/sensor/sx9500/Kconfig"
-
-source "drivers/sensor/th02/Kconfig"
-
-source "drivers/sensor/tmp007/Kconfig"
-
-source "drivers/sensor/tmp108/Kconfig"
-
-source "drivers/sensor/tmp112/Kconfig"
-
-source "drivers/sensor/tmp116/Kconfig"
-
-source "drivers/sensor/vcnl4040/Kconfig"
-
-source "drivers/sensor/vl53l0x/Kconfig"
-
-source "drivers/sensor/nxp_kinetis_temp/Kconfig"
-
-source "drivers/sensor/wsen_hids/Kconfig"
-
-source "drivers/sensor/wsen_itds/Kconfig"
-
-source "drivers/sensor/mcux_acmp/Kconfig"
-
-source "drivers/sensor/nuvoton_tach_npcx/Kconfig"
-
-source "drivers/sensor/nuvoton_adc_cmp_npcx/Kconfig"
-
-source "drivers/sensor/ite_tach_it8xxx2/Kconfig"
-
-source "drivers/sensor/ite_vcmp_it8xxx2/Kconfig"
-
-source "drivers/sensor/pcnt_esp32/Kconfig"
-
-source "drivers/sensor/esp32_temp/Kconfig"
-
 source "drivers/sensor/rpi_pico_temp/Kconfig"
+source "drivers/sensor/s11059/Kconfig"
+source "drivers/sensor/sbs_gauge/Kconfig"
+source "drivers/sensor/sx9500/Kconfig"
+source "drivers/sensor/th02/Kconfig"
+source "drivers/sensor/tsic_xx6/Kconfig"
+source "drivers/sensor/veaa_x_3/Kconfig"
+source "drivers/sensor/voltage_divider/Kconfig"
+source "drivers/sensor/ene_tach_kb1200/Kconfig"
 
 endif # SENSOR

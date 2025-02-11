@@ -1,0 +1,13 @@
+sample:
+  name: Bluetooth Handsfree Audio Gateway
+tests:
+  sample.bluetooth.handsfree.ag:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_BT_HFP_AG_CALL_OUTGOING=y

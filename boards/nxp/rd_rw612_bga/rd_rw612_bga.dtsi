@@ -1,0 +1,284 @@
+/*
+ * Copyright 2022-2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_rw6xx.dtsi>
+#include "rd_rw612_bga-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "nxp,rd_rw612_bga";
+	compatible = "nxp,rd_rw612_bga";
+
+	aliases {
+		usart-0 = &flexcomm3;
+		led0 = &green_led;
+		sw0 = &sw_4;
+		i2c-0 = &flexcomm2;
+		watchdog0 = &wwdt;
+		dmic-dev = &dmic0;
+	};
+
+	chosen {
+		zephyr,sram = &sram_data;
+		zephyr,flash = &mx25u51245g;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &mx25u51245g;
+		zephyr,console = &flexcomm3;
+		zephyr,shell-uart = &flexcomm3;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&hsgpio1 20 0>;
+			label = "User LED_GREEN";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		sw_4: sw_4 {
+			label = "User SW4";
+			gpios = <&hsgpio0 25 0>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &hsgpio1 14 0>,	/* A0 */
+				<1 0 &hsgpio1 15 0>,	/* A1 */
+				<2 0 &hsgpio1 16 0>,	/* A2 */
+				<3 0 &hsgpio1 17 0>,	/* A3 */
+				<4 0 &hsgpio0 16 0>,	/* A4 */
+				<5 0 &hsgpio0 17 0>,	/* A5 */
+				<6 0 &hsgpio0 24 0>,	/* D0 */
+				<7 0 &hsgpio0 26 0>,	/* D1 */
+				<8 0 &hsgpio0 11 0>,	/* D2 */
+				<9 0 &hsgpio0 15 0>,	/* D3 */
+				<10 0 &hsgpio0 18 0>,	/* D4 */
+				<11 0 &hsgpio0 27 0>,	/* D5 */
+				<12 0 &hsgpio0 6 0>,	/* D6 */
+				<13 0 &hsgpio0 10 0>,	/* D7 */
+				<14 0 &hsgpio1 18 0>,	/* D8 */
+				<15 0 &hsgpio1 13 0>,	/* D9 */
+				<16 0 &hsgpio0 0 0>,	/* D10 */
+				<17 0 &hsgpio0 2 0>,	/* D11 */
+				<18 0 &hsgpio0 3 0>,	/* D12 */
+				<19 0 &hsgpio0 4 0>,	/* D13 */
+				<20 0 &hsgpio0 16 0>,	/* D14 */
+				<21 0 &hsgpio0 17 0>;	/* D15 */
+	};
+};
+
+&wwdt {
+	status = "okay";
+};
+
+arduino_spi: &flexcomm0 {
+	compatible = "nxp,lpc-spi";
+	pinctrl-0 = <&pinmux_flexcomm0_spi>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+arduino_i2c: &flexcomm2 {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
+	pinctrl-names = "default";
+};
+
+&flexcomm3 {
+	compatible = "nxp,lpc-usart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm3_usart>;
+	pinctrl-names = "default";
+};
+
+&hsgpio0 {
+	status = "okay";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-bufferable;
+	ahb-prefetch;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	rx-clock-source-b = <3>;
+	pinctrl-0 = <&pinmux_flexspi>;
+	pinctrl-names = "default";
+	status = "okay";
+	mx25u51245g: mx25u51245g@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		spi-max-frequency = <133000000>;
+		reg = <0>;
+		/* MX25UM51245G is 64MB, 512MBit flash part */
+		size = <DT_SIZE_M(64 * 8)>;
+		status = "okay";
+		jedec-id = [c2 25 3a];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* Note slot 0 has one additional sector,
+			 * this is intended for use with the swap move algorithm
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 0x3e0000>;
+			};
+
+			/* This partition is reserved for connectivity firmwares storage
+			 * and shouldn't be moved.
+			 */
+			 fw_storage: partition@400000 {
+				label = "fw_storage";
+				reg = <0x400000 0x280000>;
+				read-only;
+			};
+
+			slot1_partition: partition@680000 {
+				label = "image-1";
+				reg = <0x680000 0x3e0000>;
+			};
+			storage_partition: partition@a60000 {
+				label = "storage";
+				reg = <0xa60000 0x35a0000>;
+			};
+		};
+	};
+	is66wvq8m4: is66wvq8m4@2 {
+		compatible = "nxp,imx-flexspi-is66wvq8m4";
+		/* IS66WVQ8M4 is 4MB, 32MBit pSRAM */
+		size = <DT_SIZE_M(32)>;
+		reg = <2>;
+		spi-max-frequency = <256000000>;
+		/* PSRAM cannot be enabled while board is in default XIP
+		 * configuration, as it will conflict with flash chip.
+		 */
+		status = "disabled";
+		cs-interval-unit = <1>;
+		cs-interval = <5>;
+		cs-hold-time = <2>;
+		cs-setup-time = <3>;
+		data-valid-time = <1>;
+		column-space = <14>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
+	};
+};
+
+&dmic0 {
+	pinctrl-0 = <&pinmux_dmic0>;
+	pinctrl-names = "default";
+	use2fs;
+	status = "okay";
+};
+
+/* Configure pdm channels 0-3 with gain, and cutoff settings
+ * appropriate for the attached MEMS microphones.
+ * Note that PDMC0/PDMC1 and PDMC2/PDMC3 are each connected to the same
+ * microphone. For best results, read from PDM HW channel 0 as left channel,
+ * and PDM HW channel 1 as right channel.
+ */
+&pdmc0 {
+	status = "okay";
+	gainshift = <3>;
+	dc-cutoff = "155hz";
+	dc-gain = <1>;
+};
+
+&pdmc1 {
+	status = "okay";
+	gainshift = <3>;
+	dc-cutoff = "155hz";
+	dc-gain = <1>;
+};
+
+&pdmc2 {
+	status = "okay";
+	gainshift = <3>;
+	dc-cutoff = "155hz";
+	dc-gain = <1>;
+};
+
+&pdmc3 {
+	status = "okay";
+	gainshift = <3>;
+	dc-cutoff = "155hz";
+	dc-gain = <1>;
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&lcdic {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lcdic>;
+	pinctrl-names = "default";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&pmu {
+	reset-causes-en = <PMU_RESET_CM33_LOCKUP>,
+			  <PMU_RESET_ITRC>,
+			  <PMU_RESET_AP_RESET>;
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+};
+
+/* OS Timer is the wakeup source for PM mode 2 */
+&os_timer {
+	status = "okay";
+	wakeup-source;
+};
+
+&systick {
+	status = "disabled";
+};
+
+&hci {
+	status = "okay";
+	wakeup-source;
+};

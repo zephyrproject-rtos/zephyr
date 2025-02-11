@@ -12,10 +12,10 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_INLINES_H_
 #define ZEPHYR_INCLUDE_ARCH_INLINES_H_
 
-#if defined(CONFIG_X86) || defined(CONFIG_X86_64)
+#if defined(CONFIG_X86)
 #include <zephyr/arch/x86/arch_inlines.h>
 #elif defined(CONFIG_ARM)
-#include <zephyr/arch/arm/aarch32/arch_inlines.h>
+#include <zephyr/arch/arm/arch_inlines.h>
 #elif defined(CONFIG_ARM64)
 #include <zephyr/arch/arm64/arch_inlines.h>
 #elif defined(CONFIG_ARC)
@@ -32,8 +32,6 @@
 #include <zephyr/arch/posix/arch_inlines.h>
 #elif defined(CONFIG_SPARC)
 #include <zephyr/arch/sparc/arch_inlines.h>
-#else
-#error "Unknown Architecture"
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_INLINES_H_ */

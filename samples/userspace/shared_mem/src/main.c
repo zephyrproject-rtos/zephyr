@@ -100,7 +100,7 @@ _app_ct_d char ctMSG[] = "CT!\n";
 
 
 
-void main(void)
+int main(void)
 {
 	struct k_mem_partition *enc_parts[] = {
 #if Z_LIBC_PARTITION_EXISTS
@@ -133,7 +133,7 @@ void main(void)
 	 * then add the thread to the domain.
 	 */
 	tENC = k_thread_create(&enc_thread, enc_stack, STACKSIZE,
-			(k_thread_entry_t)enc, NULL, NULL, NULL,
+			enc, NULL, NULL, NULL,
 			-1, K_USER,
 			K_FOREVER);
 	k_thread_access_grant(tENC, &allforone);
@@ -150,7 +150,7 @@ void main(void)
 
 
 	tPT = k_thread_create(&pt_thread, pt_stack, STACKSIZE,
-			(k_thread_entry_t)pt, NULL, NULL, NULL,
+			pt, NULL, NULL, NULL,
 			-1, K_USER,
 			K_FOREVER);
 	k_thread_access_grant(tPT, &allforone);
@@ -163,7 +163,7 @@ void main(void)
 	printk("pt_domain Created\n");
 
 	tCT = k_thread_create(&ct_thread, ct_stack, STACKSIZE,
-			(k_thread_entry_t)ct, NULL, NULL, NULL,
+			ct, NULL, NULL, NULL,
 			-1, K_USER,
 			K_FOREVER);
 	k_thread_access_grant(tCT, &allforone);
@@ -193,18 +193,22 @@ void main(void)
 	k_thread_start(&ct_thread);
 	k_sem_give(&allforone);
 	printk("CT thread started\n");
+	return 0;
 }
 
 
 
 /*
  * The enc thread.
- * Function: initialize the the simulation of the wheels.
+ * Function: initialize the simulation of the wheels.
  * Copy memory from pt thread and encrypt to a local buffer
  * then copy to the ct thread.
  */
-void enc(void)
+void enc(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	int index, index_out;
 
@@ -251,8 +255,11 @@ void enc(void)
  * It can be extended to receive data from a serial port
  * and pass the data to enc
  */
-void pt(void)
+void pt(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	k_sleep(K_MSEC(20));
 	while (1) {
@@ -281,8 +288,11 @@ void pt(void)
  * CT waits for fBUFOUT = 1 then copies
  * the message clears the flag and prints
  */
-void ct(void)
+void ct(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	char tbuf[60];
 

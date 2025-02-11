@@ -1,0 +1,12 @@
+sample:
+  description: SensorTile.box Pro board testing
+  name: SensorTile.box Pro test
+tests:
+  sample.board.sensortile_box_pro.sensors-on-board:
+    harness: sensor
+    platform_allow: sensortile_box_pro
+    tags: sensors
+    depends_on:
+      - i2c
+      - spi
+      - gpio

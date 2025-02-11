@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2023 Joel Guittet
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	grove_header0: grove_header0 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &portb 8 0>,	/* A0/D0 */
+			   <1 0 &portb 9 0>;	/* A1/D1 */
+	};
+	grove_header1: grove_header1 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &porta 16 0>,	/* I2C1_SCL */
+			   <1 0 &porta 17 0>;	/* I2C1_SDA */
+	};
+};
+
+grove_i2c1: &sercom3 {};

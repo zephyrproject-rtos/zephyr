@@ -31,7 +31,7 @@
 #define ZEPHYR_INCLUDE_MODBUS_H_
 
 #include <zephyr/drivers/uart.h>
-
+#include <zephyr/sys/slist.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,6 +40,31 @@ extern "C" {
 #define MODBUS_MBAP_LENGTH		7
 /** Length of MBAP Header plus function code */
 #define MODBUS_MBAP_AND_FC_LENGTH	(MODBUS_MBAP_LENGTH + 1)
+
+/** @name Modbus exception codes
+ *  @{
+ */
+/** No exception */
+#define MODBUS_EXC_NONE				0
+/** Illegal function code */
+#define MODBUS_EXC_ILLEGAL_FC			1
+/** Illegal data address */
+#define MODBUS_EXC_ILLEGAL_DATA_ADDR		2
+/** Illegal data value */
+#define MODBUS_EXC_ILLEGAL_DATA_VAL		3
+/** Server device failure */
+#define MODBUS_EXC_SERVER_DEVICE_FAILURE	4
+/** Acknowledge */
+#define MODBUS_EXC_ACK				5
+/** Server device busy */
+#define MODBUS_EXC_SERVER_DEVICE_BUSY		6
+/** Memory parity error */
+#define MODBUS_EXC_MEM_PARITY_ERROR		8
+/** Gateway path unavailable */
+#define MODBUS_EXC_GW_PATH_UNAVAILABLE		10
+/** Gateway target device failed to respond */
+#define MODBUS_EXC_GW_TARGET_FAILED_TO_RESP	11
+/** @} */
 
 /**
  * @brief Frame struct used internally and for raw ADU support.
@@ -385,6 +410,57 @@ typedef int (*modbus_raw_cb_t)(const int iface, const struct modbus_adu *adu,
 				void *user_data);
 
 /**
+ * @brief Custom function code handler function signature.
+ *
+ * Modbus allows user defined function codes which can be used to extend
+ * the base protocol. These callbacks can also be used to implement
+ * function codes currently not supported by Zephyr's Modbus subsystem.
+ *
+ * If an error occurs during the handling of the request, the handler should
+ * signal this by setting excep_code to a modbus exception code.
+ *
+ * User data pointer can be used to pass state between subsequent calls to
+ * the handler.
+ *
+ * @param iface      Modbus interface index
+ * @param rx_adu     Pointer to the received ADU struct
+ * @param tx_adu     Pointer to the outgoing ADU struct
+ * @param excep_code Pointer to possible exception code
+ * @param user_data  Pointer to user data
+ *
+ * @retval           true If response should be sent, false otherwise
+ */
+typedef bool (*modbus_custom_cb_t)(const int iface,
+				const struct modbus_adu *const rx_adu,
+				struct modbus_adu *const tx_adu,
+				uint8_t *const excep_code,
+				void *const user_data);
+
+/** @cond INTERNAL_HIDDEN */
+/**
+ * @brief Custom function code definition.
+ */
+struct modbus_custom_fc {
+	sys_snode_t node;
+	modbus_custom_cb_t cb;
+	void *user_data;
+	uint8_t fc;
+	uint8_t excep_code;
+};
+/** @endcond INTERNAL_HIDDEN */
+
+/**
+ * @brief Helper macro for initializing custom function code structs
+ */
+#define MODBUS_CUSTOM_FC_DEFINE(name, user_cb, user_fc, userdata)	\
+	static struct modbus_custom_fc modbus_cfg_##name = {		\
+		.cb = user_cb,						\
+		.user_data = userdata,					\
+		.fc = user_fc,						\
+		.excep_code = MODBUS_EXC_NONE,				\
+	}
+
+/**
  * @brief Modbus interface mode
  */
 enum modbus_mode {
@@ -534,6 +610,24 @@ void modbus_raw_set_server_failure(struct modbus_adu *adu);
  * @retval           0 If transfer was successful
  */
 int modbus_raw_backend_txn(const int iface, struct modbus_adu *adu);
+
+/**
+ * @brief Register a user-defined function code handler.
+ *
+ * The Modbus specification allows users to define standard function codes
+ * missing from Zephyr's Modbus implementation as well as add non-standard
+ * function codes in the ranges 65 to 72 and 100 to 110 (decimal), as per
+ * specification.
+ *
+ * This function registers a new handler at runtime for the given
+ * function code.
+ *
+ * @param iface        Modbus client interface index
+ * @param custom_fc    User defined function code and callback pair
+ *
+ * @retval           0 on success
+ */
+int modbus_register_user_fc(const int iface, struct modbus_custom_fc *custom_fc);
 
 #ifdef __cplusplus
 }

@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT microchip_xec_i2c
 
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
@@ -49,6 +50,8 @@ struct i2c_xec_config {
 	uint32_t base_addr;
 	uint8_t girq_id;
 	uint8_t girq_bit;
+	uint8_t pcr_idx;
+	uint8_t pcr_bitpos;
 	struct gpio_dt_spec sda_gpio;
 	struct gpio_dt_spec scl_gpio;
 	const struct pinctrl_dev_config *pcfg;
@@ -102,17 +105,10 @@ static void i2c_xec_reset_config(const struct device *dev)
 		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->data);
-
 	uint32_t ba = config->base_addr;
 
-	/* Assert RESET and clr others */
-	MCHP_I2C_SMB_CFG(ba) = MCHP_I2C_SMB_CFG_RESET;
-
-	k_busy_wait(RESET_WAIT_US);
-
-	/* Bus reset */
-	MCHP_I2C_SMB_CFG(ba) = 0;
-
+	/* Assert RESET */
+	z_mchp_xec_pcr_periph_reset(config->pcr_idx, config->pcr_bitpos);
 	/* Write 0x80. i.e Assert PIN bit, ESO = 0 and Interrupts
 	 * disabled (ENI)
 	 */
@@ -772,7 +768,7 @@ clear_iag:
 }
 
 #ifdef CONFIG_I2C_TARGET
-static int i2c_xec_slave_register(const struct device *dev,
+static int i2c_xec_target_register(const struct device *dev,
 				  struct i2c_target_config *config)
 {
 	const struct i2c_xec_config *cfg = dev->config;
@@ -815,7 +811,7 @@ static int i2c_xec_slave_register(const struct device *dev,
 	return 0;
 }
 
-static int i2c_xec_slave_unregister(const struct device *dev,
+static int i2c_xec_target_unregister(const struct device *dev,
 				    struct i2c_target_config *config)
 {
 	const struct i2c_xec_config *cfg = dev->config;
@@ -837,8 +833,8 @@ static const struct i2c_driver_api i2c_xec_driver_api = {
 	.configure = i2c_xec_configure,
 	.transfer = i2c_xec_transfer,
 #ifdef CONFIG_I2C_TARGET
-	.slave_register = i2c_xec_slave_register,
-	.slave_unregister = i2c_xec_slave_unregister,
+	.target_register = i2c_xec_target_register,
+	.target_unregister = i2c_xec_target_unregister,
 #endif
 };
 
@@ -858,12 +854,12 @@ static int i2c_xec_init(const struct device *dev)
 		return ret;
 	}
 
-	if (!device_is_ready(cfg->sda_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->sda_gpio)) {
 		LOG_ERR("%s GPIO device is not ready for SDA GPIO", dev->name);
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(cfg->scl_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->scl_gpio)) {
 		LOG_ERR("%s GPIO device is not ready for SCL GPIO", dev->name);
 		return -ENODEV;
 	}
@@ -899,6 +895,8 @@ static int i2c_xec_init(const struct device *dev)
 		.port_sel = DT_INST_PROP(n, port_sel),			\
 		.girq_id = DT_INST_PROP(n, girq),			\
 		.girq_bit = DT_INST_PROP(n, girq_bit),			\
+		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),		\
+		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),		\
 		.sda_gpio = GPIO_DT_SPEC_INST_GET(n, sda_gpios),	\
 		.scl_gpio = GPIO_DT_SPEC_INST_GET(n, scl_gpios),	\
 		.irq_config_func = i2c_xec_irq_config_func_##n,		\

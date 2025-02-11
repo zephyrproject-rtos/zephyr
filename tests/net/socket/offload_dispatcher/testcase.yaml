@@ -3,4 +3,6 @@ common:
   min_flash: 240
 tests:
   net.socket.offload.dispatcher:
-    tags: net socket
+    tags:
+      - net
+      - socket

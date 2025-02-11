@@ -25,3 +25,8 @@ volatile int *__aeabi_errno_addr(void)
 {
 	return &_current->errno_var;
 }
+
+int fputc(int c, FILE *f)
+{
+	return (_stdout_hook)(c);
+}

@@ -20,11 +20,12 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_offload.h>
+#include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/net_pkt.h>
 #if defined(CONFIG_NET_IPV6)
 #include "ipv6.h"
@@ -822,10 +823,10 @@ static void on_cmd_sockread(struct net_buf **buf, uint16_t len)
 	for (i = 0; i < actual_length * 2; i++) {
 		char c2 = *(*buf)->data;
 
-		if (isdigit(c2)) {
+		if (isdigit((int)c2) != 0) {
 			c += c2 - '0';
-		} else if (isalpha(c2)) {
-			c += c2 - (isupper(c2) ? 'A' - 10 : 'a' - 10);
+		} else if (isalpha((int)c2) != 0) {
+			c += c2 - (isupper((int)c2) != 0 ? 'A' - 10 : 'a' - 10);
 		} else {
 			/* TODO: unexpected input! skip? */
 		}
@@ -1056,8 +1057,12 @@ static void wncm14a2a_read_rx(struct net_buf **buf)
 }
 
 /* RX thread */
-static void wncm14a2a_rx(void)
+static void wncm14a2a_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct net_buf *rx_buf = NULL;
 	struct net_buf *frag = NULL;
 	int i;
@@ -1401,7 +1406,7 @@ static int wncm14a2a_init(const struct device *dev)
 
 	/* setup port devices and pin directions */
 	for (i = 0; i < MAX_MDM_CONTROL_PINS; i++) {
-		if (!device_is_ready(wncm14a2a_cfg.gpio[i].port)) {
+		if (!gpio_is_ready_dt(&wncm14a2a_cfg.gpio[i])) {
 			LOG_ERR("gpio port (%s) not ready!",
 				wncm14a2a_cfg.gpio[i].port->name);
 			return -ENODEV;
@@ -1429,7 +1434,7 @@ static int wncm14a2a_init(const struct device *dev)
 	/* start RX thread */
 	k_thread_create(&wncm14a2a_rx_thread, wncm14a2a_rx_stack,
 			K_KERNEL_STACK_SIZEOF(wncm14a2a_rx_stack),
-			(k_thread_entry_t) wncm14a2a_rx,
+			wncm14a2a_rx,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* init RSSI query */
@@ -1755,8 +1760,7 @@ static inline uint8_t *wncm14a2a_get_mac(const struct device *dev)
 	ctx->mac_addr[0] = 0x00;
 	ctx->mac_addr[1] = 0x10;
 
-	UNALIGNED_PUT(sys_cpu_to_be32(sys_rand32_get()),
-		      (uint32_t *)(ctx->mac_addr + 2));
+	sys_rand_get(&ctx->mac_addr[2], 4U);
 
 	return ctx->mac_addr;
 }
@@ -1773,8 +1777,8 @@ static void offload_iface_init(struct net_if *iface)
 	ctx->iface = iface;
 }
 
-static struct net_if_api api_funcs = {
-	.init	= offload_iface_init,
+static struct offloaded_if_api api_funcs = {
+	.iface_api.init = offload_iface_init,
 };
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, wncm14a2a_init, NULL,

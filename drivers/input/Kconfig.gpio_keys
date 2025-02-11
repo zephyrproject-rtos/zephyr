@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_GPIO_KEYS
+	bool "GPIO Keys input driver"
+	default y
+	depends on DT_HAS_GPIO_KEYS_ENABLED
+	depends on GPIO
+	help
+	  Enable support for GPIO Keys input driver.

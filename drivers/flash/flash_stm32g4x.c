@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/device.h>
 #include <string.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_system.h>
@@ -42,8 +43,10 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 	}
 #endif
 
-	return (!write || (offset % 8 == 0 && len % 8 == 0U)) &&
-		flash_stm32_range_exists(dev, offset, len);
+	if (write && !flash_stm32_valid_write(offset, len)) {
+		return false;
+	}
+	return flash_stm32_range_exists(dev, offset, len);
 }
 
 static inline void flush_cache(FLASH_TypeDef *regs)
@@ -72,7 +75,7 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 
 static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
-	volatile uint32_t *flash = (uint32_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
+	volatile uint32_t *flash = (uint32_t *)(offset + FLASH_STM32_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 #if defined(FLASH_STM32_DBANK)
 	bool dcache_enabled = false;
@@ -251,6 +254,155 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 
 	return rc;
 }
+
+static __unused int write_optb(const struct device *dev, uint32_t mask,
+			       uint32_t value)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	int rc;
+
+	if (regs->CR & FLASH_CR_OPTLOCK) {
+		return -EIO;
+	}
+
+	if ((regs->OPTR & mask) == value) {
+		return 0;
+	}
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	regs->OPTR = (regs->OPTR & ~mask) | value;
+	regs->CR |= FLASH_CR_OPTSTRT;
+
+	/* Make sure previous write is completed. */
+	barrier_dsync_fence_full();
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+
+/*
+ * Remark for future development implementing Write Protection for the L4 parts:
+ *
+ * STM32L4 allows for 2 write protected memory areas, c.f. FLASH_WEP1AR, FLASH_WRP1BR
+ * which are defined by their start and end pages.
+ *
+ * Other STM32 parts (i.e. F4 series) uses bitmask to select sectors.
+ *
+ * To implement Write Protection for L4 one should thus add a new EX_OP like
+ * FLASH_STM32_EX_OP_SECTOR_WP_RANGED in stm32_flash_api_extensions.h
+ */
+
+#endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
+
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+int flash_stm32_update_rdp(const struct device *dev, bool enable,
+			   bool permanent)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	uint8_t current_level, target_level;
+
+	current_level =
+		(regs->OPTR & FLASH_OPTR_RDP_Msk) >> FLASH_OPTR_RDP_Pos;
+	target_level = current_level;
+
+	/*
+	 * 0xAA = RDP level 0 (no protection)
+	 * 0xCC = RDP level 2 (permanent protection)
+	 * others = RDP level 1 (protection active)
+	 */
+	switch (current_level) {
+	case FLASH_STM32_RDP2:
+		if (!enable || !permanent) {
+			LOG_ERR("RDP level 2 is permanent and can't be changed!");
+			return -ENOTSUP;
+		}
+		break;
+	case FLASH_STM32_RDP0:
+		if (enable) {
+			target_level = FLASH_STM32_RDP1;
+			if (permanent) {
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW)
+				target_level = FLASH_STM32_RDP2;
+#else
+				LOG_ERR("Permanent readout protection (RDP "
+					"level 0 -> 2) not allowed");
+				return -ENOTSUP;
+#endif
+			}
+		}
+		break;
+	default: /* FLASH_STM32_RDP1 */
+		if (enable && permanent) {
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW)
+			target_level = FLASH_STM32_RDP2;
+#else
+			LOG_ERR("Permanent readout protection (RDP "
+				"level 1 -> 2) not allowed");
+			return -ENOTSUP;
+#endif
+		}
+		if (!enable) {
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_DISABLE_ALLOW)
+			target_level = FLASH_STM32_RDP0;
+#else
+			LOG_ERR("Disabling readout protection (RDP "
+				"level 1 -> 0) not allowed");
+			return -EACCES;
+#endif
+		}
+	}
+
+	/* Update RDP level if needed */
+	if (current_level != target_level) {
+		LOG_INF("RDP changed from 0x%02x to 0x%02x", current_level,
+			target_level);
+
+		write_optb(dev, FLASH_OPTR_RDP_Msk,
+			   (uint32_t)target_level << FLASH_OPTR_RDP_Pos);
+	}
+	return 0;
+}
+
+int flash_stm32_get_rdp(const struct device *dev, bool *enabled,
+			bool *permanent)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	uint8_t current_level;
+
+	current_level =
+		(regs->OPTR & FLASH_OPTR_RDP_Msk) >> FLASH_OPTR_RDP_Pos;
+
+	/*
+	 * 0xAA = RDP level 0 (no protection)
+	 * 0xCC = RDP level 2 (permanent protection)
+	 * others = RDP level 1 (protection active)
+	 */
+	switch (current_level) {
+	case FLASH_STM32_RDP2:
+		*enabled = true;
+		*permanent = true;
+		break;
+	case FLASH_STM32_RDP0:
+		*enabled = false;
+		*permanent = false;
+		break;
+	default: /* FLASH_STM32_RDP1 */
+		*enabled = true;
+		*permanent = false;
+	}
+	return 0;
+}
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
 void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,

@@ -22,6 +22,8 @@ struct mcp2515_tx_cb {
 };
 
 struct mcp2515_data {
+	struct can_driver_data common;
+
 	/* interrupt data */
 	struct gpio_callback int_gpio_cb;
 	struct k_thread int_thread;
@@ -38,18 +40,16 @@ struct mcp2515_data {
 	can_rx_callback_t rx_cb[CONFIG_CAN_MAX_FILTER];
 	void *cb_arg[CONFIG_CAN_MAX_FILTER];
 	struct can_filter filter[CONFIG_CAN_MAX_FILTER];
-	can_state_change_callback_t state_change_cb;
-	void *state_change_cb_data;
 
 	/* general data */
 	struct k_mutex mutex;
 	enum can_state old_state;
 	uint8_t mcp2515_mode;
-	bool started;
-	uint8_t sjw;
 };
 
 struct mcp2515_config {
+	const struct can_driver_config common;
+
 	/* spi configuration */
 	struct spi_dt_spec bus;
 
@@ -59,17 +59,7 @@ struct mcp2515_config {
 	int int_thread_priority;
 
 	/* CAN timing */
-	uint8_t tq_sjw;
-	uint8_t tq_prop;
-	uint8_t tq_bs1;
-	uint8_t tq_bs2;
-	uint32_t bus_speed;
 	uint32_t osc_freq;
-	uint16_t sample_point;
-
-	/* CAN transceiver */
-	const struct device *phy;
-	uint32_t max_bitrate;
 };
 
 /*

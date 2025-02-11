@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define MAX_INSTANCE_COUNT		CONFIG_LWM2M_SECURITY_INSTANCE_COUNT
 
 #define SECURITY_URI_LEN		255
-#define IDENTITY_LEN			128
+#define IDENTITY_LEN			CONFIG_LWM2M_SECURITY_KEY_SIZE
 #define KEY_LEN				CONFIG_LWM2M_SECURITY_KEY_SIZE
 
 /*
@@ -212,7 +212,32 @@ int lwm2m_security_index_to_inst_id(int index)
 	return inst[index].obj_inst_id;
 }
 
-static int lwm2m_security_init(const struct device *dev)
+int lwm2m_security_short_id_to_inst(uint16_t short_id)
+{
+	for (int i = 0; i < MAX_INSTANCE_COUNT; i++) {
+		if (short_server_id[i] == short_id) {
+			return inst[i].obj_inst_id;
+		}
+	}
+	return -ENOENT;
+}
+
+int lwm2m_security_mode(struct lwm2m_ctx *ctx)
+{
+	int ret;
+	uint8_t mode;
+	struct lwm2m_obj_path path =
+		LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, ctx->sec_obj_inst, SECURITY_MODE_ID);
+
+	ret = lwm2m_get_u8(&path, &mode);
+	if (ret) {
+		return ret;
+	}
+	return (int)mode;
+}
+
+
+static int lwm2m_security_init(void)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0;
@@ -236,4 +261,4 @@ static int lwm2m_security_init(const struct device *dev)
 	return ret;
 }
 
-SYS_INIT(lwm2m_security_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_CORE_INIT(lwm2m_security_init);

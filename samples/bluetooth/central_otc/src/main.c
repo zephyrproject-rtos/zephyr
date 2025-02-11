@@ -45,7 +45,7 @@ static int on_obj_data_read(struct bt_ots_client *ots_inst, struct bt_conn *conn
 			    uint32_t len, uint8_t *data_p, bool is_complete);
 
 static void start_scan(void);
-static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
+static struct bt_uuid_16 discover_uuid = BT_UUID_INIT_16(0);
 static struct bt_conn *default_conn;
 static atomic_t discovery_state;
 
@@ -188,7 +188,7 @@ static void configure_button_irq(const struct gpio_dt_spec btn)
 {
 	int ret;
 
-	if (!device_is_ready(btn.port)) {
+	if (!gpio_is_ready_dt(&btn)) {
 		printk("Error: button device %s is not ready\n", btn.port->name);
 		return;
 	}
@@ -237,7 +237,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 
 		for (i = 0; i < data->data_len; i += sizeof(uint16_t)) {
 			struct bt_le_conn_param *param;
-			struct bt_uuid *uuid;
+			const struct bt_uuid *uuid;
 			uint16_t u16;
 			int err;
 
@@ -371,8 +371,8 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	}
 
 	if (bt_uuid_cmp(discover_params.uuid, BT_UUID_OTS) == 0) {
-		(void)memcpy(&uuid, BT_UUID_OTS_FEATURE, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		(void)memcpy(&discover_uuid, BT_UUID_OTS_FEATURE, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 		err = bt_gatt_discover(conn, &discover_params);
@@ -384,8 +384,8 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	} else if (bt_uuid_cmp(discover_params.uuid, BT_UUID_OTS_FEATURE) == 0) {
 		atomic_set_bit(&discovery_state, DISC_OTS_FEATURE);
 		otc.feature_handle = bt_gatt_attr_value_handle(attr);
-		(void)memcpy(&uuid, BT_UUID_OTS_NAME, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		(void)memcpy(&discover_uuid, BT_UUID_OTS_NAME, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
@@ -397,8 +397,8 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	} else if (bt_uuid_cmp(discover_params.uuid, BT_UUID_OTS_NAME) == 0) {
 		atomic_set_bit(&discovery_state, DISC_OTS_NAME);
 		otc.obj_name_handle = bt_gatt_attr_value_handle(attr);
-		(void)memcpy(&uuid, BT_UUID_OTS_TYPE, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		(void)memcpy(&discover_uuid, BT_UUID_OTS_TYPE, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
@@ -410,8 +410,8 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	} else if (bt_uuid_cmp(discover_params.uuid, BT_UUID_OTS_TYPE) == 0) {
 		atomic_set_bit(&discovery_state, DISC_OTS_TYPE);
 		otc.obj_type_handle = bt_gatt_attr_value_handle(attr);
-		(void)memcpy(&uuid, BT_UUID_OTS_SIZE, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		(void)memcpy(&discover_uuid, BT_UUID_OTS_SIZE, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
@@ -423,8 +423,8 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	} else if (bt_uuid_cmp(discover_params.uuid, BT_UUID_OTS_SIZE) == 0) {
 		atomic_set_bit(&discovery_state, DISC_OTS_SIZE);
 		otc.obj_size_handle = bt_gatt_attr_value_handle(attr);
-		(void)memcpy(&uuid, BT_UUID_OTS_ID, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		(void)memcpy(&discover_uuid, BT_UUID_OTS_ID, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
@@ -436,8 +436,8 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	} else if (bt_uuid_cmp(discover_params.uuid, BT_UUID_OTS_ID) == 0) {
 		atomic_set_bit(&discovery_state, DISC_OTS_ID);
 		otc.obj_id_handle = bt_gatt_attr_value_handle(attr);
-		(void)memcpy(&uuid, BT_UUID_OTS_PROPERTIES, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		(void)memcpy(&discover_uuid, BT_UUID_OTS_PROPERTIES, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
@@ -449,8 +449,8 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	} else if (bt_uuid_cmp(discover_params.uuid, BT_UUID_OTS_PROPERTIES) == 0) {
 		atomic_set_bit(&discovery_state, DISC_OTS_PROPERTIES);
 		otc.obj_properties_handle = bt_gatt_attr_value_handle(attr);
-		(void)memcpy(&uuid, BT_UUID_OTS_ACTION_CP, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		(void)memcpy(&discover_uuid, BT_UUID_OTS_ACTION_CP, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
@@ -461,8 +461,8 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	} else if (bt_uuid_cmp(discover_params.uuid, BT_UUID_OTS_ACTION_CP) == 0) {
 		atomic_set_bit(&discovery_state, DISC_OTS_ACTION_CP);
 		otc.oacp_handle = bt_gatt_attr_value_handle(attr);
-		(void)memcpy(&uuid, BT_UUID_OTS_LIST_CP, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		(void)memcpy(&discover_uuid, BT_UUID_OTS_LIST_CP, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
@@ -517,8 +517,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	printk("Connected: %s\n", addr);
 
 	if (conn == default_conn) {
-		(void)memcpy(&uuid, BT_UUID_OTS, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		(void)memcpy(&discover_uuid, BT_UUID_OTS, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.func = discover_func;
 		discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 		discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
@@ -645,7 +645,7 @@ static void bt_otc_init(void)
 	bt_ots_client_register(&otc);
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -659,11 +659,12 @@ void main(void)
 
 	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	bt_otc_init();
 	printk("Bluetooth OTS client sample running\n");
 
 	start_scan();
+	return 0;
 }

@@ -29,15 +29,16 @@ import re
 import argparse
 import os
 import json
+from pathlib import PurePath
 
 regex_flags = re.MULTILINE | re.VERBOSE
 
 syscall_regex = re.compile(r'''
-__syscall\s+                    # __syscall attribute, must be first
-([^(]+)                         # type and name of system call (split later)
-[(]                             # Function opening parenthesis
-([^)]*)                         # Arg list (split later)
-[)]                             # Closing parenthesis
+(?:__syscall|__syscall_always_inline)\s+   # __syscall attribute, must be first
+([^(]+)                                    # type and name of system call (split later)
+[(]                                        # Function opening parenthesis
+([^)]*)                                    # Arg list (split later)
+[)]                                        # Closing parenthesis
 ''', regex_flags)
 
 struct_tags = ["__subsystem", "__net_socket"]
@@ -55,13 +56,41 @@ def tagged_struct_update(target_list, tag, contents):
     target_list.extend(items)
 
 
-def analyze_headers(multiple_directories):
+def analyze_headers(include_dir, scan_dir, file_list):
     syscall_ret = []
     tagged_ret = {}
 
     for tag in struct_tags:
         tagged_ret[tag] = []
 
+    syscall_files = dict()
+
+    # Get the list of header files which contains syscalls to be emitted.
+    # If file_list does not exist, we emit all syscalls.
+    if file_list:
+        with open(file_list, "r", encoding="utf-8") as fp:
+            contents = fp.read()
+
+            for one_file in contents.split(";"):
+                if os.path.isfile(one_file):
+                    syscall_files[one_file] = {"emit": True}
+                else:
+                    sys.stderr.write(f"{one_file} does not exists!\n")
+                    sys.exit(1)
+
+    multiple_directories = set()
+    if include_dir:
+        multiple_directories |= set(include_dir)
+    if scan_dir:
+        multiple_directories |= set(scan_dir)
+
+    # Convert to a list to keep the output deterministic
+    multiple_directories = sorted(multiple_directories)
+
+    # Look for source files under various directories.
+    # Due to "syscalls/*.h" being included unconditionally in various
+    # other header files. We must generate the associated syscall
+    # header files (e.g. for function stubs).
     for base_path in multiple_directories:
         for root, dirs, files in os.walk(base_path, topdown=True):
             dirs.sort()
@@ -76,19 +105,37 @@ def analyze_headers(multiple_directories):
                                                    'common.h'))):
                     continue
 
-                with open(path, "r", encoding="utf-8") as fp:
-                    contents = fp.read()
+                path = PurePath(os.path.normpath(path)).as_posix()
 
-                try:
-                    syscall_result = [(mo.groups(), fn)
-                                      for mo in syscall_regex.finditer(contents)]
-                    for tag in struct_tags:
-                        tagged_struct_update(tagged_ret[tag], tag, contents)
-                except Exception:
-                    sys.stderr.write("While parsing %s\n" % fn)
-                    raise
+                if path not in syscall_files:
+                    if include_dir and base_path in include_dir:
+                        syscall_files[path] = {"emit" : True}
+                    else:
+                        syscall_files[path] = {"emit" : False}
 
-                syscall_ret.extend(syscall_result)
+    # Parse files to extract syscall functions
+    for one_file in syscall_files:
+        with open(one_file, "r", encoding="utf-8") as fp:
+            try:
+                contents = fp.read()
+            except Exception:
+                sys.stderr.write("Error decoding %s\n" % path)
+                raise
+
+        fn = os.path.basename(one_file)
+
+        try:
+            to_emit = syscall_files[one_file]["emit"] | args.emit_all_syscalls
+
+            syscall_result = [(mo.groups(), fn, to_emit)
+                              for mo in syscall_regex.finditer(contents)]
+            for tag in struct_tags:
+                tagged_struct_update(tagged_ret[tag], tag, contents)
+        except Exception:
+            sys.stderr.write("While parsing %s\n" % fn)
+            raise
+
+        syscall_ret.extend(syscall_result)
 
     return syscall_ret, tagged_ret
 
@@ -112,16 +159,31 @@ def parse_args():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
-    parser.add_argument("-i", "--include", required=True, action='append',
-                        help='''include directories recursively scanned
-                        for .h files.  Can be specified multiple times:
-                        -i topdir1 -i topdir2 ...''')
+    parser.add_argument(
+        "-i", "--include", required=False, action="append",
+        help="Include directories recursively scanned for .h files "
+             "containing syscalls that must be present in final binary. "
+             "Can be specified multiple times: -i topdir1 -i topdir2 ...")
+    parser.add_argument(
+        "--scan", required=False, action="append",
+        help="Scan directories recursively for .h files containing "
+             "syscalls that need stubs generated but may not need to "
+             "be present in final binary. Can be specified multiple "
+             "times.")
     parser.add_argument(
         "-j", "--json-file", required=True,
         help="Write system call prototype information as json to file")
     parser.add_argument(
         "-t", "--tag-struct-file", required=True,
         help="Write tagged struct name information as json to file")
+    parser.add_argument(
+        "--file-list", required=False,
+        help="Text file containing semi-colon separated list of "
+             "header file where only syscalls in these files "
+             "are emitted.")
+    parser.add_argument(
+        "--emit-all-syscalls", required=False, action="store_true",
+        help="Emit all potential syscalls in the tree")
 
     args = parser.parse_args()
 
@@ -129,7 +191,8 @@ def parse_args():
 def main():
     parse_args()
 
-    syscalls, tagged = analyze_headers(args.include)
+    syscalls, tagged = analyze_headers(args.include, args.scan,
+                                       args.file_list)
 
     # Only write json files if they don't exist or have changes since
     # they will force an incremental rebuild.

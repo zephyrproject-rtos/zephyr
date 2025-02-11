@@ -79,20 +79,12 @@ static const struct bbram_driver_api bbram_xec_driver_api = {
 	.write = bbram_xec_write,
 };
 
-static int bbram_xec_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 #define BBRAM_INIT(inst)						\
 	static const struct bbram_xec_config bbram_cfg_##inst = {	\
 		.base = (uint8_t *)(DT_INST_REG_ADDR(inst)),		\
 		.size = DT_INST_REG_SIZE(inst),				\
 	};								\
-	DEVICE_DT_INST_DEFINE(inst, bbram_xec_init, NULL, NULL,		\
-			      &bbram_cfg_##inst,			\
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &bbram_cfg_##inst,\
 			      PRE_KERNEL_1, CONFIG_BBRAM_INIT_PRIORITY,	\
 			      &bbram_xec_driver_api);
 

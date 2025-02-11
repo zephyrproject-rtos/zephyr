@@ -9,7 +9,6 @@ menu "ARC Options"
 config ARCH
 	default "arc"
 
-
 config CPU_ARCEM
 	bool
 	select ATOMIC_OPERATIONS_C
@@ -19,6 +18,7 @@ config CPU_ARCEM
 config CPU_ARCHS
 	bool
 	select ATOMIC_OPERATIONS_BUILTIN
+	select BARRIER_OPERATIONS_BUILTIN
 	help
 	  This option signifies the use of an ARC HS CPU
 
@@ -87,7 +87,15 @@ config CPU_HS3X
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
 	help
-	  If y, the SoC uses an ARC HS3x or HS4x CPU
+	  If y, the SoC uses an ARC HS3x CPU
+
+config CPU_HS4X
+	bool
+	select CPU_ARCHS
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  If y, the SoC uses an HS4X CPU
 
 endif #ISA_ARCV2
 
@@ -245,20 +253,17 @@ config ARC_USE_UNALIGNED_MEM_ACCESS
 	  to support unaligned memory access which is then disabled by default.
 	  Enable unaligned access in hardware and make software to use it.
 
-config FAULT_DUMP
-	int "Fault dump level"
-	default 2
-	range 0 2
+config ARC_CURRENT_THREAD_USE_NO_TLS
+	bool
+	select CURRENT_THREAD_USE_NO_TLS
+	default y if (RGF_NUM_BANKS > 1) || ("$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt")
 	help
-	  Different levels for display information when a fault occurs.
-
-	  2: The default. Display specific and verbose information. Consumes
-		the most memory (long strings).
-
-	  1: Display general and short information. Consumes less memory
-		(short strings).
-
-	  0: Off.
+	  Disable current Thread Local Storage for ARC. For cores with more then one
+	  RGF_NUM_BANKS the parameter is disabled by-default because banks syncronization
+	  requires significant time, and it slows down performance.
+	  ARCMWDT works with tls pointer in different way then GCC. Optimized access to
+	  TLS pointer via _current variable does not provide significant advantages
+	  in case of MetaWare.
 
 config GEN_ISR_TABLES
 	default y
@@ -278,8 +283,8 @@ config CODE_DENSITY
 	  Enable code density option to get better code density
 
 config ARC_HAS_ACCL_REGS
-	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6)"
-	default y if CPU_HS3X || CPU_HS5X || CPU_HS6X
+	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6 and/or DSP)"
+	default y if CPU_HS3X || CPU_HS4X || CPU_HS5X || CPU_HS6X
 	help
 	  Depending on the configuration, CPU can contain accumulator reg-pair
 	  (also referred to as r58:r59). These can also be used by gcc as GPR so
@@ -368,16 +373,12 @@ config ARC_EXCEPTION_STACK_SIZE
 
 endmenu
 
-config ARC_EXCEPTION_DEBUG
-	bool "Unhandled exception debugging information"
-	default n
-	depends on PRINTK || LOG
+config ARC_EARLY_SOC_INIT
+	bool "Make early stage SoC-specific initialization"
 	help
-	  Print human-readable information about exception vectors, cause codes,
-	  and parameters, at a cost of code/data size for the human-readable
-	  strings.
-
-endmenu
+	  Call SoC per-core setup code on early stage initialization
+	  (before C runtime initialization). Setup code is called in form of
+	  soc_early_asm_init_percpu assembler macro.
 
 config MAIN_STACK_SIZE
 	default 4096 if 64BIT
@@ -405,3 +406,5 @@ config CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
 	default 2048 if 64BIT
+
+endmenu

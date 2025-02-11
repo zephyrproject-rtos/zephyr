@@ -19,7 +19,7 @@
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
 #include <zephyr/mgmt/mcumgr/transport/serial.h>
 #include <zephyr/mgmt/mcumgr/transport/smp_shell.h>
-#include <syscalls/uart.h>
+#include <zephyr/syscalls/uart.h>
 #include <string.h>
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
@@ -30,9 +30,20 @@ LOG_MODULE_REGISTER(smp_shell);
 BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_SHELL_MTU != 0,
 	     "CONFIG_MCUMGR_TRANSPORT_SHELL_MTU must be > 0");
 
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT_TIME != 0,
+	     "CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT_TIME must be > 0");
+#endif
+
 static struct smp_transport smp_shell_transport;
 
 static struct mcumgr_serial_rx_ctxt smp_shell_rx_ctxt;
+
+static const struct shell_uart_common *shell_uart;
+
+#ifdef CONFIG_SMP_CLIENT
+static struct smp_client_transport_entry smp_client_transport;
+#endif
 
 /** SMP mcumgr frame fragments. */
 enum smp_shell_esc_mcumgr {
@@ -48,6 +59,27 @@ enum smp_shell_mcumgr_state {
 	SMP_SHELL_MCUMGR_STATE_HEADER,
 	SMP_SHELL_MCUMGR_STATE_PAYLOAD
 };
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+static void smp_shell_input_timeout_handler(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+	struct smp_shell_data *const data = shell_uart_smp_shell_data_get_ptr();
+
+	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
+	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
+	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
+	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
+
+	if (data->buf) {
+		net_buf_reset(data->buf);
+		net_buf_unref(data->buf);
+		data->buf = NULL;
+	}
+}
+
+K_TIMER_DEFINE(smp_shell_input_timer, smp_shell_input_timeout_handler, NULL);
+#endif
 
 static int read_mcumgr_byte(struct smp_shell_data *data, uint8_t byte)
 {
@@ -70,12 +102,22 @@ static int read_mcumgr_byte(struct smp_shell_data *data, uint8_t byte)
 		if (byte == MCUMGR_SERIAL_HDR_PKT_2) {
 			/* Final framing byte received. */
 			atomic_set_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+			k_timer_start(&smp_shell_input_timer,
+				      K_MSEC(CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT_TIME),
+				      K_NO_WAIT);
+#endif
 			return SMP_SHELL_MCUMGR_STATE_PAYLOAD;
 		}
 	} else if (frag_1) {
 		if (byte == MCUMGR_SERIAL_HDR_FRAG_2) {
 			/* Final framing byte received. */
 			atomic_set_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+			k_timer_start(&smp_shell_input_timer,
+				      K_MSEC(CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT_TIME),
+				      K_NO_WAIT);
+#endif
 			return SMP_SHELL_MCUMGR_STATE_PAYLOAD;
 		}
 	} else {
@@ -129,6 +171,10 @@ size_t smp_shell_rx_bytes(struct smp_shell_data *data, const uint8_t *bytes,
 			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
 			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
 			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+			k_timer_stop(&smp_shell_input_timer);
+#endif
 		}
 
 		++consumed;
@@ -166,13 +212,10 @@ static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
 
 static int smp_shell_tx_raw(const void *data, int len)
 {
-	const struct shell *const sh = shell_backend_uart_get_ptr();
-	const struct shell_uart *const su = sh->iface->ctx;
-	const struct shell_uart_ctrl_blk *const scb = su->ctrl_blk;
 	const uint8_t *out = data;
 
 	while ((out != NULL) && (len != 0)) {
-		uart_poll_out(scb->dev, *out);
+		uart_poll_out(shell_uart->dev, *out);
 		++out;
 		--len;
 	}
@@ -184,6 +227,7 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 {
 	int rc;
 
+	shell_uart = (struct shell_uart_common *)shell_backend_uart_get_ptr()->iface->ctx;
 	rc = mcumgr_serial_tx_pkt(nb->data, nb->len, smp_shell_tx_raw);
 	smp_packet_free(nb);
 
@@ -192,8 +236,19 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 
 int smp_shell_init(void)
 {
-	smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
-			   smp_shell_get_mtu, NULL, NULL, NULL);
+	int rc;
 
-	return 0;
+	smp_shell_transport.functions.output = smp_shell_tx_pkt;
+	smp_shell_transport.functions.get_mtu = smp_shell_get_mtu;
+
+	rc = smp_transport_init(&smp_shell_transport);
+#ifdef CONFIG_SMP_CLIENT
+	if (rc == 0) {
+		smp_client_transport.smpt = &smp_shell_transport;
+		smp_client_transport.smpt_type = SMP_SHELL_TRANSPORT;
+		smp_client_transport_register(&smp_client_transport);
+	}
+#endif
+
+	return rc;
 }

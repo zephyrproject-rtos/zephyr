@@ -10,7 +10,6 @@
 zephyr_library(mgmt_mcumgr_grp_img)
 zephyr_library_sources(
   src/zephyr_img_mgmt.c
-  src/zephyr_img_mgmt_log.c
   src/img_mgmt_state.c
   src/img_mgmt_util.c
   src/img_mgmt.c

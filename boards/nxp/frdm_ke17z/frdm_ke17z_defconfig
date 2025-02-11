@@ -1,0 +1,20 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y
+
+# GPIO Controller
+CONFIG_GPIO=y
+
+# Clock Control
+CONFIG_CLOCK_CONTROL=y
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=48000000
+
+# Enable pin controller
+CONFIG_PINCTRL=y

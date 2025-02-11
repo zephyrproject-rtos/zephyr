@@ -16,10 +16,17 @@ math(EXPR FLASH_ADDR
      OUTPUT_FORMAT HEXADECIMAL
 )
 
-math(EXPR FLASH_SIZE
-     "(${CONFIG_FLASH_SIZE} + 0) * 1024 - (${CONFIG_FLASH_LOAD_OFFSET} + 0)"
-     OUTPUT_FORMAT HEXADECIMAL
-)
+if(CONFIG_FLASH_LOAD_SIZE GREATER 0)
+  math(EXPR FLASH_SIZE
+       "(${CONFIG_FLASH_LOAD_SIZE} + 0) - (${CONFIG_ROM_END_OFFSET} + 0)"
+       OUTPUT_FORMAT HEXADECIMAL
+  )
+else()
+  math(EXPR FLASH_SIZE
+       "(${CONFIG_FLASH_SIZE} + 0) * 1024 - (${CONFIG_FLASH_LOAD_OFFSET} + 0) - (${CONFIG_ROM_END_OFFSET} + 0)"
+       OUTPUT_FORMAT HEXADECIMAL
+  )
+endif()
 
 set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
 math(EXPR RAM_SIZE "(${CONFIG_SRAM_SIZE} + 0) * 1024" OUTPUT_FORMAT HEXADECIMAL)
@@ -134,6 +141,8 @@ if(NOT CONFIG_USERSPACE)
   # will not be cleared during the boot process.
   zephyr_linker_section_configure(SECTION .noinit INPUT ".kernel_noinit.*")
 endif()
+
+include(${COMMON_ZEPHYR_LINKER_DIR}/ram-end.cmake)
 
 zephyr_linker_symbol(SYMBOL __kernel_ram_start EXPR "(@__bss_start@)")
 zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(${RAM_ADDR} + ${RAM_SIZE})")

@@ -284,16 +284,16 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag)
 static void reass_timeout(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct frag_cache *cache = CONTAINER_OF(dwork, struct frag_cache, timer);
+	struct frag_cache *fcache = CONTAINER_OF(dwork, struct frag_cache, timer);
 
-	if (cache->pkt) {
-		net_pkt_unref(cache->pkt);
+	if (fcache->pkt) {
+		net_pkt_unref(fcache->pkt);
 	}
 
-	cache->pkt = NULL;
-	cache->size = 0U;
-	cache->tag = 0U;
-	cache->used = false;
+	fcache->pkt = NULL;
+	fcache->size = 0U;
+	fcache->tag = 0U;
+	fcache->used = false;
 }
 
 /**
@@ -359,18 +359,18 @@ static inline size_t fragment_cached_pkt_len(struct net_pkt *pkt)
 {
 	size_t len = 0U;
 	struct net_buf *frag;
-	int hdr_len;
+	int hdr_diff;
 	uint8_t *data;
 
 	frag = pkt->buffer;
 	while (frag) {
-		uint16_t hdr_len = NET_6LO_FRAGN_HDR_LEN;
+		uint16_t frag_hdr_len = NET_6LO_FRAGN_HDR_LEN;
 
 		if (get_datagram_type(frag->data) == NET_6LO_DISPATCH_FRAG1) {
-			hdr_len = NET_6LO_FRAG1_HDR_LEN;
+			frag_hdr_len = NET_6LO_FRAG1_HDR_LEN;
 		}
 
-		len += frag->len - hdr_len;
+		len += frag->len - frag_hdr_len;
 
 		frag = frag->frags;
 	}
@@ -381,15 +381,15 @@ static inline size_t fragment_cached_pkt_len(struct net_pkt *pkt)
 	data = pkt->buffer->data;
 	pkt->buffer->data += NET_6LO_FRAG1_HDR_LEN;
 
-	hdr_len = net_6lo_uncompress_hdr_diff(pkt);
+	hdr_diff = net_6lo_uncompress_hdr_diff(pkt);
 
 	pkt->buffer->data = data;
 
-	if (hdr_len == INT_MAX) {
+	if (hdr_diff == INT_MAX) {
 		return 0;
 	}
 
-	return len + hdr_len;
+	return len + hdr_diff;
 }
 
 static inline uint16_t fragment_offset(struct net_buf *frag)
@@ -429,14 +429,14 @@ static inline void fragment_remove_headers(struct net_pkt *pkt)
 
 	frag = pkt->buffer;
 	while (frag) {
-		uint16_t hdr_len = NET_6LO_FRAGN_HDR_LEN;
+		uint16_t frag_hdr_len = NET_6LO_FRAGN_HDR_LEN;
 
 		if (get_datagram_type(frag->data) == NET_6LO_DISPATCH_FRAG1) {
-			hdr_len = NET_6LO_FRAG1_HDR_LEN;
+			frag_hdr_len = NET_6LO_FRAG1_HDR_LEN;
 		}
 
-		memmove(frag->data, frag->data + hdr_len, frag->len - hdr_len);
-		frag->len -= hdr_len;
+		memmove(frag->data, frag->data + frag_hdr_len, frag->len - frag_hdr_len);
+		frag->len -= frag_hdr_len;
 
 		frag = frag->frags;
 	}
@@ -481,7 +481,7 @@ static inline bool fragment_packet_valid(struct net_pkt *pkt)
 static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 {
 	bool first_frag = false;
-	struct frag_cache *cache;
+	struct frag_cache *fcache;
 	struct net_buf *frag;
 	uint16_t size;
 	uint16_t tag;
@@ -506,10 +506,10 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 	 */
 	pkt->buffer = NULL;
 
-	cache = get_reass_cache(size, tag);
-	if (!cache) {
-		cache = set_reass_cache(pkt, size, tag);
-		if (!cache) {
+	fcache = get_reass_cache(size, tag);
+	if (!fcache) {
+		fcache = set_reass_cache(pkt, size, tag);
+		if (!fcache) {
 			NET_ERR("Could not get a cache entry");
 			pkt->buffer = frag;
 			return NET_DROP;
@@ -518,18 +518,18 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 		first_frag = true;
 	}
 
-	fragment_append(cache->pkt, frag);
+	fragment_append(fcache->pkt, frag);
 
-	if (fragment_cached_pkt_len(cache->pkt) == cache->size) {
+	if (fragment_cached_pkt_len(fcache->pkt) == fcache->size) {
 		if (!first_frag) {
 			/* Assign buffer back to input packet. */
-			pkt->buffer = cache->pkt->buffer;
-			cache->pkt->buffer = NULL;
+			pkt->buffer = fcache->pkt->buffer;
+			fcache->pkt->buffer = NULL;
 		} else {
-			/* in case pkt == cache->pkt, we don't want
-			 * to unref it while clearing the cach.
+			/* in case pkt == fcache->pkt, we don't want
+			 * to unref it while clearing the cache.
 			 */
-			cache->pkt = NULL;
+			fcache->pkt = NULL;
 		}
 
 		clear_reass_cache(size, tag);

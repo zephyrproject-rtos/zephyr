@@ -98,18 +98,32 @@ For example:
 * The kernel :c:struct:`k_work_delayable` API provides a timeout parameter
   indicating when a work queue item will be added to the system queue.
 
-All these values are specified using a :c:struct:`k_timeout_t` value.  This is
+All these values are specified using a :c:type:`k_timeout_t` value.  This is
 an opaque struct type that must be initialized using one of a family
-of kernel timeout macros.  The most common, :c:macro:`K_MSEC` , defines
-a time in milliseconds after the current time (strictly: the time at
-which the kernel receives the timeout value).
+of kernel timeout macros.  The most common, :c:macro:`K_MSEC`, defines
+a time in milliseconds after the current time.
+
+What is meant by "current time" for relative timeouts depends on the context:
+
+* When scheduling a relative timeout from within a timeout callback (e.g. from
+  within the expiry function passed to :c:func:`k_timer_init` or the work handler
+  passed to :c:func:`k_work_init_delayable`), "current time" is the exact time at
+  which the currently firing timeout was originally scheduled even if the "real
+  time" will already have advanced. This is to ensure that timers scheduled from
+  within another timer's callback will always be calculated with a precise offset
+  to the firing timer. It is thereby possible to fire at regular intervals without
+  introducing systematic clock drift over time.
+
+* When scheduling a timeout from application context, "current time" means the
+  value returned by :c:func:`k_uptime_ticks` at the time at which the kernel
+  receives the timeout value.
 
 Other options for timeout initialization follow the unit conventions
 described above: :c:macro:`K_NSEC()`, :c:macro:`K_USEC`, :c:macro:`K_TICKS` and
 :c:macro:`K_CYC()` specify timeout values that will expire after specified
 numbers of nanoseconds, microseconds, ticks and cycles, respectively.
 
-Precision of :c:struct:`k_timeout_t` values is configurable, with the default
+Precision of :c:type:`k_timeout_t` values is configurable, with the default
 being 32 bits.  Large uptime counts in non-tick units will experience
 complicated rollover semantics, so it is expected that
 timing-sensitive applications with long uptimes will be configured to
@@ -127,16 +141,16 @@ Timing Internals
 Timeout Queue
 -------------
 
-All Zephyr :c:struct:`k_timeout_t` events specified using the API above are
+All Zephyr :c:type:`k_timeout_t` events specified using the API above are
 managed in a single, global queue of events.  Each event is stored in
 a double-linked list, with an attendant delta count in ticks from the
 previous event.  The action to take on an event is specified as a
 callback function pointer provided by the subsystem requesting the
 event, along with a :c:struct:`_timeout` tracking struct that is
 expected to be embedded within subsystem-defined data structures (for
-example: a :c:struct:`wait_q` struct, or a :c:struct:`k_tid_t` thread struct).
+example: a :c:struct:`wait_q` struct, or a :c:type:`k_tid_t` thread struct).
 
-Note that all variant units passed via a :c:struct:`k_timeout_t` are converted
+Note that all variant units passed via a :c:type:`k_timeout_t` are converted
 to ticks once on insertion into the list.  There no
 multiple-conversion steps internal to the kernel, so precision is
 guaranteed at the tick level no matter how many events exist or how
@@ -310,39 +324,43 @@ code.  For example, consider this design:
     }
 
 This code requires that the timeout value be inspected, which is no
-longer possible.  For situations like this, the new API provides an
-internal :c:func:`sys_clock_timeout_end_calc` routine that converts an
-arbitrary timeout to the uptime value in ticks at which it will
-expire.  So such a loop might look like:
+longer possible.  For situations like this, the new API provides the
+internal :c:func:`sys_timepoint_calc` and :c:func:`sys_timepoint_timeout` routines
+that converts an arbitrary timeout to and from a timepoint value based on
+an uptime tick at which it will expire.  So such a loop might look like:
 
 
 .. code-block:: c
 
-    void my_wait_for_event(struct my_subsys *obj, k_timeout_t timeout_in_ms)
+    void my_wait_for_event(struct my_subsys *obj, k_timeout_t timeout)
     {
         /* Compute the end time from the timeout */
-        uint64_t end = sys_clock_timeout_end_calc(timeout_in_ms);
+        k_timepoint_t end = sys_timepoint_calc(timeout);
 
-        while (end > k_uptime_ticks()) {
+        do {
             if (is_event_complete(obj)) {
                 return;
             }
 
+            /* Update timeout with remaining time */
+            timeout = sys_timepoint_timeout(end);
+
             /* Wait for notification of state change */
-            k_sem_take(obj->sem, timeout_in_ms);
-        }
+            k_sem_take(obj->sem, timeout);
+        } while (!K_TIMEOUT_EQ(timeout, K_NO_WAIT));
     }
 
-Note that :c:func:`sys_clock_timeout_end_calc` returns values in units of
-ticks, to prevent conversion aliasing, is always presented at 64 bit
-uptime precision to prevent rollover bugs, handles special
-:c:macro:`K_FOREVER` naturally (as ``UINT64_MAX``), and works
-identically for absolute timeouts as well as conventional ones.
+Note that :c:func:`sys_timepoint_calc` accepts special values :c:macro:`K_FOREVER`
+and :c:macro:`K_NO_WAIT`, and works identically for absolute timeouts as well
+as conventional ones. Conversely, :c:func:`sys_timepoint_timeout` may return
+:c:macro:`K_FOREVER` or :c:macro:`K_NO_WAIT` if those were used to create
+the timepoint, the later also being returned if the timepoint is now in the
+past. For simple cases, :c:func:`sys_timepoint_expired` can be used as well.
 
-But some care is still required for subsystems that use it.  Note that
+But some care is still required for subsystems that use those.  Note that
 delta timeouts need to be interpreted relative to a "current time",
 and obviously that time is the time of the call to
-:c:func:`sys_clock_timeout_end_calc`.  But the user expects that the time is
+:c:func:`sys_timepoint_calc`.  But the user expects that the time is
 the time they passed the timeout to you.  Care must be taken to call
 this function just once, as synchronously as possible to the timeout
 creation in user code.  It should not be used on a "stored" timeout

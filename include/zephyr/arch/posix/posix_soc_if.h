@@ -31,6 +31,8 @@ unsigned int posix_irq_lock(void);
 void posix_irq_unlock(unsigned int key);
 void posix_irq_full_unlock(void);
 int  posix_get_current_irq(void);
+void posix_sw_set_pending_IRQ(unsigned int IRQn);
+void posix_sw_clear_pending_IRQ(unsigned int IRQn);
 #ifdef CONFIG_IRQ_OFFLOAD
 void posix_irq_offload(void (*routine)(const void *), const void *parameter);
 #endif

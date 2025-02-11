@@ -34,7 +34,21 @@ if(NOT DEFINED NOSYSDEF_CFLAG)
   set(NOSYSDEF_CFLAG -undef)
 endif()
 
-foreach(file_name include/stddef.h include-fixed/limits.h)
+# GCC-13, does not install limits.h on include-fixed anymore
+# https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git;h=be9dd80f933480
+# Add check for GCC version >= 13.1
+execute_process(
+    COMMAND ${CMAKE_C_COMPILER} -dumpfullversion
+    OUTPUT_VARIABLE temp_compiler_version
+    )
+
+if("${temp_compiler_version}" VERSION_GREATER_EQUAL 13.1.0)
+    set(fix_header_file include/limits.h)
+else()
+    set(fix_header_file include-fixed/limits.h)
+endif()
+
+foreach(file_name include/stddef.h "${fix_header_file}")
   execute_process(
     COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
     OUTPUT_VARIABLE _OUTPUT
@@ -62,6 +76,8 @@ elseif("${ARCH}" STREQUAL "sparc")
   include(${CMAKE_CURRENT_LIST_DIR}/target_sparc.cmake)
 elseif("${ARCH}" STREQUAL "mips")
   include(${CMAKE_CURRENT_LIST_DIR}/target_mips.cmake)
+elseif("${ARCH}" STREQUAL "xtensa")
+  include(${CMAKE_CURRENT_LIST_DIR}/target_xtensa.cmake)
 endif()
 
 if(SYSROOT_DIR)

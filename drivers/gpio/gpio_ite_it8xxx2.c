@@ -10,6 +10,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/ite-it8xxx2-gpio.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
+#include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
@@ -148,7 +149,7 @@ static const struct {
 	[IT8XXX2_IRQ_WU63] = {BIT(3), 6, BIT(3)},
 	[IT8XXX2_IRQ_WU64] = {BIT(4), 6, BIT(4)},
 	[IT8XXX2_IRQ_WU65] = {BIT(5), 6, BIT(5)},
-	[IT8XXX2_IRQ_WU65] = {BIT(6), 6, BIT(6)},
+	[IT8XXX2_IRQ_WU66] = {BIT(6), 6, BIT(6)},
 	[IT8XXX2_IRQ_WU67] = {BIT(7), 6, BIT(7)},
 	[IT8XXX2_IRQ_WU70] = {BIT(0), 7, BIT(0)},
 	[IT8XXX2_IRQ_WU71] = {BIT(1), 7, BIT(1)},
@@ -616,10 +617,20 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 	const struct gpio_ite_cfg *gpio_config = DEV_GPIO_CFG(dev);
 	uint8_t gpio_irq = gpio_config->gpio_irq[pin];
 
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	if (mode == GPIO_INT_MODE_DISABLED || mode == GPIO_INT_MODE_DISABLE_ONLY) {
+#else
 	if (mode == GPIO_INT_MODE_DISABLED) {
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 		/* Disable GPIO interrupt */
 		irq_disable(gpio_irq);
 		return 0;
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
+		/* Only enable GPIO interrupt */
+		irq_enable(gpio_irq);
+		return 0;
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 	}
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
@@ -674,11 +685,6 @@ static const struct gpio_driver_api gpio_ite_driver_api = {
 	.manage_callback = gpio_ite_manage_callback,
 };
 
-static int gpio_ite_init(const struct device *dev)
-{
-	return 0;
-}
-
 #define GPIO_ITE_DEV_CFG_DATA(inst)                                \
 static struct gpio_ite_data gpio_ite_data_##inst;                  \
 static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
@@ -702,7 +708,7 @@ static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
 	.gpio_irq[7] = DT_INST_IRQ_BY_IDX(inst, 7, irq),           \
 	};                                                         \
 DEVICE_DT_INST_DEFINE(inst,                                        \
-		gpio_ite_init,                                     \
+		NULL,                                              \
 		NULL,                                              \
 		&gpio_ite_data_##inst,                             \
 		&gpio_ite_cfg_##inst,                              \
@@ -712,9 +718,8 @@ DEVICE_DT_INST_DEFINE(inst,                                        \
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ITE_DEV_CFG_DATA)
 
-static int gpio_it8xxx2_init_set(const struct device *arg)
+static int gpio_it8xxx2_init_set(void)
 {
-	ARG_UNUSED(arg);
 
 	if (IS_ENABLED(CONFIG_SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN)) {
 		const struct device *const gpiok = DEVICE_DT_GET(DT_NODELABEL(gpiok));

@@ -47,6 +47,7 @@ ZTEST(littlefs, test_fs_mkfs_ops_lfs)
 
 /* Custom config with doubled the prog size */
 FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(custom_cfg,
+		4,
 		CONFIG_FS_LITTLEFS_READ_SIZE,
 		CONFIG_FS_LITTLEFS_PROG_SIZE * 2,
 		CONFIG_FS_LITTLEFS_CACHE_SIZE,

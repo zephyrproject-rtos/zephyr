@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_WRN);
 #include <string.h>
 #include <errno.h>
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "config.h"
 
@@ -193,7 +193,7 @@ static int publish(enum mqtt_qos qos)
 	param.message.payload.data = get_mqtt_payload(qos);
 	param.message.payload.len =
 			strlen(param.message.payload.data);
-	param.message_id = sys_rand32_get();
+	param.message_id = sys_rand16_get();
 	param.dup_flag = 0U;
 	param.retain_flag = 0U;
 

@@ -1,0 +1,40 @@
+# Copyright (c) 2024 Vitrolife A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Festo VEAA proportional pressure regulator using 3/3-way valve.
+  Only voltage controlled valve is supported.
+
+compatible: "festo,veaa-x-3"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      ADC used to get the actual value:
+      <&adc_node channel>
+  dac:
+    type: phandle
+    required: true
+    description: |
+      DAC used to set the setpoint value:
+      <&dac_node channel resolution buffered>
+  dac-channel-id:
+    type: int
+    required: true
+  dac-resolution:
+    type: int
+    required: true
+  pressure-range-type:
+    type: string
+    enum: ["D2", "D9", "D11"]
+    required: true
+    description: |
+      The device pressure range type.
+      | Type  | Range [kPa] |
+      | D11   | 5-1000      |
+      | D9    | 3-600       |
+      | D2    | 1-200       |

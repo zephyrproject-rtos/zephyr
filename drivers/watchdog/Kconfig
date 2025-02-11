@@ -5,14 +5,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WATCHDOG
-	bool "Watchdog Support"
+	bool "Watchdog drivers"
 	help
 	  Include support for watchdogs.
 
 if WATCHDOG
 
+config HAS_WDT_DISABLE_AT_BOOT
+	bool
+
 config WDT_DISABLE_AT_BOOT
 	bool "Disable at boot"
+	depends on HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Disable watchdog at Zephyr system startup.
 
@@ -90,8 +94,40 @@ source "drivers/watchdog/Kconfig.rpi_pico"
 
 source "drivers/watchdog/Kconfig.gd32"
 
+source "drivers/watchdog/Kconfig.npm1300"
+
 source "drivers/watchdog/Kconfig.npm6001"
 
 source "drivers/watchdog/Kconfig.nxp_s32"
 
-endif
+source "drivers/watchdog/Kconfig.dw"
+
+source "drivers/watchdog/Kconfig.intel_adsp"
+
+source "drivers/watchdog/Kconfig.smartbond"
+
+source "drivers/watchdog/Kconfig.ti_tps382x"
+
+source "drivers/watchdog/Kconfig.tco"
+
+source "drivers/watchdog/Kconfig.xlnx"
+
+source "drivers/watchdog/Kconfig.ifx_cat1"
+
+source "drivers/watchdog/Kconfig.opentitan"
+
+source "drivers/watchdog/Kconfig.andes_atcwdt200"
+
+source "drivers/watchdog/Kconfig.nxp_fs26"
+
+source "drivers/watchdog/Kconfig.ambiq"
+
+source "drivers/watchdog/Kconfig.shell"
+
+source "drivers/watchdog/Kconfig.xmc4xxx"
+
+source "drivers/watchdog/Kconfig.numaker"
+
+source "drivers/watchdog/Kconfig.ene"
+
+endif # WATCHDOG

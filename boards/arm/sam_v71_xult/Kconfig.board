@@ -1,9 +1,0 @@
-# Atmel SMART SAM V71 Xplained Board selection
-
-# Copyright (c) 2019 Gerson Fernando Budke
-# Copyright (c) 2016 Piotr Mienkowski
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_SAM_V71_XULT
-	bool "Atmel SMART SAM V71 Xplained Ultra Board"
-	depends on SOC_PART_NUMBER_SAMV71Q21 || SOC_PART_NUMBER_SAMV71Q21B

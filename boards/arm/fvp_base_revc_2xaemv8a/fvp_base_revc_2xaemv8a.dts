@@ -1,0 +1,175 @@
+/*
+ * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	model = "FVP Base RevC 2xAEMv8A";
+
+	chosen {
+		/*
+		 * The SRAM node is actually located in the
+		 * DRAM region of the FVP Base RevC 2xAEMv8A.
+		 */
+		zephyr,sram = &dram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0>;
+		};
+
+		cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x100>;
+		};
+
+		cpu@200 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x200>;
+		};
+
+		cpu@300 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x300>;
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+	};
+
+	uartclk: apb-pclk {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		interrupt-parent = <&gic>;
+
+		gic: interrupt-controller@2f000000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0x2f000000 0x10000>, // GICD
+			      <0x2f100000 0x200000>; // GICR
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			its: msi-controller@2f020000 {
+				compatible = "arm,gic-v3-its";
+				reg = <0x2f020000 0x20000>;
+				status = "okay";
+			};
+		};
+
+		uart0: uart@1c090000 {
+			compatible = "arm,pl011";
+			reg = <0x1c090000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_5";
+			clocks = <&uartclk>;
+		};
+
+		uart1: uart@1c0a0000 {
+			compatible = "arm,pl011";
+			reg = <0x1c0a0000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_6";
+			clocks = <&uartclk>;
+		};
+
+		uart2: uart@1c0b0000 {
+			compatible = "arm,pl011";
+			reg = <0x1c0b0000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_7";
+			clocks = <&uartclk>;
+		};
+
+		uart3: uart@1c0c0000 {
+			compatible = "arm,pl011";
+			reg = <0x1c0c0000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_8";
+			clocks = <&uartclk>;
+		};
+
+		ethernet@1a000000 {
+			reg = <0x1a000000 0x1000>;
+
+			eth: ethernet {
+				compatible = "smsc,lan91c111";
+				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+
+				phy-handle = <&phy>;
+			};
+
+			mdio: mdio {
+				compatible = "smsc,lan91c111-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				phy: ethernet-phy@0 {
+					compatible = "ethernet-phy";
+					status = "disabled";
+					reg = <0>;
+				};
+			};
+		};
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		dram0: memory@88000000 {
+			compatible = "mmio-dram";
+			reg = <0x88000000 DT_SIZE_K(2048)>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};

@@ -3,7 +3,9 @@ sample:
 tests:
   sample.portability.cmsis_rtos_v2.timer_synchronization:
     integration_platforms:
-      - native_posix
+      - native_sim
+    platform_exclude:
+      - qemu_arc/qemu_arc_hs5x  # See issue #62405
     tags: cmsis_rtos
     min_ram: 32
     min_flash: 34

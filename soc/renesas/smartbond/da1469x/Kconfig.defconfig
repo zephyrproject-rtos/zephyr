@@ -1,0 +1,51 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_DA1469X
+
+config SMARTBOND_TIMER
+	default y if PM && !$(dt_nodelabel_enabled,timer2)
+
+config CORTEX_M_SYSTICK
+	default n if SMARTBOND_TIMER
+
+config NUM_IRQS
+	default 40
+
+DT_LPCLK_PATH := $(dt_nodelabel_path,lp_clk)
+DT_CLOCK_SRC_PATH := $(dt_node_ph_prop_path,$(DT_LPCLK_PATH),clock-src)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,$(DT_CLOCK_SRC_PATH),clock-frequency) if SMARTBOND_TIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_CLOCK_SRC_PATH),clock-frequency) if SMARTBOND_TIMER
+
+config SRAM_VECTOR_TABLE
+	default y
+
+config USE_DT_CODE_PARTITION
+	default y if MCUBOOT
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config FLASH_LOAD_OFFSET
+	default 0x2400 if !USE_DT_CODE_PARTITION
+
+# Enable sleep and voltage rails manager so that
+# the device consumes the lowest possible current
+config PM
+	default y
+
+config PM_DEVICE
+	default y
+
+config REGULATOR
+	default y
+
+config PM_DEVICE_RUNTIME_EXCLUSIVE
+	default n if PM_DEVICE_RUNTIME
+
+endif # SOC_SERIES_DA1469X

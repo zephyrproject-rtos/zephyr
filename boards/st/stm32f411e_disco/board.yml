@@ -1,0 +1,11 @@
+board:
+  name: stm32f411e_disco
+  vendor: st
+  revision:
+    format: letter
+    default: "D"
+    revisions:
+      - name: "B"
+      - name: "D"
+  socs:
+    - name: stm32f411xe

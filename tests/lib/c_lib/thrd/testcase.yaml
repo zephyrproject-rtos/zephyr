@@ -1,0 +1,52 @@
+common:
+  tags:
+    - clib c11 threads
+  filter: not CONFIG_NATIVE_APPLICATION
+  integration_platforms:
+    - qemu_x86
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
+tests:
+  libraries.libc.c11_threads.minimal:
+    tags: minimal_libc
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+      - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
+      - CONFIG_MINIMAL_LIBC_RAND=y
+  libraries.libc.c11_threads.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  libraries.libc.c11_threads.picolibc.module:
+    filter: CONFIG_ZEPHYR_PICOLIBC_MODULE
+    tags: picolibc
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_PICOLIBC_USE_MODULE=y
+      - CONFIG_THREAD_LOCAL_STORAGE=y
+  libraries.libc.c11_threads.picolibc.notls:
+    filter: CONFIG_ZEPHYR_PICOLIBC_MODULE
+    tags: picolibc
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_PICOLIBC_USE_MODULE=y
+      - CONFIG_THREAD_LOCAL_STORAGE=n
+  libraries.libc.c11_threads.newlib:
+    filter: CONFIG_NEWLIB_LIBC_SUPPORTED
+    arch_exclude:
+      - posix
+    min_ram: 32
+    tags: newlib
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  libraries.libc.c11_threads.newlib_nano:
+    filter: CONFIG_NEWLIB_LIBC_SUPPORTED and CONFIG_HAS_NEWLIB_LIBC_NANO
+    arch_exclude:
+      - posix
+    tags: newlib
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_NEWLIB_LIBC_NANO=y

@@ -118,6 +118,11 @@ _exc_return:
 
 	BREQR r0, 0, _exc_return_from_exc
 
+	/* Save old thread into switch handle which is required by z_sched_switch_spin which
+	 * will be called during old thread abort.
+	 */
+	STR r2, r2, ___thread_t_switch_handle_OFFSET
+
 	MOVR r2, r0
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE

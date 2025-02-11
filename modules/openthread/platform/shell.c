@@ -39,7 +39,7 @@ static int ot_console_cb(void *context, const char *format, va_list arg)
 #define SHELL_HELP_OT	"OpenThread subcommands\n" \
 			"Use \"ot help\" to get the list of subcommands"
 
-static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
+static int ot_cmd(const struct shell *sh, size_t argc, char *argv[])
 {
 	char *buf_ptr = rx_buffer;
 	size_t buf_len = OT_SHELL_BUFFER_SIZE;
@@ -62,7 +62,7 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 		arg_len = snprintk(buf_ptr, buf_len, "%s", argv[i]);
 
 		if (arg_len >= buf_len) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "OT shell buffer full\n");
 			return -ENOEXEC;
 		}
@@ -72,7 +72,7 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 		buf_len -= arg_len;
 	}
 
-	shell_p = shell;
+	shell_p = sh;
 
 	openthread_api_mutex_lock(openthread_get_default_context());
 	otCliInputLine(rx_buffer);

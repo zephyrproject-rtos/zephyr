@@ -10,11 +10,21 @@
  * NOTE: This driver implements the GICv1 and GICv2 interfaces.
  */
 
+#include <zephyr/device.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/sys/barrier.h>
+
+#if defined(CONFIG_GIC_V1)
+#define DT_DRV_COMPAT arm_gic_v1
+#elif defined(CONFIG_GIC_V2)
+#define DT_DRV_COMPAT arm_gic_v2
+#else
+#error "Unknown GIC controller compatible for this configuration"
+#endif
 
 static const uint64_t cpu_mpid_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
@@ -56,6 +66,29 @@ bool arm_gic_irq_is_enabled(unsigned int irq)
 	return (enabler & (1 << int_off)) != 0;
 }
 
+bool arm_gic_irq_is_pending(unsigned int irq)
+{
+	int int_grp, int_off;
+	unsigned int enabler;
+
+	int_grp = irq / 32;
+	int_off = irq % 32;
+
+	enabler = sys_read32(GICD_ISPENDRn + int_grp * 4);
+
+	return (enabler & (1 << int_off)) != 0;
+}
+
+void arm_gic_irq_clear_pending(unsigned int irq)
+{
+	int int_grp, int_off;
+
+	int_grp = irq / 32;
+	int_off = irq % 32;
+
+	sys_write32((1 << int_off), (GICD_ICPENDRn + int_grp * 4));
+}
+
 void arm_gic_irq_set_priority(
 	unsigned int irq, unsigned int prio, uint32_t flags)
 {
@@ -80,9 +113,20 @@ void arm_gic_irq_set_priority(
 
 unsigned int arm_gic_get_active(void)
 {
-	int irq;
+	unsigned int irq;
 
-	irq = sys_read32(GICC_IAR) & 0x3ff;
+	/*
+	 * "ARM Generic Interrupt Controller Architecture version 2.0" states that
+	 * [4.4.5 End of Interrupt Register, GICC_EOIR)]:
+	 * """
+	 * For compatibility with possible extensions to the GIC architecture
+	 * specification, ARM recommends that software preserves the entire register
+	 * value read from the GICC_IAR when it acknowledges the interrupt, and uses
+	 * that entire value for its corresponding write to the GICC_EOIR.
+	 * """
+	 * Because of that, we read the entire value here, to be later written back to GICC_EOIR
+	 */
+	irq = sys_read32(GICC_IAR);
 	return irq;
 }
 
@@ -96,7 +140,7 @@ void arm_gic_eoi(unsigned int irq)
 	 * and the barrier is the best core can do by which execution of further
 	 * instructions waits till the barrier is alive.
 	 */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* set to inactive */
 	sys_write32(irq, GICC_EOIR);
@@ -113,9 +157,9 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 		GICD_SGIR_CPULIST(target_list & GICD_SGIR_CPULIST_MASK) |
 		sgi_id;
 
-	__DSB();
+	barrier_dsync_fence_full();
 	sys_write32(sgi_val, GICD_SGIR);
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 static void gic_dist_init(void)
@@ -228,10 +272,8 @@ static void gic_cpu_init(void)
 /**
  * @brief Initialize the GIC device driver
  */
-int arm_gic_init(const struct device *unused)
+int arm_gic_init(const struct device *dev)
 {
-	ARG_UNUSED(unused);
-
 	/* Init of Distributor interface registers */
 	gic_dist_init();
 
@@ -241,7 +283,8 @@ int arm_gic_init(const struct device *unused)
 	return 0;
 }
 
-SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
+DEVICE_DT_INST_DEFINE(0, arm_gic_init, NULL, NULL, NULL,
+		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
 
 #ifdef CONFIG_SMP
 void arm_gic_secondary_init(void)

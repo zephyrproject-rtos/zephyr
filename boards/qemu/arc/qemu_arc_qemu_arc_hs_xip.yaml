@@ -1,0 +1,14 @@
+identifier: qemu_arc/qemu_arc_hs/xip
+name: QEMU Emulation for ARC HS (XIP)
+type: qemu
+simulation: qemu
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

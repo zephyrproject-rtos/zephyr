@@ -11,7 +11,7 @@ target_sources(app
 )
 
 set(includes
-"$ENV{ZEPHYR_BASE}/subsys/net/lib/lwm2m/"
+"${ZEPHYR_BASE}/subsys/net/lib/lwm2m/"
 "src/"
 )
 

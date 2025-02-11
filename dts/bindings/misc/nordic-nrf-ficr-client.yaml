@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  nordic,ficrs:
+    type: phandle-array
+    description: |
+      FICR entries, e.g. <&ficr OFFSET>. Available offsets (or FICR entries) are
+      available at <zephyr/dt-bindings/misc/nordic-nrf-ficr-*.h>.
+
+  nordic,ficr-names:
+    type: string-array
+    description: |
+      Names of each nordic,ficrs entry.

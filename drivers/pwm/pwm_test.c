@@ -58,15 +58,8 @@ static const struct pwm_driver_api vnd_pwm_api = {
 	.get_cycles_per_sec = vnd_pwm_get_cycles_per_sec,
 };
 
-static int vnd_pwm_init(const struct device *dev)
-{
-	return 0;
-}
-
-#define VND_PWM_INIT(n)						  \
-	DEVICE_DT_INST_DEFINE(n, &vnd_pwm_init, NULL,		  \
-			      NULL, NULL, POST_KERNEL,		  \
-			      CONFIG_PWM_INIT_PRIORITY,		  \
-			      &vnd_pwm_api);
+#define VND_PWM_INIT(n)							       \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,	       \
+			      CONFIG_PWM_INIT_PRIORITY, &vnd_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_PWM_INIT)

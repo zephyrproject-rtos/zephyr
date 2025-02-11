@@ -134,11 +134,21 @@ struct pm_state_info {
 	 *			substate-id = <2>;
 	 *			min-residency-us = <20000>;
 	 *			exit-latency-us = <200>;
+	 *			zephyr,pm-device-disabled;
 	 *		};
 	 *	};
 	 * @endcode
 	 */
 	uint8_t substate_id;
+
+	/**
+	 * Whether or not this state triggers device power management.
+	 *
+	 * When this property is false the power management subsystem
+	 * will suspend devices before entering this state and will
+	 * properly resume them when leaving it.
+	 */
+	bool pm_device_disabled;
 
 	/**
 	 * Minimum residency duration in microseconds. It is the minimum
@@ -156,27 +166,62 @@ struct pm_state_info {
 	uint32_t exit_latency_us;
 };
 
+/**
+ * Power state information needed to lock a power state.
+ */
+struct pm_state_constraint {
+	 /**
+	  * Power management state
+	  *
+	  * @see pm_state
+	  **/
+	enum pm_state state;
+	 /**
+	  * Power management sub-state
+	  *
+	  * @see pm_state
+	  **/
+	uint8_t substate_id;
+};
+
 /** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Helper macro that expands to 1 if a phandle node is enabled, 0 otherwise.
+ *
+ * @param node_id Node identifier.
+ * @param prop Property holding phandle-array.
+ * @param idx Index within the array.
+ */
+#define Z_DT_PHANDLE_01(node_id, prop, idx) \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_PHANDLE_BY_IDX(node_id, prop, idx), okay), \
+		    (1), (0))
 
 /**
  * @brief Helper macro to initialize an entry of a struct pm_state_info array
  * when using UTIL_LISTIFY in PM_STATE_INFO_LIST_FROM_DT_CPU.
  *
+ * @note Only enabled states are initialized.
+ *
  * @param i UTIL_LISTIFY entry index.
  * @param node_id A node identifier with compatible zephyr,power-state
  */
-#define Z_PM_STATE_INFO_FROM_DT_CPU(i, node_id) \
-	PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i))
+#define Z_PM_STATE_INFO_FROM_DT_CPU(i, node_id)                                                   \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i), okay),    \
+		    (PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i)),), ())
 
 /**
  * @brief Helper macro to initialize an entry of a struct pm_state array when
  * using UTIL_LISTIFY in PM_STATE_LIST_FROM_DT_CPU.
  *
+ * @note Only enabled states are initialized.
+ *
  * @param i UTIL_LISTIFY entry index.
  * @param node_id A node identifier with compatible zephyr,power-state
  */
-#define Z_PM_STATE_FROM_DT_CPU(i, node_id) \
-	PM_STATE_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i))
+#define Z_PM_STATE_FROM_DT_CPU(i, node_id)                                                        \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i), okay),    \
+		    (PM_STATE_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i)),), ())
 
 /** @endcond */
 
@@ -192,6 +237,7 @@ struct pm_state_info {
 		.substate_id = DT_PROP_OR(node_id, substate_id, 0),	       \
 		.min_residency_us = DT_PROP_OR(node_id, min_residency_us, 0),  \
 		.exit_latency_us = DT_PROP_OR(node_id, exit_latency_us, 0),    \
+		.pm_device_disabled = DT_PROP(node_id, zephyr_pm_device_disabled),    \
 	}
 
 /**
@@ -204,18 +250,20 @@ struct pm_state_info {
 	DT_ENUM_IDX(node_id, power_state_name)
 
 /**
- * @brief Obtain number of CPU power states supported by the given CPU node
- * identifier.
+ * @brief Obtain number of CPU power states supported and enabled by the given
+ * CPU node identifier.
  *
  * @param node_id A CPU node identifier.
- * @return Number of supported CPU power states.
+ * @return Number of supported and enabled CPU power states.
  */
-#define DT_NUM_CPU_POWER_STATES(node_id) \
-	DT_PROP_LEN_OR(node_id, cpu_power_states, 0)
+#define DT_NUM_CPU_POWER_STATES(node_id)                                                           \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, cpu_power_states),                                   \
+		    (DT_FOREACH_PROP_ELEM_SEP(node_id, cpu_power_states, Z_DT_PHANDLE_01, (+))),   \
+		    (0))
 
 /**
  * @brief Initialize an array of struct pm_state_info with information from all
- * the states present in the given CPU node identifier.
+ * the states present and enabled in the given CPU node identifier.
  *
  * Example devicetree fragment:
  *
@@ -227,24 +275,25 @@ struct pm_state_info {
  *			...
  *			cpu-power-states = <&state0 &state1>;
  *		};
- *	};
  *
- *	...
- *	power-states {
- *		state0: state0 {
- *			compatible = "zephyr,power-state";
- *			power-state-name = "suspend-to-idle";
- *			min-residency-us = <10000>;
- *			exit-latency-us = <100>;
- *		};
+ *		power-states {
+ *			state0: state0 {
+ *				compatible = "zephyr,power-state";
+ *				power-state-name = "suspend-to-idle";
+ *				min-residency-us = <10000>;
+ *				exit-latency-us = <100>;
+ *			};
  *
- *		state1: state1 {
- *			compatible = "zephyr,power-state";
- *			power-state-name = "suspend-to-ram";
- *			min-residency-us = <50000>;
- *			exit-latency-us = <500>;
+ *			state1: state1 {
+ *				compatible = "zephyr,power-state";
+ *				power-state-name = "suspend-to-ram";
+ *				min-residency-us = <50000>;
+ *				exit-latency-us = <500>;
+ *				zephyr,pm-device-disabled;
+ *			};
  *		};
  *	};
+
  * @endcode
  *
  * Example usage:
@@ -258,13 +307,13 @@ struct pm_state_info {
  */
 #define PM_STATE_INFO_LIST_FROM_DT_CPU(node_id)				       \
 	{								       \
-		LISTIFY(DT_NUM_CPU_POWER_STATES(node_id),		       \
-			Z_PM_STATE_INFO_FROM_DT_CPU, (,), node_id)	       \
+		LISTIFY(DT_PROP_LEN_OR(node_id, cpu_power_states, 0),	       \
+			Z_PM_STATE_INFO_FROM_DT_CPU, (), node_id)	       \
 	}
 
 /**
  * @brief Initialize an array of struct pm_state with information from all the
- * states present in the given CPU node identifier.
+ * states present and enabled in the given CPU node identifier.
  *
  * Example devicetree fragment:
  *
@@ -276,22 +325,21 @@ struct pm_state_info {
  *			...
  *			cpu-power-states = <&state0 &state1>;
  *		};
- *	};
  *
- *	...
- *	power-states {
- *		state0: state0 {
- *			compatible = "zephyr,power-state";
- *			power-state-name = "suspend-to-idle";
- *			min-residency-us = <10000>;
- *			exit-latency-us = <100>;
- *		};
+ *		power-states {
+ *			state0: state0 {
+ *				compatible = "zephyr,power-state";
+ *				power-state-name = "suspend-to-idle";
+ *				min-residency-us = <10000>;
+ *				exit-latency-us = <100>;
+ *			};
  *
- *		state1: state1 {
- *			compatible = "zephyr,power-state";
- *			power-state-name = "suspend-to-ram";
- *			min-residency-us = <50000>;
- *			exit-latency-us = <500>;
+ *			state1: state1 {
+ *				compatible = "zephyr,power-state";
+ *				power-state-name = "suspend-to-ram";
+ *				min-residency-us = <50000>;
+ *				exit-latency-us = <500>;
+ *			};
  *		};
  *	};
  * @endcode
@@ -306,11 +354,12 @@ struct pm_state_info {
  */
 #define PM_STATE_LIST_FROM_DT_CPU(node_id)				       \
 	{								       \
-		LISTIFY(DT_NUM_CPU_POWER_STATES(node_id),		       \
-			Z_PM_STATE_FROM_DT_CPU, (,), node_id)		       \
+		LISTIFY(DT_PROP_LEN_OR(node_id, cpu_power_states, 0),	       \
+			Z_PM_STATE_FROM_DT_CPU, (), node_id)		       \
 	}
 
 
+#if defined(CONFIG_PM) || defined(__DOXYGEN__)
 /**
  * Obtain information about all supported states by a CPU.
  *
@@ -324,6 +373,18 @@ uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states);
 /**
  * @}
  */
+
+#else  /* CONFIG_PM */
+
+static inline uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states)
+{
+	ARG_UNUSED(cpu);
+	ARG_UNUSED(states);
+
+	return 0;
+}
+
+#endif /* CONFIG_PM */
 
 #ifdef __cplusplus
 }

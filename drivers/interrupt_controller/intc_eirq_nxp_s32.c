@@ -1,9 +1,12 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_s32_siul2_eirq
+
+#include <soc.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -45,6 +48,10 @@ int eirq_nxp_s32_set_callback(const struct device *dev, uint8_t line,
 	struct eirq_nxp_s32_data *data = dev->data;
 
 	__ASSERT(line < NXP_S32_NUM_CHANNELS, "Interrupt line is out of range");
+
+	if ((data->cb[line].cb == cb) && (data->cb[line].data == arg)) {
+		return 0;
+	}
 
 	if (data->cb[line].cb) {
 		return -EBUSY;
@@ -124,23 +131,17 @@ static int eirq_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
-#define EIRQ_NXP_S32_NODE(n)	DT_NODELABEL(eirq##n)
-
 #define EIRQ_NXP_S32_CALLBACK(line, n)								\
 	void nxp_s32_icu_##n##_eirq_line_##line##_callback(void)				\
 	{											\
-		const struct device *dev = DEVICE_DT_GET(EIRQ_NXP_S32_NODE(n));			\
-												\
-		eirq_nxp_s32_callback(dev, line);						\
+		eirq_nxp_s32_callback(DEVICE_DT_INST_GET(n), line);				\
 	}
 
 #define EIRQ_NXP_S32_CHANNEL_CONFIG(idx, n)							\
 	{											\
 		.hwChannel = idx,								\
-		.digFilterEn = DT_PROP_OR(DT_CHILD(EIRQ_NXP_S32_NODE(n), line_##idx),		\
-						filter_enable, 0),				\
-		.maxFilterCnt = DT_PROP_OR(DT_CHILD(EIRQ_NXP_S32_NODE(n), line_##idx),		\
-						filter_counter, 0),				\
+		.digFilterEn = DT_INST_PROP_OR(DT_CHILD(n, line_##idx), filter_enable, 0),	\
+		.maxFilterCnt = DT_INST_PROP_OR(DT_CHILD(n, line_##idx), filter_counter, 0),	\
 		.intSel = SIUL2_ICU_IRQ,							\
 		.intEdgeSel = SIUL2_ICU_DISABLE,						\
 		.callback = NULL,								\
@@ -155,8 +156,7 @@ static int eirq_nxp_s32_init(const struct device *dev)
 
 #define EIRQ_NXP_S32_INSTANCE_CONFIG(n)								\
 	static const Siul2_Icu_Ip_InstanceConfigType eirq_##n##_instance_nxp_s32_cfg = {	\
-		.intFilterClk = DT_PROP_OR(EIRQ_NXP_S32_NODE(n),				\
-						filter_prescaler, (0)),				\
+		.intFilterClk = DT_INST_PROP_OR(n, filter_prescaler, 0),			\
 		.altIntFilterClk = 0U,								\
 	}
 
@@ -173,27 +173,53 @@ static int eirq_nxp_s32_init(const struct device *dev)
 	EIRQ_NXP_S32_INSTANCE_CONFIG(n);							\
 	EIRQ_NXP_S32_COMBINE_CONFIG(n);
 
+#define _EIRQ_NXP_S32_IRQ_NAME(name)	DT_CAT3(SIUL2_EXT_IRQ_, name, _ISR)
+
+#define EIRQ_NXP_S32_IRQ_NAME(idx, n)								\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupt_names),					\
+		(_EIRQ_NXP_S32_IRQ_NAME(DT_INST_STRING_TOKEN_BY_IDX(n, interrupt_names, idx))),	\
+		(DT_CAT3(SIUL2_, n, _ICU_EIRQ_SINGLE_INT_HANDLER)))
+
+#define _EIRQ_NXP_S32_IRQ_CONFIG(idx, n)							\
+	do {											\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),					\
+			DT_INST_IRQ_BY_IDX(n, idx, priority),					\
+			EIRQ_NXP_S32_IRQ_NAME(idx, n),						\
+			DEVICE_DT_INST_GET(n),							\
+			COND_CODE_1(CONFIG_GIC, (DT_INST_IRQ_BY_IDX(n, idx, flags)), (0)));	\
+		irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));					\
+	} while (false);
+
+#define EIRQ_NXP_S32_IRQ_CONFIG(n)								\
+	LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), _EIRQ_NXP_S32_IRQ_CONFIG, (), n)
+
+#define EIRQ_NXP_S32_HW_INSTANCE_CHECK(i, n) \
+	(((DT_REG_ADDR(DT_INST_PARENT(n))) == IP_SIUL2_##i##_BASE) ? i : 0)
+
+#define EIRQ_NXP_S32_HW_INSTANCE(n) \
+	LISTIFY(__DEBRACKET SIUL2_INSTANCE_COUNT, EIRQ_NXP_S32_HW_INSTANCE_CHECK, (|), n)
+
 #define EIRQ_NXP_S32_INIT_DEVICE(n)								\
 	EIRQ_NXP_S32_CONFIG(n)									\
-	PINCTRL_DT_DEFINE(EIRQ_NXP_S32_NODE(n));						\
+	PINCTRL_DT_INST_DEFINE(n);								\
 	static const struct eirq_nxp_s32_config eirq_nxp_s32_conf_##n = {			\
-		.instance = n,									\
-		.disr0    = (mem_addr_t)DT_REG_ADDR_BY_NAME(EIRQ_NXP_S32_NODE(n), disr0),	\
-		.direr0   = (mem_addr_t)DT_REG_ADDR_BY_NAME(EIRQ_NXP_S32_NODE(n), direr0),	\
+		.instance = EIRQ_NXP_S32_HW_INSTANCE(n),					\
+		.disr0    = (mem_addr_t)DT_INST_REG_ADDR_BY_NAME(n, disr0),			\
+		.direr0   = (mem_addr_t)DT_INST_REG_ADDR_BY_NAME(n, direr0),			\
 		.icu_cfg  = (Siul2_Icu_Ip_ConfigType *)&eirq_##n##_nxp_s32_cfg,			\
-		.pincfg   = PINCTRL_DT_DEV_CONFIG_GET(EIRQ_NXP_S32_NODE(n))			\
+		.pincfg   = PINCTRL_DT_INST_DEV_CONFIG_GET(n)					\
 	};											\
 	static struct eirq_nxp_s32_cb eirq_nxp_s32_cb_##n[NXP_S32_NUM_CHANNELS];		\
 	static struct eirq_nxp_s32_data eirq_nxp_s32_data_##n = {				\
 		.cb = eirq_nxp_s32_cb_##n,							\
 	};											\
 	static int eirq_nxp_s32_init##n(const struct device *dev);				\
-	DEVICE_DT_DEFINE(EIRQ_NXP_S32_NODE(n),							\
+	DEVICE_DT_INST_DEFINE(n,								\
 		eirq_nxp_s32_init##n,								\
 		NULL,										\
 		&eirq_nxp_s32_data_##n,								\
 		&eirq_nxp_s32_conf_##n,								\
-		PRE_KERNEL_1,									\
+		PRE_KERNEL_2,									\
 		CONFIG_INTC_INIT_PRIORITY,							\
 		NULL);										\
 	static int eirq_nxp_s32_init##n(const struct device *dev)				\
@@ -205,29 +231,9 @@ static int eirq_nxp_s32_init(const struct device *dev)
 			return err;								\
 		}										\
 												\
-		IRQ_CONNECT(DT_IRQN(EIRQ_NXP_S32_NODE(n)),					\
-			DT_IRQ(EIRQ_NXP_S32_NODE(n), priority),					\
-			SIUL2_##n##_ICU_EIRQ_SINGLE_INT_HANDLER,				\
-			DEVICE_DT_GET(EIRQ_NXP_S32_NODE(n)),					\
-			DT_IRQ(EIRQ_NXP_S32_NODE(n), flags));					\
-												\
-		irq_enable(DT_IRQN(EIRQ_NXP_S32_NODE(n)));					\
+		EIRQ_NXP_S32_IRQ_CONFIG(n);							\
 												\
 		return 0;									\
 	}
 
-#if DT_NODE_HAS_STATUS(EIRQ_NXP_S32_NODE(0), okay)
-EIRQ_NXP_S32_INIT_DEVICE(0)
-#endif
-
-#if DT_NODE_HAS_STATUS(EIRQ_NXP_S32_NODE(1), okay)
-EIRQ_NXP_S32_INIT_DEVICE(1)
-#endif
-
-#if DT_NODE_HAS_STATUS(EIRQ_NXP_S32_NODE(4), okay)
-EIRQ_NXP_S32_INIT_DEVICE(4)
-#endif
-
-#if DT_NODE_HAS_STATUS(EIRQ_NXP_S32_NODE(5), okay)
-EIRQ_NXP_S32_INIT_DEVICE(5)
-#endif
+DT_INST_FOREACH_STATUS_OKAY(EIRQ_NXP_S32_INIT_DEVICE)

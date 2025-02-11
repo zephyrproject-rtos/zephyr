@@ -11,12 +11,19 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
 
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#include <adsp_shim.h>
+#endif
+
 #define DT_DRV_COMPAT intel_alh_dai
 #define LOG_DOMAIN dai_intel_alh
 
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "alh.h"
+
+/* global data shared between all alh instances */
+struct dai_alh_global_shared dai_alh_global;
 
 /* Digital Audio interface formatting */
 static int dai_alh_set_config_tplg(struct dai_intel_alh *dp, const void *spec_config)
@@ -75,6 +82,10 @@ static void alh_claim_ownership(void)
 	sys_write32(sys_read32(ALHASCTL) | ALHASCTL_OSEL(0x3), ALHASCTL);
 	sys_write32(sys_read32(ALHCSCTL) | ALHASCTL_OSEL(0x3), ALHCSCTL);
 #endif
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+	/* Allow LPGPDMA connection to Audio Link Hub */
+	sys_set_bits(ADSP_DSPALHO_ADDRESS, DSPALHO_ASO_FLAG | DSPALHO_CSO_FLAG);
+#endif
 }
 
 static void alh_release_ownership(void)
@@ -86,20 +97,30 @@ static void alh_release_ownership(void)
 	sys_write32(sys_read32(ALHASCTL) | ALHASCTL_OSEL(0), ALHASCTL);
 	sys_write32(sys_read32(ALHCSCTL) | ALHASCTL_OSEL(0), ALHCSCTL);
 #endif
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+	sys_clear_bits(ADSP_DSPALHO_ADDRESS, DSPALHO_ASO_FLAG | DSPALHO_CSO_FLAG);
+#endif
 }
 
 
-static const struct dai_config *dai_alh_config_get(const struct device *dev, enum dai_dir dir)
+static int dai_alh_config_get(const struct device *dev, struct dai_config *cfg,
+			      enum dai_dir dir)
 {
 	struct dai_config *params = (struct dai_config *)dev->config;
 	struct dai_intel_alh *dp = (struct dai_intel_alh *)dev->data;
 	struct dai_intel_alh_pdata *alh = dai_get_drvdata(dp);
 
+	if (!cfg) {
+		return -EINVAL;
+	}
+
 	params->rate = alh->params.rate;
 	params->channels = alh->params.channels;
 	params->word_size = ALH_WORD_SIZE_DEFAULT;
 
-	return params;
+	*cfg = *params;
+
+	return 0;
 }
 
 static int dai_alh_config_set(const struct device *dev, const struct dai_config *cfg,
@@ -139,44 +160,37 @@ static const struct dai_properties *dai_alh_get_properties(const struct device *
 
 static int dai_alh_probe(const struct device *dev)
 {
-	struct dai_intel_alh *dp = (struct dai_intel_alh *)dev->data;
 	k_spinlock_key_t key;
 
 	LOG_DBG("%s", __func__);
 
-	key = k_spin_lock(&dp->lock);
+	key = k_spin_lock(&dai_alh_global.lock);
 
-	if (dp->sref == 0) {
+	if (dai_alh_global.sref == 0) {
 		alh_claim_ownership();
 	}
 
-	dp->sref++;
+	dai_alh_global.sref++;
 
-	k_spin_unlock(&dp->lock, key);
+	k_spin_unlock(&dai_alh_global.lock, key);
 
 	return 0;
 }
 
 static int dai_alh_remove(const struct device *dev)
 {
-	struct dai_intel_alh *dp = (struct dai_intel_alh *)dev->data;
 	k_spinlock_key_t key;
 
 	LOG_DBG("%s", __func__);
 
-	key = k_spin_lock(&dp->lock);
+	key = k_spin_lock(&dai_alh_global.lock);
 
-	if (--dp->sref == 0) {
+	if (--dai_alh_global.sref == 0) {
 		alh_release_ownership();
 	}
 
-	k_spin_unlock(&dp->lock, key);
+	k_spin_unlock(&dai_alh_global.lock, key);
 
-	return 0;
-}
-
-static int alh_init(const struct device *dev)
-{
 	return 0;
 }
 
@@ -206,7 +220,7 @@ static const struct dai_driver_api dai_intel_alh_api_funcs = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			alh_init, NULL,					\
+			NULL, NULL,					\
 			&dai_intel_alh_data_##n,			\
 			&dai_intel_alh_config_##n,			\
 			POST_KERNEL, 32,				\

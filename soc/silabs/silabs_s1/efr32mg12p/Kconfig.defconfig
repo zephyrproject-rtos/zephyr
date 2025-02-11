@@ -1,0 +1,12 @@
+# EFM32WG series configuration options
+
+# Copyright (c) 2018 Diego Sueiro
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFR32MG12P
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 49
+
+endif # SOC_SERIES_EFR32MG12P

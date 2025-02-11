@@ -1,6 +1,6 @@
 .. _lps22hb:
 
-LPS22HB: Temperature and Humidity Monitor
+LPS22HB: Temperature and Pressure Monitor
 #########################################
 
 Overview
@@ -17,7 +17,7 @@ This sample uses the LPS22HB sensor controlled using the I2C interface.
 References
 **********
 
-- LPS22HB: http://www.st.com/en/mems-and-sensors/lps22hb.html
+- LPS22HB: https://www.st.com/en/mems-and-sensors/lps22hb.html
 
 Building and Running
 ********************

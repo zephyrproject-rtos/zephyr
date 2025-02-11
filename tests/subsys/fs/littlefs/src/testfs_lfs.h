@@ -8,7 +8,7 @@
 #define _ZEPHYR_TESTS_SUBSYS_FS_LITTLEFS_TESTFS_LFS_H_
 
 #include <zephyr/fs/fs.h>
-#include "testfs_util.h"
+#include "../../common/test_fs_util.h"
 
 #define TESTFS_MNT_POINT_SMALL "/sml"
 #define TESTFS_MNT_POINT_MEDIUM "/med"

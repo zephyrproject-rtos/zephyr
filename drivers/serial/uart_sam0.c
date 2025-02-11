@@ -43,10 +43,10 @@ struct uart_sam0_dev_cfg {
 	uint32_t pm_apbcmask;
 	uint16_t gclk_clkctrl_id;
 #endif
-#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_SAM0_ASYNC
 	void (*irq_config_func)(const struct device *dev);
 #endif
-#if CONFIG_UART_ASYNC_API
+#if CONFIG_UART_SAM0_ASYNC
 	const struct device *dma_dev;
 	uint8_t tx_dma_request;
 	uint8_t tx_dma_channel;
@@ -62,8 +62,9 @@ struct uart_sam0_dev_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t cb;
 	void *cb_data;
+	uint8_t txc_cache;
 #endif
-#if CONFIG_UART_ASYNC_API
+#if CONFIG_UART_SAM0_ASYNC
 	const struct device *dev;
 	const struct uart_sam0_dev_cfg *cfg;
 
@@ -125,7 +126,7 @@ static int uart_sam0_set_baudrate(SercomUsart *const usart, uint32_t baudrate,
 }
 
 
-#if CONFIG_UART_ASYNC_API
+#if CONFIG_UART_SAM0_ASYNC
 
 static void uart_sam0_dma_tx_done(const struct device *dma_dev, void *arg,
 				  uint32_t id, int error_code)
@@ -302,7 +303,8 @@ static void uart_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 
 static void uart_sam0_rx_timeout(struct k_work *work)
 {
-	struct uart_sam0_dev_data *dev_data = CONTAINER_OF(work,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct uart_sam0_dev_data *dev_data = CONTAINER_OF(dwork,
 							   struct uart_sam0_dev_data, rx_timeout_work);
 	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
 	SercomUsart * const regs = cfg->regs;
@@ -564,11 +566,11 @@ static int uart_sam0_init(const struct device *dev)
 	}
 	dev_data->config_cache.baudrate = cfg->baudrate;
 
-#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_SAM0_ASYNC
 	cfg->irq_config_func(dev);
 #endif
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SAM0_ASYNC
 	dev_data->dev = dev;
 	dev_data->cfg = cfg;
 	if (!device_is_ready(cfg->dma_dev)) {
@@ -704,7 +706,7 @@ static int uart_sam0_err_check(const struct device *dev)
 	return err;
 }
 
-#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_SAM0_ASYNC
 
 static void uart_sam0_isr(const struct device *dev)
 {
@@ -716,7 +718,7 @@ static void uart_sam0_isr(const struct device *dev)
 	}
 #endif
 
-#if CONFIG_UART_ASYNC_API
+#if CONFIG_UART_SAM0_ASYNC
 	const struct uart_sam0_dev_cfg *const cfg = dev->config;
 	SercomUsart * const regs = cfg->regs;
 
@@ -823,9 +825,10 @@ static int uart_sam0_irq_tx_ready(const struct device *dev)
 static int uart_sam0_irq_tx_complete(const struct device *dev)
 {
 	const struct uart_sam0_dev_cfg *config = dev->config;
+	struct uart_sam0_dev_data *const dev_data = dev->data;
 	SercomUsart * const regs = config->regs;
 
-	return (regs->INTFLAG.bit.TXC != 0) && (regs->INTENSET.bit.TXC != 0);
+	return (dev_data->txc_cache != 0) && (regs->INTENSET.bit.TXC != 0);
 }
 
 static void uart_sam0_irq_rx_enable(const struct device *dev)
@@ -904,13 +907,23 @@ static int uart_sam0_irq_update(const struct device *dev)
 	/* Clear sticky interrupts */
 	const struct uart_sam0_dev_cfg *config = dev->config;
 	SercomUsart * const regs = config->regs;
+
 #if defined(SERCOM_REV500)
-	regs->INTFLAG.reg |=	SERCOM_USART_INTENCLR_ERROR
-			   |	SERCOM_USART_INTENCLR_RXBRK
-			   |	SERCOM_USART_INTENCLR_CTSIC
-			   |	SERCOM_USART_INTENCLR_RXS;
+	/*
+	 * Cache the TXC flag, and use this cached value to clear the interrupt
+	 * if we do not used the cached value, there is a chance TXC will set
+	 * after caching...this will cause TXC to never cached.
+	 */
+	struct uart_sam0_dev_data *const dev_data = dev->data;
+
+	dev_data->txc_cache = regs->INTFLAG.bit.TXC;
+	regs->INTFLAG.reg = SERCOM_USART_INTENCLR_ERROR
+			  | SERCOM_USART_INTENCLR_RXBRK
+			  | SERCOM_USART_INTENCLR_CTSIC
+			  | SERCOM_USART_INTENCLR_RXS
+			  | (dev_data->txc_cache << SERCOM_USART_INTENCLR_TXC_Pos);
 #else
-	regs->INTFLAG.reg =	SERCOM_USART_INTENCLR_RXS;
+	regs->INTFLAG.reg = SERCOM_USART_INTENCLR_RXS;
 #endif
 	return 1;
 }
@@ -923,10 +936,15 @@ static void uart_sam0_irq_callback_set(const struct device *dev,
 
 	dev_data->cb = cb;
 	dev_data->cb_data = cb_data;
+
+#if defined(CONFIG_UART_SAM0_ASYNC) && defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	dev_data->async_cb = NULL;
+	dev_data->async_cb_data = NULL;
+#endif
 }
 #endif
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SAM0_ASYNC
 
 static int uart_sam0_callback_set(const struct device *dev,
 				  uart_callback_t callback,
@@ -936,6 +954,11 @@ static int uart_sam0_callback_set(const struct device *dev,
 
 	dev_data->async_cb = callback;
 	dev_data->async_cb_data = user_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	dev_data->cb = NULL;
+	dev_data->cb_data = NULL;
+#endif
 
 	return 0;
 }
@@ -1130,7 +1153,7 @@ static int uart_sam0_rx_disable(const struct device *dev)
 	}
 
 	if (dev_data->rx_next_len) {
-		struct uart_event evt = {
+		struct uart_event next_evt = {
 			.type = UART_RX_BUF_RELEASED,
 			.data.rx_buf = {
 				.buf = dev_data->rx_next_buf,
@@ -1141,7 +1164,7 @@ static int uart_sam0_rx_disable(const struct device *dev)
 		dev_data->rx_next_len = 0U;
 
 		if (dev_data->async_cb) {
-			dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
+			dev_data->async_cb(dev, &next_evt, dev_data->async_cb_data);
 		}
 	}
 
@@ -1183,7 +1206,7 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 	.irq_update = uart_sam0_irq_update,
 	.irq_callback_set = uart_sam0_irq_callback_set,
 #endif
-#if CONFIG_UART_ASYNC_API
+#if CONFIG_UART_SAM0_ASYNC
 	.callback_set = uart_sam0_callback_set,
 	.tx = uart_sam0_tx,
 	.tx_abort = uart_sam0_tx_abort,
@@ -1193,7 +1216,7 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 #endif
 };
 
-#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_SAM0_ASYNC
 
 #define SAM0_UART_IRQ_CONNECT(n, m)					\
 	do {								\
@@ -1231,7 +1254,7 @@ static void uart_sam0_irq_config_##n(const struct device *dev)		\
 #define UART_SAM0_IRQ_HANDLER(n)
 #endif
 
-#if CONFIG_UART_ASYNC_API
+#if CONFIG_UART_SAM0_ASYNC
 #define UART_SAM0_DMA_CHANNELS(n)					\
 	.dma_dev = DEVICE_DT_GET(ATMEL_SAM0_DT_INST_DMA_CTLR(n, tx)),	\
 	.tx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),	\
@@ -1247,7 +1270,7 @@ static void uart_sam0_irq_config_##n(const struct device *dev)		\
 	(DT_INST_PROP(n, txpo) << SERCOM_USART_CTRLA_TXPO_Pos)
 
 #define UART_SAM0_SERCOM_COLLISION_DETECT(n) \
-	(DT_INST_PROP_OR(n, collision_detection, false))
+	(DT_INST_PROP(n, collision_detection))
 
 #ifdef MCLK
 #define UART_SAM0_CONFIG_DEFN(n)					\

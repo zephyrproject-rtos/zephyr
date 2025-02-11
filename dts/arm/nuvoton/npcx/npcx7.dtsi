@@ -1,0 +1,287 @@
+/*
+ * Copyright (c) 2021 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* NPCX7 series pinmux mapping table */
+#include "npcx7/npcx7-alts-map.dtsi"
+/* NPCX7 series mapping table between MIWU wui bits and source device */
+#include "npcx7/npcx7-miwus-wui-map.dtsi"
+/* NPCX7 series mapping table between MIWU groups and interrupts */
+#include "npcx7/npcx7-miwus-int-map.dtsi"
+/* NPCX7 series eSPI VW mapping table */
+#include "npcx7/npcx7-espi-vws-map.dtsi"
+/* NPCX7 series low-voltage io controls mapping table */
+#include "npcx7/npcx7-lvol-ctrl-map.dtsi"
+
+/* Device tree declarations of npcx soc family */
+#include "npcx.dtsi"
+
+/ {
+	def-io-conf-list {
+		pinmux = <&alt0_gpio_no_spip
+			   &alt0_gpio_no_fpip
+			   &alt1_no_pwrgd
+			   &alta_no_peci_en
+			   &altd_npsl_in1_sl
+			   &altd_npsl_in2_sl
+			   &altd_psl_in3_sl
+			   &altd_psl_in4_sl
+			   &alt7_no_ksi0_sl
+			   &alt7_no_ksi1_sl
+			   &alt7_no_ksi2_sl
+			   &alt7_no_ksi3_sl
+			   &alt7_no_ksi4_sl
+			   &alt7_no_ksi5_sl
+			   &alt7_no_ksi6_sl
+			   &alt7_no_ksi7_sl
+			   &alt8_no_kso00_sl
+			   &alt8_no_kso01_sl
+			   &alt8_no_kso02_sl
+			   &alt8_no_kso03_sl
+			   &alt8_no_kso04_sl
+			   &alt8_no_kso05_sl
+			   &alt8_no_kso06_sl
+			   &alt8_no_kso07_sl
+			   &alt9_no_kso08_sl
+			   &alt9_no_kso09_sl
+			   &alt9_no_kso10_sl
+			   &alt9_no_kso11_sl
+			   &alt9_no_kso12_sl
+			   &alt9_no_kso13_sl
+			   &alt9_no_kso14_sl
+			   &alt9_no_kso15_sl
+			   &alta_no_kso16_sl
+			   &alta_no_kso17_sl>;
+	};
+
+	soc {
+		compatible = "nuvoton,npcx7", "nuvoton,npcx", "simple-bus";
+
+		bbram: bb-ram@400af000 {
+			compatible = "nuvoton,npcx-bbram";
+			reg = <0x400af000 0x80
+			       0x400af100 0x1>;
+			reg-names = "memory", "status";
+		};
+
+		/* Specific soc devices in npcx7 series */
+		itims: timer@400bc000 {
+			compatible = "nuvoton,npcx-itim-timer";
+			reg = <0x400bc000 0x2000
+			       0x400be000 0x2000>;
+			reg-names = "evt_itim", "sys_itim";
+			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 3
+				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
+			interrupts = <46 1>; /* Event timer interrupt */
+		};
+
+		uart1: serial@400c4000 {
+			compatible = "nuvoton,npcx-uart";
+			reg = <0x400C4000 0x2000>;
+			interrupts = <33 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
+			uart-rx = <&wui_cr_sin1>;
+			status = "disabled";
+		};
+
+		uart2: serial@400c6000 {
+			compatible = "nuvoton,npcx-uart";
+			reg = <0x400C6000 0x2000>;
+			interrupts = <32 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 6>;
+			uart-rx = <&wui_cr_sin2>;
+			status = "disabled";
+		};
+
+		/* Default clock and power settings in npcx9 series */
+		pcc: clock-controller@4000d000 {
+			clock-frequency = <DT_FREQ_M(90)>; /* OFMCLK runs at 90MHz */
+			core-prescaler = <6>; /* CORE_CLK runs at 15MHz */
+			apb1-prescaler = <6>; /* APB1_CLK runs at 15MHz */
+			apb2-prescaler = <6>; /* APB2_CLK runs at 15MHz */
+			apb3-prescaler = <6>; /* APB3_CLK runs at 15MHz */
+			ram-pd-depth = <12>; /* Valid bit-depth of RAM_PDn reg */
+			pwdwn-ctl-val = <0xfb /* No FIU_PD */
+					 0xff
+					 0x1f /* No GDMA_PD */
+					 0xff
+					 0xfa
+					 0x7f /* No ESPI_PD */
+					 0xe7>;
+		};
+
+		/* Wake-up input source mapping for GPIOs in npcx7 series */
+		gpio0: gpio@40081000 {
+			wui-maps = <&wui_io00 &wui_io01 &wui_io02 &wui_io03
+				    &wui_io04 &wui_io05 &wui_io06 &wui_io07>;
+
+			lvol-maps = <&lvol_io00 &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
+		};
+
+		gpio1: gpio@40083000 {
+			wui-maps = <&wui_io10 &wui_io11 &wui_none &wui_none
+				    &wui_io14 &wui_io15 &wui_io16 &wui_io17>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
+		};
+
+		gpio2: gpio@40085000 {
+			wui-maps = <&wui_io20 &wui_io21 &wui_io22 &wui_io23
+				    &wui_io24 &wui_io25 &wui_io26 &wui_io27>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
+		};
+
+		gpio3: gpio@40087000 {
+			wui-maps = <&wui_io30 &wui_io31 &wui_none &wui_io33
+				    &wui_io34 &wui_none &wui_io36 &wui_io37>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_io33
+				     &lvol_io34 &lvol_none &lvol_io36 &lvol_io37>;
+		};
+
+		gpio4: gpio@40089000 {
+			wui-maps = <&wui_io40 &wui_io41 &wui_io42 &wui_io43
+				    &wui_io44 &wui_io45 &wui_io46 &wui_io47>;
+
+			lvol-maps = <&lvol_io40 &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
+		};
+
+		gpio5: gpio@4008b000 {
+			wui-maps = <&wui_io50 &wui_io51 &wui_io52 &wui_io53
+				    &wui_io54 &wui_io55 &wui_io56 &wui_io57>;
+
+			lvol-maps = <&lvol_io50 &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
+		};
+
+		gpio6: gpio@4008d000 {
+			wui-maps = <&wui_io60 &wui_io61 &wui_io62 &wui_io63
+				    &wui_io64 &wui_none &wui_none &wui_io67>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_none
+				     &lvol_io64 &lvol_none &lvol_none &lvol_none>;
+		};
+
+		gpio7: gpio@4008f000 {
+			wui-maps = <&wui_io70 &wui_none &wui_io72 &wui_io73
+				    &wui_io74 &wui_io75 &wui_io76 &wui_none>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_io72 &lvol_io73
+				     &lvol_io74 &lvol_io75 &lvol_none &lvol_none>;
+		};
+
+		gpio8: gpio@40091000 {
+			wui-maps = <&wui_io80 &wui_io81 &wui_io82 &wui_io83
+				    &wui_none &wui_none &wui_io86 &wui_io87>;
+
+			lvol-maps = <&lvol_io80 &lvol_none &lvol_io82 &lvol_none
+				     &lvol_none &lvol_none &lvol_io86 &lvol_io87>;
+		};
+
+		gpio9: gpio@40093000 {
+			wui-maps = <&wui_io90 &wui_io91 &wui_io92 &wui_io93
+				    &wui_io94 &wui_io95 &wui_io96 &wui_io97>;
+
+			lvol-maps = <&lvol_io90 &lvol_io91 &lvol_io92 &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
+		};
+
+		gpioa: gpio@40095000 {
+			wui-maps = <&wui_ioa0 &wui_ioa1 &wui_ioa2 &wui_ioa3
+				    &wui_ioa4 &wui_ioa5 &wui_ioa6 &wui_ioa7>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
+		};
+
+		gpiob: gpio@40097000 {
+			wui-maps = <&wui_iob0 &wui_iob1 &wui_iob2 &wui_iob3
+				    &wui_iob4 &wui_iob5 &wui_none &wui_iob7>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_iob2 &lvol_iob3
+				     &lvol_iob4 &lvol_iob5 &lvol_none &lvol_none>;
+		};
+
+		gpioc: gpio@40099000 {
+			wui-maps = <&wui_ioc0 &wui_ioc1 &wui_ioc2 &wui_ioc3
+				    &wui_ioc4 &wui_ioc5 &wui_ioc6 &wui_ioc7>;
+
+			lvol-maps = <&lvol_none &lvol_ioc1 &lvol_ioc2 &lvol_none
+				     &lvol_none &lvol_ioc5 &lvol_ioc6 &lvol_ioc7>;
+		};
+
+		gpiod: gpio@4009b000 {
+			wui-maps = <&wui_iod0 &wui_iod1 &wui_iod2 &wui_iod3
+				    &wui_iod4 &wui_iod5 &wui_none &wui_iod7>;
+
+			lvol-maps = <&lvol_iod0 &lvol_iod1 &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
+		};
+
+		gpioe: gpio@4009d000 {
+			wui-maps = <&wui_ioe0 &wui_ioe1 &wui_ioe2 &wui_ioe3
+				    &wui_ioe4 &wui_ioe5 &wui_none &wui_none>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_ioe3
+				     &lvol_ioe4 &lvol_none &lvol_none &lvol_none>;
+		};
+
+		gpiof: gpio@4009f000 {
+			wui-maps = <&wui_iof0 &wui_iof1 &wui_iof2 &wui_iof3
+				    &wui_iof4 &wui_iof5 &wui_none &wui_none>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_iof2 &lvol_iof3
+				     &lvol_iof4 &lvol_iof5 &lvol_none &lvol_none>;
+		};
+
+		/* ADC0 comparator configuration in npcx7 series */
+		adc0: adc@400d1000 {
+			channel-count = <10>;
+			threshold-count = <3>;
+		};
+
+		/* FIU0 configuration in npcx7 series */
+		qspi_fiu0: quadspi@40020000 {
+			clocks = <&pcc NPCX_CLOCK_BUS_FIU NPCX_PWDWN_CTL1 2>;
+		};
+
+		shi0: shi@4000f000 {
+			compatible = "nuvoton,npcx-shi";
+			reg = <0x4000f000 0x120>;
+			interrupts = <18 1>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 1>;
+			status = "disabled";
+			buffer-rx-size = <128>;
+			buffer-tx-size = <128>;
+			shi-cs-wui =<&wui_io53>;
+		};
+
+		espi0: espi@4000a000 {
+			rx-plsize = <64>;
+			tx-plsize = <16>;
+		};
+
+		rctl: reset-controller@400c3100 {
+			compatible = "nuvoton,npcx-rst";
+			reg = <0x400c3100 0x10>;
+			#reset-cells = <1>;
+			status = "disabled";
+		};
+	};
+
+	soc-id {
+		chip-id = <0x07>;
+		revision-reg = <0x00007FFC 1>;
+	};
+
+	booter-variant {
+		hif-type-auto;
+	};
+};

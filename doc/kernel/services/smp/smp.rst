@@ -18,7 +18,7 @@ variable.  This must be set to "y" to enable SMP features, otherwise
 a uniprocessor kernel will be built.  In general the platform default
 will have enabled this anywhere it's supported. When enabled, the
 number of physical CPUs available is visible at build time as
-:kconfig:option:`CONFIG_MP_NUM_CPUS`.  Likewise, the default for this will be the
+:kconfig:option:`CONFIG_MP_MAX_NUM_CPUS`.  Likewise, the default for this will be the
 number of available CPUs on the platform and it is not expected that
 typical apps will change it.  But it is legal and supported to set
 this to a smaller (but obviously not larger) number for special
@@ -132,7 +132,7 @@ happens on a single CPU before other CPUs are brought online.
 Just before entering the application :c:func:`main` function, the kernel
 calls :c:func:`z_smp_init` to launch the SMP initialization process.  This
 enumerates over the configured CPUs, calling into the architecture
-layer using :c:func:`arch_start_cpu` for each one.  This function is
+layer using :c:func:`arch_cpu_start` for each one.  This function is
 passed a memory region to use as a stack on the foreign CPU (in
 practice it uses the area that will become that CPU's interrupt
 stack), the address of a local :c:func:`smp_init_top` callback function to
@@ -180,13 +180,17 @@ handle the newly-runnable load.
 
 So where possible, Zephyr SMP architectures should implement an
 interprocessor interrupt.  The current framework is very simple: the
-architecture provides a :c:func:`arch_sched_ipi` call, which when invoked
-will flag an interrupt on all CPUs (except the current one, though
-that is allowed behavior) which will then invoke the :c:func:`z_sched_ipi`
-function implemented in the scheduler.  The expectation is that these
-APIs will evolve over time to encompass more functionality
-(e.g. cross-CPU calls), and that the scheduler-specific calls here
-will be implemented in terms of a more general framework.
+architecture provides at least a :c:func:`arch_sched_broadcast_ipi` call,
+which when invoked will flag an interrupt on all CPUs (except the current one,
+though that is allowed behavior). If the architecture supports directed IPIs
+(see :kconfig:option:`CONFIG_ARCH_HAS_DIRECTED_IPIS`), then the
+architecture also provides a :c:func:`arch_sched_directed_ipi` call, which
+when invoked will flag an interrupt on the specified CPUs. When an interrupt is
+flagged on the CPUs, the :c:func:`z_sched_ipi` function implemented in the
+scheduler will get invoked on those CPUs. The expectation is that these
+APIs will evolve over time to encompass more functionality (e.g. cross-CPU
+calls), and that the scheduler-specific calls here will be implemented in
+terms of a more general framework.
 
 Note that not all SMP architectures will have a usable IPI mechanism
 (either missing, or just undocumented/unimplemented).  In those cases
@@ -220,6 +224,45 @@ involve severe lock contention) for new threads.  The expectation is
 that power constrained SMP applications are always going to provide an
 IPI, and this code will only be used for testing purposes or on
 systems without power consumption requirements.
+
+IPI Cascades
+============
+
+The kernel can not control the order in which IPIs are processed by the CPUs
+in the system. In general, this is not an issue and a single set of IPIs is
+sufficient to trigger a reschedule on the N CPUs that results with them
+scheduling the highest N priority ready threads to execute. When CPU masking
+is used, there may be more than one valid set of threads (not to be confused
+with an optimal set of threads) that can be scheduled on the N CPUs and a
+single set of IPIs may be insufficient to result in any of these valid sets.
+
+.. note::
+    When CPU masking is not in play, the optimal set of threads is the same
+    as the valid set of threads. However when CPU masking is in play, there
+    may be more than one valid set--one of which may be optimal.
+
+    To better illustrate the distinction, consider a 2-CPU system with ready
+    threads T1 and T2 at priorities 1 and 2 respectively. Let T2 be pinned to
+    CPU0 and T1 not be pinned. If CPU0 is executing T2 and CPU1 executing T1,
+    then this set is is both valid and optimal. However, if CPU0 is executing
+    T1 and CPU1 is idling, then this too would be valid though not optimal.
+
+In those cases where a single set of IPIs is not sufficient to generate a valid
+set, the resulting set of executing threads are expected to be close to a valid
+set, and subsequent IPIs can generally be expected to correct the situation
+soon. However, for cases where neither the approximation nor the delay are
+acceptable, enabling :kconfig:option:`CONFIG_SCHED_IPI_CASCADE` will allow the
+kernel to generate cascading IPIs until the kernel has selected a valid set of
+ready threads for the CPUs.
+
+There are three types of costs/penalties associated with the IPI cascades--and
+for these reasons they are disabled by default. The first is a cost incurred
+by the CPU producing the IPI when a new thread preempts the old thread as checks
+must be done to compare the old thread against the threads executing on the
+other CPUs. The second is a cost incurred by the CPUs receiving the IPIs as
+they must be processed. The third is the apparent sputtering of a thread as it
+"winks in" and then "winks out" due to cascades stemming from the
+aforementioned first cost.
 
 SMP Kernel Internals
 ********************
@@ -302,7 +345,7 @@ registers only when :c:func:`arch_switch` is called to minimize context
 switching latency. Such architectures must use NULL as the argument to
 :c:func:`z_get_next_switch_handle` to determine if there is a new thread
 to schedule, and follow through with their own :c:func:`arch_switch` or
-derrivative if so, or directly leave interrupt mode otherwise.
+derivative if so, or directly leave interrupt mode otherwise.
 In the former case it is up to that switch code to store the handle
 resulting from the thread that is being switched out in that thread's
 "switch_handle" field after its context has fully been saved.

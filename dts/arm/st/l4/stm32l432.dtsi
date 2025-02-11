@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32l432", "st,stm32l4", "simple-bus";
+
 		clocks {
 			clk_hsi48: clk-hsi48 {
 				#clock-cells = <0>;
@@ -49,14 +51,12 @@
 		};
 
 		can1: can@40006400 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>; //RCC_APB1ENR1_CAN1EN
 			status = "disabled";
-			sjw = <1>;
-			sample-point = <875>;
 		};
 
 		usb: usb@40006800 {
@@ -88,10 +88,6 @@
 				status = "disabled";
 			};
 		};
-	};
-
-	die_temp: dietemp {
-		ts-cal2-temp = <130>;
 	};
 
 	usb_fs_phy: usbphy {

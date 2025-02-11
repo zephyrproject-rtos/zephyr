@@ -1,0 +1,21 @@
+# NPCX Keyboard scan driver configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_NPCX_KBD
+	bool "Nuvoton NPCX embedded controller (EC) keyboard scan driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_KBD_ENABLED
+	select INPUT_KBD_MATRIX
+	help
+	  This option enables the keyboard scan driver for NPCX family of
+	  processors.
+
+config INPUT_NPCX_KBD_KSO_HIGH_DRIVE
+	bool "Select quasi-bidirectional buffers for KSO pins"
+	default y
+	depends on INPUT_NPCX_KBD
+	help
+	  Select quasi-bidirectional buffers for KSO pins to reduce the
+	  low-to-high transition time.

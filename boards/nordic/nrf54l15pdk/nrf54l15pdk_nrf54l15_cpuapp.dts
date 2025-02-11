@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nrf54l15_cpuapp_common.dtsi"
+
+/ {
+	compatible = "nordic,nrf54l15pdk_nrf54l15-cpuapp";
+	model = "Nordic nRF54L15 PDK nRF54L15 Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};

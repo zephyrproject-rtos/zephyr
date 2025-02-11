@@ -1,0 +1,241 @@
+/*
+ * Copyright (c) 2022 Seco Spa
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f3/stm32f302Xc.dtsi>
+#include <st/f3/stm32f302v(b-c)tx-pinctrl.dtsi>
+
+/ {
+	model = "SECO SBC-3.5-PX30 board (STM32F302VCT6)";
+	compatible = "seco,stm32f3-d23";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &can1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_1: led_1 {
+			gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
+			label = "LED-1";
+		};
+		led_2: led_2 {
+			gpios = <&gpiod 9 GPIO_ACTIVE_HIGH>;
+			label = "LED-2";
+		};
+	};
+
+	out_3p3v_pwr: 3p3v-out-pwr-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "3p3v-out-pwr-ctrl";
+		enable-gpios = <&gpioe 7 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	out_gpio_bufa_pwr: out-gpio-bufa-pwr-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "out-gpio-bufa-pwr-ctrl";
+		enable-gpios = <&gpiof 2 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	out_gpio_bufb_pwr: out-gpio-bufb-pwr-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "out-gpio-bufb-pwr-ctrl";
+		enable-gpios = <&gpiof 4 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	in_gpio_buf_pwr: in-gpio-buf-pwr-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "in-gpio-buf-pwr-ctrl";
+		enable-gpios = <&gpiof 6 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "nxp,tja1040", "can-transceiver-gpio";
+		standby-gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <1000000>;
+		#phy-cells = <0>;
+	};
+
+	aliases {
+		led0 = &led_1;
+		led1 = &led_2;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	prediv = <1>;
+	mul = <9>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(72)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+	status = "okay";
+};
+
+/* Debug Serial */
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* Modbus */
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6
+		     &usart2_cts_pd3 &usart2_rts_pd4>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+/* RS-485 */
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11
+		     &usart3_rts_pd12>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&uart5 {
+	pinctrl-0 = <&uart5_tx_pc12 &uart5_rx_pd2>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+&i2c2 {
+	/* alternate config usart1 */
+	pinctrl-0 = <&i2c2_scl_pa9 &i2c2_sda_pa10>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pb3
+		     &spi1_miso_pb4 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
+	pinctrl-names = "default";
+	phys = <&transceiver0>;
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+			read-only;
+		};
+		/*
+		 * The flash starting at 0x00010000 and ending at
+		 * 0x0001ffff (sectors 16-31) is reserved for use
+		 * by the application.
+		 */
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x00008000>;
+		};
+		slot1_partition: partition@28000 {
+			label = "image-1";
+			reg = <0x00028000 0x00008000>;
+		};
+		storage_partition: partition@30000 {
+			label = "storage";
+			reg = <0x00030000 0x00002000>;
+		};
+		scratch_partition: partition@32000 {
+			label = "image-scratch";
+			reg = <0x00032000 0x00008000>;
+		};
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+	status = "okay";
+	pwm1: pwm {
+		pinctrl-0 = <&tim1_ch1_pe9 &tim1_ch2n_pe10 &tim1_ch2_pe11
+			     &tim1_ch3n_pe12 &tim1_ch3_pe13 &tim1_ch4_pe14>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers4 {
+	st,prescaler = <10000>;
+	status = "okay";
+	pwm4: pwm {
+		pinctrl-0 = <&tim4_ch2_pd13 &tim4_ch3_pd14 &tim4_ch4_pd15>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};

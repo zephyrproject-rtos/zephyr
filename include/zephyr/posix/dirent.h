@@ -9,7 +9,7 @@
 #include <limits.h>
 #include "posix_types.h"
 
-#ifdef CONFIG_POSIX_FS
+#ifdef CONFIG_POSIX_FILE_SYSTEM
 #include <zephyr/fs/fs.h>
 
 #ifdef __cplusplus
@@ -24,14 +24,14 @@ struct dirent {
 };
 
 /* Directory related operations */
-extern DIR *opendir(const char *dirname);
-extern int closedir(DIR *dirp);
-extern struct dirent *readdir(DIR *dirp);
+DIR *opendir(const char *dirname);
+int closedir(DIR *dirp);
+struct dirent *readdir(DIR *dirp);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* CONFIG_POSIX_FS */
+#endif /* CONFIG_POSIX_FILE_SYSTEM */
 
 #endif	/* ZEPHYR_INCLUDE_POSIX_DIRENT_H_ */

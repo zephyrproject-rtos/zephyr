@@ -33,7 +33,7 @@ static size_t dir_list_object_record_size(const struct bt_gatt_ots_object *obj)
 	/* ID */
 	len += BT_OTS_OBJ_ID_SIZE;
 
-	/* Name length (single octect is used for the name length) */
+	/* Name length (single octet is used for the name length) */
 	len += sizeof(uint8_t);
 
 	/* Name */
@@ -126,7 +126,9 @@ static void dir_list_object_encode(const struct bt_gatt_ots_object *obj,
 static void bt_ots_dir_list_reset_anchor(struct bt_ots_dir_list *dir_list, void *obj_manager)
 {
 	dir_list->anchor_offset = 0;
-	bt_gatt_ots_obj_manager_first_obj_get(obj_manager, &dir_list->anchor_object);
+
+	/* Reset the dir_list - Ignore any error as we can't do anything about it anyways */
+	(void)bt_gatt_ots_obj_manager_first_obj_get(obj_manager, &dir_list->anchor_object);
 }
 
 static int bt_ots_dir_list_search_forward(struct bt_ots_dir_list *dir_list, void *obj_manager,

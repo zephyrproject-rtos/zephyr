@@ -20,7 +20,7 @@ static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, 3),
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -30,7 +30,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Bluetooth initialized\n");
@@ -45,7 +45,7 @@ void main(void)
 				      NULL, 0);
 		if (err) {
 			printk("Advertising failed to start (err %d)\n", err);
-			return;
+			return 0;
 		}
 
 		k_msleep(1000);
@@ -53,10 +53,11 @@ void main(void)
 		err = bt_le_adv_stop();
 		if (err) {
 			printk("Advertising failed to stop (err %d)\n", err);
-			return;
+			return 0;
 		}
 
 		mfg_data[2]++;
 
 	} while (1);
+	return 0;
 }

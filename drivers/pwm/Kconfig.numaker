@@ -1,0 +1,14 @@
+# NUMAKER PWM Driver configuration options
+
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_NUMAKER
+	bool "Nuvoton NuMaker MCU PWM driver"
+	default y
+	select HAS_NUMAKER_PWM
+	depends on DT_HAS_NUVOTON_NUMAKER_PWM_ENABLED
+	help
+	  This option enables the PWM driver for Nuvoton NuMaker family of
+	  processors.
+	  Say y if you wish to enable NuMaker PWM.

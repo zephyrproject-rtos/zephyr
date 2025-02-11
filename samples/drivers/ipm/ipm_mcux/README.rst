@@ -1,7 +1,8 @@
-.. _ipm-mcux-sample:
+.. zephyr:code-sample:: ipm-mcux
+   :name: IPM on NXP LPC
+   :relevant-api: ipm_interface
 
-Sample mailbox application
-##########################
+   Implement inter-processor mailbox (IPM) on NXP LPC family.
 
 Overview
 ********
@@ -20,22 +21,24 @@ Requirements
 - :ref:`lpcxpresso54114` board
 - :ref:`lpcxpresso55s69` board
 
-Building the application for lpcxpresso54114_m4
-***********************************************
+Building the application for lpcxpresso54114/lpc54114/m4
+********************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ipm/ipm_mcux
-   :board: lpcxpresso54114_m4
+   :board: lpcxpresso54114/lpc54114/m4
    :goals: debug
+   :west-args: --sysbuild
 
 
-Building the application for lpcxpresso55s69_cpu0
-*************************************************
+Building the application for lpcxpresso55s69/lpc55s69/cpu0
+**********************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ipm/ipm_mcux
-   :board: lpcxpresso55s69_cpu0
+   :board: lpcxpresso55s69/lpc55s69/cpu0
    :goals: debug
+   :west-args: --sysbuild
 
 Running
 *******

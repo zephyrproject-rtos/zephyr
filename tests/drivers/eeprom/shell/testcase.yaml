@@ -1,6 +1,9 @@
 tests:
   drivers.eeprom.shell:
     integration_platforms:
-      - native_posix
-      - native_posix_64
-    tags: drivers eeprom shell
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - drivers
+      - eeprom
+      - shell

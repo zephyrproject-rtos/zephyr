@@ -1,12 +1,13 @@
-.. _dac-sample:
+.. zephyr:code-sample:: dac
+   :name: Digital-to-Analog Converter (DAC)
+   :relevant-api: dac_interface
 
-Digital-to-Analog Converter (DAC)
-#################################
+   Generate an analog sawtooth signal using the DAC driver API.
 
 Overview
 ********
 
-This sample demonstrates how to use the DAC driver API.
+This sample demonstrates how to use the :ref:`DAC driver API <dac_api>`.
 
 Building and Running
 ********************
@@ -170,7 +171,7 @@ built and executed for the :ref:`bl5340_dvk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: bl5340_dvk_cpuapp
+   :board: bl5340_dvk/nrf5340/cpuapp
    :goals: build flash
    :compact:
 
@@ -205,9 +206,22 @@ also can run for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: longan_nano_lite
+   :board: longan_nano/gd32vf103/lite
    :goals: build flash
    :compact:
+
+Building and Running for NXP LPCXpresso55S36
+============================================
+The sample can be built and executed for the :ref:`lpcxpresso55s36` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: lpcxpresso55s36
+   :goals: build flash
+   :compact:
+
+DAC output is available on connector J12 pin 4.
 
 Sample output
 =============

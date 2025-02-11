@@ -27,14 +27,23 @@ zephyr_sources_ifdef(
   tracing_backend_uart.c
   )
 
-zephyr_sources_ifdef(
-  CONFIG_TRACING_BACKEND_POSIX
-  tracing_backend_posix.c
-  )
+if (CONFIG_TRACING_BACKEND_POSIX)
+  zephyr_sources(tracing_backend_posix.c)
+  if (CONFIG_NATIVE_APPLICATION)
+    zephyr_library_sources(tracing_backend_posix_bottom.c)
+  else()
+    target_sources(native_simulator INTERFACE tracing_backend_posix_bottom.c)
+  endif()
+endif()
 
 zephyr_sources_ifdef(
   CONFIG_TRACING_BACKEND_RAM
   tracing_backend_ram.c
+  )
+
+zephyr_sources_ifdef(
+  CONFIG_TRACING_BACKEND_ADSP_MEMORY_WINDOW
+  tracing_backend_adsp_memory_window.c
   )
 
 endif()

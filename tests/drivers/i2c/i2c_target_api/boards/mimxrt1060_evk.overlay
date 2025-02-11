@@ -23,12 +23,9 @@
 &lpi2c1 {
 	status = "okay";
 	eeprom0: eeprom@54 {
-		compatible = "atmel,at24";
+		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
-		size = <1024>;
-		pagesize = <16>;
-		address-width = <8>;
-		timeout = <5>;
+		size = <256>;
 	};
 };
 
@@ -37,11 +34,8 @@
 	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
 	eeprom1: eeprom@56 {
-		compatible = "atmel,at24";
+		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
-		size = <1024>;
-		pagesize = <16>;
-		address-width = <8>;
-		timeout = <5>;
+		size = <256>;
 	};
 };

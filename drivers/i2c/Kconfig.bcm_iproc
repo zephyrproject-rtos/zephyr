@@ -1,0 +1,10 @@
+# Copyright 2020 Broadcom
+# Copyright 2024 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_IPROC
+	bool "Broadcom iProc I2C controller"
+	default y
+	depends on DT_HAS_BRCM_IPROC_I2C_ENABLED
+	help
+	  Enable support for Broadcom iProc I2C controller.

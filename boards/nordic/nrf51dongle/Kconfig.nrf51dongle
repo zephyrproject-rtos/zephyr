@@ -1,0 +1,7 @@
+# nRF51 Dongle NRF51822 board configuration
+
+# Copyright (c) 2018 Nordic Semiconductor ASA.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF51DONGLE
+	select SOC_NRF51822_QFAC

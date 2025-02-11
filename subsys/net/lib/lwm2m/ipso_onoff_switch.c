@@ -87,10 +87,10 @@ static int get_switch_index(uint16_t obj_inst_id)
 	return ret;
 }
 
-static int state_post_write_cb(uint16_t obj_inst_id,
-			       uint16_t res_id, uint16_t res_inst_id,
-			       uint8_t *data, uint16_t data_len,
-			       bool last_block, size_t total_size)
+static int state_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+			       uint16_t res_inst_id, uint8_t *data,
+			       uint16_t data_len, bool last_block,
+			       size_t total_size, size_t offset)
 {
 	int i;
 
@@ -157,10 +157,10 @@ static void *off_time_read_cb(uint16_t obj_inst_id,
 	return &switch_data[i].off_time_sec;
 }
 
-static int time_post_write_cb(uint16_t obj_inst_id,
-			      uint16_t res_id, uint16_t res_inst_id,
-			      uint8_t *data, uint16_t data_len,
-			      bool last_block, size_t total_size)
+static int time_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+			      uint16_t res_inst_id, uint8_t *data,
+			      uint16_t data_len, bool last_block,
+			      size_t total_size, size_t offset)
 {
 	int i = get_switch_index(obj_inst_id);
 
@@ -234,7 +234,7 @@ static struct lwm2m_engine_obj_inst *switch_create(uint16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ipso_switch_init(const struct device *dev)
+static int ipso_switch_init(void)
 {
 	onoff_switch.obj_id = IPSO_OBJECT_ONOFF_SWITCH_ID;
 	onoff_switch.version_major = SWITCH_VERSION_MAJOR;
@@ -249,4 +249,4 @@ static int ipso_switch_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(ipso_switch_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(ipso_switch_init);

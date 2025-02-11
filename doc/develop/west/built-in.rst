@@ -245,12 +245,14 @@ West has a few more commands for managing the projects in the
 workspace, which are summarized here. Run ``west <command> -h`` for
 detailed help.
 
+- ``west compare``: compare the state of the workspace against the manifest
+- ``west diff``: run ``git diff`` in local project repositories
+- ``west forall``: run an arbitrary command in local project repositories
+- ``west grep``: search for patterns in local project repositories
 - ``west list``: print a line of information about each project in the
   manifest, according to a format string
 - ``west manifest``: manage the manifest file. See :ref:`west-manifest-cmd`.
-- ``west diff``: run ``git diff`` in local project repositories
 - ``west status``: run ``git status`` in local project repositories
-- ``west forall``: run an arbitrary command in local project repositories
 
 Other built-in commands
 ***********************

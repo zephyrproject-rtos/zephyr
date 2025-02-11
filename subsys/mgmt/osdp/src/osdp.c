@@ -32,8 +32,8 @@ struct osdp_device {
 	int rx_event_data;
 	struct k_fifo rx_event_fifo;
 #endif
-	uint8_t rx_fbuf[CONFIG_OSDP_UART_BUFFER_LENGTH];
-	uint8_t tx_fbuf[CONFIG_OSDP_UART_BUFFER_LENGTH];
+	uint8_t rx_fbuf[OSDP_PACKET_BUF_SIZE];
+	uint8_t tx_fbuf[OSDP_PACKET_BUF_SIZE];
 	struct uart_config dev_config;
 	const struct device *dev;
 	int wait_for_mark;
@@ -156,8 +156,7 @@ static struct osdp *osdp_build_ctx(struct osdp_channel *channel)
 			SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
 		}
 		memcpy(&pd->channel, channel, sizeof(struct osdp_channel));
-		k_mem_slab_init(&pd->cmd.slab,
-				pd->cmd.slab_buf, sizeof(struct osdp_cmd),
+		k_mem_slab_init(&pd->cmd.slab, pd->cmd.slab_buf, sizeof(union osdp_ephemeral_data),
 				CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE);
 	}
 	return ctx;
@@ -177,9 +176,8 @@ void osdp_refresh(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static int osdp_init(const struct device *arg)
+static int osdp_init(void)
 {
-	ARG_UNUSED(arg);
 	int len;
 	uint8_t c, *key = NULL, key_buf[16];
 	struct osdp *ctx;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 NXP
+ * Copyright 2021,2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@
 #include <fsl_cache.h>
 #endif
 
-#define NOR_WRITE_SIZE	1
 #define NOR_ERASE_VALUE	0xff
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
@@ -40,8 +39,11 @@ static uint8_t nor_write_buf[SPI_NOR_PAGE_SIZE];
 /* FLASH_ENABLE_OCTAL_CMD: (01 = STR OPI Enable) , (02 = DTR OPI Enable) */
 #if CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR
 #define NOR_FLASH_ENABLE_OCTAL_CMD 0x2
+/* In OPI DTR mode, all writes must be 2 byte aligned, and multiples of 2 bytes */
+#define NOR_WRITE_SIZE	2
 #else
 #define NOR_FLASH_ENABLE_OCTAL_CMD 0x1
+#define NOR_WRITE_SIZE	1
 #endif
 
 LOG_MODULE_REGISTER(flash_flexspi_nor, CONFIG_FLASH_LOG_LEVEL);
@@ -388,6 +390,12 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		 */
 		key = irq_lock();
 	}
+	if (IS_ENABLED(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR)) {
+		/* Check that write size and length are even */
+		if ((offset & 0x1) || (len & 0x1)) {
+			return -EINVAL;
+		}
+	}
 
 	while (len) {
 		/* If the offset isn't a multiple of the NOR page size, we first need
@@ -510,17 +518,16 @@ static int flash_flexspi_nor_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!memc_flexspi_is_running_xip(data->controller) &&
-	    memc_flexspi_set_device_config(data->controller, &data->config,
-					   data->port)) {
-		LOG_ERR("Could not set device configuration");
-		return -EINVAL;
+	if (memc_flexspi_is_running_xip(data->controller)) {
+		/* Wait for bus idle before configuring */
+		memc_flexspi_wait_bus_idle(data->controller);
 	}
 
-	if (memc_flexspi_update_lut(data->controller, 0,
-				   (const uint32_t *) flash_flexspi_nor_lut,
-				   sizeof(flash_flexspi_nor_lut) / 4)) {
-		LOG_ERR("Could not update lut");
+	if (memc_flexspi_set_device_config(data->controller, &data->config,
+	    (const uint32_t *)flash_flexspi_nor_lut,
+	    sizeof(flash_flexspi_nor_lut) / MEMC_FLEXSPI_CMD_SIZE,
+	    data->port)) {
+		LOG_ERR("Could not set device configuration");
 		return -EINVAL;
 	}
 

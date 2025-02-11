@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NSIM_VPX5
+	bool
+	select SOC_FAMILY_NSIM_ARC_CLASSIC
+
+config SOC_SERIES
+	default "nsim_vpx5" if SOC_SERIES_NSIM_VPX5
+
+config SOC_NSIM_VPX5
+	bool
+	select SOC_SERIES_NSIM_VPX5
+	help
+	  Synopsys ARC VPX5 in nSIM
+
+config SOC
+	default "nsim_vpx5" if SOC_NSIM_VPX5

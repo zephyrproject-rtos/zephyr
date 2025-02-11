@@ -11,7 +11,7 @@
 #error Rebuild with the ARC_DSP config option enabled
 #endif
 
-#ifndef CONFIG_ARC_DSP_SHARING
+#ifndef CONFIG_DSP_SHARING
 #error Rebuild with the ARC_DSP_SHARING config option enabled
 #endif
 

@@ -132,6 +132,8 @@ def main():
         else:
             logger.debug("# Endianness: Big")
 
+        logger.debug("# Database version: %d", database.get_version())
+
         ret = log_parser.parse_log_data(logdata, debug=args.debug)
         if not ret:
             logger.error("ERROR: there were error(s) parsing log data")

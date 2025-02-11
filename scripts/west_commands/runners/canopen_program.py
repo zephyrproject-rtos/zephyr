@@ -31,7 +31,7 @@ PROGRAM_DOWNLOAD_CHUNK_SIZE = PROGRAM_DOWNLOAD_BUFFER_SIZE // 2
 
 # Default timeouts and retries
 DEFAULT_TIMEOUT = 10.0 # seconds
-DEFAULT_SDO_TIMEOUT = 0.3 # seconds
+DEFAULT_SDO_TIMEOUT = 1 # seconds
 DEFAULT_SDO_RETRIES = 1
 
 # Object dictionary indexes

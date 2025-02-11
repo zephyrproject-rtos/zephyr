@@ -73,7 +73,7 @@ static bool init_buttons(void)
 #if DT_NODE_HAS_STATUS(SW0_NODE, okay)
 	static struct gpio_callback sw0_cb_data;
 
-	if (!device_is_ready(sw0_spec.port)) {
+	if (!gpio_is_ready_dt(&sw0_spec)) {
 		printk("%s is not ready\n", sw0_spec.port->name);
 		return false;
 	}
@@ -101,7 +101,7 @@ static bool init_buttons(void)
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
 	static struct gpio_callback sw1_cb_data;
 
-	if (!device_is_ready(sw1_spec.port)) {
+	if (!gpio_is_ready_dt(&sw1_spec)) {
 		printk("%s is not ready\n", sw1_spec.port->name);
 		return false;
 	}
@@ -244,7 +244,7 @@ static bool trigger_command(const struct device *i2s_dev_rx,
 	return true;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const i2s_dev_rx = DEVICE_DT_GET(I2S_RX_NODE);
 	const struct device *const i2s_dev_tx = DEVICE_DT_GET(I2S_TX_NODE);
@@ -254,22 +254,22 @@ void main(void)
 
 #if DT_ON_BUS(DT_NODELABEL(wm8731), i2c)
 	if (!init_wm8731_i2c()) {
-		return;
+		return 0;
 	}
 #endif
 
 	if (!init_buttons()) {
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(i2s_dev_rx)) {
 		printk("%s is not ready\n", i2s_dev_rx->name);
-		return;
+		return 0;
 	}
 
 	if (i2s_dev_rx != i2s_dev_tx && !device_is_ready(i2s_dev_tx)) {
 		printk("%s is not ready\n", i2s_dev_tx->name);
-		return;
+		return 0;
 	}
 
 	config.word_size = SAMPLE_BIT_WIDTH;
@@ -281,19 +281,19 @@ void main(void)
 	config.block_size = BLOCK_SIZE;
 	config.timeout = TIMEOUT;
 	if (!configure_streams(i2s_dev_rx, i2s_dev_tx, &config)) {
-		return;
+		return 0;
 	}
 
 	for (;;) {
 		k_sem_take(&toggle_transfer, K_FOREVER);
 
 		if (!prepare_transfer(i2s_dev_rx, i2s_dev_tx)) {
-			return;
+			return 0;
 		}
 
 		if (!trigger_command(i2s_dev_rx, i2s_dev_tx,
 				     I2S_TRIGGER_START)) {
-			return;
+			return 0;
 		}
 
 		printk("Streams started\n");
@@ -320,7 +320,7 @@ void main(void)
 
 		if (!trigger_command(i2s_dev_rx, i2s_dev_tx,
 				     I2S_TRIGGER_DROP)) {
-			return;
+			return 0;
 		}
 
 		printk("Streams stopped\n");

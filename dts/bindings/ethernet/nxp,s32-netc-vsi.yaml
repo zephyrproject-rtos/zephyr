@@ -5,7 +5,7 @@ description: NXP S32 NETC Virtual Station Interface (VSI)
 
 compatible: "nxp,s32-netc-vsi"
 
-include: ethernet.yaml
+include: ethernet-controller.yaml
 
 properties:
   reg:

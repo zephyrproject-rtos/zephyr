@@ -16,25 +16,35 @@
 #include "nvm/lorawan_nvm.h"
 
 #ifdef CONFIG_LORAMAC_REGION_AS923
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_AS923
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_AS923
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_AS923
 #elif CONFIG_LORAMAC_REGION_AU915
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_AU915
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_AU915
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_AU915
 #elif CONFIG_LORAMAC_REGION_CN470
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_CN470
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_CN470
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_CN470
 #elif CONFIG_LORAMAC_REGION_CN779
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_CN779
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_CN779
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_CN779
 #elif CONFIG_LORAMAC_REGION_EU433
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_EU433
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_EU433
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_EU433
 #elif CONFIG_LORAMAC_REGION_EU868
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_EU868
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_EU868
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_EU868
 #elif CONFIG_LORAMAC_REGION_KR920
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_KR920
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_KR920
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_KR920
 #elif CONFIG_LORAMAC_REGION_IN865
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_IN865
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_IN865
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_IN865
 #elif CONFIG_LORAMAC_REGION_US915
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_US915
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_US915
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_US915
 #elif CONFIG_LORAMAC_REGION_RU864
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_RU864
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_RU864
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_RU864
 #else
 #error "At least one LoRaWAN region should be selected"
 #endif
@@ -72,8 +82,11 @@ static LoRaMacEventInfoStatus_t last_mlme_indication_status;
 
 static LoRaMacRegion_t selected_region = DEFAULT_LORAWAN_REGION;
 
-static uint8_t (*get_battery_level_user)(void);
-static void (*dr_change_cb)(enum lorawan_datarate dr);
+static enum lorawan_channels_mask_size region_channels_mask_size =
+	DEFAULT_LORAWAN_CHANNELS_MASK_SIZE;
+
+static lorawan_battery_level_cb_t battery_level_cb;
+static lorawan_dr_changed_cb_t dr_changed_cb;
 
 /* implementation required by the soft-se (software secure element) */
 void BoardGetUniqueId(uint8_t *id)
@@ -83,11 +96,11 @@ void BoardGetUniqueId(uint8_t *id)
 
 static uint8_t get_battery_level(void)
 {
-	if (get_battery_level_user != NULL) {
-		return get_battery_level_user();
+	if (battery_level_cb != NULL) {
+		return battery_level_cb();
+	} else {
+		return 255;
 	}
-
-	return 255;
 }
 
 static void mac_process_notify(void)
@@ -105,8 +118,8 @@ static void datarate_observe(bool force_notification)
 	if ((mib_req.Param.ChannelsDatarate != current_datarate) ||
 	    (force_notification)) {
 		current_datarate = mib_req.Param.ChannelsDatarate;
-		if (dr_change_cb) {
-			dr_change_cb(current_datarate);
+		if (dr_changed_cb != NULL) {
+			dr_changed_cb(current_datarate);
 		}
 		LOG_INF("Datarate changed: DR_%d", current_datarate);
 	}
@@ -292,60 +305,70 @@ int lorawan_set_region(enum lorawan_region region)
 #if defined(CONFIG_LORAMAC_REGION_AS923)
 	case LORAWAN_REGION_AS923:
 		selected_region = LORAMAC_REGION_AS923;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_AS923;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_AU915)
 	case LORAWAN_REGION_AU915:
 		selected_region = LORAMAC_REGION_AU915;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_AU915;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_CN470)
 	case LORAWAN_REGION_CN470:
 		selected_region = LORAMAC_REGION_CN470;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_CN470;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_CN779)
 	case LORAWAN_REGION_CN779:
 		selected_region = LORAMAC_REGION_CN779;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_CN779;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_EU433)
 	case LORAWAN_REGION_EU433:
 		selected_region = LORAMAC_REGION_EU433;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_EU433;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_EU868)
 	case LORAWAN_REGION_EU868:
 		selected_region = LORAMAC_REGION_EU868;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_EU868;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_KR920)
 	case LORAWAN_REGION_KR920:
 		selected_region = LORAMAC_REGION_KR920;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_KR920;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_IN865)
 	case LORAWAN_REGION_IN865:
 		selected_region = LORAMAC_REGION_IN865;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_IN865;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_US915)
 	case LORAWAN_REGION_US915:
 		selected_region = LORAMAC_REGION_US915;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_US915;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_RU864)
 	case LORAWAN_REGION_RU864:
 		selected_region = LORAMAC_REGION_RU864;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_RU864;
 		break;
 #endif
 
@@ -369,7 +392,7 @@ int lorawan_join(const struct lorawan_join_config *join_cfg)
 
 	/* MIB_PUBLIC_NETWORK powers on the radio and does not turn it off */
 	mib_req.Type = MIB_PUBLIC_NETWORK;
-	mib_req.Param.EnablePublicNetwork = true;
+	mib_req.Param.EnablePublicNetwork = IS_ENABLED(CONFIG_LORAWAN_PUBLIC_NETWORK);
 	LoRaMacMibSetRequestConfirm(&mib_req);
 
 	if (join_cfg->mode == LORAWAN_ACT_OTAA) {
@@ -418,11 +441,11 @@ out:
 		 * responsibility to increase datarates when ADR is enabled.
 		 */
 		if (!lorawan_adr_enable) {
-			MibRequestConfirm_t mib_req;
+			MibRequestConfirm_t mib_req2;
 
-			mib_req.Type = MIB_CHANNELS_DATARATE;
-			mib_req.Param.ChannelsDatarate = default_datarate;
-			LoRaMacMibSetRequestConfirm(&mib_req);
+			mib_req2.Type = MIB_CHANNELS_DATARATE;
+			mib_req2.Param.ChannelsDatarate = default_datarate;
+			LoRaMacMibSetRequestConfirm(&mib_req2);
 		}
 
 		/*
@@ -467,6 +490,26 @@ int lorawan_set_class(enum lorawan_class dev_class)
 				lorawan_status2str(status));
 			return lorawan_status2errno(status);
 		}
+	}
+
+	return 0;
+}
+
+int lorawan_set_channels_mask(uint16_t *channels_mask, size_t channels_mask_size)
+{
+	MibRequestConfirm_t mib_req;
+
+	if ((channels_mask == NULL) || (channels_mask_size != region_channels_mask_size)) {
+		return -EINVAL;
+	}
+
+	/* Notify MAC layer of the requested channel mask. */
+	mib_req.Type = MIB_CHANNELS_MASK;
+	mib_req.Param.ChannelsMask = channels_mask;
+
+	if (LoRaMacMibSetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
+		/* Channels mask is invalid for this region. */
+		return -EINVAL;
 	}
 
 	return 0;
@@ -552,7 +595,7 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 	int ret = 0;
 	bool empty_frame = false;
 
-	if (data == NULL) {
+	if (data == NULL && len > 0) {
 		return -EINVAL;
 	}
 
@@ -621,15 +664,9 @@ out:
 	return ret;
 }
 
-int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void))
+void lorawan_register_battery_level_callback(lorawan_battery_level_cb_t cb)
 {
-	if (battery_lvl_cb == NULL) {
-		return -EINVAL;
-	}
-
-	get_battery_level_user = battery_lvl_cb;
-
-	return 0;
+	battery_level_cb = cb;
 }
 
 void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb)
@@ -637,9 +674,9 @@ void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb)
 	sys_slist_append(&dl_callbacks, &cb->node);
 }
 
-void lorawan_register_dr_changed_callback(void (*cb)(enum lorawan_datarate))
+void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb)
 {
-	dr_change_cb = cb;
+	dr_changed_cb = cb;
 }
 
 int lorawan_start(void)
@@ -685,9 +722,8 @@ int lorawan_start(void)
 	return 0;
 }
 
-static int lorawan_init(const struct device *dev)
+static int lorawan_init(void)
 {
-	ARG_UNUSED(dev);
 
 	sys_slist_init(&dl_callbacks);
 
@@ -709,4 +745,4 @@ static int lorawan_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(lorawan_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(lorawan_init, POST_KERNEL, 0);

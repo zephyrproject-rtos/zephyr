@@ -1,0 +1,62 @@
+# ST Microelectronics LIS2DS12 3-axis accelerometer driver
+
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LIS2DS12
+	bool "LIS2DS12 I2C/SPI accelerometer sensor driver"
+	default y
+	depends on DT_HAS_ST_LIS2DS12_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DS12),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DS12),spi)
+	select HAS_STMEMSC
+	select USE_STDC_LIS2DS12
+	help
+	  Enable driver for LIS2DS12 accelerometer sensor driver
+
+if LIS2DS12
+
+choice LIS2DS12_TRIGGER_MODE
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config LIS2DS12_TRIGGER_NONE
+	bool "No trigger"
+
+config LIS2DS12_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select LIS2DS12_TRIGGER
+
+config LIS2DS12_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select LIS2DS12_TRIGGER
+
+endchoice
+
+config LIS2DS12_TRIGGER
+	bool
+
+config LIS2DS12_THREAD_PRIORITY
+	int "Thread priority"
+	depends on LIS2DS12_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config LIS2DS12_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on LIS2DS12_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config LIS2DS12_ENABLE_TEMP
+	bool "Temperature"
+	help
+	  Enable/disable temperature
+
+endif # LIS2DS12

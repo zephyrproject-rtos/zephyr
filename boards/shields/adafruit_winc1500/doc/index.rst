@@ -53,7 +53,7 @@ for Arduino connectors and defines node aliases for SPI and GPIO interfaces
 Programming
 ***********
 
-Set ``-DSHIELD=adafruit_winc1500`` when you invoke ``west build``. For example:
+Set ``--shield adafruit_winc1500`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi

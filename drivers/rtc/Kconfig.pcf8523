@@ -1,0 +1,54 @@
+# NXP PCF8523 RTC
+
+# Copyright (c) 2019-2023 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_PCF8523
+	bool "NXP PCF8523 RTC driver"
+	default y
+	depends on DT_HAS_NXP_PCF8523_ENABLED
+	select I2C
+	help
+	  Enable the NXP PCF8523 RTC driver.
+
+if RTC_PCF8523
+
+choice RTC_PCF8523_OFFSET_MODE
+	prompt "Offset mode"
+	default RTC_PCF8523_OFFSET_MODE_SLOW
+	depends on RTC_CALIBRATION
+	help
+	  Offset register mode selection.
+
+config RTC_PCF8523_OFFSET_MODE_SLOW
+	bool "Slow"
+	help
+	  Offset correction is made once per two hours and then correction pulses are applied once
+	  per minute until the programmed correction values have been implemented (MODE = 0).
+
+config RTC_PCF8523_OFFSET_MODE_FAST
+	bool "Fast"
+	help
+	  Offset correction is made once per minute and then correction pulses are applied once per
+	  second up to a maximum of 60 pulses. When correction values greater than 60 pulses are
+	  used, additional correction pulses are made in the 59th second (MODE = 1).
+
+endchoice
+
+if RTC_ALARM || RTC_UPDATE
+
+config RTC_PCF8523_THREAD_STACK_SIZE
+	int "Stack size for the PCF8523 interrupt thread"
+	default 512
+	help
+	  Size of the stack used for the thread handling interrupts and dispatching callbacks.
+
+config RTC_PCF8523_THREAD_PRIO
+	int "Priority for the PCF8523 interrupt thread"
+	default 0
+	help
+	  Priority level for the thread handling interrupts and dispatching callbacks.
+
+endif # RTC_ALARM || RTC_UPDATE
+
+endif # RTC_PCF8523

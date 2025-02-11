@@ -5,7 +5,7 @@ description: SiFive Freedom I2C interface
 
 compatible: "sifive,i2c0"
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

@@ -1,8 +1,0 @@
-# Adafruit ItsyBitsy M4 Express board configuration
-
-# Copyright (c) 2020 Google LLC.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_ADAFRUIT_ITSYBITSY_M4_EXPRESS
-	bool "Adafruit ItsyBitsy M4 Express"
-	depends on SOC_PART_NUMBER_SAMD51G19A

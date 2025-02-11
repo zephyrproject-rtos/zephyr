@@ -42,12 +42,15 @@ static void loopback_init(struct net_if *iface)
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		struct in_addr ipv4_loopback = INADDR_LOOPBACK_INIT;
+		struct in_addr netmask = { { { 255, 0, 0, 0 } } };
 
 		ifaddr = net_if_ipv4_addr_add(iface, &ipv4_loopback,
 					      NET_ADDR_AUTOCONF, 0);
 		if (!ifaddr) {
 			LOG_ERR("Failed to register IPv4 loopback address");
 		}
+
+		net_if_ipv4_set_netmask_by_addr(iface, &ipv4_loopback, &netmask);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
@@ -107,26 +110,6 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	/* We need to swap the IP addresses because otherwise
-	 * the packet will be dropped.
-	 */
-
-	if (net_pkt_family(pkt) == AF_INET6) {
-		struct in6_addr addr;
-
-		net_ipv6_addr_copy_raw((uint8_t *)&addr, NET_IPV6_HDR(pkt)->src);
-		net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->src,
-				       NET_IPV6_HDR(pkt)->dst);
-		net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->dst, (uint8_t *)&addr);
-	} else {
-		struct in_addr addr;
-
-		net_ipv4_addr_copy_raw((uint8_t *)&addr, NET_IPV4_HDR(pkt)->src);
-		net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->src,
-				       NET_IPV4_HDR(pkt)->dst);
-		net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->dst, (uint8_t *)&addr);
-	}
-
 	/* We should simulate normal driver meaning that if the packet is
 	 * properly sent (which is always in this driver), then the packet
 	 * must be dropped. This is very much needed for TCP packets where
@@ -136,6 +119,21 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 	if (!cloned) {
 		res = -ENOMEM;
 		goto out;
+	}
+
+	/* We need to swap the IP addresses because otherwise
+	 * the packet will be dropped.
+	 */
+	if (net_pkt_family(pkt) == AF_INET6) {
+		net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->src,
+				       NET_IPV6_HDR(pkt)->dst);
+		net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->dst,
+				       NET_IPV6_HDR(pkt)->src);
+	} else {
+		net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->src,
+				       NET_IPV4_HDR(pkt)->dst);
+		net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->dst,
+				       NET_IPV4_HDR(pkt)->src);
 	}
 
 	res = net_recv_data(net_pkt_iface(cloned), cloned);

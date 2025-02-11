@@ -71,7 +71,7 @@ int start_slave_port_packet_socket(struct net_if *iface,
 	struct sockaddr_ll dst;
 	int ret;
 
-	pd->sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	pd->sock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (pd->sock < 0) {
 		LOG_ERR("Failed to create RAW socket : %d", errno);
 		return -errno;
@@ -90,23 +90,23 @@ int start_slave_port_packet_socket(struct net_if *iface,
 	return 0;
 }
 
-struct ud ifaces;
+struct ud user_data_ifaces;
 static int init_dsa_ports(void)
 {
 	uint8_t tbl_buf[8];
 
-	/* Initialize interfaces - read them to ifaces */
-	(void)memset(&ifaces, 0, sizeof(ifaces));
-	net_if_foreach(iface_cb, &ifaces);
+	/* Initialize interfaces - read them to user_data_ifaces */
+	(void)memset(&user_data_ifaces, 0, sizeof(user_data_ifaces));
+	net_if_foreach(iface_cb, &user_data_ifaces);
 
 	/*
 	 * Set static table to forward LLDP protocol packets
 	 * to master port.
 	 */
-	dsa_switch_set_mac_table_entry(ifaces.lan[0],
+	dsa_switch_set_mac_table_entry(user_data_ifaces.lan[0],
 					      &eth_filter_l2_addr_base[0][0],
 					      BIT(4), 0, 0);
-	dsa_switch_get_mac_table_entry(ifaces.lan[0], tbl_buf, 0);
+	dsa_switch_get_mac_table_entry(user_data_ifaces.lan[0], tbl_buf, 0);
 
 	LOG_INF("DSA static MAC address table entry [%d]:", 0);
 	LOG_INF("0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x",
@@ -116,9 +116,10 @@ static int init_dsa_ports(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	init_dsa_ports();
 
 	LOG_INF("DSA ports init - OK");
+	return 0;
 }

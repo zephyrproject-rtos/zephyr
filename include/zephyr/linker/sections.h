@@ -39,6 +39,11 @@
 #define _SW_ISR_TABLE_SECTION_NAME	.gnu.linkonce.sw_isr_table
 #define _SW_ISR_TABLE_SECTION_SYMS	.gnu.linkonce.sw_isr_table*
 
+#ifdef CONFIG_SHARED_INTERRUPTS
+#define _SHARED_SW_ISR_TABLE_SECTION_NAME	.gnu.linkonce.shared_sw_isr_table
+#define _SHARED_SW_ISR_TABLE_SECTION_SYMS	.gnu.linkonce.shared_sw_isr_table*
+#endif /* CONFIG_SHARED_INTERRUPTS */
+
 /* Architecture-specific sections */
 #if defined(CONFIG_ARM)
 #define _KINETIS_FLASH_CONFIG_SECTION_NAME  kinetis_flash_config
@@ -71,6 +76,13 @@
 #ifdef CONFIG_NOCACHE_MEMORY
 #define _NOCACHE_SECTION_NAME nocache
 #endif
+
+/* Symbol table section */
+#if defined(CONFIG_SYMTAB)
+#define _SYMTAB_INFO_SECTION_NAME	.gnu.linkonce.symtab.info
+#define _SYMTAB_ENTRY_SECTION_NAME	.gnu.linkonce.symtab.entry
+#define _SYMTAB_SECTION_SYMS		.gnu.linkonce.symtab*
+#endif /* CONFIG_SYMTAB */
 
 #if defined(CONFIG_LINKER_USE_BOOT_SECTION)
 #define BOOT_TEXT_SECTION_NAME		boot_text

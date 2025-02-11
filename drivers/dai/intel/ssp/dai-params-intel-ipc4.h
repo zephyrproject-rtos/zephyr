@@ -11,6 +11,9 @@
 
 #define DAI_INTEL_I2S_TDM_MAX_SLOT_MAP_COUNT 8
 
+#define I2SIPCMC 8
+#define I2SOPCMC 8
+
 /**< Type of the gateway. */
 enum dai_intel_ipc4_connector_node_id_type {
 	/**< HD/A host output (-> DSP). */
@@ -66,6 +69,62 @@ enum dai_intel_ipc4_connector_node_id_type {
 	dai_intel_ipc4_spi_input_class = 26,
 	dai_intel_ipc4_max_connector_node_id_type
 };
+
+struct ssp_intel_aux_tlv {
+	uint32_t type;
+	uint32_t size;
+	uint32_t val[];
+} __packed;
+
+struct ssp_intel_mn_ctl {
+	uint32_t div_m;
+	uint32_t div_n;
+} __packed;
+
+struct ssp_intel_clk_ctl {
+	uint32_t start;
+	uint32_t stop;
+} __packed;
+
+struct ssp_intel_tr_ctl {
+	uint32_t sampling_frequency;
+	uint32_t bit_depth;
+	uint32_t channel_map;
+	uint32_t channel_config;
+	uint32_t interleaving_style;
+	uint32_t format;
+} __packed;
+
+struct ssp_intel_run_ctl {
+	uint32_t enabled;
+} __packed;
+
+struct ssp_intel_node_ctl {
+	uint32_t node_id;
+	uint32_t sampling_rate;
+} __packed;
+
+struct ssp_intel_sync_ctl {
+	uint32_t sync_denominator;
+	uint32_t count;
+} __packed;
+
+struct ssp_intel_ext_ctl {
+	uint32_t ext_data;
+} __packed;
+
+struct ssp_intel_link_ctl {
+	uint32_t clock_source;
+} __packed;
+
+#define SSP_MN_DIVIDER_CONTROLS                 0
+#define SSP_DMA_CLK_CONTROLS                    1
+#define SSP_DMA_TRANSMISSION_START              2
+#define SSP_DMA_TRANSMISSION_STOP               3
+#define SSP_DMA_ALWAYS_RUNNING_MODE             4
+#define SSP_DMA_SYNC_DATA                       5
+#define SSP_DMA_CLK_CONTROLS_EXT                6
+#define SSP_LINK_CLK_SOURCE                     7
 
 /**< Base top-level structure of an address of a gateway. */
 /*!
@@ -172,12 +231,18 @@ struct dai_intel_ipc4_ssp_config {
 	uint32_t ssc1;
 	uint32_t sscto;
 	uint32_t sspsp;
+#ifndef CONFIG_SOC_INTEL_ACE30_PTL
 	uint32_t sstsa;
 	uint32_t ssrsa;
+#endif
 	uint32_t ssc2;
 	uint32_t sspsp2;
 	uint32_t ssc3;
 	uint32_t ssioc;
+#ifdef CONFIG_SOC_INTEL_ACE30_PTL
+	uint64_t ssmidytsa[I2SIPCMC];
+	uint64_t ssmodytsa[I2SOPCMC];
+#endif
 } __packed;
 
 struct dai_intel_ipc4_ssp_mclk_config {
@@ -186,6 +251,12 @@ struct dai_intel_ipc4_ssp_mclk_config {
 
 	/* master clock divider ratio register */
 	uint32_t mdivr;
+} __packed;
+
+struct dai_intel_ipc4_ssp_mclk_config_2 {
+	uint32_t mdivctlr;
+	uint32_t mdivrcnt;
+	uint32_t mdivr[];
 } __packed;
 
 struct dai_intel_ipc4_ssp_driver_config {
@@ -250,6 +321,23 @@ struct dai_intel_ipc4_ssp_configuration_blob {
 
 	/* optional configuration parameters */
 	union dai_intel_ipc4_ssp_dma_control i2s_dma_control[0];
+} __packed;
+
+#define SSP_BLOB_VER_1_5 0xee000105
+
+struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 {
+	union dai_intel_ipc4_gateway_attributes gw_attr;
+
+	uint32_t version;
+	uint32_t size;
+
+	/* TDM time slot mappings */
+	uint32_t tdm_ts_group[DAI_INTEL_I2S_TDM_MAX_SLOT_MAP_COUNT];
+
+	/* i2s port configuration */
+	struct dai_intel_ipc4_ssp_config i2s_ssp_config;
+	/* clock configuration parameters */
+	struct dai_intel_ipc4_ssp_mclk_config_2 i2s_mclk_control;
 } __packed;
 
 #endif

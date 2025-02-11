@@ -15,7 +15,9 @@
 LOG_MODULE_REGISTER(app);
 
 #define CAN_INTERFACE DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))
-#define CAN_BITRATE (DT_PROP(DT_CHOSEN(zephyr_canbus), bus_speed) / 1000)
+#define CAN_BITRATE (DT_PROP_OR(DT_CHOSEN(zephyr_canbus), bitrate, \
+					  DT_PROP_OR(DT_CHOSEN(zephyr_canbus), bus_speed, \
+						     CONFIG_CAN_DEFAULT_BITRATE)) / 1000)
 
 static struct gpio_dt_spec led_green_gpio = GPIO_DT_SPEC_GET_OR(
 		DT_ALIAS(green_led), gpios, {0});
@@ -64,7 +66,7 @@ static void config_leds(CO_NMT_t *nmt)
 
 	if (!led_green_gpio.port) {
 		LOG_INF("Green LED not available");
-	} else if (!device_is_ready(led_green_gpio.port)) {
+	} else if (!gpio_is_ready_dt(&led_green_gpio)) {
 		LOG_ERR("Green LED device not ready");
 		led_green_gpio.port = NULL;
 	} else {
@@ -78,7 +80,7 @@ static void config_leds(CO_NMT_t *nmt)
 
 	if (!led_red_gpio.port) {
 		LOG_INF("Red LED not available");
-	} else if (!device_is_ready(led_red_gpio.port)) {
+	} else if (!gpio_is_ready_dt(&led_red_gpio)) {
 		LOG_ERR("Red LED device not ready");
 		led_red_gpio.port = NULL;
 	} else {
@@ -159,7 +161,7 @@ static void config_button(void)
 		return;
 	}
 
-	if (!device_is_ready(button_gpio.port)) {
+	if (!gpio_is_ready_dt(&button_gpio)) {
 		LOG_ERR("Button device not ready");
 		return;
 	}
@@ -193,7 +195,7 @@ static void config_button(void)
  * The main application thread is responsible for initializing the
  * CANopen stack and doing the non real-time processing.
  */
-void main(void)
+int main(void)
 {
 	CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 	CO_ReturnError_t err;
@@ -208,7 +210,7 @@ void main(void)
 	can.dev = CAN_INTERFACE;
 	if (!device_is_ready(can.dev)) {
 		LOG_ERR("CAN interface not ready");
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_CANOPENNODE_STORAGE
@@ -216,13 +218,13 @@ void main(void)
 	if (ret) {
 		LOG_ERR("failed to initialize settings subsystem (err = %d)",
 			ret);
-		return;
+		return 0;
 	}
 
 	ret = settings_load();
 	if (ret) {
 		LOG_ERR("failed to load settings (err = %d)", ret);
-		return;
+		return 0;
 	}
 #endif /* CONFIG_CANOPENNODE_STORAGE */
 
@@ -236,7 +238,7 @@ void main(void)
 		err = CO_init(&can, CONFIG_CANOPEN_NODE_ID, CAN_BITRATE);
 		if (err != CO_ERROR_NO) {
 			LOG_ERR("CO_init failed (err = %d)", err);
-			return;
+			return 0;
 		}
 
 		LOG_INF("CANopen stack initialized");

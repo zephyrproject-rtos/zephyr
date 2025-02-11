@@ -3,7 +3,7 @@
 Access layer
 ############
 
-The access layer is the application's interface to the Bluetooth mesh network.
+The access layer is the application's interface to the Bluetooth Mesh network.
 The access layer provides mechanisms for compartmentalizing the node behavior
 into elements and models, which are implemented by the application.
 
@@ -113,7 +113,7 @@ number within one publication interval.
 Extended models
 ===============
 
-The Bluetooth mesh specification allows the mesh models to extend each other.
+The Bluetooth Mesh specification allows the mesh models to extend each other.
 When a model extends another, it inherits that model's functionality, and
 extension can be used to construct complex models out of simple ones,
 leveraging the existing model functionality to avoid defining new opcodes.
@@ -148,6 +148,126 @@ callback gets called when model specific data is found in the persistent
 storage. The model can retrieve the data by calling the ``read_cb`` passed as
 a parameter to the callback. See the :ref:`settings_api` module documentation for
 details.
+
+When model data changes frequently, storing it on every change may lead to
+increased wear of flash. To reduce the wear, the model can postpone storing of
+data by calling :c:func:`bt_mesh_model_data_store_schedule`. The stack will
+schedule a work item with delay defined by the
+:kconfig:option:`CONFIG_BT_MESH_STORE_TIMEOUT` option. When the work item is
+running, the stack will call the :c:member:`bt_mesh_model_cb.pending_store`
+callback for every model that has requested storing of data. The model can
+then call :c:func:`bt_mesh_model_data_store` to store the data.
+
+If :kconfig:option:`CONFIG_BT_MESH_SETTINGS_WORKQ` is enabled, the
+:c:member:`bt_mesh_model_cb.pending_store` callback is called from a dedicated
+thread. This allows the stack to process other incoming and outgoing messages
+while model data is being stored. It is recommended to use this option and the
+:c:func:`bt_mesh_model_data_store_schedule` function when large amount of data
+needs to be stored.
+
+Composition Data
+================
+
+The Composition Data provides information about a mesh device.
+A device's Composition Data holds information about the elements on the
+device, the models that it supports, and other features. The Composition
+Data is split into different pages, where each page contains specific feature
+information about the device. In order to access this information, the user
+may use the :ref:`bluetooth_mesh_models_cfg_srv` model or, if supported,
+the :ref:`bluetooth_mesh_lcd_srv` model.
+
+Composition Data Page 0
+-----------------------
+
+Composition Data Page 0 provides the fundamental information about a device, and
+is mandatory for all mesh devices. It contains the element and model composition,
+the supported features, and manufacturer information.
+
+Composition Data Page 1
+-----------------------
+
+Composition Data Page 1 provides information about the relationships between models,
+and is mandatory for all mesh devices. A model may extend and/or correspond to one
+or more models. A model can extend another model by calling :c:func:`bt_mesh_model_extend`,
+or correspond to another model by calling :c:func:`bt_mesh_model_correspond`.
+:kconfig:option:`CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE` specifies how many model
+relations can be stored in the composition on a device, and this number should reflect the
+number of :c:func:`bt_mesh_model_extend` and :c:func:`bt_mesh_model_correspond` calls.
+
+Composition Data Page 2
+-----------------------
+
+Composition Data Page 2 provides information for supported mesh profiles. Mesh profile
+specifications define product requirements for devices that want to support a specific
+Bluetooth SIG defined profile. Currently supported profiles can be found in section
+3.12 in `Bluetooth SIG Assigned Numbers
+<https://www.bluetooth.com/specifications/assigned-numbers/uri-scheme-name-string-mapping/>`_.
+Composition Data Page 2 is only mandatory for devices that claim support for one or more
+mesh profile(s).
+
+Composition Data Pages 128, 129 and 130
+---------------------------------------
+
+Composition Data Pages 128, 129 and 130 mirror Composition Data Pages 0, 1 and 2 respectively.
+They are used to represent the new content of the mirrored pages when the Composition Data will
+change after a firmware update. See :ref:`bluetooth_mesh_dfu_srv_comp_data_and_models_metadata`
+for details.
+
+Delayable messages
+==================
+
+The delayable message functionality is enabled with Kconfig option
+:kconfig:option:`CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG`.
+This is an optional functionality that implements specification recommendations for
+messages that are transmitted by a model in a response to a received message, also called
+response messages.
+
+Response messages should be sent with the following random delays:
+
+* Between 20 and 50 milliseconds if the received message was sent
+  to a unicast address
+* Between 20 and 500 milliseconds if the received message was sent
+  to a group or virtual address
+
+The delayable message functionality is triggered if the :c:member:`bt_mesh_msg_ctx.rnd_delay`
+flag is set.
+The delayable message functionality stores messages in the local memory while they are
+waiting for the random delay expiration.
+
+If the transport layer doesn't have sufficient memory to send a message at the moment
+the random delay expires, the message is postponed for another 10 milliseconds.
+If the transport layer cannot send a message for any other reason, the delayable message
+functionality raises the :c:member:`bt_mesh_send_cb.start` callback with a transport layer
+error code.
+
+If the delayable message functionality cannot find enough free memory to store an incoming
+message, it will send messages with delay close to expiration to free memory.
+
+When the mesh stack is suspended or reset, messages not yet sent are removed and
+the :c:member:`bt_mesh_send_cb.start` callback is raised with an error code.
+
+.. note::
+   When a model sends several messages in a row, it may happen that the messages are not sent in
+   the order they were passed to the access layer. This is because some messages can be delayed
+   for a longer time than the others.
+
+   Disable the randomization by setting the :c:member:`bt_mesh_msg_ctx.rnd_delay` to ``false``,
+   when a set of messages originated by the same model needs to be sent in a certain order.
+
+Delayable publications
+======================
+
+The delayable publication functionality implements the specification recommendations for message
+publication delays in the following cases:
+
+* Between 20 to 500 milliseconds when the Bluetooth Mesh stack starts or when the publication is
+  triggered by the :c:func:`bt_mesh_model_publish` function
+* Between 20 to 50 milliseconds for periodically published messages
+
+This feature is optional and enabled with the :kconfig:option:`CONFIG_BT_MESH_DELAYABLE_PUBLICATION`
+Kconfig option. When enabled, each model can enable or disable the delayable publication by setting
+the :c:member:`bt_mesh_model_pub.delayable` bit field to ``1`` or ``0`` correspondingly. This bit
+field can be changed at any time.
 
 API reference
 *************

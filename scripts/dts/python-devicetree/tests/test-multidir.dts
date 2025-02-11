@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-// Used by testedtlib.py. Dedicated file for testing having multiple binding
-// directories.
+/*
+ * Used by test_edtlib.py. Dedicated file for testing having multiple binding
+ * directories.
+ */
 
 /dts-v1/;
 

@@ -1,0 +1,21 @@
+identifier: twr_ke18f
+name: NXP TWR-KE18F
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 512
+supported:
+  - adc
+  - can
+  - counter
+  - dac
+  - dma
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+vendor: nxp

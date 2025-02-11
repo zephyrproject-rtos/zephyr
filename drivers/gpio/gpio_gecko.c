@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 #include <em_gpio.h>
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
@@ -25,11 +26,14 @@
 #if DT_NODE_HAS_PROP(id, peripheral_id)
 #define GET_GECKO_GPIO_INDEX(id) DT_INST_PROP(id, peripheral_id)
 #else
-#if defined(CONFIG_SOC_SERIES_EFR32BG22) || defined(CONFIG_SOC_SERIES_EFR32MG21)
+#if defined(CONFIG_SOC_SERIES_EFR32BG22) || \
+	defined(CONFIG_SOC_SERIES_EFR32BG27) || \
+	defined(CONFIG_SOC_SERIES_EFR32MG21) || \
+	defined(CONFIG_SOC_SERIES_EFR32MG24)
 #define GECKO_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_PORT_TypeDef)
 #else
 #define GECKO_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_P_TypeDef)
-#endif /* defined(CONFIG_SOC_SERIES_EFM32HG) || defined(CONFIG_SOC_SERIES_EFM32WG) */
+#endif
 /* Assumption for calculating gpio index:
  * 1. Address space of the first GPIO port is the address space for GPIO port A
  */
@@ -60,9 +64,8 @@
 #define GECKO_GPIO_MODEH(pin, mode) (mode << ((pin - 8) * 4))
 
 
-#define member_size(type, member) sizeof(((type *)0)->member)
-#define NUMBER_OF_PORTS (member_size(GPIO_TypeDef, P) / \
-			 member_size(GPIO_TypeDef, P[0]))
+#define NUMBER_OF_PORTS (SIZEOF_FIELD(GPIO_TypeDef, P) / \
+			 SIZEOF_FIELD(GPIO_TypeDef, P[0]))
 
 struct gpio_gecko_common_config {
 };

@@ -39,7 +39,7 @@ arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 }
 
 FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
-				       const z_arch_esf_t *esf);
+				       const struct arch_esf *esf);
 
 static inline bool arch_is_in_isr(void)
 {

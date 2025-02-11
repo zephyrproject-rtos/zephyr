@@ -5,9 +5,6 @@
 
 if BOARD_V2M_BEETLE
 
-config BOARD
-	default "v2m_beetle"
-
 if SERIAL
 
 config UART_INTERRUPT_DRIVEN

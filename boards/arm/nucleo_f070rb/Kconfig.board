@@ -1,8 +1,0 @@
-# NUCLEO_F070RB board configuration
-
-# Copyright (c) 2018 qianfan Zhao
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_F070RB
-	bool "NUCLEO-64 F070RB Development Board"
-	depends on SOC_STM32F070XB

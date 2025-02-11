@@ -3,7 +3,9 @@ sample:
 tests:
   sample.cpp.synchronization:
     tags: cpp
-    toolchain_exclude: issm xcc
+    toolchain_exclude:
+      - issm
+      - xcc
     integration_platforms:
       - qemu_x86
     harness: console
@@ -18,7 +20,9 @@ tests:
     extra_configs:
       - CONFIG_PICOLIBC=y
     tags: cpp
-    toolchain_exclude: issm xcc
+    toolchain_exclude:
+      - issm
+      - xcc
     integration_platforms:
       - qemu_x86
     harness: console

@@ -1,0 +1,26 @@
+# Kinetis K2x series configuration options
+
+# Copyright (c) 2018 Prevas A/S
+# Copyright (c) 2019 Thomas Burdick <thomas.burdick@gmail.com>
+# Copyright 2024 NXP
+
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_KINETIS_K2X
+
+config GPIO
+	default y if SOC_MK22F51212
+
+config NUM_IRQS
+	default 74
+
+config NUM_IRQS
+	default 81 if SOC_MK22F12
+	default 74 if SOC_MK22F51212
+
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	default y if SOC_MK22F12
+
+endif # SOC_SERIES_KINETIS_K2X

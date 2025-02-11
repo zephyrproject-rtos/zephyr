@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <nxp/nxp_rt11xx.dtsi>
+#include <zephyr/dt-bindings/memory-controller/nxp,flexram.h>
 
 / {
 	cpus {
@@ -22,11 +23,34 @@
 		/delete-node/ dma-controller@40c14000;
 
 		flexram: flexram@40028000 {
+			compatible = "nxp,flexram";
+
 			reg = <0x40028000 0x4000>;
 			interrupts = <50 0>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			flexram,bank-size = <32>;
+			flexram,num-ram-banks = <16>;
+			flexram,has-magic-addr;
+			/* same as default fuse value */
+			flexram,bank-spec = <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>;
 
 			itcm: itcm@0 {
 				compatible = "zephyr,memory-region", "nxp,imx-itcm";
@@ -39,6 +63,8 @@
 				reg = <0x20000000 DT_SIZE_K(256)>;
 				zephyr,memory-region = "DTCM";
 			};
+
+			/* no ocram node for this bank-spec */
 		};
 
 		/*
@@ -77,7 +103,7 @@
 		};
 
 		mailbox_a: mailbox@40c48000 {
-			compatible = "nxp,imx-mu-rev2";
+			compatible = "nxp,imx-mu";
 			reg = <0x40c48000 0x4000>;
 			interrupts = <118 0>;
 			rdc = <0>;
@@ -317,19 +343,19 @@
 };
 
 &gpio13{
-	pinmux = <&iomuxc_snvs_wakeup_gpio13_io00>,
-		<&iomuxc_snvs_pmic_on_req_gpio13_io01>,
-		<&iomuxc_snvs_pmic_stby_req_gpio13_io02>,
-		<&iomuxc_snvs_gpio_snvs_00_gpio13_io03>,
-		<&iomuxc_snvs_gpio_snvs_01_gpio13_io04>,
-		<&iomuxc_snvs_gpio_snvs_02_gpio13_io05>,
-		<&iomuxc_snvs_gpio_snvs_03_gpio13_io06>,
-		<&iomuxc_snvs_gpio_snvs_04_gpio13_io07>,
-		<&iomuxc_snvs_gpio_snvs_05_gpio13_io08>,
-		<&iomuxc_snvs_gpio_snvs_06_gpio13_io09>,
-		<&iomuxc_snvs_gpio_snvs_07_gpio13_io10>,
-		<&iomuxc_snvs_gpio_snvs_08_gpio13_io11>,
-		<&iomuxc_snvs_gpio_snvs_09_gpio13_io12>;
+	pinmux = <&iomuxc_snvs_wakeup_dig_gpio13_io00>,
+		<&iomuxc_snvs_pmic_on_req_dig_gpio13_io01>,
+		<&iomuxc_snvs_pmic_stby_req_dig_gpio13_io02>,
+		<&iomuxc_snvs_gpio_snvs_00_dig_gpio13_io03>,
+		<&iomuxc_snvs_gpio_snvs_01_dig_gpio13_io04>,
+		<&iomuxc_snvs_gpio_snvs_02_dig_gpio13_io05>,
+		<&iomuxc_snvs_gpio_snvs_03_dig_gpio13_io06>,
+		<&iomuxc_snvs_gpio_snvs_04_dig_gpio13_io07>,
+		<&iomuxc_snvs_gpio_snvs_05_dig_gpio13_io08>,
+		<&iomuxc_snvs_gpio_snvs_06_dig_gpio13_io09>,
+		<&iomuxc_snvs_gpio_snvs_07_dig_gpio13_io10>,
+		<&iomuxc_snvs_gpio_snvs_08_dig_gpio13_io11>,
+		<&iomuxc_snvs_gpio_snvs_09_dig_gpio13_io12>;
 };
 
 &gpio2{

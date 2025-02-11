@@ -36,14 +36,13 @@ if(CONFIG_HAS_RPI_PICO)
         -DZEPHYR_BASE=${ZEPHYR_BASE}
         -DFLASH_TYPE=${flash_type}
         -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}
-        -DCONFIG_LEGACY_INCLUDE_PATH=$<BOOL:${CONFIG_LEGACY_INCLUDE_PATH}>
         -DRP2_BOOTLOADER_BYPRODUCT=${rp2_bootloader_asm}
       INSTALL_COMMAND "" # No installation needed
       BUILD_BYPRODUCTS ${rp2_bootloader_asm}
       BUILD_ALWAYS TRUE
       )
 
-      add_dependencies(${ZEPHYR_CURRENT_LIBRARY} second_stage_bootloader)
+      zephyr_library_add_dependencies(second_stage_bootloader)
       zephyr_library_sources(${rp2_bootloader_asm})
   endif()
 
@@ -83,8 +82,6 @@ if(CONFIG_HAS_RPI_PICO)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_GPIO
           ${rp2_common_dir}/hardware_gpio/include)
 
-  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_UART
-          ${rp2_common_dir}/hardware_uart/uart.c)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_UART
           ${rp2_common_dir}/hardware_uart/include)
 
@@ -101,6 +98,26 @@ if(CONFIG_HAS_RPI_PICO)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_ADC
           ${rp2_common_dir}/hardware_adc/include)
 
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_DMA
+          ${rp2_common_dir}/hardware_dma/dma.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_DMA
+          ${rp2_common_dir}/hardware_dma/include)
+
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_TIMER
+          ${rp2_common_dir}/hardware_timer/timer.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_TIMER
+          ${rp2_common_dir}/hardware_timer/include)
+
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_CLAIM
+          ${rp2_common_dir}/hardware_claim/claim.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_CLAIM
+          ${rp2_common_dir}/hardware_claim/include)
+
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_RTC
+          ${rp2_common_dir}/hardware_rtc/rtc.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_RTC
+          ${rp2_common_dir}/hardware_rtc/include)
+
   # Some flash driver functions must be executed from the RAM.
   # Originally pico-sdk places them in the RW data section, so this
   # implementation does the same.
@@ -112,5 +129,15 @@ if(CONFIG_HAS_RPI_PICO)
     PROPERTIES
     COMPILE_FLAGS $<TARGET_PROPERTY:compiler,warning_no_pointer_arithmetic>
   )
+
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_PIO
+          ${rp2_common_dir}/hardware_pio/pio.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_PIO
+          ${rp2_common_dir}/hardware_pio/include)
+
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_CLAIM
+          ${rp2_common_dir}/hardware_claim/claim.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_CLAIM
+          ${rp2_common_dir}/hardware_claim/include)
 
 endif()

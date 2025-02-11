@@ -1,0 +1,74 @@
+# Copyright (c) 2024 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  IS31FL3194 3-channel LED driver with programmable pattern sequencing
+
+  This driver supports single-channel and RGB LEDs. For single channel LEDs,
+  the led_set_brightness() API can be used to set the brightness of each LED.
+  For RGB LEDs, the led_set_color() API can be used to set the red, green and
+  blue components; the driver takes care of routing to the outputs described
+  by the color-mapping property.
+
+  The LED_SHELL application can be used for testing.
+
+  The following defines a single RGB LED in the is31fl3194 DT node:
+
+    is31fl3194@53 {
+      compatible = "issi,is31fl3194";
+      reg = <0x53>;
+
+      led_0 {
+        label = "RGB LED";
+        color-mapping =
+          <LED_COLOR_ID_RED>,
+          <LED_COLOR_ID_GREEN>,
+          <LED_COLOR_ID_BLUE>;
+      };
+    };
+
+  The following example defines three single-channel LEDs in the is31fl3194 DT node:
+
+    is31fl3194@53 {
+      compatible = "issi,is31fl3194";
+      reg = <0x53>;
+
+      led_0 {
+        label = "RED LED";
+        color-mapping = <LED_COLOR_ID_RED>;
+      };
+
+      led_1 {
+        label = "GREEN LED";
+        color-mapping = <LED_COLOR_ID_GREEN>;
+      };
+
+      led_2 {
+        label = "BLUE LED";
+        color-mapping = <LED_COLOR_ID_BLUE>;
+      };
+    };
+
+
+compatible: "issi,is31fl3194"
+
+include: ["i2c-device.yaml", "led-controller.yaml"]
+
+child-binding:
+  properties:
+    label:
+      required: true
+
+    color-mapping:
+      required: true
+
+    current-limit:
+      type: int
+      enum:
+        - 10
+        - 20
+        - 30
+        - 40
+      required: true
+      description: |
+        The current limit for the LED in mA.

@@ -1,0 +1,12 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP EHCI USB device mode
+
+compatible: nxp,ehci
+
+include: "nxp,mcux-usbd.yaml"
+
+properties:
+  phy_handle:
+    type: phandle

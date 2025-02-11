@@ -1,0 +1,42 @@
+&pinctrl {
+	/* Configure pin control bias mode for SPI pins (MASTER) */
+	p10_0_scb1_spi_m_mosi: p10_0_scb1_spi_m_mosi {
+		pinmux = <DT_CAT1_PINMUX(10, 0, HSIOM_SEL_ACT_8)>;
+		drive-push-pull;
+	};
+
+	p10_1_scb1_spi_m_miso: p10_1_scb1_spi_m_miso {
+		pinmux = <DT_CAT1_PINMUX(10, 1, HSIOM_SEL_ACT_8)>;
+		input-enable;
+	};
+
+	p10_2_scb1_spi_m_clk: p10_2_scb1_spi_m_clk {
+		pinmux = <DT_CAT1_PINMUX(10, 2, HSIOM_SEL_ACT_8)>;
+		drive-push-pull;
+	};
+};
+
+spi: &scb1 {
+	compatible = "infineon,cat1-spi";
+	status = "okay";
+
+	pinctrl-0 = <&p10_0_scb1_spi_m_mosi &p10_1_scb1_spi_m_miso &p10_2_scb1_spi_m_clk>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt10 3 GPIO_ACTIVE_LOW>;
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <200000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <1500000>;
+	};
+};
+
+&gpio_prt10 {
+	status = "okay";
+};

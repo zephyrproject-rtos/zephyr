@@ -10,6 +10,13 @@
 #include <zephyr/sys/dlist.h>
 #include <zephyr/kernel.h>
 
+/**
+ * @brief Application memory domain APIs
+ * @defgroup mem_domain_apis_app Application memory domain APIs
+ * @ingroup mem_domain_apis
+ * @{
+ */
+
 #ifdef CONFIG_USERSPACE
 
 /**
@@ -121,16 +128,16 @@ struct z_app_region {
 	extern char Z_APP_START(name)[]; \
 	extern char Z_APP_SIZE(name)[]; \
 	struct k_mem_partition name = { \
-		.start = (uintptr_t) &Z_APP_START(name), \
-		.size = (size_t) &Z_APP_SIZE(name), \
+		.start = (uintptr_t) &Z_APP_START(name)[0], \
+		.size = (size_t) &Z_APP_SIZE(name)[0], \
 		.attr = K_MEM_PARTITION_P_RW_U_RW \
 	}; \
 	extern char Z_APP_BSS_START(name)[]; \
 	extern char Z_APP_BSS_SIZE(name)[]; \
 	Z_GENERIC_SECTION(.app_regions.name) \
 	const struct z_app_region name##_region = { \
-		.bss_start = &Z_APP_BSS_START(name), \
-		.bss_size = (size_t) &Z_APP_BSS_SIZE(name) \
+		.bss_start = &Z_APP_BSS_START(name)[0], \
+		.bss_size = (size_t) &Z_APP_BSS_SIZE(name)[0] \
 	}; \
 	Z_APPMEM_PLACEHOLDER(name)
 #else
@@ -142,4 +149,9 @@ struct z_app_region {
 #define K_APPMEM_PARTITION_DEFINE(name)
 
 #endif /* CONFIG_USERSPACE */
+
+/**
+ * @}
+ */
+
 #endif /* ZEPHYR_INCLUDE_APP_MEMORY_APP_MEMDOMAIN_H_ */

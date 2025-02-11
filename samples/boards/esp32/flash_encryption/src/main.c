@@ -10,17 +10,18 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 
-#include <esp_spi_flash.h>
+#include <esp_flash.h>
+#include <spi_flash_mmap.h>
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_encryption, CONFIG_LOG_DEFAULT_LEVEL);
 
-#if !defined(CONFIG_SOC_ESP32)
+#if !defined(CONFIG_SOC_SERIES_ESP32)
 #error Flash encryption feature is only available for ESP32 SOC yet.
 #endif
 
-void main(void)
+int main(void)
 {
 	uint8_t buffer[32];
 	const struct device *flash_device;
@@ -29,7 +30,7 @@ void main(void)
 	flash_device = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	if (!device_is_ready(flash_device)) {
 		printk("%s: device not ready.\n", flash_device->name);
-		return;
+		return 0;
 	}
 
 	for (int k = 0; k < 32; k++) {
@@ -45,11 +46,12 @@ void main(void)
 
 	/* read flash content without decrypting content */
 	memset(buffer, 0, sizeof(buffer));
-	spi_flash_read(address, &buffer, sizeof(buffer));
+	esp_flash_read(NULL, &buffer, address, sizeof(buffer));
 	LOG_HEXDUMP_INF(buffer, sizeof(buffer), "FLASH RAW DATA (Encrypted)");
 
 	/* read flash content and decrypt */
 	memset(buffer, 0, sizeof(buffer));
 	flash_read(flash_device, address, &buffer, sizeof(buffer));
 	LOG_HEXDUMP_INF(buffer, sizeof(buffer), "FLASH DECRYPTED DATA");
+	return 0;
 }

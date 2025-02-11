@@ -1,7 +1,8 @@
-.. _ipm_mhu_dual_core:
+.. zephyr:code-sample:: ipm-mhu-dual-core
+   :name: IPM with ARM MHU
+   :relevant-api: ipm_interface
 
-MHU Dual Core
-#############
+   Implement inter-processor mailbox (IPM) using an MHU (Message Handling Unit)
 
 Overview
 ********
@@ -26,7 +27,7 @@ It can be built and executed on Musca B1 CPU 0 as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ipm/ipm_mhu_dual_core
-   :board: v2m_musca_b1
+   :board: v2m_musca_b1/musca_b1
    :goals: run
    :compact:
 
@@ -35,7 +36,7 @@ It can be built and executed on Musca B1 CPU 1 as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ipm/ipm_mhu_dual_core
-   :board: v2m_musca_b1_ns
+   :board: v2m_musca_b1/musca_b1/ns
    :goals: run
    :compact:
 
@@ -80,4 +81,4 @@ Sample Output
 
 
 .. _Srecord Manual:
-   http://srecord.sourceforge.net/man/man1/srec_cat.html
+   https://srecord.sourceforge.net/man/man1/srec_cat.1.html

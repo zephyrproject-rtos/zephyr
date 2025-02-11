@@ -1,0 +1,24 @@
+name: Merged PR stats
+
+on:
+  pull_request_target:
+    branches:
+      - main
+      - v*-branch
+    types: [closed]
+jobs:
+  record_merged:
+    if: github.event.pull_request.merged == true && github.repository == 'zephyrproject-rtos/zephyr'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: PR event
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
+          ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
+          PR_STAT_ES_INDEX: ${{ vars.PR_STAT_ES_INDEX }}
+        run: |
+          pip3 install pygithub elasticsearch
+          python3 ./scripts/ci/stats/merged_prs.py --pull-request ${{ github.event.pull_request.number }} --repo ${{ github.repository }}

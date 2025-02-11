@@ -1,7 +1,8 @@
-.. _display-sample:
+.. zephyr:code-sample:: display
+   :name: Display
+   :relevant-api: display_interface
 
-Display Sample
-##############
+   Draw basic rectangles on a display device.
 
 Overview
 ********
@@ -24,17 +25,17 @@ Below is an example on how to build for a :ref:`nrf52840dk_nrf52840` board with 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :shield: adafruit_2_8_tft_touch_v2
    :compact:
 
-For testing purpose without the need of any hardware, the :ref:`native_posix`
+For testing purpose without the need of any hardware, the :ref:`native_sim <native_sim>`
 board is also supported and can be built as follows;
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
-   :board: native_posix
+   :board: native_sim
    :goals: build
    :compact:
 
@@ -44,4 +45,4 @@ List of Arduino-based display shields
 - :ref:`adafruit_2_8_tft_touch_v2`
 - :ref:`ssd1306_128_shield`
 - :ref:`st7789v_generic`
-- :ref:`waveshare_e_paper_raw_panel_shield`
+- :ref:`waveshare_epaper`

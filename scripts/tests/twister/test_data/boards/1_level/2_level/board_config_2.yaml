@@ -1,0 +1,13 @@
+identifier: demo_board_2
+name: DEMO_Board_2
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 1024
+supported:
+  - supported_board_1
+  - supported_board_3

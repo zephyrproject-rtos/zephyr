@@ -103,7 +103,7 @@ static const struct test_result {
 		/* 10 */
 		.test_case.family = AF_PACKET,
 		.test_case.type = SOCK_RAW,
-		.test_case.proto = ETH_P_ALL,
+		.test_case.proto = htons(ETH_P_ALL),
 		.result = 0,
 	},
 	{
@@ -147,14 +147,14 @@ static const struct test_result {
 		/* 16 */
 		.test_case.family = AF_PACKET,
 		.test_case.type = SOCK_RAW,
-		.test_case.proto = ETH_P_IEEE802154,
+		.test_case.proto = htons(ETH_P_IEEE802154),
 		.result = 0,
 	},
 	{
 		/* 17 */
 		.test_case.family = AF_PACKET,
 		.test_case.type = SOCK_DGRAM,
-		.test_case.proto = ETH_P_IEEE802154,
+		.test_case.proto = htons(ETH_P_IEEE802154),
 		.result = 0,
 	},
 };
@@ -201,6 +201,8 @@ static bool is_tls(int family, int type, int proto)
 
 static bool is_packet(int family, int type, int proto)
 {
+	proto = ntohs(proto);
+
 	if (((type == SOCK_RAW) && (proto == ETH_P_ALL || proto == ETH_P_IEEE802154)) ||
 	    ((type == SOCK_DGRAM) && (proto > 0))) {
 		return true;
@@ -245,9 +247,9 @@ ZTEST(net_socket_register, test_create_sockets)
 	for (i = 0; i < ARRAY_SIZE(expected_result); i++, current_test++) {
 		errno = 0;
 
-		fd = socket(expected_result[i].test_case.family,
-			    expected_result[i].test_case.type,
-			    expected_result[i].test_case.proto);
+		fd = zsock_socket(expected_result[i].test_case.family,
+				  expected_result[i].test_case.type,
+				  expected_result[i].test_case.proto);
 
 		if (errno == EPROTONOSUPPORT) {
 			func_called--;
@@ -271,7 +273,7 @@ ZTEST(net_socket_register, test_create_sockets)
 		}
 
 		if (fd >= 0) {
-			close(fd);
+			zsock_close(fd);
 		}
 	}
 

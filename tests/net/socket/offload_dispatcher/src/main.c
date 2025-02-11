@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/socket.h>
 #include <sockets_internal.h>
 #include <zephyr/sys/fdtable.h>
@@ -270,15 +271,15 @@ static const struct socket_op_vtable offload_1_socket_fd_op_vtable = {
 
 int offload_1_socket(int family, int type, int proto)
 {
-	int fd = z_reserve_fd();
+	int fd = zvfs_reserve_fd();
 
 	if (fd < 0) {
 		return -1;
 	}
 
-	z_finalize_fd(fd, &test_socket_ctx[OFFLOAD_1],
-		      (const struct fd_op_vtable *)
-					&offload_1_socket_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, &test_socket_ctx[OFFLOAD_1],
+			    (const struct fd_op_vtable *)&offload_1_socket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	test_socket_ctx[OFFLOAD_1].socket_called = true;
 
@@ -293,24 +294,16 @@ static bool offload_1_is_supported(int family, int type, int proto)
 NET_SOCKET_OFFLOAD_REGISTER(offloaded_1, SOCKET_OFFLOAD_PRIO_HIGH, AF_UNSPEC,
 			    offload_1_is_supported, offload_1_socket);
 
-
-static int offloaded_1_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static void offloaded_1_iface_init(struct net_if *iface)
 {
 	net_if_socket_offload_set(iface, offload_1_socket);
 }
 
-static struct net_if_api offloaded_1_if_api = {
-	.init = offloaded_1_iface_init,
+static struct offloaded_if_api offloaded_1_if_api = {
+	.iface_api.init = offloaded_1_iface_init,
 };
 
-NET_DEVICE_OFFLOAD_INIT(offloaded_1, "offloaded_1", offloaded_1_init, NULL,
+NET_DEVICE_OFFLOAD_INIT(offloaded_1, "offloaded_1", NULL, NULL,
 			NULL, NULL, 0, &offloaded_1_if_api, 1500);
 
 /* Offloaded interface 2 - low priority */
@@ -340,15 +333,15 @@ static const struct socket_op_vtable offload_2_socket_fd_op_vtable = {
 
 int offload_2_socket(int family, int type, int proto)
 {
-	int fd = z_reserve_fd();
+	int fd = zvfs_reserve_fd();
 
 	if (fd < 0) {
 		return -1;
 	}
 
-	z_finalize_fd(fd, &test_socket_ctx[OFFLOAD_2],
-		      (const struct fd_op_vtable *)
-					&offload_2_socket_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, &test_socket_ctx[OFFLOAD_2],
+			    (const struct fd_op_vtable *)&offload_2_socket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	test_socket_ctx[OFFLOAD_2].socket_called = true;
 
@@ -363,24 +356,16 @@ static bool offload_2_is_supported(int family, int type, int proto)
 NET_SOCKET_OFFLOAD_REGISTER(offloaded_2, SOCKET_OFFLOAD_PRIO_HIGH, AF_UNSPEC,
 			    offload_2_is_supported, offload_2_socket);
 
-
-static int offloaded_2_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static void offloaded_2_iface_init(struct net_if *iface)
 {
 	net_if_socket_offload_set(iface, offload_2_socket);
 }
 
-static struct net_if_api offloaded_2_if_api = {
-	.init = offloaded_2_iface_init,
+static struct offloaded_if_api offloaded_2_if_api = {
+	.iface_api.init = offloaded_2_iface_init,
 };
 
-NET_DEVICE_OFFLOAD_INIT(offloaded_2, "offloaded_2", offloaded_2_init, NULL,
+NET_DEVICE_OFFLOAD_INIT(offloaded_2, "offloaded_2", NULL, NULL,
 			NULL, NULL, 0, &offloaded_2_if_api, 1500);
 
 
@@ -406,19 +391,12 @@ static int dummy_native_dev_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-int dummy_native_dev_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static const struct dummy_api dummy_native_dev_api = {
 	.iface_api.init = dummy_native_iface_init,
 	.send = dummy_native_dev_send,
 };
 
-NET_DEVICE_INIT(dummy_native, "dummy_native", dummy_native_dev_init, NULL, NULL,
+NET_DEVICE_INIT(dummy_native, "dummy_native", NULL, NULL, NULL,
 		NULL, 0, &dummy_native_dev_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 1500);
 
@@ -710,7 +688,11 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_offloaded)
 	int ret;
 	uint8_t dummy_data = 0;
 	struct ifreq ifreq = {
+#if defined(CONFIG_NET_INTERFACE_NAME)
+		.ifr_name = "net1"
+#else
 		.ifr_name = "offloaded_2"
+#endif
 	};
 	struct sockaddr_in addr = {
 		.sin_family = AF_INET
@@ -741,7 +723,11 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_native)
 	int ret;
 	uint8_t dummy_data = 0;
 	struct ifreq ifreq = {
+#if defined(CONFIG_NET_INTERFACE_NAME)
+		.ifr_name = "dummy0"
+#else
 		.ifr_name = "dummy_native"
+#endif
 	};
 	struct sockaddr_in addr = test_peer_addr;
 
@@ -772,7 +758,11 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_offloaded)
 	const struct fd_op_vtable *vtable;
 	void *obj;
 	struct ifreq ifreq = {
+#if defined(CONFIG_NET_INTERFACE_NAME)
+		.ifr_name = "net1"
+#else
 		.ifr_name = "offloaded_2"
+#endif
 	};
 	int tls_native = 1;
 	struct sockaddr_in addr = test_peer_addr;
@@ -785,7 +775,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_offloaded)
 	zassert_false(test_socket_ctx[OFFLOAD_2].socket_called,
 		     "TLS socket dispatched to wrong iface");
 
-	obj = z_get_fd_obj_and_vtable(test_sock, &vtable, NULL);
+	obj = zvfs_get_fd_obj_and_vtable(test_sock, &vtable, NULL);
 	zassert_not_null(obj, "No obj found");
 	zassert_true(net_socket_is_tls(obj), "Socket is not a native TLS sock");
 
@@ -815,7 +805,11 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_native)
 	const struct fd_op_vtable *vtable;
 	void *obj;
 	struct ifreq ifreq = {
+#if defined(CONFIG_NET_INTERFACE_NAME)
+		.ifr_name = "dummy0"
+#else
 		.ifr_name = "dummy_native"
+#endif
 	};
 	int tls_native = 1;
 	struct sockaddr_in addr = test_peer_addr;
@@ -828,7 +822,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_native)
 	zassert_false(test_socket_ctx[OFFLOAD_2].socket_called,
 		     "TLS socket dispatched to wrong iface");
 
-	obj = z_get_fd_obj_and_vtable(test_sock, &vtable, NULL);
+	obj = zvfs_get_fd_obj_and_vtable(test_sock, &vtable, NULL);
 	zassert_not_null(obj, "No obj found");
 	zassert_true(net_socket_is_tls(obj), "Socket is not a native TLS sock");
 

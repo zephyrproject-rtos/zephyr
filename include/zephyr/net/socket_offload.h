@@ -26,9 +26,11 @@ extern "C" {
  * POSIX socket API standard for arguments, return values and setting of errno.
  */
 struct socket_dns_offload {
+	/** DNS getaddrinfo offloaded implementation API */
 	int (*getaddrinfo)(const char *node, const char *service,
 			   const struct zsock_addrinfo *hints,
 			   struct zsock_addrinfo **res);
+	/** DNS freeaddrinfo offloaded implementation API */
 	void (*freeaddrinfo)(struct zsock_addrinfo *res);
 };
 
@@ -39,11 +41,15 @@ struct socket_dns_offload {
  */
 void socket_offload_dns_register(const struct socket_dns_offload *ops);
 
+/** @cond INTERNAL_HIDDEN */
+
 int socket_offload_getaddrinfo(const char *node, const char *service,
 			       const struct zsock_addrinfo *hints,
 			       struct zsock_addrinfo **res);
 
 void socket_offload_freeaddrinfo(struct zsock_addrinfo *res);
+
+/** @endcond */
 
 #ifdef __cplusplus
 }

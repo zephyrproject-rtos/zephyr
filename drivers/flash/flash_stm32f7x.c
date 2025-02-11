@@ -10,6 +10,7 @@
 #include <string.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/barrier.h>
 #include <soc.h>
 
 #include "flash_stm32.h"
@@ -56,12 +57,12 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 	regs->CR = (regs->CR & CR_PSIZE_MASK) |
 		   FLASH_PSIZE_BYTE | FLASH_CR_PG;
 	/* flush the register write */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* write the data */
-	*((uint8_t *) offset + CONFIG_FLASH_BASE_ADDRESS) = val;
+	*((uint8_t *) offset + FLASH_STM32_BASE_ADDRESS) = val;
 	/* flush the register write */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	regs->CR &= (~FLASH_CR_PG);
@@ -105,7 +106,7 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 		   (sector << FLASH_CR_SNB_Pos) |
 		   FLASH_CR_STRT;
 	/* flush the register write */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	regs->CR &= ~(FLASH_CR_SER | FLASH_CR_SNB);

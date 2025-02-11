@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  init.check_init_priorities:
+    build_only: true
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - native_posix
+    integration_platforms:
+      - native_sim
+      - native_sim

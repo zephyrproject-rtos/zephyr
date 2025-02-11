@@ -1,0 +1,17 @@
+identifier: nrf9131ek/nrf9131
+name: nRF9131-EK-NRF9131
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 88
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - counter

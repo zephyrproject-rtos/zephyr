@@ -1,7 +1,8 @@
-.. _usb_mass:
+.. zephyr:code-sample:: usb-mass
+   :name: USB Mass Storage
+   :relevant-api: usbd_api usbd_msc_device _usb_device_core_api file_system_api
 
-USB Mass Storage Sample Application
-###################################
+   Expose board's RAM or FLASH as a USB disk using USB Mass Storage driver.
 
 Overview
 ********
@@ -14,8 +15,7 @@ into an USB disk.  This sample can be found under
 Requirements
 ************
 
-This project requires a USB device driver, and either 32KiB (96KiB optional)
-of RAM or a FLASH device.
+This project requires a USB device driver, and either 96KiB of RAM or a FLASH device.
 
 Building and Running
 ********************
@@ -29,12 +29,13 @@ RAM-disk Example without any file system
 ========================================
 
 The default configurations selects RAM-based disk without any file system.
-This example only needs additional 32KiB RAM for the RAM-disk and is intended
+This example only needs additional 96KiB RAM for the RAM-disk and is intended
 for testing USB mass storage class implementation.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
    :board: reel_board
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
    :goals: build
    :compact:
 
@@ -49,7 +50,7 @@ In this example we will build the sample with a RAM-based disk:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
    :board: reel_board
-   :gen-args: -DCONFIG_APP_MSC_STORAGE_RAM=y
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE="ramdisk.overlay" -DCONFIG_APP_MSC_STORAGE_RAM=y
    :goals: build
    :compact:
 
@@ -60,7 +61,7 @@ to use the external 16 MiBi QSPI flash chip with a 2 MiBy FAT partition.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: adafruit_feather_nrf52840
+   :board: adafruit_feather/nrf52840
    :gen-args: -DCONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
    :goals: build
    :compact:
@@ -127,7 +128,7 @@ be connected to SPI using e.g. a shield, example can be built as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: waveshare_epaper_gdeh0154a07
    :gen-args: -DCONFIG_APP_MSC_STORAGE_SDCARD=y
    :goals: build
@@ -157,11 +158,11 @@ LittleFS Example
 
 This board configures to use the external 64 MiBi QSPI flash chip with a
 128 KiBy `littlefs`_ partition compatible with the one produced by the
-:ref:`littlefs-sample`.
+:zephyr:code-sample:`littlefs` sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :gen-args: -DCONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
    :goals: build
    :compact:
@@ -273,5 +274,5 @@ from the Zephyr mount log messages:
 If any of the parameters are inconsistent between the Zephyr and Linux
 specification the file system will not mount correctly.
 
-.. _littlefs: https://github.com/ARMmbed/littlefs
-.. _littlefs-FUSE: https://github.com/ARMmbed/littlefs-fuse
+.. _littlefs: https://github.com/littlefs-project/littlefs
+.. _littlefs-FUSE: https://github.com/littlefs-project/littlefs-fuse

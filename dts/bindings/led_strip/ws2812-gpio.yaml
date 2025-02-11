@@ -1,0 +1,15 @@
+# Copyright (c) 2024, TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+include: ws2812.yaml
+
+description: |
+  Common definition GPIO based WS2812 node
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO phandle and specifier for the pin connected to the
+      led-strip. Exactly one pin should be given.

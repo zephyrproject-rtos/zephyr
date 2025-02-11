@@ -245,7 +245,7 @@ ZTEST(riscv_fpu_sharing, test_multi_thread_interaction)
 			thread2_entry, NULL, NULL, NULL,
 			-1, 0, K_NO_WAIT);
 	zassert_true(k_thread_join(&thread1, K_FOREVER) == 0);
-	zassert_true(k_thread_join(&thread1, K_FOREVER) == 0);
+	zassert_true(k_thread_join(&thread2, K_FOREVER) == 0);
 }
 
 /*
@@ -417,6 +417,34 @@ ZTEST(riscv_fpu_sharing, test_fp_insn_trap)
 		     "got %#llx instead", buf64);
 #endif
 #endif /* CONFIG_RISCV_ISA_EXT_C */
+
+	/* MADD major opcode space */
+	reg = 3579;
+	TEST_TRAP("fcvt.s.w fa1, %0");
+	TEST_TRAP("fmadd.s fa0, fa1, fa1, fa1");
+	TEST_TRAP("fcvt.w.s %0, fa0");
+	zassert_true(reg == 12812820, "got %ld instead", reg);
+
+	/* MSUB major opcode space */
+	reg = 1234;
+	TEST_TRAP("fcvt.s.w fa1, %0");
+	TEST_TRAP("fmsub.s fa0, fa1, fa1, fa0");
+	TEST_TRAP("fcvt.w.s %0, fa0");
+	zassert_true(reg == -11290064, "got %ld instead", reg);
+
+	/* NMSUB major opcode space */
+	reg = -23;
+	TEST_TRAP("fcvt.s.w fa1, %0");
+	TEST_TRAP("fnmsub.s fa0, fa1, fa1, fa0");
+	TEST_TRAP("fcvt.w.s %0, fa0");
+	zassert_true(reg == -11290593, "got %ld instead", reg);
+
+	/* NMADD major opcode space */
+	reg = 765;
+	TEST_TRAP("fcvt.s.w fa1, %0");
+	TEST_TRAP("fnmadd.s fa0, fa1, fa1, fa1");
+	TEST_TRAP("fcvt.w.s %0, fa0");
+	zassert_true(reg == -585990, "got %ld instead", reg);
 }
 
 ZTEST_SUITE(riscv_fpu_sharing, NULL, NULL, NULL, NULL, NULL);

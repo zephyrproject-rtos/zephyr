@@ -9,7 +9,7 @@
 ##################### Audio Input Control Service #####################
 
 config BT_AICS_MAX_INSTANCE_COUNT
-	int "Audio Input Control Service max instance count [EXPERIMENTAL]"
+	int "Audio Input Control Service max instance count"
 	default 0
 	range 0 15
 	help
@@ -19,7 +19,7 @@ config BT_AICS_MAX_INSTANCE_COUNT
 config BT_AICS
 	bool # hidden
 	default y if BT_AICS_MAX_INSTANCE_COUNT > 0
-	select EXPERIMENTAL
+	select BT_GATT_DYNAMIC_DB
 	help
 	  This hidden option enables support for Audio Input Control Service.
 
@@ -32,26 +32,12 @@ config BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
 	help
 	  This option sets the maximum input description size in octets.
 
-############# DEBUG #############
-
-config BT_DEBUG_AICS
-	bool "Audio Input Control Service debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Audio Input Control Service debug logs for
-	  the Bluetooth Audio functionality.
-
-module = BT_AICS
-legacy-debug-sym = BT_DEBUG_AICS
-module-str = "Audio Input Control Service"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 endif # BT_AICS
 
 ##################### Audio Input Control Service Client #####################
 
 config BT_AICS_CLIENT_MAX_INSTANCE_COUNT
-	int "Audio Input Control Service client max instance count [EXPERIMENTAL]"
+	int "Audio Input Control Service client max instance count"
 	default 0
 	range 0 15
 	help
@@ -61,24 +47,5 @@ config BT_AICS_CLIENT_MAX_INSTANCE_COUNT
 config BT_AICS_CLIENT
 	bool # hidden
 	default y if BT_AICS_CLIENT_MAX_INSTANCE_COUNT > 0
-	select EXPERIMENTAL
 	help
 	  This hidden option enables support for Audio Input Control Service.
-
-if BT_AICS_CLIENT
-
-############# DEBUG #############
-
-config BT_DEBUG_AICS_CLIENT
-	bool "Audio Input Control Service client debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Audio Input Control Service client debug
-	  logs for the Bluetooth Audio functionality.
-
-module = BT_AICS_CLIENT
-legacy-debug-sym = BT_DEBUG_AICS_CLIENT
-module-str = "Audio Input Control Service client"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-endif # BT_AICS_CLIENT

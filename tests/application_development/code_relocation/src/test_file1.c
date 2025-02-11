@@ -29,14 +29,14 @@ void function_in_custom_section(void);
 
 ZTEST(code_relocation, test_function_in_sram2)
 {
-	extern uintptr_t __sram2_text_start;
-	extern uintptr_t __sram2_text_end;
-	extern uintptr_t __sram2_data_start;
-	extern uintptr_t __sram2_data_end;
-	extern uintptr_t __sram2_bss_start;
-	extern uintptr_t __sram2_bss_end;
-	extern uintptr_t __sram2_rodata_start;
-	extern uintptr_t __sram2_rodata_end;
+	extern uintptr_t __sram2_text_reloc_start;
+	extern uintptr_t __sram2_text_reloc_end;
+	extern uintptr_t __sram2_data_reloc_start;
+	extern uintptr_t __sram2_data_reloc_end;
+	extern uintptr_t __sram2_bss_reloc_start;
+	extern uintptr_t __sram2_bss_reloc_end;
+	extern uintptr_t __sram2_rodata_reloc_start;
+	extern uintptr_t __sram2_rodata_reloc_end;
 	extern uintptr_t __custom_section_start;
 	extern uintptr_t __custom_section_end;
 
@@ -47,20 +47,20 @@ ZTEST(code_relocation, test_function_in_sram2)
 	printk("Address of var_sram2_bss %p\n\n", &var_sram2_bss);
 
 	zassert_between_inclusive((uintptr_t)&var_sram2_data,
-		(uintptr_t)&__sram2_data_start,
-		(uintptr_t)&__sram2_data_end,
+		(uintptr_t)&__sram2_data_reloc_start,
+		(uintptr_t)&__sram2_data_reloc_end,
 		"var_sram2_data not in sram2 region");
 	zassert_between_inclusive((uintptr_t)&k_sem_give,
-		(uintptr_t)&__sram2_text_start,
-		(uintptr_t)&__sram2_text_end,
+		(uintptr_t)&__sram2_text_reloc_start,
+		(uintptr_t)&__sram2_text_reloc_end,
 		"k_sem_give not in sram_text region");
 	zassert_between_inclusive((uintptr_t)&var_sram2_rodata,
-		(uintptr_t)&__sram2_rodata_start,
-		(uintptr_t)&__sram2_rodata_end,
+		(uintptr_t)&__sram2_rodata_reloc_start,
+		(uintptr_t)&__sram2_rodata_reloc_end,
 		"var_sram2_rodata not in sram2_rodata region");
 	zassert_between_inclusive((uintptr_t)&var_sram2_bss,
-		(uintptr_t)&__sram2_bss_start,
-		(uintptr_t)&__sram2_bss_end,
+		(uintptr_t)&__sram2_bss_reloc_start,
+		(uintptr_t)&__sram2_bss_reloc_end,
 		"var_sram2_bss not in sram2_bss region");
 
 	/* Print values from sram */

@@ -1,0 +1,30 @@
+# Copyright (c) 2020 NXP
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_FT5336
+	bool "FT3267/FT5XX6/FT6XX6 capacitive touch panel driver"
+	default y
+	depends on DT_HAS_FOCALTECH_FT5336_ENABLED
+	select I2C
+	help
+	  Enable driver for multiple Focaltech capacitive touch panel
+	  controllers. This driver should support FT5x06, FT5606, FT5x16,
+	  FT6x06, Ft6x36, FT5x06i, FT5336, FT3316, FT5436i, FT3267,
+	  FT5336i and FT5x46.
+
+if INPUT_FT5336
+
+config INPUT_FT5336_PERIOD
+	int "Sample period"
+	depends on !INPUT_FT5336_INTERRUPT
+	default 10
+	help
+	  Sample period in milliseconds when in polling mode.
+
+config INPUT_FT5336_INTERRUPT
+	bool "Interrupt"
+	help
+	  Enable interrupt support (requires GPIO).
+
+endif # INPUT_FT5336

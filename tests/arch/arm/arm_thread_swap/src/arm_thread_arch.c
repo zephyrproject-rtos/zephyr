@@ -6,8 +6,9 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #include <zephyr/kernel_structs.h>
+#include <zephyr/sys/barrier.h>
 #include <offsets_short_arch.h>
 #include <ksched.h>
 
@@ -91,7 +92,7 @@ static void load_callee_saved_regs(const _callee_saved_t *regs)
 		: "memory", "r1"
 	);
 #endif
-	__DSB();
+	barrier_dsync_fence_full();
 }
 
 static void verify_callee_saved(const _callee_saved_t *src,
@@ -153,7 +154,7 @@ static void load_fp_callee_saved_regs(
 		: "r" (regs)
 		: "memory"
 		);
-	__DSB();
+	barrier_dsync_fence_full();
 }
 
 static void verify_fp_callee_saved(const struct _preempt_float *src,
@@ -220,8 +221,12 @@ static void verify_fp_callee_saved(const struct _preempt_float *src,
 #define ALT_THREAD_OPTIONS 0
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
-static void alt_thread_entry(void)
+static void alt_thread_entry(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int init_flag, post_flag;
 
 	/* Lock interrupts to make sure we get preempted only when
@@ -392,7 +397,7 @@ static void alt_thread_entry(void)
 	/* Manually trigger a context-switch, to swap-out
 	 * the alternative test thread.
 	 */
-	__DMB();
+	barrier_dmem_fence_full();
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 	irq_unlock(0);
 
@@ -529,7 +534,7 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	k_thread_create(&alt_thread,
 		alt_thread_stack,
 		K_THREAD_STACK_SIZEOF(alt_thread_stack),
-		(k_thread_entry_t)alt_thread_entry,
+		alt_thread_entry,
 		NULL, NULL, NULL,
 		K_PRIO_COOP(PRIORITY), ALT_THREAD_OPTIONS,
 		K_NO_WAIT);
@@ -593,7 +598,7 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	/* Manually trigger a context-switch to swap-out the current thread.
 	 * Request a return to a different interrupt lock state.
 	 */
-	__DMB();
+	barrier_dmem_fence_full();
 
 #if defined(CONFIG_NO_OPTIMIZATIONS)
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;

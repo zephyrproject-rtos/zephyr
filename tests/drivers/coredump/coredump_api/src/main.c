@@ -22,11 +22,28 @@
 
 #define TEST_MEMORY_VALUE_8 0xbabababa
 
+#ifdef CONFIG_COVERAGE_DUMP
+#include <zephyr/debug/gcov.h>
+#endif
+
 static uint32_t values_to_dump[3];
 static struct coredump_mem_region_node dump_region0 = {
 	.start = (uintptr_t)&values_to_dump,
 	.size = sizeof(values_to_dump)
 };
+
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+{
+	ARG_UNUSED(pEsf);
+
+	printk("%s as expected; reason = %u; halting ...\n", __func__, reason);
+
+#ifdef CONFIG_COVERAGE_DUMP
+	gcov_coverage_dump();  /* LCOV_EXCL_LINE */
+#endif
+	k_fatal_halt(reason);
+}
+
 
 static void test_coredump_callback(uintptr_t dump_area, size_t dump_area_size)
 {

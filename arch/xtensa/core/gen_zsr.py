@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2022 Intel corporation
 # SPDX-License-Identifier: Apache-2.0
-import sys
+import argparse
 import re
 
 # Scratch register allocator.  Zephyr uses multiple Xtensa SRs as
@@ -11,10 +11,32 @@ import re
 # -dM") core-isa.h file for the current architecture and assigns
 # registers to usages.
 
-NEEDED = ("ALLOCA", "CPU", "FLUSH")
+def parse_args():
+    parser = argparse.ArgumentParser(allow_abbrev=False)
 
-coreisa = sys.argv[1]
-outfile = sys.argv[2]
+    parser.add_argument("--coherence", action="store_true",
+                        help="Enable scratch registers for CONFIG_KERNEL_COHERENCE")
+    parser.add_argument("--mmu", action="store_true",
+                        help="Enable scratch registers for MMU usage")
+    parser.add_argument("--syscall-scratch", action="store_true",
+                        help="Enable scratch registers for syscalls if needed")
+    parser.add_argument("coreisa",
+                        help="Path to preprocessed core-isa.h")
+    parser.add_argument("outfile",
+                        help="Output file")
+
+    return parser.parse_args()
+
+args = parse_args()
+
+NEEDED = ["A0SAVE", "CPU"]
+if args.mmu:
+    NEEDED += ["DBLEXC", "DEPC_SAVE", "EXCCAUSE_SAVE"]
+if args.coherence:
+    NEEDED += ["FLUSH"]
+
+coreisa = args.coreisa
+outfile = args.outfile
 
 syms = {}
 
@@ -29,6 +51,14 @@ with open(coreisa) as infile:
 
 # Use MISC registers first if available, that's what they're for
 regs = [ f"MISC{n}" for n in range(0, int(get("XCHAL_NUM_MISC_REGS"))) ]
+
+if args.syscall_scratch:
+    # If there is no THREADPTR, we need to use syscall for
+    # arch_is_user_context() where the code needs a scratch
+    # register.
+    have_threadptr = int(get("XCHAL_HAVE_THREADPTR"))
+    if have_threadptr == 0:
+        NEEDED.append("SYSCALL_SCRATCH")
 
 # Next come EXCSAVE. Also record our highest non-debug interrupt level.
 maxint = 0
@@ -65,6 +95,7 @@ with open(outfile, "w") as f:
     # Emit any remaining registers as generics
     for i in range(len(NEEDED), len(regs)):
         f.write(f"# define ZSR_EXTRA{i - len(NEEDED)} {regs[i]}\n")
+        f.write(f"# define ZSR_EXTRA{i - len(NEEDED)}_STR \"{regs[i]}\"\n")
 
     # Also, our highest level EPC/EPS registers
     f.write(f"# define ZSR_RFI_LEVEL {maxint}\n")

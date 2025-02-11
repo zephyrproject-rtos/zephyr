@@ -72,16 +72,17 @@ static void do_main(const struct device *dev)
 
 #endif /* CONFIG_SX9500_TRIGGER */
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(semtech_sx9500);
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	printk("device is %p, name is %s\n", dev, dev->name);
 
 	do_main(dev);
+	return 0;
 }

@@ -7,7 +7,7 @@ description: USB Audio headphones specific fields.
 
 compatible: "usb-audio-hp"
 
-include: usb-audio.yaml
+include: [usb-audio.yaml, usb-audio-feature-volume.yaml]
 
 properties:
   resolution:
@@ -18,6 +18,12 @@ properties:
       - 16
       - 24
       - 32
+  sample-rate-hz:
+    type: int
+    default: 48000
+  polling-interval:
+    type: int
+    default: 1
   # channel configuration options
   channel-l:
     type: boolean

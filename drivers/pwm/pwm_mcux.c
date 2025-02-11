@@ -12,6 +12,7 @@
 #include <soc.h>
 #include <fsl_pwm.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
 
@@ -35,16 +36,118 @@ struct pwm_mcux_config {
 struct pwm_mcux_data {
 	uint32_t period_cycles[CHANNEL_COUNT];
 	pwm_signal_param_t channel[CHANNEL_COUNT];
+	struct k_mutex lock;
 };
 
-static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
+static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t channel,
 			       uint32_t period_cycles, uint32_t pulse_cycles,
 			       pwm_flags_t flags)
 {
 	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
-	uint8_t duty_cycle;
 	pwm_level_select_t level;
+
+	if (flags & PWM_POLARITY_INVERTED) {
+		level = kPWM_LowTrue;
+	} else {
+		level = kPWM_HighTrue;
+	}
+
+	if (period_cycles != data->period_cycles[channel]
+	    || level != data->channel[channel].level) {
+		uint32_t clock_freq;
+		status_t status;
+
+		data->period_cycles[channel] = period_cycles;
+
+		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+				&clock_freq)) {
+			return -EINVAL;
+		}
+
+		data->channel[channel].pwmchannelenable = true;
+
+		PWM_StopTimer(config->base, 1U << config->index);
+
+		/*
+		 * We will directly write the duty cycle pulse width
+		 * and full pulse width into the VALx registers to
+		 * setup PWM with higher resolution.
+		 * Therefore we use dummy values for the duty cycle
+		 * and frequency.
+		 */
+		data->channel[channel].dutyCyclePercent = 0;
+		data->channel[channel].level = level;
+
+		status = PWM_SetupPwm(config->base, config->index,
+				      &data->channel[channel], 1U,
+				      config->mode, 1U, clock_freq);
+		if (status != kStatus_Success) {
+			LOG_ERR("Could not set up pwm");
+			return -ENOTSUP;
+		}
+
+		/* Setup VALx values directly for edge aligned PWM */
+		if (channel == 0) {
+			/* Side A */
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_0,
+					 (uint16_t)(period_cycles / 2U));
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_1,
+					 (uint16_t)(period_cycles - 1U));
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_2, 0U);
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_3,
+					 (uint16_t)pulse_cycles);
+		} else {
+			/* Side B */
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_0,
+					 (uint16_t)(period_cycles / 2U));
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_1,
+					 (uint16_t)(period_cycles - 1U));
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_4, 0U);
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_5,
+					 (uint16_t)pulse_cycles);
+		}
+
+		PWM_SetPwmLdok(config->base, 1U << config->index, true);
+
+		PWM_StartTimer(config->base, 1U << config->index);
+	} else {
+		/* Setup VALx values directly for edge aligned PWM */
+		if (channel == 0) {
+			/* Side A */
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_2, 0U);
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_3,
+					 (uint16_t)pulse_cycles);
+		} else {
+			/* Side B */
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_4, 0U);
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_5,
+					 (uint16_t)pulse_cycles);
+		}
+		PWM_SetPwmLdok(config->base, 1U << config->index, true);
+	}
+
+	return 0;
+}
+
+static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
+			       uint32_t period_cycles, uint32_t pulse_cycles,
+			       pwm_flags_t flags)
+{
+	struct pwm_mcux_data *data = dev->data;
+	int result;
 
 	if (channel >= CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel");
@@ -63,62 +166,10 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		/* TODO: dynamically adjust prescaler */
 		return -EINVAL;
 	}
-
-	duty_cycle = 100 * pulse_cycles / period_cycles;
-
-	if (flags & PWM_POLARITY_INVERTED) {
-		level = kPWM_LowTrue;
-	} else {
-		level = kPWM_HighTrue;
-	}
-
-	/* FIXME: Force re-setup even for duty-cycle update */
-	if (period_cycles != data->period_cycles[channel]
-	    || level != data->channel[channel].level) {
-		uint32_t clock_freq;
-		uint32_t pwm_freq;
-		status_t status;
-
-		data->period_cycles[channel] = period_cycles;
-
-		LOG_DBG("SETUP dutycycle to %u", duty_cycle);
-
-		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				&clock_freq)) {
-			return -EINVAL;
-		}
-
-		pwm_freq = (clock_freq >> config->prescale) / period_cycles;
-
-		if (pwm_freq == 0) {
-			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
-			return -EINVAL;
-		}
-
-		PWM_StopTimer(config->base, 1U << config->index);
-
-		data->channel[channel].dutyCyclePercent = duty_cycle;
-		data->channel[channel].level = level;
-
-		status = PWM_SetupPwm(config->base, config->index,
-				      &data->channel[0], CHANNEL_COUNT,
-				      config->mode, pwm_freq, clock_freq);
-		if (status != kStatus_Success) {
-			LOG_ERR("Could not set up pwm");
-			return -ENOTSUP;
-		}
-
-		PWM_SetPwmLdok(config->base, 1U << config->index, true);
-
-		PWM_StartTimer(config->base, 1U << config->index);
-	} else {
-		PWM_UpdatePwmDutycycle(config->base, config->index,
-				       (channel == 0) ? kPWM_PwmA : kPWM_PwmB,
-				       config->mode, duty_cycle);
-		PWM_SetPwmLdok(config->base, 1U << config->index, true);
-	}
-
-	return 0;
+	k_mutex_lock(&data->lock, K_FOREVER);
+	result = mcux_pwm_set_cycles_internal(dev, channel, period_cycles, pulse_cycles, flags);
+	k_mutex_unlock(&data->lock);
+	return result;
 }
 
 static int mcux_pwm_get_cycles_per_sec(const struct device *dev,
@@ -144,6 +195,8 @@ static int pwm_mcux_init(const struct device *dev)
 	status_t status;
 	int i, err;
 
+	k_mutex_init(&data->lock);
+
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
@@ -162,7 +215,9 @@ static int pwm_mcux_init(const struct device *dev)
 	pwm_config.reloadLogic = config->reload;
 	pwm_config.clockSource = kPWM_BusClock;
 	pwm_config.enableDebugMode = config->run_debug;
+#if !defined(FSL_FEATURE_PWM_HAS_NO_WAITEN) || (!FSL_FEATURE_PWM_HAS_NO_WAITEN)
 	pwm_config.enableWait = config->run_wait;
+#endif
 
 	status = PWM_Init(config->base, config->index, &pwm_config);
 	if (status != kStatus_Success) {

@@ -110,7 +110,11 @@ static struct bt_conn_cb conn_callbacks = {
 	.disconnected = disconnected,
 };
 
-void main(void)
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
+int main(void)
 {
 	struct bt_le_per_adv_sync_transfer_param past_param;
 	int err;
@@ -121,7 +125,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Connection callbacks register...");
@@ -139,13 +143,13 @@ void main(void)
 						    &past_param);
 	if (err) {
 		printk("PAST subscribe failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, NULL, 0, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, NULL, 0, sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	do {
@@ -153,7 +157,7 @@ void main(void)
 		err = k_sem_take(&sem_per_sync, K_FOREVER);
 		if (err) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("Periodic sync established.\n");
 
@@ -161,8 +165,9 @@ void main(void)
 		err = k_sem_take(&sem_per_sync_lost, K_FOREVER);
 		if (err) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("Periodic sync lost.\n");
 	} while (true);
+	return 0;
 }

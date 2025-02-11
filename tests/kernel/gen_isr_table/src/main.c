@@ -7,9 +7,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/irq.h>
+#include <zephyr/irq_multilevel.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/interrupt_util.h>
+#include <zephyr/sys/barrier.h>
 
 extern uint32_t _irq_vector_table[];
 
@@ -18,6 +20,18 @@ extern uint32_t _irq_vector_table[];
 #endif
 
 #if defined(CONFIG_RISCV)
+#if defined(CONFIG_NRFX_CLIC)
+#define ISR1_OFFSET	15
+#define ISR3_OFFSET	16
+#define ISR5_OFFSET	17
+#define TRIG_CHECK_SIZE	18
+#elif defined(CONFIG_RISCV_HAS_CLIC)
+#define ISR1_OFFSET	3
+#define ISR3_OFFSET	17
+#define ISR5_OFFSET	18
+#define TRIG_CHECK_SIZE	19
+#else
+
 /* RISC-V has very few IRQ lines which can be triggered from software */
 #define ISR3_OFFSET	1
 
@@ -29,10 +43,16 @@ extern uint32_t _irq_vector_table[];
 #else
 #define ISR5_OFFSET	5
 #endif
+#define TRIG_CHECK_SIZE	6
+#endif
 
 #define IRQ_LINE(offset)        offset
+#if defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
+#define TABLE_INDEX(offset)     offset + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+#else
 #define TABLE_INDEX(offset)     offset
-#define TRIG_CHECK_SIZE		6
+#endif
+
 #else
 #define ISR1_OFFSET	0
 #define ISR2_OFFSET	1
@@ -87,6 +107,12 @@ extern uint32_t _irq_vector_table[];
 #define ISR4_ARG	0xca55e77e
 #define ISR5_ARG	0xf0ccac1a
 #define ISR6_ARG	0xba5eba11
+
+#if defined(CONFIG_RISCV_HAS_CLIC)
+#define IRQ_FLAGS 1 /* rising edge */
+#else
+#define IRQ_FLAGS 0
+#endif
 
 static volatile int trigger_check[TRIG_CHECK_SIZE];
 
@@ -159,8 +185,8 @@ int test_irq(int offset)
 	TC_PRINT("triggering irq %d\n", IRQ_LINE(offset));
 	trigger_irq(IRQ_LINE(offset));
 #ifdef CONFIG_CPU_CORTEX_M
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 #endif
 	if (trigger_check[offset] != 1) {
 		TC_PRINT("interrupt %d didn't run once, ran %d times\n",
@@ -260,7 +286,7 @@ ZTEST(gen_isr_table, test_build_time_direct_interrupt)
 #else
 
 #ifdef ISR1_OFFSET
-	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), 0, isr1, 0);
+	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), 0, isr1, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR1_OFFSET));
 	TC_PRINT("isr1 isr=%p irq=%d\n", isr1, IRQ_LINE(ISR1_OFFSET));
 	zassert_ok(check_vector(isr1, ISR1_OFFSET),
@@ -268,7 +294,7 @@ ZTEST(gen_isr_table, test_build_time_direct_interrupt)
 #endif
 
 #ifdef ISR2_OFFSET
-	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), 0, isr2, 0);
+	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), 0, isr2, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR2_OFFSET));
 	TC_PRINT("isr2 isr=%p irq=%d\n", isr2, IRQ_LINE(ISR2_OFFSET));
 
@@ -303,7 +329,7 @@ ZTEST(gen_isr_table, test_build_time_interrupt)
 	TC_PRINT("_sw_isr_table at location %p\n", _sw_isr_table);
 
 #ifdef ISR3_OFFSET
-	IRQ_CONNECT(IRQ_LINE(ISR3_OFFSET), 1, isr3, ISR3_ARG, 0);
+	IRQ_CONNECT(IRQ_LINE(ISR3_OFFSET), 1, isr3, ISR3_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR3_OFFSET));
 	TC_PRINT("isr3 isr=%p irq=%d param=%p\n", isr3, IRQ_LINE(ISR3_OFFSET),
 		 (void *)ISR3_ARG);
@@ -313,7 +339,7 @@ ZTEST(gen_isr_table, test_build_time_interrupt)
 #endif
 
 #ifdef ISR4_OFFSET
-	IRQ_CONNECT(IRQ_LINE(ISR4_OFFSET), 1, isr4, ISR4_ARG, 0);
+	IRQ_CONNECT(IRQ_LINE(ISR4_OFFSET), 1, isr4, ISR4_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR4_OFFSET));
 	TC_PRINT("isr4 isr=%p irq=%d param=%p\n", isr4, IRQ_LINE(ISR4_OFFSET),
 		 (void *)ISR4_ARG);
@@ -349,7 +375,7 @@ ZTEST(gen_isr_table, test_run_time_interrupt)
 
 #ifdef ISR5_OFFSET
 	irq_connect_dynamic(IRQ_LINE(ISR5_OFFSET), 1, isr5,
-			    (const void *)ISR5_ARG, 0);
+			    (const void *)ISR5_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR5_OFFSET));
 	TC_PRINT("isr5 isr=%p irq=%d param=%p\n", isr5, IRQ_LINE(ISR5_OFFSET),
 		 (void *)ISR5_ARG);
@@ -359,7 +385,7 @@ ZTEST(gen_isr_table, test_run_time_interrupt)
 
 #ifdef ISR6_OFFSET
 	irq_connect_dynamic(IRQ_LINE(ISR6_OFFSET), 1, isr6,
-			    (const void *)ISR6_ARG, 0);
+			    (const void *)ISR6_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR6_OFFSET));
 	TC_PRINT("isr6 isr=%p irq=%d param=%p\n", isr6, IRQ_LINE(ISR6_OFFSET),
 		 (void *)ISR6_ARG);
@@ -372,8 +398,6 @@ ZTEST(gen_isr_table, test_run_time_interrupt)
 
 static void *gen_isr_table_setup(void)
 {
-	TC_START("Test gen_isr_tables");
-
 	TC_PRINT("IRQ configuration (total lines %d):\n", CONFIG_NUM_IRQS);
 
 #pragma GCC diagnostic push
@@ -381,5 +405,124 @@ static void *gen_isr_table_setup(void)
 
 	return NULL;
 }
+
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+static void test_multi_level_bit_masks_fn(uint32_t irq1, uint32_t irq2, uint32_t irq3)
+{
+	const uint32_t l2_shift = CONFIG_1ST_LEVEL_INTERRUPT_BITS;
+	const uint32_t l3_shift = CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS;
+	const uint32_t hwirq1 = irq1;
+	const uint32_t hwirq2 = irq2 - 1;
+	const uint32_t hwirq3 = irq3 - 1;
+	const bool has_l3 = irq3 > 0;
+	const bool has_l2 = irq2 > 0;
+	const uint32_t level = has_l3 ? 3 : has_l2 ? 2 : 1;
+	const uint32_t irqn_l1 = irq1;
+	const uint32_t irqn_l2 = (irq2 << l2_shift) | irqn_l1;
+	const uint32_t irqn = (irq3 << l3_shift) | irqn_l2;
+
+	zassert_equal(level, irq_get_level(irqn));
+
+	if (has_l2) {
+		zassert_equal(hwirq2, irq_from_level_2(irqn));
+		zassert_equal(hwirq2, irq_from_level(irqn, 2));
+		zassert_equal((hwirq2 + 1) << l2_shift, irq_to_level_2(hwirq2));
+		zassert_equal((hwirq2 + 1) << l2_shift, irq_to_level(hwirq2, 2));
+		zassert_equal(hwirq1, irq_parent_level_2(irqn));
+		zassert_equal(hwirq1, irq_parent_level(irqn, 2));
+	}
+
+	if (has_l3) {
+		zassert_equal(hwirq3, irq_from_level_3(irqn));
+		zassert_equal(hwirq3, irq_from_level(irqn, 3));
+		zassert_equal((hwirq3 + 1) << l3_shift, irq_to_level_3(hwirq3));
+		zassert_equal((hwirq3 + 1) << l3_shift, irq_to_level(hwirq3, 3));
+		zassert_equal(hwirq2, irq_parent_level_3(irqn));
+		zassert_equal(hwirq2, irq_parent_level(irqn, 3));
+	}
+
+	if (has_l3) {
+		zassert_equal(irqn_l2, irq_get_intc_irq(irqn));
+	} else if (has_l2) {
+		zassert_equal(irqn_l1, irq_get_intc_irq(irqn));
+	} else {
+		/* degenerate cases */
+		if (false) {
+			zassert_equal(irqn, irq_get_intc_irq(irqn));
+		}
+	}
+}
+
+ZTEST(gen_isr_table, test_multi_level_bit_masks_l1)
+{
+	uint32_t irq1;
+
+	/* First IRQ of level 1 */
+	irq1 = 0;
+	test_multi_level_bit_masks_fn(irq1, 0, 0);
+
+	/* Somewhere in-between */
+	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS) >> 1;
+	test_multi_level_bit_masks_fn(irq1, 0, 0);
+
+	/* Last IRQ of level 1 */
+	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
+	test_multi_level_bit_masks_fn(irq1, 0, 0);
+}
+
+ZTEST(gen_isr_table, test_multi_level_bit_masks_l2)
+{
+	if (!IS_ENABLED(CONFIG_2ND_LEVEL_INTERRUPTS)) {
+		ztest_test_skip();
+	}
+
+	uint32_t irq1, irq2;
+
+	/* First IRQ of level 2 */
+	irq1 = 0;
+	/* First irq of level 2 and onwards is 1, as 0 means that the irq is not present */
+	irq2 = 1;
+	test_multi_level_bit_masks_fn(irq1, irq2, 0);
+
+	/* Somewhere in-between */
+	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS) >> 1;
+	irq2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS) >> 1;
+	test_multi_level_bit_masks_fn(irq1, irq2, 0);
+
+	/* Last IRQ of level 2 */
+	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
+	irq2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
+	test_multi_level_bit_masks_fn(irq1, irq2, 0);
+}
+
+ZTEST(gen_isr_table, test_multi_level_bit_masks_l3)
+{
+	if (!IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS)) {
+		ztest_test_skip();
+	}
+
+	uint32_t irq1, irq2, irq3;
+
+	/* First IRQ of level 3 */
+	irq1 = 0;
+	/* First irq of level 2 and onwards is 1, as 0 means that the irq is not present */
+	irq2 = 1;
+	irq3 = 1;
+	test_multi_level_bit_masks_fn(irq1, irq2, irq3);
+
+	/* Somewhere in-between */
+	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS) >> 1;
+	irq2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS) >> 1;
+	irq3 = BIT_MASK(CONFIG_3RD_LEVEL_INTERRUPT_BITS) >> 1;
+	test_multi_level_bit_masks_fn(irq1, irq2, irq3);
+
+	/* Last IRQ of level 3 */
+	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
+	irq2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
+	irq3 = BIT_MASK(CONFIG_3RD_LEVEL_INTERRUPT_BITS);
+	test_multi_level_bit_masks_fn(irq1, irq2, irq3);
+}
+
+#endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
 
 ZTEST_SUITE(gen_isr_table, NULL, gen_isr_table_setup, NULL, NULL, NULL);

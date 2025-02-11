@@ -1,0 +1,79 @@
+# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon CYW20829 series MCUs
+
+# SOC series
+config SOC_SERIES_CYW20829
+	bool
+
+config SOC_SERIES
+	default "cyw20829" if SOC_SERIES_CYW20829
+
+# SOC die
+config SOC_DIE_CYW20829
+	bool
+	select SOC_FAMILY_INFINEON_CAT1B
+
+# SOC packages
+config SOC_PACKAGE_CYW20829_56_QFN
+	bool
+
+config SOC_PACKAGE_CYW20829_40_QFN
+	bool
+
+config SOC_PACKAGE_CYW20829_77_BGA
+	bool
+
+# MPN
+config SOC_CYW20829A0LKML
+	bool
+	select SOC_DIE_CYW20829
+	select SOC_PACKAGE_CYW20829_56_QFN
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829A0KML
+	bool
+	select SOC_DIE_CYW20829
+	select SOC_PACKAGE_CYW20829_40_QFN
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW89829A0KML
+	bool
+	select SOC_DIE_CYW20829
+	select SOC_PACKAGE_CYW20829_40_QFN
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B0LKML
+	bool
+	select SOC_DIE_CYW20829
+	select SOC_PACKAGE_CYW20829_56_QFN
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B0KML
+	bool
+	select SOC_DIE_CYW20829
+	select SOC_PACKAGE_CYW20829_40_QFN
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW89829B0KML
+	bool
+	select SOC_DIE_CYW20829
+	select SOC_PACKAGE_CYW20829_40_QFN
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW89829B01MKSBG
+	bool
+	select SOC_DIE_CYW20829
+	select SOC_PACKAGE_CYW20829_77_BGA
+	select SOC_SERIES_CYW20829
+
+config SOC
+	default "cyw20829a0lkml" if SOC_CYW20829A0LKML
+	default "cyw20829a0kml" if SOC_CYW20829A0KML
+	default "cyw89829a0kml" if SOC_CYW89829A0KML
+	default "cyw20829b0lkml" if SOC_CYW20829B0LKML
+	default "cyw20829b0kml" if SOC_CYW20829B0KML
+	default "cyw89829b0kml" if SOC_CYW89829B0KML
+	default "cyw89829b01mksbg" if SOC_CYW89829B01MKSBG

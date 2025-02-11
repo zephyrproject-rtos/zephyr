@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_TRACING_TRACING_MACROS_H_
 #define ZEPHYR_INCLUDE_TRACING_TRACING_MACROS_H_
 
+#include <zephyr/sys/util_macro.h>
+
 #if !defined(CONFIG_TRACING) && !defined(__DOXYGEN__)
 
 #define SYS_PORT_TRACING_FUNC(type, func, ...) do { } while (false)
@@ -73,6 +75,7 @@
 	#define sys_port_trace_type_mask_k_thread(trace_call) trace_call
 #else
 	#define sys_port_trace_type_mask_k_thread(trace_call)
+	#define sys_port_trace_k_thread_is_disabled 1
 #endif
 
 #if defined(CONFIG_TRACING_WORK)
@@ -173,6 +176,35 @@
 	#define sys_port_trace_type_mask_k_event(trace_call)
 #endif
 
+#ifndef CONFIG_TRACING_POLLING
+	#define sys_port_trace_k_poll_api_is_disabled 1
+	#define sys_port_trace_k_work_poll_is_disabled 1
+#endif
+
+#ifndef CONFIG_TRACING_PM
+	#define sys_port_trace_pm_is_disabled 1
+#endif
+
+#if defined(CONFIG_TRACING_NETWORKING)
+	#define sys_port_trace_type_mask_socket(trace_call) trace_call
+#else
+	#define sys_port_trace_type_mask_socket(trace_call)
+#endif
+
+/*
+ * We cannot positively enumerate all traced APIs, as applications may trace
+ * arbitrary custom APIs we know nothing about. Therefore we demand that tracing
+ * of an API must be actively disabled.
+ *
+ * This contrasts with object tracing/tracking as all traceable objects are well
+ * known, see the SYS_PORT_TRACING_TYPE_MASK approach below.
+ */
+#define _SYS_PORT_TRACE_IS_DISABLED(type) sys_port_trace_##type##_is_disabled
+#define _SYS_PORT_TRACE_WRAP(func, ...) do { func(__VA_ARGS__); } while (false)
+#define _SYS_PORT_TRACE_IF_NOT_DISABLED(type, func, ...)                                           \
+	COND_CODE_1(_SYS_PORT_TRACE_IS_DISABLED(type), (),                                         \
+		    (_SYS_PORT_TRACE_WRAP(func, __VA_ARGS__)))
+
 /** @endcond */
 
 /**
@@ -194,10 +226,8 @@
  * system calls etc. That is, we can often omit the z_vrfy/z_impl part of the name.
  * @param ... Additional parameters relevant to the tracing call
  */
-#define SYS_PORT_TRACING_FUNC(type, func, ...) \
-	do { \
-		_SYS_PORT_TRACING_FUNC(type, func)(__VA_ARGS__); \
-	} while (false)
+#define SYS_PORT_TRACING_FUNC(type, func, ...)                                                     \
+	_SYS_PORT_TRACE_IF_NOT_DISABLED(type, _SYS_PORT_TRACING_FUNC(type, func), __VA_ARGS__)
 
 /**
  * @brief Tracing macro for the entry into a function that might or might not return
@@ -209,10 +239,8 @@
  * system calls etc. That is, we can often omit the z_vrfy/z_impl part of the name.
  * @param ... Additional parameters relevant to the tracing call
  */
-#define SYS_PORT_TRACING_FUNC_ENTER(type, func, ...) \
-	do { \
-		_SYS_PORT_TRACING_FUNC_ENTER(type, func)(__VA_ARGS__); \
-	} while (false)
+#define SYS_PORT_TRACING_FUNC_ENTER(type, func, ...)                                               \
+	_SYS_PORT_TRACE_IF_NOT_DISABLED(type, _SYS_PORT_TRACING_FUNC_ENTER(type, func), __VA_ARGS__)
 
 /**
  * @brief Tracing macro for when a function blocks during its execution.
@@ -223,10 +251,9 @@
  * system calls etc. That is, we can often omit the z_vrfy/z_impl part of the name.
  * @param ... Additional parameters relevant to the tracing call
  */
-#define SYS_PORT_TRACING_FUNC_BLOCKING(type, func, ...) \
-	do { \
-		_SYS_PORT_TRACING_FUNC_BLOCKING(type, func)(__VA_ARGS__); \
-	} while (false)
+#define SYS_PORT_TRACING_FUNC_BLOCKING(type, func, ...)                                            \
+	_SYS_PORT_TRACE_IF_NOT_DISABLED(type, _SYS_PORT_TRACING_FUNC_BLOCKING(type, func),         \
+					__VA_ARGS__)
 
 /**
  * @brief Tracing macro for when a function ends its execution. Potential return values
@@ -238,10 +265,8 @@
  * system calls etc. That is, we can often omit the z_vrfy/z_impl part of the name.
  * @param ... Additional parameters relevant to the tracing call
  */
-#define SYS_PORT_TRACING_FUNC_EXIT(type, func, ...) \
-	do { \
-		_SYS_PORT_TRACING_FUNC_EXIT(type, func)(__VA_ARGS__); \
-	} while (false)
+#define SYS_PORT_TRACING_FUNC_EXIT(type, func, ...)                                                \
+	_SYS_PORT_TRACE_IF_NOT_DISABLED(type, _SYS_PORT_TRACING_FUNC_EXIT(type, func), __VA_ARGS__)
 
 /**
  * @brief Tracing macro for the initialization of an object.

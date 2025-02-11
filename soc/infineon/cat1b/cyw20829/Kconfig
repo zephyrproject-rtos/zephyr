@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon CAT1B devices
+
+# Series definitions
+config SOC_SERIES_CYW20829
+	select ARM
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M33
+	select CPU_HAS_FPU
+	select DYNAMIC_INTERRUPTS

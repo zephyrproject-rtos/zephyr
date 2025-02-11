@@ -1,5 +1,10 @@
 tests:
-  kernel.mutex_error_case:
+  kernel.mutex.error:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    tags: kernel userspace
+    arch_exclude:
+      - posix
+    tags:
+      - kernel
+      - userspace
+      - mutex
     ignore_faults: true

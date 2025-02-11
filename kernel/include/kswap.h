@@ -8,15 +8,16 @@
 
 #include <ksched.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/barrier.h>
 #include <kernel_arch_func.h>
 
 #ifdef CONFIG_STACK_SENTINEL
 extern void z_check_stack_sentinel(void);
 #else
 #define z_check_stack_sentinel() /**/
-#endif
+#endif /* CONFIG_STACK_SENTINEL */
 
-extern struct k_spinlock sched_spinlock;
+extern struct k_spinlock _sched_spinlock;
 
 /* In SMP, the irq_lock() is a spinlock which is implicitly released
  * and reacquired on context switch to preserve the existing
@@ -30,24 +31,39 @@ void z_smp_release_global_lock(struct k_thread *thread);
 /* context switching and scheduling-related routines */
 #ifdef CONFIG_USE_SWITCH
 
-/* There is an unavoidable SMP race when threads swap -- their thread
- * record is in the queue (and visible to other CPUs) before
- * arch_switch() finishes saving state.  We must spin for the switch
- * handle before entering a new thread.  See docs on arch_switch().
+/* Spin, with the scheduler lock held (!), on a thread that is known
+ * (!!) to have released the lock and be on a path where it will
+ * deterministically (!!!) reach arch_switch() in very small constant
+ * time.
  *
- * Note: future SMP architectures may need a fence/barrier or cache
- * invalidation here.  Current ones don't, and sadly Zephyr doesn't
- * have a framework for that yet.
+ * This exists to treat an unavoidable SMP race when threads swap --
+ * their thread record is in the queue (and visible to other CPUs)
+ * before arch_switch() finishes saving state.  We must spin for the
+ * switch handle before entering a new thread.  See docs on
+ * arch_switch().
+ *
+ * Stated differently: there's a chicken and egg bug with the question
+ * of "is a thread running or not?".  The thread needs to mark itself
+ * "not running" from its own context, but at that moment it obviously
+ * is still running until it reaches arch_switch()!  Locking can't
+ * treat this because the scheduler lock can't be released by the
+ * switched-to thread, which is going to (obviously) be running its
+ * own code and doesn't know it was switched out.
  */
-static inline void wait_for_switch(struct k_thread *thread)
+static inline void z_sched_switch_spin(struct k_thread *thread)
 {
 #ifdef CONFIG_SMP
 	volatile void **shp = (void *)&thread->switch_handle;
 
 	while (*shp == NULL) {
-		k_busy_wait(1);
+		arch_spin_relax();
 	}
-#endif
+	/* Read barrier: don't allow any subsequent loads in the
+	 * calling code to reorder before we saw switch_handle go
+	 * non-null.
+	 */
+	barrier_dmem_fence_full();
+#endif /* CONFIG_SMP */
 }
 
 /* New style context switching.  arch_switch() is a lower level
@@ -83,8 +99,8 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	__ASSERT(arch_irq_unlocked(key) ||
 		 _current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
 		 "Context switching while holding lock!");
-# endif
-#endif
+# endif /* CONFIG_ARM64 */
+#endif /* CONFIG_SPIN_VALIDATE */
 
 	old_thread = _current;
 
@@ -96,11 +112,11 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	 * have it.  We "release" other spinlocks here.  But we never
 	 * drop the interrupt lock.
 	 */
-	if (is_spinlock && lock != NULL && lock != &sched_spinlock) {
+	if (is_spinlock && lock != NULL && lock != &_sched_spinlock) {
 		k_spin_release(lock);
 	}
-	if (!is_spinlock || lock != &sched_spinlock) {
-		(void) k_spin_lock(&sched_spinlock);
+	if (!is_spinlock || lock != &_sched_spinlock) {
+		(void) k_spin_lock(&_sched_spinlock);
 	}
 
 	new_thread = z_swap_next_thread();
@@ -115,39 +131,42 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		if (!is_spinlock) {
 			z_smp_release_global_lock(new_thread);
 		}
-#endif
+#endif /* CONFIG_SMP */
 		z_thread_mark_switched_out();
-		wait_for_switch(new_thread);
+		z_sched_switch_spin(new_thread);
 		_current_cpu->current = new_thread;
 
 #ifdef CONFIG_TIMESLICING
 		z_reset_time_slice(new_thread);
-#endif
+#endif /* CONFIG_TIMESLICING */
 
 #ifdef CONFIG_SPIN_VALIDATE
-		z_spin_lock_set_owner(&sched_spinlock);
-#endif
+		z_spin_lock_set_owner(&_sched_spinlock);
+#endif /* CONFIG_SPIN_VALIDATE */
 
 		arch_cohere_stacks(old_thread, NULL, new_thread);
 
 #ifdef CONFIG_SMP
-		/* Add _current back to the run queue HERE. After
-		 * wait_for_switch() we are guaranteed to reach the
-		 * context switch in finite time, avoiding a potential
-		 * deadlock.
+		/* Now add _current back to the run queue, once we are
+		 * guaranteed to reach the context switch in finite
+		 * time.  See z_sched_switch_spin().
 		 */
 		z_requeue_current(old_thread);
-#endif
+#endif /* CONFIG_SMP */
 		void *newsh = new_thread->switch_handle;
 
 		if (IS_ENABLED(CONFIG_SMP)) {
-			/* Active threads MUST have a null here */
+			/* Active threads must have a null here.  And
+			 * it must be seen before the scheduler lock
+			 * is released!
+			 */
 			new_thread->switch_handle = NULL;
+			barrier_dmem_fence_full(); /* write barrier */
 		}
-		k_spin_release(&sched_spinlock);
+		k_spin_release(&_sched_spinlock);
 		arch_switch(newsh, &old_thread->switch_handle);
 	} else {
-		k_spin_release(&sched_spinlock);
+		k_spin_release(&_sched_spinlock);
 	}
 
 	if (is_spinlock) {
@@ -177,6 +196,11 @@ static inline void z_swap_unlocked(void)
 #else /* !CONFIG_USE_SWITCH */
 
 extern int arch_swap(unsigned int key);
+
+static inline void z_sched_switch_spin(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
 
 static inline int z_swap_irqlock(unsigned int key)
 {
@@ -217,24 +241,24 @@ static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
 	dummy_thread->base.thread_state = _THREAD_DUMMY;
 #ifdef CONFIG_SCHED_CPU_MASK
 	dummy_thread->base.cpu_mask = -1;
-#endif
+#endif /* CONFIG_SCHED_CPU_MASK */
 	dummy_thread->base.user_options = K_ESSENTIAL;
 #ifdef CONFIG_THREAD_STACK_INFO
 	dummy_thread->stack_info.start = 0U;
 	dummy_thread->stack_info.size = 0U;
-#endif
+#endif /* CONFIG_THREAD_STACK_INFO */
 #ifdef CONFIG_USERSPACE
 	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
-#endif
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+#endif /* CONFIG_USERSPACE */
+#if (K_HEAP_MEM_POOL_SIZE > 0)
 	k_thread_system_pool_assign(dummy_thread);
 #else
 	dummy_thread->resource_pool = NULL;
-#endif
+#endif /* K_HEAP_MEM_POOL_SIZE */
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 	dummy_thread->base.slice_ticks = 0;
-#endif
+#endif /* CONFIG_TIMESLICE_PER_THREAD */
 
 	_current_cpu->current = dummy_thread;
 }

@@ -7,47 +7,27 @@ zephyr_interface_library_named(zephyr-802154-interface)
 if (CONFIG_NRF_802154_RADIO_DRIVER)
   target_sources(nrf-802154-platform
     PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/radio/platform/nrf_802154_random_zephyr.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_gpiote_crit_sect.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_clock_zephyr.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_gpiote_zephyr.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_irq_zephyr.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_temperature_zephyr.c
+      radio/platform/nrf_802154_random_zephyr.c
+      sl_opensource/platform/nrf_802154_clock_zephyr.c
+      sl_opensource/platform/nrf_802154_irq_zephyr.c
+      sl_opensource/platform/nrf_802154_temperature_zephyr.c
   )
-
-  target_compile_definitions(zephyr-802154-interface
-    INTERFACE
-      # CCA mode options
-      NRF_802154_CCA_CORR_LIMIT_DEFAULT=${CONFIG_NRF_802154_CCA_CORR_LIMIT}
-      NRF_802154_CCA_CORR_THRESHOLD_DEFAULT=${CONFIG_NRF_802154_CCA_CORR_THRESHOLD}
-      NRF_802154_CCA_ED_THRESHOLD_DEFAULT=${CONFIG_NRF_802154_CCA_ED_THRESHOLD}
-  )
-
-  if (CONFIG_NRF_802154_CCA_MODE_ED)
-    target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CCA_MODE_DEFAULT=NRF_RADIO_CCA_MODE_ED)
-  elseif (CONFIG_NRF_802154_CCA_MODE_CARRIER)
-    target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CCA_MODE_DEFAULT=NRF_RADIO_CCA_MODE_CARRIER)
-  elseif (CONFIG_NRF_802154_CCA_MODE_CARRIER_AND_ED)
-    target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CCA_MODE_DEFAULT=NRF_RADIO_CCA_MODE_CARRIER_AND_ED)
-  elseif (CONFIG_NRF_802154_CCA_MODE_CARRIER_OR_ED)
-    target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CCA_MODE_DEFAULT=NRF_RADIO_CCA_MODE_CARRIER_OR_ED)
-  endif()
 endif ()
 
 if (CONFIG_NRF_802154_SERIALIZATION)
   target_sources(nrf-802154-platform
     PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/serialization/platform/nrf_802154_serialization_crit_sect.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/serialization/platform/nrf_802154_spinel_log.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/serialization/platform/nrf_802154_spinel_backend_ipc.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/serialization/platform/nrf_802154_spinel_response_notifier.c
+      serialization/platform/nrf_802154_serialization_crit_sect.c
+      serialization/platform/nrf_802154_spinel_log.c
+      serialization/platform/nrf_802154_spinel_backend_ipc.c
+      serialization/platform/nrf_802154_spinel_response_notifier.c
   )
 endif ()
 
 if (CONFIG_NRF_802154_SER_RADIO)
     target_sources(nrf-802154-platform
       PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/serialization/platform/nrf_802154_init_net.c
+        serialization/platform/nrf_802154_init_net.c
     )
 endif ()
 
@@ -71,7 +51,25 @@ target_compile_definitions(zephyr-802154-interface
 
     # ACK timeout
     NRF_802154_ACK_TIMEOUT_ENABLED=1
+
+    # CCA mode options
+    NRF_802154_CCA_CORR_LIMIT_DEFAULT=${CONFIG_NRF_802154_CCA_CORR_LIMIT}
+    NRF_802154_CCA_CORR_THRESHOLD_DEFAULT=${CONFIG_NRF_802154_CCA_CORR_THRESHOLD}
+    NRF_802154_CCA_ED_THRESHOLD_DEFAULT=${CONFIG_NRF_802154_CCA_ED_THRESHOLD}
+
+    # Key storage size
+    NRF_802154_SECURITY_KEY_STORAGE_SIZE=${CONFIG_NRF_802154_SECURITY_KEY_STORAGE_SIZE}
 )
+
+if (CONFIG_NRF_802154_CCA_MODE_ED)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CCA_MODE_DEFAULT=NRF_RADIO_CCA_MODE_ED)
+elseif (CONFIG_NRF_802154_CCA_MODE_CARRIER)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CCA_MODE_DEFAULT=NRF_RADIO_CCA_MODE_CARRIER)
+elseif (CONFIG_NRF_802154_CCA_MODE_CARRIER_AND_ED)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CCA_MODE_DEFAULT=NRF_RADIO_CCA_MODE_CARRIER_AND_ED)
+elseif (CONFIG_NRF_802154_CCA_MODE_CARRIER_OR_ED)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CCA_MODE_DEFAULT=NRF_RADIO_CCA_MODE_CARRIER_OR_ED)
+endif()
 
 if (CONFIG_NRF_802154_ENCRYPTION)
   target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_ENCRYPTION_ENABLED=1)
@@ -87,6 +85,18 @@ if (NOT CONFIG_IEEE802154_NRF5 AND NOT CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT AND C
   target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_INTERNAL_RADIO_IRQ_HANDLING=1)
 else()
   target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_INTERNAL_RADIO_IRQ_HANDLING=0)
+endif()
+
+if (CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CARRIER_FUNCTIONS_ENABLED=1)
+else()
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CARRIER_FUNCTIONS_ENABLED=0)
+endif()
+
+if (CONFIG_NRF_802154_ASSERT_ZEPHYR OR CONFIG_NRF_802154_ASSERT_ZEPHYR_MINIMAL)
+  target_include_directories(zephyr-802154-interface INTERFACE include)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_PLATFORM_ASSERT_INCLUDE=\"nrf_802154_assert_zephyr.h\")
+  target_sources(nrf-802154-platform PRIVATE nrf_802154_assert_handler.c)
 endif()
 
 set(NRF52_SERIES  ${CONFIG_SOC_SERIES_NRF52X})

@@ -262,12 +262,15 @@ ZTEST(linear_range, test_linear_range_get_win_index)
 	ret = linear_range_get_win_index(&r[0], -20, -15, &idx);
 	zassert_equal(ret, -EINVAL);
 
+	ret = linear_range_get_win_index(&r[0], -4, -3, &idx);
+	zassert_equal(ret, -EINVAL);
+
 	/* out of range, partial intersection (< min, > max) */
 	ret = linear_range_get_win_index(&r[1], -1, 0, &idx);
 	zassert_equal(ret, -ERANGE);
 	zassert_equal(idx, 2U);
 
-	ret = linear_range_get_win_index(&r[1], 2, 3, &idx);
+	ret = linear_range_get_win_index(&r[1], 1, 2, &idx);
 	zassert_equal(ret, -ERANGE);
 	zassert_equal(idx, 3U);
 
@@ -308,7 +311,7 @@ ZTEST(linear_range, test_linear_range_get_win_index)
 	zassert_equal(idx, 2U);
 
 	ret = linear_range_group_get_win_index(r, r_cnt, 1, 120, &idx);
-	zassert_equal(ret, 0);
+	zassert_equal(ret, -ERANGE);
 	zassert_equal(idx, 3U);
 
 	ret = linear_range_group_get_win_index(r, r_cnt, 120, 140, &idx);
@@ -316,8 +319,8 @@ ZTEST(linear_range, test_linear_range_get_win_index)
 	zassert_equal(idx, 5U);
 
 	ret = linear_range_group_get_win_index(r, r_cnt, 140, 400, &idx);
-	zassert_equal(ret, 0);
-	zassert_equal(idx, 6U);
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(idx, 10U);
 
 	ret = linear_range_group_get_win_index(r, r_cnt, 400, 400, &idx);
 	zassert_equal(ret, 0);

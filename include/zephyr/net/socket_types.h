@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief socket types definitionis
+ */
+
 #ifndef ZEPHYR_INCLUDE_NET_SOCKET_TYPES_H_
 #define ZEPHYR_INCLUDE_NET_SOCKET_TYPES_H_
 
@@ -16,6 +21,7 @@
 
 #include <zephyr/types.h>
 
+/** @cond INTERNAL_HIDDEN */
 
 #ifdef CONFIG_NEWLIB_LIBC
 
@@ -34,7 +40,7 @@ struct timeval {
 
 #else /* CONFIG_NEWLIB_LIBC */
 
-#ifdef CONFIG_ARCH_POSIX
+#if defined(CONFIG_ARCH_POSIX) && defined(CONFIG_EXTERNAL_LIBC)
 #include <bits/types/struct_timeval.h>
 #else
 #include <sys/_timeval.h>
@@ -51,6 +57,8 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+/** @endcond */
 
 /**
  * @}

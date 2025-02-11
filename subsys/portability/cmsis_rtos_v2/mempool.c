@@ -30,7 +30,7 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 {
 	struct cv2_mslab *mslab;
 
-	BUILD_ASSERT(CONFIG_HEAP_MEM_POOL_SIZE >=
+	BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE >=
 		     CONFIG_CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE,
 		     "heap must be configured to be at least the max dynamic size");
 
@@ -59,7 +59,7 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 
 		mslab->pool = k_calloc(block_count, block_size);
 		if (mslab->pool == NULL) {
-			k_mem_slab_free(&cv2_mem_slab, (void *) &mslab);
+			k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
 			return NULL;
 		}
 		mslab->is_dynamic_allocation = TRUE;
@@ -68,7 +68,15 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 		mslab->is_dynamic_allocation = FALSE;
 	}
 
-	k_mem_slab_init(&mslab->z_mslab, mslab->pool, block_size, block_count);
+	int rc = k_mem_slab_init(&mslab->z_mslab, mslab->pool, block_size, block_count);
+
+	if (rc != 0) {
+		k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
+		if (attr->mp_mem == NULL) {
+			k_free(mslab->pool);
+		}
+		return NULL;
+	}
 
 	if (attr->name == NULL) {
 		strncpy(mslab->name, init_mslab_attrs.name,
@@ -135,7 +143,7 @@ osStatus_t osMemoryPoolFree(osMemoryPoolId_t mp_id, void *block)
 	 *       is in an invalid memory pool state.
 	 */
 
-	k_mem_slab_free((struct k_mem_slab *)(&mslab->z_mslab), (void *)&block);
+	k_mem_slab_free((struct k_mem_slab *)(&mslab->z_mslab), (void *)block);
 
 	return osOK;
 }
@@ -164,7 +172,7 @@ uint32_t osMemoryPoolGetCapacity(osMemoryPoolId_t mp_id)
 	if (mslab == NULL) {
 		return 0;
 	} else {
-		return mslab->z_mslab.num_blocks;
+		return mslab->z_mslab.info.num_blocks;
 	}
 }
 
@@ -178,7 +186,7 @@ uint32_t osMemoryPoolGetBlockSize(osMemoryPoolId_t mp_id)
 	if (mslab == NULL) {
 		return 0;
 	} else {
-		return mslab->z_mslab.block_size;
+		return mslab->z_mslab.info.block_size;
 	}
 }
 
@@ -233,7 +241,7 @@ osStatus_t osMemoryPoolDelete(osMemoryPoolId_t mp_id)
 	if (mslab->is_dynamic_allocation) {
 		k_free(mslab->pool);
 	}
-	k_mem_slab_free(&cv2_mem_slab, (void *)&mslab);
+	k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
 
 	return osOK;
 }

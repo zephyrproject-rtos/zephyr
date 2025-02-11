@@ -3,6 +3,9 @@
 Optimization Tools
 ##################
 
+The available optimization tools let you analyse :ref:`footprint_tools`
+and :ref:`data_structure_tools` using different build system targets.
+
 .. _footprint_tools:
 
 Footprint and Memory Usage
@@ -12,23 +15,167 @@ The build system offers 3 targets to view and analyse RAM, ROM and stack usage
 in generated images. The tools run on the final image and give information
 about size of symbols and code being used in both RAM and ROM. Additionally,
 with features available through the compiler, we can also generate worst-case
-stack usage analysis:
+stack usage analysis.
 
-Tools that are available as build system targets:
+Some of the tools mentioned in this section are organizing their output based
+on the physical organization of the symbols. As some symbols might be external
+to the project's tree structure, or might lack metadata needed to display them
+by name, the following top-level containers are used to group such symbols:
+
+* Hidden - The RAM and ROM reports list all processing symbols with no matching
+  mapped files in the Hidden category.
+
+  This means that the file for the listed symbol was not added to the metadata file,
+  was empty, or was undefined. The tool was unable to get the name
+  of the function for the given symbol nor identify where it comes from.
+
+* No paths - The RAM and ROM reports list all processing symbols with relative paths
+  in the No paths category.
+
+  This means that the listed symbols cannot be placed in the tree structure
+  of the report at an absolute path under one specific file. The tool was able
+  to get the name of the function, but it was unable to identify where it comes from.
+
+  .. note::
+
+     You can have multiple cases of the same function, and the No paths category
+     will list the sum of these in one entry.
+
+
+Build Target: ram_report
+========================
+
+List all compiled objects and their RAM usage in a tabular form with bytes
+per symbol and the percentage it uses. The data is grouped based on the file
+system location of the object in the tree and the file containing the symbol.
+
+Use the ``ram_report`` target with your board, as in the following example.
+
+.. zephyr-app-commands::
+    :tool: all
+    :app: samples/hello_world
+    :board: reel_board
+    :goals: ram_report
+
+These commands will generate something similar to the output below::
+
+    Path                                                           Size    %      Address
+    ========================================================================================
+    Root                                                           4637 100.00%  -
+    ├── (hidden)                                                      4   0.09%  -
+    ├── (no paths)                                                 2748  59.26%  -
+    │   ├── _cpus_active                                              4   0.09%  0x20000314
+    │   ├── _kernel                                                  32   0.69%  0x20000318
+    │   ├── _sw_isr_table                                           384   8.28%  0x00006474
+    │   ├── cli.1                                                    16   0.35%  0x20000254
+    │   ├── on.2                                                      4   0.09%  0x20000264
+    │   ├── poll_out_lock.0                                           4   0.09%  0x200002d4
+    │   ├── z_idle_threads                                          128   2.76%  0x20000120
+    │   ├── z_interrupt_stacks                                     2048  44.17%  0x20000360
+    │   └── z_main_thread                                           128   2.76%  0x200001a0
+    ├── WORKSPACE                                                   184   3.97%  -
+    │   └── modules                                                 184   3.97%  -
+    │       └── hal                                                 184   3.97%  -
+    │           └── nordic                                          184   3.97%  -
+    │               └── nrfx                                        184   3.97%  -
+    │                   └── drivers                                 184   3.97%  -
+    │                       └── src                                 184   3.97%  -
+    │                           ├── nrfx_clock.c                      8   0.17%  -
+    │                           │   └── m_clock_cb                    8   0.17%  0x200002e4
+    │                           ├── nrfx_gpiote.c                   132   2.85%  -
+    │                           │   └── m_cb                        132   2.85%  0x20000060
+    │                           ├── nrfx_ppi.c                        4   0.09%  -
+    │                           │   └── m_channels_allocated          4   0.09%  0x200000e4
+    │                           └── nrfx_twim.c                      40   0.86%  -
+    │                               └── m_cb                         40   0.86%  0x200002ec
+    └── ZEPHYR_BASE                                                1701  36.68%  -
+        ├── arch                                                      5   0.11%  -
+        │   └── arm                                                   5   0.11%  -
+        │       └── core                                              5   0.11%  -
+        │           ├── mpu                                           1   0.02%  -
+        │           │   └── arm_mpu.c                                 1   0.02%  -
+        │           │       └── static_regions_num                    1   0.02%  0x20000348
+        │           └── tls.c                                         4   0.09%  -
+        │               └── z_arm_tls_ptr                             4   0.09%  0x20000240
+        ├── drivers                                                 258   5.56%  -
+        │   ├── ...                                                 ...    ...%
+    ========================================================================================
+                                                                   4637
+
+
+Build Target: rom_report
+========================
+
+List all compiled objects and their ROM usage in a tabular form with bytes
+per symbol and the percentage it uses. The data is grouped based on the file
+system location of the object in the tree and the file containing the symbol.
+
+Use the ``rom_report`` target with your board, as in the following example.
+
+.. zephyr-app-commands::
+    :tool: all
+    :app: samples/hello_world
+    :board: reel_board
+    :goals: rom_report
+
+These commands will generate something similar to the output below::
+
+    Path                                                           Size    %      Address
+    ========================================================================================
+    Root                                                          27828 100.00%  -
+    ├── ...                                                         ...    ...%
+    └── ZEPHYR_BASE                                               13558  48.72%  -
+        ├── arch                                                   1766   6.35%  -
+        │   └── arm                                                1766   6.35%  -
+        │       └── core                                           1766   6.35%  -
+        │           ├── cortex_m                                   1020   3.67%  -
+        │           │   ├── fault.c                                 620   2.23%  -
+        │           │   │   ├── bus_fault.constprop.0               108   0.39%  0x00000749
+        │           │   │   ├── mem_manage_fault.constprop.0        120   0.43%  0x000007b5
+        │           │   │   ├── usage_fault.constprop.0              84   0.30%  0x000006f5
+        │           │   │   ├── z_arm_fault                         292   1.05%  0x0000082d
+        │           │   │   └── z_arm_fault_init                     16   0.06%  0x00000951
+        │           │   ├── ...                                     ...    ...%
+        ├── boards                                                   32   0.11%  -
+        │   └── arm                                                  32   0.11%  -
+        │       └── reel_board                                       32   0.11%  -
+        │           └── board.c                                      32   0.11%  -
+        │               ├── __init_board_reel_board_init              8   0.03%  0x000063e4
+        │               └── board_reel_board_init                    24   0.09%  0x00000ed5
+        ├── build                                                   194   0.70%  -
+        │   └── zephyr                                              194   0.70%  -
+        │       ├── isr_tables.c                                    192   0.69%  -
+        │       │   └── _irq_vector_table                           192   0.69%  0x00000040
+        │       └── misc                                              2   0.01%  -
+        │           └── generated                                     2   0.01%  -
+        │               └── configs.c                                 2   0.01%  -
+        │                   └── _ConfigAbsSyms                        2   0.01%  0x00005945
+        ├── drivers                                                6282  22.57%  -
+        │   ├── ...                                                 ...    ...%
+    ========================================================================================
+                                                                  21652
 
 Build Target: puncover
 ======================
 
-This target uses a 3rd party tools called puncover which can be found `here
-<https://github.com/HBehrens/puncover>`_. When this target is built, it will
+This target uses a third-party tool called puncover which can be found at
+https://github.com/HBehrens/puncover. When this target is built, it will
 launch a local web server which will allow you to open a web client and browse
-the files and view their ROM, RAM and stack usage. Before you can use this
-target, you will have to install the puncover python module::
+the files and view their ROM, RAM, and stack usage.
+
+Before you can use this
+target, install the puncover Python module::
 
     pip3 install git+https://github.com/HBehrens/puncover --user
 
+.. warning::
 
-Then:
+   This is a third-party tool that might or might not be working at any given
+   time. Please check the GitHub issues, and report new problems to the
+   project maintainer.
+
+After you installed the Python module, use ``puncover`` target with your board,
+as in the following example.
 
 .. zephyr-app-commands::
     :tool: all
@@ -48,114 +195,7 @@ To view worst-case stack usage analysis, build this with the
     :gen-args: -DCONFIG_STACK_USAGE=y
 
 
-Build Target: ram_report
-========================
-
-List all compiled objects and their RAM usage in a tabular form with bytes
-per symbol and the percentage it uses. The data is grouped based on the file
-system location of the object in the tree and the file containing the symbol.
-
-Use the ``ram_report`` target with your board:
-
-.. zephyr-app-commands::
-    :tool: all
-    :app: samples/hello_world
-    :board: reel_board
-    :goals: ram_report
-
-which will generate something similar to the output below::
-
-    Path                                                                                    Size       %
-    ==============================================================================================================
-    ...
-    ...
-    SystemCoreClock                                                                          4     0.08%
-    _kernel                                                                                 48     0.99%
-    _sw_isr_table                                                                          384     7.94%
-    cli.10544                                                                               16     0.33%
-    gpio_initialized.9765                                                                    1     0.02%
-    on.10543                                                                                 4     0.08%
-    poll_out_lock.9764                                                                       4     0.08%
-    z_idle_threads                                                                         128     2.65%
-    z_interrupt_stacks                                                                    2048    42.36%
-    z_main_thread                                                                          128     2.65%
-    arch                                                                                     1     0.02%
-    arm                                                                                      1     0.02%
-        core                                                                                 1     0.02%
-        aarch32                                                                              1     0.02%
-            cortex_m                                                                         1     0.02%
-            mpu                                                                              1     0.02%
-                arm_mpu.c                                                                    1     0.02%
-                static_regions_num                                                           1     0.02%
-    drivers                                                                                536    11.09%
-    clock_control                                                                          100     2.07%
-        nrf_power_clock.c                                                                  100     2.07%
-        __device_clock_nrf                                                                  16     0.33%
-        data                                                                                80     1.65%
-        hfclk_users                                                                          4     0.08%
-    ...
-    ...
-
-
-Build Target: rom_report
-========================
-
-List all compiled objects and their ROM usage in a tabular form with bytes
-per symbol and the percentage it uses. The data is grouped based on the file
-system location of the object in the tree and the file containing the symbol.
-
-Use the ``rom_report`` to get the ROM report:
-
-.. zephyr-app-commands::
-    :tool: all
-    :app: samples/hello_world
-    :board: reel_board
-    :goals: rom_report
-
-which will generate something similar to the output below::
-
-    Path                                                                                    Size       %
-    ==============================================================================================================
-    ...
-    ...
-    CSWTCH.5                                                                                 4     0.02%
-    SystemCoreClock                                                                          4     0.02%
-    __aeabi_idiv0                                                                            2     0.01%
-    __udivmoddi4                                                                           702     3.37%
-    _sw_isr_table                                                                          384     1.85%
-    delay_machine_code.9114                                                                  6     0.03%
-    levels.8826                                                                             20     0.10%
-    mpu_config                                                                               8     0.04%
-    transitions.10558                                                                       12     0.06%
-    arch                                                                                  1194     5.74%
-    arm                                                                                   1194     5.74%
-        core                                                                              1194     5.74%
-        aarch32                                                                           1194     5.74%
-            cortex_m                                                                       852     4.09%
-            fault.c                                                                        400     1.92%
-                bus_fault.isra.0                                                            60     0.29%
-                mem_manage_fault.isra.0                                                     56     0.27%
-                usage_fault.isra.0                                                          36     0.17%
-                z_arm_fault                                                                232     1.11%
-                z_arm_fault_init                                                            16     0.08%
-            irq_init.c                                                                      24     0.12%
-                z_arm_interrupt_init                                                        24     0.12%
-            mpu                                                                            352     1.69%
-                arm_core_mpu.c                                                              56     0.27%
-                z_arm_configure_static_mpu_regions                                          56     0.27%
-                arm_mpu.c                                                                  296     1.42%
-                __init_sys_init_arm_mpu_init0                                                8     0.04%
-                arm_core_mpu_configure_static_mpu_regions                                   20     0.10%
-                arm_core_mpu_disable                                                        16     0.08%
-                arm_core_mpu_enable                                                         20     0.10%
-                arm_mpu_init                                                                92     0.44%
-                mpu_configure_regions                                                      140     0.67%
-            thread_abort.c                                                                  76     0.37%
-                z_impl_k_thread_abort
-                76     0.37%
-    ...
-    ...
-
+.. _data_structure_tools:
 
 Data Structures
 ****************
@@ -174,10 +214,12 @@ available in the dwarves package in both fedora and ubuntu::
 
     sudo apt-get install dwarves
 
-or in fedora::
+Alternatively, you can get it from fedora::
 
     sudo dnf install dwarves
 
+After you installed the package, use ``pahole`` target with your board,
+as in the following example.
 
 .. zephyr-app-commands::
     :tool: all
@@ -185,35 +227,34 @@ or in fedora::
     :board: reel_board
     :goals: pahole
 
+Pahole will generate something similar to the output below in the console::
 
-After running this target, pahole will output the results to the console::
-
-    /* Used at: zephyr/isr_tables.c */
-    /* <80> ../include/sw_isr_table.h:30 */
-    struct _isr_table_entry {
-            void *                     arg;                  /*     0     4 */
-            void                       (*isr)(void *);       /*     4     4 */
+    /* Used at: [...]/build/zephyr/kobject_hash.c */
+    /* <375> [...]/zephyr/include/zephyr/sys/dlist.h:37 */
+    union {
+            struct _dnode *            head;               /*     0     4 */
+            struct _dnode *            next;               /*     0     4 */
+    };
+    /* Used at: [...]/build/zephyr/kobject_hash.c */
+    /* <397> [...]/zephyr/include/zephyr/sys/dlist.h:36 */
+    struct _dnode {
+            union {
+                    struct _dnode *    head;                 /*     0     4 */
+                    struct _dnode *    next;                 /*     0     4 */
+            };                                               /*     0     4 */
+            union {
+                    struct _dnode *    tail;                 /*     4     4 */
+                    struct _dnode *    prev;                 /*     4     4 */
+            };                                               /*     4     4 */
 
             /* size: 8, cachelines: 1, members: 2 */
             /* last cacheline: 8 bytes */
     };
-    /* Used at: zephyr/isr_tables.c */
-    /* <eb> ../include/arch/arm/aarch32/cortex_m/mpu/arm_mpu_v7m.h:134 */
-    struct arm_mpu_region_attr {
-            uint32_t                   rasr;                 /*     0     4 */
-
-            /* size: 4, cachelines: 1, members: 1 */
-            /* last cacheline: 4 bytes */
-    };
-    /* Used at: zephyr/isr_tables.c */
-    /* <112> ../include/arch/arm/aarch32/cortex_m/mpu/arm_mpu.h:24 */
-    struct arm_mpu_region {
-            uint32_t                   base;                 /*     0     4 */
-            const char  *              name;                 /*     4     4 */
-            arm_mpu_region_attr_t      attr;                 /*     8     4 */
-
-            /* size: 12, cachelines: 1, members: 3 */
-            /* last cacheline: 12 bytes */
+    /* Used at: [...]/build/zephyr/kobject_hash.c */
+    /* <3b7> [...]/zephyr/include/zephyr/sys/dlist.h:41 */
+    union {
+            struct _dnode *            tail;               /*     0     4 */
+            struct _dnode *            prev;               /*     0     4 */
     };
     ...
     ...

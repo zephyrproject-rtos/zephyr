@@ -7,7 +7,7 @@
 
 if SYS_CLOCK_EXISTS
 
-menu "Timer Drivers"
+menu "Timer drivers"
 
 config TIMER_HAS_64BIT_CYCLE_COUNTER
 	bool
@@ -64,14 +64,15 @@ config SYSTEM_CLOCK_LOCK_FREE_COUNT
 	  hold times.
 
 source "drivers/timer/Kconfig.altera_avalon"
-source "drivers/timer/Kconfig.apic"
+source "drivers/timer/Kconfig.ambiq"
+source "drivers/timer/Kconfig.x86"
 source "drivers/timer/Kconfig.arcv2"
 source "drivers/timer/Kconfig.arm_arch"
 source "drivers/timer/Kconfig.cavs"
-source "drivers/timer/Kconfig.cc13x2_cc26x2_rtc"
+source "drivers/timer/Kconfig.cc13xx_cc26xx_rtc"
 source "drivers/timer/Kconfig.cortex_m_systick"
-source "drivers/timer/Kconfig.esp32c3_sys"
-source "drivers/timer/Kconfig.hpet"
+source "drivers/timer/Kconfig.esp32"
+source "drivers/timer/Kconfig.gecko"
 source "drivers/timer/Kconfig.ite_it8xxx2"
 source "drivers/timer/Kconfig.leon_gptimer"
 source "drivers/timer/Kconfig.litex"
@@ -83,13 +84,18 @@ source "drivers/timer/Kconfig.mips_cp0"
 source "drivers/timer/Kconfig.native_posix"
 source "drivers/timer/Kconfig.npcx_itim"
 source "drivers/timer/Kconfig.nrf_rtc"
+source "drivers/timer/Kconfig.nrf_grtc"
+source "drivers/timer/Kconfig.nrf_xrtc"
 source "drivers/timer/Kconfig.rcar_cmt"
 source "drivers/timer/Kconfig.riscv_machine"
 source "drivers/timer/Kconfig.rv32m1_lptmr"
 source "drivers/timer/Kconfig.sam0_rtc"
+source "drivers/timer/Kconfig.smartbond"
 source "drivers/timer/Kconfig.stm32_lptim"
+source "drivers/timer/Kconfig.ti_dm_timer"
 source "drivers/timer/Kconfig.xlnx_psttc"
 source "drivers/timer/Kconfig.xtensa"
+source "drivers/timer/Kconfig.mtk_adsp"
 
 endmenu
 

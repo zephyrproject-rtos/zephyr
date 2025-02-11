@@ -13,6 +13,7 @@
 #include <nrfx_uarte.h>
 #include <drivers/src/prs/nrfx_prs.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 
 #define TRANSFER_LENGTH 10
 
@@ -81,7 +82,7 @@ static bool init_buttons(void)
 		const struct button_spec *btn = &btn_spec[i];
 		int ret;
 
-		if (!device_is_ready(btn->gpio.port)) {
+		if (!gpio_is_ready_dt(&btn->gpio)) {
 			printk("%s is not ready\n", btn->gpio.port->name);
 			return false;
 		}
@@ -133,15 +134,17 @@ static bool switch_to_spim(void)
 	 */
 	if (uarte_initialized) {
 		nrfx_uarte_uninit(&uarte);
+		/* Workaround: uninit does not clear events, make sure all events are cleared. */
+		nrfy_uarte_int_init(uarte.p_reg, 0xFFFFFFFF, 0, false);
 		uarte_initialized = false;
 	}
 
 	nrfx_spim_config_t spim_config = NRFX_SPIM_DEFAULT_CONFIG(
-		NRFX_SPIM_PIN_NOT_USED,
-		NRFX_SPIM_PIN_NOT_USED,
-		NRFX_SPIM_PIN_NOT_USED,
+		NRF_SPIM_PIN_NOT_CONNECTED,
+		NRF_SPIM_PIN_NOT_CONNECTED,
+		NRF_SPIM_PIN_NOT_CONNECTED,
 		NRF_DT_GPIOS_TO_PSEL(SPIM_NODE, cs_gpios));
-	spim_config.frequency = NRF_SPIM_FREQ_1M;
+	spim_config.frequency = MHZ(1);
 	spim_config.skip_gpio_cfg = true;
 	spim_config.skip_psel_cfg = true;
 
@@ -150,6 +153,10 @@ static bool switch_to_spim(void)
 	if (ret < 0) {
 		return ret;
 	}
+
+	/* Set initial state of SCK according to the SPI mode. */
+	nrfy_gpio_pin_write(nrfy_spim_sck_pin_get(spim.p_reg),
+			    (spim_config.mode <= NRF_SPIM_MODE_1) ? 0 : 1);
 
 	err = nrfx_spim_init(&spim, &spim_config, spim_handler, NULL);
 	if (err != NRFX_SUCCESS) {
@@ -191,7 +198,7 @@ static bool spim_transfer(const uint8_t *tx_data, size_t tx_data_len,
 static void uarte_handler(const nrfx_uarte_event_t *p_event, void *p_context)
 {
 	if (p_event->type == NRFX_UARTE_EVT_RX_DONE) {
-		received = p_event->data.rxtx.bytes;
+		received = p_event->data.rx.length;
 		k_sem_give(&transfer_finished);
 	} else if (p_event->type == NRFX_UARTE_EVT_ERROR) {
 		received = 0;
@@ -215,6 +222,8 @@ static bool switch_to_uarte(void)
 	 */
 	if (spim_initialized) {
 		nrfx_spim_uninit(&spim);
+		/* Workaround: uninit does not clear events, make sure all events are cleared. */
+		nrfy_spim_int_init(spim.p_reg, 0xFFFFFFFF, 0, false);
 		spim_initialized = false;
 	}
 
@@ -253,7 +262,7 @@ static bool uarte_transfer(const uint8_t *tx_data, size_t tx_data_len,
 		return false;
 	}
 
-	err = nrfx_uarte_tx(&uarte, tx_data, tx_data_len);
+	err = nrfx_uarte_tx(&uarte, tx_data, tx_data_len, 0);
 	if (err != NRFX_SUCCESS) {
 		printk("nrfx_uarte_tx() failed: 0x%08x\n", err);
 		return false;
@@ -266,7 +275,7 @@ static bool uarte_transfer(const uint8_t *tx_data, size_t tx_data_len,
 		 * fail. In such case, stop the reception and end the transfer
 		 * this way. Now taking the semaphore should be successful.
 		 */
-		nrfx_uarte_rx_abort(&uarte);
+		nrfx_uarte_rx_abort(&uarte, 0, 0);
 		if (k_sem_take(&transfer_finished, K_MSEC(10)) != 0) {
 			printk("UARTE transfer timeout\n");
 			return false;
@@ -288,14 +297,13 @@ static bool background_transfer(const struct device *spi_dev)
 {
 	static const uint8_t tx_buffer[] = "Nordic Semiconductor";
 	static uint8_t rx_buffer[sizeof(tx_buffer)];
-	static const struct spi_cs_control spi_dev_cs_ctrl = {
-		.gpio = GPIO_DT_SPEC_GET(SPI_DEV_NODE, cs_gpios),
-	};
 	static const struct spi_config spi_dev_cfg = {
 		.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
 			     SPI_TRANSFER_MSB,
-		.frequency = 1000000,
-		.cs = &spi_dev_cs_ctrl
+		.frequency = MHZ(1),
+		.cs = {
+			.gpio = GPIO_DT_SPEC_GET(SPI_DEV_NODE, cs_gpios),
+		},
 	};
 	static const struct spi_buf tx_buf = {
 		.buf = (void *)tx_buffer,
@@ -330,7 +338,7 @@ static bool background_transfer(const struct device *spi_dev)
 	return true;
 }
 
-void main(void)
+int main(void)
 {
 	printk("nrfx PRS example on %s\n", CONFIG_BOARD);
 
@@ -341,7 +349,7 @@ void main(void)
 
 	if (!device_is_ready(spi_dev)) {
 		printk("%s is not ready\n", spi_dev->name);
-		return;
+		return 0;
 	}
 
 	/* Install a shared interrupt handler for peripherals used via
@@ -355,12 +363,12 @@ void main(void)
 		    nrfx_isr, nrfx_prs_box_2_irq_handler, 0);
 
 	if (!init_buttons()) {
-		return;
+		return 0;
 	}
 
 	/* Initially use the SPIM. */
 	if (!switch_to_spim()) {
-		return;
+		return 0;
 	}
 
 	for (;;) {
@@ -370,7 +378,7 @@ void main(void)
 		 */
 		if (k_sem_take(&button_pressed, K_MSEC(5000)) != 0) {
 			if (!background_transfer(spi_dev)) {
-				return;
+				return 0;
 			}
 		} else {
 			bool res;
@@ -393,7 +401,7 @@ void main(void)
 							rx_buffer,
 							sizeof(rx_buffer)));
 				if (!res) {
-					return;
+					return 0;
 				}
 
 				printk("Tx:");
@@ -407,10 +415,11 @@ void main(void)
 				       ? switch_to_uarte()
 				       : switch_to_spim());
 				if (!res) {
-					return;
+					return 0;
 				}
 				break;
 			}
 		}
 	}
+	return 0;
 }

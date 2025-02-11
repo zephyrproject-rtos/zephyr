@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
 
 #include "test_syscall.h"
@@ -41,12 +41,12 @@ void z_impl_stack_info_get(char **start_addr, size_t *size)
 static inline void z_vrfy_stack_info_get(char **start_addr,
 					 size_t *size)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(start_addr, sizeof(uintptr_t)));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(size, sizeof(size_t)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(start_addr, sizeof(uintptr_t)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(size, sizeof(size_t)));
 
 	z_impl_stack_info_get(start_addr, size);
 }
-#include <syscalls/stack_info_get_mrsh.c>
+#include <zephyr/syscalls/stack_info_get_mrsh.c>
 
 int z_impl_check_perms(void *addr, size_t size, int write)
 {
@@ -57,7 +57,7 @@ static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 {
 	return z_impl_check_perms((void *)addr, size, write);
 }
-#include <syscalls/check_perms_mrsh.c>
+#include <zephyr/syscalls/check_perms_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /* Global data structure with object information, used by
@@ -65,6 +65,10 @@ static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
  */
 ZTEST_BMEM struct scenario_data {
 	k_thread_stack_t *stack;
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	k_thread_stack_t *stack_mapped;
+#endif
 
 	/* If this was declared with K_THREAD_STACK_DEFINE and not
 	 * K_KERNEL_STACK_DEFINE
@@ -89,7 +93,7 @@ ZTEST_BMEM struct scenario_data {
 
 void stack_buffer_scenarios(void)
 {
-	k_thread_stack_t *stack_obj = scenario_data.stack;
+	k_thread_stack_t *stack_obj;
 	size_t obj_size = scenario_data.object_size;
 	size_t stack_size, unused, carveout, reserved, alignment, adjusted;
 	uint8_t val = 0;
@@ -97,9 +101,17 @@ void stack_buffer_scenarios(void)
 	char *stack_buf;
 	volatile char *pos;
 	int ret, expected;
-	uintptr_t base = (uintptr_t)stack_obj;
+	uintptr_t base;
 	bool is_usermode;
 	long int end_space;
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	stack_obj = scenario_data.stack_mapped;
+#else
+	stack_obj = scenario_data.stack;
+#endif
+
+	base = (uintptr_t)stack_obj;
 
 #ifdef CONFIG_USERSPACE
 	is_usermode = arch_is_user_context();
@@ -114,14 +126,14 @@ void stack_buffer_scenarios(void)
 #ifdef CONFIG_USERSPACE
 	if (scenario_data.is_user) {
 		reserved = K_THREAD_STACK_RESERVED;
-		stack_buf = Z_THREAD_STACK_BUFFER(stack_obj);
+		stack_buf = K_THREAD_STACK_BUFFER(stack_obj);
 		/* always use the original size here */
 		alignment = Z_THREAD_STACK_OBJ_ALIGN(STEST_STACKSIZE);
 	} else
 #endif
 	{
 		reserved = K_KERNEL_STACK_RESERVED;
-		stack_buf = Z_KERNEL_STACK_BUFFER(stack_obj);
+		stack_buf = K_KERNEL_STACK_BUFFER(stack_obj);
 		alignment = Z_KERNEL_STACK_OBJ_ALIGN;
 	}
 
@@ -211,8 +223,10 @@ void stack_buffer_scenarios(void)
 			      stack_size);
 	}
 #endif
+
 	carveout = stack_start - stack_buf;
 	printk("   - Carved-out space in buffer: %zu\n", carveout);
+
 	zassert_true(carveout < stack_size,
 		     "Suspicious carve-out space reported");
 	/* 0 unless this is a stack array */
@@ -231,21 +245,21 @@ void stack_buffer_scenarios(void)
 		 * For some stack declared with:
 		 *
 		 * K_THREAD_STACK_DEFINE(my_stack, X);
-		 * Z_THREAD_STACK_SIZE_ADJUST(X) - K_THREAD_STACK_RESERVED ==
+		 * K_THREAD_STACK_LEN(X) - K_THREAD_STACK_RESERVED ==
 		 * 	K_THREAD_STACK_SIZEOF(my_stack)
 		 *
 		 * K_KERNEL_STACK_DEFINE(my_kern_stack, Y):
-		 * Z_KERNEL_STACK_SIZE_ADJUST(Y) - K_KERNEL_STACK_RESERVED ==
+		 * K_KERNEL_STACK_LEN(Y) - K_KERNEL_STACK_RESERVED ==
 		 *	K_KERNEL_STACK_SIZEOF(my_stack)
 		 */
 #ifdef CONFIG_USERSPACE
 		/* Not defined if user mode disabled, all stacks are kernel stacks */
 		if (scenario_data.is_user) {
-			adjusted = Z_THREAD_STACK_SIZE_ADJUST(scenario_data.declared_size);
+			adjusted = K_THREAD_STACK_LEN(scenario_data.declared_size);
 		} else
 #endif
 		{
-			adjusted = Z_KERNEL_STACK_SIZE_ADJUST(scenario_data.declared_size);
+			adjusted = K_KERNEL_STACK_LEN(scenario_data.declared_size);
 		}
 		adjusted -= reserved;
 
@@ -271,7 +285,7 @@ void stack_buffer_scenarios(void)
 		if (scenario_data.is_user) {
 			adjusted = K_THREAD_STACK_LEN(scenario_data.declared_size);
 		} else {
-			adjusted = Z_KERNEL_STACK_LEN(scenario_data.declared_size);
+			adjusted = K_KERNEL_STACK_LEN(scenario_data.declared_size);
 		}
 		adjusted -= reserved;
 
@@ -318,12 +332,28 @@ void stest_thread_launch(uint32_t flags, bool drop)
 	k_thread_create(&test_thread, scenario_data.stack, STEST_STACKSIZE,
 			stest_thread_entry,
 			(void *)drop, NULL, NULL,
-			-1, flags, K_NO_WAIT);
+			-1, flags, K_FOREVER);
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	scenario_data.stack_mapped = test_thread.stack_info.mapped.addr;
+
+	printk("   - Memory mapped stack object %p\n", scenario_data.stack_mapped);
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
+	k_thread_start(&test_thread);
 	k_thread_join(&test_thread, K_FOREVER);
 
 	ret = k_thread_stack_space_get(&test_thread, &unused);
-	zassert_equal(ret, 0, "failed to calculate unused stack space\n");
-	printk("target thread unused stack space: %zu\n", unused);
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	if (ret == -EINVAL) {
+		printk("! cannot report unused stack space due to stack no longer mapped.\n");
+	} else
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+	{
+		zassert_equal(ret, 0, "failed to calculate unused stack space\n");
+		printk("target thread unused stack space: %zu\n", unused);
+	}
 }
 
 void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
@@ -333,9 +363,9 @@ void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
 	size_t metadata_size;
 
 #ifdef CONFIG_USERSPACE
-	struct z_object *zo;
+	struct k_object *zo;
 
-	zo = z_object_find(stack_obj);
+	zo = k_object_find(stack_obj);
 	if (zo != NULL) {
 		is_user = true;
 #ifdef CONFIG_GEN_PRIV_STACKS

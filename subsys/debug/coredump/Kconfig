@@ -9,13 +9,13 @@ menuconfig DEBUG_COREDUMP
 
 if DEBUG_COREDUMP
 
-choice
+choice DEBUG_COREDUMP_BACKEND
 	prompt "Coredump backend"
-	default DEBUG_COREDUMP_BACKEND_LOGGING if LOG
+	default DEBUG_COREDUMP_BACKEND_LOGGING
 
 config DEBUG_COREDUMP_BACKEND_LOGGING
 	bool "Use Logging subsystem for coredump"
-	depends on LOG
+	select LOG
 	help
 	  Core dump is done via logging subsystem.
 
@@ -28,6 +28,14 @@ config DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
 	  Core dump is saved to a flash partition with DTS alias
 	  "coredump-partition".
 
+config DEBUG_COREDUMP_BACKEND_INTEL_ADSP_MEM_WINDOW
+	bool "Use memory window for coredump on Intel ADSP"
+	depends on DT_HAS_INTEL_ADSP_MEM_WINDOW_ENABLED
+	help
+	  Core dump is done via memory window slot[1].
+	  It is Intel ADSP memory region shared with xtensa DSP.
+	  Window 2 slot [1] is reserved for debuging information.
+
 config DEBUG_COREDUMP_BACKEND_OTHER
 	bool "Backend subsystem for coredump defined out of tree"
 	help
@@ -35,7 +43,7 @@ config DEBUG_COREDUMP_BACKEND_OTHER
 
 endchoice
 
-choice
+choice DEBUG_COREDUMP_MEMORY_DUMP
 	prompt "Memory dump"
 	default DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 
@@ -63,7 +71,6 @@ endchoice
 
 config DEBUG_COREDUMP_SHELL
 	bool "Coredump shell"
-	default y
 	depends on SHELL
 	help
 	  This shell provides access to coredump and its backends.

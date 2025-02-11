@@ -1,0 +1,5 @@
+description: Texas Instruments LP5009 I2C LED controller node
+
+compatible: ti,lp5009
+
+include: ti,lp50xx.yaml

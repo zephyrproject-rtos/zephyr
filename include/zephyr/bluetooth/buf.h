@@ -18,7 +18,8 @@
  * @{
  */
 
-#include <zephyr/types.h>
+#include <stdint.h>
+
 #include <zephyr/net/buf.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/util.h>
@@ -50,11 +51,8 @@ struct bt_buf_data {
 	uint8_t type;
 };
 
-#if defined(CONFIG_BT_HCI_RAW)
-#define BT_BUF_RESERVE MAX(CONFIG_BT_HCI_RESERVE, CONFIG_BT_HCI_RAW_RESERVE)
-#else
-#define BT_BUF_RESERVE CONFIG_BT_HCI_RESERVE
-#endif
+/* Headroom reserved in buffers, primarily for HCI transport encoding purposes */
+#define BT_BUF_RESERVE 1
 
 /** Helper to include reserved HCI data in buffer calculations */
 #define BT_BUF_SIZE(size) (BT_BUF_RESERVE + (size))
@@ -70,7 +68,7 @@ struct bt_buf_data {
 
 /** Helper to calculate needed buffer size for HCI ISO packets. */
 #define BT_BUF_ISO_SIZE(size) BT_BUF_SIZE(BT_HCI_ISO_HDR_SIZE + \
-					  BT_HCI_ISO_TS_DATA_HDR_SIZE + \
+					  BT_HCI_ISO_SDU_TS_HDR_SIZE + \
 					  (size))
 
 /** Data size needed for HCI ACL RX buffers */
@@ -102,7 +100,7 @@ struct bt_buf_data {
 /** Allocate a buffer for incoming data
  *
  *  This will set the buffer type so bt_buf_set_type() does not need to
- *  be explicitly called before bt_recv_prio().
+ *  be explicitly called.
  *
  *  @param type    Type of buffer. Only BT_BUF_EVT, BT_BUF_ACL_IN and BT_BUF_ISO_IN
  *                 are allowed.
@@ -115,7 +113,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout);
 /** Allocate a buffer for outgoing data
  *
  *  This will set the buffer type so bt_buf_set_type() does not need to
- *  be explicitly called before bt_send().
+ *  be explicitly called.
  *
  *  @param type    Type of buffer. Only BT_BUF_CMD, BT_BUF_ACL_OUT or
  *                 BT_BUF_H4, when operating on H:4 mode, are allowed.
@@ -128,21 +126,10 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout);
 struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 			      const void *data, size_t size);
 
-/** Allocate a buffer for an HCI Command Complete/Status Event
- *
- *  This will set the buffer type so bt_buf_set_type() does not need to
- *  be explicitly called before bt_recv_prio().
- *
- *  @param timeout Non-negative waiting period to obtain a buffer or one of the
- *                 special values K_NO_WAIT and K_FOREVER.
- *  @return A new buffer.
- */
-struct net_buf *bt_buf_get_cmd_complete(k_timeout_t timeout);
-
 /** Allocate a buffer for an HCI Event
  *
  *  This will set the buffer type so bt_buf_set_type() does not need to
- *  be explicitly called before bt_recv_prio() or bt_recv().
+ *  be explicitly called.
  *
  *  @param evt          HCI event code
  *  @param discardable  Whether the driver considers the event discardable.

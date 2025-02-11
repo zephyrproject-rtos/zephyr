@@ -1,0 +1,7 @@
+if (NOT DEFINED BOARD_REVISION)
+  set(BOARD_REVISION "hyperflash")
+else ()
+  if (NOT (BOARD_REVISION STREQUAL "hyperflash") AND NOT (BOARD_REVISION STREQUAL "qspi"))
+    message(FATAL_ERROR "Invalid board revision, ${BOARD_REVISION}, valid revisions are: hyperflash, qspi")
+  endif()
+endif()

@@ -1,0 +1,42 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sram-ext = &is66wvq8m4;
+	};
+};
+
+&is66wvq8m4 {
+	status = "okay";
+};
+
+&pinctrl {
+	pinmux_flexspi_safe: pinmux-flexspi-safe {
+		group0 {
+			pinmux = <IO_MUX_QUAD_SPI_PSRAM_IO35
+				IO_MUX_QUAD_SPI_PSRAM_IO36
+				IO_MUX_QUAD_SPI_PSRAM_IO38
+				IO_MUX_QUAD_SPI_PSRAM_IO39
+				IO_MUX_QUAD_SPI_PSRAM_IO40
+				IO_MUX_QUAD_SPI_PSRAM_IO41>;
+			slew-rate = "normal";
+		};
+
+		group1 {
+			pinmux = <IO_MUX_QUAD_SPI_PSRAM_IO37>;
+			slew-rate = "normal";
+			bias-pull-down;
+		};
+	};
+};
+
+/* Override pin control state to use one that only changes the PSRAM pin
+ * configuration
+ */
+&flexspi {
+	pinctrl-0 = <&pinmux_flexspi_safe>;
+};

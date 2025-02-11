@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (c) 2020-2024 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/same70q21b.dtsi>
+#include "sam_e70_xplained-common.dtsi"
+
+/ {
+	model = "Atmel SAM E70B Xplained board";
+	compatible = "atmel,sam_e70b_xplained", "atmel,same70q21b", "atmel,same70b";
+};

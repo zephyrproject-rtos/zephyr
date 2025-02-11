@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Joel Guittet
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32S3_TOUCH_LCD_1_28
+	select SOC_ESP32S3_R2

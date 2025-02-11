@@ -1,0 +1,5 @@
+board:
+  name: sltb004a
+  vendor: silabs
+  socs:
+  - name: efr32mg12p332f1024gl125

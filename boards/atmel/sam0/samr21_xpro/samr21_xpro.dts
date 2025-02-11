@@ -1,0 +1,228 @@
+/*
+ * Copyright (c) 2019 Benjamin Valentin
+ * Copyright (c) 2019-2024 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <atmel/samr21.dtsi>
+#include <atmel/samx2xx18.dtsi>
+#include "samr21_xpro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "SAM R21 Xplained Pro";
+	compatible = "samr21,xpro", "atmel,samr21g18a", "atmel,samr21";
+
+	chosen {
+		zephyr,console = &sercom0;
+		zephyr,shell-uart = &sercom0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		pwm-led0 = &pwm_led0;
+		sw0 = &user_button;
+		i2c-0 = &sercom1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&porta 19 GPIO_ACTIVE_LOW>;
+			label = "Yellow LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc0 3 PWM_MSEC(20)>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			gpios = <&porta 28 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	ext1_header: xplained-pro-connector1 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0  0 &porta  6 0>,	/* ADC6             */
+				<1  0 &porta  7 0>,	/* ADC7             */
+				<2  0 &porta 13 0>,	/* GPIO             */
+				<3  0 &porta 28 0>,	/* GPIO             */
+				<4  0 &porta 18 0>,	/* PWM_T0_W2        */
+				<5  0 &porta 19 0>,	/* PWM_T0_W3        */
+				<6  0 &porta 22 0>,	/* GPIO             */
+				<7  0 &porta 23 0>,	/* GPIO             */
+				<8  0 &porta 16 0>,	/* TWD1        EXT2 */
+				<9  0 &porta 17 0>,	/* TWCK1       EXT2 */
+				<10 0 &porta  5 0>,	/* RXD0             */
+				<11 0 &porta  4 0>,	/* TXD0             */
+				<12 0 &portb  3 0>,	/* SPI5(SS)         */
+				<13 0 &portb 22 0>,	/* SPI5(MOSI)  EXTx */
+				<14 0 &portb  2 0>,	/* SPI5(MISO)  EXTx */
+				<15 0 &portb 23 0>;	/* SPI5(SCK)   EXTx */
+	};
+
+	ext2_header: xplained-pro-connector2 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =    /*<0  0 -      - 0>,	   -                */
+			      /*<1  0 -      - 0>,	   -                */
+				<2  0 &porta 15 0>,	/* GPIO             */
+			      /*<3  0 -      - 0>,	   -                */
+			      /*<4  0 -      - 0>,	   -                */
+			      /*<5  0 -      - 0>,	   -                */
+			      /*<6  0 -      - 0>,	   -                */
+				<7  0 &porta  8 0>,	/* GPIO             */
+				<8  0 &porta 16 0>,	/* TWD1        EXT1 */
+				<9  0 &porta 17 0>,	/* TWCK1       EXT1 */
+			      /*<11 0 -      - 0>,	   -                */
+			      /*<12 0 -      - 0>,	   -                */
+				<12 0 &porta 14 0>,	/* GPIO             */
+				<13 0 &portb 22 0>,	/* SPI5(MOSI)  EXTx */
+				<14 0 &portb  2 0>,	/* SPI5(MISO)  EXTx */
+				<15 0 &portb 23 0>;	/* SPI5(SCK)   EXTx */
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&tcc0 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	prescaler = <4>;
+	#pwm-cells = <2>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
+};
+
+&sercom0 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom0_uart_default>;
+	pinctrl-names = "default";
+};
+
+&sercom1 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom1_i2c_default>;
+	pinctrl-names = "default";
+};
+
+&sercom4 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	/*
+	 *	CS-PB31; MOSI-PB30; MISO-PC19; SCLK-PC18
+	 *	PAD[1]; PAD[2]; PAD[0]; PAD[3]
+	 */
+	dipo = <0>;
+	dopo = <1>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom4_spi_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&portb 31 GPIO_ACTIVE_LOW>;
+
+	ieee802154: rf2xx@0 {
+		compatible = "atmel,rf2xx";
+		reg = <0x0>;
+		spi-max-frequency = <6000000>;
+		irq-gpios = <&portb 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		reset-gpios = <&portb 15 GPIO_ACTIVE_LOW>;
+		slptr-gpios = <&porta 20 GPIO_ACTIVE_HIGH>;
+		dig2-gpios = <&portb 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		status = "okay";
+		tx-pwr-min = [01 11];	/* -17.0 dBm */
+		tx-pwr-max = [00 04];	/*   4.0 dBm */
+		tx-pwr-table = [00 01 03 04 05 05 06 06
+				07 07 07 08 08 09 09 0a
+				0a 0a 0b 0b 0b 0b 0c 0c
+				0c 0c 0d 0d 0d 0d 0d 0d
+				0d 0d 0e 0e 0e 0e 0e 0e
+				0e 0e 0e 0e 0e 0e 0f 0f];
+	};
+};
+
+&sercom5 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	dipo = <0>;
+	dopo = <2>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom5_spi_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
+};
+
+ext1_spi: &sercom5 {
+};
+
+ext1_i2c: &sercom1 {
+};
+
+ext1_serial: &sercom0 {
+};
+
+ext2_spi: &sercom5 {
+};
+
+ext2_i2c: &sercom1 {
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The final 16 KiB is reserved for the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@3c000 {
+			label = "storage";
+			reg = <0x0003c000 0x00004000>;
+		};
+	};
+};

@@ -1,6 +1,9 @@
 tests:
   drivers.pwm.loopback:
-    tags: pwm drivers userspace
+    tags:
+      - pwm
+      - drivers
+      - userspace
     depends_on: pwm
     filter: dt_compat_enabled("test-pwm-loopback")
     harness: ztest

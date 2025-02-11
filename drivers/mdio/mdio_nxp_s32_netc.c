@@ -1,8 +1,10 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT nxp_s32_netc_emdio
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mdio.h>
@@ -12,12 +14,9 @@ LOG_MODULE_REGISTER(nxp_s32_emdio, CONFIG_MDIO_LOG_LEVEL);
 
 #include <Netc_EthSwt_Ip.h>
 
-#define MDIO_NODE	DT_NODELABEL(emdio)
-#define NETC_SWT_IDX	0
-
 struct nxp_s32_mdio_config {
-	int protocol;
 	const struct pinctrl_dev_config *pincfg;
+	uint8_t instance;
 };
 
 struct nxp_s32_mdio_data {
@@ -25,38 +24,28 @@ struct nxp_s32_mdio_data {
 };
 
 static int nxp_s32_mdio_read(const struct device *dev, uint8_t prtad,
-			     uint8_t devad, uint16_t *regval)
+			     uint8_t regad, uint16_t *regval)
 {
-	const struct nxp_s32_mdio_config *const cfg = dev->config;
+	const struct nxp_s32_mdio_config *cfg = dev->config;
 	struct nxp_s32_mdio_data *data = dev->data;
 	Std_ReturnType status;
 
-	if (cfg->protocol != CLAUSE_22) {
-		LOG_ERR("Unsupported protocol");
-		return -ENOTSUP;
-	}
-
 	k_mutex_lock(&data->rw_mutex, K_FOREVER);
-	status = Netc_EthSwt_Ip_ReadTrcvRegister(NETC_SWT_IDX, prtad, devad, regval);
+	status = Netc_EthSwt_Ip_ReadTrcvRegister(cfg->instance, prtad, regad, regval);
 	k_mutex_unlock(&data->rw_mutex);
 
 	return status == E_OK ? 0 : -EIO;
 }
 
 static int nxp_s32_mdio_write(const struct device *dev, uint8_t prtad,
-			      uint8_t devad, uint16_t regval)
+			      uint8_t regad, uint16_t regval)
 {
-	const struct nxp_s32_mdio_config *const cfg = dev->config;
+	const struct nxp_s32_mdio_config *cfg = dev->config;
 	struct nxp_s32_mdio_data *data = dev->data;
 	Std_ReturnType status;
 
-	if (cfg->protocol != CLAUSE_22) {
-		LOG_ERR("Unsupported protocol");
-		return -ENOTSUP;
-	}
-
 	k_mutex_lock(&data->rw_mutex, K_FOREVER);
-	status = Netc_EthSwt_Ip_WriteTrcvRegister(NETC_SWT_IDX, prtad, devad, regval);
+	status = Netc_EthSwt_Ip_WriteTrcvRegister(cfg->instance, prtad, regad, regval);
 	k_mutex_unlock(&data->rw_mutex);
 
 	return status == E_OK ? 0 : -EIO;
@@ -78,33 +67,31 @@ static int nxp_s32_mdio_initialize(const struct device *dev)
 	return 0;
 }
 
-static void nxp_s32_mdio_noop(const struct device *dev)
-{
-	/* intentionally left empty */
-}
-
 static const struct mdio_driver_api nxp_s32_mdio_api = {
 	.read = nxp_s32_mdio_read,
 	.write = nxp_s32_mdio_write,
-	/* NETC does not support enabling/disabling EMDIO controller independently */
-	.bus_enable = nxp_s32_mdio_noop,
-	.bus_disable = nxp_s32_mdio_noop,
 };
 
-PINCTRL_DT_DEFINE(MDIO_NODE);
+#define NXP_S32_MDIO_HW_INSTANCE_CHECK(i, n) \
+	((DT_INST_REG_ADDR(n) == IP_NETC_EMDIO_##n##_BASE) ? i : 0)
 
-static struct nxp_s32_mdio_data nxp_s32_mdio0_data;
+#define NXP_S32_MDIO_HW_INSTANCE(n) \
+	LISTIFY(__DEBRACKET NETC_F1_INSTANCE_COUNT, NXP_S32_MDIO_HW_INSTANCE_CHECK, (|), n)
 
-static const struct nxp_s32_mdio_config nxp_s32_mdio0_cfg = {
-	.protocol = DT_ENUM_IDX(MDIO_NODE, protocol),
-	.pincfg = PINCTRL_DT_DEV_CONFIG_GET(MDIO_NODE),
-};
+#define NXP_S32_MDIO_INSTANCE_DEFINE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);						\
+	static struct nxp_s32_mdio_data nxp_s32_mdio##n##_data;			\
+	static const struct nxp_s32_mdio_config nxp_s32_mdio##n##_cfg = {	\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		.instance = NXP_S32_MDIO_HW_INSTANCE(n),			\
+	};									\
+	DEVICE_DT_INST_DEFINE(n,						\
+			      &nxp_s32_mdio_initialize,				\
+			      NULL,						\
+			      &nxp_s32_mdio##n##_data,				\
+			      &nxp_s32_mdio##n##_cfg,				\
+			      POST_KERNEL,					\
+			      CONFIG_MDIO_INIT_PRIORITY,			\
+			      &nxp_s32_mdio_api);
 
-DEVICE_DT_DEFINE(MDIO_NODE,
-		 &nxp_s32_mdio_initialize,
-		 NULL,
-		 &nxp_s32_mdio0_data,
-		 &nxp_s32_mdio0_cfg,
-		 POST_KERNEL,
-		 CONFIG_MDIO_INIT_PRIORITY,
-		 &nxp_s32_mdio_api);
+DT_INST_FOREACH_STATUS_OKAY(NXP_S32_MDIO_INSTANCE_DEFINE)

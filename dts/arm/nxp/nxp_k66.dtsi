@@ -24,15 +24,13 @@
 		};
 
 		flexcan1: can@400a4000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan";
 			reg = <0x400a4000 0x1000>;
 			interrupts = <94 0>, <95 0>, <96 0>, <97 0>, <98 0>, <99 0>;
 			interrupt-names = "mb-0-15", "bus-off", "error", "tx-warning",
 			    "rx-warning", "wake-up";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1030 4>;
 			clk-source = <1>;
-			sjw = <1>;
-			sample-point = <875>;
 			status = "disabled";
 		  };
 	};

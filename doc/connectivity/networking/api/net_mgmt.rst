@@ -42,21 +42,25 @@ To avoid extra cost, all :c:func:`net_mgmt` calls are direct. Though this
 may change in a future release, it will not affect the users of this
 function.
 
+.. _net_mgmt_listening:
+
 Listening to network events
 ***************************
 
 You can receive notifications on network events by registering a
 callback function and specifying a set of events used to filter when
-your callback is invoked. The callback  will have to be unique for a
+your callback is invoked. The callback will have to be unique for a
 pair of layer and code, whereas on the command part it will be a mask of
 events.
 
-Two functions are available, :c:func:`net_mgmt_add_event_callback` for
-registering the callback function, and
-:c:func:`net_mgmt_del_event_callback`
+At runtime two functions are available, :c:func:`net_mgmt_add_event_callback`
+for registering the callback function, and :c:func:`net_mgmt_del_event_callback`
 for unregistering a callback. A helper function,
 :c:func:`net_mgmt_init_event_callback`, can
 be used to ease the initialization of the callback structure.
+
+Additionally :c:macro:`NET_MGMT_REGISTER_EVENT_HANDLER` can be used to
+register a callback handler at compile time.
 
 When an event occurs that matches a callback's event set, the
 associated callback function is invoked with the actual event
@@ -118,6 +122,44 @@ An example follows.
 		net_mgmt_add_event_callback(&iface_callback);
 		net_mgmt_add_event_callback(&ipv4_callback);
 	}
+
+Or similarly using :c:macro:`NET_MGMT_REGISTER_EVENT_HANDLER`.
+
+.. note::
+
+   The ``info`` and ``info_length`` arguments are only usable if
+   :kconfig:option:`CONFIG_NET_MGMT_EVENT_INFO` is enabled. Otherwise these are
+   ``NULL`` and zero.
+
+.. code-block:: c
+
+	/*
+	 * Set of events to handle.
+	 */
+	#define EVENT_IFACE_SET (NET_EVENT_IF_xxx | NET_EVENT_IF_yyy)
+	#define EVENT_IPV4_SET (NET_EVENT_IPV4_xxx | NET_EVENT_IPV4_yyy)
+
+	static void event_handler(uint32_t mgmt_event, struct net_if *iface,
+				  void *info, size_t info_length,
+				  void *user_data)
+	{
+		if (mgmt_event == NET_EVENT_IF_xxx) {
+			/* Handle NET_EVENT_IF_xxx */
+		} else if (mgmt_event == NET_EVENT_IF_yyy) {
+			/* Handle NET_EVENT_IF_yyy */
+		} else if (mgmt_event == NET_EVENT_IPV4_xxx) {
+			/* Handle NET_EVENT_IPV4_xxx */
+		} else if (mgmt_event == NET_EVENT_IPV4_yyy) {
+			/* Handle NET_EVENT_IPV4_yyy */
+		} else {
+			/* Spurious (false positive) invocation. */
+		}
+	}
+
+	NET_MGMT_REGISTER_EVENT_HANDLER(iface_event_handler, EVENT_IFACE_SET,
+					event_handler, NULL);
+	NET_MGMT_REGISTER_EVENT_HANDLER(ipv4_event_handler, EVENT_IPV4_SET,
+					event_handler, NULL);
 
 See :zephyr_file:`include/zephyr/net/net_event.h` for available generic core events that
 can be listened to.

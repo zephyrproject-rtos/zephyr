@@ -2,22 +2,31 @@ common:
   tags: coredump
   ignore_faults: true
   ignore_qemu_crash: true
+  arch_exclude:
+    - posix
+  integration_platforms:
+    - qemu_x86
 tests:
-  coredump.backends.logging:
+  debug.coredump.backends.logging:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     platform_exclude: acrn_ehl_crb
-    harness: console
-    harness_config:
-      type: multi_line
-      regex:
-        - "E: #CD:BEGIN#"
-        - "E: #CD:5([aA])45([0-9a-fA-F]+)"
-        - "E: #CD:END#"
-  coredump.backends.flash:
+    extra_configs:
+      - CONFIG_TEST_STORED_COREDUMP=n
+  debug.coredump.backends.flash:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_flash_partition.conf
-    platform_allow: qemu_x86
-  coredump.backends.other:
+    extra_configs:
+      - CONFIG_TEST_STORED_COREDUMP=y
+    platform_allow:
+      - qemu_x86
+      - esp32_devkitc_wroom/esp32/procpu
+      - esp32_devkitc_wrover/esp32/procpu
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp32c3_devkitm
+  debug.coredump.backends.other:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_backend_other.conf
+    extra_configs:
+      - CONFIG_TEST_STORED_COREDUMP=y
     platform_exclude: acrn_ehl_crb

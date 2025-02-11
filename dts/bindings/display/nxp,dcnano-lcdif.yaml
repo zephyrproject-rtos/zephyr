@@ -1,0 +1,34 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP DCNano LCDIF (LCD Interface) controller
+
+compatible: "nxp,dcnano-lcdif"
+
+include: [lcd-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  backlight-gpios:
+    type: phandle-array
+    required: true
+    description:
+      LCB backlight control gpio. Driver will initialize this GPIO to active high
+
+  data-bus-width:
+    type: string
+    default: "24-bit"
+    enum:
+      - "16-bit-config1" # 16 bit configuration 1. RGB565: XXXXXXXX_RRRRRGGG_GGGBBBBB
+      - "16-bit-config2" # 16 bit configuration 2. RGB565: XXXRRRRR_XXGGGGGG_XXXBBBBB
+      - "16-bit-config3" # 16-bit configuration 3. RGB565: XXRRRRRX_XXGGGGGG_XXBBBBBX
+      - "18-bit-config1" # 18-bit configuration 1. RGB666: XXXXXXRR_RRRRGGGG_GGBBBBBB
+      - "18-bit-config2" # 18-bit configuration 2. RGB666: XXRRRRRR_XXGGGGGG_XXBBBBBB
+      - "24-bit" # 24 Bit
+    description:
+      LCD data bus width. The default is set to the reset value of 24-bit

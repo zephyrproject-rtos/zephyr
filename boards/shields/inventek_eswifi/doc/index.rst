@@ -121,15 +121,15 @@ details).
 Tested Boards
 =============
 
-+-----------------------------+------------------------------+-----------+
-| Board                       | Disabled Interface           | Variation |
-+=============================+==============================+===========+
-| ATMEL sam_v71_xult          | Ethernet                     |   2 , 3   |
-+-----------------------------+------------------------------+-----------+
-| ST nucleo_f767zi            | Ethernet                     |   2 , 3   |
-+-----------------------------+------------------------------+-----------+
-| ST disco_l475_iot1          |                              |     -     |
-+-----------------------------+------------------------------+-----------+
++------------------------------+------------------------------+-----------+
+| Board                        | Disabled Interface           | Variation |
++==============================+==============================+===========+
+| ATMEL sam_v71_xult/samv71q21 | Ethernet                     |   2 , 3   |
++------------------------------+------------------------------+-----------+
+| ST nucleo_f767zi             | Ethernet                     |   2 , 3   |
++------------------------------+------------------------------+-----------+
+| ST disco_l475_iot1           |                              |     -     |
++------------------------------+------------------------------+-----------+
 
 .. note::
 	ST disco_l475_iot1 already have an ISM43362 module with IWIN SPI
@@ -140,19 +140,19 @@ Tested Boards
 Sample usage
 ************
 
-The reference sample for WIFI is :ref:`wifi_sample`.  It allows you use WIFI
+The reference sample for WIFI is :zephyr:code-sample:`wifi-shell`.  It allows you to use WIFI
 shell to scan local Wireless networks.  With the password you can pick,
 connect and send ping.
 
 Build and Programming
 *********************
 
-Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
+Set ``--shield <shield designator>`` when you invoke ``west build``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
    :host-os: unix
-   :board: [sam_v71_xult | nucleo_f767zi]
+   :board: [sam_v71_xult/samv71q21 | nucleo_f767zi]
    :shield: inventek_eswifi_arduino_uart
    :goals: build flash
    :compact:
@@ -160,7 +160,7 @@ Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
    :host-os: unix
-   :board: [sam_v71_xult | nucleo_f767zi]
+   :board: [sam_v71_xult/samv71q21 | nucleo_f767zi]
    :shield: inventek_eswifi_arduino_spi
    :goals: build flash
    :compact:

@@ -154,7 +154,7 @@ struct ztress_context_data {
 #define Z_ZTRESS_TIMER_IDX(idx, data) \
 	((GET_ARG_N(1, __DEBRACKET data)) == ZTRESS_ID_K_TIMER ? idx : 0)
 
-/** @intenal Macro validates that @ref ZTRESS_TIMER context is not used except for
+/** @internal Macro validates that @ref ZTRESS_TIMER context is not used except for
  * the first item in the list of contexts.
  */
 #define Z_ZTRESS_TIMER_CONTEXT_VALIDATE(...) \
@@ -169,23 +169,25 @@ struct ztress_context_data {
  * @param ... List of contexts. Contexts are configured using @ref ZTRESS_TIMER
  * and @ref ZTRESS_THREAD macros. @ref ZTRESS_TIMER must be the first argument if
  * used. Each thread context has an assigned priority. The priority is assigned in
- * a descending order (first listed thread context has the highest priority). The
- * number of supported thread contexts is configurable in Kconfig.
+ * a descending order (first listed thread context has the highest priority).
+ * The maximum number of supported thread contexts, including the timer context,
+ * is configurable in Kconfig (ZTRESS_MAX_THREADS).
  */
 #define ZTRESS_EXECUTE(...) do {							\
 	Z_ZTRESS_TIMER_CONTEXT_VALIDATE(__VA_ARGS__);					\
 	int has_timer = Z_ZTRESS_HAS_TIMER(__VA_ARGS__);				\
-	struct ztress_context_data data1[] = {						\
+	struct ztress_context_data _ctx_data1[] = {					\
 		FOR_EACH(Z_ZTRESS_GET_HANDLER_DATA, (,), __VA_ARGS__)			\
 	};										\
-	size_t cnt = ARRAY_SIZE(data1) - has_timer;					\
-	static struct ztress_context_data data[ARRAY_SIZE(data1)];                      \
-	for (size_t i = 0; i < ARRAY_SIZE(data1); i++) {                                \
-		data[i] = data1[i];                                                     \
+	size_t cnt = ARRAY_SIZE(_ctx_data1) - has_timer;				\
+	static struct ztress_context_data _ctx_data[ARRAY_SIZE(_ctx_data1)];		\
+	for (size_t i = 0; i < ARRAY_SIZE(_ctx_data1); i++) {				\
+		_ctx_data[i] = _ctx_data1[i];						\
 	}	                                                                        \
-	int err = ztress_execute(has_timer ? &data[0] : NULL, &data[has_timer], cnt);	\
+	int exec_err = ztress_execute(has_timer ? &_ctx_data[0] : NULL,			\
+				 &_ctx_data[has_timer], cnt);				\
 											\
-	zassert_equal(err, 0, "ztress_execute failed (err: %d)", err);			\
+	zassert_equal(exec_err, 0, "ztress_execute failed (err: %d)", exec_err);	\
 } while (0)
 
 /** Execute contexts.

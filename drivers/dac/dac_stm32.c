@@ -68,6 +68,11 @@ static int dac_stm32_write_value(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (value >= BIT(data->resolution)) {
+		LOG_ERR("Value %d is out of range", value);
+		return -EINVAL;
+	}
+
 	if (data->resolution == 8) {
 		LL_DAC_ConvertData8RightAligned(cfg->base,
 			table_channels[channel - STM32_FIRST_CHANNEL], value);
@@ -84,6 +89,7 @@ static int dac_stm32_channel_setup(const struct device *dev,
 {
 	struct dac_stm32_data *data = dev->data;
 	const struct dac_stm32_cfg *cfg = dev->config;
+	uint32_t output_buffer;
 
 	if ((channel_cfg->channel_id - STM32_FIRST_CHANNEL >=
 			data->channel_count) ||
@@ -100,10 +106,15 @@ static int dac_stm32_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* enable output buffer by default */
+	if (channel_cfg->buffered) {
+		output_buffer = LL_DAC_OUTPUT_BUFFER_ENABLE;
+	} else {
+		output_buffer = LL_DAC_OUTPUT_BUFFER_DISABLE;
+	}
+
 	LL_DAC_SetOutputBuffer(cfg->base,
 		table_channels[channel_cfg->channel_id - STM32_FIRST_CHANNEL],
-		LL_DAC_OUTPUT_BUFFER_ENABLE);
+		output_buffer);
 
 	LL_DAC_Enable(cfg->base,
 		table_channels[channel_cfg->channel_id - STM32_FIRST_CHANNEL]);
@@ -127,7 +138,7 @@ static int dac_stm32_init(const struct device *dev)
 	}
 
 	if (clock_control_on(clk,
-			     (clock_control_subsys_t *) &cfg->pclken) != 0) {
+			     (clock_control_subsys_t) &cfg->pclken) != 0) {
 		return -EIO;
 	}
 

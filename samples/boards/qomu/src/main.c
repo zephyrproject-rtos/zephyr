@@ -14,7 +14,7 @@
 extern uint32_t axFPGABitStream[];
 extern uint32_t axFPGABitStream_length;
 
-void main(void)
+int main(void)
 {
 	const struct device *fpga = device_get_binding("fpga");
 
@@ -27,4 +27,5 @@ void main(void)
 	printk("####################\n");
 	printk("I am Zephyr on Qomu!\n");
 	printk("####################\n");
+	return 0;
 }

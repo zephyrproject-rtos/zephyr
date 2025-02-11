@@ -48,3 +48,15 @@ properties:
       The RESET pin of SSD1306 is active low.
       If connected directly the MCU pin should be configured
       as active low.
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting
+
+  ready-time-ms:
+    type: int
+    default: 10
+    description: |
+      Time it takes for the device from power up to become responsive and
+      accepting commands. Defaults to 10ms (found by trial and error) if not
+      provided.

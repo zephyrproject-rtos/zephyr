@@ -1,5 +1,3 @@
-set_property(GLOBAL PROPERTY CSTD gnu99)
-
 # List the warnings that are not supported for C++ compilations
 list(APPEND CXX_EXCLUDED_OPTIONS
   -Werror=implicit-int
@@ -28,11 +26,13 @@ set_compiler_property(PROPERTY warning_base
                       -Wformat
                       -Wformat-security
                       -Wno-format-zero-length
-                      -Wno-main-return-type
                       -Wno-unaligned-pointer-conversion
                       -Wno-incompatible-pointer-types-discards-qualifiers
                       -Wno-typedef-redefinition
 )
+
+# C implicit promotion rules will want to make floats into doubles very easily
+check_set_compiler_property(APPEND PROPERTY warning_base -Wdouble-promotion)
 
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
 
@@ -116,7 +116,7 @@ set_compiler_property(PROPERTY warning_error_misra_sane -Werror=vla)
 set_compiler_property(PROPERTY cstd -std=)
 
 if (NOT CONFIG_ARCMWDT_LIBC)
-  set_compiler_property(PROPERTY nostdinc -Hno_default_include -Hnoarcexlib)
+  set_compiler_property(PROPERTY nostdinc -Hno_default_include -Hnoarcexlib -U__STDC_LIB_EXT1__)
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
 
@@ -134,6 +134,10 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "")
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
 
+# Flags for set extra warnigs (ARCMWDT asm can't recognize --fatal-warnings. Skip it)
+set_property(TARGET compiler PROPERTY warnings_as_errors -Werror)
+set_property(TARGET asm PROPERTY warnings_as_errors -Werror)
+
 # Disable exceptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")
 
@@ -148,14 +152,8 @@ set_property(TARGET compiler-cpp PROPERTY no_rtti "-fno-rtti")
 # do not link in supplied run-time startup files
 set_compiler_property(PROPERTY freestanding -Hnocrt)
 
-# Flag to enable debugging
-if(CONFIG_THREAD_LOCAL_STORAGE)
-  # FIXME: Temporary workaround for ARC MWDT toolchain issue - LLDAC linker produce errors on
-  # debugging information (if -g option specified) of thread-local variables.
-  set_compiler_property(PROPERTY debug)
-else()
-  set_compiler_property(PROPERTY debug -g)
-endif()
+# Flag to keep DWARF information (enable debug info)
+set_compiler_property(PROPERTY debug -g)
 
 # compile common globals like normal definitions
 set_compiler_property(PROPERTY no_common -fno-common)
@@ -176,7 +174,11 @@ set_compiler_property(PROPERTY security_fortify_compile_time)
 set_compiler_property(PROPERTY security_fortify_run_time)
 
 # Required C++ flags when using mwdt
-set_property(TARGET compiler-cpp PROPERTY required "-Hcplus" "-Hoff=Stackcheck_alloca")
+set_property(TARGET compiler-cpp PROPERTY required "-Hcplus" )
+
+if(CONFIG_ARC)
+  set_property(TARGET compiler-cpp PROPERTY required "-Hoff=Stackcheck_alloca")
+endif()
 
 # Compiler flag for turning off thread-safe initialization of local statics
 set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe-statics")
@@ -200,3 +202,9 @@ if(CONFIG_ARCMWDT_LIBC)
   # to ASM builds (which may use 'stdbool.h').
   set_property(TARGET asm APPEND PROPERTY required "-I${NOSTDINC}")
 endif()
+
+# Remove after testing that -Wshadow works
+set_compiler_property(PROPERTY warning_shadow_variables)
+
+set_compiler_property(PROPERTY no_builtin -fno-builtin)
+set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)

@@ -1,12 +1,13 @@
-.. _samples_eeprom:
+.. zephyr:code-sample:: eeprom
+   :name: EEPROM
+   :relevant-api: eeprom_interface
 
-EEPROM Sample
-#############
+   Store a boot count value in EEPROM.
 
 Overview
 ********
 
-This sample demonstrates the EEPROM driver API in a simple boot counter
+This sample demonstrates the :ref:`EEPROM driver API <eeprom_api>` in a simple boot counter
 application.
 
 Building and Running
@@ -14,12 +15,12 @@ Building and Running
 
 In case the target board has defined an EEPROM with alias ``eeprom-0`` the
 sample can be built without further ado. This applies for example to the
-:ref:`native_posix` board:
+:ref:`native_sim` board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/eeprom
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: run
    :compact:
 
@@ -29,7 +30,7 @@ as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/eeprom
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :shield: x_nucleo_eeprma2
    :compact:

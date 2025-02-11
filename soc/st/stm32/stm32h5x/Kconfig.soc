@@ -1,0 +1,38 @@
+# ST Microelectronics STM32H5 MCU line
+
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32H5X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32h5x" if SOC_SERIES_STM32H5X
+
+config SOC_STM32H503XX
+	bool
+	select SOC_SERIES_STM32H5X
+
+config SOC_STM32H533XX
+	bool
+	select SOC_SERIES_STM32H5X
+
+config SOC_STM32H562XX
+	bool
+	select SOC_SERIES_STM32H5X
+
+config SOC_STM32H563XX
+	bool
+	select SOC_SERIES_STM32H5X
+
+config SOC_STM32H573XX
+	bool
+	select SOC_SERIES_STM32H5X
+
+config SOC
+	default "stm32h503xx" if SOC_STM32H503XX
+	default "stm32h533xx" if SOC_STM32H533XX
+	default "stm32h562xx" if SOC_STM32H562XX
+	default "stm32h563xx" if SOC_STM32H563XX
+	default "stm32h573xx" if SOC_STM32H573XX

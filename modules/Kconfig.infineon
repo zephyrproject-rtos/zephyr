@@ -6,7 +6,7 @@
 config HAS_XMCLIB
 	bool
 	select HAS_CMSIS_CORE
-	depends on SOC_FAMILY_XMC
+	depends on SOC_FAMILY_INFINEON_XMC
 
 if HAS_XMCLIB
 
@@ -29,5 +29,40 @@ config HAS_XMCLIB_VADC
 	bool
 	help
 	  Enable XMCLIB VADC
+
+config HAS_XMCLIB_DMA
+	bool
+	help
+	  Enable XMCLIB DMA
+
+config HAS_XMCLIB_SPI
+	bool
+	help
+	  Enable XMCLIB SPI
+
+config HAS_XMCLIB_I2C
+	bool
+	help
+	  Enable XMCLIB I2C
+
+config HAS_XMCLIB_CCU
+	bool
+	help
+	  Enable XMCLIB CCU4/CCU8
+
+config HAS_XMCLIB_WDT
+	bool
+	help
+	  Enable XMCLIB WDT
+
+config HAS_XMCLIB_ETH
+	bool
+	help
+	  Enable XMCLIB Ethernet MAC
+
+config HAS_XMCLIB_CAN
+	bool
+	help
+	  Enable XMCLIB CAN
 
 endif # HAS_XMCLIB

@@ -16,6 +16,8 @@
 /**
  * @brief Hardware Information Interface
  * @defgroup hwinfo_interface Hardware Info Interface
+ * @since 1.14
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -30,27 +32,50 @@
 extern "C" {
 #endif
 
+/**
+ * @name Reset cause flags
+ * @anchor reset_cause
+ * @{
+ */
+/** External pin */
 #define RESET_PIN				BIT(0)
+/** Software reset */
 #define RESET_SOFTWARE				BIT(1)
+/** Brownout (drop in voltage) */
 #define RESET_BROWNOUT				BIT(2)
+/** Power-on reset (POR) */
 #define RESET_POR				BIT(3)
+/** Watchdog timer expiration */
 #define RESET_WATCHDOG				BIT(4)
+/** Debug event */
 #define RESET_DEBUG				BIT(5)
+/** Security violation */
 #define RESET_SECURITY				BIT(6)
+/** Waking up from low power mode */
 #define RESET_LOW_POWER_WAKE			BIT(7)
+/** CPU lock-up detected */
 #define RESET_CPU_LOCKUP			BIT(8)
+/** Parity error */
 #define RESET_PARITY				BIT(9)
+/** PLL error */
 #define RESET_PLL				BIT(10)
+/** Clock error */
 #define RESET_CLOCK				BIT(11)
+/** Hardware reset */
 #define RESET_HARDWARE				BIT(12)
+/** User reset */
 #define RESET_USER				BIT(13)
+/** Temperature reset */
 #define RESET_TEMPERATURE			BIT(14)
+/**
+ * @}
+ */
 
 /**
  * @brief Copy the device id to a buffer
  *
  * This routine copies "length" number of bytes of the device ID to the buffer.
- * If the device ID is smaller then length, the rest of the buffer is left unchanged.
+ * If the device ID is smaller than length, the rest of the buffer is left unchanged.
  * The ID depends on the hardware and is not guaranteed unique.
  *
  * Drivers are responsible for ensuring that the ID data structure is a
@@ -71,9 +96,25 @@ __syscall ssize_t hwinfo_get_device_id(uint8_t *buffer, size_t length);
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length);
 
 /**
+ * @brief Copy the device EUI64 to a buffer
+ *
+ * This routine copies the device EUI64 (8 bytes) to the buffer.
+ * The EUI64 depends on the hardware and is guaranteed unique.
+ *
+ * @param buffer  Buffer of 8 bytes to write the ID to.
+ *
+ * @retval zero if successful.
+ * @retval -ENOSYS if there is no implementation for the particular device.
+ * @retval any negative value on driver specific errors.
+ */
+__syscall int hwinfo_get_device_eui64(uint8_t *buffer);
+
+int z_impl_hwinfo_get_device_eui64(uint8_t *buffer);
+
+/**
  * @brief      Retrieve cause of device reset.
  *
- * @param      cause  OR'd `reset_cause` flags
+ * @param      cause  OR'd @ref reset_cause "reset cause" flags
  *
  * This routine retrieves the flags that indicate why the device was reset.
  *
@@ -110,7 +151,7 @@ int z_impl_hwinfo_clear_reset_cause(void);
 /**
  * @brief      Get supported reset cause flags
  *
- * @param      supported  OR'd `reset_cause` flags that are supported
+ * @param      supported  OR'd @ref reset_cause "reset cause" flags that are supported
  *
  * Retrieves all `reset_cause` flags that are supported by this device.
  *
@@ -130,6 +171,6 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported);
 }
 #endif
 
-#include <syscalls/hwinfo.h>
+#include <zephyr/syscalls/hwinfo.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_HWINFO_H_ */

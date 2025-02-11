@@ -15,6 +15,8 @@
 /**
  * @brief GNSS Interface
  * @defgroup gnss_interface GNSS Interface
+ * @since 3.6
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -121,9 +123,9 @@ typedef int (*gnss_get_supported_systems_t)(const struct device *dev, gnss_syste
 
 /** GNSS fix status */
 enum gnss_fix_status {
-	/** No GNSS fix aqcuired */
+	/** No GNSS fix acquired */
 	GNSS_FIX_STATUS_NO_FIX = 0,
-	/** GNSS fix aqcuired */
+	/** GNSS fix acquired */
 	GNSS_FIX_STATUS_GNSS_FIX = 1,
 	/** Differential GNSS fix acquired */
 	GNSS_FIX_STATUS_DGNSS_FIX = 2,
@@ -154,7 +156,7 @@ struct gnss_info {
 	/** Number of satellites being tracked */
 	uint16_t satellites_cnt;
 	/** Horizontal dilution of precision in 1/1000 */
-	uint16_t hdop;
+	uint32_t hdop;
 	/** The fix status */
 	enum gnss_fix_status fix_status;
 	/** The fix quality */
@@ -457,7 +459,7 @@ static inline int z_impl_gnss_get_supported_systems(const struct device *dev,
  */
 #if CONFIG_GNSS
 #define GNSS_DATA_CALLBACK_DEFINE(_dev, _callback)                                              \
-	const STRUCT_SECTION_ITERABLE(gnss_data_callback,                                       \
+	static const STRUCT_SECTION_ITERABLE(gnss_data_callback,                                \
 					     _gnss_data_callback__##_callback) = {              \
 		.dev = _dev,                                                                    \
 		.callback = _callback,                                                          \
@@ -491,6 +493,6 @@ static inline int z_impl_gnss_get_supported_systems(const struct device *dev,
 }
 #endif
 
-#include <syscalls/gnss.h>
+#include <zephyr/syscalls/gnss.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GNSS_H_ */

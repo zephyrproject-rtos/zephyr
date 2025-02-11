@@ -5,11 +5,15 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
 
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/conn.h>
+
+#include "util/util.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "hal/ccm.h"
 #include "hal/ticker.h"
@@ -21,16 +25,15 @@
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_vendor.h"
 #include "lll_clock.h"
+#include "lll/lll_vendor.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_peripheral_iso.h"
 
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#include "ull_tx_queue.h"
-#endif
+#include "ll_sw/ull_tx_queue.h"
 
 #include "ull_conn_types.h"
 
@@ -44,8 +47,6 @@
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_internal.h"
 #include "ull_llcp_internal.h"
-
-#include <zephyr/bluetooth/hci.h>
 
 #include "hal/debug.h"
 
@@ -65,11 +66,7 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 
 	for (int h = 0; h < CONFIG_BT_MAX_CONN; h++) {
 		struct ll_conn *conn = ll_conn_get(h);
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-		uint16_t cis_handle = conn->llcp_cis.cis_handle;
-#else
 		uint16_t cis_handle = ull_cp_cc_ongoing_handle(conn);
-#endif
 
 		if (handle == cis_handle) {
 			/* ACL connection found */
@@ -90,11 +87,7 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 		return NULL;
 	}
 
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	if (acl_conn->llcp_cis.state != LLCP_CIS_STATE_RSP_WAIT) {
-#else
 	if (!ull_cp_cc_awaiting_reply(acl_conn)) {
-#endif
 		LOG_ERR("Not allowed in current procedure state");
 		*error = BT_HCI_ERR_CMD_DISALLOWED;
 		return NULL;
@@ -106,15 +99,26 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 uint8_t ll_cis_accept(uint16_t handle)
 {
 	uint8_t status = BT_HCI_ERR_SUCCESS;
-	struct ll_conn *acl_conn = ll_cis_get_acl_awaiting_reply(handle, &status);
+	struct ll_conn *conn = ll_cis_get_acl_awaiting_reply(handle, &status);
 
-	if (acl_conn) {
+	if (conn) {
+		uint32_t cis_offset_min;
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START) ||
+		    !IS_ENABLED(CONFIG_BT_CTLR_CIS_ACCEPT_MIN_OFFSET_STRICT)) {
+			/* Early start allows offset down to spec defined minimum */
+			cis_offset_min = CIS_MIN_OFFSET_MIN;
+		} else {
+			cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
+					 (EVENT_TICKER_RES_MARGIN_US << 1U);
+
+			if (!IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
+				cis_offset_min += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+			}
+		}
+
 		/* Accept request */
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-		acl_conn->llcp_cis.req++;
-#else
-		ull_cp_cc_accept(acl_conn);
-#endif
+		ull_cp_cc_accept(conn, cis_offset_min);
 	}
 
 	return status;
@@ -123,17 +127,12 @@ uint8_t ll_cis_accept(uint16_t handle)
 uint8_t ll_cis_reject(uint16_t handle, uint8_t reason)
 {
 	uint8_t status = BT_HCI_ERR_SUCCESS;
-
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	status = BT_HCI_ERR_CMD_DISALLOWED;
-#else
 	struct ll_conn *acl_conn = ll_cis_get_acl_awaiting_reply(handle, &status);
 
 	if (acl_conn) {
 		/* Reject request */
 		ull_cp_cc_reject(acl_conn, reason);
 	}
-#endif
 
 	return status;
 }
@@ -163,6 +162,7 @@ void ull_peripheral_iso_release(uint16_t cis_handle)
 	cig = cis->group;
 
 	ll_conn_iso_stream_release(cis);
+	cig->lll.num_cis--;
 
 	if (!cig->lll.num_cis) {
 		ll_conn_iso_group_release(cig);
@@ -192,6 +192,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 
 		cig->iso_interval = sys_le16_to_cpu(req->iso_interval);
 		iso_interval_us = cig->iso_interval * CONN_INT_UNIT_US;
+		cig->lll.iso_interval_us = iso_interval_us;
 
 		cig->cig_id = req->cig_id;
 		cig->lll.handle = LLL_HANDLE_INVALID;
@@ -206,7 +207,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 		cig->lll.window_widening_max_us = (iso_interval_us >> 1) -
 						  EVENT_IFS_US;
 		cig->lll.window_widening_periodic_us_frac =
-			ceiling_fraction(((lll_clock_ppm_local_get() +
+			DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 					 lll_clock_ppm_get(acl->periph.sca)) *
 					 EVENT_US_TO_US_FRAC(iso_interval_us)), USEC_PER_SEC);
 
@@ -255,22 +256,23 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->p_max_sdu = (uint16_t)(req->p_max_sdu[1] & 0x0F) << 8 |
 				    req->p_max_sdu[0];
 
-	cis->lll.handle = 0xFFFF;
+	cis->lll.active = 0U;
+	cis->lll.handle = LLL_HANDLE_INVALID;
 	cis->lll.acl_handle = acl->lll.handle;
 	cis->lll.sub_interval = sys_get_le24(req->sub_interval);
 	cis->lll.nse = req->nse;
 
 	cis->lll.rx.phy = req->c_phy;
+	cis->lll.rx.phy_flags = PHY_FLAGS_S8;
 	cis->lll.rx.bn = req->c_bn;
 	cis->lll.rx.ft = req->c_ft;
 	cis->lll.rx.max_pdu = sys_le16_to_cpu(req->c_max_pdu);
-	cis->lll.rx.payload_count = 0;
 
 	cis->lll.tx.phy = req->p_phy;
+	cis->lll.tx.phy_flags = PHY_FLAGS_S8;
 	cis->lll.tx.bn = req->p_bn;
 	cis->lll.tx.ft = req->p_ft;
 	cis->lll.tx.max_pdu = sys_le16_to_cpu(req->p_max_pdu);
-	cis->lll.tx.payload_count = 0;
 
 	if (!cis->lll.link_tx_free) {
 		cis->lll.link_tx_free = &cis->lll.link_tx;
@@ -281,6 +283,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.link_tx_free = NULL;
 
 	*cis_handle = ll_conn_iso_stream_handle_get(cis);
+	cig->lll.num_cis++;
 
 	return 0;
 }
@@ -310,7 +313,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis_offset = sys_get_le24(ind->cis_offset);
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
-	if (!cig->started) {
+	if (cig->state != CIG_STATE_ACTIVE) {
 		/* This is the first CIS. Make sure we can make the anchorpoint, otherwise
 		 * we need to move up the instant up by one connection interval.
 		 */
@@ -324,16 +327,21 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis->sync_delay = sys_get_le24(ind->cis_sync_delay);
 	cis->offset = cis_offset;
 	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
-	cis->lll.event_count = -1;
+#if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
+	cis->pkt_seq_num = 0U;
+#endif /* CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
+	cis->lll.event_count = LLL_CONN_ISO_EVENT_COUNT_MAX;
 	cis->lll.next_subevent = 0U;
 	cis->lll.sn = 0U;
 	cis->lll.nesn = 0U;
 	cis->lll.cie = 0U;
-	cis->lll.flushed = 0U;
-	cis->lll.active = 0U;
+	cis->lll.npi = 0U;
+	cis->lll.flush = LLL_CIS_FLUSH_NONE;
 	cis->lll.datapath_ready_rx = 0U;
 	cis->lll.tx.payload_count = 0U;
 	cis->lll.rx.payload_count = 0U;
+	cis->lll.rx.bn_curr = 1U;
+	cis->lll.tx.bn_curr = 1U;
 
 	return 0;
 }

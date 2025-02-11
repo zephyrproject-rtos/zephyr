@@ -114,42 +114,92 @@ hr,
 }
 
 /* JavaScript documentation directives */
-.rst-content dl:not(.docutils) dt {
-    background-color: var(--admonition-note-background-color) !important;
-    border-color: var(--admonition-note-title-background-color) !important;
-    color: var(--admonition-note-color) !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list) > dt {
+    background-color: var(--admonition-note-background-color);
+    border-color: var(--admonition-note-title-background-color);
+    color: var(--admonition-note-color);
 }
-.rst-content dl:not(.docutils) dl dt {
-    background-color: var(--admonition-attention-background-color) !important;
-    border-color: var(--admonition-attention-title-background-color) !important;
-    color: var(--admonition-attention-color) !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl dt {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--footer-color);
 }
-
-.rst-content dt.sig .k {
-    color: var(--highlight-keyword2-color) !important;
-    font-style: normal !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).attribute dt {
+    font-weight: 600;
+    padding: 0 8px;
+    margin-bottom: 1px;
+    width: 100%;
 }
-
-.rst-content dt.sig .kt {
-    color: var(--highlight-keyword-color) !important;
-    font-style: normal !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class > dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function > dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method > dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).attribute > dt {
+    font-family: var(--monospace-font-family);
+    font-variant-ligatures: none;
+    font-size: 90%;
+    font-weight: normal;
+    margin-bottom: 16px;
+    padding: 6px 8px;
 }
-
-.rst-content dt.sig .sig-name .n {
-    color: var(--highlight-function-color) !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-prename.descclassname {
+    color: var(--highlight-type2-color);
+    font-weight: normal;
 }
-
-.rst-content dt.sig .k,
-.rst-content dt.sig .kt,
-.rst-content dt.sig .n {
-    font-weight: normal !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-name.descname {
+    color: var(--highlight-function-color);
+    font-weight: 700;
 }
-
-.rst-content dl:not(.docutils) dt a.headerlink {
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-paren,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .optional {
+    color: var(--highlight-operator-color) !important;
+    font-weight: normal;
+    padding: 0 2px;
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .optional {
+    font-style: italic;
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-param,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > em,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt > em,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt > em {
+    color: var(--code-literal-color);
+    font-style: normal;
+    padding: 0 4px;
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .k {
+    font-style: normal;
+}
+html.writer-html5 .rst-content dl:not(.docutils) > dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt {
+    border-top-color: var(--highlight-background-emph-color);
+    background: var(--highlight-background-color);
+}
+html.writer-html5 .rst-content dl:not(.docutils) dl:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) dl:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt {
+    border-left-color: var(--highlight-background-emph-color);
+    background: var(--highlight-background-color);
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-param,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > .optional ~ em,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt > .optional ~ em,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt > .optional ~ em {
+    color: var(--highlight-number-color);
+    font-style: italic;
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > em.property {
+    color: var(--highlight-keyword-color);
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt a.headerlink {
     color: var(--link-color) !important;
 }
-.rst-content dl:not(.docutils) dt a.headerlink:visited {
-    color: var(--link-color-visited) !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt a.headerlink:visited {
+    color: var(--link-color-visited);
+}
+html.writer-html5 .rst-content dl.field-list > dd strong {
+    font-family: var(--monospace-font-family);
+    font-variant-ligatures: none;
 }
 
 footer,
@@ -161,105 +211,6 @@ footer,
 a.icon-home,
 a.icon-home:visited {
     color: var(--navbar-level-1-color);
-}
-
-/* Sphinx Search extension */
-/* .wy-body-for-nav is used for higher rule specificity */
-
-/* Search popup body */
-.wy-body-for-nav .search__outer {
-    background-color: var(--content-background-color);
-    border: 2px solid var(--content-background-color);
-}
-.wy-body-for-nav .search__cross svg {
-    fill: var(--body-color);
-}
-
-.wy-body-for-nav .search__outer::-webkit-scrollbar-track {
-    border-radius: 10px;
-    background-color: var(--content-background-color);
-}
-.wy-body-for-nav .search__outer::-webkit-scrollbar {
-    width: 7px;
-    height: 7px;
-    background-color: var(--content-background-color);
-}
-.wy-body-for-nav .search__outer::-webkit-scrollbar-thumb {
-    border-radius: 10px;
-    background-color: var(--hr-color);
-}
-
-/* Search input */
-.wy-body-for-nav .search__outer__input {
-    background-color: var(--search-input-background-color);
-    background-image: none;
-    border-radius: 50px;
-    border: 2px solid transparent;
-    color: var(--body-color);
-    height: 36px;
-    padding: 6px 12px;
-}
-.wy-body-for-nav .search__outer__input:focus {
-    border-color: var(--input-focus-border-color);
-}
-.wy-body-for-nav .search__outer .bar:after,
-.wy-body-for-nav .search__outer .bar:before {
-    display: none;
-}
-
-/* Search results item */
-.wy-body-for-nav .search__result__single {
-    border-bottom-color: var(--hr-color);
-}
-/* Search item title */
-.wy-body-for-nav .search__result__title {
-    color: var(--link-color);
-    border-bottom: none;
-    font-size: 120%;
-    font-weight: 400;
-}
-
-/* Search item section */
-.wy-body-for-nav .outer_div_page_results:hover,
-.wy-body-for-nav .search__result__box .active {
-    background-color: var(--search-active-color);
-}
-.wy-body-for-nav .search__result__subheading{
-    color: var(--body-color);
-    font-size: 100%;
-    font-weight: 400;
-}
-.wy-body-for-nav .search__result__content {
-    color: var(--footer-color);
-}
-
-/* Search item matching substring */
-.wy-body-for-nav .search__outer .search__result__title span,
-.wy-body-for-nav .search__outer .search__result__content span {
-    color: var(--search-match-color);
-    border-bottom: 1px solid var(--search-match-color);
-    background-color: var(--search-match-background-color);
-    padding: 0 2px;
-}
-.wy-body-for-nav .search__result__subheading span {
-    border-bottom-color: var(--body-color);
-}
-
-/* Search empty results */
-/* The original styles are inlined, see https://github.com/readthedocs/readthedocs-sphinx-search/issues/48 */
-.wy-body-for-nav .search__result__box {
-    color: var(--body-color) !important;
-}
-
-/* Search footer & credits */
-.wy-body-for-nav .rtd__search__credits {
-    background-color: var(--search-credits-background-color);
-    border-color: var(--search-credits-background-color);
-    color: var(--search-credits-color);
-    padding: 4px 8px;
-}
-.wy-body-for-nav .rtd__search__credits a {
-    color: var(--search-credits-link-color);
 }
 
 /* Main sections */
@@ -293,6 +244,9 @@ a.icon-home:visited {
     border-color: var(--code-border-color);
 }
 
+.rst-content table.docutils caption, .rst-content table.field-list caption, .wy-table caption {
+    color: var(--body-color);
+}
 .wy-table-odd td,
 .wy-table-striped tr:nth-child(2n-1) td,
 .rst-content table.docutils:not(.field-list) tr:nth-child(2n-1) td {
@@ -303,6 +257,12 @@ a.icon-home:visited {
 /* The first column cells are not verbose, no need to wrap them */
 .wy-table-responsive table td:not(:nth-child(1)),
 .wy-table-responsive table th:not(:nth-child(1)) {
+    white-space: normal;
+}
+
+/* Allow to control wrapping behavior per table */
+.wy-table-responsive table.wrap-normal td,
+.wy-table-responsive table.wrap-normal th {
     white-space: normal;
 }
 
@@ -544,8 +504,26 @@ a.internal:visited code.literal {
     color: var(--admonition-tip-title-color);
 }
 
+/* Admonition tweaks - sphinx_togglebutton */
+
+.rst-content .admonition.toggle {
+    overflow: visible;
+}
+
+.rst-content .admonition.toggle button {
+    display: inline-flex;
+    color: var(--admonition-note-title-color);
+}
+
+.rst-content .admonition.toggle .tb-icon {
+    height: 1em;
+    width: 1em;
+}
+
 /* Keyboard shortcuts tweaks */
-kbd, .kbd {
+kbd, .kbd,
+.rst-content :not(dl.option-list) > :not(dt):not(kbd):not(.kbd) > kbd,
+.rst-content :not(dl.option-list) > :not(dt):not(kbd):not(.kbd) > .kbd {
     background-color: var(--kbd-background-color);
     border: 1px solid var(--kbd-outline-color);
     border-radius: 3px;
@@ -556,6 +534,14 @@ kbd, .kbd {
     line-height: 11px;
     padding: 4px 5px;
     vertical-align: middle;
+}
+
+/* guilabel and menuselection tweaks */
+.rst-content .guilabel,
+.rst-content .menuselection {
+    color: var(--body-color);
+    background-color: var(--guiitems-background-color);
+    border-color: var(--guiitems-border-color);
 }
 
 /* Buttons */
@@ -619,7 +605,10 @@ kbd, .kbd {
     background-color: var(--navbar-background-color-active);
 }
 
-.wy-side-nav-search input[type="text"] {
+.wy-side-nav-search input[type=search] {
+    width: 100%;
+    border-radius: 50px;
+    padding: 6px 12px;
     background-color: var(--input-background-color);
     color: var(--body-color);
     /* Avoid reflowing when toggling the focus state */
@@ -630,11 +619,11 @@ kbd, .kbd {
     font-size: 14px;
 }
 
-.wy-side-nav-search input[type="text"]:focus {
+.wy-side-nav-search input[type="search"]:focus {
     border: 2px solid var(--input-focus-border-color);
 }
 
-.wy-side-nav-search input[type="text"]::placeholder {
+.wy-side-nav-search input[type="search"]::placeholder {
     color: var(--body-color);
     opacity: 0.55;
 }
@@ -956,3 +945,61 @@ dark-mode-toggle::part(toggleLabel){
    font-size: 3rem;
    color: white;
 }
+
+/* Custom search box, including search engine selection */
+
+.search-container {
+    position: relative;
+}
+
+#search-se-settings-icon {
+    position: absolute;
+    color: var(--body-color);
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+#search-se-menu {
+    display: none;
+    position: absolute;
+    font-size: 11px;
+    background-color: var(--input-background-color);
+    color: var(--body-color);
+    right: 0px;
+    top: 36px;
+    border: solid 1px var(--body-color);
+    border-radius: 10px;
+    z-index: 1000;
+}
+
+#search-se-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 2px;
+}
+
+#search-se-menu ul li {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1em;
+}
+
+#search-se-menu [role="menuitemradio"]:focus {
+    background-color: var(--navbar-current-background-color-hover);
+    color: var(--navbar-level-1-color);
+    border-radius: 10px;
+}
+
+#search-se-menu ul li .fa-check {
+    display: none;
+  }
+
+  #search-se-menu ul li.selected .fa-check {
+    display: inline;
+  }

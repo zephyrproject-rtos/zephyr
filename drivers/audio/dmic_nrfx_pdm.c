@@ -29,9 +29,7 @@ struct dmic_nrfx_pdm_drv_data {
 struct dmic_nrfx_pdm_drv_cfg {
 	nrfx_pdm_event_handler_t event_handler;
 	nrfx_pdm_config_t nrfx_def_cfg;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
-#endif
 	enum clock_source {
 		PCLK32M,
 		PCLK32M_HFXO,
@@ -41,7 +39,7 @@ struct dmic_nrfx_pdm_drv_cfg {
 
 static void free_buffer(struct dmic_nrfx_pdm_drv_data *drv_data, void *buffer)
 {
-	k_mem_slab_free(drv_data->mem_slab, &buffer);
+	k_mem_slab_free(drv_data->mem_slab, buffer);
 	LOG_DBG("Freed buffer %p", buffer);
 }
 
@@ -209,7 +207,7 @@ static bool check_pdm_frequencies(const struct dmic_nrfx_pdm_drv_cfg *drv_cfg,
 				better_found = true;
 			}
 
-			/* Since frequencies are are in ascending order, stop
+			/* Since frequencies are in ascending order, stop
 			 * checking next ones for the current ratio after
 			 * resulting PCM rate goes above the one requested.
 			 */
@@ -538,26 +536,21 @@ static const struct _dmic_ops dmic_ops = {
 };
 
 #define PDM(idx) DT_NODELABEL(pdm##idx)
-#define PDM_PIN(idx, name) DT_PROP_OR(PDM(idx), name##_pin, 0)
 #define PDM_CLK_SRC(idx) DT_STRING_TOKEN(PDM(idx), clock_source)
 
 #define PDM_NRFX_DEVICE(idx)						     \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(PDM(idx), 0, clk_pin, din_pin);	     \
 	static void *rx_msgs##idx[DT_PROP(PDM(idx), queue_size)];	     \
 	static struct dmic_nrfx_pdm_drv_data dmic_nrfx_pdm_data##idx;	     \
 	static int pdm_nrfx_init##idx(const struct device *dev)		     \
 	{								     \
 		IRQ_CONNECT(DT_IRQN(PDM(idx)), DT_IRQ(PDM(idx), priority),   \
 			    nrfx_isr, nrfx_pdm_irq_handler, 0);		     \
-		IF_ENABLED(CONFIG_PINCTRL, (				     \
-			const struct dmic_nrfx_pdm_drv_cfg *drv_cfg =	     \
-				dev->config;				     \
-			int err = pinctrl_apply_state(drv_cfg->pcfg,	     \
-						      PINCTRL_STATE_DEFAULT);\
-			if (err < 0) {					     \
-				return err;				     \
-			}						     \
-		))							     \
+		const struct dmic_nrfx_pdm_drv_cfg *drv_cfg = dev->config;   \
+		int err = pinctrl_apply_state(drv_cfg->pcfg,		     \
+					      PINCTRL_STATE_DEFAULT);	     \
+		if (err < 0) {						     \
+			return err;					     \
+		}							     \
 		k_msgq_init(&dmic_nrfx_pdm_data##idx.rx_queue,		     \
 			    (char *)rx_msgs##idx, sizeof(void *),	     \
 			    ARRAY_SIZE(rx_msgs##idx));			     \
@@ -568,15 +561,13 @@ static const struct _dmic_ops dmic_ops = {
 	{								     \
 		event_handler(DEVICE_DT_GET(PDM(idx)), evt);		     \
 	}								     \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(PDM(idx))));	     \
+	PINCTRL_DT_DEFINE(PDM(idx));					     \
 	static const struct dmic_nrfx_pdm_drv_cfg dmic_nrfx_pdm_cfg##idx = { \
 		.event_handler = event_handler##idx,			     \
-		.nrfx_def_cfg =	NRFX_PDM_DEFAULT_CONFIG(PDM_PIN(idx, clk),   \
-							PDM_PIN(idx, din)),  \
-		IF_ENABLED(CONFIG_PINCTRL,				     \
-			(.nrfx_def_cfg.skip_gpio_cfg = true,		     \
-			 .nrfx_def_cfg.skip_psel_cfg = true,		     \
-			 .pcfg = PINCTRL_DT_DEV_CONFIG_GET(PDM(idx)),))      \
+		.nrfx_def_cfg =	NRFX_PDM_DEFAULT_CONFIG(0, 0),		     \
+		.nrfx_def_cfg.skip_gpio_cfg = true,			     \
+		.nrfx_def_cfg.skip_psel_cfg = true,			     \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(PDM(idx)),		     \
 		.clk_src = PDM_CLK_SRC(idx),				     \
 	};								     \
 	BUILD_ASSERT(PDM_CLK_SRC(idx) != ACLK || NRF_PDM_HAS_MCLKCONFIG,     \

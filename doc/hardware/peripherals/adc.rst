@@ -1,7 +1,7 @@
 .. _adc_api:
 
-ADC
-###
+Analog-to-Digital Converter (ADC)
+#################################
 
 Overview
 ********

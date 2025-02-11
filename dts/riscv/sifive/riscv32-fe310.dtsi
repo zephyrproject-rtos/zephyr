@@ -27,10 +27,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		cpu: cpu@0 {
-			compatible = "sifive,e31";
+			compatible = "sifive,e31", "riscv";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv32imac";
+			riscv,isa = "rv32imac_zicsr_zifencei";
 			status = "okay";
 			hlic: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -123,10 +123,7 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0x0c000000 0x00002000
-			       0x0c002000 0x001fe000
-			       0x0c200000 0x03e00000>;
-			reg-names = "prio", "irq_en", "reg";
+			reg = <0x0c000000 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <52>;
 		};

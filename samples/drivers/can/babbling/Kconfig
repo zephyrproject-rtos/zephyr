@@ -22,10 +22,10 @@ config SAMPLE_CAN_BABBLING_RTR
 	  Babbling node sends Remote Transmission Request (RTR) frames.
 
 config SAMPLE_CAN_BABBLING_FD_MODE
-	bool "Send CAN-FD format frames"
+	bool "Send CAN FD format frames"
 	select CAN_FD_MODE
 	help
-	  Babbling node sends CAN-FD format frames.
+	  Babbling node sends CAN FD format frames.
 
 config SAMPLE_CAN_BABBLING_TX_QUEUE_SIZE
 	int "Maximum number of CAN frames to enqueue"

@@ -1,0 +1,5 @@
+board:
+  name: mimx8mm_phyboard_polis
+  vendor: phytec
+  socs:
+    - name: mimx8mm6

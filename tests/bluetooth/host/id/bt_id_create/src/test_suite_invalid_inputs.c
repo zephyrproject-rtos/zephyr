@@ -93,6 +93,10 @@ ZTEST(bt_id_create_invalid_inputs, test_public_address)
 {
 	int err;
 
+	if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+		ztest_test_skip();
+	}
+
 	err = bt_id_create(BT_LE_ADDR, NULL);
 
 	zassert_true(err == -EINVAL, "Unexpected error code '%d' was returned", err);
@@ -148,7 +152,7 @@ ZTEST(bt_id_create_invalid_inputs, test_pa_address_exists_in_id_list)
  *
  *  Constraints:
  *   - A static random address is used
- *   - Input IRK is is filled with zeros
+ *   - Input IRK is filled with zeros
  *
  *  Expected behaviour:
  *   - '-EINVAL' error code is returned representing invalid values were used.

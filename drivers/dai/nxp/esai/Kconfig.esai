@@ -1,0 +1,9 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_NXP_ESAI
+	bool "NXP Enhanced Serial Audio Interface (ESAI) driver"
+	default y
+	depends on DT_HAS_NXP_DAI_ESAI_ENABLED
+	help
+		Select this to enable NXP ESAI driver.

@@ -13,11 +13,11 @@
 #include "state_binding.h"
 #include "transition.h"
 
-struct transition transition;
+struct transition_data onoff_transition;
 
 /* Function to calculate Remaining Time (Start) */
 
-void calculate_rt(struct transition *transition)
+void calculate_rt(struct transition_data *transition)
 {
 	uint8_t steps, resolution;
 	int32_t duration_remainder;
@@ -62,7 +62,7 @@ void calculate_rt(struct transition *transition)
 
 /* Function to calculate Remaining Time (End) */
 
-static bool set_transition_counter(struct transition *transition)
+static bool set_transition_counter(struct transition_data *transition)
 {
 	uint8_t steps_multiplier, resolution;
 

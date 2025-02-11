@@ -9,6 +9,8 @@ import os
 import sys
 import pytest
 
+pytest_plugins = ["pytester"]
+
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
@@ -27,6 +29,10 @@ def _test_data():
     data = ZEPHYR_BASE + "/scripts/tests/twister/test_data/"
     return data
 
+@pytest.fixture(name='zephyr_base')
+def zephyr_base_directory():
+    return ZEPHYR_BASE
+
 @pytest.fixture(name='testsuites_dir')
 def testsuites_directory():
     """ Pytest fixture to load the test data directory"""
@@ -38,8 +44,9 @@ def tesenv_obj(test_data, testsuites_dir, tmpdir_factory):
     parser = add_parse_arguments()
     options = parse_arguments(parser, [])
     env = TwisterEnv(options)
-    env.board_roots = [test_data +"board_config/1_level/2_level/"]
-    env.test_roots = [testsuites_dir + '/tests', testsuites_dir + '/samples']
+    env.board_roots = [os.path.join(test_data, "board_config", "1_level", "2_level")]
+    env.test_roots = [os.path.join(testsuites_dir, 'tests', testsuites_dir, 'samples')]
+    env.test_config = os.path.join(test_data, "test_config.yaml")
     env.outdir = tmpdir_factory.mktemp("sanity_out_demo")
     return env
 
@@ -52,6 +59,7 @@ def testplan_obj(test_data, class_env, testsuites_dir, tmpdir_factory):
     env.test_roots = [testsuites_dir + '/tests', testsuites_dir + '/samples']
     env.outdir = tmpdir_factory.mktemp("sanity_out_demo")
     plan = TestPlan(env)
+    plan.parse_configuration(config_file=env.test_config)
     return plan
 
 @pytest.fixture(name='all_testsuites_dict')
@@ -67,8 +75,9 @@ def testsuites_dict(class_testplan):
 def all_platforms_list(test_data, class_testplan):
     """ Pytest fixture to call add_configurations function of
 	Testsuite class and return the Platforms list"""
-    class_testplan.env.board_roots = [os.path.abspath(test_data + "board_config")]
+    class_testplan.env.board_roots = [os.path.abspath(os.path.join(test_data, "board_config"))]
     plan = TestPlan(class_testplan.env)
+    plan.parse_configuration(config_file=class_testplan.env.test_config)
     plan.add_configurations()
     return plan.platforms
 

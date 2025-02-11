@@ -12,6 +12,9 @@
 	(IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO) && \
 	 (cig->lll.role == BT_HCI_ROLE_CENTRAL))
 
+/* BT Core 5.4, Vol 6, Part B, section 2.4.2.29 */
+#define CIS_MIN_OFFSET_MIN 500U
+
 /* Helper functions to initialize and reset ull_conn_iso module */
 int ull_conn_iso_init(void);
 int ull_conn_iso_reset(void);
@@ -31,9 +34,11 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_acl(struct ll_conn *conn,
 							 uint16_t *cis_iter);
 struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_group *cig,
 							   uint16_t *handle_iter);
+struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_id(uint8_t cis_id);
 
-void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
-			uint16_t cis_handle, uint16_t instant_latency);
+void ull_conn_iso_start(struct ll_conn *acl, uint16_t cis_handle,
+			uint32_t ticks_at_expire, uint32_t remainder,
+			uint16_t instant_latency);
 void ull_conn_iso_done(struct node_rx_event_done *done);
 void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 			   ll_iso_stream_released_cb_t cis_released_cb,

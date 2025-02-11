@@ -1,0 +1,8 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP ENET QOS MDIO Controller
+
+compatible: "nxp,enet-qos-mdio"
+
+include: [mdio-controller.yaml]

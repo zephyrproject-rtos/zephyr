@@ -3,6 +3,8 @@
 
 .PHONY: all clean
 
+OS = $(shell uname -s)
+
 CXXFLAGS :=
 CXXFLAGS += -std=c++17
 
@@ -14,6 +16,14 @@ GENOBJ = $(filter-out %.h, $(GENSRC:.cpp=.o))
 THRIFT_FLAGS :=
 THRIFT_FLAGS += $(shell pkg-config --cflags thrift)
 THRIFT_FLAGS += -I$(GEN_DIR)
+ifeq ($(OS),Darwin)
+# get Homebrew prefix
+HOMEBREW_PREFIX := $(shell brew --prefix)
+# get boost include path (no pkgconfig file)
+BOOST_INCLUDE := $(shell find $(HOMEBREW_PREFIX) -path '*/Cellar/boost/*/include' -type d | head -n 1)
+THRIFT_FLAGS += -I$(BOOST_INCLUDE)
+THRIFT_FLAGS += $(shell pkg-config --cflags openssl)
+endif
 THRIFT_LIBS :=
 THRIFT_LIBS = $(shell pkg-config --libs thrift)
 

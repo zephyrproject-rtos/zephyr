@@ -8,6 +8,6 @@ config SAMPLE_BT_USE_AUTHENTICATION
 	default y
 	help
 	  Enable the passkey authentication callback and register the GATT
-	  read and and write attributes as authentication required.
+	  read and write attributes as authentication required.
 
 source "Kconfig.zephyr"

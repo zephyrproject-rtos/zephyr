@@ -284,7 +284,7 @@ static struct mqtt_sn_decode_test decode_tests[] = {
 	},
 };
 
-static void test_mqtt_packet_decode(void)
+static ZTEST(mqtt_sn_packet, test_mqtt_packet_decode)
 {
 	struct net_buf_simple msg;
 	struct mqtt_sn_param param;
@@ -521,7 +521,7 @@ static struct mqtt_sn_encode_test encode_tests[] = {
 	}
 };
 
-static void test_mqtt_packet_encode(void)
+static ZTEST(mqtt_sn_packet, test_mqtt_packet_encode)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 255);
 	int err;
@@ -543,9 +543,4 @@ static void test_mqtt_packet_encode(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_mqtt_sn_packet_fn, ztest_unit_test(test_mqtt_packet_decode),
-			 ztest_unit_test(test_mqtt_packet_encode));
-	ztest_run_test_suite(test_mqtt_sn_packet_fn);
-}
+ZTEST_SUITE(mqtt_sn_packet, NULL, NULL, NULL, NULL, NULL);

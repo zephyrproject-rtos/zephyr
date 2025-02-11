@@ -15,7 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/lorawan/lorawan.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 LOG_MODULE_REGISTER(lorawan_clock_sync, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
 
@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(lorawan_clock_sync, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
  * Version of LoRaWAN Application Layer Clock Synchronization Specification
  *
  * This implementation only supports TS003-2.0.0, as the previous revision TS003-1.0.0
- * requested to temporarily disable ADR and and set nb_trans to 1. This causes issues on the
+ * requested to temporarily disable ADR and set nb_trans to 1. This causes issues on the
  * server side and is not recommended anymore.
  */
 #define CLOCK_SYNC_PACKAGE_VERSION 2
@@ -71,7 +71,7 @@ static struct clock_sync_context ctx;
  */
 static int clock_sync_serialize_device_time(uint8_t *buf, size_t size)
 {
-	uint32_t device_time = k_uptime_get() / MSEC_PER_SEC + ctx.time_offset;
+	uint32_t device_time = k_uptime_seconds() + ctx.time_offset;
 
 	if (size < sizeof(uint32_t)) {
 		return -ENOSPC;
@@ -83,6 +83,12 @@ static int clock_sync_serialize_device_time(uint8_t *buf, size_t size)
 	buf[3] = (device_time >> 24) & 0xFF;
 
 	return sizeof(uint32_t);
+}
+
+static inline k_timeout_t clock_sync_calc_periodicity(void)
+{
+	/* add +-30s jitter to nominal periodicity as required by the spec */
+	return K_SECONDS(ctx.periodicity - 30 + sys_rand32_get() % 61);
 }
 
 static void clock_sync_package_callback(uint8_t port, bool data_pending, int16_t rssi, int8_t snr,
@@ -145,6 +151,9 @@ static void clock_sync_package_callback(uint8_t port, bool data_pending, int16_t
 			tx_pos += clock_sync_serialize_device_time(tx_buf + tx_pos,
 								   sizeof(tx_buf) - tx_pos);
 
+			lorawan_services_reschedule_work(&ctx.resync_work,
+							 clock_sync_calc_periodicity());
+
 			LOG_DBG("DeviceAppTimePeriodicityReq period: %u", period);
 			break;
 		}
@@ -174,6 +183,12 @@ static int clock_sync_app_time_req(void)
 	uint8_t tx_pos = 0;
 	uint8_t tx_buf[6];
 
+	if (lorawan_services_class_c_active() > 0) {
+		/* avoid disturbing the session and causing potential package loss */
+		LOG_DBG("AppTimeReq not sent because of active class C session");
+		return -EBUSY;
+	}
+
 	tx_buf[tx_pos++] = CLOCK_SYNC_CMD_APP_TIME;
 	tx_pos += clock_sync_serialize_device_time(tx_buf + tx_pos,
 						       sizeof(tx_buf) - tx_pos);
@@ -185,24 +200,20 @@ static int clock_sync_app_time_req(void)
 
 	lorawan_services_schedule_uplink(LORAWAN_PORT_CLOCK_SYNC, tx_buf, tx_pos, 0);
 
-	if (ctx.nb_transmissions > 0) {
-		ctx.nb_transmissions--;
-		lorawan_services_reschedule_work(&ctx.resync_work, K_SECONDS(CLOCK_RESYNC_DELAY));
-	}
-
 	return 0;
 }
 
 static void clock_sync_resync_handler(struct k_work *work)
 {
-	uint32_t periodicity;
-
 	clock_sync_app_time_req();
 
-	/* Add +-30s jitter to actual periodicity as required */
-	periodicity = ctx.periodicity - 30 + sys_rand32_get() % 61;
-
-	lorawan_services_reschedule_work(&ctx.resync_work, K_SECONDS(periodicity));
+	if (ctx.nb_transmissions > 0) {
+		ctx.nb_transmissions--;
+		lorawan_services_reschedule_work(&ctx.resync_work, K_SECONDS(CLOCK_RESYNC_DELAY));
+	} else {
+		lorawan_services_reschedule_work(&ctx.resync_work,
+						 clock_sync_calc_periodicity());
+	}
 }
 
 int lorawan_clock_sync_get(uint32_t *gps_time)
@@ -210,7 +221,7 @@ int lorawan_clock_sync_get(uint32_t *gps_time)
 	__ASSERT(gps_time != NULL, "gps_time parameter is required");
 
 	if (ctx.synchronized) {
-		*gps_time = (uint32_t)(k_uptime_get() / MSEC_PER_SEC + ctx.time_offset);
+		*gps_time = k_uptime_seconds() + ctx.time_offset;
 		return 0;
 	} else {
 		return -EAGAIN;

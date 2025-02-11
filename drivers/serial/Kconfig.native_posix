@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config UART_NATIVE_POSIX
-	bool "UART driver for native_posix"
+	bool "UART driver for native_sim/posix"
 	default y
 	depends on DT_HAS_ZEPHYR_NATIVE_POSIX_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	help
 	  This enables a UART driver for the POSIX ARCH with up to 2 UARTs.
 	  For the first UART port, the driver can be configured
-	  to either connect to the terminal from which native_posix was run, or into
+	  to either connect to the terminal from which the executable was run, or into
 	  one dedicated pseudoterminal for that UART.
 
 if UART_NATIVE_POSIX
@@ -22,18 +22,17 @@ config NATIVE_UART_0_ON_OWN_PTY
 	help
 	  Connect this UART to its own pseudoterminal. This is the preferred
 	  option for users who want to use Zephyr's shell.
-	  Moreover this option does not conflict with any other native_posix
-	  backend which may use the calling shell standard input/output.
+	  Moreover this option does not conflict with any other native
+	  backend which may use the invoking shell standard input/output.
 
 config NATIVE_UART_0_ON_STDINOUT
 	bool "Connect the UART to the invoking shell stdin/stdout"
 	help
 	  Connect this UART to the stdin & stdout of the calling shell/terminal
-	  which invoked the native_posix executable. This is good enough for
+	  which invoked the native executable. This is good enough for
 	  automated testing, or when feeding from a file/pipe.
 	  Note that other, non UART messages, will also be printed to the
-	  terminal. This option should NOT be used in conjunction with
-	  NATIVE_POSIX_STDIN_CONSOLE
+	  terminal.
 	  It is strongly discouraged to try to use this option with the new
 	  shell interactively, as the default terminal configuration is NOT
 	  appropriate for interactive use.
@@ -61,7 +60,7 @@ config NATIVE_UART_AUTOATTACH_DEFAULT_CMD
 	string "Default command to attach the UART to a new terminal"
 	default "xterm -e screen %s &"
 	help
-	  If the native_posix executable is called with the --attach_uart
+	  If the native executable is called with the --attach_uart
 	  command line option, this will be the default command which will be
 	  run to attach a new terminal to the 1st UART.
 	  Note that this command must have one, and only one, '%s' as

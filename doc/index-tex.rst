@@ -23,3 +23,5 @@ Zephyr Project Documentation
    contribute/index.rst
    project/index.rst
    security/index.rst
+   safety/index.rst
+   glossary.rst

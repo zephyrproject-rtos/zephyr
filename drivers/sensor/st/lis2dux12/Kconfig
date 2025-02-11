@@ -1,0 +1,30 @@
+# ST Microelectronics LIS2DUX12 3-axis accelerometer driver
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LIS2DUX12
+	bool "LIS2DUX12 I2C/SPI accelerometer sensor driver"
+	default y
+	depends on DT_HAS_ST_LIS2DUX12_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUX12),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUX12),spi)
+	select HAS_STMEMSC
+	select USE_STDC_LIS2DUX12
+	help
+	  Enable driver for LIS2DUX12 accelerometer sensor driver
+
+if LIS2DUX12
+
+module = LIS2DUX12
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+config LIS2DUX12_ENABLE_TEMP
+	bool "Temperature"
+	help
+	  Enable/disable temperature
+
+endif # LIS2DUX12

@@ -3,7 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_64BIT
+. = ALIGN(8);
+#else
 . = ALIGN(4);
+#endif
 
 PROVIDE_HIDDEN (__init_array_start = .);
 KEEP (*(SORT(.init_array.*)))

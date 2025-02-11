@@ -1,9 +1,0 @@
-#  Copyright (c) 2020 Linaro Limited
-#  SPDX-License-Identifier: Apache-2.0
-
-if BOARD_96B_AEROCORE2
-
-config BOARD
-	default "96b_aerocore2"
-
-endif # BOARD_96B_AEROCORE2

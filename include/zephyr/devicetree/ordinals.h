@@ -25,6 +25,13 @@
 #define DT_DEP_ORD(node_id) DT_CAT(node_id, _ORD)
 
 /**
+ * @brief Get a node's dependency ordinal in string sortable form
+ * @param node_id Node identifier
+ * @return the node's dependency ordinal as a zero-padded integer literal
+ */
+#define DT_DEP_ORD_STR_SORTABLE(node_id) DT_CAT(node_id, _ORD_STR_SORTABLE)
+
+/**
  * @brief Get a list of dependency ordinals of a node's direct dependencies
  *
  * There is a comma after each ordinal in the expansion, **including**

@@ -60,7 +60,7 @@
 		interrupt-parent = <&gic>;
 
 		gic: interrupt-controller@af000000 {
-			compatible = "arm,gic";
+			compatible = "arm,gic-v3", "arm,gic";
 			reg = <0xaf000000 0x10000>,
 			      <0xaf100000 0x200000>;
 			interrupt-controller;
@@ -102,6 +102,31 @@
 			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_8";
 			clocks = <&uartclk>;
+		};
+
+		ethernet@9a000000 {
+			reg = <0x9a000000 0x1000>;
+
+			eth: ethernet {
+				compatible = "smsc,lan91c111";
+				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+
+				phy-handle = <&phy>;
+			};
+
+			mdio: mdio {
+				compatible = "smsc,lan91c111-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				phy: ethernet-phy@0 {
+					compatible = "ethernet-phy";
+					status = "disabled";
+					reg = <0>;
+				};
+			};
 		};
 	};
 };

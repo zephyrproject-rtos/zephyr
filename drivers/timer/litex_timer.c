@@ -8,10 +8,12 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/timer/system_timer.h>
+
+#include <soc.h>
 
 #define TIMER_LOAD_ADDR			DT_INST_REG_ADDR_BY_NAME(0, load)
 #define TIMER_RELOAD_ADDR		DT_INST_REG_ADDR_BY_NAME(0, reload)
@@ -77,9 +79,8 @@ uint32_t sys_clock_elapsed(void)
 	return 0;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 	IRQ_CONNECT(TIMER_IRQ, DT_INST_IRQ(0, priority),
 			litex_timer_irq_handler, NULL, 0);
 	irq_enable(TIMER_IRQ);

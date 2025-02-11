@@ -1,0 +1,61 @@
+# Kinetis K8x series MCU
+
+# Copyright (c) 2019 SEAL AG
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KINETIS_K8X
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_NXP_MPU
+	select CPU_HAS_FPU
+	select CLOCK_CONTROL
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_FTM
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_PIT
+	select HAS_MCUX_RTC
+	select HAS_MCUX_SIM
+	select HAS_MCUX_TRNG
+	select HAS_OSC
+	select HAS_MCG
+	select HAS_MCUX_EDMA
+	select HAS_MCUX_PIT
+	select HAS_MCUX_RCM
+	select HAS_MCUX_CACHE
+	select PLATFORM_SPECIFIC_INIT
+
+if SOC_SERIES_KINETIS_K8X
+
+config K8X_CORE_CLOCK_DIVIDER
+	int "Freescale K8x core clock divider"
+	default 1
+	help
+	  This option specifies the divide value for the K8x processor core clock
+	  from the system clock.
+
+config K8X_BUS_CLOCK_DIVIDER
+	int "Freescale K8x bus clock divider"
+	default 2
+	help
+	  This option specifies the divide value for the K8x bus clock from the
+	  system clock.
+
+config K8X_FLEXBUS_CLOCK_DIVIDER
+	int "Freescale K8x FlexBus clock divider"
+	default 2
+	help
+	  This option specifies the divide value for the K8x FlexBus clock from the
+	  system clock.
+
+config K8X_FLASH_CLOCK_DIVIDER
+	int "Freescale K8x flash clock divider"
+	default 5
+	help
+	  This option specifies the divide value for the K8x flash clock from the
+	  system clock.
+
+endif # SOC_SERIES_KINETIS_K8X

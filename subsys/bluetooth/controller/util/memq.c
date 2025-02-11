@@ -94,7 +94,7 @@ memq_link_t *memq_enqueue(memq_link_t *link, void *mem, memq_link_t **tail)
 	/* Let the old tail element point to the new tail element */
 	(*tail)->next = link;
 
-	/* Let the old tail element point the the new memory */
+	/* Let the old tail element point the new memory */
 	(*tail)->mem = mem;
 
 	/* Update the tail-pointer to point to the new tail element.

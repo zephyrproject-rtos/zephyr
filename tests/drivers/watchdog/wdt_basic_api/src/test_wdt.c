@@ -98,10 +98,21 @@
 #define WDT_NODE DT_INST(0, gd_gd32_fwdgt)
 #elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_counter_watchdog)
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_wwdt)
+#define WDT_NODE DT_INST(0, nuvoton_numaker_wwdt)
+#define TIMEOUTS 1
+#elif DT_HAS_COMPAT_STATUS_OKAY(andestech_atcwdt200)
+#define WDT_NODE DT_INST(0, andestech_atcwdt200)
+#define TIMEOUTS 0
+#define WDT_TEST_MAX_WINDOW 200U
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
 #define WDT_TEST_MAX_WINDOW 20000U
 #define TIMEOUTS 0
+#endif
+#if DT_HAS_COMPAT_STATUS_OKAY(intel_tco_wdt)
+#define TIMEOUTS 0
+#define WDT_TEST_MAX_WINDOW 3000U
 #endif
 
 #define WDT_TEST_STATE_IDLE        0
@@ -201,11 +212,17 @@ static int test_wdt_no_callback(void)
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
 	if (err < 0) {
 		TC_PRINT("Watchdog install error\n");
+		return TC_FAIL;
 	}
 
 	err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
+	if (err == -ENOTSUP) {
+		TC_PRINT("- pausing watchdog by debugger is not supported\n");
+		err = wdt_setup(wdt, 0);
+	}
 	if (err < 0) {
 		TC_PRINT("Watchdog setup error\n");
+		return TC_FAIL;
 	}
 
 	TC_PRINT("Waiting to restart MCU\n");
@@ -257,6 +274,10 @@ static int test_wdt_callback_1(void)
 	}
 
 	err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
+	if (err == -ENOTSUP) {
+		TC_PRINT("- pausing watchdog by debugger is not supported\n");
+		err = wdt_setup(wdt, 0);
+	}
 	if (err < 0) {
 		TC_PRINT("Watchdog setup error\n");
 		return TC_FAIL;
@@ -317,6 +338,10 @@ static int test_wdt_callback_2(void)
 	}
 
 	err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
+	if (err == -ENOTSUP) {
+		TC_PRINT("- pausing watchdog by debugger is not supported\n");
+		err = wdt_setup(wdt, 0);
+	}
 	if (err < 0) {
 		TC_PRINT("Watchdog setup error\n");
 		return TC_FAIL;

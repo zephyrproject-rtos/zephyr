@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2022-2023, Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <soc_gpio.h>
 
 /** Utility macro that expands to the GPIO port address if it exists */
@@ -13,9 +14,9 @@
 		   (DT_REG_ADDR(DT_NODELABEL(nodelabel)),))
 
 /** Utility macro that expands to the GPIO Peripheral ID if it exists */
-#define SAM_PORT_PERIPH_ID_OR_NONE(nodelabel)					\
+#define SAM_PORT_CLOCKS_OR_NONE(nodelabel)					\
 	IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),			\
-		   (DT_PROP(DT_NODELABEL(nodelabel), peripheral_id),))
+		   (SAM_DT_CLOCK_PMC_CFG(0, DT_NODELABEL(nodelabel)),))
 
 /** SAM port addresses */
 static const uint32_t sam_port_addrs[] = {
@@ -33,19 +34,19 @@ static const uint32_t sam_port_addrs[] = {
 #endif
 };
 
-/** SAM port peripheral id */
-static const uint32_t sam_port_periph_id[] = {
+/** SAM port clocks */
+static const struct atmel_sam_pmc_config sam_port_clocks[] = {
 #ifdef ID_GPIO
-	SAM_PORT_PERIPH_ID_OR_NONE(gpioa)
-	SAM_PORT_PERIPH_ID_OR_NONE(gpiob)
-	SAM_PORT_PERIPH_ID_OR_NONE(gpioc)
+	SAM_PORT_CLOCKS_OR_NONE(gpioa)
+	SAM_PORT_CLOCKS_OR_NONE(gpiob)
+	SAM_PORT_CLOCKS_OR_NONE(gpioc)
 #else
-	SAM_PORT_PERIPH_ID_OR_NONE(pioa)
-	SAM_PORT_PERIPH_ID_OR_NONE(piob)
-	SAM_PORT_PERIPH_ID_OR_NONE(pioc)
-	SAM_PORT_PERIPH_ID_OR_NONE(piod)
-	SAM_PORT_PERIPH_ID_OR_NONE(pioe)
-	SAM_PORT_PERIPH_ID_OR_NONE(piof)
+	SAM_PORT_CLOCKS_OR_NONE(pioa)
+	SAM_PORT_CLOCKS_OR_NONE(piob)
+	SAM_PORT_CLOCKS_OR_NONE(pioc)
+	SAM_PORT_CLOCKS_OR_NONE(piod)
+	SAM_PORT_CLOCKS_OR_NONE(pioe)
+	SAM_PORT_CLOCKS_OR_NONE(piof)
 #endif
 };
 
@@ -63,7 +64,7 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 #else
 	soc_pin.regs = (Pio *) sam_port_addrs[port_idx];
 #endif
-	soc_pin.periph_id = sam_port_periph_id[port_idx];
+	soc_pin.periph_id = sam_port_clocks[port_idx].peripheral_id;
 	soc_pin.mask = 1 << SAM_PINMUX_PIN_GET(pin);
 	soc_pin.flags = SAM_PINCTRL_FLAGS_GET(pin) << SOC_GPIO_FLAGS_POS;
 

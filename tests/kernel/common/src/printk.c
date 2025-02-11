@@ -17,32 +17,61 @@ int (*_old_char_out)(int);
 
 #if defined(CONFIG_PICOLIBC)
 
+#define ZEPHYR_PICOLIBC_VERSION (__PICOLIBC__ * 10000 + \
+				 __PICOLIBC_MINOR__ * 100 + \
+				 __PICOLIBC_PATCHLEVEL__)
+
+#ifdef CONFIG_PICOLIBC_IO_MINIMAL
 /*
- * Picolibc long long support is present if the picolibc _WANT_IO_LONG_LONG
- * symbol is defined or if the Zephyr configuration has enabled floating
- * point support. Note that CONFIG_PICOLIBC_IO_LONG_LONG is only useful
- * when using the picolibc module as it cannot affect picolibc included
- * with the toolchain
+ * If picolibc is >= 1.8.4, then minimal printf is available. Otherwise,
+ * we're going to get the floating point version when the minimal one is
+ * selected.
+ */
+#if ZEPHYR_PICOLIBC_VERSION >= 10804
+#define HAS_PICOLIBC_IO_MINIMAL
+#else
+#define HAS_PICOLIBC_IO_FLOAT
+#endif
+#endif
+
+#ifdef CONFIG_PICOLIBC_IO_LONG_LONG
+/*
+ * If picolibc is >= 1.8.5, then long long printf is available. Otherwise,
+ * we're going to get the floating point version when the long long one is
+ * selected.
+ */
+#if ZEPHYR_PICOLIBC_VERSION >= 10805
+#define HAS_PICOLIBC_IO_LONG_LONG
+#else
+#define HAS_PICOLIBC_IO_FLOAT
+#endif
+#endif
+
+#ifdef CONFIG_PICOLIBC_IO_FLOAT
+#define HAS_PICOLIBC_IO_FLOAT
+#endif
+
+/*
+ * Picolibc long long support is present if Zephyr configuration has
+ * enabled long long or floating point support.
  */
 
 char expected_32[] = "22 113 10000 32768 40000 22\n"
 	"p 112 -10000 -32768 -40000 -22\n"
-	"0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
-	"0x1 0x 1 0x   1 0x       1\n"
-	"42 42 0042 00000042\n"
-	"-42 -42 -042 -0000042\n"
-	"42 42   42       42\n"
-	"42 42 0042 00000042\n"
-	"255     42    abcdef        42\n"
-#if defined(_WANT_IO_LONG_LONG) || defined(CONFIG_PICOLIBC_IO_FLOAT)
+#if defined(HAS_PICOLIBC_IO_MINIMAL)
+	"0x1 0x1 0x1 0x1 0x1\n"
+	"0x1 0x1 0x1 0x1\n"
+	"42 42 42 42\n"
+	"-42 -42 -42 -42\n"
+	"42 42 42 42\n"
+	"42 42 42 42\n"
+	"25542abcdef  42\n"
+#if defined(_WANT_MINIMAL_IO_LONG_LONG)
 	"68719476735 -1 18446744073709551615 ffffffffffffffff\n"
 #else
 	"-1 -1 4294967295 ffffffff\n"
 #endif
-	"0xcafebabe 0xbeef 0x2a\n"
-;
-char expected_64[] = "22 113 10000 32768 40000 22\n"
-	"p 112 -10000 -32768 -40000 -22\n"
+#else
 	"0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
 	"0x1 0x 1 0x   1 0x       1\n"
 	"42 42 0042 00000042\n"
@@ -50,6 +79,34 @@ char expected_64[] = "22 113 10000 32768 40000 22\n"
 	"42 42   42       42\n"
 	"42 42 0042 00000042\n"
 	"255     42    abcdef        42\n"
+#if defined(HAS_PICOLIBC_IO_LONG_LONG) || defined(HAS_PICOLIBC_IO_FLOAT)
+	"68719476735 -1 18446744073709551615 ffffffffffffffff\n"
+#else
+	"-1 -1 4294967295 ffffffff\n"
+#endif
+#endif
+	"0xcafebabe 0xbeef 0x2a\n"
+;
+
+char expected_64[] = "22 113 10000 32768 40000 22\n"
+	"p 112 -10000 -32768 -40000 -22\n"
+#if defined(HAS_PICOLIBC_IO_MINIMAL)
+	"0x1 0x1 0x1 0x1 0x1\n"
+	"0x1 0x1 0x1 0x1\n"
+	"42 42 42 42\n"
+	"-42 -42 -42 -42\n"
+	"42 42 42 42\n"
+	"42 42 42 42\n"
+	"25542abcdef  42\n"
+#else
+	"0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
+	"0x1 0x 1 0x   1 0x       1\n"
+	"42 42 0042 00000042\n"
+	"-42 -42 -042 -0000042\n"
+	"42 42   42       42\n"
+	"42 42 0042 00000042\n"
+	"255     42    abcdef        42\n"
+#endif
 	"68719476735 -1 18446744073709551615 ffffffffffffffff\n"
 	"0xcafebabe 0xbeef 0x2a\n"
 ;
@@ -161,7 +218,9 @@ ZTEST(printk, test_printk)
 	printk("0x%x %p %-2p\n", hex, ptr, (char *)42);
 
 	pk_console[pos] = '\0';
-	zassert_true((strcmp(pk_console, expected) == 0), "printk failed");
+	__printk_hook_install(_old_char_out);
+	printk("expected '%s'\n", expected);
+	zassert_str_equal(pk_console, expected, "printk failed");
 
 	(void)memset(pk_console, 0, sizeof(pk_console));
 	count = 0;
@@ -192,8 +251,12 @@ ZTEST(printk, test_printk)
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "0x%x %p %-2p\n", hex, ptr, (char *)42);
 	pk_console[count] = '\0';
-	zassert_true((strcmp(pk_console, expected) == 0), "snprintk failed");
+	zassert_str_equal(pk_console, expected, "snprintk failed");
 }
+
+extern void *common_setup(void);
+ZTEST_SUITE(printk, NULL, common_setup, NULL, NULL, NULL);
+
 /**
  * @}
  */

@@ -14,13 +14,11 @@
  * HAL includes go first to
  * avoid BIT macro redefinition
  */
-#include <esp_spi_flash.h>
-#include <hal/spi_ll.h>
-#include <hal/spi_flash_ll.h>
-#include <hal/spi_flash_hal.h>
+#include <esp_flash.h>
+#include <spi_flash_mmap.h>
 #include <soc/spi_struct.h>
-#include <spi_flash_defs.h>
 #include <esp_flash_encrypt.h>
+#include <esp_flash_internal.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -30,35 +28,19 @@
 #include <zephyr/drivers/flash.h>
 #include <soc.h>
 
-#if defined(CONFIG_SOC_ESP32)
-#include "soc/dport_reg.h"
-#include "esp32/rom/cache.h"
-#include "esp32/rom/spi_flash.h"
-#include "esp32/spiram.h"
-#elif defined(CONFIG_SOC_ESP32S2)
-#include "soc/spi_mem_reg.h"
-#include "esp32s2/rom/cache.h"
-#include "esp32s2/rom/spi_flash.h"
-#elif defined(CONFIG_SOC_ESP32C3)
-#include "soc/spi_periph.h"
-#include "soc/spi_mem_reg.h"
-#include "soc/dport_access.h"
-#include "esp32c3/dport_access.h"
-#include "esp32c3/rom/cache.h"
-#include "esp32c3/rom/spi_flash.h"
-#endif
-
-#include "soc/mmu.h"
-
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_esp32, CONFIG_FLASH_LOG_LEVEL);
+
+#define FLASH_SEM_TIMEOUT (k_is_in_isr() ? K_NO_WAIT : K_FOREVER)
 
 struct flash_esp32_dev_config {
 	spi_dev_t *controller;
 };
 
 struct flash_esp32_dev_data {
+#ifdef CONFIG_MULTITHREADING
 	struct k_sem sem;
+#endif
 };
 
 static const struct flash_parameters flash_esp32_parameters = {
@@ -66,11 +48,12 @@ static const struct flash_parameters flash_esp32_parameters = {
 	.erase_value = 0xff,
 };
 
+#ifdef CONFIG_MULTITHREADING
 static inline void flash_esp32_sem_take(const struct device *dev)
 {
 	struct flash_esp32_dev_data *data = dev->data;
 
-	k_sem_take(&data->sem, K_FOREVER);
+	k_sem_take(&data->sem, FLASH_SEM_TIMEOUT);
 }
 
 static inline void flash_esp32_sem_give(const struct device *dev)
@@ -79,6 +62,12 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 
 	k_sem_give(&data->sem);
 }
+#else
+
+#define flash_esp32_sem_take(dev) do {} while (0)
+#define flash_esp32_sem_give(dev) do {} while (0)
+
+#endif /* CONFIG_MULTITHREADING */
 
 static int flash_esp32_read(const struct device *dev, off_t address, void *buffer, size_t length)
 {
@@ -86,12 +75,16 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 
 	flash_esp32_sem_take(dev);
 	if (!esp_flash_encryption_enabled()) {
-		ret = spi_flash_read(address, buffer, length);
+		ret = esp_flash_read(NULL, buffer, address, length);
 	} else {
-		ret = spi_flash_read_encrypted(address, buffer, length);
+		ret = esp_flash_read_encrypted(NULL, address, buffer, length);
 	}
 	flash_esp32_sem_give(dev);
-	return ret;
+	if (ret != 0) {
+		LOG_ERR("esp_flash_read failed %d", ret);
+		return -EIO;
+	}
+	return 0;
 }
 
 static int flash_esp32_write(const struct device *dev,
@@ -103,20 +96,29 @@ static int flash_esp32_write(const struct device *dev,
 
 	flash_esp32_sem_take(dev);
 	if (!esp_flash_encryption_enabled()) {
-		ret = spi_flash_write(address, buffer, length);
+		ret = esp_flash_write(NULL, buffer, address, length);
 	} else {
-		ret = spi_flash_write_encrypted(address, buffer, length);
+		ret = esp_flash_write_encrypted(NULL, address, buffer, length);
 	}
 	flash_esp32_sem_give(dev);
-	return ret;
+
+	if (ret != 0) {
+		LOG_ERR("esp_flash_write failed %d", ret);
+		return -EIO;
+	}
+	return 0;
 }
 
 static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 {
 	flash_esp32_sem_take(dev);
-	int ret = spi_flash_erase_range(start, len);
+	int ret = esp_flash_erase_region(NULL, start, len);
 	flash_esp32_sem_give(dev);
-	return ret;
+	if (ret != 0) {
+		LOG_ERR("esp_flash_erase_region failed %d", ret);
+		return -EIO;
+	}
+	return 0;
 }
 
 #if CONFIG_FLASH_PAGE_LAYOUT
@@ -145,9 +147,16 @@ flash_esp32_get_parameters(const struct device *dev)
 static int flash_esp32_init(const struct device *dev)
 {
 	struct flash_esp32_dev_data *const dev_data = dev->data;
+	uint32_t ret = 0;
 
+#ifdef CONFIG_MULTITHREADING
 	k_sem_init(&dev_data->sem, 1, 1);
-
+#endif /* CONFIG_MULTITHREADING */
+	ret = esp_flash_init_default_chip();
+	if (ret != 0) {
+		LOG_ERR("esp_flash_init_default_chip failed %d", ret);
+		return 0;
+	}
 	return 0;
 }
 

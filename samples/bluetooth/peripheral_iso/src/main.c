@@ -22,6 +22,10 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -91,8 +95,10 @@ static void iso_print_data(uint8_t *data, size_t data_len)
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
-	printk("Incoming data channel %p len %u\n", chan, buf->len);
-	iso_print_data(buf->data, buf->len);
+	if (info->flags & BT_ISO_FLAGS_VALID) {
+		printk("Incoming data channel %p len %u\n", chan, buf->len);
+		iso_print_data(buf->data, buf->len);
+	}
 }
 
 static void iso_connected(struct bt_iso_chan *chan)
@@ -148,14 +154,14 @@ static struct bt_iso_server iso_server = {
 	.accept = iso_accept,
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
@@ -167,14 +173,15 @@ void main(void)
 	err = bt_iso_server_register(&iso_server);
 	if (err) {
 		printk("Unable to register ISO server (err %d)\n", err);
-		return;
+		return 0;
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Advertising successfully started\n");
+	return 0;
 }

@@ -1,7 +1,7 @@
 .. _uart_api:
 
-UART
-####
+Universal Asynchronous Receiver-Transmitter (UART)
+##################################################
 
 Overview
 ********
@@ -27,6 +27,15 @@ the thread and the UART driver.
 The Asynchronous API allows to read and write data in the background using DMA
 without interrupting the MCU at all. However, the setup is more complex
 than the other methods.
+
+.. warning::
+
+   Interrupt-driven API and the Asynchronous API should NOT be used at
+   the same time for the same hardware peripheral, since both APIs require
+   hardware interrupts to function properly. Using the callbacks for both
+   APIs would result in interference between each other.
+   :kconfig:option:`CONFIG_UART_EXCLUSIVE_API_CALLBACKS` is enabled by default
+   so that only the callbacks associated with one API is active at a time.
 
 
 Configuration Options

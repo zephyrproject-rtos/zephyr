@@ -1,0 +1,7 @@
+# EFM32HG SLSTK3400A board
+
+# Copyright (c) 2018, Marcio Montenegro
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SLSTK3400A
+	select SOC_PART_NUMBER_EFM32HG322F64

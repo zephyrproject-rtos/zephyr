@@ -1,0 +1,179 @@
+/*
+ * Copyright (c) 2019 Brett Witherspoon
+ * Copyright (c) 2020 Friedt Professional Engineering Services, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc1352r.dtsi>
+#include "../cc1352r1_launchxl/boosterpack_connector.dtsi"
+#include "cc1352r_sensortag-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
+
+/ {
+	model = "TI CC1352R1 SensorTag";
+	compatible = "ti,sensortag-cc1352r";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &btn0;
+		sw1 = &btn1;
+		sensor0 = &sensor0;
+		sensor1 = &sensor1;
+		sensor2 = &sensor2;
+		accel0 = &sensor1;
+		watchdog0 = &wdt0;
+		mcuboot-led0 = &led1;
+		mcuboot-button0 = &btn1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		btn0: btn_0 {
+			gpios = <&gpio0 15 BTN_GPIO_FLAGS>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		btn1: btn_1 {
+			gpios = <&gpio0 14 BTN_GPIO_FLAGS>;
+			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		/* 40 KiB (0xa000) for MCUboot */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000a000>;
+		};
+
+		/* 136 KiB (0x22000) per slot for application */
+		slot0_partition: partition@a000 {
+			label = "image-0";
+			reg = <0x0000a000 0x00022000>;
+		};
+
+		slot1_partition: partition@2c000 {
+			label = "image-1";
+			reg = <0x0002c000 0x00022000>;
+		};
+
+		/* 32 KiB (0x8000) for storage */
+		storage_partition: partition@4e000 {
+			label = "storage";
+			reg = <0x0004e000 0x00008000>;
+		};
+
+		/* CCFG (customer configuration area) is located in uppermost
+		 * flash sector (0x2000/8 KiB @ 0x56000), keep it unused.
+		 */
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&trng {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_default &i2c0_sda_default>;
+	pinctrl-1 = <&i2c0_scl_sleep &i2c0_sda_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	sensor0: sensor@44 {
+		compatible = "ti,opt3001";
+		reg = <0x44>;
+	};
+
+	sensor2: sensor@41 {
+		compatible = "ti,hdc2080";
+		reg = <0x41>;
+		int-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_sck_default &spi0_mosi_default
+				 &spi0_miso_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+
+	sensor1: sensor@0 {
+		compatible = "adi,adxl362";
+		reg = <0>;
+		int1-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <8000000>;
+	};
+
+	/* TODO: "jedec,spi-nor" for the mx25r8035 */
+};
+
+&radio {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&ieee802154g {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};

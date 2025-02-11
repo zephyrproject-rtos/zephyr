@@ -18,14 +18,14 @@
 static struct bt_csip_set_member_svc_inst *svc_inst;
 
 static void csip_lock_changed_cb(struct bt_conn *conn,
-				 struct bt_csip_set_member_svc_inst *svc_inst,
+				 struct bt_csip_set_member_svc_inst *inst,
 				 bool locked)
 {
 	printk("Client %p %s the lock\n", conn, locked ? "locked" : "released");
 }
 
 static uint8_t sirk_read_req_cb(struct bt_conn *conn,
-				struct bt_csip_set_member_svc_inst *svc_inst)
+				struct bt_csip_set_member_svc_inst *inst)
 {
 	return BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 }
@@ -41,7 +41,7 @@ int csip_set_member_init(void)
 		.set_size = 2,
 		.rank = CONFIG_HAP_HA_SET_RANK,
 		.lockable = false,
-		.set_sirk = CSIP_SIRK_DEBUG,
+		.sirk = CSIP_SIRK_DEBUG,
 		.cb = &csip_cb,
 	};
 

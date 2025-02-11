@@ -1,0 +1,22 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  QSPI memory device supporting xSPI or Hyperbus.
+
+compatible: "nxp,s32-qspi-device"
+
+include: [base.yaml, "jedec,jesd216.yaml"]
+
+on-bus: qspi
+
+properties:
+  reg:
+    required: true
+
+  memory-alignment:
+    type: int
+    description: |
+      Memory alignment in bytes, used to calculate padding when performing
+      unaligned accesses.
+      If not provided, 1 byte alignment will be selected.

@@ -5,10 +5,4 @@ description: Nuclei Bumblebee RISC-V Core
 
 compatible: "nuclei,bumblebee"
 
-include: cpu.yaml
-
-properties:
-  mcause-exception-mask:
-    type: int
-    required: true
-    description: Specify the bits to use for exception code in mcause register.
+include: riscv,cpus.yaml

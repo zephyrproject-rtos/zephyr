@@ -15,7 +15,8 @@ zephyr_library_sources(
   intel64/thread.c
   intel64/fatal.c
 )
-
+zephyr_library_sources_ifdef(CONFIG_SMP		intel64/smp.c)
+zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD		intel64/irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE	intel64/userspace.S)
-
+zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE	intel64/tls.c)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP	intel64/coredump.c)

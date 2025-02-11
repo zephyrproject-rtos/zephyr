@@ -9,3 +9,9 @@ description: |
 include: sensor-device.yaml
 
 compatible: "bosch,bmi270"
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      The INT1 and (optional) INT2 signal connections.

@@ -98,4 +98,8 @@ void smp_dummy_disable(void);
  */
 bool smp_dummy_get_status(void);
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_DUMMY_H_ */

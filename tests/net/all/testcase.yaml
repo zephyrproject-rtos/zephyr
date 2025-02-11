@@ -3,7 +3,9 @@ common:
   platform_allow: qemu_x86
   build_only: true
   min_ram: 32
-  tags: net net-all
+  tags:
+    - net
+    - net-all
 tests:
   net.build:
     extra_configs:

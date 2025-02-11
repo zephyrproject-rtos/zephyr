@@ -11,69 +11,17 @@ menuconfig ETH_NATIVE_POSIX
 	  a process in your host system.
 
 if ETH_NATIVE_POSIX
-config ETH_NATIVE_POSIX_STARTUP_AUTOMATIC
-	bool "Start network interface automatically"
-	help
-	  If set, the native_posix ethernet driver will set up the network
-	  interface, requiring ``zephyr.exe`` to be run with root privileges
-	  (needed to create and configure the TAP device).
-	  If not set (the default and recommended way), the network interface
-	  must be set up manually using ``net-setup.sh`` (from the net-tools
-	  project repo). The ``zephyr.exe`` program can then be run as a
-	  non-root user.
-
-if ETH_NATIVE_POSIX_STARTUP_AUTOMATIC
-
-config ETH_NATIVE_POSIX_SETUP_SCRIPT
-	string "Host setup script"
-	default "${ZEPHYR_BASE}/samples/net/eth_native_posix/net_setup_host"
-	help
-	  This option sets the name of the script that is run when the host TAP
-	  network interface is created. The script should setup IP addresses
-	  etc. for the host TAP network interface.
-	  The default script accepts following options:
-	  -i|--interface <network interface name>, default is zeth
-	  -f|--file <config file name>, default is net_setup_host.conf
-	  If needed, you can add these options to this script name option.
-	  Note that the driver will add -i option with the value of
-	  CONFIG_ETH_NATIVE_POSIX_DRV_NAME option to the end of the options
-	  list when calling the host setup script.
-
-config ETH_NATIVE_POSIX_STARTUP_SCRIPT
-	string "Host startup script"
-	default ""
-	help
-	  This option sets the name of the script that is run when the host TAP
-	  network interface is created and setup script has been run.
-	  The startup script could launch e.g., wireshark to capture
-	  the network traffic for the freshly started network interface.
-	  Note that the network interface name CONFIG_ETH_NATIVE_POSIX_DRV_NAME
-	  is appended at the end of this startup script name.
-	  Example script for starting wireshark is provided in
-	  ${ZEPHYR_BASE}/samples/net/eth_native_posix/net_start_wireshark.sh
-	  file.
-
-config ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER
-	string "Username to run the host startup script"
-	default ""
-	help
-	  By default the startup script is run as a root user. Set here the
-	  username to run the script if running it as a root user is not
-	  desired. Note that this setting is only for startup script and not
-	  for the setup script. The setup script needs to be run always as
-	  a root user.
-
-endif # ETH_NATIVE_POSIX_STARTUP_AUTOMATIC
 
 config ETH_NATIVE_POSIX_INTERFACE_COUNT
 	int "Number of network interfaces created"
 	default NET_GPTP_NUM_PORTS if NET_GPTP
+	default PTP_NUM_PORTS if PTP
 	default 1
 	range 1 32
 	help
 	  By default only one network interface is created. It is possible
 	  to create multiple interfaces in certain use cases. For example if
-	  multiple ports are defined in gPTP, then multiple network interfaces
+	  multiple ports are defined in gPTP or PTP, then multiple network interfaces
 	  must be created here.
 
 config ETH_NATIVE_POSIX_DRV_NAME
@@ -93,9 +41,9 @@ config ETH_NATIVE_POSIX_DEV_NAME
 
 config ETH_NATIVE_POSIX_PTP_CLOCK
 	bool "PTP clock driver support"
-	default y if NET_GPTP
+	default y if NET_GPTP || PTP
 	select PTP_CLOCK
-	depends on NET_GPTP
+	depends on NET_GPTP || PTP
 	help
 	  Enable PTP clock support.
 
@@ -124,5 +72,15 @@ config ETH_NATIVE_POSIX_MAC_ADDR
 	  aa:33:cc:22:e2:c0).  The default is an empty string, which
 	  means the code will make 00:00:5E:00:53:XX, where XX will be
 	  random.
+
+config ETH_NATIVE_POSIX_RX_TIMEOUT
+	int "Ethernet RX timeout"
+	default 1 if NET_GPTP
+	default 50
+	range 1 100
+	help
+	  Native posix ethernet driver repeatedly checks for new data.
+	  Specify how long the thread sleeps between these checks if no new data
+	  available.
 
 endif # ETH_NATIVE_POSIX

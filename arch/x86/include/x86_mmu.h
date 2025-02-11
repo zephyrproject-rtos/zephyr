@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/x86/mmustructs.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 
 #if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
 #define XD_SUPPORTED
@@ -120,7 +120,7 @@ void z_x86_pentry_get(int *paging_level, pentry_t *val, pentry_t *ptables,
 void z_x86_dump_page_tables(pentry_t *ptables);
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-#ifdef CONFIG_HW_STACK_PROTECTION
+#ifdef CONFIG_X86_STACK_PROTECTION
 /* Legacy function - set identity-mapped MMU stack guard page to RO in the
  * kernel's page tables to prevent writes and generate an exception
  */
@@ -182,7 +182,7 @@ static inline uintptr_t z_x86_cr3_get(void)
 /* Return the virtual address of the page tables installed in this CPU in CR3 */
 static inline pentry_t *z_x86_page_tables_get(void)
 {
-	return z_mem_virt_addr(z_x86_cr3_get());
+	return k_mem_virt_addr(z_x86_cr3_get());
 }
 
 /* Return cr2 value, which contains the page fault linear address.
@@ -215,8 +215,10 @@ static inline pentry_t *z_x86_thread_page_tables_get(struct k_thread *thread)
 		 * the kernel's page tables and not the page tables associated
 		 * with their memory domain.
 		 */
-		return z_mem_virt_addr(thread->arch.ptables);
+		return k_mem_virt_addr(thread->arch.ptables);
 	}
+#else
+	ARG_UNUSED(thread);
 #endif
 	return z_x86_kernel_ptables;
 }

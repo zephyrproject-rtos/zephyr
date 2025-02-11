@@ -1,0 +1,11 @@
+common:
+  min_ram: 16
+  depends_on: netif
+  tags: net iface
+tests:
+  net.conn_mgr.nodad:
+    extra_configs:
+      - CONFIG_NET_IPV6_DAD=n
+  net.conn_mgr.dad:
+    extra_configs:
+      - CONFIG_NET_IPV6_DAD=y

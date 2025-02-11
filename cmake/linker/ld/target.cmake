@@ -1,21 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-set_property(TARGET linker PROPERTY devices_start_symbol "__device_start")
+set_property(TARGET linker PROPERTY devices_start_symbol "_device_list_start")
 
-if(DEFINED TOOLCHAIN_HOME)
-  # When Toolchain home is defined, then we are cross-compiling, so only look
-  # for linker in that path, else we are using host tools.
-  set(LD_SEARCH_PATH PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-endif()
-
-find_program(CMAKE_LINKER ${CROSS_COMPILE}ld.bfd ${LD_SEARCH_PATH})
-if(NOT CMAKE_LINKER)
-  find_program(CMAKE_LINKER ${CROSS_COMPILE}ld ${LD_SEARCH_PATH})
-endif()
+find_package(GnuLd REQUIRED)
+set(CMAKE_LINKER ${GNULD_LINKER})
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
 if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "host")
-  if(CONFIG_CPP_EXCEPTIONS)
+  if(CONFIG_CPP_EXCEPTIONS AND LIBGCC_DIR)
     # When building with C++ Exceptions, it is important that crtbegin and crtend
     # are linked at specific locations.
     # The location is so important that we cannot let this be controlled by normal
@@ -65,6 +57,10 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
 
     zephyr_get_include_directories_for_lang(C current_includes)
     get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
+    if(DEFINED SOC_LINKER_SCRIPT)
+      cmake_path(GET SOC_LINKER_SCRIPT PARENT_PATH soc_linker_script_includes)
+      set(soc_linker_script_includes -I${soc_linker_script_includes})
+    endif()
 
     add_custom_command(
       OUTPUT ${linker_script_gen}
@@ -82,6 +78,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       -D_ASMLANGUAGE
       -imacros ${AUTOCONF_H}
       ${current_includes}
+      ${soc_linker_script_includes}
       ${current_defines}
       ${template_script_defines}
       -E ${LINKER_SCRIPT}
@@ -121,7 +118,8 @@ function(toolchain_ld_link_elf)
     ${ARGN}                                                   # input args to parse
   )
 
-  if(${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd")
+  if((${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd") OR
+     ${GNULD_LINKER_IS_BFD})
     # ld.bfd was found so let's explicitly use that for linking, see #32237
     set(use_linker "-fuse-ld=bfd")
   endif()
@@ -136,9 +134,9 @@ function(toolchain_ld_link_elf)
 
     ${LINKERFLAGPREFIX},-Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
     ${LINKERFLAGPREFIX},--whole-archive
-    ${ZEPHYR_LIBS_PROPERTY}
+    ${WHOLE_ARCHIVE_LIBS}
     ${LINKERFLAGPREFIX},--no-whole-archive
-    kernel
+    ${NO_WHOLE_ARCHIVE_LIBS}
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     ${LIB_INCLUDE_DIR}
     -L${PROJECT_BINARY_DIR}

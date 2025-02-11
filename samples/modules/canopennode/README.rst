@@ -26,6 +26,13 @@ Requirements
 Building and Running
 ********************
 
+First, ensure the optional CANopenNode module is enabled and available:
+
+   .. code-block:: console
+
+      west config manifest.project-filter +canopennode
+      west update canopennode
+
 Building and Running for TWR-KE18F
 ==================================
 The :ref:`twr_ke18f` board is equipped with an onboard CAN
@@ -402,6 +409,7 @@ for the FRDM-K64F as follows:
       :board: frdm_k64f
       :goals: build
       :west-args: --sysbuild
+      :gen-args: -Dcanopennode_CONF_FILE=prj_img_mgmt.conf -DSB_CONFIG_BOOTLOADER_MCUBOOT=y
       :compact:
 
 #. Flash the newly built MCUboot and CANopen sample binaries using west:
@@ -432,22 +440,22 @@ generation.
 
 A popular choice is the EDS editor from the `libedssharp`_
 project. With that, the
-:zephyr_file:`samples/modules/canopennode/objdict/objdicts.xml`
+:zephyr_file:`samples/modules/canopennode/objdict/objdict.xml`
 project file can be opened and modified, and new implementation files
 (:zephyr_file:`samples/modules/canopennode/objdict/CO_OD.h` and
 :zephyr_file:`samples/modules/canopennode/objdict/CO_OD.c`) can be
 generated. The EDS editor can also export an updated Electronic Data
 Sheet (EDS) file
-(:zephyr_file:`samples/modules/canopennode/objdict/objdicts.eds`).
+(:zephyr_file:`samples/modules/canopennode/objdict/objdict.eds`).
 
 .. _CANopenNode:
    https://github.com/CANopenNode/CANopenNode
 
 .. _EN 50325-4:
-   https://can-cia.org/groups/international-standardization/
+   https://can-cia.org/cia-groups/international-standardization/
 
 .. _CiA 301:
-   https://can-cia.org/groups/specifications/
+   https://can-cia.org/cia-groups/technical-documents/
 
 .. _CANopen for Python:
    https://github.com/christiansandberg/canopen

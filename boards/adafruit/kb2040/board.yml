@@ -1,0 +1,5 @@
+board:
+  name: adafruit_kb2040
+  vendor: adafruit
+  socs:
+  - name: rp2040

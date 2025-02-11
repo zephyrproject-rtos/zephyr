@@ -1,0 +1,5 @@
+board:
+  name: xiao_esp32c3
+  vendor: seeed
+  socs:
+  - name: esp32c3

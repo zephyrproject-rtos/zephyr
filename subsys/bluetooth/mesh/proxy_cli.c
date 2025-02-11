@@ -16,11 +16,9 @@
 #include <zephyr/bluetooth/mesh.h>
 
 #include "mesh.h"
-#include "adv.h"
 #include "net.h"
 #include "rpl.h"
 #include "transport.h"
-#include "host/ecc.h"
 #include "prov.h"
 #include "beacon.h"
 #include "foundation.h"
@@ -28,6 +26,7 @@
 #include "proxy.h"
 #include "gatt_cli.h"
 #include "proxy_msg.h"
+#include "crypto.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_PROXY_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -79,7 +78,7 @@ static struct bt_mesh_proxy_server *find_proxy_srv_by_conn(struct bt_conn *conn)
 	return NULL;
 }
 
-bool bt_mesh_proxy_cli_relay(struct net_buf *buf)
+bool bt_mesh_proxy_cli_relay(struct bt_mesh_adv *adv)
 {
 	bool relayed = false;
 	int i;
@@ -91,7 +90,7 @@ bool bt_mesh_proxy_cli_relay(struct net_buf *buf)
 			continue;
 		}
 
-		if (bt_mesh_proxy_relay_send(server->role->conn, buf)) {
+		if (bt_mesh_proxy_relay_send(server->role->conn, adv)) {
 			continue;
 		}
 
@@ -158,14 +157,9 @@ static const struct bt_mesh_gatt_cli proxy = {
 	.disconnected		= proxy_disconnected
 };
 
-struct find_net_id {
-	const uint8_t *net_id;
-	struct bt_mesh_proxy_server *srv;
-};
-
-static bool has_net_id(struct bt_mesh_subnet *sub, void *user_data)
+static bool proxy_srv_check_and_get(struct bt_mesh_subnet *sub, const uint8_t *net_id,
+				    struct bt_mesh_proxy_server **p_srv)
 {
-	struct find_net_id *res = user_data;
 	struct bt_mesh_proxy_server *srv;
 
 	srv = find_proxy_srv(sub->net_idx, true, true);
@@ -184,40 +178,122 @@ static bool has_net_id(struct bt_mesh_subnet *sub, void *user_data)
 		}
 	}
 
-	if (!memcmp(sub->keys[0].net_id, res->net_id, 8) ||
-	    (bt_mesh_subnet_has_new_key(sub) &&
-	     !memcmp(sub->keys[1].net_id, res->net_id, 8))) {
-		res->srv = srv;
+	/* If net_id is NULL we already know that the networks match */
+	if (!net_id || !memcmp(sub->keys[0].net_id, net_id, 8) ||
+	    (bt_mesh_subnet_has_new_key(sub) && !memcmp(sub->keys[1].net_id, net_id, 8))) {
+
+		*p_srv = srv;
 		return true;
 	}
 
 	return false;
 }
 
+struct find_net_id {
+	uint8_t type;
+
+	union {
+		const uint8_t *net_id;
+		struct {
+			const uint8_t *hash;
+			const uint8_t *rand;
+		} priv;
+	} data;
+
+	struct bt_mesh_proxy_server *srv;
+};
+
+static bool is_hash_equal(struct bt_mesh_subnet *sub, struct find_net_id *res, uint8_t idx)
+{
+	int err;
+	uint8_t in[16], out[16];
+
+	memcpy(&in[0], sub->keys[idx].net_id, 8);
+	memcpy(&in[8], res->data.priv.rand, 8);
+	err = bt_mesh_encrypt(&sub->keys[idx].identity, in, out);
+	if (err) {
+		LOG_ERR("Failed to generate hash (err: %d)", err);
+		return false;
+	}
+
+	if (memcmp(&out[8], res->data.priv.hash, 8)) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool has_net_id(struct bt_mesh_subnet *sub, void *user_data)
+{
+	struct find_net_id *res = user_data;
+	uint8_t *net_id = NULL;
+
+	if (res->type == BT_MESH_ID_TYPE_NET) {
+		net_id = (uint8_t *)res->data.net_id;
+		goto end;
+	}
+
+	/* Additional handling for BT_MESH_ID_TYPE_PRIV_NET msg type */
+	if (!(is_hash_equal(sub, res, 0) ||
+	      (bt_mesh_subnet_has_new_key(sub) && is_hash_equal(sub, res, 1)))) {
+		return false;
+	}
+end:
+	return proxy_srv_check_and_get(sub, net_id, &res->srv);
+}
+
+static void handle_net_id(uint8_t type, const struct bt_le_scan_recv_info *info,
+			  struct net_buf_simple *buf)
+{
+	int err;
+	struct find_net_id res;
+	struct bt_mesh_subnet *sub;
+
+	res.type = type;
+	res.srv = NULL;
+
+	if (type == BT_MESH_ID_TYPE_NET) {
+		if (buf->len != 8) {
+			return;
+		}
+		res.data.net_id = net_buf_simple_pull_mem(buf, 8);
+
+	} else {
+		if (buf->len != 16) {
+			return;
+		}
+
+		res.data.priv.hash = net_buf_simple_pull_mem(buf, 8);
+		res.data.priv.rand = net_buf_simple_pull_mem(buf, 8);
+	}
+
+	sub = bt_mesh_subnet_find(has_net_id, (void *)&res);
+	if (sub && res.srv) {
+		err = bt_mesh_gatt_cli_connect(info->addr, &proxy, res.srv);
+		if (err) {
+			LOG_DBG("Failed to connect over GATT (err:%d)", err);
+		}
+	}
+}
+
 void bt_mesh_proxy_cli_adv_recv(const struct bt_le_scan_recv_info *info,
 				struct net_buf_simple *buf)
 {
 	uint8_t type;
-	struct find_net_id res;
-	struct bt_mesh_subnet *sub;
 
 	type = net_buf_simple_pull_u8(buf);
 	switch (type) {
 	case BT_MESH_ID_TYPE_NET:
-		if (buf->len != 8) {
-			break;
-		}
-
-		res.net_id = net_buf_simple_pull_mem(buf, 8);
-		res.srv = NULL;
-
-		sub = bt_mesh_subnet_find(has_net_id, (void *)&res);
-		if (sub && res.srv) {
-			(void)bt_mesh_gatt_cli_connect(info->addr, &proxy, res.srv);
-		}
-
+		/* Fallthrough */
+	case BT_MESH_ID_TYPE_PRIV_NET: {
+		handle_net_id(type, info, buf);
 		break;
+	}
 	case BT_MESH_ID_TYPE_NODE: {
+		/* TODO */
+		break;
+	}
+	case BT_MESH_ID_TYPE_PRIV_NODE: {
 		/* TODO */
 		break;
 	}
@@ -314,3 +390,12 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 BT_MESH_SUBNET_CB_DEFINE(proxy_cli) = {
 	.evt_handler = subnet_evt,
 };
+
+bool bt_mesh_proxy_cli_is_connected(uint16_t net_idx)
+{
+	if (find_proxy_srv(net_idx, true, false)) {
+		return true;
+	}
+
+	return false;
+}

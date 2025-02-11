@@ -104,8 +104,6 @@ const uint8_t ciphertext[80] = {
 ZTEST(tinycrypt, test_cbc_sp_800_38a_encrypt_decrypt)
 {
 
-	TC_START("Performing AES128 tests:");
-
 	TC_PRINT("Performing CBC tests:\n");
 
 	struct tc_aes_key_sched_struct a;

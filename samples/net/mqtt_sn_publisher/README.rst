@@ -1,7 +1,8 @@
-.. _mqtt-sn-publisher-sample:
+.. zephyr:code-sample:: mqtt-sn-publisher
+   :name: MQTT-SN publisher
+   :relevant-api: mqtt_sn_socket
 
-MQTT-SN Publisher
-#################
+   Send MQTT-SN PUBLISH messages to an MQTT-SN gateway.
 
 Overview
 ********
@@ -16,8 +17,8 @@ requires a reliable TCP/IP transport, MQTT-SN is designed to be usable
 on any datagram-based transport like UDP, ZigBee or even a plain UART
 (with an additional framing protocol).
 
-The Zephyr MQTT-SN Publisher sample application is a MQTT-SN v1.2
-client that sends MQTT-SN PUBLISH messages to a MQTT-SN gateway.
+The Zephyr MQTT-SN Publisher sample application is an MQTT-SN v1.2
+client that sends MQTT-SN PUBLISH messages to an MQTT-SN gateway.
 It also SUBSCRIBEs to a topic.
 See the `MQTT-SN v1.2 spec`_ for more information.
 
@@ -43,7 +44,7 @@ Currently, this sample application only supports static IP addresses.
 Open the :file:`prj.conf` file and set the IP addresses according
 to the LAN environment.
 
-You will also need to start a MQTT-SN gateway. With paho, you can either
+You will also need to start an MQTT-SN gateway. With Paho, you can either
 build it from source - see `PAHO MQTT-SN Gateway`_ - or run an unofficial
 docker image, like `kyberpunk/paho`_.
 
@@ -66,8 +67,8 @@ Then, locate your zephyr directory and type:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/mqtt_sn_publisher
-   :board: native_posix_64
-   :goals: build -t run
+   :board: native_sim/native/64
+   :goals: run
    :compact:
 
 Optionally, use any MQTT explorer to connect to your broker.

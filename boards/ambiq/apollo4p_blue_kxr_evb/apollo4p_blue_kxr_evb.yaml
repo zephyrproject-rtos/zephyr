@@ -1,0 +1,22 @@
+identifier: apollo4p_blue_kxr_evb
+name: Apollo4 Blue Plus KXR EVB
+type: mcu
+arch: arm
+ram: 2816
+flash: 1952
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - watchdog
+  - counter
+  - gpio
+  - spi
+  - i2c
+  - clock_control
+  - ble
+testing:
+  ignore_tags:
+    - net
+vendor: ambiq

@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/net/ethernet_mgmt.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/net/gptp.h>
 
@@ -19,8 +19,6 @@ LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 #include "gptp_data_set.h"
 
 #include "gptp_private.h"
-
-#define NET_GPTP_STACK_SIZE 2048
 
 #if CONFIG_NET_GPTP_NUM_PORTS > 32
 /*
@@ -31,7 +29,7 @@ LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 #error Maximum number of ports exceeded. (Max is 32).
 #endif
 
-K_KERNEL_STACK_DEFINE(gptp_stack, NET_GPTP_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(gptp_stack, CONFIG_NET_GPTP_STACK_SIZE);
 K_FIFO_DEFINE(gptp_rx_queue);
 
 static k_tid_t tid;
@@ -492,10 +490,10 @@ static void gptp_init_port_ds(int port)
 	port_ds->compute_neighbor_prop_delay = true;
 
 	/* Random Sequence Numbers. */
-	port_ds->sync_seq_id = (uint16_t)sys_rand32_get();
-	port_ds->pdelay_req_seq_id = (uint16_t)sys_rand32_get();
-	port_ds->announce_seq_id = (uint16_t)sys_rand32_get();
-	port_ds->signaling_seq_id = (uint16_t)sys_rand32_get();
+	port_ds->sync_seq_id = sys_rand16_get();
+	port_ds->pdelay_req_seq_id = sys_rand16_get();
+	port_ds->announce_seq_id = sys_rand16_get();
+	port_ds->signaling_seq_id = sys_rand16_get();
 
 #if defined(CONFIG_NET_GPTP_STATISTICS)
 	/* Initialize stats data set. */
@@ -542,8 +540,12 @@ static void gptp_state_machine(void)
 	gptp_mi_state_machines();
 }
 
-static void gptp_thread(void)
+static void gptp_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int port;
 
 	NET_DBG("Starting PTP thread");
@@ -579,19 +581,6 @@ static void gptp_add_port(struct net_if *iface, void *user_data)
 		return;
 	}
 
-#if defined(CONFIG_NET_GPTP_VLAN)
-	if (CONFIG_NET_GPTP_VLAN_TAG >= 0 &&
-	    CONFIG_NET_GPTP_VLAN_TAG < NET_VLAN_TAG_UNSPEC) {
-		struct net_if *vlan_iface;
-
-		vlan_iface = net_eth_get_vlan_iface(iface,
-						    CONFIG_NET_GPTP_VLAN_TAG);
-		if (vlan_iface != iface) {
-			return;
-		}
-	}
-#endif /* CONFIG_NET_GPTP_VLAN */
-
 	/* Check if interface has a PTP clock. */
 	clk = net_eth_get_ptp_clock(iface);
 	if (clk) {
@@ -625,7 +614,7 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
 	}
 
 
-	/* NSEC_PER_SEC is between 2^30 and 2^31, seconds is less thant 2^16,
+	/* NSEC_PER_SEC is between 2^30 and 2^31, seconds is less than 2^16,
 	 * thus the computation will be less than 2^63.
 	 */
 	interval->low =	(seconds * (uint64_t)NSEC_PER_SEC) << 16;
@@ -919,133 +908,14 @@ static void init_ports(void)
 
 	tid = k_thread_create(&gptp_thread_data, gptp_stack,
 			      K_KERNEL_STACK_SIZEOF(gptp_stack),
-			      (k_thread_entry_t)gptp_thread,
+			      gptp_thread,
 			      NULL, NULL, NULL, K_PRIO_COOP(5), 0, K_NO_WAIT);
 	k_thread_name_set(&gptp_thread_data, "gptp");
 }
-
-#if defined(CONFIG_NET_GPTP_VLAN)
-static struct net_mgmt_event_callback vlan_cb;
-
-struct vlan_work {
-	struct k_work work;
-	struct net_if *iface;
-} vlan;
-
-static void disable_port(int port)
-{
-	GPTP_GLOBAL_DS()->selected_role[port] = GPTP_PORT_DISABLED;
-
-	gptp_state_machine();
-}
-
-static void vlan_enabled(struct k_work *work)
-{
-	struct vlan_work *vlan = CONTAINER_OF(work,
-					      struct vlan_work,
-					      work);
-	if (tid) {
-		int port;
-
-		port = gptp_get_port_number(vlan->iface);
-		if (port < 0) {
-			NET_DBG("No port found for iface %p", vlan->iface);
-			return;
-		}
-
-		GPTP_GLOBAL_DS()->selected_role[port] = GPTP_PORT_SLAVE;
-
-		gptp_state_machine();
-	} else {
-		init_ports();
-	}
-}
-
-static void vlan_disabled(struct k_work *work)
-{
-	struct vlan_work *vlan = CONTAINER_OF(work,
-					      struct vlan_work,
-					      work);
-	int port;
-
-	port = gptp_get_port_number(vlan->iface);
-	if (port < 0) {
-		NET_DBG("No port found for iface %p", vlan->iface);
-		return;
-	}
-
-	disable_port(port);
-}
-
-static void vlan_event_handler(struct net_mgmt_event_callback *cb,
-			       uint32_t mgmt_event,
-			       struct net_if *iface)
-{
-	uint16_t tag;
-
-	if (mgmt_event != NET_EVENT_ETHERNET_VLAN_TAG_ENABLED &&
-	    mgmt_event != NET_EVENT_ETHERNET_VLAN_TAG_DISABLED) {
-		return;
-	}
-
-#if defined(CONFIG_NET_MGMT_EVENT_INFO)
-	if (!cb->info) {
-		return;
-	}
-
-	tag = *((uint16_t *)cb->info);
-	if (tag != CONFIG_NET_GPTP_VLAN_TAG) {
-		return;
-	}
-
-	vlan.iface = iface;
-
-	if (mgmt_event == NET_EVENT_ETHERNET_VLAN_TAG_ENABLED) {
-		/* We found the right tag, now start gPTP for this interface */
-		k_work_init(&vlan.work, vlan_enabled);
-
-		NET_DBG("VLAN tag %d %s for iface %p", tag, "enabled", iface);
-	} else {
-		k_work_init(&vlan.work, vlan_disabled);
-
-		NET_DBG("VLAN tag %d %s for iface %p", tag, "disabled", iface);
-	}
-
-	k_work_submit(&vlan.work);
-#else
-	NET_WARN("VLAN event but tag info missing!");
-
-	ARG_UNUSED(tag);
-#endif
-}
-
-static void setup_vlan_events_listener(void)
-{
-	net_mgmt_init_event_callback(&vlan_cb, vlan_event_handler,
-				     NET_EVENT_ETHERNET_VLAN_TAG_ENABLED |
-				     NET_EVENT_ETHERNET_VLAN_TAG_DISABLED);
-	net_mgmt_add_event_callback(&vlan_cb);
-}
-#endif /* CONFIG_NET_GPTP_VLAN */
 
 void net_gptp_init(void)
 {
 	gptp_domain.default_ds.nb_ports = 0U;
 
-#if defined(CONFIG_NET_GPTP_VLAN)
-	/* If user has enabled gPTP over VLAN support, then we start gPTP
-	 * support after we have received correct "VLAN tag enabled" event.
-	 */
-	if (CONFIG_NET_GPTP_VLAN_TAG >= 0 &&
-	    CONFIG_NET_GPTP_VLAN_TAG < NET_VLAN_TAG_UNSPEC) {
-		setup_vlan_events_listener();
-	} else {
-		NET_WARN("VLAN tag %d set but the value is not valid.",
-			 CONFIG_NET_GPTP_VLAN_TAG);
-
-		init_ports();
-	}
-#else
 	init_ports();
-#endif
 }

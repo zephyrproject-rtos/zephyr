@@ -1,0 +1,11 @@
+/ {
+	aliases {
+		pwm-0 = &flexpwm1_pwm2;
+	};
+};
+
+&flexpwm1_pwm2 {
+	pinctrl-0 = <&pinmux_flexpwm1>;
+	pinctrl-names = "default";
+	status = "okay";
+};

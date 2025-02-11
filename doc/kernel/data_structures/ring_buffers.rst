@@ -44,7 +44,7 @@ A ring buffer has the following key properties:
   bytes or 32-bit words that have been added to the ring buffer but not yet
   removed.
 
-* A **data buffer size**, measured in bytes or 32-byte words. This governs
+* A **data buffer size**, measured in bytes or 32-bit words. This governs
   the maximum amount of data (including possible metadata values) the ring
   buffer can hold.
 
@@ -53,7 +53,7 @@ data buffer to empty.
 
 A ``struct ring_buf`` may be placed anywhere in user-accessible
 memory, and must be initialized with :c:func:`ring_buf_init` or
-:c:func:`ring_buf_element_init` before use. This must be provided a region
+:c:func:`ring_buf_item_init` before use. This must be provided a region
 of user-controlled memory for use as the buffer itself.  Note carefully that the units of the size of the
 buffer passed change (either bytes or words) depending on how the ring
 buffer will be used later.  Macros for combining these steps in a
@@ -198,7 +198,7 @@ Implementation
 Defining a Ring Buffer
 ======================
 
-A ring buffer is defined using a variable of type :c:type:`ring_buf`.
+A ring buffer is defined using a variable of type :c:struct:`ring_buf`.
 It must then be initialized by calling :c:func:`ring_buf_init` or
 :c:func:`ring_buf_item_init`.
 

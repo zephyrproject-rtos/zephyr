@@ -1,4 +1,8 @@
 tests:
   kernel.futex:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    tags: kernel userspace
+    arch_exclude:
+      - posix
+    tags:
+      - kernel
+      - userspace

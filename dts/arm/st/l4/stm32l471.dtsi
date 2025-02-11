@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32l471", "st,stm32l4", "simple-bus";
+
 		pinctrl: pin-controller@48000000 {
 
 			gpiod: gpio@48000c00 {
@@ -224,14 +226,12 @@
 		};
 
 		can1: can@40006400 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>; //RCC_APB1ENR1_CAN1EN
 			status = "disabled";
-			sjw = <1>;
-			sample-point = <875>;
 		};
 
 		sdmmc1: sdmmc@40012800 {
@@ -259,7 +259,6 @@
 			interrupts = <47 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			temp-channel = <17>;
 		};
 
 		rtc@40002800 {
@@ -269,5 +268,17 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	die_temp: dietemp {
+		ts-cal2-temp = <110>;
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
 	};
 };

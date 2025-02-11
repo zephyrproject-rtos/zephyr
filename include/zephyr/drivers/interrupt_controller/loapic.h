@@ -49,17 +49,22 @@
 
 #define LOAPIC_LVT_MASKED 0x00010000   /* mask */
 
+/* Defined in intc_loapic.c */
+#define LOAPIC_REGS_STR				loapic_regs	/* mmio device name */
+
 #ifndef _ASMLANGUAGE
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern uint32_t z_loapic_irq_base(void);
-extern void z_loapic_enable(unsigned char cpu_number);
-extern void z_loapic_int_vec_set(unsigned int irq, unsigned int vector);
-extern void z_loapic_irq_enable(unsigned int irq);
-extern void z_loapic_irq_disable(unsigned int irq);
+DEVICE_MMIO_TOPLEVEL_DECLARE(LOAPIC_REGS_STR);
+
+uint32_t z_loapic_irq_base(void);
+void z_loapic_enable(unsigned char cpu_number);
+void z_loapic_int_vec_set(unsigned int irq, unsigned int vector);
+void z_loapic_irq_enable(unsigned int irq);
+void z_loapic_irq_disable(unsigned int irq);
 
 /**
  * @brief Read 64-bit value from the local APIC in x2APIC mode.
@@ -72,11 +77,6 @@ static inline uint64_t x86_read_x2apic(unsigned int reg)
 	return z_x86_msr_read(X86_X2APIC_BASE_MSR + reg);
 }
 
-/* Defined in intc_loapic.c */
-#ifdef DEVICE_MMIO_IS_IN_RAM
-extern mm_reg_t z_loapic_regs;
-#endif
-
 /**
  * @brief Read 32-bit value from the local APIC in xAPIC (MMIO) mode.
  *
@@ -85,11 +85,7 @@ extern mm_reg_t z_loapic_regs;
 static inline uint32_t x86_read_xapic(unsigned int reg)
 {
 	mm_reg_t base;
-#ifdef DEVICE_MMIO_IS_IN_RAM
-	base = z_loapic_regs;
-#else
-	base = CONFIG_LOAPIC_BASE_ADDRESS;
-#endif
+	base = DEVICE_MMIO_TOPLEVEL_GET(LOAPIC_REGS_STR);
 	return sys_read32(base + reg);
 }
 
@@ -133,11 +129,7 @@ static inline void x86_write_x2apic(unsigned int reg, uint64_t val)
 static inline void x86_write_xapic(unsigned int reg, uint32_t val)
 {
 	mm_reg_t base;
-#ifdef DEVICE_MMIO_IS_IN_RAM
-	base = z_loapic_regs;
-#else
-	base = CONFIG_LOAPIC_BASE_ADDRESS;
-#endif
+	base = DEVICE_MMIO_TOPLEVEL_GET(LOAPIC_REGS_STR);
 	sys_write32(val, base + reg);
 }
 

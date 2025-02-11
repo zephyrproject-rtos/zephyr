@@ -1,0 +1,19 @@
+# Copyright 2023 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SBS_CHARGER
+	bool "Smart Battery Charger"
+	default y
+	depends on DT_HAS_SBS_SBS_CHARGER_ENABLED
+	select I2C
+	help
+	  Enable I2C-based/SMBus-based driver for a Smart Battery Charger.
+
+config EMUL_SBS_CHARGER
+	bool "Emulate an SBS 1.1 compliant smart battery charger"
+	default y
+	depends on EMUL
+	depends on SBS_CHARGER
+	help
+	  It provides reading which follow a simple sequence, thus allowing
+	  test code to check that things are working as expected.

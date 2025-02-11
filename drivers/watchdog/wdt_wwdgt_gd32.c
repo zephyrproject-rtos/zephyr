@@ -57,7 +57,7 @@ static inline uint32_t gd32_wwdgt_calc_ticks(const struct device *dev,
 	uint32_t pclk;
 
 	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-				       (clock_control_subsys_t *)&config->clkid,
+				       (clock_control_subsys_t)&config->clkid,
 				       &pclk);
 
 	return ((timeout * pclk)
@@ -204,7 +204,7 @@ static int gd32_wwdgt_init(const struct device *dev)
 	const struct gd32_wwdgt_config *config = dev->config;
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&config->clkid);
+			       (clock_control_subsys_t)&config->clkid);
 	(void)reset_line_toggle_dt(&config->reset);
 	gd32_wwdgt_irq_config(dev);
 

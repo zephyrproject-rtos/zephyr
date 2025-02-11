@@ -23,6 +23,8 @@ the library internal system calls to the equivalent Zephyr API calls.
 .. _`C17 (ISO/IEC 9899:2018)`: https://www.iso.org/standard/74528.html
 .. _`POSIX 2018 (IEEE Std 1003.1-2017)`: https://pubs.opengroup.org/onlinepubs/9699919799/functions/printf.html
 
+.. _c_library_picolibc_module:
+
 Picolibc Module
 ===============
 
@@ -38,6 +40,12 @@ The Picolibc module can be enabled by selecting
 :kconfig:option:`CONFIG_PICOLIBC_USE_MODULE` in the application
 configuration file.
 
+When updating the Picolibc module to a newer version, the
+:ref:`toolchain-bundled Picolibc in the Zephyr SDK
+<c_library_picolibc_toolchain>` must also be updated to the same version.
+
+.. _c_library_picolibc_toolchain:
+
 Toolchain Picolibc
 ==================
 
@@ -48,6 +56,33 @@ precompiled versions of libstdc++.
 The toolchain version of Picolibc can be enabled by de-selecting
 :kconfig:option:`CONFIG_PICOLIBC_USE_MODULE` in the application
 configuration file.
+
+For every release of Zephyr, the toolchain-bundled Picolibc and the
+:ref:`Picolibc module <c_library_picolibc_module>` are guaranteed to be in
+sync when using the
+:ref:`recommended version of Zephyr SDK <toolchain_zephyr_sdk_compatibility>`.
+
+Building Without Toolchain bundled Picolibc
+-------------------------------------------
+
+For toolchain where there is no bundled Picolibc, it is still
+possible to use Picolibc by building it from source. Note that
+any restrictions mentioned in :ref:`c_library_picolibc_module`
+still apply.
+
+To build without toolchain bundled Picolibc, the toolchain must
+enable :kconfig:option:`CONFIG_PICOLIBC_SUPPORTED`. For example,
+this needs to be added to the toolchain Kconfig file:
+
+.. code-block:: kconfig
+
+   config TOOLCHAIN_<name>_PICOLIBC_SUPPORTED
+      def_bool y
+      select PICOLIBC_SUPPORTED
+
+By enabling :kconfig:option:`CONFIG_PICOLIBC_SUPPORTED`, the build
+system would automatically build Picolibc from source with its module
+when there is no toolchain bundled Picolibc.
 
 Formatted Output
 ****************
@@ -114,44 +149,6 @@ this partition is included in any domain active during Picolibc calls.
 Dynamic Memory Management
 *************************
 
-Picolibc implements an internal heap allocator to manage the memory
-blocks used by the standard dynamic memory management interface
-functions (for example, :c:func:`malloc` and :c:func:`free`).
-
-The only interface between the Picolibc dynamic memory management
-functions and the Zephyr-side libc hooks is the :c:func:`sbrk`
-function, which is used by Picolibc to manage the size of the
-memory pool reserved for its internal heap allocator.
-
-The :c:func:`sbrk` hook function, implemented in
-:file:`libc-hooks.c`, handles the memory pool size change requests
-from Picolibc and ensures that the Picolibc internal heap allocator
-memory pool size does not exceed the amount of available memory space
-by returning an error when the system is out of memory.
-
-When userspace is enabled, the Picolibc internal heap allocator memory
-pool is placed in a dedicated memory partition called
-:c:var:`z_malloc_partition`, which can be accessed from the user mode
-threads.
-
-The amount of memory space available for the Picolibc heap is set by
-the :kconfig:option:`CONFIG_PICOLIBC_HEAP_SIZE`, or the amount of free
-memory available, whichever is smallest. Set
-:kconfig:option:`CONFIG_PICOLIBC_HEAP_SIZE` to -1 to always use the
-amount of free memory available.
-
-* When MMU is enabled (:kconfig:option:`CONFIG_MMU` is selected), the
-  amount of free memory available is determined at runtime with the
-  :c:func:`k_mem_free_get` function.
-
-* When MPU is enabled and the MPU requires power-of-two partition
-  size, then :kconfig:option:`CONFIG_PICOLIBC_HEAP_SIZE` (if not -1)
-  must be set to a power of two value.
-
-* Otherwise, the amount of free memory available is equal to the
-  amount of unallocated memory in the SRAM region as determined at
-  compile time.
-
-The standard dynamic memory management interface functions implemented
-by Picolibc are thread safe and may be simultaneously called by
-multiple threads.
+Picolibc uses the malloc api family implementation provided by the
+:ref:`common C library <c_library_common>`, which itself is built upon the
+:ref:`kernel memory heap API <heap_v2>`.

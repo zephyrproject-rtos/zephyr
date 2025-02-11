@@ -57,4 +57,10 @@
 #define IOC_PORT_RFC_SMI_CL_OUT   0x00000037  /* RF Core SMI Command Link Out */
 #define IOC_PORT_RFC_SMI_CL_IN    0x00000038  /* RF Core SMI Command Link In */
 
+/* Edge Detection */
+#define IOC_NO_EDGE      0x00000000 /* No edge detection */
+#define IOC_FALLING_EDGE 0x00010000 /* Edge detection on falling edge */
+#define IOC_RISING_EDGE  0x00020000 /* Edge detection on rising edge */
+#define IOC_BOTH_EDGES   0x00030000 /* Edge detection on both edges */
+
 #endif  /* CC13XX_CC26XX_PINCTRL_COMMON_H_ */

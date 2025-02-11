@@ -7,4 +7,6 @@ properties:
   "#reset-cells":
     type: int
     required: true
-    description: Number of cells in reset property
+    description: |
+      Number of cells in reset property. There must be a cell
+      named "id" to use the reset_dt_spec macros.

@@ -1,6 +1,5 @@
 # Copyright (c) 2022 Silicon Labs
 # SPDX-License-Identifier: Apache-2.0
-# TODO: copyright changes?
 
 config PINCTRL_GECKO
 	bool "Gecko pin controller driver"

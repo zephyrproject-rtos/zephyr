@@ -23,7 +23,7 @@
 #include <zephyr/arch/common/sys_bitops.h>
 #include "sys-io-common.h"
 
-#include <zephyr/arch/arc/v2/exc.h>
+#include <zephyr/arch/arc/v2/exception.h>
 #include <zephyr/arch/arc/v2/irq.h>
 #include <zephyr/arch/arc/v2/misc.h>
 #include <zephyr/arch/arc/v2/aux_regs.h>
@@ -115,7 +115,8 @@ BUILD_ASSERT(CONFIG_ARC_EXCEPTION_STACK_SIZE % ARCH_STACK_PTR_ALIGN == 0,
 #ifdef CONFIG_ARC_CORE_MPU
 #if CONFIG_ARC_MPU_VER == 2
 #define Z_ARC_MPU_ALIGN	2048
-#elif (CONFIG_ARC_MPU_VER == 3) || (CONFIG_ARC_MPU_VER == 4) || (CONFIG_ARC_MPU_VER == 6)
+#elif (CONFIG_ARC_MPU_VER == 3) || (CONFIG_ARC_MPU_VER == 4) || \
+	(CONFIG_ARC_MPU_VER == 6) || (CONFIG_ARC_MPU_VER == 8)
 #define Z_ARC_MPU_ALIGN	32
 #else
 #error "Unsupported MPU version"
@@ -187,7 +188,7 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
  * in another area of memory generated at build time by gen_kobject_list.py
  *
  * +------------+ <- thread.arch.priv_stack_start
- * | Priv Stack | } Z_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)
+ * | Priv Stack | } K_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)
  * +------------+
  *
  * +------------+ <- thread.stack_obj = thread.stack_info.start
@@ -311,7 +312,7 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
 	BUILD_ASSERT(IS_BUILTIN_MWDT(size) ? IS_BUILTIN_MWDT(start) ?				\
 		!((uintptr_t)(start) & ((size) - 1)) : 1 : 1,					\
 		"partition start address must align with size.")
-#elif CONFIG_ARC_MPU_VER == 4
+#elif CONFIG_ARC_MPU_VER == 4 || CONFIG_ARC_MPU_VER == 8
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)						\
 	BUILD_ASSERT(IS_BUILTIN_MWDT(size) ? (size) % Z_ARC_MPU_ALIGN == 0 : 1,			\
 		"partition size must align with " STRINGIFY(Z_ARC_MPU_ALIGN));			\
@@ -329,7 +330,7 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
 		"partition size must be >= mpu address alignment.");				\
 	BUILD_ASSERT(!((uintptr_t)(start) & ((size) - 1)),					\
 		"partition start address must align with size.")
-#elif CONFIG_ARC_MPU_VER == 4
+#elif CONFIG_ARC_MPU_VER == 4 || CONFIG_ARC_MPU_VER == 8
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)						\
 	BUILD_ASSERT((size) % Z_ARC_MPU_ALIGN == 0,						\
 		"partition size must align with " STRINGIFY(Z_ARC_MPU_ALIGN));			\

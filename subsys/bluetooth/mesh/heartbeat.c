@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/sys/iterable_sections.h>
+
 #include "net.h"
 #include "rpl.h"
 #include "access.h"
@@ -162,7 +164,7 @@ static void hb_publish(struct k_work *work)
 		.start = hb_publish_start_cb,
 		.end = hb_publish_end_cb,
 	};
-	struct bt_mesh_subnet *sub;
+	struct bt_mesh_subnet *subnet;
 	int err;
 
 	LOG_DBG("hb_pub.count: %u", pub.count);
@@ -172,8 +174,8 @@ static void hb_publish(struct k_work *work)
 		return;
 	}
 
-	sub = bt_mesh_subnet_get(pub.net_idx);
-	if (!sub) {
+	subnet = bt_mesh_subnet_get(pub.net_idx);
+	if (!subnet) {
 		LOG_ERR("No matching subnet for idx 0x%02x", pub.net_idx);
 		pub.dst = BT_MESH_ADDR_UNASSIGNED;
 		return;
@@ -231,8 +233,10 @@ static void pub_disable(void)
 
 	pub.dst = BT_MESH_ADDR_UNASSIGNED;
 	pub.count = 0U;
-	pub.ttl = 0U;
 	pub.period = 0U;
+	pub.ttl = 0U;
+	pub.feat = 0U;
+	pub.net_idx = 0U;
 
 	/* Try to cancel, but it's OK if this still runs (or is
 	 * running) as the handler will be a no-op if it hasn't
@@ -408,7 +412,7 @@ void bt_mesh_hb_resume(void)
 static int hb_pub_set(const char *name, size_t len_rd,
 		      settings_read_cb read_cb, void *cb_arg)
 {
-	struct bt_mesh_hb_pub pub;
+	struct bt_mesh_hb_pub hb_pub;
 	struct hb_pub_val hb_val;
 	int err;
 
@@ -418,19 +422,19 @@ static int hb_pub_set(const char *name, size_t len_rd,
 		return err;
 	}
 
-	pub.dst = hb_val.dst;
-	pub.period = bt_mesh_hb_pwr2(hb_val.period);
-	pub.ttl = hb_val.ttl;
-	pub.feat = hb_val.feat;
-	pub.net_idx = hb_val.net_idx;
+	hb_pub.dst = hb_val.dst;
+	hb_pub.period = bt_mesh_hb_pwr2(hb_val.period);
+	hb_pub.ttl = hb_val.ttl;
+	hb_pub.feat = hb_val.feat;
+	hb_pub.net_idx = hb_val.net_idx;
 
 	if (hb_val.indefinite) {
-		pub.count = 0xffff;
+		hb_pub.count = 0xffff;
 	} else {
-		pub.count = 0U;
+		hb_pub.count = 0U;
 	}
 
-	(void)bt_mesh_hb_pub_set(&pub);
+	(void)bt_mesh_hb_pub_set(&hb_pub);
 
 	LOG_DBG("Restored heartbeat publication");
 
@@ -441,20 +445,20 @@ BT_MESH_SETTINGS_DEFINE(pub, "HBPub", hb_pub_set);
 
 void bt_mesh_hb_pub_pending_store(void)
 {
-	struct bt_mesh_hb_pub pub;
+	struct bt_mesh_hb_pub hb_pub;
 	struct hb_pub_val val;
 	int err;
 
-	bt_mesh_hb_pub_get(&pub);
-	if (pub.dst == BT_MESH_ADDR_UNASSIGNED) {
+	bt_mesh_hb_pub_get(&hb_pub);
+	if (hb_pub.dst == BT_MESH_ADDR_UNASSIGNED) {
 		err = settings_delete("bt/mesh/HBPub");
 	} else {
-		val.indefinite = (pub.count == 0xffff);
-		val.dst = pub.dst;
-		val.period = bt_mesh_hb_log(pub.period);
-		val.ttl = pub.ttl;
-		val.feat = pub.feat;
-		val.net_idx = pub.net_idx;
+		val.indefinite = (hb_pub.count == 0xffff);
+		val.dst = hb_pub.dst;
+		val.period = bt_mesh_hb_log(hb_pub.period);
+		val.ttl = hb_pub.ttl;
+		val.feat = hb_pub.feat;
+		val.net_idx = hb_pub.net_idx;
 
 		err = settings_save_one("bt/mesh/HBPub", &val, sizeof(val));
 	}

@@ -6,9 +6,9 @@ Coding Guidelines
 The project TSC and the Safety Committee of the project agreed to implement
 a staged and incremental approach for complying with a set of coding rules (AKA
 Coding Guidelines) to improve quality and consistency of the code base. Below
-are the agreed upon stages and the approximate timelines:
+are the agreed upon stages:
 
-Stage I
+Stage I (COMPLETED)
   Coding guideline rules are available to be followed and referenced,
   but not enforced. Rules are not yet enforced in CI and pull-requests cannot be
   blocked by reviewers/approvers due to violations.
@@ -16,8 +16,8 @@ Stage I
 Stage II
   Begin enforcement on a limited scope of the code base. Initially, this would be
   the safety certification scope. For rules easily applied across codebase, we
-  should not limit compliance to initial scope. This step requires tooling and
-  CI setup and will start sometime after LTS2.
+  should not limit compliance to initial scope. This step requires tooling,
+  CI setup and an enforcement strategy.
 
 Stage III
   Revisit the coding guideline rules and based on experience from previous
@@ -32,6 +32,13 @@ Stage IV
 
     Coding guideline rules may be removed/changed at any time by filing a
     GH issue/RFC.
+
+.. important::
+
+    **Current stage:**
+    The prerequisites for entering **Stage II** are currently being looked at:
+    The tooling is in evaluation, CI setup and `enforcement strategy
+    <https://github.com/zephyrproject-rtos/zephyr/issues/58903>`__ is being worked on.
 
 Main rules
 **********
@@ -1212,8 +1219,8 @@ Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language 
      -
 
    * - eSPI
-     - * ``master / slave`` => TBD
-     -
+     - * ``master / slave`` => ``controller / target``
+     - Refer to `eSPI Specification`_ for new terminology
 
    * - gPTP
      - * ``master / slave`` => TBD
@@ -1250,106 +1257,240 @@ Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language 
 
 .. _Inclusive Language Label: https://github.com/zephyrproject-rtos/zephyr/issues?q=label%3A%22Inclusive+Language%22
 .. _I2C Specification: https://www.nxp.com/docs/en/user-guide/UM10204.pdf
-.. _Bluetooth Appropriate Language Mapping Tables: https://btprodspecificationrefs.blob.core.windows.net/language-mapping/Appropriate_Language_Mapping_Table.pdf
+.. _Bluetooth Appropriate Language Mapping Tables: https://specificationrefs.bluetooth.com/language-mapping/Appropriate_Language_Mapping_Table.pdf
 .. _OSHWA Resolution to Redefine SPI Signal Names: https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/
 .. _CAN in Automation Inclusive Language news post: https://www.can-cia.org/news/archive/view/?tx_news_pi1%5Bnews%5D=699&tx_news_pi1%5Bday%5D=6&tx_news_pi1%5Bmonth%5D=12&tx_news_pi1%5Byear%5D=2020&cHash=784e79eb438141179386cf7c29ed9438
 .. _CAN in Automation Inclusive Language: https://can-newsletter.org/canopen/categories/
+.. _eSPI Specification: https://downloadmirror.intel.com/27055/327432%20espi_base_specification%20R1-5.pdf
 
-Parasoft Codescan Tool
-**********************
 
-Parasoft Codescan is an official static code analysis tool used by the Zephyr
-project. It is used to automate compliance with a range of coding and security
-standards.
-The tool is currently set to the MISRA-C:2012 Coding Standard because the Zephyr
-:ref:`coding_guidelines` are based on that standard.
-It is used together with the Coverity Scan tool to achieve the best code health
-and precision in bug findings.
+Rule A.3: Macro name collisions
+===============================
 
-Violations fixing process
-=========================
+Severity
+--------
 
-Step 1
-  Any Zephyr Project member, company or a developer can request access
-  to the Parasoft reporting centre if they wish to get involved in fixing
-  violations by submitting issues.
+Required
 
-Step 2
-  A developer starts to review violations.
+Description
+-----------
 
-Step 3
-  A developer submits a Github PR with the fix. Commit messages should follow
-  the same guidelines as other PRs in the Zephyr project. Please add a comment
-  that your fix was found by a static coding scanning tool.
-  Developers should follow and refer to the Zephyr :ref:`coding_guidelines`
-  as basic rules for coding. These rules are based on the MISRA-C standard.
+Macros with commonly used names such as  ``MIN``, ``MAX``, ``ARRAY_SIZE``, must
+not be modified or protected to avoid name collisions with other
+implementations. In particular, they must not be prefixed to place them in a
+Zephyr-specific namespace, re-defined using ``#undef``, or conditionally
+excluded from compilation using ``#ifndef``.  Instead, if a conflict arises with
+an existing definition originating from a :ref:`module <modules>`, the module's
+code itself needs to be modified (ideally upstream, alternatively via a change
+in Zephyr's own fork).
+This rule applies to Zephyr as a project in general, regardless of the time of
+introduction of the macro or its current name in the tree. If a macro name is
+commonly used in several other well-known open source projects then the
+implementation in Zephyr should use that name. While there is a subjective and
+non-measurable component to what "commonly used" means, the ultimate goal is
+to offer users familiar macros.
+Finally, this rule applies to inter-module name collisions as well: in that case
+both modules, prior to their inclusion, should be modified to use
+module-specific versions of the macro name that collides.
 
-  Below you can find an example of a recommended commit message::
+Rationale
+---------
 
-     lib: os: add braces to 'if' statements
+Zephyr is an RTOS that comes with additional functionality and dependencies in
+the form of modules. Those modules are typically independent projects that may
+use macro names that can conflict with other modules or with Zephyr itself.
+Since, in the context of this documentation, Zephyr is considered the central or
+main project, it should implement the non-namespaced versions of the
+macros. Given that Zephyr uses a fork of the corresponding upstream for each
+module, it is always possible to patch the macro implementation in each module
+to avoid collisions.
 
-     An 'if' (expression) construct shall be followed by a compound statement.
-     Add braces to improve readability and maintainability.
+.. _coding_guideline_libc_usage_restrictions_in_zephyr_kernel:
 
-     Found as a coding guideline violation (Rule 15.6) by static
-     coding scanning tool.
+Rule A.4: C Standard Library Usage Restrictions in Zephyr Kernel
+================================================================
 
-     Signed-off-by: Johnny Developer <johnny.developer@company.com>
+Severity
+--------
 
-Step 4
-  If a violation is a false positive, the developer should mark it for the Codescan
-  tool just like they would do for the Coverity tool.
-  The developer should also add a comment to the code explaining that
-  the violation raised by the static code analysis tool should be considered a
-  false positive.
+Required
 
-Step 5
-  If the developer has found a real violation that the community decided to ignore,
-  the developer must submit a PR with a suppression tag
-  and a comment explaining why the violation has been deviated.
-  The template structure of the comment and tag in the code should be::
+Description
+-----------
 
-     /* Explain why that part of the code doesn't follow the standard,
-      * explain why it is a deliberate deviation from the standard.
-      * Don't refer to the Parasoft tool here, just mention that static code
-      * analysis tool raised a violation in the line below.
-      */
-     code_line_with_a_violation /* parasoft-suppress Rule ID */
+The use of the C standard library functions and macros in the Zephyr kernel
+shall be limited to the following functions and macros from the ISO/IEC
+9899:2011 standard, also known as C11, and their extensions:
 
-  Below you can find an example of a recommended commit message::
+.. csv-table:: List of allowed libc functions and macros in the Zephyr kernel
+   :header: Function,Source
+   :widths: auto
 
-     testsuite: suppress usage of setjmp in a testcode (rule 21.4)
+   abort(),ISO/IEC 9899:2011
+   abs(),ISO/IEC 9899:2011
+   aligned_alloc(),ISO/IEC 9899:2011
+   assert(),ISO/IEC 9899:2011
+   atoi(),ISO/IEC 9899:2011
+   bsearch(),ISO/IEC 9899:2011
+   calloc(),ISO/IEC 9899:2011
+   exit(),ISO/IEC 9899:2011
+   fprintf(),ISO/IEC 9899:2011
+   fputc(),ISO/IEC 9899:2011
+   fputs(),ISO/IEC 9899:2011
+   free(),ISO/IEC 9899:2011
+   fwrite(),ISO/IEC 9899:2011
+   gmtime(),ISO/IEC 9899:2011
+   isalnum(),ISO/IEC 9899:2011
+   isalpha(),ISO/IEC 9899:2011
+   iscntrl(),ISO/IEC 9899:2011
+   isdigit(),ISO/IEC 9899:2011
+   isgraph(),ISO/IEC 9899:2011
+   isprint(),ISO/IEC 9899:2011
+   isspace(),ISO/IEC 9899:2011
+   isupper(),ISO/IEC 9899:2011
+   isxdigit(),ISO/IEC 9899:2011
+   labs(),ISO/IEC 9899:2011
+   llabs(),ISO/IEC 9899:2011
+   malloc(),ISO/IEC 9899:2011
+   memchr(),ISO/IEC 9899:2011
+   memcmp(),ISO/IEC 9899:2011
+   memcpy(),ISO/IEC 9899:2011
+   memmove(),ISO/IEC 9899:2011
+   memset(),ISO/IEC 9899:2011
+   perror(),ISO/IEC 9899:2011
+   printf(),ISO/IEC 9899:2011
+   putc(),ISO/IEC 9899:2011
+   putchar(),ISO/IEC 9899:2011
+   puts(),ISO/IEC 9899:2011
+   qsort(),ISO/IEC 9899:2011
+   rand(),ISO/IEC 9899:2011
+   realloc(),ISO/IEC 9899:2011
+   snprintf(),ISO/IEC 9899:2011
+   sprintf(),ISO/IEC 9899:2011
+   sqrt(),ISO/IEC 9899:2011
+   sqrtf(),ISO/IEC 9899:2011
+   srand(),ISO/IEC 9899:2011
+   strcat(),ISO/IEC 9899:2011
+   strchr(),ISO/IEC 9899:2011
+   strcmp(),ISO/IEC 9899:2011
+   strcpy(),ISO/IEC 9899:2011
+   strcspn(),ISO/IEC 9899:2011
+   strerror(),ISO/IEC 9899:2011
+   strlen(),ISO/IEC 9899:2011
+   strncat(),ISO/IEC 9899:2011
+   strncmp(),ISO/IEC 9899:2011
+   strncpy(),ISO/IEC 9899:2011
+   `strnlen()`_,POSIX.1-2008
+   strrchr(),ISO/IEC 9899:2011
+   strspn(),ISO/IEC 9899:2011
+   strstr(),ISO/IEC 9899:2011
+   strtol(),ISO/IEC 9899:2011
+   strtoll(),ISO/IEC 9899:2011
+   strtoul(),ISO/IEC 9899:2011
+   strtoull(),ISO/IEC 9899:2011
+   time(),ISO/IEC 9899:2011
+   tolower(),ISO/IEC 9899:2011
+   toupper(),ISO/IEC 9899:2011
+   vfprintf(),ISO/IEC 9899:2011
+   vprintf(),ISO/IEC 9899:2011
+   vsnprintf(),ISO/IEC 9899:2011
+   vsprintf(),ISO/IEC 9899:2011
 
-     According to the Rule 21.4 the standard header file <setjmp.h> shall not
-     be used. We will suppress this violation because it is in
-     test code. Tag suppresses reporting of the violation for the
-     line where the violation is located.
-     This is a deliberate deviation.
+All of the functions listed above must be implemented by the
+:ref:`minimal libc <c_library_minimal>` to ensure that the Zephyr kernel can
+build with the minimal libc.
 
-     Found as a coding guideline violation (Rule 21.4) by static coding
-     scanning tool.
+In addition, any functions from the above list that are not part of the
+ISO/IEC 9899:2011 standard must be implemented by the
+:ref:`common libc <c_library_common>` to ensure their availability across
+multiple C standard libraries.
 
-     Signed-off-by: Johnny Developer <johnny.developer@company.com>
+Introducing new C standard library functions to the Zephyr kernel is allowed
+with justification given that the above requirements are satisfied.
 
-  The example below demonstrates how deviations can be suppressed in the code::
+Note that the use of the functions listed above are subject to secure and safe
+coding practices and it should not be assumed that their use in the Zephyr
+kernel is unconditionally permitted by being listed in this rule.
 
-     /* Static code analysis tool can raise a violation that the standard
-      * header <setjmp.h> shall not be used.
-      * Since this violation is in test code, we will suppress it.
-      * Deliberate deviation.
-      */
-     #include <setjmp.h> /* parasoft-suppress MISRAC2012-RULE_21_4-a MISRAC2012-RULE_21_4-b */
+The "Zephyr kernel" in this context consists of the following components:
 
-  This variant above suppresses item ``MISRAC2012-RULE_21_4-a`` and ``MISRAC2012-RULE_21_4-b``
-  on the line with "setjump" header include. You can add as many rules to suppress you want -
-  just make sure to keep the Parasoft tag on one line and separate rules with a space.
-  To read more about suppressing findings in the Parasoft tool, refer to the
-  official Parasoft `documentation`_
+* Kernel (:file:`kernel`)
+* OS Library (:file:`lib/os`)
+* Architecture Port (:file:`arch`)
+* Logging Subsystem (:file:`subsys/logging`)
 
-  .. _documentation: https://docs.parasoft.com/display/CPPTEST1031/Suppressing+Findings
+Rationale
+---------
 
-Step 6
-  After a PR is submitted, the developer should add the ``Coding guidelines``
-  and ``MISRA-C`` Github labels so their PR can be easily tracked by maintainers.
-  If you have any concerns about what your PR should look like, you can search
-  on Github using those tags and refer to similar PRs that have already been merged.
+Zephyr kernel must be able to build with the
+:ref:`minimal libc <c_library_minimal>`, a limited C standard library
+implementation that is part of the Zephyr RTOS and maintained by the Zephyr
+Project, to allow self-contained testing and verification of the kernel and
+core OS services.
+
+In order to ensure that the Zephyr kernel can build with the minimal libc, it
+is necessary to restrict the use of the C standard library functions and macros
+in the Zephyr kernel to the functions and macros that are available as part of
+the minimal libc.
+
+Rule A.5: C Standard Library Usage Restrictions in Zephyr Codebase
+==================================================================
+
+Severity
+--------
+
+Required
+
+Description
+-----------
+
+The use of the C standard library functions and macros in the Zephyr codebase
+shall be limited to the functions, excluding the Annex K "Bounds-checking
+interfaces", from the ISO/IEC 9899:2011 standard, also known as C11, unless
+exempted by this rule.
+
+The "Zephyr codebase" in this context refers to all embedded source code files committed
+to the `main Zephyr repository`_, except the Zephyr kernel as defined by the
+:ref:`coding_guideline_libc_usage_restrictions_in_zephyr_kernel`.
+With embedded source code we refer to code which is meant to be executed in embedded
+targets, and therefore excludes host tooling, and code specific for the
+:ref:`native <boards_posix>` test targets.
+
+The following non-ISO 9899:2011, hereinafter referred to as non-standard,
+functions and macros are exempt from this rule and allowed to be used in the
+Zephyr codebase:
+
+.. csv-table:: List of allowed non-standard libc functions
+   :header: Function,Source
+   :widths: auto
+
+   `gmtime_r()`_,POSIX.1-2001
+   `strnlen()`_,POSIX.1-2008
+   `strtok_r()`_,POSIX.1-2001
+
+All non-standard functions and macros listed above must be implemented by the
+:ref:`common libc <c_library_common>` in order to make sure that these
+functions can be made available when using a C standard library that does not
+implement these functions.
+
+Adding a new non-standard function from common C standard libraries to the
+above list is allowed with justification, given that the above requirement is
+satisfied. However, when there exists a standard function that is functionally
+equivalent, the standard function shall be used.
+
+Rationale
+---------
+
+Some C standard libraries, such as Newlib and Picolibc, include additional
+functions and macros that are defined by the standards and de-facto standards
+that extend the ISO C standard (e.g. POSIX, Linux).
+
+The ISO/IEC 9899:2011 standard does not require C compiler toolchains to
+include the support for these non-standard functions, and therefore using
+these functions can lead to compatibility issues with the third-party
+toolchains that come with their own C standard libraries.
+
+.. _main Zephyr repository: https://github.com/zephyrproject-rtos/zephyr
+.. _gmtime_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/gmtime_r.html
+.. _strnlen(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
+.. _strtok_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strtok.html

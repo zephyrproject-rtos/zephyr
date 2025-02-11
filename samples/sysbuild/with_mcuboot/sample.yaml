@@ -1,0 +1,30 @@
+sample:
+  description: Sample with MCUboot built through sysbuild
+  name: with mcuboot
+tests:
+  sample.sysbuild.with_mcuboot:
+    sysbuild: true
+    # Platform allowed is used as twister using sysbuild still lacks proper
+    # filtering support, see discussion in #49552.
+    platform_allow:
+      - reel_board
+      - nrf52840dk/nrf52840
+      - esp32_devkitc_wrover/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp32c3_devkitm
+      - esp32c6_devkitc
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - esp32_devkitc_wrover/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp32c3_devkitm
+      - esp32c6_devkitc
+    tags: mcuboot
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Address of sample(.*)"
+        - "Hello sysbuild with mcuboot!(.*)"

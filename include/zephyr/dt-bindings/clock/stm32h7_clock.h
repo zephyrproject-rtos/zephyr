@@ -6,34 +6,37 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_
 
+#include "stm32_common_clocks.h"
+
 /** Domain clocks */
 
 /* RM0468, Table 56 Kernel clock dictribution summary */
 
+/** System clock */
+/* defined in stm32_common_clocks.h */
+
+/** Fixed clocks  */
+/* Low speed clocks defined in stm32_common_clocks.h */
+#define STM32_SRC_HSE		(STM32_SRC_LSI + 1)
+#define STM32_SRC_HSI48		(STM32_SRC_HSE + 1)
+#define STM32_SRC_HSI_KER	(STM32_SRC_HSI48 + 1) /* HSI + HSIKERON */
+#define STM32_SRC_CSI_KER	(STM32_SRC_HSI_KER + 1) /* CSI + CSIKERON */
 /** PLL outputs */
-#define STM32_SRC_PLL1_P	0x001
-#define STM32_SRC_PLL1_Q	0x002
-#define STM32_SRC_PLL1_R	0x003
-#define STM32_SRC_PLL2_P	0x004
-#define STM32_SRC_PLL2_Q	0x005
-#define STM32_SRC_PLL2_R	0x006
-#define STM32_SRC_PLL3_P	0x007
-#define STM32_SRC_PLL3_Q	0x008
-#define STM32_SRC_PLL3_R	0x009
-/** Oscillators  */
-#define STM32_SRC_HSE		0x00A
-#define STM32_SRC_LSE		0x00B
-#define STM32_SRC_LSI		0x00C
-#define STM32_SRC_HSI48		0x00D
-#define STM32_SRC_HSI_KER	0x00E /* HSI + HSIKERON */
-#define STM32_SRC_CSI_KER	0x00F /* CSI + CSIKERON */
-/** Core clock */
-#define STM32_SRC_SYSCLK	0x010
-/** Others: Not yet supported */
-/* #define STM32_SRC_I2SCKIN	0x011 */
-/* #define STM32_SRC_SPDIFRX	0x012 */
+#define STM32_SRC_PLL1_P	(STM32_SRC_CSI_KER + 1)
+#define STM32_SRC_PLL1_Q	(STM32_SRC_PLL1_P + 1)
+#define STM32_SRC_PLL1_R	(STM32_SRC_PLL1_Q + 1)
+#define STM32_SRC_PLL2_P	(STM32_SRC_PLL1_R + 1)
+#define STM32_SRC_PLL2_Q	(STM32_SRC_PLL2_P + 1)
+#define STM32_SRC_PLL2_R	(STM32_SRC_PLL2_Q + 1)
+#define STM32_SRC_PLL3_P	(STM32_SRC_PLL2_R + 1)
+#define STM32_SRC_PLL3_Q	(STM32_SRC_PLL3_P + 1)
+#define STM32_SRC_PLL3_R	(STM32_SRC_PLL3_Q + 1)
 /** Clock muxes */
-#define STM32_SRC_CKPER		0x013
+#define STM32_SRC_CKPER		(STM32_SRC_PLL3_R + 1)
+/** Others: Not yet supported */
+/* #define STM32_SRC_I2SCKIN	TBD */
+/* #define STM32_SRC_SPDIFRX	TBD */
+
 
 /** Bus clocks */
 #define STM32_CLOCK_BUS_AHB3    0x0D4

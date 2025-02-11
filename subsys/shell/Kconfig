@@ -40,8 +40,8 @@ endif
 
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
-	default 3168 if OPENTHREAD_SHELL && OPENTHREAD_JOINER
-	default 2616 if OPENTHREAD_SHELL
+	default 3168 if OPENTHREAD_SHELL
+	default 3072 if 64BIT
 	default 2048 if MULTITHREADING
 	default 0 if !MULTITHREADING
 	help
@@ -54,6 +54,24 @@ config SHELL_BACKSPACE_MODE_DELETE
 	  Terminals have different escape code settings for backspace button.
 	  Some terminals send code: 0x08 (backspace) other 0x7F (delete). When
 	  this option is set shell will expect 0x7F for backspace key.
+
+config SHELL_PROMPT_CHANGE
+	bool "Allow prompt change in runtime"
+	default y if !SHELL_MINIMAL
+	help
+	  Allow for the modification of the shell prompt at runtime.
+	  Enabling this will allocate additional RAM memory where
+	  the string of the prompt will be stored.
+
+config SHELL_PROMPT_BUFF_SIZE
+	int "Shell prompt buffer size"
+	depends on SHELL_PROMPT_CHANGE
+	range 2 40
+	default 10 if SHELL_MINIMAL
+	default 20
+	help
+	  Maximum prompt size in bytes. One byte is reserved for the string
+	  terminator character.
 
 config SHELL_CMD_BUFF_SIZE
 	int "Shell command buffer size"
@@ -70,6 +88,13 @@ config SHELL_PRINTF_BUFF_SIZE
 	  Maximum text buffer size for fprintf function.
 	  It is working like stdio buffering in Linux systems
 	  to limit number of peripheral access calls.
+
+config SHELL_PRINTF_AUTOFLUSH
+	bool "Indicate if the buffer should be automatically flushed"
+	default y
+	help
+	  Specify whether the shell's printing functions should automatically
+	  flush the printf buffer.
 
 config SHELL_DEFAULT_TERMINAL_WIDTH
 	int "Default terminal width"
@@ -90,7 +115,7 @@ config SHELL_ARGC_MAX
 
 config SHELL_TAB
 	bool "The Tab button support in shell"
-	default y if !SHELL_MINIMAL
+	default y if !SHELL_MINIMAL && !SHELL_BACKEND_RTT
 	help
 	  Enable using the Tab button in the shell. The button
 	  can be used for prompting commands, or for autocompletion.
@@ -104,12 +129,32 @@ config SHELL_TAB_AUTOCOMPLETION
 	  Enable commands and subcommands autocompletion with the Tab
 	  key. This function can be deactivated to save some flash.
 
+config SHELL_ASCII_FILTER
+	bool "Filter incoming ASCII characters"
+	default y
+	help
+	  Shell will not collect characters that are not in
+	  ASCII range: <0, 127>. As a result filtered characters will not be
+	  printed on the terminal and passed to the command handler.
+
 config SHELL_WILDCARD
 	bool "Wildcard support in shell"
-	select FNMATCH
+	select POSIX_C_LIB_EXT
 	default y if !SHELL_MINIMAL
 	help
 	  Enables using wildcards: * and ? in the shell.
+
+config SHELL_MSG_CMD_NOT_FOUND
+	bool "': command not found' message in the shell"
+	default y
+	help
+	  If enabled, the shell prints out this message.
+
+config SHELL_MSG_SPECIFY_SUBCOMMAND
+	bool "'Please specify a subcommand.' message in the shell"
+	default y
+	help
+	  If enabled, the shell prints out this message.
 
 config SHELL_ECHO_STATUS
 	bool "Echo on shell"
@@ -125,7 +170,7 @@ config SHELL_START_OBSCURED
 
 config SHELL_VT100_COMMANDS
 	bool "VT100 commands in shell"
-	default y
+	default y if !SHELL_BACKEND_RTT
 	help
 	  Enables VT100 commands in shell (e.g. cursor position, clear screen etc.).
 
@@ -138,7 +183,7 @@ config SHELL_VT100_COLORS
 
 config SHELL_GETOPT
 	bool "Threadsafe getopt support in shell"
-	select GETOPT
+	select POSIX_C_LIB_EXT
 	help
 	  This config creates a separate getopt_state for the shell instance.
 	  It ensures that using getopt with shell is thread safe.
@@ -250,6 +295,22 @@ config SHELL_AUTOSTART
 	default y
 	help
 	  If enabled, shell will be automatically started.
+
+config SHELL_CMDS_RETURN_VALUE
+	bool "Retval command"
+	depends on SHELL_CMDS
+	default y
+	help
+	  This option enables the retval command. It is used to retrieve
+	  the return value from the most recently executed command.
+
+config SHELL_CUSTOM_HEADER
+	bool "Include Custom Shell Header"
+	help
+	  When enabled, a custom application provided header, named
+	  "zephyr_custom_shell.h", is included at the end of shell.h. This enables
+	  extension of the shell APIs at the macro level. Please use cautiously!
+	  The internal shell API may change in future releases.
 
 source "subsys/shell/modules/Kconfig"
 

@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_INSTANCE_H_
 
 #include <zephyr/types.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,9 +36,9 @@ struct log_source_dynamic_data {
 	 */
 	uint32_t dummy[2];
 #endif
-#if defined(CONFIG_RISCV) && defined(CONFIG_64BIT)
-	/* Workaround: RV64 needs to ensure that structure is just 8 bytes. */
-	uint32_t dummy;
+#if defined(CONFIG_64BIT)
+	/* Workaround: Ensure that structure size is a multiple of 8 bytes. */
+	uint32_t dummy_64;
 #endif
 };
 
@@ -61,9 +62,10 @@ struct log_source_dynamic_data {
  * @param _level Messages up to this level are compiled in.
  */
 #define Z_LOG_CONST_ITEM_REGISTER(_name, _str_name, _level)		       \
-	const struct log_source_const_data Z_LOG_ITEM_CONST_DATA(_name)	       \
-	__attribute__ ((section("." STRINGIFY(Z_LOG_ITEM_CONST_DATA(_name))))) \
-	__attribute__((used)) = {					       \
+	const STRUCT_SECTION_ITERABLE_ALTERNATE(log_const,		       \
+		log_source_const_data,					       \
+		Z_LOG_ITEM_CONST_DATA(_name)) =				       \
+	{								       \
 		.name = _str_name,					       \
 		.level  = (_level),					       \
 	}
@@ -135,18 +137,20 @@ struct log_source_dynamic_data {
 /**
  * @brief Declare a logger instance pointer in the module structure.
  *
+ * If logging is disabled then element in the structure is still declared to avoid
+ * compilation issues. If compiler supports zero length arrays then it is utilized
+ * to not use any space, else a byte array is created.
+ *
  * @param _name Name of a structure element that will have a pointer to logging
  * instance object.
  */
 #define LOG_INSTANCE_PTR_DECLARE(_name)	\
-	IF_ENABLED(CONFIG_LOG, (Z_LOG_INSTANCE_STRUCT * _name))
+	COND_CODE_1(CONFIG_LOG, (Z_LOG_INSTANCE_STRUCT * _name), \
+				(int _name[TOOLCHAIN_HAS_ZLA ? 0 : 1]))
 
 #define Z_LOG_RUNTIME_INSTANCE_REGISTER(_module_name, _inst_name) \
-	struct log_source_dynamic_data LOG_INSTANCE_DYNAMIC_DATA(_module_name, _inst_name) \
-		__attribute__ ((section("." STRINGIFY( \
-				LOG_INSTANCE_DYNAMIC_DATA(_module_name, _inst_name) \
-				) \
-		))) __attribute__((used))
+	STRUCT_SECTION_ITERABLE_ALTERNATE(log_dynamic, log_source_dynamic_data, \
+			LOG_INSTANCE_DYNAMIC_DATA(_module_name, _inst_name))
 
 #define Z_LOG_INSTANCE_REGISTER(_module_name, _inst_name, _level) \
 	Z_LOG_CONST_ITEM_REGISTER( \

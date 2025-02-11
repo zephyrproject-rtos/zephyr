@@ -7,6 +7,7 @@
 #include "analog.h"
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
+#include <zephyr/init.h>
 
 #define DT_DRV_COMPAT telink_b91_pinctrl
 
@@ -66,9 +67,8 @@
 				       ((pin & 0xf0) ? 1 : 0)))
 
 /* Pinctrl driver initialization */
-static int pinctrl_b91_init(const struct device *dev)
+static int pinctrl_b91_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* set pad_mul_sel register value from dts */
 	reg_gpio_pad_mul_sel |= DT_INST_PROP(0, pad_mul_sel);

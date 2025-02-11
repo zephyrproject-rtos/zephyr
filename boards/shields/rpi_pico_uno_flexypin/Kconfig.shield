@@ -1,0 +1,5 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_RPI_PICO_UNO_FLEXYPIN
+	def_bool $(shields_list_contains,rpi_pico_uno_flexypin)

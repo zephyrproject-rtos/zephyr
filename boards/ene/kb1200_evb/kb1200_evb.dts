@@ -1,0 +1,157 @@
+/*
+ * Copyright (c) 2023 ENE Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <ene/kb1200.dtsi>
+#include <ene/kb1200-pinctrl.dtsi>
+#include <dt-bindings/i2c/i2c.h>
+
+/ {
+	model = "KB1200 board";
+	compatible = "ene,kb1200";
+
+	aliases {
+		uart0 = &uart0;
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &user_button;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpio0x1x 0x10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* green led */
+		led0: led_0 {
+			gpios = <&gpio0x1x 0x0f GPIO_ACTIVE_HIGH>;
+			label = "LED0";
+		};
+		/* blue led */
+		led1: led_1 {
+			gpios = <&gpio0x1x 0x11 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0_tx_gpio03 &uart0_rx_gpio01>;
+	pinctrl-names = "default";
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_tx_gpio36 &uart1_rx_gpio28>;
+	pinctrl-names = "default";
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_tx_gpio04 &uart2_rx_gpio55>;
+	pinctrl-names = "default";
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&gpio0x1x {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_gpio0a &adc1_gpio0b &adc2_gpio0c &adc3_gpio0d>;
+	pinctrl-names = "default";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_gpio3a>;
+	pinctrl-names = "default";
+};
+
+&pwm4 {
+	status = "okay";
+	pinctrl-0 = <&pwm4_gpio31>;
+	pinctrl-names = "default";
+};
+
+&pwm5 {
+	status = "okay";
+	pinctrl-0 = <&pwm5_gpio30>;
+	pinctrl-names = "default";
+};
+
+&pwm6 {
+	status = "okay";
+	pinctrl-0 = <&pwm6_gpio37>;
+	pinctrl-names = "default";
+};
+
+&tach0 {
+	status = "okay";
+	pinctrl-0 = <&tach0_gpio48>;
+	pinctrl-names = "default";
+	pulses-per-round = <2>;
+	sample-time-us = <2>;
+};
+
+&tach1 {
+	status = "okay";
+	pinctrl-0 = <&tach1_gpio4e>;
+	pinctrl-names = "default";
+	pulses-per-round = <1>;
+	sample-time-us = <8>;
+};
+
+&tach2 {
+	status = "okay";
+	pinctrl-0 = <&tach2_gpio0e>;
+	pinctrl-names = "default";
+	pulses-per-round = <2>;
+	sample-time-us = <16>;
+};
+
+&tach3 {
+	status = "okay";
+	pinctrl-0 = <&tach3_gpio43>;
+	pinctrl-names = "default";
+	pulses-per-round = <1>;
+	sample-time-us = <64>;
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_clk_gpio2c &i2c0_dat_gpio2d>;
+	pinctrl-names = "default";
+};
+
+&i2c8 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c8_clk_gpio70 &i2c8_dat_gpio71>;
+	pinctrl-names = "default";
+};

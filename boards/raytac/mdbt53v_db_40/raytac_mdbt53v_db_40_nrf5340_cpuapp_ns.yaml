@@ -1,0 +1,16 @@
+identifier: raytac_mdbt53v_db_40/nrf5340/cpuapp/ns
+name: RAYTAC-MDBT53V-DB-40-NRF52840-application-MCU-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 192
+flash: 192
+supported:
+  - i2c
+  - pwm
+  - watchdog
+  - netif:openthread
+  - gpio

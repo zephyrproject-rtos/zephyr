@@ -1,0 +1,11 @@
+# ST STM32F405XX MCU configuration options
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F405XX
+
+config NUM_IRQS
+	default 82
+
+endif # SOC_STM32F405XX

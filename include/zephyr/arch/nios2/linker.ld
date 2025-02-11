@@ -39,6 +39,11 @@
  * the exception vector is in RAM
  */
 
+#if defined(CONFIG_ROM_END_OFFSET)
+#define ROM_END_OFFSET CONFIG_ROM_END_OFFSET
+#else
+#define ROM_END_OFFSET 0
+#endif
 
 #ifdef CONFIG_XIP
 	#define ROMABLE_REGION FLASH
@@ -54,7 +59,7 @@ ASSERT(_RESET_VECTOR == _ROM_ADDR, "Reset vector not at beginning of ROM!")
 MEMORY
     {
     RESET (rx) : ORIGIN = _RESET_VECTOR, LENGTH = 0x20
-    FLASH (rx) : ORIGIN = _RESET_VECTOR + 0x20 , LENGTH = (_ROM_SIZE - 0x20)
+    FLASH (rx) : ORIGIN = _RESET_VECTOR + 0x20 , LENGTH = (_ROM_SIZE - 0x20 - ROM_END_OFFSET)
     RAM   (wx) : ORIGIN = _EXC_VECTOR, LENGTH = _RAM_SIZE - (_EXC_VECTOR - _RAM_ADDR)
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
@@ -79,6 +84,10 @@ SECTIONS
     {
 
 #include <zephyr/linker/rel-sections.ld>
+
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
 
     /*
      * .plt and .iplt are here according to
@@ -134,6 +143,10 @@ SECTIONS
     __rodata_region_start = .;
 
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
         {
@@ -259,16 +272,14 @@ SECTIONS
 
 #include <zephyr/linker/common-noinit.ld>
 
-    /* Define linker symbols */
-    _image_ram_end = .;
-    _end = .; /* end of image */
-
-    GROUP_END(RAMABLE_REGION)
-
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-sections.ld>
+
+#include <zephyr/linker/ram-end.ld>
+
+    GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 

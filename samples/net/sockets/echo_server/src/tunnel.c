@@ -11,6 +11,7 @@ LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/virtual_mgmt.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 
 /* User data for the interface callback */
 struct ud {
@@ -20,7 +21,9 @@ struct ud {
 
 bool is_tunnel(struct net_if *iface)
 {
-	if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
+	    strncmp(net_if_get_device(iface)->name, "IP_TUNNEL0",
+		    strlen(net_if_get_device(iface)->name)) == 0) {
 		return true;
 	}
 
@@ -41,6 +44,9 @@ static int setup_iface(struct net_if *iface, const char *ipaddr)
 {
 	struct net_if_addr *ifaddr;
 	struct sockaddr addr;
+
+	/* Before setting up tunnel, make sure it will be ignored by conn_mgr */
+	conn_mgr_ignore_iface(iface);
 
 	if (!net_ipaddr_parse(ipaddr, strlen(ipaddr), &addr)) {
 		LOG_ERR("Tunnel peer address \"%s\" invalid.", ipaddr);
@@ -129,6 +135,11 @@ int init_tunnel(void)
 	}
 
 	net_if_foreach(iface_cb, &ud);
+
+	if (ud.tunnel == NULL) {
+		LOG_ERR("Tunnel interface not found.");
+		return -ENOENT;
+	}
 
 	ret = net_mgmt(NET_REQUEST_VIRTUAL_INTERFACE_SET_PEER_ADDRESS,
 		       ud.tunnel, &params, sizeof(params));

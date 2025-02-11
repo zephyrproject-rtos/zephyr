@@ -101,7 +101,7 @@ static void isr_tx(void *param)
 
 	/* LE Test Packet Interval */
 	l = radio_tmr_end_get() - radio_tmr_ready_get();
-	i = ceiling_fraction((l + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
+	i = DIV_ROUND_UP((l + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
 	t = radio_tmr_end_get() - l + i;
 	t -= radio_tx_ready_delay_get(test_phy, test_phy_flags);
 

@@ -10,18 +10,12 @@
  * @brief Zephyr Testsuite
  */
 
-/**
- * @brief Zephyr Tests (ZTest)
- * @defgroup all_tests Zephyr Tests
- * @{
- * @}
- */
-
 #ifndef ZEPHYR_TESTSUITE_INCLUDE_ZTEST_H_
 #define ZEPHYR_TESTSUITE_INCLUDE_ZTEST_H_
 
 /**
- * @defgroup ztest Zephyr testing suite
+ * @defgroup ztest Zephyr Testing Framework (ZTest)
+ * @ingroup testing
  */
 
 #if !defined(CONFIG_ZTEST) && !defined(ZTEST_UNITTEST)
@@ -34,8 +28,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-struct esf;
-typedef struct esf z_arch_esf_t;
+struct arch_esf;
 #ifdef __cplusplus
 }
 #endif

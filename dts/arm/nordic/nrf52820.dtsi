@@ -5,11 +5,12 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include "nrf_common.dtsi"
+#include <nordic/nrf_common.dtsi>
 
 / {
 
 	chosen {
+		zephyr,bt-hci = &bt_hci_controller;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash_controller;
 	};
@@ -37,6 +38,7 @@
 		ficr: ficr@10000000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0x10000000 0x1000>;
+			#nordic,ficr-cells = <1>;
 			status = "okay";
 		};
 
@@ -62,6 +64,24 @@
 			reg = <0x40000000 0x1000>;
 			interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpregret1: gpregret1@4000051c {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "nordic,nrf-gpregret";
+				reg = <0x4000051c 0x1>;
+				status = "okay";
+			};
+
+			gpregret2: gpregret2@40000520 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "nordic,nrf-gpregret";
+				reg = <0x40000520 0x1>;
+				status = "okay";
+			};
 		};
 
 		radio: radio@40001000 {
@@ -70,9 +90,23 @@
 			interrupts = <1 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			dfe-supported;
+			ieee802154-supported;
 			ble-2mbps-supported;
 			ble-coded-phy-supported;
 			tx-high-power-supported;
+
+			ieee802154: ieee802154 {
+				compatible = "nordic,nrf-ieee802154";
+				status = "disabled";
+			};
+
+			/* Note: In the nRF Connect SDK another Bluetooth controller
+			 * is added and set as the default.
+			 */
+			bt_hci_controller: bt_hci_controller {
+				compatible = "zephyr,bt-hci-ll-sw-split";
+				status = "okay";
+			};
 		};
 
 		uart0: uart@40002000 {
@@ -98,6 +132,7 @@
 			reg = <0x40003000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
+			easydma-maxcnt-bits = <15>;
 			status = "disabled";
 		};
 
@@ -115,6 +150,7 @@
 			reg = <0x40003000 0x1000>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(8)>;
+			easydma-maxcnt-bits = <15>;
 			status = "disabled";
 		};
 
@@ -132,6 +168,7 @@
 			reg = <0x40004000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
+			easydma-maxcnt-bits = <15>;
 			status = "disabled";
 		};
 
@@ -149,39 +186,44 @@
 			reg = <0x40004000 0x1000>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(8)>;
+			easydma-maxcnt-bits = <15>;
 			status = "disabled";
 		};
 
-		gpiote: gpiote@40006000 {
+		gpiote: gpiote0: gpiote@40006000 {
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x40006000 0x1000>;
 			interrupts = <6 5>;
 			status = "disabled";
+			instance = <0>;
 		};
 
 		timer0: timer@40008000 {
 			compatible = "nordic,nrf-timer";
-			status = "okay";
+			status = "disabled";
 			reg = <0x40008000 0x1000>;
 			cc-num = <4>;
+			max-bit-width = <32>;
 			interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 		};
 
 		timer1: timer@40009000 {
 			compatible = "nordic,nrf-timer";
-			status = "okay";
+			status = "disabled";
 			reg = <0x40009000 0x1000>;
 			cc-num = <4>;
+			max-bit-width = <32>;
 			interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 		};
 
 		timer2: timer@4000a000 {
 			compatible = "nordic,nrf-timer";
-			status = "okay";
+			status = "disabled";
 			reg = <0x4000a000 0x1000>;
 			cc-num = <4>;
+			max-bit-width = <32>;
 			interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 		};
@@ -191,7 +233,7 @@
 			reg = <0x4000b000 0x1000>;
 			cc-num = <3>;
 			interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
+			status = "disabled";
 			clock-frequency = <32768>;
 			prescaler = <1>;
 		};
@@ -222,6 +264,7 @@
 			reg = <0x4000f000 0x1000>;
 			interrupts = <15 NRF_DEFAULT_IRQ_PRIORITY>;
 			length-field-length-8-bits;
+			headermask-supported;
 			status = "okay";
 		};
 
@@ -237,7 +280,7 @@
 			reg = <0x40011000 0x1000>;
 			cc-num = <4>;
 			interrupts = <17 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
+			status = "disabled";
 			clock-frequency = <32768>;
 			prescaler = <1>;
 		};
@@ -301,9 +344,10 @@
 
 		timer3: timer@4001a000 {
 			compatible = "nordic,nrf-timer";
-			status = "okay";
+			status = "disabled";
 			reg = <0x4001a000 0x1000>;
 			cc-num = <6>;
+			max-bit-width = <32>;
 			interrupts = <26 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 		};
@@ -356,18 +400,16 @@
 			#gpio-cells = <2>;
 			status = "disabled";
 			port = <0>;
+			gpiote-instance = <&gpiote>;
 		};
-	};
-
-	sw_pwm: sw-pwm {
-		compatible = "nordic,nrf-sw-pwm";
-		status = "disabled";
-		generator = <&timer2>;
-		clock-prescaler = <0>;
-		#pwm-cells = <3>;
 	};
 };
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	/* Use RTC for system clock, instead of SysTick. */
+	status = "disabled";
 };

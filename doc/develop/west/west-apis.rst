@@ -10,14 +10,6 @@ This page documents the Python APIs provided by :ref:`west <west>`, as well as
 some additional APIs used by the :ref:`west extensions <west-extensions>` in
 the zephyr repository.
 
-.. warning::
-
-   These APIs should be considered unstable until west version 1.0 (see `west
-   #38`_).
-
-.. _west #38:
-   https://github.com/zephyrproject-rtos/west/issues/38
-
 **Contents**:
 
 .. contents::
@@ -42,7 +34,7 @@ provided.
 WestCommand
 ===========
 
-.. py:class:: west.commands.WestCommand
+.. autoclass:: west.commands.WestCommand
 
    Instance attributes:
 
@@ -111,6 +103,13 @@ WestCommand
 
    .. versionadded:: 0.11.0
 
+   .. py:attribute:: color_ui
+
+      True if the west configuration permits colorized output,
+      False otherwise.
+
+   .. versionadded:: 1.0.0
+
    Constructor:
 
    .. automethod:: __init__
@@ -123,6 +122,8 @@ WestCommand
       The *topdir* parameter can now be any ``os.PathLike``.
    .. versionchanged:: 0.13.0
       The deprecated *requires_installation* parameter was removed.
+   .. versionadded:: 1.0.0
+      The *verbosity* parameter.
 
    Methods:
 
@@ -133,13 +134,41 @@ WestCommand
 
    .. automethod:: add_parser
 
-   .. automethod:: check_call
+   .. automethod:: add_pre_run_hook
+   .. versionadded:: 1.0.0
 
+   .. NOTE: the following 'method' (not 'automethod') directives were added for
+      expediency during the west v1.2 release time frame to work around a build
+      failure in this zephyr documentation that could not be fixed without
+      cutting a west point release. (The docstrings in west had some RST syntax
+      errors).
+
+      These should be reverted back to automethod calls at the next release.
+
+   .. method:: check_call(args, **kwargs)
+
+      Runs ``subprocess.check_call(args, **kwargs)`` after
+      logging the call at Verbosity.DBG_MORE`` level.
+
+   .. versionchanged:: 1.2.0
+      The *cwd* keyword argument was replaced with a catch-all ``**kwargs``.
    .. versionchanged:: 0.11.0
 
-   .. automethod:: check_output
+   .. method:: check_output(args, **kwargs)
 
+      Runs ``subprocess.check_output(args, **kwargs)`` after
+      logging the call at Verbosity.DBG_MORE level.
+
+   .. versionchanged:: 1.2.0
+      The *cwd* keyword argument was replaced with a catch-all ``**kwargs``.
    .. versionchanged:: 0.11.0
+
+   .. method:: run_subprocess(args, **kwargs)
+
+      Runs ``subprocess.run(args, **kwargs)`` after logging
+      the call at Verbosity.DBG_MORE level.
+
+   .. versionadded:: 1.2.0
 
    All subclasses must provide the following abstract methods, which are used
    to implement the above:
@@ -147,6 +176,61 @@ WestCommand
    .. automethod:: do_add_parser
 
    .. automethod:: do_run
+
+   The following methods should be used when the command needs to print output.
+   These were introduced to enable a transition from the deprecated
+   ``west.log`` module to a per-command interface that will allow for a global
+   "quiet" mode for west commands in a future release:
+
+   .. automethod:: dbg
+   .. versionchanged:: 1.2.0
+      The *end* argument.
+   .. versionadded:: 1.0.0
+
+   .. automethod:: inf
+   .. versionchanged:: 1.2.0
+      The *end* argument.
+   .. versionadded:: 1.0.0
+
+   .. automethod:: wrn
+   .. versionchanged:: 1.2.0
+      The *end* argument.
+   .. versionadded:: 1.0.0
+
+   .. automethod:: err
+   .. versionchanged:: 1.2.0
+      The *end* argument.
+   .. versionadded:: 1.0.0
+
+   .. automethod:: die
+   .. versionadded:: 1.0.0
+
+   .. automethod:: banner
+   .. versionadded:: 1.0.0
+
+   .. automethod:: small_banner
+   .. versionadded:: 1.0.0
+
+.. _west-apis-commands-output:
+
+Verbosity
+=========
+
+Since west v1.0, west commands should print output using methods like
+west.commands.WestCommand.dbg(), west.commands.WestCommand.inf(), etc. (see
+above). This section documents a related enum used to declare verbosity levels.
+
+.. autoclass:: west.commands.Verbosity
+
+   .. autoattribute:: QUIET
+   .. autoattribute:: ERR
+   .. autoattribute:: WRN
+   .. autoattribute:: INF
+   .. autoattribute:: DBG
+   .. autoattribute:: DBG_MORE
+   .. autoattribute:: DBG_EXTREME
+
+.. versionadded:: 1.0.0
 
 Exceptions
 ==========
@@ -172,7 +256,7 @@ Since west v0.13, the recommended class for reading this is
 :py:class:`west.configuration.Configuration`.
 
 Note that if you are writing a :ref:`west extension <west-extensions>`, you can
-access the current ``Configuration`` object as ``self.configuration``. See
+access the current ``Configuration`` object as ``self.config``. See
 :py:class:`west.commands.WestCommand`.
 
 Configuration API
@@ -216,16 +300,10 @@ not be used in new code when west v0.13.0 or later may be assumed.
 
 .. _west-apis-log:
 
-west.log
-********
+west.log (deprecated)
+*********************
 
 .. automodule:: west.log
-
-This module's functions are used whenever a running west command needs to print
-to standard out or error streams.
-
-This is safe to use from extension commands if you want output that mirrors
-that of west itself.
 
 Verbosity control
 =================
@@ -266,8 +344,8 @@ west.manifest
 
 The main classes are :py:class:`Manifest` and :py:class:`Project`. These
 represent the contents of a :ref:`manifest file <west-manifests>`. The
-recommended methods for parsing west manifests are
-:py:meth:`Manifest.from_file` and :py:meth:`Manifest.from_data`.
+recommended method for parsing west manifests is
+:py:meth:`Manifest.from_topdir`.
 
 Constants and functions
 =======================
@@ -339,6 +417,9 @@ Manifest and sub-objects
    .. versionadded:: 0.7.0
    .. automethod:: is_active
    .. versionadded:: 0.9.0
+   .. versionchanged:: 1.1.0
+      This respects the ``manifest.project-filter`` configuration
+      option. See :ref:`west-config-index`.
 
 .. autoclass:: west.manifest.ImportFlag
    :members:
@@ -348,10 +429,6 @@ Manifest and sub-objects
 
    .. (note: attributes are part of the class docstring)
 
-   .. versionchanged:: 0.8.0
-      The *west_commands* attribute is now always a list. In previous
-      releases, it could be a string or ``None``.
-
    .. versionchanged:: 0.7.0
       The *remote* attribute was removed. Its semantics could no longer
       be preserved when support for manifest ``import`` keys was added.
@@ -359,11 +436,18 @@ Manifest and sub-objects
    .. versionadded:: 0.7.0
       The *remote_name* and *name_and_path* attributes.
 
+   .. versionchanged:: 0.8.0
+      The *west_commands* attribute is now always a list. In previous
+      releases, it could be a string or ``None``.
+
    .. versionadded:: 0.9.0
       The *group_filter* and *submodules* attributes.
 
    .. versionadded:: 0.12.0
       The *userdata* attribute.
+
+   .. versionadded:: 1.2.0
+      The *description* attribute.
 
    Constructor:
 
@@ -439,10 +523,10 @@ Manifest and sub-objects
 Exceptions
 ==========
 
-.. autoclass:: west.manifest.MalformedManifest
+.. autoclass:: west.configuration.MalformedConfig
    :show-inheritance:
 
-.. autoclass:: west.manifest.MalformedConfig
+.. autoclass:: west.manifest.MalformedManifest
    :show-inheritance:
 
 .. autoclass:: west.manifest.ManifestVersionError

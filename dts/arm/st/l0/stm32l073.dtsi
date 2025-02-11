@@ -6,3 +6,9 @@
  */
 
 #include <st/l0/stm32l072.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l073", "st,stm32l0", "simple-bus";
+	};
+};

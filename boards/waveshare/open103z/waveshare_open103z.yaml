@@ -1,0 +1,19 @@
+identifier: waveshare_open103z
+name: Waveshare Open103Z
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
+supported:
+  - gpio
+  - spi
+  - i2c
+  - pwm
+  - watchdog
+  - adc
+  - usb_device
+vendor: waveshare

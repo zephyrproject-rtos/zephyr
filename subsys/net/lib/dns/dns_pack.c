@@ -134,7 +134,7 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl,
 	 *
 	 * See RFC-1035 4.1.3. Resource record format
 	 */
-	rem_size = dns_msg->msg_size - dname_len;
+	rem_size = dns_msg->msg_size - dns_msg->answer_offset - dname_len;
 	if (rem_size < 2 + 2 + 4 + 2) {
 		return -EINVAL;
 	}
@@ -394,7 +394,7 @@ int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
 		/* validate that the label (i.e. size + elements),
 		 * fits the current msg buffer
 		 */
-		if (DNS_LABEL_LEN_SIZE + lb_size > size - *len) {
+		if (DNS_LABEL_LEN_SIZE + lb_size > MIN(size - *len, msg_size - pos)) {
 			rc = -ENOMEM;
 			break;
 		}
@@ -540,6 +540,30 @@ static int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 	return buf->len;
 }
 
+const char *dns_qtype_to_str(enum dns_rr_type qtype)
+{
+	switch (qtype) {
+	case DNS_RR_TYPE_A:
+		return "A";
+	case DNS_RR_TYPE_CNAME:
+		return "CNAME";
+	case DNS_RR_TYPE_PTR:
+		return "PTR";
+	case DNS_RR_TYPE_TXT:
+		return "TXT";
+	case DNS_RR_TYPE_AAAA:
+		return "AAAA";
+	case DNS_RR_TYPE_SRV:
+		return "SRV";
+	case DNS_RR_TYPE_ANY:
+		return "ANY";
+	default:
+		break;
+	}
+
+	return "<unknown>";
+}
+
 int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 		     enum dns_rr_type *qtype, enum dns_class *qclass)
 {
@@ -560,12 +584,13 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 	if (query_type != DNS_RR_TYPE_A && query_type != DNS_RR_TYPE_AAAA
 		&& query_type != DNS_RR_TYPE_PTR
 		&& query_type != DNS_RR_TYPE_SRV
-		&& query_type != DNS_RR_TYPE_TXT) {
+		&& query_type != DNS_RR_TYPE_TXT
+		&& query_type != DNS_RR_TYPE_ANY) {
 		return -EINVAL;
 	}
 
 	query_class = dns_unpack_query_qclass(end_of_label);
-	if (query_class != DNS_CLASS_IN) {
+	if ((query_class & DNS_CLASS_IN) != DNS_CLASS_IN) {
 		return -EINVAL;
 	}
 

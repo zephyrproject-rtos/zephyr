@@ -44,7 +44,7 @@ struct sof_dai_ssp_params {
 } __packed;
 
 static const struct device *const dev_dai_ssp =
-	DEVICE_DT_GET(DT_NODELABEL(ssp0));
+	DEVICE_DT_GET(DT_NODELABEL(ssp00));
 static const struct device *const dev_dma_dw =
 	DEVICE_DT_GET(DT_NODELABEL(lpgpdma0));
 
@@ -83,7 +83,7 @@ static __aligned(32) int32_t rx_data[XFERS][BUF_SIZE] = { { 0 } };
 static void dma_callback(const struct device *dma_dev, void *user_data,
 			 uint32_t channel, int status)
 {
-	if (status) {
+	if (status < 0) {
 		TC_PRINT("tx callback status %d\n", status);
 	} else {
 		TC_PRINT("tx giving up\n");
@@ -93,7 +93,7 @@ static void dma_callback(const struct device *dma_dev, void *user_data,
 static void dma_callback_rx(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
-	if (status) {
+	if (status < 0) {
 		TC_PRINT("rx callback status %d\n", status);
 	} else {
 		TC_PRINT("rx giving xfer_sem\n");
@@ -405,6 +405,17 @@ static void *adsp_ssp_setup(void)
 	test_adsp_ssp_probe();
 
 	return NULL;
+}
+
+
+bool adsp_clock_source_is_supported(int source)
+{
+	return true;
+}
+
+uint32_t adsp_clock_source_frequency(int source)
+{
+	return 0;
 }
 
 ZTEST_SUITE(adsp_ssp, NULL, adsp_ssp_setup, NULL, NULL, NULL);

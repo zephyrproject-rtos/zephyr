@@ -31,6 +31,12 @@ to stdout. Using the completion scripts:
     # permanent (might require sudo)
     west completion zsh > "${fpath[1]}/_west"
 
+  fish:
+    # one-time
+    west completion fish | source
+    # permanent
+    west completion fish > $HOME/.config/fish/completions/west.fish
+
 positional arguments:
   source_dir            application source directory
   cmake_opt             extra options to pass to cmake; implies -c
@@ -57,7 +63,7 @@ class Completion(WestCommand):
 
         # Remember to update west-completion.bash if you add or remove
         # flags
-        parser.add_argument('shell', nargs=1, choices=['bash', 'zsh'],
+        parser.add_argument('shell', nargs=1, choices=['bash', 'zsh', 'fish'],
                             help='''Shell that which the completion
                             script is intended for.''')
         return parser

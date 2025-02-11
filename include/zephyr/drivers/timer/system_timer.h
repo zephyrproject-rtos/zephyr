@@ -23,8 +23,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Clock APIs
- * @defgroup clock_apis Clock APIs
+ * @brief System Clock APIs
+ * @defgroup clock_apis System Clock APIs
  * @{
  */
 
@@ -33,7 +33,7 @@ extern "C" {
  *
  * Informs the system clock driver that the next needed call to
  * sys_clock_announce() will not be until the specified number of ticks
- * from the the current time have elapsed.  Note that spurious calls
+ * from the current time have elapsed.  Note that spurious calls
  * to sys_clock_announce() are allowed (i.e. it's legal to announce
  * every tick and implement this function as a noop), the requirement
  * is that one tick announcement should occur within one tick BEFORE
@@ -70,7 +70,7 @@ extern "C" {
  * @param idle Hint to the driver that the system is about to enter
  *        the idle state immediately after setting the timeout
  */
-extern void sys_clock_set_timeout(int32_t ticks, bool idle);
+void sys_clock_set_timeout(int32_t ticks, bool idle);
 
 /**
  * @brief Timer idle exit notification
@@ -84,7 +84,7 @@ extern void sys_clock_set_timeout(int32_t ticks, bool idle);
  * This is allowed for compatibility, but not recommended.  The kernel
  * will figure that out on its own.
  */
-extern void sys_clock_idle_exit(void);
+void sys_clock_idle_exit(void);
 
 /**
  * @brief Announce time progress to the kernel
@@ -97,7 +97,7 @@ extern void sys_clock_idle_exit(void);
  *
  * @param ticks Elapsed time, in ticks
  */
-extern void sys_clock_announce(int32_t ticks);
+void sys_clock_announce(int32_t ticks);
 
 /**
  * @brief Ticks elapsed since last sys_clock_announce() call
@@ -107,7 +107,7 @@ extern void sys_clock_announce(int32_t ticks);
  * this with appropriate locking, the driver needs only provide an
  * instantaneous answer.
  */
-extern uint32_t sys_clock_elapsed(void);
+uint32_t sys_clock_elapsed(void);
 
 /**
  * @brief Disable system timer.
@@ -116,7 +116,49 @@ extern uint32_t sys_clock_elapsed(void);
  * The config @kconfig{CONFIG_SYSTEM_TIMER_HAS_DISABLE_SUPPORT} can be used to
  * check if the system timer has the capability of being disabled.
  */
-extern void sys_clock_disable(void);
+void sys_clock_disable(void);
+
+/**
+ * @brief Hardware cycle counter
+ *
+ * Timer drivers are generally responsible for the system cycle
+ * counter as well as the tick announcements.  This function is
+ * generally called out of the architecture layer (@see
+ * arch_k_cycle_get_32()) to implement the cycle counter, though the
+ * user-facing API is owned by the architecture, not the driver.  The
+ * rate must match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.
+ *
+ * @note
+ * If the counter clock is large enough for this to wrap its full range
+ * within a few seconds (i.e. CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC is greater
+ * than 50Mhz) then it is recommended to also implement
+ * sys_clock_cycle_get_64().
+ *
+ * @return The current cycle time.  This should count up monotonically
+ * through the full 32 bit space, wrapping at 0xffffffff.  Hardware
+ * with fewer bits of precision in the timer is expected to synthesize
+ * a 32 bit count.
+ */
+uint32_t sys_clock_cycle_get_32(void);
+
+/**
+ * @brief 64 bit hardware cycle counter
+ *
+ * As for sys_clock_cycle_get_32(), but with a 64 bit return value.
+ * Not all hardware has 64 bit counters.  This function need be
+ * implemented only if CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER is set.
+ *
+ * @note
+ * If the counter clock is large enough for sys_clock_cycle_get_32() to wrap
+ * its full range within a few seconds (i.e. CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+ * is greater than 50Mhz) then it is recommended to implement this API.
+ *
+ * @return The current cycle time.  This should count up monotonically
+ * through the full 64 bit space, wrapping at 2^64-1.  Hardware with
+ * fewer bits of precision in the timer is generally not expected to
+ * implement this API.
+ */
+uint64_t sys_clock_cycle_get_64(void);
 
 /**
  * @}

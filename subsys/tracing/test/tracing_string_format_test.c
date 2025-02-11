@@ -361,6 +361,16 @@ void sys_trace_k_heap_free(struct k_heap *h, void *mem)
 	TRACING_STRING("%s: %p\n", __func__, h);
 }
 
+void sys_trace_k_heap_realloc_enter(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout)
+{
+	TRACING_STRING("%s: %p\n", __func__, h);
+}
+void sys_trace_k_heap_realloc_exit(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout,
+				   void *ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, h);
+}
+
 void sys_trace_k_heap_aligned_alloc_blocking(struct k_heap *h, size_t bytes, k_timeout_t timeout)
 {
 	TRACING_STRING("%s: %p\n", __func__, h);
@@ -474,12 +484,12 @@ void sys_trace_k_mem_slab_alloc_exit(struct k_mem_slab *slab, void **mem, k_time
 	TRACING_STRING("%s: %p\n", __func__, slab);
 }
 
-void sys_trace_k_mem_slab_free_enter(struct k_mem_slab *slab, void **mem)
+void sys_trace_k_mem_slab_free_enter(struct k_mem_slab *slab, void *mem)
 {
 	TRACING_STRING("%s: %p\n", __func__, slab);
 }
 
-void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab, void **mem)
+void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab, void *mem)
 {
 	TRACING_STRING("%s: %p\n", __func__, slab);
 }

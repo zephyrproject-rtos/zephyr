@@ -20,6 +20,6 @@
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_init_configurations(struct usbd_contex *const uds_ctx);
+int usbd_init_configurations(struct usbd_context *const uds_ctx);
 
 #endif /* ZEPHYR_INCLUDE_USBD_INIT_H */

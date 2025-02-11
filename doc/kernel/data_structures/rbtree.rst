@@ -27,7 +27,7 @@ the algorithm to work correctly.
 
 As with the slist and dlist containers, nodes within an rbtree are
 represented as a :c:struct:`rbnode` structure which exists in
-user-managed memory, typically embedded within the the data structure
+user-managed memory, typically embedded within the data structure
 being tracked in the tree.  Unlike the list code, the data within an
 rbnode is entirely opaque.  It is not possible for the user to extract
 the binary tree topology and "manually" traverse the tree as it is for

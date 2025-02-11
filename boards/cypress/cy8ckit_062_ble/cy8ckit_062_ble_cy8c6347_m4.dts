@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2018, Cypress
+ * Copyright (c) 2020-2021, ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <infineon/cat1a/legacy/psoc6_cm4.dtsi>
+#include "cy8ckit_062_ble_common.dtsi"
+
+/ {
+	model = "Cypress PSoC6 BLE Pioneer Kit";
+	compatible = "cypress,cy8c6xx7_cm4", "cypress,psoc6";
+
+	chosen {
+		zephyr,sram = &sram2;
+		zephyr,flash = &flash1;
+	};
+};

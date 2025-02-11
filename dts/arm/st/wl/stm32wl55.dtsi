@@ -5,3 +5,9 @@
  */
 
 #include <st/wl/stm32wl.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32wl55", "st,stm32wl", "simple-bus";
+	};
+};

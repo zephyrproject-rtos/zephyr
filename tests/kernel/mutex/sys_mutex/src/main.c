@@ -88,7 +88,7 @@ static ZTEST_BMEM SYS_MUTEX_DEFINE(bad_count_mutex);
 #define CREATE_PARTICIPANT_THREAD(id, pri)                                     \
 		k_thread_create(&thread_##id##_thread_data, thread_##id##_stack_area,  \
 			K_THREAD_STACK_SIZEOF(thread_##id##_stack_area),                   \
-			(k_thread_entry_t)thread_##id,                                     \
+			thread_##id,                                                       \
 			NULL, NULL, NULL,                                                  \
 			pri, PARTICIPANT_THREAD_OPTIONS, K_FOREVER);
 #define START_PARTICIPANT_THREAD(id) k_thread_start(&(thread_##id##_thread_data));
@@ -100,8 +100,12 @@ static ZTEST_BMEM SYS_MUTEX_DEFINE(bad_count_mutex);
  *
  */
 
-void thread_05(void)
+void thread_05(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(3500));
@@ -122,8 +126,12 @@ void thread_05(void)
  *
  */
 
-void thread_06(void)
+void thread_06(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(3750));
@@ -153,8 +161,12 @@ void thread_06(void)
  *
  */
 
-void thread_07(void)
+void thread_07(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(2500));
@@ -182,8 +194,12 @@ void thread_07(void)
  *
  */
 
-void thread_08(void)
+void thread_08(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(1500));
@@ -205,8 +221,12 @@ void thread_08(void)
  *
  */
 
-void thread_09(void)
+void thread_09(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(500));	/* Allow lower priority thread to run */
@@ -237,8 +257,12 @@ void thread_09(void)
  *
  */
 
-void thread_11(void)
+void thread_11(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(3500));
@@ -253,7 +277,7 @@ void thread_11(void)
 
 K_THREAD_STACK_DEFINE(thread_12_stack_area, STACKSIZE);
 struct k_thread thread_12_thread_data;
-extern void thread_12(void);
+extern void thread_12(void *p1, void *p2, void *p3);
 
 
 
@@ -321,8 +345,6 @@ ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
 	struct sys_mutex *givemutex[3] = { &mutex_3, &mutex_2, &mutex_1 };
 	int priority[4] = { 9, 8, 7, 5 };
 	int droppri[3] = { 8, 8, 9 };
-
-	TC_START("Test kernel Mutex API");
 
 	PRINT_LINE;
 
@@ -397,9 +419,9 @@ ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
 
 	/* Start thread */
 	k_thread_create(&thread_12_thread_data, thread_12_stack_area, STACKSIZE,
-			(k_thread_entry_t)thread_12, NULL, NULL, NULL,
+			thread_12, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(12), PARTICIPANT_THREAD_OPTIONS, K_NO_WAIT);
-	k_sleep(K_MSEC(1));     /* Give thread_12 a chance to block on the mutex */
+	k_sleep(K_MSEC(5));     /* Give thread_12 a chance to block on the mutex */
 
 	sys_mutex_unlock(&private_mutex);
 	sys_mutex_unlock(&private_mutex); /* thread_12 should now have lock */

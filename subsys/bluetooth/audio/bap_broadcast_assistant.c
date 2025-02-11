@@ -2,25 +2,45 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
 #include <zephyr/logging/log.h>
+#include <sys/errno.h>
 
 LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTANT_LOG_LEVEL);
 
@@ -32,15 +52,20 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTAN
 
 #define MINIMUM_RECV_STATE_LEN          15
 
+struct bap_broadcast_assistant_recv_state_info {
+	uint8_t src_id;
+	/** Cached PAST available */
+	bool past_avail;
+	uint8_t adv_sid;
+	uint32_t broadcast_id;
+	bt_addr_le_t addr;
+};
+
 struct bap_broadcast_assistant_instance {
-	bool discovering;
+	struct bt_conn *conn;
 	bool scanning;
 	uint8_t pa_sync;
 	uint8_t recv_state_cnt;
-	/* Source ID cache so that we can notify application about
-	 * which source ID was removed
-	 */
-	uint8_t src_ids[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 
 	uint16_t start_handle;
 	uint16_t end_handle;
@@ -55,19 +80,27 @@ struct bap_broadcast_assistant_instance {
 	struct bt_gatt_read_params read_params;
 	struct bt_gatt_write_params write_params;
 	struct bt_gatt_discover_params disc_params;
+
+	struct k_work_delayable bap_read_work;
+	uint16_t long_read_handle;
+
+	struct bap_broadcast_assistant_recv_state_info recv_states
+		[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 };
 
-static struct bt_bap_broadcast_assistant_cb *broadcast_assistant_cbs;
+static sys_slist_t broadcast_assistant_cbs = SYS_SLIST_STATIC_INIT(&broadcast_assistant_cbs);
 
-static struct bap_broadcast_assistant_instance broadcast_assistant;
+static struct bap_broadcast_assistant_instance broadcast_assistants[CONFIG_BT_MAX_CONN];
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
-NET_BUF_SIMPLE_DEFINE_STATIC(cp_buf, CONFIG_BT_L2CAP_TX_MTU);
+#define ATT_BUF_SIZE BT_ATT_MAX_ATTRIBUTE_LEN
+NET_BUF_SIMPLE_DEFINE_STATIC(att_buf, ATT_BUF_SIZE);
 
-static int16_t lookup_index_by_handle(uint16_t handle)
+static int16_t lookup_index_by_handle(struct bap_broadcast_assistant_instance *inst,
+				      uint16_t handle)
 {
-	for (int i = 0; i < ARRAY_SIZE(broadcast_assistant.recv_state_handles); i++) {
-		if (broadcast_assistant.recv_state_handles[i] == handle) {
+	for (size_t i = 0U; i < ARRAY_SIZE(inst->recv_state_handles); i++) {
+		if (inst->recv_state_handles[i] == handle) {
 			return i;
 		}
 	}
@@ -75,6 +108,87 @@ static int16_t lookup_index_by_handle(uint16_t handle)
 	LOG_ERR("Unknown handle 0x%04x", handle);
 
 	return -1;
+}
+
+static struct bap_broadcast_assistant_instance *inst_by_conn(struct bt_conn *conn)
+{
+	struct bap_broadcast_assistant_instance *inst;
+
+	if (conn == NULL) {
+		LOG_DBG("NULL conn");
+		return NULL;
+	}
+
+	inst = &broadcast_assistants[bt_conn_index(conn)];
+
+	if (inst->conn == conn) {
+		return inst;
+	}
+
+	return NULL;
+}
+
+static void bap_broadcast_assistant_discover_complete(struct bt_conn *conn, int err,
+						      uint8_t recv_state_count)
+{
+	struct bt_bap_broadcast_assistant_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs,
+					  listener, next, _node) {
+		if (listener->discover) {
+			listener->discover(conn, err, recv_state_count);
+		}
+	}
+}
+
+static void bap_broadcast_assistant_recv_state_changed(
+	struct bt_conn *conn, int err, const struct bt_bap_scan_delegator_recv_state *state)
+{
+	struct bt_bap_broadcast_assistant_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs,
+					  listener, next, _node) {
+		if (listener->recv_state) {
+			listener->recv_state(conn, err, state);
+		}
+	}
+}
+
+static void bap_broadcast_assistant_recv_state_removed(struct bt_conn *conn, uint8_t src_id)
+{
+	struct bt_bap_broadcast_assistant_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs,
+					  listener, next, _node) {
+		if (listener->recv_state_removed) {
+			listener->recv_state_removed(conn, src_id);
+		}
+	}
+}
+
+static void bap_broadcast_assistant_scan_results(const struct bt_le_scan_recv_info *info,
+						 uint32_t broadcast_id)
+{
+	struct bt_bap_broadcast_assistant_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs, listener, next, _node) {
+		if (listener->scan) {
+			listener->scan(info, broadcast_id);
+		}
+	}
+}
+
+static bool past_available(const struct bt_conn *conn,
+			   const bt_addr_le_t *adv_addr,
+			   uint8_t sid)
+{
+	LOG_DBG("%p remote %s PAST, local %s PAST", (void *)conn,
+		BT_FEAT_LE_PAST_RECV(conn->le.features) ? "supports" : "does not support",
+		BT_FEAT_LE_PAST_SEND(bt_dev.le.features) ? "supports" : "does not support");
+
+	return BT_FEAT_LE_PAST_RECV(conn->le.features) &&
+	       BT_FEAT_LE_PAST_SEND(bt_dev.le.features) &&
+	       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
 }
 
 static int parse_recv_state(const void *data, uint16_t length,
@@ -120,14 +234,21 @@ static int parse_recv_state(const void *data, uint16_t length,
 		}
 
 		broadcast_code = net_buf_simple_pull_mem(&buf,
-							 BT_BAP_BROADCAST_CODE_SIZE);
+							 BT_AUDIO_BROADCAST_CODE_SIZE);
 		(void)memcpy(recv_state->bad_code, broadcast_code,
 			     sizeof(recv_state->bad_code));
 	}
 
 	recv_state->num_subgroups = net_buf_simple_pull_u8(&buf);
+	if (recv_state->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+		LOG_DBG("Cannot parse %u subgroups (max %d)", recv_state->num_subgroups,
+			CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
+
+		return -ENOMEM;
+	}
+
 	for (int i = 0; i < recv_state->num_subgroups; i++) {
-		struct bt_bap_scan_delegator_subgroup *subgroup = &recv_state->subgroups[i];
+		struct bt_bap_bass_subgroup *subgroup = &recv_state->subgroups[i];
 		uint8_t *metadata;
 
 		if (buf.len < sizeof(subgroup->bis_sync)) {
@@ -155,6 +276,7 @@ static int parse_recv_state(const void *data, uint16_t length,
 			LOG_DBG("Metadata too long: %u/%zu",
 			       subgroup->metadata_len,
 			       sizeof(subgroup->metadata));
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
 		metadata = net_buf_simple_pull_mem(&buf,
@@ -172,6 +294,158 @@ static int parse_recv_state(const void *data, uint16_t length,
 	return 0;
 }
 
+static void bap_long_op_reset(struct bap_broadcast_assistant_instance *inst)
+{
+	inst->busy = false;
+	inst->long_read_handle = 0;
+	net_buf_simple_reset(&att_buf);
+}
+
+static uint8_t parse_and_send_recv_state(struct bt_conn *conn, uint16_t handle,
+					 const void *data, uint16_t length,
+					 struct bt_bap_scan_delegator_recv_state *recv_state)
+{
+	int err;
+	int16_t index;
+	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+
+	if (inst == NULL) {
+		return BT_GATT_ITER_STOP;
+	}
+
+	err = parse_recv_state(data, length, recv_state);
+	if (err != 0) {
+		LOG_WRN("Invalid receive state received");
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	index = lookup_index_by_handle(inst, handle);
+	if (index < 0) {
+		LOG_DBG("Invalid index");
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	inst->recv_states[index].src_id = recv_state->src_id;
+	inst->recv_states[index].past_avail = past_available(conn, &recv_state->addr,
+							     recv_state->adv_sid);
+
+	bap_broadcast_assistant_recv_state_changed(conn, 0, recv_state);
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static uint8_t broadcast_assistant_bap_ntf_read_func(struct bt_conn *conn, uint8_t err,
+						     struct bt_gatt_read_params *read,
+						     const void *data, uint16_t length)
+{
+	struct bt_bap_scan_delegator_recv_state recv_state;
+	uint16_t handle = read->single.handle;
+	uint16_t data_length;
+	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+
+	if (inst == NULL) {
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_DBG("conn %p err 0x%02x len %u", conn, err, length);
+
+	if (err) {
+		LOG_DBG("Failed to read: %u", err);
+		memset(read, 0, sizeof(*read));
+		bap_long_op_reset(inst);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_DBG("handle 0x%04x", handle);
+
+	if (data != NULL) {
+		if (net_buf_simple_tailroom(&att_buf) < length) {
+			LOG_DBG("Buffer full, invalid server response of size %u",
+				length + att_buf.len);
+			memset(read, 0, sizeof(*read));
+			bap_long_op_reset(inst);
+
+			return BT_GATT_ITER_STOP;
+		}
+
+		/* store data*/
+		net_buf_simple_add_mem(&att_buf, data, length);
+
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	/* we reset the buffer so that it is ready for new data */
+	memset(read, 0, sizeof(*read));
+	data_length = att_buf.len;
+	bap_long_op_reset(inst);
+
+	/* do the parse and callback to send  notify to application*/
+	parse_and_send_recv_state(conn, handle,
+				  att_buf.data, data_length, &recv_state);
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void long_bap_read(struct bt_conn *conn, uint16_t handle)
+{
+	int err;
+	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+
+	if (inst == NULL) {
+		return;
+	}
+
+	if (inst->busy) {
+		LOG_DBG("conn %p busy %u", conn, inst->busy);
+
+		/* If the client is busy reading or writing something else, reschedule the
+		 * long read.
+		 */
+		struct bt_conn_info conn_info;
+
+		err = bt_conn_get_info(conn, &conn_info);
+		if (err != 0) {
+			LOG_DBG("Failed to get conn info, use default interval");
+
+			conn_info.le.interval = BT_GAP_INIT_CONN_INT_MIN;
+		}
+
+		/* Wait a connection interval to retry */
+		err = k_work_reschedule(&inst->bap_read_work,
+					K_USEC(BT_CONN_INTERVAL_TO_US(conn_info.le.interval)));
+		if (err < 0) {
+			LOG_DBG("Failed to reschedule read work: %d", err);
+			bap_long_op_reset(inst);
+		}
+
+		return;
+	}
+
+	inst->read_params.func = broadcast_assistant_bap_ntf_read_func;
+	inst->read_params.handle_count = 1U;
+	inst->read_params.single.handle = handle;
+	inst->read_params.single.offset = att_buf.len;
+
+	err = bt_gatt_read(conn, &inst->read_params);
+	if (err != 0) {
+		LOG_DBG("Failed to read: %d", err);
+		bap_long_op_reset(inst);
+	} else {
+		inst->busy = true;
+	}
+}
+
+static void delayed_bap_read_handler(struct k_work *work)
+{
+	struct bap_broadcast_assistant_instance *inst =
+		CONTAINER_OF((struct k_work_delayable *)work,
+			     struct bap_broadcast_assistant_instance, bap_read_work);
+	long_bap_read(inst->conn, inst->long_read_handle);
+}
+
 /** @brief Handles notifications and indications from the server */
 static uint8_t notify_handler(struct bt_conn *conn,
 			      struct bt_gatt_subscribe_params *params,
@@ -179,8 +453,19 @@ static uint8_t notify_handler(struct bt_conn *conn,
 {
 	uint16_t handle = params->value_handle;
 	struct bt_bap_scan_delegator_recv_state recv_state;
-	int err;
 	int16_t index;
+	struct bap_broadcast_assistant_instance *inst;
+
+	if (conn == NULL) {
+		/* Indicates that the CCC has been removed - no-op */
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	inst = inst_by_conn(conn);
+
+	if (inst == NULL) {
+		return BT_GATT_ITER_STOP;
+	}
 
 	if (data == NULL) {
 		LOG_DBG("[UNSUBSCRIBED] %u", handle);
@@ -191,35 +476,38 @@ static uint8_t notify_handler(struct bt_conn *conn,
 
 	LOG_HEXDUMP_DBG(data, length, "Receive state notification:");
 
-	index = lookup_index_by_handle(handle);
+	index = lookup_index_by_handle(inst, handle);
 	if (index < 0) {
 		LOG_DBG("Invalid index");
+
 		return BT_GATT_ITER_STOP;
 	}
 
 	if (length != 0) {
-		err = parse_recv_state(data, length, &recv_state);
+		const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
+		const uint16_t max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
 
-		if (err != 0) {
-			/* TODO: Likely due to the length.
-			 * Start a read autonomously
+		/* Cancel any pending long reads containing now obsolete information */
+		(void)k_work_cancel_delayable(&inst->bap_read_work);
+
+		if (length == max_ntf_size) {
+			/* TODO: if we are busy we should not overwrite the long_read_handle,
+			 * we'll have to keep track of the handle and parameters separately
+			 * for each characteristic, similar to the bt_bap_unicast_client_ep
+			 * struct for the unicast client
 			 */
-			LOG_WRN("Invalid receive state received");
+			inst->long_read_handle = handle;
 
-			return BT_GATT_ITER_STOP;
+			if (!inst->busy) {
+				net_buf_simple_add_mem(&att_buf, data, length);
+			}
+			long_bap_read(conn, handle);
+		} else {
+			return parse_and_send_recv_state(conn, handle, data, length, &recv_state);
 		}
-
-		broadcast_assistant.src_ids[index] = recv_state.src_id;
-
-		if (broadcast_assistant_cbs != NULL &&
-		    broadcast_assistant_cbs->recv_state != NULL) {
-			broadcast_assistant_cbs->recv_state(conn, 0, &
-							    recv_state);
-		}
-	} else if (broadcast_assistant_cbs != NULL &&
-		   broadcast_assistant_cbs->recv_state_removed != NULL) {
-		broadcast_assistant_cbs->recv_state_removed(conn, 0,
-							    broadcast_assistant.src_ids[index]);
+	} else {
+		inst->recv_states[index].past_avail = false;
+		bap_broadcast_assistant_recv_state_removed(conn, inst->recv_states[index].src_id);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -229,9 +517,15 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 				  struct bt_gatt_read_params *params,
 				  const void *data, uint16_t length)
 {
+	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+
+	if (inst == NULL) {
+		return BT_GATT_ITER_STOP;
+	}
+
 	uint16_t handle = params->single.handle;
-	uint8_t last_handle_index = broadcast_assistant.recv_state_cnt - 1;
-	uint16_t last_handle = broadcast_assistant.recv_state_handles[last_handle_index];
+	uint8_t last_handle_index = inst->recv_state_cnt - 1;
+	uint16_t last_handle = inst->recv_state_handles[last_handle_index];
 	struct bt_bap_scan_delegator_recv_state recv_state;
 	int cb_err = err;
 	bool active_recv_state = data != NULL && length != 0;
@@ -240,10 +534,12 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 
 	(void)memset(params, 0, sizeof(*params));
 
+	LOG_DBG("%s receive state", active_recv_state ? "Active " : "Inactive");
+
 	if (cb_err == 0 && active_recv_state) {
 		int16_t index;
 
-		index = lookup_index_by_handle(handle);
+		index = lookup_index_by_handle(inst, handle);
 		if (index < 0) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_HANDLE);
 		} else {
@@ -252,61 +548,62 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 			if (cb_err != 0) {
 				LOG_DBG("Invalid receive state");
 			} else {
-				broadcast_assistant.src_ids[index] = recv_state.src_id;
+				struct bap_broadcast_assistant_recv_state_info *stored_state =
+					&inst->recv_states[index];
+
+				stored_state->src_id = recv_state.src_id;
+				stored_state->adv_sid = recv_state.adv_sid;
+				stored_state->broadcast_id = recv_state.broadcast_id;
+				bt_addr_le_copy(&stored_state->addr, &recv_state.addr);
+				inst->recv_states[index].past_avail =
+					past_available(conn, &recv_state.addr,
+						       recv_state.adv_sid);
 			}
 		}
 	}
 
 	if (cb_err != 0) {
-		LOG_DBG("err: %d", cb_err);
-		if (broadcast_assistant.discovering) {
-			broadcast_assistant.discovering = false;
-			if (broadcast_assistant_cbs != NULL &&
-			    broadcast_assistant_cbs->discover != NULL) {
-				broadcast_assistant_cbs->discover(conn,
-								  cb_err, 0);
-			}
+		LOG_DBG("err %d", cb_err);
+
+		if (inst->busy) {
+			inst->busy = false;
+			bap_broadcast_assistant_discover_complete(conn, cb_err, 0);
 		} else {
-			if (broadcast_assistant_cbs != NULL &&
-			    broadcast_assistant_cbs->recv_state != NULL) {
-				broadcast_assistant_cbs->recv_state(conn,
-								    cb_err,
-								    NULL);
-			}
+			bap_broadcast_assistant_recv_state_changed(conn, cb_err, NULL);
 		}
 	} else if (handle == last_handle) {
-		if (broadcast_assistant.discovering) {
-			broadcast_assistant.discovering = false;
-			if (broadcast_assistant_cbs != NULL &&
-			    broadcast_assistant_cbs->discover != NULL) {
-				broadcast_assistant_cbs->discover(
-					conn, cb_err,
-					broadcast_assistant.recv_state_cnt);
-			}
+		if (inst->busy) {
+			const uint8_t recv_state_cnt = inst->recv_state_cnt;
+
+			inst->busy = false;
+			bap_broadcast_assistant_discover_complete(conn, cb_err, recv_state_cnt);
 		} else {
-			if (broadcast_assistant_cbs != NULL &&
-			    broadcast_assistant_cbs->recv_state != NULL) {
-				if (active_recv_state) {
-					broadcast_assistant_cbs->recv_state(conn,
-									    cb_err,
-									    &recv_state);
-				} else {
-					broadcast_assistant_cbs->recv_state(conn,
-									    cb_err,
-									    NULL);
-				}
-			}
+			bap_broadcast_assistant_recv_state_changed(conn, cb_err,
+								   active_recv_state ?
+								   &recv_state : NULL);
 		}
 	} else {
-		for (int i = 0; i < broadcast_assistant.recv_state_cnt; i++) {
-			if (handle == broadcast_assistant.recv_state_handles[i]) {
-				(void)bt_bap_broadcast_assistant_read_recv_state(conn, i + 1);
+		for (uint8_t i = 0U; i < inst->recv_state_cnt; i++) {
+			if (handle == inst->recv_state_handles[i]) {
+				if (i + 1 < ARRAY_SIZE(inst->recv_state_handles)) {
+					(void)bt_bap_broadcast_assistant_read_recv_state(conn,
+											 i + 1);
+				}
 				break;
 			}
 		}
 	}
 
 	return BT_GATT_ITER_STOP;
+}
+
+static void discover_init(void)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(broadcast_assistants); i++) {
+		k_work_init_delayable(&broadcast_assistants[i].bap_read_work,
+				      delayed_bap_read_handler);
+	}
+	net_buf_simple_reset(&att_buf);
 }
 
 /**
@@ -320,19 +617,20 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 {
 	struct bt_gatt_subscribe_params *sub_params = NULL;
 	int err;
+	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+
+	if (inst == NULL) {
+		return BT_GATT_ITER_STOP;
+	}
 
 	if (attr == NULL) {
-		LOG_DBG("Found %u BASS receive states",
-		       broadcast_assistant.recv_state_cnt);
+		LOG_DBG("Found %u BASS receive states", inst->recv_state_cnt);
 		(void)memset(params, 0, sizeof(*params));
 
 		err = bt_bap_broadcast_assistant_read_recv_state(conn, 0);
 		if (err != 0) {
-			broadcast_assistant.discovering = false;
-			if (broadcast_assistant_cbs != NULL &&
-			    broadcast_assistant_cbs->discover != NULL) {
-				broadcast_assistant_cbs->discover(conn, err, 0);
-			}
+			inst->busy = false;
+			bap_broadcast_assistant_discover_complete(conn, err, 0);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -346,41 +644,38 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 
 		if (bt_uuid_cmp(chrc->uuid, BT_UUID_BASS_CONTROL_POINT) == 0) {
 			LOG_DBG("Control Point");
-			broadcast_assistant.cp_handle = attr->handle + 1;
+			inst->cp_handle = attr->handle + 1;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_BASS_RECV_STATE) == 0) {
-			if (broadcast_assistant.recv_state_cnt <
+			if (inst->recv_state_cnt <
 				CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT) {
-				uint8_t idx = broadcast_assistant.recv_state_cnt++;
+				uint8_t idx = inst->recv_state_cnt++;
 
-				LOG_DBG("Receive State %u", broadcast_assistant.recv_state_cnt);
-				broadcast_assistant.recv_state_handles[idx] =
+				LOG_DBG("Receive State %u", inst->recv_state_cnt);
+				inst->recv_state_handles[idx] =
 					attr->handle + 1;
-				sub_params = &broadcast_assistant.recv_state_sub_params[idx];
-				sub_params->disc_params =
-					&broadcast_assistant.recv_state_disc_params[idx];
+				sub_params = &inst->recv_state_sub_params[idx];
+				sub_params->disc_params = &inst->recv_state_disc_params[idx];
 			}
 		}
 
 		if (sub_params != NULL) {
 			/* With ccc_handle == 0 it will use auto discovery */
-			sub_params->end_handle = broadcast_assistant.end_handle;
+			sub_params->end_handle = inst->end_handle;
 			sub_params->ccc_handle = 0;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = attr->handle + 1;
 			sub_params->notify = notify_handler;
+			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+
 			err = bt_gatt_subscribe(conn, sub_params);
-
 			if (err != 0) {
-				LOG_DBG("Could not subscribe to handle 0x%04x",
-					sub_params->value_handle);
+				LOG_DBG("Could not subscribe to handle 0x%04x: %d",
+					sub_params->value_handle, err);
 
-				broadcast_assistant.discovering = false;
-				if (broadcast_assistant_cbs != NULL &&
-				    broadcast_assistant_cbs->discover != NULL) {
-					broadcast_assistant_cbs->discover(conn,
-									  err,
-									  0);
-				}
+				inst->busy = false;
+				LOG_DBG("no handle discover callback");
+
+				bap_broadcast_assistant_discover_complete(conn, err, 0);
 
 				return BT_GATT_ITER_STOP;
 			}
@@ -396,18 +691,20 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 {
 	int err;
 	struct bt_gatt_service_val *prim_service;
+	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+
+	if (inst == NULL) {
+		return BT_GATT_ITER_STOP;
+	}
 
 	if (attr == NULL) {
 		LOG_DBG("Could not discover BASS");
 		(void)memset(params, 0, sizeof(*params));
 
-		broadcast_assistant.discovering = false;
+		inst->busy = false;
+		err = BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 
-		if (broadcast_assistant_cbs != NULL &&
-		    broadcast_assistant_cbs->discover != NULL) {
-			err = BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
-			broadcast_assistant_cbs->discover(conn, err, 0);
-		}
+		bap_broadcast_assistant_discover_complete(conn, err, 0);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -416,24 +713,20 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
-		broadcast_assistant.start_handle = attr->handle + 1;
-		broadcast_assistant.end_handle = prim_service->end_handle;
+		inst->start_handle = attr->handle + 1;
+		inst->end_handle = prim_service->end_handle;
 
-		broadcast_assistant.disc_params.uuid = NULL;
-		broadcast_assistant.disc_params.start_handle = broadcast_assistant.start_handle;
-		broadcast_assistant.disc_params.end_handle = broadcast_assistant.end_handle;
-		broadcast_assistant.disc_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
-		broadcast_assistant.disc_params.func = char_discover_func;
+		inst->disc_params.uuid = NULL;
+		inst->disc_params.start_handle = inst->start_handle;
+		inst->disc_params.end_handle = inst->end_handle;
+		inst->disc_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+		inst->disc_params.func = char_discover_func;
 
-		err = bt_gatt_discover(conn, &broadcast_assistant.disc_params);
+		err = bt_gatt_discover(conn, &inst->disc_params);
 		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
-			broadcast_assistant.discovering = false;
-
-			if (broadcast_assistant_cbs != NULL &&
-			    broadcast_assistant_cbs->discover != NULL) {
-				broadcast_assistant_cbs->discover(conn, err, 0);
-			}
+			inst->busy = false;
+			bap_broadcast_assistant_discover_complete(conn, err, 0);
 		}
 	}
 
@@ -443,48 +736,55 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 static void bap_broadcast_assistant_write_cp_cb(struct bt_conn *conn, uint8_t err,
 						struct bt_gatt_write_params *params)
 {
-	uint8_t opcode = net_buf_simple_pull_u8(&cp_buf);
+	struct bt_bap_broadcast_assistant_cb *listener, *next;
+	uint8_t opcode = net_buf_simple_pull_u8(&att_buf);
+	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
 
-	broadcast_assistant.busy = false;
-
-	if (broadcast_assistant_cbs == NULL) {
+	if (inst == NULL) {
 		return;
 	}
 
-	switch (opcode) {
-	case BT_BAP_BASS_OP_SCAN_STOP:
-		if (broadcast_assistant_cbs->scan_stop != NULL) {
-			broadcast_assistant_cbs->scan_stop(conn, err);
+	inst->busy = false;
+
+	/* we reset the buffer, so that we are ready for new notifications and writes */
+	net_buf_simple_reset(&att_buf);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs, listener, next, _node) {
+		switch (opcode) {
+		case BT_BAP_BASS_OP_SCAN_STOP:
+			if (listener->scan_stop != NULL) {
+				listener->scan_stop(conn, err);
+			}
+			break;
+		case BT_BAP_BASS_OP_SCAN_START:
+			if (listener->scan_start != NULL) {
+				listener->scan_start(conn, err);
+			}
+			break;
+		case BT_BAP_BASS_OP_ADD_SRC:
+			if (listener->add_src != NULL) {
+				listener->add_src(conn, err);
+			}
+			break;
+		case BT_BAP_BASS_OP_MOD_SRC:
+			if (listener->mod_src != NULL) {
+				listener->mod_src(conn, err);
+			}
+			break;
+		case BT_BAP_BASS_OP_BROADCAST_CODE:
+			if (listener->broadcast_code != NULL) {
+				listener->broadcast_code(conn, err);
+			}
+			break;
+		case BT_BAP_BASS_OP_REM_SRC:
+			if (listener->rem_src != NULL) {
+				listener->rem_src(conn, err);
+			}
+			break;
+		default:
+			LOG_DBG("Unknown opcode 0x%02x", opcode);
+			break;
 		}
-		break;
-	case BT_BAP_BASS_OP_SCAN_START:
-		if (broadcast_assistant_cbs->scan_start != NULL) {
-			broadcast_assistant_cbs->scan_start(conn, err);
-		}
-		break;
-	case BT_BAP_BASS_OP_ADD_SRC:
-		if (broadcast_assistant_cbs->add_src != NULL) {
-			broadcast_assistant_cbs->add_src(conn, err);
-		}
-		break;
-	case BT_BAP_BASS_OP_MOD_SRC:
-		if (broadcast_assistant_cbs->mod_src != NULL) {
-			broadcast_assistant_cbs->mod_src(conn, err);
-		}
-		break;
-	case BT_BAP_BASS_OP_BROADCAST_CODE:
-		if (broadcast_assistant_cbs->broadcast_code != NULL) {
-			broadcast_assistant_cbs->broadcast_code(conn, err);
-		}
-		break;
-	case BT_BAP_BASS_OP_REM_SRC:
-		if (broadcast_assistant_cbs->rem_src != NULL) {
-			broadcast_assistant_cbs->rem_src(conn, err);
-		}
-		break;
-	default:
-		LOG_DBG("Unknown opcode 0x%02x", opcode);
-		break;
 	}
 }
 
@@ -492,23 +792,34 @@ static int bt_bap_broadcast_assistant_common_cp(struct bt_conn *conn,
 				    const struct net_buf_simple *buf)
 {
 	int err;
+	struct bap_broadcast_assistant_instance *inst;
 
 	if (conn == NULL) {
+		LOG_DBG("conn is NULL");
+
 		return -EINVAL;
-	} else if (broadcast_assistant.cp_handle == 0) {
+	}
+
+	inst = inst_by_conn(conn);
+
+	if (inst == NULL) {
+		return -EINVAL;
+	}
+
+	if (inst->cp_handle == 0) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
 	}
 
-	broadcast_assistant.write_params.offset = 0;
-	broadcast_assistant.write_params.data = buf->data;
-	broadcast_assistant.write_params.length = buf->len;
-	broadcast_assistant.write_params.handle = broadcast_assistant.cp_handle;
-	broadcast_assistant.write_params.func = bap_broadcast_assistant_write_cp_cb;
+	inst->write_params.offset = 0;
+	inst->write_params.data = buf->data;
+	inst->write_params.length = buf->len;
+	inst->write_params.handle = inst->cp_handle;
+	inst->write_params.func = bap_broadcast_assistant_write_cp_cb;
 
-	err = bt_gatt_write(conn, &broadcast_assistant.write_params);
+	err = bt_gatt_write(conn, &inst->write_params);
 	if (err == 0) {
-		broadcast_assistant.busy = true;
+		inst->busy = true;
 	}
 
 	return err;
@@ -539,12 +850,10 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
-	LOG_DBG("Found BIS advertiser with address %s", bt_addr_le_str(info->addr));
+	LOG_DBG("Found BIS advertiser with address %s SID 0x%02X and broadcast_id 0x%06X",
+		bt_addr_le_str(info->addr), info->sid, broadcast_id);
 
-	if (broadcast_assistant_cbs != NULL &&
-	    broadcast_assistant_cbs->scan != NULL) {
-		broadcast_assistant_cbs->scan(info, broadcast_id);
-	}
+	bap_broadcast_assistant_scan_results(info, broadcast_id);
 
 	return false;
 }
@@ -565,50 +874,203 @@ static struct bt_le_scan_cb scan_cb = {
 	.recv = scan_recv
 };
 
+/* BAP 6.5.4 states that the Broadcast Assistant shall not initiate the Add Source operation
+ * if the operation would result in duplicate values for the combined Source_Address_Type,
+ * Source_Adv_SID, and Broadcast_ID fields of any Broadcast Receive State characteristic exposed
+ * by the Scan Delegator.
+ */
+static bool broadcast_src_is_duplicate(struct bap_broadcast_assistant_instance *inst,
+				       uint32_t broadcast_id, uint8_t adv_sid, uint8_t addr_type)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(inst->recv_states); i++) {
+		const struct bap_broadcast_assistant_recv_state_info *state =
+							&inst->recv_states[i];
+
+		if (state != NULL && state->broadcast_id == broadcast_id &&
+			state->adv_sid == adv_sid && state->addr.type == addr_type) {
+			LOG_DBG("recv_state already exists at src_id=0x%02X", state->src_id);
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /****************************** PUBLIC API ******************************/
 
-int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
+static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *inst)
 {
-	int err;
+	inst->busy = false;
+	inst->scanning = false;
+	inst->pa_sync = 0U;
+	inst->recv_state_cnt = 0U;
+	inst->start_handle = 0U;
+	inst->end_handle = 0U;
+	inst->cp_handle = 0U;
+	inst->long_read_handle = 0;
+	(void)k_work_cancel_delayable(&inst->bap_read_work);
 
-	if (conn == NULL) {
-		return -EINVAL;
+	for (int i = 0U; i < CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT; i++) {
+		memset(&inst->recv_states[i], 0, sizeof(inst->recv_states[i]));
+		inst->recv_states[i].past_avail = false;
+		inst->recv_state_handles[i] = 0U;
 	}
 
-	/* Discover BASS on peer, setup handles and notify */
-	(void)memset(&broadcast_assistant, 0, sizeof(broadcast_assistant));
-	(void)memcpy(&uuid, BT_UUID_BASS, sizeof(uuid));
-	broadcast_assistant.disc_params.func = service_discover_func;
-	broadcast_assistant.disc_params.uuid = &uuid.uuid;
-	broadcast_assistant.disc_params.type = BT_GATT_DISCOVER_PRIMARY;
-	broadcast_assistant.disc_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-	broadcast_assistant.disc_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	if (inst->conn != NULL) {
+		struct bt_conn *conn = inst->conn;
+		struct bt_conn_info info;
+		int err;
 
-	err = bt_gatt_discover(conn, &broadcast_assistant.disc_params);
-	if (err != 0) {
-		return err;
+		err = bt_conn_get_info(conn, &info);
+		if (err != 0) {
+			return err;
+		}
+
+		if (info.state == BT_CONN_STATE_CONNECTED) {
+			for (size_t i = 0U; i < ARRAY_SIZE(inst->recv_state_sub_params); i++) {
+				/* It's okay if this fail with -EINVAL as that means that they are
+				 * not currently subscribed
+				 */
+				err = bt_gatt_unsubscribe(conn, &inst->recv_state_sub_params[i]);
+				if (err != 0 && err != -EINVAL) {
+					LOG_DBG("Failed to unsubscribe to state: %d", err);
+
+					return err;
+				}
+			}
+		}
+
+		bt_conn_unref(conn);
+		inst->conn = NULL;
 	}
 
-	broadcast_assistant.discovering = true;
+	/* The subscribe parameters must remain instact so they can get cleaned up by GATT */
+	memset(&inst->disc_params, 0, sizeof(inst->disc_params));
+	memset(&inst->recv_state_disc_params, 0, sizeof(inst->recv_state_disc_params));
+	memset(&inst->read_params, 0, sizeof(inst->read_params));
+	memset(&inst->write_params, 0, sizeof(inst->write_params));
 
 	return 0;
 }
 
-void bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb)
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	broadcast_assistant_cbs = cb;
+	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+
+	if (inst) {
+		(void)broadcast_assistant_reset(inst);
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected_cb,
+};
+
+int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
+{
+	int err;
+	struct bap_broadcast_assistant_instance *inst;
+
+	if (conn == NULL) {
+		LOG_DBG("conn is NULL");
+
+		return -EINVAL;
+	}
+
+	inst = &broadcast_assistants[bt_conn_index(conn)];
+
+	if (inst->busy) {
+		LOG_DBG("Instance is busy");
+		return -EBUSY;
+	}
+
+	err = broadcast_assistant_reset(inst);
+	if (err != 0) {
+		LOG_DBG("Failed to reset broadcast assistant: %d", err);
+
+		return -EINVAL;
+	}
+
+	inst->conn = bt_conn_ref(conn);
+
+	/* Discover BASS on peer, setup handles and notify */
+	discover_init();
+
+	(void)memcpy(&uuid, BT_UUID_BASS, sizeof(uuid));
+	inst->disc_params.func = service_discover_func;
+	inst->disc_params.uuid = &uuid.uuid;
+	inst->disc_params.type = BT_GATT_DISCOVER_PRIMARY;
+	inst->disc_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	inst->disc_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	err = bt_gatt_discover(conn, &inst->disc_params);
+	if (err != 0) {
+		return err;
+	}
+
+	inst->busy = true;
+
+	return 0;
+}
+
+/* TODO: naming is different from e.g. bt_vcp_vol_ctrl_cb_register */
+int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb)
+{
+	struct bt_bap_broadcast_assistant_cb *tmp;
+
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&broadcast_assistant_cbs, tmp, _node) {
+		if (tmp == cb) {
+			LOG_DBG("Already registered");
+			return -EALREADY;
+		}
+	}
+
+	sys_slist_append(&broadcast_assistant_cbs, &cb->_node);
+
+	return 0;
+}
+
+int bt_bap_broadcast_assistant_unregister_cb(struct bt_bap_broadcast_assistant_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&broadcast_assistant_cbs, &cb->_node)) {
+		return -EALREADY;
+	}
+
+	return 0;
 }
 
 int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 {
 	struct bt_bap_bass_cp_scan_start *cp;
 	int err;
+	struct bap_broadcast_assistant_instance *inst;
 
 	if (conn == NULL) {
+		LOG_DBG("conn is NULL");
+
 		return -EINVAL;
-	} else if (broadcast_assistant.cp_handle == 0) {
+	}
+
+	inst = inst_by_conn(conn);
+	if (inst == NULL) {
 		return -EINVAL;
-	} else if (broadcast_assistant.busy) {
+	}
+
+	if (inst->cp_handle == 0) {
+		LOG_DBG("handle not set");
+
+		return -EINVAL;
+	} else if (inst->busy) {
+		LOG_DBG("instance busy");
+
 		return -EBUSY;
 	}
 
@@ -627,32 +1089,46 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 			return err;
 		}
 
-		broadcast_assistant.scanning = true;
+		inst->scanning = true;
 	}
 
 	/* Reset buffer before using */
-	net_buf_simple_reset(&cp_buf);
-	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
+	net_buf_simple_reset(&att_buf);
+	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_SCAN_START;
 
-	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
+	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
 }
 
 int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn)
 {
 	struct bt_bap_bass_cp_scan_stop *cp;
 	int err;
+	struct bap_broadcast_assistant_instance *inst;
 
 	if (conn == NULL) {
-		return 0;
-	} else if (broadcast_assistant.cp_handle == 0) {
+		LOG_DBG("conn is NULL");
+
 		return -EINVAL;
-	} else if (broadcast_assistant.busy) {
+	}
+
+	inst = inst_by_conn(conn);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
+
+	if (inst->cp_handle == 0) {
+		LOG_DBG("handle not set");
+
+		return -EINVAL;
+	} else if (inst->busy) {
+		LOG_DBG("instance busy");
+
 		return -EBUSY;
 	}
 
-	if (broadcast_assistant.scanning) {
+	if (inst->scanning) {
 		err = bt_le_scan_stop();
 		if (err != 0) {
 			LOG_DBG("Could not stop scan (%d)", err);
@@ -660,34 +1136,56 @@ int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn)
 			return err;
 		}
 
-		broadcast_assistant.scanning = false;
+		inst->scanning = false;
 	}
 
 	/* Reset buffer before using */
-	net_buf_simple_reset(&cp_buf);
-	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
+	net_buf_simple_reset(&att_buf);
+	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_SCAN_STOP;
 
-	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
+	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
 }
 
 int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
-				       struct bt_bap_broadcast_assistant_add_src_param *param)
+				       const struct bt_bap_broadcast_assistant_add_src_param *param)
 {
 	struct bt_bap_bass_cp_add_src *cp;
+	struct bap_broadcast_assistant_instance *inst;
 
 	if (conn == NULL) {
-		return 0;
-	} else if (broadcast_assistant.cp_handle == 0) {
+		LOG_DBG("conn is NULL");
+
 		return -EINVAL;
-	} else if (broadcast_assistant.busy) {
+	}
+
+	inst = inst_by_conn(conn);
+
+	if (inst == NULL) {
+		return -EINVAL;
+	}
+
+	if (inst->cp_handle == 0) {
+		LOG_DBG("handle not set");
+
+		return -EINVAL;
+	} else if (inst->busy) {
+		LOG_DBG("instance busy");
+
 		return -EBUSY;
 	}
 
+	/* Check if this operation would result in a duplicate before proceeding */
+	if (broadcast_src_is_duplicate(inst, param->broadcast_id,
+				       param->adv_sid, param->addr.type)) {
+		LOG_DBG("Broadcast source already exists");
+
+		return -EINVAL;
+	}
 	/* Reset buffer before using */
-	net_buf_simple_reset(&cp_buf);
-	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
+	net_buf_simple_reset(&att_buf);
+	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_ADD_SRC;
 	cp->adv_sid = param->adv_sid;
@@ -695,12 +1193,8 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 
 	sys_put_le24(param->broadcast_id, cp->broadcast_id);
 
-	if (param->pa_sync != 0) {
-		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
-		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
-			/* TODO: Validate that we are synced to the peer address
-			 * before saying to use PAST - Requires additional per_adv_sync API
-			 */
+	if (param->pa_sync) {
+		if (past_available(conn, &param->addr, param->adv_sid)) {
 			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC_PAST;
 		} else {
 			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC;
@@ -708,7 +1202,6 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	} else {
 		cp->pa_sync = BT_BAP_BASS_PA_REQ_NO_SYNC;
 	}
-
 	cp->pa_interval = sys_cpu_to_le16(param->pa_interval);
 
 	cp->num_subgroups = param->num_subgroups;
@@ -718,15 +1211,20 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 					     sizeof(subgroup->metadata_len) +
 					     param->subgroups[i].metadata_len;
 
-		if (cp_buf.len + subgroup_size > cp_buf.size) {
-			LOG_DBG("MTU is too small to send %zu octets", cp_buf.len + subgroup_size);
+		if (att_buf.len + subgroup_size > att_buf.size) {
+			LOG_DBG("MTU is too small to send %zu octets", att_buf.len + subgroup_size);
 
 			return -EINVAL;
 		}
 
-		subgroup = net_buf_simple_add(&cp_buf, subgroup_size);
+		subgroup = net_buf_simple_add(&att_buf, subgroup_size);
 
-		subgroup->bis_sync = param->subgroups[i].bis_sync;
+		if (param->subgroups[i].bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
+			/* The BIS Index bitfield to be sent must use BIT(0) for BIS Index 1 */
+			subgroup->bis_sync = param->subgroups[i].bis_sync >> 1;
+		} else {
+			subgroup->bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
+		}
 
 		CHECKIF(param->pa_sync == 0 && subgroup->bis_sync != 0) {
 			LOG_DBG("Only syncing to BIS is not allowed");
@@ -744,32 +1242,65 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 
 	}
 
-	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
+	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
 }
 
 int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
-				       struct bt_bap_broadcast_assistant_mod_src_param *param)
+				       const struct bt_bap_broadcast_assistant_mod_src_param *param)
 {
 	struct bt_bap_bass_cp_mod_src *cp;
+	bool known_recv_state;
+	bool past_avail;
+	struct bap_broadcast_assistant_instance *inst;
 
 	if (conn == NULL) {
-		return 0;
-	} else if (broadcast_assistant.cp_handle == 0) {
+		LOG_DBG("conn is NULL");
+
 		return -EINVAL;
-	} else if (broadcast_assistant.busy) {
+	}
+
+	inst = inst_by_conn(conn);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
+
+	if (inst->cp_handle == 0) {
+		LOG_DBG("handle not set");
+
+		return -EINVAL;
+	} else if (inst->busy) {
+		LOG_DBG("instance busy");
+
 		return -EBUSY;
 	}
 
 	/* Reset buffer before using */
-	net_buf_simple_reset(&cp_buf);
-	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
+	net_buf_simple_reset(&att_buf);
+	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_MOD_SRC;
 	cp->src_id = param->src_id;
 
-	if (param->pa_sync != 0) {
-		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
-		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
+	/* Since we do not have the address and SID in this function, we
+	 * rely on cached PAST support information
+	 */
+	known_recv_state = false;
+	past_avail = false;
+	for (size_t i = 0; i < ARRAY_SIZE(inst->recv_states); i++) {
+		if (inst->recv_states[i].src_id == param->src_id) {
+			known_recv_state = true;
+			past_avail = inst->recv_states[i].past_avail;
+			break;
+		}
+	}
+
+	if (!known_recv_state) {
+		LOG_WRN("Attempting to modify unknown receive state: %u",
+			param->src_id);
+	}
+
+	if (param->pa_sync) {
+		if (known_recv_state && past_avail) {
 			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC_PAST;
 		} else {
 			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC;
@@ -777,6 +1308,7 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 	} else {
 		cp->pa_sync = BT_BAP_BASS_PA_REQ_NO_SYNC;
 	}
+
 	cp->pa_interval = sys_cpu_to_le16(param->pa_interval);
 
 	cp->num_subgroups = param->num_subgroups;
@@ -786,13 +1318,18 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 					     sizeof(subgroup->metadata_len) +
 					     param->subgroups[i].metadata_len;
 
-		if (cp_buf.len + subgroup_size > cp_buf.size) {
-			LOG_DBG("MTU is too small to send %zu octets", cp_buf.len + subgroup_size);
+		if (att_buf.len + subgroup_size > att_buf.size) {
+			LOG_DBG("MTU is too small to send %zu octets", att_buf.len + subgroup_size);
 			return -EINVAL;
 		}
-		subgroup = net_buf_simple_add(&cp_buf, subgroup_size);
+		subgroup = net_buf_simple_add(&att_buf, subgroup_size);
 
-		subgroup->bis_sync = param->subgroups[i].bis_sync;
+		if (param->subgroups[i].bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
+			/* The BIS Index bitfield to be sent must use BIT(0) for BIS Index 1 */
+			subgroup->bis_sync = param->subgroups[i].bis_sync >> 1;
+		} else {
+			subgroup->bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
+		}
 
 		CHECKIF(param->pa_sync == 0 && subgroup->bis_sync != 0) {
 			LOG_DBG("Only syncing to BIS is not allowed");
@@ -809,81 +1346,125 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 		}
 	}
 
-	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
+	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
 }
 
 int bt_bap_broadcast_assistant_set_broadcast_code(
 	struct bt_conn *conn, uint8_t src_id,
-	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE])
+	const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
 {
 	struct bt_bap_bass_cp_broadcase_code *cp;
+	struct bap_broadcast_assistant_instance *inst;
 
 	if (conn == NULL) {
-		return 0;
-	} else if (broadcast_assistant.cp_handle == 0) {
+		LOG_DBG("conn is NULL");
+
 		return -EINVAL;
-	} else if (broadcast_assistant.busy) {
+	}
+
+	inst = inst_by_conn(conn);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
+
+	if (inst->cp_handle == 0) {
+		LOG_DBG("handle not set");
+
+		return -EINVAL;
+	} else if (inst->busy) {
+		LOG_DBG("instance busy");
+
 		return -EBUSY;
 	}
 
 	/* Reset buffer before using */
-	net_buf_simple_reset(&cp_buf);
-	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
+	net_buf_simple_reset(&att_buf);
+	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_BROADCAST_CODE;
 	cp->src_id = src_id;
 
 	(void)memcpy(cp->broadcast_code, broadcast_code,
-		     BT_BAP_BROADCAST_CODE_SIZE);
+		     BT_AUDIO_BROADCAST_CODE_SIZE);
 
-	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
+	LOG_HEXDUMP_DBG(cp->broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE, "broadcast code:");
+
+	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
 }
 
 int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id)
 {
 	struct bt_bap_bass_cp_rem_src *cp;
+	struct bap_broadcast_assistant_instance *inst;
 
 	if (conn == NULL) {
-		return 0;
-	} else if (broadcast_assistant.cp_handle == 0) {
+		LOG_DBG("conn is NULL");
+
 		return -EINVAL;
-	} else if (broadcast_assistant.busy) {
+	}
+
+	inst = inst_by_conn(conn);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
+
+	if (inst->cp_handle == 0) {
+		LOG_DBG("handle not set");
+
+		return -EINVAL;
+	} else if (inst->busy) {
+		LOG_DBG("instance busy");
+
 		return -EBUSY;
 	}
 
 	/* Reset buffer before using */
-	net_buf_simple_reset(&cp_buf);
-	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
+	net_buf_simple_reset(&att_buf);
+	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_REM_SRC;
 	cp->src_id = src_id;
 
-	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
+	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
 }
 
 int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn,
 					       uint8_t idx)
 {
 	int err;
+	struct bap_broadcast_assistant_instance *inst;
 
 	if (conn == NULL) {
+		LOG_DBG("conn is NULL");
+
 		return -EINVAL;
 	}
 
-	if (broadcast_assistant.recv_state_handles[idx] == 0) {
-		LOG_DBG("Handle not set");
+	inst = inst_by_conn(conn);
+	if (inst == NULL) {
 		return -EINVAL;
 	}
 
-	broadcast_assistant.read_params.func = read_recv_state_cb;
-	broadcast_assistant.read_params.handle_count = 1;
-	broadcast_assistant.read_params.single.handle =
-		broadcast_assistant.recv_state_handles[idx];
+	CHECKIF(idx >= ARRAY_SIZE(inst->recv_state_handles)) {
+		LOG_DBG("Invalid idx: %u", idx);
 
-	err = bt_gatt_read(conn, &broadcast_assistant.read_params);
+		return -EINVAL;
+	}
+
+	if (inst->recv_state_handles[idx] == 0) {
+		LOG_DBG("handle not set");
+
+		return -EINVAL;
+	}
+
+	inst->read_params.func = read_recv_state_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->recv_state_handles[idx];
+
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err != 0) {
-		(void)memset(&broadcast_assistant.read_params, 0,
-			     sizeof(broadcast_assistant.read_params));
+		(void)memset(&inst->read_params, 0,
+			     sizeof(inst->read_params));
 	}
 
 	return err;

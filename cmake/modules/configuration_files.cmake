@@ -11,7 +11,10 @@
 # The following variables will be defined when this CMake module completes:
 #
 # - CONF_FILE:              List of Kconfig fragments
+# - EXTRA_CONF_FILE:        List of additional Kconfig fragments
 # - DTC_OVERLAY_FILE:       List of devicetree overlay files
+# - EXTRA_DTC_OVERLAY_FILE  List of additional devicetree overlay files
+# - DTS_EXTRA_CPPFLAGS      List of additional devicetree preprocessor defines
 # - APPLICATION_CONFIG_DIR: Root folder for application configuration
 #
 # If any of the above variables are already set when this CMake module is
@@ -24,83 +27,64 @@ include_guard(GLOBAL)
 
 include(extensions)
 
-zephyr_get(APPLICATION_CONFIG_DIR)
-if(DEFINED APPLICATION_CONFIG_DIR)
-  string(CONFIGURE ${APPLICATION_CONFIG_DIR} APPLICATION_CONFIG_DIR)
-  if(NOT IS_ABSOLUTE ${APPLICATION_CONFIG_DIR})
-    get_filename_component(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} ABSOLUTE)
-  endif()
-else()
-  # Application config dir is not set, so we default to the  application
-  # source directory as configuration directory.
-  set(APPLICATION_CONFIG_DIR ${APPLICATION_SOURCE_DIR})
-endif()
+# Merge in variables from other sources (e.g. sysbuild)
+zephyr_get(FILE_SUFFIX SYSBUILD GLOBAL)
+
+zephyr_get(APPLICATION_CONFIG_DIR SYSBUILD GLOBAL)
+zephyr_file(APPLICATION_ROOT APPLICATION_CONFIG_DIR)
+set_ifndef(APPLICATION_CONFIG_DIR ${APPLICATION_SOURCE_DIR})
+string(CONFIGURE ${APPLICATION_CONFIG_DIR} APPLICATION_CONFIG_DIR)
 
 zephyr_get(CONF_FILE SYSBUILD LOCAL)
-if(DEFINED CONF_FILE)
-  # This ensures that CACHE{CONF_FILE} will be set correctly to current scope
-  # variable CONF_FILE. An already current scope variable will stay the same.
-  set(CONF_FILE ${CONF_FILE})
-
-  # CONF_FILE has either been specified on the cmake CLI or is already
-  # in the CMakeCache.txt. This has precedence over the environment
-  # variable CONF_FILE and the default prj.conf
-
-  # In order to support a `prj_<name>.conf pattern for auto inclusion of board
-  # overlays, then we must first ensure only a single conf file is provided.
+if(NOT DEFINED CONF_FILE)
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} KCONF CONF_FILE NAMES "prj.conf" SUFFIX ${FILE_SUFFIX} REQUIRED)
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/socs KCONF CONF_FILE QUALIFIERS SUFFIX ${FILE_SUFFIX})
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE SUFFIX ${FILE_SUFFIX})
+else()
   string(CONFIGURE "${CONF_FILE}" CONF_FILE_EXPANDED)
   string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE_EXPANDED}")
   list(LENGTH CONF_FILE_AS_LIST CONF_FILE_LENGTH)
   if(${CONF_FILE_LENGTH} EQUAL 1)
-    # Need the file name to look for match.
-    # Need path in order to check if it is absolute.
     get_filename_component(CONF_FILE_NAME ${CONF_FILE} NAME)
     if(${CONF_FILE_NAME} MATCHES "prj_(.*).conf")
       set(CONF_FILE_BUILD_TYPE ${CMAKE_MATCH_1})
-      set(CONF_FILE_INCLUDE_FRAGMENTS true)
+      zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE
+                  BUILD ${CONF_FILE_BUILD_TYPE}
+      )
+      set(CONF_FILE_FORCE_CACHE FORCE)
     endif()
   endif()
-elseif(CACHED_CONF_FILE)
-  # Cached conf file is present.
-  # That value has precedence over anything else than a new
-  # `cmake -DCONF_FILE=<file>` invocation.
-  set(CONF_FILE ${CACHED_CONF_FILE})
-elseif(EXISTS   ${APPLICATION_CONFIG_DIR}/prj_${BOARD}.conf)
-  set(CONF_FILE ${APPLICATION_CONFIG_DIR}/prj_${BOARD}.conf)
-
-elseif(EXISTS   ${APPLICATION_CONFIG_DIR}/prj.conf)
-  set(CONF_FILE ${APPLICATION_CONFIG_DIR}/prj.conf)
-  set(CONF_FILE_INCLUDE_FRAGMENTS true)
 endif()
 
-if(CONF_FILE_INCLUDE_FRAGMENTS)
-  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE BUILD ${CONF_FILE_BUILD_TYPE})
-endif()
-
-set(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} CACHE INTERNAL "The application configuration folder")
-set(CACHED_CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
+set(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} CACHE PATH "The application configuration folder" FORCE)
+set(CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
 the configuration settings specified in an alternate .conf file using this parameter. \
 These settings will override the settings in the application’s .config file or its default .conf file.\
 Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf;prj2.conf\" \
 The CACHED_CONF_FILE is internal Zephyr variable used between CMake runs. \
-To change CONF_FILE, use the CONF_FILE variable.")
-unset(CONF_FILE CACHE)
-
-zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS APP_BOARD_DTS)
+To change CONF_FILE, use the CONF_FILE variable." ${CONF_FILE_FORCE_CACHE})
 
 # The CONF_FILE variable is now set to its final value.
 zephyr_boilerplate_watch(CONF_FILE)
 
 zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
-if(DTC_OVERLAY_FILE)
-  # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already
-  # in the CMakeCache.txt.
-elseif(APP_BOARD_DTS)
-  set(DTC_OVERLAY_FILE ${APP_BOARD_DTS})
-elseif(EXISTS          ${APPLICATION_CONFIG_DIR}/${BOARD}.overlay)
-  set(DTC_OVERLAY_FILE ${APPLICATION_CONFIG_DIR}/${BOARD}.overlay)
-elseif(EXISTS          ${APPLICATION_CONFIG_DIR}/app.overlay)
-  set(DTC_OVERLAY_FILE ${APPLICATION_CONFIG_DIR}/app.overlay)
+
+# If DTC_OVERLAY_FILE is not set by the user, look for SoC and board-specific overlays
+# in the 'boards' and `soc` configuration subdirectories.
+if(NOT DEFINED DTC_OVERLAY_FILE)
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/socs DTS DTC_OVERLAY_FILE QUALIFIERS SUFFIX ${FILE_SUFFIX})
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS DTC_OVERLAY_FILE SUFFIX ${FILE_SUFFIX})
+endif()
+
+# If still not found, search for other overlays in the configuration directory.
+if(NOT DEFINED DTC_OVERLAY_FILE)
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} DTS DTC_OVERLAY_FILE)
+
+  if(NOT DEFINED DTC_OVERLAY_FILE)
+    zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} DTS DTC_OVERLAY_FILE
+                NAMES "app.overlay" SUFFIX ${FILE_SUFFIX}
+    )
+  endif()
 endif()
 
 set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} CACHE STRING "If desired, you can \
@@ -111,3 +95,7 @@ DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
 
 # The DTC_OVERLAY_FILE variable is now set to its final value.
 zephyr_boilerplate_watch(DTC_OVERLAY_FILE)
+
+zephyr_get(EXTRA_CONF_FILE SYSBUILD LOCAL VAR EXTRA_CONF_FILE OVERLAY_CONFIG MERGE REVERSE)
+zephyr_get(EXTRA_DTC_OVERLAY_FILE SYSBUILD LOCAL MERGE REVERSE)
+zephyr_get(DTS_EXTRA_CPPFLAGS SYSBUILD LOCAL MERGE REVERSE)

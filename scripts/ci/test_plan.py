@@ -12,17 +12,31 @@ import subprocess
 import json
 import logging
 import sys
+import glob
 from pathlib import Path
 from git import Repo
+from west.manifest import Manifest
+
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
 
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
 
-repository_path = Path(os.environ['ZEPHYR_BASE'])
+# These are globaly used variables. They are assigned in __main__ and are visible in further methods
+# however, pylint complains that it doesn't recognized them when used (used-before-assignment).
+zephyr_base = Path(os.environ['ZEPHYR_BASE'])
+repository_path = zephyr_base
+repo_to_scan = Repo(zephyr_base)
+args = None
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+logging.getLogger("pykwalify.core").setLevel(50)
 
-sys.path.append(os.path.join(repository_path, 'scripts'))
+sys.path.append(os.path.join(zephyr_base, 'scripts'))
 import list_boards
+
 
 def _get_match_fn(globs, regexes):
     # Constructs a single regex that tests for matches against the globs in
@@ -85,33 +99,45 @@ class Tag:
         return "<Tag {}>".format(self.name)
 
 class Filters:
-    def __init__(self, modified_files, pull_request=False, platforms=[]):
+    def __init__(self, modified_files, ignore_path, alt_tags, testsuite_root,
+                 pull_request=False, platforms=[], detailed_test_id=True, quarantine_list=None, tc_roots_th=20):
         self.modified_files = modified_files
+        self.testsuite_root = testsuite_root
+        self.resolved_files = []
         self.twister_options = []
         self.full_twister = False
         self.all_tests = []
         self.tag_options = []
         self.pull_request = pull_request
         self.platforms = platforms
-        self.default_run = False
+        self.detailed_test_id = detailed_test_id
+        self.ignore_path = ignore_path
+        self.tag_cfg_file = alt_tags
+        self.quarantine_list = quarantine_list
+        self.tc_roots_th = tc_roots_th
 
     def process(self):
+        self.find_modules()
         self.find_tags()
         self.find_tests()
         if not self.platforms:
             self.find_archs()
             self.find_boards()
+        self.find_excludes()
 
-        if self.default_run:
-            self.find_excludes(skip=["tests/*", "boards/*/*/*"])
-        else:
-            self.find_excludes()
-
-    def get_plan(self, options, integration=False):
+    def get_plan(self, options, integration=False, use_testsuite_root=True):
         fname = "_test_plan_partial.json"
-        cmd = ["scripts/twister", "-c"] + options + ["--save-tests", fname ]
+        cmd = [f"{zephyr_base}/scripts/twister", "-c"] + options + ["--save-tests", fname ]
+        if not self.detailed_test_id:
+            cmd += ["--no-detailed-test-id"]
+        if self.testsuite_root and use_testsuite_root:
+            for root in self.testsuite_root:
+                cmd+=["-T", root]
         if integration:
             cmd.append("--integration")
+        if self.quarantine_list:
+            for q in self.quarantine_list:
+                cmd += ["--quarantine-list", q]
 
         logging.info(" ".join(cmd))
         _ = subprocess.call(cmd)
@@ -122,23 +148,61 @@ class Filters:
         if os.path.exists(fname):
             os.remove(fname)
 
+    def find_modules(self):
+        if 'west.yml' in self.modified_files and args.commits is not None:
+            print(f"Manifest file 'west.yml' changed")
+            print("=========")
+            old_manifest_content = repo_to_scan.git.show(f"{args.commits[:-2]}:west.yml")
+            with open("west_old.yml", "w") as manifest:
+                manifest.write(old_manifest_content)
+            old_manifest = Manifest.from_file("west_old.yml")
+            new_manifest = Manifest.from_file("west.yml")
+            old_projs = set((p.name, p.revision) for p in old_manifest.projects)
+            new_projs = set((p.name, p.revision) for p in new_manifest.projects)
+            logging.debug(f'old_projs: {old_projs}')
+            logging.debug(f'new_projs: {new_projs}')
+            # Removed projects
+            rprojs = set(filter(lambda p: p[0] not in list(p[0] for p in new_projs),
+                old_projs - new_projs))
+            # Updated projects
+            uprojs = set(filter(lambda p: p[0] in list(p[0] for p in old_projs),
+                new_projs - old_projs))
+            # Added projects
+            aprojs = new_projs - old_projs - uprojs
+
+            # All projs
+            projs = rprojs | uprojs | aprojs
+            projs_names = [name for name, rev in projs]
+
+            logging.info(f'rprojs: {rprojs}')
+            logging.info(f'uprojs: {uprojs}')
+            logging.info(f'aprojs: {aprojs}')
+            logging.info(f'project: {projs_names}')
+
+            _options = []
+            for p in projs_names:
+                _options.extend(["-t", p ])
+
+            if self.platforms:
+                for platform in self.platforms:
+                    _options.extend(["-p", platform])
+
+            self.get_plan(_options, True)
+
+
     def find_archs(self):
-        # we match both arch/<arch>/* and include/arch/<arch> and skip common.
-        # Some architectures like riscv require special handling, i.e. riscv
-        # directory covers 2 architectures known to twister: riscv32 and riscv64.
+        # we match both arch/<arch>/* and include/zephyr/arch/<arch> and skip common.
         archs = set()
 
         for f in self.modified_files:
             p = re.match(r"^arch\/([^/]+)\/", f)
             if not p:
-                p = re.match(r"^include\/arch\/([^/]+)\/", f)
+                p = re.match(r"^include\/zephyr\/arch\/([^/]+)\/", f)
             if p:
                 if p.group(1) != 'common':
-                    if p.group(1) == 'riscv':
-                        archs.add('riscv32')
-                        archs.add('riscv64')
-                    else:
-                        archs.add(p.group(1))
+                    archs.add(p.group(1))
+                    # Modified file is treated as resolved, since a matching scope was found
+                    self.resolved_files.append(f)
 
         _options = []
         for arch in archs:
@@ -152,35 +216,53 @@ class Filters:
 
                 self.get_plan(_options, True)
             else:
-                self.get_plan(_options, False)
+                self.get_plan(_options, True)
 
     def find_boards(self):
-        boards = set()
-        all_boards = set()
+        changed_boards = set()
+        matched_boards = {}
+        resolved_files = []
 
-        for f in self.modified_files:
-            if f.endswith(".rst") or f.endswith(".png") or f.endswith(".jpg"):
+        for file in self.modified_files:
+            if file.endswith(".rst") or file.endswith(".png") or file.endswith(".jpg"):
                 continue
-            p = re.match(r"^boards\/[^/]+\/([^/]+)\/", f)
-            if p and p.groups():
-                boards.add(p.group(1))
+            if file.startswith("boards/"):
+                changed_boards.add(file)
+                resolved_files.append(file)
 
-        # Limit search to $ZEPHYR_BASE since this is where the changed files are
-        lb_args = argparse.Namespace(**{ 'arch_roots': [repository_path], 'board_roots': [repository_path] })
-        known_boards = list_boards.find_boards(lb_args)
-        for b in boards:
-            name_re = re.compile(b)
-            for kb in known_boards:
-                if name_re.search(kb.name):
-                    all_boards.add(kb.name)
+        roots = [zephyr_base]
+        if repository_path != zephyr_base:
+            roots.append(repository_path)
+
+        # Look for boards in monitored repositories
+        lb_args = argparse.Namespace(**{'arch_roots': roots, 'board_roots': roots, 'board': None, 'soc_roots':roots,
+                                        'board_dir': None})
+        known_boards = list_boards.find_v2_boards(lb_args)
+
+        for changed in changed_boards:
+            for board in known_boards:
+                c = (zephyr_base / changed).resolve()
+                if c.is_relative_to(board.dir.resolve()):
+                    for file in glob.glob(os.path.join(board.dir, f"{board.name}*.yaml")):
+                        with open(file, 'r') as f:
+                            b = yaml.load(f.read(), Loader=SafeLoader)
+                            matched_boards[b['identifier']] = board
+
+
+        logging.info(f"found boards: {','.join(matched_boards.keys())}")
+        # If modified file is caught by "find_boards" workflow (change in "boards" dir AND board recognized)
+        # it means a proper testing scope for this file was found and this file can be removed
+        # from further consideration
+        for _, board in matched_boards.items():
+            self.resolved_files.extend(list(filter(lambda f: str(board.dir.relative_to(zephyr_base)) in f, resolved_files)))
 
         _options = []
-        if len(all_boards) > 20:
-            logging.warning(f"{len(boards)} boards changed, this looks like a global change, skipping test handling, revert to default.")
-            self.default_run = True
+        if len(matched_boards) > 20:
+            logging.warning(f"{len(matched_boards)} boards changed, this looks like a global change, skipping test handling, revert to default.")
+            self.full_twister = True
             return
 
-        for board in all_boards:
+        for board in matched_boards:
             _options.extend(["-p", board ])
 
         if _options:
@@ -193,11 +275,27 @@ class Filters:
             if f.endswith(".rst"):
                 continue
             d = os.path.dirname(f)
-            while d:
+            scope_found = False
+            while not scope_found and d:
+                head, tail = os.path.split(d)
                 if os.path.exists(os.path.join(d, "testcase.yaml")) or \
                     os.path.exists(os.path.join(d, "sample.yaml")):
                     tests.add(d)
-                    break
+                    # Modified file is treated as resolved, since a matching scope was found
+                    self.resolved_files.append(f)
+                    scope_found = True
+                elif tail == "common":
+                    # Look for yamls in directories collocated with common
+
+                    yamls_found = [yaml for yaml in glob.iglob(head + '/**/testcase.yaml', recursive=True)]
+                    yamls_found.extend([yaml for yaml in glob.iglob(head + '/**/sample.yaml', recursive=True)])
+                    if yamls_found:
+                        for yaml in yamls_found:
+                            tests.add(os.path.dirname(yaml))
+                        self.resolved_files.append(f)
+                        scope_found = True
+                    else:
+                        d = os.path.dirname(d)
                 else:
                     d = os.path.dirname(d)
 
@@ -205,9 +303,9 @@ class Filters:
         for t in tests:
             _options.extend(["-T", t ])
 
-        if len(tests) > 20:
+        if len(tests) > self.tc_roots_th:
             logging.warning(f"{len(tests)} tests changed, this looks like a global change, skipping test handling, revert to default")
-            self.default_run = True
+            self.full_twister = True
             return
 
         if _options:
@@ -215,14 +313,11 @@ class Filters:
             if self.platforms:
                 for platform in self.platforms:
                     _options.extend(["-p", platform])
-            else:
-                _options.append("--all")
-            self.get_plan(_options)
+            self.get_plan(_options, use_testsuite_root=False)
 
     def find_tags(self):
 
-        tag_cfg_file = os.path.join(repository_path, 'scripts', 'ci', 'tags.yaml')
-        with open(tag_cfg_file, 'r') as ymlfile:
+        with open(self.tag_cfg_file, 'r') as ymlfile:
             tags_config = yaml.safe_load(ymlfile)
 
         tags = {}
@@ -259,26 +354,27 @@ class Filters:
             logging.info(f'Potential tag based filters: {exclude_tags}')
 
     def find_excludes(self, skip=[]):
-        with open("scripts/ci/twister_ignore.txt", "r") as twister_ignore:
+        with open(self.ignore_path, "r") as twister_ignore:
             ignores = twister_ignore.read().splitlines()
             ignores = filter(lambda x: not x.startswith("#"), ignores)
 
         found = set()
-        files = list(filter(lambda x: x, self.modified_files))
+        files_not_resolved = list(filter(lambda x: x not in self.resolved_files, self.modified_files))
 
         for pattern in ignores:
-            if pattern in skip:
-                continue
             if pattern:
-                found.update(fnmatch.filter(files, pattern))
+                found.update(fnmatch.filter(files_not_resolved, pattern))
 
         logging.debug(found)
-        logging.debug(files)
+        logging.debug(files_not_resolved)
 
-        if sorted(files) != sorted(found):
+        # Full twister run can be ordered by detecting great number of tests/boards changed
+        # or if not all modified files were resolved (corresponding scope found)
+        self.full_twister = self.full_twister or sorted(files_not_resolved) != sorted(found)
+
+        if self.full_twister:
             _options = []
             logging.info(f'Need to run full or partial twister...')
-            self.full_twister = True
             if self.platforms:
                 for platform in self.platforms:
                     _options.extend(["-p", platform])
@@ -309,6 +405,36 @@ def parse_args():
             help="Number of tests per builder")
     parser.add_argument('-n', '--default-matrix', default=10, type=int,
             help="Number of tests per builder")
+    parser.add_argument('--testcase-roots-threshold', default=20, type=int,
+            help="Threshold value for number of modified testcase roots, up to which an optimized scope is still applied."
+                 "When exceeded, full scope will be triggered")
+    parser.add_argument('--detailed-test-id', action='store_true',
+            help="Include paths to tests' locations in tests' names.")
+    parser.add_argument("--no-detailed-test-id", dest='detailed_test_id', action="store_false",
+            help="Don't put paths into tests' names.")
+    parser.add_argument('-r', '--repo-to-scan', default=None,
+            help="Repo to scan")
+    parser.add_argument('--ignore-path',
+            default=os.path.join(zephyr_base, 'scripts', 'ci', 'twister_ignore.txt'),
+            help="Path to a text file with patterns of files to be matched against changed files")
+    parser.add_argument('--alt-tags',
+            default=os.path.join(zephyr_base, 'scripts', 'ci', 'tags.yaml'),
+            help="Path to a file describing relations between directories and tags")
+    parser.add_argument(
+            "-T", "--testsuite-root", action="append", default=[],
+            help="Base directory to recursively search for test cases. All "
+                "testcase.yaml files under here will be processed. May be "
+                "called multiple times. Defaults to the 'samples/' and "
+                "'tests/' directories at the base of the Zephyr tree.")
+    parser.add_argument(
+            "--quarantine-list", action="append", metavar="FILENAME",
+            help="Load list of test scenarios under quarantine. The entries in "
+                "the file need to correspond to the test scenarios names as in "
+                "corresponding tests .yaml files. These scenarios "
+                "will be skipped with quarantine as the reason.")
+
+    # Include paths in names by default.
+    parser.set_defaults(detailed_test_id=True)
 
     return parser.parse_args()
 
@@ -318,9 +444,11 @@ if __name__ == "__main__":
     args = parse_args()
     files = []
     errors = 0
+    if args.repo_to_scan:
+        repository_path = Path(args.repo_to_scan)
+        repo_to_scan = Repo(repository_path)
     if args.commits:
-        repo = Repo(repository_path)
-        commit = repo.git.diff("--name-only", args.commits)
+        commit = repo_to_scan.git.diff("--name-only", args.commits)
         files = commit.split("\n")
     elif args.modified_files:
         with open(args.modified_files, "r") as fp:
@@ -331,7 +459,9 @@ if __name__ == "__main__":
         print("\n".join(files))
         print("=========")
 
-    f = Filters(files, args.pull_request, args.platform)
+    f = Filters(files, args.ignore_path, args.alt_tags, args.testsuite_root,
+                args.pull_request, args.platform, args.detailed_test_id, args.quarantine_list,
+                args.testcase_roots_threshold)
     f.process()
 
     # remove dupes and filtered cases
@@ -358,12 +488,6 @@ if __name__ == "__main__":
             nodes = 1
         else:
             nodes = round(total_tests / args.tests_per_builder)
-
-        if total_tests % args.tests_per_builder != total_tests:
-            nodes = nodes + 1
-
-        if args.default_matrix > nodes > 5:
-            nodes = args.default_matrix
 
         tp.write(f"TWISTER_TESTS={total_tests}\n")
         tp.write(f"TWISTER_NODES={nodes}\n")

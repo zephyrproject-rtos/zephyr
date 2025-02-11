@@ -65,7 +65,7 @@ struct ipso_timer_data {
 
 static struct ipso_timer_data timer_data[MAX_INSTANCE_COUNT];
 
-static struct lwm2m_engine_obj timer;
+static struct lwm2m_engine_obj ipso_timer;
 static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(DELAY_DURATION_RID, RW, FLOAT),
 	OBJ_FIELD_DATA(REMAINING_TIME_RID, R_OPT, FLOAT),
@@ -200,9 +200,10 @@ static void *cumulative_time_read_cb(uint16_t obj_inst_id,
 }
 
 static int cumulative_time_post_write_cb(uint16_t obj_inst_id,
-					 uint16_t res_id, uint16_t res_inst_id,
-					 uint8_t *data, uint16_t data_len,
-					 bool last_block, size_t total_size)
+					 uint16_t res_id,
+					 uint16_t res_inst_id, uint8_t *data,
+					 uint16_t data_len, bool last_block,
+					 size_t total_size, size_t offset)
 {
 	int i;
 
@@ -215,10 +216,10 @@ static int cumulative_time_post_write_cb(uint16_t obj_inst_id,
 	return 0;
 }
 
-static int enabled_post_write_cb(uint16_t obj_inst_id,
-				 uint16_t res_id, uint16_t res_inst_id,
-				 uint8_t *data, uint16_t data_len,
-				 bool last_block, size_t total_size)
+static int enabled_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+				 uint16_t res_inst_id, uint8_t *data,
+				 uint16_t data_len, bool last_block,
+				 size_t total_size, size_t offset)
 {
 	int i;
 
@@ -236,9 +237,10 @@ static int enabled_post_write_cb(uint16_t obj_inst_id,
 }
 
 static int trigger_counter_post_write_cb(uint16_t obj_inst_id,
-					 uint16_t res_id, uint16_t res_inst_id,
-					 uint8_t *data, uint16_t data_len,
-					 bool last_block, size_t total_size)
+					 uint16_t res_id,
+					 uint16_t res_inst_id, uint8_t *data,
+					 uint16_t data_len, bool last_block,
+					 size_t total_size, size_t offset)
 {
 	int i;
 
@@ -351,19 +353,19 @@ static struct lwm2m_engine_obj_inst *timer_inst_create(uint16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ipso_timer_init(const struct device *dev)
+static int ipso_timer_init(void)
 {
-	timer.obj_id = IPSO_OBJECT_TIMER_ID;
-	timer.version_major = TIMER_VERSION_MAJOR;
-	timer.version_minor = TIMER_VERSION_MINOR;
-	timer.is_core = false;
-	timer.fields = fields;
-	timer.field_count = ARRAY_SIZE(fields);
-	timer.max_instance_count = MAX_INSTANCE_COUNT;
-	timer.create_cb = timer_inst_create;
-	lwm2m_register_obj(&timer);
+	ipso_timer.obj_id = IPSO_OBJECT_TIMER_ID;
+	ipso_timer.version_major = TIMER_VERSION_MAJOR;
+	ipso_timer.version_minor = TIMER_VERSION_MINOR;
+	ipso_timer.is_core = false;
+	ipso_timer.fields = fields;
+	ipso_timer.field_count = ARRAY_SIZE(fields);
+	ipso_timer.max_instance_count = MAX_INSTANCE_COUNT;
+	ipso_timer.create_cb = timer_inst_create;
+	lwm2m_register_obj(&ipso_timer);
 
 	return 0;
 }
 
-SYS_INIT(ipso_timer_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(ipso_timer_init);

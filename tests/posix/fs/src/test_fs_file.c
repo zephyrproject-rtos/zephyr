@@ -141,6 +141,43 @@ static int test_file_close(void)
 	return res;
 }
 
+static int test_file_fsync(void)
+{
+	int res = 0;
+
+	if (file < 0)
+		return res;
+
+	res = fsync(file);
+	if (res < 0) {
+		TC_ERROR("Failed to sync file: %d, errno = %d\n", res, errno);
+		res = TC_FAIL;
+	}
+
+	close(file);
+	file = -1;
+	return res;
+}
+
+static int test_file_truncate(void)
+{
+	int res = 0;
+	size_t truncate_size = sizeof(test_str) - 4;
+
+	if (file < 0)
+		return res;
+
+	res = ftruncate(file, truncate_size);
+	if (res) {
+		TC_PRINT("Error truncating file [%d]\n", res);
+		res = TC_FAIL;
+	}
+
+	close(file);
+	file = -1;
+	return res;
+}
+
 static int test_file_delete(void)
 {
 	int res;
@@ -202,6 +239,32 @@ ZTEST(posix_fs_file_test, test_fs_read)
 }
 
 /**
+ * @brief Test for POSIX fsync API
+ *
+ * @details Test sync the file through POSIX fsync API.
+ */
+ZTEST(posix_fs_file_test, test_fs_sync)
+{
+	/* FIXME: restructure tests as per #46897 */
+	zassert_true(test_file_open() == TC_PASS);
+	zassert_true(test_file_write() == TC_PASS);
+	zassert_true(test_file_fsync() == TC_PASS);
+}
+
+/**
+ * @brief Test for POSIX ftruncate API
+ *
+ * @details Test truncate the file through POSIX ftruncate API.
+ */
+ZTEST(posix_fs_file_test, test_fs_truncate)
+{
+	/* FIXME: restructure tests as per #46897 */
+	zassert_true(test_file_open() == TC_PASS);
+	zassert_true(test_file_write() == TC_PASS);
+	zassert_true(test_file_truncate() == TC_PASS);
+}
+
+/**
  * @brief Test for POSIX close API
  *
  * @details Test closes the open file through POSIX close API.
@@ -227,7 +290,7 @@ ZTEST(posix_fs_file_test, test_fs_unlink)
 ZTEST(posix_fs_file_test, test_fs_fd_leak)
 {
 	const int reps =
-	    MAX(CONFIG_POSIX_MAX_OPEN_FILES, CONFIG_POSIX_MAX_FDS) + 5;
+	    MAX(CONFIG_POSIX_OPEN_MAX, CONFIG_ZVFS_OPEN_MAX) + 5;
 
 	for (int i = 0; i < reps; i++) {
 		if (i > 0) {

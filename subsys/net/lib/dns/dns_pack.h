@@ -93,6 +93,7 @@ enum dns_rr_type {
 	DNS_RR_TYPE_TXT = 16,		/* TXT   */
 	DNS_RR_TYPE_AAAA = 28,		/* IPv6  */
 	DNS_RR_TYPE_SRV = 33,		/* SRV   */
+	DNS_RR_TYPE_ANY = 0xff,		/* ANY (all records)   */
 };
 
 enum dns_response_type {
@@ -461,5 +462,14 @@ static inline int llmnr_unpack_query_header(struct dns_msg_t *msg,
 int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 		     enum dns_rr_type *qtype,
 		     enum dns_class *qclass);
+
+/**
+ * @brief Map query type number to a string.
+ *
+ * @param qtype Query type
+ *
+ * @return Printable query type name.
+ */
+const char *dns_qtype_to_str(enum dns_rr_type qtype);
 
 #endif

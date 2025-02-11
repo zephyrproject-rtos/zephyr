@@ -12,7 +12,6 @@ zephyr_include_directories(include)
 zephyr_include_directories(${THRIFT_UPSTREAM}/lib/cpp/src)
 
 zephyr_library_sources(
-  src/_stat.c
   src/thrift/server/TFDServer.cpp
   ${THRIFT_UPSTREAM}/lib/cpp/src/thrift/protocol/TProtocol.cpp
   ${THRIFT_UPSTREAM}/lib/cpp/src/thrift/server/TConnectedClient.cpp

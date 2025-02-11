@@ -119,6 +119,7 @@ static int set_pre_scale(const struct device *dev, uint8_t value)
 	struct pca9685_data *data = dev->data;
 	uint8_t mode1;
 	int ret;
+	uint8_t restart = RESTART;
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
@@ -134,9 +135,7 @@ static int set_pre_scale(const struct device *dev, uint8_t value)
 	}
 
 	if ((mode1 & RESTART) == 0x00) {
-		LOG_ERR("RESTART bit should be set");
-		ret = -EIO;
-		goto out;
+		restart = 0;
 	}
 
 	ret = set_reg(dev, ADDR_PRE_SCALE, value);
@@ -152,7 +151,7 @@ static int set_pre_scale(const struct device *dev, uint8_t value)
 
 	k_sleep(OSCILLATOR_STABILIZE);
 
-	ret = set_reg(dev, ADDR_MODE1, AUTO_INC | RESTART);
+	ret = set_reg(dev, ADDR_MODE1, AUTO_INC | restart);
 	if (ret != 0) {
 		goto out;
 	}
@@ -181,7 +180,7 @@ static int pca9685_set_cycles(const struct device *dev,
 		return -EINVAL;
 	}
 
-	pre_scale = ceiling_fraction((int64_t)period_count, PWM_STEPS) - 1;
+	pre_scale = DIV_ROUND_UP((int64_t)period_count, PWM_STEPS) - 1;
 
 	if (pre_scale < PRE_SCALE_MIN) {
 		LOG_ERR("period_count %u < %u (min)", period_count,
@@ -203,7 +202,7 @@ static int pca9685_set_cycles(const struct device *dev,
 	}
 
 	/* Adjust PWM output for the resolution of the PCA9685 */
-	led_off_count = ceiling_fraction(pulse_count * PWM_STEPS, period_count);
+	led_off_count = DIV_ROUND_UP(pulse_count * PWM_STEPS, period_count);
 
 	buf[0] = ADDR_LED_ON_L(channel);
 	if (led_off_count == 0) {

@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
+#include <stdio.h>
 
-void main(void)
+int main(void)
 {
-	printk("Hello World! %s\n", CONFIG_BOARD);
+	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
+
+	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2022 NXP
+ * Copyright 2020-2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/rdc/imx_rdc.h>
 
 / {
 	#address-cells = <1>;
@@ -57,7 +58,7 @@
 	};
 
 	gic: interrupt-controller@38800000 {
-		compatible = "arm,gic";
+		compatible = "arm,gic-v3", "arm,gic";
 		reg = <0x38800000 0x10000>, /* GIC Dist */
 		      <0x38880000 0xc0000>; /* GICR (RD_base + SGI_base) */
 		interrupt-controller;
@@ -77,6 +78,28 @@
 			#clock-cells = <3>;
 		};
 
+		gpt1: gpt@302d0000 {
+			compatible = "nxp,imx-gpt";
+			reg = <0x302d0000 DT_SIZE_K(64)>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+			gptfreq = <24000000>;
+			clocks = <&ccm IMX_CCM_GPT_IPG_CLK 0x6C 20>;
+			status = "disabled";
+		};
+
+		gpt2: gpt@302e0000 {
+			compatible = "nxp,imx-gpt";
+			reg = <0x302e0000 DT_SIZE_K(64)>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+			gptfreq = <24000000>;
+			clocks = <&ccm IMX_CCM_GPT_IPG_CLK 0x68 24>;
+			status = "disabled";
+		};
+
 		uart2: uart@30890000 {
 			compatible = "nxp,imx-iuart";
 			reg = <0x30890000 DT_SIZE_K(64)>;
@@ -84,6 +107,8 @@
 			interrupt-names = "irq_0";
 			interrupt-parent = <&gic>;
 			clocks = <&ccm IMX_CCM_UART2_CLK 0x6c 24>;
+			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -94,7 +119,40 @@
 			interrupt-names = "irq_0";
 			interrupt-parent = <&gic>;
 			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
+		};
+
+		enet: enet@30be0000 {
+			compatible = "nxp,enet1g";
+			reg = <0x30be0000 DT_SIZE_K(64)>;
+			clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
+			rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+			status = "disabled";
+
+			enet_mac: ethernet {
+				compatible = "nxp,enet-mac";
+				interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-names = "COMMON";
+				interrupt-parent = <&gic>;
+				nxp,mdio = <&enet_mdio>;
+				nxp,ptp-clock = <&enet_ptp_clock>;
+				status = "disabled";
+			};
+			enet_mdio: mdio {
+				compatible = "nxp,enet-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+			enet_ptp_clock: ptp_clock {
+				compatible = "nxp,enet-ptp-clock";
+				interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-parent = <&gic>;
+				clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
+				status = "disabled";
+			};
 		};
 
 		iomuxc: iomuxc@30330000 {
@@ -105,6 +163,11 @@
 				status = "okay";
 				compatible = "nxp,imx8mp-pinctrl";
 			};
+		};
+
+		rdc: rdc@303d0000 {
+			compatible = "nxp,rdc";
+			reg = <0x303d0000 DT_SIZE_K(64)>;
 		};
 	};
 };

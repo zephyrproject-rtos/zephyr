@@ -1,0 +1,19 @@
+/*
+ * Copyright (C) 2023 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The overlay file should be used to enable any
+ * dts nodes required by this application for this
+ * board.
+ */
+
+/ {
+	aliases {
+		nand = &nand;
+	};
+};
+
+&nand {
+	status = "okay";
+};

@@ -10,7 +10,8 @@
 
 int init_peripheral(uint8_t iterations);
 
-void main(void)
+int main(void)
 {
 	(void)init_peripheral(CONFIG_SAMPLE_CONN_ITERATIONS);
+	return 0;
 }

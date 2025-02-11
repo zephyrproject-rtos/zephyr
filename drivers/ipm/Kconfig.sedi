@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Intel Corporation
+
+config IPM_SEDI
+	bool "Intel SEDI IPM Driver"
+	default y if DT_HAS_INTEL_SEDI_IPM_ENABLED
+	select IPM_CALLBACK_ASYNC
+	help
+	  This option enables the Intel SEDI IPM(IPC) driver.
+	  This driver is simply a shim driver built upon the SEDI
+	  bare metal IPC driver in the hal-intel module

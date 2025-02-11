@@ -8,13 +8,14 @@
 
 #include <soc.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/barrier.h>
 LOG_MODULE_REGISTER(clock_control_xec, LOG_LEVEL_ERR);
 
 #define CLK32K_SIL_OSC_DELAY		256
@@ -109,6 +110,9 @@ struct pcr_hw_regs {
 	volatile uint32_t CLK32K_MON_IEN;
 };
 
+#define XEC_CC_PCR_RST_EN_UNLOCK	0xa6382d4cu
+#define XEC_CC_PCR_RST_EN_LOCK		0xa6382d4du
+
 #define XEC_CC_PCR_OSC_ID_PLL_LOCK	BIT(8)
 #define XEC_CC_PCR_TURBO_CLK_96M	BIT(2)
 
@@ -118,7 +122,7 @@ struct pcr_hw_regs {
 #define XEC_CC_PCR_CLK32K_SRC_PIN	2
 #define XEC_CC_PCR_CLK32K_SRC_OFF	3
 
-#ifdef CONFIG_SOC_SERIES_MEC1501X
+#ifdef CONFIG_SOC_SERIES_MEC15XX
 #define XEC_CC_PCR3_CRYPTO_MASK		(BIT(26) | BIT(27) | BIT(28))
 #else
 #define XEC_CC_PCR3_CRYPTO_MASK		BIT(26)
@@ -259,11 +263,11 @@ static int periph_clk_src_using_pin(enum periph_clk32k_src src)
 	}
 }
 
-#ifdef CONFIG_SOC_SERIES_MEC1501X
+#ifdef CONFIG_SOC_SERIES_MEC15XX
 /* MEC15xx uses the same 32KHz source for both PLL and Peripheral 32K clock domains.
  * We ignore the peripheral clock source.
  * If XTAL is selected (parallel) or single-ended the external 32KHz MUST stay on
- * even when when VTR goes off.
+ * even when VTR goes off.
  * If PIN(32KHZ_IN pin) as the external source, hardware can auto-switch to internal
  * silicon OSC if the signal on the 32KHZ_PIN goes away.
  * We ignore th
@@ -640,7 +644,7 @@ enum periph_clk32k_src get_periph_32k_source(const struct device *dev)
 	} else if (temp == VBR_CLK32K_SRC_PIN_SO) {
 		src = PERIPH_CLK32K_SRC_PIN_SO;
 	} else {
-		src = VBR_CLK32K_SRC_PIN_XTAL;
+		src = PERIPH_CLK32K_SRC_PIN_XTAL;
 	}
 
 	return src;
@@ -762,8 +766,8 @@ static void xec_clock_control_core_clock_divider_set(uint8_t clkdiv)
 	arch_nop();
 	arch_nop();
 	arch_nop();
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
 
 /*
@@ -787,6 +791,29 @@ int z_mchp_xec_pcr_periph_sleep(uint8_t slp_idx, uint8_t slp_pos,
 	} else {
 		pcr->SLP_EN[slp_idx] &= ~BIT(slp_pos);
 	}
+
+	return 0;
+}
+
+/* Most peripherals have a write only reset bit in the PCR reset enable registers.
+ * The layout of these registers is identical to the PCR sleep enable registers.
+ * Reset enables are protected by a lock register.
+ */
+int z_mchp_xec_pcr_periph_reset(uint8_t slp_idx, uint8_t slp_pos)
+{
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0);
+
+	if ((slp_idx >= MCHP_MAX_PCR_SCR_REGS) || (slp_pos >= 32)) {
+		return -EINVAL;
+	}
+
+	uint32_t lock = irq_lock();
+
+	pcr->RST_EN_LOCK = XEC_CC_PCR_RST_EN_UNLOCK;
+	pcr->RST_EN[slp_idx] = BIT(slp_pos);
+	pcr->RST_EN_LOCK = XEC_CC_PCR_RST_EN_LOCK;
+
+	irq_unlock(lock);
 
 	return 0;
 }
@@ -888,7 +915,7 @@ static inline int xec_clock_control_off(const struct device *dev,
  */
 static uint32_t get_turbo_clock(const struct device *dev)
 {
-#ifdef CONFIG_SOC_SERIES_MEC1501X
+#ifdef CONFIG_SOC_SERIES_MEC15XX
 	ARG_UNUSED(dev);
 
 	return MHZ(48);
@@ -987,7 +1014,7 @@ void mchp_xec_clk_ctrl_sys_sleep_disable(void)
 #endif
 
 /* Clock controller driver registration */
-static struct clock_control_driver_api xec_clock_control_api = {
+static const struct clock_control_driver_api xec_clock_control_api = {
 	.on = xec_clock_control_on,
 	.off = xec_clock_control_off,
 	.get_rate = xec_clock_control_get_subsys_rate,
@@ -1052,7 +1079,7 @@ const struct xec_pcr_config pcr_xec_config = {
 		(uint16_t)DT_INST_PROP_OR(0, pll_lock_timeout_ms, XEC_CC_DFLT_PLL_LOCK_WAIT_MS),
 	.period_min = (uint16_t)DT_INST_PROP_OR(0, clk32kmon_period_min, CNT32K_TMIN),
 	.period_max = (uint16_t)DT_INST_PROP_OR(0, clk32kmon_period_max, CNT32K_TMAX),
-	.core_clk_div = (uint8_t)DT_INST_PROP_OR(0, core_clk_div, CONFIG_SOC_MEC172X_PROC_CLK_DIV),
+	.core_clk_div = (uint8_t)DT_INST_PROP_OR(0, core_clk_div, CONFIG_SOC_MEC_PROC_CLK_DIV),
 	.xtal_se = (uint8_t)DT_INST_PROP_OR(0, xtal_single_ended, 0),
 	.max_dc_va = (uint8_t)DT_INST_PROP_OR(0, clk32kmon_duty_cycle_var_max, CNT32K_DUTY_MAX),
 	.min_valid = (uint8_t)DT_INST_PROP_OR(0, clk32kmon_valid_min, CNT32K_VAL_MIN),
@@ -1063,7 +1090,7 @@ const struct xec_pcr_config pcr_xec_config = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &xec_clock_control_init,
+		    xec_clock_control_init,
 		    NULL,
 		    NULL, &pcr_xec_config,
 		    PRE_KERNEL_1,

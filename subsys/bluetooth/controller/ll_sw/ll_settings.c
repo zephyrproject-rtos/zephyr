@@ -4,11 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-
 #include <zephyr/settings/settings.h>
-
-#include <zephyr/bluetooth/bluetooth.h>
 
 #include "ll_settings.h"
 

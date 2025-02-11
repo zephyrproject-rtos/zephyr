@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 foreach(extra_flags EXTRA_CPPFLAGS EXTRA_LDFLAGS EXTRA_CFLAGS EXTRA_CXXFLAGS EXTRA_AFLAGS)
+  # Note: zephyr_get MERGE should not be used until issue #43959 is resolved.
+  zephyr_get(${extra_flags})
   list(LENGTH ${extra_flags} flags_length)
   if(flags_length LESS_EQUAL 1)
     # A length of zero means no argument.

@@ -1,7 +1,8 @@
-.. _coprocessor-sample:
+.. zephyr:code-sample:: coprocessor
+   :name: OpenThread co-processor
+   :relevant-api: openthread
 
-OpenThread Co-Processor
-#######################
+   Build a Thread border-router using OpenThread's co-processor designs.
 
 Overview
 ********
@@ -36,17 +37,17 @@ Build the OpenThread NCP sample application which uses CDC ACM UART device:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/openthread/coprocessor
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
-   :gen-args: -DDTC_OVERLAY_FILE=usb.overlay -DOVERLAY_CONFIG=overlay-usb-nrf-br.conf
+   :gen-args: -DDTC_OVERLAY_FILE=usb.overlay -DEXTRA_CONF_FILE=overlay-usb-nrf-br.conf
    :compact:
 
-Example building for the nrf52840dk_nrf52840 for RCP:
+Example building for the nrf52840dk/nrf52840 for RCP:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/openthread/coprocessor
    :host-os: unix
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :conf: "prj.conf overlay-rcp.conf"
    :goals: run
    :compact:

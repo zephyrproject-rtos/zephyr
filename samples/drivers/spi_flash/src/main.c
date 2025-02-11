@@ -13,8 +13,8 @@
 
 #if defined(CONFIG_BOARD_ADAFRUIT_FEATHER_STM32F405)
 #define SPI_FLASH_TEST_REGION_OFFSET 0xf000
-#elif defined(CONFIG_BOARD_ARTY_A7_ARM_DESIGNSTART_M1) || \
-	defined(CONFIG_BOARD_ARTY_A7_ARM_DESIGNSTART_M3)
+#elif defined(CONFIG_BOARD_ARTY_A7_DESIGNSTART_FPGA_CORTEX_M1) || \
+	defined(CONFIG_BOARD_ARTY_A7_DESIGNSTART_FPGA_CORTEX_M3)
 /* The FPGA bitstream is stored in the lower 536 sectors of the flash. */
 #define SPI_FLASH_TEST_REGION_OFFSET \
 	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(fpga_bitstream))
@@ -26,9 +26,27 @@
 #endif
 #define SPI_FLASH_SECTOR_SIZE        4096
 
-#if defined CONFIG_FLASH_STM32_OSPI
+#if defined(CONFIG_FLASH_STM32_OSPI) || \
+	defined(CONFIG_FLASH_STM32_QSPI) || \
+	defined(CONFIG_FLASH_STM32_XSPI)
 #define SPI_FLASH_MULTI_SECTOR_TEST
 #endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(jedec_spi_nor)
+#define SPI_FLASH_COMPAT jedec_spi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
+#define SPI_FLASH_COMPAT st_stm32_qspi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_ospi_nor)
+#define SPI_FLASH_COMPAT st_stm32_ospi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_xspi_nor)
+#define SPI_FLASH_COMPAT st_stm32_xspi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_qspi_nor)
+#define SPI_FLASH_COMPAT nordic_qspi_nor
+#else
+#define SPI_FLASH_COMPAT invalid
+#endif
+
+const uint8_t erased[] = { 0xff, 0xff, 0xff, 0xff };
 
 void single_sector_test(const struct device *flash_dev)
 {
@@ -53,9 +71,20 @@ void single_sector_test(const struct device *flash_dev)
 	if (rc != 0) {
 		printf("Flash erase failed! %d\n", rc);
 	} else {
+		/* Check erased pattern */
+		memset(buf, 0, len);
+		rc = flash_read(flash_dev, SPI_FLASH_TEST_REGION_OFFSET, buf, len);
+		if (rc != 0) {
+			printf("Flash read failed! %d\n", rc);
+			return;
+		}
+		if (memcmp(erased, buf, len) != 0) {
+			printf("Flash erase failed at offset 0x%x got 0x%x\n",
+				SPI_FLASH_TEST_REGION_OFFSET, *(uint32_t *)buf);
+			return;
+		}
 		printf("Flash erase succeeded!\n");
 	}
-
 	printf("\nTest 2: Flash write\n");
 
 	printf("Attempting to write %zu bytes\n", len);
@@ -98,7 +127,7 @@ void multi_sector_test(const struct device *flash_dev)
 	uint8_t buf[sizeof(expected)];
 	int rc;
 
-	printf("\nPerform test on multiple consequtive sectors");
+	printf("\nPerform test on multiple consecutive sectors");
 
 	/* Write protection needs to be disabled before each write or
 	 * erase, since the flash component turns on write protection
@@ -125,9 +154,9 @@ void multi_sector_test(const struct device *flash_dev)
 				printf("Flash read failed! %d\n", rc);
 				return;
 			}
-			if (buf[0] != 0xff) {
+			if (memcmp(erased, buf, len) != 0) {
 				printf("Flash erase failed at offset 0x%x got 0x%x\n",
-				offs, buf[0]);
+				offs, *(uint32_t *)buf);
 				return;
 			}
 			offs += SPI_FLASH_SECTOR_SIZE;
@@ -175,13 +204,13 @@ void multi_sector_test(const struct device *flash_dev)
 }
 #endif
 
-void main(void)
+int main(void)
 {
-	const struct device *flash_dev = DEVICE_DT_GET(DT_ALIAS(spi_flash0));
+	const struct device *flash_dev = DEVICE_DT_GET_ONE(SPI_FLASH_COMPAT);
 
 	if (!device_is_ready(flash_dev)) {
 		printk("%s: device not ready.\n", flash_dev->name);
-		return;
+		return 0;
 	}
 
 	printf("\n%s SPI flash testing\n", flash_dev->name);
@@ -191,4 +220,5 @@ void main(void)
 #if defined SPI_FLASH_MULTI_SECTOR_TEST
 	multi_sector_test(flash_dev);
 #endif
+	return 0;
 }

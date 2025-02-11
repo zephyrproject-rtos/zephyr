@@ -1,0 +1,16 @@
+# MAX32 UART configuration
+
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_MAX32
+	bool "MAX32 MCU serial driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  This option enables the UART driver for MAX32 family of
+	  processors.
+	  Say y if you wish to use serial port on MAX32 MCU.

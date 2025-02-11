@@ -9,86 +9,51 @@
  * in the CSIS spec is also provided as BE, and logging values as BE will make
  * it easier to compare.
  */
-#include "csip_crypto.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/crypto.h>
-#include <tinycrypt/constants.h>
-#include <tinycrypt/utils.h>
-#include <tinycrypt/aes.h>
-#include <tinycrypt/cmac_mode.h>
-#include <tinycrypt/ccm_mode.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+
+#include "crypto/bt_crypto.h"
 
 #include "common/bt_str.h"
 
-#include <zephyr/logging/log.h>
+#include "csip_crypto.h"
 
 LOG_MODULE_REGISTER(bt_csip_crypto, CONFIG_BT_CSIP_SET_MEMBER_CRYPTO_LOG_LEVEL);
 
 #define BT_CSIP_CRYPTO_PADDING_SIZE 13
-#define BT_CSIP_R_SIZE              3 /* r is 24 bit / 3 octet */
+#define BT_CSIP_PADDED_RAND_SIZE    (BT_CSIP_CRYPTO_PADDING_SIZE + BT_CSIP_CRYPTO_PRAND_SIZE)
 #define BT_CSIP_R_MASK              BIT_MASK(24) /* r is 24 bit / 3 octet */
 
-static int aes_cmac(const uint8_t key[BT_CSIP_CRYPTO_KEY_SIZE],
-		    const uint8_t *in, size_t in_len, uint8_t *out)
+int bt_csip_sih(const uint8_t sirk[BT_CSIP_SIRK_SIZE], uint8_t r[BT_CSIP_CRYPTO_PRAND_SIZE],
+		uint8_t out[BT_CSIP_CRYPTO_HASH_SIZE])
 {
-	struct tc_aes_key_sched_struct sched;
-	struct tc_cmac_struct state;
-
-	/* TODO: Copy of the aes_cmac from smp.c: Can we merge them? */
-
-	if (tc_cmac_setup(&state, key, &sched) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	if (tc_cmac_update(&state, in, in_len) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	if (tc_cmac_final(out, &state) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static void xor_128(const uint8_t a[16], const uint8_t b[16], uint8_t out[16])
-{
-	size_t len = 16;
-	/* TODO: Identical to the xor_128 from smp.c: Move to util */
-
-	while (len--) {
-		*out++ = *a++ ^ *b++;
-	}
-}
-
-int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint32_t r,
-		uint32_t *out)
-{
-	uint8_t res[16]; /* need to store 128 bit */
+	uint8_t res[BT_CSIP_PADDED_RAND_SIZE]; /* need to store 128 bit */
 	int err;
-	uint8_t sirk_tmp[BT_CSIP_SET_SIRK_SIZE];
 
-	if ((r & BIT(23)) || ((r & BIT(22)) == 0)) {
-		LOG_DBG("Invalid r %0x06x", (uint32_t)(r & BT_CSIP_R_MASK));
+	if ((r[BT_CSIP_CRYPTO_PRAND_SIZE - 1] & BIT(7)) ||
+	   ((r[BT_CSIP_CRYPTO_PRAND_SIZE - 1] & BIT(6)) == 0)) {
+		LOG_DBG("Invalid r %s", bt_hex(r, BT_CSIP_CRYPTO_PRAND_SIZE));
 	}
 
-	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIP_SET_SIRK_SIZE));
-	LOG_DBG("r 0x%06x", r);
+	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIP_SIRK_SIZE));
+	LOG_DBG("r %s", bt_hex(r, BT_CSIP_CRYPTO_PRAND_SIZE));
 
 	/* r' = padding || r */
-	(void)memset(res, 0, BT_CSIP_CRYPTO_PADDING_SIZE);
-	sys_put_be24(r, res + BT_CSIP_CRYPTO_PADDING_SIZE);
+	(void)memset(res + BT_CSIP_CRYPTO_PRAND_SIZE, 0, BT_CSIP_CRYPTO_PADDING_SIZE);
+	memcpy(res, r, BT_CSIP_CRYPTO_PRAND_SIZE);
 
-	LOG_DBG("BE: r' %s", bt_hex(res, sizeof(res)));
+	LOG_DBG("r' %s", bt_hex(res, sizeof(res)));
 
-	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
-		/* Swap to Big Endian (BE) */
-		sys_memcpy_swap(sirk_tmp, sirk, BT_CSIP_SET_SIRK_SIZE);
-	} else {
-		(void)memcpy(sirk_tmp, sirk, BT_CSIP_SET_SIRK_SIZE);
-	}
-
-	err = bt_encrypt_be(sirk_tmp, res, res);
+	err = bt_encrypt_le(sirk, res, res);
 
 	if (err != 0) {
 		return err;
@@ -101,12 +66,12 @@ int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint32_t r,
 	 * result of sih.
 	 */
 
-	LOG_DBG("BE: res %s", bt_hex(res, sizeof(res)));
+	LOG_DBG("res %s", bt_hex(res, sizeof(res)));
 
 	/* Result is the lowest 3 bytes */
-	*out = sys_get_be24(res + 13);
+	memcpy(out, res, BT_CSIP_CRYPTO_HASH_SIZE);
 
-	LOG_DBG("sih 0x%06x", *out);
+	LOG_DBG("sih %s", bt_hex(out, BT_CSIP_CRYPTO_HASH_SIZE));
 
 	return 0;
 }
@@ -146,7 +111,7 @@ static int k1(const uint8_t *n, size_t n_size,
 	LOG_DBG("BE: salt %s", bt_hex(salt, BT_CSIP_CRYPTO_SALT_SIZE));
 	LOG_DBG("BE: p %s", bt_hex(p, p_size));
 
-	err = aes_cmac(salt, n, n_size, t);
+	err = bt_crypto_aes_cmac(salt, n, n_size, t);
 
 	LOG_DBG("BE: t %s", bt_hex(t, sizeof(t)));
 
@@ -154,7 +119,7 @@ static int k1(const uint8_t *n, size_t n_size,
 		return err;
 	}
 
-	err = aes_cmac(t, p, p_size, out);
+	err = bt_crypto_aes_cmac(t, p, p_size, out);
 
 	LOG_DBG("BE: out %s", bt_hex(out, 16));
 
@@ -183,16 +148,15 @@ static int s1(const uint8_t *m, size_t m_size,
 
 	memset(zero, 0, sizeof(zero));
 
-	err = aes_cmac(zero, m, m_size, out);
+	err = bt_crypto_aes_cmac(zero, m, m_size, out);
 
 	LOG_DBG("BE: out %s", bt_hex(out, 16));
 
 	return err;
 }
 
-int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
-		const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE])
+int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t sirk[BT_CSIP_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SIRK_SIZE])
 {
 	const uint8_t m[] = {'S', 'I', 'R', 'K', 'e', 'n', 'c'};
 	const uint8_t p[] = {'c', 's', 'i', 's'};
@@ -205,7 +169,7 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
 	 * sef(K, SIRK) = k1(K, s1("SIRKenc"), "csis") ^ SIRK
 	 */
 
-	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIP_SET_SIRK_SIZE));
+	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIP_SIRK_SIZE));
 
 	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
 		/* Swap because aes_cmac is big endian
@@ -236,15 +200,14 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
 		sys_mem_swap(k1_out, sizeof(k1_out));
 	}
 
-	xor_128(k1_out, sirk, out_sirk);
-	LOG_DBG("out %s", bt_hex(out_sirk, BT_CSIP_SET_SIRK_SIZE));
+	mem_xor_128(out_sirk, k1_out, sirk);
+	LOG_DBG("out %s", bt_hex(out_sirk, BT_CSIP_SIRK_SIZE));
 
 	return 0;
 }
 
-int bt_csip_sdf(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
-		const uint8_t enc_sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE])
+int bt_csip_sdf(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t enc_sirk[BT_CSIP_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SIRK_SIZE])
 {
 	/* SIRK encryption is currently symmetric, which means that we can
 	 * simply apply the sef function to decrypt it.

@@ -10,3 +10,9 @@ properties:
   device-id:
     type: int
     description: Device ID of the device
+  class-rev:
+    type: int
+    description: Optional class/revision register filter
+  class-rev-mask:
+    type: int
+    description: Class/revision register mask

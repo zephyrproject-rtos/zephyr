@@ -60,19 +60,19 @@ static struct virtio_vring_info rvrings[2] = {
 static struct virtio_device vdev;
 static struct rpmsg_virtio_device rvdev;
 static struct metal_io_region *io;
-static struct virtqueue *vq[2];
+static struct virtqueue *vqueue[2];
 
-static unsigned char virtio_get_status(struct virtio_device *vdev)
+static unsigned char ipc_virtio_get_status(struct virtio_device *dev)
 {
 	return sys_read8(VDEV_STATUS_ADDR);
 }
 
-static uint32_t virtio_get_features(struct virtio_device *vdev)
+static uint32_t ipc_virtio_get_features(struct virtio_device *dev)
 {
 	return 1 << VIRTIO_RPMSG_F_NS;
 }
 
-static void virtio_notify(struct virtqueue *vq)
+static void ipc_virtio_notify(struct virtqueue *vq)
 {
 #if defined(CONFIG_SOC_MPS2_AN521) || \
 	defined(CONFIG_SOC_V2M_MUSCA_B1)
@@ -87,9 +87,9 @@ static void virtio_notify(struct virtqueue *vq)
 }
 
 struct virtio_dispatch dispatch = {
-	.get_status = virtio_get_status,
-	.get_features = virtio_get_features,
-	.notify = virtio_notify,
+	.get_status = ipc_virtio_get_status,
+	.get_features = ipc_virtio_get_features,
+	.notify = ipc_virtio_notify,
 };
 
 static K_SEM_DEFINE(data_sem, 0, 1);
@@ -128,7 +128,7 @@ static unsigned int receive_message(void)
 		int status = k_sem_take(&data_sem, K_FOREVER);
 
 		if (status == 0) {
-			virtqueue_notification(vq[1]);
+			virtqueue_notification(vqueue[1]);
 		}
 	}
 	return received_data;
@@ -144,6 +144,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
 	int status = 0;
 	unsigned int message = 0U;
 	struct metal_device *device;
@@ -191,14 +192,14 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	}
 
 	/* setup vdev */
-	vq[0] = virtqueue_allocate(VRING_SIZE);
-	if (vq[0] == NULL) {
-		printk("virtqueue_allocate failed to alloc vq[0]\n");
+	vqueue[0] = virtqueue_allocate(VRING_SIZE);
+	if (vqueue[0] == NULL) {
+		printk("virtqueue_allocate failed to alloc vqueue[0]\n");
 		return;
 	}
-	vq[1] = virtqueue_allocate(VRING_SIZE);
-	if (vq[1] == NULL) {
-		printk("virtqueue_allocate failed to alloc vq[1]\n");
+	vqueue[1] = virtqueue_allocate(VRING_SIZE);
+	if (vqueue[1] == NULL) {
+		printk("virtqueue_allocate failed to alloc vqueue[1]\n");
 		return;
 	}
 
@@ -209,13 +210,13 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	rvrings[0].info.vaddr = (void *)VRING_TX_ADDRESS;
 	rvrings[0].info.num_descs = VRING_SIZE;
 	rvrings[0].info.align = VRING_ALIGNMENT;
-	rvrings[0].vq = vq[0];
+	rvrings[0].vq = vqueue[0];
 
 	rvrings[1].io = io;
 	rvrings[1].info.vaddr = (void *)VRING_RX_ADDRESS;
 	rvrings[1].info.num_descs = VRING_SIZE;
 	rvrings[1].info.align = VRING_ALIGNMENT;
-	rvrings[1].vq = vq[1];
+	rvrings[1].vq = vqueue[1];
 
 	vdev.vrings_info = &rvrings[0];
 
@@ -255,10 +256,11 @@ _cleanup:
 	printk("OpenAMP demo ended.\n");
 }
 
-void main(void)
+int main(void)
 {
 	printk("Starting application thread!\n");
 	k_thread_create(&thread_data, thread_stack, APP_TASK_STACK_SIZE,
-			(k_thread_entry_t)app_task,
+			app_task,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	return 0;
 }

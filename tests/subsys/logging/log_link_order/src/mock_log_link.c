@@ -22,18 +22,32 @@ static int activate(const struct log_link *link)
 static int get_domain_name(const struct log_link *link, uint32_t domain_id,
 			char *buf, size_t *length)
 {
+	if (length) {
+		*length = 0;
+	}
 	return 0;
 }
 
 static int get_source_name(const struct log_link *link, uint32_t domain_id,
 			uint16_t source_id, char *buf, size_t *length)
 {
+	if (length) {
+		*length = 0;
+	}
+
 	return 0;
 }
 
 static int get_levels(const struct log_link *link, uint32_t domain_id,
 			uint16_t source_id, uint8_t *level, uint8_t *runtime_level)
 {
+	if (level) {
+		*level = LOG_LEVEL_INF;
+	}
+	if (runtime_level) {
+		*runtime_level = LOG_LEVEL_INF;
+	}
+
 	return 0;
 }
 

@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nuvoton/m2l31x.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(168)>;
+	};
+
+	soc {
+		rmc: flash-controller@4000c000 {
+			flash0: flash@0 {
+				reg = <0 DT_SIZE_K(512)>;
+			};
+		};
+	};
+};

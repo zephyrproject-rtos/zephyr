@@ -28,7 +28,8 @@
 #define ARCH_X86_MEMORY_LD
 
 #include <zephyr/devicetree.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/linker/devicetree_regions.h>
+#include <zephyr/kernel/mm.h>
 
 /* Bounds of physical RAM from DTS */
 #define PHYS_RAM_ADDR		DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
@@ -38,7 +39,7 @@
  * the same as its physical location, although an identity mapping for RAM
  * is still supported by setting CONFIG_KERNEL_VM_BASE=CONFIG_SRAM_BASE_ADDRESS.
  */
-#ifdef Z_VM_KERNEL
+#ifdef K_MEM_IS_VM_KERNEL
 #define KERNEL_BASE_ADDR  (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET)
 #define KERNEL_RAM_SIZE   (CONFIG_KERNEL_VM_SIZE - CONFIG_KERNEL_VM_OFFSET)
 #define PHYS_RAM_AVAIL    (PHYS_RAM_SIZE - CONFIG_SRAM_OFFSET)
@@ -49,12 +50,18 @@
 
 /* "kernel RAM" for linker VMA allocations starts at the offset */
 
+#if defined(CONFIG_ROM_END_OFFSET)
+#define ROM_END_OFFSET CONFIG_ROM_END_OFFSET
+#else
+#define ROM_END_OFFSET 0
+#endif
+
 #ifdef CONFIG_XIP
   /* "ROM" is flash, we leave rodata and text there and just copy in data.
    * Board-level DTS must specify a flash region that doesn't overlap with
    * sram0, so that DT_PHYS_LOAD_ADDR is set.
    */
-  #define FLASH_ROM_SIZE      DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
+  #define FLASH_ROM_SIZE      (DT_REG_SIZE(DT_CHOSEN(zephyr_flash)) - ROM_END_OFFSET)
   #define PHYS_LOAD_ADDR      DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
 #else
   /* Physical RAM location where the kernel image is loaded */
@@ -80,7 +87,7 @@ MEMORY
      * or copied into physical RAM by a loader (MMU)
      */
     ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = FLASH_ROM_SIZE
-#elif defined(Z_VM_KERNEL)
+#elif defined(K_MEM_IS_VM_KERNEL)
     ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = PHYS_RAM_AVAIL
 #endif
     /* Linear address range to link the kernel. If non-XIP, everything is
@@ -88,6 +95,7 @@ MEMORY
      * physical ROM locations
      */
     RAM (wx)        : ORIGIN = KERNEL_BASE_ADDR, LENGTH = KERNEL_RAM_SIZE
+    LINKER_DT_REGIONS()
 
 #ifdef CONFIG_X86_64
     /* Special low-memory area for bootstrapping other CPUs from real mode */

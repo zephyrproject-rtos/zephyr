@@ -28,7 +28,7 @@ between *visible* and *invisible* symbols.
 
   Here's an example of a visible symbol:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config FPU
      	bool "Support floating point operations"
@@ -47,7 +47,7 @@ between *visible* and *invisible* symbols.
 
   Here's an example of an invisible symbol:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config CPU_HAS_FPU
      	bool
@@ -68,7 +68,7 @@ board with application settings, usually from :file:`prj.conf`. See
 
 Assignments in configuration files use this syntax:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_<symbol name>=<value>
 
@@ -78,7 +78,7 @@ There should be no spaces around the equals sign.
 respectively. The ``FPU`` symbol from the example above could be enabled like
 this:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_FPU=y
 
@@ -87,7 +87,7 @@ this:
    A boolean symbol can also be set to ``n`` with a comment formatted like
    this:
 
-   .. code-block:: none
+   .. code-block:: cfg
 
       # CONFIG_SOME_OTHER_BOOL is not set
 
@@ -100,14 +100,14 @@ this:
 
 Other symbol types are assigned like this:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_SOME_STRING="cool value"
    CONFIG_SOME_INT=123
 
 Comments use a #:
 
-.. code-block:: none
+.. code-block:: cfg
 
    # This is a comment
 
@@ -128,16 +128,18 @@ The initial configuration for an application comes from merging configuration
 settings from three sources:
 
 1. A ``BOARD``-specific configuration file stored in
-   :file:`boards/<architecture>/<BOARD>/<BOARD>_defconfig`
+   :file:`boards/<VENDOR>/<BOARD>/<BOARD>_defconfig`
 
 2. Any CMake cache entries prefix with ``CONFIG_``
 
 3. The application configuration
 
-The application configuration can come from the sources below. By default,
-:file:`prj.conf` is used.
+The application configuration can come from the sources below (each file is
+known as a Kconfig fragment, which are then merged to get the final
+configuration used for a particular build). By default, :file:`prj.conf` is
+used.
 
-1. If ``CONF_FILE`` is set, the configuration file(s) specified in it are
+#. If ``CONF_FILE`` is set, the configuration file(s) specified in it are
    merged and used as the application configuration. ``CONF_FILE`` can be set
    in various ways:
 
@@ -147,30 +149,34 @@ The application configuration can come from the sources below. By default,
 
    3. From the CMake variable cache
 
-2. Otherwise if ``CONF_FILE`` is set, and a single configuration file of the
-   form :file:`prj_<build>.conf` is used, then if file
+   Furthermore if ``CONF_FILE`` is set as single configuration file of the
+   form :file:`prj_<build>.conf` and if file
    :file:`boards/<BOARD>_<build>.conf` exists in same folder as file
    :file:`prj_<build>.conf`, the result of merging :file:`prj_<build>.conf` and
-   :file:`boards/<BOARD>_<build>.conf` is used.
+   :file:`boards/<BOARD>_<build>.conf` is used - note that this feature is
+   deprecated, :ref:`application-file-suffixes` should be used instead.
 
-3. Otherwise, :file:`prj_<BOARD>.conf` is used if it exists in the application
-   configuration directory.
-
-4. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
+#. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
    configuration directory, the result of merging it with :file:`prj.conf` is
    used.
 
-5. Otherwise, if board revisions are used and
+#. Otherwise, if board revisions are used and
    :file:`boards/<BOARD>_<revision>.conf` exists in the application
    configuration directory, the result of merging it with :file:`prj.conf` and
    :file:`boards/<BOARD>.conf` is used.
 
-6. Otherwise, :file:`prj.conf` is used if it exists in the application
-   configuration directory
+#. Otherwise, :file:`prj.conf` is used from the application configuration
+   directory. If it does not exist then a fatal error will be emitted.
+
+Furthermore, applications can have SoC overlay configuration that is applied to
+it, the file :file:`socs/<SOC>_<BOARD_QUALIFIERS>.conf` will be applied if it exists,
+after the main project configuration has been applied and before any board overlay
+configuration files have been applied.
 
 All configuration files will be taken from the application's configuration
 directory except for files with an absolute path that are given with the
-``CONF_FILE``, ``OVERLAY_CONFIG``, and ``DTC_OVERLAY_FILE`` arguments.  For these,
+``CONF_FILE``, ``EXTRA_CONF_FILE``, ``DTC_OVERLAY_FILE``, and
+``EXTRA_DTC_OVERLAY_FILE`` arguments.  For these,
 a file in a Zephyr module can be referred by escaping the Zephyr module dir
 variable like this ``\${ZEPHYR_<module>_MODULE_DIR}/<path-to>/<file>``
 when setting any of said variables in the application's :file:`CMakeLists.txt`.
@@ -192,12 +198,61 @@ configuration that gets modified when making changes in the :ref:`interactive
 configuration interfaces <menuconfig>`.
 
 
+Tracking Kconfig symbols
+************************
+
+It is possible to create Kconfig symbols which takes the default value of
+another Kconfig symbol.
+
+This is valuable when you want a symbol specific to an application or subsystem
+but do not want to rely directly on the common symbol. For example, you might
+want to decouple the settings so they can be independently configured, or to
+ensure you always have a locally named setting, even if the external setting name changes.
+is later changed.
+
+For example, consider the common ``FOO_STRING`` setting where a subsystem wants
+to have a ``SUB_FOO_STRING`` but still allow for customization.
+
+This can be done like this:
+
+.. code-block:: kconfig
+
+    config FOO_STRING
+            string "Foo"
+            default "foo"
+
+    config SUB_FOO_STRING
+            string "Sub-foo"
+            default FOO_STRING
+
+This ensures that the default value of ``SUB_FOO_STRING`` is identical to
+``FOO_STRING`` while still allows users to configure both settings
+independently.
+
+It is also possible to make ``SUB_FOO_STRING`` invisible and thereby keep the
+two symbols in sync, unless the value of the tracking symbol is changed in a
+:file:`defconfig` file.
+
+.. code-block:: kconfig
+
+    config FOO_STRING
+            string "Foo"
+            default "foo"
+
+    config SUB_FOO_STRING
+            string
+            default FOO_STRING
+            help
+              Hidden symbol which follows FOO_STRING
+              Can be changed through *.defconfig files.
+
+
 Configuring invisible Kconfig symbols
 *************************************
 
 When making changes to the default configuration for a board, you might have to
 configure invisible symbols. This is done in
-:file:`boards/<architecture>/<BOARD>/Kconfig.defconfig`, which is a regular
+:file:`boards/<VENDOR>/<BOARD>/Kconfig.defconfig`, which is a regular
 :file:`Kconfig` file.
 
 .. note::
@@ -209,7 +264,7 @@ Assigning values in :file:`Kconfig.defconfig` relies on defining a Kconfig
 symbol in multiple locations. As an example, say we want to set ``FOO_WIDTH``
 below to 32:
 
-.. code-block:: none
+.. code-block:: kconfig
 
     config FOO_WIDTH
     	int
@@ -217,7 +272,7 @@ below to 32:
 To do this, we extend the definition of ``FOO_WIDTH`` as follows, in
 :file:`Kconfig.defconfig`:
 
-.. code-block:: none
+.. code-block:: kconfig
 
     if BOARD_MY_BOARD
 
@@ -243,25 +298,51 @@ Note that conditions from surrounding top-level ``if``\ s are propagated to
 symbol properties, so the above ``default`` is equivalent to
 ``default 32 if BOARD_MY_BOARD``.
 
+.. _multiple_symbol_definitions:
+
+Multiple symbol definitions
+---------------------------
+
+When a symbol is defined in multiple locations, each definition acts as an
+independent symbol that happens to share the same name. This means that
+properties are not appended to previous definitions. If the conditions
+for **ANY** definition result in the symbol resolving to ``y``, the symbol
+will be ``y``. It is therefore not possible to make the dependencies of a
+symbol more restrictive by defining it in multiple locations.
+
+For example, the dependencies of the symbol ``FOO`` below are satisfied if
+either ``DEP1`` **OR** ``DEP2`` are true, it does not require both:
+
+.. code-block:: none
+
+   config FOO
+      ...
+      depends on DEP1
+
+   config FOO
+      ...
+      depends on DEP2
+
 .. warning::
+   Symbols without explicit dependencies still follow the above rule. A
+   symbol without any dependencies will result in the symbol always being
+   assignable. The definition below will result in ``FOO`` always being
+   enabled by default, regardless of the value of ``DEP1``.
 
-   When defining a symbol in multiple locations, dependencies are ORed together
-   rather than ANDed together. It is not possible to make the dependencies of a
-   symbol more restrictive by defining it in multiple locations.
-
-   For example, the direct dependencies of the symbol below becomes
-   ``DEP1 || DEP2``:
-
-   .. code-block:: none
+   .. code-block:: kconfig
 
       config FOO
-      	...
-      	depends on DEP1
+         bool "FOO"
+         depends on DEP1
 
       config FOO
-      	...
-      	depends on DEP2
+         default y
 
+   This dependency weakening can be avoided with the :ref:`configdefault
+   <kconfig_extensions>` extension if the desire is only to add a new default
+   without modifying any other behaviour of the symbol.
+
+.. note::
    When making changes to :file:`Kconfig.defconfig` files, always check the
    symbol's direct dependencies in one of the :ref:`interactive configuration
    interfaces <menuconfig>` afterwards. It is often necessary to repeat
@@ -309,7 +390,7 @@ There are two ways to configure a Kconfig ``choice``:
    As an example, assume that a choice has the following base definition (here,
    the name of the choice is ``FOO``):
 
-   .. code-block:: none
+   .. code-block:: kconfig
 
        choice FOO
            bool "Foo choice"
@@ -326,7 +407,7 @@ There are two ways to configure a Kconfig ``choice``:
    To change the default symbol of ``FOO`` to ``A``, you would add the
    following definition to :file:`Kconfig.defconfig`:
 
-   .. code-block:: none
+   .. code-block:: kconfig
 
        choice FOO
            default A
@@ -344,5 +425,4 @@ The :ref:`kconfig_tips_and_tricks` page has some tips for writing Kconfig
 files.
 
 The :zephyr_file:`kconfiglib.py <scripts/kconfig/kconfiglib.py>` docstring
-docstring (at the top of the file) goes over how symbol values are calculated
-in detail.
+(at the top of the file) goes over how symbol values are calculated in detail.

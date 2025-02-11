@@ -1,0 +1,56 @@
+# Copyright (c) 2023 Meta
+# Copyright (c) 2024 BayLibre SAS
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig POSIX_SINGLE_PROCESS
+	bool "POSIX single process support"
+	# imply COMMON_LIBC_MALLOC # for env.c
+	help
+	  Select 'y' here to use confstr(), environ, errno, getenv(), setenv(), sysconf(), uname(),
+	  or unsetenv().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+if POSIX_SINGLE_PROCESS
+
+choice POSIX_SYSCONF_IMPL_CHOICE
+	default POSIX_SYSCONF_IMPL_FULL if CPP
+	default POSIX_SYSCONF_IMPL_MACRO
+	prompt "Sysconf implementation method"
+
+config POSIX_SYSCONF_IMPL_MACRO
+	bool "Macro"
+	help
+	  The sysconf() function is implemented compile-time constant via macros. This is the option
+	  with the least overhead. The downside is that sysconf() is not an addressable function.
+
+config POSIX_SYSCONF_IMPL_FULL
+	bool "Full"
+	help
+	  The sysconf() function is implemented as a large integer-integer array. The advantage if this
+	  option is that all sysconf() options can be queried and that the sysconf() symbol is
+	  addressable.
+
+endchoice
+
+config POSIX_UNAME_VERSION_LEN
+	int "uname version string length"
+	default 70
+	help
+	  Defines the maximum string length of uname version.
+
+config POSIX_UNAME_NODENAME_LEN
+	int "uname nodename string length"
+	default 6 if !NET_HOSTNAME_UNIQUE
+	default 22 if NET_HOSTNAME_UNIQUE
+	help
+	  Defines the maximum string length of nodename version.
+
+module = POSIX_ENV
+module-str = POSIX env logging
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # POSIX_SINGLE_PROCESS

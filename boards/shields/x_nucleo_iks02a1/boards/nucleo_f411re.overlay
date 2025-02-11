@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&plli2s {
+	mul-n = <192>;
+	div-r = <3>;
+	status = "okay";
+};
+
 &dma2 {
 	status = "okay";
 };

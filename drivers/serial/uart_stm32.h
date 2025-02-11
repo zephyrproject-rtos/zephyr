@@ -13,21 +13,26 @@
 #define ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
+#include <zephyr/drivers/uart.h>
 
 #include <stm32_ll_usart.h>
+
+#define STM32_UART_DEFAULT_BAUDRATE	115200
+#define STM32_UART_DEFAULT_PARITY	UART_CFG_PARITY_NONE
+#define STM32_UART_DEFAULT_STOP_BITS	UART_CFG_STOP_BITS_1
+#define STM32_UART_DEFAULT_DATA_BITS	UART_CFG_DATA_BITS_8
 
 /* device config */
 struct uart_stm32_config {
 	/* USART instance */
 	USART_TypeDef *usart;
+	/* Reset controller device configuration */
+	const struct reset_dt_spec reset;
 	/* clock subsystem driving this peripheral */
 	const struct stm32_pclken *pclken;
 	/* number of clock subsystems */
 	size_t pclk_len;
-	/* initial hardware flow control, 1 for RTS/CTS */
-	bool hw_flow_control;
-	/* initial parity, 0 for none, 1 for odd, 2 for even */
-	int  parity;
 	/* switch to enable single wire / half duplex feature */
 	bool single_wire;
 	/* enable tx/rx pin swap */
@@ -36,6 +41,17 @@ struct uart_stm32_config {
 	bool rx_invert;
 	/* enable tx pin inversion */
 	bool tx_invert;
+	/* enable de signal */
+	bool de_enable;
+	/* de signal assertion time in 1/16 of a bit */
+	uint8_t de_assert_time;
+	/* de signal deassertion time in 1/16 of a bit */
+	uint8_t de_deassert_time;
+	/* enable de pin inversion */
+	bool de_invert;
+	/* enable fifo */
+	bool fifo_enable;
+	/* pin muxing */
 	const struct pinctrl_dev_config *pcfg;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
 	defined(CONFIG_PM)
@@ -70,12 +86,10 @@ struct uart_dma_stream {
 
 /* driver data */
 struct uart_stm32_data {
-	/* Baud rate */
-	uint32_t baud_rate;
 	/* clock device */
 	const struct device *clock;
-	/* Reset controller device configuration */
-	const struct reset_dt_spec reset;
+	/* uart config */
+	struct uart_config *uart_cfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;

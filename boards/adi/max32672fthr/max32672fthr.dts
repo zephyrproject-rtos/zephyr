@@ -1,0 +1,107 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32672.dtsi>
+#include <adi/max32/max32672-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices MAX32672FTHR";
+	compatible = "adi,max32672fthr";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram3;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+		led3: led_3 {
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		pb1: pb1 {
+			gpios = <&gpio0 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+		sw0 = &pb1;
+	};
+
+	/* Used for accessing other pins */
+	feather_header: feather_connector {
+		compatible = "adafruit-feather-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <12 0 &gpio0 19 0>,  /* SDA */
+				<13 0 &gpio0 18 0>,  /* SCL */
+				<14 0 &gpio0 25 0>,  /* I2S LRCLK */
+				<15 0 &gpio0 24 0>,  /* I2S SDO */
+				<16 0 &gpio0 17 0>,   /* SPI1 SS */
+				<17 0 &gpio0 23 0>,   /* QEI */
+				<18 0 &gpio0 7 0>,   /* QEB */
+				<19 0 &gpio0 6 0>,   /* QEA */
+				<20 0 &gpio0 5 0>,   /* HFX CLK OUT */
+				/* 11 not connected */
+				<10 0 &gpio0 29 0>,  /* TX */
+				<9 0 &gpio0 28 0>,   /* RX */
+				<8 0 &gpio0 14 0>,   /* MISO */
+				<7 0 &gpio0 15 0>,   /* MOSI */
+				<6 0 &gpio0 16 0>,   /* SCK */
+				<5 0 &gpio0 26 0>,   /* I2S BCLK */
+				<4 0 &gpio0 27 0>,   /* I2S SDI */
+				<3 0 &gpio0 22 0>,   /* ADC_TRG */
+				<2 0 &gpio0 13 0>,   /* AIN5 */
+				<1 0 &gpio0 12 0>,   /* AIN4 */
+				<0 0 &gpio0 11 0>;   /* AIN3 */
+	};
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0a_tx_p0_9 &uart0a_rx_p0_8>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};

@@ -12,6 +12,8 @@ This document explains how to participate in project conversations, log bugs
 and enhancement requests, and submit patches to the project so your patch will
 be accepted quickly in the codebase.
 
+.. _licensing_requirements:
+
 Licensing
 *********
 
@@ -146,6 +148,8 @@ For your commits, replace:
 
 You can automatically add the Signed-off-by: line to your commit body using
 ``git commit -s``. Use other commits in the zephyr git history as examples.
+See :ref:`git_setup` for instructions on configuring user and email settings
+in Git.
 
 Additional requirements:
 
@@ -314,7 +318,7 @@ Pull Requests and Issues
 
 Before starting on a patch, first check in our issues `Zephyr Project Issues`_
 system to see what's been reported on the issue you'd like to address.  Have a
-conversation on the `Zephyr devel mailing list`_ (or the the `Zephyr Discord
+conversation on the `Zephyr devel mailing list`_ (or the `Zephyr Discord
 Server`_) to see what others think of your issue (and proposed solution).  You
 may find others that have encountered the issue you're finding, or that have
 similar ideas for changes or additions.  Send a message to the `Zephyr devel
@@ -329,16 +333,10 @@ business days.
 You can find all `open pull requests`_ on GitHub and open `Zephyr Project
 Issues`_ in Github issues.
 
- .. _Continuous Integration:
+.. _git_setup:
 
-
-Tools and Git Setup
-*******************
-
-.. _git-name-and-email:
-
-Name and email
-==============
+Git Setup
+*********
 
 We need to know who you are, and how to contact you. To add this
 information to your Git installation, set the Git configuration
@@ -353,100 +351,190 @@ address is ``z.developer@example.com``:
    git config --global user.name "Zephyr Developer"
    git config --global user.email "z.developer@example.com"
 
-gitlint
-=========
 
-When you submit a pull request to the project, a series of checks are
-performed to verify your commit messages meet the requirements. The same step
-done during the CI process can be performed locally using the the ``gitlint``
-command.
+Pull Request Guidelines
+***********************
+When opening a new Pull Request, adhere to the following guidelines to ensure
+compliance with Zephyr standards and facilitate the review process.
 
-Run ``gitlint`` locally in your tree and branch where your patches have been
-committed:
+If in doubt, it's advisible to explore existing Pull Requests within the Zephyr
+repository. Use the search filters and labels to locate PRs related to changes
+similar to the ones you are proposing.
 
-.. code-block:: console
+.. _commit-guidelines:
 
-     gitlint
+Commit Message Guidelines
+=========================
 
-Note, gitlint only checks HEAD (the most recent commit), so you should run it
-after each commit, or use the ``--commits`` option to specify a commit range
-covering all the development patches to be submitted.
+Changes are submitted as Git commits. Each commit has a *commit
+message* describing the change. Acceptable commit messages look like
+this:
 
-twister
-=======
+.. code-block:: none
 
-.. note::
-   twister support on windows is limited and execution of tests is not
-   supported, only building.
+   [area]: [summary of change]
 
-To verify that your changes did not break any tests or samples, please run the
-``twister`` script locally before submitting your pull request to GitHub.
+   [Commit message body (must be non-empty)]
 
-Twister allows limiting the scope of the tests built and run by pointing it to
-the tests related to the code or the platform you have modified. For example, to
-limit tests to a single platform and an area in the kernel::
+   Signed-off-by: [Your Full Name] <[your.email@address]>
 
-    source zephyr-env.sh
-    west twister -p qemu_x86 -T tests/kernel/sched
+You need to change text in square brackets (``[like this]``) above to
+fit your commit.
 
-Running tests on connected devices is also supported using the
-``--device-testing`` options. Please consult with the :ref:`Twister
-<twister_script>` documentation for more details.
+Examples and more details follow.
 
-To run the same tests the CI system runs, follow these steps from within your
-local Zephyr source working directory:
+Example
+-------
 
-.. code-block:: console
+Here is an example of a good commit message.
 
-    source zephyr-env.sh
-    west twister --integration
+.. code-block:: none
 
-The above will execute the basic twister script, which will run various
-tests using the QEMU emulator and other simulators supported in Zephyr.
-It will also do some build tests on various samples with advanced features that
-can't run in a simulator or QEMU.
+   drivers: sensor: abcd1234: fix bus I/O error handling
 
-We highly recommend you run these tests locally to avoid any CI failures
-However, note that building and executing tests using twister requires
-significant computing resources. When running locally and to get results in a
-reasonable time, limit the scope to the areas and platforms you have modified.
-In case of major changes to the kernel, build or configuration infrastructures
-of Zephyr, it is advised to use twister for verifying majority the changes
-before handing over to the dedicated CI resources provided by the Zephyr
-project.
+   The abcd1234 sensor driver is failing to check the flags field in
+   the response packet from the device which signals that an error
+   occurred. This can lead to reading invalid data from the response
+   buffer. Fix it by checking the flag and adding an error path.
 
-clang-format
-============
+   Signed-off-by: Zephyr Developer <z.developer@example.com>
 
-The `clang-format tool <https://clang.llvm.org/docs/ClangFormat.html>`_ can
-be helpful to quickly reformat large amounts of new source code to our
-`Coding Style`_ standards together with the ``.clang-format`` configuration file
-provided in the repository. ``clang-format`` is well integrated into most
-editors, but you can also run it manually like this:
+[area]: [summary of change]
+---------------------------
 
-.. code-block:: bash
+This line is called the commit's *title*. Titles must be:
 
-   clang-format -i my_source_file.c
+* one line
+* less than 72 characters long
+* followed by a completely blank line
 
-``clang-format`` is part of LLVM, which can be downloaded from the project
-`releases page <https://github.com/llvm/llvm-project/releases>`. Note that if
-you are a Linux user, ``clang-format`` will likely be available as a package in
-your distribution repositories.
+[area]
+  The ``[area]`` prefix usually identifies the area of code
+  being changed. It can also identify the change's wider
+  context if multiple areas are affected.
+
+  Here are some examples:
+
+  * ``doc: ...`` for documentation changes
+  * ``drivers: foo:`` for ``foo`` driver changes
+  * ``Bluetooth: Shell:`` for changes to the Bluetooth shell
+  * ``net: ethernet:`` for Ethernet-related networking changes
+  * ``dts:`` for treewide devicetree changes
+  * ``style:`` for code style changes
+
+  If you're not sure what to use, try running ``git log FILE``, where
+  ``FILE`` is a file you are changing, and using previous commits that
+  changed the same file as inspiration.
+
+[summary of change]
+  The ``[summary of change]`` part should be a quick description of
+  what you've done. Here are some examples:
+
+  * ``doc: update wiki references to new site``
+  * ``drivers: sensor: sensor_shell: fix channel name collision``
+
+Commit Message Body
+-------------------
+
+.. warning::
+
+   An empty commit message body is not permitted. Even for trivial
+   changes, please include a descriptive commit message body. Your
+   pull request will fail CI checks if you do not.
+
+This part of the commit should explain what your change does, and why
+it's needed. Be specific. A body that says ``"Fixes stuff"`` will be
+rejected. Be sure to include the following as relevant:
+
+* **what** the change does,
+* **why** you chose that approach,
+* **what** assumptions were made, and
+* **how** you know it works -- for example, which tests you ran.
+
+Each line in your commit message should usually be 75 characters or
+less. Use newlines to wrap longer lines. Exceptions include lines
+with long URLs, email addresses, etc.
+
+For examples of accepted commit messages, you can refer to the Zephyr GitHub
+`changelog <https://github.com/zephyrproject-rtos/zephyr/commits/main>`__.
+
+
+Signed-off-by: ...
+------------------
+
+.. tip::
+
+   You should have set your :ref:`git_setup`
+   already. Create your commit with ``git commit -s`` to add the
+   Signed-off-by: line automatically using this information.
+
+For open source licensing reasons, your commit must include a
+Signed-off-by: line that looks like this:
+
+.. code-block:: none
+
+   Signed-off-by: [Your Full Name] <[your.email@address]>
+
+For example, if your full name is ``Zephyr Developer`` and your email
+address is ``z.developer@example.com``:
+
+.. code-block:: none
+
+   Signed-off-by: Zephyr Developer <z.developer@example.com>
+
+This means that you have personally made sure your change complies
+with the :ref:`DCO`. For this reason, you must use your legal name.
+Pseudonyms or "hacker aliases" are not permitted.
+
+Your name and the email address you use must match the name and email
+in the Git commit's ``Author:`` field.
+
+See the :ref:`contributor-expectations` for a more complete discussion of
+contributor and reviewer expectations.
+
+Adding links
+------------
+
+.. _GitHub references:
+   https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls
+
+Do not include `GitHub references`_ in the commit message directly, as it can
+lose meaning in case the repository is forked, for example. Instead, if the
+change addresses a specific GitHub issue, include in the Pull Request message a
+line of the form:
+
+.. code-block:: none
+
+   Fixes #[issue number]
+
+Where ``[issue number]`` is the relevant GitHub issue's number. For
+example:
+
+.. code-block:: none
+
+   Fixes: #1234
+
+You can point to other relevant information that can be found on the web using
+:code:`Link:` tags. This includes, for example: GitHub issues, datasheets,
+reference manuals, etc.
+
+.. code-block:: none
+
+   Link: https://github.com/zephyrproject-rtos/zephyr/issues/<issue number>
 
 .. _coding_style:
 
 Coding Style
-************
-
-Use these coding guidelines to ensure that your development complies with the
-project's style and naming conventions.
+============
 
 .. _Linux kernel coding style:
    https://kernel.org/doc/html/latest/process/coding-style.html
 
-In general, follow the `Linux kernel coding style`_, with the
-following exceptions:
+In general, follow the `Linux kernel coding style`_, with the following
+exceptions:
 
+* The line length is 100 columns or fewer. In the documentation, longer lines
+  for URL references are an allowed exception.
 * Add braces to every ``if``, ``else``, ``do``, ``while``, ``for`` and
   ``switch`` body, even for single-line code blocks. Use the ``--ignore BRACES``
   flag to make *checkpatch* stop complaining.
@@ -454,7 +542,12 @@ following exceptions:
 * Use C89-style single line comments, ``/*  */``. The C99-style single line
   comment, ``//``, is not allowed.
 * Use ``/**  */`` for doxygen comments that need to appear in the documentation.
+* Avoid using binary literals (constants starting with ``0b``).
+* Avoid using non-ASCII symbols in code, unless it significantly improves
+  clarity, avoid emojis in any case.
 
+Use these coding guidelines to ensure that your development complies with the
+project's style and naming conventions.
 
 The Linux kernel GPL-licensed tool ``checkpatch`` is used to check
 coding style conformity.
@@ -497,10 +590,153 @@ before pushing on zephyr repo. To do this, make the file
 If you want to override checkpatch verdict and push you branch despite reported
 issues, you can add option --no-verify to the git push command.
 
-A more complete alternative to this is using check_compliance.py script from
-ci-tools repo.
+A more complete alternative to this is using :ref:`check_compliance_py` script.
 
-.. _Contribution Tools:
+clang-format
+------------
+
+The `clang-format tool <https://clang.llvm.org/docs/ClangFormat.html>`_ can
+be helpful to quickly reformat large amounts of new source code to our
+`Coding Style`_ standards together with the ``.clang-format`` configuration file
+provided in the repository. ``clang-format`` is well integrated into most
+editors, but you can also run it manually like this:
+
+.. code-block:: bash
+
+   clang-format -i my_source_file.c
+
+``clang-format`` is part of LLVM, which can be downloaded from the project
+`releases page <https://github.com/llvm/llvm-project/releases>`_. Note that if
+you are a Linux user, ``clang-format`` will likely be available as a package in
+your distribution repositories.
+
+When there are differences between the `Coding Style`_ guidelines and the
+formatting generated by code formatting tools, the `Coding Style`_ guidelines
+take precedence. If there is ambiguity between formatting tools and the
+guidelines, maintainers may decide which style should be adopted.
+
+.. _Continuous Integration:
+
+Continuous Integration (CI)
+===========================
+
+The Zephyr Project operates a Continuous Integration (CI) system that runs on
+every Pull Request (PR) in order to verify several aspects of the PR:
+
+* Git commit formatting
+* Coding Style
+* Twister builds for multiple architectures and boards
+* Documentation build to verify any doc changes
+
+CI is run on Github Actions and it uses the same tools described in the
+`CI Tests`_ section.  The CI results must be green indicating "All
+checks have passed" before the Pull Request can be merged.  CI is run when the
+PR is created, and again every time the PR is modified with a commit.
+
+The current status of the CI run can always be found at the bottom of the
+GitHub PR page, below the review status. Depending on the success or failure
+of the run you will see:
+
+* "All checks have passed"
+* "All checks have failed"
+
+In case of failure you can click on the "Details" link presented below the
+failure message in order to navigate to ``Github Actions`` and inspect the
+results.
+Once you click on the link you will be taken to the ``Github actions`` summary
+results page where a table with all the different builds will be shown. To see
+what build or test failed click on the row that contains the failed (i.e.
+non-green) build.
+
+.. _CI Tests:
+
+Running CI Tests Locally
+========================
+
+.. _check_compliance_py:
+
+check_compliance.py
+-------------------
+
+The ``check_compliance.py`` script serves as a valuable tool for assessing code
+compliance with Zephyr's established guidelines and best practices. The script
+acts as wrapper for a suite of tools that performs various checks, including
+linters and formatters.
+
+Developers are encouraged to run the script locally to validate their changes
+before opening a new Pull Request:
+
+.. code-block:: bash
+
+   ./scripts/ci/check_compliance.py -c upstream/main..
+
+twister
+-------
+
+.. note::
+   twister is only fully supported on Linux; on Windows and MacOS the execution
+   of tests is not supported, only building.
+
+If you think your change may break some test, you can submit your PR as a draft
+and let the project CI automatically run the :ref:`twister_script` for you.
+
+If a test fails, you can check from the CI run logs how to rerun it locally,
+for example:
+
+.. code-block:: bash
+
+   west twister -p native_sim -s tests/drivers/build_all/sensor/sensors.generic_test
+
+.. _static_analysis:
+
+Static Code Analysis
+********************
+
+Coverity Scan is a free service for static code analysis of Open Source
+projects. It is based on Coverity's commercial product and is able to analyze
+C, C++ and Java code.
+
+Coverity's static code analysis doesn't run the code. Instead of that it uses
+abstract interpretation to gain information about the code's control flow and
+data flow. It's able to follow all possible code paths that a program may take.
+For example the analyzer understands that malloc() returns a memory that must
+be freed with free() later. It follows all branches and function calls to see
+if all possible combinations free the memory. The analyzer is able to detect
+all sorts of issues like resource leaks (memory, file descriptors), NULL
+dereferencing, use after free, unchecked return values, dead code, buffer
+overflows, integer overflows, uninitialized variables, and many more.
+
+The results are available on the `Coverity Scan
+<https://scan.coverity.com/projects/zephyr>`_ website. In order to access the
+results you have to create an account yourself.  From the Zephyr project page,
+you may select "Add me to project" to be added to the project. New members must
+be approved by an admin.
+
+Static analysis of the Zephyr codebase is conducted on a bi-weekly basis. GitHub
+issues are automatically created for any issues detected by static analysis
+tools. These issues will have the same (or equivalent) priority initially
+defined by the tool.
+
+To ensure accountability and efficient issue resolution, they are assigned to
+the respective maintainer who is responsible for the affected code.
+
+A dedicated team comprising members with expertise in static analysis, code
+quality, and software security ensures the effectiveness of the static
+analysis process and verifies that identified issues are properly
+triaged and resolved in a timely manner.
+
+Workflow
+========
+
+If after analyzing the Coverity report it is concluded that it is a false
+positive please set the classification to either "False positive" or
+"Intentional", the action to "Ignore", owner to your own account and add a
+comment why the issue is considered false positive or intentional.
+
+Update the related Github issue in the zephyr project with the details, and only close
+it after completing the steps above on scan service website. Any issues
+closed without a fix or without ignoring the entry in the scan service will be
+automatically reopened if the issue continues to be present in the code.
 
 .. _Contribution workflow:
 
@@ -553,14 +789,14 @@ workflow here:
      upstream https://github.com/zephyrproject-rtos/zephyr (fetch)
      upstream https://github.com/zephyrproject-rtos/zephyr (push)
 
-#. Create a topic branch (off of main) for your work (if you're addressing
+#. Create a topic branch (off of ``main``) for your work (if you're addressing
    an issue, we suggest including the issue number in the branch name)::
 
      git checkout main
      git checkout -b fix_comment_typo
 
    Some Zephyr subsystems do development work on a separate branch from
-   main so you may need to indicate this in your checkout::
+   ``main`` so you may need to indicate this in your checkout::
 
      git checkout -b fix_out_of_date_patch origin/net
 
@@ -598,12 +834,12 @@ workflow here:
    ``Compare & pull request`` button for the branch you just worked on and
    you want to open a pull request with.
 
-#. Review the pull request changes, and verify that you are opening a
-   pull request for the appropriate branch (if unsure, use `main`). The title
-   and message from your commit message should appear as well.
+#. Review the pull request changes, and verify that you are opening a pull
+   request for the ``main`` branch. The title and message from your commit
+   message should appear as well.
 
-#. GitHub will assign one or more suggested reviewers (based on the
-   CODEOWNERS file in the repo). If you are a project member, you can
+#. A bot will assign one or more suggested reviewers (based on the
+   MAINTAINERS file in the repo). If you are a project member, you can
    select additional reviewers now too.
 
 #. Click on the submit button and your pull request is sent and awaits
@@ -619,7 +855,7 @@ workflow here:
 
 #. While you're waiting for your pull request to be accepted and merged, you
    can create another branch to work on another issue. (Be sure to make your
-   new branch off of main and not the previous branch.)::
+   new branch off of ``main`` and not the previous branch.)::
 
      git checkout main
      git checkout -b fix_another_issue
@@ -627,13 +863,7 @@ workflow here:
    and use the same process described above to work on this new topic branch.
 
 #. If reviewers do request changes to your patch, you can interactively rebase
-   commit(s) to fix review issues.  In your development repo::
-
-     git fetch --all
-     git rebase --ignore-whitespace upstream/main
-
-   The ``--ignore-whitespace`` option stops ``git apply`` (called by rebase)
-   from changing any whitespace. Continuing::
+   commit(s) to fix review issues. In your development repo::
 
      git rebase -i <offending-commit-id>^
 
@@ -655,6 +885,17 @@ workflow here:
    By force pushing your update, your original pull request will be updated
    with your changes so you won't need to resubmit the pull request.
 
+#. After pushing the requested change, check on the PR page if there is a
+   merge conflict. If so, rebase your local branch::
+
+      git fetch --all
+      git rebase --ignore-whitespace upstream/main
+
+   The ``--ignore-whitespace`` option stops ``git apply`` (called by rebase)
+   from changing any whitespace. Resolve the conflicts and push again::
+
+      git push --force origin fix_comment_typo
+
    .. note:: While amending commits and force pushing is a common review model
       outside GitHub, and the one recommended by Zephyr, it's not the main
       model supported by GitHub. Forced pushes can cause unexpected behavior,
@@ -669,167 +910,40 @@ workflow here:
    Additional information about the CI system can be found in
    `Continuous Integration`_.
 
-.. _commit-guidelines:
+.. _contribution_tips:
 
-Commit Message Guidelines
-*************************
+Contribution Tips
+=================
 
-Changes are submitted as Git commits. Each commit has a *commit
-message* describing the change. Acceptable commit messages look like
-this:
+The following is a list of tips to improve and accelerate the review process of
+Pull Requests. If you follow them, chances are your pull request will get the
+attention needed and it will be ready for merge sooner than later:
 
-.. code-block:: none
+.. _git-rebase:
+   https://git-scm.com/docs/git-rebase#Documentation/git-rebase.txt---keep-base
 
-   [area]: [summary of change]
+#. When pushing follow-up changes, use the ``--keep-base`` option of
+   `git-rebase`_
 
-   [Commit message body (must be non-empty)]
+#. On the PR page, check if the change can still be merged with no merge
+   conflicts
 
-   Signed-off-by: [Your Full Name] <[your.email@address]>
+#. Make sure title of PR explains what is being fixed or added
 
-You need to change text in square brackets (``[like this]``) above to
-fit your commit.
+#. Make sure your PR has a body with more details about the content of your
+   submission
 
-Examples and more details follow.
+#. Make sure you reference the issue you are fixing in the body of the PR
 
-Example
-=======
+#. Watch early CI results immediately after submissions and fix issues as they
+   are discovered
 
-Here is an example of a good commit message.
+#. Revisit PR after 1-2 hours to see the status of all CI checks, make sure all
+   is green
 
-.. code-block:: none
-
-   drivers: sensor: abcd1234: fix bus I/O error handling
-
-   The abcd1234 sensor driver is failing to check the flags field in
-   the response packet from the device which signals that an error
-   occurred. This can lead to reading invalid data from the response
-   buffer. Fix it by checking the flag and adding an error path.
-
-   Signed-off-by: Zephyr Developer <z.developer@example.com>
-
-[area]: [summary of change]
-===========================
-
-This line is called the commit's *title*. Titles must be:
-
-* one line
-* less than 72 characters long
-* followed by a completely blank line
-
-[area]
-  The ``[area]`` prefix usually identifies the area of code
-  being changed. It can also identify the change's wider
-  context if multiple areas are affected.
-
-  Here are some examples:
-
-  * ``doc: ...`` for documentation changes
-  * ``drivers: foo:`` for ``foo`` driver changes
-  * ``Bluetooth: Shell:`` for changes to the Bluetooth shell
-  * ``net: ethernet:`` for Ethernet-related networking changes
-  * ``dts:`` for treewide devicetree changes
-  * ``style:`` for code style changes
-
-  If you're not sure what to use, try running ``git log FILE``, where
-  ``FILE`` is a file you are changing, and using previous commits that
-  changed the same file as inspiration.
-
-[summary of change]
-  The ``[summary of change]`` part should be a quick description of
-  what you've done. Here are some examples:
-
-  * ``doc: update wiki references to new site``
-  * ``drivers: sensor: sensor_shell: fix channel name collision``
-
-Commit Message Body
-===================
-
-.. warning::
-
-   An empty commit message body is not permitted. Even for trivial
-   changes, please include a descriptive commit message body. Your
-   pull request will fail CI checks if you do not.
-
-This part of the commit should explain what your change does, and why
-it's needed. Be specific. A body that says ``"Fixes stuff"`` will be
-rejected. Be sure to include the following as relevant:
-
-* **what** the change does,
-* **why** you chose that approach,
-* **what** assumptions were made, and
-* **how** you know it works -- for example, which tests you ran.
-
-Each line in your commit message should usually be 75 characters or
-less. Use newlines to wrap longer lines. Exceptions include lines
-with long URLs, email addresses, etc.
-
-For examples of accepted commit messages, you can refer to the Zephyr GitHub
-`changelog <https://github.com/zephyrproject-rtos/zephyr/commits/main>`__.
-
-If the change addresses a GitHub issue, include a line of the form:
-
-.. code-block:: none
-
-   Fixes #[issue number]
-
-Where ``[issue number]`` is the relevant GitHub issue's number. For
-example:
-
-.. code-block:: none
-
-   Fixes: #1234
-
-Signed-off-by: ...
-==================
-
-.. tip::
-
-   You should have set your :ref:`git-name-and-email`
-   already. Create your commit with ``git commit -s`` to add the
-   Signed-off-by: line automatically using this information.
-
-For open source licensing reasons, your commit must include a
-Signed-off-by: line that looks like this:
-
-.. code-block:: none
-
-   Signed-off-by: [Your Full Name] <[your.email@address]>
-
-For example, if your full name is ``Zephyr Developer`` and your email
-address is ``z.developer@example.com``:
-
-.. code-block:: none
-
-   Signed-off-by: Zephyr Developer <z.developer@example.com>
-
-This means that you have personally made sure your change complies
-with the :ref:`DCO`. For this reason, you must use your legal name.
-Pseudonyms or "hacker aliases" are not permitted.
-
-Your name and the email address you use must match the name and email
-in the Git commit's ``Author:`` field.
-
-Other Commit Expectations
-=========================
-
-* Commits must build cleanly when applied on top of each other, thus avoiding
-  breaking bisectability.
-
-* Commits must pass all CI checks (see `Continuous Integration`_ for more
-  information)
-
-* Each commit must address a single identifiable issue and must be
-  logically self-contained. Unrelated changes should be submitted as
-  separate commits.
-
-* You may submit pull request RFCs (requests for comments) to send work
-  proposals, progress snapshots of your work, or to get early feedback on
-  features or changes that will affect multiple areas in the code base.
-
-* When major new functionality is added, tests for the new functionality MUST be
-  added to the automated test suite. All new APIs MUST be documented and tested
-  and tests MUST cover at least 80% of the added functionality using the code
-  coverage tool and reporting provided by the project.
+#. If you get request for changes and submit a change to address them, make
+   sure you click the "Re-request review" button on the GitHub UI to notify
+   those who asked for the changes
 
 
 Submitting Proposals
@@ -887,42 +1001,6 @@ For example, a copy of an externally maintained import in a module repository::
       commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
       Purpose: Introduction of TinyCrypt
 
-
-Continuous Integration (CI)
-***************************
-
-The Zephyr Project operates a Continuous Integration (CI) system that runs on
-every Pull Request (PR) in order to verify several aspects of the PR:
-
-* Git commit formatting
-* Coding Style
-* Twister builds for multiple architectures and boards
-* Documentation build to verify any doc changes
-
-CI is run on Github Actions and it uses the same tools described in the
-`Contribution Tools`_ section.  The CI results must be green indicating "All
-checks have passed" before the Pull Request can be merged.  CI is run when the
-PR is created, and again every time the PR is modified with a commit.
-
-The current status of the CI run can always be found at the bottom of the
-GitHub PR page, below the review status. Depending on the success or failure
-of the run you will see:
-
-* "All checks have passed"
-* "All checks have failed"
-
-In case of failure you can click on the "Details" link presented below the
-failure message in order to navigate to ``Github Actions`` and inspect the
-results.
-Once you click on the link you will be taken to the ``Github actions`` summary
-results page where a table with all the different builds will be shown. To see
-what build or test failed click on the row that contains the failed (i.e.
-non-green) build.
-
-The `builds@lists.zephyrproject.org mailing list
-<https://lists.zephyrproject.org/g/builds>`_ archives any nightly build results
-produced by CI.
-
 Contributions to External Modules
 **********************************
 
@@ -964,7 +1042,7 @@ Requirements for Treewide Changes
   pull requests that are treewide changes
 
 - The person proposing a treewide change must create an `RFC issue
-  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=rfc-proposal.md&title=>`_
+  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=003_rfc-proposal.md&title=>`_
   describing the change, its rationale and impact, etc. before any pull
   requests related to the change can be merged
 
@@ -998,3 +1076,18 @@ Some example past treewide changes are:
 Note that adding a new version of a widely used API while maintaining
 support for the old one is not a treewide change. Deprecation and removal of
 such APIs, however, are treewide changes.
+
+Specialized driver requirements
+*******************************
+
+Drivers for standalone devices should use the Zephyr bus APIs (SPI, I2C...)
+whenever possible so that the device can be used with any SoC from any vendor
+implementing a compatible bus.
+
+If it is not technically possible to achieve full performance using the Zephyr
+APIs due to specialized accelerators in a particular SoC family, one could
+extend the support for an external device by providing a specialized path for
+that SoC family. However, the driver must still provide a regular path (via
+Zephyr APIs) for all other SoCs. Every exception must be approved by the
+Architecture WG in order to be validated and potentially to be learned/improved
+from.

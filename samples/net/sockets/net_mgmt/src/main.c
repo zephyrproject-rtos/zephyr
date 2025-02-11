@@ -82,8 +82,12 @@ static char *get_ip_addr(char *ipaddr, size_t len, sa_family_t family,
 	return buf;
 }
 
-static void listener(void)
+static void listener(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct sockaddr_nm sockaddr;
 	struct sockaddr_nm event_addr;
 	socklen_t event_addr_len;
@@ -155,7 +159,7 @@ static void listener(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	/* The thread start to trigger network management events that
 	 * we then can catch.
@@ -163,9 +167,10 @@ void main(void)
 	k_thread_start(trigger_events_thread_id);
 
 	if (IS_ENABLED(CONFIG_USERSPACE)) {
-		k_thread_user_mode_enter((k_thread_entry_t)listener,
+		k_thread_user_mode_enter(listener,
 					 NULL, NULL, NULL);
 	} else {
-		listener();
+		listener(NULL, NULL, NULL);
 	}
+	return 0;
 }

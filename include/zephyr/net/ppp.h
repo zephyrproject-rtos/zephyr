@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief PPP (Point-to-Point Protocol)
+ */
 
 #ifndef ZEPHYR_INCLUDE_NET_PPP_H_
 #define ZEPHYR_INCLUDE_NET_PPP_H_
@@ -103,6 +107,8 @@ enum ppp_phase {
 	PPP_TERMINATE,
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 /**
  * PPP states, RFC 1661 ch. 4.2
  */
@@ -136,10 +142,13 @@ enum ppp_packet_type {
 	PPP_DISCARD_REQ    = 11
 };
 
+/** @endcond */
+
 /**
  * LCP option types from RFC 1661 ch. 6
  */
 enum lcp_option_type {
+	/** Reserved option value (do not use) */
 	LCP_OPTION_RESERVED = 0,
 
 	/** Maximum-Receive-Unit */
@@ -168,6 +177,7 @@ enum lcp_option_type {
  * IPCP option types from RFC 1332
  */
 enum ipcp_option_type {
+	/** Reserved IPCP option value (do not use) */
 	IPCP_OPTION_RESERVED = 0,
 
 	/** IP Addresses */
@@ -198,6 +208,7 @@ enum ipcp_option_type {
  * IPV6CP option types from RFC 5072
  */
 enum ipv6cp_option_type {
+	/** Reserved IPV6CP option value (do not use) */
 	IPV6CP_OPTION_RESERVED = 0,
 
 	/** Interface identifier */
@@ -225,6 +236,7 @@ struct ppp_fsm {
 	/** Timeout timer */
 	struct k_work_delayable timer;
 
+	/** FSM callbacks */
 	struct {
 		/** Acknowledge Configuration Information */
 		int (*config_info_ack)(struct ppp_fsm *fsm,
@@ -284,6 +296,7 @@ struct ppp_fsm {
 						    struct net_pkt *pkt);
 	} cb;
 
+	/** My options */
 	struct {
 		/** Options information */
 		const struct ppp_my_option_info *info;
@@ -329,6 +342,8 @@ struct ppp_fsm {
 	uint8_t ack_received : 1;
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 #define PPP_MY_OPTION_ACKED	BIT(0)
 #define PPP_MY_OPTION_REJECTED	BIT(1)
 
@@ -336,6 +351,16 @@ struct ppp_my_option_data {
 	uint32_t flags;
 };
 
+#define IPCP_NUM_MY_OPTIONS	3
+#define IPV6CP_NUM_MY_OPTIONS	1
+
+enum ppp_flags {
+	PPP_CARRIER_UP,
+};
+
+/** @endcond */
+
+/** Link control protocol options */
 struct lcp_options {
 	/** Magic number */
 	uint32_t magic;
@@ -354,24 +379,22 @@ struct lcp_options {
 #define LCP_NUM_MY_OPTIONS	1
 #endif
 
+/** IPv4 control protocol options */
 struct ipcp_options {
 	/** IPv4 address */
 	struct in_addr address;
+
+	/** Primary DNS server address */
 	struct in_addr dns1_address;
+
+	/** Secondary DNS server address */
 	struct in_addr dns2_address;
 };
 
-#define IPCP_NUM_MY_OPTIONS	3
-
+/** IPv6 control protocol options */
 struct ipv6cp_options {
 	/** Interface identifier */
 	uint8_t iid[PPP_INTERFACE_IDENTIFIER_LEN];
-};
-
-#define IPV6CP_NUM_MY_OPTIONS	1
-
-enum ppp_flags {
-	PPP_CARRIER_UP,
 };
 
 /** PPP L2 context specific to certain network interface */
@@ -384,14 +407,7 @@ struct ppp_context {
 	/** PPP startup worker. */
 	struct k_work_delayable startup;
 
-	/** Carrier ON/OFF handler worker. This is used to create
-	 * network interface UP/DOWN event when PPP L2 driver
-	 * notices carrier ON/OFF situation. We must not create another
-	 * network management event from inside management handler thus
-	 * we use worker thread to trigger the UP/DOWN event.
-	 */
-	struct k_work carrier_work;
-
+	/** LCP options */
 	struct {
 		/** Finite state machine for LCP */
 		struct ppp_fsm fsm;
@@ -410,6 +426,7 @@ struct ppp_context {
 	} lcp;
 
 #if defined(CONFIG_NET_IPV4)
+	/** ICMP options */
 	struct {
 		/** Finite state machine for IPCP */
 		struct ppp_fsm fsm;
@@ -426,6 +443,7 @@ struct ppp_context {
 #endif
 
 #if defined(CONFIG_NET_IPV6)
+	/** IPV6CP options */
 	struct {
 		/** Finite state machine for IPV6CP */
 		struct ppp_fsm fsm;
@@ -442,6 +460,7 @@ struct ppp_context {
 #endif
 
 #if defined(CONFIG_NET_L2_PPP_PAP)
+	/** PAP options */
 	struct {
 		/** Finite state machine for PAP */
 		struct ppp_fsm fsm;
@@ -449,7 +468,9 @@ struct ppp_context {
 #endif
 
 #if defined(CONFIG_NET_SHELL)
+	/** Network shell PPP command internal data */
 	struct {
+		/** Ping command internal data */
 		struct {
 			/** Callback to be called when Echo-Reply is received.
 			 */
@@ -476,8 +497,17 @@ struct ppp_context {
 	/** Network interface related to this PPP connection */
 	struct net_if *iface;
 
+	/** Network management callback structure */
+	struct net_mgmt_event_callback mgmt_evt_cb;
+
 	/** Current phase of PPP link */
 	enum ppp_phase phase;
+
+	/** Signal when PPP link is terminated */
+	struct k_sem wait_ppp_link_terminated;
+
+	/** Signal when PPP link is down */
+	struct k_sem wait_ppp_link_down;
 
 	/** This tells what features the PPP supports. */
 	enum net_l2_flags ppp_l2_flags;
@@ -488,17 +518,11 @@ struct ppp_context {
 	/** This tells how many network protocols are up */
 	int network_protos_up;
 
-	/** Is network carrier up */
-	uint16_t is_net_carrier_up : 1;
-
 	/** Is PPP ready to receive packets */
 	uint16_t is_ready_to_serve : 1;
 
 	/** Is PPP L2 enabled or not */
 	uint16_t is_enabled : 1;
-
-	/** PPP startup pending */
-	uint16_t is_startup_pending : 1;
 
 	/** PPP enable pending */
 	uint16_t is_enable_done : 1;
@@ -521,22 +545,6 @@ struct ppp_context {
 	/** PAP open status (open / closed) */
 	uint16_t is_pap_open : 1;
 };
-
-/**
- * @brief Inform PPP L2 driver that carrier is detected.
- * This happens when cable is connected etc.
- *
- * @param iface Network interface
- */
-void net_ppp_carrier_on(struct net_if *iface);
-
-/**
- * @brief Inform PPP L2 driver that carrier was lost.
- * This happens when cable is disconnected etc.
- *
- * @param iface Network interface
- */
-void net_ppp_carrier_off(struct net_if *iface);
 
 /**
  * @brief Initialize PPP L2 stack for a given interface
@@ -565,21 +573,25 @@ enum net_event_ppp_cmd {
 	NET_EVENT_PPP_CMD_PHASE_DEAD,
 };
 
-#define NET_EVENT_PPP_CARRIER_ON					\
-	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_ON)
-
-#define NET_EVENT_PPP_CARRIER_OFF					\
-	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_OFF)
-
-#define NET_EVENT_PPP_PHASE_RUNNING					\
-	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_RUNNING)
-
-#define NET_EVENT_PPP_PHASE_DEAD					\
-	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_DEAD)
-
 struct net_if;
 
 /** @endcond */
+
+/** Event emitted when PPP carrier is on */
+#define NET_EVENT_PPP_CARRIER_ON					\
+	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_ON)
+
+/** Event emitted when PPP carrier is off */
+#define NET_EVENT_PPP_CARRIER_OFF					\
+	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_OFF)
+
+/** Event emitted when PPP goes into running phase */
+#define NET_EVENT_PPP_PHASE_RUNNING					\
+	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_RUNNING)
+
+/** Event emitted when PPP goes into dead phase */
+#define NET_EVENT_PPP_PHASE_DEAD					\
+	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_DEAD)
 
 /**
  * @brief Raise CARRIER_ON event when PPP is connected.

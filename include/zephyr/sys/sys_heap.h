@@ -42,7 +42,7 @@ extern "C" {
  * are constant time (though there is a search of the smallest bucket
  * that has a compile-time-configurable upper bound, setting this to
  * extreme values results in an effectively linear search of the
- * list), objectively fast (~hundred instructions) and and amenable to
+ * list), objectively fast (~hundred instructions) and amenable to
  * locked operation.
  */
 
@@ -65,6 +65,12 @@ struct z_heap_stress_result {
 	uint32_t total_frees;
 	uint64_t accumulated_in_use_bytes;
 };
+
+/**
+ * @defgroup low_level_heap_allocator Low Level Heap Allocator
+ * @ingroup heaps
+ * @{
+ */
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 
@@ -162,11 +168,6 @@ void sys_heap_free(struct sys_heap *heap, void *mem);
  * new block fails, then NULL will be returned and the old block will
  * not be freed or modified.
  *
- * @note The return of a NULL on failure is a different behavior than
- * POSIX realloc(), which specifies that the original pointer will be
- * returned (i.e. it is not possible to safely detect realloc()
- * failure in POSIX, but it is here).
- *
  * @param heap Heap from which to allocate
  * @param ptr Original pointer returned from a previous allocation
  * @param align Alignment in bytes, must be a power of two
@@ -257,6 +258,9 @@ void sys_heap_stress(void *(*alloc_fn)(void *arg, size_t bytes),
  */
 void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks);
 
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

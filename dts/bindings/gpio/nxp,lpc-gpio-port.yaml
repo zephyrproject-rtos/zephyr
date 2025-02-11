@@ -1,0 +1,34 @@
+# Copyright 2019-2022, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC GPIO port device.
+
+compatible: "nxp,lpc-gpio-port"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  int-source:
+    type: string
+    default: "none"
+    enum:
+      - "pint"
+      - "int-a"
+      - "int-b"
+      - "none"
+    description: |
+      Interrupt source for the gpio port. For ports that can use the PINT
+      as an interrupt source for their pins (typically ports 0 and 1),
+      this can be set to PINT. Otherwise, the property should be set to "int-a"
+      or "int-b" if interrupt support is desired, and the appropriate IRQ number
+      should set for the device.
+
+gpio-cells:
+  - pin
+  - flags

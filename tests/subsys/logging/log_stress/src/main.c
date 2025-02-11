@@ -8,7 +8,7 @@
 #include <zephyr/sys/util.h>
 #include <string.h>
 #include <zephyr/ztress.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_backend.h>
@@ -116,7 +116,7 @@ static bool context_handler(void *user_data, uint32_t cnt, bool last, int prio)
 
 	uint32_t i = cnt | (prio << CNT_BITS);
 
-	switch (sys_rand32_get() % 4) {
+	switch (sys_rand8_get() % 4) {
 	case 0:
 		LOG_INF("%u", i);
 		break;

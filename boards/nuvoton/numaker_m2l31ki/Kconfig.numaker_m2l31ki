@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Nuvoton NuMaker M2L31KI board configuration
+#
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+
+config BOARD_NUMAKER_M2L31KI
+	select SOC_M2L31XXX

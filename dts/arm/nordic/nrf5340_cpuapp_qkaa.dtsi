@@ -15,12 +15,9 @@
 	reg = <0x20000000 DT_SIZE_K(512)>;
 };
 
-&mpu {
-	arm,num-mpu-regions = <8>;
-};
-
 / {
 	soc {
-		compatible = "nordic,nRF5340-CPUAPP-QKAA", "nordic,nRF5340-CPUAPP", "nordic,nRF53", "simple-bus";
+		compatible = "nordic,nrf5340-cpuapp-qkaa", "nordic,nrf5340-cpuapp",
+			     "nordic,nrf53", "simple-bus";
 	};
 };

@@ -18,58 +18,43 @@
  * 10) Unlock all members
  */
 
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
+#include <string.h>
 
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-#include <zephyr/sys/check.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/audio/csip.h>
-#include "csip_crypto.h"
-#include "csip_internal.h"
+
 #include "../host/conn_internal.h"
 #include "../host/keys.h"
 
-#include <zephyr/logging/log.h>
+#include "csip_crypto.h"
+#include "csip_internal.h"
+#include "common/bt_str.h"
 
 LOG_MODULE_REGISTER(bt_csip_set_coordinator, CONFIG_BT_CSIP_SET_COORDINATOR_LOG_LEVEL);
-
-static uint8_t gatt_write_buf[1];
-static struct bt_gatt_write_params write_params;
-static struct bt_gatt_read_params read_params;
-static struct bt_gatt_discover_params discover_params;
-static struct bt_csip_set_coordinator_svc_inst *cur_inst;
-static bool busy;
-
-struct bt_csip_set_coordinator_svc_inst {
-	uint8_t rank;
-	uint8_t set_lock;
-
-	uint16_t start_handle;
-	uint16_t end_handle;
-	uint16_t set_sirk_handle;
-	uint16_t set_size_handle;
-	uint16_t set_lock_handle;
-	uint16_t rank_handle;
-
-	uint8_t idx;
-	struct bt_gatt_subscribe_params sirk_sub_params;
-	struct bt_gatt_discover_params sirk_sub_disc_params;
-	struct bt_gatt_subscribe_params size_sub_params;
-	struct bt_gatt_discover_params size_sub_disc_params;
-	struct bt_gatt_subscribe_params lock_sub_params;
-	struct bt_gatt_discover_params lock_sub_disc_params;
-
-	struct bt_conn *conn;
-	struct bt_csip_set_coordinator_set_member *member;
-};
 
 static struct active_members {
 	struct bt_csip_set_coordinator_set_member *members[CONFIG_BT_MAX_CONN];
@@ -77,16 +62,24 @@ static struct active_members {
 	uint8_t members_count;
 	uint8_t members_handled;
 	uint8_t members_restored;
+	bool in_progress;
 
 	bt_csip_set_coordinator_ordered_access_t oap_cb;
 } active;
 
 struct bt_csip_set_coordinator_inst {
 	uint8_t inst_count;
-	struct bt_csip_set_coordinator_svc_inst svc_insts
-		[CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES];
+	bool busy;
+	uint8_t gatt_write_buf[1];
+
+	struct bt_csip_set_coordinator_svc_inst
+		svc_insts[CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES];
 	struct bt_csip_set_coordinator_set_member set_member;
 	struct bt_conn *conn;
+	struct bt_csip_set_coordinator_svc_inst *cur_inst;
+	struct bt_gatt_discover_params discover_params;
+	struct bt_gatt_read_params read_params;
+	struct bt_gatt_write_params write_params;
 };
 
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
@@ -94,15 +87,15 @@ static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 static sys_slist_t csip_set_coordinator_cbs = SYS_SLIST_STATIC_INIT(&csip_set_coordinator_cbs);
 static struct bt_csip_set_coordinator_inst client_insts[CONFIG_BT_MAX_CONN];
 
-static int read_set_sirk(struct bt_csip_set_coordinator_svc_inst *svc_inst);
+static int read_sirk(struct bt_csip_set_coordinator_svc_inst *svc_inst);
 static int csip_set_coordinator_read_set_size(struct bt_conn *conn,
 					      uint8_t inst_idx,
 					      bt_gatt_read_func_t cb);
 static int csip_set_coordinator_read_set_lock(struct bt_csip_set_coordinator_svc_inst *svc_inst);
 
-static uint8_t csip_set_coordinator_discover_insts_read_set_sirk_cb(
-	struct bt_conn *conn, uint8_t err, struct bt_gatt_read_params *params,
-	const void *data, uint16_t length);
+static uint8_t csip_set_coordinator_discover_insts_read_sirk_cb(struct bt_conn *conn, uint8_t err,
+								struct bt_gatt_read_params *params,
+								const void *data, uint16_t length);
 static void discover_insts_resume(struct bt_conn *conn, uint16_t sirk_handle,
 				 uint16_t size_handle, uint16_t rank_handle);
 
@@ -133,8 +126,8 @@ static struct bt_csip_set_coordinator_svc_inst *lookup_instance_by_handle(struct
 	return NULL;
 }
 
-static struct bt_csip_set_coordinator_svc_inst *lookup_instance_by_index(const struct bt_conn *conn,
-						uint8_t idx)
+struct bt_csip_set_coordinator_svc_inst *bt_csip_set_coordinator_lookup_instance_by_index
+	(const struct bt_conn *conn, uint8_t idx)
 {
 	uint8_t conn_index;
 	struct bt_csip_set_coordinator_inst *client;
@@ -161,10 +154,8 @@ static struct bt_csip_set_coordinator_svc_inst *lookup_instance_by_set_info(
 
 		member_set_info = &member->insts[i].info;
 		if (member_set_info->set_size == set_info->set_size &&
-		    memcmp(&member_set_info->set_sirk,
-			   &set_info->set_sirk,
-			   sizeof(set_info->set_sirk)) == 0) {
-			return lookup_instance_by_index(inst->conn, i);
+		    memcmp(&member_set_info->sirk, &set_info->sirk, sizeof(set_info->sirk)) == 0) {
+			return bt_csip_set_coordinator_lookup_instance_by_index(inst->conn, i);
 		}
 	}
 
@@ -208,7 +199,7 @@ static int member_rank_compare_asc(const void *m1, const void *m2)
 		return 0;
 	}
 
-	return svc_inst_1->rank - svc_inst_2->rank;
+	return svc_inst_1->set_info->rank - svc_inst_2->set_info->rank;
 }
 
 static int member_rank_compare_desc(const void *m1, const void *m2)
@@ -232,26 +223,26 @@ static void active_members_store_ordered(const struct bt_csip_set_coordinator_se
 		qsort(active.members, count, sizeof(members[0U]),
 		ascending ? member_rank_compare_asc : member_rank_compare_desc);
 
-		if (IS_ENABLED(CONFIG_ASSERT)) {
-			for (size_t i = 1U; i < count; i++) {
-				const struct bt_csip_set_coordinator_svc_inst *svc_inst_1 =
-					lookup_instance_by_set_info(active.members[i - 1U], info);
-				const struct bt_csip_set_coordinator_svc_inst *svc_inst_2 =
-					lookup_instance_by_set_info(active.members[i], info);
-				const uint8_t rank_1 = svc_inst_1->rank;
-				const uint8_t rank_2 = svc_inst_2->rank;
+#if defined(CONFIG_ASSERT)
+		for (size_t i = 1U; i < count; i++) {
+			const struct bt_csip_set_coordinator_svc_inst *svc_inst_1 =
+				lookup_instance_by_set_info(active.members[i - 1U], info);
+			const struct bt_csip_set_coordinator_svc_inst *svc_inst_2 =
+				lookup_instance_by_set_info(active.members[i], info);
+			const uint8_t rank_1 = svc_inst_1->set_info->rank;
+			const uint8_t rank_2 = svc_inst_2->set_info->rank;
 
-				if (ascending) {
-					__ASSERT(rank_1 <= rank_2,
-						"Members not sorted by ascending rank %u - %u",
-						rank_1, rank_2);
-				} else {
-					__ASSERT(rank_1 >= rank_2,
-						"Members not sorted by descending rank %u - %u",
-						rank_1, rank_2);
-				}
+			if (ascending) {
+				__ASSERT(rank_1 <= rank_2,
+					 "Members not sorted by ascending rank %u - %u", rank_1,
+					 rank_2);
+			} else {
+				__ASSERT(rank_1 >= rank_2,
+					 "Members not sorted by descending rank %u - %u", rank_1,
+					 rank_2);
 			}
 		}
+#endif /* CONFIG_ASSERT */
 	}
 }
 
@@ -296,6 +287,17 @@ static void lock_changed(struct bt_csip_set_coordinator_csis_inst *inst, bool lo
 	SYS_SLIST_FOR_EACH_CONTAINER(&csip_set_coordinator_cbs, listener, _node) {
 		if (listener->lock_changed) {
 			listener->lock_changed(inst, locked);
+		}
+	}
+}
+
+static void sirk_changed(struct bt_csip_set_coordinator_csis_inst *inst)
+{
+	struct bt_csip_set_coordinator_cb *listener;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&csip_set_coordinator_cbs, listener, _node) {
+		if (listener->sirk_changed) {
+			listener->sirk_changed(inst);
 		}
 	}
 }
@@ -347,8 +349,8 @@ static void discover_complete(struct bt_csip_set_coordinator_inst *client,
 {
 	struct bt_csip_set_coordinator_cb *listener;
 
-	cur_inst = NULL;
-	busy = false;
+	client->cur_inst = NULL;
+	client->busy = false;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&csip_set_coordinator_cbs, listener, _node) {
 		if (listener->discover) {
@@ -385,16 +387,17 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 
 	if (svc_inst != NULL) {
 		LOG_DBG("Instance %u", svc_inst->idx);
-		if (length == sizeof(struct bt_csip_set_sirk)) {
-			struct bt_csip_set_sirk *sirk =
-				(struct bt_csip_set_sirk *)data;
+		if (length == sizeof(struct bt_csip_sirk)) {
+			struct bt_csip_sirk *sirk = (struct bt_csip_sirk *)data;
 			struct bt_csip_set_coordinator_inst *client;
+			struct bt_csip_set_coordinator_csis_inst *inst;
 			uint8_t *dst_sirk;
 
 			client = &client_insts[bt_conn_index(conn)];
-			dst_sirk = client->set_member.insts[svc_inst->idx].info.set_sirk;
+			inst = &client->set_member.insts[svc_inst->idx];
+			dst_sirk = inst->info.sirk;
 
-			LOG_DBG("Set SIRK %sencrypted",
+			LOG_DBG("SIRK %sencrypted",
 				sirk->type == BT_CSIP_SIRK_TYPE_PLAIN ? "not " : "");
 
 			/* Assuming not connected to other set devices */
@@ -403,7 +406,7 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 					int err;
 
 					LOG_HEXDUMP_DBG(sirk->value, sizeof(*sirk),
-							"Encrypted Set SIRK");
+							"Encrypted SIRK");
 					err = sirk_decrypt(conn, sirk->value,
 							   dst_sirk);
 					if (err != 0) {
@@ -419,10 +422,9 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 				(void)memcpy(dst_sirk, sirk->value, sizeof(sirk->value));
 			}
 
-			LOG_HEXDUMP_DBG(dst_sirk, BT_CSIP_SET_SIRK_SIZE,
-					"Set SIRK");
+			LOG_HEXDUMP_DBG(dst_sirk, BT_CSIP_SIRK_SIZE, "SIRK");
 
-			/* TODO: Notify app */
+			sirk_changed(inst);
 		} else {
 			LOG_DBG("Invalid length %u", length);
 		}
@@ -538,117 +540,128 @@ static int csip_set_coordinator_write_set_lock(struct bt_csip_set_coordinator_sv
 					       bool lock,
 					       bt_gatt_write_func_t cb)
 {
+	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(inst->conn)];
+
 	if (inst->set_lock_handle == 0) {
 		LOG_DBG("Handle not set");
-		cur_inst = NULL;
+		client->cur_inst = NULL;
 		return -EINVAL;
 	}
 
 	/* Write to call control point */
-	gatt_write_buf[0] = lock ? BT_CSIP_LOCK_VALUE : BT_CSIP_RELEASE_VALUE;
-	write_params.data = gatt_write_buf;
-	write_params.length = sizeof(lock);
-	write_params.func = cb;
-	write_params.handle = inst->set_lock_handle;
+	client->gatt_write_buf[0] = lock ? BT_CSIP_LOCK_VALUE : BT_CSIP_RELEASE_VALUE;
+	client->write_params.data = client->gatt_write_buf;
+	client->write_params.length = sizeof(lock);
+	client->write_params.func = cb;
+	client->write_params.handle = inst->set_lock_handle;
 
-	return bt_gatt_write(inst->conn, &write_params);
+	return bt_gatt_write(inst->conn, &client->write_params);
 }
 
-static int read_set_sirk(struct bt_csip_set_coordinator_svc_inst *svc_inst)
+static int read_sirk(struct bt_csip_set_coordinator_svc_inst *svc_inst)
 {
-	if (cur_inst != NULL) {
-		if (cur_inst != svc_inst) {
+	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(svc_inst->conn)];
+
+	if (client->cur_inst != NULL) {
+		if (client->cur_inst != svc_inst) {
 			return -EBUSY;
 		}
 	} else {
-		cur_inst = svc_inst;
+		client->cur_inst = svc_inst;
 	}
 
-	if (svc_inst->set_sirk_handle == 0) {
+	if (svc_inst->sirk_handle == 0) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
 	}
 
-	read_params.func = csip_set_coordinator_discover_insts_read_set_sirk_cb;
-	read_params.handle_count = 1;
-	read_params.single.handle = svc_inst->set_sirk_handle;
-	read_params.single.offset = 0U;
+	client->read_params.func = csip_set_coordinator_discover_insts_read_sirk_cb;
+	client->read_params.handle_count = 1;
+	client->read_params.single.handle = svc_inst->sirk_handle;
+	client->read_params.single.offset = 0U;
 
-	return bt_gatt_read(svc_inst->conn, &read_params);
+	return bt_gatt_read(svc_inst->conn, &client->read_params);
 }
 
 static int csip_set_coordinator_read_set_size(struct bt_conn *conn,
 					      uint8_t inst_idx,
 					      bt_gatt_read_func_t cb)
 {
+	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
+
 	if (inst_idx >= CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES) {
 		return -EINVAL;
-	} else if (cur_inst != NULL) {
-		if (cur_inst != lookup_instance_by_index(conn, inst_idx)) {
+	} else if (client->cur_inst != NULL) {
+		if (client->cur_inst !=
+		    bt_csip_set_coordinator_lookup_instance_by_index(conn, inst_idx)) {
 			return -EBUSY;
 		}
 	} else {
-		cur_inst = lookup_instance_by_index(conn, inst_idx);
-		if (cur_inst == NULL) {
+		client->cur_inst = bt_csip_set_coordinator_lookup_instance_by_index(conn, inst_idx);
+		if (client->cur_inst == NULL) {
 			LOG_DBG("Inst not found");
 			return -EINVAL;
 		}
 	}
 
-	if (cur_inst->set_size_handle == 0) {
+	if (client->cur_inst->set_size_handle == 0) {
 		LOG_DBG("Handle not set");
-		cur_inst = NULL;
+		client->cur_inst = NULL;
 		return -EINVAL;
 	}
 
-	read_params.func = cb;
-	read_params.handle_count = 1;
-	read_params.single.handle = cur_inst->set_size_handle;
-	read_params.single.offset = 0U;
+	client->read_params.func = cb;
+	client->read_params.handle_count = 1;
+	client->read_params.single.handle = client->cur_inst->set_size_handle;
+	client->read_params.single.offset = 0U;
 
-	return bt_gatt_read(conn, &read_params);
+	return bt_gatt_read(conn, &client->read_params);
 }
 
 static int csip_set_coordinator_read_rank(struct bt_conn *conn,
 					  uint8_t inst_idx,
 					  bt_gatt_read_func_t cb)
 {
+	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
+
 	if (inst_idx >= CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES) {
 		return -EINVAL;
-	} else if (cur_inst != NULL) {
-		if (cur_inst != lookup_instance_by_index(conn, inst_idx)) {
+	} else if (client->cur_inst != NULL) {
+		if (client->cur_inst !=
+		    bt_csip_set_coordinator_lookup_instance_by_index(conn, inst_idx)) {
 			return -EBUSY;
 		}
 	} else {
-		cur_inst = lookup_instance_by_index(conn, inst_idx);
-		if (cur_inst == NULL) {
+		client->cur_inst = bt_csip_set_coordinator_lookup_instance_by_index(conn, inst_idx);
+		if (client->cur_inst == NULL) {
 			LOG_DBG("Inst not found");
 			return -EINVAL;
 		}
 	}
 
-	if (cur_inst->rank_handle == 0) {
+	if (client->cur_inst->rank_handle == 0) {
 		LOG_DBG("Handle not set");
-		cur_inst = NULL;
+		client->cur_inst = NULL;
 		return -EINVAL;
 	}
 
-	read_params.func = cb;
-	read_params.handle_count = 1;
-	read_params.single.handle = cur_inst->rank_handle;
-	read_params.single.offset = 0U;
+	client->read_params.func = cb;
+	client->read_params.handle_count = 1;
+	client->read_params.single.handle = client->cur_inst->rank_handle;
+	client->read_params.single.offset = 0U;
 
-	return bt_gatt_read(conn, &read_params);
+	return bt_gatt_read(conn, &client->read_params);
 }
 
-static int csip_set_coordinator_discover_sets(struct bt_csip_set_coordinator_set_member *member)
+static int csip_set_coordinator_discover_sets(struct bt_csip_set_coordinator_inst *client)
 {
+	struct bt_csip_set_coordinator_set_member *member = &client->set_member;
 	int err;
 
 	/* Start reading values and call CB when done */
-	err = read_set_sirk((struct bt_csip_set_coordinator_svc_inst *)member->insts[0].svc_inst);
+	err = read_sirk((struct bt_csip_set_coordinator_svc_inst *)member->insts[0].svc_inst);
 	if (err == 0) {
-		busy = true;
+		client->busy = true;
 	}
 
 	return err;
@@ -664,20 +677,22 @@ static uint8_t discover_func(struct bt_conn *conn,
 	void *notify_handler = NULL;
 
 	if (attr == NULL) {
-		LOG_DBG("Setup complete for %u / %u", cur_inst->idx + 1, client->inst_count);
+		LOG_DBG("Setup complete for %u / %u", client->cur_inst->idx + 1,
+			client->inst_count);
 		(void)memset(params, 0, sizeof(*params));
 
-		if ((cur_inst->idx + 1) < client->inst_count) {
+		if (CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES > 1 &&
+		    (client->cur_inst->idx + 1) < client->inst_count) {
 			int err;
 
-			cur_inst = &client->svc_insts[cur_inst->idx + 1];
-			discover_params.uuid = NULL;
-			discover_params.start_handle = cur_inst->start_handle;
-			discover_params.end_handle = cur_inst->end_handle;
-			discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
-			discover_params.func = discover_func;
+			client->cur_inst = &client->svc_insts[client->cur_inst->idx + 1];
+			client->discover_params.uuid = NULL;
+			client->discover_params.start_handle = client->cur_inst->start_handle;
+			client->discover_params.end_handle = client->cur_inst->end_handle;
+			client->discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+			client->discover_params.func = discover_func;
 
-			err = bt_gatt_discover(conn, &discover_params);
+			err = bt_gatt_discover(conn, &client->discover_params);
 			if (err != 0) {
 				LOG_DBG("Discover failed (err %d)", err);
 				discover_complete(client, err);
@@ -686,9 +701,9 @@ static uint8_t discover_func(struct bt_conn *conn,
 		} else {
 			int err;
 
-			cur_inst = NULL;
-			busy = false;
-			err = csip_set_coordinator_discover_sets(&client->set_member);
+			client->cur_inst = NULL;
+			client->busy = false;
+			err = csip_set_coordinator_discover_sets(client);
 			if (err != 0) {
 				LOG_DBG("Discover sets failed (err %d)", err);
 				discover_complete(client, err);
@@ -702,27 +717,32 @@ static uint8_t discover_func(struct bt_conn *conn,
 	if (params->type == BT_GATT_DISCOVER_CHARACTERISTIC &&
 	    client->inst_count != 0) {
 		chrc = (struct bt_gatt_chrc *)attr->user_data;
-		if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_SET_SIRK) == 0) {
-			LOG_DBG("Set SIRK");
-			cur_inst->set_sirk_handle = chrc->value_handle;
-			sub_params = &cur_inst->sirk_sub_params;
-			sub_params->disc_params = &cur_inst->sirk_sub_disc_params;
+		if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_SIRK) == 0) {
+			LOG_DBG("SIRK");
+			client->cur_inst->sirk_handle = chrc->value_handle;
+			sub_params = &client->cur_inst->sirk_sub_params;
+			sub_params->disc_params = &client->cur_inst->sirk_sub_disc_params;
 			notify_handler = sirk_notify_func;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_SET_SIZE) == 0) {
 			LOG_DBG("Set size");
-			cur_inst->set_size_handle = chrc->value_handle;
-			sub_params = &cur_inst->size_sub_params;
-			sub_params->disc_params = &cur_inst->size_sub_disc_params;
+			client->cur_inst->set_size_handle = chrc->value_handle;
+			sub_params = &client->cur_inst->size_sub_params;
+			sub_params->disc_params = &client->cur_inst->size_sub_disc_params;
 			notify_handler = size_notify_func;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_SET_LOCK) == 0) {
+			struct bt_csip_set_coordinator_set_info *set_info;
+
 			LOG_DBG("Set lock");
-			cur_inst->set_lock_handle = chrc->value_handle;
-			sub_params = &cur_inst->lock_sub_params;
-			sub_params->disc_params = &cur_inst->lock_sub_disc_params;
+			client->cur_inst->set_lock_handle = chrc->value_handle;
+			sub_params = &client->cur_inst->lock_sub_params;
+			sub_params->disc_params = &client->cur_inst->lock_sub_disc_params;
 			notify_handler = lock_notify_func;
+
+			set_info = &client->set_member.insts[client->cur_inst->idx].info;
+			set_info->lockable = true;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_RANK) == 0) {
 			LOG_DBG("Set rank");
-			cur_inst->rank_handle = chrc->value_handle;
+			client->cur_inst->rank_handle = chrc->value_handle;
 		}
 
 		if (sub_params != NULL && notify_handler != NULL) {
@@ -734,12 +754,22 @@ static uint8_t discover_func(struct bt_conn *conn,
 			}
 
 			if (sub_params->value != 0) {
+				int err;
+
 				/* With ccc_handle == 0 it will use auto discovery */
 				sub_params->ccc_handle = 0;
-				sub_params->end_handle = cur_inst->end_handle;
+				sub_params->end_handle = client->cur_inst->end_handle;
 				sub_params->value_handle = chrc->value_handle;
 				sub_params->notify = notify_handler;
-				bt_gatt_subscribe(conn, sub_params);
+				atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+
+				err = bt_gatt_subscribe(conn, sub_params);
+				if (err != 0 && err != -EALREADY) {
+					LOG_DBG("Failed to subscribe (err %d)", err);
+					discover_complete(client, err);
+
+					return BT_GATT_ITER_STOP;
+				}
 			}
 		}
 	}
@@ -762,14 +792,14 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		if (client->inst_count != 0) {
 			int err;
 
-			cur_inst = &client->svc_insts[0];
-			discover_params.uuid = NULL;
-			discover_params.start_handle = cur_inst->start_handle;
-			discover_params.end_handle = cur_inst->end_handle;
-			discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
-			discover_params.func = discover_func;
+			client->cur_inst = &client->svc_insts[0];
+			client->discover_params.uuid = NULL;
+			client->discover_params.start_handle = client->cur_inst->start_handle;
+			client->discover_params.end_handle = client->cur_inst->end_handle;
+			client->discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+			client->discover_params.func = discover_func;
 
-			err = bt_gatt_discover(conn, &discover_params);
+			err = bt_gatt_discover(conn, &client->discover_params);
 			if (err != 0) {
 				LOG_DBG("Discover failed (err %d)", err);
 				discover_complete(client, err);
@@ -785,41 +815,44 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
-		discover_params.start_handle = attr->handle + 1;
+		client->discover_params.start_handle = attr->handle + 1;
 
-		cur_inst = &client->svc_insts[client->inst_count];
-		cur_inst->idx = client->inst_count;
-		cur_inst->start_handle = attr->handle;
-		cur_inst->end_handle = prim_service->end_handle;
-		cur_inst->conn = bt_conn_ref(conn);
+		client->cur_inst = &client->svc_insts[client->inst_count];
+		client->cur_inst->idx = client->inst_count;
+		client->cur_inst->start_handle = attr->handle;
+		client->cur_inst->end_handle = prim_service->end_handle;
+		client->cur_inst->conn = bt_conn_ref(conn);
+		client->cur_inst->set_info = &client->set_member.insts[client->cur_inst->idx].info;
 		client->inst_count++;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
 }
 
-bool bt_csip_set_coordinator_is_set_member(const uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE],
-				  struct bt_data *data)
+bool bt_csip_set_coordinator_is_set_member(const uint8_t sirk[BT_CSIP_SIRK_SIZE],
+					   struct bt_data *data)
 {
 	if (data->type == BT_DATA_CSIS_RSI &&
 	    data->data_len == BT_CSIP_RSI_SIZE) {
 		uint8_t err;
+		uint8_t hash[BT_CSIP_CRYPTO_HASH_SIZE];
+		uint8_t prand[BT_CSIP_CRYPTO_PRAND_SIZE];
+		uint8_t calculated_hash[BT_CSIP_CRYPTO_HASH_SIZE];
 
-		uint32_t hash = sys_get_le24(data->data);
-		uint32_t prand = sys_get_le24(data->data + 3);
-		uint32_t calculated_hash;
+		memcpy(hash, data->data, BT_CSIP_CRYPTO_HASH_SIZE);
+		memcpy(prand, data->data + BT_CSIP_CRYPTO_HASH_SIZE, BT_CSIP_CRYPTO_PRAND_SIZE);
 
-		LOG_DBG("hash: 0x%06x, prand 0x%06x", hash, prand);
-		err = bt_csip_sih(set_sirk, prand, &calculated_hash);
+		LOG_DBG("hash: %s", bt_hex(hash, BT_CSIP_CRYPTO_HASH_SIZE));
+		LOG_DBG("prand %s", bt_hex(prand, BT_CSIP_CRYPTO_PRAND_SIZE));
+		err = bt_csip_sih(sirk, prand, calculated_hash);
 		if (err != 0) {
 			return false;
 		}
 
-		calculated_hash &= 0xffffff;
+		LOG_DBG("calculated_hash: %s", bt_hex(calculated_hash, BT_CSIP_CRYPTO_HASH_SIZE));
+		LOG_DBG("hash: %s", bt_hex(hash, BT_CSIP_CRYPTO_HASH_SIZE));
 
-		LOG_DBG("calculated_hash: 0x%06x, hash 0x%06x", calculated_hash, hash);
-
-		return calculated_hash == hash;
+		return memcmp(calculated_hash, hash, BT_CSIP_CRYPTO_HASH_SIZE) == 0;
 	}
 
 	return false;
@@ -833,21 +866,24 @@ static uint8_t csip_set_coordinator_discover_insts_read_rank_cb(struct bt_conn *
 {
 	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
 
-	__ASSERT(cur_inst != NULL, "cur_inst must not be NULL");
+	__ASSERT(client->cur_inst != NULL, "client->cur_inst must not be NULL");
 
-	busy = false;
+	client->busy = false;
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02X", err);
 
 		discover_complete(client, err);
 	} else if (data != NULL) {
+		struct bt_csip_set_coordinator_set_info *set_info;
+
 		LOG_HEXDUMP_DBG(data, length, "Data read");
 
-		if (length == 1) {
-			(void)memcpy(&client->svc_insts[cur_inst->idx].rank,
-				     data, length);
-			LOG_DBG("%u", client->svc_insts[cur_inst->idx].rank);
+		set_info = &client->set_member.insts[client->cur_inst->idx].info;
+
+		if (length == sizeof(set_info->rank)) {
+			(void)memcpy(&set_info->rank, data, length);
+			LOG_DBG("%u", set_info->rank);
 		} else {
 			LOG_DBG("Invalid length, continuing to next member");
 		}
@@ -864,9 +900,9 @@ static uint8_t csip_set_coordinator_discover_insts_read_set_size_cb(
 {
 	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
 
-	__ASSERT(cur_inst != NULL, "cur_inst must not be NULL");
+	__ASSERT(client->cur_inst != NULL, "client->cur_inst must not be NULL");
 
-	busy = false;
+	client->busy = false;
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02X", err);
@@ -877,7 +913,7 @@ static uint8_t csip_set_coordinator_discover_insts_read_set_size_cb(
 
 		LOG_HEXDUMP_DBG(data, length, "Data read");
 
-		set_info = &client->set_member.insts[cur_inst->idx].info;
+		set_info = &client->set_member.insts[client->cur_inst->idx].info;
 
 		if (length == sizeof(set_info->set_size)) {
 			(void)memcpy(&set_info->set_size, data, length);
@@ -886,7 +922,7 @@ static uint8_t csip_set_coordinator_discover_insts_read_set_size_cb(
 			LOG_DBG("Invalid length");
 		}
 
-		discover_insts_resume(conn, 0, 0, cur_inst->rank_handle);
+		discover_insts_resume(conn, 0, 0, client->cur_inst->rank_handle);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -895,25 +931,23 @@ static uint8_t csip_set_coordinator_discover_insts_read_set_size_cb(
 static int parse_sirk(struct bt_csip_set_coordinator_inst *client,
 		      const void *data, uint16_t length)
 {
-	uint8_t *set_sirk;
+	uint8_t *sirk;
 
-	set_sirk = client->set_member.insts[cur_inst->idx].info.set_sirk;
+	sirk = client->set_member.insts[client->cur_inst->idx].info.sirk;
 
-	if (length == sizeof(struct bt_csip_set_sirk)) {
-		struct bt_csip_set_sirk *sirk =
-			(struct bt_csip_set_sirk *)data;
+	if (length == sizeof(struct bt_csip_sirk)) {
+		struct bt_csip_sirk *recvd_sirk = (struct bt_csip_sirk *)data;
 
-		LOG_DBG("Set SIRK %sencrypted",
-			sirk->type == BT_CSIP_SIRK_TYPE_PLAIN ? "not " : "");
+		LOG_DBG("SIRK %sencrypted",
+			recvd_sirk->type == BT_CSIP_SIRK_TYPE_PLAIN ? "not " : "");
 		/* Assuming not connected to other set devices */
-		if (sirk->type == BT_CSIP_SIRK_TYPE_ENCRYPTED) {
+		if (recvd_sirk->type == BT_CSIP_SIRK_TYPE_ENCRYPTED) {
 			if (IS_ENABLED(CONFIG_BT_CSIP_SET_COORDINATOR_ENC_SIRK_SUPPORT)) {
 				int err;
 
-				LOG_HEXDUMP_DBG(sirk->value, sizeof(sirk->value),
-						"Encrypted Set SIRK");
-				err = sirk_decrypt(client->conn, sirk->value,
-						   set_sirk);
+				LOG_HEXDUMP_DBG(recvd_sirk->value, sizeof(recvd_sirk->value),
+						"Encrypted SIRK");
+				err = sirk_decrypt(client->conn, recvd_sirk->value, sirk);
 				if (err != 0) {
 					LOG_ERR("Could not decrypt "
 						"SIRK %d",
@@ -922,16 +956,15 @@ static int parse_sirk(struct bt_csip_set_coordinator_inst *client,
 				}
 			} else {
 				LOG_WRN("Encrypted SIRK not supported");
-				set_sirk = NULL;
+				sirk = NULL;
 				return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
 			}
 		} else {
-			(void)memcpy(set_sirk, sirk->value, sizeof(sirk->value));
+			(void)memcpy(sirk, recvd_sirk->value, sizeof(recvd_sirk->value));
 		}
 
-		if (set_sirk != NULL) {
-			LOG_HEXDUMP_DBG(set_sirk, BT_CSIP_SET_SIRK_SIZE,
-					"Set SIRK");
+		if (sirk != NULL) {
+			LOG_HEXDUMP_DBG(sirk, BT_CSIP_SIRK_SIZE, "SIRK");
 		}
 	} else {
 		LOG_DBG("Invalid length");
@@ -941,15 +974,15 @@ static int parse_sirk(struct bt_csip_set_coordinator_inst *client,
 	return 0;
 }
 
-static uint8_t csip_set_coordinator_discover_insts_read_set_sirk_cb(
-	struct bt_conn *conn, uint8_t err, struct bt_gatt_read_params *params,
-	const void *data, uint16_t length)
+static uint8_t csip_set_coordinator_discover_insts_read_sirk_cb(struct bt_conn *conn, uint8_t err,
+								struct bt_gatt_read_params *params,
+								const void *data, uint16_t length)
 {
 	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
 	int cb_err = err;
-	__ASSERT(cur_inst != NULL, "cur_inst must not be NULL");
+	__ASSERT(client->cur_inst != NULL, "client->cur_inst must not be NULL");
 
-	busy = false;
+	client->busy = false;
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02X", err);
@@ -963,9 +996,8 @@ static uint8_t csip_set_coordinator_discover_insts_read_set_sirk_cb(
 		if (cb_err != 0) {
 			LOG_DBG("Could not parse SIRK: %d", cb_err);
 		} else {
-			discover_insts_resume(conn, 0,
-					     cur_inst->set_size_handle,
-					     cur_inst->rank_handle);
+			discover_insts_resume(conn, 0, client->cur_inst->set_size_handle,
+					      client->cur_inst->rank_handle);
 		}
 	}
 
@@ -990,27 +1022,28 @@ static void discover_insts_resume(struct bt_conn *conn, uint16_t sirk_handle,
 
 	if (size_handle != 0) {
 		cb_err = csip_set_coordinator_read_set_size(
-				conn, cur_inst->idx,
-				csip_set_coordinator_discover_insts_read_set_size_cb);
+			conn, client->cur_inst->idx,
+			csip_set_coordinator_discover_insts_read_set_size_cb);
 		if (cb_err != 0) {
 			LOG_DBG("Could not read set size: %d", cb_err);
 		}
 	} else if (rank_handle != 0) {
 		cb_err = csip_set_coordinator_read_rank(
-				conn, cur_inst->idx,
-				csip_set_coordinator_discover_insts_read_rank_cb);
+			conn, client->cur_inst->idx,
+			csip_set_coordinator_discover_insts_read_rank_cb);
 		if (cb_err != 0) {
 			LOG_DBG("Could not read set rank: %d", cb_err);
 		}
 	} else {
-		uint8_t next_idx = cur_inst->idx + 1;
+		uint8_t next_idx = client->cur_inst->idx + 1;
 
-		cur_inst = NULL;
+		client->cur_inst = NULL;
 		if (next_idx < client->inst_count) {
-			cur_inst = lookup_instance_by_index(conn, next_idx);
+			client->cur_inst =
+				bt_csip_set_coordinator_lookup_instance_by_index(conn, next_idx);
 
 			/* Read next */
-			cb_err = read_set_sirk(cur_inst);
+			cb_err = read_sirk(client->cur_inst);
 		} else {
 			discover_complete(client, 0);
 
@@ -1021,7 +1054,7 @@ static void discover_insts_resume(struct bt_conn *conn, uint16_t sirk_handle,
 	if (cb_err != 0) {
 		discover_complete(client, cb_err);
 	} else {
-		busy = true;
+		client->busy = true;
 	}
 }
 
@@ -1029,7 +1062,9 @@ static void csip_set_coordinator_write_restore_cb(struct bt_conn *conn,
 						  uint8_t err,
 						  struct bt_gatt_write_params *params)
 {
-	busy = false;
+	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
+
+	client->busy = false;
 
 	if (err != 0) {
 		LOG_WRN("Could not restore (%d)", err);
@@ -1047,18 +1082,17 @@ static void csip_set_coordinator_write_restore_cb(struct bt_conn *conn,
 		int csip_err;
 
 		member = active.members[active.members_handled - active.members_restored - 1];
-		cur_inst = lookup_instance_by_set_info(member, active.info);
-		if (cur_inst == NULL) {
+		client->cur_inst = lookup_instance_by_set_info(member, active.info);
+		if (client->cur_inst == NULL) {
 			release_set_complete(-ENOENT);
 
 			return;
 		}
 
 		csip_err = csip_set_coordinator_write_set_lock(
-				cur_inst, false,
-				csip_set_coordinator_write_restore_cb);
+			client->cur_inst, false, csip_set_coordinator_write_restore_cb);
 		if (csip_err == 0) {
-			busy = true;
+			client->busy = true;
 		} else {
 			LOG_DBG("Failed to release next member[%u]: %d", active.members_handled,
 				csip_err);
@@ -1074,7 +1108,9 @@ static void csip_set_coordinator_write_lock_cb(struct bt_conn *conn,
 					       uint8_t err,
 					       struct bt_gatt_write_params *params)
 {
-	busy = false;
+	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
+
+	client->busy = false;
 
 	if (err != 0) {
 		LOG_DBG("Could not lock (0x%X)", err);
@@ -1085,9 +1121,8 @@ static void csip_set_coordinator_write_lock_cb(struct bt_conn *conn,
 			active.members_restored = 0;
 
 			member = active.members[active.members_handled - active.members_restored];
-			cur_inst = lookup_instance_by_set_info(member,
-							       active.info);
-			if (cur_inst == NULL) {
+			client->cur_inst = lookup_instance_by_set_info(member, active.info);
+			if (client->cur_inst == NULL) {
 				LOG_DBG("Failed to lookup instance by set_info %p", active.info);
 
 				lock_set_complete(-ENOENT);
@@ -1095,10 +1130,9 @@ static void csip_set_coordinator_write_lock_cb(struct bt_conn *conn,
 			}
 
 			csip_err = csip_set_coordinator_write_set_lock(
-					cur_inst, false,
-					csip_set_coordinator_write_restore_cb);
+				client->cur_inst, false, csip_set_coordinator_write_restore_cb);
 			if (csip_err == 0) {
-				busy = true;
+				client->busy = true;
 			} else {
 				LOG_WRN("Could not release lock of previous locked member: %d",
 					csip_err);
@@ -1116,21 +1150,20 @@ static void csip_set_coordinator_write_lock_cb(struct bt_conn *conn,
 	LOG_DBG("Locked %u/%u members", active.members_handled, active.members_count);
 
 	if (active.members_handled < active.members_count) {
-		struct bt_csip_set_coordinator_svc_inst *prev_inst = cur_inst;
+		struct bt_csip_set_coordinator_svc_inst *prev_inst = client->cur_inst;
 		int csip_err;
 
-		cur_inst = get_next_active_instance();
-		if (cur_inst == NULL) {
+		client->cur_inst = get_next_active_instance();
+		if (client->cur_inst == NULL) {
 			lock_set_complete(-ENOENT);
 
 			return;
 		}
 
-		csip_err = csip_set_coordinator_write_set_lock(
-				cur_inst, true,
-				csip_set_coordinator_write_lock_cb);
+		csip_err = csip_set_coordinator_write_set_lock(client->cur_inst, true,
+							       csip_set_coordinator_write_lock_cb);
 		if (csip_err == 0) {
-			busy = true;
+			client->busy = true;
 		} else {
 			LOG_DBG("Failed to lock next member[%u]: %d", active.members_handled,
 				csip_err);
@@ -1141,7 +1174,7 @@ static void csip_set_coordinator_write_lock_cb(struct bt_conn *conn,
 					prev_inst, false,
 					csip_set_coordinator_write_restore_cb);
 			if (csip_err == 0) {
-				busy = true;
+				client->busy = true;
 			} else {
 				LOG_WRN("Could not release lock of previous locked member: %d",
 					csip_err);
@@ -1157,7 +1190,9 @@ static void csip_set_coordinator_write_lock_cb(struct bt_conn *conn,
 static void csip_set_coordinator_write_release_cb(struct bt_conn *conn, uint8_t err,
 						  struct bt_gatt_write_params *params)
 {
-	busy = false;
+	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
+
+	client->busy = false;
 
 	if (err != 0) {
 		LOG_DBG("Could not release lock (%d)", err);
@@ -1172,18 +1207,17 @@ static void csip_set_coordinator_write_release_cb(struct bt_conn *conn, uint8_t 
 	if (active.members_handled < active.members_count) {
 		int csip_err;
 
-		cur_inst = get_next_active_instance();
-		if (cur_inst == NULL) {
+		client->cur_inst = get_next_active_instance();
+		if (client->cur_inst == NULL) {
 			release_set_complete(-ENOENT);
 
 			return;
 		}
 
 		csip_err = csip_set_coordinator_write_set_lock(
-				cur_inst, false,
-				csip_set_coordinator_write_release_cb);
+			client->cur_inst, false, csip_set_coordinator_write_release_cb);
 		if (csip_err == 0) {
-			busy = true;
+			client->busy = true;
 		} else {
 			LOG_DBG("Failed to release next member[%u]: %d", active.members_handled,
 				csip_err);
@@ -1202,7 +1236,8 @@ static void csip_set_coordinator_lock_state_read_cb(int err, bool locked)
 
 	if (err || locked) {
 		cur_member = active.members[active.members_handled];
-	} else if (!active.oap_cb(info, active.members, active.members_count)) {
+	} else if (active.oap_cb == NULL || !active.oap_cb(info, active.members,
+		   active.members_count)) {
 		err = -ECANCELED;
 	}
 
@@ -1215,9 +1250,10 @@ static uint8_t csip_set_coordinator_read_lock_cb(struct bt_conn *conn,
 						 const void *data,
 						 uint16_t length)
 {
+	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
 	uint8_t value = 0;
 
-	busy = false;
+	client->busy = false;
 
 	if (err != 0) {
 		LOG_DBG("Could not read lock value (0x%X)", err);
@@ -1230,7 +1266,7 @@ static uint8_t csip_set_coordinator_read_lock_cb(struct bt_conn *conn,
 	active.members_handled++;
 	LOG_DBG("Read lock state on %u/%u members", active.members_handled, active.members_count);
 
-	if (data == NULL || length != sizeof(cur_inst->set_lock)) {
+	if (data == NULL || length != sizeof(client->cur_inst->set_lock)) {
 		LOG_DBG("Invalid data %p or length %u", data, length);
 
 		csip_set_coordinator_lock_state_read_cb(err, false);
@@ -1248,7 +1284,7 @@ static uint8_t csip_set_coordinator_read_lock_cb(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	cur_inst->set_lock = value;
+	client->cur_inst->set_lock = value;
 
 	if (value != BT_CSIP_RELEASE_VALUE) {
 		LOG_DBG("Set member not unlocked");
@@ -1261,16 +1297,16 @@ static uint8_t csip_set_coordinator_read_lock_cb(struct bt_conn *conn,
 	if (active.members_handled < active.members_count) {
 		int csip_err;
 
-		cur_inst = get_next_active_instance();
-		if (cur_inst == NULL) {
+		client->cur_inst = get_next_active_instance();
+		if (client->cur_inst == NULL) {
 			csip_set_coordinator_lock_state_read_cb(-ENOENT, false);
 
 			return BT_GATT_ITER_STOP;
 		}
 
-		csip_err = csip_set_coordinator_read_set_lock(cur_inst);
+		csip_err = csip_set_coordinator_read_set_lock(client->cur_inst);
 		if (csip_err == 0) {
-			busy = true;
+			client->busy = true;
 		} else {
 			LOG_DBG("Failed to read next member[%u]: %d", active.members_handled,
 				csip_err);
@@ -1286,31 +1322,43 @@ static uint8_t csip_set_coordinator_read_lock_cb(struct bt_conn *conn,
 
 static int csip_set_coordinator_read_set_lock(struct bt_csip_set_coordinator_svc_inst *inst)
 {
+	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(inst->conn)];
+	int err;
+
 	if (inst->set_lock_handle == 0) {
 		LOG_DBG("Handle not set");
-		cur_inst = NULL;
+		client->cur_inst = NULL;
 		return -EINVAL;
 	}
 
-	read_params.func = csip_set_coordinator_read_lock_cb;
-	read_params.handle_count = 1;
-	read_params.single.handle = inst->set_lock_handle;
-	read_params.single.offset = 0;
+	client->read_params.func = csip_set_coordinator_read_lock_cb;
+	client->read_params.handle_count = 1;
+	client->read_params.single.handle = inst->set_lock_handle;
+	client->read_params.single.offset = 0;
 
-	return bt_gatt_read(inst->conn, &read_params);
+	client->cur_inst = inst;
+
+	err = bt_gatt_read(inst->conn, &client->read_params);
+	if (err != 0) {
+		client->cur_inst = NULL;
+	}
+
+	return err;
 }
 
 static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst)
 {
+	inst->inst_count = 0U;
+	memset(&inst->set_member, 0, sizeof(inst->set_member));
+
 	for (size_t i = 0; i < ARRAY_SIZE(inst->svc_insts); i++) {
 		struct bt_csip_set_coordinator_svc_inst *svc_inst = &inst->svc_insts[i];
 
 		svc_inst->idx = 0;
-		svc_inst->rank = 0;
 		svc_inst->set_lock = 0;
 		svc_inst->start_handle = 0;
 		svc_inst->end_handle = 0;
-		svc_inst->set_sirk_handle = 0;
+		svc_inst->sirk_handle = 0;
 		svc_inst->set_size_handle = 0;
 		svc_inst->set_lock_handle = 0;
 		svc_inst->rank_handle = 0;
@@ -1318,22 +1366,13 @@ static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst
 		if (svc_inst->conn != NULL) {
 			struct bt_conn *conn = svc_inst->conn;
 
-			/* It's okay if these fail. In case of disconnect,
-			 * we can't unsubscribe and they will just fail.
-			 * In case that we reset due to another call of the
-			 * discover function, we will unsubscribe (regardless of
-			 * bonding state) to accommodate the new discovery
-			 * values.
-			 */
-			(void)bt_gatt_unsubscribe(conn,
-						  &svc_inst->sirk_sub_params);
-			(void)bt_gatt_unsubscribe(conn,
-						  &svc_inst->size_sub_params);
-			(void)bt_gatt_unsubscribe(conn,
-						  &svc_inst->lock_sub_params);
-
 			bt_conn_unref(conn);
 			svc_inst->conn = NULL;
+		}
+
+		if (svc_inst->set_info != NULL) {
+			memset(svc_inst->set_info, 0, sizeof(*svc_inst->set_info));
+			svc_inst->set_info = NULL;
 		}
 	}
 
@@ -1359,8 +1398,21 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_handle(
 	struct bt_conn *conn, uint16_t start_handle)
 {
-	const struct bt_csip_set_coordinator_svc_inst *svc_inst =
-		lookup_instance_by_handle(conn, start_handle);
+	const struct bt_csip_set_coordinator_svc_inst *svc_inst;
+
+	CHECKIF(conn == NULL) {
+		LOG_DBG("conn is NULL");
+
+		return NULL;
+	}
+
+	CHECKIF(start_handle == 0) {
+		LOG_DBG("start_handle is 0");
+
+		return NULL;
+	}
+
+	svc_inst = lookup_instance_by_handle(conn, start_handle);
 
 	if (svc_inst != NULL) {
 		struct bt_csip_set_coordinator_inst *client;
@@ -1368,6 +1420,25 @@ struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_h
 		client = &client_insts[bt_conn_index(conn)];
 
 		return &client->set_member.insts[svc_inst->idx];
+	}
+
+	return NULL;
+}
+
+struct bt_csip_set_coordinator_set_member *
+bt_csip_set_coordinator_set_member_by_conn(const struct bt_conn *conn)
+{
+	struct bt_csip_set_coordinator_inst *client;
+
+	CHECKIF(conn == NULL) {
+		LOG_DBG("conn is NULL");
+
+		return NULL;
+	}
+
+	client = &client_insts[bt_conn_index(conn)];
+	if (client->conn == conn) {
+		return &client->set_member;
 	}
 
 	return NULL;
@@ -1397,29 +1468,28 @@ int bt_csip_set_coordinator_discover(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (busy) {
+	client = &client_insts[bt_conn_index(conn)];
+	if (client->busy) {
 		return -EBUSY;
 	}
 
-	client = &client_insts[bt_conn_index(conn)];
-
-	(void)memset(client, 0, sizeof(*client));
+	csip_set_coordinator_reset(client);
 
 	/* Discover CSIS on peer, setup handles and notify */
-	(void)memset(&discover_params, 0, sizeof(discover_params));
+	(void)memset(&client->discover_params, 0, sizeof(client->discover_params));
 	(void)memcpy(&uuid, BT_UUID_CSIS, sizeof(uuid));
-	discover_params.func = primary_discover_func;
-	discover_params.uuid = &uuid.uuid;
-	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	client->discover_params.func = primary_discover_func;
+	client->discover_params.uuid = &uuid.uuid;
+	client->discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+	client->discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	client->discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
-	err = bt_gatt_discover(conn, &discover_params);
+	err = bt_gatt_discover(conn, &client->discover_params);
 	if (err == 0) {
 		for (size_t i = 0; i < ARRAY_SIZE(client->set_member.insts); i++) {
 			client->set_member.insts[i].svc_inst = (void *)&client->svc_insts[i];
 		}
-		busy = true;
+		client->busy = true;
 		client->conn = bt_conn_ref(conn);
 	}
 
@@ -1470,7 +1540,7 @@ static int verify_members(const struct bt_csip_set_coordinator_set_member **memb
 			return -EINVAL;
 		}
 
-		ranks[i] = svc_inst->rank;
+		ranks[i] = svc_inst->set_info->rank;
 		if (ranks[i] == 0U && !zero_rank) {
 			zero_rank = true;
 		} else if (ranks[i] != 0 && zero_rank) {
@@ -1478,9 +1548,12 @@ static int verify_members(const struct bt_csip_set_coordinator_set_member **memb
 			LOG_DBG("Found mix of 0 and non-0 ranks");
 			return -EINVAL;
 		}
+	}
 
-		if (!zero_rank) {
-			for (size_t j = 0U; j < i; j++) {
+	if (CONFIG_BT_MAX_CONN > 1 && !zero_rank && count > 1U) {
+		/* Search for duplicate ranks */
+		for (uint8_t i = 0U; i < count - 1; i++) {
+			for (uint8_t j = i + 1; j < count; j++) {
 				if (ranks[j] == ranks[i]) {
 					/* duplicate rank */
 					LOG_DBG("Duplicate rank (%u) for members[%zu] "
@@ -1502,8 +1575,8 @@ static int bt_csip_set_coordinator_get_lock_state(
 {
 	int err;
 
-	if (busy) {
-		LOG_DBG("csip_set_coordinator busy");
+	if (active.in_progress) {
+		LOG_DBG("Procedure in progress");
 		return -EBUSY;
 	}
 
@@ -1515,19 +1588,40 @@ static int bt_csip_set_coordinator_get_lock_state(
 
 	active_members_store_ordered(members, count, set_info, true);
 
-	cur_inst = lookup_instance_by_set_info(active.members[0], active.info);
-	if (cur_inst == NULL) {
-		LOG_DBG("Failed to lookup instance by set_info %p", active.info);
+	for (uint8_t i = 0U; i < count; i++) {
+		struct bt_csip_set_coordinator_svc_inst *svc_inst;
 
-		active_members_reset();
-		return -ENOENT;
+		svc_inst = lookup_instance_by_set_info(active.members[i], active.info);
+		if (svc_inst == NULL) {
+			LOG_DBG("Failed to lookup instance by set_info %p", active.info);
+
+			active_members_reset();
+			return -ENOENT;
+		}
+
+		if (svc_inst->set_info->lockable) {
+			err = csip_set_coordinator_read_set_lock(svc_inst);
+			if (err == 0) {
+				active.in_progress = true;
+			}
+
+			break;
+		}
+
+		active.members_handled++;
 	}
 
-	err = csip_set_coordinator_read_set_lock(cur_inst);
-	if (err == 0) {
-		busy = true;
-	} else {
-		cur_inst = NULL;
+	if (!active.in_progress && err == 0) {
+		/* We are not reading any lock states (because they are not on the remote devices),
+		 * so we can just initiate the ordered access procedure (oap) callback directly
+		 * here.
+		 */
+		if (active.oap_cb == NULL ||
+		    !active.oap_cb(active.info, active.members, active.members_count)) {
+			err = -ECANCELED;
+		}
+
+		ordered_access_complete(active.info, err, false, NULL);
 	}
 
 	return err;
@@ -1541,13 +1635,15 @@ int bt_csip_set_coordinator_ordered_access(
 {
 	int err;
 
-	err = bt_csip_set_coordinator_get_lock_state(members, count, set_info);
-	if (err != 0) {
-		return err;
-	}
-
 	/* wait for the get_lock_state to finish and then call the callback */
 	active.oap_cb = cb;
+
+	err = bt_csip_set_coordinator_get_lock_state(members, count, set_info);
+	if (err != 0) {
+		active.oap_cb = NULL;
+
+		return err;
+	}
 
 	return 0;
 }
@@ -1557,10 +1653,11 @@ int bt_csip_set_coordinator_lock(
 	uint8_t count,
 	const struct bt_csip_set_coordinator_set_info *set_info)
 {
+	struct bt_csip_set_coordinator_svc_inst *svc_inst;
 	int err;
 
-	CHECKIF(busy) {
-		LOG_DBG("csip_set_coordinator busy");
+	CHECKIF(active.in_progress) {
+		LOG_DBG("Procedure in progress");
 		return -EBUSY;
 	}
 
@@ -1572,18 +1669,18 @@ int bt_csip_set_coordinator_lock(
 
 	active_members_store_ordered(members, count, set_info, true);
 
-	cur_inst = lookup_instance_by_set_info(active.members[0], active.info);
-	if (cur_inst == NULL) {
+	svc_inst = lookup_instance_by_set_info(active.members[0], active.info);
+	if (svc_inst == NULL) {
 		LOG_DBG("Failed to lookup instance by set_info %p", active.info);
 
 		active_members_reset();
 		return -ENOENT;
 	}
 
-	err = csip_set_coordinator_write_set_lock(cur_inst, true,
+	err = csip_set_coordinator_write_set_lock(svc_inst, true,
 						  csip_set_coordinator_write_lock_cb);
 	if (err == 0) {
-		busy = true;
+		active.in_progress = true;
 	}
 
 	return err;
@@ -1593,10 +1690,11 @@ int bt_csip_set_coordinator_release(const struct bt_csip_set_coordinator_set_mem
 				    uint8_t count,
 				    const struct bt_csip_set_coordinator_set_info *set_info)
 {
+	struct bt_csip_set_coordinator_svc_inst *svc_inst;
 	int err;
 
-	CHECKIF(busy) {
-		LOG_DBG("csip_set_coordinator busy");
+	CHECKIF(active.in_progress) {
+		LOG_DBG("Procedure in progress");
 		return -EBUSY;
 	}
 
@@ -1608,18 +1706,18 @@ int bt_csip_set_coordinator_release(const struct bt_csip_set_coordinator_set_mem
 
 	active_members_store_ordered(members, count, set_info, false);
 
-	cur_inst = lookup_instance_by_set_info(active.members[0], active.info);
-	if (cur_inst == NULL) {
+	svc_inst = lookup_instance_by_set_info(active.members[0], active.info);
+	if (svc_inst == NULL) {
 		LOG_DBG("Failed to lookup instance by set_info %p", active.info);
 
 		active_members_reset();
 		return -ENOENT;
 	}
 
-	err = csip_set_coordinator_write_set_lock(cur_inst, false,
+	err = csip_set_coordinator_write_set_lock(svc_inst, false,
 						  csip_set_coordinator_write_release_cb);
 	if (err == 0) {
-		busy = true;
+		active.in_progress = true;
 	}
 
 	return err;

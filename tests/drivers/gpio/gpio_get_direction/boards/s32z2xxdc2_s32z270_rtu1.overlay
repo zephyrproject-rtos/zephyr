@@ -1,0 +1,24 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		led0 = &led_A3;
+	};
+
+	gpio-led {
+		compatible = "gpio-leds";
+		led_A3: led_A3 {
+			gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gpioa {
+	status = "okay";
+};

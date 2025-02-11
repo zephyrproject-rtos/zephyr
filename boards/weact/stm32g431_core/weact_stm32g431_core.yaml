@@ -1,0 +1,20 @@
+identifier: weact_stm32g431_core
+name: WeAct Studio STM32G431 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 128
+supported:
+  - counter
+  - gpio
+  - nvs
+  - pinctrl
+  - tcpc
+  - uart
+  - usb_device
+  - watchdog
+vendor: weact

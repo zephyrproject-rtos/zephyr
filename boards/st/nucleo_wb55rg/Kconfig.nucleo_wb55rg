@@ -1,0 +1,5 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_WB55RG
+	select SOC_STM32WB55XX

@@ -7,13 +7,14 @@ Networking with the host system
    :maxdepth: 1
    :hidden:
 
-   native_posix_setup.rst
+   native_sim_setup.rst
    qemu_eth_setup.rst
    qemu_setup.rst
    usbnet_setup.rst
    qemu_user_setup.rst
    networking_with_multiple_instances.rst
    qemu_802154_setup.rst
+   armfvp_user_networking_setup.rst
 
 While developing networking software, it is usually necessary to connect and
 exchange data with the host system like a Linux desktop computer.
@@ -42,14 +43,25 @@ possible:
     limitations including performance which makes it less valuable for practical
     purposes. See :ref:`networking_with_user_qemu` for details.
 
-* native_posix board.
+* Arm FVP (User Mode Networking).
+
+  * User mode networking emulates a built-in IP router and DHCP server, and
+    routes TCP and UDP traffic between the guest and host. It uses the user mode
+    socket layer of the host to communicate with other hosts. This allows
+    the use of a significant number of IP network services without requiring
+    administrative privileges, or the installation of a separate driver on
+    the host on which the model is running. See :ref:`networking_with_armfvp`
+    for details.
+
+* native_sim board.
 
   * The Zephyr instance can be executed as a user space process in the host
     system. This is the most convenient way to debug the Zephyr system as one
     can attach host debugger directly to the running Zephyr instance. This
     requires that there is an adaptation driver in Zephyr for interfacing
-    with the host system. An Ethernet driver exists in Zephyr for this purpose.
-    See :ref:`networking_with_native_posix` for details.
+    with the host system. Two possible network drivers can be used for this
+    purpose, a TAP virtual Ethernet driver and an offloaded sockets driver.
+    See :ref:`networking_with_native_sim` for details.
 
 * USB device networking.
 
@@ -59,7 +71,7 @@ possible:
 
 * Connecting multiple Zephyr instances together.
 
-  * If you have multiple Zephyr instances, either QEMU or native_posix ones,
+  * If you have multiple Zephyr instances, either QEMU or native_sim ones,
     and want to create a connection between them, see
     :ref:`networking_with_multiple_instances` for details.
 

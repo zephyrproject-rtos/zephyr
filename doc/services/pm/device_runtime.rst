@@ -26,6 +26,15 @@ asynchronously, it will be put into the
 :c:enumerator:`PM_DEVICE_STATE_SUSPENDING` state first and then into the
 :c:enumerator:`PM_DEVICE_STATE_SUSPENDED` state when the action is run.
 
+For devices on a power domain (via the devicetree 'power-domain' property), device runtime
+power management automatically attempts to request and release the dependent domain
+in response to :c:func:`pm_device_runtime_get` and :c:func:`pm_device_runtime_put`
+calls on the child device.
+
+For the previous to automatically control the power domain state, device runtime PM must be enabled
+on the power domain device (either through the `zephyr,pm-device-runtime-auto` devicetree property
+or :c:func:`pm_device_runtime_enable`).
+
 .. graphviz::
    :caption: Device states and transitions
 
@@ -84,11 +93,8 @@ increase device usage count and resume the device if necessary. Similarly, the
 :c:func:`pm_device_runtime_put` function can be used to indicate that the device
 is no longer needed. This function will decrease the device usage count and
 suspend the device if necessary. It is worth to note that in both cases, the
-operation is carried out synchronously. The sequence diagram shown in
-:numref:`pm_device_runtime_sync_ops` illustrates how a device can use this API
-and the expected sequence of events.
-
-.. _pm_device_runtime_sync_ops:
+operation is carried out synchronously. The sequence diagram shown below
+illustrates how a device can use this API and the expected sequence of events.
 
 .. figure:: images/devr-sync-ops.svg
 
@@ -103,10 +109,7 @@ slow bus. For this reason the device drivers can also make use of the
 :c:func:`pm_device_runtime_put_async` function. This function will schedule
 the suspend operation, again, if device is no longer used. The suspension will
 then be carried out when the system work queue gets the chance to run. The
-sequence diagram in :numref:`pm_device_runtime_async_ops` illustrates this
-scenario.
-
-.. _pm_device_runtime_async_ops:
+sequence diagram shown below illustrates this scenario.
 
 .. figure:: images/devr-async-ops.svg
 
@@ -168,6 +171,18 @@ suspended, the init function should call
         }
     }
 
+Device runtime power management can also be automatically enabled on a device
+instance by adding the ``zephyr,pm-device-runtime-auto`` flag onto the corresponding
+devicetree node. If enabled, :c:func:`pm_device_runtime_enable` is called immediately
+after the ``init`` function of the device runs and returns successfully.
+
+.. code-block:: dts
+
+    foo {
+        /* ... */
+        zephyr,pm-device-runtime-auto;
+    };
+
 Assuming an example device driver that implements an ``operation`` API call, the
 *get* and *put* operations could be carried out as follows:
 
@@ -209,5 +224,14 @@ asynchronous API:
         ...
 
         /* "put" device (decreases usage count, schedule suspend if no more users) */
-        return pm_device_runtime_put_async(dev);
+        return pm_device_runtime_put_async(dev, K_NO_WAIT);
     }
+
+Examples
+********
+
+Some helpful examples showing device runtime power management features:
+
+* :zephyr_file:`tests/subsys/pm/device_runtime_api/`
+* :zephyr_file:`tests/subsys/pm/device_power_domains/`
+* :zephyr_file:`tests/subsys/pm/power_domain/`

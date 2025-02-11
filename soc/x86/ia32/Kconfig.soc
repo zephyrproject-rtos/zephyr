@@ -1,9 +1,0 @@
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_IA32
-	bool "Generic IA32 SoC"
-	select X86
-	select CPU_ATOM
-	select X86_CPU_HAS_MMX
-	select X86_CPU_HAS_SSE
-	select ARCH_HAS_RESERVED_PAGE_FRAMES if SRAM_BASE_ADDRESS = 0

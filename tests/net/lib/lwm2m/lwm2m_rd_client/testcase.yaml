@@ -1,9 +1,13 @@
 common:
-  depends_on: netif
+  platform_key:
+    - simulation
+  tags:
+    - lwm2m
+    - net
+  platform_allow:
+    - native_sim
 tests:
-  subsys.net.lib.lwm2m_rd_client:
-    tags: net lwm2m
-    platform_allow: native_posix qemu_x86 qemu_x86_64
-    integration_platforms:
-      - native_posix
-      - qemu_x86
+  net.lwm2m.lwm2m_rd_client:
+    extra_args: EXTRA_CFLAGS=""
+  net.lwm2m.lwm2m_rd_client_dtls:
+    extra_args: EXTRA_CFLAGS=-DCONFIG_LWM2M_DTLS_SUPPORT

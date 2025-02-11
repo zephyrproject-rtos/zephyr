@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 #include <zephyr/ztest.h>
 #include "util/util.h"
 #include "util/mem.h"
@@ -22,7 +22,7 @@
 #include "lll_conn.h"
 #include "ull_conn_types.h"
 
-void ull_periph_setup(memq_link_t *link, struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
+void ull_periph_setup(memq_link_t *link, struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		     struct lll_conn *lll)
 {
 }

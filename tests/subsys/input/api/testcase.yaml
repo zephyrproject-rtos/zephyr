@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - input
+  integration_platforms:
+    - native_sim
+tests:
+  input.api.thread:
+    extra_configs:
+      - CONFIG_INPUT_MODE_THREAD=y
+  input.api.synchronous:
+    extra_configs:
+      - CONFIG_INPUT_MODE_SYNCHRONOUS=y

@@ -1,0 +1,359 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "thingy53_nrf5340_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart;
+		zephyr,shell-uart = &cdc_acm_uart;
+		zephyr,uart-mcumgr = &cdc_acm_uart;
+		zephyr,bt-mon-uart = &cdc_acm_uart;
+		zephyr,bt-c2h-uart = &cdc_acm_uart;
+		zephyr,bt-hci-ipc = &ipc0;
+		zephyr,bt-hci = &bt_hci_ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: button_1 {
+			gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_1 {
+			gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+			label = "RGB red LED";
+		};
+		green_led: led_2 {
+			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			label = "RGB green LED";
+		};
+		blue_led: led_3 {
+			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+			label = "RGB blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		red_led_pwm: led_pwm_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Red PWM LED";
+		};
+
+		green_led_pwm: led_pwm_1 {
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Green PWM LED";
+		};
+
+		blue_led_pwm: led_pwm_2 {
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Blue PWM LED";
+		};
+	};
+
+	edge_connector: connector {
+		compatible = "nordic-thingy53-edge-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <8 0 &gpio0 5 0>,	/* P8, P0.05/AIN1 */
+			   <9 0 &gpio0 4 0>,	/* P9, P0.04/AIN0 */
+			   <15 0 &gpio0 8 0>,	/* P15, P0.08/TRACEDATA3 */
+			   <16 0 &gpio0 9 0>,	/* P16, P0.09/TRACEDATA2 */
+			   <17 0 &gpio0 10 0>,	/* P17, P0.10/TRACEDATA1 */
+			   <18 0 &gpio0 11 0>,	/* P18, P0.11/TRACEDATA0 */
+			   <19 0 &gpio0 12 0>;	/* P19, P0.12/TRACECLK */
+	};
+
+	npm1100_force_pwm_mode: npm1100_force_pwm_mode {
+		compatible = "regulator-fixed";
+		regulator-name = "npm1100_force_pwm_mode";
+		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+		regulator-boot-on;
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 2>;
+		output-ohms = <180000>;
+		full-ohms = <(1500000 + 180000)>;
+		power-gpios = <&gpio0 16 0>;
+	};
+
+	regulator_3v3: regulator-3v3-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "ncp114";
+		enable-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
+
+	sensor_pwr_ctrl: sensor-pwr-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "tck106ag";
+		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	gpio_fwd: nrf-gpio-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "okay";
+		fem-gpio-if {
+			gpios = <&gpio1 11 0>,
+				<&gpio1 12 0>,
+				<&gpio1 10 0>,
+				<&gpio0 30 0>;
+		};
+	};
+
+	aliases {
+		sw0 = &button0;
+		sw1 = &button1;
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		pwm-led0 = &red_led_pwm;
+		pwm-led1 = &green_led_pwm;
+		pwm-led2 = &blue_led_pwm;
+		magn0 = &bmm150;
+		watchdog0 = &wdt0;
+		accel0 = &adxl362;
+		mcuboot-button0 = &button1;
+		mcuboot-led0 = &blue_led;
+	};
+};
+
+/* RGB LED control */
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+/* Buzzer control */
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <600>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <NRF_SAADC_AIN2>;
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+	bmm150: bmm150@10 {
+		compatible = "bosch,bmm150";
+		reg = <0x10>;
+	};
+
+	bh1749: bh1749@38 {
+		compatible = "rohm,bh1749";
+		reg = <0x38>;
+		int-gpios = <&gpio1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+
+	bme688: bme688@76 {
+		compatible = "bosch,bme680";
+		reg = <0x76>;
+	};
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>,
+		   <&gpio1 4  GPIO_ACTIVE_LOW>,
+		   <&gpio0 24 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+	adxl362: spi-dev-adxl362@0 {
+		compatible = "adi,adxl362";
+		spi-max-frequency = <8000000>;
+		reg = <0>;
+		int1-gpios = <&gpio0 19 0>;
+	};
+
+	bmi270: spi-dev-bmi270@1 {
+		compatible = "bosch,bmi270";
+		status = "disabled";
+		spi-max-frequency = <8000000>;
+		reg = <1>;
+	};
+
+	nrf_radio_fem_spi: fem_spi@2 {
+		compatible = "nordic,nrf21540-fem-spi";
+		status = "disabled";
+		reg = <2>;
+		spi-max-frequency = <8000000>;
+	};
+};
+
+/* UART0 GPIOs can be configured for other use-cases */
+&uart0 {
+	/* Disabled by default */
+	current-speed = <115200>;
+	status = "disabled";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&qspi {
+	status = "okay";
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
+	mx25r64: mx25r6435f@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		/* MX25R64 supports only pp and pp4io */
+		/* Thingy:53 supports only pp and pp2o options */
+		writeoc = "pp";
+		/* MX25R64 supports all readoc options */
+		/* Thingy:53 supports only fastread and read2io options */
+		readoc = "read2io";
+		sck-frequency = <8000000>;
+		jedec-id = [c2 28 17];
+		sfdp-bfp = [
+			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
+			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
+		];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <35000>;
+	};
+};
+
+edge_connector_spi: &spi4 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&edge_connector 18 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-1 = <&spi4_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@50000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@c0000 {
+			label = "image-1-nonsecure";
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0x000f0000 0xa000>;
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+
+	cdc_acm_uart: cdc_acm_uart {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+/ {
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_image: image@20000000 {
+			/* Zephyr image(s) memory */
+		};
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_ns: image_ns@20040000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+/* Include partition configuration file */
+#include "thingy53_nrf5340_partition_conf.dtsi"

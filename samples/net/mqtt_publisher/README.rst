@@ -1,7 +1,8 @@
-.. _mqtt-publisher-sample:
+.. zephyr:code-sample:: mqtt-publisher
+   :name: MQTT publisher
+   :relevant-api: mqtt_socket
 
-MQTT Publisher
-##############
+   Send MQTT PUBLISH messages to an MQTT server.
 
 Overview
 ********
@@ -83,9 +84,9 @@ following macros to specify those values:
 
 Max number of MQTT PUBLISH iterations is defined in Kconfig:
 
-.. code-block:: c
+.. code-block:: cfg
 
-	CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS	5
+	CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS=5
 
 On your Linux host computer, open a terminal window, locate the source code
 of this sample application (i.e., :zephyr_file:`samples/net/mqtt_publisher`) and type:
@@ -129,7 +130,7 @@ try this sample with TLS enabled, by following these steps:
   i.e., the IP address of test.mosquitto.org ``"37.187.106.16"``
 - In :file:`src/main.c`, set TLS_SNI_HOSTNAME to ``"test.mosquitto.org"``
   to match the Common Name (CN) in the downloaded certificate.
-- Build the sample by specifying ``-DOVERLAY_CONFIG=overlay-tls.conf``
+- Build the sample by specifying ``-DEXTRA_CONF_FILE=overlay-tls.conf``
   when running ``west build`` or ``cmake`` (or refer to the TLS offloading
   section below if your platform uses the offloading feature).
 - Flash the binary onto the device to run the sample:
@@ -142,7 +143,7 @@ TLS offloading
 ==============
 
 For boards that support this feature, TLS offloading is used by
-specifying ``-DOVERLAY_CONFIG=overlay-tls-offload.conf`` when running ``west
+specifying ``-DEXTRA_CONF_FILE=overlay-tls-offload.conf`` when running ``west
 build`` or ``cmake``.
 
 Using this overlay enables TLS without bringing in mbedtls.
@@ -151,7 +152,7 @@ SOCKS5 proxy support
 ====================
 
 It is also possible to connect to the MQTT broker through a SOCKS5 proxy.
-To enable it, use ``-DOVERLAY_CONFIG=overlay-socks5.conf`` when running ``west
+To enable it, use ``-DEXTRA_CONF_FILE=overlay-socks5.conf`` when running ``west
 build`` or  ``cmake``.
 
 By default, to make the testing easier, the proxy is expected to run on the
@@ -201,9 +202,9 @@ Sample output
 
 This is the output from the FRDM UART console, with:
 
-.. code-block:: c
+.. code-block:: cfg
 
-	CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS     5
+	CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS=5
 
 .. code-block:: console
 

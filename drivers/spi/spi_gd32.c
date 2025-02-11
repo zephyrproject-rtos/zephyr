@@ -147,7 +147,7 @@ static int spi_gd32_configure(const struct device *dev,
 
 	/* Reset to hardware NSS mode. */
 	SPI_CTL0(cfg->reg) &= ~SPI_CTL0_SWNSSEN;
-	if (config->cs != NULL) {
+	if (spi_cs_is_gpio(config)) {
 		SPI_CTL0(cfg->reg) |= SPI_CTL0_SWNSSEN;
 	} else {
 		/*
@@ -173,7 +173,7 @@ static int spi_gd32_configure(const struct device *dev,
 	}
 
 	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-				     (clock_control_subsys_t *)&cfg->clkid,
+				     (clock_control_subsys_t)&cfg->clkid,
 				     &bus_freq);
 
 	for (uint8_t i = 0U; i <= GD32_SPI_PSC_MAX; i++) {
@@ -414,11 +414,13 @@ static int spi_gd32_transceive_impl(const struct device *dev,
 
 #ifdef CONFIG_SPI_GD32_DMA
 dma_error:
+	SPI_CTL1(cfg->reg) &=
+		~(SPI_CTL1_DMATEN | SPI_CTL1_DMAREN);
 #endif
 	spi_context_cs_control(&data->ctx, false);
 
 	SPI_CTL0(cfg->reg) &=
-		~(SPI_CTL0_SPIEN | SPI_CTL1_DMATEN | SPI_CTL1_DMAREN);
+		~(SPI_CTL0_SPIEN);
 
 error:
 	spi_context_release(&data->ctx, ret);
@@ -471,17 +473,19 @@ static void spi_gd32_isr(struct device *dev)
 	struct spi_gd32_data *data = dev->data;
 	int err = 0;
 
-	if ((SPI_STAT(cfg->reg) & SPI_GD32_ERR_MASK) != 0) {
-		err = spi_gd32_get_err(cfg);
-	} else {
+	err = spi_gd32_get_err(cfg);
+	if (err) {
+		spi_gd32_complete(dev, err);
+		return;
+	}
+
+	if (spi_gd32_transfer_ongoing(data)) {
 		err = spi_gd32_frame_exchange(dev);
 	}
 
 	if (err || !spi_gd32_transfer_ongoing(data)) {
 		spi_gd32_complete(dev, err);
 	}
-
-	SPI_STAT(cfg->reg) = 0;
 }
 
 #endif /* SPI_GD32_INTERRUPT */
@@ -565,7 +569,7 @@ static int spi_gd32_release(const struct device *dev,
 	return 0;
 }
 
-static struct spi_driver_api spi_gd32_driver_api = {
+static const struct spi_driver_api spi_gd32_driver_api = {
 	.transceive = spi_gd32_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_gd32_transceive_async,
@@ -583,7 +587,7 @@ int spi_gd32_init(const struct device *dev)
 #endif
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&cfg->clkid);
+			       (clock_control_subsys_t)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 

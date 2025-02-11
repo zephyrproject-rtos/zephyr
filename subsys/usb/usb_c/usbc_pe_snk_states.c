@@ -237,6 +237,7 @@ void pe_snk_select_capability_entry(void *obj)
 
 /**
  * @brief PE_SNK_Select_Capability Run State
+ *	  NOTE: Sender Response Timer is handled in super state.
  */
 void pe_snk_select_capability_run(void *obj)
 {
@@ -259,9 +260,6 @@ void pe_snk_select_capability_run(void *obj)
 		} else {
 			pe_set_state(dev, PE_SNK_READY);
 		}
-	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
-		/* Start the SenderResponseTimer */
-		usbc_timer_start(&pe->pd_t_sender_response);
 	}
 
 	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
@@ -321,23 +319,6 @@ void pe_snk_select_capability_run(void *obj)
 		}
 		return;
 	}
-
-	/* When the SenderResponseTimer times out, perform a Hard Reset. */
-	if (usbc_timer_expired(&pe->pd_t_sender_response)) {
-		policy_notify(dev, PORT_PARTNER_NOT_RESPONSIVE);
-		pe_set_state(dev, PE_SNK_HARD_RESET);
-	}
-}
-
-/**
- * @brief PE_SNK_Select_Capability Exit State
- */
-void pe_snk_select_capability_exit(void *obj)
-{
-	struct policy_engine *pe = (struct policy_engine *)obj;
-
-	/* Stop SenderResponse Timer */
-	usbc_timer_stop(&pe->pd_t_sender_response);
 }
 
 /**
@@ -514,6 +495,20 @@ void pe_snk_ready_run(void *obj)
 	sink_dpm_requests(dev);
 }
 
+void pe_snk_ready_exit(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	/*
+	 * If the Source is initiating an AMS, then notify the
+	 * PRL that the first message in an AMS will follow.
+	 */
+	if (pe_dpm_initiated_ams(dev)) {
+		prl_first_msg_notificaiton(dev);
+	}
+}
+
 /**
  * @brief PE_SNK_Hard_Reset Entry State
  */
@@ -617,6 +612,7 @@ void pe_snk_transition_to_default_run(void *obj)
 
 /**
  * @brief PE_SNK_Get_Source_Cap Entry State
+ *
  */
 void pe_snk_get_source_cap_entry(void *obj)
 {
@@ -636,6 +632,7 @@ void pe_snk_get_source_cap_entry(void *obj)
 
 /**
  * @brief PE_SNK_Get_Source_Cap Run State
+ *	  NOTE: Sender Response Timer is handled in super state.
  */
 void pe_snk_get_source_cap_run(void *obj)
 {
@@ -646,10 +643,7 @@ void pe_snk_get_source_cap_run(void *obj)
 	union pd_header header;
 
 	/* Wait until message is sent or dropped */
-	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
-		/* The Policy Engine Shall then start the SenderResponseTimer. */
-		usbc_timer_start(&pe->pd_t_sender_response);
-	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
 		/*
 		 * The Policy Engine Shall transition to the PE_SNK_Evaluate_Capability
 		 * State when:
@@ -661,25 +655,7 @@ void pe_snk_get_source_cap_run(void *obj)
 		if (received_control_message(dev, header, PD_DATA_SOURCE_CAP)) {
 			pe_set_state(dev, PE_SNK_EVALUATE_CAPABILITY);
 		}
-	} else if (usbc_timer_expired(&pe->pd_t_sender_response)) {
-		/*
-		 * The Policy Engine Shall transition to the PE_SNK_Ready state when:
-		 *	1: The SenderResponseTimer times out.
-		 */
-		pe_set_state(dev, PE_SNK_READY);
-		/* Inform the DPM of the sender response timeout */
-		policy_notify(dev, SENDER_RESPONSE_TIMEOUT);
 	}
-}
-
-/**
- * @brief PE_SNK_Get_Source_Cap Exit State
- */
-void pe_snk_get_source_cap_exit(void *obj)
-{
-	struct policy_engine *pe = (struct policy_engine *)obj;
-
-	usbc_timer_stop(&pe->pd_t_sender_response);
 }
 
 /**

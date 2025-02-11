@@ -66,7 +66,7 @@ static int eswifi_spi_write(struct eswifi_dev *eswifi, char *data, size_t dlen)
 	int status;
 
 	spi_tx_buf[0].buf = data;
-	spi_tx_buf[0].len = dlen / 2; /* 16-bit words */
+	spi_tx_buf[0].len = dlen;
 	spi_tx.buffers = spi_tx_buf;
 	spi_tx.count = ARRAY_SIZE(spi_tx_buf);
 
@@ -88,7 +88,7 @@ static int eswifi_spi_read(struct eswifi_dev *eswifi, char *data, size_t dlen)
 	int status;
 
 	spi_rx_buf[0].buf = data;
-	spi_rx_buf[0].len = dlen / 2; /* 16-bit words */
+	spi_rx_buf[0].len = dlen;
 	spi_rx.buffers = spi_rx_buf;
 	spi_rx.count = ARRAY_SIZE(spi_rx_buf);
 
@@ -219,8 +219,11 @@ static void eswifi_spi_read_msg(struct eswifi_dev *eswifi)
 	eswifi_unlock(eswifi);
 }
 
-static void eswifi_spi_poll_thread(void *p1)
+static void eswifi_spi_poll_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct eswifi_dev *eswifi = p1;
 
 	while (1) {
@@ -235,7 +238,7 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	const struct eswifi_spi_config *cfg = &eswifi_config_spi0; /* Static instance */
 
 	/* SPI DATA READY PIN */
-	if (!device_is_ready(cfg->dr.port)) {
+	if (!gpio_is_ready_dt(&cfg->dr)) {
 		LOG_ERR("device %s is not ready", cfg->dr.port->name);
 		return -ENODEV;
 	}
@@ -255,7 +258,7 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 
 	k_thread_create(&spi->poll_thread, eswifi_spi_poll_stack,
 			ESWIFI_SPI_THREAD_STACK_SIZE,
-			(k_thread_entry_t)eswifi_spi_poll_thread, eswifi, NULL,
+			eswifi_spi_poll_thread, eswifi, NULL,
 			NULL, K_PRIO_COOP(CONFIG_WIFI_ESWIFI_THREAD_PRIO), 0,
 			K_NO_WAIT);
 

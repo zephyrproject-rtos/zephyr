@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(flash_stm32generic, CONFIG_FLASH_LOG_LEVEL);
 #include <string.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/barrier.h>
 #include <soc.h>
 
 #include "flash_stm32.h"
@@ -24,6 +25,8 @@ typedef uint64_t flash_prg_t;
 typedef uint32_t flash_prg_t;
 #elif FLASH_STM32_WRITE_BLOCK_SIZE == 2
 typedef uint16_t flash_prg_t;
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 1
+typedef uint8_t flash_prg_t;
 #else
 #error Unknown write block size
 #endif
@@ -61,9 +64,9 @@ static void erase_page_begin(FLASH_TypeDef *regs, unsigned int page)
 {
 	/* Set the PER bit and select the page you wish to erase */
 	regs->CR |= FLASH_CR_PER;
-	regs->AR = CONFIG_FLASH_BASE_ADDRESS + page * FLASH_PAGE_SIZE;
+	regs->AR = FLASH_STM32_BASE_ADDRESS + page * FLASH_PAGE_SIZE;
 
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* Set the STRT bit */
 	regs->CR |= FLASH_CR_STRT;
@@ -98,14 +101,14 @@ static void write_disable(FLASH_TypeDef *regs)
 static void erase_page_begin(FLASH_TypeDef *regs, unsigned int page)
 {
 	volatile flash_prg_t *page_base = (flash_prg_t *)(
-		CONFIG_FLASH_BASE_ADDRESS + page * FLASH_PAGE_SIZE);
+		FLASH_STM32_BASE_ADDRESS + page * FLASH_PAGE_SIZE);
 	/* Enable programming in erase mode. An erase is triggered by
 	 * writing 0 to the first word of a page.
 	 */
 	regs->PECR |= FLASH_PECR_ERASE;
 	regs->PECR |= FLASH_PECR_PROG;
 
-	__DSB();
+	barrier_dsync_fence_full();
 
 	*page_base = 0;
 }
@@ -122,7 +125,7 @@ static int write_value(const struct device *dev, off_t offset,
 		       flash_prg_t val)
 {
 	volatile flash_prg_t *flash = (flash_prg_t *)(
-		offset + CONFIG_FLASH_BASE_ADDRESS);
+		offset + FLASH_STM32_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
 
@@ -148,7 +151,7 @@ static int write_value(const struct device *dev, off_t offset,
 	write_enable(regs);
 
 	/* Make sure the register write has taken effect */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* Perform the data write operation at the desired memory address */
 	*flash = val;
@@ -160,17 +163,6 @@ static int write_value(const struct device *dev, off_t offset,
 	write_disable(regs);
 
 	return rc;
-}
-
-/* offset and len must be aligned on 2 for write
- * positive and not beyond end of flash
- */
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
-{
-	return (!write || (offset % 2 == 0 && len % 2 == 0U)) &&
-		flash_stm32_range_exists(dev, offset, len);
 }
 
 int flash_stm32_block_erase_loop(const struct device *dev,
@@ -194,7 +186,7 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 
 	for (i = get_page(offset); i <= get_page(offset + len - 1); ++i) {
 		erase_page_begin(regs, i);
-		__DSB();
+		barrier_dsync_fence_full();
 		rc = flash_stm32_wait_flash_idle(dev);
 		erase_page_end(regs);
 

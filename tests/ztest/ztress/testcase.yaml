@@ -1,5 +1,6 @@
 common:
-  tags: test_framework
+  tags:
+    - test_framework
   platform_type:
     - qemu
 tests:

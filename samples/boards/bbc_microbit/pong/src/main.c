@@ -64,7 +64,7 @@ enum pong_state {
 	CONNECTED,
 };
 
-static enum pong_state state = INIT;
+static enum pong_state pg_state = INIT;
 
 struct pong_choice {
 	int val;
@@ -202,9 +202,9 @@ static void mode_selected(int val)
 {
 	struct mb_display *disp = mb_display_get();
 
-	state = val;
+	pg_state = val;
 
-	switch (state) {
+	switch (pg_state) {
 	case SINGLE:
 		game_init(true);
 		k_sem_give(&disp_update);
@@ -216,7 +216,7 @@ static void mode_selected(int val)
 				 SCROLL_SPEED, "Connecting...");
 		break;
 	default:
-		printk("Unknown state %d\n", state);
+		printk("Unknown state %d\n", pg_state);
 		return;
 	}
 }
@@ -304,27 +304,31 @@ static void game_ended(bool won)
 	k_work_reschedule(&refresh, K_MSEC(RESTART_THRESHOLD));
 }
 
+#if CONFIG_THREAD_MONITOR
 static void game_stack_dump(const struct k_thread *thread, void *user_data)
 {
 	ARG_UNUSED(user_data);
 
 	log_stack_usage(thread);
 }
+#endif
 
 static void game_refresh(struct k_work *work)
 {
 	if (sound_state != SOUND_IDLE) {
 		sound_set(SOUND_IDLE);
+#if CONFIG_THREAD_MONITOR
 		k_thread_foreach(game_stack_dump, NULL);
+#endif
 	}
 
-	if (state == INIT) {
+	if (pg_state == INIT) {
 		pong_select(&mode_selection);
 		return;
 	}
 
 	if (ended) {
-		game_init(state == SINGLE || remote_lost);
+		game_init(pg_state == SINGLE || remote_lost);
 		k_sem_give(&disp_update);
 		return;
 	}
@@ -334,7 +338,7 @@ static void game_refresh(struct k_work *work)
 
 	/* Ball went over to the other side */
 	if (ball_vel.y < 0 && ball_pos.y < BALL_POS_Y_MIN) {
-		if (state == SINGLE) {
+		if (pg_state == SINGLE) {
 			ball_pos.y = -ball_pos.y;
 			ball_vel.y = -ball_vel.y;
 			sound_set(SOUND_WALL);
@@ -362,7 +366,7 @@ static void game_refresh(struct k_work *work)
 		if (ball_pos.x < REAL_TO_VIRT(paddle_x) ||
 		    ball_pos.x >= REAL_TO_VIRT(paddle_x + 2)) {
 			game_ended(false);
-			if (state == CONNECTED) {
+			if (pg_state == CONNECTED) {
 				ble_send_lost();
 			}
 			return;
@@ -421,14 +425,14 @@ static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 			printk("WARNING: Data-race (work and event)\n");
 		}
 
-		game_init(state == SINGLE || remote_lost);
+		game_init(pg_state == SINGLE || remote_lost);
 		k_sem_give(&disp_update);
 		return;
 	}
 
-	if (state == MULTI) {
+	if (pg_state == MULTI) {
 		ble_cancel_connect();
-		state = INIT;
+		pg_state = INIT;
 		pong_select(&mode_selection);
 		return;
 	}
@@ -474,14 +478,14 @@ static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 
 void pong_conn_ready(bool initiator)
 {
-	state = CONNECTED;
+	pg_state = CONNECTED;
 	game_init(initiator);
 	k_sem_give(&disp_update);
 }
 
 void pong_remote_disconnected(void)
 {
-	state = INIT;
+	pg_state = INIT;
 	k_work_reschedule(&refresh, K_SECONDS(1));
 }
 
@@ -496,7 +500,7 @@ static void configure_buttons(void)
 	static struct gpio_callback button_cb_data;
 
 	/* since sw0_gpio.port == sw1_gpio.port, we only need to check ready once */
-	if (!device_is_ready(sw0_gpio.port)) {
+	if (!gpio_is_ready_dt(&sw0_gpio)) {
 		printk("%s: device not ready.\n", sw0_gpio.port->name);
 		return;
 	}
@@ -513,7 +517,7 @@ static void configure_buttons(void)
 	gpio_add_callback(sw0_gpio.port, &button_cb_data);
 }
 
-void main(void)
+int main(void)
 {
 	struct mb_display *disp = mb_display_get();
 
@@ -521,9 +525,9 @@ void main(void)
 
 	k_work_init_delayable(&refresh, game_refresh);
 
-	if (!device_is_ready(pwm.dev)) {
+	if (!pwm_is_ready_dt(&pwm)) {
 		printk("%s: device not ready.\n", pwm.dev->name);
-		return;
+		return 0;
 	}
 
 	ble_init();
@@ -551,4 +555,5 @@ void main(void)
 		mb_display_image(disp, MB_DISPLAY_MODE_SINGLE,
 				 SYS_FOREVER_MS, &img, 1);
 	}
+	return 0;
 }

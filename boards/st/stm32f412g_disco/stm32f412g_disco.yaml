@@ -1,0 +1,15 @@
+identifier: stm32f412g_disco
+name: ST STM32F412G Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - arduino_gpio
+  - arduino_serial
+  - arduino_i2c
+  - arduino_spi
+  - counter
+vendor: st

@@ -5,6 +5,7 @@
 
 menuconfig ISOTP
 	bool "ISO-TP Transport [EXPERIMENTAL]"
+	depends on CAN
 	select NET_BUF
 	select POLL
 	select EXPERIMENTAL
@@ -51,7 +52,7 @@ config ISOTP_CR_TIMEOUT
 config ISOTP_REQUIRE_RX_PADDING
 	bool "Require padding for received messages"
 	help
-	  If enabled, SFs and the last CF must always have a DLC of 8 bytes
+	  If enabled, SFs, FCs and the last CF must always have a DLC of 8 bytes
 	  (for classic CAN) and unused bytes must be padded by the sending
 	  device. This setting allows to be compliant to AUTOSAR Specification
 	  of CAN Transport Layer.
@@ -60,6 +61,7 @@ config ISOTP_REQUIRE_RX_PADDING
 
 config ISOTP_ENABLE_TX_PADDING
 	bool "Padding for transmitted messages"
+	default y if ISOTP_REQUIRE_RX_PADDING
 	help
 	  Add padding bytes 0xCC (as recommended by Bosch) if the PDU payload
 	  does not fit exactly into the CAN frame.
@@ -73,11 +75,12 @@ config ISOTP_RX_BUF_COUNT
 
 config ISOTP_RX_BUF_SIZE
 	int "Size of one buffer data block"
+	default 63 if CAN_FD_MODE
 	default 56
 	help
 	  This value defines the size of a single block in the pool. The number of
 	  blocks is given by ISOTP_RX_BUF_COUNT. To be efficient use a multiple of
-	  CAN_DL - 1 (for classic can : 8 - 1 = 7).
+	  CAN_MAX_DLEN - 1 (for classic CAN : 8 - 1 = 7, for CAN FD : 64 - 1 = 63).
 
 config ISOTP_RX_SF_FF_BUF_COUNT
 	int "Number of SF and FF data buffers for receiving data"
@@ -86,7 +89,7 @@ config ISOTP_RX_SF_FF_BUF_COUNT
 	  This buffer is used for first and single frames. It is extra because the
 	  buffer has to be ready for the first reception in isr context and therefor
 	  is allocated when binding.
-	  Each buffer will occupy CAN_DL - 1 byte + header (sizeof(struct net_buf))
+	  Each buffer will occupy CAN_MAX_DLEN - 1 byte + header (sizeof(struct net_buf))
 	  amount of data.
 
 config ISOTP_USE_TX_BUF
@@ -128,5 +131,59 @@ config ISOTP_TX_CONTEXT_BUF_COUNT
 	help
 	  This defines the size of the memory slab where the buffers are
 	  allocated from.
+
+config ISOTP_CUSTOM_FIXED_ADDR
+	bool "Use fixed address not compatible with SAE J1939"
+	default n
+	help
+	  This option allow to use an alternative CAN frame id format.
+	  If not set ISO-TP fixed addressing use SAE J1939 standard.
+
+menu "Fixed address definition"
+	visible if ISOTP_CUSTOM_FIXED_ADDR
+
+config ISOTP_FIXED_ADDR_SA_POS
+	int "Position of fixed source address (SA)"
+	default 0
+	help
+	  Source address position in bits.
+
+config ISOTP_FIXED_ADDR_SA_MASK
+	hex "Mask to obtain fixed source address (SA)"
+	default 0xFF
+	help
+	  Source address mask.
+
+config ISOTP_FIXED_ADDR_TA_POS
+	int "Position of fixed target address (TA)"
+	default 8
+	help
+	  Target address position in bits.
+
+config ISOTP_FIXED_ADDR_TA_MASK
+	hex "Mask to obtain fixed target address (TA)"
+	default 0xFF00
+	help
+	  Target address mask.
+
+config ISOTP_FIXED_ADDR_PRIO_POS
+	int "Position of priority in fixed addressing mode"
+	default 26
+	help
+	  Priority address position in bits.
+
+config ISOTP_FIXED_ADDR_PRIO_MASK
+	hex "Mask for priority in fixed addressing mode"
+	default 0x1C000000
+	help
+	  Priority address mask.
+
+config ISOTP_FIXED_ADDR_RX_MASK
+	hex "CAN filter RX mask to match any priority and source address (SA)"
+	default 0x03FFFF00
+	help
+	  CAN filter RX mask
+
+endmenu
 
 endif # ISOTP

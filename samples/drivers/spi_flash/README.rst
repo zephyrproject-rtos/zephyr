@@ -1,12 +1,13 @@
-.. _spi-nor-sample:
+.. zephyr:code-sample:: spi-nor
+   :name: JEDEC SPI-NOR flash
+   :relevant-api: flash_interface
 
-JEDEC SPI-NOR Sample
-####################
+   Use the flash API to interact with an SPI NOR serial flash memory device.
 
 Overview
 ********
 
-This sample demonstrates using the flash API on a SPI NOR serial flash
+This sample demonstrates using the :ref:`flash API <flash_api>` on a SPI NOR serial flash
 memory device.  While trivial it is an example of direct access and
 allows confirmation that the flash is working and that automatic power
 savings is correctly implemented.
@@ -14,12 +15,17 @@ savings is correctly implemented.
 Building and Running
 ********************
 
-The application will build only for a target that has a :ref:`devicetree
-<dt-guide>` entry with ``jedec,spi-nor`` as a compatible.
+The application will build only for a target that has a devicetree node with one of the
+following bindings as a compatible:
+
+* :dtcompatible:`jedec,spi-nor`,
+* :dtcompatible:`st,stm32-qspi-nor`,
+* :dtcompatible:`st,stm32-ospi-nor`,
+* :dtcompatible:`nordic,qspi-nor`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 

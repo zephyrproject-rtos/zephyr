@@ -1,7 +1,8 @@
-.. _display-ft800-sample:
+.. zephyr:code-sample:: ft800
+   :name: FT800
+   :relevant-api: ft8xx_interface
 
-FT800
-#####
+   Display various shapes and text using FT800 Embedded Video Engine.
 
 Overview
 ********
@@ -32,7 +33,7 @@ described below:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/misc/ft800
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: flash
    :compact:
 
@@ -41,7 +42,7 @@ below:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/misc/ft800
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: ftdi_vm800c
    :goals: flash
    :compact:

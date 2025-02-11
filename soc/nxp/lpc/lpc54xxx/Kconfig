@@ -1,0 +1,69 @@
+# LPC LPC54XXX MCU line
+
+# Copyright 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_LPC54XXX
+	select ARM
+	select HAS_MCUX
+	select HAS_MCUX_FLEXCOMM
+	select HAS_MCUX_SYSCON
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select PLATFORM_SPECIFIC_INIT
+
+config SOC_LPC54114_M4
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select PLATFORM_SPECIFIC_INIT
+	select CLOCK_CONTROL
+	select HAS_MCUX_IAP_LEGACY
+
+config SOC_LPC54114_M0
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
+	select CLOCK_CONTROL
+
+config MCUX_CORE_SUFFIX
+	default "_cm4" if SOC_LPC54114_M4
+	default "_cm0plus" if SOC_LPC54114_M0
+
+if SOC_SERIES_LPC54XXX
+
+config SECOND_CORE_MCUX
+	bool "LPC54114 Cortex-M0 second core"
+	help
+	  Driver for second core startup
+
+config SECOND_CORE_BOOT_ADDRESS_MCUX
+	depends on SECOND_CORE_MCUX
+	hex "Address the second core will boot at"
+	default 0x20010000
+	help
+	  This is the address the second core will boot from. Additionally this
+	  address is where we will copy the SECOND_IMAGE to. We default this to
+	  the base of SRAM1.
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_CPU1_PARTITION := zephyr,code-cpu1-partition
+
+# Move the LMA address of second core into flash
+config BUILD_OUTPUT_ADJUST_LMA
+	depends on SECOND_CORE_MCUX && SOC_LPC54114_M0
+	default "-0x20010000+\
+	  $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_CPU1_PARTITION))"
+
+config BUILD_OUTPUT_INFO_HEADER
+	default y
+	depends on SECOND_CORE_MCUX && SOC_LPC54114_M0
+
+config LPC54XXX_SRAM2_CLOCK
+	bool "Clock LPC54XXX SRAM2"
+	default y
+	help
+	  SRAM2 ram bank is disabled out of reset. By default, CMSIS SystemInit
+	  will enable the clock to this RAM bank. Disable this Kconfig to leave
+	  this ram bank untouched out of reset.
+
+endif # SOC_SERIES_LPC54XXX

@@ -1,16 +1,17 @@
-.. _hawkbit-api-sample:
+.. zephyr:code-sample:: hawkbit-api
+   :name: Eclipse hawkBit Direct Device Integration API
+   :relevant-api: hawkbit
 
-Hawkbit Direct Device Integration API sample
-############################################
+   Update a device using Eclipse hawkBit DDI API.
 
 Overview
 ********
 
-The hawkbit update server provides REST resources which are consumed by the
+The Eclipse hawkBit update server provides REST resources which are consumed by the
 device to retrieve software update tasks. This API is based on HTTP standards
 and a polling mechanism.
 
-This sample shows how to use Hawkbit DDI API in both a polling and manual
+This sample shows how to use hawkBit DDI API in both a polling and manual
 update mode.
 
 Polling mode run automatically on a predefined period, probing the server
@@ -24,7 +25,7 @@ source code for this mode hawkbit_manual
 Caveats
 *******
 
-* The Zephyr port of ``Hawkbit`` is configured to run on a
+* The Zephyr port of hawkBit is configured to run on a
   :ref:`Freedom-K64F <frdm_k64f>` MCU by default. The application should
   build and run for other platforms with support internet connection. Some
   platforms need some modification. Overlay files would be needed to support
@@ -32,14 +33,14 @@ Caveats
   understanding that most other connectivity options would require an edge
   gateway of some sort (Border Router, etc).
 
-* The MCUboot bootloader is required for ``Hawkbit`` to function properly.
+* The MCUboot bootloader is required for hawkBit to function properly.
   More information about the Device Firmware Upgrade subsystem and MCUboot
   can be found in :ref:`mcuboot`.
 
 Building and Running
 ********************
 
-The below steps describe how to build and run the ``Hawkbit`` sample in
+The below steps describe how to build and run the hawkBit sample in
 Zephyr. Where examples are given, it is assumed the sample is being build for
 the Freedom-K64F Development Kit (``BOARD=frdm_k64f``).
 
@@ -59,7 +60,7 @@ be done by,
 
    west flash
 
-Step 3: Start the Hawkbit Docker
+Step 3: Start the hawkBit Docker
 ================================
 
 By default, the hawkbit application is set to run on http at port:8080.
@@ -74,40 +75,35 @@ This will start the hawkbit server on the host system.Opening your browser to
 the server URL, ``<your-ip-address>:8080``, and logging into the server using
 ``admin`` as the login and password by default.
 
-Step 4: Build Hawkbit
+Step 4: Build hawkBit
 =====================
 
-``Hawkbit`` can be built for the frdm_k64f as follows:
+hawkBit can be built for the :ref:`Freedom-K64F <frdm_k64f>` as follows:
 
 .. zephyr-app-commands::
-    :zephyr-app: samples/net/hawkbit
+    :zephyr-app: samples/subsys/mgmt/hawkbit
     :board: frdm_k64f
     :conf: "prj.conf"
     :goals: build
 
+If you want to build it with the ability to set the hawkBit server address
+and port during runtime, you can use the following command:
+
+.. zephyr-app-commands::
+    :zephyr-app: samples/subsys/mgmt/hawkbit
+    :board: frdm_k64f
+    :conf: "prj.conf overlay-runtime.conf"
+    :goals: build
+
 .. _hawkbit_sample_sign:
 
-Step 5: Sign and confirm the first image
-========================================
+The firmware will be signed automatically by the build system with the
+``root-rsa-2048.pem`` key. The key is located in the MCUboot repository.
 
-From this section onwards you use a binary (``.bin``) image format.
-
-.. code-block:: console
-
-   west sign -t imgtool -- --key \
-   ~/zephyrproject/bootloader/mcuboot/root-rsa-2048.pem --confirm \
-   --version 1.0.0
-
-The command above creates a signed and confirmed image file called
-:file:`zephyr.signed.confirmed.bin` in the build directory. It's important for
-the first image to be confirmed as MCUboot isn't able to confirm an image that
-is flashed using a hardware tool, and Hawkbit will reboot to trigger a firmware
-swap if it isn't able to confirm the running image on init.
-
-Step 6: Flash the first image
+Step 5: Flash the first image
 =============================
 
-Upload the :file:`zephyr.signed.confirmed.bin` file from Step 5 to image slot-0
+Upload the :file:`zephyr.signed.confirmed.bin` file to image slot-0
 of your board.
 
 .. code-block:: console
@@ -116,25 +112,16 @@ of your board.
 
 Once the image is flashed and booted, the sample will print the image build
 time to the console. After it connects to the internet, in hawkbit server UI,
-you should see the the frdm_k64f show up in the Targets pane. It's time to
+you should see the ``frdm_k64f`` show up in the Targets pane. It's time to
 upload a firmware binary to the server, and update it using this UI.
 
-Step 7: Building and signing the test image
+Step 6: Building and signing the test image
 ===========================================
 
-The easiest way to test the functionality of Hawkbit is to repeat step 4 to
-build the sample again, so that the build time will be different. Then, similar
-to step 5, sign the image and assign it a different version number but without
-confirming it like so:
+The easiest way to test the functionality of hawkBit is to repeat step 4 to
+build the sample again, so that the build time will be different.
 
-.. code-block:: console
-
-   west sign -t imgtool -- --key \
-   ~/zephyrproject/bootloader/mcuboot/root-rsa-2048.pem \
-   --version 1.0.1
-
-The command above creates a signed image file called
-:file:`zephyr.signed.bin` in the build directory.
+This time you need the file :file:`zephyr.signed.bin` from the build directory.
 
 Upload the signed image to the server. Click Upload icon in left pane of UI and
 create a new Software Module with type Apps (``name:hawkbit,version:1.0.1``).
@@ -142,11 +129,11 @@ Then upload the signed image to the server with Upload file Icon.
 
 Click on distribution icon in the left pane of UI and create a new Distribution
 with type Apps only (``name:frdm_k64f_update,version:1.0.1``). Assign the
-``hawkbit`` software module to the created distribution. Click on Deployment
+hawkBit software module to the created distribution. Click on Deployment
 icon in the left pane of UI and assign the ``frdm_k64f_update`` distribution to
 the target ``frdm_k64f``.
 
-Step 8: Run the update
+Step 7: Run the update
 ======================
 
 Back in the terminal session that you used for debugging the board, type the
@@ -158,24 +145,14 @@ following command:
 
 And then wait. The board will ping the server, check if there are any new
 updates, and then download the update you've just created. If everything goes
-fine the message ``Image flashed successfully, you can reboot now`` will be
-printed on the terminal.
+fine the message ``Update installed`` will be printed on the terminal.
 
-Step 9: Reboot the system
-=========================
-
-In the terminal you used for debugging the board, type the following command:
-
-.. code-block:: console
-
-   kernel reboot cold
-
-Your board will reboot and then start with the new image. After rebooting, the
+Your board will reboot automatically and then start with the new image. After rebooting, the
 board will print a different image build time then automatically ping the server
-again and the message ``No update available`` will be printed on the terminal.
+again and the message ``Image is already updated`` will be printed on the terminal.
 
-Step 10: Clone and build hawkbit with https
-===========================================
+Step 8: Clone and build hawkbit with https
+==========================================
 
 Below steps clone and build the hawkbit with self-signed certificate
 to support https.
@@ -277,18 +254,18 @@ Change authentication security from false to true.
    java -jar ./hawkbit-runtime/hawkbit-update-server/target/ \
         hawkbit-update-server-#version#-SNAPSHOT.jar
 
-Step 11: Build Hawkbit HTTPS
-============================
+Step 9: Build hawkBit HTTPS
+===========================
 
 * Convert the server.pem file to self_sign.der and place the der file in
   hawkbit/src directory
 
-``Hawkbit https`` can be built for the frdm_k64f as follows:
+``hawkBit https`` can be built for the :ref:`Freedom-K64F <frdm_k64f>` as follows:
 
 .. zephyr-app-commands::
-    :zephyr-app: samples/net/hawkbit
+    :zephyr-app: samples/subsys/mgmt/hawkbit
     :board: frdm_k64f
     :conf: "prj.conf overlay-tls.conf"
     :goals: build
 
-Repeat the steps from 5 to 9, to update the device over https.
+Repeat the steps from 5 to 7, to update the device over https.

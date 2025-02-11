@@ -1,0 +1,5 @@
+board:
+  name: steval_fcu001v1
+  vendor: st
+  socs:
+    - name: stm32f401xc

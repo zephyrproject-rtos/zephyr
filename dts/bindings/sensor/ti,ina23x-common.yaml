@@ -7,16 +7,6 @@
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-  config:
-    type: int
-    required: true
-    description: |
-      Value of the configuration register
-      e.g shunt voltage and bus voltage ADC conversion
-      times and averaging, operating mode for INA230 or
-      delay for initial ADC conversion, shunt full scale range
-      for INA237.
-
   current-lsb-microamps:
     type: int
     required: true
@@ -34,10 +24,10 @@ properties:
       while keeping a good measurement resolution. The units are in uA/LSB
       so that low maximum currents can be measured with enough resolution.
 
-  rshunt-milliohms:
+  rshunt-micro-ohms:
     type: int
     required: true
-    description: Shunt resistor value in milliohms
+    description: Shunt resistor value in microOhms
 
   alert-gpios:
     type: phandle-array

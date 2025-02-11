@@ -1,0 +1,27 @@
+family:
+- name: nxp_mcx
+  series:
+  - name: mcxnx4x
+    socs:
+    - name: mcxn947
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
+runners:
+  run_once:
+    '--erase':
+    - run: first
+      runners:
+      - all
+      groups:
+      - qualifiers:
+        - mcxn947/cpu0
+        - mcxn947/cpu1
+    '--reset':
+    - run: last
+      runners:
+      - all
+      groups:
+      - qualifiers:
+        - mcxn947/cpu0
+        - mcxn947/cpu1

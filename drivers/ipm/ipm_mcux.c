@@ -13,6 +13,9 @@
 #include <fsl_clock.h>
 #include <soc.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
+#include <zephyr/drivers/reset.h>
+#include <zephyr/sys/util_macro.h>
 
 #define MCUX_IPM_DATA_REGS 1
 #define MCUX_IPM_MAX_ID_VAL 0
@@ -35,9 +38,12 @@
 #endif
 #endif
 
+#define MAILBOX_USES_RESET COND_CODE_1(DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets), (true), (false))
+
 struct mcux_mailbox_config {
 	MAILBOX_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+	const struct reset_dt_spec reset;
 };
 
 struct mcux_mailbox_data {
@@ -69,7 +75,7 @@ static void mcux_mailbox_isr(const struct device *dev)
 	 * might vector to incorrect interrupt
 	 */
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
-	__DSB();
+	barrier_dsync_fence_full();
 #endif
 }
 
@@ -80,9 +86,8 @@ static int mcux_mailbox_ipm_send(const struct device *d, int wait,
 {
 	const struct mcux_mailbox_config *config = d->config;
 	MAILBOX_Type *base = config->base;
-	uint32_t data32[MCUX_IPM_DATA_REGS]; /* Until we change API
-					   * to uint32_t array
-					   */
+	/* Until we change API to uint32_t array */
+	uint32_t data32[MCUX_IPM_DATA_REGS] = {0};
 	unsigned int flags;
 	int i;
 
@@ -92,7 +97,7 @@ static int mcux_mailbox_ipm_send(const struct device *d, int wait,
 		return -EINVAL;
 	}
 
-	if (size > MCUX_IPM_DATA_REGS * sizeof(uint32_t)) {
+	if ((size < 0) || (size > MCUX_IPM_DATA_REGS * sizeof(uint32_t))) {
 		return -EMSGSIZE;
 	}
 
@@ -143,10 +148,34 @@ static int mcux_mailbox_ipm_set_enabled(const struct device *d, int enable)
 	return 0;
 }
 
+static inline int mcux_mailbox_reset(const struct device *dev)
+{
+	const struct mcux_mailbox_config *config = dev->config;
+	int ret = 0;
+
+	/* on some platforms, explicit reset is not needed or possible for the mailbox */
+	if (!MAILBOX_USES_RESET) {
+		return 0;
+	}
+
+	if (!device_is_ready(config->reset.dev)) {
+		ret = -ENODEV;
+	} else {
+		ret = reset_line_toggle(config->reset.dev, config->reset.id);
+	}
+
+	return ret;
+}
 
 static int mcux_mailbox_init(const struct device *dev)
 {
 	const struct mcux_mailbox_config *config = dev->config;
+	int ret = 0;
+
+	ret = mcux_mailbox_reset(dev);
+	if (ret) {
+		return ret;
+	}
 
 	MAILBOX_Init(config->base);
 	config->irq_config_func(dev);
@@ -169,6 +198,7 @@ static void mcux_mailbox_config_func_0(const struct device *dev);
 static const struct mcux_mailbox_config mcux_mailbox_0_config = {
 	.base = (MAILBOX_Type *)DT_INST_REG_ADDR(0),
 	.irq_config_func = mcux_mailbox_config_func_0,
+	.reset = RESET_DT_SPEC_INST_GET_OR(0, {0}),
 };
 
 static struct mcux_mailbox_data mcux_mailbox_0_data;

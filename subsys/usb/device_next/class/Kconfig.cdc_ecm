@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_CDC_ECM_CLASS
+	bool "USB CDC ECM implementation [EXPERIMENTAL]"
+	default y
+	depends on NET_L2_ETHERNET
+	depends on DT_HAS_ZEPHYR_CDC_ECM_ETHERNET_ENABLED
+	help
+	  USB CDC Ethernet Control Model (ECM) implementation"
+
+if USBD_CDC_ECM_CLASS
+
+module = USBD_CDC_ECM
+module-str = usbd cdc_ecm
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+rsource "Kconfig.template.instances_count"
+
+endif

@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Clocks clean up config
+ * Aim is to avoid conflict with specific default board configuration
+ */
+
+&clk_hse {
+	status = "disabled";
+	/delete-property/ hse-bypass;
+	/delete-property/ clock-frequency;
+};
+
+&clk_hsi {
+	status = "disabled";
+};
+
+&clk_lse {
+	status = "disabled";
+};
+
+&clk_lsi {
+	status = "disabled";
+};
+
+&pll {
+	/delete-property/ mul;
+	/delete-property/ div;
+	/delete-property/ prediv;
+	/delete-property/ xtpre;
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&rcc {
+	/delete-property/ clocks;
+	/delete-property/ clock-frequency;
+};
+
+&i2s2 {
+	/delete-property/ clocks;
+};
+
+/* Core set up
+ * Aim of this part is to provide a base working clock config
+ */
+
+&clk_hse {
+	hse-bypass;
+	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	status = "okay";
+};
+
+&pll {
+	div-m = <8>;
+	mul-n = <336>;
+	div-p = <4>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&plli2s {
+	mul-n = <384>;
+	div-r = <2>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(84)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+};
+
+&i2s2 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>,
+		 <&rcc STM32_SRC_PLLI2S_R I2S_SEL(0)>;
+	pinctrl-0 = <&i2s2_ck_pb10 &i2s2_sd_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};

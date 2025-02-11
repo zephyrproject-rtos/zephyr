@@ -7,7 +7,7 @@ description: USB Audio headset specific fields.
 
 compatible: "usb-audio-hs"
 
-include: usb-audio.yaml
+include: [usb-audio.yaml, usb-audio-feature-volume.yaml]
 
 properties:
   mic-resolution:
@@ -23,13 +23,19 @@ properties:
     type: string
     description: |
       Type of endpoint synchronization for IN devices.
-      Default value is Sychronous.
+      Default value is Synchronous.
       Adaptive is not supported.
     enum:
       - "No Synchronization"
       - "Asynchronous"
       - "Adaptive"
       - "Synchronous"
+  mic-sample-rate-hz:
+    type: int
+    default: 48000
+  mic-polling-interval:
+    type: int
+    default: 1
   hp-resolution:
     type: int
     default: 16
@@ -38,6 +44,12 @@ properties:
       - 16
       - 24
       - 32
+  hp-sample-rate-hz:
+    type: int
+    default: 48000
+  hp-polling-interval:
+    type: int
+    default: 1
   # microphone channel configuration options
   mic-channel-l:
     type: boolean
@@ -167,7 +179,6 @@ properties:
     type: boolean
     description: |
       Enable Volume feature.
-      Currently not supported.
   hp-feature-tone-control:
     type: boolean
     description: |

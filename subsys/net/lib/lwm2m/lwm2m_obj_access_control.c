@@ -335,8 +335,10 @@ static void add_existing_objects(void)
 	}
 }
 
-static int write_validate_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
-			     uint8_t *data, uint16_t data_len, bool last_block, size_t total_size)
+static int write_validate_cb(uint16_t obj_inst_id, uint16_t res_id,
+			     uint16_t res_inst_id, uint8_t *data,
+			     uint16_t data_len, bool last_block,
+			     size_t total_size, size_t offset)
 {
 	/* validates and removes acl instances for non-existing servers */
 
@@ -420,7 +422,7 @@ static struct lwm2m_engine_obj_inst *ac_create(uint16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ac_control_init(const struct device *dev)
+static int ac_control_init(void)
 {
 	ac_obj.obj_id = LWM2M_OBJECT_ACCESS_CONTROL_ID;
 	ac_obj.version_major = ACCESS_CONTROL_VERSION_MAJOR;
@@ -432,11 +434,11 @@ static int ac_control_init(const struct device *dev)
 	ac_obj.create_cb = ac_create;
 	lwm2m_register_obj(&ac_obj);
 
-#if !IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
-	/* add the objects/object instances that were created before the ac control object */
-	add_existing_objects();
-#endif /* CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP */
+	if (!IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)) {
+		/* add the objects/object instances that were created before the ac control */
+		add_existing_objects();
+	}
 	return 0;
 }
 
-SYS_INIT(ac_control_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_CORE_INIT(ac_control_init);

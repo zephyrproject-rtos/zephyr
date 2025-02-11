@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PECI
-	bool "PECI Driver"
+	bool "Platform Environment Control Interface (PECI) drivers"
 	help
 	  Include PECI drivers in system config.
 
@@ -26,10 +26,10 @@ config PECI_INIT_PRIORITY
 	  There isn't any critical component relying on this priority at
 	  the moment.
 
-endif # PECI
-
 config PECI_INTERRUPT_DRIVEN
 	bool "PECI driver interrupt support"
 	help
 	  This is an option to be enabled by individual peci driver
 	  to indicate that the driver and hardware supports interrupts.
+
+endif # PECI

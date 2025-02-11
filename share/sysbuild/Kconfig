@@ -2,9 +2,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+rsource "Kconfig.$(HWM_SCHEME)"
+
 comment "Sysbuild image configuration"
 
 osource "$(BOARD_DIR)/Kconfig.sysbuild"
+osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig.sysbuild"
+
+menu "Modules"
+
+source "modules/Kconfig.sysbuild"
+
+endmenu
 
 config EXPERIMENTAL
 	bool
@@ -33,4 +42,10 @@ config WARN_DEPRECATED
 	  Print a warning when the Kconfig tree is parsed if any deprecated
 	  features are enabled.
 
-rsource "bootloader/Kconfig"
+rsource "images/Kconfig"
+
+menu "Build options"
+
+rsource "build/Kconfig"
+
+endmenu

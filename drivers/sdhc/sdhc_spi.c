@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,6 +82,7 @@ struct sdhc_spi_config {
 	const struct device *spi_dev;
 	const struct gpio_dt_spec pwr_gpio;
 	const uint32_t spi_max_freq;
+	uint32_t power_delay_ms;
 };
 
 struct sdhc_spi_data {
@@ -142,6 +143,7 @@ static int sdhc_spi_init_card(const struct device *dev)
 	spi_cfg->operation |= SPI_CS_ACTIVE_HIGH;
 	ret = sdhc_spi_rx(config->spi_dev, spi_cfg, data->scratch, 10);
 	if (ret != 0) {
+		spi_release(config->spi_dev, spi_cfg);
 		spi_cfg->operation &= ~SPI_CS_ACTIVE_HIGH;
 		return ret;
 	}
@@ -205,7 +207,7 @@ static int sdhc_spi_response_get(const struct device *dev, struct sdhc_command *
 	struct sdhc_spi_data *dev_data = dev->data;
 	uint8_t *response = dev_data->scratch;
 	uint8_t *end = response + rx_len;
-	int ret;
+	int ret, timeout = cmd->timeout_ms;
 	uint8_t value, i;
 
 	/* First step is finding the first valid byte of the response.
@@ -223,7 +225,7 @@ static int sdhc_spi_response_get(const struct device *dev, struct sdhc_command *
 		 */
 		response = dev_data->scratch;
 		end = response + 1;
-		for (i = 0; i < 16; i++) {
+		while (timeout > 0) {
 			ret = sdhc_spi_rx(config->spi_dev, dev_data->spi_cfg,
 				response, 1);
 			if (ret < 0) {
@@ -232,6 +234,9 @@ static int sdhc_spi_response_get(const struct device *dev, struct sdhc_command *
 			if (*response != 0xff) {
 				break;
 			}
+			/* Delay for a bit, and poll the card again */
+			k_msleep(10);
+			timeout -= 10;
 		}
 		if (*response == 0xff) {
 			return -ETIMEDOUT;
@@ -599,7 +604,7 @@ static int sdhc_spi_request(const struct device *dev,
 {
 	const struct sdhc_spi_config *config = dev->config;
 	struct sdhc_spi_data *dev_data = dev->data;
-	int ret, retries = cmd->retries;
+	int ret, stop_ret, retries = cmd->retries;
 	const struct sdhc_command stop_cmd = {
 		.opcode = SD_STOP_TRANSMISSION,
 		.arg = 0,
@@ -613,6 +618,7 @@ static int sdhc_spi_request(const struct device *dev,
 		} while ((ret != 0) && (retries-- > 0));
 	} else {
 		do {
+			retries--;
 			ret = sdhc_spi_send_cmd(dev, cmd, true);
 			if (ret) {
 				continue;
@@ -624,16 +630,27 @@ static int sdhc_spi_request(const struct device *dev,
 				ret = sdhc_spi_read_data(dev, data);
 			}
 			if (ret || (cmd->opcode == SD_READ_MULTIPLE_BLOCK)) {
+				int stop_retries = cmd->retries;
+
 				/* CMD12 is required after multiple read, or
 				 * to retry failed transfer
 				 */
-				sdhc_spi_send_cmd(dev,
+				stop_ret = sdhc_spi_send_cmd(dev,
 					(struct sdhc_command *)&stop_cmd,
 					false);
+				while ((stop_ret != 0) && (stop_retries > 0)) {
+					/* Retry stop command */
+					ret = stop_ret = sdhc_spi_send_cmd(dev,
+						(struct sdhc_command *)&stop_cmd,
+						false);
+					stop_retries--;
+				}
 			}
-		} while ((ret != 0) && (retries-- > 0));
+		} while ((ret != 0) && (retries > 0));
 	}
 	if (ret) {
+		/* Release SPI bus */
+		spi_release(config->spi_dev, dev_data->spi_cfg);
 		return ret;
 	}
 	/* Release SPI bus */
@@ -718,7 +735,7 @@ static int sdhc_spi_get_host_props(const struct device *dev,
 
 	props->f_min = SDMMC_CLOCK_400KHZ;
 	props->f_max = cfg->spi_max_freq;
-	props->power_delay = 1000; /* SPI always needs 1ms power delay */
+	props->power_delay = cfg->power_delay_ms;
 	props->host_caps.vol_330_support = true;
 	props->is_spi = true;
 	return 0;
@@ -737,17 +754,28 @@ static int sdhc_spi_init(const struct device *dev)
 {
 	const struct sdhc_spi_config *cfg = dev->config;
 	struct sdhc_spi_data *data = dev->data;
+	int ret = 0;
 
 	if (!device_is_ready(cfg->spi_dev)) {
 		return -ENODEV;
 	}
+	if (cfg->pwr_gpio.port) {
+		if (!gpio_is_ready_dt(&cfg->pwr_gpio)) {
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(&cfg->pwr_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret != 0) {
+			LOG_ERR("Could not configure power gpio (%d)", ret);
+			return ret;
+		}
+	}
 	data->power_mode = SDHC_POWER_OFF;
 	data->spi_cfg = &data->cfg_a;
 	data->spi_cfg->frequency = 0;
-	return 0;
+	return ret;
 }
 
-static struct sdhc_driver_api sdhc_spi_api = {
+static const struct sdhc_driver_api sdhc_spi_api = {
 	.request = sdhc_spi_request,
 	.set_io = sdhc_spi_set_io,
 	.get_host_props = sdhc_spi_get_host_props,
@@ -762,11 +790,15 @@ static struct sdhc_driver_api sdhc_spi_api = {
 		.spi_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),	\
 		.spi_max_freq = DT_INST_PROP(n, spi_max_frequency),		\
+		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),		\
 	};									\
 										\
 	struct sdhc_spi_data sdhc_spi_data_##n = {				\
 		.cfg_a = SPI_CONFIG_DT_INST(n,					\
-				(SPI_LOCK_ON | SPI_HOLD_ON_CS | SPI_WORD_SET(8)),\
+				(SPI_LOCK_ON | SPI_HOLD_ON_CS | SPI_WORD_SET(8) \
+				 | (DT_INST_PROP(n, spi_clock_mode_cpol) ? SPI_MODE_CPOL : 0) \
+				 | (DT_INST_PROP(n, spi_clock_mode_cpha) ? SPI_MODE_CPHA : 0) \
+				),\
 				0),						\
 	};									\
 										\

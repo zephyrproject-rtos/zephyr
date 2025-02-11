@@ -38,13 +38,13 @@
  */
 
 #include <zephyr/linker/linker-defs.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 
 #include <zephyr/linker/linker-tool.h>
 
-#if defined(CONFIG_XIP) || defined(Z_VM_KERNEL)
+#if defined(CONFIG_XIP) || defined(K_MEM_IS_VM_KERNEL)
 	#define ROMABLE_REGION ROM
 	#define RAMABLE_REGION RAM
 #else
@@ -68,7 +68,7 @@
 	#define MMU_PAGE_ALIGN_PERM
 #endif
 
-epoint = Z_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY);
+epoint = K_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY);
 ENTRY(epoint)
 
 /* SECTIONS definitions */
@@ -76,6 +76,10 @@ SECTIONS
 	{
 
 #include <zephyr/linker/rel-sections.ld>
+
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
 
     /DISCARD/ :
 	{
@@ -86,6 +90,10 @@ SECTIONS
 	{
 	*(.iplt)
 	}
+
+#if defined(CONFIG_SOC_FAMILY_INTEL_ISH) && defined(CONFIG_PM)
+#include <zephyr/arch/x86/ia32/scripts/ish_aon.ld>
+#endif
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 
@@ -207,6 +215,10 @@ SECTIONS
 	lnkr_pinned_rodata_start = .;
 
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 
 	SECTION_PROLOGUE(pinned.rodata,,)
@@ -342,6 +354,10 @@ SECTIONS
 
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 #endif
 
@@ -413,43 +429,10 @@ SECTIONS
 	_app_smem_num_words = _app_smem_size >> 2;
 #endif /* CONFIG_USERSPACE */
 
-	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD),)
-	{
-	MMU_PAGE_ALIGN_PERM
-#if !defined(CONFIG_USERSPACE)
-	_image_ram_start = .;
-#endif
-	/*
-	 * For performance, BSS section is forced to be both 4 byte aligned and
-	 * a multiple of 4 bytes.
-	 */
-	. = ALIGN(4);
-	__kernel_ram_start = .;
-	__bss_start = .;
-
-	*(.bss)
-	*(".bss.*")
-	*(COMMON)
-	*(".kernel_bss.*")
-
-	/*
-	 * As memory is cleared in words only, it is simpler to ensure the BSS
-	 * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
-	 */
-	. = ALIGN(4);
-	__bss_end = .;
-	} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	__bss_num_words	= (__bss_end - __bss_start) >> 2;
-
-#include <zephyr/linker/common-noinit.ld>
-
-	MMU_PAGE_ALIGN_PERM
-
-
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 
+	MMU_PAGE_ALIGN_PERM
 	__data_region_start = .;
 	__data_start = .;
 
@@ -499,18 +482,47 @@ SECTIONS
 	MMU_PAGE_ALIGN
 	__data_region_end = .;
 
+	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD),)
+	{
+	MMU_PAGE_ALIGN_PERM
+#if !defined(CONFIG_USERSPACE)
+	_image_ram_start = .;
+#endif
+	/*
+	 * For performance, BSS section is forced to be both 4 byte aligned and
+	 * a multiple of 4 bytes.
+	 */
+	. = ALIGN(4);
+	__kernel_ram_start = .;
+	__bss_start = .;
+
+	*(.bss)
+	*(".bss.*")
+	*(COMMON)
+	*(".kernel_bss.*")
+
+	/*
+	 * As memory is cleared in words only, it is simpler to ensure the BSS
+	 * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+	 */
+	. = ALIGN(4);
+	__bss_end = .;
+	} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	__bss_num_words	= (__bss_end - __bss_start) >> 2;
+
+#include <zephyr/linker/common-noinit.ld>
+
+	MMU_PAGE_ALIGN_PERM
+
 	/* All unused memory also owned by the kernel for heaps */
 	__kernel_ram_end = KERNEL_BASE_ADDR + KERNEL_RAM_SIZE;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
-	_image_ram_end = .;
 	_image_ram_all = (KERNEL_BASE_ADDR + KERNEL_RAM_SIZE) - _image_ram_start;
 
 	z_mapped_end = .;
 	z_mapped_size = z_mapped_end - z_mapped_start;
-	_end = .; /* end of image */
-
-	GROUP_END(RAMABLE_REGION)
 
 #ifndef LINKER_ZEPHYR_FINAL
 	/* static interrupts */
@@ -537,6 +549,10 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-sections.ld>
+
+#include <zephyr/linker/ram-end.ld>
+
+    GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 

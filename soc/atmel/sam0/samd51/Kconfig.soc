@@ -1,0 +1,62 @@
+# Atmel SAMD51 MCU series
+
+# Copyright (c) 2019 ML!PA Consulting GmbH
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAMD51
+	bool
+	select SOC_FAMILY_ATMEL_SAM0
+	help
+	  Enable support for Atmel SAMD51 Cortex-M4F microcontrollers.
+
+config SOC_SERIES
+	default "samd51" if SOC_SERIES_SAMD51
+
+config SOC_SAMD51G18A
+	bool
+	select SOC_SERIES_SAMD51
+
+config SOC_SAMD51G19A
+	bool
+	select SOC_SERIES_SAMD51
+
+config SOC_SAMD51J18A
+	bool
+	select SOC_SERIES_SAMD51
+
+config SOC_SAMD51J19A
+	bool
+	select SOC_SERIES_SAMD51
+
+config SOC_SAMD51J20A
+	bool
+	select SOC_SERIES_SAMD51
+
+config SOC_SAMD51N19A
+	bool
+	select SOC_SERIES_SAMD51
+
+config SOC_SAMD51N20A
+	bool
+	select SOC_SERIES_SAMD51
+
+config SOC_SAMD51P19A
+	bool
+	select SOC_SERIES_SAMD51
+
+config SOC_SAMD51P20A
+	bool
+	select SOC_SERIES_SAMD51
+
+config SOC
+	string
+	default "samd51g18a" if SOC_SAMD51G18A
+	default "samd51g19a" if SOC_SAMD51G19A
+	default "samd51j18a" if SOC_SAMD51J18A
+	default "samd51j19a" if SOC_SAMD51J19A
+	default "samd51j20a" if SOC_SAMD51J20A
+	default "samd51n19a" if SOC_SAMD51N19A
+	default "samd51n20a" if SOC_SAMD51N20A
+	default "samd51p19a" if SOC_SAMD51P19A
+	default "samd51p20a" if SOC_SAMD51P20A

@@ -2,7 +2,9 @@ sample:
   name: GPIO with custom devicetree binding
 tests:
   sample.basic.custom_dts_binding:
-    tags: gpio devicetree
+    tags:
+      - gpio
+      - devicetree
     platform_allow: nucleo_l073rz
     integration_platforms:
       - nucleo_l073rz

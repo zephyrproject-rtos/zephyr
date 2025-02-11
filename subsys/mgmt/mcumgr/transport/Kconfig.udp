@@ -12,8 +12,8 @@
 menuconfig MCUMGR_TRANSPORT_UDP
 	bool "UDP mcumgr SMP transport"
 	depends on NET_UDP
-	select NET_SOCKETS
-	select NET_SOCKETS_POSIX_NAMES if !POSIX_API
+	depends on NET_SOCKETS
+	select NET_CONNECTION_MANAGER
 	help
 	  Enables handling of SMP commands received over UDP.
 	  Will start a thread for listening on the configured UDP port.
@@ -63,12 +63,12 @@ config MCUMGR_TRANSPORT_UDP_MTU
 	  where address size is determined by IPv4/IPv6 selection.
 
 config MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
-	bool "UDP SMP autostart/setup"
+	bool "UDP SMP autostart"
 	default y
 	help
-	  Enable setting up the UDP SMP transport at boot time without needing
-	  any code in the application to do this. Will automatically start the
-	  UDP SMP service when the network interface is up and disable it when
-	  it goes down (at layer 4).
+	  Enable starting the UDP SMP transport at boot time without needing
+	  any code in the application to do this, otherwise will need the user
+	  application to manually start and stop the transport using
+	  `smp_udp_open` and `smp_udp_close`.
 
 endif # MCUMGR_TRANSPORT_UDP

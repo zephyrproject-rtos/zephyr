@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -20,12 +21,15 @@ extern "C" {
 
 /**
  * @defgroup file_system_storage File System Storage
+ * @ingroup os_services
  * @{
  * @}
  */
 
 /**
  * @defgroup settings Settings
+ * @since 1.12
+ * @version 1.0.0
  * @ingroup file_system_storage
  * @{
  */
@@ -298,6 +302,16 @@ int settings_load_subtree_direct(
  * @return 0 on success, non-zero on failure.
  */
 int settings_save(void);
+
+/**
+ * Save limited set of currently running serialized items. All serialized items
+ * that belong to subtree and which are different from currently persisted
+ * values will be saved.
+ *
+ * @param[in] subtree name of the subtree to be loaded.
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_save_subtree(const char *subtree);
 
 /**
  * Write a single serialized value to persisted storage (if it has

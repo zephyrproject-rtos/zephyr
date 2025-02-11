@@ -31,7 +31,7 @@
 #define ADV_DATA_HEX_STR_LEN_MAX (BT_GAP_ADV_MAX_EXT_ADV_DATA_LEN * 2 + 1)
 
 static struct bt_le_per_adv_sync_param sync_create_param;
-static struct bt_le_per_adv_sync *sync;
+static struct bt_le_per_adv_sync *adv_sync;
 static bt_addr_le_t per_addr;
 static bool per_adv_found;
 static bool scan_enabled;
@@ -263,8 +263,8 @@ static void create_sync(void)
 	sync_create_param.options = BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT;
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
-	sync_create_param.timeout = 0xaa;
-	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
+	sync_create_param.timeout = sync_create_timeout_ms * 10 / 10; /* 10 attempts */
+	err = bt_le_per_adv_sync_create(&sync_create_param, &adv_sync);
 	if (err != 0) {
 		printk("failed (err %d)\n", err);
 		return;
@@ -277,7 +277,7 @@ static int delete_sync(void)
 	int err;
 
 	printk("Deleting Periodic Advertising Sync...");
-	err = bt_le_per_adv_sync_delete(sync);
+	err = bt_le_per_adv_sync_delete(adv_sync);
 	if (err != 0) {
 		printk("failed (err %d)\n", err);
 		return err;
@@ -304,7 +304,7 @@ static void enable_cte_rx(void)
 	};
 
 	printk("Enable receiving of CTE...\n");
-	err = bt_df_per_adv_sync_cte_rx_enable(sync, &cte_rx_params);
+	err = bt_df_per_adv_sync_cte_rx_enable(adv_sync, &cte_rx_params);
 	if (err != 0) {
 		printk("failed (err %d)\n", err);
 		return;
@@ -364,7 +364,7 @@ static void scan_disable(void)
 	scan_enabled = false;
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -388,7 +388,7 @@ void main(void)
 		err = k_sem_take(&sem_per_adv, K_FOREVER);
 		if (err != 0) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("success. Found periodic advertising.\n");
 
@@ -410,7 +410,7 @@ void main(void)
 
 			err = delete_sync();
 			if (err != 0) {
-				return;
+				return 0;
 			}
 
 			continue;
@@ -427,8 +427,9 @@ void main(void)
 		err = k_sem_take(&sem_per_sync_lost, K_FOREVER);
 		if (err != 0) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("Periodic sync lost.\n");
 	} while (true);
+	return 0;
 }

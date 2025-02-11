@@ -8,17 +8,15 @@
 #include <zephyr/mgmt/updatehub.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
-#include <zephyr/net/net_conn_mgr.h>
+#include <zephyr/net/conn_mgr_monitor.h>
+
+#ifdef CONFIG_NET_L2_WIFI_MGMT
 #include <zephyr/net/wifi_mgmt.h>
+#endif /* CONFIG_NET_L2_WIFI_MGMT */
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 #include <zephyr/net/tls_credentials.h>
 #include "c_certificates.h"
-#endif
-
-#if defined(CONFIG_MODEM_GSM_PPP)
-#define GSM_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_gsm_ppp)
-#define UART_NODE DT_BUS(GSM_NODE)
 #endif
 
 #include <zephyr/logging/log.h>
@@ -83,7 +81,7 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -95,7 +93,7 @@ void main(void)
 			       server_certificate,
 			       sizeof(server_certificate)) < 0) {
 		LOG_ERR("Failed to register server certificate");
-		return;
+		return 0;
 	}
 
 	if (tls_credential_add(CA_CERTIFICATE_TAG,
@@ -103,7 +101,7 @@ void main(void)
 			       private_key,
 			       sizeof(private_key)) < 0) {
 		LOG_ERR("Failed to register private key");
-		return;
+		return 0;
 	}
 #endif
 
@@ -140,15 +138,10 @@ void main(void)
 		LOG_INF("Connect request failed %d. Waiting iface be up...", ret);
 		k_msleep(500);
 	}
-
-#elif defined(CONFIG_MODEM_GSM_PPP)
-	const struct device *const uart_dev = DEVICE_DT_GET(UART_NODE);
-
-	LOG_INF("APN '%s' UART '%s' device %p", CONFIG_MODEM_GSM_APN,
-		uart_dev->name, uart_dev);
 #endif
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler, EVENT_MASK);
 	net_mgmt_add_event_callback(&mgmt_cb);
-	net_conn_mgr_resend_status();
+	conn_mgr_mon_resend_status();
+	return 0;
 }

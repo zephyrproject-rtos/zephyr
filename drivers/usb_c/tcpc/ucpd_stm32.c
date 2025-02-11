@@ -361,6 +361,37 @@ static int ucpd_get_rp_value(const struct device *dev, enum tc_rp_value *rp)
 }
 
 /**
+ * @brief Enable or disable Dead Battery resistors
+ */
+static void dead_battery(const struct device *dev, bool en)
+{
+	struct tcpc_data *data = dev->data;
+
+#ifdef CONFIG_SOC_SERIES_STM32G0X
+	const struct tcpc_config *const config = dev->config;
+	uint32_t cr;
+
+	cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+
+	if (en) {
+		cr |= UCPD_CR_DBATTEN;
+	} else {
+		cr &= ~UCPD_CR_DBATTEN;
+	}
+
+	LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
+	update_stm32g0x_cc_line(config->ucpd_port);
+#else
+	if (en) {
+		CLEAR_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
+	} else {
+		SET_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
+	}
+#endif
+	data->dead_battery_active = en;
+}
+
+/**
  * @brief Set the CC pull up or pull down resistors
  *
  * @retval 0 on success
@@ -372,6 +403,11 @@ static int ucpd_set_cc(const struct device *dev,
 	const struct tcpc_config *const config = dev->config;
 	struct tcpc_data *data = dev->data;
 	uint32_t cr;
+
+	/* Disable dead battery if it's active */
+	if (data->dead_battery_active) {
+		dead_battery(dev, false);
+	}
 
 	cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
 
@@ -989,44 +1025,24 @@ static int ucpd_transmit_data(const struct device *dev,
 }
 
 /**
- * @brief Tests if a received Power Delivery message is pending
- *
- * @retval true if message is pending, else false
- */
-static bool ucpd_is_rx_pending_msg(const struct device *dev,
-				   enum pd_packet_type *type)
-{
-	struct tcpc_data *data = dev->data;
-	bool ret;
-
-	ret = (*(uint32_t *)data->ucpd_rx_buffer > 0);
-
-	if (ret & (type != NULL)) {
-		*type = *(uint16_t *)data->ucpd_rx_buffer;
-	}
-
-	return ret;
-}
-
-/**
  * @brief Retrieves the Power Delivery message from the TCPC
  *
- * @retval number of bytes received
- * @retval -EIO on no message to retrieve
- * @retval -EFAULT on buf being NULL
+ * @retval number of bytes received if msg parameter is provided
+ * @retval 0 if there is a message pending and the msg parameter is NULL
+ * @retval -ENODATA if there is no pending message
  */
-static int ucpd_receive_data(const struct device *dev, struct pd_msg *msg)
+static int ucpd_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
 {
 	struct tcpc_data *data = dev->data;
 	int ret = 0;
 
-	if (msg == NULL) {
-		return -EFAULT;
+	/* Make sure we have a message to retrieve */
+	if (*(uint32_t *)data->ucpd_rx_buffer == 0) {
+		return -ENODATA;
 	}
 
-	/* Make sure we have a message to retrieve */
-	if (!ucpd_is_rx_pending_msg(dev, NULL)) {
-		return -EIO;
+	if (msg == NULL) {
+		return 0;
 	}
 
 	msg->type = *(uint16_t *)data->ucpd_rx_buffer;
@@ -1350,7 +1366,7 @@ static int ucpd_init(const struct device *dev)
 
 	LOG_DBG("Pinctrl signals configuration");
 	ret = pinctrl_apply_state(config->ucpd_pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
+	if (ret != 0) {
 		LOG_ERR("USB pinctrl setup failed (%d)", ret);
 		return ret;
 	}
@@ -1384,16 +1400,13 @@ static int ucpd_init(const struct device *dev)
 
 		/* Enable Dead Battery Support */
 		if (config->ucpd_dead_battery) {
-#ifdef CONFIG_SOC_SERIES_STM32G0X
-			uint32_t cr;
-
-			cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
-			cr |= UCPD_CR_DBATTEN;
-			LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
-			update_stm32g0x_cc_line(config->ucpd_port);
-#else
-			CLEAR_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
-#endif
+			dead_battery(dev, true);
+		} else {
+			/*
+			 * Some devices have dead battery enabled by default
+			 * after power up, so disable it
+			 */
+			dead_battery(dev, false);
 		}
 
 		/* Initialize the isr */
@@ -1410,8 +1423,7 @@ static const struct tcpc_driver_api driver_api = {
 	.set_alert_handler_cb = ucpd_set_alert_handler_cb,
 	.get_cc = ucpd_get_cc,
 	.set_rx_enable = ucpd_set_rx_enable,
-	.is_rx_pending_msg = ucpd_is_rx_pending_msg,
-	.receive_data = ucpd_receive_data,
+	.get_rx_pending_msg = ucpd_get_rx_pending_msg,
 	.transmit_data = ucpd_transmit_data,
 	.select_rp_value = ucpd_select_rp_value,
 	.get_rp_value = ucpd_get_rp_value,
@@ -1467,7 +1479,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 			      &drv_data_##inst,						\
 			      &drv_config_##inst,					\
 			      POST_KERNEL,						\
-			      CONFIG_USBC_INIT_PRIORITY,				\
+			      CONFIG_USBC_TCPC_INIT_PRIORITY,				\
 			      &driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TCPC_DRIVER_INIT)

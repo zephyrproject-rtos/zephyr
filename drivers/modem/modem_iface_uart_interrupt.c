@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(modem_iface_uart, CONFIG_MODEM_LOG_LEVEL);
  *
  * @note   Discards remaining data.
  *
- * @param  *iface: modem interface.
+ * @param  iface: modem interface.
  *
  * @retval None.
  */
@@ -43,7 +43,7 @@ static void modem_iface_uart_flush(struct modem_iface *iface)
  * @note   Fills interfaces ring buffer with received data.
  *         When ring buffer is full the data is discarded.
  *
- * @param  *uart_dev: uart device.
+ * @param  uart_dev: uart device.
  *
  * @retval None.
  */
@@ -125,18 +125,6 @@ static int modem_iface_uart_read(struct modem_iface *iface,
 	return 0;
 }
 
-static bool mux_is_active(struct modem_iface *iface)
-{
-	bool active = false;
-
-#if defined(CONFIG_UART_MUX_DEVICE_NAME)
-	active = strncmp(CONFIG_UART_MUX_DEVICE_NAME, iface->dev->name,
-			 sizeof(CONFIG_UART_MUX_DEVICE_NAME) - 1) == 0;
-#endif /* CONFIG_UART_MUX_DEVICE_NAME */
-
-	return active;
-}
-
 static int modem_iface_uart_write(struct modem_iface *iface,
 				  const uint8_t *buf, size_t size)
 {
@@ -148,18 +136,9 @@ static int modem_iface_uart_write(struct modem_iface *iface,
 		return 0;
 	}
 
-	/* If we're using gsm_mux, We don't want to use poll_out because sending
-	 * one byte at a time causes each byte to get wrapped in muxing headers.
-	 * But we can safely call uart_fifo_fill outside of ISR context when
-	 * muxing because uart_mux implements it in software.
-	 */
-	if (mux_is_active(iface)) {
-		uart_fifo_fill(iface->dev, buf, size);
-	} else {
-		do {
-			uart_poll_out(iface->dev, *buf++);
-		} while (--size);
-	}
+	do {
+		uart_poll_out(iface->dev, *buf++);
+	} while (--size);
 
 	return 0;
 }
@@ -198,13 +177,12 @@ int modem_iface_uart_init_dev(struct modem_iface *iface,
 	return 0;
 }
 
-int modem_iface_uart_init(struct modem_iface *iface,
-			  struct modem_iface_uart_data *data,
-			  const struct device *dev)
+int modem_iface_uart_init(struct modem_iface *iface, struct modem_iface_uart_data *data,
+			  const struct modem_iface_uart_config *config)
 {
 	int ret;
 
-	if (!iface || !data) {
+	if (iface == NULL || data == NULL || config == NULL) {
 		return -EINVAL;
 	}
 
@@ -212,11 +190,14 @@ int modem_iface_uart_init(struct modem_iface *iface,
 	iface->read = modem_iface_uart_read;
 	iface->write = modem_iface_uart_write;
 
-	ring_buf_init(&data->rx_rb, data->rx_rb_buf_len, data->rx_rb_buf);
+	ring_buf_init(&data->rx_rb, config->rx_rb_buf_len, config->rx_rb_buf);
 	k_sem_init(&data->rx_sem, 0, 1);
 
-	/* get UART device */
-	ret = modem_iface_uart_init_dev(iface, dev);
+	/* Configure hardware flow control */
+	data->hw_flow_control = config->hw_flow_control;
+
+	/* Get UART device */
+	ret = modem_iface_uart_init_dev(iface, config->dev);
 	if (ret < 0) {
 		iface->iface_data = NULL;
 		iface->read = NULL;

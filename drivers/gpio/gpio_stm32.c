@@ -22,10 +22,16 @@
 #include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/drivers/misc/stm32_wkup_pins/stm32_wkup_pins.h>
+#include <zephyr/dt-bindings/gpio/stm32-gpio.h>
 
 #include "stm32_hsem.h"
 #include "gpio_stm32.h"
 #include <zephyr/drivers/gpio/gpio_utils.h>
+
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(stm32, CONFIG_GPIO_LOG_LEVEL);
 
 /**
  * @brief Common GPIO driver for STM32 MCUs.
@@ -270,7 +276,7 @@ static void gpio_stm32_configure_raw(const struct device *dev, int pin,
 static int gpio_stm32_clock_request(const struct device *dev, bool on)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
-	int ret = 0;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 
@@ -279,14 +285,10 @@ static int gpio_stm32_clock_request(const struct device *dev, bool on)
 
 	if (on) {
 		ret = clock_control_on(clk,
-					(clock_control_subsys_t *)&cfg->pclken);
+					(clock_control_subsys_t)&cfg->pclken);
 	} else {
 		ret = clock_control_off(clk,
-					(clock_control_subsys_t *)&cfg->pclken);
-	}
-
-	if (ret != 0) {
-		return ret;
+					(clock_control_subsys_t)&cfg->pclken);
 	}
 
 	return ret;
@@ -297,17 +299,18 @@ static inline uint32_t gpio_stm32_pin_to_exti_line(int pin)
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X)
 	return ((pin % 4 * 4) << 16) | (pin / 4);
-#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
-	return (((pin * 8) % 32) << 16) | (pin / 4);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 	return ((pin & 0x3) << (16 + 3)) | (pin >> 2);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
+	/* Gives the LL_SBS_EXTI_LINEn corresponding to the pin */
+	return (((pin % 4 * 4) << LL_SBS_REGISTER_PINPOS_SHFT) | (pin / 4));
 #else
 	return (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
 #endif
 }
 
+
+/* Set the EXTI line corresponding to the PORT [STM32_PORTA .. ] and pin [0..15] */
 static void gpio_stm32_set_exti_source(int port, int pin)
 {
 	uint32_t line = gpio_stm32_pin_to_exti_line(pin);
@@ -327,18 +330,18 @@ static void gpio_stm32_set_exti_source(int port, int pin)
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	LL_GPIO_AF_SetEXTISource(port, line);
-#elif CONFIG_SOC_SERIES_STM32MP1X
+
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 	LL_EXTI_SetEXTISource(port, line);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
-	LL_EXTI_SetEXTISource(port, line);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
+	LL_SBS_SetEXTISource(port, line);
 #else
 	LL_SYSCFG_SetEXTISource(port, line);
 #endif
 	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 }
 
+/* Gives the PORT [STM32_PORTA .. ] corresponding to the EXTI line of the pin [0..15] */
 static int gpio_stm32_get_exti_source(int pin)
 {
 	uint32_t line = gpio_stm32_pin_to_exti_line(pin);
@@ -346,12 +349,10 @@ static int gpio_stm32_get_exti_source(int pin)
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	port = LL_GPIO_AF_GetEXTISource(line);
-#elif CONFIG_SOC_SERIES_STM32MP1X
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 	port = LL_EXTI_GetEXTISource(line);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
-	port = LL_EXTI_GetEXTISource(line);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
+	port = LL_SBS_GetEXTISource(line);
 #else
 	port = LL_SYSCFG_GetEXTISource(line);
 #endif
@@ -380,14 +381,18 @@ static int gpio_stm32_enable_int(int port, int pin)
 	defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	struct stm32_pclken pclken = {
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
 		.bus = STM32_CLOCK_BUS_APB4,
 		.enr = LL_APB4_GRP1_PERIPH_SYSCFG
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		.bus = STM32_CLOCK_BUS_APB4,
+		.enr = LL_APB4_GRP1_PERIPH_SBS
 #else
 		.bus = STM32_CLOCK_BUS_APB2,
 		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
@@ -396,7 +401,7 @@ static int gpio_stm32_enable_int(int port, int pin)
 	int ret;
 
 	/* Enable SYSCFG clock */
-	ret = clock_control_on(clk, (clock_control_subsys_t *) &pclken);
+	ret = clock_control_on(clk, (clock_control_subsys_t) &pclken);
 	if (ret != 0) {
 		return ret;
 	}
@@ -535,9 +540,11 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 
 	/* Enable device clock before configuration (requires bank writes) */
-	err = pm_device_runtime_get(dev);
-	if (err < 0) {
-		return err;
+	if (((flags & GPIO_OUTPUT) != 0) || ((flags & GPIO_INPUT) != 0)) {
+		err = pm_device_runtime_get(dev);
+		if (err < 0) {
+			return err;
+		}
 	}
 
 	if ((flags & GPIO_OUTPUT) != 0) {
@@ -549,6 +556,25 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 
 	gpio_stm32_configure_raw(dev, pin, pincfg, 0);
+
+#ifdef CONFIG_STM32_WKUP_PINS
+	if (flags & STM32_GPIO_WKUP) {
+#ifdef CONFIG_POWEROFF
+		struct gpio_dt_spec gpio_dt_cfg = {
+			.port = dev,
+			.pin = pin,
+			.dt_flags = (gpio_dt_flags_t)flags,
+		};
+
+		if (stm32_pwr_wkup_pin_cfg_gpio((const struct gpio_dt_spec *)&gpio_dt_cfg)) {
+			LOG_ERR("Could not configure GPIO %s pin %d as a wake-up source",
+					gpio_dt_cfg.port->name, gpio_dt_cfg.pin);
+		}
+#else
+		LOG_DBG("STM32_GPIO_WKUP flag has no effect when CONFIG_POWEROFF=n");
+#endif /* CONFIG_POWEROFF */
+	}
+#endif /* CONFIG_STM32_WKUP_PINS */
 
 	/* Release clock only if pin is disconnected */
 	if (((flags & GPIO_OUTPUT) == 0) && ((flags & GPIO_INPUT) == 0)) {
@@ -601,6 +627,16 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 	int edge = 0;
 	int err = 0;
 
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	if (mode == GPIO_INT_MODE_DISABLE_ONLY) {
+		stm32_exti_disable(pin);
+		goto exit;
+	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
+		stm32_exti_enable(pin);
+		goto exit;
+	}
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
+
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		if (gpio_stm32_get_exti_source(pin) == cfg->port) {
 			stm32_exti_disable(pin);
@@ -622,8 +658,6 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		goto exit;
 	}
 
-	gpio_stm32_enable_int(cfg->port, pin);
-
 	switch (trig) {
 	case GPIO_INT_TRIG_LOW:
 		edge = STM32_EXTI_TRIG_FALLING;
@@ -634,7 +668,12 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 	case GPIO_INT_TRIG_BOTH:
 		edge = STM32_EXTI_TRIG_BOTH;
 		break;
+	default:
+		err = -EINVAL;
+		goto exit;
 	}
+
+	gpio_stm32_enable_int(cfg->port, pin);
 
 	stm32_exti_trigger(pin, edge);
 
@@ -720,7 +759,9 @@ static int gpio_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-	pm_device_init_suspended(dev);
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_init_suspended(dev);
+	}
 	(void)pm_device_runtime_enable(dev);
 
 	return 0;
@@ -754,46 +795,24 @@ static int gpio_stm32_init(const struct device *dev)
 			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bits),\
 			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bus))
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay)
-GPIO_DEVICE_INIT_STM32(a, A);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay) */
+#define GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX) \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(gpio##__suffix), okay), \
+		    (GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)), \
+		    ())
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiob), okay)
-GPIO_DEVICE_INIT_STM32(b, B);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiob), okay) */
+GPIO_DEVICE_INIT_STM32_IF_OKAY(a, A);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(b, B);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(c, C);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(d, D);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(e, E);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(f, F);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(g, G);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(h, H);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(i, I);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(j, J);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(k, K);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioc), okay)
-GPIO_DEVICE_INIT_STM32(c, C);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioc), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiod), okay)
-GPIO_DEVICE_INIT_STM32(d, D);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiod), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioe), okay)
-GPIO_DEVICE_INIT_STM32(e, E);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioe), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiof), okay)
-GPIO_DEVICE_INIT_STM32(f, F);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiof), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiog), okay)
-GPIO_DEVICE_INIT_STM32(g, G);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiog), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioh), okay)
-GPIO_DEVICE_INIT_STM32(h, H);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioh), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioi), okay)
-GPIO_DEVICE_INIT_STM32(i, I);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioi), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioj), okay)
-GPIO_DEVICE_INIT_STM32(j, J);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioj), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiok), okay)
-GPIO_DEVICE_INIT_STM32(k, K);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiok), okay) */
+GPIO_DEVICE_INIT_STM32_IF_OKAY(m, M);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(n, N);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(o, O);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(p, P);

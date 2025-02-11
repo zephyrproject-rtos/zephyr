@@ -68,6 +68,7 @@ static int spi_emul_io(const struct device *dev, const struct spi_config *config
 {
 	struct spi_emul *emul;
 	const struct spi_emul_api *api;
+	int ret;
 
 	emul = spi_emul_find(dev, config->slave);
 	if (!emul) {
@@ -78,7 +79,26 @@ static int spi_emul_io(const struct device *dev, const struct spi_config *config
 	__ASSERT_NO_MSG(emul->api);
 	__ASSERT_NO_MSG(emul->api->io);
 
+	if (emul->mock_api != NULL && emul->mock_api->io != NULL) {
+		ret = emul->mock_api->io(emul->target, config, tx_bufs, rx_bufs);
+		if (ret != -ENOSYS) {
+			return ret;
+		}
+	}
+
 	return api->io(emul->target, config, tx_bufs, rx_bufs);
+}
+
+/**
+ * @brief This is a no-op stub of the SPI API's `release` method to protect drivers under test
+ *        from hitting a segmentation fault when using SPI_LOCK_ON plus spi_release()
+ */
+static int spi_emul_release(const struct device *dev, const struct spi_config *config)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(config);
+
+	return 0;
 }
 
 /**
@@ -109,8 +129,9 @@ int spi_emul_register(const struct device *dev, struct spi_emul *emul)
 
 /* Device instantiation */
 
-static struct spi_driver_api spi_emul_api = {
+static const struct spi_driver_api spi_emul_api = {
 	.transceive = spi_emul_io,
+	.release = spi_emul_release,
 };
 
 #define EMUL_LINK_AND_COMMA(node_id)                                                               \
@@ -119,8 +140,8 @@ static struct spi_driver_api spi_emul_api = {
 	},
 
 #define SPI_EMUL_INIT(n)                                                                           \
-	static const struct emul_link_for_bus emuls_##n[] = { DT_FOREACH_CHILD(                    \
-		DT_DRV_INST(0), EMUL_LINK_AND_COMMA) };                                            \
+	static const struct emul_link_for_bus emuls_##n[] = {                                      \
+		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};                \
 	static struct emul_list_for_bus spi_emul_cfg_##n = {                                       \
 		.children = emuls_##n,                                                             \
 		.num_children = ARRAY_SIZE(emuls_##n),                                             \

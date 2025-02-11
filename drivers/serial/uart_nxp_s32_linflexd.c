@@ -1,9 +1,12 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_s32_linflexd
+
+#include <soc.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -243,45 +246,54 @@ static void uart_nxp_s32_irq_callback_set(const struct device *dev,
 	data->cb_data = cb_data;
 }
 
-/**
- * @brief Interrupt service routine.
- *
- * This simply calls the callback function, if one exists.
- *
- * Note: s32 UART Tx interrupts when ready to send; Rx interrupts when char
- * received.
- *
- * @param arg Argument to ISR.
- *
- * @return N/A
- */
-
 void uart_nxp_s32_isr(const struct device *dev)
 {
-	struct uart_nxp_s32_data *data = dev->data;
+	const struct uart_nxp_s32_config *config = dev->config;
 
-	if (data->callback) {
-		data->callback(dev, data->cb_data);
+	Linflexd_Uart_Ip_IRQHandler(config->instance);
+}
+
+static void uart_nxp_s32_event_handler(const uint8 instance,
+				       Linflexd_Uart_Ip_EventType event,
+				       void *user_data)
+{
+	const struct device *dev = (const struct device *)user_data;
+	const struct uart_nxp_s32_config *config = dev->config;
+	struct uart_nxp_s32_data *data = dev->data;
+	struct uart_nxp_s32_int *int_data = &(data->int_data);
+	Linflexd_Uart_Ip_StatusType status;
+
+	if (event == LINFLEXD_UART_IP_EVENT_END_TRANSFER) {
+		/*
+		 * Check the previous UART transmit has	finished
+		 * because Rx may also trigger this event
+		 */
+		status = Linflexd_Uart_Ip_GetTransmitStatus(config->instance, NULL);
+		if (status != LINFLEXD_UART_IP_STATUS_BUSY) {
+			int_data->tx_fifo_busy = false;
+			if (data->callback) {
+				data->callback(dev, data->cb_data);
+			}
+		}
+	} else if (event == LINFLEXD_UART_IP_EVENT_RX_FULL) {
+		int_data->rx_fifo_busy = false;
+		if (data->callback) {
+			data->callback(dev, data->cb_data);
+		}
+	} else if (event == LINFLEXD_UART_IP_EVENT_ERROR) {
+		if (data->callback) {
+			data->callback(dev, data->cb_data);
+		}
+	} else {
+		/* Other events are not used */
 	}
 }
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-/**
- * @brief Initialize UART channel
- *
- * This routine is called to reset the chip in a quiescent state.
- * It is assumed that this function is called only once per UART.
- *
- * @param dev UART device struct
- *
- * @return 0
- */
 static int uart_nxp_s32_init(const struct device *dev)
 {
 	const struct uart_nxp_s32_config *config = dev->config;
-	struct uart_nxp_s32_data *data = dev->data;
-	static uint8_t state_idx;
-	uint8_t key;
 	int err;
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
@@ -289,24 +301,7 @@ static int uart_nxp_s32_init(const struct device *dev)
 		return err;
 	}
 
-	key = irq_lock();
-
-	/* Initialize UART with default configuration */
-	data->hw_cfg.BaudRate = 115200;
-	data->hw_cfg.BaudRateMantissa = 26U;
-	data->hw_cfg.BaudRateFractionalDivisor = 1U;
-	data->hw_cfg.ParityCheck = false;
-	data->hw_cfg.ParityType = LINFLEXD_UART_IP_PARITY_EVEN;
-	data->hw_cfg.StopBitsCount = LINFLEXD_UART_IP_ONE_STOP_BIT;
-	data->hw_cfg.WordLength = LINFLEXD_UART_IP_8_BITS;
-	data->hw_cfg.TransferType = LINFLEXD_UART_IP_USING_INTERRUPTS;
-	data->hw_cfg.Callback = s32_uart_callback;
-	data->hw_cfg.CallbackParam = NULL;
-	data->hw_cfg.StateStruct = &Linflexd_Uart_Ip_apStateStructure[state_idx++];
-
-	Linflexd_Uart_Ip_Init(config->instance, &data->hw_cfg);
-
-	irq_unlock(key);
+	Linflexd_Uart_Ip_Init(config->instance, &config->hw_cfg);
 
 	return 0;
 }
@@ -334,207 +329,63 @@ static const struct uart_driver_api uart_nxp_s32_driver_api = {
 
 };
 
-#define UART_NXP_S32_NODE(n)	DT_NODELABEL(uart##n)
+#define UART_NXP_S32_HW_INSTANCE_CHECK(i, n) \
+	((DT_INST_REG_ADDR(n) == IP_LINFLEX_##i##_BASE) ? i : 0)
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
-#define UART_NXP_S32_INTERRUPT_DEFINE(n, isr_handler, parameter)	\
-	do {								\
-		IRQ_CONNECT(DT_IRQN(UART_NXP_S32_NODE(n)),		\
-			DT_IRQ(UART_NXP_S32_NODE(n), priority),		\
-			isr_handler,					\
-			parameter,					\
-			DT_IRQ(UART_NXP_S32_NODE(n), flags));		\
-									\
-		irq_enable(DT_IRQN(UART_NXP_S32_NODE(n)));		\
+#define UART_NXP_S32_HW_INSTANCE(n) \
+	LISTIFY(__DEBRACKET LINFLEXD_INSTANCE_COUNT, UART_NXP_S32_HW_INSTANCE_CHECK, (|), n)
+
+#define UART_NXP_S32_INTERRUPT_DEFINE(n)					\
+	do {									\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
+			uart_nxp_s32_isr, DEVICE_DT_INST_GET(n),		\
+			DT_INST_IRQ(n, flags));					\
+		irq_enable(DT_INST_IRQN(n));					\
 	} while (0)
 
-#else
-#define UART_NXP_S32_INTERRUPT_DEFINE(n, isr_handler, parameter)
-#endif
+#define UART_NXP_S32_HW_CONFIG(n)						\
+	{									\
+		.BaudRate = 115200,						\
+		.BaudRateMantissa = 26U,					\
+		.BaudRateDivisor = 16U,						\
+		.BaudRateFractionalDivisor = 1U,				\
+		.ParityCheck = false,						\
+		.ParityType = LINFLEXD_UART_IP_PARITY_EVEN,			\
+		.StopBitsCount = LINFLEXD_UART_IP_ONE_STOP_BIT,			\
+		.WordLength = LINFLEXD_UART_IP_8_BITS,				\
+		.TransferType = LINFLEXD_UART_IP_USING_INTERRUPTS,		\
+		.StateStruct = &Linflexd_Uart_Ip_apStateStructure[n],		\
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (			\
+			.Callback = uart_nxp_s32_event_handler,			\
+			.CallbackParam = (void *)DEVICE_DT_INST_GET(n),		\
+		))								\
+	}
 
 #define UART_NXP_S32_INIT_DEVICE(n)						\
-	PINCTRL_DT_DEFINE(UART_NXP_S32_NODE(n));				\
-	static struct uart_nxp_s32_data uart_nxp_s32_data_##n;			\
+	PINCTRL_DT_INST_DEFINE(n);						\
+	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,				\
+		(static struct uart_nxp_s32_data uart_nxp_s32_data_##n;))	\
 	static const struct uart_nxp_s32_config uart_nxp_s32_config_##n = {	\
-		.instance = n,							\
-		.base = (LINFLEXD_Type *)DT_REG_ADDR(UART_NXP_S32_NODE(n)),	\
-		.pincfg = PINCTRL_DT_DEV_CONFIG_GET(UART_NXP_S32_NODE(n)),	\
+		.instance = UART_NXP_S32_HW_INSTANCE(n),			\
+		.base = (LINFLEXD_Type *)DT_INST_REG_ADDR(n),			\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		.hw_cfg = UART_NXP_S32_HW_CONFIG(n),				\
 	};									\
 	static int uart_nxp_s32_init_##n(const struct device *dev)		\
 	{									\
-		UART_NXP_S32_INTERRUPT_DEFINE(n, Linflexd_Uart_Ip_IRQHandler, n);\
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,			\
+			(UART_NXP_S32_INTERRUPT_DEFINE(n);))			\
 										\
 		return uart_nxp_s32_init(dev);					\
 	}									\
-	DEVICE_DT_DEFINE(UART_NXP_S32_NODE(n),					\
+	DEVICE_DT_INST_DEFINE(n,						\
 			&uart_nxp_s32_init_##n,					\
 			NULL,							\
-			&uart_nxp_s32_data_##n,					\
+			COND_CODE_1(CONFIG_UART_INTERRUPT_DRIVEN,		\
+				   (&uart_nxp_s32_data_##n), (NULL)),		\
 			&uart_nxp_s32_config_##n,				\
 			PRE_KERNEL_1,						\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+			CONFIG_SERIAL_INIT_PRIORITY,				\
 			&uart_nxp_s32_driver_api);
 
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(0), okay)
-UART_NXP_S32_INIT_DEVICE(0)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(1), okay)
-UART_NXP_S32_INIT_DEVICE(1)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(2), okay)
-UART_NXP_S32_INIT_DEVICE(2)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(3), okay)
-UART_NXP_S32_INIT_DEVICE(3)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(4), okay)
-UART_NXP_S32_INIT_DEVICE(4)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(5), okay)
-UART_NXP_S32_INIT_DEVICE(5)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(6), okay)
-UART_NXP_S32_INIT_DEVICE(6)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(7), okay)
-UART_NXP_S32_INIT_DEVICE(7)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(8), okay)
-UART_NXP_S32_INIT_DEVICE(8)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(9), okay)
-UART_NXP_S32_INIT_DEVICE(9)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(10), okay)
-UART_NXP_S32_INIT_DEVICE(10)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(11), okay)
-UART_NXP_S32_INIT_DEVICE(11)
-#endif
-
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(12), okay)
-UART_NXP_S32_INIT_DEVICE(12)
-#endif
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void s32_uart_device_event(const struct device *dev, Linflexd_Uart_Ip_EventType event,
-				  void *user_data)
-{
-	const struct uart_nxp_s32_config *config = dev->config;
-	struct uart_nxp_s32_data *data = dev->data;
-	struct uart_nxp_s32_int *int_data = &(data->int_data);
-	Linflexd_Uart_Ip_StatusType status;
-
-	ARG_UNUSED(user_data);
-
-	if (event == LINFLEXD_UART_IP_EVENT_END_TRANSFER) {
-		/*
-		 * Check the previous UART transmit has	finished
-		 * because Rx may also trigger this event
-		 */
-		status = Linflexd_Uart_Ip_GetTransmitStatus(config->instance, NULL);
-		if (status != LINFLEXD_UART_IP_STATUS_BUSY) {
-			int_data->tx_fifo_busy = false;
-			uart_nxp_s32_isr(dev);
-		}
-	} else if (event == LINFLEXD_UART_IP_EVENT_RX_FULL) {
-		int_data->rx_fifo_busy = false;
-		uart_nxp_s32_isr(dev);
-	} else if (event == LINFLEXD_UART_IP_EVENT_ERROR) {
-		uart_nxp_s32_isr(dev);
-	} else {
-		/* Other events are not used */
-	}
-}
-
-void s32_uart_callback(const uint8 instance, Linflexd_Uart_Ip_EventType event, void *user_data)
-{
-	const struct device *dev;
-
-	switch (instance) {
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(0), okay)
-	case 0:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(0));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(1), okay)
-	case 1:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(1));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(2), okay)
-	case 2:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(2));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(3), okay)
-	case 3:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(3));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(4), okay)
-	case 4:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(4));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(5), okay)
-	case 5:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(5));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(6), okay)
-	case 6:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(6));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(7), okay)
-	case 7:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(7));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(8), okay)
-	case 8:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(8));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(9), okay)
-	case 9:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(9));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(10), okay)
-	case 10:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(10));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(11), okay)
-	case 11:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(11));
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(12), okay)
-	case 12:
-		dev = DEVICE_DT_GET(UART_NXP_S32_NODE(12));
-		break;
-#endif
-	default:
-		dev = NULL;
-		break;
-	}
-
-	if (dev != NULL) {
-		s32_uart_device_event(dev, event, user_data);
-	}
-}
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+DT_INST_FOREACH_STATUS_OKAY(UART_NXP_S32_INIT_DEVICE)

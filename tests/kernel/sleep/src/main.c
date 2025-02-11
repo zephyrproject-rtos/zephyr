@@ -72,8 +72,6 @@ static void test_objects_init(void)
 	k_sem_init(&test_thread_sem, 0, UINT_MAX);
 	k_sem_init(&helper_thread_sem, 0, UINT_MAX);
 	k_sem_init(&task_sem, 0, UINT_MAX);
-
-	TC_PRINT("Kernel objects initialized\n");
 }
 
 static void align_to_tick_boundary(void)
@@ -83,9 +81,7 @@ static void align_to_tick_boundary(void)
 	tick = k_uptime_get_32();
 	while (k_uptime_get_32() == tick) {
 		/* Busy wait to align to tick boundary */
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(50);
-#endif
+		Z_SPIN_DELAY(50);
 	}
 
 }
@@ -102,14 +98,17 @@ static int sleep_time_valid(uint32_t start, uint32_t end, uint32_t dur)
 	return dt >= dur && dt <= (dur + TICK_MARGIN);
 }
 
-static void test_thread(int arg1, int arg2)
+static void test_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	uint32_t start_tick;
 	uint32_t end_tick;
 
 	k_sem_take(&test_thread_sem, K_FOREVER);
 
-	TC_PRINT("Testing normal expiration of k_sleep()\n");
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
@@ -123,7 +122,6 @@ static void test_thread(int arg1, int arg2)
 		return;
 	}
 
-	TC_PRINT("Testing: test thread sleep + helper thread wakeup test\n");
 	k_sem_give(&helper_thread_sem);   /* Activate helper thread */
 	align_to_tick_boundary();
 
@@ -137,7 +135,6 @@ static void test_thread(int arg1, int arg2)
 		return;
 	}
 
-	TC_PRINT("Testing: test thread sleep + isr offload wakeup test\n");
 	k_sem_give(&helper_thread_sem);   /* Activate helper thread */
 	align_to_tick_boundary();
 
@@ -151,7 +148,6 @@ static void test_thread(int arg1, int arg2)
 		return;
 	}
 
-	TC_PRINT("Testing: test thread sleep + main wakeup test thread\n");
 	k_sem_give(&task_sem);    /* Activate task */
 	align_to_tick_boundary();
 
@@ -173,8 +169,11 @@ static void irq_offload_isr(const void *arg)
 	k_wakeup((k_tid_t) arg);
 }
 
-static void helper_thread(int arg1, int arg2)
+static void helper_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	k_sem_take(&helper_thread_sem, K_FOREVER);
 	/* Wake the test thread */
@@ -207,19 +206,15 @@ ZTEST(sleep, test_sleep)
 
 	test_thread_id = k_thread_create(&test_thread_data, test_thread_stack,
 					 THREAD_STACK,
-					 (k_thread_entry_t) test_thread,
+					 test_thread,
 					 0, 0, NULL, TEST_THREAD_PRIORITY,
 					 0, K_NO_WAIT);
 
-	TC_PRINT("Test thread started: id = %p\n", test_thread_id);
-
 	helper_thread_id = k_thread_create(&helper_thread_data,
 					   helper_thread_stack, THREAD_STACK,
-					   (k_thread_entry_t) helper_thread,
+					   helper_thread,
 					   0, 0, NULL, HELPER_THREAD_PRIORITY,
 					   0, K_NO_WAIT);
-
-	TC_PRINT("Helper thread started: id = %p\n", helper_thread_id);
 
 	/* Activate test_thread */
 	k_sem_give(&test_thread_sem);
@@ -232,7 +227,6 @@ ZTEST(sleep, test_sleep)
 
 	zassert_false(test_failure, "test failure");
 
-	TC_PRINT("Testing kernel k_sleep()\n");
 	align_to_tick_boundary();
 	start_tick = k_uptime_get_32();
 	k_sleep(K_SECONDS(1));

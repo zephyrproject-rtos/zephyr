@@ -5,7 +5,9 @@
 
 menuconfig ETH_ESP32
 	bool "ESP32 Ethernet driver"
-	depends on SOC_ESP32
+	default y
+	depends on SOC_SERIES_ESP32
+	depends on DT_HAS_ESPRESSIF_ESP32_ETH_ENABLED
 	select MDIO
 	help
 	  Enable ESP32 Ethernet driver.

@@ -1,0 +1,20 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: gd32e507v_start
+name: GigaDevice GD32E507V-START
+type: mcu
+arch: arm
+ram: 128
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - pwm
+  - gpio
+  - watchdog
+  - counter
+  - dma
+vendor: gd

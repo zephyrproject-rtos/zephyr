@@ -57,6 +57,10 @@ enum http_method {
 	HTTP_MKCALENDAR = 30, /**< MKCALENDAR */
 	HTTP_LINK = 31, /**< LINK */
 	HTTP_UNLINK = 32, /**< UNLINK */
+
+	/** @cond INTERNAL_HIDDEN */
+	HTTP_METHOD_END_VALUE /* keep this the last value */
+	/** @endcond */
 };
 
 #ifdef __cplusplus

@@ -1,0 +1,19 @@
+identifier: slstk3701a
+name: EFM32GG11 Giant Gecko Starter Kit (SLSTK3701A)
+type: mcu
+arch: arm
+ram: 512
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - i2c
+  - gpio
+  - netif:eth
+  - nvs
+testing:
+  ignore_tags:
+    - bluetooth
+vendor: silabs

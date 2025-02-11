@@ -38,14 +38,14 @@ static int print_die_temperature(const struct device *dev)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int rc;
 
 	for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
 		if (!device_is_ready(sensors[i])) {
 			printk("sensor: device %s not ready.\n", sensors[i]->name);
-			return;
+			return 0;
 		}
 	}
 
@@ -53,9 +53,10 @@ void main(void)
 		for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
 			rc = print_die_temperature(sensors[i]);
 			if (rc < 0) {
-				return;
+				return 0;
 			}
 		}
 		k_msleep(300);
 	}
+	return 0;
 }

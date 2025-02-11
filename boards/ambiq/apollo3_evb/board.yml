@@ -1,0 +1,5 @@
+board:
+  name: apollo3_evb
+  vendor: ambiq
+  socs:
+  - name: apollo3_blue

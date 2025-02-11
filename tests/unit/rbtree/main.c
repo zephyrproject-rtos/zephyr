@@ -6,14 +6,14 @@
 #include <zephyr/ztest.h>
 #include <zephyr/sys/rb.h>
 
-#include "../../../lib/os/rb.c"
+#include "../../../lib/utils/rb.c"
 
 #define _CHECK(n) \
 	zassert_true(!!(n), "Tree check failed: [ " #n " ] @%d", __LINE__)
 
 #define MAX_NODES 256
 
-static struct rbtree tree;
+static struct rbtree test_rbtree;
 
 static struct rbnode nodes[MAX_NODES];
 
@@ -123,10 +123,10 @@ void check_rb(void)
 {
 	last_black_height = 0;
 
-	_CHECK(tree.root);
-	_CHECK(z_rb_is_black(tree.root));
+	_CHECK(test_rbtree.root);
+	_CHECK(z_rb_is_black(test_rbtree.root));
 
-	check_rbnode(tree.root, 0);
+	check_rbnode(test_rbtree.root, 0);
 }
 
 /* First validates the external API behavior via a walk, then checks
@@ -140,11 +140,11 @@ void _check_tree(int size, int use_foreach)
 	(void)memset(walked_nodes, 0, sizeof(walked_nodes));
 
 	if (use_foreach) {
-		RB_FOR_EACH(&tree, n) {
+		RB_FOR_EACH(&test_rbtree, n) {
 			visit_node(n, &nwalked);
 		}
 	} else {
-		rb_walk(&tree, visit_node, &nwalked);
+		rb_walk(&test_rbtree, visit_node, &nwalked);
 	}
 
 	/* Make sure all found nodes are in-order and marked in the tree */
@@ -164,7 +164,7 @@ void _check_tree(int size, int use_foreach)
 	/* Make sure all tree bits properly reflect the set of nodes we found */
 	ni = 0;
 	for (i = 0; i < MAX_NODES; i++) {
-		_CHECK(get_node_mask(i) == rb_contains(&tree, &nodes[i]));
+		_CHECK(get_node_mask(i) == rb_contains(&test_rbtree, &nodes[i]));
 
 		if (get_node_mask(i)) {
 			_CHECK(node_index(walked_nodes[ni]) == i);
@@ -174,7 +174,7 @@ void _check_tree(int size, int use_foreach)
 
 	_CHECK(ni == nwalked);
 
-	if (tree.root) {
+	if (test_rbtree.root) {
 		check_rb();
 	}
 }
@@ -200,8 +200,8 @@ void test_tree(int size)
 	/* Small trees get checked after every op, big trees less often */
 	int small_tree = size <= 32;
 
-	(void)memset(&tree, 0, sizeof(tree));
-	tree.lessthan_fn = node_lessthan;
+	(void)memset(&test_rbtree, 0, sizeof(test_rbtree));
+	test_rbtree.lessthan_fn = node_lessthan;
 	(void)memset(nodes, 0, sizeof(nodes));
 	(void)memset(node_mask, 0, sizeof(node_mask));
 
@@ -210,10 +210,10 @@ void test_tree(int size)
 			int node = next_rand_mod(size);
 
 			if (!get_node_mask(node)) {
-				rb_insert(&tree, &nodes[node]);
+				rb_insert(&test_rbtree, &nodes[node]);
 				set_node_mask(node, 1);
 			} else {
-				rb_remove(&tree, &nodes[node]);
+				rb_remove(&test_rbtree, &nodes[node]);
 				set_node_mask(node, 0);
 			}
 
@@ -260,21 +260,21 @@ ZTEST(rbtree_api, test_rb_get_minmax)
 	struct rbnode temp = {0};
 
 	/* Initialize a tree and insert it */
-	(void)memset(&tree, 0, sizeof(tree));
-	tree.lessthan_fn = node_lessthan;
+	(void)memset(&test_rbtree, 0, sizeof(test_rbtree));
+	test_rbtree.lessthan_fn = node_lessthan;
 	(void)memset(nodes, 0, sizeof(nodes));
 
-	zassert_true(rb_get_min(&tree) == NULL, "the tree is invalid");
+	zassert_true(rb_get_min(&test_rbtree) == NULL, "the tree is invalid");
 
 	for (int i = 0; i < 8; i++) {
-		rb_insert(&tree, &nodes[i]);
+		rb_insert(&test_rbtree, &nodes[i]);
 	}
 
-	rb_remove(&tree, &temp);
+	rb_remove(&test_rbtree, &temp);
 
 	/* Check if tree's max and min node are expected */
-	zassert_true(rb_get_min(&tree) == &nodes[0], "the tree is invalid");
-	zassert_true(rb_get_max(&tree) == &nodes[7], "the tree is invalid");
+	zassert_true(rb_get_min(&test_rbtree) == &nodes[0], "the tree is invalid");
+	zassert_true(rb_get_max(&test_rbtree) == &nodes[7], "the tree is invalid");
 }
 
 ZTEST_SUITE(rbtree_api, NULL, NULL, NULL, NULL, NULL);

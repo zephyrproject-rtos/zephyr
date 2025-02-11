@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 comsuisse AG
  * Copyright (c) 2018 Justin Watson
+ * Copyright (c) 2023 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +23,7 @@
 #include <soc.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -32,8 +34,10 @@
 LOG_MODULE_REGISTER(adc_sam_afec);
 
 #define NUM_CHANNELS 12
-
 #define CONF_ADC_PRESCALER ((SOC_ATMEL_SAM_MCK_FREQ_HZ / 15000000) - 1)
+#ifndef AFEC_MR_ONE
+#define AFEC_MR_ONE AFEC_MR_ANACH
+#endif
 
 typedef void (*cfg_func_t)(const struct device *dev);
 
@@ -60,7 +64,7 @@ struct adc_sam_data {
 struct adc_sam_cfg {
 	Afec *regs;
 	cfg_func_t cfg_func;
-	uint32_t periph_id;
+	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -105,11 +109,13 @@ static int adc_sam_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+#ifdef AFEC_11147
 	/* Set single ended channels to unsigned and differential channels
 	 * to signed conversions.
 	 */
 	afec->AFEC_EMR &= ~(AFEC_EMR_SIGNMODE(
 			  AFEC_EMR_SIGNMODE_SE_UNSG_DF_SIGN_Val));
+#endif
 
 	return 0;
 }
@@ -283,11 +289,16 @@ static int adc_sam_init(const struct device *dev)
 	}
 
 	/* Enable PGA and Current Bias. */
-	afec->AFEC_ACR = AFEC_ACR_PGA0EN
+	afec->AFEC_ACR = AFEC_ACR_IBCTL(1)
+#ifdef AFEC_11147
+		       | AFEC_ACR_PGA0EN
 		       | AFEC_ACR_PGA1EN
-		       | AFEC_ACR_IBCTL(1);
+#endif
+		       ;
 
-	soc_pmc_peripheral_enable(cfg->periph_id);
+	/* Enable AFEC clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	/* Connect pins to the peripheral */
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -359,7 +370,7 @@ static void adc_sam_isr(const struct device *dev)
 	static const struct adc_sam_cfg adc##n##_sam_cfg = {		\
 		.regs = (Afec *)DT_INST_REG_ADDR(n),			\
 		.cfg_func = adc##n##_sam_cfg_func,			\
-		.periph_id = DT_INST_PROP(n, peripheral_id),		\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\

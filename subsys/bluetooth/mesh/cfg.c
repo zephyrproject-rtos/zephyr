@@ -15,7 +15,8 @@
 #include "heartbeat.h"
 #include "friend.h"
 #include "cfg.h"
-#include "adv.h"
+#include "od_priv_proxy.h"
+#include "priv_beacon.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_CFG_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -43,7 +44,7 @@ void bt_mesh_beacon_set(bool beacon)
 	if (beacon) {
 		bt_mesh_beacon_enable();
 	} else {
-		bt_mesh_beacon_disable();
+		/* Beacon timer will stop automatically when all beacons are disabled. */
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
@@ -82,6 +83,85 @@ static enum bt_mesh_feat_state feature_get(int feature_flag)
 		       BT_MESH_FEATURE_DISABLED;
 }
 
+int bt_mesh_priv_beacon_set(enum bt_mesh_feat_state priv_beacon)
+{
+	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS)) {
+		return -ENOTSUP;
+	}
+
+	err = feature_set(BT_MESH_PRIV_BEACON, priv_beacon);
+	if (err) {
+		return err;
+	}
+
+	if (priv_beacon == BT_MESH_FEATURE_ENABLED) {
+		bt_mesh_beacon_enable();
+	} else {
+		/* Beacon timer will stop automatically when all beacons are disabled. */
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACON_SRV) &&
+	    atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+		bt_mesh_priv_beacon_srv_store_schedule();
+	}
+
+	return 0;
+}
+
+enum bt_mesh_feat_state bt_mesh_priv_beacon_get(void)
+{
+	if (!IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS)) {
+		return BT_MESH_FEATURE_NOT_SUPPORTED;
+	}
+
+	return feature_get(BT_MESH_PRIV_BEACON);
+}
+
+void bt_mesh_priv_beacon_update_interval_set(uint8_t interval)
+{
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	bt_mesh.priv_beacon_int = interval;
+#endif
+}
+
+uint8_t bt_mesh_priv_beacon_update_interval_get(void)
+{
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	return bt_mesh.priv_beacon_int;
+#else
+	return 0;
+#endif
+}
+
+int bt_mesh_od_priv_proxy_get(void)
+{
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+	return bt_mesh.on_demand_state;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+int bt_mesh_od_priv_proxy_set(uint8_t on_demand_proxy)
+{
+#if !defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+	return -ENOTSUP;
+#else
+
+	if (bt_mesh_priv_gatt_proxy_get() != BT_MESH_FEATURE_NOT_SUPPORTED) {
+		bt_mesh.on_demand_state = on_demand_proxy;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && IS_ENABLED(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV) &&
+	    atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+		bt_mesh_od_priv_proxy_srv_store_schedule();
+	}
+	return 0;
+#endif
+}
+
 static bool node_id_is_running(struct bt_mesh_subnet *sub, void *cb_data)
 {
 	return sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING;
@@ -98,6 +178,13 @@ int bt_mesh_gatt_proxy_set(enum bt_mesh_feat_state gatt_proxy)
 	err = feature_set(BT_MESH_GATT_PROXY, gatt_proxy);
 	if (err) {
 		return err;
+	}
+
+	/* The binding from section 4.2.45.1 disables Private GATT Proxy state when non-private
+	 * state is enabled.
+	 */
+	if (gatt_proxy == BT_MESH_FEATURE_ENABLED) {
+		feature_set(BT_MESH_PRIV_GATT_PROXY, BT_MESH_FEATURE_DISABLED);
 	}
 
 	if ((gatt_proxy == BT_MESH_FEATURE_ENABLED) ||
@@ -123,6 +210,48 @@ enum bt_mesh_feat_state bt_mesh_gatt_proxy_get(void)
 	}
 
 	return feature_get(BT_MESH_GATT_PROXY);
+}
+
+int bt_mesh_priv_gatt_proxy_set(enum bt_mesh_feat_state priv_gatt_proxy)
+{
+	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) || !IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS)) {
+		return BT_MESH_FEATURE_NOT_SUPPORTED;
+	}
+
+	/* Reverse binding from section 4.2.45.1 doesn't allow to enable private state if
+	 * non-private state is enabled.
+	 */
+	if (bt_mesh_gatt_proxy_get() == BT_MESH_FEATURE_ENABLED) {
+		return BT_MESH_FEATURE_DISABLED;
+	}
+
+	err = feature_set(BT_MESH_PRIV_GATT_PROXY, priv_gatt_proxy);
+	if (err) {
+		return err;
+	}
+
+	if (priv_gatt_proxy == BT_MESH_FEATURE_ENABLED) {
+		/* Re-generate proxy beacon */
+		bt_mesh_adv_gatt_update();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACON_SRV) &&
+	    atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+		bt_mesh_priv_beacon_srv_store_schedule();
+	}
+
+	return 0;
+}
+
+enum bt_mesh_feat_state bt_mesh_priv_gatt_proxy_get(void)
+{
+	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) || !IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS)) {
+		return BT_MESH_FEATURE_NOT_SUPPORTED;
+	}
+
+	return feature_get(BT_MESH_PRIV_GATT_PROXY);
 }
 
 int bt_mesh_default_ttl_set(uint8_t default_ttl)
@@ -331,7 +460,7 @@ static void clear_cfg(void)
 
 	err = settings_delete("bt/mesh/Cfg");
 	if (err) {
-		LOG_ERR("Failed to clear configuration");
+		LOG_ERR("Failed to clear configuration (err: %d)", err);
 	} else {
 		LOG_DBG("Cleared configuration");
 	}

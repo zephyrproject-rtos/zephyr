@@ -680,7 +680,7 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle));
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unknown conn handle 0x%04X for iq samples report",
 			sys_le16_to_cpu(evt->conn_handle));
@@ -689,11 +689,13 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_ENABLED)) {
 		LOG_ERR("Received conn CTE report when CTE receive disabled");
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
 	if (!(conn->cte_types & BIT(evt->cte_type))) {
 		LOG_DBG("CTE filtered out by cte_type: %u", evt->cte_type);
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
@@ -730,7 +732,7 @@ int hci_df_vs_prepare_connection_iq_report(struct net_buf *buf,
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle));
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unknown conn handle 0x%04X for iq samples report",
 			sys_le16_to_cpu(evt->conn_handle));
@@ -739,11 +741,13 @@ int hci_df_vs_prepare_connection_iq_report(struct net_buf *buf,
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_ENABLED)) {
 		LOG_ERR("Received conn CTE report when CTE receive disabled");
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
 	if (!(conn->cte_types & BIT(evt->cte_type))) {
 		LOG_DBG("CTE filtered out by cte_type: %u", evt->cte_type);
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
@@ -853,7 +857,7 @@ int hci_df_prepare_conn_cte_req_failed(struct net_buf *buf,
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle));
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unknown conn handle 0x%04X for iq samples report",
 			sys_le16_to_cpu(evt->conn_handle));
@@ -862,6 +866,7 @@ int hci_df_prepare_conn_cte_req_failed(struct net_buf *buf,
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_REQ_ENABLED)) {
 		LOG_ERR("Received conn CTE request notification when CTE REQ disabled");
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
@@ -1139,7 +1144,7 @@ static int bt_df_set_conn_cte_req_enable(struct bt_conn *conn, bool enable,
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_PARAMS_SET)) {
-		LOG_ERR("Can't start CTE requres procedure before CTE RX params setup");
+		LOG_ERR("Can't start CTE request procedure before CTE RX params setup");
 		return -EINVAL;
 	}
 

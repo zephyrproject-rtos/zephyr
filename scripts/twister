@@ -44,6 +44,9 @@ pairs:
     Extra configuration options to be merged with a master prj.conf
     when building or running the test case.
 
+  required_snippets: <list of snippets>
+    Snippets that must be applied for the test case to run.
+
   sysbuild: <True|False> (default False)
     If true, build the sample using the sysbuild infrastructure. Filtering
     will only be enabled for the main project, and is not supported for
@@ -86,6 +89,9 @@ pairs:
 
   platform_exclude: <list of platforms>
     Set of platforms that this test case should not run on.
+
+  simulation_exclude: <list of simulators>
+    Set of simulators that this test case should not run on.
 
   extra_sections: <list of extra binary sections>
     When computing sizes, twister will report errors if it finds
@@ -139,15 +145,6 @@ pairs:
         not (right associative)
         all comparison operators (non-associative)
 
-    arch_allow, arch_exclude, platform_allow, platform_exclude
-    are all syntactic sugar for these expressions. For instance
-
-        arch_exclude = x86 arc
-
-    Is the same as:
-
-        filter = not ARCH in ["x86", "arc"]
-
     The ':' operator compiles the string argument as a regular expression,
     and then returns a true value only if the symbol's value in the environment
     matches. For example, if CONFIG_SOC="stm32f107xc" then
@@ -155,6 +152,22 @@ pairs:
         filter = CONFIG_SOC : "stm.*"
 
     Would match it.
+
+    Note that arch_allow, arch_exclude, platform_allow, platform_exclude
+    are not just syntactic sugar for filter expressions. For instance
+
+        arch_exclude = x86 arc
+
+    Can appear at first glance to have a similar effect to
+
+        filter = not ARCH in ["x86", "arc"]
+
+    but unlike "filter", these cause platforms to be filtered already during the testplan
+    generation. While "filter" does not exclue platforms at the testplan generation, and instead
+    relies on the result of running the build configuration stage. That is, to evaluate the filter
+    expression, cmake is run for that target, and then the filter evaluated as a gate for the
+    build and run steps.
+    Therefore filtering by using {platform|arch}_{exclude|allow} is much faster.
 
 The set of test cases that actually run depends on directives in the testsuite
 files and options passed in on the command line. If there is any confusion,
@@ -198,7 +211,8 @@ if __name__ == "__main__":
     try:
         parser = add_parse_arguments()
         options = parse_arguments(parser, sys.argv[1:])
-        ret = main(options)
+        default_options = parse_arguments(parser, [], on_init=False)
+        ret = main(options, default_options)
     finally:
         if (os.name != "nt") and os.isatty(1):
             # (OS is not Windows) and (stdout is interactive)

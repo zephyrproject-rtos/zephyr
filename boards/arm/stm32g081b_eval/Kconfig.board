@@ -1,8 +1,0 @@
-# STM32G081B Evaluation board configuration
-
-# Copyright 2021 The Chromium OS Authors
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_STM32G081B_EVAL
-	bool "STM32G081B Evaluation Board"
-	depends on SOC_STM32G081XX

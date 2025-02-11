@@ -779,7 +779,7 @@ int arc_core_mpu_get_max_domain_partition_regions(void)
 /**
  * @brief validate the given buffer is user accessible or not
  */
-int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
+int arc_core_mpu_buffer_validate(const void *addr, size_t size, int write)
 {
 	int r_index;
 	int key = arch_irq_lock();
@@ -814,9 +814,8 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
  * This function provides the default configuration mechanism for the Memory
  * Protection Unit (MPU).
  */
-static int arc_mpu_init(const struct device *arg)
+static int arc_mpu_init(void)
 {
-	ARG_UNUSED(arg);
 	uint32_t num_regions;
 	uint32_t i;
 

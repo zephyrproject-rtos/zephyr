@@ -1,0 +1,76 @@
+# ST Microelectronics STM32L0 MCU line
+
+# Copyright (c) 2018 Endre Karlson <endre.karlson@gmail.com>
+# Copyright (c) 2021 Nomono AS
+# Copyright (c) 2023 OS Systems
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32L0X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32l0x" if SOC_SERIES_STM32L0X
+
+config SOC_STM32L010X4
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC_STM32L010X6
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC_STM32L010X8
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC_STM32L010XB
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC_STM32L011XX
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC_STM32L031XX
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC_STM32L051XX
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC_STM32L053XX
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC_STM32L071XX
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC_STM32L072XX
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC_STM32L073XX
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC_STM32L081XX
+	bool
+	select SOC_SERIES_STM32L0X
+
+config SOC
+	default "stm32l010x4" if SOC_STM32L010X4
+	default "stm32l010x6" if SOC_STM32L010X6
+	default "stm32l010x8" if SOC_STM32L010X8
+	default "stm32l010xb" if SOC_STM32L010XB
+	default "stm32l011xx" if SOC_STM32L011XX
+	default "stm32l031xx" if SOC_STM32L031XX
+	default "stm32l051xx" if SOC_STM32L051XX
+	default "stm32l053xx" if SOC_STM32L053XX
+	default "stm32l071xx" if SOC_STM32L071XX
+	default "stm32l072xx" if SOC_STM32L072XX
+	default "stm32l073xx" if SOC_STM32L073XX
+	default "stm32l081xx" if SOC_STM32L081XX

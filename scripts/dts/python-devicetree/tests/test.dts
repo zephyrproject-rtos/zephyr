@@ -237,6 +237,7 @@
 
 		node {
 			reg = <1 2>;
+			reg-names = "foo", "bar";
 		};
 	};
 	reg-zero-size-cells {
@@ -469,16 +470,21 @@
 	// 'child-binding:')
 	//
 
+	child-binding-dep {
+	};
+
 	child-binding {
 		compatible = "top-binding";
 		child-1 {
 			child-prop = <1>;
 			grandchild {
 				grandchild-prop = <2>;
+				grandchild-ref = < &{/child-binding-dep} >;
 			};
 		};
 		child-2 {
 			child-prop = <3>;
+			child-ref = < &{/child-binding-dep} >;
 		};
 	};
 

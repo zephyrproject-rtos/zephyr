@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "util/util.h"
@@ -39,9 +39,7 @@
 #include "lll_filter.h"
 #include "lll_conn_iso.h"
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#include "ull_tx_queue.h"
-#endif
+#include "ll_sw/ull_tx_queue.h"
 
 #include "ull_adv_types.h"
 #include "ull_conn_types.h"
@@ -54,24 +52,22 @@
 
 #include "ll.h"
 
-#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
-#include "isoal.h"
-#include "ull_iso_types.h"
-#include "ull_conn_iso_types.h"
+#include "ll_sw/isoal.h"
+#include "ll_sw/ull_iso_types.h"
+#include "ll_sw/ull_conn_iso_types.h"
 
-#include "ull_llcp.h"
-#endif
+#include "ll_sw/ull_llcp.h"
 
 #include "hal/debug.h"
 
 static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
-			    memq_link_t *link, struct node_rx_hdr *rx);
+			    memq_link_t *link, struct node_rx_pdu *rx);
 static void ticker_op_stop_adv_cb(uint32_t status, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 					       void *param);
 
-void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
+void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		     struct lll_conn *lll)
 {
 	uint32_t conn_offset_us, conn_interval_us;
@@ -93,6 +89,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	uint16_t max_rx_time;
 	uint16_t win_offset;
 	memq_link_t *link;
+	uint32_t slot_us;
 	uint8_t chan_sel;
 	void *node;
 
@@ -100,7 +97,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	conn = lll->hdr.parent;
 
 	/* Populate the peripheral context */
-	pdu_adv = (void *)((struct node_rx_pdu *)rx)->pdu;
+	pdu_adv = (void *)rx->pdu;
 
 	peer_addr_type = pdu_adv->tx_addr;
 	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
@@ -123,7 +120,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	/* Use the link stored in the node rx to enqueue connection
 	 * complete node rx towards LL context.
 	 */
-	link = rx->link;
+	link = rx->hdr.link;
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
 	const uint8_t peer_id_addr_type = (peer_addr_type & 0x01);
@@ -188,15 +185,13 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		win_delay_us = WIN_DELAY_LEGACY;
 	}
 
-#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 	/* Set LLCP as connection-wise connected */
 	ull_cp_state_set(conn, ULL_CP_CONNECTED);
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	/* calculate the window widening */
 	conn->periph.sca = pdu_adv->connect_ind.sca;
 	lll->periph.window_widening_periodic_us =
-		ceiling_fraction(((lll_clock_ppm_local_get() +
+		DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 				   lll_clock_ppm_get(conn->periph.sca)) *
 				  conn_interval_us), USEC_PER_SEC);
 	lll->periph.window_widening_max_us = (conn_interval_us >> 1) -
@@ -207,15 +202,9 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	/* procedure timeouts */
 	conn->supervision_timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
 
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	conn->procedure_reload =
-		RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
-#else
 	/* Setup the PRT reload */
 	ull_cp_prt_reload_set(conn, conn_interval_us);
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	uint16_t conn_accept_timeout;
 
@@ -224,7 +213,6 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 #else
 	conn->connect_accept_to = DEFAULT_CONNECTION_ACCEPT_TIMEOUT_US;
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
-#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	/* APTO in no. of connection events */
@@ -289,7 +277,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	cc->sca = conn->periph.sca;
 
 	lll->handle = ll_conn_handle_get(conn);
-	rx->handle = lll->handle;
+	rx->hdr.handle = lll->handle;
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
@@ -309,11 +297,11 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		ll_rx_put(link, rx);
 
 		/* use the rx node for CSA event */
-		rx = (void *)rx_csa;
-		link = rx->link;
+		rx = rx_csa;
+		link = rx->hdr.link;
 
-		rx->handle = lll->handle;
-		rx->type = NODE_RX_TYPE_CHAN_SEL_ALGO;
+		rx->hdr.handle = lll->handle;
+		rx->hdr.type = NODE_RX_TYPE_CHAN_SEL_ALGO;
 
 		cs = (void *)rx_csa->pdu;
 
@@ -338,13 +326,13 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		 * advertising terminate event
 		 */
 		rx = adv->lll.node_rx_adv_term;
-		link = rx->link;
+		link = rx->hdr.link;
 
 		handle = ull_adv_handle_get(adv);
 		LL_ASSERT(handle < BT_CTLR_ADV_SET);
 
-		rx->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
-		rx->handle = handle;
+		rx->hdr.type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
+		rx->hdr.handle = handle;
 		rx->rx_ftr.param_adv_term.status = 0U;
 		rx->rx_ftr.param_adv_term.conn_handle = lll->handle;
 		rx->rx_ftr.param_adv_term.num_events = 0U;
@@ -355,13 +343,8 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 #if defined(CONFIG_BT_CTLR_PHY)
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	max_tx_time = lll->max_tx_time;
-	max_rx_time = lll->max_rx_time;
-#else
 	max_tx_time = lll->dle.eff.max_tx_time;
 	max_rx_time = lll->dle.eff.max_rx_time;
-#endif
 #else /* !CONFIG_BT_CTLR_PHY */
 	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
@@ -378,10 +361,19 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy_rx, 1);
-#else
-	ready_delay_us = lll_radio_rx_ready_delay_get(0, 0);
-#endif
+	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy_rx, PHY_FLAGS_S8);
+#else /* CONFIG_BT_CTLR_PHY */
+	ready_delay_us = lll_radio_rx_ready_delay_get(0U, 0U);
+#endif /* CONFIG_BT_CTLR_PHY */
+
+	/* Calculate event time reservation */
+	slot_us = max_rx_time + max_tx_time;
+	slot_us += EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1);
+	slot_us += ready_delay_us;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
+		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	}
 
 	/* TODO: active_to_start feature port */
 	conn->ull.ticks_active_to_start = 0U;
@@ -389,12 +381,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	conn->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	conn->ull.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ready_delay_us +
-				       max_rx_time +
-				       EVENT_IFS_US +
-				       max_tx_time);
+	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
 	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
 				conn->ull.ticks_prepare_to_start);
@@ -458,8 +445,8 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		 * Deferred attempt to stop can fail as it would have
 		 * expired, hence ignore failure.
 		 */
-		ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			    TICKER_ID_ADV_STOP, NULL, NULL);
+		(void)ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+				  TICKER_ID_ADV_STOP, NULL, NULL);
 	}
 
 	/* Start Peripheral */
@@ -540,7 +527,7 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		int ret;
 
 		/* Handle any LL Control Procedures */
-		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
+		ret = ull_conn_llcp(conn, ticks_at_expire, remainder, lazy);
 		if (ret) {
 			/* NOTE: Under BT_CTLR_LOW_LAT, ULL_LOW context is
 			 *       disabled inside radio events, hence, abort any
@@ -595,52 +582,18 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	if (error_code) {
-		if (conn->llcp_enc.refresh == 0U) {
-			if ((conn->llcp_req == conn->llcp_ack) ||
-			     (conn->llcp_type != LLCP_ENCRYPTION)) {
-				return BT_HCI_ERR_CMD_DISALLOWED;
-			}
-
-			conn->llcp.encryption.error_code = error_code;
-			conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
-		} else {
-			if (conn->llcp_terminate.ack !=
-			    conn->llcp_terminate.req) {
-				return BT_HCI_ERR_CMD_DISALLOWED;
-			}
-
-			conn->llcp_terminate.reason_own = error_code;
-
-			conn->llcp_terminate.req++;
-		}
-	} else {
-		if ((conn->llcp_req == conn->llcp_ack) ||
-		     (conn->llcp_type != LLCP_ENCRYPTION)) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-
-		memcpy(&conn->llcp_enc.ltk[0], ltk,
-		       sizeof(conn->llcp_enc.ltk));
-
-		conn->llcp.encryption.error_code = 0U;
-		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
-	}
-#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	if (error_code) {
 		return ull_cp_ltk_req_neq_reply(conn);
 	} else {
 		return ull_cp_ltk_req_reply(conn, ltk);
 	}
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
-			    memq_link_t *link, struct node_rx_hdr *rx)
+			    memq_link_t *link, struct node_rx_pdu *rx)
 {
 	/* Reset the advertising disabled callback */
 	hdr->disabled_cb = NULL;
@@ -649,7 +602,7 @@ static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
 	lll->periph.initiated = 0U;
 
 	/* Mark for buffer for release */
-	rx->type = NODE_RX_TYPE_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	/* Release CSA#2 related node rx too */
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
@@ -664,11 +617,11 @@ static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
 		ll_rx_put(link, rx);
 
 		/* Use the rx node for CSA event */
-		rx = (void *)rx_csa;
-		link = rx->link;
+		rx = rx_csa;
+		link = rx->hdr.link;
 
 		/* Mark for buffer for release */
-		rx->type = NODE_RX_TYPE_RELEASE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 	}
 
 	/* Enqueue connection or CSA event to be release */
@@ -698,7 +651,6 @@ static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 	conn->periph.latency_cancel = 0U;
 }
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
 			      uint8_t const min_used_chans)
@@ -717,4 +669,3 @@ uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
 	return ull_cp_min_used_chans(conn, phys, min_used_chans);
 }
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
-#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */

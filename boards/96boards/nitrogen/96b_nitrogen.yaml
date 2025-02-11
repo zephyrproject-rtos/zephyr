@@ -1,0 +1,16 @@
+identifier: 96b_nitrogen
+name: 96Boards Nitrogen
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - ble
+  - gpio
+  - i2c
+  - spi
+ram: 64
+flash: 512
+vendor: seeed

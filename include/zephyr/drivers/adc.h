@@ -24,6 +24,8 @@ extern "C" {
 /**
  * @brief ADC driver APIs
  * @defgroup adc_interface ADC driver APIs
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -145,6 +147,29 @@ struct adc_channel_cfg {
 	 */
 	uint8_t input_negative;
 #endif /* CONFIG_ADC_CONFIGURABLE_INPUTS */
+
+#ifdef CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	uint8_t current_source_pin_set : 1;
+	/**
+	 * Output pin for the current sources.
+	 * This is only available if the driver enables this feature
+	 * via the hidden configuration option ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN.
+	 * The meaning itself is then defined by the driver itself.
+	 */
+	uint8_t current_source_pin[2];
+#endif /* CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN */
+
+#ifdef CONFIG_ADC_CONFIGURABLE_VBIAS_PIN
+	/**
+	 * Output pins for the bias voltage.
+	 * This is only available if the driver enables this feature
+	 * via the hidden configuration option ADC_CONFIGURABLE_VBIAS_PIN.
+	 * The field is interpreted as a bitmask, where each bit represents
+	 * one of the input pins. The actual mapping to the physical pins
+	 * depends on the driver itself.
+	 */
+	uint32_t vbias_pins;
+#endif /* CONFIG_ADC_CONFIGURABLE_VBIAS_PIN */
 };
 
 /**
@@ -216,10 +241,18 @@ struct adc_channel_cfg {
 	.reference        = DT_STRING_TOKEN(node_id, zephyr_reference), \
 	.acquisition_time = DT_PROP(node_id, zephyr_acquisition_time), \
 	.channel_id       = DT_REG_ADDR(node_id), \
+IF_ENABLED(UTIL_OR(DT_PROP(node_id, zephyr_differential), \
+		   UTIL_AND(CONFIG_ADC_CONFIGURABLE_INPUTS, \
+			    DT_NODE_HAS_PROP(node_id, zephyr_input_negative))), \
+	(.differential    = true,)) \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
-	(.differential    = DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
-	 .input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
+	(.input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
 	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
+IF_ENABLED(CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN, \
+	(.current_source_pin_set = DT_NODE_HAS_PROP(node_id, zephyr_current_source_pin), \
+	 .current_source_pin = DT_PROP_OR(node_id, zephyr_current_source_pin, {0}),)) \
+IF_ENABLED(CONFIG_ADC_CONFIGURABLE_VBIAS_PIN, \
+	(.vbias_pins = DT_PROP_OR(node_id, zephyr_vbias_pins, 0),)) \
 }
 
 /**
@@ -299,6 +332,91 @@ struct adc_dt_spec {
 		 .oversampling = DT_PROP_OR(node_id, zephyr_oversampling, 0),))
 
 /** @endcond */
+
+/**
+ * @brief Get ADC io-channel information from devicetree by name.
+ *
+ * This returns a static initializer for an @p adc_dt_spec structure
+ * given a devicetree node and a channel name. The node must have
+ * the "io-channels" property defined.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ * / {
+ *     zephyr,user {
+ *         io-channels = <&adc0 1>, <&adc0 3>;
+ *         io-channel-names = "A0", "A1";
+ *     };
+ * };
+ *
+ * &adc0 {
+ *    #address-cells = <1>;
+ *    #size-cells = <0>;
+ *
+ *    channel@3 {
+ *        reg = <3>;
+ *        zephyr,gain = "ADC_GAIN_1_5";
+ *        zephyr,reference = "ADC_REF_VDD_1_4";
+ *        zephyr,vref-mv = <750>;
+ *        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+ *        zephyr,resolution = <12>;
+ *        zephyr,oversampling = <4>;
+ *    };
+ * };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ * static const struct adc_dt_spec adc_chan0 =
+ *     ADC_DT_SPEC_GET_BY_NAME(DT_PATH(zephyr_user), a0);
+ * static const struct adc_dt_spec adc_chan1 =
+ *     ADC_DT_SPEC_GET_BY_NAME(DT_PATH(zephyr_user), a1);
+ *
+ * // Initializes 'adc_chan0' to:
+ * // {
+ * //     .dev = DEVICE_DT_GET(DT_NODELABEL(adc0)),
+ * //     .channel_id = 1,
+ * // }
+ * // and 'adc_chan1' to:
+ * // {
+ * //     .dev = DEVICE_DT_GET(DT_NODELABEL(adc0)),
+ * //     .channel_id = 3,
+ * //     .channel_cfg_dt_node_exists = true,
+ * //     .channel_cfg = {
+ * //         .channel_id = 3,
+ * //         .gain = ADC_GAIN_1_5,
+ * //         .reference = ADC_REF_VDD_1_4,
+ * //         .acquisition_time = ADC_ACQ_TIME_DEFAULT,
+ * //     },
+ * //     .vref_mv = 750,
+ * //     .resolution = 12,
+ * //     .oversampling = 4,
+ * // }
+ * @endcode
+ *
+ * @param node_id Devicetree node identifier.
+ * @param name Channel name.
+ *
+ * @return Static initializer for an adc_dt_spec structure.
+ */
+#define ADC_DT_SPEC_GET_BY_NAME(node_id, name) \
+	ADC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_NAME(node_id, name), \
+			   DT_IO_CHANNELS_INPUT_BY_NAME(node_id, name))
+
+/** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
+ *         instance by name.
+ *
+ * @see ADC_DT_SPEC_GET_BY_NAME()
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name Channel name.
+ *
+ * @return Static initializer for an adc_dt_spec structure.
+ */
+#define ADC_DT_SPEC_INST_GET_BY_NAME(inst, name) \
+	ADC_DT_SPEC_GET_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
  * @brief Get ADC io-channel information from devicetree.
@@ -666,6 +784,21 @@ static inline int z_impl_adc_read(const struct device *dev,
 }
 
 /**
+ * @brief Set a read request from a struct adc_dt_spec.
+ *
+ * @param spec ADC specification from Devicetree.
+ * @param sequence  Structure specifying requested sequence of samplings.
+ *
+ * @return A value from adc_read().
+ * @see adc_read()
+ */
+static inline int adc_read_dt(const struct adc_dt_spec *spec,
+			      const struct adc_sequence *sequence)
+{
+	return adc_read(spec->dev, sequence);
+}
+
+/**
  * @brief Set an asynchronous read request.
  *
  * @note This function is available only if @kconfig{CONFIG_ADC_ASYNC}
@@ -833,6 +966,18 @@ static inline int adc_sequence_init_dt(const struct adc_dt_spec *spec,
 }
 
 /**
+ * @brief Validate that the ADC device is ready.
+ *
+ * @param spec ADC specification from devicetree
+ *
+ * @retval true if the ADC device is ready for use and false otherwise.
+ */
+static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
+{
+	return device_is_ready(spec->dev);
+}
+
+/**
  * @}
  */
 
@@ -840,6 +985,6 @@ static inline int adc_sequence_init_dt(const struct adc_dt_spec *spec,
 }
 #endif
 
-#include <syscalls/adc.h>
+#include <zephyr/syscalls/adc.h>
 
 #endif  /* ZEPHYR_INCLUDE_DRIVERS_ADC_H_ */

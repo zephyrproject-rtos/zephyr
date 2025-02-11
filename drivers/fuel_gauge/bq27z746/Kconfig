@@ -1,0 +1,21 @@
+# Copyright (c) 2023, ithinx GmbH
+# Copyright (c) 2023, Tonies GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BQ27Z746
+	bool "BQ27Z746 Fuel Gauge"
+	default y
+	depends on DT_HAS_TI_BQ27Z746_ENABLED
+	select I2C
+	help
+	  Enable I2C-based driver for BQ27Z746 Fuel Gauge.
+
+config EMUL_BQ27Z746
+	bool "Emulate an BQ27Z746 fuel gague"
+	default y
+	depends on EMUL
+	depends on BQ27Z746
+	help
+	  It provides readings which follow a simple sequence, thus allowing
+	  test code to check that things are working as expected.

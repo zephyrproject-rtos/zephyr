@@ -27,6 +27,7 @@ config TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS
 	select CMSIS_NN_RESHAPE
 	select CMSIS_NN_SOFTMAX
 	select CMSIS_NN_SVD
+	select CMSIS_NN_LSTM
 	help
 	  This option adds support for CMSIS-NN optimized kernels when using TensorFlow Lite Micro.
 

@@ -15,6 +15,10 @@ properties:
     type: string
     description: A string used as a descriptive name for regulator outputs
 
+  regulator-init-microvolt:
+    type: int
+    description: Voltage set during initialisation
+
   regulator-min-microvolt:
     type: int
     description: smallest voltage consumers may set
@@ -26,6 +30,10 @@ properties:
   regulator-microvolt-offset:
     type: int
     description: Offset applied to voltages to compensate for voltage drops
+
+  regulator-init-microamp:
+    type: int
+    description: Current set during initialisation
 
   regulator-min-microamp:
     type: int
@@ -52,6 +60,11 @@ properties:
       at boot but shouldn't prevent it from being turned off later.
       This property is intended to only be used for regulators where
       software cannot read the state of the regulator.
+
+  regulator-boot-off:
+    type: boolean
+    description: |
+      Regulator should be disabled on boot.
 
   regulator-allow-bypass:
     type: boolean
@@ -143,7 +156,7 @@ properties:
     type: int
     description: |
       Set over current error limit. This is a limit where part of the hardware
-      propably is malfunctional and damage prevention is requested. Zero can be
+      probably is malfunctional and damage prevention is requested. Zero can be
       passed to disable error detection and value '1' indicates that detection
       should be enabled but limit setting can be omitted.
 
@@ -168,7 +181,7 @@ properties:
     type: int
     description: |
       Set over voltage error limit. This is a limit where part of the hardware
-      propably is malfunctional and damage prevention is requested Zero can be
+      probably is malfunctional and damage prevention is requested Zero can be
       passed to disable error detection and value '1' indicates that detection
       should be enabled but limit setting can be omitted. Limit is given as
       microvolt offset from voltage set to regulator.
@@ -196,7 +209,7 @@ properties:
     type: int
     description: |
       Set under voltage error limit. This is a limit where part of the hardware
-      propably is malfunctional and damage prevention is requested Zero can be
+      probably is malfunctional and damage prevention is requested Zero can be
       passed to disable error detection and value '1' indicates that detection
       should be enabled but limit setting can be omitted. Limit is given as
       microvolt offset from voltage set to regulator.
@@ -223,7 +236,7 @@ properties:
     type: int
     description: |
       Set over temperature error limit. This is a limit where part of the
-      hardware propably is malfunctional and damage prevention is requested Zero
+      hardware probably is malfunctional and damage prevention is requested Zero
       can be passed to disable error detection and value '1' indicates that
       detection should be enabled but limit setting can be omitted.
 
@@ -252,3 +265,11 @@ properties:
     description: |
       Maximum difference between current and target voltages that can be changed
       safely in a single step.
+
+  startup-delay-us:
+    type: int
+    description: Startup time, in microseconds
+
+  off-on-delay-us:
+    type: int
+    description: Off to on delay time, in microseconds

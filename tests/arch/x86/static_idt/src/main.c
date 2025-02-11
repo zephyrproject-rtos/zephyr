@@ -47,7 +47,7 @@ static volatile int int_handler_executed;
 /* Assume the spurious interrupt handler will execute and abort the task */
 static volatile int spur_handler_aborted_thread = 1;
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {
 	if (reason != K_ERR_SPURIOUS_IRQ) {
 		printk("wrong error reason\n");
@@ -89,7 +89,7 @@ void isr_handler(void)
  *
  */
 
-void exc_divide_error_handler(z_arch_esf_t *p_esf)
+void exc_divide_error_handler(struct arch_esf *p_esf)
 {
 	p_esf->eip += 2;
 	/* provide evidence that the handler executed */
@@ -175,7 +175,12 @@ ZTEST(static_idt, test_static_idt)
 	 * issuing a 'divide by zero' warning.
 	 */
 	error = 32;     /* avoid static checker uninitialized warnings */
-	error = error / exc_handler_executed;
+
+	__asm__ volatile ("movl $0x0, %%edx\n\t"
+			  "movl %0, %%eax\n\t"
+			  "movl %1, %%ebx\n\t"
+			  "idivl %%ebx;" : : "g" (error), "g" (exc_handler_executed) :
+			  "eax", "edx");
 
 	zassert_not_equal(exc_handler_executed, 0,
 			  "Exception handler did not execute");

@@ -6,7 +6,7 @@
 
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_GEN_PRIV_STACKS
-	SECTION_DATA_PROLOGUE(priv_stacks_noinit,,)
+	SECTION_DATA_PROLOGUE(priv_stacks_noinit,(NOLOAD),)
 	{
 	z_priv_stacks_ram_start = .;
 
@@ -20,7 +20,7 @@
 	 */
 
 #if defined(LINKER_ZEPHYR_PREBUILT)
-#include <linker-kobject-prebuilt-priv-stacks.h>
+#include <zephyr/linker-kobject-prebuilt-priv-stacks.h>
 #ifdef KOBJECT_PRIV_STACKS_ALIGN
 	. = ALIGN(KOBJECT_PRIV_STACKS_ALIGN);
 	. = . + KOBJECT_PRIV_STACKS_SZ;
@@ -28,7 +28,7 @@
 #endif /* LINKER_ZEPHYR_PREBUILT */
 
 #if defined(LINKER_ZEPHYR_FINAL)
-#include <linker-kobject-prebuilt-priv-stacks.h>
+#include <zephyr/linker-kobject-prebuilt-priv-stacks.h>
 #ifdef KOBJECT_PRIV_STACKS_ALIGN
 	. = ALIGN(KOBJECT_PRIV_STACKS_ALIGN);
 #endif

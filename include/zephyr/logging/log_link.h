@@ -10,6 +10,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log_msg.h>
 #include <zephyr/logging/log_internal.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,7 +84,7 @@ struct log_link {
  * @param _ctx      Context (void *) associated with the link.
  */
 #define LOG_LINK_DEF(_name, _api, _buf_wlen, _ctx) \
-	static uint32_t __aligned(Z_LOG_MSG2_ALIGNMENT) _name##_buf32[_buf_wlen]; \
+	static uint32_t __aligned(Z_LOG_MSG_ALIGNMENT) _name##_buf32[_buf_wlen]; \
 	static const struct mpsc_pbuf_buffer_config _name##_mpsc_pbuf_config = { \
 		.buf = (uint32_t *)_name##_buf32, \
 		.size = _buf_wlen, \
@@ -129,7 +130,7 @@ static inline int log_link_initiate(const struct log_link *link,
 
 /** @brief Activate log link.
  *
- * Function checks if link is initilized and completes initialization process.
+ * Function checks if link is initialized and completes initialization process.
  * When successfully returns, link is ready with domain and sources count fetched
  * and timestamp details updated.
  *

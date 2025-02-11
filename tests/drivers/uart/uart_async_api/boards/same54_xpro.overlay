@@ -1,0 +1,27 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&dmac {
+	status = "okay";
+};
+
+dut: &sercom1 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* Internally loop-back TX and RX on PAD0 */
+	rxpo = <0>;
+	txpo = <0>;
+
+	/* Configure DMA channels for async operation */
+	dmas = <&dmac 0 6>, <&dmac 1 7>;
+	dma-names = "rx", "tx";
+};
+
+&sercom2 {
+	/* configure DMA channels for async operation */
+	dmas = <&dmac 30 8>, <&dmac 31 9>;
+	dma-names = "rx", "tx";
+};

@@ -7,6 +7,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -25,7 +26,7 @@
 	};
 
 	sram0: memory@20000000 {
-	       compatible = "mmio-sram";
+		compatible = "mmio-sram";
 	};
 
 	soc {
@@ -242,6 +243,23 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+		};
+
+		adc0: adc@40002000 {
+			compatible = "silabs,gecko-adc";
+			reg = <0x40002000 0x400>;
+			interrupts = <15 0>;
+			frequency = <16000000>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		pinctrl: pin-controller {
+			/* Pin controller is a "virtual" device since SiLabs SoCs do pin
+			 * control in a distributed way (GPIO registers and PSEL
+			 * registers on each peripheral).
+			 */
+			compatible = "silabs,gecko-pinctrl";
 		};
 	};
 };

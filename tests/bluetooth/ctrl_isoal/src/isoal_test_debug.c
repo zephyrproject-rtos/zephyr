@@ -2,11 +2,6 @@
  * Copyright (c) 2020 Demant
  *
  * SPDX-License-Identifier: Apache-2.0
- *
- *  Run this test from zephyr directory as:
- *
- *     ./scripts/twister --coverage -p native_posix -v -T tests/bluetooth/ctrl_isoal/
- *
  */
 
 #include <string.h>
@@ -52,16 +47,56 @@ void isoal_test_debug_print_rx_pdu(struct isoal_pdu_rx *pdu_meta)
 {
 	zassert_not_null(pdu_meta, "");
 
+	struct pdu_iso *pdu;
+	uint8_t seg_length;
+
+	pdu = pdu_meta->pdu;
+	seg_length = 0;
+
 	PRINT("\n");
 	PRINT("PDU %04u (%10u) | %12s [%10s] %03u: ",
 		(uint32_t) pdu_meta->meta->payload_number,
 		(uint32_t) pdu_meta->meta->timestamp,
 		LLID_TO_STR(pdu_meta->pdu->ll_id),
 		DU_ERR_TO_STR(pdu_meta->meta->status),
-		pdu_meta->pdu->length);
+		pdu_meta->pdu->len);
 
-	for (int i = 0; i < pdu_meta->pdu->length; i++) {
-		PRINT("%02x ", pdu_meta->pdu->payload[i]);
+	for (uint8_t i = 0U; i < pdu->len; i++) {
+		if (seg_length == 0U && pdu->ll_id == PDU_BIS_LLID_FRAMED) {
+			seg_length = pdu->payload[i + 1U];
+			PRINT("[%s %s %03u]",
+				pdu->payload[i] & BIT(0) ? "C" : "S",
+				pdu->payload[i] & BIT(1) ? "C" : "-",
+				pdu->payload[i + 1U]);
+			if ((pdu->payload[i] & BIT(0)) == 0U) {
+				PRINT("(%8uus)",
+					((uint32_t)pdu->payload[i + 2U] +
+					((uint32_t)pdu->payload[i + 3U] << 8) +
+					((uint32_t)pdu->payload[i + 4U] << 16)));
+			}
+
+			PRINT(" / ");
+			PRINT("[%02x %02x]",
+				pdu->payload[i],
+				pdu->payload[i + 1U]);
+			if ((pdu->payload[i] & BIT(0)) == 0U) {
+				PRINT("(%02x %02x %02x)",
+					(uint32_t)pdu->payload[i + 4U],
+					(uint32_t)pdu->payload[i + 3U],
+					(uint32_t)pdu->payload[i + 2U]);
+			}
+
+			PRINT(" : ");
+			seg_length -= pdu->payload[i] & BIT(0) ? 0 : PDU_ISO_SEG_TIMEOFFSET_SIZE;
+			i += PDU_ISO_SEG_HDR_SIZE +
+				(pdu->payload[i] & BIT(0) ? 0 : PDU_ISO_SEG_TIMEOFFSET_SIZE);
+		}
+
+		PRINT("%02x ", pdu->payload[i]);
+		seg_length--;
+		if (seg_length == 0 && pdu->ll_id == PDU_BIS_LLID_FRAMED) {
+			PRINT("\n%44s", "");
+		}
 	}
 	PRINT("\n");
 	PRINT("\n");
@@ -86,7 +121,7 @@ void isoal_test_debug_print_rx_sdu(const struct isoal_sink             *sink_ctx
 
 	PRINT("\n");
 	PRINT("SDU %04d (%10d) | %12s [%10s] %03d: ",
-		sdu_frag->sdu.seqn,
+		sdu_frag->sdu.sn,
 		sdu_frag->sdu.timestamp,
 		STATE_TO_STR(sdu_frag->sdu_state),
 		DU_ERR_TO_STR(sdu_frag->sdu.status),
@@ -128,9 +163,9 @@ void isoal_test_debug_print_tx_pdu(struct node_tx_iso *node_tx)
 		(uint32_t) node_tx->payload_count,
 		 node_tx->sdu_fragments,
 		LLID_TO_STR(pdu->ll_id),
-		pdu->length);
+		pdu->len);
 
-	for (int i = 0; i < pdu->length; i++) {
+	for (int i = 0; i < pdu->len; i++) {
 		if (seg_length == 0 && pdu->ll_id == PDU_BIS_LLID_FRAMED) {
 			seg_length = pdu->payload[i+1];
 			PRINT("[%s %s %03u]",
@@ -193,6 +228,7 @@ void isoal_test_debug_print_tx_sdu(struct isoal_sdu_tx *tx_sdu)
 		PRINT("%02x ", buf[i]);
 	}
 	PRINT("\n");
+	PRINT("Cntr TS. <%10u>\n", tx_sdu->cntr_time_stamp);
 	PRINT("    Ref. <%10u>\n", tx_sdu->grp_ref_point);
 	PRINT("   Event <%10u>\n", (uint32_t)tx_sdu->target_event);
 	PRINT("\n");

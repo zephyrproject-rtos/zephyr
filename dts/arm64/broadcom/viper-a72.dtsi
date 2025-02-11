@@ -5,9 +5,9 @@
  */
 
 #include <arm64/armv8-a.dtsi>
-#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <broadcom/viper-common.dtsi>
 
-#include "viper-common.dtsi"
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
 	cpus {
@@ -36,7 +36,7 @@
 
 	soc {
 		gic: interrupt-controller@42700000 {
-			compatible = "arm,gic";
+			compatible = "arm,gic-v3", "arm,gic";
 			reg = <0x42700000 0x010000>,
 			      <0x42780000 0x600000>;
 			interrupt-controller;

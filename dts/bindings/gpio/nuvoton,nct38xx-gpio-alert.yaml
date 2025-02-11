@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Nuvoton NCT38XX series I2C-based GPIO expander alert handler
+    Nuvoton NCT38XX series I2C-based GPIO expander alert handler.
 
     Example:
       nct3807_alert_1 {
@@ -25,4 +25,4 @@ properties:
     type: phandles
     required: true
     description: |
-      NCT38XX devices which alert are handled by this alert handler.
+      List of NCT38XX multi-function devices managed by this alert handler.

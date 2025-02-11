@@ -14,11 +14,13 @@
 
 menuconfig MCUMGR_GRP_OS
 	bool "Mcumgr handlers for OS management"
-	select REBOOT
+	imply REBOOT
 	help
-	  Enables mcumgr handlers for OS management
+	  Enables MCUmgr handlers for OS management
 
 if MCUMGR_GRP_OS
+
+if REBOOT
 
 config MCUMGR_GRP_OS_RESET_MS
 	int "Delay before executing reset command (ms)"
@@ -26,7 +28,7 @@ config MCUMGR_GRP_OS_RESET_MS
 	depends on REBOOT
 	help
 	  When a reset command is received, the system waits this many milliseconds
-	  before performing the reset.  This delay allows time for the mcumgr
+	  before performing the reset.  This delay allows time for the MCUmgr
 	  response to be delivered.
 
 config MCUMGR_GRP_OS_RESET_HOOK
@@ -35,15 +37,18 @@ config MCUMGR_GRP_OS_RESET_HOOK
 	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
 	help
 	  Allows applications to control and get notifications of when a reset
-	  command has been issued via an mcumgr command. With this option
+	  command has been issued via an MCUmgr command. With this option
 	  disabled, modules will reboot when the command is received without
 	  notification, when this is enabled and a handler is registered, the
 	  application will be notified that a reset command has been received
 	  and will allow the application to perform any required operations
 	  before accepting or declining the reset request.
 
+endif
+
 config MCUMGR_GRP_OS_TASKSTAT
 	bool "Support for taskstat command"
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3 if ZCBOR_CANONICAL
 	depends on THREAD_MONITOR
 
 if MCUMGR_GRP_OS_TASKSTAT
@@ -130,6 +135,27 @@ config MCUMGR_GRP_OS_ECHO
 	default y
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 
+config MCUMGR_GRP_OS_DATETIME
+	bool "Support for datetime command"
+	depends on RTC
+	depends on $(dt_alias_enabled,rtc)
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	help
+	  Enables support for the datetime get and set functions, this allows for using the
+	  `rtc` alias device as a timesource from which the current time can be written or read.
+
+config MCUMGR_GRP_OS_DATETIME_MS
+	bool "Support millisecond field in datetime commands"
+	depends on MCUMGR_GRP_OS_DATETIME
+
+config MCUMGR_GRP_OS_DATETIME_HOOK
+	bool "Datetime hook"
+	depends on MCUMGR_GRP_OS_DATETIME
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  Allows applications to control and get notifications of when a datetime set/get
+	  command has been issued via an MCUmgr command.
+
 config MCUMGR_GRP_OS_MCUMGR_PARAMS
 	bool "MCUMGR Parameters retrieval command"
 
@@ -167,6 +193,16 @@ config MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
 	  build date/time in the output firmware image.
 
 endif
+
+if BOOTLOADER_MCUBOOT
+
+config MCUMGR_GRP_OS_BOOTLOADER_INFO
+	bool "Bootloader information"
+	help
+	  Allows to query MCUmgr about bootloader used by device and various bootloader
+	  parameters.
+
+endif # BOOTLOADER_MCUBOOT
 
 module = MCUMGR_GRP_OS
 module-str = mcumgr_grp_os

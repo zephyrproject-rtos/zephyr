@@ -322,6 +322,9 @@ struct tcpc_data {
 	/* Track CC line that VCONN was active on */
 	enum tc_cc_polarity ucpd_vconn_cc;
 
+	/* Dead Battery active */
+	bool dead_battery_active;
+
 	/* Timer for amount of time to wait for receiving a GoodCRC */
 	struct k_timer goodcrc_rx_timer;
 };

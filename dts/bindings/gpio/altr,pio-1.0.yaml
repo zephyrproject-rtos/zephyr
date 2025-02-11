@@ -1,0 +1,42 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Altera PIO node
+
+compatible: "altr,pio-1.0"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  direction:
+    type: string
+    description: |
+      Direction can be set to bidir, input, inout or output.
+      It cannot be configure when during the runtime and should be
+      set according to the synthesized FPGA design.
+    default: output
+    enum:
+      - "bidir"
+      - "input"
+      - "inout"
+      - "output"
+
+  outset:
+    type: boolean
+    description: |
+      Enable outset register to specify which bit of the output port to set.
+
+  outclear:
+    type: boolean
+    description: |
+      Enable outclear register to specify which output bit to clear.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

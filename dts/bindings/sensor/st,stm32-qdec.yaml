@@ -16,6 +16,34 @@ properties:
   pinctrl-names:
     required: true
 
+  st,encoder-mode:
+    type: int
+    description: |
+      Set encoder mode.
+      The following modes are supported:
+      0x1: Encoder mode 1 (Default)
+      0x2: Encoder mode 2
+      0x3: Encoder mode 3
+      Some MCUs supports additional modes:
+      0x10002: Encoder mode: Clock plus direction, x2 mode
+      0x10003: Encoder mode: Clock plus direction, x1 mode
+      0x10004: Encoder mode: Directional Clock, x2 mode
+      0x10005: Encoder mode: Directional Clock, x1 mode
+      0x10006: Quadrature encoder mode: x1 mode, counting on tim_ti1fp1
+      0x10007: Quadrature encoder mode: x1 mode, counting on tim_ti2fp2
+      Default value complies with stm32 low level timer encoder init value.
+    default: 0x1
+    enum:
+      - 0x1
+      - 0x2
+      - 0x3
+      - 0x10002
+      - 0x10003
+      - 0x10004
+      - 0x10005
+      - 0x10006
+      - 0x10007
+
   st,input-polarity-inverted:
     type: boolean
     description: Encoder is triggered by a falling edge on the input pin

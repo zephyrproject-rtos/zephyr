@@ -34,7 +34,7 @@
 	.if \off == 0
 		stl \d, [\s]
 	.else
-		.if \off > 256
+		.if \off > 255
 			STR.as \d, \s, \off / 8
 		.else
 			stl    \d, [\s, \off]

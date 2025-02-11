@@ -255,6 +255,9 @@ static int gpio_rt1718s_pin_interrupt_configure(const struct device *dev, gpio_p
 		case GPIO_INT_TRIG_LOW:
 			new_reg_mask8 = (reg_mask8 | mask_fall) & ~mask_rise;
 			break;
+		default:
+			ret = -EINVAL;
+			goto done;
 		}
 
 		ret = rt1718s_reg_burst_read(config->rt1718s_dev, RT1718S_REG_ALERT_MASK,

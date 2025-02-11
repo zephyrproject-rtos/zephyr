@@ -5,6 +5,8 @@ common:
 tests:
   sample.boards.mimxrt1060_evk.system_off:
     build_only: true
-    platform_allow: mimxrt1060_evk mimxrt1060_evkb
+    platform_allow:
+      - mimxrt1060_evk
+      - mimxrt1060_evkb
     integration_platforms:
       - mimxrt1060_evk

@@ -1,0 +1,19 @@
+#
+# Copyright 2019, 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: lpcxpresso55s69/lpc55s69/cpu1
+name: NXP LPCXpresso55S69 (CPU1)
+type: mcu
+arch: arm
+ram: 64
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+vendor: nxp

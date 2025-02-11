@@ -1,0 +1,26 @@
+# Timeaware gpio config options
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig TIMEAWARE_GPIO
+	bool "Timeaware GPIO driver"
+	help
+	  Enable config options for timeaware GPIO driver.
+
+if TIMEAWARE_GPIO
+
+module = TIMEAWARE_GPIO
+module-str = timeaware_gpio
+source "subsys/logging/Kconfig.template.log_config"
+
+config TIMEAWARE_GPIO_INIT_PRIORITY
+	int "Timeaware GPIO initialization priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  System initialization priority for timeaware GPIO drivers.
+
+source "drivers/misc/timeaware_gpio/Kconfig.timeaware_gpio_intel"
+
+endif # TIMEAWARE_GPIO

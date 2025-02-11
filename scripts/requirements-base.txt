@@ -4,11 +4,11 @@
 # part of the recommended workflow
 
 # used by various build scripts
-pyelftools>=0.27
+pyelftools>=0.29
 
 # used by dts generation to parse binding YAMLs, also used by
 # twister to parse YAMLs, by west, zephyr_module,...
-PyYAML>=5.1
+PyYAML>=6.0
 
 # YAML validation. Used by zephyr_module.
 pykwalify
@@ -19,6 +19,8 @@ packaging
 progress
 psutil
 pylink-square
+pyserial
+requests
 
 # for ram/rom reports
 anytree
@@ -27,7 +29,8 @@ anytree
 intelhex
 
 # it's west
-west>=0.10.1
+# Keep the version identical to the minimum required in cmake/modules/west.cmake
+west>=0.14.0
 
 # used for windows based 'menuconfig'
 # "win32" is used for 64-bit Windows as well

@@ -1,0 +1,244 @@
+/*
+ * Copyright (c) 2020, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt1024.dtsi>
+#include "mimxrt1024_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP MIMXRT1024-EVK board";
+	compatible = "nxp,mimxrt1024";
+
+	aliases {
+		led0 = &green_led;
+		sw0 = &user_button;
+		watchdog0 = &wdog0;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
+		sdhc0 = &usdhc1;
+	};
+
+	chosen {
+		zephyr,flash-controller = &w25q32jvwj0;
+		zephyr,flash = &w25q32jvwj0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &sdram0;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,canbus = &flexcan1;
+	};
+
+	sdram0: memory@80000000 {
+		/* ISSI IS42S16160J-6TLI */
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(32)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button-1 {
+			label = "User SW4";
+			gpios = <&gpio5 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio1 26 0>,	/* A0 */
+			   <1 0 &gpio1 27 0>,	/* A1 */
+			   <2 0 &gpio1 28 0>,	/* A2 */
+			   <3 0 &gpio1 29 0>,	/* A3 */
+			   <4 0 &gpio1 31 0>,	/* A4 */
+			   <5 0 &gpio1 30 0>,	/* A5 */
+			   <6 0 &gpio1 25 0>,	/* D0 */
+			   <7 0 &gpio1 24 0>,	/* D1 */
+			   <8 0 &gpio1 9 0>,	/* D2 */
+			   <9 0 &gpio1 7 0>,	/* D3 */
+			   <10 0 &gpio1 5 0>,	/* D4 */
+			   <11 0 &gpio1 6 0>,	/* D5 */
+			   <12 0 &gpio1 14 0>,	/* D6 */
+			   <13 0 &gpio1 22 0>,	/* D7 */
+			   <14 0 &gpio1 23 0>,	/* D8 */
+			   <15 0 &gpio1 15 0>,	/* D9 */
+			   <16 0 &gpio1 11 0>,	/* D10 */
+			   <17 0 &gpio1 12 0>,	/* D11 */
+			   <18 0 &gpio1 13 0>,	/* D12 */
+			   <19 0 &gpio1 10 0>,	/* D13 */
+			   <20 0 &gpio3 23 0>,	/* D14 */
+			   <21 0 &gpio3 22 0>;	/* D15 */
+	};
+};
+
+arduino_serial: &lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&w25q32jvwj0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+		};
+		/* The MCUBoot swap-move algorithm uses the last 2 sectors
+		 * of the primary slot0 for swap status and move.
+		 */
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 (DT_SIZE_K(1920) + DT_SIZE_K(8))>;
+		};
+		slot1_partition: partition@202000 {
+			label = "image-1";
+			reg = <0x00202000 DT_SIZE_K(1920)>;
+		};
+		storage_partition: partition@3E2000 {
+			label = "storage";
+			reg = <0x003E2000 DT_SIZE_K(120)>;
+		};
+	};
+};
+
+&enet_mac {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "microchip,ksz8081";
+		reg = <0>;
+		status = "okay";
+		reset-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
+	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
+	pinctrl-0 = <&pinmux_ptp>;
+	pinctrl-names = "default";
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flexcan1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan1>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&lpi2c4 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c4>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpio3 22 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio3 23 GPIO_ACTIVE_HIGH>;
+
+	fxos8700: fxos8700@1f {
+		compatible = "nxp,fxos8700";
+		reg = <0x1f>;
+	};
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&lpspi1 {
+	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
+	dmas = <&edma0 0 13>, <&edma0 1 14>;
+	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+&adc1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_adc1>;
+	pinctrl-names = "default";
+};
+
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
+ */
+&gpt_hw_timer {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
+	cd-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
+	pwr-gpios = <&gpio3 30 GPIO_ACTIVE_HIGH>;
+	no-1-8-v;
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+};

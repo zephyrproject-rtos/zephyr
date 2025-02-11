@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
-#include <version.h>
+#include <zephyr/version.h>
 
 #include <openthread/cli.h>
 #include <openthread/ip6.h>
@@ -566,6 +566,9 @@ void ieee802154_init(struct net_if *iface)
 		LOG_DBG("Interface auto start disabled.");
 		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	}
+
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
+	net_if_flag_set(iface, NET_IF_IPV6_NO_MLD);
 
 	openthread_init(iface);
 }

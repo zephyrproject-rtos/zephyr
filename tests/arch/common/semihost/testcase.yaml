@@ -1,5 +1,8 @@
 tests:
   arch.common.semihost:
-    arch_allow: arm arm64 riscv32 riscv64
+    arch_allow:
+      - arm
+      - arm64
+      - riscv
     platform_type:
       - qemu

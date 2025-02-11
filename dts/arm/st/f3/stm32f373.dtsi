@@ -5,9 +5,20 @@
  */
 
 #include <st/f3/stm32f3.dtsi>
+#include <zephyr/dt-bindings/adc/stm32f1_adc.h>
 
 / {
 	soc {
+		compatible = "st,stm32f373", "st,stm32f3", "simple-bus";
+
+		rcc: rcc@40021000 {
+			/*
+			 * Use the STM32F1 compatible that define the same ADC
+			 * prescaler in the RCC register
+			 */
+			compatible = "st,stm32f1-rcc";
+		};
+
 		pinctrl: pin-controller@48000000 {
 			gpioe: gpio@48001000 {
 				compatible = "st,stm32-gpio";
@@ -174,12 +185,15 @@
 		};
 
 		adc1: adc@40012400 {
-			compatible = "st,stm32-adc";
+			compatible = "st,stm32f1-adc", "st,stm32-adc";
 			reg = <0x40012400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			resolutions = <STM32F1_ADC_RES(12)>;
+			sampling-times = <2 8 14 29 42 56 72 240>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		rtc@40002800 {
@@ -189,5 +203,21 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	vref: vref {
+		io-channels = <&adc1 17>;
+	};
+
+	vbat: vbat {
+		io-channels = <&adc1 18>;
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
 	};
 };

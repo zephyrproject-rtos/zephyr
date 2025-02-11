@@ -192,19 +192,6 @@ static int gpio_npm6001_port_toggle_bits(const struct device *dev,
 						~val & NPM6001_PIN_MSK);
 }
 
-static int gpio_npm6001_pin_interrupt_configure(const struct device *dev,
-						gpio_pin_t pin,
-						enum gpio_int_mode mode,
-						enum gpio_int_trig trig)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(pin);
-	ARG_UNUSED(mode);
-	ARG_UNUSED(trig);
-
-	return -ENOTSUP;
-}
-
 static const struct gpio_driver_api gpio_npm6001_api = {
 	.pin_configure = gpio_npm6001_configure,
 	.port_get_raw = gpio_npm6001_port_get_raw,
@@ -212,7 +199,6 @@ static const struct gpio_driver_api gpio_npm6001_api = {
 	.port_set_bits_raw = gpio_npm6001_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_npm6001_port_clear_bits_raw,
 	.port_toggle_bits = gpio_npm6001_port_toggle_bits,
-	.pin_interrupt_configure = gpio_npm6001_pin_interrupt_configure,
 };
 
 static int gpio_npm6001_init(const struct device *dev)
@@ -237,7 +223,7 @@ static int gpio_npm6001_init(const struct device *dev)
                                                                                \
 	static struct gpio_npm6001_data gpio_npm6001_data##n;                  \
                                                                                \
-	DEVICE_DT_INST_DEFINE(n, &gpio_npm6001_init, NULL,                     \
+	DEVICE_DT_INST_DEFINE(n, gpio_npm6001_init, NULL,                      \
 			      &gpio_npm6001_data##n, &gpio_npm6001_config##n,  \
 			      POST_KERNEL, CONFIG_GPIO_NPM6001_INIT_PRIORITY,  \
 			      &gpio_npm6001_api);

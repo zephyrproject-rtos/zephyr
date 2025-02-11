@@ -18,6 +18,66 @@
 #include <zephyr/cache.h>
 #include <stdbool.h>
 
+/* Not Write-through bit */
+#define X86_REG_CR0_NW BIT(29)
+/* Cache Disable bit */
+#define X86_REG_CR0_CD BIT(30)
+
+static inline void z_x86_wbinvd(void)
+{
+	__asm__ volatile("wbinvd;\n\t" : : : "memory");
+}
+
+void arch_dcache_enable(void)
+{
+	unsigned long cr0 = 0;
+
+	/* Enable write-back caching by clearing the NW and CD bits */
+	__asm__ volatile("mov %%cr0, %0;\n\t"
+			 "and %1, %0;\n\t"
+			 "mov %0, %%cr0;\n\t"
+			 : "=r" (cr0)
+			 : "i" (~(X86_REG_CR0_NW | X86_REG_CR0_CD)));
+}
+
+void arch_dcache_disable(void)
+{
+	unsigned long cr0 = 0;
+
+	/* Enter the no-fill mode by setting NW=0 and CD=1 */
+	__asm__ volatile("mov %%cr0, %0;\n\t"
+			 "and %1, %0;\n\t"
+			 "or %2, %0;\n\t"
+			 "mov %0, %%cr0;\n\t"
+			 : "=r" (cr0)
+			 : "i" (~(X86_REG_CR0_NW)),
+			   "i" (X86_REG_CR0_CD));
+
+	/* Flush all caches */
+	z_x86_wbinvd();
+}
+
+int arch_dcache_flush_all(void)
+{
+	z_x86_wbinvd();
+
+	return 0;
+}
+
+int arch_dcache_invd_all(void)
+{
+	z_x86_wbinvd();
+
+	return 0;
+}
+
+int arch_dcache_flush_and_invd_all(void)
+{
+	z_x86_wbinvd();
+
+	return 0;
+}
+
 /**
  * No alignment is required for either <virt> or <size>, but since
  * sys_cache_flush() iterates on the cache lines, a cache line alignment for
@@ -48,4 +108,14 @@ int arch_dcache_flush_range(void *start_addr, size_t size)
 	__asm__ volatile("lock; addl $0,-4(%%esp);\n\t":::"memory", "cc");
 #endif
 	return 0;
+}
+
+int arch_dcache_invd_range(void *start_addr, size_t size)
+{
+	return arch_dcache_flush_range(start_addr, size);
+}
+
+int arch_dcache_flush_and_invd_range(void *start_addr, size_t size)
+{
+	return arch_dcache_flush_range(start_addr, size);
 }

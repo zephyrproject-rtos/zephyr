@@ -1,0 +1,37 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MIPI-DBI Mode C compatible SPI controller. This driver emulates MIPI DBI
+  mode C using a SPI controller and GPIO pins
+compatible: "zephyr,mipi-dbi-spi"
+
+include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  spi-dev:
+    type: phandle
+    required: true
+    description: |
+      SPI device to use for data transfers with MIPI DBI commands. This SPI
+      device should be connected to the MIPI DBI display.
+
+  dc-gpios:
+    type: phandle-array
+    description: |
+      Data/command gpio pin. Required when using 4 wire SPI mode (Mode C1).
+      Set to low when sending a command, or high when sending data.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin. Set high to reset the display
+
+  write-only:
+    type: boolean
+    description: |
+      Only writes to display controller, do not perform reads.
+      If all controllers are write-only, read functions will be
+      optimized out for size.
+      It can also be used as an alternative to half duplex when
+      only one data line is connected.

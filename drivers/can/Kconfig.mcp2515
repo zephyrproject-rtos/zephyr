@@ -15,7 +15,7 @@ if CAN_MCP2515
 
 config CAN_MCP2515_INT_THREAD_STACK_SIZE
 	int "Stack size for interrupt handler"
-	default 512
+	default 1024
 	help
 	  Size of the stack used for internal thread which is ran for
 	  interrupt handling and incoming packets.

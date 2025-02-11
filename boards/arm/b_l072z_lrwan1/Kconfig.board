@@ -1,8 +1,0 @@
-# STMicroelectronics B-L072Z-LRWAN1 Discovery board configuration
-
-# Copyright (c) 2018 Aleksandr Makarov <aleksandr.o.makarov@gmail.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_B_L072Z_LRWAN1
-	bool "STMicroelectronics B-L072Z-LRWAN1 Discovery kit"
-	depends on SOC_STM32L072XX

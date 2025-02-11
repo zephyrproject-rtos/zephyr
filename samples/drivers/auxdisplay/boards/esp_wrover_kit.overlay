@@ -1,0 +1,34 @@
+/*
+ * Character HD44780 module driven by the PCF8574 gpio.
+ */
+
+&i2c0 {
+	aux_display_gpio: pcf8574@27 {
+		compatible = "nxp,pcf857x";
+		reg = <0x27>;
+		gpio-controller;
+		ngpios = <8>;
+		#gpio-cells = <2>;
+	};
+};
+
+/ {
+	auxdisplay_0: hd44780 {
+		compatible = "hit,hd44780";
+		columns = <16>;
+		rows = <2>;
+		mode = <4>;
+		boot-delay-ms = <100>;
+		enable-line-rise-delay-us = <1000>;
+		enable-line-fall-delay-us = <500>;
+		register-select-gpios = <&aux_display_gpio 0 (GPIO_ACTIVE_HIGH)>;
+		read-write-gpios    = <&aux_display_gpio 1 (GPIO_ACTIVE_HIGH)>;
+		enable-gpios        = <&aux_display_gpio 2 (GPIO_ACTIVE_HIGH)>;
+		backlight-gpios     = <&aux_display_gpio 3 (GPIO_ACTIVE_HIGH)>;
+		data-bus-gpios      = <0>, <0>, <0>, <0>,
+				<&aux_display_gpio 4 (GPIO_ACTIVE_HIGH)>,
+				<&aux_display_gpio 5 (GPIO_ACTIVE_HIGH)>,
+				<&aux_display_gpio 6 (GPIO_ACTIVE_HIGH)>,
+				<&aux_display_gpio 7 (GPIO_ACTIVE_HIGH)>;
+	};
+};

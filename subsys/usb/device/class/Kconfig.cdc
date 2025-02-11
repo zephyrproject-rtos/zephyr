@@ -6,6 +6,7 @@ menu "USB CDC ACM Class support"
 config USB_CDC_ACM
 	bool "USB CDC ACM Class support"
 	default y
+	select USB_COMPOSITE_DEVICE
 	depends on SERIAL
 	depends on DT_HAS_ZEPHYR_CDC_ACM_UART_ENABLED
 	select SERIAL_HAS_DRIVER
@@ -35,6 +36,13 @@ config CDC_ACM_BULK_EP_MPS
 	default 64
 	help
 	  CDC ACM class bulk endpoints size
+
+config CDC_ACM_TX_DELAY_MS
+	int
+	default 100
+	help
+	  Time in milliseconds to wait before sending actual payload to host.
+	  This is needed to prevent tty ECHO on Linux.
 
 config CDC_ACM_IAD
 	bool "Force using Interface Association Descriptor"

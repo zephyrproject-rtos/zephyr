@@ -1,0 +1,11 @@
+# ST Microelectronics STM32F091XC MCU
+
+# Copyright (c) 2017 b0661n0e17e@gmail.com
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F091XC
+
+config NUM_IRQS
+	default 31
+
+endif # SOC_STM32F091XC

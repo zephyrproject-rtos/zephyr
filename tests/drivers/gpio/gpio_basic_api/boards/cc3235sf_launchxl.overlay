@@ -7,9 +7,9 @@
 /* Connect P07 to P08 to run this test */
 
 / {
-        resources {
-                compatible = "test-gpio-basic-api";
-                out-gpios = <&gpioa2 1 0>;
-                in-gpios = <&gpioa2 0 0>;
-        };
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpioa2 1 0>;
+		in-gpios = <&gpioa2 0 0>;
+	};
 };

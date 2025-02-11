@@ -1,0 +1,21 @@
+# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr MSPI Emulation Device
+
+compatible: "zephyr,mspi-emul-device"
+
+include: mspi-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  xip-config:
+    default: [0, 0, 0, 0]
+
+  scramble-config:
+    default: [0, 0, 0]
+
+  ce-break-config:
+    default: [0, 0]

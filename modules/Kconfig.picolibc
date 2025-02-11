@@ -1,0 +1,5 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_PICOLIBC_MODULE
+	bool

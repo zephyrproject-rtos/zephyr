@@ -8,10 +8,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/winstream.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/cache.h>
 
 #include <adsp_memory.h>
 #include <mem_window.h>
-#include <soc.h>
 
 struct k_spinlock trace_lock;
 
@@ -46,9 +46,31 @@ int arch_printk_char_out(int c)
 	return 0;
 }
 
-static int winstream_console_init(const struct device *d)
+#if defined(CONFIG_STDOUT_CONSOLE)
+extern void __stdout_hook_install(int (*hook)(int));
+#else
+#define __stdout_hook_install(x)		\
+	do {/* nothing */			\
+	} while ((0))
+#endif
+
+#if defined(CONFIG_PRINTK)
+extern void __printk_hook_install(int (*fn)(int));
+#else
+#define __printk_hook_install(x)		\
+	do {/* nothing */			\
+	} while ((0))
+#endif
+
+static void winstream_console_hook_install(void)
 {
-	ARG_UNUSED(d);
+	__stdout_hook_install(arch_printk_char_out);
+	__printk_hook_install(arch_printk_char_out);
+}
+
+
+static int winstream_console_init(void)
+{
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(dev)) {
@@ -56,11 +78,12 @@ static int winstream_console_init(const struct device *d)
 	}
 	const struct mem_win_config *config = dev->config;
 	void *buf =
-		arch_xtensa_uncached_ptr((__sparse_force void __sparse_cache *)config->mem_base);
+		sys_cache_uncached_ptr_get((__sparse_force void __sparse_cache *)config->mem_base);
 
 	winstream = sys_winstream_init(buf, config->size);
+	winstream_console_hook_install();
 
 	return 0;
 }
 
-SYS_INIT(winstream_console_init, EARLY, CONFIG_CONSOLE_INIT_PRIORITY);
+SYS_INIT(winstream_console_init, PRE_KERNEL_1, CONFIG_CONSOLE_INIT_PRIORITY);

@@ -47,6 +47,17 @@ static ssize_t read_blvl(struct bt_conn *conn,
 				 sizeof(lvl8));
 }
 
+/* Constant values from the Assigned Numbers specification:
+ * https://www.bluetooth.com/wp-content/uploads/Files/Specification/Assigned_Numbers.pdf?id=89
+ */
+static const struct bt_gatt_cpf level_cpf = {
+	.format = 0x04,        /* uint8 */
+	.exponent = 0x0,
+	.unit = 0x27AD,        /* Percentage */
+	.name_space = 0x01,    /* Bluetooth SIG */
+	.description = 0x0106, /* "main" */
+};
+
 BT_GATT_SERVICE_DEFINE(bas,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_BAS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_BAS_BATTERY_LEVEL,
@@ -55,11 +66,11 @@ BT_GATT_SERVICE_DEFINE(bas,
 			       &battery_level),
 	BT_GATT_CCC(blvl_ccc_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	BT_GATT_CPF(&level_cpf),
 );
 
-static int bas_init(const struct device *dev)
+static int bas_init(void)
 {
-	ARG_UNUSED(dev);
 
 	return 0;
 }

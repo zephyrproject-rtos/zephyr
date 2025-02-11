@@ -1,0 +1,17 @@
+identifier: nrf54l15bsim/nrf54l15/cpuapp
+name: NRF54L15 BabbleSim - Application Core target
+type: native
+arch: posix
+simulation: native
+env:
+  - BSIM_OUT_PATH
+toolchain:
+  - zephyr
+supported:
+  - counter
+testing:
+  ignore_tags:
+    - gpio
+    - modem
+    - uart
+    - bsim_skip_CI

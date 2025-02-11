@@ -1,0 +1,12 @@
+# Copyright (c) 2019 Electronut Labs
+# SPDX-License-Identifier: Apache-2.0
+
+config SI7006
+	bool "SHT21, Si7006, and HTU21D Humidity and Temperature Sensors"
+	default y
+	depends on DT_HAS_SILABS_SI7006_ENABLED || DT_HAS_SENSIRION_SHT21_ENABLED
+	select I2C
+	help
+	  Enable I2C-based driver for several humidity and temperature sensors
+	  compatible with the Sensirion SHT21, such as the Silicon Labs
+	  Si7006/13/20/21 and Measurement Specialties HTU21D

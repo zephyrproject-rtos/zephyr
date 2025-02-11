@@ -24,6 +24,7 @@ SYSBUILD_PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent.parent \
 
 BUILD_USAGE = '''\
 west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
+           [-S SNIPPET] [--shield SHIELD]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
            [-n] [-o BUILD_OPT] [-f]
            [--sysbuild | --no-sysbuild] [--domain DOMAIN]
@@ -123,13 +124,32 @@ class Build(Forceable):
                            (try "-t usage")''')
         group.add_argument('-T', '--test-item',
                            help='''Build based on test data in testcase.yaml
-                           or sample.yaml''')
+                           or sample.yaml. If source directory is not used
+                           an argument has to be defined as
+                           SOURCE_PATH/TEST_NAME.
+                           E.g. samples/hello_world/sample.basic.helloworld.
+                           If source directory is passed
+                           then "TEST_NAME" is enough.''')
         group.add_argument('-o', '--build-opt', default=[], action='append',
                            help='''options to pass to the build tool
                            (make or ninja); may be given more than once''')
         group.add_argument('-n', '--just-print', '--dry-run', '--recon',
                             dest='dry_run', action='store_true',
                             help="just print build commands; don't run them")
+        group.add_argument('-S', '--snippet', dest='snippets', metavar='SNIPPET',
+                           action='append', default=[],
+                           help='''add the argument to SNIPPET; may be given
+                           multiple times. Forces CMake to run again if given.
+                           Do not use this option with manually specified
+                           -DSNIPPET... cmake arguments: the results are
+                           undefined''')
+        group.add_argument('--shield', dest='shields', metavar='SHIELD',
+                           action='append', default=[],
+                           help='''add the argument to SHIELD; may be given
+                           multiple times. Forces CMake to run again if given.
+                           Do not use this option with manually specified
+                           -DSHIELD... cmake arguments: the results are
+                           undefined''')
 
         group = parser.add_mutually_exclusive_group()
         group.add_argument('--sysbuild', action='store_true',
@@ -158,11 +178,17 @@ class Build(Forceable):
         if self.args.test_item:
             # we get path + testitem
             item = os.path.basename(self.args.test_item)
-            test_path = os.path.dirname(self.args.test_item)
-            if test_path:
+            if self.args.source_dir:
+                test_path = self.args.source_dir
+            else:
+                test_path = os.path.dirname(self.args.test_item)
+            if test_path and os.path.exists(test_path):
                 self.args.source_dir = test_path
-            if not self._parse_test_item(item):
-                log.die("No test metadata found")
+                if not self._parse_test_item(item):
+                    log.die("No test metadata found")
+            else:
+                log.die("test item path does not exist")
+
         if source_dir:
             if self.args.source_dir:
                 log.die("source directory specified twice:({} and {})".format(
@@ -184,7 +210,7 @@ class Build(Forceable):
                     'treating unknown build.pristine value "{}" as "never"'.
                     format(pristine))
                 pristine = 'never'
-        self.auto_pristine = (pristine == 'auto')
+        self.auto_pristine = pristine == 'auto'
 
         log.dbg('pristine: {} auto_pristine: {}'.format(pristine,
                                                         self.auto_pristine),
@@ -196,7 +222,8 @@ class Build(Forceable):
             else:
                 self._update_cache()
                 if (self.args.cmake or self.args.cmake_opts or
-                        self.args.cmake_only):
+                        self.args.cmake_only or self.args.snippets or
+                        self.args.shields):
                     self.run_cmake = True
         else:
             self.run_cmake = True
@@ -249,7 +276,7 @@ class Build(Forceable):
             if remainder:
                 self.args.cmake_opts = remainder
         except IndexError:
-            return
+            pass
 
     def _parse_test_item(self, test_item):
         found_test_metadata = False
@@ -263,6 +290,7 @@ class Build(Forceable):
                     y = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
                     log.die(exc)
+            common = y.get('common')
             tests = y.get('tests')
             if not tests:
                 log.die(f"No tests found in {yf}")
@@ -270,19 +298,81 @@ class Build(Forceable):
             if not item:
                 log.die(f"Test item {test_item} not found in {yf}")
 
-            for data in ['extra_args', 'extra_configs']:
-                extra = item.get(data)
-                if not extra:
+            sysbuild = False
+            extra_dtc_overlay_files = []
+            extra_overlay_confs = []
+            extra_conf_files = []
+            required_snippets = []
+            for section in [common, item]:
+                if not section:
                     continue
-                if isinstance(extra, str):
-                    arg_list = extra.split(" ")
-                else:
-                    arg_list = extra
-                args = ["-D{}".format(arg.replace('"', '')) for arg in arg_list]
-                if self.args.cmake_opts:
-                    self.args.cmake_opts.extend(args)
-                else:
-                    self.args.cmake_opts = args
+                sysbuild = section.get('sysbuild', sysbuild)
+                for data in [
+                        'extra_args',
+                        'extra_configs',
+                        'extra_conf_files',
+                        'extra_overlay_confs',
+                        'extra_dtc_overlay_files',
+                        'required_snippets'
+                        ]:
+                    extra = section.get(data)
+                    if not extra:
+                        continue
+                    if isinstance(extra, str):
+                        arg_list = extra.split(" ")
+                    else:
+                        arg_list = extra
+
+                    if data == 'extra_configs':
+                        args = ["-D{}".format(arg.replace('"', '\"')) for arg in arg_list]
+                    elif data == 'extra_args':
+                        # Retain quotes around config options
+                        config_options = [arg for arg in arg_list if arg.startswith("CONFIG_")]
+                        non_config_options = [arg for arg in arg_list if not arg.startswith("CONFIG_")]
+                        args = ["-D{}".format(a.replace('"', '\"')) for a in config_options]
+                        args.extend(["-D{}".format(arg.replace('"', '')) for arg in non_config_options])
+                    elif data == 'extra_conf_files':
+                        extra_conf_files.extend(arg_list)
+                        continue
+                    elif data == 'extra_overlay_confs':
+                        extra_overlay_confs.extend(arg_list)
+                        continue
+                    elif data == 'extra_dtc_overlay_files':
+                        extra_dtc_overlay_files.extend(arg_list)
+                        continue
+                    elif data == 'required_snippets':
+                        required_snippets.extend(arg_list)
+                        continue
+
+                    if self.args.cmake_opts:
+                        self.args.cmake_opts.extend(args)
+                    else:
+                        self.args.cmake_opts = args
+
+            self.args.sysbuild = sysbuild
+
+        if found_test_metadata:
+            args = []
+            if extra_conf_files:
+                args.append(f"CONF_FILE=\"{';'.join(extra_conf_files)}\"")
+
+            if extra_dtc_overlay_files:
+                args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
+
+            if extra_overlay_confs:
+                args.append(f"OVERLAY_CONFIG=\"{';'.join(extra_overlay_confs)}\"")
+
+            if required_snippets:
+                args.append(f"SNIPPET=\"{';'.join(required_snippets)}\"")
+
+            # Build the final argument list
+            args_expanded = ["-D{}".format(a.replace('"', '')) for a in args]
+
+            if self.args.cmake_opts:
+                self.args.cmake_opts.extend(args_expanded)
+            else:
+                self.args.cmake_opts = args_expanded
+
         return found_test_metadata
 
     def _sanity_precheck(self):
@@ -334,7 +424,14 @@ class Build(Forceable):
         if self.args.source_dir:
             source_dir = self.args.source_dir
         elif self.cmake_cache:
-            source_dir = self.cmake_cache.get('CMAKE_HOME_DIRECTORY')
+            source_dir = self.cmake_cache.get('APP_DIR')
+
+            if not source_dir:
+                source_dir = self.cmake_cache.get('APPLICATION_SOURCE_DIR')
+
+            if not source_dir:
+                source_dir = self.cmake_cache.get('CMAKE_HOME_DIRECTORY')
+
             if not source_dir:
                 # This really ought to be there. The build directory
                 # must be corrupted somehow. Let's see what we can do.
@@ -469,6 +566,10 @@ class Build(Forceable):
             cmake_opts = []
         if self.args.cmake_opts:
             cmake_opts.extend(self.args.cmake_opts)
+        if self.args.snippets:
+            cmake_opts.append(f'-DSNIPPET={";".join(self.args.snippets)}')
+        if self.args.shields:
+            cmake_opts.append(f'-DSHIELD={";".join(self.args.shields)}')
 
         user_args = config_get('cmake-args', None)
         if user_args:
@@ -488,7 +589,7 @@ class Build(Forceable):
         # to Just Work:
         #
         # west build -- -DOVERLAY_CONFIG=relative-path.conf
-        final_cmake_args = ['-DWEST_PYTHON={}'.format(sys.executable),
+        final_cmake_args = ['-DWEST_PYTHON={}'.format(pathlib.Path(sys.executable).as_posix()),
                             '-B{}'.format(self.build_dir),
                             '-G{}'.format(config_get('generator',
                                                      DEFAULT_CMAKE_GENERATOR))]

@@ -215,15 +215,10 @@ static int memc_flexspi_aps6408l_init(const struct device *dev)
 	}
 
 	if (memc_flexspi_set_device_config(data->controller, &config->config,
-					   config->port)) {
+	    (const uint32_t *) memc_flexspi_aps6408l_lut,
+	    sizeof(memc_flexspi_aps6408l_lut) / MEMC_FLEXSPI_CMD_SIZE,
+	    config->port)) {
 		LOG_ERR("Could not set device configuration");
-		return -EINVAL;
-	}
-
-	if (memc_flexspi_update_lut(data->controller, 0,
-				    (const uint32_t *) memc_flexspi_aps6408l_lut,
-				    sizeof(memc_flexspi_aps6408l_lut) / 4)) {
-		LOG_ERR("Could not update lut");
 		return -EINVAL;
 	}
 
@@ -323,7 +318,7 @@ static int memc_flexspi_aps6408l_init(const struct device *dev)
 			      &memc_flexspi_aps6408l_data_##n,  \
 			      &memc_flexspi_aps6408l_config_##n,  \
 			      POST_KERNEL,			  \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      CONFIG_MEMC_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI_APS6408L)

@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 #include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/net/ieee802154.h>
 #include <zephyr/net/net_pkt.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <string.h>
 #include <zephyr/sys/sys_io.h>
 
@@ -122,9 +122,9 @@ static void client_event_callback(RF_Handle h, RF_ClientEvent event, void *arg)
 static enum ieee802154_hw_caps
 ieee802154_cc13xx_cc26xx_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ |
-	       IEEE802154_HW_FILTER | IEEE802154_HW_TX_RX_ACK |
-	       IEEE802154_HW_CSMA;
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_CSMA |
+	       IEEE802154_HW_RETRANSMISSION;
 }
 
 static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
@@ -149,34 +149,57 @@ static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
 	}
 }
 
+static inline int ieee802154_cc13xx_cc26xx_channel_to_frequency(
+	uint16_t channel, uint16_t *frequency, uint16_t *fractFreq)
+{
+	__ASSERT_NO_MSG(frequency != NULL);
+	__ASSERT_NO_MSG(fractFreq != NULL);
+
+	/* See IEEE 802.15.4-2020, section 10.1.3.3. */
+	if (channel >= 11 && channel <= 26) {
+		*frequency = 2405 + 5 * (channel - 11);
+		*fractFreq = 0;
+		return 0;
+	} else {
+		/* TODO: Support sub-GHz for CC13xx rather than having separate drivers */
+		*frequency = 0;
+		*fractFreq = 0;
+		return channel < 11 ? -ENOTSUP : -EINVAL;
+	}
+}
+
 static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 						uint16_t channel)
 {
-	int r;
-	RF_Stat status;
+	int ret;
 	RF_CmdHandle cmd_handle;
+	RF_EventMask reason;
+	uint16_t freq, fract;
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
-	/* TODO Support sub-GHz for CC13xx */
-	if (channel < 11 || channel > 26) {
-		return -EINVAL;
+	ret = ieee802154_cc13xx_cc26xx_channel_to_frequency(channel, &freq, &fract);
+	if (ret < 0) {
+		return ret;
 	}
 
 	/* Abort FG and BG processes */
 	if (ieee802154_cc13xx_cc26xx_stop(dev) < 0) {
-		r = -EIO;
+		ret = -EIO;
 		goto out;
 	}
 
 	/* Block TX while changing channel */
 	k_mutex_lock(&drv_data->tx_mutex, K_FOREVER);
 
-	/* Set all RX entries to empty */
-	status = RF_runImmediateCmd(drv_data->rf_handle,
-		(uint32_t *)&drv_data->cmd_clear_rx);
-	if (status != RF_StatCmdDoneSuccess && status != RF_StatSuccess) {
-		LOG_ERR("Failed to clear RX queue (%d)", status);
-		r = -EIO;
+	/* Set the frequency */
+	drv_data->cmd_fs.status = IDLE;
+	drv_data->cmd_fs.frequency = freq;
+	drv_data->cmd_fs.fractFreq = fract;
+	reason = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
+			   RF_PriorityNormal, NULL, 0);
+	if (reason != RF_EventLastCmdDone) {
+		LOG_ERR("Failed to set frequency: 0x%" PRIx64, reason);
+		ret = -EIO;
 		goto out;
 	}
 
@@ -188,15 +211,15 @@ static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 		cmd_ieee_rx_callback, RF_EventRxEntryDone);
 	if (cmd_handle < 0) {
 		LOG_ERR("Failed to post RX command (%d)", cmd_handle);
-		r = -EIO;
+		ret = -EIO;
 		goto out;
 	}
 
-	r = 0;
+	ret = 0;
 
 out:
 	k_mutex_unlock(&drv_data->tx_mutex);
-	return r;
+	return ret;
 }
 
 /* TODO remove when rf driver bugfix is pulled in */
@@ -332,12 +355,20 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 		}
 
 		if (drv_data->cmd_ieee_csma.status != IEEE_DONE_OK) {
+			/* TODO: According to IEEE 802.15.4 CSMA/CA failure
+			 *       fails TX immediately and should not trigger
+			 *       attempt (which is reserved for ACK timeouts).
+			 */
 			LOG_DBG("Channel access failure (0x%x)",
 				drv_data->cmd_ieee_csma.status);
 			continue;
 		}
 
 		if (drv_data->cmd_ieee_tx.status != IEEE_DONE_OK) {
+			/* TODO: According to IEEE 802.15.4 transmission failure
+			 *       fails TX immediately and should not trigger
+			 *       attempt (which is reserved for ACK timeouts).
+			 */
 			LOG_DBG("Transmit failed (0x%x)",
 				drv_data->cmd_ieee_tx.status);
 			continue;
@@ -359,20 +390,6 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 out:
 	k_mutex_unlock(&drv_data->tx_mutex);
 	return r;
-}
-
-static inline uint8_t ieee802154_cc13xx_cc26xx_convert_rssi(int8_t rssi)
-{
-	if (rssi > CC13XX_CC26XX_RECEIVER_SENSITIVITY +
-			   CC13XX_CC26XX_RSSI_DYNAMIC_RANGE) {
-		rssi = CC13XX_CC26XX_RECEIVER_SENSITIVITY +
-		       CC13XX_CC26XX_RSSI_DYNAMIC_RANGE;
-	} else if (rssi < CC13XX_CC26XX_RECEIVER_SENSITIVITY) {
-		rssi = CC13XX_CC26XX_RECEIVER_SENSITIVITY;
-	}
-
-	return (255 * (rssi - CC13XX_CC26XX_RECEIVER_SENSITIVITY)) /
-	       CC13XX_CC26XX_RSSI_DYNAMIC_RANGE;
 }
 
 static void ieee802154_cc13xx_cc26xx_rx_done(
@@ -421,9 +438,10 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 			drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
 
 			net_pkt_set_ieee802154_lqi(pkt, lqi);
-			net_pkt_set_ieee802154_rssi(
-				pkt,
-				ieee802154_cc13xx_cc26xx_convert_rssi(rssi));
+			net_pkt_set_ieee802154_rssi_dbm(pkt,
+							rssi == CC13XX_CC26XX_INVALID_RSSI
+								? IEEE802154_MAC_RSSI_DBM_UNDEFINED
+								: rssi);
 
 			if (net_recv_data(drv_data->iface, pkt)) {
 				LOG_WRN("Packet dropped");
@@ -463,6 +481,25 @@ static int ieee802154_cc13xx_cc26xx_stop(const struct device *dev)
 	return 0;
 }
 
+/**
+ * Stops the sub-GHz interface and yields the radio (tells RF module to power
+ * down).
+ */
+static int ieee802154_cc13xx_cc26xx_stop_if(const struct device *dev)
+{
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
+	int ret;
+
+	ret = ieee802154_cc13xx_cc26xx_stop(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* power down radio */
+	RF_yield(drv_data->rf_handle);
+	return 0;
+}
+
 static int
 ieee802154_cc13xx_cc26xx_configure(const struct device *dev,
 				   enum ieee802154_config_type type,
@@ -471,6 +508,18 @@ ieee802154_cc13xx_cc26xx_configure(const struct device *dev,
 	return -ENOTSUP;
 }
 
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
+
+static int ieee802154_cc13xx_cc26xx_attr_get(const struct device *dev, enum ieee802154_attr attr,
+					     struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+
+	return ieee802154_attr_get_channel_page_and_range(
+		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		&drv_attr.phy_supported_channels, value);
+}
 
 static void ieee802154_cc13xx_cc26xx_data_init(const struct device *dev)
 {
@@ -484,7 +533,7 @@ static void ieee802154_cc13xx_cc26xx_data_init(const struct device *dev)
 		mac = (uint8_t *)(FCFG1_BASE + FCFG1_O_MAC_15_4_0);
 	}
 
-	memcpy(&drv_data->mac, mac, sizeof(drv_data->mac));
+	sys_memcpy_swap(&drv_data->mac, mac, sizeof(drv_data->mac));
 
 	/* Setup circular RX queue (TRM 25.3.2.7) */
 	memset(&drv_data->rx_entry[0], 0, sizeof(drv_data->rx_entry[0]));
@@ -521,7 +570,7 @@ static void ieee802154_cc13xx_cc26xx_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
-static struct ieee802154_radio_api ieee802154_cc13xx_cc26xx_radio_api = {
+static const struct ieee802154_radio_api ieee802154_cc13xx_cc26xx_radio_api = {
 	.iface_api.init = ieee802154_cc13xx_cc26xx_iface_init,
 
 	.get_capabilities = ieee802154_cc13xx_cc26xx_get_capabilities,
@@ -531,18 +580,21 @@ static struct ieee802154_radio_api ieee802154_cc13xx_cc26xx_radio_api = {
 	.set_txpower = ieee802154_cc13xx_cc26xx_set_txpower,
 	.tx = ieee802154_cc13xx_cc26xx_tx,
 	.start = ieee802154_cc13xx_cc26xx_start,
-	.stop = ieee802154_cc13xx_cc26xx_stop,
+	.stop = ieee802154_cc13xx_cc26xx_stop_if,
 	.configure = ieee802154_cc13xx_cc26xx_configure,
+	.attr_get = ieee802154_cc13xx_cc26xx_attr_get,
+};
+
+/** RF patches to use (note: RF core keeps a pointer to this, so no stack). */
+static RF_Mode rf_mode = {
+	.rfMode      = RF_MODE_MULTIPLE,
+	.cpePatchFxn = &rf_patch_cpe_multi_protocol,
 };
 
 static int ieee802154_cc13xx_cc26xx_init(const struct device *dev)
 {
 	RF_Params rf_params;
 	RF_EventMask reason;
-	RF_Mode rf_mode = {
-		.rfMode      = RF_MODE_MULTIPLE,
-		.cpePatchFxn = &rf_patch_cpe_multi_protocol,
-	};
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	/* Initialize driver data */
@@ -590,11 +642,6 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 
 	.cmd_ieee_cca_req = {
 		.commandNo = CMD_IEEE_CCA_REQ,
-	},
-
-	.cmd_clear_rx = {
-		.commandNo = CMD_CLEAR_RX,
-		.pQueue = &ieee802154_cc13xx_cc26xx_data.rx_queue,
 	},
 
 	.cmd_ieee_rx = {
@@ -668,10 +715,6 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 		.localShortAddr = 0x0000,
 		.localPanID = 0x0000,
 		.endTrigger.triggerType = TRIG_NEVER
-	},
-
-	.cmd_set_tx_power = {
-		.commandNo = CMD_SET_TX_POWER
 	},
 
 	.cmd_ieee_csma = {

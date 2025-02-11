@@ -5,8 +5,8 @@
  */
 
 &twi0 {
-    mpr@18 {
-        compatible = "honeywell,mpr";
-        reg = <0x18>;
-    };
+	mpr@18 {
+		compatible = "honeywell,mpr";
+		reg = <0x18>;
+	};
 };

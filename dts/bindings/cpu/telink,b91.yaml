@@ -5,4 +5,4 @@ description: Telink RISC-V CPU
 
 compatible: "telink,b91"
 
-include: cpu.yaml
+include: riscv,cpus.yaml

@@ -8,13 +8,10 @@ zephyr_linker_section_obj_level(SECTION init LEVEL POST_KERNEL)
 zephyr_linker_section_obj_level(SECTION init LEVEL APPLICATION)
 zephyr_linker_section_obj_level(SECTION init LEVEL SMP)
 
-zephyr_linker_section(NAME device KVMA RAM_REGION GROUP RODATA_REGION)
-zephyr_linker_section_obj_level(SECTION device LEVEL EARLY)
-zephyr_linker_section_obj_level(SECTION device LEVEL PRE_KERNEL_1)
-zephyr_linker_section_obj_level(SECTION device LEVEL PRE_KERNEL_2)
-zephyr_linker_section_obj_level(SECTION device LEVEL POST_KERNEL)
-zephyr_linker_section_obj_level(SECTION device LEVEL APPLICATION)
-zephyr_linker_section_obj_level(SECTION device LEVEL SMP)
+zephyr_linker_section(NAME deferred_init_list KVMA RAM_REGION GROUP RODATA_REGION)
+zephyr_linker_section_configure(SECTION deferred_init_list INPUT ".z_deferred_init*" KEEP SORT NAME)
+
+zephyr_iterable_section(NAME device NUMERIC KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
 if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_DYNAMIC_INTERRUPTS)
   # ld align has been changed to subalign to provide identical behavior scatter vs. ld.
@@ -73,13 +70,13 @@ if(CONFIG_USERSPACE)
   # Build-time assignment of permissions to kernel objects to
   # threads declared with K_THREAD_DEFINE()
   zephyr_linker_section(
-    NAME z_object_assignment_area
+    NAME k_object_assignment_area
     VMA FLASH NOINPUT
     SUBALIGN 4
   )
   zephyr_linker_section_configure(
-    SECTION z_object_assignment
-    INPUT ".z_object_assignment.static.*"
+    SECTION k_object_assignment
+    INPUT ".k_object_assignment.static.*"
     KEEP SORT NAME
   )
 endif()
@@ -95,107 +92,158 @@ zephyr_linker_section_configure(
 )
 
 if(CONFIG_NET_SOCKETS)
-  zephyr_iterable_section(NAME net_socket_register KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME net_socket_register KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
 
 if(CONFIG_NET_L2_PPP)
-  zephyr_iterable_section(NAME ppp_protocol_handler KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME ppp_protocol_handler KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
-zephyr_iterable_section(NAME bt_l2cap_fixed_chan KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+zephyr_iterable_section(NAME bt_l2cap_fixed_chan KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
-if(CONFIG_BT_BREDR)
-  zephyr_iterable_section(NAME bt_l2cap_br_fixed_chan KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+if(CONFIG_BT_CLASSIC)
+  zephyr_iterable_section(NAME bt_l2cap_br_fixed_chan KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
 if(CONFIG_BT_CONN)
-  zephyr_iterable_section(NAME bt_conn_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME bt_conn_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
-zephyr_iterable_section(NAME bt_gatt_service_static KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+zephyr_iterable_section(NAME bt_gatt_service_static KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
 if(CONFIG_BT_MESH)
-  zephyr_iterable_section(NAME bt_mesh_subnet_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
-  zephyr_iterable_section(NAME bt_mesh_app_key_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME bt_mesh_subnet_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+  zephyr_iterable_section(NAME bt_mesh_app_key_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
-  zephyr_iterable_section(NAME bt_mesh_hb_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME bt_mesh_hb_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
 if(CONFIG_BT_MESH_FRIEND)
-  zephyr_iterable_section(NAME bt_mesh_friend_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME bt_mesh_friend_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
 if(CONFIG_BT_MESH_LOW_POWER)
-  zephyr_iterable_section(NAME bt_mesh_lpn_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME bt_mesh_lpn_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
 if(CONFIG_BT_MESH_PROXY)
-  zephyr_iterable_section(NAME bt_mesh_proxy_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME bt_mesh_proxy_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
 if(CONFIG_EC_HOST_CMD)
-  zephyr_iterable_section(NAME ec_host_cmd_handler KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME ec_host_cmd_handler KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
 if(CONFIG_SETTINGS)
-  zephyr_iterable_section(NAME settings_handler_static KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME settings_handler_static KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()
+
+if(CONFIG_SENSING)
+  zephyr_iterable_section(NAME sensing_sensor_info KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
 if(CONFIG_SENSOR_INFO)
-  zephyr_iterable_section(NAME sensor_info KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME sensor_info KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()
+
+if(CONFIG_SENSOR_ASYNC_API)
+  zephyr_iterable_section(NAME sensor_decoder_api KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
 if(CONFIG_MCUMGR)
-  zephyr_iterable_section(NAME mcumgr_handler KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME mcumgr_handler KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
-zephyr_iterable_section(NAME k_p4wq_initparam KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+zephyr_iterable_section(NAME k_p4wq_initparam KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
 if(CONFIG_EMUL)
-  zephyr_linker_section(NAME emulators_section GROUP RODATA_REGION ${XIP_ALIGN_WITH_INPUT})
-  zephyr_linker_section_configure(SECTION emulators_section INPUT ".emulators" KEEP SORT NAME)
+  zephyr_iterable_section(NAME emul KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
 if(CONFIG_DNS_SD)
-  zephyr_iterable_section(NAME dns_sd_rec KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME dns_sd_rec KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
 if(CONFIG_PCIE)
-  zephyr_linker_section(NAME irq_alloc GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-  zephyr_linker_section_configure(SECTION irq_alloc INPUT ".irq_alloc*" KEEP SORT NAME)
+  zephyr_iterable_section(NAME irq_alloc KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
-if(CONFIG_GNSS)
-  zephyr_iterable_section(NAME gnss_data_callback KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
-endif()
+zephyr_iterable_section(NAME log_strings KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
-if(CONFIG_GNSS_SATELLITES)
-  zephyr_iterable_section(NAME gnss_satellites_callback KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
-endif()
+zephyr_iterable_section(NAME log_const KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
-zephyr_linker_section(NAME log_strings KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION log_strings INPUT ".log_strings*" KEEP SORT NAME)
+zephyr_iterable_section(NAME shell KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
-zephyr_linker_section(NAME log_const KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION log_const INPUT ".log_const_*" KEEP SORT NAME)
+zephyr_iterable_section(NAME shell_root_cmds KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
-zephyr_linker_section(NAME log_backends KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION log_backends INPUT ".log_backends.*" KEEP)
+zephyr_iterable_section(NAME shell_subcmds KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
-zephyr_iterable_section(NAME shell KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+zephyr_iterable_section(NAME shell_dynamic_subcmds KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
-zephyr_linker_section(NAME shell_root_cmds KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION shell_root_cmds INPUT ".shell_root_cmd_*" KEEP SORT NAME)
+zephyr_iterable_section(NAME cfb_font KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
-zephyr_linker_section(NAME font_entry KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION font_entry INPUT "._cfb_font.*" KEEP SORT NAME)
-
-zephyr_iterable_section(NAME tracing_backend KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+zephyr_iterable_section(NAME tracing_backend KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
 zephyr_linker_section(NAME zephyr_dbg_info KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
 zephyr_linker_section_configure(SECTION zephyr_dbg_info INPUT ".zephyr_dbg_info" KEEP)
 
-zephyr_linker_section(NAME device_handles KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT} ENDALIGN 16)
-zephyr_linker_section_configure(SECTION device_handles INPUT .__device_handles_pass1* KEEP SORT NAME PASS LINKER_DEVICE_HANDLES_PASS1)
-zephyr_linker_section_configure(SECTION device_handles INPUT .__device_handles_pass2* KEEP SORT NAME PASS NOT LINKER_DEVICE_HANDLES_PASS1)
+if(CONFIG_SYMTAB)
+  zephyr_linker_section(NAME symtab KVMA FLASH GROUP RODATA_REGION SUBALIGN 4 NOINPUT)
+  zephyr_linker_section_configure(SECTION symtab INPUT ".gnu.linkonce.symtab*")
+endif()
+
+if (CONFIG_DEVICE_DEPS)
+  zephyr_linker_section(NAME device_deps KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT} ENDALIGN 16)
+  zephyr_linker_section_configure(SECTION device_deps INPUT .__device_deps_pass1* KEEP SORT NAME PASS LINKER_DEVICE_DEPS_PASS1)
+  zephyr_linker_section_configure(SECTION device_deps INPUT .__device_deps_pass2* KEEP SORT NAME PASS NOT LINKER_DEVICE_DEPS_PASS1)
+endif()
+
+zephyr_iterable_section(NAME _static_thread_data KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+
+if (CONFIG_BT_IAS)
+  zephyr_iterable_section(NAME bt_ias_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()
+
+if (CONFIG_LOG)
+  zephyr_iterable_section(NAME log_link KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+  zephyr_iterable_section(NAME log_backend KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()
+
+if (CONFIG_MULTI_LEVEL_INTERRUPTS)
+  zephyr_iterable_section(NAME intc_table KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
+
+if (CONFIG_HTTP_SERVER)
+  zephyr_iterable_section(NAME http_service_desc KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()
+
+if (CONFIG_COAP_SERVER)
+  zephyr_iterable_section(NAME coap_service KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()
+
+if (CONFIG_NET_MGMT)
+  zephyr_iterable_section(NAME net_mgmt_event_static_handler KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()
+
+if(CONFIG_INPUT)
+  zephyr_iterable_section(NAME input_callback KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()
+
+if(CONFIG_USBD_MSC_CLASS)
+  zephyr_iterable_section(NAME usbd_msc_lun KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()
+
+if(CONFIG_ZBUS)
+  zephyr_iterable_section(NAME zbus_channel KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+  zephyr_iterable_section(NAME zbus_observer KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+  zephyr_iterable_section(NAME zbus_channel_observation KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()
+
+if(CONFIG_GNSS)
+  zephyr_iterable_section(NAME gnss_data_callback KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()
+
+if(CONFIG_GNSS_SATELLITES)
+  zephyr_iterable_section(NAME gnss_satellites_callback KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+endif()

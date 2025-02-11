@@ -1,0 +1,8 @@
+board:
+  name: verdin_imx8mp
+  vendor: toradex
+  socs:
+  - name: mimx8ml8
+    variants:
+    - name: ddr
+      cpucluster: m7

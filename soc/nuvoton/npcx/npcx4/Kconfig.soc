@@ -1,0 +1,29 @@
+# Nuvoton NPCX4 EC series
+
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NPCX4
+	bool
+	select SOC_FAMILY_NPCX
+	help
+	  Enable support for Nuvoton NPCX4 series
+
+config SOC_NPCX4M3F
+	bool
+	select SOC_SERIES_NPCX4
+	help
+	  NPCX4M3F
+
+config SOC_NPCX4M8F
+	bool
+	select SOC_SERIES_NPCX4
+	help
+	  NPCX4M8F
+
+config SOC_SERIES
+	default "npcx4" if SOC_SERIES_NPCX4
+
+config SOC
+	default "npcx4m3f" if SOC_NPCX4M3F
+	default "npcx4m8f" if SOC_NPCX4M8F

@@ -5,7 +5,7 @@ config BBRAM_STM32
 	bool "ST STM32 Battery-backed RAM drivers"
 	default y
 	depends on DT_HAS_ST_STM32_BBRAM_ENABLED
-	depends on COUNTER
+	depends on COUNTER_RTC_STM32 || RTC_STM32
 	help
 	  This option enables the BBRAM driver for STM32 family of
 	  processors.

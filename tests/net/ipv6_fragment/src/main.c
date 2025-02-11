@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/ztest.h>
 
@@ -927,11 +927,6 @@ enum net_test_type {
 
 static enum net_test_type test_type = NO_TEST_TYPE;
 
-static int net_iface_dev_init(const struct device *dev)
-{
-	return 0;
-}
-
 static uint8_t *net_iface_get_mac(const struct device *dev)
 {
 	struct net_if_test *data = dev->data;
@@ -943,7 +938,7 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 		data->mac_addr[2] = 0x5E;
 		data->mac_addr[3] = 0x00;
 		data->mac_addr[4] = 0x53;
-		data->mac_addr[5] = sys_rand32_get();
+		data->mac_addr[5] = sys_rand8_get();
 	}
 
 	data->ll_addr.addr = data->mac_addr;
@@ -1591,7 +1586,7 @@ static struct dummy_api net_iface_api = {
 NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 "iface1",
 			 iface1,
-			 net_iface_dev_init,
+			 NULL,
 			 NULL,
 			 &net_iface1_data,
 			 NULL,
@@ -2020,7 +2015,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment)
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
 
-	net_udp_finalize(pkt);
+	net_udp_finalize(pkt, false);
 
 	test_failed = false;
 	test_complete = false;
@@ -2180,7 +2175,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_udp_loopback)
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
 
-	net_udp_finalize(pkt);
+	net_udp_finalize(pkt, false);
 
 	test_failed = false;
 	test_complete = false;
@@ -2222,9 +2217,11 @@ static uint8_t ipv6_reass_frag2[] = {
 
 static uint16_t test_recv_payload_len = 1300U;
 
-static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
-					       struct net_ipv6_hdr *ip_hdr,
-					       struct net_icmp_hdr *icmp_hdr)
+static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
+				  struct net_pkt *pkt,
+				  struct net_icmp_ip_hdr *ip_hdr,
+				  struct net_icmp_hdr *icmp_hdr,
+				  void *user_data)
 {
 	const struct net_ipv6_hdr *hdr = NET_IPV6_HDR(pkt);
 	uint8_t verify_buf[NET_IPV6H_LEN];
@@ -2232,6 +2229,11 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 	uint16_t expected_icmpv6_length = htons(test_recv_payload_len + ECHO_REPLY_H_LEN);
 	uint16_t i;
 	uint8_t expected_data = 0;
+
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(ip_hdr);
+	ARG_UNUSED(icmp_hdr);
+	ARG_UNUSED(user_data);
 
 	NET_DBG("Data %p received", pkt);
 
@@ -2280,8 +2282,6 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 		i++;
 	}
 
-	net_pkt_unref(pkt);
-
 	k_sem_give(&wait_data);
 
 	return NET_OK;
@@ -2297,13 +2297,12 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 	uint16_t payload2_len;
 	uint8_t data;
 	int ret;
-	static struct net_icmpv6_handler ping6_handler = {
-		.type = NET_ICMPV6_ECHO_REPLY,
-		.code = 0,
-		.handler = handle_ipv6_echo_reply,
-	};
+	struct net_icmp_ctx ctx;
 
-	net_icmpv6_register_handler(&ping6_handler);
+	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REPLY,
+				0, handle_ipv6_echo_reply);
+	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
+		      STRINGIFY(NET_ICMPV6_ECHO_REPLY), ret);
 
 	/* Fragment 1 */
 	data = 0U;
@@ -2392,7 +2391,7 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 		zassert_true(false, "Timeout");
 	}
 
-	net_icmpv6_unregister_handler(&ping6_handler);
+	net_icmp_cleanup_ctx(&ctx);
 }
 
 ZTEST_SUITE(net_ipv6_fragment, NULL, test_setup, NULL, NULL, NULL);

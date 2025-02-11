@@ -1,18 +1,16 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <zephyr/linker/iterable_sections.h>
+
 #if defined(CONFIG_NETWORKING)
 #ifndef NETWORK_RAM_SECTIONS
 #define NETWORK_RAM_SECTIONS \
-	ITERABLE_SECTION_RAM(net_if, 4) \
-	ITERABLE_SECTION_RAM(net_if_dev, 4) \
-	ITERABLE_SECTION_RAM(net_l2, 4) \
-	ITERABLE_SECTION_RAM(eth_bridge, 4)
+	ITERABLE_SECTION_RAM(net_if, Z_LINK_ITERABLE_SUBALIGN) \
+	ITERABLE_SECTION_RAM(net_if_dev, Z_LINK_ITERABLE_SUBALIGN) \
+	ITERABLE_SECTION_RAM(net_l2, Z_LINK_ITERABLE_SUBALIGN) \
+	ITERABLE_SECTION_RAM(eth_bridge, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 #endif /* NETWORKING */
-
-#if defined(CONFIG_BT_MESH)
-	ITERABLE_SECTION_RAM(bt_mesh_ext_adv, 4)
-#endif
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_DATA_PROLOGUE(sw_isr_table,,)
@@ -25,6 +23,15 @@
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
 		*(_SW_ISR_TABLE_SECTION_SYMS)
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#if defined(CONFIG_SHARED_INTERRUPTS)
+	SECTION_DATA_PROLOGUE(shared_sw_isr_table,,)
+	{
+		/* TODO: does this section require alignment? */
+		KEEP(*(_SHARED_SW_ISR_TABLE_SECTION_SYMS))
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 #endif
 
         SECTION_DATA_PROLOGUE(device_states,,)
@@ -36,45 +43,20 @@
                 __device_states_end = .;
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#if CONFIG_PM_DEVICE
-	SECTION_DATA_PROLOGUE(pm_device_slots, (NOLOAD),)
-	{
-		__pm_device_slots_start = .;
-		KEEP(*(".z_pm_device_slots"));
-		__pm_device_slots_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#ifdef CONFIG_PM_DEVICE
+	ITERABLE_SECTION_RAM(pm_device_slots, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
-#if defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
-	SECTION_DATA_PROLOGUE(device_handles,,)
+#if defined(CONFIG_DEVICE_DEPS_DYNAMIC)
+	SECTION_DATA_PROLOGUE(device_deps,,)
 	{
-#include "device-handles.ld"
+#include "device-deps.ld"
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif 	/* CONFIG_HAS_DYNAMIC_DEVICE_HANDLES */
+#endif 	/* CONFIG_DEVICE_DEPS_DYNAMIC */
 
-	SECTION_DATA_PROLOGUE(initshell,,)
-	{
-		/* link in shell initialization objects for all modules that
-		 * use shell and their shell commands are automatically
-		 * initialized by the kernel.
-		 */
-		__shell_module_start = .;
-		KEEP(*(".shell_module_*"));
-		__shell_module_end = .;
-		__shell_cmd_start = .;
-		KEEP(*(".shell_cmd_*"));
-		__shell_cmd_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	ITERABLE_SECTION_RAM_GC_ALLOWED(log_mpsc_pbuf, 4)
-	ITERABLE_SECTION_RAM(log_msg_ptr, 4)
-
-	SECTION_DATA_PROLOGUE(log_dynamic_sections,,)
-	{
-		__log_dynamic_start = .;
-		KEEP(*(SORT(.log_dynamic_*)));
-		__log_dynamic_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(log_mpsc_pbuf, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM(log_msg_ptr, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM(log_dynamic, Z_LINK_ITERABLE_SUBALIGN)
 
 #ifdef CONFIG_USERSPACE
 	/* All kernel objects within are assumed to be either completely
@@ -87,42 +69,31 @@
 	_static_kernel_objects_begin = .;
 #endif /* CONFIG_USERSPACE */
 
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_timer, 4)
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_mem_slab, 4)
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_heap, 4)
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_mutex, 4)
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_stack, 4)
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_msgq, 4)
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_mbox, 4)
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_pipe, 4)
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_sem, 4)
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_event, 4)
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_queue, 4)
-	ITERABLE_SECTION_RAM_GC_ALLOWED(k_condvar, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_timer, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_mem_slab, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_heap, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_mutex, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_stack, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_msgq, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_mbox, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_pipe, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_sem, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_event, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_queue, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_fifo, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_lifo, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_condvar, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(sys_mem_blocks_ptr, Z_LINK_ITERABLE_SUBALIGN)
 
-	SECTION_DATA_PROLOGUE(_net_buf_pool_area,,SUBALIGN(4))
-	{
-		_net_buf_pool_list = .;
-		KEEP(*(SORT_BY_NAME("._net_buf_pool.static.*")))
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_RAM(net_buf_pool, Z_LINK_ITERABLE_SUBALIGN)
 
 #if defined(CONFIG_NETWORKING)
 	NETWORK_RAM_SECTIONS
 #endif /* NETWORKING */
 
 #if defined(CONFIG_PCIE)
-	ITERABLE_SECTION_RAM(pcie_dev, 4)
+	ITERABLE_SECTION_RAM(pcie_dev, Z_LINK_ITERABLE_SUBALIGN)
 #endif /* PCIE */
-
-#if defined(CONFIG_UART_MUX)
-	SECTION_DATA_PROLOGUE(uart_mux,,SUBALIGN(4))
-	{
-		__uart_mux_start = .;
-		*(".uart_mux.*")
-		KEEP(*(SORT_BY_NAME(".uart_mux.*")))
-		__uart_mux_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif
 
 #if defined(CONFIG_USB_DEVICE_STACK)
 	SECTION_DATA_PROLOGUE(usb_descriptor,,SUBALIGN(1))
@@ -133,7 +104,7 @@
 		__usb_descriptor_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	ITERABLE_SECTION_RAM(usb_cfg_data, 4)
+	ITERABLE_SECTION_RAM(usb_cfg_data, Z_LINK_ITERABLE_SUBALIGN)
 #endif /* CONFIG_USB_DEVICE_STACK */
 
 #if defined(CONFIG_USB_DEVICE_BOS)
@@ -146,20 +117,28 @@
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* CONFIG_USB_DEVICE_BOS */
 
-
 #if defined(CONFIG_RTIO)
-	SECTION_DATA_PROLOGUE(rtio,,SUBALIGN(4))
-	{
-		__rtio_start = .;
-		*(".rtio.*")
-		KEEP(*(SORT_BY_NAME(".rtio.*")))
-		__rtio_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	ITERABLE_SECTION_RAM(rtio, 4)
-	ITERABLE_SECTION_RAM(rtio_iodev, 4)
+	ITERABLE_SECTION_RAM(rtio, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM(rtio_iodev, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM(rtio_sqe_pool, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM(rtio_cqe_pool, Z_LINK_ITERABLE_SUBALIGN)
 #endif /* CONFIG_RTIO */
 
+#if defined(CONFIG_SENSING)
+	ITERABLE_SECTION_RAM(sensing_sensor, Z_LINK_ITERABLE_SUBALIGN)
+#endif /* CONFIG_SENSING */
+
+#if defined(CONFIG_ZBUS)
+	ITERABLE_SECTION_RAM(zbus_channel_observation_mask, 1)
+#endif /* CONFIG_ZBUS */
+
+#if defined(CONFIG_DEVICE_MUTABLE)
+	ITERABLE_SECTION_RAM(device_mutable, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_BT_ZEPHYR_NUS)
+	ITERABLE_SECTION_RAM(bt_nus_inst, Z_LINK_ITERABLE_SUBALIGN)
+#endif
 
 #ifdef CONFIG_USERSPACE
 	_static_kernel_objects_end = .;

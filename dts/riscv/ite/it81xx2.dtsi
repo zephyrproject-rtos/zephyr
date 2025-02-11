@@ -57,280 +57,297 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
+		};
 
-			pinctrla: pinctrl@f01610 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01610 8>;   /* GPCR */
-				func3-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
-						 0xf02032 0xf02032 0xf016f0 0xf016f0>;
-				func3-en-mask = <0        0        0        0
-						 0x02     0x02     0x10     0x0C    >;
-				func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
-						 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
-				func4-en-mask = <0        0        0        0
-						 0        0        0        0       >;
-				volt-sel =      <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
-						 0xf016e9 0xf016e9 0xf016e9 0xf016e9>;
-				volt-sel-mask = <0        0        0        0
-						 0x1      0x02     0x20     0x40    >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrla: pinctrl@f01610 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01610 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 0xf02032 0xf02032 0xf016f0 0xf016f0>;
+			func3-en-mask = <0        0        0        0
+					 0x02     0x02     0x10     0x0C    >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
+			func4-en-mask = <0        0        0        0
+					 0        0        0        0       >;
+			volt-sel =      <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 0xf016e9 0xf016e9 0xf016e9 0xf016e9>;
+			volt-sel-mask = <0        0        0        0
+					 0x1      0x02     0x20     0x40    >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrlb: pinctrl@f01618 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01618 8>;   /* GPCR */
-				func3-gcr =     <0xf016f5 0xf016f5 NO_FUNC NO_FUNC
-						 NO_FUNC  NO_FUNC  NO_FUNC 0xf01600>;
-				func3-en-mask = <0x01     0x02     0       0
-						 0        0        0       0x02    >;
-				func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC NO_FUNC
-						 NO_FUNC  NO_FUNC  NO_FUNC 0xf016f1>;
-				func4-en-mask = <0        0        0       0
-						 0        0        0       0x40    >;
-				volt-sel =      <NO_FUNC  NO_FUNC  NO_FUNC  0xf016e7
-						 0xf016e7 0xf016e4 0xf016e4 0xf016e9>;
-				volt-sel-mask = <0        0        0        0x02
-						 0x01     0x80     0x40     0x10    >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrlb: pinctrl@f01618 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01618 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <0xf016f5 0xf016f5 NO_FUNC NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC 0xf01600>;
+			func3-en-mask = <0x01     0x02     0       0
+					 0        0        0       0x02    >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC 0xf016f1>;
+			func4-en-mask = <0        0        0       0
+					 0        0        0       0x40    >;
+			volt-sel =      <NO_FUNC  NO_FUNC  NO_FUNC  0xf016e7
+					 0xf016e7 0xf016e4 0xf016e4 0xf016e9>;
+			volt-sel-mask = <0        0        0        0x02
+					 0x01     0x80     0x40     0x10    >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrlc: pinctrl@f01620 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01620 8>;   /* GPCR */
-				func3-gcr =     <NO_FUNC NO_FUNC  NO_FUNC 0xf016f0
-						 NO_FUNC 0xf016f0 NO_FUNC 0xf016f3>;
-				func3-en-mask = <0       0        0       0x10
-						 0       0x10     0       0x02    >;
-				func4-gcr =     <NO_FUNC NO_FUNC  NO_FUNC NO_FUNC
-						 NO_FUNC NO_FUNC  NO_FUNC 0xf016f6>;
-				func4-en-mask = <0       0        0       0
-						 0       0        0       0x80    >;
-				volt-sel =      <0xf016e7 0xf016e4 0xf016e4 NO_FUNC
-						 0xf016e9 NO_FUNC  0xf016e9 0xf016e4>;
-				volt-sel-mask = <0x80     0x20     0x10     0
-						 0x04     0        0x08     0x08    >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrlc: pinctrl@f01620 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01620 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC NO_FUNC  NO_FUNC 0xf016f0
+					 NO_FUNC 0xf016f0 NO_FUNC 0xf016f3>;
+			func3-en-mask = <0       0        0       0x10
+					 0       0x10     0       0x02    >;
+			func4-gcr =     <NO_FUNC NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC  NO_FUNC 0xf016f6>;
+			func4-en-mask = <0       0        0       0
+					 0       0        0       0x80    >;
+			volt-sel =      <0xf016e7 0xf016e4 0xf016e4 NO_FUNC
+					 0xf016e9 NO_FUNC  0xf016e9 0xf016e4>;
+			volt-sel-mask = <0x80     0x20     0x10     0
+					 0x04     0        0x08     0x08    >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrld: pinctrl@f01628 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01628 8>;   /* GPCR */
-				func3-gcr =     <NO_FUNC NO_FUNC  NO_FUNC NO_FUNC
-						 NO_FUNC 0xf016f0 NO_FUNC NO_FUNC>;
-				func3-en-mask = <0       0        0       0
-						 0       0x02     0       0      >;
-				func4-gcr =     <NO_FUNC NO_FUNC  NO_FUNC NO_FUNC
-						 NO_FUNC NO_FUNC  NO_FUNC NO_FUNC>;
-				func4-en-mask = <0       0        0       0
-						 0       0        0       0      >;
-				volt-sel =      <0xf016e4 0xf016e4 0xf016e4 0xf016e5
-						 0xf016e5 0xf016e7 0xf016e7 0xf016e7>;
-				volt-sel-mask = <0x04     0x02     0x01     0x80
-						 0x40     0x10     0x20     0x40    >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrld: pinctrl@f01628 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01628 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC 0xf016f0 NO_FUNC NO_FUNC>;
+			func3-en-mask = <0       0        0       0
+					 0       0x02     0       0      >;
+			func4-gcr =     <NO_FUNC NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC  NO_FUNC NO_FUNC>;
+			func4-en-mask = <0       0        0       0
+					 0       0        0       0      >;
+			volt-sel =      <0xf016e4 0xf016e4 0xf016e4 0xf016e5
+					 0xf016e5 0xf016e7 0xf016e7 0xf016e7>;
+			volt-sel-mask = <0x04     0x02     0x01     0x80
+					 0x40     0x10     0x20     0x40    >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrle: pinctrl@f01630 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01630 8>;   /* GPCR */
-				func3-gcr =     <0xf02032 NO_FUNC  NO_FUNC NO_FUNC
-						 NO_FUNC  0xf016f0 NO_FUNC 0xf02032>;
-				func3-en-mask = <0x01     0        0       0
-						 0        0x08     0       0x01    >;
-				func4-gcr =     <0xf016f3 NO_FUNC  NO_FUNC NO_FUNC
-						 NO_FUNC  NO_FUNC  NO_FUNC NO_FUNC >;
-				func4-en-mask = <0x01     0        0       0
-						 0        0        0       0       >;
-				volt-sel =      <0xf016e5 0xf016d4 0xf016d4 NO_FUNC
-						 0xf016e7 0xf016e7 0xf016e5 0xf016e5>;
-				volt-sel-mask = <0x20     0x40     0x80     0
-						 0x04     0x08     0x10     0x08    >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrle: pinctrl@f01630 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01630 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <0xf02032 NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC  0xf016f0 NO_FUNC 0xf02032>;
+			func3-en-mask = <0x01     0        0       0
+					 0        0x08     0       0x01    >;
+			func4-gcr =     <0xf016f3 NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC NO_FUNC >;
+			func4-en-mask = <0x01     0        0       0
+					 0        0        0       0       >;
+			volt-sel =      <0xf016e5 0xf016d4 0xf016d4 NO_FUNC
+					 0xf016e7 0xf016e7 0xf016e5 0xf016e5>;
+			volt-sel-mask = <0x20     0x40     0x80     0
+					 0x04     0x08     0x10     0x08    >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrlf: pinctrl@f01638 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01638 8>;   /* GPCR */
-				func3-gcr =     <NO_FUNC NO_FUNC 0xf016f0 0xf016f0
-						 NO_FUNC NO_FUNC 0xf016f1 0xf016f1>;
-				func3-en-mask = <0       0       0x02     0x02
-						 0       0       0x10     0x10    >;
-				func4-gcr =     <NO_FUNC NO_FUNC 0xf02046 0xf02046
-						 NO_FUNC NO_FUNC NO_FUNC  NO_FUNC >;
-				func4-en-mask = <0       0       0x40     0x40
-						 0       0       0        0       >;
-				volt-sel =      <0xf016d4 0xf016d4 0xf016e5 0xf016e5
-						 0xf016e5 0xf016e6 0xf016e6 0xf016e6>;
-				volt-sel-mask = <0x10     0x20     0x04     0x02
-						 0x01     0x80     0x40     0x20    >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrlf: pinctrl@f01638 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01638 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC NO_FUNC 0xf016f0 0xf016f0
+					 NO_FUNC NO_FUNC 0xf016f1 0xf016f1>;
+			func3-en-mask = <0       0       0x02     0x02
+					 0       0       0x10     0x10    >;
+			func4-gcr =     <NO_FUNC NO_FUNC 0xf02046 0xf02046
+					 NO_FUNC NO_FUNC NO_FUNC  NO_FUNC >;
+			func4-en-mask = <0       0       0x40     0x40
+					 0       0       0        0       >;
+			volt-sel =      <0xf016d4 0xf016d4 0xf016e5 0xf016e5
+					 0xf016e5 0xf016e6 0xf016e6 0xf016e6>;
+			volt-sel-mask = <0x10     0x20     0x04     0x02
+					 0x01     0x80     0x40     0x20    >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrlg: pinctrl@f01640 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01640 8>;   /* GPCR */
-				func3-gcr =     <0xf016f0 0xf016f0 0xf016f0 NO_FUNC
-						 NO_FUNC  NO_FUNC  0xf016f0 NO_FUNC>;
-				func3-en-mask = <0x20     0x08     0x10     0
-						 0        0        0x02     0      >;
-				func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
-						 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
-				func4-en-mask = <0        0        0        0
-						 0        0        0        0      >;
-				volt-sel =      <0xf016d4 0xf016e6 0xf016d4 NO_FUNC
-						 NO_FUNC  NO_FUNC  0xf016e6 NO_FUNC>;
-				volt-sel-mask = <0x04     0x10    0x08     0
-						 0        0       0x08     0       >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrlg: pinctrl@f01640 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01640 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <0xf016f0 0xf016f0 0xf016f0 NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf016f0 NO_FUNC>;
+			func3-en-mask = <0x20     0x08     0x10     0
+					 0        0        0x02     0      >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4-en-mask = <0        0        0        0
+					 0        0        0        0      >;
+			volt-sel =      <0xf016d4 0xf016e6 0xf016d4 NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf016e6 NO_FUNC>;
+			volt-sel-mask = <0x04     0x10    0x08     0
+					 0        0       0x08     0       >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrlh: pinctrl@f01648 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01648 8>;   /* GPCR */
-				func3-gcr =     <NO_FUNC 0xf016f1 0xf016f1 NO_FUNC
-						 NO_FUNC 0xf016f5 0xf016f5 NO_FUNC>;
-				func3-en-mask = <0       0x20     0x20     0
-						 0       0x04     0x08     0      >;
-				func4-gcr =     <NO_FUNC 0xf016f5 0xf016f5 NO_FUNC
-						 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC>;
-				func4-en-mask = <0       0x04     0x08     0
-						 0       0        0        0      >;
-				volt-sel =      <0xf016e6 0xf016e6 0xf016e6 NO_FUNC
-						 NO_FUNC  0xf016d3 0xf016d4 NO_FUNC>;
-				volt-sel-mask = <0x04     0x02     0x01     0
-						 0        0x80     0x01     0      >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrlh: pinctrl@f01648 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01648 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC 0xf016f1 0xf016f1 NO_FUNC
+					 NO_FUNC 0xf016f5 0xf016f5 NO_FUNC>;
+			func3-en-mask = <0       0x20     0x20     0
+					 0       0x04     0x08     0      >;
+			func3-ext =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC 0xf03a23 0xf03a23 NO_FUNC>;
+			func3-ext-mask = <0      0        0        0
+					  0      0x01     0x01     0      >;
+			func4-gcr =     <NO_FUNC 0xf016f5 0xf016f5 NO_FUNC
+					 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4-en-mask = <0       0x04     0x08     0
+					 0       0        0        0      >;
+			volt-sel =      <0xf016e6 0xf016e6 0xf016e6 NO_FUNC
+					 NO_FUNC  0xf016d3 0xf016d4 NO_FUNC>;
+			volt-sel-mask = <0x04     0x02     0x01     0
+					 0        0x80     0x01     0      >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrli: pinctrl@f01650 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01650 8>;   /* GPCR */
-				func3-gcr =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
-						 NO_FUNC 0xf016f0 0xf016f0 0xf016f0>;
-				func3-en-mask = <0       0        0        0
-						 0       0x08     0x08     0x08    >;
-				func4-gcr =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
-						 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC >;
-				func4-en-mask = <0       0        0        0
-						 0       0        0        0       >;
-				volt-sel =      <0xf016d3 0xf016e8 0xf016e8 0xf016e8
-						 0xf016e8 0xf016d3 0xf016d3 0xf016d3>;
-				volt-sel-mask = <0x08     0x10     0x20     0x40
-						 0x80     0x10     0x20     0x40    >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrli: pinctrl@f01650 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01650 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC 0xf016f0 0xf016f0 0xf016f0>;
+			func3-en-mask = <0       0        0        0
+					 0       0x08     0x08     0x08    >;
+			func4-gcr =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC >;
+			func4-en-mask = <0       0        0        0
+					 0       0        0        0       >;
+			volt-sel =      <0xf016d3 0xf016e8 0xf016e8 0xf016e8
+					 0xf016e8 0xf016d3 0xf016d3 0xf016d3>;
+			volt-sel-mask = <0x08     0x10     0x20     0x40
+					 0x80     0x10     0x20     0x40    >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrlj: pinctrl@f01658 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01658 8>;   /* GPCR */
-				func3-gcr =     <0xf016f4 NO_FUNC  0xf016f4 0xf016f4
-						 0xf016f0 0xf016f0 NO_FUNC  NO_FUNC>;
-				func3-en-mask = <0x01     0        0x01     0x02
-						 0x02     0x03     0        0      >;
-				func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
-						 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
-				func4-en-mask = <0        0        0        0
-						 0        0        0        0      >;
-				volt-sel =      <0xf016e8 0xf016e8 0xf016e8 0xf016e8
-						 0xf016d3 0xf016d3 0xf016d3 0xf016d7>;
-				volt-sel-mask = <0x01     0x02     0x04     0x08
-						 0x01     0x02     0x04     0x04    >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrlj: pinctrl@f01658 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01658 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <0xf016f4 NO_FUNC  0xf016f4 0xf016f4
+					 0xf016f0 0xf016f0 NO_FUNC  NO_FUNC>;
+			func3-en-mask = <0x01     0        0x01     0x02
+					 0x02     0x03     0        0      >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4-en-mask = <0        0        0        0
+					 0        0        0        0      >;
+			volt-sel =      <0xf016e8 0xf016e8 0xf016e8 0xf016e8
+					 0xf016d3 0xf016d3 0xf016d3 0xf016d7>;
+			volt-sel-mask = <0x01     0x02     0x04     0x08
+					 0x01     0x02     0x04     0x04    >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrlk: pinctrl@f01690 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01690 8>;   /* GPCR */
-				func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
-						 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
-				func3-en-mask = <0       0       0       0
-						 0       0       0       0      >;
-				func4-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
-						 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
-				func4-en-mask = <0       0       0       0
-						 0       0       0       0      >;
-				volt-sel =      <0xf016d2 0xf016d2 0xf016d2 0xf016d2
-						 0xf016d2 0xf016d2 0xf016d2 0xf016d2>;
-				volt-sel-mask = <0x01     0x02     0x04     0x08
-						 0x10     0x20     0x40     0x80    >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrlk: pinctrl@f01690 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01690 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func3-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			func4-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func4-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			volt-sel =      <0xf016d2 0xf016d2 0xf016d2 0xf016d2
+					 0xf016d2 0xf016d2 0xf016d2 0xf016d2>;
+			volt-sel-mask = <0x01     0x02     0x04     0x08
+					 0x10     0x20     0x40     0x80    >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrll: pinctrl@f01698 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01698 8>;   /* GPCR */
-				func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
-						 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
-				func3-en-mask = <0       0       0       0
-						 0       0       0       0      >;
-				func4-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
-						 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
-				func4-en-mask = <0       0       0       0
-						 0       0       0       0      >;
-				volt-sel =      <0xf016d1 0xf016d1 0xf016d1 0xf016d1
-						 0xf016d1 0xf016d1 0xf016d1 0xf016d1>;
-				volt-sel-mask = <0x01     0x02     0x04     0x08
-						 0x10     0x20     0x40     0x80    >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrll: pinctrl@f01698 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01698 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func3-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			func4-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func4-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			volt-sel =      <0xf016d1 0xf016d1 0xf016d1 0xf016d1
+					 0xf016d1 0xf016d1 0xf016d1 0xf016d1>;
+			volt-sel-mask = <0x01     0x02     0x04     0x08
+					 0x10     0x20     0x40     0x80    >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrlm: pinctrl@f016a0 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f016a0 8>;   /* GPCR */
-				func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
-						 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
-				func3-en-mask = <0       0       0       0
-						 0       0       0       0      >;
-				func4-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
-						 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
-				func4-en-mask = <0       0       0       0
-						 0       0       0       0      >;
-				volt-sel =      <0xf016ed 0xf016ed 0xf016ed 0xf016ed
-						 0xf016ed 0xf016ed 0xf016ed NO_FUNC >;
-				volt-sel-mask = <0x10     0x10     0x10     0x10
-						 0x10     0x10     0x10     0       >;
-				#pinmux-cells = <2>;
-				gpio-group;
-			};
+		pinctrlm: pinctrl@f016a0 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f016a0 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func3-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			func4-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func4-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			volt-sel =      <0xf016ed 0xf016ed 0xf016ed 0xf016ed
+					 0xf016ed 0xf016ed 0xf016ed NO_FUNC >;
+			volt-sel-mask = <0x10     0x10     0x10     0x10
+					 0x10     0x10     0x10     0       >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
 
-			pinctrlksi: pinctrl@f01d06 {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01d06 1   /* KSIGCTRL */
-				       0x00f01d05 1>; /* KSICTRL */
-				pp-od-mask = <NO_FUNC>;
-				pullup-mask = <BIT(2)>;
-				#pinmux-cells = <2>;
-			};
+		pinctrlksi: pinctrl@f01d06 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d06 1   /* KSIGCTRL */
+			       0x00f01d05 1>; /* KSICTRL */
+			pp-od-mask = <NO_FUNC>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
 
-			pinctrlksoh: pinctrl@f01d0a {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01d0a 1   /* KSOHGCTRL */
-				       0x00f01d02 1>; /* KSOCTRL */
-				pp-od-mask = <BIT(0)>;
-				pullup-mask = <BIT(2)>;
-				#pinmux-cells = <2>;
-			};
+		pinctrlksoh: pinctrl@f01d0a {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d0a 1   /* KSOHGCTRL */
+			       0x00f01d02 1>; /* KSOCTRL */
+			pp-od-mask = <BIT(0)>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
 
-			pinctrlksol: pinctrl@f01d0d {
-				compatible = "ite,it8xxx2-pinctrl-func";
-				reg = <0x00f01d0d 1   /* KSOLGCTRL */
-				       0x00f01d02 1>; /* KSOCTRL */
-				pp-od-mask = <BIT(0)>;
-				pullup-mask = <BIT(2)>;
-				#pinmux-cells = <2>;
-			};
+		pinctrlksol: pinctrl@f01d0d {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d0d 1   /* KSOLGCTRL */
+			       0x00f01d02 1>; /* KSOCTRL */
+			pp-od-mask = <BIT(0)>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
 		};
 
 		i2c0: i2c@f01c40 {
@@ -343,6 +360,7 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <SMB_CHANNEL_A>;
+			channel-switch-sel = <I2C_CHA_LOCATE>;
 			scl-gpios = <&gpiob 3 0>;
 			sda-gpios = <&gpiob 4 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBA>;
@@ -359,10 +377,11 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <SMB_CHANNEL_B>;
+			channel-switch-sel = <I2C_CHB_LOCATE>;
 			scl-gpios = <&gpioc 1 0>;
 			sda-gpios = <&gpioc 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBB>;
-			/delete-property/ fifo-enable;   /* FIFO2 */
+			fifo-enable;   /* FIFO2 */
 		};
 
 		i2c2: i2c@f01cc0 {
@@ -375,10 +394,11 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <SMB_CHANNEL_C>;
+			channel-switch-sel = <I2C_CHC_LOCATE>;
 			scl-gpios = <&gpiof 6 0>;
 			sda-gpios = <&gpiof 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBC>;
-			fifo-enable;   /* FIFO2 */
+			/delete-property/ fifo-enable;   /* FIFO2 */
 		};
 
 		i2c3: i2c@f03680 {
@@ -390,6 +410,7 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <I2C_CHANNEL_D>;
+			channel-switch-sel = <I2C_CHD_LOCATE>;
 			scl-gpios = <&gpioh 1 0>;
 			sda-gpios = <&gpioh 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBD>;
@@ -404,6 +425,7 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <I2C_CHANNEL_E>;
+			channel-switch-sel = <I2C_CHE_LOCATE>;
 			scl-gpios = <&gpioe 0 0>;
 			sda-gpios = <&gpioe 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBE>;
@@ -418,6 +440,7 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <I2C_CHANNEL_F>;
+			channel-switch-sel = <I2C_CHF_LOCATE>;
 			scl-gpios = <&gpioa 4 0>;
 			sda-gpios = <&gpioa 5 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBF>;
@@ -593,10 +616,16 @@
 
 		twd0: watchdog@f01f00 {
 			compatible = "ite,it8xxx2-watchdog";
-			reg = <0x00f01f00 0x0062>;
+			reg = <0x00f01f00 0x000f>;
 			interrupts = <IT8XXX2_IRQ_TIMER1 IRQ_TYPE_EDGE_RISING   /* Warning timer */
 				      IT8XXX2_IRQ_TIMER2 IRQ_TYPE_EDGE_RISING>; /* One shot timer */
 			interrupt-parent = <&intc>;
+		};
+
+		sha0: sha@f0202d {
+			compatible = "ite,it8xxx2-sha";
+			reg = <0x00f0202d 0x3>;
+			status = "disabled";
 		};
 	};
 };

@@ -104,7 +104,7 @@ typedef __UINT_LEAST64_TYPE__	uint_least64_t;
 typedef __INTPTR_TYPE__		intptr_t;
 typedef __UINTPTR_TYPE__	uintptr_t;
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 /* These macros must produce constant integer expressions, which can't
  * be done in the preprocessor (casts aren't allowed).  Defer to the
  * GCC internal functions where they're available.
@@ -120,7 +120,7 @@ typedef __UINTPTR_TYPE__	uintptr_t;
 #define UINT32_C(_v) __UINT32_C(_v)
 #define UINT64_C(_v) __UINT64_C(_v)
 #define UINTMAX_C(_v) __UINTMAX_C(_v)
-#endif /* __GNUC__ */
+#endif /* defined(__GNUC__) || defined(__clang__) */
 
 #ifdef __CCAC__
 #ifndef __INT8_C

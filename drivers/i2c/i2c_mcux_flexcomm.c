@@ -11,9 +11,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_i2c.h>
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
+#include <zephyr/drivers/reset.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -21,16 +20,31 @@ LOG_MODULE_REGISTER(mcux_flexcomm);
 
 #include "i2c-priv.h"
 
+#define I2C_TRANSFER_TIMEOUT_MSEC                                                                  \
+	COND_CODE_0(CONFIG_I2C_NXP_TRANSFER_TIMEOUT, (K_FOREVER),                                  \
+		    (K_MSEC(CONFIG_I2C_NXP_TRANSFER_TIMEOUT)))
+
+#define MCUX_FLEXCOMM_MAX_TARGETS 4
+
 struct mcux_flexcomm_config {
 	I2C_Type *base;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif
+	const struct reset_dt_spec reset;
 };
+
+#ifdef CONFIG_I2C_TARGET
+struct mcux_flexcomm_target_data {
+	struct i2c_target_config *target_cfg;
+	bool target_attached;
+	bool first_read;
+	bool first_write;
+	bool is_write;
+};
+#endif
 
 struct mcux_flexcomm_data {
 	i2c_master_handle_t handle;
@@ -38,12 +52,10 @@ struct mcux_flexcomm_data {
 	struct k_sem lock;
 	status_t callback_status;
 #ifdef CONFIG_I2C_TARGET
+	uint8_t nr_targets_attached;
+	i2c_slave_config_t i2c_cfg;
 	i2c_slave_handle_t target_handle;
-	struct i2c_target_config *target_cfg;
-	bool target_attached;
-	bool first_read;
-	bool first_write;
-	bool is_write;
+	struct mcux_flexcomm_target_data target_data[MCUX_FLEXCOMM_MAX_TARGETS];
 #endif
 };
 
@@ -172,7 +184,7 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		}
 
 		/* Wait for the transfer to complete */
-		k_sem_take(&data->device_sync_sem, K_FOREVER);
+		k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT_MSEC);
 
 		/* Return an error if the transfer didn't complete
 		 * successfully. e.g., nak, timeout, lost arbitration
@@ -193,23 +205,108 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 }
 
 #if defined(CONFIG_I2C_TARGET)
+
+static struct mcux_flexcomm_target_data *mcux_flexcomm_find_free_target(
+		struct mcux_flexcomm_data *data)
+{
+	struct mcux_flexcomm_target_data *target;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(data->target_data); i++) {
+		target = &data->target_data[i];
+		if (!target->target_attached) {
+			return target;
+		}
+	}
+	return NULL;
+}
+
+static struct mcux_flexcomm_target_data *mcux_flexcomm_find_target_by_address(
+		struct mcux_flexcomm_data *data, uint16_t address)
+{
+	struct mcux_flexcomm_target_data *target;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(data->target_data); i++) {
+		target = &data->target_data[i];
+		if (target->target_attached && target->target_cfg->address == address) {
+			return target;
+		}
+	}
+	return NULL;
+}
+
+static int mcux_flexcomm_setup_i2c_config_address(struct mcux_flexcomm_data *data,
+		struct mcux_flexcomm_target_data *target, bool disabled)
+{
+	i2c_slave_address_t *addr;
+	int idx = -1;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(data->target_data); i++) {
+		if (data->target_data[i].target_attached && &data->target_data[i] == target) {
+			idx = i;
+			break;
+		}
+	}
+
+	if (idx < 0) {
+		return -ENODEV;
+	}
+
+	/* This could be just shifting a pointer in the i2c_cfg struct */
+	/* However would be less readable and error prone if the struct changes */
+	switch (idx) {
+	case 0:
+		addr = &data->i2c_cfg.address0;
+		break;
+	case 1:
+		addr = &data->i2c_cfg.address1;
+		break;
+	case 2:
+		addr = &data->i2c_cfg.address2;
+		break;
+	case 3:
+		addr = &data->i2c_cfg.address3;
+		break;
+	default:
+		return -1;
+	}
+
+	addr->address = target->target_cfg->address;
+	addr->addressDisable = disabled;
+
+	return 0;
+}
+
 static void i2c_target_transfer_callback(I2C_Type *base,
 		volatile i2c_slave_transfer_t *transfer, void *userData)
 {
+	/* Convert 8-bit received address to 7-bit address */
+	uint8_t address = transfer->receivedAddress >> 1;
 	struct mcux_flexcomm_data *data = userData;
-	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	struct mcux_flexcomm_target_data *target;
+	const struct i2c_target_callbacks *target_cb;
 	static uint8_t rxVal, txVal;
 
 	ARG_UNUSED(base);
 
+	target = mcux_flexcomm_find_target_by_address(data, address);
+	if (!target) {
+		LOG_ERR("No target found for address: 0x%x", address);
+		return;
+	}
+
+	target_cb = target->target_cfg->callbacks;
+
 	switch (transfer->event) {
 	case kI2C_SlaveTransmitEvent:
 		/* request to provide data to transmit */
-		if (data->first_read && target_cb->read_requested) {
-			data->first_read = false;
-			target_cb->read_requested(data->target_cfg, &txVal);
+		if (target->first_read && target_cb->read_requested) {
+			target->first_read = false;
+			target_cb->read_requested(target->target_cfg, &txVal);
 		} else if (target_cb->read_processed) {
-			target_cb->read_processed(data->target_cfg, &txVal);
+			target_cb->read_processed(target->target_cfg, &txVal);
 		}
 
 		transfer->txData = &txVal;
@@ -218,31 +315,31 @@ static void i2c_target_transfer_callback(I2C_Type *base,
 
 	case kI2C_SlaveReceiveEvent:
 		/* request to provide a buffer in which to place received data */
-		if (data->first_write && target_cb->write_requested) {
-			target_cb->write_requested(data->target_cfg);
-			data->first_write = false;
+		if (target->first_write && target_cb->write_requested) {
+			target_cb->write_requested(target->target_cfg);
+			target->first_write = false;
 		}
 
 		transfer->rxData = &rxVal;
 		transfer->rxSize = 1;
-		data->is_write = true;
+		target->is_write = true;
 		break;
 
 	case kI2C_SlaveCompletionEvent:
 		/* called after every transferred byte */
-		if (data->is_write && target_cb->write_received) {
-			target_cb->write_received(data->target_cfg, rxVal);
-			data->is_write = false;
+		if (target->is_write && target_cb->write_received) {
+			target_cb->write_received(target->target_cfg, rxVal);
+			target->is_write = false;
 		}
 		break;
 
 	case kI2C_SlaveDeselectedEvent:
 		if (target_cb->stop) {
-			target_cb->stop(data->target_cfg);
+			target_cb->stop(target->target_cfg);
 		}
 
-		data->first_read = true;
-		data->first_write = true;
+		target->first_read = true;
+		target->first_write = true;
 		break;
 
 	default:
@@ -251,16 +348,12 @@ static void i2c_target_transfer_callback(I2C_Type *base,
 	}
 }
 
-int mcux_flexcomm_target_register(const struct device *dev,
-			     struct i2c_target_config *target_config)
+static int mcux_flexcomm_setup_slave_config(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
 	I2C_Type *base = config->base;
 	uint32_t clock_freq;
-	i2c_slave_config_t i2c_cfg;
-
-	I2C_MasterDeinit(base);
 
 	/* Get the clock frequency */
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
@@ -268,23 +361,7 @@ int mcux_flexcomm_target_register(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (!target_config) {
-		return -EINVAL;
-	}
-
-	if (data->target_attached) {
-		return -EBUSY;
-	}
-
-	data->target_cfg = target_config;
-	data->target_attached = true;
-	data->first_read = true;
-	data->first_write = true;
-
-	I2C_SlaveGetDefaultConfig(&i2c_cfg);
-	i2c_cfg.address0.address = target_config->address;
-
-	I2C_SlaveInit(base, &i2c_cfg, clock_freq);
+	I2C_SlaveInit(base, &data->i2c_cfg, clock_freq);
 	I2C_SlaveTransferCreateHandle(base, &data->target_handle,
 			i2c_target_transfer_callback, data);
 	I2C_SlaveTransferNonBlocking(base, &data->target_handle,
@@ -294,21 +371,77 @@ int mcux_flexcomm_target_register(const struct device *dev,
 	return 0;
 }
 
+int mcux_flexcomm_target_register(const struct device *dev,
+			     struct i2c_target_config *target_config)
+{
+	const struct mcux_flexcomm_config *config = dev->config;
+	struct mcux_flexcomm_data *data = dev->data;
+	struct mcux_flexcomm_target_data *target;
+	I2C_Type *base = config->base;
+
+	I2C_MasterDeinit(base);
+
+	if (!target_config) {
+		return -EINVAL;
+	}
+
+	target = mcux_flexcomm_find_free_target(data);
+	if (!target) {
+		return -EBUSY;
+	}
+
+	target->target_cfg = target_config;
+	target->target_attached = true;
+	target->first_read = true;
+	target->first_write = true;
+
+	if (data->nr_targets_attached == 0) {
+		I2C_SlaveGetDefaultConfig(&data->i2c_cfg);
+	}
+
+	if (mcux_flexcomm_setup_i2c_config_address(data, target, false) < 0) {
+		return -EINVAL;
+	}
+
+	if (mcux_flexcomm_setup_slave_config(dev) < 0) {
+		return -EINVAL;
+	}
+
+	data->nr_targets_attached++;
+	return 0;
+}
+
 int mcux_flexcomm_target_unregister(const struct device *dev,
 			       struct i2c_target_config *target_config)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
+	struct mcux_flexcomm_target_data *target;
 	I2C_Type *base = config->base;
 
-	if (!data->target_attached) {
+	target = mcux_flexcomm_find_target_by_address(data, target_config->address);
+	if (!target || !target->target_attached) {
 		return -EINVAL;
 	}
 
-	data->target_cfg = NULL;
-	data->target_attached = false;
+	if (mcux_flexcomm_setup_i2c_config_address(data, target, true) < 0) {
+		return -EINVAL;
+	}
 
-	I2C_SlaveDeinit(base);
+	target->target_cfg = NULL;
+	target->target_attached = false;
+
+	data->nr_targets_attached--;
+
+	if (data->nr_targets_attached > 0) {
+		/* still slaves attached, reconfigure the I2C peripheral after address removal */
+		if (mcux_flexcomm_setup_slave_config(dev) < 0) {
+			return -EINVAL;
+		}
+
+	} else {
+		I2C_SlaveDeinit(base);
+	}
 
 	return 0;
 }
@@ -321,7 +454,7 @@ static void mcux_flexcomm_isr(const struct device *dev)
 	I2C_Type *base = config->base;
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->target_attached) {
+	if (data->nr_targets_attached > 0) {
 		I2C_SlaveTransferHandleIRQ(base, &data->target_handle);
 		return;
 	}
@@ -339,12 +472,20 @@ static int mcux_flexcomm_init(const struct device *dev)
 	i2c_master_config_t master_config;
 	int error;
 
-#ifdef CONFIG_PINCTRL
+	if (!device_is_ready(config->reset.dev)) {
+		LOG_ERR("Reset device not ready");
+		return -ENODEV;
+	}
+
+	error = reset_line_toggle(config->reset.dev, config->reset.id);
+	if (error) {
+		return error;
+	}
+
 	error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (error) {
 		return error;
 	}
-#endif
 
 	k_sem_init(&data->lock, 1, 1);
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
@@ -387,17 +528,8 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 #endif
 };
 
-#ifdef CONFIG_PINCTRL
-#define I2C_MCUX_FLEXCOMM_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define I2C_MCUX_FLEXCOMM_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define I2C_MCUX_FLEXCOMM_PINCTRL_DEFINE(n)
-#define I2C_MCUX_FLEXCOMM_PINCTRL_INIT(n)
-#endif
-
-
 #define I2C_MCUX_FLEXCOMM_DEVICE(id)					\
-	I2C_MCUX_FLEXCOMM_PINCTRL_DEFINE(id)				\
+	PINCTRL_DT_INST_DEFINE(id);					\
 	static void mcux_flexcomm_config_func_##id(const struct device *dev); \
 	static const struct mcux_flexcomm_config mcux_flexcomm_config_##id = {	\
 		.base = (I2C_Type *) DT_INST_REG_ADDR(id),		\
@@ -406,7 +538,8 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
 		.irq_config_func = mcux_flexcomm_config_func_##id,	\
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
-		I2C_MCUX_FLEXCOMM_PINCTRL_INIT(id)			\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
+		.reset = RESET_DT_SPEC_INST_GET(id),			\
 	};								\
 	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;	\
 	I2C_DEVICE_DT_INST_DEFINE(id,					\

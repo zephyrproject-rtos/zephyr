@@ -12,4 +12,4 @@ properties:
     type: boolean
     description: |
       FIFO1 supports channel A.
-      FIFO2 only supports one channel of B or C.
+      FIFO2 supports channel B.

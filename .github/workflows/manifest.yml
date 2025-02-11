@@ -4,23 +4,34 @@ on:
 
 jobs:
   contribs:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Manifest
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: zephyrproject/zephyr
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
 
+      - name: west setup
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        working-directory: zephyrproject/zephyr
+        run: |
+          pip3 install west
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+          west init -l . || true
+
       - name: Manifest
-        uses: zephyrproject-rtos/action-manifest@a6d0c6e52bbbb7d6df23ceb42842edcb4582b8dc
+        uses: zephyrproject-rtos/action-manifest@v1.2.2
         with:
           github-token: ${{ secrets.ZB_GITHUB_TOKEN }}
           manifest-path: 'west.yml'
           checkout-path: 'zephyrproject/zephyr'
+          use-tree-checkout: 'true'
           label-prefix: 'manifest-'
           verbosity-level: '1'
           labels: 'manifest'

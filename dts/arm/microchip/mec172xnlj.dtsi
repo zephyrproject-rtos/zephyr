@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2023 Silicom Connectivity Solutions, Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/microchip-xec-gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <freq.h>
+#include <mem.h>
+
+#include "mec172x/mec172x-vw-routing.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <1000000>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <2000000>;
+			};
+		};
+	};
+
+	flash0: flash@c0000 {
+		reg = <0x000C0000 0x58000>;
+	};
+
+	sram0: memory@118000 {
+		compatible = "mmio-sram";
+		reg = <0x00118000 0x10000>;
+	};
+
+	soc {
+		#include "mec172x_common.dtsi"
+
+		eeprom: eeprom@40002c00 {
+			compatible = "microchip,xec-eeprom";
+			reg = <0x40002c00 0x400>;
+			interrupts = <155 2>;
+			size = <8192>;
+			girqs = <18 13>;
+			pcrs = <4 14>;
+			status = "disabled";
+		};
+
+		pwm9: pwm@40005890 {
+			compatible = "microchip,xec-pwm";
+			reg = <0x40005890 0x20>;
+			pcrs = <3 31>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm10: pwm@400058a0 {
+			compatible = "microchip,xec-pwm";
+			reg = <0x400058a0 0x20>;
+			pcrs = <4 0>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm11: pwm@400058b0 {
+			compatible = "microchip,xec-pwm";
+			reg = <0x400058b0 0x20>;
+			pcrs = <4 1>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	status = "disabled";
+};

@@ -1,0 +1,15 @@
+identifier: nrf52840_mdk_usb_dongle
+name: nRF52840-MDK-USB-Dongle
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - usb_device
+  - ble
+  - watchdog
+  - counter

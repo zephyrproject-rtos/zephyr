@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2020-2023 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -14,7 +14,7 @@ description: |
 
   When using speeds above standard mode, user may need adjust clock and data
   lines slew and strength parameters.  In general, slew 0 and minimal strength
-  is enougth for short buses and light loads.  As reference, the below
+  is enough for short buses and light loads.  As a reference, the below
   is the lowest power configuration:
 
     std-clk-slew-lim = <0>;
@@ -48,10 +48,8 @@ properties:
   interrupts:
     required: true
 
-  peripheral-id:
-    type: int
+  clocks:
     required: true
-    description: peripheral ID
 
   std-clk-slew-lim:
     type: int

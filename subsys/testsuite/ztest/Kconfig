@@ -4,22 +4,16 @@
 config ZTEST
 	bool "Zephyr testing framework"
 	select TEST
-	select OUTPUT_SYMBOLS
 	help
 	  Enable the Zephyr testing framework. You should enable this only
 	  if you're writing automated tests.
 
 if ZTEST
 
-config ZTEST_NEW_API
-	bool "Use the new Ztest API"
-	help
-	  Enables the new Ztest APIs for creating suites and unit tests in
-	  separate compilation units as well as the new 'rules' API.
-
 config ZTEST_STACK_SIZE
 	int "Test function thread stack size"
 	default 2048 if COVERAGE_GCOV
+	default 2048 if X86
 	default 1024
 
 config ZTEST_TEST_DELAY_MS
@@ -29,9 +23,18 @@ config ZTEST_TEST_DELAY_MS
 	  Add a delay between between tests to manage output on the console on
 	  systems that can't handle the rapid output rate.
 
+config ZTEST_SHELL
+	bool "Ztest with shell support"
+	select SHELL
+	select SHELL_THREAD_PRIORITY_OVERRIDE
+	select GETOPT_LONG
+	select SHELL_GETOPT
+	help
+	  Enable shell to manage test execution and selection.
+
 config ZTEST_CPU_HOLD_TIME_MS
 	int "Time in milliseconds to hold other CPUs for 1cpu type tests"
-	default 3000
+	default 5000
 	help
 	  This option is used to specify the maximum time in milliseconds for
 	  which a 1cpu type test may execute on a multicpu system. The default
@@ -104,9 +107,16 @@ config ZTEST_NO_YIELD
 	  yielding to the idle thread may put the board into a low power state
 	  where a debugger cannot connect to it.
 
-if ZTEST_NEW_API
+config ZTEST_WARN_NO_OPTIMIZATIONS
+	bool "Warn when running tests with CONFIG_NO_OPTIMIZATIONS"
+	default y if !(ARCH_POSIX || COVERAGE)
+	depends on NO_OPTIMIZATIONS
+	help
+	  Print a CMake warning when building ztests with no compiler
+	  optimizations. Please don't file issues when running tests that are
+	  not explicitly tuned to work in this configuration.
 
-menu "ztest provided rules"
+menu "ZTest provided rules"
 
 config ZTEST_RULE_1CPU
 	bool "Run all the tests on a single CPU"
@@ -121,6 +131,16 @@ config ZTEST_VERIFY_RUN_ALL
 	default y
 	help
 	  This rule will fail the project if not all tests have been run.
+
+
+config ZTEST_COVERAGE_RESET_BEFORE_TESTS
+	bool "Performs coverage counters reset"
+	depends on COVERAGE_GCOV
+	help
+	  This rule will reset gcov counters before running tests. This ensures
+	  that only code lines triggered by test itself are counted in the coverage report
+	  and all the board initialization code and pre-test bootstrap is not counted.
+	  This is useful when, for example, you are testing code that is also executed during bootup.
 
 config ZTEST_SHUFFLE
 	bool "Shuffle the order of tests and suites"
@@ -174,8 +194,6 @@ config ZTEST_FAIL_ON_ASSUME
 	  that while tests will still be marked as skipped on failed zassume calls, the final test
 	  result will be shown as a failure in order to increase visibility. This precludes tests
 	  that skipped with the ZTEST_EXPECT_SKIP annotation.
-
-endif # ZTEST_NEW_API
 
 config TEST_LOGGING_FLUSH_AFTER_TEST
 	bool "When enabled logs are flushed after each test case"

@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2018, Diego Sueiro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx7d_m4.dtsi>
+#include "warp7-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "WaRP7 IMX7S board";
+	compatible = "nxp,mcimx7d_m4";
+
+	aliases {
+		sw0    = &user_switch_1;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
+	};
+
+	chosen {
+		zephyr,flash = &tcml_code;
+		zephyr,sram = &tcmu_sys;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_switch_1: user_sw_1 {
+			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
+			label = "User SW1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	modem-mode = <0>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};
+
+&uart6 {
+	status = "okay";
+	current-speed = <115200>;
+	modem-mode = <0>;
+	pinctrl-0 = <&uart6_default>;
+	pinctrl-names = "default";
+};
+
+&gpio7 {
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+};
+
+&i2c4 {
+	status = "okay";
+	pinctrl-0 = <&i2c4_default>;
+	pinctrl-names = "default";
+
+	fxos8700: fxos8700@1e {
+		compatible = "nxp,fxos8700";
+		reg = <0x1e>;
+		int1-gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
+	};
+
+	fxas21002@20 {
+		compatible = "nxp,fxas21002";
+		reg = <0x20>;
+		int1-gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
+	};
+
+};
+
+&mub {
+	status = "okay";
+};

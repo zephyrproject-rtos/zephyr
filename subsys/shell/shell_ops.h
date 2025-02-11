@@ -48,7 +48,7 @@ static inline void z_shell_raw_fprintf(const struct shell_fprintf *const ctx,
 						   ~_internal_.value);		\
 		}								\
 		_ret_ = (_internal_.flags._flag_ != 0);				\
-	} while (0)
+	} while (false)
 
 static inline bool z_flag_insert_mode_get(const struct shell *sh)
 {
@@ -185,6 +185,11 @@ static inline uint8_t z_flag_last_nl_get(const struct shell *sh)
 	return sh->ctx->ctx.flags.last_nl;
 }
 
+static inline int z_shell_get_return_value(const struct shell *sh)
+{
+	return sh->ctx->ret_val;
+}
+
 static inline void z_flag_last_nl_set(const struct shell *sh, uint8_t val)
 {
 	sh->ctx->ctx.flags.last_nl = val;
@@ -213,6 +218,19 @@ static inline bool z_flag_sync_mode_set(const struct shell *sh, bool val)
 	bool ret;
 
 	Z_SHELL_SET_FLAG_ATOMIC(sh, ctx, sync_mode, val, ret);
+	return ret;
+}
+
+static inline bool z_flag_handle_log_get(const struct shell *sh)
+{
+	return sh->ctx->ctx.flags.handle_log == 1;
+}
+
+static inline bool z_flag_handle_log_set(const struct shell *sh, bool val)
+{
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(sh, ctx, handle_log, val, ret);
 	return ret;
 }
 
@@ -301,14 +319,14 @@ void z_shell_cmd_line_erase(const struct shell *sh);
 /**
  * @brief Print command buffer.
  *
- * @param shell Shell instance.
+ * @param sh Shell instance.
  */
 void z_shell_print_cmd(const struct shell *sh);
 
 /**
  * @brief Print prompt followed by command buffer.
  *
- * @param shell Shell instance.
+ * @param sh Shell instance.
  */
 void z_shell_print_prompt_and_cmd(const struct shell *sh);
 

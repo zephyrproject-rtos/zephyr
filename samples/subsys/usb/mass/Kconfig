@@ -1,6 +1,8 @@
 # Copyright (c) 2019-2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+menu "MSC sample options"
+
 config APP_WIPE_STORAGE
 	bool "Option to clear the flash area before mounting"
 	help
@@ -14,11 +16,9 @@ choice
 
 config APP_MSC_STORAGE_NONE
 	bool "Use RAM disk as block device"
-	imply DISK_DRIVER_RAM
 
 config APP_MSC_STORAGE_RAM
 	bool "Use RAM disk and FAT file system"
-	imply DISK_DRIVER_RAM
 	imply FILE_SYSTEM
 	imply FAT_FILESYSTEM_ELM
 
@@ -41,9 +41,6 @@ config APP_MSC_STORAGE_SDCARD
 	imply FAT_FILESYSTEM_ELM
 
 endchoice
-
-config DISK_RAM_VOLUME_SIZE
-	default 32 if APP_MSC_STORAGE_NONE
 
 config MASS_STORAGE_DISK_NAME
 	default "NAND" if DISK_DRIVER_FLASH
@@ -69,5 +66,12 @@ config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 endif # NORDIC_QSPI_NOR
 
 endif # DISK_DRIVER_FLASH
+
+endmenu
+
+# Source common USB sample options used to initialize new experimental USB
+# device stack. The scope of these options is limited to USB samples in project
+# tree, you cannot use them in your own application.
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
 
 source "Kconfig.zephyr"

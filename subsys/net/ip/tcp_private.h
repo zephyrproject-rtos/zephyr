@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2019 Intel Corporation
+ * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,7 +46,7 @@
 #define tcp_free(_ptr) k_free(_ptr)
 #endif
 
-#define TCP_PKT_ALLOC_TIMEOUT K_MSEC(100)
+#define TCP_PKT_ALLOC_TIMEOUT K_MSEC(CONFIG_NET_TCP_PKT_ALLOC_TIMEOUT)
 
 #if defined(CONFIG_NET_TEST_PROTOCOL)
 #define tcp_pkt_clone(_pkt) tp_pkt_clone(_pkt, tp_basename(__FILE__), __LINE__)
@@ -97,6 +98,23 @@
 	_pkt;								\
 })
 
+#define tcp_pkt_alloc_no_conn(_iface, _family, _len)			\
+({									\
+	struct net_pkt *_pkt;						\
+									\
+	if ((_len) > 0) {						\
+		_pkt = net_pkt_alloc_with_buffer(			\
+			(_iface), (_len), (_family),			\
+			IPPROTO_TCP,					\
+			TCP_PKT_ALLOC_TIMEOUT);				\
+	} else {							\
+		_pkt = net_pkt_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
+	}								\
+									\
+	tp_pkt_alloc(_pkt, tp_basename(__FILE__), __LINE__);		\
+									\
+	_pkt;								\
+})
 
 #if defined(CONFIG_NET_TEST_PROTOCOL)
 #define conn_seq(_conn, _req) \
@@ -179,7 +197,8 @@ struct tcp_mss_option {
 };
 
 enum tcp_state {
-	TCP_LISTEN = 1,
+	TCP_UNUSED = 0,
+	TCP_LISTEN,
 	TCP_SYN_SENT,
 	TCP_SYN_RECEIVED,
 	TCP_ESTABLISHED,
@@ -222,6 +241,18 @@ struct tcp_options {
 	bool wnd_found : 1;
 };
 
+#ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
+
+struct tcp_collision_avoidance_reno {
+	uint16_t cwnd;
+	uint16_t ssthresh;
+	uint16_t pending_fast_retransmit_bytes;
+};
+#endif
+
+struct tcp;
+typedef void (*net_tcp_closed_cb_t)(struct tcp *conn, void *user_data);
+
 struct tcp { /* TCP connection */
 	sys_snode_t next;
 	struct net_context *context;
@@ -234,6 +265,11 @@ struct tcp { /* TCP connection */
 		net_tcp_accept_cb_t accept_cb;
 		struct tcp *accepted_conn;
 	};
+	net_context_connect_cb_t connect_cb;
+#if defined(CONFIG_NET_TEST)
+	net_tcp_closed_cb_t test_closed_cb;
+	void *test_user_data;
+#endif
 	struct k_mutex lock;
 	struct k_sem connect_sem; /* semaphore for blocking connect */
 	struct k_sem tx_sem; /* Semaphore indicating if transfers are blocked . */
@@ -246,6 +282,10 @@ struct tcp { /* TCP connection */
 	struct k_work_delayable timewait_timer;
 	struct k_work_delayable persist_timer;
 	struct k_work_delayable ack_timer;
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	struct k_work_delayable keepalive_timer;
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
+	struct k_work conn_release;
 
 	union {
 		/* Because FIN and establish timers are never happening
@@ -257,6 +297,9 @@ struct tcp { /* TCP connection */
 	};
 	union tcp_endpoint src;
 	union tcp_endpoint dst;
+#if defined(CONFIG_NET_TCP_IPV6_ND_REACHABILITY_HINT)
+	int64_t last_nd_hint_time;
+#endif
 	size_t send_data_total;
 	size_t send_retries;
 	int unacked_len;
@@ -265,11 +308,22 @@ struct tcp { /* TCP connection */
 	enum tcp_data_mode data_mode;
 	uint32_t seq;
 	uint32_t ack;
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	uint32_t keep_idle;
+	uint32_t keep_intvl;
+	uint32_t keep_cnt;
+	uint32_t keep_cur;
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
+	uint16_t recv_win_sent;
 	uint16_t recv_win_max;
 	uint16_t recv_win;
+	uint16_t send_win_max;
 	uint16_t send_win;
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
 	uint16_t rto;
+#endif
+#ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
+	struct tcp_collision_avoidance_reno ca;
 #endif
 	uint8_t send_data_retries;
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
@@ -279,7 +333,11 @@ struct tcp { /* TCP connection */
 	bool in_retransmission : 1;
 	bool in_connect : 1;
 	bool in_close : 1;
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	bool keep_alive : 1;
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
 	bool tcp_nodelay : 1;
+	bool addr_ref_done : 1;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
@@ -296,6 +354,12 @@ struct tcp { /* TCP connection */
 })
 
 #define FL(_fl, _op, _mask, _args...)					\
-	_flags(_fl, _op, _mask, strlen("" #_args) ? _args : true)
+	_flags(_fl, _op, _mask, sizeof(#_args) > 1 ? _args : true)
 
 typedef void (*net_tcp_cb_t)(struct tcp *conn, void *user_data);
+
+#if defined(CONFIG_NET_TEST)
+void tcp_install_close_cb(struct net_context *ctx,
+			  net_tcp_closed_cb_t cb,
+			  void *user_data);
+#endif

@@ -1,0 +1,59 @@
+# Kinetis K6x series configuration
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KINETIS_K6X
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_NXP_MPU
+	select HAS_MCUX_PIT
+	select CLOCK_CONTROL
+	select PLATFORM_SPECIFIC_INIT
+
+config SOC_MK64F12
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_ENET
+	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_FTM
+	select HAS_MCUX_RNGA
+	select HAS_MCUX_SIM
+	select HAS_OSC
+	select HAS_MCG
+	select CPU_HAS_FPU
+	select HAS_MCUX_RTC
+	select HAS_MCUX_DAC
+	select HAS_MCUX_EDMA
+	select HAS_MCUX_RCM
+
+config SOC_MK66F18
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_ENET
+	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_FTM
+	select HAS_MCUX_RNGA
+	select HAS_MCUX_SIM
+	select HAS_OSC
+	select HAS_MCG
+	select CPU_HAS_FPU
+	select HAS_MCUX_RTC
+	select HAS_MCUX_DAC
+	select HAS_MCUX_EDMA
+	select HAS_MCUX_RCM
+	select HAS_MCUX_LPUART
+
+
+if SOC_MK66F18
+
+config K6X_HSRUN
+	bool "High Speed RUN mode"
+	default y
+	help
+	  This options enables support for High Speed RUN mode on K66F SoC.
+
+endif # SOC_MK66F18

@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT microchip_xec_rtos_timer
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <soc.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #include <zephyr/irq.h>
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "XEC RTOS timer doesn't support SMP");
@@ -398,9 +398,8 @@ void arch_busy_wait(uint32_t usec_to_wait)
 }
 #endif
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	cached_icr = MAX_TICKS;
@@ -421,7 +420,7 @@ static int sys_clock_driver_init(const struct device *dev)
 			      | MCHP_BTMR_CTRL_COUNT_UP
 			      | (47UL << MCHP_BTMR_CTRL_PRESCALE_POS));
 
-#if CONFIG_SOC_SERIES_MEC1501X
+#if CONFIG_SOC_SERIES_MEC15XX
 	mchp_pcr_periph_slp_ctrl(PCR_B32TMR0, 0);
 #else
 	PCR_XEC_REGS->SLP_EN[BTMR32_0_PCR_REG_IDX] &= ~BIT(BTMR32_0_PCR_BITPOS);

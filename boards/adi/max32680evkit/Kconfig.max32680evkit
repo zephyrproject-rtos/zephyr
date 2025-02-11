@@ -1,0 +1,7 @@
+# MAX32680EVKIT boards configuration
+
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MAX32680EVKIT
+	select SOC_MAX32680_M4 if BOARD_MAX32680EVKIT_MAX32680_M4

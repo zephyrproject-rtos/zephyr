@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Ambiq Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr MSPI flash emulator
+
+compatible: "zephyr,mspi-emul-flash"
+
+include: ["zephyr,mspi-emul-device.yaml", "jedec,jesd216.yaml"]

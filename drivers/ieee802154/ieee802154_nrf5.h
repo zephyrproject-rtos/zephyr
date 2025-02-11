@@ -1,7 +1,7 @@
 /* ieee802154_nrf5.h - nRF5 802.15.4 driver */
 
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,6 @@
 
 #include <zephyr/net/ieee802154_radio.h>
 
-#define NRF5_FCS_LENGTH   (2)
-#define NRF5_PSDU_LENGTH  (125)
 #define NRF5_PHR_LENGTH   (1)
 
 struct nrf5_802154_rx_frame {
@@ -21,6 +19,7 @@ struct nrf5_802154_rx_frame {
 	uint8_t lqi; /* Last received frame LQI value. */
 	int8_t rssi; /* Last received frame RSSI value. */
 	bool ack_fpb; /* FPB value in ACK sent for the received frame. */
+	bool ack_seb; /* SEB value in ACK sent for the received frame. */
 };
 
 struct nrf5_802154_data {
@@ -47,6 +46,9 @@ struct nrf5_802154_data {
 	/* Frame pending bit value in ACK sent for the last received frame. */
 	bool last_frame_ack_fpb;
 
+	/* Security Enabled bit value in ACK sent for the last received frame. */
+	bool last_frame_ack_seb;
+
 	/* CCA complete semaphore. Unlocked when CCA is complete. */
 	struct k_sem cca_wait;
 
@@ -61,7 +63,7 @@ struct nrf5_802154_data {
 	/* TX buffer. First byte is PHR (length), remaining bytes are
 	 * MPDU data.
 	 */
-	uint8_t tx_psdu[NRF5_PHR_LENGTH + NRF5_PSDU_LENGTH + NRF5_FCS_LENGTH];
+	uint8_t tx_psdu[NRF5_PHR_LENGTH + IEEE802154_MAX_PHY_PACKET_SIZE];
 
 	/* TX result, updated in radio transmit callbacks. */
 	uint8_t tx_result;
@@ -84,14 +86,30 @@ struct nrf5_802154_data {
 	/* Capabilities of the network interface. */
 	enum ieee802154_hw_caps capabilities;
 
-	/* Next CSL receive time */
-	uint32_t csl_rx_time;
-
 	/* Indicates if currently processed TX frame is secured. */
 	bool tx_frame_is_secured;
 
 	/* Indicates if currently processed TX frame has dynamic data updated. */
 	bool tx_frame_mac_hdr_rdy;
+
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+	/* The maximum number of extra CCA attempts to be performed before transmission. */
+	uint8_t max_extra_cca_attempts;
+#endif
+
+	/* The TX power in dBm. */
+	int8_t txpwr;
+
+#if defined(CONFIG_NRF_802154_SER_HOST) && defined(CONFIG_IEEE802154_CSL_ENDPOINT)
+	/* The last configured value of CSL period in units of 10 symbols. */
+	uint32_t csl_period;
+
+	/* The last configured value of CSL phase time in nanoseconds. */
+	net_time_t csl_rx_time;
+#endif /* CONFIG_NRF_802154_SER_HOST && CONFIG_IEEE802154_CSL_ENDPOINT */
+
+	/* Indicates if RxOnWhenIdle mode is enabled. */
+	bool rx_on_when_idle;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */

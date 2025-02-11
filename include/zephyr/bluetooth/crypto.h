@@ -19,6 +19,7 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,8 +80,8 @@ int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
  *  @param nonce     13 byte MS byte first nonce
  *  @param enc_data  Encrypted data
  *  @param len       Length of the encrypted data
- *  @param aad       Additional input data
- *  @param aad_len   Additional input data length
+ *  @param aad       Additional authenticated data
+ *  @param aad_len   Additional authenticated data length
  *  @param plaintext Plaintext buffer to place result in
  *  @param mic_size  Size of the trailing MIC (in bytes)
  *
@@ -104,8 +105,8 @@ int bt_ccm_decrypt(const uint8_t key[16], uint8_t nonce[13], const uint8_t *enc_
  *  @param nonce     13 byte MS byte first nonce
  *  @param plaintext Plaintext buffer to encrypt
  *  @param len       Length of the encrypted data
- *  @param aad       Additional input data
- *  @param aad_len   Additional input data length
+ *  @param aad       Additional authenticated data
+ *  @param aad_len   Additional authenticated data length
  *  @param enc_data  Buffer to place encrypted data in
  *  @param mic_size  Size of the trailing MIC (in bytes)
  *

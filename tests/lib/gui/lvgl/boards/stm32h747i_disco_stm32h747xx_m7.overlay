@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sdmmc1 {
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+	};
+};
+
+/delete-node/ &storage_partition;
+
+&flash0 {
+	partitions {
+		partition@ff800 {
+			reg = <0x000ff800 DT_SIZE_K(2)>;
+		};
+	};
+};
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			read-size = <32>;
+			prog-size = <32>;
+			cache-size = <256>;
+			lookahead-size = <64>;
+			block-cycles = <512>;
+			partition = <&storage_partition>;
+			mount-point = "/lfs1";
+		};
+	};
+};
+
+&mt25ql512ab1 {
+	partitions {
+		storage_partition: partition@0 {
+			reg = <0x0 DT_SIZE_M(64)>;
+			label = "storage";
+		};
+	};
+};

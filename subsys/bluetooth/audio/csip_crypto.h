@@ -5,13 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stddef.h>
-#include <zephyr/types.h>
+#include <stdint.h>
 
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/types.h>
 
 #define BT_CSIP_CRYPTO_KEY_SIZE   16
 #define BT_CSIP_CRYPTO_SALT_SIZE  16
+#define BT_CSIP_CRYPTO_PRAND_SIZE 3
+#define BT_CSIP_CRYPTO_HASH_SIZE  3
 
 /**
  * @brief Private Set Unique identifier hash function sih.
@@ -20,13 +22,13 @@
  * used in RSIs - Used by the Coordinated Set Identification service and
  * profile.
  *
- * @param sirk The 16-byte SIRK
- * @param r 3 byte random value
- * @param out The 3 byte output buffer
+ * @param sirk  16 byte LS byte first SIRK
+ * @param r     3 byte LS byte first random value
+ * @param out   3 byte LS byte first output buffer
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint32_t r,
-		uint32_t *out);
+int bt_csip_sih(const uint8_t sirk[BT_CSIP_SIRK_SIZE], uint8_t r[BT_CSIP_CRYPTO_PRAND_SIZE],
+		uint8_t out[BT_CSIP_CRYPTO_HASH_SIZE]);
 
 /**
  * @brief SIRK encryption function sef
@@ -51,9 +53,8 @@ int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint32_t r,
  * @param out_sirk  The encrypted SIRK.
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
-		const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE]);
+int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t sirk[BT_CSIP_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SIRK_SIZE]);
 
 /**
  * @brief SIRK decryption function sdf
@@ -78,6 +79,5 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
  * @param out_sirk  The decrypted SIRK.
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csip_sdf(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
-		const uint8_t enc_sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE]);
+int bt_csip_sdf(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t enc_sirk[BT_CSIP_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SIRK_SIZE]);

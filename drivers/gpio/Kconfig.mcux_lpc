@@ -6,6 +6,6 @@
 config GPIO_MCUX_LPC
 	bool "MCUX LPC GPIO driver"
 	default y
-	depends on DT_HAS_NXP_LPC_GPIO_ENABLED
+	depends on DT_HAS_NXP_LPC_GPIO_PORT_ENABLED
 	help
 	  Enable the MCUX LPC pinmux driver.

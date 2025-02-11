@@ -16,6 +16,8 @@
 /**
  * @brief Entropy Interface
  * @defgroup entropy_interface Entropy Interface
+ * @since 1.10
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -29,9 +31,15 @@
 extern "C" {
 #endif
 
+/** @brief Driver is allowed to busy-wait for random data to be ready */
+#define ENTROPY_BUSYWAIT  BIT(0)
+
 /**
  * @typedef entropy_get_entropy_t
  * @brief Callback API to get entropy.
+ *
+ * @note This call has to be thread safe to satisfy requirements
+ * of the random subsystem.
  *
  * See entropy_get_entropy() for argument description
  */
@@ -48,6 +56,12 @@ typedef int (*entropy_get_entropy_isr_t)(const struct device *dev,
 					 uint8_t *buffer,
 					 uint16_t length,
 					 uint32_t flags);
+
+/**
+ * @brief Entropy driver API structure.
+ *
+ * This is the mandatory API any Entropy driver needs to expose.
+ */
 __subsystem struct entropy_driver_api {
 	entropy_get_entropy_t     get_entropy;
 	entropy_get_entropy_isr_t get_entropy_isr;
@@ -78,9 +92,6 @@ static inline int z_impl_entropy_get_entropy(const struct device *dev,
 		"Callback pointer should not be NULL");
 	return api->get_entropy(dev, buffer, length);
 }
-
-/* Busy-wait for random data to be ready */
-#define ENTROPY_BUSYWAIT  BIT(0)
 
 /**
  * @brief Fills a buffer with entropy in a non-blocking or busy-wait manner.
@@ -116,6 +127,6 @@ static inline int entropy_get_entropy_isr(const struct device *dev,
  * @}
  */
 
-#include <syscalls/entropy.h>
+#include <zephyr/syscalls/entropy.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ENTROPY_H_ */

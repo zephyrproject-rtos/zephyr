@@ -5,7 +5,7 @@
  */
 
 #include "mem_protect.h"
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
 /* function prototypes */
@@ -132,7 +132,7 @@ static inline struct k_heap *z_vrfy_ret_resource_pool_ptr(void)
 {
 	return z_impl_ret_resource_pool_ptr();
 }
-#include <syscalls/ret_resource_pool_ptr_mrsh.c>
+#include <zephyr/syscalls/ret_resource_pool_ptr_mrsh.c>
 struct k_heap *child_heap_mem_ptr;
 struct k_heap *parent_heap_mem_ptr;
 
@@ -150,6 +150,8 @@ void parent_handler(void *p1, void *p2, void *p3)
 			child_handler,
 			NULL, NULL, NULL,
 			PRIORITY, 0, K_NO_WAIT);
+
+	k_thread_join(&child_thr, K_FOREVER);
 }
 
 /**
@@ -167,7 +169,7 @@ void parent_handler(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_thread_heap_assign()
+ * @see k_thread_heap_assign()
  */
 ZTEST(mem_protect, test_inherit_resource_pool)
 {
@@ -183,6 +185,8 @@ ZTEST(mem_protect, test_inherit_resource_pool)
 	zassert_true(parent_heap_mem_ptr == child_heap_mem_ptr,
 		     "Resource pool of the parent thread not inherited,"
 		     " by child thread");
+
+	k_thread_join(&parent_thr, K_FOREVER);
 }
 
 void mem_protect_inhert_setup(void)

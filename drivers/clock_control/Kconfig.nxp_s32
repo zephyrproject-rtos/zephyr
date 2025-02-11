@@ -1,0 +1,20 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_NXP_S32
+	bool "NXP S32 clock control driver"
+	default y
+	depends on DT_HAS_NXP_S32_CLOCK_ENABLED
+	help
+	  Enable support for NXP S32 clock control driver.
+
+if CLOCK_CONTROL_NXP_S32
+
+config CLOCK_CONTROL_NXP_S32_CLOCK_CONFIG_IDX
+	int
+	default 0
+	help
+	  This option specifies the zero-based index of the clock configuration
+	  used to initialize the SoC clocks.
+
+endif # CLOCK_CONTROL_NXP_S32

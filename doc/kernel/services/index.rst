@@ -59,7 +59,7 @@ Object            Bidirectional?      Data structure         Data item size     
 FIFO              No                  Queue                  Arbitrary [1]              4 B [2]   Yes [3]            Yes             N/A
 LIFO              No                  Queue                  Arbitrary [1]              4 B [2]   Yes [3]            Yes             N/A
 Stack             No                  Array                  Word                          Word   Yes [3]            Yes             Undefined behavior
-Message queue     No                  Ring buffer            Power of two          Power of two   Yes [3]            Yes             Pend thread or return -errno
+Message queue     No                  Ring buffer            Arbitrary [6]         Power of two   Yes [3]            Yes             Pend thread or return -errno
 Mailbox           Yes                 Queue                  Arbitrary [1]            Arbitrary   No                 No              N/A
 Pipe              No                  Ring buffer [4]        Arbitrary                Arbitrary   Yes [5]            Yes [5]         Pend thread or return -errno
 ===============   ==============      ===================    ==============      ==============   =================  ==============  ===============================
@@ -78,6 +78,8 @@ argument.
 
 [5] ISRS can send and/or receive only when passing K_NO_WAIT as the
 timeout argument.
+
+[6] Data item size must be a multiple of the data alignment.
 
 .. toctree::
    :maxdepth: 1

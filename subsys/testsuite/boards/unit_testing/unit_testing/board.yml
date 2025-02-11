@@ -1,0 +1,5 @@
+board:
+  name: unit_testing
+  vendor: zephyr
+  socs:
+  - name: unit_testing

@@ -74,7 +74,7 @@ int settings_fcb_src(struct settings_fcb *cf)
 		 */
 		if (fcb_free_sector_cnt(&cf->cf_fcb) < 1) {
 
-			rc = flash_area_erase(cf->cf_fcb.fap,
+			rc = flash_area_flatten(cf->cf_fcb.fap,
 					cf->cf_fcb.f_active.fe_sector->fs_off,
 					cf->cf_fcb.f_active.fe_sector->fs_size);
 
@@ -158,13 +158,13 @@ static int settings_fcb_load_priv(struct settings_store *cs,
 	while ((rc = fcb_getnext(&cf->cf_fcb, &entry_ctx.loc)) == 0) {
 		char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
 		size_t name_len;
-		int rc;
+		int rc2;
 		bool pass_entry = true;
 
-		rc = settings_line_name_read(name, sizeof(name), &name_len,
+		rc2 = settings_line_name_read(name, sizeof(name), &name_len,
 					     (void *)&entry_ctx);
-		if (rc) {
-			LOG_ERR("Failed to load line name: %d", rc);
+		if (rc2) {
+			LOG_ERR("Failed to load line name: %d", rc2);
 			continue;
 		}
 		name[name_len] = '\0';
@@ -424,7 +424,7 @@ int settings_backend_init(void)
 			return rc;
 		}
 
-		rc = flash_area_erase(fap, 0, fap->fa_size);
+		rc = flash_area_flatten(fap, 0, fap->fa_size);
 		flash_area_close(fap);
 
 		if (rc != 0) {

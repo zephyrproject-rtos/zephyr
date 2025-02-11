@@ -1,4 +1,4 @@
-# Copyright (c) 2018, NXP
+# Copyright (c) 2018,2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP i.MX LPSPI controller
@@ -9,9 +9,6 @@ include: ["spi-controller.yaml", "pinctrl-device.yaml"]
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true
 
   clocks:
@@ -34,3 +31,15 @@ properties:
     description: |
       Delay in nanoseconds from the chip select deassert to the next chip
       select assert. If not set, the minimum supported delay is used.
+
+  data-pin-config:
+    type: string
+    enum:
+      - "sdi-in,sdo-out"
+      - "sdi-in,sdi-out"
+      - "sdo-in,sdo-out"
+      - "sdo-in,sdi-out"
+    default: "sdi-in,sdo-out"
+    description: |
+      Configures which pins (SDO and SDI) are used for input and output data
+      during single bit transfers.

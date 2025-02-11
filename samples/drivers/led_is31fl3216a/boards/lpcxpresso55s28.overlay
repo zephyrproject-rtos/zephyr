@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023 Endor AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+&flexcomm4 {
+	status = "okay";
+	is31fl3216a@74 {
+		compatible = "issi,is31fl3216a";
+		reg = <0x74>;
+	};
+};

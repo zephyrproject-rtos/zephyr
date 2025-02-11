@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_ARCH_NIOS2_INCLUDE_OFFSETS_SHORT_ARCH_H_
 #define ZEPHYR_ARCH_NIOS2_INCLUDE_OFFSETS_SHORT_ARCH_H_
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 /* kernel */
 

@@ -21,7 +21,7 @@
 	};
 };
 
-&uart1 {
+dut: &uart1 {
 	current-speed = <115200>;
 	compatible = "nordic,nrf-uarte";
 	status = "okay";
@@ -33,4 +33,8 @@
 
 &rtc1 {
 	interrupts = <21 2>;
+};
+
+counter_dev: &timer0 {
+	status = "okay";
 };

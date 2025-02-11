@@ -32,6 +32,7 @@ static enum mmsg_type {
 static void msg_sender(struct k_mbox *pmbox, k_timeout_t timeout)
 {
 	static struct k_mbox_msg mmsg;
+	int ret;
 
 	(void)memset(&mmsg, 0, sizeof(mmsg));
 
@@ -41,13 +42,9 @@ static void msg_sender(struct k_mbox *pmbox, k_timeout_t timeout)
 		mmsg.info = PUT_GET_NULL;
 		mmsg.size = 0;
 		mmsg.tx_data = NULL;
-		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			k_mbox_put(pmbox, &mmsg, K_FOREVER);
-		} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-			k_mbox_put(pmbox, &mmsg, K_NO_WAIT);
-		} else {
-			k_mbox_put(pmbox, &mmsg, timeout);
-		}
+
+		ret = k_mbox_put(pmbox, &mmsg, timeout);
+		zassert_ok(ret, "k_mbox_put() failed, ret %d", ret);
 		break;
 	default:
 		break;
@@ -59,20 +56,20 @@ static void msg_receiver(struct k_mbox *pmbox, k_tid_t thd_id,
 {
 	static struct k_mbox_msg mmsg;
 	static char rxdata[MAIL_LEN];
+	int ret;
 
 	switch (info_type) {
 	case PUT_GET_NULL:
 		mmsg.size = sizeof(rxdata);
 		mmsg.rx_source_thread = thd_id;
+
+		ret = k_mbox_get(pmbox, &mmsg, rxdata, timeout);
 		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			zassert_true(k_mbox_get(pmbox, &mmsg,
-				     rxdata, K_FOREVER) == 0, NULL);
+			zassert_ok(ret, "k_mbox_get() ret %d", ret);
 		} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-			zassert_false(k_mbox_get(pmbox, &mmsg,
-				      rxdata, K_NO_WAIT) == 0, NULL);
+			zassert_false(ret == 0, "k_mbox_get() ret %d", ret);
 		} else {
-			zassert_true(k_mbox_get(pmbox, &mmsg,
-				     rxdata, timeout) == 0, NULL);
+			zassert_ok(ret, "k_mbox_get() ret %d", ret);
 		}
 		break;
 	default:
@@ -163,7 +160,7 @@ static void thread_high_prio(void *p1, void *p2, void *p3)
 	k_sem_give(&sync_sema);
 }
 
-ZTEST_USER(mbox_usage_1cpu, test_multi_thread_send_get)
+ZTEST(mbox_usage_1cpu, test_multi_thread_send_get)
 {
 	static k_tid_t low_prio, high_prio;
 	struct k_mbox_msg mmsg = {0};
@@ -178,7 +175,6 @@ ZTEST_USER(mbox_usage_1cpu, test_multi_thread_send_get)
 				    thread_high_prio, &multi_tmbox, NULL, NULL,
 				    HIGH_PRIO, 0, K_NO_WAIT);
 
-	k_sleep(K_MSEC(20));
 	mmsg.size = sizeof(msg_data[0]);
 	mmsg.tx_data = msg_data[0];
 	mmsg.tx_target_thread = K_ANY;

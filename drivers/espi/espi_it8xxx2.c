@@ -204,10 +204,10 @@ static const struct ec2i_t pmc2_settings[] = {
  * This feature allows host access EC's memory directly by eSPI I/O cycles.
  * Mapping range is 4K bytes and base address is adjustable.
  * Eg. the I/O cycle 800h~8ffh from host can be mapped to x800h~x8ffh.
- * Linker script of h2ram.ld will make the pool 4K aligned.
+ * Linker script will make the pool 4K aligned.
  */
 #define IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX 0x1000
-#define IT8XXX2_ESPI_H2RAM_OFFSET_MASK   GENMASK(3, 0)
+#define IT8XXX2_ESPI_H2RAM_OFFSET_MASK   GENMASK(5, 0)
 
 #if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
 #define H2RAM_ACPI_SHM_MAX ((CONFIG_ESPI_IT8XXX2_ACPI_SHM_H2RAM_SIZE) + \
@@ -517,7 +517,11 @@ static void port80_it8xxx2_isr(const struct device *dev)
 		ESPI_PERIPHERAL_NODATA
 	};
 
-	evt.evt_data = gctrl->GCTRL_P80HDR;
+	if (IS_ENABLED(CONFIG_ESPI_IT8XXX2_PORT_81_CYCLE)) {
+		evt.evt_data = gctrl->GCTRL_P80HDR | (gctrl->GCTRL_P81HDR << 8);
+	} else {
+		evt.evt_data = gctrl->GCTRL_P80HDR;
+	}
 	/* Write 1 to clear this bit */
 	gctrl->GCTRL_P80H81HSR |= BIT(0);
 
@@ -529,8 +533,13 @@ static void port80_it8xxx2_init(const struct device *dev)
 	ARG_UNUSED(dev);
 	struct gctrl_it8xxx2_regs *const gctrl = ESPI_IT8XXX2_GET_GCTRL_BASE;
 
-	/* Accept Port 80h Cycle */
-	gctrl->GCTRL_SPCTRL1 |= IT8XXX2_GCTRL_ACP80;
+	/* Accept Port 80h (and 81h) Cycle */
+	if (IS_ENABLED(CONFIG_ESPI_IT8XXX2_PORT_81_CYCLE)) {
+		gctrl->GCTRL_SPCTRL1 |=
+			(IT8XXX2_GCTRL_ACP80 | IT8XXX2_GCTRL_ACP81);
+	} else {
+		gctrl->GCTRL_SPCTRL1 |= IT8XXX2_GCTRL_ACP80;
+	}
 	IRQ_CONNECT(IT8XXX2_PORT_80_IRQ, 0, port80_it8xxx2_isr,
 			DEVICE_DT_INST_GET(0), 0);
 	irq_enable(IT8XXX2_PORT_80_IRQ);
@@ -597,10 +606,10 @@ static const struct vw_channel_t vw_channel_list[] = {
 	VW_CHAN(ESPI_VWIRE_SIGNAL_PME,           0x04, BIT(3), BIT(7)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_WAKE,          0x04, BIT(2), BIT(6)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_OOB_RST_ACK,   0x04, BIT(0), BIT(4)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SLV_BOOT_STS,  0x05, BIT(3), BIT(7)),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS,  0x05, BIT(3), BIT(7)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_ERR_NON_FATAL, 0x05, BIT(2), BIT(6)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_ERR_FATAL,     0x05, BIT(1), BIT(5)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 0x05, BIT(0), BIT(4)),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 0x05, BIT(0), BIT(4)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_HOST_RST_ACK,  0x06, BIT(3), BIT(7)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_RST_CPU_INIT,  0x06, BIT(2), BIT(6)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_SMI,           0x06, BIT(1), BIT(5)),
@@ -1598,9 +1607,9 @@ static void espi_it8xxx2_oob_ch_en_isr(const struct device *dev, bool enable)
 static void espi_it8xxx2_flash_ch_en_isr(const struct device *dev, bool enable)
 {
 	if (enable) {
-		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
+		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, 1);
 		espi_it8xxx2_send_vwire(dev,
-					ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
+					ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 1);
 	}
 
 	espi_it8xxx2_ch_notify_system_state(dev, ESPI_CHANNEL_FLASH, enable);

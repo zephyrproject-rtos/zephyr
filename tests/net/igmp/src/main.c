@@ -27,10 +27,12 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/igmp.h>
+#include <zephyr/net/socket.h>
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "ipv4.h"
+#include "igmp.h"
 
 #define THREAD_SLEEP 50 /* ms */
 
@@ -45,8 +47,9 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
 
 static struct in_addr my_addr = { { { 192, 0, 2, 1 } } };
 static struct in_addr mcast_addr = { { { 224, 0, 2, 63 } } };
+static struct in_addr any_addr = INADDR_ANY_INIT;
 
-static struct net_if *iface;
+static struct net_if *net_iface;
 static bool is_group_joined;
 static bool is_group_left;
 static bool is_join_msg_ok;
@@ -82,7 +85,7 @@ static uint8_t *net_test_get_mac(const struct device *dev)
 		context->mac_addr[2] = 0x5E;
 		context->mac_addr[3] = 0x00;
 		context->mac_addr[4] = 0x53;
-		context->mac_addr[5] = sys_rand32_get();
+		context->mac_addr[5] = sys_rand8_get();
 	}
 
 	return context->mac_addr;
@@ -96,37 +99,87 @@ static void net_test_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+static struct net_ipv4_igmp_v3_report *get_igmp_hdr(struct net_pkt *pkt)
+#else
 static struct net_ipv4_igmp_v2_query *get_igmp_hdr(struct net_pkt *pkt)
+#endif
 {
 	net_pkt_cursor_init(pkt);
 
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
 		     net_pkt_ipv4_opts_len(pkt));
 
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+	return (struct net_ipv4_igmp_v3_report *)net_pkt_cursor_get_pos(pkt);
+#else
 	return (struct net_ipv4_igmp_v2_query *)net_pkt_cursor_get_pos(pkt);
+#endif
 }
+
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+static struct net_ipv4_igmp_v3_group_record *get_igmp_group_record(struct net_pkt *pkt)
+{
+	net_pkt_cursor_init(pkt);
+
+	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt));
+	net_pkt_skip(pkt, sizeof(struct net_ipv4_igmp_v3_report));
+
+	return (struct net_ipv4_igmp_v3_group_record *)net_pkt_cursor_get_pos(pkt);
+}
+#endif
 
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
-	struct net_ipv4_igmp_v2_query *igmp;
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+	struct net_ipv4_igmp_v3_report *igmp_header;
+	struct net_ipv4_igmp_v3_group_record *igmp_group_record;
+#else
+	struct net_ipv4_igmp_v2_query *igmp_header;
+#endif
 
 	if (!pkt->buffer) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
 	}
 
-	igmp = get_igmp_hdr(pkt);
+	igmp_header = get_igmp_hdr(pkt);
 
-	if (igmp->type == NET_IPV4_IGMP_QUERY) {
+	if (igmp_header->type == NET_IPV4_IGMP_QUERY) {
 		NET_DBG("Received query....");
 		is_query_received = true;
 		k_sem_give(&wait_data);
-	} else if (igmp->type == NET_IPV4_IGMP_REPORT_V2) {
+	} else if (igmp_header->type == NET_IPV4_IGMP_REPORT_V2) {
 		NET_DBG("Received v2 report....");
+		zassert_false(IS_ENABLED(CONFIG_NET_IPV4_IGMPV3),
+			      "Wrong IGMP report received (IGMPv2)");
 		is_join_msg_ok = true;
 		is_report_sent = true;
 		k_sem_give(&wait_data);
-	} else if (igmp->type == NET_IPV4_IGMP_LEAVE) {
+	} else if (igmp_header->type == NET_IPV4_IGMP_REPORT_V3) {
+		NET_DBG("Received v3 report....");
+		zassert_true(IS_ENABLED(CONFIG_NET_IPV4_IGMPV3),
+			     "Wrong IGMP report received (IGMPv3)");
+
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+		zassert_true(ntohs(igmp_header->groups_len) == 1,
+			     "Invalid group length of IGMPv3 report (%d)", igmp_header->groups_len);
+
+		igmp_group_record = get_igmp_group_record(pkt);
+		zassert_true(igmp_group_record->sources_len == 0,
+			     "Invalid sources length of IGMPv3 group record");
+
+		if (igmp_group_record->type == IGMPV3_CHANGE_TO_EXCLUDE_MODE) {
+			is_join_msg_ok = true;
+		} else if (igmp_group_record->type == IGMPV3_CHANGE_TO_INCLUDE_MODE) {
+			is_leave_msg_ok = true;
+		}
+#else
+		is_join_msg_ok = true;
+#endif
+		is_report_sent = true;
+		k_sem_give(&wait_data);
+	} else if (igmp_header->type == NET_IPV4_IGMP_LEAVE) {
 		NET_DBG("Received leave....");
 		is_leave_msg_ok = true;
 		k_sem_give(&wait_data);
@@ -206,11 +259,11 @@ static void *igmp_setup(void)
 
 	setup_mgmt_events();
 
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
-	zassert_not_null(iface, "Interface is NULL");
+	zassert_not_null(net_iface, "Interface is NULL");
 
-	ifaddr = net_if_ipv4_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
+	ifaddr = net_if_ipv4_addr_add(net_iface, &my_addr, NET_ADDR_MANUAL, 0);
 
 	zassert_not_null(ifaddr, "Cannot add IPv4 address");
 
@@ -227,16 +280,16 @@ static void igmp_teardown(void *dummy)
 		net_mgmt_del_event_callback(&mgmt_events[i].cb);
 	}
 
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
-	net_if_ipv4_addr_rm(iface, &my_addr);
+	net_if_ipv4_addr_rm(net_iface, &my_addr);
 }
 
 static void join_group(void)
 {
 	int ret;
 
-	ret = net_ipv4_igmp_join(iface, &mcast_addr);
+	ret = net_ipv4_igmp_join(net_iface, &mcast_addr, NULL);
 
 	if (ignore_already) {
 		zassert_true(ret == 0 || ret == -EALREADY,
@@ -253,7 +306,7 @@ static void leave_group(void)
 {
 	int ret;
 
-	ret = net_ipv4_igmp_leave(iface, &mcast_addr);
+	ret = net_ipv4_igmp_leave(net_iface, &mcast_addr);
 
 	zassert_equal(ret, 0, "Cannot leave IPv4 multicast group");
 
@@ -353,6 +406,157 @@ ZTEST(net_igmp, test_igmp_verify_catch_join)
 {
 	verify_join_group();
 	verify_leave_group();
+}
+
+static void socket_group_with_address(struct in_addr *local_addr, bool do_join)
+{
+	struct ip_mreqn mreqn = { 0 };
+	int option;
+	int ret, fd;
+
+	if (do_join) {
+		option = IP_ADD_MEMBERSHIP;
+	} else {
+		option = IP_DROP_MEMBERSHIP;
+	}
+
+	fd = zsock_socket(AF_INET, SOCK_DGRAM, 0);
+	zassert_true(fd >= 0, "Cannot get socket (%d)", -errno);
+
+	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+			       NULL, sizeof(mreqn));
+	zassert_true(ret == -1 && errno == EINVAL,
+		     "Incorrect return value (%d)", -errno);
+
+	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+			       (void *)&mreqn, 1);
+	zassert_true(ret == -1 && errno == EINVAL,
+		     "Incorrect return value (%d)", -errno);
+
+	/* First try with empty mreqn */
+	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+			       (void *)&mreqn, sizeof(mreqn));
+	zassert_true(ret == -1 && errno == EINVAL,
+		     "Incorrect return value (%d)", -errno);
+
+	memcpy(&mreqn.imr_address, local_addr, sizeof(mreqn.imr_address));
+	memcpy(&mreqn.imr_multiaddr, &mcast_addr, sizeof(mreqn.imr_multiaddr));
+
+	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+			       (void *)&mreqn, sizeof(mreqn));
+
+	if (do_join) {
+		if (ignore_already) {
+			zassert_true(ret == 0 || ret == -EALREADY,
+				     "Cannot join IPv4 multicast group (%d)",
+				     -errno);
+		} else {
+			zassert_equal(ret, 0,
+				      "Cannot join IPv4 multicast group (%d) "
+				      "with local addr %s",
+				      -errno, net_sprint_ipv4_addr(local_addr));
+		}
+	} else {
+		zassert_equal(ret, 0, "Cannot leave IPv4 multicast group (%d)",
+			      -errno);
+
+		if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+			/* Let the network stack to proceed */
+			k_msleep(THREAD_SLEEP);
+		} else {
+			k_yield();
+		}
+	}
+
+	zsock_close(fd);
+
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
+}
+
+static void socket_group_with_index(struct in_addr *local_addr, bool do_join)
+{
+	struct ip_mreqn mreqn = { 0 };
+	int option;
+	int ret, fd;
+
+	if (do_join) {
+		option = IP_ADD_MEMBERSHIP;
+	} else {
+		option = IP_DROP_MEMBERSHIP;
+	}
+
+	fd = zsock_socket(AF_INET, SOCK_DGRAM, 0);
+	zassert_true(fd >= 0, "Cannot get socket (%d)", -errno);
+
+	mreqn.imr_ifindex = net_if_ipv4_addr_lookup_by_index(local_addr);
+	memcpy(&mreqn.imr_multiaddr, &mcast_addr, sizeof(mreqn.imr_multiaddr));
+
+	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+			       (void *)&mreqn, sizeof(mreqn));
+
+	if (do_join) {
+		if (ignore_already) {
+			zassert_true(ret == 0 || ret == -EALREADY,
+				     "Cannot join IPv4 multicast group (%d)",
+				     -errno);
+		} else {
+			zassert_equal(ret, 0,
+				      "Cannot join IPv4 multicast group (%d)",
+				      -errno);
+		}
+	} else {
+		zassert_equal(ret, 0, "Cannot leave IPv4 multicast group (%d)",
+			      -errno);
+
+		if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+			/* Let the network stack to proceed */
+			k_msleep(THREAD_SLEEP);
+		} else {
+			k_yield();
+		}
+	}
+
+	zsock_close(fd);
+
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
+}
+
+static void socket_join_group_with_address(struct in_addr *addr)
+{
+	socket_group_with_address(addr, true);
+}
+
+static void socket_leave_group_with_address(struct in_addr *addr)
+{
+	socket_group_with_address(addr, false);
+}
+
+static void socket_join_group_with_index(struct in_addr *addr)
+{
+	socket_group_with_index(addr, true);
+}
+
+static void socket_leave_group_with_index(struct in_addr *addr)
+{
+	socket_group_with_index(addr, false);
+}
+
+ZTEST_USER(net_igmp, test_socket_catch_join_with_address)
+{
+	socket_join_group_with_address(&any_addr);
+	socket_leave_group_with_address(&any_addr);
+	socket_join_group_with_address(&my_addr);
+	socket_leave_group_with_address(&my_addr);
+}
+
+ZTEST_USER(net_igmp, test_socket_catch_join_with_index)
+{
+	socket_join_group_with_index(&any_addr);
+	socket_leave_group_with_index(&any_addr);
+	socket_join_group_with_index(&my_addr);
+	socket_leave_group_with_index(&my_addr);
 }
 
 ZTEST_SUITE(net_igmp, NULL, igmp_setup, NULL, NULL, igmp_teardown);

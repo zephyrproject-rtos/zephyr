@@ -1,20 +1,20 @@
 &pinctrl {
 	spi1_default_alt: spi1_default_alt {
 		group1 {
-			psels = <NRF_PSEL(SPIM_SCK, 0, 6)>,
-				<NRF_PSEL(SPIM_MOSI, 0, 7)>;
+			psels = <NRF_PSEL(SPIM_SCK, 0, 25)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 6)>;
 		};
 		group2 {
-			psels = <NRF_PSEL(SPIM_MISO, 0, 25)>;
+			psels = <NRF_PSEL(SPIM_MISO, 0, 7)>;
 			bias-pull-down;
 		};
 	};
 
 	spi1_sleep_alt: spi1_sleep_alt {
 		group1 {
-			psels = <NRF_PSEL(SPIM_SCK, 0, 6)>,
-				<NRF_PSEL(SPIM_MOSI, 0, 7)>,
-				<NRF_PSEL(SPIM_MISO, 0, 25)>;
+			psels = <NRF_PSEL(SPIM_SCK, 0, 25)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 6)>,
+				<NRF_PSEL(SPIM_MISO, 0, 7)>;
 			low-power-enable;
 		};
 	};

@@ -13,7 +13,7 @@ config X86
 
 if CONSOLE
 
-config NATIVE_POSIX_CONSOLE
+config POSIX_ARCH_CONSOLE
 	bool
 	default y
 	select CONSOLE_HAS_DRIVER

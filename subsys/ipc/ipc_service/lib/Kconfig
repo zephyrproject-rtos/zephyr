@@ -11,20 +11,27 @@ config IPC_SERVICE_STATIC_VRINGS
 	help
 	  "Static VRINGs library"
 
-config IPC_SERVICE_STATIC_VRINGS_ALIGNMENT
+config IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT
 	int "VRINGs alignment"
 	depends on IPC_SERVICE_STATIC_VRINGS
 	default 4
 	help
-	  Static VRINGs alignment
+	  Static VRINGs alignment. This should take into account the cache line
+	  alignment if the cache is enabled.
 
 menuconfig IPC_SERVICE_ICMSG
 	bool "icmsg IPC library"
-	select SPSC_PBUF
-	select SPSC_PBUF_USE_CACHE
+	select PBUF
 	help
 	  Icmsg library
 
 if IPC_SERVICE_ICMSG
 	rsource "Kconfig.icmsg"
 endif
+
+config IPC_SERVICE_ICMSG_ME
+	bool "icmsg IPC library with multi-endpoint functionality"
+	select IPC_SERVICE_ICMSG
+	select EVENTS
+	help
+	  Multi-endpoint functionality for the icmsg library

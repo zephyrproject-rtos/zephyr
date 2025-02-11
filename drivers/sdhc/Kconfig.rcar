@@ -1,0 +1,42 @@
+# Copyright (c) 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config RCAR_MMC
+	bool "Renesas Rcar MMC driver"
+	default y
+	depends on DT_HAS_RENESAS_RCAR_MMC_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select REGULATOR
+	select GPIO
+	select SDHC_SUPPORTS_UHS if SDMMC_STACK
+	help
+	  Renesas Rcar MMC driver.
+
+if RCAR_MMC
+
+config RCAR_MMC_DMA_SUPPORT
+	bool "Internal DMA support for Renesas Rcar MMC driver"
+	select CACHE_MANAGEMENT
+	select DCACHE
+	default y
+	help
+	  Internal DMA support for Renesas Rcar MMC driver.
+
+config RCAR_MMC_SCC_SUPPORT
+	bool "Support of SCC"
+	default y
+	help
+	  Enable support of Sampling Clock Controller for Renesas Rcar MMC driver.
+
+if RCAR_MMC_DMA_SUPPORT
+
+config SDHC_BUFFER_ALIGNMENT
+	default 128
+
+config RCAR_MMC_DMA_IRQ_DRIVEN_SUPPORT
+	bool "Internal DMA IRQ driven support for Renesas Rcar MMC driver"
+	default y
+
+endif # RCAR_MMC_DMA_SUPPORT
+
+endif # RCAR_MMC

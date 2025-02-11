@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
+#if !defined(__ZEPHYR__)
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -24,7 +24,8 @@
 
 #else
 
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
+#include <zephyr/posix/sys/select.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
 
@@ -91,7 +92,7 @@ void pollfds_del(int fd)
 	FD_CLR(fd, &readfds);
 }
 
-void main(void)
+int main(void)
 {
 	int res;
 	static int counter;
@@ -243,4 +244,5 @@ error:
 			}
 		}
 	}
+	return 0;
 }

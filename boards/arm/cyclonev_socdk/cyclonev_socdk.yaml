@@ -1,7 +1,0 @@
-identifier: cyclonev_socdk
-name: Intel Cyclone V SoC FPGA
-type: mcu
-arch: arm
-toolchain:
-  - zephyr
-  - gnuarmemb

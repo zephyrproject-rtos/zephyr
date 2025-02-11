@@ -14,13 +14,6 @@ config NET_L2_IEEE802154_MGMT
 	select NET_MGMT
 	select NET_MGMT_EVENT
 
-config NET_L2_IEEE802154_SUB_GHZ
-	bool
-	help
-	  Enable support for Sub-GHz devices. This will add a tiny bit more
-	  logic in L2 code for channel management. This option is automatically
-	  selected when relevant device driver is enabled.
-
 module = NET_L2_IEEE802154
 module-dep = NET_LOG
 module-str = Log level for IEEE 802.15.4
@@ -56,12 +49,6 @@ config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_TX
 
 endchoice
 
-config NET_L2_IEEE802154_ACK_REPLY
-	bool "IEEE 802.15.4 ACK reply logic"
-	help
-	  Enable inner stack's logic on handling ACK request. Note that
-	  if the hw driver has an AUTOACK feature, this is then unnecessary.
-
 choice
 	prompt "Device features level support"
 	default NET_L2_IEEE802154_RFD
@@ -96,9 +83,10 @@ config NET_L2_IEEE802154_FRAGMENT
 	  If IPv6 packets size more than 802.15.4 MTU, packet is fragmented
 	  and reassemble incoming packets according to RFC4944/6282.
 
+if NET_L2_IEEE802154_FRAGMENT
+
 config NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
 	int "IEEE 802.15.4 Reassembly cache size"
-	depends on NET_L2_IEEE802154_FRAGMENT
 	default 1
 	help
 	  Simultaneously reassemble 802.15.4 fragments depending on
@@ -106,7 +94,6 @@ config NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
 
 config NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
 	int "IEEE 802.15.4 Reassembly timeout in seconds"
-	depends on NET_L2_IEEE802154_FRAGMENT
 	default 5
 	range 1 60
 	help
@@ -114,12 +101,18 @@ config NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
 	  from peer. Reassembly should be finished within a given time.
 	  Otherwise all accumulated fragments are dropped.
 
+endif # NET_L2_IEEE802154_FRAGMENT
+
 config NET_L2_IEEE802154_SECURITY
 	bool "IEEE 802.15.4 security [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Enable 802.15.4 frame security handling, in order to bring data
-	  confidentiality and authenticity.
+	  confidentiality and authenticity. The implementation is incomplete
+	  (only implicit key mode, no key/device specific state, incoming
+	  and outgoing security procedures only partially implemented, etc.).
+	  Therefore the feature is to be considered EXPERIMENTAL work in
+	  progress.
 
 config NET_L2_IEEE802154_SECURITY_CRYPTO_DEV_NAME
 	string "Crypto device name used for <en/de>cryption"

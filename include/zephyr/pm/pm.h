@@ -21,7 +21,8 @@ extern "C" {
 /**
  * @brief System and device power management
  * @defgroup subsys_pm Power Management (PM)
- * @ingroup subsys
+ * @since 1.2
+ * @ingroup os_services
  * @{
  * @}
  */
@@ -29,6 +30,7 @@ extern "C" {
 /**
  * @brief System Power Management API
  * @defgroup subsys_pm_sys System
+ * @since 1.2
  * @ingroup subsys_pm
  * @{
  */
@@ -115,6 +117,30 @@ int pm_notifier_unregister(struct pm_notifier *notifier);
 const struct pm_state_info *pm_state_next_get(uint8_t cpu);
 
 /**
+ * @brief Notify exit from kernel sleep.
+ *
+ * This function would notify exit from kernel idling if a corresponding
+ * pm_system_suspend() notification was handled and did not return
+ * PM_STATE_ACTIVE.
+ *
+ * This function should be called from the ISR context of the event
+ * that caused the exit from kernel idling.
+ *
+ * This is required for cpu power states that would require
+ * interrupts to be enabled while entering low power states. e.g. C1 in x86. In
+ * those cases, the ISR would be invoked immediately after the event wakes up
+ * the CPU, before code following the CPU wait, gets a chance to execute. This
+ * can be ignored if no operation needs to be done at the wake event
+ * notification.
+ */
+void pm_system_resume(void);
+
+
+/** @cond INTERNAL_HIDDEN */
+__deprecated void z_pm_save_idle_exit(void);
+/** @endcond */
+
+/**
  * @}
  */
 
@@ -167,28 +193,21 @@ static inline int pm_notifier_unregister(struct pm_notifier *notifier)
 	return -ENOSYS;
 }
 
-static inline void pm_state_set(enum pm_state state, uint8_t substate_id)
-{
-	ARG_UNUSED(state);
-	ARG_UNUSED(substate_id);
-}
-
-static inline void pm_state_exit_post_ops(enum pm_state state,
-					  uint8_t substate_id)
-{
-	ARG_UNUSED(state);
-	ARG_UNUSED(substate_id);
-}
-
 static inline const struct pm_state_info *pm_state_next_get(uint8_t cpu)
 {
 	ARG_UNUSED(cpu);
 
 	return NULL;
 }
-#endif /* CONFIG_PM */
+static inline void z_pm_save_idle_exit(void)
+{
+}
 
-void z_pm_save_idle_exit(void);
+static inline void pm_system_resume(void)
+{
+}
+
+#endif /* CONFIG_PM */
 
 #ifdef __cplusplus
 }

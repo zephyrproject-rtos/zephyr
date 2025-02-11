@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/init.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/net/ieee802154_radio.h>
@@ -117,7 +117,7 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 	}
 
 	if (!upipe->rx_len) {
-		if (*buf > 127) {
+		if (*buf > IEEE802154_MAX_PHY_PACKET_SIZE) {
 			goto flush;
 		}
 
@@ -128,33 +128,26 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 	upipe->rx_buf[upipe->rx_off++] = *buf;
 
 	if (upipe->rx_len == upipe->rx_off) {
-		struct net_buf *frag;
-
-		pkt = net_pkt_rx_alloc(K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(upipe->iface, upipe->rx_len,
+						   AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_DBG("No pkt available");
 			goto flush;
 		}
 
-		frag = net_pkt_get_frag(pkt, upipe->rx_len, K_NO_WAIT);
-		if (!frag) {
-			LOG_DBG("No fragment available");
+		if (net_pkt_write(pkt, upipe->rx_buf, upipe->rx_len)) {
+			LOG_DBG("No content read?");
 			goto out;
 		}
 
-		net_pkt_frag_insert(pkt, frag);
-
-		memcpy(frag->data, upipe->rx_buf, upipe->rx_len);
-		net_buf_add(frag, upipe->rx_len);
-
 #if defined(CONFIG_IEEE802154_UPIPE_HW_FILTER)
-		if (received_dest_addr_matched(frag->data) == false) {
+		if (received_dest_addr_matched(pkt->buffer->data) == false) {
 			LOG_DBG("Packet received is not addressed to me");
 			goto out;
 		}
 #endif
 
-		if (ieee802154_radio_handle_ack(upipe->iface, pkt) == NET_OK) {
+		if (ieee802154_handle_ack(upipe->iface, pkt) == NET_OK) {
 			LOG_DBG("ACK packet handled");
 			goto out;
 		}
@@ -181,9 +174,7 @@ done:
 
 static enum ieee802154_hw_caps upipe_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS |
-		IEEE802154_HW_2_4_GHZ |
-		IEEE802154_HW_FILTER;
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER;
 }
 
 static int upipe_cca(const struct device *dev)
@@ -329,6 +320,20 @@ static int upipe_stop(const struct device *dev)
 	return 0;
 }
 
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
+
+/* API implementation: attr_get */
+static int upipe_attr_get(const struct device *dev, enum ieee802154_attr attr,
+			  struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+
+	return ieee802154_attr_get_channel_page_and_range(
+		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		&drv_attr.phy_supported_channels, value);
+}
+
 static int upipe_init(const struct device *dev)
 {
 	struct upipe_context *upipe = dev->data;
@@ -352,8 +357,7 @@ static inline uint8_t *get_mac(const struct device *dev)
 	upipe->mac_addr[3] = 0x30;
 
 #if defined(CONFIG_IEEE802154_UPIPE_RANDOM_MAC)
-	UNALIGNED_PUT(sys_cpu_to_be32(sys_rand32_get()),
-		      (uint32_t *) ((uint8_t *)upipe->mac_addr+4));
+	sys_rand_get(&upipe->mac_addr[4], 4U);
 #else
 	upipe->mac_addr[4] = CONFIG_IEEE802154_UPIPE_MAC4;
 	upipe->mac_addr[5] = CONFIG_IEEE802154_UPIPE_MAC5;
@@ -380,7 +384,7 @@ static void upipe_iface_init(struct net_if *iface)
 
 static struct upipe_context upipe_context_data;
 
-static struct ieee802154_radio_api upipe_radio_api = {
+static const struct ieee802154_radio_api upipe_radio_api = {
 	.iface_api.init		= upipe_iface_init,
 
 	.get_capabilities	= upipe_get_capabilities,
@@ -391,6 +395,7 @@ static struct ieee802154_radio_api upipe_radio_api = {
 	.tx			= upipe_tx,
 	.start			= upipe_start,
 	.stop			= upipe_stop,
+	.attr_get		= upipe_attr_get,
 };
 
 NET_DEVICE_DT_INST_DEFINE(0, upipe_init, NULL, &upipe_context_data, NULL,

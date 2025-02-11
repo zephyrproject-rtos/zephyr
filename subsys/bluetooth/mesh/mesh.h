@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/iterable_sections.h>
+
 #define BT_MESH_KEY_PRIMARY 0x0000
 
 enum bt_mesh_key_evt {
@@ -35,3 +37,7 @@ struct bt_mesh_app_key_cb {
 struct bt_mesh_net;
 
 int bt_mesh_start(void);
+void bt_mesh_reprovision(uint16_t addr);
+void bt_mesh_dev_key_cand(const uint8_t *key);
+void bt_mesh_dev_key_cand_remove(void);
+void bt_mesh_dev_key_cand_activate(void);

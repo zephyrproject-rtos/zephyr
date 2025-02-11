@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m4.dtsi>
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include "arduino_portenta_h7-common.dtsi"
+
+/ {
+	model = "Arduino Portenta H7 board";
+	compatible = "arduino,portenta-h7";
+
+	/* HW resources are split between CM7 and CM4 */
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+	};
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(200)>;
+};
+
+&usart1 {
+	status = "disabled";
+};

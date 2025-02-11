@@ -1,7 +1,8 @@
-.. _nvs-sample:
+.. zephyr:code-sample:: nvs
+   :name: Non-Volatile Storage (NVS)
+   :relevant-api: nvs_high_level_api
 
-NVS: Non-Volatile Storage
-#########################
+   Store and retrieve data from flash using the NVS API.
 
 Overview
 ********
@@ -22,11 +23,11 @@ Building and Running
 This sample can be found under :zephyr_file:`samples/subsys/nvs` in the Zephyr tree.
 
 The sample can be build for several platforms, the following commands build the
-application for the nrf51dk_nrf51422 board.
+application for the nrf51dk/nrf51822 board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/nvs
-   :board: nrf51dk_nrf51422
+   :board: nrf51dk/nrf51822
    :goals: build flash
    :compact:
 

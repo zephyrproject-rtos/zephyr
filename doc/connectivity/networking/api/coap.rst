@@ -17,7 +17,8 @@ that support CoAP's features. For more information about the protocol
 itself, see `IETF RFC7252 The Constrained Application Protocol <https://tools.ietf.org/html/rfc7252>`_.
 
 Zephyr provides a CoAP library which supports client and server roles.
-The library is configurable as per user needs. The Zephyr CoAP library
+The library can be enabled with :kconfig:option:`CONFIG_COAP` Kconfig option and
+is configurable as per user needs. The Zephyr CoAP library
 is implemented using plain buffers. Users of the API create sockets
 for communication and pass the buffer to the library for parsing and other
 purposes. The library itself doesn't create any sockets for users.
@@ -25,8 +26,6 @@ purposes. The library itself doesn't create any sockets for users.
 On top of CoAP, Zephyr has support for LWM2M "Lightweight Machine 2 Machine"
 protocol, a simple, low-cost remote management and service enablement mechanism.
 See :ref:`lwm2m_interface` for more information.
-
-Supported RFCs:
 
 Supported RFCs:
 
@@ -42,6 +41,11 @@ Sample Usage
 
 CoAP Server
 ===========
+
+.. note::
+
+   A :ref:`coap_server_interface` subsystem is available, the following is for creating a custom
+   server implementation.
 
 To create a CoAP server, resources for the server need to be defined.
 The ``.well-known/core`` resource should be added before all other
@@ -97,6 +101,11 @@ with resource path like '/some_resource/+/#'.
 CoAP Client
 ===========
 
+.. note::
+
+   A :ref:`coap_client_interface` subsystem is available, the following is for creating a custom
+   client implementation.
+
 If the CoAP client knows about resources in the CoAP server, the client can start
 prepare CoAP requests and wait for responses. If the client doesn't know
 about resources in the CoAP server, it can request resources through
@@ -142,7 +151,7 @@ in Zephyr.
 
 See the `net-tools <https://github.com/zephyrproject-rtos/net-tools>`_ project for more details
 
-The :ref:`coap-server-sample` sample can be built and executed on QEMU as described
+The :zephyr:code-sample:`coap-server` sample can be built and executed on QEMU as described
 in :ref:`networking_with_qemu`.
 
 Use this command on the host to run the libcoap implementation of
@@ -172,16 +181,16 @@ Install eclipse-titan and set symbolic links for titan tools
 
     export TTCN3_DIR=/usr/share/titan
 
-    git clone https://github.com/eclipse/titan.misc.git
+    git clone https://gitlab.eclipse.org/eclipse/titan/titan.misc.git
 
     cd titan.misc
 
 Follow the instruction to setup CoAP test suite from here:
 
-- https://github.com/eclipse/titan.misc
-- https://github.com/eclipse/titan.misc/tree/master/CoAP_Conf
+- https://gitlab.eclipse.org/eclipse/titan/titan.misc
+- https://gitlab.eclipse.org/eclipse/titan/titan.misc/-/tree/master/CoAP_Conf
 
-After the build is complete, the :ref:`coap-server-sample` sample can be built
+After the build is complete, the :zephyr:code-sample:`coap-server` sample can be built
 and executed on QEMU as described in :ref:`networking_with_qemu`.
 
 Change the client (test suite) and server (Zephyr coap-server sample) addresses

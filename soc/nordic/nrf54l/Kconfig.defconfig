@@ -1,0 +1,32 @@
+# Nordic Semiconductor nRF54L MCU line
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NRF54LX
+
+rsource "Kconfig.defconfig.nrf54l*"
+
+if ARM
+
+config CORTEX_M_SYSTICK
+	default !NRF_GRTC_TIMER
+
+config CACHE_NRF_CACHE
+	default y if EXTERNAL_CACHE
+
+endif # ARM
+
+if RISCV
+
+DT_CHOSEN_Z_SRAM = zephyr,sram
+DT_CHOSEN_Z_CODE = zephyr,code-partition
+
+config BUILD_OUTPUT_ADJUST_LMA
+	depends on !XIP
+	default "$(dt_chosen_partition_addr_hex,$(DT_CHOSEN_Z_CODE)) - \
+		 $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))"
+
+endif # RISCV
+
+endif # SOC_SERIES_NRF54LX

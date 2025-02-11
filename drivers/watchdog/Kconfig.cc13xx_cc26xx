@@ -5,6 +5,7 @@ config WDT_CC13XX_CC26XX
 	bool "Watchdog Driver for CC13xx / CC26xx family of MCUs"
 	default y
 	depends on DT_HAS_TI_CC13XX_CC26XX_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Enable watchdog for CC13xx / CC26xx family of MCUs
 

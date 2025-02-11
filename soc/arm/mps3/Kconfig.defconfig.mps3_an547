@@ -1,0 +1,9 @@
+# Copyright (c) 2018-2021 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MPS3_AN547
+
+config NUM_IRQS
+	default 128
+
+endif

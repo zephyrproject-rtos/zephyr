@@ -4,9 +4,12 @@
 menuconfig UART_PL011
 	bool "ARM PL011 UART Driver"
 	default y
-	depends on DT_HAS_ARM_PL011_ENABLED
+	depends on DT_HAS_ARM_PL011_ENABLED || DT_HAS_ARM_SBSA_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL if SOC_EOS_S3
+	select PINCTRL if DT_HAS_AMBIQ_UART_ENABLED
+	select PINCTRL if DT_HAS_RASPBERRYPI_PICO_UART_ENABLED
 	help
 	  This option enables the UART driver for the PL011
 
@@ -14,6 +17,7 @@ if UART_PL011
 
 config UART_PL011_SBSA
 	bool "SBSA UART"
+	default y if DT_HAS_ARM_SBSA_UART_ENABLED
 	help
 	  Enable SBSA mode for PL011 driver. SBSA stands for
 	  Server Based System Architecture. This specification

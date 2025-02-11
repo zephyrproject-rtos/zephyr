@@ -1,0 +1,11 @@
+# Smartbond Cryptographic Accelerator configuration options
+
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_SMARTBOND
+	bool "Smartbond NOR/PSRAM memory controller"
+	depends on DT_HAS_RENESAS_SMARTBOND_NOR_PSRAM_ENABLED
+	default y
+	help
+		Enable Smartbond NOR/PSRAM memory controller.

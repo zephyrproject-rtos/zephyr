@@ -32,7 +32,7 @@ static void process_int(const struct device *dev)
 	struct grow_r502a_data *drv_data = dev->data;
 
 	if (drv_data->th_handler != NULL) {
-		drv_data->th_handler(dev, &drv_data->th_trigger);
+		drv_data->th_handler(dev, drv_data->th_trigger);
 	}
 	setup_int(dev, true);
 }
@@ -45,7 +45,7 @@ int grow_r502a_trigger_set(const struct device *dev,
 
 	if ((enum sensor_trigger_type_grow_r502a)trig->type == SENSOR_TRIG_TOUCH) {
 		drv_data->th_handler = handler;
-		drv_data->th_trigger = *trig;
+		drv_data->th_trigger = trig;
 		setup_int(dev, true);
 	} else {
 		LOG_ERR("Unsupported sensor trigger");
@@ -71,8 +71,13 @@ static void grow_r502a_gpio_callback(const struct device *dev,
 }
 
 #if defined(CONFIG_GROW_R502A_TRIGGER_OWN_THREAD)
-static void grow_r502a_thread(struct grow_r502a_data *drv_data)
+static void grow_r502a_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct grow_r502a_data *drv_data = p1;
+
 	while (true) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
 		process_int(drv_data->gpio_dev);
@@ -95,7 +100,7 @@ int grow_r502a_init_interrupt(const struct device *dev)
 	const struct grow_r502a_config *cfg = dev->config;
 	int rc;
 
-	if (!device_is_ready(cfg->int_gpios.port)) {
+	if (!gpio_is_ready_dt(&cfg->int_gpios)) {
 		LOG_ERR("GPIO port %s not ready", cfg->int_gpios.port->name);
 		return -ENODEV;
 	}
@@ -111,7 +116,7 @@ int grow_r502a_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_GROW_R502A_THREAD_STACK_SIZE,
-			(k_thread_entry_t)grow_r502a_thread, drv_data, NULL,
+			grow_r502a_thread, drv_data, NULL,
 			NULL, K_PRIO_COOP(CONFIG_GROW_R502A_THREAD_PRIORITY), 0,
 			K_NO_WAIT);
 #elif defined(CONFIG_GROW_R502A_TRIGGER_GLOBAL_THREAD)

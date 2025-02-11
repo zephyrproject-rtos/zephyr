@@ -1,8 +1,0 @@
-# Copyright (c) 2017 Linaro Limited
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_MPS2_AN385
-	bool "ARM Cortex-M3 SMM on V2M-MPS2 (Application Note AN385)"
-	depends on SOC_MPS2_AN385
-	select QEMU_TARGET
-	select HAS_COVERAGE_SUPPORT

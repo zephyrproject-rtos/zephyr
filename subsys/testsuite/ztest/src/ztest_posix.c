@@ -6,11 +6,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include "cmdline.h" /* native_posix command line options header */
+#include "cmdline.h" /* native_sim command line options header */
 #include "soc.h"
 #include <zephyr/tc_util.h>
-#include <zephyr/ztest_test_new.h>
+#include <zephyr/ztest_test.h>
+#include "nsi_host_trampolines.h"
 
 static const char *test_args;
 static bool list_tests;
@@ -47,7 +47,7 @@ NATIVE_TASK(add_test_filter_option, PRE_BOOT_1, 10);
  * This makes assertions a lot more readable, and sometimes they fit on one
  * line.
  *
- * Overrides implementation in ztest_new.c
+ * Overrides implementation in ztest.c
  *
  * @param file Filename to check
  * @returns Shortened filename, or @file if it could not be shortened
@@ -57,7 +57,7 @@ const char *ztest_relative_filename(const char *file)
 	const char *cwd;
 	char buf[200];
 
-	cwd = getcwd(buf, sizeof(buf));
+	cwd = nsi_host_getcwd(buf, sizeof(buf));
 	if (cwd && strlen(file) > strlen(cwd) && !strncmp(file, cwd, strlen(cwd))) {
 		return file + strlen(cwd) + 1; /* move past the trailing '/' */
 	}
@@ -95,6 +95,8 @@ const char *ztest_get_test_args(void)
 	return test_args;
 }
 
+
+
 /**
  * @brief Lists registered unit tests in this binary, one per line
  *
@@ -126,12 +128,12 @@ int z_ztest_list_tests(void)
  *
  * @param state The current state of the machine as it relates to the test executable.
  */
-void z_ztest_run_all(const void *state)
+void z_ztest_run_all(const void *state, bool shuffle, int suite_iter, int case_iter)
 {
 	if (z_ztest_get_list_test()) {
 		z_ztest_list_tests();
 	} else {
-		ztest_run_test_suites(state);
+		ztest_run_test_suites(state, shuffle, suite_iter, case_iter);
 	}
 }
 
@@ -146,7 +148,7 @@ void z_ztest_run_all(const void *state)
 static bool z_ztest_testargs_contains(const char *suite_name, const char *test_name)
 {
 	bool found = false;
-	char *test_args_local = strdup(test_args);
+	char *test_args_local = nsi_host_strdup(test_args);
 	char *suite_test_pair;
 	char *last_suite_test_pair;
 	char *suite_arg;
@@ -168,7 +170,7 @@ static bool z_ztest_testargs_contains(const char *suite_name, const char *test_n
 		suite_test_pair = strtok_r(NULL, ",", &last_suite_test_pair);
 	}
 
-	free(test_args_local);
+	nsi_host_free(test_args_local);
 	return found;
 }
 
@@ -176,7 +178,7 @@ static bool z_ztest_testargs_contains(const char *suite_name, const char *test_n
  * @brief Determines if the test case should run based on test cases listed
  *	  in the command line argument.
  *
- * Overrides implementation in ztest_new.c
+ * Overrides implementation in ztest.c
  *
  * @param suite - name of test suite
  * @param test  - name of unit test
@@ -197,7 +199,7 @@ bool z_ztest_should_test_run(const char *suite, const char *test)
  * @brief Determines if the test suite should run based on test cases listed
  *	  in the command line argument.
  *
- * Overrides implementation in ztest_new.c
+ * Overrides implementation in ztest.c
  *
  * @param state The current state of the machine as it relates to the test
  *		executable.

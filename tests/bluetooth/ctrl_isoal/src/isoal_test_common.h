@@ -2,11 +2,6 @@
  * Copyright (c) 2022 Demant
  *
  * SPDX-License-Identifier: Apache-2.0
- *
- *  Run this test from zephyr directory as:
- *
- *     ./scripts/twister --coverage -p native_posix -v -T tests/bluetooth/ctrl_isoal/
- *
  */
 
 #ifndef _ISOAL_TEST_COMMON_H_
@@ -37,9 +32,11 @@
 		(s == BT_ISO_CONT ? "CONT" : \
 			(s == BT_ISO_END ? "END" : "???"))))
 
-#define ROLE_TO_STR(s) (s == BT_ROLE_BROADCAST ? "Broadcast" : \
-	(role == BT_CONN_ROLE_PERIPHERAL ? "Peripheral" : \
-	(role == BT_CONN_ROLE_CENTRAL ? "Central" : "Undefined")))
+#define ROLE_TO_STR(s) \
+	((s) == ISOAL_ROLE_BROADCAST_SOURCE ? "Broadcast Source" : \
+	 ((s) == ISOAL_ROLE_BROADCAST_SINK ? "Broadcast Sink" : \
+	  ((s) == ISOAL_ROLE_PERIPHERAL ? "Peripheral" : \
+	   ((s) == ISOAL_ROLE_CENTRAL ? "Central" : "Undefined"))))
 
 #define FSM_TO_STR(s) (s == ISOAL_START ? "START" : \
 	(s == ISOAL_CONTINUE ? "CONTINUE" : \
@@ -51,6 +48,10 @@
 #define COLLATED_RX_SDU_INFO(_non_buf, _buf) (_non_buf)
 #endif /* ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE */
 
+/* Maximum PDU payload for given number of PDUs */
+#define MAX_FRAMED_PDU_PAYLOAD(_pdus)                                                              \
+	(TEST_TX_PDU_PAYLOAD_MAX * _pdus) -                                                        \
+		((PDU_ISO_SEG_HDR_SIZE * _pdus) + PDU_ISO_SEG_TIMEOFFSET_SIZE)
 
 struct rx_pdu_meta_buffer {
 	struct isoal_pdu_rx pdu_meta;

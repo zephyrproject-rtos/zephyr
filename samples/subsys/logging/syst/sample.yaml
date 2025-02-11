@@ -1,18 +1,22 @@
 sample:
   name: syst sample
 common:
-  tags: logging mipi-sys-t
+  tags:
+    - logging
+    - mipi-sys-t
   modules:
     - mipi-sys-t
-  arch_exclude: mips nios2 posix sparc
+  arch_exclude:
+    - mips
+    - nios2
+    - posix
+    - sparc
 tests:
   sample.logger.syst.deferred:
     toolchain_exclude: xcc
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
-      - sam_e70_xplained
-      - qemu_cortex_a53
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     harness: console
     harness_config:
@@ -20,36 +24,36 @@ tests:
       regex:
         - "SYS-T RAW DATA: "
         - "SYST Sample Execution Completed"
-    # "TOOLCHAIN_HAS_NEWLIB == 1" filter was applied
+    # "CONFIG_FULL_LIBC_SUPPORTED" filter was applied
     # because of following chain of dependencies:
     # LOG_MIPI_SYST_ENABLE=y --> CONFIG_MIPI_SYST_LIB --> \
-    # --> REQUIRES_FULL_LIBC --> NEWLIB_LIBC.
+    # --> REQUIRES_FULL_LIBC.
     #
-    # Not all compillers announced in Zephyr support NewLib.
-    filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
+    # Not all compillers announced in Zephyr support a full C library
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_REQUIRES_FULL_LIBC=y
   sample.logger.syst.immediate:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     integration_platforms:
-      - mps2_an385
       - qemu_x86
-      - sam_e70_xplained
-      - qemu_cortex_a53
+      - sam_e70_xplained/same70q21
     harness: console
     harness_config:
       type: multi_line
       regex:
         - "SYS-T RAW DATA: "
         - "SYST Sample Execution Completed"
-    filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_REQUIRES_FULL_LIBC=y
   sample.logger.syst.catalog.deferred:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     integration_platforms:
-      - mps2_an385
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -57,14 +61,13 @@ tests:
         - "SYS-T RAW DATA: "
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
-    filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
+      - CONFIG_REQUIRES_FULL_LIBC=y
+    filter: CONFIG_FULL_LIBC_SUPPORTED
   sample.logger.syst.catalog.immediate:
     toolchain_exclude: xcc
     integration_platforms:
-      - mps2_an385
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -72,16 +75,14 @@ tests:
         - "SYS-T RAW DATA: "
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
-    filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
+      - CONFIG_REQUIRES_FULL_LIBC=y
+    filter: CONFIG_FULL_LIBC_SUPPORTED
   sample.logger.syst.deferred_cpp:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     integration_platforms:
-      - mps2_an385
       - qemu_x86
       - qemu_x86_64
-      - sam_e70_xplained
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -89,15 +90,13 @@ tests:
         - "SYS-T RAW DATA: "
     extra_configs:
       - CONFIG_CPP=y
-    filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
+      - CONFIG_REQUIRES_FULL_LIBC=y
+    filter: CONFIG_FULL_LIBC_SUPPORTED
   sample.logger.syst.immediate_cpp:
     toolchain_exclude: xcc
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
-      - qemu_x86_64
-      - sam_e70_xplained
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -105,15 +104,14 @@ tests:
         - "SYS-T RAW DATA: "
     extra_configs:
       - CONFIG_CPP=y
-    filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
+      - CONFIG_REQUIRES_FULL_LIBC=y
+    filter: CONFIG_FULL_LIBC_SUPPORTED
   sample.logger.syst.catalog.deferred_cpp:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     integration_platforms:
-      - mps2_an385
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -122,14 +120,13 @@ tests:
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
       - CONFIG_CPP=y
-    filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
+      - CONFIG_REQUIRES_FULL_LIBC=y
+    filter: CONFIG_FULL_LIBC_SUPPORTED
   sample.logger.syst.catalog.immediate_cpp:
     toolchain_exclude: xcc
     integration_platforms:
-      - mps2_an385
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -138,4 +135,5 @@ tests:
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
       - CONFIG_CPP=y
-    filter: (TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_PICOLIBC_SUPPORTED
+      - CONFIG_REQUIRES_FULL_LIBC=y
+    filter: CONFIG_FULL_LIBC_SUPPORTED

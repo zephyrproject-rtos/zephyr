@@ -1,0 +1,5 @@
+board:
+  name: ip_k66f
+  vendor: segger
+  socs:
+    - name: mk66f18

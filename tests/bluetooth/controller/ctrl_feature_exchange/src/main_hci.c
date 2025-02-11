@@ -136,12 +136,12 @@ ZTEST(hci_fex, test_hci_feat_exchange_central_loc)
 			      "Wrong event count %d\n", conn_from_pool->lll.event_counter);
 
 		ull_cp_release_tx(conn_from_pool, tx);
-		ull_cp_release_ntf(ntf);
+		release_ntf(ntf);
 
 		ll_conn_release(conn_from_pool);
 	}
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST(hci_fex, test_hci_feat_exchange_wrong_handle)
@@ -169,8 +169,8 @@ ZTEST(hci_fex, test_hci_feat_exchange_wrong_handle)
 	err = ll_feature_req_send(conn_handle);
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for wrong handle\n");
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - (ctx_counter - 1),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt() - (ctx_counter - 1),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 ZTEST_SUITE(hci_fex, NULL, NULL, hci_setup, NULL, NULL);

@@ -12,8 +12,9 @@
 
 #include <mylib.h>
 
-void main(void)
+int main(void)
 {
 	printf("Hello World!\n");
 	mylib_hello_world();
+	return 0;
 }

@@ -23,7 +23,7 @@
 #include <zephyr/toolchain/common.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/util.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 /* We need to dummy out DT_NODE_HAS_STATUS when building the unittests.
  * Including devicetree.h would require generating dummy header files
@@ -37,106 +37,6 @@
 #endif
 
 #ifdef _LINKER
-
-/**
- * @addtogroup iterable_section_apis
- * @{
- */
-
-#define Z_LINK_ITERABLE(struct_type) \
-	_CONCAT(_##struct_type, _list_start) = .; \
-	KEEP(*(SORT_BY_NAME(._##struct_type.static.*))); \
-	_CONCAT(_##struct_type, _list_end) = .
-
-#define Z_LINK_ITERABLE_ALIGNED(struct_type, align) \
-	. = ALIGN(align); \
-	Z_LINK_ITERABLE(struct_type);
-
-#define Z_LINK_ITERABLE_GC_ALLOWED(struct_type) \
-	_CONCAT(_##struct_type, _list_start) = .; \
-	*(SORT_BY_NAME(._##struct_type.static.*)); \
-	_CONCAT(_##struct_type, _list_end) = .
-
-/**
- * @brief Define a read-only iterable section output.
- *
- * @details
- * Define an output section which will set up an iterable area
- * of equally-sized data structures. For use with STRUCT_SECTION_ITERABLE().
- * Input sections will be sorted by name, per ld's SORT_BY_NAME.
- *
- * This macro should be used for read-only data.
- *
- * Note that this keeps the symbols in the image even though
- * they are not being directly referenced. Use this when symbols
- * are indirectly referenced by iterating through the section.
- */
-#define ITERABLE_SECTION_ROM(struct_type, subalign) \
-	SECTION_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
-	{ \
-		Z_LINK_ITERABLE(struct_type); \
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-/**
- * @brief Define a garbage collectable read-only iterable section output.
- *
- * @details
- * Define an output section which will set up an iterable area
- * of equally-sized data structures. For use with STRUCT_SECTION_ITERABLE().
- * Input sections will be sorted by name, per ld's SORT_BY_NAME.
- *
- * This macro should be used for read-only data.
- *
- * Note that the symbols within the section can be garbage collected.
- */
-#define ITERABLE_SECTION_ROM_GC_ALLOWED(struct_type, subalign) \
-	SECTION_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
-	{ \
-		Z_LINK_ITERABLE_GC_ALLOWED(struct_type); \
-	} GROUP_LINK_IN(ROMABLE_REGION)
-
-/**
- * @brief Define a read-write iterable section output.
- *
- * @details
- * Define an output section which will set up an iterable area
- * of equally-sized data structures. For use with STRUCT_SECTION_ITERABLE().
- * Input sections will be sorted by name, per ld's SORT_BY_NAME.
- *
- * This macro should be used for read-write data that is modified at runtime.
- *
- * Note that this keeps the symbols in the image even though
- * they are not being directly referenced. Use this when symbols
- * are indirectly referenced by iterating through the section.
- */
-#define ITERABLE_SECTION_RAM(struct_type, subalign) \
-	SECTION_DATA_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
-	{ \
-		Z_LINK_ITERABLE(struct_type); \
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-/**
- * @brief Define a garbage collectable read-write iterable section output.
- *
- * @details
- * Define an output section which will set up an iterable area
- * of equally-sized data structures. For use with STRUCT_SECTION_ITERABLE().
- * Input sections will be sorted by name, per ld's SORT_BY_NAME.
- *
- * This macro should be used for read-write data that is modified at runtime.
- *
- * Note that the symbols within the section can be garbage collected.
- */
-#define ITERABLE_SECTION_RAM_GC_ALLOWED(struct_type, subalign) \
-	SECTION_DATA_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
-	{ \
-		Z_LINK_ITERABLE_GC_ALLOWED(struct_type); \
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-/**
- * @}
- */ /* end of struct_section_apis */
-
 /*
  * generate a symbol to mark the start of the objects array for
  * the specified object and level, then link all of those objects
@@ -145,8 +45,8 @@
  */
 #define CREATE_OBJ_LEVEL(object, level)				\
 		__##object##_##level##_start = .;		\
-		KEEP(*(SORT(.z_##object##_##level[0-9]_*)));		\
-		KEEP(*(SORT(.z_##object##_##level[1-9][0-9]_*)));
+		KEEP(*(SORT(.z_##object##_##level?_*)));	\
+		KEEP(*(SORT(.z_##object##_##level??_*)));
 
 /*
  * link in shell initialization objects for all modules that use shell and
@@ -233,6 +133,7 @@ extern char _flash_used[];
 /* datas, bss, noinit */
 extern char _image_ram_start[];
 extern char _image_ram_end[];
+extern char _image_ram_size[];
 
 extern char __text_region_start[];
 extern char __text_region_end[];
@@ -258,7 +159,7 @@ extern char __gcov_bss_size[];
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
+#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay))
 extern char __ccm_data_rom_start[];
 extern char __ccm_start[];
 extern char __ccm_data_start[];
@@ -270,14 +171,14 @@ extern char __ccm_noinit_end[];
 extern char __ccm_end[];
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay))
 extern char __itcm_start[];
 extern char __itcm_end[];
 extern char __itcm_size[];
 extern char __itcm_load_start[];
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay))
 extern char __dtcm_data_start[];
 extern char __dtcm_data_end[];
 extern char __dtcm_bss_start[];
@@ -289,7 +190,7 @@ extern char __dtcm_start[];
 extern char __dtcm_end[];
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
+#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay))
 extern char __ocm_data_start[];
 extern char __ocm_data_end[];
 extern char __ocm_bss_start[];
@@ -391,7 +292,7 @@ extern char lnkr_boot_noinit_size[];
 /* lnkr_pinned_start[] and lnkr_pinned_end[] must encapsulate
  * all the pinned sections as these are used by
  * the MMU code to mark the physical page frames with
- * Z_PAGE_FRAME_PINNED.
+ * K_MEM_PAGE_FRAME_PINNED.
  */
 extern char lnkr_pinned_start[];
 extern char lnkr_pinned_end[];

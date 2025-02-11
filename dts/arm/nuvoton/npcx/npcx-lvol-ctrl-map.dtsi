@@ -130,7 +130,7 @@
 		 * low voltage detection.)
 		 */
 		lvol_none: lvol-pseudo {
-			lvols = <&scfg 6 0>;
+			lvols = <&scfg 31 0>;
 		};
 	};
 };

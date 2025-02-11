@@ -1,7 +1,8 @@
-.. _settings_subsys_sample:
+.. zephyr:code-sample:: settings
+   :name: Settings API
+   :relevant-api: settings settings_rt settings_name_proc
 
-Settings sample
-###############
+   Load and save configuration values using the settings API.
 
 Overview
 ********
@@ -15,7 +16,7 @@ register them.
 Requirements
 ************
 
-* A board with settings support, for instance: nrf52840dk_nrf52840
+* A board with settings support, for instance: nrf52840dk/nrf52840
 * Or qemu_x86 target
 
 Building and Running

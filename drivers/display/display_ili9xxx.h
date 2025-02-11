@@ -9,8 +9,7 @@
 #ifndef ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_
 #define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_
 
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/sys/util.h>
 
 /* Commands/registers. */
@@ -23,8 +22,11 @@
 #define ILI9XXX_CASET 0x2a
 #define ILI9XXX_PASET 0x2b
 #define ILI9XXX_RAMWR 0x2c
+#define ILI9XXX_RGBSET 0x2d
+#define ILI9XXX_RAMRD 0x2e
 #define ILI9XXX_MADCTL 0x36
 #define ILI9XXX_PIXSET 0x3A
+#define ILI9XXX_RAMRD_CONT 0x3e
 
 /* MADCTL register fields. */
 #define ILI9XXX_MADCTL_MY BIT(7U)
@@ -54,10 +56,19 @@
 /** Reset wait time (ms), ref 15.4 of ILI9XXX manual. */
 #define ILI9XXX_RESET_WAIT_TIME 5
 
+enum madctl_cmd_set {
+	CMD_SET_1,	/* Default for most of ILI9xxx display controllers */
+	CMD_SET_2,	/* Used by ILI9342c */
+};
+
+struct ili9xxx_quirks {
+	enum madctl_cmd_set cmd_set;
+};
+
 struct ili9xxx_config {
-	struct spi_dt_spec spi;
-	struct gpio_dt_spec cmd_data;
-	struct gpio_dt_spec reset;
+	const struct ili9xxx_quirks *quirks;
+	const struct device *mipi_dev;
+	struct mipi_dbi_config dbi_config;
 	uint8_t pixel_format;
 	uint16_t rotation;
 	uint16_t x_resolution;

@@ -14,6 +14,12 @@ module = PCIE
 module-str = pcie
 source "subsys/logging/Kconfig.template.log_config"
 
+config PCIE_INIT_PRIORITY
+	int "PCIe initialization priority"
+	default 41
+	help
+	  PCIe host drivers initialization priority.
+
 config PCIE_CONTROLLER
 	bool "PCIe Controller management"
 	help
@@ -67,9 +73,15 @@ config PCIE_PTM
 	  This will enable support both PTM root and PTM requester features.
 	  Up to the PCIe device driver to enable its PTM requester capability.
 
+config PCIE_PRT
+	bool "Support for IRQ information retrieve via ACPI PRT (PCI Routing Table)"
+	default y if ACPI_DSDT_SUPPORT
+	help
+	  This will enable retrieve interrupt routing information for PCI legacy
+	  interrupt via ACPI PRT (PCI Routing Table)
+
 config PCIE_SHELL
 	bool "PCIe/new PCI Shell"
-	default y
 	depends on SHELL
 	help
 	  Enable commands for debugging PCI(e) using the built-in shell.

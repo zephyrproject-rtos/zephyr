@@ -1,0 +1,11 @@
+ /* SPDX-License-Identifier: Apache-2.0 */
+
+&rtc130 {
+	status = "reserved";
+	interrupt-parent = <&cpuppr_clic>;
+};
+
+&rtc131 {
+	status = "reserved";
+	interrupt-parent = <&cpuppr_clic>;
+};

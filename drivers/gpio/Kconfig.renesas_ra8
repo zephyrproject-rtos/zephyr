@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_RA8
+	bool "Renesas RA8 GPIO driver"
+	default y
+	depends on DT_HAS_RENESAS_RA8_GPIO_ENABLED
+	help
+	  Enable the Renesas RA8 GPIO driver.

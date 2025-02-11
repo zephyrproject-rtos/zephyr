@@ -1,0 +1,30 @@
+# Atmel SAM0 MCU family default configuration options
+
+# Copyright (c) 2017 Google LLC.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ATMEL_SAM0
+
+rsource "*/Kconfig.defconfig"
+
+config GPIO
+	default y
+
+config HWINFO_SAM0
+	default HWINFO
+
+config PINCTRL
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+if USB_DEVICE_DRIVER
+
+config HEAP_MEM_POOL_ADD_SIZE_SOC
+	def_int 1024
+
+endif # USB_DEVICE_DRIVER
+
+endif # SOC_FAMILY_ATMEL_SAM0

@@ -1,7 +1,0 @@
-# Copyright (c) 2021 Rajnesh Kanwal <rajnesh.kanwal49@gmail.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_BEAGLEV_STARLIGHT_JH7100
-	bool "BeagleV Starlight JH7100 RISCV64 target"
-	depends on SOC_JH7100
-	select 64BIT

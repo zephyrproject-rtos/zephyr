@@ -9,6 +9,34 @@ description: |
     This is based on Linux, documentation:
       https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/devicetree/bindings/connector/usb-connector.yaml?h=v5.19&id=3d7cb6b04c3f3115719235cc6866b10326de34cd
 
+    Example:
+
+    USB-C connector attached to a STM32 UCPD typec port controller, which has
+    power delivery support and enables SINK.
+
+    vbus1: vbus {
+        compatible = "zephyr,usb-c-vbus-adc";
+        io-channels = <&adc2 8>;
+        output-ohms = <49900>;
+        full-ohms = <(330000 + 49900)>;
+    };
+
+    ports {
+        #address-cells = <1>;
+        #size-cells = <0>;
+        port1: usb-c-port@1 {
+            compatible = "usb-c-connector";
+            reg = <1>;
+            tcpc = <&ucpd1>;
+            vbus = <&vbus1>;
+            power-role = "sink";
+            sink-pdos = <PDO_FIXED(5000, 2000, PDO_FIXED_USB_COMM)
+                         PDO_VAR(5000, 12000, 2000)>;
+            op-sink-microwatt = <10000000>;
+        };
+    };
+
+
 compatible: "usb-c-connector"
 
 include: base.yaml
@@ -25,6 +53,11 @@ properties:
     required: true
     description: |
         VBUS measurement and control for this port.
+
+  ppc:
+    type: phandle
+    description: |
+        Power path controller for this port
 
   power-role:
     type: string
@@ -82,7 +115,7 @@ properties:
     type: array
     description: |
       An array of source Power Data Objects (PDOs).
-      Use tht following macros to define the PDOs, defined in
+      Use the following macros to define the PDOs, defined in
       dt-bindings/usb-c/pd.h.
         * PDO_FIXED
         * PDO_BATT
@@ -94,7 +127,7 @@ properties:
     type: array
     description: |
       An array of sink Power Data Objects (PDOs).
-      Use tht following macros to define the PDOs, defined in
+      Use the following macros to define the PDOs, defined in
       dt-bindings/usb-c/pd.h.
         * PDO_FIXED
         * PDO_BATT
@@ -106,7 +139,7 @@ properties:
     type: array
     description: |
       An array of sink Vendor Defined Objects (VDOs).
-      Use tht following macros to define the VDOs, defined in
+      Use the following macros to define the VDOs, defined in
       dt-bindings/usb-c/pd.h.
         * VDO_IDH
         * VDO_CERT
@@ -122,7 +155,7 @@ properties:
     type: array
     description: |
       An array of sink Vendor Defined Objects (VDOs).
-      Use tht following macros to define the VDOs, defined in
+      Use the following macros to define the VDOs, defined in
       dt-bindings/usb-c/pd.h.
         * VDO_IDH
         * VDO_CERT
@@ -136,32 +169,3 @@ properties:
     description: |
       Minimum power, in microwatts, needed by the sink. A Capability
       Mismatch is sent to the Source if the power can't be met.
-
-  # EXAMPLE:
-  #
-  # USB-C connector attached to a STM32 UCPD typec port controller, which has
-  # power delivery support and enables SINK.
-  #
-  # #include <dt-bindings/usb-c/pd.h>
-  #
-  # vbus1: vbus {
-  #     compatible = "zephyr,usb-c-vbus-adc";
-  #     io-channels = <&adc2 8>;
-  #     output-ohms = <49900>;
-  #     full-ohms = <(330000 + 49900)>;
-  # };
-  #
-  # ports {
-  #     #address-cells = <1>;
-  #     #size-cells = <0>;
-  #     port1: usb-c-port@1 {
-  #         compatible = "usb-c-connector";
-  #         reg = <1>;
-  #         tcpc = <&ucpd1>;
-  #         vbus = <&vbus1>;
-  #         power-role = "SINK";
-  #         sink-pdos = <PDO_FIXED(5000, 2000, PDO_FIXED_USB_COMM)
-  #                      PDO_VAR(5000, 12000, 2000)>;
-  #         op-sink-microwatt = <10000000>;
-  #      };
-  # };

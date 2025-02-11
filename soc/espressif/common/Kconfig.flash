@@ -1,0 +1,138 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ESPRESSIF_ESP32
+
+config MMU_PAGE_SIZE
+	hex
+	default 0x10000
+
+config SPI_FLASH_VENDOR_MXIC_SUPPORTED
+	bool
+	default y
+
+config SPI_FLASH_SUPPORT_ISSI_CHIP
+	bool "ISSI"
+	default y
+	help
+	  Enable this to support auto detection of ISSI chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_SUPPORT_MXIC_CHIP
+	bool "MXIC"
+	default y
+	help
+	  Enable this to support auto detection of MXIC chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_SUPPORT_GD_CHIP
+	bool "GigaDevice"
+	default y
+	help
+	  Enable this to support auto detection of GD (GigaDevice) chips if chip vendor not
+	  directly given by ``chip_drv`` member of the chip struct. If you are using Wrover
+	  modules, please don't disable this, otherwise your flash may not work in 4-bit
+	  mode.
+
+	  This adds support for variant chips, however will extend detecting time and image
+	  size. Note that the default chip driver supports the GD chips with product ID
+	  60H.
+
+config SPI_FLASH_SUPPORT_WINBOND_CHIP
+	bool "Winbond"
+	default y
+	help
+	  Enable this to support auto detection of Winbond chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_SUPPORT_BOYA_CHIP
+	bool "BOYA"
+	default y if !SOC_SERIES_ESP32
+	help
+	  Enable this to support auto detection of BOYA chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_SUPPORT_TH_CHIP
+	bool "TH"
+	default y if !SOC_SERIES_ESP32
+	help
+	  Enable this to support auto detection of TH chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
+	bool "mxic (opi)"
+	depends on SOC_SERIES_ESP32S3
+	default y
+	help
+	  Enable this to support auto detection of Octal MXIC chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_ROM_DRIVER_PATCH
+	bool "SPI flash ROM driver patched functions"
+	default y
+	help
+	  Enable this flag to use patched versions of SPI flash ROM driver functions.
+	  This option should be enabled, if any one of the following is true: (1) need to write
+	  to flash on ESP32-D2WD; (2) main SPI flash is connected to non-default pins; (3) main
+	  SPI flash chip is manufactured by ISSI.
+
+config BOOTLOADER_FLASH_XMC_SUPPORT
+	bool "Support flash chips of XMC (READ HELP FIRST)"
+	default y
+	help
+	  Perform the startup flow recommended by XMC. Please consult XMC for the details of this flow.
+	  XMC chips will be forbidden to be used, when this option is disabled.
+
+	  DON'T DISABLE THIS UNLESS YOU KNOW WHAT YOU ARE DOING.
+
+choice BOOTLOADER_VDDSDIO_BOOST
+	bool "VDDSDIO LDO voltage"
+	default BOOTLOADER_VDDSDIO_BOOST_1_9V
+	depends on !SOC_SERIES_ESP32C3 && !SOC_SERIES_ESP32C6
+	help
+	  If this option is enabled, and VDDSDIO LDO is set to 1.8V (using eFuse
+	  or MTDI bootstrapping pin), bootloader will change LDO settings to
+	  output 1.9V instead. This helps prevent flash chip from browning out
+	  during flash programming operations.
+
+	  This option has no effect if VDDSDIO is set to 3.3V, or if the internal
+	  VDDSDIO regulator is disabled via eFuse.
+
+	config BOOTLOADER_VDDSDIO_BOOST_1_8V
+		bool "1.8V"
+		depends on !ESPTOOLPY_FLASHFREQ_80M
+	config BOOTLOADER_VDDSDIO_BOOST_1_9V
+		bool "1.9V"
+endchoice
+
+config BOOTLOADER_REGION_PROTECTION_ENABLE
+	bool "Protect unmapped memory regions from unintended accesses"
+	default y
+	help
+	  Protects the unmapped memory regions of the entire address space from unintended accesses.
+	  This will ensure that an exception will be triggered whenever the CPU performs a memory
+	  operation on unmapped regions of the address space.
+
+config SPI_FLASH_HPM_ENABLE
+	bool
+	depends on SOC_SERIES_ESP32S3
+	default n
+	help
+	  This option is invisible, and will be selected automatically
+	  when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.
+
+config ESP_SIMPLE_BOOT
+	bool "Simple Boot method"
+	default y if !BOOTLOADER_MCUBOOT
+	help
+	  The Simple Boot is a method of booting that doesn't depend on a
+	  2nd stage bootloader. Please note that some of the bootloader features
+	  are not available using simple boot, such secure boot and OTA.
+
+endif # SOC_FAMILY_ESPRESSIF_ESP32

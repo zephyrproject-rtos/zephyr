@@ -51,11 +51,6 @@ static int rv32m1_pcc_get_rate(const struct device *dev,
 	return 0;
 }
 
-static int rv32m1_pcc_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct clock_control_driver_api rv32m1_pcc_api = {
 	.on = rv32m1_pcc_on,
 	.off = rv32m1_pcc_off,
@@ -63,12 +58,12 @@ static const struct clock_control_driver_api rv32m1_pcc_api = {
 };
 
 #define RV32M1_PCC_INIT(inst)						\
-	static struct rv32m1_pcc_config rv32m1_pcc##inst##_config = {	\
+	static const struct rv32m1_pcc_config rv32m1_pcc##inst##_config = {	\
 		.base_address = DT_INST_REG_ADDR(inst)			\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
-			    &rv32m1_pcc_init,				\
+			    NULL,					\
 			    NULL,					\
 			    NULL, &rv32m1_pcc##inst##_config,		\
 			    PRE_KERNEL_1,				\

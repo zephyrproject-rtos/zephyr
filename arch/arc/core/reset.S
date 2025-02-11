@@ -16,6 +16,9 @@
 #include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
 #include <zephyr/arch/arc/asm-compat/assembler.h>
+#ifdef CONFIG_ARC_EARLY_SOC_INIT
+  #include <soc_ctrl.h>
+#endif
 
 GDATA(z_interrupt_stacks)
 GDATA(z_main_stack)
@@ -37,7 +40,7 @@ GTEXT(__start)
  *
  * Locking interrupts prevents anything from interrupting the CPU.
  *
- * When these steps are completed, jump to _PrepC(), which will finish setting
+ * When these steps are completed, jump to z_prep_c(), which will finish setting
  * up the system for running C code.
  */
 
@@ -109,6 +112,12 @@ done_icache_invalidate:
 
 done_dcache_invalidate:
 
+#ifdef CONFIG_ARC_EARLY_SOC_INIT
+	soc_early_asm_init_percpu
+#endif
+
+	_dsp_extension_probe
+
 /*
  * Init ARC internal architecture state
  * Force to initialize internal architecture state to reset values
@@ -117,8 +126,8 @@ done_dcache_invalidate:
  * substitution of normal hardware reset sequence.
  */
 #ifdef CONFIG_INIT_ARCH_HW_AT_BOOT
-	/* Set MPU (v4) registers to default */
-#if CONFIG_ARC_MPU_VER == 4
+	/* Set MPU (v4 or v8) registers to default */
+#if CONFIG_ARC_MPU_VER == 4 || CONFIG_ARC_MPU_VER == 8
 	/* Set default reset value to _ARC_V2_MPU_EN register */
 #define ARC_MPU_EN_RESET_VALUE 0x400181C0
 	mov_s r1, ARC_MPU_EN_RESET_VALUE
@@ -140,6 +149,16 @@ mpu_regions_reset:
 	b_s mpu_regions_reset
 done_mpu_regions_reset:
 #endif
+#endif
+
+#ifdef CONFIG_ISA_ARCV3
+	/* Enable HW prefetcher if exist */
+	lr r0, [_ARC_HW_PF_BUILD]
+	breq r0, 0, hw_pf_setup_done
+	lr r1, [_ARC_HW_PF_CTRL]
+	or r1, r1, _ARC_HW_PF_CTRL_ENABLE
+	sr r1, [_ARC_HW_PF_CTRL]
+hw_pf_setup_done:
 #endif
 
 #if defined(CONFIG_SMP) || CONFIG_MP_MAX_NUM_CPUS  > 1
@@ -165,7 +184,7 @@ _slave_core_wait:
 	jl z_arc_firq_stack_set
 	pop r0
 #endif
-	j z_arc_slave_start
+	j arch_secondary_cpu_init
 
 _master_core_startup:
 #endif
@@ -193,4 +212,4 @@ _master_core_startup:
 	jl z_arc_firq_stack_set
 #endif
 
-	j _PrepC
+	j z_prep_c

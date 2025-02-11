@@ -210,7 +210,7 @@ Deprecated in this release
 
 * MCUmgr subsystem, specifically the SMP transport API, is dropping `zephyr_`
   prefix, deprecating prefixed functions and callback type definitions with the
-  prefix and replacing them with with prefix-less variants.
+  prefix and replacing them with prefix-less variants.
   The :c:struct:`zephyr_smp_transport` type, representing transport object,
   is now replaced with :c:struct:`smp_transport`, and the later one is used,
   instead of the former one, by all prefix-less functions.
@@ -742,7 +742,7 @@ Drivers and Sensors
 
   * STM32 OSPI: Now supports DMA transfer on STM32U5.
 
-  * STM32: Flash driver was revisited to simplify re-use of driver for new series, taking
+  * STM32: Flash driver was revisited to simplify reuse of driver for new series, taking
     advantage of device tree compatibles.
 
 * FPGA
@@ -811,7 +811,7 @@ Drivers and Sensors
 
   * Added new API :c:func:`pcie_scan` to scan for devices.
 
-    * This iterates through the the buses and devices which are expected to
+    * This iterates through the buses and devices which are expected to
       exist. The old method was to try all possible combination of buses
       and devices to determine if there is a device there.
       :c:func:`pci_init` and :c:func:`pcie_bdf_lookup` have been updated to
@@ -2013,6 +2013,18 @@ Shields
     to provide a device nodelabel in the form ``<device>_<shield>``. In-tree shields
     have been updated to follow this recommendation.
 
+* Others
+
+  * STM32F1 SoCs
+
+    * Added new pinctrl definitions for STM32F1xx PWM input. In PWM capture mode
+      STM32F1xx pins have to be configured as input and not as alternate.
+      The new names takes the form tim1_ch1_pwm_in_pa8 for example.
+
+    * Renamed pinctrl definitions for STM32F1xx PWM output to differentiate them
+      from newly created inputs. The new names takes the form tim1_ch1_pwm_out_pa8
+      instead of tim1_ch1_pwm_pa8.
+
 Libraries / Subsystems
 **********************
 
@@ -2484,13 +2496,13 @@ Libraries / Subsystems
     * Uses mutex to control channels access.
     * Added the following samples:
 
-      * :ref:`zbus-hello-world-sample`
-      * :ref:`zbus-work-queue-sample`
-      * :ref:`zbus-dyn-channel-sample`
-      * :ref:`zbus-uart-bridge-sample`
-      * :ref:`zbus-remote-mock-sample`
-      * :ref:`zbus-runtime-obs-registration-sample`
-      * :ref:`zbus-benchmark-sample`
+      * :zephyr:code-sample:`zbus-hello-world`
+      * :zephyr:code-sample:`zbus-work-queue`
+      * :zephyr:code-sample:`zbus-dyn-channel`
+      * :zephyr:code-sample:`zbus-uart-bridge`
+      * :zephyr:code-sample:`zbus-remote-mock`
+      * :zephyr:code-sample:`zbus-runtime-obs-registration`
+      * :zephyr:code-sample:`zbus-benchmark`
 
     * Added zbus channels APIs:
 
@@ -3474,7 +3486,7 @@ Addressed issues
 * :github:`50732` - net: tests/net/ieee802154/l2/net.ieee802154.l2 failed on reel_board due to build failure
 * :github:`50709` - tests: arch: arm: arm_thread_swap fails on stm32g0 or stm32l0
 * :github:`50684` - After enabling  CONFIG_SPI_STM32_DMA in project config file for STM32MP157-dk2 Zephyr throwing error
-* :github:`50665` - MEC15xx/MEC1501: UART and and special purpose pins missing pinctrl configuration
+* :github:`50665` - MEC15xx/MEC1501: UART and special purpose pins missing pinctrl configuration
 * :github:`50658` - Bluetooth: BLE stack notifications blocks host side for too long (``drivers/bluetooth/hci/spi.c`` and ``hci_spi``)
 * :github:`50656` - Wrong definition of bank size for intel memory management driver.
 * :github:`50655` - STM32WB55 Bus Fault when connecting then disconnecting then connecting then disconnecting then connecting

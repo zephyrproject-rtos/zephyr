@@ -1,0 +1,38 @@
+# STMicroelectronics STM32L1 MCU line
+
+# Copyright (c) 2019 Linaro Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32L1X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32l1x" if SOC_SERIES_STM32L1X
+
+config SOC_STM32L151XB
+	bool
+	select SOC_SERIES_STM32L1X
+
+config SOC_STM32L151XBA
+	bool
+	select SOC_SERIES_STM32L1X
+
+config SOC_STM32L151XC
+	bool
+	select SOC_SERIES_STM32L1X
+
+config SOC_STM32L152XC
+	bool
+	select SOC_SERIES_STM32L1X
+
+config SOC_STM32L152XE
+	bool
+	select SOC_SERIES_STM32L1X
+
+config SOC
+	default "stm32l151xb" if SOC_STM32L151XB
+	default "stm32l151xba" if SOC_STM32L151XBA
+	default "stm32l151xc" if SOC_STM32L151XC
+	default "stm32l152xc" if SOC_STM32L152XC
+	default "stm32l152xe" if SOC_STM32L152XE

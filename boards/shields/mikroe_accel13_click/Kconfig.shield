@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Mark Olsson <mark@markolsson.se>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_ACCEL13_CLICK
+	def_bool $(shields_list_contains,mikroe_accel13_click)

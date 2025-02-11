@@ -1,0 +1,20 @@
+identifier: nucleo_c031c6
+name: ST Nucleo C031C6
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - counter
+  - watchdog
+  - pwm
+  - adc
+  - i2c
+  - dma
+  - rtc
+ram: 12
+flash: 32
+vendor: st

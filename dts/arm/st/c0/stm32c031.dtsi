@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2023 Benjamin Björnsson <benjamin.bjornsson@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/c0/stm32c0.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32c031", "st,stm32c0", "simple-bus";
+
+		pinctrl: pin-controller@50000000 {
+			gpiod: gpio@50000c00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x50000c00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000008>;
+			};
+		};
+	};
+};

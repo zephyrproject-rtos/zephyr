@@ -7,6 +7,13 @@
 #ifndef NRFX_GLUE_H__
 #define NRFX_GLUE_H__
 
+#if defined(CONFIG_CPU_CORTEX_M)
+/* Workaround for missing __ICACHE_PRESENT and __DCACHE_PRESENT symbols in MDK
+ * SoC definitions. To be removed when this is fixed.
+ */
+#include <cmsis_core_m_defaults.h>
+#endif
+
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/irq.h>
@@ -35,6 +42,11 @@ extern "C" {
 #define NRFX_ASSERT(expression)  __ASSERT_NO_MSG(expression)
 #endif
 
+#if defined(CONFIG_RISCV)
+/* included here due to dependency on NRFX_ASSERT definition */
+#include <hal/nrf_vpr_clic.h>
+#endif
+
 /**
  * @brief Macro for placing a compile time assertion.
  *
@@ -51,9 +63,9 @@ extern "C" {
  * @param irq_number IRQ number.
  * @param priority   Priority to be set.
  */
-#define NRFX_IRQ_PRIORITY_SET(irq_number, priority)  // Intentionally empty.
-                                                     // Priorities of IRQs are
-                                                     // set through IRQ_CONNECT.
+#define NRFX_IRQ_PRIORITY_SET(irq_number, priority)                                                \
+	ARG_UNUSED(priority)                                                                       \
+	/* Intentionally empty. Priorities of IRQs are set through IRQ_CONNECT. */
 
 /**
  * @brief Macro for enabling a specific IRQ.
@@ -84,14 +96,22 @@ extern "C" {
  *
  * @param irq_number IRQ number.
  */
-#define NRFX_IRQ_PENDING_SET(irq_number)  NVIC_SetPendingIRQ(irq_number)
+#if defined(CONFIG_RISCV)
+#define NRFX_IRQ_PENDING_SET(irq_number) nrf_vpr_clic_int_pending_set(NRF_VPRCLIC, irq_number)
+#else
+#define NRFX_IRQ_PENDING_SET(irq_number) NVIC_SetPendingIRQ(irq_number)
+#endif
 
 /**
  * @brief Macro for clearing the pending status of a specific IRQ.
  *
  * @param irq_number IRQ number.
  */
-#define NRFX_IRQ_PENDING_CLEAR(irq_number)  NVIC_ClearPendingIRQ(irq_number)
+#if defined(CONFIG_RISCV)
+#define NRFX_IRQ_PENDING_CLEAR(irq_number) nrf_vpr_clic_int_pending_clear(NRF_VPRCLIC, irq_number)
+#else
+#define NRFX_IRQ_PENDING_CLEAR(irq_number) NVIC_ClearPendingIRQ(irq_number)
+#endif
 
 /**
  * @brief Macro for checking the pending status of a specific IRQ.
@@ -99,7 +119,11 @@ extern "C" {
  * @retval true  If the IRQ is pending.
  * @retval false Otherwise.
  */
-#define NRFX_IRQ_IS_PENDING(irq_number)  (NVIC_GetPendingIRQ(irq_number) == 1)
+#if defined(CONFIG_RISCV)
+#define NRFX_IRQ_IS_PENDING(irq_number) nrf_vpr_clic_int_pending_check(NRF_VPRCLIC, irq_number)
+#else
+#define NRFX_IRQ_IS_PENDING(irq_number) (NVIC_GetPendingIRQ(irq_number) == 1)
+#endif
 
 /** @brief Macro for entering into a critical section. */
 #define NRFX_CRITICAL_SECTION_ENTER()  { unsigned int irq_lock_key = irq_lock();
@@ -251,6 +275,45 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 
 //------------------------------------------------------------------------------
 
+/**
+ * @brief Macro for writing back cache lines associated with the specified buffer.
+ *
+ * @param[in] p_buffer Pointer to the buffer.
+ * @param[in] size     Size of the buffer.
+ */
+#define NRFY_CACHE_WB(p_buffer, size) \
+	do {                          \
+		(void)p_buffer;       \
+		(void)size;           \
+	} while (0)
+
+/**
+ * @brief Macro for invalidating cache lines associated with the specified buffer.
+ *
+ * @param[in] p_buffer Pointer to the buffer.
+ * @param[in] size     Size of the buffer.
+ */
+#define NRFY_CACHE_INV(p_buffer, size) \
+	do {                           \
+		(void)p_buffer;        \
+		(void)size;            \
+	} while (0)
+
+/**
+ * @brief Macro for writing back and invalidating cache lines associated with
+ *        the specified buffer.
+ *
+ * @param[in] p_buffer Pointer to the buffer.
+ * @param[in] size     Size of the buffer.
+ */
+#define NRFY_CACHE_WBINV(p_buffer, size) \
+	do {                             \
+		(void)p_buffer;          \
+		(void)size;              \
+	} while (0)
+
+/*------------------------------------------------------------------------------*/
+
 /** @brief Bitmask that defines DPPI channels that are reserved for use outside of the nrfx library. */
 #define NRFX_DPPI_CHANNELS_USED   (NRFX_PPI_CHANNELS_USED_BY_BT_CTLR |    \
 				   NRFX_PPI_CHANNELS_USED_BY_802154_DRV | \
@@ -271,8 +334,11 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 				   NRFX_PPI_GROUPS_USED_BY_802154_DRV | \
 				   NRFX_PPI_GROUPS_USED_BY_MPSL)
 
-/** @brief Bitmask that defines GPIOTE channels that are reserved for use outside of the nrfx library. */
-#define NRFX_GPIOTE_CHANNELS_USED NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR
+/** @brief Bitmask that defines GPIOTE130 channels reserved for use outside of the nrfx library. */
+#define NRFX_GPIOTE130_CHANNELS_USED \
+	(~NRFX_CONFIG_MASK_DT(DT_NODELABEL(gpiote130), owned_channels) | \
+	 NRFX_CONFIG_MASK_DT(DT_NODELABEL(gpiote130), child_owned_channels))
+
 
 #if defined(CONFIG_BT_CTLR)
 /*
@@ -285,11 +351,9 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 #include <bt_ctlr_used_resources.h>
 #define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR    BT_CTLR_USED_PPI_CHANNELS
 #define NRFX_PPI_GROUPS_USED_BY_BT_CTLR      BT_CTLR_USED_PPI_GROUPS
-#define NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR BT_CTLR_USED_GPIOTE_CHANNELS
 #else
 #define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR    0
 #define NRFX_PPI_GROUPS_USED_BY_BT_CTLR      0
-#define NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR 0
 #endif
 
 #if defined(CONFIG_NRF_802154_RADIO_DRIVER)
@@ -299,6 +363,14 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 #define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_PPI_GROUPS_USED_MASK
 #elif defined(NRF53_SERIES)
 #include <../src/nrf_802154_peripherals_nrf53.h>
+#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   NRF_802154_DPPI_CHANNELS_USED_MASK
+#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_DPPI_GROUPS_USED_MASK
+#elif defined(NRF54L_SERIES)
+#include <../src/nrf_802154_peripherals_nrf54l.h>
+#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   NRF_802154_DPPI_CHANNELS_USED_MASK
+#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_DPPI_GROUPS_USED_MASK
+#elif defined(NRF54H_SERIES)
+#include <../src/nrf_802154_peripherals_nrf54h.h>
 #define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   NRF_802154_DPPI_CHANNELS_USED_MASK
 #define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_DPPI_GROUPS_USED_MASK
 #else
@@ -318,7 +390,7 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 #define NRFX_PPI_GROUPS_USED_BY_MPSL     0
 #endif
 
-#if NRF_802154_VERIFY_PERIPHS_ALLOC_AGAINST_MPSL
+#if defined(NRF_802154_VERIFY_PERIPHS_ALLOC_AGAINST_MPSL)
 BUILD_ASSERT(
 	(NRFX_PPI_CHANNELS_USED_BY_802154_DRV & NRFX_PPI_CHANNELS_USED_BY_MPSL) == 0,
 	"PPI channels used by the IEEE802.15.4 radio driver overlap with those "

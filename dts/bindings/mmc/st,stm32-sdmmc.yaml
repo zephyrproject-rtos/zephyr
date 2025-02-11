@@ -39,6 +39,20 @@ properties:
       - 4
       - 8
 
+  clk-div:
+    type: int
+    default: 0
+    description: |
+        Clock division factor for SDMMC. Typically the clock operates at 25MHz so
+        a division factor of 2 would be 25MHz / 2 = 12.5MHz.
+
+  idma:
+    type: boolean
+    description: |
+      SDMMC device has an internal DMA. Internal DMA doesn't require any additional
+      configuration using "dmas" property.
+      Delete this property to use interrupt driven mode.
+
   dmas:
     description: |
       Optional DMA channel specifier. If DMA should be used, specifier should

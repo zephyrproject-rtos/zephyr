@@ -50,7 +50,7 @@ static struct fs_mount_t littlefs_mnt = {
 };
 #endif
 
-void main(void)
+int main(void)
 {
 	int rc = STATS_INIT_AND_REG(smp_svr_stats, STATS_SIZE_32,
 				    "smp_svr_stats");
@@ -73,9 +73,11 @@ void main(void)
 
 	if (IS_ENABLED(CONFIG_USB_DEVICE_STACK)) {
 		rc = usb_enable(NULL);
-		if (rc) {
+
+		/* Ignore EALREADY error as USB CDC is likely already initialised */
+		if (rc != 0 && rc != -EALREADY) {
 			LOG_ERR("Failed to enable USB");
-			return;
+			return 0;
 		}
 	}
 	/* using __TIME__ ensure that a new binary will be built on every
@@ -90,4 +92,5 @@ void main(void)
 		k_sleep(K_MSEC(1000));
 		STATS_INC(smp_svr_stats, ticks);
 	}
+	return 0;
 }

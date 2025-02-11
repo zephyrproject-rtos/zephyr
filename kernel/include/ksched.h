@@ -9,7 +9,8 @@
 
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <zephyr/timeout_q.h>
+#include <timeout_q.h>
+#include <kthread.h>
 #include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
 
@@ -34,16 +35,16 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 #else
 #define Z_VALID_PRIO(prio, entry_point) ((prio) == -1)
 #define Z_ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
-#endif
+#endif /* CONFIG_MULTITHREADING */
+
+extern struct k_thread _thread_dummy;
 
 void z_sched_init(void);
 void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
-int z_is_thread_time_slicing(struct k_thread *thread);
 void z_unpend_thread_no_timeout(struct k_thread *thread);
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q);
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, k_timeout_t timeout);
-int z_pend_curr_irqlock(uint32_t key, _wait_q_t *wait_q, k_timeout_t timeout);
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout);
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key);
@@ -51,131 +52,25 @@ void z_reschedule_irqlock(uint32_t key);
 struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q);
 void z_unpend_thread(struct k_thread *thread);
 int z_unpend_all(_wait_q_t *wait_q);
-void z_thread_priority_set(struct k_thread *thread, int prio);
-bool z_set_prio(struct k_thread *thread, int prio);
+bool z_thread_prio_set(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
-void idle(void *unused1, void *unused2, void *unused3);
-void z_time_slice(int ticks);
+
+void z_time_slice(void);
 void z_reset_time_slice(struct k_thread *curr);
 void z_sched_abort(struct k_thread *thread);
 void z_sched_ipi(void);
 void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);
+void z_ready_thread_locked(struct k_thread *thread);
 void z_requeue_current(struct k_thread *curr);
 struct k_thread *z_swap_next_thread(void);
 void z_thread_abort(struct k_thread *thread);
-
-static inline void z_pend_curr_unlocked(_wait_q_t *wait_q, k_timeout_t timeout)
-{
-	(void) z_pend_curr_irqlock(arch_irq_lock(), wait_q, timeout);
-}
+void move_thread_to_end_of_prio_q(struct k_thread *thread);
+bool thread_is_sliceable(struct k_thread *thread);
 
 static inline void z_reschedule_unlocked(void)
 {
 	(void) z_reschedule_irqlock(arch_irq_lock());
-}
-
-static inline bool z_is_idle_thread_entry(void *entry_point)
-{
-	return entry_point == idle;
-}
-
-static inline bool z_is_idle_thread_object(struct k_thread *thread)
-{
-#ifdef CONFIG_MULTITHREADING
-#ifdef CONFIG_SMP
-	return thread->base.is_idle;
-#else
-	return thread == &z_idle_threads[0];
-#endif
-#else
-	return false;
-#endif /* CONFIG_MULTITHREADING */
-}
-
-static inline bool z_is_thread_suspended(struct k_thread *thread)
-{
-	return (thread->base.thread_state & _THREAD_SUSPENDED) != 0U;
-}
-
-static inline bool z_is_thread_pending(struct k_thread *thread)
-{
-	return (thread->base.thread_state & _THREAD_PENDING) != 0U;
-}
-
-static inline bool z_is_thread_prevented_from_running(struct k_thread *thread)
-{
-	uint8_t state = thread->base.thread_state;
-
-	return (state & (_THREAD_PENDING | _THREAD_PRESTART | _THREAD_DEAD |
-			 _THREAD_DUMMY | _THREAD_SUSPENDED)) != 0U;
-
-}
-
-static inline bool z_is_thread_timeout_active(struct k_thread *thread)
-{
-	return !z_is_inactive_timeout(&thread->base.timeout);
-}
-
-static inline bool z_is_thread_ready(struct k_thread *thread)
-{
-	return !((z_is_thread_prevented_from_running(thread)) != 0U ||
-		 z_is_thread_timeout_active(thread));
-}
-
-static inline bool z_has_thread_started(struct k_thread *thread)
-{
-	return (thread->base.thread_state & _THREAD_PRESTART) == 0U;
-}
-
-static inline bool z_is_thread_state_set(struct k_thread *thread, uint32_t state)
-{
-	return (thread->base.thread_state & state) != 0U;
-}
-
-static inline bool z_is_thread_queued(struct k_thread *thread)
-{
-	return z_is_thread_state_set(thread, _THREAD_QUEUED);
-}
-
-static inline void z_mark_thread_as_suspended(struct k_thread *thread)
-{
-	thread->base.thread_state |= _THREAD_SUSPENDED;
-
-	SYS_PORT_TRACING_FUNC(k_thread, sched_suspend, thread);
-}
-
-static inline void z_mark_thread_as_not_suspended(struct k_thread *thread)
-{
-	thread->base.thread_state &= ~_THREAD_SUSPENDED;
-
-	SYS_PORT_TRACING_FUNC(k_thread, sched_resume, thread);
-}
-
-static inline void z_mark_thread_as_started(struct k_thread *thread)
-{
-	thread->base.thread_state &= ~_THREAD_PRESTART;
-}
-
-static inline void z_mark_thread_as_pending(struct k_thread *thread)
-{
-	thread->base.thread_state |= _THREAD_PENDING;
-}
-
-static inline void z_mark_thread_as_not_pending(struct k_thread *thread)
-{
-	thread->base.thread_state &= ~_THREAD_PENDING;
-}
-
-static inline void z_set_thread_states(struct k_thread *thread, uint32_t states)
-{
-	thread->base.thread_state |= states;
-}
-
-static inline void z_reset_thread_states(struct k_thread *thread,
-					uint32_t states)
-{
-	thread->base.thread_state &= ~states;
 }
 
 static inline bool z_is_under_prio_ceiling(int prio)
@@ -222,7 +117,7 @@ int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct k_thread *thread_2);
 
 static inline bool _is_valid_prio(int prio, void *entry_point)
 {
-	if (prio == K_IDLE_PRIO && z_is_idle_thread_entry(entry_point)) {
+	if ((prio == K_IDLE_PRIO) && z_is_idle_thread_entry(entry_point)) {
 		return true;
 	}
 
@@ -239,15 +134,6 @@ static inline bool _is_valid_prio(int prio, void *entry_point)
 	return true;
 }
 
-static inline void _ready_one_thread(_wait_q_t *wq)
-{
-	struct k_thread *thread = z_unpend_first_thread(wq);
-
-	if (thread != NULL) {
-		z_ready_thread(thread);
-	}
-}
-
 static inline void z_sched_lock(void)
 {
 	__ASSERT(!arch_is_in_isr(), "");
@@ -256,25 +142,6 @@ static inline void z_sched_lock(void)
 	--_current->base.sched_locked;
 
 	compiler_barrier();
-}
-
-static ALWAYS_INLINE void z_sched_unlock_no_reschedule(void)
-{
-	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 0U, "");
-
-	compiler_barrier();
-
-	++_current->base.sched_locked;
-}
-
-static ALWAYS_INLINE bool z_is_thread_timeout_expired(struct k_thread *thread)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return thread->base.timeout.dticks == _EXPIRED;
-#else
-	return 0;
-#endif
 }
 
 /*
@@ -293,7 +160,7 @@ static ALWAYS_INLINE bool z_is_thread_timeout_expired(struct k_thread *thread)
  * Given a wait_q, wake up the highest priority thread on the queue. If the
  * queue was empty just return false.
  *
- * Otherwise, do the following, in order,  holding sched_spinlock the entire
+ * Otherwise, do the following, in order,  holding _sched_spinlock the entire
  * time so that the thread state is guaranteed not to change:
  * - Set the thread's swap return values to swap_retval and swap_data
  * - un-pend and ready the thread, but do not invoke the scheduler.
@@ -314,6 +181,18 @@ static ALWAYS_INLINE bool z_is_thread_timeout_expired(struct k_thread *thread)
  * @retval false If the wait_q was empty
  */
 bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data);
+
+/**
+ * Wakes the specified thread.
+ *
+ * Given a specific thread, wake it up. This routine assumes that the given
+ * thread is not on the timeout queue.
+ *
+ * @param thread Given thread to wake up.
+ * @param is_timeout True if called from the timer ISR; false otherwise.
+ *
+ */
+void z_sched_wake_thread(struct k_thread *thread, bool is_timeout);
 
 /**
  * Wake up all threads pending on the provided wait queue
@@ -367,11 +246,11 @@ int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
  * @brief Walks the wait queue invoking the callback on each waiting thread
  *
  * This function walks the wait queue invoking the callback function on each
- * waiting thread while holding sched_spinlock. This can be useful for routines
+ * waiting thread while holding _sched_spinlock. This can be useful for routines
  * that need to operate on multiple waiting threads.
  *
- * CAUTION! As a wait queue is of indeterminant length, the scheduler will be
- * locked for an indeterminant amount of time. This may impact system
+ * CAUTION! As a wait queue is of indeterminate length, the scheduler will be
+ * locked for an indeterminate amount of time. This may impact system
  * performance. As such, care must be taken when using both this function and
  * the specified callback.
  *
@@ -398,7 +277,7 @@ int z_sched_waitq_walk(_wait_q_t *wait_q,
  *
  * This function assumes local interrupts are masked (so that the
  * current CPU pointer and current thread are safe to modify), but
- * requires no other synchronizaton.  Architecture layers don't need
+ * requires no other synchronization.  Architecture layers don't need
  * to do anything more.
  */
 void z_sched_usage_stop(void);
@@ -422,7 +301,7 @@ static inline void z_sched_usage_switch(struct k_thread *thread)
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	z_sched_usage_stop();
 	z_sched_usage_start(thread);
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE */
 }
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */

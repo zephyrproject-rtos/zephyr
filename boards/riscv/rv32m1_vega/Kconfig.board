@@ -1,5 +1,0 @@
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_RV32M1_VEGA
-	bool "RV32M1 RISC-V cores"
-	depends on SOC_OPENISA_RV32M1_RISCV32

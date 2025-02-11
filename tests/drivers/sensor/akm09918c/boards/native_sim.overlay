@@ -1,0 +1,10 @@
+/* Copyright (c) 2023 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	akm09918c: akm09918c@c {
+		compatible = "asahi-kasei,akm09918c";
+		reg = <0xc>;
+	};
+};

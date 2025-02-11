@@ -5,7 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #define NUM_THREADS 8
 /* this should be large enough for us
@@ -20,7 +20,7 @@ K_THREAD_STACK_ARRAY_DEFINE(worker_stacks, NUM_THREADS, STACK_SIZE);
 
 int thread_deadlines[NUM_THREADS];
 
-/* The number of worker threads that ran, and and array of their
+/* The number of worker threads that ran, and array of their
  * indices in execution order
  */
 int n_exec;
@@ -125,6 +125,8 @@ void yield_worker(void *p1, void *p2, void *p3)
 	zassert_true(n_exec == NUM_THREADS, "");
 
 	k_thread_abort(k_current_get());
+
+	CODE_UNREACHABLE;
 }
 
 ZTEST(suite_deadline, test_yield)

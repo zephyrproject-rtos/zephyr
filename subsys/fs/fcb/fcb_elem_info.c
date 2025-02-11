@@ -66,7 +66,7 @@ fcb_elem_crc8(struct fcb *_fcb, struct fcb_entry *loc, uint8_t *c8p)
 	return 0;
 }
 
-#if IS_ENABLED(CONFIG_FCB_ALLOW_FIXED_ENDMARKER)
+#if defined(CONFIG_FCB_ALLOW_FIXED_ENDMARKER)
 /* Given the offset in flash sector, calculate the FCB entry data offset and size, and set
  * the fixed endmarker.
  */
@@ -97,7 +97,7 @@ fcb_elem_endmarker_fixed(struct fcb *_fcb, struct fcb_entry *loc, uint8_t *em)
 	*em = FCB_FIXED_ENDMARKER;
 	return 0;
 }
-#endif /* IS_ENABLED(CONFIG_FCB_ALLOW_FIXED_ENDMARKER) */
+#endif /* defined(CONFIG_FCB_ALLOW_FIXED_ENDMARKER) */
 
 /* Given the offset in flash sector, calculate the FCB entry data offset and size, and calculate
  * the expected endmarker.
@@ -105,11 +105,11 @@ fcb_elem_endmarker_fixed(struct fcb *_fcb, struct fcb_entry *loc, uint8_t *em)
 int
 fcb_elem_endmarker(struct fcb *_fcb, struct fcb_entry *loc, uint8_t *em)
 {
-#if IS_ENABLED(CONFIG_FCB_ALLOW_FIXED_ENDMARKER)
+#if defined(CONFIG_FCB_ALLOW_FIXED_ENDMARKER)
 	if (_fcb->f_flags & FCB_FLAGS_CRC_DISABLED) {
 		return fcb_elem_endmarker_fixed(_fcb, loc, em);
 	}
-#endif /* IS_ENABLED(CONFIG_FCB_ALLOW_FIXED_ENDMARKER) */
+#endif /* defined(CONFIG_FCB_ALLOW_FIXED_ENDMARKER) */
 
 	return fcb_elem_crc8(_fcb, loc, em);
 }

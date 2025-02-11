@@ -11,7 +11,9 @@
  * @file
  * @brief Public LoRaWAN APIs
  * @defgroup lorawan_api LoRaWAN APIs
- * @ingroup subsystem
+ * @since 2.5
+ * @version 0.1.0
+ * @ingroup connectivity
  * @{
  */
 
@@ -26,63 +28,79 @@ extern "C" {
  * @brief LoRaWAN class types.
  */
 enum lorawan_class {
-	LORAWAN_CLASS_A = 0x00,
-	LORAWAN_CLASS_B = 0x01,
-	LORAWAN_CLASS_C = 0x02,
+	LORAWAN_CLASS_A = 0x00, /**< Class A device */
+	LORAWAN_CLASS_B = 0x01, /**< Class B device */
+	LORAWAN_CLASS_C = 0x02, /**< Class C device */
 };
 
 /**
  * @brief LoRaWAN activation types.
  */
 enum lorawan_act_type {
-	LORAWAN_ACT_OTAA = 0,
-	LORAWAN_ACT_ABP,
+	LORAWAN_ACT_OTAA = 0, /**< Over-the-Air Activation (OTAA) */
+	LORAWAN_ACT_ABP,      /**< Activation by Personalization (ABP) */
+};
+
+/**
+ * @brief LoRaWAN channels mask sizes.
+ */
+enum lorawan_channels_mask_size {
+	LORAWAN_CHANNELS_MASK_SIZE_AS923 = 1, /**< Region AS923 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_AU915 = 6, /**< Region AU915 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_CN470 = 6, /**< Region CN470 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_CN779 = 1, /**< Region CN779 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_EU433 = 1, /**< Region EU433 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_EU868 = 1, /**< Region EU868 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_KR920 = 1, /**< Region KR920 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_IN865 = 1, /**< Region IN865 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_US915 = 6, /**< Region US915 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_RU864 = 1, /**< Region RU864 mask size */
 };
 
 /**
  * @brief LoRaWAN datarate types.
  */
 enum lorawan_datarate {
-	LORAWAN_DR_0 = 0,
-	LORAWAN_DR_1,
-	LORAWAN_DR_2,
-	LORAWAN_DR_3,
-	LORAWAN_DR_4,
-	LORAWAN_DR_5,
-	LORAWAN_DR_6,
-	LORAWAN_DR_7,
-	LORAWAN_DR_8,
-	LORAWAN_DR_9,
-	LORAWAN_DR_10,
-	LORAWAN_DR_11,
-	LORAWAN_DR_12,
-	LORAWAN_DR_13,
-	LORAWAN_DR_14,
-	LORAWAN_DR_15,
+	LORAWAN_DR_0 = 0, /**< DR0 data rate */
+	LORAWAN_DR_1,     /**< DR1 data rate */
+	LORAWAN_DR_2,     /**< DR2 data rate */
+	LORAWAN_DR_3,     /**< DR3 data rate */
+	LORAWAN_DR_4,     /**< DR4 data rate */
+	LORAWAN_DR_5,     /**< DR5 data rate */
+	LORAWAN_DR_6,     /**< DR6 data rate */
+	LORAWAN_DR_7,     /**< DR7 data rate */
+	LORAWAN_DR_8,     /**< DR8 data rate */
+	LORAWAN_DR_9,     /**< DR9 data rate */
+	LORAWAN_DR_10,    /**< DR10 data rate */
+	LORAWAN_DR_11,    /**< DR11 data rate */
+	LORAWAN_DR_12,    /**< DR12 data rate */
+	LORAWAN_DR_13,    /**< DR13 data rate */
+	LORAWAN_DR_14,    /**< DR14 data rate */
+	LORAWAN_DR_15,    /**< DR15 data rate */
 };
 
 /**
  * @brief LoRaWAN region types.
  */
 enum lorawan_region {
-	LORAWAN_REGION_AS923,
-	LORAWAN_REGION_AU915,
-	LORAWAN_REGION_CN470,
-	LORAWAN_REGION_CN779,
-	LORAWAN_REGION_EU433,
-	LORAWAN_REGION_EU868,
-	LORAWAN_REGION_KR920,
-	LORAWAN_REGION_IN865,
-	LORAWAN_REGION_US915,
-	LORAWAN_REGION_RU864,
+	LORAWAN_REGION_AS923, /**< Asia 923 MHz frequency band */
+	LORAWAN_REGION_AU915, /**< Australia 915 MHz frequency band */
+	LORAWAN_REGION_CN470, /**< China 470 MHz frequency band */
+	LORAWAN_REGION_CN779, /**< China 779 MHz frequency band */
+	LORAWAN_REGION_EU433, /**< Europe 433 MHz frequency band */
+	LORAWAN_REGION_EU868, /**< Europe 868 MHz frequency band */
+	LORAWAN_REGION_KR920, /**< South Korea 920 MHz frequency band */
+	LORAWAN_REGION_IN865, /**< India 865 MHz frequency band */
+	LORAWAN_REGION_US915, /**< United States 915 MHz frequency band */
+	LORAWAN_REGION_RU864, /**< Russia 864 MHz frequency band */
 };
 
 /**
  * @brief LoRaWAN message types.
  */
 enum lorawan_message_type {
-	LORAWAN_MSG_UNCONFIRMED = 0,
-	LORAWAN_MSG_CONFIRMED,
+	LORAWAN_MSG_UNCONFIRMED = 0,  /**< Unconfirmed message */
+	LORAWAN_MSG_CONFIRMED,        /**< Confirmed message */
 };
 
 /**
@@ -107,9 +125,12 @@ struct lorawan_join_otaa {
 	 * increasing for each OTAA join with the same EUI. The DevNonce
 	 * should be stored in non-volatile memory by the application.
 	 */
-	uint32_t dev_nonce;
+	uint16_t dev_nonce;
 };
 
+/**
+ * @brief LoRaWAN join parameters for activation by personalization (ABP)
+ */
 struct lorawan_join_abp {
 	/** Device address on the network */
 	uint32_t dev_addr;
@@ -121,25 +142,36 @@ struct lorawan_join_abp {
 	uint8_t *app_eui;
 };
 
+/**
+ * @brief LoRaWAN join parameters
+ */
 struct lorawan_join_config {
+	/** Join parameters */
 	union {
-		struct lorawan_join_otaa otaa;
-		struct lorawan_join_abp abp;
+		struct lorawan_join_otaa otaa; /**< OTAA join parameters */
+		struct lorawan_join_abp abp;   /**< ABP join parameters */
 	};
 
 	/** Device EUI. Optional if a secure element is present. */
 	uint8_t *dev_eui;
 
+	/** Activation mode */
 	enum lorawan_act_type mode;
 };
 
+/** Flag to indicate receiving on any port */
 #define LW_RECV_PORT_ANY UINT16_MAX
 
+/**
+ * @brief LoRaWAN downlink callback parameters
+ */
 struct lorawan_downlink_cb {
-	/* Port to handle messages for:
-	 *               Port 0: TX packet acknowledgements
-	 *          Ports 1-255: Standard downlink port
-	 *     LW_RECV_PORT_ANY: All downlinks
+	/**
+	 * @brief Port to handle messages for.
+	 *
+	 * - Port 0: TX packet acknowledgements
+	 * - Ports 1-255: Standard downlink port
+	 * - LW_RECV_PORT_ANY: All downlinks
 	 */
 	uint16_t port;
 	/**
@@ -163,22 +195,32 @@ struct lorawan_downlink_cb {
 };
 
 /**
- * @brief Add battery level callback function.
+ * @brief Defines the battery level callback handler function signature.
+ *
+ * @retval 0      if the node is connected to an external power source
+ * @retval 1..254 battery level, where 1 is the minimum and 254 is the maximum value
+ * @retval 255    if the node was not able to measure the battery level
+ */
+typedef uint8_t (*lorawan_battery_level_cb_t)(void);
+
+/**
+ * @brief Defines the datarate changed callback handler function signature.
+ *
+ * @param dr Updated datarate.
+ */
+typedef void (*lorawan_dr_changed_cb_t)(enum lorawan_datarate dr);
+
+/**
+ * @brief Register a battery level callback function.
  *
  * Provide the LoRaWAN stack with a function to be called whenever a battery
- * level needs to be read. As per LoRaWAN specification the callback needs to
- * return "0:      node is connected to an external power source,
- *         1..254: battery level, where 1 is the minimum and 254 is the maximum
- *                 value,
- *         255: the node was not able to measure the battery level"
+ * level needs to be read.
  *
  * Should no callback be provided the lorawan backend will report 255.
  *
- * @param battery_lvl_cb Pointer to the battery level function
- *
- * @return 0 if successful, negative errno code if failure
+ * @param cb Pointer to the battery level function
  */
-int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void));
+void lorawan_register_battery_level_callback(lorawan_battery_level_cb_t cb);
 
 /**
  * @brief Register a callback to be run on downlink packets
@@ -193,12 +235,9 @@ void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb);
  * The callback is called once upon successfully joining a network and again
  * each time the datarate changes due to ADR.
  *
- * The callback function takes one parameter:
- *	- dr - updated datarate
- *
- * @param dr_cb Pointer to datarate update callback
+ * @param cb Pointer to datarate update callback
  */
-void lorawan_register_dr_changed_callback(void (*dr_cb)(enum lorawan_datarate));
+void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb);
 
 /**
  * @brief Join the LoRaWAN network
@@ -271,6 +310,21 @@ int lorawan_set_conf_msg_tries(uint8_t tries);
  * @param enable Enable or Disable adaptive data rate.
  */
 void lorawan_enable_adr(bool enable);
+
+/**
+ * @brief Set the channels mask.
+ *
+ * Change the default channels mask. When mask is not changed, all the channels
+ * can be used for data transmission. Some Network Servers don't use all the channels,
+ * in this case, the channels mask must be provided.
+ *
+ * @param channels_mask Buffer with channels mask to be used.
+ * @param channels_mask_size Size of channels mask buffer.
+ *
+ * @retval 0 successful
+ * @retval -EINVAL channels mask or channels mask size is wrong
+ */
+int lorawan_set_channels_mask(uint16_t *channels_mask, size_t channels_mask_size);
 
 /**
  * @brief Set the default data rate
@@ -349,6 +403,24 @@ int lorawan_clock_sync_run(void);
 int lorawan_clock_sync_get(uint32_t *gps_time);
 
 #endif /* CONFIG_LORAWAN_APP_CLOCK_SYNC */
+
+#ifdef CONFIG_LORAWAN_FRAG_TRANSPORT
+
+/**
+ * @brief Run Fragmented Data Block Transport service
+ *
+ * This service receives fragmented data (usually firmware images) and
+ * stores them in the image-1 flash partition.
+ *
+ * After all fragments have been received, the provided callback is invoked.
+ *
+ * @param transport_finished_cb Callback for notification of finished data transfer.
+ *
+ * @return 0 if successful, negative errno otherwise.
+ */
+int lorawan_frag_transport_run(void (*transport_finished_cb)(void));
+
+#endif /* CONFIG_LORAWAN_FRAG_TRANSPORT */
 
 #ifdef __cplusplus
 }

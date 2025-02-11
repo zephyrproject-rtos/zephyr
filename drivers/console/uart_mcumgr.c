@@ -61,7 +61,7 @@ void uart_mcumgr_free_rx_buf(struct uart_mcumgr_rx_buf *rx_buf)
 	void *block;
 
 	block = rx_buf;
-	k_mem_slab_free(&uart_mcumgr_slab, &block);
+	k_mem_slab_free(&uart_mcumgr_slab, block);
 }
 
 #if !defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
@@ -228,15 +228,8 @@ static void uart_mcumgr_setup(const struct device *uart)
 #else
 static void uart_mcumgr_setup(const struct device *uart)
 {
-	uint8_t c;
-
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
-
-	/* Drain the fifo */
-	while (uart_fifo_read(uart, &c, 1)) {
-		continue;
-	}
 
 	uart_irq_callback_set(uart, uart_mcumgr_isr);
 

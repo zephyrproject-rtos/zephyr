@@ -1,0 +1,16 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek RTL8211F Ethernet PHY device
+
+compatible: "realtek,rtl8211f"
+
+include: ethernet-phy.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: GPIO connected to PHY reset signal pin. Reset is active low.
+  int-gpios:
+    type: phandle-array
+    description: GPIO for interrupt signal indicating PHY state change.

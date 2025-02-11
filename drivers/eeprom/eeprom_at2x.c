@@ -313,7 +313,7 @@ static int eeprom_at24_write(const struct device *dev, off_t offset,
 	bus_addr = eeprom_at24_translate_offset(dev, &offset);
 
 	/*
-	 * Not all I2C EEPROMs support repeated start so the the
+	 * Not all I2C EEPROMs support repeated start so the
 	 * address (offset) and data (buf) must be provided in one
 	 * write transaction (block).
 	 */
@@ -577,7 +577,7 @@ static int eeprom_at2x_init(const struct device *dev)
 #if ANY_INST_HAS_WP_GPIOS
 	if (config->wp_gpio.port) {
 		int err;
-		if (!device_is_ready(config->wp_gpio.port)) {
+		if (!gpio_is_ready_dt(&config->wp_gpio)) {
 			LOG_ERR("wp gpio device not ready");
 			return -EINVAL;
 		}
@@ -651,7 +651,7 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 	DEVICE_DT_DEFINE(INST_DT_AT2X(n, t), &eeprom_at2x_init, \
 			    NULL, &eeprom_at##t##_data_##n, \
 			    &eeprom_at##t##_config_##n, POST_KERNEL, \
-			    CONFIG_EEPROM_INIT_PRIORITY, \
+			    CONFIG_EEPROM_AT2X_INIT_PRIORITY, \
 			    &eeprom_at2x_api)
 
 #define EEPROM_AT24_DEVICE(n) EEPROM_AT2X_DEVICE(n, 24)

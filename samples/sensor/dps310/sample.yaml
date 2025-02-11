@@ -4,7 +4,9 @@ tests:
   sample.sensor.dps310:
     harness: console
     tags: sensors
-    depends_on: i2c arduino_i2c
+    depends_on:
+      - i2c
+      - arduino_i2c
     harness_config:
       type: one_line
       regex:

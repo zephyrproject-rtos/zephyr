@@ -346,7 +346,7 @@ int w1_skip_rom(const struct device *dev, const struct w1_slave_config *config)
 
 static int reset_select(const struct device *dev, const struct w1_slave_config *config)
 {
-	if (w1_get_slave_count(dev) > 1) {
+	if (IS_ENABLED(CONFIG_W1_NET_FORCE_MULTIDROP_ADDRESSING) || w1_get_slave_count(dev) > 1) {
 		return match_rom(dev, config);
 	}
 

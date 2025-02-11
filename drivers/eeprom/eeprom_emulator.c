@@ -642,7 +642,7 @@ static int eeprom_emu_init(const struct device *dev)
 	struct eeprom_emu_data *dev_data = dev->data;
 	off_t offset;
 	uint8_t buf[dev_config->flash_cbs];
-	int rc;
+	int rc = 0;
 
 	k_mutex_init(&dev_data->lock);
 	if (!device_is_ready(dev_config->flash_dev)) {
@@ -733,7 +733,7 @@ static const struct eeprom_driver_api eeprom_emu_api = {
 		(DT_GPARENT(part)), (DT_PARENT(part))), write_block_size)
 
 #define PART_CBS(part, size) (PART_WBS(part) < 4) ? \
-	((size > (2^16)) ? 8 : 4) : PART_WBS(part)
+	((size > KB(64)) ? 8 : 4) : PART_WBS(part)
 
 #define PART_DEV_ID(part) \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(part), soc_nv_flash), \

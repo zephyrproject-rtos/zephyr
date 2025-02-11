@@ -18,6 +18,14 @@ enabled, for example:
    :board: reel_board
    :goals: build flash
 
+For boards that do not have a sensor, a simple fake sensor driver is provided, for example:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/sensor_shell
+   :board: qemu_riscv64
+   :goals: run
+   :gen-args: -DCONFIG_SAMPLES_SENSOR_SHELL_FAKE_SENSOR=y
+
 Shell Module Command Help
 =========================
 

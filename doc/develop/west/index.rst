@@ -26,9 +26,6 @@ You can run ``west --help`` (or ``west -h`` for short) to get top-level help
 for available west commands, and ``west <command> -h`` for detailed help on
 each command.
 
-The following pages document west's ``v0.14.x`` releases, and provide additional
-context about the tool.
-
 .. toctree::
    :maxdepth: 1
 

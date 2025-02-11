@@ -15,9 +15,9 @@
 
 #include <zephyr/init.h>
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/buf.h>
-/* #include <zephyr/sys/byteorder.h> conflicts with __bswapXX on native_posix */
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/crc.h>
 
@@ -34,7 +34,6 @@
 #include <zephyr/drivers/disk.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/dma.h>
-#include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_periph.h>
 #include <zephyr/drivers/edac.h>
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/emul.h>
@@ -44,7 +43,6 @@
 /* drivers/espi_saf.h requires SoC specific header */
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/fpga.h>
-#include <zephyr/drivers/gna.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/i2c_emul.h>
@@ -80,6 +78,11 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/watchdog.h>
 
+/* Add RTIO headers to make sure they're CXX compatible */
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/sys/spsc_lockfree.h>
+#include <zephyr/sys/mpsc_lockfree.h>
+
 #include <zephyr/ztest.h>
 
 class foo_class {
@@ -101,7 +104,7 @@ static struct foo foos[5];
 BUILD_ASSERT(ARRAY_SIZE(foos) == 5, "expected 5 elements");
 
 /* Check that SYS_INIT() compiles. */
-static int test_init(const struct device *dev)
+static int test_init(void)
 {
 	return 0;
 }
@@ -134,3 +137,18 @@ ZTEST(cxx_tests, test_new_delete)
 	delete test_foo;
 }
 ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);
+
+/*
+ * Unused macros are parsed but not actually compiled. So, even with all their NULL
+ * arguments these one-liners add significant C++ coverage. For instance this actually
+ * compiles some of the macros in zephyr/device.h in C++.
+ *
+ * DEVICE_DEFINE(dev_id, name, * init_fn, pm, data, config, level, prio, api)
+ */
+DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), NULL, NULL, NULL, NULL, POST_KERNEL, 33, NULL);
+
+DEVICE_DT_DEFINE(DT_NODELABEL(test_dev1_dfr), NULL, NULL, NULL, NULL, POST_KERNEL, 33, NULL);
+
+static int fake_pm_action(const struct device *dev,
+		enum pm_device_action pm_action) { return -1; }
+PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), fake_pm_action);

@@ -3,47 +3,25 @@
 
 menu "OS Support Library"
 
-config JSON_LIBRARY
-	bool "Build JSON library"
+config FDTABLE
+	bool "File descriptor table"
 	help
-	  Build a minimal JSON parsing/encoding library. Used by sample
-	  applications such as the NATS client.
+	  This file provides generic file descriptor table implementation, suitable
+	  for any I/O object implementing POSIX I/O semantics (i.e. read/write +
+	  aux operations).
 
-config RING_BUFFER
-	bool "Ring buffers"
+config ZVFS_OPEN_MAX
+	int "Maximum number of open file descriptors"
+	default 16 if WIFI_NM_WPA_SUPPLICANT
+	default 16 if POSIX_API
+	default 4
 	help
-	  Enable usage of ring buffers. This is similar to kernel FIFOs but ring
-	  buffers manage their own buffer memory and can store arbitrary data.
-	  For optimal performance, use buffer sizes that are a power of 2.
-
-config NOTIFY
-	bool "Asynchronous Notifications"
-	help
-	  Use this API to support async transactions.
-
-config BASE64
-	bool "Base64 encoding and decoding"
-	help
-	  Enable base64 encoding and decoding functionality
-
-config CRC
-	bool "Cyclic redundancy check (CRC) Support"
-	default y
-	help
-	  Enable use of CRC.
-
-if CRC
-config CRC_SHELL
-	bool "CRC Shell"
-	depends on SHELL
-	select GETOPT
-	help
-	  Enable CRC checking for memory regions from the shell.
-endif # CRC
+	  Maximum number of open file descriptors, this includes
+	  files, sockets, special devices, etc.
 
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
-	default y if SMP && MP_NUM_CPUS > 1 && !(EFI_CONSOLE && LOG)
+	default y if SMP && MP_MAX_NUM_CPUS > 1 && !(EFI_CONSOLE && LOG)
 	help
 	  When true, a spinlock will be taken around the output from a
 	  single printk() call, preventing the output data from
@@ -57,14 +35,6 @@ config MPSC_PBUF
 	  Enable usage of mpsc packet buffer. Packet buffer is capable of
 	  storing variable length packets in a circular way and operate directly
 	  on the buffer memory.
-
-config ONOFF
-	bool "On-Off Manager"
-	select NOTIFY
-	help
-	  An on-off manager supports an arbitrary number of clients of a
-	  service which has a binary state.  Example applications are power
-	  rails, clocks, and binary device power management.
 
 config SPSC_PBUF
 	bool "Single producer, single consumer packet buffer"
@@ -90,7 +60,9 @@ config SPSC_PBUF_CACHE_ALWAYS
 	bool "Always handle cache"
 	help
 	  Handle cache writeback and invalidation for all instances. Option used
-	  to avoid runtime check and thus reduce memory footprint.
+	  to avoid runtime check and thus reduce memory footprint. Beware! It shall
+	  be used only if all packet buffer instances are used for data sharing
+	  between cores.
 
 config SPSC_PBUF_CACHE_NEVER
 	bool "Never handle cache"
@@ -127,31 +99,6 @@ config SPSC_PBUF_UTILIZATION
 
 endif # SPSC_PBUF
 
-config SHARED_MULTI_HEAP
-	bool "Shared multi-heap manager"
-	help
-	  Enable support for a shared multi-heap manager that uses the
-	  multi-heap allocator to manage a set of reserved memory regions with
-	  different capabilities / attributes (cacheable, non-cacheable,
-	  etc...) defined in the DT.
-
-config WINSTREAM
-	bool "Lockless shared memory window byte stream"
-	help
-	  Winstream is a byte stream IPC for use in shared memory
-	  "windows", generally for transmit to non-Zephyr contexts that
-	  can't share Zephyr APIs or data structures.
-
-if WINSTREAM
-config WINSTREAM_STDLIB_MEMCOPY
-	bool "Use standard memcpy() in winstream"
-	help
-	  The sys_winstream utility is sometimes used in early boot
-	  environments before the standard library is usable.  By
-	  default it uses a simple internal bytewise memcpy().  Set
-	  this to use the one from the standard library.
-endif
-
 if MPSC_PBUF
 config MPSC_CLEAR_ALLOCATED
 	bool "Clear allocated packet"
@@ -166,14 +113,18 @@ config REBOOT
 	  needed to perform a "safe" reboot (e.g. to stop the system clock before
 	  issuing a reset).
 
-config UTF8
-	bool "UTF-8 string operation supported"
+config HAS_POWEROFF
+	bool
 	help
-	  Enable the utf8 API. The API implements functions to specifically
-	  handle UTF-8 encoded strings.
+	  Option to signal that power off functionality is implemented.
+
+config POWEROFF
+	bool "Power off functionality"
+	depends on HAS_POWEROFF
+	help
+	  Enable support for system power off.
 
 rsource "Kconfig.cbprintf"
-
-rsource "Kconfig.heap"
+rsource "zvfs/Kconfig"
 
 endmenu

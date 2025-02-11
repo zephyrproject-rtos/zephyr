@@ -1,0 +1,18 @@
+# Copyright (c) 2023 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_KB1200
+
+config NUM_IRQS
+	default 64
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config BUILD_OUTPUT_BIN
+	default y
+
+config BUILD_OUTPUT_HEX
+	default y
+
+endif # SOC_KB1200

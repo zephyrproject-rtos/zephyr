@@ -23,9 +23,6 @@
 		wui_io83: wui0-1-3 {
 			miwus = <&miwu0 0 3>; /* GPIO83 */
 		};
-		wui_cr_sin2: wui0-1-6-2 {
-			miwus = <&miwu0 0 6>; /* CR_SIN2 */
-		};
 		wui_io87: wui0-1-7 {
 			miwus = <&miwu0 0 7>; /* GPIO87 */
 		};

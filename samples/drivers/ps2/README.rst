@@ -1,7 +1,8 @@
-.. _ps2-sample:
+.. zephyr:code-sample:: ps2
+   :name: PS/2 interface
+   :relevant-api: ps2_interface
 
-PS/2 Interface
-####################################
+   Communicate with a PS/2 mouse.
 
 Overview
 ********

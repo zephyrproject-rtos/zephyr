@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2023 Meta
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma {
+	dma-channels = <2>;
+	status = "okay";
+};
+
+dma0: &dma { };

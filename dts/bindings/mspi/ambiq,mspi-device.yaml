@@ -1,0 +1,64 @@
+# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq MSPI device
+
+compatible: "ambiq,mspi-device"
+
+include: [mspi-device.yaml, "jedec,jesd216.yaml"]
+
+properties:
+  mspi-io-mode:
+    required: true
+
+  mspi-data-rate:
+    required: true
+
+  mspi-hardware-ce-num:
+    type: int
+    required: true
+    default: 0
+    description: |
+      It can be only CE0 or CE1,
+      but there could be multiple of CE0 or CE1 for a controller
+
+  rx-dummy:
+    required: true
+
+  tx-dummy:
+    required: true
+
+  read-command:
+    required: true
+
+  write-command:
+    required: true
+
+  command-length:
+    required: true
+
+  address-length:
+    required: true
+
+  ambiq,timing-config-mask:
+    type: int
+    required: true
+    description: |
+      It must be defined in the board DTS based on Soc series.
+
+  ambiq,timing-config:
+    type: array
+    default: [0, 0, 0, 0, 0, 0, 0, 0]
+    description: |
+      Array of tuples to configure the timing parameters
+      default =
+      <
+        .ui8WriteLatency   = 0,
+        .ui8TurnAround     = 0,
+        .bTxNeg            = false,
+        .bRxNeg            = false,
+        .bRxCap            = false,
+        .ui32TxDQSDelay    = 0,
+        .ui32RxDQSDelay    = 0,
+        .ui32RXDQSDelayEXT = 0,
+      >

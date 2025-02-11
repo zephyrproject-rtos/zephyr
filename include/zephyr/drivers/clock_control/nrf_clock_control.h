@@ -56,16 +56,16 @@ enum nrf_lfclk_start_mode {
 #define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_RC
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_Xtal
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_Synth
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_SYNTH
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_LOW_SWING
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_Xtal_Low_Swing
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL_LOW_SWING
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_Xtal_Full_Swing
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL_FULL_SWING
 #endif
 
 /* Define 32KHz clock accuracy */
@@ -99,7 +99,7 @@ void z_nrf_clock_calibration_force_start(void);
 
 /** @brief Return number of calibrations performed.
  *
- * Valid when @ref CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG is set.
+ * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
  *
  * @return Number of calibrations or -1 if feature is disabled.
  */
@@ -107,7 +107,7 @@ int z_nrf_clock_calibration_count(void);
 
 /** @brief Return number of attempts when calibration was skipped.
  *
- * Valid when @ref CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG is set.
+ * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
  *
  * @return Number of calibrations or -1 if feature is disabled.
  */

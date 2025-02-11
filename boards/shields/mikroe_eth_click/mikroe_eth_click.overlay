@@ -8,6 +8,7 @@
 	eth_click_mikroe_eth_click: eth_click@0 {
 		compatible = "microchip,enc28j60";
 		reg = <0x0>;
+		full-duplex;
 		local-mac-address = [00 00 00 01 02 03];
 		/* Errata B7/1 specifies min 8Mhz, 20MHz max according to RM */
 		spi-max-frequency = <10000000>;

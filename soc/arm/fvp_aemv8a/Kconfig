@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_FVP_AEMV8A
+	select ARM64
+	help
+	  Enable support for ARM FVP AEMv8A AArch64 Series
+
+config SOC_FVP_BASE_REVC_2XAEMV8A
+	select CPU_CORTEX_A53

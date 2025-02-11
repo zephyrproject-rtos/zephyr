@@ -13,9 +13,9 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/led.h>
-#include <zephyr/drivers/led/ht16k33.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 
@@ -77,7 +77,6 @@ struct ht16k33_data {
 #ifdef CONFIG_HT16K33_KEYSCAN
 	struct k_mutex lock;
 	const struct device *child;
-	kscan_callback_t kscan_cb;
 	struct gpio_callback irq_cb;
 	struct k_thread irq_thread;
 	struct k_sem irq_sem;
@@ -214,7 +213,7 @@ static bool ht16k33_process_keyscan_data(const struct device *dev)
 
 	err = i2c_burst_read_dt(&config->i2c, HT16K33_CMD_KEY_DATA_ADDR, keys, sizeof(keys));
 	if (err) {
-		LOG_WRN("Failed to to read HT16K33 key data (err %d)", err);
+		LOG_WRN("Failed to read HT16K33 key data (err %d)", err);
 		/* Reprocess */
 		return true;
 	}
@@ -230,15 +229,13 @@ static bool ht16k33_process_keyscan_data(const struct device *dev)
 			pressed = true;
 		}
 
-		if (data->kscan_cb == NULL) {
-			continue;
-		}
-
 		for (col = 0; col < HT16K33_KEYSCAN_COLS; col++) {
-			if (changed & BIT(col)) {
-				data->kscan_cb(data->child, row, col,
-					state & BIT(col));
+			if ((changed & BIT(col)) == 0) {
+				continue;
 			}
+			input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
+			input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
+			input_report_key(dev, INPUT_BTN_TOUCH, state & BIT(col), true, K_FOREVER);
 		}
 	}
 
@@ -247,8 +244,12 @@ static bool ht16k33_process_keyscan_data(const struct device *dev)
 	return pressed;
 }
 
-static void ht16k33_irq_thread(struct ht16k33_data *data)
+static void ht16k33_irq_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct ht16k33_data *data = p1;
 	bool pressed;
 
 	while (true) {
@@ -280,20 +281,6 @@ static void ht16k33_timer_callback(struct k_timer *timer)
 
 	data = CONTAINER_OF(timer, struct ht16k33_data, timer);
 	k_sem_give(&data->irq_sem);
-}
-
-int ht16k33_register_keyscan_callback(const struct device *parent,
-				      const struct device *child,
-				      kscan_callback_t callback)
-{
-	struct ht16k33_data *data = parent->data;
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-	data->child = child;
-	data->kscan_cb = callback;
-	k_mutex_unlock(&data->lock);
-
-	return 0;
 }
 #endif /* CONFIG_HT16K33_KEYSCAN */
 
@@ -362,7 +349,7 @@ static int ht16k33_init(const struct device *dev)
 	if (config->irq_enabled) {
 		uint8_t keys[HT16K33_KEYSCAN_DATA_SIZE];
 
-		if (!device_is_ready(config->irq.port)) {
+		if (!gpio_is_ready_dt(&config->irq)) {
 			LOG_ERR("IRQ device not ready");
 			return -EINVAL;
 		}
@@ -393,7 +380,7 @@ static int ht16k33_init(const struct device *dev)
 		err = i2c_burst_read_dt(&config->i2c, HT16K33_CMD_KEY_DATA_ADDR, keys,
 					sizeof(keys));
 		if (err) {
-			LOG_ERR("Failed to to read HT16K33 key data");
+			LOG_ERR("Failed to read HT16K33 key data");
 			return -EIO;
 		}
 
@@ -420,7 +407,7 @@ static int ht16k33_init(const struct device *dev)
 
 	k_thread_create(&data->irq_thread, data->irq_thread_stack,
 			CONFIG_HT16K33_KEYSCAN_IRQ_THREAD_STACK_SIZE,
-			(k_thread_entry_t)ht16k33_irq_thread, data, NULL, NULL,
+			ht16k33_irq_thread, data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_HT16K33_KEYSCAN_IRQ_THREAD_PRIO),
 			0, K_NO_WAIT);
 #endif /* CONFIG_HT16K33_KEYSCAN */

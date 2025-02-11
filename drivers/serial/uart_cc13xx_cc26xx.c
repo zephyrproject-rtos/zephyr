@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <errno.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/drivers/uart.h>
@@ -26,6 +27,12 @@ struct uart_cc13xx_cc26xx_config {
 	uint32_t sys_clk_freq;
 };
 
+enum uart_cc13xx_cc26xx_pm_locks {
+	UART_CC13XX_CC26XX_PM_LOCK_TX,
+	UART_CC13XX_CC26XX_PM_LOCK_RX,
+	UART_CC13XX_CC26XX_PM_LOCK_COUNT,
+};
+
 struct uart_cc13xx_cc26xx_data {
 	struct uart_config uart_config;
 	const struct pinctrl_dev_config *pcfg;
@@ -35,8 +42,7 @@ struct uart_cc13xx_cc26xx_data {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 #ifdef CONFIG_PM
 	Power_NotifyObj postNotify;
-	bool tx_constrained;
-	bool rx_constrained;
+	ATOMIC_DEFINE(pm_lock, UART_CC13XX_CC26XX_PM_LOCK_COUNT);
 #endif
 };
 
@@ -240,7 +246,7 @@ static void uart_cc13xx_cc26xx_irq_tx_enable(const struct device *dev)
 #ifdef CONFIG_PM
 	struct uart_cc13xx_cc26xx_data *data = dev->data;
 
-	if (!data->tx_constrained) {
+	if (!atomic_test_and_set_bit(data->pm_lock, UART_CC13XX_CC26XX_PM_LOCK_TX)) {
 		/*
 		 * When tx irq is enabled, it is implicit that we are expecting
 		 * to transmit using the uart, hence we should no longer go
@@ -252,7 +258,6 @@ static void uart_cc13xx_cc26xx_irq_tx_enable(const struct device *dev)
 		 * would interfere with a transfer.
 		 */
 		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-		data->tx_constrained = true;
 	}
 #endif
 
@@ -268,9 +273,8 @@ static void uart_cc13xx_cc26xx_irq_tx_disable(const struct device *dev)
 #ifdef CONFIG_PM
 	struct uart_cc13xx_cc26xx_data *data = dev->data;
 
-	if (data->tx_constrained) {
+	if (atomic_test_and_clear_bit(data->pm_lock, UART_CC13XX_CC26XX_PM_LOCK_TX)) {
 		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-		data->tx_constrained = false;
 	}
 #endif
 }
@@ -294,9 +298,8 @@ static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)
 	 * to receive from the uart, hence we can no longer go into
 	 * standby.
 	 */
-	if (!data->rx_constrained) {
+	if (!atomic_test_and_set_bit(data->pm_lock, UART_CC13XX_CC26XX_PM_LOCK_RX)) {
 		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-		data->rx_constrained = true;
 	}
 #endif
 
@@ -310,9 +313,8 @@ static void uart_cc13xx_cc26xx_irq_rx_disable(const struct device *dev)
 #ifdef CONFIG_PM
 	struct uart_cc13xx_cc26xx_data *data = dev->data;
 
-	if (data->rx_constrained) {
+	if (atomic_test_and_clear_bit(data->pm_lock, UART_CC13XX_CC26XX_PM_LOCK_RX)) {
 		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-		data->rx_constrained = false;
 	}
 #endif
 
@@ -495,10 +497,10 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 #ifdef CONFIG_PM
 #define UART_CC13XX_CC26XX_POWER_UART(n)				\
 	do {								\
-		struct uart_cc13xx_cc26xx_data *data = dev->data;	\
+		struct uart_cc13xx_cc26xx_data *dev_data = dev->data;	\
 									\
-		data->rx_constrained = false;				\
-		data->tx_constrained = false;				\
+		atomic_clear_bit(dev_data->pm_lock, UART_CC13XX_CC26XX_PM_LOCK_RX); \
+		atomic_clear_bit(dev_data->pm_lock, UART_CC13XX_CC26XX_PM_LOCK_TX); \
 									\
 		/* Set Power dependencies */				\
 		if (DT_INST_REG_ADDR(n) == 0x40001000) {		\
@@ -508,7 +510,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		}							\
 									\
 		/* Register notification function */			\
-		Power_registerNotify(&data->postNotify,			\
+		Power_registerNotify(&dev_data->postNotify,		\
 			PowerCC26XX_AWAKE_STANDBY,			\
 			postNotifyFxn, (uintptr_t)dev);			\
 	} while (false)

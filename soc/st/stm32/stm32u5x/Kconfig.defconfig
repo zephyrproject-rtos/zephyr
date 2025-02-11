@@ -1,0 +1,35 @@
+# ST Microelectronics STM32U5 MCU line
+
+# Copyright (c) 2021 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32U5X
+
+rsource "Kconfig.defconfig.stm32u5*"
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
+if STM32_STOP3_LP_MODE
+
+config COUNTER
+	default y
+
+config COUNTER_RTC_STM32_SUBSECONDS
+	default y
+
+config STM32_LPTIM_STDBY_TIMER
+	default y
+
+config TICKLESS_KERNEL
+	default y
+
+config COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS
+	default y
+
+config IDLE_STACK_SIZE
+	default 512
+
+endif #STM32_USE_STOP3
+
+endif # SOC_SERIES_STM32U5X

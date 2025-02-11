@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(pca953x, CONFIG_GPIO_LOG_LEVEL);
 #define PCA953X_INPUT_PORT		0x00
 #define PCA953X_OUTPUT_PORT		0x01
 #define PCA953X_CONFIGURATION		0x03
+#define REG_INPUT_LATCH_PORT0		0x42
+#define REG_INT_MASK_PORT0		0x45
 
 /* Number of pins supported by the device */
 #define NUM_PINS 8
@@ -67,6 +69,8 @@ struct pca953x_config {
 	struct i2c_dt_spec i2c;
 	const struct gpio_dt_spec gpio_int;
 	bool interrupt_enabled;
+	int interrupt_mask;
+	int input_latch;
 };
 
 /**
@@ -412,7 +416,7 @@ static int gpio_pca953x_init(const struct device *dev)
 	}
 
 	if (cfg->interrupt_enabled) {
-		if (!device_is_ready(cfg->gpio_int.port)) {
+		if (!gpio_is_ready_dt(&cfg->gpio_int)) {
 			LOG_ERR("Cannot get pointer to gpio interrupt device");
 			rc = -EINVAL;
 			goto out;
@@ -439,6 +443,20 @@ static int gpio_pca953x_init(const struct device *dev)
 
 		rc = gpio_add_callback(cfg->gpio_int.port,
 					&drv_data->gpio_cb);
+
+		if (rc) {
+			goto out;
+		}
+
+		/* This may not present on all variants of device */
+		if (cfg->input_latch > -1) {
+			rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_INPUT_LATCH_PORT0,
+						   cfg->input_latch);
+		}
+		if (cfg->interrupt_mask > -1) {
+			rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_INT_MASK_PORT0,
+						   cfg->interrupt_mask);
+		}
 	}
 out:
 	if (rc) {
@@ -468,6 +486,8 @@ static const struct gpio_driver_api api_table = {
 		},								\
 		.interrupt_enabled = DT_INST_NODE_HAS_PROP(n, nint_gpios),	\
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(n, nint_gpios, {0}),	\
+		.interrupt_mask = DT_INST_PROP_OR(n, interrupt_mask, -1),	\
+		.input_latch = DT_INST_PROP_OR(n, input_latch, -1),		\
 	};									\
 										\
 	static struct pca953x_drv_data pca953x_drvdata_##n = {			\

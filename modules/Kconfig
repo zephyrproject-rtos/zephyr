@@ -12,27 +12,26 @@ comment "Available modules."
 
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
 
-comment "Optional modules. Make sure they're installed, via the project manifest."
-
 source "modules/Kconfig.altera"
 source "modules/Kconfig.atmel"
-source "modules/Kconfig.cmsis"
+source "modules/Kconfig.chre"
 source "modules/Kconfig.cypress"
 source "modules/Kconfig.eos_s3"
 source "modules/Kconfig.esp32"
 source "modules/Kconfig.imx"
 source "modules/Kconfig.infineon"
 source "modules/Kconfig.libmetal"
-source "modules/Kconfig.lvgl"
+source "modules/lvgl/Kconfig"
 source "modules/Kconfig.mcux"
 source "modules/Kconfig.microchip"
 source "modules/Kconfig.nuvoton"
 source "modules/Kconfig.open-amp"
-source "modules/Kconfig.s32"
+source "modules/Kconfig.picolibc"
+source "modules/Kconfig.nxp_s32"
+source "modules/Kconfig.renesas_fsp"
 source "modules/Kconfig.silabs"
 source "modules/Kconfig.simplelink"
 source "modules/Kconfig.sof"
-source "modules/Kconfig.st"
 source "modules/Kconfig.stm32"
 source "modules/Kconfig.syst"
 source "modules/Kconfig.telink"
@@ -42,7 +41,9 @@ source "modules/Kconfig.vega"
 source "modules/Kconfig.wurthelektronik"
 source "modules/Kconfig.xtensa"
 source "modules/zcbor/Kconfig"
-source "modules/Kconfig.mcuboot_bootutil"
+source "modules/Kconfig.mcuboot"
+source "modules/Kconfig.intel"
+source "modules/hostap/Kconfig"
 
 comment "Unavailable modules, please install those via the project manifest."
 
@@ -98,6 +99,21 @@ comment "CHRE module not available."
 
 comment "THRIFT module not available."
 	depends on !ZEPHYR_THRIFT_MODULE
+
+comment "Segger module not available."
+	depends on !ZEPHYR_SEGGER_MODULE
+
+comment "LVGL module not available."
+	depends on !ZEPHYR_LVGL_MODULE
+
+comment "cmsis module not available."
+	depends on !ZEPHYR_CMSIS_MODULE
+
+comment "cmsis-dsp module not available."
+	depends on !ZEPHYR_CMSIS_DSP_MODULE
+
+comment "cmsis-nn module not available."
+	depends on !ZEPHYR_CMSIS_NN_MODULE
 
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the

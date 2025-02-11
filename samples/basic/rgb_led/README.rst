@@ -1,12 +1,13 @@
-.. _rgb-led-sample:
+.. zephyr:code-sample:: rgb-led
+   :name: PWM RGB LED
+   :relevant-api: pwm_interface
 
-PWM: RGB LED
-############
+   Drive an RGB LED using the PWM API.
 
 Overview
 ********
 
-This is a sample app which drives an RGB LED using PWM.
+This is a sample app which drives an RGB LED using the :ref:`PWM API <pwm_api>`.
 
 There are three single-color component LEDs in an RGB LED. Each component LED
 is driven by a PWM port where the pulse width is changed from zero to the period
@@ -38,7 +39,7 @@ an unsupported board:
    Unsupported board: green-pwm-led devicetree alias is not defined
    Unsupported board: blue-pwm-led devicetree alias is not defined
 
-See :zephyr_file:`boards/arm/hexiwear_k64/hexiwear_k64.dts` for an example
+See :zephyr_file:`boards/nxp/hexiwear/hexiwear_mk64f12.dts` for an example
 :file:`BOARD.dts` file which supports this sample.
 
 Wiring
@@ -52,12 +53,12 @@ Otherwise, LEDs should be connected to the appropriate PWM channels.
 Building and Running
 ********************
 
-For example, to build and flash this board for :ref:`hexiwear_k64`:
+For example, to build and flash this board for :ref:`hexiwear`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/rgb_led
-   :board: hexiwear_k64
+   :board: hexiwear/mk64f12
    :goals: build flash
    :compact:
 
-Change ``hexiwear_k64`` appropriately for other supported boards.
+Change ``hexiwear/mk64f12`` appropriately for other supported boards.

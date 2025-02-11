@@ -4,17 +4,24 @@ tests:
   sample.usb.cdc-acm:
     depends_on: usb_device
     tags: usb
-    platform_exclude: native_posix native_posix_64
+    arch_exclude: posix
     harness: console
     harness_config:
       type: one_line
       regex:
         - "Wait for DTR"
   sample.usb_device_next.cdc-acm:
-    depends_on: usb_device
+    depends_on: usbd
     tags: usb
     extra_args: CONF_FILE="usbd_next_prj.conf"
-    platform_allow: nrf52840dk_nrf52840 frdm_k64f
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp
+      - frdm_k64f
+      - stm32f723e_disco
+      - nucleo_f413zh
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt1060_evk
     harness: console
     harness_config:
       type: one_line
@@ -23,8 +30,10 @@ tests:
   sample.usb.cdc-acm.comp:
     depends_on: usb_device
     tags: usb
-    platform_exclude: native_posix native_posix_64
-    extra_args: OVERLAY_CONFIG=overlay-composite-cdc-msc.conf
+    arch_exclude: posix
+    extra_args:
+      - OVERLAY_CONFIG=overlay-composite-cdc-msc.conf
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
     harness: console
     harness_config:
       type: one_line
@@ -33,7 +42,7 @@ tests:
   sample.usb.cdc-acm.buildonly:
     depends_on: usb_device
     tags: usb
-    platform_allow: native_posix native_posix_64
+    arch_allow: posix
     build_only: true
     integration_platforms:
-      - native_posix
+      - native_sim

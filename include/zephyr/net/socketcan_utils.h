@@ -44,7 +44,11 @@ static inline void socketcan_to_can_frame(const struct socketcan_frame *sframe,
 	zframe->flags |= (sframe->flags & CANFD_BRS) != 0 ? CAN_FRAME_BRS : 0;
 	zframe->id = sframe->can_id & BIT_MASK(29);
 	zframe->dlc = can_bytes_to_dlc(sframe->len);
-	memcpy(zframe->data, sframe->data, MIN(sizeof(sframe->data), sizeof(zframe->data)));
+
+	if ((zframe->flags & CAN_FRAME_RTR) == 0U) {
+		memcpy(zframe->data, sframe->data,
+		       MIN(sframe->len, MIN(sizeof(sframe->data), sizeof(zframe->data))));
+	}
 }
 
 /**
@@ -71,7 +75,10 @@ static inline void socketcan_from_can_frame(const struct can_frame *zframe,
 		sframe->flags |= CANFD_BRS;
 	}
 
-	memcpy(sframe->data, zframe->data, MIN(sizeof(zframe->data), sizeof(sframe->data)));
+	if ((zframe->flags & CAN_FRAME_RTR) == 0U) {
+		memcpy(sframe->data, zframe->data,
+		       MIN(sframe->len, MIN(sizeof(zframe->data), sizeof(sframe->data))));
+	}
 }
 
 /**
@@ -88,15 +95,6 @@ static inline void socketcan_to_can_filter(const struct socketcan_filter *sfilte
 	zfilter->flags |= (sfilter->can_id & BIT(31)) != 0 ? CAN_FILTER_IDE : 0;
 	zfilter->id = sfilter->can_id & BIT_MASK(29);
 	zfilter->mask = sfilter->can_mask & BIT_MASK(29);
-	zfilter->flags |= (sfilter->flags & CANFD_FDF) != 0 ? CAN_FILTER_FDF : 0;
-
-	if ((sfilter->can_mask & BIT(30)) == 0) {
-		zfilter->flags |= CAN_FILTER_DATA | CAN_FILTER_RTR;
-	} else if ((sfilter->can_id & BIT(30)) == 0) {
-		zfilter->flags |= CAN_FILTER_DATA;
-	} else {
-		zfilter->flags |= CAN_FILTER_RTR;
-	}
 }
 
 /**
@@ -112,18 +110,12 @@ static inline void socketcan_from_can_filter(const struct can_filter *zfilter,
 
 	sfilter->can_id = zfilter->id;
 	sfilter->can_id |= (zfilter->flags & CAN_FILTER_IDE) != 0 ? BIT(31) : 0;
-	sfilter->can_id |= (zfilter->flags & CAN_FILTER_RTR) != 0 ? BIT(30) : 0;
 
 	sfilter->can_mask = zfilter->mask;
 	sfilter->can_mask |= (zfilter->flags & CAN_FILTER_IDE) != 0 ? BIT(31) : 0;
 
-	if ((zfilter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) !=
-		(CAN_FILTER_DATA | CAN_FILTER_RTR)) {
+	if (!IS_ENABLED(CONFIG_CAN_ACCEPT_RTR)) {
 		sfilter->can_mask |= BIT(30);
-	}
-
-	if ((zfilter->flags & CAN_FILTER_FDF) != 0) {
-		sfilter->flags |= CANFD_FDF;
 	}
 }
 

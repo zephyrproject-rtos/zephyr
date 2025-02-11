@@ -5,7 +5,52 @@
  */
 
 &pinctrl {
+
+	/* Prebuild nodes for peripheral device's characteristics (Optional) */
+	/omit-if-no-ref/ vhif_lpc_sl: devctl-vhif-3p3v-lpc {
+		dev-ctl = <0x0 2 2 0x01>;
+	};
+
+	/omit-if-no-ref/ vhif_espi_shi_sl: devctl-vhif-1p8v-espi-shi {
+		dev-ctl = <0x0 2 2 0x02>;
+	};
+
+	/omit-if-no-ref/ ext_flash_tris_off: devctl-fiu-ext-tris-off {
+		dev-ctl = <0x0 6 1 0x00>;
+	};
+
+	/omit-if-no-ref/ ext_flash_tris_on: devctl-fiu-ext-tris-on {
+		dev-ctl = <0x0 6 1 0x01>;
+	};
+
+	/omit-if-no-ref/ sio_full_ck48: devctl4-sio-full-ck48 {
+		dev-ctl = <0x6 3 1 0x00>;
+	};
+
+	/omit-if-no-ref/ sio_full_ck50: devctl4-sio-full-ck50 {
+		dev-ctl = <0x6 3 1 0x01>;
+	};
+
 	/* Prebuild nodes for peripheral device's pin-muxing and pad properties */
+	/* Flash Interface Unit (FIU) */
+	/omit-if-no-ref/ fiu_ext_io0_io1_clk_cs_gpa4_96_a2_a0: periph-fiu-ext {
+		dev-ctl = <0x6 1 1 0x00>; /* Select to external flash */
+		pinmux = <&alt0_gpio_no_fpip>;
+	};
+
+	/omit-if-no-ref/ ext_flash_cs1_gpa6: periph-ext-spi-flash-cs1 {
+		pinmux = <&alt0_f_spi_cs1>;
+	};
+
+	/omit-if-no-ref/ int_flash_sl: periph-fiu-int {
+		dev-ctl = <0x6 1 1 0x01>; /* Select to internal flash */
+		/* No need for pin-muxing */
+	};
+
+	/omit-if-no-ref/ fiu_ext_quad_io2_io3_gp93_a7: periph-fiu-ext-quad {
+		pinmux = <&alt0_f_spi_quad>;
+	};
+
 	/* Host peripheral interfaces */
 	/omit-if-no-ref/ espi_lpc_gp46_47_51_52_53_54_55_57: periph-lpc-espi {
 		pinmux = <&alt1_no_lpc_espi>;
@@ -424,5 +469,13 @@
 
 	/omit-if-no-ref/ uart4_sout_gp35: periph-uart4-sout {
 		pinmux = <&alte_cr_sout4_sl>;
+	};
+
+	/omit-if-no-ref/ spip_sclk_mosi_miso_gp95_gpa1_gpa3_gpa5_sl: periph-spip-sl {
+		pinmux = <&alt0_spip_sl>;
+	};
+
+	/omit-if-no-ref/ spip_sclk_mosi_miso_gp95_gpa1_gpa3_gpa5_no_spip_inv: periph-no-spip-inv {
+		pinmux = <&alt0_gpio_no_spip>;
 	};
 };

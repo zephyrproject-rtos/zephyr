@@ -131,7 +131,7 @@ ZTEST(log_links, test_log_domain_count)
 ZTEST(log_links, test_log_source_count)
 {
 	uint8_t exp_source_cnt[] = {
-		log_const_source_id(__log_const_end),
+		log_const_source_id(TYPE_SECTION_END(log_const)),
 		/*link1*/
 		domains_a[0]->source_cnt,
 		domains_a[1]->source_cnt,
@@ -211,8 +211,8 @@ ZTEST(log_links, test_log_runtime_level_set)
 
 ZTEST(log_links, test_log_domain_name_get)
 {
-	zassert_equal(strcmp(log_domain_name_get(0), ""), 0,
-			"Unexpected domain name");
+	zassert_str_equal(log_domain_name_get(0), "",
+			  "Unexpected domain name");
 	zassert_equal(strcmp(log_domain_name_get(1), "domain1"), 0,
 			"Unexpected domain name (%s)", log_domain_name_get(1));
 	zassert_equal(strcmp(log_domain_name_get(2), "domain2"), 0,

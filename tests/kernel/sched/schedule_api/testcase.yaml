@@ -1,7 +1,11 @@
 common:
   timeout: 180
   min_ram: 34
-  tags: kernel threads scheduler userspace
+  tags:
+    - kernel
+    - threads
+    - scheduler
+    - userspace
   ignore_faults: true
 tests:
   kernel.scheduler:
@@ -33,10 +37,3 @@ tests:
     extra_args: CONF_FILE=prj_dumb.conf
     extra_configs:
       - CONFIG_TIMESLICING=n
-  kernel.scheduler.linker_generator:
-    filter: not CONFIG_SCHED_MULTIQ
-    platform_allow: qemu_cortex_m3
-    extra_configs:
-      - CONFIG_TIMESLICING=y
-      - CONFIG_CMAKE_LINKER_GENERATOR=y
-    tags: linker_generator

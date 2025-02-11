@@ -16,11 +16,9 @@
 #include <zephyr/bluetooth/mesh.h>
 
 #include "mesh.h"
-#include "adv.h"
 #include "net.h"
 #include "rpl.h"
 #include "transport.h"
-#include "host/ecc.h"
 #include "prov.h"
 #include "pb_gatt.h"
 #include "beacon.h"

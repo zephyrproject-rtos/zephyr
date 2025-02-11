@@ -1,0 +1,17 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_DA1469X
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select ARMV8_M_DSP
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_PM
+	select CLOCK_CONTROL
+	select CLOCK_CONTROL_SMARTBOND
+	select PLATFORM_SPECIFIC_INIT
+	select PM_DEVICE if PM
+	imply TIMER_READS_ITS_FREQUENCY_AT_RUNTIME

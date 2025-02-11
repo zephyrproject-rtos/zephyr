@@ -2,7 +2,9 @@ tests:
   # section.subsection
   sample.testing.ztest:
     build_only: true
-    platform_allow: native_posix
-    integration_platforms:
+    platform_allow:
       - native_posix
-    tags: testing
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags: test_framework

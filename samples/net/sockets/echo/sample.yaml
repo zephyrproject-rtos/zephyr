@@ -4,10 +4,16 @@ sample:
 common:
   harness: net
   depends_on: netif
-  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
 tests:
   sample.net.sockets.echo:
-    tags: net socket
+    tags:
+      - net
+      - socket
   sample.net.sockets.echo.offload.simplelink:
     platform_allow: cc3220sf_launchxl
-    tags: net socket offload simplelink
+    tags:
+      - net
+      - socket
+      - offload
+      - simplelink

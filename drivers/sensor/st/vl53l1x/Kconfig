@@ -1,0 +1,33 @@
+# VL53L0X time of flight sensor configuration options
+
+# Copyright (c) 2023 Prosaris Solutions Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VL53L1X
+	bool "VL53L1X time of flight sensor"
+	default y
+	depends on DT_HAS_ST_VL53L1X_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C
+	select HAS_STLIB
+	help
+	  Enable driver for VL53L1X I2C-based time of flight sensor.
+
+if VL53L1X
+
+config VL53L1X_INTERRUPT_MODE
+	bool "Use interrupt mode for VL53L1X time of flight sensor"
+	default y
+	depends on GPIO
+	help
+	  Enable interrupt mode for VL53L1X time of flight sensor. Otherwise,
+	  the driver will use the polling method.
+
+config VL53L1X_XSHUT
+	bool "Use xshut pin on VL53L1X time of flight sensor"
+	depends on GPIO
+	help
+	  Enable to use the xshut pin on the VL53L1X. If not, the pin should be
+	  connected to VDD.
+
+endif # VL53L1X

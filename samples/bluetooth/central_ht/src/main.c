@@ -23,7 +23,7 @@
 static int scan_start(void);
 
 static struct bt_conn *default_conn;
-static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
+static struct bt_uuid_16 discover_uuid = BT_UUID_INIT_16(0);
 static struct bt_gatt_discover_params discover_params;
 static struct bt_gatt_subscribe_params subscribe_params;
 
@@ -84,8 +84,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 	printk("[ATTRIBUTE] handle %u\n", attr->handle);
 
 	if (!bt_uuid_cmp(discover_params.uuid, BT_UUID_HTS)) {
-		memcpy(&uuid, BT_UUID_HTS_MEASUREMENT, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		memcpy(&discover_uuid, BT_UUID_HTS_MEASUREMENT, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
@@ -95,8 +95,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 		}
 	} else if (!bt_uuid_cmp(discover_params.uuid,
 				BT_UUID_HTS_MEASUREMENT)) {
-		memcpy(&uuid, BT_UUID_GATT_CCC, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		memcpy(&discover_uuid, BT_UUID_GATT_CCC, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.start_handle = attr->handle + 2;
 		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 		subscribe_params.value_handle = bt_gatt_attr_value_handle(attr);
@@ -143,8 +143,8 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 	printk("Connected: %s\n", addr);
 
 	if (conn == default_conn) {
-		memcpy(&uuid, BT_UUID_HTS, sizeof(uuid));
-		discover_params.uuid = &uuid.uuid;
+		memcpy(&discover_uuid, BT_UUID_HTS, sizeof(discover_uuid));
+		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.func = discover_func;
 		discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 		discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
@@ -174,7 +174,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 		}
 
 		for (i = 0; i < data->data_len; i += sizeof(uint16_t)) {
-			struct bt_uuid *uuid;
+			const struct bt_uuid *uuid;
 			uint16_t u16;
 			int err;
 
@@ -263,14 +263,14 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Bluetooth initialized\n");
@@ -279,8 +279,9 @@ void main(void)
 
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Scanning successfully started\n");
+	return 0;
 }

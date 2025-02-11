@@ -1,0 +1,17 @@
+common:
+  tags:
+    - drivers
+    - can
+  depends_on: can
+tests:
+  drivers.can.host:
+    filter: dt_chosen_enabled("zephyr,canbus")
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      fixture: can
+    extra_configs:
+      - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64

@@ -15,7 +15,7 @@ static int thread_yield_check;
 static int thread_yield_check_dynamic;
 
 static K_THREAD_STACK_DEFINE(test_stack1, STACKSZ);
-static osThreadAttr_t thread1_attr = {
+static osThreadAttr_t os_thread1_attr = {
 	.name = "Thread1",
 	.stack_mem = &test_stack1,
 	.stack_size = STACKSZ,
@@ -23,7 +23,7 @@ static osThreadAttr_t thread1_attr = {
 };
 
 static K_THREAD_STACK_DEFINE(test_stack2, STACKSZ);
-static osThreadAttr_t thread2_attr = {
+static osThreadAttr_t os_thread2_attr = {
 	.name = "Thread2",
 	.stack_mem = &test_stack2,
 	.stack_size = STACKSZ,
@@ -46,8 +46,7 @@ static void thread1(void *argument)
 	zassert_true(thread_id != NULL, "Failed getting Thread ID");
 
 	name = osThreadGetName(thread_id);
-	zassert_true(strcmp(args->name, name) == 0,
-		     "Failed getting Thread name");
+	zassert_str_equal(args->name, name, "Failed getting Thread name");
 
 	/* This thread starts off at a high priority (same as thread2) */
 	(*args->yield_check)++;
@@ -144,8 +143,8 @@ ZTEST(cmsis_thread_apis, test_thread_apis_dynamic)
 
 ZTEST(cmsis_thread_apis, test_thread_apis)
 {
-	thread_apis_common(&thread_yield_check, thread1_attr.name,
-			   &thread1_attr, &thread2_attr);
+	thread_apis_common(&thread_yield_check, os_thread1_attr.name,
+			   &os_thread1_attr, &os_thread2_attr);
 }
 
 static osPriority_t OsPriorityInvalid = 60;

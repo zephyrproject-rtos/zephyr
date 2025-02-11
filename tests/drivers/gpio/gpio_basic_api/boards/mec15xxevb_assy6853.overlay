@@ -14,7 +14,7 @@
 		 * Also remove jumpers on JP41 (1-2, 3-4) as the LEDs
 		 * are connected to pull-up resistors also.
 		 */
-		in-gpios  = <&gpio_140_176 14 0>; /* GPIO_156, JP31 Pin 13 */
-		out-gpios = <&gpio_140_176 15 0>; /* GPIO_157, JP31 Pin 15 */
+		in-gpios  = <MCHP_GPIO_DECODE_156 0>; /* GPIO_156, JP31 Pin 13 */
+		out-gpios = <MCHP_GPIO_DECODE_157 0>; /* GPIO_157, JP31 Pin 15 */
 	};
 };

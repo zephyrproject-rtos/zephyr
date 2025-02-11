@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32g0b0", "st,stm32g0", "simple-bus";
+
 		pinctrl: pin-controller@50000000 {
 			gpioe: gpio@50001000 {
 				compatible = "st,stm32-gpio";
@@ -107,5 +109,13 @@
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	smbus3: smbus3 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c3>;
+		status = "disabled";
 	};
 };

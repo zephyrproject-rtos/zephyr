@@ -34,7 +34,7 @@ ZTEST(shell_flash, test_flash_read)
 		"00000010: 51 52 53 54 55 56 57 58  59 5a 5b 5c 5d 5e 5f 60 |QRSTUVWX YZ[\\]^_`|",
 		"00000020: 61 62 63                                         |abc              |",
 	};
-	const struct shell *shell = shell_backend_dummy_get_ptr();
+	const struct shell *sh = shell_backend_dummy_get_ptr();
 	const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	const char *buf;
 	const int test_base = FLASH_SIMULATOR_BASE_OFFSET;
@@ -57,7 +57,7 @@ ZTEST(shell_flash, test_flash_read)
 	ret = shell_execute_cmd(NULL, "flash read 0 23");
 	zassert_equal(0, ret, "flash read failed: %d", ret);
 
-	buf = shell_backend_dummy_get_output(shell, &size);
+	buf = shell_backend_dummy_get_output(sh, &size);
 	for (i = 0; i < ARRAY_SIZE(lines); i++) {
 		/* buf contains all the bytes that goes through the shell
 		 * backend interface including escape codes, NL and CR.

@@ -1,0 +1,297 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <nxp/nxp_k6x.dtsi>
+#include "frdm_k64f-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP Freedom MK64F board";
+	compatible = "nxp,mk64f12", "nxp,k64f", "nxp,k6x";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
+		sw0 = &user_button_3;
+		sw1 = &user_button_2;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart0;
+		zephyr,canbus = &flexcan0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		green_led: led_1 {
+			gpios = <&gpioe 26 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+		blue_led: led_2 {
+			gpios = <&gpiob 21 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_2: button_0 {
+			label = "User SW2";
+			gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_3: button_1 {
+			label = "User SW3";
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpiob 2 0>,	/* A0 */
+			   <1 0 &gpiob 3 0>,	/* A1 */
+			   <2 0 &gpiob 10 0>,	/* A2 */
+			   <3 0 &gpiob 11 0>,	/* A3 */
+			   <4 0 &gpioc 11 0>,	/* A4 */
+			   <5 0 &gpioc 10 0>,	/* A5 */
+			   <6 0 &gpioc 16 0>,	/* D0 */
+			   <7 0 &gpioc 17 0>,	/* D1 */
+			   <8 0 &gpiob 9 0>,	/* D2 */
+			   <9 0 &gpioa 1 0>,	/* D3 */
+			   <10 0 &gpiob 23 0>,	/* D4 */
+			   <11 0 &gpioa 2 0>,	/* D5 */
+			   <12 0 &gpioc 2 0>,	/* D6 */
+			   <13 0 &gpioc 3 0>,	/* D7 */
+			   /* NOTE: HW Rev D and below use: */
+			   /* <14 0 &gpioa 0 0>, */
+			   /* NOTE: HW Rev E and on use: */
+			   <14 0 &gpioc 12 0>,	/* D8 */
+			   <15 0 &gpioc 4 0>,	/* D9 */
+			   <16 0 &gpiod 0 0>,	/* D10 */
+			   <17 0 &gpiod 2 0>,	/* D11 */
+			   <18 0 &gpiod 3 0>,	/* D12 */
+			   <19 0 &gpiod 1 0>,	/* D13 */
+			   <20 0 &gpioe 25 0>,	/* D14 */
+			   <21 0 &gpioe 24 0>;	/* D15 */
+	};
+};
+
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_RTC>;
+};
+
+arduino_serial: &uart3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&adc1 {
+	status = "okay";
+	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
+};
+
+&temp1 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+	voltage-reference = <2>;
+};
+
+arduino_i2c: &i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	fxos8700: fxos8700@1d {
+		compatible = "nxp,fxos8700";
+		reg = <0x1d>;
+		int1-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+	};
+};
+
+arduino_spi: &spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		sdmmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+		spi-max-frequency = <24000000>;
+	};
+};
+
+&ftm0 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&ftm0_default>;
+	pinctrl-names = "default";
+	clock-source = "fixed";
+};
+
+&ftm3 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&ftm3_default>;
+	pinctrl-names = "default";
+	clock-source = "fixed";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbotg {
+	compatible = "nxp,kinetis-usbd";
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+		/* The MCUBoot swap-move algorithm uses the last 2 sectors
+		 * of the primary slot0 for swap status and move.
+		 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 (DT_SIZE_K(416) + DT_SIZE_K(8))>;
+		};
+		slot1_partition: partition@7a000 {
+			label = "image-1";
+			reg = <0x0007a000 DT_SIZE_K(416)>;
+		};
+		storage_partition: partition@e2000 {
+			label = "storage";
+			reg = <0x000e2000 DT_SIZE_K(120)>;
+		};
+	};
+};
+
+&enet_mac {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+};
+
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "microchip,ksz8081";
+		reg = <0>;
+		status = "okay";
+		microchip,interface-type = "rmii-25MHz";
+	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
+	pinctrl-0 = <&pinmux_ptp>;
+	pinctrl-names = "default";
+};
+
+&flexcan0 {
+	status = "okay";
+	pinctrl-0 = <&flexcan0_default>;
+	pinctrl-names = "default";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&pit0 {
+	status = "okay";
+};

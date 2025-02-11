@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <zephyr/linker/iterable_sections.h>
+
 	SECTION_PROLOGUE(initlevel,,)
 	{
 		/*
@@ -16,23 +18,32 @@
 		CREATE_OBJ_LEVEL(init, APPLICATION)
 		CREATE_OBJ_LEVEL(init, SMP)
 		__init_end = .;
+		__deferred_init_list_start = .;
+		KEEP(*(.z_deferred_init*))
+		__deferred_init_list_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_PROLOGUE(devices,,)
+	ITERABLE_SECTION_ROM_NUMERIC(device, Z_LINK_ITERABLE_SUBALIGN)
+
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_SHARED_INTERRUPTS)
+	/* since z_shared_isr() is not referenced anywhere when
+	 * zephyr_pre0.elf is built, the linker will end up dropping it.
+	 * Later on, during the second linking stage (when zephyr.elf is
+	 * built), the symbol will be added to the text section since it's
+	 * now being referenced (thanks to isr_tables.c). This is very
+	 * problematic because adding the z_shared_isr symbol between
+	 * the linking stages will end up shifting the addresses of the
+	 * functions, which, in turn, will end up messing the ISR table
+	 * (as the entries from _sw_isr_table will end up pointing to
+	 * old addresses of the registered ISRs). To prevent this from
+	 * happening, instruct the linker to avoid dropping z_shared_isr
+	 * if it's not being referenced anywhere.
+	 */
+	SECTION_PROLOGUE(.text.z_shared_isr,,)
 	{
-		/* Link in devices objects, which are tied to the init ones;
-		 * the objects are thus sorted the same way as their init
-		 * object parent. See above and include/device.h.
-		 */
-		__device_start = .;
-		CREATE_OBJ_LEVEL(device, EARLY)
-		CREATE_OBJ_LEVEL(device, PRE_KERNEL_1)
-		CREATE_OBJ_LEVEL(device, PRE_KERNEL_2)
-		CREATE_OBJ_LEVEL(device, POST_KERNEL)
-		CREATE_OBJ_LEVEL(device, APPLICATION)
-		CREATE_OBJ_LEVEL(device, SMP)
-		__device_end = .;
+		KEEP(*(.text.z_shared_isr*))
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_PROLOGUE(sw_isr_table,,)
@@ -45,6 +56,15 @@
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
 		*(_SW_ISR_TABLE_SECTION_SYMS)
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#if defined(CONFIG_SHARED_INTERRUPTS)
+	SECTION_PROLOGUE(shared_sw_isr_table,,)
+	{
+		/* TODO: does this section require alignment? */
+		KEEP(*(_SHARED_SW_ISR_TABLE_SECTION_SYMS))
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 #endif
 
 	/* verify we don't have rogue .z_init_<something> initlevel sections */
@@ -58,7 +78,7 @@
 	/* Build-time assignment of permissions to kernel objects to
 	 * threads declared with K_THREAD_DEFINE()
 	 */
-	ITERABLE_SECTION_ROM(z_object_assignment, 4)
+	ITERABLE_SECTION_ROM(k_object_assignment, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
 	SECTION_DATA_PROLOGUE(app_shmem_regions,,)
@@ -68,22 +88,17 @@
 		__app_shmem_regions_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	ITERABLE_SECTION_ROM(k_p4wq_initparam, 4)
+	ITERABLE_SECTION_ROM(k_p4wq_initparam, Z_LINK_ITERABLE_SUBALIGN)
 
-	ITERABLE_SECTION_ROM(_static_thread_data, 4)
+	ITERABLE_SECTION_ROM(_static_thread_data, Z_LINK_ITERABLE_SUBALIGN)
 
 #if defined(CONFIG_PCIE)
-	SECTION_DATA_PROLOGUE(irq_alloc,,)
-	{
-		__irq_alloc_start = .;
-		KEEP(*(SORT_BY_NAME("._irq_alloc*")));
-		__irq_alloc_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	ITERABLE_SECTION_ROM(irq_alloc, Z_LINK_ITERABLE_SUBALIGN)
 #endif /* CONFIG_PCIE */
 
-#if !defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
-	SECTION_DATA_PROLOGUE(device_handles,,)
+#if !defined(CONFIG_DEVICE_DEPS_DYNAMIC)
+	SECTION_DATA_PROLOGUE(device_deps,,)
 	{
-#include <zephyr/linker/device-handles.ld>
+#include <zephyr/linker/device-deps.ld>
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif /* !CONFIG_HAS_DYNAMIC_DEVICE_HANDLES */
+#endif /* !CONFIG_DEVICE_DEPS_DYNAMIC */

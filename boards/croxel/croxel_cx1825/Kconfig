@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Luis Ubieda
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CROXEL_CX1825
+
+config BOARD_ENABLE_DCDC
+	bool "DCDC mode"
+	select SOC_DCDC_NRF52X
+	default y
+
+config BOARD_ENABLE_DCDC_HV
+	bool "High Voltage DCDC converter"
+	select SOC_DCDC_NRF52X_HV
+	default y
+
+endif # BOARD_CROXEL_CX1825

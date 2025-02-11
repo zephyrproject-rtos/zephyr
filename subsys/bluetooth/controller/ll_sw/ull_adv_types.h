@@ -58,11 +58,23 @@ struct ll_adv_set {
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	struct lll_df_adv_cfg *df_cfg;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING) || \
+	(defined(CONFIG_BT_CTLR_ADV_EXT) && \
+	 (CONFIG_BT_CTLR_ADV_AUX_SET > 0) && \
+	 !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO))
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	uint32_t delay;
 	uint32_t delay_at_expire;
-	uint32_t ticks_at_expire;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+	uint32_t ticks_at_expire;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING ||
+	* (CONFIG_BT_CTLR_ADV_EXT &&
+	*  (CONFIG_BT_CTLR_ADV_AUX_SET > 0) &&
+	*  !CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	*/
 };
 
 struct ll_adv_aux_set {
@@ -92,23 +104,26 @@ struct ll_adv_sync_set {
 	uint8_t is_started:1;
 	uint8_t is_data_cmplt:1;
 
+#if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	uint32_t aux_remainder;
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 };
 
 struct ll_adv_iso_set {
 	struct ull_hdr        ull;
 	struct lll_adv_iso    lll;
 
-	struct {
-		struct node_rx_hdr hdr;
-	} node_rx_complete;
+	uint32_t big_ref_point; /* Previously elapsed BIG reference point in
+				 * microseconds of the free running Controller
+				 * clock.
+				 */
+
+	struct node_rx_pdu node_rx_complete;
 
 	struct {
-		struct node_rx_hdr hdr;
-		union {
-			uint8_t    pdu[0] __aligned(4);
-			uint8_t    reason;
-		};
+		struct node_rx_pdu rx;
+		/* Dummy declaration to ensure space allocated to hold one pdu bytes */
+		uint8_t  dummy;
 	} node_rx_terminate;
 
 #if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)

@@ -1,0 +1,45 @@
+/*
+ * Copyright 2023 honglin leng <a909204013@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <broadcom/bcm2711.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Raspberry Pi 4 Model B";
+	compatible = "raspberrypi,4-model-b", "brcm,bcm2838";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		led0 = &led_act;
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_act: led-act {
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>; /* GPIO 42 */
+			label = "ACT";
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};

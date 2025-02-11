@@ -1,7 +1,7 @@
 .. _bin-blobs:
 
 Binary Blobs
-************
+############
 
 In the context of an operating system that supports multiple architectures and
 many different IC families, some functionality may be unavailable without the
@@ -22,7 +22,7 @@ therefore free to create Zephyr-based downstream software which uses binary
 blobs if they cannot meet the requirements described in this page.
 
 Software license
-================
+****************
 
 Most binary blobs are distributed under proprietary licenses which vary
 significantly in nature and conditions. It is up to the vendor to specify the
@@ -30,7 +30,7 @@ license as part of the blob submission process. Blob vendors may impose a
 click-through or other EULA-like workflow when users fetch and install blobs.
 
 Hosting
-=======
+*******
 
 Blobs must be hosted on the Internet and managed by third-party infrastructure.
 Two potential examples are Git repositories and web servers managed by
@@ -40,10 +40,10 @@ The Zephyr Project does not host binary blobs in its Git repositories or
 anywhere else.
 
 Fetching blobs
-==============
+**************
 
 Blobs are fetched from official third-party sources by the :ref:`west blobs
-command <west-blobs>` command.
+<west-blobs>` command.
 
 The blobs themselves must be specified in the :ref:`module.yml
 <modules-bin-blobs>` files included in separate Zephyr :ref:`module repositories
@@ -76,7 +76,7 @@ Any accompanying code, including interface header files for the blobs, must be
 present in the corresponding module repository.
 
 Tainting
-========
+********
 
 Inclusion of binary blobs will taint the Zephyr build. The definition of
 tainting originates in the `Linux kernel
@@ -96,7 +96,7 @@ Tainting will be communicated to the user in the following manners:
 .. _bin-blobs-types:
 
 Allowed types
-=============
+*************
 
 The following binary blob types are acceptable in Zephyr:
 
@@ -121,7 +121,7 @@ In case of disagreement, the TSC is the arbiter of whether a particular blob
 fits in one of the above types.
 
 Precompiled library-specific requirements
-=========================================
+*****************************************
 
 This section contains additional requirements specific to precompiled library
 blobs.
@@ -132,14 +132,14 @@ distribution if it is discovered that the blob fails to meet these requirements
 later on.
 
 Interface header files
-----------------------
+======================
 
 The precompiled library must be accompanied by one or more header files,
 distributed under a non-copyleft OSI approved license, that define the interface
 to the library.
 
 Allowed dependencies
---------------------
+====================
 
 This section defines requirements related to external symbols that a library
 blob requires the build system to provide.
@@ -155,7 +155,7 @@ blob requires the build system to provide.
   released under an OSI approved license and documented using Doxygen
 
 Toolchain requirements
-----------------------
+======================
 
 Precompiled library blobs must be in a data format which is compatible with and
 can be linked by a toolchain supported by the Zephyr Project.  This is required
@@ -164,7 +164,7 @@ compiler and/or linker flags, however. For example, a porting layer may require
 special flags, or a static archive may require use of specific linker flags.
 
 Limited scope
--------------
+=============
 
 Allowing arbitrary library blobs carries a risk of degrading the degree to
 which the upstream Zephyr software distribution is open source. As an extreme
@@ -188,7 +188,7 @@ At the discretion of the release team, the project may remove support for a
 hardware target if it cannot pass this test suite.
 
 Support and maintenance
-=======================
+***********************
 
 The Zephyr Project is not expected to be responsible for the maintenance and
 support of contributed binary blobs. As a consequence, at the discretion of the
@@ -217,10 +217,16 @@ over bit-rot, security issues, etc.
 The submitter of the proposal to integrate a binary blob must commit to maintain
 the integration of such blob for the foreseeable future.
 
+Regarding Continuous Integration, binary blobs will **not** be fetched in the
+project's CI infrastructure that builds and optionally executes tests and samples
+to prevent regressions and issues from entering the codebase. This includes
+both CI ran when a new GitHub Pull Request is opened as well as any other
+regularly scheduled execution of the CI infrastructure.
+
 .. _blobs-process:
 
 Submission and review process
-=============================
+*****************************
 
 For references to binary blobs to be included in the project, they must be
 reviewed and accepted by the Technical Steering Committee (TSC). This process is
@@ -237,7 +243,7 @@ Follow the steps below to begin the submission process:
    detail, so that you are informed of the criteria used by the TSC in order to
    approve or reject a request
 #. Use the :github:`New Binary Blobs Issue
-   <new?assignees=&labels=RFC&template=bin-blobs.md&title=>` to open an issue
+   <new?assignees=&labels=RFC&template=008_bin-blobs.md&title=>` to open an issue
 #. Fill out all required sections, making sure you provide enough detail for the
    TSC to assess the merit of the request. Additionally you must also create a Pull
    Request that demonstrates the integration of the binary blobs and then

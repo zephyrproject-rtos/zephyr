@@ -3,7 +3,7 @@
 # Copyright (c) 2022, Nordic Semiconductor ASA
 
 find_program(SPARSE_COMPILER cgcc REQUIRED)
-message(STATUS "Found sparse: ${SPARSE_COMPILER}")
+message(STATUS "Found SCA: sparse (${SPARSE_COMPILER})")
 
 # Create sparse.cmake which will be called as compiler launcher.
 # sparse.cmake will ensure that REAL_CC is set correctly in environment before

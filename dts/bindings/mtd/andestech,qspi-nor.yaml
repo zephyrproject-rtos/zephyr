@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2023, Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+compatible: "andestech,qspi-nor"
+
+description:
+  Properties supporting Zephyr qspi-nor flash driver control of
+  flash memories using the standard M25P80-based command set.
+
+include: "jedec,spi-nor-common.yaml"
+
+properties:
+  wp-gpios:
+    type: phandle-array
+    description: WPn pin
+
+  hold-gpios:
+    type: phandle-array
+    description: HOLDn pin
+
+  reset-gpios:
+    type: phandle-array
+    description: RESETn pin

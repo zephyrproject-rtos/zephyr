@@ -62,7 +62,7 @@ __ramfunc static void hwinfo_sam_read_device_id(void)
 	}
 }
 
-static int hwinfo_sam_init(const struct device *arg)
+static int hwinfo_sam_init(void)
 {
 	Efc *efc = (Efc *)DT_REG_ADDR(DT_INST(0, atmel_sam_flash_controller));
 	uint32_t fmr;

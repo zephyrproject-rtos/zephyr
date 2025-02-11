@@ -7,7 +7,7 @@
 # Top-level configuration file for LORA drivers.
 
 menuconfig LORA
-	bool "LoRa support [EXPERIMENTAL]"
+	bool "LoRa drivers [EXPERIMENTAL]"
 	select POLL
 	select EXPERIMENTAL
 	help
@@ -21,7 +21,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config LORA_SHELL
 	bool "LoRa Shell"
-	default y
 	depends on SHELL
 	help
 	  Enable LoRa Shell for testing.
@@ -33,5 +32,7 @@ config LORA_INIT_PRIORITY
 	  System initialization priority for LoRa drivers.
 
 source "drivers/lora/Kconfig.sx12xx"
+
+source "drivers/lora/Kconfig.rylrxxx"
 
 endif # LORA

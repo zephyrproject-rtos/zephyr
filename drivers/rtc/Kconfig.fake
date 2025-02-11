@@ -1,0 +1,11 @@
+# Fake RTC configuration options
+#
+# Copyright (c) 2023 Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_FAKE
+	bool "Fake RTC driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_RTC_ENABLED
+	help
+	  Enable support for the FFF-based fake RTC driver.

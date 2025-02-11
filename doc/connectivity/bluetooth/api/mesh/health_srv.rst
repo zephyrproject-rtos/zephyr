@@ -7,6 +7,8 @@ The Health Server model provides attention callbacks and node diagnostics for
 :ref:`bluetooth_mesh_models_health_cli` models. It is primarily used to report
 faults in the mesh node and map the mesh nodes to their physical location.
 
+If present, the Health Server model must be instantiated on the primary element.
+
 Faults
 ******
 
@@ -19,7 +21,7 @@ necessarily damaging to the device. Errors indicate conditions that are
 outside of the node's design limits, and may have caused invalid behavior or
 permanent damage to the device.
 
-Fault values ``0x01`` to ``0x7f`` are reserved for the Bluetooth mesh
+Fault values ``0x01`` to ``0x7f`` are reserved for the Bluetooth Mesh
 specification, and the full list of specification defined faults are available
 in :ref:`bluetooth_mesh_health_faults`. Fault values ``0x80`` to ``0xff`` are
 vendor specific. The list of faults are always reported with a company ID to
@@ -55,6 +57,6 @@ API reference
 Health faults
 =============
 
-Fault values defined by the Bluetooth mesh specification.
+Fault values defined by the Bluetooth Mesh specification.
 
 .. doxygengroup:: bt_mesh_health_faults

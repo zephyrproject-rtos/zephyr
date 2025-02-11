@@ -12,9 +12,9 @@
 static char heap_mem[HEAP_SIZE];
 static struct sys_heap heap;
 
-void print_sys_memory_stats(void);
+static void print_sys_memory_stats(void);
 
-void main(void)
+int main(void)
 {
 	void *p;
 
@@ -31,9 +31,10 @@ void main(void)
 
 	sys_heap_free(&heap, p);
 	print_sys_memory_stats();
+	return 0;
 }
 
-void print_sys_memory_stats(void)
+static void print_sys_memory_stats(void)
 {
 	struct sys_memory_stats stats;
 

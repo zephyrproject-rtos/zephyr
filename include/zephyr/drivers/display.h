@@ -15,13 +15,17 @@
 /**
  * @brief Display Interface
  * @defgroup display_interface Display Interface
- * @ingroup display_interfaces
+ * @since 1.14
+ * @version 0.8.0
+ * @ingroup io_interfaces
  * @{
  */
 
 #include <zephyr/device.h>
+#include <errno.h>
 #include <stddef.h>
 #include <zephyr/types.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,14 +40,32 @@ extern "C" {
  * big endian.
  */
 enum display_pixel_format {
-	PIXEL_FORMAT_RGB_888		= BIT(0),
-	PIXEL_FORMAT_MONO01		= BIT(1), /* 0=Black 1=White */
-	PIXEL_FORMAT_MONO10		= BIT(2), /* 1=Black 0=White */
-	PIXEL_FORMAT_ARGB_8888		= BIT(3),
-	PIXEL_FORMAT_RGB_565		= BIT(4),
-	PIXEL_FORMAT_BGR_565		= BIT(5),
+	PIXEL_FORMAT_RGB_888		= BIT(0), /**< 24-bit RGB */
+	PIXEL_FORMAT_MONO01		= BIT(1), /**< Monochrome (0=Black 1=White) */
+	PIXEL_FORMAT_MONO10		= BIT(2), /**< Monochrome (1=Black 0=White) */
+	PIXEL_FORMAT_ARGB_8888		= BIT(3), /**< 32-bit ARGB */
+	PIXEL_FORMAT_RGB_565		= BIT(4), /**< 16-bit RGB */
+	PIXEL_FORMAT_BGR_565		= BIT(5), /**< 16-bit BGR */
 };
 
+/**
+ * @brief Bits required per pixel for display format
+ *
+ * This macro expands to the number of bits required for a given display
+ * format. It can be used to allocate a framebuffer based on a given
+ * display format type
+ */
+#define DISPLAY_BITS_PER_PIXEL(fmt)						\
+	((((fmt & PIXEL_FORMAT_RGB_888) >> 0) * 24U) +				\
+	(((fmt & PIXEL_FORMAT_MONO01) >> 1) * 1U) +				\
+	(((fmt & PIXEL_FORMAT_MONO10) >> 2) * 1U) +				\
+	(((fmt & PIXEL_FORMAT_ARGB_8888) >> 3) * 32U) +				\
+	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_BGR_565) >> 5) * 16U))
+
+/**
+ * @brief Display screen information
+ */
 enum display_screen_info {
 	/**
 	 * If selected, one octet represents 8 pixels ordered vertically,
@@ -70,15 +92,13 @@ enum display_screen_info {
 };
 
 /**
- * @enum display_orientation
  * @brief Enumeration with possible display orientation
- *
  */
 enum display_orientation {
-	DISPLAY_ORIENTATION_NORMAL,
-	DISPLAY_ORIENTATION_ROTATED_90,
-	DISPLAY_ORIENTATION_ROTATED_180,
-	DISPLAY_ORIENTATION_ROTATED_270,
+	DISPLAY_ORIENTATION_NORMAL,      /**< No rotation */
+	DISPLAY_ORIENTATION_ROTATED_90,  /**< Rotated 90 degrees clockwise */
+	DISPLAY_ORIENTATION_ROTATED_180, /**< Rotated 180 degrees clockwise */
+	DISPLAY_ORIENTATION_ROTATED_270, /**< Rotated 270 degrees clockwise */
 };
 
 /** @brief Structure holding display capabilities. */
@@ -197,7 +217,7 @@ typedef int (*display_set_orientation_api)(const struct device *dev,
  * @brief Display driver API
  * API which a display driver should expose
  */
-struct display_driver_api {
+__subsystem struct display_driver_api {
 	display_blanking_on_api blanking_on;
 	display_blanking_off_api blanking_off;
 	display_write_api write;
@@ -242,6 +262,7 @@ static inline int display_write(const struct device *dev, const uint16_t x,
  * @param buf Pointer to buffer array
  *
  * @retval 0 on success else negative errno code.
+ * @retval -ENOSYS if not implemented.
  */
 static inline int display_read(const struct device *dev, const uint16_t x,
 			       const uint16_t y,
@@ -250,6 +271,10 @@ static inline int display_read(const struct device *dev, const uint16_t x,
 {
 	struct display_driver_api *api =
 		(struct display_driver_api *)dev->api;
+
+	if (api->read == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->read(dev, x, y, desc, buf);
 }
@@ -267,6 +292,10 @@ static inline void *display_get_framebuffer(const struct device *dev)
 {
 	struct display_driver_api *api =
 		(struct display_driver_api *)dev->api;
+
+	if (api->get_framebuffer == NULL) {
+		return NULL;
+	}
 
 	return api->get_framebuffer(dev);
 }
@@ -288,11 +317,16 @@ static inline void *display_get_framebuffer(const struct device *dev)
  * @param dev Pointer to device structure
  *
  * @retval 0 on success else negative errno code.
+ * @retval -ENOSYS if not implemented.
  */
 static inline int display_blanking_on(const struct device *dev)
 {
 	struct display_driver_api *api =
 		(struct display_driver_api *)dev->api;
+
+	if (api->blanking_on == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->blanking_on(dev);
 }
@@ -307,11 +341,16 @@ static inline int display_blanking_on(const struct device *dev)
  * @param dev Pointer to device structure
  *
  * @retval 0 on success else negative errno code.
+ * @retval -ENOSYS if not implemented.
  */
 static inline int display_blanking_off(const struct device *dev)
 {
 	struct display_driver_api *api =
 		(struct display_driver_api *)dev->api;
+
+	if (api->blanking_off == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->blanking_off(dev);
 }
@@ -326,12 +365,17 @@ static inline int display_blanking_off(const struct device *dev)
  * @param brightness Brightness in steps of 1/256
  *
  * @retval 0 on success else negative errno code.
+ * @retval -ENOSYS if not implemented.
  */
 static inline int display_set_brightness(const struct device *dev,
 					 uint8_t brightness)
 {
 	struct display_driver_api *api =
 		(struct display_driver_api *)dev->api;
+
+	if (api->set_brightness == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->set_brightness(dev, brightness);
 }
@@ -346,11 +390,16 @@ static inline int display_set_brightness(const struct device *dev,
  * @param contrast Contrast in steps of 1/256
  *
  * @retval 0 on success else negative errno code.
+ * @retval -ENOSYS if not implemented.
  */
 static inline int display_set_contrast(const struct device *dev, uint8_t contrast)
 {
 	struct display_driver_api *api =
 		(struct display_driver_api *)dev->api;
+
+	if (api->set_contrast == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->set_contrast(dev, contrast);
 }
@@ -378,6 +427,7 @@ static inline void display_get_capabilities(const struct device *dev,
  * @param pixel_format Pixel format to be used by display
  *
  * @retval 0 on success else negative errno code.
+ * @retval -ENOSYS if not implemented.
  */
 static inline int
 display_set_pixel_format(const struct device *dev,
@@ -385,6 +435,10 @@ display_set_pixel_format(const struct device *dev,
 {
 	struct display_driver_api *api =
 		(struct display_driver_api *)dev->api;
+
+	if (api->set_pixel_format == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->set_pixel_format(dev, pixel_format);
 }
@@ -396,6 +450,7 @@ display_set_pixel_format(const struct device *dev,
  * @param orientation Orientation to be used by display
  *
  * @retval 0 on success else negative errno code.
+ * @retval -ENOSYS if not implemented.
  */
 static inline int display_set_orientation(const struct device *dev,
 					  const enum display_orientation
@@ -403,6 +458,10 @@ static inline int display_set_orientation(const struct device *dev,
 {
 	struct display_driver_api *api =
 		(struct display_driver_api *)dev->api;
+
+	if (api->set_orientation == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->set_orientation(dev, orientation);
 }

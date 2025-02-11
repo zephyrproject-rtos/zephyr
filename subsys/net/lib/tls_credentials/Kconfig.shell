@@ -1,0 +1,35 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TLS_CREDENTIALS_SHELL
+	bool "TLS credentials management shell"
+	depends on TLS_CREDENTIALS
+	depends on SHELL
+	depends on BASE64
+	help
+	  Enable shell commands to manage TLS credentials.
+
+if TLS_CREDENTIALS_SHELL
+
+config TLS_CREDENTIALS_SHELL_CRED_BUF_SIZE
+	int "Size of buffer used for storing and retrieving credentials, measured in bytes."
+	default 1024
+	help
+	  The amount of preallocated buffer (in bytes) used for storing and retrieving credentials.
+
+config TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH
+	int "Credential output line width (characters)"
+	default 32
+	help
+	   This setting specifies how long (in characters) contiguous lines of base64 credential
+	   output should be. Must be a multiple of 4. Applies only to ??? mode.
+
+config TLS_CREDENTIALS_SHELL_DIGEST_BUF_SIZE
+	int "Buffer for generating credentials digests"
+	default 48
+	help
+	   The amount of preallocated buffer (in bytes) for temporarily storing credential digests.
+
+	   Also used to print error messages if digest generation fails.
+
+endif # TLS_CREDENTIALS_SHELL

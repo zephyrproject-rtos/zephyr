@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2023 Toradex
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: verdin_imx8mp/mimx8ml8/m7/ddr
+name: Toradex Verdin iMX8M Plus (DDR)
+type: mcu
+arch: arm
+ram: 2048
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - uart

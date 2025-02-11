@@ -1,0 +1,21 @@
+# PCF857x GPIO configuration options
+
+# Copyright (c) 2022 Ithinx
+# Copyright (c) 2023 Mr Beam Lasers GmbH
+# Copyright (c) 2023 Amrith Venkat Kesavamoorthi <amrith@mr-beam.org>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_PCF857X
+	bool "PCF857X I2C GPIO chip"
+	default y
+	depends on DT_HAS_NXP_PCF857X_ENABLED
+	select I2C
+	help
+	  Enable driver for PCF857X I2C GPIO chip.
+
+config GPIO_PCF857X_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_PCF857X
+	help
+	  Device driver initialization priority.

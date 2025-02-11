@@ -10,33 +10,37 @@
 #include <soc.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/espi.h>
-#include <zephyr/drivers/espi_saf.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 /* OOB operations will be attempted regardless of channel enabled or not */
 #include "espi_oob_handler.h"
+
+#ifdef CONFIG_ESPI_TAF
+#include <zephyr/drivers/espi_saf.h>
+#endif
+
 LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 
 /* eSPI flash parameters */
-#define MAX_TEST_BUF_SIZE     1024u
-#define MAX_FLASH_REQUEST     64u
-#define TARGET_FLASH_REGION   0x72000ul
+#define MAX_TEST_BUF_SIZE   1024u
+#define MAX_FLASH_REQUEST   64u
+#define TARGET_FLASH_REGION 0x72000ul
 
-#define ESPI_FREQ_20MHZ       20u
-#define ESPI_FREQ_25MHZ       25u
-#define ESPI_FREQ_66MHZ       66u
+#define ESPI_FREQ_20MHZ 20u
+#define ESPI_FREQ_25MHZ 25u
+#define ESPI_FREQ_66MHZ 66u
 
-#define K_WAIT_DELAY          100u
+#define K_WAIT_DELAY 100u
 
 /* eSPI event */
-#define EVENT_MASK            0x0000FFFFu
-#define EVENT_DETAILS_MASK    0xFFFF0000u
-#define EVENT_DETAILS_POS     16u
-#define EVENT_TYPE(x)         (x & EVENT_MASK)
-#define EVENT_DETAILS(x)      ((x & EVENT_DETAILS_MASK) >> EVENT_DETAILS_POS)
+#define EVENT_MASK         0x0000FFFFu
+#define EVENT_DETAILS_MASK 0xFFFF0000u
+#define EVENT_DETAILS_POS  16u
+#define EVENT_TYPE(x)      (x & EVENT_MASK)
+#define EVENT_DETAILS(x)   ((x & EVENT_DETAILS_MASK) >> EVENT_DETAILS_POS)
 
-#define PWR_SEQ_TIMEOUT    3000u
+#define PWR_SEQ_TIMEOUT 3000u
 
 /* The devicetree node identifier for the board power rails pins. */
 #define BRD_PWR_NODE DT_NODELABEL(board_power)
@@ -61,26 +65,26 @@ static uint8_t flash_write_buf[MAX_TEST_BUF_SIZE];
 static uint8_t flash_read_buf[MAX_TEST_BUF_SIZE];
 #endif
 
-#ifdef CONFIG_ESPI_SAF
-#define SAF_BASE_ADDR   DT_REG_ADDR(DT_NODELABEL(espi_saf0))
+#ifdef CONFIG_ESPI_TAF
+#define SAF_BASE_ADDR DT_REG_ADDR(DT_NODELABEL(espi_saf0))
 
-#define SAF_TEST_FREQ_HZ 24000000U
+#define SAF_TEST_FREQ_HZ  24000000U
 #define SAF_TEST_BUF_SIZE 4096U
 
 /* SPI address of 4KB sector modified by test */
 #define SAF_SPI_TEST_ADDRESS 0x1000U
 
-#define SPI_WRITE_STATUS1 0x01U
-#define SPI_WRITE_STATUS2 0x31U
-#define SPI_WRITE_DISABLE 0x04U
-#define SPI_READ_STATUS1 0x05U
-#define SPI_WRITE_ENABLE 0x06U
-#define SPI_READ_STATUS2 0x35U
+#define SPI_WRITE_STATUS1   0x01U
+#define SPI_WRITE_STATUS2   0x31U
+#define SPI_WRITE_DISABLE   0x04U
+#define SPI_READ_STATUS1    0x05U
+#define SPI_WRITE_ENABLE    0x06U
+#define SPI_READ_STATUS2    0x35U
 #define SPI_WRITE_ENABLE_VS 0x50U
-#define SPI_READ_JEDEC_ID 0x9FU
+#define SPI_READ_JEDEC_ID   0x9FU
 
 #define SPI_STATUS1_BUSY 0x80U
-#define SPI_STATUS2_QE 0x02U
+#define SPI_STATUS2_QE   0x02U
 
 #define W25Q128_JEDEC_ID 0x001840efU
 
@@ -95,10 +99,8 @@ struct saf_addr_info {
 	uintptr_t saf_struct_addr;
 	uintptr_t saf_exp_addr;
 };
-static const struct device *const qspi_dev =
-	DEVICE_DT_GET(DT_NODELABEL(spi0));
-static const struct device *const espi_saf_dev =
-	DEVICE_DT_GET(DT_NODELABEL(espi_saf0));
+static const struct device *const qspi_dev = DEVICE_DT_GET(DT_NODELABEL(spi0));
+static const struct device *const espi_saf_dev = DEVICE_DT_GET(DT_NODELABEL(espi_saf0));
 static uint8_t safbuf[SAF_TEST_BUF_SIZE] __aligned(4);
 static uint8_t safbuf2[SAF_TEST_BUF_SIZE] __aligned(4);
 
@@ -116,15 +118,8 @@ static const struct espi_saf_flash_cfg flash_w25q128 = {
 	.cont_prefix = 0U,
 	.cs_cfg_descr_ids = MCHP_CS0_CFG_DESCR_IDX_REG_VAL,
 	.flags = 0,
-	.descr = {
-		MCHP_W25Q128_CM_RD_D0,
-		MCHP_W25Q128_CM_RD_D1,
-		MCHP_W25Q128_CM_RD_D2,
-		MCHP_W25Q128_ENTER_CM_D0,
-		MCHP_W25Q128_ENTER_CM_D1,
-		MCHP_W25Q128_ENTER_CM_D2
-	}
-};
+	.descr = {MCHP_W25Q128_CM_RD_D0, MCHP_W25Q128_CM_RD_D1, MCHP_W25Q128_CM_RD_D2,
+		  MCHP_W25Q128_ENTER_CM_D0, MCHP_W25Q128_ENTER_CM_D1, MCHP_W25Q128_ENTER_CM_D2}};
 
 /*
  * SAF driver configuration.
@@ -133,21 +128,31 @@ static const struct espi_saf_flash_cfg flash_w25q128 = {
  * by QMSPI driver.
  * Use SAF hardware default TAG map.
  */
+#ifdef CONFIG_ESPI_TAF_XEC_V2
 static const struct espi_saf_cfg saf_cfg1 = {
 	.nflash_devices = 1U,
-	.hwcfg = {
-		.qmspi_freq_hz = 0U,
-		.qmspi_cs_timing = 0U,
-		.qmspi_cpha = 0U,
-		.flags = 0U,
-		.generic_descr = {
-			MCHP_SAF_EXIT_CM_DESCR12, MCHP_SAF_EXIT_CM_DESCR13,
-			MCHP_SAF_POLL_DESCR14, MCHP_SAF_POLL_DESCR15
-		},
-		.tag_map = { 0U, 0U, 0U }
-	},
-	.flash_cfgs = (struct espi_saf_flash_cfg *)&flash_w25q128
-};
+	.hwcfg = {.version = 2U,               /* TODO */
+		  .flags = 0U,                 /* TODO */
+		  .qmspi_cpha = 0U,            /* TODO */
+		  .qmspi_cs_timing = 0U,       /* TODO */
+		  .flash_pd_timeout = 0U,      /* TODO */
+		  .flash_pd_min_interval = 0U, /* TODO */
+		  .generic_descr = {MCHP_SAF_EXIT_CM_DESCR12, MCHP_SAF_EXIT_CM_DESCR13,
+				    MCHP_SAF_POLL_DESCR14, MCHP_SAF_POLL_DESCR15},
+		  .tag_map = {0U, 0U, 0U}},
+	.flash_cfgs = (struct espi_saf_flash_cfg *)&flash_w25q128};
+#else
+static const struct espi_saf_cfg saf_cfg1 = {
+	.nflash_devices = 1U,
+	.hwcfg = {.qmspi_freq_hz = 0U,
+		  .qmspi_cs_timing = 0U,
+		  .qmspi_cpha = 0U,
+		  .flags = 0U,
+		  .generic_descr = {MCHP_SAF_EXIT_CM_DESCR12, MCHP_SAF_EXIT_CM_DESCR13,
+				    MCHP_SAF_POLL_DESCR14, MCHP_SAF_POLL_DESCR15},
+		  .tag_map = {0U, 0U, 0U}},
+	.flash_cfgs = (struct espi_saf_flash_cfg *)&flash_w25q128};
+#endif
 
 /*
  * Example for SAF driver set protection regions API.
@@ -155,28 +160,24 @@ static const struct espi_saf_cfg saf_cfg1 = {
 static const struct espi_saf_pr w25q128_protect_regions[2] = {
 	{
 		.start = 0xe00000U,
-		.size =  0x100000U,
+		.size = 0x100000U,
 		.master_bm_we = (1U << MCHP_SAF_MSTR_HOST_PCH_ME),
 		.master_bm_rd = (1U << MCHP_SAF_MSTR_HOST_PCH_ME),
 		.pr_num = 1U,
-		.flags = MCHP_SAF_PR_FLAG_ENABLE
-			 | MCHP_SAF_PR_FLAG_LOCK,
+		.flags = MCHP_SAF_PR_FLAG_ENABLE | MCHP_SAF_PR_FLAG_LOCK,
 	},
 	{
 		.start = 0xf00000U,
-		.size =  0x100000U,
+		.size = 0x100000U,
 		.master_bm_we = (1U << MCHP_SAF_MSTR_HOST_PCH_LAN),
 		.master_bm_rd = (1U << MCHP_SAF_MSTR_HOST_PCH_LAN),
 		.pr_num = 2U,
-		.flags = MCHP_SAF_PR_FLAG_ENABLE
-			 | MCHP_SAF_PR_FLAG_LOCK,
+		.flags = MCHP_SAF_PR_FLAG_ENABLE | MCHP_SAF_PR_FLAG_LOCK,
 	},
 };
 
-static const struct espi_saf_protection saf_pr_w25q128 = {
-	.nregions = 2U,
-	.pregions = w25q128_protect_regions
-};
+static const struct espi_saf_protection saf_pr_w25q128 = {.nregions = 2U,
+							  .pregions = w25q128_protect_regions};
 
 /*
  * Initialize the local attached SPI flash.
@@ -210,8 +211,7 @@ int spi_saf_init(void)
 	memset(safbuf2, 0x55, 4U);
 
 	spi_cfg.frequency = SAF_TEST_FREQ_HZ;
-	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
-			    | SPI_WORD_SET(8);
+	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8);
 
 	/*
 	 * Use SPI master mode and inform driver the SPI controller hardware
@@ -219,7 +219,10 @@ int spi_saf_init(void)
 	 */
 	jedec_id = 0U;
 	spi_cfg.slave = 0;
-	spi_cfg.cs = NULL;
+	spi_cfg.cs.delay = 0;
+	spi_cfg.cs.gpio.pin = 0;
+	spi_cfg.cs.gpio.dt_flags = 0;
+	spi_cfg.cs.gpio.port = NULL;
 
 	txb.buf = &safbuf;
 	txb.len = 1U;
@@ -290,13 +293,13 @@ int spi_saf_init(void)
 		rx_bufs.buffers = NULL;
 		rx_bufs.count = 0U;
 
-		ret = spi_transceive(qspi_dev,
-				     (const struct spi_config *)&spi_cfg,
+		ret = spi_transceive(qspi_dev, (const struct spi_config *)&spi_cfg,
 				     (const struct spi_buf_set *)&tx_bufs,
 				     (const struct spi_buf_set *)&rx_bufs);
 		if (ret) {
 			LOG_ERR("Send write enable volatile spi_transceive"
-				" failure: error %d", ret);
+				" failure: error %d",
+				ret);
 			return ret;
 		}
 
@@ -312,13 +315,13 @@ int spi_saf_init(void)
 		rx_bufs.buffers = NULL;
 		rx_bufs.count = 0U;
 
-		ret = spi_transceive(qspi_dev,
-				     (const struct spi_config *)&spi_cfg,
+		ret = spi_transceive(qspi_dev, (const struct spi_config *)&spi_cfg,
 				     (const struct spi_buf_set *)&tx_bufs,
 				     (const struct spi_buf_set *)&rx_bufs);
 		if (ret) {
 			LOG_ERR("Write SPI STATUS2 QE=1 spi_transceive"
-				" failure: error %d", ret);
+				" failure: error %d",
+				ret);
 			return ret;
 		}
 
@@ -339,20 +342,21 @@ int spi_saf_init(void)
 		rx_bufs.buffers = (const struct spi_buf *)&rxb;
 		rx_bufs.count = 1U;
 
-		ret = spi_transceive(qspi_dev,
-				     (const struct spi_config *)&spi_cfg,
+		ret = spi_transceive(qspi_dev, (const struct spi_config *)&spi_cfg,
 				     (const struct spi_buf_set *)&tx_bufs,
 				     (const struct spi_buf_set *)&rx_bufs);
 		if (ret) {
 			LOG_ERR("Read SPI STATUS1 spi_transceive"
-				" failure: error %d", ret);
+				" failure: error %d",
+				ret);
 			return ret;
 		}
 
 		spi_status1 = safbuf2[0];
 		if (spi_status1 & SPI_STATUS1_BUSY) {
 			LOG_ERR("SPI BUSY set after write to volatile STATUS2:"
-				" STATUS1=0x%02X", spi_status1);
+				" STATUS1=0x%02X",
+				spi_status1);
 			return ret;
 		}
 
@@ -373,13 +377,13 @@ int spi_saf_init(void)
 		rx_bufs.buffers = (const struct spi_buf *)&rxb;
 		rx_bufs.count = 1U;
 
-		ret = spi_transceive(qspi_dev,
-				     (const struct spi_config *)&spi_cfg,
+		ret = spi_transceive(qspi_dev, (const struct spi_config *)&spi_cfg,
 				     (const struct spi_buf_set *)&tx_bufs,
 				     (const struct spi_buf_set *)&rx_bufs);
 		if (ret) {
 			LOG_ERR("Read 2 of SPI STATUS2  spi_transceive"
-				" failure: error %d", ret);
+				" failure: error %d",
+				ret);
 			return ret;
 		}
 
@@ -406,8 +410,7 @@ int espi_saf_init(void)
 		LOG_INF("eSPI SAF configured successfully!");
 	}
 
-	ret = espi_saf_set_protection_regions(espi_saf_dev,
-					      &saf_pr_w25q128);
+	ret = espi_saf_set_protection_regions(espi_saf_dev, &saf_pr_w25q128);
 	if (ret) {
 		LOG_ERR("Failed to set SAF protection region(s) %d", ret);
 	} else {
@@ -417,8 +420,7 @@ int espi_saf_init(void)
 	return ret;
 }
 
-static int pr_check_range(struct mchp_espi_saf *regs,
-			  const struct espi_saf_pr *pr)
+static int pr_check_range(struct mchp_espi_saf *regs, const struct espi_saf_pr *pr)
 {
 	uint32_t limit;
 
@@ -436,17 +438,14 @@ static int pr_check_range(struct mchp_espi_saf *regs,
 	return 0;
 }
 
-static int pr_check_enable(struct mchp_espi_saf *regs,
-			   const struct espi_saf_pr *pr)
+static int pr_check_enable(struct mchp_espi_saf *regs, const struct espi_saf_pr *pr)
 {
 	if (pr->flags & MCHP_SAF_PR_FLAG_ENABLE) {
-		if (regs->SAF_PROT_RG[pr->pr_num].LIMIT >
-		    regs->SAF_PROT_RG[pr->pr_num].START) {
+		if (regs->SAF_PROT_RG[pr->pr_num].LIMIT > regs->SAF_PROT_RG[pr->pr_num].START) {
 			return 0;
 		}
 	} else {
-		if (regs->SAF_PROT_RG[pr->pr_num].START >
-		    regs->SAF_PROT_RG[pr->pr_num].LIMIT) {
+		if (regs->SAF_PROT_RG[pr->pr_num].START > regs->SAF_PROT_RG[pr->pr_num].LIMIT) {
 			return 0;
 		}
 	}
@@ -454,8 +453,7 @@ static int pr_check_enable(struct mchp_espi_saf *regs,
 	return -2;
 }
 
-static int pr_check_lock(struct mchp_espi_saf *regs,
-			 const struct espi_saf_pr *pr)
+static int pr_check_lock(struct mchp_espi_saf *regs, const struct espi_saf_pr *pr)
 {
 	if (pr->flags & MCHP_SAF_PR_FLAG_LOCK) {
 		if (regs->SAF_PROT_LOCK & BIT(pr->pr_num)) {
@@ -473,16 +471,13 @@ static int pr_check_lock(struct mchp_espi_saf *regs,
 /*
  * NOTE: bit[0] of bit map registers is read-only = 1
  */
-static int pr_check_master_bm(struct mchp_espi_saf *regs,
-			      const struct espi_saf_pr *pr)
+static int pr_check_master_bm(struct mchp_espi_saf *regs, const struct espi_saf_pr *pr)
 {
-	if (regs->SAF_PROT_RG[pr->pr_num].WEBM !=
-	    (pr->master_bm_we | BIT(0))) {
+	if (regs->SAF_PROT_RG[pr->pr_num].WEBM != (pr->master_bm_we | BIT(0))) {
 		return -4;
 	}
 
-	if (regs->SAF_PROT_RG[pr->pr_num].RDBM !=
-	    (pr->master_bm_rd | BIT(0))) {
+	if (regs->SAF_PROT_RG[pr->pr_num].RDBM != (pr->master_bm_rd | BIT(0))) {
 		return -4;
 	}
 
@@ -507,29 +502,25 @@ static int espi_saf_test_pr1(const struct espi_saf_protection *spr)
 	for (size_t n = 0U; n < spr->nregions; n++) {
 		rc = pr_check_range(saf_regs, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u range fail",
-				pr->pr_num);
+			LOG_INF("SAF Protection region %u range fail", pr->pr_num);
 			return rc;
 		}
 
 		rc = pr_check_enable(saf_regs, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u enable fail",
-				pr->pr_num);
+			LOG_INF("SAF Protection region %u enable fail", pr->pr_num);
 			return rc;
 		}
 
 		rc = pr_check_lock(saf_regs, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u lock check fail",
-				pr->pr_num);
+			LOG_INF("SAF Protection region %u lock check fail", pr->pr_num);
 			return rc;
 		}
 
 		rc = pr_check_master_bm(saf_regs, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u Master select fail",
-				pr->pr_num);
+			LOG_INF("SAF Protection region %u Master select fail", pr->pr_num);
 			return rc;
 		}
 
@@ -545,7 +536,7 @@ static int espi_saf_test_pr1(const struct espi_saf_protection *spr)
 static int saf_read(uint32_t spi_addr, uint8_t *dest, int len)
 {
 	int rc, chunk_len, n;
-	struct espi_saf_packet saf_pkt = { 0 };
+	struct espi_saf_packet saf_pkt = {0};
 
 	if ((dest == NULL) || (len < 0)) {
 		return -EINVAL;
@@ -566,8 +557,8 @@ static int saf_read(uint32_t spi_addr, uint8_t *dest, int len)
 		rc = espi_saf_flash_read(espi_saf_dev, &saf_pkt);
 		if (rc != 0) {
 			LOG_INF("%s: error = %d: chunk_len = %d "
-				"spi_addr = %x", __func__, rc, chunk_len,
-				spi_addr);
+				"spi_addr = %x",
+				__func__, rc, chunk_len, spi_addr);
 			return rc;
 		}
 
@@ -587,7 +578,7 @@ static int saf_read(uint32_t spi_addr, uint8_t *dest, int len)
 static int saf_erase_block(uint32_t spi_addr, enum saf_erase_size ersz)
 {
 	int rc;
-	struct espi_saf_packet saf_pkt = { 0 };
+	struct espi_saf_packet saf_pkt = {0};
 
 	switch (ersz) {
 	case SAF_ERASE_4K:
@@ -623,7 +614,7 @@ static int saf_erase_block(uint32_t spi_addr, enum saf_erase_size ersz)
 static int saf_page_prog(uint32_t spi_addr, const uint8_t *src, int progsz)
 {
 	int rc, chunk_len, n;
-	struct espi_saf_packet saf_pkt = { 0 };
+	struct espi_saf_packet saf_pkt = {0};
 
 	if ((src == NULL) || (progsz < 0) || (progsz > 256)) {
 		return -EINVAL;
@@ -647,8 +638,8 @@ static int saf_page_prog(uint32_t spi_addr, const uint8_t *src, int progsz)
 
 		rc = espi_saf_flash_write(espi_saf_dev, &saf_pkt);
 		if (rc != 0) {
-			LOG_INF("%s: error = %d: erase fail spi_addr = 0x%X",
-				__func__, rc, spi_addr);
+			LOG_INF("%s: error = %d: erase fail spi_addr = 0x%X", __func__, rc,
+				spi_addr);
 			return rc;
 		}
 
@@ -660,7 +651,6 @@ static int saf_page_prog(uint32_t spi_addr, const uint8_t *src, int progsz)
 	return progsz;
 }
 
-
 int espi_saf_test1(uint32_t spi_addr)
 {
 	int rc, retries;
@@ -671,11 +661,9 @@ int espi_saf_test1(uint32_t spi_addr)
 	LOG_INF("%s: activate = %d", __func__, rc);
 
 	if (spi_addr & 0xfffU) {
-		LOG_INF("%s: SPI address 0x%08x not 4KB aligned", __func__,
-			spi_addr);
-		spi_addr &= ~(4096U-1U);
-		LOG_INF("%s: Aligned SPI address to 0x%08x", __func__,
-			spi_addr);
+		LOG_INF("%s: SPI address 0x%08x not 4KB aligned", __func__, spi_addr);
+		spi_addr &= ~(4096U - 1U);
+		LOG_INF("%s: Aligned SPI address to 0x%08x", __func__, spi_addr);
 	}
 
 	memset(safbuf, 0x55, sizeof(safbuf));
@@ -687,8 +675,8 @@ int espi_saf_test1(uint32_t spi_addr)
 		/* read 4KB sector at 0 */
 		rc = saf_read(spi_addr, safbuf, 4096);
 		if (rc != 4096) {
-			LOG_INF("%s: error=%d Read 4K sector at 0x%X failed",
-				__func__, rc, spi_addr);
+			LOG_INF("%s: error=%d Read 4K sector at 0x%X failed", __func__, rc,
+				spi_addr);
 			return rc;
 		}
 
@@ -702,23 +690,25 @@ int espi_saf_test1(uint32_t spi_addr)
 
 		if (rc == 0) {
 			LOG_INF("4KB sector at 0x%x is in erased state. "
-				"Continue tests", spi_addr);
+				"Continue tests",
+				spi_addr);
 			erased = true;
 		} else {
 			LOG_INF("4KB sector at 0x%x not in erased state. "
-				"Send 4K erase.", spi_addr);
+				"Send 4K erase.",
+				spi_addr);
 			rc = saf_erase_block(spi_addr, SAF_ERASE_4K);
 			if (rc != 0) {
 				LOG_INF("SAF erase block at 0x%x returned "
-					"error %d", spi_addr, rc);
+					"error %d",
+					spi_addr, rc);
 				return rc;
 			}
 		}
 	}
 
 	if (!erased) {
-		LOG_INF("%s: Could not erase 4KB sector at 0x%08x",
-			__func__, spi_addr);
+		LOG_INF("%s: Could not erase 4KB sector at 0x%08x", __func__, spi_addr);
 		return -1;
 	}
 
@@ -739,11 +729,9 @@ int espi_saf_test1(uint32_t spi_addr)
 	LOG_INF("%s: Program 4KB sector at 0x%X", __func__, saddr);
 
 	while (n < progsz) {
-		rc = saf_page_prog(saddr, (const uint8_t *)src,
-				   (int)chunksz);
+		rc = saf_page_prog(saddr, (const uint8_t *)src, (int)chunksz);
 		if (rc != chunksz) {
-			LOG_INF("saf_page_prog error=%d at 0x%X", rc,
-				saddr);
+			LOG_INF("saf_page_prog error=%d at 0x%X", rc, saddr);
 			break;
 		}
 		saddr += chunksz;
@@ -769,7 +757,7 @@ int espi_saf_test1(uint32_t spi_addr)
 
 	return rc;
 }
-#endif /* CONFIG_ESPI_SAF */
+#endif /* CONFIG_ESPI_TAF */
 
 static void host_warn_handler(uint32_t signal, uint32_t status)
 {
@@ -778,17 +766,14 @@ static void host_warn_handler(uint32_t signal, uint32_t status)
 		LOG_INF("Host reset warning %d", status);
 		if (!IS_ENABLED(CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE)) {
 			LOG_INF("HOST RST ACK %d", status);
-			espi_send_vwire(espi_dev,
-					ESPI_VWIRE_SIGNAL_HOST_RST_ACK,
-					status);
+			espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_HOST_RST_ACK, status);
 		}
 		break;
 	case ESPI_VWIRE_SIGNAL_SUS_WARN:
 		LOG_INF("Host suspend warning %d", status);
 		if (!IS_ENABLED(CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE)) {
 			LOG_INF("SUS ACK %d", status);
-			espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SUS_ACK,
-					status);
+			espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SUS_ACK, status);
 		}
 		break;
 	default:
@@ -797,8 +782,7 @@ static void host_warn_handler(uint32_t signal, uint32_t status)
 }
 
 /* eSPI bus event handler */
-static void espi_reset_handler(const struct device *dev,
-			       struct espi_callback *cb,
+static void espi_reset_handler(const struct device *dev, struct espi_callback *cb,
 			       struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_RESET) {
@@ -808,8 +792,7 @@ static void espi_reset_handler(const struct device *dev,
 }
 
 /* eSPI logical channels enable/disable event handler */
-static void espi_ch_handler(const struct device *dev,
-			    struct espi_callback *cb,
+static void espi_ch_handler(const struct device *dev, struct espi_callback *cb,
 			    struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_EVENT_CHANNEL_READY) {
@@ -845,8 +828,7 @@ static void vwire_handler(const struct device *dev, struct espi_callback *cb,
 			break;
 		case ESPI_VWIRE_SIGNAL_SUS_WARN:
 		case ESPI_VWIRE_SIGNAL_HOST_RST_WARN:
-			host_warn_handler(event.evt_details,
-					      event.evt_data);
+			host_warn_handler(event.evt_details, event.evt_data);
 			break;
 		}
 	}
@@ -871,8 +853,7 @@ static void periph_handler(const struct device *dev, struct espi_callback *cb,
 		espi_remove_callback(espi_dev, &p80_cb);
 		break;
 	default:
-		LOG_INF("%s periph 0x%x [%x]", __func__, periph_type,
-			event.evt_data);
+		LOG_INF("%s periph 0x%x [%x]", __func__, periph_type, event.evt_data);
 	}
 }
 
@@ -900,24 +881,20 @@ int espi_init(void)
 
 	ret = espi_config(espi_dev, &cfg);
 	if (ret) {
-		LOG_ERR("Failed to configure eSPI slave channels:%x err: %d",
-			cfg.channel_caps, ret);
+		LOG_ERR("Failed to configure eSPI target channels:%x err: %d", cfg.channel_caps,
+			ret);
 		return ret;
 	} else {
-		LOG_INF("eSPI slave configured successfully!");
+		LOG_INF("eSPI target configured successfully!");
 	}
 
 	LOG_INF("eSPI test - callbacks initialization... ");
 	espi_init_callback(&espi_bus_cb, espi_reset_handler, ESPI_BUS_RESET);
-	espi_init_callback(&vw_rdy_cb, espi_ch_handler,
-			   ESPI_BUS_EVENT_CHANNEL_READY);
-	espi_init_callback(&vw_cb, vwire_handler,
-			   ESPI_BUS_EVENT_VWIRE_RECEIVED);
-	espi_init_callback(&p80_cb, periph_handler,
-			   ESPI_BUS_PERIPHERAL_NOTIFICATION);
+	espi_init_callback(&vw_rdy_cb, espi_ch_handler, ESPI_BUS_EVENT_CHANNEL_READY);
+	espi_init_callback(&vw_cb, vwire_handler, ESPI_BUS_EVENT_VWIRE_RECEIVED);
+	espi_init_callback(&p80_cb, periph_handler, ESPI_BUS_PERIPHERAL_NOTIFICATION);
 #ifdef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
-			   espi_init_callback(&oob_cb, oob_rx_handler,
-			   ESPI_BUS_EVENT_OOB_RECEIVED);
+	espi_init_callback(&oob_cb, oob_rx_handler, ESPI_BUS_EVENT_OOB_RECEIVED);
 #endif
 	LOG_INF("complete");
 
@@ -965,8 +942,7 @@ static int wait_for_pin(const struct gpio_dt_spec *gpio, uint16_t timeout, int e
 }
 #endif
 
-static int wait_for_vwire(const struct device *espi_dev,
-			  enum espi_vwire_signal signal,
+static int wait_for_vwire(const struct device *espi_dev, enum espi_vwire_signal signal,
 			  uint16_t timeout, uint8_t exp_level)
 {
 	int ret;
@@ -1020,30 +996,30 @@ int espi_handshake(void)
 	int ret;
 
 	LOG_INF("eSPI test - Handshake with eSPI master...");
-	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SUS_WARN,
-			     CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT, 1);
+	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SUS_WARN, CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT,
+			     1);
 	if (ret) {
 		LOG_ERR("SUS_WARN Timeout");
 		return ret;
 	}
 
 	LOG_INF("1st phase completed");
-	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S5,
-			     CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT, 1);
+	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S5, CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT,
+			     1);
 	if (ret) {
 		LOG_ERR("SLP_S5 Timeout");
 		return ret;
 	}
 
-	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S4,
-			     CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT, 1);
+	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S4, CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT,
+			     1);
 	if (ret) {
 		LOG_ERR("SLP_S4 Timeout");
 		return ret;
 	}
 
-	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S3,
-			     CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT, 1);
+	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S3, CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT,
+			     1);
 	if (ret) {
 		LOG_ERR("SLP_S3 Timeout");
 		return ret;
@@ -1051,8 +1027,8 @@ int espi_handshake(void)
 
 	LOG_INF("2nd phase completed");
 
-	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_PLTRST,
-			     CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT, 1);
+	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_PLTRST, CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT,
+			     1);
 	if (ret) {
 		LOG_ERR("PLT_RST Timeout");
 		return ret;
@@ -1068,7 +1044,7 @@ int read_test_block(uint8_t *buf, uint32_t start_flash_adr, uint16_t block_len)
 {
 	uint8_t i = 0;
 	uint32_t flash_addr = start_flash_adr;
-	uint16_t transactions = block_len/MAX_FLASH_REQUEST;
+	uint16_t transactions = block_len / MAX_FLASH_REQUEST;
 	int ret = 0;
 	struct espi_flash_packet pckt;
 
@@ -1095,7 +1071,7 @@ int write_test_block(uint8_t *buf, uint32_t start_flash_adr, uint16_t block_len)
 {
 	uint8_t i = 0;
 	uint32_t flash_addr = start_flash_adr;
-	uint16_t transactions = block_len/MAX_FLASH_REQUEST;
+	uint16_t transactions = block_len / MAX_FLASH_REQUEST;
 	int ret = 0;
 	struct espi_flash_packet pckt;
 
@@ -1131,8 +1107,7 @@ static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 	pattern = 0x99;
 	for (i = 0; i <= blocks; i++) {
 		memset(flash_write_buf, pattern++, sizeof(flash_write_buf));
-		ret = write_test_block(flash_write_buf, flash_addr,
-				       sizeof(flash_write_buf));
+		ret = write_test_block(flash_write_buf, flash_addr, sizeof(flash_write_buf));
 		if (ret) {
 			LOG_ERR("Failed to write to eSPI");
 			return ret;
@@ -1149,20 +1124,17 @@ static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 		memset(flash_write_buf, pattern, sizeof(flash_write_buf));
 		/* Clear last read content */
 		memset(flash_read_buf, 0, sizeof(flash_read_buf));
-		ret = read_test_block(flash_read_buf, flash_addr,
-				      sizeof(flash_read_buf));
+		ret = read_test_block(flash_read_buf, flash_addr, sizeof(flash_read_buf));
 		if (ret) {
 			LOG_ERR("Failed to read from eSPI");
 			return ret;
 		}
 
 		/* Compare buffers  */
-		int cmp = memcmp(flash_write_buf, flash_read_buf,
-				 sizeof(flash_write_buf));
+		int cmp = memcmp(flash_write_buf, flash_read_buf, sizeof(flash_write_buf));
 
 		if (cmp != 0) {
-			LOG_ERR("eSPI read mismmatch at %d expected %x",
-				cmp, pattern);
+			LOG_ERR("eSPI read mismmatch at %d expected %x", cmp, pattern);
 		}
 
 		flash_addr += sizeof(flash_read_buf);
@@ -1173,21 +1145,20 @@ static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 }
 #endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
-#ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
-static void send_slave_bootdone(void)
+#ifndef CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
+static void send_target_bootdone(void)
 {
 	int ret;
 	uint8_t boot_done;
 
-	ret = espi_receive_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE,
-				 &boot_done);
+	ret = espi_receive_vwire(espi_dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, &boot_done);
 	LOG_INF("%s boot_done: %d", __func__, boot_done);
 	if (ret) {
-		LOG_WRN("Fail to retrieve slave boot done");
+		LOG_WRN("Fail to retrieve target boot done");
 	} else if (!boot_done) {
-		/* SLAVE_BOOT_DONE & SLAVE_LOAD_STS have to be sent together */
-		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
-		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
+		/* TARGET_BOOT_DONE & TARGET_LOAD_STS have to be sent together */
+		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, 1);
+		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 1);
 	}
 }
 #endif
@@ -1202,11 +1173,11 @@ int espi_test(void)
 	k_sleep(K_SECONDS(1));
 
 #if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
-	if (!device_is_ready(pwrgd_gpio.port)) {
+	if (!gpio_is_ready_dt(&pwrgd_gpio)) {
 		LOG_ERR("%s: device not ready.", pwrgd_gpio.port->name);
 		return -ENODEV;
 	}
-	if (!device_is_ready(rsm_gpio.port)) {
+	if (!gpio_is_ready_dt(&rsm_gpio)) {
 		LOG_ERR("%s: device not ready.", rsm_gpio.port->name);
 		return -ENODEV;
 	}
@@ -1216,7 +1187,7 @@ int espi_test(void)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_ESPI_SAF
+#ifdef CONFIG_ESPI_TAF
 	if (!device_is_ready(qspi_dev)) {
 		LOG_ERR("%s: device not ready.", qspi_dev->name);
 		return -ENODEV;
@@ -1252,7 +1223,7 @@ int espi_test(void)
 
 	espi_init();
 
-#ifdef CONFIG_ESPI_SAF
+#ifdef CONFIG_ESPI_TAF
 	/*
 	 * eSPI SAF configuration must be after eSPI configuration.
 	 * eSPI SAF EC portal flash tests before EC releases RSMRST# and
@@ -1269,7 +1240,6 @@ int espi_test(void)
 		LOG_ERR("Unable to configure %d:%s", ret, espi_saf_dev->name);
 		return ret;
 	}
-
 
 	ret = espi_saf_test_pr1(&saf_pr_w25q128);
 	if (ret) {
@@ -1301,9 +1271,9 @@ int espi_test(void)
 		return ret;
 	}
 
-#ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
+#ifndef CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
 	/* When automatic acknowledge is disabled to perform lengthy operations
-	 * in the eSPI slave, need to explicitly send slave boot
+	 * in the eSPI target, need to explicitly send target boot virtual wires
 	 */
 	bool vw_ch_sts;
 
@@ -1311,15 +1281,12 @@ int espi_test(void)
 	k_sleep(K_SECONDS(2));
 
 	do {
-		vw_ch_sts = espi_get_channel_status(espi_dev,
-						    ESPI_CHANNEL_VWIRE);
+		vw_ch_sts = espi_get_channel_status(espi_dev, ESPI_CHANNEL_VWIRE);
 		k_busy_wait(100);
 	} while (!vw_ch_sts);
 
-
-	send_slave_bootdone();
+	send_target_bootdone();
 #endif
-
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 	/* Flash operation need to be perform before VW handshake or
@@ -1330,8 +1297,7 @@ int espi_test(void)
 	bool flash_sts;
 
 	do {
-		flash_sts = espi_get_channel_status(espi_dev,
-						    ESPI_CHANNEL_FLASH);
+		flash_sts = espi_get_channel_status(espi_dev, ESPI_CHANNEL_FLASH);
 		k_busy_wait(100);
 	} while (!flash_sts);
 
@@ -1371,7 +1337,8 @@ int espi_test(void)
 	return ret;
 }
 
-void main(void)
+int main(void)
 {
 	espi_test();
+	return 0;
 }

@@ -6,7 +6,8 @@ BQ274XX Sensor Sample
 Overview
 ********
 
-This sample application retrieves all the fuel gauge parameters,
+This sample application retrieves all the fuel gauge parameters:
+
 - Voltage, in volts
 - Average current, in amps
 - Standby current, in amps
@@ -25,7 +26,7 @@ from BQ274XX sensor and prints this information to the UART console.
 Requirements
 ************
 
-- nrf9160_innblue22 board with BQ274XX sensor `BQ274XX Sensor`_
+- innblue22/nrf9160 board with BQ274XX sensor `BQ274XX Sensor`_
 
 Building and Running
 ********************
@@ -34,7 +35,7 @@ Build this sample using the following commands:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/bq274xx
-   :board: nrf9160_innblue22
+   :board: innblue22/nrf9160
    :goals: build flash
 
 References

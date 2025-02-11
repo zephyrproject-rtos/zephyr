@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2015 Intel Corporation.
+ * Copyright (c) 2023 Synopsys, Inc. All rights reserved.
+ * Copyright (c) 2023 Meta Platforms
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,19 +13,6 @@
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_dw);
-
-#if (CONFIG_SPI_LOG_LEVEL == 4)
-#define DBG_COUNTER_INIT()	\
-	uint32_t __cnt = 0
-#define DBG_COUNTER_INC()	\
-	(__cnt++)
-#define DBG_COUNTER_RESULT()	\
-	(__cnt)
-#else
-#define DBG_COUNTER_INIT() {; }
-#define DBG_COUNTER_INC() {; }
-#define DBG_COUNTER_RESULT() 0
-#endif
 
 #include <errno.h>
 
@@ -47,6 +36,10 @@ LOG_MODULE_REGISTER(spi_dw);
 #include "spi_dw.h"
 #include "spi_context.h"
 
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
+
 static inline bool spi_dw_is_slave(struct spi_dw_data *spi)
 {
 	return (IS_ENABLED(CONFIG_SPI_SLAVE) &&
@@ -55,8 +48,8 @@ static inline bool spi_dw_is_slave(struct spi_dw_data *spi)
 
 static void completed(const struct device *dev, int error)
 {
-	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
+	struct spi_context *ctx = &spi->ctx;
 
 	if (error) {
 		goto out;
@@ -69,15 +62,21 @@ static void completed(const struct device *dev, int error)
 
 out:
 	/* need to give time for FIFOs to drain before issuing more commands */
-	while (test_bit_sr_busy(info->regs)) {
+	while (test_bit_sr_busy(dev)) {
 	}
 
 	/* Disabling interrupts */
-	write_imr(DW_SPI_IMR_MASK, info->regs);
+	write_imr(dev, DW_SPI_IMR_MASK);
 	/* Disabling the controller */
-	clear_bit_ssienr(info->regs);
+	clear_bit_ssienr(dev);
 
-	spi_context_cs_control(&spi->ctx, false);
+	if (!spi_dw_is_slave(spi)) {
+		if (spi_cs_is_gpio(ctx->config)) {
+			spi_context_cs_control(ctx, false);
+		} else {
+			write_ser(dev, 0);
+		}
+	}
 
 	LOG_DBG("SPI transaction completed %s error",
 		    error ? "with" : "without");
@@ -92,16 +91,14 @@ static void push_data(const struct device *dev)
 	uint32_t data = 0U;
 	uint32_t f_tx;
 
-	DBG_COUNTER_INIT();
-
 	if (spi_context_rx_on(&spi->ctx)) {
-		f_tx = DW_SPI_FIFO_DEPTH - read_txflr(info->regs) -
-			read_rxflr(info->regs);
+		f_tx = info->fifo_depth - read_txflr(dev) -
+			read_rxflr(dev);
 		if ((int)f_tx < 0) {
 			f_tx = 0U; /* if rx-fifo is full, hold off tx */
 		}
 	} else {
-		f_tx = DW_SPI_FIFO_DEPTH - read_txflr(info->regs);
+		f_tx = info->fifo_depth - read_txflr(dev);
 	}
 
 	while (f_tx) {
@@ -115,12 +112,10 @@ static void push_data(const struct device *dev)
 				data = UNALIGNED_GET((uint16_t *)
 						     (spi->ctx.tx_buf));
 				break;
-#ifndef CONFIG_ARC
 			case 4:
 				data = UNALIGNED_GET((uint32_t *)
 						     (spi->ctx.tx_buf));
 				break;
-#endif
 			}
 		} else if (spi_context_rx_on(&spi->ctx)) {
 			/* No need to push more than necessary */
@@ -136,22 +131,18 @@ static void push_data(const struct device *dev)
 			break;
 		}
 
-		write_dr(data, info->regs);
+		write_dr(dev, data);
 
 		spi_context_update_tx(&spi->ctx, spi->dfs, 1);
 		spi->fifo_diff++;
 
 		f_tx--;
-
-		DBG_COUNTER_INC();
 	}
 
 	if (!spi_context_tx_on(&spi->ctx)) {
 		/* prevents any further interrupts demanding TX fifo fill */
-		write_txftlr(0, info->regs);
+		write_txftlr(dev, 0);
 	}
-
-	LOG_DBG("Pushed: %d", DBG_COUNTER_RESULT());
 }
 
 static void pull_data(const struct device *dev)
@@ -159,12 +150,8 @@ static void pull_data(const struct device *dev)
 	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
 
-	DBG_COUNTER_INIT();
-
-	while (read_rxflr(info->regs)) {
-		uint32_t data = read_dr(info->regs);
-
-		DBG_COUNTER_INC();
+	while (read_rxflr(dev)) {
+		uint32_t data = read_dr(dev);
 
 		if (spi_context_rx_buf_on(&spi->ctx)) {
 			switch (spi->dfs) {
@@ -174,11 +161,9 @@ static void pull_data(const struct device *dev)
 			case 2:
 				UNALIGNED_PUT(data, (uint16_t *)spi->ctx.rx_buf);
 				break;
-#ifndef CONFIG_ARC
 			case 4:
 				UNALIGNED_PUT(data, (uint32_t *)spi->ctx.rx_buf);
 				break;
-#endif
 			}
 		}
 
@@ -186,19 +171,18 @@ static void pull_data(const struct device *dev)
 		spi->fifo_diff--;
 	}
 
-	if (!spi->ctx.rx_len && spi->ctx.tx_len < DW_SPI_FIFO_DEPTH) {
-		write_rxftlr(spi->ctx.tx_len - 1, info->regs);
-	} else if (read_rxftlr(info->regs) >= spi->ctx.rx_len) {
-		write_rxftlr(spi->ctx.rx_len - 1, info->regs);
+	if (!spi->ctx.rx_len && spi->ctx.tx_len < info->fifo_depth) {
+		write_rxftlr(dev, spi->ctx.tx_len - 1);
+	} else if (read_rxftlr(dev) >= spi->ctx.rx_len) {
+		write_rxftlr(dev, spi->ctx.rx_len - 1);
 	}
-
-	LOG_DBG("Pulled: %d", DBG_COUNTER_RESULT());
 }
 
-static int spi_dw_configure(const struct spi_dw_config *info,
+static int spi_dw_configure(const struct device *dev,
 			    struct spi_dw_data *spi,
 			    const struct spi_config *config)
 {
+	const struct spi_dw_config *info = dev->config;
 	uint32_t ctrlr0 = 0U;
 
 	LOG_DBG("%p (prev %p)", config, spi->ctx.config);
@@ -215,12 +199,12 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 
 	/* Verify if requested op mode is relevant to this controller */
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		if (!(info->op_modes & SPI_CTX_RUNTIME_OP_MODE_SLAVE)) {
+		if (!(info->serial_target)) {
 			LOG_ERR("Slave mode not supported");
 			return -ENOTSUP;
 		}
 	} else {
-		if (!(info->op_modes & SPI_CTX_RUNTIME_OP_MODE_MASTER)) {
+		if (info->serial_target) {
 			LOG_ERR("Master mode not supported");
 			return -ENOTSUP;
 		}
@@ -234,8 +218,18 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 		return -EINVAL;
 	}
 
+	if (info->max_xfer_size < SPI_WORD_SIZE_GET(config->operation)) {
+		LOG_ERR("Max xfer size is %u, word size of %u not allowed",
+			info->max_xfer_size, SPI_WORD_SIZE_GET(config->operation));
+		return -ENOTSUP;
+	}
+
 	/* Word size */
-	ctrlr0 |= DW_SPI_CTRLR0_DFS(SPI_WORD_SIZE_GET(config->operation));
+	if (info->max_xfer_size == 32) {
+		ctrlr0 |= DW_SPI_CTRLR0_DFS_32(SPI_WORD_SIZE_GET(config->operation));
+	} else {
+		ctrlr0 |= DW_SPI_CTRLR0_DFS_16(SPI_WORD_SIZE_GET(config->operation));
+	}
 
 	/* Determine how many bytes are required per-frame */
 	spi->dfs = SPI_WS_TO_DFS(SPI_WORD_SIZE_GET(config->operation));
@@ -254,16 +248,15 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 	}
 
 	/* Installing the configuration */
-	write_ctrlr0(ctrlr0, info->regs);
+	write_ctrlr0(dev, ctrlr0);
 
 	/* At this point, it's mandatory to set this on the context! */
 	spi->ctx.config = config;
 
 	if (!spi_dw_is_slave(spi)) {
 		/* Baud rate and Slave select, for master only */
-		write_baudr(SPI_DW_CLK_DIVIDER(info->clock_frequency,
-					       config->frequency), info->regs);
-		write_ser(1 << config->slave, info->regs);
+		write_baudr(dev, SPI_DW_CLK_DIVIDER(info->clock_frequency,
+						    config->frequency));
 	}
 
 	if (spi_dw_is_slave(spi)) {
@@ -316,22 +309,24 @@ error:
 	return UINT32_MAX;
 }
 
-static void spi_dw_update_txftlr(const struct spi_dw_config *info,
+static void spi_dw_update_txftlr(const struct device *dev,
 				 struct spi_dw_data *spi)
 {
-	uint32_t reg_data = DW_SPI_TXFTLR_DFLT;
+	const struct spi_dw_config *info = dev->config;
+	uint32_t dw_spi_txftlr_dflt = (info->fifo_depth * 1) / 2;
+	uint32_t reg_data = dw_spi_txftlr_dflt;
 
 	if (spi_dw_is_slave(spi)) {
 		if (!spi->ctx.tx_len) {
 			reg_data = 0U;
-		} else if (spi->ctx.tx_len < DW_SPI_TXFTLR_DFLT) {
+		} else if (spi->ctx.tx_len < dw_spi_txftlr_dflt) {
 			reg_data = spi->ctx.tx_len - 1;
 		}
 	}
 
 	LOG_DBG("TxFTLR: %u", reg_data);
 
-	write_txftlr(reg_data, info->regs);
+	write_txftlr(dev, reg_data);
 }
 
 static int transceive(const struct device *dev,
@@ -345,6 +340,7 @@ static int transceive(const struct device *dev,
 	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
 	uint32_t tmod = DW_SPI_CTRLR0_TMOD_TX_RX;
+	uint32_t dw_spi_rxftlr_dflt = (info->fifo_depth * 5) / 8;
 	uint32_t reg_data;
 	int ret;
 
@@ -357,7 +353,7 @@ static int transceive(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 	/* Configure */
-	ret = spi_dw_configure(info, spi, config);
+	ret = spi_dw_configure(dev, spi, config);
 	if (ret) {
 		goto out;
 	}
@@ -380,9 +376,9 @@ static int transceive(const struct device *dev,
 			goto out;
 		}
 
-		write_ctrlr1(reg_data, info->regs);
+		write_ctrlr1(dev, reg_data);
 	} else {
-		write_ctrlr1(0, info->regs);
+		write_ctrlr1(dev, 0);
 	}
 
 	if (spi_dw_is_slave(spi)) {
@@ -395,11 +391,11 @@ static int transceive(const struct device *dev,
 	}
 
 	/* Updating TMOD in CTRLR0 register */
-	reg_data = read_ctrlr0(info->regs);
+	reg_data = read_ctrlr0(dev);
 	reg_data &= ~DW_SPI_CTRLR0_TMOD_RESET;
 	reg_data |= tmod;
 
-	write_ctrlr0(reg_data, info->regs);
+	write_ctrlr0(dev, reg_data);
 
 	/* Set buffers info */
 	spi_context_buffers_setup(&spi->ctx, tx_bufs, rx_bufs, spi->dfs);
@@ -407,37 +403,51 @@ static int transceive(const struct device *dev,
 	spi->fifo_diff = 0U;
 
 	/* Tx Threshold */
-	spi_dw_update_txftlr(info, spi);
+	spi_dw_update_txftlr(dev, spi);
 
 	/* Does Rx thresholds needs to be lower? */
-	reg_data = DW_SPI_RXFTLR_DFLT;
+	reg_data = dw_spi_rxftlr_dflt;
 
 	if (spi_dw_is_slave(spi)) {
 		if (spi->ctx.rx_len &&
-		    spi->ctx.rx_len < DW_SPI_RXFTLR_DFLT) {
+		    spi->ctx.rx_len < dw_spi_rxftlr_dflt) {
 			reg_data = spi->ctx.rx_len - 1;
 		}
 	} else {
-		if (spi->ctx.rx_len && spi->ctx.rx_len < DW_SPI_FIFO_DEPTH) {
+		if (spi->ctx.rx_len && spi->ctx.rx_len < info->fifo_depth) {
 			reg_data = spi->ctx.rx_len - 1;
 		}
 	}
 
 	/* Rx Threshold */
-	write_rxftlr(reg_data, info->regs);
+	write_rxftlr(dev, reg_data);
 
 	/* Enable interrupts */
 	reg_data = !rx_bufs ?
 		DW_SPI_IMR_UNMASK & DW_SPI_IMR_MASK_RX :
 		DW_SPI_IMR_UNMASK;
-	write_imr(reg_data, info->regs);
+	write_imr(dev, reg_data);
 
-	spi_context_cs_control(&spi->ctx, true);
+	if (!spi_dw_is_slave(spi)) {
+		/* if cs is not defined as gpio, use hw cs */
+		if (spi_cs_is_gpio(config)) {
+			spi_context_cs_control(&spi->ctx, true);
+		} else {
+			write_ser(dev, BIT(config->slave));
+		}
+	}
 
 	LOG_DBG("Enabling controller");
-	set_bit_ssienr(info->regs);
+	set_bit_ssienr(dev);
 
 	ret = spi_context_wait_for_completion(&spi->ctx);
+
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(&spi->ctx) && !ret) {
+		ret = spi->ctx.recv_frames;
+	}
+#endif /* CONFIG_SPI_SLAVE */
+
 out:
 	spi_context_release(&spi->ctx, ret);
 
@@ -486,14 +496,13 @@ static int spi_dw_release(const struct device *dev,
 
 void spi_dw_isr(const struct device *dev)
 {
-	const struct spi_dw_config *info = dev->config;
 	uint32_t int_status;
 	int error;
 
-	int_status = read_isr(info->regs);
+	int_status = read_isr(dev);
 
-	LOG_DBG("SPI %p int_status 0x%x - (tx: %d, rx: %d)", dev,
-		    int_status, read_txflr(info->regs), read_rxflr(info->regs));
+	LOG_DBG("SPI %p int_status 0x%x - (tx: %d, rx: %d)", dev, int_status,
+		read_txflr(dev), read_rxflr(dev));
 
 	if (int_status & DW_SPI_ISR_ERRORS_MASK) {
 		error = -EIO;
@@ -511,7 +520,7 @@ void spi_dw_isr(const struct device *dev)
 	}
 
 out:
-	clear_interrupts(info->regs);
+	clear_interrupts(dev);
 	completed(dev, error);
 }
 
@@ -529,11 +538,17 @@ int spi_dw_init(const struct device *dev)
 	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
 
+#ifdef CONFIG_PINCTRL
+	pinctrl_apply_state(info->pcfg, PINCTRL_STATE_DEFAULT);
+#endif
+
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 	info->config_func();
 
 	/* Masking interrupt and making sure controller is disabled */
-	write_imr(DW_SPI_IMR_MASK, info->regs);
-	clear_bit_ssienr(info->regs);
+	write_imr(dev, DW_SPI_IMR_MASK);
+	clear_bit_ssienr(dev);
 
 	LOG_DBG("Designware SPI driver initialized on device: %p", dev);
 
@@ -547,259 +562,107 @@ int spi_dw_init(const struct device *dev)
 	return 0;
 }
 
+#define SPI_CFG_IRQS_SINGLE_ERR_LINE(inst)					\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rx_avail, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, rx_avail, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, tx_req, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, tx_req, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, err_int, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, err_int, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, rx_avail, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, tx_req, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, err_int, irq));
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
-void spi_config_0_irq(void);
+#define SPI_CFG_IRQS_MULTIPLE_ERR_LINES(inst)					\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rx_avail, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, rx_avail, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, tx_req, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, tx_req, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, txo_err, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, txo_err, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rxo_err, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, rxo_err, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rxu_err, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, rxu_err, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, mst_err, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, mst_err, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, rx_avail, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, tx_req, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, txo_err, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, rxo_err, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, rxu_err, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, mst_err, irq));
 
-struct spi_dw_data spi_dw_data_port_0 = {
-	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_0, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_0, ctx),
-	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(0), ctx)
-};
-
-#if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
-#define INST_0_SNPS_DESIGNWARE_SPI_CLOCK_FREQ \
-	DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency)
-#else
-#define INST_0_SNPS_DESIGNWARE_SPI_CLOCK_FREQ \
-	DT_INST_PROP(0, clock_frequency)
-#endif
-
-const struct spi_dw_config spi_dw_config_0 = {
-	.regs = DT_INST_REG_ADDR(0),
-	.clock_frequency = INST_0_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
-	.config_func = spi_config_0_irq,
-	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
-};
-
-DEVICE_DT_INST_DEFINE(0, spi_dw_init, NULL,
-		    &spi_dw_data_port_0, &spi_dw_config_0,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &dw_spi_api);
-
-void spi_config_0_irq(void)
-{
-#if DT_NUM_IRQS(DT_DRV_INST(0)) == 1
-#if DT_INST_IRQ_HAS_NAME(0, flags)
-#define INST_0_IRQ_FLAGS DT_INST_IRQ_BY_NAME(0, flags, irq)
-#else
-#define INST_0_IRQ_FLAGS 0
-#endif
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    spi_dw_isr, DEVICE_DT_INST_GET(0),
-		    INST_0_IRQ_FLAGS);
-	irq_enable(DT_INST_IRQN(0));
-#else
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rx_avail, irq),
-		    DT_INST_IRQ_BY_NAME(0, rx_avail_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(0),
-		    DT_INST_IRQ_BY_NAME(0, rx_avail, flags));
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, tx_req, irq),
-		    DT_INST_IRQ_BY_NAME(0, tx_req_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(0),
-		    DT_INST_IRQ_BY_NAME(0, tx_req, flags));
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, err_int, irq),
-		    DT_INST_IRQ_BY_NAME(0, err_int_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(0),
-		    DT_INST_IRQ_BY_NAME(0, err_int, flags));
-
-	irq_enable(DT_INST_IRQ_BY_NAME(0, rx_avail, irq));
-	irq_enable(DT_INST_IRQ_BY_NAME(0, tx_req, irq));
-	irq_enable(DT_INST_IRQ_BY_NAME(0, err_int, irq));
-
-#endif
+#define SPI_DW_IRQ_HANDLER(inst)                                   \
+void spi_dw_irq_config_##inst(void)                                \
+{                                                                  \
+COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 1),              \
+	(IRQ_CONNECT(DT_INST_IRQN(inst),                           \
+		DT_INST_IRQ(inst, priority),                       \
+		spi_dw_isr, DEVICE_DT_INST_GET(inst),              \
+		0);                                                \
+	irq_enable(DT_INST_IRQN(inst));),                          \
+	(COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 3),     \
+		(SPI_CFG_IRQS_SINGLE_ERR_LINE(inst)),		   \
+		(SPI_CFG_IRQS_MULTIPLE_ERR_LINES(inst)))))	   \
 }
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
-void spi_config_1_irq(void);
+#define SPI_DW_INIT(inst)                                                                   \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(inst);))                         \
+	SPI_DW_IRQ_HANDLER(inst);                                                           \
+	static struct spi_dw_data spi_dw_data_##inst = {                                    \
+		SPI_CONTEXT_INIT_LOCK(spi_dw_data_##inst, ctx),                             \
+		SPI_CONTEXT_INIT_SYNC(spi_dw_data_##inst, ctx),                             \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)                     \
+	};                                                                                  \
+	static const struct spi_dw_config spi_dw_config_##inst = {                          \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                    \
+		.clock_frequency = COND_CODE_1(                                             \
+			DT_NODE_HAS_PROP(DT_INST_PHANDLE(inst, clocks), clock_frequency),   \
+			(DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency)),           \
+			(DT_INST_PROP(inst, clock_frequency))),                             \
+		.config_func = spi_dw_irq_config_##inst,                                    \
+		.serial_target = DT_INST_PROP(inst, serial_target),                         \
+		.fifo_depth = DT_INST_PROP(inst, fifo_depth),                               \
+		.max_xfer_size = DT_INST_PROP(inst, max_xfer_size),                         \
+		IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),)) \
+		COND_CODE_1(DT_INST_PROP(inst, aux_reg),                                    \
+			(.read_func = aux_reg_read,                                         \
+			.write_func = aux_reg_write,                                        \
+			.set_bit_func = aux_reg_set_bit,                                    \
+			.clear_bit_func = aux_reg_clear_bit,                                \
+			.test_bit_func = aux_reg_test_bit,),                                \
+			(.read_func = reg_read,                                             \
+			.write_func = reg_write,                                            \
+			.set_bit_func = reg_set_bit,                                        \
+			.clear_bit_func = reg_clear_bit,                                    \
+			.test_bit_func = reg_test_bit,))                                    \
+	};                                                                                  \
+	DEVICE_DT_INST_DEFINE(inst,                                                         \
+		spi_dw_init,                                                                \
+		NULL,                                                                       \
+		&spi_dw_data_##inst,                                                        \
+		&spi_dw_config_##inst,                                                      \
+		POST_KERNEL,                                                                \
+		CONFIG_SPI_INIT_PRIORITY,                                                   \
+		&dw_spi_api);
 
-struct spi_dw_data spi_dw_data_port_1 = {
-	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_1, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_1, ctx),
-	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(1), ctx)
-};
-
-#if DT_NODE_HAS_PROP(DT_INST_PHANDLE(1, clocks), clock_frequency)
-#define INST_1_SNPS_DESIGNWARE_SPI_CLOCK_FREQ \
-	DT_INST_PROP_BY_PHANDLE(1, clocks, clock_frequency)
-#else
-#define INST_1_SNPS_DESIGNWARE_SPI_CLOCK_FREQ \
-	DT_INST_PROP(1, clock_frequency)
-#endif
-
-static const struct spi_dw_config spi_dw_config_1 = {
-	.regs = DT_INST_REG_ADDR(1),
-	.clock_frequency = INST_1_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
-	.config_func = spi_config_1_irq,
-	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
-};
-
-DEVICE_DT_INST_DEFINE(1, spi_dw_init, NULL,
-		    &spi_dw_data_port_1, &spi_dw_config_1,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &dw_spi_api);
-
-void spi_config_1_irq(void)
-{
-#if DT_NUM_IRQS(DT_DRV_INST(1)) == 1
-#if DT_INST_IRQ_HAS_NAME(1, flags)
-#define INST_1_IRQ_FLAGS DT_INST_IRQ_BY_NAME(1, flags, irq)
-#else
-#define INST_1_IRQ_FLAGS 0
-#endif
-	IRQ_CONNECT(DT_INST_IRQN(1),
-		    DT_INST_IRQ(1, priority),
-		    spi_dw_isr, DEVICE_DT_INST_GET(1),
-		    INST_1_IRQ_FLAGS);
-	irq_enable(DT_INST_IRQN(1));
-#else
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, rx_avail, irq),
-		    DT_INST_IRQ_BY_NAME(1, rx_avail_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(1),
-		    DT_INST_IRQ_BY_NAME(1, rx_avail, flags));
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, tx_req, irq),
-		    DT_INST_IRQ_BY_NAME(1, tx_req_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(1),
-		    DT_INST_IRQ_BY_NAME(1, tx_req, flags));
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, err_int, irq),
-		    DT_INST_IRQ_BY_NAME(1, err_int_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(1),
-		    DT_INST_IRQ_BY_NAME(1, err_int, flags));
-
-	irq_enable(DT_INST_IRQ_BY_NAME(1, rx_avail, irq));
-	irq_enable(DT_INST_IRQ_BY_NAME(1, tx_req, irq));
-	irq_enable(DT_INST_IRQ_BY_NAME(1, err_int, irq));
-
-#endif
-}
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(2), okay)
-void spi_config_2_irq(void);
-
-struct spi_dw_data spi_dw_data_port_2 = {
-	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_2, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_2, ctx),
-	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(2), ctx)
-};
-
-#if DT_NODE_HAS_PROP(DT_INST_PHANDLE(2, clocks), clock_frequency)
-#define INST_2_SNPS_DESIGNWARE_SPI_CLOCK_FREQ \
-	DT_INST_PROP_BY_PHANDLE(2, clocks, clock_frequency)
-#else
-#define INST_2_SNPS_DESIGNWARE_SPI_CLOCK_FREQ \
-	DT_INST_PROP(2, clock_frequency)
-#endif
-
-static const struct spi_dw_config spi_dw_config_2 = {
-	.regs = DT_INST_REG_ADDR(2),
-	.clock_frequency = INST_2_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
-	.config_func = spi_config_2_irq,
-	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
-};
-
-DEVICE_DT_INST_DEFINE(2, spi_dw_init, NULL,
-		    &spi_dw_data_port_2, &spi_dw_config_2,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &dw_spi_api);
-
-void spi_config_2_irq(void)
-{
-#if DT_NUM_IRQS(DT_DRV_INST(2)) == 1
-#if DT_INST_IRQ_HAS_NAME(2, flags)
-#define INST_2_IRQ_FLAGS DT_INST_IRQ_BY_NAME(2, flags, irq)
-#else
-#define INST_2_IRQ_FLAGS 0
-#endif
-	IRQ_CONNECT(DT_INST_IRQN(2),
-		    DT_INST_IRQ(2, priority),
-		    spi_dw_isr, DEVICE_DT_INST_GET(2),
-		    INST_2_IRQ_FLAGS);
-	irq_enable(DT_INST_IRQN(2));
-#else
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(2, rx_avail, irq),
-		    DT_INST_IRQ_BY_NAME(2, rx_avail_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(2),
-		    DT_INST_IRQ_BY_NAME(2, rx_avail, flags));
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(2, tx_req, irq),
-		    DT_INST_IRQ_BY_NAME(2, tx_req_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(2),
-		    DT_INST_IRQ_BY_NAME(2, tx_req, flags));
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(2, err_int, irq),
-		    DT_INST_IRQ_BY_NAME(2, err_int_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(2),
-		    DT_INST_IRQ_BY_NAME(2, err_int, flags));
-
-	irq_enable(DT_INST_IRQ_BY_NAME(2, rx_avail, irq));
-	irq_enable(DT_INST_IRQ_BY_NAME(2, tx_req, irq));
-	irq_enable(DT_INST_IRQ_BY_NAME(2, err_int, irq));
-
-#endif
-}
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(2), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(3), okay)
-void spi_config_3_irq(void);
-
-struct spi_dw_data spi_dw_data_port_3 = {
-	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_3, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_3, ctx),
-	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(3), ctx)
-};
-
-#if DT_NODE_HAS_PROP(DT_INST_PHANDLE(3, clocks), clock_frequency)
-#define INST_3_SNPS_DESIGNWARE_SPI_CLOCK_FREQ \
-	DT_INST_PROP_BY_PHANDLE(3, clocks, clock_frequency)
-#else
-#define INST_3_SNPS_DESIGNWARE_SPI_CLOCK_FREQ \
-	DT_INST_PROP(3, clock_frequency)
-#endif
-
-static const struct spi_dw_config spi_dw_config_3 = {
-	.regs = DT_INST_REG_ADDR(3),
-	.clock_frequency = INST_3_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
-	.config_func = spi_config_3_irq,
-	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
-};
-
-DEVICE_DT_INST_DEFINE(3, spi_dw_init, NULL,
-		    &spi_dw_data_port_3, &spi_dw_config_3,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &dw_spi_api);
-
-void spi_config_3_irq(void)
-{
-#if DT_NUM_IRQS(DT_DRV_INST(3)) == 1
-#if DT_INST_IRQ_HAS_NAME(3, flags)
-#define INST_3_IRQ_FLAGS DT_INST_IRQ_BY_NAME(3, flags, irq)
-#else
-#define INST_3_IRQ_FLAGS 0
-#endif
-	IRQ_CONNECT(DT_INST_IRQN(3),
-		    DT_INST_IRQ(3, priority),
-		    spi_dw_isr, DEVICE_DT_INST_GET(3),
-		    INST_3_IRQ_FLAGS);
-	irq_enable(DT_INST_IRQN(3));
-#else
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(3, rx_avail, irq),
-		    DT_INST_IRQ_BY_NAME(3, rx_avail_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(3),
-		    DT_INST_IRQ_BY_NAME(3, rx_avail, flags));
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(3, tx_req, irq),
-		    DT_INST_IRQ_BY_NAME(3, tx_req_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(3),
-		    DT_INST_IRQ_BY_NAME(3, tx_req, flags));
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(3, err_int, irq),
-		    DT_INST_IRQ_BY_NAME(3, err_int_pri, irq),
-		    spi_dw_isr, DEVICE_DT_INST_GET(3),
-		    DT_INST_IRQ_BY_NAME(3, err_int, flags));
-
-	irq_enable(DT_INST_IRQ_BY_NAME(3, rx_avail, irq));
-	irq_enable(DT_INST_IRQ_BY_NAME(3, tx_req, irq));
-	irq_enable(DT_INST_IRQ_BY_NAME(3, err_int, irq));
-
-#endif
-}
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(3), okay) */
+DT_INST_FOREACH_STATUS_OKAY(SPI_DW_INIT)

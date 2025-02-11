@@ -9,19 +9,23 @@
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(bosch_bme680);
 	struct sensor_value temp, press, humidity, gas_res;
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	printf("Device %p name is %s\n", dev, dev->name);
 
+#ifndef CONFIG_COVERAGE
 	while (1) {
+#else
+	for (int i = 0; i < 5; i++) {
+#endif
 		k_sleep(K_MSEC(3000));
 
 		sensor_sample_fetch(dev);
@@ -35,4 +39,5 @@ void main(void)
 				humidity.val1, humidity.val2, gas_res.val1,
 				gas_res.val2);
 	}
+	return 0;
 }

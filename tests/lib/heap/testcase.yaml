@@ -8,6 +8,12 @@
 tests:
   libraries.heap:
     tags: heap
-    platform_exclude: m2gl025_miv qemu_xtensa esp32s2_saola
-    filter: not CONFIG_SOC_NSIM
+    platform_exclude:
+      - m2gl025_miv
+      - qemu_xtensa
+      - esp32s2_saola
+      - esp32s2_lolin_mini
     timeout: 480
+    integration_platforms:
+      - native_sim
+      - qemu_x86

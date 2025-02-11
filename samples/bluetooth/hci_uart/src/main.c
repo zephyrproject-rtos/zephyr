@@ -326,7 +326,7 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 
-static int hci_uart_init(const struct device *unused)
+static int hci_uart_init(void)
 {
 	LOG_DBG("");
 
@@ -354,7 +354,7 @@ static int hci_uart_init(const struct device *unused)
 
 SYS_INIT(hci_uart_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-void main(void)
+int main(void)
 {
 	/* incoming events and data from the controller */
 	static K_FIFO_DEFINE(rx_queue);
@@ -409,4 +409,5 @@ void main(void)
 			LOG_ERR("Failed to send");
 		}
 	}
+	return 0;
 }

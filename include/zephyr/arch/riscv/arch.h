@@ -16,23 +16,25 @@
 #define ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 
 #include <zephyr/arch/riscv/thread.h>
-#include <zephyr/arch/riscv/exp.h>
+#include <zephyr/arch/riscv/exception.h>
 #include <zephyr/arch/riscv/irq.h>
+#include <zephyr/arch/riscv/sys_io.h>
 #include <zephyr/arch/common/sys_bitops.h>
-#include <zephyr/arch/common/sys_io.h>
 #include <zephyr/arch/common/ffs.h>
 #if defined(CONFIG_USERSPACE)
 #include <zephyr/arch/riscv/syscall.h>
 #endif /* CONFIG_USERSPACE */
 #include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>
-#include <soc.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/riscv/csr.h>
-#include <zephyr/arch/riscv/exp.h>
+#include <zephyr/arch/riscv/exception.h>
 
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
 #define ARCH_STACK_PTR_ALIGN  16
+
+#define Z_RISCV_STACK_PMP_ALIGN \
+	MAX(CONFIG_PMP_GRANULARITY, ARCH_STACK_PTR_ALIGN)
 
 #ifdef CONFIG_PMP_STACK_GUARD
 /*
@@ -43,12 +45,18 @@
  * configurable stack wiggle room to execute the fault handling code off of,
  * as well as some guard size to cover possible sudden stack pointer
  * displacement before the fault.
- *
- * The m-mode PMP set is not overly used so no need to force NAPOT.
  */
+#ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
 #define Z_RISCV_STACK_GUARD_SIZE \
-	ROUND_UP(sizeof(z_arch_esf_t) + CONFIG_PMP_STACK_GUARD_MIN_SIZE, \
-		 ARCH_STACK_PTR_ALIGN)
+	Z_POW2_CEIL(MAX(sizeof(struct arch_esf) + CONFIG_PMP_STACK_GUARD_MIN_SIZE, \
+			Z_RISCV_STACK_PMP_ALIGN))
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	Z_RISCV_STACK_GUARD_SIZE
+#else
+#define Z_RISCV_STACK_GUARD_SIZE \
+	ROUND_UP(sizeof(struct arch_esf) + CONFIG_PMP_STACK_GUARD_MIN_SIZE, \
+		 Z_RISCV_STACK_PMP_ALIGN)
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	Z_RISCV_STACK_PMP_ALIGN
+#endif
 
 /* Kernel-only stacks have the following layout if a stack guard is enabled:
  *
@@ -68,7 +76,7 @@
 #define Z_RISCV_STACK_GUARD_SIZE 0
 #endif
 
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+#ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
 /* The privilege elevation stack is located in another area of memory
  * generated at build time by gen_kobject_list.py
  *
@@ -107,11 +115,12 @@
  */
 #define ARCH_THREAD_STACK_RESERVED Z_RISCV_STACK_GUARD_SIZE
 #define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
-		Z_POW2_CEIL(MAX(size, CONFIG_PRIVILEGED_STACK_SIZE))
+	Z_POW2_CEIL(MAX(MAX(size, CONFIG_PRIVILEGED_STACK_SIZE), \
+			Z_RISCV_STACK_PMP_ALIGN))
 #define ARCH_THREAD_STACK_OBJ_ALIGN(size) \
 		ARCH_THREAD_STACK_SIZE_ADJUST(size)
 
-#else /* !CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+#else /* !CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
 
 /* The stack object will contain the PMP guard, the privilege stack, and then
  * the usermode stack buffer in that order:
@@ -130,9 +139,11 @@
  */
 #define ARCH_THREAD_STACK_RESERVED \
 	ROUND_UP(Z_RISCV_STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE, \
-		 ARCH_STACK_PTR_ALIGN)
-
-#endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+		 Z_RISCV_STACK_PMP_ALIGN)
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
+	ROUND_UP(size, Z_RISCV_STACK_PMP_ALIGN)
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_RISCV_STACK_PMP_ALIGN
+#endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
 
 #ifdef CONFIG_64BIT
 #define RV_REGSIZE 8
@@ -288,8 +299,8 @@ static inline uint64_t arch_k_cycle_get_64(void)
 
 #endif /*_ASMLANGUAGE */
 
-#if defined(CONFIG_SOC_FAMILY_RISCV_PRIVILEGE)
-#include <zephyr/arch/riscv/riscv-privilege/asm_inline.h>
+#if defined(CONFIG_RISCV_PRIVILEGED)
+#include <zephyr/arch/riscv/riscv-privileged/asm_inline.h>
 #endif
 
 

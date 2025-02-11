@@ -1,0 +1,246 @@
+/*
+ * Copyright (c) 2019 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l4/stm32l4r9Xi.dtsi>
+#include <st/l4/stm32l4r9z(g-i)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics SensorTile.box board";
+	compatible = "st,sensortile-box";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,bt-c2h-uart = &usart1;
+		zephyr,bt-hci = &spbtle_1s_sensortile_box;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: led {
+			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+
+		green_led: led_2 {
+			gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User PB1";
+			gpios = <&gpiog 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+		led1 = &green_led;
+		sw0 = &user_button;
+		magn0 = &lis2mdl;
+		accel0 = &lis2dw12;
+		accel1 = &lsm6dso;
+		accel2 = &iis3dhhc;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <4>;
+	mul-n = <40>;
+	div-p = <7>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(80)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		drdy-gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+	};
+
+	lps22hh@5d {
+		compatible = "st,lps22hh";
+		reg = <0x5d>;
+		drdy-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pg7 &i2c3_sda_pg8>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	stts751@38 {
+		compatible = "st,stts751";
+		reg = <0x38>;
+		drdy-gpios = <&gpiog 5 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pe13
+		     &spi1_miso_pe14 &spi1_mosi_pe15>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>, <&gpioe 12 GPIO_ACTIVE_LOW>, <&gpioe 10 GPIO_ACTIVE_LOW>;
+
+	lis2dw12: lis2dw12@0 {
+		compatible = "st,lis2dw12";
+		spi-max-frequency = <1000000>;
+		reg = <0>;
+		irq-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
+	};
+
+	lsm6dso: lsm6dso@1 {
+		compatible = "st,lsm6dso";
+		spi-max-frequency = <1000000>;
+		reg = <1>;
+		irq-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+		int-pin = <1>;
+	};
+
+	iis3dhhc: iis3dhhc@2 {
+		compatible = "st,iis3dhhc";
+		spi-max-frequency = <1000000>;
+		reg = <2>;
+		irq-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>, <&gpioe 6 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pd1 &spi2_miso_pd3 &spi2_mosi_pc3>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
+	spbtle_1s_sensortile_box: spbtle-1s@0 {
+		compatible = "st,hci-spi-v2";
+		reg = <0>;
+		reset-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpiod 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		spi-cpha;
+		spi-hold-cs;
+		reset-assert-duration-ms = <6>;
+	};
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pb3
+		     &spi3_miso_pb4 &spi3_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+
+	lis2mdl: lis2mdl@0 {
+		compatible = "st,lis2mdl";
+		spi-max-frequency = <1000000>;
+		reg = <0>;
+	};
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at offset 0x10000 and ending at
+		 * offset 0x1ffff is reserved for use by the application.
+		 */
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(432)>;
+		};
+		slot1_partition: partition@8c000 {
+			label = "image-1";
+			reg = <0x0008C000 DT_SIZE_K(432)>;
+		};
+		scratch_partition: partition@f8000 {
+			label = "image-scratch";
+			reg = <0x000F8000 DT_SIZE_K(24)>;
+		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 DT_SIZE_K(24)>;
+		};
+	};
+};

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WIFI
-	bool "Wi-Fi Drivers"
+	bool "Wi-Fi drivers"
 
 if WIFI
 
@@ -40,5 +40,6 @@ source "drivers/wifi/simplelink/Kconfig.simplelink"
 source "drivers/wifi/eswifi/Kconfig.eswifi"
 source "drivers/wifi/esp_at/Kconfig.esp_at"
 source "drivers/wifi/esp32/Kconfig.esp32"
+source "drivers/wifi/infineon/Kconfig.airoc"
 
 endif # WIFI

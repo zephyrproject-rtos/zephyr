@@ -32,15 +32,19 @@ static struct k_thread rx_data;
 #define CLOSE_PERIOD 15
 
 static const struct can_filter zfilter = {
-	.flags = CAN_FILTER_DATA,
+	.flags = 0U,
 	.id = 0x1,
 	.mask = CAN_STD_ID_MASK
 };
 
-static struct socketcan_filter sfilter;
+static struct socketcan_filter sock_filter;
 
-static void tx(int *can_fd)
+static void tx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	int *can_fd = p1;
 	int fd = POINTER_TO_INT(can_fd);
 	struct can_frame zframe = {0};
 	struct socketcan_frame sframe = {0};
@@ -95,9 +99,11 @@ static int create_socket(const struct socketcan_filter *sfilter)
 	return fd;
 }
 
-static void rx(int *can_fd, int *do_close_period,
-	       const struct socketcan_filter *sfilter)
+static void rx(void *p1, void *p2, void *p3)
 {
+	int *can_fd = p1;
+	int *do_close_period = p2;
+	const struct socketcan_filter *sfilter = p3;
 	int close_period = POINTER_TO_INT(do_close_period);
 	int fd = POINTER_TO_INT(can_fd);
 	struct sockaddr_can can_addr;
@@ -169,7 +175,7 @@ static int setup_socket(void)
 	int fd, rx_fd;
 	int ret;
 
-	socketcan_from_can_filter(&zfilter, &sfilter);
+	socketcan_from_can_filter(&zfilter, &sock_filter);
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS_RAW));
 	if (!iface) {
@@ -194,8 +200,8 @@ static int setup_socket(void)
 		goto cleanup;
 	}
 
-	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &sfilter,
-			 sizeof(sfilter));
+	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &sock_filter,
+			 sizeof(sock_filter));
 	if (ret < 0) {
 		ret = -errno;
 		LOG_ERR("Cannot set CAN sockopt (%d)", ret);
@@ -205,7 +211,7 @@ static int setup_socket(void)
 	/* Delay TX startup so that RX is ready to receive */
 	tx_tid = k_thread_create(&tx_data, tx_stack,
 				 K_THREAD_STACK_SIZEOF(tx_stack),
-				 (k_thread_entry_t)tx, INT_TO_POINTER(fd),
+				 tx, INT_TO_POINTER(fd),
 				 NULL, NULL, PRIORITY, 0, K_SECONDS(1));
 	if (!tx_tid) {
 		ret = -ENOENT;
@@ -221,14 +227,14 @@ static int setup_socket(void)
 	rx_fd = fd;
 
 #if CONFIG_NET_SOCKETS_CAN_RECEIVERS == 2
-	fd = create_socket(&sfilter);
+	fd = create_socket(&sock_filter);
 	if (fd >= 0) {
 		rx_tid = k_thread_create(&rx_data, rx_stack,
 					 K_THREAD_STACK_SIZEOF(rx_stack),
-					 (k_thread_entry_t)rx,
+					 rx,
 					 INT_TO_POINTER(fd),
 					 INT_TO_POINTER(CLOSE_PERIOD),
-					 &sfilter, PRIORITY, 0, K_NO_WAIT);
+					 &sock_filter, PRIORITY, 0, K_NO_WAIT);
 		if (!rx_tid) {
 			ret = -ENOENT;
 			errno = -ret;
@@ -254,7 +260,7 @@ cleanup:
 	return ret;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int ret;
@@ -264,14 +270,14 @@ void main(void)
 	ret = can_set_mode(dev, CAN_MODE_LOOPBACK);
 	if (ret != 0) {
 		LOG_ERR("Cannot set CAN loopback mode (%d)", ret);
-		return;
+		return 0;
 	}
 #endif
 
 	ret = can_start(dev);
 	if (ret != 0) {
 		LOG_ERR("Cannot start CAN controller (%d)", ret);
-		return;
+		return 0;
 	}
 
 	/* Let the device start before doing anything */
@@ -280,8 +286,9 @@ void main(void)
 	fd = setup_socket();
 	if (fd < 0) {
 		LOG_ERR("Cannot start CAN application (%d)", fd);
-		return;
+		return 0;
 	}
 
 	rx(INT_TO_POINTER(fd), NULL, NULL);
+	return 0;
 }

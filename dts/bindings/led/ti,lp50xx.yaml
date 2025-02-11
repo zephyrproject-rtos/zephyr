@@ -1,0 +1,28 @@
+# Copyright (c) 2020 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+include: ["i2c-device.yaml", "led-controller.yaml"]
+
+properties:
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO to use to enable/disable the controller.
+  max_curr_opt:
+    type: boolean
+    description: |
+      If enabled the maximum current output is set to 35 mA (25.5 mA else).
+  log_scale_en:
+    type: boolean
+    description: |
+      If enabled a logarithmic dimming scale curve is used for LED brightness
+      control. A linear dimming scale curve is used else.
+
+child-binding:
+  properties:
+    label:
+      required: true
+    index:
+      required: true
+    color-mapping:
+      required: true

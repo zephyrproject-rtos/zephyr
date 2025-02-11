@@ -1,0 +1,17 @@
+#include "adafruit_neopixel_grid_bff.overlay"
+
+/ {
+	chosen {
+		zephyr,display = &bff_led_matrix;
+	};
+
+	bff_led_matrix: bff-led-matrix {
+		compatible = "led-strip-matrix";
+		status = "okay";
+		led-strips = <&bff_led_strip>;
+		width = <5>;
+		height = <5>;
+		start-from-right;
+		circulative;
+	};
+};

@@ -49,9 +49,11 @@ config USB_DEVICE_SN
 	  Hardware Information Driver (HWINFO).
 
 config USB_COMPOSITE_DEVICE
-	bool "Composite device driver"
+	bool "Use Interface Association Descriptor code triple"
 	help
-	  Enable composite USB device driver.
+	  This option modifies the code triple in the device descriptor
+	  to signal that one of the functions has two or more interfaces and
+	  uses the Interface Association Descriptor.
 
 config USB_MAX_NUM_TRANSFERS
     int "Set number of USB transfer data buffers"
@@ -95,7 +97,7 @@ config USB_NUMOF_EP_WRITE_RETRIES
 
 config USB_DEVICE_SOF
 	bool "Start of Frame processing in events"
-	default y if (USB_DEVICE_AUDIO && NRFX_USBD)
+	default y if (USB_DEVICE_AUDIO && NRF_USBD_COMMON)
 
 config USB_DEVICE_BOS
 	bool "USB Binary Device Object Store (BOS)"
@@ -136,7 +138,7 @@ config USB_WORKQUEUE
 config USB_WORKQUEUE_STACK_SIZE
 	int "USB workqueue stack size"
 	depends on USB_WORKQUEUE
-	default 4096 if COVERAGE
+	default 4096 if COVERAGE_GCOV
 	default 1024
 
 config USB_WORKQUEUE_PRIORITY

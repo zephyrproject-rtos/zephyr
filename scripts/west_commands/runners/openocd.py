@@ -1,6 +1,8 @@
 # Copyright (c) 2017 Linaro Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
+#
+# pylint: disable=duplicate-code
 
 '''Runner for openocd.'''
 
@@ -9,13 +11,14 @@ import re
 
 from os import path
 from pathlib import Path
+from zephyr_ext_common import ZEPHYR_BASE
 
 try:
     from elftools.elf.elffile import ELFFile
 except ImportError:
-    ELFFile = None
+    pass
 
-from runners.core import ZephyrBinaryRunner
+from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 DEFAULT_OPENOCD_TCL_PORT = 6333
 DEFAULT_OPENOCD_TELNET_PORT = 4444
@@ -34,11 +37,19 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
                  gdb_port=DEFAULT_OPENOCD_GDB_PORT,
+                 gdb_client_port=DEFAULT_OPENOCD_GDB_PORT,
                  gdb_init=None, no_load=False,
                  target_handle=DEFAULT_OPENOCD_TARGET_HANDLE):
         super().__init__(cfg)
 
-        support = path.join(cfg.board_dir, 'support')
+        if not path.exists(cfg.board_dir):
+            # try to find the board support in-tree
+            cfg_board_path = path.normpath(cfg.board_dir)
+            _temp_path = cfg_board_path.split("boards/")[1]
+            support = path.join(ZEPHYR_BASE, "boards", _temp_path, 'support')
+        else:
+            support = path.join(cfg.board_dir, 'support')
+
 
         if not config:
             default = path.join(support, 'openocd.cfg')
@@ -63,7 +74,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.openocd_cmd = [cfg.openocd or 'openocd'] + search_args
         # openocd doesn't cope with Windows path names, so convert
         # them to POSIX style just to be sure.
-        self.elf_name = Path(cfg.elf_file).as_posix()
+        self.elf_name = Path(cfg.elf_file).as_posix() if cfg.elf_file else None
         self.pre_init = pre_init or []
         self.reset_halt_cmd = reset_halt_cmd
         self.pre_load = pre_load or []
@@ -75,6 +86,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.tcl_port = tcl_port
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
+        self.gdb_client_port = gdb_client_port
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.tui_arg = ['-tui'] if tui else []
         self.halt_arg = [] if no_halt else ['-c halt']
@@ -89,6 +101,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def name(cls):
         return 'openocd'
+
+    @classmethod
+    def capabilities(cls):
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'})
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -132,6 +148,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             help='openocd telnet port, defaults to 4444')
         parser.add_argument('--gdb-port', default=DEFAULT_OPENOCD_GDB_PORT,
                             help='openocd gdb port, defaults to 3333')
+        parser.add_argument('--gdb-client-port', default=DEFAULT_OPENOCD_GDB_PORT,
+                            help='''openocd gdb client port if multiple ports come
+                            up, defaults to 3333''')
         parser.add_argument('--gdb-init', action='append',
                             help='if given, add GDB init commands')
         parser.add_argument('--no-halt', action='store_true',
@@ -160,8 +179,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             use_elf=args.use_elf, no_halt=args.no_halt, no_init=args.no_init,
             no_targets=args.no_targets, tcl_port=args.tcl_port,
             telnet_port=args.telnet_port, gdb_port=args.gdb_port,
-            gdb_init=args.gdb_init, no_load=args.no_load,
-            target_handle=args.target_handle)
+            gdb_client_port=args.gdb_client_port, gdb_init=args.gdb_init,
+            no_load=args.no_load, target_handle=args.target_handle)
 
     def print_gdbserver_message(self):
         if not self.thread_info_enabled:
@@ -189,22 +208,23 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     def read_version(self):
         self.require(self.openocd_cmd[0])
 
-	# OpenOCD prints in stderr, need redirect to get output
+        # OpenOCD prints in stderr, need redirect to get output
         out = self.check_output([self.openocd_cmd[0], '--version'],
                                 stderr=subprocess.STDOUT).decode()
 
-        return out.split('\n')[0]
+        version_match = re.search(r"Open On-Chip Debugger (\d+.\d+.\d+)", out)
+        version = version_match.group(1).split('.')
+
+        return [self.to_num(i) for i in version]
 
     def supports_thread_info(self):
         # Zephyr rtos was introduced after 0.11.0
-        version_str = self.read_version().split(' ')[3]
-        version = version_str.split('.')
-        (major, minor, rev) = [self.to_num(i) for i in version]
+        (major, minor, rev) = self.read_version()
         return (major, minor, rev) > (0, 11, 0)
 
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
-        if ELFFile is None:
+        if globals().get('ELFFile') is None:
             raise RuntimeError(
                 'elftools missing; please "pip3 install elftools"')
 
@@ -253,12 +273,20 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             post_verify_cmd.append("-c")
             post_verify_cmd.append(i)
 
+        load_image = []
+        if not self.do_verify_only:
+            load_image = ['-c', self.reset_halt_cmd,
+                          '-c', self.load_cmd + ' ' + hex_name]
+
+        verify_image = []
+        if self.do_verify or self.do_verify_only:
+            verify_image = ['-c', self.reset_halt_cmd,
+                            '-c', self.verify_cmd + ' ' + hex_name]
+
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                pre_init_cmd + self.init_arg + self.targets_arg +
-               pre_load_cmd + ['-c', self.reset_halt_cmd,
-                               '-c', self.load_cmd + ' ' + hex_name,
-                               '-c', self.reset_halt_cmd] +
-               ['-c', self.verify_cmd + ' ' + hex_name] +
+               pre_load_cmd + load_image +
+               verify_image +
                post_verify_cmd +
                ['-c', 'reset run',
                 '-c', 'shutdown'])
@@ -329,7 +357,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                       pre_init_cmd + self.init_arg + self.targets_arg +
                       self.halt_arg)
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
-                   ['-ex', 'target extended-remote :{}'.format(self.gdb_port),
+                   ['-ex', 'target extended-remote :{}'.format(self.gdb_client_port),
                     self.elf_name])
         if command == 'debug':
             gdb_cmd.extend(self.load_arg)
@@ -347,6 +375,11 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         for i in self.pre_init:
             pre_init_cmd.append("-c")
             pre_init_cmd.append(i)
+
+        if self.thread_info_enabled and self.supports_thread_info():
+            pre_init_cmd.append("-c")
+            rtos_command = '${} configure -rtos Zephyr'.format(self.target_handle)
+            pre_init_cmd.append(rtos_command)
 
         cmd = (self.openocd_cmd + self.cfg_cmd +
                ['-c', 'tcl_port {}'.format(self.tcl_port),

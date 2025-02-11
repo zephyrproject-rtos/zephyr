@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2023 Efinix Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	model = "efinix,sapphire";
+	compatible = "efinix,sapphire";
+
+	chosen {
+		zephyr,sram = &ram0;
+	};
+
+	ram0: memory@F9000000 {
+		device_type = "memory";
+		reg = <0xF9000000 DT_SIZE_K(192)>;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu@0 {
+			clock-frequency = <100000000>;
+			compatible = "efinix,vexriscv-sapphire", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa = "rv32ima_zicsr_zifencei";
+			status = "okay";
+
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "efinix,sapphire";
+		ranges;
+
+		plic0: interrupt-controller@f8c00000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			reg = <0xf8c00000 0x0400000>;
+			riscv,max-priority = <3>;
+			riscv,ndev = <32>;
+		};
+
+		clint: clint@f8b00000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic 3 &hlic 7>;
+			reg = <0xf8b00000 0x10000>;
+		};
+
+		timer0: timer@e0002800 {
+			compatible = "efinix,sapphire-timer0";
+			reg = <0xe0002800 0x40>;
+			interrupt-parent = <&plic0>;
+			interrupts = <19 0>;
+			status = "disabled";
+		};
+
+		gpio0: gpio@f8015000 {
+			compatible = "efinix,sapphire-gpio";
+			reg = <0xf8015000 0x100>;
+			reg-names = "base";
+			ngpios = <4>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
+		uart0: uart@f8010000 {
+			compatible = "efinix,sapphire-uart0";
+			interrupt-parent = <&plic0>;
+			interrupts = <1 1>;
+			reg = <0xf8010000 0x40>;
+			reg-names = "base";
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+	};
+};

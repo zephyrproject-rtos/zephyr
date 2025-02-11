@@ -90,12 +90,14 @@ static int i2c_emul_transfer(const struct device *dev, struct i2c_msg *msgs, uin
 	__ASSERT_NO_MSG(emul->api);
 	__ASSERT_NO_MSG(emul->api->transfer);
 
-	ret = api->transfer(emul->target, msgs, num_msgs, addr);
-	if (ret) {
-		return ret;
+	if (emul->mock_api != NULL && emul->mock_api->transfer != NULL) {
+		ret = emul->mock_api->transfer(emul->target, msgs, num_msgs, addr);
+		if (ret != -ENOSYS) {
+			return ret;
+		}
 	}
 
-	return 0;
+	return api->transfer(emul->target, msgs, num_msgs, addr);
 }
 
 /**
@@ -125,14 +127,14 @@ int i2c_emul_register(const struct device *dev, struct i2c_emul *emul)
 
 	sys_slist_append(&data->emuls, &emul->node);
 
-	LOG_INF("Register emulator '%s' at I2C addr %02x\n", name, emul->addr);
+	LOG_INF("Register emulator '%s' at I2C addr %02x", name, emul->addr);
 
 	return 0;
 }
 
 /* Device instantiation */
 
-static struct i2c_driver_api i2c_emul_api = {
+static const struct i2c_driver_api i2c_emul_api = {
 	.configure = i2c_emul_configure,
 	.get_config = i2c_emul_get_config,
 	.transfer = i2c_emul_transfer,
@@ -144,8 +146,8 @@ static struct i2c_driver_api i2c_emul_api = {
 	},
 
 #define I2C_EMUL_INIT(n)                                                                           \
-	static const struct emul_link_for_bus emuls_##n[] = { DT_FOREACH_CHILD(                    \
-		DT_DRV_INST(n), EMUL_LINK_AND_COMMA) };                                            \
+	static const struct emul_link_for_bus emuls_##n[] = {                                      \
+		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};                \
 	static struct emul_list_for_bus i2c_emul_cfg_##n = {                                       \
 		.children = emuls_##n,                                                             \
 		.num_children = ARRAY_SIZE(emuls_##n),                                             \

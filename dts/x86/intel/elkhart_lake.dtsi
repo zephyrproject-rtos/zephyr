@@ -16,7 +16,7 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "intel,elkhart_lake";
+			compatible = "intel,elkhart-lake";
 			d-cache-line-size = <64>;
 			reg = <0>;
 		};
@@ -29,21 +29,31 @@
 	};
 
 	ibecc: ibecc {
-	       compatible = "intel,ibecc";
-	       status = "okay";
+		compatible = "intel,ibecc";
+		status = "okay";
 	};
 
 	intc: ioapic@fec00000  {
 		compatible = "intel,ioapic";
+		#address-cells = <1>;
+		#interrupt-cells = <3>;
 		reg = <0xfec00000 0x1000>;
 		interrupt-controller;
+	};
+
+	intc_loapic: loapic@fee00000  {
+		compatible = "intel,loapic";
+		reg = <0xfee00000 0x1000>;
+		interrupt-controller;
 		#interrupt-cells = <3>;
+		#address-cells = <1>;
 	};
 
 	pcie0: pcie0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "intel,pcie";
+		compatible = "pcie-controller";
+		acpi-hid = "PNP0A08";
 		ranges;
 
 		ptm_root0: ptm_root0 {
@@ -187,6 +197,18 @@
 
 			status = "disabled";
 			current-speed = <115200>;
+		};
+
+		smbus0: smbus0 {
+			compatible = "intel,pch-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			vendor-id = <0x8086>;
+			device-id = <0x4b23>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
 		};
 
 		i2c0: i2c0 {
@@ -677,11 +699,22 @@
 			status = "okay";
 		};
 
-		counter: counter@70 {
+		tco_wdt: tco_wdt@400 {
+			compatible = "intel,tco-wdt";
+			reg = <0x0400 0x20>;
+
+			status = "disabled";
+		};
+
+		rtc: counter: rtc@70 {
 			compatible = "motorola,mc146818";
 			reg = <0x70 0x0D 0x71 0x0D>;
+			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			alarms-count = <1>;
 
 			status = "okay";
 		};
+
 	};
 };

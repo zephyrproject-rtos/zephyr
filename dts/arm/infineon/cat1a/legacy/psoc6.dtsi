@@ -1,0 +1,386 @@
+/*
+ * Copyright (c) 2018, Cypress
+ * Copyright (c) 2020-2021, ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+#include "psoc6-pinctrl.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+		};
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <1>;
+		};
+	};
+
+	flash-controller@40250000 {
+			compatible = "cypress,psoc6-flash-controller";
+			reg = <0x40250000 0x10000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+
+			flash0: flash@10000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10000000 DT_SIZE_K(384)>;
+				write-block-size = <4>;
+			};
+
+			flash1: flash@10060000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10060000 DT_SIZE_K(640)>;
+				write-block-size = <4>;
+			};
+	};
+
+	sram0: memory@8000000 {
+		compatible = "mmio-sram";
+		reg = <0x08000000 DT_SIZE_K(140)>;
+	};
+
+	sram1: memory@8023000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x08023000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "SRAM1";
+	};
+
+	sram2: memory@8024000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x08024000 DT_SIZE_K(112)>;
+		zephyr,memory-region = "SRAM2";
+	};
+
+	soc {
+		pinctrl@40310000 {
+			compatible = "infineon,cat1-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x40310000 0x40310000 0x2024>;
+		};
+
+		hsiom: hsiom@40310000 {
+			compatible = "cypress,psoc6-hsiom";
+			reg = <0x40310000 0x2024>;
+			interrupts = <15 1>, <16 1>;
+			status = "disabled";
+		};
+
+		gpio_prt0: gpio@40320000 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320000 0x80>;
+			interrupts = <0 1>;
+			gpio-controller;
+			ngpios = <6>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt1: gpio@40320080 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320080 0x80>;
+			interrupts = <1 1>;
+			gpio-controller;
+			ngpios = <6>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt2: gpio@40320100 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320100 0x80>;
+			interrupts = <2 1>;
+			gpio-controller;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt3: gpio@40320180 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320180 0x80>;
+			interrupts = <3 1>;
+			gpio-controller;
+			ngpios = <6>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt4: gpio@40320200 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320200 0x80>;
+			interrupts = <4 1>;
+			gpio-controller;
+			ngpios = <4>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt5: gpio@40320280 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320280 0x80>;
+			interrupts = <5 1>;
+			gpio-controller;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt6: gpio@40320300 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320300 0x80>;
+			interrupts = <6 1>;
+			gpio-controller;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt7: gpio@40320380 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320380 0x80>;
+			interrupts = <7 1>;
+			gpio-controller;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt8: gpio@40320400 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320400 0x80>;
+			interrupts = <8 1>;
+			gpio-controller;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt9: gpio@40320480 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320480 0x80>;
+			interrupts = <9 1>;
+			gpio-controller;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt10: gpio@40320500 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320500 0x80>;
+			interrupts = <10 1>;
+			gpio-controller;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt11: gpio@40320580 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320580 0x80>;
+			interrupts = <11 1>;
+			gpio-controller;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt12: gpio@40320600 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320600 0x80>;
+			interrupts = <12 1>;
+			gpio-controller;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt13: gpio@40320680 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320680 0x80>;
+			interrupts = <13 1>;
+			gpio-controller;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+		gpio_prt14: gpio@40320700 {
+			compatible = "cypress,psoc6-gpio";
+			reg = <0x40320700 0x80>;
+			interrupts = <14 1>;
+			gpio-controller;
+			ngpios = <2>;
+			#gpio-cells = <2>;
+			#cypress,pin-cells = <2>;
+			status = "disabled";
+		};
+
+		spi0: spi@40610000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40610000 0x10000>;
+			interrupts = <41 6>;
+			peripheral-id = <0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi1: spi@40620000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40620000 0x10000>;
+			interrupts = <42 6>;
+			peripheral-id = <1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi2: spi@40630000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40630000 0x10000>;
+			interrupts = <43 6>;
+			peripheral-id = <2>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi3: spi@40640000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40640000 0x10000>;
+			interrupts = <44 6>;
+			peripheral-id = <3>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi4: spi@40650000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40650000 0x10000>;
+			interrupts = <45 6>;
+			peripheral-id = <4>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi5: spi@40660000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40660000 0x10000>;
+			interrupts = <46 6>;
+			peripheral-id = <5>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi6: spi@40670000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40670000 0x10000>;
+			interrupts = <47 6>;
+			peripheral-id = <6>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi7: spi@40680000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40680000 0x10000>;
+			interrupts = <48 6>;
+			peripheral-id = <7>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi8: spi@40690000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40690000 0x10000>;
+			interrupts = <18 6>;
+			peripheral-id = <8>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		uart0: uart@40610000 {
+			compatible = "cypress,psoc6-uart";
+			reg = <0x40610000 0x10000>;
+			interrupts = <41 6>;
+			peripheral-id = <0>;
+			status = "disabled";
+		};
+		uart1: uart@40620000 {
+			compatible = "cypress,psoc6-uart";
+			reg = <0x40620000 0x10000>;
+			interrupts = <42 6>;
+			peripheral-id = <1>;
+			status = "disabled";
+		};
+		uart2: uart@40630000 {
+			compatible = "cypress,psoc6-uart";
+			reg = <0x40630000 0x10000>;
+			interrupts = <43 6>;
+			peripheral-id = <2>;
+			status = "disabled";
+		};
+		uart3: uart@40640000 {
+			compatible = "cypress,psoc6-uart";
+			reg = <0x40640000 0x10000>;
+			interrupts = <44 6>;
+			peripheral-id = <3>;
+			status = "disabled";
+		};
+		uart4: uart@40650000 {
+			compatible = "cypress,psoc6-uart";
+			reg = <0x40650000 0x10000>;
+			interrupts = <45 6>;
+			peripheral-id = <4>;
+			status = "disabled";
+		};
+		uart5: uart@40660000 {
+			compatible = "cypress,psoc6-uart";
+			reg = <0x40660000 0x10000>;
+			interrupts = <46 6>;
+			peripheral-id = <5>;
+			status = "disabled";
+		};
+		uart6: uart@40670000 {
+			compatible = "cypress,psoc6-uart";
+			reg = <0x40670000 0x10000>;
+			interrupts = <47 6>;
+			peripheral-id = <6>;
+			status = "disabled";
+		};
+		uart7: uart@40680000 {
+			compatible = "cypress,psoc6-uart";
+			reg = <0x40680000 0x10000>;
+			interrupts = <48 6>;
+			peripheral-id = <7>;
+			status = "disabled";
+		};
+		uart8: uart@40690000 {
+			compatible = "cypress,psoc6-uart";
+			reg = <0x40690000 0x10000>;
+			interrupts = <18 6>;
+			peripheral-id = <8>;
+			status = "disabled";
+		};
+
+		uid: device_uid@16000600 {
+			compatible = "cypress,psoc6-uid";
+			reg = <0x16000600 0xb>;
+			status = "okay";
+		};
+	};
+};

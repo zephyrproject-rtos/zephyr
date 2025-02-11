@@ -14,7 +14,7 @@ import os
 import json
 import argparse
 
-def gendata(f, index):
+def gendata(f, index, run_date=None, run_id=None, run_attempt=None):
     with open(f, "r") as j:
         data = json.load(j)
         for t in data['testsuites']:
@@ -22,12 +22,18 @@ def gendata(f, index):
             _grouping = name.split("/")[-1]
             main_group = _grouping.split(".")[0]
             sub_group = _grouping.split(".")[1]
-            t['environment'] = data['environment']
+            env = data['environment']
+            if run_date:
+                env['run_date'] =  run_date
+            if run_id:
+                env['run_id'] =  run_id
+            if run_attempt:
+                env['run_attempt'] =  run_attempt
+            t['environment'] = env
             t['component'] = main_group
             t['sub_component'] = sub_group
             yield {
                     "_index": index,
-                    "_id": t['run_id'],
                     "_source": t
                     }
 
@@ -55,7 +61,7 @@ def main():
     if args.dry_run:
         xx = None
         for f in args.files:
-            xx = gendata(f, index_name)
+            xx = gendata(f, index_name, args.run_date, args.run_id, args.run_attempt)
         for x in xx:
             print(x)
         sys.exit(0)
@@ -69,8 +75,10 @@ def main():
     if args.create_index:
         es.indices.create(index=index_name, mappings=mappings, settings=settings)
     else:
+        if args.run_date:
+            print(f"Setting run date from command line: {args.run_date}")
         for f in args.files:
-            bulk(es, gendata(f, index_name))
+            bulk(es, gendata(f, index_name, args.run_date, args.run_id, args.run_attempt))
 
 
 def parse_args():
@@ -78,6 +86,11 @@ def parse_args():
     parser.add_argument('-y','--dry-run', action="store_true", help='Dry run.')
     parser.add_argument('-c','--create-index', action="store_true", help='Create index.')
     parser.add_argument('-i', '--index', help='index to push to.', required=True)
+    parser.add_argument('-r', '--run-date', help='Run date in ISO format', required=False)
+    parser.add_argument('--run-id', required=False,
+                        help="unique run-id (e.g. from github.run_id context)")
+    parser.add_argument('--run-attempt', required=False,
+                        help="unique run attempt number (e.g. from github.run_attempt context)")
     parser.add_argument('files', metavar='FILE', nargs='+', help='file with test data.')
 
     args = parser.parse_args()

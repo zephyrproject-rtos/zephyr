@@ -5,7 +5,7 @@ config UDC_NRF
 	bool "Nordic Semiconductor USB device controller driver"
 	default y
 	depends on DT_HAS_NORDIC_NRF_USBD_ENABLED
-	select NRFX_USBD
+	select NRF_USBD_COMMON
 	select NRFX_POWER
 	help
 	  nRF USB device controller driver.

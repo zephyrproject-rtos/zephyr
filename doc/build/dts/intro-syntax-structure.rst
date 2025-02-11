@@ -370,7 +370,7 @@ curious about details, see the devicetree specification.
 Additional notes on the above:
 
 - The values in the ``phandle``, ``phandles``, and ``phandle-array`` types are
-  are described further in :ref:`dt-phandles`
+  described further in :ref:`dt-phandles`
 
 - Boolean properties are true if present. They should not have a value.
   A boolean property is only false if it is completely missing in the DTS.
@@ -387,9 +387,11 @@ Additional notes on the above:
   that order.
 
 - Parentheses, arithmetic operators, and bitwise operators are allowed. The
-  ``bar`` property contains a single cell with value 64::
+  ``bar`` property contains a single cell with value 64:
 
-  	bar = <(2 * (1 << 5))>;
+  .. code-block:: devicetree
+
+     bar = <(2 * (1 << 5))>;
 
   Note that the entire expression must be parenthesized.
 
@@ -419,7 +421,7 @@ Additional notes on the above:
 - Array and similar type property values can be split into several ``<>``
   blocks, like this:
 
-  .. code-block:: none
+  .. code-block:: devicetree
 
      foo = <1 2>, <3 4>;                         // Okay for 'type: array'
      foo = <&label1 &label2>, <&label3 &label4>; // Okay for 'type: phandles'
@@ -468,7 +470,7 @@ Using its node label ``uart0``, the same node is set as the value of the chosen
 
 Zephyr sample applications sometimes use aliases to allow overriding the
 particular hardware device used by the application in a generic way. For
-example, :ref:`blinky-sample` uses this to abstract the LED to blink via the
+example, :zephyr:code-sample:`blinky` uses this to abstract the LED to blink via the
 ``led0`` alias.
 
 The ``/chosen`` node's properties are used to configure system- or

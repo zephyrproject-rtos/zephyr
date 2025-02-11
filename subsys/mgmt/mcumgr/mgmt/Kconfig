@@ -25,3 +25,16 @@ config MCUMGR_MGMT_NOTIFICATION_HOOKS
 	  or decline the current operation, by returning false this will signal to the calling
 	  function that the request should be denied, for informal-only notifications or
 	  acceptable, true must be returned by all the registered notification handlers.
+
+config MCUMGR_MGMT_HANDLER_USER_DATA
+	bool "MCUmgr mgmt handler user data support"
+	help
+	  This will add an extra field to the struct mgmt_handler that will allow a user
+	  to pass user_data when the defined handler is called.
+
+config MCUMGR_MGMT_CUSTOM_PAYLOAD
+	bool "MCUmgr custom payload"
+	help
+	  When this config is enabled, a user can use the field `custom_payload` in `mgmt_handler` to
+	  skip the generation of the cbor start- and end byte in `smp_handle_single_payload` and
+	  instead use a user defined payload in SMP messages.

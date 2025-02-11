@@ -8,11 +8,12 @@
 LOG_MODULE_REGISTER(mqtt_azure, LOG_LEVEL_DBG);
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/mqtt.h>
 
 #include <zephyr/sys/printk.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <string.h>
 #include <errno.h>
 
@@ -34,7 +35,7 @@ static struct sockaddr socks5_proxy;
 #endif
 
 /* Socket Poll */
-static struct zsock_pollfd fds[1];
+static struct pollfd fds[1];
 static int nfds;
 
 static bool mqtt_connected;
@@ -50,8 +51,8 @@ static struct net_mgmt_event_callback l4_mgmt_cb;
 #endif
 
 #if defined(CONFIG_DNS_RESOLVER)
-static struct zsock_addrinfo hints;
-static struct zsock_addrinfo *haddr;
+static struct addrinfo hints;
+static struct addrinfo *haddr;
 #endif
 
 static K_SEM_DEFINE(mqtt_start, 0, 1);
@@ -60,11 +61,11 @@ static K_SEM_DEFINE(mqtt_start, 0, 1);
 #define TLS_SNI_HOSTNAME CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME
 #define APP_CA_CERT_TAG 1
 
-static sec_tag_t m_sec_tags[] = {
+static const sec_tag_t m_sec_tags[] = {
 	APP_CA_CERT_TAG,
 };
 
-static uint8_t topic[] = "devices/" MQTT_CLIENTID "/messages/devicebound/#";
+static uint8_t devbound_topic[] = "devices/" MQTT_CLIENTID "/messages/devicebound/#";
 static struct mqtt_topic subs_topic;
 static struct mqtt_subscription_list subs_list;
 
@@ -91,7 +92,7 @@ static void prepare_fds(struct mqtt_client *client)
 		fds[0].fd = client->transport.tls.sock;
 	}
 
-	fds[0].events = ZSOCK_POLLIN;
+	fds[0].events = POLLIN;
 	nfds = 1;
 }
 
@@ -108,7 +109,7 @@ static int wait(int timeout)
 		return rc;
 	}
 
-	rc = zsock_poll(fds, nfds, timeout);
+	rc = poll(fds, nfds, timeout);
 	if (rc < 0) {
 		LOG_ERR("poll error: %d", errno);
 		return -errno;
@@ -128,7 +129,7 @@ static void broker_init(void)
 	net_ipaddr_copy(&broker4->sin_addr,
 			&net_sin(haddr->ai_addr)->sin_addr);
 #else
-	zsock_inet_pton(AF_INET, SERVER_ADDR, &broker4->sin_addr);
+	inet_pton(AF_INET, SERVER_ADDR, &broker4->sin_addr);
 #endif
 
 #if defined(CONFIG_SOCKS)
@@ -136,7 +137,7 @@ static void broker_init(void)
 
 	proxy4->sin_family = AF_INET;
 	proxy4->sin_port = htons(SOCKS5_PROXY_PORT);
-	zsock_inet_pton(AF_INET, SOCKS5_PROXY_ADDR, &proxy4->sin_addr);
+	inet_pton(AF_INET, SOCKS5_PROXY_ADDR, &proxy4->sin_addr);
 #endif
 }
 
@@ -274,31 +275,31 @@ static void subscribe(struct mqtt_client *client)
 	int err;
 
 	/* subscribe */
-	subs_topic.topic.utf8 = topic;
-	subs_topic.topic.size = strlen(topic);
+	subs_topic.topic.utf8 = devbound_topic;
+	subs_topic.topic.size = strlen(devbound_topic);
 	subs_list.list = &subs_topic;
 	subs_list.list_count = 1U;
 	subs_list.message_id = 1U;
 
 	err = mqtt_subscribe(client, &subs_list);
 	if (err) {
-		LOG_ERR("Failed on topic %s", topic);
+		LOG_ERR("Failed on topic %s", devbound_topic);
 	}
 }
 
 static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 {
 	char payload[] = "{id=123}";
-	char topic[] = "devices/" MQTT_CLIENTID "/messages/events/";
-	uint8_t len = strlen(topic);
+	char evt_topic[] = "devices/" MQTT_CLIENTID "/messages/events/";
+	uint8_t len = strlen(evt_topic);
 	struct mqtt_publish_param param;
 
 	param.message.topic.qos = qos;
-	param.message.topic.topic.utf8 = (uint8_t *)topic;
+	param.message.topic.topic.utf8 = (uint8_t *)evt_topic;
 	param.message.topic.topic.size = len;
 	param.message.payload.data = payload;
 	param.message.payload.len = strlen(payload);
-	param.message_id = sys_rand32_get();
+	param.message_id = sys_rand16_get();
 	param.dup_flag = 0U;
 	param.retain_flag = 0U;
 
@@ -324,7 +325,7 @@ static void poll_mqtt(void)
  */
 static uint8_t timeout_for_publish(void)
 {
-	return (10 + sys_rand32_get() % 5);
+	return (10 + sys_rand8_get() % 5);
 }
 
 static void publish_timeout(struct k_work *work)
@@ -398,8 +399,8 @@ static int get_mqtt_broker_addrinfo(void)
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_protocol = 0;
 
-		rc = zsock_getaddrinfo(CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME, "8883",
-				       &hints, &haddr);
+		rc = getaddrinfo(CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME, "8883",
+				 &hints, &haddr);
 		if (rc == 0) {
 			LOG_INF("DNS resolved for %s:%d",
 			CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME,
@@ -508,7 +509,7 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb,
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	int rc;
 
@@ -516,7 +517,7 @@ void main(void)
 
 	rc = tls_init();
 	if (rc) {
-		return;
+		return 0;
 	}
 
 	k_work_init_delayable(&pub_message, publish_timeout);
@@ -530,4 +531,5 @@ void main(void)
 #endif
 
 	connect_to_cloud_and_publish();
+	return 0;
 }

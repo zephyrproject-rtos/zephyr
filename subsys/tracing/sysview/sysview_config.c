@@ -49,7 +49,7 @@ void sys_trace_thread_info(struct k_thread *thread)
 
 static void cbSendSystemDesc(void)
 {
-	SEGGER_SYSVIEW_SendSysDesc("N=ZephyrSysView");
+	SEGGER_SYSVIEW_SendSysDesc("N=" CONFIG_SEGGER_SYSVIEW_APP_NAME);
 	SEGGER_SYSVIEW_SendSysDesc("D=" CONFIG_BOARD " "
 				   CONFIG_SOC_SERIES " " CONFIG_ARCH);
 	SEGGER_SYSVIEW_SendSysDesc("O=Zephyr");

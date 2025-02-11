@@ -1,0 +1,63 @@
+# Copyright (c) 2023 Kurtis Dinelle
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TSL2591
+	bool "OSRAM-AMS TSL2591 light sensor"
+	default y
+	depends on DT_HAS_AMS_TSL2591_ENABLED
+	select I2C
+	help
+	  Enable driver for TSL2591 sensor.
+
+if TSL2591
+config TSL2591_FETCH_WAIT
+	bool "Wait for valid sensor reading before fetch"
+	help
+	  If set, the driver will automatically wait for the duration of an integration cycle
+	  during a fetch call if necessary.
+
+config TSL2591_WARN_SATURATED
+	bool "Warn if sensor is potentially saturated"
+	help
+	  If set, the driver will warn if the sensor ADC is
+	  potentially saturated after a data fetch.
+
+config TSL2591_TRIGGER
+	bool
+
+choice
+	prompt "Trigger mode"
+	default TSL2591_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config TSL2591_TRIGGER_NONE
+	bool "No trigger"
+
+config TSL2591_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select TSL2591_TRIGGER
+
+config TSL2591_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select TSL2591_TRIGGER
+
+endchoice
+
+config TSL2591_THREAD_PRIORITY
+	int "Thread priority"
+	depends on TSL2591_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config TSL2591_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on TSL2591_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # TSL2591

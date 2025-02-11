@@ -1,6 +1,0 @@
-# Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_LITEX_VEXRISCV
-	bool "Board with LiteX/VexRiscV CPU"
-	depends on SOC_RISCV32_LITEX_VEXRISCV

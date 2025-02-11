@@ -1,0 +1,11 @@
+tests:
+  drivers.gpio.reserved_ranges:
+    tags: drivers gpio
+    depends_on: gpio
+    filter: dt_compat_enabled("test-gpio-reserved-ranges")
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64

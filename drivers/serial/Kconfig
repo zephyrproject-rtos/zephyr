@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SERIAL
-	bool "Serial Drivers"
+	bool "Serial drivers"
 	help
 	  Enable options for serial drivers.
 
@@ -76,6 +76,21 @@ config UART_INTERRUPT_DRIVEN
 	  This option enables interrupt support for UART allowing console
 	  input and other UART based drivers.
 
+config UART_EXCLUSIVE_API_CALLBACKS
+	bool "Use exclusive callbacks for multiple APIs"
+	depends on UART_ASYNC_API && UART_INTERRUPT_DRIVEN
+	default y
+	help
+	  When multiple set of APIs support callbacks, enabling this
+	  option will result in only the callbacks of one set of API
+	  being active at a time. Setting a new callback to one set of
+	  API will remove callbacks to other set of APIs. For example,
+	  calling uart_callback_set() would disable the callback
+	  previously set via uart_irq_callback_set().
+
+	  Says yes unless you are absolutely sure you know what you are
+	  doing and promise not to file bug when things do not work out.
+
 config UART_LINE_CTRL
 	bool "Serial Line Control API"
 	help
@@ -110,104 +125,159 @@ config UART_PIPE
 	  data (as contrary to console UART driver) and all aspects of received
 	  protocol data are handled by application provided callback.
 
+config UART_ASYNC_RX_HELPER
+	bool "Helper for UART asynchronous reception"
+	help
+	  Module implements handling of reception of variable length data using
+	  Asynchronous UART API. It can be used in cases where received data processing
+	  is delayed. Module implements zero-copy approach with multiple reception
+	  buffers.
+
+config UART_ASYNC_TO_INT_DRIVEN_API
+	bool
+	select UART_ASYNC_RX_HELPER
+	help
+	  Asynchronous to Interrupt driven adaptation layer. When enabled device
+	  which implements only asynchronous API can be used with interrupt driven
+	  API implemented by the generic adaptation layer.
+
+config UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT
+	int "Receiver timeout (in bauds)"
+	depends on UART_ASYNC_TO_INT_DRIVEN_API
+	default 100
+	help
+	  Receiver inactivity timeout. It is used to calculate timeout in microseconds.
+
 comment "Serial Drivers"
 
-source "drivers/serial/Kconfig.b91"
+rsource "Kconfig.b91"
 
-source "drivers/serial/Kconfig.ns16550"
+rsource "Kconfig.ns16550"
 
-source "drivers/serial/Kconfig.mcux"
+rsource "Kconfig.mcux"
 
-source "drivers/serial/Kconfig.mcux_flexcomm"
+rsource "Kconfig.mcux_flexcomm"
 
-source "drivers/serial/Kconfig.mcux_iuart"
+rsource "Kconfig.mcux_iuart"
 
-source "drivers/serial/Kconfig.mcux_lpsci"
+rsource "Kconfig.mcux_lpsci"
 
-source "drivers/serial/Kconfig.mcux_lpuart"
+rsource "Kconfig.mcux_lpuart"
 
-source "drivers/serial/Kconfig.miv"
+rsource "Kconfig.miv"
 
-source "drivers/serial/Kconfig.imx"
+rsource "Kconfig.imx"
 
-source "drivers/serial/Kconfig.it8xxx2"
+rsource "Kconfig.it8xxx2"
 
-source "drivers/serial/Kconfig.stellaris"
+rsource "Kconfig.stellaris"
 
-source "drivers/serial/Kconfig.native_posix"
+rsource "Kconfig.native_posix"
 
-source "drivers/serial/Kconfig.usart_sam"
+rsource "Kconfig.usart_sam"
 
-source "drivers/serial/Kconfig.uart_sam"
+rsource "Kconfig.uart_sam"
 
-source "drivers/serial/Kconfig.stm32"
+rsource "Kconfig.stm32"
 
-source "drivers/serial/Kconfig.nrfx"
+rsource "Kconfig.nrfx"
 
-source "drivers/serial/Kconfig.altera_jtag"
+rsource "Kconfig.altera_jtag"
 
-source "drivers/serial/Kconfig.cc13xx_cc26xx"
+rsource "Kconfig.cc13xx_cc26xx"
 
-source "drivers/serial/Kconfig.cc32xx"
+rsource "Kconfig.cc32xx"
 
-source "drivers/serial/Kconfig.cmsdk_apb"
+rsource "Kconfig.cmsdk_apb"
 
-source "drivers/serial/Kconfig.sifive"
+rsource "Kconfig.sifive"
 
-source "drivers/serial/Kconfig.esp32"
+rsource "Kconfig.esp32"
 
-source "drivers/serial/Kconfig.gecko"
+rsource "Kconfig.gecko"
 
-source "drivers/serial/Kconfig.leuart_gecko"
+rsource "Kconfig.leuart_gecko"
 
-source "drivers/serial/Kconfig.msp432p4xx"
+rsource "Kconfig.msp432p4xx"
 
-source "drivers/serial/Kconfig.numicro"
+rsource "Kconfig.numicro"
 
-source "drivers/serial/Kconfig.sam0"
+rsource "Kconfig.sam0"
 
-source "drivers/serial/Kconfig.psoc6"
+rsource "Kconfig.psoc6"
 
-source "drivers/serial/Kconfig.pl011"
+rsource "Kconfig.pl011"
 
-source "drivers/serial/Kconfig.ql_usbserialport_s3b"
+rsource "Kconfig.ql_usbserialport_s3b"
 
-source "drivers/serial/Kconfig.rv32m1_lpuart"
+rsource "Kconfig.rv32m1_lpuart"
 
-source "drivers/serial/Kconfig.rpi_pico"
+rsource "Kconfig.rpi_pico"
 
-source "drivers/serial/Kconfig.litex"
+rsource "Kconfig.litex"
 
-source "drivers/serial/Kconfig.rtt"
+rsource "Kconfig.rtt"
 
-source "drivers/serial/Kconfig.xlnx"
+rsource "Kconfig.bt"
 
-source "drivers/serial/Kconfig.xmc4xxx"
+rsource "Kconfig.xlnx"
 
-source "drivers/serial/Kconfig.lpc11u6x"
+rsource "Kconfig.xmc4xxx"
 
-source "drivers/serial/Kconfig.npcx"
+rsource "Kconfig.lpc11u6x"
 
-source "drivers/serial/Kconfig.apbuart"
+rsource "Kconfig.npcx"
 
-source "drivers/serial/Kconfig.rcar"
+rsource "Kconfig.apbuart"
 
-source "drivers/serial/Kconfig.xec"
+rsource "Kconfig.rcar"
 
-source "drivers/serial/Kconfig.gd32"
+rsource "Kconfig.xec"
 
-source "drivers/serial/Kconfig.test"
+rsource "Kconfig.gd32"
 
-source "drivers/serial/Kconfig.neorv32"
+rsource "Kconfig.test"
 
-source "drivers/serial/Kconfig.xen"
+rsource "Kconfig.neorv32"
 
-source "drivers/serial/Kconfig.smartbond"
+rsource "Kconfig.xen"
 
-source "drivers/serial/Kconfig.nxp_s32"
+rsource "Kconfig.ifx_cat1"
 
-source "drivers/serial/Kconfig.cdns"
+rsource "Kconfig.smartbond"
 
-source "drivers/serial/Kconfig.opentitan"
+rsource "Kconfig.nxp_s32"
+
+rsource "Kconfig.cdns"
+
+rsource "Kconfig.opentitan"
+
+rsource "Kconfig.altera"
+
+rsource "Kconfig.hostlink"
+
+rsource "Kconfig.emul"
+
+rsource "Kconfig.native_tty"
+
+rsource "Kconfig.numaker"
+
+rsource "Kconfig.efinix_sapphire"
+
+rsource "Kconfig.sedi"
+
+rsource "Kconfig.max32"
+
+rsource "Kconfig.bcm2711"
+
+rsource "Kconfig.intel_lw"
+
+rsource "Kconfig.renesas_ra"
+
+rsource "Kconfig.ene"
+
+rsource "Kconfig.rzt2m"
+
+source "drivers/serial/Kconfig.renesas_ra8"
 
 endif # SERIAL

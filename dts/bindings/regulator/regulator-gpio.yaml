@@ -1,0 +1,73 @@
+# Copyright 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO-controlled voltage of regulators
+
+  Example of dts node:
+    vccq_sd0: regulator-vccq-sd0 {
+      compatible = "regulator-gpio";
+
+      regulator-name = "SD0 VccQ";
+      regulator-min-microvolt = <1800000>;
+      regulator-max-microvolt = <3300000>;
+
+      enable-gpios = <&gpio5 3 GPIO_ACTIVE_HIGH>;
+
+      gpios = <&gpio5 1 GPIO_ACTIVE_HIGH>, <&gpio5 2 GPIO_ACTIVE_HIGH>;
+      states = <3300000 2>, <2700000 1>, <1800000 0>;
+
+      regulator-boot-on;
+    };
+
+  In the above example, three GPIO pins are used for controlling the regulator:
+    * two of them for controlling voltage;
+    * third for enabling/disabling the regulator.
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+      - regulator-init-microvolt
+      - regulator-min-microvolt
+      - regulator-max-microvolt
+      - regulator-always-on
+      - regulator-boot-on
+      - startup-delay-us
+
+compatible: "regulator-gpio"
+
+properties:
+  regulator-name:
+    required: true
+
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to use to switch voltage.
+
+  states:
+    type: array
+    description: |
+      Selection of available voltages provided by this regulator and matching
+      GPIO configurations to achieve them. If there are no states in the
+      "states" array, use a fixed regulator instead. First value in an array
+      item is voltage in microvolts and the second is GPIO group state value.
+
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO to use to enable/disable the regulator.
+
+      Unlike the gpio property in the Linux bindings this array must provide
+      the GPIO polarity and open-drain status in the phandle selector. The
+      Linux enable-active-high and gpio-open-drain properties are not valid
+      for Zephyr devicetree files. Moreover, the driver isn't capable of
+      working with more than one GPIO and this property does not have a state
+      array. The driver simply sets or clears the appropriate GPIO bit when
+      it is requested to enable or disable the regulator.
+
+      Example:
+        enable-gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>;

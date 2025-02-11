@@ -1,0 +1,186 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    When setting the accel-range, accel-odr, gyro-range, gyro-odr properties in
+    a .dts or .dtsi file you may include lsm6dsv16x.h and use the macros
+    defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
+
+    lsm6dsv16x: lsm6dsv16x@0 {
+      ...
+
+      accel-range = <LSM6DSV16X_DT_FS_8G>;
+      accel-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+      gyro-range = <LSM6DSV16X_DT_FS_4000DPS>;
+      gyro-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+    };
+
+include: sensor-device.yaml
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      INT1 pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      INT2 pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  drdy-pin:
+    type: int
+    default: 1
+    enum:
+      - 1 # drdy is generated from INT1
+      - 2 # drdy is generated from INT2
+    description: |
+      Select DRDY pin number (1 or 2).
+
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 1 which is the
+      configuration at power-up.
+
+  accel-range:
+    type: int
+    default: 0
+    description: |
+      Range in g. Default is power-up configuration.
+
+      - 0 # LSM6DSV16X_DT_FS_2G  (0.061 mg/LSB)
+      - 1 # LSM6DSV16X_DT_FS_4G  (0.122 mg/LSB)
+      - 2 # LSM6DSV16X_DT_FS_8G  (0.244 mg/LSB)
+      - 3 # LSM6DSV16X_DT_FS_16G (0.488 mg/LSB)
+
+    enum: [0, 1, 2, 3]
+
+  accel-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dsv16x_data_rate_t enumerative in hal/st
+      module. Please note that this values will not change the operating mode, which will remain
+      High Performance (device default)
+      Default is power-up configuration.
+
+      - 0x00 # LSM6DSV16X_DT_ODR_OFF
+      - 0x01 # LSM6DSV16X_DT_ODR_AT_1Hz875
+      - 0x02 # LSM6DSV16X_DT_ODR_AT_7Hz5
+      - 0x03 # LSM6DSV16X_DT_ODR_AT_15Hz
+      - 0x04 # LSM6DSV16X_DT_ODR_AT_30Hz
+      - 0x05 # LSM6DSV16X_DT_ODR_AT_60Hz
+      - 0x06 # LSM6DSV16X_DT_ODR_AT_120Hz
+      - 0x07 # LSM6DSV16X_DT_ODR_AT_240Hz
+      - 0x08 # LSM6DSV16X_DT_ODR_AT_480Hz
+      - 0x09 # LSM6DSV16X_DT_ODR_AT_960Hz
+      - 0x0a # LSM6DSV16X_DT_ODR_AT_1920Hz
+      - 0x0b # LSM6DSV16X_DT_ODR_AT_3840Hz
+      - 0x0c # LSM6DSV16X_DT_ODR_AT_7680Hz
+      - 0x13 # LSM6DSV16X_DT_ODR_HA01_AT_15Hz625
+      - 0x14 # LSM6DSV16X_DT_ODR_HA01_AT_31Hz25
+      - 0x15 # LSM6DSV16X_DT_ODR_HA01_AT_62Hz5
+      - 0x16 # LSM6DSV16X_DT_ODR_HA01_AT_125Hz
+      - 0x17 # LSM6DSV16X_DT_ODR_HA01_AT_250Hz
+      - 0x18 # LSM6DSV16X_DT_ODR_HA01_AT_500Hz
+      - 0x19 # LSM6DSV16X_DT_ODR_HA01_AT_1000Hz
+      - 0x1a # LSM6DSV16X_DT_ODR_HA01_AT_2000Hz
+      - 0x1b # LSM6DSV16X_DT_ODR_HA01_AT_4000Hz
+      - 0x1c # LSM6DSV16X_DT_ODR_HA01_AT_8000Hz
+      - 0x23 # LSM6DSV16X_DT_ODR_HA02_AT_12Hz5
+      - 0x24 # LSM6DSV16X_DT_ODR_HA02_AT_25Hz
+      - 0x25 # LSM6DSV16X_DT_ODR_HA02_AT_50Hz
+      - 0x26 # LSM6DSV16X_DT_ODR_HA02_AT_100Hz
+      - 0x27 # LSM6DSV16X_DT_ODR_HA02_AT_200Hz
+      - 0x28 # LSM6DSV16X_DT_ODR_HA02_AT_400Hz
+      - 0x29 # LSM6DSV16X_DT_ODR_HA02_AT_800Hz
+      - 0x2a # LSM6DSV16X_DT_ODR_HA02_AT_1600Hz
+      - 0x2b # LSM6DSV16X_DT_ODR_HA02_AT_3200Hz
+      - 0x2c # LSM6DSV16X_DT_ODR_HA02_AT_6400Hz
+
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+           0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c,
+           0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c]
+
+  gyro-range:
+    type: int
+    default: 0
+    description: |
+      Range in dps. Default is power-up configuration.
+
+      - 0x0 # LSM6DSV16X_DT_FS_125DPS  (4.375 mdps/LSB)
+      - 0x1 # LSM6DSV16X_DT_FS_250DPS  (8.75 mdps/LSB)
+      - 0x2 # LSM6DSV16X_DT_FS_500DPS  (17.50 mdps/LSB)
+      - 0x3 # LSM6DSV16X_DT_FS_1000DPS (35 mdps/LSB)
+      - 0x4 # LSM6DSV16X_DT_FS_2000DPS (70 mdps/LSB)
+      - 0xc # LSM6DSV16X_DT_FS_4000DPS (140 mdps/LSB)
+
+    enum: [0x0, 0x1, 0x2, 0x3, 0x4, 0xc]
+
+  gyro-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default gyro output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dsv16x_data_rate_t enumerative in hal/st
+      module. Please note that these values will not change the operating mode, which will remain
+      High Performance (device default). Moreover, the values here which will be selected in the
+      DT are the only way to specify the odr accuracy even at runtime with
+      SENSOR_ATTR_SAMPLING_FREQUENCY.
+      Default is power-up configuration.
+
+      - 0x00 # LSM6DSV16X_DT_ODR_OFF
+      - 0x01 # LSM6DSV16X_DT_ODR_AT_1Hz875
+      - 0x02 # LSM6DSV16X_DT_ODR_AT_7Hz5
+      - 0x03 # LSM6DSV16X_DT_ODR_AT_15Hz
+      - 0x04 # LSM6DSV16X_DT_ODR_AT_30Hz
+      - 0x05 # LSM6DSV16X_DT_ODR_AT_60Hz
+      - 0x06 # LSM6DSV16X_DT_ODR_AT_120Hz
+      - 0x07 # LSM6DSV16X_DT_ODR_AT_240Hz
+      - 0x08 # LSM6DSV16X_DT_ODR_AT_480Hz
+      - 0x09 # LSM6DSV16X_DT_ODR_AT_960Hz
+      - 0x0a # LSM6DSV16X_DT_ODR_AT_1920Hz
+      - 0x0b # LSM6DSV16X_DT_ODR_AT_3840Hz
+      - 0x0c # LSM6DSV16X_DT_ODR_AT_7680Hz
+      - 0x13 # LSM6DSV16X_DT_ODR_HA01_AT_15Hz625
+      - 0x14 # LSM6DSV16X_DT_ODR_HA01_AT_31Hz25
+      - 0x15 # LSM6DSV16X_DT_ODR_HA01_AT_62Hz5
+      - 0x16 # LSM6DSV16X_DT_ODR_HA01_AT_125Hz
+      - 0x17 # LSM6DSV16X_DT_ODR_HA01_AT_250Hz
+      - 0x18 # LSM6DSV16X_DT_ODR_HA01_AT_500Hz
+      - 0x19 # LSM6DSV16X_DT_ODR_HA01_AT_1000Hz
+      - 0x1a # LSM6DSV16X_DT_ODR_HA01_AT_2000Hz
+      - 0x1b # LSM6DSV16X_DT_ODR_HA01_AT_4000Hz
+      - 0x1c # LSM6DSV16X_DT_ODR_HA01_AT_8000Hz
+      - 0x23 # LSM6DSV16X_DT_ODR_HA02_AT_12Hz5
+      - 0x24 # LSM6DSV16X_DT_ODR_HA02_AT_25Hz
+      - 0x25 # LSM6DSV16X_DT_ODR_HA02_AT_50Hz
+      - 0x26 # LSM6DSV16X_DT_ODR_HA02_AT_100Hz
+      - 0x27 # LSM6DSV16X_DT_ODR_HA02_AT_200Hz
+      - 0x28 # LSM6DSV16X_DT_ODR_HA02_AT_400Hz
+      - 0x29 # LSM6DSV16X_DT_ODR_HA02_AT_800Hz
+      - 0x2a # LSM6DSV16X_DT_ODR_HA02_AT_1600Hz
+      - 0x2b # LSM6DSV16X_DT_ODR_HA02_AT_3200Hz
+      - 0x2c # LSM6DSV16X_DT_ODR_HA02_AT_6400Hz
+
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+           0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c,
+           0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c]
+
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.

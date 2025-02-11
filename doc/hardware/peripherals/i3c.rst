@@ -1,7 +1,7 @@
 .. _i3c_api:
 
-I3C
-###
+Improved Inter-Integrated Circuit (I3C) Bus
+###########################################
 
 I3C (Improved Inter-Integrated Circuit) is a two-signal shared
 peripheral interface bus.  Devices on the bus can operate in
@@ -303,7 +303,7 @@ the controller.
 I\ :sup:`2`\ C Devices under I3C Bus
 ====================================
 
-Since I3C is backware compatible with I\ :sup:`2`\ C, the I3C controller
+Since I3C is backward compatible with I\ :sup:`2`\ C, the I3C controller
 API can accommodate I2C API calls without modifications if the controller
 device driver implements the I2C API. This has the advantage of using
 existing I2C devices without any modifications to their device drivers.

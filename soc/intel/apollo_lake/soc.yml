@@ -1,0 +1,4 @@
+vendor: intel
+comment: "Intel Apollo Lake SoC"
+socs:
+- name: apollo_lake

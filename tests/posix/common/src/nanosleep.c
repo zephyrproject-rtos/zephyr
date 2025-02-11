@@ -4,224 +4,282 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
 #include <errno.h>
-#include <zephyr/posix/time.h>
 #include <stdint.h>
+#include <time.h>
+
 #include <zephyr/sys_clock.h>
+#include <zephyr/ztest.h>
 
-/** req and rem are both NULL */
-ZTEST(posix_apis, test_nanosleep_NULL_NULL)
+#define SELECT_NANOSLEEP       1
+#define SELECT_CLOCK_NANOSLEEP 0
+
+static inline int select_nanosleep(int selection, clockid_t clock_id, int flags,
+				   const struct timespec *rqtp, struct timespec *rmtp)
 {
-	int r = nanosleep(NULL, NULL);
-
-	zassert_equal(r, -1, "actual: %d expected: %d", r, -1);
-	zassert_equal(errno, EFAULT, "actual: %d expected: %d", errno, EFAULT);
+	if (selection == SELECT_NANOSLEEP) {
+		return nanosleep(rqtp, rmtp);
+	}
+	return clock_nanosleep(clock_id, flags, rqtp, rmtp);
 }
 
-/**
- * req is NULL, rem is non-NULL (all-zero)
- *
- * Expect rem to be the same when function returns
- */
-ZTEST(posix_apis, test_nanosleep_NULL_notNULL)
+static inline uint64_t cycle_get_64(void)
+{
+	if (IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
+		return k_cycle_get_64();
+	} else {
+		return k_cycle_get_32();
+	}
+}
+
+static void common_errors(int selection, clockid_t clock_id, int flags)
 {
 	struct timespec rem = {};
-
-	errno = 0;
-	int r = nanosleep(NULL, &rem);
-
-	zassert_equal(r, -1, "actual: %d expected: %d", r, -1);
-	zassert_equal(errno, EFAULT, "actual: %d expected: %d",
-	errno, EFAULT);
-	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d",
-	rem.tv_sec, 0);
-	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d",
-	rem.tv_nsec, 0);
-}
-
-/**
- * req is non-NULL (all-zero), rem is NULL
- *
- * Expect req to be the same when function returns
- */
-ZTEST(posix_apis, test_nanosleep_notNULL_NULL)
-{
 	struct timespec req = {};
 
-	errno = 0;
-	int r = nanosleep(&req, NULL);
+	/*
+	 * invalid parameters
+	 */
+	zassert_equal(select_nanosleep(selection, clock_id, flags, NULL, NULL), -1);
+	zassert_equal(errno, EFAULT);
 
-	zassert_equal(req.tv_sec, 0, "actual: %d expected: %d",
-		req.tv_sec, 0);
-	zassert_equal(req.tv_nsec, 0, "actual: %d expected: %d",
-		req.tv_nsec, 0);
-	zassert_equal(r, 0, "actual: %d expected: %d", r, -1);
-	zassert_equal(errno, 0, "actual: %d expected: %d", errno, 0);
+	/* NULL request */
+	errno = 0;
+	zassert_equal(select_nanosleep(selection, clock_id, flags, NULL, &rem), -1);
+	zassert_equal(errno, EFAULT);
+	/* Expect rem to be the same when function returns */
+	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
+	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
+
+	/* negative times */
+	errno = 0;
+	req = (struct timespec){.tv_sec = -1, .tv_nsec = 0};
+	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	errno = 0;
+	req = (struct timespec){.tv_sec = 0, .tv_nsec = -1};
+	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	errno = 0;
+	req = (struct timespec){.tv_sec = -1, .tv_nsec = -1};
+	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* nanoseconds too high */
+	errno = 0;
+	req = (struct timespec){.tv_sec = 0, .tv_nsec = 1000000000};
+	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	/*
+	 * Valid parameters
+	 */
+	errno = 0;
+
+	/* Happy path, plus make sure the const input is unmodified */
+	req = (struct timespec){.tv_sec = 1, .tv_nsec = 1};
+	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), 0);
+	zassert_equal(errno, 0);
+	zassert_equal(req.tv_sec, 1);
+	zassert_equal(req.tv_nsec, 1);
+
+	/* Sleep for 0.0 s. Expect req & rem to be the same when function returns */
+	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, &rem), 0);
+	zassert_equal(errno, 0);
+	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
+	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
+
+	/*
+	 * req and rem point to the same timespec
+	 *
+	 * Normative spec says they may be the same.
+	 * Expect rem to be zero after returning.
+	 */
+	req = (struct timespec){.tv_sec = 0, .tv_nsec = 1};
+	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, &req), 0);
+	zassert_equal(errno, 0);
+	zassert_equal(req.tv_sec, 0, "actual: %d expected: %d", req.tv_sec, 0);
+	zassert_equal(req.tv_nsec, 0, "actual: %d expected: %d", req.tv_nsec, 0);
 }
 
-/**
- * req is non-NULL (all-zero), rem is non-NULL (all-zero)
- *
- * Expect req & rem to be the same when function returns
- */
-ZTEST(posix_apis, test_nanosleep_notNULL_notNULL)
+ZTEST(nanosleep, test_nanosleep_errors_errno)
 {
-	struct timespec req = {};
+	common_errors(SELECT_NANOSLEEP, CLOCK_REALTIME, 0);
+}
+
+ZTEST(nanosleep, test_clock_nanosleep_errors_errno)
+{
 	struct timespec rem = {};
+	struct timespec req = {};
 
-	errno = 0;
-	int r = nanosleep(&req, &rem);
+	common_errors(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME);
 
-	zassert_equal(r, 0, "actual: %d expected: %d", r, -1);
-	zassert_equal(errno, 0, "actual: %d expected: %d", errno, 0);
-	zassert_equal(req.tv_sec, 0, "actual: %d expected: %d",
-		req.tv_sec, 0);
-	zassert_equal(req.tv_nsec, 0, "actual: %d expected: %d",
-		req.tv_nsec, 0);
-	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d",
-		rem.tv_sec, 0);
-	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d",
-		rem.tv_nsec, 0);
+	/* Absolute timeout in the past. */
+	clock_gettime(CLOCK_MONOTONIC, &req);
+	zassert_equal(clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &req, &rem), 0);
+	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
+	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
+
+	/* Absolute timeout in the past relative to the realtime clock. */
+	clock_gettime(CLOCK_REALTIME, &req);
+	zassert_equal(clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &req, &rem), 0);
+	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
+	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
 }
 
 /**
- * req and rem point to the same timespec
+ * @brief Check that a call to nanosleep has yielded execution for some minimum time.
  *
- * Normative spec says they may be the same.
- * Expect rem to be zero after returning.
+ * Check that the actual time slept is >= the total time specified by @p s (in seconds) and
+ * @p ns (in nanoseconds).
+ *
+ * @note The time specified by @p s and @p ns is assumed to be absolute (i.e. a time-point)
+ * when @p selection is set to @ref SELECT_CLOCK_NANOSLEEP. The time is assumed to be relative
+ * when @p selection is set to @ref SELECT_NANOSLEEP.
+ *
+ * @param selection Either @ref SELECT_CLOCK_NANOSLEEP or @ref SELECT_NANOSLEEP
+ * @param clock_id The clock to test (e.g. @ref CLOCK_MONOTONIC or @ref CLOCK_REALTIME)
+ * @param flags Flags to pass to @ref clock_nanosleep
+ * @param s Partial lower bound for yielded time (in seconds)
+ * @param ns Partial lower bound for yielded time (in nanoseconds)
  */
-ZTEST(posix_apis, test_nanosleep_req_is_rem)
+static void common_lower_bound_check(int selection, clockid_t clock_id, int flags, const uint32_t s,
+				     uint32_t ns)
 {
-	struct timespec ts = {0, 1};
-
-	errno = 0;
-	int r = nanosleep(&ts, &ts);
-
-	zassert_equal(r, 0, "actual: %d expected: %d", r, -1);
-	zassert_equal(errno, 0, "actual: %d expected: %d", errno, 0);
-	zassert_equal(ts.tv_sec, 0, "actual: %d expected: %d",
-		ts.tv_sec, 0);
-	zassert_equal(ts.tv_nsec, 0, "actual: %d expected: %d",
-		ts.tv_nsec, 0);
-}
-
-/** req tv_sec is -1 */
-ZTEST(posix_apis, test_nanosleep_n1_0)
-{
-	struct timespec req = {-1, 0};
-
-	errno = 0;
-	int r = nanosleep(&req, NULL);
-
-	zassert_equal(r, -1, "actual: %d expected: %d", r, -1);
-	zassert_equal(errno, EINVAL, "actual: %d expected: %d", errno, EFAULT);
-}
-
-/** req tv_nsec is -1 */
-ZTEST(posix_apis, test_nanosleep_0_n1)
-{
-	struct timespec req = {0, -1};
-
-	errno = 0;
-	int r = nanosleep(&req, NULL);
-
-	zassert_equal(r, -1, "actual: %d expected: %d", r, -1);
-	zassert_equal(errno, EINVAL, "actual: %d expected: %d", errno, EFAULT);
-}
-
-/** req tv_sec and tv_nsec are both -1 */
-ZTEST(posix_apis, test_nanosleep_n1_n1)
-{
-	struct timespec req = {-1, -1};
-
-	errno = 0;
-	int r = nanosleep(&req, NULL);
-
-	zassert_equal(r, -1, "actual: %d expected: %d", r, -1);
-	zassert_equal(errno, EINVAL, "actual: %d expected: %d", errno, EFAULT);
-}
-
-/** req tv_sec is 0 tv_nsec is 10^9 */
-ZTEST(posix_apis, test_nanosleep_0_1000000000)
-{
-	struct timespec req = {0, 1000000000};
-
-	errno = 0;
-	int r = nanosleep(&req, NULL);
-
-	zassert_equal(r, -1, "actual: %d expected: %d", r, -1);
-	zassert_equal(errno, EINVAL, "actual: %d expected: %d", errno, EFAULT);
-}
-
-static void common(const uint32_t s, uint32_t ns)
-{
-	uint32_t then;
-	uint32_t now;
 	int r;
-	struct timespec req = {s, ns};
+	uint64_t actual_ns;
+	uint64_t exp_ns;
+	uint64_t now;
+	uint64_t then;
 	struct timespec rem = {0, 0};
+	struct timespec req = {s, ns};
 
 	errno = 0;
-	then = k_cycle_get_32();
-	r = nanosleep(&req, &rem);
-	now = k_cycle_get_32();
+	then = cycle_get_64();
+	r = select_nanosleep(selection, clock_id, flags, &req, &rem);
+	now = cycle_get_64();
 
-	zassert_equal(r, 0, "actual: %d expected: %d", r, -1);
+	zassert_equal(r, 0, "actual: %d expected: %d", r, 0);
 	zassert_equal(errno, 0, "actual: %d expected: %d", errno, 0);
-	zassert_equal(req.tv_sec, s, "actual: %d expected: %d",
-		req.tv_sec, s);
-	zassert_equal(req.tv_nsec, ns, "actual: %d expected: %d",
-		req.tv_nsec, ns);
-	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d",
-	rem.tv_sec, 0);
-	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d",
-		rem.tv_nsec, 0);
+	zassert_equal(req.tv_sec, s, "actual: %d expected: %d", req.tv_sec, s);
+	zassert_equal(req.tv_nsec, ns, "actual: %d expected: %d", req.tv_nsec, ns);
+	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
+	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
 
-	uint64_t actual_ns = k_cyc_to_ns_ceil64((now - then));
-	uint64_t exp_ns = (uint64_t)s * NSEC_PER_SEC + ns;
+	switch (selection) {
+	case SELECT_NANOSLEEP:
+		/* exp_ns and actual_ns are relative (i.e. durations) */
+		actual_ns = k_cyc_to_ns_ceil64(now + then);
+		break;
+	case SELECT_CLOCK_NANOSLEEP:
+		/* exp_ns and actual_ns are absolute (i.e. time-points) */
+		actual_ns = k_cyc_to_ns_ceil64(now);
+		break;
+	default:
+		zassert_unreachable();
+		break;
+	}
+
+	exp_ns = (uint64_t)s * NSEC_PER_SEC + ns;
 	/* round up to the nearest microsecond for k_busy_wait() */
-	exp_ns = ceiling_fraction(exp_ns, NSEC_PER_USEC) * NSEC_PER_USEC;
+	exp_ns = DIV_ROUND_UP(exp_ns, NSEC_PER_USEC) * NSEC_PER_USEC;
 
+	/* The comparison may be incorrect if counter wrap happened. In case of ARC HSDK platforms
+	 * we have high counter clock frequency (500MHz or 1GHz) so counter wrap quite likely to
+	 * happen if we wait long enough. As in some test cases we wait more than 1 second, there
+	 * are significant chances to get false-positive assertion.
+	 * TODO: switch test for k_cycle_get_64 usage where available.
+	 */
+#if !defined(CONFIG_SOC_ARC_HSDK) && !defined(CONFIG_SOC_ARC_HSDK4XD)
 	/* lower bounds check */
-	zassert_true(actual_ns >= exp_ns,
-		"actual: %llu expected: %llu", actual_ns, exp_ns);
+	zassert_true(actual_ns >= exp_ns, "actual: %llu expected: %llu", actual_ns, exp_ns);
+#endif
 
 	/* TODO: Upper bounds check when hr timers are available */
 }
 
-/** sleep for 1ns */
-ZTEST(posix_apis, test_nanosleep_0_1)
+ZTEST(nanosleep, test_nanosleep_execution)
 {
-	common(0, 1);
+	/* sleep for 1ns */
+	common_lower_bound_check(SELECT_NANOSLEEP, 0, 0, 0, 1);
+
+	/* sleep for 1us + 1ns */
+	common_lower_bound_check(SELECT_NANOSLEEP, 0, 0, 0, 1001);
+
+	/* sleep for 500000000ns */
+	common_lower_bound_check(SELECT_NANOSLEEP, 0, 0, 0, 500000000);
+
+	/* sleep for 1s */
+	common_lower_bound_check(SELECT_NANOSLEEP, 0, 0, 1, 0);
+
+	/* sleep for 1s + 1ns */
+	common_lower_bound_check(SELECT_NANOSLEEP, 0, 0, 1, 1);
+
+	/* sleep for 1s + 1us + 1ns */
+	common_lower_bound_check(SELECT_NANOSLEEP, 0, 0, 1, 1001);
 }
 
-/** sleep for 1us + 1ns */
-ZTEST(posix_apis, test_nanosleep_0_1001)
+ZTEST(nanosleep, test_clock_nanosleep_execution)
 {
-	common(0, 1001);
+	struct timespec ts;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+
+	/* absolute sleeps with the monotonic clock and reference time ts */
+
+	/* until 1s + 1ns past the reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
+		ts.tv_sec + 1, 1);
+
+	/* until 1s + 1us past the reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
+		ts.tv_sec + 1, 1000);
+
+	/* until 1s + 500000000ns past the reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
+		ts.tv_sec + 1, 500000000);
+
+	/* until 2s past the reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
+		ts.tv_sec + 2, 0);
+
+	/* until 2s + 1ns past the reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
+		ts.tv_sec + 2, 1);
+
+	/* until 2s + 1us + 1ns past reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
+		ts.tv_sec + 2, 1001);
+
+	clock_gettime(CLOCK_REALTIME, &ts);
+
+	/* absolute sleeps with the real time clock and adjusted reference time ts */
+
+	/* until 1s + 1ns past the reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_REALTIME, TIMER_ABSTIME,
+				 ts.tv_sec + 1, 1);
+
+	/* until 1s + 1us past the reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_REALTIME, TIMER_ABSTIME,
+				 ts.tv_sec + 1, 1000);
+
+	/* until 1s + 500000000ns past the reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_REALTIME, TIMER_ABSTIME,
+				 ts.tv_sec + 1, 500000000);
+
+	/* until 2s past the reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_REALTIME, TIMER_ABSTIME,
+				 ts.tv_sec + 2, 0);
+
+	/* until 2s + 1ns past the reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_REALTIME, TIMER_ABSTIME,
+				 ts.tv_sec + 2, 1);
+
+	/* until 2s + 1us + 1ns past the reference time */
+	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_REALTIME, TIMER_ABSTIME,
+				 ts.tv_sec + 2, 1001);
 }
 
-/** sleep for 500000000ns */
-ZTEST(posix_apis, test_nanosleep_0_500000000)
-{
-	common(0, 500000000);
-}
-
-/** sleep for 1s */
-ZTEST(posix_apis, test_nanosleep_1_0)
-{
-	common(1, 0);
-}
-
-/** sleep for 1s + 1ns */
-ZTEST(posix_apis, test_nanosleep_1_1)
-{
-	common(1, 1);
-}
-
-/** sleep for 1s + 1us + 1ns */
-ZTEST(posix_apis, test_nanosleep_1_1001)
-{
-	common(1, 1001);
-}
+ZTEST_SUITE(nanosleep, NULL, NULL, NULL, NULL, NULL);

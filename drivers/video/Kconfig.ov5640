@@ -1,0 +1,12 @@
+# OV5640
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_OV5640
+	bool "OV5640 CMOS digital image sensor"
+	select I2C
+	depends on DT_HAS_OVTI_OV5640_ENABLED
+	default y
+	help
+	  Enable driver for OV5640 CMOS digital image sensor device

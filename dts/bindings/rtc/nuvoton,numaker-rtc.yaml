@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NuMaker RTC controller
+
+compatible: "nuvoton,numaker-rtc"
+
+include: rtc-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  oscillator:
+    type: string
+    description: |
+      Specify RTC oscillator source
+    enum:
+      - "lxt"
+      - "lirc"
+      - "lirc32k"

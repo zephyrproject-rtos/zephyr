@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT atmel_at24
+#define DT_DRV_COMPAT zephyr_i2c_target_eeprom
 
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
@@ -22,7 +22,8 @@ struct i2c_eeprom_target_data {
 	uint32_t buffer_size;
 	uint8_t *buffer;
 	uint32_t buffer_idx;
-	bool first_write;
+	uint32_t idx_write_cnt;
+	uint8_t address_width;
 };
 
 struct i2c_eeprom_target_config {
@@ -59,6 +60,25 @@ int eeprom_target_read(const struct device *dev, uint8_t *eeprom_data,
 	return 0;
 }
 
+#ifdef CONFIG_I2C_EEPROM_TARGET_RUNTIME_ADDR
+int eeprom_target_set_addr(const struct device *dev, uint8_t addr)
+{
+	const struct i2c_eeprom_target_config *cfg = dev->config;
+	struct i2c_eeprom_target_data *data = dev->data;
+	int ret;
+
+	ret = i2c_target_unregister(cfg->bus.bus, &data->config);
+	if (ret) {
+		LOG_DBG("eeprom target failed to unregister");
+		return ret;
+	}
+
+	data->config.address = addr;
+
+	return i2c_target_register(cfg->bus.bus, &data->config);
+}
+#endif /* CONFIG_I2C_EEPROM_TARGET_RUNTIME_ADDR */
+
 static int eeprom_target_write_requested(struct i2c_target_config *config)
 {
 	struct i2c_eeprom_target_data *data = CONTAINER_OF(config,
@@ -67,7 +87,7 @@ static int eeprom_target_write_requested(struct i2c_target_config *config)
 
 	LOG_DBG("eeprom: write req");
 
-	data->first_write = true;
+	data->idx_write_cnt = 0;
 
 	return 0;
 }
@@ -102,9 +122,13 @@ static int eeprom_target_write_received(struct i2c_target_config *config,
 	 * I2C controller support
 	 */
 
-	if (data->first_write) {
-		data->buffer_idx = val;
-		data->first_write = false;
+	if (data->idx_write_cnt < (data->address_width >> 3)) {
+		if (data->idx_write_cnt == 0) {
+			data->buffer_idx = 0;
+		}
+
+		data->buffer_idx = val | (data->buffer_idx << 8);
+		data->idx_write_cnt++;
 	} else {
 		data->buffer[data->buffer_idx++] = val;
 	}
@@ -143,10 +167,46 @@ static int eeprom_target_stop(struct i2c_target_config *config)
 
 	LOG_DBG("eeprom: stop");
 
-	data->first_write = true;
+	data->idx_write_cnt = 0;
 
 	return 0;
 }
+
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+static void eeprom_target_buf_write_received(struct i2c_target_config *config,
+					     uint8_t *ptr, uint32_t len)
+{
+	struct i2c_eeprom_target_data *data = CONTAINER_OF(config,
+						struct i2c_eeprom_target_data,
+						config);
+	/* The first byte(s) is offset */
+	uint32_t idx_write_cnt = 0;
+
+	data->buffer_idx = 0;
+	while (idx_write_cnt < (data->address_width >> 3)) {
+		data->buffer_idx = (data->buffer_idx << 8) | *ptr++;
+		len--;
+		idx_write_cnt++;
+	}
+
+	if (len > 0) {
+		memcpy(&data->buffer[data->buffer_idx], ptr, len);
+	}
+}
+
+static int eeprom_target_buf_read_requested(struct i2c_target_config *config,
+					    uint8_t **ptr, uint32_t *len)
+{
+	struct i2c_eeprom_target_data *data = CONTAINER_OF(config,
+						struct i2c_eeprom_target_data,
+						config);
+
+	*ptr = &data->buffer[data->buffer_idx];
+	*len = data->buffer_size;
+
+	return 0;
+}
+#endif
 
 static int eeprom_target_register(const struct device *dev)
 {
@@ -174,6 +234,10 @@ static const struct i2c_target_callbacks eeprom_callbacks = {
 	.read_requested = eeprom_target_read_requested,
 	.write_received = eeprom_target_write_received,
 	.read_processed = eeprom_target_read_processed,
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	.buf_write_received = eeprom_target_buf_write_received,
+	.buf_read_requested = eeprom_target_buf_read_requested,
+#endif
 	.stop = eeprom_target_stop,
 };
 
@@ -197,10 +261,17 @@ static int i2c_eeprom_target_init(const struct device *dev)
 
 #define I2C_EEPROM_INIT(inst)						\
 	static struct i2c_eeprom_target_data				\
-		i2c_eeprom_target_##inst##_dev_data;			\
+		i2c_eeprom_target_##inst##_dev_data = {			\
+			.address_width = DT_INST_PROP_OR(inst,		\
+					address_width, 8),		\
+		};							\
 									\
 	static uint8_t							\
 	i2c_eeprom_target_##inst##_buffer[(DT_INST_PROP(inst, size))];	\
+									\
+	BUILD_ASSERT(DT_INST_PROP(inst, size) <=			\
+			(1 << DT_INST_PROP_OR(inst, address_width, 8)), \
+			"size must be <= than 2^address_width");	\
 									\
 	static const struct i2c_eeprom_target_config			\
 		i2c_eeprom_target_##inst##_cfg = {			\

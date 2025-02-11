@@ -1,0 +1,5 @@
+board:
+  name: mm_feather
+  vendor: madmachine
+  socs:
+    - name: mimxrt1062

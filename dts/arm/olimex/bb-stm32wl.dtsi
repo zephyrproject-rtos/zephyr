@@ -21,5 +21,7 @@
 		status = "okay";
 		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>; /* FE_CTRL1 */
 		rx-enable-gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;  /* FE_CTRL2 */
+		power-amplifier-output = "rfo-lp";
+		rfo-lp-max-power = <14>;
 	};
 };

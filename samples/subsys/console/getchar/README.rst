@@ -1,7 +1,7 @@
-.. _console_getchar_sample:
+.. zephyr:code-sample:: console_getchar
+   :name: console_getchar()
 
-console_getchar() Sample Application
-####################################
+   Use console_getchar() to read an input character from the console.
 
 Overview
 ********
@@ -15,7 +15,7 @@ process console input character by character. The sample also allows to
 see key/character codes as returned by the function.
 
 If you are interested in line by line console input, see
-:ref:`console_getline_sample`.
+:zephyr:code-sample:`console_getline`.
 
 
 Requirements

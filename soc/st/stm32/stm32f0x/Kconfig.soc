@@ -1,0 +1,73 @@
+# ST Microelectronics STM32F0 MCU line
+
+# Copyright (c) 2017 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32F0X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32f0x" if SOC_SERIES_STM32F0X
+
+config SOC_STM32F030X4
+	bool
+	select SOC_SERIES_STM32F0X
+
+config SOC_STM32F030X6
+	bool
+	select SOC_SERIES_STM32F0X
+
+config SOC_STM32F030X8
+	bool
+	select SOC_SERIES_STM32F0X
+
+config SOC_STM32F030XC
+	bool
+	select SOC_SERIES_STM32F0X
+
+config SOC_STM32F031X6
+	bool
+	select SOC_SERIES_STM32F0X
+
+config SOC_STM32F042X6
+	bool
+	select SOC_SERIES_STM32F0X
+
+config SOC_STM32F051X8
+	bool
+	select SOC_SERIES_STM32F0X
+
+config SOC_STM32F070XB
+	bool
+	select SOC_SERIES_STM32F0X
+
+config SOC_STM32F072X8
+	bool
+	select SOC_SERIES_STM32F0X
+
+config SOC_STM32F072XB
+	bool
+	select SOC_SERIES_STM32F0X
+
+config SOC_STM32F091XC
+	bool
+	select SOC_SERIES_STM32F0X
+
+config SOC_STM32F098XX
+	bool
+	select SOC_SERIES_STM32F0X
+
+# STM32F0 Cube package advises to use 'stm32f030x6' code
+# for both STM32F030x4 and STM32F030x6
+config SOC
+	default "stm32f030x6" if SOC_STM32F030X4 || SOC_STM32F030X6
+	default "stm32f030x8" if SOC_STM32F030X8
+	default "stm32f030xc" if SOC_STM32F030XC
+	default "stm32f031x6" if SOC_STM32F031X6
+	default "stm32f042x6" if SOC_STM32F042X6
+	default "stm32f051x8" if SOC_STM32F051X8
+	default "stm32f070xb" if SOC_STM32F070XB
+	default "stm32f072xb" if SOC_STM32F072X8 || SOC_STM32F072XB
+	default "stm32f091xc" if SOC_STM32F091XC
+	default "stm32f098xx" if SOC_STM32F098XX

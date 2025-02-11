@@ -21,7 +21,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
-#include <nrfx_usbd.h>
+#include <nrf_usbd_common.h>
+#include <hal/nrf_usbd.h>
 #include <nrfx_power.h>
 #include "udc_common.h"
 
@@ -29,7 +30,7 @@
 LOG_MODULE_REGISTER(udc_nrf, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
 /*
- * There is no real advantage to change control enpoint size
+ * There is no real advantage to change control endpoint size
  * but we can use it for testing UDC driver API and higher layers.
  */
 #define UDC_NRF_MPS0		UDC_MPS0_64
@@ -47,7 +48,7 @@ enum udc_nrf_event_type {
 struct udc_nrf_evt {
 	enum udc_nrf_event_type type;
 	union {
-		nrfx_usbd_evt_t hal_evt;
+		nrf_usbd_common_evt_t hal_evt;
 		uint8_t ep;
 	};
 };
@@ -82,10 +83,10 @@ static struct onoff_client hfxo_cli;
 
 static void udc_nrf_clear_control_out(const struct device *dev)
 {
-	if (nrfx_usbd_last_setup_dir_get() == USB_CONTROL_EP_OUT &&
+	if (nrf_usbd_common_last_setup_dir_get() == USB_CONTROL_EP_OUT &&
 	    udc_nrf_setup_rcvd) {
 		/* Allow data chunk on EP0 OUT */
-		nrfx_usbd_setup_data_clear();
+		nrf_usbd_common_setup_data_clear();
 		udc_nrf_setup_rcvd = false;
 		LOG_INF("Allow data OUT");
 	}
@@ -101,20 +102,19 @@ static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
 
 	buf = udc_buf_peek(dev, ep);
 	if (buf != NULL) {
-		nrfx_usbd_transfer_t xfer = {
+		nrf_usbd_common_transfer_t xfer = {
 			.p_data = {.tx = buf->data},
 			.size = buf->len,
 			.flags = udc_ep_buf_has_zlp(buf) ?
-				 NRFX_USBD_TRANSFER_ZLP_FLAG : 0,
+				 NRF_USBD_COMMON_TRANSFER_ZLP_FLAG : 0,
 		};
 		nrfx_err_t err;
 
-		err = nrfx_usbd_ep_transfer(ep, &xfer);
+		err = nrf_usbd_common_ep_transfer(ep, &xfer);
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-					 -ECONNREFUSED, buf);
+			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
 			udc_ep_set_busy(dev, ep, true);
 		}
@@ -142,7 +142,7 @@ static void udc_event_xfer_ctrl_in(const struct device *dev,
 	/* Update to next stage of control transfer */
 	udc_ctrl_update_stage(dev, buf);
 
-	nrfx_usbd_setup_clear();
+	nrf_usbd_common_setup_clear();
 }
 
 static void udc_event_fake_status_in(const struct device *dev)
@@ -160,13 +160,13 @@ static void udc_event_fake_status_in(const struct device *dev)
 }
 
 static void udc_event_xfer_in(const struct device *dev,
-			      nrfx_usbd_evt_t const *const event)
+			      nrf_usbd_common_evt_t const *const event)
 {
 	uint8_t ep = event->data.eptransfer.ep;
 	struct net_buf *buf;
 
 	switch (event->data.eptransfer.status) {
-	case NRFX_USBD_EP_OK:
+	case NRF_USBD_COMMON_EP_OK:
 		buf = udc_buf_get(dev, ep);
 		if (buf == NULL) {
 			LOG_ERR("ep 0x%02x queue is empty", ep);
@@ -179,10 +179,10 @@ static void udc_event_xfer_in(const struct device *dev,
 			return udc_event_xfer_ctrl_in(dev, buf);
 		}
 
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+		udc_submit_ep_event(dev, buf, 0);
 		break;
 
-	case NRFX_USBD_EP_ABORTED:
+	case NRF_USBD_COMMON_EP_ABORTED:
 		LOG_WRN("aborted IN ep 0x%02x", ep);
 		buf = udc_buf_get_all(dev, ep);
 
@@ -192,14 +192,13 @@ static void udc_event_xfer_in(const struct device *dev,
 		}
 
 		udc_ep_set_busy(dev, ep, false);
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-				 -ECONNABORTED, buf);
+		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 		break;
 
 	default:
 		LOG_ERR("Unexpected event (nrfx_usbd): %d, ep 0x%02x",
 			event->data.eptransfer.status, ep);
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, -EIO, NULL);
+		udc_submit_event(dev, UDC_EVT_ERROR, -EIO);
 		break;
 	}
 }
@@ -230,19 +229,18 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 
 	buf = udc_buf_peek(dev, ep);
 	if (buf != NULL) {
-		nrfx_usbd_transfer_t xfer = {
+		nrf_usbd_common_transfer_t xfer = {
 			.p_data = {.rx = buf->data},
 			.size = buf->size,
 			.flags = 0,
 		};
 		nrfx_err_t err;
 
-		err = nrfx_usbd_ep_transfer(ep, &xfer);
+		err = nrf_usbd_common_ep_transfer(ep, &xfer);
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-					 -ECONNREFUSED, buf);
+			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
 			udc_ep_set_busy(dev, ep, true);
 		}
@@ -252,24 +250,24 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 }
 
 static void udc_event_xfer_out(const struct device *dev,
-			       nrfx_usbd_evt_t const *const event)
+			       nrf_usbd_common_evt_t const *const event)
 {
 	uint8_t ep = event->data.eptransfer.ep;
-	nrfx_usbd_ep_status_t err_code;
+	nrf_usbd_common_ep_status_t err_code;
 	struct net_buf *buf;
 	size_t len;
 
 	switch (event->data.eptransfer.status) {
-	case NRFX_USBD_EP_WAITING:
+	case NRF_USBD_COMMON_EP_WAITING:
 		/*
 		 * There is nothing to do here, new transfer
 		 * will be tried in both cases later.
 		 */
 		break;
 
-	case NRFX_USBD_EP_OK:
-		err_code = nrfx_usbd_ep_status_get(ep, &len);
-		if (err_code != NRFX_USBD_EP_OK) {
+	case NRF_USBD_COMMON_EP_OK:
+		err_code = nrf_usbd_common_ep_status_get(ep, &len);
+		if (err_code != NRF_USBD_COMMON_EP_OK) {
 			LOG_ERR("OUT transfer failed %d", err_code);
 		}
 
@@ -284,7 +282,7 @@ static void udc_event_xfer_out(const struct device *dev,
 		if (ep == USB_CONTROL_EP_OUT) {
 			udc_event_xfer_ctrl_out(dev, buf);
 		} else {
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+			udc_submit_ep_event(dev, buf, 0);
 		}
 
 		break;
@@ -292,7 +290,7 @@ static void udc_event_xfer_out(const struct device *dev,
 	default:
 		LOG_ERR("Unexpected event (nrfx_usbd): %d, ep 0x%02x",
 			event->data.eptransfer.status, ep);
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST, -EIO, NULL);
+		udc_submit_event(dev, UDC_EVT_ERROR, -EIO);
 		break;
 	}
 }
@@ -328,8 +326,8 @@ static int udc_event_xfer_setup(const struct device *dev)
 	}
 
 	udc_ep_buf_set_setup(buf);
-	nrfx_usbd_setup_get((nrfx_usbd_setup_t *)buf->data);
-	net_buf_add(buf, sizeof(nrfx_usbd_setup_t));
+	nrf_usbd_common_setup_get((nrf_usbd_common_setup_t *)buf->data);
+	net_buf_add(buf, sizeof(nrf_usbd_common_setup_t));
 	udc_nrf_setup_rcvd = true;
 
 	/* Update to next stage of control transfer */
@@ -340,7 +338,7 @@ static int udc_event_xfer_setup(const struct device *dev)
 		LOG_DBG("s:%p|feed for -out-", buf);
 		err = usbd_ctrl_feed_dout(dev, udc_data_stage_length(buf));
 		if (err == -ENOMEM) {
-			err = udc_submit_event(dev, UDC_EVT_EP_REQUEST, err, buf);
+			err = udc_submit_ep_event(dev, buf, err);
 		}
 	} else if (udc_ctrl_stage_is_data_in(dev)) {
 		err = udc_ctrl_submit_s_in_status(dev);
@@ -351,8 +349,13 @@ static int udc_event_xfer_setup(const struct device *dev)
 	return err;
 }
 
-static void udc_nrf_thread(const struct device *dev)
+static void udc_nrf_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
+
 	while (true) {
 		bool start_xfer = false;
 		struct udc_nrf_evt evt;
@@ -364,7 +367,7 @@ static void udc_nrf_thread(const struct device *dev)
 		case UDC_NRF_EVT_HAL:
 			ep = evt.hal_evt.data.eptransfer.ep;
 			switch (evt.hal_evt.type) {
-			case NRFX_USBD_EVT_EPTRANSFER:
+			case NRF_USBD_COMMON_EVT_EPTRANSFER:
 				start_xfer = true;
 				if (USB_EP_DIR_IS_IN(ep)) {
 					udc_event_xfer_in(dev, &evt.hal_evt);
@@ -372,7 +375,7 @@ static void udc_nrf_thread(const struct device *dev)
 					udc_event_xfer_out(dev, &evt.hal_evt);
 				}
 				break;
-			case NRFX_USBD_EVT_SETUP:
+			case NRF_USBD_COMMON_EVT_SETUP:
 				udc_event_xfer_setup(dev);
 				break;
 			default:
@@ -417,33 +420,35 @@ static void udc_sof_check_iso_out(const struct device *dev)
 	}
 }
 
-static void usbd_event_handler(nrfx_usbd_evt_t const *const hal_evt)
+static void usbd_event_handler(nrf_usbd_common_evt_t const *const hal_evt)
 {
 	switch (hal_evt->type) {
-	case NRFX_USBD_EVT_SUSPEND:
+	case NRF_USBD_COMMON_EVT_SUSPEND:
 		LOG_INF("SUSPEND state detected");
-		nrfx_usbd_suspend();
+		nrf_usbd_common_suspend();
 		udc_set_suspended(udc_nrf_dev, true);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_SUSPEND, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_SUSPEND, 0);
 		break;
-	case NRFX_USBD_EVT_RESUME:
+	case NRF_USBD_COMMON_EVT_RESUME:
 		LOG_INF("RESUMING from suspend");
 		udc_set_suspended(udc_nrf_dev, false);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
 		break;
-	case NRFX_USBD_EVT_WUREQ:
+	case NRF_USBD_COMMON_EVT_WUREQ:
 		LOG_INF("Remote wakeup initiated");
+		udc_set_suspended(udc_nrf_dev, false);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
 		break;
-	case NRFX_USBD_EVT_RESET:
+	case NRF_USBD_COMMON_EVT_RESET:
 		LOG_INF("Reset");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0, NULL);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0);
 		break;
-	case NRFX_USBD_EVT_SOF:
-		udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0, NULL);
+	case NRF_USBD_COMMON_EVT_SOF:
+		udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
 		udc_sof_check_iso_out(udc_nrf_dev);
 		break;
-	case NRFX_USBD_EVT_EPTRANSFER:
-	case NRFX_USBD_EVT_SETUP:
+	case NRF_USBD_COMMON_EVT_EPTRANSFER:
+	case NRF_USBD_COMMON_EVT_SETUP: {
 		struct udc_nrf_evt evt = {
 			.type = UDC_NRF_EVT_HAL,
 			.hal_evt = *hal_evt,
@@ -454,6 +459,7 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const hal_evt)
 		 */
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		break;
+	}
 	default:
 		break;
 	}
@@ -464,15 +470,15 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 	switch (pwr_evt) {
 	case NRFX_POWER_USB_EVT_DETECTED:
 		LOG_DBG("POWER event detected");
+		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_READY, 0);
 		break;
 	case NRFX_POWER_USB_EVT_READY:
-		LOG_INF("POWER event ready");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_READY, 0, NULL);
-		nrfx_usbd_start(true);
+		LOG_DBG("POWER event ready");
+		nrf_usbd_common_start(true);
 		break;
 	case NRFX_POWER_USB_EVT_REMOVED:
-		LOG_INF("POWER event removed");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_REMOVED, 0, NULL);
+		LOG_DBG("POWER event removed");
+		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_REMOVED, 0);
 		break;
 	default:
 		LOG_ERR("Unknown power event %d", pwr_evt);
@@ -486,7 +492,7 @@ static void udc_nrf_fake_status_in(const struct device *dev)
 		.ep = USB_CONTROL_EP_IN,
 	};
 
-	if (nrfx_usbd_last_setup_dir_get() == USB_CONTROL_EP_OUT) {
+	if (nrf_usbd_common_last_setup_dir_get() == USB_CONTROL_EP_OUT) {
 		/* Let controller perform status IN stage */
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 	}
@@ -516,9 +522,9 @@ static int udc_nrf_ep_enqueue(const struct device *dev,
 static int udc_nrf_ep_dequeue(const struct device *dev,
 			      struct udc_ep_config *cfg)
 {
-	bool busy = nrfx_usbd_ep_is_busy(cfg->addr);
+	bool busy = nrf_usbd_common_ep_is_busy(cfg->addr);
 
-	nrfx_usbd_ep_abort(cfg->addr);
+	nrf_usbd_common_ep_abort(cfg->addr);
 	if (USB_EP_DIR_IS_OUT(cfg->addr) || !busy) {
 		struct net_buf *buf;
 
@@ -528,8 +534,7 @@ static int udc_nrf_ep_dequeue(const struct device *dev,
 		 */
 		buf = udc_buf_get_all(dev, cfg->addr);
 		if (buf) {
-			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-					 -ECONNABORTED, buf);
+			udc_submit_ep_event(dev, buf, -ECONNABORTED);
 		} else {
 			LOG_INF("ep 0x%02x queue is empty", cfg->addr);
 		}
@@ -548,14 +553,14 @@ static int udc_nrf_ep_enable(const struct device *dev,
 
 	__ASSERT_NO_MSG(cfg);
 	mps = (cfg->mps == 0) ? cfg->caps.mps : cfg->mps;
-	nrfx_usbd_ep_max_packet_size_set(cfg->addr, mps);
-	nrfx_usbd_ep_enable(cfg->addr);
+	nrf_usbd_common_ep_max_packet_size_set(cfg->addr, mps);
+	nrf_usbd_common_ep_enable(cfg->addr);
 	if (!NRF_USBD_EPISO_CHECK(cfg->addr)) {
 		/* ISO transactions for full-speed device do not support
 		 * toggle sequencing and should only send DATA0 PID.
 		 */
-		nrfx_usbd_ep_dtoggle_clear(cfg->addr);
-		nrfx_usbd_ep_stall_clear(cfg->addr);
+		nrf_usbd_common_ep_dtoggle_clear(cfg->addr);
+		nrf_usbd_common_ep_stall_clear(cfg->addr);
 	}
 
 	LOG_DBG("Enable ep 0x%02x", cfg->addr);
@@ -567,7 +572,7 @@ static int udc_nrf_ep_disable(const struct device *dev,
 			      struct udc_ep_config *cfg)
 {
 	__ASSERT_NO_MSG(cfg);
-	nrfx_usbd_ep_disable(cfg->addr);
+	nrf_usbd_common_ep_disable(cfg->addr);
 	LOG_DBG("Disable ep 0x%02x", cfg->addr);
 
 	return 0;
@@ -580,9 +585,9 @@ static int udc_nrf_ep_set_halt(const struct device *dev,
 
 	if (cfg->addr == USB_CONTROL_EP_OUT ||
 	    cfg->addr == USB_CONTROL_EP_IN) {
-		nrfx_usbd_setup_stall();
+		nrf_usbd_common_setup_stall();
 	} else {
-		nrfx_usbd_ep_stall(cfg->addr);
+		nrf_usbd_common_ep_stall(cfg->addr);
 	}
 
 	return 0;
@@ -593,8 +598,8 @@ static int udc_nrf_ep_clear_halt(const struct device *dev,
 {
 	LOG_DBG("Clear halt ep 0x%02x", cfg->addr);
 
-	nrfx_usbd_ep_dtoggle_clear(cfg->addr);
-	nrfx_usbd_ep_stall_clear(cfg->addr);
+	nrf_usbd_common_ep_dtoggle_clear(cfg->addr);
+	nrf_usbd_common_ep_stall_clear(cfg->addr);
 
 	return 0;
 }
@@ -614,7 +619,7 @@ static int udc_nrf_set_address(const struct device *dev, const uint8_t addr)
 
 static int udc_nrf_host_wakeup(const struct device *dev)
 {
-	bool res = nrfx_usbd_wakeup_req();
+	bool res = nrf_usbd_common_wakeup_req();
 
 	LOG_DBG("Host wakeup request");
 	if (!res) {
@@ -626,9 +631,26 @@ static int udc_nrf_host_wakeup(const struct device *dev)
 
 static int udc_nrf_enable(const struct device *dev)
 {
+	unsigned int key;
 	int ret;
 
-	nrfx_usbd_enable();
+	ret = nrf_usbd_common_init(usbd_event_handler);
+	if (ret != NRFX_SUCCESS) {
+		LOG_ERR("nRF USBD driver initialization failed");
+		return -EIO;
+	}
+
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
+				   USB_EP_TYPE_CONTROL, UDC_NRF_EP0_SIZE, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+		return -EIO;
+	}
+
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
+				   USB_EP_TYPE_CONTROL, UDC_NRF_EP0_SIZE, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+		return -EIO;
+	}
 
 	sys_notify_init_spinwait(&hfxo_cli.notify);
 	ret = onoff_request(hfxo_mgr, &hfxo_cli);
@@ -637,6 +659,11 @@ static int udc_nrf_enable(const struct device *dev)
 		return ret;
 	}
 
+	/* Disable interrupts until USBD is enabled */
+	key = irq_lock();
+	nrf_usbd_common_enable();
+	irq_unlock(key);
+
 	return 0;
 }
 
@@ -644,7 +671,19 @@ static int udc_nrf_disable(const struct device *dev)
 {
 	int ret;
 
-	nrfx_usbd_disable();
+	nrf_usbd_common_disable();
+
+	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
+		LOG_ERR("Failed to disable control endpoint");
+		return -EIO;
+	}
+
+	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
+		LOG_ERR("Failed to disable control endpoint");
+		return -EIO;
+	}
+
+	nrf_usbd_common_uninit();
 
 	ret = onoff_cancel_or_release(hfxo_mgr, &hfxo_cli);
 	if (ret < 0) {
@@ -658,7 +697,6 @@ static int udc_nrf_disable(const struct device *dev)
 static int udc_nrf_init(const struct device *dev)
 {
 	const struct udc_nrf_config *cfg = dev->config;
-	int ret;
 
 	hfxo_mgr = z_nrf_clock_control_get_onoff(cfg->clock);
 
@@ -673,30 +711,12 @@ static int udc_nrf_init(const struct device *dev)
 #endif
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    nrfx_isr, nrfx_usbd_irq_handler, 0);
+		    nrfx_isr, nrf_usbd_common_irq_handler, 0);
 
 	(void)nrfx_power_init(&cfg->pwr);
 	nrfx_power_usbevt_init(&cfg->evt);
 
-	ret = nrfx_usbd_init(usbd_event_handler);
-	if (ret != NRFX_SUCCESS) {
-		LOG_ERR("nRF USBD driver initialization failed");
-		return -EIO;
-	}
-
 	nrfx_power_usbevt_enable();
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, UDC_NRF_EP0_SIZE, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, UDC_NRF_EP0_SIZE, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
-		return -EIO;
-	}
-
 	LOG_INF("Initialized");
 
 	return 0;
@@ -706,18 +726,7 @@ static int udc_nrf_shutdown(const struct device *dev)
 {
 	LOG_INF("shutdown");
 
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
-	}
-
 	nrfx_power_usbevt_disable();
-	nrfx_usbd_uninit();
 	nrfx_power_usbevt_uninit();
 #ifdef CONFIG_HAS_HW_NRF_USBREG
 	irq_disable(USBREGULATOR_IRQn);
@@ -736,7 +745,7 @@ static int udc_nrf_driver_init(const struct device *dev)
 	k_mutex_init(&data->mutex);
 	k_thread_create(&drv_stack_data, drv_stack,
 			K_KERNEL_STACK_SIZEOF(drv_stack),
-			(k_thread_entry_t)udc_nrf_thread,
+			udc_nrf_thread,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(8), 0, K_NO_WAIT);
 
@@ -746,14 +755,14 @@ static int udc_nrf_driver_init(const struct device *dev)
 		ep_cfg_out[i].caps.out = 1;
 		if (i == 0) {
 			ep_cfg_out[i].caps.control = 1;
-			ep_cfg_out[i].caps.mps = NRFX_USBD_EPSIZE;
+			ep_cfg_out[i].caps.mps = NRF_USBD_COMMON_EPSIZE;
 		} else if (i < (CFG_EPOUT_CNT + 1)) {
 			ep_cfg_out[i].caps.bulk = 1;
 			ep_cfg_out[i].caps.interrupt = 1;
-			ep_cfg_out[i].caps.mps = NRFX_USBD_EPSIZE;
+			ep_cfg_out[i].caps.mps = NRF_USBD_COMMON_EPSIZE;
 		} else {
 			ep_cfg_out[i].caps.iso = 1;
-			ep_cfg_out[i].caps.mps = NRFX_USBD_ISOSIZE / 2;
+			ep_cfg_out[i].caps.mps = NRF_USBD_COMMON_ISOSIZE / 2;
 		}
 
 		ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
@@ -768,14 +777,14 @@ static int udc_nrf_driver_init(const struct device *dev)
 		ep_cfg_in[i].caps.in = 1;
 		if (i == 0) {
 			ep_cfg_in[i].caps.control = 1;
-			ep_cfg_in[i].caps.mps = NRFX_USBD_EPSIZE;
+			ep_cfg_in[i].caps.mps = NRF_USBD_COMMON_EPSIZE;
 		} else if (i < (CFG_EPIN_CNT + 1)) {
 			ep_cfg_in[i].caps.bulk = 1;
 			ep_cfg_in[i].caps.interrupt = 1;
-			ep_cfg_in[i].caps.mps = NRFX_USBD_EPSIZE;
+			ep_cfg_in[i].caps.mps = NRF_USBD_COMMON_EPSIZE;
 		} else {
 			ep_cfg_in[i].caps.iso = 1;
-			ep_cfg_in[i].caps.mps = NRFX_USBD_ISOSIZE / 2;
+			ep_cfg_in[i].caps.mps = NRF_USBD_COMMON_ISOSIZE / 2;
 		}
 
 		ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
@@ -789,6 +798,7 @@ static int udc_nrf_driver_init(const struct device *dev)
 	data->caps.rwup = true;
 	data->caps.out_ack = true;
 	data->caps.mps0 = UDC_NRF_MPS0;
+	data->caps.can_detect_vbus = true;
 
 	return 0;
 }

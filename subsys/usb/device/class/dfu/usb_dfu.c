@@ -427,6 +427,10 @@ static void dfu_timer_work_handler(struct k_work *item)
 				LOG_ERR("usb_dc_detach failed");
 			}
 			dfu_enter_idle();
+
+			/* Wait 1 SOF period to ensure the host notices the deconnection. */
+			k_sleep(K_MSEC(1));
+
 			if (usb_dc_attach()) {
 				LOG_ERR("usb_dc_attach failed");
 			}
@@ -898,11 +902,10 @@ static void dfu_work_handler(struct k_work *item)
 	}
 }
 
-static int usb_dfu_init(const struct device *dev)
+static int usb_dfu_init(void)
 {
 	const struct flash_area *fa;
 
-	ARG_UNUSED(dev);
 
 	k_work_init(&dfu_work, dfu_work_handler);
 	k_poll_signal_init(&dfu_signal);
@@ -944,12 +947,12 @@ static bool is_dfu_started(void)
  */
 void wait_for_usb_dfu(k_timeout_t delay)
 {
-	uint64_t end = sys_clock_timeout_end_calc(delay);
+	k_timepoint_t end = sys_timepoint_calc(delay);
 
 	/* Wait for a prescribed duration of time. If DFU hasn't started within
 	 * that time, stop waiting and proceed further.
 	 */
-	while (end > k_uptime_ticks()) {
+	while (!sys_timepoint_expired(end)) {
 		if (is_dfu_started()) {
 			k_poll_event_init(&dfu_event, K_POLL_TYPE_SIGNAL,
 				K_POLL_MODE_NOTIFY_ONLY, &dfu_signal);

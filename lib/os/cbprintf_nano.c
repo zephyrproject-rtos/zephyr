@@ -38,7 +38,7 @@ static inline int convert_value(uint_value_type num, unsigned int base,
 		if (c >= 10) {
 			c += alpha;
 		}
-		buftop[--i] = c + '0';
+		buftop[i--] = c + '0';
 		num /= base;
 	} while (num);
 
@@ -73,7 +73,7 @@ static inline int convert_value(uint_value_type num, unsigned int base,
  *
  * @return printed byte count if CONFIG_CBPRINTF_LIBC_SUBSTS is set
  */
-int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fmt,
+int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fmt,
 		     va_list ap, uint32_t flags)
 {
 	size_t count = 0;
@@ -81,6 +81,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fmt,
 	char *prefix, *data;
 	int min_width, precision, data_len;
 	char padding_mode, length_mod, special;
+	cbprintf_cb_local out = __out;
 
 	const bool tagged_ap = (flags & Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS)
 			       == Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS;
@@ -244,7 +245,7 @@ start:
 			} else {
 				;
 			}
-			data_len = convert_value(d, 10, 0, buf + sizeof(buf));
+			data_len = convert_value(d, 10, 0, buf + sizeof(buf) - 1);
 			data = buf + sizeof(buf) - data_len;
 			break;
 		}
@@ -286,7 +287,7 @@ start:
 				min_width -= 2;
 			}
 			data_len = convert_value(x, 16, ALPHA(*fmt),
-						 buf + sizeof(buf));
+						 buf + sizeof(buf) - 1);
 			data = buf + sizeof(buf) - data_len;
 			break;
 		}

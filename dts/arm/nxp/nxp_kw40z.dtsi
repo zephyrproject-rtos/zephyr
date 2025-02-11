@@ -2,6 +2,7 @@
 
 #include <mem.h>
 #include "armv6-m.dtsi"
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
 #include <zephyr/dt-bindings/clock/kinetis_mcg.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>

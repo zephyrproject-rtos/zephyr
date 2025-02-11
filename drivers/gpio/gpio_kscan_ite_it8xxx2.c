@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/dt-bindings/gpio/ite-it8xxx2-gpio.h>
+#include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
@@ -68,12 +69,16 @@ static int gpio_kscan_it8xxx2_configure(const struct device *dev,
 			*reg_ksi_kso_gpod &= ~mask;
 		}
 
+		unsigned int key = irq_lock();
+
 		/* Set level before change to output */
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			*reg_ksi_kso_gdat |= mask;
 		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
 			*reg_ksi_kso_gdat &= ~mask;
 		}
+
+		irq_unlock(key);
 
 		/* Set output mode */
 		*reg_ksi_kso_goen |= mask;
@@ -156,10 +161,13 @@ static int gpio_kscan_it8xxx2_port_set_masked_raw(const struct device *dev,
 {
 	const struct gpio_kscan_cfg *const config = dev->config;
 	volatile uint8_t *reg_ksi_kso_gdat = config->reg_ksi_kso_gdat;
+	unsigned int key = irq_lock();
 	uint8_t out = *reg_ksi_kso_gdat;
 
 	/* Set high/low level to mask pins of the port */
 	*reg_ksi_kso_gdat = ((out & ~mask) | (value & mask));
+
+	irq_unlock(key);
 
 	return 0;
 }
@@ -169,9 +177,12 @@ static int gpio_kscan_it8xxx2_port_set_bits_raw(const struct device *dev,
 {
 	const struct gpio_kscan_cfg *const config = dev->config;
 	volatile uint8_t *reg_ksi_kso_gdat = config->reg_ksi_kso_gdat;
+	unsigned int key = irq_lock();
 
 	/* Set high level to pins of the port */
 	*reg_ksi_kso_gdat |= pins;
+
+	irq_unlock(key);
 
 	return 0;
 }
@@ -181,9 +192,12 @@ static int gpio_kscan_it8xxx2_port_clear_bits_raw(const struct device *dev,
 {
 	const struct gpio_kscan_cfg *const config = dev->config;
 	volatile uint8_t *reg_ksi_kso_gdat = config->reg_ksi_kso_gdat;
+	unsigned int key = irq_lock();
 
 	/* Set low level to pins of the port */
 	*reg_ksi_kso_gdat &= ~pins;
+
+	irq_unlock(key);
 
 	return 0;
 }
@@ -193,15 +207,13 @@ static int gpio_kscan_it8xxx2_port_toggle_bits(const struct device *dev,
 {
 	const struct gpio_kscan_cfg *const config = dev->config;
 	volatile uint8_t *reg_ksi_kso_gdat = config->reg_ksi_kso_gdat;
+	unsigned int key = irq_lock();
 
 	/* Toggle output level to pins of the port */
 	*reg_ksi_kso_gdat ^= pins;
 
-	return 0;
-}
+	irq_unlock(key);
 
-static int gpio_kscan_it8xxx2_init(const struct device *dev)
-{
 	return 0;
 }
 
@@ -233,7 +245,7 @@ static const struct gpio_kscan_cfg gpio_kscan_it8xxx2_cfg_##inst = {           \
 static struct gpio_kscan_data gpio_kscan_it8xxx2_data_##inst;                  \
 									       \
 DEVICE_DT_INST_DEFINE(inst,                                                    \
-		      gpio_kscan_it8xxx2_init,                                 \
+		      NULL,                                                    \
 		      NULL,                                                    \
 		      &gpio_kscan_it8xxx2_data_##inst,                         \
 		      &gpio_kscan_it8xxx2_cfg_##inst,                          \

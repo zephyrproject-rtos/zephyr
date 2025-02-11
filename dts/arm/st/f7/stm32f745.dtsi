@@ -10,8 +10,9 @@
 	/* 64KB DTCM @ 20000000, 240KB SRAM1 @ 20010000, 16KB SRAM2 @ 2004C000 */
 
 	sram0: memory@20010000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(256)>;
+		zephyr,memory-region = "SRAM0";
 	};
 
 	dtcm: memory@20000000 {
@@ -21,6 +22,8 @@
 	};
 
 	soc {
+		compatible = "st,stm32f745", "st,stm32f7", "simple-bus";
+
 		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x2C00>;
 
@@ -64,14 +67,12 @@
 		};
 
 		can2: can@40006800 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006800 0x400>;
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			status = "disabled";
-			sjw = <1>;
-			sample-point = <875>;
 		};
 
 		mac: ethernet@40028000 {
@@ -86,5 +87,13 @@
 				 <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
 			status = "disabled";
 		};
+	};
+
+	smbus4: smbus4 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c4>;
+		status = "disabled";
 	};
 };

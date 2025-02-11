@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/tc_util.h>
 
@@ -789,10 +789,11 @@ static void recv_cb_timeout(struct net_context *context,
 	net_pkt_unref(pkt);
 }
 
-void timeout_thread(struct net_context *ctx, void *param2, void *param3)
+void timeout_thread(void *p1, void *p2, void *p3)
 {
-	int family = POINTER_TO_INT(param2);
-	int32_t timeout = POINTER_TO_INT(param3);
+	struct net_context *ctx = p1;
+	int family = POINTER_TO_INT(p2);
+	int32_t timeout = POINTER_TO_INT(p3);
 	int ret;
 
 	ret = net_context_recv(ctx, recv_cb_timeout, K_MSEC(timeout),
@@ -818,7 +819,7 @@ void timeout_thread(struct net_context *ctx, void *param2, void *param3)
 static k_tid_t start_timeout_v6_thread(int32_t timeout)
 {
 	return k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			       (k_thread_entry_t)timeout_thread,
+			       timeout_thread,
 			       udp_v6_ctx, INT_TO_POINTER(AF_INET6),
 			       INT_TO_POINTER(timeout),
 			       K_PRIO_COOP(7), 0, K_NO_WAIT);
@@ -827,7 +828,7 @@ static k_tid_t start_timeout_v6_thread(int32_t timeout)
 static k_tid_t start_timeout_v4_thread(int32_t timeout)
 {
 	return k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			       (k_thread_entry_t)timeout_thread,
+			       timeout_thread,
 			       udp_v4_ctx, INT_TO_POINTER(AF_INET),
 			       INT_TO_POINTER(timeout),
 			       K_PRIO_COOP(7), 0, K_NO_WAIT);
@@ -982,7 +983,7 @@ static uint8_t *net_context_get_mac(const struct device *dev)
 		context->mac_addr[2] = 0x5E;
 		context->mac_addr[3] = 0x00;
 		context->mac_addr[4] = 0x53;
-		context->mac_addr[5] = sys_rand32_get();
+		context->mac_addr[5] = sys_rand8_get();
 	}
 
 	return context->mac_addr;

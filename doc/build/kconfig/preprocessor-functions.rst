@@ -28,42 +28,56 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
 
 .. code-block:: none
 
-   $(dt_has_compat,<compatible string>)
+   $(dt_alias_enabled,<node alias>)
+   $(dt_chosen_bool_prop, <property in /chosen>, <prop>)
+   $(dt_chosen_enabled,<property in /chosen>)
+   $(dt_chosen_has_compat,<property in /chosen>)
+   $(dt_chosen_label,<property in /chosen>)
+   $(dt_chosen_partition,addr_hex,<chosen>[,<index>,<unit>])
+   $(dt_chosen_partition,addr_int,<chosen>[,<index>,<unit>])
+   $(dt_chosen_path,<property in /chosen>)
+   $(dt_chosen_reg_addr_hex,<property in /chosen>[,<index>,<unit>])
+   $(dt_chosen_reg_addr_int,<property in /chosen>[,<index>,<unit>])
+   $(dt_chosen_reg_size_hex,<property in /chosen>[,<index>,<unit>])
+   $(dt_chosen_reg_size_int,<property in /chosen>[,<index>,<unit>])
+   $(dt_compat_any_has_prop,<compatible string>,<prop>)
+   $(dt_compat_any_on_bus,<compatible string>,<prop>)
    $(dt_compat_enabled,<compatible string>)
    $(dt_compat_on_bus,<compatible string>,<bus>)
-   $(dt_chosen_label,<property in /chosen>)
-   $(dt_chosen_enabled,<property in /chosen>)
-   $(dt_chosen_path,<property in /chosen>)
-   $(dt_chosen_has_compat,<property in /chosen>)
-   $(dt_path_enabled,<node path>)
-   $(dt_alias_enabled,<node alias>)
+   $(dt_gpio_hogs_enabled)
+   $(dt_has_compat,<compatible string>)
+   $(dt_has_compat_enabled,<compatible string>)
+   $(dt_node_array_prop_hex,<node path>,<prop>,<index>[,<unit>])
+   $(dt_node_array_prop_int,<node path>,<prop>,<index>[,<unit>])
+   $(dt_node_bool_prop,<node path>,<prop>)
+   $(dt_node_has_compat,<node path>,<compatible string>)
+   $(dt_node_has_prop,<node path>,<prop>)
+   $(dt_node_int_prop_hex,<node path>,<prop>[,<unit>])
+   $(dt_node_int_prop_int,<node path>,<prop>[,<unit>])
+   $(dt_node_parent,<node path>)
+   $(dt_node_ph_array_prop_hex,<node path>,<prop>,<index>,<cell>[,<unit>])
+   $(dt_node_ph_array_prop_int,<node path>,<prop>,<index>,<cell>[,<unit>])
+   $(dt_node_ph_prop_path,<node path>,<prop>)
+   $(dt_node_reg_addr_hex,<node path>[,<index>,<unit>])
+   $(dt_node_reg_addr_int,<node path>[,<index>,<unit>])
+   $(dt_node_reg_size_hex,<node path>[,<index>,<unit>])
+   $(dt_node_reg_size_int,<node path>[,<index>,<unit>])
+   $(dt_node_str_prop_equals,<node path>,<prop>,<value>)
+   $(dt_nodelabel_array_prop_has_val, <node label>, <prop>, <value>)
+   $(dt_nodelabel_bool_prop,<node label>,<prop>)
    $(dt_nodelabel_enabled,<node label>)
    $(dt_nodelabel_enabled_with_compat,<node label>,<compatible string>)
-   $(dt_chosen_reg_addr_int,<property in /chosen>[,<index>,<unit>])
-   $(dt_chosen_reg_addr_hex,<property in /chosen>[,<index>,<unit>])
-   $(dt_chosen_reg_size_int,<property in /chosen>[,<index>,<unit>])
-   $(dt_chosen_reg_size_hex,<property in /chosen>[,<index>,<unit>])
-   $(dt_node_reg_addr_int,<node path>[,<index>,<unit>])
-   $(dt_node_reg_addr_hex,<node path>[,<index>,<unit>])
-   $(dt_node_reg_size_int,<node path>[,<index>,<unit>])
-   $(dt_node_reg_size_hex,<node path>[,<index>,<unit>])
-   $(dt_compat_enabled,<compatible string>)
-   $(dt_chosen_enabled,<property in /chosen>)
-   $(dt_node_bool_prop,<node path>,<prop>)
-   $(dt_nodelabel_bool_prop,<node label>,<prop>)
-   $(dt_chosen_bool_prop, <property in /chosen>, <prop>)
-   $(dt_node_has_prop,<node path>,<prop>)
-   $(dt_nodelabel_has_prop,<node label>,<prop>)
-   $(dt_node_int_prop_int,<node path>,<prop>[,<unit>])
-   $(dt_node_int_prop_hex,<node path>,<prop>[,<unit>])
-   $(dt_node_str_prop_equals,<node path>,<prop>,<value>)
    $(dt_nodelabel_has_compat,<node label>,<compatible string>)
-   $(dt_node_has_compat,<node path>,<compatible string>)
+   $(dt_nodelabel_has_prop,<node label>,<prop>)
    $(dt_nodelabel_path,<node label>)
-   $(dt_node_parent,<node path>)
-   $(dt_nodelabel_array_prop_has_val, <node label>, <prop>, <value>)
-   $(dt_gpio_hogs_enabled)
+   $(dt_nodelabel_reg_addr_hex,<node label>[,<index>,<unit>])
+   $(dt_nodelabel_reg_addr_int,<node label>[,<index>,<unit>])
+   $(dt_nodelabel_reg_size_hex,<node label>[,<index>,<unit>])
+   $(dt_nodelabel_reg_size_int,<node label>[,<index>,<unit>])
+   $(dt_path_enabled,<node path>)
+   $(normalize_upper,<string>)
    $(shields_list_contains,<shield name>)
+   $(substring,<string>,<start>[,<stop>])
 
 
 Example Usage
@@ -71,7 +85,7 @@ Example Usage
 
 Assume that the devicetree for some board looks like this:
 
-.. code-block:: none
+.. code-block:: devicetree
 
    {
    	soc {
@@ -90,14 +104,14 @@ The second entry in ``reg`` in ``spi@1001400`` (``<0x20010000 0x3c0900>``)
 corresponds to ``mem``, and has the address ``0x20010000``. This address can be
 inserted into Kconfig as follows:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FLASH_BASE_ADDRESS
    	default $(dt_node_reg_addr_hex,/soc/spi@1001400,1)
 
 After preprocessor expansion, this turns into the definition below:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FLASH_BASE_ADDRESS
    	default 0x20010000

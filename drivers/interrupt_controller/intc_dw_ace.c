@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT intel_ace_intc
+
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/irq_nextlevel.h>
 #include <zephyr/arch/xtensa/irq.h>
-#ifdef CONFIG_DYNAMIC_INTERRUPTS
 #include <zephyr/sw_isr_table.h>
-#endif
 #include <zephyr/drivers/interrupt_controller/dw_ace.h>
 #include <soc.h>
 #include <adsp_interrupt.h>
@@ -68,7 +69,7 @@
  *     ACE_INTC[core_id].irq_inten_l |= interrupt_bit;
  */
 
-#define ACE_INTC ((volatile struct dw_ictl_registers *)DT_REG_ADDR(DT_NODELABEL(ace_intc)))
+#define ACE_INTC ((volatile struct dw_ictl_registers *)DT_INST_REG_ADDR(0))
 
 static inline bool is_dw_irq(uint32_t irq)
 {
@@ -92,7 +93,7 @@ void dw_ace_irq_enable(const struct device *dev, uint32_t irq)
 			ACE_INTC[i].irq_intmask_l &= ~BIT(ACE_IRQ_FROM_ZEPHYR(irq));
 		}
 	} else if ((irq & ~XTENSA_IRQ_NUM_MASK) == 0U) {
-		z_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
+		xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
 	}
 }
 
@@ -108,7 +109,7 @@ void dw_ace_irq_disable(const struct device *dev, uint32_t irq)
 			ACE_INTC[i].irq_intmask_l |= BIT(ACE_IRQ_FROM_ZEPHYR(irq));
 		}
 	} else if ((irq & ~XTENSA_IRQ_NUM_MASK) == 0U) {
-		z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+		xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 	}
 }
 
@@ -119,7 +120,7 @@ int dw_ace_irq_is_enabled(const struct device *dev, unsigned int irq)
 	if (is_dw_irq(irq)) {
 		return ACE_INTC[0].irq_inten_l & BIT(ACE_IRQ_FROM_ZEPHYR(irq));
 	} else if ((irq & ~XTENSA_IRQ_NUM_MASK) == 0U) {
-		return z_xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
+		return xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
 	}
 
 	return false;
@@ -161,7 +162,7 @@ static int dw_ace_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(ACE_INTC_IRQ, 0, dwint_isr, 0, 0);
-	z_xtensa_irq_enable(ACE_INTC_IRQ);
+	xtensa_irq_enable(ACE_INTC_IRQ);
 
 	return 0;
 }
@@ -175,6 +176,10 @@ static const struct dw_ace_v1_ictl_driver_api dw_ictl_ace_v1x_apis = {
 #endif
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(ace_intc), dw_ace_init, NULL, NULL, NULL,
+DEVICE_DT_INST_DEFINE(0, dw_ace_init, NULL, NULL, NULL,
 		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		 &dw_ictl_ace_v1x_apis);
+
+IRQ_PARENT_ENTRY_DEFINE(ace_intc, DEVICE_DT_INST_GET(0), DT_INST_IRQN(0),
+			INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(0)),
+			DT_INST_INTC_GET_AGGREGATOR_LEVEL(0));

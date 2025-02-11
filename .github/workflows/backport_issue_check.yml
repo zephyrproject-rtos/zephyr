@@ -2,18 +2,26 @@ name: Backport Issue Check
 
 on:
   pull_request_target:
+    types:
+      - edited
+      - opened
+      - reopened
+      - synchronize
     branches:
       - v*-branch
 
 jobs:
   backport:
     name: Backport Issue Check
-    runs-on: ubuntu-20.04
+    concurrency:
+      group: backport-issue-check-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-22.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Python dependencies
         run: |

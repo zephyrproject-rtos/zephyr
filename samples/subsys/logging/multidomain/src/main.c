@@ -9,7 +9,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
 
-void main(void)
+int main(void)
 {
 	printk("Hello World! %s\n", CONFIG_BOARD);
+	return 0;
 }

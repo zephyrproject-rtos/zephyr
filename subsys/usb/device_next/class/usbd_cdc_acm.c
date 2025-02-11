@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT zephyr_cdc_acm_uart
+
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -15,20 +18,29 @@
 
 #include <zephyr/drivers/usb/udc.h>
 
+#include "usbd_msg.h"
+
 #include <zephyr/logging/log.h>
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart) \
+	&& defined(CONFIG_LOG_BACKEND_UART) \
+	&& defined(CONFIG_USBD_CDC_ACM_LOG_LEVEL) \
+	&& CONFIG_USBD_CDC_ACM_LOG_LEVEL != LOG_LEVEL_NONE
+/* Prevent endless recursive logging loop and warn user about it */
+#warning "USB_CDC_ACM_LOG_LEVEL forced to LOG_LEVEL_NONE"
+#undef CONFIG_USBD_CDC_ACM_LOG_LEVEL
+#define CONFIG_USBD_CDC_ACM_LOG_LEVEL LOG_LEVEL_NONE
+#endif
 LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 
-/*
- * FIXME: buffer count per device.
- */
 NET_BUF_POOL_FIXED_DEFINE(cdc_acm_ep_pool,
-			  2, 512,
-			  sizeof(struct udc_buf_info), NULL);
+			  DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
+			  512, sizeof(struct udc_buf_info), NULL);
 
 #define CDC_ACM_DEFAULT_LINECODING	{sys_cpu_to_le32(115200), 0, 0, 8}
-#define CDC_ACM_DEFAULT_BULK_EP_MPS	0
 #define CDC_ACM_DEFAULT_INT_EP_MPS	16
-#define CDC_ACM_DEFAULT_INT_INTERVAL	0x0A
+#define CDC_ACM_INTERVAL_DEFAULT	10000UL
+#define CDC_ACM_FS_INT_EP_INTERVAL	USB_FS_INT_EP_INTERVAL(10000U)
+#define CDC_ACM_HS_INT_EP_INTERVAL	USB_HS_INT_EP_INTERVAL(10000U)
 
 #define CDC_ACM_CLASS_ENABLED		0
 #define CDC_ACM_CLASS_SUSPENDED		1
@@ -47,9 +59,32 @@ struct cdc_acm_uart_fifo {
 	bool altered;
 };
 
+struct usbd_cdc_acm_desc {
+	struct usb_association_descriptor iad;
+	struct usb_if_descriptor if0;
+	struct cdc_header_descriptor if0_header;
+	struct cdc_cm_descriptor if0_cm;
+	struct cdc_acm_descriptor if0_acm;
+	struct cdc_union_descriptor if0_union;
+	struct usb_ep_descriptor if0_int_ep;
+	struct usb_ep_descriptor if0_hs_int_ep;
+
+	struct usb_if_descriptor if1;
+	struct usb_ep_descriptor if1_in_ep;
+	struct usb_ep_descriptor if1_out_ep;
+	struct usb_ep_descriptor if1_hs_in_ep;
+	struct usb_ep_descriptor if1_hs_out_ep;
+
+	struct usb_desc_header nil_desc;
+};
+
 struct cdc_acm_uart_data {
 	/* Pointer to the associated USBD class node */
-	struct usbd_class_node *c_nd;
+	struct usbd_class_data *c_data;
+	/* Pointer to the class interface descriptors */
+	struct usbd_cdc_acm_desc *const desc;
+	const struct usb_desc_header **const fs_desc;
+	const struct usb_desc_header **const hs_desc;
 	/* Line Coding Structure */
 	struct cdc_acm_line_coding line_coding;
 	/* SetControlLineState bitmap */
@@ -77,22 +112,6 @@ struct cdc_acm_uart_data {
 	atomic_t state;
 	struct k_sem notif_sem;
 };
-
-struct usbd_cdc_acm_desc {
-	struct usb_association_descriptor iad_cdc;
-	struct usb_if_descriptor if0;
-	struct cdc_header_descriptor if0_header;
-	struct cdc_cm_descriptor if0_cm;
-	struct cdc_acm_descriptor if0_acm;
-	struct cdc_union_descriptor if0_union;
-	struct usb_ep_descriptor if0_int_ep;
-
-	struct usb_if_descriptor if1;
-	struct usb_ep_descriptor if1_in_ep;
-	struct usb_ep_descriptor if1_out_ep;
-
-	struct usb_desc_header nil_desc;
-} __packed;
 
 static void cdc_acm_irq_rx_enable(const struct device *dev);
 
@@ -123,39 +142,64 @@ static ALWAYS_INLINE bool check_wq_ctx(const struct device *dev)
 	return k_current_get() == k_work_queue_thread_get(&cdc_acm_work_q);
 }
 
-static uint8_t cdc_acm_get_int_in(struct usbd_class_node *const c_nd)
+static uint8_t cdc_acm_get_int_in(struct usbd_class_data *const c_data)
 {
-	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct cdc_acm_uart_data *data = dev->data;
+	struct usbd_cdc_acm_desc *desc = data->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if0_hs_int_ep.bEndpointAddress;
+	}
 
 	return desc->if0_int_ep.bEndpointAddress;
 }
 
-static uint8_t cdc_acm_get_bulk_in(struct usbd_class_node *const c_nd)
+static uint8_t cdc_acm_get_bulk_in(struct usbd_class_data *const c_data)
 {
-	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct cdc_acm_uart_data *data = dev->data;
+	struct usbd_cdc_acm_desc *desc = data->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if1_hs_in_ep.bEndpointAddress;
+	}
 
 	return desc->if1_in_ep.bEndpointAddress;
 }
 
-static uint8_t cdc_acm_get_bulk_out(struct usbd_class_node *const c_nd)
+static uint8_t cdc_acm_get_bulk_out(struct usbd_class_data *const c_data)
 {
-	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct cdc_acm_uart_data *data = dev->data;
+	struct usbd_cdc_acm_desc *desc = data->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if1_hs_out_ep.bEndpointAddress;
+	}
 
 	return desc->if1_out_ep.bEndpointAddress;
 }
 
-static size_t cdc_acm_get_bulk_mps(struct usbd_class_node *const c_nd)
+static size_t cdc_acm_get_bulk_mps(struct usbd_class_data *const c_data)
 {
-	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
-	return desc->if1_out_ep.wMaxPacketSize;
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return 512U;
+	}
+
+	return 64U;
 }
 
-static int usbd_cdc_acm_request(struct usbd_class_node *const c_nd,
+static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 				struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = c_nd->data->uds_ctx;
-	const struct device *dev = c_nd->data->priv;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct udc_buf_info *bi;
 
@@ -169,14 +213,14 @@ static int usbd_cdc_acm_request(struct usbd_class_node *const c_nd,
 				bi->ep, buf->len);
 		}
 
-		if (bi->ep == cdc_acm_get_bulk_out(c_nd)) {
+		if (bi->ep == cdc_acm_get_bulk_out(c_data)) {
 			atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
 		}
 
 		goto ep_request_error;
 	}
 
-	if (bi->ep == cdc_acm_get_bulk_out(c_nd)) {
+	if (bi->ep == cdc_acm_get_bulk_out(c_data)) {
 		/* RX transfer completion */
 		size_t done;
 
@@ -190,14 +234,14 @@ static int usbd_cdc_acm_request(struct usbd_class_node *const c_nd,
 		cdc_acm_work_submit(&data->rx_fifo_work);
 	}
 
-	if (bi->ep == cdc_acm_get_bulk_in(c_nd)) {
+	if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
 		/* TX transfer completion */
 		if (data->cb) {
 			cdc_acm_work_submit(&data->irq_cb_work);
 		}
 	}
 
-	if (bi->ep == cdc_acm_get_int_in(c_nd)) {
+	if (bi->ep == cdc_acm_get_int_in(c_data)) {
 		k_sem_give(&data->notif_sem);
 	}
 
@@ -205,16 +249,16 @@ ep_request_error:
 	return usbd_ep_buf_free(uds_ctx, buf);
 }
 
-static void usbd_cdc_acm_update(struct usbd_class_node *const c_nd,
+static void usbd_cdc_acm_update(struct usbd_class_data *const c_data,
 				uint8_t iface, uint8_t alternate)
 {
 	LOG_DBG("New configuration, interface %u alternate %u",
 		iface, alternate);
 }
 
-static void usbd_cdc_acm_enable(struct usbd_class_node *const c_nd)
+static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_set_bit(&data->state, CDC_ACM_CLASS_ENABLED);
@@ -225,13 +269,19 @@ static void usbd_cdc_acm_enable(struct usbd_class_node *const c_nd)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
-		/* TODO */
+		if (ring_buf_is_empty(data->tx_fifo.rb)) {
+			/* Raise TX ready interrupt */
+			cdc_acm_work_submit(&data->irq_cb_work);
+		} else {
+			/* Queue pending TX data on IN endpoint */
+			cdc_acm_work_submit(&data->tx_fifo_work);
+		}
 	}
 }
 
-static void usbd_cdc_acm_disable(struct usbd_class_node *const c_nd)
+static void usbd_cdc_acm_disable(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_ENABLED);
@@ -239,21 +289,34 @@ static void usbd_cdc_acm_disable(struct usbd_class_node *const c_nd)
 	LOG_INF("Configuration disabled");
 }
 
-static void usbd_cdc_acm_suspended(struct usbd_class_node *const c_nd)
+static void usbd_cdc_acm_suspended(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	/* FIXME: filter stray suspended events earlier */
 	atomic_set_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
 }
 
-static void usbd_cdc_acm_resumed(struct usbd_class_node *const c_nd)
+static void usbd_cdc_acm_resumed(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
+}
+
+static void *usbd_cdc_acm_get_desc(struct usbd_class_data *const c_data,
+				   const enum usbd_speed speed)
+{
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct cdc_acm_uart_data *data = dev->data;
+
+	if (speed == USBD_SPEED_HS) {
+		return data->hs_desc;
+	}
+
+	return data->fs_desc;
 }
 
 static void cdc_acm_update_uart_cfg(struct cdc_acm_uart_data *const data)
@@ -328,11 +391,11 @@ static void cdc_acm_update_linestate(struct cdc_acm_uart_data *const data)
 	}
 }
 
-static int usbd_cdc_acm_cth(struct usbd_class_node *const c_nd,
+static int usbd_cdc_acm_cth(struct usbd_class_data *const c_data,
 			    const struct usb_setup_packet *const setup,
 			    struct net_buf *const buf)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	size_t min_len;
 
@@ -355,11 +418,12 @@ static int usbd_cdc_acm_cth(struct usbd_class_node *const c_nd,
 	return 0;
 }
 
-static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
+static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
 			    const struct usb_setup_packet *const setup,
 			    const struct net_buf *const buf)
 {
-	const struct device *dev = c_nd->data->priv;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	size_t len;
 
@@ -373,11 +437,13 @@ static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
 
 		memcpy(&data->line_coding, buf->data, len);
 		cdc_acm_update_uart_cfg(data);
+		usbd_msg_pub_device(uds_ctx, USBD_MSG_CDC_ACM_LINE_CODING, dev);
 		return 0;
 
 	case SET_CONTROL_LINE_STATE:
 		data->line_state = setup->wValue;
 		cdc_acm_update_linestate(data);
+		usbd_msg_pub_device(uds_ctx, USBD_MSG_CDC_ACM_CONTROL_LINE_STATE, dev);
 		return 0;
 
 	default:
@@ -391,11 +457,13 @@ static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
 	return 0;
 }
 
-static int usbd_cdc_acm_init(struct usbd_class_node *const c_nd)
+static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 {
-	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct cdc_acm_uart_data *data = dev->data;
+	struct usbd_cdc_acm_desc *desc = data->desc;
 
-	desc->iad_cdc.bFirstInterface = desc->if0.bInterfaceNumber;
+	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
 
@@ -414,7 +482,7 @@ static int cdc_acm_send_notification(const struct device *dev,
 		.data = sys_cpu_to_le16(serial_state),
 	};
 	struct cdc_acm_uart_data *data = dev->data;
-	struct usbd_class_node *c_nd = data->c_nd;
+	struct usbd_class_data *c_data = data->c_data;
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
@@ -429,14 +497,14 @@ static int cdc_acm_send_notification(const struct device *dev,
 		return -EACCES;
 	}
 
-	ep = cdc_acm_get_int_in(c_nd);
-	buf = usbd_ep_buf_alloc(c_nd, ep, sizeof(struct cdc_acm_notification));
+	ep = cdc_acm_get_int_in(c_data);
+	buf = usbd_ep_buf_alloc(c_data, ep, sizeof(struct cdc_acm_notification));
 	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
 	net_buf_add_mem(buf, &notification, sizeof(struct cdc_acm_notification));
-	ret = usbd_ep_enqueue(c_nd, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	/* FIXME: support for sync transfers */
 	k_sem_take(&data->notif_sem, K_FOREVER);
 
@@ -449,13 +517,13 @@ static int cdc_acm_send_notification(const struct device *dev,
 static void cdc_acm_tx_fifo_handler(struct k_work *work)
 {
 	struct cdc_acm_uart_data *data;
-	struct usbd_class_node *c_nd;
+	struct usbd_class_data *c_data;
 	struct net_buf *buf;
 	size_t len;
 	int ret;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, tx_fifo_work);
-	c_nd = data->c_nd;
+	c_data = data->c_data;
 
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
 		LOG_DBG("USB configuration is not enabled");
@@ -472,7 +540,7 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	buf = cdc_acm_buf_alloc(cdc_acm_get_bulk_in(c_nd));
+	buf = cdc_acm_buf_alloc(cdc_acm_get_bulk_in(c_data));
 	if (buf == NULL) {
 		cdc_acm_work_submit(&data->tx_fifo_work);
 		goto tx_fifo_handler_exit;
@@ -481,7 +549,7 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 	len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
 	net_buf_add(buf, len);
 
-	ret = usbd_ep_enqueue(c_nd, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue");
 		net_buf_unref(buf);
@@ -502,13 +570,13 @@ tx_fifo_handler_exit:
 static void cdc_acm_rx_fifo_handler(struct k_work *work)
 {
 	struct cdc_acm_uart_data *data;
-	struct usbd_class_node *c_nd;
+	struct usbd_class_data *c_data;
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, rx_fifo_work);
-	c_nd = data->c_nd;
+	c_data = data->c_data;
 
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED) ||
 	    atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
@@ -516,7 +584,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	if (ring_buf_space_get(data->rx_fifo.rb) < cdc_acm_get_bulk_mps(c_nd)) {
+	if (ring_buf_space_get(data->rx_fifo.rb) < cdc_acm_get_bulk_mps(c_data)) {
 		LOG_INF("RX buffer to small, throttle");
 		return;
 	}
@@ -526,13 +594,13 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	ep = cdc_acm_get_bulk_out(c_nd);
+	ep = cdc_acm_get_bulk_out(c_data);
 	buf = cdc_acm_buf_alloc(ep);
 	if (buf == NULL) {
 		return;
 	}
 
-	ret = usbd_ep_enqueue(c_nd, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
@@ -588,6 +656,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 			     const int len)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
+	unsigned int lock;
 	uint32_t done;
 
 	if (!check_wq_ctx(dev)) {
@@ -596,7 +665,9 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 		return 0;
 	}
 
+	lock = irq_lock();
 	done = ring_buf_put(data->tx_fifo.rb, tx_data, len);
+	irq_unlock(lock);
 	if (done) {
 		data->tx_fifo.altered = true;
 	}
@@ -722,10 +793,10 @@ static int cdc_acm_irq_update(const struct device *dev)
 static void cdc_acm_irq_cb_handler(struct k_work *work)
 {
 	struct cdc_acm_uart_data *data;
-	struct usbd_class_node *c_nd;
+	struct usbd_class_data *c_data;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, irq_cb_work);
-	c_nd = data->c_nd;
+	c_data = data->c_data;
 
 	if (data->cb == NULL) {
 		LOG_ERR("IRQ callback is not set");
@@ -745,7 +816,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) ||
 	    atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
-		data->cb(c_nd->data->priv, data->cb_data);
+		data->cb(usbd_class_get_private(c_data), data->cb_data);
 	}
 
 	if (data->rx_fifo.altered) {
@@ -931,7 +1002,7 @@ static int cdc_acm_config_get(const struct device *dev,
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
-static int usbd_cdc_acm_init_wq(const struct device *dev)
+static int usbd_cdc_acm_init_wq(void)
 {
 	k_work_queue_init(&cdc_acm_work_q);
 	k_work_queue_start(&cdc_acm_work_q, cdc_acm_stack,
@@ -991,11 +1062,12 @@ struct usbd_class_api usbd_cdc_acm_api = {
 	.control_to_host = usbd_cdc_acm_cth,
 	.control_to_dev = usbd_cdc_acm_ctd,
 	.init = usbd_cdc_acm_init,
+	.get_desc = usbd_cdc_acm_get_desc,
 };
 
 #define CDC_ACM_DEFINE_DESCRIPTOR(n)						\
 static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
-	.iad_cdc = {								\
+	.iad = {								\
 		.bLength = sizeof(struct usb_association_descriptor),		\
 		.bDescriptorType = USB_DESC_INTERFACE_ASSOC,			\
 		.bFirstInterface = 0,						\
@@ -1055,7 +1127,16 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.bEndpointAddress = 0x81,					\
 		.bmAttributes = USB_EP_TYPE_INTERRUPT,				\
 		.wMaxPacketSize = sys_cpu_to_le16(CDC_ACM_DEFAULT_INT_EP_MPS),	\
-		.bInterval = CDC_ACM_DEFAULT_INT_INTERVAL,			\
+		.bInterval = CDC_ACM_FS_INT_EP_INTERVAL,			\
+	},									\
+										\
+	.if0_hs_int_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x81,					\
+		.bmAttributes = USB_EP_TYPE_INTERRUPT,				\
+		.wMaxPacketSize = sys_cpu_to_le16(CDC_ACM_DEFAULT_INT_EP_MPS),	\
+		.bInterval = CDC_ACM_HS_INT_EP_INTERVAL,			\
 	},									\
 										\
 	.if1 = {								\
@@ -1075,7 +1156,7 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = 0x82,					\
 		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(CDC_ACM_DEFAULT_BULK_EP_MPS),	\
+		.wMaxPacketSize = sys_cpu_to_le16(64U),				\
 		.bInterval = 0,							\
 	},									\
 										\
@@ -1084,7 +1165,25 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = 0x01,					\
 		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(CDC_ACM_DEFAULT_BULK_EP_MPS),	\
+		.wMaxPacketSize = sys_cpu_to_le16(64U),				\
+		.bInterval = 0,							\
+	},									\
+										\
+	.if1_hs_in_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x82,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(512U),			\
+		.bInterval = 0,							\
+	},									\
+										\
+	.if1_hs_out_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x01,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(512U),			\
 		.bInterval = 0,							\
 	},									\
 										\
@@ -1092,9 +1191,35 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.bLength = 0,							\
 		.bDescriptorType = 0,						\
 	},									\
+};										\
+										\
+const static struct usb_desc_header *cdc_acm_fs_desc_##n[] = {			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.iad,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_header,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_cm,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_acm,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_union,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_int_ep,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_in_ep,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_out_ep,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.nil_desc,			\
+};										\
+										\
+const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.iad,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_header,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_cm,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_acm,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_union,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_hs_int_ep,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_hs_in_ep,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_hs_out_ep,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.nil_desc,			\
 }
-
-#define DT_DRV_COMPAT zephyr_cdc_acm_uart
 
 #define USBD_CDC_ACM_DT_DEVICE_DEFINE(n)					\
 	BUILD_ASSERT(DT_INST_ON_BUS(n, usb),					\
@@ -1103,26 +1228,22 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 										\
 	CDC_ACM_DEFINE_DESCRIPTOR(n);						\
 										\
-	static struct usbd_class_data usbd_cdc_acm_data_##n;			\
-										\
 	USBD_DEFINE_CLASS(cdc_acm_##n,						\
 			  &usbd_cdc_acm_api,					\
-			  &usbd_cdc_acm_data_##n);				\
+			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
 										\
-	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, tx_fifo_size));	\
+	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, rx_fifo_size));	\
 	RING_BUF_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
 										\
 	static struct cdc_acm_uart_data uart_data_##n = {			\
 		.line_coding = CDC_ACM_DEFAULT_LINECODING,			\
-		.c_nd = &cdc_acm_##n,						\
+		.c_data = &cdc_acm_##n,						\
 		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
 		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
 		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
-	};									\
-										\
-	static struct usbd_class_data usbd_cdc_acm_data_##n = {			\
-		.desc = (struct usb_desc_header *)&cdc_acm_desc_##n,		\
-		.priv = (void *)DEVICE_DT_GET(DT_DRV_INST(n)),			\
+		.desc = &cdc_acm_desc_##n,					\
+		.fs_desc = cdc_acm_fs_desc_##n,					\
+		.hs_desc = cdc_acm_hs_desc_##n,					\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, usbd_cdc_acm_preinit, NULL,			\

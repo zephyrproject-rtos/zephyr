@@ -17,7 +17,7 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
@@ -213,8 +213,9 @@ static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 
 static void reassembly_timeout(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct net_ipv6_reassembly *reass =
-		CONTAINER_OF(work, struct net_ipv6_reassembly, timer);
+		CONTAINER_OF(dwork, struct net_ipv6_reassembly, timer);
 
 	reassembly_info("Reassembly cancelled", reass);
 
@@ -337,6 +338,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	ipv6.hdr->len = htons(len);
 
 	net_pkt_set_data(pkt, &ipv6_access);
+	net_pkt_set_ip_reassembled(pkt, true);
 
 	NET_DBG("New pkt %p IPv6 len is %d bytes", pkt,
 		len + NET_IPV6H_LEN);
@@ -634,10 +636,13 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 	frag_hdr->id = net_pkt_ipv6_fragment_id(pkt);
 	frag_hdr->offset = htons(((frag_offset / 8U) << 3) | !final);
 
+	net_pkt_set_chksum_done(frag_pkt, true);
+
 	if (net_pkt_set_data(frag_pkt, &frag_access)) {
 		goto fail;
 	}
 
+	net_pkt_set_ip_hdr_len(frag_pkt, net_pkt_ip_hdr_len(pkt));
 	net_pkt_set_ipv6_ext_len(frag_pkt,
 				 net_pkt_ipv6_ext_len(pkt) +
 				 sizeof(struct net_ipv6_frag_hdr));
@@ -654,6 +659,10 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 
 	if (net_ipv6_finalize(frag_pkt, frag_pkt_next_hdr) < 0) {
 		goto fail;
+	}
+
+	if (final) {
+		net_pkt_set_context(frag_pkt, net_pkt_context(pkt));
 	}
 
 	/* If everything has been ok so far, we can send the packet. */
@@ -684,7 +693,6 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	uint16_t frag_offset;
 	size_t length;
 	uint8_t next_hdr;
-	uint8_t last_hdr;
 	int fit_len;
 	int ret;
 
@@ -698,9 +706,7 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	net_pkt_cursor_init(pkt);
 
 	if (net_pkt_skip(pkt, next_hdr_off) ||
-	    net_pkt_read_u8(pkt, &next_hdr) ||
-	    net_pkt_skip(pkt, last_hdr_off) ||
-	    net_pkt_read_u8(pkt, &last_hdr)) {
+	    net_pkt_read_u8(pkt, &next_hdr)) {
 		return -ENOBUFS;
 	}
 
@@ -718,6 +724,31 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	frag_offset = 0U;
+
+	/* Calculate the L4 checksum (if not done already) before the fragmentation. */
+	if (!net_pkt_is_chksum_done(pkt)) {
+		net_pkt_cursor_init(pkt);
+		net_pkt_skip(pkt, last_hdr_off);
+
+		switch (next_hdr) {
+		case IPPROTO_ICMPV6:
+			ret = net_icmpv6_finalize(pkt, true);
+			break;
+		case IPPROTO_TCP:
+			ret = net_tcp_finalize(pkt, true);
+			break;
+		case IPPROTO_UDP:
+			ret = net_udp_finalize(pkt, true);
+			break;
+		default:
+			ret = 0;
+			break;
+		}
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	length = net_pkt_get_len(pkt) -
 		(net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));

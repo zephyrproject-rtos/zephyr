@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_RENESAS_RZT2M
+
+config NUM_IRQS
+	default 994
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 20000000
+
+config FPU
+	default y
+
+config FLASH_SIZE
+	default 0
+
+config FLASH_BASE_ADDRESS
+	default 0
+
+endif # SOC_RENESAS_RZT2M

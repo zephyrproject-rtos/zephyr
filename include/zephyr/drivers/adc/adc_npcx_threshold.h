@@ -19,7 +19,7 @@ enum adc_npcx_threshold_param_type {
 	ADC_NPCX_THRESHOLD_PARAM_CHNSEL,
 	/* Sets relation between measured value and assetion threshold value.*/
 	ADC_NPCX_THRESHOLD_PARAM_L_H,
-	/* Sets the threshol value to which measured data is compared. */
+	/* Sets the threshold value to which measured data is compared. */
 	ADC_NPCX_THRESHOLD_PARAM_THVAL,
 	/* Sets worker queue thread to be notified */
 	ADC_NPCX_THRESHOLD_PARAM_WORK,
@@ -41,13 +41,15 @@ struct adc_npcx_threshold_param {
  * @note This function is available only if @kconfig{CONFIG_ADC_CMP_NPCX}
  * is selected.
  *
+ * @param dev       Pointer to the device structure for the driver instance.
  * @param val_mv    Input value in millivolts to be converted.
  * @param thrval    Pointer of variable to hold the result of conversion.
  *
  * @returns 0 on success, negative result if input cannot be converted due to
  *          overflow.
  */
-int adc_npcx_threshold_mv_to_thrval(uint32_t val_mv, uint32_t *thrval);
+int adc_npcx_threshold_mv_to_thrval(const struct device *dev, uint32_t val_mv,
+								uint32_t *thrval);
 
 /**
  * @brief Set ADC threshold parameter.
@@ -80,7 +82,7 @@ int adc_npcx_threshold_ctrl_set_param(const struct device *dev,
  *
  * @returns 0 on success, negative error code otherwise.
  *            all parameters must be configure prior enabling threshold
- *            interruption, otherwhise error will be returned.
+ *            interruption, otherwise error will be returned.
  */
 int adc_npcx_threshold_ctrl_enable(const struct device *dev, uint8_t th_sel,
 				   const bool enable);

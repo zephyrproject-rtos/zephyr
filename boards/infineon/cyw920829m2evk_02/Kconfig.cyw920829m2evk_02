@@ -1,0 +1,7 @@
+# The Infineon AIROC™ CYW20829 Bluetooth® LE evaluation kit (CYW92089M2EVK-02)
+
+# Copyright (c) 2024 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CYW920829M2EVK_02
+	select SOC_CYW20829B0LKML

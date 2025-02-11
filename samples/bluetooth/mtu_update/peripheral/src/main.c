@@ -11,7 +11,7 @@
 
 extern void run_peripheral_sample(uint8_t *notify_data, size_t notify_data_size, uint16_t seconds);
 
-void main(void)
+int main(void)
 {
 	uint8_t notify_data[100] = {};
 
@@ -19,4 +19,5 @@ void main(void)
 	notify_data[99] = 0x55;
 
 	run_peripheral_sample(notify_data, sizeof(notify_data), 0);
+	return 0;
 }

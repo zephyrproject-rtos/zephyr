@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021 The Chromium OS Authors
  * Copyright (c) 2019 Richard Osterloh <richard.osterloh@gmail.com>
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32g4_l4_5_reset.h>
 #include <freq.h>
 
@@ -27,10 +29,26 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&stop0 &stop1>;
+		};
+
+		power-states {
+			stop0: state0 {
+					compatible = "zephyr,power-state";
+					power-state-name = "suspend-to-idle";
+					substate-id = <1>;
+					min-residency-us = <20>;
+				};
+			stop1: state1 {
+					compatible = "zephyr,power-state";
+					power-state-name = "suspend-to-idle";
+					substate-id = <2>;
+					min-residency-us = <100>;
+				};
 		};
 	};
 
@@ -61,8 +79,9 @@
 
 		clk_lse: clk-lse {
 			#clock-cells = <0>;
-			compatible = "fixed-clock";
+			compatible = "st,stm32-lse-clock";
 			clock-frequency = <32768>;
+			driving-capability = <0>;
 			status = "disabled";
 		};
 
@@ -91,8 +110,12 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			temp-channel = <16>;
-			vref-channel = <18>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		adc2: adc@50000100 {
@@ -102,6 +125,12 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		dac1: dac@50000800 {
@@ -155,6 +184,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x40010400 0x400>;
 			num-lines = <16>;
 			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
@@ -353,30 +383,15 @@
 			status = "disabled";
 		};
 
-		can {
-			compatible = "bosch,m_can-base";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			std-filter-elements = <28>;
-			ext-filter-elements = <8>;
-			rx-fifo0-elements = <3>;
-			rx-fifo1-elements = <3>;
-			rx-buffer-elements = <0>;
-			tx-buffer-elements = <3>;
-
-			can1: can@40006400 {
-				compatible = "st,stm32-fdcan";
-				reg = <0x40006400 0x400>, <0x4000A400 0x350>;
-				reg-names = "m_can", "message_ram";
-				interrupts = <21 0>, <22 0>;
-				interrupt-names = "LINE_0", "LINE_1";
-				clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
-				status = "disabled";
-				sjw = <1>;
-				sample-point = <875>;
-				sjw-data = <1>;
-				sample-point-data = <875>;
-			};
+		fdcan1: can@40006400 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x40006400 0x400>, <0x4000a400 0x350>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <21 0>, <22 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			status = "disabled";
 		};
 
 		lptim1: timers@40007c00 {
@@ -417,6 +432,11 @@
 			st,prescaler = <0>;
 			status = "disabled";
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
@@ -434,6 +454,11 @@
 			st,prescaler = <0>;
 			status = "disabled";
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
@@ -450,6 +475,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "st,stm32-pwm";
@@ -512,6 +542,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers16: timers@40014400 {
@@ -528,6 +563,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -546,6 +586,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		rtc: rtc@40002800 {
@@ -554,6 +599,8 @@
 			interrupts = <41 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
 			prescaler = <32768>;
+			alarms-count = <2>;
+			alrm-exti-line = <17>;
 			status = "disabled";
 		};
 
@@ -626,9 +673,48 @@
 		status = "disabled";
 	};
 
+	vref: vref {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x1FFF75AA>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc1 18>;
+		status = "disabled";
+	};
+
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <3>;
+		io-channels = <&adc1 17>;
+		status = "disabled";
+	};
+
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
+		status = "disabled";
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
+	};
+
+	smbus3: smbus3 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c3>;
+		status = "disabled";
 	};
 };
 

@@ -63,7 +63,20 @@ struct fp_non_volatile_register_set {
 #define SIZEOF_FP_VOLATILE_REGISTER_SET sizeof(struct fp_volatile_register_set)
 #define SIZEOF_FP_NON_VOLATILE_REGISTER_SET 0
 
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_FP) || defined(CONFIG_ARMV7_R_FP)
+#elif defined(CONFIG_ARM)
+
+#if defined(CONFIG_VFP_FEATURE_REGS_S64_D32)
+
+struct fp_volatile_register_set {
+	double regs[16]; /* d0..d15 */
+};
+
+struct fp_non_volatile_register_set {
+	double regs[16]; /*d16..d31 */
+};
+
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_FP) || defined(CONFIG_ARMV7_R_FP) \
+	|| defined(CONFIG_VFP_FEATURE_REGS_S32_D16)
 
 #define FP_OPTION 0
 
@@ -82,6 +95,8 @@ struct fp_volatile_register_set {
 struct fp_non_volatile_register_set {
 	float s[16];
 };
+
+#endif
 
 #define SIZEOF_FP_VOLATILE_REGISTER_SET	\
 	sizeof(struct fp_volatile_register_set)

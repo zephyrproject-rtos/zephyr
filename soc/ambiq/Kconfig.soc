@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+
+config SOC_FAMILY_AMBIQ
+	bool
+
+config SOC_FAMILY
+	default "ambiq" if SOC_FAMILY_AMBIQ
+
+rsource "*/Kconfig.soc"

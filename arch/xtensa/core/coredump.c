@@ -6,7 +6,8 @@
 
 #include <string.h>
 #include <zephyr/debug/coredump.h>
-#include <xtensa-asm2.h>
+#include <xtensa_asm2_context.h>
+#include <zephyr/offsets.h>
 
 #define ARCH_HDR_VER			1
 #define XTENSA_BLOCK_HDR_VER		2
@@ -16,6 +17,9 @@ enum xtensa_soc_code {
 	XTENSA_SOC_SAMPLE_CONTROLLER,
 	XTENSA_SOC_ESP32,
 	XTENSA_SOC_INTEL_ADSP,
+	XTENSA_SOC_ESP32S2,
+	XTENSA_SOC_ESP32S3,
+	XTENSA_SOC_DC233C,
 };
 
 struct xtensa_arch_block {
@@ -87,7 +91,7 @@ struct xtensa_arch_block {
  */
 static struct xtensa_arch_block arch_blk;
 
-void arch_coredump_info_dump(const z_arch_esf_t *esf)
+void arch_coredump_info_dump(const struct arch_esf *esf)
 {
 	struct coredump_arch_hdr_t hdr = {
 		.id = COREDUMP_ARCH_HDR_ID,
@@ -106,10 +110,16 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf)
 
 	#if CONFIG_SOC_XTENSA_SAMPLE_CONTROLLER
 		arch_blk.soc = XTENSA_SOC_SAMPLE_CONTROLLER;
-	#elif CONFIG_SOC_ESP32
-		arch_blk.soc = XTENSA_SOC_ESP32;
 	#elif CONFIG_SOC_FAMILY_INTEL_ADSP
 		arch_blk.soc = XTENSA_SOC_INTEL_ADSP;
+	#elif CONFIG_SOC_SERIES_ESP32
+		arch_blk.soc = XTENSA_SOC_ESP32;
+	#elif CONFIG_SOC_SERIES_ESP32S2
+		arch_blk.soc = XTENSA_SOC_ESP32S2;
+	#elif CONFIG_SOC_SERIES_ESP32S3
+		arch_blk.soc = XTENSA_SOC_ESP32S3;
+	#elif CONFIG_SOC_XTENSA_DC233C
+		arch_blk.soc = XTENSA_SOC_DC233C;
 	#else
 		arch_blk.soc = XTENSA_SOC_UNKNOWN;
 	#endif
@@ -119,41 +129,55 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf)
 
 	__asm__ volatile("rsr.exccause %0" : "=r"(arch_blk.r.exccause));
 
-	int *bsa = *(int **)esf;
+	_xtensa_irq_stack_frame_raw_t *frame = (void *)esf;
+	_xtensa_irq_bsa_t *bsa = frame->ptr_to_bsa;
+	uintptr_t num_high_regs;
+	int regs_blk_remaining;
 
-	arch_blk.r.pc = bsa[BSA_PC_OFF/4];
+	/* Calculate number of high registers. */
+	num_high_regs = (uint8_t *)bsa - (uint8_t *)frame + sizeof(void *);
+	num_high_regs /= sizeof(uintptr_t);
+
+	/* And high registers are always comes in 4 in a block. */
+	regs_blk_remaining = (int)num_high_regs / 4;
+
+	arch_blk.r.pc = bsa->pc;
 	__asm__ volatile("rsr.excvaddr %0" : "=r"(arch_blk.r.excvaddr));
-	arch_blk.r.ps = bsa[BSA_PS_OFF/4];
+	arch_blk.r.ps = bsa->ps;
 #if XCHAL_HAVE_S32C1I
-	arch_blk.r.scompare1 = bsa[BSA_SCOMPARE1_OFF];
+	arch_blk.r.scompare1 = bsa->scompare1;
 #endif
-	arch_blk.r.sar = bsa[BSA_SAR_OFF/4];
-	arch_blk.r.a0 = bsa[BSA_A0_OFF/4];
-	arch_blk.r.a1 =  (uint32_t)((char *)bsa) + BASE_SAVE_AREA_SIZE;
-	arch_blk.r.a2 = bsa[BSA_A2_OFF/4];
-	arch_blk.r.a3 = bsa[BSA_A3_OFF/4];
-	if (bsa - esf > 4) {
-		arch_blk.r.a4 = bsa[-4];
-		arch_blk.r.a5 = bsa[-3];
-		arch_blk.r.a6 = bsa[-2];
-		arch_blk.r.a7 = bsa[-1];
+	arch_blk.r.sar = bsa->sar;
+	arch_blk.r.a0 = bsa->a0;
+	arch_blk.r.a1 = (uint32_t)((char *)bsa) + sizeof(*bsa);
+	arch_blk.r.a2 = bsa->a2;
+	arch_blk.r.a3 = bsa->a3;
+	if (regs_blk_remaining > 0) {
+		regs_blk_remaining--;
+
+		arch_blk.r.a4 = frame->blks[regs_blk_remaining].r0;
+		arch_blk.r.a5 = frame->blks[regs_blk_remaining].r1;
+		arch_blk.r.a6 = frame->blks[regs_blk_remaining].r2;
+		arch_blk.r.a7 = frame->blks[regs_blk_remaining].r3;
 	}
-	if (bsa - esf > 8) {
-		arch_blk.r.a8 = bsa[-8];
-		arch_blk.r.a9 = bsa[-7];
-		arch_blk.r.a10 = bsa[-6];
-		arch_blk.r.a11 = bsa[-5];
+	if (regs_blk_remaining > 0) {
+		regs_blk_remaining--;
+
+		arch_blk.r.a8 = frame->blks[regs_blk_remaining].r0;
+		arch_blk.r.a9 = frame->blks[regs_blk_remaining].r1;
+		arch_blk.r.a10 = frame->blks[regs_blk_remaining].r2;
+		arch_blk.r.a11 = frame->blks[regs_blk_remaining].r3;
 	}
-	if (bsa - esf > 12) {
-		arch_blk.r.a12 = bsa[-12];
-		arch_blk.r.a13 = bsa[-11];
-		arch_blk.r.a14 = bsa[-10];
-		arch_blk.r.a15 = bsa[-9];
+	if (regs_blk_remaining > 0) {
+		arch_blk.r.a12 = frame->blks[regs_blk_remaining].r0;
+		arch_blk.r.a13 = frame->blks[regs_blk_remaining].r1;
+		arch_blk.r.a14 = frame->blks[regs_blk_remaining].r2;
+		arch_blk.r.a15 = frame->blks[regs_blk_remaining].r3;
 	}
 	#if XCHAL_HAVE_LOOPS
-	arch_blk.r.lbeg = bsa[BSA_LBEG_OFF/4];
-	arch_blk.r.lend = bsa[BSA_LEND_OFF/4];
-	arch_blk.r.lcount = bsa[BSA_LCOUNT_OFF/4];
+	arch_blk.r.lbeg = bsa->lbeg;
+	arch_blk.r.lend = bsa->lend;
+	arch_blk.r.lcount = bsa->lcount;
 	#endif
 
 	/* Send for output */

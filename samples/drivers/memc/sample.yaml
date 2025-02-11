@@ -5,7 +5,7 @@ common:
   tags: memc
   filter: dt_alias_exists("sram-ext")
   integration_platforms:
-    - mimxrt595_evk_cm33
+    - mimxrt595_evk/mimxrt595s/cm33
   harness: console
   harness_config:
     type: one_line

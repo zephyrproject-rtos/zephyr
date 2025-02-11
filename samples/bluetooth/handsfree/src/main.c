@@ -16,7 +16,8 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/hfp_hf.h>
+#include <zephyr/bluetooth/classic/hfp_hf.h>
+#include <zephyr/settings/settings.h>
 
 static void connected(struct bt_conn *conn)
 {
@@ -88,6 +89,10 @@ static void bt_ready(int err)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
+	}
+
 	printk("Bluetooth initialized\n");
 
 	err = bt_br_set_connectable(true);
@@ -114,7 +119,7 @@ static void handsfree_enable(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -124,4 +129,5 @@ void main(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
+	return 0;
 }

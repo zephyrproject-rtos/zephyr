@@ -1,0 +1,14 @@
+identifier: longan_nano/gd32vf103/lite
+name: Sipeed Longan Nano Lite
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+  - xtools
+flash: 64
+ram: 20
+supported:
+  - watchdog
+  - dma
+  - spi
+vendor: sipeed

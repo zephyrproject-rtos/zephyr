@@ -1,0 +1,35 @@
+# Copyright (c) 2023 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Infineon XMC4xxx CAN Node
+
+compatible: "infineon,xmc4xxx-can-node"
+
+include: ["can-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock_div8:
+    description: Option enables clock divide by a factor of 8.
+    type: boolean
+
+  input-src:
+    description: Connects the CAN input line to a specific IO.
+    type: string
+    required: true
+    enum:
+      - "RXDA"
+      - "RXDB"
+      - "RXDC"
+      - "RXDD"
+      - "RXDE"
+      - "RXDF"
+      - "RXDG"
+      - "RXDH"

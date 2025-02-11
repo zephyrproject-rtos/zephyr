@@ -1,0 +1,6 @@
+tests:
+  message_bus.zbus.hlp_priority_boost:
+    platform_exclude: fvp_base_revc_2xaemv8a//smp/ns
+    tags: zbus
+    integration_platforms:
+      - native_sim

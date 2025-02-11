@@ -54,9 +54,17 @@ IRAM_ATTR static void esp32_ipm_isr(const struct device *dev)
 
 	/* clear interrupt flag */
 	if (core_id == 0) {
+#if defined(CONFIG_SOC_SERIES_ESP32)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
+#elif defined(CONFIG_SOC_SERIES_ESP32S3)
+		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
+#endif
 	} else {
+#if defined(CONFIG_SOC_SERIES_ESP32)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
+#elif defined(CONFIG_SOC_SERIES_ESP32S3)
+		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, 0);
+#endif
 	}
 
 	/* first of all take the own of the shared memory */
@@ -87,7 +95,7 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 {
 	struct esp32_ipm_data *dev_data = (struct esp32_ipm_data *)dev->data;
 
-	if (data == NULL) {
+	if (size > 0 && data == NULL) {
 		LOG_ERR("Invalid data source");
 		return -EINVAL;
 	}
@@ -130,12 +138,21 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 		memcpy(dev_data->shm.app_cpu_shm, data, size);
 		atomic_set(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 		LOG_DBG("Generating interrupt on remote CPU 1 from CPU 0");
+#if defined(CONFIG_SOC_SERIES_ESP32)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
+#elif defined(CONFIG_SOC_SERIES_ESP32S3)
+		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, SYSTEM_CPU_INTR_FROM_CPU_1);
+#endif
+
 	} else {
 		memcpy(dev_data->shm.pro_cpu_shm, data, size);
 		atomic_set(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 		LOG_DBG("Generating interrupt on remote CPU 0 from CPU 1");
+#if defined(CONFIG_SOC_SERIES_ESP32)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
+#elif defined(CONFIG_SOC_SERIES_ESP32S3)
+		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, SYSTEM_CPU_INTR_FROM_CPU_0);
+#endif
 	}
 
 	irq_unlock(key);
@@ -170,6 +187,20 @@ static uint32_t esp_32_ipm_max_id_val_get(const struct device *dev)
 	return 0xFFFF;
 }
 
+static int esp_32_ipm_set_enabled(const struct device *dev, int enable)
+{
+	/* The esp32 IPM is always enabled
+	 * but rpmsg backend needs IPM set enabled to be
+	 * implemented so just return success here
+	 */
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enable);
+
+	return 0;
+}
+
+
 static int esp32_ipm_init(const struct device *dev)
 {
 	struct esp32_ipm_data *data = (struct esp32_ipm_data *)dev->data;
@@ -203,7 +234,6 @@ static int esp32_ipm_init(const struct device *dev)
 			NULL);
 
 		LOG_DBG("Waiting CPU0 to sync");
-
 		while (!atomic_cas(&data->control->lock,
 			ESP32_IPM_LOCK_FREE_VAL, data->this_core_id))
 			;
@@ -221,7 +251,8 @@ static const struct ipm_driver_api esp32_ipm_driver_api = {
 	.send = esp32_ipm_send,
 	.register_callback = esp32_ipm_register_callback,
 	.max_data_size_get = esp32_ipm_max_data_size_get,
-	.max_id_val_get = esp_32_ipm_max_id_val_get
+	.max_id_val_get = esp_32_ipm_max_id_val_get,
+	.set_enabled = esp_32_ipm_set_enabled
 };
 
 #define ESP32_IPM_SHM_SIZE_BY_IDX(idx)		\

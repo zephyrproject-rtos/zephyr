@@ -1,0 +1,5 @@
+name: dummy
+boards:
+  demo_board_2:
+    append:
+      EXTRA_CONF_FILE: dummy.conf

@@ -1,0 +1,18 @@
+identifier: slstk3400a
+name: EFM32 Happy Gecko Starter Kit (SLSTK3400A)
+type: mcu
+arch: arm
+ram: 8
+flash: 64
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - nvs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

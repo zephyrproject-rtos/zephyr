@@ -8,7 +8,9 @@
 #include <zephyr/device.h>
 
 #include <zephyr/ipc/ipc_service.h>
-#include <hal/nrf_reset.h>
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#include <nrf53_cpunet_mgmt.h>
+#endif
 #include <string.h>
 
 #include "common.h"
@@ -17,14 +19,16 @@
 LOG_MODULE_REGISTER(host, LOG_LEVEL_INF);
 
 
-#define DT_DRV_COMPAT	zephyr_ipc_icmsg
-
 K_SEM_DEFINE(bound_sem, 0, 1);
 static unsigned char expected_message = 'A';
 static size_t expected_len = PACKET_SIZE_START;
 
+static size_t received;
+
 static void ep_bound(void *priv)
 {
+	received = 0;
+
 	k_sem_give(&bound_sem);
 	LOG_INF("Ep bounded");
 }
@@ -38,6 +42,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 	__ASSERT(len == expected_len, "Unexpected length. Expected %zu, got %zu",
 		expected_len, len);
 
+	received += len;
 	expected_message++;
 	expected_len++;
 
@@ -65,6 +70,7 @@ static int send_for_time(struct ipc_ept *ep, const int64_t sending_time_ms)
 		ret = ipc_service_send(ep, &msg, mlen);
 		if (ret == -ENOMEM) {
 			/* No space in the buffer. Retry. */
+			ret = 0;
 			continue;
 		} else if (ret < 0) {
 			LOG_ERR("Failed to send (%c) failed with ret %d", msg.data[0], ret);
@@ -106,6 +112,11 @@ int main(void)
 
 	LOG_INF("IPC-service HOST demo started");
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+	LOG_INF("Run network core");
+	nrf53_cpunet_enable(true);
+#endif
+
 	ipc0_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
 
 	ret = ipc_service_open_instance(ipc0_instance);
@@ -128,11 +139,14 @@ int main(void)
 		return ret;
 	}
 
-	LOG_INF("Wait 500ms. Let net core finish its sends");
+	LOG_INF("Wait 500ms. Let remote core finish its sends");
 	k_msleep(500);
 
+	LOG_INF("Received %zu [Bytes] in total", received);
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
 	LOG_INF("Stop network core");
-	nrf_reset_network_force_off(NRF_RESET, true);
+	nrf53_cpunet_enable(false);
 
 	LOG_INF("Reset IPC service");
 
@@ -153,16 +167,6 @@ int main(void)
 		return ret;
 	}
 
-	uintptr_t tx_shm_size = DT_REG_SIZE(DT_INST_PHANDLE(0, tx_region));
-	uintptr_t tx_shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(0, tx_region));
-	uintptr_t rx_shm_size = DT_REG_SIZE(DT_INST_PHANDLE(0, rx_region));
-	uintptr_t rx_shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(0, rx_region));
-
-	LOG_INF("Clean shared memory");
-
-	memset((void *)tx_shm_addr, 0, tx_shm_size);
-	memset((void *)rx_shm_addr, 0, rx_shm_size);
-
 	ret = ipc_service_register_endpoint(ipc0_instance, &ep, &ep_cfg);
 	if (ret != 0) {
 		LOG_INF("ipc_service_register_endpoint() failure");
@@ -170,7 +174,7 @@ int main(void)
 	}
 
 	LOG_INF("Run network core");
-	nrf_reset_network_force_off(NRF_RESET, false);
+	nrf53_cpunet_enable(true);
 
 	k_sem_take(&bound_sem, K_FOREVER);
 
@@ -179,6 +183,7 @@ int main(void)
 		LOG_ERR("send_for_time() failure");
 		return ret;
 	}
+#endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 	LOG_INF("IPC-service HOST demo ended");
 

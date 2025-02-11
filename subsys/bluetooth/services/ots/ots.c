@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 #define OACP_FEAT_BIT_DELETE 0
 #endif
 
-#if defined(BT_OTS_OACP_CHECKSUM_SUPPORT)
+#if defined(CONFIG_BT_OTS_OACP_CHECKSUM_SUPPORT)
 #define OACP_FEAT_BIT_CRC BIT(BT_OTS_OACP_FEAT_CHECKSUM)
 #else
 #define OACP_FEAT_BIT_CRC 0
@@ -318,7 +318,7 @@ int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
 	(void)memset(&created_desc, 0, sizeof(created_desc));
 
 	if (ots->cb->obj_created) {
-		err = ots->cb->obj_created(ots, NULL, new_obj->id, param, &created_desc);
+		err = ots->cb->obj_created(ots, conn, new_obj->id, param, &created_desc);
 
 		if (err) {
 			(void)bt_gatt_ots_obj_manager_obj_delete(new_obj);
@@ -395,6 +395,12 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
 	int err;
 	struct bt_gatt_ots_object *obj;
 
+	CHECKIF(!BT_OTS_VALID_OBJ_ID(id)) {
+		LOG_DBG("Invalid object ID 0x%016llx", id);
+
+		return -EINVAL;
+	}
+
 	err = bt_gatt_ots_obj_manager_obj_get(ots->obj_manager, id, &obj);
 	if (err) {
 		return err;
@@ -436,8 +442,24 @@ void *bt_ots_svc_decl_get(struct bt_ots *ots)
 }
 #endif
 
+static void oacp_indicate_work_handler(struct k_work *work)
+{
+	struct bt_gatt_ots_indicate *ind = CONTAINER_OF(work, struct bt_gatt_ots_indicate, work);
+	struct bt_ots *ots = CONTAINER_OF(ind, struct bt_ots, oacp_ind);
+
+	bt_gatt_indicate(NULL, &ots->oacp_ind.params);
+}
+
+static void olcp_indicate_work_handler(struct k_work *work)
+{
+	struct bt_gatt_ots_indicate *ind = CONTAINER_OF(work, struct bt_gatt_ots_indicate, work);
+	struct bt_ots *ots = CONTAINER_OF(ind, struct bt_ots, olcp_ind);
+
+	bt_gatt_indicate(NULL, &ots->olcp_ind.params);
+}
+
 int bt_ots_init(struct bt_ots *ots,
-		     struct bt_ots_init *ots_init)
+		     struct bt_ots_init_param *ots_init)
 {
 	int err;
 
@@ -445,21 +467,19 @@ int bt_ots_init(struct bt_ots *ots,
 		return -EINVAL;
 	}
 
-	__ASSERT(ots_init->cb->obj_created,
-		 "Callback for object creation is not set");
-	__ASSERT(ots_init->cb->obj_deleted ||
-		 !BT_OTS_OACP_GET_FEAT_CREATE(ots_init->features.oacp),
-		 "Callback for object deletion is not set and object creation is enabled");
+	__ASSERT(ots_init->cb->obj_created || !BT_OTS_OACP_GET_FEAT_CREATE(ots_init->features.oacp),
+		 "Callback for object creation is not set and object creation is enabled");
+	__ASSERT(ots_init->cb->obj_deleted || !BT_OTS_OACP_GET_FEAT_DELETE(ots_init->features.oacp),
+		 "Callback for object deletion is not set and object deletion is enabled");
 #if defined(CONFIG_BT_OTS_OACP_CHECKSUM_SUPPORT)
-	__ASSERT(ots_init->cb->obj_cal_checksum,
-		 "Callback for object calculate checksum is not set");
+	__ASSERT(ots_init->cb->obj_cal_checksum ||
+			 !BT_OTS_OACP_GET_FEAT_CHECKSUM(ots_init->features.oacp),
+		 "Callback for object calculate checksum is not set and checksum is enabled");
 #endif
-	__ASSERT(ots_init->cb->obj_read ||
-		 !BT_OTS_OACP_GET_FEAT_READ(ots_init->features.oacp),
-		 "Callback for object reading is not set");
-	__ASSERT(ots_init->cb->obj_write ||
-		 !BT_OTS_OACP_GET_FEAT_WRITE(ots_init->features.oacp),
-		 "Callback for object write is not set");
+	__ASSERT(ots_init->cb->obj_read || !BT_OTS_OACP_GET_FEAT_READ(ots_init->features.oacp),
+		 "Callback for object reading is not set and object read is enabled");
+	__ASSERT(ots_init->cb->obj_write || !BT_OTS_OACP_GET_FEAT_WRITE(ots_init->features.oacp),
+		 "Callback for object write is not set and object write is enabled");
 
 	/* Set callback structure. */
 	ots->cb = ots_init->cb;
@@ -499,6 +519,9 @@ int bt_ots_init(struct bt_ots *ots,
 	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
 		bt_ots_dir_list_init(&ots->dir_list, ots->obj_manager);
 	}
+
+	k_work_init(&ots->oacp_ind.work, oacp_indicate_work_handler);
+	k_work_init(&ots->olcp_ind.work, olcp_indicate_work_handler);
 
 	LOG_DBG("Initialized OTS");
 
@@ -635,7 +658,7 @@ struct bt_ots *bt_ots_free_instance_get(void)
 	return &BT_GATT_OTS_INSTANCE_LIST_START[instance_cnt++];
 }
 
-static int bt_gatt_ots_instances_prepare(const struct device *dev)
+static int bt_gatt_ots_instances_prepare(void)
 {
 	uint32_t index;
 	struct bt_ots *instance;

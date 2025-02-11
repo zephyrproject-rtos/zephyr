@@ -1,0 +1,19 @@
+# Copyright (c) 2021 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include: cpu.yaml
+
+properties:
+  mmu-type:
+    description: Memory Management Unit (MMU)
+    type: string
+    enum:
+      - riscv,sv32
+      - riscv,sv39
+      - riscv,sv48
+      - riscv,none
+
+  riscv,isa:
+    description: RISC-V instruction set architecture
+    required: true
+    type: string

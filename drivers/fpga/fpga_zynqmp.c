@@ -293,7 +293,7 @@ static int zynqmp_fpga_load(const struct device *dev, uint32_t *image_ptr,
 	}
 
 	for (int i = 0; i < (img_size / 4); i++) {
-		*(BITSTREAM + i) = __bswap_32(*(addr + i));
+		*(BITSTREAM + i) = BSWAP_32(*(addr + i));
 	}
 
 	init_pcap(dev);
@@ -323,4 +323,4 @@ static const struct fpga_driver_api zynqmp_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, &zynqmp_fpga_init, NULL, &fpga_data, NULL,
-	      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &zynqmp_api);
+	      POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY, &zynqmp_api);

@@ -1,4 +1,11 @@
+common:
+  tags:
+    - lib
+    - utilities
 tests:
   utilities.dec:
-    tags: lib utilities
     type: unit
+  utilities.dec.cpp:
+    type: unit
+    extra_configs:
+      - CONFIG_CPP=y

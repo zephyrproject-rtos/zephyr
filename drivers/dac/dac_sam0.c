@@ -11,6 +11,8 @@
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(dac_sam0, CONFIG_DAC_LOG_LEVEL);
 
 /*
  * Maps between the DTS reference property names and register values.  Note that
@@ -36,6 +38,11 @@ static int dac_sam0_write_value(const struct device *dev, uint8_t channel,
 {
 	const struct dac_sam0_cfg *const cfg = dev->config;
 	Dac *regs = cfg->regs;
+
+	if (value >= BIT(12)) {
+		LOG_ERR("value %d out of range", value);
+		return -EINVAL;
+	}
 
 	regs->DATA.reg = (uint16_t)value;
 

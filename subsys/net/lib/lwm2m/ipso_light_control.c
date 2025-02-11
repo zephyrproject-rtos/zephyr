@@ -78,8 +78,7 @@ static void *on_time_read_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res
 		}
 
 		if (on_off_value[i]) {
-			on_time_value[i] = (k_uptime_get() / MSEC_PER_SEC) -
-				on_time_offset[i];
+			on_time_value[i] = k_uptime_seconds() - on_time_offset[i];
 		}
 
 		*data_len = sizeof(on_time_value[i]);
@@ -89,10 +88,10 @@ static void *on_time_read_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res
 	return NULL;
 }
 
-static int on_time_post_write_cb(uint16_t obj_inst_id,
-				 uint16_t res_id, uint16_t res_inst_id,
-				 uint8_t *data, uint16_t data_len,
-				 bool last_block, size_t total_size)
+static int on_time_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+				 uint16_t res_inst_id, uint8_t *data,
+				 uint16_t data_len, bool last_block,
+				 size_t total_size, size_t offset)
 {
 	int i;
 
@@ -109,8 +108,7 @@ static int on_time_post_write_cb(uint16_t obj_inst_id,
 		}
 
 		if (counter == 0) {
-			on_time_offset[i] =
-				(int32_t)(k_uptime_get() / MSEC_PER_SEC);
+			on_time_offset[i] = k_uptime_seconds();
 		}
 
 		return 0;
@@ -171,10 +169,10 @@ static struct lwm2m_engine_obj_inst *light_control_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_DATA(POWER_FACTOR_RID, res[avail], i, res_inst[avail], j,
 			  &power_factor_value[avail],
 			  sizeof(*power_factor_value));
-	INIT_OBJ_RES_DATA(COLOUR_RID, res[avail], i, res_inst[avail], j,
-			  colour[avail], LIGHT_STRING_LONG);
-	INIT_OBJ_RES_DATA(SENSOR_UNITS_RID, res[avail], i, res_inst[avail], j,
-			  units[avail], LIGHT_STRING_SHORT);
+	INIT_OBJ_RES_DATA_LEN(COLOUR_RID, res[avail], i, res_inst[avail], j,
+			  colour[avail], LIGHT_STRING_LONG, 0);
+	INIT_OBJ_RES_DATA_LEN(SENSOR_UNITS_RID, res[avail], i, res_inst[avail], j,
+			  units[avail], LIGHT_STRING_SHORT, 0);
 	INIT_OBJ_RES_OPTDATA(APPLICATION_TYPE_RID, res[avail], i,
 			     res_inst[avail], j);
 
@@ -186,7 +184,7 @@ static struct lwm2m_engine_obj_inst *light_control_create(uint16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ipso_light_control_init(const struct device *dev)
+static int ipso_light_control_init(void)
 {
 	light_control.obj_id = IPSO_OBJECT_LIGHT_CONTROL_ID;
 	light_control.version_major = LIGHT_VERSION_MAJOR;
@@ -201,5 +199,4 @@ static int ipso_light_control_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(ipso_light_control_init, APPLICATION,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(ipso_light_control_init);

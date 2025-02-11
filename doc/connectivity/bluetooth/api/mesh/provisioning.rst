@@ -12,15 +12,15 @@ two devices operating in the following roles:
   Provisioning process. Before the provisioning process starts, the
   provisionee is an *unprovisioned device*.
 
-The Provisioning module in the Zephyr Bluetooth mesh stack supports both the
+The Provisioning module in the Zephyr Bluetooth Mesh stack supports both the
 Advertising and GATT Provisioning bearers for the provisionee role, as well as
 the Advertising Provisioning bearer for the provisioner role.
 
 The Provisioning process
 ************************
 
-All Bluetooth mesh nodes must be provisioned before they can participate in a
-Bluetooth mesh network. The Provisioning API provides all the functionality
+All Bluetooth Mesh nodes must be provisioned before they can participate in a
+Bluetooth Mesh network. The Provisioning API provides all the functionality
 necessary for a device to become a provisioned mesh node.
 Provisioning is a five-step process, involving the following steps:
 
@@ -53,7 +53,7 @@ The Uniform Resource Identifier shall follow the format specified in the
 Bluetooth Core Specification Supplement. The URI must start with a URI scheme,
 encoded as a single utf-8 data point, or the special ``none`` scheme, encoded
 as ``0x01``. The available schemes are listed on the `Bluetooth website
-<https://www.bluetooth.com/specifications/assigned-numbers/uri-scheme-name-string-mapping/>`_.
+<https://www.bluetooth.com/specifications/assigned-numbers/>`_.
 
 Examples of encoded URIs:
 
@@ -78,7 +78,7 @@ itself using the Health Server
 
 The Unprovisioned device automatically responds to the invite by presenting a
 list of its capabilities, including the supported Out of Band Authentication
-methods.
+methods and algorithms.
 
 Public key exchange
 ===================
@@ -148,6 +148,9 @@ response should be fed back to the Provisioning API through
 no user response is recorded within 60 seconds, the Provisioning process is
 aborted.
 
+If Provisionee wants to mandate OOB authentication, it is mandatory to use
+the BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM algorithm.
+
 Data transfer
 =============
 
@@ -173,11 +176,11 @@ Depending on the choice of public key exchange mechanism and authentication meth
 the provisioning process can be secure or insecure.
 
 On May 24th 2021, ANSSI `disclosed <https://kb.cert.org/vuls/id/799380>`_
-a set of vulnerabilities in the Bluetooth mesh provisioning protocol that showcased
+a set of vulnerabilities in the Bluetooth Mesh provisioning protocol that showcased
 how the low entropy provided by the Blink, Vibrate, Push, Twist and
 Input/Output numeric OOB methods could be exploited in impersonation and MITM
 attacks. In response, the Bluetooth SIG has reclassified these OOB methods as
-insecure in the Mesh Profile specification `erratum 16350 <https://www.bluetooth.org/docman/handlers/DownloadDoc.ashx?doc_id=516072>`_,
+insecure in the Bluetooth Mesh Profile Specification v1.0.1 `erratum 16350 <https://www.bluetooth.org/docman/handlers/DownloadDoc.ashx?doc_id=516072>`_,
 as AuthValue may be brute forced in real time. To ensure secure provisioning, applications
 should use a static OOB value and OOB public key transfer.
 

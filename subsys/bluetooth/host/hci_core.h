@@ -7,11 +7,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/devicetree.h>
+
 /* LL connection parameters */
 #define LE_CONN_LATENCY		0x0000
 #define LE_CONN_TIMEOUT		0x002a
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 #define LMP_FEAT_PAGES_COUNT	3
 #else
 #define LMP_FEAT_PAGES_COUNT	1
@@ -24,6 +26,7 @@
 enum {
 	BT_EVENT_CMD_TX,
 	BT_EVENT_CONN_TX_QUEUE,
+	BT_EVENT_CONN_FREE_TX,
 };
 
 /* bt_dev flags: the flags defined here represent BT controller state */
@@ -35,12 +38,40 @@ enum {
 	BT_DEV_HAS_PUB_KEY,
 	BT_DEV_PUB_KEY_BUSY,
 
-	BT_DEV_SCANNING,
+	/** The application explicitly instructed the stack to scan for advertisers
+	 * using the API @ref bt_le_scan_start().
+	 */
 	BT_DEV_EXPLICIT_SCAN,
+
+	/** The application either explicitly or implicitly instructed the stack to scan
+	 * for advertisers.
+	 *
+	 * Examples of such cases
+	 *  - Explicit scanning, @ref BT_DEV_EXPLICIT_SCAN.
+	 *  - The application instructed the stack to automatically connect if a given device
+	 *    is detected.
+	 *  - The application wants to connect to a peer device using private addresses, but
+	 *    the controller resolving list is too small. The host will fallback to using
+	 *    host-based privacy and first scan for the device before it initiates a connection.
+	 *  - The application wants to synchronize to a periodic advertiser.
+	 *    The host will implicitly start scanning if it is not already doing so.
+	 *
+	 * The host needs to keep track of this state to ensure it can restart scanning
+	 * when a connection is established/lost, explicit scanning is started or stopped etc.
+	 * Also, when the scanner and advertiser share the same identity, the scanner may need
+	 * to be restarted upon RPA refresh.
+	 */
+	BT_DEV_SCANNING,
+
+	/* Cached parameters used when initially enabling the scanner.
+	 * These are needed to ensure the same parameters are used when restarting
+	 * the scanner after refreshing an RPA.
+	 */
 	BT_DEV_ACTIVE_SCAN,
 	BT_DEV_SCAN_FILTER_DUP,
 	BT_DEV_SCAN_FILTERED,
 	BT_DEV_SCAN_LIMITED,
+
 	BT_DEV_INITIATING,
 
 	BT_DEV_RPA_VALID,
@@ -49,11 +80,11 @@ enum {
 	BT_DEV_ID_PENDING,
 	BT_DEV_STORE_ID,
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	BT_DEV_ISCAN,
 	BT_DEV_PSCAN,
 	BT_DEV_INQUIRY,
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_DEV_NUM_FLAGS,
@@ -156,6 +187,11 @@ struct bt_le_ext_adv {
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 	struct k_work_delayable	lim_adv_timeout_work;
+
+	/** The options used to set the parameters for this advertising set
+	 * @ref bt_le_adv_param
+	 */
+	uint32_t options;
 };
 
 enum {
@@ -227,6 +263,20 @@ struct bt_le_per_adv_sync {
 
 	/** Flags */
 	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	/** Number of subevents */
+	uint8_t num_subevents;
+
+	/** Subevent interval (N * 1.25ms) */
+	uint8_t subevent_interval;
+
+	/** Response slot delay (N * 1.25ms) */
+	uint8_t response_slot_delay;
+
+	/** Response slot spacing (N * 1.25ms) */
+	uint8_t response_slot_spacing;
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 };
 
 struct bt_dev_le {
@@ -247,18 +297,27 @@ struct bt_dev_le {
 	uint8_t			iso_limit;
 	struct k_sem		iso_pkts;
 #endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_BROADCASTER)
+	uint16_t max_adv_data_len;
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_SMP)
-	/* Size of the the controller resolving list */
+	/* Size of the controller resolving list */
 	uint8_t                    rl_size;
 	/* Number of entries in the resolving list. rl_entries > rl_size
 	 * means that host-side resolving is used.
 	 */
 	uint8_t                    rl_entries;
 #endif /* CONFIG_BT_SMP */
+	/* List of `struct bt_conn` that have either pending data to send, or
+	 * something to process (e.g. a disconnection event).
+	 *
+	 * Each element in this list contains a reference to its `conn` object.
+	 */
+	sys_slist_t		conn_ready;
 };
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
 	uint16_t         mtu;
@@ -323,7 +382,7 @@ struct bt_dev {
 	/* Supported commands */
 	uint8_t			supported_commands[64];
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 	/* Vendor HCI support */
 	uint8_t                    vs_features[BT_DEV_VS_FEAT_MAX];
 	uint8_t                    vs_commands[BT_DEV_VS_CMDS_MAX];
@@ -336,7 +395,7 @@ struct bt_dev {
 	/* LE controller specific features */
 	struct bt_dev_le	le;
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	/* BR/EDR controller specific features */
 	struct bt_dev_br	br;
 #endif
@@ -347,20 +406,27 @@ struct bt_dev {
 	/* Last sent HCI command */
 	struct net_buf		*sent_cmd;
 
-#if !defined(CONFIG_BT_RECV_BLOCKING)
 	/* Queue for incoming HCI events & ACL data */
 	sys_slist_t rx_queue;
-#endif
 
 	/* Queue for outgoing HCI commands */
 	struct k_fifo		cmd_tx_queue;
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	const struct device *hci;
+#else
 	/* Registered HCI driver */
 	const struct bt_hci_driver *drv;
+#endif
 
 #if defined(CONFIG_BT_PRIVACY)
 	/* Local Identity Resolving Key */
 	uint8_t			irk[CONFIG_BT_ID_MAX][16];
+
+#if defined(CONFIG_BT_RPA_SHARING)
+	/* Only 1 RPA per identity */
+	bt_addr_t		rpa[CONFIG_BT_ID_MAX];
+#endif
 
 	/* Work used for RPA rotation */
 	struct k_work_delayable rpa_update;
@@ -380,11 +446,15 @@ struct bt_dev {
 };
 
 extern struct bt_dev bt_dev;
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
+
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+int bt_hci_recv(const struct device *dev, struct net_buf *buf);
+#endif
 
 /* Data type to store state related with command to be updated
  * when command completes successfully.
@@ -410,11 +480,43 @@ int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_tim
 int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 		  uint8_t pref_tx_phy, uint8_t pref_rx_phy, uint8_t phy_opts);
 uint8_t bt_get_phy(uint8_t hci_phy);
+/**
+ * @brief Convert CTE type value from HCI format to @ref bt_df_cte_type format.
+ *
+ * @param hci_cte_type   CTE type in an HCI format.
+ *
+ * @return CTE type (@ref bt_df_cte_type).
+ */
+int bt_get_df_cte_type(uint8_t hci_cte_type);
 
+/** Start or restart scanner if needed
+ *
+ * Examples of cases where it may be required to start/restart a scanner:
+ * - When the auto-connection establishement feature is used:
+ *   - When the host sets a connection context for auto-connection establishment.
+ *   - When a connection was established.
+ *     The host may now be able to retry to automatically set up a connection.
+ *   - When a connection was disconnected/lost.
+ *     The host may now be able to retry to automatically set up a connection.
+ *   - When the application stops explicit scanning.
+ *     The host may now be able to retry to automatically set up a connection.
+ *   - The application tries to connect to another device, but fails.
+ *     The host may now be able to retry to automatically set up a connection.
+ * - When the application wants to connect to a device, but we need
+ *   to fallback to host privacy.
+ * - When the application wants to establish a periodic sync to a device
+ *   and the application has not already started scanning.
+ *
+ * @param fast_scan Use fast scan parameters or slow scan parameters
+ *
+ * @return 0 in case of success, or a negative error code on failure.
+ */
 int bt_le_scan_update(bool fast_scan);
 
 int bt_le_create_conn(const struct bt_conn *conn);
 int bt_le_create_conn_cancel(void);
+int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_adv *adv,
+			     uint8_t subevent);
 
 bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr);
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr);
@@ -459,12 +561,15 @@ void bt_hci_le_adv_report(struct net_buf *buf);
 void bt_hci_le_scan_timeout(struct net_buf *buf);
 void bt_hci_le_adv_ext_report(struct net_buf *buf);
 void bt_hci_le_per_adv_sync_established(struct net_buf *buf);
+void bt_hci_le_per_adv_sync_established_v2(struct net_buf *buf);
 void bt_hci_le_per_adv_report(struct net_buf *buf);
+void bt_hci_le_per_adv_report_v2(struct net_buf *buf);
 void bt_hci_le_per_adv_sync_lost(struct net_buf *buf);
 void bt_hci_le_biginfo_adv_report(struct net_buf *buf);
 void bt_hci_le_df_connectionless_iq_report(struct net_buf *buf);
 void bt_hci_le_vs_df_connectionless_iq_report(struct net_buf *buf);
 void bt_hci_le_past_received(struct net_buf *buf);
+void bt_hci_le_past_received_v2(struct net_buf *buf);
 
 /* Adv HCI event handlers */
 void bt_hci_le_adv_set_terminated(struct net_buf *buf);
@@ -488,3 +593,8 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf);
 void bt_hci_le_df_connection_iq_report(struct net_buf *buf);
 void bt_hci_le_vs_df_connection_iq_report(struct net_buf *buf);
 void bt_hci_le_df_cte_req_failed(struct net_buf *buf);
+
+void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf);
+void bt_hci_le_per_adv_response_report(struct net_buf *buf);
+
+void bt_tx_irq_raise(void);

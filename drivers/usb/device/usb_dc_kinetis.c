@@ -14,7 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usb_device.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -186,7 +186,6 @@ int usb_dc_reset(void)
 	for (uint8_t i = 0; i < 16; i++) {
 		USB0->ENDPOINT[i].ENDPT = 0;
 	}
-	(void)memset(bdt, 0, sizeof(bdt));
 	dev_data.bd_active = 0U;
 	dev_data.address = 0U;
 
@@ -355,7 +354,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	(void)memset(&bdt[idx_even], 0, sizeof(struct buf_descriptor));
 	(void)memset(&bdt[idx_odd], 0, sizeof(struct buf_descriptor));
 
-	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps * 2U, K_MSEC(10));
+	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps * 2U, K_NO_WAIT);
 	if (block->data != NULL) {
 		(void)memset(block->data, 0, cfg->ep_mps * 2U);
 	} else {
@@ -849,16 +848,21 @@ int usb_dc_ep_mps(const uint8_t ep)
 	}
 }
 
-static inline void reenable_all_endpoints(void)
+static inline void reenable_control_endpoints(void)
 {
-	for (uint8_t ep_idx = 0; ep_idx < NUM_OF_EP_MAX; ep_idx++) {
-		if (dev_data.ep_ctrl[ep_idx].status.out_enabled) {
-			usb_dc_ep_enable(ep_idx);
-		}
-		if (dev_data.ep_ctrl[ep_idx].status.in_enabled) {
-			usb_dc_ep_enable(ep_idx | USB_EP_DIR_IN);
-		}
-	}
+	struct usb_dc_ep_cfg_data ep_cfg;
+
+	/* Reconfigure control endpoint 0 after a reset */
+	ep_cfg.ep_addr = USB_CONTROL_EP_OUT;
+	ep_cfg.ep_mps = USB_CONTROL_EP_MPS;
+	ep_cfg.ep_type = USB_DC_EP_CONTROL;
+	usb_dc_ep_configure(&ep_cfg);
+	ep_cfg.ep_addr = USB_CONTROL_EP_IN;
+	usb_dc_ep_configure(&ep_cfg);
+
+	/* Enable both endpoint directions */
+	usb_dc_ep_enable(USB_CONTROL_EP_OUT);
+	usb_dc_ep_enable(USB_CONTROL_EP_IN);
 }
 
 static void usb_kinetis_isr_handler(void)
@@ -874,12 +878,12 @@ static void usb_kinetis_isr_handler(void)
 		/*
 		 * Device reset is not possible because the stack does not
 		 * configure the endpoints after the USB_DC_RESET event,
-		 * therefore, reenable all endpoints and set they BDT into a
-		 * defined state.
+		 * therefore, we must re-enable the default control 0 endpoint
+		 * after a reset event
 		 */
 		USB0->CTL |= USB_CTL_ODDRST_MASK;
 		USB0->CTL &= ~USB_CTL_ODDRST_MASK;
-		reenable_all_endpoints();
+		reenable_control_endpoints();
 		msg.ep = 0U;
 		msg.type = USB_DC_CB_TYPE_MGMT;
 		msg.cb = USB_DC_RESET;
@@ -1038,10 +1042,10 @@ static void usb_kinetis_thread_main(void *arg1, void *unused1, void *unused2)
 	}
 }
 
-static int usb_kinetis_init(const struct device *dev)
+static int usb_kinetis_init(void)
 {
-	ARG_UNUSED(dev);
 
+	(void)memset(bdt, 0, sizeof(bdt));
 	k_thread_create(&dev_data.thread, dev_data.thread_stack,
 			USBD_THREAD_STACK_SIZE,
 			usb_kinetis_thread_main, NULL, NULL, NULL,

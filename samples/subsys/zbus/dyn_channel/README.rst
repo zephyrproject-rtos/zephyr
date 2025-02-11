@@ -1,7 +1,8 @@
-.. _zbus-dyn-channel-sample:
+.. zephyr:code-sample:: zbus-dyn-channel
+   :name: Dynamic channel
+   :relevant-api: zbus_apis
 
-Dynamic channel sample
-######################
+   Use zbus channels with dynamically allocated messages.
 
 Overview
 ********

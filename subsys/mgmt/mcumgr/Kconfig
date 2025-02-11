@@ -4,9 +4,8 @@
 
 menuconfig MCUMGR
 	bool "mcumgr Support"
-	select NET_BUF
-	select ZCBOR
-	select CRC
+	depends on NET_BUF
+	depends on ZCBOR
 	help
 	  This option enables the mcumgr management library.
 
@@ -22,6 +21,7 @@ rsource "smp/Kconfig"
 
 config MCUMGR_SMP_LEGACY_RC_BEHAVIOUR
 	bool "Legacy rc (result code) response behaviour"
+	depends on MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	help
 	  This will enable legacy result code response behaviour of having rc
 	  present in responses when the status is 0. With this option disabled,
@@ -31,6 +31,12 @@ config MCUMGR_SMP_LEGACY_RC_BEHAVIOUR
 	  If a command only returns a result code, this will mean that the
 	  response will be empty with the new behaviour enabled, as opposed to
 	  the old behaviour where the rc field will be present in the response.
+
+menu "SMP Client"
+
+rsource "smp_client/Kconfig"
+
+endmenu
 
 menu "Command Handlers"
 

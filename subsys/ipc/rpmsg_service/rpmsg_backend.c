@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 
 #include <openamp/open_amp.h>
@@ -88,11 +89,11 @@ static struct virtio_vring_info rvrings[2] = {
 		.info.align = VRING_ALIGNMENT,
 	},
 };
-static struct virtqueue *vq[2];
+static struct virtqueue *vqueue[2];
 
 static struct k_work ipm_work;
 
-static unsigned char virtio_get_status(struct virtio_device *vdev)
+static unsigned char ipc_virtio_get_status(struct virtio_device *vdev)
 {
 #if MASTER
 	return VIRTIO_CONFIG_STATUS_DRIVER_OK;
@@ -101,22 +102,21 @@ static unsigned char virtio_get_status(struct virtio_device *vdev)
 #endif
 }
 
-static void virtio_set_status(struct virtio_device *vdev, unsigned char status)
+static void ipc_virtio_set_status(struct virtio_device *vdev, unsigned char status)
 {
 	sys_write8(status, VDEV_STATUS_ADDR);
 }
 
-static uint32_t virtio_get_features(struct virtio_device *vdev)
+static uint32_t ipc_virtio_get_features(struct virtio_device *vdev)
 {
 	return BIT(VIRTIO_RPMSG_F_NS);
 }
 
-static void virtio_set_features(struct virtio_device *vdev,
-				uint32_t features)
+static void ipc_virtio_set_features(struct virtio_device *vdev, uint32_t features)
 {
 }
 
-static void virtio_notify(struct virtqueue *vq)
+static void ipc_virtio_notify(struct virtqueue *vq)
 {
 	int status;
 
@@ -129,8 +129,17 @@ static void virtio_notify(struct virtqueue *vq)
 	uint32_t current_core = sse_200_platform_get_cpu_id();
 
 	status = ipm_send(ipm_handle, 0, current_core ? 0 : 1, 0, 1);
+#elif defined(CONFIG_IPM_STM32_HSEM)
+	/* No data transfer, only doorbell. */
+	status = ipm_send(ipm_handle, 0, 0, NULL, 0);
 #else
-	uint32_t dummy_data = 0x55005500; /* Some data must be provided */
+	/* The IPM interface is unclear on whether or not ipm_send
+	 * can be called with NULL as data, thus, drivers might cause
+	 * problems if you do. To avoid problems, we always send some
+	 * dummy data, unless the IPM driver cannot transfer data.
+	 * Ref: #68741
+	 */
+	uint32_t dummy_data = 0x55005500;
 
 	status = ipm_send(ipm_handle, 0, 0, &dummy_data, sizeof(dummy_data));
 #endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
@@ -143,16 +152,16 @@ static void virtio_notify(struct virtqueue *vq)
 }
 
 const struct virtio_dispatch dispatch = {
-	.get_status = virtio_get_status,
-	.set_status = virtio_set_status,
-	.get_features = virtio_get_features,
-	.set_features = virtio_set_features,
-	.notify = virtio_notify,
+	.get_status = ipc_virtio_get_status,
+	.set_status = ipc_virtio_set_status,
+	.get_features = ipc_virtio_get_features,
+	.set_features = ipc_virtio_set_features,
+	.notify = ipc_virtio_notify,
 };
 
 static void ipm_callback_process(struct k_work *work)
 {
-	virtqueue_notification(vq[VIRTQUEUE_ID]);
+	virtqueue_notification(vqueue[VIRTQUEUE_ID]);
 }
 
 static void ipm_callback(const struct device *dev,
@@ -247,15 +256,15 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 #endif
 
 	/* Virtqueue setup */
-	vq[0] = virtqueue_allocate(VRING_SIZE);
-	if (!vq[0]) {
-		LOG_ERR("virtqueue_allocate failed to alloc vq[0]");
+	vqueue[0] = virtqueue_allocate(VRING_SIZE);
+	if (!vqueue[0]) {
+		LOG_ERR("virtqueue_allocate failed to alloc vqueue[0]");
 		return -ENOMEM;
 	}
 
-	vq[1] = virtqueue_allocate(VRING_SIZE);
-	if (!vq[1]) {
-		LOG_ERR("virtqueue_allocate failed to alloc vq[1]");
+	vqueue[1] = virtqueue_allocate(VRING_SIZE);
+	if (!vqueue[1]) {
+		LOG_ERR("virtqueue_allocate failed to alloc vqueue[1]");
 		return -ENOMEM;
 	}
 
@@ -263,13 +272,13 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	rvrings[0].info.vaddr = (void *)VRING_TX_ADDRESS;
 	rvrings[0].info.num_descs = VRING_SIZE;
 	rvrings[0].info.align = VRING_ALIGNMENT;
-	rvrings[0].vq = vq[0];
+	rvrings[0].vq = vqueue[0];
 
 	rvrings[1].io = *io;
 	rvrings[1].info.vaddr = (void *)VRING_RX_ADDRESS;
 	rvrings[1].info.num_descs = VRING_SIZE;
 	rvrings[1].info.align = VRING_ALIGNMENT;
-	rvrings[1].vq = vq[1];
+	rvrings[1].vq = vqueue[1];
 
 	vdev->role = RPMSG_ROLE;
 	vdev->vrings_num = VRING_COUNT;
@@ -283,9 +292,9 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 /* Make sure we clear out the status flag very early (before we bringup the
  * secondary core) so the secondary core see's the proper status
  */
-int init_status_flag(const struct device *arg)
+int init_status_flag(void)
 {
-	virtio_set_status(NULL, 0);
+	ipc_virtio_set_status(NULL, 0);
 
 	return 0;
 }

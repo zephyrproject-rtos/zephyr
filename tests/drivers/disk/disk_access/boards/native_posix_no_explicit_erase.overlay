@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flashcontroller0 {
+	reg = <0x00000000 DT_SIZE_K(1024)>;
+};
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(1024)>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flashdisk_partition: partition@0 {
+			label = "flashdisk";
+			reg = <0x00000000 0x00100000>;
+		};
+	};
+};
+
+/ {
+	test_disk: storage_disk {
+		compatible = "zephyr,flash-disk";
+		partition = <&flashdisk_partition>;
+		disk-name = "NAND";
+		cache-size = <512>;
+	};
+};

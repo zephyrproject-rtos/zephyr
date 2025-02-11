@@ -203,7 +203,7 @@ A device-specific API definition typically looks like this:
    __syscall int specific_from_user(const struct device *dev, int bar);
 
    /* Only needed when extensions include syscalls */
-   #include <syscalls/specific.h>
+   #include <zephyr/syscalls/specific.h>
 
 A driver implementing extensions to the subsystem will define the real
 implementation of both the subsystem API and the specific APIs:
@@ -235,15 +235,15 @@ implementation of both the subsystem API and the specific APIs:
 
    #ifdef CONFIG_USERSPACE
 
-   #include <zephyr/syscall_handler.h>
+   #include <zephyr/internal/syscall_handler.h>
 
    int z_vrfy_specific_from_user(const struct device *dev, int bar)
    {
-       Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_GENERIC, &api));
+       K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_GENERIC, &api));
        return z_impl_specific_do_that(dev, bar)
    }
 
-   #include <syscalls/specific_from_user_mrsh.c>
+   #include <zephyr/syscalls/specific_from_user_mrsh.c>
 
    #endif /* CONFIG_USERSPACE */
 
@@ -312,7 +312,7 @@ Then when the particular instance is declared:
 
   DEVICE_DECLARE(my_driver_0);
 
-  static void my_driver_config_irq_0(void)
+  static void my_driver_config_irq_0(const struct device *dev)
   {
         IRQ_CONNECT(MY_DRIVER_0_IRQ, MY_DRIVER_0_PRI, my_driver_isr,
                     DEVICE_GET(my_driver_0), MY_DRIVER_0_FLAGS);
@@ -343,13 +343,6 @@ allow the user to specify at what time during the boot sequence the init
 function will be executed. Any driver will specify one of four
 initialization levels:
 
-``EARLY``
-        Used very early in the boot process, right after entering the C domain
-        (``z_cstart()``). This can be used in architectures and SoCs that extend
-        or implement architecture code and use drivers or system services that
-        have to be initialized before the Kernel calls any architecture specific
-        initialization code.
-
 ``PRE_KERNEL_1``
         Used for devices that have no dependencies, such as those that rely
         solely on hardware present in the processor/SOC. These devices cannot
@@ -368,12 +361,6 @@ initialization levels:
         Used for devices that require kernel services during configuration.
         Init functions at this level run in context of the kernel main task.
 
-``APPLICATION``
-        Used for application components (i.e. non-kernel components) that need
-        automatic configuration. These devices can use all services provided by
-        the kernel during configuration. Init functions at this level run on
-        the kernel main task.
-
 Within each initialization level you may specify a priority level, relative to
 other devices in the same initialization level. The priority level is specified
 as an integer value in the range 0 to 99; lower values indicate earlier
@@ -386,6 +373,24 @@ Drivers and other system utilities can determine whether startup is
 still in pre-kernel states by using the :c:func:`k_is_pre_kernel`
 function.
 
+Deferred initialization
+***********************
+
+Initialization of devices can also be deferred to a later time. In this case,
+the device is not automatically initialized by Zephyr at boot time. Instead,
+the device is initialized when the application calls :c:func:`device_init`.
+To defer a device driver initialization, add the property ``zephyr,deferred-init``
+to the associated device node in the DTS file. For example:
+
+.. code-block:: devicetree
+
+   / {
+           a-driver@40000000 {
+                   reg = <0x40000000 0x1000>;
+                   zephyr,deferred-init;
+           };
+   };
+
 System Drivers
 **************
 
@@ -393,6 +398,18 @@ In some cases you may just need to run a function at boot. For such cases, the
 :c:macro:`SYS_INIT` can be used. This macro does not take any config or runtime
 data structures and there isn't a way to later get a device pointer by name. The
 same device policies for initialization level and priority apply.
+
+Inspecting the initialization sequence
+**************************************
+
+Device drivers declared with :c:macro:`DEVICE_DEFINE` (or any variations of it)
+and :c:macro:`SYS_INIT` are processed at boot time and the corresponding
+initialization functions are called sequentially according to their specified
+level and priority.
+
+Sometimes it's useful to inspect the final sequence of initialization function
+call as produced by the linker. To do that, use the ``initlevels`` CMake
+target, for example ``west build -t initlevels``.
 
 Error handling
 **************

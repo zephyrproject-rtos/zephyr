@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MODEM
-	bool "Modem Drivers"
+	bool "Modem drivers"
 	help
 	  Enable config options for modem drivers.
 
@@ -142,6 +142,8 @@ config MODEM_CMD_HANDLER_MAX_PARAM_COUNT
 	  of the match_buf (match_buf_len) field as it needs to be large
 	  enough to hold a single line of data (ending with /r).
 
+endif # MODEM_CONTEXT
+
 config MODEM_SOCKET
 	bool "Generic modem socket support layer"
 	help
@@ -153,7 +155,7 @@ config MODEM_SOCKET
 	  modem_socket_init().
 	  Note that the modem socket uses runtime allocated file descriptors
 	  reserved from the fdtable, for which the max count is set using the
-	  Kconfig option POSIX_MAX_FDS. Make sure to update this value as both
+	  Kconfig option ZVFS_OPEN_MAX. Make sure to update this value as both
 	  the modem sockets and the POSIX_API, if used, share them.
 
 config MODEM_SOCKET_PACKET_COUNT
@@ -165,8 +167,6 @@ config MODEM_SOCKET_PACKET_COUNT
 	  these values are organized into "packets".  This setting limits
 	  the maximum number of packet sizes the socket can keep track of.
 
-endif # MODEM_CONTEXT
-
 config MODEM_SHELL
 	bool "Modem shell utilities"
 	select SHELL
@@ -176,7 +176,6 @@ config MODEM_SHELL
 
 config MODEM_SIM_NUMBERS
 	bool "Query the SIM for IMSI and ICCID"
-	depends on MODEM_SHELL
 	default y
 	help
 	  Query the SIM card for the IMSI and ICCID identifiers. This
@@ -184,14 +183,14 @@ config MODEM_SIM_NUMBERS
 
 config MODEM_CELL_INFO
 	bool "Query for operator and cell info"
-	depends on MODEM_SHELL
 	help
 	  Query for numerical operator id, location area code and cell id.
 
 source "drivers/modem/Kconfig.ublox-sara-r4"
 source "drivers/modem/Kconfig.quectel-bg9x"
 source "drivers/modem/Kconfig.wncm14a2a"
-source "drivers/modem/Kconfig.gsm"
+source "drivers/modem/Kconfig.cellular"
+source "drivers/modem/Kconfig.at_shell"
 
 source "drivers/modem/Kconfig.hl7800"
 source "drivers/modem/Kconfig.simcom-sim7080"

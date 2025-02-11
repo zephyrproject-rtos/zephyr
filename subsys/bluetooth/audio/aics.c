@@ -5,17 +5,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/types.h>
 
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
 
 #include "aics_internal.h"
 #include "audio_internal.h"
@@ -164,6 +176,74 @@ static ssize_t read_input_status(struct bt_conn *conn,
 				 sizeof(inst->srv.status));
 }
 
+static const char *aics_notify_str(enum bt_aics_notify notify)
+{
+	switch (notify) {
+	case AICS_NOTIFY_STATE:
+		return "state";
+	case AICS_NOTIFY_DESCRIPTION:
+		return "description";
+	case AICS_NOTIFY_STATUS:
+		return "status";
+	default:
+		return "unknown";
+	}
+}
+
+static void notify_work_reschedule(struct bt_aics *inst, enum bt_aics_notify notify,
+				   k_timeout_t delay)
+{
+	int err;
+
+	atomic_set_bit(inst->srv.notify, notify);
+
+	err = k_work_reschedule(&inst->srv.notify_work, K_NO_WAIT);
+	if (err < 0) {
+		LOG_ERR("Failed to reschedule %s notification err %d",
+			aics_notify_str(notify), err);
+	}
+}
+
+static void notify(struct bt_aics *inst, enum bt_aics_notify notify, const struct bt_uuid *uuid,
+		   const void *data, uint16_t len)
+{
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, uuid, inst->srv.service_p->attrs, data, len);
+	if (err == -ENOMEM) {
+		notify_work_reschedule(inst, notify, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
+	} else if (err < 0 && err != -ENOTCONN) {
+		LOG_ERR("Notify %s err %d", aics_notify_str(notify), err);
+	}
+}
+
+static void notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_aics *inst = CONTAINER_OF(d_work, struct bt_aics, srv.notify_work);
+
+	if (atomic_test_and_clear_bit(inst->srv.notify, AICS_NOTIFY_STATE)) {
+		notify(inst, AICS_NOTIFY_STATE, BT_UUID_AICS_STATE, &inst->srv.state,
+		       sizeof(inst->srv.state));
+	}
+
+	if (atomic_test_and_clear_bit(inst->srv.notify, AICS_NOTIFY_DESCRIPTION)) {
+		notify(inst, AICS_NOTIFY_DESCRIPTION, BT_UUID_AICS_DESCRIPTION,
+		       &inst->srv.description, strlen(inst->srv.description));
+	}
+
+	if (atomic_test_and_clear_bit(inst->srv.notify, AICS_NOTIFY_STATUS)) {
+		notify(inst, AICS_NOTIFY_STATUS, BT_UUID_AICS_INPUT_STATUS, &inst->srv.status,
+		       sizeof(inst->srv.status));
+	}
+}
+
+static void value_changed(struct bt_aics *inst, enum bt_aics_notify notify)
+{
+	notify_work_reschedule(inst, notify, K_NO_WAIT);
+}
+#else
+#define value_changed(...)
 #endif /* CONFIG_BT_AICS */
 
 static ssize_t write_aics_control(struct bt_conn *conn,
@@ -264,9 +344,7 @@ static ssize_t write_aics_control(struct bt_conn *conn,
 			inst->srv.state.gain, inst->srv.state.mute, inst->srv.state.gain_mode,
 			inst->srv.state.change_counter);
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_AICS_STATE,
-				    inst->srv.service_p->attrs, &inst->srv.state,
-				    sizeof(inst->srv.state));
+		value_changed(inst, AICS_NOTIFY_STATE);
 
 		if (inst->srv.cb && inst->srv.cb->state) {
 			inst->srv.cb->state(inst, 0, inst->srv.state.gain,
@@ -306,9 +384,7 @@ static ssize_t write_description(struct bt_conn *conn,
 		memcpy(inst->srv.description, buf, len);
 		inst->srv.description[len] = '\0';
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_AICS_DESCRIPTION,
-				    inst->srv.service_p->attrs, &inst->srv.description,
-				    strlen(inst->srv.description));
+		value_changed(inst, AICS_NOTIFY_DESCRIPTION);
 
 		if (inst->srv.cb && inst->srv.cb->description) {
 			inst->srv.cb->description(inst, 0,
@@ -444,11 +520,12 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 	aics->srv.status = param->status ? BT_AICS_STATUS_ACTIVE : BT_AICS_STATUS_INACTIVE;
 	aics->srv.cb = param->cb;
 
+	atomic_clear(aics->srv.notify);
+	k_work_init_delayable(&aics->srv.notify_work, notify_work_handler);
+
 	if (param->description) {
-		strncpy(aics->srv.description, param->description,
-			sizeof(aics->srv.description) - 1);
-		/* strncpy may not always null-terminate */
-		aics->srv.description[sizeof(aics->srv.description) - 1] = '\0';
+		(void)utf8_lcpy(aics->srv.description, param->description,
+				sizeof(aics->srv.description));
 		if (IS_ENABLED(CONFIG_BT_AICS_LOG_LEVEL_DBG) &&
 		    strcmp(aics->srv.description, param->description)) {
 			LOG_DBG("Input desc clipped to %s", aics->srv.description);
@@ -509,14 +586,15 @@ int bt_aics_deactivate(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return -ENOTSUP;
+	}
+
 	if (inst->srv.status == BT_AICS_STATUS_ACTIVE) {
 		inst->srv.status = BT_AICS_STATUS_INACTIVE;
 		LOG_DBG("Instance %p: Status was set to inactive", inst);
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_AICS_INPUT_STATUS,
-				    inst->srv.service_p->attrs,
-				    &inst->srv.status,
-				    sizeof(inst->srv.status));
+		value_changed(inst, AICS_NOTIFY_STATUS);
 
 		if (inst->srv.cb && inst->srv.cb->status) {
 			inst->srv.cb->status(inst, 0, inst->srv.status);
@@ -535,14 +613,15 @@ int bt_aics_activate(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return -ENOTSUP;
+	}
+
 	if (inst->srv.status == BT_AICS_STATUS_INACTIVE) {
 		inst->srv.status = BT_AICS_STATUS_ACTIVE;
 		LOG_DBG("Instance %p: Status was set to active", inst);
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_AICS_INPUT_STATUS,
-				    inst->srv.service_p->attrs,
-				    &inst->srv.status,
-				    sizeof(inst->srv.status));
+		value_changed(inst, AICS_NOTIFY_STATUS);
 
 		if (inst->srv.cb && inst->srv.cb->status) {
 			inst->srv.cb->status(inst, 0, inst->srv.status);
@@ -555,6 +634,33 @@ int bt_aics_activate(struct bt_aics *inst)
 }
 
 #endif /* CONFIG_BT_AICS */
+int bt_aics_gain_set_manual_only(struct bt_aics *inst)
+{
+	CHECKIF(!inst) {
+		LOG_DBG("NULL instance");
+		return -EINVAL;
+	}
+
+	inst->srv.state.gain_mode = BT_AICS_MODE_MANUAL_ONLY;
+
+	value_changed(inst, AICS_NOTIFY_STATE);
+
+	return 0;
+}
+
+int bt_aics_gain_set_auto_only(struct bt_aics *inst)
+{
+	CHECKIF(!inst) {
+		LOG_DBG("NULL instance");
+		return -EINVAL;
+	}
+
+	inst->srv.state.gain_mode = BT_AICS_MODE_AUTO_ONLY;
+
+	value_changed(inst, AICS_NOTIFY_STATE);
+
+	return 0;
+}
 
 int bt_aics_state_get(struct bt_aics *inst)
 {
@@ -643,6 +749,20 @@ int bt_aics_status_get(struct bt_aics *inst)
 	}
 
 	return -ENOTSUP;
+}
+
+int bt_aics_disable_mute(struct bt_aics *inst)
+{
+	CHECKIF(!inst) {
+		LOG_DBG("NULL instance");
+		return -EINVAL;
+	}
+
+	inst->srv.state.mute = BT_AICS_STATE_MUTE_DISABLED;
+
+	value_changed(inst, AICS_NOTIFY_STATE);
+
+	return 0;
 }
 
 int bt_aics_unmute(struct bt_aics *inst)

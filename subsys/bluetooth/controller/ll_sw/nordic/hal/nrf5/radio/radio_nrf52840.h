@@ -5,6 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <nrf_erratas.h>
+
+/* Use the NRF_RTC instance for coarse radio event scheduling */
+#define NRF_RTC NRF_RTC0
+
+/* HAL abstraction of event timer prescaler value */
+#define HAL_EVENT_TIMER_PRESCALER_VALUE 4U
+
 /* NRF Radio HW timing constants
  * - provided in US and NS (for higher granularity)
  * - based on empirical measurements and sniffer logs
@@ -337,24 +345,13 @@
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 #endif /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
 
-#if !defined(CONFIG_BT_CTLR_TIFS_HW)
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-#undef EVENT_TIMER_ID
-#define EVENT_TIMER_ID 4
-#define SW_SWITCH_TIMER EVENT_TIMER
-#define SW_SWITCH_TIMER_EVTS_COMP_BASE 3
-#define SW_SWITCH_TIMER_EVTS_COMP_S2_BASE 5
-#undef HAL_EVENT_TIMER_SAMPLE_CC_OFFSET
-#define HAL_EVENT_TIMER_SAMPLE_CC_OFFSET 2
-#undef HAL_EVENT_TIMER_SAMPLE_TASK
-#define HAL_EVENT_TIMER_SAMPLE_TASK NRF_TIMER_TASK_CAPTURE2
+/* HAL abstraction of Radio bitfields */
+#define HAL_RADIO_INTENSET_DISABLED_Msk         RADIO_INTENSET_DISABLED_Msk
+#define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk    RADIO_SHORTS_END_DISABLE_Msk
+#define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk RADIO_SHORTS_PHYEND_DISABLE_Msk
 
-#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-#define SW_SWITCH_TIMER NRF_TIMER1
-#define SW_SWITCH_TIMER_EVTS_COMP_BASE 0
-#define SW_SWITCH_TIMER_EVTS_COMP_S2_BASE 2
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+/* HAL abstraction of Radio IRQ number */
+#define HAL_RADIO_IRQn                          RADIO_IRQn
 
 static inline void hal_radio_reset(void)
 {

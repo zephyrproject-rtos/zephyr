@@ -8,9 +8,9 @@
 	board_power: resources {
 		compatible = "microchip,mec15xx-board-power";
 		/* MCHP_GPIO_012 */
-		pwrg-gpios = <&gpio_000_036 10 GPIO_ACTIVE_HIGH>;
+		pwrg-gpios = <MCHP_GPIO_DECODE_012 GPIO_ACTIVE_HIGH>;
 		/* MCHP_GPIO_0054 */
-		rsm-gpios = <&gpio_040_076 12 GPIO_ACTIVE_HIGH>;
+		rsm-gpios = <MCHP_GPIO_DECODE_054 GPIO_ACTIVE_HIGH>;
 	};
 };
 

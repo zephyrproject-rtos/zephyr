@@ -14,22 +14,16 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Display Drivers
- * @addtogroup display_interfaces Display Drivers
- * @{
- * @}
- */
-
-/**
  * @brief Public Monochrome Character Framebuffer API
  * @defgroup monochrome_character_framebuffer Monochrome Character Framebuffer
- * @ingroup display_interfaces
+ * @ingroup utilities
  * @{
  */
 
@@ -54,6 +48,11 @@ struct cfb_font {
 	uint8_t height;
 	uint8_t first_char;
 	uint8_t last_char;
+};
+
+struct cfb_position {
+	uint16_t x;
+	uint16_t y;
 };
 
 /**
@@ -87,7 +86,55 @@ struct cfb_font {
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_print(const struct device *dev, char *str, uint16_t x, uint16_t y);
+int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint16_t y);
+
+/**
+ * @brief Print a string into the framebuffer.
+ * For compare to cfb_print, cfb_draw_text accept non tile-aligned coords
+ * and not line wrapping.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param str String to print
+ * @param x Position in X direction of the beginning of the string
+ * @param y Position in Y direction of the beginning of the string
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y);
+
+/**
+ * @brief Draw a point.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param pos position of the point
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_point(const struct device *dev, const struct cfb_position *pos);
+
+/**
+ * @brief Draw a line.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param start start position of the line
+ * @param end end position of the line
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_line(const struct device *dev, const struct cfb_position *start,
+		  const struct cfb_position *end);
+
+/**
+ * @brief Draw a rectangle.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param start Top-Left position of the rectangle
+ * @param end Bottom-Right position of the rectangle
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
+		  const struct cfb_position *end);
 
 /**
  * @brief Clear framebuffer.
@@ -154,6 +201,16 @@ int cfb_get_display_parameter(const struct device *dev,
 int cfb_framebuffer_set_font(const struct device *dev, uint8_t idx);
 
 /**
+ * @brief Set font kerning (spacing between individual letters).
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param kerning Font kerning
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_set_kerning(const struct device *dev, int8_t kerning);
+
+/**
  * @brief Get font size.
  *
  * @param dev Pointer to device structure for driver instance
@@ -183,6 +240,13 @@ int cfb_get_numof_fonts(const struct device *dev);
  * @return 0 on success, negative value otherwise
  */
 int cfb_framebuffer_init(const struct device *dev);
+
+/**
+ * @brief Deinitialize Character Framebuffer.
+ *
+ * @param dev Pointer to device structure for driver instance
+ */
+void cfb_framebuffer_deinit(const struct device *dev);
 
 #ifdef __cplusplus
 }

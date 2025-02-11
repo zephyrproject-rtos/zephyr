@@ -91,6 +91,37 @@
 #define OP_VND_MOD_APP_GET                 BT_MESH_MODEL_OP_2(0x80, 0x4d)
 #define OP_VND_MOD_APP_LIST                BT_MESH_MODEL_OP_2(0x80, 0x4e)
 
+#define OP_SAR_CFG_TX_GET                  BT_MESH_MODEL_OP_2(0x80, 0x6c)
+#define OP_SAR_CFG_TX_SET                  BT_MESH_MODEL_OP_2(0x80, 0x6d)
+#define OP_SAR_CFG_TX_STATUS               BT_MESH_MODEL_OP_2(0x80, 0x6e)
+#define OP_SAR_CFG_RX_GET                  BT_MESH_MODEL_OP_2(0x80, 0x6f)
+#define OP_SAR_CFG_RX_SET                  BT_MESH_MODEL_OP_2(0x80, 0x70)
+#define OP_SAR_CFG_RX_STATUS               BT_MESH_MODEL_OP_2(0x80, 0x71)
+#define OP_OPCODES_AGGREGATOR_SEQUENCE     BT_MESH_MODEL_OP_2(0x80, 0x72)
+#define OP_OPCODES_AGGREGATOR_STATUS       BT_MESH_MODEL_OP_2(0x80, 0x73)
+#define OP_LARGE_COMP_DATA_GET             BT_MESH_MODEL_OP_2(0x80, 0x74)
+#define OP_LARGE_COMP_DATA_STATUS          BT_MESH_MODEL_OP_2(0x80, 0x75)
+#define OP_MODELS_METADATA_GET             BT_MESH_MODEL_OP_2(0x80, 0x76)
+#define OP_MODELS_METADATA_STATUS          BT_MESH_MODEL_OP_2(0x80, 0x77)
+
+#define OP_PRIV_BEACON_GET                 BT_MESH_MODEL_OP_2(0x80, 0x60)
+#define OP_PRIV_BEACON_SET                 BT_MESH_MODEL_OP_2(0x80, 0x61)
+#define OP_PRIV_BEACON_STATUS              BT_MESH_MODEL_OP_2(0x80, 0x62)
+#define OP_PRIV_GATT_PROXY_GET             BT_MESH_MODEL_OP_2(0x80, 0x63)
+#define OP_PRIV_GATT_PROXY_SET             BT_MESH_MODEL_OP_2(0x80, 0x64)
+#define OP_PRIV_GATT_PROXY_STATUS          BT_MESH_MODEL_OP_2(0x80, 0x65)
+#define OP_PRIV_NODE_ID_GET                BT_MESH_MODEL_OP_2(0x80, 0x66)
+#define OP_PRIV_NODE_ID_SET                BT_MESH_MODEL_OP_2(0x80, 0x67)
+#define OP_PRIV_NODE_ID_STATUS             BT_MESH_MODEL_OP_2(0x80, 0x68)
+
+#define OP_OD_PRIV_PROXY_GET               BT_MESH_MODEL_OP_2(0x80, 0x69)
+#define OP_OD_PRIV_PROXY_SET               BT_MESH_MODEL_OP_2(0x80, 0x6a)
+#define OP_OD_PRIV_PROXY_STATUS            BT_MESH_MODEL_OP_2(0x80, 0x6b)
+
+#define OP_SOL_PDU_RPL_ITEM_CLEAR          BT_MESH_MODEL_OP_2(0x80, 0x78)
+#define OP_SOL_PDU_RPL_ITEM_CLEAR_UNACKED  BT_MESH_MODEL_OP_2(0x80, 0x79)
+#define OP_SOL_PDU_RPL_ITEM_STATUS         BT_MESH_MODEL_OP_2(0x80, 0x7a)
+
 #define STATUS_SUCCESS                     0x00
 #define STATUS_INVALID_ADDRESS             0x01
 #define STATUS_INVALID_MODEL               0x02
@@ -110,21 +141,26 @@
 #define STATUS_UNSPECIFIED                 0x10
 #define STATUS_INVALID_BINDING             0x11
 
+#define ACCESS_STATUS_SUCCESS                0x00
+#define ACCESS_STATUS_INVALID_ADDRESS        0x01
+#define ACCESS_STATUS_WRONG_KEY              0x02
+#define ACCESS_STATUS_WRONG_OPCODE           0x03
+#define ACCESS_STATUS_MESSAGE_NOT_UNDERSTOOD 0x04
+#define ACCESS_STATUS_RESPONSE_OVERFLOW      0x05
+
 void bt_mesh_model_reset(void);
 
-void bt_mesh_attention(struct bt_mesh_model *model, uint8_t time);
+void bt_mesh_attention(const struct bt_mesh_model *model, uint8_t time);
 
 #include <zephyr/sys/byteorder.h>
 
-static inline void key_idx_pack(struct net_buf_simple *buf,
-				uint16_t idx1, uint16_t idx2)
+static inline void key_idx_pack_pair(struct net_buf_simple *buf, uint16_t idx1, uint16_t idx2)
 {
 	net_buf_simple_add_le16(buf, idx1 | ((idx2 & 0x00f) << 12));
 	net_buf_simple_add_u8(buf, idx2 >> 4);
 }
 
-static inline void key_idx_unpack(struct net_buf_simple *buf,
-				  uint16_t *idx1, uint16_t *idx2)
+static inline void key_idx_unpack_pair(struct net_buf_simple *buf, uint16_t *idx1, uint16_t *idx2)
 {
 	*idx1 = sys_get_le16(&buf->data[0]) & 0xfff;
 	*idx2 = sys_get_le16(&buf->data[1]) >> 4;

@@ -8,8 +8,10 @@
 int ull_central_iso_init(void);
 int ull_central_iso_reset(void);
 
-uint16_t ull_central_iso_cis_offset_get(uint16_t cis_handle, uint32_t *cis_offset_min,
-					uint32_t *cis_offset_max);
+int ull_central_iso_cis_offset_get(uint16_t cis_handle,
+				   uint32_t *cis_offset_min,
+				   uint32_t *cis_offset_max,
+				   uint16_t *conn_event_count);
 uint8_t ull_central_iso_setup(uint16_t cis_handle,
 			      uint32_t *cig_sync_delay,
 			      uint32_t *cis_sync_delay,

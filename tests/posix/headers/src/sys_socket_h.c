@@ -100,7 +100,7 @@ ZTEST(posix_headers, test_sys_socket_h)
 	zassert_not_equal(-1, SHUT_RDWR);
 	zassert_not_equal(-1, SHUT_WR);
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_POSIX_NETWORKING)) {
 		zassert_not_null(accept);
 		zassert_not_null(bind);
 		zassert_not_null(connect);
@@ -115,7 +115,7 @@ ZTEST(posix_headers, test_sys_socket_h)
 		zassert_not_null(sendto);
 		zassert_not_null(setsockopt);
 		zassert_not_null(shutdown);
-		/* zassert_not_null(sockatmark); */ /* not implemented */
+		zassert_not_null(sockatmark);
 		zassert_not_null(socket);
 		zassert_not_null(socketpair);
 	}

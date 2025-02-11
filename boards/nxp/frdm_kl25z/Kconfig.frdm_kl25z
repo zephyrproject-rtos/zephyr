@@ -1,0 +1,6 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_KL25Z
+	select SOC_MKL25Z4
+	select SOC_PART_NUMBER_MKL25Z128VLK4

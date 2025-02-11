@@ -40,6 +40,12 @@ config USE_STM32_HAL_COMP
 	  Enable STM32Cube Ultra Low Power Comparator channels (COMP) HAL module
 	  driver
 
+config USE_STM32_HAL_CORDIC
+	bool
+	help
+	  Enable STM32Cube CORDIC co-processor (CORDIC) functions HAL module
+	  driver
+
 config USE_STM32_HAL_CORTEX
 	bool
 	help
@@ -78,6 +84,11 @@ config USE_STM32_HAL_DAC_EX
 	help
 	  Enable STM32Cube Extended Digital-to-analog converter (DAC) HAL module
 	  driver
+
+config USE_STM32_HAL_DCACHE
+	bool
+	help
+	  Enable STM32Cube data cache (DCACHE) HAL module driver
 
 config USE_STM32_HAL_DCMI
 	bool
@@ -124,6 +135,11 @@ config USE_STM32_HAL_DSI
 	bool
 	help
 	  Enable STM32Cube Display Serial Interface Host (DSI) HAL module driver
+
+config USE_STM32_HAL_DTS
+	bool
+	help
+	  Enable STM32Cube Digital temperature sensor (DTS) HAL module driver
 
 config USE_STM32_HAL_ETH
 	bool
@@ -202,6 +218,18 @@ config USE_STM32_HAL_GPIO_EX
 	  Enable STM32Cube Extended General-purpose I/Os (GPIO) HAL module
 	  driver
 
+config USE_STM32_HAL_GPU2D
+	bool
+	help
+	  Enable STM32Cube Neo-Chrom graphic processor (GPU2D) HAL module
+	  driver
+
+config USE_STM32_HAL_GTZC
+	bool
+	help
+	  Enable STM32Cube Global TrustZone controller (GTZC) HAL module
+	  driver
+
 config USE_STM32_HAL_HASH
 	bool
 	help
@@ -249,6 +277,17 @@ config USE_STM32_HAL_I2S_EX
 	help
 	  Enable STM32Cube Extended Inter-IC sound (I2S) HAL module driver
 
+config USE_STM32_HAL_I3C
+	bool
+	help
+	  Enable STM32Cube Improved inter-integrated circuit (I3C) HAL module
+	  driver
+
+config USE_STM32_HAL_ICACHE
+	bool
+	help
+	  Enable STM32Cube Instruction cache (ICACHE) HAL module driver
+
 config USE_STM32_HAL_IPCC
 	bool
 	help
@@ -290,6 +329,11 @@ config USE_STM32_HAL_LTDC_EX
 	help
 	  Enable STM32Cube Extended LCD-TFT controller (LTDC) HAL module driver
 
+config USE_STM32_HAL_MDF
+	bool
+	help
+	  Enable STM32Cube Multi-function digital filter (MDF) HAL module driver
+
 config USE_STM32_HAL_MDIOS
 	bool
 	help
@@ -312,6 +356,11 @@ config USE_STM32_HAL_MMC_EX
 	help
 	  Enable STM32Cube Extended MultiMediaCard interface (SDMMC) HAL module
 	  driver
+
+config USE_STM32_HAL_MSP
+	bool
+	help
+	  Enable STM32Cube MCU Support Package (MSP) HAL module driver
 
 config USE_STM32_HAL_NAND
 	bool
@@ -339,6 +388,12 @@ config USE_STM32_HAL_OSPI
 	help
 	  Enable STM32Cube Octo-SPI interface (OSPI) HAL module driver
 
+config USE_STM32_HAL_OTFDEC
+	bool
+	help
+	  Enable STM32Cube On-the-fly decryption engine (OTFDEC) HAL module
+	  driver
+
 config USE_STM32_HAL_PCCARD
 	bool
 	help
@@ -354,6 +409,11 @@ config USE_STM32_HAL_PCD_EX
 	help
 	  Enable STM32Cube Extended USB Peripheral Controller (PCD) HAL module
 	  driver
+
+config USE_STM32_HAL_PKA
+	bool
+	help
+	  Enable STM32Cube Public key accelerator (PKA) HAL module driver
 
 config USE_STM32_HAL_PSSI
 	bool
@@ -376,10 +436,21 @@ config USE_STM32_HAL_QSPI
 	help
 	  Enable STM32Cube Quad-SPI interface (QSPI) HAL module driver
 
+config USE_STM32_HAL_RAMCFG
+	bool
+	help
+	  Enable STM32Cube RAMs configuration controller (RAMCFG) HAL module
+	  driver
+
 config USE_STM32_HAL_RAMECC
 	bool
 	help
 	  Enable STM32Cube RAM ECC monitoring (RAMECC) HAL module driver
+
+config USE_STM32_HAL_RAMCFG
+	bool
+	help
+	  Enable STM32Cube RAM config (RAMCFG) HAL module driver
 
 config USE_STM32_HAL_RNG
 	bool
@@ -516,6 +587,11 @@ config USE_STM32_HAL_WWDG
 	help
 	  Enable STM32Cube System window watchdog (WWDG) HAL module driver
 
+config USE_STM32_HAL_XSPI
+	bool
+	help
+	  Enable STM32Cube OctoSPI (XSPI) HAL module driver
+
 config USE_STM32_LL_ADC
 	bool
 	help
@@ -531,6 +607,12 @@ config USE_STM32_LL_COMP
 	bool
 	help
 	  Enable STM32Cube Ultra Low Power Comparator channels (COMP) LL module
+	  driver
+
+config USE_STM32_LL_CORDIC
+	bool
+	help
+	  Enable STM32Cube CORDIC co-processor (CORDIC) functions LL module
 	  driver
 
 config USE_STM32_LL_CRC
@@ -609,10 +691,27 @@ config USE_STM32_LL_I2C
 	  Enable STM32Cube Inter-integrated circuit (I2C) interface LL module
 	  driver
 
+config USE_STM32_LL_I3C
+	bool
+	help
+	  Enable STM32Cube Improved inter-integrated circuit (I3C) LL module
+	  driver
+
+config USE_STM32_LL_ICACHE
+	bool
+	help
+	  Enable STM32Cube Instruction cache (ICACHE) LL module driver
+
 config USE_STM32_LL_IPCC
 	bool
 	help
 	  Enable STM32Cube Inter-Processor communication controller (IPCC) LL
+	  module driver
+
+config USE_STM32_LL_LPGPIO
+	bool
+	help
+	  Enable STM32Cube Low-power general-purpose I/Os (LPGPIO) LL
 	  module driver
 
 config USE_STM32_LL_LPTIM
@@ -636,6 +735,11 @@ config USE_STM32_LL_OPAMP
 	bool
 	help
 	  Enable STM32Cube Operational amplifiers (OPAMP) LL module driver
+
+config USE_STM32_LL_PKA
+	bool
+	help
+	  Enable STM32Cube Public key accelerator (PKA) LL module driver
 
 config USE_STM32_LL_PWR
 	bool

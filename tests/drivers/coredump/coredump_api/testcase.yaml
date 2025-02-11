@@ -2,11 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 common:
-  tags: coredump
+  tags:
+    - coredump
   ignore_faults: true
   ignore_qemu_crash: true
 tests:
-  drivers.coredump.api.qemu_riscv32:
+  debug.coredump.drivers.api.qemu_riscv32:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     platform_allow: qemu_riscv32
     harness: console
@@ -29,10 +30,14 @@ tests:
         - "E: #CD:4([dD])([0-9a-fA-F]+)"
         - "E: #CD:babababa"
         - "E: #CD:END#"
-  drivers.coredump.api:
+  debug.coredump.drivers.api:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     platform_exclude: qemu_riscv32
+    arch_exclude:
+      - posix
     harness: console
+    integration_platforms:
+      - qemu_x86
     harness_config:
       type: multi_line
       # Verify core dump contains test values saved in memory

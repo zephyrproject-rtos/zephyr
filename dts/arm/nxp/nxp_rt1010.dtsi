@@ -6,6 +6,15 @@
 
 #include <nxp/nxp_rt10xx.dtsi>
 
+&flexram {
+	flexram,num-ram-banks = <4>;
+	/* default fuse */
+	flexram,bank-spec = <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_ITCM>;
+};
+
 &sysclk {
 	clock-frequency = <500000000>;
 };
@@ -48,6 +57,8 @@
 };
 
 &edma0 {
+	/* Each channel has separate interrupt entry */
+	irq-shared-offset = <0>;
 	dma-channels = <16>;
 };
 
@@ -103,9 +114,10 @@
 			ahb-bufferable;
 			ahb-cacheable;
 			status = "disabled";
+			clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0x0>;
 		};
 
-		/* Remove SEMC, it does'nt exist on RT1010 */
+		/* Remove SEMC, it doesn't exist on RT1010 */
 		/delete-node/ semc0@402f0000;
 
 		/* Fixup LPI2C1 and LPI2C2, they have different base addr on RT1010 */
@@ -228,30 +240,29 @@
 		/delete-node/ flexpwm@403e4000;
 		/delete-node/ flexpwm@403e8000;
 
-		/* Remove Ethernet, it does'nt exist on RT1010 */
-		/delete-node/ ethernet@402d8000;
+		/* Remove Ethernet, it doesn't exist on RT1010 */
+		/delete-node/ enet@402d8000;
 
 		/* Fixup USB it has different base addr and interrupt numbers on RT1010 */
 		/delete-node/ usbd@402e0000;
 		usb1: usbd@400e4000 {
-			compatible = "nxp,mcux-usbd";
+			compatible = "nxp,ehci";
 			reg = <0x400e4000 0x200>;
 			interrupts = <25 1>;
 			interrupt-names = "usb_otg";
 			clocks = <&usbclk>;
 			num-bidir-endpoints = <8>;
-			usb-controller-index = "Ehci0";
 			status = "disabled";
 		};
 
-		/* Remove USB2, it does'nt exist on RT1010 */
+		/* Remove USB2, it doesn't exist on RT1010 */
 		/delete-node/ usbd@402e0200;
 
 		/* Remove USDHC, they don't exist on RT1010 */
 		/delete-node/ usdhc@402c0000;
 		/delete-node/ usdhc@402c4000;
 
-		/* Remove CSI, it does'nt exist on RT1010 */
+		/* Remove CSI, it doesn't exist on RT1010 */
 		/delete-node/ csi@402bc000;
 
 		/* Remove FLEXCAN, they don't exist on RT1010 */
@@ -259,7 +270,7 @@
 		/delete-node/ can@401d4000;
 		/delete-node/ can@401d8000;
 
-		/* Remove WDOG2, it does'nt exist on RT1010 */
+		/* Remove WDOG2, it doesn't exist on RT1010 */
 		/delete-node/ wdog@400d0000;
 
 		/* Fix SAI1, 3, it has different base addr on RT1010 */
@@ -272,6 +283,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x401e0000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI1_CLK 0x7C 18>;
+			/* Source clock from Audio PLL */
+			clock-mux = <2>;
 			/* Audio PLL Output Frequency is determined by:
 			 * (Fref * (DIV_SELECT + NUM/DENOM)) / POST_DIV
 			 * = (24MHz * (32 + 77 / 100)) / 1 = 786.48 MHz
@@ -310,6 +323,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x401e8000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI3_CLK 0x7C 22>;
+			/* Source clock from Audio PLL */
+			clock-mux = <2>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0x70 0xC000 0>,
@@ -328,7 +343,7 @@
 			status = "disabled";
 		};
 
-		/* Remove SAI2, it does'nt exist on RT1010 */
+		/* Remove SAI2, it doesn't exist on RT1010 */
 		/delete-node/ sai@40388000;
 	};
 };
@@ -372,4 +387,8 @@
 
 &gpio5{
 	pinmux = <&iomuxc_snvs_pmic_on_req_gpio5_io00>;
+};
+
+&pit0 {
+	interrupts = <24 0>;
 };

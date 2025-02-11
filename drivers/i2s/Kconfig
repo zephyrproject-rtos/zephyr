@@ -7,7 +7,7 @@
 # I2S Drivers
 #
 menuconfig I2S
-	bool "I2S bus drivers"
+	bool "Inter-IC Sound (I2S) bus drivers"
 	help
 	  Enable support for the I2S (Inter-IC Sound) hardware bus.
 

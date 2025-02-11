@@ -1,7 +1,8 @@
-.. _modbus-gateway-sample:
+.. zephyr:code-sample:: modbus-gateway
+   :name: Modbus TCP-to-serial gateway
+   :relevant-api: modbus bsd_sockets
 
-Modbus TCP to serial line gateway sample
-########################################
+   Implement a gateway between an Ethernet TCP-IP network and a Modbus serial line.
 
 Overview
 ********
@@ -16,8 +17,8 @@ This sample has been tested with FRDM-K64F board,
 but it should work with any board or shield that has a network interface.
 
 Gateway example is running on an evaluation board and communicates
-with another board that has been prepared according to the description
-`modbus-rtu-server-sample`. Client is running on a PC or laptop.
+with another board that has been prepared according to the instructions in
+:zephyr:code-sample:`modbus-rtu-server` sample. Client is running on a PC or laptop.
 
 The description of this sample uses `PyModbus`_ (Pymodbus REPL).
 The user can of course try out other client implementations with this sample.
@@ -53,7 +54,7 @@ For example, to set LED0 on use FC01 command (write_coil).
 .. code-block:: console
 
    > client.connect
-   > client.write_coil address=0 value=1 unit=1
+   > client.write_coil address=0 value=1 slave=1
 
 Client should confirm successful communication and LED0 should light.
 
@@ -68,13 +69,13 @@ To set LED0 off but LED1 and LED2 on use FC15 command (write_coils).
 
 .. code-block:: console
 
-   > client.write_coils address=0 values=0,1,1 unit=1
+   > client.write_coils address=0 values=0,1,1 slave=1
 
 To read LED0, LED1, LED2 state FC05 command (read_coils) can be used.
 
 .. code-block:: console
 
-   > client.read_coils address=0 count=3 unit=1
+   > client.read_coils address=0 count=3 slave=1
    {
        "bits": [
            false,
@@ -96,19 +97,19 @@ To write single holding registers use FC06 command (write_register),
 
 .. code-block:: console
 
-   > client.write_register address=0 value=42 unit=1
+   > client.write_register address=0 value=42 slave=1
 
 or FC16 command (write_registers).
 
 .. code-block:: console
 
-   > client.write_registers address=0 values=42,42,42 unit=1
+   > client.write_registers address=0 values=42,42,42 slave=1
 
 To read holding registers use FC03 command (read_holding_registers).
 
 .. code-block:: console
 
-   > client.read_holding_registers address=0 count=3 unit=1
+   > client.read_holding_registers address=0 count=3 slave=1
    {
        "registers": [
            42,
@@ -117,4 +118,4 @@ To read holding registers use FC03 command (read_holding_registers).
        ]
    }
 
-.. _`PyModbus`: https://github.com/riptideio/pymodbus
+.. _`PyModbus`: https://github.com/pymodbus-dev/pymodbus

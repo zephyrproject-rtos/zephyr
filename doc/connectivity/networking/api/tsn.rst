@@ -7,4 +7,6 @@ Time Sensitive Networking
    :maxdepth: 1
 
    gptp.rst
+   net_time.rst
    ptp_time.rst
+   ptp.rst

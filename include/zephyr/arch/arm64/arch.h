@@ -20,7 +20,7 @@
 #include <zephyr/devicetree.h>
 
 #include <zephyr/arch/arm64/thread.h>
-#include <zephyr/arch/arm64/exc.h>
+#include <zephyr/arch/arm64/exception.h>
 #include <zephyr/arch/arm64/irq.h>
 #include <zephyr/arch/arm64/misc.h>
 #include <zephyr/arch/arm64/asm_inline.h>

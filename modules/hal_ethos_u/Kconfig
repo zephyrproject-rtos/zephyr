@@ -1,5 +1,5 @@
-# Copyright 2021-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
-#
+# SPDX-FileCopyrightText: <text>Copyright 2021-2022, 2024 Arm Limited and/or its
+# affiliates <open-source-office@arm.com></text>
 # SPDX-License-Identifier: Apache-2.0
 
 config ARM_ETHOS_U
@@ -9,10 +9,10 @@ config ARM_ETHOS_U
 	help
 	  This option enables the Arm Ethos-U core driver.
 
+if ARM_ETHOS_U
 menu "Arm Ethos-U NPU configuration"
 choice  ARM_ETHOS_U_NPU_CONFIG
 	prompt "Arm Ethos-U NPU configuration"
-	depends on ARM_ETHOS_U
 	default ARM_ETHOS_U55_128
 config ARM_ETHOS_U55_64
 	bool "using Ethos-U55 with 64 macs"
@@ -40,6 +40,38 @@ config ARM_ETHOS_U_NPU_NAME
 	help
 		Name of the used Arm NPU
 
-module = ARM_ETHOS_U
-module-str = arm_ethos_u
-source "subsys/logging/Kconfig.template.log_config"
+choice "ARM_ETHOS_U_LOG_LEVEL_CHOICE"
+	prompt "Max compiled-in log level for arm_ethos_u"
+	default ARM_ETHOS_U_LOG_LEVEL_WRN
+	depends on STDOUT_CONSOLE
+
+config ARM_ETHOS_U_LOG_LEVEL_NONE
+	bool "None"
+
+config ARM_ETHOS_U_LOG_LEVEL_ERR
+	bool "Error"
+
+config ARM_ETHOS_U_LOG_LEVEL_WRN
+	bool "Warning"
+
+config ARM_ETHOS_U_LOG_LEVEL_INF
+	bool "Info"
+
+config ARM_ETHOS_U_LOG_LEVEL_DBG
+	bool "Debug"
+
+config ARM_ETHOS_U_LOG_LEVEL_DEFAULT
+	bool "Default"
+
+endchoice
+
+config ARM_ETHOS_U_LOG_LEVEL
+	int
+	depends on STDOUT_CONSOLE
+	default 0 if ARM_ETHOS_U_LOG_LEVEL_NONE
+	default 1 if ARM_ETHOS_U_LOG_LEVEL_ERR
+	default 2 if ARM_ETHOS_U_LOG_LEVEL_WRN
+	default 3 if ARM_ETHOS_U_LOG_LEVEL_INF
+	default 4 if ARM_ETHOS_U_LOG_LEVEL_DBG
+
+endif

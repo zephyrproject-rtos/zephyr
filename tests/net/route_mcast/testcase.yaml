@@ -3,4 +3,6 @@ common:
 tests:
   net.route_mcast:
     min_ram: 21
-    tags: net route_mcast
+    tags:
+      - net
+      - route_mcast

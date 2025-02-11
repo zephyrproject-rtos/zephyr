@@ -22,16 +22,32 @@
 extern "C" {
 #endif
 
+/** Broadcast Address on I3C bus. */
 #define I3C_BROADCAST_ADDR			0x7E
+
+/** Maximum value of device addresses. */
 #define I3C_MAX_ADDR				0x7F
 
 struct i3c_dev_list;
 
+/**
+ * Enum to indicate whether an address is reserved, has I2C/I3C device attached,
+ * or no device attached.
+ */
 enum i3c_addr_slot_status {
+	/** Address has not device attached. */
 	I3C_ADDR_SLOT_STATUS_FREE = 0U,
+
+	/** Address is reserved. */
 	I3C_ADDR_SLOT_STATUS_RSVD,
+
+	/** Address is associated with an I3C device. */
 	I3C_ADDR_SLOT_STATUS_I3C_DEV,
+
+	/** Address is associated with an I2C device. */
 	I3C_ADDR_SLOT_STATUS_I2C_DEV,
+
+	/** Bit masks used to filter status bits. */
 	I3C_ADDR_SLOT_STATUS_MASK = 0x03U,
 };
 
@@ -49,14 +65,12 @@ struct i3c_addr_slots {
  * This clears out the assigned address bits, and set the reserved
  * address bits according to the I3C specification.
  *
- * @param slots Pointer to address slots struct.
- * @param dev_list Pointer to device list struct.
+ * @param dev Pointer to controller device driver instance.
  *
  * @retval 0 if successful.
  * @retval -EINVAL if duplicate addresses.
  */
-int i3c_addr_slots_init(struct i3c_addr_slots *slots,
-			const struct i3c_dev_list *dev_list);
+int i3c_addr_slots_init(const struct device *dev);
 
 /**
  * @brief Set the address status of a device.
@@ -99,10 +113,11 @@ bool i3c_addr_slots_is_free(struct i3c_addr_slots *slots,
  * assigned to a new device.
  *
  * @param slots Pointer to the address slots structure.
+ * @param start_addr Where to start searching
  *
  * @return The next free address, or 0 if none found.
  */
-uint8_t i3c_addr_slots_next_free_find(struct i3c_addr_slots *slots);
+uint8_t i3c_addr_slots_next_free_find(struct i3c_addr_slots *slots, uint8_t start_addr);
 
 /**
  * @brief Mark the address as free (not used) in device list.

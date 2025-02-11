@@ -63,7 +63,7 @@ int send_msg_thread(void)
 	return 1;
 }
 
-void main(void)
+int main(void)
 {
 	osTimerId_t timer_id;
 	osStatus_t status;
@@ -105,4 +105,5 @@ exit:
 	} else {
 		printk("Error in execution! \n");
 	}
+	return 0;
 }

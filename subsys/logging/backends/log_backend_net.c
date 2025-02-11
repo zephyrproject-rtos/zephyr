@@ -7,20 +7,19 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
 
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
-#include <zephyr/net/net_pkt.h>
-#include <zephyr/net/net_context.h>
+#include <zephyr/logging/log_backend_net.h>
+#include <zephyr/net/hostname.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/socket.h>
 
 /* Set this to 1 if you want to see what is being sent to server */
 #define DEBUG_PRINTING 0
 
-#if DEBUG_PRINTING
-#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
-#else
-#define DBG(fmt, ...)
-#endif
+#define DBG(fmt, ...) IF_ENABLED(DEBUG_PRINTING, (printk(fmt, ##__VA_ARGS__)))
 
 #if defined(CONFIG_NET_IPV6) || CONFIG_NET_HOSTNAME_ENABLE
 #define MAX_HOSTNAME_LEN NET_IPV6_ADDR_LEN
@@ -36,34 +35,48 @@ struct sockaddr server_addr;
 static bool panic_mode;
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_NET_OUTPUT_DEFAULT;
 
-const struct log_backend *log_backend_net_get(void);
-
-NET_PKT_SLAB_DEFINE(syslog_tx_pkts, CONFIG_LOG_BACKEND_NET_MAX_BUF);
-NET_PKT_DATA_POOL_DEFINE(syslog_tx_bufs,
-			 ROUND_UP(CONFIG_LOG_BACKEND_NET_MAX_BUF_SIZE /
-				  CONFIG_NET_BUF_DATA_SIZE, 1) *
-			 CONFIG_LOG_BACKEND_NET_MAX_BUF);
-
-static struct k_mem_slab *get_tx_slab(void)
-{
-	return &syslog_tx_pkts;
-}
-
-struct net_buf_pool *get_data_pool(void)
-{
-	return &syslog_tx_bufs;
-}
+static struct log_backend_net_ctx {
+	int sock;
+	bool is_tcp;
+} ctx = {
+	.sock = -1,
+};
 
 static int line_out(uint8_t *data, size_t length, void *output_ctx)
 {
-	struct net_context *ctx = (struct net_context *)output_ctx;
+	struct log_backend_net_ctx *ctx = (struct log_backend_net_ctx *)output_ctx;
 	int ret = -ENOMEM;
+	struct msghdr msg = { 0 };
+	struct iovec io_vector[2];
+	int pos = 0;
 
 	if (ctx == NULL) {
 		return length;
 	}
 
-	ret = net_context_send(ctx, data, length, NULL, K_NO_WAIT, NULL);
+#if defined(CONFIG_NET_TCP)
+	char len[sizeof("123456789")];
+
+	if (ctx->is_tcp) {
+		(void)snprintk(len, sizeof(len), "%zu ", length);
+		io_vector[pos].iov_base = (void *)len;
+		io_vector[pos].iov_len = strlen(len);
+		pos++;
+	}
+#else
+	if (ctx->is_tcp) {
+		return -ENOTSUP;
+	}
+#endif
+
+	io_vector[pos].iov_base = (void *)data;
+	io_vector[pos].iov_len = length;
+	pos++;
+
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = pos;
+
+	ret = zsock_sendmsg(ctx->sock, &msg, ctx->is_tcp ? 0 : ZSOCK_MSG_DONTWAIT);
 	if (ret < 0) {
 		goto fail;
 	}
@@ -75,14 +88,13 @@ fail:
 
 LOG_OUTPUT_DEFINE(log_output_net, line_out, output_buf, sizeof(output_buf));
 
-static int do_net_init(void)
+static int do_net_init(struct log_backend_net_ctx *ctx)
 {
 	struct sockaddr *local_addr = NULL;
 	struct sockaddr_in6 local_addr6 = {0};
 	struct sockaddr_in local_addr4 = {0};
 	socklen_t server_addr_len;
-	struct net_context *ctx;
-	int ret;
+	int ret, proto = IPPROTO_UDP, type = SOCK_DGRAM;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && server_addr.sa_family == AF_INET) {
 		local_addr = (struct sockaddr *)&local_addr4;
@@ -103,12 +115,19 @@ static int do_net_init(void)
 
 	local_addr->sa_family = server_addr.sa_family;
 
-	ret = net_context_get(server_addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
-			      &ctx);
+	if (ctx->is_tcp) {
+		proto = IPPROTO_TCP;
+		type = SOCK_STREAM;
+	}
+
+	ret = zsock_socket(server_addr.sa_family, type, proto);
 	if (ret < 0) {
-		DBG("Cannot get context (%d)\n", ret);
+		ret = -errno;
+		DBG("Cannot get socket (%d)\n", ret);
 		return ret;
 	}
+
+	ctx->sock = ret;
 
 	if (IS_ENABLED(CONFIG_NET_HOSTNAME_ENABLE)) {
 		(void)strncpy(dev_hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
@@ -146,42 +165,49 @@ static int do_net_init(void)
 
 	} else {
 	unknown:
-		DBG("Cannot setup local context\n");
-		return -EINVAL;
+		DBG("Cannot setup local socket\n");
+		ret = -EINVAL;
+		goto err;
 	}
 
-	ret = net_context_bind(ctx, local_addr, server_addr_len);
+	ret = zsock_bind(ctx->sock, local_addr, server_addr_len);
 	if (ret < 0) {
-		DBG("Cannot bind context (%d)\n", ret);
-		return ret;
+		ret = -errno;
+		DBG("Cannot bind socket (%d)\n", ret);
+		goto err;
 	}
 
-	(void)net_context_connect(ctx, &server_addr, server_addr_len,
-				  NULL, K_NO_WAIT, NULL);
-
-	/* We do not care about return value for this UDP connect call that
-	 * basically does nothing. Calling the connect is only useful so that
-	 * we can see the syslog connection in net-shell.
-	 */
-
-	net_context_setup_pools(ctx, get_tx_slab, get_data_pool);
+	ret = zsock_connect(ctx->sock, &server_addr, server_addr_len);
+	if (ret < 0) {
+		ret = -errno;
+		DBG("Cannot connect socket (%d)\n", ret);
+		goto err;
+	}
 
 	log_output_ctx_set(&log_output_net, ctx);
 	log_output_hostname_set(&log_output_net, dev_hostname);
 
 	return 0;
+
+err:
+	(void)zsock_close(ctx->sock);
+	ctx->sock = -1;
+
+	return ret;
 }
 
 static void process(const struct log_backend *const backend,
 		    union log_msg_generic *msg)
 {
-	uint32_t flags = LOG_OUTPUT_FLAG_FORMAT_SYSLOG | LOG_OUTPUT_FLAG_TIMESTAMP;
+	uint32_t flags = LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
+			 LOG_OUTPUT_FLAG_TIMESTAMP |
+			 LOG_OUTPUT_FLAG_THREAD;
 
 	if (panic_mode) {
 		return;
 	}
 
-	if (!net_init_done && do_net_init() == 0) {
+	if (!net_init_done && do_net_init(&ctx) == 0) {
 		net_init_done = true;
 	}
 
@@ -196,19 +222,111 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 	return 0;
 }
 
-static void init_net(struct log_backend const *const backend)
+static bool check_net_init_done(void)
 {
-	ARG_UNUSED(backend);
-	int ret;
+	bool ret = false;
+
+	if (net_init_done) {
+		/* Release context so it can be recreated with the specified ip address
+		 * next time process() is called
+		 */
+		struct log_backend_net_ctx *ctx = log_output_net.control_block->ctx;
+		int released;
+
+		released = zsock_close(ctx->sock);
+		if (released < 0) {
+			LOG_ERR("Cannot release socket (%d)", ret);
+			ret = false;
+		} else {
+			/* The socket is successfully closed so we flag it
+			 * to be recreated with the new ip address
+			 */
+			net_init_done = false;
+			ret = true;
+		}
+
+		ctx->sock = -1;
+
+		return ret;
+	}
+
+	return true;
+}
+
+bool log_backend_net_set_addr(const char *addr)
+{
+	bool ret = check_net_init_done();
+
+	if (!ret) {
+		return ret;
+	}
 
 	net_sin(&server_addr)->sin_port = htons(514);
 
-	ret = net_ipaddr_parse(CONFIG_LOG_BACKEND_NET_SERVER,
-			       sizeof(CONFIG_LOG_BACKEND_NET_SERVER) - 1,
-			       &server_addr);
-	if (ret == 0) {
-		LOG_ERR("Cannot configure syslog server address");
-		return;
+	ret = net_ipaddr_parse(addr, strlen(addr), &server_addr);
+	if (!ret) {
+		LOG_ERR("Cannot parse syslog server address");
+		return ret;
+	}
+
+	return ret;
+}
+
+bool log_backend_net_set_ip(const struct sockaddr *addr)
+{
+	bool ret = check_net_init_done();
+
+	if (!ret) {
+		return ret;
+	}
+
+	if ((IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) ||
+	    (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6)) {
+		memcpy(&server_addr, addr, sizeof(server_addr));
+
+		net_port_set_default(&server_addr, 514);
+	} else {
+		LOG_ERR("Unknown address family");
+		return false;
+	}
+
+	return ret;
+}
+
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+void log_backend_net_hostname_set(char *hostname, size_t len)
+{
+	(void)strncpy(dev_hostname, hostname, MIN(len, MAX_HOSTNAME_LEN));
+	log_output_hostname_set(&log_output_net, dev_hostname);
+}
+#endif
+
+void log_backend_net_start(void)
+{
+	const struct log_backend *backend = log_backend_net_get();
+
+	if (!log_backend_is_active(backend)) {
+		log_backend_activate(backend, backend->cb->ctx);
+	}
+}
+
+static void init_net(struct log_backend const *const backend)
+{
+	ARG_UNUSED(backend);
+
+	if (strlen(CONFIG_LOG_BACKEND_NET_SERVER) != 0) {
+		const char *server = CONFIG_LOG_BACKEND_NET_SERVER;
+		bool ret;
+
+		if (memcmp(server, "tcp://", sizeof("tcp://") - 1) == 0) {
+			server += sizeof("tcp://") - 1;
+			ctx.is_tcp = true;
+		}
+
+		ret = log_backend_net_set_addr(server);
+		if (!ret) {
+			return;
+		}
 	}
 
 	log_backend_deactivate(log_backend_net_get());

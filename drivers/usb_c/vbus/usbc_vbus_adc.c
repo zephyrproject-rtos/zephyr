@@ -139,15 +139,19 @@ static int adc_vbus_init(const struct device *dev)
 	const struct gpio_dt_spec *gcd = &config->discharge_gpios;
 	int ret;
 
+	if (!adc_is_ready_dt(&config->adc_channel)) {
+		LOG_ERR("ADC controller device is not ready");
+		return -ENODEV;
+	}
+
 	/* Configure VBUS Measurement enable pin if defined */
 	if (gcp->port) {
-		ret = device_is_ready(gcp->port);
-		if (ret < 0) {
+		if (!device_is_ready(gcp->port)) {
 			LOG_ERR("%s: device not ready", gcp->port->name);
-			return ret;
+			return -EIO;
 		}
 		ret = gpio_pin_configure_dt(gcp, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
+		if (ret != 0) {
 			LOG_ERR("Failed to control feed %s.%u: %d",
 				gcp->port->name, gcp->pin, ret);
 			return ret;
@@ -156,13 +160,12 @@ static int adc_vbus_init(const struct device *dev)
 
 	/* Configure VBUS Discharge pin if defined */
 	if (gcd->port) {
-		ret = device_is_ready(gcd->port);
-		if (ret == false) {
+		if (!device_is_ready(gcd->port)) {
 			LOG_ERR("%s: device not ready", gcd->port->name);
-			return ret;
+			return -EIO;
 		}
 		ret = gpio_pin_configure_dt(gcd, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
+		if (ret != 0) {
 			LOG_ERR("Failed to control feed %s.%u: %d",
 				gcd->port->name, gcd->pin, ret);
 			return ret;
@@ -174,13 +177,13 @@ static int adc_vbus_init(const struct device *dev)
 	data->sequence.buffer_size = sizeof(data->sample);
 
 	ret = adc_channel_setup_dt(&config->adc_channel);
-	if (ret < 0) {
+	if (ret != 0) {
 		LOG_INF("Could not setup channel (%d)\n", ret);
 		return ret;
 	}
 
 	ret = adc_sequence_init_dt(&config->adc_channel, &data->sequence);
-	if (ret < 0) {
+	if (ret != 0) {
 		LOG_INF("Could not init sequence (%d)\n", ret);
 		return ret;
 	}
@@ -213,7 +216,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 			      &drv_data_##inst,						\
 			      &drv_config_##inst,					\
 			      POST_KERNEL,						\
-			      CONFIG_USBC_INIT_PRIORITY,				\
+			      CONFIG_USBC_VBUS_INIT_PRIORITY,				\
 			      &driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DRIVER_INIT)

@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
@@ -18,6 +19,7 @@ extern "C" {
 
 /**
  * @defgroup sys_init System Initialization
+ * @ingroup os_services
  *
  * Zephyr offers an infrastructure to call initialization code before `main`.
  * Such initialization calls can be registered using SYS_INIT() or
@@ -47,25 +49,89 @@ extern "C" {
 
 struct device;
 
-/** @brief Structure to store initialization entry information. */
-struct init_entry {
+/**
+ * @brief Initialization function for init entries.
+ *
+ * Init entries support both the system initialization and the device
+ * APIs. Each API has its own init function signature; hence, we have a
+ * union to cover both.
+ */
+union init_function {
 	/**
-	 * Initialization function for the init entry.
-	 *
-	 * @param dev Device pointer, NULL if not a device init function.
+	 * System initialization function.
 	 *
 	 * @retval 0 On success
 	 * @retval -errno If init fails.
 	 */
-	int (*init)(const struct device *dev);
+	int (*sys)(void);
+	/**
+	 * Device initialization function.
+	 *
+	 * @param dev Device instance.
+	 *
+	 * @retval 0 On success
+	 * @retval -errno If device initialization fails.
+	 */
+	int (*dev)(const struct device *dev);
+#ifdef CONFIG_DEVICE_MUTABLE
+	/**
+	 * Device initialization function (rw).
+	 *
+	 * @param dev Device instance.
+	 *
+	 * @retval 0 On success
+	 * @retval -errno If device initialization fails.
+	 */
+	int (*dev_rw)(struct device *dev);
+#endif
+};
+
+/**
+ * @brief Structure to store initialization entry information.
+ *
+ * @internal
+ * Init entries need to be defined following these rules:
+ *
+ * - Their name must be set using Z_INIT_ENTRY_NAME().
+ * - They must be placed in a special init section, given by
+ *   Z_INIT_ENTRY_SECTION().
+ * - They must be aligned, e.g. using Z_DECL_ALIGN().
+ *
+ * See SYS_INIT_NAMED() for an example.
+ * @endinternal
+ */
+struct init_entry {
+	/** Initialization function. */
+	union init_function init_fn;
 	/**
 	 * If the init entry belongs to a device, this fields stores a
 	 * reference to it, otherwise it is set to NULL.
 	 */
-	const struct device *dev;
+	union {
+		const struct device *dev;
+#ifdef CONFIG_DEVICE_MUTABLE
+		struct device *dev_rw;
+#endif
+	};
 };
 
 /** @cond INTERNAL_HIDDEN */
+
+/* Helper definitions to evaluate level equality */
+#define Z_INIT_EARLY_EARLY		 1
+#define Z_INIT_PRE_KERNEL_1_PRE_KERNEL_1 1
+#define Z_INIT_PRE_KERNEL_2_PRE_KERNEL_2 1
+#define Z_INIT_POST_KERNEL_POST_KERNEL	 1
+#define Z_INIT_APPLICATION_APPLICATION	 1
+#define Z_INIT_SMP_SMP			 1
+
+/* Init level ordinals */
+#define Z_INIT_ORD_EARLY	0
+#define Z_INIT_ORD_PRE_KERNEL_1 1
+#define Z_INIT_ORD_PRE_KERNEL_2 2
+#define Z_INIT_ORD_POST_KERNEL	3
+#define Z_INIT_ORD_APPLICATION	4
+#define Z_INIT_ORD_SMP		5
 
 /**
  * @brief Obtain init entry name.
@@ -78,35 +144,64 @@ struct init_entry {
  * @brief Init entry section.
  *
  * Each init entry is placed in a section with a name crafted so that it allows
- * linker scripts to sort them according to the specified level/priority.
+ * linker scripts to sort them according to the specified
+ * level/priority/sub-priority.
  */
-#define Z_INIT_ENTRY_SECTION(level, prio)                                      \
-	__attribute__((__section__(".z_init_" #level STRINGIFY(prio)"_")))
+#define Z_INIT_ENTRY_SECTION(level, prio, sub_prio)                           \
+	__attribute__((__section__(                                           \
+		".z_init_" #level STRINGIFY(prio)"_" STRINGIFY(sub_prio)"_")))
 
-/**
- * @brief Create an init entry object.
- *
- * This macro defines an init entry object that will be automatically
- * configured by the kernel during system initialization. Note that init
- * entries will not be accessible from user mode.
- *
- * @param init_id Init entry unique identifier.
- * @param init_fn Init function.
- * @param device Device instance (optional).
- * @param level Initialization level.
- * @param prio Initialization priority within @p level.
- *
- * @see SYS_INIT()
+
+/* Designated initializers where added to C in C99. There were added to
+ * C++ 20 years later in a much more restricted form. C99 allows many
+ * variations: out of order, mix of designated and not, overlap,
+ * override,... but C++ allows none of these. See differences detailed
+ * in the P0329R0.pdf C++ proposal.
+ * Note __STDC_VERSION__ is undefined when compiling C++.
  */
-#define Z_INIT_ENTRY_DEFINE(init_id, init_fn, device, level, prio)             \
-	static const Z_DECL_ALIGN(struct init_entry)                           \
-		Z_INIT_ENTRY_SECTION(level, prio) __used __noasan              \
-		Z_INIT_ENTRY_NAME(init_id) = {                                 \
-			.init = (init_fn),                                     \
-			.dev = (device),                                       \
-	}
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__) < 201100
+
+/* Anonymous unions require C11. Some pre-C11 gcc versions have early
+ * support for anonymous unions but they require these braces when
+ * combined with C99 designated initializers, see longer discussion in
+ * #69411.
+ * These braces are compatible with any C version but not with C++20.
+ */
+#  define Z_INIT_SYS_INIT_DEV_NULL  { .dev = NULL }
+
+#else
+
+/* When using -std=c++20 or higher, g++ (v12.2.0) reject braces for
+ * initializing anonymous unions because it is technically a mix of
+ * designated and not designated initializers which is not allowed in
+ * C++. Interestingly, the _same_ g++ version does accept the braces above
+ * when using -std=c++17 or lower!
+ * The tests/lib/cpp/cxx/ added by commit 3d9c428d57bf invoke the C++
+ * compiler with a range of different `-std=...` parameters without needing
+ * any manual configuration.
+ */
+#  define Z_INIT_SYS_INIT_DEV_NULL    .dev = NULL
+
+#endif
 
 /** @endcond */
+
+/**
+ * @brief Obtain the ordinal for an init level.
+ *
+ * @param level Init level (EARLY, PRE_KERNEL_1, PRE_KERNEL_2, POST_KERNEL,
+ * APPLICATION, SMP).
+ *
+ * @return Init level ordinal.
+ */
+#define INIT_LEVEL_ORD(level)                                                  \
+	COND_CODE_1(Z_INIT_EARLY_##level, (Z_INIT_ORD_EARLY),                  \
+	(COND_CODE_1(Z_INIT_PRE_KERNEL_1_##level, (Z_INIT_ORD_PRE_KERNEL_1),   \
+	(COND_CODE_1(Z_INIT_PRE_KERNEL_2_##level, (Z_INIT_ORD_PRE_KERNEL_2),   \
+	(COND_CODE_1(Z_INIT_POST_KERNEL_##level, (Z_INIT_ORD_POST_KERNEL),     \
+	(COND_CODE_1(Z_INIT_APPLICATION_##level, (Z_INIT_ORD_APPLICATION),     \
+	(COND_CODE_1(Z_INIT_SMP_##level, (Z_INIT_ORD_SMP),                     \
+	(ZERO_OR_COMPILE_ERROR(0)))))))))))))
 
 /**
  * @brief Register an initialization function.
@@ -134,14 +229,17 @@ struct init_entry {
  * same init function.
  *
  * @param name Unique name for SYS_INIT entry.
- * @param init_fn See SYS_INIT().
+ * @param init_fn_ See SYS_INIT().
  * @param level See SYS_INIT().
  * @param prio See SYS_INIT().
  *
  * @see SYS_INIT()
  */
-#define SYS_INIT_NAMED(name, init_fn, level, prio)                             \
-	Z_INIT_ENTRY_DEFINE(name, init_fn, NULL, level, prio)
+#define SYS_INIT_NAMED(name, init_fn_, level, prio)                                       \
+	static const Z_DECL_ALIGN(struct init_entry)                                      \
+		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan                      \
+		Z_INIT_ENTRY_NAME(name) = {.init_fn = {.sys = (init_fn_)},                \
+			Z_INIT_SYS_INIT_DEV_NULL}
 
 /** @} */
 

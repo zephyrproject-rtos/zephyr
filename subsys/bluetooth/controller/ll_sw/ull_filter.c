@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
@@ -33,9 +33,7 @@
 #include "lll_conn.h"
 #include "lll_filter.h"
 
-#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 #include "ll_sw/ull_tx_queue.h"
-#endif
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -76,6 +74,10 @@ static uint8_t rl_enable;
 static uint8_t newest_prpa;
 static struct lll_prpa_cache prpa_cache[CONFIG_BT_CTLR_RPA_CACHE_SIZE];
 
+/* Cache of known unknown target RPAs */
+static uint8_t newest_trpa;
+static struct lll_trpa_cache trpa_cache[CONFIG_BT_CTLR_TRPA_CACHE_SIZE];
+
 struct prpa_resolve_work {
 	struct k_work prpa_work;
 	bt_addr_t     rpa;
@@ -101,6 +103,7 @@ static struct prpa_resolve_work resolve_work;
 static struct target_resolve_work t_work;
 
 BUILD_ASSERT(ARRAY_SIZE(prpa_cache) < FILTER_IDX_NONE);
+BUILD_ASSERT(ARRAY_SIZE(trpa_cache) < FILTER_IDX_NONE);
 #endif /* CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
 BUILD_ASSERT(ARRAY_SIZE(fal) < FILTER_IDX_NONE);
 BUILD_ASSERT(ARRAY_SIZE(rl) < FILTER_IDX_NONE);
@@ -160,6 +163,9 @@ static void prpa_cache_add(bt_addr_t *prpa_cache_addr);
 static uint8_t prpa_cache_try_resolve(bt_addr_t *rpa);
 static void prpa_cache_resolve(struct k_work *work);
 static void target_resolve(struct k_work *work);
+static void trpa_cache_clear(void);
+static uint8_t trpa_cache_find(bt_addr_t *prpa_cache_addr, uint8_t rl_idx);
+static void trpa_cache_add(bt_addr_t *prpa_cache_addr, uint8_t rl_idx);
 #endif /* CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
 #endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
@@ -328,6 +334,7 @@ uint8_t ll_rl_add(bt_addr_le_t *id_addr, const uint8_t pirk[IRK_SIZE],
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 		/* a new key was added, invalidate the known/unknown list */
 		prpa_cache_clear();
+		trpa_cache_clear();
 #endif
 	}
 	if (rl[i].lirk) {
@@ -383,7 +390,7 @@ uint8_t ll_rl_remove(bt_addr_le_t *id_addr)
 			/* Swap with last item */
 			uint8_t pi = rl[i].pirk_idx, pj = peer_irk_count - 1;
 
-			if (pj && pi != pj) {
+			if (pj && (pj < ARRAY_SIZE(peer_irks)) && (pi != pj)) {
 				(void)memcpy(peer_irks[pi], peer_irks[pj],
 					     IRK_SIZE);
 				for (k = 0U;
@@ -631,6 +638,7 @@ void ull_filter_reset(bool init)
 	rl_clear();
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 	prpa_cache_clear();
+	trpa_cache_clear();
 #endif
 	if (init) {
 		k_work_init_delayable(&rpa_work, rpa_timeout);
@@ -750,6 +758,7 @@ void ull_filter_rpa_update(bool timeout)
 				 * invalidate the known/unknown peer RPA cache
 				 */
 				prpa_cache_clear();
+				trpa_cache_clear();
 #endif
 			}
 
@@ -1495,15 +1504,28 @@ static void target_resolve(struct k_work *work)
 	idx = twork->idx;
 	search_rpa = &(twork->rpa);
 
-	if (rl[idx].taken && !bt_addr_cmp(&(rl[idx].target_rpa), search_rpa)) {
+	if (rl[idx].taken && bt_addr_eq(&(rl[idx].target_rpa), search_rpa)) {
 		j = idx;
 	} else {
-		/* No match - so not in list Need to see if we can resolve */
-		if (bt_rpa_irk_matches(rl[idx].local_irk, search_rpa)) {
+		uint8_t i;
+
+		/* No match - so not in list; Need to see if we can resolve */
+
+		i = trpa_cache_find(search_rpa, idx);
+		if (i != FILTER_IDX_NONE) {
+			/* Found a known unknown - do nothing */
+			j = FILTER_IDX_NONE;
+		} else if (bt_rpa_irk_matches(rl[idx].local_irk, search_rpa)) {
 			/* Could resolve, store RPA */
 			(void)memcpy(rl[idx].target_rpa.val, search_rpa->val,
 				     sizeof(bt_addr_t));
 			j = idx;
+		} else if (rl[idx].taken) {
+			/* No match - thus cannot resolve, we have an unknown
+			 * so insert in known unknown list
+			 */
+			trpa_cache_add(search_rpa, idx);
+			j = FILTER_IDX_NONE;
 		} else {
 			/* Could not resolve, and not in table */
 			j = FILTER_IDX_NONE;
@@ -1620,7 +1642,7 @@ static uint8_t prpa_cache_find(bt_addr_t *rpa)
 {
 	for (uint8_t i = 0; i < CONFIG_BT_CTLR_RPA_CACHE_SIZE; i++) {
 		if (prpa_cache[i].taken &&
-		    !bt_addr_cmp(&(prpa_cache[i].rpa), rpa)) {
+		    bt_addr_eq(&(prpa_cache[i].rpa), rpa)) {
 			return i;
 		}
 	}
@@ -1631,4 +1653,45 @@ const struct lll_prpa_cache *ull_filter_lll_prpa_cache_get(void)
 {
 	return prpa_cache;
 }
+
+static void trpa_cache_clear(void)
+{
+	/* Note the first element will not be in use before wrap around
+	 * is reached.
+	 * The first element in actual use will be at index 1.
+	 * There is no element waisted with this implementation, as
+	 * element 0 will eventually be allocated.
+	 */
+	newest_trpa = 0U;
+
+	for (uint8_t i = 0; i < CONFIG_BT_CTLR_TRPA_CACHE_SIZE; i++) {
+		trpa_cache[i].rl_idx = FILTER_IDX_NONE;
+	}
+}
+
+static void trpa_cache_add(bt_addr_t *rpa, uint8_t rl_idx)
+{
+	newest_trpa = (newest_trpa + 1) % CONFIG_BT_CTLR_TRPA_CACHE_SIZE;
+
+	(void)memcpy(trpa_cache[newest_trpa].rpa.val, rpa->val,
+		     sizeof(bt_addr_t));
+	trpa_cache[newest_trpa].rl_idx = rl_idx;
+}
+
+static uint8_t trpa_cache_find(bt_addr_t *rpa, uint8_t rl_idx)
+{
+	for (uint8_t i = 0; i < CONFIG_BT_CTLR_TRPA_CACHE_SIZE; i++) {
+		if (trpa_cache[i].rl_idx == rl_idx &&
+		    bt_addr_eq(&(trpa_cache[i].rpa), rpa)) {
+			return i;
+		}
+	}
+	return FILTER_IDX_NONE;
+}
+
+const struct lll_trpa_cache *ull_filter_lll_trpa_cache_get(void)
+{
+	return trpa_cache;
+}
+
 #endif /* !CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */

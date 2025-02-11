@@ -61,13 +61,13 @@ Samples
 The sample :ref:`vl53l0x` demonstrates how to use the ranging sensor VL53L0X
 using the center sensor only.
 
-The sample :ref:`x-nucleo-53l0a1-sample` demonstrates how to use the three
+The sample :zephyr:code-sample:`x-nucleo-53l0a1` sample demonstrates how to use the three
 sensors (soldered + 2 satellites) and the 7 segments display.
 
 Programming
 ***********
 
-Set ``-DSHIELD=x_nucleo_53l0a1`` when you invoke ``west build``. For example:
+Set ``--shield x_nucleo_53l0a1`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/vl53l0x

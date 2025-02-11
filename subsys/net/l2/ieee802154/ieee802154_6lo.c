@@ -36,7 +36,8 @@ enum net_verdict ieee802154_6lo_decode_pkt(struct net_if *iface, struct net_pkt 
 }
 
 int ieee802154_6lo_encode_pkt(struct net_if *iface, struct net_pkt *pkt,
-			      struct ieee802154_6lo_fragment_ctx *f_ctx, uint8_t ll_hdr_len)
+			      struct ieee802154_6lo_fragment_ctx *frag_ctx, uint8_t ll_hdr_len,
+			      uint8_t authtag_len)
 {
 	if (net_pkt_family(pkt) != AF_INET6) {
 		return 0;
@@ -50,10 +51,11 @@ int ieee802154_6lo_encode_pkt(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
-	bool requires_fragmentation = ieee802154_6lo_requires_fragmentation(pkt, ll_hdr_len);
+	bool requires_fragmentation =
+		ieee802154_6lo_requires_fragmentation(pkt, ll_hdr_len, authtag_len);
 
 	if (requires_fragmentation) {
-		ieee802154_6lo_fragment_ctx_init(f_ctx, pkt, hdr_diff, true);
+		ieee802154_6lo_fragment_ctx_init(frag_ctx, pkt, hdr_diff, true);
 	}
 	return requires_fragmentation ? 1 : 0;
 #else

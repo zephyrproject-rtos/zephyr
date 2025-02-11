@@ -45,8 +45,8 @@ static struct k_sem rel_sem;
 /* Common work structures, to avoid dead references to stack objects
  * if a test fails.
  */
-static struct k_work work;
-static struct k_work work1;
+static struct k_work common_work;
+static struct k_work common_work1;
 static struct k_work_delayable dwork;
 
 /* Work synchronization objects must be in cache-coherent memory,
@@ -214,10 +214,10 @@ ZTEST(work, test_unstarted)
 {
 	int rc;
 
-	k_work_init(&work, counter_handler);
-	zassert_equal(k_work_busy_get(&work), 0);
+	k_work_init(&common_work, counter_handler);
+	zassert_equal(k_work_busy_get(&common_work), 0);
 
-	rc = k_work_submit_to_queue(&not_start_queue, &work);
+	rc = k_work_submit_to_queue(&not_start_queue, &common_work);
 	zassert_equal(rc, -ENODEV);
 }
 
@@ -237,7 +237,7 @@ static void test_queue_start(void)
 
 		zassert_true(tn != cfg.name);
 		zassert_true(tn != NULL);
-		zassert_equal(strcmp(tn, cfg.name), 0);
+		zassert_str_equal(tn, cfg.name);
 	}
 
 	cfg.name = NULL;
@@ -251,7 +251,7 @@ static void test_queue_start(void)
 
 		zassert_true(tn != cfg.name);
 		zassert_true(tn != NULL);
-		zassert_equal(strcmp(tn, ""), 0);
+		zassert_str_equal(tn, "");
 	}
 
 	cfg.name = "wq.coophi";
@@ -274,10 +274,10 @@ ZTEST(work, test_null_queue)
 {
 	int rc;
 
-	k_work_init(&work, counter_handler);
-	zassert_equal(k_work_busy_get(&work), 0);
+	k_work_init(&common_work, counter_handler);
+	zassert_equal(k_work_busy_get(&common_work), 0);
 
-	rc = k_work_submit_to_queue(NULL, &work);
+	rc = k_work_submit_to_queue(NULL, &common_work);
 	zassert_equal(rc, -EINVAL);
 }
 
@@ -288,15 +288,15 @@ ZTEST(work_1cpu, test_1cpu_simple_queue)
 
 	/* Reset state and use the non-blocking handler */
 	reset_counters();
-	k_work_init(&work, counter_handler);
-	zassert_equal(k_work_busy_get(&work), 0);
-	zassert_equal(k_work_is_pending(&work), false);
+	k_work_init(&common_work, counter_handler);
+	zassert_equal(k_work_busy_get(&common_work), 0);
+	zassert_equal(k_work_is_pending(&common_work), false);
 
 	/* Submit to the cooperative queue */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, 1);
-	zassert_equal(k_work_busy_get(&work), K_WORK_QUEUED);
-	zassert_equal(k_work_is_pending(&work), true);
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_QUEUED);
+	zassert_equal(k_work_is_pending(&common_work), true);
 
 	/* Shouldn't have been started since test thread is
 	 * cooperative.
@@ -306,7 +306,7 @@ ZTEST(work_1cpu, test_1cpu_simple_queue)
 	/* Let it run, then check it finished. */
 	k_sleep(K_TICKS(1));
 	zassert_equal(coophi_counter(), 1);
-	zassert_equal(k_work_busy_get(&work), 0);
+	zassert_equal(k_work_busy_get(&common_work), 0);
 
 	/* Flush the sync state from completion */
 	rc = k_sem_take(&sync_sem, K_NO_WAIT);
@@ -325,12 +325,12 @@ ZTEST(work, test_smp_simple_queue)
 
 	/* Reset state and use the non-blocking handler */
 	reset_counters();
-	k_work_init(&work, counter_handler);
-	zassert_equal(k_work_busy_get(&work), 0);
-	zassert_equal(k_work_is_pending(&work), false);
+	k_work_init(&common_work, counter_handler);
+	zassert_equal(k_work_busy_get(&common_work), 0);
+	zassert_equal(k_work_is_pending(&common_work), false);
 
 	/* Submit to the cooperative queue */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, 1);
 
 	/* It should run and finish without this thread yielding. */
@@ -339,9 +339,9 @@ ZTEST(work, test_smp_simple_queue)
 
 	do {
 		delay = k_ticks_to_ms_floor32(k_uptime_ticks() - ts0);
-	} while (k_work_is_pending(&work) && (delay < DELAY_MS));
+	} while (k_work_is_pending(&common_work) && (delay < DELAY_MS));
 
-	zassert_equal(k_work_busy_get(&work), 0);
+	zassert_equal(k_work_busy_get(&common_work), 0);
 	zassert_equal(coophi_counter(), 1);
 
 	/* Flush the sync state from completion */
@@ -356,13 +356,13 @@ ZTEST(work_1cpu, test_1cpu_sync_queue)
 
 	/* Reset state and use the blocking handler */
 	reset_counters();
-	k_work_init(&work, rel_handler);
-	zassert_equal(k_work_busy_get(&work), 0);
+	k_work_init(&common_work, rel_handler);
+	zassert_equal(k_work_busy_get(&common_work), 0);
 
 	/* Submit to the cooperative queue */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, 1);
-	zassert_equal(k_work_busy_get(&work), K_WORK_QUEUED);
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_QUEUED);
 
 	/* Shouldn't have been started since test thread is
 	 * cooperative.
@@ -372,7 +372,7 @@ ZTEST(work_1cpu, test_1cpu_sync_queue)
 	/* Let it run, then check it didn't finish. */
 	k_sleep(K_TICKS(1));
 	zassert_equal(coophi_counter(), 0);
-	zassert_equal(k_work_busy_get(&work), K_WORK_RUNNING);
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_RUNNING);
 
 	/* Make it ready so it can finish when this thread yields. */
 	handler_release();
@@ -394,10 +394,10 @@ ZTEST(work_1cpu, test_1cpu_reentrant_queue)
 
 	/* Reset state and use the blocking handler */
 	reset_counters();
-	k_work_init(&work, rel_handler);
+	k_work_init(&common_work, rel_handler);
 
 	/* Submit to the cooperative queue. */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, 1);
 	zassert_equal(coophi_counter(), 0);
 
@@ -406,7 +406,7 @@ ZTEST(work_1cpu, test_1cpu_reentrant_queue)
 	zassert_equal(coophi_counter(), 0);
 
 	/* Resubmit to a different queue. */
-	rc = k_work_submit_to_queue(&preempt_queue, &work);
+	rc = k_work_submit_to_queue(&preempt_queue, &common_work);
 	zassert_equal(rc, 2);
 
 	/* Release the first submission. */
@@ -433,34 +433,34 @@ ZTEST(work_1cpu, test_1cpu_queued_flush)
 
 	/* Reset state and use the delaying handler */
 	reset_counters();
-	k_work_init(&work, delay_handler);
-	k_work_init(&work1, delay_handler);
+	k_work_init(&common_work, delay_handler);
+	k_work_init(&common_work1, delay_handler);
 
 	/* Submit to the cooperative queue. */
-	rc = k_work_submit_to_queue(&coophi_queue, &work1);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work1);
 	zassert_equal(rc, 1);
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, 1);
 	zassert_equal(coophi_counter(), 0);
 
 	/* Confirm that it's still in the queue, then wait for completion.
 	 * This should wait.
 	 */
-	zassert_equal(k_work_busy_get(&work), K_WORK_QUEUED);
-	zassert_equal(k_work_busy_get(&work1), K_WORK_QUEUED);
-	zassert_true(k_work_flush(&work, &work_sync));
-	zassert_false(k_work_flush(&work1, &work_sync));
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_QUEUED);
+	zassert_equal(k_work_busy_get(&common_work1), K_WORK_QUEUED);
+	zassert_true(k_work_flush(&common_work, &work_sync));
+	zassert_false(k_work_flush(&common_work1, &work_sync));
 
 	/* Verify completion. */
 	zassert_equal(coophi_counter(), 2);
-	zassert_true(!k_work_is_pending(&work));
-	zassert_true(!k_work_is_pending(&work1));
+	zassert_true(!k_work_is_pending(&common_work));
+	zassert_true(!k_work_is_pending(&common_work1));
 	rc = k_sem_take(&sync_sem, K_NO_WAIT);
 	zassert_equal(rc, 0);
 
 	/* After completion flush should be a no-op */
-	zassert_false(k_work_flush(&work, &work_sync));
-	zassert_false(k_work_flush(&work1, &work_sync));
+	zassert_false(k_work_flush(&common_work, &work_sync));
+	zassert_false(k_work_flush(&common_work1, &work_sync));
 }
 
 /* Single CPU submit a work item and wait for flush after it's started.
@@ -471,23 +471,23 @@ ZTEST(work_1cpu, test_1cpu_running_flush)
 
 	/* Reset state and use the delaying handler */
 	reset_counters();
-	k_work_init(&work, delay_handler);
+	k_work_init(&common_work, delay_handler);
 
 	/* Submit to the cooperative queue. */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, 1);
 	zassert_equal(coophi_counter(), 0);
-	zassert_equal(k_work_busy_get(&work), K_WORK_QUEUED);
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_QUEUED);
 
 	/* Release it so it's running. */
 	k_sleep(K_TICKS(1));
-	zassert_equal(k_work_busy_get(&work), K_WORK_RUNNING);
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_RUNNING);
 	zassert_equal(coophi_counter(), 0);
 
 	/* Wait for completion.  This should be released by the delay
 	 * handler.
 	 */
-	zassert_true(k_work_flush(&work, &work_sync));
+	zassert_true(k_work_flush(&common_work, &work_sync));
 
 	/* Verify completion. */
 	zassert_equal(coophi_counter(), 1);
@@ -536,15 +536,15 @@ ZTEST(work_1cpu, test_1cpu_queued_cancel)
 
 	/* Reset state and use the blocking handler */
 	reset_counters();
-	k_work_init(&work, rel_handler);
+	k_work_init(&common_work, rel_handler);
 
 	/* Submit to the cooperative queue. */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, 1);
 	zassert_equal(coophi_counter(), 0);
 
 	/* Cancellation should complete immediately. */
-	zassert_equal(k_work_cancel(&work), 0);
+	zassert_equal(k_work_cancel(&common_work), 0);
 
 	/* Shouldn't have run. */
 	zassert_equal(coophi_counter(), 0);
@@ -557,22 +557,22 @@ ZTEST(work_1cpu, test_1cpu_queued_cancel_sync)
 
 	/* Reset state and use the blocking handler */
 	reset_counters();
-	k_work_init(&work, rel_handler);
+	k_work_init(&common_work, rel_handler);
 
 	/* Cancel an unqueued work item should not affect the work
 	 * and return false.
 	 */
-	zassert_false(k_work_cancel_sync(&work, &work_sync));
+	zassert_false(k_work_cancel_sync(&common_work, &work_sync));
 
 	/* Submit to the cooperative queue. */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, 1);
 	zassert_equal(coophi_counter(), 0);
 
 	/* Cancellation should complete immediately, indicating that
 	 * work was pending.
 	 */
-	zassert_true(k_work_cancel_sync(&work, &work_sync));
+	zassert_true(k_work_cancel_sync(&common_work, &work_sync));
 
 	/* Shouldn't have run. */
 	zassert_equal(coophi_counter(), 0);
@@ -816,10 +816,10 @@ ZTEST(work, test_smp_running_cancel)
 
 	/* Reset state and use the delaying handler */
 	reset_counters();
-	k_work_init(&work, delay_handler);
+	k_work_init(&common_work, delay_handler);
 
 	/* Submit to the cooperative queue. */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, 1);
 
 	/* It should advance to running without this thread yielding. */
@@ -828,17 +828,17 @@ ZTEST(work, test_smp_running_cancel)
 
 	do {
 		delay = k_ticks_to_ms_floor32(k_uptime_ticks() - ts0);
-	} while ((k_work_busy_get(&work) != K_WORK_RUNNING)
+	} while ((k_work_busy_get(&common_work) != K_WORK_RUNNING)
 		 && (delay < DELAY_MS));
 
 	/* Cancellation should not succeed immediately because the
 	 * work is running.
 	 */
-	rc = k_work_cancel(&work);
+	rc = k_work_cancel(&common_work);
 	zassert_equal(rc, K_WORK_RUNNING | K_WORK_CANCELING, "rc %x", rc);
 
 	/* Sync should wait. */
-	zassert_equal(k_work_cancel_sync(&work, &work_sync), true);
+	zassert_equal(k_work_cancel_sync(&common_work, &work_sync), true);
 
 	/* Should have completed. */
 	zassert_equal(coophi_counter(), 1);
@@ -875,6 +875,7 @@ static void test_drain_wait_cb(struct k_timer *timer)
 ZTEST(work_1cpu, test_1cpu_drain_wait)
 {
 	struct test_drain_wait_timer *ctx = &test_drain_wait_ctx;
+	struct k_work *wp = &ctx->work;
 	int rc;
 
 	/* Reset state, allow one re-submission, and use the delaying
@@ -882,10 +883,10 @@ ZTEST(work_1cpu, test_1cpu_drain_wait)
 	 */
 	reset_counters();
 	atomic_set(&resubmits_left, 1);
-	k_work_init(&work, delay_handler);
+	k_work_init(wp, delay_handler);
 
 	/* Submit to the cooperative queue. */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, wp);
 	zassert_equal(rc, 1);
 	zassert_equal(coophi_counter(), 0);
 
@@ -921,10 +922,10 @@ ZTEST(work_1cpu, test_1cpu_plugged_drain)
 
 	/* Reset state and use the delaying handler. */
 	reset_counters();
-	k_work_init(&work, delay_handler);
+	k_work_init(&common_work, delay_handler);
 
 	/* Submit to the cooperative queue */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, 1);
 
 	/* Wait to drain, and plug. */
@@ -944,10 +945,10 @@ ZTEST(work_1cpu, test_1cpu_plugged_drain)
 		      NULL);
 
 	/* Switch to the non-blocking handler. */
-	k_work_init(&work, counter_handler);
+	k_work_init(&common_work, counter_handler);
 
 	/* Resubmission should fail because queue is plugged */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, -EBUSY);
 
 	/* Unplug the queue */
@@ -962,7 +963,7 @@ ZTEST(work_1cpu, test_1cpu_plugged_drain)
 		      NULL);
 
 	/* Resubmission should succeed and complete */
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
 	zassert_equal(rc, 1);
 
 	/* Flush the sync state and verify completion */
@@ -1027,9 +1028,9 @@ struct state_1cpu_basic_schedule_running {
 
 static void handle_1cpu_basic_schedule_running(struct k_work *work)
 {
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct k_work_delayable *one_dwork = k_work_delayable_from_work(work);
 	struct state_1cpu_basic_schedule_running *state
-		= CONTAINER_OF(dwork, struct state_1cpu_basic_schedule_running,
+		= CONTAINER_OF(one_dwork, struct state_1cpu_basic_schedule_running,
 			       dwork);
 
 	/* Co-opt the resubmits so we can test the schedule API
@@ -1037,7 +1038,7 @@ static void handle_1cpu_basic_schedule_running(struct k_work *work)
 	 */
 	if (atomic_dec(&resubmits_left) > 0) {
 		/* Schedule again on current queue */
-		state->schedule_res = k_work_schedule_for_queue(NULL, dwork,
+		state->schedule_res = k_work_schedule_for_queue(NULL, one_dwork,
 								K_MSEC(DELAY_MS));
 	} else {
 		/* Flag that it didn't schedule */
@@ -1262,7 +1263,7 @@ ZTEST(work_1cpu, test_1cpu_immed_reschedule)
 	zassert_equal(rc, 1);
 }
 
-/* Test no-yield behavior, returns true iff work queue priority is
+/* Test no-yield behavior, returns true if and only if work queue priority is
  * higher than test thread priority
  */
 static bool try_queue_no_yield(struct k_work_q *wq)
@@ -1277,16 +1278,16 @@ static bool try_queue_no_yield(struct k_work_q *wq)
 
 	/* Submit two work items directly to the cooperative queue. */
 
-	k_work_init(&work, counter_handler);
+	k_work_init(&common_work, counter_handler);
 	k_work_init_delayable(&dwork, counter_handler);
 
-	rc = k_work_submit_to_queue(wq, &work);
+	rc = k_work_submit_to_queue(wq, &common_work);
 	zassert_equal(rc, 1);
 	rc = k_work_schedule_for_queue(wq, &dwork, K_NO_WAIT);
 	zassert_equal(rc, 1);
 
 	/* Wait for completion */
-	zassert_equal(k_work_is_pending(&work), true);
+	zassert_equal(k_work_is_pending(&common_work), true);
 	zassert_equal(k_work_delayable_is_pending(&dwork), true);
 	rc = k_sem_take(&sync_sem, K_FOREVER);
 	zassert_equal(rc, 0);
@@ -1295,7 +1296,7 @@ static bool try_queue_no_yield(struct k_work_q *wq)
 	 * another yield won't cause anything to happen.
 	 */
 	zassert_equal(coop_counter(wq), 2);
-	zassert_equal(k_work_is_pending(&work), false);
+	zassert_equal(k_work_is_pending(&common_work), false);
 	zassert_equal(k_work_delayable_is_pending(&dwork), false);
 
 	/* The first give unblocked this thread; we need to consume
@@ -1325,13 +1326,13 @@ ZTEST(work_1cpu, test_1cpu_system_queue)
 
 	/* Reset state and use the non-blocking handler */
 	reset_counters();
-	k_work_init(&work, counter_handler);
-	zassert_equal(k_work_busy_get(&work), 0);
+	k_work_init(&common_work, counter_handler);
+	zassert_equal(k_work_busy_get(&common_work), 0);
 
 	/* Submit to the system queue */
-	rc = k_work_submit(&work);
+	rc = k_work_submit(&common_work);
 	zassert_equal(rc, 1);
-	zassert_equal(k_work_busy_get(&work), K_WORK_QUEUED);
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_QUEUED);
 
 	/* Shouldn't have been started since test thread is
 	 * cooperative.
@@ -1341,7 +1342,7 @@ ZTEST(work_1cpu, test_1cpu_system_queue)
 	/* Let it run, then check it didn't finish. */
 	k_sleep(K_TICKS(1));
 	zassert_equal(system_counter(), 1);
-	zassert_equal(k_work_busy_get(&work), 0);
+	zassert_equal(k_work_busy_get(&common_work), 0);
 
 	/* Flush the sync state from completion */
 	rc = k_sem_take(&sync_sem, K_NO_WAIT);

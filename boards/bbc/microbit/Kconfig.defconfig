@@ -1,0 +1,19 @@
+# nRF51 BBC_MICROBIT board configuration
+
+# Copyright (c) 2016 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BBC_MICROBIT
+
+config BT_CTLR
+	default BT
+
+if FXOS8700
+
+choice FXOS8700_MODE
+	default FXOS8700_MODE_ACCEL
+endchoice
+
+endif # FXOS8700
+
+endif # BOARD_BBC_MICROBIT

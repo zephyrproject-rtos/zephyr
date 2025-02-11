@@ -65,7 +65,7 @@ static void rgb_work_handler(struct k_work *work)
 	k_work_schedule(k_work_delayable_from_work(work), K_MSEC(10));
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -75,7 +75,7 @@ void main(void)
 
 	if (!device_is_ready(sx1509b_dev)) {
 		printk("sx1509b: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	for (int i = 0; i < NUMBER_OF_LEDS; i++) {
@@ -89,4 +89,5 @@ void main(void)
 
 	k_work_init_delayable(&rgb_work, rgb_work_handler);
 	k_work_schedule(&rgb_work, K_NO_WAIT);
+	return 0;
 }

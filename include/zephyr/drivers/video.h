@@ -15,6 +15,8 @@
 /**
  * @brief Video Interface
  * @defgroup video_interface Video Interface
+ * @since 2.1
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -33,85 +35,92 @@ extern "C" {
 
 
 /**
- * @brief video format structure
+ * @struct video_format
+ * @brief Video format structure
  *
  * Used to configure frame format.
- *
- * @param pixelformat is the fourcc pixel format value.
- * @param width is the frame width in pixels.
- * @param height is the frame height in pixels.
- * @param pitch is the line stride, the number of bytes that needs to be added
- *    to the address in the first pixel of a row in order to go to the address
- *    of the first pixel of the next row (>=width).
  */
 struct video_format {
+	/** FourCC pixel format value (\ref video_pixel_formats) */
 	uint32_t pixelformat;
+	/** frame width in pixels. */
 	uint32_t width;
+	/** frame height in pixels. */
 	uint32_t height;
+	/**
+	 * @brief line stride.
+	 *
+	 * This is the number of bytes that needs to be added to the address in the
+	 * first pixel of a row in order to go to the address of the first pixel of
+	 * the next row (>=width).
+	 */
 	uint32_t pitch;
 };
 
+
 /**
- * @brief video format capability
+ * @struct video_format_cap
+ * @brief Video format capability
  *
  * Used to describe a video endpoint format capability.
- *
- * @param pixelformat is a list of supported pixel formats (0 terminated).
- * @param width_min is the minimum supported frame width.
- * @param width_max is the maximum supported frame width.
- * @param height_min is the minimum supported frame width.
- * @param height_max is the maximum supported frame width.
- * @param width_step is the width step size.
- * @param height_step is the height step size.
  */
 struct video_format_cap {
+	/** FourCC pixel format value (\ref video_pixel_formats). */
 	uint32_t pixelformat;
+	/** minimum supported frame width in pixels. */
 	uint32_t width_min;
+	/** maximum supported frame width in pixels. */
 	uint32_t width_max;
+	/** minimum supported frame height in pixels. */
 	uint32_t height_min;
+	/** maximum supported frame height in pixels. */
 	uint32_t height_max;
+	/** width step size in pixels. */
 	uint16_t width_step;
+	/** height step size in pixels. */
 	uint16_t height_step;
 };
 
 /**
- * @brief video capabilities
+ * @struct video_caps
+ * @brief Video format capabilities
  *
  * Used to describe video endpoint capabilities.
- *
- * @param format_caps is a list of video format capabilities (zero terminated).
- * @param min_vbuf_count is the minimal count of video buffers to enqueue
- *    before being able to start the stream.
  */
 struct video_caps {
+	/** list of video format capabilities (zero terminated). */
 	const struct video_format_cap *format_caps;
+	/** minimal count of video buffers to enqueue before being able to start
+	 * the stream.
+	 */
 	uint8_t min_vbuf_count;
 };
 
 /**
- * @brief video buffer structure
+ * @struct video_buffer
+ * @brief Video buffer structure
  *
  * Represent a video frame.
- *
- * @param driver_data is a pointer to driver specific data.
- * @param buffer is a pointer to the start of the buffer.
- * @param size is the size in bytes of the buffer.
- * @param bytesused is the number of bytes occupied by the valid data in
- *        the buffer.
- * @param timestamp is a time reference in milliseconds at which the last data
- *        byte was actually received for input endpoints or to be consumed for
- *        output endpoints.
  */
 struct video_buffer {
+	/** pointer to driver specific data. */
 	void *driver_data;
+	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
+	/** size of the buffer in bytes. */
 	uint32_t size;
+	/** number of bytes occupied by the valid data in the buffer. */
 	uint32_t bytesused;
+	/** time reference in milliseconds at which the last data byte was
+	 * actually received for input endpoints or to be consumed for output
+	 * endpoints.
+	 */
 	uint32_t timestamp;
 };
 
 /**
  * @brief video_endpoint_id enum
+ *
  * Identify the video device endpoint.
  */
 enum video_endpoint_id {
@@ -123,6 +132,7 @@ enum video_endpoint_id {
 
 /**
  * @brief video_event enum
+ *
  * Identify video event.
  */
 enum video_signal_result {
@@ -134,6 +144,7 @@ enum video_signal_result {
 /**
  * @typedef video_api_set_format_t
  * @brief Set video format
+ *
  * See video_set_format() for argument descriptions.
  */
 typedef int (*video_api_set_format_t)(const struct device *dev,
@@ -142,7 +153,8 @@ typedef int (*video_api_set_format_t)(const struct device *dev,
 
 /**
  * @typedef video_api_get_format_t
- * @brief get current video format
+ * @brief Get current video format
+ *
  * See video_get_format() for argument descriptions.
  */
 typedef int (*video_api_get_format_t)(const struct device *dev,
@@ -152,6 +164,7 @@ typedef int (*video_api_get_format_t)(const struct device *dev,
 /**
  * @typedef video_api_enqueue_t
  * @brief Enqueue a buffer in the driver’s incoming queue.
+ *
  * See video_enqueue() for argument descriptions.
  */
 typedef int (*video_api_enqueue_t)(const struct device *dev,
@@ -161,6 +174,7 @@ typedef int (*video_api_enqueue_t)(const struct device *dev,
 /**
  * @typedef video_api_dequeue_t
  * @brief Dequeue a buffer from the driver’s outgoing queue.
+ *
  * See video_dequeue() for argument descriptions.
  */
 typedef int (*video_api_dequeue_t)(const struct device *dev,
@@ -172,6 +186,7 @@ typedef int (*video_api_dequeue_t)(const struct device *dev,
  * @typedef video_api_flush_t
  * @brief Flush endpoint buffers, buffer are moved from incoming queue to
  *        outgoing queue.
+ *
  * See video_flush() for argument descriptions.
  */
 typedef int (*video_api_flush_t)(const struct device *dev,
@@ -181,6 +196,7 @@ typedef int (*video_api_flush_t)(const struct device *dev,
 /**
  * @typedef video_api_stream_start_t
  * @brief Start the capture or output process.
+ *
  * See video_stream_start() for argument descriptions.
  */
 typedef int (*video_api_stream_start_t)(const struct device *dev);
@@ -188,13 +204,15 @@ typedef int (*video_api_stream_start_t)(const struct device *dev);
 /**
  * @typedef video_api_stream_stop_t
  * @brief Stop the capture or output process.
+ *
  * See video_stream_stop() for argument descriptions.
  */
 typedef int (*video_api_stream_stop_t)(const struct device *dev);
 
 /**
  * @typedef video_api_set_ctrl_t
- * @brief set a video control value.
+ * @brief Set a video control value.
+ *
  * See video_set_ctrl() for argument descriptions.
  */
 typedef int (*video_api_set_ctrl_t)(const struct device *dev,
@@ -203,7 +221,8 @@ typedef int (*video_api_set_ctrl_t)(const struct device *dev,
 
 /**
  * @typedef video_api_get_ctrl_t
- * @brief get a video control value.
+ * @brief Get a video control value.
+ *
  * See video_get_ctrl() for argument descriptions.
  */
 typedef int (*video_api_get_ctrl_t)(const struct device *dev,
@@ -213,6 +232,7 @@ typedef int (*video_api_get_ctrl_t)(const struct device *dev,
 /**
  * @typedef video_api_get_caps_t
  * @brief Get capabilities of a video endpoint.
+ *
  * See video_get_caps() for argument descriptions.
  */
 typedef int (*video_api_get_caps_t)(const struct device *dev,
@@ -222,13 +242,14 @@ typedef int (*video_api_get_caps_t)(const struct device *dev,
 /**
  * @typedef video_api_set_signal_t
  * @brief Register/Unregister poll signal for buffer events.
+ *
  * See video_set_signal() for argument descriptions.
  */
 typedef int (*video_api_set_signal_t)(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct k_poll_signal *signal);
 
-struct video_driver_api {
+__subsystem struct video_driver_api {
 	/* mandatory callbacks */
 	video_api_set_format_t set_format;
 	video_api_get_format_t get_format;
@@ -540,9 +561,19 @@ static inline int video_set_signal(const struct device *dev,
 }
 
 /**
+ * @brief Allocate aligned video buffer.
+ *
+ * @param size Size of the video buffer (in bytes).
+ * @param align Alignment of the requested memory, must be a power of two.
+ *
+ * @retval pointer to allocated video buffer
+ */
+struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align);
+
+/**
  * @brief Allocate video buffer.
  *
- * @param size Size of the video buffer.
+ * @param size Size of the video buffer (in bytes).
  *
  * @retval pointer to allocated video buffer
  */
@@ -560,17 +591,76 @@ void video_buffer_release(struct video_buffer *buf);
 #define video_fourcc(a, b, c, d)\
 	((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
 
-/* Raw bayer formats */
+
+/**
+ * @defgroup video_pixel_formats Video pixel formats
+ * @{
+ */
+
+/**
+ * @name Bayer formats
+ * @{
+ */
+
+/** BGGR8 pixel format */
 #define VIDEO_PIX_FMT_BGGR8  video_fourcc('B', 'G', 'G', 'R') /*  8  BGBG.. GRGR.. */
+/** GBRG8 pixel format */
 #define VIDEO_PIX_FMT_GBRG8  video_fourcc('G', 'B', 'R', 'G') /*  8  GBGB.. RGRG.. */
+/** GRBG8 pixel format */
 #define VIDEO_PIX_FMT_GRBG8  video_fourcc('G', 'R', 'B', 'G') /*  8  GRGR.. BGBG.. */
+/** RGGB8 pixel format */
 #define VIDEO_PIX_FMT_RGGB8  video_fourcc('R', 'G', 'G', 'B') /*  8  RGRG.. GBGB.. */
 
-/* RGB formats */
+/**
+ * @}
+ */
+
+/**
+ * @name RGB formats
+ * @{
+ */
+
+/** RGB565 pixel format */
 #define VIDEO_PIX_FMT_RGB565 video_fourcc('R', 'G', 'B', 'P') /* 16  RGB-5-6-5 */
 
-/* JPEG formats */
+/** XRGB32 pixel format */
+#define VIDEO_PIX_FMT_XRGB32 video_fourcc('B', 'X', '2', '4') /* 32  XRGB-8-8-8-8 */
+
+/**
+ * @}
+ */
+
+/**
+ * @name YUV formats
+ * @{
+ */
+
+/** YUYV pixel format */
+#define VIDEO_PIX_FMT_YUYV video_fourcc('Y', 'U', 'Y', 'V') /* 16  Y0-Cb0 Y1-Cr0 */
+
+/** XYUV32 pixel format */
+#define VIDEO_PIX_FMT_XYUV32 video_fourcc('X', 'Y', 'U', 'V') /* 32  XYUV-8-8-8-8 */
+
+/**
+ *
+ * @}
+ */
+
+/**
+ * @name JPEG formats
+ * @{
+ */
+
+/** JPEG pixel format */
 #define VIDEO_PIX_FMT_JPEG   video_fourcc('J', 'P', 'E', 'G') /*  8  JPEG */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

@@ -27,7 +27,8 @@
 #include "modem_iface_uart.h"
 #include "modem_socket.h"
 
-#define MDM_UART_DEV DEVICE_DT_GET(DT_INST_BUS(0))
+#define MDM_UART_NODE DT_INST_BUS(0)
+#define MDM_UART_DEV DEVICE_DT_GET(MDM_UART_NODE)
 #define MDM_MAX_DATA_LENGTH 1024
 #define MDM_RECV_BUF_SIZE 1024
 #define MDM_MAX_SOCKETS 5

@@ -1,0 +1,54 @@
+# Copyright (c) 2024 NXP Semiconductors
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_SBUS
+	bool "SBUS driver"
+	default y
+	depends on DT_HAS_FUTABA_SBUS_ENABLED
+	depends on UART_INTERRUPT_DRIVEN
+	select UART_USE_RUNTIME_CONFIGURE
+	help
+	  Enable driver for SBUS Remote controller.
+
+if INPUT_SBUS
+
+config INPUT_SBUS_THREAD_STACK_SIZE
+	int "Stack size for the sbus thread"
+	default 1024
+	help
+	  Size of the stack used for the sbus thread.
+
+config INPUT_SBUS_THREAD_PRIORITY
+	int "Priority for the sbus thread"
+	default 0
+	help
+	  Priority level of the sbus thread.
+
+config INPUT_SBUS_REPORT_FILTER
+	int "Minimal change in signal to report"
+	default 1
+	help
+	  SBUS tends to be a bit noisy you can increase the threshold to
+	  lower the amounts of input events. Set to 0 for no filtering
+
+config INPUT_SBUS_SEND_SYNC
+	bool "Send Sync to input subsys on each SBUS frame"
+	default y
+	help
+	  Sends sync message to input subsys with sync bit.
+
+config INPUT_SBUS_CHANNEL_VALUE_ONE
+	int "Threshold value > for INPUT_EV_KEY value 1"
+	default 1800
+	help
+	  SBUS sends analogue values for digital switches. This config value
+	  sets the threshold to interperted the analogue value as an logic 1
+
+config INPUT_SBUS_CHANNEL_VALUE_ZERO
+	int "Threshold value < for INPUT_EV_KEY value 0"
+	default 1200
+	help
+	  SBUS sends analogue values for digital switches. This config value
+	  sets the threshold to interperted the analogue value as an logic 0
+
+endif # INPUT_SBUS

@@ -3,17 +3,14 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-# BT_CTLR_DF_SUPPORT is a wrapper for all DF features.
-# If only certain DF features are supported, those should be selected
-# individually.
+# BT_CTLR_DF_SUPPORT is a wrapper for all DF features. It is referenced by Host
+# to enable its DF related Kconfigs when build together with the Controller.
+# It is required to enable it when Controller supports any DF related feature
+# but particular features are selected individually.
 config BT_CTLR_DF_SUPPORT
 	bool
-	depends on BT_LL_SW_SPLIT && !BT_CTLR_TIFS_HW
-	select BT_CTLR_DF_CTE_TX_SUPPORT
-	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
-	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
-	select BT_CTLR_DF_CTE_RX_SUPPORT
-	select BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
+
+if BT_CTLR_DF_SUPPORT
 
 config BT_CTLR_DF_CTE_TX_SUPPORT
 	bool
@@ -32,6 +29,8 @@ config BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
 
 config BT_CTLR_CTEINLINE_SUPPORT
 	bool
+
+endif # BT_CTLR_DF_SUPPORT
 
 menuconfig BT_CTLR_DF
 	bool "LE Direction Finding"
@@ -313,24 +312,22 @@ endchoice
 
 config BT_CTLR_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES
 	bool "Use 16 bits signed integer IQ samples in connectionless IQ reports"
-	depends on BT_CTLR_DF_SCAN_CTE_RX && BT_HCI_VS_EXT
-	select BT_HCI_VS_EVT
+	depends on BT_CTLR_DF_SCAN_CTE_RX && BT_HCI_VS
 	help
 	  Direction Finging connectionless IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E section 7.7.65.21. This option enables a vendor specific
-	  extenstion to HCI layer, so that connectionless IQ reports store samples in 16 bit signed
+	  extension to HCI layer, so that connectionless IQ reports store samples in 16 bit signed
 	  integer format.
 
 config BT_CTLR_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
 	bool "Use 16 bits signed integer IQ samples in connection IQ reports"
-	depends on BT_CTLR_DF_CONN_CTE_RX && BT_HCI_VS_EXT
-	select BT_HCI_VS_EVT
+	depends on BT_CTLR_DF_CONN_CTE_RX && BT_HCI_VS
 	help
 	  Direction Finging connection IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E section 7.7.65.22. This option enables a vendor specific
-	  extenstion to HCI layer, so that connection IQ reports store samples in 16 bit signed
+	  extension to HCI layer, so that connection IQ reports store samples in 16 bit signed
 	  integer format.
 
 endif # BT_LL_SW_SPLIT

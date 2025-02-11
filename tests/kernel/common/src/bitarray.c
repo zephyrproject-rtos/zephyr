@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
@@ -335,6 +336,23 @@ void alloc_and_free_predefined(void)
 	zassert_equal(ret, 0, "sys_bitarray_free() failed: %d", ret);
 	zassert_true(cmp_u32_arrays(ba_128.bundles, ba_128_expected, ba_128.num_bundles),
 		     "sys_bitarray_free() failed bits comparison");
+
+	/* test in-between bundles */
+	ba_128.bundles[0] = 0x7FFFFFFF;
+	ba_128.bundles[1] = 0xFFFFFFFF;
+	ba_128.bundles[2] = 0x00000000;
+	ba_128.bundles[3] = 0x00000000;
+
+	ba_128_expected[0] = 0x7FFFFFFF;
+	ba_128_expected[1] = 0xFFFFFFFF;
+	ba_128_expected[2] = 0xFFFFFFFF;
+	ba_128_expected[3] = 0x00000003;
+
+	ret = sys_bitarray_alloc(&ba_128, 34, &offset);
+	zassert_equal(ret, 0, "sys_bitarray_alloc() failed: %d", ret);
+	zassert_equal(offset, 64, "sys_bitarray_alloc() offset expected %d, got %d", 64, offset);
+	zassert_true(cmp_u32_arrays(ba_128.bundles, ba_128_expected, ba_128.num_bundles),
+		     "sys_bitarray_alloc() failed bits comparison");
 }
 
 static inline size_t count_bits(uint32_t val)
@@ -502,6 +520,353 @@ ZTEST(bitarray, test_bitarray_alloc_free)
 	alloc_and_free_interval();
 }
 
+ZTEST(bitarray, test_bitarray_popcount_region)
+{
+	int ret;
+	size_t count;
+
+	/* Bitarrays have embedded spinlocks and can't on the stack. */
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		ztest_test_skip();
+	}
+
+	SYS_BITARRAY_DEFINE(ba, 128);
+
+	printk("Testing bit array region popcount spanning single bundle\n");
+
+	/* Pre-populate the bits */
+	ba.bundles[0] = 0x00000005;
+	ba.bundles[1] = 0x00000000;
+	ba.bundles[2] = 0x00000000;
+	ba.bundles[3] = 0x00000000;
+
+	ret = sys_bitarray_popcount_region(&ba, 1, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 1, 1, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 0, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 2, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 3, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 2, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 3, 1, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	printk("Testing bit array region popcount spanning multiple bundles\n");
+
+	/* Pre-populate the bits.
+	 * First and last bit of bitarray are set
+	 */
+	ba.bundles[0] = 0x00000001;
+	ba.bundles[1] = 0x00000000;
+	ba.bundles[2] = 0x00000000;
+	ba.bundles[3] = 0x80000000;
+
+	ret = sys_bitarray_popcount_region(&ba, 126, 1, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 0, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 126, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 127, 1, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+	ret = sys_bitarray_popcount_region(&ba, 1, 127, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 128, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 2, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	printk("Testing edge/error cases\n");
+	ret = sys_bitarray_popcount_region(&ba, 0, 0, &count);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_popcount_region() returned unexpected value: %d",
+		      ret);
+	ret = sys_bitarray_popcount_region(&ba, 0, 128, &count);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_popcount_region() returned unexpected value: %d",
+		      ret);
+	ret = sys_bitarray_popcount_region(&ba, 128, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+
+	ret = sys_bitarray_popcount_region(&ba, 128, 1, &count);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_popcount_region() returned unexpected value: %d",
+		      ret);
+	ret = sys_bitarray_popcount_region(&ba, 129, 0, &count);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_popcount_region() returned unexpected value: %d",
+		      ret);
+}
+
+ZTEST(bitarray, test_bitarray_xor)
+{
+	int ret;
+
+	/* Bitarrays have embedded spinlocks and can't on the stack. */
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		ztest_test_skip();
+	}
+
+	SYS_BITARRAY_DEFINE(ba, 128);
+	SYS_BITARRAY_DEFINE(bb, 128);
+	SYS_BITARRAY_DEFINE(bc, 129);
+
+	printk("Testing bit array region xor spanning single bundle\n");
+
+	/* Pre-populate the bits */
+	ba.bundles[0] = 0x80001001;
+	ba.bundles[1] = 0x10000008;
+	ba.bundles[2] = 0xFFFFFFFF;
+	ba.bundles[3] = 0x00000000;
+
+	bb.bundles[0] = 0x80010001;
+	bb.bundles[1] = 0x10000008;
+	bb.bundles[2] = 0xFFFFFFFF;
+	bb.bundles[3] = 0x00000000;
+
+	ret = sys_bitarray_xor(&ba, &bb, 32, 0);
+	zassert_equal(ret, 0, "sys_bitarray_xor() returned unexpected value: %d", ret);
+	zassert_equal(ba.bundles[0], 0x00011000, "sys_bitarray_xor() result unexpected: %x",
+		      ba.bundles[0]);
+	zassert_equal(bb.bundles[0], 0x80010001, "sys_bitarray_xor() result unexpected: %x",
+		      bb.bundles[0]);
+
+	zassert_equal(ba.bundles[1], 0x10000008, "sys_bitarray_xor() result unexpected: %x",
+		      ba.bundles[1]);
+	zassert_equal(bb.bundles[1], 0x10000008, "sys_bitarray_xor() result unexpected: %x",
+		      bb.bundles[1]);
+
+	zassert_equal(ba.bundles[2], 0xFFFFFFFF, "sys_bitarray_xor() result unexpected: %x",
+		      ba.bundles[2]);
+	zassert_equal(bb.bundles[2], 0xFFFFFFFF, "sys_bitarray_xor() result unexpected: %x",
+		      bb.bundles[2]);
+
+	zassert_equal(ba.bundles[3], 0x00000000, "sys_bitarray_xor() result unexpected: %x",
+		      ba.bundles[3]);
+	zassert_equal(bb.bundles[3], 0x00000000, "sys_bitarray_xor() result unexpected: %x",
+		      bb.bundles[3]);
+
+	/* Pre-populate the bits */
+	ba.bundles[0] = 0x80001001;
+	ba.bundles[1] = 0x10000008;
+	ba.bundles[2] = 0xFFFFFFFF;
+	ba.bundles[3] = 0x00000000;
+
+	bb.bundles[0] = 0x80010001;
+	bb.bundles[1] = 0x10000008;
+	bb.bundles[2] = 0xFFFFFFFF;
+	bb.bundles[3] = 0x00000000;
+
+	ret = sys_bitarray_xor(&ba, &bb, 16, 0);
+	zassert_equal(ret, 0, "sys_bitarray_xor() returned unexpected value: %d", ret);
+	zassert_equal(ba.bundles[0], 0x80001000, "sys_bitarray_xor() result unexpected: %x",
+		      ba.bundles[0]);
+	zassert_equal(bb.bundles[0], 0x80010001, "sys_bitarray_xor() result unexpected: %x",
+		      bb.bundles[0]);
+
+	/* Pre-populate the bits */
+	ba.bundles[0] = 0x80001001;
+	ba.bundles[1] = 0x10000008;
+	ba.bundles[2] = 0xFFFFFFFF;
+	ba.bundles[3] = 0x00000000;
+
+	bb.bundles[0] = 0x80010001;
+	bb.bundles[1] = 0x10000008;
+	bb.bundles[2] = 0xFFFFFFFF;
+	bb.bundles[3] = 0x00000000;
+
+	ret = sys_bitarray_xor(&ba, &bb, 16, 16);
+	zassert_equal(ret, 0, "sys_bitarray_xor() returned unexpected value: %d", ret);
+	zassert_equal(ba.bundles[0], 0x00011001, "sys_bitarray_xor() result unexpected: %x",
+		      ba.bundles[0]);
+	zassert_equal(bb.bundles[0], 0x80010001, "sys_bitarray_xor() result unexpected: %x",
+		      bb.bundles[0]);
+
+	printk("Testing bit array region xor spanning multiple bundles\n");
+
+	/* Pre-populate the bits */
+	ba.bundles[0] = 0x00000000;
+	ba.bundles[1] = 0xFFFFFFFF;
+	ba.bundles[2] = 0xFFFFFFFF;
+	ba.bundles[3] = 0xFFFFFFFF;
+
+	bb.bundles[0] = 0x00000000;
+	bb.bundles[1] = 0xFFFFFFFF;
+	bb.bundles[2] = 0xFFFFFFFF;
+	bb.bundles[3] = 0xFFFFFFFF;
+
+	ret = sys_bitarray_xor(&ba, &bb, 32*3 - 2, 32 + 1);
+	zassert_equal(ret, 0, "sys_bitarray_xor() returned unexpected value: %d", ret);
+	zassert_equal(ba.bundles[0], 0x00000000, "sys_bitarray_xor() result unexpected: %x",
+		      ba.bundles[0]);
+	zassert_equal(ba.bundles[1], 0x00000001, "sys_bitarray_xor() result unexpected: %x",
+		      ba.bundles[1]);
+	zassert_equal(ba.bundles[2], 0x00000000, "sys_bitarray_xor() result unexpected: %x",
+		      ba.bundles[2]);
+	zassert_equal(ba.bundles[3], 0x80000000, "sys_bitarray_xor() result unexpected: %x",
+		      ba.bundles[3]);
+
+	printk("Testing error cases\n");
+	/* Pre-populate the bits */
+	ba.bundles[0] = 0x00000000;
+	ba.bundles[1] = 0x00000000;
+	ba.bundles[2] = 0x00000000;
+	ba.bundles[3] = 0x00000000;
+
+	bb.bundles[0] = 0x00000000;
+	bb.bundles[1] = 0x00000000;
+	bb.bundles[2] = 0x00000000;
+	bb.bundles[3] = 0x00000000;
+
+	bc.bundles[0] = 0x00000000;
+	bc.bundles[1] = 0x00000000;
+	bc.bundles[2] = 0x00000000;
+	bc.bundles[3] = 0x00000000;
+	bc.bundles[4] = 0x00000000;
+
+	ret = sys_bitarray_xor(&ba, &bb, 32, 0);
+	zassert_equal(ret, 0, "sys_bitarray_xor() returned unexpected value: %d", ret);
+	ret = sys_bitarray_xor(&ba, &bc, 32, 0);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_xor() returned unexpected value: %d", ret);
+	ret = sys_bitarray_xor(&bc, &ba, 32, 0);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_xor() returned unexpected value: %d", ret);
+
+	ret = sys_bitarray_xor(&ba, &bb, 128, 0);
+	zassert_equal(ret, 0, "sys_bitarray_xor() returned unexpected value: %d", ret);
+	ret = sys_bitarray_xor(&ba, &bb, 128, 1);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_xor() returned unexpected value: %d", ret);
+	ret = sys_bitarray_xor(&ba, &bb, 129, 0);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_xor() returned unexpected value: %d", ret);
+	ret = sys_bitarray_xor(&ba, &bb, 0, 0);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_xor() returned unexpected value: %d", ret);
+}
+
+ZTEST(bitarray, test_bitarray_find_nth_set)
+{
+	int ret;
+	size_t found_at;
+
+	/* Bitarrays have embedded spinlocks and can't on the stack. */
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		ztest_test_skip();
+	}
+
+	SYS_BITARRAY_DEFINE(ba, 128);
+
+	printk("Testing bit array nth bit set finding spanning single bundle\n");
+
+	/* Pre-populate the bits */
+	ba.bundles[0] = 0x80000001;
+	ba.bundles[1] = 0x80000001;
+	ba.bundles[2] = 0x80000001;
+	ba.bundles[3] = 0x80000001;
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 1, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 32, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 2, 32, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 31, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 31, 1, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 31, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 2, 31, 1, &found_at);
+	zassert_equal(ret, 1, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+
+	printk("Testing bit array nth bit set finding spanning multiple bundles\n");
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 128, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 8, 128, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 127, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 8, 128, 1, &found_at);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
+		      ret);
+
+	ret = sys_bitarray_find_nth_set(&ba, 7, 127, 1, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 127, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 7, 127, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 6, 127, 1, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 6, 127, 1, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 32, 48, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 63, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 2, 32, 48, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 64, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	printk("Testing error cases\n");
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 128, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 128, 1, &found_at);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
+		      ret);
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 129, 0, &found_at);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
+		      ret);
+
+	ret = sys_bitarray_find_nth_set(&ba, 0, 128, 0, &found_at);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
+		      ret);
+}
+
 ZTEST(bitarray, test_bitarray_region_set_clear)
 {
 	int ret;
@@ -613,6 +978,34 @@ ZTEST(bitarray, test_bitarray_region_set_clear)
 	zassert_equal(ret, -EINVAL, "sys_bitarray_clear_region() should fail but not");
 	zassert_true(cmp_u32_arrays(ba.bundles, ba_expected, ba.num_bundles),
 		     "sys_bitarray_clear_region() failed bits comparison");
+
+	SYS_BITARRAY_DEFINE(bw, 128);
+
+	/* Pre-populate the bits */
+	bw.bundles[0] = 0xFF0F0F0F;
+	bw.bundles[1] = 0xF0000000;
+	bw.bundles[2] = 0xFFFFFFFF;
+	bw.bundles[3] = 0x0000000F;
+
+	zassert_true(sys_bitarray_is_region_set(&bw, 40, 60));
+	zassert_false(sys_bitarray_is_region_cleared(&bw, 40, 60));
+
+	bw.bundles[2] = 0xFFFEEFFF;
+
+	zassert_false(sys_bitarray_is_region_set(&bw, 40, 60));
+	zassert_false(sys_bitarray_is_region_cleared(&bw, 40, 60));
+
+	bw.bundles[1] = 0x0FFFFFFF;
+	bw.bundles[2] = 0x00000000;
+	bw.bundles[3] = 0xFFFFFFF0;
+
+	zassert_true(sys_bitarray_is_region_cleared(&bw, 40, 60));
+	zassert_false(sys_bitarray_is_region_set(&bw, 40, 60));
+
+	bw.bundles[2] = 0x00011000;
+
+	zassert_false(sys_bitarray_is_region_cleared(&bw, 40, 60));
+	zassert_false(sys_bitarray_is_region_set(&bw, 40, 60));
 }
 
 /**
@@ -665,6 +1058,8 @@ ZTEST(bitarray, test_ffs)
 		zassert_equal(find_lsb_set(value), bit + 1, "LSB is not matched");
 	}
 }
+extern void *common_setup(void);
+ZTEST_SUITE(bitarray, NULL, common_setup, NULL, NULL, NULL);
 
 /**
  * @}

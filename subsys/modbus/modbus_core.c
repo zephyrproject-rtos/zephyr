@@ -137,6 +137,8 @@ void modbus_tx_adu(struct modbus_context *ctx)
 
 int modbus_tx_wait_rx_adu(struct modbus_context *ctx)
 {
+	k_sem_reset(&ctx->client_wait_sem);
+
 	modbus_tx_adu(ctx);
 
 	if (k_sem_take(&ctx->client_wait_sem, K_USEC(ctx->rxwait_to)) != 0) {
@@ -211,6 +213,14 @@ static struct modbus_context *modbus_init_iface(const uint8_t iface)
 	return ctx;
 }
 
+static int modbus_user_fc_init(struct modbus_context *ctx, struct modbus_iface_param param)
+{
+	sys_slist_init(&ctx->user_defined_cbs);
+	LOG_DBG("Initializing user-defined function code support.");
+
+	return 0;
+}
+
 int modbus_init_server(const int iface, struct modbus_iface_param param)
 {
 	struct modbus_context *ctx = NULL;
@@ -235,6 +245,12 @@ int modbus_init_server(const int iface, struct modbus_iface_param param)
 	}
 
 	ctx->client = false;
+
+	if (modbus_user_fc_init(ctx, param) != 0) {
+		LOG_ERR("Failed to init MODBUS user defined function codes");
+		rc = -EINVAL;
+		goto init_server_error;
+	}
 
 	switch (param.mode) {
 	case MODBUS_MODE_RTU:
@@ -276,6 +292,28 @@ init_server_error:
 	}
 
 	return rc;
+}
+
+int modbus_register_user_fc(const int iface, struct modbus_custom_fc *custom_fc)
+{
+	struct modbus_context *ctx = modbus_get_context(iface);
+
+	if (!custom_fc) {
+		LOG_ERR("Provided function code handler was NULL");
+		return -EINVAL;
+	}
+
+	if (custom_fc->fc & BIT(7)) {
+		LOG_ERR("Function codes must have MSB of 0");
+		return -EINVAL;
+	}
+
+	custom_fc->excep_code = MODBUS_EXC_NONE;
+
+	LOG_DBG("Registered new custom function code %d", custom_fc->fc);
+	sys_slist_append(&ctx->user_defined_cbs, &custom_fc->node);
+
+	return 0;
 }
 
 int modbus_init_client(const int iface, struct modbus_iface_param param)
@@ -338,6 +376,7 @@ init_client_error:
 int modbus_disable(const uint8_t iface)
 {
 	struct modbus_context *ctx;
+	struct k_work_sync work_sync;
 
 	ctx = modbus_get_context(iface);
 	if (ctx == NULL) {
@@ -358,9 +397,9 @@ int modbus_disable(const uint8_t iface)
 		LOG_ERR("Unknown MODBUS mode");
 	}
 
+	k_work_cancel_sync(&ctx->server_work, &work_sync);
 	ctx->rxwait_to = 0;
 	ctx->unit_id = 0;
-	ctx->mode = MODBUS_MODE_RTU;
 	ctx->mbs_user_cb = NULL;
 	atomic_clear_bit(&ctx->state, MODBUS_STATE_CONFIGURED);
 

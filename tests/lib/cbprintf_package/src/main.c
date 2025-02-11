@@ -148,7 +148,7 @@ ZTEST(cbprintf_package, test_cbprintf_package)
 		TEST_PACKAGING(0, "test %f %a", (double)f, d);
 #if CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE && !(defined(CONFIG_RISCV) && !defined(CONFIG_64BIT))
 		/* Excluding riscv32 which does not handle long double correctly. */
-		long double ld = 1.2333;
+		long double ld = 1.2333L;
 
 		TEST_PACKAGING(0, "test %Lf", ld);
 #endif
@@ -289,11 +289,11 @@ ZTEST(cbprintf_package, test_cbprintf_fsc_package)
 	/* Get pointer to the first string in the package. */
 	addr = (char *)&fsc_package[desc->desc.len * sizeof(int) + 1];
 
-	zassert_equal(strcmp(test_str, addr), 0);
+	zassert_str_equal(test_str, addr);
 
 	/* Get address of the second string. */
 	addr += strlen(addr) + 2;
-	zassert_equal(strcmp(test_str1, addr), 0);
+	zassert_str_equal(test_str1, addr);
 }
 
 static void check_package(void *package, size_t len, const char *exp_str)
@@ -882,6 +882,48 @@ ZTEST(cbprintf_package, test_cbprintf_package_convert)
 
 	clen = cbprintf_package_convert(spackage, slen, NULL, 0, copy_flags, NULL, 0);
 	zassert_true(clen > 0);
+
+	clen = cbprintf_package_convert(spackage, slen, convert_cb, &ctx, copy_flags, NULL, 0);
+	zassert_true(clen > 0);
+	zassert_true(ctx.null);
+	zassert_equal((int)ctx.offset, clen);
+
+	check_package(ctx.buf, ctx.offset, exp_str);
+#undef TEST_FMT
+
+}
+
+ZTEST(cbprintf_package, test_cbprintf_package_convert_static)
+{
+	int slen, clen, olen;
+	static const char test_str[] = "test %s";
+	char test_str1[] = "test str1";
+	/* Store indexes of rw strings. */
+	uint32_t flags = CBPRINTF_PACKAGE_ADD_RW_STR_POS |
+			 CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(0) |
+			 CBPRINTF_PACKAGE_ADD_STRING_IDXS;
+	struct test_cbprintf_covert_ctx ctx;
+
+#define TEST_FMT test_str, test_str1
+	char exp_str[256];
+
+	snprintfcb(exp_str, sizeof(exp_str), TEST_FMT);
+
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, slen, CBPRINTF_PACKAGE_ALIGNMENT, flags, TEST_FMT);
+	zassert_true(slen > 0);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[slen];
+
+	memset(&ctx, 0, sizeof(ctx));
+	memset(spackage, 0, slen);
+
+	CBPRINTF_STATIC_PACKAGE(spackage, slen, olen, CBPRINTF_PACKAGE_ALIGNMENT, flags, TEST_FMT);
+	zassert_equal(olen, slen);
+
+	uint32_t copy_flags = CBPRINTF_PACKAGE_CONVERT_RW_STR;
+
+	clen = cbprintf_package_convert(spackage, slen, NULL, 0, copy_flags, NULL, 0);
+	zassert_true(clen == slen + sizeof(test_str1) + 1/*null*/ - 2 /* arg+ro idx gone*/);
 
 	clen = cbprintf_package_convert(spackage, slen, convert_cb, &ctx, copy_flags, NULL, 0);
 	zassert_true(clen > 0);

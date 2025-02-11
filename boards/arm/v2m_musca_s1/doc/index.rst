@@ -95,7 +95,7 @@ See the `V2M Musca-S1 Website`_ for a complete list of V2M Musca-S1 board
 hardware features.
 
 The default configuration can be found in the defconfig file:
-``boards/arm/v2m_musca_s1/v2m_musca_s1_defconfig``.
+:zephyr_file:`boards/arm/v2m_musca_s1/v2m_musca_s1_defconfig`.
 
 Interrupt Controller
 ====================
@@ -199,7 +199,7 @@ Peripheral Mapping:
    - I2C_0_SDA : D14
    - I2C_0_SCL : D15
 
-For mode details please refer to `Musca-S1 Technical Reference Manual (TRM)`_.
+For more details please refer to `Musca-S1 Technical Reference Manual (TRM)`_.
 
 
 RGB LED
@@ -384,13 +384,13 @@ folder after TF-M built.
 Building the TF-M integration sample for Musca-S1
 -------------------------------------------------
 
-The TF-M integration samples can be run using the ``v2m_musca_s1_ns``
+The TF-M integration samples can be run using the ``v2m_musca_s1/musca_s1/ns``
 target. Please make sure all the requirements listed in the sample's
 description are met before building.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/tfm_integration/psa_crypto
-   :board: v2m_musca_s1_ns
+   :board: v2m_musca_s1/musca_s1/ns
    :goals: build
 
 To upload the build artifact to the board, first connect the Musca-S1 to your
@@ -427,7 +427,7 @@ corresponding TF-M integration example's README file.
    https://developer.arm.com/documentation/dto0051/latest/subsystem-overview/about-the-sse-200
 
 .. _Srecord Manual:
-   http://srecord.sourceforge.net/man/man1/srec_cat.html
+   https://srecord.sourceforge.net/man/man1/srec_cat.1.html
 
 .. _IDAU:
    https://developer.arm.com/documentation/100690/latest/Attribution-units--SAU-and-IDAU-

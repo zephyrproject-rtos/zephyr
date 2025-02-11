@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 
+#include <zephyr/net/ipv4_autoconf.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_pkt.h>
@@ -36,7 +37,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #endif
 
 #include "net_private.h"
-#include "net_shell.h"
+#include "shell/net_shell.h"
 
 #include "icmpv6.h"
 #include "ipv6.h"
@@ -44,7 +45,8 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "icmpv4.h"
 #include "ipv4.h"
 
-#include "dhcpv4.h"
+#include "dhcpv4/dhcpv4_internal.h"
+#include "dhcpv6/dhcpv6_internal.h"
 
 #include "route.h"
 
@@ -54,7 +56,6 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "connection.h"
 #include "udp_internal.h"
 #include "tcp_internal.h"
-#include "ipv4_autoconf_internal.h"
 
 #include "net_stats.h"
 
@@ -75,8 +76,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	/* If the packet is routed back to us when we have reassembled an IPv4 or IPv6 packet,
 	 * then do not pass it to L2 as the packet does not have link layer headers in it.
 	 */
-	if ((IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT) && net_pkt_ipv4_fragment_more(pkt)) ||
-	    (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT) && net_pkt_ipv6_fragment_start(pkt))) {
+	if (net_pkt_is_ip_reassembled(pkt)) {
 		locally_routed = true;
 	}
 
@@ -135,7 +135,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		if (IS_ENABLED(CONFIG_NET_IPV6) && vtc_vhl == 0x60) {
 			return net_ipv6_input(pkt, is_loopback);
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
-			return net_ipv4_input(pkt);
+			return net_ipv4_input(pkt, is_loopback);
 		}
 
 		NET_DBG("Unknown IP family packet (0x%x)", NET_IPV6_HDR(pkt)->vtc & 0xf0);
@@ -203,22 +203,55 @@ static void init_rx_queues(void)
 	net_post_init();
 }
 
-/* If loopback driver is enabled, then direct packets to it so the address
- * check is not needed.
- */
-#if defined(CONFIG_NET_IP) && defined(CONFIG_NET_IP_ADDR_CHECK) && !defined(CONFIG_NET_LOOPBACK)
-/* Check if the IPv{4|6} addresses are proper. As this can be expensive,
- * make this optional.
- */
-static inline int check_ip_addr(struct net_pkt *pkt)
+static inline void copy_ll_addr(struct net_pkt *pkt)
 {
-	uint8_t family = net_pkt_family(pkt);
+	memcpy(net_pkt_lladdr_src(pkt), net_pkt_lladdr_if(pkt),
+	       sizeof(struct net_linkaddr));
+	memcpy(net_pkt_lladdr_dst(pkt), net_pkt_lladdr_if(pkt),
+	       sizeof(struct net_linkaddr));
+}
+
+/* Check if the IPv{4|6} addresses are proper. As this can be expensive,
+ * make this optional. We still check the IPv4 TTL and IPv6 hop limit
+ * if the corresponding protocol family is enabled.
+ */
+static inline int check_ip(struct net_pkt *pkt)
+{
+	uint8_t family;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_IP)) {
+		return 0;
+	}
+
+	family = net_pkt_family(pkt);
+	ret = 0;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+		/* Drop IPv6 packet if hop limit is 0 */
+		if (NET_IPV6_HDR(pkt)->hop_limit == 0) {
+			NET_DBG("DROP: IPv6 hop limit");
+			ret = -ENOMSG; /* silently drop the pkt, not an error */
+			goto drop;
+		}
+
+		if (!IS_ENABLED(CONFIG_NET_IP_ADDR_CHECK)) {
+			return 0;
+		}
+
+#if defined(CONFIG_NET_LOOPBACK)
+		/* If loopback driver is enabled, then send packets to it
+		 * as the address check is not needed.
+		 */
+		if (net_if_l2(net_pkt_iface(pkt)) == &NET_L2_GET_NAME(DUMMY)) {
+			return 0;
+		}
+#endif
 		if (net_ipv6_addr_cmp((struct in6_addr *)NET_IPV6_HDR(pkt)->dst,
 				      net_ipv6_unspecified_address())) {
-			NET_DBG("IPv6 dst address missing");
-			return -EADDRNOTAVAIL;
+			NET_DBG("DROP: IPv6 dst address missing");
+			ret = -EADDRNOTAVAIL;
+			goto drop;
 		}
 
 		/* If the destination address is our own, then route it
@@ -237,6 +270,9 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 			net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->src,
 					       NET_IPV6_HDR(pkt)->dst);
 			net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->dst, (uint8_t *)&addr);
+
+			net_pkt_set_ll_proto_type(pkt, ETH_P_IPV6);
+			copy_ll_addr(pkt);
 
 			return 1;
 		}
@@ -258,14 +294,36 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		 */
 		if (net_ipv6_is_addr_loopback(
 				(struct in6_addr *)NET_IPV6_HDR(pkt)->src)) {
-			NET_DBG("IPv6 loopback src address");
-			return -EADDRNOTAVAIL;
+			NET_DBG("DROP: IPv6 loopback src address");
+			ret = -EADDRNOTAVAIL;
+			goto drop;
 		}
+
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+		/* Drop IPv4 packet if ttl is 0 */
+		if (NET_IPV4_HDR(pkt)->ttl == 0) {
+			NET_DBG("DROP: IPv4 ttl");
+			ret = -ENOMSG; /* silently drop the pkt, not an error */
+			goto drop;
+		}
+
+		if (!IS_ENABLED(CONFIG_NET_IP_ADDR_CHECK)) {
+			return 0;
+		}
+
+#if defined(CONFIG_NET_LOOPBACK)
+		/* If loopback driver is enabled, then send packets to it
+		 * as the address check is not needed.
+		 */
+		if (net_if_l2(net_pkt_iface(pkt)) == &NET_L2_GET_NAME(DUMMY)) {
+			return 0;
+		}
+#endif
 		if (net_ipv4_addr_cmp((struct in_addr *)NET_IPV4_HDR(pkt)->dst,
 				      net_ipv4_unspecified_address())) {
-			NET_DBG("IPv4 dst address missing");
-			return -EADDRNOTAVAIL;
+			NET_DBG("DROP: IPv4 dst address missing");
+			ret = -EADDRNOTAVAIL;
+			goto drop;
 		}
 
 		/* If the destination address is our own, then route it
@@ -285,6 +343,9 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 					       NET_IPV4_HDR(pkt)->dst);
 			net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->dst, (uint8_t *)&addr);
 
+			net_pkt_set_ll_proto_type(pkt, ETH_P_IP);
+			copy_ll_addr(pkt);
+
 			return 1;
 		}
 
@@ -293,16 +354,25 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		 * localhost subnet too.
 		 */
 		if (net_ipv4_is_addr_loopback((struct in_addr *)NET_IPV4_HDR(pkt)->src)) {
-			NET_DBG("IPv4 loopback src address");
-			return -EADDRNOTAVAIL;
+			NET_DBG("DROP: IPv4 loopback src address");
+			ret = -EADDRNOTAVAIL;
+			goto drop;
 		}
 	}
 
-	return 0;
+	return ret;
+
+drop:
+	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+		if (family == AF_INET6) {
+			net_stats_update_ipv6_drop(net_pkt_iface(pkt));
+		} else {
+			net_stats_update_ipv4_drop(net_pkt_iface(pkt));
+		}
+	}
+
+	return ret;
 }
-#else
-#define check_ip_addr(pkt) 0
-#endif
 
 /* Called when data needs to be sent to network */
 int net_send_data(struct net_pkt *pkt)
@@ -317,22 +387,20 @@ int net_send_data(struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_NET_STATISTICS)
-	switch (net_pkt_family(pkt)) {
-	case AF_INET:
-		net_stats_update_ipv4_sent(net_pkt_iface(pkt));
-		break;
-	case AF_INET6:
-		net_stats_update_ipv6_sent(net_pkt_iface(pkt));
-		break;
-	}
-#endif
-
 	net_pkt_trim_buffer(pkt);
 	net_pkt_cursor_init(pkt);
 
-	status = check_ip_addr(pkt);
+	status = check_ip(pkt);
 	if (status < 0) {
+		/* Special handling for ENOMSG which is returned if packet
+		 * TTL is 0 or hop limit is 0. This is not an error as it is
+		 * perfectly valid case to set the limit to 0. In this case
+		 * we just silently drop the packet by returning 0.
+		 */
+		if (status == -ENOMSG) {
+			return 0;
+		}
+
 		return status;
 	} else if (status > 0) {
 		/* Packet is destined back to us so send it directly
@@ -345,6 +413,17 @@ int net_send_data(struct net_pkt *pkt)
 
 	if (net_if_send_data(net_pkt_iface(pkt), pkt) == NET_DROP) {
 		return -EIO;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+		switch (net_pkt_family(pkt)) {
+		case AF_INET:
+			net_stats_update_ipv4_sent(net_pkt_iface(pkt));
+			break;
+		case AF_INET6:
+			net_stats_update_ipv6_sent(net_pkt_iface(pkt));
+			break;
+		}
 	}
 
 	return 0;
@@ -470,12 +549,24 @@ static inline int services_init(void)
 {
 	int status;
 
+	socket_service_init();
+
 	status = net_dhcpv4_init();
 	if (status) {
 		return status;
 	}
 
+	status = net_dhcpv6_init();
+	if (status != 0) {
+		return status;
+	}
+
+	net_dhcpv4_server_init();
+
+	dns_dispatcher_init();
 	dns_init_resolver();
+	mdns_init_responder();
+
 	websocket_init();
 
 	net_coap_init();
@@ -485,7 +576,7 @@ static inline int services_init(void)
 	return status;
 }
 
-static int net_init(const struct device *unused)
+static int net_init(void)
 {
 	net_hostname_init();
 

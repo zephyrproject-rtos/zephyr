@@ -12,7 +12,7 @@
 
 #ifdef CONFIG_OSDP_SC_ENABLED
 #include <zephyr/crypto/crypto.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #endif
 
 #include "osdp_common.h"
@@ -39,6 +39,11 @@ int64_t osdp_millis_since(int64_t last)
 	int64_t tmp = last;
 
 	return (int64_t) k_uptime_delta(&tmp);
+}
+
+void osdp_keyset_complete(struct osdp_pd *pd)
+{
+	cp_keyset_complete(pd);
 }
 
 #ifdef CONFIG_OSDP_SC_ENABLED

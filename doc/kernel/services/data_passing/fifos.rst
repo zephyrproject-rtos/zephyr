@@ -32,6 +32,12 @@ reserved space requirements for data items if they are added with
 :c:func:`k_fifo_alloc_put`, instead additional memory is temporarily
 allocated from the calling thread's resource pool.
 
+.. note::
+    FIFO data items are restricted to single active instance across all FIFO
+    data queues. Any attempt to re-add a FIFO data item to a queue before
+    it has been removed from the queue to which it was previously added will
+    result in undefined behavior.
+
 A data item may be **added** to a FIFO by a thread or an ISR.
 The item is given directly to a waiting thread, if one exists;
 otherwise the item is added to the FIFO's queue.

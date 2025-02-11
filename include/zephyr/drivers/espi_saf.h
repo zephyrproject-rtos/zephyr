@@ -145,6 +145,8 @@ typedef int (*espi_saf_api_flash_write)(const struct device *dev,
 					struct espi_saf_packet *pckt);
 typedef int (*espi_saf_api_flash_erase)(const struct device *dev,
 					struct espi_saf_packet *pckt);
+typedef int (*espi_saf_api_flash_unsuccess)(const struct device *dev,
+					struct espi_saf_packet *pckt);
 /* Callbacks and traffic intercept */
 typedef int (*espi_saf_api_manage_callback)(const struct device *dev,
 					    struct espi_callback *callback,
@@ -158,6 +160,7 @@ __subsystem struct espi_saf_driver_api {
 	espi_saf_api_flash_read flash_read;
 	espi_saf_api_flash_write flash_write;
 	espi_saf_api_flash_erase flash_erase;
+	espi_saf_api_flash_unsuccess flash_unsuccess;
 	espi_saf_api_manage_callback manage_callback;
 };
 
@@ -384,6 +387,35 @@ static inline int z_impl_espi_saf_flash_erase(const struct device *dev,
 }
 
 /**
+ * @brief Response unsuccessful completion for slave attached flash.
+ *
+ * This routines provides an interface to response that transaction is
+ * invalid and return unsuccessful completion from target to controller.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param pckt Address of the representation of flash transaction.
+ *
+ * @retval -ENOTSUP eSPI flash logical channel transactions not supported.
+ * @retval -EBUSY eSPI flash channel is not ready or disabled by master.
+ * @retval -EIO General input / output error, failed request to master.
+ */
+__syscall int espi_saf_flash_unsuccess(const struct device *dev,
+				       struct espi_saf_packet *pckt);
+
+static inline int z_impl_espi_saf_flash_unsuccess(const struct device *dev,
+						  struct espi_saf_packet *pckt)
+{
+	const struct espi_saf_driver_api *api =
+		(const struct espi_saf_driver_api *)dev->api;
+
+	if (!api->flash_unsuccess) {
+		return -ENOTSUP;
+	}
+
+	return api->flash_unsuccess(dev, pckt);
+}
+
+/**
  * Callback model
  *
  * @code
@@ -525,5 +557,5 @@ static inline int espi_saf_remove_callback(const struct device *dev,
 /**
  * @}
  */
-#include <syscalls/espi_saf.h>
+#include <zephyr/syscalls/espi_saf.h>
 #endif /* ZEPHYR_INCLUDE_ESPI_SAF_H_ */

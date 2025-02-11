@@ -24,7 +24,6 @@ struct mqtt_sn_confirmable {
 	int64_t last_attempt;
 	uint16_t msg_id;
 	uint8_t retries;
-	bool in_use;
 };
 
 struct mqtt_sn_publish {
@@ -36,8 +35,6 @@ struct mqtt_sn_publish {
 	enum mqtt_sn_qos qos;
 	bool retain;
 };
-
-static struct mqtt_sn_publish pubs[CONFIG_MQTT_SN_LIB_MAX_PUBLISH];
 
 enum mqtt_sn_topic_state {
 	MQTT_SN_TOPIC_STATE_REGISTERING,
@@ -58,7 +55,9 @@ struct mqtt_sn_topic {
 	enum mqtt_sn_topic_state state;
 };
 
-static struct mqtt_sn_topic topics[CONFIG_MQTT_SN_LIB_MAX_TOPICS];
+K_MEM_SLAB_DEFINE_STATIC(publishes, sizeof(struct mqtt_sn_publish),
+			 CONFIG_MQTT_SN_LIB_MAX_PUBLISH, 4);
+K_MEM_SLAB_DEFINE_STATIC(topics, sizeof(struct mqtt_sn_topic), CONFIG_MQTT_SN_LIB_MAX_TOPICS, 4);
 
 enum mqtt_sn_client_state {
 	MQTT_SN_CLIENT_DISCONNECTED,
@@ -126,13 +125,12 @@ static void mqtt_sn_con_init(struct mqtt_sn_confirmable *con)
 	con->last_attempt = 0;
 	con->retries = N_RETRY;
 	con->msg_id = next_msg_id();
-	con->in_use = true;
 }
 
 static void mqtt_sn_publish_destroy(struct mqtt_sn_client *client, struct mqtt_sn_publish *pub)
 {
 	sys_slist_find_and_remove(&client->publish, &pub->next);
-	memset(pub, 0, sizeof(*pub));
+	k_mem_slab_free(&publishes, (void *)pub);
 }
 
 static void mqtt_sn_publish_destroy_all(struct mqtt_sn_client *client)
@@ -142,31 +140,20 @@ static void mqtt_sn_publish_destroy_all(struct mqtt_sn_client *client)
 
 	while ((next = sys_slist_get(&client->publish)) != NULL) {
 		pub = SYS_SLIST_CONTAINER(next, pub, next);
-		memset(pub, 0, sizeof(*pub));
+		k_mem_slab_free(&publishes, (void *)pub);
 	}
-}
-
-static struct mqtt_sn_publish *mqtt_sn_publish_find_empty(void)
-{
-	size_t i;
-
-	for (i = 0; i < ARRAY_SIZE(pubs); i++) {
-		if (!pubs[i].con.in_use) {
-			return &pubs[i];
-		}
-	}
-
-	return NULL;
 }
 
 static struct mqtt_sn_publish *mqtt_sn_publish_create(struct mqtt_sn_data *data)
 {
-	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_empty();
+	struct mqtt_sn_publish *pub;
 
-	if (!pub) {
+	if (k_mem_slab_alloc(&publishes, (void **)&pub, K_NO_WAIT)) {
 		LOG_ERR("Can't create PUB: no free slot");
 		return NULL;
 	}
+
+	memset(pub, 0, sizeof(*pub));
 
 	if (data && data->data && data->size) {
 		if (data->size > sizeof(pub->pubdata)) {
@@ -211,27 +198,16 @@ static struct mqtt_sn_publish *mqtt_sn_publish_find_topic(struct mqtt_sn_client 
 	return NULL;
 }
 
-static struct mqtt_sn_topic *mqtt_sn_topic_find_empty(void)
-{
-	size_t i;
-
-	for (i = 0; i < ARRAY_SIZE(topics); i++) {
-		if (!topics[i].con.in_use) {
-			return &topics[i];
-		}
-	}
-
-	return NULL;
-}
-
 static struct mqtt_sn_topic *mqtt_sn_topic_create(struct mqtt_sn_data *name)
 {
-	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_empty();
+	struct mqtt_sn_topic *topic;
 
-	if (!topic) {
+	if (k_mem_slab_alloc(&topics, (void **)&topic, K_NO_WAIT)) {
 		LOG_ERR("Can't create topic: no free slot");
 		return NULL;
 	}
+
+	memset(topic, 0, sizeof(*topic));
 
 	if (!name || !name->data || !name->size) {
 		LOG_ERR("Can't create topic with empty name");
@@ -291,7 +267,6 @@ static void mqtt_sn_topic_destroy(struct mqtt_sn_client *client, struct mqtt_sn_
 	}
 
 	sys_slist_find_and_remove(&client->topic, &topic->next);
-	memset(topic, 0, sizeof(*topic));
 }
 
 static void mqtt_sn_topic_destroy_all(struct mqtt_sn_client *client)
@@ -308,7 +283,7 @@ static void mqtt_sn_topic_destroy_all(struct mqtt_sn_client *client)
 			mqtt_sn_publish_destroy(client, pub);
 		}
 
-		memset(topic, 0, sizeof(*topic));
+		k_mem_slab_free(&topics, (void *)topic);
 	}
 }
 
@@ -892,6 +867,7 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 
 	pub = mqtt_sn_publish_create(data);
 	if (!pub) {
+		k_work_reschedule(&client->process_work, K_NO_WAIT);
 		return -ENOMEM;
 	}
 
@@ -972,6 +948,8 @@ static void handle_register(struct mqtt_sn_client *client, struct mqtt_sn_param_
 	topic->state = MQTT_SN_TOPIC_STATE_REGISTERED;
 	topic->topic_id = p->topic_id;
 	topic->type = MQTT_SN_TOPIC_TYPE_NORMAL;
+
+	sys_slist_append(&client->topic, &topic->next);
 
 	response.params.regack.ret_code = MQTT_SN_CODE_ACCEPTED;
 	response.params.regack.topic_id = p->topic_id;
@@ -1247,4 +1225,23 @@ int mqtt_sn_input(struct mqtt_sn_client *client)
 
 	/* Should be zero */
 	return -client->rx.len;
+}
+
+int mqtt_sn_get_topic_name(struct mqtt_sn_client *client, uint16_t id,
+			   struct mqtt_sn_data *topic_name)
+{
+	struct mqtt_sn_topic *topic;
+
+	if (!client || !topic_name) {
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {
+		if (topic->topic_id == id) {
+			topic_name->data = (const uint8_t *)topic->name;
+			topic_name->size = topic->namelen;
+			return 0;
+		}
+	}
+	return -ENOENT;
 }

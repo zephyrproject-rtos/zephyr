@@ -1,0 +1,24 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: mr_canhubk3
+name: NXP MR-CANHUBK3
+type: mcu
+arch: arm
+ram: 1024
+flash: 1024
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - can
+  - i2c
+  - adc
+  - spi
+  - watchdog
+  - netif:eth
+  - pwm
+  - dma
+  - display
+vendor: nxp

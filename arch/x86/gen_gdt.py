@@ -137,7 +137,7 @@ def create_tss_entry(base, limit, dpl):
     gran = 0
 
     flags = (gran << 7) | limit_hi
-    type_byte = ((present << 7) | (dpl << 5) | type_code)
+    type_byte = (present << 7) | (dpl << 5) | type_code
 
     return struct.pack(GDT_ENT_FMT, limit_lo, base_lo, base_mid,
                        type_byte, flags, base_hi)
@@ -185,7 +185,7 @@ def main():
     # fault exception handling
     if "CONFIG_USERSPACE" in syms:
         num_entries = 7
-    elif "CONFIG_HW_STACK_PROTECTION" in syms:
+    elif "CONFIG_X86_STACK_PROTECTION" in syms:
         num_entries = 5
     else:
         num_entries = 3

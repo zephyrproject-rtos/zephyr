@@ -1,0 +1,25 @@
+# Copyright (c) 2021 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ANDES_AE350
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 100 if (!ICACHE || XIP)
+
+config MAIN_STACK_SIZE
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 1536
+
+config PRIVILEGED_STACK_SIZE
+	default 2048 if 64BIT
+
+config TEST_EXTRA_STACK_SIZE
+	default 2048 if 64BIT
+
+config MP_MAX_NUM_CPUS
+	default 1
+	range 1 8
+
+endif # SOC_ANDES_AE350

@@ -1,0 +1,11 @@
+# UART test configuration options
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config DUAL_UART_TEST
+	bool "Enable dual UART test"
+
+config SETUP_MISMATCH_TEST
+	bool "Enable mismatched configuration in dual UART test"
+
+source "Kconfig.zephyr"

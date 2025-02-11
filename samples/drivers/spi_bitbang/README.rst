@@ -1,7 +1,8 @@
-.. _spi-bitbang-sample:
+.. zephyr:code-sample:: spi-bitbang
+   :name: SPI bitbang
+   :relevant-api: spi_interface
 
-SPI-Bitbang Sample
-####################
+   Use the bitbang SPI driver for communicating with a slave.
 
 Overview
 ********
@@ -24,7 +25,7 @@ test for receive data.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_bitbang
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 

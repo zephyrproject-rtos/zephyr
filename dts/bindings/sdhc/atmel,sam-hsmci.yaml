@@ -1,0 +1,24 @@
+# Copyright 2023, Nikhef
+# SPDX-License-Identifier: Apache-2.0
+
+description: ATMEL (Microchip) SAM HSMCI SD host controller
+
+compatible: "atmel,sam-hsmci"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+
+  cd-gpios:
+    type: phandle-array

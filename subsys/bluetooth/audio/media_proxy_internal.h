@@ -9,7 +9,11 @@
 
 /** @brief Internal APIs for Bluetooth Media Control */
 
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/sys/util_macro.h>
 
 #define MPL_NO_TRACK_ID 0
 
@@ -30,6 +34,9 @@
 
 /** @brief Callbacks to a controller, from the media proxy */
 struct media_proxy_sctrl_cbs {
+	void (*player_name)(const char *name);
+
+	void (*icon_url)(const char *url);
 
 	void (*track_changed)(void);
 

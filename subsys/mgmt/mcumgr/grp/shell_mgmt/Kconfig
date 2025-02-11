@@ -15,10 +15,10 @@
 menuconfig MCUMGR_GRP_SHELL
 	bool "Mcumgr handlers for shell management"
 	depends on SHELL
-	select SHELL_BACKEND_DUMMY
+	depends on SHELL_BACKEND_DUMMY
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 	help
-	  Enables mcumgr handlers for shell management. The handler will utilize
+	  Enables MCUmgr handlers for shell management. The handler will utilize
 	  the dummy backend to execute shell commands and capture the output to
 	  an internal memory buffer. This way, there is no interaction with
 	  physical interfaces outside of the scope of the user.
@@ -29,7 +29,7 @@ menuconfig MCUMGR_GRP_SHELL
 	  increase the value. Remember to set MCUMGR_TRANSPORT_NETBUF_SIZE accordingly.
 	  Note that maximum length of shell command accepted is regulated by
 	  the CONFIG_SHELL_CMD_BUFF_SIZE, and a buffer for a command is allocated
-	  on a stack, by the mcumgr, so enabling MCUMGR_GRP_SHELL and
+	  on a stack, by the MCUmgr, so enabling MCUMGR_GRP_SHELL and
 	  changes to the CONFIG_SHELL_CMD_BUFF_SIZE may increase stack size
 	  requirements.
 

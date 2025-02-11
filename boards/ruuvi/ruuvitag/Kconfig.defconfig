@@ -1,0 +1,14 @@
+# Ruuvi RuuviTag configuration
+
+# Copyright (c) 2020 Ruuvi Innovations Ltd (Oy)
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RUUVI_RUUVITAG
+
+config SPI
+	default y
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_RUUVI_RUUVITAG

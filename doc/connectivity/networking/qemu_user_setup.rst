@@ -33,7 +33,7 @@ Using SLIRP with Zephyr
 In order to use SLIRP with Zephyr, the user has to set the Kconfig option to
 enable User Networking.
 
-.. code-block:: console
+.. code-block:: cfg
 
    CONFIG_NET_QEMU_USER=y
 
@@ -58,7 +58,7 @@ offloads this to the user, and expects that they will provide arguments
 based on requirements. For this, there is a Kconfig string which can be
 populated by the user.
 
-.. code-block:: console
+.. code-block:: cfg
 
    CONFIG_NET_QEMU_USER_EXTRA_ARGS="net=192.168.0.0/24,hostfwd=tcp::8080-:8080"
 

@@ -1,0 +1,5 @@
+board:
+  name: ev11l78a
+  vendor: microchip
+  socs:
+    - name: samd20e16

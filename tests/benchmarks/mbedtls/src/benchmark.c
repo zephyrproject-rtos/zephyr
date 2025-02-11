@@ -70,7 +70,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/kernel.h>
 
@@ -244,25 +244,11 @@ do {                                                                  \
 
 static int myrand(void *rng_state, unsigned char *output, size_t len)
 {
-	size_t use_len;
-	int rnd;
-
 	if (rng_state != NULL) {
 		rng_state  = NULL;
 	}
 
-	while (len > 0) {
-		use_len = len;
-
-		if (use_len > sizeof(int)) {
-			use_len = sizeof(int);
-		}
-
-		rnd = sys_rand32_get();
-		memcpy(output, &rnd, use_len);
-		output += use_len;
-		len -= use_len;
-	}
+	sys_rand_get(output, len);
 
 	return(0);
 }
@@ -299,7 +285,7 @@ typedef struct {
 	     havege, ctr_drbg, hmac_drbg, rsa, dhm, ecdsa, ecdh;
 } todo_list;
 
-void main(void)
+int main(void)
 {
 	mbedtls_ssl_config conf;
 	unsigned char tmp[200];
@@ -1029,4 +1015,5 @@ void main(void)
 	}
 #endif
 	mbedtls_printf("\n       Done\n");
+	return 0;
 }

@@ -53,28 +53,33 @@ int bt_addr_le_create_static(bt_addr_le_t *addr)
 
 int bt_addr_from_str(const char *str, bt_addr_t *addr)
 {
-	int i, j;
-	uint8_t tmp;
+	/* Parse a null-terminated string with a Bluetooth address in
+	 * canonical "XX:XX:XX:XX:XX:XX" format.
+	 */
 
-	if (strlen(str) != 17U) {
+	const size_t len = strlen(str);
+
+	/* Verify length. */
+	if (len != BT_ADDR_STR_LEN - 1) {
 		return -EINVAL;
 	}
 
-	for (i = 5, j = 1; *str != '\0'; str++, j++) {
-		if (!(j % 3) && (*str != ':')) {
-			return -EINVAL;
-		} else if (*str == ':') {
-			i--;
-			continue;
-		}
-
-		addr->val[i] = addr->val[i] << 4;
-
-		if (char2hex(*str, &tmp) < 0) {
+	/* Verify that all the colons are present. */
+	for (size_t i = 2; i < len; i += 3) {
+		if (str[i] != ':') {
 			return -EINVAL;
 		}
+	}
 
-		addr->val[i] |= tmp;
+	/* Parse each octet as hex and populate `addr->val`. It must be
+	 * reversed since `bt_addr_t` is in 'on-air' format.
+	 */
+	for (size_t i = 0; i < ARRAY_SIZE(addr->val); i++) {
+		const size_t reverse_i = ARRAY_SIZE(addr->val) - 1 - i;
+
+		if (!hex2bin(&str[i * 3], 2, &addr->val[reverse_i], 1)) {
+			return -EINVAL;
+		}
 	}
 
 	return 0;

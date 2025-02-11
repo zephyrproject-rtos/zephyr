@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2022 Jamie McCrae
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Jinghua Display JHD1313
+
+compatible: "jhd,jhd1313"
+
+include: [auxdisplay-device.yaml, i2c-device.yaml]

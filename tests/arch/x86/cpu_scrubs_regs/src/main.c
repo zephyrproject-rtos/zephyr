@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/ztest.h>
 #include "test_syscalls.h"
 
@@ -54,7 +54,7 @@ static inline void z_vrfy_test_cpu_write_reg(void)
 {
 	z_impl_test_cpu_write_reg();
 }
-#include <syscalls/test_cpu_write_reg_mrsh.c>
+#include <zephyr/syscalls/test_cpu_write_reg_mrsh.c>
 
 /**
  * @brief Test CPU scrubs registers after system call

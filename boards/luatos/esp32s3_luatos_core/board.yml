@@ -1,0 +1,10 @@
+board:
+  name: esp32s3_luatos_core
+  vendor: luatos
+  socs:
+  - name: esp32s3
+    variants:
+    - name: usb
+      cpucluster: procpu
+    - name: usb
+      cpucluster: appcpu

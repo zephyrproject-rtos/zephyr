@@ -68,6 +68,7 @@ static int start_tcp_proto(struct data *data,
 			   struct sockaddr *bind_addr,
 			   socklen_t bind_addrlen)
 {
+	int optval;
 	int ret;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -99,6 +100,22 @@ static int start_tcp_proto(struct data *data,
 		ret = -errno;
 	}
 #endif
+
+	if (bind_addr->sa_family == AF_INET6) {
+		/* Prefer IPv6 temporary addresses */
+		optval = IPV6_PREFER_SRC_PUBLIC;
+		(void)setsockopt(data->tcp.sock, IPPROTO_IPV6,
+				 IPV6_ADDR_PREFERENCES,
+				 &optval, sizeof(optval));
+
+		/*
+		 * Bind only to IPv6 without mapping to IPv4, since we bind to
+		 * IPv4 using another socket
+		 */
+		optval = 1;
+		(void)setsockopt(data->tcp.sock, IPPROTO_IPV6, IPV6_V6ONLY,
+				 &optval, sizeof(optval));
+	}
 
 	ret = bind(data->tcp.sock, bind_addr, bind_addrlen);
 	if (ret < 0) {
@@ -219,7 +236,7 @@ static int process_tcp(struct data *data)
 			&client_addr_len);
 	if (client < 0) {
 		LOG_ERR("%s accept error (%d)", data->proto, -errno);
-		return 0;
+		return -errno;
 	}
 
 	slot = get_free_slot(data);
@@ -243,7 +260,7 @@ static int process_tcp(struct data *data)
 			&tcp6_handler_thread[slot],
 			tcp6_handler_stack[slot],
 			K_THREAD_STACK_SIZEOF(tcp6_handler_stack[slot]),
-			(k_thread_entry_t)handle_data,
+			handle_data,
 			INT_TO_POINTER(slot), data, &tcp6_handler_in_use[slot],
 			THREAD_PRIORITY,
 			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
@@ -267,7 +284,7 @@ static int process_tcp(struct data *data)
 			&tcp4_handler_thread[slot],
 			tcp4_handler_stack[slot],
 			K_THREAD_STACK_SIZEOF(tcp4_handler_stack[slot]),
-			(k_thread_entry_t)handle_data,
+			handle_data,
 			INT_TO_POINTER(slot), data, &tcp4_handler_in_use[slot],
 			THREAD_PRIORITY,
 			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
@@ -302,8 +319,6 @@ static void process_tcp4(void)
 		return;
 	}
 
-	k_work_reschedule(&conf.ipv4.tcp.stats_print, K_SECONDS(STATS_TIMER));
-
 	while (ret == 0) {
 		ret = process_tcp(&conf.ipv4);
 		if (ret < 0) {
@@ -329,8 +344,6 @@ static void process_tcp6(void)
 		quit();
 		return;
 	}
-
-	k_work_reschedule(&conf.ipv6.tcp.stats_print, K_SECONDS(STATS_TIMER));
 
 	while (ret == 0) {
 		ret = process_tcp(&conf.ipv6);
@@ -384,8 +397,6 @@ void start_tcp(void)
 	k_mem_domain_add_thread(&app_domain, tcp6_thread_id);
 
 	for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
-		k_mem_domain_add_thread(&app_domain, &tcp6_handler_thread[i]);
-
 		k_thread_access_grant(tcp6_thread_id, &tcp6_handler_thread[i]);
 		k_thread_access_grant(tcp6_thread_id, &tcp6_handler_stack[i]);
 	}
@@ -393,6 +404,7 @@ void start_tcp(void)
 
 	k_work_init_delayable(&conf.ipv6.tcp.stats_print, print_stats);
 	k_thread_start(tcp6_thread_id);
+	k_work_reschedule(&conf.ipv6.tcp.stats_print, K_SECONDS(STATS_TIMER));
 #endif
 
 #if defined(CONFIG_NET_IPV4)
@@ -400,8 +412,6 @@ void start_tcp(void)
 	k_mem_domain_add_thread(&app_domain, tcp4_thread_id);
 
 	for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
-		k_mem_domain_add_thread(&app_domain, &tcp4_handler_thread[i]);
-
 		k_thread_access_grant(tcp4_thread_id, &tcp4_handler_thread[i]);
 		k_thread_access_grant(tcp4_thread_id, &tcp4_handler_stack[i]);
 	}
@@ -409,6 +419,7 @@ void start_tcp(void)
 
 	k_work_init_delayable(&conf.ipv4.tcp.stats_print, print_stats);
 	k_thread_start(tcp4_thread_id);
+	k_work_reschedule(&conf.ipv4.tcp.stats_print, K_SECONDS(STATS_TIMER));
 #endif
 }
 

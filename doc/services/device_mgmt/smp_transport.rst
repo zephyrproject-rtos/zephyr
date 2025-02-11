@@ -179,7 +179,7 @@ taking form:
     | Content       | Size          | Description               |
     +===============+===============+===========================+
     | body          | no more than  | Raw body data fragment    |
-    |               | MTU - 3       |                           |
+    |               | MTU - 5       |                           |
     +---------------+---------------+---------------------------+
     | crc16         | 2 bytes       | CRC16 of entire packet    |
     |               |               | body, preceding length    |
@@ -193,3 +193,8 @@ CRC Details
 The CRC16 included in final type frames is calculated over only
 raw data and does not include packet length.
 CRC16 polynomial is 0x1021 and initial value is 0.
+
+API Reference
+*************
+
+.. doxygengroup:: mcumgr_transport_smp

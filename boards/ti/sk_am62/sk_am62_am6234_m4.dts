@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2023 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am62x_m4.dtsi>
+
+/ {
+	model = "TI AM62X STARTER KIT (SK) EVALUATION MODULE (EVM)";
+	compatible = "ti,am62x_m4_sk";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram1 = &ddr0;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+			clock-frequency = <400000000>;
+		};
+	};
+
+	ddr0:memory@9CC00000{
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x9CC00000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "DDR";
+	};
+};
+
+&pinctrl {
+	mcu_uart0_rx_default: mcu_uart0_rx_default {
+		pinmux = <K3_PINMUX(0x0014, PIN_INPUT, MUX_MODE_0)>;
+	};
+	mcu_uart0_tx_default: mcu_uart0_tx_default {
+		pinmux = <K3_PINMUX(0x0018, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&mcu_uart0_rx_default &mcu_uart0_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

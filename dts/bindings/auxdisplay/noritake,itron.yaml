@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2022 Jamie McCrae
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Noritake Itron VFD
+
+compatible: "noritake,itron"
+
+include: [auxdisplay-device.yaml, uart-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: Optional GPIO used to reset the display
+
+  busy-gpios:
+    type: phandle-array
+    description: Optional GPIO used for busy detection

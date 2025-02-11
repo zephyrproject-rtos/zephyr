@@ -11,11 +11,12 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/init.h>
-#include <soc.h>
+#include <zephyr/device.h>
 
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
+
+#define DT_DRV_COMPAT nuclei_eclic
 
 union CLICCFG {
 	struct {
@@ -82,27 +83,14 @@ struct CLICCTRL {
 	volatile uint8_t INTCTRL;
 };
 
-/** ECLIC Mode mask for MTVT CSR Register */
-#define ECLIC_MODE_MTVEC_Msk   3U
-
-/** CLIC INTATTR: TRIG Position */
-#define CLIC_INTATTR_TRIG_Pos  1U
 /** CLIC INTATTR: TRIG Mask */
-#define CLIC_INTATTR_TRIG_Msk  (0x3UL << CLIC_INTATTR_TRIG_Pos)
+#define CLIC_INTATTR_TRIG_Msk  0x3U
 
 #define ECLIC_CFG       (*((volatile union CLICCFG  *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 0))))
 #define ECLIC_INFO      (*((volatile union CLICINFO *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 1))))
 #define ECLIC_MTH       (*((volatile union CLICMTH  *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 2))))
 #define ECLIC_CTRL      ((volatile  struct CLICCTRL *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 3)))
 #define ECLIC_CTRL_SIZE (DT_REG_SIZE_BY_IDX(DT_NODELABEL(eclic), 3))
-
-#if CONFIG_3RD_LEVEL_INTERRUPTS
-#define INTERRUPT_LEVEL 2
-#elif CONFIG_2ND_LEVEL_INTERRUPTS
-#define INTERRUPT_LEVEL 1
-#else
-#define INTERRUPT_LEVEL 0
-#endif
 
 static uint8_t nlbits;
 static uint8_t intctlbits;
@@ -150,28 +138,42 @@ int riscv_clic_irq_is_enabled(uint32_t irq)
 void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 {
 	const uint8_t prio = leftalign8(MIN(pri, max_prio), intctlbits);
-	const uint8_t level =  leftalign8(MIN((irq_get_level(irq) - 1), max_level), nlbits);
+	const uint8_t level =  leftalign8(max_level, nlbits);
 	const uint8_t intctrl = (prio | level) | (~intctrl_mask);
 
 	ECLIC_CTRL[irq].INTCTRL = intctrl;
 
-	ECLIC_CTRL[irq].INTATTR.b.shv = 0;
-	ECLIC_CTRL[irq].INTATTR.b.trg = (uint8_t)(flags & CLIC_INTATTR_TRIG_Msk);
+	union CLICINTATTR intattr = {.w = 0};
+#if defined(CONFIG_RISCV_VECTORED_MODE) && !defined(CONFIG_LEGACY_CLIC)
+	/*
+	 * Set Selective Hardware Vectoring.
+	 * Legacy SiFive does not implement smclicshv extension and vectoring is
+	 * enabled in the mode bits of mtvec.
+	 */
+	intattr.b.shv = 1;
+#else
+	intattr.b.shv = 0;
+#endif
+	intattr.b.trg = (uint8_t)(flags & CLIC_INTATTR_TRIG_Msk);
+	ECLIC_CTRL[irq].INTATTR = intattr;
+}
+
+/**
+ * @brief Set pending bit of an interrupt
+ */
+void riscv_clic_irq_set_pending(uint32_t irq)
+{
+	ECLIC_CTRL[irq].INTIP.b.IP = 1;
 }
 
 static int nuclei_eclic_init(const struct device *dev)
 {
-	/* check hardware support required interrupt levels */
-	__ASSERT_NO_MSG(ECLIC_INFO.b.intctlbits >= INTERRUPT_LEVEL);
-
 	ECLIC_MTH.w = 0;
 	ECLIC_CFG.w = 0;
-	ECLIC_CFG.b.nlbits = INTERRUPT_LEVEL;
+	ECLIC_CFG.b.nlbits = 0;
 	for (int i = 0; i < ECLIC_CTRL_SIZE; i++) {
 		ECLIC_CTRL[i] = (struct CLICCTRL) { 0 };
 	}
-
-	csr_write(mtvec, ((csr_read(mtvec) & 0xFFFFFFC0) | ECLIC_MODE_MTVEC_Msk));
 
 	nlbits = ECLIC_CFG.b.nlbits;
 	intctlbits = ECLIC_INFO.b.intctlbits;
@@ -182,4 +184,5 @@ static int nuclei_eclic_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(nuclei_eclic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
+DEVICE_DT_INST_DEFINE(0, nuclei_eclic_init, NULL, NULL, NULL,
+		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);

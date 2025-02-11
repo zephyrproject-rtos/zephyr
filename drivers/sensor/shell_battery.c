@@ -49,7 +49,7 @@ static int get_channels(const struct device *dev, ...)
 }
 
 /* battery */
-static int cmd_battery(const struct shell *shell, size_t argc, char **argv)
+static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 {
 	struct sensor_value temp, volt, current, i_desired, charge_remain;
 	struct sensor_value charge, v_desired, v_design, cap, nom_cap;
@@ -59,13 +59,13 @@ static int cmd_battery(const struct shell *shell, size_t argc, char **argv)
 	int err;
 
 	if (!device_is_ready(dev)) {
-		shell_error(shell, "Device not ready (%s)", argv[1]);
+		shell_error(sh, "Device not ready (%s)", argv[1]);
 		return -ENODEV;
 	}
 
 	err = sensor_sample_fetch(dev);
 	if (err < 0) {
-		shell_error(shell, "Failed to read sensor: %d", err);
+		shell_error(sh, "Failed to read sensor: %d", err);
 	}
 
 	err = get_channels(dev,
@@ -88,34 +88,34 @@ static int cmd_battery(const struct shell *shell, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "Temp:  %.1d.%02d C\n", temp.val1,
+	shell_fprintf(sh, SHELL_NORMAL, "Temp:  %.1d.%02d C\n", temp.val1,
 		      temp.val2 / 10000);
-	shell_fprintf(shell, SHELL_NORMAL, "V: %5d.%02d V\n", volt.val1,
+	shell_fprintf(sh, SHELL_NORMAL, "V: %5d.%02d V\n", volt.val1,
 		      volt.val2 / 10000);
-	shell_fprintf(shell, SHELL_NORMAL, "V-desired: %d.%02d V\n",
+	shell_fprintf(sh, SHELL_NORMAL, "V-desired: %d.%02d V\n",
 		      v_desired.val1, v_desired.val2 / 10000);
-	shell_fprintf(shell, SHELL_NORMAL, "I:    %d mA", current.val1);
+	shell_fprintf(sh, SHELL_NORMAL, "I:    %d mA", current.val1);
 	if (current.val1 > 0) {
-		shell_fprintf(shell, SHELL_NORMAL, " (CHG)");
+		shell_fprintf(sh, SHELL_NORMAL, " (CHG)");
 	} else if (current.val1 < 0) {
-		shell_fprintf(shell, SHELL_NORMAL, " (DISCHG)");
+		shell_fprintf(sh, SHELL_NORMAL, " (DISCHG)");
 	}
-	shell_fprintf(shell, SHELL_NORMAL, "\n");
-	shell_fprintf(shell, SHELL_NORMAL, "I-desired: %5d mA\n",
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+	shell_fprintf(sh, SHELL_NORMAL, "I-desired: %5d mA\n",
 		      i_desired.val1);
 	allowed = i_desired.val1 && v_desired.val2 && charge.val1 < 100;
-	shell_fprintf(shell, SHELL_NORMAL, "Charging: %sAllowed\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Charging: %sAllowed\n",
 		      allowed ? "" : "Not ");
-	shell_fprintf(shell, SHELL_NORMAL, "Charge: %d %%\n", charge.val1);
-	shell_fprintf(shell, SHELL_NORMAL, "V-design: %d.%02d V\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Charge: %d %%\n", charge.val1);
+	shell_fprintf(sh, SHELL_NORMAL, "V-design: %d.%02d V\n",
 		      v_design.val1, v_design.val2 / 10000);
-	shell_fprintf(shell, SHELL_NORMAL, "Remaining: %d mA\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Remaining: %d mA\n",
 		      charge_remain.val1);
-	shell_fprintf(shell, SHELL_NORMAL, "Cap-full: %d mA\n", cap.val1);
-	shell_fprintf(shell, SHELL_NORMAL, "Design: %d mA\n", nom_cap.val1);
-	shell_fprintf(shell, SHELL_NORMAL, "Time full: %dh:%02d\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Cap-full: %d mA\n", cap.val1);
+	shell_fprintf(sh, SHELL_NORMAL, "Design: %d mA\n", nom_cap.val1);
+	shell_fprintf(sh, SHELL_NORMAL, "Time full: %dh:%02d\n",
 		      full.val1 / 60, full.val1 % 60);
-	shell_fprintf(shell, SHELL_NORMAL, "Time empty: %dh:%02d\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Time empty: %dh:%02d\n",
 		      empty.val1 / 60, empty.val1 % 60);
 
 	return 0;

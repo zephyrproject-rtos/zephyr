@@ -5,14 +5,20 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT_HAS
-	bool "Hearing Access Service support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Hearing Access Service support"
 	select UTF8
-	depends on BT_AUDIO_UNICAST_SERVER
+	select BT_GATT_DYNAMIC_DB
+	depends on BT_BAP_UNICAST_SERVER
 	help
 	  This option enables support for Hearing Access Service.
 
 if BT_HAS
+
+config BT_HAS_FEATURES_NOTIFIABLE
+	bool "Hearing Aid Features Notifiable Support"
+	help
+	  This option enables support for clients to subscribe for notifications
+	  on the Hearing Aid Features characteristic.
 
 config BT_HAS_PRESET_COUNT
 	int "Preset record list size"
@@ -32,39 +38,27 @@ config BT_HAS_PRESET_NAME_DYNAMIC
 	help
 	  Enabling this option allows for runtime configuration of preset name.
 
-endif # BT_HAS_PRESET_SUPPORT
-
-config BT_DEBUG_HAS
-	bool "Hearing Access Service debug"
-	select DEPRECATED
+config BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE
+	bool "Preset Control Point Notifiable support"
+	depends on BT_EATT
 	help
-	  This option enables enables Hearing Access Service debug logs.
+	  This option enables support for clients to subscribe for notifications
+	  on the Hearing Aid Preset Control Point characteristic.
 
-module = BT_HAS
-legacy-debug-sym = BT_DEBUG_HAS
-module-str = "Hearing Access Service"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+config BT_HAS_ACTIVE_PRESET_INDEX
+	def_bool BT_HAS_PRESET_SUPPORT
+	help
+	  This option enables the Hearing Aid Active Preset Index characteristic.
+
+endif # BT_HAS_PRESET_SUPPORT
 
 endif # BT_HAS
 
 config BT_HAS_CLIENT
-	bool "Hearing Access Service Client support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Hearing Access Service Client support"
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
 	select BT_GATT_AUTO_UPDATE_MTU
 	select UTF8
 	help
 	  This option enables support for Hearing Access Service Client.
-
-config BT_DEBUG_HAS_CLIENT
-	bool "Hearing Access Service Client debug"
-	select DEPRECATED
-	depends on BT_HAS_CLIENT
-	help
-	  This option enables enables Hearing Access Service Client debug logs.
-
-module = BT_HAS_CLIENT
-legacy-debug-sym = BT_DEBUG_HAS_CLIENT
-module-str = "Hearing Access Service Client"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"

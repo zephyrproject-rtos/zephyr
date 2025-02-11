@@ -14,7 +14,7 @@
 #define __TCP_INTERNAL_H
 
 #include <zephyr/types.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
@@ -32,6 +32,10 @@ extern "C" {
 
 enum tcp_conn_option {
 	TCP_OPT_NODELAY	= 1,
+	TCP_OPT_KEEPALIVE = 2,
+	TCP_OPT_KEEPIDLE = 3,
+	TCP_OPT_KEEPINTVL = 4,
+	TCP_OPT_KEEPCNT = 5,
 };
 
 /**
@@ -249,11 +253,12 @@ static inline int net_tcp_recv(struct net_context *context,
  * @return 0 on success, negative errno otherwise.
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_finalize(struct net_pkt *pkt);
+int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum);
 #else
-static inline int net_tcp_finalize(struct net_pkt *pkt)
+static inline int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	ARG_UNUSED(pkt);
+	ARG_UNUSED(force_chksum);
 	return 0;
 }
 #endif
@@ -282,21 +287,27 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 #endif
 
 /**
- * @brief Enqueue a single packet for transmission
+ * @brief Enqueue data for transmission
  *
- * @param context TCP context
- * @param pkt Packet
+ * @param context	Network context
+ * @param data		Pointer to the data
+ * @param len		Number of bytes
+ * @param msg		Data for a vector array operation
  *
  * @return 0 if ok, < 0 if error
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt);
+int net_tcp_queue(struct net_context *context, const void *data, size_t len,
+		  const struct msghdr *msg);
 #else
-static inline int net_tcp_queue_data(struct net_context *context,
-				     struct net_pkt *pkt)
+static inline int net_tcp_queue(struct net_context *context, const void *data,
+				size_t len, const struct msghdr *msg)
 {
 	ARG_UNUSED(context);
-	ARG_UNUSED(pkt);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+	ARG_UNUSED(msg);
+
 	return -EPROTONOSUPPORT;
 }
 #endif
@@ -413,6 +424,44 @@ static inline int net_tcp_get_option(struct net_context *context,
  * @return semaphore indicating if transfers are blocked
  */
 struct k_sem *net_tcp_tx_sem_get(struct net_context *context);
+
+/**
+ * @brief Obtain a semaphore indicating if connection is connected.
+ *
+ * @param context Network context
+ *
+ * @return semaphore indicating if connection is connected
+ */
+struct k_sem *net_tcp_conn_sem_get(struct net_context *context);
+
+/**
+ * @brief Send a TCP RST reply for the received packet w/o associated connection.
+ *
+ * @param pkt TCP packet to reply for.
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+void net_tcp_reply_rst(struct net_pkt *pkt);
+#else
+static inline void net_tcp_reply_rst(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+}
+#endif
+
+/**
+ * @brief Get the TCP connection endpoint information.
+ *
+ * @param context Network context
+ * @param local TCP connection local socket information is copied here
+ * @param peer TCP connection peer socket information is copied here
+ * @param addrlen Size of the sockaddr struct. Copied size is returned.
+ *
+ * @return <0 if there was an error, 0 if ok
+ */
+int net_tcp_endpoint_copy(struct net_context *ctx,
+			  struct sockaddr *local,
+			  struct sockaddr *peer,
+			  socklen_t *addrlen);
 
 #ifdef __cplusplus
 }

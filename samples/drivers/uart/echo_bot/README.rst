@@ -1,7 +1,8 @@
-.. _uart_sample:
+.. zephyr:code-sample:: uart
+   :name: UART echo
+   :relevant-api: uart_interface
 
-UART Driver Sample
-##################
+   Read data from the console and echo it back.
 
 Overview
 ********
@@ -20,12 +21,12 @@ is used, so that almost every board should be supported.
 Building and Running
 ********************
 
-Build and flash the sample as follows, changing ``nrf52840dk_nrf52840`` for
+Build and flash the sample as follows, changing ``nrf52840dk/nrf52840`` for
 your board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/uart/echo_bot
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 

@@ -1,0 +1,139 @@
+/*
+ * Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m7.dtsi>
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include "arduino_portenta_h7-common.dtsi"
+
+/ {
+	model = "Arduino Portenta H7 board";
+	compatible = "arduino,portenta-h7";
+
+	/* HW resources are split between CM7 and CM4 */
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+		zephyr,cdc-acm-uart0 = &cdc_acm_uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	oscen: oscen {
+		compatible = "regulator-fixed";
+		regulator-name = "oscen";
+		enable-gpios = <&gpioh 1 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	ethernet_phy_en: ethernet_phy_en {
+		compatible = "regulator-fixed";
+		regulator-name = "ethernet-phy-reset-release";
+		enable-gpios = <&gpioj 15 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	sdram1: sdram@c0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xc0000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	hse-bypass;
+	status = "okay";
+};
+
+&clk_hsi {
+	hsi-div = <1>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <160>;
+	div-p = <2>;
+	div-q = <10>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+/** The power supply for the Portenta H7 is based on a ST PSU reference design.
+ *  The design specification from this reference design limits the maximum
+ *  clock speed to 400 MHz.
+ *        Refer: section 8.1 of the reference design guide.
+ */
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(400)>;
+};
+
+
+&usart1 {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+};
+
+/* Only one should be enabled */
+&usbotg_fs {
+	status = "disabled";
+};
+
+&usbotg_hs {
+	status = "okay";
+};
+
+&cdc_acm_uart0 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+			read-only;
+		};
+		/*
+		 * The flash starting at 0x00010000 and ending at
+		 * 0x0001ffff (sectors 16-31) is reserved for use
+		 * by the application.
+		 */
+		scratch_partition: partition@10000 {
+			label = "image-scratch";
+			reg = <0x00010000 0x00030000>;
+		};
+		/* The arduino default bootloader occupies the address space 0x0 - 0x40000.
+		 * This way regardless of the user's choice to use the mcuboot bootloader,
+		 * applications will be located at 0x40000 which will be loaded by the
+		 * arduino bootloader.
+		 */
+		slot0_partition: partition@40000 {
+			label = "image-0";
+			reg = <0x00040000 0x00060000>;
+		};
+		slot1_partition: partition@A0000 {
+			label = "image-1";
+			reg = <0x000A0000 0x00060000>;
+		};
+	};
+};

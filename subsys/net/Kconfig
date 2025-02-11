@@ -51,6 +51,16 @@ config NET_BUF_POOL_USAGE
 	  * total size of the pool is calculated
 	  * pool name is stored and can be shown in debugging prints
 
+config NET_BUF_ALIGNMENT
+	int "Network buffer alignment restriction"
+	default 0
+	help
+	  Alignment restriction for network buffers. This is useful for
+	  some hardware IP with DMA that requires the buffers to be aligned
+	  to a certain byte boundary, or dealing with cache line restrictions.
+	  Default value of 0 means the alignment will be the size of a void pointer,
+	  any other value will force the alignment of a net buffer in bytes.
+
 endif # NET_BUF
 
 config NETWORKING
@@ -79,6 +89,8 @@ source "subsys/net/ip/Kconfig"
 source "subsys/net/pkt_filter/Kconfig"
 
 source "subsys/net/lib/Kconfig"
+
+source "subsys/net/conn_mgr/Kconfig"
 
 endif
 

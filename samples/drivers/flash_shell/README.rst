@@ -1,10 +1,12 @@
-.. _samples_flash_shell:
+.. zephyr:code-sample:: flash-shell
+   :name: Flash shell
+   :relevant-api: flash_interface
 
-Flash Shell Sample
-##################
+   Explore a flash device using shell commands.
 
 Overview
 ********
+
 This is a simple shell module that allows arbitrary boards with flash
 driver support to explore the flash device.
 
@@ -25,19 +27,24 @@ Sample Output
 
 .. code-block:: console
 
-    uart:~$ flash_sample page_count
-    Flash device contains 1024 pages.
-    uart:~$ flash_sample page_erase 1023
-    Erasing page 1023 (start offset 0xffc00, size 0x400)
-    uart:~$ flash_sample page_write 1023 8 17 19 28 39
-    Reading back written bytes:
-    11 13 1c 27
-    uart:~$ flash_sample page_write 1023 4 77 9 1 2
-    Reading back written bytes:
-    4d 09 01 02
-    uart:~$ flash_sample page_read 1023 4 12
-    4d 09 01 02 | 11 13 1c 27
-    ff ff ff ff
-    uart:~$ flash_sample page_read 1023 0 16
-    ff ff ff ff | 4d 09 01 02
-    11 13 1c 27 | ff ff ff ff
+    uart:~$ flash page_info 0
+    Page for address 0x0:
+    start offset: 0x0
+    size: 4096
+    index: 0
+    uart:~$ flash erase 0x1000
+    Erase success.
+    uart:~$ flash write 0x1000 0x12345678 0x9abcdef0
+    Write OK.
+    Verified.
+    uart:~$ flash write 0x1000 0x11111111
+    Write internal ERROR!
+    uart:~$ flash read 0x1000 0x10
+    00001000: 78 56 34 12 f0 de bc 9a  ff ff ff ff ff ff ff ff |xV4..... ........|
+
+    uart:~$ flash write 0x101c 0xabcd1234
+    Write OK.
+    Verified.
+    uart:~$ flash read 0x1000 0x20
+    00001000: 78 56 34 12 f0 de bc 9a  ff ff ff ff ff ff ff ff |xV4..... ........|
+    00001010: ff ff ff ff ff ff ff ff  ff ff ff ff 34 12 cd ab |........ ....4...|

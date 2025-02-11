@@ -26,6 +26,11 @@ properties:
     required: true
     description: Bit position in GIRQ for this device
 
+  pcrs:
+    type: array
+    required: true
+    description: PCR sleep register index and bit position
+
   pinctrl-0:
     required: true
 

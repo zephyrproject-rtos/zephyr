@@ -8,12 +8,5 @@
 	fake_can: fake_can {
 		compatible = "zephyr,fake-can";
 		status = "okay";
-		sjw = <1>;
-		sample-point = <875>;
-		bus-speed = <125000>;
-		sample-point = <875>;
-		sjw-data = <1>;
-		bus-speed-data = <1000000>;
-		sample-point-data = <750>;
 	};
 };

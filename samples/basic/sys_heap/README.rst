@@ -1,7 +1,7 @@
-.. _system_heap:
+.. zephyr:code-sample:: sys-heap
+   :name: System heap
 
-System heap
-###########
+   Print system heap usage to the console.
 
 Overview
 ********
@@ -10,18 +10,18 @@ A simple sample that can be used with any :ref:`supported board <boards>` and
 prints system heap usage to the console.
 
 Building
-********************
+********
 
-This application can be built on native_posix as follows:
+This application can be built on :ref:`native_sim <native_sim>` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/sys_heap
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: build
    :compact:
 
-To build for another board, change "native_posix" above to that board's name.
+To build for another board, change "native_sim" above to that board's name.
 
 Running
 *******

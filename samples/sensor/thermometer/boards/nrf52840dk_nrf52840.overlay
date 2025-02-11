@@ -1,0 +1,27 @@
+/ {
+	mcp9700a: mcp9700a {
+		status = "okay";
+		compatible = "microchip,mcp970x";
+		family = "MCP9700/9700A";
+		io-channels = <&adc 7>;
+	};
+
+	aliases {
+		ambient-temp0 = &mcp9700a;
+	};
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1_3";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS,10)>;
+		zephyr,input-positive = <NRF_SAADC_AIN7>;
+		zephyr,resolution = <12>; /* 0.055C per ADC step */
+		zephyr,oversampling = <2>; /* x4 */
+	};
+};

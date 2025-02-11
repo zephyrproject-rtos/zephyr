@@ -18,3 +18,10 @@ zephyr_library_sources_ifdef(
 	usbc_tc_snk_states.c
 	usbc_pe_snk_states.c
 )
+
+# Source USB-C Stack files
+zephyr_library_sources_ifdef(
+	CONFIG_USBC_CSM_SOURCE_ONLY
+	usbc_tc_src_states.c
+	usbc_pe_src_states.c
+)

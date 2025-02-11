@@ -6,4 +6,7 @@ tests:
     harness: sensor
     platform_allow: 96b_argonkey
     tags: sensors
-    depends_on: i2c spi gpio
+    depends_on:
+      - i2c
+      - spi
+      - gpio

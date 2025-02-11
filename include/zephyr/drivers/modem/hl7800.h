@@ -388,7 +388,7 @@ int32_t mdm_hl7800_get_local_time(struct tm *tm, int32_t *offset);
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
 /**
  * @brief Update the HL7800 via XMODEM protocol.  During the firmware update
- * no other modem fuctions will be available.
+ * no other modem functions will be available.
  *
  * @param file_path Absolute path of the update file
  *
@@ -522,7 +522,7 @@ void mdm_hl7800_register_cts_callback(void (*func)(int state));
  * NOTE: This will cause the modem to reboot. This call returns before the reboot.
  *
  * @param bands Band bitmap in hexadecimal format without the 0x prefix.
- * Leading 0's for the value can be ommited.
+ * Leading 0's for the value can be omitted.
  *
  * @return int32_t negative errno, 0 on success
  */

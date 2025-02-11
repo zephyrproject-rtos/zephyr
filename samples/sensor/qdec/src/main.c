@@ -22,51 +22,55 @@ static const struct gpio_dt_spec phase_a =
 			GPIO_DT_SPEC_GET(DT_ALIAS(qenca), gpios);
 static const struct gpio_dt_spec phase_b =
 			GPIO_DT_SPEC_GET(DT_ALIAS(qencb), gpios);
+static bool toggle_a;
 
 void qenc_emulate_work_handler(struct k_work *work)
 {
-	gpio_pin_toggle_dt(&phase_a);
-	k_msleep(1);
-	gpio_pin_toggle_dt(&phase_b);
+	toggle_a = !toggle_a;
+	if (toggle_a) {
+		gpio_pin_toggle_dt(&phase_a);
+	} else {
+		gpio_pin_toggle_dt(&phase_b);
+	}
 }
 
-K_WORK_DEFINE(qenc_emulate_work, qenc_emulate_work_handler);
+static K_WORK_DEFINE(qenc_emulate_work, qenc_emulate_work_handler);
 
-void qenc_emulate_timer_handler(struct k_timer *dummy)
+static void qenc_emulate_timer_handler(struct k_timer *dummy)
 {
 	k_work_submit(&qenc_emulate_work);
 }
 
-K_TIMER_DEFINE(qenc_emulate_timer, qenc_emulate_timer_handler, NULL);
+static K_TIMER_DEFINE(qenc_emulate_timer, qenc_emulate_timer_handler, NULL);
 
-void qenc_emulate_init(void)
+static void qenc_emulate_init(void)
 {
 	printk("Quadrature encoder emulator enabled with %u ms period\n",
 		QUAD_ENC_EMUL_PERIOD);
 
-	if (!device_is_ready(phase_a.port)) {
+	if (!gpio_is_ready_dt(&phase_a)) {
 		printk("%s: device not ready.", phase_a.port->name);
 		return;
 	}
 	gpio_pin_configure_dt(&phase_a, GPIO_OUTPUT);
 
-	if (!device_is_ready(phase_b.port)) {
+	if (!gpio_is_ready_dt(&phase_b)) {
 		printk("%s: device not ready.", phase_b.port->name);
 		return;
 	}
 	gpio_pin_configure_dt(&phase_b, GPIO_OUTPUT);
 
-	k_timer_start(&qenc_emulate_timer, K_MSEC(QUAD_ENC_EMUL_PERIOD),
-			K_MSEC(QUAD_ENC_EMUL_PERIOD));
+	k_timer_start(&qenc_emulate_timer, K_MSEC(QUAD_ENC_EMUL_PERIOD / 2),
+			K_MSEC(QUAD_ENC_EMUL_PERIOD / 2));
 }
 
 #else
 
-void qenc_emulate_init(void) { };
+static void qenc_emulate_init(void) { };
 
 #endif /* QUAD_ENC_EMUL_ENABLED */
 
-void main(void)
+int main(void)
 {
 	struct sensor_value val;
 	int rc;
@@ -74,28 +78,34 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("Qdec device is not ready\n");
-		return;
+		return 0;
 	}
 
 	printk("Quadrature decoder sensor test\n");
 
 	qenc_emulate_init();
 
+#ifndef CONFIG_COVERAGE
 	while (true) {
+#else
+	for (int i = 0; i < 3; i++) {
+#endif
+		/* sleep first to gather position from first period */
+		k_msleep(1000);
+
 		rc = sensor_sample_fetch(dev);
 		if (rc != 0) {
 			printk("Failed to fetch sample (%d)\n", rc);
-			return;
+			return 0;
 		}
 
 		rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
 		if (rc != 0) {
 			printk("Failed to get data (%d)\n", rc);
-			return;
+			return 0;
 		}
 
 		printk("Position = %d degrees\n", val.val1);
-
-		k_msleep(1000);
 	}
+	return 0;
 }

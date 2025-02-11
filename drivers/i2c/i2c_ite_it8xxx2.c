@@ -44,6 +44,7 @@ struct i2c_it8xxx2_config {
 	uint8_t *reg_mstfctrl;
 	uint8_t i2c_irq_base;
 	uint8_t port;
+	uint8_t channel_switch_sel;
 	/* SCL GPIO cells */
 	struct gpio_dt_spec scl_gpios;
 	/* SDA GPIO cells */
@@ -52,6 +53,7 @@ struct i2c_it8xxx2_config {
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t clock_gate_offset;
 	bool fifo_enable;
+	bool push_pull_recovery;
 };
 
 enum i2c_pin_fun {
@@ -209,6 +211,15 @@ static void i2c_standard_port_timing_regs_400khz(uint8_t port)
 	/* Port clock frequency depends on setting of timing registers. */
 	IT8XXX2_SMB_SCLKTS(port) = 0;
 	/* Suggested setting of timing registers of 400kHz. */
+#ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
+	IT8XXX2_SMB_4P7USL = 0x16;
+	IT8XXX2_SMB_4P0USL = 0x11;
+	IT8XXX2_SMB_300NS = 0x8;
+	IT8XXX2_SMB_250NS = 0x8;
+	IT8XXX2_SMB_45P3USL = 0xff;
+	IT8XXX2_SMB_45P3USH = 0x3;
+	IT8XXX2_SMB_4P7A4P0H = 0;
+#else
 	IT8XXX2_SMB_4P7USL = 0x3;
 	IT8XXX2_SMB_4P0USL = 0;
 	IT8XXX2_SMB_300NS = 0x1;
@@ -216,6 +227,7 @@ static void i2c_standard_port_timing_regs_400khz(uint8_t port)
 	IT8XXX2_SMB_45P3USL = 0x6a;
 	IT8XXX2_SMB_45P3USH = 0x1;
 	IT8XXX2_SMB_4P7A4P0H = 0;
+#endif
 }
 
 /* Set clock frequency for i2c port A, B , or C */
@@ -926,7 +938,7 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
-	int res;
+	int res, ret;
 
 	/* Lock mutex of i2c controller */
 	k_mutex_lock(&data->mutex, K_FOREVER);
@@ -1051,10 +1063,12 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (data->err || (data->active_msg->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
+	/* Save return value. */
+	ret = i2c_parsing_return_value(dev);
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 
-	return i2c_parsing_return_value(dev);
+	return ret;
 }
 
 static void i2c_it8xxx2_isr(const struct device *dev)
@@ -1088,13 +1102,6 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	uint8_t *base = config->base;
 	uint32_t bitrate_cfg;
 	int error, status;
-
-	/*
-	 * This register is a pre-define hardware slave A and can
-	 * be accessed through I2C0. It is not currently used, so
-	 * it can be disabled to avoid illegal access.
-	 */
-	IT8XXX2_SMB_SFFCTL &= ~IT8XXX2_SMB_HSAPE;
 
 	/* Initialize mutex and semaphore */
 	k_mutex_init(&data->mutex);
@@ -1139,6 +1146,18 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	}
 #endif
 
+	/* ChannelA-C switch selection of I2C pin */
+	if (config->port == SMB_CHANNEL_A) {
+		IT8XXX2_SMB_SMB01CHS = (IT8XXX2_SMB_SMB01CHS &= ~GENMASK(2, 0)) |
+			config->channel_switch_sel;
+	} else if (config->port == SMB_CHANNEL_B) {
+		IT8XXX2_SMB_SMB01CHS = (config->channel_switch_sel << 4) |
+			(IT8XXX2_SMB_SMB01CHS &= ~GENMASK(6, 4));
+	} else if (config->port == SMB_CHANNEL_C) {
+		IT8XXX2_SMB_SMB23CHS = (IT8XXX2_SMB_SMB23CHS &= ~GENMASK(2, 0)) |
+			config->channel_switch_sel;
+	}
+
 	/* Set clock frequency for I2C ports */
 	if (config->bitrate == I2C_BITRATE_STANDARD ||
 		config->bitrate == I2C_BITRATE_FAST ||
@@ -1172,10 +1191,12 @@ static int i2c_it8xxx2_recover_bus(const struct device *dev)
 	const struct i2c_it8xxx2_config *config = dev->config;
 	int i, status;
 
+	/* Output type selection */
+	gpio_flags_t flags = GPIO_OUTPUT | (config->push_pull_recovery ? 0 : GPIO_OPEN_DRAIN);
 	/* Set SCL of I2C as GPIO pin */
-	gpio_pin_configure_dt(&config->scl_gpios, GPIO_OUTPUT);
+	gpio_pin_configure_dt(&config->scl_gpios, flags);
 	/* Set SDA of I2C as GPIO pin */
-	gpio_pin_configure_dt(&config->sda_gpios, GPIO_OUTPUT);
+	gpio_pin_configure_dt(&config->sda_gpios, flags);
 
 	/*
 	 * In I2C recovery bus, 1ms sleep interval for bitbanging i2c
@@ -1237,11 +1258,26 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 };
 
 #ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
-BUILD_ASSERT(((DT_INST_PROP(SMB_CHANNEL_B, fifo_enable) == true) &&
-	     (DT_INST_PROP(SMB_CHANNEL_C, fifo_enable) == false)) ||
-	     ((DT_INST_PROP(SMB_CHANNEL_B, fifo_enable) == false) &&
-	     (DT_INST_PROP(SMB_CHANNEL_C, fifo_enable) == true)),
-	     "FIFO2 only supports one channel of B or C.");
+/*
+ * Sometimes, channel C may write wrong register to the target device.
+ * This issue occurs when FIFO2 is enabled on channel C. The problem
+ * arises because FIFO2 is shared between channel B and channel C.
+ * FIFO2 will be disabled when data access is completed, at which point
+ * FIFO2 is set to the default configuration for channel B.
+ * The byte counter of FIFO2 may be affected by channel B. There is a chance
+ * that channel C may encounter wrong register being written due to FIFO2
+ * byte counter wrong write after channel B's write operation.
+ */
+BUILD_ASSERT((DT_PROP(DT_NODELABEL(i2c2), fifo_enable) == false),
+	     "Channel C cannot use FIFO mode.");
+#endif
+
+#ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
+#define I2C_IT8XXX2_CHECK_SUPPORTED_CLOCK(inst)                                 \
+	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) ==                    \
+		     I2C_BITRATE_FAST), "Only supports 400 KHz");
+
+DT_INST_FOREACH_STATUS_OKAY(I2C_IT8XXX2_CHECK_SUPPORTED_CLOCK)
 #endif
 
 #define I2C_ITE_IT8XXX2_INIT(inst)                                              \
@@ -1263,11 +1299,13 @@ BUILD_ASSERT(((DT_INST_PROP(SMB_CHANNEL_B, fifo_enable) == true) &&
 		.bitrate = DT_INST_PROP(inst, clock_frequency),                 \
 		.i2c_irq_base = DT_INST_IRQN(inst),                             \
 		.port = DT_INST_PROP(inst, port_num),                           \
+		.channel_switch_sel = DT_INST_PROP(inst, channel_switch_sel),   \
 		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),            \
 		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),            \
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.fifo_enable = DT_INST_PROP(inst, fifo_enable),                 \
+		.push_pull_recovery = DT_INST_PROP(inst, push_pull_recovery),   \
 	};                                                                      \
 										\
 	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##inst;                 \
@@ -1277,7 +1315,7 @@ BUILD_ASSERT(((DT_INST_PROP(SMB_CHANNEL_B, fifo_enable) == true) &&
 				  &i2c_it8xxx2_data_##inst,                     \
 				  &i2c_it8xxx2_cfg_##inst,                      \
 				  POST_KERNEL,                                  \
-				  CONFIG_KERNEL_INIT_PRIORITY_DEVICE,           \
+				  CONFIG_I2C_INIT_PRIORITY,                     \
 				  &i2c_it8xxx2_driver_api);                     \
 										\
 	static void i2c_it8xxx2_config_func_##inst(void)                        \

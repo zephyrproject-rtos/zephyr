@@ -1,7 +1,8 @@
-.. _ht16k33:
+.. zephyr:code-sample:: ht16k33
+   :name: HT16K33 LED driver with keyscan
+   :relevant-api: led_interface kscan_interface
 
-HT16K33 LED driver with keyscan
-###############################
+   Control up to 128 LEDs connected to an HT16K33 LED driver and log keyscan events.
 
 Overview
 ********
@@ -23,11 +24,11 @@ Building and Running
 ********************
 
 Build the application for the :ref:`nrf52840dk_nrf52840` board, and
-connect a HT16K33 LED driver at address 0x70 on the I2C-0 bus.
+connect an HT16K33 LED driver at address 0x70 on the I2C-0 bus.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ht16k33
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :compact:
 
@@ -39,4 +40,4 @@ References
 
 .. target-notes::
 
-.. _Holtek HT16K33: http://www.holtek.com/productdetail/-/vg/HT16K33
+.. _Holtek HT16K33: https://www.holtek.com/page/vg/HT16K33A

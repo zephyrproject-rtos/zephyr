@@ -1,0 +1,5 @@
+board:
+  name: cy8cproto_063_ble
+  vendor: infineon
+  socs:
+  - name: cyble_416045_02

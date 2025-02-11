@@ -18,6 +18,8 @@ struct k_thread cpu1_thread;
 static struct k_spinlock bounce_lock;
 
 volatile int bounce_owner, bounce_done;
+volatile int trylock_failures;
+volatile int trylock_successes;
 
 /**
  * @brief Tests for spinlock
@@ -42,19 +44,20 @@ ZTEST(spinlock, test_spinlock_basic)
 	k_spinlock_key_t key;
 	static struct k_spinlock l;
 
-	zassert_true(!l.locked, "Spinlock initialized to locked");
+	zassert_true(!z_spin_is_locked(&l), "Spinlock initialized to locked");
 
 	key = k_spin_lock(&l);
 
-	zassert_true(l.locked, "Spinlock failed to lock");
+	zassert_true(z_spin_is_locked(&l), "Spinlock failed to lock");
 
 	k_spin_unlock(&l, key);
 
-	zassert_true(!l.locked, "Spinlock failed to unlock");
+	zassert_true(!z_spin_is_locked(&l), "Spinlock failed to unlock");
 }
 
-void bounce_once(int id)
+static void bounce_once(int id, bool trylock)
 {
+	int ret;
 	int i, locked;
 	k_spinlock_key_t key;
 
@@ -63,7 +66,16 @@ void bounce_once(int id)
 	 */
 	locked = 0;
 	for (i = 0; i < 10000; i++) {
-		key = k_spin_lock(&bounce_lock);
+		if (trylock) {
+			ret = k_spin_trylock(&bounce_lock, &key);
+			if (ret == -EBUSY) {
+				trylock_failures++;
+				continue;
+			}
+			trylock_successes++;
+		} else {
+			key = k_spin_lock(&bounce_lock);
+		}
 
 		if (bounce_owner != id) {
 			locked = 1;
@@ -85,22 +97,23 @@ void bounce_once(int id)
 	 */
 	bounce_owner = id;
 
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 5; i++) {
 		zassert_true(bounce_owner == id, "Locked data changed");
+		k_busy_wait(1);
 	}
 
 	/* Release the lock */
 	k_spin_unlock(&bounce_lock, key);
 }
 
-void cpu1_fn(void *p1, void *p2, void *p3)
+static void cpu1_fn(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	while (1) {
-		bounce_once(4321);
+	while (!bounce_done) {
+		bounce_once(4321, false);
 	}
 }
 
@@ -109,7 +122,7 @@ void cpu1_fn(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_spinlock_tests
  *
- * @see arch_start_cpu()
+ * @see arch_cpu_start()
  */
 ZTEST(spinlock, test_spinlock_bounce)
 {
@@ -122,10 +135,12 @@ ZTEST(spinlock, test_spinlock_bounce)
 	k_busy_wait(10);
 
 	for (i = 0; i < 10000; i++) {
-		bounce_once(1234);
+		bounce_once(1234, false);
 	}
 
 	bounce_done = 1;
+
+	k_thread_join(&cpu1_thread, K_FOREVER);
 }
 
 /**
@@ -150,7 +165,7 @@ ZTEST(spinlock, test_spinlock_mutual_exclusion)
 
 	key = k_spin_lock(&lock_runtime);
 
-	zassert_true(lock_runtime.locked, "Spinlock failed to lock");
+	zassert_true(z_spin_is_locked(&lock_runtime), "Spinlock failed to lock");
 
 	/* check irq has not locked */
 	zassert_true(arch_irq_unlocked(key.key),
@@ -170,7 +185,57 @@ ZTEST(spinlock, test_spinlock_mutual_exclusion)
 
 	k_spin_unlock(&lock_runtime, key);
 
-	zassert_true(!lock_runtime.locked, "Spinlock failed to unlock");
+	zassert_true(!z_spin_is_locked(&lock_runtime), "Spinlock failed to unlock");
 }
 
-ZTEST_SUITE(spinlock, NULL, NULL, NULL, NULL, NULL);
+static void trylock_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (!bounce_done) {
+		bounce_once(4321, true);
+	}
+}
+
+/**
+ * @brief Test k_spin_trylock()
+ *
+ * @ingroup kernel_spinlock_tests
+ *
+ * @see k_spin_trylock()
+ */
+ZTEST(spinlock, test_trylock)
+{
+	int i;
+
+	k_thread_create(&cpu1_thread, cpu1_stack, CPU1_STACK_SIZE,
+			trylock_fn, NULL, NULL, NULL,
+			0, 0, K_NO_WAIT);
+
+	k_busy_wait(10);
+
+	for (i = 0; i < 10000; i++) {
+		bounce_once(1234, true);
+	}
+
+	bounce_done = 1;
+
+	k_thread_join(&cpu1_thread, K_FOREVER);
+
+	zassert_true(trylock_failures > 0);
+	zassert_true(trylock_successes > 0);
+}
+
+static void before(void *ctx)
+{
+	ARG_UNUSED(ctx);
+
+	bounce_done = 0;
+	bounce_owner = 0;
+	trylock_failures = 0;
+	trylock_successes = 0;
+}
+
+ZTEST_SUITE(spinlock, NULL, NULL, before, NULL, NULL);

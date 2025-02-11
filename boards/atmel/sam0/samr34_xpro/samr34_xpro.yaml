@@ -1,0 +1,25 @@
+# Copyright (c) 2021 Argentum Systems Ltd.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+identifier: samr34_xpro
+name: SAM R34 Xplained Pro
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+flash: 256
+ram: 32
+supported:
+  - adc
+  - counter
+  - dma
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - usb_device
+  - watchdog
+vendor: atmel

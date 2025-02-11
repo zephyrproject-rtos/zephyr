@@ -1,0 +1,192 @@
+/*
+ * Copyright (c) 2022, Kumar Gala <galak@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_mipi_dbi {
+			compatible = "zephyr,mipi-dbi-spi";
+			status = "okay";
+			dc-gpios = <&test_gpio 0 0>;
+			spi-dev = <&test_spi>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			test_mipi_dbi_ili9342c: ili9342c@0 {
+				compatible = "ilitek,ili9342c";
+				reg = <0>;
+				mipi-max-frequency = <25000000>;
+				pixel-format = <0>;
+				rotation = <270>;
+				width = <320>;
+				height = <240>;
+			};
+
+			test_mipi_dbi_st7796s: st7796s@1 {
+				compatible = "sitronix,st7796s";
+				reg = <1>;
+				mipi-max-frequency = <25000000>;
+				height = <320>;
+				width = <480>;
+				/* Use dummy values for PCG and NGC,
+				 * As this won't drive a real panel
+				 */
+				pgc = [F0 06 0B 07 06 05 2E 33 47 3A 17 16 2E 31];
+				ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
+			};
+
+			test_mipi_dbi_st7735r: st7735t@2 {
+				compatible = "sitronix,st7735r";
+				mipi-max-frequency = <250000000>;
+				mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+				reg = <2>;
+				/* Arbitrary values */
+				x-offset = <0>;
+				y-offset = <0>;
+				gamctrp1 = [10 0E 02 03 0E 07 02 07 0A 12 27 37 00 0D 0E 10];
+				gamctrn1 = [10 0E 03 03 0F 06 02 08 0A 13 26 36 00 0D 0E 10];
+				width = <160>;
+				height = <128>;
+			};
+
+			st7789v: st7789v@3 {
+				compatible = "sitronix,st7789v";
+				reg = <3>;
+				mipi-max-frequency = <25000000>;
+
+				width = <128>;
+				height = <128>;
+				/* Arbiratry values */
+				x-offset = <0>;
+				y-offset = <0>;
+				vcom = <0x28>;
+				gctrl = <0x35>;
+				vrhs = <0x10>;
+				vdvs = <0x20>;
+				mdac = <0x00>;
+				gamma = <0x01>;
+				colmod = <0x55>;
+				lcm = <0x0c>;
+				porch-param = [0c 0c 00 33 33];
+				cmd2en-param = [5a 69 02 00];
+				pwctrl1-param = [a4 a1];
+				pvgam-param = [d0 00 02 07 0a 28 32 44 42 06 0e 12 14 17];
+				nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
+				ram-param = [00 E0];
+				rgb-param = [40 02 14];
+				mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+			};
+
+			test_mipi_dbi_ssd1680: ssd1680@4 {
+				compatible = "gooddisplay,gdey0213b74", "solomon,ssd1680";
+				mipi-max-frequency = <4000000>;
+				reg = <4>;
+				width = <250>;
+				height = <122>;
+				busy-gpios = <&test_gpio 0 0>;
+			};
+
+			uc8176_waveshare_epaper_gdew042t2: uc8176@5 {
+				compatible = "ultrachip,uc8176";
+				mipi-max-frequency = <4000000>;
+				reg = <5>;
+				width = <400>;
+				height = <300>;
+				busy-gpios = <&test_gpio 0 0>;
+
+				/* Arbirary settings */
+				softstart = [17 17 17];
+
+				full {
+					pwr = [03 00 26 26 09];
+					cdi = <0xd7>;
+					tcon = <0x22>;
+				};
+			};
+
+			test_spi_gc9x01x: gc9x01x@6 {
+				compatible = "galaxycore,gc9x01x";
+				reg = <6>;
+				mipi-max-frequency = <100000000>;
+				pixel-format = <16>;
+
+				width = <240>;
+				height = <240>;
+			};
+		};
+
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every device. Note that this must
+			 * include MIPI DBI devices as well.
+			 */
+			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1 &test_gpio 0 2
+				&test_gpio 0 3 &test_gpio 0 4 &test_gpio 0 5
+				&test_gpio 0 6>;
+
+			test_led_strip_0: lpd8806@0 {
+				compatible = "greeled,lpd8806";
+				reg = <0>;
+				spi-max-frequency = <2000000>;
+				chain-length = <1>;
+				color-mapping = <LED_COLOR_ID_RED
+						 LED_COLOR_ID_GREEN
+						 LED_COLOR_ID_BLUE>;
+			};
+
+			test_led_strip_1: ws2812_spi@1 {
+				compatible = "worldsemi,ws2812-spi";
+				reg = <1>;
+				spi-max-frequency = <2000000>;
+				spi-one-frame = <1>;
+				spi-zero-frame = <1>;
+				chain-length = <256>;
+				color-mapping = <0 1 2>;
+				reset-delay = <280>;
+			};
+		};
+
+		test_led_strip_matrix {
+			compatible = "led-strip-matrix";
+			status = "okay";
+
+			led-strips = <&test_led_strip_0>, <&test_led_strip_1>;
+			chain-lengths = <256>, <256>;
+			width = <32>;
+			height = <16>;
+			horizontal-modules = <2>;
+			vertical-modules = <1>;
+			circulative;
+			start-from-right;
+		};
+	};
+};

@@ -25,26 +25,12 @@
 #include <sys/select.h>
 #include <net/if.h>
 #include <time.h>
-#include <zephyr/arch/posix/posix_trace.h>
+#include <inttypes.h>
+#include <nsi_tracing.h>
 
 #ifdef __linux
+#include <linux/if.h>
 #include <linux/if_tun.h>
-#endif
-
-/* Zephyr include files. Be very careful here and only include minimum
- * things needed.
- */
-#define LOG_MODULE_NAME eth_posix_adapt
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
-#include <zephyr/types.h>
-#include <zephyr/sys_clock.h>
-
-#if defined(CONFIG_NET_GPTP)
-#include <zephyr/net/gptp.h>
 #endif
 
 #include "eth_native_posix_priv.h"
@@ -52,12 +38,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* Note that we cannot create the TUN/TAP device from the setup script
  * as we need to get a file descriptor to communicate with the interface.
  */
-int eth_iface_create(const char *if_name, bool tun_only)
+int eth_iface_create(const char *dev_name, const char *if_name, bool tun_only)
 {
 	struct ifreq ifr;
 	int fd, ret = -EINVAL;
 
-	fd = open(ETH_NATIVE_POSIX_DEV_NAME, O_RDWR);
+	fd = open(dev_name, O_RDWR);
 	if (fd < 0) {
 		return -errno;
 	}
@@ -98,46 +84,11 @@ static int ssystem(const char *fmt, ...)
 	vsnprintf(cmd, sizeof(cmd), fmt, ap);
 	va_end(ap);
 
-	posix_print_trace("%s\n", cmd);
+	nsi_print_trace("%s\n", cmd);
 
 	ret = system(cmd);
 
 	return -WEXITSTATUS(ret);
-}
-
-int eth_setup_host(const char *if_name)
-{
-	if (!IS_ENABLED(CONFIG_ETH_NATIVE_POSIX_STARTUP_AUTOMATIC)) {
-		return 0;
-	}
-
-	/* User might have added -i option to setup script string, so
-	 * check that situation in the script itself so that the -i option
-	 * we add here is ignored in that case.
-	 */
-	return ssystem("%s -i %s", ETH_NATIVE_POSIX_SETUP_SCRIPT,
-		       if_name);
-}
-
-int eth_start_script(const char *if_name)
-{
-	if (!IS_ENABLED(CONFIG_ETH_NATIVE_POSIX_STARTUP_AUTOMATIC)) {
-		return 0;
-	}
-
-	if (ETH_NATIVE_POSIX_STARTUP_SCRIPT[0] == '\0') {
-		return 0;
-	}
-
-	if (ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER[0] == '\0') {
-		return ssystem("%s %s", ETH_NATIVE_POSIX_STARTUP_SCRIPT,
-			       if_name);
-	} else {
-		return ssystem("sudo -u %s %s %s",
-			       ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER,
-			       ETH_NATIVE_POSIX_STARTUP_SCRIPT,
-			       if_name);
-	}
 }
 
 int eth_wait_data(int fd)
@@ -165,18 +116,7 @@ int eth_wait_data(int fd)
 	return -EAGAIN;
 }
 
-ssize_t eth_read_data(int fd, void *buf, size_t buf_len)
-{
-	return read(fd, buf, buf_len);
-}
-
-ssize_t eth_write_data(int fd, void *buf, size_t buf_len)
-{
-	return write(fd, buf, buf_len);
-}
-
-#if defined(CONFIG_NET_GPTP)
-int eth_clock_gettime(struct net_ptp_time *time)
+int eth_clock_gettime(uint64_t *second, uint32_t *nanosecond)
 {
 	struct timespec tp;
 	int ret;
@@ -186,44 +126,14 @@ int eth_clock_gettime(struct net_ptp_time *time)
 		return -errno;
 	}
 
-	time->second = tp.tv_sec;
-	time->nanosecond = tp.tv_nsec;
+	*second = (uint64_t)tp.tv_sec;
+	*nanosecond = (uint32_t)tp.tv_nsec;
 
 	return 0;
 }
-#endif /* CONFIG_NET_GPTP */
 
-#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int eth_promisc_mode(const char *if_name, bool enable)
 {
-	if (!IS_ENABLED(CONFIG_ETH_NATIVE_POSIX_STARTUP_AUTOMATIC)) {
-		return 0;
-	}
-
 	return ssystem("ip link set dev %s promisc %s",
 		       if_name, enable ? "on" : "off");
-}
-#endif /* CONFIG_NET_PROMISCUOUS_MODE */
-
-/* If we have enabled manual setup, then interface cannot be
- * taken up or down by the driver as we normally do not have
- * enough permissions.
- */
-
-int eth_if_up(const char *if_name)
-{
-	if (!IS_ENABLED(CONFIG_ETH_NATIVE_POSIX_STARTUP_AUTOMATIC)) {
-		return 0;
-	}
-
-	return ssystem("ip link set dev %s up", if_name);
-}
-
-int eth_if_down(const char *if_name)
-{
-	if (!IS_ENABLED(CONFIG_ETH_NATIVE_POSIX_STARTUP_AUTOMATIC)) {
-		return 0;
-	}
-
-	return ssystem("ip link set dev %s down", if_name);
 }

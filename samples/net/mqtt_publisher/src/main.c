@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_mqtt_publisher_sample, LOG_LEVEL_DBG);
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/mqtt.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <string.h>
 #include <errno.h>
@@ -50,7 +50,7 @@ static APP_BMEM struct sockaddr_storage broker;
 static APP_BMEM struct sockaddr socks5_proxy;
 #endif
 
-static APP_BMEM struct zsock_pollfd fds[1];
+static APP_BMEM struct pollfd fds[1];
 static APP_BMEM int nfds;
 
 static APP_BMEM bool connected;
@@ -116,7 +116,7 @@ static void prepare_fds(struct mqtt_client *client)
 	}
 #endif
 
-	fds[0].events = ZSOCK_POLLIN;
+	fds[0].events = POLLIN;
 	nfds = 1;
 }
 
@@ -130,7 +130,7 @@ static int wait(int timeout)
 	int ret = 0;
 
 	if (nfds > 0) {
-		ret = zsock_poll(fds, nfds, timeout);
+		ret = poll(fds, nfds, timeout);
 		if (ret < 0) {
 			LOG_ERR("poll error: %d", errno);
 		}
@@ -219,7 +219,7 @@ static char *get_mqtt_payload(enum mqtt_qos qos)
 	static APP_BMEM char payload[30];
 
 	snprintk(payload, sizeof(payload), "{d:{temperature:%d}}",
-		 (uint8_t)sys_rand32_get());
+		 sys_rand8_get());
 #else
 	static APP_DMEM char payload[] = "DOORS:OPEN_QoSx";
 
@@ -250,7 +250,7 @@ static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 	param.message.payload.data = get_mqtt_payload(qos);
 	param.message.payload.len =
 			strlen(param.message.payload.data);
-	param.message_id = sys_rand32_get();
+	param.message_id = sys_rand16_get();
 	param.dup_flag = 0U;
 	param.retain_flag = 0U;
 
@@ -269,27 +269,27 @@ static void broker_init(void)
 
 	broker6->sin6_family = AF_INET6;
 	broker6->sin6_port = htons(SERVER_PORT);
-	zsock_inet_pton(AF_INET6, SERVER_ADDR, &broker6->sin6_addr);
+	inet_pton(AF_INET6, SERVER_ADDR, &broker6->sin6_addr);
 
 #if defined(CONFIG_SOCKS)
 	struct sockaddr_in6 *proxy6 = (struct sockaddr_in6 *)&socks5_proxy;
 
 	proxy6->sin6_family = AF_INET6;
 	proxy6->sin6_port = htons(SOCKS5_PROXY_PORT);
-	zsock_inet_pton(AF_INET6, SOCKS5_PROXY_ADDR, &proxy6->sin6_addr);
+	inet_pton(AF_INET6, SOCKS5_PROXY_ADDR, &proxy6->sin6_addr);
 #endif
 #else
 	struct sockaddr_in *broker4 = (struct sockaddr_in *)&broker;
 
 	broker4->sin_family = AF_INET;
 	broker4->sin_port = htons(SERVER_PORT);
-	zsock_inet_pton(AF_INET, SERVER_ADDR, &broker4->sin_addr);
+	inet_pton(AF_INET, SERVER_ADDR, &broker4->sin_addr);
 #if defined(CONFIG_SOCKS)
 	struct sockaddr_in *proxy4 = (struct sockaddr_in *)&socks5_proxy;
 
 	proxy4->sin_family = AF_INET;
 	proxy4->sin_port = htons(SOCKS5_PROXY_PORT);
-	zsock_inet_pton(AF_INET, SOCKS5_PROXY_ADDR, &proxy4->sin_addr);
+	inet_pton(AF_INET, SOCKS5_PROXY_ADDR, &proxy4->sin_addr);
 #endif
 #endif
 }
@@ -514,7 +514,7 @@ K_THREAD_DEFINE(app_thread, STACK_SIZE,
 static K_HEAP_DEFINE(app_mem_pool, 1024 * 2);
 #endif
 
-void main(void)
+int main(void)
 {
 #if defined(CONFIG_MQTT_LIB_TLS)
 	int rc;
@@ -545,4 +545,5 @@ void main(void)
 #else
 	exit(start_app());
 #endif
+	return 0;
 }

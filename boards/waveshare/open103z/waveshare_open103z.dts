@@ -1,0 +1,191 @@
+/*
+ * Copyright (c) 2020 Stefano Manni
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f1/stm32f103Xe.dtsi>
+#include <st/f1/stm32f103z(c-d-e)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Waveshare Open103Z";
+	compatible = "waveshare,open103z";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &can1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_1: led_1 {
+			gpios = <&gpiof 6 GPIO_ACTIVE_HIGH>;
+			label = "User LED1";
+		};
+		led_2: led_2 {
+			gpios = <&gpiof 7 GPIO_ACTIVE_HIGH>;
+			label = "User LED2";
+		};
+		led_3: led_3 {
+			gpios = <&gpiof 8 GPIO_ACTIVE_HIGH>;
+			label = "User LED3";
+		};
+		led_4: led_4 {
+			gpios = <&gpiof 9 GPIO_ACTIVE_HIGH>;
+			label = "User LED4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		button: button {
+			label = "User button";
+			gpios = <&gpiog 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		joystick_enter: joystick_enter {
+			label = "User joystick ENTER";
+			gpios = <&gpiog 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+		joystick_right: joystick_right {
+			label = "User joystick RIGHT";
+			gpios = <&gpioc 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+		joystick_up: joystick_up {
+			label = "User joystick UP";
+			gpios = <&gpioc 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+		joystick_down: joystick_down {
+			label = "User joystick DOWN";
+			gpios = <&gpioc 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+		joystick_left: joystick_left {
+			label = "User joystick LEFT";
+			gpios = <&gpioc 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+	};
+
+	aliases {
+		led0 = &led_1;
+		led1 = &led_2;
+		led2 = &led_3;
+		led3 = &led_4;
+		sw0 = &button;
+		watchdog0 = &iwdg;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	mul = <9>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(72)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+	/* usbpre not set: USB clock = 72 / 1.5: 48MHz */
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_master_pa4 &spi1_sck_master_pa5
+		     &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_master_pb12 &spi2_sck_master_pb13
+		     &spi2_miso_master_pb14 &spi2_mosi_master_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_sda_pb7 &i2c1_scl_pb6>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_sda_pb11 &i2c2_scl_pb10>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&can1 {
+	pinctrl-0 = <&can_rx_remap1_pb8 &can_tx_remap1_pb9>;
+	pinctrl-names = "default";
+	/*
+	 * make sure CAN and USB are not enabled at the same time
+	 * because they share interrupts 19, 20 (stm32f103Xb.dtsi)
+	 * reference: RM0008 rev20 page 205
+	 */
+	status = "disabled";
+};
+
+zephyr_udc0: &usb {
+	/*
+	 * make sure CAN and USB are not enabled at the same time
+	 * because they share interrupts 19, 20 (stm32f103Xb.dtsi)
+	 * reference: RM0008 rev20 page 205
+	 */
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+	disconnect-gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
+};
+
+&timers1 {
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pwm_out_pa8>;
+		pinctrl-names = "default";
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pa0>;
+	pinctrl-names = "default";
+	status = "okay";
+};

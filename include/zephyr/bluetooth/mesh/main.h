@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth mesh Profile APIs.
+ *  @brief Bluetooth Mesh Protocol APIs.
  */
 
 /*
@@ -9,6 +9,12 @@
  */
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_MAIN_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_MAIN_H_
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/sys/iterable_sections.h>
 
 /**
  * @brief Provisioning
@@ -21,46 +27,61 @@
 extern "C" {
 #endif
 
+/** Available authentication algorithms. */
+enum {
+	BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM,
+	BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM,
+};
+
+/** OOB Type field values. */
+enum {
+	BT_MESH_STATIC_OOB_AVAILABLE = BIT(0), /**< Static OOB information available */
+	BT_MESH_OOB_AUTH_REQUIRED    = BIT(1)  /**< OOB authentication required */
+};
+
 /** Available Provisioning output authentication actions. */
 typedef enum {
 	BT_MESH_NO_OUTPUT       = 0,
-	BT_MESH_BLINK           = BIT(0),
-	BT_MESH_BEEP            = BIT(1),
-	BT_MESH_VIBRATE         = BIT(2),
-	BT_MESH_DISPLAY_NUMBER  = BIT(3),
-	BT_MESH_DISPLAY_STRING  = BIT(4),
+	BT_MESH_BLINK           = BIT(0),   /**< Blink */
+	BT_MESH_BEEP            = BIT(1),   /**< Beep */
+	BT_MESH_VIBRATE         = BIT(2),   /**< Vibrate */
+	BT_MESH_DISPLAY_NUMBER  = BIT(3),   /**< Output numeric */
+	BT_MESH_DISPLAY_STRING  = BIT(4),   /**< Output alphanumeric */
 } bt_mesh_output_action_t;
 
 /** Available Provisioning input authentication actions. */
 typedef enum {
 	BT_MESH_NO_INPUT      = 0,
-	BT_MESH_PUSH          = BIT(0),
-	BT_MESH_TWIST         = BIT(1),
-	BT_MESH_ENTER_NUMBER  = BIT(2),
-	BT_MESH_ENTER_STRING  = BIT(3),
+	BT_MESH_PUSH          = BIT(0),	   /**< Push */
+	BT_MESH_TWIST         = BIT(1),	   /**< Twist */
+	BT_MESH_ENTER_NUMBER  = BIT(2),	   /**< Input number */
+	BT_MESH_ENTER_STRING  = BIT(3),	   /**< Input alphanumeric */
 } bt_mesh_input_action_t;
 
 /** Available Provisioning bearers. */
 typedef enum {
-	BT_MESH_PROV_ADV   = BIT(0),
-	BT_MESH_PROV_GATT  = BIT(1),
+	BT_MESH_PROV_ADV    = BIT(0),	/**< PB-ADV bearer */
+	BT_MESH_PROV_GATT   = BIT(1),	/**< PB-GATT bearer */
+	BT_MESH_PROV_REMOTE = BIT(2),	/**< PB-Remote bearer */
 } bt_mesh_prov_bearer_t;
 
 /** Out of Band information location. */
 typedef enum {
-	BT_MESH_PROV_OOB_OTHER     = BIT(0),
-	BT_MESH_PROV_OOB_URI       = BIT(1),
-	BT_MESH_PROV_OOB_2D_CODE   = BIT(2),
-	BT_MESH_PROV_OOB_BAR_CODE  = BIT(3),
-	BT_MESH_PROV_OOB_NFC       = BIT(4),
-	BT_MESH_PROV_OOB_NUMBER    = BIT(5),
-	BT_MESH_PROV_OOB_STRING    = BIT(6),
-	/* 7 - 10 are reserved */
-	BT_MESH_PROV_OOB_ON_BOX    = BIT(11),
-	BT_MESH_PROV_OOB_IN_BOX    = BIT(12),
-	BT_MESH_PROV_OOB_ON_PAPER  = BIT(13),
-	BT_MESH_PROV_OOB_IN_MANUAL = BIT(14),
-	BT_MESH_PROV_OOB_ON_DEV    = BIT(15),
+	BT_MESH_PROV_OOB_OTHER       = BIT(0),   /**< Other */
+	BT_MESH_PROV_OOB_URI         = BIT(1),   /**< Electronic / URI */
+	BT_MESH_PROV_OOB_2D_CODE     = BIT(2),   /**< 2D machine-readable code */
+	BT_MESH_PROV_OOB_BAR_CODE    = BIT(3),   /**< Bar Code */
+	BT_MESH_PROV_OOB_NFC         = BIT(4),   /**< Near Field Communication (NFC) */
+	BT_MESH_PROV_OOB_NUMBER      = BIT(5),   /**< Number */
+	BT_MESH_PROV_OOB_STRING      = BIT(6),   /**< String */
+	BT_MESH_PROV_OOB_CERTIFICATE = BIT(7),   /**< Support for certificate-based provisioning */
+	BT_MESH_PROV_OOB_RECORDS     = BIT(8),   /**< Support for provisioning records */
+	/* 9 - 10 are reserved */
+	BT_MESH_PROV_OOB_ON_BOX      = BIT(11),  /**< On box */
+	BT_MESH_PROV_OOB_IN_BOX      = BIT(12),  /**< Inside box */
+	BT_MESH_PROV_OOB_ON_PAPER    = BIT(13),  /**< On piece of paper */
+	BT_MESH_PROV_OOB_IN_MANUAL   = BIT(14),  /**< Inside manual */
+	BT_MESH_PROV_OOB_ON_DEV      = BIT(15),  /**< On device */
 } bt_mesh_prov_oob_info_t;
 
 /** Device Capabilities. */
@@ -74,8 +95,8 @@ struct bt_mesh_dev_capabilities {
 	/** Supported public key types */
 	uint8_t pub_key_type;
 
-	/** Supported static OOB Types */
-	uint8_t static_oob;
+	/** Supported OOB Types */
+	uint8_t oob_type;
 
 	/** Supported Output OOB Actions */
 	bt_mesh_output_action_t output_actions;
@@ -253,6 +274,15 @@ struct bt_mesh_prov {
 	 */
 	void        (*complete)(uint16_t net_idx, uint16_t addr);
 
+	/** @brief Local node has been reprovisioned.
+	 *
+	 *  This callback notifies the application that reprovisioning has
+	 *  been successfully completed.
+	 *
+	 *  @param addr    New primary element address.
+	 */
+	void        (*reprovisioned)(uint16_t addr);
+
 	/** @brief A new node has been added to the provisioning database.
 	 *
 	 *  This callback notifies the application that provisioning has
@@ -270,13 +300,16 @@ struct bt_mesh_prov {
 	/** @brief Node has been reset.
 	 *
 	 *  This callback notifies the application that the local node
-	 *  has been reset and needs to be reprovisioned. The node will
+	 *  has been reset and needs to be provisioned again. The node will
 	 *  not automatically advertise as unprovisioned, rather the
 	 *  bt_mesh_prov_enable() API needs to be called to enable
 	 *  unprovisioned advertising on one or more provisioning bearers.
 	 */
 	void        (*reset)(void);
 };
+
+struct bt_mesh_rpr_cli;
+struct bt_mesh_rpr_node;
 
 /** @brief Provide provisioning input OOB string.
  *
@@ -448,6 +481,59 @@ int bt_mesh_provision_adv(const uint8_t uuid[16], uint16_t net_idx, uint16_t add
 int bt_mesh_provision_gatt(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
 			   uint8_t attention_duration);
 
+/** @brief Provision a Mesh Node using PB-Remote
+ *
+ *  @param cli     Remote Provisioning Client Model to provision with.
+ *  @param srv     Remote Provisioning Server that should be used to tunnel the
+ *                 provisioning.
+ *  @param uuid    UUID of the unprovisioned node
+ *  @param net_idx Network Key Index to give to the unprovisioned node.
+ *  @param addr    Address to assign to remote device. If addr is 0,
+ *                 the lowest available address will be chosen.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_provision_remote(struct bt_mesh_rpr_cli *cli,
+			     const struct bt_mesh_rpr_node *srv,
+			     const uint8_t uuid[16], uint16_t net_idx,
+			     uint16_t addr);
+
+/** @brief Reprovision a Mesh Node using PB-Remote
+ *
+ *  Reprovisioning can be used to change the device key, unicast address and
+ *  composition data of another device. The reprovisioning procedure uses the
+ *  same protocol as normal provisioning, with the same level of security.
+ *
+ *  There are three tiers of reprovisioning:
+ *  1. Refreshing the device key
+ *  2. Refreshing the device key and node address. Composition data may change,
+ *     including the number of elements.
+ *  3. Refreshing the device key and composition data, in case the composition
+ *     data of the target node changed due to a firmware update or a similar
+ *     procedure.
+ *
+ *  The target node indicates that its composition data changed by instantiating
+ *  its composition data page 128. If the number of elements have changed, it
+ *  may be necessary to move the unicast address of the target node as well, to
+ *  avoid overlapping addresses.
+ *
+ *  @note Changing the unicast addresses of the target node requires changes to
+ *        all nodes that publish directly to any of the target node's models.
+ *
+ *  @param cli         Remote Provisioning Client Model to provision on
+ *  @param srv         Remote Provisioning Server to reprovision
+ *  @param addr        Address to assign to remote device. If addr is 0, the
+ *                     lowest available address will be chosen.
+ *  @param comp_change The target node has indicated that its composition
+ *                     data has changed. Note that the target node will reject
+ *                     the update if this isn't true.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_reprovision_remote(struct bt_mesh_rpr_cli *cli,
+			       struct bt_mesh_rpr_node *srv,
+			       uint16_t addr, bool comp_change);
+
 /** @brief Check if the local node has been provisioned.
  *
  *  This API can be used to check if the local node has been provisioned
@@ -464,13 +550,13 @@ bool bt_mesh_is_provisioned(void);
  */
 
 /**
- * @brief Bluetooth mesh
- * @defgroup bt_mesh Bluetooth mesh
+ * @brief Bluetooth Mesh
+ * @defgroup bt_mesh Bluetooth Mesh
  * @ingroup bluetooth
  * @{
  */
 
-/* Primary Network Key index */
+/** Primary Network Key index */
 #define BT_MESH_NET_PRIMARY                 0x000
 
 /** Relay feature */
@@ -481,6 +567,7 @@ bool bt_mesh_is_provisioned(void);
 #define BT_MESH_FEAT_FRIEND                 BIT(2)
 /** Low Power Node feature */
 #define BT_MESH_FEAT_LOW_POWER              BIT(3)
+/** Supported heartbeat publication features */
 #define BT_MESH_FEAT_SUPPORTED              (BT_MESH_FEAT_RELAY |   \
 					     BT_MESH_FEAT_PROXY |   \
 					     BT_MESH_FEAT_FRIEND |  \
@@ -677,6 +764,69 @@ struct bt_mesh_friend_cb {
 	static const STRUCT_SECTION_ITERABLE(bt_mesh_friend_cb,          \
 					     _CONCAT(bt_mesh_friend_cb_, \
 						     _name))
+#if defined(CONFIG_BT_TESTING)
+struct bt_mesh_snb {
+	/** Flags */
+	uint8_t flags;
+
+	/** Network ID */
+	uint64_t net_id;
+
+	/** IV Index */
+	uint32_t iv_idx;
+
+	/** Authentication Value */
+	uint64_t auth_val;
+};
+
+struct bt_mesh_prb {
+	/** Random */
+	uint8_t random[13];
+
+	/** Flags */
+	uint8_t flags;
+
+	/** IV Index */
+	uint32_t iv_idx;
+
+	/** Authentication tag */
+	uint64_t auth_tag;
+};
+
+/** Beacon callback functions. */
+struct bt_mesh_beacon_cb {
+	/** @brief Secure Network Beacon received.
+	 *
+	 *  This callback notifies the application that Secure Network Beacon
+	 *  was received.
+	 *
+	 *  @param snb  Structure describing received Secure Network Beacon
+	 */
+	void (*snb_received)(const struct bt_mesh_snb *snb);
+
+	/** @brief Private Beacon received.
+	 *
+	 *  This callback notifies the application that Private Beacon
+	 *  was received and successfully decrypted.
+	 *
+	 *  @param prb  Structure describing received Private Beacon
+	 */
+	void (*priv_received)(const struct bt_mesh_prb *prb);
+};
+
+/**
+ *  @brief Register a callback structure for beacon events.
+ *
+ *  Registers a callback structure that will be called whenever beacon advertisement
+ *  is received.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_MESH_BEACON_CB_DEFINE(_name)                                  \
+	static const STRUCT_SECTION_ITERABLE(bt_mesh_beacon_cb,          \
+					     _CONCAT(bt_mesh_beacon_cb_, \
+						     _name))
+#endif
 
 /** @brief Terminate Friendship.
  *
@@ -700,6 +850,23 @@ int bt_mesh_friend_terminate(uint16_t lpn_addr);
  * @ref BT_MESH_ADDR_ALL_NODES to store all pending RPL entries.
  */
 void bt_mesh_rpl_pending_store(uint16_t addr);
+
+/** @brief Iterate stored Label UUIDs.
+ *
+ * When @c addr is @ref BT_MESH_ADDR_UNASSIGNED, this function iterates over all available addresses
+ * starting with @c uuid. In this case, use @c retaddr to get virtual address representation of
+ * the returned Label UUID. When @c addr is a virtual address, this function returns next Label
+ * UUID corresponding to the @c addr. When @c uuid is NULL, this function returns the first
+ * available UUID. If @c uuid is previously returned uuid, this function returns following uuid.
+ *
+ * @param addr    Virtual address to search for, or @ref BT_MESH_ADDR_UNASSIGNED.
+ * @param uuid    Pointer to the previously returned Label UUID or NULL.
+ * @param retaddr Pointer to a memory where virtual address representation of the returning UUID is
+ *                to be stored to.
+ *
+ * @return Pointer to Label UUID, or NULL if no more entries found.
+ */
+const uint8_t *bt_mesh_va_uuid_get(uint16_t addr, const uint8_t *uuid, uint16_t *retaddr);
 
 #ifdef __cplusplus
 }

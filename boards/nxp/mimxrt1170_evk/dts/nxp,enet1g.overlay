@@ -1,0 +1,36 @@
+/*
+ * Copyright 2023-2024 NXP
+ *
+ * ENET_1G binding overlay
+ */
+
+/ {
+	soc {
+		/delete-node/ ethernet@40424000;
+	};
+};
+
+&enet1g {
+	status = "okay";
+};
+
+&enet1g_mac {
+	status = "okay";
+};
+
+&enet1g_mdio {
+	status = "okay";
+	enet1g_phy: phy@1 {
+		status = "okay";
+	};
+};
+
+&enet1g_ptp_clock {
+	status = "okay";
+};
+
+&pinctrl {
+	/delete-node/ pinmux_enet;
+	/delete-node/ pinmux_enet_mdio;
+	/delete-node/ pinmux_ptp;
+};

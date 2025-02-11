@@ -1,5 +1,6 @@
 tests:
-  dyn_channel.static_and_dynamic_channels:
-    build_only: false
-    platform_exclude: fvp_base_revc_2xaemv8a_smp_ns
+  message_bus.zbus.dyn_channel.static_and_dynamic_channels:
+    platform_exclude: fvp_base_revc_2xaemv8a//smp/ns
     tags: zbus
+    integration_platforms:
+      - native_sim

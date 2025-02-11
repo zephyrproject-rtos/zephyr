@@ -2,6 +2,8 @@
  * Copyright (c) 2019-2020 Peter Bigot Consulting, LLC
  * Copyright (c) 2021 NXP
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2023 EPAM Systems
+ * Copyright (c) 2023 Meta Platforms
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,6 +13,8 @@
 /**
  * @brief Regulator Interface
  * @defgroup regulator_interface Regulator Interface
+ * @since 2.4
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -20,7 +24,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 #include <zephyr/kernel.h>
+#endif
 #include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
@@ -56,9 +62,12 @@ typedef uint8_t regulator_error_flags_t;
 typedef int (*regulator_dvs_state_set_t)(const struct device *dev,
 					 regulator_dvs_state_t state);
 
+typedef int (*regulator_ship_mode_t)(const struct device *dev);
+
 /** @brief Driver-specific API functions to support parent regulator control. */
 __subsystem struct regulator_parent_driver_api {
 	regulator_dvs_state_set_t dvs_state_set;
+	regulator_ship_mode_t ship_mode;
 };
 
 typedef int (*regulator_enable_t)(const struct device *dev);
@@ -70,6 +79,9 @@ typedef int (*regulator_set_voltage_t)(const struct device *dev, int32_t min_uv,
 				       int32_t max_uv);
 typedef int (*regulator_get_voltage_t)(const struct device *dev,
 				       int32_t *volt_uv);
+typedef unsigned int (*regulator_count_current_limits_t)(const struct device *dev);
+typedef int (*regulator_list_current_limit_t)(const struct device *dev,
+					      unsigned int idx, int32_t *current_ua);
 typedef int (*regulator_set_current_limit_t)(const struct device *dev,
 					     int32_t min_ua, int32_t max_ua);
 typedef int (*regulator_get_current_limit_t)(const struct device *dev,
@@ -78,6 +90,10 @@ typedef int (*regulator_set_mode_t)(const struct device *dev,
 				    regulator_mode_t mode);
 typedef int (*regulator_get_mode_t)(const struct device *dev,
 				    regulator_mode_t *mode);
+typedef int (*regulator_set_active_discharge_t)(const struct device *dev,
+				    bool active_discharge);
+typedef int (*regulator_get_active_discharge_t)(const struct device *dev,
+				    bool *active_discharge);
 typedef int (*regulator_get_error_flags_t)(
 	const struct device *dev, regulator_error_flags_t *flags);
 
@@ -89,10 +105,14 @@ __subsystem struct regulator_driver_api {
 	regulator_list_voltage_t list_voltage;
 	regulator_set_voltage_t set_voltage;
 	regulator_get_voltage_t get_voltage;
+	regulator_count_current_limits_t count_current_limits;
+	regulator_list_current_limit_t list_current_limit;
 	regulator_set_current_limit_t set_current_limit;
 	regulator_get_current_limit_t get_current_limit;
 	regulator_set_mode_t set_mode;
 	regulator_get_mode_t get_mode;
+	regulator_set_active_discharge_t set_active_discharge;
+	regulator_get_active_discharge_t get_active_discharge;
 	regulator_get_error_flags_t get_error_flags;
 };
 
@@ -102,11 +122,29 @@ __subsystem struct regulator_driver_api {
  * @{
  */
 /** Indicates regulator must stay always ON */
-#define REGULATOR_ALWAYS_ON	BIT(0)
+#define REGULATOR_ALWAYS_ON	           BIT(0)
 /** Indicates regulator must be initialized ON */
-#define REGULATOR_BOOT_ON	BIT(1)
+#define REGULATOR_BOOT_ON	           BIT(1)
 /** Indicates if regulator must be enabled when initialized */
-#define REGULATOR_INIT_ENABLED  (REGULATOR_ALWAYS_ON | REGULATOR_BOOT_ON)
+#define REGULATOR_INIT_ENABLED             (REGULATOR_ALWAYS_ON | REGULATOR_BOOT_ON)
+/** Regulator active discharge state mask */
+#define REGULATOR_ACTIVE_DISCHARGE_MASK    GENMASK(3, 2)
+/** Regulator active discharge state flag position*/
+#define REGULATOR_ACTIVE_DISCHARGE_POS     2
+/** Disable regulator active discharge */
+#define REGULATOR_ACTIVE_DISCHARGE_DISABLE 0
+/** Enable regulator active discharge */
+#define REGULATOR_ACTIVE_DISCHARGE_ENABLE  1
+/** Leave regulator active discharge state as default */
+#define REGULATOR_ACTIVE_DISCHARGE_DEFAULT 2
+/** Regulator active discharge set bits */
+#define REGULATOR_ACTIVE_DISCHARGE_SET_BITS(x) \
+	(((x) << REGULATOR_ACTIVE_DISCHARGE_POS) & REGULATOR_ACTIVE_DISCHARGE_MASK)
+/** Regulator active discharge get bits */
+#define REGULATOR_ACTIVE_DISCHARGE_GET_BITS(x) \
+	(((x) & REGULATOR_ACTIVE_DISCHARGE_MASK) >> REGULATOR_ACTIVE_DISCHARGE_POS)
+/** Indicates regulator must be initialized OFF */
+#define REGULATOR_BOOT_OFF BIT(4)
 
 /** @} */
 
@@ -123,10 +161,18 @@ struct regulator_common_config {
 	int32_t min_uv;
 	/** Maximum allowed voltage, in microvolts. */
 	int32_t max_uv;
+	/** Initial voltage, in microvolts. */
+	int32_t init_uv;
 	/** Minimum allowed current, in microamps. */
 	int32_t min_ua;
 	/** Maximum allowed current, in microamps. */
 	int32_t max_ua;
+	/** Initial current, in microamps. */
+	int32_t init_ua;
+	/** Startup delay, in microseconds. */
+	uint32_t startup_delay_us;
+	/** Off to on delay, in microseconds. */
+	uint32_t off_on_delay_us;
 	/** Allowed modes */
 	const regulator_mode_t *allowed_modes;
 	/** Number of allowed modes */
@@ -148,10 +194,16 @@ struct regulator_common_config {
 				     INT32_MIN),                               \
 		.max_uv = DT_PROP_OR(node_id, regulator_max_microvolt,         \
 				     INT32_MAX),                               \
+		.init_uv = DT_PROP_OR(node_id, regulator_init_microvolt,       \
+				      INT32_MIN),			       \
 		.min_ua = DT_PROP_OR(node_id, regulator_min_microamp,          \
 				     INT32_MIN),                               \
 		.max_ua = DT_PROP_OR(node_id, regulator_max_microamp,          \
 				     INT32_MAX),                               \
+		.init_ua = DT_PROP_OR(node_id, regulator_init_microamp,       \
+				      INT32_MIN),			       \
+		.startup_delay_us = DT_PROP_OR(node_id, startup_delay_us, 0),  \
+		.off_on_delay_us = DT_PROP_OR(node_id, off_on_delay_us, 0),    \
 		.allowed_modes = (const regulator_mode_t [])                   \
 			DT_PROP_OR(node_id, regulator_allowed_modes, {}),      \
 		.allowed_modes_cnt =                                           \
@@ -161,7 +213,12 @@ struct regulator_common_config {
 		.flags = ((DT_PROP_OR(node_id, regulator_always_on, 0U) *      \
 			   REGULATOR_ALWAYS_ON) |                              \
 			  (DT_PROP_OR(node_id, regulator_boot_on, 0U) *        \
-			   REGULATOR_BOOT_ON)),                                \
+			   REGULATOR_BOOT_ON) |                                \
+			  (REGULATOR_ACTIVE_DISCHARGE_SET_BITS(                \
+			   DT_PROP_OR(node_id, regulator_active_discharge,     \
+			   REGULATOR_ACTIVE_DISCHARGE_DEFAULT))) |             \
+			  (DT_PROP_OR(node_id, regulator_boot_off, 0U) *       \
+			   REGULATOR_BOOT_OFF)),                               \
 	}
 
 /**
@@ -178,8 +235,10 @@ struct regulator_common_config {
  * This structure **must** be placed first in the driver's data structure.
  */
 struct regulator_common_data {
-	/** Lock */
+#if defined(CONFIG_REGULATOR_THREAD_SAFE_REFCNT) || defined(__DOXYGEN__)
+	/** Lock (only if @kconfig{CONFIG_REGULATOR_THREAD_SAFE_REFCNT}=y) */
 	struct k_mutex lock;
+#endif
 	/** Reference count */
 	int refcnt;
 };
@@ -201,6 +260,7 @@ void regulator_common_data_init(const struct device *dev);
  *
  * - Automatically enable the regulator if it is set to `regulator-boot-on`
  *   or `regulator-always-on` and increase its usage count.
+ * - Automatically disable the regulator if it is set to `regulator-boot-off`.
  * - Configure the regulator mode if `regulator-initial-mode` is set.
  * - Ensure regulator voltage is set to a valid range.
  *
@@ -215,6 +275,43 @@ void regulator_common_data_init(const struct device *dev);
  * @retval -errno Negative errno in case of failure.
  */
 int regulator_common_init(const struct device *dev, bool is_enabled);
+
+/**
+ * @brief Check if regulator is expected to be enabled at init time.
+ *
+ * @param dev Regulator device instance
+ * @return true If regulator needs to be enabled at init time.
+ * @return false If regulator does not need to be enabled at init time.
+ */
+static inline bool regulator_common_is_init_enabled(const struct device *dev)
+{
+	const struct regulator_common_config *config =
+		(const struct regulator_common_config *)dev->config;
+
+	return (config->flags & REGULATOR_INIT_ENABLED) != 0U;
+}
+
+/**
+ * @brief Get minimum supported voltage.
+ *
+ * @param dev Regulator device instance.
+ * @param min_uv Where minimum voltage will be stored, in microvolts.
+ *
+ * @retval 0 If successful
+ * @retval -ENOENT If minimum voltage is not specified.
+ */
+static inline int regulator_common_get_min_voltage(const struct device *dev, int32_t *min_uv)
+{
+	const struct regulator_common_config *config =
+		(const struct regulator_common_config *)dev->config;
+
+	if (config->min_uv == INT32_MIN) {
+		return -ENOENT;
+	}
+
+	*min_uv = config->min_uv;
+	return 0;
+}
 
 /** @endcond */
 
@@ -256,6 +353,32 @@ static inline int regulator_parent_dvs_state_set(const struct device *dev,
 	return api->dvs_state_set(dev, state);
 }
 
+/**
+ * @brief Enter ship mode.
+ *
+ * Some PMICs feature a ship mode, which allows the system to save power.
+ * Exit from low power is normally by pin transition.
+ *
+ * This API can be used when ship mode needs to be entered.
+ *
+ * @param dev Parent regulator device instance.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If function is not implemented.
+ * @retval -errno In case of any other error.
+ */
+static inline int regulator_parent_ship_mode(const struct device *dev)
+{
+	const struct regulator_parent_driver_api *api =
+		(const struct regulator_parent_driver_api *)dev->api;
+
+	if (api->ship_mode == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->ship_mode(dev);
+}
+
 /** @} */
 
 /**
@@ -270,6 +393,7 @@ static inline int regulator_parent_dvs_state_set(const struct device *dev,
  *
  * @retval 0 If regulator has been successfully enabled.
  * @retval -errno Negative errno in case of failure.
+ * @retval -ENOTSUP If regulator enablement can not be controlled.
  */
 int regulator_enable(const struct device *dev);
 
@@ -297,6 +421,7 @@ bool regulator_is_enabled(const struct device *dev);
  *
  * @retval 0 If regulator has been successfully disabled.
  * @retval -errno Negative errno in case of failure.
+ * @retval -ENOTSUP If regulator disablement can not be controlled.
  */
 int regulator_disable(const struct device *dev);
 
@@ -409,6 +534,57 @@ static inline int regulator_get_voltage(const struct device *dev,
 }
 
 /**
+ * @brief Obtain the number of supported current limit levels.
+ *
+ * Each current limit level supported by a regulator gets an index, starting from
+ * zero. The total number of supported current limit levels can be used together with
+ * regulator_list_current_limit() to list all supported current limit levels.
+ *
+ * @param dev Regulator device instance.
+ *
+ * @return Number of supported current limits.
+ */
+static inline unsigned int regulator_count_current_limits(const struct device *dev)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->count_current_limits == NULL) {
+		return 0U;
+	}
+
+	return api->count_current_limits(dev);
+}
+
+/**
+ * @brief Obtain the value of a current limit given an index.
+ *
+ * Each current limit level supported by a regulator gets an index, starting from
+ * zero. Together with regulator_count_current_limits(), this function can be used
+ * to iterate over all supported current limits.
+ *
+ * @param dev Regulator device instance.
+ * @param idx Current index.
+ * @param[out] current_ua Where current for the given @p index will be stored, in
+ * microamps.
+ *
+ * @retval 0 If @p index corresponds to a supported current limit.
+ * @retval -EINVAL If @p index does not correspond to a supported current limit.
+ */
+static inline int regulator_list_current_limit(const struct device *dev,
+					       unsigned int idx, int32_t *current_ua)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->list_current_limit == NULL) {
+		return -EINVAL;
+	}
+
+	return api->list_current_limit(dev, idx, current_ua);
+}
+
+/**
  * @brief Set output current limit.
  *
  * The output current limit will be configured to the closest supported output
@@ -490,6 +666,52 @@ static inline int regulator_get_mode(const struct device *dev,
 	}
 
 	return api->get_mode(dev, mode);
+}
+
+/**
+ * @brief Set active discharge setting.
+ *
+ * @param dev Regulator device instance.
+ * @param active_discharge Active discharge enable or disable.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If function is not implemented.
+ * @retval -errno In case of any other error.
+ */
+static inline int regulator_set_active_discharge(const struct device *dev,
+				     bool active_discharge)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->set_active_discharge == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_active_discharge(dev, active_discharge);
+}
+
+/**
+ * @brief Get active discharge setting.
+ *
+ * @param dev Regulator device instance.
+ * @param[out] active_discharge Where active discharge will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If function is not implemented.
+ * @retval -errno In case of any other error.
+ */
+static inline int regulator_get_active_discharge(const struct device *dev,
+				     bool *active_discharge)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->get_active_discharge == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_active_discharge(dev, active_discharge);
 }
 
 /**

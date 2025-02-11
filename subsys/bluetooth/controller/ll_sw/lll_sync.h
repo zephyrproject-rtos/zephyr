@@ -70,7 +70,7 @@ struct lll_sync {
 	 * generation.
 	 */
 	struct node_rx_iq_report *node_cte_incomplete;
-	/* Member sotres information if there were insufficient IQ report rx nodes for all CTEs
+	/* Member stores information if there were insufficient IQ report rx nodes for all CTEs
 	 * in pending synchronization event.
 	 */
 	bool is_cte_incomplete;

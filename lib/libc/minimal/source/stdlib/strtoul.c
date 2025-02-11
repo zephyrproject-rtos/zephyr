@@ -53,7 +53,7 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 	 */
 	do {
 		c = *s++;
-	} while (isspace((unsigned char)c));
+	} while (isspace((unsigned char)c) != 0);
 	if (c == '-') {
 		neg = 1;
 		c = *s++;
@@ -61,31 +61,31 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 		c = *s++;
 	}
 
-	if ((base == 0 || base == 16) &&
-	    c == '0' && (*s == 'x' || *s == 'X')) {
+	if (((base == 0) || (base == 16)) &&
+	    (c == '0') && ((*s == 'x') || (*s == 'X'))) {
 		c = s[1];
 		s += 2;
 		base = 16;
 	}
 
 	if (base == 0) {
-		base = c == '0' ? 8 : 10;
+		base = (c == '0') ? 8 : 10;
 	}
 
 	cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
 	cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
 	for (acc = 0, any = 0;; c = *s++) {
-		if (isdigit((unsigned char)c)) {
+		if (isdigit((unsigned char)c) != 0) {
 			c -= '0';
-		} else if (isalpha((unsigned char)c)) {
-			c -= isupper((unsigned char)c) ? 'A' - 10 : 'a' - 10;
+		} else if (isalpha((unsigned char)c) != 0) {
+			c -= isupper((unsigned char)c) != 0 ? 'A' - 10 : 'a' - 10;
 		} else {
 			break;
 		}
 		if (c >= base) {
 			break;
 		}
-		if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim)) {
+		if ((any < 0) || (acc > cutoff) || ((acc == cutoff) && (c > cutlim))) {
 			any = -1;
 		} else {
 			any = 1;
@@ -96,11 +96,11 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 	if (any < 0) {
 		acc = ULONG_MAX;
 		errno = ERANGE;
-	} else if (neg) {
+	} else if (neg != 0) {
 		acc = -acc;
 	}
 	if (endptr != NULL) {
-		*endptr = (char *)(any ? s - 1 : nptr);
+		*endptr = (char *)(any ? (s - 1) : nptr);
 	}
 	return acc;
 }

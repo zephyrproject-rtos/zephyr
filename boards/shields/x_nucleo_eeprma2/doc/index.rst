@@ -50,7 +50,7 @@ and the X-NUCLEO-EEPRMA2 in particular, see these ST Microelectronics documents:
 Samples
 *******
 
-The :ref:`samples_eeprom` can be used to demonstrate the expansion boards
+The :zephyr:code-sample:`eeprom` sample can be used to demonstrate the expansion boards
 functionality.
 Per default the shield sets an ``eeprom-0`` alias for the M24C02-FMC6TG EEPROM,
 which can be overwritten to use the other EEPROM devices instead.
@@ -58,7 +58,7 @@ which can be overwritten to use the other EEPROM devices instead.
 Programming
 ***********
 
-Set ``-DSHIELD=x_nucleo_eeprma2`` when you invoke ``west build``. For example:
+Set ``--shield x_nucleo_eeprma2`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/eeprom/

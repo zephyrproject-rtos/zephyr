@@ -30,6 +30,14 @@ config WIFI_ESWIFI_BUS_UART
 
 endchoice
 
+config WIFI_ESWIFI_MAX_DATA_SIZE
+	int "esWiFi message size"
+	default 1600
+	range 500 4000
+	help
+	  This option sets the size of the esWiFi message buffer.
+	  It can be increased to handle larger messages, like scan results.
+
 config WIFI_ESWIFI_THREAD_PRIO
 	int "esWiFi threads priority"
 	default 2

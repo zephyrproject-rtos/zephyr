@@ -52,7 +52,6 @@ ZTEST_SUITE(test_hci_codecs_info, NULL, NULL, NULL, NULL, NULL);
 
 ZTEST(test_hci_codecs_info, test_read_codecs)
 {
-	struct net_buf *rsp;
 	int err;
 
 	/* Initialize bluetooth subsystem */
@@ -66,7 +65,7 @@ ZTEST(test_hci_codecs_info, test_read_codecs)
 
 
 	/* Read Local Supported Codecs */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_CODECS, NULL, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_CODECS, NULL, NULL);
 	zassert_not_equal(err, 0, "Reading local supported codecs failed");
 
 }

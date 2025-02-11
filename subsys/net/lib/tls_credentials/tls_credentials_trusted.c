@@ -12,6 +12,7 @@
 #include <psa/protected_storage.h>
 
 #include "tls_internal.h"
+#include "tls_credentials_digest_raw.h"
 
 LOG_MODULE_REGISTER(tls_credentials_trusted,
 		    CONFIG_TLS_CREDENTIALS_LOG_LEVEL);
@@ -122,7 +123,7 @@ static unsigned int tls_credential_toc_find_slot(psa_storage_uid_t uid)
 	return CRED_MAX_SLOTS;
 }
 
-static int credentials_init(const struct device *unused)
+static int credentials_init(void)
 {
 	struct psa_storage_info_t info;
 	unsigned int sync = 0;
@@ -164,7 +165,7 @@ static int credentials_init(const struct device *unused)
 
 	return 0;
 }
-SYS_INIT(credentials_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(credentials_init, POST_KERNEL, 0);
 
 static struct tls_credential *unused_credential_get(void)
 {
@@ -227,7 +228,7 @@ struct tls_credential *credential_get(sec_tag_t tag,
 }
 
 
-/* Get the following credential filtered by a TAG valud */
+/* Get the following credential filtered by a TAG value */
 struct tls_credential *credential_next_get(sec_tag_t tag,
 					   struct tls_credential *iter)
 {
@@ -260,6 +261,46 @@ struct tls_credential *credential_next_get(sec_tag_t tag,
 	}
 
 	return NULL;
+}
+
+sec_tag_t credential_next_tag_get(sec_tag_t iter)
+{
+	unsigned int slot;
+	psa_storage_uid_t uid;
+	sec_tag_t lowest_candidate = TLS_SEC_TAG_NONE;
+	sec_tag_t candidate;
+
+	/* Scan all slots and find lowest sectag greater than iter */
+	for (slot = 0; slot < CRED_MAX_SLOTS; slot++) {
+		uid = credentials_toc[slot];
+
+		/* Skip empty slots. */
+		if (uid == 0) {
+			continue;
+		}
+		if (tls_credential_uid_to_type(uid) == TLS_CREDENTIAL_NONE) {
+			continue;
+		}
+
+		candidate = tls_credential_uid_to_tag(uid);
+
+		/* Skip any slots containing sectags not greater than iter */
+		if (candidate <= iter && iter != TLS_SEC_TAG_NONE) {
+			continue;
+		}
+
+		/* Find the lowest of such slots */
+		if (lowest_candidate == TLS_SEC_TAG_NONE || candidate < lowest_candidate) {
+			lowest_candidate = candidate;
+		}
+	}
+
+	return lowest_candidate;
+}
+
+int credential_digest(struct tls_credential *credential, void *dest, size_t *len)
+{
+	return credential_digest_raw(credential, dest, len);
 }
 
 void credentials_lock(void)

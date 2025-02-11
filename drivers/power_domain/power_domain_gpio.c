@@ -30,12 +30,14 @@ struct pd_visitor_context {
 	enum pm_device_action action;
 };
 
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
+
 static int pd_on_domain_visitor(const struct device *dev, void *context)
 {
 	struct pd_visitor_context *visitor_context = context;
 
 	/* Only run action if the device is on the specified domain */
-	if (!dev->pm || (dev->pm->domain != visitor_context->domain)) {
+	if (!dev->pm || (dev->pm_base->domain != visitor_context->domain)) {
 		return 0;
 	}
 
@@ -43,12 +45,16 @@ static int pd_on_domain_visitor(const struct device *dev, void *context)
 	return 0;
 }
 
+#endif
+
 static int pd_gpio_pm_action(const struct device *dev,
 			     enum pm_device_action action)
 {
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
+	struct pd_visitor_context context = {.domain = dev};
+#endif
 	const struct pd_gpio_config *cfg = dev->config;
 	struct pd_gpio_data *data = dev->data;
-	struct pd_visitor_context context = {.domain = dev};
 	int64_t next_boot_ticks;
 	int rc = 0;
 
@@ -67,14 +73,18 @@ static int pd_gpio_pm_action(const struct device *dev,
 		LOG_INF("%s is now ON", dev->name);
 		/* Wait for domain to come up */
 		k_sleep(K_USEC(cfg->startup_delay_us));
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
 		/* Notify devices on the domain they are now powered */
 		context.action = PM_DEVICE_ACTION_TURN_ON;
 		(void)device_supported_foreach(dev, pd_on_domain_visitor, &context);
+#endif
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
 		/* Notify devices on the domain that power is going down */
 		context.action = PM_DEVICE_ACTION_TURN_OFF;
 		(void)device_supported_foreach(dev, pd_on_domain_visitor, &context);
+#endif
 		/* Switch power off */
 		gpio_pin_set_dt(&cfg->enable, 0);
 		LOG_INF("%s is now OFF", dev->name);
@@ -103,38 +113,29 @@ static int pd_gpio_init(const struct device *dev)
 {
 	const struct pd_gpio_config *cfg = dev->config;
 	struct pd_gpio_data *data = dev->data;
-	int rc;
 
-	if (!device_is_ready(cfg->enable.port)) {
+	if (!gpio_is_ready_dt(&cfg->enable)) {
 		LOG_ERR("GPIO port %s is not ready", cfg->enable.port->name);
 		return -ENODEV;
 	}
 	/* We can't know how long the domain has been off for before boot */
 	data->next_boot = K_TIMEOUT_ABS_US(cfg->off_on_delay_us);
 
-	if (pm_device_on_power_domain(dev)) {
-		/* Device is unpowered */
-		pm_device_init_off(dev);
-		rc = gpio_pin_configure_dt(&cfg->enable, GPIO_DISCONNECTED);
-	} else {
-		pm_device_init_suspended(dev);
-		rc = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
-	}
-
-	return rc;
+	/* Boot according to state */
+	return pm_device_driver_init(dev, pd_gpio_pm_action);
 }
 
-#define POWER_DOMAIN_DEVICE(id)						   \
-	static const struct pd_gpio_config pd_gpio_##id##_cfg = {	   \
-		.enable = GPIO_DT_SPEC_INST_GET(id, enable_gpios),	   \
-		.startup_delay_us = DT_INST_PROP(id, startup_delay_us),	   \
-		.off_on_delay_us = DT_INST_PROP(id, off_on_delay_us),	   \
-	};								   \
-	static struct pd_gpio_data pd_gpio_##id##_data;			   \
-	PM_DEVICE_DT_INST_DEFINE(id, pd_gpio_pm_action);		   \
-	DEVICE_DT_INST_DEFINE(id, pd_gpio_init, PM_DEVICE_DT_INST_GET(id), \
-			      &pd_gpio_##id##_data, &pd_gpio_##id##_cfg,   \
-			      POST_KERNEL, 75,				   \
+#define POWER_DOMAIN_DEVICE(id)							\
+	static const struct pd_gpio_config pd_gpio_##id##_cfg = {		\
+		.enable = GPIO_DT_SPEC_INST_GET(id, enable_gpios),		\
+		.startup_delay_us = DT_INST_PROP(id, startup_delay_us),		\
+		.off_on_delay_us = DT_INST_PROP(id, off_on_delay_us),		\
+	};									\
+	static struct pd_gpio_data pd_gpio_##id##_data;				\
+	PM_DEVICE_DT_INST_DEFINE(id, pd_gpio_pm_action);			\
+	DEVICE_DT_INST_DEFINE(id, pd_gpio_init, PM_DEVICE_DT_INST_GET(id),	\
+			      &pd_gpio_##id##_data, &pd_gpio_##id##_cfg,	\
+			      POST_KERNEL, CONFIG_POWER_DOMAIN_GPIO_INIT_PRIORITY,	\
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(POWER_DOMAIN_DEVICE)

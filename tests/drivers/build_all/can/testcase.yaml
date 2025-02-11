@@ -1,0 +1,27 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - can
+tests:
+  drivers.can.build_all.mcp2515:
+    depends_on:
+      - arduino_spi
+      - arduino_gpio
+    extra_args: SHIELD=dfrobot_can_bus_v2_0
+    platform_allow: frdm_k64f
+  drivers.can.build_all.tcan4x5x:
+    depends_on:
+      - arduino_spi
+      - arduino_gpio
+    extra_args: SHIELD=tcan4550evm
+    platform_allow: frdm_k64f
+  drivers.can.build_all.mcp251xfd:
+    extra_args: SHIELD=mikroe_mcp2518fd_click
+    platform_allow: lpcxpresso55s28
+  drivers.can.build_all.native_linux:
+    platform_allow:
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64

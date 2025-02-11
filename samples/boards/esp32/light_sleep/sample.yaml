@@ -1,0 +1,10 @@
+sample:
+  description: Sample application to test ESP32 light-sleep mode
+  name: ESP32 Light-sleep
+tests:
+  sample.board.esp32.light_sleep:
+    platform_allow:
+    - esp32_devkitc_wroom/esp32/procpu
+    - esp32c3_devkitm
+    tags: esp32
+    build_only: true

@@ -1,0 +1,17 @@
+identifier: intel_adl_rvp
+name: Alder Lake RVP
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 2048
+supported:
+  - acpi
+  - smp
+  - watchdog
+testing:
+  timeout_multiplier: 4
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: intel

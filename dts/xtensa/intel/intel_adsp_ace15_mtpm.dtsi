@@ -25,32 +25,33 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <1>;
-			cpu-power-states = <&d0i3 &d3>;
+			cpu-power-states = <&d3>;
 		};
 
 		cpu2: cpu@2 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <2>;
-			cpu-power-states = <&d0i3 &d3>;
+			cpu-power-states = <&d3>;
 		};
-	};
 
-	power-states {
-		d0i3: idle {
-			compatible = "zephyr,power-state";
-			power-state-name = "runtime-idle";
-			min-residency-us = <200>;
-			exit-latency-us = <100>;
-		};
-		/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
-		 * The procedure is triggered by IPC from the HOST (SET_DX).
-		 */
-		d3: off {
-			compatible = "zephyr,power-state";
-			power-state-name = "soft-off";
-			min-residency-us = <2147483647>;
-			exit-latency-us = <0>;
+		power-states {
+			d0i3: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <200>;
+				exit-latency-us = <100>;
+			};
+			/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
+			 * The procedure is triggered by IPC from the HOST (SET_DX).
+			 */
+			d3: off {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				min-residency-us = <0>;
+				exit-latency-us = <0>;
+				status = "disabled";
+			};
 		};
 	};
 
@@ -81,11 +82,10 @@
 	clkctl: clkctl {
 		compatible = "intel,adsp-shim-clkctl";
 		adsp-clkctl-clk-wovcro = <0>;
-		adsp-clkctl-clk-lpro = <1>;
-		adsp-clkctl-clk-hpro = <2>;
-		adsp-clkctl-freq-enc = <0xc 0x0 0x4>;
-		adsp-clkctl-freq-mask = <0x0 0x0 0x0>;
-		adsp-clkctl-freq-default = <2>;
+		adsp-clkctl-clk-ipll = <1>;
+		adsp-clkctl-freq-enc = <0xc 0x4>;
+		adsp-clkctl-freq-mask = <0x0 0x0>;
+		adsp-clkctl-freq-default = <1>;
 		adsp-clkctl-freq-lowest = <0>;
 		wovcro-supported;
 	};
@@ -110,6 +110,32 @@
 	};
 
 	soc {
+
+		l1ccap: l1ccap@1fe80080 {
+			compatible = "intel,adsp-l1ccap";
+			reg = <0x1fe80080 0x4>;
+		};
+
+		l1ccfg: l1ccfg@1fe80084 {
+			compatible = "intel,adsp-l1ccfg";
+			reg = <0x1fe80084 0x4>;
+		};
+
+		l1pcfg: l1pcfg@1fe80088 {
+			compatible = "intel,adsp-l1pcfg";
+			reg = <0x1fe80088 0x4>;
+		};
+
+		lsbpm: lsbpm@71d80 {
+			compatible = "intel,adsp-lsbpm";
+			reg = <0x71d80 0x0008>;
+		};
+
+		hsbpm: hsbpm@17a800 {
+			compatible = "intel,adsp-hsbpm";
+			reg = <0x17a800 0x0008>;
+		};
+
 		core_intc: core_intc@0 {
 			compatible = "cdns,xtensa-core-intc";
 			reg = <0x00 0x400>;
@@ -243,10 +269,15 @@
 			status = "okay";
 		};
 
+		sspbase: ssp_base@28800 {
+			compatible = "intel,ssp-sspbase";
+			reg = <0x28800 0x1000>;
+		};
+
 		ssp0: ssp@28000 {
-			compatible = "intel,ssp-dai";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			compatible = "intel,ssp";
 			reg = <0x00028000 0x1000
 				   0x00079C00 0x200>;
 			interrupts = <0x00 0 0>;
@@ -255,16 +286,18 @@
 					&lpgpdma0 3>;
 			dma-names = "tx", "rx";
 			power-domain = <&io0_domain>;
+			ssp-index = <0>;
 			status = "okay";
-		};
 
-		sspbase: ssp_base@28800 {
-			compatible = "intel,ssp-sspbase";
-			reg = <0x28800 0x1000>;
+			ssp00: ssp@0 {
+				compatible = "intel,ssp-dai";
+				status = "okay";
+				reg = <0x0>;
+			};
 		};
 
 		ssp1: ssp@29000 {
-			compatible = "intel,ssp-dai";
+			compatible = "intel,ssp";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00029000 0x1000
@@ -275,11 +308,18 @@
 					&lpgpdma0 5>;
 			dma-names = "tx", "rx";
 			power-domain = <&io0_domain>;
+			ssp-index = <1>;
 			status = "okay";
+
+			ssp10: ssp@10 {
+				compatible = "intel,ssp-dai";
+				status = "okay";
+				reg = <0x10>;
+			};
 		};
 
 		ssp2: ssp@2a000 {
-			compatible = "intel,ssp-dai";
+			compatible = "intel,ssp";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x0002a000 0x1000
@@ -290,52 +330,14 @@
 					&lpgpdma0 7>;
 			dma-names = "tx", "rx";
 			power-domain = <&io0_domain>;
+			ssp-index = <2>;
 			status = "okay";
-		};
 
-		ssp3: ssp@2b000 {
-			compatible = "intel,ssp-dai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x0002b000 0x1000
-				   0x00079C00 0x200>;
-			interrupts = <0x03 0 0>;
-			interrupt-parent = <&ace_intc>;
-			dmas = <&lpgpdma0 8
-					&lpgpdma0 9>;
-			dma-names = "tx", "rx";
-			power-domain = <&io0_domain>;
-			status = "okay";
-		};
-
-		ssp4: ssp@2c000 {
-			compatible = "intel,ssp-dai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x0002c000 0x1000
-				   0x00079C00 0x200>;
-			interrupts = <0x04 0 0>;
-			interrupt-parent = <&ace_intc>;
-			dmas = <&lpgpdma0 10
-					&lpgpdma0 11>;
-			dma-names = "tx", "rx";
-			power-domain = <&io0_domain>;
-			status = "okay";
-		};
-
-		ssp5: ssp@2d000 {
-			compatible = "intel,ssp-dai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x0002d000 0x1000
-				   0x00079C00 0x200>;
-			interrupts = <0x04 0 0>;
-			interrupt-parent = <&ace_intc>;
-			dmas = <&lpgpdma0 12
-					&lpgpdma0 13>;
-			dma-names = "tx", "rx";
-			power-domain = <&io0_domain>;
-			status = "okay";
+			ssp20: ssp@20 {
+				compatible = "intel,ssp-dai";
+				status = "okay";
+				reg = <0x20>;
+			};
 		};
 
 		mem_window0: mem_window@70200 {
@@ -386,43 +388,43 @@
 				compatible = "intel,adsp-power-domain";
 				bit-position = <15>;
 			};
-			hub_hp_domain: hub_hp_domain {
+			ml1_domain: ml1_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <6>;
-			};
-			io0_domain: io0_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <8>;
-			};
-			io1_domain: io1_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <9>;
-			};
-			io2_domain: io2_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <10>;
-			};
-			io3_domain: io3_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <11>;
-			};
-			hst_domain: hst_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <4>;
+				bit-position = <13>;
 			};
 			ml0_domain: ml0_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <12>;
 			};
-			ml1_domain: ml1_domain {
+			io3_domain: io3_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <13>;
+				bit-position = <11>;
+			};
+			io2_domain: io2_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <10>;
+			};
+			io1_domain: io1_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <9>;
+			};
+			io0_domain: io0_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <8>;
+			};
+			hub_hp_domain: hub_hp_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <6>;
+			};
+			hst_domain: hst_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <4>;
 			};
 		};
 
-		ace_comm_widget: ace_comm_widget@71C00 {
+		ace_comm_widget: ace_comm_widget@71c00 {
 			compatible = "intel,adsp-communication-widget";
-			reg = <0x00071C00 0x100>;
+			reg = <0x00071c00 0x100>;
 			interrupts = <0x19 0 0>;
 			interrupt-parent = <&ace_intc>;
 			status = "okay";
@@ -461,8 +463,8 @@
 			dma-channels = <9>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
-			power-domain = <&hst_domain>;
+			dma-copy-alignment = <16>;
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -473,8 +475,8 @@
 			dma-channels = <10>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
-			power-domain = <&hst_domain>;
+			dma-copy-alignment = <16>;
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -485,8 +487,10 @@
 			dma-channels = <9>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
+			dma-copy-alignment = <16>;
 			power-domain = <&hst_domain>;
+			interrupts = <13 0 0>;
+			interrupt-parent = <&ace_intc>;
 			status = "okay";
 		};
 
@@ -497,8 +501,10 @@
 			dma-channels = <10>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
+			dma-copy-alignment = <16>;
 			power-domain = <&hst_domain>;
+			interrupts = <12 0 0>;
+			interrupt-parent = <&ace_intc>;
 			status = "okay";
 		};
 
@@ -530,12 +536,13 @@
 			#dma-cells = <1>;
 			reg = <0x0007c000 0x1000>;
 			shim = <0x0007c800 0x1000>;
-			interrupts = <0x10 0 0>;
-			interrupt-parent = <&core_intc>;
+			interrupts = <17 0 0>;
+			interrupt-parent = <&ace_intc>;
 			dma-buf-size-alignment = <4>;
 			dma-copy-alignment = <4>;
 			status = "okay";
 			power-domain = <&hub_ulp_domain>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		lpgpdma1: dma@7d000 {
@@ -549,6 +556,7 @@
 			dma-copy-alignment = <4>;
 			status = "okay";
 			power-domain = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		lpgpdma2: dma@7e000 {
@@ -562,6 +570,7 @@
 			dma-copy-alignment = <4>;
 			power-domain = <&io0_domain>;
 			status = "okay";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		sha: adsp-sha@17df00 {

@@ -5,6 +5,7 @@ config IPM_MCUX
 	bool "MCUX IPM driver"
 	default y
 	depends on DT_HAS_NXP_LPC_MAILBOX_ENABLED
+	select RESET
 	help
 	  Driver for MCUX mailbox
 
@@ -15,17 +16,11 @@ config IPM_IMX
 	help
 	  Driver for NXP i.MX messaging unit
 
-config IPM_IMX_REV2
-	bool "IMX IPM driver (rev 2)"
-	default y
-	depends on DT_HAS_NXP_IMX_MU_REV2_ENABLED
-	help
-	  Rev 2 driver for NXP i.MX messaging unit (MCUX-based)
+if IPM_IMX
 
 choice
 	prompt "IMX IPM max data size"
 	default IPM_IMX_MAX_DATA_SIZE_16
-	depends on IPM_IMX || IPM_IMX_REV2
 	help
 	  Select maximum message size for NXP i.MX messaging unit.
 
@@ -55,7 +50,6 @@ config IPM_IMX_MAX_DATA_SIZE
 	default 4 if IPM_IMX_MAX_DATA_SIZE_4
 	default 8 if IPM_IMX_MAX_DATA_SIZE_8
 	default 16 if IPM_IMX_MAX_DATA_SIZE_16
-	depends on IPM_IMX || IPM_IMX_REV2
 
 config IPM_IMX_MAX_ID_VAL
 	int
@@ -63,4 +57,10 @@ config IPM_IMX_MAX_ID_VAL
 	default 3 if IPM_IMX_MAX_DATA_SIZE_4
 	default 1 if IPM_IMX_MAX_DATA_SIZE_8
 	default 0 if IPM_IMX_MAX_DATA_SIZE_16
-	depends on IPM_IMX || IPM_IMX_REV2
+
+config IPM_IMX_FW_READY_REPLY
+	bool "Send FW_READY reply message"
+	help
+	  Send FW_READY reply to check for FW boot completion
+
+endif # IPM_IMX

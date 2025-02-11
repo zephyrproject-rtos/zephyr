@@ -1,0 +1,739 @@
+.. _etsi_303645:
+
+ETSI 303-645
+############
+
+
+`ETSI EN 303 645`, also known as "Cyber Security for Consumer Internet
+of Things: Baseline Requirements," is a standard developed by the
+European Telecommunications Standards Institute (ETSI).
+
+The standard includes provisions for secure software updates, data
+protection, secure communication, and the minimization of exposed
+attack surfaces, among other things. It is part of a broader effort to
+address the challenges and risks associated with IoT devices.
+
+Full version of the standard can be found `here <https://www.etsi.org/deliver/etsi_en/303600_303699/303645/02.01.01_60/en_303645v020101p.pdf>`_.
+
+
+Terminology
+***********
+
+.. list-table:: ETSI 303645 terminology
+    :widths: 17 43
+
+    * - administrator
+      - user who has the highest-privilege level possible for a user of the device,
+        which can mean they are able to change any configuration related to the intended
+        functionality.
+
+    * - associated services
+      - digital services that, together with the device, are part of the overall consumer
+        IoT product and that are typically required to provide the product's intended
+        functionality.
+
+    * - authentication mechanism
+      - method used to prove the authenticity of an entity.
+
+    * - authentication value
+      - individual value of an attribute used by an authentication mechanism.
+
+    * - best practice cryptography
+      - cryptography that is suitable for the corresponding use case and has no
+        indications of a feasible attack with current readily available techniques.
+
+    * - constrained device
+      - device which has physical limitations in either the ability to process data, the
+        ability to communicate data, the ability to store data or the ability to interact
+        with the user, due to restrictions that arise from its intended use.
+
+    * - consumer
+      - natural person who is acting for purposes that are outside her/his trade,
+        business, craft or profession.
+
+    * - consumer IoT device
+      - network-connected (and network-connectable) device that has relationships to
+        associated services and are used by the consumer typically in the home or as
+        electronic wearables.
+
+    * - critical security parameter
+      - security-related secret information whose disclosure or modification can compromise
+        the security of a security module.
+
+    * - debug interface
+      - physical interface used by the manufacturer to communicate with the device during
+        development or to perform triage of issues with the device and that is not used as part
+        of the consumer-facing functionality
+
+    * - defined support period
+      - minimum length of time, expressed as a period or by an end-date, for which a
+        manufacturer will provide security updates.
+
+    * - device manufacturer
+      - entity that creates an assembled final consumer IoT product, which is likely to contain
+        the products and components of many other suppliers.
+
+    * - factory default
+      - state of the device after factory reset or after final production/assembly.
+
+    * - initialization
+      - process that activates the network connectivity of the device for operation and
+        optionally sets authentication features for a user or for network access.
+
+    * - initialized state
+      - state of the device after initialization.
+
+    * - IoT product
+      - consumer IoT device and its associated services.
+
+    * - isolable
+      - able to be removed from the network it is connected to, where any functionality loss
+        caused is related only to that connectivity and not to its main function; alternatively,
+        able to be placed in a self-contained environment with other devices if and only if the
+        integrity of devices within that environment can be ensured
+
+    * - logical interface
+      - software implementation that utilizes a network interface to communicate over the network
+        via channels or ports.
+
+    * - manufacturer
+      - relevant economic operator in the supply chain (including the device manufacturer).
+
+    * - network interface
+      - physical interface that can be used to access the functionality of consumer IoT via a network.
+
+    * - owner
+      - user who owns or who purchased the device.
+
+    * - personal data
+      - Any information relating to an identified or identifiable natural person.
+
+    * - physical interface
+      - physical port or air interface (such as radio, audio or optical) used to communicate with the
+        device at the physical layer.
+
+    * - public security parameter
+      - security related public information whose modification can compromise the security of a
+        security module.
+
+    * - remotely accessible
+      - intended to be accessible from outside the local network.
+
+    * - security module
+      - set of hardware, software, and/or firmware that implements security functions.
+
+    * - security update
+      - software update that addresses security vulnerabilities either discovered by or reported
+        to the manufacturer.
+
+    * - sensitive security parameters
+      - critical security parameters and public security parameters.
+
+    * - software service
+      - software component of a device that is used to support functionality.
+
+    * - telemetry
+      - data from a device that can provide information to help the manufacturer identify issues
+        or information related to device usage.
+
+    * - unique per device
+      - unique for each individual device of a given product class or type.
+
+    * - user
+      - natural person or organization.
+
+Provisions Assessment
+*********************
+
+ The following table is a self-assessment using Table B.1 from ETSI EN
+ 303 645, specifically focusing on the Zephyr RTOS as a component
+ within IoT products.
+
+ According with ETSI 303 645, table B.1 provides a mechanism to give information
+ about the implementation of the provisions presented in the standard. Zephyr has
+ adopted the following notations used in the standard:
+
+.. list-table:: ETSI 303645 Table B.1 notations
+    :widths: 17 43
+
+    * - M
+      - the provision is a mandatory requirement
+
+    * - R
+      - the provision is a recommendation
+
+    * - M C
+      - the provision is a mandatory requirement and conditional
+
+    * - R C
+      - the provision is a recommendation and conditional
+
+    * - Y
+      - The provision is supported by Zephyr
+
+    * - N
+      - The provision is not supported by Zephyr
+
+    * - N/A
+      - The provision is not applicable to Zephyr or it is product makers responsibility
+
+.. raw:: latex
+
+    \begin{landscape}
+
+.. list-table:: ETSI 303645 provisions assessment using table B.1
+    :header-rows: 1
+    :widths: 25 80 15 15 60
+
+    * - Provision
+      - Description
+      - Status
+      - Support
+      - Detail
+
+        .. _ETSI_Provision_5_1_1:
+    * - Provision 5.1-1
+      - Where passwords are used and in any state other than the
+        factory default, all consumer IoT device passwords shall be
+        unique per device or defined by the user.
+      - M C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_1_2:
+    * - Provision 5.1-2
+      - Where pre-installed unique per device passwords are used,
+        these shall be generated with a mechanism that reduces the
+        risk of automated attacks against a class or type of device.
+      - M C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_1_3:
+    * - Provision 5.1-3
+      - Authentication mechanisms used to authenticate users against a
+        device shall use best practice cryptography, appropriate to
+        the properties of the technology, risk and usage.
+      - M
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_1_4:
+    * - Provision 5.1-4
+      - Where a user can authenticate against a device, the device
+        shall provide to the user or an administrator a simple
+        mechanism to change the authentication value used.
+      - M C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_1_5:
+    * - Provision 5.1-5
+      - When the device is not a constrained device, it shall have a
+        mechanism available which makes brute-force attacks on
+        authentication mechanisms via network interfaces
+        impracticable.
+      - M C
+      - N
+      - **TODO**
+
+        .. _ETSI_Provision_5_2_1:
+    * - Provision 5.2-1
+      - The manufacture shall make a vulnerability disclosure policy publicly
+        available.
+      - M
+      - Y
+      - :ref:`Vulnerability Management <reporting>`
+
+        .. _ETSI_Provision_5_2_2:
+    * - Provision 5.2-2
+      - Disclosed vulnerabilities should be acted on in a timely manner.
+      - R
+      - Y
+      - :ref:`Vulnerability Timeline  <vulnerability_timeline>`
+
+        .. _ETSI_Provision_5_2_3:
+    * - Provision 5.2-3
+      - Manufacturers should continually monitor for, identify and rectify security
+        vulnerabilities within products and services they sell, produce, have produced
+        and services they operate during the defined support period.
+      - R
+      - Y
+      - `Modules <https://github.com/zephyrproject-rtos/>`_ are covered
+
+        .. _ETSI_Provision_5_3_1:
+    * - Provision 5.3-1
+      - All software components in consumer IoT devices should be securely updatable.
+      - R
+      - Y
+      - :ref:`Device firwmware upgrade  <dfu>`
+
+        .. _ETSI_Provision_5_3_2:
+    * - Provision 5.3-2
+      - When the device is not a constrained device, it shall have an update mechanism
+        for the secure installation of updates.
+      - M C
+      - Y
+      - :ref:`Device firwmware upgrade  <dfu>`
+
+        .. _ETSI_Provision_5_3_3:
+    * - Provision 5.3-3
+      - An update shall be simple for the user to apply.
+      - M C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_3_4:
+    * - Provision 5.3-4
+      - Automatic mechanisms should be used for software updates.
+      - R C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_3_5:
+    * - Provision 5.3-5
+      - The device should check after initialization, and then periodically, whether
+        security updates are available.
+      - R C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_3_6:
+    * - Provision 5.3-6
+      - If the device supports automatic updates and/or update notifications, these
+        should be enabled in the initialized state and configurable so that the user
+        can enable, disable, or postpone installation of security updates and/or
+        update notifications.
+      - R C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_3_7:
+    * - Provision 5.3-7
+      - The device shall use best practice cryptography to facilitate secure update mechanisms.
+      - M C
+      - Y
+      - :ref:`West Sign  <west-sign>`
+
+        .. _ETSI_Provision_5_3_8:
+    * - Provision 5.3-8
+      - Security updates shall be timely.
+      - M C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_3_9:
+    * - Provision 5.3-9
+      - The device should verify the authenticity and integrity of software updates.
+      - R C
+      - Y
+      - Functionality provided by `MCUboot <https://github.com/zephyrproject-rtos/mcuboot>`. Also see :ref:`Device Firwmware Upgrade  <dfu>`
+
+        .. _ETSI_Provision_5_3_10:
+    * - Provision 5.3-10
+      - Where updates are delivered over a network interface, the device shall verify
+        the authenticity and integrity of each update via a trust relationship.
+      - M
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_3_11:
+    * - Provision 5.3-11
+      - The manufacturer should inform the user in a recognizable and apparent manner
+        that a security update is required together with information on the risks
+        mitigated by that update.
+      - R C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_3_12:
+    * - Provision 5.3-12
+      - The device should notify the user when the application of a software update
+        will disrupt the basic functioning of the device.
+      - R C
+      - N/A
+      - Zephyr provides this information for its updates. Anyone using Zephyr in their products must check if they are affected
+
+        .. _ETSI_Provision_5_3_13:
+    * - Provision 5.3-13
+      - The manufacturer shall publish, in an accessible way that is clear and
+        transparent to the user, the defined support period.
+      - M
+      - Y
+      - :ref:`Release Life Cycle and Maintenance  <zephyr_release_cycle>`
+
+        .. _ETSI_Provision_5_3_14:
+    * - Provision 5.3-14
+      - For constrained devices that cannot have their software updated, the rationale
+        for the absence of software updates, the period and method of hardware replacement
+        support and a defined support period should be published by the manufacturer in an
+        accessible way that is clear and transparent to the user.
+      - R C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_3_15:
+    * - Provision 5.3-15
+      - For constrained devices that cannot have their software updated, the product
+        should be isolable and the hardware replaceable.
+      - R C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_3_16:
+    * - Provision 5.3-16
+      - The model designation of the consumer IoT device shall be clearly recognizable,
+        either by labelling on the device or via a physical interface.
+      - M
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_4_1:
+    * - Provision 5.4-1
+      - Sensitive security parameters in persistent storage shall be stored securely by the device.
+      - M
+      - N
+      - There is not secure storage within Zephyr
+
+        .. _ETSI_Provision_5_4_2:
+    * - Provision 5.4-2
+      - Where a hard-coded unique per device identity is used in a device for security purposes,
+        it shall be implemented in such a way that it resists tampering by means such as physical,
+        electrical or software.
+      - M C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_4_3:
+    * - Provision 5.4-3
+      - Hard-coded critical security parameters in device software source code shall not be used.
+      - M
+      - Y
+      - :ref:`Hardening Tool <hardening>`
+
+        .. _ETSI_Provision_5_4_4:
+    * - Provision 5.4-4
+      - Any critical security parameters used for integrity and authenticity checks of software
+        updates and for protection of communication with associated services in device software
+        shall be unique per device and shall be produced with a mechanism that reduces the risk
+        of automated attacks against classes of devices.
+      - M
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_5_1:
+    * - Provision 5.5-1
+      - The consumer IoT device shall use best practice cryptography to communicate securely.
+      - M
+      - Y
+      -
+
+        .. _ETSI_Provision_5_5_2:
+    * - Provision 5.5-2
+      - The consumer IoT device should use reviewed or evaluated implementations to deliver
+        network and security functionalities, particularly in the field of cryptography.
+      - R
+      - Y
+      -
+
+        .. _ETSI_Provision_5_5_3:
+    * - Provision 5.5-3
+      - Cryptographic algorithms and primitives should be updatable.
+      - R
+      - N
+      - The whole image must be updated
+
+        .. _ETSI_Provision_5_5_4:
+    * - Provision 5.5-4
+      - Access to device functionality via a network interface in the initialized state should
+        only be possible after authentication on that interface.
+      - R
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_5_5:
+    * - Provision 5.5-5
+      - Device functionality that allows security-relevant changes in configuration via a
+        network interface shall only be accessible after authentication. The exception is for
+        network service protocols that are relied upon by the device and where the manufacturer
+        cannot guarantee what configuration will be required for the device to operate.
+      - M
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_5_6:
+    * - Provision 5.5-6
+      - Critical security parameters should be encrypted in transit, with such encryption
+        appropriate to the properties of the technology, risk and usage.
+      - R
+      - Y
+      -
+
+        .. _ETSI_Provision_5_5_7:
+    * - Provision 5.5-7
+      - The consumer IoT device shall protect the confidentiality of critical security
+        parameters that are communicated via remotely accessible network interfaces.
+      - M
+      - Y
+      -
+
+        .. _ETSI_Provision_5_5_8:
+    * - Provision 5.5-8
+      - The manufacturer shall follow secure management processes for critical security
+        parameters that relate to the device.
+      - M
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_6_1:
+    * - Provision 5.6-1
+      - All unused network and logical interfaces shall be disabled.
+      - M
+      - Y
+      - :ref:`Kconfig <kconfig>`
+
+        .. _ETSI_Provision_5_6_2:
+    * - Provision 5.6-2
+      - In the initialized state, the network interfaces of the device shall minimize the
+        unauthenticated disclosure of security-relevant information.
+      - M
+      - Y
+      -
+
+        .. _ETSI_Provision_5_6_3:
+    * - Provision 5.6-3
+      - Device hardware should not unnecessarily expose physical interfaces to attack.
+      - R
+      - Y
+      - :ref:`Kconfig <kconfig>` and :ref:`Hardening Tool <hardening>`
+
+        .. _ETSI_Provision_5_6_4:
+    * - Provision 5.6-4
+      - Where a debug interface is physically accessible, it shall be disabled in software.
+      - M C
+      - Y
+      - :ref:`Hardening Tool <hardening>`
+
+        .. _ETSI_Provision_5_6_5:
+    * - Provision 5.6-5
+      - The manufacturer should only enable software services that are used or required for
+        the intended use or operation of the device.
+      - R
+      - Y
+      - :ref:`Kconfig <kconfig>` and :ref:`Hardening Tool <hardening>`
+
+        .. _ETSI_Provision_5_6_6:
+    * - Provision 5.6-6
+      - Code should be minimized to the functionality necessary for the service/device to operate.
+      - R
+      - Y
+      - :ref:`Kconfig <kconfig>`
+
+        .. _ETSI_Provision_5_6_7:
+    * - Provision 5.6-7
+      - Software should run with least necessary privileges, taking account of both security
+        and functionality.
+      - R
+      - Y
+      - :ref:`Security Overview <security-overview>`
+
+        .. _ETSI_Provision_5_6_8:
+    * - Provision 5.6-8
+      - The device should include a hardware-level access control mechanism for memory.
+      - R
+      - Y
+      - :ref:`Memory protection <memory_domain>`
+
+        .. _ETSI_Provision_5_6_9:
+    * - Provision 5.6-9
+      - The manufacturer should follow secure development processes for software deployed on
+        the device.
+      - R
+      - Y
+      - :ref:`Security Overview  <security-overview>` and :ref:`Coding guidelines <coding_guidelines>`
+
+        .. _ETSI_Provision_5_7_1:
+    * - Provision 5.7-1
+      - The consumer IoT device should verify its software using secure boot mechanisms.
+      - R
+      - Y
+      - Functionality provided by `MCUboot <https://github.com/zephyrproject-rtos/mcuboot>`. Also see :ref:`Security Overview  <west-sign>`
+
+        .. _ETSI_Provision_5_7_2:
+    * - Provision 5.7-2
+      - If an unauthorized change is detected to the software, the device should alert the
+        user and/or administrator to the issue and should not connect to wider networks than
+        those necessary to perform the alerting function.
+      - R
+      - N
+      - Zephyr does not provide runtime detection / notification.
+
+        .. _ETSI_Provision_5_8_1:
+    * - Provision 5.8-1
+      - The confidentiality of personal data transiting between a device and a service,
+        especially associated services, should be protected, with best practice cryptography.
+      - R
+      - Y
+      -
+
+        .. _ETSI_Provision_5_8_2:
+    * - Provision 5.8-2
+      - The confidentiality of sensitive personal data communicated between the device and
+        associated services shall be protected, with cryptography appropriate to the
+        properties of the technology and usage.
+      - M
+      - Y
+      -
+
+        .. _ETSI_Provision_5_8_3:
+    * - Provision 5.8-3
+      - All external sensing capabilities of the device shall be documented in an accessible
+        way that is clear and transparent for the user.
+      - M
+      - Y
+      - :ref:`sensing`
+
+        .. _ETSI_Provision_5_9_1:
+    * - Provision 5.9-1
+      - Resilience should be built in to consumer IoT devices and services, taking into
+        account the possibility of outages of data networks and power.
+      - R
+      - Y
+      -
+
+        .. _ETSI_Provision_5_9_2:
+    * - Provision 5.9-2
+      - Consumer IoT devices should remain operating and locally functional in the case of a
+        loss of network access and should recover cleanly in the case of restoration of a
+        loss of power.
+      - R
+      - Y
+      -
+
+        .. _ETSI_Provision_5_9_3:
+    * - Provision 5.9-3
+      - The consumer IoT device should connect to networks in an expected, operational and
+        stable state and in an orderly fashion, taking the capability of the infrastructure
+        into consideration.
+      - R
+      - Y
+      -
+
+        .. _ETSI_Provision_5_10_1:
+    * - Provision 5.10-1
+      - If telemetry data is collected from consumer IoT devices and services, such as usage
+        and measurement data, it should be examined for security anomalies.
+      - R C
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_11_1:
+    * - Provision 5.11-1
+      - The user shall be provided with functionality such that user data can be erased from
+        the device in a simple manner.
+      - M
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_11_2:
+    * - Provision 5.11-2
+      - The consumer should be provided with functionality on the device such that personal
+        data can be removed from associated services in a simple manner.
+      - R
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_11_3:
+    * - Provision 5.11-3
+      - Users should be given clear instructions on how to delete their personal data.
+      - R
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_11_4:
+    * - Provision 5.11-4
+      - Users should be provided with clear confirmation that personal data has been deleted
+        from services, devices and applications.
+      - R
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_12_1:
+    * - Provision 5.12-1
+      - Installation and maintenance of consumer IoT should involve minimal decisions by the
+        user and should follow security best practice on usability.
+      - R
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_12_2:
+    * - Provision 5.12-2
+      - The manufacturer should provide users with guidance on how to securely set up their device.
+      - R
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_12_3:
+    * - Provision 5.12-3
+      - The manufacturer should provide users with guidance on how to check whether their
+        device is securely set up.
+      - R
+      - N/A
+      -
+
+        .. _ETSI_Provision_5_13_1:
+    * - Provision 5.13-1
+      - The consumer IoT device software shall validate data input via user interfaces or
+        transferred via Application Programming Interfaces (APIs) or between networks in
+        services and devices.
+      - M
+      - Y
+      - :ref:`Syscall verification <syscall_verification>` and :ref:`Coding guidelines <coding_guidelines>`
+
+        .. _ETSI_Provision_6_1_1:
+    * - Provision 6.1-1
+      - The manufacturer shall provide consumers with clear and transparent information about
+        what personal data is processed, how it is being used, by whom, and for what purposes,
+        for each device and service. This also applies to third parties that can be involved,
+        including advertisers.
+      - M
+      - N/A
+      -
+
+        .. _ETSI_Provision_6_1_2:
+    * - Provision 6.1-2
+      - Where personal data is processed on the basis of consumers' consent, this consent
+        shall be obtained in a valid way.
+      - M C
+      - N/A
+      -
+
+        .. _ETSI_Provision_6_1_3:
+    * - Provision 6.1-3
+      - Consumers who gave consent for the processing of their personal data shall have
+        the capability to withdraw it at any time.
+      - M
+      - N/A
+      -
+
+        .. _ETSI_Provision_6_1_4:
+    * - Provision 6.1-4
+      - If telemetry data is collected from consumer IoT devices and services, the
+        processing of personal data should be kept to the minimum necessary for the
+        intended functionality.
+      - R C
+      - N/A
+      -
+
+        .. _ETSI_Provision_6_1_5:
+    * - Provision 6.1-5
+      - If telemetry data is collected from consumer IoT devices and services, consumers
+        shall be provided with information on what telemetry data is collected, how it is
+        being used, by whom, and for what purposes.
+      - M C
+      - N/A
+      -
+
+.. raw:: latex
+
+    \end{landscape}

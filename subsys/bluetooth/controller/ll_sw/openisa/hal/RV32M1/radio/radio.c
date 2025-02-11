@@ -8,7 +8,6 @@
 
 #include <string.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/sys/dlist.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/toolchain.h>
@@ -685,7 +684,7 @@ void radio_whiten_iv_set(uint32_t iv)
 	GENFSK->WHITEN_SZ_THR |= GENFSK_WHITEN_SZ_THR_WHITEN_SZ_THR(0);
 }
 
-void radio_aa_set(uint8_t *aa)
+void radio_aa_set(const uint8_t *aa)
 {
 	/* Configure Access Address detection using NETWORK ADDRESS 0 */
 	GENFSK->NTW_ADR_0 = *((uint32_t *)aa);

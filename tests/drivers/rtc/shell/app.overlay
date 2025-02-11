@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2023 Prevas A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	fake_rtc: fake_rtc {
+		compatible = "zephyr,fake-rtc";
+		status = "okay";
+	};
+};

@@ -12,10 +12,27 @@ menuconfig NET_IPV4
 if NET_IPV4
 
 config NET_INITIAL_TTL
-	int "Initial time to live for a connection"
+	int "Initial IPv4 time to live value for unicast packets"
 	default 64
+	range 0 255
 	help
-	  The value should be > 0
+	  The value should normally be > 0. The device receiving the IPv4
+	  packet will decrement the value and will drop the packet if the TTL
+	  value is 0. When sending, the packet is dropped before transmitting
+	  to network if TTL is 0.
+
+config NET_INITIAL_MCAST_TTL
+	int "Initial IPv4 time to live value for multicast packets"
+	default 1
+	range 0 255
+	help
+	  The value should normally be > 0. The device receiving the IPv4
+	  packet will decrement the value and will drop the packet if the TTL
+	  value is 0. When sending, the packet is dropped before transmitting
+	  to network if TTL is 0.
+	  The default is 1 (same as in Linux) which means that multicast packets
+	  don't leave the local network unless the application explicitly
+	  requests it.
 
 config NET_IF_MAX_IPV4_COUNT
 	int "Max number of IPv4 network interfaces in the system"
@@ -37,6 +54,10 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 	default 2 if NET_IPV4_IGMP
 	default 1
 
+config NET_IF_MCAST_IPV4_SOURCE_COUNT
+	int "Max number of IPv4 sources per mcast address to be included or excluded"
+	default 1
+
 config NET_ICMPV4_ACCEPT_BROADCAST
 	bool "Accept broadcast ICMPv4 echo-request"
 	help
@@ -50,7 +71,7 @@ config NET_IPV4_ACCEPT_ZERO_BROADCAST
 	  0.0.0.0 broadcast address as described in RFC 1122 ch. 3.3.6
 
 config NET_IPV4_IGMP
-	bool "Internet Group Management Protocol (IGMP) support"
+	bool "Internet Group Management Protocol (IGMPv2) support"
 	select NET_IPV4_HDR_OPTIONS
 	help
 	  The value depends on your network needs. IGMP should normally be
@@ -59,25 +80,27 @@ config NET_IPV4_IGMP
 	  because IP Router Alert option must be sent.
 	  See RFC 2236 for details.
 
-config NET_DHCPV4
-	bool "DHCPv4 client"
-	select NET_MGMT
-	select NET_MGMT_EVENT
-	depends on NET_UDP
-
-config NET_DHCPV4_INITIAL_DELAY_MAX
-	int "Maximum time out for initial discover request"
-	depends on NET_DHCPV4
-	default 10
-	range 2 10
+config NET_IPV4_IGMPV3
+	bool "Internet Group Management Protocol version 3 (IGMPv3) support"
+	depends on NET_IPV4_IGMP
 	help
-	  As per RFC2131 4.1.1, we wait a random period between
-	  1 and 10 seconds before sending the initial discover.
+	  Use IGMPv3 for managing the multicast groups.
+
+config NET_IPV4_ACD
+	bool "Activate IPv4 address conflict detection (RFC 5227)"
+	depends on NET_ARP
+	help
+	  Activate IPv4 address conflict detection specified in RFC 5227.
+	  The conflict detection is based on ARP probes/announcements.
 
 config NET_IPV4_AUTO
 	bool "IPv4 autoconfiguration [EXPERIMENTAL]"
 	depends on NET_ARP
 	select EXPERIMENTAL
+	select NET_IPV4_ACD
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
 	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
 
@@ -138,13 +161,13 @@ module-str = Log level for ICMPv4
 module-help = Enables ICMPv4 code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
-if NET_DHCPV4
-module = NET_DHCPV4
+#if NET_IPV4_ACD
+module = NET_IPV4_ACD
 module-dep = NET_LOG
-module-str = Log level for DHCPv4 client
-module-help = Enable debug diagnostic from DHCPV4 client.
+module-str = Log level for IPv4 address conflict detection
+module-help = Enables IPv4 address conflict detection debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
-endif # NET_DHCPV4
+#endif
 
 if NET_IPV4_AUTO
 module = NET_IPV4_AUTO

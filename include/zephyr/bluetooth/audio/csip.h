@@ -1,5 +1,10 @@
 /**
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * @file
+ * @brief Bluetooth Coordinated Set Identification Profile (CSIP) APIs.
+ */
+
+/*
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,15 +17,26 @@
  *
  * @defgroup bt_gatt_csip Coordinated Set Identification Profile (CSIP)
  *
+ * @since 3.0
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
- * *
- * [Experimental] Users should note that the APIs can change as a part of ongoing development.
+ *
+ * The Coordinated Set Identification Profile (CSIP) provides procedures to discover and coordinate
+ * sets of devices.
  */
 
-#include <zephyr/types.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +45,10 @@ extern "C" {
 /** Recommended timer for member discovery */
 #define BT_CSIP_SET_COORDINATOR_DISCOVER_TIMER_VALUE        K_SECONDS(10)
 
+/**
+ * Defines the maximum number of Coordinated Set Identification service instances for the
+ * Coordinated Set Identification Set Coordinator
+ */
 #if defined(CONFIG_BT_CSIP_SET_COORDINATOR)
 #define BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES
 #else
@@ -45,7 +65,7 @@ extern "C" {
 #define BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY      0x03
 
 /** Size of the Set Identification Resolving Key (SIRK) */
-#define BT_CSIP_SET_SIRK_SIZE 16
+#define BT_CSIP_SIRK_SIZE 16
 
 /** Size of the Resolvable Set Identifier (RSI) */
 #define BT_CSIP_RSI_SIZE                        6
@@ -124,7 +144,7 @@ struct bt_csip_set_member_register_param {
 	 * This shall be unique between different sets, and shall be the same
 	 * for each set member for each set.
 	 */
-	uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE];
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 
 	/**
 	 * @brief Boolean to set whether the set is lockable by clients
@@ -145,7 +165,7 @@ struct bt_csip_set_member_register_param {
 	/** Pointer to the callback structure. */
 	struct bt_csip_set_member_cb *cb;
 
-#if CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1
+#if CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1 || defined(__DOXYGEN__)
 	/**
 	 * @brief Parent service pointer
 	 *
@@ -189,11 +209,33 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 				struct bt_csip_set_member_svc_inst **svc_inst);
 
 /**
- * @brief Print the SIRK to the debug output
+ * @brief Unregister a Coordinated Set Identification Service instance.
  *
- * @param svc_inst   Pointer to the Coordinated Set Identification Service.
+ * This will unregister and disable the service instance.
+ *
+ * @param svc_inst  Pointer to the registered Coordinated Set Identification Service.
+ *
+ * @return 0 if success, errno on failure.
  */
-void bt_csip_set_member_print_sirk(const struct bt_csip_set_member_svc_inst *svc_inst);
+int bt_csip_set_member_unregister(struct bt_csip_set_member_svc_inst *svc_inst);
+
+/**
+ * @brief Set the SIRK of a service instance
+ *
+ * @param svc_inst  Pointer to the registered Coordinated Set Identification Service.
+ * @param sirk      The new SIRK.
+ */
+int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
+			    const uint8_t sirk[BT_CSIP_SIRK_SIZE]);
+
+/**
+ * @brief Get the SIRK of a service instance
+ *
+ * @param[in]  svc_inst  Pointer to the registered Coordinated Set Identification Service.
+ * @param[out] sirk      Array to store the SIRK in.
+ */
+int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
+				uint8_t sirk[BT_CSIP_SIRK_SIZE]);
 
 /**
  * @brief Generate the Resolvable Set Identifier (RSI) value.
@@ -201,7 +243,7 @@ void bt_csip_set_member_print_sirk(const struct bt_csip_set_member_svc_inst *svc
  * This will generate RSI for given @p svc_inst instance.
  *
  * @param svc_inst  Pointer to the Coordinated Set Identification Service.
- * @param rsi       Pointer to the 6-octet newly generated RSI data.
+ * @param rsi       Pointer to the 6-octet newly generated RSI data in little-endian.
  *
  * @return int		0 if on success, errno on error.
  */
@@ -227,10 +269,10 @@ struct bt_csip_set_coordinator_set_info {
 	/**
 	 * @brief The 16 octet set Set Identity Resolving Key (SIRK)
 	 *
-	 * The Set SIRK may not be exposed by the server over Bluetooth, and
+	 * The SIRK may not be exposed by the server over Bluetooth, and
 	 * may require an out-of-band solution.
 	 */
-	uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE];
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 
 	/**
 	 * @brief The size of the set
@@ -240,11 +282,14 @@ struct bt_csip_set_coordinator_set_info {
 	uint8_t set_size;
 
 	/**
-	 * @brief The rank of the set on on the remote device
+	 * @brief The rank of the set on the remote device
 	 *
 	 * Will be 0 if not exposed by the server.
 	 */
 	uint8_t rank;
+
+	/** Whether or not the set can be locked on this device */
+	bool lockable;
 };
 
 /**
@@ -254,6 +299,7 @@ struct bt_csip_set_coordinator_set_info {
  * (bt_csip_set_coordinator_discover()).
  */
 struct bt_csip_set_coordinator_csis_inst {
+	/** Information about the coordinated set */
 	struct bt_csip_set_coordinator_set_info info;
 
 	/** Internally used pointer value */
@@ -291,6 +337,21 @@ typedef void (*bt_csip_set_coordinator_discover_cb)(
 int bt_csip_set_coordinator_discover(struct bt_conn *conn);
 
 /**
+ * @brief Get the set member from a connection pointer
+ *
+ * Get the Coordinated Set Identification Profile Set Coordinator pointer from a connection pointer.
+ * Only Set Coordinators that have been initiated via bt_csip_set_coordinator_discover() can be
+ * retrieved.
+ *
+ * @param conn     Connection pointer.
+ *
+ * @retval Pointer to a Coordinated Set Identification Profile Set Coordinator instance
+ * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
+ */
+struct bt_csip_set_coordinator_set_member *
+bt_csip_set_coordinator_set_member_by_conn(const struct bt_conn *conn);
+
+/**
  * @typedef bt_csip_set_coordinator_lock_set_cb
  * @brief Callback for locking a set across one or more devices
  *
@@ -312,6 +373,16 @@ typedef void (*bt_csip_set_coordinator_lock_changed_cb)(
 	struct bt_csip_set_coordinator_csis_inst *inst, bool locked);
 
 /**
+ * @typedef bt_csip_set_coordinator_sirk_changed_cb
+ * @brief Callback when the SIRK value of a set of a connected device changes.
+ *
+ * @param inst    The Coordinated Set Identification Service instance that was changed.
+ *                The new SIRK can be accessed via the @p inst.info.
+ */
+typedef void (*bt_csip_set_coordinator_sirk_changed_cb)(
+	struct bt_csip_set_coordinator_csis_inst *inst);
+
+/**
  * @typedef bt_csip_set_coordinator_ordered_access_cb_t
  * @brief Callback for bt_csip_set_coordinator_ordered_access()
  *
@@ -330,29 +401,38 @@ typedef void (*bt_csip_set_coordinator_ordered_access_cb_t)(
 	int err, bool locked,
 	struct bt_csip_set_coordinator_set_member *member);
 
+/**
+ * @brief Struct to hold the Coordinated Set Identification Profile Set Coordinator callbacks
+ *
+ * These can be registered for usage with bt_csip_set_coordinator_register_cb().
+ */
 struct bt_csip_set_coordinator_cb {
-	/* Set callbacks */
-	bt_csip_set_coordinator_lock_set_cb             lock_set;
-	bt_csip_set_coordinator_lock_set_cb             release_set;
-	bt_csip_set_coordinator_lock_changed_cb         lock_changed;
+	/** Callback when discovery has finished */
+	bt_csip_set_coordinator_discover_cb discover;
+	/** Callback when locking a set has finished */
+	bt_csip_set_coordinator_lock_set_cb lock_set;
+	/** Callback when unlocking a set has finished */
+	bt_csip_set_coordinator_lock_set_cb release_set;
+	/** Callback when a set's lock state has changed */
+	bt_csip_set_coordinator_lock_changed_cb lock_changed;
+	/** Callback when a set's SIRK has changed */
+	bt_csip_set_coordinator_sirk_changed_cb sirk_changed;
+	/** Callback for the ordered access procedure */
+	bt_csip_set_coordinator_ordered_access_cb_t ordered_access;
 
-	/* Device specific callbacks */
-	bt_csip_set_coordinator_discover_cb             discover;
-	bt_csip_set_coordinator_ordered_access_cb_t     ordered_access;
-
-	/** Internally used field for list handling */
+	/** @internal Internally used field for list handling */
 	sys_snode_t _node;
 };
 
 /**
  * @brief Check if advertising data indicates a set member
  *
- * @param set_sirk The SIRK of the set to check against
- * @param data     The advertising data
+ * @param sirk The SIRK of the set to check against
+ * @param data The advertising data
  *
  * @return true if the advertising data indicates a set member, false otherwise
  */
-bool bt_csip_set_coordinator_is_set_member(const uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE],
+bool bt_csip_set_coordinator_is_set_member(const uint8_t sirk[BT_CSIP_SIRK_SIZE],
 					   struct bt_data *data);
 
 /**
@@ -389,7 +469,7 @@ typedef bool (*bt_csip_set_coordinator_ordered_access_t)(
  * (if present). Once this procedure is finished or an error occurs,
  * @ref bt_csip_set_coordinator_cb.ordered_access will be called.
  *
- * This procedure only works if all the members have the lock characterstic,
+ * This procedure only works if all the members have the lock characteristic,
  * and all either has rank = 0 or unique ranks.
  *
  * If any of the members are in the locked state, the procedure will be
@@ -442,7 +522,6 @@ int bt_csip_set_coordinator_lock(const struct bt_csip_set_coordinator_set_member
 int bt_csip_set_coordinator_release(const struct bt_csip_set_coordinator_set_member **members,
 				    uint8_t count,
 				    const struct bt_csip_set_coordinator_set_info *set_info);
-
 
 #ifdef __cplusplus
 }

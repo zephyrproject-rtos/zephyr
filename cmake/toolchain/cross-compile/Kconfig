@@ -7,3 +7,10 @@ config TOOLCHAIN_CROSS_COMPILE_SUPPORTS_THREAD_LOCAL_STORAGE
 	help
 	  Set this if the cross-compile toolchain being used for the build
 	  supports thread local storage.
+
+config TOOLCHAIN_CROSS_COMPILE_SUPPORTS_GNU_EXTENSIONS
+	bool "Cross-compile toolchain supports GNU Extensions"
+	select TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
+	help
+	  Set this if the cross-compile toolchain being used for the build
+	  supports GNU Extensions.

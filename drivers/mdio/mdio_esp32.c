@@ -30,7 +30,7 @@ struct mdio_esp32_dev_config {
 	const struct pinctrl_dev_config *pcfg;
 };
 
-static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
+static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 			 bool write, uint16_t data_in, uint16_t *data_out)
 {
 	struct mdio_esp32_dev_data *const dev_data = dev->data;
@@ -46,7 +46,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 	if (write) {
 		emac_ll_set_phy_data(dev_data->hal.mac_regs, data_in);
 	}
-	emac_hal_set_phy_cmd(&dev_data->hal, prtad, devad, write);
+	emac_hal_set_phy_cmd(&dev_data->hal, prtad, regad, write);
 
 	/* Poll until operation complete */
 	bool success = false;
@@ -73,27 +73,17 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 	return 0;
 }
 
-static int mdio_esp32_read(const struct device *dev, uint8_t prtad, uint8_t devad,
+static int mdio_esp32_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			 uint16_t *data)
 {
-	return mdio_transfer(dev, prtad, devad, false, 0, data);
+	return mdio_transfer(dev, prtad, regad, false, 0, data);
 
 }
 
 static int mdio_esp32_write(const struct device *dev, uint8_t prtad,
-			  uint8_t devad, uint16_t data)
+			  uint8_t regad, uint16_t data)
 {
-	return mdio_transfer(dev, prtad, devad, true, data, NULL);
-}
-
-static void mdio_esp32_bus_enable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
-static void mdio_esp32_bus_disable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
+	return mdio_transfer(dev, prtad, regad, true, data, NULL);
 }
 
 static int mdio_esp32_initialize(const struct device *dev)
@@ -114,8 +104,9 @@ static int mdio_esp32_initialize(const struct device *dev)
 	clock_control_subsys_t clock_subsys =
 		(clock_control_subsys_t)DT_CLOCKS_CELL(DT_NODELABEL(mdio), offset);
 
+	/* clock is shared, so do not bail out if already enabled */
 	res = clock_control_on(clock_dev, clock_subsys);
-	if (res != 0) {
+	if (res < 0 && res != -EALREADY) {
 		goto err;
 	}
 
@@ -134,8 +125,6 @@ err:
 static const struct mdio_driver_api mdio_esp32_driver_api = {
 	.read = mdio_esp32_read,
 	.write = mdio_esp32_write,
-	.bus_enable = mdio_esp32_bus_enable,
-	.bus_disable = mdio_esp32_bus_disable,
 };
 
 #define MDIO_ESP32_CONFIG(n)						\
@@ -143,12 +132,7 @@ static const struct mdio_esp32_dev_config mdio_esp32_dev_config_##n = {	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 };
 
-#define MDIO_ESP32_PROTOCOL_ASSERT(n)					\
-	BUILD_ASSERT(DT_INST_ENUM_IDX(n, protocol) == CLAUSE_22,	\
-		     "ESP32 MDIO only supports CLAUSE_22 protocol")
-
 #define MDIO_ESP32_DEVICE(n)						\
-	MDIO_ESP32_PROTOCOL_ASSERT(n);					\
 	PINCTRL_DT_INST_DEFINE(n);					\
 	MDIO_ESP32_CONFIG(n);						\
 	static struct mdio_esp32_dev_data mdio_esp32_dev_data##n;	\

@@ -30,6 +30,7 @@
 #define IT8XXX2_IRQ_SMB_C       16
 #define IT8XXX2_IRQ_WU24        17
 #define IT8XXX2_IRQ_WU22        21
+#define IT8XXX2_IRQ_USB         23
 /* Group 3 */
 #define IT8XXX2_IRQ_KBC_IBF     24
 #define IT8XXX2_IRQ_PMC1_IBF    25

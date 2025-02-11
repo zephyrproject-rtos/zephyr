@@ -1,0 +1,5 @@
+board:
+  name: waveshare_open103z
+  vendor: waveshare
+  socs:
+    - name: stm32f103xe

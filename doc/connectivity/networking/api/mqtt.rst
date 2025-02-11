@@ -16,7 +16,8 @@ publish/subscribe messaging transport for machine-to-machine communication.
 For more information about the protocol itself, see http://mqtt.org/.
 
 Zephyr provides an MQTT client library built on top of BSD sockets API. The
-library is configurable at a per-client basis, with support for MQTT versions
+library can be enabled with :kconfig:option:`CONFIG_MQTT_LIB` Kconfig option and
+is configurable at a per-client basis, with support for MQTT versions
 3.1.0 and 3.1.1. The Zephyr MQTT implementation can be used with either plain
 sockets communicating over TCP, or with secure sockets communicating over
 TLS. See :ref:`bsd_sockets_interface` for more information about Zephyr sockets.
@@ -108,7 +109,7 @@ application through the callback function.
 
    fds[0].fd = client_ctx.transport.tcp.sock;
    fds[0].events = ZSOCK_POLLIN;
-   poll(fds, 1, K_MSEC(5000));
+   poll(fds, 1, 5000);
 
    mqtt_input(&client_ctx);
 
@@ -129,7 +130,7 @@ be called and an appropriate event notified.
 The connection can be closed by calling the ``mqtt_disconnect`` function.
 
 Zephyr provides sample code utilizing the MQTT client API. See
-:ref:`mqtt-publisher-sample` for more information.
+:zephyr:code-sample:`mqtt-publisher` for more information.
 
 Using MQTT with TLS
 *******************
@@ -162,7 +163,7 @@ registered in the system first. For more information on how to do that, refer
 to :ref:`secure sockets documentation <secure_sockets_interface>`.
 
 An example of how to use TLS with MQTT is also present in
-:ref:`mqtt-publisher-sample`.
+:zephyr:code-sample:`mqtt-publisher` sample application.
 
 .. _mqtt_api_reference:
 

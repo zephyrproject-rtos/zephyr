@@ -4,7 +4,7 @@ sample:
   name: protected memory
 common:
   integration_platforms:
-    - mps2_an385
+    - mps2/an385
   tags: userspace
   harness: console
   harness_config:
@@ -14,6 +14,12 @@ common:
 tests:
   sample.kernel.memory_protection.shared_mem:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    platform_exclude: twr_ke18f
+    arch_exclude:
+      - posix
+    platform_exclude:
+      - twr_ke18f
+      - cy8cproto_062_4343w
+      - cy8cproto_063_ble
+      - ucans32k1sic
     extra_configs:
       - CONFIG_TEST_HW_STACK_PROTECTION=n

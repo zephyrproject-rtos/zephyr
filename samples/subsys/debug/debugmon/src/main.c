@@ -7,8 +7,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/arch/arm/aarch32/exc.h>
+#include <cmsis_core.h>
+#include <zephyr/arch/arm/exception.h>
 
 #define LED0_NODE DT_ALIAS(led0)
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
@@ -55,19 +55,19 @@ void z_arm_debug_monitor(void)
 		;
 }
 
-void main(void)
+int main(void)
 {
 	/* Set up led and led timer */
-	if (!device_is_ready(led.port)) {
+	if (!gpio_is_ready_dt(&led)) {
 		printk("Device not ready\n");
-		return;
+		return 0;
 	}
 
 	int err = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
 
 	if (err) {
 		printk("Error configuring LED\n");
-		return;
+		return 0;
 	}
 	k_timer_start(&led_timer, K_NO_WAIT, K_SECONDS(1));
 
@@ -76,9 +76,10 @@ void main(void)
 	if (err) {
 		printk("Error enabling monitor mode:\n"
 			"Cannot enable DBM when CPU is in Debug mode");
-		return;
+		return 0;
 	}
 
 	/* Enter a breakpoint */
 	__asm("bkpt");
+	return 0;
 }

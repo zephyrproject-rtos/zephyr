@@ -40,30 +40,62 @@ config COVERAGE
 	  For more information see
 	  https://docs.zephyrproject.org/latest/guides/coverage.html
 
+choice
+	prompt "Coverage mode"
+	default COVERAGE_NATIVE_GCOV if NATIVE_BUILD
+	default COVERAGE_GCOV if !NATIVE_BUILD
+	depends on COVERAGE
+
+config COVERAGE_NATIVE_GCOV
+	bool "Host compiler gcov based code coverage"
+	depends on NATIVE_BUILD
+	help
+	  Build natively with the compiler standard `--coverage` options,
+	  that is with gcov/GCC-compatible coverage
+
+config COVERAGE_NATIVE_SOURCE
+	bool "Host compiler source based code coverage"
+	depends on NATIVE_BUILD
+	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
+	help
+	  Build natively with the compiler source based coverage options.
+	  Today this is only supported with LLVM
+
 config COVERAGE_GCOV
 	bool "Create Coverage data from hardware platform"
-	default y
-	depends on COVERAGE
-	depends on !NATIVE_APPLICATION
+	depends on !NATIVE_BUILD
 	help
 	  This option will select the custom gcov library. The reports will
 	  be available over serial. This serial dump can be passed to
 	  gen_gcov_files.py which creates the required .gcda files. These
 	  can be read by gcov utility. For more details see gcovr.com .
 
+endchoice
+
 config COVERAGE_GCOV_HEAP_SIZE
 	int "Size of heap allocated for gcov coverage data dump"
+	depends on COVERAGE_GCOV
 	default 32768 if X86 || SOC_SERIES_MPS2
 	default 16384
 	help
 	  This option configures the heap size allocated for gcov coverage
-	  data to be dumped over serial.
+	  data to be dumped over serial. If the value is 0, no buffer will be used,
+	  data will be dumped directly over serial.
 
 config COVERAGE_DUMP
 	bool "Dump coverage data on exit"
 	depends on COVERAGE_GCOV
 	help
 	  Dump collected coverage information to console on exit.
+
+config FORCE_COVERAGE
+	bool "Force coverage"
+	select HAS_COVERAGE_SUPPORT
+	help
+	  Regardless of platform support, it will enable coverage data production.
+	  If the platform does not support coverage by default, setting this config
+	  does not guarantee that coverage data will be gathered.
+	  Application may not fit memory or crash at runtime.
 
 config TEST_USERSPACE
 	bool "Indicate that this test exercises user mode"
@@ -100,8 +132,8 @@ config TEST_ENABLE_USERSPACE
 	bool
 	depends on TEST_USERSPACE
 	depends on ARCH_HAS_USERSPACE
-	select USERSPACE
-	select DYNAMIC_OBJECTS
+	imply USERSPACE
+	imply DYNAMIC_OBJECTS
 	default y
 	help
 	  This hidden option implements the TEST_USERSPACE logic. It turns on
@@ -112,7 +144,7 @@ config TEST_ENABLE_USERSPACE
 config TEST_USERSPACE_WITHOUT_HW_STACK_PROTECTION
 	bool "Run User Mode tests without additionally enabling stack protection"
 	depends on TEST_ENABLE_USERSPACE
-	default y if SOC_SERIES_KINETIS_KE1XF
+	default y if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_S32K1
 	help
 	  A HW platform might not have sufficient MPU/MMU capabilities to support
 	  running all test cases with User Mode and HW Stack Protection features
@@ -133,7 +165,6 @@ config TEST_FLASH_DRIVERS
 	bool "Test flash drivers"
 	depends on BOARD_QEMU_X86
 	select FLASH_HAS_DRIVER_ENABLED
-	select FLASH_HAS_PAGE_LAYOUT
 	help
 	  This option will help test the flash drivers. This should be enabled
 	  only when using qemu_x86.

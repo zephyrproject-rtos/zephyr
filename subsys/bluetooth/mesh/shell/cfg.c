@@ -8,8 +8,8 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#include "../net.h"
-#include "../access.h"
+#include "mesh/net.h"
+#include "mesh/access.h"
 #include "utils.h"
 #include <zephyr/bluetooth/mesh/shell.h>
 
@@ -98,51 +98,195 @@ static int cmd_get_comp(const struct shell *sh, size_t argc, char *argv[])
 		return 0;
 	}
 
-	if (page != 0x00) {
-		shell_print(sh, "Got page 0x%02x. No parser available.", page);
+	if (page != 0 && page != 128 &&
+	    ((page != 1 && page != 129) || !IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) &&
+	    ((page != 2 && page != 130) || !IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_2))) {
+		shell_print(sh, "Got page %d. No parser available.", page);
 		return 0;
 	}
 
-	err = bt_mesh_comp_p0_get(&comp, &buf);
-	if (err) {
-		shell_error(sh, "Couldn't parse Composition data (err %d)", err);
-		return 0;
+	if (page == 0 || page == 128) {
+		err = bt_mesh_comp_p0_get(&comp, &buf);
+
+		if (err) {
+			shell_error(sh, "Couldn't parse Composition data (err %d)",
+				    err);
+			return 0;
+		}
+
+		shell_print(sh, "Got Composition Data for 0x%04x, page: %d:",
+			    bt_mesh_shell_target_ctx.dst, page);
+		shell_print(sh, "\tCID      0x%04x", comp.cid);
+		shell_print(sh, "\tPID      0x%04x", comp.pid);
+		shell_print(sh, "\tVID      0x%04x", comp.vid);
+		shell_print(sh, "\tCRPL     0x%04x", comp.crpl);
+		shell_print(sh, "\tFeatures 0x%04x", comp.feat);
+
+		while (bt_mesh_comp_p0_elem_pull(&comp, &elem)) {
+			int i;
+
+			shell_print(sh, "\tElement @ 0x%04x:", elem.loc);
+
+			if (elem.nsig) {
+				shell_print(sh, "\t\tSIG Models:");
+			} else {
+				shell_print(sh, "\t\tNo SIG Models");
+			}
+
+			for (i = 0; i < elem.nsig; i++) {
+				uint16_t mod_id = bt_mesh_comp_p0_elem_mod(&elem, i);
+
+				shell_print(sh, "\t\t\t0x%04x", mod_id);
+			}
+
+			if (elem.nvnd) {
+				shell_print(sh, "\t\tVendor Models:");
+			} else {
+				shell_print(sh, "\t\tNo Vendor Models");
+			}
+
+			for (i = 0; i < elem.nvnd; i++) {
+				struct bt_mesh_mod_id_vnd mod =
+					bt_mesh_comp_p0_elem_mod_vnd(&elem, i);
+
+				shell_print(sh, "\t\t\tCompany 0x%04x: 0x%04x",
+					    mod.company, mod.id);
+			}
+		}
 	}
 
-	shell_print(sh, "Got Composition Data for 0x%04x:", bt_mesh_shell_target_ctx.dst);
-	shell_print(sh, "\tCID      0x%04x", comp.cid);
-	shell_print(sh, "\tPID      0x%04x", comp.pid);
-	shell_print(sh, "\tVID      0x%04x", comp.vid);
-	shell_print(sh, "\tCRPL     0x%04x", comp.crpl);
-	shell_print(sh, "\tFeatures 0x%04x", comp.feat);
+	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1) && (page == 1 || page == 129)) {
+		/* size of 32 is chosen arbitrary, as sufficient for testing purposes */
+		NET_BUF_SIMPLE_DEFINE(p1_buf, 32);
+		NET_BUF_SIMPLE_DEFINE(p1_item_buf, 32);
+		struct bt_mesh_comp_p1_elem p1_elem = { ._buf = &p1_buf };
+		struct bt_mesh_comp_p1_model_item mod_item = { ._buf = &p1_item_buf };
+		struct bt_mesh_comp_p1_ext_item ext_item = { 0 };
+		int mod_idx = 1;
 
-	while (bt_mesh_comp_p0_elem_pull(&comp, &elem)) {
-		int i;
-
-		shell_print(sh, "\tElement @ 0x%04x:", elem.loc);
-
-		if (elem.nsig) {
-			shell_print(sh, "\t\tSIG Models:");
-		} else {
-			shell_print(sh, "\t\tNo SIG Models");
+		if (!buf.len) {
+			shell_error(sh, "Composition data empty");
+			return 0;
 		}
+		shell_print(sh,
+			    "Got Composition Data for 0x%04x, page: %d:",
+			    bt_mesh_shell_target_ctx.dst, page);
 
-		for (i = 0; i < elem.nsig; i++) {
-			uint16_t mod_id = bt_mesh_comp_p0_elem_mod(&elem, i);
+		while (bt_mesh_comp_p1_elem_pull(&buf, &p1_elem)) {
+			int i, j;
 
-			shell_print(sh, "\t\t\t0x%04x", mod_id);
+			shell_print(sh, "\tElement #%d description", mod_idx);
+
+			for (i = 0; i < p1_elem.nsig; i++) {
+				if (bt_mesh_comp_p1_item_pull(&p1_elem, &mod_item)) {
+					shell_print(sh, "\t\tSIG Model Item #%d:", i+1);
+					if (mod_item.cor_present) {
+						shell_print(sh,
+							    "\t\t\tWith Corresponding ID %u",
+							    mod_item.cor_id);
+					} else {
+						shell_print(sh,
+							    "\t\t\tWithout Corresponding ID");
+					}
+					shell_print(sh,
+						    "\t\t\tWith %u Extended Model Item(s)",
+						    mod_item.ext_item_cnt);
+				}
+				for (j = 0; j < mod_item.ext_item_cnt; j++) {
+					bt_mesh_comp_p1_pull_ext_item(&mod_item,
+								      &ext_item);
+					shell_print(sh,
+						    "\t\t\t\tExtended Item #%d:", j+1);
+					if (ext_item.type == SHORT) {
+						shell_print(sh,
+							    "\t\t\t\t\toffset: %u",
+							    ext_item.short_item.elem_offset);
+						shell_print(sh,
+							    "\t\t\t\t\tindex: %u",
+							    ext_item.short_item.mod_item_idx);
+					} else {
+						shell_print(sh,
+							    "\t\t\t\t\toffset: %u",
+							    ext_item.long_item.elem_offset);
+						shell_print(sh,
+							    "\t\t\t\t\tindex: %u",
+							    ext_item.long_item.mod_item_idx);
+					}
+				}
+			}
+			for (i = 0; i < p1_elem.nvnd; i++) {
+				if (bt_mesh_comp_p1_item_pull(&p1_elem, &mod_item)) {
+					shell_print(sh, "\t\tVendor Model Item #%d:", i+1);
+					if (mod_item.cor_present) {
+						shell_print(sh,
+							    "\t\t\tWith Corresponding ID %u",
+							    mod_item.cor_id);
+					} else {
+						shell_print(sh,
+							    "\t\t\tWithout Corresponding ID");
+					}
+					shell_print(sh,
+						    "\t\t\tWith %u Extended Model Item(s)",
+						    mod_item.ext_item_cnt);
+				}
+				for (j = 0; j < mod_item.ext_item_cnt; j++) {
+					bt_mesh_comp_p1_pull_ext_item(&mod_item,
+								      &ext_item);
+					shell_print(sh,
+						    "\t\t\t\tExtended Item #%d:", j+1);
+					if (ext_item.type == SHORT) {
+						shell_print(sh,
+							    "\t\t\t\t\toffset: %u",
+							    ext_item.short_item.elem_offset);
+						shell_print(sh,
+							    "\t\t\t\t\tindex: %u",
+							    ext_item.short_item.mod_item_idx);
+					} else {
+						shell_print(sh,
+							    "\t\t\t\t\toffset: %u",
+							    ext_item.long_item.elem_offset);
+						shell_print(sh,
+							    "\t\t\t\t\tindex: %u",
+							    ext_item.long_item.mod_item_idx);
+					}
+				}
+			}
+			mod_idx++;
 		}
+	}
 
-		if (elem.nvnd) {
-			shell_print(sh, "\t\tVendor Models:");
-		} else {
-			shell_print(sh, "\t\tNo Vendor Models");
+	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_2) && (page == 2 || page == 130)) {
+		/* size of 32 is chosen arbitrary, as sufficient for testing purposes */
+		NET_BUF_SIMPLE_DEFINE(p2_elem_offset_buf, 32);
+		NET_BUF_SIMPLE_DEFINE(p2_data_buf, 32);
+		struct bt_mesh_comp_p2_record p2_elem = {
+			.elem_buf = &p2_elem_offset_buf,
+			.data_buf = &p2_data_buf
+		};
+
+		if (!buf.len) {
+			shell_error(sh, "Composition data empty");
+			return 0;
 		}
+		shell_print(sh, "Got Composition Data for 0x%04x, page: %d:",
+			    bt_mesh_shell_target_ctx.dst, page);
 
-		for (i = 0; i < elem.nvnd; i++) {
-			struct bt_mesh_mod_id_vnd mod = bt_mesh_comp_p0_elem_mod_vnd(&elem, i);
+		while (bt_mesh_comp_p2_record_pull(&buf, &p2_elem)) {
 
-			shell_print(sh, "\t\t\tCompany 0x%04x: 0x%04x", mod.company, mod.id);
+			shell_print(sh, "\tMesh Profile id: %04x ", p2_elem.id);
+			shell_print(sh, "\t\tVersion: %d.%d.%d ", p2_elem.version.x,
+				    p2_elem.version.y, p2_elem.version.z);
+			shell_print(sh, "\t\tElement offsets:");
+
+			while (p2_elem.elem_buf->len) {
+				shell_print(sh, "\t\t\t%d ",
+					    net_buf_simple_pull_u8(p2_elem.elem_buf));
+			}
+
+			if (p2_elem.data_buf->len) {
+				shell_print(sh, "\t\t%d bytes of additional data is available",
+					    p2_elem.data_buf->len);
+			}
 		}
 	}
 
@@ -423,7 +567,11 @@ static int cmd_net_key_add(const struct shell *sh, size_t argc, char *argv[])
 				return 0;
 			}
 
-			memcpy(key_val, subnet->keys[0].net_key, 16);
+			if (bt_mesh_cdb_subnet_key_export(subnet, 0, key_val)) {
+				shell_error(sh, "Unable to export subnet key from cdb 0x%03x",
+					    key_net_idx);
+				return 0;
+			}
 		} else {
 			subnet = bt_mesh_cdb_subnet_alloc(key_net_idx);
 			if (!subnet) {
@@ -431,7 +579,11 @@ static int cmd_net_key_add(const struct shell *sh, size_t argc, char *argv[])
 				return 0;
 			}
 
-			memcpy(subnet->keys[0].net_key, key_val, 16);
+			if (bt_mesh_cdb_subnet_key_import(subnet, 0, key_val)) {
+				shell_error(sh, "Unable to import subnet key into cdb 0x%03x",
+					    key_net_idx);
+				return 0;
+			}
 			bt_mesh_cdb_subnet_store(subnet);
 		}
 	}
@@ -577,7 +729,11 @@ static int cmd_app_key_add(const struct shell *sh, size_t argc, char *argv[])
 				return 0;
 			}
 
-			memcpy(key_val, app_key->keys[0].app_key, 16);
+			if (bt_mesh_cdb_app_key_export(app_key, 0, key_val)) {
+				shell_error(sh, "Unable to export app key 0x%03x from cdb",
+					    key_app_idx);
+				return 0;
+			}
 		} else {
 			app_key = bt_mesh_cdb_app_key_alloc(key_net_idx, key_app_idx);
 			if (!app_key) {
@@ -585,7 +741,11 @@ static int cmd_app_key_add(const struct shell *sh, size_t argc, char *argv[])
 				return 0;
 			}
 
-			memcpy(app_key->keys[0].app_key, key_val, 16);
+			if (bt_mesh_cdb_app_key_import(app_key, 0, key_val)) {
+				shell_error(sh, "Unable to import app key 0x%03x into cdb",
+					    key_app_idx);
+				return 0;
+			}
 			bt_mesh_cdb_app_key_store(app_key);
 		}
 	}
@@ -700,7 +860,6 @@ static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc <= 2) {
-		printk("ANders\n");
 		err = bt_mesh_cfg_cli_node_identity_get(bt_mesh_shell_target_ctx.net_idx,
 						    bt_mesh_shell_target_ctx.dst, net_idx, &status,
 						    &identify);
@@ -991,7 +1150,7 @@ static int cmd_mod_sub_del(const struct shell *sh, size_t argc, char *argv[])
 	if (status) {
 		shell_print(sh, "Model Subscription Delete failed with status 0x%02x", status);
 	} else {
-		shell_print(sh, "Model subscription deltion was successful");
+		shell_print(sh, "Model subscription deletion was successful");
 	}
 
 	return 0;
@@ -1228,7 +1387,7 @@ static int cmd_mod_sub_del_all(const struct shell *sh, size_t argc, char *argv[]
 	if (status) {
 		shell_print(sh, "Model Subscription Delete All failed with status 0x%02x", status);
 	} else {
-		shell_print(sh, "Model subscription deltion all was successful");
+		shell_print(sh, "Model subscription deletion all was successful");
 	}
 
 	return 0;
@@ -1377,7 +1536,7 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va, uint16
 		       uint16_t cid, char *argv[])
 {
 	struct bt_mesh_cfg_cli_mod_pub pub;
-	uint8_t status, count;
+	uint8_t status, count, res_step, steps;
 	uint16_t interval;
 	uint8_t uuid[16];
 	uint8_t len;
@@ -1395,15 +1554,21 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va, uint16
 	pub.app_idx = shell_strtoul(argv[1], 0, &err);
 	pub.cred_flag = shell_strtobool(argv[2], 0, &err);
 	pub.ttl = shell_strtoul(argv[3], 0, &err);
-	pub.period = shell_strtoul(argv[4], 0, &err);
+	res_step = shell_strtoul(argv[4], 0, &err);
+	steps = shell_strtoul(argv[5], 0, &err);
+	if ((res_step > 3) || (steps > 0x3F)) {
+		shell_print(sh, "Invalid period");
+		return -EINVAL;
+	}
 
-	count = shell_strtoul(argv[5], 0, &err);
+	pub.period = (steps << 2) + res_step;
+	count = shell_strtoul(argv[6], 0, &err);
 	if (count > 7) {
 		shell_print(sh, "Invalid retransmit count");
 		return -EINVAL;
 	}
 
-	interval = shell_strtoul(argv[6], 0, &err);
+	interval = shell_strtoul(argv[7], 0, &err);
 	if (err) {
 		shell_warn(sh, "Unable to parse input string argument");
 		return err;
@@ -1451,7 +1616,7 @@ static int cmd_mod_pub(const struct shell *sh, size_t argc, char *argv[])
 	argc -= 3;
 	argv += 3;
 
-	if (argc == 1 || argc == 8) {
+	if (argc == 1 || argc == 9) {
 		cid = shell_strtoul(argv[0], 0, &err);
 		argc--;
 		argv++;
@@ -1650,53 +1815,54 @@ static int cmd_hb_pub(const struct shell *sh, size_t argc, char *argv[])
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(model_cmds,
-	SHELL_CMD_ARG(app-bind, NULL, "<Addr> <AppIndex> <Model ID> [Company ID]",
+	SHELL_CMD_ARG(app-bind, NULL, "<Addr> <AppKeyIdx> <MID> [CID]",
 		      cmd_mod_app_bind, 4, 1),
-	SHELL_CMD_ARG(app-get, NULL, "<Elem addr> <Model ID> [Company ID]", cmd_mod_app_get,
+	SHELL_CMD_ARG(app-get, NULL, "<ElemAddr> <MID> [CID]", cmd_mod_app_get,
 		      3, 1),
-	SHELL_CMD_ARG(app-unbind, NULL, "<Addr> <AppIndex> <Model ID> [Company ID]",
+	SHELL_CMD_ARG(app-unbind, NULL, "<Addr> <AppKeyIdx> <MID> [CID]",
 		      cmd_mod_app_unbind, 4, 1),
 	SHELL_CMD_ARG(pub, NULL,
-		      "<Addr> <Model ID> [Company ID] [<PubAddr> "
-		      "<AppKeyIndex> <Cred: off, on> <TTL> <Period> <Count> <Interval>]",
-		      cmd_mod_pub, 3, 1 + 7),
+		      "<Addr> <MID> [CID] [<PubAddr> "
+		      "<AppKeyIdx> <Cred(off, on)> <TTL> <PerRes> <PerSteps> <Count> "
+		      "<Int(ms)>]",
+		      cmd_mod_pub, 3, 1 + 8),
 	SHELL_CMD_ARG(pub-va, NULL,
-		      "<Addr> <UUID: 16 hex values> "
-		      "<AppKeyIndex> <Cred: off, on> <TTL> <Period> <Count> <Interval> "
-		      "<Model ID> [Company ID]",
-		      cmd_mod_pub_va, 10, 1),
-	SHELL_CMD_ARG(sub-add, NULL, "<Elem addr> <Sub addr> <Model ID> [Company ID]",
+		      "<Addr> <UUID(1-16 hex)> "
+		      "<AppKeyIdx> <Cred(off, on)> <TTL> <PerRes> <PerSteps> <Count> "
+		      "<Int(ms)> <MID> [CID]",
+		      cmd_mod_pub_va, 11, 1),
+	SHELL_CMD_ARG(sub-add, NULL, "<ElemAddr> <SubAddr> <MID> [CID]",
 		      cmd_mod_sub_add, 4, 1),
-	SHELL_CMD_ARG(sub-del, NULL, "<Elem addr> <Sub addr> <Model ID> [Company ID]",
+	SHELL_CMD_ARG(sub-del, NULL, "<ElemAddr> <SubAddr> <MID> [CID]",
 		      cmd_mod_sub_del, 4, 1),
 	SHELL_CMD_ARG(sub-add-va, NULL,
-		      "<Elem addr> <Label UUID> <Model ID> [Company ID]", cmd_mod_sub_add_va, 4, 1),
+		      "<ElemAddr> <LabelUUID(1-16 hex)> <MID> [CID]", cmd_mod_sub_add_va, 4, 1),
 	SHELL_CMD_ARG(sub-del-va, NULL,
-		      "<Elem addr> <Label UUID> <Model ID> [Company ID]", cmd_mod_sub_del_va, 4, 1),
-	SHELL_CMD_ARG(sub-ow, NULL, "<Elem addr> <Sub addr> <Model ID> [Company ID]",
+		      "<ElemAddr> <LabelUUID(1-16 hex)> <MID> [CID]", cmd_mod_sub_del_va, 4, 1),
+	SHELL_CMD_ARG(sub-ow, NULL, "<ElemAddr> <SubAddr> <MID> [CID]",
 		      cmd_mod_sub_ow, 4, 1),
-	SHELL_CMD_ARG(sub-ow-va, NULL, "<Elem addr> <Label UUID> <Model ID> [Company ID]",
+	SHELL_CMD_ARG(sub-ow-va, NULL, "<ElemAddr> <LabelUUID(1-16 hex)> <MID> [CID]",
 		      cmd_mod_sub_ow_va, 4, 1),
-	SHELL_CMD_ARG(sub-del-all, NULL, "<Elem addr> <Model ID> [Company ID]",
+	SHELL_CMD_ARG(sub-del-all, NULL, "<ElemAddr> <MID> [CID]",
 		      cmd_mod_sub_del_all, 3, 1),
-	SHELL_CMD_ARG(sub-get, NULL, "<Elem addr> <Model ID> [Company ID]", cmd_mod_sub_get,
+	SHELL_CMD_ARG(sub-get, NULL, "<ElemAddr> <MID> [CID]", cmd_mod_sub_get,
 		      3, 1),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(netkey_cmds,
-	SHELL_CMD_ARG(add, NULL, "<NetKeyIndex> [Val]", cmd_net_key_add, 2, 1),
-	SHELL_CMD_ARG(upd, NULL, "<NetKeyIndex> [Val]", cmd_net_key_update, 2, 1),
+	SHELL_CMD_ARG(add, NULL, "<NetKeyIdx> [Key(1-16 hex)]", cmd_net_key_add, 2, 1),
+	SHELL_CMD_ARG(upd, NULL, "<NetKeyIdx> [Key(1-16 hex)]", cmd_net_key_update, 2, 1),
 	SHELL_CMD_ARG(get, NULL, NULL, cmd_net_key_get, 1, 0),
-	SHELL_CMD_ARG(del, NULL, "<NetKeyIndex>", cmd_net_key_del, 2, 0),
+	SHELL_CMD_ARG(del, NULL, "<NetKeyIdx>", cmd_net_key_del, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(appkey_cmds,
-	SHELL_CMD_ARG(add, NULL, "<NetKeyIndex> <AppKeyIndex> [Val]", cmd_app_key_add,
+	SHELL_CMD_ARG(add, NULL, "<NetKeyIdx> <AppKeyIdx> [Key(1-16 hex)]", cmd_app_key_add,
 		      3, 1),
-	SHELL_CMD_ARG(upd, NULL, "<NetKeyIndex> <AppKeyIndex> [Val]", cmd_app_key_upd,
+	SHELL_CMD_ARG(upd, NULL, "<NetKeyIdx> <AppKeyIdx> [Key(1-16 hex)]", cmd_app_key_upd,
 		      3, 1),
-	SHELL_CMD_ARG(del, NULL, "<NetKeyIndex> <AppKeyIndex>", cmd_app_key_del, 3, 0),
-	SHELL_CMD_ARG(get, NULL, "<NetKeyIndex>", cmd_app_key_get, 2, 0),
+	SHELL_CMD_ARG(del, NULL, "<NetKeyIdx> <AppKeyIdx>", cmd_app_key_del, 3, 0),
+	SHELL_CMD_ARG(get, NULL, "<NetKeyIdx>", cmd_app_key_get, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 
@@ -1704,23 +1870,21 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	cfg_cli_cmds,
 	/* Configuration Client Model operations */
 	SHELL_CMD_ARG(reset, NULL, NULL, cmd_reset, 1, 0),
-	SHELL_CMD_ARG(timeout, NULL, "[Timeout in seconds]", cmd_timeout, 1, 1),
+	SHELL_CMD_ARG(timeout, NULL, "[Timeout(s)]", cmd_timeout, 1, 1),
 	SHELL_CMD_ARG(get-comp, NULL, "[Page]", cmd_get_comp, 1, 1),
-	SHELL_CMD_ARG(beacon, NULL, "[Val: off, on]", cmd_beacon, 1, 1),
-	SHELL_CMD_ARG(ttl, NULL, "[TTL: 0x00, 0x02-0x7f]", cmd_ttl, 1, 1),
-	SHELL_CMD_ARG(friend, NULL, "[Val: off, on]", cmd_friend, 1, 1),
-	SHELL_CMD_ARG(gatt-proxy, NULL, "[Val: off, on]", cmd_gatt_proxy, 1, 1),
-	SHELL_CMD_ARG(relay, NULL, "[<Val: off, on> [<Count: 0-7> [Interval: 10-320]]]", cmd_relay,
+	SHELL_CMD_ARG(beacon, NULL, "[Val(off, on)]", cmd_beacon, 1, 1),
+	SHELL_CMD_ARG(ttl, NULL, "[TTL]", cmd_ttl, 1, 1),
+	SHELL_CMD_ARG(friend, NULL, "[Val(off, on)]", cmd_friend, 1, 1),
+	SHELL_CMD_ARG(gatt-proxy, NULL, "[Val(off, on)]", cmd_gatt_proxy, 1, 1),
+	SHELL_CMD_ARG(relay, NULL, "[<Val(off, on)> [<Count> [Int(ms)]]]", cmd_relay,
 		      1, 3),
-	SHELL_CMD_ARG(node-id, NULL, "<NetKeyIndex> [Identify]", cmd_node_id, 2, 1),
-	SHELL_CMD_ARG(polltimeout-get, NULL, "<LPN Address>", cmd_polltimeout_get, 2, 0),
-	SHELL_CMD_ARG(net-transmit-param, NULL,
-		      "[<Count: 0-7>"
-		      " <Interval: 10-320>]",
+	SHELL_CMD_ARG(node-id, NULL, "<NetKeyIdx> [Identify]", cmd_node_id, 2, 1),
+	SHELL_CMD_ARG(polltimeout-get, NULL, "<LPNAddr>", cmd_polltimeout_get, 2, 0),
+	SHELL_CMD_ARG(net-transmit-param, NULL, "[<Count> <Int(ms)>]",
 		      cmd_net_transmit, 1, 2),
-	SHELL_CMD_ARG(krp, NULL, "<NetKeyIndex> [Phase]", cmd_krp, 2, 1),
-	SHELL_CMD_ARG(hb-sub, NULL, "[<Src> <Dst> <Period>]", cmd_hb_sub, 1, 3),
-	SHELL_CMD_ARG(hb-pub, NULL, "[<Dst> <Count> <Period> <TTL> <Features> <NetKeyIndex>]",
+	SHELL_CMD_ARG(krp, NULL, "<NetKeyIdx> [Phase]", cmd_krp, 2, 1),
+	SHELL_CMD_ARG(hb-sub, NULL, "[<Src> <Dst> <Per>]", cmd_hb_sub, 1, 3),
+	SHELL_CMD_ARG(hb-pub, NULL, "[<Dst> <Count> <Per> <TTL> <Features> <NetKeyIdx>]",
 		      cmd_hb_pub, 1, 6),
 	SHELL_CMD(appkey, &appkey_cmds, "Appkey config commands", bt_mesh_shell_mdl_cmds_help),
 	SHELL_CMD(netkey, &netkey_cmds, "Netkey config commands", bt_mesh_shell_mdl_cmds_help),

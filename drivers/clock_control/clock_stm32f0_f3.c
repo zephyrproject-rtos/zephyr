@@ -144,6 +144,9 @@ uint32_t get_pllout_frequency(void)
  */
 void config_enable_default_clocks(void)
 {
+	/* Enable PWR clock, required to access BDCR and PWR_CR */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
 #ifndef CONFIG_SOC_SERIES_STM32F3X
 #if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32)
 	/* Enable System Configuration Controller clock. */

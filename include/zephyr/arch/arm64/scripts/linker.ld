@@ -14,6 +14,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/devicetree.h>
 
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 
@@ -31,10 +32,16 @@
   #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
-#if CONFIG_FLASH_LOAD_SIZE > 0
-  #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
+#if defined(CONFIG_ROM_END_OFFSET)
+#define ROM_END_OFFSET CONFIG_ROM_END_OFFSET
 #else
-  #define ROM_SIZE (CONFIG_FLASH_SIZE * 1K - CONFIG_FLASH_LOAD_OFFSET)
+#define ROM_END_OFFSET 0
+#endif
+
+#if CONFIG_FLASH_LOAD_SIZE > 0
+  #define ROM_SIZE (CONFIG_FLASH_LOAD_SIZE - ROM_END_OFFSET)
+#else
+  #define ROM_SIZE (CONFIG_FLASH_SIZE * 1K - CONFIG_FLASH_LOAD_OFFSET - ROM_END_OFFSET)
 #endif
 
 #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
@@ -60,8 +67,9 @@ MEMORY
 {
     FLASH     (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     RAM       (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
+    LINKER_DT_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST  (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
+    IDT_LIST  (wx) : ORIGIN = 0xFFFF8000, LENGTH = 32K
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -70,6 +78,10 @@ SECTIONS
 {
 
 #include <zephyr/linker/rel-sections.ld>
+
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
 
     /*
      * .plt and .iplt are here according to 'arm-zephyr-elf-ld --verbose',
@@ -105,8 +117,11 @@ SECTIONS
         KEEP(*(.exc_vector_table))
         KEEP(*(".exc_vector_table.*"))
 
+#if LINKER_ZEPHYR_FINAL && defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+        INCLUDE isr_tables_vt.ld
+#else
         KEEP(*(.vectors))
-
+#endif
         _vector_end = .;
 
         *(.text)
@@ -155,6 +170,10 @@ SECTIONS
         __rodata_region_start = .;
 
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
@@ -295,20 +314,20 @@ SECTIONS
 
     /* Define linker symbols */
 
-    MMU_ALIGN;
-    _image_ram_end = .;
-    _end = .; /* end of image */
-    z_mapped_end = .;
-
     __kernel_ram_end = RAM_ADDR + RAM_SIZE;
     __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
-    GROUP_END(RAMABLE_REGION)
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-sections.ld>
+
+#define LAST_RAM_ALIGN MMU_ALIGN;
+
+#include <zephyr/linker/ram-end.ld>
+
+    GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 
@@ -320,6 +339,17 @@ SECTIONS
 
     /DISCARD/ : { *(.note.GNU-stack) }
 
+/* Output section descriptions are needed for these sections to suppress
+ * warnings when "--orphan-handling=warn" is set for lld.
+ */
+#if defined(CONFIG_LLVM_USE_LLD)
+    SECTION_PROLOGUE(.symtab, 0,) { *(.symtab) }
+    SECTION_PROLOGUE(.strtab, 0,) { *(.strtab) }
+    SECTION_PROLOGUE(.shstrtab, 0,) { *(.shstrtab) }
+#endif
+
+    /* Sections generated from 'zephyr,memory-region' nodes */
+    LINKER_DT_SECTIONS()
 
     /* Must be last in romable region */
     SECTION_PROLOGUE(.last_section,,)

@@ -18,11 +18,6 @@
 
 static uint8_t rambuf[TEST_PARTITION_SIZE];
 
-static int test_ram_flash_init(const struct device *dev)
-{
-	return 0;
-}
-
 static int test_flash_ram_erase(const struct device *dev, off_t offset,
 				size_t len)
 {
@@ -89,6 +84,5 @@ static const struct flash_driver_api flash_ram_api = {
 	.page_layout = test_flash_ram_pages_layout,
 };
 
-DEVICE_DEFINE(flash_ram_test, "ram_flash_test_drv", test_ram_flash_init,
-		NULL, NULL, NULL, POST_KERNEL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_ram_api);
+DEVICE_DEFINE(flash_ram_test, "ram_flash_test_drv", NULL, NULL, NULL, NULL,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_ram_api);

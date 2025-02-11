@@ -7,7 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -36,10 +36,7 @@
 #include "lll_conn.h"
 #include "lll_filter.h"
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#include "ull_tx_queue.h"
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-
+#include "ll_sw/ull_tx_queue.h"
 
 #include "ull_adv_types.h"
 #include "ull_filter.h"
@@ -78,6 +75,10 @@ static void ext_disabled_cb(void *param);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static struct ll_scan_set ll_scan[BT_CTLR_SCAN_SET];
+
+#if defined(CONFIG_BT_TICKER_EXT)
+static struct ticker_ext ll_scan_ticker_ext[BT_CTLR_SCAN_SET];
+#endif /* CONFIG_BT_TICKER_EXT */
 
 uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 			uint8_t own_addr_type, uint8_t filter_policy)
@@ -132,7 +133,8 @@ uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 
 	scan->own_addr_type = own_addr_type;
 
-	ull_scan_params_set(lll, type, interval, window, filter_policy);
+	scan->ticks_window = ull_scan_params_set(lll, type, interval, window,
+						 filter_policy);
 
 	return 0;
 }
@@ -349,8 +351,9 @@ int ull_scan_reset(void)
 	return 0;
 }
 
-void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval,
-			 uint16_t window, uint8_t filter_policy)
+uint32_t ull_scan_params_set(struct lll_scan *lll, uint8_t type,
+			     uint16_t interval, uint16_t window,
+			     uint8_t filter_policy)
 {
 	/* type value:
 	 * 0000b - legacy 1M passive
@@ -369,6 +372,8 @@ void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval,
 	lll->interval = interval;
 	lll->ticks_window = HAL_TICKER_US_TO_TICKS((uint64_t)window *
 						   SCAN_INT_UNIT_US);
+
+	return lll->ticks_window;
 }
 
 uint8_t ull_scan_enable(struct ll_scan_set *scan)
@@ -414,12 +419,21 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		ticks_slot_overhead = 0U;
 	}
 
+	handle = ull_scan_handle_get(scan);
+
+	lll->ticks_window = scan->ticks_window;
 	if ((lll->ticks_window +
 	     HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US)) <
 	    (ticks_interval - ticks_slot_overhead)) {
 		scan->ull.ticks_slot =
 			(lll->ticks_window +
 			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US));
+
+#if defined(CONFIG_BT_TICKER_EXT)
+		ll_scan_ticker_ext[handle].ticks_slot_window =
+			scan->ull.ticks_slot + ticks_slot_overhead;
+#endif /* CONFIG_BT_TICKER_EXT */
+
 	} else {
 		if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_UNRESERVED)) {
 			scan->ull.ticks_slot = 0U;
@@ -429,9 +443,11 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		}
 
 		lll->ticks_window = 0U;
-	}
 
-	handle = ull_scan_handle_get(scan);
+#if defined(CONFIG_BT_TICKER_EXT)
+		ll_scan_ticker_ext[handle].ticks_slot_window = ticks_interval;
+#endif /* CONFIG_BT_TICKER_EXT */
+	}
 
 	if (false) {
 
@@ -484,6 +500,10 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 				 * enabled.
 				 */
 			}
+
+#if defined(CONFIG_BT_TICKER_EXT)
+			ll_scan_ticker_ext[handle].ticks_slot_window = 0U;
+#endif /* CONFIG_BT_TICKER_EXT */
 		}
 
 		/* 1M scan window starts without any offset */
@@ -543,6 +563,10 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			} else {
 				ticks_offset = 0U;
 			}
+
+#if defined(CONFIG_BT_TICKER_EXT)
+			ll_scan_ticker_ext[handle].ticks_slot_window = 0U;
+#endif /* CONFIG_BT_TICKER_EXT */
 		} else {
 			ticks_offset = 0U;
 		}
@@ -553,13 +577,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	}
 
 	ticks_anchor = ticker_ticks_now_get();
-
-#if !defined(CONFIG_BT_TICKER_LOW_LAT)
-	/* NOTE: mesh bsim loopback_group_low_lat test needs both adv and scan
-	 * to not have that start overhead added to pass the test.
-	 */
 	ticks_anchor += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
-#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 	if (!lll->conn) {
@@ -584,7 +602,13 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+
+#if defined(CONFIG_BT_TICKER_EXT)
+	ret = ticker_start_ext(
+#else
+	ret = ticker_start(
+#endif /* CONFIG_BT_TICKER_EXT */
+			   TICKER_INSTANCE_ID_CTLR,
 			   TICKER_USER_ID_THREAD, TICKER_ID_SCAN_BASE + handle,
 			   (ticks_anchor + ticks_offset), 0, ticks_interval,
 			   HAL_TICKER_REMAINDER((uint64_t)lll->interval *
@@ -592,7 +616,12 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			   TICKER_NULL_LAZY,
 			   (scan->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, scan,
-			   ull_ticker_status_give, (void *)&ret_cb);
+			   ull_ticker_status_give, (void *)&ret_cb
+#if defined(CONFIG_BT_TICKER_EXT)
+			   ,
+			   &ll_scan_ticker_ext[handle]
+#endif /* CONFIG_BT_TICKER_EXT */
+			   );
 	ret = ull_ticker_status_take(ret, &ret_cb);
 	if (ret != TICKER_STATUS_SUCCESS) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -624,7 +653,7 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_BASE + handle,
 					scan, &scan->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, handle, err);
 	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -670,7 +699,7 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 void ull_scan_done(struct node_rx_event_done *done)
 {
-	struct node_rx_hdr *rx_hdr;
+	struct node_rx_pdu *rx;
 	struct ll_scan_set *scan;
 	struct lll_scan *lll;
 	uint8_t handle;
@@ -705,9 +734,9 @@ void ull_scan_done(struct node_rx_event_done *done)
 	scan_other->lll.duration_reload = 0U;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 
-	rx_hdr = (void *)scan->node_rx_scan_term;
-	rx_hdr->type = NODE_RX_TYPE_EXT_SCAN_TERMINATE;
-	rx_hdr->handle = handle;
+	rx = (void *)scan->node_rx_scan_term;
+	rx->hdr.type = NODE_RX_TYPE_EXT_SCAN_TERMINATE;
+	rx->hdr.handle = handle;
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  (TICKER_ID_SCAN_BASE + handle), ticker_stop_ext_op_cb,
@@ -956,7 +985,7 @@ static uint8_t is_scan_update(uint8_t handle, uint16_t duration,
 			      struct node_rx_pdu **node_rx_scan_term)
 {
 	*scan = ull_scan_set_get(handle);
-	*node_rx_scan_term = (void *)(*scan)->node_rx_scan_term;
+	*node_rx_scan_term = (*scan)->node_rx_scan_term;
 	return duration && period && (*scan)->lll.duration_reload &&
 	       (*scan)->duration_lazy;
 }
@@ -990,8 +1019,7 @@ static uint8_t duration_period_setup(struct ll_scan_set *scan,
 			scan->duration_lazy = 0U;
 
 			if (*node_rx_scan_term) {
-				scan->node_rx_scan_term =
-					(void *)*node_rx_scan_term;
+				scan->node_rx_scan_term = *node_rx_scan_term;
 
 				return 0;
 			}
@@ -1010,7 +1038,7 @@ static uint8_t duration_period_setup(struct ll_scan_set *scan,
 			}
 
 			node_rx->hdr.link = (void *)link_scan_term;
-			scan->node_rx_scan_term = (void *)node_rx;
+			scan->node_rx_scan_term = node_rx;
 			*node_rx_scan_term = node_rx;
 		}
 	} else {
@@ -1105,7 +1133,7 @@ static void ext_disable(void *param)
 
 static void ext_disabled_cb(void *param)
 {
-	struct node_rx_hdr *rx_hdr;
+	struct node_rx_pdu *rx;
 	struct ll_scan_set *scan;
 	struct lll_scan *lll;
 
@@ -1114,15 +1142,15 @@ static void ext_disabled_cb(void *param)
 	 */
 	lll = (void *)param;
 	scan = HDR_LLL2ULL(lll);
-	rx_hdr = (void *)scan->node_rx_scan_term;
-	if (!rx_hdr) {
+	rx = scan->node_rx_scan_term;
+	if (!rx) {
 		return;
 	}
 
 	/* NOTE: parameters are already populated on disable,
 	 * just enqueue here
 	 */
-	ll_rx_put_sched(rx_hdr->link, rx_hdr);
+	ll_rx_put_sched(rx->hdr.link, rx);
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1151,8 +1179,7 @@ static uint8_t disable(uint8_t handle)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (scan->node_rx_scan_term) {
-		struct node_rx_pdu *node_rx_scan_term =
-			(void *)scan->node_rx_scan_term;
+		struct node_rx_pdu *node_rx_scan_term = scan->node_rx_scan_term;
 
 		scan->node_rx_scan_term = NULL;
 

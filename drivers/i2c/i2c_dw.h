@@ -18,6 +18,10 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "DW I2C in DT needs CONFIG_PCIE");
 #include <zephyr/drivers/pcie/pcie.h>
 #endif
 
+#if defined(CONFIG_RESET)
+#include <zephyr/drivers/reset.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -93,15 +97,23 @@ struct i2c_dw_rom_config {
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pcfg;
 #endif
+#if defined(CONFIG_RESET)
+	const struct reset_dt_spec reset;
+#endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	struct pcie_dev *pcie;
 #endif /* I2C_DW_PCIE_ENABLED */
+
+#ifdef CONFIG_I2C_DW_LPSS_DMA
+	const struct device *dma_dev;
+#endif
 };
 
 struct i2c_dw_dev_config {
 	DEVICE_MMIO_RAM;
 	struct k_sem		device_sync_sem;
+	struct k_mutex		bus_mutex;
 	uint32_t app_config;
 
 	uint8_t			*xfr_buf;
@@ -115,6 +127,12 @@ struct i2c_dw_dev_config {
 	uint8_t			request_bytes;
 	uint8_t			xfr_flags;
 	bool			support_hs_mode;
+#ifdef CONFIG_I2C_DW_LPSS_DMA
+	uintptr_t phy_addr;
+	uintptr_t base_addr;
+	/* For dma transfer */
+	bool xfr_status;
+#endif
 
 	struct i2c_target_config *slave_cfg;
 };

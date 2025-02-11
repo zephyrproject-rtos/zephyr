@@ -11,4 +11,5 @@ include_directories(
 if(NOT DEFINED CONFIG_EVICTION_CUSTOM)
   zephyr_library()
   zephyr_library_sources_ifdef(CONFIG_EVICTION_NRU            nru.c)
+  zephyr_library_sources_ifdef(CONFIG_EVICTION_LRU            lru.c)
 endif()

@@ -1,0 +1,67 @@
+# NPCX Flash driver configuration options
+
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_NPCX_FIU_QSPI
+	bool "Nuvoton NPCX QSPI Bus Flash driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_FIU_QSPI_ENABLED
+	help
+	  This option enables the QSPI Bus Flash driver for NPCX family of
+	  processors.
+
+config FLASH_NPCX_FIU_NOR
+	bool "Nuvoton NPCX embedded controller (EC) QSPI NOR Flash driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_FIU_NOR_ENABLED
+	depends on FLASH_NPCX_FIU_QSPI
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_JESD216
+	select FLASH_HAS_EX_OP
+	help
+	  This option enables the QSPI NOR Flash driver for NPCX family of
+	  processors.
+
+if FLASH_NPCX_FIU_QSPI
+
+config FLASH_NPCX_FIU_NOR_INIT
+	bool "QSPI NOR flash feature during driver initialization"
+	default y
+	depends on FLASH_NPCX_FIU_NOR
+	help
+	  This option enables the QSPI NOR Flash features such as Quad-Enable,
+	  4-byte address support and so on during driver initialization. Disable
+	  it if QSPI NOR devices are not ready during driver initialization.
+
+config FLASH_NPCX_FIU_DRA_V1
+	bool "Direct Read Access version 1 support"
+	default y if SOC_SERIES_NPCX9
+	help
+	  This option enables DRA V1 support.
+
+config FLASH_NPCX_FIU_DRA_V2
+	bool "Direct Read Access version 2 support"
+	default y if SOC_SERIES_NPCX4
+	help
+	  This option enables DRA V1 support.
+
+config FLASH_NPCX_FIU_SUPP_DRA_4B_ADDR
+	bool "4 byte address support in Direct Read Access mode"
+	default y if FLASH_NPCX_FIU_DRA_V1 || \
+		     FLASH_NPCX_FIU_DRA_V2
+	help
+	  Selected if NPCX series supports 4 byte address mode in Direct Read
+	  Access mode.
+
+config FLASH_NPCX_FIU_SUPP_DRA_2_DEV
+	bool "4 byte address support in Direct Read Access mode"
+	default y if FLASH_NPCX_FIU_DRA_V1 || \
+		     FLASH_NPCX_FIU_DRA_V2
+	help
+	  Selected if NPCX series supports two external SPI devices in Direct
+	  Read Access (DRA) on QSPI bus.
+
+endif #FLASH_NPCX_FIU_QSPI

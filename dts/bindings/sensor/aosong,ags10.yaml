@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Balthazar Deliers
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    AOSONG AGS10 a high-performance TVOC Sensor With I2C Interface.
+    See: http://www.aosong.com/en/products-86.html
+
+compatible: "aosong,ags10"
+
+include: [sensor-device.yaml, i2c-device.yaml]

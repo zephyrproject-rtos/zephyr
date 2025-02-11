@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Rivos
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenTitan power management
+
+compatible: "lowrisc,opentitan-pwrmgr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

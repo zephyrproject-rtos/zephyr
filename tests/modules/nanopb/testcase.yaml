@@ -1,0 +1,9 @@
+tests:
+  libraries.nanopb:
+    modules:
+      - nanopb
+    tags:
+      - nanopb
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64

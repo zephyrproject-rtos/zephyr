@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #define BT_MESH_NET_FLAG_KR       BIT(0)
 #define BT_MESH_NET_FLAG_IVU      BIT(1)
@@ -28,24 +29,26 @@ enum bt_mesh_key_evt;
 
 /** Network message encryption credentials */
 struct bt_mesh_net_cred {
-	uint8_t nid;         /* NID */
-	uint8_t enc[16];     /* EncKey */
-	uint8_t privacy[16]; /* PrivacyKey */
+	uint8_t nid;                /* NID */
+	struct bt_mesh_key enc;     /* EncKey */
+	struct bt_mesh_key privacy; /* PrivacyKey */
+};
+
+struct bt_mesh_beacon {
+	uint32_t sent;        /* Timestamp of last sent beacon */
+	uint32_t recv;        /* Timestamp of last received beacon */
+	uint8_t  last;       /* Number of beacons during last
+				      * observation window
+				      */
+	uint8_t  cur;        /* Number of beacons observed during
+				      * currently ongoing window.
+				      */
+	uint8_t  cache[8];   /* Cached last beacon auth value */
+	uint8_t  auth[8];    /* Beacon Authentication Value */
 };
 
 /** Subnet instance. */
 struct bt_mesh_subnet {
-	uint32_t beacon_sent;        /* Timestamp of last sent beacon */
-	uint32_t beacon_recv;        /* Timestamp of last received beacon */
-	uint8_t  beacons_last;       /* Number of beacons during last
-				      * observation window
-				      */
-	uint8_t  beacons_cur;        /* Number of beacons observed during
-				      * currently ongoing window.
-				      */
-
-	uint8_t  beacon_cache[21];   /* Cached last authenticated beacon */
-
 	uint16_t net_idx;            /* NetKeyIndex */
 
 	uint8_t  kr_phase;           /* Key Refresh Phase */
@@ -53,18 +56,37 @@ struct bt_mesh_subnet {
 	uint8_t  node_id;            /* Node Identity State */
 	uint32_t node_id_start;      /* Node Identity started timestamp */
 
-	uint8_t  auth[8];            /* Beacon Authentication Value */
+	struct bt_mesh_beacon secure_beacon;
+
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	struct bt_mesh_beacon priv_beacon;
+	struct {
+		uint16_t idx;        /* Private beacon random index */
+		bool node_id;        /* Private Node Identity enabled */
+		uint8_t data[5];     /* Private Beacon data */
+	} priv_beacon_ctx;
+#endif
 
 	struct bt_mesh_subnet_keys {
 		bool valid;
-		uint8_t net[16];       /* NetKey */
+		struct bt_mesh_key net;         /* NetKey */
 		struct bt_mesh_net_cred msg;
-		uint8_t net_id[8];     /* Network ID */
+		uint8_t net_id[8];              /* Network ID */
 	#if defined(CONFIG_BT_MESH_GATT_PROXY)
-		uint8_t identity[16];  /* IdentityKey */
+		struct bt_mesh_key identity;    /* IdentityKey */
 	#endif
-		uint8_t beacon[16];    /* BeaconKey */
+		struct bt_mesh_key beacon;      /* BeaconKey */
+		struct bt_mesh_key priv_beacon; /* PrivateBeaconKey */
 	} keys[2];
+#if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
+	bool sol_tx;
+#endif
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+	uint32_t priv_net_id_sent; /* Timestamp for Private Network ID advertising
+				    * started via Proxy Solicitation
+				    */
+	bool solicited;      /* Subnet received valid Solicitation PDU */
+#endif
 };
 
 /** Subnet callback structure. Instantiate with @ref BT_MESH_SUBNET_CB */
@@ -133,7 +155,7 @@ struct bt_mesh_subnet *bt_mesh_subnet_get(uint16_t net_idx);
  *  @returns 0 on success, or (negative) error code on failure.
  */
 int bt_mesh_subnet_set(uint16_t net_idx, uint8_t kr_phase,
-		       const uint8_t key[16], const uint8_t new_key[16]);
+		       const struct bt_mesh_key *key, const struct bt_mesh_key *new_key);
 
 /** @brief Create Friendship credentials.
  *
@@ -149,7 +171,13 @@ int bt_mesh_subnet_set(uint16_t net_idx, uint8_t kr_phase,
 int bt_mesh_friend_cred_create(struct bt_mesh_net_cred *cred,
 			       uint16_t lpn_addr, uint16_t frnd_addr,
 			       uint16_t lpn_counter, uint16_t frnd_counter,
-			       const uint8_t key[16]);
+			       const struct bt_mesh_key *key);
+
+/** @brief Destroy Friendship credentials.
+ *
+ *  @param cred Credential object to destroy.
+ */
+void bt_mesh_friend_cred_destroy(struct bt_mesh_net_cred *cred);
 
 /** @brief Iterate through all valid network credentials to decrypt a message.
  *
@@ -183,6 +211,8 @@ uint8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub);
  *  @param kr_flag Key Refresh flag.
  *  @param new_key Whether the Key Refresh event was received on the new key
  *                 set.
+ *
+ *  @returns Whether the Key Refresh event caused a change.
  */
 void bt_mesh_kr_update(struct bt_mesh_subnet *sub, bool kr_flag, bool new_key);
 
@@ -197,6 +227,24 @@ bt_mesh_subnet_has_new_key(const struct bt_mesh_subnet *sub)
 {
 	return sub->kr_phase != BT_MESH_KR_NORMAL;
 }
+
+/** Kind of currently enabled Node Identity state on one or more subnets. */
+enum bt_mesh_subnets_node_id_state {
+	/* None node identity states are enabled on any subnets. */
+	BT_MESH_SUBNETS_NODE_ID_STATE_NONE,
+	/* Node Identity state is enabled on one or more subnets. */
+	BT_MESH_SUBNETS_NODE_ID_STATE_ENABLED,
+	/* Private Node Identity state is enabled on one or more subnets. */
+	BT_MESH_SUBNETS_NODE_ID_STATE_ENABLED_PRIVATE,
+};
+
+/** @brief Returns what kind of node identity state is currently enabled on one or more subnets.
+ *
+ * Only one kind (either non-private or private) can be enabled at the same time on all subnets.
+ *
+ * @returns Kind of node identity state that is currently enabled.
+ */
+enum bt_mesh_subnets_node_id_state bt_mesh_subnets_node_id_state_get(void);
 
 /** @brief Store the Subnet information in persistent storage.
  *

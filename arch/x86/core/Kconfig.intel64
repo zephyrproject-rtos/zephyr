@@ -32,7 +32,9 @@ config X86_EXCEPTION_STACK_SIZE
 config X86_EXCEPTION_STACK_TRACE
 	bool
 	default y
-	depends on EXCEPTION_STACK_TRACE
+	select DEBUG_INFO
+	select THREAD_STACK_INFO
+	depends on !OMIT_FRAME_POINTER
 	depends on NO_OPTIMIZATIONS
 	help
 	  Internal config to enable runtime stack traces on fatal exceptions.
@@ -73,6 +75,7 @@ config X86_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
 	select THREAD_STACK_INFO
+	imply THREAD_STACK_MEM_MAPPED
 	help
 	  This option leverages the MMU to cause a system fatal error if the
 	  bounds of the current process stack are overflowed. This is done

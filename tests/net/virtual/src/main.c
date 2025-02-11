@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/ztest.h>
 
@@ -175,7 +175,7 @@ static void generate_mac(uint8_t *mac_addr)
 	mac_addr[2] = 0x5E;
 	mac_addr[3] = 0x00;
 	mac_addr[4] = 0x53;
-	mac_addr[5] = sys_rand32_get();
+	mac_addr[5] = sys_rand8_get();
 }
 
 static int eth_init(const struct device *dev)
@@ -198,11 +198,6 @@ struct net_if_test {
 	struct net_linkaddr ll_addr;
 };
 
-static int net_iface_dev_init(const struct device *dev)
-{
-	return 0;
-}
-
 static uint8_t *net_iface_get_mac(const struct device *dev)
 {
 	struct net_if_test *data = dev->data;
@@ -214,7 +209,7 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 		data->mac_addr[2] = 0x5E;
 		data->mac_addr[3] = 0x00;
 		data->mac_addr[4] = 0x53;
-		data->mac_addr[5] = sys_rand32_get();
+		data->mac_addr[5] = sys_rand8_get();
 	}
 
 	data->ll_addr.addr = data->mac_addr;
@@ -250,7 +245,7 @@ static struct dummy_api net_iface_api = {
 NET_DEVICE_INIT_INSTANCE(eth_test_dummy1,
 			 "iface1",
 			 iface1,
-			 net_iface_dev_init,
+			 NULL,
 			 NULL,
 			 &net_iface1_data,
 			 NULL,
@@ -263,7 +258,7 @@ NET_DEVICE_INIT_INSTANCE(eth_test_dummy1,
 NET_DEVICE_INIT_INSTANCE(eth_test_dummy2,
 			 "iface2",
 			 iface2,
-			 net_iface_dev_init,
+			 NULL,
 			 NULL,
 			 &net_iface2_data,
 			 NULL,
@@ -384,6 +379,7 @@ static void test_virtual_setup(void)
 
 static void test_address_setup(void)
 {
+	struct in_addr netmask = {{{ 255, 255, 255, 0 }}};
 	struct net_if_addr *ifaddr;
 	struct net_if *eth, *virt, *dummy1, *dummy2;
 	int ret;
@@ -416,6 +412,8 @@ static void test_address_setup(void)
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	net_if_ipv4_set_netmask_by_addr(eth, &my_addr, &netmask);
 
 	ifaddr = net_if_ipv6_addr_add(eth, &ll_addr, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
@@ -465,6 +463,11 @@ static void test_address_setup(void)
 		}
 
 		net_sin(&virtual_addr)->sin_port = htons(4242);
+
+		net_if_ipv4_set_netmask_by_addr(virt,
+						&net_sin(&virtual_addr)->sin_addr,
+						&netmask);
+
 	} else if (virtual_addr.sa_family == AF_INET6) {
 		ifaddr = net_if_ipv6_addr_add(virt,
 					&net_sin6(&virtual_addr)->sin6_addr,
@@ -530,12 +533,12 @@ static bool add_to_arp(struct net_if *iface, struct in_addr *addr)
 #if defined(CONFIG_NET_ARP)
 	struct net_eth_addr lladdr;
 
-	lladdr.addr[0] = sys_rand32_get();
+	lladdr.addr[0] = sys_rand8_get();
 	lladdr.addr[1] = 0x08;
 	lladdr.addr[2] = 0x09;
 	lladdr.addr[3] = 0x10;
 	lladdr.addr[4] = 0x11;
-	lladdr.addr[5] = sys_rand32_get();
+	lladdr.addr[5] = sys_rand8_get();
 
 	return arp_add(iface, addr, &lladdr);
 #else
@@ -735,6 +738,12 @@ ZTEST(net_virtual, test_virtual_05_set_peer)
 		      net_if_get_by_iface(iface),
 		      net_if_get_by_iface(dummy_interfaces[0]),
 		      ret);
+
+	ret = net_virtual_interface_attach(iface, NULL);
+	zassert_equal(ret, 0, "Cannot deattach %d from %d (%d)",
+		      net_if_get_by_iface(iface),
+		      net_if_get_by_iface(eth_interfaces[0]),
+		      ret);
 }
 
 ZTEST(net_virtual, test_virtual_06_get_peer)
@@ -789,13 +798,25 @@ ZTEST(net_virtual, test_virtual_07_verify_name)
 			  "Cannot get name");
 }
 
+ZTEST(net_virtual, test_virtual_08_detach)
+{
+	struct net_if *iface = virtual_interfaces[0];
+	int ret;
+
+	ret = net_virtual_interface_attach(iface, NULL);
+	zassert_true((ret == 0) || (ret == -EALREADY),
+		     "Cannot deattach %d from %d (%d)",
+		     net_if_get_by_iface(iface),
+		     net_if_get_by_iface(eth_interfaces[0]),
+		     ret);
+}
+
 ZTEST(net_virtual, test_virtual_08_send_data_to_tunnel)
 {
 	struct virtual_interface_req_params params = { 0 };
 	struct net_if *iface = virtual_interfaces[0];
-	struct net_if *attached;
+	struct net_if *attached = eth_interfaces[0];
 	struct sockaddr dst_addr, src_addr;
-	struct in_addr netmask = {{{ 255, 255, 255, 0 }}};
 	void *addr;
 	int addrlen;
 	int ret;
@@ -822,9 +843,6 @@ ZTEST(net_virtual, test_virtual_08_send_data_to_tunnel)
 	} else {
 		zassert_true(false, "Invalid family (%d)", params.family);
 	}
-
-	net_if_ipv4_set_netmask(iface, &netmask);
-	net_if_ipv4_set_netmask(eth_interfaces[0], &netmask);
 
 	ret = net_mgmt(NET_REQUEST_VIRTUAL_INTERFACE_SET_PEER_ADDRESS,
 		       iface, &params, sizeof(params));
@@ -1012,7 +1030,12 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 	net_pkt_write(inner, test_data, strlen(test_data));
 
 	net_pkt_cursor_init(inner);
-	net_ipv4_finalize(inner, IPPROTO_UDP);
+
+	if (virtual_addr.sa_family == AF_INET) {
+		net_ipv4_finalize(inner, IPPROTO_UDP);
+	} else {
+		net_ipv6_finalize(inner, IPPROTO_UDP);
+	}
 
 	net_buf_frag_add(outer->buffer, inner->buffer);
 	inner->buffer = NULL;
@@ -1045,13 +1068,13 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 	net_pkt_cursor_init(outer);
 
 	if (peer_addr.sa_family == AF_INET) {
-		verdict = net_ipv4_input(outer);
+		verdict = net_ipv4_input(outer, false);
 	} else {
 		verdict = net_ipv6_input(outer, false);
 	}
 
 	if (expected_ok) {
-		zassert_equal(verdict, NET_CONTINUE,
+		zassert_equal(verdict, NET_OK,
 			      "Packet not accepted (%d)",
 			      verdict);
 	} else {

@@ -470,37 +470,6 @@ ZTEST(net_content_plain_text_nodata, test_get_bool_nodata)
 	zassert_equal(ret, -ENODATA, "Invalid error code returned");
 }
 
-ZTEST(net_content_plain_text, test_get_opaque)
-{
-	int ret;
-	const char *test_payload = "test_payload";
-	uint8_t buf[16];
-	bool last_block;
-	struct lwm2m_opaque_context ctx = { 0 };
-
-	test_payload_set(test_payload);
-
-	ret = plain_text_reader.get_opaque(&test_in, buf, sizeof(buf),
-					   &ctx, &last_block);
-	zassert_equal(ret, strlen(test_payload), "Invalid length returned");
-	zassert_mem_equal(buf, test_payload, strlen(test_payload),
-			  "Invalid value parsed");
-	zassert_equal(test_in.offset, strlen(test_payload) + 1,
-		      "Invalid packet offset");
-}
-
-ZTEST(net_content_plain_text_nodata, test_get_opaque_nodata)
-{
-	int ret;
-	uint8_t value[4];
-	bool last_block;
-	struct lwm2m_opaque_context ctx = { 0 };
-
-	ret = plain_text_reader.get_opaque(&test_in, value, sizeof(value),
-					   &ctx, &last_block);
-	zassert_equal(ret, 0, "Invalid error code returned");
-}
-
 ZTEST(net_content_plain_text, test_get_objlnk)
 {
 	int ret;

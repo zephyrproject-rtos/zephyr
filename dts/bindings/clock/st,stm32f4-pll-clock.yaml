@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32L4 Main PLL node binding:
+  STM32F4 Main PLL node binding:
 
   Takes one of clk_hse or clk_hsi as input clock, with an
   input frequency from 1 to 2 MHz. PLLM factor is used to set the input clock
@@ -61,3 +61,10 @@ properties:
         Main PLL (PLL) division factor for USB OTG FS, SDMMC and random number
         generator clocks.
         Valid range: 2 - 15
+
+  div-r:
+    type: int
+    description: |
+        Main PLL (PLL) division factor for I2S and DFSDM
+        generator clocks.
+        Valid range: 2 - 7

@@ -4,6 +4,7 @@ Various Subsystems Samples
 ##########################
 
 .. toctree::
+   :titlesonly:
    :maxdepth: 2
    :glob:
 

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
@@ -36,7 +36,7 @@ check_dirs ()
 	    do
 	        local l
 
-	        l="$d/net-tools"
+	        l="$d/tools/net-tools"
 	        if [ -d "$l" ]; then
 		        NET_TOOLS_BASE="$l"
 		        break
@@ -157,7 +157,7 @@ start_zephyr ()
     fi
 
     rm -rf build && mkdir build && \
-	cmake -GNinja -DBOARD=native_posix -B build "$@" . && \
+	cmake -GNinja -DBOARD=native_sim -B build "$@" . && \
 	ninja -C build
 
     # Run the binary directly so that ninja does not print errors that

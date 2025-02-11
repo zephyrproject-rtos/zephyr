@@ -1,0 +1,22 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Simple monitorig power domain
+
+  This power domain monitors the state of a GPIO pin to detect whether a power
+  rail is on/off. Therefore, performing resume/suspend on power domain won't
+  change physical state of power rails and that action won't be triggered on
+  child nodes. Additionally, due to the asynchronous nature of monitoring, a
+  pending transaction won't be interrupted by power state change.
+
+compatible: "power-domain-gpio-monitor"
+
+include: power-domain.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to use to sense if rail is powered on.

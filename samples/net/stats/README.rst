@@ -1,7 +1,8 @@
-.. _net_stats-sample:
+.. zephyr:code-sample:: net-stats
+   :name: Network statistics
+   :relevant-api: net_stats
 
-Network Statistics Sample Application
-#####################################
+   Query and display network statistics from a user application.
 
 Overview
 ********
@@ -20,7 +21,7 @@ Requirements
 Building and Running
 ********************
 
-A good way to run this sample application is with QEMU or native_posix board
+A good way to run this sample application is with QEMU or native_sim board
 as described in :ref:`networking_with_host`.
 
 Follow these steps to build the network statistics sample application:

@@ -3,8 +3,12 @@
 
 tests:
   drivers.pinctrl.gd32_af:
-    tags: drivers pinctrl
+    tags:
+      - drivers
+      - pinctrl
     platform_allow: gd32f450i_eval
   drivers.pinctrl.gd32_afio:
-    tags: drivers pinctrl
+    tags:
+      - drivers
+      - pinctrl
     platform_allow: gd32f403z_eval

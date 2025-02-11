@@ -86,36 +86,36 @@ extern "C" {
  * @brief Register a service for DNS Service Discovery
  *
  * This macro should be used for advanced use cases. Two simple use cases are
- * when a custom @p domain or a custom (non-standard) @p proto is required.
+ * when a custom @p _domain or a custom (non-standard) @p _proto is required.
  *
  * Another use case is when the port number is not preassigned. That could
  * be for a number of reasons, but the most common use case would be for
  * ephemeral port usage - i.e. when the service is bound using port number 0.
  * In that case, Zephyr (like other OS's) will simply choose an unused port.
- * When using ephemeral ports, it can be helpful to assign @p port to the
+ * When using ephemeral ports, it can be helpful to assign @p _port to the
  * @ref sockaddr_in.sin_port field of an IPv4 @ref sockaddr_in, or to the
  * @ref sockaddr_in6.sin6_port field of an IPv6 @ref sockaddr_in6.
  *
- * The service can be referenced using the @p id variable.
+ * The service can be referenced using the @p _id variable.
  *
- * @param id variable name for the DNS-SD service record
- * @param instance name of the service instance such as "My HTTP Server"
- * @param service name of the service, such as "_http"
- * @param proto protocol used by the service - either "_tcp" or "_udp"
- * @param domain the domain of the service, such as "local"
- * @param text information for the DNS TXT record
- * @param port a pointer to the port number that this service will use
+ * @param _id variable name for the DNS-SD service record
+ * @param _instance name of the service instance such as "My HTTP Server"
+ * @param _service name of the service, such as "_http"
+ * @param _proto protocol used by the service - either "_tcp" or "_udp"
+ * @param _domain the domain of the service, such as "local"
+ * @param _text information for the DNS TXT record
+ * @param _port a pointer to the port number that this service will use
  */
-#define DNS_SD_REGISTER_SERVICE(id, instance, service, proto, domain, \
-				text, port)			      \
-	static const STRUCT_SECTION_ITERABLE(dns_sd_rec, id) = {      \
-		instance,					      \
-		service,					      \
-		proto,						      \
-		domain,						      \
-		(const char *)text,				      \
-		sizeof(text) - 1,				      \
-		port						      \
+#define DNS_SD_REGISTER_SERVICE(_id, _instance, _service, _proto,	\
+				_domain, _text, _port)			\
+	static const STRUCT_SECTION_ITERABLE(dns_sd_rec, _id) = {	\
+		.instance = _instance,					\
+		.service = _service,					\
+		.proto = _proto,					\
+		.domain = _domain,					\
+		.text = (const char *)_text,				\
+		.text_size = sizeof(_text) - 1,				\
+		.port = _port,						\
 	}
 
 /**
@@ -126,7 +126,7 @@ extern "C" {
  * The service can be referenced using the @p id variable.
  *
  * Example (with TXT):
- * @code{c}
+ * @code{.c}
  * #include <zephyr/net/dns_sd.h>
  * static const bar_txt[] = {
  *   "\x06" "path=/"
@@ -140,7 +140,7 @@ extern "C" {
  * static uint16_t bar_port;
  * DNS_SD_REGISTER_TCP_SERVICE(bar, CONFIG_NET_HOSTNAME,
  *   "_bar", "local", bar_txt, &bar_port);
- * @endcode{c}
+ * @endcode
  *
  * TXT records begin with a single length byte (hex-encoded)
  * and contain key=value pairs. Thus, the length of the key-value pair
@@ -172,13 +172,13 @@ extern "C" {
  * The service can be referenced using the @p id variable.
  *
  * Example (no TXT):
- * @code{c}
+ * @code{.c}
  * #include <zephyr/net/dns_sd.h>
  * #include <zephyr/sys/byteorder.h>
  * static const foo_port = sys_cpu_to_be16(4242);
  * DNS_SD_REGISTER_UDP_SERVICE(foo, CONFIG_NET_HOSTNAME,
  *   "_foo", DNS_SD_EMPTY_TXT, &foo_port);
- * @endcode{c}
+ * @endcode
  *
  * @param id variable name for the DNS-SD service record
  * @param instance name of the service instance such as "My TFTP Server"
@@ -198,8 +198,6 @@ extern "C" {
 /** Empty DNS-SD TXT specifier */
 #define DNS_SD_EMPTY_TXT dns_sd_empty_txt
 
-/** @cond INTERNAL_HIDDEN */
-
 /**
  * @brief DNS Service Discovery record
  *
@@ -214,18 +212,16 @@ extern "C" {
  * Thus, it is possible for multiple services to advertise on a
  * particular port if they hard-code the port.
  *
- * @internal
- *
  * @see <a href="https://tools.ietf.org/html/rfc6763">RFC 6763</a>
  */
 struct dns_sd_rec {
-	/** <Instance> - e.g. "My HTTP Server" */
+	/** "<Instance>" - e.g. "My HTTP Server" */
 	const char *instance;
-	/** Top half of the <Service> such as "_http" */
+	/** Top half of the "<Service>" such as "_http" */
 	const char *service;
-	/** Bottom half of the <Service> "_tcp" or "_udp" */
+	/** Bottom half of the "<Service>" "_tcp" or "_udp" */
 	const char *proto;
-	/** <Domain> such as "local" or "zephyrproject.org" */
+	/** "<Domain>" such as "local" or "zephyrproject.org" */
 	const char *domain;
 	/** DNS TXT record */
 	const char *text;
@@ -234,6 +230,8 @@ struct dns_sd_rec {
 	/** A pointer to the port number used by the service */
 	const uint16_t *port;
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 /**
  * @brief Empty TXT specifier for DNS-SD

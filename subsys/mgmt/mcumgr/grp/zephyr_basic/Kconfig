@@ -4,7 +4,7 @@
 menuconfig MCUMGR_GRP_ZBASIC
 	bool "Zephyr specific basic group of commands"
 	help
-	  Enables mcumgr to processing of Zephyr specific groups.
+	  Enables MCUmgr to processing of Zephyr specific groups.
 
 if MCUMGR_GRP_ZBASIC
 

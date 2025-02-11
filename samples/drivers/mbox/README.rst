@@ -1,7 +1,8 @@
-.. _mbox-sample:
+.. zephyr:code-sample:: mbox
+   :name: MBOX
+   :relevant-api: mbox_interface
 
-MBOX Interface
-##############
+   Perform inter-processor mailbox communication using the MBOX API.
 
 Overview
 ********
@@ -13,13 +14,14 @@ Building and Running
 
 The sample can be built and executed on boards supporting MBOX.
 
-Building the application for nrf5340dk_nrf5340_cpuapp
+Building the application for nrf5340dk/nrf5340/cpuapp
 *****************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/mbox/
-   :board: nrf5340dk_nrf5340_cpuapp
+   :board: nrf5340dk/nrf5340/cpuapp
    :goals: debug
+   :west-args: --sysbuild
 
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:
@@ -57,3 +59,23 @@ core:
    Pong (on channel 1)
    Ping (on channel 0)
    Pong (on channel 1)
+
+
+Building the application for the simulated nrf5340bsim
+******************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mbox/
+   :host-os: unix
+   :board: nrf5340bsim/nrf5340/cpuapp
+   :goals: build
+   :west-args: --sysbuild
+
+Then you can execute your application using:
+
+.. code-block:: console
+
+   $ ./build/zephyr/zephyr.exe -nosim
+   # Press Ctrl+C to exit
+
+You can expect a similar output as in the real HW in the invoking console.

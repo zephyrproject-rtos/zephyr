@@ -15,9 +15,6 @@
 #define SPI_NOR_WIP_BIT         BIT(0)  /* Write in progress */
 #define SPI_NOR_WEL_BIT         BIT(1)  /* Write enable latch */
 
-/* Control register bits */
-#define SPI_NOR_4BYTE_BIT       BIT(5)  /* 4B addressing */
-
 /* Flash opcodes */
 #define SPI_NOR_CMD_WRSR        0x01    /* Write status register */
 #define SPI_NOR_CMD_RDSR        0x05    /* Read status register */
@@ -39,6 +36,7 @@
 #define SPI_NOR_CMD_PP_1_4_4    0x38    /* Quad Page program (1-4-4) */
 #define SPI_NOR_CMD_RDCR        0x15    /* Read control register */
 #define SPI_NOR_CMD_SE          0x20    /* Sector erase */
+#define SPI_NOR_CMD_SE_4B       0x21    /* Sector erase 4 byte address*/
 #define SPI_NOR_CMD_BE_32K      0x52    /* Block erase 32KB */
 #define SPI_NOR_CMD_BE          0xD8    /* Block erase */
 #define SPI_NOR_CMD_CE          0xC7    /* Chip erase */
@@ -86,6 +84,9 @@
 #define SPI_NOR_WREN_MATCH    0x02
 #define SPI_NOR_WREN_MASK     0x02
 
+#define SPI_NOR_WEL_MATCH     0x00
+#define SPI_NOR_WEL_MASK      0x02
+
 #define SPI_NOR_MEM_RDY_MATCH 0x00
 #define SPI_NOR_MEM_RDY_MASK  0x01
 
@@ -109,5 +110,9 @@
 /* Test whether offset is aligned to a given number of bits. */
 #define SPI_NOR_IS_ALIGNED(_ofs, _bits) (((_ofs) & BIT_MASK(_bits)) == 0)
 #define SPI_NOR_IS_SECTOR_ALIGNED(_ofs) SPI_NOR_IS_ALIGNED(_ofs, 12)
+#define SPI_NOR_IS_32K_ALIGNED(_ofs) SPI_NOR_IS_ALIGNED(_ofs, 15)
+#define SPI_NOR_IS_64K_ALIGNED(_ofs) SPI_NOR_IS_ALIGNED(_ofs, 16)
+
+#define CMD_RDCR 0x15 /* Read the configuration register. */
 
 #endif /*__SPI_NOR_H__*/

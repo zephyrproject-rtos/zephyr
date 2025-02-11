@@ -1,0 +1,20 @@
+/* i2s-node0 is the receiver    */
+/* i2s-node1 is the transmitter */
+/ {
+	aliases {
+		i2s-node0 = &i2s1;
+		i2s-node1 = &i2s2;
+	};
+};
+
+&i2s1 {
+	pinctrl-0 = <&i2s1_ws_pa4 &i2s1_ck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2s2 {
+	pinctrl-0 = <&i2s2_ws_pa3 &i2s2_ck_pi1 &spi2_miso_pi2 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};

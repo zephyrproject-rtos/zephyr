@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2022 AVSystem Sławomir Wolf Sp.j. (AVSystem)
+ * Copyright (c) 2023 Martin Kiepfer <m.kiepfer@teleschrim.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32-gpio-sigmap.h>
+
+&pinctrl {
+
+	uart0_tx_gpio1: uart0_tx_gpio1 {
+		pinmux = <UART0_TX_GPIO1>;
+	};
+
+	uart0_rx_gpio3: uart0_rx_gpio3 {
+		pinmux = <UART0_RX_GPIO3>;
+		bias-pull-up;
+	};
+
+	uart1_rx_gpio33: uart1_rx_gpio33 {
+		pinmux = <UART1_RX_GPIO33>;
+	};
+
+	uart2_rx_gpio13: uart2_rx_gpio13 {
+		pinmux = <UART2_RX_GPIO13>;
+	};
+
+	uart2_tx_gpio14: uart2_rx_gpio14 {
+		pinmux = <UART2_TX_GPIO14>;
+	};
+
+	uart1_tx_gpio32: uart1_tx_gpio32 {
+		pinmux = <UART1_TX_GPIO32>;
+	};
+
+	spim3_default: spim3_default {
+		group1 {
+			pinmux = <SPIM3_MISO_GPIO38>,
+				 <SPIM3_SCLK_GPIO18>;
+		};
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO23>;
+			output-low;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO21>,
+				 <I2C0_SCL_GPIO22>;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO32>,
+				 <I2C1_SCL_GPIO33>;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+};

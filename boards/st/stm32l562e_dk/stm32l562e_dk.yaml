@@ -1,0 +1,28 @@
+identifier: stm32l562e_dk
+name: ST STM32L562E-DK Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - i2c
+  - lptim
+  - pwm
+  - counter
+  - watchdog
+  - dac
+  - adc
+  - spi
+  - ble
+  - dma
+  - usart
+  - arduino_spi
+  - usb
+  - usb_device
+  - nvs
+  - usbd
+ram: 192
+flash: 512
+vendor: st

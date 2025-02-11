@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DT_DRV_COMPAT snps_designware_ethernet
 
 #include <sys/types.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <zephyr/net/ethernet.h>
@@ -47,12 +47,12 @@ void dwmac_platform_init(struct dwmac_priv *p)
 	sys_cache_data_invd_range(dwmac_tx_rx_descriptors,
 				  sizeof(dwmac_tx_rx_descriptors));
 
-	desc_phys_addr = z_mem_phys_addr(dwmac_tx_rx_descriptors);
+	desc_phys_addr = k_mem_phys_addr(dwmac_tx_rx_descriptors);
 
 	/* remap descriptor rings uncached */
-	z_phys_map(&desc_uncached_addr, desc_phys_addr,
-		   sizeof(dwmac_tx_rx_descriptors),
-		   K_MEM_PERM_RW | K_MEM_CACHE_NONE);
+	k_mem_map_phys_bare(&desc_uncached_addr, desc_phys_addr,
+			    sizeof(dwmac_tx_rx_descriptors),
+			    K_MEM_PERM_RW | K_MEM_CACHE_NONE);
 
 	LOG_DBG("desc virt %p uncached %p phys 0x%lx",
 		dwmac_tx_rx_descriptors, desc_uncached_addr, desc_phys_addr);

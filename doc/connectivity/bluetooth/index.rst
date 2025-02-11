@@ -13,13 +13,13 @@ hardware, as well as portions of a Classical Bluetooth (BR/EDR) Host layer.
 .. toctree::
    :maxdepth: 1
 
-   overview.rst
-   bluetooth-arch.rst
-   bluetooth-audio-arch.rst
+   features.rst
    bluetooth-qual.rst
-   bluetooth-tools.rst
+   bluetooth-arch.rst
+   bluetooth-le-host.rst
+   api/audio/bluetooth-le-audio-arch.rst
+   bluetooth-ctlr-arch.rst
    bluetooth-dev.rst
-   autopts/autopts-win10.rst
-   autopts/autopts-linux.rst
    api/index.rst
+   bluetooth-tools.rst
    bluetooth-shell.rst

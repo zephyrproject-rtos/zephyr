@@ -6,7 +6,7 @@ description: |
 
 compatible: "microchip,enc424j600"
 
-include: [spi-device.yaml, ethernet.yaml]
+include: [spi-device.yaml, ethernet-controller.yaml]
 
 properties:
   int-gpios:

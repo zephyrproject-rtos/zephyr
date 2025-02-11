@@ -46,6 +46,23 @@ bluetooth:
     - subsys/bluetooth/
     - subsys/net/l2/bluetooth/
 
+net:
+  files:
+    - subsys/net/
+    - include/zephyr/net/
+    - drivers/wifi/
+    - drivers/net/
+    - drivers/ethernet/
+    - drivers/ieee802154/
+    - drivers/ptp_clock/
+
+test_framework:
+  files:
+    - subsys/testsuite/
+    - samples/subsys/testsuite/
+    - tests/subsys/testsuite/
+    - tests/ztest/
+
 cmsis_dsp:
   files:
     - modules/Kconfig.cmsis_dsp
@@ -53,6 +70,12 @@ cmsis_dsp:
     # change to west.yml is updating something we need to re-test for.
     - west.yml
 
+mcumgr:
+  files:
+    - subsys/mgmt/mcumgr/
+    - tests/subsys/mgmt/mcumgr/
+    - samples/subsys/mgmt/mcumgr/
+    - include/zephyr/mgmt/mcumgr/
 kernel:
   files:
     - kernel/

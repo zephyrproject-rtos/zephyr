@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig LED_STRIP
-	bool "LED strip drivers"
+	bool "Light-Emitting Diode (LED) strip drivers"
 	help
 	  Include LED strip drivers in the system configuration.
 
@@ -34,5 +34,7 @@ source "drivers/led_strip/Kconfig.ws2812"
 source "drivers/led_strip/Kconfig.apa102"
 
 source "drivers/led_strip/Kconfig.tlc5971"
+
+source "drivers/led_strip/Kconfig.tlc59731"
 
 endif # LED_STRIP

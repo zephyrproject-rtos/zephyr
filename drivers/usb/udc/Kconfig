@@ -3,7 +3,7 @@
 
 
 menuconfig UDC_DRIVER
-	bool "USB device controller driver [EXPERIMENTAL]"
+	bool "USB device controller drivers [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select NET_BUF
 	help
@@ -47,8 +47,13 @@ module = UDC_DRIVER
 module-str = usb drv
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/usb/udc/Kconfig.dwc2"
 source "drivers/usb/udc/Kconfig.nrf"
 source "drivers/usb/udc/Kconfig.kinetis"
+source "drivers/usb/udc/Kconfig.skeleton"
 source "drivers/usb/udc/Kconfig.virtual"
+source "drivers/usb/udc/Kconfig.stm32"
+source "drivers/usb/udc/Kconfig.it82xx2"
+source "drivers/usb/udc/Kconfig.mcux"
 
 endif # UDC_DRIVER

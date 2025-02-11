@@ -1,0 +1,34 @@
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt1060_evk@hyperflash
+name: NXP MIMXRT1060-EVK-HYPERFLASH
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32768
+flash: 65536
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - counter
+  - display
+  - dma
+  - gpio
+  - i2c
+  - netif:eth
+  - pwm
+  - sdhc
+  - spi
+  - usb_device
+  - usbd
+  - watchdog
+vendor: nxp

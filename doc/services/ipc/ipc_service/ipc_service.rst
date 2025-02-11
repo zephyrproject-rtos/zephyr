@@ -63,11 +63,11 @@ See the following example:
 
 .. code-block:: c
 
-   #include <zephyr/include/ipc_service.h>
+   #include <zephyr/ipc/ipc_service.h>
 
    static void bound_cb(void *priv)
    {
-      /* Endpint bounded */
+      /* Endpoint bounded */
    }
 
    static void recv_cb(const void *data, size_t len, void *priv)
@@ -93,7 +93,7 @@ See the following example:
       ret = ipc_service_open_instance(inst0);
       ret = ipc_service_register_endpoint(inst0, &ept0, &ept0_cfg);
 
-      /* Wait for endpint bound (bound_cb called) */
+      /* Wait for endpoint bound (bound_cb called) */
 
       unsigned char message[] = "hello world";
       ret = ipc_service_send(&ept0, &message, sizeof(message));
@@ -109,7 +109,7 @@ See the following example:
 
 .. code-block:: c
 
-   #include <zephyr/include/ipc_service.h>
+   #include <zephyr/ipc/ipc_service.h>
    #include <stdint.h>
    #include <string.h>
 
@@ -117,7 +117,7 @@ See the following example:
 
    static void bound_cb(void *priv)
    {
-      /* Endpint bounded */
+      /* Endpoint bounded */
    }
 
    static void recv_cb_nocopy(const void *data, size_t len, void *priv)
@@ -146,7 +146,7 @@ See the following example:
       ret = ipc_service_open_instance(inst0);
       ret = ipc_service_register_endpoint(inst0, &ept0, &ept0_cfg);
 
-      /* Wait for endpint bound (bound_cb called) */
+      /* Wait for endpoint bound (bound_cb called) */
       void *data;
       unsigned char message[] = "hello world";
       uint32_t len = sizeof(message);
@@ -161,7 +161,7 @@ See the following example:
 Backends
 ********
 
-The requirements needed for implementating backends give flexibility to the IPC
+The requirements needed for implementing backends give flexibility to the IPC
 service. These allow for the addition of dedicated backends having only a
 subsets of features for specific use cases.
 
@@ -185,6 +185,7 @@ backend.
    :maxdepth: 1
 
    backends/ipc_service_icmsg.rst
+   backends/ipc_service_icbmsg.rst
 
 API Reference
 *************

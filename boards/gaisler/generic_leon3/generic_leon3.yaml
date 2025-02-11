@@ -1,0 +1,18 @@
+identifier: generic_leon3
+name: Generic LEON3 system
+type: mcu
+simulation: tsim
+simulation_exec: tsim-leon3
+arch: sparc
+ram: 4096
+flash: 2048
+toolchain:
+  - zephyr
+  - xtools
+supported:
+  - netif
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: gaisler

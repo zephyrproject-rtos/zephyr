@@ -30,7 +30,14 @@ config UART_NS16550_DRV_CMD
 
 	  Says n if not sure.
 
-choice
+config UART_NS16550_INTEL_LPSS_DMA
+	bool "INTEL LPSS support for NS16550"
+	select SERIAL_SUPPORT_ASYNC
+	select DMA if UART_ASYNC_API
+	help
+	  This enables the usage of INTEL LPSS internal DMA for Async operations.
+
+choice UART_NS16550_VARIANT
 	prompt "UART variant"
 	default UART_NS16550_VARIANT_NS16550
 	help
@@ -60,11 +67,18 @@ config UART_NS16550_ACCESS_WORD_ONLY
 	  16550 (DesignWare UART) only allows word access, byte access will raise
 	  exception.
 
-config UART_NS16550_ACCESS_IOPORT
-	bool
+config UART_NS16550_TI_K3
+	bool "Add support for NS16550 variant specific to TI K3 SoCs"
 	help
-	  When enabled, NS16550 will not be a memory mapped device. This option
-	  must be selected at SoC/board level if needed.
+	  Enabling this configuration allows the users to use the UART port in
+	  Texas Instruments K3 SoCs by enabling a vendor specific extended register
+	  set.
+
+config UART_NS16550_ITE_HIGH_SPEED_BUADRATE
+	bool "IT8XXX2 specific baud rate configuration"
+	help
+	  Enable IT8XXX2 specific baud rate configuration.
+	  This applies to high-speed baud rate configuration.
 
 menu "NS16550 Workarounds"
 

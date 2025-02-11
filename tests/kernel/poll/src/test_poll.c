@@ -115,10 +115,13 @@ ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 		      -EINVAL,
 		      NULL);
 
+	/* can't use the initializer to misconstruct this */
 	struct k_poll_event bad_events2[] = {
-		K_POLL_EVENT_INITIALIZER(0xFU,
-					 K_POLL_MODE_NOTIFY_ONLY,
-					 &no_wait_sem),
+		{ .type = 0xFU,
+		  .state = K_POLL_STATE_NOT_READY,
+		  .mode = K_POLL_MODE_NOTIFY_ONLY,
+		  .obj = &no_wait_sem,
+		},
 	};
 	zassert_equal(k_poll(bad_events2, ARRAY_SIZE(bad_events), K_NO_WAIT),
 		      -EINVAL,
@@ -786,53 +789,4 @@ ZTEST(poll_api_1cpu, test_poll_zero_events)
 			  K_POLL_MODE_NOTIFY_ONLY, &zero_events_sem);
 
 	zassert_equal(k_poll(&event, 0, K_MSEC(50)), -EAGAIN);
-}
-
-/* subthread entry */
-void polling_event(void *p1, void *p2, void *p3)
-{
-	k_poll(p1, 1, K_FOREVER);
-}
-
-/**
- * @brief Detect is_polling is false in signal_poll_event()
- *
- * @details
- * Define and initialize a signal event, and spawn a thread to
- * poll event, and set dticks as invalid, check if the value
- * of is_polling in function signal_poll_event().
- *
- * @ingroup kernel_poll_tests
- */
-ZTEST(poll_api_1cpu, test_detect_is_polling)
-{
-	k_poll_signal_init(&test_signal);
-
-	struct k_thread *p = &test_thread;
-	struct k_poll_event events[1] = {
-		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
-				K_POLL_MODE_NOTIFY_ONLY,
-				&test_signal),
-	};
-
-	k_tid_t tid = k_thread_create(&test_thread, test_stack,
-		K_THREAD_STACK_SIZEOF(test_stack), polling_event,
-		events, NULL, NULL, K_PRIO_PREEMPT(0),
-		K_INHERIT_PERMS, K_NO_WAIT);
-
-	/* Set up the thread timeout value to check if
-	 * what happened if dticks is invalid.
-	 */
-	p->base.timeout.dticks = _EXPIRED;
-	/* Wait for register event successfully */
-	k_sleep(K_MSEC(50));
-
-	/* Raise a signal */
-	int ret = k_poll_signal_raise(&test_signal, 0x1337);
-
-	zassert_true(ret == -EAGAIN, "thread expired failed\n");
-	zassert_true(events[0].poller->is_polling == false,
-		"the value of is_polling is invalid\n");
-
-	k_thread_abort(tid);
 }

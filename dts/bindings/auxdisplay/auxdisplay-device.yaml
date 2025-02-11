@@ -1,0 +1,17 @@
+# Copyright (c) 2022 Jamie McCrae
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for auxiliary (text) displays
+
+include: base.yaml
+
+properties:
+  columns:
+    type: int
+    required: true
+    description: Number of text columns that the display has
+
+  rows:
+    type: int
+    required: true
+    description: Number of text rows that the display has

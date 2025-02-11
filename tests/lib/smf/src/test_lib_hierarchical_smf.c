@@ -338,17 +338,17 @@ static void state_d_exit(void *obj)
 
 static const struct smf_state test_states[] = {
 	[PARENT_AB] = SMF_CREATE_STATE(parent_ab_entry, parent_ab_run,
-				       parent_ab_exit, NULL),
+				       parent_ab_exit, NULL, NULL),
 	[PARENT_C] = SMF_CREATE_STATE(parent_c_entry, parent_c_run,
-				      parent_c_exit, NULL),
+				      parent_c_exit, NULL, NULL),
 	[STATE_A] = SMF_CREATE_STATE(state_a_entry, state_a_run, state_a_exit,
-				     &test_states[PARENT_AB]),
+				     &test_states[PARENT_AB], NULL),
 	[STATE_B] = SMF_CREATE_STATE(state_b_entry, state_b_run, state_b_exit,
-				     &test_states[PARENT_AB]),
+				     &test_states[PARENT_AB], NULL),
 	[STATE_C] = SMF_CREATE_STATE(state_c_entry, state_c_run, state_c_exit,
-				     &test_states[PARENT_C]),
+				     &test_states[PARENT_C], NULL),
 	[STATE_D] = SMF_CREATE_STATE(state_d_entry, state_d_run, state_d_exit,
-				     NULL),
+				     NULL, NULL),
 };
 
 ZTEST(smf_tests, test_smf_hierarchical)

@@ -21,9 +21,9 @@
  * When the SDA pin is read it must return the state of the physical hardware
  * line, not just the last state written to it for output.
  *
- * The SCL pin should be configured in the same manner as SDA, or, if it is known
- * that the hardware attached to pin doesn't attempt clock stretching, then the
- * SCL pin may be a push/pull output.
+ * The SCL pin should be configured in the same manner as SDA, or, if it is
+ * known that the hardware attached to pin doesn't attempt clock stretching,
+ * then the SCL pin may be a push/pull output.
  */
 
 #include <zephyr/device.h>
@@ -47,6 +47,7 @@ struct i2c_gpio_config {
 /* Driver instance data */
 struct i2c_gpio_context {
 	struct i2c_bitbang bitbang;	/* Bit-bang library data */
+	struct k_mutex mutex;
 };
 
 static void i2c_gpio_set_scl(void *io_context, int state)
@@ -81,28 +82,67 @@ static const struct i2c_bitbang_io io_fns = {
 static int i2c_gpio_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_gpio_context *context = dev->data;
+	int rc;
 
-	return i2c_bitbang_configure(&context->bitbang, dev_config);
+	k_mutex_lock(&context->mutex, K_FOREVER);
+
+	rc = i2c_bitbang_configure(&context->bitbang, dev_config);
+
+	k_mutex_unlock(&context->mutex);
+
+	return rc;
+}
+
+static int i2c_gpio_get_config(const struct device *dev, uint32_t *config)
+{
+	struct i2c_gpio_context *context = dev->data;
+	int rc;
+
+	k_mutex_lock(&context->mutex, K_FOREVER);
+
+	rc = i2c_bitbang_get_config(&context->bitbang, config);
+	if (rc < 0) {
+		LOG_ERR("I2C controller not configured: %d", rc);
+	}
+
+	k_mutex_unlock(&context->mutex);
+
+	return rc;
 }
 
 static int i2c_gpio_transfer(const struct device *dev, struct i2c_msg *msgs,
 				uint8_t num_msgs, uint16_t slave_address)
 {
 	struct i2c_gpio_context *context = dev->data;
+	int rc;
 
-	return i2c_bitbang_transfer(&context->bitbang, msgs, num_msgs,
+	k_mutex_lock(&context->mutex, K_FOREVER);
+
+	rc = i2c_bitbang_transfer(&context->bitbang, msgs, num_msgs,
 				    slave_address);
+
+	k_mutex_unlock(&context->mutex);
+
+	return rc;
 }
 
 static int i2c_gpio_recover_bus(const struct device *dev)
 {
 	struct i2c_gpio_context *context = dev->data;
+	int rc;
 
-	return i2c_bitbang_recover_bus(&context->bitbang);
+	k_mutex_lock(&context->mutex, K_FOREVER);
+
+	rc = i2c_bitbang_recover_bus(&context->bitbang);
+
+	k_mutex_unlock(&context->mutex);
+
+	return rc;
 }
 
-static struct i2c_driver_api api = {
+static const struct i2c_driver_api api = {
 	.configure = i2c_gpio_configure,
+	.get_config = i2c_gpio_get_config,
 	.transfer = i2c_gpio_transfer,
 	.recover_bus = i2c_gpio_recover_bus,
 };
@@ -114,7 +154,7 @@ static int i2c_gpio_init(const struct device *dev)
 	uint32_t bitrate_cfg;
 	int err;
 
-	if (!device_is_ready(config->scl_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->scl_gpio)) {
 		LOG_ERR("SCL GPIO device not ready");
 		return -ENODEV;
 	}
@@ -125,7 +165,7 @@ static int i2c_gpio_init(const struct device *dev)
 		return err;
 	}
 
-	if (!device_is_ready(config->sda_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->sda_gpio)) {
 		LOG_ERR("SDA GPIO device not ready");
 		return -ENODEV;
 	}
@@ -141,13 +181,19 @@ static int i2c_gpio_init(const struct device *dev)
 		return err;
 	}
 
-	i2c_bitbang_init(&context->bitbang, &io_fns, config);
+	i2c_bitbang_init(&context->bitbang, &io_fns, (void *)config);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 	err = i2c_bitbang_configure(&context->bitbang,
 				    I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (err) {
 		LOG_ERR("failed to configure I2C bitbang (err %d)", err);
+		return err;
+	}
+
+	err = k_mutex_init(&context->mutex);
+	if (err) {
+		LOG_ERR("Failed to create the i2c lock mutex : %d", err);
 		return err;
 	}
 

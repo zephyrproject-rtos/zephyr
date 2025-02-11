@@ -149,13 +149,13 @@ static void block_matrix_callback(struct k_timer *timer)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	printk("Kscan matrix sample application\n");
 
 	if (!device_is_ready(kscan_dev)) {
 		LOG_ERR("kscan device %s not ready", kscan_dev->name);
-		return;
+		return 0;
 	}
 
 	kscan_config(kscan_dev, kb_callback);
@@ -163,4 +163,5 @@ void main(void)
 	k_timer_init(&block_matrix_timer, block_matrix_callback, NULL);
 	k_timer_start(&block_matrix_timer, K_SECONDS(1), K_SECONDS(3));
 
+	return 0;
 }

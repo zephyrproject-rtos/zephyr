@@ -21,7 +21,7 @@ jobs:
 
     steps:
     - name: Download artifacts
-      uses: dawidd6/action-download-artifact@v2
+      uses: dawidd6/action-download-artifact@v3
       with:
         workflow: doc-build.yml
         run_id: ${{ github.event.workflow_run.id }}
@@ -32,7 +32,7 @@ jobs:
 
     - name: Check PR number
       id: check-pr
-      uses: carpentries/actions/check-valid-pr@v0.8
+      uses: carpentries/actions/check-valid-pr@v0.14.0
       with:
         pr: ${{ env.PR_NUM }}
         sha: ${{ github.event.workflow_run.head_sha }}
@@ -46,11 +46,14 @@ jobs:
     - name: Uncompress HTML docs
       run: |
         tar xf html-output/html-output.tar.xz -C html-output
+        if [ -f api-coverage/api-coverage.tar.xz ]; then
+          tar xf api-coverage/api-coverage.tar.xz -C api-coverage
+        fi
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_ACCESS_KEY_ID }}
+        aws-access-key-id: ${{ vars.AWS_BUILDS_ZEPHYR_PR_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
@@ -61,3 +64,8 @@ jobs:
         aws s3 sync --quiet html-output/html \
           s3://builds.zephyrproject.org/${{ github.event.repository.name }}/pr/${PR_NUM}/docs \
           --delete
+        if [ -d api-coverage/coverage-report ]; then
+          aws s3 sync --quiet api-coverage/coverage-report/ \
+            s3://builds.zephyrproject.org/${{ github.event.repository.name }}/pr/${PR_NUM}/api-coverage \
+            --delete
+        fi

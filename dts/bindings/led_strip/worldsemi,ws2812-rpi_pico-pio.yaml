@@ -1,0 +1,66 @@
+# Copyright (c) 2023, TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The pio node configured for ws2812.
+
+compatible: "worldsemi,ws2812-rpi_pico-pio"
+
+include: pinctrl-device.yaml
+
+properties:
+  bit-waveform:
+    type: array
+    description: |
+      This property defines the waveform for sending 1-bit data.
+      The program uses the first three elements of the array.
+      The T0 is equal to T0H in the datasheet.
+      The T2 is equal to T1L in the datasheet.
+      The T1 is equal to (T1H-T0H) or (T0L-T1L) in the datasheet.
+
+      Code-0
+         +------+                 +---
+         |      |                 |
+         |  T0  |      T1+T2      |
+         |      |                 |
+      ---+      +-----------------+
+
+      Code-1
+         +---------------+        +---
+         |               |        |
+         |     T0+T1     |   T2   |
+         |               |        |
+      ---+               +--------+
+
+
+      The frequency determines the wave period.
+      The T0～T2 means ratio in one period.
+
+      For example, T0=3, T1=3, T2=4 and the frequency is 800kHz case,
+      T0H is
+        (1 / 800kHz) * (3/10) = 375ns
+      T0L is
+        (1 / 800kHz) * ((4+3)/10) = 875ns
+
+child-binding:
+  description: |
+    Worldsemi WS2812 or compatible LED strip driver based on RaspberryPi Pico's PIO
+    The LED strip node can put up to 4 instances under a single PIO node.
+
+  include: ws2812-gpio.yaml
+
+  properties:
+    gpios:
+      description: |
+        Inherited from ws2812-gpio.yaml.
+
+        Note: This driver does not configure the output pin.
+        You need to configure the pin with pinctrl that is in the parent node configuration
+        for use by PIO. This property only uses the GPIO pin number and ignores flags.
+
+    frequency:
+      type: int
+      description: |
+        Specify the number of times a waveform representing 1 bit is
+        transmitted per second. It is same meaning as bit-per-seconds.
+        WS2812 works with 800000. Set the value 400000 if use with WS2811.

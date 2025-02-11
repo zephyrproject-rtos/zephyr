@@ -38,6 +38,9 @@
 #elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_3), okay)
 #define PWM_DEV_NODE DT_ALIAS(pwm_3)
 
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwm)
+#define PWM_DEV_NODE DT_INST(0, nordic_nrf_pwm)
+
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
 #define PWM_DEV_NODE DT_INST(0, st_stm32_pwm)
 
@@ -47,14 +50,23 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_ftm_pwm)
 #define PWM_DEV_NODE DT_INST(0, nxp_kinetis_ftm_pwm)
 
+#elif DT_HAS_COMPAT_STATUS_OKAY(intel_blinky_pwm)
+#define PWM_DEV_NODE DT_INST(0, intel_blinky_pwm)
+
 #else
 #error "Define a PWM device"
 #endif
 
-#if defined(CONFIG_BOARD_COLIBRI_IMX7D_M4) || defined(CONFIG_SOC_MK64F12) || \
-	defined(CONFIG_SOC_MKW41Z4)
+#if defined(CONFIG_BOARD_COLIBRI_IMX7D_MCIMX7D_M4) || defined(CONFIG_SOC_MK64F12) ||               \
+	defined(CONFIG_SOC_MKW41Z4) || defined(CONFIG_SOC_SERIES_ESP32S2) ||                       \
+	defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32C3)
 #define DEFAULT_PERIOD_CYCLE 1024
 #define DEFAULT_PULSE_CYCLE 512
+#define DEFAULT_PERIOD_NSEC 2000000
+#define DEFAULT_PULSE_NSEC 500000
+#elif DT_HAS_COMPAT_STATUS_OKAY(intel_blinky_pwm)
+#define DEFAULT_PERIOD_CYCLE 32768
+#define DEFAULT_PULSE_CYCLE 16384
 #define DEFAULT_PERIOD_NSEC 2000000
 #define DEFAULT_PULSE_NSEC 500000
 #else
@@ -67,12 +79,13 @@
 #if defined CONFIG_BOARD_SAM_E70_XPLAINED
 #define DEFAULT_PWM_PORT 2 /* PWM on EXT2 connector, pin 8 */
 #elif defined CONFIG_PWM_NRFX
-#define DEFAULT_PWM_PORT DT_PROP(DT_ALIAS(pwm_0), ch0_pin)
+#define DEFAULT_PWM_PORT 0
 #elif defined CONFIG_BOARD_ADAFRUIT_ITSYBITSY_M4_EXPRESS
 #define DEFAULT_PWM_PORT 2 /* TCC1/WO[2] on PA18 (D7) */
 #elif defined CONFIG_BOARD_MIMXRT685_EVK
 #define DEFAULT_PWM_PORT 7 /* D3 on Arduino connector J27 */
-#elif defined CONFIG_BOARD_LPCXPRESSO55S69_CPU0
+#elif defined(CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS) ||                                    \
+	defined(CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0)
 #define DEFAULT_PWM_PORT 2 /* D2 on Arduino connector P18 */
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
 /* Default port should be adapted per board to fit the channel
@@ -159,4 +172,5 @@ ZTEST_USER(pwm_basic, test_pwm_cycle)
 	/* Period : Pulse (64000 : 0), unit (cycle). Voltage : 0V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_CYCLE,
 				0, UNIT_CYCLES) == TC_PASS, NULL);
+	k_sleep(K_MSEC(1000));
 }

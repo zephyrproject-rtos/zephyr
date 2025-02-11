@@ -1,0 +1,45 @@
+# EFR32XG24 DK2601B board
+
+# Copyright (c) 2021, Sateesh Kotapati
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_XG24_DK2601B
+
+config CMU_HFXO_FREQ
+	default 40000000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+config FLASH_BASE_ADDRESS
+	hex
+	default 0x08000000
+
+if SOC_GECKO_USE_RAIL
+
+config FPU
+	default y
+
+endif # SOC_GECKO_USE_RAIL
+
+if BT
+
+config FPU
+	default y
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 8192
+
+config MAIN_STACK_SIZE
+	default 2304
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 4096
+
+endif # SHELL
+
+endif # BT
+
+endif # BOARD_XG24_DK2601B

@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023 Kenneth J. Miller <ken@miller.ec>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* Controls 3.3V VDDIO supply for UEXT1 connector and CON1 header */
+	vddio_reg: fet2_regulator {
+		compatible = "regulator-fixed";
+		enable-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		regulator-name = "fet2_regulator";
+		regulator-boot-on;
+	};
+};

@@ -7,17 +7,34 @@
 # SPI Drivers
 #
 menuconfig SPI
-	bool "SPI hardware bus support"
+	bool "Serial Peripheral Interface (SPI) bus drivers"
 	help
 	  Enable support for the SPI hardware bus.
 
 if SPI
+
+config SPI_SHELL
+	bool "SPI Shell"
+	depends on SHELL
+	help
+	  Enable SPI Shell.
+
+	  The currently SPI shell supports simple SPI write/read (transceive)
+	  operation.
 
 config SPI_ASYNC
 	bool "Asynchronous call support"
 	select POLL
 	help
 	  This option enables the asynchronous API calls.
+
+config SPI_RTIO
+	bool "RTIO support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select RTIO
+	help
+	  This option enables the RTIO API calls. RTIO support is
+	  experimental as the API itself is unstable.
 
 config SPI_SLAVE
 	bool "Slave support [EXPERIMENTAL]"
@@ -37,7 +54,7 @@ config SPI_EXTENDED_MODES
 
 config SPI_INIT_PRIORITY
 	int "Init priority"
-	default 70
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  Device driver initialization priority.
 
@@ -46,6 +63,12 @@ config SPI_COMPLETION_TIMEOUT_TOLERANCE
 	default 200
 	help
 	  The tolerance value in ms for the SPI completion timeout logic.
+
+config SPI_STATS
+	bool "SPI device statistics"
+	depends on STATS
+	help
+	  Enable SPI device statistics.
 
 module = SPI
 module-str = spi
@@ -59,7 +82,11 @@ source "drivers/spi/Kconfig.dw"
 
 source "drivers/spi/Kconfig.mcux_dspi"
 
+source "drivers/spi/Kconfig.mcux_ecspi"
+
 source "drivers/spi/Kconfig.mcux_flexcomm"
+
+source "drivers/spi/Kconfig.mcux_flexio"
 
 source "drivers/spi/Kconfig.mcux_lpspi"
 
@@ -93,8 +120,6 @@ source "drivers/spi/Kconfig.test"
 
 source "drivers/spi/Kconfig.psoc6"
 
-source "drivers/spi/Kconfig.npcx_fiu"
-
 source "drivers/spi/Kconfig.bitbang"
 
 source "drivers/spi/Kconfig.gd32"
@@ -106,5 +131,31 @@ source "drivers/spi/Kconfig.pl022"
 source "drivers/spi/Kconfig.andes_atcspi200"
 
 source "drivers/spi/Kconfig.nxp_s32"
+
+source "drivers/spi/Kconfig.xmc4xxx"
+
+source "drivers/spi/Kconfig.pw"
+
+source "drivers/spi/Kconfig.smartbond"
+
+source "drivers/spi/Kconfig.opentitan"
+
+source "drivers/spi/Kconfig.numaker"
+
+source "drivers/spi/Kconfig.ambiq"
+
+source "drivers/spi/Kconfig.rpi_pico"
+
+source "drivers/spi/Kconfig.ifx_cat1"
+
+source "drivers/spi/Kconfig.sedi"
+
+source "drivers/spi/Kconfig.npcx"
+
+source "drivers/spi/Kconfig.mchp_mss"
+
+source "drivers/spi/Kconfig.grlib_spimctrl"
+
+source "drivers/spi/Kconfig.max32"
 
 endif # SPI

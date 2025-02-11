@@ -9,12 +9,13 @@
 
 /* Grotesque hack for pinmux boards */
 #if defined(CONFIG_BOARD_RV32M1_VEGA)
-#include <zephyr/drivers/pinmux.h>
 #include <fsl_port.h>
-#elif defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
+#elif defined(CONFIG_BOARD_UDOO_NEO_FULL_MCIMX6X_M4)
 #include "device_imx.h"
 #elif defined(CONFIG_BOARD_MIMXRT1050_EVK)
 #include <fsl_iomuxc.h>
+#elif defined(CONFIG_BOARD_NRF52_BSIM)
+#include <NRF_GPIO.h>
 #endif
 
 static void board_setup(void)
@@ -31,7 +32,7 @@ static void board_setup(void)
 	}
 #endif
 
-#if defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
+#if defined(CONFIG_BOARD_UDOO_NEO_FULL_MCIMX6X_M4)
 	/*
 	 * Configure pin mux.
 	 * The following code needs to configure the same GPIOs which were
@@ -88,6 +89,14 @@ static void board_setup(void)
 	zassert_true(device_is_ready(dev), "GPIO dev is not ready");
 	int rc = gpio_add_callback(dev, &gpio_emul_callback);
 	__ASSERT(rc == 0, "gpio_add_callback() failed: %d", rc);
+#elif defined(CONFIG_BOARD_NRF52_BSIM)
+	static bool done;
+
+	if (!done) {
+		done = true;
+		/* This functions allows to programmatically short-circuit SOC GPIO pins */
+		nrf_gpio_backend_register_short(1, PIN_OUT, 1, PIN_IN);
+	}
 #endif
 }
 
@@ -106,3 +115,9 @@ ZTEST_SUITE(gpio_port_cb_mgmt, NULL, gpio_basic_setup, NULL, NULL, NULL);
 
 /* Test GPIO callbacks */
 ZTEST_SUITE(gpio_port_cb_vari, NULL, gpio_basic_setup, NULL, NULL, NULL);
+
+/* Test GPIO port configuration influence on callbacks. Want to run just
+ * after flash, hence the name starting in 'a'
+ */
+ZTEST_SUITE(after_flash_gpio_config_trigger, NULL, gpio_basic_setup, NULL, NULL,
+	    NULL);

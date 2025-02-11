@@ -2,22 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_L2_PPP
-	bool "Point-to-point (PPP) support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Point-to-point (PPP) support"
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	help
 	  Add support for PPP.
 
 if NET_L2_PPP
-
-config NET_L2_PPP_DELAY_STARTUP_MS
-	int "PPP delay startup ms"
-	default 0
-	help
-	  If the PPP starts too fast, it is possible to delay it
-	  a bit. This is mostly useful in debugging if you want the
-	  device be fully up before PPP handshake is started.
-	  Wait amount of milliseconds before starting PPP. Value 0 disables
-	  the wait.
 
 config NET_L2_PPP_TIMEOUT
 	int "Maximum timeout in ms for Configure-Req"
@@ -99,5 +90,21 @@ config NET_L2_PPP_TX_STACK_SIZE
 	default 1024
 	help
 	  Set the TX handler stack size.
+
+config NET_L2_PPP_THREAD_PRIO
+	int "Priority of the PPP TX thread"
+	default 1
+	help
+	  Set the priority of the PPP TX thread, that handles all
+	  transmission of PPP packets.
+	  Value 0 = highest priortity.
+	  When CONFIG_NET_TC_THREAD_COOPERATIVE = y, lowest priority is
+	  CONFIG_NUM_COOP_PRIORITIES-1 else lowest priority is
+	  CONFIG_NUM_PREEMPT_PRIORITIES-1.
+	  When using PPP in combination with TCP, make sure the priority
+	  is higher (or equal) than the TCP work queue, otherwise the
+	  TCP stack will consume all net_bufs before transferring
+	  execution to the lower layer network stack, with a high risk of
+	  running out of net_bufs.
 
 endif # NET_L2_PPP

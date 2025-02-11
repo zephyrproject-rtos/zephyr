@@ -12,7 +12,6 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
 
 static uint8_t mfg_data[] = { 0xff, 0xff, 0x00 };
 
@@ -26,10 +25,10 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 	mfg_data[2]++;
 }
 
-void main(void)
+int main(void)
 {
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
+		.type       = BT_LE_SCAN_TYPE_PASSIVE,
 		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = 0x0010,
 		.window     = 0x0010,
@@ -42,7 +41,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Bluetooth initialized\n");
@@ -50,7 +49,7 @@ void main(void)
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
 		printk("Starting scanning failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	do {
@@ -61,7 +60,7 @@ void main(void)
 				      NULL, 0);
 		if (err) {
 			printk("Advertising failed to start (err %d)\n", err);
-			return;
+			return 0;
 		}
 
 		k_sleep(K_MSEC(400));
@@ -69,7 +68,8 @@ void main(void)
 		err = bt_le_adv_stop();
 		if (err) {
 			printk("Advertising failed to stop (err %d)\n", err);
-			return;
+			return 0;
 		}
 	} while (1);
+	return 0;
 }

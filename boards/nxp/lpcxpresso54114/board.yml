@@ -1,0 +1,5 @@
+board:
+  name: lpcxpresso54114
+  vendor: nxp
+  socs:
+    - name: lpc54114

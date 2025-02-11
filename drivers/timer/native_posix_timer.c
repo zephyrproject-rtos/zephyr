@@ -5,14 +5,14 @@
  */
 
 /**
- * Driver for the timer model of the POSIX native_posix board
+ * Driver for the timer model of the POSIX native_sim/posix board
  * It provides the interfaces required by the kernel and the sanity testcases
  * It also provides a custom k_busy_wait() which can be used with the
  * POSIX arch and InfClock SOC
  */
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 #include <zephyr/irq.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include "timer_model.h"
@@ -65,7 +65,7 @@ void np_timer_isr_test_hook(const void *arg)
  *
  * Informs the system clock driver that the next needed call to
  * sys_clock_announce() will not be until the specified number of ticks
- * from the the current time have elapsed.
+ * from the current time have elapsed.
  *
  * See system_timer.h for more information
  *
@@ -123,9 +123,8 @@ void sys_clock_disable(void)
  *
  * Enable the hw timer, setting its tick period, and setup its interrupt
  */
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	tick_period = 1000000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 

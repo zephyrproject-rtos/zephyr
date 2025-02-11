@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2022 - 2023 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -106,7 +106,7 @@ def __gen_syst_catalog(database):
         fmt = XML_CATALOG32_EACH
 
     for addr, one_str in database.get_string_mappings().items():
-        xml += fmt.format(addr, escape(one_str))
+        xml += fmt.format(addr, one_str)
 
     if database.is_tgt_64bit():
         xml += XML_CATALOG64_FOOTER

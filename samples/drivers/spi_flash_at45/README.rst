@@ -1,7 +1,8 @@
-.. _spi_flash_at45_sample:
+.. zephyr:code-sample:: spi-flash-at45
+   :name: AT45 DataFlash driver
+   :relevant-api: flash_interface
 
-AT45 DataFlash driver sample
-#############################
+   Use the AT45 family DataFlash driver to interact with the flash memory over SPI.
 
 Overview
 ********
@@ -23,13 +24,13 @@ enables the flash page layout API which allow show the flash information.
 In the default configuration, the AT45 flash driver is configured to use
 the Read-Modify-Write functionality of DataFlash chips and does not perform
 page erasing, as it is not needed in this case. This can be modified by
-simply disabling the SPI_FLASH_AT45_USE_READ_MODIFY_WRITE option.
+simply disabling the :kconfig:option:`CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE` option.
 
 Requirements
 ************
 
 This sample has been tested on the Nordic Semiconductor nRF9160 DK
-(nrf9160dk_nrf9160) board with the AT45DB321E chip connected.
+(nrf9160dk/nrf9160) board with the AT45DB321E chip connected.
 It can be easily adjusted to be usable on other boards and with other
 AT45 family chips by just providing a corresponding overlay file.
 
@@ -42,7 +43,7 @@ To build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
-   :board: nrf9160dk_nrf9160
+   :board: nrf9160dk/nrf9160
    :goals: build flash
    :compact:
 
@@ -50,8 +51,8 @@ To build and flash with device power management enabled:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
-   :board: nrf9160dk_nrf9160
-   :gen-args: -DOVERLAY_CONFIG=overlay-pm.conf
+   :board: nrf9160dk/nrf9160
+   :gen-args: -DEXTRA_CONF_FILE=overlay-pm.conf
    :goals: build flash
    :compact:
 
@@ -59,8 +60,8 @@ To build and flash with flash page layout enabled:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
-   :board: nrf9160dk_nrf9160
-   :gen-args: -DOVERLAY_CONFIG=overlay-page_layout.conf
+   :board: nrf9160dk/nrf9160
+   :gen-args: -DEXTRA_CONF_FILE=overlay-page_layout.conf
    :goals: build flash
    :compact:
 
@@ -69,8 +70,8 @@ layout enabled:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
-   :board: nrf9160dk_nrf9160
-   :gen-args: -DOVERLAY_CONFIG="overlay-pm.conf overlay-page_layout.conf"
+   :board: nrf9160dk/nrf9160
+   :gen-args: -DEXTRA_CONF_FILE="overlay-pm.conf overlay-page_layout.conf"
    :goals: build flash
    :compact:
 

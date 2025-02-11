@@ -27,14 +27,14 @@ static const int bw_table[] = {
 	[BW_500_KHZ] = 500,
 };
 
-static int parse_long(long *out, const struct shell *shell, const char *arg)
+static int parse_long(long *out, const struct shell *sh, const char *arg)
 {
 	char *eptr;
 	long lval;
 
 	lval = strtol(arg, &eptr, 0);
 	if (*eptr != '\0') {
-		shell_error(shell, "'%s' is not an integer", arg);
+		shell_error(sh, "'%s' is not an integer", arg);
 		return -EINVAL;
 	}
 
@@ -42,19 +42,19 @@ static int parse_long(long *out, const struct shell *shell, const char *arg)
 	return 0;
 }
 
-static int parse_long_range(long *out, const struct shell *shell,
+static int parse_long_range(long *out, const struct shell *sh,
 			    const char *arg, const char *name, long min,
 			    long max)
 {
 	int ret;
 
-	ret = parse_long(out, shell, arg);
+	ret = parse_long(out, sh, arg);
 	if (ret < 0) {
 		return ret;
 	}
 
 	if (*out < min || *out > max) {
-		shell_error(shell, "Parameter '%s' is out of range. "
+		shell_error(sh, "Parameter '%s' is out of range. "
 			    "Valid range is %li -- %li.",
 			    name, min, max);
 		return -EINVAL;
@@ -63,20 +63,20 @@ static int parse_long_range(long *out, const struct shell *shell,
 	return 0;
 }
 
-static int parse_freq(uint32_t *out, const struct shell *shell, const char *arg)
+static int parse_freq(uint32_t *out, const struct shell *sh, const char *arg)
 {
 	char *eptr;
 	unsigned long val;
 
 	val = strtoul(arg, &eptr, 0);
 	if (*eptr != '\0') {
-		shell_error(shell, "Invalid frequency, '%s' is not an integer",
+		shell_error(sh, "Invalid frequency, '%s' is not an integer",
 			    arg);
 		return -EINVAL;
 	}
 
 	if (val == ULONG_MAX) {
-		shell_error(shell, "Frequency %s out of range", arg);
+		shell_error(sh, "Frequency %s out of range", arg);
 		return -EINVAL;
 	}
 
@@ -84,42 +84,42 @@ static int parse_freq(uint32_t *out, const struct shell *shell, const char *arg)
 	return 0;
 }
 
-static int lora_conf_dump(const struct shell *shell)
+static int lora_conf_dump(const struct shell *sh)
 {
-	shell_print(shell, "  Frequency: %" PRIu32 " Hz",
+	shell_print(sh, "  Frequency: %" PRIu32 " Hz",
 		    modem_config.frequency);
-	shell_print(shell, "  TX power: %" PRIi8 " dBm",
+	shell_print(sh, "  TX power: %" PRIi8 " dBm",
 		    modem_config.tx_power);
-	shell_print(shell, "  Bandwidth: %i kHz",
+	shell_print(sh, "  Bandwidth: %i kHz",
 		    bw_table[modem_config.bandwidth]);
-	shell_print(shell, "  Spreading factor: SF%i",
+	shell_print(sh, "  Spreading factor: SF%i",
 		    (int)modem_config.datarate);
-	shell_print(shell, "  Coding rate: 4/%i",
+	shell_print(sh, "  Coding rate: 4/%i",
 		    (int)modem_config.coding_rate + 4);
-	shell_print(shell, "  Preamble length: %" PRIu16,
+	shell_print(sh, "  Preamble length: %" PRIu16,
 		    modem_config.preamble_len);
 
 	return 0;
 }
 
-static int lora_conf_set(const struct shell *shell, const char *param,
+static int lora_conf_set(const struct shell *sh, const char *param,
 			 const char *value)
 {
 	long lval;
 
 	if (!strcmp("freq", param)) {
-		if (parse_freq(&modem_config.frequency, shell, value) < 0) {
+		if (parse_freq(&modem_config.frequency, sh, value) < 0) {
 			return -EINVAL;
 		}
 	} else if (!strcmp("tx-power", param)) {
-		if (parse_long_range(&lval, shell, value,
+		if (parse_long_range(&lval, sh, value,
 				     "tx-power", INT8_MIN, INT8_MAX) < 0) {
 			return -EINVAL;
 		}
 		modem_config.tx_power = lval;
 	} else if (!strcmp("bw", param)) {
-		if (parse_long_range(&lval, shell, value,
-				     "bw", 0, UINT16_MAX) < 0) {
+		if (parse_long_range(&lval, sh, value,
+				     "bw", 0, INT16_MAX) < 0) {
 			return -EINVAL;
 		}
 		switch (lval) {
@@ -133,50 +133,50 @@ static int lora_conf_set(const struct shell *shell, const char *param,
 			modem_config.bandwidth = BW_500_KHZ;
 			break;
 		default:
-			shell_error(shell, "Invalid bandwidth: %ld", lval);
+			shell_error(sh, "Invalid bandwidth: %ld", lval);
 			return -EINVAL;
 		}
 	} else if (!strcmp("sf", param)) {
-		if (parse_long_range(&lval, shell, value, "sf", 6, 12) < 0) {
+		if (parse_long_range(&lval, sh, value, "sf", 6, 12) < 0) {
 			return -EINVAL;
 		}
 		modem_config.datarate = SF_6 + (unsigned int)lval - 6;
 	} else if (!strcmp("cr", param)) {
-		if (parse_long_range(&lval, shell, value, "cr", 5, 8) < 0) {
+		if (parse_long_range(&lval, sh, value, "cr", 5, 8) < 0) {
 			return -EINVAL;
 		}
 		modem_config.coding_rate = CR_4_5 + (unsigned int)lval - 5;
 	} else if (!strcmp("pre-len", param)) {
-		if (parse_long_range(&lval, shell, value,
+		if (parse_long_range(&lval, sh, value,
 				     "pre-len", 0, UINT16_MAX) < 0) {
 			return -EINVAL;
 		}
 		modem_config.preamble_len = lval;
 	} else {
-		shell_error(shell, "Unknown parameter '%s'", param);
+		shell_error(sh, "Unknown parameter '%s'", param);
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-static int cmd_lora_conf(const struct shell *shell, size_t argc, char **argv)
+static int cmd_lora_conf(const struct shell *sh, size_t argc, char **argv)
 {
 	int i;
 	int ret;
 
 	if (argc < 2) {
-		return lora_conf_dump(shell);
+		return lora_conf_dump(sh);
 	}
 
 	for (i = 1; i < argc; i += 2) {
 		if (i + 1 >= argc) {
-			shell_error(shell, "'%s' expects an argument",
+			shell_error(sh, "'%s' expects an argument",
 				    argv[i]);
 			return -EINVAL;
 		}
 
-		ret = lora_conf_set(shell, argv[i], argv[i + 1]);
+		ret = lora_conf_set(sh, argv[i], argv[i + 1]);
 		if (ret != 0) {
 			return ret;
 		}
@@ -185,7 +185,7 @@ static int cmd_lora_conf(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_lora_send(const struct shell *shell,
+static int cmd_lora_send(const struct shell *sh,
 			size_t argc, char **argv)
 {
 	int ret;
@@ -197,27 +197,27 @@ static int cmd_lora_send(const struct shell *shell,
 	}
 
 	if (modem_config.frequency == 0) {
-		shell_error(shell, "No frequency specified.");
+		shell_error(sh, "No frequency specified.");
 		return -EINVAL;
 	}
 
 	modem_config.tx = true;
 	ret = lora_config(dev, &modem_config);
 	if (ret < 0) {
-		shell_error(shell, "LoRa %s config failed", dev->name);
+		shell_error(sh, "LoRa %s config failed", dev->name);
 		return ret;
 	}
 
 	ret = lora_send(dev, argv[2], strlen(argv[2]));
 	if (ret < 0) {
-		shell_error(shell, "LoRa send failed: %i", ret);
+		shell_error(sh, "LoRa send failed: %i", ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-static int cmd_lora_recv(const struct shell *shell, size_t argc, char **argv)
+static int cmd_lora_recv(const struct shell *sh, size_t argc, char **argv)
 {
 	static char buf[0xff];
 	const struct device *dev;
@@ -232,18 +232,18 @@ static int cmd_lora_recv(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (modem_config.frequency == 0) {
-		shell_error(shell, "No frequency specified.");
+		shell_error(sh, "No frequency specified.");
 		return -EINVAL;
 	}
 
 	modem_config.tx = false;
 	ret = lora_config(dev, &modem_config);
 	if (ret < 0) {
-		shell_error(shell, "LoRa %s config failed", dev->name);
+		shell_error(sh, "LoRa %s config failed", dev->name);
 		return ret;
 	}
 
-	if (argc >= 3 && parse_long_range(&timeout, shell, argv[2],
+	if (argc >= 3 && parse_long_range(&timeout, sh, argv[2],
 					  "timeout", 0, INT_MAX) < 0) {
 		return -EINVAL;
 	}
@@ -251,18 +251,18 @@ static int cmd_lora_recv(const struct shell *shell, size_t argc, char **argv)
 	ret = lora_recv(dev, buf, sizeof(buf),
 			timeout ? K_MSEC(timeout) : K_FOREVER, &rssi, &snr);
 	if (ret < 0) {
-		shell_error(shell, "LoRa recv failed: %i", ret);
+		shell_error(sh, "LoRa recv failed: %i", ret);
 		return ret;
 	}
 
-	shell_hexdump(shell, buf, ret);
-	shell_print(shell, "RSSI: %" PRIi16 " dBm, SNR:%" PRIi8 " dBm",
+	shell_hexdump(sh, buf, ret);
+	shell_print(sh, "RSSI: %" PRIi16 " dBm, SNR:%" PRIi8 " dBm",
 		    rssi, snr);
 
 	return 0;
 }
 
-static int cmd_lora_test_cw(const struct shell *shell,
+static int cmd_lora_test_cw(const struct shell *sh,
 			    size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -275,17 +275,17 @@ static int cmd_lora_test_cw(const struct shell *shell,
 		return -ENODEV;
 	}
 
-	if (parse_freq(&freq, shell, argv[2]) < 0 ||
-	    parse_long_range(&power, shell, argv[3],
+	if (parse_freq(&freq, sh, argv[2]) < 0 ||
+	    parse_long_range(&power, sh, argv[3],
 			     "power", INT8_MIN, INT8_MAX) < 0 ||
-	    parse_long_range(&duration, shell, argv[4],
+	    parse_long_range(&duration, sh, argv[4],
 			     "duration", 0, UINT16_MAX) < 0) {
 		return -EINVAL;
 	}
 
 	ret = lora_test_cw(dev, (uint32_t)freq, (int8_t)power, (uint16_t)duration);
 	if (ret < 0) {
-		shell_error(shell, "LoRa test CW failed: %i", ret);
+		shell_error(sh, "LoRa test CW failed: %i", ret);
 		return ret;
 	}
 

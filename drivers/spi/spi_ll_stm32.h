@@ -28,8 +28,13 @@ struct spi_stm32_config {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
 	bool use_subghzspi_nss;
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	int midi_clocks;
+	int mssi_clocks;
+#endif
 	size_t pclk_len;
 	const struct stm32_pclken *pclken;
+	bool fifo_enabled;
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
@@ -63,6 +68,7 @@ struct spi_stm32_data {
 	struct stream dma_rx;
 	struct stream dma_tx;
 #endif /* CONFIG_SPI_STM32_DMA */
+	bool pm_policy_state_on;
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
@@ -94,7 +100,7 @@ static inline uint32_t ll_func_spi_dma_busy(SPI_TypeDef *spi)
 }
 #endif /* CONFIG_SPI_STM32_DMA */
 
-static inline uint32_t ll_func_tx_is_empty(SPI_TypeDef *spi)
+static inline uint32_t ll_func_tx_is_not_full(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	return LL_SPI_IsActiveFlag_TXP(spi);
@@ -177,7 +183,11 @@ static inline void ll_func_disable_int_errors(SPI_TypeDef *spi)
 static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	return LL_SPI_IsActiveFlag_EOT(spi);
+	if (LL_SPI_GetTransferSize(spi) == 0) {
+		return LL_SPI_IsActiveFlag_TXC(spi) == 0;
+	} else {
+		return LL_SPI_IsActiveFlag_EOT(spi) == 0;
+	}
 #else
 	return LL_SPI_IsActiveFlag_BSY(spi);
 #endif /* st_stm32h7_spi */

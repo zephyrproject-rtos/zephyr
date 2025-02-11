@@ -1,0 +1,37 @@
+# Copyright (c) 2017-2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MPS2
+	bool
+	select SOC_FAMILY_ARM
+	help
+	  Enable support for ARM MPS2 MCU Series
+
+config SOC_MPS2_AN385
+	bool
+	select SOC_SERIES_MPS2
+	help
+	  ARM Cortex-M3 SMM on V2M-MPS2 (Application Note AN385)
+
+config SOC_MPS2_AN521
+	bool
+	select SOC_SERIES_MPS2
+
+config SOC_MPS2_AN521_CPU0
+	bool
+	select SOC_MPS2_AN521
+	help
+	  ARM Cortex-M33 SMM-SSE-200 on V2M-MPS2+ (AN521) CPU0
+
+config SOC_MPS2_AN521_CPU1
+	bool
+	select SOC_MPS2_AN521
+	help
+	  ARM Cortex-M33 SMM-SSE-200 on V2M-MPS2+ (AN521) CPU1
+
+config SOC_SERIES
+	default "mps2" if SOC_SERIES_MPS2
+
+config SOC
+	default "an385" if SOC_MPS2_AN385
+	default "an521" if SOC_MPS2_AN521

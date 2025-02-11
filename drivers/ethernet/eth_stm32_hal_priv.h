@@ -9,6 +9,15 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
+/* Naming of the  ETH PTP Config Status changes depending on the stm32 serie */
+#if defined(CONFIG_SOC_SERIES_STM32F4X)
+#define ETH_STM32_PTP_CONFIGURED HAL_ETH_PTP_CONFIGURATED
+#define ETH_STM32_PTP_NOT_CONFIGURED HAL_ETH_PTP_NOT_CONFIGURATED
+#else
+#define ETH_STM32_PTP_CONFIGURED HAL_ETH_PTP_CONFIGURED
+#define ETH_STM32_PTP_NOT_CONFIGURED HAL_ETH_PTP_NOT_CONFIGURED
+#endif /* stm32F7x or sm32F4x */
+
 #define ST_OUI_B0 0x00
 #define ST_OUI_B1 0x80
 #define ST_OUI_B2 0xE1
@@ -41,13 +50,17 @@ struct eth_stm32_hal_dev_data {
 	const struct device *clock;
 	struct k_mutex tx_mutex;
 	struct k_sem rx_int_sem;
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
+	defined(CONFIG_ETH_STM32_HAL_API_V2)
 	struct k_sem tx_int_sem;
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2*/
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2*/
 	K_KERNEL_STACK_MEMBER(rx_thread_stack,
 		CONFIG_ETH_STM32_HAL_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
 	bool link_up;
+#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
+	uint8_t hash_index_cnt[64];
+#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	const struct device *ptp_clock;
 	float clk_ratio;

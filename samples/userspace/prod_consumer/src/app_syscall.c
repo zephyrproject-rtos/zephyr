@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(app_syscall);
@@ -38,7 +38,7 @@ static int z_vrfy_magic_syscall(unsigned int *cookie)
 	/* Confirm that this user-supplied pointer is valid memory that
 	 * can be accessed. If it's OK, copy into cookie_copy.
 	 */
-	if (z_user_from_copy(&cookie_copy, cookie, sizeof(*cookie)) != 0) {
+	if (k_usermode_from_copy(&cookie_copy, cookie, sizeof(*cookie)) != 0) {
 		return -EPERM;
 	}
 
@@ -47,11 +47,11 @@ static int z_vrfy_magic_syscall(unsigned int *cookie)
 	ret = z_impl_magic_syscall(&cookie_copy);
 
 	if (ret == 0 &&
-	    z_user_to_copy(cookie, &cookie_copy, sizeof(*cookie)) != 0) {
+	    k_usermode_to_copy(cookie, &cookie_copy, sizeof(*cookie)) != 0) {
 		return -EPERM;
 	}
 
 	return ret;
 }
 
-#include <syscalls/magic_syscall_mrsh.c>
+#include <zephyr/syscalls/magic_syscall_mrsh.c>

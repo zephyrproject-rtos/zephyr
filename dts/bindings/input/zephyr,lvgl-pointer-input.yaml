@@ -1,0 +1,36 @@
+# Copyright 2023 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LVGL pointer indev pseudo-device
+
+  Listens for touch input events and routes the
+  lv_indev_data_t to the underlying pointer lv_indev_t managed by LVGL.
+
+  Needs to be associated to a specific device to listen for events
+  from that device. Example configuration:
+
+  pointer {
+          compatible = "zephyr,lvgl-pointer-input";
+          input = <&input_sdl_touch>;
+  };
+
+compatible: "zephyr,lvgl-pointer-input"
+
+include: zephyr,lvgl-common-input.yaml
+
+properties:
+  swap-xy:
+    type: boolean
+    description: |
+      Swap x-y axes to align input with the display.
+
+  invert-x:
+    type: boolean
+    description: |
+      Invert x axes to align input with the display.
+
+  invert-y:
+    type: boolean
+    description: |
+      Invert y axes to align input with the display.

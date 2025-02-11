@@ -1,0 +1,15 @@
+identifier: stm32l152c_disco
+name: ST STM32L152C Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 256
+supported:
+  - gpio
+  - i2c
+  - spi
+vendor: st

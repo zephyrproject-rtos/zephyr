@@ -32,8 +32,27 @@ clock: clock@5000 {
 power: power@5000 {
 	compatible = "nordic,nrf-power";
 	reg = <0x5000 0x1000>;
+	ranges = <0x0 0x5000 0x1000>;
 	interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	gpregret1: gpregret1@51c {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "nordic,nrf-gpregret";
+		reg = <0x51c 0x1>;
+		status = "okay";
+	};
+
+	gpregret2: gpregret2@520 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "nordic,nrf-gpregret";
+		reg = <0x520 0x1>;
+		status = "okay";
+	};
 };
 
 reset: reset-controller@5000 {
@@ -60,6 +79,7 @@ i2c0: i2c@8000 {
 	reg = <0x8000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
@@ -76,6 +96,7 @@ spi0: spi@8000 {
 	reg = <0x8000 0x1000>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
@@ -99,6 +120,7 @@ i2c1: i2c@9000 {
 	reg = <0x9000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
@@ -115,6 +137,7 @@ spi1: spi@9000 {
 	reg = <0x9000 0x1000>;
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
@@ -132,6 +155,7 @@ spi4: spi@a000 {
 	reg = <0xa000 0x1000>;
 	interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(32)>;
+	easydma-maxcnt-bits = <16>;
 	rx-delay-supported;
 	rx-delay = <2>;
 	status = "disabled";
@@ -150,6 +174,7 @@ i2c2: i2c@b000 {
 	reg = <0xb000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
@@ -166,6 +191,7 @@ spi2: spi@b000 {
 	reg = <0xb000 0x1000>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
@@ -189,6 +215,7 @@ i2c3: i2c@c000 {
 	reg = <0xc000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
@@ -205,6 +232,7 @@ spi3: spi@c000 {
 	reg = <0xc000 0x1000>;
 	interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
@@ -228,6 +256,7 @@ timer0: timer@f000 {
 	status = "disabled";
 	reg = <0xf000 0x1000>;
 	cc-num = <6>;
+	max-bit-width = <32>;
 	interrupts = <15 NRF_DEFAULT_IRQ_PRIORITY>;
 	prescaler = <0>;
 };
@@ -237,6 +266,7 @@ timer1: timer@10000 {
 	status = "disabled";
 	reg = <0x10000 0x1000>;
 	cc-num = <6>;
+	max-bit-width = <32>;
 	interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>;
 	prescaler = <0>;
 };
@@ -246,6 +276,7 @@ timer2: timer@11000 {
 	status = "disabled";
 	reg = <0x11000 0x1000>;
 	cc-num = <6>;
+	max-bit-width = <32>;
 	interrupts = <17 NRF_DEFAULT_IRQ_PRIORITY>;
 	prescaler = <0>;
 };
@@ -255,7 +286,7 @@ rtc0: rtc@14000 {
 	reg = <0x14000 0x1000>;
 	cc-num = <4>;
 	interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
-	status = "okay";
+	status = "disabled";
 	clock-frequency = <32768>;
 	prescaler = <1>;
 };
@@ -265,7 +296,7 @@ rtc1: rtc@15000 {
 	reg = <0x15000 0x1000>;
 	cc-num = <4>;
 	interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
-	status = "okay";
+	status = "disabled";
 	clock-frequency = <32768>;
 	prescaler = <1>;
 };
@@ -496,6 +527,7 @@ gpio0: gpio@842500 {
 	#gpio-cells = <2>;
 	status = "disabled";
 	port = <0>;
+	gpiote-instance = <&gpiote>;
 };
 
 gpio1: gpio@842800 {
@@ -506,6 +538,7 @@ gpio1: gpio@842800 {
 	ngpios = <16>;
 	status = "disabled";
 	port = <1>;
+	gpiote-instance = <&gpiote>;
 };
 
 ieee802154: ieee802154 {

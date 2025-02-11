@@ -11,13 +11,13 @@
 
 #define SLEEP_TIME	K_MSEC(1000)
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(seeed_grove_light);
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -36,4 +36,5 @@ void main(void)
 
 		k_sleep(SLEEP_TIME);
 	}
+	return 0;
 }

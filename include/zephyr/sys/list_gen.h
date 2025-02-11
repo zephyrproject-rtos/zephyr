@@ -12,21 +12,21 @@
 #include <zephyr/sys/util.h>
 
 #define Z_GENLIST_FOR_EACH_NODE(__lname, __l, __sn)			\
-	for (__sn = sys_ ## __lname ## _peek_head(__l); __sn != NULL;	\
-	     __sn = sys_ ## __lname ## _peek_next(__sn))
+	for ((__sn) = sys_ ## __lname ## _peek_head(__l); (__sn) != NULL;	\
+	     (__sn) = sys_ ## __lname ## _peek_next(__sn))
 
 
 #define Z_GENLIST_ITERATE_FROM_NODE(__lname, __l, __sn)			\
-	for (__sn = __sn ? sys_ ## __lname ## _peek_next_no_check(__sn)	\
+	for ((__sn) = (__sn) ? sys_ ## __lname ## _peek_next_no_check(__sn)	\
 			 : sys_ ## __lname ## _peek_head(__l);		\
-	     __sn != NULL;						\
-	     __sn = sys_ ## __lname ## _peek_next(__sn))
+	     (__sn) != NULL;						\
+	     (__sn) = sys_ ## __lname ## _peek_next(__sn))
 
 #define Z_GENLIST_FOR_EACH_NODE_SAFE(__lname, __l, __sn, __sns)		\
-	for (__sn = sys_ ## __lname ## _peek_head(__l),			\
-		     __sns = sys_ ## __lname ## _peek_next(__sn);	\
-	     __sn != NULL ; __sn = __sns,				\
-		     __sns = sys_ ## __lname ## _peek_next(__sn))
+	for ((__sn) = sys_ ## __lname ## _peek_head(__l),			\
+		     (__sns) = sys_ ## __lname ## _peek_next(__sn);	\
+	     (__sn) != NULL ; (__sn) = (__sns),				\
+		     (__sns) = sys_ ## __lname ## _peek_next(__sn))
 
 #define Z_GENLIST_CONTAINER(__ln, __cn, __n)				\
 	((__ln) ? CONTAINER_OF((__ln), __typeof__(*(__cn)), __n) : NULL)
@@ -43,16 +43,16 @@
 			__cn, __n) : NULL)
 
 #define Z_GENLIST_FOR_EACH_CONTAINER(__lname, __l, __cn, __n)		\
-	for (__cn = Z_GENLIST_PEEK_HEAD_CONTAINER(__lname, __l, __cn,	\
+	for ((__cn) = Z_GENLIST_PEEK_HEAD_CONTAINER(__lname, __l, __cn,	\
 						  __n);			\
-	     __cn != NULL;						\
-	     __cn = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n))
+	     (__cn) != NULL;						\
+	     (__cn) = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n))
 
 #define Z_GENLIST_FOR_EACH_CONTAINER_SAFE(__lname, __l, __cn, __cns, __n)     \
-	for (__cn = Z_GENLIST_PEEK_HEAD_CONTAINER(__lname, __l, __cn, __n),   \
-	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n); \
-	     __cn != NULL; __cn = __cns,				\
-	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n))
+	for ((__cn) = Z_GENLIST_PEEK_HEAD_CONTAINER(__lname, __l, __cn, __n),   \
+	     (__cns) = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n); \
+	     (__cn) != NULL; (__cn) = (__cns),				\
+	     (__cns) = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n))
 
 #define Z_GENLIST_IS_EMPTY(__lname)					\
 	static inline bool						\
@@ -72,7 +72,7 @@
 	static inline sys_ ## __nname ## _t *				     \
 	sys_ ## __lname ## _peek_next(sys_ ## __nname ## _t *node)	     \
 	{								     \
-		return node != NULL ?                                        \
+		return (node != NULL) ?                                        \
 			sys_ ## __lname ## _peek_next_no_check(node) :       \
 			      NULL;					     \
 	}
@@ -232,6 +232,42 @@
 		}							 \
 									 \
 		return false;						 \
+	}
+
+#define Z_GENLIST_FIND(__lname, __nname)                                                 \
+	static inline bool sys_##__lname##_find(                                         \
+		sys_##__lname##_t *list, sys_##__nname##_t *node, sys_##__nname##_t **prev)        \
+	{                                                                                          \
+		sys_##__nname##_t *current = NULL;                                                 \
+		sys_##__nname##_t *previous = NULL;                                                \
+                                                                                                   \
+		Z_GENLIST_FOR_EACH_NODE(__lname, list, current) {                                  \
+			if (current == node) {                                                     \
+				if (prev != NULL) {                                                \
+					*prev = previous;                                          \
+				}                                                                  \
+				return true;                                                       \
+			}                                                                          \
+                                                                                                   \
+			previous = current;                                                        \
+		}                                                                                  \
+                                                                                                   \
+		if (prev != NULL) {                                                                \
+			*prev = previous;                                                          \
+		}                                                                                  \
+                                                                                                   \
+		return false;                                                                      \
+	}
+
+#define Z_GENLIST_LEN(__lname, __nname)                                                            \
+	static inline size_t sys_##__lname##_len(sys_##__lname##_t * list)                         \
+	{                                                                                          \
+		size_t len = 0;                                                                    \
+		static sys_##__nname##_t * node;                                                   \
+		Z_GENLIST_FOR_EACH_NODE(__lname, list, node) {                                     \
+			len++;                                                                     \
+		}                                                                                  \
+		return len;                                                                        \
 	}
 
 #endif /* ZEPHYR_INCLUDE_SYS_LIST_GEN_H_ */

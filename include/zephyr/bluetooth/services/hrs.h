@@ -17,9 +17,51 @@
  * as a part of ongoing development.
  */
 
+#include <stdint.h>
+
+#include <zephyr/sys/slist.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @brief Heart rate service callback structure */
+struct bt_hrs_cb {
+	/** @brief Heart rate notifications changed
+	 *
+	 * @param enabled Flag that is true if notifications were enabled, false
+	 *                if they were disabled.
+	 */
+	void (*ntf_changed)(bool enabled);
+
+	/** Internal member to form a list of callbacks */
+	sys_snode_t _node;
+};
+
+/** @brief Heart rate service callback register
+ *
+ * This function will register callbacks that will be called in
+ * certain events related to Heart rate service.
+ *
+ * @param cb Pointer to callbacks structure. Must point to memory that remains valid
+ * until unregistered.
+ *
+ * @return 0 on success
+ * @return -EINVAL in case @p cb is NULL
+ */
+int bt_hrs_cb_register(struct bt_hrs_cb *cb);
+
+/** @brief Heart rate service callback unregister
+ *
+ * This function will unregister callback from Heart rate service.
+ *
+ * @param cb Pointer to callbacks structure
+ *
+ * @return 0 on success
+ * @return -EINVAL in case @p cb is NULL
+ * @return -ENOENT in case the @p cb was not found in registered callbacks
+ */
+int bt_hrs_cb_unregister(struct bt_hrs_cb *cb);
 
 /** @brief Notify heart rate measurement.
  *

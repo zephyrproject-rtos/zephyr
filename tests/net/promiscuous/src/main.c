@@ -178,7 +178,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		const struct ethernet_api *api =
 			net_if_get_device(iface)->api;
 
-		/* As native_posix board will introduce another ethernet
+		/* As native_sim board will introduce another ethernet
 		 * interface, make sure that we only use our own in this test.
 		 */
 		if (api->get_capabilities ==
@@ -352,6 +352,8 @@ static void _recv_data(struct net_if *iface, struct net_pkt **pkt)
 	*pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(data),
 					    AF_UNSPEC, 0, K_FOREVER);
 
+	net_pkt_ref(*pkt);
+
 	net_pkt_write(*pkt, data, sizeof(data));
 
 	ret = net_recv_data(iface, *pkt);
@@ -372,11 +374,25 @@ static void test_verify_data(void)
 	struct net_pkt *pkt;
 
 	pkt = net_promisc_mode_wait_data(K_SECONDS(1));
-	zassert_equal_ptr(pkt, pkt1, "pkt %p != %p", pkt, pkt1);
+	zassert_not_null(pkt, "pkt");
+	zassert_not_null(pkt->buffer, "pkt->buffer");
+	zassert_not_null(pkt1, "pkt1");
+	zassert_not_null(pkt1->buffer, "pkt1->buffer");
+	zassert_equal(pkt->buffer->len, pkt1->buffer->len, "packet length differs");
+	zassert_not_null(pkt->buffer->data, "pkt->buffer->data");
+	zassert_not_null(pkt1->buffer->data, "pkt1->buffer->data");
+	zassert_mem_equal(pkt->buffer->data, pkt1->buffer->data, pkt1->buffer->len);
 	net_pkt_unref(pkt);
 
 	pkt = net_promisc_mode_wait_data(K_SECONDS(1));
-	zassert_equal_ptr(pkt, pkt2, "pkt %p != %p", pkt, pkt2);
+	zassert_not_null(pkt, "pkt");
+	zassert_not_null(pkt->buffer, "pkt->buffer");
+	zassert_not_null(pkt2, "pkt2");
+	zassert_not_null(pkt2->buffer, "pkt2->buffer");
+	zassert_equal(pkt->buffer->len, pkt2->buffer->len, "packet length differs");
+	zassert_not_null(pkt->buffer->data, "pkt->buffer->data");
+	zassert_not_null(pkt2->buffer->data, "pkt2->buffer->data");
+	zassert_mem_equal(pkt->buffer->data, pkt2->buffer->data, pkt2->buffer->len);
 	net_pkt_unref(pkt);
 }
 

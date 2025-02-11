@@ -29,14 +29,14 @@ static void trigger_handler(const struct device *dev,
 }
 #endif /* !CONFIG_FXOS8700_TRIGGER_NONE */
 
-void main(void)
+int main(void)
 {
 	struct sensor_value accel[3];
 	const struct device *const dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
 
 	if (!device_is_ready(dev)) {
 		printf("Device %s is not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 	struct sensor_value attr = {
@@ -47,7 +47,7 @@ void main(void)
 	if (sensor_attr_set(dev, SENSOR_CHAN_ALL,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr)) {
 		printk("Could not set sampling frequency\n");
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_FXOS8700_MOTION
@@ -56,7 +56,7 @@ void main(void)
 	if (sensor_attr_set(dev, SENSOR_CHAN_ALL,
 			    SENSOR_ATTR_SLOPE_TH, &attr)) {
 		printk("Could not set slope threshold\n");
-		return;
+		return 0;
 	}
 #endif
 
@@ -72,7 +72,7 @@ void main(void)
 
 	if (sensor_trigger_set(dev, &trig, trigger_handler)) {
 		printf("Could not set trigger\n");
-		return;
+		return 0;
 	}
 #endif /* !CONFIG_FXOS8700_TRIGGER_NONE */
 

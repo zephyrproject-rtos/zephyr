@@ -9,6 +9,7 @@
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
+#include <stm32_ll_pwr.h>
 #include <stm32_ll_utils.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
@@ -82,6 +83,22 @@ uint32_t get_pllout_frequency(void)
 #endif /* defined(STM32_PLL_ENABLED) */
 
 /**
+ * @brief Set up voltage regulator voltage
+ */
+void config_regulator_voltage(uint32_t hclk_freq)
+{
+	if (hclk_freq <= MHZ(4.2)) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE3);
+	} else if (hclk_freq <= MHZ(16)) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
+	} else {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	}
+	while (LL_PWR_IsActiveFlag_VOS() == 1) {
+	}
+}
+
+/**
  * @brief Activate default clocks
  */
 void config_enable_default_clocks(void)
@@ -92,4 +109,5 @@ void config_enable_default_clocks(void)
 	/* Enable System Configuration Controller clock. */
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
 #endif
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 }

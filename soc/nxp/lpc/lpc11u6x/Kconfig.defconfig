@@ -1,0 +1,15 @@
+# LPC LPC11U6X MCU line
+#
+# Copyright (c) 2020, Seagate
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_LPC11U6X
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 40
+
+endif # SOC_SERIES_LPC11U6X

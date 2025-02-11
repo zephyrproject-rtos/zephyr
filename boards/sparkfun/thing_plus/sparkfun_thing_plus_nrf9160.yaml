@@ -1,0 +1,16 @@
+identifier: sparkfun_thing_plus/nrf9160
+name: Sparkfun-Thing-Plus-nRF9160
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - i2c
+  - pwm
+  - watchdog
+  - counter
+vendor: sparkfun

@@ -1,0 +1,23 @@
+# Copyright (c) 2016 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable UART
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# Bluetooth not enabled by default on nRF52811 due to RAM limitations when
+# running the default set of kernel tests.
+# Enable this on your prj.conf to include Bluetooth support

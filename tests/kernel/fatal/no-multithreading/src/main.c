@@ -13,7 +13,7 @@
 
 static ZTEST_DMEM volatile int expected_reason = -1;
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	int rv = TC_PASS;
 
@@ -22,7 +22,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		TC_PRINT("Unexpected reason (exp: %d)\n", expected_reason);
 		rv = TC_FAIL;
 	}
-
+	TC_END_RESULT_CUSTOM(rv, "test_fatal");
 	TC_END_REPORT(rv);
 	arch_system_halt(reason);
 }

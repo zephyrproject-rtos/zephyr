@@ -46,6 +46,54 @@ config NET_CAPTURE_DEVICE_COUNT
 	  if one needs to send captured data to multiple different devices,
 	  then you need to increase the value.
 
+config NET_CAPTURE_COOKED_MODE
+	bool "Capture non-IP packets a.k.a cooked (SLL) mode [EXPERIMENTAL]"
+	select NET_PSEUDO_IFACE
+	select NET_L2_DUMMY
+	select NET_L2_VIRTUAL
+	select EXPERIMENTAL
+	help
+	  This enables application to capture packets in so called
+	  Linux cooked mode (sll). Here a synthetic link layer header
+	  is used instead of real network link header.
+
+choice NET_CAPTURE_COOKED_MODE_SLL_VERSION
+	prompt "SLL version to use"
+	depends on NET_CAPTURE_COOKED_MODE
+	default NET_CAPTURE_COOKED_MODE_SLLV1
+	help
+	  What SLL header version to use.
+
+config NET_CAPTURE_COOKED_MODE_SLLV1
+	bool "SLL version 1"
+	depends on NET_CAPTURE_COOKED_MODE
+	help
+	  Use SLL version 1 (header is 16 bytes)
+
+config NET_CAPTURE_COOKED_MODE_SLLV2
+	bool "SLL version 2"
+	depends on NET_CAPTURE_COOKED_MODE
+	help
+	  Use SLL version 2 (header is 20 bytes)
+
+endchoice
+
+config NET_CAPTURE_COOKED_MODE_INTERFACE_NAME
+	string "Name of the cooked mode network interface"
+	default "cooked"
+	depends on NET_CAPTURE_COOKED_MODE
+	help
+	  This sets the name of the cooked mode capture network interface.
+
+config NET_CAPTURE_COOKED_MODE_MAX_LINK_TYPES
+	int "How many link types (ETH_P_*) to capture at the same time"
+	default 2
+	range 1 64
+	depends on NET_CAPTURE_COOKED_MODE
+	help
+	  This defines how many ETH_P_* link type values can be captured
+	  at the same time in cooked mode.
+
 module = NET_CAPTURE
 module-dep = NET_LOG
 module-str = Log level for network capture API

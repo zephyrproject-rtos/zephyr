@@ -1,0 +1,9 @@
+boards:
+  - name: intel_adl_crb
+    vendor: intel
+    socs:
+      - name: alder_lake
+  - name: intel_adl_rvp
+    vendor: intel
+    socs:
+      - name: alder_lake

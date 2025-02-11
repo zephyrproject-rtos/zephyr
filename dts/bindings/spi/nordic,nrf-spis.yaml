@@ -5,19 +5,9 @@ description: Nordic nRF family SPIS (SPI slave with EasyDMA)
 
 compatible: "nordic,nrf-spis"
 
-include: nordic,nrf-spi-common.yaml
+include: ["nordic,nrf-spi-common.yaml", "memory-region.yaml"]
 
 properties:
-  csn-pin:
-    type: int
-    deprecated: true
-    description: |
-      IMPORTANT: This option will only be used if the new pin control driver
-      is not enabled.
-
-      The CSN pin to use. The pin numbering scheme is the same as
-      the sck-pin property's.
-
   def-char:
     type: int
     required: true

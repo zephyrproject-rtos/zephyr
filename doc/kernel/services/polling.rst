@@ -24,6 +24,8 @@ There is a limited set of such conditions:
 
 - a semaphore becomes available
 - a kernel FIFO contains data ready to be retrieved
+- a kernel message queue contains data ready to be retrieved
+- a kernel pipe contains data ready to be retrieved
 - a poll signal is raised
 
 A thread that wants to wait on multiple conditions must define an array of
@@ -76,31 +78,38 @@ Poll events can be initialized using either the runtime initializers
 :c:macro:`K_POLL_EVENT_INITIALIZER()` or :c:func:`k_poll_event_init`, or
 the static initializer :c:macro:`K_POLL_EVENT_STATIC_INITIALIZER()`. An object
 that matches the **type** specified must be passed to the initializers. The
-**mode** *must* be set to :c:macro:`K_POLL_MODE_NOTIFY_ONLY`. The state *must*
-be set to :c:macro:`K_POLL_STATE_NOT_READY` (the initializers take care of
-this). The user **tag** is optional and completely opaque to the API: it is
+**mode** *must* be set to :c:enumerator:`K_POLL_MODE_NOTIFY_ONLY`. The state
+*must* be set to :c:macro:`K_POLL_STATE_NOT_READY` (the initializers take care
+of this). The user **tag** is optional and completely opaque to the API: it is
 there to help a user to group similar events together. Being optional, it is
 passed to the static initializer, but not the runtime ones for performance
 reasons. If using runtime initializers, the user must set it separately in the
 :c:struct:`k_poll_event` data structure. If an event in the array is to be
-ignored, most likely temporarily, its type can be set to K_POLL_TYPE_IGNORE.
+ignored, most likely temporarily, its type can be set to
+:c:macro:`K_POLL_TYPE_IGNORE`.
 
 .. code-block:: c
 
-    struct k_poll_event events[2] = {
+    struct k_poll_event events[4] = {
         K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
                                         K_POLL_MODE_NOTIFY_ONLY,
                                         &my_sem, 0),
         K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
                                         K_POLL_MODE_NOTIFY_ONLY,
                                         &my_fifo, 0),
+        K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+                                        K_POLL_MODE_NOTIFY_ONLY,
+                                        &my_msgq, 0),
+        K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_PIPE_DATA_AVAILABLE,
+                                        K_POLL_MODE_NOTIFY_ONLY,
+                                        &my_pipe, 0),
     };
 
 or at runtime
 
 .. code-block:: c
 
-    struct k_poll_event events[2];
+    struct k_poll_event events[4];
     void some_init(void)
     {
         k_poll_event_init(&events[0],
@@ -112,6 +121,16 @@ or at runtime
                           K_POLL_TYPE_FIFO_DATA_AVAILABLE,
                           K_POLL_MODE_NOTIFY_ONLY,
                           &my_fifo);
+
+        k_poll_event_init(&events[2],
+                          K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+                          K_POLL_MODE_NOTIFY_ONLY,
+                          &my_msgq);
+
+        k_poll_event_init(&events[3],
+                          K_POLL_TYPE_PIPE_DATA_AVAILABLE,
+                          K_POLL_MODE_NOTIFY_ONLY,
+                          &my_pipe);
 
         // tags are left uninitialized if unused
     }
@@ -138,12 +157,18 @@ In case of success, :c:func:`k_poll` returns 0. If it times out, it returns
 
     void do_stuff(void)
     {
-        rc = k_poll(events, 2, 1000);
+        rc = k_poll(events, ARRAY_SIZE(events), K_MSEC(1000));
         if (rc == 0) {
             if (events[0].state == K_POLL_STATE_SEM_AVAILABLE) {
                 k_sem_take(events[0].sem, 0);
             } else if (events[1].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
                 data = k_fifo_get(events[1].fifo, 0);
+                // handle data
+            } else if (events[2].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
+                ret = k_msgq_get(events[2].msgq, buf, K_NO_WAIT);
+                // handle data
+            } else if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
+                ret = k_pipe_get(events[3].pipe, buf, bytes_to_read, &bytes_read, min_xfer, K_NO_WAIT);
                 // handle data
             }
         } else {
@@ -159,15 +184,23 @@ to :c:macro:`K_POLL_STATE_NOT_READY` by the user.
     void do_stuff(void)
     {
         for(;;) {
-            rc = k_poll(events, 2, K_FOREVER);
+            rc = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
             if (events[0].state == K_POLL_STATE_SEM_AVAILABLE) {
                 k_sem_take(events[0].sem, 0);
             } else if (events[1].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
                 data = k_fifo_get(events[1].fifo, 0);
                 // handle data
+            } else if (events[2].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
+                ret = k_msgq_get(events[2].msgq, buf, K_NO_WAIT);
+                // handle data
+            } else if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
+                ret = k_pipe_get(events[3].pipe, buf, bytes_to_read, &bytes_read, min_xfer, K_NO_WAIT);
+                // handle data
             }
             events[0].state = K_POLL_STATE_NOT_READY;
             events[1].state = K_POLL_STATE_NOT_READY;
+            events[2].state = K_POLL_STATE_NOT_READY;
+            events[3].state = K_POLL_STATE_NOT_READY;
         }
     }
 
@@ -212,7 +245,11 @@ pass extra information to the thread waiting on the event.
 
         k_poll(events, 1, K_FOREVER);
 
-        if (events.signal->result == 0x1337) {
+        int signaled, result;
+
+        k_poll_signal_check(&signal, &signaled, &result);
+
+        if (signaled && (result == 0x1337)) {
             // A-OK!
         } else {
             // weird error
@@ -225,8 +262,10 @@ pass extra information to the thread waiting on the event.
         k_poll_signal_raise(&signal, 0x1337);
     }
 
-If the signal is to be polled in a loop, *both* its event state and its
-**signaled** field *must* be reset on each iteration if it has been signaled.
+If the signal is to be polled in a loop, *both* its event state must be
+reset to :c:macro:`K_POLL_STATE_NOT_READY` *and* its ``result`` must be
+reset using :c:func:`k_poll_signal_reset()` on each iteration if it has
+been signaled.
 
 .. code-block:: c
 
@@ -244,13 +283,17 @@ If the signal is to be polled in a loop, *both* its event state and its
         for (;;) {
             k_poll(events, 1, K_FOREVER);
 
-            if (events[0].signal->result == 0x1337) {
+            int signaled, result;
+
+            k_poll_signal_check(&signal, &signaled, &result);
+
+            if (signaled && (result == 0x1337)) {
                 // A-OK!
             } else {
                 // weird error
             }
 
-            events[0].signal->signaled = 0;
+            k_poll_signal_reset(signal);
             events[0].state = K_POLL_STATE_NOT_READY;
         }
     }

@@ -63,11 +63,12 @@ static inline int net_udp_create(struct net_pkt *pkt,
  * @return 0 on success, negative errno otherwise.
  */
 #if defined(CONFIG_NET_NATIVE_UDP)
-int net_udp_finalize(struct net_pkt *pkt);
+int net_udp_finalize(struct net_pkt *pkt, bool force_chksum);
 #else
-static inline int net_udp_finalize(struct net_pkt *pkt)
+static inline int net_udp_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	ARG_UNUSED(pkt);
+	ARG_UNUSED(force_chksum);
 
 	return 0;
 }

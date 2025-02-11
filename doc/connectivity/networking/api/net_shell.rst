@@ -38,6 +38,9 @@ The following net-shell commands are implemented:
    "net ping", "Ping a network host."
    "net route", "Show IPv6 network routes. Only available if
    :kconfig:option:`CONFIG_NET_ROUTE` is set."
+   "net sockets", "Show network socket information and statistics. Only available if
+   :kconfig:option:`CONFIG_NET_SOCKETS_OBJ_CORE` and :kconfig:option:`CONFIG_OBJ_CORE`
+   are set."
    "net stats", "Show network statistics."
    "net tcp", "Connect/send data/close TCP connection. Only available if
    :kconfig:option:`CONFIG_NET_TCP` is set."

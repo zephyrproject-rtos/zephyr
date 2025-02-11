@@ -58,17 +58,11 @@ static void dummy_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 }
 
-static int dummy_init(const struct device *dev)
-{
-	return 0;
-}
-
 static struct ieee802154_radio_api dummy_radio_api = {
 	.iface_api.init	= dummy_iface_init,
 };
 
-NET_DEVICE_INIT(dummy, "dummy_ieee802154",
-		dummy_init, NULL, NULL, NULL,
+NET_DEVICE_INIT(dummy, "dummy_ieee802154", NULL, NULL, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&dummy_radio_api, CUSTOM_IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(CUSTOM_IEEE802154_L2),

@@ -7,8 +7,12 @@
 
 #include <zephyr/sys/byteorder.h>
 
+#if defined(CONFIG_BT_USE_PSA_API)
+#include "psa/crypto.h"
+#else
 #include <tinycrypt/cmac_mode.h>
 #include <tinycrypt/constants.h>
+#endif
 
 #include "common/bt_str.h"
 #include "bt_crypto.h"
@@ -16,27 +20,6 @@
 #define LOG_LEVEL CONFIG_BT_CRYPTO_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_crypto);
-
-
-int bt_crypto_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len, uint8_t *out)
-{
-	struct tc_aes_key_sched_struct sched;
-	struct tc_cmac_struct state;
-
-	if (tc_cmac_setup(&state, key, &sched) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	if (tc_cmac_update(&state, in, len) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	if (tc_cmac_final(out, &state) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	return 0;
-}
 
 int bt_crypto_f4(const uint8_t *u, const uint8_t *v, const uint8_t *x, uint8_t z, uint8_t res[16])
 {

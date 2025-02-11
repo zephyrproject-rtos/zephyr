@@ -3,11 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 include:
-  - name: ethernet.yaml
+  - name: ethernet-controller.yaml
   - name: pinctrl-device.yaml
 
 properties:
   reg:
+    required: true
+
+  phy-handle:
     required: true
 
   num-queues:
@@ -40,19 +43,9 @@ properties:
       gmac driver supports 10Mbit/s and 100Mbit/s.  Using 100, as default
       value, enables driver to configure 10 and 100Mbit/s speeds.
 
-  phy-connection-type:
-    type: string
-    enum:
-      - "rmii"
-      - "mii"
-    default: "rmii"
-    description: |
-      Phy connection type define the physical interface connection between
-      PHY and MAC.  The default value uses gmac register reset value, which
-      represents Reduced Media-Independent Interface (RMII) mode.
-
-      This property must be used with pinctrl-0.
-
   mac-eeprom:
     type: phandle
     description: phandle to I2C eeprom device node.
+
+  phy-connection-type:
+    default: "rmii"

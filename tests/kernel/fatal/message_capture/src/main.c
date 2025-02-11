@@ -6,25 +6,30 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <ksched.h>
 
 static volatile int expected_reason = -1;
 
-void z_thread_essential_clear(void);
+void z_thread_essential_clear(struct k_thread *thread);
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	printk("Caught system error -- reason %d\n", reason);
 
 	if (expected_reason == -1) {
 		printk("Was not expecting a crash\n");
+		printk("PROJECT EXECUTION FAILED\n");
 		k_fatal_halt(reason);
 	}
 
 	if (reason != expected_reason) {
 		printk("Wrong crash type got %d expected %d\n", reason,
 		       expected_reason);
+		printk("PROJECT EXECUTION FAILED\n");
 		k_fatal_halt(reason);
 	}
+
+	printk("Fatal error expected as part of test case.\n");
 
 	expected_reason = -1;
 }
@@ -73,7 +78,7 @@ void test_message_capture(void)
 	irq_unlock(key);
 }
 
-void main(void)
+int main(void)
 {
 	/* main() is an essential thread, and we try to OOPS it.  When
 	 * this test was written, that worked (even though it wasn't
@@ -81,7 +86,8 @@ void main(void)
 	 * panic and not an oops).  Set the thread non-essential as a
 	 * workaround.
 	 */
-	z_thread_essential_clear();
+	z_thread_essential_clear(_current);
 
 	test_message_capture();
+	return 0;
 }

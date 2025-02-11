@@ -28,6 +28,14 @@ config TEST_RANDOM_GENERATOR
 	  device-backed random number generator, if available, will be selected by
 	  default even when CONFIG_TEST_RANDOM_GENERATOR=y.
 
+config TIMER_RANDOM_INITIAL_STATE
+	int "Initial state used by clock based number generator"
+	default 123456789
+	help
+	  Initial state value used by TIMER_RANDOM_GENERATOR and
+	  early random number genenator.
+
+
 choice RNG_GENERATOR_CHOICE
 	prompt "Random generator"
 	default ENTROPY_DEVICE_RANDOM_GENERATOR if ENTROPY_HAS_DRIVER
@@ -57,11 +65,6 @@ config ENTROPY_DEVICE_RANDOM_GENERATOR
 	  selected if hardware entropy driver is designed to be a random
 	  number generator source.
 
-config XOROSHIRO_RANDOM_GENERATOR
-	bool "Use Xoroshiro128+ as PRNG (DEPRECATED)"
-	help
-	  This is deprecated, please use XOSHIRO_RANDOM_GENERATOR instead.
-
 config XOSHIRO_RANDOM_GENERATOR
 	bool "Use Xoshiro128++ as PRNG"
 	depends on ENTROPY_HAS_DRIVER
@@ -77,8 +80,7 @@ endchoice # RNG_GENERATOR_CHOICE
 # enabling CS generators. ENTROPY_HAS_DRIVER is the flag indicating the
 # CS entropy source.
 #
-config CSPRING_ENABLED
-#	bool "Cryptographically secure RNG functions enabled"
+config CSPRNG_ENABLED
 	bool
 	default y
 	depends on ENTROPY_HAS_DRIVER
@@ -105,12 +107,13 @@ config CTR_DRBG_CSPRNG_GENERATOR
 	bool "Use CTR-DRBG CSPRNG"
 	depends on MBEDTLS || TINYCRYPT
 	depends on ENTROPY_HAS_DRIVER
+	select MBEDTLS_CIPHER_AES_ENABLED if MBEDTLS
 	select TINYCRYPT_CTR_PRNG if TINYCRYPT
 	select TINYCRYPT_AES if TINYCRYPT
 	help
 	  Enables the CTR-DRBG pseudo-random number generator. This CSPRNG
 	  shall use the entropy API for an initialization seed. The CTR-DRBG
-	  is a a FIPS140-2 recommended cryptographically secure random number
+	  is a FIPS140-2 recommended cryptographically secure random number
 	  generator.
 
 endchoice # CSPRNG_GENERATOR_CHOICE

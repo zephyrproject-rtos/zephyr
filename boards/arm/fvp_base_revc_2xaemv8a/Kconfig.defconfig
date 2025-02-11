@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FVP_BASE_REVC_2XAEMV8A
+
+config BUILD_OUTPUT_BIN
+	default y
+
+endif # BOARD_FVP_BASE_REVC_2XAEMV8A

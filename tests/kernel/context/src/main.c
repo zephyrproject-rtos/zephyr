@@ -72,11 +72,10 @@ extern const int32_t z_sys_timer_irq_for_test;
 
 #endif
 
-/* Cortex-M1, Nios II, and RISCV without CONFIG_RISCV_HAS_CPU_IDLE
- * do have a power saving instruction, so k_cpu_idle() returns immediately
+/* Cortex-M1 and Nios II do have a power saving instruction, so k_cpu_idle()
+ * returns immediately
  */
-#if !defined(CONFIG_CPU_CORTEX_M1) && !defined(CONFIG_NIOS2) && \
-	(!defined(CONFIG_RISCV) || defined(CONFIG_RISCV_HAS_CPU_IDLE))
+#if !defined(CONFIG_CPU_CORTEX_M1) && !defined(CONFIG_NIOS2)
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
 
@@ -213,9 +212,12 @@ void irq_enable_wrapper(int irq)
 #if defined(CONFIG_TICKLESS_KERNEL)
 static struct k_timer idle_timer;
 
+static volatile bool idle_timer_done;
+
 static void idle_timer_expiry_function(struct k_timer *timer_id)
 {
 	k_timer_stop(&idle_timer);
+	idle_timer_done = true;
 }
 
 static void _test_kernel_cpu_idle(int atomic)
@@ -224,6 +226,7 @@ static void _test_kernel_cpu_idle(int atomic)
 	unsigned int i, key;
 	uint32_t dur = k_ms_to_ticks_ceil32(10);
 	uint32_t slop = 1 + k_ms_to_ticks_ceil32(1);
+	int idle_loops;
 
 	/* Set up a time to trigger events to exit idle mode */
 	k_timer_init(&idle_timer, idle_timer_expiry_function, NULL);
@@ -231,15 +234,22 @@ static void _test_kernel_cpu_idle(int atomic)
 	for (i = 0; i < 5; i++) {
 		k_usleep(1);
 		t0 = k_uptime_ticks();
+		idle_loops = 0;
+		idle_timer_done = false;
 		k_timer_start(&idle_timer, K_TICKS(dur), K_NO_WAIT);
 		key = irq_lock();
-		if (atomic) {
-			k_cpu_atomic_idle(key);
-		} else {
-			k_cpu_idle();
-		}
+		do {
+			if (atomic) {
+				k_cpu_atomic_idle(key);
+			} else {
+				k_cpu_idle();
+			}
+		} while ((idle_loops++ < CONFIG_MAX_IDLE_WAKES) && (idle_timer_done == false));
+		zassert_true(idle_timer_done,
+			     "The CPU was waken spuriously too many times (%d > %d)",
+			     idle_loops, CONFIG_MAX_IDLE_WAKES);
 		dt = k_uptime_ticks() - t0;
-		zassert_true(abs(dt - dur) <= slop,
+		zassert_true(abs((int32_t) (dt - dur)) <= slop,
 			     "Inaccurate wakeup, idled for %d ticks, expected %d",
 			     dt, dur);
 	}
@@ -254,9 +264,7 @@ static void _test_kernel_cpu_idle(int atomic)
 	/* Align to a "ms boundary". */
 	tms = k_uptime_get_32();
 	while (tms == k_uptime_get_32()) {
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(50);
-#endif
+		Z_SPIN_DELAY(50);
 	}
 
 	tms = k_uptime_get_32();
@@ -363,13 +371,6 @@ ZTEST(context_cpu_idle, test_cpu_idle_atomic)
  */
 ZTEST(context_cpu_idle, test_cpu_idle)
 {
-/*
- * Fixme: remove the skip code when sleep instruction in
- * nsim_hs_smp is fixed.
- */
-#if defined(CONFIG_SOC_NSIM) && defined(CONFIG_SMP)
-	ztest_test_skip();
-#endif
 	_test_kernel_cpu_idle(0);
 }
 
@@ -387,7 +388,7 @@ ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 static void _test_kernel_interrupts(disable_int_func disable_int,
 				    enable_int_func enable_int, int irq)
 {
-	unsigned long long count = 0;
+	unsigned long long count = 1ull;
 	unsigned long long i = 0;
 	int tick;
 	int tick2;
@@ -396,16 +397,12 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	/* Align to a "tick boundary" */
 	tick = sys_clock_tick_get_32();
 	while (sys_clock_tick_get_32() == tick) {
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(1000);
-#endif
+		Z_SPIN_DELAY(1000);
 	}
 
 	tick++;
 	while (sys_clock_tick_get_32() == tick) {
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(1000);
-#endif
+		Z_SPIN_DELAY(1000);
 		count++;
 	}
 
@@ -422,9 +419,7 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	tick = sys_clock_tick_get_32();
 	for (i = 0; i < count; i++) {
 		sys_clock_tick_get_32();
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(1000);
-#endif
+		Z_SPIN_DELAY(1000);
 	}
 
 	tick2 = sys_clock_tick_get_32();
@@ -446,9 +441,7 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	/* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++) {
 		sys_clock_tick_get_32();
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(1000);
-#endif
+		Z_SPIN_DELAY(1000);
 	}
 
 	tick2 = sys_clock_tick_get_32();

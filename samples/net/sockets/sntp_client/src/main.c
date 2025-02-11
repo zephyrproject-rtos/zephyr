@@ -9,15 +9,13 @@
 LOG_MODULE_REGISTER(net_sntp_client_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/sntp.h>
-#ifdef CONFIG_POSIX_API
 #include <arpa/inet.h>
-#endif
 
 #include "config.h"
 
 #define SNTP_PORT 123
 
-void main(void)
+int main(void)
 {
 	struct sntp_ctx ctx;
 	struct sockaddr_in addr;
@@ -82,4 +80,5 @@ void main(void)
 
 end:
 	sntp_close(&ctx);
+	return 0;
 }

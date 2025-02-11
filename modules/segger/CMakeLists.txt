@@ -4,7 +4,6 @@ if(CONFIG_USE_SEGGER_RTT)
   zephyr_include_directories_ifdef(CONFIG_USE_SEGGER_RTT
     ${SEGGER_DIR}/SEGGER
     ${SEGGER_DIR}/Config
-    .
   )
   zephyr_library_sources(
     ${SEGGER_DIR}/SEGGER/SEGGER_RTT.c

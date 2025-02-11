@@ -1,8 +1,5 @@
 tests:
   kernel.fifo.usage:
-    tags: kernel fifo
-  kernel.fifo.usage.linker_generator:
-    platform_allow: qemu_cortex_m3
-    tags: linker_generator
-    extra_configs:
-      - CONFIG_CMAKE_LINKER_GENERATOR=y
+    tags:
+      - kernel
+      - fifo

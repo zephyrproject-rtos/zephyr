@@ -1,10 +1,16 @@
 name: Compliance Checks
 
-on: pull_request
+on:
+  pull_request:
+    types:
+    - edited
+    - opened
+    - reopened
+    - synchronize
 
 jobs:
   check_compliance:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Run compliance checks on patch series (PR)
     steps:
     - name: Update PATH for west
@@ -12,16 +18,21 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Checkout the code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
 
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+
     - name: cache-pip
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-doc-pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('.github/workflows/compliance.yml') }}
 
     - name: Install python dependencies
       run: |
@@ -44,7 +55,16 @@ jobs:
         # debug
         git log  --pretty=oneline | head -n 10
         west init -l . || true
-        west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
+        west config manifest.group-filter -- +ci,-optional
+        west update -o=--depth=1 -n 2>&1 1> west.update.log || west update -o=--depth=1 -n 2>&1 1> west.update2.log
+
+    - name: Check for PR description
+      if: ${{ github.event.pull_request.body == '' }}
+      continue-on-error: true
+      id: pr_description
+      run: |
+        echo "Pull request description cannot be empty."
+        exit 1
 
     - name: Run Compliance Tests
       continue-on-error: true
@@ -56,11 +76,13 @@ jobs:
         # debug
         ls -la
         git log  --pretty=oneline | head -n 10
+        # Increase rename limit to allow for large PRs
+        git config diff.renameLimit 10000
         ./scripts/ci/check_compliance.py --annotate -e KconfigBasic \
         -c origin/${BASE_REF}..
 
     - name: upload-results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       continue-on-error: true
       with:
         name: compliance.xml
@@ -86,5 +108,12 @@ jobs:
         done
 
         if [ "${exit}" == "1" ]; then
+          echo "Compliance error, check for error messages in the \"Run Compliance Tests\" step"
+          echo "You can run this step locally with the ./scripts/ci/check_compliance.py script."
+          exit 1;
+        fi
+
+        if [ "${{ steps.pr_description.outcome }}" == "failure" ]; then
+          echo "PR description cannot be empty"
           exit 1;
         fi

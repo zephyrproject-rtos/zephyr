@@ -102,7 +102,14 @@ _get_west_projs() {
 }
 
 _get_west_boards() {
-  _west_boards=($(__west_x boards --format={name}))
+  _west_boards=( $(__west_x boards --format='{name}|{qualifiers}') )
+  for i in {1..${#_west_boards[@]}}; do
+    local name="${_west_boards[$i]%%|*}"
+    local transformed_board="${_west_boards[$i]//|//}"
+    _west_boards[$i]="${transformed_board//,/ ${name}/}"
+  done
+  _west_boards=(${(@s/ /)_west_boards})
+
   _describe 'boards' _west_boards
 }
 
@@ -205,7 +212,7 @@ _west_help() {
 
 _west_completion() {
 
-  _arguments -S "1:shell:(bash zsh)"
+  _arguments -S "1:shell:(bash zsh fish)"
 }
 
 _west_boards() {
@@ -214,6 +221,7 @@ _west_boards() {
   {-n,--name}'[name regex]:regex:'
   '*--arch-root[Add an arch root]:arch root:_directories'
   '*--board-root[Add a board root]:board root:_directories'
+  '*--soc-root[Add a soc root]:soc root:_directories'
   )
 
   _arguments -S $opts
@@ -300,7 +308,7 @@ _west_spdx() {
   '(-i --init)'{-i,--init}'[initialize CMake file-based API]'
   '(-d --build-dir)'{-d,--build-dir}'[build directory to create or use]:build dir:_directories'
   '(-n --namespace-prefix)'{-n,--namespace-prefix}'[namespace prefix]:namespace prefix:'
-  '(-s --spdx-dir)'{-d,--spdx-dir}'[SPDX output directory]:spdx output dir:_directories'
+  '(-s --spdx-dir)'{-s,--spdx-dir}'[SPDX output directory]:spdx output dir:_directories'
   '--analyze-includes[also analyze included header files]'
   '--include-sdk[also generate SPDX document for SDK]'
   )

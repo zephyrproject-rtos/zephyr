@@ -425,11 +425,7 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 	LL_ASSERT(node_rx);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#ifdef CONFIG_BT_LL_SW_LLCP_LEGACY
-	max_rx_octets = lll->max_rx_octets;
-#else
 	max_rx_octets = lll->dle.eff.max_rx_octets;
-#endif
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH */
 	max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
@@ -463,11 +459,7 @@ void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx)
 	uint8_t phy, flags;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#ifdef CONFIG_BT_LL_SW_LLCP_LEGACY
-	max_tx_octets = lll->max_tx_octets;
-#else
 	max_tx_octets = lll->dle.eff.max_tx_octets;
-#endif
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH */
 	max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
@@ -550,11 +542,11 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 
 	p->rfu = 0U;
 
-#if !defined(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
+#if !defined(CONFIG_SOC_OPENISA_RV32M1)
 #if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
 	p->resv = 0U;
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
-#endif /* !CONFIG_SOC_OPENISA_RV32M1_RISCV32 */
+#endif /* !CONFIG_SOC_OPENISA_RV32M1 */
 
 	*pdu_data_tx = p;
 }

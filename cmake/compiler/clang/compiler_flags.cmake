@@ -10,15 +10,25 @@ set_compiler_property(PROPERTY security_fortify_run_time)
 # No printf-return-value optimizations in clang
 set_compiler_property(PROPERTY no_printf_return_value)
 
-# No property flag, this is used by the native_posix, clang has problems
-# compiling the native_posix with -fno-freestanding.
+# No property flag, this is used by the POSIX arch based targets when building with the host libC,
+# But clang has problems compiling these with -fno-freestanding.
 check_set_compiler_property(PROPERTY hosted)
 
 # clang flags for coverage generation
-set_property(TARGET compiler PROPERTY coverage --coverage -fno-inline)
+if (CONFIG_COVERAGE_NATIVE_SOURCE)
+  set_compiler_property(PROPERTY coverage -fprofile-instr-generate -fcoverage-mapping)
+else()
+  set_compiler_property(PROPERTY coverage --coverage -fno-inline)
+endif()
 
 # clang flag for colourful diagnostic messages
 set_compiler_property(PROPERTY diagnostic -fcolor-diagnostics)
+
+# clang flag to save temporary object files
+set_compiler_property(PROPERTY save_temps -save-temps)
+
+# clang doesn't handle the -T flag
+set_compiler_property(PROPERTY linker_script -Wl,-T)
 
 #######################################################
 # This section covers flags related to warning levels #
@@ -30,11 +40,13 @@ check_set_compiler_property(PROPERTY warning_base
                             -Wformat
                             -Wformat-security
                             -Wno-format-zero-length
-                            -Wno-main
                             -Wno-unused-but-set-variable
                             -Wno-typedef-redefinition
                             -Wno-deprecated-non-prototype
 )
+
+# C implicit promotion rules will want to make floats into doubles very easily
+check_set_compiler_property(APPEND PROPERTY warning_base -Wdouble-promotion)
 
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
 

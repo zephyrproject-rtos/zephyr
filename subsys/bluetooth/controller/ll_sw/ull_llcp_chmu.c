@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <zephyr/kernel.h>
 
-#include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/ccm.h"
 
@@ -50,7 +51,7 @@
 
 /* LLCP Local Procedure Channel Map Update FSM states */
 enum {
-	LP_CHMU_STATE_IDLE,
+	LP_CHMU_STATE_IDLE = LLCP_STATE_IDLE,
 	LP_CHMU_STATE_WAIT_TX_CHAN_MAP_IND,
 	LP_CHMU_STATE_WAIT_INSTANT,
 };
@@ -63,7 +64,7 @@ enum {
 
 /* LLCP Remote Procedure Channel Map Update FSM states */
 enum {
-	RP_CHMU_STATE_IDLE,
+	RP_CHMU_STATE_IDLE = LLCP_STATE_IDLE,
 	RP_CHMU_STATE_WAIT_RX_CHAN_MAP_IND,
 	RP_CHMU_STATE_WAIT_INSTANT,
 };
@@ -197,11 +198,6 @@ void llcp_lp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_
 	}
 }
 
-void llcp_lp_chmu_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = LP_CHMU_STATE_IDLE;
-}
-
 void llcp_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_chmu_execute_fsm(conn, ctx, LP_CHMU_EVT_RUN, param);
@@ -316,11 +312,6 @@ void llcp_rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_
 		ctx->state = RP_CHMU_STATE_IDLE;
 		break;
 	}
-}
-
-void llcp_rp_chmu_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = RP_CHMU_STATE_IDLE;
 }
 
 void llcp_rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)

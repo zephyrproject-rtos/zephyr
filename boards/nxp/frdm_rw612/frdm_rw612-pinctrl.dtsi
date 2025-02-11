@@ -1,0 +1,56 @@
+/*
+ * Copyright 2022-2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/rw/RW612-pinctrl.h>
+
+&pinctrl {
+	pinmux_flexcomm3_usart: pinmux_flexcomm3_usart {
+		group0 {
+			pinmux = <IO_MUX_FC3_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
+		group0 {
+			pinmux = <IO_MUX_FC0_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_enet: pinmux_enet {
+		group0 {
+			pinmux = <IO_MUX_ENET_CLK
+				IO_MUX_ENET_RX
+				IO_MUX_ENET_TX
+				IO_MUX_GPIO21
+				IO_MUX_GPIO55>;
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_mdio: pinmux_mdio {
+		group0 {
+			pinmux = <IO_MUX_ENET_MDIO>;
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_flexcomm2_i2c: pinmux_flexcomm2_i2c {
+		group0 {
+			pinmux = <IO_MUX_FC2_I2C_16_17>;
+			slew-rate = "normal";
+			bias-pull-up;
+		};
+	};
+
+	pinmux_flexcomm1_spi: pinmux_flexcomm1_spi {
+		group0 {
+			pinmux = <IO_MUX_FC1_SPI_SS0>;
+			slew-rate = "ultra";
+		};
+	};
+};

@@ -8,3 +8,10 @@
 		peci-0 = &peci0;
 	};
 };
+
+&peci0 {
+	status = "okay";
+	pinctrl-0 = <&peci_dat_gpio042 &vref_vtt_gpio044>;
+	pinctrl-1 = <&peci_dat_gpio042_sleep &vref_vtt_gpio044_sleep>;
+	pinctrl-names = "default", "sleep";
+};

@@ -54,9 +54,8 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 }
 
 /* need to be executed on every core in the system */
-int arc_irq_offload_init(const struct device *unused)
+int arc_irq_offload_init(void)
 {
-	ARG_UNUSED(unused);
 
 	IRQ_CONNECT(IRQ_OFFLOAD_LINE, IRQ_OFFLOAD_PRIO, arc_irq_offload_handler, NULL, 0);
 

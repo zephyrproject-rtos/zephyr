@@ -1,0 +1,83 @@
+# Copyright (c), 2023 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+description: Maxim MAX20335 battery charger
+
+include: battery.yaml
+
+compatible: "maxim,max20335-charger"
+
+properties:
+  constant-charge-voltage-max-microvolt:
+    required: true
+    enum:
+      - 4050000
+      - 4100000
+      - 4150000
+      - 4200000
+      - 4250000
+      - 4300000
+      - 4350000
+      - 4400000
+      - 4450000
+      - 4500000
+      - 4550000
+      - 4600000
+
+  chgin-to-sys-current-limit-microamp:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 100000
+      - 500000
+      - 1000000
+    description: |
+      CHGIN to SYS path current limitter configuration.
+      Refer to ILimCntl register description for details.
+
+  system-voltage-min-threshold-microvolt:
+    type: int
+    required: true
+    enum:
+      - 3600000
+      - 3700000
+      - 3800000
+      - 3900000
+      - 4000000
+      - 4100000
+      - 4200000
+      - 4300000
+    description: |
+      System voltage minimum threshold. When SYS path
+      voltage drops to this level, the charger current
+      is reduced to prevent battery damage.
+
+  re-charge-threshold-microvolt:
+    type: int
+    required: true
+    enum:
+      - 70000
+      - 120000
+      - 170000
+      - 220000
+    description: |
+      Recharge threshold in relation to BatReg.
+      Refer to ChgCntlA register description for details.
+
+  thermistor-monitoring-mode:
+    type: string
+    required: true
+    enum:
+      - "disabled"
+      - "thermistor"
+      - "JEITA-1"
+      - "JEITA-2"
+    description: |
+      Thermistor monitoring mode.
+      Refer to ThrmCfg register description and Table 2 for details.
+
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin

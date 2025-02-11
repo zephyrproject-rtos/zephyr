@@ -38,6 +38,32 @@ references to optional :ref:`binary blobs <bin-blobs>`.
 This page summarizes a list of policies and best practices which aim at
 better organizing the workflow in Zephyr modules.
 
+.. _modules-vs-projects:
+
+Modules vs west projects
+************************
+
+Zephyr modules, described in this page, are not the same as :ref:`west projects
+<west-workspace>`. In fact, modules :ref:`do not require west
+<modules_without_west>` at all. However, when using modules :ref:`with west
+<modules_using_west>`, then the build system uses west in order to find modules.
+
+In summary:
+
+Modules are repositories that contain a :file:`zephyr/module.yml` file, so that
+the Zephyr build system can pull in the source code from the repository.
+:ref:`West projects <west-manifests-projects>` are entries in the `projects:`
+section in the :file:`west.yml` manifest file.
+West projects are often also modules, but not always. There are west projects
+that are not included in the final firmware image (eg. tools) and thus do not
+need to be modules.
+Modules are found by the Zephyr build system either via :ref:`west itself
+<modules_using_west>`, or via the :ref:`ZEPHYR_MODULES CMake variable
+<modules_without_west>`.
+
+The contents of this page only apply to modules, and not to west projects in
+general (unless they are a module themselves).
+
 Module Repositories
 *******************
 
@@ -250,7 +276,7 @@ The merging of pull requests in the main branch of a module
 repository must be coupled with the corresponding manifest
 file update in the zephyr main tree.
 
-**Issue Reporting:** GitHub issues are intentionally disabled in module
+**Issue Reporting:** `GitHub issues`_ are intentionally disabled in module
 repositories, in
 favor of a centralized policy for issue reporting. Tickets concerning, for
 example, bugs or enhancements in modules shall be opened in the main
@@ -396,16 +422,16 @@ added to the build using CMake's `add_subdirectory()`_ command, and the
 If you have :ref:`west <west>` installed, you don't need to worry about how
 this variable is defined unless you are adding a new module. The build system
 knows how to use west to set :makevar:`ZEPHYR_MODULES`. You can add additional
-modules to this list by setting the :makevar:`ZEPHYR_EXTRA_MODULES` CMake
-variable or by adding a :makevar:`ZEPHYR_EXTRA_MODULES` line to ``.zephyrrc``
+modules to this list by setting the :makevar:`EXTRA_ZEPHYR_MODULES` CMake
+variable or by adding a :makevar:`EXTRA_ZEPHYR_MODULES` line to ``.zephyrrc``
 (See the section on :ref:`env_vars` for more details). This can be
 useful if you want to keep the list of modules found with west and also add
 your own.
 
 .. note::
    If the module ``FOO`` is provided by :ref:`west <west>` but also given with
-   ``-DZEPHYR_EXTRA_MODULES=/<path>/foo`` then the module given by the command
-   line variable :makevar:`ZEPHYR_EXTRA_MODULES` will take precedence.
+   ``-DEXTRA_ZEPHYR_MODULES=/<path>/foo`` then the module given by the command
+   line variable :makevar:`EXTRA_ZEPHYR_MODULES` will take precedence.
    This allows you to use a custom version of ``FOO`` when building and still
    use other Zephyr modules provided by :ref:`west <west>`.
    This can for example be useful for special test purposes.
@@ -495,12 +521,102 @@ module:
      cmake: .
      kconfig: Kconfig
 
+.. _sysbuild_module_integration:
+
+Sysbuild integration
+====================
+
+:ref:`Sysbuild<sysbuild>` is the Zephyr build system that allows for building
+multiple images as part of a single application, the sysbuild build process
+can be extended externally with modules as needed, for example to add custom
+build steps or add additional targets to a build. Inclusion of
+sysbuild-specific build files, :file:`CMakeLists.txt` and :file:`Kconfig`, can
+be described as:
+
+.. code-block:: yaml
+
+   build:
+     sysbuild-cmake: <cmake-directory>
+     sysbuild-kconfig: <directory>/Kconfig
+
+The ``sysbuild-cmake: <cmake-directory>`` part specifies that
+:file:`<cmake-directory>` contains the :file:`CMakeLists.txt` to use. The
+``sysbuild-kconfig: <directory>/Kconfig`` part specifies the Kconfig file to
+use.
+
+Here is an example :file:`module.yml` file referring to
+:file:`CMakeLists.txt` and :file:`Kconfig` files in the `sysbuild` directory of
+the module:
+
+.. code-block:: yaml
+
+   build:
+     sysbuild-cmake: sysbuild
+     sysbuild-kconfig: sysbuild/Kconfig
+
+The module description file :file:`zephyr/module.yml` can also be used to
+specify that the build files, :file:`CMakeLists.txt` and :file:`Kconfig`, are
+located in a :ref:`modules_module_ext_root`.
+
+Build files located in a ``MODULE_EXT_ROOT`` can be described as:
+
+.. code-block:: yaml
+
+   build:
+     sysbuild-cmake-ext: True
+     sysbuild-kconfig-ext: True
+
+This allows control of the build inclusion to be described externally to the
+Zephyr module.
+
+.. _modules-vulnerability-monitoring:
+
+Vulnerability monitoring
+========================
+
+The module description file :file:`zephyr/module.yml` can be used to improve vulnerability monitoring.
+
+If your module needs to track vulnerabilities using an external reference
+(e.g your module is forked from another repository), you can use the ``security`` section.
+It contains the field ``external-references`` that contains a list of references that needs to
+be monitored for your module. The supported formats are:
+
+- CPE (Common Platform Enumeration)
+- PURL (Package URL)
+
+.. code-block:: yaml
+
+   security:
+     external-references:
+       - <module-related-cpe>
+       - <an-other-module-related-cpe>
+       - <module-related-purl>
+
+A real life example for `mbedTLS` module could look like this:
+
+.. code-block:: yaml
+
+   security:
+     external-references:
+       - cpe:2.3:a:arm:mbed_tls:3.5.2:*:*:*:*:*:*:*
+       - pkg:github/Mbed-TLS/mbedtls@V3.5.2
+
+.. note::
+   CPE field must follow the CPE 2.3 schema provided by `NVD
+   <https://csrc.nist.gov/projects/security-content-automation-protocol/specifications/cpe>`_.
+   PURL field must follow the PURL specification provided by `Github
+   <https://github.com/package-url/purl-spec/blob/master/PURL-SPECIFICATION.rst>`_.
+
+
 Build system integration
 ========================
 
 When a module has a :file:`module.yml` file, it will automatically be included into
 the Zephyr build system. The path to the module is then accessible through Kconfig
 and CMake variables.
+
+Zephyr modules
+--------------
 
 In both Kconfig and CMake, the variable ``ZEPHYR_<MODULE_NAME>_MODULE_DIR``
 contains the absolute path to the module.
@@ -534,9 +650,10 @@ For example, to include the file :file:`some/Kconfig` in module ``foo``:
 
   source "$(ZEPHYR_FOO_MODULE_DIR)/some/Kconfig"
 
-During CMake processing of each Zephyr module, the following two variables are
+During CMake processing of each Zephyr module, the following variables are
 also available:
 
+- the current module's name: ``${ZEPHYR_CURRENT_MODULE_NAME}``
 - the current module's top level directory: ``${ZEPHYR_CURRENT_MODULE_DIR}``
 - the current module's :file:`CMakeLists.txt` directory: ``${ZEPHYR_CURRENT_CMAKE_DIR}``
 
@@ -548,7 +665,7 @@ variables. For example:
 
   include(${ZEPHYR_CURRENT_MODULE_DIR}/cmake/code.cmake)
 
-It is possible to append values to a Zephyr CMake list variable from the module's first
+It is possible to append values to a Zephyr `CMake list`_ variable from the module's first
 CMakeLists.txt file.
 To do so, append the value to the list and then set the list in the PARENT_SCOPE
 of the CMakeLists.txt file. For example, to append ``bar`` to the ``FOO_LIST`` variable in the
@@ -561,6 +678,88 @@ Zephyr CMakeLists.txt scope:
 
 An example of a Zephyr list where this is useful is when adding additional
 directories to the ``SYSCALL_INCLUDE_DIRS`` list.
+
+Sysbuild modules
+----------------
+
+In both Kconfig and CMake, the variable ``SYSBUILD_CURRENT_MODULE_DIR``
+contains the absolute path to the sysbuild module. In CMake,
+``SYSBUILD_CURRENT_CMAKE_DIR`` contains the absolute path to the directory
+containing the :file:`CMakeLists.txt` file that is included into CMake build
+system. This variable's value is empty if the module.yml file does not specify
+a CMakeLists.txt.
+
+To read these variables for a sysbuild module:
+
+- In CMake: use ``${SYSBUILD_CURRENT_MODULE_DIR}`` for the module's top level
+  directory, and ``${SYSBUILD_CURRENT_CMAKE_DIR}`` for the directory containing
+  its :file:`CMakeLists.txt`
+- In Kconfig: use ``$(SYSBUILD_CURRENT_MODULE_DIR)`` for the module's top level
+  directory
+
+In Kconfig, the variable may be used to find additional files to include.
+For example, to include the file :file:`some/Kconfig`:
+
+.. code-block:: kconfig
+
+  source "$(SYSBUILD_CURRENT_MODULE_DIR)/some/Kconfig"
+
+The module can source additional CMake files using these variables. For
+example:
+
+.. code-block:: cmake
+
+  include(${SYSBUILD_CURRENT_MODULE_DIR}/cmake/code.cmake)
+
+It is possible to append values to a Zephyr `CMake list`_ variable from the
+module's first CMakeLists.txt file.
+To do so, append the value to the list and then set the list in the
+PARENT_SCOPE of the CMakeLists.txt file. For example, to append ``bar`` to the
+``FOO_LIST`` variable in the Zephyr CMakeLists.txt scope:
+
+.. code-block:: cmake
+
+  list(APPEND FOO_LIST bar)
+  set(FOO_LIST ${FOO_LIST} PARENT_SCOPE)
+
+Sysbuild modules hooks
+----------------------
+
+Sysbuild provides an infrastructure which allows a sysbuild module to define
+a function which will be invoked by sysbuild at a pre-defined point in the
+CMake flow.
+
+Functions invoked by sysbuild:
+
+- ``<module-name>_pre_cmake(IMAGES <images>)``: This function is called for each
+  sysbuild module before CMake configure is invoked for all images.
+- ``<module-name>_post_cmake(IMAGES <images>)``: This function is called for each
+  sysbuild module after CMake configure has completed for all images.
+- ``<module-name>_pre_domains(IMAGES <images>)``: This function is called for each
+  sysbuild module before domains yaml is created by sysbuild.
+- ``<module-name>_post_domains(IMAGES <images>)``: This function is called for each
+  sysbuild module after domains yaml has been created by sysbuild.
+
+arguments passed from sysbuild to the function defined by a module:
+
+- ``<images>`` is the list of Zephyr images that will be created by the build system.
+
+If a module ``foo`` want to provide a post CMake configure function, then the
+module's sysbuild :file:`CMakeLists.txt` file must define function ``foo_post_cmake()``.
+
+To facilitate naming of functions, the module name is provided by sysbuild CMake
+through the ``SYSBUILD_CURRENT_MODULE_NAME`` CMake variable when loading the
+module's sysbuild :file:`CMakeLists.txt` file.
+
+Example of how the ``foo`` sysbuild module can define ``foo_post_cmake()``:
+
+.. code-block:: cmake
+
+   function(${SYSBUILD_CURRENT_MODULE_NAME}_post_cmake)
+     cmake_parse_arguments(POST_CMAKE "" "" "IMAGES" ${ARGN})
+
+     message("Invoking ${CMAKE_CURRENT_FUNCTION}. Images: ${POST_CMAKE_IMAGES}")
+   endfunction()
 
 Zephyr module dependencies
 ==========================
@@ -586,7 +785,7 @@ module ``bar`` to be present in the build system:
    name: foo
    build:
      depends:
-     - bar
+       - bar
 
 This example will ensure that ``bar`` is present when ``foo`` is included into
 the build system, and it will also ensure that ``bar`` is processed before
@@ -635,7 +834,7 @@ Create a ``MODULE_EXT_ROOT`` with the following structure
            └── Kconfig
 
 and then build your application by specifying ``-DMODULE_EXT_ROOT`` parameter to
-the CMake build system. The ``MODULE_EXT_ROOT`` accepts a CMake list of roots as
+the CMake build system. The ``MODULE_EXT_ROOT`` accepts a `CMake list`_ of roots as
 argument.
 
 A Zephyr module can automatically be added to the ``MODULE_EXT_ROOT``
@@ -659,7 +858,7 @@ to the path containing the CMake file.
 To include a module's Kconfig file, set the variable ``ZEPHYR_<MODULE_NAME>_KCONFIG``
 to the path to the Kconfig file.
 
-The following is an example on how to add support the the ``FOO`` module.
+The following is an example on how to add support the ``FOO`` module.
 
 Create the following structure
 
@@ -717,6 +916,12 @@ Build settings supported in the :file:`module.yml` file are:
 - ``dts_root``: Contains additional dts files related to the architecture/soc
   families. Additional dts files must be located in a :file:`<dts_root>/dts`
   folder.
+- ``snippet_root``: Contains additional snippets that are available for use.
+  These snippets must be defined in :file:`snippet.yml` files underneath the
+  :file:`<snippet_root>/snippets` folder. For example, if you have
+  ``snippet_root: foo``, then you should place your module's
+  :file:`snippet.yml` files in :file:`<your-module>/foo/snippets` or any
+  nested subdirectory.
 - ``soc_root``: Contains additional SoCs that are available to the build
   system. Additional SoCs must be located in a :file:`<soc_root>/soc` folder.
 - ``arch_root``: Contains additional architectures that are available to the
@@ -898,7 +1103,9 @@ module.
 To avoid merging changes to master with pull request information, the pull
 request should be marked as ``DNM`` (Do Not Merge) or preferably a draft pull
 request to make sure it is not merged by mistake and to allow for the module to
-be merged first and be assigned a permanent commit hash. Once the module is
+be merged first and be assigned a permanent commit hash. Drafts reduce noise by
+not automatically notifying anyone until marked as "Ready for review".
+Once the module is
 merged, the revision will need to be changed either by the submitter or by the
 maintainer to the commit hash of the module which reflects the changes.
 
@@ -955,7 +1162,8 @@ Process for submitting changes to existing modules
 ==================================================
 
 #. Submit the changes using a pull request to an existing repository following
-   the :ref:`contribution guidelines <contribute_guidelines>`.
+   the :ref:`contribution guidelines <contribute_guidelines>` and
+   :ref:`expectations <contributor-expectations>`.
 #. Submit a pull request changing the entry referencing the module into the
    :zephyr_file:`west.yml` of the main Zephyr tree with the following
    information:
@@ -983,5 +1191,4 @@ revision needs to be changed to the commit hash from the module repository.
 
 .. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
 .. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html
-
 .. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues

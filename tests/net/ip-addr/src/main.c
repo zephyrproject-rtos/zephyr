@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/ztest.h>
 
@@ -68,15 +68,17 @@ static struct net_if *default_iface;
 			      "Test %s failed.\n", expected);		\
 	} while (0)
 
+#define LL_ADDR_STR_SIZE sizeof("xx:xx:xx:xx:xx:xx")
+
 #define TEST_LL_6_TWO(a, b, c, d, e, f, expected)			\
 	do {								\
 		uint8_t ll1[] = { a, b, c, d, e, f };			\
 		uint8_t ll2[] = { f, e, d, c, b, a };			\
-		char out[2 * sizeof("xx:xx:xx:xx:xx:xx") + 1 + 1];	\
+		char out[2 * LL_ADDR_STR_SIZE + 1 + 1];	\
 		snprintk(out, sizeof(out), "%s ",			\
 			 net_sprint_ll_addr(ll1, sizeof(ll1)));		\
-		snprintk(out + sizeof("xx:xx:xx:xx:xx:xx"),		\
-			 sizeof(out), "%s",				\
+		snprintk(out + LL_ADDR_STR_SIZE,			\
+			 sizeof(out) - LL_ADDR_STR_SIZE, "%s",		\
 			 net_sprint_ll_addr(ll2, sizeof(ll2)));		\
 		zassert_false(strcmp(out, expected),			\
 			      "Test %s failed, got %s\n", expected,	\
@@ -127,7 +129,7 @@ static uint8_t *net_test_get_mac(const struct device *dev)
 		context->mac_addr[2] = 0x5E;
 		context->mac_addr[3] = 0x00;
 		context->mac_addr[4] = 0x53;
-		context->mac_addr[5] = sys_rand32_get();
+		context->mac_addr[5] = sys_rand8_get();
 	}
 
 	return context->mac_addr;
@@ -402,11 +404,15 @@ ZTEST(ip_addr_fn, test_ipv4_addresses)
 	zassert_true(net_ipv4_is_my_addr(&addr4),
 		     "My IPv4 address check failed");
 
+	net_if_ipv4_set_netmask_by_addr(default_iface, &addr4, &netmask);
+
 	ifaddr1 = net_if_ipv4_addr_add(default_iface,
 				       &lladdr4,
 				       NET_ADDR_MANUAL,
 				       0);
 	zassert_not_null(ifaddr1, "IPv4 interface address add failed");
+
+	net_if_ipv4_set_netmask_by_addr(default_iface, &lladdr4, &netmask2);
 
 	zassert_true(net_ipv4_is_my_addr(&lladdr4),
 		     "My IPv4 address check failed");
@@ -469,10 +475,9 @@ ZTEST(ip_addr_fn, test_ipv4_addresses)
 	iface = default_iface;
 
 	net_if_ipv4_set_gw(iface, &gw);
-	net_if_ipv4_set_netmask(iface, &netmask);
 
 	zassert_false(net_ipv4_addr_mask_cmp(iface, &fail_addr),
-		"IPv4 wrong match failed");
+		      "IPv4 wrong match failed");
 
 	zassert_true(net_ipv4_addr_mask_cmp(iface, &match_addr),
 		     "IPv4 match failed");
@@ -539,10 +544,10 @@ ZTEST(ip_addr_fn, test_ipv4_addresses)
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr5);
 	zassert_true(ret, "IPv4 address 5 is not broadcast address");
 
-	net_if_ipv4_set_netmask(iface, &netmask2);
-
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr2);
 	zassert_false(ret, "IPv4 address 2 is broadcast address");
+
+	net_if_ipv4_set_netmask_by_addr(iface, &addr4, &netmask2);
 
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr3);
 	zassert_true(ret, "IPv4 address 3 is not broadcast address");
@@ -598,6 +603,104 @@ ZTEST(ip_addr_fn, test_ipv6_mesh_addresses)
 		     "IPv6 removing address failed\n");
 	zassert_true(net_if_ipv6_addr_rm(iface, &ml_eid),
 		     "IPv6 removing address failed\n");
+}
+
+ZTEST(ip_addr_fn, test_private_ipv6_addresses)
+{
+	bool ret;
+	struct {
+		struct in6_addr addr;
+		bool is_private;
+	} addrs[] = {
+		{
+			.addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0x99, 0x1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 0xfc, 0x01, 0, 0, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 0xfc, 0, 0, 0, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0, 2 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 0x20, 0x01, 0x1d, 0xb8, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0x99, 0x1 } } },
+			.is_private = false,
+		},
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(addrs); i++) {
+		ret = net_ipv6_is_private_addr(&addrs[i].addr);
+		zassert_equal(ret, addrs[i].is_private, "Address %s check failed",
+			      net_sprint_ipv6_addr(&addrs[i].addr));
+	}
+
+}
+
+ZTEST(ip_addr_fn, test_private_ipv4_addresses)
+{
+	bool ret;
+	struct {
+		struct in_addr addr;
+		bool is_private;
+	} addrs[] = {
+		{
+			.addr = { { { 192, 0, 2, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 10, 1, 2, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 100, 124, 2, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 172, 24, 100, 12 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 172, 15, 254, 255 } } },
+			.is_private = false,
+		},
+		{
+			.addr = { { { 172, 16, 0, 0 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 192, 168, 10, 122 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 192, 51, 100, 255 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 203, 0, 113, 122 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 1, 2, 3, 4 } } },
+			.is_private = false,
+		},
+		{
+			.addr = { { { 192, 1, 32, 4 } } },
+			.is_private = false,
+		},
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(addrs); i++) {
+		ret = net_ipv4_is_private_addr(&addrs[i].addr);
+		zassert_equal(ret, addrs[i].is_private, "Address %s check failed",
+			      net_sprint_ipv4_addr(&addrs[i].addr));
+	}
+
 }
 
 void *test_setup(void)

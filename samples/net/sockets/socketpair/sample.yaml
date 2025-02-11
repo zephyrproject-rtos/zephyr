@@ -2,10 +2,13 @@ sample:
   description: Socketpair sample
   name: socketpair
 common:
-  tags: net socket posix
+  tags:
+    - net
+    - socket
+    - posix
   harness: net
   arch_exclude: posix
   integration_platforms:
-    - mps2_an385
+    - qemu_x86
 tests:
   sample.net.sockets.socketpair: {}

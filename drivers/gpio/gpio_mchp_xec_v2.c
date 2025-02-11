@@ -10,14 +10,17 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/dt-bindings/pinctrl/mchp-xec-pinctrl.h>
 #include <soc.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/irq.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
 #define XEC_GPIO_EDGE_DLY_COUNT		4
+
+LOG_MODULE_REGISTER(gpio, CONFIG_GPIO_LOG_LEVEL);
 
 static const uint32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
 	(MCHP_GPIO_PORT_A_BITMAP),
@@ -82,101 +85,130 @@ static inline void xec_mask_write32(uintptr_t addr, uint32_t mask, uint32_t val)
 }
 
 /*
- * notes: The GPIO parallel output bits are read-only until the
- * Alternate-Output-Disable (AOD) bit is set in the pin's control
- * register. To preload a parallel output value to prevent certain
- * classes of glitching for output pins we must:
- * Set GPIO control AOD=1 with the pin direction set to input.
- * Program the new pin value in the respective GPIO parallel output
- * register.
- * Program other GPIO control bits except direction.
- * Last step set the GPIO control register direction bit to output.
+ * NOTE: gpio_flags_t b[15:0] are defined in the dt-binding gpio header.
+ * b[31:16] are defined in the driver gpio header.
+ * Hardware only supports push-pull or open-drain.
+ */
+static int gpio_xec_validate_flags(gpio_flags_t flags)
+{
+	if ((flags & (GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_DRAIN))
+	    == (GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_SOURCE)) {
+		return -ENOTSUP;
+	}
+
+	if ((flags & (GPIO_INPUT | GPIO_OUTPUT))
+	    == (GPIO_INPUT | GPIO_OUTPUT)) {
+		return -ENOTSUP;
+	}
+
+	if ((flags & GPIO_OUTPUT_INIT_LOW) && (flags & GPIO_OUTPUT_INIT_HIGH)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/*
+ * Each GPIO pin has two 32-bit control registers. Control 1 configures pin
+ * features except for drive strength and slew rate in Control 2.
+ * A pin's input and output state can be read/written from either the Control 1
+ * register or from corresponding bits in the GPIO parallel input/output registers.
+ * The parallel input and output registers group 32 pins into each register.
+ * The GPIO hardware restricts the pin output state to Control 1 or the parallel bit.
+ * Both output bits reflect each other on read and writes but only one is writable
+ * selected by the output control select bit in Control 1. In the configuration API
+ * we use Control 1 to configure all pin features and output state. Before exiting,
+ * we set the output select for parallel mode enabling writes to the parallel output bit.
  */
 static int gpio_xec_configure(const struct device *dev,
 			      gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_xec_config *config = dev->config;
-	uintptr_t pcr1_addr = pin_ctrl_addr(dev, pin);
-	uintptr_t pout_addr = pin_parout_addr(dev);
-	uint32_t pcr1 = 0U;
-	uint32_t mask = 0U;
+	uintptr_t pcr1_addr = 0u;
+	uint32_t pcr1 = 0u, pcr1_new = 0u;
+	uint32_t msk = (MCHP_GPIO_CTRL_PWRG_MASK
+		| MCHP_GPIO_CTRL_BUFT_MASK | MCHP_GPIO_CTRL_DIR_MASK
+		| MCHP_GPIO_CTRL_AOD_MASK | BIT(MCHP_GPIO_CTRL_POL_POS)
+		| MCHP_GPIO_CTRL_MUX_MASK | MCHP_GPIO_CTRL_INPAD_DIS_MASK);
 
-	/* Validate pin number range in terms of current port */
-	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0U) {
+	if (!(valid_ctrl_masks[config->port_num] & BIT(pin))) {
 		return -EINVAL;
 	}
 
-	/* Don't support "open source" mode */
-	if (((flags & GPIO_SINGLE_ENDED) != 0U) &&
-	    ((flags & GPIO_LINE_OPEN_DRAIN) == 0U)) {
-		return -ENOTSUP;
+	int ret = gpio_xec_validate_flags(flags);
+
+	if (ret) {
+		return ret;
 	}
 
-	/* The flags contain options that require touching registers in the
-	 * PCRs for a given GPIO. There are no GPIO modules in Microchip SOCs!
-	 * Keep direction as input until last.
-	 * Clear input pad disable allowing input pad to operate.
-	 * Clear Power gate to allow pads to operate.
-	 */
-	mask |= MCHP_GPIO_CTRL_DIR_MASK;
-	mask |= MCHP_GPIO_CTRL_INPAD_DIS_MASK;
-	mask |= MCHP_GPIO_CTRL_PWRG_MASK;
-	pcr1 |= MCHP_GPIO_CTRL_DIR_INPUT;
+	pcr1_addr = pin_ctrl_addr(dev, pin);
+	pcr1 = sys_read32(pcr1_addr);
 
-	/* Figure out the pullup/pulldown configuration and keep it in the
-	 * pcr1 variable
-	 */
-	mask |= MCHP_GPIO_CTRL_PUD_MASK;
-
-	if ((flags & GPIO_PULL_UP) != 0U) {
-		/* Enable the pull and select the pullup resistor. */
-		pcr1 |= MCHP_GPIO_CTRL_PUD_PU;
-	} else if ((flags & GPIO_PULL_DOWN) != 0U) {
-		/* Enable the pull and select the pulldown resistor */
-		pcr1 |= MCHP_GPIO_CTRL_PUD_PD;
+	/* Check if pin is in GPIO mode */
+	if (MCHP_GPIO_CTRL_MUX_GET(pcr1) != MCHP_GPIO_CTRL_MUX_F0) {
+		LOG_WRN("Port:%d pin:0x%x not in GPIO mode. CTRL[%x]=%x", config->port_num, pin,
+			(uint32_t)pcr1_addr, pcr1);
 	}
 
-	/* Push-pull or open drain */
-	mask |= MCHP_GPIO_CTRL_BUFT_MASK;
-
-	if ((flags & GPIO_OPEN_DRAIN) != 0U) {
-		/* Open drain */
-		pcr1 |= MCHP_GPIO_CTRL_BUFT_OPENDRAIN;
-	} else {
-		/* Push-pull */
-		pcr1 |= MCHP_GPIO_CTRL_BUFT_PUSHPULL;
-	}
-
-	/* Use GPIO output register to control pin output, instead of
-	 * using the control register (=> alternate output disable).
-	 */
-	mask |= MCHP_GPIO_CTRL_AOD_MASK;
-	pcr1 |= MCHP_GPIO_CTRL_AOD_DIS;
-
-	/* Make sure disconnected on first control register write */
 	if (flags == GPIO_DISCONNECTED) {
-		pcr1 |= MCHP_GPIO_CTRL_PWRG_OFF;
+		pcr1 = (pcr1 & ~MCHP_GPIO_CTRL_PWRG_MASK) | MCHP_GPIO_CTRL_PWRG_OFF;
+		sys_write32(pcr1, pcr1_addr);
+		return 0;
 	}
 
-	/* Now write contents of pcr1 variable to the PCR1 register that
-	 * corresponds to the GPIO being configured.
-	 * AOD is 1 and direction is input. HW will allow use to set the
-	 * GPIO parallel output bit for this pin and with the pin direction
-	 * as input no glitch will occur.
-	 */
-	xec_mask_write32(pcr1_addr, mask, pcr1);
+	/* final pin state will be powered */
+	pcr1_new = MCHP_GPIO_CTRL_PWRG_VTR_IO;
 
-	if ((flags & GPIO_OUTPUT) != 0U) {
-		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-			sys_set_bit(pout_addr, pin);
-		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-			sys_clear_bit(pout_addr, pin);
+	/* always enable input pad */
+	if (pcr1 & BIT(MCHP_GPIO_CTRL_INPAD_DIS_POS)) {
+		pcr1 &= ~BIT(MCHP_GPIO_CTRL_INPAD_DIS_POS);
+		sys_write32(pcr1, pcr1_addr);
+	}
+
+	if (flags & GPIO_OUTPUT) {
+		pcr1_new |= BIT(MCHP_GPIO_CTRL_DIR_POS);
+		msk |= BIT(MCHP_GPIO_CTRL_OUTVAL_POS);
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			pcr1_new |= BIT(MCHP_GPIO_CTRL_OUTVAL_POS);
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+			pcr1_new &= ~BIT(MCHP_GPIO_CTRL_OUTVAL_POS);
+		} else { /* copy current input state to output state */
+			if ((pcr1 & MCHP_GPIO_CTRL_PWRG_MASK) == MCHP_GPIO_CTRL_PWRG_OFF) {
+				pcr1 &= ~(MCHP_GPIO_CTRL_PWRG_MASK);
+				pcr1 |= MCHP_GPIO_CTRL_PWRG_VTR_IO;
+				sys_write32(pcr1, pcr1_addr);
+			}
+			pcr1 = sys_read32(pcr1_addr);
+			if (pcr1 & BIT(MCHP_GPIO_CTRL_INPAD_VAL_POS)) {
+				pcr1_new |= BIT(MCHP_GPIO_CTRL_OUTVAL_POS);
+			} else {
+				pcr1_new &= ~BIT(MCHP_GPIO_CTRL_OUTVAL_POS);
+			}
 		}
-
-		mask = MCHP_GPIO_CTRL_DIR_MASK;
-		pcr1 = MCHP_GPIO_CTRL_DIR_OUTPUT;
-		xec_mask_write32(pcr1_addr, mask, pcr1);
+		if (flags & GPIO_LINE_OPEN_DRAIN) {
+			pcr1_new |= BIT(MCHP_GPIO_CTRL_BUFT_POS);
+		}
 	}
+
+	if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
+		msk |= MCHP_GPIO_CTRL_PUD_MASK;
+		/* both bits specifies repeater mode */
+		if (flags & GPIO_PULL_UP) {
+			pcr1_new |= MCHP_GPIO_CTRL_PUD_PU;
+		}
+		if (flags & GPIO_PULL_DOWN) {
+			pcr1_new |= MCHP_GPIO_CTRL_PUD_PD;
+		}
+	}
+
+	/*
+	 * Problem, if pin was power gated off we can't read input.
+	 * How to turn on pin to read input but not glitch it?
+	 */
+	pcr1 = (pcr1 & ~msk) | (pcr1_new & msk);
+	sys_write32(pcr1, pcr1_addr); /* configuration. may generate a single edge */
+	 /* Control output bit becomes read-only and parallel out register bit becomes r/w */
+	sys_write32(pcr1 | BIT(MCHP_GPIO_CTRL_AOD_POS), pcr1_addr);
 
 	return 0;
 }
@@ -257,6 +289,8 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 
 	/* pin configuration matches requested detection mode? */
 	pcr1 = sys_read32(pcr1_addr);
+	/* HW detects interrupt on input. Make sure input pad disable is cleared */
+	pcr1 &= ~BIT(MCHP_GPIO_CTRL_INPAD_DIS_POS);
 
 	if ((pcr1 & MCHP_GPIO_CTRL_IDET_MASK) == pcr1_req) {
 		gpio_xec_intr_en(pin, mode, config->girq_id);
@@ -354,13 +388,95 @@ static int gpio_xec_manage_callback(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_xec_get_direction(const struct device *port, gpio_port_pins_t map,
+				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	if (!port) {
+		return -EINVAL;
+	}
+
+	const struct gpio_xec_config *config = port->config;
+	uint32_t valid_msk = valid_ctrl_masks[config->port_num];
+
+	*inputs = 0u;
+	*outputs = 0u;
+	for (uint8_t pin = 0; pin < 32; pin++) {
+		if (!map) {
+			break;
+		}
+		if ((map & BIT(pin)) && (valid_msk & BIT(pin))) {
+			uintptr_t pcr1_addr = pin_ctrl_addr(port, pin);
+			uint32_t pcr1 = sys_read32(pcr1_addr);
+
+			if (!((pcr1 & MCHP_GPIO_CTRL_PWRG_MASK) == MCHP_GPIO_CTRL_PWRG_OFF)) {
+				if (outputs && (pcr1 & BIT(MCHP_GPIO_CTRL_DIR_POS))) {
+					*outputs |= BIT(pin);
+				} else if (inputs && !(pcr1 & BIT(MCHP_GPIO_CTRL_INPAD_DIS_POS))) {
+					*inputs |= BIT(pin);
+				}
+			}
+
+			map &= ~BIT(pin);
+		}
+	}
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_GPIO_GET_CONFIG
+int gpio_xec_get_config(const struct device *port, gpio_pin_t pin, gpio_flags_t *flags)
+{
+	if (!port || !flags) {
+		return -EINVAL;
+	}
+
+	const struct gpio_xec_config *config = port->config;
+	uint32_t valid_msk = valid_ctrl_masks[config->port_num];
+
+	if (!(valid_msk & BIT(pin))) {
+		return -EINVAL;
+		/* Or should we set *flags = GPIO_DISCONNECTED and return success? */
+	}
+
+	uintptr_t pcr1_addr = pin_ctrl_addr(port, pin);
+	uint32_t pcr1 = sys_read32(pcr1_addr);
+	uint32_t pin_flags = 0u;
+
+	if (pcr1 & BIT(MCHP_GPIO_CTRL_DIR_POS)) {
+		pin_flags |= GPIO_OUTPUT;
+		if (pcr1 & BIT(MCHP_GPIO_CTRL_OUTVAL_POS)) {
+			pin_flags |= GPIO_OUTPUT_INIT_HIGH;
+		} else {
+			pin_flags |= GPIO_OUTPUT_INIT_LOW;
+		}
+
+		if (pcr1 & BIT(MCHP_GPIO_CTRL_BUFT_POS)) {
+			pin_flags |= GPIO_OPEN_DRAIN;
+		}
+	} else if (!(pcr1 & BIT(MCHP_GPIO_CTRL_INPAD_DIS_POS))) {
+		pin_flags |= GPIO_INPUT;
+	}
+
+	if (pin_flags) {
+		*flags = pin_flags;
+	} else {
+		*flags = GPIO_DISCONNECTED;
+	}
+
+	return 0;
+}
+#endif
+
 static void gpio_gpio_xec_port_isr(const struct device *dev)
 {
 	const struct gpio_xec_config *config = dev->config;
 	struct gpio_xec_data *data = dev->data;
 	uint32_t girq_result;
 
-	/* Figure out which interrupts have been triggered from the EC
+	/*
+	 * Figure out which interrupts have been triggered from the EC
 	 * aggregator result register
 	 */
 	girq_result = mchp_soc_ecia_girq_result(config->girq_id);
@@ -381,6 +497,12 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 	.port_toggle_bits = gpio_xec_port_toggle_bits,
 	.pin_interrupt_configure = gpio_xec_pin_interrupt_configure,
 	.manage_callback = gpio_xec_manage_callback,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_xec_get_direction,
+#endif
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_xec_get_config,
+#endif
 };
 
 #define XEC_GPIO_PORT_FLAGS(n)						\

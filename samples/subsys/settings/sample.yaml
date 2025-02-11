@@ -5,9 +5,17 @@ tests:
   sample.subsys.settings:
     tags: settings
     timeout: 10
-    platform_allow: qemu_x86 native_posix native_posix_64
-    integration_platforms:
+    platform_allow:
+      - qemu_x86
       - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+      - mr_canhubk3
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - native_sim
     harness: console
     harness_config:
       type: multi_line
@@ -32,6 +40,7 @@ tests:
         - "direct.length_1 = 46"
         - "direct.length_2 = 54"
         - "<gamma> = 5"
-        - "The settings destination off the key <alpha/beta/source> has got value: \"RT\""
-        - "String value \"rtos\" was retrieved from the settings destination off the key \
-           <alpha/beta/source>"
+        - "The settings destination off the key <alpha/beta/source> has got value:\
+        \ \"RT\""
+        - "String value \"rtos\" was retrieved from the settings destination off the\
+        \ key <alpha/beta/source>"

@@ -1,0 +1,14 @@
+sample:
+  name: UART Passthrough
+tests:
+  sample.drivers.uart:
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - serial
+      - uart
+    filter: CONFIG_SERIAL and
+            CONFIG_UART_INTERRUPT_DRIVEN and
+            dt_chosen_enabled("zephyr,console") and
+            dt_chosen_enabled("uart,passthrough")
+    harness: keyboard

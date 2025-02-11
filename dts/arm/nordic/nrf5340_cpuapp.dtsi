@@ -5,7 +5,7 @@
  */
 
 #include <arm/armv8-m.dtsi>
-#include "nrf_common.dtsi"
+#include <nordic/nrf_common.dtsi>
 
 / {
 	cpus {
@@ -41,6 +41,7 @@
 		ficr: ficr@ff0000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0xff0000 0x1000>;
+			#nordic,ficr-cells = <1>;
 			status = "okay";
 		};
 
@@ -84,19 +85,24 @@
 			reg = <0x5000d000 0x1000>;
 			interrupts = <13 5>;
 			status = "disabled";
+			instance = <0>;
+		};
+
+		/* Additional Non-Secure GPIOTE instance */
+		gpiote1: gpiote@4002f000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x4002f000 0x1000>;
+			interrupts = <47 5>;
+			status = "disabled";
+			instance = <1>;
 		};
 
 		cryptocell: crypto@50844000 {
-			compatible = "nordic,nrf-cc312";
-			reg = <0x50844000 0x1000>;
-			status = "okay";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			cryptocell312: crypto@50845000 {
-				compatible = "arm,cryptocell-312";
-				reg = <0x50845000 0x1000>;
-				interrupts = <68 NRF_DEFAULT_IRQ_PRIORITY>;
-			};
+			compatible = "nordic,cryptocell", "arm,cryptocell-312";
+			reg = <0x50844000 0x1000>, <0x50845000 0x1000>;
+			reg-names = "wrapper", "core";
+			interrupts = <68 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
 		};
 	};
 
@@ -110,9 +116,7 @@
 	arm,num-irq-priority-bits = <3>;
 };
 
-/*
- * Include the non-secure peripherals file here since
- * it expects to be at the root level. This provides
- * a node for GPIOTE1.
- */
-#include "nrf5340_cpuapp_peripherals_ns.dtsi"
+&systick {
+	/* Use RTC for system clock, instead of SysTick. */
+	status = "disabled";
+};

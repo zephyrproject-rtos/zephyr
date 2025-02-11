@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Piotr Mienkowski
+ * Copyright (c) 2023 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +24,7 @@
 #include <soc.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -43,8 +45,8 @@ struct i2c_sam_twi_dev_cfg {
 	Twi *regs;
 	void (*irq_config)(void);
 	uint32_t bitrate;
+	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t periph_id;
 	uint8_t irq_id;
 };
 
@@ -325,8 +327,9 @@ static int i2c_sam_twi_initialize(const struct device *dev)
 		return ret;
 	}
 
-	/* Enable module's clock */
-	soc_pmc_peripheral_enable(dev_cfg->periph_id);
+	/* Enable TWI clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
 
 	/* Reset TWI module */
 	twi->TWI_CR = TWI_CR_SWRST;
@@ -364,7 +367,7 @@ static const struct i2c_driver_api i2c_sam_twi_driver_api = {
 	static const struct i2c_sam_twi_dev_cfg i2c##n##_sam_config = {	\
 		.regs = (Twi *)DT_INST_REG_ADDR(n),			\
 		.irq_config = i2c##n##_sam_irq_config,			\
-		.periph_id = DT_INST_PROP(n, peripheral_id),		\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),		\
 		.irq_id = DT_INST_IRQN(n),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\

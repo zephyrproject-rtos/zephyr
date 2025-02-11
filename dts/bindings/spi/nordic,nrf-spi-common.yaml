@@ -12,6 +12,9 @@ properties:
   interrupts:
     required: true
 
+  pinctrl-0:
+    required: true
+
   max-frequency:
     type: int
     required: true
@@ -27,41 +30,33 @@ properties:
       are sent, but the transfer continues due to RX. Defaults to 0xff
       (line high), the most common value used in SPI transfers.
 
-  sck-pin:
+  easydma-maxcnt-bits:
     type: int
-    deprecated: true
+    required: true
     description: |
-      IMPORTANT: This option will only be used if the new pin control driver
-      is not enabled.
+      Maximum number of bits available in the EasyDMA MAXCNT register. This
+      property must be set at SoC level DTS files.
 
-      The SCK pin to use.
-
-      For pins P0.0 through P0.31, use the pin number. For example,
-      to use P0.16 for SCK, set:
-
-          sck-pin = <16>;
-
-      For pins P1.0 through P1.31, add 32 to the pin number. For
-      example, to use P1.2 for SCK, set:
-
-          sck-pin = <34>;  /* 32 + 2 */
-
-  mosi-pin:
-    type: int
-    deprecated: true
+  wake-gpios:
+    type: phandle-array
     description: |
-      IMPORTANT: This option will only be used if the new pin control driver
-      is not enabled.
-
-      The MOSI pin to use. The pin numbering scheme is the same as
-      the sck-pin property's.
-
-  miso-pin:
-    type: int
-    deprecated: true
-    description: |
-      IMPORTANT: This option will only be used if the new pin control driver
-      is not enabled.
-
-      The MISO pin to use. The pin numbering scheme is the same as
-      the sck-pin property's.
+      Optional bi-directional line that allows SPI master to indicate to SPI
+      slave (by setting the line high) that a transfer is to occur, so that
+      the latter can prepare (and indicate its readiness) for handling that
+      transfer when it is actually needed, and stay in any desired low-power
+      state otherwise.
+      The protocol is as follows:
+      - initially, SPI slave configures its WAKE line pin as an input and SPI
+        master keeps the line in the low state
+      - when a transfer is to be performed, SPI master configures its WAKE
+        line pin as an input with pull-up; this changes the line state to
+        high but allows SPI slave to override that state
+      - when SPI slave detects the high state of the WAKE line, it prepares
+        for the transfer and when everything is ready, it drives the WAKE
+        line low by configuring its pin as an output
+      - the generated high-to-low transition on the WAKE line is a signal
+        to SPI master that it can proceed with the transfer
+      - SPI slave releases the line by configuring its pin back to be an input
+        and SPI master again keeps the line in the low state
+      Please note that the line must be configured and properly handled on
+      both sides for the mechanism to work correctly.

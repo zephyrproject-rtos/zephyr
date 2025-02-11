@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Linaro Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test memory and memory attributes
+
+compatible: "vnd,memory-attr"
+
+include: [base.yaml, "zephyr,memory-common.yaml"]

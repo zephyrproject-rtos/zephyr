@@ -1,0 +1,27 @@
+identifier: esp32s3_luatos_core/esp32s3/appcpu/usb
+name: ESP32-S3 LuatOS Core APPCPU USB
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - flash
+    - cpp
+    - posix
+    - watchdog
+    - logging
+    - kernel
+    - pm
+    - gpio
+    - crypto
+    - eeprom
+    - heap
+    - cmsis_rtos
+    - jwt
+    - zdsp
+vendor: luatos

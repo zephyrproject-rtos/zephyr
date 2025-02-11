@@ -5,9 +5,12 @@
  */
 
 #include <st/f3/stm32f3.dtsi>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 
 / {
 	soc {
+		compatible = "st,stm32f303", "st,stm32f3", "simple-bus";
+
 		usb: usb@40005c00 {
 			/* Remap USB_LP IRQ to enable use with CAN_1 */
 			interrupts = <75 0>;
@@ -145,8 +148,36 @@
 			status = "disabled";
 			vref-mv = <3000>;
 			#io-channel-cells = <1>;
-			temp-channel = <16>;
-			vref-channel = <18>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <2 3 5 8 20 62 182 602>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
+
+		adc2: adc@50000100 {
+			compatible = "st,stm32-adc";
+			reg = <0x50000100 0x4c>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
+			interrupts = <18 0>;
+			status = "disabled";
+			vref-mv = <3000>;
+			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <2 3 5 8 20 62 182 602>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+		};
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
 	};
 };

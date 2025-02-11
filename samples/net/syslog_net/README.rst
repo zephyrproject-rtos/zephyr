@@ -1,7 +1,8 @@
-.. _syslog-net-sample:
+.. zephyr:code-sample:: syslog-net
+   :name: Remote syslog
+   :relevant-api: log_backend log_ctrl
 
-Syslog net Application
-######################
+   Enable a remote syslog service that sends syslog messages to a remote server
 
 Overview
 ********
@@ -25,7 +26,7 @@ Building and Running
 For configuring the remote IPv6 syslog server, set the following
 variables in prj.conf file:
 
-.. code-block:: console
+.. code-block:: cfg
 
 	CONFIG_LOG_BACKEND_NET=y
 	CONFIG_LOG_BACKEND_NET_SERVER="[2001:db8::2]:514"

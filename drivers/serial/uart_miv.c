@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT microsemi_coreuart
+#define DT_DRV_COMPAT microchip_coreuart
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
@@ -105,6 +105,8 @@
 #define BAUDVALUE_LSB ((uint16_t)(0x00FF))
 #define BAUDVALUE_MSB ((uint16_t)(0xFF00))
 #define BAUDVALUE_SHIFT ((uint8_t)(5))
+
+#define MIV_UART_0_LINECFG 0x1
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static struct k_thread rx_thread;

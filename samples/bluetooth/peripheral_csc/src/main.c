@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
@@ -77,7 +77,7 @@
 
 /* Cycling Speed and Cadence Service declaration */
 
-static uint32_t cwr; /* Cumulative Wheel Revolutions */
+static uint32_t c_wheel_revs; /* Cumulative Wheel Revolutions */
 static uint8_t supported_locations[] = CSC_SUPPORTED_LOCATIONS;
 static uint8_t sensor_location; /* Current Sensor Location */
 static bool csc_simulate;
@@ -150,7 +150,7 @@ static ssize_t write_ctrl_point(struct bt_conn *conn,
 			break;
 		}
 
-		cwr = sys_le32_to_cpu(req->cwr);
+		c_wheel_revs = sys_le32_to_cpu(req->cwr);
 		status = SC_CP_RSP_SUCCESS;
 		break;
 	case SC_CP_OP_UPDATE_LOC:
@@ -304,18 +304,18 @@ static uint16_t lcet; /* Last Crank Event Time */
 static void csc_simulation(void)
 {
 	static uint8_t i;
-	uint32_t rand = sys_rand32_get();
+	uint8_t rnd = sys_rand8_get();
 	bool nfy_crank = false, nfy_wheel = false;
 
 	/* Measurements don't have to be updated every second */
 	if (!(i % 2)) {
-		lwet += 1050 + rand % 50;
-		cwr += 2U;
+		lwet += 1050 + rnd % 50;
+		c_wheel_revs += 2U;
 		nfy_wheel = true;
 	}
 
 	if (!(i % 3)) {
-		lcet += 1000 + rand % 50;
+		lcet += 1000 + rnd % 50;
 		ccr += 1U;
 		nfy_crank = true;
 	}
@@ -326,7 +326,7 @@ static void csc_simulation(void)
 	 * and is determined by the Server and not required to be configurable
 	 * by the Client.
 	 */
-	measurement_nfy(NULL, nfy_wheel ? cwr : 0, nfy_wheel ? lwet : 0,
+	measurement_nfy(NULL, nfy_wheel ? c_wheel_revs : 0, nfy_wheel ? lwet : 0,
 			nfy_crank ? ccr : 0, nfy_crank ? lcet : 0);
 
 	/*
@@ -368,13 +368,17 @@ static const struct bt_data ad[] = {
 		      BT_UUID_16_ENCODE(BT_UUID_BAS_VAL))
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 static void bt_ready(void)
 {
 	int err;
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
@@ -396,14 +400,14 @@ static void bas_notify(void)
 	bt_bas_set_battery_level(battery_level);
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	bt_ready();
@@ -419,4 +423,5 @@ void main(void)
 		/* Battery level simulation */
 		bas_notify();
 	}
+	return 0;
 }

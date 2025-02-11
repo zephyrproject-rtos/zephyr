@@ -16,8 +16,6 @@
 
 #include "eswifi_offload.h"
 
-#define MAX_DATA_SIZE 1600
-
 #define AT_OK_STR "\r\nOK\r\n> "
 #define AT_OK_STR_LEN 8
 #define AT_RSP_DELIMITER "\r\n"
@@ -50,6 +48,7 @@ struct eswifi_sta {
 	char pass[65];
 	bool connected;
 	uint8_t channel;
+	int rssi;
 };
 
 struct eswifi_bus_ops;
@@ -65,11 +64,12 @@ struct eswifi_dev {
 	scan_result_cb_t scan_cb;
 	struct k_work_q work_q;
 	struct k_work request_work;
+	struct k_work_delayable status_work;
 	struct eswifi_sta sta;
 	enum eswifi_request req;
 	enum eswifi_role role;
 	uint8_t mac[6];
-	char buf[MAX_DATA_SIZE];
+	char buf[CONFIG_WIFI_ESWIFI_MAX_DATA_SIZE];
 	struct k_mutex mutex;
 	atomic_val_t mutex_owner;
 	unsigned int mutex_depth;
@@ -119,7 +119,7 @@ static inline int __select_socket(struct eswifi_dev *eswifi, uint8_t idx)
 static inline
 struct eswifi_dev *eswifi_socket_to_dev(struct eswifi_off_socket *socket)
 {
-	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket);
+	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket[0]);
 }
 
 struct eswifi_bus_ops *eswifi_get_bus(void);

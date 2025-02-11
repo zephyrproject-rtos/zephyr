@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/silabs/gpio_gecko.h>
+#include <dt-bindings/pinctrl/gecko-pinctrl.h>
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group1 {
+			psels = <GECKO_PSEL(UART_TX, A, 8)>,
+				<GECKO_PSEL(UART_RX, A, 9)>,
+				<GECKO_LOC(UART, 0)>;
+		};
+	};
+};

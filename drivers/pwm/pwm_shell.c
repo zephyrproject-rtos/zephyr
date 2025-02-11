@@ -29,7 +29,7 @@ static const struct args_index args_indx = {
 	.flags = 5,
 };
 
-static int cmd_cycles(const struct shell *shell, size_t argc, char **argv)
+static int cmd_cycles(const struct shell *sh, size_t argc, char **argv)
 {
 	pwm_flags_t flags = 0;
 	const struct device *dev;
@@ -40,7 +40,7 @@ static int cmd_cycles(const struct shell *shell, size_t argc, char **argv)
 
 	dev = device_get_binding(argv[args_indx.device]);
 	if (!dev) {
-		shell_error(shell, "PWM device not found");
+		shell_error(sh, "PWM device not found");
 		return -EINVAL;
 	}
 
@@ -54,7 +54,7 @@ static int cmd_cycles(const struct shell *shell, size_t argc, char **argv)
 
 	err = pwm_set_cycles(dev, channel, period, pulse, flags);
 	if (err) {
-		shell_error(shell, "failed to setup PWM (err %d)",
+		shell_error(sh, "failed to setup PWM (err %d)",
 			    err);
 		return err;
 	}
@@ -62,7 +62,7 @@ static int cmd_cycles(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_usec(const struct shell *shell, size_t argc, char **argv)
+static int cmd_usec(const struct shell *sh, size_t argc, char **argv)
 {
 	pwm_flags_t flags = 0;
 	const struct device *dev;
@@ -73,7 +73,7 @@ static int cmd_usec(const struct shell *shell, size_t argc, char **argv)
 
 	dev = device_get_binding(argv[args_indx.device]);
 	if (!dev) {
-		shell_error(shell, "PWM device not found");
+		shell_error(sh, "PWM device not found");
 		return -EINVAL;
 	}
 
@@ -87,14 +87,14 @@ static int cmd_usec(const struct shell *shell, size_t argc, char **argv)
 
 	err = pwm_set(dev, channel, PWM_USEC(period), PWM_USEC(pulse), flags);
 	if (err) {
-		shell_error(shell, "failed to setup PWM (err %d)", err);
+		shell_error(sh, "failed to setup PWM (err %d)", err);
 		return err;
 	}
 
 	return 0;
 }
 
-static int cmd_nsec(const struct shell *shell, size_t argc, char **argv)
+static int cmd_nsec(const struct shell *sh, size_t argc, char **argv)
 {
 	pwm_flags_t flags = 0;
 	const struct device *dev;
@@ -105,7 +105,7 @@ static int cmd_nsec(const struct shell *shell, size_t argc, char **argv)
 
 	dev = device_get_binding(argv[args_indx.device]);
 	if (!dev) {
-		shell_error(shell, "PWM device not found");
+		shell_error(sh, "PWM device not found");
 		return -EINVAL;
 	}
 
@@ -119,7 +119,7 @@ static int cmd_nsec(const struct shell *shell, size_t argc, char **argv)
 
 	err = pwm_set(dev, channel, period, pulse, flags);
 	if (err) {
-		shell_error(shell, "failed to setup PWM (err %d)", err);
+		shell_error(sh, "failed to setup PWM (err %d)", err);
 		return err;
 	}
 

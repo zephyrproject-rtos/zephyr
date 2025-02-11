@@ -1,0 +1,20 @@
+# ADC configuration options
+
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_SMARTBOND_GPADC
+	bool "Renesas SmartBond(tm) ADC driver for ADC"
+	default y
+	depends on DT_HAS_RENESAS_SMARTBOND_ADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable support for ADC driver for Renesas SmartBond(tm) MCU series.
+
+config ADC_SMARTBOND_SDADC
+	bool "Renesas SmartBond(tm) ADC driver for Sigma-Delta ADC"
+	default y
+	depends on DT_HAS_RENESAS_SMARTBOND_SDADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable support for ADC driver for Renesas SmartBond(tm) MCU series.

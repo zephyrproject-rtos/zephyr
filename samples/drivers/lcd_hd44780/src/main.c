@@ -70,14 +70,13 @@
 #include <zephyr/drivers/gpio.h>
 #include <string.h>
 
-
-#if defined(CONFIG_SOC_PART_NUMBER_SAM3X8E)
+#if defined(CONFIG_SOC_SAM3X8E)
 #define GPIO_NODE DT_NODELABEL(pioc)
 #else
 #error "Unsupported GPIO driver"
 #endif
 
-#if defined(CONFIG_SOC_PART_NUMBER_SAM3X8E)
+#if defined(CONFIG_SOC_SAM3X8E)
 /* Define GPIO OUT to LCD */
 #define GPIO_PIN_PC12_D0		12	/* PC12 - pin 51 */
 #define GPIO_PIN_PC13_D1		13	/* PC13 - pin 50 */
@@ -525,13 +524,13 @@ void pi_lcd_init(const struct device *gpio_dev, uint8_t cols, uint8_t rows,
 	_pi_lcd_command(gpio_dev, LCD_ENTRY_MODE_SET | lcd_data.disp_mode);
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const gpio_dev = DEVICE_DT_GET(GPIO_NODE);
 
 	if (!device_is_ready(gpio_dev)) {
 		printk("Device %s not ready!\n", gpio_dev->name);
-		return;
+		return 0;
 	}
 
 	/* Setup GPIO output */
@@ -600,4 +599,5 @@ void main(void)
 		/* Clear display */
 		pi_lcd_clear(gpio_dev);
 	}
+	return 0;
 }

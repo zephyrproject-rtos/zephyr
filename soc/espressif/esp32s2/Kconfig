@@ -1,0 +1,100 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32S2
+	select XTENSA
+	select ATOMIC_OPERATIONS_C
+	select DYNAMIC_INTERRUPTS
+	select CLOCK_CONTROL
+	select PINCTRL
+	select XIP if !MCUBOOT
+	select HAS_ESPRESSIF_HAL
+	select ARCH_SUPPORTS_COREDUMP
+	select HAS_PM
+	select HAS_POWEROFF
+
+if SOC_SERIES_ESP32S2
+
+config IDF_TARGET_ESP32S2
+	bool "ESP32S2 as target SOC"
+	default y
+
+menu "Cache config"
+
+choice
+	prompt "Instruction cache line size"
+	default ESP32S2_INSTRUCTION_CACHE_LINE_32B
+
+	config ESP32S2_INSTRUCTION_CACHE_LINE_16B
+		bool "16 Bytes"
+
+	config ESP32S2_INSTRUCTION_CACHE_LINE_32B
+		bool "32 Bytes"
+
+endchoice
+
+choice
+	prompt "Instruction cache size"
+	default ESP32S2_INSTRUCTION_CACHE_8KB
+
+	config ESP32S2_INSTRUCTION_CACHE_8KB
+		bool "8KB instruction cache size"
+
+	config ESP32S2_INSTRUCTION_CACHE_16KB
+		bool "16KB instruction cache size"
+
+endchoice
+
+choice ESP32S2_DATA_CACHE_SIZE
+	prompt "Data cache size"
+	default ESP32S2_DATA_CACHE_8KB
+	help
+		Data cache size to be set on application startup.
+	config ESP32S2_DATA_CACHE_0KB
+		depends on !ESP_SPIRAM
+		bool "0KB"
+	config ESP32S2_DATA_CACHE_8KB
+		bool "8KB"
+	config ESP32S2_DATA_CACHE_16KB
+		bool "16KB"
+
+endchoice
+
+choice
+	prompt "Data cache line size"
+	default ESP32S2_DATA_CACHE_LINE_32B
+
+	config ESP32S2_DATA_CACHE_LINE_16B
+		bool "16 Bytes"
+
+	config ESP32S2_DATA_CACHE_LINE_32B
+		bool "32 Bytes"
+
+endchoice
+
+config ESP32S2_INSTRUCTION_CACHE_SIZE
+	hex
+	default 0x4000 if ESP32S2_INSTRUCTION_CACHE_16KB
+	default 0x2000
+
+config ESP32S2_DATA_CACHE_SIZE
+	hex
+	default 0x2000 if ESP32S2_DATA_CACHE_8KB
+	default 0x4000 if ESP32S2_DATA_CACHE_16KB
+	default 0x0000
+
+endmenu  # Cache config
+
+config ESP32_PHY_MAX_WIFI_TX_POWER
+	int "Max WiFi TX power (dBm)"
+	range 10 20
+	default 20
+	help
+	  Set maximum transmit power for WiFi radio. Actual transmit power for high
+	  data rates may be lower than this setting.
+
+config ESP32_PHY_MAX_TX_POWER
+	int
+	default ESP32_PHY_MAX_WIFI_TX_POWER
+
+endif # SOC_SERIES_ESP32S2

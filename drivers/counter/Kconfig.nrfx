@@ -2,109 +2,25 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config COUNTER_NRF_TIMER
-	bool
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_TIMER_ENABLED
 
 config COUNTER_NRF_RTC
-	bool
-
-config COUNTER_TIMER0
-	bool "Counter on TIMER0"
-	depends on HAS_HW_NRF_TIMER0
-	depends on !NRF_HW_TIMER0_RESERVED
-	select COUNTER_NRF_TIMER
-
-config COUNTER_TIMER0_ZLI
-	bool "Event in ZLI interrupt context"
-	depends on COUNTER_TIMER0
-	depends on ZERO_LATENCY_IRQS
-
-config COUNTER_TIMER1
-	bool "Counter on TIMER1"
-	depends on HAS_HW_NRF_TIMER1
-	depends on !NRF_HW_TIMER1_RESERVED
-	select COUNTER_NRF_TIMER
-
-config COUNTER_TIMER1_ZLI
-	bool "Event in ZLI interrupt context"
-	depends on COUNTER_TIMER1
-	depends on ZERO_LATENCY_IRQS
-
-config COUNTER_TIMER2
-	bool "Counter on TIMER2"
-	depends on HAS_HW_NRF_TIMER2
-	depends on !NRF_HW_TIMER2_RESERVED
-	select COUNTER_NRF_TIMER
-
-config COUNTER_TIMER2_ZLI
-	bool "Event in ZLI interrupt context"
-	depends on COUNTER_TIMER2
-	depends on ZERO_LATENCY_IRQS
-
-config COUNTER_TIMER3
-	bool "Counter on TIMER3"
-	depends on HAS_HW_NRF_TIMER3
-	depends on !NRF_HW_TIMER3_RESERVED
-	select COUNTER_NRF_TIMER
-
-config COUNTER_TIMER3_ZLI
-	bool "Event in ZLI interrupt context"
-	depends on COUNTER_TIMER3
-	depends on ZERO_LATENCY_IRQS
-
-config COUNTER_TIMER4
-	bool "Counter on TIMER4"
-	depends on HAS_HW_NRF_TIMER4
-	depends on !NRF_HW_TIMER4_RESERVED
-	select COUNTER_NRF_TIMER
-
-config COUNTER_TIMER4_ZLI
-	bool "Event in ZLI interrupt context"
-	depends on COUNTER_TIMER4
-	depends on ZERO_LATENCY_IRQS
-
-config COUNTER_RTC0
-	bool "Counter on RTC0"
-	depends on HAS_HW_NRF_RTC0
-	depends on !NRF_HW_RTC0_RESERVED
-	select COUNTER_NRF_RTC
-
-config COUNTER_RTC0_ZLI
-	bool "Event in ZLI interrupt context"
-	depends on COUNTER_RTC0
-	depends on ZERO_LATENCY_IRQS
-
-config COUNTER_RTC1
-	bool "Counter on RTC1"
-	depends on HAS_HW_NRF_RTC1
-	depends on !NRF_HW_RTC1_RESERVED
-	select COUNTER_NRF_RTC
-
-config COUNTER_RTC1_ZLI
-	bool "Event in ZLI interrupt context"
-	depends on COUNTER_RTC1
-	depends on ZERO_LATENCY_IRQS
-
-config COUNTER_RTC2
-	bool "Counter on RTC2"
-	depends on HAS_HW_NRF_RTC2
-	depends on !NRF_HW_RTC2_RESERVED
-	select COUNTER_NRF_RTC
-
-config COUNTER_RTC2_ZLI
-	bool "Event in ZLI interrupt context"
-	depends on COUNTER_RTC2
-	depends on ZERO_LATENCY_IRQS
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_RTC_ENABLED
 
 # Internal flag which detects if PPI wrap feature is enabled for any instance
 config COUNTER_RTC_WITH_PPI_WRAP
-	def_bool ($(dt_nodelabel_bool_prop,rtc0,ppi-wrap) && COUNTER_RTC0) || \
-		 ($(dt_nodelabel_bool_prop,rtc1,ppi-wrap) && COUNTER_RTC1) || \
-		 ($(dt_nodelabel_bool_prop,rtc2,ppi-wrap) && COUNTER_RTC2)
+	def_bool $(dt_nodelabel_bool_prop,rtc0,ppi-wrap) || \
+		 $(dt_nodelabel_bool_prop,rtc1,ppi-wrap) || \
+		 $(dt_nodelabel_bool_prop,rtc2,ppi-wrap)
+	depends on COUNTER_NRF_RTC
 	select NRFX_PPI if HAS_HW_NRF_PPI
 	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 
 # Internal flag which detects if fixed top feature is enabled for any instance
 config COUNTER_RTC_CUSTOM_TOP_SUPPORT
-	def_bool (!$(dt_nodelabel_bool_prop,rtc0,fixed-top) && COUNTER_RTC0) || \
-		 (!$(dt_nodelabel_bool_prop,rtc1,fixed-top) && COUNTER_RTC1) || \
-		 (!$(dt_nodelabel_bool_prop,rtc2,fixed-top) && COUNTER_RTC2)
+	def_bool !$(dt_nodelabel_bool_prop,rtc0,fixed-top) || \
+		 !$(dt_nodelabel_bool_prop,rtc1,fixed-top) || \
+		 !$(dt_nodelabel_bool_prop,rtc2,fixed-top)
+	depends on COUNTER_NRF_RTC

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig HWINFO
-	bool "Hardware Information driver"
+	bool "Hardware Information drivers"
 	help
 	  Enable hwinfo driver.
 
@@ -16,10 +16,45 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config HWINFO_SHELL
 	bool "HWINFO Shell"
-	default y
 	depends on SHELL
 	help
 	  Enable hwinfo Shell for testing.
+
+menuconfig HWINFO_CC13XX_CC26XX
+	bool "TI SimpleLink CC13xx/CC26xx hwinfo driver"
+	default y
+	depends on SOC_SERIES_CC13X2_CC26X2 || SOC_SERIES_CC13X2X7_CC26X2X7
+	help
+	  Enable TI SimpleLink CC13xx/CC26xx hwinfo driver.
+
+if HWINFO_CC13XX_CC26XX
+
+config HWINFO_CC13XX_CC26XX_ALWAYS_USE_FACTORY_DEFAULT
+	bool "Ignore CCFG and always use factory value"
+	default y
+	help
+	  Always return factory pre-programmed values, stored in FCFG and ignore
+	  values provided in CCFG (Customer Configuration).
+
+choice
+	prompt "Select MAC address type for device ID"
+	default HWINFO_CC13XX_CC26XX_USE_IEEE_MAC
+	help
+	  Specify the MAC address type to be used as device ID by the driver.
+
+config HWINFO_CC13XX_CC26XX_USE_IEEE_MAC
+	bool "Use IEEE 802.15.4 extended address"
+	help
+	  Use 8-bytes length IEEE 802.15.4 extended address as device ID value.
+
+config HWINFO_CC13XX_CC26XX_USE_BLE_MAC
+	bool "Use BLE MAC address"
+	help
+	  Use 6-bytes length BLE MAC address as device ID value.
+
+endchoice
+
+endif
 
 config HWINFO_STM32
 	bool "STM32 hwinfo"
@@ -31,7 +66,7 @@ config HWINFO_STM32
 config HWINFO_NRF
 	bool "NRF device ID"
 	default y
-	depends on SOC_FAMILY_NRF
+	depends on SOC_FAMILY_NORDIC_NRF
 	depends on NRF_SOC_SECURE_SUPPORTED
 	help
 	  Enable Nordic NRF hwinfo driver.
@@ -74,7 +109,7 @@ config HWINFO_MCUX_SYSCON
 config HWINFO_IMXRT
 	bool "NXP i.mx RT device ID"
 	default y
-	depends on SOC_SERIES_IMX_RT
+	depends on SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
 	help
 	  Enable NXP i.mx RT hwinfo driver.
 
@@ -89,15 +124,14 @@ config HWINFO_RPI_PICO
 config HWINFO_SAM_RSTC
 	bool "Atmel SAM reset cause"
 	default y
-	depends on SOC_SERIES_SAM4S || SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
+	depends on SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L
 	help
 	  Enable Atmel SAM reset cause hwinfo driver.
 
 config HWINFO_SAM
 	bool "Atmel SAM device ID"
 	default y
-	depends on SOC_FAMILY_SAM && !SOC_SERIES_SAM4L
+	depends on SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L
 	help
 	  Enable Atmel SAM device ID hwinfo driver.
 
@@ -111,35 +145,44 @@ config HWINFO_SAM4L
 config HWINFO_SAM0
 	bool "Atmel SAM0 device ID"
 	default y
-	depends on SOC_FAMILY_SAM0
+	depends on SOC_FAMILY_ATMEL_SAM0
 	help
 	  Enable Atmel SAM0 hwinfo driver.
+
+config HWINFO_SMARTBOND
+	bool "Smartbond device reset cause"
+	default y
+	depends on SOC_FAMILY_RENESAS_SMARTBOND
+	help
+	  Enable Smartbond reset cause hwinfo driver.
 
 config HWINFO_ESP32
 	bool "ESP32 device ID"
 	default y
-	depends on SOC_ESP32 || SOC_ESP32C3
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
 	help
 	  Enable ESP32 hwinfo driver.
 
 config HWINFO_LITEX
 	bool "LiteX device ID"
 	default y
-	depends on SOC_RISCV32_LITEX_VEXRISCV
+	depends on SOC_LITEX_VEXRISCV
 	help
 	  Enable LiteX hwinfo driver
 
 config HWINFO_PSOC6
 	bool "Cypress PSoC-6 unique device ID"
 	default y
-	depends on SOC_FAMILY_PSOC6
+	depends on SOC_FAMILY_PSOC6_LEGACY
 	help
 	  Enable Cypress PSoC-6 hwinfo driver.
 
 config HWINFO_GECKO
 	bool "GECKO hwinfo"
 	default y
-	depends on SOC_FAMILY_EXX32 && !SOC_SERIES_EFR32MG21  && !SOC_SERIES_EFR32BG22
+	depends on SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+	depends on !SOC_SERIES_EFR32MG21
+	depends on !SOC_SERIES_EFR32BG22
 	select SOC_GECKO_RMU
 	help
 	  Enable Silabs GECKO hwinfo driver.
@@ -147,8 +190,25 @@ config HWINFO_GECKO
 config HWINFO_ANDES
 	bool "Andes system ID"
 	default y
-	depends on SOC_SERIES_RISCV_ANDES_V5
+	depends on SOC_FAMILY_ANDES_V5
+	depends on SYSCON
 	help
 	  Enable Andes hwinfo driver
+
+config HWINFO_RW61X
+	bool "RW61X hwinfo"
+	default y
+	depends on SOC_SERIES_RW6XX
+	help
+	  Enable RW61X hwinfo driver
+
+config HWINFO_AMBIQ
+	bool "AMBIQ hwinfo"
+	default y
+	depends on SOC_SERIES_APOLLO4X
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_HWINFO
+	help
+	  Enable AMBIQ hwinfo driver
 
 endif

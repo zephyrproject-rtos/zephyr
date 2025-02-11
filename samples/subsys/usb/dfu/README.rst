@@ -1,7 +1,8 @@
-.. _usb_dfu:
+.. zephyr:code-sample:: usb-dfu
+   :name: USB DFU (Device Firmware Upgrade)
+   :relevant-api: _usb_device_core_api
 
-USB DFU Sample Application
-##########################
+   Implement device firmware upgrade using the USB DFU class driver.
 
 Overview
 ********
@@ -38,7 +39,7 @@ For example:
 
 .. code-block:: console
 
-   west build -b nrf52840dk_nrf52840 zephyr/samples/subsys/usb/dfu -d build-dfu -- \
+   west build -b nrf52840dk/nrf52840 zephyr/samples/subsys/usb/dfu -d build-dfu -- \
    -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/root-rsa-2048.pem\"
 
 Build and flash MCUboot bootloader for Zephyr project as it is described in
@@ -52,7 +53,7 @@ in :ref:`mcuboot`). For example:
 
 .. code-block:: console
 
-   west build -b nrf52840dk_nrf52840 zephyr/samples/hello_world -d build-hello_world -- \
+   west build -b nrf52840dk/nrf52840 zephyr/samples/hello_world -d build-hello_world -- \
    -DCONFIG_BOOTLOADER_MCUBOOT=y '-DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE="bootloader/mcuboot/root-rsa-2048.pem"'
 
 Testing
@@ -87,7 +88,7 @@ showing this output to the console:
    I: Bootloader chainload address offset: 0xc000
    I: Jumping to the first image slot
    *** Booting Zephyr OS build zephyr-v3.0.0-361-gb987e6daa2f9  ***
-   Hello World! nrf52840dk_nrf52840
+   Hello World! nrf52840dk
 
 
 Reset the SoC again and MCUboot should revert the images and boot
@@ -127,9 +128,9 @@ Both symbols can be enabled with the :file:`overlay-permanent-download.conf` ove
 
 .. code-block:: console
 
-   west build -b nrf52840dk_nrf52840 zephyr/samples/subsys/usb/dfu -d build-dfu -- \
+   west build -b nrf52840dk/nrf52840 zephyr/samples/subsys/usb/dfu -d build-dfu -- \
    -DCONFIG_BOOTLOADER_MCUBOOT=y '-DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE="bootloader/mcuboot/root-rsa-2048.pem"' \
-   -DOVERLAY_CONFIG=overlay-permanent-download.conf
+   -DEXTRA_CONF_FILE=overlay-permanent-download.conf
 
 
 The listing below shows the output to the console when downloading via dfu-util.
@@ -149,8 +150,8 @@ Note the ``Swap type: perm``.
    I: Bootloader chainload address offset: 0xc000
    I: Jumping to the first image slot
    *** Booting Zephyr OS build zephyr-v3.0.0-361-gb987e6daa2f9  ***
-   Hello World! nrf52840dk_nrf52840
+   Hello World! nrf52840dk
 
 
 .. _MCUboot GitHub repo: https://github.com/zephyrproject-rtos/mcuboot
-.. _Using MCUboot with Zephyr: https://mcuboot.com/documentation/readme-zephyr/
+.. _Using MCUboot with Zephyr: https://docs.mcuboot.com/readme-zephyr

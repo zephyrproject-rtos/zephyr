@@ -38,7 +38,7 @@ static void can_tx_callback(const struct device *dev, int error, void *user_data
 	k_sem_give(tx_queue_sem);
 }
 
-void main(void)
+int main(void)
 {
 #if DT_NODE_EXISTS(BUTTON_NODE)
 	const struct gpio_dt_spec btn = GPIO_DT_SPEC_GET(BUTTON_NODE, gpios);
@@ -54,41 +54,41 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("CAN device not ready");
-		return;
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_SAMPLE_CAN_BABBLING_FD_MODE)) {
 		err = can_set_mode(dev, CAN_MODE_FD);
 		if (err != 0) {
-			printk("Error setting CAN-FD mode (err %d)", err);
-			return;
+			printk("Error setting CAN FD mode (err %d)", err);
+			return 0;
 		}
 	}
 
 	err = can_start(dev);
 	if (err != 0) {
 		printk("Error starting CAN controller (err %d)", err);
-		return;
+		return 0;
 	}
 
 #if DT_NODE_EXISTS(BUTTON_NODE)
 	k_sem_init(&btn_cb_ctx.sem, 0, 1);
 
-	if (!device_is_ready(btn.port)) {
+	if (!gpio_is_ready_dt(&btn)) {
 		printk("button device not ready\n");
-		return;
+		return 0;
 	}
 
 	err = gpio_pin_configure_dt(&btn, GPIO_INPUT);
 	if (err != 0) {
 		printk("failed to configure button GPIO (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	err = gpio_pin_interrupt_configure_dt(&btn, GPIO_INT_EDGE_TO_ACTIVE);
 	if (err != 0) {
 		printk("failed to configure button interrupt (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	gpio_init_callback(&btn_cb_ctx.callback, button_callback, BIT(btn.pin));
@@ -109,7 +109,7 @@ void main(void)
 
 	frame.id = CONFIG_SAMPLE_CAN_BABBLING_CAN_ID;
 
-	printk("babbling on %s with %s (%d-bit) CAN ID 0x%0*x, RTR %d, CAN-FD %d\n",
+	printk("babbling on %s with %s (%d-bit) CAN ID 0x%0*x, RTR %d, CAN FD %d\n",
 	       dev->name,
 	       (frame.flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
 	       (frame.flags & CAN_FRAME_IDE) != 0 ? 29 : 11,
@@ -132,7 +132,7 @@ void main(void)
 #if DT_NODE_EXISTS(BUTTON_NODE)
 		if (k_sem_take(&btn_cb_ctx.sem, K_NO_WAIT) == 0) {
 			printk("button press detected, babbling stopped\n");
-			return;
+			return 0;
 		}
 #endif /* DT_NODE_EXISTS(BUTTON_NODE) */
 	}

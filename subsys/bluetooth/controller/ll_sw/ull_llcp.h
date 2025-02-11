@@ -25,6 +25,8 @@ void ull_llcp_init(struct ll_conn *conn);
  */
 void ull_cp_state_set(struct ll_conn *conn, uint8_t state);
 
+void ull_cp_release_nodes(struct ll_conn *conn);
+
 /*
  * @brief Update 'global' tx buffer allowance
  */
@@ -34,11 +36,6 @@ void ull_cp_update_tx_buffer_queue(struct ll_conn *conn);
  *
  */
 void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx);
-
-/**
- *
- */
-void ull_cp_release_ntf(struct node_rx_pdu *ntf);
 
 /**
  * @brief Procedure Response Timeout Check
@@ -68,7 +65,7 @@ void ull_cp_tx_ntf(struct ll_conn *conn);
 /**
  * @brief Handle received LL Control PDU.
  */
-void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx);
+void ull_cp_rx(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 /**
@@ -85,7 +82,7 @@ uint8_t ull_cp_version_exchange(struct ll_conn *conn);
 /**
  * @brief Initiate a Feature Exchange Procedure.
  */
-uint8_t ull_cp_feature_exchange(struct ll_conn *conn);
+uint8_t ull_cp_feature_exchange(struct ll_conn *conn, uint8_t host_initiated);
 
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 /**
@@ -159,7 +156,7 @@ uint8_t ull_cp_remote_cpr_pending(struct ll_conn *conn);
 bool ull_cp_remote_cpr_apm_awaiting_reply(struct ll_conn *conn);
 
 /**
- * @brief Repsond to anchor point move of remote connection
+ * @brief Respond to anchor point move of remote connection
  *        param reg.
  */
 void ull_cp_remote_cpr_apm_reply(struct ll_conn *conn, uint16_t *offsets);
@@ -187,6 +184,12 @@ uint8_t ull_cp_cis_terminate(struct ll_conn *conn, struct ll_conn_iso_stream *ci
 uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis);
 
 /**
+ * @brief Resume CIS create after CIS offset calculation.
+ */
+void ull_cp_cc_offset_calc_reply(struct ll_conn *conn, uint32_t cis_offset_min,
+				 uint32_t cis_offset_max);
+
+/**
  * @brief Is ongoing create cis procedure expecting a reply?
  */
 bool ull_cp_cc_awaiting_reply(struct ll_conn *conn);
@@ -197,6 +200,11 @@ bool ull_cp_cc_awaiting_reply(struct ll_conn *conn);
 bool ull_cp_cc_awaiting_established(struct ll_conn *conn);
 
 /**
+ * @brief Cancel ongoing create cis procedure
+ */
+bool ull_cp_cc_cancel(struct ll_conn *conn);
+
+/**
  * @brief Get handle of ongoing create cis procedure.
  * @return 0xFFFF if none
  */
@@ -205,7 +213,7 @@ uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn);
 /**
  * @brief Accept the remote device’s request to create cis.
  */
-void ull_cp_cc_accept(struct ll_conn *conn);
+void ull_cp_cc_accept(struct ll_conn *conn, uint32_t cis_offset_min);
 
 /**
  * @brief Reject the remote device’s request to create cis.
@@ -221,6 +229,11 @@ void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code);
  * @brief CIS creation ongoing.
  */
 bool ull_lp_cc_is_active(struct ll_conn *conn);
+
+/**
+ * @brief CIS creation ongoing or enqueued.
+ */
+bool ull_lp_cc_is_enqueued(struct ll_conn *conn);
 
 /**
  * @brief Initiate a Channel Map Update Procedure.

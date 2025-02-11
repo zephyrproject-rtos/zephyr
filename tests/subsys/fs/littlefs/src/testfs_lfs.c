@@ -27,7 +27,7 @@ struct fs_mount_t testfs_small_mnt = {
 };
 
 #if CONFIG_APP_TEST_CUSTOM
-FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(medium, MEDIUM_IO_SIZE, MEDIUM_IO_SIZE,
+FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(medium, 4, MEDIUM_IO_SIZE, MEDIUM_IO_SIZE,
 				  MEDIUM_CACHE_SIZE, MEDIUM_LOOKAHEAD_SIZE);
 struct fs_mount_t testfs_medium_mnt = {
 	.type = FS_LITTLEFS,
@@ -73,7 +73,7 @@ int testfs_lfs_wipe_partition(const struct fs_mount_t *mp)
 	}
 
 	TC_PRINT("Erasing %zu (0x%zx) bytes\n", pfa->fa_size, pfa->fa_size);
-	rc = flash_area_erase(pfa, 0, pfa->fa_size);
+	rc = flash_area_flatten(pfa, 0, pfa->fa_size);
 	(void)flash_area_close(pfa);
 
 	if (rc < 0) {

@@ -1,0 +1,19 @@
+identifier: samd20_xpro
+name: SAM D20 Xplained Pro
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+flash: 256
+ram: 32
+supported:
+  - adc
+  - flash
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - watchdog
+vendor: atmel

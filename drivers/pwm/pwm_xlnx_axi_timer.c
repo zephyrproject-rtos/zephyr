@@ -172,11 +172,6 @@ static int xlnx_axi_timer_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static int xlnx_axi_timer_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct pwm_driver_api xlnx_axi_timer_driver_api = {
 	.set_cycles = xlnx_axi_timer_set_cycles,
 	.get_cycles_per_sec = xlnx_axi_timer_get_cycles_per_sec,
@@ -200,8 +195,7 @@ static const struct pwm_driver_api xlnx_axi_timer_driver_api = {
 			GENMASK(DT_INST_PROP(n, xlnx_count_width) - 1, 0), \
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &xlnx_axi_timer_init,			\
-			    NULL, NULL,					\
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL,			\
 			    &xlnx_axi_timer_config_##n,			\
 			    POST_KERNEL,				\
 			    CONFIG_PWM_INIT_PRIORITY,			\

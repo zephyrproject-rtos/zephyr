@@ -1,0 +1,11 @@
+identifier: b_u585i_iot02a/stm32u585xx/ns
+name: ST B_U585I_IOT02A Discovery kit non secure target
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 786
+flash: 512
+vendor: st

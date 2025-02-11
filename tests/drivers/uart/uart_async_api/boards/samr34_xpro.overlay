@@ -1,0 +1,40 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2021 Argentum Systems Ltd.
+ */
+
+&dmac {
+	status = "okay";
+};
+
+&sercom0 {
+	/* configure DMA channels for async operation */
+	dmas = <&dmac 0 0x01>, <&dmac 1 0x02>;
+	dma-names = "rx", "tx";
+};
+
+&pinctrl {
+	sercom2_default: sercom2_default {
+		group1 {
+			pinmux = <PA8D_SERCOM2_PAD0>;
+		};
+	};
+};
+dut: &sercom2 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+
+	/* internally loop-back Tx and Rx on PAD0 */
+	rxpo = <0>;
+	txpo = <0>;
+
+	/* configure DMA channels for async operation */
+	dmas = <&dmac 0 0x05>, <&dmac 1 0x06>;
+	dma-names = "rx", "tx";
+
+	/* PAD0 must be configured to allow working loop-back */
+	pinctrl-0 = <&sercom2_default>;
+	pinctrl-names = "default";
+};

@@ -102,19 +102,24 @@ static void amg88xx_thread_cb(const struct device *dev)
 	}
 
 	if (drv_data->drdy_handler != NULL) {
-		drv_data->drdy_handler(dev, &drv_data->drdy_trigger);
+		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 
 	if (drv_data->th_handler != NULL) {
-		drv_data->th_handler(dev, &drv_data->th_trigger);
+		drv_data->th_handler(dev, drv_data->th_trigger);
 	}
 
 	amg88xx_setup_int(config, true);
 }
 
 #ifdef CONFIG_AMG88XX_TRIGGER_OWN_THREAD
-static void amg88xx_thread(struct amg88xx_data *drv_data)
+static void amg88xx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct amg88xx_data *drv_data = p1;
+
 	while (42) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
 		amg88xx_thread_cb(drv_data->dev);
@@ -151,7 +156,7 @@ int amg88xx_trigger_set(const struct device *dev,
 
 	if (trig->type == SENSOR_TRIG_THRESHOLD) {
 		drv_data->th_handler = handler;
-		drv_data->th_trigger = *trig;
+		drv_data->th_trigger = trig;
 	} else {
 		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
@@ -172,7 +177,7 @@ int amg88xx_init_interrupt(const struct device *dev)
 	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
 
-	if (!device_is_ready(config->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->int_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name,
 				config->int_gpio.port->name);
 		return -ENODEV;
@@ -196,7 +201,7 @@ int amg88xx_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_AMG88XX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)amg88xx_thread, drv_data,
+			amg88xx_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_AMG88XX_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD)

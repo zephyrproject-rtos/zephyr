@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32f411", "st,stm32f4", "simple-bus";
+
 		spi5: spi@40015000 {
 			compatible = "st,stm32-spi";
 			#address-cells = <1>;

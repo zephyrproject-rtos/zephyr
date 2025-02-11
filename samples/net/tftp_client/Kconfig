@@ -1,0 +1,21 @@
+# Private config options for TFTP client sample
+
+# Copyright (c) 2023 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "TFTP Client sample"
+
+config TFTP_APP_PORT
+	string "TFTP port used"
+	default "69"
+	help
+	  TFTP port used.
+
+config TFTP_APP_SERVER
+	string "TFTP server address"
+	default "192.0.2.2"
+	help
+	  TFTP server address. Write as a full URI including optional port number.
+	  When DNS resolver is enabled, DNS domain names could be used as well.
+
+source "Kconfig.zephyr"

@@ -15,8 +15,10 @@
 	((((val1) * 100) < ((val2) * (100 + (pcnt)))) &&              \
 	 (((val1) * 100) > ((val2) * (100 - (pcnt))))) ? true : false
 
-#if defined(CONFIG_RISCV_MACHINE_TIMER)
-#define IDLE_EVENT_STATS_PRECISION 5
+#if defined(CONFIG_RISCV)
+#define IDLE_EVENT_STATS_PRECISION 7
+#elif defined(CONFIG_QEMU_TARGET)
+#define IDLE_EVENT_STATS_PRECISION 3
 #else
 #define IDLE_EVENT_STATS_PRECISION 1
 #endif

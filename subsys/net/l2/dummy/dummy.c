@@ -17,14 +17,17 @@ LOG_MODULE_REGISTER(net_l2_dummy, LOG_LEVEL_NONE);
 static inline enum net_verdict dummy_recv(struct net_if *iface,
 					  struct net_pkt *pkt)
 {
-	net_pkt_lladdr_src(pkt)->addr = NULL;
-	net_pkt_lladdr_src(pkt)->len = 0U;
-	net_pkt_lladdr_src(pkt)->type = NET_LINK_DUMMY;
-	net_pkt_lladdr_dst(pkt)->addr = NULL;
-	net_pkt_lladdr_dst(pkt)->len = 0U;
-	net_pkt_lladdr_dst(pkt)->type = NET_LINK_DUMMY;
+	const struct dummy_api *api = net_if_get_device(iface)->api;
 
-	return NET_CONTINUE;
+	if (api == NULL) {
+		return NET_DROP;
+	}
+
+	if (api->recv == NULL) {
+		return NET_CONTINUE;
+	}
+
+	return api->recv(iface, pkt);
 }
 
 static inline int dummy_send(struct net_if *iface, struct net_pkt *pkt)
@@ -45,9 +48,31 @@ static inline int dummy_send(struct net_if *iface, struct net_pkt *pkt)
 	return ret;
 }
 
+static inline int dummy_enable(struct net_if *iface, bool state)
+{
+	int ret = 0;
+	const struct dummy_api *api = net_if_get_device(iface)->api;
+
+	if (!api) {
+		return -ENOENT;
+	}
+
+	if (!state) {
+		if (api->stop) {
+			ret = api->stop(net_if_get_device(iface));
+		}
+	} else {
+		if (api->start) {
+			ret = api->start(net_if_get_device(iface));
+		}
+	}
+
+	return ret;
+}
+
 static enum net_l2_flags dummy_flags(struct net_if *iface)
 {
 	return NET_L2_MULTICAST;
 }
 
-NET_L2_INIT(DUMMY_L2, dummy_recv, dummy_send, NULL, dummy_flags);
+NET_L2_INIT(DUMMY_L2, dummy_recv, dummy_send, dummy_enable, dummy_flags);

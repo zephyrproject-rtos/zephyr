@@ -1,3 +1,5 @@
 tests:
   drivers.hwinfo.api:
-    tags: drivers hwinfo
+    tags:
+      - drivers
+      - hwinfo

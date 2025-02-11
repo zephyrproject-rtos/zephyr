@@ -21,21 +21,25 @@ extern "C" {
 /**
  * @brief DAC driver APIs
  * @defgroup dac_interface DAC driver APIs
+ * @since 2.3
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
 
 /**
- * @struct dac_channel_cfg
  * @brief Structure for specifying the configuration of a DAC channel.
- *
- * @param channel_id Channel identifier of the DAC that should be configured.
- * @param resolution Desired resolution of the DAC (depends on device
- *                   capabilities).
  */
 struct dac_channel_cfg {
+	/** Channel identifier of the DAC that should be configured. */
 	uint8_t channel_id;
+	/** Desired resolution of the DAC (depends on device capabilities). */
 	uint8_t resolution;
+	/** Enable output buffer for this channel.
+	 * This is relevant for instance if the output is directly connected to the load,
+	 * without an amplifierin between. The actual details on this are hardware dependent.
+	 */
+	bool buffered;
 };
 
 /**
@@ -127,6 +131,6 @@ static inline int z_impl_dac_write_value(const struct device *dev,
 }
 #endif
 
-#include <syscalls/dac.h>
+#include <zephyr/syscalls/dac.h>
 
 #endif  /* ZEPHYR_INCLUDE_DRIVERS_DAC_H_ */

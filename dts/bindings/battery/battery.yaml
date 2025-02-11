@@ -1,0 +1,29 @@
+# Copyright 2023 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Static Battery Characteristics
+
+  Properties are inherited from Linux. See
+  linux/Documentation/devicetree/bindings/power/supply/battery.yaml
+
+properties:
+  re-charge-voltage-microvolt:
+    type: int
+    description: limit to automatically start charging again
+
+  precharge-current-microamp:
+    type: int
+    description: current for pre-charge phase
+
+  charge-term-current-microamp:
+    type: int
+    description: current for charge termination phase
+
+  constant-charge-current-max-microamp:
+    type: int
+    description: maximum constant input current
+
+  constant-charge-voltage-max-microvolt:
+    type: int
+    description: maximum constant input voltage

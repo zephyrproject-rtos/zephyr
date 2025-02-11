@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_X86
+	bool
+	select CPU_HAS_FPU
+
+config BOARD_QEMU_X86_64
+	bool
+	select X86_64
+
+config BOARD_QEMU_X86_LAKEMONT
+	bool
+	select CPU_HAS_FPU
+
+config BOARD_QEMU_X86_TINY
+	bool
+	select CPU_HAS_FPU

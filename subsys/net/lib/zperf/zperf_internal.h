@@ -43,6 +43,14 @@
 #define DEF_PORT 5001
 #define DEF_PORT_STR STRINGIFY(DEF_PORT)
 
+/* Upload defaults */
+#define DEF_DURATION_SECONDS 1
+#define DEF_DURATION_SECONDS_STR STRINGIFY(DEF_DURATION_SECONDS)
+#define DEF_PACKET_SIZE 256
+#define DEF_PACKET_SIZE_STR STRINGIFY(DEF_PACKET_SIZE)
+#define DEF_RATE_KBPS 10
+#define DEF_RATE_KBPS_STR STRINGIFY(DEF_RATE_KBPS)
+
 #define ZPERF_VERSION "1.1"
 
 struct zperf_udp_datagram {
@@ -95,19 +103,14 @@ struct sockaddr_in *zperf_get_sin(void);
 
 extern void connect_ap(char *ssid);
 
-const struct in_addr *zperf_get_default_if_in4_addr(void);
-const struct in6_addr *zperf_get_default_if_in6_addr(void);
-
-int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, int tos,
-			      int proto);
+int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
+			      int priority, int tcp_nodelay, int proto);
 
 uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);
 
 void zperf_async_work_submit(struct k_work *work);
 void zperf_udp_uploader_init(void);
 void zperf_tcp_uploader_init(void);
-void zperf_udp_receiver_init(void);
-void zperf_tcp_receiver_init(void);
 
 void zperf_shell_init(void);
 

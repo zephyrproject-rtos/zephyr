@@ -10,7 +10,7 @@
 
 #include <zephyr/net/buf.h>
 
-#include "subsys/bluetooth/host/at.h"
+#include "subsys/bluetooth/host/classic/at.h"
 
 #include <zephyr/ztest.h>
 

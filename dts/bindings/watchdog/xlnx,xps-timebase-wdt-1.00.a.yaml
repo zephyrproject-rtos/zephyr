@@ -1,0 +1,30 @@
+# Copyright (c) 2023, Calian
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx AXI timebase WDT core
+
+compatible: "xlnx,xps-timebase-wdt-1.00.a"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    description: Reference to AXI clock for watchdog core
+    required: true
+
+  xlnx,wdt-interval:
+    description:
+      Configured bit width of watchdog counter in core, controls watchdog expiry duration.
+    required: true
+    type: int
+
+  xlnx,wdt-enable-once:
+    description: Indicates whether WDT can only be enabled once and not disabled
+    required: true
+    type: int
+    enum:
+      - 0
+      - 1

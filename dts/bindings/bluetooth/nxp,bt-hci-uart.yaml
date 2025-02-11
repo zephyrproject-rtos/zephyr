@@ -1,0 +1,50 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bluetooth module that uses NXP's Bluetooth Module (e.g. Murata 2EL)
+
+compatible: "nxp,bt-hci-uart"
+
+include: base.yaml
+
+properties:
+  sdio-reset-gpios:
+    type: phandle-array
+    required: true
+
+  w-disable-gpios:
+    type: phandle-array
+    required: true
+
+  hci-operation-speed:
+    type: int
+    description: |
+      HCI UART baudrate for feature operation. If not defined
+      bus/current-speed will be used as default.
+
+  hw-flow-control:
+    type: boolean
+    description: Set to enable RTS/CTS flow control for HCI.
+
+  fw-download-primary-speed:
+    type: int
+    description: |
+      HCI UART primary baudrate for FW download operation.
+      If not defined bus/current-speed will be used as default.
+
+  fw-download-primary-flowcontrol:
+    type: boolean
+    description: |
+      Flow control setting for primary speed.
+
+  fw-download-secondary-speed:
+    type: int
+    description: |
+      HCI UART secondary baudrate for FW download operation.
+      If not defined bus/current-speed will be used as default.
+
+  fw-download-secondary-flowcontrol:
+    type: boolean
+    description: |
+      Flow control setting for secondary speed.

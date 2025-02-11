@@ -1,0 +1,20 @@
+identifier: rddrone_fmuk66
+name: NXP RDDRONE-FMUK66
+type: mcu
+arch: arm
+ram: 256
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - can
+  - counter
+  - gpio
+  - i2c
+  - nvs
+  - pwm
+  - spi
+  - usb_device
+  - watchdog
+vendor: nxp

@@ -72,7 +72,7 @@ SECTION_FUNC(TEXT, __sparc_trap_except_reason)
 	mov	%l5, %g3
 
 	/* Allocate an ABI stack frame and exception stack frame */
-	sub	%fp, 96 + __z_arch_esf_t_SIZEOF, %sp
+	sub	%fp, 96 + __struct_arch_esf_SIZEOF, %sp
 	/*
 	 * %fp: %sp of interrupted task
 	 * %sp: %sp of interrupted task - ABI_frame - esf
@@ -81,19 +81,19 @@ SECTION_FUNC(TEXT, __sparc_trap_except_reason)
 	mov	%l7, %o0
 	/* Fill in the content of the exception stack frame */
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
-	std	%i0, [%sp + 96 + __z_arch_esf_t_out_OFFSET + 0x00]
-	std	%i2, [%sp + 96 + __z_arch_esf_t_out_OFFSET + 0x08]
-	std	%i4, [%sp + 96 + __z_arch_esf_t_out_OFFSET + 0x10]
-	std	%i6, [%sp + 96 + __z_arch_esf_t_out_OFFSET + 0x18]
-	std	%g0, [%sp + 96 + __z_arch_esf_t_global_OFFSET + 0x00]
-	std	%g2, [%sp + 96 + __z_arch_esf_t_global_OFFSET + 0x08]
-	std	%g4, [%sp + 96 + __z_arch_esf_t_global_OFFSET + 0x10]
-	std	%g6, [%sp + 96 + __z_arch_esf_t_global_OFFSET + 0x18]
+	std	%i0, [%sp + 96 + __struct_arch_esf_out_OFFSET + 0x00]
+	std	%i2, [%sp + 96 + __struct_arch_esf_out_OFFSET + 0x08]
+	std	%i4, [%sp + 96 + __struct_arch_esf_out_OFFSET + 0x10]
+	std	%i6, [%sp + 96 + __struct_arch_esf_out_OFFSET + 0x18]
+	std	%g0, [%sp + 96 + __struct_arch_esf_global_OFFSET + 0x00]
+	std	%g2, [%sp + 96 + __struct_arch_esf_global_OFFSET + 0x08]
+	std	%g4, [%sp + 96 + __struct_arch_esf_global_OFFSET + 0x10]
+	std	%g6, [%sp + 96 + __struct_arch_esf_global_OFFSET + 0x18]
 #endif
-	std	%l0, [%sp + 96 + __z_arch_esf_t_psr_OFFSET] /* psr pc */
-	std	%l2, [%sp + 96 + __z_arch_esf_t_npc_OFFSET] /* npc wim */
+	std	%l0, [%sp + 96 + __struct_arch_esf_psr_OFFSET] /* psr pc */
+	std	%l2, [%sp + 96 + __struct_arch_esf_npc_OFFSET] /* npc wim */
 	rd	%y, %l7
-	std	%l6, [%sp + 96 + __z_arch_esf_t_tbr_OFFSET] /* tbr y */
+	std	%l6, [%sp + 96 + __struct_arch_esf_tbr_OFFSET] /* tbr y */
 
 	/* Enable traps, raise PIL to mask all maskable interrupts. */
 	or	%l0, PSR_PIL, %o2

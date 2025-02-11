@@ -1,0 +1,18 @@
+# Copyright (c) 2019 Lexmark International, Inc.
+# Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_XILINX_ZYNQMP
+	bool
+
+config SOC_XILINX_ZYNQMP_RPU
+	bool
+	select SOC_XILINX_ZYNQMP
+	help
+	  Xilinx ZynqMP RPU
+
+config SOC_FAMILY
+	default "xilinx_zynqmp" if SOC_XILINX_ZYNQMP
+
+config SOC
+	default "zynqmp_rpu" if SOC_XILINX_ZYNQMP_RPU

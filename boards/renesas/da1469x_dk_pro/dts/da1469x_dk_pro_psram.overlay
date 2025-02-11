@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sram-ext = &memc;
+	};
+};
+
+&psram {
+	status = "okay";
+};
+
+/* QSPIC settings for the APS6404L-3SQR QSPI PSRAM memory in QPI mode. */
+&memc {
+	status = "okay";
+	is-ram;
+	dev-size = <DT_SIZE_M(64)>;
+	dev-type = <0x5D>;
+	dev-id = <0x0D>;
+	dev-density = <0xE040>;
+	reset-delay-us = <50>;
+	read-cs-idle-min-ns = <18>;
+	tcem-max-us = <2>;
+	enter-qpi-mode;
+	enter-qpi-cmd = <0x35>;
+	extra-byte-enable;
+	extra-byte = <0x0>;
+	dummy-bytes-count = "dummy-bytes-count2";
+	read-cmd = <0xEB>;
+	write-cmd = <0x38>;
+	rx-inst-mode = "quad-spi";
+	rx-addr-mode = "quad-spi";
+	rx-data-mode = "quad-spi";
+	rx-dummy-mode = "quad-spi";
+	rx-extra-mode = "quad-spi";
+	tx-inst-mode = "quad-spi";
+	tx-addr-mode = "quad-spi";
+	tx-data-mode = "quad-spi";
+};

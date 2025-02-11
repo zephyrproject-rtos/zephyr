@@ -6,7 +6,7 @@ Bluetooth: Mesh Demo
 Overview
 ********
 
-This sample is a Bluetooth mesh application intended for demonstration
+This sample is a Bluetooth Mesh application intended for demonstration
 purposes only. The application provisions and configures itself (i.e. no
 external provisioner needed) with hard-coded network and application key
 values. The local unicast address can be set using a NODE_ADDR build
@@ -54,3 +54,9 @@ For other boards, build and flash the application as follows:
 
 Refer to your :ref:`board's documentation <boards>` for alternative
 flash instructions if your board doesn't support the ``flash`` target.
+
+To run the application on an :ref:`nrf5340dk_nrf5340`, a Bluetooth controller application
+must also run on the network core. The :ref:`bluetooth-hci-ipc-sample` sample
+application may be used. Build this sample with configuration
+:zephyr_file:`samples/bluetooth/hci_ipc/nrf5340_cpunet_bt_mesh-bt_ll_sw_split.conf`
+to enable mesh support.

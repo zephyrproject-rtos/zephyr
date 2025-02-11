@@ -241,6 +241,29 @@ net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 #endif /* CONFIG_NET_IPV6_MLD */
 
 /**
+ * @brief Send MLDv2 report message with a single entry.
+ *
+ * @param iface Network interface where message is sent
+ * @param addr Multicast group
+ * @param mode MLDv2 mode (NET_IPV6_MLDv2_MODE_IS_INCLUDE NET_IPV6_MLDv2_MODE_IS_EXCLUDE)
+ *
+ * @return Return 0 if leaving is done, <0 otherwise.
+ */
+#if defined(CONFIG_NET_IPV6_MLD)
+int net_ipv6_mld_send_single(struct net_if *iface, const struct in6_addr *addr, uint8_t mode);
+#else
+static inline int
+net_ipv6_mld_send_single(struct net_if *iface, const struct in6_addr *addr, uint8_t mode)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(mode);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_IPV6_MLD */
+
+/**
  * @typedef net_nbr_cb_t
  * @brief Callback used while iterating over neighbors.
  *
@@ -269,6 +292,21 @@ static inline enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	return NET_OK;
 }
 #endif
+
+/**
+ * @brief Lock IPv6 Neighbor table mutex
+ *
+ * Neighbor table mutex is used by IPv6 Neighbor cache and IPv6 Routing module.
+ * Mutex shall be held whenever accessing or manipulating neighbor or routing
+ * table entries (for example when obtaining a pointer to the neighbor table
+ * entry). Neighbor and Routing API functions will lock the mutex when called.
+ */
+void net_ipv6_nbr_lock(void);
+
+/**
+ * @brief Unlock IPv6 Neighbor table mutex
+ */
+void net_ipv6_nbr_unlock(void);
 
 /**
  * @brief Look for a neighbor from it's address on an iface
@@ -384,6 +422,29 @@ static inline void net_ipv6_nbr_foreach(net_nbr_cb_t cb, void *user_data)
 	return;
 }
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
+
+/**
+ * @brief Provide a reachability hint for IPv6 Neighbor Discovery.
+ *
+ * This function is intended for upper-layer protocols to inform the IPv6
+ * Neighbor Discovery process about the active link to a specific neighbor.
+ * By signaling recent "forward progress" event, such as the reception of
+ * an ACK, this function can help reducing unnecessary ND traffic as per the
+ * guidelines in RFC 4861 (section 7.3).
+ *
+ * @param iface A pointer to the network interface.
+ * @param ipv6_addr Pointer to the IPv6 address of the neighbor node.
+ */
+#if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
+void net_ipv6_nbr_reachability_hint(struct net_if *iface, const struct in6_addr *ipv6_addr);
+#else
+static inline void net_ipv6_nbr_reachability_hint(struct net_if *iface,
+						  const struct in6_addr *ipv6_addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ipv6_addr);
+}
+#endif
 
 /**
  * @brief Set the neighbor reachable timer.
@@ -524,6 +585,16 @@ static inline void net_ipv6_set_dscp(uint8_t *tc, uint8_t dscp)
 }
 
 /**
+ * @brief Convert DSCP value to priority.
+ *
+ * @param dscp DSCP value.
+ */
+static inline uint8_t net_ipv6_dscp_to_priority(uint8_t dscp)
+{
+	return dscp >> 3;
+}
+
+/**
  * @brief Decode ECN value from TC field.
  *
  * @param tc TC field value from the IPv6 header.
@@ -547,5 +618,94 @@ static inline void net_ipv6_set_ecn(uint8_t *tc, uint8_t ecn)
 	*tc |= ecn & NET_IPV6_ECN_MASK;
 }
 
+/**
+ * @brief Start IPv6 privacy extension procedure.
+ *
+ * @param iface Interface to use.
+ * @param prefix IPv6 prefix to use.
+ * @param vlifetime Lifetime of this IPv6 prefix (in seconds).
+ * @param preferred_lifetime Preferred lifetime of this IPv6 prefix (in seconds)
+ */
+#if defined(CONFIG_NET_IPV6_PE)
+void net_ipv6_pe_start(struct net_if *iface, const struct in6_addr *prefix,
+		       uint32_t vlifetime, uint32_t preferred_lifetime);
+
+#else
+static inline void net_ipv6_pe_start(struct net_if *iface,
+				     const struct in6_addr *prefix,
+				     uint32_t vlifetime,
+				     uint32_t preferred_lifetime)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(prefix);
+	ARG_UNUSED(vlifetime);
+	ARG_UNUSED(preferred_lifetime);
+}
+#endif /* CONFIG_NET_IPV6_PE */
+
+/**
+ * @brief Check if maximum number of Duplicate Address Detection (DAD) requests
+ *        have been done.
+ *
+ * @param count Number of DAD requests done.
+ *
+ * @return Return True if DAD can continue, False if max amount of DAD
+ *         requests have been done.
+ */
+#if defined(CONFIG_NET_IPV6_PE)
+bool net_ipv6_pe_check_dad(int count);
+#else
+static inline bool net_ipv6_pe_check_dad(int count)
+{
+	ARG_UNUSED(count);
+
+	return false;
+}
+#endif /* CONFIG_NET_IPV6_PE */
+
+/**
+ * @brief Initialize IPv6 privacy extension support for a network interface.
+ *
+ * @param iface Network interface
+ *
+ * @return Return 0 if ok or <0 if there is an error.
+ */
+#if defined(CONFIG_NET_IPV6_PE)
+int net_ipv6_pe_init(struct net_if *iface);
+#else
+static inline int net_ipv6_pe_init(struct net_if *iface)
+{
+	iface->pe_enabled = false;
+	iface->pe_prefer_public = false;
+
+	return 0;
+}
+#endif /* CONFIG_NET_IPV6_PE */
+
+typedef void (*net_ipv6_pe_filter_cb_t)(struct in6_addr *prefix,
+					bool is_blacklist,
+					void *user_data);
+
+/**
+ * @brief Go through all the IPv6 privacy extension filters and call callback
+ * for each IPv6 prefix.
+ *
+ * @param cb User supplied callback function to call.
+ * @param user_data User specified data.
+ *
+ * @return Total number of filters found.
+ */
+#if defined(CONFIG_NET_IPV6_PE)
+int net_ipv6_pe_filter_foreach(net_ipv6_pe_filter_cb_t cb, void *user_data);
+#else
+static inline int net_ipv6_pe_filter_foreach(net_ipv6_pe_filter_cb_t cb,
+					     void *user_data)
+{
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
+
+	return 0;
+}
+#endif
 
 #endif /* __IPV6_H */

@@ -1,22 +1,32 @@
-description: Specialization of Bosch m_can CAN-FD controller for Atmel SAM
+description: Specialization of Bosch m_can CAN FD controller for Atmel SAM
 
 compatible: "atmel,sam-can"
 
 include:
-  - name: can-fd-controller.yaml
+  - name: bosch,m_can-base.yaml
   - name: pinctrl-device.yaml
 
 properties:
   reg:
     required: true
+    description: |
+      2 reg blocks needed; Register block for the MCAN configuration registers;
+      Register block for the DMA Base Address
+
+  reg-names:
+    type: string-array
+    required: true
+    description: |
+      description of reg blocks
 
   interrupts:
     required: true
 
-  peripheral-id:
-    type: int
+  interrupt-names:
     required: true
-    description: peripheral ID
+
+  clocks:
+    required: true
 
   divider:
     type: int

@@ -6,7 +6,7 @@
 config HAS_IMX_HAL
 	bool
 	select HAS_CMSIS_CORE
-	depends on SOC_FAMILY_IMX
+	depends on SOC_FAMILY_NXP_IMX
 
 if HAS_IMX_HAL
 

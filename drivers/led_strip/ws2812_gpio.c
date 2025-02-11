@@ -25,9 +25,10 @@ LOG_MODULE_REGISTER(ws2812_gpio);
 #include <zephyr/dt-bindings/led/led.h>
 
 struct ws2812_gpio_cfg {
-	struct gpio_dt_spec in_gpio;
+	struct gpio_dt_spec gpio;
 	uint8_t num_colors;
 	const uint8_t *color_mapping;
+	size_t length;
 };
 
 /*
@@ -91,7 +92,7 @@ static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 {
 	const struct ws2812_gpio_cfg *config = dev->config;
 	volatile uint32_t *base = (uint32_t *)&NRF_GPIO->OUTSET;
-	const uint32_t val = BIT(config->in_gpio.pin);
+	const uint32_t val = BIT(config->gpio.pin);
 	struct onoff_manager *mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	struct onoff_client cli;
@@ -179,17 +180,16 @@ static int ws2812_gpio_update_rgb(const struct device *dev,
 	return send_buf(dev, (uint8_t *)pixels, num_pixels * config->num_colors);
 }
 
-static int ws2812_gpio_update_channels(const struct device *dev,
-				       uint8_t *channels,
-				       size_t num_channels)
+static size_t ws2812_gpio_length(const struct device *dev)
 {
-	LOG_ERR("update_channels not implemented");
-	return -ENOTSUP;
+	const struct ws2812_gpio_cfg *config = dev->config;
+
+	return config->length;
 }
 
 static const struct led_strip_driver_api ws2812_gpio_api = {
 	.update_rgb = ws2812_gpio_update_rgb,
-	.update_channels = ws2812_gpio_update_channels,
+	.length = ws2812_gpio_length,
 };
 
 /*
@@ -216,7 +216,7 @@ static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
 		const struct ws2812_gpio_cfg *cfg = dev->config;	\
 		uint8_t i;						\
 									\
-		if (!device_is_ready(cfg->in_gpio.port)) {		\
+		if (!gpio_is_ready_dt(&cfg->gpio)) {			\
 			LOG_ERR("GPIO device not ready");		\
 			return -ENODEV;					\
 		}							\
@@ -236,15 +236,16 @@ static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
 			}						\
 		}							\
 									\
-		return gpio_pin_configure_dt(&cfg->in_gpio, GPIO_OUTPUT); \
+		return gpio_pin_configure_dt(&cfg->gpio, GPIO_OUTPUT);	\
 	}								\
 									\
 	WS2812_COLOR_MAPPING(idx);					\
 									\
 	static const struct ws2812_gpio_cfg ws2812_gpio_##idx##_cfg = { \
-		.in_gpio = GPIO_DT_SPEC_INST_GET(idx, in_gpios),	\
+		.gpio = GPIO_DT_SPEC_INST_GET(idx, gpios),		\
 		.num_colors = WS2812_NUM_COLORS(idx),			\
 		.color_mapping = ws2812_gpio_##idx##_color_mapping,	\
+		.length = DT_INST_PROP(idx, chain_length),		\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(idx,					\

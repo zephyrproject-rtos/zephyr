@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_SMARTBOND
+	bool "Smartbond RTC driver"
+	depends on DT_HAS_RENESAS_SMARTBOND_RTC_ENABLED
+	default y
+	help
+	  Build RTC driver for Smartbond SoCs.

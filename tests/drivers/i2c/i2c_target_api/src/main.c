@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <stdio.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/drivers/i2c.h>
@@ -43,15 +44,17 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 }
 
 static int run_full_read(const struct device *i2c, uint8_t addr,
-			 const uint8_t *comp_buffer)
+			 uint8_t addr_width, const uint8_t *comp_buffer)
 {
 	int ret;
+	uint8_t start_addr[2];
 
 	TC_PRINT("Testing full read: Master: %s, address: 0x%x\n",
 		 i2c->name, addr);
 
 	/* Read EEPROM from I2C Master requests, then compare */
-	ret = i2c_burst_read(i2c, addr, 0, i2c_buffer, TEST_DATA_SIZE);
+	memset(start_addr, 0, sizeof(start_addr));
+	ret = i2c_write_read(i2c, addr, start_addr, (addr_width >> 3), i2c_buffer, TEST_DATA_SIZE);
 	zassert_equal(ret, 0, "Failed to read EEPROM");
 
 	if (memcmp(i2c_buffer, comp_buffer, TEST_DATA_SIZE)) {
@@ -70,15 +73,27 @@ static int run_full_read(const struct device *i2c, uint8_t addr,
 }
 
 static int run_partial_read(const struct device *i2c, uint8_t addr,
-			    const uint8_t *comp_buffer, unsigned int offset)
+			    uint8_t addr_width, const uint8_t *comp_buffer, unsigned int offset)
 {
 	int ret;
+	uint8_t start_addr[2];
 
 	TC_PRINT("Testing partial read. Master: %s, address: 0x%x, off=%d\n",
 		 i2c->name, addr, offset);
 
-	ret = i2c_burst_read(i2c, addr,
-			     offset, i2c_buffer, TEST_DATA_SIZE-offset);
+	switch (addr_width) {
+	case 8:
+		start_addr[0] = (uint8_t) (offset & 0xFF);
+	break;
+	case 16:
+		sys_put_be16((uint16_t)(offset & 0xFFFF), start_addr);
+	break;
+	default:
+		return -EINVAL;
+	}
+
+	ret = i2c_write_read(i2c, addr,
+			     start_addr, (addr_width >> 3), i2c_buffer, TEST_DATA_SIZE-offset);
 	zassert_equal(ret, 0, "Failed to read EEPROM");
 
 	if (memcmp(i2c_buffer, &comp_buffer[offset], TEST_DATA_SIZE-offset)) {
@@ -97,9 +112,11 @@ static int run_partial_read(const struct device *i2c, uint8_t addr,
 }
 
 static int run_program_read(const struct device *i2c, uint8_t addr,
-			    unsigned int offset)
+			    uint8_t addr_width, unsigned int offset)
 {
 	int ret, i;
+	uint8_t start_addr[2];
+	struct i2c_msg msg[2];
 
 	TC_PRINT("Testing program. Master: %s, address: 0x%x, off=%d\n",
 		i2c->name, addr, offset);
@@ -108,15 +125,32 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 		i2c_buffer[i] = i;
 	}
 
-	ret = i2c_burst_write(i2c, addr,
-			      offset, i2c_buffer, TEST_DATA_SIZE-offset);
+	switch (addr_width) {
+	case 8:
+		start_addr[0] = (uint8_t) (offset & 0xFF);
+	break;
+	case 16:
+		sys_put_be16((uint16_t)(offset & 0xFFFF), start_addr);
+	break;
+	default:
+		return -EINVAL;
+	}
+
+	msg[0].buf = start_addr;
+	msg[0].len = (addr_width >> 3);
+	msg[0].flags = I2C_MSG_WRITE;
+	msg[1].buf = &i2c_buffer[0];
+	msg[1].len = TEST_DATA_SIZE;
+	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	ret = i2c_transfer(i2c, &msg[0], 2, addr);
 	zassert_equal(ret, 0, "Failed to write EEPROM");
 
 	(void)memset(i2c_buffer, 0xFF, TEST_DATA_SIZE);
 
 	/* Read back EEPROM from I2C Master requests, then compare */
-	ret = i2c_burst_read(i2c, addr,
-			     offset, i2c_buffer, TEST_DATA_SIZE-offset);
+	ret = i2c_write_read(i2c, addr,
+			     start_addr, (addr_width >> 3), i2c_buffer, TEST_DATA_SIZE-offset);
 	zassert_equal(ret, 0, "Failed to read EEPROM");
 
 	for (i = 0 ; i < TEST_DATA_SIZE-offset ; ++i) {
@@ -137,9 +171,11 @@ ZTEST(i2c_eeprom_target, test_eeprom_target)
 	const struct device *const eeprom_0 = DEVICE_DT_GET(NODE_EP0);
 	const struct device *const i2c_0 = DEVICE_DT_GET(DT_BUS(NODE_EP0));
 	int addr_0 = DT_REG_ADDR(NODE_EP0);
+	uint8_t addr_0_width = DT_PROP_OR(NODE_EP0, address_width, 8);
 	const struct device *const eeprom_1 = DEVICE_DT_GET(NODE_EP1);
 	const struct device *const i2c_1 = DEVICE_DT_GET(DT_BUS(NODE_EP1));
 	int addr_1 = DT_REG_ADDR(NODE_EP1);
+	uint8_t addr_1_width = DT_PROP_OR(NODE_EP1, address_width, 8);
 	int ret, offset;
 
 	zassert_not_null(i2c_0, "EEPROM 0 - I2C bus not found");
@@ -194,21 +230,22 @@ ZTEST(i2c_eeprom_target, test_eeprom_target)
 	 * Similarly validation of EP1 uses i2c_0 as a master with addr_1 and
 	 * eeprom_1_data for validation.
 	 */
-	ret = run_full_read(i2c_1, addr_0, eeprom_0_data);
+	ret = run_full_read(i2c_1, addr_0, addr_0_width, eeprom_0_data);
 	zassert_equal(ret, 0,
 		     "Full I2C read from EP0 failed");
 	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
-		ret = run_full_read(i2c_0, addr_1, eeprom_1_data);
+		ret = run_full_read(i2c_0, addr_1, addr_1_width, eeprom_1_data);
 		zassert_equal(ret, 0,
 			      "Full I2C read from EP1 failed");
 	}
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
 		zassert_equal(0, run_partial_read(i2c_1, addr_0,
-			      eeprom_0_data, offset),
+			      addr_0_width, eeprom_0_data, offset),
 			      "Partial I2C read EP0 failed");
 		if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
 			zassert_equal(0, run_partial_read(i2c_0, addr_1,
+							  addr_1_width,
 							  eeprom_1_data,
 							  offset),
 				      "Partial I2C read EP1 failed");
@@ -216,11 +253,12 @@ ZTEST(i2c_eeprom_target, test_eeprom_target)
 	}
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		zassert_equal(0, run_program_read(i2c_1, addr_0, offset),
+		zassert_equal(0, run_program_read(i2c_1, addr_0,
+							  addr_0_width, offset),
 			      "Program I2C read EP0 failed");
 		if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
 			zassert_equal(0, run_program_read(i2c_0, addr_1,
-							  offset),
+							  addr_1_width, offset),
 				      "Program I2C read EP1 failed");
 		}
 	}

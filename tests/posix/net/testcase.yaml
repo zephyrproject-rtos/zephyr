@@ -1,0 +1,22 @@
+common:
+  depends_on: netif
+  min_ram: 16
+  tags:
+    - iface
+    - net
+    - posix
+tests:
+  portability.posix.net:
+    # native_sim links to if_*() from the host libc which causes the test to crash immediately.
+    filter: not CONFIG_NATIVE_LIBC
+  portability.posix.net.cpp.native_sim:
+    # demonstrate that #75319 fixes the build error in #75849
+    tags:
+      - cpp
+    build_only: true
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_STD_CPP20=y
+      - CONFIG_REQUIRES_FULL_LIBCPP=y

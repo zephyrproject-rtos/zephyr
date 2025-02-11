@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2024 Jerónimo Agulló <jeronimoagullo97@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		modem-uart = &micromod_1_uart;
+		modem = &modem;
+	};
+};
+
+&micromod_1_uart {
+	current-speed = <115200>;
+	hw-flow-control;
+	status = "okay";
+
+	modem: sara_r5 {
+		compatible = "u-blox,sara-r5";
+		mdm-power-gpios = <&micromod_header 7 0>; /* G2 */
+		mdm-reset-gpios = <&micromod_header 12 0>; /* D6 */
+		status = "okay";
+	};
+};
+
+&micromod_0_spi {
+	status = "okay";
+	/* G0 (SD_CS) */
+	cs-gpios = <&micromod_header 5 GPIO_ACTIVE_LOW>;
+
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+};
+
+&micromod_0_i2c {
+	max17048: max17048@36 {
+		compatible = "maxim,max17048";
+		reg = <0x36>;
+		status = "okay";
+	};
+};

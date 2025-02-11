@@ -10,6 +10,7 @@
 #include <zephyr/sys/util.h>
 #include <stdarg.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +50,12 @@ extern "C" {
 /** @brief Flag forcing syslog format specified in RFC 5424
  */
 #define LOG_OUTPUT_FLAG_FORMAT_SYSLOG		BIT(6)
+
+/** @brief Flag thread id or name prefix. */
+#define LOG_OUTPUT_FLAG_THREAD			BIT(7)
+
+/** @brief Flag forcing to skip logging the source. */
+#define LOG_OUTPUT_FLAG_SKIP_SOURCE		BIT(8)
 
 /**@} */
 
@@ -144,9 +151,10 @@ void log_output_msg_process(const struct log_output *log_output,
  * @param timestamp	Timestamp.
  * @param domain	Domain name string. Can be NULL.
  * @param source	Source name string. Can be NULL.
+ * @param tid		Thread ID.
  * @param level		Criticality level.
  * @param package	Cbprintf package with a logging message string.
- * @param data		Data passed to hexdump API. Can bu NULL.
+ * @param data		Data passed to hexdump API. Can be NULL.
  * @param data_len	Data length.
  * @param flags		Formatting flags. See @ref LOG_OUTPUT_FLAGS.
  */
@@ -154,6 +162,7 @@ void log_output_process(const struct log_output *log_output,
 			log_timestamp_t timestamp,
 			const char *domain,
 			const char *source,
+			k_tid_t tid,
 			uint8_t level,
 			const uint8_t *package,
 			const uint8_t *data,
@@ -221,7 +230,7 @@ void log_output_timestamp_freq_set(uint32_t freq);
  *
  * @return Timestamp value in us.
  */
-uint64_t log_output_timestamp_to_us(uint32_t timestamp);
+uint64_t log_output_timestamp_to_us(log_timestamp_t timestamp);
 
 /**
  * @}

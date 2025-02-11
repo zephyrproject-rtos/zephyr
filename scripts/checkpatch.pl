@@ -389,6 +389,7 @@ our $Attribute	= qr{
 			__always_unused|
 			__noreturn|
 			__used|
+			__unused|
 			__cold|
 			__pure|
 			__noclone|
@@ -591,6 +592,18 @@ our @mode_permission_funcs = (
 	["SENSOR_TEMPLATE(?:_2|)", 3],
 	["__ATTR", 2],
 );
+
+our $api_defines = qr{(?x:
+	_ATFILE_SOURCE|
+	_BSD_SOURCE|
+	_DEFAULT_SOURCE|
+	_GNU_SOURCE|
+	_ISOC11_SOURCE|
+	_ISOC99_SOURCE|
+	_POSIX_SOURCE|
+	_SVID_SOURCE|
+	_XOPEN_SOURCE_EXTENDED
+)};
 
 my $word_pattern = '\b[A-Z]?[a-z]{2,}\b';
 
@@ -2940,6 +2953,7 @@ sub process {
 
 # Check for various typo / spelling mistakes
 		if (defined($misspellings) &&
+		    ($spelling_file !~ /$realfile/) &&
 		    ($in_commit_log || $line =~ /^(?:\+|Subject:)/i)) {
 			while ($rawline =~ /(?:^|[^a-z@])($misspellings)(?:\b|$|[^a-z@])/gi) {
 				my $typo = $1;
@@ -3121,7 +3135,7 @@ sub process {
 
 # check for DT compatible documentation
 		if (defined $root &&
-			(($realfile =~ /\.dtsi?$/ && $line =~ /^\+\s*compatible\s*=\s*\"/) ||
+			(($realfile =~ /\.(dts|dtsi|overlay)$/ && $line =~ /^\+\s*compatible\s*=\s*\"/) ||
 			 ($realfile =~ /\.[ch]$/ && $line =~ /^\+.*\.compatible\s*=\s*\"/))) {
 
 			my @compats = $rawline =~ /\"([a-zA-Z0-9\-\,\.\+_]+)\"/g;
@@ -3158,7 +3172,7 @@ sub process {
 				my $comment = "";
 				if ($realfile =~ /\.(h|s|S)$/) {
 					$comment = '/*';
-				} elsif ($realfile =~ /\.(c|dts|dtsi)$/) {
+				} elsif ($realfile =~ /\.(c|dts|dtsi|overlay)$/) {
 					$comment = '//';
 				} elsif (($checklicenseline == 2) || $realfile =~ /\.(sh|pl|py|awk|tc|yaml)$/) {
 					$comment = '#';
@@ -3200,7 +3214,7 @@ sub process {
 		}
 
 # check we are in a valid source file if not then ignore this hunk
-		next if ($realfile !~ /\.(h|c|s|S|sh|dtsi|dts)$/);
+		next if ($realfile !~ /\.(h|c|s|S|sh|dtsi|dts|overlay)$/);
 
 # check for using SPDX-License-Identifier on the wrong line number
 		if ($realline != $checklicenseline &&
@@ -3281,7 +3295,7 @@ sub process {
 		}
 
 # check we are in a valid source file C or perl if not then ignore this hunk
-		next if ($realfile !~ /\.(h|c|pl|dtsi|dts)$/);
+		next if ($realfile !~ /\.(h|c|pl|dtsi|dts|overlay)$/);
 
 # at the beginning of a line any tabs must come first and anything
 # more than $tabsize must use tabs, except multi-line macros which may start
@@ -3530,7 +3544,7 @@ sub process {
 			# known declaration macros
 		      $sline =~ /^\+\s+$declaration_macros/ ||
 			# start of struct or union or enum
-		      $sline =~ /^\+\s+(?:static\s+)?(?:const\s+)?(?:union|struct|enum|typedef)\b/ ||
+		      $sline =~ /^\+\s+(?:volatile\s+)?(?:static\s+)?(?:const\s+)?(?:union|struct|enum|typedef)\b/ ||
 			# start or end of block or continuation of declaration
 		      $sline =~ /^\+\s+(?:$|[\{\}\.\#\"\?\:\(\[])/ ||
 			# bitfield continuation
@@ -3723,7 +3737,7 @@ sub process {
 
 # if/while/etc brace do not go on next line, unless defining a do while loop,
 # or if that brace on the next line is for something else
-		if ($line =~ /(.*)\b((?:if|while|for|switch|(?:[A-Z_]+|)FOR_EACH[A-Z_]+)\s*\(|do\b|else\b)/ && $line !~ /^.\s*\#/) {
+		if ($line =~ /(.*)\b((?:if|while|for|switch|(?:[A-Z_]+|)FOR_EACH(?!_NONEMPTY_TERM)[A-Z_]+)\s*\(|do\b|else\b)/ && $line !~ /^.\s*\#/) {
 			my $pre_ctx = "$1$2";
 
 			my ($level, @ctx) = ctx_statement_level($linenr, $realcnt, 0);
@@ -3769,7 +3783,7 @@ sub process {
 		}
 
 # Check relative indent for conditionals and blocks.
-		if ($line =~ /\b(?:(?:if|while|for|(?:[A-Z_]+|)FOR_EACH[A-Z_]+)\s*\(|(?:do|else)\b)/ && $line !~ /^.\s*#/ && $line !~ /\}\s*while\s*/) {
+		if ($line =~ /\b(?:(?:if|while|for|(?:[A-Z_]+|)FOR_EACH(?!_NONEMPTY_TERM|_IDX|_FIXED_ARG|_IDX_FIXED_ARG)[A-Z_]+)\s*\(|(?:do|else)\b)/ && $line !~ /^.\s*#/ && $line !~ /\}\s*while\s*/) {
 			($stat, $cond, $line_nr_next, $remain_next, $off_next) =
 				ctx_statement_block($linenr, $realcnt, 0)
 					if (!defined $stat);
@@ -4150,13 +4164,15 @@ sub process {
 
 # check for new typedefs, only function parameters and sparse annotations
 # make sense.
-		if ($line =~ /\btypedef\s/ &&
-		    $line !~ /\btypedef\s+$Type\s*\(\s*\*?$Ident\s*\)\s*\(/ &&
-		    $line !~ /\btypedef\s+$Type\s+$Ident\s*\(/ &&
-		    $line !~ /\b$typeTypedefs\b/ &&
-		    $line !~ /\b__bitwise\b/) {
-			WARN("NEW_TYPEDEFS",
-			     "do not add new typedefs\n" . $herecurr);
+		if ($realfile =~ /\/include\/zephyr\/posix\/*.h/) {
+			if ($line =~ /\btypedef\s/ &&
+			$line !~ /\btypedef\s+$Type\s*\(\s*\*?$Ident\s*\)\s*\(/ &&
+			$line !~ /\btypedef\s+$Type\s+$Ident\s*\(/ &&
+			$line !~ /\b$typeTypedefs\b/ &&
+			$line !~ /\b__bitwise\b/) {
+				WARN("NEW_TYPEDEFS",
+				"do not add new typedefs\n" . $herecurr);
+			}
 		}
 
 # * goes on variable not on type
@@ -4403,11 +4419,13 @@ sub process {
 #  1. with a type on the left -- int [] a;
 #  2. at the beginning of a line for slice initialisers -- [0...10] = 5,
 #  3. inside a curly brace -- = { [0...10] = 5 }
+#  4. inside macro arguments, example: #define HCI_ERR(err) [err] = #err
 		while ($line =~ /(.*?\s)\[/g) {
 			my ($where, $prefix) = ($-[1], $1);
 			if ($prefix !~ /$Type\s+$/ &&
 			    ($where != 0 || $prefix !~ /^.\s+$/) &&
 			    $prefix !~ /[{,:]\s+$/ &&
+			    $prefix !~ /\#define\s+.+\s+$/ &&
 			    $prefix !~ /:\s+$/) {
 				if (ERROR("BRACKET_SPACE",
 					  "space prohibited before open square bracket '['\n" . $herecurr) &&
@@ -4986,6 +5004,7 @@ sub process {
 #	only fix matches surrounded by parentheses to avoid incorrect
 #	conversions like "FOO < baz() + 5" being "misfixed" to "baz() > FOO + 5"
 		if ($perl_version_ok &&
+			!($line =~ /^\+(.*)($Constant|[A-Z_][A-Z0-9_]*)\s*($Compare)\s*(.*)($Constant|[A-Z_][A-Z0-9_]*)(.*)/) &&
 		    $line =~ /^\+(.*)\b($Constant|[A-Z_][A-Z0-9_]*)\s*($Compare)\s*($LvalOrFunc)/) {
 			my $lead = $1;
 			my $const = $2;
@@ -5014,8 +5033,11 @@ sub process {
 		if ($sline =~ /\breturn(?:\s*\(+\s*|\s+)(E[A-Z]+)(?:\s*\)+\s*|\s*)[;:,]/) {
 			my $name = $1;
 			if ($name ne 'EOF' && $name ne 'ERROR') {
-				WARN("USE_NEGATIVE_ERRNO",
-				     "return of an errno should typically be negative (ie: return -$1)\n" . $herecurr);
+				# only print this warning if not dealing with 'lib/posix/*.c'
+				if ($realfile =~ /.*\/lib\/posix\/*.c/) {
+					WARN("USE_NEGATIVE_ERRNO",
+						"return of an errno should typically be negative (ie: return -$1)\n" . $herecurr);
+				}
 			}
 		}
 
@@ -6522,6 +6544,13 @@ sub process {
 			    $fix) {
 				$fixed[$fixlinenr] =~ s/\(?\s*1\s*[ulUL]*\s*<<\s*(\d+|$Ident)\s*\)?/BIT${ull}($1)/;
 			}
+		}
+
+# check for feature test macros that request C library API extensions, violating rules A.4 and A.5
+
+		if ($line =~ /#\s*define\s+$api_defines/) {
+			ERROR("API_DEFINE",
+			      "do not specify non-standard feature test macros for embedded code\n" . "$here$rawline\n");
 		}
 
 # check for IS_ENABLED() without CONFIG_<FOO> ($rawline for comments too)

@@ -1,5 +1,7 @@
 common:
-  tags: net mqtt
+  tags:
+    - net
+    - mqtt
   harness: net
   depends_on: netif
 tests:

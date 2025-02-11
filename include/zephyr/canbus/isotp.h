@@ -11,13 +11,13 @@
  * ISO-TP is a transport protocol for CAN (Controller Area Network)
  */
 
-#ifndef ZEPHYR_INCLUDE_ISOTP_H_
-#define ZEPHYR_INCLUDE_ISOTP_H_
+#ifndef ZEPHYR_INCLUDE_CANBUS_ISOTP_H_
+#define ZEPHYR_INCLUDE_CANBUS_ISOTP_H_
 
 /**
- * @brief CAN ISO-TP Interface
- * @defgroup can_isotp CAN ISO-TP Interface
- * @ingroup CAN
+ * @brief CAN ISO-TP Protocol
+ * @defgroup can_isotp CAN ISO-TP Protocol
+ * @ingroup connectivity
  * @{
  */
 
@@ -34,10 +34,16 @@
  * DLC     Data length code
  * FC      Flow Control
  * FF      First Frame
+ * SF      Single Frame
  * FS      Flow Status
  * AE      Address Extension
+ * SN      Sequence Number
+ * ST      Separation time
  * SA      Source Address
  * TA      Target Address
+ * RX_DL   CAN RX LL data size
+ * TX_DL   CAN TX LL data size
+ * PCI     Process Control Information
  */
 
 /*
@@ -104,29 +110,56 @@
  */
 
 /** Position of fixed source address (SA) */
-#define ISOTP_FIXED_ADDR_SA_POS         (0U)
+#define ISOTP_FIXED_ADDR_SA_POS         (CONFIG_ISOTP_FIXED_ADDR_SA_POS)
 
 /** Mask to obtain fixed source address (SA) */
-#define ISOTP_FIXED_ADDR_SA_MASK        (0xFF << ISOTP_FIXED_ADDR_SA_POS)
+#define ISOTP_FIXED_ADDR_SA_MASK        (CONFIG_ISOTP_FIXED_ADDR_SA_MASK)
 
 /** Position of fixed target address (TA) */
-#define ISOTP_FIXED_ADDR_TA_POS         (8U)
+#define ISOTP_FIXED_ADDR_TA_POS         (CONFIG_ISOTP_FIXED_ADDR_TA_POS)
 
 /** Mask to obtain fixed target address (TA) */
-#define ISOTP_FIXED_ADDR_TA_MASK        (0xFF << ISOTP_FIXED_ADDR_TA_POS)
+#define ISOTP_FIXED_ADDR_TA_MASK        (CONFIG_ISOTP_FIXED_ADDR_TA_MASK)
 
 /** Position of priority in fixed addressing mode */
-#define ISOTP_FIXED_ADDR_PRIO_POS       (26U)
+#define ISOTP_FIXED_ADDR_PRIO_POS       (CONFIG_ISOTP_FIXED_ADDR_PRIO_POS)
 
 /** Mask for priority in fixed addressing mode */
-#define ISOTP_FIXED_ADDR_PRIO_MASK      (0x7 << ISOTP_FIXED_ADDR_PRIO_POS)
+#define ISOTP_FIXED_ADDR_PRIO_MASK      (CONFIG_ISOTP_FIXED_ADDR_PRIO_MASK)
 
-/* CAN filter RX mask to match any priority and source address (SA) */
-#define ISOTP_FIXED_ADDR_RX_MASK        (0x03FFFF00)
+/** CAN filter RX mask to match any priority and source address (SA) */
+#define ISOTP_FIXED_ADDR_RX_MASK        (CONFIG_ISOTP_FIXED_ADDR_RX_MASK)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @name ISO-TP message ID flags
+ * @anchor ISOTP_MSG_FLAGS
+ *
+ * @{
+ */
+
+/** Message uses ISO-TP extended addressing (first payload byte of CAN frame) */
+#define ISOTP_MSG_EXT_ADDR BIT(0)
+
+/**
+ * Message uses ISO-TP fixed addressing (according to SAE J1939). Only valid in combination with
+ * ``ISOTP_MSG_IDE``.
+ */
+#define ISOTP_MSG_FIXED_ADDR BIT(1)
+
+/** Message uses extended (29-bit) CAN ID */
+#define ISOTP_MSG_IDE BIT(2)
+
+/** Message uses CAN FD format (FDF) */
+#define ISOTP_MSG_FDF BIT(3)
+
+/** Message uses CAN FD Baud Rate Switch (BRS). Only valid in combination with ``ISOTP_MSG_FDF``. */
+#define ISOTP_MSG_BRS BIT(4)
+
+/** @} */
 
 /**
  * @brief ISO-TP message id struct
@@ -146,12 +179,19 @@ struct isotp_msg_id {
 	};
 	/** ISO-TP extended address (if used) */
 	uint8_t ext_addr;
-	/** Indicates the CAN identifier type (0 for standard or 1 for extended) */
-	uint8_t ide : 1;
-	/** Indicates if ISO-TP extended addressing is used */
-	uint8_t use_ext_addr : 1;
-	/** Indicates if ISO-TP fixed addressing (acc. to SAE J1939) is used */
-	uint8_t use_fixed_addr : 1;
+	/**
+	 * ISO-TP frame data length (TX_DL for TX address or RX_DL for RX address).
+	 *
+	 * Valid values are 8 for classical CAN or 8, 12, 16, 20, 24, 32, 48 and 64 for CAN FD.
+	 *
+	 * 0 will be interpreted as 8 or 64 (if ISOTP_MSG_FDF is set).
+	 *
+	 * The value for incoming transmissions (RX_DL) is determined automatically based on the
+	 * received first frame and does not need to be set during initialization.
+	 */
+	uint8_t dl;
+	/** Flags. @see @ref ISOTP_MSG_FLAGS. */
+	uint8_t flags;
 };
 
 /*
@@ -172,6 +212,14 @@ struct isotp_fc_opts {
 	uint8_t stmin; /**< Minimum separation time. Min time between frames */
 };
 
+/**
+ * @brief Transmission callback
+ *
+ * This callback is called when a transmission is completed.
+ *
+ * @param error_nr ISOTP_N_OK on success, ISOTP_N_* on error
+ * @param arg      Callback argument passed to the send function
+ */
 typedef void (*isotp_tx_callback_t)(int error_nr, void *arg);
 
 struct isotp_send_ctx;
@@ -186,7 +234,7 @@ struct isotp_recv_ctx;
  * When calling this routine, a filter is applied in the CAN device, and the
  * context is initialized. The context must be valid until calling unbind.
  *
- * @param ctx     Context to store the internal states.
+ * @param rctx    Context to store the internal states.
  * @param can_dev The CAN device to be used for sending and receiving.
  * @param rx_addr Identifier for incoming data.
  * @param tx_addr Identifier for FC frames.
@@ -196,7 +244,7 @@ struct isotp_recv_ctx;
  * @retval ISOTP_N_OK on success
  * @retval ISOTP_NO_FREE_FILTER if CAN device has no filters left.
  */
-int isotp_bind(struct isotp_recv_ctx *ctx, const struct device *can_dev,
+int isotp_bind(struct isotp_recv_ctx *rctx, const struct device *can_dev,
 	       const struct isotp_msg_id *rx_addr,
 	       const struct isotp_msg_id *tx_addr,
 	       const struct isotp_fc_opts *opts,
@@ -210,9 +258,9 @@ int isotp_bind(struct isotp_recv_ctx *ctx, const struct device *can_dev,
  * buffers are freed.
  * The context can be discarded safely after calling this function.
  *
- * @param ctx     Context that should be unbound.
+ * @param rctx    Context that should be unbound.
  */
-void isotp_unbind(struct isotp_recv_ctx *ctx);
+void isotp_unbind(struct isotp_recv_ctx *rctx);
 
 /**
  * @brief Read out received data from fifo.
@@ -222,17 +270,16 @@ void isotp_unbind(struct isotp_recv_ctx *ctx);
  * If an error occurs, the function returns a negative number and leaves the
  * data buffer unchanged.
  *
- * @param ctx     Context that is already bound.
+ * @param rctx    Context that is already bound.
  * @param data    Pointer to a buffer where the data is copied to.
  * @param len     Size of the buffer.
  * @param timeout Timeout for incoming data.
  *
  * @retval Number of bytes copied on success
- * @retval ISOTP_WAIT_TIMEOUT when "timeout" timed out
+ * @retval ISOTP_RECV_TIMEOUT when "timeout" timed out
  * @retval ISOTP_N_* on error
  */
-int isotp_recv(struct isotp_recv_ctx *ctx, uint8_t *data, size_t len,
-	       k_timeout_t timeout);
+int isotp_recv(struct isotp_recv_ctx *rctx, uint8_t *data, size_t len, k_timeout_t timeout);
 
 /**
  * @brief Get the net buffer on data reception
@@ -244,16 +291,15 @@ int isotp_recv(struct isotp_recv_ctx *ctx, uint8_t *data, size_t len,
  * The net-buffers are referenced and must be freed with net_buf_unref after the
  * data is processed.
  *
- * @param ctx     Context that is already bound.
+ * @param rctx    Context that is already bound.
  * @param buffer  Pointer where the net_buf pointer is written to.
  * @param timeout Timeout for incoming data.
  *
  * @retval Remaining data length for this transfer if BS > 0, 0 for BS = 0
- * @retval ISOTP_WAIT_TIMEOUT when "timeout" timed out
+ * @retval ISOTP_RECV_TIMEOUT when "timeout" timed out
  * @retval ISOTP_N_* on error
  */
-int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,
-		   k_timeout_t timeout);
+int isotp_recv_net(struct isotp_recv_ctx *rctx, struct net_buf **buffer, k_timeout_t timeout);
 
 /**
  * @brief Send data
@@ -264,7 +310,7 @@ int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,
  * If a complete_cb is given, this function is non-blocking, and the callback
  * is called on completion with the return value as a parameter.
  *
- * @param ctx         Context to store the internal states.
+ * @param sctx        Context to store the internal states.
  * @param can_dev     The CAN device to be used for sending and receiving.
  * @param data        Data to be sent.
  * @param len         Length of the data to be sent.
@@ -276,7 +322,7 @@ int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,
  * @retval ISOTP_N_OK on success
  * @retval ISOTP_N_* on error
  */
-int isotp_send(struct isotp_send_ctx *ctx, const struct device *can_dev,
+int isotp_send(struct isotp_send_ctx *sctx, const struct device *can_dev,
 	       const uint8_t *data, size_t len,
 	       const struct isotp_msg_id *tx_addr,
 	       const struct isotp_msg_id *rx_addr,
@@ -383,7 +429,7 @@ struct isotp_send_ctx {
 		};
 	};
 	struct k_work work;
-	struct _timeout timeout;
+	struct k_timer timer;
 	union {
 		struct isotp_callback fin_cb;
 		struct k_sem fin_sem;
@@ -413,7 +459,7 @@ struct isotp_recv_ctx {
 	uint32_t length;
 	int error_nr;
 	struct k_work work;
-	struct _timeout timeout;
+	struct k_timer timer;
 	struct k_fifo fifo;
 	struct isotp_msg_id rx_addr;
 	struct isotp_msg_id tx_addr;
@@ -434,4 +480,4 @@ struct isotp_recv_ctx {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ISOTP_H_ */
+#endif /* ZEPHYR_INCLUDE_CANBUS_ISOTP_H_ */

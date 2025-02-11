@@ -1,0 +1,19 @@
+identifier: esp32s2_franzininho
+name: ESP32-S2 Franzininho
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - pinmux
+  - nvs
+testing:
+  ignore_tags:
+    - heap
+    - net
+    - bluetooth
+vendor: franzininho

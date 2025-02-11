@@ -1,5 +1,6 @@
 # Copyright (c) 2016 Intel Corporation
 # Copyright (c) 2020 Nordic Semiconductor ASA
+# Copyright (c) 2023 Husqvarna AB
 # SPDX-License-Identifier: Apache-2.0
 
 config FAT_FILESYSTEM_ELM
@@ -24,7 +25,8 @@ config FS_FATFS_READ_ONLY
 	  ELM FAT module.
 
 config FS_FATFS_MKFS
-	bool
+	bool "mkfs support for FAT FS"
+	default y if FILE_SYSTEM_MKFS
 	help
 	  Adds code for creating disks with FAT file system.
 	  This option affects FF_USE_MKFS defined in ffconf.h, inside
@@ -47,7 +49,7 @@ config FS_FATFS_MOUNT_MKFS
 	  prior to connecting to a device, otherwise it will not be
 	  mountable.
 
-if FS_FATFS_MOUNT_MKFS
+if FS_FATFS_MKFS
 
 config FS_FATFS_MAX_ROOT_ENTRIES
 	int "Max number of entries in FAT FS root directory"
@@ -58,7 +60,7 @@ config FS_FATFS_MAX_ROOT_ENTRIES
 	  formatting new FAT system to a device.
 	  Note that this should be multiply of FS_FATFS_MAX_SS / 32.
 
-endif # FS_FATFS_MOUNT_MKFS
+endif # FS_FATFS_MKFS
 
 config FS_FATFS_EXFAT
 	bool "ExFAT support"
@@ -121,6 +123,15 @@ config FS_FATFS_LFN_MODE_HEAP
 	  ELM FAT module, by setting its value to 3.
 
 endchoice
+
+config FS_FATFS_FF_USE_LFN
+	int
+	default 1 if FS_FATFS_LFN_MODE_BSS
+	default 2 if FS_FATFS_LFN_MODE_STACK
+	default 3 if FS_FATFS_LFN_MODE_HEAP
+	help
+	  Translates FS_FATFS_LFN_MODE selection to FF_USE_LFN, defined in ffconf.h,
+	  inside ELM FAT module.
 
 config FS_FATFS_MAX_LFN
 	int "Max filename length"
@@ -210,6 +221,14 @@ config FS_FATFS_WINDOW_ALIGNMENT
 	  buffer is internal element of FATFS structure, which means
 	  that, in worst scenario, value provided here may cause FATFS
 	  structure to have size of twice the value.
+
+config FS_FATFS_REENTRANT
+	bool "FatFs reentrant"
+	depends on !FS_FATFS_LFN_MODE_BSS
+	help
+	  Enable the FatFs re-entrancy (thread safe) option for file/directory
+	  access for each volume. Will create a zephyr mutex object for each
+	  FatFs volume and a FatFs system mutex.
 
 endmenu
 

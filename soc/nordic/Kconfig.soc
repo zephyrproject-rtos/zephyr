@@ -1,0 +1,59 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+
+# This file contains Zephyr hw module v2 Kconfig description for
+# Nordic Semiconductor SoCs.
+# The hw model v2 is generic and contains no Kconfig references outside its own
+# tree structure and is therefore reusable in Kconfig trees outside a Zephyr build.
+
+config SOC_SERIES
+	default "nrf51" if SOC_SERIES_NRF51X
+	default "nrf52" if SOC_SERIES_NRF52X
+	default "nrf53" if SOC_SERIES_NRF53X
+	default "nrf54h" if SOC_SERIES_NRF54HX
+	default "nrf54l" if SOC_SERIES_NRF54LX
+	default "nrf91" if SOC_SERIES_NRF91X
+
+config SOC_FAMILY_NORDIC_NRF
+	bool
+
+config SOC_FAMILY
+	default "nordic_nrf" if SOC_FAMILY_NORDIC_NRF
+
+config SOC_SERIES_NRF51X
+	bool
+	help
+	  Enable support for NRF51 MCU series
+
+config SOC_SERIES_NRF52X
+	bool
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	  Enable support for NRF52 MCU series
+
+config SOC_SERIES_NRF53X
+	bool
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	 Enable support for NRF53 MCU series
+
+config SOC_SERIES_NRF54HX
+	bool
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	  Nordic Semiconductor nRF54H series MCU
+
+config SOC_SERIES_NRF54LX
+	bool
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	  Nordic Semiconductor nRF54L series MCU
+
+config SOC_SERIES_NRF91X
+	bool
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	  Enable support for NRF91 MCU series
+
+rsource "*/Kconfig.soc"

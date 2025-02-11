@@ -14,7 +14,7 @@
 #include <mips/regdef.h>
 #include <mips/mipsregs.h>
 
-#define ESF_O(FIELD)	__z_arch_esf_t_##FIELD##_OFFSET
+#define ESF_O(FIELD)	__struct_arch_esf_##FIELD##_OFFSET
 #define THREAD_O(FIELD)	_thread_offset_to_##FIELD
 
 /* Convenience macros for loading/storing register states. */
@@ -58,12 +58,12 @@
 	op v1, ESF_O(v1)(sp)		;
 
 #define STORE_CALLER_SAVED() \
-	addi sp, sp, -__z_arch_esf_t_SIZEOF	;\
+	addi sp, sp, -__struct_arch_esf_SIZEOF	;\
 	DO_CALLER_SAVED(OP_STOREREG)		;
 
 #define LOAD_CALLER_SAVED() \
 	DO_CALLER_SAVED(OP_LOADREG)		;\
-	addi sp, sp, __z_arch_esf_t_SIZEOF	;
+	addi sp, sp, __struct_arch_esf_SIZEOF	;
 
 /* imports */
 GTEXT(_Fault)

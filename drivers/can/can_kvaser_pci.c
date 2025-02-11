@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT kvaser_pcican
 
-#include "can_sja1000.h"
+#include <zephyr/drivers/can/can_sja1000.h>
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/pcie/pcie.h>
@@ -143,10 +143,9 @@ const struct can_driver_api can_kvaser_pci_driver_api = {
 	.set_state_change_callback = can_sja1000_set_state_change_callback,
 	.get_core_clock = can_kvaser_pci_get_core_clock,
 	.get_max_filters = can_sja1000_get_max_filters,
-	.get_max_bitrate = can_sja1000_get_max_bitrate,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_sja1000_recover,
-#endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.timing_min = CAN_SJA1000_TIMING_MIN_INITIALIZER,
 	.timing_max = CAN_SJA1000_TIMING_MAX_INITIALIZER,
 };
@@ -169,16 +168,16 @@ const struct can_driver_api can_kvaser_pci_driver_api = {
 	static const struct can_sja1000_config can_sja1000_config_##inst =                         \
 		CAN_SJA1000_DT_CONFIG_INST_GET(inst, &can_kvaser_pci_config_##inst,                \
 					       can_kvaser_pci_read_reg, can_kvaser_pci_write_reg,  \
-					       CAN_KVASER_PCI_OCR, CAN_KVASER_PCI_CDR);            \
+					       CAN_KVASER_PCI_OCR, CAN_KVASER_PCI_CDR, 0);         \
                                                                                                    \
 	static struct can_kvaser_pci_data can_kvaser_pci_data_##inst;                              \
                                                                                                    \
 	static struct can_sja1000_data can_sja1000_data_##inst =                                   \
 		CAN_SJA1000_DATA_INITIALIZER(&can_kvaser_pci_data_##inst);                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, can_kvaser_pci_init, NULL, &can_sja1000_data_##inst,           \
-			      &can_sja1000_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,   \
-			      &can_kvaser_pci_driver_api);                                         \
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_kvaser_pci_init, NULL, &can_sja1000_data_##inst,       \
+				  &can_sja1000_config_##inst, POST_KERNEL,                         \
+				  CONFIG_CAN_INIT_PRIORITY, &can_kvaser_pci_driver_api);           \
                                                                                                    \
 	static void can_kvaser_pci_config_func_##inst(const struct device *dev)                    \
 	{                                                                                          \

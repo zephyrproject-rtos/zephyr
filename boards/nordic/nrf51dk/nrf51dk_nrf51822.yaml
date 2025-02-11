@@ -1,0 +1,24 @@
+identifier: nrf51dk/nrf51822
+name: nRF51-DK-NRF51822
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 256
+supported:
+  - adc
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - nvs
+  - pwm
+  - spi
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+vendor: nordic

@@ -22,16 +22,16 @@ is referenced by its memory address.
 A timer has the following key properties:
 
 * A **duration** specifying the time interval before the timer
-  expires for the first time.  This is a ``k_timeout_t`` value that
+  expires for the first time.  This is a :c:type:`k_timeout_t` value that
   may be initialized via different units.
 
 * A **period** specifying the time interval between all timer
-  expirations after the first one, also a ``k_timeout_t``. It must be
+  expirations after the first one, also a :c:type:`k_timeout_t`. It must be
   non-negative.  A period of ``K_NO_WAIT`` (i.e. zero) or
-  ``K_FOREVER`` means that the timer is a one shot timer that stops
+  ``K_FOREVER`` means that the timer is a one-shot timer that stops
   after a single expiration. (For example then, if a timer is started
   with a duration of 200 and a period of 75, it will first expire
-  after 200ms and then every 75ms after that.)
+  after 200 ms and then every 75 ms after that.)
 
 * An **expiry function** that is executed each time the timer expires.
   The function is executed by the system clock interrupt handler.
@@ -49,7 +49,7 @@ expiry function and stop function values, sets the timer's status to zero,
 and puts the timer into the **stopped** state.
 
 A timer is **started** by specifying a duration and a period.
-The timer's status is reset to zero, then the timer enters
+The timer's status is reset to zero, and then the timer enters
 the **running** state and begins counting down towards expiry.
 
 Note that the timer's duration and period parameters specify
@@ -63,7 +63,7 @@ When a running timer expires its status is incremented
 and the timer executes its expiry function, if one exists;
 If a thread is waiting on the timer, it is unblocked.
 If the timer's period is zero the timer enters the stopped state;
-otherwise the timer restarts with a new duration equal to its period.
+otherwise, the timer restarts with a new duration equal to its period.
 
 A running timer can be stopped in mid-countdown, if desired.
 The timer's status is left unchanged, then the timer enters the stopped state
@@ -128,7 +128,7 @@ Using a Timer Expiry Function
 =============================
 
 The following code uses a timer to perform a non-trivial action on a periodic
-basis. Since the required work cannot be done at interrupt level,
+basis. Since the required work cannot be done at the interrupt level,
 the timer's expiry function submits a work item to the
 :ref:`system workqueue <workqueues_v2>`, whose thread performs the work.
 
@@ -151,14 +151,14 @@ the timer's expiry function submits a work item to the
 
     ...
 
-    /* start periodic timer that expires once every second */
+    /* start a periodic timer that expires once every second */
     k_timer_start(&my_timer, K_SECONDS(1), K_SECONDS(1));
 
 Reading Timer Status
 ====================
 
 The following code reads a timer's status directly to determine
-if the timer has expired on not.
+if the timer has expired or not.
 
 .. code-block:: c
 
@@ -166,7 +166,7 @@ if the timer has expired on not.
 
     ...
 
-    /* start one shot timer that expires after 200 ms */
+    /* start a one-shot timer that expires after 200 ms */
     k_timer_start(&my_status_timer, K_MSEC(200), K_NO_WAIT);
 
     /* do work */
@@ -197,7 +197,7 @@ are separated by the specified time interval.
     /* do first protocol operation */
     ...
 
-    /* start one shot timer that expires after 500 ms */
+    /* start a one-shot timer that expires after 500 ms */
     k_timer_start(&my_sync_timer, K_MSEC(500), K_NO_WAIT);
 
     /* do other work */

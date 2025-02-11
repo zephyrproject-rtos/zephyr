@@ -6,6 +6,4 @@ zephyr_sources_ifdef(CONFIG_FLASH_MAP_SHELL flash_map_shell.c)
 zephyr_sources_ifdef(CONFIG_FLASH_PAGE_LAYOUT flash_map_layout.c)
 zephyr_sources_ifdef(CONFIG_FLASH_AREA_CHECK_INTEGRITY flash_map_integrity.c)
 
-if(CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS)
-  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
-endif()
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

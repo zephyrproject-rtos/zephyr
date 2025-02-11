@@ -1,0 +1,30 @@
+{% extends "!footer.html" %}
+{% block contentinfo %}
+<p>
+  {%- if show_copyright %}
+  &#169; Copyright {{ copyright }}.
+  {%- endif %}
+
+  {%- if last_updated %}
+  <span class="lastupdated">
+    Last generated on {{ last_updated }}.
+  </span>
+  {%- endif -%}
+</p>
+{%- set git_last_updated, sha1 = pagename | git_info | default((None, None), true) %}
+{%- if git_last_updated %}
+<div class="admonition tip" data-nosnippet>
+  <p class="admonition-title">
+    Help us keep our technical documentation accurate and up-to-date!
+  </p>
+  <p>
+    The human-authored contents on this page was last updated on {{ git_last_updated }}.
+  </p>
+  <p>
+    If you find any errors on this page, outdated information, or have any other suggestion for
+    improving its contents, please consider
+    <a href="{{ pagename | gh_link_get_open_issue_url(sha1) }}">opening an issue</a>.
+  </p>
+</div>
+{%- endif %}
+{% endblock %}

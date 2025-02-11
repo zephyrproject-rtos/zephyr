@@ -3,55 +3,6 @@
 # Copyright (c) 2017 Intel Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-config NET_CONFIG_AUTO_INIT
-	bool "Init networking support automatically during device startup"
-	default n if USB_DEVICE_NETWORK
-	default y
-	help
-	  If this option is set, then the networking system is automatically
-	  initialized when the device is started. If you do not wish to do
-	  this, then disable this and call net_config_init() in your application.
-
-config NET_CONFIG_INIT_PRIO
-	int "Startup priority for the network application init"
-	default 95
-	depends on NET_CONFIG_AUTO_INIT
-
-config NET_CONFIG_INIT_TIMEOUT
-	int "How long to wait for networking to be ready and available"
-	default 30
-	help
-	  The value is in seconds. If for example IPv4 address from DHCPv4 is not
-	  received within this limit, then the net_config_init() call will fail
-	  during the device startup.
-
-config NET_CONFIG_NEED_IPV6
-	bool "This application wants IPv6 support"
-	depends on NET_CONFIG_AUTO_INIT
-	select NET_IPV6
-	help
-	  The network application needs IPv6 support to function properly.
-	  This option makes sure the network application is initialized properly
-	  in order to use IPv6.
-
-config NET_CONFIG_NEED_IPV6_ROUTER
-	bool "This application wants IPv6 router to exists"
-	depends on NET_CONFIG_AUTO_INIT
-	depends on NET_IPV6
-	help
-	  The network application needs IPv6 router to exists before continuing.
-	  What this means that the application wants to wait until it receives
-	  IPv6 router advertisement message before continuing.
-
-config NET_CONFIG_NEED_IPV4
-	bool "This application wants IPv4 support"
-	depends on NET_CONFIG_AUTO_INIT
-	select NET_IPV4
-	help
-	  The network application needs IPv4 support to function properly.
-	  This option makes sure the network application is initialized properly
-	  in order to use IPv4.
-
 module = NET_CONFIG
 module-dep = NET_LOG
 module-str = Log level for network config library
@@ -70,6 +21,62 @@ menuconfig NET_CONFIG_SETTINGS
 	  provisioning but quick sampling/testing.
 
 if NET_CONFIG_SETTINGS
+
+config NET_CONFIG_AUTO_INIT
+	bool "Init networking support automatically during device startup"
+	default n if USB_DEVICE_NETWORK
+	default y
+	help
+	  If this option is set, then the networking system is automatically
+	  initialized when the device is started. If you do not wish to do
+	  this, then disable this and call net_config_init() in your application.
+
+if NET_CONFIG_AUTO_INIT
+
+config NET_CONFIG_INIT_PRIO
+	int "Startup priority for the network application init"
+	default 95
+
+config NET_CONFIG_NEED_IPV6
+	bool "This application wants IPv6 support"
+	select NET_IPV6
+	help
+	  The network application needs IPv6 support to function properly.
+	  This option makes sure the network application is initialized properly
+	  in order to use IPv6.
+
+config NET_CONFIG_NEED_IPV6_ROUTER
+	bool "This application wants IPv6 router to exists"
+	depends on NET_IPV6
+	help
+	  The network application needs IPv6 router to exists before continuing.
+	  What this means that the application wants to wait until it receives
+	  IPv6 router advertisement message before continuing.
+
+config NET_CONFIG_NEED_IPV4
+	bool "This application wants IPv4 support"
+	select NET_IPV4
+	help
+	  The network application needs IPv4 support to function properly.
+	  This option makes sure the network application is initialized properly
+	  in order to use IPv4.
+
+endif # NET_CONFIG_AUTO_INIT
+
+config NET_CONFIG_INIT_TIMEOUT
+	int "How long to wait for networking to be ready and available"
+	default 30
+	help
+	  The value is in seconds. If for example IPv4 address from DHCPv4 is not
+	  received within this limit, then the net_config_init() call will fail
+	  during the device startup.
+
+config NET_CONFIG_MY_VLAN_ID
+	int "My VLAN identifier"
+	default 0
+	depends on NET_VLAN
+	help
+	  Use 0 here if uncertain.
 
 if NET_IPV6
 
@@ -164,22 +171,38 @@ config NET_CONFIG_IEEE802154_SECURITY_LEVEL
 	  1 authentication only with a 4 bytes length tag
 	  2 authentication only with a 8 bytes length tag
 	  3 authentication only with a 16 bytes length tag
-	  4 encryption only
+	  4 deprecated since IEEE 802.15.4-2015
 	  5 encryption/authentication with a 4 bytes length tag
 	  6 encryption/authentication with a 8 bytes length tag
 	  7 encryption/authentication with a 16 bytes length tag
 
+config NET_CONFIG_IEEE802154_ACK_REQUIRED
+	bool "IEEE 802.15.4 acknowledgment"
+	default y
+	help
+	  Whether or not to request and require IEEE 802.15.4 acknowledgment
+	  packets.
+
 endif # NET_L2_IEEE802154 || IEEE802154_RAW_MODE
 
-config NET_CONFIG_BT_NODE
-	bool "Bluetooth node support"
-	depends on NET_L2_BT
-	select NET_L2_BT_MGMT
-	help
-	  Enables application to operate in node mode which requires GATT
-	  service to be registered and start advertising as peripheral.
-
 endif # NET_CONFIG_SETTINGS
+
+if NET_DHCPV6
+
+config NET_CONFIG_DHCPV6_REQUEST_ADDR
+	bool "Request IPv6 address when configuring DHCPv6 client"
+	default y
+	help
+	  When DHCPv6 is enabled this will configure the DHCPv6 client to
+	  request IPv6 address from the DHCPv6 server.
+
+config NET_CONFIG_DHCPV6_REQUEST_PREFIX
+	bool "Request IPv6 prefix when configuring DHCPv6 client"
+	help
+	  When DHCPv6 is enabled this will configure the DHCPv6 client to
+	  request IPv6 prefix from the DHCPv6 server.
+
+endif # NET_DHCPV6
 
 config NET_CONFIG_CLOCK_SNTP_INIT
 	bool "Initialize system clock using SNTP on application startup"
@@ -202,6 +225,14 @@ config NET_CONFIG_SNTP_INIT_SERVER
 	  on their locality, needs, and server's terms of service. See
 	  e.g. server information at
 	  https://support.ntp.org/bin/view/Servers/NTPPoolServers
+
+config NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
+	bool "SNTP server to use for system clock init is set using DHCPv4 option"
+	default y
+	depends on NET_DHCPV4_OPTION_NTP_SERVER
+	help
+	  If this option is set, then the SNTP server to use for system
+	  clock init can be set using DHCPv4 option.
 
 config NET_CONFIG_SNTP_INIT_TIMEOUT
 	int "SNTP timeout to init system clock (ms)"

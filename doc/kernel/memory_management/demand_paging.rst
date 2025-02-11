@@ -50,28 +50,32 @@ Page Frame
   A page frame is a page-sized physical memory region in RAM. It is a
   container where a data page may be placed. It is always referred to by
   physical address. Zephyr has a convention of using ``uintptr_t`` for physical
-  addresses. For every page frame, a ``struct z_page_frame`` is instantiated to
+  addresses. For every page frame, a ``struct k_mem_page_frame`` is instantiated to
   store metadata. Flags for each page frame:
 
-  * ``Z_PAGE_FRAME_PINNED`` indicates a page frame is pinned in memory
+  * ``K_MEM_PAGE_FRAME_FREE`` indicates a page frame is unused and on the list of
+    free page frames. When this flag is set, none of the other flags are
+    meaningful and they must not be modified.
+
+  * ``K_MEM_PAGE_FRAME_PINNED`` indicates a page frame is pinned in memory
     and should never be paged out.
 
-  * ``Z_PAGE_FRAME_RESERVED`` indicates a physical page reserved by hardware
+  * ``K_MEM_PAGE_FRAME_RESERVED`` indicates a physical page reserved by hardware
     and should not be used at all.
 
-  * ``Z_PAGE_FRAME_MAPPED`` is set when a physical page is mapped to
+  * ``K_MEM_PAGE_FRAME_MAPPED`` is set when a physical page is mapped to
     virtual memory address.
 
-  * ``Z_PAGE_FRAME_BUSY`` indicates a page frame is currently involved in
+  * ``K_MEM_PAGE_FRAME_BUSY`` indicates a page frame is currently involved in
     a page-in/out operation.
 
-  * ``Z_PAGE_FRAME_BACKED`` indicates a page frame has a clean copy
+  * ``K_MEM_PAGE_FRAME_BACKED`` indicates a page frame has a clean copy
     in the backing store.
 
-Z_SCRATCH_PAGE
+K_MEM_SCRATCH_PAGE
   The virtual address of a special page provided to the backing store to:
-  * Copy a data page from ``Z_SCRATCH_PAGE`` to the specified location; or,
-  * Copy a data page from the provided location to ``Z_SCRATCH_PAGE``.
+  * Copy a data page from ``k_MEM_SCRATCH_PAGE`` to the specified location; or,
+  * Copy a data page from the provided location to ``K_MEM_SCRATCH_PAGE``.
   This is used as an intermediate page for page in/out operations. This
   scratch needs to be mapped read/write for backing store code to access.
   However the data page itself may only be mapped as read-only in virtual
@@ -159,10 +163,10 @@ which must be implemented:
 
 * :c:func:`k_mem_paging_backing_store_page_in()` copies a data page
   from the backing store location associated with the provided
-  ``location`` token to the page pointed by ``Z_SCRATCH_PAGE``.
+  ``location`` token to the page pointed by ``K_MEM_SCRATCH_PAGE``.
 
 * :c:func:`k_mem_paging_backing_store_page_out()` copies a data page
-  from ``Z_SCRATCH_PAGE`` to the backing store location associated
+  from ``K_MEM_SCRATCH_PAGE`` to the backing store location associated
   with the provided ``location`` token.
 
 * :c:func:`k_mem_paging_backing_store_page_finalize()` is invoked after

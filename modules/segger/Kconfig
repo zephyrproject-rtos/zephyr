@@ -1,0 +1,87 @@
+# Copyright (c) 2016 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_SEGGER_MODULE
+	bool
+
+config HAS_SEGGER_RTT
+	bool
+	help
+	  Indicates that the platform supports SEGGER J-Link RTT.
+
+config USE_SEGGER_RTT
+	bool "SEGGER RTT libraries."
+	depends on HAS_SEGGER_RTT
+	select STM32_ENABLE_DEBUG_SLEEP_STOP if SOC_FAMILY_STM32
+	help
+	  Enable Segger J-Link RTT libraries for platforms that support it.
+	  Selection of this option enables use of RTT for various subsystems.
+	  Note that by enabling this option, RTT buffers consume more RAM.
+
+if USE_SEGGER_RTT
+
+config SEGGER_RTT_CUSTOM_LOCKING
+	bool "Custom locking"
+	help
+	  Enable custom locking using a mutex.
+
+config SEGGER_RTT_MAX_NUM_UP_BUFFERS
+	int "Maximum number of up-buffers"
+	default 3
+
+config SEGGER_RTT_MAX_NUM_DOWN_BUFFERS
+	int "Maximum number of down-buffers"
+	default 3
+
+config SEGGER_RTT_BUFFER_SIZE_UP
+	int "Size of the buffer for terminal output of target, up to host"
+	default 1024
+
+config SEGGER_RTT_BUFFER_SIZE_DOWN
+	int "Size of the buffer for terminal input of target, from host"
+	default 32 if SHELL_BACKEND_RTT
+	default 16
+
+config SEGGER_RTT_PRINTF_BUFFER_SIZE
+	int "Size of buffer for RTT printf to bulk-send chars via RTT"
+	default 64
+
+choice SEGGER_RTT_MODE
+	prompt "Mode for pre-initialized terminal channel (buffer 0)"
+	default SEGGER_RTT_MODE_NO_BLOCK_SKIP
+
+config SEGGER_RTT_MODE_NO_BLOCK_SKIP
+	bool "Skip. Do not block, output nothing."
+
+config SEGGER_RTT_MODE_NO_BLOCK_TRIM
+	bool "Trim: Do not block, output as much as fits."
+
+config SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
+	bool "Block: Wait until there is space in the buffer."
+
+endchoice
+
+config SEGGER_RTT_MODE
+	int
+	default 2 if SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
+	default 1 if SEGGER_RTT_MODE_NO_BLOCK_TRIM
+	default 0
+
+config SEGGER_RTT_MEMCPY_USE_BYTELOOP
+	bool "Use a simple byte-loop instead of standard memcpy"
+
+choice SEGGER_RTT_SECTION
+	prompt "Choose RTT data linker section"
+
+config SEGGER_RTT_SECTION_NONE
+	bool "Place RTT data in the default linker section"
+
+config SEGGER_RTT_SECTION_DTCM
+	bool "Place RTT data in the DTCM linker section"
+
+config SEGGER_RTT_SECTION_CCM
+	bool "Place RTT data in the CCM linker section"
+
+endchoice
+
+endif

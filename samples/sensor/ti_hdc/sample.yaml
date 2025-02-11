@@ -3,7 +3,9 @@ sample:
 tests:
   sample.sensor.ti_hdc:
     harness: sensor
-    platform_allow: reel_board nucleo_l496zg
+    platform_allow:
+      - reel_board
+      - nucleo_l496zg
     integration_platforms:
       - reel_board
     tags: sensors

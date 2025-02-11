@@ -16,6 +16,7 @@ static bool per_adv_found;
 static bt_addr_le_t per_addr;
 static uint8_t per_sid;
 static struct bt_conn *default_conn;
+static uint32_t per_adv_interval_ms;
 
 static K_SEM_DEFINE(sem_conn, 0, 1);
 static K_SEM_DEFINE(sem_conn_lost, 0, 1);
@@ -105,6 +106,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		/* If info->interval it is a periodic advertiser, mark for sync */
 		if (!per_adv_found && info->interval) {
 			per_adv_found = true;
+			per_adv_interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval);
 
 			per_sid = info->sid;
 			bt_addr_le_copy(&per_addr, info->addr);
@@ -228,7 +230,7 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 	.recv = recv_cb
 };
 
-void main(void)
+int main(void)
 {
 	struct bt_le_per_adv_sync_param sync_create_param;
 	struct bt_le_per_adv_sync *sync;
@@ -241,7 +243,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err != 0) {
 		printk("failed to enable BT (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Connection callbacks register\n");
@@ -257,7 +259,7 @@ void main(void)
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err != 0) {
 		printk("failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 	printk("success.\n");
 
@@ -266,7 +268,7 @@ void main(void)
 		err = k_sem_take(&sem_conn, K_FOREVER);
 		if (err != 0) {
 			printk("Could not take sem_conn (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("Connected.\n");
 
@@ -275,7 +277,7 @@ void main(void)
 		err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 		if (err != 0) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("Scan started.\n");
 
@@ -283,7 +285,7 @@ void main(void)
 		err = k_sem_take(&sem_per_adv, K_FOREVER);
 		if (err != 0) {
 			printk("Could not take sem_per_adv (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("Found periodic advertising.\n");
 
@@ -293,11 +295,11 @@ void main(void)
 		sync_create_param.options = 0;
 		sync_create_param.sid = per_sid;
 		sync_create_param.skip = 0;
-		sync_create_param.timeout = 0xaa;
+		sync_create_param.timeout = per_adv_interval_ms * 10 / 10; /* 10 attempts */
 		err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 		if (err != 0) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("success.\n");
 
@@ -305,7 +307,7 @@ void main(void)
 		err = k_sem_take(&sem_per_sync, K_FOREVER);
 		if (err != 0) {
 			printk("failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("Periodic sync established.\n");
 
@@ -313,14 +315,14 @@ void main(void)
 		err = bt_le_per_adv_sync_transfer(sync, default_conn, 0);
 		if (err != 0) {
 			printk("Could not transfer sync (err %d)\n", err);
-			return;
+			return 0;
 		}
 
 		printk("Waiting for connection lost...\n");
 		err = k_sem_take(&sem_conn_lost, K_FOREVER);
 		if (err != 0) {
 			printk("Could not take sem_conn_lost (err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("Connection lost.\n");
 	} while (true);

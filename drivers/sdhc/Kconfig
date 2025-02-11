@@ -2,15 +2,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SDHC
-	bool "SDHC drivers"
+	bool "Secure Digital High Capacity (SDHC) drivers"
 	help
 	  Include drivers for SD host controller
 
 if SDHC
 
+source "drivers/sdhc/Kconfig.ifx_cat1"
 source "drivers/sdhc/Kconfig.imx"
 source "drivers/sdhc/Kconfig.spi"
 source "drivers/sdhc/Kconfig.mcux_sdif"
+source "drivers/sdhc/Kconfig.rcar"
+source "drivers/sdhc/Kconfig.sam_hsmci"
+source "drivers/sdhc/Kconfig.intel"
+source "drivers/sdhc/Kconfig.sdhc_cdns"
+source "drivers/sdhc/Kconfig.esp32"
 
 config SDHC_INIT_PRIORITY
 	int "SDHC driver init priority"
@@ -48,6 +54,5 @@ config SDHC_SUPPORTS_NATIVE_MODE
 module = SDHC
 module-str = sdhc
 source "subsys/logging/Kconfig.template.log_config"
-
 
 endif # SDHC

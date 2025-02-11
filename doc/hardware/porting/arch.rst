@@ -47,6 +47,16 @@ some are optional:
 * **Linker scripts and toolchains**: architecture-specific details will most
   likely be needed in the build system and when linking the image (required).
 
+* **Memory Management and Memory Mapping**: for architecture-specific details
+  on supporting memory management and memory mapping.
+
+* **Stack Objects**: for architecture-specific details on memory protection
+  hardware regarding stack objects.
+
+* **User Mode Threads**: for supporting threads in user mode.
+
+* **GDB Stub**: for supporting GDB stub to enable remote debugging.
+
 Early Boot Sequence
 *******************
 
@@ -59,11 +69,11 @@ Common steps for all architectures:
 
 * Setup an initial stack.
 * If running an :abbr:`XIP (eXecute-In-Place)` kernel, copy initialized data
-* from ROM to RAM.
+  from ROM to RAM.
 * If not using an ELF loader, zero the BSS section.
-* Jump to :code:`_Cstart()`, the early kernel initialization
+* Jump to :code:`z_cstart()`, the early kernel initialization
 
-  * :code:`_Cstart()` is responsible for context switching out of the fake
+  * :code:`z_cstart()` is responsible for context switching out of the fake
     context running at startup into the main thread.
 
 Some examples of architecture-specific steps that have to be taken:
@@ -160,7 +170,7 @@ we strongly suggest that handlers at least print some debug information. The
 information helps figuring out what went wrong when hitting an exception that
 is a fault, like divide-by-zero or invalid memory access, or an interrupt that
 is not expected (:dfn:`spurious interrupt`). See the ARM implementation in
-:zephyr_file:`arch/arm/core/aarch32/cortex_m/fault.c` for an example.
+:zephyr_file:`arch/arm/core/cortex_m/fault.c` for an example.
 
 Thread Context Switching
 ************************
@@ -299,7 +309,7 @@ gracefully exits its entry point function.
 This means implementing an architecture-specific version of
 :c:func:`k_thread_abort`, and setting the Kconfig option
 :kconfig:option:`CONFIG_ARCH_HAS_THREAD_ABORT` as needed for the architecture (e.g. see
-:zephyr_file:`arch/arm/core/aarch32/cortex_m/Kconfig`).
+:zephyr_file:`arch/arm/core/cortex_m/Kconfig`).
 
 Thread Local Storage
 ********************
@@ -467,8 +477,8 @@ be derived from the linker scripts of other architectures. Some sections might
 be specific to the new architecture, for example the SCB section on ARM and the
 IDT section on x86.
 
-Memory Management
-*****************
+Memory Management and Memory Mapping
+************************************
 
 If the target platform enables paging and requires drivers to memory-map
 their I/O regions, :kconfig:option:`CONFIG_MMU` needs to be enabled and the
@@ -535,24 +545,23 @@ The region specified by	``thread.stack_info.start`` and
 the initial stack pointer from the very end of the stack object, taking into
 account storage for TLS and ASLR random offsets.
 
-::
+.. code-block:: none
 
-	+---------------------+ <- thread.stack_obj
-	| Reserved Memory     | } K_(THREAD|KERNEL)_STACK_RESERVED
-	+---------------------+
-	| Carved-out memory   |
-	|.....................| <- thread.stack_info.start
-	| Unused stack buffer |
-	|                     |
-	|.....................| <- thread's current stack pointer
-	| Used stack buffer   |
-	|                     |
-	|.....................| <- Initial stack pointer. Computable
-	| ASLR Random offset  |      with thread.stack_info.delta
-	+---------------------| <- thread.userspace_local_data
-	| Thread-local data   |
-	+---------------------+ <- thread.stack_info.start +
-	                             thread.stack_info.size
+   +---------------------+ <- thread.stack_obj
+   | Reserved Memory     | } K_(THREAD|KERNEL)_STACK_RESERVED
+   +---------------------+
+   | Carved-out memory   |
+   |.....................| <- thread.stack_info.start
+   | Unused stack buffer |
+   |                     |
+   |.....................| <- thread's current stack pointer
+   | Used stack buffer   |
+   |                     |
+   |.....................| <- Initial stack pointer. Computable
+   | ASLR Random offset  |      with thread.stack_info.delta
+   +---------------------| <- thread.userspace_local_data
+   | Thread-local data   |
+   +---------------------+ <- thread.stack_info.start + thread.stack_info.size
 
 
 At present, Zephyr does not support stacks that grow upward.
@@ -624,7 +633,7 @@ simply leave an non-present virtual page below every stack when it is mapped
 into the address space. The stack object will still need to be properly aligned
 and sized to page granularity.
 
-::
+.. code-block:: none
 
    +-----------------------------+ <- thread.stack_obj
    | Guard reserved memory       | } K_KERNEL_STACK_RESERVED
@@ -683,7 +692,7 @@ On systems without power-of-two region requirements, the reserved memory area
 for threads stacks defined by :c:macro:`K_THREAD_STACK_RESERVED` may be used to
 contain the privilege mode stack. The layout could be something like:
 
-::
+.. code-block:: none
 
    +------------------------------+ <- thread.stack_obj
    | Other platform data          |
@@ -742,7 +751,7 @@ of the privilege stacks can be looked up quickly at runtime based on the
 thread stack address using :c:func:`z_priv_stack_find()`. These stacks are
 laid out the same way as other kernel-only stacks.
 
-::
+.. code-block:: none
 
    +-----------------------------+ <- z_priv_stack_find(thread.stack_obj)
    | Reserved memory             | } K_KERNEL_STACK_RESERVED

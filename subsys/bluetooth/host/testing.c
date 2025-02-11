@@ -20,9 +20,15 @@
 
 static sys_slist_t cb_slist;
 
-void bt_test_cb_register(struct bt_test_cb *cb)
+int bt_test_cb_register(struct bt_test_cb *cb)
 {
+	if (sys_slist_find(&cb_slist, &cb->node, NULL)) {
+		return -EEXIST;
+	}
+
 	sys_slist_append(&cb_slist, &cb->node);
+
+	return 0;
 }
 
 void bt_test_cb_unregister(struct bt_test_cb *cb)
@@ -44,7 +50,19 @@ void bt_test_mesh_net_recv(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst,
 	}
 }
 
-void bt_test_mesh_model_bound(uint16_t addr, struct bt_mesh_model *model,
+void bt_test_mesh_model_recv(uint16_t src, uint16_t dst, const void *payload,
+			     size_t payload_len)
+{
+	struct bt_test_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
+		if (cb->mesh_model_recv) {
+			cb->mesh_model_recv(src, dst, payload, payload_len);
+		}
+	}
+}
+
+void bt_test_mesh_model_bound(uint16_t addr, const struct bt_mesh_model *model,
 			      uint16_t key_idx)
 {
 	struct bt_test_cb *cb;
@@ -56,7 +74,7 @@ void bt_test_mesh_model_bound(uint16_t addr, struct bt_mesh_model *model,
 	}
 }
 
-void bt_test_mesh_model_unbound(uint16_t addr, struct bt_mesh_model *model,
+void bt_test_mesh_model_unbound(uint16_t addr, const struct bt_mesh_model *model,
 				uint16_t key_idx)
 {
 	struct bt_test_cb *cb;
@@ -90,6 +108,7 @@ void bt_test_mesh_trans_incomp_timer_exp(void)
 	}
 }
 
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 int bt_test_mesh_lpn_group_add(uint16_t group)
 {
 	bt_mesh_lpn_group_add(group);
@@ -103,6 +122,7 @@ int bt_test_mesh_lpn_group_remove(uint16_t *groups, size_t groups_count)
 
 	return 0;
 }
+#endif /* CONFIG_BT_MESH_LOW_POWER */
 
 int bt_test_mesh_rpl_clear(void)
 {

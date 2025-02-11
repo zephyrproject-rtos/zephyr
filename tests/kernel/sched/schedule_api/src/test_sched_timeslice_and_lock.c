@@ -18,7 +18,7 @@ struct k_thread t;
 
 K_SEM_DEFINE(pend_sema, 0, 1);
 K_SEM_DEFINE(timer_sema, 0, 1);
-struct k_timer timer;
+struct k_timer th_wakeup_timer;
 
 static void thread_entry(void *p1, void *p2, void *p3)
 {
@@ -80,8 +80,8 @@ static void timer_handler(struct k_timer *timer)
 
 static void thread_handler(void *p1, void *p2, void *p3)
 {
-	k_timer_init(&timer, timer_handler, NULL);
-	k_timer_start(&timer, DURATION, K_NO_WAIT);
+	k_timer_init(&th_wakeup_timer, timer_handler, NULL);
+	k_timer_start(&th_wakeup_timer, DURATION, K_NO_WAIT);
 }
 
 /* test cases */
@@ -189,6 +189,10 @@ ZTEST(threads_scheduling, test_sleep_wakeup_preemptible)
 static int executed;
 static void coop_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	k_sem_take(&pend_sema, K_MSEC(100));
 	executed = 1;
 }
@@ -211,7 +215,7 @@ ZTEST(threads_scheduling, test_pending_thread_wakeup)
 
 	/* Create a thread which waits for semaphore */
 	k_tid_t tid = k_thread_create(&t, tstack, STACK_SIZE,
-				      (k_thread_entry_t)coop_thread,
+				      coop_thread,
 				      NULL, NULL, NULL,
 				      K_PRIO_COOP(1), 0, K_NO_WAIT);
 

@@ -9,6 +9,16 @@ menuconfig SNTP
 
 if SNTP
 
+config SNTP_UNCERTAINTY
+	bool "Calculate SNTP uncertainty and set uptime timestamp"
+	help
+	  Get a more reliable timestamp by supplying the sntp_time struct with an
+	  uptime timestamp of when the time was valid and an uncertainty of the
+	  time in microseconds. Time is then given as:
+	  seconds,fraction +/- uncertainty at uptime timestamp.
+	  Enabling this option uses more resources (memory) and is not normally
+	  needed.
+
 module = SNTP
 module-dep = NET_LOG
 module-str = Log level for SNTP

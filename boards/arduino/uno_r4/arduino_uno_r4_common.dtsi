@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <renesas/ra/r7fa4m1ab3cfm.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Arduino Uno R4 Board";
+	compatible = "renesas,r7fa4m1ab3cfm";
+
+	chosen {
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&sci2 {
+	status = "okay";
+	pinctrl-0 = <&sci2_default>;
+	pinctrl-names = "default";
+	uart2: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x4000>;
+			read-only;
+		};
+
+		code_partition: partition@4000 {
+			label = "code";
+			reg = <0x4000 0x3C000>;
+			read-only;
+		};
+	};
+};
+
+&fcu {
+	status = "okay";
+};
+
+&hoco {
+	status = "okay";
+	clock-frequency = <48000000>;
+};
+
+&cgc {
+	clock-source = <&hoco>;
+	iclk-div = <1>;
+	pclka-div = <1>;
+	pclkb-div = <2>;
+	pclkc-div = <1>;
+	pclkd-div = <1>;
+	fclk-div = <2>;
+};

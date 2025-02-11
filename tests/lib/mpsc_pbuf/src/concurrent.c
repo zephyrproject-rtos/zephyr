@@ -7,7 +7,7 @@
 #include <zephyr/ztress.h>
 #include <zephyr/sys/mpsc_pbuf.h>
 #include <zephyr/sys/ring_buffer.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(test);
 #define DBG(...) COND_CODE_1(DEBUG, (printk(__VA_ARGS__)), ())
 
 static uint32_t buf32[128];
-static struct mpsc_pbuf_buffer buffer;
+static struct mpsc_pbuf_buffer mpsc_buffer;
 volatile int test_microdelay_cnt;
 static struct k_spinlock lock;
 
@@ -248,24 +248,24 @@ static void stress_test(bool overwrite,
 	memset(track_base_idx, 0, sizeof(track_base_idx));
 	memset(track_mask, 0, sizeof(track_mask));
 	memset(&data, 0, sizeof(data));
-	memset(&buffer, 0, sizeof(buffer));
-	mpsc_pbuf_init(&buffer, &config);
+	memset(&mpsc_buffer, 0, sizeof(mpsc_buffer));
+	mpsc_pbuf_init(&mpsc_buffer, &config);
 
 	ztress_set_timeout(K_MSEC(10000));
 
 	if (h4 == NULL) {
 		ZTRESS_EXECUTE(
-				/*ZTRESS_TIMER(h1,  &buffer, 0, t),*/
-			       ZTRESS_THREAD(h1,  &buffer, 0, 0, t),
-			       ZTRESS_THREAD(h2, &buffer, 0, preempt_max, t),
-			       ZTRESS_THREAD(h3, &buffer, 0, preempt_max, t));
+				/*ZTRESS_TIMER(h1,  &mpsc_buffer, 0, t),*/
+			       ZTRESS_THREAD(h1,  &mpsc_buffer, 0, 0, t),
+			       ZTRESS_THREAD(h2, &mpsc_buffer, 0, preempt_max, t),
+			       ZTRESS_THREAD(h3, &mpsc_buffer, 0, preempt_max, t));
 	} else {
 		ZTRESS_EXECUTE(
-				/*ZTRESS_TIMER(h1,  &buffer, 0, t),*/
-			       ZTRESS_THREAD(h1, &buffer, 0, 0, t),
-			       ZTRESS_THREAD(h2, &buffer, 0, preempt_max, t),
-			       ZTRESS_THREAD(h3, &buffer, 0, preempt_max, t),
-			       ZTRESS_THREAD(h4, &buffer, 0, preempt_max, t)
+				/*ZTRESS_TIMER(h1,  &mpsc_buffer, 0, t),*/
+			       ZTRESS_THREAD(h1, &mpsc_buffer, 0, 0, t),
+			       ZTRESS_THREAD(h2, &mpsc_buffer, 0, preempt_max, t),
+			       ZTRESS_THREAD(h3, &mpsc_buffer, 0, preempt_max, t),
+			       ZTRESS_THREAD(h4, &mpsc_buffer, 0, preempt_max, t)
 			       );
 	}
 

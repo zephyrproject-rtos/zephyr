@@ -1,0 +1,30 @@
+#
+# Copyright 2023 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt1170_evk@B/mimxrt1176/cm7
+name: NXP MIMXRT1170-EVKB CM7
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 65536
+flash: 65536
+supported:
+  - adc
+  - counter
+  - can
+  - dma
+  - gpio
+  - hwinfo
+  - i2c
+  - mipi_dsi
+  - spi
+  - usb_device
+  - watchdog
+  - video
+vendor: nxp

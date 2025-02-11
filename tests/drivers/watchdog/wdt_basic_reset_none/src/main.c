@@ -54,7 +54,10 @@ static int test_wdt_callback_reset_none(void)
 	m_cfg_wdt0.callback = wdt_callback;
 
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
-	if (err != 0) {
+	if (err == -ENOTSUP) {
+		TC_PRINT("Some of the options are not supported, skip\n");
+		return TC_SKIP;
+	} else if (err != 0) {
 		TC_PRINT("Watchdog install error\n");
 		return TC_FAIL;
 	}
@@ -88,7 +91,10 @@ static int test_wdt_callback_reset_none(void)
 			"wdt callback failed");
 
 	err = wdt_disable(wdt);
-	if (err != 0) {
+	if (err == -EPERM) {
+		TC_PRINT("Some of the options are not permitted, skip\n");
+		return TC_SKIP;
+	} else if (err != 0) {
 		TC_PRINT("Disable watchdog error\n");
 		return TC_FAIL;
 	}
@@ -121,7 +127,16 @@ static int test_wdt_bad_window_max(void)
 
 ZTEST(wdt_basic_reset_none, test_wdt_callback_reset_none)
 {
-	zassert_true(test_wdt_callback_reset_none() == TC_PASS);
+	switch (test_wdt_callback_reset_none()) {
+	case TC_SKIP:
+		ztest_test_skip();
+		break;
+	case TC_PASS:
+		ztest_test_pass();
+		break;
+	default:
+		ztest_test_fail();
+	}
 }
 
 ZTEST(wdt_basic_reset_none, test_wdt_bad_window_max)

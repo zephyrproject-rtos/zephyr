@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,7 +44,7 @@
 #define NETC_MSIX(node, name, cb)					\
 	{								\
 		.handler = cb,						\
-		.mbox_channel = MBOX_DT_CHANNEL_GET(node, name),	\
+		.mbox_spec = MBOX_DT_SPEC_GET(node, name),		\
 	}
 
 /* Tx/Rx ENETC ring definitions */
@@ -78,28 +78,33 @@
 		mac_addr[5] = (id + n) & 0xff;				\
 	} while (0)
 
-#define NETC_GENERATE_MAC_ADDRESS(node, n)					\
+#define NETC_GENERATE_MAC_ADDRESS(n)						\
 	static void nxp_s32_eth##n##_generate_mac(uint8_t mac_addr[6])		\
 	{									\
-		COND_CODE_1(DT_PROP(node, zephyr_random_mac_address),		\
+		COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),		\
 			(_NETC_GENERATE_MAC_ADDRESS_RANDOM),			\
-			(COND_CODE_0(DT_NODE_HAS_PROP(node, local_mac_address),	\
+			(COND_CODE_0(DT_INST_NODE_HAS_PROP(n, local_mac_address),\
 				(_NETC_GENERATE_MAC_ADDRESS_UNIQUE(n)),		\
 				(ARG_UNUSED(mac_addr)))));			\
 	}
+
+#define NETC_SI_NXP_S32_HW_INSTANCE_CHECK(i, n) \
+	((DT_INST_REG_ADDR(n) == IP_NETC__ENETC0_SI##i##_BASE) ? i : 0)
+
+#define NETC_SI_NXP_S32_HW_INSTANCE(n)					\
+	LISTIFY(__DEBRACKET FEATURE_NETC_ETH_NUMBER_OF_CTRLS,		\
+			NETC_SI_NXP_S32_HW_INSTANCE_CHECK, (|), n)
 
 /* Helper macros to concatenate tokens that require further expansions */
 #define _CONCAT3(a, b, c)	DT_CAT3(a, b, c)
 
 struct nxp_s32_eth_msix {
 	void (*handler)(uint8_t chan, const uint32_t *buf, uint8_t buf_size);
-	struct mbox_channel mbox_channel;
+	struct mbox_dt_spec mbox_spec;
 };
 
 struct nxp_s32_eth_config {
 	const Netc_Eth_Ip_ConfigType netc_cfg;
-
-	const Netc_EthSwt_Ip_ConfigType switch_cfg;
 
 	Netc_Eth_Ip_MACFilterHashTableEntryType *mac_filter_hash_table;
 
@@ -126,8 +131,9 @@ struct nxp_s32_eth_data {
 int nxp_s32_eth_initialize_common(const struct device *dev);
 int nxp_s32_eth_tx(const struct device *dev, struct net_pkt *pkt);
 enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev);
-void nxp_s32_eth_mcast_cb(struct net_if *iface, const struct net_addr *addr, bool is_joined);
+void nxp_s32_eth_mcast_filter(const struct device *dev, const struct ethernet_filter *filter);
 int nxp_s32_eth_set_config(const struct device *dev, enum ethernet_config_type type,
 			   const struct ethernet_config *config);
+extern void Netc_Eth_Ip_MSIX_Rx(uint8_t si_idx);
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_S32_NETC_PRIV_H_ */

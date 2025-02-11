@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm64/fvp/fvp-aemv8r.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	model = "FVP BaseR AEMv8R";
+
+	chosen {
+		/*
+		 * The SRAM node is actually located in the
+		 * DRAM region of the FVP BaseR AEMv8R.
+		 */
+		zephyr,sram = &dram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "hvc";
+	};
+
+	soc {
+		flash0: flash@88000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x88000000 DT_SIZE_M(64)>;
+		};
+
+		dram0: memory@0 {
+			compatible = "mmio-dram";
+			reg = <0x0 DT_SIZE_M(128)>;
+		};
+
+		device_region: memory@9a000000 {
+			compatible = "zephyr,memory-region", "mmio-dram";
+			reg = <0x9a000000 0x66000000>;
+			zephyr,memory-region = "DEVICE_REGION";
+			zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};

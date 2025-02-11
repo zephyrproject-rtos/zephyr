@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2023 Dave Rensberger - Beechwoods Software
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "rpi_pico-common.dtsi"

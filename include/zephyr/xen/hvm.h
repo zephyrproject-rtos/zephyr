@@ -11,7 +11,7 @@
 
 #include <zephyr/kernel.h>
 
-int hvm_set_parameter(int idx, uint64_t value);
-int hvm_get_parameter(int idx, uint64_t *value);
+int hvm_set_parameter(int idx, int domid, uint64_t value);
+int hvm_get_parameter(int idx, int domid, uint64_t *value);
 
 #endif /* __XEN_HVM_H__ */

@@ -1,0 +1,29 @@
+sample:
+  description: Test TF-M builds in various configurations
+  name: TF-M build configuration
+common:
+  tags:
+    - trusted-firmware-m
+  platform_allow:
+    - mps2/an521/cpu0/ns
+    - v2m_musca_s1/musca_s1/ns
+    - nrf5340dk/nrf5340/cpuapp/ns
+    - nrf9160dk/nrf9160/ns
+    - bl5340_dvk/nrf5340/cpuapp/ns
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Hello World! (.*)"
+tests:
+  sample.config_build.no_bl2:
+    extra_configs:
+      - CONFIG_TFM_BL2=n
+  sample.config_build.single_image:
+    tags:
+      - mcuboot
+    platform_allow:
+      # Platform fails no_bl2
+      - stm32l562e_dk/stm32l562xx/ns
+    extra_configs:
+      - CONFIG_TFM_MCUBOOT_IMAGE_NUMBER=1

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 STMicroelectronics
+ * Copyright (c) 2020-2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,9 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32wb_l_reset.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
 
 / {
@@ -28,8 +30,30 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "arm,cortex-m4f";
+			compatible = "arm,cortex-m4";
 			reg = <0>;
+			cpu-power-states = <&stop0 &stop1 &stop2>;
+		};
+
+		power-states {
+			stop0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <100>;
+			};
+			stop1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+				min-residency-us = <500>;
+			};
+			stop2: state2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <3>;
+				min-residency-us = <900>;
+			};
 		};
 	};
 
@@ -116,6 +140,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x58000800 0x400>;
 			num-lines = <16>;
 			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
@@ -182,7 +207,21 @@
 			interrupts = <42 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
 			prescaler = <32768>;
+			alarms-count = <2>;
+			alrm-exti-line = <17>;
 			status = "disabled";
+
+			/* In STM32WL, the backup registers are defined as part of the TAMP
+			 * peripheral. This peripheral is not implemented in Zephyr yet, however,
+			 * the reference manual states that tamp_pclk is connected to rtc_pclk.
+			 * It makes sense to have BBRAM instantiated as a child of RTC, so that
+			 * the driver can verify that its parent device (RTC) is ready.
+			 */
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <20>;
+				status = "disabled";
+			};
 		};
 
 		iwdg: watchdog@40003000 {
@@ -223,6 +262,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000001>;
 			resets = <&rctl STM32_RESET(APB1H, 0U)>;
 			interrupts = <38 0>;
+			wakeup-line = <28>;
 			status = "disabled";
 		};
 
@@ -296,7 +336,7 @@
 				compatible = "st,stm32wl-subghz-radio";
 				reg = <0>;
 				interrupts = <50 0>;
-				spi-max-frequency = <12000000>;
+				spi-max-frequency = <8000000>;
 				status = "disabled";
 			};
 		};
@@ -308,8 +348,13 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			temp-channel = <12>;
-			vref-channel = <13>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <2 4 8 13 20 40 80 161>;
+			num-sampling-time-common-channels = <2>;
+			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
 		};
 
 		dac1: dac@40007400 {
@@ -352,6 +397,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers16: timers@40014400 {
@@ -369,6 +419,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers17: timers@40014800 {
@@ -385,6 +440,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -439,6 +499,34 @@
 			dma-requests= <38>;
 			status = "disabled";
 		};
+
+		pwr: power@58000400 {
+			compatible = "st,stm32-pwr";
+			reg = <0x58000400 0x400>; /* PWR register bank */
+			status = "disabled";
+
+			wkup-pins-nb = <3>; /* 3 system wake-up pins */
+			wkup-pins-pol;
+			wkup-pins-pupd;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			wkup-pin@1 {
+				reg = <0x1>;
+				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_SRC_0>;
+			};
+
+			wkup-pin@2 {
+				reg = <0x2>;
+				wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_SRC_0>;
+			};
+
+			wkup-pin@3 {
+				reg = <0x3>;
+				wkup-gpios = <&gpiob 3 STM32_PWR_WKUP_PIN_SRC_0>;
+			};
+		};
 	};
 
 	die_temp: dietemp {
@@ -449,6 +537,45 @@
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3300>;
 		io-channels = <&adc1 12>;
+		status = "disabled";
+	};
+
+	vref: vref {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x1FFF75AA>;
+		vrefint-cal-mv = <3300>;
+		io-channels = <&adc1 13>;
+		status = "disabled";
+	};
+
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <3>;
+		io-channels = <&adc1 14>;
+		status = "disabled";
+	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
+		status = "disabled";
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
+	};
+
+	smbus3: smbus3 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c3>;
 		status = "disabled";
 	};
 };

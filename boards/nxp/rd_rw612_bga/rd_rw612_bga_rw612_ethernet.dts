@@ -1,0 +1,47 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "rd_rw612_bga.dtsi"
+
+/*
+ * To use ethernet on RD_RW612_BGA board:
+ *
+ * Load R485, R486, R487, R488, R489, R491, R490,
+ *	R522, R521, R520, R524, R523, R508, R505
+ * Remove R518, R507, R506
+ */
+&enet_mac {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_mdio>;
+	pinctrl-names = "default";
+	phy: phy@2 {
+		compatible = "microchip,ksz8081";
+		reg = <2>;
+		status = "okay";
+		reset-gpios = <&hsgpio1 23 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&hsgpio0 21 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
+	};
+};
+
+/* XTAL is disconnected */
+/* TODO: this should be uncommented once it is added */
+/*
+ * &rtc {
+ *	status = "disabled";
+ * };
+ */

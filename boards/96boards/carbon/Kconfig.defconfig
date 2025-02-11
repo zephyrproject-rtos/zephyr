@@ -1,0 +1,29 @@
+# 96boards Carbon board configuration
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_96B_CARBON_STM32F401XE
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+if BT
+
+config SPI
+	default y
+
+config BT_SPI
+	default y
+
+endif # BT
+
+endif # BOARD_96B_CARBON_STM32F401XE
+
+if BOARD_96B_CARBON_NRF51822
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_96B_CARBON_NRF51822

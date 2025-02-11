@@ -1,4 +1,4 @@
-# Content of this file originates from include/linker/debug-sections.ld
+# Content of this file originates from include/zephyr/linker/debug-sections.ld
 # Following sections are obtained via 'ld --verbose'
 
 # Stabs debugging sections.
@@ -37,7 +37,7 @@ zephyr_linker_section(NAME  .debug_str ADDRESS 0)
 zephyr_linker_section(NAME  .debug_loc ADDRESS 0)
 zephyr_linker_section(NAME  .debug_macinfo ADDRESS 0)
 
- #SGI/MIPS DWARF 2 extensions
+# SGI/MIPS DWARF 2 extensions
 zephyr_linker_section(NAME  .debug_weaknames ADDRESS 0)
 zephyr_linker_section(NAME  .debug_funcnames ADDRESS 0)
 zephyr_linker_section(NAME  .debug_typenames ADDRESS 0)
@@ -46,5 +46,13 @@ zephyr_linker_section(NAME  .debug_varnames ADDRESS 0)
 # DWARF 3
 zephyr_linker_section(NAME  .debug_pubtypes ADDRESS 0)
 zephyr_linker_section(NAME  .debug_ranges ADDRESS 0)
-# DWARF Extension.
+
+# DWARF 5
+zephyr_linker_section(NAME  .debug_addr ADDRESS 0)
+zephyr_linker_section(NAME  .debug_line_str ADDRESS 0)
+zephyr_linker_section(NAME  .debug_loclists ADDRESS 0)
 zephyr_linker_section(NAME  .debug_macro ADDRESS 0)
+zephyr_linker_section(NAME  .debug_names ADDRESS 0)
+zephyr_linker_section(NAME  .debug_rnglists ADDRESS 0)
+zephyr_linker_section(NAME  .debug_str_offsets ADDRESS 0)
+zephyr_linker_section(NAME  .debug_sup ADDRESS 0)

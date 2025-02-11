@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2023 Meta
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ /{
+	soc {
+		plic1: interrupt-controller@8000000 {
+			riscv,max-priority = <7>;
+			riscv,ndev = <0x35>;
+			reg = <0x08000000 0x04000000>;
+			interrupts-extended = <
+				&hlic0 0x03
+				&hlic1 0x03
+				&hlic2 0x03
+				&hlic3 0x03
+				&hlic4 0x03
+				&hlic5 0x03
+				&hlic6 0x03
+				&hlic7 0x03
+			>;
+			interrupt-controller;
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0x00>;
+			#interrupt-cells = <0x02>;
+		};
+	};
+
+	uart1: uart@10000100 {
+		interrupts = <0x0a 1>;
+		interrupt-parent = <&plic1>;
+		clock-frequency = <0x384000>;
+		reg = <0x10000100 0x100>;
+		compatible = "ns16550";
+		reg-shift = <0>;
+	};
+};

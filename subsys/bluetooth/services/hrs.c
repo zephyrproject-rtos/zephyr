@@ -14,12 +14,14 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/check.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/hrs.h>
 
 #define LOG_LEVEL CONFIG_BT_HRS_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -51,14 +53,23 @@ LOG_MODULE_REGISTER(hrs);
 	(BT_GATT_PERM_READ | BT_GATT_PERM_WRITE))			\
 
 static uint8_t hrs_blsc;
+static sys_slist_t hrs_cbs = SYS_SLIST_STATIC_INIT(&hrs_cbs);
 
 static void hrmc_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	ARG_UNUSED(attr);
 
+	struct bt_hrs_cb *listener;
+
 	bool notif_enabled = (value == BT_GATT_CCC_NOTIFY);
 
 	LOG_INF("HRS notifications %s", notif_enabled ? "enabled" : "disabled");
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&hrs_cbs, listener, _node) {
+		if (listener->ntf_changed) {
+			listener->ntf_changed(notif_enabled);
+		}
+	}
 }
 
 static ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -83,11 +94,34 @@ BT_GATT_SERVICE_DEFINE(hrs_svc,
 			       NULL, NULL, NULL),
 );
 
-static int hrs_init(const struct device *dev)
+static int hrs_init(void)
 {
-	ARG_UNUSED(dev);
 
 	hrs_blsc = 0x01;
+
+	return 0;
+}
+
+int bt_hrs_cb_register(struct bt_hrs_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	sys_slist_append(&hrs_cbs, &cb->_node);
+
+	return 0;
+}
+
+int bt_hrs_cb_unregister(struct bt_hrs_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&hrs_cbs, &cb->_node)) {
+		return -ENOENT;
+	}
 
 	return 0;
 }

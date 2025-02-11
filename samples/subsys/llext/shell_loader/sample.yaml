@@ -1,0 +1,32 @@
+common:
+  tags: shell llext
+  arch_allow:
+    - arm
+    - xtensa
+  filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+  platform_exclude:
+    # platforms with active issues
+    - apollo4p_evb            # See #73443
+    - apollo4p_blue_kxr_evb   # See #73443
+    - numaker_pfm_m487        # See #63167
+    - s32z2xxdc2/s32z270/rtu0 # See commit 18a0660
+    - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
+    # platforms that are always skipped by the runtime filter
+    - qemu_arc/qemu_arc_em
+    - qemu_arc/qemu_arc_hs
+    - qemu_arc/qemu_arc_hs/xip
+    - qemu_arc/qemu_arc_hs5x
+    - qemu_arc/qemu_arc_hs6x
+    - qemu_cortex_m0
+    - qemu_xtensa/dc233c/mmu
+
+sample:
+  description: Loadable extensions with shell sample
+  name: Extension loader shell
+
+tests:
+  sample.llext.shell:
+    harness: keyboard
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - arch:arm:CONFIG_ARM_AARCH32_MMU=n

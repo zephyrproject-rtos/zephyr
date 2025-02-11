@@ -1,0 +1,5 @@
+board:
+  name: qemu_riscv32e
+  vendor: qemu
+  socs:
+    - name: qemu_virt_riscv32e

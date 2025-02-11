@@ -295,8 +295,12 @@ static int tx(struct net_pkt *pkt)
 	return ret;
 }
 
-static void tx_thread(void)
+static void tx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	LOG_DBG("Tx thread started");
 
 	while (1) {
@@ -353,7 +357,7 @@ static void init_tx_queue(void)
 
 	k_thread_create(&tx_thread_data, tx_stack,
 			K_THREAD_STACK_SIZEOF(tx_stack),
-			(k_thread_entry_t)tx_thread,
+			tx_thread,
 			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
 }
 
@@ -414,19 +418,19 @@ out:
 	return ret;
 }
 
-enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface, struct net_pkt *pkt)
+enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt)
 {
 	return NET_CONTINUE;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 	LOG_INF("Starting wpanusb");
 
 	if (!device_is_ready(ieee802154_dev)) {
 		LOG_ERR("IEEE802.15.4 device not ready");
-		return;
+		return 0;
 	}
 
 	/* Initialize net_pkt */
@@ -440,9 +444,10 @@ void main(void)
 	ret = usb_enable(NULL);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 	/* TODO: Initialize more */
 
 	LOG_DBG("radio_api %p initialized", radio_api);
+	return 0;
 }

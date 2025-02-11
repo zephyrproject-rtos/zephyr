@@ -1,0 +1,23 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_SPI
+	bool "MIPI DBI SPI driver"
+	default y
+	depends on DT_HAS_ZEPHYR_MIPI_DBI_SPI_ENABLED
+	select SPI
+	help
+	  Enable support for MIPI DBI SPI driver. This driver implements
+	  a MIPI-DBI mode C compatible controller using a SPI device, as well
+	  as GPIO outputs for the reset and D/C signals
+
+if MIPI_DBI_SPI
+
+config MIPI_DBI_SPI_3WIRE
+	bool "Emulated 3 wire SPI support"
+	help
+	  Support 3 wire MIPI DBI (Mode C option 2) in MIPI DBI SPI
+	  driver. This requires manually packing each byte with a data/command
+	  bit, and may slow down display data transmission.
+
+endif # MIPI_DBI_SPI

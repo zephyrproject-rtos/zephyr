@@ -1,0 +1,75 @@
+# SENSORTILE_BOX_PRO board configuration
+
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SENSORTILE_BOX_PRO
+
+if BT
+
+config SPI
+	default y
+
+config BT_SPI
+	default y
+
+config BT_BLUENRG_ACI
+	default y
+
+# Disable Flow control
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+endif # BT
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+if BOARD_SERIAL_BACKEND_CDC_ACM
+
+config USB_DEVICE_STACK
+	default y
+
+config USB_CDC_ACM
+	default SERIAL
+
+config USB_DEVICE_INITIALIZE_AT_BOOT
+	default y if CONSOLE
+
+config SHELL_BACKEND_SERIAL_CHECK_DTR
+	default SHELL
+	depends on UART_LINE_CTRL
+
+config UART_LINE_CTRL
+	default SHELL
+
+config USB_DEVICE_REMOTE_WAKEUP
+	default n
+
+config USB_DEVICE_VID
+	default 0x0483
+
+config USB_DEVICE_PID
+	default 0x5740
+
+config USB_DEVICE_PRODUCT
+	default "Zephyr CDC SensorTile.box PRO"
+
+if LOG
+
+# Logger cannot use itself to log
+choice USB_CDC_ACM_LOG_LEVEL_CHOICE
+	default USB_CDC_ACM_LOG_LEVEL_OFF
+endchoice
+
+endif # LOG
+
+endif # BOARD_SERIAL_BACKEND_CDC_ACM
+
+DT_CHOSEN_ZEPHYR_CONSOLE := zephyr,console
+
+config UART_CONSOLE
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_CONSOLE)) && CONSOLE
+
+endif # BOARD_SENSORTILE_BOX_PRO

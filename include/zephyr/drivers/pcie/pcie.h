@@ -7,11 +7,19 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 
+/**
+ * @brief PCIe Host Interface
+ * @defgroup pcie_host_interface PCIe Host Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
 #include <stddef.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,6 +59,8 @@ typedef uint32_t pcie_id_t;
 struct pcie_dev {
 	pcie_bdf_t bdf;
 	pcie_id_t  id;
+	uint32_t   class_rev;
+	uint32_t   class_rev_mask;
 };
 
 #define Z_DEVICE_PCIE_NAME(node_id) _CONCAT(pcie_dev_, DT_DEP_ORD(node_id))
@@ -87,6 +97,8 @@ struct pcie_dev {
 	STRUCT_SECTION_ITERABLE(pcie_dev, Z_DEVICE_PCIE_NAME(node_id)) = {  \
 		.bdf = PCIE_BDF_NONE,                                       \
 		.id = PCIE_DT_ID(node_id),                                  \
+		.class_rev = DT_PROP_OR(node_id, class_rev, 0),             \
+		.class_rev_mask = DT_PROP_OR(node_id, class_rev_mask, 0),   \
 	}
 
 /**
@@ -147,20 +159,6 @@ struct pcie_bar {
  */
 
 /**
- * @brief Look up the BDF based on PCI(e) vendor & device ID
- *
- * This function is used to look up the BDF for a device given its
- * vendor and device ID.
- *
- * @deprecated
- * @see DEVICE_PCIE_DECLARE
- *
- * @param id PCI(e) vendor & device ID encoded using PCIE_ID()
- * @return The BDF for the device, or PCIE_BDF_NONE if it was not found
- */
-__deprecated extern pcie_bdf_t pcie_bdf_lookup(pcie_id_t id);
-
-/**
  * @brief Read a 32-bit word from an endpoint's configuration space.
  *
  * This function is exported by the arch/SoC/board code.
@@ -216,24 +214,12 @@ struct pcie_scan_opt {
 
 /** Scan for PCIe devices.
  *
- * Scan the PCI bus (or busses) for available endpoints.
+ * Scan the PCI bus (or buses) for available endpoints.
  *
  * @param opt Options determining how to perform the scan.
  * @return 0 on success, negative POSIX error number on failure.
  */
 int pcie_scan(const struct pcie_scan_opt *opt);
-
-/**
- * @brief Probe for the presence of a PCI(e) endpoint.
- *
- * @deprecated
- * @see DEVICE_PCIE_DECLARE
- *
- * @param bdf the endpoint to probe
- * @param id the endpoint ID to expect, or PCIE_ID_NONE for "any device"
- * @return true if the device is present, false otherwise
- */
-__deprecated extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
 
 /**
  * @brief Get the MBAR at a specific BAR index
@@ -590,5 +576,9 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_ */

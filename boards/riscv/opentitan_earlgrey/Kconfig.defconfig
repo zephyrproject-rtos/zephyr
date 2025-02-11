@@ -1,9 +1,0 @@
-# Copyright (c) 2023 by Rivos Inc.
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_OPENTITAN_EARLGREY
-
-config BOARD
-	default "opentitan_earlgrey"
-
-endif # BOARD_OPENTITAN_EARLGREY

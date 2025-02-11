@@ -14,22 +14,32 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "intel,atom";
+			compatible = "intel,x86";
 			d-cache-line-size = <64>;
 			reg = <0>;
 		};
-	};
 
-	dram0: memory@0 {
-		device_type = "memory";
-		reg = <0x0 DT_DRAM_SIZE>;
 	};
 
 	intc: ioapic@fec00000  {
 		compatible = "intel,ioapic";
+		#address-cells = <1>;
+		#interrupt-cells = <3>;
 		reg = <0xfec00000 0x1000>;
 		interrupt-controller;
+	};
+
+	intc_loapic: loapic@fee00000  {
+		compatible = "intel,loapic";
+		reg = <0xfee00000 0x1000>;
+		interrupt-controller;
 		#interrupt-cells = <3>;
+		#address-cells = <1>;
+	};
+
+	dram0: memory@0 {
+		device_type = "memory";
+		reg = <DT_DRAM_BASE DT_DRAM_SIZE>;
 	};
 
 	soc {
@@ -38,10 +48,10 @@
 		compatible = "simple-bus";
 		ranges;
 
-
 		uart0: uart@3f8 {
 			compatible = "ns16550";
 			reg = <0x000003f8 0x100>;
+			io-mapped;
 			clock-frequency = <1843200>;
 			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
@@ -52,6 +62,7 @@
 		uart1: uart@2f8 {
 			compatible = "ns16550";
 			reg = <0x000002f8 0x100>;
+			io-mapped;
 			clock-frequency = <1843200>;
 			interrupts = <3 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
@@ -68,11 +79,15 @@
 			status = "disabled";
 		};
 
-		counter: counter@70 {
+		rtc: counter: rtc@70 {
 			compatible = "motorola,mc146818";
 			reg = <0x70 0x0D 0x71 0x0D>;
+			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			alarms-count = <1>;
 
 			status = "okay";
 		};
+
 	};
 };

@@ -265,7 +265,6 @@ ZTEST(tinycrypt, test_cmac_mode)
 	};
 	uint8_t K1[BUF_LEN], K2[BUF_LEN];
 
-	TC_START("Performing CMAC tests:");
 
 	(void) tc_cmac_setup(&state, key, &sched);
 	result = verify_gf_2_128_double(K1, K2, state);

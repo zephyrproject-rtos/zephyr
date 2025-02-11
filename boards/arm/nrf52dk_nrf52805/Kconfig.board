@@ -1,8 +1,0 @@
-# nRF52 DK nRF52805 board configuration
-
-# Copyright (c) 2020 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NRF52DK_NRF52805
-	bool "nRF52 DK NRF52805"
-	depends on SOC_NRF52805_CAAA

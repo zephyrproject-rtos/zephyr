@@ -71,7 +71,7 @@ A memory slab is defined using a variable of type :c:type:`k_mem_slab`.
 It must then be initialized by calling :c:func:`k_mem_slab_init`.
 
 The following code defines and initializes a memory slab that has 6 blocks
-that are 400 bytes long, each of which is aligned to a 4-byte boundary..
+that are 400 bytes long, each of which is aligned to a 4-byte boundary.
 
 .. code-block:: c
 
@@ -109,7 +109,7 @@ A warning is printed if a suitable block is not obtained.
 
     char *block_ptr;
 
-    if (k_mem_slab_alloc(&my_slab, &block_ptr, 100) == 0)) {
+    if (k_mem_slab_alloc(&my_slab, (void **)&block_ptr, K_MSEC(100)) == 0) {
         memset(block_ptr, 0, 400);
 	...
     } else {
@@ -128,9 +128,9 @@ then releases it once it is no longer needed.
 
     char *block_ptr;
 
-    k_mem_slab_alloc(&my_slab, &block_ptr, K_FOREVER);
+    k_mem_slab_alloc(&my_slab, (void **)&block_ptr, K_FOREVER);
     ... /* use memory block pointed at by block_ptr */
-    k_mem_slab_free(&my_slab, &block_ptr);
+    k_mem_slab_free(&my_slab, (void *)block_ptr);
 
 Suggested Uses
 **************

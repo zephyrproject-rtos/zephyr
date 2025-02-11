@@ -1,0 +1,8 @@
+tests:
+  acpi.basic:
+    tags:
+      - acpi
+      - acpica
+    integration_platforms:
+      - qemu_x86_64
+    depends_on: acpi

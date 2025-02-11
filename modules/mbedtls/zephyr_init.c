@@ -13,8 +13,10 @@
 #include <zephyr/init.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/drivers/entropy.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <mbedtls/entropy.h>
+#include <mbedtls/platform_time.h>
+
 
 #include <mbedtls/debug.h>
 
@@ -83,9 +85,8 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len,
 }
 #endif /* CONFIG_MBEDTLS_ZEPHYR_ENTROPY */
 
-static int _mbedtls_init(const struct device *device)
+static int _mbedtls_init(void)
 {
-	ARG_UNUSED(device);
 
 	init_heap();
 
@@ -93,7 +94,53 @@ static int _mbedtls_init(const struct device *device)
 	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
 #endif
 
+#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
+	if (psa_crypto_init() != PSA_SUCCESS) {
+		return -EIO;
+	}
+#endif
+
 	return 0;
 }
 
-SYS_INIT(_mbedtls_init, POST_KERNEL, 0);
+#if defined(CONFIG_MBEDTLS_INIT)
+SYS_INIT(_mbedtls_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
+
+/* if CONFIG_MBEDTLS_INIT is not defined then this function
+ * should be called by the platform before any mbedtls functionality
+ * is used
+ */
+int mbedtls_init(void)
+{
+	return _mbedtls_init();
+}
+
+/* TLS 1.3 ticket lifetime needs a timing interface */
+mbedtls_ms_time_t mbedtls_ms_time(void)
+{
+	return (mbedtls_ms_time_t)k_uptime_get();
+}
+
+#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
+/* MBEDTLS_PSA_CRYPTO_C requires a random generator to work and this can
+ * be achieved through either legacy MbedTLS modules
+ * (ENTROPY + CTR_DRBG/HMAC_DRBG) or provided externally by enabling the
+ * CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG. In the latter case the following
+ * callback functions needs to be defined.
+ */
+psa_status_t mbedtls_psa_external_get_random(
+	mbedtls_psa_external_random_context_t *context,
+	uint8_t *output, size_t output_size, size_t *output_length)
+{
+	(void) context;
+
+	if (sys_csrand_get(output, output_size) != 0) {
+		return PSA_ERROR_GENERIC_ERROR;
+	}
+
+	*output_length = output_size;
+
+	return PSA_SUCCESS;
+}
+#endif

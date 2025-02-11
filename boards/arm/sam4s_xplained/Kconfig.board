@@ -1,8 +1,0 @@
-# Atmel SAM4S Xplained Board selection
-
-# Copyright (c) 2017 Justin Watson
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_SAM4S_XPLAINED
-	bool "Atmel SAM4S Xplained"
-	depends on SOC_PART_NUMBER_SAM4S16C

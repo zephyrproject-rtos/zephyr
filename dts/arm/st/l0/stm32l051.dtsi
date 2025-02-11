@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32l051", "st,stm32l0", "simple-bus";
+
 		i2c2: i2c@40005800 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -70,9 +72,13 @@
 		eeprom: eeprom@8080000{
 			reg = <0x08080000 DT_SIZE_K(2)>;
 		};
+	};
 
-		adc1: adc@40012400 {
-			temp-channel = <18>;
-		};
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
 	};
 };

@@ -52,13 +52,13 @@ static const char *now_str(void)
 	return buf;
 }
 
-void main(void)
+int main(void)
 {
 	int rc = battery_measure_enable(true);
 
 	if (rc != 0) {
 		printk("Failed initialize battery measurement: %d\n", rc);
-		return;
+		return 0;
 	}
 
 	while (true) {
@@ -79,4 +79,5 @@ void main(void)
 		k_busy_wait(5 * USEC_PER_SEC);
 	}
 	printk("Disable: %d\n", battery_measure_enable(false));
+	return 0;
 }

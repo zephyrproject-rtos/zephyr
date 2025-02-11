@@ -1,9 +1,0 @@
-# Copyright (c) 2018, Google LLC.
-# Copyright (c) 2022, Microchip Technology Inc.
-# SPDX-License-Identifier: Apache-2.0
-
-description: Microchip XEC QMSPI controller with local DMA
-
-compatible: "microchip,xec-qmspi-full-duplex"
-
-include: [microchip-xec-qmspi-v2.yaml]

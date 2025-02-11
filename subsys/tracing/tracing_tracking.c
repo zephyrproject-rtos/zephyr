@@ -8,6 +8,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/tracing/tracking.h>
+#include <zephyr/sys/iterable_sections.h>
 
 struct k_timer *_track_list_k_timer;
 struct k_spinlock _track_list_k_timer_lock;
@@ -124,9 +125,18 @@ void sys_track_k_event_init(struct k_event *event)
 }
 #endif
 
-static int sys_track_static_init(const struct device *arg)
+#ifdef CONFIG_NETWORKING
+void sys_track_socket_init(int sock, int family, int type, int proto)
 {
-	ARG_UNUSED(arg);
+	ARG_UNUSED(sock);
+	ARG_UNUSED(family);
+	ARG_UNUSED(type);
+	ARG_UNUSED(proto);
+}
+#endif
+
+static int sys_track_static_init(void)
+{
 
 	SYS_PORT_TRACING_TYPE_MASK(k_timer,
 			SYS_TRACK_STATIC_INIT(k_timer));

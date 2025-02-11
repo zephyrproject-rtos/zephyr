@@ -25,6 +25,8 @@
 	};
 
 	soc {
+		compatible = "st,stm32f105", "st,stm32f1", "simple-bus";
+
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
 				erase-block-size = <DT_SIZE_K(2)>;
@@ -32,26 +34,22 @@
 		};
 
 		can1: can@40006400 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
-			sjw = <1>;
-			sample-point = <875>;
 		};
 
 		can2: can@40006800 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006800 0x400>;
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			/* also enabling clock for can1 (master instance) */
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x06000000>;
 			status = "disabled";
-			sjw = <1>;
-			sample-point = <875>;
 		};
 
 		dac1: dac@40007400 {

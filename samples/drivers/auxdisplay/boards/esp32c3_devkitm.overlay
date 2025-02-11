@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+&spi2 {
+	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+
+	auxdisplay_0: auxdisplay@0 {
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		compatible = "ptc,pt6314";
+		status = "okay";
+		columns = <20>;
+		rows = <2>;
+	};
+};

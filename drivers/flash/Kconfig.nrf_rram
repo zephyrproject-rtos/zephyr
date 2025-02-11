@@ -1,0 +1,84 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SOC_FLASH_NRF_RRAM
+	bool "Nordic Semiconductor flash driver for nRF RRAM"
+	default y
+	depends on DT_HAS_NORDIC_RRAM_CONTROLLER_ENABLED
+	select NRFX_RRAMC
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select FLASH_NRF_FORCE_ALT
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	help
+	  Enables Nordic Semiconductor flash driver for nRF RRAM controllers.
+	  The entire contiguous block of RRAM gets logically divided into pages,
+	  but partial erase is always supported.
+
+if SOC_FLASH_NRF_RRAM
+
+config NRF_RRAM_WRITE_BUFFER_SIZE
+	int "Internal write-buffer size"
+	default 32 if !SOC_FLASH_NRF_RADIO_SYNC_NONE
+	default 0
+	range 0 32
+	help
+	  Number of 128-bit words.
+	  Maximum buffer size can be configured to the value of 32 (128-bit words).
+	  Set 0 to disable write-buffer.
+
+config NRF_RRAM_READYNEXT_TIMEOUT_VALUE
+	int "Preload timeout value for waiting for a next write in RRAMC clock cycles"
+	default 128
+	range 0 4095
+	help
+	  Set 0 to disable ready next timeout counter.
+
+choice SOC_FLASH_NRF_RADIO_SYNC_CHOICE
+	prompt "Nordic nRFx flash driver synchronization"
+	default SOC_FLASH_NRF_RADIO_SYNC_TICKER if BT_LL_SW_SPLIT
+	default SOC_FLASH_NRF_RADIO_SYNC_NONE
+	help
+	  synchronization between flash memory driver and radio.
+
+config SOC_FLASH_NRF_RADIO_SYNC_TICKER
+	bool "Nordic nRFx flash driver synchronized with radio"
+	depends on BT_LL_SW_SPLIT
+	help
+	  Enable synchronization between flash memory driver and radio using
+	  BLE LL controller ticker API.
+
+config SOC_FLASH_NRF_RADIO_SYNC_NONE
+	bool "none"
+	help
+	  disable synchronization between flash memory driver and radio.
+endchoice
+
+config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
+	int "Multiplier for flash operation timeouts [x0.1]"
+	depends on !SOC_FLASH_NRF_RADIO_SYNC_NONE
+	default 15
+	help
+	  This is a multiplier that will be divided by 10 that is applied
+	  to the flash erase and write operations timeout. The base for
+	  the multiplication would allow erasing all nRF flash pages in
+	  blocking mode.
+
+config NRF_RRAM_REGION_ADDRESS_RESOLUTION
+	hex
+	default 0x400
+	help
+	  RRAMC's region protection address resolution.
+	  Applies to region with configurable start address.
+
+config NRF_RRAM_REGION_SIZE_UNIT
+	hex
+	default 0x400
+	help
+	  Base unit for the size of RRAMC's region protection.
+
+endif # SOC_FLASH_NRF_RRAM

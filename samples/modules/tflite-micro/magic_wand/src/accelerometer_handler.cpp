@@ -33,26 +33,19 @@ float bufz[BUFLEN] = { 0.0f };
 
 bool initial = true;
 
-TfLiteStatus SetupAccelerometer(tflite::ErrorReporter *error_reporter)
+TfLiteStatus SetupAccelerometer()
 {
 	if (!device_is_ready(sensor)) {
 		printk("%s: device not ready.\n", sensor->name);
 		return kTfLiteApplicationError;
 	}
 
-	if (sensor == NULL) {
-		TF_LITE_REPORT_ERROR(error_reporter,
-				     "Failed to get accelerometer, name: %s\n",
-				     sensor->name);
-	} else {
-		TF_LITE_REPORT_ERROR(error_reporter, "Got accelerometer, name: %s\n",
-				     sensor->name);
-	}
+	MicroPrintf("Got accelerometer, name: %s\n", sensor->name);
+
 	return kTfLiteOk;
 }
 
-bool ReadAccelerometer(tflite::ErrorReporter *error_reporter, float *input,
-		       int length)
+bool ReadAccelerometer(float *input, int length)
 {
 	int rc;
 	struct sensor_value accel[3];
@@ -60,7 +53,7 @@ bool ReadAccelerometer(tflite::ErrorReporter *error_reporter, float *input,
 
 	rc = sensor_sample_fetch(sensor);
 	if (rc < 0) {
-		TF_LITE_REPORT_ERROR(error_reporter, "Fetch failed\n");
+		MicroPrintf("Fetch failed\n");
 		return false;
 	}
 	/* Skip if there is no data */
@@ -72,7 +65,7 @@ bool ReadAccelerometer(tflite::ErrorReporter *error_reporter, float *input,
 	for (int i = 0; i < samples_count; i++) {
 		rc = sensor_channel_get(sensor, SENSOR_CHAN_ACCEL_XYZ, accel);
 		if (rc < 0) {
-			TF_LITE_REPORT_ERROR(error_reporter, "ERROR: Update failed: %d\n", rc);
+			MicroPrintf("ERROR: Update failed: %d\n", rc);
 			return false;
 		}
 		bufx[begin_index] = (float)sensor_value_to_double(&accel[0]);

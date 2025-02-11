@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+# Device data: comp.
+# https://www.xilinx.com/products/silicon-devices/soc/zynq-7000.html#productTable
+#
+
+config SOC_SERIES_XC7ZXXX
+	select ARM
+	select CPU_CORTEX_A9
+	select SYSCON
+	select ARM_ARCH_TIMER_ERRATUM_740657 if ARM_ARCH_TIMER

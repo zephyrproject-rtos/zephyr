@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
- * Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,10 +20,16 @@ extern "C" {
 /**
  * @brief File System APIs
  * @defgroup file_system_api File System APIs
+ * @since 1.5
+ * @version 1.0.0
+ * @ingroup os_services
  * @{
  */
 struct fs_file_system_t;
 
+/**
+ * @brief Enumeration for directory entry types
+ */
 enum fs_dir_entry_type {
 	/** Identifier for file entry */
 	FS_DIR_ENTRY_FILE = 0,
@@ -52,6 +58,9 @@ enum {
 	/** Identifier for in-tree LittleFS file system. */
 	FS_LITTLEFS,
 
+	/** Identifier for in-tree Ext2 file system. */
+	FS_EXT2,
+
 	/** Base identifier for external file systems. */
 	FS_TYPE_EXTERNAL_BASE,
 };
@@ -78,43 +87,41 @@ enum {
 
 /**
  * @brief File system mount info structure
- *
- * @param node Entry for the fs_mount_list list
- * @param type File system type
- * @param mnt_point Mount point directory name (ex: "/fatfs")
- * @param fs_data Pointer to file system specific data
- * @param storage_dev Pointer to backend storage device
- * @param mountp_len Length of Mount point string
- * @param fs Pointer to File system interface of the mount point
- * @param flags Mount flags
  */
 struct fs_mount_t {
+	/** Entry for the fs_mount_list list */
 	sys_dnode_t node;
+	/** File system type */
 	int type;
+	/** Mount point directory name (ex: "/fatfs") */
 	const char *mnt_point;
+	/** Pointer to file system specific data */
 	void *fs_data;
+	/** Pointer to backend storage device */
 	void *storage_dev;
-	/* fields filled by file system core */
+	/* The following fields are filled by file system core */
+	/** Length of Mount point string */
 	size_t mountp_len;
+	/** Pointer to File system interface of the mount point */
 	const struct fs_file_system_t *fs;
+	/** Mount flags */
 	uint8_t flags;
 };
 
 /**
  * @brief Structure to receive file or directory information
  *
- * Used in functions that reads the directory entries to get
+ * Used in functions that read the directory entries to get
  * file or directory information.
- *
- * @param dir_entry_type Whether file or directory
- * - FS_DIR_ENTRY_FILE
- * - FS_DIR_ENTRY_DIR
- * @param name Name of directory or file
- * @param size Size of file. 0 if directory
  */
 struct fs_dirent {
+	/**
+	 * File/directory type (FS_DIR_ENTRY_FILE or FS_DIR_ENTRY_DIR)
+	 */
 	enum fs_dir_entry_type type;
+	/** Name of file or directory */
 	char name[MAX_FILE_NAME + 1];
+	/** Size of file (0 if directory). */
 	size_t size;
 };
 
@@ -123,16 +130,15 @@ struct fs_dirent {
  *
  * Used to retrieve information about total and available space
  * in the volume.
- *
- * @param f_bsize Optimal transfer block size
- * @param f_frsize Allocation unit size
- * @param f_blocks Size of FS in f_frsize units
- * @param f_bfree Number of free blocks
  */
 struct fs_statvfs {
+	/** Optimal transfer block size */
 	unsigned long f_bsize;
+	/** Allocation unit size */
 	unsigned long f_frsize;
+	/** Size of FS in f_frsize units */
 	unsigned long f_blocks;
+	/** Number of free blocks */
 	unsigned long f_bfree;
 };
 
@@ -154,8 +160,11 @@ struct fs_statvfs {
 #define FS_O_CREATE     0x10
 /** Open/create file for append */
 #define FS_O_APPEND     0x20
+/** Truncate the file while opening */
+#define FS_O_TRUNC      0x40
 /** Bitmask for open/create flags */
-#define FS_O_FLAGS_MASK 0x30
+#define FS_O_FLAGS_MASK 0x70
+
 
 /** Bitmask for open flags */
 #define FS_O_MASK       (FS_O_MODE_MASK | FS_O_FLAGS_MASK)
@@ -183,7 +192,7 @@ struct fs_statvfs {
  * @}
  */
 
-/*
+/**
  * @brief Get the common mount flags for an fstab entry.
 
  * @param node_id the node identifier for a child entry in a
@@ -200,6 +209,8 @@ struct fs_statvfs {
 /**
  * @brief The name under which a zephyr,fstab entry mount structure is
  * defined.
+ *
+ * @param node_id the node identifier for a child entry in a zephyr,fstab node.
  */
 #define FS_FSTAB_ENTRY(node_id) _CONCAT(z_fsmp_, node_id)
 
@@ -208,6 +219,8 @@ struct fs_statvfs {
  * entry.
  *
  * This will evaluate to the name of a struct fs_mount_t object.
+ *
+ * @param node_id the node identifier for a child entry in a zephyr,fstab node.
  */
 #define FS_FSTAB_DECLARE_ENTRY(node_id)		\
 	extern struct fs_mount_t FS_FSTAB_ENTRY(node_id)
@@ -223,7 +236,9 @@ struct fs_statvfs {
  */
 static inline void fs_file_t_init(struct fs_file_t *zfp)
 {
-	*zfp = (struct fs_file_t){ 0 };
+	zfp->filep = NULL;
+	zfp->mp = NULL;
+	zfp->flags = 0;
 }
 
 /**
@@ -237,13 +252,16 @@ static inline void fs_file_t_init(struct fs_file_t *zfp)
  */
 static inline void fs_dir_t_init(struct fs_dir_t *zdp)
 {
-	*zdp = (struct fs_dir_t){ 0 };
+	zdp->dirp = NULL;
+	zdp->mp = NULL;
 }
 
 /**
  * @brief Open or create file
  *
  * Opens or possibly creates a file and associates a stream with it.
+ * Successfully opened file, when no longer in use, should be closed
+ * with fs_close().
  *
  * @details
  * @p flags can be 0 or a binary combination of one or more of the following
@@ -253,9 +271,10 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  *   - @c FS_O_RDWR open for read/write (<tt>FS_O_READ | FS_O_WRITE</tt>)
  *   - @c FS_O_CREATE create file if it does not exist
  *   - @c FS_O_APPEND move to end of file before each write
+ *   - @c FS_O_TRUNC truncate the file
  *
- * If @p flags are set to 0 the function will attempt to open an existing file
- * with no read/write access; this may be used to e.g. check if the file exists.
+ * @warning If @p flags are set to 0 the function will open file, if it exists
+ *          and is accessible, but you will have no read/write access to it.
  *
  * @param zfp Pointer to a file object
  * @param file_name The name of a file to open
@@ -267,8 +286,9 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  * @retval -EROFS when opening read-only file for write, or attempting to
  *	   create a file on a system that has been mounted with the
  *	   FS_MOUNT_FLAG_READ_ONLY flag;
- * @retval -ENOENT when the file path is not possible (bad mount point);
+ * @retval -ENOENT when the file does not exist at the path;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval -EACCES when trying to truncate a file without opening it for write.
  * @retval <0 an other negative errno code, depending on a file system back-end.
  */
 int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);

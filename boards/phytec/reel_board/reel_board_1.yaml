@@ -1,0 +1,21 @@
+identifier: reel_board
+name: reel-board
+type: mcu
+arch: arm
+ram: 512
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - i2c
+  - spi
+  - gpio
+  - usb_device
+  - ble
+  - pwm
+  - arduino_i2c
+  - arduino_spi
+  - arduino_gpio
+vendor: phytec

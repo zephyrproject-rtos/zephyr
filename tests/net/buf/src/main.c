@@ -20,6 +20,7 @@
 #define USER_DATA_HEAP	4
 #define USER_DATA_FIXED	0
 #define USER_DATA_VAR	63
+#define FIXED_BUFFER_SIZE 128
 
 struct bt_data {
 	void *hci_sync;
@@ -68,7 +69,7 @@ static void fixed_destroy(struct net_buf *buf);
 static void var_destroy(struct net_buf *buf);
 
 NET_BUF_POOL_HEAP_DEFINE(bufs_pool, 10, USER_DATA_HEAP, buf_destroy);
-NET_BUF_POOL_FIXED_DEFINE(fixed_pool, 10, 128, USER_DATA_FIXED, fixed_destroy);
+NET_BUF_POOL_FIXED_DEFINE(fixed_pool, 10, FIXED_BUFFER_SIZE, USER_DATA_FIXED, fixed_destroy);
 NET_BUF_POOL_VAR_DEFINE(var_pool, 10, 1024, USER_DATA_VAR, var_destroy);
 
 static void buf_destroy(struct net_buf *buf)
@@ -150,6 +151,8 @@ ZTEST(net_buf_tests, test_net_buf_2)
 
 static void test_3_thread(void *arg1, void *arg2, void *arg3)
 {
+	ARG_UNUSED(arg3);
+
 	struct k_fifo *fifo = (struct k_fifo *)arg1;
 	struct k_sem *sema = (struct k_sem *)arg2;
 	struct net_buf *buf;
@@ -192,7 +195,7 @@ ZTEST(net_buf_tests, test_net_buf_3)
 
 	k_thread_create(&test_3_thread_data, test_3_thread_stack,
 			K_THREAD_STACK_SIZEOF(test_3_thread_stack),
-			(k_thread_entry_t) test_3_thread, &fifo, &sema, NULL,
+			test_3_thread, &fifo, &sema, NULL,
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	zassert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
@@ -270,10 +273,10 @@ ZTEST(net_buf_tests, test_net_buf_4)
 	removed = 0;
 
 	while (buf->frags) {
-		struct net_buf *frag = buf->frags;
+		struct net_buf *frag2 = buf->frags;
 
-		net_buf_frag_del(buf, frag);
-		net_buf_unref(frag);
+		net_buf_frag_del(buf, frag2);
+		net_buf_unref(frag2);
 		removed++;
 	}
 
@@ -405,12 +408,13 @@ ZTEST(net_buf_tests, test_net_buf_multi_frags)
 		      "Incorrect frag destroy callback count");
 }
 
-ZTEST(net_buf_tests, test_net_buf_clone)
+ZTEST(net_buf_tests, test_net_buf_clone_ref_count)
 {
 	struct net_buf *buf, *clone;
 
 	destroy_called = 0;
 
+	/* Heap pool supports reference counting */
 	buf = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
 	zassert_not_null(buf, "Failed to get buffer");
 
@@ -424,6 +428,64 @@ ZTEST(net_buf_tests, test_net_buf_clone)
 	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 
+ZTEST(net_buf_tests, test_net_buf_clone_no_ref_count)
+{
+	struct net_buf *buf, *clone;
+	const uint8_t data[3] = {0x11, 0x22, 0x33};
+
+	destroy_called = 0;
+
+	/* Fixed pool does not support reference counting */
+	buf = net_buf_alloc_len(&fixed_pool, 3, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+	net_buf_add_mem(buf, data, sizeof(data));
+
+	clone = net_buf_clone(buf, K_NO_WAIT);
+	zassert_not_null(clone, "Failed to get clone buffer");
+	zassert_not_equal(buf->data, clone->data,
+			  "No reference counting support, different pointers expected");
+	zassert_mem_equal(clone->data, data, sizeof(data));
+
+	net_buf_unref(buf);
+	net_buf_unref(clone);
+
+	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
+}
+
+/* Regression test: Zero sized buffers must be copy-able, not trigger a NULL pointer dereference */
+ZTEST(net_buf_tests, test_net_buf_clone_reference_counted_zero_sized_buffer)
+{
+	struct net_buf *buf, *clone;
+
+	buf = net_buf_alloc_len(&var_pool, 0, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	clone = net_buf_clone(buf, K_NO_WAIT);
+	zassert_not_null(clone, "Failed to clone zero sized buffer");
+
+	net_buf_unref(buf);
+}
+
+ZTEST(net_buf_tests, test_net_buf_clone_user_data)
+{
+	struct net_buf *original, *clone;
+	uint32_t *buf_user_data, *clone_user_data;
+
+	/* Requesting size 1 because all we are interested in are the user data */
+	original = net_buf_alloc_len(&bufs_pool, 1, K_NO_WAIT);
+	zassert_not_null(original, "Failed to get buffer");
+	buf_user_data = net_buf_user_data(original);
+	*buf_user_data = 0xAABBCCDD;
+
+	clone = net_buf_clone(original, K_NO_WAIT);
+	zassert_not_null(clone, "Failed to get clone buffer");
+	clone_user_data = net_buf_user_data(clone);
+	zexpect_equal(*clone_user_data, 0xAABBCCDD, "User data copy is invalid");
+
+	net_buf_unref(original);
+	net_buf_unref(clone);
+}
+
 ZTEST(net_buf_tests, test_net_buf_fixed_pool)
 {
 	struct net_buf *buf;
@@ -432,6 +494,12 @@ ZTEST(net_buf_tests, test_net_buf_fixed_pool)
 
 	buf = net_buf_alloc_len(&fixed_pool, 20, K_NO_WAIT);
 	zassert_not_null(buf, "Failed to get buffer");
+
+	/* Verify buffer's size and len - even though we requested less bytes we
+	 * should get a buffer with the fixed size.
+	 */
+	zassert_equal(buf->size, FIXED_BUFFER_SIZE, "Invalid fixed buffer size");
+	zassert_equal(buf->len, 0, "Invalid fixed buffer length");
 
 	net_buf_unref(buf);
 
@@ -470,6 +538,8 @@ ZTEST(net_buf_tests, test_net_buf_byte_order)
 	uint8_t be24[3] = { 0x01, 0x02, 0x03 };
 	uint8_t le32[4] = { 0x04, 0x03, 0x02, 0x01 };
 	uint8_t be32[4] = { 0x01, 0x02, 0x03, 0x04 };
+	uint8_t le40[5] = { 0x05, 0x04, 0x03, 0x02, 0x01 };
+	uint8_t be40[5] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
 	uint8_t le48[6] = { 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 	uint8_t be48[6] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
 	uint8_t le64[8] = { 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
@@ -539,6 +609,24 @@ ZTEST(net_buf_tests, test_net_buf_byte_order)
 
 	net_buf_reset(buf);
 
+	net_buf_add_mem(buf, &le40, sizeof(le40));
+	net_buf_add_mem(buf, &be40, sizeof(be40));
+
+	u64 = net_buf_pull_le40(buf);
+	zassert_equal(u64, net_buf_pull_be40(buf), "Invalid 40 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_le40(buf, u64);
+	net_buf_add_be40(buf, u64);
+
+	zassert_mem_equal(le40, net_buf_pull_mem(buf, sizeof(le40)), sizeof(le40),
+			  "Invalid 40 bits byte order");
+	zassert_mem_equal(be40, net_buf_pull_mem(buf, sizeof(be40)), sizeof(be40),
+			  "Invalid 40 bits byte order");
+
+	net_buf_reset(buf);
+
 	net_buf_add_mem(buf, &le48, sizeof(le48));
 	net_buf_add_mem(buf, &be48, sizeof(be48));
 
@@ -573,7 +661,7 @@ ZTEST(net_buf_tests, test_net_buf_byte_order)
 	zassert_mem_equal(le64, net_buf_pull_mem(buf, sizeof(le64)),
 			  sizeof(le64), "Invalid 64 bits byte order");
 	zassert_mem_equal(be64, net_buf_pull_mem(buf, sizeof(be64)),
-			  sizeof(be48), "Invalid 64 bits byte order");
+			  sizeof(be64), "Invalid 64 bits byte order");
 
 	/* push/remove byte order */
 	net_buf_reset(buf);
@@ -638,6 +726,26 @@ ZTEST(net_buf_tests, test_net_buf_byte_order)
 			  sizeof(le32), "Invalid 32 bits byte order");
 	zassert_mem_equal(be32, net_buf_remove_mem(buf, sizeof(be32)),
 			  sizeof(be32), "Invalid 32 bits byte order");
+
+	net_buf_reset(buf);
+	net_buf_reserve(buf, 16);
+
+	net_buf_push_mem(buf, &le40, sizeof(le40));
+	net_buf_push_mem(buf, &be40, sizeof(be40));
+
+	u64 = net_buf_remove_le40(buf);
+	zassert_equal(u64, net_buf_remove_be40(buf), "Invalid 40 bits byte order");
+
+	net_buf_reset(buf);
+	net_buf_reserve(buf, 16);
+
+	net_buf_push_le40(buf, u64);
+	net_buf_push_be40(buf, u64);
+
+	zassert_mem_equal(le40, net_buf_remove_mem(buf, sizeof(le40)), sizeof(le40),
+			  "Invalid 40 bits byte order");
+	zassert_mem_equal(be40, net_buf_remove_mem(buf, sizeof(be40)), sizeof(be40),
+			  "Invalid 40 bits byte order");
 
 	net_buf_reset(buf);
 	net_buf_reserve(buf, 16);
@@ -721,5 +829,156 @@ ZTEST(net_buf_tests, test_net_buf_user_data)
 
 	net_buf_unref(buf);
 }
+
+ZTEST(net_buf_tests, test_net_buf_user_data_copy)
+{
+	struct net_buf *buf_user_data_small, *buf_user_data_big;
+	uint32_t *src_user_data, *dst_user_data;
+
+	buf_user_data_small = net_buf_alloc_len(&bufs_pool, 1, K_NO_WAIT);
+	zassert_not_null(buf_user_data_small, "Failed to get buffer");
+	src_user_data = net_buf_user_data(buf_user_data_small);
+	*src_user_data = 0xAABBCCDD;
+
+	/* Happy case: Size of user data in destination buf is bigger than the source buf one */
+	buf_user_data_big = net_buf_alloc_len(&var_pool, 1, K_NO_WAIT);
+	zassert_not_null(buf_user_data_big, "Failed to get buffer");
+	dst_user_data = net_buf_user_data(buf_user_data_big);
+	*dst_user_data = 0x11223344;
+
+	zassert_ok(net_buf_user_data_copy(buf_user_data_big, buf_user_data_small));
+	zassert_equal(*src_user_data, 0xAABBCCDD);
+
+	/* Error case: User data size of destination buffer is too small */
+	zassert_not_ok(net_buf_user_data_copy(buf_user_data_small, buf_user_data_big),
+		       "User data size in destination buffer too small");
+
+	net_buf_unref(buf_user_data_big);
+
+	/* Corner case: Same buffer used as source and target */
+	zassert_ok(net_buf_user_data_copy(buf_user_data_small, buf_user_data_small),
+		   "No-op is tolerated");
+	zassert_equal(*src_user_data, 0xAABBCCDD, "User data remains the same");
+
+	net_buf_unref(buf_user_data_small);
+}
+
+ZTEST(net_buf_tests, test_net_buf_comparison)
+{
+	struct net_buf *buf;
+	size_t written;
+	size_t offset;
+	size_t to_compare;
+	size_t res;
+	uint8_t data[FIXED_BUFFER_SIZE * 2];
+
+	/* Fill data buffer */
+	for (int i = 0; i < sizeof(data); ++i) {
+		data[i] = (uint8_t)i;
+	}
+
+	/* Allocate a single net_buf  */
+	buf = net_buf_alloc(&fixed_pool, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	written = net_buf_append_bytes(buf, buf->size, data, K_NO_WAIT, NULL, NULL);
+	zassert_equal(written, buf->size, "Failed to fill the buffer");
+	zassert_equal(buf->frags, NULL, "Additional buffer allocated");
+
+	/* Compare the whole buffer */
+	res = net_buf_data_match(buf, 0, data, buf->size);
+	zassert_equal(res, buf->size, "Whole net_buf comparison failed");
+
+	/* Compare from the offset */
+	offset = buf->size / 2;
+	to_compare = written - offset;
+
+	res = net_buf_data_match(buf, offset, &data[offset], to_compare);
+	zassert_equal(res, to_compare, "Comparison with offset failed");
+
+	/* Write more data (it allocates more buffers) */
+	written = net_buf_append_bytes(buf, sizeof(data) - written, &data[buf->size], K_NO_WAIT,
+				       NULL, NULL);
+	zassert_true(buf->frags, "Failed to allocate an additional net_buf");
+
+	/* Compare whole data with buffers' content */
+	res = net_buf_data_match(buf, 0, data, sizeof(data));
+	zassert_equal(res, sizeof(data), "Failed to compare data with multiple buffers");
+
+	/* Compare data with offset at the edge between two fragments */
+	offset = buf->size - (buf->size / 2);
+	res = net_buf_data_match(buf, offset, &data[offset], buf->size);
+	zassert_equal(res, buf->size, "Failed to compare bytes within two buffers with offset");
+
+	/* Compare data with partial matching - change the data in the middle */
+	data[sizeof(data) / 2] += 1;
+	res = net_buf_data_match(buf, 0, data, sizeof(data));
+	zassert_equal(res, sizeof(data) / 2, "Partial matching failed");
+
+	/* No buffer - expect 0 matching bytes */
+	res = net_buf_data_match(NULL, 0, data, sizeof(data));
+	zassert_equal(res, 0, "Matching without a buffer must fail");
+
+	/* No data - expect 0 matching bytes */
+	res = net_buf_data_match(buf, 0, NULL, sizeof(data));
+	zassert_equal(res, 0, "Matching without data must fail");
+
+	/* Too high offset - expect 0 matching bytes */
+	res = net_buf_data_match(buf, FIXED_BUFFER_SIZE * 2, data, sizeof(data));
+	zassert_equal(res, 0, "Matching with too high offset must fail");
+
+	/* Try to match more bytes than are in buffers - expect only partial match */
+	offset = (FIXED_BUFFER_SIZE * 2) - 8;
+	res = net_buf_data_match(buf, offset, &data[offset], 16);
+	zassert_equal(res, 8, "Reaching out of bounds must return a partial match");
+
+	net_buf_unref(buf);
+}
+
+ZTEST(net_buf_tests, test_net_buf_fixed_append)
+{
+	struct net_buf *buf;
+	uint8_t data[FIXED_BUFFER_SIZE * 2];
+
+	/* Fill data buffer */
+	for (int i = 0; i < sizeof(data); ++i) {
+		data[i] = (uint8_t)i;
+	}
+
+	/* Fixed Pool */
+	buf = net_buf_alloc(&fixed_pool, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get fixed buffer");
+	zassert_equal(buf->size, FIXED_BUFFER_SIZE, "Invalid fixed buffer size");
+
+	/* For fixed pool appending less bytes than buffer's free space must
+	 * not add a new fragment
+	 */
+	net_buf_append_bytes(buf, buf->size - 8, data, K_NO_WAIT, NULL, NULL);
+	zassert_equal(buf->len, buf->size - 8, "Invalid buffer len");
+	zassert_is_null(buf->frags, "Unexpected buffer fragment");
+
+	/* Filling rest of the space should not add an additional buffer */
+	net_buf_append_bytes(buf, 8, data, K_NO_WAIT, NULL, NULL);
+	zassert_equal(buf->len, buf->size, "Invalid buffer len");
+	zassert_is_null(buf->frags, "Unexpected buffer fragment");
+
+	/* Appending any number of bytes allocates an additional fragment */
+	net_buf_append_bytes(buf, 1, data, K_NO_WAIT, NULL, NULL);
+	zassert_not_null(buf->frags, "Lack of expected buffer fragment");
+	zassert_equal(buf->frags->len, 1, "Expected single byte in the new fragment");
+	zassert_equal(buf->frags->size, buf->size, "Different size of the fragment");
+
+	/* Remove 1-byte buffer */
+	net_buf_frag_del(buf, buf->frags);
+
+	/* Appending size bigger than single buffer's size will allocate multiple fragments */
+	net_buf_append_bytes(buf, sizeof(data), data, K_NO_WAIT, NULL, NULL);
+	zassert_not_null(buf->frags, "Missing first buffer fragment");
+	zassert_not_null(buf->frags->frags, "Missing second buffer fragment");
+	zassert_is_null(buf->frags->frags->frags, "Unexpected buffer fragment");
+
+	net_buf_unref(buf);
+}
+
 
 ZTEST_SUITE(net_buf_tests, NULL, NULL, NULL, NULL, NULL);

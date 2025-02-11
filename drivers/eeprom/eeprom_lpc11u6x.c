@@ -101,11 +101,6 @@ static size_t eeprom_lpc11u6x_size(const struct device *dev)
 	return config->size;
 }
 
-static int eeprom_lpc11u6x_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct eeprom_driver_api eeprom_lpc11u6x_api = {
 	.read = eeprom_lpc11u6x_read,
 	.write = eeprom_lpc11u6x_write,
@@ -116,6 +111,5 @@ static const struct eeprom_lpc11u6x_config eeprom_config = {
 	.size = DT_INST_PROP(0, size),
 };
 
-DEVICE_DT_INST_DEFINE(0, &eeprom_lpc11u6x_init, NULL, NULL,
-		    &eeprom_config, POST_KERNEL,
-		    CONFIG_EEPROM_INIT_PRIORITY, &eeprom_lpc11u6x_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &eeprom_config, POST_KERNEL,
+		      CONFIG_EEPROM_INIT_PRIORITY, &eeprom_lpc11u6x_api);

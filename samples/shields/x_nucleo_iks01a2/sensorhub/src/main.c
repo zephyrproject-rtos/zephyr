@@ -21,7 +21,7 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 }
 #endif
 
-void main(void)
+int main(void)
 {
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	int cnt = 1;
@@ -38,7 +38,7 @@ void main(void)
 
 	if (!device_is_ready(lsm6dsl)) {
 		printk("%s: device not ready.\n", lsm6dsl->name);
-		return;
+		return 0;
 	}
 
 	/* set LSM6DSL accel/gyro sampling frequency to 104 Hz */
@@ -50,13 +50,13 @@ void main(void)
 	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for accelerometer.\n");
-		return;
+		return 0;
 	}
 
 	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for gyro.\n");
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
@@ -73,7 +73,7 @@ void main(void)
 #ifndef CONFIG_LSM6DSL_TRIGGER
 		if (sensor_sample_fetch(lsm6dsl) < 0) {
 			printf("LSM6DSL Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 

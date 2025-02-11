@@ -1,0 +1,24 @@
+#
+# Copyright 2023 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt1040_evk
+name: NXP MIMXRT1040-EVK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32768
+flash: 8192
+supported:
+  - arduino_gpio
+  - gpio
+  - pwm
+  - adc
+  - spi
+  - i2c
+vendor: nxp

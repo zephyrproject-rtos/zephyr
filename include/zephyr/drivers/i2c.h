@@ -15,6 +15,8 @@
 /**
  * @brief I2C Interface
  * @defgroup i2c_interface I2C Interface
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -25,6 +27,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/rtio/rtio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,9 +67,6 @@ extern "C" {
 
 /** Peripheral to act as Controller. */
 #define I2C_MODE_CONTROLLER		BIT(4)
-
-/** @deprecated Use I2C_MODE_CONTROLLER instead. */
-#define I2C_MODE_MASTER	__DEPRECATED_MACRO BIT(4)
 
 /**
  * @brief Complete I2C DT information
@@ -229,6 +229,16 @@ typedef int (*i2c_api_transfer_cb_t)(const struct device *dev,
 				 i2c_callback_t cb,
 				 void *userdata);
 #endif /* CONFIG_I2C_CALLBACK */
+#if defined(CONFIG_I2C_RTIO) || defined(__DOXYGEN__)
+
+/**
+ * @typedef i2c_api_iodev_submit
+ * @brief Callback API for submitting work to a I2C device with RTIO
+ */
+typedef void (*i2c_api_iodev_submit)(const struct device *dev,
+				     struct rtio_iodev_sqe *iodev_sqe);
+#endif /* CONFIG_I2C_RTIO */
+
 typedef int (*i2c_api_recover_bus_t)(const struct device *dev);
 
 __subsystem struct i2c_driver_api {
@@ -240,13 +250,16 @@ __subsystem struct i2c_driver_api {
 #ifdef CONFIG_I2C_CALLBACK
 	i2c_api_transfer_cb_t transfer_cb;
 #endif
+#ifdef CONFIG_I2C_RTIO
+	i2c_api_iodev_submit iodev_submit;
+#endif
 	i2c_api_recover_bus_t recover_bus;
 };
 
 typedef int (*i2c_target_api_register_t)(const struct device *dev);
 typedef int (*i2c_target_api_unregister_t)(const struct device *dev);
 
-struct i2c_target_driver_api {
+__subsystem struct i2c_target_driver_api {
 	i2c_target_api_register_t driver_register;
 	i2c_target_api_unregister_t driver_unregister;
 };
@@ -341,6 +354,49 @@ typedef int (*i2c_target_read_requested_cb_t)(
 typedef int (*i2c_target_read_processed_cb_t)(
 		struct i2c_target_config *config, uint8_t *val);
 
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+/** @brief Function called when a write to the device is completed.
+ *
+ * This function is invoked by the controller when it completes
+ * reception of data from the source buffer to the destination
+ * buffer in an ongoing write operation to the device.
+ *
+ * @param config the configuration structure associated with the
+ * device to which the operation is addressed.
+ *
+ * @param ptr pointer to the buffer that contains the data to be transferred.
+ *
+ * @param len the length of the data to be transferred.
+ */
+typedef void (*i2c_target_buf_write_received_cb_t)(
+		struct i2c_target_config *config, uint8_t *ptr, uint32_t len);
+
+/** @brief Function called when a read from the device is initiated.
+ *
+ * This function is invoked by the controller when the bus is ready to
+ * provide additional data by buffer for a read operation from the address
+ * associated with the device.
+ *
+ * The value returned in @p **ptr and @p *len will be transmitted. A success
+ * return shall cause the controller to react to additional read operations.
+ * An error return shall cause the controller to ignore bus operations until
+ * a new start condition is received.
+ *
+ * @param config the configuration structure associated with the
+ * device to which the operation is addressed.
+ *
+ * @param ptr pointer to storage for the address of data buffer to return
+ * for the read request.
+ *
+ * @param len pointer to storage for the length of the data to be transferred
+ * for the read request.
+ *
+ * @return 0 if data has been provided, or a negative error code.
+ */
+typedef int (*i2c_target_buf_read_requested_cb_t)(
+		struct i2c_target_config *config, uint8_t **ptr, uint32_t *len);
+#endif
+
 /** @brief Function called when a stop condition is observed after a
  * start condition addressed to a particular device.
  *
@@ -368,6 +424,10 @@ struct i2c_target_callbacks {
 	i2c_target_read_requested_cb_t read_requested;
 	i2c_target_write_received_cb_t write_received;
 	i2c_target_read_processed_cb_t read_processed;
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	i2c_target_buf_write_received_cb_t buf_write_received;
+	i2c_target_buf_read_requested_cb_t buf_read_requested;
+#endif
 	i2c_target_stop_cb_t stop;
 };
 
@@ -411,6 +471,18 @@ static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
 }
 
 /**
+ * @brief Check if the current message is a read operation
+ *
+ * @param msg The message to check
+ * @return true if the I2C message is sa read operation
+ * @return false if the I2C message is a write operation
+ */
+static inline bool i2c_is_read_op(struct i2c_msg *msg)
+{
+	return (msg->flags & I2C_MSG_READ) == I2C_MSG_READ;
+}
+
+/**
  * @brief Dump out an I2C message
  *
  * Dumps out a list of I2C messages. For any that are writes (W), the data is
@@ -430,33 +502,33 @@ static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
  * D:    R len=01: 6c
  * @endcode
  *
- * @param name Name of this dump, displayed at the top.
+ * @param dev Target for the messages being sent. Its name will be printed in the log.
  * @param msgs Array of messages to dump.
  * @param num_msgs Number of messages to dump.
  * @param addr Address of the I2C target device.
  * @param dump_read Dump data from I2C reads, otherwise only writes have data dumped.
  */
-void i2c_dump_msgs_rw(const char *name, const struct i2c_msg *msgs,
-		      uint8_t num_msgs, uint16_t addr, bool dump_read);
+void i2c_dump_msgs_rw(const struct device *dev, const struct i2c_msg *msgs, uint8_t num_msgs,
+		      uint16_t addr, bool dump_read);
 
 /**
  * @brief Dump out an I2C message, before it is executed.
  *
  * This is equivalent to:
  *
- *     i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
+ *     i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, false);
  *
  * The read messages' data isn't dumped.
  *
- * @param name Name of this dump, displayed at the top.
+ * @param dev Target for the messages being sent. Its name will be printed in the log.
  * @param msgs Array of messages to dump.
  * @param num_msgs Number of messages to dump.
  * @param addr Address of the I2C target device.
  */
-static inline void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
+static inline void i2c_dump_msgs(const struct device *dev, const struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr)
 {
-	i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
+	i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, false);
 }
 
 #if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
@@ -510,8 +582,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	for (uint8_t i = 0U; i < num_msgs; i++) {
 		if (msgs[i].flags & I2C_MSG_READ) {
 			bytes_read += msgs[i].len;
-		}
-		if (msgs[i].flags & I2C_MSG_WRITE) {
+		} else {
 			bytes_written += msgs[i].len;
 		}
 	}
@@ -542,7 +613,11 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 4,	\
 			   STATS_NAME_INIT_PARMS(i2c));			\
 		stats_register(dev->name, &(state->stats.s_hdr));	\
-		return init_fn(dev);					\
+		if (!is_null_no_warn(init_fn)) {			\
+			return init_fn(dev);				\
+		}							\
+									\
+		return 0;						\
 	}
 
 /** @endcond */
@@ -556,7 +631,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  *
  * @param node_id The devicetree node identifier.
  *
- * @param init_fn Name of the init function of the driver.
+ * @param init_fn Name of the init function of the driver. Can be `NULL`.
  *
  * @param pm PM device resources reference (NULL if device does not use PM).
  *
@@ -581,7 +656,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
 			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
-			pm_device, data, config, level, prio, api,	\
+			pm, data, config, level, prio, api,	\
 			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
 
@@ -597,7 +672,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 
 #define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\
-	DEVICE_DT_DEFINE(node_id, &init_fn, pm, data, config, level,	\
+	DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			 prio, api, __VA_ARGS__)
 
 #endif /* CONFIG_I2C_STATS */
@@ -686,6 +761,10 @@ static inline int z_impl_i2c_get_config(const struct device *dev, uint32_t *dev_
  * the same behavior.  See the documentation of `struct i2c_msg` for
  * limitations on support for multi-message bus transactions.
  *
+ * @note The last message in the scatter/gather transaction implies a STOP
+ * whether or not it is explicitly set. This ensures the bus is in a good
+ * state for the next transaction which may be from a different call context.
+ *
  * @param dev Pointer to the device structure for an I2C controller
  * driver configured in controller mode.
  * @param msgs Array of messages to transfer.
@@ -711,13 +790,13 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 	i2c_xfer_stats(dev, msgs, num_msgs);
 
 	if (IS_ENABLED(CONFIG_I2C_DUMP_MESSAGES)) {
-		i2c_dump_msgs_rw(dev->name, msgs, num_msgs, addr, true);
+		i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, true);
 	}
 
 	return res;
 }
 
-#ifdef CONFIG_I2C_CALLBACK
+#if defined(CONFIG_I2C_CALLBACK) || defined(__DOXYGEN__)
 
 /**
  * @brief Perform data transfer to another I2C device in controller mode.
@@ -726,7 +805,7 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
  * to another I2C device asynchronously with a callback completion.
  *
  * @see i2c_transfer()
- * @funcprop \isr_ok
+ * @funcprops \isr_ok
  *
  * @param dev Pointer to the device structure for an I2C controller
  *            driver configured in controller mode.
@@ -854,7 +933,7 @@ static inline int i2c_write_read_cb_dt(const struct i2c_dt_spec *spec, struct i2
 				 read_buf, num_read, cb, userdata);
 }
 
-#ifdef CONFIG_POLL
+#if defined(CONFIG_POLL) || defined(__DOXYGEN__)
 
 /** @cond INTERNAL_HIDDEN */
 void z_i2c_transfer_signal_cb(const struct device *dev, int result, void *userdata);
@@ -867,14 +946,14 @@ void z_i2c_transfer_signal_cb(const struct device *dev, int result, void *userda
  * to another I2C device asynchronously with a k_poll_signal completion.
  *
  * @see i2c_transfer_cb()
- * @funcprop \isr_ok
+ * @funcprops \isr_ok
  *
  * @param dev Pointer to the device structure for an I2C controller
  *            driver configured in controller mode.
  * @param msgs Array of messages to transfer, must live until callback completes.
  * @param num_msgs Number of messages to transfer.
  * @param addr Address of the I2C target device.
- * @param signal Signal to notify of transfer completion.
+ * @param sig Signal to notify of transfer completion.
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
@@ -899,6 +978,75 @@ static inline int i2c_transfer_signal(const struct device *dev,
 #endif /* CONFIG_POLL */
 
 #endif /* CONFIG_I2C_CALLBACK */
+
+
+#if defined(CONFIG_I2C_RTIO) || defined(__DOXYGEN__)
+
+/**
+ * @brief Submit request(s) to an I2C device with RTIO
+ *
+ * @param iodev_sqe Prepared submissions queue entry connected to an iodev
+ *                  defined by I2C_DT_IODEV_DEFINE.
+ */
+static inline void i2c_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct i2c_dt_spec *dt_spec = (const struct i2c_dt_spec *)iodev_sqe->sqe.iodev->data;
+	const struct device *dev = dt_spec->bus;
+	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+
+	api->iodev_submit(dt_spec->bus, iodev_sqe);
+}
+
+extern const struct rtio_iodev_api i2c_iodev_api;
+
+/**
+ * @brief Define an iodev for a given dt node on the bus
+ *
+ * These do not need to be shared globally but doing so
+ * will save a small amount of memory.
+ *
+ * @param name Symbolic name of the iodev to define
+ * @param node_id Devicetree node identifier
+ */
+#define I2C_DT_IODEV_DEFINE(name, node_id)					\
+	const struct i2c_dt_spec _i2c_dt_spec_##name =				\
+		I2C_DT_SPEC_GET(node_id);					\
+	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
+
+/**
+ * @brief Define an iodev for a given i2c device on a bus
+ *
+ * These do not need to be shared globally but doing so
+ * will save a small amount of memory.
+ *
+ * @param name Symbolic name of the iodev to define
+ * @param _bus Node ID for I2C bus
+ * @param _addr I2C target address
+ */
+#define I2C_IODEV_DEFINE(name, _bus, _addr)                                     \
+	const struct i2c_dt_spec _i2c_dt_spec_##name = {                        \
+		.bus = DEVICE_DT_GET(_bus),                                     \
+		.addr = _addr,                                                  \
+	};                                                                      \
+	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
+
+/**
+ * @brief Copy the i2c_msgs into a set of RTIO requests
+ *
+ * @param r RTIO context
+ * @param iodev RTIO IODev to target for the submissions
+ * @param msgs Array of messages
+ * @param num_msgs Number of i2c msgs in array
+ *
+ * @retval sqe Last submission in the queue added
+ * @retval NULL Not enough memory in the context to copy the requests
+ */
+struct rtio_sqe *i2c_rtio_copy(struct rtio *r,
+			       struct rtio_iodev *iodev,
+			       const struct i2c_msg *msgs,
+			       uint8_t num_msgs);
+
+#endif /* CONFIG_I2C_RTIO */
 
 /**
  * @brief Perform data transfer to another I2C device in controller mode.
@@ -1486,6 +1634,6 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
  * @}
  */
 
-#include <syscalls/i2c.h>
+#include <zephyr/syscalls/i2c.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_H_ */

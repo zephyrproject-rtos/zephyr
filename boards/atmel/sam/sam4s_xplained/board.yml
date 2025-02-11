@@ -1,0 +1,5 @@
+board:
+  name: sam4s_xplained
+  vendor: atmel
+  socs:
+    - name: sam4s16c

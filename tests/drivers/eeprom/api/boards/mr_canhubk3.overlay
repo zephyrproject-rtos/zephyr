@@ -1,0 +1,25 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect I2C0 (connector P4) to the external eeprom Microchip AT24C01C-XHM */
+
+/ {
+	aliases {
+		eeprom-0 = &eeprom0;
+	};
+};
+
+&lpi2c0 {
+	status = "okay";
+	eeprom0: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <128>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};

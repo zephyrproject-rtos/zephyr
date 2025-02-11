@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Renesas Electronics Corporation and/or its affiliates
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_SMARTBOND
+	bool "Renesas SmartBond(tm) I2C driver"
+	default y
+	depends on DT_HAS_RENESAS_SMARTBOND_I2C_ENABLED
+	help
+	  Enable I2C driver for Renesas SmartBond(tm) DA1469x series MCU.

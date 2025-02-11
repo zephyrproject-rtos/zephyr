@@ -1,0 +1,8 @@
+# EFR32 Thunderboard-style boards
+
+# Copyright (c) 2022, Silicon Labs
+# SPDX-License-Identifier: Apache-2.0
+
+module = BOARD_SLTB010A
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"

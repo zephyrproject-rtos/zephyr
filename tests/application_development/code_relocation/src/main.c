@@ -17,7 +17,7 @@
  */
 
 #if (defined(CONFIG_ARM_MPU) && !defined(CONFIG_CPU_HAS_NXP_MPU))
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 void disable_mpu_rasr_xn(void)
 {
 	uint32_t index;

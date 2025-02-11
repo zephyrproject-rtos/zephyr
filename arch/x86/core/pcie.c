@@ -9,7 +9,7 @@
 #include <zephyr/drivers/pcie/pcie.h>
 
 #ifdef CONFIG_ACPI
-#include <zephyr/arch/x86/acpi.h>
+#include <zephyr/acpi/acpi.h>
 #endif
 
 #ifdef CONFIG_PCIE_MSI
@@ -36,25 +36,25 @@ static bool do_pcie_mmio_cfg;
 static void pcie_mm_init(void)
 {
 #ifdef CONFIG_ACPI
-	struct acpi_mcfg *m = z_acpi_find_table(ACPI_MCFG_SIGNATURE);
+	struct acpi_mcfg *m = acpi_table_get("MCFG", 0);
 
 	if (m != NULL) {
-		int n = (m->sdt.length - sizeof(*m)) / sizeof(m->pci_segs[0]);
+		int n = (m->header.Length - sizeof(*m)) / sizeof(m->pci_segs[0]);
 
 		for (int i = 0; i < n && i < MAX_PCI_BUS_SEGMENTS; i++) {
 			size_t size;
 			uintptr_t phys_addr;
 
-			bus_segs[i].start_bus = m->pci_segs[i].start_bus;
-			bus_segs[i].n_buses = 1 + m->pci_segs[i].end_bus
-				- m->pci_segs[i].start_bus;
+			bus_segs[i].start_bus = m->pci_segs[i].StartBusNumber;
+			bus_segs[i].n_buses =
+				1 + m->pci_segs[i].EndBusNumber - m->pci_segs[i].StartBusNumber;
 
-			phys_addr = m->pci_segs[i].base_addr;
+			phys_addr = m->pci_segs[i].Address;
 			/* 32 devices & 8 functions per bus, 4k per device */
 			size = bus_segs[i].n_buses * (32 * 8 * 4096);
 
-			device_map((mm_reg_t *)&bus_segs[i].mmio, phys_addr,
-				   size, K_MEM_CACHE_NONE);
+			device_map((mm_reg_t *)&bus_segs[i].mmio, phys_addr, size,
+				   K_MEM_CACHE_NONE);
 		}
 
 		do_pcie_mmio_cfg = true;
@@ -162,7 +162,6 @@ void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 #ifdef CONFIG_INTEL_VTD_ICTL
 
 #include <zephyr/drivers/interrupt_controller/intel_vtd.h>
-#include <zephyr/arch/x86/acpi.h>
 
 static const struct device *const vtd = DEVICE_DT_GET_ONE(intel_vt_d);
 

@@ -9,7 +9,7 @@
 
 /**
  * @brief I3C Target Device API
- * @defgroup i3c_target_device Target Device API
+ * @defgroup i3c_target_device I3C Target Device API
  * @ingroup i3c_interface
  * @{
  */
@@ -211,13 +211,13 @@ struct i3c_target_callbacks {
 	int (*stop_cb)(struct i3c_target_config *config);
 };
 
-struct i3c_target_driver_api {
+__subsystem struct i3c_target_driver_api {
 	int (*driver_register)(const struct device *dev);
 	int (*driver_unregister)(const struct device *dev);
 };
 
 /**
- * @brief Writes to the Target's TX FIFO
+ * @brief Writes to the target's TX FIFO
  *
  * Write to the TX FIFO @p dev I3C bus driver using the provided
  * buffer and length. Some I3C targets will NACK read requests until data

@@ -1,4 +1,4 @@
 tests:
-  misc.kconfigoptions:
+  kconfig.kconfigoptions:
     tags: kconfigoptions
-    platform_allow: native_posix
+    platform_allow: native_sim

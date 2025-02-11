@@ -36,14 +36,14 @@ board's DTS file ``chosen`` section:
 
 For example the olimex STM32 E407 DTS file looks like this:
 
-.. literalinclude:: ../../../../boards/arm/olimex_stm32_e407/olimex_stm32_e407.dts
+.. literalinclude:: ../../../../boards/olimex/stm32_e407/olimex_stm32_e407.dts
    :linenos:
 
 Building and Running
 ********************
 
 .. zephyr-app-commands::
-   :app: samples/boards/olimex_stm32_e407/ccm
+   :app: samples/boards/stm32/ccm
    :goals: build flash
 
 The first time the example is run after power on, the output will

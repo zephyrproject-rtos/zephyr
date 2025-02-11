@@ -46,14 +46,18 @@ There are four severity levels available in the system: error, warning, info
 and debug. For each severity level the logging API (:zephyr_file:`include/zephyr/logging/log.h`)
 has set of dedicated macros. Logger API also has macros for logging data.
 
-For each level following set of macros are available:
+For each level the following set of macros are available:
 
 - ``LOG_X`` for standard printf-like messages, e.g. :c:macro:`LOG_ERR`.
 - ``LOG_HEXDUMP_X`` for dumping data, e.g. :c:macro:`LOG_HEXDUMP_WRN`.
 - ``LOG_INST_X`` for standard printf-like message associated with the
   particular instance, e.g. :c:macro:`LOG_INST_INF`.
 - ``LOG_INST_HEXDUMP_X`` for dumping data associated with the particular
-  instance, e.g. :c:macro:`LOG_HEXDUMP_INST_DBG`
+  instance, e.g. :c:macro:`LOG_INST_HEXDUMP_DBG`
+
+The warning level also exposes the following additional macro:
+
+- :c:macro:`LOG_WRN_ONCE` for warnings where only the first occurrence is of interest.
 
 There are two configuration categories: configurations per module and global
 configuration. When logging is enabled globally, it works for modules. However,
@@ -124,9 +128,9 @@ allocated.
 
 :kconfig:option:`CONFIG_LOG_PRINTK`: Redirect printk calls to the logging.
 
-:kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
-messages reaches the threshold dedicated thread (see :c:func:`log_thread_set`)
-is waken up. If :kconfig:option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
+:kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When the number of buffered log
+messages reaches the threshold, the dedicated thread (see :c:func:`log_thread_set`)
+is woken up. If :kconfig:option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
 threshold is used by the internal thread.
 
 :kconfig:option:`CONFIG_LOG_PROCESS_THREAD`: When enabled, logging thread is created
@@ -142,9 +146,15 @@ packet buffer.
 
 :kconfig:option:`CONFIG_LOG_FRONTEND_ONLY`: No backends are used when messages goes to frontend.
 
+:kconfig:option:`CONFIG_LOG_FRONTEND_OPT_API`: Optional API optimized for the most common
+simple messages.
+
 :kconfig:option:`CONFIG_LOG_CUSTOM_HEADER`: Injects an application provided header into log.h
 
 :kconfig:option:`CONFIG_LOG_TIMESTAMP_64BIT`: 64 bit timestamp.
+
+:kconfig:option:`CONFIG_LOG_SIMPLE_MSG_OPTIMIZE`: Optimizes simple log messages for size
+and performance. Option available only for 32 bit architectures.
 
 Formatting options:
 
@@ -236,7 +246,7 @@ Logging in a module instance
 ============================
 
 In case of modules which are multi-instance and instances are widely used
-across the system enabling logs will lead to flooding. Logger provide the tools
+across the system enabling logs will lead to flooding. The logger provides the tools
 which can be used to provide filtering on instance level rather than module
 level. In that case logging can be enabled for particular instance.
 
@@ -299,22 +309,22 @@ By default, logging processing in deferred mode is handled internally by the
 dedicated task which starts automatically. However, it might not be available
 if multithreading is disabled. It can also be disabled by unsetting
 :kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`. In that case, logging can
-be controlled using API defined in :zephyr_file:`include/zephyr/logging/log_ctrl.h`.
-Logging must be initialized before it can be used. Optionally, user can provide
-function which returns timestamp value. If not provided, :c:macro:`k_cycle_get`
+be controlled using the API defined in :zephyr_file:`include/zephyr/logging/log_ctrl.h`.
+Logging must be initialized before it can be used. Optionally, the user can provide
+a function which returns the timestamp value. If not provided, :c:macro:`k_cycle_get`
 or :c:macro:`k_cycle_get_32` is used for timestamping.
-:c:func:`log_process` function is used to trigger processing of one log
-message (if pending). Function returns true if there is more messages pending.
+The :c:func:`log_process` function is used to trigger processing of one log
+message (if pending), and returns true if there are more messages pending.
 However, it is recommended to use macro wrappers (:c:macro:`LOG_INIT` and
-:c:macro:`LOG_PROCESS`) which handles case when logging is disabled.
+:c:macro:`LOG_PROCESS`) which handle the case where logging is disabled.
 
-Following snippet shows how logging can be processed in simple forever loop.
+The following snippet shows how logging can be processed in simple forever loop.
 
 .. code-block:: c
 
-   #include <zephyr/log_ctrl.h>
+   #include <zephyr/logging/log_ctrl.h>
 
-   void main(void)
+   int main(void)
    {
    	LOG_INIT();
    	/* If multithreading is enabled provide thread id to the logging. */
@@ -350,16 +360,17 @@ that moment all logs are processed in a blocking way.
 Printk
 ******
 
-Typically, logging and :c:func:`printk` is using the same output for which they
-compete. This can lead to issues if the output does not support preemption but
-also it may result in the corrupted output because logging data is interleaved
-with printk data. However, it is possible to redirect printk messages to the
+Typically, logging and :c:func:`printk` use the same output, which they compete
+for. This can lead to issues if the output does not support preemption but it may
+also result in corrupted output because logging data is interleaved with printk
+data. However, it is possible to redirect printk messages to the
 logging subsystem by enabling :kconfig:option:`CONFIG_LOG_PRINTK`. In that case,
 printk entries are treated as log messages with level 0 (they cannot be disabled).
 When enabled, logging manages the output so there is no interleaving. However,
-in the deferred mode it changes the behavior of the printk because output is delayed
-until logging thread processes the data. :kconfig:option:`CONFIG_LOG_PRINTK` is by
-default enabled.
+in deferred mode the printk behaviour is changed since the output is delayed
+until the logging thread processes the data. :kconfig:option:`CONFIG_LOG_PRINTK`
+is enabled by default.
+
 
 .. _log_architecture:
 
@@ -378,27 +389,27 @@ instance of a module.
 Default Frontend
 ================
 
-Default frontend is engaged when logging API is called in a source of logging (e.g.
+Default frontend is engaged when the logging API is called in a source of logging (e.g.
 :c:macro:`LOG_INF`) and is responsible for filtering a message (compile and run
-time), allocating buffer for the message, creating the message and committing that
-message. Since logging API can be called in an interrupt, frontend is optimized
+time), allocating a buffer for the message, creating the message and committing that
+message. Since the logging API can be called in an interrupt, the frontend is optimized
 to log the message as fast as possible.
 
 Log message
 -----------
 
-Log message contains message descriptor (source, domain and level), timestamp,
+A log message contains a message descriptor (source, domain and level), timestamp,
 formatted string details (see :ref:`cbprintf_packaging`) and optional data.
 Log messages are stored in a continuous block of memory.
-Memory is allocated from a circular packet buffer (:ref:`mpsc_pbuf`). It has
-few consequences:
+Memory is allocated from a circular packet buffer (:ref:`mpsc_pbuf`), which has
+a few consequences:
 
- * Each message is self-contained, continuous block of memory thus it is suited
+ * Each message is a self-contained, continuous block of memory thus it is suited
    for copying the message (e.g. for offline processing).
  * Messages must be sequentially freed. Backend processing is synchronous. Backend
    can make a copy for deferred processing.
 
-Log message has following format:
+A log message has following format:
 
 +------------------+----------------------------------------------------+
 | Message Header   | 2 bits: MPSC packet buffer header                  |
@@ -440,12 +451,12 @@ Log message has following format:
 Log message allocation
 ----------------------
 
-It may happen that frontend cannot allocate a message. It happens if system is
-generating more log messages than it can process in certain time frame. There
-are two strategies to handle that case:
+It may happen that the frontend cannot allocate a message. This happens if the
+system is generating more log messages than it can process in certain time
+frame. There are two strategies to handle that case:
 
-- No overflow - new log is dropped if space for a message cannot be allocated.
-- Overflow - oldest pending messages are freed, until new message can be
+- No overflow - the new log is dropped if space for a message cannot be allocated.
+- Overflow - the oldest pending messages are freed, until the new message can be
   allocated. Enabled by :kconfig:option:`CONFIG_LOG_MODE_OVERFLOW`. Note that it degrades
   performance thus it is recommended to adjust buffer size and amount of enabled
   logs to limit dropping.
@@ -535,15 +546,13 @@ There are three types of domains in a multi-domain system:
 
 See the following image for an example of a multi-domain setup:
 
-.. _logging-multidomain-example:
-
 .. figure:: images/multidomain.png
 
     Multi-domain example
 
 In this architecture, a link can handle multiple domains.
 For example, let's consider an SoC with two ARM Cortex-M33 cores with TrustZone: cores A and B (see
-:numref:`logging-multidomain-example`). There are four domains in the system, as
+the example illustrated above). There are four domains in the system, as
 each core has both a Secure and a Nonsecure domain. If *core A nonsecure* (A_NS) is the
 root domain, it has two links: one to *core A secure* (A_NS-A_S) and one to
 *core B nonsecure* (A_NS-B_NS). *B_NS* domain has one link, to *core B secure*
@@ -551,7 +560,7 @@ root domain, it has two links: one to *core A secure* (A_NS-A_S) and one to
 
 Since in all instances there is a standard logging subsystem, it is always possible
 to have multiple backends and simultaneously output messages to them. An example of this is shown
-on :numref:`logging-multidomain-example` as a dotted UART backend on the *B_NS* domain.
+in the illustration above as a dotted UART backend on the *B_NS* domain.
 
 Domain ID
 ---------
@@ -569,10 +578,9 @@ The first link has the offset set to 1.
 The following offset equals the previous link offset plus the number of domains in the previous
 link.
 
-The following example is shown on :numref:`logging-domain-ids-example`, where
+The following example is shown below, where
 the assigned ``domain_ids`` are shown for each domain:
 
-.. _logging-domain-ids-example:
 .. figure:: images/domain_ids.png
 
     Domain IDs assigning example
@@ -656,7 +664,7 @@ not supported.  Occasionally, logging may inform backend about number of dropped
 messages with :c:func:`log_backend_dropped`. Message processing API is version
 specific.
 
-:c:func:`log_backend_msg2_process` is used for processing message. It is common for
+:c:func:`log_backend_msg_process` is used for processing message. It is common for
 standard and hexdump messages because log message hold string with arguments
 and data. It is also common for deferred and immediate logging.
 
@@ -666,7 +674,7 @@ Message formatting
 Logging provides set of function that can be used by the backend to format a
 message. Helper functions are available in :zephyr_file:`include/zephyr/logging/log_output.h`.
 
-Example message formatted using :c:func:`log_output_msg2_process`.
+Example message formatted using :c:func:`log_output_msg_process`.
 
 .. code-block:: console
 
@@ -737,7 +745,8 @@ hexadecimal characters
 (e.g. when ``CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX=y``). This tells
 the parser to convert the hexadecimal characters to binary before parsing.
 
-Please refer to :ref:`logging_dictionary_sample` on how to use the log parser.
+Please refer to the :zephyr:code-sample:`logging-dictionary` sample to learn more on how to use
+the log parser.
 
 
 Recommendations

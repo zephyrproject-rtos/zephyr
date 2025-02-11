@@ -1,0 +1,28 @@
+# Kinetis KE1xZ series configuration options
+
+# Copyright (c) 2019-2021 Vestas Wind Systems A/S
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_KE1XZ
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+
+config NUM_IRQS
+	default 32
+
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	default y
+
+# This Kconfig is SOC Specific and configures the MCU at boot time
+# This SOC is configured via the following bits
+# 0000 0001 - Normal Boot
+# 0000 0100 - Enable Interrupts
+# 0000 1000 - Allow Reset detection from RESET_Pin
+# 0111 0000 - Reserved for Future Expansion
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0x7d
+	depends on KINETIS_FLASH_CONFIG
+
+endif # SOC_SERIES_KE1XZ

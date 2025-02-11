@@ -137,7 +137,7 @@ static int read_bytes(const struct device *spi, struct spi_config *spi_cfg,
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *spi;
 	struct spi_config spi_cfg = {0};
@@ -148,7 +148,7 @@ void main(void)
 	spi = DEVICE_DT_GET(DT_ALIAS(spi_1));
 	if (!device_is_ready(spi)) {
 		printk("SPI device %s is not ready\n", spi->name);
-		return;
+		return 0;
 	}
 
 	spi_cfg.operation = SPI_WORD_SET(8);
@@ -158,7 +158,7 @@ void main(void)
 	err = mb85rs64v_read_id(spi, &spi_cfg);
 	if (err) {
 		printk("Could not verify FRAM ID\n");
-		return;
+		return 0;
 	}
 
 	/* Do one-byte read/write */
@@ -166,7 +166,7 @@ void main(void)
 	err = write_bytes(spi, &spi_cfg, 0x00, data, 1);
 	if (err) {
 		printk("Error writing to FRAM! error code (%d)\n", err);
-		return;
+		return 0;
 	} else {
 		printk("Wrote 0xAE to address 0x00.\n");
 	}
@@ -175,7 +175,7 @@ void main(void)
 	err = write_bytes(spi, &spi_cfg, 0x01, data, 1);
 	if (err) {
 		printk("Error writing to FRAM! error code (%d)\n", err);
-		return;
+		return 0;
 	} else {
 		printk("Wrote 0x86 to address 0x01.\n");
 	}
@@ -184,7 +184,7 @@ void main(void)
 	err = read_bytes(spi, &spi_cfg, 0x00, data, 1);
 	if (err) {
 		printk("Error reading from FRAM! error code (%d)\n", err);
-		return;
+		return 0;
 	} else {
 		printk("Read 0x%X from address 0x00.\n", data[0]);
 	}
@@ -193,7 +193,7 @@ void main(void)
 	err = read_bytes(spi, &spi_cfg, 0x01, data, 1);
 	if (err) {
 		printk("Error reading from FRAM! error code (%d)\n", err);
-		return;
+		return 0;
 	} else {
 		printk("Read 0x%X from address 0x01.\n", data[0]);
 	}
@@ -209,7 +209,7 @@ void main(void)
 	err = write_bytes(spi, &spi_cfg, 0x00, cmp_data, sizeof(cmp_data));
 	if (err) {
 		printk("Error writing to FRAM! error code (%d)\n", err);
-		return;
+		return 0;
 	} else {
 		printk("Wrote %d bytes to address 0x00.\n",
 		       (uint32_t) sizeof(cmp_data));
@@ -218,7 +218,7 @@ void main(void)
 	err = read_bytes(spi, &spi_cfg, 0x00, data, sizeof(data));
 	if (err) {
 		printk("Error reading from FRAM! error code (%d)\n", err);
-		return;
+		return 0;
 	} else {
 		printk("Read %d bytes from address 0x00.\n",
 		       (uint32_t) sizeof(data));
@@ -234,4 +234,5 @@ void main(void)
 	if (err == 0) {
 		printk("Data comparison successful.\n");
 	}
+	return 0;
 }

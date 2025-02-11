@@ -1,7 +1,8 @@
-.. _can-babbling-sample:
+.. zephyr:code-sample:: can-babbling
+   :name: Controller Area Network (CAN) babbling node
+   :relevant-api: can_interface
 
-Controller Area Network (CAN) Babbling Node
-###########################################
+   Simulate a babbling CAN node.
 
 Overview
 ********
@@ -46,5 +47,5 @@ Sample output
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v3.1.0-4606-g8c1efa8b96bb  ***
-   babbling on can@40024000 with standard (11-bit) CAN ID 0x010, RTR 0, CAN-FD 0
+   babbling on can@40024000 with standard (11-bit) CAN ID 0x010, RTR 0, CAN FD 0
    abort by pressing User SW3 button

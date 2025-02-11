@@ -13,6 +13,7 @@ config MBEDTLS_PROMPTLESS
 	  mbed TLS menu prompt and instead handle the selection of MBEDTLS from
 	  dependent sub-configurations and thus prevent stuck symbol behavior.
 
+rsource "Kconfig.psa"
 
 menuconfig MBEDTLS
 	bool "mbed TLS Support" if !MBEDTLS_PROMPTLESS
@@ -82,7 +83,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config MBEDTLS_DEBUG
 	bool "mbed TLS debug activation"
-	depends on MBEDTLS_BUILTIN
 	help
 	  Enable debugging activation for mbed TLS configuration. If you use
 	  mbedTLS/Zephyr integration (e.g. native TLS sockets), this will
@@ -183,8 +183,8 @@ config MBEDTLS_ENABLE_HEAP
 	  This option enables the mbedtls to use the heap. This setting must
 	  be global so that various applications and libraries in Zephyr do not
 	  try to do this themselves as there can be only one heap defined
-	  in mbedtls. If this is enabled, then the Zephyr will, during the device
-	  startup, initialize the heap automatically.
+	  in mbedtls. If this is enabled, and MBEDTLS_INIT is enabled then the
+	  Zephyr will, during the device startup, initialize the heap automatically.
 
 config MBEDTLS_HEAP_SIZE
 	int "Heap size for mbed TLS"
@@ -202,6 +202,13 @@ config MBEDTLS_HEAP_SIZE
 	  be needed. For some dedicated and specific usage of mbedtls API, the
 	  1000 bytes might be ok.
 
+config MBEDTLS_INIT
+	bool "Initialize mbed TLS at boot"
+	default y
+	help
+	  By default mbed TLS will be initialized at Zephyr init. Disabling this option
+	  will defer the initialization until explicitly called.
+
 config MBEDTLS_SHELL
 	bool "mbed TLS shell"
 	depends on MBEDTLS
@@ -217,6 +224,12 @@ config MBEDTLS_ZEPHYR_ENTROPY
 	  This option enables the entropy source based on Zephyr entropy driver
 	  for mbed TLS. The entropy source is registered automatically during
 	  system initialization.
+
+config MBEDTLS_ZEROIZE_ALT
+	bool "mbed TLS alternate mbedtls_platform_zeroize implementation"
+	help
+	  mbed TLS configuration supplies an alternate implementation of
+	  mbedtls_platform_zeroize.
 
 config APP_LINK_WITH_MBEDTLS
 	bool "Link 'app' with MBEDTLS"

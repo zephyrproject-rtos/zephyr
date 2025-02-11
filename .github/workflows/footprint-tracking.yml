@@ -8,6 +8,9 @@ on:
     paths:
       - 'VERSION'
       - '.github/workflows/footprint-tracking.yml'
+    branches:
+      - main
+      - v*-branch
     tags:
       # only publish v* tags, do not care about zephyr-v* which point to the
       # same commit
@@ -19,15 +22,15 @@ concurrency:
 
 jobs:
   footprint-tracking:
-    runs-on: ubuntu-20.04
-    if: github.repository == 'zephyrproject-rtos/zephyr'
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    if: github.repository_owner == 'zephyrproject-rtos'
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.11
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
     steps:
       - name: Apply container owner mismatch workaround
@@ -38,18 +41,31 @@ jobs:
           #        GitHub comes up with a fundamental fix for this problem.
           git config --global --add safe.directory ${GITHUB_WORKSPACE}
 
+      - name: Print cloud service information
+        run: |
+          echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+          echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+          echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
       - name: Update PATH for west
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - name: Install pip packages
+
+      - name: Install packages
         run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-venv
           sudo pip3 install -U setuptools wheel pip gitpython
 
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+
+      - name: Environment Setup
+        run: |
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: west setup
         run: |
@@ -58,10 +74,10 @@ jobs:
           west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.FOOTPRINT_AWS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.FOOTPRINT_AWS_ACCESS_KEY }}
+          aws-access-key-id: ${{ vars.AWS_TESTING_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_TESTING_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
       - name: Record Footprint
@@ -70,4 +86,10 @@ jobs:
         run: |
           export ZEPHYR_BASE=${PWD}
           ./scripts/footprint/track.py  -p scripts/footprint/plan.txt
+
+      - name: Upload footprint data
+        run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip3 install awscli
           aws s3 sync  --quiet footprint_data/ s3://testing.zephyrproject.org/footprint_data/

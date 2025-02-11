@@ -5,7 +5,7 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_timer
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <soc.h>
@@ -15,6 +15,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
+
+#define COUNT_1US (EC_FREQ / USEC_PER_SEC - 1)
 
 BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
 	     "ITE RTOS timer HW frequency is fixed at 32768Hz");
@@ -74,6 +76,9 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 5, i
 static struct k_spinlock lock;
 /* Last HW count that we called sys_clock_announce() */
 static volatile uint32_t last_announced_hw_cnt;
+/* Last system (kernel) elapse and ticks */
+static volatile uint32_t last_elapsed;
+static volatile uint32_t last_ticks;
 
 enum ext_timer_raw_cnt {
 	EXT_NOT_RAW_CNT = 0,
@@ -192,6 +197,8 @@ static void evt_timer_isr(const void *unused)
 		uint32_t dticks = (~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER)) -
 				   last_announced_hw_cnt) / HW_CNT_PER_SYS_TICK;
 		last_announced_hw_cnt += (dticks * HW_CNT_PER_SYS_TICK);
+		last_ticks += dticks;
+		last_elapsed = 0;
 
 		sys_clock_announce(dticks);
 	} else {
@@ -244,21 +251,26 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		 */
 		k_spin_unlock(&lock, key);
 		return;
-	} else if (ticks <= 1) {
-		/*
-		 * Ticks <= 1 means the kernel wants the tick announced
-		 * as soon as possible, ideally no more than one system tick
-		 * in the future. So set event timer count to 1 system tick or
-		 * at least 1 hw count.
-		 */
-		hw_cnt = MAX((1 * HW_CNT_PER_SYS_TICK), 1);
 	} else {
+		uint32_t next_cycs;
+		uint32_t now;
+		uint32_t dcycles;
+
 		/*
-		 * Set event timer count to EVENT_TIMER_MAX_CNT, after
-		 * interrupt fired the remaining time will be set again
-		 * by sys_clock_announce().
+		 * If ticks <= 1 means the kernel wants the tick announced
+		 * as soon as possible, ideally no more than one system tick
+		 * in the future. So set event timer count to 1 HW tick.
 		 */
-		hw_cnt = MIN((ticks * HW_CNT_PER_SYS_TICK), EVENT_TIMER_MAX_CNT);
+		ticks = CLAMP(ticks, 1, (int32_t)EVEN_TIMER_MAX_CNT_SYS_TICK);
+
+		next_cycs = (last_ticks + last_elapsed + ticks) * HW_CNT_PER_SYS_TICK;
+		now = ~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER));
+		if (unlikely(next_cycs <= now)) {
+			hw_cnt = 1;
+		} else {
+			dcycles = next_cycs - now;
+			hw_cnt = MIN(dcycles, EVENT_TIMER_MAX_CNT);
+		}
 	}
 
 	/* Set event timer 24-bit count */
@@ -290,6 +302,8 @@ uint32_t sys_clock_elapsed(void)
 	 */
 	uint32_t dticks = (~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER)) -
 				last_announced_hw_cnt) / HW_CNT_PER_SYS_TICK;
+	last_elapsed = dticks;
+
 	k_spin_unlock(&lock, key);
 
 	return dticks;
@@ -332,8 +346,8 @@ static int timer_init(enum ext_timer_idx ext_timer,
 			hw_cnt = MS_TO_COUNT(1024, ms);
 		else if (clock_source_sel == EXT_PSR_32)
 			hw_cnt = MS_TO_COUNT(32, ms);
-		else if (clock_source_sel == EXT_PSR_8M)
-			hw_cnt = 8000 * ms;
+		else if (clock_source_sel == EXT_PSR_EC_CLK)
+			hw_cnt = MS_TO_COUNT(EC_FREQ, ms);
 		else {
 			LOG_ERR("Timer %d clock source error !", ext_timer);
 			return -1;
@@ -381,11 +395,10 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	return 0;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
 	int ret;
 
-	ARG_UNUSED(dev);
 
 	/* Enable 32-bit free run timer overflow interrupt */
 	IRQ_CONNECT(FREE_RUN_TIMER_IRQ, 0, free_run_timer_overflow_isr, NULL,
@@ -425,7 +438,7 @@ static int sys_clock_driver_init(const struct device *dev)
 		IT8XXX2_EXT_CTRLX(BUSY_WAIT_L_TIMER) |= IT8XXX2_EXT_ETXCOMB;
 
 		/* Set 32-bit timer6 to count-- every 1us */
-		ret = timer_init(BUSY_WAIT_H_TIMER, EXT_PSR_8M, EXT_RAW_CNT,
+		ret = timer_init(BUSY_WAIT_H_TIMER, EXT_PSR_EC_CLK, EXT_RAW_CNT,
 				 BUSY_WAIT_TIMER_H_MAX_CNT, EXT_FIRST_TIME_ENABLE,
 				 BUSY_WAIT_H_TIMER_IRQ, BUSY_WAIT_H_TIMER_FLAG,
 				 EXT_WITHOUT_TIMER_INT, EXT_START_TIMER);
@@ -439,11 +452,12 @@ static int sys_clock_driver_init(const struct device *dev)
 		 * NOTE: When the timer5 count down to overflow in combinational
 		 *       mode, timer6 counter will automatically decrease one count
 		 *       and timer5 will automatically re-start counting down
-		 *       from 0x7. Timer5 clock source is 8MHz (=0.125ns), so the
-		 *       time period from 0x7 to overflow is 0.125ns * 8 = 1us.
+		 *       from COUNT_1US. Timer5 clock source is EC_FREQ, so the
+		 *       time period from COUNT_1US to overflow is
+		 *       (1 / EC_FREQ) * (EC_FREQ / USEC_PER_SEC) = 1us.
 		 */
-		ret = timer_init(BUSY_WAIT_L_TIMER, EXT_PSR_8M, EXT_RAW_CNT,
-				 0x7, EXT_FIRST_TIME_ENABLE,
+		ret = timer_init(BUSY_WAIT_L_TIMER, EXT_PSR_EC_CLK, EXT_RAW_CNT,
+				 COUNT_1US, EXT_FIRST_TIME_ENABLE,
 				 BUSY_WAIT_L_TIMER_IRQ, BUSY_WAIT_L_TIMER_FLAG,
 				 EXT_WITHOUT_TIMER_INT, EXT_START_TIMER);
 		if (ret < 0) {

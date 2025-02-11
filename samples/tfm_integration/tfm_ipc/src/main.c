@@ -7,7 +7,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
-#include "tfm_api.h"
 #include "tfm_ns_interface.h"
 #ifdef TFM_PSA_API
 #include "psa_manifest/sid.h"
@@ -74,7 +73,7 @@ void tfm_psa_crypto_rng(void)
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	printk("TF-M IPC on %s\n", CONFIG_BOARD);
 
@@ -83,4 +82,5 @@ void main(void)
 	tfm_get_sid();
 	tfm_psa_crypto_rng();
 #endif
+	return 0;
 }

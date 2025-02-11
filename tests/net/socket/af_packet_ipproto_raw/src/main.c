@@ -10,9 +10,9 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/ztest.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
@@ -56,7 +56,7 @@ static uint8_t *fake_dev_get_mac(struct fake_dev_context *ctx)
 		ctx->mac_addr[2] = 0x5E;
 		ctx->mac_addr[3] = 0x00;
 		ctx->mac_addr[4] = 0x53;
-		ctx->mac_addr[5] = sys_rand32_get();
+		ctx->mac_addr[5] = sys_rand8_get();
 	}
 
 	return ctx->mac_addr;
@@ -120,27 +120,27 @@ ZTEST(net_sckt_packet_raw_ip, test_sckt_raw_packet_raw_ip)
 	char receive_buffer[128];
 	int sock;
 
-	sock = socket(AF_PACKET, SOCK_RAW, IPPROTO_RAW);
+	sock = zsock_socket(AF_PACKET, SOCK_RAW, htons(IPPROTO_RAW));
 	zassert_true(sock >= 0, "Could not create a socket");
 
 	dst.sll_ifindex = net_if_get_by_iface(iface);
 	dst.sll_family = AF_PACKET;
 
-	ret = bind(sock, (const struct sockaddr *)&dst, sizeof(struct sockaddr_ll));
+	ret = zsock_bind(sock, (const struct sockaddr *)&dst, sizeof(struct sockaddr_ll));
 	zassert_true(ret >= 0, "Could not bind the socket");
 
 	/* Let's send some data: */
-	ret = sendto(sock, testing_data, ARRAY_SIZE(testing_data), 0, (const struct sockaddr *)&dst,
-		     sizeof(struct sockaddr_ll));
+	ret = zsock_sendto(sock, testing_data, ARRAY_SIZE(testing_data), 0,
+			   (const struct sockaddr *)&dst, sizeof(struct sockaddr_ll));
 	zassert_true(ret > 0, "Could not send data");
 
 	/* Receive the same data back: */
-	recv_data_len = recv(sock, receive_buffer, sizeof(receive_buffer), 0);
+	recv_data_len = zsock_recv(sock, receive_buffer, sizeof(receive_buffer), 0);
 	zassert_true(recv_data_len == ARRAY_SIZE(testing_data), "Expected data not received");
 
 	NET_DBG("Received successfully data %s", receive_buffer);
 
-	close(sock);
+	zsock_close(sock);
 }
 
 ZTEST_SUITE(net_sckt_packet_raw_ip, NULL, test_setup, NULL, NULL, NULL);

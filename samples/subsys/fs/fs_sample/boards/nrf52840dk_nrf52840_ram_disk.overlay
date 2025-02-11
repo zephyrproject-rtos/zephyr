@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	msc_disk0 {
+		status="okay";
+		compatible = "zephyr,ram-disk";
+		/* Sample, to make things easier, mounts all FAT
+		 * systems at "SD".
+		 */
+		disk-name = "SD";
+		/* Disk size is 64kB, 128 sectors of 512B, the minimal
+		 * required by FAT FS.
+		 */
+		sector-size = <512>;
+		sector-count = <128>;
+	};
+};

@@ -12,14 +12,13 @@
 	cpus {
 		#address-cells = <0x01>;
 		#size-cells = <0x00>;
-		timebase-frequency = <10000000>;
 
 		cpu@0 {
 			device_type = "cpu";
 			reg = <0x00>;
 			status = "okay";
-			compatible = "riscv";
-			riscv,isa = "rv32imc";
+			compatible = "lowrisc,ibex", "riscv";
+			riscv,isa = "rv32imcb_zicsr_zifencei";
 
 			hlic: interrupt-controller {
 				#interrupt-cells = <0x01>;
@@ -53,24 +52,56 @@
 			status = "disabled";
 		};
 
+		aontimer: aontimer@40470000 {
+			compatible = "lowrisc,opentitan-aontimer";
+			reg = <0x40470000 0x1000>;
+			interrupts = <156 1>;
+			interrupt-names = "wdog_bark";
+			interrupt-parent = <&plic>;
+			clock-frequency = <200000>;
+			status = "disabled";
+		};
+
+		pwrmgr: pwrmgr@40400000 {
+			compatible = "lowrisc,opentitan-pwrmgr";
+			reg = <0x40400000 0x80>;
+			status = "okay";
+		};
+
 		plic: interrupt-controller@48000000 {
 			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0x48000000 0x00002000
-			       0x48002000 0x001fe000
-			       0x48000000 0x03e00000>;
-			reg-names = "prio", "irq_en", "reg";
+			reg = <0x48000000 0x04000000>;
 			riscv,max-priority = <7>;
-			riscv,ndev = <184>;
+			riscv,ndev = <182>;
+			status = "okay";
 		};
 
 		uart0: serial@40000000{
 			reg = <0x40000000 0x1000>;
 			compatible = "lowrisc,opentitan-uart";
 			status = "disabled";
+		};
+
+		spi0: spi@40300000 {
+			compatible = "lowrisc,opentitan-spi";
+			status = "disabled";
+			reg = <0x40300000 0x100>;
+			clock-frequency = <96000000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi1: spi@40310000 {
+			compatible = "lowrisc,opentitan-spi";
+			status = "disabled";
+			reg = <0x40310000 0x100>;
+			clock-frequency = <48000000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };

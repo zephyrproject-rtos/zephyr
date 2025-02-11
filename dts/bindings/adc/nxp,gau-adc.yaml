@@ -1,0 +1,55 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP GAU GPADC.
+
+compatible: "nxp,gau-adc"
+
+include:
+  - name: base.yaml
+  - name: adc-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  nxp,clock-divider:
+    type: int
+    description: |
+      Clock divider from 1 to 32.
+      Default is 1 which is reset value.
+    default: 1
+
+  nxp,power-mode:
+    type: string
+    description: |
+      Current bias.
+      Default is "full-bias" because it is the reset value.
+    enum:
+      - "full-bias"
+      - "half-bias"
+    default: "full-bias"
+
+  nxp,input-buffer:
+    type: boolean
+    description: Enable use of the input buffer
+
+  nxp,calibration-voltage:
+    type: string
+    enum:
+      - "internal"
+      - "external"
+    default: "internal"
+    description: |
+      Use external calibration voltage.
+      Default is "internal" because it is the reset value.
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

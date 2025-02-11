@@ -7,7 +7,7 @@
 #include <zephyr/modem/backend/tty.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(modem_backend_tty);
+LOG_MODULE_REGISTER(modem_backend_tty, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #include <fcntl.h>
 #include <unistd.h>

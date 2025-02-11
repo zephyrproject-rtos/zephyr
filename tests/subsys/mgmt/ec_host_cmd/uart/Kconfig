@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+# This config is used to select SERIAL_SUPPORT_ASYNC, to satisfy CONFIG_UART_ASYNC_API dependencies
+config UART_ASYNC_MOCK
+	bool "Mock UART async driver"
+	default y
+	select SERIAL_SUPPORT_ASYNC
+
+source "Kconfig.zephyr"

@@ -13,28 +13,7 @@
 #include "mesh/access.h"
 #include "utils.h"
 
-struct shell_model_instance {
-	uint16_t addr;
-	uint8_t elem_idx;
-};
-
-static void model_instances_get(uint16_t id, struct shell_model_instance *arr, uint8_t len)
-{
-	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
-	struct bt_mesh_elem *elem;
-	struct bt_mesh_model *mod;
-
-	for (int i = 0; i < len; i++) {
-		elem = bt_mesh_elem_find(comp->elem[i].addr);
-		mod = bt_mesh_model_find(elem, id);
-		if (mod) {
-			arr[i].addr = comp->elem[i].addr;
-			arr[i].elem_idx = mod->elem_idx;
-		}
-	}
-}
-
-bool bt_mesh_shell_mdl_first_get(uint16_t id, struct bt_mesh_model **mod)
+bool bt_mesh_shell_mdl_first_get(uint16_t id, const struct bt_mesh_model **mod)
 {
 	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
 
@@ -48,10 +27,10 @@ bool bt_mesh_shell_mdl_first_get(uint16_t id, struct bt_mesh_model **mod)
 	return false;
 }
 
-int bt_mesh_shell_mdl_instance_set(const struct shell *sh, struct bt_mesh_model **mod,
+int bt_mesh_shell_mdl_instance_set(const struct shell *sh, const struct bt_mesh_model **mod,
 				 uint16_t mod_id, uint8_t elem_idx)
 {
-	struct bt_mesh_model *mod_temp;
+	const struct bt_mesh_model *mod_temp;
 	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
 
 	if (elem_idx >= comp->elem_count) {
@@ -73,17 +52,15 @@ int bt_mesh_shell_mdl_instance_set(const struct shell *sh, struct bt_mesh_model 
 
 int bt_mesh_shell_mdl_print_all(const struct shell *sh, uint16_t mod_id)
 {
-	uint8_t elem_cnt = bt_mesh_elem_count();
-	struct shell_model_instance mod_arr[elem_cnt];
+	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
+	const struct bt_mesh_model *mod;
 
-	memset(mod_arr, 0, sizeof(mod_arr));
-	model_instances_get(mod_id, mod_arr, ARRAY_SIZE(mod_arr));
-
-	for (int i = 0; i < ARRAY_SIZE(mod_arr); i++) {
-		if (mod_arr[i].addr) {
+	for (int i = 0; i < comp->elem_count; i++) {
+		mod = bt_mesh_model_find(&comp->elem[i], mod_id);
+		if (mod) {
 			shell_print(sh,
 				    "Client model instance found at addr 0x%.4X. Element index: %d",
-				    mod_arr[i].addr, mod_arr[i].elem_idx);
+				    comp->elem[i].rt->addr, mod->rt->elem_idx);
 		}
 	}
 
@@ -92,6 +69,11 @@ int bt_mesh_shell_mdl_print_all(const struct shell *sh, uint16_t mod_id)
 
 int bt_mesh_shell_mdl_cmds_help(const struct shell *sh, size_t argc, char **argv)
 {
+	shell_print(
+		sh,
+		"\nFor a detailed description of the commands and arguments in this shell module,\n"
+		"please refer to the Zephyr Project documentation online.\n");
+
 	if (argc == 1) {
 		shell_help(sh);
 		return 0;

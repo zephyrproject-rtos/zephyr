@@ -1,7 +1,10 @@
 common:
   depends_on: netif
   min_ram: 32
-  tags: net tunnel virtual
+  tags:
+    - net
+    - tunnel
+    - virtual
   filter: CONFIG_ENTROPY_HAS_DRIVER
 tests:
   net.virtual.tunnel.ipip:

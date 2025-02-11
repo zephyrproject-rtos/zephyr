@@ -46,7 +46,7 @@ API Changes
 
 * The :c:func:`lwm2m_rd_client_start` function now accepts an additional
   ``flags`` parameter, which allows to configure current LwM2M client session,
-  for instance enable bootstrap procedure in the curent session.
+  for instance enable bootstrap procedure in the current session.
 
 * LwM2M execute now supports arguments. The execute callback
   :c:type:`lwm2m_engine_execute_cb_t` is extended with an ``args`` parameter
@@ -453,7 +453,7 @@ Drivers and Sensors
 
 * I2C
 
-  * Added driver support for lmx6x, it8xxx2, and npcx7 plaforms.
+  * Added driver support for lmx6x, it8xxx2, and npcx7 platforms.
   * Added Atmel SAM4L TWIM driver.
   * Added I2C slave support in the microchip i2c driver.
   * Reversed 2.4 decision to downgrade I2C eeprom slave driver to a
@@ -745,7 +745,7 @@ USB
   * Separate PID for DFU mode added to avoid problems caused by the host OS
     caching the remaining descriptors when switching to DFU mode.
   * Added timer for appDETACH state and revised descriptor handling to
-    to meet specification requirements.
+    meet specification requirements.
 
 * USB HID class
 
@@ -900,7 +900,7 @@ MCUBoot
   * Renamed single-image mode to single-slot mode,
     see ``CONFIG_SINGLE_APPLICATION_SLOT``.
   * Added patch for turning off cache for Cortex M7 before chain-loading.
-  * Fixed boostrapping in swap-move mode.
+  * Fixed bootstrapping in swap-move mode.
   * Fixed issue causing that interrupted swap-move operation might brick device
     if the primary image was padded.
   * Fixed issue causing that HW stack protection catches the chain-loaded
@@ -1562,7 +1562,7 @@ release:
 * :github:`29146` - canisotp: mimxrt1064_evk: no DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL defined cause tests failure
 * :github:`29145` - net: frdmk64f many net related applications meet hardfault, hal driver assert
 * :github:`29139` - tests/kernel/fatal/exception failed on nsim_sem_mpu_stack_guard board
-* :github:`29120` - STM32: Few issues on on pinctrl generation script
+* :github:`29120` - STM32: Few issues on pinctrl generation script
 * :github:`29113` - Build failure with OSPD
 * :github:`29111` - Atmel SAM V71 UART_0 fail
 * :github:`29109` - HAL STM32 Missing ETH pin control configurations in DT files

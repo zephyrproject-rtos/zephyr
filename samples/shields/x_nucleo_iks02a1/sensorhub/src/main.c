@@ -148,7 +148,7 @@ static void ism330dhcx_config(const struct device *ism330dhcx)
 #endif
 }
 
-void main(void)
+int main(void)
 {
 #ifdef CONFIG_ISM330DHCX_ENABLE_TEMP
 	struct sensor_value die_temp;
@@ -162,11 +162,11 @@ void main(void)
 
 	if (!device_is_ready(iis2dlpc)) {
 		printk("%s: device not ready.\n", iis2dlpc->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(ism330dhcx)) {
 		printk("%s: device not ready.\n", ism330dhcx->name);
-		return;
+		return 0;
 	}
 
 	iis2dlpc_config(iis2dlpc);
@@ -178,13 +178,13 @@ void main(void)
 #ifndef CONFIG_IIS2DLPC_TRIGGER
 		if (sensor_sample_fetch(iis2dlpc) < 0) {
 			printf("IIS2DLPC Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 #ifndef CONFIG_ISM330DHCX_TRIGGER
 		if (sensor_sample_fetch(ism330dhcx) < 0) {
 			printf("ISM330DHCX Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 

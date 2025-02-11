@@ -18,17 +18,17 @@ LOG_MODULE_REGISTER(app);
 
 #define DELAY_TIME K_MSEC(1000)
 
-void main(void)
+int main(void)
 {
 	const struct device *const led_dev = DEVICE_DT_GET_ANY(ti_lp3943);
 	int i, ret;
 
 	if (!led_dev) {
 		LOG_ERR("No device with compatible ti,lp3943 found");
-		return;
+		return 0;
 	} else if (!device_is_ready(led_dev)) {
 		LOG_ERR("LED device %s not ready", led_dev->name);
-		return;
+		return 0;
 	} else {
 		LOG_INF("Found LED device %s", led_dev->name);
 	}
@@ -45,7 +45,7 @@ void main(void)
 		for (i = 0; i < NUM_LEDS; i++) {
 			ret = led_on(led_dev, i);
 			if (ret < 0) {
-				return;
+				return 0;
 			}
 
 			k_sleep(DELAY_TIME);
@@ -55,10 +55,11 @@ void main(void)
 		for (i = NUM_LEDS - 1; i >= 0; i--) {
 			ret = led_off(led_dev, i);
 			if (ret < 0) {
-				return;
+				return 0;
 			}
 
 			k_sleep(DELAY_TIME);
 		}
 	}
+	return 0;
 }

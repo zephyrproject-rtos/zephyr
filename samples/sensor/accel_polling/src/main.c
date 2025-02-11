@@ -51,24 +51,29 @@ static int print_accels(const struct device *dev)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
 	for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
 		if (!device_is_ready(sensors[i])) {
 			printk("sensor: device %s not ready.\n", sensors[i]->name);
-			return;
+			return 0;
 		}
 	}
 
+#ifndef CONFIG_COVERAGE
 	while (1) {
+#else
+	for (int i = 0; i < 5; i++) {
+#endif
 		for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
 			ret = print_accels(sensors[i]);
 			if (ret < 0) {
-				return;
+				return 0;
 			}
 		}
 		k_msleep(1000);
 	}
+	return 0;
 }

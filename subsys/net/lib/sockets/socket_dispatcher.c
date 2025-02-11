@@ -6,6 +6,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #include "sockets_internal.h"
 
@@ -59,7 +60,7 @@ static int sock_dispatch_socket(struct dispatcher_context *ctx,
 		return -1;
 	}
 
-	obj = z_get_fd_obj_and_vtable(new_fd,
+	obj = zvfs_get_fd_obj_and_vtable(new_fd,
 				      (const struct fd_op_vtable **)&vtable,
 				      NULL);
 	if (obj == NULL) {
@@ -68,10 +69,10 @@ static int sock_dispatch_socket(struct dispatcher_context *ctx,
 
 	/* Reassing FD with new obj and entry. */
 	fd = ctx->fd;
-	z_finalize_fd(fd, obj, (const struct fd_op_vtable *)vtable);
+	zvfs_finalize_typed_fd(fd, obj, (const struct fd_op_vtable *)vtable, ZVFS_MODE_IFSOCK);
 
 	/* Release FD that is no longer in use. */
-	z_free_fd(new_fd);
+	zvfs_free_fd(new_fd);
 
 	dispatcher_ctx_free(ctx);
 
@@ -147,7 +148,7 @@ static ssize_t sock_dispatch_read_vmeth(void *obj, void *buffer, size_t count)
 		return -1;
 	}
 
-	new_obj = z_get_fd_obj_and_vtable(fd, &vtable, NULL);
+	new_obj = zvfs_get_fd_obj_and_vtable(fd, &vtable, NULL);
 	if (new_obj == NULL) {
 		return -1;
 	}
@@ -167,7 +168,7 @@ static ssize_t sock_dispatch_write_vmeth(void *obj, const void *buffer,
 		return -1;
 	}
 
-	new_obj = z_get_fd_obj_and_vtable(fd, &vtable, NULL);
+	new_obj = zvfs_get_fd_obj_and_vtable(fd, &vtable, NULL);
 	if (new_obj == NULL) {
 		return -1;
 	}
@@ -192,7 +193,7 @@ static int sock_dispatch_ioctl_vmeth(void *obj, unsigned int request,
 		return -1;
 	}
 
-	new_obj = z_get_fd_obj_and_vtable(fd, &vtable, NULL);
+	new_obj = zvfs_get_fd_obj_and_vtable(fd, &vtable, NULL);
 	if (new_obj == NULL) {
 		return -1;
 	}
@@ -317,7 +318,6 @@ static int sock_dispatch_setsockopt_vmeth(void *obj, int level, int optname,
 
 	if ((level == SOL_SOCKET) && (optname == SO_BINDTODEVICE)) {
 		struct net_if *iface;
-		const struct device *dev;
 		const struct ifreq *ifreq = optval;
 
 		if ((ifreq == NULL) || (optlen != sizeof(*ifreq))) {
@@ -325,16 +325,34 @@ static int sock_dispatch_setsockopt_vmeth(void *obj, int level, int optname,
 			return -1;
 		}
 
-		dev = device_get_binding(ifreq->ifr_name);
-		if (dev == NULL) {
-			errno = ENODEV;
-			return -1;
-		}
+		if (IS_ENABLED(CONFIG_NET_INTERFACE_NAME)) {
+			int ret;
 
-		iface = net_if_lookup_by_dev(dev);
-		if (iface == NULL) {
-			errno = ENODEV;
-			return -1;
+			ret = net_if_get_by_name(ifreq->ifr_name);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			iface = net_if_get_by_index(ret);
+			if (iface == NULL) {
+				errno = ENODEV;
+				return -1;
+			}
+		} else {
+			const struct device *dev;
+
+			dev = device_get_binding(ifreq->ifr_name);
+			if (dev == NULL) {
+				errno = ENODEV;
+				return -1;
+			}
+
+			iface = net_if_lookup_by_dev(dev);
+			if (iface == NULL) {
+				errno = ENODEV;
+				return -1;
+			}
 		}
 
 		if (net_if_socket_offload(iface) != NULL) {
@@ -453,7 +471,7 @@ static int sock_dispatch_create(int family, int type, int proto)
 		goto out;
 	}
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		goto out;
 	}
@@ -464,8 +482,8 @@ static int sock_dispatch_create(int family, int type, int proto)
 	entry->proto = proto;
 	entry->is_used = true;
 
-	z_finalize_fd(fd, entry,
-		      (const struct fd_op_vtable *)&sock_dispatch_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, entry, (const struct fd_op_vtable *)&sock_dispatch_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 out:
 	k_mutex_unlock(&dispatcher_lock);

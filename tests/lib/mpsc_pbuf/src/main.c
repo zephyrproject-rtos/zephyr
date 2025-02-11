@@ -15,7 +15,7 @@
 #include <stdbool.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #define PUT_EXT_LEN \
 	((sizeof(union mpsc_pbuf_generic) + sizeof(void *)) / sizeof(uint32_t))
@@ -80,7 +80,7 @@ static void drop(const struct mpsc_pbuf_buffer *buffer, const union mpsc_pbuf_ge
 
 static uint32_t buf32[512];
 
-static struct mpsc_pbuf_buffer_config cfg = {
+static struct mpsc_pbuf_buffer_config mpsc_buf_cfg = {
 	.buf = buf32,
 	.size = ARRAY_SIZE(buf32),
 	.notify_drop = drop,
@@ -91,9 +91,9 @@ static void init(struct mpsc_pbuf_buffer *buffer, uint32_t wlen, bool overwrite)
 {
 	drop_cnt = 0;
 	exp_drop_cnt = 0;
-	cfg.flags = overwrite ? MPSC_PBUF_MODE_OVERWRITE : 0;
-	cfg.size = wlen;
-	mpsc_pbuf_init(buffer, &cfg);
+	mpsc_buf_cfg.flags = overwrite ? MPSC_PBUF_MODE_OVERWRITE : 0;
+	mpsc_buf_cfg.size = wlen;
+	mpsc_pbuf_init(buffer, &mpsc_buf_cfg);
 
 #if CONFIG_SOC_SERIES_NRF52X
 	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
@@ -235,12 +235,12 @@ void benchmark_item_put(bool pow2)
 
 	t = get_cyc();
 	for (int i = 0; i < repeat; i++) {
-		union test_item *t;
+		union test_item *ti;
 
-		t = (union test_item *)mpsc_pbuf_claim(&buffer);
-		zassert_true(t);
-		zassert_equal(t->data.data, i);
-		mpsc_pbuf_free(&buffer, &t->item);
+		ti = (union test_item *)mpsc_pbuf_claim(&buffer);
+		zassert_true(ti);
+		zassert_equal(ti->data.data, i);
+		mpsc_pbuf_free(&buffer, &ti->item);
 	}
 
 	t = get_cyc() - t;
@@ -405,12 +405,12 @@ void benchmark_item_put_ext(bool pow2)
 
 	t = get_cyc();
 	for (int i = 0; i < repeat; i++) {
-		union test_item *t;
+		union test_item *ti;
 
-		t = (union test_item *)mpsc_pbuf_claim(&buffer);
-		zassert_true(t);
-		zassert_equal(t->data.data, i);
-		mpsc_pbuf_free(&buffer, &t->item);
+		ti = (union test_item *)mpsc_pbuf_claim(&buffer);
+		zassert_true(ti);
+		zassert_equal(ti->data.data, i);
+		mpsc_pbuf_free(&buffer, &ti->item);
 	}
 
 	t = get_cyc() - t;
@@ -441,7 +441,7 @@ void benchmark_item_put_data(bool pow2)
 			.data = NULL
 		}
 	};
-	uint32_t t = get_cyc();
+	uint32_t cyc = get_cyc();
 
 	for (uintptr_t i = 0; i < repeat; i++) {
 		test_ext_item.data_ext.hdr.data = i;
@@ -450,22 +450,22 @@ void benchmark_item_put_data(bool pow2)
 				    PUT_EXT_LEN);
 	}
 
-	t = get_cyc() - t;
+	cyc = get_cyc() - cyc;
 	PRINT("%spow2 buffer\n", pow2 ? "" : "non-");
-	PRINT("put_ext time: %d cycles\n", t/repeat);
+	PRINT("put_ext time: %d cycles\n", cyc/repeat);
 
-	t = get_cyc();
+	cyc = get_cyc();
 	for (int i = 0; i < repeat; i++) {
-		union test_item *t;
+		union test_item *ti;
 
-		t = (union test_item *)mpsc_pbuf_claim(&buffer);
-		zassert_true(t);
-		zassert_equal(t->data.data, i);
-		mpsc_pbuf_free(&buffer, &t->item);
+		ti = (union test_item *)mpsc_pbuf_claim(&buffer);
+		zassert_true(ti);
+		zassert_equal(ti->data.data, i);
+		mpsc_pbuf_free(&buffer, &ti->item);
 	}
 
-	t = get_cyc() - t;
-	PRINT("ext item claim,free: %d cycles\n", t/repeat);
+	cyc = get_cyc() - cyc;
+	PRINT("ext item claim,free: %d cycles\n", cyc/repeat);
 
 	zassert_is_null(mpsc_pbuf_claim(&buffer));
 }
@@ -930,16 +930,16 @@ ZTEST(log_buffer, test_overwrite_consistency)
 	int id = 0;
 
 	while (id < repeat) {
-		struct test_data_var *t = NULL;
+		struct test_data_var *tdv = NULL;
 		bool alloc_during_claim = (rand_get(1, 5) <= 2);
 
 		/* Occasionally claim buffer to simulate that claiming is
 		 * interrupted by allocation.
 		 */
 		if (alloc_during_claim) {
-			t = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
-			if (t) {
-				validate_packet(t);
+			tdv = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
+			if (tdv) {
+				validate_packet(tdv);
 			}
 		}
 
@@ -947,33 +947,33 @@ ZTEST(log_buffer, test_overwrite_consistency)
 
 		for (int i = 0; i < wr_cnt; i++) {
 			uint32_t wlen = rand_get(1, 15);
-			struct test_data_var *t;
+			struct test_data_var *tdv2;
 
-			t = (struct test_data_var *)mpsc_pbuf_alloc(&buffer,
-								    wlen,
-								    K_NO_WAIT);
-			t->hdr.len = wlen;
-			t->hdr.data = id++;
-			mpsc_pbuf_commit(&buffer, (union mpsc_pbuf_generic *)t);
+			tdv2 = (struct test_data_var *)mpsc_pbuf_alloc(&buffer,
+								       wlen,
+								       K_NO_WAIT);
+			tdv2->hdr.len = wlen;
+			tdv2->hdr.data = id++;
+			mpsc_pbuf_commit(&buffer, (union mpsc_pbuf_generic *)tdv2);
 		}
 
 		/* Put back item claimed before committing new items. */
-		if (t) {
-			mpsc_pbuf_free(&buffer, (union mpsc_pbuf_generic *)t);
+		if (tdv) {
+			mpsc_pbuf_free(&buffer, (union mpsc_pbuf_generic *)tdv);
 		}
 
 		uint32_t rd_cnt = rand_get(1, 30);
 
 		for (int i = 0; i < rd_cnt; i++) {
-			struct test_data_var *t;
+			struct test_data_var *tdv2;
 
-			t = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
-			if (!t) {
+			tdv2 = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
+			if (!tdv2) {
 				continue;
 			}
 
-			validate_packet(t);
-			mpsc_pbuf_free(&buffer, (union mpsc_pbuf_generic *)t);
+			validate_packet(tdv2);
+			mpsc_pbuf_free(&buffer, (union mpsc_pbuf_generic *)tdv2);
 		}
 	}
 }
@@ -1292,6 +1292,29 @@ ZTEST(log_buffer, test_utilization)
 	packet = (struct test_data_var *)mpsc_pbuf_alloc(&buffer, len, K_NO_WAIT);
 
 	zassert_true(packet == NULL);
+}
+
+/* Make sure that `mpsc_pbuf_alloc()` works in spinlock-held context when buf is not available */
+ZTEST(log_buffer, test_alloc_in_spinlock)
+{
+	struct mpsc_pbuf_buffer buffer;
+	struct test_data_var *packet;
+	struct k_spinlock l = {0};
+
+	init(&buffer, 32, false);
+
+	/* Allocate all available buffer */
+	packet = (struct test_data_var *)mpsc_pbuf_alloc(
+		&buffer, 32, K_MSEC(10));
+	zassert_not_null(packet);
+
+	K_SPINLOCK(&l) {
+		/* Try to allocate another buf */
+		packet = (struct test_data_var *)mpsc_pbuf_alloc(
+			&buffer, 32, K_MSEC(10));
+		/* No buf is available this time */
+		zassert_is_null(packet);
+	}
 }
 
 /*test case main entry*/

@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	fake_i2c_bus: i2c@100 {
+		status = "okay";
+		compatible = "zephyr,i2c-emul-controller";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x100 4>;
+	};
+};
+
+&fake_i2c_bus {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	compatible = "zephyr,i2c-emul-controller";
+	smartbattery0: smartbattery@b {
+		compatible = "sbs,sbs-gauge-new-api";
+		reg = <0x0B>;
+		status = "okay";
+	};
+};

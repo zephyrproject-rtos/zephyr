@@ -16,16 +16,9 @@ extern "C" {
 #endif
 
 /**
- * @brief Display Drivers
- * @defgroup display_interfaces Display Drivers
- * @{
- * @}
- */
-
-/**
  * @brief Grove display APIs
  * @defgroup grove_display Grove display APIs
- * @ingroup display_interfaces
+ * @ingroup third_party
  * @{
  */
 

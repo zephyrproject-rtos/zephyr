@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-set_property(TARGET linker PROPERTY devices_start_symbol "__device_start")
+set_property(TARGET linker PROPERTY devices_start_symbol "_device_list_start")
 
 find_program(CMAKE_LINKER ${CROSS_COMPILE}lldac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
@@ -97,9 +97,9 @@ function(toolchain_ld_link_elf)
     ${LINKERFLAGPREFIX}--entry=__start
     ${LINKERFLAGPREFIX}--Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
     ${LINKERFLAGPREFIX}--whole-archive
-    ${ZEPHYR_LIBS_PROPERTY}
+    ${WHOLE_ARCHIVE_LIBS}
     ${LINKERFLAGPREFIX}--no-whole-archive
-    kernel
+    ${NO_WHOLE_ARCHIVE_LIBS}
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     ${LIB_INCLUDE_DIR}
     -L${PROJECT_BINARY_DIR}

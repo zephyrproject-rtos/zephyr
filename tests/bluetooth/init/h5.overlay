@@ -1,0 +1,16 @@
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci_3wire_uart;
+	};
+};
+
+&bt_hci_uart {
+	status = "disabled";
+};
+
+&uart2 {
+	bt_hci_3wire_uart: bt_hci_3wire_uart {
+		compatible = "zephyr,bt-hci-3wire-uart";
+		status = "okay";
+	};
+};

@@ -8,6 +8,7 @@ Network System Management
 
    net_config.rst
    dhcpv4.rst
+   dhcpv6.rst
    net_hostname.rst
    net_core.rst
    net_if.rst
@@ -18,3 +19,4 @@ Network System Management
    traffic-class.rst
    net_pkt_filter.rst
    net_shell.rst
+   tls_credentials_shell.rst

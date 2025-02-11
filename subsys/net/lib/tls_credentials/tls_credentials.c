@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 
 #include "tls_internal.h"
+#include "tls_credentials_digest_raw.h"
 
 /* Global pool of credentials shared among TLS contexts. */
 static struct tls_credential credentials[CONFIG_TLS_MAX_CREDENTIALS_NUMBER];
@@ -16,7 +17,7 @@ static struct tls_credential credentials[CONFIG_TLS_MAX_CREDENTIALS_NUMBER];
 /* A mutex for protecting access to the credentials array. */
 static struct k_mutex credential_lock;
 
-static int credentials_init(const struct device *unused)
+static int credentials_init(void)
 {
 	(void)memset(credentials, 0, sizeof(credentials));
 
@@ -24,7 +25,7 @@ static int credentials_init(const struct device *unused)
 
 	return 0;
 }
-SYS_INIT(credentials_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(credentials_init, POST_KERNEL, 0);
 
 static struct tls_credential *unused_credential_get(void)
 {
@@ -72,6 +73,37 @@ struct tls_credential *credential_next_get(sec_tag_t tag,
 	}
 
 	return NULL;
+}
+
+sec_tag_t credential_next_tag_get(sec_tag_t iter)
+{
+	int i;
+	sec_tag_t lowest = TLS_SEC_TAG_NONE;
+
+	/* Scan all slots and find lowest sectag greater than iter */
+	for (i = 0; i < ARRAY_SIZE(credentials); i++) {
+		/* Skip empty slots. */
+		if (credentials[i].type == TLS_CREDENTIAL_NONE) {
+			continue;
+		}
+
+		/* Skip any slots containing sectags not greater than iter */
+		if (credentials[i].tag <= iter && iter != TLS_SEC_TAG_NONE) {
+			continue;
+		}
+
+		/* Find the lowest of such slots */
+		if (lowest == TLS_SEC_TAG_NONE || credentials[i].tag < lowest) {
+			lowest = credentials[i].tag;
+		}
+	}
+
+	return lowest;
+}
+
+int credential_digest(struct tls_credential *credential, void *dest, size_t *len)
+{
+	return credential_digest_raw(credential, dest, len);
 }
 
 void credentials_lock(void)

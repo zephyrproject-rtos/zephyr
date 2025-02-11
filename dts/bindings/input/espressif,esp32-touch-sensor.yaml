@@ -1,0 +1,131 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Zephyr input touch sensor parent node
+
+  This defines a group of touch sensors that can generate input events. Each touch
+  sensor is defined in a child node of the touch-sensor node and defines a specific key
+  code.
+
+  For example:
+
+  #include <zephyr/dt-bindings/input/input-event-codes.h>
+  #include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
+
+  &touch {
+         compatible = "espressif,esp32-touch";
+         status = "okay";
+
+         debounce-interval-ms = <30>;
+         href-microvolt = <27000000>;
+         lref-microvolt = <500000>;
+         href-atten-microvolt = <1000000>;
+         filter-mode = <ESP32_TOUCH_FILTER_MODE_IIR_16>;
+         filter-debounce-cnt = <1>;
+         filter-noise-thr = <ESP32_TOUCH_FILTER_NOISE_THR_4_8TH>;
+         filter-jitter-step = <4>;
+         filter-smooth-level = <ESP32_TOUCH_FILTER_SMOOTH_MODE_IIR_2>;
+
+         touch_sensor_0 {
+                 channel-num = <1>;
+                 channel-sens = <20>;
+                 zephyr,code = <INPUT_KEY_0>;
+         };
+  };
+
+
+compatible: "espressif,esp32-touch"
+
+include: base.yaml
+
+properties:
+  debounce-interval-ms:
+    type: int
+    default: 30
+    description: Debouncing interval time in milliseconds.
+
+  href-microvolt:
+    type: int
+    enum:
+      - 2400000
+      - 2500000
+      - 2500000
+      - 2700000
+    default: 2700000
+    description: Touch sensor high reference voltage.
+
+  lref-microvolt:
+    type: int
+    enum:
+      - 500000
+      - 600000
+      - 700000
+      - 800000
+    default: 500000
+    description: Touch sensor low reference voltage.
+
+  href-atten-microvolt:
+    type: int
+    enum:
+      - 1500000
+      - 1000000
+      - 500000
+      - 0
+    default: 1000000
+    description: Touch sensor high reference attenuation voltage.
+
+  filter-mode:
+    type: int
+    default: 2
+    description: |
+       Touch sensor IIR filter coefficient.
+       If not specified defaults to ESP32_TOUCH_FILTER_MODE_IIR_16.
+
+  filter-debounce-cnt:
+    type: int
+    default: 1
+    description: |
+       Touch sensor debounce count.
+       If not specified defaults to 1.
+
+  filter-noise-thr:
+    type: int
+    default: 0
+    description: |
+       Touch sensor noise threshold coefficient.
+       If not specified defaults to ESP32_TOUCH_FILTER_NOISE_THR_4_8TH.
+
+  filter-jitter-step:
+    type: int
+    default: 4
+    description: |
+       Touch sensor jitter filter step size.
+       If not specified defaults to 4.
+
+  filter-smooth-level:
+    type: int
+    default: 1
+    description: |
+       Touch sensor level of filter applied on the original data against large noise interference.
+       If not specified defaults to ESP32_TOUCH_FILTER_SMOOTH_MODE_IIR_2.
+
+child-binding:
+  description: Touch sensor child node
+  properties:
+    channel-num:
+      type: int
+      required: true
+      description: Touch sensor channel number
+
+    channel-sens:
+      type: int
+      default: 20
+      description: |
+         Touch sensor channel sensibility in 100th.
+         If not specified defaults to 20.
+
+    zephyr,code:
+      type: int
+      required: true
+      description: Key code to emit.

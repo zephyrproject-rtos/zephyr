@@ -321,8 +321,6 @@ config MODEM_HL7800_BOOT_IN_AIRPLANE_MODE
 	help
 	  mdm_hl7800_set_functionality must be used by app to exit
 	  airplane mode.
-	  If bands are reconfigured, then this setting is overridden
-	  because modem is rebooted into full functionality mode.
 
 endchoice
 
@@ -356,6 +354,10 @@ endchoice
 config MODEM_HL7800_ALLOW_SLEEP_DELAY_MS
 	int "Milliseconds to delay before allowing modem to sleep"
 	default 5000
+	range 5000 3600000
+	help
+	  This value should be set larger than the network latency. Otherwise
+	  the modem can go to sleep before having a chance to receive socket data.
 
 config MODEM_HL7800_RSSI_RATE_SECONDS
 	int "Rate to automatically query RSSI"
@@ -363,11 +365,10 @@ config MODEM_HL7800_RSSI_RATE_SECONDS
 	default 30
 
 config MODEM_HL7800_CTS_FILTER_US
-	int "Duration in microseconds between samples of CTS signal"
-	default 10
-
-config MODEM_HL7800_CTS_FILTER_MAX_ITERATIONS
-	int "Maximum filter loops"
-	default 5
+	int "CTS signal filter time (microseconds)"
+	default 20
+	help
+	  This value is used to filter the CTS signal from the modem.
+	  CTS pulses shorter than this value will be ignored.
 
 endif # MODEM_HL7800

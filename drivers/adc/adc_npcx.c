@@ -28,23 +28,18 @@ LOG_MODULE_REGISTER(adc_npcx, CONFIG_ADC_LOG_LEVEL);
 #define ADC_REGULAR_GENDLY_VAL	0x0100
 #define ADC_REGULAR_MEAST_VAL	0x0001
 
-/* ADC channel number */
-#define NPCX_ADC_CH_COUNT DT_INST_PROP(0, channel_count)
-
 /* ADC targeted operating frequency (2MHz) */
 #define NPCX_ADC_CLK 2000000
-
-/* ADC internal reference voltage (Unit:mV) */
-#define NPCX_ADC_VREF_VOL 2816
 
 /* ADC conversion mode */
 #define NPCX_ADC_CHN_CONVERSION_MODE	0
 #define NPCX_ADC_SCAN_CONVERSION_MODE	1
 
+/* Max channel number to be converted in ADCCS */
+#define NPCX_ADCCS_MAX_CHANNEL_COUNT	16
+
 #define ADC_NPCX_THRVAL_RESOLUTION	10
 #define ADC_NPCX_THRVAL_MAX		BIT_MASK(ADC_NPCX_THRVAL_RESOLUTION)
-
-#define THRCTL(dev, ctl_no) (*((volatile uint16_t *) npcx_thrctl_reg(dev, ctl_no)))
 
 /* Device config */
 struct adc_npcx_config {
@@ -52,10 +47,12 @@ struct adc_npcx_config {
 	uintptr_t base;
 	/* clock configuration */
 	struct npcx_clk_cfg clk_cfg;
+	/* the number of ADC channels */
+	const uint8_t channel_count;
 	/* amount of thresholds supported */
 	const uint8_t threshold_count;
-	/* threshold control register offset */
-	const uint16_t threshold_reg_offset;
+	/* routine for configuring ADC's ISR */
+	void (*irq_cfg_func)(void);
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -88,7 +85,7 @@ struct adc_npcx_threshold_data {
 	 * channels being used in repetitive mode in order to set ADC registers
 	 * back to threshold detection when adc_npcx_read is completed.
 	 */
-	uint16_t repetitive_channels;
+	uint32_t repetitive_channels;
 	/*
 	 * While threshold interruption is enabled, adc_npcx_read must disable
 	 * all active threshold running to avoid race condition, this variable
@@ -98,11 +95,6 @@ struct adc_npcx_threshold_data {
 	/* This array holds current configuration for each threshold. */
 	struct adc_npcx_threshold_control
 			control[DT_INST_PROP(0, threshold_count)];
-	/*
-	 * Pointer of work queue thread to be notified when threshold assertion
-	 * occurs.
-	 */
-	struct k_work_q *work_q;
 };
 
 /* Driver data */
@@ -115,7 +107,7 @@ struct adc_npcx_data {
 	 * Bit-mask indicating the channels to be included in each sampling
 	 * of this sequence.
 	 */
-	uint16_t channels;
+	uint32_t channels;
 	/* ADC Device pointer used in api functions */
 	const struct device *adc_dev;
 	uint16_t *buffer;
@@ -128,6 +120,12 @@ struct adc_npcx_data {
 	atomic_t current_pm_lock;
 #endif
 };
+
+/*
+ * Pointer of internal work queue thread to be notified when threshold assertion
+ * occurs if CONFIG_ADC_CMP_NPCX_WORKQUEUE is enabled.
+ */
+struct k_work_q *work_q;
 
 /* Driver convenience defines */
 #define HAL_INSTANCE(dev) ((struct adc_reg *)((const struct adc_npcx_config *)(dev)->config)->base)
@@ -150,12 +148,39 @@ static void adc_npcx_pm_policy_state_lock_put(struct adc_npcx_data *data)
 }
 #endif
 
-static inline uint32_t npcx_thrctl_reg(const struct device *dev,
-				       uint32_t ctl_no)
+static inline void adc_npcx_config_channels(const struct device *dev, uint32_t channels)
+{
+	const struct adc_npcx_config *config = dev->config;
+	struct adc_reg *const inst = HAL_INSTANCE(dev);
+
+	inst->ADCCS = channels & BIT_MASK(NPCX_ADCCS_MAX_CHANNEL_COUNT);
+
+	/* Only npcx4 and later series support over 16 ADC channels */
+	if (config->channel_count > NPCX_ADCCS_MAX_CHANNEL_COUNT) {
+		inst->ADCCS2 = (channels >> NPCX_ADCCS_MAX_CHANNEL_COUNT) &
+			       BIT_MASK(NPCX_ADCCS_MAX_CHANNEL_COUNT);
+	}
+}
+
+static inline void adc_npcx_enable_threshold_detect(const struct device *dev, uint8_t th_sel,
+						    bool enable)
 {
 	const struct adc_npcx_config *config = dev->config;
 
-	return (config->base + config->threshold_reg_offset) + (ctl_no - 1) * 2;
+	if (enable) {
+#ifdef CONFIG_ADC_NPCX_CMP_V2
+		THEN(config->base) |= BIT(th_sel);
+#else /* CONFIG_ADC_NPCX_CMP_V1 */
+		THRCTL(config->base, th_sel) |= BIT(NPCX_THRCTL_THEN);
+#endif
+
+	} else {
+#ifdef CONFIG_ADC_NPCX_CMP_V2
+		THEN(config->base) &= ~BIT(th_sel);
+#else /* CONFIG_ADC_NPCX_CMP_V1 */
+		THRCTL(config->base, th_sel) &= ~BIT(NPCX_THRCTL_THEN);
+#endif
+	}
 }
 
 static void adc_npcx_isr(const struct device *dev)
@@ -198,12 +223,12 @@ static void adc_npcx_isr(const struct device *dev)
 		if (IS_ENABLED(CONFIG_ADC_CMP_NPCX) &&
 		    t_data->active_thresholds) {
 			/* Set repetitive channels back */
-			inst->ADCCS = t_data->repetitive_channels;
+			adc_npcx_config_channels(dev, t_data->repetitive_channels);
 			/* Start conversion */
 			inst->ADCCNF |= BIT(NPCX_ADCCNF_START);
 		} else {
 			/* Disable all channels */
-			inst->ADCCS = 0;
+			adc_npcx_config_channels(dev, 0);
 			/* Turn off ADC */
 			inst->ADCCNF &= ~(BIT(NPCX_ADCCNF_ADCEN));
 
@@ -231,9 +256,8 @@ static void adc_npcx_isr(const struct device *dev)
 			inst->THRCTS = thrcts;
 			if (t_data->control[i].work) {
 				/* Notify work thread */
-				k_work_submit_to_queue(t_data->work_q ?
-					t_data->work_q : &k_sys_work_q,
-					t_data->control[i].work);
+				k_work_submit_to_queue(work_q ? work_q : &k_sys_work_q,
+						       t_data->control[i].work);
 			}
 		}
 	}
@@ -246,11 +270,12 @@ static void adc_npcx_isr(const struct device *dev)
 static int adc_npcx_validate_buffer_size(const struct device *dev,
 					const struct adc_sequence *sequence)
 {
+	const struct adc_npcx_config *config = dev->config;
 	uint8_t channels = 0;
 	uint32_t mask;
 	size_t needed;
 
-	for (mask = BIT(NPCX_ADC_CH_COUNT - 1); mask != 0; mask >>= 1) {
+	for (mask = BIT(config->channel_count - 1); mask != 0; mask >>= 1) {
 		if (mask & sequence->channels) {
 			channels++;
 		}
@@ -270,6 +295,7 @@ static int adc_npcx_validate_buffer_size(const struct device *dev,
 
 static void adc_npcx_start_scan(const struct device *dev)
 {
+	const struct adc_npcx_config *config = dev->config;
 	struct adc_npcx_data *const data = dev->data;
 	struct adc_reg *const inst = HAL_INSTANCE(dev);
 
@@ -286,7 +312,7 @@ static void adc_npcx_start_scan(const struct device *dev)
 	inst->ADCSTS |= BIT(NPCX_ADCSTS_EOCCEV);
 
 	/* Update selected channels in scan mode by channels mask */
-	inst->ADCCS |= data->channels;
+	adc_npcx_config_channels(dev, data->channels);
 
 	/* Select 'Scan' Conversion mode. */
 	SET_FIELD(inst->ADCCNF, NPCX_ADCCNF_ADCMD_FIELD,
@@ -298,18 +324,24 @@ static void adc_npcx_start_scan(const struct device *dev)
 	/* Start conversion */
 	inst->ADCCNF |= BIT(NPCX_ADCCNF_START);
 
-	LOG_DBG("Start ADC scan conversion and ADCCNF,ADCCS are (%04X,%04X)\n",
+	if (config->channel_count > NPCX_ADCCS_MAX_CHANNEL_COUNT) {
+		LOG_DBG("Start ADC scan conversion and ADCCNF,ADCCS, ADCCS2 are "
+			"(%04X,%04X,%04X)\n", inst->ADCCNF, inst->ADCCS, inst->ADCCS2);
+	} else {
+		LOG_DBG("Start ADC scan conversion and ADCCNF,ADCCS are (%04X,%04X)\n",
 			inst->ADCCNF, inst->ADCCS);
+	}
 }
 
 static int adc_npcx_start_read(const struct device *dev,
 					const struct adc_sequence *sequence)
 {
+	const struct adc_npcx_config *config = dev->config;
 	struct adc_npcx_data *const data = dev->data;
 	int error = 0;
 
 	if (!sequence->channels ||
-	    (sequence->channels & ~BIT_MASK(NPCX_ADC_CH_COUNT))) {
+	    (sequence->channels & ~BIT_MASK(config->channel_count))) {
 		LOG_ERR("Invalid ADC channels");
 		return -EINVAL;
 	}
@@ -364,9 +396,10 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 static int adc_npcx_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
+	const struct adc_npcx_config *config = dev->config;
 	uint8_t channel_id = channel_cfg->channel_id;
 
-	if (channel_id >= NPCX_ADC_CH_COUNT) {
+	if (channel_id >= config->channel_count) {
 		LOG_ERR("Invalid channel %d", channel_id);
 		return -EINVAL;
 	}
@@ -443,18 +476,21 @@ static void adc_npcx_set_repetitive(const struct device *dev, int chnsel,
 		/* Set ADC conversion code to SW conversion mode */
 		SET_FIELD(inst->ADCCNF, NPCX_ADCCNF_ADCMD_FIELD,
 			  NPCX_ADC_SCAN_CONVERSION_MODE);
-		/* Update number of channel to be converted */
-		inst->ADCCS |= BIT(chnsel);
+
+		/* Add selected ADC channel to be converted */
+		t_data->repetitive_channels |= BIT(chnsel);
+		adc_npcx_config_channels(dev, t_data->repetitive_channels);
+
 		/* Set conversion type to repetitive (runs continuously) */
 		inst->ADCCNF |= BIT(NPCX_ADCCNF_ADCRPTC);
 
-		t_data->repetitive_channels |= BIT(chnsel);
 		/* Start conversion */
 		inst->ADCCNF |= BIT(NPCX_ADCCNF_START);
 	} else {
-		inst->ADCCS &= ~BIT(chnsel);
-
+		/* Remove selected ADC channel to be converted */
 		t_data->repetitive_channels &= ~BIT(chnsel);
+		adc_npcx_config_channels(dev, t_data->repetitive_channels);
+
 		if (!t_data->repetitive_channels) {
 			/* No thesholdd active left, disable repetitive mode */
 			inst->ADCCNF &= ~BIT(NPCX_ADCCNF_ADCRPTC);
@@ -493,7 +529,7 @@ int adc_npcx_threshold_ctrl_set_param(const struct device *dev,
 	adc_context_lock(&data->ctx, false, NULL);
 	switch (param->type) {
 	case ADC_NPCX_THRESHOLD_PARAM_CHNSEL:
-		if (param->val >= NPCX_ADC_CH_COUNT) {
+		if (param->val >= config->channel_count) {
 			ret = -EINVAL;
 			break;
 		}
@@ -530,6 +566,7 @@ static int adc_npcx_threshold_ctrl_setup(const struct device *dev,
 					 const uint8_t th_sel)
 {
 	struct adc_npcx_data *const data = dev->data;
+	struct adc_driver_api *api = (struct adc_driver_api *)dev->api;
 	struct adc_npcx_threshold_data *const t_data = data->threshold_data;
 	const struct adc_npcx_config *config = dev->config;
 	struct adc_npcx_threshold_control *const t_ctrl =
@@ -548,24 +585,24 @@ static int adc_npcx_threshold_ctrl_setup(const struct device *dev,
 		return -EBUSY;
 	}
 
-	if (t_ctrl->chnsel >= NPCX_ADC_CH_COUNT ||
-	    t_ctrl->thrval >= NPCX_ADC_VREF_VOL ||
+	if (t_ctrl->chnsel >= config->channel_count ||
+	    t_ctrl->thrval >= api->ref_internal ||
 	    t_ctrl->thrval == 0 || t_ctrl->work == 0) {
 		adc_context_release(&data->ctx, 0);
 		LOG_ERR("Threshold selected (%d) is not configured!", th_sel);
 		return -EINVAL;
 	}
 
-	SET_FIELD(THRCTL(dev, (th_sel + 1)),
+	SET_FIELD(THRCTL(config->base, th_sel),
 		  NPCX_THRCTL_CHNSEL, t_ctrl->chnsel);
 
 	if (t_ctrl->l_h) {
-		THRCTL(dev, (th_sel + 1)) |= BIT(NPCX_THRCTL_L_H);
+		THRCTL(config->base, th_sel) |= BIT(NPCX_THRCTL_L_H);
 	} else {
-		THRCTL(dev, (th_sel + 1)) &= ~BIT(NPCX_THRCTL_L_H);
+		THRCTL(config->base, th_sel) &= ~BIT(NPCX_THRCTL_L_H);
 	}
 	/* Set the threshold value. */
-	SET_FIELD(THRCTL(dev, (th_sel + 1)), NPCX_THRCTL_THRVAL,
+	SET_FIELD(THRCTL(config->base, th_sel), NPCX_THRCTL_THRVAL,
 		  t_ctrl->thrval);
 
 	adc_context_release(&data->ctx, 0);
@@ -576,6 +613,7 @@ static int adc_npcx_threshold_enable_irq(const struct device *dev,
 				  const uint8_t th_sel)
 {
 	struct adc_reg *const inst = HAL_INSTANCE(dev);
+	struct adc_driver_api *api = (struct adc_driver_api *)dev->api;
 	struct adc_npcx_data *const data = dev->data;
 	const struct adc_npcx_config *config = dev->config;
 	struct adc_npcx_threshold_data *const t_data = data->threshold_data;
@@ -589,8 +627,8 @@ static int adc_npcx_threshold_enable_irq(const struct device *dev,
 	}
 
 	adc_context_lock(&data->ctx, false, NULL);
-	if (t_ctrl->chnsel >= NPCX_ADC_CH_COUNT ||
-	    t_ctrl->thrval >= NPCX_ADC_VREF_VOL ||
+	if (t_ctrl->chnsel >= config->channel_count ||
+	    t_ctrl->thrval >= api->ref_internal ||
 	    t_ctrl->thrval == 0 || t_ctrl->work == 0) {
 		adc_context_release(&data->ctx, 0);
 		LOG_ERR("Threshold selected (%d) is not configured!", th_sel);
@@ -604,7 +642,7 @@ static int adc_npcx_threshold_enable_irq(const struct device *dev,
 	thrcts = inst->THRCTS & ~GENMASK(config->threshold_count - 1, 0);
 
 	/* Enable threshold detection */
-	THRCTL(dev, (th_sel + 1)) |= BIT(NPCX_THRCTL_THEN);
+	adc_npcx_enable_threshold_detect(dev, th_sel, true);
 
 	/* clear threshold status */
 	thrcts |= BIT(th_sel);
@@ -652,7 +690,7 @@ int adc_npcx_threshold_disable_irq(const struct device *dev,
 	inst->THRCTS = thrcts;
 
 	/* Disable threshold detection */
-	THRCTL(dev, (th_sel + 1)) &= ~BIT(NPCX_THRCTL_THEN);
+	adc_npcx_enable_threshold_detect(dev, th_sel, false);
 
 	/* Update active threshold */
 	t_data->active_thresholds &= ~BIT(th_sel);
@@ -687,52 +725,23 @@ int adc_npcx_threshold_ctrl_enable(const struct device *dev, uint8_t th_sel,
 	return ret;
 }
 
-int adc_npcx_threshold_mv_to_thrval(uint32_t val_mv, uint32_t *thrval)
+int adc_npcx_threshold_mv_to_thrval(const struct device *dev, uint32_t val_mv,
+								uint32_t *thrval)
 {
+	struct adc_driver_api *api = (struct adc_driver_api *)dev->api;
+
 	if (!IS_ENABLED(CONFIG_ADC_CMP_NPCX)) {
 		return -EOPNOTSUPP;
 	}
 
-	if (val_mv >= NPCX_ADC_VREF_VOL) {
+	if (val_mv >= api->ref_internal) {
 		return -EINVAL;
 	}
 
 	*thrval = (val_mv << ADC_NPCX_THRVAL_RESOLUTION) /
-		NPCX_ADC_VREF_VOL;
+		api->ref_internal;
 	return 0;
 }
-
-/* ADC driver registration */
-static const struct adc_driver_api adc_npcx_driver_api = {
-	.channel_setup = adc_npcx_channel_setup,
-	.read = adc_npcx_read,
-#if defined(CONFIG_ADC_ASYNC)
-	.read_async = adc_npcx_read_async,
-#endif
-	.ref_internal = NPCX_ADC_VREF_VOL,
-};
-
-static int adc_npcx_init(const struct device *dev);
-
-PINCTRL_DT_INST_DEFINE(0);
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	"only one 'nuvoton_npcx_adc' compatible node may be present");
-
-static const struct adc_npcx_config adc_npcx_cfg_0 = {
-	.base = DT_INST_REG_ADDR(0),
-	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(0),
-	.threshold_count = DT_INST_PROP(0, threshold_count),
-	.threshold_reg_offset = DT_INST_PROP(0, threshold_reg_offset),
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-};
-
-static struct adc_npcx_threshold_data threshold_data_0;
-
-static struct adc_npcx_data adc_npcx_data_0 = {
-	ADC_CONTEXT_INIT_TIMER(adc_npcx_data_0, ctx),
-	ADC_CONTEXT_INIT_LOCK(adc_npcx_data_0, ctx),
-	ADC_CONTEXT_INIT_SYNC(adc_npcx_data_0, ctx),
-};
 
 #if defined(CONFIG_ADC_CMP_NPCX_WORKQUEUE)
 struct k_work_q adc_npcx_work_q;
@@ -740,9 +749,8 @@ struct k_work_q adc_npcx_work_q;
 static K_KERNEL_STACK_DEFINE(adc_npcx_work_q_stack,
 			CONFIG_ADC_CMP_NPCX_WORKQUEUE_STACK_SIZE);
 
-static int adc_npcx_init_cmp_work_q(const struct device *dev)
+static int adc_npcx_init_cmp_work_q(void)
 {
-	ARG_UNUSED(dev);
 	struct k_work_queue_config cfg = {
 		.name = "adc_cmp_work",
 		.no_yield = false,
@@ -753,19 +761,12 @@ static int adc_npcx_init_cmp_work_q(const struct device *dev)
 			   K_KERNEL_STACK_SIZEOF(adc_npcx_work_q_stack),
 			   CONFIG_ADC_CMP_NPCX_WORKQUEUE_PRIORITY, &cfg);
 
-	threshold_data_0.work_q = &adc_npcx_work_q;
+	work_q = &adc_npcx_work_q;
 	return 0;
 }
 
 SYS_INIT(adc_npcx_init_cmp_work_q, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
 #endif
-
-DEVICE_DT_INST_DEFINE(0,
-		    adc_npcx_init, NULL,
-		    &adc_npcx_data_0, &adc_npcx_cfg_0,
-		    PRE_KERNEL_1,
-		    CONFIG_ADC_INIT_PRIORITY,
-		    &adc_npcx_driver_api);
 
 static int adc_npcx_init(const struct device *dev)
 {
@@ -784,14 +785,14 @@ static int adc_npcx_init(const struct device *dev)
 	data->adc_dev = dev;
 
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
 							&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on ADC clock fail %d", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
 			&config->clk_cfg, &data->input_clk);
 	if (ret < 0) {
 		LOG_ERR("Get ADC clock rate error %d", ret);
@@ -799,7 +800,7 @@ static int adc_npcx_init(const struct device *dev)
 	}
 
 	/* Configure the ADC clock */
-	prescaler = ceiling_fraction(data->input_clk, NPCX_ADC_CLK);
+	prescaler = DIV_ROUND_UP(data->input_clk, NPCX_ADC_CLK);
 	if (prescaler > 0x40) {
 		prescaler = 0x40;
 	}
@@ -815,14 +816,8 @@ static int adc_npcx_init(const struct device *dev)
 	inst->GENDLY = ADC_REGULAR_GENDLY_VAL;
 	inst->MEAST = ADC_REGULAR_MEAST_VAL;
 
-	if (IS_ENABLED(CONFIG_ADC_CMP_NPCX)) {
-		data->threshold_data = &threshold_data_0;
-	}
-
 	/* Configure ADC interrupt and enable it */
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), adc_npcx_isr,
-			    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQN(0));
+	config->irq_cfg_func();
 
 	/* Initialize mutex of ADC channels */
 	adc_context_unlock_unconditionally(&data->ctx);
@@ -836,3 +831,45 @@ static int adc_npcx_init(const struct device *dev)
 
 	return 0;
 }
+
+#define NPCX_ADC_INIT(n)							\
+										\
+	static void adc_npcx_irq_cfg_func_##n(void)				\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
+			    adc_npcx_isr, DEVICE_DT_INST_GET(n), 0);		\
+		irq_enable(DT_INST_IRQN(n));					\
+	}									\
+										\
+	static const struct adc_driver_api adc_npcx_driver_api_##n = {		\
+		.channel_setup = adc_npcx_channel_setup,			\
+		.read = adc_npcx_read,						\
+		.ref_internal = DT_INST_PROP(n, vref_mv),			\
+		IF_ENABLED(CONFIG_ADC_ASYNC,					\
+			(.read_async = adc_npcx_read_async,))			\
+	};									\
+										\
+	PINCTRL_DT_INST_DEFINE(n);						\
+										\
+	static const struct adc_npcx_config adc_npcx_cfg_##n = {		\
+		.base = DT_INST_REG_ADDR(n),					\
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),				\
+		.channel_count = DT_INST_PROP(n, channel_count),		\
+		.threshold_count = DT_INST_PROP(n, threshold_count),		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		.irq_cfg_func = adc_npcx_irq_cfg_func_##n,			\
+	};									\
+	static struct adc_npcx_threshold_data threshold_data_##n;		\
+	static struct adc_npcx_data adc_npcx_data_##n = {			\
+		ADC_CONTEXT_INIT_TIMER(adc_npcx_data_##n, ctx),			\
+		ADC_CONTEXT_INIT_LOCK(adc_npcx_data_##n, ctx),			\
+		ADC_CONTEXT_INIT_SYNC(adc_npcx_data_##n, ctx),			\
+		.threshold_data = &threshold_data_##n,				\
+	};									\
+	DEVICE_DT_INST_DEFINE(n,						\
+			     adc_npcx_init, NULL,				\
+			     &adc_npcx_data_##n, &adc_npcx_cfg_##n,		\
+			     PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY,		\
+			     &adc_npcx_driver_api_##n);
+
+DT_INST_FOREACH_STATUS_OKAY(NPCX_ADC_INIT)

@@ -3,6 +3,11 @@ sample:
   name: Arm Ethos-U NPU sample
 tests:
   sample.drivers.tflm_ethosu:
-    tags: NPU
+    tags:
+      - NPU
+    modules:
+      - tflite-micro
     filter: dt_compat_enabled("arm,ethos-u")
     build_only: true
+    integration_platforms:
+      - mps3/an547

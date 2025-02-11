@@ -23,6 +23,10 @@ config CPU_AARCH64_CORTEX_R
 	select HAS_FLASH_LOAD_OFFSET
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
+	select ARCH_HAS_STACK_PROTECTION
+	select CPU_HAS_FPU
+	imply FPU
+	imply FPU_SHARING
 	help
 	  This option signifies the use of a CPU of the Cortex-R 64-bit family.
 
@@ -40,12 +44,33 @@ config CPU_CORTEX_A55
 	help
 	  This option signifies the use of a Cortex-A55 CPU
 
+config CPU_CORTEX_A57
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A57 CPU
+
 config CPU_CORTEX_A72
 	bool
 	select CPU_CORTEX_A
 	select ARMV8_A
 	help
 	  This option signifies the use of a Cortex-A72 CPU
+
+config CPU_CORTEX_A76
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A76 CPU
+
+config CPU_CORTEX_A76_A55
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A76 and A55 big little CPU cluster
 
 config CPU_CORTEX_R82
 	bool
@@ -110,6 +135,60 @@ config WAIT_AT_RESET_VECTOR
 	  Spin at reset vector waiting for debugger to attach and resume
 	  execution
 
+config ARM64_SAFE_EXCEPTION_STACK
+	bool "To enable the safe exception stack"
+	help
+	  The safe exception stack is used for checking whether the kernel stack
+	  overflows during the exception happens from EL1. This stack is not
+	  used for user stack overflow checking, because kernel stack support
+	  the checking work.
+
+config ARM64_ENABLE_FRAME_POINTER
+	bool
+	depends on OVERRIDE_FRAME_POINTER_DEFAULT && !OMIT_FRAME_POINTER
+	depends on !FRAME_POINTER
+	select DEPRECATED
+	help
+	  Deprecated. Use CONFIG_FRAME_POINTER instead.
+	  Hidden option to simplify access to OVERRIDE_FRAME_POINTER_DEFAULT
+	  and OMIT_FRAME_POINTER. It is automatically enabled when the frame
+	  pointer unwinding is enabled.
+
+config ARM64_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	depends on FRAME_POINTER
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
+config ARM64_SAFE_EXCEPTION_STACK_SIZE
+	int "The stack size of the safe exception stack"
+	default 4096
+	depends on ARM64_SAFE_EXCEPTION_STACK
+	help
+	  The stack size of the safe exception stack. The safe exception stack
+	  requires to be enough to do the stack overflow check.
+
+config ARM64_FALLBACK_ON_RESERVED_CORES
+	bool "To enable fallback on reserved cores"
+	help
+	  Give the ability to define more cores in the device tree than required
+	  via CONFIG_MP_MAX_NUM_CPUS.  The extra cores in the device tree
+	  become reserved.  If there is an issue powering on a core during boot
+	  then that core will be skipped and the next core in the device tree
+	  will be used.
+
+config ARM64_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	depends on ARM_MPU
+	select THREAD_STACK_INFO
+	select ARM64_SAFE_EXCEPTION_STACK
+	help
+	  This option leverages the MMU or MPU to cause a system fatal error if
+	  the bounds of the current process stack are overflowed. This is done
+	  by preceding all stack areas with a fixed guard region.
+
 if CPU_CORTEX_A
 
 config ARMV8_A_NS
@@ -138,6 +217,8 @@ config ARMV8_A
 	  compatibility with the Armv7-A architecture and enhances that profile
 	  so that it can support some features included in the AArch64 state.
 	  It supports the T32 and A32 instruction sets.
+
+rsource "xen/Kconfig"
 
 endif # CPU_CORTEX_A
 
@@ -181,15 +262,6 @@ config ARM_MMU
 	help
 	  Memory Management Unit support.
 
-config EXCEPTION_DEBUG
-	bool "Unhandled exception debugging information"
-	default y
-	depends on LOG
-	help
-	  Print human-readable information about exception vectors, cause codes,
-	  and parameters, at a cost of code/data size for the human-readable
-	  strings.
-
 config XIP
 	select AARCH64_IMAGE_HEADER
 
@@ -206,7 +278,7 @@ if ARM_MMU
 config MMU_PAGE_SIZE
 	default 0x1000
 
-choice
+choice ARM64_VA_BITS
 	prompt "Virtual address space size"
 	default ARM64_VA_BITS_32
 	help
@@ -238,7 +310,7 @@ config ARM64_VA_BITS
 	default 42 if ARM64_VA_BITS_42
 	default 48 if ARM64_VA_BITS_48
 
-choice
+choice ARM64_PA_BITS
 	prompt "Physical address space size"
 	default ARM64_PA_BITS_32
 	help

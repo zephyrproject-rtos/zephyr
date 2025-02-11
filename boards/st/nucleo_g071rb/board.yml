@@ -1,0 +1,5 @@
+board:
+  name: nucleo_g071rb
+  vendor: st
+  socs:
+    - name: stm32g071xx

@@ -1,188 +1,274 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2023, Meta
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <sys/time.h>
+#include <time.h>
+#include <unistd.h>
+
 #include <zephyr/ztest.h>
-#include <zephyr/posix/time.h>
-#include <zephyr/posix/sys/time.h>
-#include <zephyr/posix/unistd.h>
+#include <zephyr/logging/log.h>
 
 #define SLEEP_SECONDS 1
 #define CLOCK_INVALID -1
 
-ZTEST(posix_apis, test_posix_clock)
+LOG_MODULE_REGISTER(clock_test, LOG_LEVEL_DBG);
+
+/* Set a particular time.  In this case, the output of: `date +%s -d 2018-01-01T15:45:01Z` */
+static const struct timespec ref_ts = {1514821501, NSEC_PER_SEC / 2U};
+
+static const clockid_t clocks[] = {
+	CLOCK_MONOTONIC,
+	CLOCK_REALTIME,
+};
+static const bool settable[] = {
+	false,
+	true,
+};
+
+static inline int64_t ts_to_ns(const struct timespec *ts)
 {
-	int64_t nsecs_elapsed, secs_elapsed;
-	struct timespec ts, te;
-
-	printk("POSIX clock APIs\n");
-
-	/* TESTPOINT: Pass invalid clock type */
-	zassert_equal(clock_gettime(CLOCK_INVALID, &ts), -1,
-			NULL);
-	zassert_equal(errno, EINVAL);
-
-	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &ts));
-	zassert_ok(k_sleep(K_SECONDS(SLEEP_SECONDS)));
-	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &te));
-
-	if (te.tv_nsec >= ts.tv_nsec) {
-		secs_elapsed = te.tv_sec - ts.tv_sec;
-		nsecs_elapsed = te.tv_nsec - ts.tv_nsec;
-	} else {
-		nsecs_elapsed = NSEC_PER_SEC + te.tv_nsec - ts.tv_nsec;
-		secs_elapsed = (te.tv_sec - ts.tv_sec - 1);
-	}
-
-	/*TESTPOINT: Check if POSIX clock API test passes*/
-	zassert_equal(secs_elapsed, SLEEP_SECONDS,
-			"POSIX clock API test failed");
-
-	printk("POSIX clock APIs test done\n");
+	return ts->tv_sec * NSEC_PER_SEC + ts->tv_nsec;
 }
 
-ZTEST(posix_apis, test_posix_realtime)
+static inline void tv_to_ts(const struct timeval *tv, struct timespec *ts)
 {
-	int ret;
-	struct timespec rts, mts;
-	struct timeval tv;
+	ts->tv_sec = tv->tv_sec;
+	ts->tv_nsec = tv->tv_usec * NSEC_PER_USEC;
+}
 
-	ret = clock_gettime(CLOCK_MONOTONIC, &mts);
-	zassert_equal(ret, 0, "Fail to get monotonic clock");
+#define _tp_op(_a, _b, _op) (ts_to_ns(_a) _op ts_to_ns(_b))
 
-	ret = clock_gettime(CLOCK_REALTIME, &rts);
-	zassert_equal(ret, 0, "Fail to get realtime clock");
+#define _decl_op(_type, _name, _op)                                                                \
+	static inline _type _name(const struct timespec *_a, const struct timespec *_b)            \
+	{                                                                                          \
+		return _tp_op(_a, _b, _op);                                                        \
+	}
 
-	/* Set a particular time.  In this case, the output of:
-	 * `date +%s -d 2018-01-01T15:45:01Z`
-	 */
-	struct timespec nts;
-	nts.tv_sec = 1514821501;
-	nts.tv_nsec = NSEC_PER_SEC / 2U;
+_decl_op(bool, tp_eq, ==);     /* a == b */
+_decl_op(bool, tp_lt, <);      /* a < b */
+_decl_op(bool, tp_gt, >);      /* a > b */
+_decl_op(bool, tp_le, <=);     /* a <= b */
+_decl_op(bool, tp_ge, >=);     /* a >= b */
+_decl_op(int64_t, tp_diff, -); /* a - b */
 
-	/* TESTPOINT: Pass invalid clock type */
-	zassert_equal(clock_settime(CLOCK_INVALID, &nts), -1,
-			NULL);
+/* lo <= (a - b) < hi */
+static inline bool tp_diff_in_range_ns(const struct timespec *a, const struct timespec *b,
+				       int64_t lo, int64_t hi)
+{
+	int64_t diff = tp_diff(a, b);
+
+	return diff >= lo && diff < hi;
+}
+
+ZTEST(clock, test_clock_gettime)
+{
+	struct timespec ts;
+
+	/* ensure argument validation is performed */
+	errno = 0;
+	zassert_equal(clock_gettime(CLOCK_INVALID, &ts), -1);
 	zassert_equal(errno, EINVAL);
 
-	ret = clock_settime(CLOCK_MONOTONIC, &nts);
-	zassert_not_equal(ret, 0, "Should not be able to set monotonic time");
+	if (false) {
+		/* undefined behaviour */
+		errno = 0;
+		zassert_equal(clock_gettime(clocks[0], NULL), -1);
+		zassert_equal(errno, EINVAL);
+	}
 
-	ret = clock_settime(CLOCK_REALTIME, &nts);
-	zassert_equal(ret, 0, "Fail to set realtime clock");
+	/* verify that we can call clock_gettime() on supported clocks */
+	ARRAY_FOR_EACH(clocks, i)
+	{
+		ts = (struct timespec){-1, -1};
+		zassert_ok(clock_gettime(clocks[i], &ts));
+		zassert_not_equal(ts.tv_sec, -1);
+		zassert_not_equal(ts.tv_nsec, -1);
+	}
+}
 
-	/*
-	 * Loop 20 times, sleeping a little bit for each, making sure
-	 * that the arithmetic roughly makes sense.  This tries to
-	 * catch all of the boundary conditions of the clock to make
-	 * sure there are no errors in the arithmetic.
-	 */
-	int64_t last_delta = 0;
-	for (int i = 1; i <= 20; i++) {
-		usleep(USEC_PER_MSEC * 90U);
-		ret = clock_gettime(CLOCK_REALTIME, &rts);
-		zassert_equal(ret, 0, "Fail to read realtime clock");
+ZTEST(clock, test_gettimeofday)
+{
+	struct timeval tv;
+	struct timespec ts;
+	struct timespec rts;
 
-		int64_t delta =
-			((int64_t)rts.tv_sec * NSEC_PER_SEC -
-			 (int64_t)nts.tv_sec * NSEC_PER_SEC) +
-			((int64_t)rts.tv_nsec - (int64_t)nts.tv_nsec);
-
-		/* Make the delta milliseconds. */
-		delta /= (NSEC_PER_SEC / 1000U);
-
-		zassert_true(delta > last_delta, "Clock moved backward");
-		int64_t error = delta - last_delta;
-
-		/* printk("Delta %d: %lld\n", i, delta); */
-
-		/* Allow for a little drift upward, but not
-		 * downward
-		 */
-		zassert_true(error >= 90, "Clock inaccurate %d", error);
-		zassert_true(error <= 110, "Clock inaccurate %d", error);
-
-		last_delta = delta;
+	if (false) {
+		/* undefined behaviour */
+		errno = 0;
+		zassert_equal(gettimeofday(NULL, NULL), -1);
+		zassert_equal(errno, EINVAL);
 	}
 
 	/* Validate gettimeofday API */
-	ret = gettimeofday(&tv, NULL);
-	zassert_equal(ret, 0);
-
-	ret = clock_gettime(CLOCK_REALTIME, &rts);
-	zassert_equal(ret, 0);
+	zassert_ok(gettimeofday(&tv, NULL));
+	zassert_ok(clock_gettime(CLOCK_REALTIME, &rts));
 
 	/* TESTPOINT: Check if time obtained from
 	 * gettimeofday is same or more than obtained
 	 * from clock_gettime
 	 */
-	zassert_true(rts.tv_sec >= tv.tv_sec, "gettimeofday didn't"
-			" provide correct result");
-	zassert_true(rts.tv_nsec >= tv.tv_usec * NSEC_PER_USEC,
-			"gettimeofday didn't provide correct result");
+	tv_to_ts(&tv, &ts);
+	zassert_true(tp_ge(&rts, &ts));
 }
 
-static inline bool ts_gt(const struct timespec *a, const struct timespec *b)
+ZTEST(clock, test_clock_settime)
 {
-	__ASSERT_NO_MSG(a->tv_nsec < NSEC_PER_SEC);
-	__ASSERT_NO_MSG(a->tv_nsec >= 0);
-	__ASSERT_NO_MSG(b->tv_nsec < NSEC_PER_SEC);
-	__ASSERT_NO_MSG(b->tv_nsec >= 0);
+	int64_t diff_ns;
+	struct timespec ts = {0};
 
-	if (a->tv_sec > b->tv_sec) {
-		return true;
+	BUILD_ASSERT(ARRAY_SIZE(settable) == ARRAY_SIZE(clocks));
+
+	/* ensure argument validation is performed */
+	errno = 0;
+	zassert_equal(clock_settime(CLOCK_INVALID, &ts), -1);
+	zassert_equal(errno, EINVAL);
+
+	if (false) {
+		/* undefined behaviour */
+		errno = 0;
+		zassert_equal(clock_settime(CLOCK_REALTIME, NULL), -1);
+		zassert_equal(errno, EINVAL);
 	}
 
-	if (a->tv_sec < b->tv_sec) {
-		return false;
+	/* verify nanoseconds */
+	errno = 0;
+	ts = (struct timespec){0, NSEC_PER_SEC};
+	zassert_equal(clock_settime(CLOCK_REALTIME, &ts), -1);
+	zassert_equal(errno, EINVAL);
+	errno = 0;
+	ts = (struct timespec){0, -1};
+	zassert_equal(clock_settime(CLOCK_REALTIME, &ts), -1);
+	zassert_equal(errno, EINVAL);
+
+	ARRAY_FOR_EACH(clocks, i)
+	{
+		if (!settable[i]) {
+			/* should fail attempting to set unsettable clocks */
+			errno = 0;
+			zassert_equal(clock_settime(clocks[i], &ts), -1);
+			zassert_equal(errno, EINVAL);
+			continue;
+		}
+
+		zassert_ok(clock_settime(clocks[i], &ref_ts));
+
+		/* read-back the time */
+		zassert_ok(clock_gettime(clocks[i], &ts));
+		/* dt should be >= 0, but definitely <= 1s */
+		diff_ns = tp_diff(&ts, &ref_ts);
+		zassert_true(diff_ns >= 0 && diff_ns <= NSEC_PER_SEC);
+	}
+}
+
+ZTEST(clock, test_realtime)
+{
+	struct timespec then, now;
+	/*
+	 * For calculating cumulative moving average
+	 * Note: we do not want to assert any individual samples due to scheduler noise.
+	 * The CMA filters out the noise so we can make an assertion (on average).
+	 * https://en.wikipedia.org/wiki/Moving_average#Cumulative_moving_average
+	 */
+	int64_t cma_prev = 0;
+	int64_t cma;
+	int64_t x_i;
+	/* lower and uppoer boundary for assertion */
+	int64_t lo = CONFIG_TEST_CLOCK_RT_SLEEP_MS;
+	int64_t hi = CONFIG_TEST_CLOCK_RT_SLEEP_MS + CONFIG_TEST_CLOCK_RT_ERROR_MS;
+	/* lower and upper watermark */
+	int64_t lo_wm = INT64_MAX;
+	int64_t hi_wm = INT64_MIN;
+
+	/* Loop n times, sleeping a little bit for each */
+	(void)clock_gettime(CLOCK_REALTIME, &then);
+	for (int i = 0; i < CONFIG_TEST_CLOCK_RT_ITERATIONS; ++i) {
+
+		zassert_ok(k_usleep(USEC_PER_MSEC * CONFIG_TEST_CLOCK_RT_SLEEP_MS));
+		(void)clock_gettime(CLOCK_REALTIME, &now);
+
+		/* Make the delta milliseconds. */
+		x_i = tp_diff(&now, &then) / NSEC_PER_MSEC;
+		then = now;
+
+		if (x_i < lo_wm) {
+			/* update low watermark */
+			lo_wm = x_i;
+		}
+
+		if (x_i > hi_wm) {
+			/* update high watermark */
+			hi_wm = x_i;
+		}
+
+		/* compute cumulative running average */
+		cma = (x_i + i * cma_prev) / (i + 1);
+		cma_prev = cma;
 	}
 
-	if (a->tv_nsec > b->tv_nsec) {
-		return true;
+	LOG_INF("n: %d, sleep: %d, margin: %d, lo: %lld, avg: %lld, hi: %lld",
+		CONFIG_TEST_CLOCK_RT_ITERATIONS, CONFIG_TEST_CLOCK_RT_SLEEP_MS,
+		CONFIG_TEST_CLOCK_RT_ERROR_MS, lo_wm, cma, hi_wm);
+	zassert_between_inclusive(cma, lo, hi);
+}
+
+ZTEST(clock, test_clock_getcpuclockid)
+{
+	int ret = 0;
+	clockid_t clock_id = CLOCK_INVALID;
+
+	ret = clock_getcpuclockid((pid_t)0, &clock_id);
+	zassert_equal(ret, 0, "POSIX clock_getcpuclock id failed");
+	zassert_equal(clock_id, CLOCK_PROCESS_CPUTIME_ID, "POSIX clock_getcpuclock id failed");
+
+	ret = clock_getcpuclockid((pid_t)2482, &clock_id);
+	zassert_equal(ret, EPERM, "POSIX clock_getcpuclock id failed");
+}
+
+ZTEST(clock, test_clock_getres)
+{
+	int ret;
+	struct timespec res;
+	const struct timespec one_ns = {
+		.tv_sec = 0,
+		.tv_nsec = 1,
+	};
+
+	struct arg {
+		clockid_t clock_id;
+		struct timespec *res;
+		int expect;
+	};
+
+	const struct arg args[] = {
+		/* permuting over "invalid" inputs */
+		{CLOCK_INVALID, NULL, -1},
+		{CLOCK_INVALID, &res, -1},
+		{CLOCK_REALTIME, NULL, 0},
+		{CLOCK_MONOTONIC, NULL, 0},
+		{CLOCK_PROCESS_CPUTIME_ID, NULL, 0},
+
+		/* all valid inputs */
+		{CLOCK_REALTIME, &res, 0},
+		{CLOCK_MONOTONIC, &res, 0},
+		{CLOCK_PROCESS_CPUTIME_ID, &res, 0},
+	};
+
+	ARRAY_FOR_EACH_PTR(args, arg) {
+		errno = 0;
+		res = (struct timespec){0};
+		ret = clock_getres(arg->clock_id, arg->res);
+		zassert_equal(ret, arg->expect);
+		if (ret != 0) {
+			zassert_equal(errno, EINVAL);
+			continue;
+		}
+		if (arg->res != NULL) {
+			zassert_true(tp_ge(arg->res, &one_ns));
+		}
 	}
-
-	return false;
 }
 
-static inline void ts_print(const char *label, const struct timespec *ts)
-{
-	printk("%s: {%" PRIu64 ", %" PRIu64 "}\n", label, (uint64_t)ts->tv_sec,
-	       (uint64_t)ts->tv_nsec);
-}
-
-ZTEST(posix_apis, test_clock_gettime_rollover)
-{
-	uint64_t t;
-	struct timespec ts[3];
-	const uint64_t rollover_s = UINT64_MAX / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-	printk("CONFIG_SYS_CLOCK_TICKS_PER_SEC: %u\n", CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-	printk("rollover_s: %" PRIu64 "\n", rollover_s);
-
-	t = UINT64_MAX - 1;
-	/* align to tick boundary */
-	k_sleep(K_TICKS(1));
-	sys_clock_tick_set(t);
-	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &ts[0]));
-	ts_print("t-1", &ts[0]);
-	zassert_equal(rollover_s, ts[0].tv_sec);
-
-	t = UINT64_MAX;
-	/* align to tick boundary */
-	k_sleep(K_TICKS(1));
-	sys_clock_tick_set(t);
-	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &ts[1]));
-	ts_print("t+0", &ts[1]);
-	zassert_equal(rollover_s, ts[1].tv_sec);
-	zassert_true(ts_gt(&ts[1], &ts[0]));
-
-	t = UINT64_MAX + 1;
-	/* align to tick boundary */
-	k_sleep(K_TICKS(1));
-	sys_clock_tick_set(t);
-	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &ts[2]));
-	ts_print("t+1", &ts[2]);
-	zassert_equal(0, ts[2].tv_sec);
-	zassert_true(ts_gt(&ts[1], &ts[2]));
-}
+ZTEST_SUITE(clock, NULL, NULL, NULL, NULL, NULL);

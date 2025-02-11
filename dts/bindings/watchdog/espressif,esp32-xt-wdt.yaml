@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This watchdog timer can detect oscillation failure of the RTC_SLOW_CLK_SRC_XTAL32K.
+    When such a failure is detected the hardware automatically switch to
+    ESP32_RTC_SLOW_CLK_SRC_RC_SLOW.
+
+    This feature is only available for ESP32S2,ESP32C3 and ESP32S3.
+
+compatible: "espressif,esp32-xt-wdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

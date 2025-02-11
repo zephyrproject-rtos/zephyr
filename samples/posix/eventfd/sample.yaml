@@ -2,11 +2,11 @@ sample:
   description: Extended POSIX (Linux) API eventfd() example
   name: eventfd
 common:
-  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   tags: posix
-  platform_exclude: m2gl025_miv intel_adsp_cavs15
+  platform_exclude: m2gl025_miv
   integration_platforms:
-    - mps2_an385
+    - mps2/an385
 tests:
   sample.posix.eventfd:
     min_ram: 32

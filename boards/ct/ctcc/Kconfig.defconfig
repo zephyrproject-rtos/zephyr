@@ -1,0 +1,58 @@
+# CTHINGS.CO Connectivity Card board configuration
+
+# Copyright (c) 2024 CTHINGS.CO
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CTCC_NRF52840
+
+if BOARD_SERIAL_BACKEND_CDC_ACM
+
+config USB_DEVICE_STACK
+	default y
+
+config USB_CDC_ACM
+	default SERIAL
+
+config CONSOLE
+	default y
+
+config UART_CONSOLE
+	default CONSOLE
+
+config USB_DEVICE_INITIALIZE_AT_BOOT
+	default y if !MCUBOOT && CONSOLE
+
+config USB_DEVICE_REMOTE_WAKEUP
+	default n
+
+if LOG
+
+# Turn off logging for USB CDC ACM
+choice USB_CDC_ACM_LOG_LEVEL_CHOICE
+	default USB_CDC_ACM_LOG_LEVEL_OFF
+endchoice
+
+# Turn off logging for USB Device
+choice USB_DEVICE_LOG_LEVEL_CHOICE
+	default USB_DEVICE_LOG_LEVEL_OFF
+endchoice
+
+# Wait 5s at startup for logging
+config LOG_PROCESS_THREAD_STARTUP_DELAY_MS
+	default 5000
+
+endif # LOG
+
+if USB_DEVICE_STACK
+
+config SERIAL
+	default y
+
+endif # USB_DEVICE_STACK
+
+endif # BOARD_SERIAL_BACKEND_CDC_ACM
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_CTCC_NRF52840

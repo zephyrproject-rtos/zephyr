@@ -49,14 +49,14 @@ static void fetch_and_display(const struct device *sensor)
 	       sensor_value_to_double(&gyro[2]));
 }
 
-void main(void)
+int main(void)
 {
 	const double sampling_frequency = 1000.0 / SAMPLING_INTERVAL_MS;
 	const struct device *const sensor = DEVICE_DT_GET_ONE(st_i3g4250d);
 
 	if (!device_is_ready(sensor)) {
 		printf("Sensor %s is not ready\n", sensor->name);
-		return;
+		return 0;
 	}
 
 	printf("Set sensor sampling frequency to %f Hz.\n", sampling_frequency);
@@ -69,4 +69,5 @@ void main(void)
 		/* Wait some time before printing the next value */
 		k_sleep(K_MSEC(DISPLAY_INTERVAL_MS));
 	}
+	return 0;
 }

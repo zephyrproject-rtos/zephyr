@@ -1,0 +1,14 @@
+identifier: qemu_xtensa
+name: QEMU Emulation for Xtensa
+type: qemu
+simulation: qemu
+arch: xtensa
+toolchain:
+  - zephyr
+  - xtools
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: cdns

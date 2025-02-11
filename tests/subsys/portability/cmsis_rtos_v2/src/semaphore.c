@@ -8,7 +8,8 @@
 #include <zephyr/kernel.h>
 #include <cmsis_os2.h>
 
-#define TIMEOUT_TICKS   10
+#define WAIT_TICKS      5
+#define TIMEOUT_TICKS   (10 + WAIT_TICKS)
 #define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 void thread_sema(void *arg)
@@ -21,7 +22,7 @@ void thread_sema(void *arg)
 		     "Semaphore acquired unexpectedly!");
 
 	/* Try taking semaphore after a TIMEOUT, but before release */
-	status = osSemaphoreAcquire((osSemaphoreId_t)arg, TIMEOUT_TICKS - 5);
+	status = osSemaphoreAcquire((osSemaphoreId_t)arg, WAIT_TICKS);
 	zassert_true(status == osErrorTimeout,
 		     "Semaphore acquired unexpectedly!");
 
@@ -77,8 +78,8 @@ ZTEST(cmsis_semaphore, test_semaphore)
 	zassert_true(semaphore_id != NULL, "semaphore creation failed");
 
 	name = osSemaphoreGetName(semaphore_id);
-	zassert_true(strcmp(sema_attr.name, name) == 0,
-		     "Error getting Semaphore name");
+	zassert_str_equal(sema_attr.name, name,
+			  "Error getting Semaphore name");
 
 	id = osThreadNew(thread_sema, semaphore_id, &thread_attr);
 	zassert_true(id != NULL, "Thread creation failed");

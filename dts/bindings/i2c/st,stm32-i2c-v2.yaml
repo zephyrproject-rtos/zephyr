@@ -43,3 +43,15 @@ properties:
                       <64000000 I2C_BITRATE_FAST 0x00603D56>,
                       <56000000 I2C_BITRATE_STANDARD 0x10606DA4>,
                       <56000000 I2C_BITRATE_FAST 0x00501D63>;
+
+  scl-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SCL signal is routed. This is only needed for
+      I2C bus recovery support.
+
+  sda-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SDA signal is routed. This is only needed for
+      I2C bus recovery support.

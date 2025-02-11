@@ -1,5 +1,10 @@
+/**
+ * @file
+ * @brief Bluetooth Volume Control Profile (VCP) APIs.
+ */
+
 /*
- * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,36 +17,69 @@
  *
  * @defgroup bt_gatt_vcp Volume Control Profile (VCP)
  *
+ * @since 2.7
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
  *
- * [Experimental] Users should note that the APIs can change
- * as a part of ongoing development.
+ * The Volume Control Profile (VCP) provides procedures to control the volume level and mute state
+ * on audio devices.
  */
 
-#include <zephyr/types.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * Defines the maximum number of Volume Offset Control service instances for the
+ * Volume Control Profile Volume Renderer
+ */
 #if defined(CONFIG_BT_VCP_VOL_REND)
 #define BT_VCP_VOL_REND_VOCS_CNT CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT
-#define BT_VCP_VOL_REND_AICS_CNT CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT
 #else
 #define BT_VCP_VOL_REND_VOCS_CNT 0
+#endif /* CONFIG_BT_VCP_VOL_REND */
+
+/**
+ * Defines the maximum number of Audio Input Control service instances for the
+ * Volume Control Profile Volume Renderer
+ */
+#if defined(CONFIG_BT_VCP_VOL_REND)
+#define BT_VCP_VOL_REND_AICS_CNT CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT
+#else
 #define BT_VCP_VOL_REND_AICS_CNT 0
 #endif /* CONFIG_BT_VCP_VOL_REND */
 
-/** Volume Control Service Error codes */
+/**
+ * @name Volume Control Service Error codes
+ * @{
+ */
+/**
+ * The Change_Counter operand value does not match the Change_Counter field value of the Volume
+ * State characteristic.
+ */
 #define BT_VCP_ERR_INVALID_COUNTER             0x80
+/** An invalid opcode has been used in a control point procedure. */
 #define BT_VCP_ERR_OP_NOT_SUPPORTED            0x81
+/** @} */
 
-/** Volume Control Service Mute Values */
+/**
+ * @name Volume Control Service Mute Values
+ * @{
+ */
+/** The volume state is unmuted */
 #define BT_VCP_STATE_UNMUTED                   0x00
+/** The volume state is muted */
 #define BT_VCP_STATE_MUTED                     0x01
+/** @} */
 
 /** @brief Opaque Volume Control Service instance. */
 struct bt_vcp_vol_ctlr;
@@ -112,6 +150,11 @@ int bt_vcp_vol_rend_included_get(struct bt_vcp_included *included);
  */
 int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param);
 
+/**
+ * @brief Struct to hold the Volume Renderer callbacks
+ *
+ * These can be registered for usage with bt_vcp_vol_rend_register().
+ */
 struct bt_vcp_vol_rend_cb {
 	/**
 	 * @brief Callback function for Volume Control Service volume state.
@@ -220,6 +263,11 @@ int bt_vcp_vol_rend_unmute(void);
  */
 int bt_vcp_vol_rend_mute(void);
 
+/**
+ * @brief Struct to hold the Volume Controller callbacks
+ *
+ * These can be registered for usage with bt_vcp_vol_ctlr_cb_register().
+ */
 struct bt_vcp_vol_ctlr_cb {
 	/**
 	 * @brief Callback function for Volume Control Profile volume state.
@@ -243,7 +291,7 @@ struct bt_vcp_vol_ctlr_cb {
 	 * Called when the value is remotely read as the Volume Controller.
 	 * Called if the value is changed by the Volume Renderer.
 	 *
-	 * A non-zero value indicates the the volume has been changed on the
+	 * A non-zero value indicates the volume has been changed on the
 	 * Volume Renderer since it was booted.
 	 *
 	 * @param vol_ctlr  Volume Controller instance pointer.
@@ -347,11 +395,14 @@ struct bt_vcp_vol_ctlr_cb {
 	 */
 	void (*vol_set)(struct bt_vcp_vol_ctlr *vol_ctlr, int err);
 
-	/* Volume Offset Control Service callbacks */
+	/** Volume Offset Control Service callbacks */
 	struct bt_vocs_cb             vocs_cb;
 
-	/* Audio Input Control Service callbacks */
+	/** Audio Input Control Service callbacks */
 	struct bt_aics_cb             aics_cb;
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
 };
 
 /**
@@ -359,9 +410,22 @@ struct bt_vcp_vol_ctlr_cb {
  *
  * @param cb   The callback structure.
  *
- * @return 0 if success, errno on failure.
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was already registered
  */
 int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb);
+
+/**
+ * @brief Unregisters the callbacks used by the Volume Controller.
+ *
+ * @param cb   The callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was not registered
+ */
+int bt_vcp_vol_ctlr_cb_unregister(struct bt_vcp_vol_ctlr_cb *cb);
 
 /**
  * @brief Discover Volume Control Service and included services.
@@ -381,6 +445,20 @@ int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb);
  */
 int bt_vcp_vol_ctlr_discover(struct bt_conn *conn,
 			     struct bt_vcp_vol_ctlr **vol_ctlr);
+
+/**
+ * @brief Get the volume controller from a connection pointer
+ *
+ * Get the Volume Control Profile Volume Controller pointer from a connection pointer.
+ * Only volume controllers that have been initiated via bt_vcp_vol_ctlr_discover() can be
+ * retrieved.
+ *
+ * @param conn     Connection pointer.
+ *
+ * @retval Pointer to a Volume Control Profile Volume Controller instance
+ * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
+ */
+struct bt_vcp_vol_ctlr *bt_vcp_vol_ctlr_get_by_conn(const struct bt_conn *conn);
 
 /**
  * @brief Get the connection pointer of a client instance
@@ -403,6 +481,9 @@ int bt_vcp_vol_ctlr_conn_get(const struct bt_vcp_vol_ctlr *vol_ctlr,
  * Volume Control Service included service instances, such as pointers to the
  * Volume Offset Control Service (Volume Offset Control Service) or
  * Audio Input Control Service (AICS) instances.
+ *
+ * Requires that @kconfig{CONFIG_BT_VCP_VOL_CTLR_VOCS} or @kconfig{CONFIG_BT_VCP_VOL_CTLR_AICS} is
+ * enabled.
  *
  * @param      vol_ctlr Volume Controller instance pointer.
  * @param[out] included Pointer to store the result in.

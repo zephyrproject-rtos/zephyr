@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Efinix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TITANIUM_TI60_F225
+	select SOC_EFINIX_SAPPHIRE

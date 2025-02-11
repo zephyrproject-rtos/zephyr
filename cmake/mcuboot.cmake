@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Nordic Semiconductor ASA
+# Copyright (c) 2020-2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 # This file includes extra build system logic that is enabled when
@@ -25,6 +25,9 @@ function(zephyr_mcuboot_tasks)
     if("${keyfile}" STREQUAL "")
       # No signature key file, no signed binaries. No error, though:
       # this is the documented behavior.
+      message(WARNING "Neither CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE or "
+                      "CONFIG_MCUBOOT_SIGNATURE_KEY_FILE are set, the generated build will not be "
+                      "bootable by MCUboot unless it is signed manually/externally.")
       return()
     endif()
   endif()
@@ -71,7 +74,9 @@ function(zephyr_mcuboot_tasks)
   endif()
 
   # Basic 'west sign' command and output format independent arguments.
-  set(west_sign ${WEST} sign --quiet --tool imgtool
+  separate_arguments(west_sign_extra UNIX_COMMAND ${CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS})
+  set(west_sign ${WEST} sign ${west_sign_extra}
+    --tool imgtool
     --tool-path "${imgtool_path}"
     --build-dir "${APPLICATION_BINARY_DIR}")
 
@@ -89,6 +94,11 @@ function(zephyr_mcuboot_tasks)
 
   if(NOT "${keyfile}" STREQUAL "")
     set(imgtool_extra --key "${keyfile}" ${imgtool_extra})
+  endif()
+
+  # Use overwrite-only instead of swap upgrades.
+  if(CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY)
+    set(imgtool_extra --overwrite-only --align 1 ${imgtool_extra})
   endif()
 
   set(imgtool_args -- ${imgtool_extra})
@@ -109,15 +119,24 @@ function(zephyr_mcuboot_tasks)
     list(APPEND unconfirmed_args --bin --sbin ${output}.signed.bin)
     list(APPEND byproducts ${output}.signed.bin)
     zephyr_runner_file(bin ${output}.signed.bin)
+    set(BYPRODUCT_KERNEL_SIGNED_BIN_NAME "${output}.signed.bin"
+        CACHE FILEPATH "Signed kernel bin file" FORCE
+    )
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND confirmed_args --bin --sbin ${output}.signed.confirmed.bin)
       list(APPEND byproducts ${output}.signed.confirmed.bin)
+      set(BYPRODUCT_KERNEL_SIGNED_CONFIRMED_BIN_NAME "${output}.signed.confirmed.bin"
+          CACHE FILEPATH "Signed and confirmed kernel bin file" FORCE
+      )
     endif()
 
     if(NOT "${keyfile_enc}" STREQUAL "")
       list(APPEND encrypted_args --bin --sbin ${output}.signed.encrypted.bin)
       list(APPEND byproducts ${output}.signed.encrypted.bin)
+      set(BYPRODUCT_KERNEL_SIGNED_ENCRYPTED_BIN_NAME "${output}.signed.encrypted.bin"
+          CACHE FILEPATH "Signed and encrypted kernel bin file" FORCE
+      )
     endif()
   endif()
 
@@ -126,15 +145,24 @@ function(zephyr_mcuboot_tasks)
     list(APPEND unconfirmed_args --hex --shex ${output}.signed.hex)
     list(APPEND byproducts ${output}.signed.hex)
     zephyr_runner_file(hex ${output}.signed.hex)
+    set(BYPRODUCT_KERNEL_SIGNED_HEX_NAME "${output}.signed.hex"
+        CACHE FILEPATH "Signed kernel hex file" FORCE
+    )
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND confirmed_args --hex --shex ${output}.signed.confirmed.hex)
       list(APPEND byproducts ${output}.signed.confirmed.hex)
+      set(BYPRODUCT_KERNEL_SIGNED_CONFIRMED_HEX_NAME "${output}.signed.confirmed.hex"
+          CACHE FILEPATH "Signed and confirmed kernel hex file" FORCE
+      )
     endif()
 
     if(NOT "${keyfile_enc}" STREQUAL "")
       list(APPEND encrypted_args --hex --shex ${output}.signed.encrypted.hex)
       list(APPEND byproducts ${output}.signed.encrypted.hex)
+      set(BYPRODUCT_KERNEL_SIGNED_ENCRYPTED_HEX_NAME "${output}.signed.encrypted.hex"
+          CACHE FILEPATH "Signed and encrypted kernel hex file" FORCE
+      )
     endif()
   endif()
 

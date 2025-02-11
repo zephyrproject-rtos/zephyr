@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/sys/printk.h>
@@ -53,6 +54,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
 	int status = 0;
 	unsigned int message = 0U;
 
@@ -74,16 +76,17 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	printk("RPMsg Service demo ended.\n");
 }
 
-void main(void)
+int main(void)
 {
 	printk("Starting application thread!\n");
 	k_thread_create(&thread_data, thread_stack, APP_TASK_STACK_SIZE,
-			(k_thread_entry_t)app_task,
+			app_task,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	return 0;
 }
 
 /* Make sure we register endpoint before RPMsg Service is initialized. */
-int register_endpoint(const struct device *arg)
+int register_endpoint(void)
 {
 	int status;
 

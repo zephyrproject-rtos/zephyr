@@ -9,17 +9,19 @@ menu "Bluetooth buffer configuration"
 config BT_BUF_ACL_TX_SIZE
 	int "Maximum supported ACL size for outgoing data"
 	range 27 65535
+	default 37 if BT_MESH_GATT
 	default 27
 	help
 	  Maximum supported ACL size of data packets sent from the Host to the
 	  Controller. This value does not include the HCI ACL header.
-	  The Host will segment the data transmitted to the Controller so that
-	  packets sent to the Controller will contain data up to this size.
+
 	  In a combined build this value will be set in both the Host and the
 	  Controller.
+
 	  In a Host-only build the Host will read the maximum ACL size supported
 	  by the Controller and use the smallest value supported by both the
 	  Host and the Controller.
+
 	  The Host supports sending of larger L2CAP PDUs than the ACL size and
 	  will fragment L2CAP PDUs into ACL data packets.
 	  The Controller will return this value in the HCI LE Read Buffer
@@ -32,6 +34,7 @@ config BT_BUF_ACL_TX_SIZE
 config BT_BUF_ACL_TX_COUNT
 	int "Number of outgoing ACL data buffers"
 	default 7 if BT_HCI_RAW
+	default 4 if BT_MESH_GATT
 	default 3
 	range 1 255
 	help
@@ -47,12 +50,10 @@ config BT_BUF_ACL_TX_COUNT
 
 config BT_BUF_ACL_RX_SIZE
 	int "Maximum supported ACL size for incoming data"
-	default 200 if BT_BREDR
-	# Mesh Proxy Recommended: 64 Pkey + 2 Bytes Mesh header.
-	# Overhead: ATT Write command Header (3) in an L2CAP PDU (4).
-	default 73 if BT_MESH_GATT
+	default 200 if BT_CLASSIC
 	default 70 if BT_EATT
 	default 69 if BT_SMP
+	default 37 if BT_MESH_GATT
 	default 27
 	range 70 65535 if BT_EATT
 	range 69 65535 if BT_SMP
@@ -60,58 +61,46 @@ config BT_BUF_ACL_RX_SIZE
 	help
 	  Maximum support ACL size of data packets sent from the Controller to
 	  the Host. This value does not include the HCI ACL header.
-	  In a combined Host and Controller build the buffer sizes in both the
-	  Host and the Controller will use this value for buffer sizes, and
-	  therefore Controller to Host flow Controller is not needed.
+
+	  In a combined Host and Controller build, both the
+	  Host and the Controller will use this value for buffer sizes, making
+	  Controller to Host flow control not strictly necessary.
+
 	  In a Host only build with Controller to Host flow control enabled
 	  the Host will inform the Controller about the maximum ACL data size it
 	  can send by setting this value in the Host Buffer Size command.
+
 	  If Controller to Host flow control is not enabled then the Controller
-	  can assume the Host has infinite buffer size so this value should then
-	  be set to something that is guaranteed the Controller will not exceed
-	  or the data packets will be dropped.
+	  can assume the Host has to receive and process ACL data faster than
+	  the controller can produce it.
+
 	  In a Controller only build this will determine the maximum ACL size
 	  that the Controller will send to the Host.
-	  The Host supports reassembling of L2CAP PDUs from ACL data packets,
-	  but the maximum supported L2CAP PDU size is limited by the maximum
-	  supported ACL size.
-	  This means the maximum L2CAP PDU MTU is restricted by the maximum ACL
-	  size subtracting the 4 byte header of an L2CAP PDU.
-	  When using L2CAP Connection oriented Channels without segmentation
-	  then the L2CAP SDU MTU is also restricted by the maximum ACL size
-	  subtracting the 4 Byte header of an L2CAP PDU plus the 2 byte header
-	  of an L2CAP SDU.
-
-	  With Enhanced ATT enabled the minimum of 70 is needed to support the
-	  minimum ATT_MTU of 64 octets in an L2CAP SDU without segmentation.
-	  With SMP LE Secure Connections enabled the minimum of 69 is needed to
-	  support the minimum SMP MTU of 65 octets (public key + opcode) in an
-	  L2CAP PDU.
-
-	  An L2CAP PDU is also referred to as an L2CAP basic frame or B-frame.
-	  An L2CAP SDU is also referred to as an L2CAP Credit-based frame or
-	  K-frame.
 
 config BT_BUF_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
-	default NET_BUF_RX_COUNT if NET_L2_BT
-	default 3 if BT_RECV_BLOCKING
 	default 6
-	range 1 64
+	range 2 256
 	help
 	  Number or incoming ACL data buffers sent from the Controller to the
 	  Host.
 	  In a combined Host and Controller build the buffers are shared and
 	  therefore Controller to Host flow control is not needed.
+
 	  In a Host only build with Controller to Host flow control enabled
 	  the Host will inform the Controller about the maximum number of
 	  buffers by setting this value in the Host Buffer Size command.
+
 	  When Controller to Host flow control is not enabled the Controller
 	  can assume that the Host has infinite amount of buffers.
 
+	  For both configurations, there is an additional requirement that is
+	  enforced by a build-time check: BT_BUF_ACL_RX_COUNT needs to be at
+	  least one greater than BT_MAX_CONN.
+
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
-	default 255 if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX
+	default 255 if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX || BT_CLASSIC
 	# LE Read Supported Commands command complete event.
 	default 68
 	range 68 255
@@ -126,7 +115,6 @@ config BT_BUF_EVT_RX_SIZE
 
 config BT_BUF_EVT_RX_COUNT
 	int "Number of HCI Event buffers"
-	default 3 if BT_RECV_BLOCKING
 	default 20 if (BT_MESH && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0))
 	default 10
 	range 2 255
@@ -139,7 +127,7 @@ config BT_BUF_EVT_DISCARDABLE_SIZE
 	range 43 255 if !BT_EXT_ADV
 	range 58 255 if BT_EXT_ADV
 	# LE Extended Advertising Report event
-	default 255 if BT_BREDR
+	default 255 if BT_CLASSIC
 	# Le Advertising Report event
 	default 43 if !BT_EXT_ADV
 	default 58 if BT_EXT_ADV
@@ -166,11 +154,10 @@ config BT_BUF_EVT_DISCARDABLE_COUNT
 
 config BT_BUF_CMD_TX_SIZE
 	int "Maximum support HCI Command buffer length"
-	# LE Set Extended Advertising Data command
-	default 255 if (BT_EXT_ADV || BT_BREDR)
+	default 255 if (BT_EXT_ADV || BT_CLASSIC || BT_ISO_CENTRAL)
 	# LE Set Connection CTE Receive Parameters. Value required to store max allowed number
 	# of antenna ids for platforms other than Nordic.
-	default 83 if (!BT_EXT_ADV && !BT_BREDR && BT_CTLR_DF && BT_CTLR_DF_CONN_CTE_REQ && !SOC_COMPATIBLE_NRF)
+	default 83 if (!BT_EXT_ADV && !BT_CLASSIC && BT_CTLR_DF && BT_CTLR_DF_CONN_CTE_REQ && !SOC_COMPATIBLE_NRF)
 	# LE Generate DHKey v2 command
 	default 65
 	range 65 255
@@ -192,8 +179,12 @@ config BT_BUF_CMD_TX_COUNT
 
 endmenu
 
+# Workaround to have commas on function arguments
+ZEPHYR_BT_HCI := zephyr,bt-hci
+
 config BT_HAS_HCI_VS
 	bool
+	default $(dt_chosen_bool_prop,$(ZEPHYR_BT_HCI),bt-hci-vs-ext)
 	help
 	  This option is set by the Bluetooth controller to indicate support
 	  for the Zephyr HCI Vendor-Specific Commands and Event.
@@ -207,32 +198,16 @@ config BT_HCI_VS
 	  Host and/or Controller. This enables Set Version Information,
 	  Supported Commands, Supported Features vendor commands.
 
-config BT_HCI_VS_EXT
-	bool "Zephyr HCI Vendor-Specific Extensions"
-	depends on BT_HCI_VS
-	default y
-	help
-	  Enable support for the Zephyr HCI Vendor-Specific Extensions in the
-	  Host and/or Controller. This enables  Write BD_ADDR, Read Build Info,
-	  Read Static Addresses and Read Key Hierarchy Roots vendor commands.
-
-config BT_HCI_VS_EVT
-	bool "Zephyr HCI Vendor-Specific Events"
-	depends on BT_HCI_VS_EXT
-	help
-	  Enable support for the Zephyr HCI Vendor-Specific Events in the
-	  Host and/or Controller.
-
 config BT_HCI_VS_FATAL_ERROR
 	bool "Allow vendor specific HCI event Zephyr Fatal Error"
-	depends on BT_HCI_VS_EXT
+	depends on BT_HCI_VS
 	help
-	  Enable emiting HCI Vendor-Specific events for system and Controller
+	  Enable emitting HCI Vendor-Specific events for system and Controller
 	  errors that are unrecoverable.
 
 config BT_HCI_VS_EXT_DETECT
 	bool "Use heuristics to guess HCI vendor extensions support in advance"
-	depends on BT_HCI_VS_EXT && !BT_CTLR
+	depends on BT_HCI_VS && !BT_CTLR
 	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3 || BOARD_NATIVE_POSIX
 	help
 	  Use some heuristics to try to guess in advance whether the controller
@@ -244,7 +219,7 @@ config BT_HCI_MESH_EXT
 	bool "Mesh HCI Command support"
 	depends on BT_BROADCASTER && BT_OBSERVER && !BT_LL_SW_SPLIT
 	help
-	  Enable support for the Bluetooth mesh HCI Commands.
+	  Enable support for the Bluetooth Mesh HCI Commands.
 
 config BT_WAIT_NOP
 	bool "Wait for \"NOP\" Command Complete event during init"
@@ -282,12 +257,17 @@ config BT_ASSERT_PANIC
 
 endif # BT_ASSERT
 
-config BT_DEBUG
-	# Hidden option to make the conditions more intuitive
-	bool
+config BT_HCI_ERR_TO_STR
+	bool "Print HCI error codes as strings [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This configuration enables printing of HCI error
+	  codes represented as strings.
+	  See bt_hci_err_to_str() for more details.
 
 config BT_MONITOR
 	bool
+	select LOG_OUTPUT
 
 choice BT_DEBUG_TYPE
 	prompt "Bluetooth debug type"
@@ -298,20 +278,8 @@ config BT_DEBUG_NONE
 	help
 	  Select this to disable all Bluetooth debug logs.
 
-config BT_DEBUG_LOG
-	bool "Normal printf-style to console"
-	select BT_DEBUG
-	select LOG
-	imply LOG_FUNC_NAME_PREFIX_INF
-	imply LOG_FUNC_NAME_PREFIX_WRN
-	imply LOG_FUNC_NAME_PREFIX_ERR
-	help
-	  This option enables Bluetooth debug going to standard
-	  serial console.
-
 config BT_DEBUG_MONITOR_UART
 	bool "Monitor protocol over UART"
-	select BT_DEBUG
 	select LOG
 	select CONSOLE_HAS_DRIVER
 	select BT_MONITOR
@@ -331,7 +299,6 @@ config BT_DEBUG_MONITOR_RTT
 	bool "Monitor protocol over RTT"
 	depends on USE_SEGGER_RTT
 	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 2
-	select BT_DEBUG
 	select LOG
 	select CONSOLE_HAS_DRIVER
 	select BT_MONITOR
@@ -368,33 +335,3 @@ config BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
 endif # BT_DEBUG_MONITOR_RTT
 
 endchoice # Bluetooth debug type
-
-if BT_DEBUG
-
-config BT_DEBUG_HCI_DRIVER
-	bool "Bluetooth HCI driver debug"
-	select DEPRECATED
-	help
-	  This option enables debug support for the active
-	  Bluetooth HCI driver, including the Controller-side HCI layer
-	  when included in the build.
-
-module = BT_HCI_DRIVER
-legacy-debug-sym = BT_DEBUG_HCI_DRIVER
-module-str = "Bluetooth HCI driver"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_RPA
-	bool "Bluetooth Resolvable Private Address (RPA) debug"
-	select DEPRECATED
-	depends on BT_RPA
-	help
-	  This option enables debug support for the Bluetooth
-	  Resolvable Private Address (RPA) generation and resolution.
-
-module = BT_RPA
-legacy-debug-sym = BT_DEBUG_RPA
-module-str = "Bluetooth Resolvable Private Address (RPA)"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-endif # BT_DEBUG

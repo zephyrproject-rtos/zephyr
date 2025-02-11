@@ -33,10 +33,10 @@
 		#size-cells = <0>;
 
 		cpu: cpu@0 {
-			compatible = "sifive,e51";
+			compatible = "sifive,e51", "riscv";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv64imac";
+			riscv,isa = "rv64imac_zicsr_zifencei";
 			status = "okay";
 
 			hlic: interrupt-controller {
@@ -51,7 +51,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
+		compatible = "fu540-soc", "sifive-soc", "simple-bus";
 		ranges;
 
 		modeselect: rom@1000 {
@@ -120,10 +120,7 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0x0c000000 0x00002000
-			       0x0c002000 0x001fe000
-			       0x0c200000 0x03e00000>;
-			reg-names = "prio", "irq_en", "reg";
+			reg = <0x0c000000 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <52>;
 		};
@@ -182,6 +179,7 @@
 		gpio0: gpio@10060000 {
 			compatible = "sifive,gpio0";
 			gpio-controller;
+			ngpios = <16>;
 			interrupt-parent = <&plic>;
 			interrupts = <7 1>, <8 1>, <9 1>, <10 1>,
 				<11 1>, <12 1>, <13 1>, <14 1>,

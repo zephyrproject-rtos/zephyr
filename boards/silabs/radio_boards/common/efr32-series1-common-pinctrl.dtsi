@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/gecko-pinctrl-s1.h>
+
+&pinctrl {
+	/* configuration for usart0 device, default state - operating as UART */
+	usart0_default: usart0_default {
+		group1 {
+			psels = <GECKO_PSEL(UART_TX, A, 0)>,
+				<GECKO_PSEL(UART_RX, A, 1)>,
+				<GECKO_LOC(UART_TX, 0)>,
+				<GECKO_LOC(UART_RX, 0)>;
+		};
+	};
+
+	usart1_default: usart1_default {
+		group1 {
+			psels = <GECKO_PSEL(SPIM_SCK, C, 8)>,
+				<GECKO_PSEL(SPIM_MISO, C, 7)>,
+				<GECKO_PSEL(SPIM_MOSI, C, 6)>,
+				<GECKO_LOC(SPI_SCK, 11)>,
+				<GECKO_LOC(SPI_MISO, 11)>,
+				<GECKO_LOC(SPI_MOSI, 11)>;
+		};
+	};
+
+	usart2_default: usart2_default {
+		group1 {
+			psels = <GECKO_PSEL(SPIM_SCK, A, 8)>,
+				<GECKO_PSEL(SPIM_MISO, A, 7)>,
+				<GECKO_PSEL(SPIM_MOSI, A, 6)>,
+				<GECKO_LOC(SPI_SCK, 1)>,
+				<GECKO_LOC(SPI_MISO, 1)>,
+				<GECKO_LOC(SPI_MOSI, 1)>;
+		};
+	};
+};

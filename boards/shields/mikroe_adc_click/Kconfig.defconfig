@@ -5,9 +5,6 @@ if SHIELD_MIKROE_ADC_CLICK
 
 if ADC
 
-config SPI
-	default y
-
 config ADC_INIT_PRIORITY
 	default 80
 

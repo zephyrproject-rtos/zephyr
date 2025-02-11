@@ -25,7 +25,7 @@ description: |
                    VCC-3.3V power - +3.3V  +5V - VCC-5V power
                  Reference Ground - GND    GND - Reference Ground
 
-    Board's silkscreen may vary depending you board, but coherent with
+    Board's silkscreen may vary depending on your board, but coherent with
     the description above as it's according to the standard's specification.
 
 compatible: "mikro-bus"

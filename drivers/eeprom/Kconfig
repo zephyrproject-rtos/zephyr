@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig EEPROM
-	bool "EEPROM hardware support"
+	bool "Electrically Erasable Programmable Read-Only Memory (EEPROM) drivers"
 	help
 	  Enable support for EEPROM hardware.
 
@@ -18,11 +18,12 @@ config EEPROM_INIT_PRIORITY
 	int "EEPROM init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
 	help
-	  EEPROM driver device initialization priority.
+	  EEPROM driver device initialization priority. This initialization
+	  priority is used unless the driver implementation has its own
+	  initialization priority.
 
 config EEPROM_SHELL
 	bool "EEPROM shell"
-	default y
 	depends on SHELL
 	help
 	  Enable the EEPROM shell with EEPROM related commands.
@@ -41,34 +42,69 @@ config EEPROM_AT2X
 	  Enable support for Atmel AT2x (and compatible) I2C/SPI
 	  EEPROMs.
 
+config EEPROM_AT2X_EMUL
+	bool "Emulate an Atmel AT24 I2C chip"
+	depends on EMUL
+	help
+	  This is an emulator for the Atmel AT24 series of I2C-attached EEPROMs.
+
+	  At present it only supports 8-bit addressing. The size of the EEPROM
+	  is given by the 'size' property. See the binding for further details.
+
 config EEPROM_AT24
-	bool "Atmel AT24 (and compatible) I2C EEPROM support"
+	bool "I2C EEPROMs compatible with Atmel's AT24 family"
 	default y
 	depends on DT_HAS_ATMEL_AT24_ENABLED
 	select I2C
 	select EEPROM_AT2X
 	help
-	  Enable support for Atmel AT24 (and compatible) I2C EEPROMs.
+	  Enable support for I2C EEPROMs compatible with Atmel's AT24 family.
+
+	  There are multiple vendors manufacturing I2C EEPROMs compatible with
+	  the programming model of the Atmel AT24.
+
+	  Examples of compatible EEPROM families:
+	  - Microchip AT24xxx
+	  - ST M24xxx
 
 config EEPROM_AT25
-	bool "Atmel AT25 (and compatible) SPI EEPROM support"
+	bool "SPI EEPROMs compatibile with Atmel's AT25 family"
 	default y
 	depends on DT_HAS_ATMEL_AT25_ENABLED
 	select SPI
 	select EEPROM_AT2X
 	help
-	  Enable support for Atmel AT25 (and compatible) SPI EEPROMs.
+	  Enable support for SPI EEPROMs compatible with Atmel's AT25 family.
+
+	  There are multiple vendors manufacturing SPI EEPROMs compatible with
+	  the programming model of the Atmel AT25.
+
+	  Examples of compatible EEPROM families:
+	  - Microchip AT25xxx
+	  - ST M95xxx
+
+config EEPROM_AT2X_INIT_PRIORITY
+	int "AT2X EEPROM init priority"
+	default 80
+	depends on EEPROM_AT2X
+	help
+	  AT2X EEPROM driver device initialization priority.
+
+	  The EEPROM is connected to I2C or SPI bus an has to be initialized
+	  after I2C/SPI driver.
 
 source "drivers/eeprom/Kconfig.lpc11u6x"
 source "drivers/eeprom/Kconfig.stm32"
 source "drivers/eeprom/Kconfig.eeprom_emu"
 source "drivers/eeprom/Kconfig.tmp116"
 source "drivers/eeprom/Kconfig.xec"
+source "drivers/eeprom/Kconfig.mb85rcxx"
 
 config EEPROM_SIMULATOR
 	bool "Simulated EEPROM driver"
 	default y
 	depends on DT_HAS_ZEPHYR_SIM_EEPROM_ENABLED
+	depends on !(ARCH_POSIX && !EXTERNAL_LIBC)
 	select STATS
 	select STATS_NAMES
 	help

@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+mainmenu "Bluetooth: ISO Receive"
+
+config ISO_PRINT_INTERVAL
+	int "Interval between each packet report"
+	range 1 360000
+	default 1
+	help
+	  Only print the packet report once in a given interval of ISO packets.
+
+config ISO_ALIGN_PRINT_INTERVALS
+	bool "Align report interval with incoming packets"
+	help
+	  Align interval-counter with packet number from incoming ISO packets.
+	  This may be needed if report printouts are to be synchronized between
+	  the iso_broadcast sample and the iso_receive sample.

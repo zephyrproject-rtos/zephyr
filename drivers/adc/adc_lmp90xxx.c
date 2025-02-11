@@ -639,7 +639,7 @@ static int lmp90xxx_adc_read_channel(const struct device *dev,
 		if (buf[3] != crc) {
 			LOG_ERR("CRC mismatch (0x%02x vs. 0x%02x)", buf[3],
 				crc);
-			return err;
+			return -EIO;
 		}
 	}
 
@@ -650,8 +650,12 @@ static int lmp90xxx_adc_read_channel(const struct device *dev,
 	return 0;
 }
 
-static void lmp90xxx_acquisition_thread(struct lmp90xxx_data *data)
+static void lmp90xxx_acquisition_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct lmp90xxx_data *data = p1;
 	uint8_t bgcalcn = LMP90XXX_BGCALN(0x3); /* Default to BgCalMode3 */
 	int32_t result = 0;
 	uint8_t channel;
@@ -1013,8 +1017,8 @@ static int lmp90xxx_init(const struct device *dev)
 	}
 
 	tid = k_thread_create(&data->thread, data->stack,
-			      CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_STACK_SIZE,
-			      (k_thread_entry_t)lmp90xxx_acquisition_thread,
+			      K_KERNEL_STACK_SIZEOF(data->stack),
+			      lmp90xxx_acquisition_thread,
 			      data, NULL, NULL,
 			      CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_PRIO,
 			      0, K_NO_WAIT);

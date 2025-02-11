@@ -25,19 +25,29 @@
 #include <zephyr/kernel_structs.h>
 
 #include <zephyr/toolchain.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/sys/dlist.h>
-#include <ksched.h>
 #include <zephyr/init.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/sys/check.h>
+/* private kernel APIs */
+#include <wait_q.h>
+#include <ksched.h>
 
 #define K_EVENT_WAIT_ANY      0x00   /* Wait for any events */
 #define K_EVENT_WAIT_ALL      0x01   /* Wait for all events */
 #define K_EVENT_WAIT_MASK     0x01
 
 #define K_EVENT_WAIT_RESET    0x02   /* Reset events prior to waiting */
+
+struct event_walk_data {
+	struct k_thread  *head;
+	uint32_t events;
+};
+
+#ifdef CONFIG_OBJ_CORE_EVENT
+static struct k_obj_type obj_type_event;
+#endif /* CONFIG_OBJ_CORE_EVENT */
 
 void z_impl_k_event_init(struct k_event *event)
 {
@@ -48,17 +58,21 @@ void z_impl_k_event_init(struct k_event *event)
 
 	z_waitq_init(&event->wait_q);
 
-	z_object_init(event);
+	k_object_init(event);
+
+#ifdef CONFIG_OBJ_CORE_EVENT
+	k_obj_core_init_and_link(K_OBJ_CORE(event), &obj_type_event);
+#endif /* CONFIG_OBJ_CORE_EVENT */
 }
 
 #ifdef CONFIG_USERSPACE
 void z_vrfy_k_event_init(struct k_event *event)
 {
-	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(event, K_OBJ_EVENT));
+	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(event, K_OBJ_EVENT));
 	z_impl_k_event_init(event);
 }
-#include <syscalls/k_event_init_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_event_init_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 /**
  * @brief determine if desired set of events been satisfied
@@ -84,57 +98,76 @@ static bool are_wait_conditions_met(uint32_t desired, uint32_t current,
 	return match != 0;
 }
 
-static void k_event_post_internal(struct k_event *event, uint32_t events,
+static int event_walk_op(struct k_thread *thread, void *data)
+{
+	unsigned int      wait_condition;
+	struct event_walk_data *event_data = data;
+
+	wait_condition = thread->event_options & K_EVENT_WAIT_MASK;
+
+	if (are_wait_conditions_met(thread->events, event_data->events,
+				    wait_condition)) {
+
+		/*
+		 * Events create a list of threads to wake up. We do
+		 * not want z_thread_timeout to wake these threads; they
+		 * will be woken up by k_event_post_internal once they
+		 * have been processed.
+		 */
+		thread->no_wake_on_timeout = true;
+
+		/*
+		 * The wait conditions have been satisfied. Add this
+		 * thread to the list of threads to unpend.
+		 */
+		thread->next_event_link = event_data->head;
+		event_data->head = thread;
+		z_abort_timeout(&thread->base.timeout);
+	}
+
+	return 0;
+}
+
+static uint32_t k_event_post_internal(struct k_event *event, uint32_t events,
 				  uint32_t events_mask)
 {
 	k_spinlock_key_t  key;
 	struct k_thread  *thread;
-	unsigned int      wait_condition;
-	struct k_thread  *head = NULL;
+	struct event_walk_data data;
+	uint32_t previous_events;
 
+	data.head = NULL;
 	key = k_spin_lock(&event->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_event, post, event, events,
 					events_mask);
 
+	previous_events = event->events & events_mask;
 	events = (event->events & ~events_mask) |
 		 (events & events_mask);
 	event->events = events;
-
+	data.events = events;
 	/*
 	 * Posting an event has the potential to wake multiple pended threads.
-	 * It is desirable to unpend all affected threads simultaneously. To
-	 * do so, this must be done in three steps as it is unsafe to unpend
-	 * threads from within the _WAIT_Q_FOR_EACH() loop.
+	 * It is desirable to unpend all affected threads simultaneously. This
+	 * is done in three steps:
 	 *
-	 * 1. Create a linked list of threads to unpend.
+	 * 1. Walk the waitq and create a linked list of threads to unpend.
 	 * 2. Unpend each of the threads in the linked list
 	 * 3. Ready each of the threads in the linked list
 	 */
 
-	_WAIT_Q_FOR_EACH(&event->wait_q, thread) {
-		wait_condition = thread->event_options & K_EVENT_WAIT_MASK;
+	z_sched_waitq_walk(&event->wait_q, event_walk_op, &data);
 
-		if (are_wait_conditions_met(thread->events, events,
-					    wait_condition)) {
-			/*
-			 * The wait conditions have been satisfied. Add this
-			 * thread to the list of threads to unpend.
-			 */
-
-			thread->next_event_link = head;
-			head = thread;
-		}
-	}
-
-	if (head != NULL) {
-		thread = head;
+	if (data.head != NULL) {
+		thread = data.head;
+		struct k_thread *next;
 		do {
-			z_unpend_thread(thread);
 			arch_thread_return_value_set(thread, 0);
 			thread->events = events;
-			z_ready_thread(thread);
-			thread = thread->next_event_link;
+			next = thread->next_event_link;
+			z_sched_wake_thread(thread, false);
+			thread = next;
 		} while (thread != NULL);
 	}
 
@@ -142,65 +175,67 @@ static void k_event_post_internal(struct k_event *event, uint32_t events,
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_event, post, event, events,
 				       events_mask);
+
+	return previous_events;
 }
 
-void z_impl_k_event_post(struct k_event *event, uint32_t events)
+uint32_t z_impl_k_event_post(struct k_event *event, uint32_t events)
 {
-	k_event_post_internal(event, events, events);
+	return k_event_post_internal(event, events, events);
 }
 
 #ifdef CONFIG_USERSPACE
-void z_vrfy_k_event_post(struct k_event *event, uint32_t events)
+uint32_t z_vrfy_k_event_post(struct k_event *event, uint32_t events)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	z_impl_k_event_post(event, events);
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	return z_impl_k_event_post(event, events);
 }
-#include <syscalls/k_event_post_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_event_post_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
-void z_impl_k_event_set(struct k_event *event, uint32_t events)
+uint32_t z_impl_k_event_set(struct k_event *event, uint32_t events)
 {
-	k_event_post_internal(event, events, ~0);
+	return k_event_post_internal(event, events, ~0);
 }
 
 #ifdef CONFIG_USERSPACE
-void z_vrfy_k_event_set(struct k_event *event, uint32_t events)
+uint32_t z_vrfy_k_event_set(struct k_event *event, uint32_t events)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	z_impl_k_event_set(event, events);
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	return z_impl_k_event_set(event, events);
 }
-#include <syscalls/k_event_set_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_event_set_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
-void z_impl_k_event_set_masked(struct k_event *event, uint32_t events,
+uint32_t z_impl_k_event_set_masked(struct k_event *event, uint32_t events,
 			       uint32_t events_mask)
 {
-	k_event_post_internal(event, events, events_mask);
+	return k_event_post_internal(event, events, events_mask);
 }
 
 #ifdef CONFIG_USERSPACE
-void z_vrfy_k_event_set_masked(struct k_event *event, uint32_t events,
+uint32_t z_vrfy_k_event_set_masked(struct k_event *event, uint32_t events,
 			       uint32_t events_mask)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	z_impl_k_event_set_masked(event, events, events_mask);
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	return z_impl_k_event_set_masked(event, events, events_mask);
 }
-#include <syscalls/k_event_set_masked_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_event_set_masked_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
-void z_impl_k_event_clear(struct k_event *event, uint32_t events)
+uint32_t z_impl_k_event_clear(struct k_event *event, uint32_t events)
 {
-	k_event_post_internal(event, 0, events);
+	return k_event_post_internal(event, 0, events);
 }
 
 #ifdef CONFIG_USERSPACE
-void z_vrfy_k_event_clear(struct k_event *event, uint32_t events)
+uint32_t z_vrfy_k_event_clear(struct k_event *event, uint32_t events)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	z_impl_k_event_clear(event, events);
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	return z_impl_k_event_clear(event, events);
 }
-#include <syscalls/k_event_clear_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_event_clear_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 				      unsigned int options, k_timeout_t timeout)
@@ -221,7 +256,7 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 	}
 
 	wait_condition = options & K_EVENT_WAIT_MASK;
-	thread = z_current_get();
+	thread = k_sched_current_thread_query();
 
 	k_spinlock_key_t  key = k_spin_lock(&event->lock);
 
@@ -282,11 +317,11 @@ uint32_t z_impl_k_event_wait(struct k_event *event, uint32_t events,
 uint32_t z_vrfy_k_event_wait(struct k_event *event, uint32_t events,
 				    bool reset, k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_wait(event, events, reset, timeout);
 }
-#include <syscalls/k_event_wait_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_event_wait_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 /**
  * Wait for all of the specified events
@@ -304,8 +339,29 @@ uint32_t z_impl_k_event_wait_all(struct k_event *event, uint32_t events,
 uint32_t z_vrfy_k_event_wait_all(struct k_event *event, uint32_t events,
 					bool reset, k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_wait_all(event, events, reset, timeout);
 }
-#include <syscalls/k_event_wait_all_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_event_wait_all_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_OBJ_CORE_EVENT
+static int init_event_obj_core_list(void)
+{
+	/* Initialize condvar object type */
+
+	z_obj_type_init(&obj_type_event, K_OBJ_TYPE_EVENT_ID,
+			offsetof(struct k_event, obj_core));
+
+	/* Initialize and link statically defined condvars */
+
+	STRUCT_SECTION_FOREACH(k_event, event) {
+		k_obj_core_init_and_link(K_OBJ_CORE(event), &obj_type_event);
+	}
+
+	return 0;
+}
+
+SYS_INIT(init_event_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+#endif /* CONFIG_OBJ_CORE_EVENT */

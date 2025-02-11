@@ -30,7 +30,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
+		compatible = "gaisler,gr716-soc", "simple-bus";
 		ranges;
 		interrupt-parent = <&irqmp>;
 
@@ -87,6 +87,24 @@
 			compatible = "gaisler,apbuart";
 			interrupts = <7>;
 			reg = <0x80305000 0x100>;
+			status = "disabled";
+		};
+
+		spim0: spi@fff00100 {
+			compatible = "gaisler,spimctrl";
+			reg = <0xfff00100 0x100>;
+			interrupts = <2 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spim1: spi@fff00200 {
+			compatible = "gaisler,spimctrl";
+			reg = <0xfff00200 0x100>;
+			interrupts = <2 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

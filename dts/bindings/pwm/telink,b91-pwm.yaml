@@ -4,14 +4,13 @@
 
 description: Telink B91 PWM
 
-include: [pwm-controller.yaml, base.yaml]
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 compatible: "telink,b91-pwm"
 
 properties:
 
   pinctrl-0:
-    type: phandles
     required: true
 
   clock-frequency:

@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2015 Intel Corporation.
+ * Copyright (c) 2023 Synopsys, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +64,7 @@ DEFINE_MM_REG_WRITE(ser, DW_SPI_REG_SER, 8)
 
 /* ICR is on a unique bit */
 DEFINE_TEST_BIT_OP(icr, DW_SPI_REG_ICR, DW_SPI_SR_ICR_BIT)
-#define clear_interrupts(addr) test_bit_icr(addr)
+#define clear_interrupts(dev) test_bit_icr(dev)
 
 #ifdef __cplusplus
 }

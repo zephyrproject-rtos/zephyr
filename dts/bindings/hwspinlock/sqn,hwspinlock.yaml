@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Sequans Communications
+# SPDX-License-Identifier: Apache-2.0
+
+description: SQN Hardware spinlocks
+
+compatible: "sqn,hwspinlock"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  num_locks:
+    type: int
+    required: true

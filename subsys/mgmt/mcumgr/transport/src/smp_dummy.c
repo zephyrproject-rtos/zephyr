@@ -65,7 +65,7 @@ static struct net_buf *mcumgr_dummy_process_frag(
 
 static struct net_buf *mcumgr_dummy_process_frag_outgoing(
 	struct mcumgr_serial_rx_ctxt *tx_ctxt,
-	const uint8_t *frag, int frag_len);
+	const uint8_t *frag, uint16_t frag_len);
 
 static int mcumgr_dummy_tx_pkt(const uint8_t *data, int len,
 			       mcumgr_serial_tx_cb cb);
@@ -113,7 +113,7 @@ static void smp_dummy_process_frag(struct uart_mcumgr_rx_buf *rx_buf)
  * used in tests
  */
 static struct net_buf *smp_dummy_process_frag_outgoing(uint8_t *buffer,
-						       uint8_t buffer_size)
+						       uint16_t buffer_size)
 {
 	struct net_buf *nb;
 
@@ -185,19 +185,25 @@ static int smp_dummy_tx_pkt_int(struct net_buf *nb)
 	return rc;
 }
 
-static int smp_dummy_init(const struct device *dev)
+static int smp_dummy_init(void)
 {
-	ARG_UNUSED(dev);
+	int rc;
 
 	k_sem_init(&smp_data_ready_sem, 0, 1);
 
-	smp_transport_init(&smp_dummy_transport, smp_dummy_tx_pkt_int,
-			   smp_dummy_get_mtu, NULL, NULL, NULL);
+	smp_dummy_transport.functions.output = smp_dummy_tx_pkt_int;
+	smp_dummy_transport.functions.get_mtu = smp_dummy_get_mtu;
+
+	rc = smp_transport_init(&smp_dummy_transport);
+
+	if (rc != 0) {
+		return rc;
+	}
+
 	dummy_mgumgr_recv_cb = smp_dummy_rx_frag;
 
 	return 0;
 }
-
 
 static struct uart_mcumgr_rx_buf *dummy_mcumgr_alloc_rx_buf(void)
 {
@@ -220,7 +226,7 @@ static void dummy_mcumgr_free_rx_buf(struct uart_mcumgr_rx_buf *rx_buf)
 	void *block;
 
 	block = rx_buf;
-	k_mem_slab_free(&dummy_mcumgr_slab, &block);
+	k_mem_slab_free(&dummy_mcumgr_slab, block);
 }
 
 /**
@@ -435,7 +441,7 @@ static struct net_buf *mcumgr_dummy_process_frag(
  */
 static struct net_buf *mcumgr_dummy_process_frag_outgoing(
 	struct mcumgr_serial_rx_ctxt *tx_ctxt,
-	const uint8_t *frag, int frag_len)
+	const uint8_t *frag, uint16_t frag_len)
 {
 	struct net_buf *nb;
 	uint16_t crc;

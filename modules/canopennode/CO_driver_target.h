@@ -22,6 +22,7 @@ extern "C" {
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/dsp/types.h> /* float32_t, float64_t */
 
 /* Use static variables instead of calloc() */
 #define CO_USE_GLOBALS
@@ -46,11 +47,12 @@ extern "C" {
 #endif
 
 typedef bool          bool_t;
-typedef float         float32_t;
-typedef long double   float64_t;
 typedef char          char_t;
 typedef unsigned char oChar_t;
 typedef unsigned char domain_t;
+
+BUILD_ASSERT(sizeof(float32_t) >= 4);
+BUILD_ASSERT(sizeof(float64_t) >= 8);
 
 typedef struct canopen_rx_msg {
 	uint8_t data[8];
@@ -66,6 +68,10 @@ typedef struct canopen_rx {
 	void *object;
 	CO_CANrxBufferCallback_t pFunct;
 	uint16_t ident;
+	uint16_t mask;
+#ifdef CONFIG_CAN_ACCEPT_RTR
+	bool rtr;
+#endif /* CONFIG_CAN_ACCEPT_RTR */
 } CO_CANrx_t;
 
 typedef struct canopen_tx {

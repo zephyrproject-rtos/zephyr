@@ -16,7 +16,7 @@ struct mem_block {
 	int member2;
 };
 
-static char __aligned(4) sample_mem[sizeof(struct mem_block) * MAX_BLOCKS];
+static char __aligned(sizeof(void *)) sample_mem[sizeof(struct mem_block) * MAX_BLOCKS];
 static const osMemoryPoolAttr_t mp_attrs = {
 	.name = "TestMempool",
 	.attr_bits = 0,
@@ -39,8 +39,7 @@ static void mempool_common_tests(osMemoryPoolId_t mp_id,
 		     "Something's wrong with osMemoryPoolGetName!");
 
 	name = osMemoryPoolGetName(mp_id);
-	zassert_true(strcmp(expected_name, name) == 0,
-		     "Error getting mempool name");
+	zassert_str_equal(expected_name, name, "Error getting mempool name");
 
 	zassert_equal(osMemoryPoolGetCapacity(dummy_id), 0,
 		      "Something's wrong with osMemoryPoolGetCapacity!");

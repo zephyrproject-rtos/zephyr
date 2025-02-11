@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2c-0 = &usic0ch1;
+	};
+};
+
+&i2c_scl_p6_2_u0c1 {
+	drive-strength = "strong-sharp-edge";
+	drive-open-drain;
+	hwctrl = "disabled";
+};
+
+&i2c_sda_p3_13_u0c1 {
+	drive-strength = "strong-soft-edge";
+	drive-open-drain;
+	hwctrl = "disabled";
+};
+
+&usic0ch1 {
+	compatible = "infineon,xmc4xxx-i2c";
+	pinctrl-0 = <&i2c_scl_p6_2_u0c1 &i2c_sda_p3_13_u0c1>;
+	pinctrl-names = "default";
+	scl-src = "DX1C";
+	sda-src = "DX0D";
+	interrupts = <86 1>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+};

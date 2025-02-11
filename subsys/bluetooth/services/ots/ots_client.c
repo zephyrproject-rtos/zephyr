@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
@@ -230,6 +231,9 @@ static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn)
 {
 	LOG_DBG("L2CAP closed, context: %p, conn: %p", l2cap_ctx, (void *)conn);
+	if (cur_inst) {
+		cur_inst = NULL;
+	}
 }
 /* End L2CAP callbacks */
 
@@ -294,6 +298,11 @@ static void olcp_ind_handler(struct bt_conn *conn,
 	enum bt_gatt_ots_olcp_proc_type op_code;
 	struct net_buf_simple net_buf;
 
+	if (length < sizeof(op_code)) {
+		LOG_DBG("Invalid indication length: %u", length);
+		return;
+	}
+
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
 	op_code = net_buf_simple_pull_u8(&net_buf);
@@ -301,6 +310,12 @@ static void olcp_ind_handler(struct bt_conn *conn,
 	LOG_DBG("OLCP indication");
 
 	if (op_code == BT_GATT_OTS_OLCP_PROC_RESP) {
+		if (net_buf.len < (sizeof(uint8_t) + sizeof(uint8_t))) {
+			LOG_DBG("Invalid indication length for op_code %u: %u", op_code,
+				net_buf.len);
+			return;
+		}
+
 		enum bt_gatt_ots_olcp_proc_type req_opcode =
 			net_buf_simple_pull_u8(&net_buf);
 		enum bt_gatt_ots_olcp_res_code result_code =
@@ -362,6 +377,11 @@ static void oacp_ind_handler(struct bt_conn *conn,
 	enum bt_gatt_ots_oacp_res_code result_code;
 	uint32_t checksum;
 	struct net_buf_simple net_buf;
+
+	if (length < sizeof(op_code)) {
+		LOG_DBG("Invalid indication length: %u", length);
+		return;
+	}
 
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
@@ -597,6 +617,12 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
 			    struct bt_conn *conn,
 			    uint64_t obj_id)
 {
+	CHECKIF(!BT_OTS_VALID_OBJ_ID(obj_id)) {
+		LOG_DBG("Invalid object ID 0x%016llx", obj_id);
+
+		return -EINVAL;
+	}
+
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
 		uint8_t param[BT_OTS_OBJ_ID_SIZE];
@@ -951,7 +977,9 @@ static uint8_t read_obj_type_cb(struct bt_conn *conn, uint8_t err,
 			struct bt_uuid *uuid =
 				&inst->otc_inst->cur_object.type.uuid;
 
-			bt_uuid_create(uuid, data, length);
+			if (!bt_uuid_create(uuid, data, length)) {
+				return BT_GATT_ITER_STOP;
+			}
 
 			bt_uuid_to_str(uuid, uuid_str, sizeof(uuid_str));
 			LOG_DBG("UUID type read: %s", uuid_str);
@@ -1393,7 +1421,7 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 		return -EINVAL;
 	}
 
-	CHECKIF((offset > UINT32_MAX) || (offset < 0)) {
+	CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
 		LOG_ERR("offset %ld exceeds UINT32 and must be >= 0", offset);
 		return -EINVAL;
 	}
@@ -1454,7 +1482,7 @@ int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_
 		return -EINVAL;
 	}
 
-	CHECKIF((offset > UINT32_MAX) || (offset < 0)) {
+	CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
 		LOG_DBG("offset exceeds %ld UINT32 and must be >= 0", offset);
 		return -EINVAL;
 	}
@@ -1647,8 +1675,10 @@ static int decode_record(struct net_buf_simple *buf,
 		}
 
 		uuid = net_buf_simple_pull_mem(buf, BT_UUID_SIZE_128);
-		bt_uuid_create(&rec->metadata.type.uuid,
-			       uuid, BT_UUID_SIZE_128);
+		if (!bt_uuid_create(&rec->metadata.type.uuid, uuid, BT_UUID_SIZE_128)) {
+			LOG_DBG("Failed to create UUID");
+			return -EINVAL;
+		}
 	} else {
 		if ((start_len - buf->len) + BT_UUID_SIZE_16 > rec->len) {
 			LOG_WRN("incorrect DirListing record, reclen %u "

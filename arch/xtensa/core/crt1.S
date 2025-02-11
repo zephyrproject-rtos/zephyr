@@ -23,7 +23,6 @@
 
 .global __start
 .type	z_cstart, @function
-.type	z_mp_entry, @function
 
 
 /* Macros to abstract away ABI differences */

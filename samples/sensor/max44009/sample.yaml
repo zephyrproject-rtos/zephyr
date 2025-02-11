@@ -1,5 +1,8 @@
 sample:
   name: MAX44009 light sensor
+  description: >
+    This is a sample app to read an external MAX44009 light sensor via I2C
+    interface
 tests:
   sample.sensor.max44009:
     tags: sensors

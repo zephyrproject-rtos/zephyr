@@ -4,15 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- *
- * @brief Single-linked list implementation
- *
- * Single-linked list implementation using inline macros/functions.
- * This API is not thread safe, and thus if a list is used across threads,
- * calls to functions must be protected with synchronization primitives.
- */
+ /**
+  * @file
+  * @defgroup single-linked-list_apis Single-linked list
+  * @ingroup datastructure_apis
+  *
+  * @brief Single-linked list implementation.
+  *
+  * Single-linked list implementation using inline macros/functions.
+  * This API is not thread safe, and thus if a list is used across threads,
+  * calls to functions must be protected with synchronization primitives.
+  * @{
+  */
 
 #ifndef ZEPHYR_INCLUDE_SYS_SLIST_H_
 #define ZEPHYR_INCLUDE_SYS_SLIST_H_
@@ -26,24 +29,24 @@ extern "C" {
 #endif
 
 
+/** @cond INTERNAL_HIDDEN */
 struct _snode {
 	struct _snode *next;
 };
+/** @endcond */
 
+/** Single-linked list node structure. */
 typedef struct _snode sys_snode_t;
 
+/** @cond INTERNAL_HIDDEN */
 struct _slist {
 	sys_snode_t *head;
 	sys_snode_t *tail;
 };
+/** @endcond */
 
+/** Single-linked list structure. */
 typedef struct _slist sys_slist_t;
-
- /**
-  * @defgroup single-linked-list_apis Single-linked list
-  * @ingroup datastructure_apis
-  * @{
-  */
 
 /**
  * @brief Provide the primitive to iterate on a list
@@ -105,7 +108,7 @@ typedef struct _slist sys_slist_t;
 #define SYS_SLIST_FOR_EACH_NODE_SAFE(__sl, __sn, __sns)			\
 	Z_GENLIST_FOR_EACH_NODE_SAFE(slist, __sl, __sn, __sns)
 
-/*
+/**
  * @brief Provide the primitive to resolve the container of a list node
  * Note: it is safe to use with NULL pointer nodes
  *
@@ -116,7 +119,7 @@ typedef struct _slist sys_slist_t;
 #define SYS_SLIST_CONTAINER(__ln, __cn, __n) \
 	Z_GENLIST_CONTAINER(__ln, __cn, __n)
 
-/*
+/**
  * @brief Provide the primitive to peek container of the list head
  *
  * @param __sl A pointer on a sys_slist_t to peek
@@ -126,7 +129,7 @@ typedef struct _slist sys_slist_t;
 #define SYS_SLIST_PEEK_HEAD_CONTAINER(__sl, __cn, __n) \
 	Z_GENLIST_PEEK_HEAD_CONTAINER(slist, __sl, __cn, __n)
 
-/*
+/**
  * @brief Provide the primitive to peek container of the list tail
  *
  * @param __sl A pointer on a sys_slist_t to peek
@@ -136,7 +139,7 @@ typedef struct _slist sys_slist_t;
 #define SYS_SLIST_PEEK_TAIL_CONTAINER(__sl, __cn, __n) \
 	Z_GENLIST_PEEK_TAIL_CONTAINER(slist, __sl, __cn, __n)
 
-/*
+/**
  * @brief Provide the primitive to peek the next container
  *
  * @param __cn Container struct type pointer
@@ -199,6 +202,10 @@ static inline void sys_slist_init(sys_slist_t *list)
 	list->tail = NULL;
 }
 
+/**
+ * @brief Statically initialize a single-linked list
+ * @param ptr_to_list A pointer on the list to initialize
+ */
 #define SYS_SLIST_STATIC_INIT(ptr_to_list) {NULL, NULL}
 
 static inline sys_snode_t *z_snode_next_peek(sys_snode_t *node)
@@ -412,6 +419,32 @@ Z_GENLIST_REMOVE(slist, snode)
  */
 static inline bool sys_slist_find_and_remove(sys_slist_t *list,
 					     sys_snode_t *node);
+
+/**
+ * @brief Find if a node is already linked in a singly linked list
+ *
+ * This and other sys_slist_*() functions are not thread safe.
+ *
+ * @param list A pointer to the list to check
+ * @param node A pointer to the node to search in the list
+ * @param[out] prev A pointer to the previous node
+ *
+ * @return true if node was found in the list, false otherwise
+ */
+static inline bool sys_slist_find(sys_slist_t *list, sys_snode_t *node,
+					    sys_snode_t **prev);
+Z_GENLIST_FIND(slist, snode)
+
+/**
+ * @brief Compute the size of the given list in O(n) time
+ *
+ * @param list A pointer on the list
+ *
+ * @return an integer equal to the size of the list, or 0 if empty
+ */
+static inline size_t sys_slist_len(sys_slist_t *list);
+
+Z_GENLIST_LEN(slist, snode)
 
 /** @} */
 Z_GENLIST_FIND_AND_REMOVE(slist, snode)

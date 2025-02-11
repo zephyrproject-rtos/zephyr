@@ -1,7 +1,8 @@
-.. _sntp-client-sample:
+.. zephyr:code-sample:: sntp-client
+   :name: SNTP client
+   :relevant-api: bsd_sockets sntp
 
-SNTP client sample
-##################
+   Use SNTP to get the current time from the host.
 
 Overview
 ********
@@ -23,7 +24,7 @@ printed.
 
 See the `net-tools`_ project for more details.
 
-This sample can be built and executed on QEMU or native_posix board as
+This sample can be built and executed on QEMU or native_sim board as
 described in :ref:`networking_with_qemu`.
 
 .. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools

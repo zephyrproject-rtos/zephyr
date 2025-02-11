@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/net_offload.h>
+#include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
 #include <zephyr/net/socket_offload.h>
 #endif
@@ -136,10 +137,14 @@ static void simplelink_scan_work_handler(struct k_work *work)
 	}
 }
 
-static int simplelink_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
+static int simplelink_mgmt_scan(const struct device *dev,
+				struct wifi_scan_params *params,
+				scan_result_cb_t cb)
 {
 	int err;
 	int status;
+
+	ARG_UNUSED(params);
 
 	/* Cancel any previous scan processing in progress: */
 	k_work_cancel_delayable(&simplelink_data.work);
@@ -263,11 +268,21 @@ static void simplelink_iface_init(struct net_if *iface)
 
 }
 
-static const struct net_wifi_mgmt_offload simplelink_api = {
-	.wifi_iface.init = simplelink_iface_init,
+static enum offloaded_net_if_types simplelink_get_type(void)
+{
+	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
+}
+
+static const struct wifi_mgmt_ops simplelink_mgmt = {
 	.scan		= simplelink_mgmt_scan,
 	.connect	= simplelink_mgmt_connect,
 	.disconnect	= simplelink_mgmt_disconnect,
+};
+
+static const struct net_wifi_mgmt_offload simplelink_api = {
+	.wifi_iface.iface_api.init = simplelink_iface_init,
+	.wifi_iface.get_type = simplelink_get_type,
+	.wifi_mgmt_api = &simplelink_mgmt,
 };
 
 static int simplelink_init(const struct device *dev)
@@ -288,3 +303,5 @@ NET_DEVICE_OFFLOAD_INIT(simplelink, CONFIG_WIFI_SIMPLELINK_NAME,
 			&simplelink_data, NULL,
 			CONFIG_WIFI_INIT_PRIORITY, &simplelink_api,
 			CONFIG_WIFI_SIMPLELINK_MAX_PACKET_SIZE);
+
+CONNECTIVITY_WIFI_MGMT_BIND(simplelink);

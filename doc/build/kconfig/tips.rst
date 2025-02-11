@@ -83,7 +83,7 @@ An application-specific devicetree :ref:`binding <dt-bindings>` to identify
 board specific properties may be appropriate. See
 :zephyr_file:`tests/drivers/gpio/gpio_basic_api` for an example.
 
-For applications, see :ref:`blinky-sample` for a devicetree-based alternative.
+For applications, see :zephyr:code-sample:`blinky` for a devicetree-based alternative.
 
 ``select`` statements
 *********************
@@ -92,7 +92,7 @@ The ``select`` statement is used to force one symbol to ``y`` whenever another
 symbol is ``y``. For example, the following code forces ``CONSOLE`` to ``y``
 whenever ``USB_CONSOLE`` is ``y``:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config CONSOLE
    	bool "Console support"
@@ -116,7 +116,7 @@ For example, say that a new dependency is added to the ``CONSOLE`` symbol
 above, by a developer who is unaware of the ``USB_CONSOLE`` symbol (or simply
 forgot about it):
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config CONSOLE
    	bool "Console support"
@@ -128,7 +128,7 @@ Enabling ``USB_CONSOLE`` now forces ``CONSOLE`` to ``y``, even if
 To fix the problem, the ``STRING_ROUTINES`` dependency needs to be added to
 ``USB_CONSOLE`` as well:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config USB_CONSOLE
    	bool "USB console support"
@@ -146,7 +146,7 @@ statements are common.
 An alternative attempt to solve the issue might be to turn the ``depends on``
 into another ``select``:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config CONSOLE
    	bool "Console support"
@@ -181,7 +181,7 @@ Alternatives to ``select``
 For the example in the previous section, a better solution is usually to turn
 the ``select`` into a ``depends on``:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config CONSOLE
    	bool "Console support"
@@ -198,7 +198,7 @@ dependencies only ever have to be updated in a single spot.
 An objection to using ``depends on`` here might be that configuration files
 that enable ``USB_CONSOLE`` now also need to enable ``CONSOLE``:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_CONSOLE=y
    CONFIG_USB_CONSOLE=y
@@ -206,7 +206,7 @@ that enable ``USB_CONSOLE`` now also need to enable ``CONSOLE``:
 This comes down to a trade-off, but if enabling ``CONSOLE`` is the norm, then a
 mitigation is to make ``CONSOLE`` default to ``y``:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config CONSOLE
    	bool "Console support"
@@ -214,14 +214,14 @@ mitigation is to make ``CONSOLE`` default to ``y``:
 
 This gives just a single assignment in configuration files:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_USB_CONSOLE=y
 
 Note that configuration files that do not want ``CONSOLE`` enabled now have to
 explicitly disable it:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_CONSOLE=n
 
@@ -238,7 +238,7 @@ dependencies.
 For example, a helper symbol for indicating that a particular CPU/SoC has an
 FPU could be defined as follows:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config CPU_HAS_FPU
    	bool
@@ -260,7 +260,7 @@ FPU could be defined as follows:
 This makes it possible for other symbols to check for FPU support in a generic
 way, without having to look for particular architectures:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FPU
    	bool "Support floating point operations"
@@ -269,7 +269,7 @@ way, without having to look for particular architectures:
 The alternative would be to have dependencies like the following, possibly
 duplicated in several spots:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FPU
    	bool "Support floating point operations"
@@ -279,7 +279,7 @@ Invisible helper symbols can also be useful without ``select``. For example,
 the following code defines a helper symbol that has the value ``y`` if the
 machine has some arbitrarily-defined "large" amount of memory:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config LARGE_MEM
    	def_bool MEM_SIZE >= 64
@@ -288,7 +288,7 @@ machine has some arbitrarily-defined "large" amount of memory:
 
    This is short for the following:
 
-   .. code-block:: none
+   .. code-block:: kconfig
 
       config LARGE_MEM
       	bool
@@ -315,6 +315,16 @@ In summary, here are some recommended practices for ``select``:
 - Select simple helper symbols without prompts and dependencies however much
   you like. They're a great tool for simplifying Kconfig files.
 
+- An exemption are buses like I2C and SPI, and following the same thought
+  process things like MFD as well. Drivers on these buses should use
+  ``select`` to allow the automatic activation of the necessary bus drivers
+  when devices on the bus are enabled in the devicetree.
+
+.. code-block:: kconfig
+
+   config ADC_FOO
+      bool "external SPI ADC foo driver"
+      select SPI
 
 (Lack of) conditional includes
 ******************************
@@ -325,7 +335,7 @@ on`` was used.
 A common misunderstanding related to ``if`` is to think that the following code
 conditionally includes the file :file:`Kconfig.other`:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    if DEP
    source "Kconfig.other"
@@ -342,14 +352,14 @@ meaning around a ``source``.
 
 Say that :file:`Kconfig.other` above contains this definition:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FOO
    	bool "Support foo"
 
 In this case, ``FOO`` will end up with this definition:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FOO
    	bool "Support foo"
@@ -371,7 +381,7 @@ twice.
 There is a common subtle gotcha related to interdependent configuration symbols
 with prompts. Consider these symbols:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FOO
    	bool "Foo"
@@ -396,7 +406,7 @@ To understand what's going on, remember that ``STACK_SIZE`` has a prompt,
 meaning it is user-configurable, and consider that all Kconfig has to go on
 from the initial configuration is this:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_STACK_SIZE=0x100
 
@@ -412,7 +422,7 @@ with suggestions:
 - If ``STACK_SIZE`` can always be derived automatically and does not need to be
   user-configurable, then just remove the prompt:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config STACK_SIZE
      	hex
@@ -425,7 +435,7 @@ with suggestions:
   0x200 when ``FOO`` is enabled, then disable its prompt when ``FOO`` is
   enabled, as described in `optional prompts`_:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config STACK_SIZE
      	hex "Stack size" if !FOO
@@ -436,7 +446,7 @@ with suggestions:
   set to a custom value in rare circumstances, then add another option for
   making ``STACK_SIZE`` user-configurable:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config CUSTOM_STACK_SIZE
      	bool "Use a custom stack size"
@@ -500,7 +510,7 @@ calculating symbol values.
 The Kconfig definitions below will hide the ``FOO_DEVICE_FREQUENCY`` symbol and
 disable any configuration output for it when ``FOO_DEVICE`` is disabled.
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FOO_DEVICE
    	bool "Foo device"
@@ -530,7 +540,7 @@ children in a separate menu rooted at ``FOO``.
 ``menuconfig`` can cut down on the number of menus and make the menu structure
 easier to navigate. For example, say you have the following definitions:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    menu "Foo subsystem"
 
@@ -557,7 +567,7 @@ easier to navigate. For example, say you have the following definitions:
 In this case, it's probably better to get rid of the ``menu`` and turn
 ``FOO_SUBSYSTEM`` into a ``menuconfig`` symbol:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    menuconfig FOO_SUBSYSTEM
    	bool "Foo subsystem"
@@ -599,7 +609,7 @@ Commas in macro arguments
 Kconfig uses commas to separate macro arguments.
 This means a construct like this will fail:
 
-.. code-block:: none
+.. code-block:: kconfig
 
     config FOO
         bool
@@ -608,7 +618,7 @@ This means a construct like this will fail:
 To solve this problem, create a variable with the text and use this variable as
 argument, as follows:
 
-.. code-block:: none
+.. code-block:: kconfig
 
     DT_CHOSEN_ZEPHYR_BAR := zephyr,bar
 
@@ -688,7 +698,7 @@ be factored out with an ``if``.
 
 As an example, consider the following code:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FOO
    	bool "Foo"
@@ -712,7 +722,7 @@ As an example, consider the following code:
 
 Here, the ``DEP`` dependency can be factored out like this:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    if DEP
 
@@ -742,7 +752,7 @@ Here, the ``DEP`` dependency can be factored out like this:
 If a sequence of symbols/choices with shared dependencies are all in the same
 menu, the dependency can be put on the menu itself:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    menu "Foo features"
    	depends on FOO_SUPPORT
@@ -782,7 +792,7 @@ a previously defined ``default y``.
 That is, FOO will be set to ``n`` in the example below. If the ``default n`` was
 omitted in the first definition, FOO would have been set to ``y``.
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config FOO
      	bool "foo"
@@ -794,7 +804,7 @@ omitted in the first definition, FOO would have been set to ``y``.
 
 In the following example FOO will get the value ``y``.
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config FOO
      	bool "foo"
@@ -814,12 +824,12 @@ Kconfig has two shorthands that deal with prompts and defaults.
 - ``<type> "prompt"`` is a shorthand for giving a symbol/choice a type and a
   prompt at the same time. These two definitions are equal:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config FOO
      	bool "foo"
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config FOO
      	bool
@@ -830,12 +840,12 @@ Kconfig has two shorthands that deal with prompts and defaults.
 - ``def_<type> <value>`` is a shorthand for giving a type and a value at the
   same time. These two definitions are equal:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config FOO
      	def_bool BAR && BAZ
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config FOO
      	bool
@@ -907,7 +917,7 @@ doesn't force a value. For example, the following code could be used to enable
 USB keyboard support by default on the FOO SoC, while still allowing the user
 to turn it off:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config SOC_FOO
    	bool "FOO SoC"
@@ -928,7 +938,7 @@ A condition can be put on a symbol's prompt to make it optionally configurable
 by the user. For example, a value ``MASK`` that's hardcoded to 0xFF on some
 boards and configurable on others could be expressed as follows:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config MASK
    	hex "Bitmask" if HAS_CONFIGURABLE_MASK
@@ -938,7 +948,7 @@ boards and configurable on others could be expressed as follows:
 
    This is short for the following:
 
-   .. code-block:: none
+   .. code-block:: kconfig
 
       config MASK
       	hex
@@ -956,7 +966,7 @@ Optional choices
 Defining a choice with the ``optional`` keyword allows the whole choice to be
 toggled off to select none of the symbols:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    choice
    	prompt "Use legacy protocol"
@@ -983,7 +993,7 @@ within it, while still allowing symbol default values to kick in.
 
 As a motivating example, consider the following code:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    menu "Foo subsystem"
    	depends on HAS_CONFIGURABLE_FOO
@@ -1002,7 +1012,7 @@ When ``HAS_CONFIGURABLE_FOO`` is ``n``, no configuration output is generated
 for ``FOO_SETTING_1`` and ``FOO_SETTING_2``, as the code above is logically
 equivalent to the following code:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FOO_SETTING_1
    	int "Foo setting 1"
@@ -1018,7 +1028,7 @@ If we want the symbols to still get their default values even when
 ``HAS_CONFIGURABLE_FOO`` is ``n``, but not be configurable by the user, then we
 can use ``visible if`` instead:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    menu "Foo subsystem"
    	visible if HAS_CONFIGURABLE_FOO
@@ -1035,7 +1045,7 @@ can use ``visible if`` instead:
 
 This is logically equivalent to the following:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FOO_SETTING_1
    	int "Foo setting 1" if HAS_CONFIGURABLE_FOO
@@ -1050,10 +1060,10 @@ This is logically equivalent to the following:
    See the `optional prompts`_ section for the meaning of the conditions on the
    prompts.
 
-When ``HAS_CONFIGURABLE`` is ``n``, we now get the following configuration
+When ``HAS_CONFIGURABLE_FOO`` is ``n``, we now get the following configuration
 output for the symbols, instead of no output:
 
-.. code-block:: none
+.. code-block:: cfg
 
    ...
    CONFIG_FOO_SETTING_1=1

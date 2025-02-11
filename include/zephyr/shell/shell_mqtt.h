@@ -12,7 +12,7 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
-#include <zephyr/net/net_conn_mgr.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/mqtt.h>
 #include <zephyr/sys/ring_buffer.h>
 
@@ -120,7 +120,7 @@ struct shell_mqtt {
 const struct shell *shell_backend_mqtt_get_ptr(void);
 
 /**
- * @brief Function to define the device ID （devid) for which the shell mqtt backend uses as a
+ * @brief Function to define the device ID (devid) for which the shell mqtt backend uses as a
  * client ID when it connects to the broker. It will publish its output to devid_tx and subscribe
  * to devid_rx for input .
  *

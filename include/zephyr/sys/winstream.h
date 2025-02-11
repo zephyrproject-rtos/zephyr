@@ -13,7 +13,7 @@
  * with simple read/write semantics on top of a memory region shared
  * by the writer and reader.  It requires no locking or
  * synchronization mechanisms beyond reliable ordering of memory
- * operations, and so is a good fit for use with heterogenous shared
+ * operations, and so is a good fit for use with heterogeneous shared
  * memory environments (for example, where Zephyr needs to talk to
  * other CPUs in the system running their own software).
  *

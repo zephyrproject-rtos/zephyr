@@ -1,0 +1,173 @@
+/*
+ * Copyright (c) 2022 Silicom Connectivity Solutions
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mec172xnsz-pinctrl.dtsi"
+
+&pinctrl {
+
+	/* ADC */
+	/omit-if-no-ref/ adc08_gpio210: adc08_gpio210 {
+		pinmux = < MCHP_XEC_PINMUX(0210, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/adc09_gpio211: adc09_gpio211 {
+		pinmux = < MCHP_XEC_PINMUX(0211, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ adc10_gpio212: adc10_gpio212 {
+		pinmux = < MCHP_XEC_PINMUX(0212, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ adc11_gpio213: adc11_gpio213 {
+		pinmux = < MCHP_XEC_PINMUX(0213, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ adc12_gpio214: adc12_gpio214 {
+		pinmux = < MCHP_XEC_PINMUX(0214, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ adc13_gpio215: adc13_gpio215 {
+		pinmux = < MCHP_XEC_PINMUX(0215, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ adc14_gpio216: adc14_gpio216 {
+		pinmux = < MCHP_XEC_PINMUX(0216, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ adc15_gpio217: adc15_gpio217 {
+		pinmux = < MCHP_XEC_PINMUX(0217, MCHP_AF1) >;
+	};
+
+	/* I2C ports */
+	/omit-if-no-ref/ i2c08_scl_gpio230: i2c08_scl_gpio230 {
+		pinmux = < MCHP_XEC_PINMUX(0230, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ i2c08_sda_gpio231: i2c00_sda_gpio231 {
+		pinmux = < MCHP_XEC_PINMUX(0231, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ i2c09_scl_gpio146: i2c09_scl_gpio146 {
+		pinmux = < MCHP_XEC_PINMUX(0146, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ i2c09_sda_gpio145: i2c09_sda_gpio145 {
+		pinmux = < MCHP_XEC_PINMUX(0145, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ i2c10_scl_gpio107: i2c10_scl_gpio107 {
+		pinmux = < MCHP_XEC_PINMUX(0107, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ i2c10_sda_gpio030: i2c10_sda_gpio030 {
+		pinmux = < MCHP_XEC_PINMUX(030, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ i2c11_scl_gpio062: i2c11_scl_gpio062 {
+		pinmux = < MCHP_XEC_PINMUX(062, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ i2c11_sda_gpio000: i2c11_sda_gpio000 {
+		pinmux = < MCHP_XEC_PINMUX(000, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ i2c11_scl_alt_gpio006: i2c11_scl_alt_gpio006 {
+		pinmux = < MCHP_XEC_PINMUX(06, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ i2c11_sda_alt_gpio005: i2c11_sda_alt_gpio005 {
+		pinmux = < MCHP_XEC_PINMUX(05, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ i2c12_scl_gpio027: i2c12_scl_gpio027 {
+		pinmux = < MCHP_XEC_PINMUX(027, MCHP_AF3) >;
+	};
+
+	/omit-if-no-ref/ i2c12_sda_gpio026: i2c12_sda_gpio026 {
+		pinmux = < MCHP_XEC_PINMUX(026, MCHP_AF3) >;
+	};
+
+	/omit-if-no-ref/ i2c13_scl_gpio065: i2c13_scl_gpio065 {
+		pinmux = < MCHP_XEC_PINMUX(065, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ i2c13_sda_gpio066: i2c13_sda_gpio066 {
+		pinmux = < MCHP_XEC_PINMUX(066, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ i2c14_scl_gpio071: i2c14_scl_gpio071 {
+		pinmux = < MCHP_XEC_PINMUX(071, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ i2c14_sda_gpio070: i2c14_sda_gpio070 {
+		pinmux = < MCHP_XEC_PINMUX(070, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ i2c15_scl_gpio150: i2c15_scl_gpio150 {
+		pinmux = < MCHP_XEC_PINMUX(0150, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ i2c15_sda_gpio147: i2c15_sda_gpio147 {
+		pinmux = < MCHP_XEC_PINMUX(0147, MCHP_AF1) >;
+	};
+
+	/* PWM */
+	/omit-if-no-ref/ pwm4_alt_gpio001: pwm4_alt_gpio001 {
+		pinmux = < MCHP_XEC_PINMUX(01, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ pwm9_gpio133: pwm9_gpio133 {
+		pinmux = < MCHP_XEC_PINMUX(0133, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ pwm10_gpio134: pwm10_gpio134 {
+		pinmux = < MCHP_XEC_PINMUX(0134, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ pwm11_gpio160: pwm11_gpio160 {
+		pinmux = < MCHP_XEC_PINMUX(0160, MCHP_AF1) >;
+	};
+
+	/* UART */
+	/omit-if-no-ref/ uart0_rts_n_alt_gpio225: uart0_rts_n_alt_gpio225 {
+		pinmux = < MCHP_XEC_PINMUX(0225, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ uart1_rts_n_alt_gpio134: uart1_rts_n_alt_gpio134 {
+		pinmux = < MCHP_XEC_PINMUX(0134, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ uart1_cts_n_alt_gpio135: uart1_cts_n_alt_gpio135 {
+		pinmux = < MCHP_XEC_PINMUX(0135, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ uart1_dsr_n_alt_gpio232: uart1_dsr_n_alt_gpio232 {
+		pinmux = < MCHP_XEC_PINMUX(0135, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ pwrgd_s0ix_alt_gpio166: pwrgd_s0ix_alt_gpio166 {
+		pinmux = < MCHP_XEC_PINMUX(0166, MCHP_AF3) >;
+	};
+
+	/* Week Timer BGPO Pins */
+	/omit-if-no-ref/ bgpo3_gpio172: bgpo3_gpio172 {
+		pinmux = < MCHP_XEC_PINMUX(0172, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ bgpo4_gpio173: bgpo4_gpio173 {
+		pinmux = < MCHP_XEC_PINMUX(0173, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ bgpo5_gpio174: bgpo5_gpio174 {
+		pinmux = < MCHP_XEC_PINMUX(0174, MCHP_AF1) >;
+	};
+
+	/* VCI */
+	/omit-if-no-ref/ vci_in4_n_gpio234: vci_in4_n_gpio234 {
+		pinmux = < MCHP_XEC_PINMUX(0234, MCHP_AF1) >;
+	};
+
+};

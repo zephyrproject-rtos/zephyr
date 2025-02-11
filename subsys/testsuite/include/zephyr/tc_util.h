@@ -49,7 +49,7 @@
 #ifdef TC_RUNID
 #define TC_PRINT_RUNID PRINT_DATA("RunID: " TC_STR(TC_RUNID) "\n")
 #else
-#define TC_PRINT_RUNID do {} while (0)
+#define TC_PRINT_RUNID do {} while (false)
 #endif
 
 #ifndef PRINT_LINE
@@ -67,6 +67,7 @@
 #define TC_PASS 0
 #define TC_FAIL 1
 #define TC_SKIP 2
+#define TC_FLAKY 3
 
 #ifndef TC_PASS_STR
 #define TC_PASS_STR "PASS"
@@ -76,6 +77,9 @@
 #endif
 #ifndef TC_SKIP_STR
 #define TC_SKIP_STR "SKIP"
+#endif
+#ifndef TC_FLAKY_STR
+#define TC_FLAKY_STR "FLAKY"
 #endif
 
 static inline const char *TC_RESULT_TO_STR(int result)
@@ -87,6 +91,8 @@ static inline const char *TC_RESULT_TO_STR(int result)
 		return TC_FAIL_STR;
 	case TC_SKIP:
 		return TC_SKIP_STR;
+	case TC_FLAKY:
+		return TC_FLAKY_STR;
 	default:
 		return "?";
 	}
@@ -112,7 +118,7 @@ static inline void get_test_duration_ms(void)
 	do {                                                 \
 		PRINT_DATA(FMT_ERROR, "FAIL", __func__, __LINE__); \
 		PRINT_DATA(fmt, ##__VA_ARGS__);                  \
-	} while (0)
+	} while (false)
 #endif
 
 static inline void print_nothing(const char *fmt, ...)
@@ -121,18 +127,11 @@ static inline void print_nothing(const char *fmt, ...)
 }
 
 #ifndef TC_PRINT
-/* Need to check for CONFIG_ZTEST_NEW_API since the TC_PRINT
- * is also used by the old ztest.
- */
-#ifdef CONFIG_ZTEST_NEW_API
 #if defined(CONFIG_ZTEST_VERBOSE_OUTPUT)
 #define TC_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 #else
 #define TC_PRINT(fmt, ...) print_nothing(fmt, ##__VA_ARGS__)
 #endif /* CONFIG_ZTEST_VERBOSE_OUTPUT */
-#else
-#define TC_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
-#endif /* CONFIG_ZTEST_NEW_API */
 #endif /* TC_PRINT */
 
 #ifndef TC_SUMMARY_PRINT
@@ -140,15 +139,11 @@ static inline void print_nothing(const char *fmt, ...)
 #endif
 
 #ifndef TC_START_PRINT
-#ifdef CONFIG_ZTEST_NEW_API
 #if defined(CONFIG_ZTEST_VERBOSE_OUTPUT)
 #define TC_START_PRINT(name) PRINT_DATA("START - %s\n", name);
 #else
 #define TC_START_PRINT(name) print_nothing(name)
 #endif /* CONFIG_ZTEST_VERBOSE_OUTPUT */
-#else
-#define TC_START_PRINT(name) PRINT_DATA("START - %s\n", name);
-#endif /* CONFIG_ZTEST_NEW_API */
 #endif /* TC_START_PRINT */
 
 #ifndef TC_START
@@ -163,15 +158,11 @@ static inline void print_nothing(const char *fmt, ...)
 #endif
 
 #ifndef TC_END_PRINT
-#ifdef CONFIG_ZTEST_NEW_API
 #if defined(CONFIG_ZTEST_VERBOSE_OUTPUT)
 #define TC_END_PRINT(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__); PRINT_LINE
 #else
 #define TC_END_PRINT(result, fmt, ...) print_nothing(fmt)
 #endif /* CONFIG_ZTEST_VERBOSE_OUTPUT */
-#else
-#define TC_END_PRINT(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__); PRINT_LINE
-#endif /* CONFIG_ZTEST_NEW_API */
 #endif /* TC_END_PRINT */
 
 /* prints result and the function name */
@@ -189,6 +180,11 @@ static inline void print_nothing(const char *fmt, ...)
 	Z_TC_END_RESULT((result), __func__)
 #endif
 
+#ifndef TC_END_RESULT_CUSTOM
+#define TC_END_RESULT_CUSTOM(result, func)                           \
+	Z_TC_END_RESULT((result), func)
+#endif
+
 #ifndef TC_SUITE_PRINT
 #define TC_SUITE_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 #endif
@@ -198,7 +194,7 @@ static inline void print_nothing(const char *fmt, ...)
 	do {							\
 		TC_SUITE_PRINT("Running TESTSUITE %s\n", name);	\
 		PRINT_LINE;					\
-	} while (0)
+	} while (false)
 #endif
 
 #ifndef TC_SUITE_END
@@ -209,7 +205,7 @@ static inline void print_nothing(const char *fmt, ...)
 		} else {						\
 			TC_SUITE_PRINT("TESTSUITE %s failed.\n", name);	\
 		}							\
-	} while (0)
+	} while (false)
 #endif
 
 #if defined(CONFIG_ARCH_POSIX)
@@ -231,12 +227,12 @@ static inline void print_nothing(const char *fmt, ...)
 		       "PROJECT EXECUTION %s\n",               \
 		       (result) == TC_PASS ? "SUCCESSFUL" : "FAILED");	\
 		TC_END_POST(result);                                    \
-	} while (0)
+	} while (false)
 #endif
 
 #if defined(CONFIG_SHELL)
 #define TC_CMD_DEFINE(name)						\
-	static int cmd_##name(const struct shell *shell, size_t argc,	\
+	static int cmd_##name(const struct shell *sh, size_t argc,	\
 			      char **argv) \
 	{								\
 		TC_START(__func__);					\

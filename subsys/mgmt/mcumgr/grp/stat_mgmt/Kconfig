@@ -16,8 +16,9 @@ menuconfig MCUMGR_GRP_STAT
 	bool "Mcumgr handlers for statistics management"
 	depends on STATS
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3 if ZCBOR_CANONICAL
 	help
-	  Enables mcumgr handlers for statistics management.
+	  Enables MCUmgr handlers for statistics management.
 
 if MCUMGR_GRP_STAT
 
@@ -26,10 +27,13 @@ config MCUMGR_GRP_STAT_MAX_NAME_LEN
 	default 32
 	depends on MCUMGR_GRP_STAT
 	help
-	  Limits the maximum stat group name length in mcumgr requests, in bytes.
-	  A buffer of this size gets allocated on the stack during handling of all
-	  stat read commands.  If a stat group's name exceeds this limit, it will
-	  be impossible to retrieve its values with a stat show command.
+	  Limits the maximum stat group name length in MCUmgr requests, in bytes.
+	  For stat group names. a buffer of this size gets allocated on the stack
+	  during handling of all stat read commands. If a stat group's name
+	  exceeds this limit, it will be impossible to retrieve its values with
+	  a stat show command.
+	  For stat names s_name and snm_name, this is the maximum length when
+	  encoding the name to cbor.
 
 module = MCUMGR_GRP_STAT
 module-str = mcumgr_grp_stat

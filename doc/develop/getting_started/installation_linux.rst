@@ -78,7 +78,7 @@ need one.
 
          sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
            ccache dfu-util device-tree-compiler wget \
-           python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file libpython3.8-dev \
+           python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
            make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
 
    .. group-tab:: Fedora
@@ -86,9 +86,8 @@ need one.
       .. code-block:: console
 
          sudo dnf group install "Development Tools" "C Development Tools and Libraries"
-         sudo dnf install git cmake ninja-build gperf ccache dfu-util dtc wget \
-           python3-pip python3-tkinter xz file glibc-devel.i686 libstdc++-devel.i686 python38 \
-           SDL2-devel
+         sudo dnf install cmake ninja-build gperf dfu-util dtc wget which \
+           python3-pip python3-tkinter xz file python3-devel SDL2-devel
 
    .. group-tab:: Clear Linux
 
@@ -227,32 +226,31 @@ The Zephyr SDK supports the following target architectures:
 
 Follow these steps to install the Zephyr SDK:
 
-#. Download and verify the `latest Zephyr SDK bundle
-   <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
+#. Download and verify the `Zephyr SDK bundle`_:
 
-   .. code-block:: bash
+   .. parsed-literal::
 
-      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_linux-x86_64.tar.gz
-      wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/sha256.sum | shasum --check --ignore-missing
+      wget |sdk-url-linux|
+      wget -O - |sdk-url-linux-sha| | shasum --check --ignore-missing
 
-   You can change ``0.15.2`` to another version if needed; the `Zephyr SDK
-   Releases`_ page contains all available SDK releases.
+   You can change |sdk-version-literal| to another version if needed; the
+   `Zephyr SDK Releases`_ page contains all available SDK releases.
 
    If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace
    ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM Linux SDK.
 
 #. Extract the Zephyr SDK bundle archive:
 
-   .. code-block:: bash
+   .. parsed-literal::
 
       cd <sdk download directory>
-      tar xvf zephyr-sdk-0.15.2_linux-x86_64.tar.gz
+      tar xvf zephyr-sdk- |sdk-version-trim| _linux-x86_64.tar.xz
 
 #. Run the Zephyr SDK bundle setup script:
 
-   .. code-block:: bash
+   .. parsed-literal::
 
-      cd zephyr-sdk-0.15.2
+      cd zephyr-sdk- |sdk-version-ltrim|
       ./setup.sh
 
    If this fails, make sure Zephyr's dependencies were installed as described
@@ -271,9 +269,9 @@ If you relocate the SDK directory, you need to re-run the setup script.
    * ``/opt``
    * ``/usr/local``
 
-   The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.15.2`` directory and, when
-   extracted under ``$HOME``, the resulting installation path will be
-   ``$HOME/zephyr-sdk-0.15.2``.
+   The Zephyr SDK bundle archive contains the ``zephyr-sdk-<version>``
+   directory and, when extracted under ``$HOME``, the resulting installation
+   path will be ``$HOME/zephyr-sdk-<version>``.
 
    If you install the Zephyr SDK outside any of these locations, you must
    register the Zephyr SDK in the CMake package registry by running the setup
@@ -303,7 +301,7 @@ toolchains for all Zephyr target architectures, and does not require any extra
 flags when building applications or running tests. In addition to
 cross-compilers, the Zephyr SDK also provides prebuilt host tools. It is,
 however, possible to build without the SDK's toolchain by using another
-toolchain as as described in the :ref:`toolchains` section.
+toolchain as described in the :ref:`toolchains` section.
 
 As already noted above, the SDK also includes prebuilt host tools.  To use the
 SDK's prebuilt host tools with a toolchain from another source, you must set the
@@ -317,5 +315,5 @@ To make sure this variable is unset, run:
 
    unset ZEPHYR_SDK_INSTALL_DIR
 
-.. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/releases
+.. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/tags
 .. _CMake Downloads: https://cmake.org/download

@@ -23,6 +23,9 @@ class XtensaSoc(Enum):
     SAMPLE_CONTROLLER = 1
     ESP32 = 2
     INTEL_ADSP_CAVS = 3
+    ESP32S2 = 4
+    ESP32S3 = 5
+    DC233C = 6
 
 
 # The previous version of this script didn't need to know
@@ -62,12 +65,18 @@ def get_gdb_reg_definition(soc, toolchain):
             sys.exit(1)
         else:
             raise NotImplementedError
+    elif soc == XtensaSoc.ESP32S2:
+        return GdbRegDef_ESP32S2
+    elif soc == XtensaSoc.ESP32S3:
+        return GdbRegDef_ESP32S3
+    elif soc == XtensaSoc.DC233C:
+        return GdbRegDef_DC233C
     else:
         raise NotImplementedError
 
 
 class ExceptionCodes(Enum):
-    # Matches arch/xtensa/core/fatal.c->z_xtensa_exccause
+    # Matches arch/xtensa/core/fatal.c->xtensa_exccause
     ILLEGAL_INSTRUCTION = 0
     # Syscall not fatal
     INSTR_FETCH_ERROR = 2
@@ -145,9 +154,12 @@ class GdbStub_Xtensa(GdbStub):
         arch_data_blk = self.logfile.get_arch_data()['data']
 
         self.version = struct.unpack('H', arch_data_blk[1:3])[0]
+        logger.debug("Xtensa GDB stub version: %d" % self.version)
 
         # Get SOC and toolchain to get correct format for unpack
         self.soc = XtensaSoc(bytearray(arch_data_blk)[0])
+        logger.debug("Xtensa SOC: %s" % self.soc.name)
+
         if self.version >= 2:
             self.toolchain = XtensaToolchain(bytearray(arch_data_blk)[3])
             arch_data_blk_regs = arch_data_blk[4:]
@@ -159,6 +171,8 @@ class GdbStub_Xtensa(GdbStub):
             else:
                 self.toolchain = XtensaToolchain.ZEPHYR
             arch_data_blk_regs = arch_data_blk[3:]
+
+        logger.debug("Xtensa toolchain: %s" % self.toolchain.name)
 
         self.gdb_reg_def = get_gdb_reg_definition(self.soc, self.toolchain)
 
@@ -292,12 +306,6 @@ class GdbRegDef_Sample_Controller:
 # espressif xtensa-overlays -> xtensa_esp32/gdb/gdb/xtensa-config.c
 class GdbRegDef_ESP32:
     ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
-
-    # Maximum index register that can be sent in a group packet is
-    # 104, which prevents us from sending An registers directly.
-    # We get around this by assigning each An in the dump to ARn
-    # and setting WINDOWBASE to 0 and WINDOWSTART to 1; ESP32 GDB
-    # will recalculate the corresponding An.
     SOC_GDB_GPKT_BIN_SIZE = 420
 
     class RegNum(Enum):
@@ -307,28 +315,89 @@ class GdbRegDef_ESP32:
         SAR = 68
         PS = 73
         SCOMPARE1 = 76
-        AR0 = 1
-        AR1 = 2
-        AR2 = 3
-        AR3 = 4
-        AR4 = 5
-        AR5 = 6
-        AR6 = 7
-        AR7 = 8
-        AR8 = 9
-        AR9 = 10
-        AR10 = 11
-        AR11 = 12
-        AR12 = 13
-        AR13 = 14
-        AR14 = 15
-        AR15 = 16
+        A0 = 157
+        A1 = 158
+        A2 = 159
+        A3 = 160
+        A4 = 161
+        A5 = 162
+        A6 = 163
+        A7 = 164
+        A8 = 165
+        A9 = 166
+        A10 = 167
+        A11 = 168
+        A12 = 169
+        A13 = 170
+        A14 = 171
+        A15 = 172
         LBEG = 65
         LEND = 66
         LCOUNT = 67
         WINDOWBASE = 69
         WINDOWSTART = 70
 
+class GdbRegDef_ESP32S2:
+    ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIII'
+    SOC_GDB_GPKT_BIN_SIZE = 420
+
+    class RegNum(Enum):
+        PC = 0
+        EXCCAUSE = 99
+        EXCVADDR = 115
+        SAR = 65
+        PS = 70
+        A0 = 155
+        A1 = 156
+        A2 = 157
+        A3 = 158
+        A4 = 159
+        A5 = 160
+        A6 = 161
+        A7 = 162
+        A8 = 163
+        A9 = 164
+        A10 = 165
+        A11 = 166
+        A12 = 167
+        A13 = 168
+        A14 = 169
+        A15 = 170
+        WINDOWBASE = 66
+        WINDOWSTART = 67
+
+class GdbRegDef_ESP32S3:
+    ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
+    SOC_GDB_GPKT_BIN_SIZE = 420
+
+    class RegNum(Enum):
+        PC = 0
+        EXCCAUSE = 166
+        EXCVADDR = 172
+        SAR = 68
+        PS = 73
+        SCOMPARE1 = 76
+        A0 = 212
+        A1 = 213
+        A2 = 214
+        A3 = 215
+        A4 = 216
+        A5 = 217
+        A6 = 218
+        A7 = 219
+        A8 = 220
+        A9 = 221
+        A10 = 222
+        A11 = 223
+        A12 = 224
+        A13 = 225
+        A14 = 226
+        A15 = 227
+        LBEG = 65
+        LEND = 66
+        LCOUNT = 67
+        WINDOWBASE = 69
+        WINDOWSTART = 70
 
 # sdk-ng -> overlays/xtensa_intel_apl/gdb/gdb/xtensa-config.c
 class GdbRegDef_Intel_Adsp_CAVS_Zephyr:
@@ -410,3 +479,38 @@ class GdbRegDef_Intel_Adsp_CAVS_XCC:
         LCOUNT = 514
         WINDOWBASE = 584
         WINDOWSTART = 585
+
+# sdk-ng -> overlays/xtensa_dc233c/gdb/gdb/xtensa-config.c
+class GdbRegDef_DC233C:
+    ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
+
+    SOC_GDB_GPKT_BIN_SIZE = 568
+
+    class RegNum(Enum):
+        PC = 0
+        EXCCAUSE = 93
+        EXCVADDR = 99
+        SAR = 36
+        PS = 42
+        SCOMPARE1 = 44
+        A0 = 105
+        A1 = 106
+        A2 = 107
+        A3 = 108
+        A4 = 109
+        A5 = 110
+        A6 = 111
+        A7 = 112
+        A8 = 113
+        A9 = 114
+        A10 = 115
+        A11 = 116
+        A12 = 117
+        A13 = 118
+        A14 = 119
+        A15 = 120
+        LBEG = 33
+        LEND = 34
+        LCOUNT = 35
+        WINDOWBASE = 38
+        WINDOWSTART = 39

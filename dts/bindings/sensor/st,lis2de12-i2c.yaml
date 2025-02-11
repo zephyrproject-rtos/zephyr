@@ -1,0 +1,10 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LIS2DE12 3-axis ultra-low power accelerometer sensor
+    accessed through I2C bus
+
+compatible: "st,lis2de12"
+
+include: ["i2c-device.yaml", "st,lis2de12-common.yaml"]

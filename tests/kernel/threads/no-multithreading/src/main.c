@@ -80,9 +80,8 @@ ZTEST(no_multithreading, test_cpu_idle)
 #define IDX_POST_KERNEL 2
 
 #define SYS_INIT_CREATE(level) \
-	static int pre_kernel_##level##_init_func(const struct device *dev) \
+	static int pre_kernel_##level##_init_func(void) \
 	{ \
-		ARG_UNUSED(dev); \
 		if (init_order != IDX_##level && sys_init_result == 0) { \
 			sys_init_result = -1; \
 			return -EIO; \

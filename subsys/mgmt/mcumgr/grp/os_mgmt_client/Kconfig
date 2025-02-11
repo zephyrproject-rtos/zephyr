@@ -1,0 +1,35 @@
+# Copyright Nordic Semiconductor ASA 2023. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to OS management group of
+# of MCUmgr client subsystem and provides Kconfig options to configure
+# group commands behaviour and other aspects.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_GRP_OS_CLIENT_ -- general group options;
+#
+# When adding Kconfig options, that control the same feature,
+# try to group them together by the same stem after prefix.
+
+menuconfig MCUMGR_GRP_OS_CLIENT
+	bool "MCUmgr client request and response handlers for OS management"
+	depends on SMP_CLIENT
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_3
+	help
+	  Enables MCUmgr client request and response handlers for OS management.
+
+if MCUMGR_GRP_OS_CLIENT
+
+config MCUMGR_GRP_OS_CLIENT_ECHO
+	default y
+	bool "Support for echo command request"
+
+config MCUMGR_GRP_OS_CLIENT_RESET
+	default y
+	bool "support for reset command request"
+
+module = MCUMGR_GRP_OS_CLIENT
+module-str = mcumgr_grp_os_client
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

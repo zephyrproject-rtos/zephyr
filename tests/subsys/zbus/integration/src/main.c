@@ -12,7 +12,8 @@
 #include <zephyr/ztest_assert.h>
 LOG_MODULE_DECLARE(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
-ZBUS_CHAN_DECLARE(version_chan, sensor_data_chan, net_pkt_chan, start_measurement_chan, busy_chan);
+ZBUS_CHAN_DECLARE(version_chan, sensor_data_chan, net_pkt_chan, net_log_chan,
+		  start_measurement_chan, busy_chan);
 
 static int count_callback;
 
@@ -39,7 +40,7 @@ static void core_thread(void)
 
 			struct sensor_data_msg data;
 
-			zbus_chan_read(&sensor_data_chan, &data, K_NO_WAIT);
+			zbus_chan_read(&sensor_data_chan, &data, K_FOREVER);
 
 			struct net_pkt_msg pkt = {.total = data.a + data.b};
 
@@ -65,15 +66,40 @@ static void net_thread(void)
 	while (1) {
 		if (!zbus_sub_wait(&net_sub, &chan, K_FOREVER)) {
 			count_net++;
-
-			zbus_chan_read(&net_pkt_chan, &pkt, K_NO_WAIT);
+			zbus_chan_read(&net_pkt_chan, &pkt, K_FOREVER);
 
 			LOG_DBG("[Net] Total %d", pkt.total);
+
+			struct net_log_msg log_msg = {.count_net = count_net,
+						      .pkt_total = pkt.total};
+
+			zbus_chan_pub(&net_log_chan, &log_msg, K_MSEC(500));
 		}
 	}
 }
 
 K_THREAD_DEFINE(net_thread_id, 1024, net_thread, NULL, NULL, NULL, 3, 0, 0);
+
+static int count_net_log;
+
+ZBUS_MSG_SUBSCRIBER_DEFINE(net_log_sub);
+
+static void net_log_thread(void)
+{
+	const struct zbus_channel *chan;
+	struct net_log_msg log_msg;
+
+	while (1) {
+		if (!zbus_sub_wait_msg(&net_log_sub, &chan, &log_msg, K_FOREVER)) {
+			count_net_log++;
+
+			LOG_DBG("[Net log]: count_net = %d, pkt.total = %d", log_msg.count_net,
+				log_msg.pkt_total);
+		}
+	}
+}
+
+K_THREAD_DEFINE(net_log_thread_id, 1024, net_log_thread, NULL, NULL, NULL, 3, 0, 0);
 
 static int a;
 static int b;
@@ -116,6 +142,7 @@ static void context_reset(void *f)
 	count_callback = 0;
 	count_core = 0;
 	count_net = 0;
+	count_net_log = 0;
 	count_peripheral = 0;
 	pkt.total = 0;
 	struct net_pkt_msg *p;
@@ -134,15 +161,22 @@ static void context_reset(void *f)
 	zbus_obs_set_enable(&critical_lis, true);
 	zbus_obs_set_enable(&peripheral_sub, true);
 	zbus_chan_claim(&start_measurement_chan, K_NO_WAIT);
-	struct action_msg *act = (struct action_msg *)start_measurement_chan.message;
+	struct action_msg *act = (struct action_msg *)zbus_chan_msg(&start_measurement_chan);
 
 	act->status = false;
 	zbus_chan_finish(&start_measurement_chan);
+	zbus_chan_claim(&net_log_chan, K_NO_WAIT);
+	struct net_log_msg *lm = (struct net_log_msg *)zbus_chan_msg(&net_log_chan);
+
+	lm->count_net = 0;
+	lm->pkt_total = 0;
+	zbus_chan_finish(&net_log_chan);
 }
 
 ZTEST(integration, test_basic)
 {
 	struct action_msg start = {true};
+	struct net_log_msg *lm = (struct net_log_msg *)zbus_chan_const_msg(&net_log_chan);
 
 	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)), NULL);
 
@@ -152,6 +186,8 @@ ZTEST(integration, test_basic)
 	zassert_equal(count_core, 1, NULL);
 	zassert_equal(count_net, 1, NULL);
 	zassert_equal(count_peripheral, 1, NULL);
+	zassert_equal(count_net_log, 1, NULL);
+	zassert_equal(count_net, lm->count_net, NULL);
 
 	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)), NULL);
 
@@ -161,6 +197,8 @@ ZTEST(integration, test_basic)
 	zassert_equal(count_core, 2, NULL);
 	zassert_equal(count_net, 2, NULL);
 	zassert_equal(count_peripheral, 2, NULL);
+	zassert_equal(count_net_log, 2, NULL);
+	zassert_equal(count_net, lm->count_net, NULL);
 
 	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)), NULL);
 
@@ -170,13 +208,17 @@ ZTEST(integration, test_basic)
 	zassert_equal(count_core, 3, NULL);
 	zassert_equal(count_net, 3, NULL);
 	zassert_equal(count_peripheral, 3, NULL);
+	zassert_equal(count_net_log, 3, NULL);
+	zassert_equal(count_net, lm->count_net, NULL);
 
 	zassert_equal(pkt.total, 6, "result was %d", pkt.total);
+	zassert_equal(pkt.total, lm->pkt_total, NULL);
 }
 
 ZTEST(integration, test_channel_set_enable)
 {
 	struct action_msg start = {true};
+	const struct net_log_msg *lm = zbus_chan_const_msg(&net_log_chan);
 
 	zassert_equal(0, zbus_obs_set_enable(&critical_lis, false), NULL);
 	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, false), NULL);
@@ -186,8 +228,10 @@ ZTEST(integration, test_channel_set_enable)
 
 	zassert_equal(count_callback, 0, NULL);
 	zassert_equal(count_core, 0, NULL);
-	zassert_equal(count_net, 0, NULL);
 	zassert_equal(count_peripheral, 0, NULL);
+	zassert_equal(count_net, 0, NULL);
+	zassert_equal(count_net_log, 0, NULL);
+	zassert_equal(count_net, lm->count_net, NULL);
 
 	zassert_equal(0, zbus_obs_set_enable(&critical_lis, false), NULL);
 	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, true), NULL);
@@ -199,6 +243,8 @@ ZTEST(integration, test_channel_set_enable)
 	zassert_equal(count_core, 1, NULL);
 	zassert_equal(count_net, 1, NULL);
 	zassert_equal(count_peripheral, 1, NULL);
+	zassert_equal(count_net_log, 1, NULL);
+	zassert_equal(count_net, lm->count_net, NULL);
 
 	zassert_equal(0, zbus_obs_set_enable(&critical_lis, true), NULL);
 	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, false), NULL);
@@ -210,6 +256,8 @@ ZTEST(integration, test_channel_set_enable)
 	zassert_equal(count_core, 1, NULL);
 	zassert_equal(count_net, 1, NULL);
 	zassert_equal(count_peripheral, 1, NULL);
+	zassert_equal(count_net_log, 1, NULL);
+	zassert_equal(count_net, lm->count_net, NULL);
 
 	zassert_equal(0, zbus_obs_set_enable(&critical_lis, true), NULL);
 	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, true), NULL);
@@ -219,10 +267,13 @@ ZTEST(integration, test_channel_set_enable)
 
 	zassert_equal(count_callback, 2, NULL);
 	zassert_equal(count_core, 2, NULL);
-	zassert_equal(count_net, 2, NULL);
 	zassert_equal(count_peripheral, 2, NULL);
+	zassert_equal(count_net, 2, NULL);
+	zassert_equal(count_net_log, 2, NULL);
+	zassert_equal(count_net, lm->count_net, NULL);
 
 	zassert_equal(pkt.total, 4, "result was %d", pkt.total);
+	zassert_equal(pkt.total, lm->pkt_total, NULL);
 }
 
 static void greedy_thread_entry(void *p1, void *p2, void *p3)

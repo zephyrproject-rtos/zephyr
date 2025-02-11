@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <zephyr/sys/printk.h>
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(st_vl53l0x);
 	struct sensor_value value;
@@ -18,14 +18,14 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	while (1) {
 		ret = sensor_sample_fetch(dev);
 		if (ret) {
 			printk("sensor_sample_fetch failed ret %d\n", ret);
-			return;
+			return 0;
 		}
 
 		ret = sensor_channel_get(dev, SENSOR_CHAN_PROX, &value);
@@ -38,4 +38,5 @@ void main(void)
 
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }

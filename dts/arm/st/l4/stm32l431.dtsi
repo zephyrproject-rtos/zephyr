@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32l431", "st,stm32l4", "simple-bus";
+
 		clocks {
 			clk_hsi48: clk-hsi48 {
 				#clock-cells = <0>;
@@ -99,25 +101,12 @@
 			};
 		};
 
-		lptim2: timers@40009400 {
-			compatible = "st,stm32-lptim";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40009400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
-			interrupts = <66 1>;
-			interrupt-names = "wakeup";
-			status = "disabled";
-		};
-
 		can1: can@40006400 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			sjw = <1>;
-			sample-point = <875>;
 			status = "disabled";
 		};
 
@@ -126,6 +115,7 @@
 			reg = <0x40012800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB2, 10U)>;
 			interrupts = <49 0>;
 			status = "disabled";
 		};
@@ -137,5 +127,13 @@
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
 	};
 };

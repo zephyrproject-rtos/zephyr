@@ -1,0 +1,27 @@
+# RDDRONE-FMUK66 board
+
+# Copyright (c) 2021, Electromaticus LLC, 2021 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RDDRONE_FMUK66
+
+config OSC_XTAL0_FREQ
+	default 16000000
+
+config MCG_PRDIV0
+	default 0x0
+
+config MCG_VDIV0
+	default 0x4
+
+config MCG_FCRDIV
+	default 1
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if !MODEM
+
+endif # NETWORKING
+
+endif # BOARD_RDDRONE_FMUK66

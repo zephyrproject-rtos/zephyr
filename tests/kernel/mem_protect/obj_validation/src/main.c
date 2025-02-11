@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/ztest.h>
 #include <kernel_internal.h>
 
@@ -31,12 +31,12 @@ static int test_object(struct k_sem *sem, int retval)
 	int ret;
 
 	if (retval) {
-		/* Expected to fail; bypass z_obj_validation_check() so we don't
+		/* Expected to fail; bypass k_object_validation_check() so we don't
 		 * fill the logs with spam
 		 */
-		ret = z_object_validate(z_object_find(sem), K_OBJ_SEM, 0);
+		ret = k_object_validate(k_object_find(sem), K_OBJ_SEM, 0);
 	} else {
-		ret = z_obj_validation_check(z_object_find(sem), sem,
+		ret = k_object_validation_check(k_object_find(sem), sem,
 					    K_OBJ_SEM, 0);
 	}
 
@@ -135,7 +135,7 @@ ZTEST(object_validation, test_kobj_assign_perms_on_alloc_obj)
 	struct k_thread *thread = _current;
 
 	uintptr_t start_addr, end_addr;
-	size_t size_heap = CONFIG_HEAP_MEM_POOL_SIZE;
+	size_t size_heap = K_HEAP_MEM_POOL_SIZE;
 
 	/* dynamically allocate kernel object semaphore */
 	test_dyn_sem = k_object_alloc(K_OBJ_SEM);
@@ -179,7 +179,7 @@ ZTEST(object_validation, test_no_ref_dyn_kobj_release_mem)
 	k_object_access_revoke(test_dyn_mutex, thread);
 
 	/* check object was released, when no threads have access to it */
-	ret = z_object_validate(z_object_find(test_dyn_mutex), K_OBJ_MUTEX, 0);
+	ret = k_object_validate(k_object_find(test_dyn_mutex), K_OBJ_MUTEX, 0);
 	zassert_true(ret == -EBADF, "Dynamic kernel object not released");
 }
 

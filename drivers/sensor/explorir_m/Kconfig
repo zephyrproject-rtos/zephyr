@@ -1,0 +1,13 @@
+# ExplorIR-M CO2 sensor configuration options
+
+# Copyright (c) 2023, Vitrolife A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config EXPLORIR_M
+	bool "ExplorIR-M CO2 Sensor"
+	default y
+	depends on DT_HAS_GSS_EXPLORIR_M_ENABLED
+	depends on UART_INTERRUPT_DRIVEN
+	select UART
+	help
+	  Enable driver for ExplorIR-M CO2 Sensor.

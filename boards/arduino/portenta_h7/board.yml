@@ -1,0 +1,11 @@
+board:
+  name: arduino_portenta_h7
+  vendor: arduino
+  socs:
+    - name: stm32h747xx
+  revision:
+    format: major.minor.patch
+    default: 1.0.0
+    revisions:
+      - name: 1.0.0
+      - name: 4.10.0

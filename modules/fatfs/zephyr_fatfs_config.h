@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Husqvarna AB
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,14 +34,10 @@
 #define FF_CODE_PAGE 437
 #endif /* defined(CONFIG_FS_FATFS_CODEPAGE) */
 
-#if defined(CONFIG_FS_FATFS_LFN)
+#if defined(CONFIG_FS_FATFS_FF_USE_LFN)
+#if CONFIG_FS_FATFS_FF_USE_LFN <= 3
 #undef FF_USE_LFN
-#if CONFIG_FS_FATFS_LFN_MODE_BSS
-#define	FF_USE_LFN	1
-#elif CONFIG_FS_FATFS_LFN_MODE_STACK
-#define	FF_USE_LFN	2
-#elif CONFIG_FS_FATFS_LFN_MODE_HEAP
-#define	FF_USE_LFN	3
+#define FF_USE_LFN CONFIG_FS_FATFS_FF_USE_LFN
 #else
 #error Invalid LFN buffer location
 #endif
@@ -65,6 +62,14 @@
 #undef FF_FS_EXFAT
 #define FF_FS_EXFAT		CONFIG_FS_FATFS_EXFAT
 #endif /* defined(CONFIG_FS_FATFS_EXFAT) */
+
+#if defined(CONFIG_FS_FATFS_REENTRANT)
+#undef FF_FS_REENTRANT
+#undef FF_FS_TIMEOUT
+#include <zephyr/kernel.h>
+#define FF_FS_REENTRANT		CONFIG_FS_FATFS_REENTRANT
+#define FF_FS_TIMEOUT		K_FOREVER
+#endif /* defined(CONFIG_FS_FATFS_REENTRANT) */
 
 /*
  * These options are override from default values, but have no Kconfig

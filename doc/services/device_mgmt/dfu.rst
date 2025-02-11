@@ -86,5 +86,5 @@ More detailed information regarding the use of MCUboot with Zephyr  can be found
 in the `MCUboot with Zephyr`_ documentation page on the MCUboot website.
 
 .. _MCUboot boot loader: https://mcuboot.com/
-.. _MCUboot with Zephyr: https://mcuboot.com/documentation/readme-zephyr/
+.. _MCUboot with Zephyr: https://docs.mcuboot.com/readme-zephyr
 .. _MCUboot GitHub Project: https://github.com/runtimeco/mcuboot

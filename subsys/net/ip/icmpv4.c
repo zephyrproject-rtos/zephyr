@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_icmpv4, CONFIG_NET_ICMPV4_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/icmp.h>
 #include "net_private.h"
 #include "ipv4.h"
 #include "icmpv4.h"
@@ -23,14 +24,12 @@ LOG_MODULE_REGISTER(net_icmpv4, CONFIG_NET_ICMPV4_LOG_LEVEL);
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
-static sys_slist_t handlers;
-
 struct net_icmpv4_hdr_opts_data {
 	struct net_pkt *reply;
 	const struct in_addr *src;
 };
 
-static int icmpv4_create(struct net_pkt *pkt, uint8_t icmp_type, uint8_t icmp_code)
+int net_icmpv4_create(struct net_pkt *pkt, uint8_t icmp_type, uint8_t icmp_code)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
 					      struct net_icmp_hdr);
@@ -48,7 +47,7 @@ static int icmpv4_create(struct net_pkt *pkt, uint8_t icmp_type, uint8_t icmp_co
 	return net_pkt_set_data(pkt, &icmpv4_access);
 }
 
-int net_icmpv4_finalize(struct net_pkt *pkt)
+int net_icmpv4_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
 					      struct net_icmp_hdr);
@@ -66,8 +65,10 @@ int net_icmpv4_finalize(struct net_pkt *pkt)
 	}
 
 	icmp_hdr->chksum = 0U;
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_ICMP) ||
+		force_chksum) {
 		icmp_hdr->chksum = net_calc_chksum_icmpv4(pkt);
+		net_pkt_set_chksum_done(pkt, true);
 	}
 
 	return net_pkt_set_data(pkt, &icmpv4_access);
@@ -410,11 +411,14 @@ static int icmpv4_handle_header_options(struct net_pkt *pkt,
 }
 #endif
 
-static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
-					   struct net_ipv4_hdr *ip_hdr,
-					   struct net_icmp_hdr *icmp_hdr)
+static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
+				      struct net_pkt *pkt,
+				      struct net_icmp_ip_hdr *hdr,
+				      struct net_icmp_hdr *icmp_hdr,
+				      void *user_data)
 {
 	struct net_pkt *reply = NULL;
+	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
 	const struct in_addr *src;
 	int16_t payload_len;
 
@@ -452,7 +456,12 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 	    net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
 				   (struct in_addr *)ip_hdr->dst)) {
 		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-						  (struct in_addr *)ip_hdr->dst);
+						  (struct in_addr *)ip_hdr->src);
+
+		if (net_ipv4_is_addr_unspecified(src)) {
+			NET_DBG("DROP: No src address match");
+			goto drop;
+		}
 	} else {
 		src = (struct in_addr *)ip_hdr->dst;
 	}
@@ -471,7 +480,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 		}
 	}
 
-	if (icmpv4_create(reply, NET_ICMPV4_ECHO_REPLY, 0) ||
+	if (net_icmpv4_create(reply, NET_ICMPV4_ECHO_REPLY, 0) ||
 	    net_pkt_copy(reply, pkt, payload_len)) {
 		goto drop;
 	}
@@ -489,9 +498,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 
 	net_stats_update_icmp_sent(net_pkt_iface(reply));
 
-	net_pkt_unref(pkt);
-
-	return NET_OK;
+	return 0;
 drop:
 	if (reply) {
 		net_pkt_unref(reply);
@@ -499,103 +506,7 @@ drop:
 
 	net_stats_update_icmp_drop(net_pkt_iface(pkt));
 
-	return NET_DROP;
-}
-
-int net_icmpv4_send_echo_request(struct net_if *iface,
-				 struct in_addr *dst,
-				 uint16_t identifier,
-				 uint16_t sequence,
-				 uint8_t tos,
-				 const void *data,
-				 size_t data_size)
-{
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
-					      struct net_icmpv4_echo_req);
-	int ret = -ENOBUFS;
-	struct net_icmpv4_echo_req *echo_req;
-	const struct in_addr *src;
-	struct net_pkt *pkt;
-
-	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && net_if_is_ip_offloaded(iface)) {
-		return -ENOTSUP;
-	}
-
-	if (!iface->config.ip.ipv4) {
-		return -ENETUNREACH;
-	}
-
-	/* Take the first address of the network interface */
-	src = &iface->config.ip.ipv4->unicast[0].address.in_addr;
-
-	pkt = net_pkt_alloc_with_buffer(iface,
-					sizeof(struct net_icmpv4_echo_req)
-					+ data_size,
-					AF_INET, IPPROTO_ICMP,
-					PKT_WAIT_TIME);
-	if (!pkt) {
-		return -ENOMEM;
-	}
-
-	net_pkt_set_ip_dscp(pkt, net_ipv4_get_dscp(tos));
-	net_pkt_set_ip_ecn(pkt, net_ipv4_get_ecn(tos));
-
-	if (net_ipv4_create(pkt, src, dst) ||
-	    icmpv4_create(pkt, NET_ICMPV4_ECHO_REQUEST, 0)) {
-		goto drop;
-	}
-
-	echo_req = (struct net_icmpv4_echo_req *)net_pkt_get_data(
-							pkt, &icmpv4_access);
-	if (!echo_req) {
-		goto drop;
-	}
-
-	echo_req->identifier = htons(identifier);
-	echo_req->sequence   = htons(sequence);
-
-	net_pkt_set_data(pkt, &icmpv4_access);
-
-	if (data != NULL && data_size > 0) {
-		net_pkt_write(pkt, data, data_size);
-	} else if (data == NULL && data_size > 0) {
-		/* Generate payload. */
-		if (data_size >= sizeof(uint32_t)) {
-			uint32_t time_stamp = htonl(k_cycle_get_32());
-
-			net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
-			data_size -= sizeof(time_stamp);
-		}
-
-		for (size_t i = 0; i < data_size; i++) {
-			net_pkt_write_u8(pkt, (uint8_t)i);
-		}
-	} else {
-		/* No payload. */
-	}
-
-	net_pkt_cursor_init(pkt);
-
-	net_ipv4_finalize(pkt, IPPROTO_ICMP);
-
-	NET_DBG("Sending ICMPv4 Echo Request type %d from %s to %s",
-		NET_ICMPV4_ECHO_REQUEST,
-		net_sprint_ipv4_addr(src),
-		net_sprint_ipv4_addr(dst));
-
-	if (net_send_data(pkt) >= 0) {
-		net_stats_update_icmp_sent(iface);
-		return 0;
-	}
-
-	net_stats_update_icmp_drop(iface);
-
-	ret = -EIO;
-
-drop:
-	net_pkt_unref(pkt);
-
-	return ret;
+	return -EIO;
 }
 
 int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
@@ -659,7 +570,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 
 	if (net_ipv4_create(pkt, (struct in_addr *)ip_hdr->dst,
 			    (struct in_addr *)ip_hdr->src) ||
-	    icmpv4_create(pkt, type, code) ||
+	    net_icmpv4_create(pkt, type, code) ||
 	    net_pkt_memset(pkt, 0, NET_ICMPV4_UNUSED_LEN) ||
 	    net_pkt_copy(pkt, orig, copy_len)) {
 		goto drop;
@@ -691,23 +602,13 @@ drop_no_pkt:
 
 }
 
-void net_icmpv4_register_handler(struct net_icmpv4_handler *handler)
-{
-	sys_slist_prepend(&handlers, &handler->node);
-}
-
-void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler)
-{
-	sys_slist_find_and_remove(&handlers, &handler->node);
-}
-
 enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 				  struct net_ipv4_hdr *ip_hdr)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
-	struct net_icmpv4_handler *cb;
+	int ret;
 
 	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
@@ -715,7 +616,8 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_ICMP) ||
+	    net_pkt_is_ip_reassembled(pkt)) {
 		if (net_calc_chksum_icmpv4(pkt) != 0U) {
 			NET_DBG("DROP: Invalid checksum");
 			goto drop;
@@ -737,12 +639,14 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 
 	net_stats_update_icmp_recv(net_pkt_iface(pkt));
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
-		if (cb->type == icmp_hdr->type &&
-		    (cb->code == icmp_hdr->code || cb->code == 0U)) {
-			return cb->handler(pkt, ip_hdr, icmp_hdr);
-		}
+	ret = net_icmp_call_ipv4_handlers(pkt, ip_hdr, icmp_hdr);
+	if (ret < 0 && ret != -ENOENT) {
+		NET_ERR("ICMPv4 handling failure (%d)", ret);
 	}
+
+	net_pkt_unref(pkt);
+
+	return NET_OK;
 
 drop:
 	net_stats_update_icmp_drop(net_pkt_iface(pkt));
@@ -750,13 +654,14 @@ drop:
 	return NET_DROP;
 }
 
-static struct net_icmpv4_handler echo_request_handler = {
-	.type = NET_ICMPV4_ECHO_REQUEST,
-	.code = 0,
-	.handler = icmpv4_handle_echo_request,
-};
-
 void net_icmpv4_init(void)
 {
-	net_icmpv4_register_handler(&echo_request_handler);
+	static struct net_icmp_ctx ctx;
+	int ret;
+
+	ret = net_icmp_init_ctx(&ctx, NET_ICMPV4_ECHO_REQUEST, 0, icmpv4_handle_echo_request);
+	if (ret < 0) {
+		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV4_ECHO_REQUEST),
+			ret);
+	}
 }

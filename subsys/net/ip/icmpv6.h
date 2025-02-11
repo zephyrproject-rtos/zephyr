@@ -89,6 +89,14 @@ struct net_icmpv6_nd_opt_route_info {
 	 */
 } __packed;
 
+struct net_icmpv6_nd_opt_rdnss {
+	uint16_t reserved;
+	uint32_t lifetime;
+	/* Variable-length DNS server address follows,
+	 * depending on the option length.
+	 */
+} __packed;
+
 struct net_icmpv6_echo_req {
 	uint16_t identifier;
 	uint16_t sequence;
@@ -136,8 +144,6 @@ struct net_icmpv6_mld_mcast_record {
 #define NET_ICMPV6_PACKET_TOO_BIG 2	/* Packet too big */
 #define NET_ICMPV6_TIME_EXCEEDED  3	/* Time exceeded */
 #define NET_ICMPV6_PARAM_PROBLEM  4	/* IPv6 header is bad */
-#define NET_ICMPV6_ECHO_REQUEST 128
-#define NET_ICMPV6_ECHO_REPLY   129
 #define NET_ICMPV6_MLD_QUERY    130	/* Multicast Listener Query */
 #define NET_ICMPV6_RS           133	/* Router Solicitation */
 #define NET_ICMPV6_RA           134	/* Router Advertisement */
@@ -162,19 +168,7 @@ struct net_icmpv6_mld_mcast_record {
 /* ICMPv6 header has 4 unused bytes that must be zero, RFC 4443 ch 3.1 */
 #define NET_ICMPV6_UNUSED_LEN 4
 
-typedef enum net_verdict (*icmpv6_callback_handler_t)(
-						struct net_pkt *pkt,
-						struct net_ipv6_hdr *ip_hdr,
-						struct net_icmp_hdr *icmp_hdr);
-
 const char *net_icmpv6_type2str(int icmpv6_type);
-
-struct net_icmpv6_handler {
-	sys_snode_t node;
-	icmpv6_callback_handler_t handler;
-	uint8_t type;
-	uint8_t code;
-};
 
 /**
  * @brief Send ICMPv6 error message.
@@ -189,68 +183,16 @@ struct net_icmpv6_handler {
 int net_icmpv6_send_error(struct net_pkt *pkt, uint8_t type, uint8_t code,
 			  uint32_t param);
 
-/**
- * @brief Send ICMPv6 echo request message.
- *
- * @param iface Network interface.
- * @param dst IPv6 address of the target host.
- * @param identifier An identifier to aid in matching Echo Replies
- * to this Echo Request. May be zero.
- * @param sequence A sequence number to aid in matching Echo Replies
- * to this Echo Request. May be zero.
- * @param tc IPv6 Traffic Class field value. Represents combined DSCP and
- * ECN values.
- * @param data Arbitrary payload data that will be included in the
- * Echo Reply verbatim. May be NULL.
- * @param data_size Size of the Payload Data in bytes. May be zero. In case data
- * pointer is NULL, the function will generate the payload up to the requested
- * size.
- *
- * @return Return 0 if the sending succeed, <0 otherwise.
- */
 #if defined(CONFIG_NET_NATIVE_IPV6)
-int net_icmpv6_send_echo_request(struct net_if *iface,
-				 struct in6_addr *dst,
-				 uint16_t identifier,
-				 uint16_t sequence,
-				 uint8_t tc,
-				 const void *data,
-				 size_t data_size);
-#else
-static inline int net_icmpv6_send_echo_request(struct net_if *iface,
-					       struct in6_addr *dst,
-					       uint16_t identifier,
-					       uint16_t sequence,
-					       uint8_t tc,
-					       const void *data,
-					       size_t data_size)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(dst);
-	ARG_UNUSED(identifier);
-	ARG_UNUSED(sequence);
-	ARG_UNUSED(tc);
-	ARG_UNUSED(data);
-	ARG_UNUSED(data_size);
-
-	return -ENOTSUP;
-}
-#endif
-
-#if defined(CONFIG_NET_NATIVE_IPV6)
-void net_icmpv6_register_handler(struct net_icmpv6_handler *handler);
-void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler);
 enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 				  struct net_ipv6_hdr *ip_hdr);
 
 int net_icmpv6_create(struct net_pkt *pkt, uint8_t icmp_type, uint8_t icmp_code);
-int net_icmpv6_finalize(struct net_pkt *pkt);
+int net_icmpv6_finalize(struct net_pkt *pkt, bool force_chksum);
 
 void net_icmpv6_init(void);
 #else
 #define net_icmpv6_init(...)
-#define net_icmpv6_register_handler(...)
-#define net_icmpv6_unregister_handler(...)
 #endif
 
 #endif /* __ICMPV6_H */

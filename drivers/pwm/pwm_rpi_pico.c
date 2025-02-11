@@ -6,6 +6,7 @@
 #define DT_DRV_COMPAT raspberrypi_pico_pwm
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
@@ -33,6 +34,8 @@ struct pwm_rpi_config {
 	struct pwm_rpi_slice_config slice_configs[NUM_PWM_SLICES];
 	const struct pinctrl_dev_config *pcfg;
 	const struct reset_dt_spec reset;
+	const struct device *clk_dev;
+	const clock_control_subsys_t clk_id;
 };
 
 static float pwm_rpi_get_clkdiv(const struct device *dev, int slice)
@@ -41,7 +44,7 @@ static float pwm_rpi_get_clkdiv(const struct device *dev, int slice)
 
 	/* the divider is a fixed point 8.4 convert to float for use in pico-sdk */
 	return (float)cfg->slice_configs[slice].integral +
-		(float)cfg->slice_configs[slice].frac / 16.0;
+		(float)cfg->slice_configs[slice].frac / 16.0f;
 }
 
 static inline uint32_t pwm_rpi_channel_to_slice(uint32_t channel)
@@ -56,19 +59,24 @@ static inline uint32_t pwm_rpi_channel_to_pico_channel(uint32_t channel)
 
 static int pwm_rpi_get_cycles_per_sec(const struct device *dev, uint32_t ch, uint64_t *cycles)
 {
-	float f_clock_in;
+	const struct pwm_rpi_config *cfg = dev->config;
 	int slice = pwm_rpi_channel_to_slice(ch);
+	uint32_t pclk;
+	int ret;
 
 	if (ch >= PWM_RPI_NUM_CHANNELS) {
 		return -EINVAL;
 	}
 
-	f_clock_in = (float)sys_clock_hw_cycles_per_sec();
+	ret = clock_control_get_rate(cfg->clk_dev, cfg->clk_id, &pclk);
+	if (ret < 0 || pclk == 0) {
+		return -EINVAL;
+	}
 
 	/* No need to check for divide by 0 since the minimum value of
 	 * pwm_rpi_get_clkdiv is 1
 	 */
-	*cycles = (uint64_t)(f_clock_in / pwm_rpi_get_clkdiv(dev, slice));
+	*cycles = (uint64_t)((float)pclk / pwm_rpi_get_clkdiv(dev, slice));
 	return 0;
 }
 
@@ -136,6 +144,16 @@ static int pwm_rpi_init(const struct device *dev)
 		return err;
 	}
 
+	err = clock_control_on(cfg->clk_dev, cfg->clk_id);
+	if (err < 0) {
+		return err;
+	}
+
+	err = reset_line_toggle_dt(&cfg->reset);
+	if (err < 0) {
+		return err;
+	}
+
 	for (slice_idx = 0; slice_idx < NUM_PWM_SLICES; slice_idx++) {
 		slice_cfg = pwm_get_default_config();
 		pwm_config_set_clkdiv_mode(&slice_cfg, PWM_DIV_FREE_RUNNING);
@@ -174,6 +192,8 @@ static int pwm_rpi_init(const struct device *dev)
 			PWM_INST_RPI_SLICE_DIVIDER(idx, 7),					   \
 		},										   \
 		.reset = RESET_DT_SPEC_INST_GET(idx),						   \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),				   \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id),	   \
 	};											   \
 												   \
 	DEVICE_DT_INST_DEFINE(idx, pwm_rpi_init, NULL, NULL, &pwm_rpi_config_##idx, POST_KERNEL,   \

@@ -1,0 +1,4 @@
+# Search paths(s) for tests which will be run in the nrf5340 net core (both app, host and controller
+# built in the net core)
+# This file is used in CI to select which tests are run
+tests/bsim/bluetooth/ll/

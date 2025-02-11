@@ -1,0 +1,10 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PTP_CLOCK_NXP_ENET
+	bool "NXP ENET PTP Clock driver"
+	default y
+	depends on DT_HAS_NXP_ENET_PTP_CLOCK_ENABLED && NET_L2_PTP
+	depends on ETH_NXP_ENET
+	help
+	  Enable NXP ENET PTP clock support.

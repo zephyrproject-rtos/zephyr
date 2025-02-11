@@ -1,7 +1,8 @@
 # Copyright 2019-2020 Peter Bigot Consulting, LLC
+# Copyright 2023 EPAM Systems
 # SPDX-License-Identifier: Apache-2.0
 
-description: GPIO-controlled regulators
+description: Fixed voltage regulators
 
 include:
   - name: base.yaml
@@ -10,6 +11,10 @@ include:
       - regulator-name
       - regulator-boot-on
       - regulator-always-on
+      - regulator-min-microvolt
+      - regulator-max-microvolt
+      - startup-delay-us
+      - off-on-delay-us
 
 compatible: "regulator-fixed"
 
@@ -19,7 +24,6 @@ properties:
 
   enable-gpios:
     type: phandle-array
-    required: true
     description: |
       GPIO to use to enable/disable the regulator.
 
@@ -27,13 +31,3 @@ properties:
       provide the GPIO polarity and open-drain status in the phandle
       selector.  The Linux enable-active-high and gpio-open-drain
       properties are not valid for Zephyr devicetree files.
-
-  startup-delay-us:
-    type: int
-    default: 0
-    description: Startup time, in microseconds
-
-  off-on-delay-us:
-    type: int
-    default: 0
-    description: Off delay time, in microseconds

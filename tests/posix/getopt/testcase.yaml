@@ -1,10 +1,12 @@
 common:
-  arch_exclude: posix
-  tags: posix getopt
+  filter: not CONFIG_NATIVE_LIBC
+  tags:
+    - posix
+    - getopt
+  integration_platforms:
+    - qemu_x86
 tests:
   portability.posix.getopt:
-    integration_platforms:
-      - qemu_x86
     min_flash: 64
     min_ram: 32
   portability.posix.getopt.newlib:
@@ -16,3 +18,7 @@ tests:
     filter: CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_PICOLIBC=y
+  portability.posix.getopt.logger:
+    extra_configs:
+      - CONFIG_LOG=y
+    build_only: true

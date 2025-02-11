@@ -26,7 +26,7 @@
 #include "ll_feat.h"
 #include "ll_settings.h"
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/debug.h"
 
@@ -68,6 +68,11 @@ uint8_t ll_set_host_feature(uint8_t bit_number, uint8_t bit_value)
 	}
 
 	return BT_HCI_ERR_SUCCESS;
+}
+
+void ll_feat_reset(void)
+{
+	host_features = 0U;
 }
 
 uint64_t ll_feat_get(void)

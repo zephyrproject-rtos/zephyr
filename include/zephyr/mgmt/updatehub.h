@@ -7,7 +7,7 @@
 /**
  * @brief UpdateHub Firmware Over-the-Air for Zephyr Project.
  * @defgroup updatehub UpdateHub Firmware Over-the-Air
- * @ingroup lib
+ * @ingroup third_party
  * @{
  */
 
@@ -98,5 +98,5 @@ __syscall int updatehub_reboot(void);
  * @}
  */
 
-#include <syscalls/updatehub.h>
+#include <zephyr/syscalls/updatehub.h>
 #endif /* ZEPHYR_INCLUDE_MGMT_UPDATEHUB_H_ */

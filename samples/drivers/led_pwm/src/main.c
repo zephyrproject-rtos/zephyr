@@ -98,7 +98,7 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 	LOG_INF("  Turned off, loop end");
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *led_pwm;
 	uint8_t led;
@@ -106,12 +106,12 @@ void main(void)
 	led_pwm = DEVICE_DT_GET(LED_PWM_NODE_ID);
 	if (!device_is_ready(led_pwm)) {
 		LOG_ERR("Device %s is not ready", led_pwm->name);
-		return;
+		return 0;
 	}
 
 	if (!num_leds) {
 		LOG_ERR("No LEDs found for %s", led_pwm->name);
-		return;
+		return 0;
 	}
 
 	do {
@@ -119,4 +119,5 @@ void main(void)
 			run_led_test(led_pwm, led);
 		}
 	} while (true);
+	return 0;
 }

@@ -160,6 +160,23 @@
 #define GET_RES_HS_MIC(i) DT_PROP(DT_INST(i, COMPAT_HS), mic_resolution)
 #define GET_RES(dev, i) GET_RES_##dev(i)
 
+#define GET_VOLUME_HS(i, prop) DT_PROP_OR(DT_INST(i, COMPAT_HS), prop, 0)
+#define GET_VOLUME_HP(i, prop) DT_PROP_OR(DT_INST(i, COMPAT_HP), prop, 0)
+#define GET_VOLUME_MIC(i, prop) DT_PROP_OR(DT_INST(i, COMPAT_MIC), prop, 0)
+#define GET_VOLUME(dev, i, prop) GET_VOLUME_##dev(i, prop)
+
+#define GET_RATE_HP(i) DT_PROP(DT_INST(i, COMPAT_HP), sample_rate_hz)
+#define GET_RATE_MIC(i) DT_PROP(DT_INST(i, COMPAT_MIC), sample_rate_hz)
+#define GET_RATE_HS_HP(i) DT_PROP(DT_INST(i, COMPAT_HS), hp_sample_rate_hz)
+#define GET_RATE_HS_MIC(i) DT_PROP(DT_INST(i, COMPAT_HS), mic_sample_rate_hz)
+#define GET_RATE(dev, i) GET_RATE_##dev(i)
+
+#define GET_INTERVAL_HP(i) DT_PROP(DT_INST(i, COMPAT_HP), polling_interval)
+#define GET_INTERVAL_MIC(i) DT_PROP(DT_INST(i, COMPAT_MIC), polling_interval)
+#define GET_INTERVAL_HS_HP(i) DT_PROP(DT_INST(i, COMPAT_HS), hp_polling_interval)
+#define GET_INTERVAL_HS_MIC(i) DT_PROP(DT_INST(i, COMPAT_HS), mic_polling_interval)
+#define GET_INTERVAL(dev, i) GET_INTERVAL_##dev(i)
+
 #define SYNC_TYPE_HP(i)     3
 #define SYNC_TYPE_MIC(i)    DT_ENUM_IDX(DT_INST(i, COMPAT_MIC), sync_type)
 #define SYNC_TYPE_HS_HP(i)  3
@@ -167,7 +184,7 @@
 #define SYNC_TYPE(dev, i) (SYNC_TYPE_##dev(i) << 2)
 
 #define EP_SIZE(dev, i) \
-	((GET_RES(dev, i)/8) * CH_CNT(dev, i) * 48)
+	(DIV_ROUND_UP((GET_RES(dev, i)/8 * CH_CNT(dev, i) * GET_RATE(dev, i)), 1000))
 
 /* *_ID() macros are used to give proper Id to each entity describing
  * the device. Entities Id must start from 1 that's why 1 is added.
@@ -328,13 +345,8 @@ struct dev##_feature_unit_descriptor_##i {	\
 	.iFunction = 0,						\
 }
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
 #define USB_AUDIO_IAD_DECLARE struct usb_association_descriptor iad;
 #define USB_AUDIO_IAD(if_cnt)  .iad = INIT_IAD(USB_AUDIO_AUDIOCONTROL, if_cnt),
-#else
-#define USB_AUDIO_IAD_DECLARE
-#define USB_AUDIO_IAD(if_cnt)
-#endif
 
 #define DECLARE_DESCRIPTOR(dev, i, ifaces)				\
 DECLARE_HEADER(dev, i, ifaces);						\
@@ -473,15 +485,18 @@ struct dev##_descriptor_##i {						\
 	.bDescriptorType = USB_DESC_CS_INTERFACE,	\
 	.bDescriptorSubtype = USB_AUDIO_AS_GENERAL,	\
 	.bTerminalLink = link,				\
-	.bDelay = 0,					\
+	.bDelay = 1,					\
 	.wFormatTag = sys_cpu_to_le16(0x0001),		\
 }
+
+#define SAMPLE_RATE(rate)			\
+	{(((rate) >> 0) & 0xff), (((rate) >> 8) & 0xff), (((rate) >> 16) & 0xff)}
 
 /** Class-Specific AS Format Type Descriptor 4.5.3 audio10.pdf
  *  For more information refer to 2.2.5 Type I Format Type Descriptor
  *  from frmts10.pdf
  */
-#define INIT_AS_FORMAT_I(ch_cnt, res)				\
+#define INIT_AS_FORMAT_I(ch_cnt, res, rate)			\
 {								\
 	.bLength = sizeof(struct format_type_i_descriptor),	\
 	.bDescriptorType = USB_DESC_CS_INTERFACE,		\
@@ -491,7 +506,7 @@ struct dev##_descriptor_##i {						\
 	.bSubframeSize = res/8,					\
 	.bBitResolution = res,					\
 	.bSamFreqType = 1,					\
-	.tSamFreq = {0x80, 0xBB, 0x00},				\
+	.tSamFreq = SAMPLE_RATE(rate),				\
 }
 
 #define INIT_STD_AS_AD_EP(dev, i, addr)					\
@@ -501,7 +516,7 @@ struct dev##_descriptor_##i {						\
 	.bEndpointAddress = addr,					\
 	.bmAttributes = (USB_DC_EP_ISOCHRONOUS | SYNC_TYPE(dev, i)),	\
 	.wMaxPacketSize = sys_cpu_to_le16(EP_SIZE(dev, i)),		\
-	.bInterval = 0x01,						\
+	.bInterval = GET_INTERVAL(dev, i),				\
 	.bRefresh = 0x00,						\
 	.bSynchAddress = 0x00,						\
 }

@@ -7,7 +7,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/audio/audio.h>
+#include <stdint.h>
+
+#include <zephyr/sys/util_macro.h>
 
 #define BT_AUDIO_LOCATION_MASK BIT_MASK(28)
 
@@ -16,11 +18,6 @@ struct bt_pac_codec {
 	uint16_t cid;			/* Company ID */
 	uint16_t vid;			/* Vendor specific Codec ID */
 } __packed;
-
-/* TODO: Figure out the capabilities types */
-#define BT_CODEC_CAP_PARAMS		0x01
-#define BT_CODEC_CAP_DRM		0x0a
-#define BT_CODEC_CAP_DRM_VALUE		0x0b
 
 struct bt_pac_ltv {
 	uint8_t  len;
@@ -41,5 +38,3 @@ struct bt_pacs_context {
 	uint16_t  snk;
 	uint16_t  src;
 } __packed;
-
-bool bt_pacs_context_available(enum bt_audio_dir dir, uint16_t context);

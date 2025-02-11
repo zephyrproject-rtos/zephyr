@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <zephyr/drivers/virtualization/ivshmem.h>
 
-static const struct device *ivshmem;
+static const struct device *ivshmem = DEVICE_DT_GET_ONE(qemu_ivshmem);
 
 #ifdef CONFIG_IVSHMEM_DOORBELL
 
@@ -23,8 +23,13 @@ K_THREAD_STACK_DEFINE(doorbell_stack, STACK_SIZE);
 static bool doorbell_started;
 static struct k_thread doorbell_thread;
 
-static void doorbell_notification_thread(const struct shell *shell)
+static void doorbell_notification_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct shell *sh = p1;
+
 	while (1) {
 		unsigned int signaled;
 		int vector;
@@ -36,7 +41,7 @@ static void doorbell_notification_thread(const struct shell *shell)
 			continue;
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "Received a notification on vector %u\n",
 			      (unsigned int)vector);
 
@@ -46,19 +51,17 @@ static void doorbell_notification_thread(const struct shell *shell)
 
 #endif /* CONFIG_IVSHMEM_DOORBELL */
 
-static bool get_ivshmem(const struct shell *shell)
+static bool get_ivshmem(const struct shell *sh)
 {
-	if (ivshmem == NULL) {
-		ivshmem = DEVICE_DT_GET_ONE(qemu_ivshmem);
-		if (!device_is_ready(ivshmem)) {
-			shell_error(shell, "IVshmem device is not ready");
-		}
+	if (!device_is_ready(ivshmem)) {
+		shell_error(sh, "IVshmem device is not ready");
+		return false;
 	}
 
-	return ivshmem != NULL ? true : false;
+	return true;
 }
 
-static int cmd_ivshmem_shmem(const struct shell *shell,
+static int cmd_ivshmem_shmem(const struct shell *sh,
 			     size_t argc, char **argv)
 {
 	uintptr_t mem;
@@ -66,7 +69,7 @@ static int cmd_ivshmem_shmem(const struct shell *shell,
 	uint32_t id;
 	uint16_t vectors;
 
-	if (!get_ivshmem(shell)) {
+	if (!get_ivshmem(sh)) {
 		return 0;
 	}
 
@@ -74,9 +77,9 @@ static int cmd_ivshmem_shmem(const struct shell *shell,
 	id = ivshmem_get_id(ivshmem);
 	vectors = ivshmem_get_vectors(ivshmem);
 
-	shell_fprintf(shell, SHELL_NORMAL,
+	shell_fprintf(sh, SHELL_NORMAL,
 		      "IVshmem up and running: \n"
-		      "\tShared memory: 0x%x of size %u bytes\n"
+		      "\tShared memory: 0x%lx of size %lu bytes\n"
 		      "\tPeer id: %u\n"
 		      "\tNotification vectors: %u\n",
 		      mem, size, id, vectors);
@@ -84,7 +87,7 @@ static int cmd_ivshmem_shmem(const struct shell *shell,
 	return 0;
 }
 
-static int cmd_ivshmem_dump(const struct shell *shell,
+static int cmd_ivshmem_dump(const struct shell *sh,
 			    size_t argc, char **argv)
 {
 	uintptr_t dump_pos;
@@ -92,7 +95,7 @@ static int cmd_ivshmem_dump(const struct shell *shell,
 	uintptr_t mem;
 	size_t size;
 
-	if (!get_ivshmem(shell)) {
+	if (!get_ivshmem(sh)) {
 		return 0;
 	}
 
@@ -102,19 +105,19 @@ static int cmd_ivshmem_dump(const struct shell *shell,
 	size = ivshmem_get_mem(ivshmem, &mem);
 
 	if (dump_size > size) {
-		shell_error(shell, "Size is too big");
+		shell_error(sh, "Size is too big");
 	} else if (dump_pos > size) {
-		shell_error(shell, "Position is out of the shared memory");
+		shell_error(sh, "Position is out of the shared memory");
 	} else if ((mem + dump_pos + dump_size) > (mem + size)) {
-		shell_error(shell, "Position and size overflow");
+		shell_error(sh, "Position and size overflow");
 	} else {
-		shell_hexdump(shell, (const uint8_t *)mem+dump_pos, dump_size);
+		shell_hexdump(sh, (const uint8_t *)mem+dump_pos, dump_size);
 	}
 
 	return 0;
 }
 
-static int cmd_ivshmem_int(const struct shell *shell,
+static int cmd_ivshmem_int(const struct shell *sh,
 			   size_t argc, char **argv)
 {
 	int peer_id;
@@ -122,11 +125,11 @@ static int cmd_ivshmem_int(const struct shell *shell,
 	int ret;
 
 	if (!IS_ENABLED(CONFIG_IVSHMEM_DOORBELL)) {
-		shell_error(shell, "CONFIG_IVSHMEM_DOORBELL is not enabled");
+		shell_error(sh, "CONFIG_IVSHMEM_DOORBELL is not enabled");
 		return 0;
 	}
 
-	if (!get_ivshmem(shell)) {
+	if (!get_ivshmem(sh)) {
 		return 0;
 	}
 
@@ -135,26 +138,26 @@ static int cmd_ivshmem_int(const struct shell *shell,
 
 	ret = ivshmem_int_peer(ivshmem, (uint16_t)peer_id, (uint16_t)vector);
 	if (ret != 0) {
-		shell_error(shell,
+		shell_error(sh,
 			    "Could not notify peer %u on %u. status %d",
 			    peer_id, vector, ret);
 		return -EIO;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL,
+	shell_fprintf(sh, SHELL_NORMAL,
 		      "Notification sent to peer %u on vector %u\n",
 		      peer_id, vector);
 
 	return 0;
 }
 
-static int cmd_ivshmem_get_notified(const struct shell *shell,
+static int cmd_ivshmem_get_notified(const struct shell *sh,
 				    size_t argc, char **argv)
 {
 #ifdef CONFIG_IVSHMEM_DOORBELL
 	int vector;
 
-	if (!get_ivshmem(shell)) {
+	if (!get_ivshmem(sh)) {
 		return 0;
 	}
 
@@ -162,12 +165,12 @@ static int cmd_ivshmem_get_notified(const struct shell *shell,
 
 	if (ivshmem_register_handler(ivshmem, &doorbell_sig,
 				     (uint16_t)vector)) {
-		shell_error(shell, "Could not get notifications on vector %u",
+		shell_error(sh, "Could not get notifications on vector %u",
 			    vector);
 		return -EIO;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL,
+	shell_fprintf(sh, SHELL_NORMAL,
 		      "Notifications enabled for vector %u\n", vector);
 
 	if (!doorbell_started) {
@@ -176,11 +179,11 @@ static int cmd_ivshmem_get_notified(const struct shell *shell,
 		tid = k_thread_create(
 			&doorbell_thread,
 			doorbell_stack, STACK_SIZE,
-			(k_thread_entry_t)doorbell_notification_thread,
-			(void *)shell, NULL, NULL,
+			doorbell_notification_thread,
+			(void *)sh, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 		if (!tid) {
-			shell_error(shell, "Cannot start notification thread");
+			shell_error(sh, "Cannot start notification thread");
 			return -ENOEXEC;
 		}
 
@@ -191,7 +194,7 @@ static int cmd_ivshmem_get_notified(const struct shell *shell,
 		doorbell_started = true;
 	}
 #else
-	shell_error(shell, "CONFIG_IVSHMEM_DOORBELL is not enabled");
+	shell_error(sh, "CONFIG_IVSHMEM_DOORBELL is not enabled");
 #endif
 	return 0;
 }
@@ -214,15 +217,3 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_ivshmem_cmds,
 
 SHELL_CMD_REGISTER(ivshmem, &sub_ivshmem_cmds,
 		   "IVshmem information", cmd_ivshmem_shmem);
-
-SHELL_CMD_ARG_REGISTER(ivshmem_dump, &sub_ivshmem_cmds,
-		       "Dump shared memory content",
-		       cmd_ivshmem_dump, 3, 0);
-
-SHELL_CMD_ARG_REGISTER(ivshmem_int, &sub_ivshmem_cmds,
-		       "Notify a vector on an ivshmem peer",
-		       cmd_ivshmem_int, 3, 0);
-
-SHELL_CMD_ARG_REGISTER(ivshmem_get_notified, &sub_ivshmem_cmds,
-		       "Get notification on vector",
-		       cmd_ivshmem_get_notified, 2, 0);

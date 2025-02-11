@@ -1,0 +1,14 @@
+# Config options for tester app
+
+# Copyright (c) 2023 Codecoup
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Bttester configuration"
+
+module = BTTESTER
+module-str = bttester
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+source "Kconfig.zephyr"

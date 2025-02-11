@@ -1,0 +1,31 @@
+# Copyright (c) 2023 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The representation of Raspberry Pi Pico's PLL.
+
+compatible: "raspberrypi,pico-pll"
+
+include: [base.yaml, fixed-factor-clock.yaml]
+
+properties:
+  fb-div:
+    type: int
+    required: true
+    description: |
+      The feedback divider value.
+      The valid range is 16 to 320.
+
+  post-div1:
+    type: int
+    required: true
+    description: |
+      The post clock divider.
+      The valid range is 1 to 49.
+
+  post-div2:
+    type: int
+    required: true
+    description: |
+      The post clock divider.
+      The valid range is 1 to 49.

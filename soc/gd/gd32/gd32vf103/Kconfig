@@ -1,0 +1,20 @@
+# GD32VF103 SOC implementation
+
+# Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32VF103
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_HAS_CLIC
+	select ATOMIC_OPERATIONS_C
+	select INCLUDE_RESET_VECTOR
+	select GD32_HAS_AFIO_PINMUX
+	select GD32_HAS_IRC_40K
+	select XIP

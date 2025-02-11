@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "esp32_common.dtsi"
+
+/* Reserved GPIO pins */
+&gpio0 {
+	gpio-reserved-ranges =	<6 5>, // embeddef psram
+				<11 1>,	// flash CS
+				<20 1>, <24 1>, <28 4>; // NC
+};
+
+/* 2MB psram */
+&psram0 {
+	reg = <0x3f800000 DT_SIZE_M(2)>;
+	status = "okay";
+};

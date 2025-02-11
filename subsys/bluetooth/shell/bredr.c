@@ -24,8 +24,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
-#include <zephyr/bluetooth/rfcomm.h>
-#include <zephyr/bluetooth/sdp.h>
+#include <zephyr/bluetooth/classic/rfcomm.h>
+#include <zephyr/bluetooth/classic/sdp.h>
 
 #include <zephyr/shell/shell.h>
 
@@ -243,7 +243,8 @@ static struct bt_l2cap_br_chan l2cap_chan = {
 	.rx.mtu		= 48,
 };
 
-static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+			struct bt_l2cap_chan **chan)
 {
 	shell_print(ctx_shell, "Incoming BR/EDR conn %p", conn);
 

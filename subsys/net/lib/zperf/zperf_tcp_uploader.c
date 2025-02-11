@@ -20,13 +20,29 @@ static char sample_packet[PACKET_SIZE_MAX];
 
 static struct zperf_async_upload_context tcp_async_upload_ctx;
 
+static ssize_t sendall(int sock, const void *buf, size_t len)
+{
+	while (len) {
+		ssize_t out_len = zsock_send(sock, buf, len, 0);
+
+		if (out_len < 0) {
+			return out_len;
+		}
+
+		buf = (const char *)buf + out_len;
+		len -= out_len;
+	}
+
+	return 0;
+}
+
 static int tcp_upload(int sock,
 		      unsigned int duration_in_ms,
 		      unsigned int packet_size,
 		      struct zperf_results *results)
 {
-	int64_t duration = sys_clock_timeout_end_calc(K_MSEC(duration_in_ms));
-	int64_t start_time, last_print_time, end_time, remaining;
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(duration_in_ms));
+	int64_t start_time, end_time;
 	uint32_t nb_packets = 0U, nb_errors = 0U;
 	uint32_t alloc_errors = 0U;
 	int ret = 0;
@@ -39,7 +55,6 @@ static int tcp_upload(int sock,
 
 	/* Start the loop */
 	start_time = k_uptime_ticks();
-	last_print_time = start_time;
 
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
@@ -51,7 +66,7 @@ static int tcp_upload(int sock,
 
 	do {
 		/* Send the packet */
-		ret = zsock_send(sock, sample_packet, packet_size, 0);
+		ret = sendall(sock, sample_packet, packet_size);
 		if (ret < 0) {
 			if (nb_errors == 0 && ret != -ENOMEM) {
 				NET_ERR("Failed to send the packet (%d)", errno);
@@ -80,15 +95,14 @@ static int tcp_upload(int sock,
 		k_yield();
 #endif
 
-		remaining = duration - k_uptime_ticks();
-	} while (remaining > 0);
+	} while (!sys_timepoint_expired(end));
 
 	end_time = k_uptime_ticks();
 
 	/* Add result coming from the client */
 	results->nb_packets_sent = nb_packets;
 	results->client_time_in_us =
-				k_ticks_to_us_ceil32(end_time - start_time);
+				k_ticks_to_us_ceil64(end_time - start_time);
 	results->packet_size = packet_size;
 	results->nb_packets_errors = nb_errors;
 
@@ -119,6 +133,7 @@ int zperf_tcp_upload(const struct zperf_upload_params *param,
 	}
 
 	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
+					 param->options.priority, param->options.tcp_nodelay,
 					 IPPROTO_TCP);
 	if (sock < 0) {
 		return sock;
@@ -135,20 +150,73 @@ static void tcp_upload_async_work(struct k_work *work)
 {
 	struct zperf_async_upload_context *upload_ctx =
 		CONTAINER_OF(work, struct zperf_async_upload_context, work);
-	struct zperf_results result;
+	struct zperf_results result = { 0 };
 	int ret;
+	struct zperf_upload_params param = upload_ctx->param;
+	int sock;
 
 	upload_ctx->callback(ZPERF_SESSION_STARTED, NULL,
 			     upload_ctx->user_data);
 
-	ret = zperf_tcp_upload(&upload_ctx->param, &result);
-	if (ret < 0) {
+	sock = zperf_prepare_upload_sock(&param.peer_addr, param.options.tos,
+					 param.options.priority, param.options.tcp_nodelay,
+					 IPPROTO_TCP);
+
+	if (sock < 0) {
 		upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
 				     upload_ctx->user_data);
-	} else {
-		upload_ctx->callback(ZPERF_SESSION_FINISHED, &result,
-				     upload_ctx->user_data);
+		return;
 	}
+
+	if (param.options.report_interval_ms > 0) {
+		uint32_t report_interval = param.options.report_interval_ms;
+		uint32_t duration = param.duration_ms;
+
+		/* Compute how many upload rounds will be executed and the duration
+		 * of the last round when total duration isn't divisible by interval
+		 */
+		uint32_t rounds = (duration + report_interval - 1) / report_interval;
+		uint32_t last_round_duration = duration - ((rounds - 1) * report_interval);
+
+		struct zperf_results periodic_result;
+
+		for (; rounds > 0; rounds--) {
+			uint32_t round_duration;
+
+			if (rounds == 1) {
+				round_duration = last_round_duration;
+			} else {
+				round_duration = report_interval;
+			}
+			ret = tcp_upload(sock, round_duration, param.packet_size, &periodic_result);
+			if (ret < 0) {
+				upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
+						     upload_ctx->user_data);
+				goto cleanup;
+			}
+			upload_ctx->callback(ZPERF_SESSION_PERIODIC_RESULT, &periodic_result,
+					     upload_ctx->user_data);
+
+			result.nb_packets_sent += periodic_result.nb_packets_sent;
+			result.client_time_in_us += periodic_result.client_time_in_us;
+			result.nb_packets_errors += periodic_result.nb_packets_errors;
+		}
+
+		result.packet_size = periodic_result.packet_size;
+
+	} else {
+		ret = tcp_upload(sock, param.duration_ms, param.packet_size, &result);
+		if (ret < 0) {
+			upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
+					     upload_ctx->user_data);
+			goto cleanup;
+		}
+	}
+
+	upload_ctx->callback(ZPERF_SESSION_FINISHED, &result,
+			     upload_ctx->user_data);
+cleanup:
+	zsock_close(sock);
 }
 
 int zperf_tcp_upload_async(const struct zperf_upload_params *param,

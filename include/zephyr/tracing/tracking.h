@@ -95,6 +95,9 @@ extern struct k_event *_track_list_k_event;
 #define sys_port_track_k_event_init(event) \
 	sys_track_k_event_init(event);
 
+#define sys_port_track_socket_init(sock, family, type, proto)	\
+	sys_track_socket_init(sock, family, type, proto);
+
 void sys_track_k_timer_init(struct k_timer *timer);
 void sys_track_k_mem_slab_init(struct k_mem_slab *slab);
 void sys_track_k_sem_init(struct k_sem *sem);
@@ -105,6 +108,7 @@ void sys_track_k_mbox_init(struct k_mbox *mbox);
 void sys_track_k_pipe_init(struct k_pipe *pipe);
 void sys_track_k_queue_init(struct k_queue *queue);
 void sys_track_k_event_init(struct k_event *event);
+void sys_track_socket_init(int sock, int family, int type, int proto);
 
 /** @endcond */
 
@@ -142,6 +146,7 @@ void sys_track_k_event_init(struct k_event *event);
 #define sys_port_track_k_heap_free(h)
 #define sys_port_track_k_heap_init(h)
 #define sys_port_track_k_event_init(event)
+#define sys_port_track_socket_init(sock, family, type, proto)
 
 #endif
 

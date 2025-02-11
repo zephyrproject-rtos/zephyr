@@ -15,7 +15,7 @@
  * This test has two threads that increment a counter.  The routine that
  * increments the counter is invoked from workqueue due to the two threads
  * calling using it.  The final result of the counter is expected
- * to be the the number of times work item was called to increment
+ * to be the number of times work item was called to increment
  * the counter.
  *
  * This is done with time slicing both disabled and enabled to ensure that the
@@ -31,7 +31,7 @@
 #define NUM_MILLISECONDS        50
 #define TEST_TIMEOUT            200
 
-#ifdef CONFIG_COVERAGE
+#ifdef CONFIG_COVERAGE_GCOV
 #define OFFLOAD_WORKQUEUE_STACK_SIZE 4096
 #else
 #define OFFLOAD_WORKQUEUE_STACK_SIZE 1024
@@ -100,14 +100,7 @@ uint32_t critical_loop(const char *tag, uint32_t count)
 		k_work_init(&work_item, critical_rtn);
 		k_work_submit_to_queue(&offload_work_q, &work_item);
 		count++;
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(50);
-		/*
-		 * For the POSIX arch this loop and critical_rtn would otherwise
-		 * run in 0 time and therefore would never finish.
-		 * => We purposely waste 50us per loop
-		 */
-#endif
+		Z_SPIN_DELAY(50);
 	}
 	TC_PRINT("End %s at %u\n", tag, (uint32_t)now);
 

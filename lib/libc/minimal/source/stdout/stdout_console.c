@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <zephyr/sys/libc-hooks.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <string.h>
 
 static int _stdout_hook_default(int c)
@@ -27,7 +27,7 @@ void __stdout_hook_install(int (*hook)(int c))
 
 int z_impl_zephyr_fputc(int c, FILE *stream)
 {
-	return (stream == stdout || stream == stderr) ? _stdout_hook(c) : EOF;
+	return ((stream == stdout) || (stream == stderr)) ? _stdout_hook(c) : EOF;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -35,7 +35,7 @@ static inline int z_vrfy_zephyr_fputc(int c, FILE *stream)
 {
 	return z_impl_zephyr_fputc(c, stream);
 }
-#include <syscalls/zephyr_fputc_mrsh.c>
+#include <zephyr/syscalls/zephyr_fputc_mrsh.c>
 #endif
 
 int fputc(int c, FILE *stream)
@@ -50,7 +50,19 @@ int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream)
 
 	ret = fwrite(s, 1, len, stream);
 
-	return len == ret ? 0 : EOF;
+	return (len == ret) ? 0 : EOF;
+}
+
+#undef putc
+int putc(int c, FILE *stream)
+{
+	return zephyr_fputc(c, stream);
+}
+
+#undef putchar
+int putchar(int c)
+{
+	return zephyr_fputc(c, stdout);
 }
 
 size_t z_impl_zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
@@ -60,7 +72,7 @@ size_t z_impl_zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 	size_t j;
 	const unsigned char *p;
 
-	if ((stream != stdout && stream != stderr) ||
+	if (((stream != stdout) && (stream != stderr)) ||
 	    (nitems == 0) || (size == 0)) {
 		return 0;
 	}
@@ -89,11 +101,10 @@ static inline size_t z_vrfy_zephyr_fwrite(const void *ZRESTRICT ptr,
 					  FILE *ZRESTRICT stream)
 {
 
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(ptr, nitems, size));
-	return z_impl_zephyr_fwrite((const void *ZRESTRICT)ptr, size,
-				    nitems, (FILE *ZRESTRICT)stream);
+	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(ptr, nitems, size));
+	return z_impl_zephyr_fwrite(ptr, size, nitems, stream);
 }
-#include <syscalls/zephyr_fwrite_mrsh.c>
+#include <zephyr/syscalls/zephyr_fwrite_mrsh.c>
 #endif
 
 size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
@@ -109,5 +120,5 @@ int puts(const char *s)
 		return EOF;
 	}
 
-	return fputc('\n', stdout) == EOF ? EOF : 0;
+	return (fputc('\n', stdout) == EOF) ? EOF : 0;
 }

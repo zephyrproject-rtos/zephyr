@@ -1,0 +1,6 @@
+family:
+- name: nxp_layerscape
+  series:
+  - name: ls1046a
+    socs:
+    - name: ls1046a

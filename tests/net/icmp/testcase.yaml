@@ -1,0 +1,32 @@
+common:
+  depends_on: netif
+  tags: net icmp
+tests:
+  net.icmp.offloaded:
+    extra_configs:
+      - CONFIG_NET_OFFLOAD=y
+      - CONFIG_NET_IF_MAX_IPV6_COUNT=2
+      - CONFIG_NET_IF_MAX_IPV4_COUNT=2
+  net.icmp.socket_offloaded:
+    extra_configs:
+      - CONFIG_NET_SOCKETS_OFFLOAD=y
+      - CONFIG_NET_IF_MAX_IPV6_COUNT=2
+      - CONFIG_NET_IF_MAX_IPV4_COUNT=2
+  net.icmp.coop:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+      - CONFIG_NET_IF_MAX_IPV6_COUNT=2
+      - CONFIG_NET_IF_MAX_IPV4_COUNT=2
+  net.icmp.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+      - CONFIG_NET_IF_MAX_IPV6_COUNT=2
+      - CONFIG_NET_IF_MAX_IPV4_COUNT=2
+  net.icmp.no_ipv4:
+    extra_configs:
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_IF_MAX_IPV6_COUNT=2
+  net.icmp.no_ipv6:
+    extra_configs:
+      - CONFIG_NET_IPV6=n
+      - CONFIG_NET_IF_MAX_IPV4_COUNT=2

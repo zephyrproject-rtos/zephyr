@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ * Copyright (c) 2024 Tomas Jurena <jurena@utb.cz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h745xihx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	leds: leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&gpioj 2 GPIO_ACTIVE_HIGH>;
+			label = "User LD7";
+		};
+		red_led: led_2 {
+			gpios = <&gpioi 13 GPIO_ACTIVE_HIGH>;
+			label = "User LD6";
+		};
+		green_led_2: led_3 {
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+			label = "User LD8";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			label = "User SB1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&rcc {
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&mailbox {
+	status = "okay";
+};

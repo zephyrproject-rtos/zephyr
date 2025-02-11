@@ -9,6 +9,8 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_arch_interface.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/sys/barrier.h>
+#include <zephyr/sys/atomic.h>
 
 /* to be found in fpu.S */
 extern void z_arm64_fpu_save(struct z_arm64_fp_context *saved_fp_context);
@@ -62,29 +64,30 @@ static inline void DBG(char *msg, struct k_thread *t) { }
  * Flush FPU content and disable access.
  * This is called locally and also from flush_fpu_ipi_handler().
  */
-void z_arm64_flush_local_fpu(void)
+void arch_flush_local_fpu(void)
 {
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
 
-	struct k_thread *owner = _current_cpu->arch.fpu_owner;
+	struct k_thread *owner = atomic_ptr_get(&_current_cpu->arch.fpu_owner);
 
 	if (owner != NULL) {
 		uint64_t cpacr = read_cpacr_el1();
 
 		/* turn on FPU access */
 		write_cpacr_el1(cpacr | CPACR_EL1_FPEN_NOTRAP);
-		isb();
+		barrier_isync_fence_full();
 
 		/* save current owner's content */
 		z_arm64_fpu_save(&owner->arch.saved_fp_context);
 		/* make sure content made it to memory before releasing */
-		dsb();
+		barrier_dsync_fence_full();
 		/* release ownership */
-		_current_cpu->arch.fpu_owner = NULL;
+		atomic_ptr_clear(&_current_cpu->arch.fpu_owner);
 		DBG("disable", owner);
 
 		/* disable FPU access */
 		write_cpacr_el1(cpacr & ~CPACR_EL1_FPEN_NOTRAP);
+		barrier_isync_fence_full();
 	}
 }
 
@@ -99,15 +102,15 @@ static void flush_owned_fpu(struct k_thread *thread)
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (i = 0; i < num_cpus; i++) {
-		if (_kernel.cpus[i].arch.fpu_owner != thread) {
+		if (atomic_ptr_get(&_kernel.cpus[i].arch.fpu_owner) != thread) {
 			continue;
 		}
 		/* we found it live on CPU i */
 		if (i == _current_cpu->id) {
-			z_arm64_flush_local_fpu();
+			arch_flush_local_fpu();
 		} else {
 			/* the FPU context is live on another CPU */
-			z_arm64_flush_fpu_ipi(i);
+			arch_flush_fpu_ipi(i);
 
 			/*
 			 * Wait for it only if this is about the thread
@@ -123,9 +126,9 @@ static void flush_owned_fpu(struct k_thread *thread)
 			 * two CPUs want to pull each other's FPU context.
 			 */
 			if (thread == _current) {
-				z_arm64_flush_local_fpu();
-				while (_kernel.cpus[i].arch.fpu_owner == thread) {
-					dsb();
+				arch_flush_local_fpu();
+				while (atomic_ptr_get(&_kernel.cpus[i].arch.fpu_owner) == thread) {
+					barrier_dsync_fence_full();
 				}
 			}
 		}
@@ -140,7 +143,7 @@ void z_arm64_fpu_enter_exc(void)
 
 	/* always deny FPU access whenever an exception is entered */
 	write_cpacr_el1(read_cpacr_el1() & ~CPACR_EL1_FPEN_NOTRAP);
-	isb();
+	barrier_isync_fence_full();
 }
 
 /*
@@ -156,7 +159,7 @@ void z_arm64_fpu_enter_exc(void)
  * simulate them and leave the FPU access disabled. This also avoids the
  * need for disabling interrupts in syscalls and IRQ handlers as well.
  */
-static bool simulate_str_q_insn(z_arch_esf_t *esf)
+static bool simulate_str_q_insn(struct arch_esf *esf)
 {
 	/*
 	 * Support only the "FP in exception" cases for now.
@@ -218,7 +221,7 @@ static bool simulate_str_q_insn(z_arch_esf_t *esf)
  * don't get interrupted that is. To ensure that we mask interrupts to
  * the triggering exception context.
  */
-void z_arm64_fpu_trap(z_arch_esf_t *esf)
+void z_arm64_fpu_trap(struct arch_esf *esf)
 {
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
 
@@ -229,15 +232,15 @@ void z_arm64_fpu_trap(z_arch_esf_t *esf)
 
 	/* turn on FPU access */
 	write_cpacr_el1(read_cpacr_el1() | CPACR_EL1_FPEN_NOTRAP);
-	isb();
+	barrier_isync_fence_full();
 
 	/* save current owner's content  if any */
-	struct k_thread *owner = _current_cpu->arch.fpu_owner;
+	struct k_thread *owner = atomic_ptr_get(&_current_cpu->arch.fpu_owner);
 
 	if (owner) {
 		z_arm64_fpu_save(&owner->arch.saved_fp_context);
-		dsb();
-		_current_cpu->arch.fpu_owner = NULL;
+		barrier_dsync_fence_full();
+		atomic_ptr_clear(&_current_cpu->arch.fpu_owner);
 		DBG("save", owner);
 	}
 
@@ -261,7 +264,7 @@ void z_arm64_fpu_trap(z_arch_esf_t *esf)
 #endif
 
 	/* become new owner */
-	_current_cpu->arch.fpu_owner = _current;
+	atomic_ptr_set(&_current_cpu->arch.fpu_owner, _current);
 
 	/* restore our content */
 	z_arm64_fpu_restore(&_current->arch.saved_fp_context);
@@ -284,7 +287,7 @@ static void fpu_access_update(unsigned int exc_update_level)
 
 	if (arch_exception_depth() == exc_update_level) {
 		/* We're about to execute non-exception code */
-		if (_current_cpu->arch.fpu_owner == _current) {
+		if (atomic_ptr_get(&_current_cpu->arch.fpu_owner) == _current) {
 			/* turn on FPU access */
 			write_cpacr_el1(cpacr | CPACR_EL1_FPEN_NOTRAP);
 		} else {
@@ -299,6 +302,7 @@ static void fpu_access_update(unsigned int exc_update_level)
 		 */
 		write_cpacr_el1(cpacr & ~CPACR_EL1_FPEN_NOTRAP);
 	}
+	barrier_isync_fence_full();
 }
 
 /*
@@ -329,8 +333,8 @@ int arch_float_disable(struct k_thread *thread)
 #ifdef CONFIG_SMP
 		flush_owned_fpu(thread);
 #else
-		if (thread == _current_cpu->arch.fpu_owner) {
-			z_arm64_flush_local_fpu();
+		if (thread == atomic_ptr_get(&_current_cpu->arch.fpu_owner)) {
+			arch_flush_local_fpu();
 		}
 #endif
 

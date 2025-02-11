@@ -11,9 +11,6 @@ properties:
   reg:
     required: true
 
-  interrupts:
-    required: true
-
   bus-idle-timeout:
     type: int
     description: Bus idle timeout in nanoseconds

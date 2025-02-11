@@ -13,33 +13,97 @@ LOG_MODULE_REGISTER(net_virtual, CONFIG_NET_L2_VIRTUAL_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/virtual_mgmt.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "net_private.h"
+#include "net_stats.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
 
 static enum net_verdict virtual_recv(struct net_if *iface,
 				     struct net_pkt *pkt)
 {
-	ARG_UNUSED(iface);
-	ARG_UNUSED(pkt);
+	struct virtual_interface_context *ctx, *tmp;
+	const struct virtual_interface_api *api;
+	enum net_verdict verdict;
+	sys_slist_t *interfaces;
 
-	return NET_CONTINUE;
+	interfaces = &iface->config.virtual_interfaces;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(interfaces, ctx, tmp, node) {
+		if (ctx->virtual_iface == NULL) {
+			continue;
+		}
+
+		api = net_if_get_device(ctx->virtual_iface)->api;
+		if (!api || api->recv == NULL) {
+			continue;
+		}
+
+		if (!net_if_is_up(ctx->virtual_iface)) {
+			NET_DBG("Interface %d is down.",
+				net_if_get_by_iface(ctx->virtual_iface));
+			continue;
+		}
+
+		verdict = api->recv(ctx->virtual_iface, pkt);
+		if (verdict == NET_CONTINUE) {
+			continue;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+			size_t pkt_len;
+
+			pkt_len = net_pkt_get_len(pkt);
+
+			NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
+
+			net_stats_update_bytes_recv(ctx->virtual_iface,
+						    pkt_len);
+		}
+
+		if (verdict == NET_DROP) {
+			net_stats_update_processing_error(ctx->virtual_iface);
+		}
+
+		return verdict;
+	}
+
+	NET_DBG("No handler, dropping pkt %p len %zu", pkt, net_pkt_get_len(pkt));
+
+	return NET_DROP;
 }
 
 static int virtual_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct virtual_interface_api *api = net_if_get_device(iface)->api;
+	size_t pkt_len;
+	int ret;
 
 	if (!api) {
 		return -ENOENT;
 	}
 
+	if (!net_if_is_up(iface)) {
+		NET_DBG("Interface %d is down.",
+			net_if_get_by_iface(iface));
+		return -ENETDOWN;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+		pkt_len = net_pkt_get_len(pkt);
+	}
+
 	/* As we are just passing data through, the net_pkt is not freed here.
 	 */
+	ret = api->send(iface, pkt);
 
-	return api->send(iface, pkt);
+	if (IS_ENABLED(CONFIG_NET_STATISTICS) && ret == 0) {
+		NET_DBG("Sent pkt %p len %zu", pkt, pkt_len);
+		net_stats_update_bytes_sent(iface, pkt_len);
+	}
+
+	return ret;
 }
 
 static int virtual_enable(struct net_if *iface, bool state)
@@ -105,11 +169,9 @@ NET_L2_INIT(VIRTUAL_L2, virtual_recv, virtual_send, virtual_enable,
 
 static void random_linkaddr(uint8_t *linkaddr, size_t len)
 {
-	int i;
+	sys_rand_get(linkaddr, len);
 
-	for (i = 0; i < len; i++) {
-		linkaddr[i] = sys_rand32_get();
-	}
+	linkaddr[0] |= 0x02; /* force LAA bit */
 }
 
 int net_virtual_interface_attach(struct net_if *virtual_iface,
@@ -308,60 +370,6 @@ enum net_l2_flags net_virtual_set_flags(struct net_if *iface,
 	ctx->virtual_l2_flags = flags;
 
 	return old_flags;
-}
-
-enum net_verdict net_virtual_input(struct net_if *input_iface,
-				   struct net_addr *remote_addr,
-				   struct net_pkt *pkt)
-{
-	struct virtual_interface_context *ctx, *tmp;
-	const struct virtual_interface_api *virt;
-	struct net_pkt_cursor hdr_start;
-	enum net_verdict verdict;
-	sys_slist_t *interfaces;
-	uint8_t iptype;
-
-	net_pkt_cursor_backup(pkt, &hdr_start);
-
-	if (net_pkt_read_u8(pkt, &iptype)) {
-		return NET_DROP;
-	}
-
-	net_pkt_cursor_restore(pkt, &hdr_start);
-
-	switch (iptype & 0xf0) {
-	case 0x60:
-		net_pkt_set_family(pkt, AF_INET6);
-		break;
-	case 0x40:
-		net_pkt_set_family(pkt, AF_INET);
-		break;
-	default:
-		return NET_DROP;
-	}
-
-	interfaces = &input_iface->config.virtual_interfaces;
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(interfaces, ctx, tmp, node) {
-		if (ctx->virtual_iface == NULL) {
-			continue;
-		}
-
-		virt = net_if_get_device(ctx->virtual_iface)->api;
-		if (!virt || virt->input == NULL) {
-			continue;
-		}
-
-		verdict = virt->input(input_iface, ctx->virtual_iface,
-				      remote_addr, pkt);
-		if (verdict == NET_OK) {
-			continue;
-		}
-
-		return verdict;
-	}
-
-	return NET_DROP;
 }
 
 void net_virtual_init(struct net_if *iface)

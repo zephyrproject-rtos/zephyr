@@ -6,26 +6,25 @@
  */
 
 #include <tracing_user.h>
-#include <kernel_internal.h>
-#include <zephyr/kernel_structs.h>
-#include <ksched.h>
-
-static int nested_interrupts[CONFIG_MP_MAX_NUM_CPUS];
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 
 void __weak sys_trace_thread_create_user(struct k_thread *thread) {}
 void __weak sys_trace_thread_abort_user(struct k_thread *thread) {}
 void __weak sys_trace_thread_suspend_user(struct k_thread *thread) {}
 void __weak sys_trace_thread_resume_user(struct k_thread *thread) {}
 void __weak sys_trace_thread_name_set_user(struct k_thread *thread) {}
-void __weak sys_trace_thread_switched_in_user(struct k_thread *thread) {}
-void __weak sys_trace_thread_switched_out_user(struct k_thread *thread) {}
+void __weak sys_trace_thread_switched_in_user(void) {}
+void __weak sys_trace_thread_switched_out_user(void) {}
 void __weak sys_trace_thread_info_user(struct k_thread *thread) {}
 void __weak sys_trace_thread_sched_ready_user(struct k_thread *thread) {}
 void __weak sys_trace_thread_pend_user(struct k_thread *thread) {}
 void __weak sys_trace_thread_priority_set_user(struct k_thread *thread, int prio) {}
-void __weak sys_trace_isr_enter_user(int nested_interrupts) {}
-void __weak sys_trace_isr_exit_user(int nested_interrupts) {}
+void __weak sys_trace_isr_enter_user(void) {}
+void __weak sys_trace_isr_exit_user(void) {}
 void __weak sys_trace_idle_user(void) {}
+void __weak sys_trace_sys_init_enter_user(const struct init_entry *entry, int level) {}
+void __weak sys_trace_sys_init_exit_user(const struct init_entry *entry, int level, int result) {}
 
 void sys_trace_thread_create(struct k_thread *thread)
 {
@@ -54,30 +53,12 @@ void sys_trace_thread_name_set(struct k_thread *thread)
 
 void sys_trace_k_thread_switched_in(void)
 {
-/* FIXME: Limitation of the current x86 EFI cosnole implementation. */
-#if !defined(CONFIG_X86_EFI_CONSOLE) && !defined(CONFIG_UART_CONSOLE)
-
-	unsigned int key = irq_lock();
-
-	__ASSERT_NO_MSG(nested_interrupts[_current_cpu->id] == 0);
-	/* Can't use k_current_get as thread base and z_tls_current might be incorrect */
-	sys_trace_thread_switched_in_user(z_current_get());
-
-	irq_unlock(key);
-#endif
+	sys_trace_thread_switched_in_user();
 }
 
 void sys_trace_k_thread_switched_out(void)
 {
-#if !defined(CONFIG_X86_EFI_CONSOLE) && !defined(CONFIG_UART_CONSOLE)
-	unsigned int key = irq_lock();
-
-	__ASSERT_NO_MSG(nested_interrupts[_current_cpu->id] == 0);
-	/* Can't use k_current_get as thread base and z_tls_current might be incorrect */
-	sys_trace_thread_switched_out_user(z_current_get());
-
-	irq_unlock(key);
-#endif
+	sys_trace_thread_switched_out_user();
 }
 
 void sys_trace_thread_info(struct k_thread *thread)
@@ -102,27 +83,25 @@ void sys_trace_thread_pend(struct k_thread *thread)
 
 void sys_trace_isr_enter(void)
 {
-	unsigned int key = irq_lock();
-	_cpu_t *curr_cpu = _current_cpu;
-
-	sys_trace_isr_enter_user(nested_interrupts[curr_cpu->id]);
-	nested_interrupts[curr_cpu->id]++;
-
-	irq_unlock(key);
+	sys_trace_isr_enter_user();
 }
 
 void sys_trace_isr_exit(void)
 {
-	unsigned int key = irq_lock();
-	_cpu_t *curr_cpu = _current_cpu;
-
-	nested_interrupts[curr_cpu->id]--;
-	sys_trace_isr_exit_user(nested_interrupts[curr_cpu->id]);
-
-	irq_unlock(key);
+	sys_trace_isr_exit_user();
 }
 
 void sys_trace_idle(void)
 {
 	sys_trace_idle_user();
+}
+
+void sys_trace_sys_init_enter(const struct init_entry *entry, int level)
+{
+	sys_trace_sys_init_enter_user(entry, level);
+}
+
+void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result)
+{
+	sys_trace_sys_init_exit_user(entry, level, result);
 }

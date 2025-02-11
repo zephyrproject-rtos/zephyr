@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
 
-void main(void)
+int main(void)
 {
+	return 0;
 }

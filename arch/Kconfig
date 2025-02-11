@@ -8,8 +8,10 @@
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 
-# Note: $ARCH might be a glob pattern
-source "$(ARCH_DIR)/$(ARCH)/Kconfig"
+source "$(ARCH_DIR)/Kconfig.$(HWM_SCHEME)"
+
+# ToDo: Generate a Kconfig.arch for loading of additional arch in HWMv2.
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.arch"
 
 # Architecture symbols
 #
@@ -19,9 +21,10 @@ source "$(ARCH_DIR)/$(ARCH)/Kconfig"
 config ARC
 	bool
 	select ARCH_IS_SET
-	select HAS_DTS
 	imply XIP
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_SUPPORTS_ROM_START
+	select ARCH_HAS_DIRECTED_IPIS
 	help
 	  ARC architecture
 
@@ -29,11 +32,11 @@ config ARM
 	bool
 	select ARCH_IS_SET
 	select ARCH_SUPPORTS_COREDUMP if CPU_CORTEX_M
-	select HAS_DTS
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
+	select BARRIER_OPERATIONS_ARCH
 	help
 	  ARM architecture
 
@@ -41,12 +44,14 @@ config ARM64
 	bool
 	select ARCH_IS_SET
 	select 64BIT
-	select HAS_DTS
+	select ARCH_SUPPORTS_COREDUMP
 	select HAS_ARM_SMCCC
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select BARRIER_OPERATIONS_ARCH
+	select ARCH_HAS_DIRECTED_IPIS
 	help
 	  ARM64 (AArch64) architecture
 
@@ -54,14 +59,12 @@ config MIPS
 	bool
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_C
-	select HAS_DTS
 	help
 	  MIPS architecture
 
 config SPARC
 	bool
 	select ARCH_IS_SET
-	select HAS_DTS
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select BIG_ENDIAN
@@ -76,19 +79,21 @@ config X86
 	bool
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
-	select HAS_DTS
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_ROM_START if !X86_64
 	select CPU_HAS_MMU
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE && !X86_COMMON_PAGE_TABLE
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
 	select ARCH_HAS_GDBSTUB if !X86_64
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
-	select ARCH_HAS_DEMAND_PAGING
+	select ARCH_HAS_DEMAND_PAGING if !X86_64
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select NEED_LIBC_MEM_PARTITION if USERSPACE && TIMING_FUNCTIONS \
 					  && !BOARD_HAS_TIMING_FUNCTIONS \
 					  && !SOC_HAS_TIMING_FUNCTIONS
+	select ARCH_HAS_STACK_CANARIES_TLS
+	select ARCH_SUPPORTS_MEM_MAPPED_STACKS if X86_MMU && !DEMAND_PAGING
 	help
 	  x86 architecture
 
@@ -96,7 +101,6 @@ config NIOS2
 	bool
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_C
-	select HAS_DTS
 	imply XIP
 	select ARCH_HAS_TIMING_FUNCTIONS
 	help
@@ -105,14 +109,17 @@ config NIOS2
 config RISCV
 	bool
 	select ARCH_IS_SET
-	select HAS_DTS
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_STACKWALK
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
+	select ARCH_HAS_DIRECTED_IPIS
+	select BARRIER_OPERATIONS_BUILTIN
 	imply XIP
 	help
 	  RISCV architecture
@@ -120,26 +127,35 @@ config RISCV
 config XTENSA
 	bool
 	select ARCH_IS_SET
-	select HAS_DTS
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
-	imply ATOMIC_OPERATIONS_ARCH
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select ARCH_HAS_DIRECTED_IPIS
+	select THREAD_STACK_INFO
 	help
 	  Xtensa architecture
 
 config ARCH_POSIX
 	bool
 	select ARCH_IS_SET
-	select HAS_DTS
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select ARCH_HAS_THREAD_ABORT
-	select NATIVE_APPLICATION
+	select NATIVE_BUILD
 	select HAS_COVERAGE_SUPPORT
+	select BARRIER_OPERATIONS_BUILTIN
+	# POSIX arch based targets get their memory cleared on entry by the host OS
+	select SKIP_BSS_CLEAR
+	# Override the C standard used for compilation to C 2011
+	# This is due to some tests using _Static_assert which is a 2011 feature, but
+	# otherwise relying on compilers supporting it also when set to C99.
+	# This was in general ok, but with some host compilers and C library versions
+	# it led to problems. So we override it to 2011 for the native targets.
+	select REQUIRES_STD_C11
 	help
 	  POSIX (native) architecture
 
@@ -199,11 +215,11 @@ config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
-	  The SRAM base address. The default value comes from from
+	  The SRAM base address. The default value comes from
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
-if ARC || ARM || ARM64 || NIOS2 || X86
+if ARC || ARM || ARM64 || NIOS2 || X86 || RISCV
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -211,6 +227,7 @@ DT_CHOSEN_Z_FLASH := zephyr,flash
 config FLASH_SIZE
 	int "Flash Size in kB"
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && (ARM ||ARM64)) || !ARM
+	default 0 if !XIP
 	help
 	  This option specifies the size of the flash in kB.  It is normally set by
 	  the board's defconfig file and the user should generally avoid modifying
@@ -219,12 +236,13 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && (ARM || ARM64)) || !ARM
+	default 0 if !XIP
 	help
 	  This option specifies the base address of the flash on the board. It is
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || NIOS2 || X86
+endif # ARM || ARM64 || ARC || NIOS2 || X86 || RISCV
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -289,6 +307,7 @@ config USERSPACE
 
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
+	default 2048 if EMUL
 	default 1024
 	depends on ARCH_HAS_USERSPACE
 	help
@@ -387,7 +406,45 @@ config NOCACHE_MEMORY
 	  transfers when cache coherence issues are not optimal or can not
 	  be solved using cache maintenance operations.
 
+config FRAME_POINTER
+	bool "Compile the kernel with frame pointers"
+	select OVERRIDE_FRAME_POINTER_DEFAULT
+	help
+	  Select Y here to gain precise stack traces at the expense of slightly
+	  increased size and decreased speed.
+
+config ARCH_STACKWALK_MAX_FRAMES
+	int "Max depth for stack walk function"
+	default 8
+	depends on ARCH_HAS_STACKWALK
+	help
+	  Depending on implementation, this can place a hard limit on the depths of the stack
+	  for the stack walk function to examine.
+
 menu "Interrupt Configuration"
+
+config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	bool
+	default y
+	# Userspace is currently not supported
+	depends on !USERSPACE
+	# List of currently supported architectures
+	depends on ARM || ARM64
+	# List of currently supported toolchains
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb"
+
+config ISR_TABLES_LOCAL_DECLARATION
+	bool "ISR tables created locally and placed by linker [EXPERIMENTAL]"
+	depends on ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	select EXPERIMENTAL
+	help
+	  Enable new scheme of interrupt tables generation.
+	  This is totally different generator that would create tables entries locally
+	  where the IRQ_CONNECT macro is called and then use the linker script to position it
+	  in the right place in memory.
+	  The most important advantage of such approach is that the generated interrupt tables
+	  are LTO compatible.
+	  The drawback is that the support on the architecture port is required.
 
 config DYNAMIC_INTERRUPTS
 	bool "Installation of IRQs at runtime"
@@ -395,6 +452,23 @@ config DYNAMIC_INTERRUPTS
 	  Enable installation of interrupts at runtime, which will move some
 	  interrupt-related data structures to RAM instead of ROM, and
 	  on some architectures increase code size.
+
+config SHARED_INTERRUPTS
+	bool "Set this to enable support for shared interrupts"
+	depends on GEN_SW_ISR_TABLE
+	select EXPERIMENTAL
+	help
+	  Set this to enable support for shared interrupts. Use this with
+	  caution as enabling this will increase the image size by a
+	  non-negligible amount.
+
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	int "Maximum number of clients allowed per shared interrupt"
+	default 2
+	depends on SHARED_INTERRUPTS
+	help
+	  This option controls the maximum number of clients allowed
+	  per shared interrupt. Set this according to your needs.
 
 config GEN_ISR_TABLES
 	bool "Use generated IRQ tables"
@@ -456,13 +530,14 @@ config GEN_SW_ISR_TABLE
 
 config ARCH_SW_ISR_TABLE_ALIGN
 	int "Alignment size of a software ISR table"
+	default 64 if RISCV_HAS_CLIC
 	default 4
 	depends on GEN_SW_ISR_TABLE
 	help
 	  This option controls alignment size of generated
 	  _sw_isr_table.  Some architecture needs a software ISR table
 	  to be aligned to architecture specific size.  The default
-	  size is 0 for no alignment.
+	  size is 4.
 
 config GEN_IRQ_START_VECTOR
 	int
@@ -492,6 +567,16 @@ config IRQ_OFFLOAD_NESTED
 	  legally be called in interrupt context to cause a
 	  synchronous nested interrupt on the current CPU.  Not all
 	  hardware is capable.
+
+config EXCEPTION_DEBUG
+	bool "Unhandled exception debugging"
+	default y
+	depends on PRINTK || LOG
+	help
+	  Install handlers for various CPU exception/trap vectors to
+	  make debugging them easier, at a small expense in code size.
+	  This prints out the specific exception vector and any associated
+	  error codes.
 
 config EXTRA_EXCEPTION_INFO
 	bool "Collect extra exception info"
@@ -572,11 +657,19 @@ config ARCH_SUPPORTS_COREDUMP
 config ARCH_SUPPORTS_ARCH_HW_INIT
 	bool
 
+config ARCH_SUPPORTS_ROM_START
+	bool
+
 config ARCH_HAS_EXTRA_EXCEPTION_INFO
 	bool
 
 config ARCH_HAS_GDBSTUB
 	bool
+
+config ARCH_HAS_STACKWALK
+	bool
+	help
+	  This is selected when the architecture implemented the arch_stack_walk() API.
 
 config ARCH_HAS_COHERENCE
 	bool
@@ -592,6 +685,14 @@ config ARCH_HAS_SUSPEND_TO_RAM
 	bool
 	help
 	  When selected, the architecture supports suspend-to-RAM (S2RAM).
+
+config ARCH_HAS_STACK_CANARIES_TLS
+	bool
+
+config ARCH_SUPPORTS_MEM_MAPPED_STACKS
+	bool
+	help
+	  Select when the architecture supports memory mapped stacks.
 
 #
 # Other architecture related options
@@ -629,6 +730,11 @@ config CPU_HAS_FPU
 	  This option is enabled when the CPU has hardware floating point
 	  unit.
 
+config CPU_HAS_DSP
+	bool
+	help
+	  This option is enabled when the CPU has hardware DSP unit.
+
 config CPU_HAS_FPU_DOUBLE_PRECISION
 	bool
 	select CPU_HAS_FPU
@@ -661,10 +767,24 @@ config ARCH_HAS_RESERVED_PAGE_FRAMES
 	  memory mappings. The architecture will need to implement
 	  arch_reserved_pages_update().
 
+config ARCH_HAS_DIRECTED_IPIS
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  it has an implementation for arch_sched_directed_ipi() which allows
+	  for IPIs to be directed to specific CPUs.
+
 config CPU_HAS_DCACHE
 	bool
 	help
 	  This hidden configuration should be selected when the CPU has a d-cache.
+
+config CPU_CACHE_INCOHERENT
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has
+	  incoherent cache. This applies to intra-CPU multiprocessing
+	  incoherence and makes only sense when MP_NUM_CPUS > 1.
 
 config CPU_HAS_ICACHE
 	bool
@@ -689,7 +809,7 @@ config ARCH_MAPS_ALL_RAM
 	  virtual addresses elsewhere, this is limited to only management of the
 	  virtual address space. The kernel's page frame ontology will not consider
 	  this mapping at all; non-kernel pages will be considered free (unless marked
-	  as reserved) and Z_PAGE_FRAME_MAPPED will not be set.
+	  as reserved) and K_MEM_PAGE_FRAME_MAPPED will not be set.
 
 config DCLS
 	bool "Processor is configured in DCLS mode"
@@ -793,6 +913,17 @@ config CODE_DATA_RELOCATION
 	  the target regions should be specified in CMakeLists.txt using
 	  zephyr_code_relocate().
 
+menu "DSP Options"
+
+config DSP_SHARING
+	bool "DSP register sharing"
+	depends on CPU_HAS_DSP
+	help
+	  This option enables preservation of the hardware DSP registers
+	  across context switches to allow multiple threads to perform concurrent
+	  DSP operations.
+endmenu
+
 menu "Floating Point Options"
 
 config FPU
@@ -849,6 +980,17 @@ config ICACHE
 	default y
 	help
 	  This option enables the support for the instruction cache (i-cache).
+
+config CACHE_DOUBLEMAP
+	bool "Cache double-mapping support"
+	depends on CPU_CACHE_INCOHERENT
+	default y
+	help
+	  Double-mapping behavior where a pointer can be cheaply converted to
+	  point to the same cached/uncached memory at different locations.
+
+	  This applies to intra-CPU multiprocessing incoherence and makes only
+	  sense when MP_NUM_CPUS > 1.
 
 config CACHE_MANAGEMENT
 	bool "Cache management features"
@@ -926,29 +1068,15 @@ config ARCH
 	help
 	  System architecture string.
 
-config SOC
-	string
-	help
-	  SoC name which can be found under soc/<arch>/<soc name>.
-	  This option holds the directory name used by the build system to locate
-	  the correct linker and header files for the SoC.
-
-config SOC_SERIES
-	string
-	help
-	  SoC series name which can be found under soc/<arch>/<family>/<series>.
-	  This option holds the directory name used by the build system to locate
-	  the correct linker and header files.
-
-config SOC_FAMILY
-	string
-	help
-	  SoC family name which can be found under soc/<arch>/<family>.
-	  This option holds the directory name used by the build system to locate
-	  the correct linker and header files.
-
 config TOOLCHAIN_HAS_BUILTIN_FFS
 	bool
 	default y if !(64BIT && RISCV)
 	help
 	  Hidden option to signal that toolchain has __builtin_ffs*().
+
+config ARCH_CPU_IDLE_CUSTOM
+	bool "Custom arch_cpu_idle implementation"
+	default n
+	help
+	  This options allows applications to override the default arch idle implementation with
+	  a custom one.

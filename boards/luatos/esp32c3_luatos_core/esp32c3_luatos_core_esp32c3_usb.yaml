@@ -1,0 +1,22 @@
+identifier: esp32c3_luatos_core/esp32c3/usb
+name: ESP32C3 LuatOS Core USB
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - dma
+  - pwm
+  - spi
+  - counter
+  - entropy
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: luatos

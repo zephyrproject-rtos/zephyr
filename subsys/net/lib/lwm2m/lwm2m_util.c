@@ -361,7 +361,7 @@ int lwm2m_atof(const char *input, double *out)
 		return 0;
 	}
 
-	while (*(++pos) && base > 1 && isdigit((unsigned char)*pos)) {
+	while (*(++pos) && base > 1 && isdigit((unsigned char)*pos) != 0) {
 		val2 = val2 * 10 + (*pos - '0');
 		base /= 10;
 	}
@@ -424,63 +424,13 @@ int lwm2m_ftoa(double *input, char *out, size_t outlen, int8_t dec_limit)
 			(val1 == 0 && val2 < 0) ? "-" : "", (long long)val1, buf);
 }
 
-int lwm2m_path_to_string(char *buf, size_t buf_size, struct lwm2m_obj_path *input, int level_max)
-{
-	size_t fpl = 0; /* Length of the formed path */
-	int level;
-	int w;
-
-	if (!buf || buf_size < sizeof("/") || !input) {
-		return -EINVAL;
-	}
-
-	memset(buf, '\0', buf_size);
-
-	level = MIN(input->level, level_max);
-
-	/* Write path element at a time and leave space for the terminating NULL */
-	for (int idx = LWM2M_PATH_LEVEL_NONE; idx <= level; idx++) {
-		switch (idx) {
-		case LWM2M_PATH_LEVEL_NONE:
-			w = snprintk(&(buf[fpl]), buf_size - fpl, "/");
-			break;
-		case LWM2M_PATH_LEVEL_OBJECT:
-			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "/", input->obj_id);
-			break;
-		case LWM2M_PATH_LEVEL_OBJECT_INST:
-			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "/",
-				     input->obj_inst_id);
-			break;
-		case LWM2M_PATH_LEVEL_RESOURCE:
-			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "", input->res_id);
-			break;
-		case LWM2M_PATH_LEVEL_RESOURCE_INST:
-			w = snprintk(&(buf[fpl]), buf_size - fpl, "/%" PRIu16 "",
-				     input->res_inst_id);
-			break;
-		default:
-			__ASSERT_NO_MSG(false);
-			return -EINVAL;
-		}
-
-		if (w < 0 || w >= buf_size - fpl) {
-			return -ENOBUFS;
-		}
-
-		/* Next path element, overwrites terminating NULL */
-		fpl += w;
-	}
-
-	return fpl;
-}
-
 uint16_t lwm2m_atou16(const uint8_t *buf, uint16_t buflen, uint16_t *len)
 {
 	uint16_t val = 0U;
 	uint16_t pos = 0U;
 
 	/* we should get a value first - consume all numbers */
-	while (pos < buflen && isdigit(buf[pos])) {
+	while (pos < buflen && isdigit(buf[pos]) != 0) {
 		val = val * 10U + (buf[pos] - '0');
 		pos++;
 	}
@@ -500,7 +450,7 @@ int lwm2m_string_to_path(const char *pathstr, struct lwm2m_obj_path *path,
 	for (i = 0; i <= end_index; i++) {
 		/* search for first numeric */
 		if (tokstart == -1) {
-			if (!isdigit((unsigned char)pathstr[i])) {
+			if (isdigit((unsigned char)pathstr[i]) == 0) {
 				continue;
 			}
 
@@ -552,7 +502,7 @@ int lwm2m_string_to_path(const char *pathstr, struct lwm2m_obj_path *path,
 	return 0;
 }
 
-bool lwm2m_obj_path_equal(struct lwm2m_obj_path *a, struct lwm2m_obj_path *b)
+bool lwm2m_obj_path_equal(const struct lwm2m_obj_path *a, const struct lwm2m_obj_path *b)
 {
 	uint8_t level = a->level;
 
@@ -577,4 +527,52 @@ bool lwm2m_obj_path_equal(struct lwm2m_obj_path *a, struct lwm2m_obj_path *b)
 	}
 
 	return true;
+}
+
+/* for debugging: to print IP addresses */
+char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
+{
+	static char buf[NET_IPV6_ADDR_LEN];
+
+	if (addr->sa_family == AF_INET6) {
+		return net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr, buf, sizeof(buf));
+	}
+
+	if (addr->sa_family == AF_INET) {
+		return net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr, buf, sizeof(buf));
+	}
+
+	return "::";
+}
+
+static uint8_t to_hex_digit(uint8_t digit)
+{
+	if (digit >= 10U) {
+		return digit - 10U + 'a';
+	}
+
+	return digit + '0';
+}
+
+char *sprint_token(const uint8_t *token, uint8_t tkl)
+{
+	static char buf[32];
+	char *ptr = buf;
+
+	if (token && tkl != 0) {
+		int i;
+
+		tkl = MIN(tkl, sizeof(buf) / 2 - 1);
+
+		for (i = 0; i < tkl; i++) {
+			*ptr++ = to_hex_digit(token[i] >> 4);
+			*ptr++ = to_hex_digit(token[i] & 0x0F);
+		}
+
+		*ptr = '\0';
+	} else {
+		strcpy(buf, "[no-token]");
+	}
+
+	return buf;
 }

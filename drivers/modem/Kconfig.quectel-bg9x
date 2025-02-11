@@ -54,6 +54,14 @@ config MODEM_QUECTEL_BG9X_PASSWORD
 	  context.  This value is specific to the network provider and may
 	  need to be changed.
 
+config MODEM_QUECTEL_BG9X_UNSOL_RDY
+	string "Unsolicited response string expected from the modem"
+	default "RDY"
+	help
+	  This string is used to determine when modem powered and ready
+	  to accept AT commands. If this value is not matching the modem
+	  response, the init will fail with timeout.
+
 config MODEM_QUECTEL_BG9X_INIT_PRIORITY
 	int "quectel BG9X driver init priority"
 	default 80

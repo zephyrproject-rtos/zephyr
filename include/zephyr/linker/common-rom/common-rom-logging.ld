@@ -1,19 +1,18 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-	SECTION_DATA_PROLOGUE(log_strings_sections,,)
+#include <zephyr/linker/iterable_sections.h>
+
+#if defined(CONFIG_LOG_FMT_SECTION_STRIP) && defined(DEVNULL_REGION)
+	SECTION_PROLOGUE(log_strings,(COPY),SUBALIGN(Z_LINK_ITERABLE_SUBALIGN))
 	{
-		__log_strings_start = .;
-		KEEP(*(SORT(.log_strings*)));
-		__log_strings_end = .;
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+		Z_LINK_ITERABLE(log_strings);
+	} GROUP_ROM_LINK_IN(DEVNULL_REGION, DEVNULL_REGION)
+#else
+	ITERABLE_SECTION_ROM(log_strings, Z_LINK_ITERABLE_SUBALIGN)
+#endif
 
-	SECTION_DATA_PROLOGUE(log_const_sections,,)
-	{
-		__log_const_start = .;
-		KEEP(*(SORT(.log_const_*)));
-		__log_const_end = .;
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_ROM(log_const, Z_LINK_ITERABLE_SUBALIGN)
 
-	ITERABLE_SECTION_ROM(log_backend, 4)
+	ITERABLE_SECTION_ROM(log_backend, Z_LINK_ITERABLE_SUBALIGN)
 
-	ITERABLE_SECTION_ROM(log_link, 4)
+	ITERABLE_SECTION_ROM(log_link, Z_LINK_ITERABLE_SUBALIGN)

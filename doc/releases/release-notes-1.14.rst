@@ -858,11 +858,11 @@ Networking
 * Added support for SOCKS5 proxy in MQTT client.
 * Added support for IPSO Timer object in LWM2M.
 * Added support for receiving gratuitous ARP request.
-* Added :ref:`sample application <google-iot-mqtt-sample>` for Google IoT Cloud.
+* Added sample application for Google IoT Cloud.
 * :ref:`Network interface <net_if_interface>` numbering starts now from 1 for
   POSIX compatibility.
 * :ref:`OpenThread <thread_protocol_interface>` enhancements.
-* :ref:`zperf <zperf-sample>` sample application fixes.
+* :zephyr:code-sample:`zperf <zperf>` sample application fixes.
 * :ref:`LLDP <lldp_interface>` (Link Layer Discovery Protocol) enhancements.
 * ARP cache update fix.
 * gPTP link delay calculation fixes.
@@ -2067,7 +2067,7 @@ release:
 * :github:`10345` - The OpenAMP remote build is for wrong board
 * :github:`10344` - SPI Chip Select usage is not unambiguous
 * :github:`10329` - SystemView overflow event
-* :github:`10320` - arm: mpu: mpu_config and and mpu_regions to be declared/defined as const
+* :github:`10320` - arm: mpu: mpu_config and mpu_regions to be declared/defined as const
 * :github:`10318` - It is not documented what YAML bindings do
 * :github:`10316` - net: sockets: Close doesn't unblock recv
 * :github:`10313` - net: sockets: Packets are leaked on TCP abort connection

@@ -123,7 +123,7 @@ struct json_obj_struct {
 	bool val_bool;
 };
 
-/* Decode description structure for parsing LwM2m JSON Arrary object*/
+/* Decode description structure for parsing LwM2m JSON Array object*/
 static const struct json_obj_descr json_obj_descr[] = {
 	JSON_OBJ_DESCR_PRIM_NAMED(struct json_obj_struct, "n",
 				  name, JSON_TOK_STRING),
@@ -662,7 +662,7 @@ static int read_int(struct lwm2m_input_context *in, int64_t *value,
 		c = *(buf + i);
 		if (c == '-' && accept_sign && i == 0) {
 			neg = true;
-		} else if (isdigit(c)) {
+		} else if (isdigit(c) != 0) {
 			*value = *value * 10 + (c - '0');
 		} else {
 			/* anything else stop reading */
@@ -757,7 +757,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 		tmp = *(json_buf + len);
 
 		if ((tmp == '-' && i == 0) || (tmp == '.' && !has_dot) ||
-		    isdigit(tmp)) {
+		    isdigit(tmp) != 0) {
 			len++;
 
 			/* Copy only if it fits into provided buffer - we won't

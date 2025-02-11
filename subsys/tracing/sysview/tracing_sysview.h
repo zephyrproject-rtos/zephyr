@@ -32,7 +32,7 @@ void sys_trace_thread_info(struct k_thread *thread);
 	do {                                                                                       \
 		SEGGER_SYSVIEW_OnTaskCreate((uint32_t)(uintptr_t)new_thread);                      \
 		sys_trace_thread_info(new_thread);                                                 \
-	} while (0)
+	} while (false)
 
 #define sys_port_trace_k_thread_user_mode_enter()                                                  \
 	SEGGER_SYSVIEW_RecordVoid(TID_THREAD_USERMODE_ENTER)
@@ -78,6 +78,12 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_thread_abort(thread)                                                      \
 	SEGGER_SYSVIEW_RecordU32(TID_THREAD_ABORT, (uint32_t)(uintptr_t)thread)
 
+#define sys_port_trace_k_thread_abort_enter(thread)                                                \
+	SEGGER_SYSVIEW_RecordU32(TID_THREAD_ABORT, (uint32_t)(uintptr_t)thread)
+
+#define sys_port_trace_k_thread_abort_exit(thread)                                                 \
+	SEGGER_SYSVIEW_RecordEndCall(TID_THREAD_ABORT)
+
 #define sys_port_trace_k_thread_suspend_enter(thread)                                              \
 	SEGGER_SYSVIEW_RecordU32(TID_THREAD_SUSPEND, (uint32_t)(uintptr_t)thread)
 
@@ -96,7 +102,7 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_thread_name_set(thread, ret) do { \
 		SEGGER_SYSVIEW_RecordU32(TID_THREAD_NAME_SET, (uint32_t)(uintptr_t)thread); \
 		sys_trace_thread_info(thread);	\
-	} while (0)
+	} while (false)
 
 #define sys_port_trace_k_thread_switched_out() sys_trace_k_thread_switched_out()
 
@@ -530,8 +536,6 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_pipe_get_enter(pipe, timeout)
 #define sys_port_trace_k_pipe_get_blocking(pipe, timeout)
 #define sys_port_trace_k_pipe_get_exit(pipe, timeout, ret)
-#define sys_port_trace_k_pipe_block_put_enter(pipe, sem)
-#define sys_port_trace_k_pipe_block_put_exit(pipe, sem)
 
 #define sys_port_trace_k_event_init(event)
 #define sys_port_trace_k_event_post_enter(event, events, events_mask)
@@ -562,6 +566,14 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_heap_free(heap)                                                           \
 	SEGGER_SYSVIEW_RecordU32(TID_HEAP_FREE, (uint32_t)(uintptr_t)heap)
 
+#define sys_port_trace_k_heap_realloc_enter(heap, ptr, bytes, timeout)                             \
+	SEGGER_SYSVIEW_RecordU32x4(TID_HEAP_REALLOC, (uint32_t)(uintptr_t)heap,                    \
+				   (uint32_t)(uintptr_t)ptr, (uint32_t)bytes,                      \
+				   (uint32_t)timeout.ticks)
+
+#define sys_port_trace_k_heap_realloc_exit(heap, ptr, bytes, timeout, ret)                         \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_HEAP_REALLOC, (uint32_t)ret)
+
 #define sys_port_trace_k_heap_sys_k_aligned_alloc_enter(heap)
 #define sys_port_trace_k_heap_sys_k_aligned_alloc_exit(heap, ret)
 #define sys_port_trace_k_heap_sys_k_malloc_enter(heap)
@@ -570,6 +582,8 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_heap_sys_k_free_exit(heap, heap_ref)
 #define sys_port_trace_k_heap_sys_k_calloc_enter(heap)
 #define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)
+#define sys_port_trace_k_heap_sys_k_realloc_enter(heap, ptr)
+#define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)
 
 #define sys_port_trace_k_mem_slab_init(slab, rc)                                                   \
 	SEGGER_SYSVIEW_RecordU32(TID_MSLAB_INIT, (uint32_t)(uintptr_t)slab)
@@ -606,10 +620,10 @@ void sys_trace_thread_info(struct k_thread *thread);
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_TIMER_STATUS_SYNC, (uint32_t)result)
 
 #define sys_port_trace_syscall_enter(id, name, ...)	\
-	SEGGER_SYSVIEW_RecordU32(TID_SYSCALL, (uint32_t)id)
+	SEGGER_SYSVIEW_RecordString(TID_SYSCALL, (const char *)#name)
 
 #define sys_port_trace_syscall_exit(id, name, ...)	\
-	SEGGER_SYSVIEW_RecordEndCallU32(TID_SYSCALL, (uint32_t)id)
+	SEGGER_SYSVIEW_RecordEndCall(TID_SYSCALL)
 
 void sys_trace_idle(void);
 
@@ -642,10 +656,10 @@ void sys_trace_k_thread_info(struct k_thread *thread);
 #define sys_port_trace_pm_device_runtime_put_exit(dev, ret)		       \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_PUT,	       \
 					(uint32_t)ret)
-#define sys_port_trace_pm_device_runtime_put_async_enter(dev)		       \
-	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_RUNTIME_PUT_ASYNC,	       \
-				 (uint32_t)(uintptr_t)dev)
-#define sys_port_trace_pm_device_runtime_put_async_exit(dev, ret)	       \
+#define sys_port_trace_pm_device_runtime_put_async_enter(dev, delay)	       \
+	SEGGER_SYSVIEW_RecordU32x2(TID_PM_DEVICE_RUNTIME_PUT_ASYNC,	       \
+			 (uint32_t)(uintptr_t)dev, (uint32_t)delay.ticks)
+#define sys_port_trace_pm_device_runtime_put_async_exit(dev, delay, ret)       \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_PUT_ASYNC,       \
 					(uint32_t)ret)
 #define sys_port_trace_pm_device_runtime_enable_enter(dev)		       \
@@ -660,6 +674,54 @@ void sys_trace_k_thread_info(struct k_thread *thread);
 #define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)		       \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_DISABLE,	       \
 					(uint32_t)ret)
+
+#define sys_trace_sys_init_enter(...)
+#define sys_trace_sys_init_exit(...)
+
+#define sys_port_trace_socket_init(sock, family, type, proto)
+#define sys_port_trace_socket_close_enter(sock)
+#define sys_port_trace_socket_close_exit(sock, ret)
+#define sys_port_trace_socket_shutdown_enter(sock, how)
+#define sys_port_trace_socket_shutdown_exit(sock, ret)
+#define sys_port_trace_socket_bind_enter(sock, addr, addrlen)
+#define sys_port_trace_socket_bind_exit(sock, ret)
+#define sys_port_trace_socket_connect_enter(sock, addr, addrlen)
+#define sys_port_trace_socket_connect_exit(sock, ret)
+#define sys_port_trace_socket_listen_enter(sock, backlog)
+#define sys_port_trace_socket_listen_exit(sock, ret)
+#define sys_port_trace_socket_accept_enter(sock)
+#define sys_port_trace_socket_accept_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_sendto_enter(sock, len, flags, dest_addr, addrlen)
+#define sys_port_trace_socket_sendto_exit(sock, ret)
+#define sys_port_trace_socket_sendmsg_enter(sock, msg, flags)
+#define sys_port_trace_socket_sendmsg_exit(sock, ret)
+#define sys_port_trace_socket_recvfrom_enter(sock, max_len, flags, addr, addrlen)
+#define sys_port_trace_socket_recvfrom_exit(sock, src_addr, addrlen, ret)
+#define sys_port_trace_socket_recvmsg_enter(sock, msg, flags)
+#define sys_port_trace_socket_recvmsg_exit(sock, msg, ret)
+#define sys_port_trace_socket_fcntl_enter(sock, cmd, flags)
+#define sys_port_trace_socket_fcntl_exit(sock, ret)
+#define sys_port_trace_socket_ioctl_enter(sock, req)
+#define sys_port_trace_socket_ioctl_exit(sock, ret)
+#define sys_port_trace_socket_poll_enter(fds, nfds, timeout)
+#define sys_port_trace_socket_poll_exit(fds, nfds, ret)
+#define sys_port_trace_socket_getsockopt_enter(sock, level, optname)
+#define sys_port_trace_socket_getsockopt_exit(sock, level, optname, optval, optlen, ret)
+#define sys_port_trace_socket_setsockopt_enter(sock, level, optname, optval, optlen)
+#define sys_port_trace_socket_setsockopt_exit(sock, ret)
+#define sys_port_trace_socket_getpeername_enter(sock)
+#define sys_port_trace_socket_getpeername_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_getsockname_enter(sock)
+#define sys_port_trace_socket_getsockname_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_socketpair_enter(family, type, proto, sv)
+#define sys_port_trace_socket_socketpair_exit(sockA, sockB, ret)
+
+#define sys_port_trace_net_recv_data_enter(iface, pkt)
+#define sys_port_trace_net_recv_data_exit(iface, pkt, ret)
+#define sys_port_trace_net_send_data_enter(pkt)
+#define sys_port_trace_net_send_data_exit(pkt, ret)
+#define sys_port_trace_net_rx_time(pkt, end_time)
+#define sys_port_trace_net_tx_time(pkt, end_time)
 
 #ifdef __cplusplus
 }

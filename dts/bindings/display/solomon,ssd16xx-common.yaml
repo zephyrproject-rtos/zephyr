@@ -1,0 +1,85 @@
+# Copyright (c) 2018, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: SSD16XX EPD display controller
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  softstart:
+    type: uint8-array
+    description: Booster soft start values
+
+  busy-gpios:
+    type: phandle-array
+    required: true
+    description: BUSY pin.
+
+      The BUSY pin of SSD16XX is active high.
+      If connected directly the MCU pin should be configured
+      as active high.
+
+  tssv:
+    type: int
+    description: Temperature Sensor Selection Value
+
+      Display controller can have integrated temperature sensor or
+      an external temperature sensor is connected to the controller.
+      The value selects which sensor should be used.
+
+  rotation:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 90
+      - 180
+      - 270
+    description:
+      Display rotation (CW) in degrees.
+      If not defined, rotation is off by default.
+
+child-binding:
+  description: |
+    Child nodes describe refresh profiles. Each refresh profile
+    specifies a set of voltages used to drive the refresh
+    cycle. Refresh profiles are optional and are used to override
+    defaults loaded from the controllers OTP memory.
+
+    Partial refresh will be disabled unless a partial refresh profile
+    has been specified. That profile may be empty to use the defaults
+    loaded from OTP if supported by the device.
+
+    The driver typically looks for the following child nodes:
+
+      - 'full' - Normal / full refresh.
+      - 'partial' - Partial refresh.
+
+  properties:
+    lut:
+      type: uint8-array
+      description: LUT associated with this profile.
+
+    gdv:
+      type: uint8-array
+      description: Gate driving voltage values
+
+    sdv:
+      type: uint8-array
+      description: Source driving voltage values
+
+    vcom:
+      type: int
+      description: VCOM voltage
+
+    border-waveform:
+      type: int
+      description: Border waveform
+
+    dummy-line:
+      type: int
+      description: Dummy line period override.
+
+    gate-line-width:
+      type: int
+      description: Gate line width override.

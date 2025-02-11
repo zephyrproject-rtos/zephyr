@@ -1,0 +1,11 @@
+board:
+  name: mimxrt1050_evk
+  vendor: nxp
+  socs:
+    - name: mimxrt1052
+  revision:
+    format: "custom"
+    default: "hyperflash"
+    revisions:
+      - name: "hyperflash"
+      - name: "qspi"

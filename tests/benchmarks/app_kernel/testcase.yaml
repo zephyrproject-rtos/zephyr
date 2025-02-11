@@ -1,30 +1,48 @@
 common:
-  tags: benchmark
+  tags:
+    - benchmark
+    - kernel
   timeout: 420
+  min_flash: 34
+  min_ram: 128
 tests:
   benchmark.kernel.application:
-    arch_allow: x86 arm riscv32 riscv64
-    min_flash: 34
-  benchmark.kernel.application.fp:
-    extra_args: CONF_FILE=prj_fp.conf
+    integration_platforms:
+      - mps2/an385
+      - qemu_x86
+  benchmark.kernel.application.objcore.stats:
+    integration_platforms:
+      - mps2/an385
+      - qemu_x86
     extra_configs:
-      - arch:x86:CONFIG_X86_SSE=y
-      - arch:x86:CONFIG_X86_SSE_FP_MATH=n
-    arch_allow: x86 arm
-    filter: CONFIG_CPU_HAS_FPU or CONFIG_ARMV7_M_ARMV8_M_FP
-    min_flash: 34
-    min_ram: 32
-    slow: true
-  benchmark.kernel.application.fp.x86.sse:
-    extra_args: CONF_FILE=prj_fp.conf
+      - CONFIG_OBJ_CORE=y
+      - CONFIG_OBJ_CORE_STATS=y
+  benchmark.kernel.application.user:
+    extra_args: CONF_FILE=prj_user.conf
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_a53
+  benchmark.kernel.application.user.objcore.stats:
+    extra_args: CONF_FILE=prj_user.conf
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_a53
     extra_configs:
-      - CONFIG_X86_SSE=y
-      - CONFIG_X86_SSE_FP_MATH=y
-    arch_allow: x86
-    filter: CONFIG_CPU_HAS_FPU
-    min_flash: 34
-    min_ram: 32
-    slow: true
-  benchmark.kernel.application.posix:
-    arch_allow: posix
-    min_ram: 32
+      - CONFIG_OBJ_CORE=y
+      - CONFIG_OBJ_CORE_STATS=y
+  benchmark.kernel.application.timeslicing:
+    integration_platforms:
+      - mps2/an385
+      - qemu_x86
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+  benchmark.kernel.application.user.timeslicing:
+    extra_args: CONF_FILE=prj_user.conf
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - mps2/an385
+      - qemu_x86
+    extra_configs:
+      - CONFIG_TIMESLICING=y

@@ -21,6 +21,7 @@ enum sd_status {
 
 struct mmc_config {
 	const struct device *host_controller;
+	uint8_t bus_width;
 };
 
 struct mmc_data {
@@ -36,11 +37,6 @@ static int disk_mmc_access_init(struct disk_info *disk)
 	const struct mmc_config *cfg = dev->config;
 	struct mmc_data *data = dev->data;
 	int ret;
-
-	if (data->status == SD_OK) {
-		/* Called twice, don't reinit */
-		return 0;
-	}
 
 	ret = sd_init(cfg->host_controller, &data->card);
 	if (ret) {
@@ -86,7 +82,21 @@ static int disk_mmc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buf)
 	const struct device *dev = disk->dev;
 	struct mmc_data *data = dev->data;
 
-	return mmc_ioctl(&data->card, cmd, buf);
+	switch (cmd) {
+	case DISK_IOCTL_CTRL_INIT:
+		return disk_mmc_access_init(disk);
+	case DISK_IOCTL_CTRL_DEINIT:
+		mmc_ioctl(&data->card, DISK_IOCTL_CTRL_SYNC, NULL);
+		/* sd_init() will toggle power to MMC, so we can just mark
+		 * disk as uninitialized
+		 */
+		data->status = SD_UNINIT;
+		return 0;
+	default:
+		return mmc_ioctl(&data->card, cmd, buf);
+	}
+
+	return 0;
 }
 
 static const struct disk_operations mmc_disk_ops = {
@@ -104,8 +114,10 @@ static struct disk_info mmc_disk = {
 static int disk_mmc_init(const struct device *dev)
 {
 	struct mmc_data *data = dev->data;
+	const struct mmc_config *config = dev->config;
 
 	data->status = SD_UNINIT;
+	data->card.bus_width = config->bus_width;
 	mmc_disk.dev = dev;
 	mmc_disk.name = data->name;
 
@@ -115,6 +127,7 @@ static int disk_mmc_init(const struct device *dev)
 #define DISK_ACCESS_MMC_INIT(n)						\
 	static const struct mmc_config mmc_config_##n = {			\
 		.host_controller = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
+		.bus_width = DT_INST_PROP(n, bus_width),			\
 	};									\
 										\
 	static struct mmc_data mmc_data_##n = {				\

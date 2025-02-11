@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Kernel Options due to Low Memory (8k)
+CONFIG_MAIN_STACK_SIZE=640
+CONFIG_IDLE_STACK_SIZE=200
+CONFIG_ISR_STACK_SIZE=512
+
+# Serial Drivers
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# GPIO Controller
+CONFIG_GPIO=y
+
+# Clock controller
+CONFIG_CLOCK_CONTROL=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

@@ -9,6 +9,7 @@ menuconfig OSDP
 	select RING_BUFFER
 	imply SERIAL_SUPPORT_INTERRUPT
 	imply UART_INTERRUPT_DRIVEN
+	imply UART_USE_RUNTIME_CONFIGURE
 	select CRC
 	help
 	  Add support for Open Supervised Device Protocol (OSDP)
@@ -70,11 +71,12 @@ config OSDP_SKIP_MARK_BYTE
 
 config OSDP_SC_ENABLED
 	bool "OSDP Secure Channel"
-	depends on CSPRING_ENABLED
+	depends on CSPRNG_ENABLED
 	default y
 	select CRYPTO
 	select CRYPTO_MBEDTLS_SHIM
 	select MBEDTLS
+	select MBEDTLS_CIPHER_AES_ENABLED
 	select MBEDTLS_CIPHER_CCM_ENABLED
 	help
 	  Secure the OSDP communication channel with encryption and mutual

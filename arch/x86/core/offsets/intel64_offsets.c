@@ -46,13 +46,10 @@ GEN_OFFSET_SYM(x86_tss64_t, usp);
 #endif /* CONFIG_USERSPACE */
 GEN_ABSOLUTE_SYM(__X86_TSS64_SIZEOF, sizeof(x86_tss64_t));
 
-GEN_OFFSET_SYM(x86_cpuboot_t, ready);
 GEN_OFFSET_SYM(x86_cpuboot_t, tr);
 GEN_OFFSET_SYM(x86_cpuboot_t, gs_base);
 GEN_OFFSET_SYM(x86_cpuboot_t, sp);
 GEN_OFFSET_SYM(x86_cpuboot_t, stack_size);
-GEN_OFFSET_SYM(x86_cpuboot_t, fn);
-GEN_OFFSET_SYM(x86_cpuboot_t, arg);
 GEN_ABSOLUTE_SYM(__X86_CPUBOOT_SIZEOF, sizeof(x86_cpuboot_t));
 
 #endif /* _X86_OFFSETS_INC_ */

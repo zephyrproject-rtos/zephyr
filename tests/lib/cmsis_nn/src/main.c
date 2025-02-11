@@ -18,41 +18,39 @@
 
 #define REPEAT_NUM 3
 
-#define AVGPOOLING_2_OUT_CH             5
-#define AVGPOOLING_2_IN_CH              5
-#define AVGPOOLING_2_INPUT_W            12
-#define AVGPOOLING_2_INPUT_H            1
-#define AVGPOOLING_2_DST_SIZE           60
-#define AVGPOOLING_2_INPUT_SIZE         60
+#define AVGPOOLING_2_OUT_CH		5
+#define AVGPOOLING_2_IN_CH		5
+#define AVGPOOLING_2_INPUT_W		12
+#define AVGPOOLING_2_INPUT_H		1
+#define AVGPOOLING_2_DST_SIZE		60
+#define AVGPOOLING_2_INPUT_SIZE		60
 #define AVGPOOLING_2_OUT_ACTIVATION_MIN -128
 #define AVGPOOLING_2_OUT_ACTIVATION_MAX 127
-#define AVGPOOLING_2_INPUT_BATCHES      1
-#define AVGPOOLING_2_FILTER_X           3
-#define AVGPOOLING_2_FILTER_Y           1
-#define AVGPOOLING_2_STRIDE_X           1
-#define AVGPOOLING_2_STRIDE_Y           2
-#define AVGPOOLING_2_PAD_X              1
-#define AVGPOOLING_2_PAD_Y              0
-#define AVGPOOLING_2_OUTPUT_W           12
-#define AVGPOOLING_2_OUTPUT_H           1
+#define AVGPOOLING_2_INPUT_BATCHES	1
+#define AVGPOOLING_2_FILTER_X		3
+#define AVGPOOLING_2_FILTER_Y		1
+#define AVGPOOLING_2_STRIDE_X		1
+#define AVGPOOLING_2_STRIDE_Y		2
+#define AVGPOOLING_2_PAD_X		1
+#define AVGPOOLING_2_PAD_Y		0
+#define AVGPOOLING_2_OUTPUT_W		12
+#define AVGPOOLING_2_OUTPUT_H		1
 
 const int8_t avgpooling_2_input[60] = {
-	80, 16, -80, -96, 96, -64, -112, -112, 48, 16, -80, -80, 80, 64, -80,
-	16, 48, -112, 0, 48, 96, -80, -112, -64, -32, -16, -112, -64, -64, 80,
-	-96, -112, -16, -80, -80, -112, -64, -48, 16, 64, 32, 48, 16, 64, 16,
-	-48, -64, -32, -80, 64, -48, -32, -32, -112, 32, 32, -112, -96, -96, 48
-};
+	-82, -104, 10,	-28, -52, -51, -66, 52,	 124, -74, -21,	 4,  37,   -7,	-33,
+	102, 110,  24,	52,  121, 13,  -55, -79, -92, -35, -103, 86, 95,   46,	32,
+	-24, -123, 120, 29,  -77, -97, -69, -68, 58,  38,  3,	 3,  79,   -47, 112,
+	-52, -113, -46, 107, 68,  83,  -70, 91,	 14,  113, 74,	 73, -103, -98, 25};
 
 const int8_t avgpooling_2_output_ref[60] = {
-	8, -48, -96, -24, 56, -21, -59, -37, 5, 11, -43, -48, -48, 37, -5,
-	11, -37, -48, 0, -21, 32, -48, -96, -43, 32, -5, -101, -64, -69, -11,
-	-75, -96, -43, -43, 21, -59, -43, -16, 0, 0, -43, -27, -21, 0, 48,
-	-21, -16, -16, -43, 37, -21, -69, -53, -96, 48, -8, -72, -64, -104, 40
-};
+	-67, -85, 31, 48,  -63, -51, -55, 33,  30, -53, 10,  16,  38,  56,  5,
+	31,  20,  -6, -16, 18,	4,   47,  13,  2,  39,	-38, -31, 45,  -6,  -27,
+	-75, -35, 49, 44,  -2,	-39, -63, 44,  13, 24,	-49, -60, -12, 39,  73,
+	11,  -60, 41, 25,  98,	35,  -37, -19, 8,  69,	79,  2,	  -6,  -42, 69};
 
 ZTEST(cmsis_nn, test_avgpool)
 {
-	q7_t output[AVGPOOLING_2_DST_SIZE] = { 0 };
+	int8_t output[AVGPOOLING_2_DST_SIZE] = {0};
 
 	cmsis_nn_context ctx;
 	cmsis_nn_pool_params pool_params;
@@ -81,74 +79,78 @@ ZTEST(cmsis_nn, test_avgpool)
 	ctx.size = arm_avgpool_s8_get_buffer_size(AVGPOOLING_2_OUTPUT_W, AVGPOOLING_2_IN_CH);
 	ctx.buf = malloc(ctx.size);
 
-	arm_status result = arm_avgpool_s8(&ctx, &pool_params, &input_dims, avgpooling_2_input,
-					   &filter_dims, &output_dims, output);
+	arm_cmsis_nn_status result = arm_avgpool_s8(&ctx,
+						   &pool_params,
+						   &input_dims,
+						   avgpooling_2_input,
+						   &filter_dims,
+						   &output_dims,
+						   output);
 
 	free(ctx.buf);
 
-	zassert_equal(ARM_MATH_SUCCESS, result, "");
+	zassert_equal(ARM_CMSIS_NN_SUCCESS, result, "");
 	zassert_mem_equal(avgpooling_2_output_ref, output, sizeof(output), "");
 }
 
-#define CONV_4_OUT_CH                   3
-#define CONV_4_IN_CH                    3
-#define CONV_4_INPUT_W                  5
-#define CONV_4_INPUT_H                  5
-#define CONV_4_DST_SIZE                 36
-#define CONV_4_INPUT_SIZE               75
-#define CONV_4_OUT_ACTIVATION_MIN       -128
-#define CONV_4_OUT_ACTIVATION_MAX       127
-#define CONV_4_INPUT_BATCHES            3
-#define CONV_4_INPUT_OFFSET             0
-#define CONV_4_OUTPUT_OFFSET            0
-#define CONV_4_FILTER_X                 2
-#define CONV_4_FILTER_Y                 3
-#define CONV_4_STRIDE_X                 2
-#define CONV_4_STRIDE_Y                 2
-#define CONV_4_PAD_X                    0
-#define CONV_4_PAD_Y                    0
-#define CONV_4_OUTPUT_W                 2
-#define CONV_4_OUTPUT_H                 2
+#define CONV_4_OUT_CH		  3
+#define CONV_4_IN_CH		  3
+#define CONV_4_INPUT_W		  5
+#define CONV_4_INPUT_H		  5
+#define CONV_4_DST_SIZE		  36
+#define CONV_4_INPUT_SIZE	  75
+#define CONV_4_OUT_ACTIVATION_MIN -109
+#define CONV_4_OUT_ACTIVATION_MAX 127
+#define CONV_4_INPUT_BATCHES	  3
+#define CONV_4_FILTER_X		  2
+#define CONV_4_FILTER_Y		  3
+#define CONV_4_STRIDE_X		  2
+#define CONV_4_STRIDE_Y		  2
+#define CONV_4_PAD_X		  0
+#define CONV_4_PAD_Y		  0
+#define CONV_4_OUTPUT_W		  2
+#define CONV_4_OUTPUT_H		  2
+#define CONV_4_INPUT_OFFSET	  128
+#define CONV_4_OUTPUT_OFFSET	  -128
+#define CONV_4_DILATION_X	  1
+#define CONV_4_DILATION_Y	  1
 
-const int32_t conv_4_biases[3] = { 2699, -5398, -2699 };
+const int32_t conv_4_biases[3] = {13175, 9050, 18215};
 
-const q7_t conv_4_weights[54] = {
-	-127, 64, 64, -64, 0, 0, 64, -64, 0, -64, 64, 64, 64, -127,
-	64, 0, -127, -64, 64, 64, -64, -64, -64, -64, -64, 0, 0, 64,
-	64, 64, 0, 0, 0, -127, -64, -127, -127, 0, 0, 0, 0, -127,
-	-127, -127, -127, 64, -127, 64, 64, 0, 0, -64, -127, 64
+const int8_t conv_4_weights[54] = {
+	-25, -83, -74,	105, 30,  118, -32, 127, 34,  127, -112, 39, -43, 104, 41,  -124, 115, 5,
+	42,  -48, -119, 93,  17,  57,  41,  -41, -42, 23,  127,	 18, 70,  -99, 71,  67,	  83,  76,
+	-50, 98,  66,	64,  127, -6,  -77, -48, -26, 45,  77,	 1,  81,  27,  124, -103, 37,  36};
+
+const int8_t conv_4_input[225] = {
+	82,   120,  -97, -44,  -118, 73,   4,	 -84,  -53,  -122, -15,	 77,   83,  43,	  37,
+	85,   -11,  103, 45,   -69,  -12,  -8,	 21,   6,    -68,  -83,	 -15,  -99, 90,	  -62,
+	95,   62,   -38, -32,  -35,  -105, -53,	 70,   112,  14,   -4,	 -33,  -26, -93,  -98,
+	22,   -5,   22,	 -104, 57,   -92,  30,	 -62,  0,    -43,  -82,	 60,   99,  -83,  32,
+	94,   49,   10,	 112,  -71,  -27,  -91,	 -79,  52,   -92,  -71,	 86,   -79, -15,  -80,
+	-74,  -4,   76,	 -119, 91,   -23,  -12,	 -111, -72,  26,   11,	 64,   116, 38,	  99,
+	125,  17,   6,	 -4,   46,   119,  113,	 -116, -125, 80,   -57,	 122,  75,  119,  -117,
+	87,   -121, -70, -75,  -127, 16,   -124, -110, 10,   71,   29,	 27,   37,  -24,  52,
+	28,   -100, 86,	 -75,  117,  -31,  -115, -86,  -122, 121,  -96,	 -118, 32,  111,  25,
+	-90,  -8,   110, 37,   35,   124,  -123, 94,   -122, -114, 37,	 85,   -36, 53,	  -40,
+	73,   -99,  27,	 10,   37,   41,   64,	 -97,  -123, 75,   0,	 -107, -72, 58,	  -100,
+	17,   77,   114, 120,  -83,  -96,  75,	 -12,  -27,  3,	   35,	 85,   4,   119,  -20,
+	28,   99,   104, -78,  -51,  -82,  -92,	 -40,  -116, 35,   -107, 39,   9,   -120, -50,
+	-102, -114, 25,	 -77,  25,   7,	   64,	 110,  80,   -93,  -20,	 34,   115, 75,	  37,
+	47,   16,   6,	 -92,  -25,  37,   69,	 82,   -61,  -100, -85,	 -51,  6,   -95,  58
 };
 
-const q7_t conv_4_input[225] = {
-	42, -85, -85, 0, 42, 42, -42, -42, -42, -85, 42, 42, -42, -42, -85,
-	0, -85, 0, 42, -42, 0, -42, 42, -42, -42, 42, -42, 42, -85, -42,
-	-85, -42, 0, -42, -42, -42, 42, -85, -42, -42, -42, 0, -42, 0, 0,
-	0, 42, -42, 42, 0, -42, 0, 0, -85, 0, 42, 42, 0, 42, 42, -85, 42,
-	42, -85, -42, 0, -85, 42, -42, -85, -42, -85, 42, 42, -85, -85, 42,
-	42, 42, -85, 42, -85, -42, -42, 0, -42, -85, -85, 42, -85, 0, -85,
-	42, 42, 0, 42, 42, 42, 42, -85, 42, -85, -42, 0, 42, 0, 0, -85, -42,
-	0, -85, 0, 42, -85, -42, 0, -42, 0, 42, -42, -42, -85, 0, -85, -42,
-	-85, 0, 42, -85, -85, -85, -85, 0, -85, 42, 42, 0, -42, -85, -85, 0,
-	-42, 0, 0, -85, -85, -42, 42, -85, -42, -42, 42, -85, 0, 42, 0, -85,
-	0, 0, 42, 42, -85, -85, -85, 0, 42, 0, 0, 42, -85, -85, 42, -85, -42,
-	-42, 0, -85, -85, 42, -85, 0, -85, -42, -85, 42, 0, 42, 42, 0, -85,
-	0, 0, 0, 0, 0, -42, -85, 42, 0, -85, -42, 0, -42, 42, 42, -85, 0,
-	42, 42, 0, -42, -85, -42, -85, 0, 42, -85, -85, -42, 42, -42, -42,
-	-42, -42, 42
-};
+const int32_t conv_4_output_mult[3] = {2039209398, 2005068758, 2023002003};
 
-const int32_t conv_4_output_mult[3] = { 1629660588, 1629660588, 1629660588 };
+const int32_t conv_4_output_shift[3] = {-9, -9, -9};
 
-const int32_t conv_4_output_shift[3] = { -11, -11, -11 };
-
-const q7_t conv_4_output_ref[36] = {
-	-2, 2, 2, 8, 0, 1, 1, 3, 7, -2, 11, 0, 8, 4, 4, 1, -1, -5,
-	4, 5, 14, 2, 5, 7, -1, -2, 2, 5, -4, 11, -1, -2, 8, 4, 2, 0
-};
+const int8_t conv_4_output_ref[36] = {-5,   -39, -31, 20,  -37, -26, -109, -7,	-10, -51, -58, 48,
+				      -100, -32, 24,  4,   69,	-38, -64,  65,	-34, 95,  -55, 39,
+				      95,   -54, 27,  -49, 25,	-68, -109, -66, 72,  38,  -44, -40};
 
 ZTEST(cmsis_nn, test_convolve)
 {
-	q7_t output[CONV_4_DST_SIZE] = { 0 };
+	int8_t output[CONV_4_DST_SIZE] = {0};
 
 	cmsis_nn_context ctx;
 	cmsis_nn_conv_params conv_params;
@@ -158,9 +160,9 @@ ZTEST(cmsis_nn, test_convolve)
 	cmsis_nn_dims bias_dims;
 	cmsis_nn_dims output_dims;
 
-	const q31_t *bias_data = conv_4_biases;
-	const q7_t *kernel_data = conv_4_weights;
-	const q7_t *input_data = conv_4_input;
+	const int32_t *bias_data = conv_4_biases;
+	const int8_t *kernel_data = conv_4_weights;
+	const int8_t *input_data = conv_4_input;
 
 	input_dims.n = CONV_4_INPUT_BATCHES;
 	input_dims.w = CONV_4_INPUT_W;
@@ -168,6 +170,7 @@ ZTEST(cmsis_nn, test_convolve)
 	input_dims.c = CONV_4_IN_CH;
 	filter_dims.w = CONV_4_FILTER_X;
 	filter_dims.h = CONV_4_FILTER_Y;
+	filter_dims.c = CONV_4_IN_CH;
 	output_dims.w = CONV_4_OUTPUT_W;
 	output_dims.h = CONV_4_OUTPUT_H;
 	output_dims.c = CONV_4_OUT_CH;
@@ -176,6 +179,8 @@ ZTEST(cmsis_nn, test_convolve)
 	conv_params.padding.h = CONV_4_PAD_Y;
 	conv_params.stride.w = CONV_4_STRIDE_X;
 	conv_params.stride.h = CONV_4_STRIDE_Y;
+	conv_params.dilation.w = CONV_4_DILATION_X;
+	conv_params.dilation.h = CONV_4_DILATION_Y;
 
 	conv_params.input_offset = CONV_4_INPUT_OFFSET;
 	conv_params.output_offset = CONV_4_OUTPUT_OFFSET;
@@ -189,7 +194,7 @@ ZTEST(cmsis_nn, test_convolve)
 	ctx.buf = malloc(buf_size);
 	ctx.size = 0;
 
-	arm_status result = arm_convolve_s8(&ctx,
+	arm_cmsis_nn_status result = arm_convolve_s8(&ctx,
 					    &conv_params,
 					    &quant_params,
 					    &input_dims,
@@ -202,7 +207,7 @@ ZTEST(cmsis_nn, test_convolve)
 					    output);
 
 	free(ctx.buf);
-	zassert_equal(ARM_MATH_SUCCESS, result, "");
+	zassert_equal(ARM_CMSIS_NN_SUCCESS, result, "");
 	zassert_mem_equal(conv_4_output_ref, output, sizeof(output), "");
 
 	buf_size = arm_convolve_wrapper_s8_get_buffer_size(&conv_params, &input_dims,
@@ -223,63 +228,63 @@ ZTEST(cmsis_nn, test_convolve)
 					 output);
 
 	free(ctx.buf);
-	zassert_equal(ARM_MATH_SUCCESS, result, "");
+	zassert_equal(ARM_CMSIS_NN_SUCCESS, result, "");
 	zassert_mem_equal(conv_4_output_ref, output, sizeof(output), "");
 }
 
-#define STRIDE2PAD1_OUT_CH              1
-#define STRIDE2PAD1_IN_CH               1
-#define STRIDE2PAD1_INPUT_W             7
-#define STRIDE2PAD1_INPUT_H             7
-#define STRIDE2PAD1_DST_SIZE            16
-#define STRIDE2PAD1_INPUT_SIZE          49
-#define STRIDE2PAD1_OUT_ACTIVATION_MIN  -128
-#define STRIDE2PAD1_OUT_ACTIVATION_MAX  127
-#define STRIDE2PAD1_INPUT_BATCHES       1
-#define STRIDE2PAD1_INPUT_OFFSET        128
-#define STRIDE2PAD1_OUTPUT_OFFSET       0
-#define STRIDE2PAD1_FILTER_X            3
-#define STRIDE2PAD1_FILTER_Y            3
-#define STRIDE2PAD1_STRIDE_X            2
-#define STRIDE2PAD1_STRIDE_Y            2
-#define STRIDE2PAD1_PAD_X               1
-#define STRIDE2PAD1_PAD_Y               1
-#define STRIDE2PAD1_OUTPUT_W            4
-#define STRIDE2PAD1_OUTPUT_H            4
+#define STRIDE2PAD1_OUT_CH	       1
+#define STRIDE2PAD1_IN_CH	       1
+#define STRIDE2PAD1_INPUT_W	       7
+#define STRIDE2PAD1_INPUT_H	       7
+#define STRIDE2PAD1_DST_SIZE	       16
+#define STRIDE2PAD1_INPUT_SIZE	       49
+#define STRIDE2PAD1_OUT_ACTIVATION_MIN -128
+#define STRIDE2PAD1_OUT_ACTIVATION_MAX 127
+#define STRIDE2PAD1_INPUT_BATCHES      1
+#define STRIDE2PAD1_FILTER_X	       3
+#define STRIDE2PAD1_FILTER_Y	       3
+#define STRIDE2PAD1_STRIDE_X	       2
+#define STRIDE2PAD1_STRIDE_Y	       2
+#define STRIDE2PAD1_PAD_X	       1
+#define STRIDE2PAD1_PAD_Y	       1
+#define STRIDE2PAD1_OUTPUT_W	       4
+#define STRIDE2PAD1_OUTPUT_H	       4
+#define STRIDE2PAD1_INPUT_OFFSET       128
+#define STRIDE2PAD1_OUTPUT_OFFSET      -20
+#define STRIDE2PAD1_DILATION_X	       1
+#define STRIDE2PAD1_DILATION_Y	       1
 
-const int32_t stride2pad1_biases[1] = { 4318 };
+const int32_t stride2pad1_biases[1] = {-9794};
 
-const q7_t stride2pad1_weights[9] = { 42, 127, 127, 127, 42, 127, 85, 42, 85 };
+const int8_t stride2pad1_weights[9] = {-54, 57, -19, -127, 87, 70, 74, -110, 66};
 
-const q7_t stride2pad1_input[49] = {
-	-26, -77, -26, -26, 25, -77, -77, -26, 25, -26, -77, -26, -26, -77, 25, -77, -26,
-	-26, -77, -26, -77, -26, -77, -26, 25, -77, -26, -26, -26, 25, -26, -77, -77, -77,
-	-26, 25, 25, -26, -77, -26, -26, -26, -26, -26, -77, -26, 25, -77, -26
-};
+const int8_t stride2pad1_input[49] = {
+	-91, -30, -57, -76, 32,	 -13, 14,   -96, 108, -4,  41,	48,  107, -68,	-101, 30,  95,
+	95,  91,  -66, -80, 114, -49, 7,    -67, -35, -1,  -88, -77, -56, -103, 5,    -39, -118,
+	-24, -32, 67,  11,  38,	 -16, -124, 44,	 -46, -92, -24, 108, 80,  -29,	-3};
 
-const int32_t stride2pad1_output_mult[1] = { 2037075735 };
+const int32_t stride2pad1_output_mult[1] = {2033801520};
 
-const int32_t stride2pad1_output_shift[1] = { -11 };
+const int32_t stride2pad1_output_shift[1] = {-8};
 
-const q7_t stride2pad1_output_ref[16] = {
-	15, 23, 22, 11, 27, 35, 39, 20, 31, 42, 29, 21, 28, 27, 27, 15
-};
+const int8_t stride2pad1_output_ref[16] = {26, -11, 33,	 -25,  -96, -52, -78, -86,
+					   33, -2,  -88, -113, -14, 0,	 -84, -27};
 
 ZTEST(cmsis_nn, test_depthwise_convolve)
 {
-	q7_t output[STRIDE2PAD1_DST_SIZE] = { 0 };
+	int8_t output[STRIDE2PAD1_DST_SIZE] = {0};
 
 	cmsis_nn_context ctx;
 	cmsis_nn_dw_conv_params dw_conv_params;
 	cmsis_nn_per_channel_quant_params quant_params;
 	cmsis_nn_dims input_dims;
 	cmsis_nn_dims filter_dims;
-	cmsis_nn_dims bias_dims = { 0 };
+	cmsis_nn_dims bias_dims = {0};
 	cmsis_nn_dims output_dims;
 
-	const q31_t *bias_data = stride2pad1_biases;
-	const q7_t *kernel_data = stride2pad1_weights;
-	const q7_t *input_data = stride2pad1_input;
+	const int32_t *bias_data = stride2pad1_biases;
+	const int8_t *kernel_data = stride2pad1_weights;
+	const int8_t *input_data = stride2pad1_input;
 
 	input_dims.n = STRIDE2PAD1_INPUT_BATCHES;
 	input_dims.w = STRIDE2PAD1_INPUT_W;
@@ -295,6 +300,9 @@ ZTEST(cmsis_nn, test_depthwise_convolve)
 	dw_conv_params.padding.h = STRIDE2PAD1_PAD_Y;
 	dw_conv_params.stride.w = STRIDE2PAD1_STRIDE_X;
 	dw_conv_params.stride.h = STRIDE2PAD1_STRIDE_Y;
+	dw_conv_params.dilation.w = STRIDE2PAD1_DILATION_X;
+	dw_conv_params.dilation.h = STRIDE2PAD1_DILATION_Y;
+
 	dw_conv_params.ch_mult = 1;
 
 	dw_conv_params.input_offset = STRIDE2PAD1_INPUT_OFFSET;
@@ -307,7 +315,7 @@ ZTEST(cmsis_nn, test_depthwise_convolve)
 	ctx.buf = NULL;
 	ctx.size = 0;
 
-	arm_status result = arm_depthwise_conv_s8(&ctx,
+	arm_cmsis_nn_status result = arm_depthwise_conv_s8(&ctx,
 						  &dw_conv_params,
 						  &quant_params,
 						  &input_dims,
@@ -320,46 +328,47 @@ ZTEST(cmsis_nn, test_depthwise_convolve)
 						  output);
 
 	free(ctx.buf);
-	zassert_equal(ARM_MATH_SUCCESS, result, "");
+	zassert_equal(ARM_CMSIS_NN_SUCCESS, result, "");
 	zassert_mem_equal(stride2pad1_output_ref, output, sizeof(output), "");
 }
 
-#define FULLY_CONNECTED_MVE_0_OUT_CH                    9
-#define FULLY_CONNECTED_MVE_0_IN_CH                     16
-#define FULLY_CONNECTED_MVE_0_INPUT_W                   1
-#define FULLY_CONNECTED_MVE_0_INPUT_H                   1
-#define FULLY_CONNECTED_MVE_0_DST_SIZE                  9
-#define FULLY_CONNECTED_MVE_0_INPUT_SIZE                16
-#define FULLY_CONNECTED_MVE_0_OUT_ACTIVATION_MIN        -128
-#define FULLY_CONNECTED_MVE_0_OUT_ACTIVATION_MAX        127
-#define FULLY_CONNECTED_MVE_0_INPUT_BATCHES             1
-#define FULLY_CONNECTED_MVE_0_INPUT_OFFSET              3
-#define FULLY_CONNECTED_MVE_0_OUTPUT_OFFSET             -2
-#define FULLY_CONNECTED_MVE_0_OUTPUT_MULTIPLIER         1073741824
-#define FULLY_CONNECTED_MVE_0_OUTPUT_SHIFT              1
-#define FULLY_CONNECTED_MVE_0_ACCUMULATION_DEPTH        16
+#define FULLY_CONNECTED_MVE_0_OUT_CH		 9
+#define FULLY_CONNECTED_MVE_0_IN_CH		 16
+#define FULLY_CONNECTED_MVE_0_INPUT_W		 1
+#define FULLY_CONNECTED_MVE_0_INPUT_H		 1
+#define FULLY_CONNECTED_MVE_0_DST_SIZE		 9
+#define FULLY_CONNECTED_MVE_0_INPUT_SIZE	 16
+#define FULLY_CONNECTED_MVE_0_OUT_ACTIVATION_MIN -128
+#define FULLY_CONNECTED_MVE_0_OUT_ACTIVATION_MAX 127
+#define FULLY_CONNECTED_MVE_0_INPUT_BATCHES	 1
+#define FULLY_CONNECTED_MVE_0_OUTPUT_MULTIPLIER	 1244038257
+#define FULLY_CONNECTED_MVE_0_OUTPUT_SHIFT	 -9
+#define FULLY_CONNECTED_MVE_0_ACCUMULATION_DEPTH 16
+#define FULLY_CONNECTED_MVE_0_INPUT_OFFSET	 128
+#define FULLY_CONNECTED_MVE_0_OUTPUT_OFFSET	 -26
 
-const int32_t fully_connected_mve_0_biases[9] = { -1, 0, 0, 2, -1, -1, 1, -3, -4 };
+const int32_t fully_connected_mve_0_biases[9] = {11295, -30752, -3196, 10489, -5120,
+						 18598, 27393,	29746, 22967};
 
-const q7_t fully_connected_mve_0_input[16] = {
-	-5, -3, -5, -3, -3, -6, -1, -5, -4, -3, -2, 0, -2, -1, -2, -6
-};
+const int8_t fully_connected_mve_0_input[16] = {-43, 68,  79,	-12, -119, -56, -102, -46,
+						107, -65, -109, -7,  92,   -99, -80,  -29};
 
-const q7_t fully_connected_mve_0_output_ref[9] = { 0, -29, 33, -5, 28, -5, 19, -7, 16 };
+const int8_t fully_connected_mve_0_output_ref[9] = {-9, -3, 26, 8, 3, -88, 75, 34, 5};
 
-const q7_t fully_connected_mve_0_weights[144] = {
-	1, 0, -1, -3, -4, -3, 3, -2, 3, 3, 1, 2, -2, -4, -4, 2, 3, 2, 3, -1, -2, 2,
-	-4, 0, 1, -3, -3, -3, 1, 1, -3, -4, -3, 3, 2, 3, 1, -4, 3, -3, -1, 3, 1, -2,
-	2, 3, -4, -3, 2, -4, 0, 3, 0, -2, 0, -1, -2, 0, 3, -3, -1, -2, -3, -1, -4,
-	1, 2, -1, -4, -4, 1, -3, -3, 2, 3, 1, -3, -2, -4, -3, -2, 2, 1, 1, 1, -2, 0,
-	3, -3, -2, -1, -4, -2, 2, 1, -1, -4, 2, 2, 3, 3, 2, 0, -3, 2, 3, 0, 3, 3, -1,
-	-4, -4, 0, 1, -4, -1, -3, 3, 2, 3, 2, -3, -1, -3, 0, 3, -2, -3, -2, 3, -4, 3,
-	-1, -4, 2, 2, 3, 1, -1, 1, 0, -4, -2, -3
-};
+const int8_t fully_connected_mve_0_weights[144] = {
+	37,  -46,  75,	 -33,  -52, -82,  -94,	64,   71,  65,	 64,  16,   -66, -5,   -65,  -44,
+	82,  42,   84,	 105,  18,  79,	  -103, -75,  -95, 65,	 87,  103,  43,	 -25,  -66,  75,
+	125, 40,   -34,	 24,   9,   -79,  4,	73,   98,  -75,	 42,  81,   18,	 -58,  -119, 92,
+	0,   -72,  48,	 23,   -69, 11,	  -95,	-103, 66,  117,	 107, -96,  114, -29,  75,   -93,
+	118, 66,   -19,	 83,   -14, 86,	  -110, 44,   37,  -9,	 17,  -107, 50,	 -116, -116, -27,
+	-84, -126, -108, -127, -71, 8,	  81,	108,  -61, 126,	 69,  -45,  37,	 -78,  -102, -55,
+	116, 112,  -111, -89,  -57, 82,	  -47,	22,   125, -84,	 97,  -9,   88,	 74,   -15,  118,
+	-95, 112,  89,	 44,   -17, -112, -71,	-94,  1,   -117, 112, -92,  52,	 57,   -22,  80,
+	-60, 95,   -106, -1,   -27, 105,  6,	123,  6,   96,	 126, -65,  -29, 103,  19,   -45};
 
 ZTEST(cmsis_nn, test_fully_connected)
 {
-	q7_t output[FULLY_CONNECTED_MVE_0_DST_SIZE] = { 0 };
+	int8_t output[FULLY_CONNECTED_MVE_0_DST_SIZE] = {0};
 
 	cmsis_nn_context ctx;
 	cmsis_nn_fc_params fc_params;
@@ -369,9 +378,9 @@ ZTEST(cmsis_nn, test_fully_connected)
 	cmsis_nn_dims bias_dims;
 	cmsis_nn_dims output_dims;
 
-	const q31_t *bias_data = fully_connected_mve_0_biases;
-	const q7_t *kernel_data = fully_connected_mve_0_weights;
-	const q7_t *input_data = fully_connected_mve_0_input;
+	const int32_t *bias_data = fully_connected_mve_0_biases;
+	const int8_t *kernel_data = fully_connected_mve_0_weights;
+	const int8_t *input_data = fully_connected_mve_0_input;
 
 	input_dims.n = FULLY_CONNECTED_MVE_0_INPUT_BATCHES;
 	input_dims.w = FULLY_CONNECTED_MVE_0_INPUT_W;
@@ -395,7 +404,7 @@ ZTEST(cmsis_nn, test_fully_connected)
 
 	ctx.buf = malloc(buf_size);
 	ctx.size = buf_size;
-	arm_status result = arm_fully_connected_s8(&ctx,
+	arm_cmsis_nn_status result = arm_fully_connected_s8(&ctx,
 						   &fc_params,
 						   &quant_params,
 						   &input_dims,
@@ -408,45 +417,43 @@ ZTEST(cmsis_nn, test_fully_connected)
 						   output);
 
 	free(ctx.buf);
-	zassert_equal(ARM_MATH_SUCCESS, result, "");
+	zassert_equal(ARM_CMSIS_NN_SUCCESS, result, "");
 	zassert_mem_equal(fully_connected_mve_0_output_ref, output, sizeof(output), "");
 }
 
-#define MAXPOOLING_2_OUT_CH             5
-#define MAXPOOLING_2_IN_CH              5
-#define MAXPOOLING_2_INPUT_W            12
-#define MAXPOOLING_2_INPUT_H            1
-#define MAXPOOLING_2_DST_SIZE           60
-#define MAXPOOLING_2_INPUT_SIZE         60
+#define MAXPOOLING_2_OUT_CH		5
+#define MAXPOOLING_2_IN_CH		5
+#define MAXPOOLING_2_INPUT_W		12
+#define MAXPOOLING_2_INPUT_H		1
+#define MAXPOOLING_2_DST_SIZE		60
+#define MAXPOOLING_2_INPUT_SIZE		60
 #define MAXPOOLING_2_OUT_ACTIVATION_MIN -128
 #define MAXPOOLING_2_OUT_ACTIVATION_MAX 127
-#define MAXPOOLING_2_INPUT_BATCHES      1
-#define MAXPOOLING_2_FILTER_X           3
-#define MAXPOOLING_2_FILTER_Y           1
-#define MAXPOOLING_2_STRIDE_X           1
-#define MAXPOOLING_2_STRIDE_Y           2
-#define MAXPOOLING_2_PAD_X              1
-#define MAXPOOLING_2_PAD_Y              0
-#define MAXPOOLING_2_OUTPUT_W           12
-#define MAXPOOLING_2_OUTPUT_H           1
+#define MAXPOOLING_2_INPUT_BATCHES	1
+#define MAXPOOLING_2_FILTER_X		3
+#define MAXPOOLING_2_FILTER_Y		1
+#define MAXPOOLING_2_STRIDE_X		1
+#define MAXPOOLING_2_STRIDE_Y		2
+#define MAXPOOLING_2_PAD_X		1
+#define MAXPOOLING_2_PAD_Y		0
+#define MAXPOOLING_2_OUTPUT_W		12
+#define MAXPOOLING_2_OUTPUT_H		1
 
 const int8_t maxpooling_2_input[60] = {
-	-16, 32, -16, -48, -16, 16, 64, 0, -112, 80, -64, 48, -64, 80, -16,
-	-80, -96, 48, 32, 96, 64, 80, 16, -96, 32, -112, -16, -80, -48, 32,
-	-64, -32, -16, 80, 48, -80, 96, -96, 64, -64, -112, 32, 96, -16, -16,
-	96, 0, -16, -16, -32, 64, -96, 96, 96, -48, -64, -16, 32, 16, 64
-};
+	75,  -52,  -42,	 -30, 56,  64,	 106, -36, 120, -3,  34,   -105, 69,   75,  -39,
+	15,  93,   -71,	 39,  34,  -11,	 65,  22,  59,	106, 105,  45,	 -116, -75, 123,
+	-65, 75,   -61,	 13,  -25, -123, 59,  110, -65, 86,  -108, -107, -17,  38,  27,
+	-1,  -115, -123, 75,  -75, 68,	 52,  12,  -35, 116, -68,  22,	 15,   76,  -81};
 
 const int8_t maxpooling_2_output_ref[60] = {
-	16, 64, 0, -48, 80, 16, 64, 0, 80, 80, 16, 64, 48, 80, 96,
-	64, 80, 48, 80, 96, 64, 80, 48, 32, 96, 64, 80, 16, 80, 48,
-	-64, 96, -16, 80, 48, -64, 96, 96, 80, 48, 96, 96, 96, 64, -16,
-	96, 32, 96, 96, -16, 96, 0, 96, 96, 64, 64, -16, 96, 96, 64
-};
+	75,  106, -36, 120, 56,	 75,  106, 69,	120, 56,  64,  106, 69,	 120, 34,
+	34,  93,  69,  75,  106, 105, 93,  22,	59,  123, 105, 75,  22,	 59,  123,
+	105, 75,  110, 13,  123, -65, 75,  110, 38,  86,  -1,  59,  110, 75,  86,
+	68,  52,  12,  75,  116, 68,  52,  15,	76,  116, 68,  52,  15,	 76,  116};
 
 ZTEST(cmsis_nn, test_max_pool)
 {
-	q7_t output[MAXPOOLING_2_DST_SIZE] = { 0 };
+	int8_t output[MAXPOOLING_2_DST_SIZE] = {0};
 
 	cmsis_nn_context ctx;
 	cmsis_nn_pool_params pool_params;
@@ -454,7 +461,7 @@ ZTEST(cmsis_nn, test_max_pool)
 	cmsis_nn_dims filter_dims;
 	cmsis_nn_dims output_dims;
 
-	const q7_t *input_data = maxpooling_2_input;
+	const int8_t *input_data = maxpooling_2_input;
 
 	input_dims.n = MAXPOOLING_2_INPUT_BATCHES;
 	input_dims.w = MAXPOOLING_2_INPUT_W;
@@ -475,24 +482,25 @@ ZTEST(cmsis_nn, test_max_pool)
 	pool_params.activation.max = MAXPOOLING_2_OUT_ACTIVATION_MAX;
 
 	for (int i = 0; i < REPEAT_NUM; i++) {
-		arm_status result = arm_max_pool_s8(&ctx, &pool_params, &input_dims, input_data,
-						    &filter_dims, &output_dims, output);
+		arm_cmsis_nn_status result =
+			arm_max_pool_s8(&ctx, &pool_params, &input_dims, input_data, &filter_dims,
+					&output_dims, output);
 
-		zassert_equal(ARM_MATH_SUCCESS, result, "");
+		zassert_equal(ARM_CMSIS_NN_SUCCESS, result, "");
 		zassert_mem_equal(maxpooling_2_output_ref, output, sizeof(output), "");
 	}
 }
 
-#define SOFTMAX_NUM_ROWS                1
-#define SOFTMAX_ROW_SIZE                5
-#define SOFTMAX_INPUT_MULT              1077952576
-#define SOFTMAX_INPUT_LEFT_SHIFT        23
-#define SOFTMAX_DIFF_MIN                -248
-#define SOFTMAX_DST_SIZE                5
+#define SOFTMAX_NUM_ROWS	 2
+#define SOFTMAX_ROW_SIZE	 5
+#define SOFTMAX_INPUT_MULT	 1077952640
+#define SOFTMAX_INPUT_LEFT_SHIFT 19
+#define SOFTMAX_DIFF_MIN	 -3968
+#define SOFTMAX_DST_SIZE	 10
 
-const q7_t softmax_input[5] = { -80, -48, 16, 0, -96 };
+const int8_t softmax_input[10] = {101, 49, 6, -34, -75, -79, -38, 120, -55, 115};
 
-const q7_t softmax_output_ref[5] = { -128, -125, 56, -60, -128 };
+const int8_t softmax_output_ref[10] = {-57, -70, -79, -86, -92, -94, -88, -54, -91, -56};
 
 ZTEST(cmsis_nn, test_softmax)
 {
@@ -501,7 +509,7 @@ ZTEST(cmsis_nn, test_softmax)
 	const int32_t mult = SOFTMAX_INPUT_MULT;
 	const int32_t shift = SOFTMAX_INPUT_LEFT_SHIFT;
 	const int32_t diff_min = SOFTMAX_DIFF_MIN;
-	const q7_t *input_data = softmax_input;
+	const int8_t *input_data = softmax_input;
 	int8_t output[SOFTMAX_DST_SIZE];
 
 	for (int i = 0; i < REPEAT_NUM; i++) {
@@ -510,52 +518,46 @@ ZTEST(cmsis_nn, test_softmax)
 	}
 }
 
-#define SVDF_2_INPUT_OFFSET             0
-#define SVDF_2_OUTPUT_OFFSET            0
-#define SVDF_2_MULTIPLIER_IN            1347440720
-#define SVDF_2_MULTIPLIER_OUT           1073741824
-#define SVDF_2_SHIFT_1                  -4
-#define SVDF_2_SHIFT_2                  1
-#define SVDF_2_IN_ACTIVATION_MIN        -32767
-#define SVDF_2_IN_ACTIVATION_MAX        32767
-#define SVDF_2_RANK                     2
-#define SVDF_2_FEATURE_BATCHES          10
-#define SVDF_2_TIME_BATCHES             2
-#define SVDF_2_INPUT_SIZE               7
-#define SVDF_2_DST_SIZE                 15
-#define SVDF_2_OUT_ACTIVATION_MIN       -128
-#define SVDF_2_OUT_ACTIVATION_MAX       127
-#define SVDF_2_INPUT_BATCHES            3
+#define SVDF_2_MULTIPLIER_IN	  1717987072
+#define SVDF_2_MULTIPLIER_OUT	  1099511552
+#define SVDF_2_SHIFT_1		  -3
+#define SVDF_2_SHIFT_2		  -11
+#define SVDF_2_IN_ACTIVATION_MIN  -32768
+#define SVDF_2_IN_ACTIVATION_MAX  32767
+#define SVDF_2_RANK		  2
+#define SVDF_2_FEATURE_BATCHES	  10
+#define SVDF_2_TIME_BATCHES	  2
+#define SVDF_2_INPUT_SIZE	  7
+#define SVDF_2_DST_SIZE		  15
+#define SVDF_2_OUT_ACTIVATION_MIN -128
+#define SVDF_2_OUT_ACTIVATION_MAX 127
+#define SVDF_2_INPUT_BATCHES	  3
+#define SVDF_2_INPUT_OFFSET	  0
+#define SVDF_2_OUTPUT_OFFSET	  0
 
-const int32_t svdf_2_biases[5] = { 0, 0, 0, 0, 0 };
+const int32_t svdf_2_biases[5] = {0, 0, 0, 0, 0};
 
+const int16_t svdf_2_state[60] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-const q15_t svdf_2_state[60] = {
-	3, 1, -1, 2, 1, 4, 3, 2, 2, 1, 4, -1, -3, 3, 4, 3, 1, -1, 3, 2,
-	0, -2, -1, -2, -1, -3, 0, -3, 4, 3, -1, 4, -4, -1, 2, 3, -4, -3, -2, 1,
-	1, 4, 3, -2, -3, -2, 4, 0, -2, 1, -2, -3, -4, 2, 0, -2, -3, 0, -1, 0
-};
+const int8_t svdf_2_weights_feature[70] = {
+	27,   82,  -108, -127, 85,  3,	 -51, 32,  110, -6,  -14, -16,	31,  101,
+	-122, 19,  76,	 74,   -80, 12,	 -22, -17, 10,	-28, 55,  109,	2,   -107,
+	-4,   72,  -65,	 -59,  36,  -69, 105, -97, 25,	38,  110, -121, -88, -126,
+	-14,  16,  -88,	 -66,  3,   -93, 69,  -64, 44,	103, 95,  -95,	68,  -46,
+	106,  -31, -63,	 23,   -38, 36,	 -95, -43, 93,	77,  91,  -26,	33,  59};
 
-const q7_t svdf_2_weights_feature[70] = {
-	-4, 0, 2, -2, 1, 1, -1, 0, -1, 2, -1, 1, 1, 3, -3, -2, -2, 3,
-	3, -3, 1, 2, 1, -4, 0, 2, -2, -1, 3, 1, 0, 0, 1, -2, 0, 2,
-	1, 0, -1, 2, 3, -1, 3, -1, -1, -2, -4, -3, 1, 1, 2, -3, 3, -3,
-	0, 0, 2, 0, 2, -1, -1, -3, -3, 1, 2, 2, 3, -2, 3, 1
-};
+const int16_t svdf_2_weights_time[20] = {-31, -88, -10, -72, -119, -6, -70, 63,	 -10, 93,
+					 5,   42,  -6,	22,  6,	   51, 37,  -38, 5,   117};
 
-const q15_t svdf_2_weights_time[20] = {
-	-4, 3, 0, -3, -2, 0, 3, 0, -3, -2, 2, 1, -4, 3, 1, 0, 3, -2, 1, 1
-};
+const int8_t svdf_2_input_sequence[42] = {
+	29,   81,   -38, 17,  -116, 43,	 119,  -127, 74,  115, 9,    118,  7,	 -56,
+	-53,  -14,  -98, 60,  -128, 10,	 28,   -18,  12,  -28, -126, 87,   -115, -44,
+	-123, -109, -59, -87, -69,  121, -128, -95,  -70, 2,   81,   -119, 84,	 -122};
 
-const q7_t svdf_2_input_sequence[42] = {
-	-51, 0, -26, 76, -102, -102, -76, 0, -51, -26, -51, -26, 51, 0,
-	51, -102, 51, -102, -76, 51, 76, -26, 26, -51, -76, -26, -102, -76,
-	-26, 26, 0, 51, 76, 0, 0, 26, -26, 76, -26, 76, 76, 26
-};
-
-const q7_t svdf_2_output_ref[15] = {
-	80, -19, -61, 17, -17, -3, 6, 30, -84, -4, -24, -11, 35, -128, 19
-};
+const int8_t svdf_2_output_ref[15] = {-53, 45,	27, -24, -53, 26, -82, -38,
+				      11,  -85, 94, -16, -32, 31, 4};
 
 static bool check_null_bias(const int32_t *bias, int32_t size)
 {
@@ -585,8 +587,8 @@ ZTEST(cmsis_nn, test_svdf)
 	cmsis_nn_per_tensor_quant_params output_quant_params;
 	int8_t output_data[SVDF_2_DST_SIZE];
 
-	const q7_t *weights_feature_data = svdf_2_weights_feature;
-	const q15_t *weights_time_data = svdf_2_weights_time;
+	const int8_t *weights_feature_data = svdf_2_weights_feature;
+	const int16_t *weights_time_data = svdf_2_weights_time;
 
 	input_dims.n = SVDF_2_INPUT_BATCHES;
 	input_dims.h = SVDF_2_INPUT_SIZE;
@@ -616,7 +618,7 @@ ZTEST(cmsis_nn, test_svdf)
 	output_ctx.buf = malloc(scratch_size_out);
 
 	int8_t *input_data = malloc(input_round_size);
-	q15_t *state_data = malloc(sizeof(svdf_2_state));
+	int16_t *state_data = malloc(sizeof(svdf_2_state));
 	const bool null_bias = check_null_bias(svdf_2_biases,
 					       SVDF_2_DST_SIZE / SVDF_2_INPUT_BATCHES);
 
@@ -625,7 +627,7 @@ ZTEST(cmsis_nn, test_svdf)
 		for (int j = 0; j < number_inputs; j++) {
 			memcpy(input_data, svdf_2_input_sequence + j * input_round_size,
 			       input_round_size);
-			arm_status result = arm_svdf_s8(&input_ctx,
+			arm_cmsis_nn_status result = arm_svdf_state_s16_s8(&input_ctx,
 							&output_ctx,
 							&svdf_2_params,
 							&input_quant_params,
@@ -642,7 +644,7 @@ ZTEST(cmsis_nn, test_svdf)
 							null_bias == true ? NULL : svdf_2_biases,
 							&output_dims,
 							output_data);
-			zassert_equal(ARM_MATH_SUCCESS, result, "");
+			zassert_equal(ARM_CMSIS_NN_SUCCESS, result, "");
 		}
 
 		zassert_mem_equal(svdf_2_output_ref, output_data, sizeof(output_data), "");

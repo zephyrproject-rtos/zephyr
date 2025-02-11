@@ -1,0 +1,88 @@
+#
+# Copyright (c) 2023 Jamie McCrae
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Hitachi HD44780 LCD
+
+compatible: "hit,hd44780"
+
+include: [auxdisplay-device.yaml]
+
+properties:
+  mode:
+    type: int
+    required: true
+    description: Operating mode of display, 8-bit or 4 for 4-bit mode
+    enum:
+      - 4
+      - 8
+
+  register-select-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO connected to Register Select (RS) of LCD
+
+  read-write-gpios:
+    type: phandle-array
+    description: Optional GPIO used for selecting read or write mode
+
+  enable-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO used for enabling commands to be sent
+
+  data-bus-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Array of GPIOs connected to the DB lines of the display, this must
+      contain 8 entries ascending from DB0 to DB7, for 4-bit interface
+      displays, the first 4 must be set as `<0>`
+
+  brightness-gpios:
+    type: phandle-array
+    description: Optional GPIO used for controlling the brightness (contrast)
+
+  backlight-gpios:
+    type: phandle-array
+    description: Optional GPIO used for enabling the backlight
+
+  line-addresses:
+    type: uint8-array
+    default: [0x00, 0x40, 0x14, 0x54]
+    description: |
+      Array of addresses for each row, will use defaults if not provided.
+      Default is as per Hitachi HD44780 specification.
+
+  enable-line-rise-delay-us:
+    type: int
+    default: 800
+    description: |
+      Delay time (in us) to wait after enable line rises before setting low.
+      Default is as per Hitachi HD44780 specification.
+
+  enable-line-fall-delay-us:
+    type: int
+    default: 100
+    description: |
+      Delay time (in us) to wait after enable line falls before sending
+      another command. Default is as per Hitachi HD44780 specification.
+
+  clear-command-delay-us:
+    type: int
+    default: 5000
+    description: |
+      Delay time (in us) to wait after issuing a clear command before sending
+      another command. Default is as per Hitachi HD44780 specification.
+
+  boot-delay-ms:
+    type: int
+    default: 0
+    description: |
+      Delay time (in ms) to wait at boot time before sending a command (note:
+      this will delay startup of the whole application by this time, this
+      should only be used when time is needed for the display device to be
+      ready before it can be configured which without any delay would cause
+      the display to not function properly).

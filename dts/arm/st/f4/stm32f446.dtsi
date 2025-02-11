@@ -9,7 +9,15 @@
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
 / {
+	clocks {
+		plli2s: plli2s {
+			compatible = "st,stm32f412-plli2s-clock";
+		};
+	};
+
 	soc {
+		compatible = "st,stm32f446", "st,stm32f4", "simple-bus";
+
 		i2s1: i2s@40013000 {
 			compatible = "st,stm32-i2s";
 			#address-cells = <1>;
@@ -51,18 +59,16 @@
 		};
 
 		can1: can@40006400 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
-			sjw = <1>;
-			sample-point = <875>;
 		};
 
 		can2: can@40006800 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006800 0x400>;
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
@@ -70,8 +76,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x06000000>;
 			master-can-reg = <0x40006400>;
 			status = "disabled";
-			sjw = <1>;
-			sample-point = <875>;
 		};
 
 		usbotg_fs: usb@50000000 {
@@ -100,6 +104,38 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
+		};
+
+		adc2: adc@40012100 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012100 0x050>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
+			interrupts = <18 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 15 28 56 84 112 144 480>;
+			st,adc-clock-source = <SYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+		};
+
+		adc3: adc@40012200 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012200 0x050>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
+			interrupts = <18 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 15 28 56 84 112 144 480>;
+			st,adc-clock-source = <SYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		dac1: dac@40007400 {

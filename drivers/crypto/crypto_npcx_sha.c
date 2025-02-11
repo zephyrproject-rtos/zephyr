@@ -13,27 +13,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sha_npcx, CONFIG_CRYPTO_LOG_LEVEL);
 
-#define NPCX_HASH_CAPS_SUPPORT	(CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
-#define NPCX_SHA256_HANDLE_SIZE 212
-#define NPCX_SHA_MAX_SESSION	1
+#include "soc_ncl.h"
 
-/* The status code returns from Nuvoton Cryptographic Library ROM APIs */
-enum ncl_status {
-	NCL_STATUS_OK = 0xA5A5,
-	NCL_STATUS_FAIL = 0x5A5A,
-	NCL_STATUS_INVALID_PARAM = 0x02,
-	NCL_STATUS_PARAM_NOT_SUPPORTED,
-	NCL_STATUS_SYSTEM_BUSY,
-	NCL_STATUS_AUTHENTICATION_FAIL,
-	NCL_STATUS_NO_RESPONSE,
-	NCL_STATUS_HARDWARE_ERROR,
-};
-enum ncl_sha_type {
-	NCL_SHA_TYPE_2_256 = 0,
-	NCL_SHA_TYPE_2_384 = 1,
-	NCL_SHA_TYPE_2_512 = 2,
-	NCL_SHA_TYPE_NUM
-};
+#define NPCX_HASH_CAPS_SUPPORT  (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
+#define NPCX_SHA256_HANDLE_SIZE DT_INST_PROP(0, context_buffer_size)
+#define NPCX_SHA_MAX_SESSION    1
 
 /* The following table holds the function pointer for each SHA API in NPCX ROM. */
 struct npcx_ncl_sha {
@@ -204,18 +188,27 @@ static int npcx_query_caps(const struct device *dev)
 	return NPCX_HASH_CAPS_SUPPORT;
 }
 
-static int sha_npcx_init(const struct device *dev)
+static int npcx_hash_init(const struct device *dev)
 {
+	uint32_t handle_size_required;
+
+	handle_size_required = NPCX_NCL_SHA->get_context_size();
+	if (handle_size_required != NPCX_SHA256_HANDLE_SIZE) {
+		LOG_ERR("Pre-alloc buf size doesn't match required buf size (%d)",
+			handle_size_required);
+		return -ENOSR;
+	}
+
 	return 0;
 }
 
-static struct crypto_driver_api npcx_crypto_api = {
+static const struct crypto_driver_api npcx_crypto_api = {
 	.hash_begin_session = npcx_hash_session_setup,
 	.hash_free_session = npcx_hash_session_free,
 	.query_hw_caps = npcx_query_caps,
 };
 
-DEVICE_DT_INST_DEFINE(0, &sha_npcx_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, npcx_hash_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
 		      &npcx_crypto_api);
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one 'nuvoton,npcx-sha' compatible node can be supported");

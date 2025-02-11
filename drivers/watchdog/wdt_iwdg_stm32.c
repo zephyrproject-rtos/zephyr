@@ -92,13 +92,15 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
 		LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_DBGMCU);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) || defined(CONFIG_SOC_SERIES_STM32G0X)
 		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
 		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
 #endif
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG1_STOP);
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG_STOP);
 #else
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_IWDG_STOP);
 #endif
@@ -190,8 +192,9 @@ static int iwdg_stm32_init(const struct device *dev)
 	struct wdt_timeout_cfg config = {
 		.window.max = CONFIG_IWDG_STM32_INITIAL_TIMEOUT
 	};
-
+	/* Watchdog should be configured and started by `wdt_setup`*/
 	iwdg_stm32_install_timeout(dev, &config);
+	iwdg_stm32_setup(dev, 0); /* no option specified */
 #endif
 
 	/*

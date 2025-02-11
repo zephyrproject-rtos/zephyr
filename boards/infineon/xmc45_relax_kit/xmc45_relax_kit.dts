@@ -1,0 +1,164 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2020 Linumiz
+ * Author: Parthiban Nallathambi <parthiban@linumiz.com>
+ *
+ */
+
+/dts-v1/;
+
+#include <infineon/cat3/xmc/xmc4500_F100x1024.dtsi>
+#include <infineon/cat3/xmc/xmc4500_F100x1024-intc.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "xmc45_relax_kit-pinctrl.dtsi"
+
+/ {
+	model = "Infineon XMC4500 Relax Kit";
+	compatible = "infineon,xm4500-relax-kit", "infineon,xmc4500",
+						"infineon,xmc4xxx";
+
+	aliases {
+		led0 = &led1;
+		die-temp0 = &die_temp;
+		pwm-led0 = &pwm_led1;
+		watchdog0 = &wdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* leds are labelled LED1 and LED2 in the relax kit documentation */
+		led1: led1 {
+			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		};
+		led2: led2 {
+			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led1: pwm_led1 {
+			pwms = <&pwm_ccu40 2 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+			label = "PWM LED1";
+		};
+		pwm_led2: pwm_led2 {
+			pwms = <&pwm_ccu40 3 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+			label = "PWM LED2";
+		};
+	};
+
+	chosen {
+		zephyr,sram = &dsram1;
+		zephyr,flash = &flash0;
+		zephyr,console = &usic1ch1;
+		zephyr,shell-uart = &usic1ch1;
+		zephyr,flash-controller = &flash_controller;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&psram1 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "PSRAM1";
+};
+
+&dsram2 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "DSRAM2";
+};
+
+&flash_controller {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		storage_partition: partition@80000 {
+			label = "storage";
+			reg = <0x80000 0x80000>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&usic1ch1 {
+	compatible = "infineon,xmc4xxx-uart";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart_tx_p0_1_u1c1 &uart_rx_p0_0_u1c1>;
+	pinctrl-names = "default";
+	input-src = "DX0D";
+	interrupts = <90 1 91 1>;
+	interrupt-names = "tx", "rx";
+	fifo-start-offset = <0>;
+	fifo-tx-size = <16>;
+	fifo-rx-size = <16>;
+	status = "okay";
+};
+
+&adc0 {
+	vref-internal-mv = <3300>;
+};
+
+&adc1 {
+	vref-internal-mv = <3300>;
+};
+
+&adc2 {
+	vref-internal-mv = <3300>;
+};
+
+&adc3 {
+	vref-internal-mv = <3300>;
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&pwm_ccu40 {
+	slice-prescaler = <15 15 15 15>;
+	pinctrl-0 = <&pwm_out_p1_0_ccu40_ch3 &pwm_out_p1_1_ccu40_ch2>;
+	pinctrl-names = "default";
+};
+
+&eth {
+	status = "okay";
+	pinctrl-0 = <&eth_p2_4_rxer &eth_p2_2_rxd0 &eth_p2_3_rxd1
+		     &eth_p15_8_clk_rmii &eth_p15_9_crs_dv &eth_p2_5_tx_en
+		     &eth_p2_8_txd0 &eth_p2_9_txd1>;
+	pinctrl-names = "default";
+
+	rxer-port-ctrl = "P2_4";
+	rxd0-port-ctrl = "P2_2";
+	rxd1-port-ctrl = "P2_3";
+	rmii-rx-clk-port-ctrl = "P15_8";
+	crs-rx-dv-port-ctrl = "P15_9";
+
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	status = "okay";
+	mdi-port-ctrl = "P2_0";
+	pinctrl-0 = <&eth_p2_0_mdo &eth_p2_7_mdc>;
+	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+	};
+};

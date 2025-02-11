@@ -1,102 +1,173 @@
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
+ * Copyright (c) 2023 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * This file contains the benchmark that measure the average time it takes to
- * do context switches between threads using k_yield () to force
- * context switch.
+ * This file contains the benchmarking code that measures the average time it
+ * takes to perform context switches between threads using k_yield().
+ *
+ * When user threads are supported, there are four cases to consider. These are
+ *   1. Kernel thread -> Kernel thread
+ *   2. User thread   -> User thread
+ *   3. Kernel thread -> User thread
+ *   4. User thread   -> Kernel thread
  */
 
 #include <zephyr/kernel.h>
 #include <zephyr/timing/timing.h>
 #include <stdlib.h>
 #include <zephyr/timestamp.h>
-#include "utils.h" /* PRINT () and other macros */
 
-/* context switch enough time so our measurement is precise */
-#define NB_OF_YIELD 1000
+#include "utils.h"
+#include "timing_sc.h"
 
-static uint32_t helper_thread_iterations;
-
-#define Y_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
-#define Y_PRIORITY K_PRIO_PREEMPT(10)
-
-K_THREAD_STACK_DEFINE(y_stack_area, Y_STACK_SIZE);
-static struct k_thread y_thread;
-
-/**
- * @brief Helper thread for measuring thread switch latency using yield
- */
-void yielding_thread(void *arg1, void *arg2, void *arg3)
+static void alt_thread_entry(void *p1, void *p2, void *p3)
 {
-	while (helper_thread_iterations < NB_OF_YIELD) {
+	uint32_t  num_iterations;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p2);
+
+	num_iterations = (uint32_t)(uintptr_t)p1;
+
+	for (uint32_t i = 0; i < num_iterations; i++) {
+
+		/* 3. Obtain the 'finish' timestamp */
+
+		timestamp.sample = timing_timestamp_get();
+
+		/* 4. Switch to <start_thread>  */
+
 		k_yield();
-		helper_thread_iterations++;
 	}
+
 }
 
-/**
- * @brief Entry point for thread context switch using yield test
- */
-void thread_switch_yield(void)
+static void start_thread_entry(void *p1, void *p2, void *p3)
 {
-	uint32_t iterations = 0U;
-	int32_t delta;
-	timing_t timestamp_start;
-	timing_t timestamp_end;
-	uint32_t ts_diff;
+	uint64_t  sum = 0ull;
+	uint32_t  num_iterations;
+	timing_t  start;
+	timing_t  finish;
 
-	timing_start();
-	bench_test_start();
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p2);
 
-	/* launch helper thread of the same priority as the thread
-	 * of routine
-	 */
-	k_thread_create(&y_thread, y_stack_area, Y_STACK_SIZE, yielding_thread,
-			NULL, NULL, NULL, Y_PRIORITY, 0, K_NO_WAIT);
+	num_iterations = (uint32_t)(uintptr_t)p1;
 
-	/* get initial timestamp */
-	timestamp_start = timing_counter_get();
+	k_thread_start(&alt_thread);
 
-	/* loop until either helper or this routine reaches number of yields */
-	while (iterations < NB_OF_YIELD &&
-	       helper_thread_iterations < NB_OF_YIELD) {
+	for (uint32_t i = 0; i < num_iterations; i++) {
+
+		/* 1. Get 'start' timestamp */
+
+		start = timing_timestamp_get();
+
+		/* 2. Switch to <alt_thread> */
+
 		k_yield();
-		iterations++;
+
+		/* 5. Get the 'finish' timestamp obtained in <alt_thread> */
+
+		finish = timestamp.sample;
+
+		/* 6. Track the sum of elapsed times */
+
+		sum += timing_cycles_get(&start, &finish);
 	}
 
-	/* get the number of cycles it took to do the test */
-	timestamp_end = timing_counter_get();
+	/* Wait for <alt_thread> to complete */
 
-	/* Ensure both helper and this routine were context switching back &
-	 * forth.
-	 * For execution to reach the line below, either this routine or helper
-	 * routine reached NB_OF_YIELD. The other loop must be at most one
-	 * iteration away from reaching NB_OF_YIELD if execute was switching
-	 * back and forth.
-	 */
-	delta = iterations - helper_thread_iterations;
-	if (bench_test_end() < 0) {
-		error_count++;
-		PRINT_OVERFLOW_ERROR();
-	} else if (abs(delta) > 1) {
-		/* expecting even alternating context switch, seems one routine
-		 * called yield without the other having chance to execute
-		 */
-		error_count++;
-		printk(" Error, iteration:%u, helper iteration:%u",
-			     iterations, helper_thread_iterations);
-	} else {
-		/* thread_yield is called (iterations + helper_thread_iterations)
-		 * times in total.
-		 */
-		ts_diff = timing_cycles_get(&timestamp_start, &timestamp_end);
-		PRINT_STATS_AVG("Average thread context switch using yield", ts_diff, (iterations + helper_thread_iterations));
+	k_thread_join(&alt_thread, K_FOREVER);
+
+	/* Record the number of cycles for use by the main thread */
+
+	timestamp.cycles = sum;
+}
+
+static void thread_switch_yield_common(const char *description,
+				       uint32_t num_iterations,
+				       uint32_t start_options,
+				       uint32_t alt_options,
+				       int priority)
+{
+	uint64_t  sum;
+	char tag[50];
+	char summary[120];
+
+	/* Create the two threads */
+
+	k_thread_create(&start_thread, start_stack,
+			K_THREAD_STACK_SIZEOF(start_stack),
+			start_thread_entry,
+			(void *)(uintptr_t)num_iterations, NULL, NULL,
+			priority - 1, start_options, K_FOREVER);
+
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
+			alt_thread_entry,
+			(void *)(uintptr_t)num_iterations, NULL, NULL,
+			priority - 1, alt_options, K_FOREVER);
+
+	/* Grant access rights if necessary */
+
+	if ((start_options & K_USER) == K_USER) {
+		k_thread_access_grant(&start_thread, &alt_thread);
 	}
 
-	timing_stop();
+	k_thread_start(&start_thread);
+
+	/* Wait until <start_thread> finishes */
+
+	k_thread_join(&start_thread, K_FOREVER);
+
+	/* Get the sum total of measured cycles */
+
+	sum = timestamp.cycles;
+
+	sum -= timestamp_overhead_adjustment(start_options, alt_options);
+
+	snprintf(tag, sizeof(tag),
+		 "%s.%c_to_%c", description,
+		 (start_options & K_USER) == K_USER ? 'u' : 'k',
+		 (alt_options & K_USER) == K_USER ? 'u' : 'k');
+	snprintf(summary, sizeof(summary),
+		 "%-40s - Context switch via k_yield", tag);
+
+	PRINT_STATS_AVG(summary, (uint32_t)sum, num_iterations, 0, "");
+}
+
+void thread_switch_yield(uint32_t num_iterations, bool is_cooperative)
+{
+	int  priority;
+	char description[40];
+
+	priority = is_cooperative ? K_PRIO_COOP(6)
+				  : k_thread_priority_get(k_current_get()) - 1;
+
+	snprintf(description, sizeof(description),
+		 "thread.yield.%s.ctx",
+		 is_cooperative ? "cooperative" : "preemptive");
+
+	/* Kernel -> Kernel */
+	thread_switch_yield_common(description, num_iterations, 0, 0,
+				   priority);
+
+#if CONFIG_USERSPACE
+	/* User   -> User   */
+	thread_switch_yield_common(description, num_iterations, K_USER, K_USER,
+				   priority);
+
+	/* Kernel -> User   */
+	thread_switch_yield_common(description, num_iterations, 0, K_USER,
+				   priority);
+
+	/* User   -> Kernel */
+	thread_switch_yield_common(description, num_iterations, K_USER, 0,
+				   priority);
+#endif
 }

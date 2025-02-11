@@ -1,5 +1,7 @@
 /* att_internal.h - Attribute protocol handling */
 
+#include <zephyr/bluetooth/l2cap.h>
+
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  *
@@ -10,8 +12,21 @@
 #define BT_ATT_DEFAULT_LE_MTU	23
 #define BT_ATT_TIMEOUT		K_SECONDS(30)
 
-/* ATT MTU must be equal for RX and TX, so select the smallest value */
-#define BT_ATT_MTU (MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU))
+/* Local ATT Rx MTU
+ *
+ * This is the local 'Client Rx MTU'/'Server Rx MTU'. Core v5.3 Vol 3 Part F
+ * 3.4.2.2 requires that they are equal.
+ *
+ * The local ATT Server Rx MTU is limited to BT_L2CAP_TX_MTU because the GATT
+ * long attribute read protocol (Core v5.3 Vol 3 Part G 4.8.3) treats the ATT
+ * MTU as a promise about the read size. This requires the server to negotiate
+ * the ATT_MTU down to what it is actually able to send. This will unfortunately
+ * also limit how much the client is allowed to send.
+ */
+#define BT_LOCAL_ATT_MTU_EATT MIN(BT_L2CAP_SDU_RX_MTU, BT_L2CAP_SDU_TX_MTU)
+#define BT_LOCAL_ATT_MTU_UATT MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU)
+
+#define BT_ATT_BUF_SIZE MAX(BT_LOCAL_ATT_MTU_UATT, BT_LOCAL_ATT_MTU_EATT)
 
 struct bt_att_hdr {
 	uint8_t  code;
@@ -255,7 +270,7 @@ struct bt_att_signed_write_cmd {
 	uint8_t  value[0];
 } __packed;
 
-typedef void (*bt_att_func_t)(struct bt_conn *conn, uint8_t err,
+typedef void (*bt_att_func_t)(struct bt_conn *conn, int err,
 			      const void *pdu, uint16_t length,
 			      void *user_data);
 
@@ -275,8 +290,6 @@ struct bt_att_req {
 #endif /* CONFIG_BT_SMP */
 	void *user_data;
 };
-
-void att_sent(struct bt_conn *conn, void *user_data);
 
 void bt_att_init(void);
 uint16_t bt_att_get_mtu(struct bt_conn *conn);
@@ -325,8 +338,6 @@ void bt_att_increment_tx_meta_data_attr_count(struct net_buf *buf, uint16_t attr
 bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_t func,
 			       const void *user_data, enum bt_att_chan_opt chan_opt);
 
-void bt_att_free_tx_meta_data(const struct net_buf *buf);
-
 #if defined(CONFIG_BT_EATT)
 #define BT_ATT_CHAN_OPT(_params) (_params)->chan_opt
 #else
@@ -334,3 +345,5 @@ void bt_att_free_tx_meta_data(const struct net_buf *buf);
 #endif /* CONFIG_BT_EATT */
 
 bool bt_att_chan_opt_valid(struct bt_conn *conn, enum bt_att_chan_opt chan_opt);
+
+void bt_gatt_req_set_mtu(struct bt_att_req *req, uint16_t mtu);

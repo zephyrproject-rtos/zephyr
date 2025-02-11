@@ -1,13 +1,14 @@
-.. _usb_shell-app:
+.. zephyr:code-sample:: usb-shell
+   :name: USB shell
+   :relevant-api: usbd_api
 
-USB support shell sample
-########################
+   Use shell commands to interact with USB device stack.
 
 Overview
 ********
 
 The sample enables new experimental USB device support and the shell function.
-It is primarily intended to aid in the development and testing of USB constoller
+It is primarily intended to aid in the development and testing of USB controller
 drivers and new USB support.
 
 Building and flashing
@@ -27,7 +28,7 @@ currently it is only MAX3421E. The example can be built as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/shell
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: sparkfun_max3421e
    :gen-args: -DCONFIG_UHC_DRIVER=y -DCONFIG_USB_HOST_STACK=y
    :goals: flash
@@ -39,8 +40,8 @@ the platform has already defined or not `zephyr_uhc0` or `zephyr_udc0` nodelabel
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/shell
-   :board: nrf52840dk_nrf52840
-   :gen-args: -DOVERLAY_CONFIG=virtual.conf -DDTC_OVERLAY_FILE=virtual.overlay
+   :board: nrf52840dk/nrf52840
+   :gen-args: -DEXTRA_CONF_FILE=virtual.conf -DDTC_OVERLAY_FILE=virtual.overlay
    :goals: flash
    :compact:
 
