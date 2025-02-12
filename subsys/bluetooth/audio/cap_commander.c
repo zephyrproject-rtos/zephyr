@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "audio_internal.h"
 #include "bap_endpoint.h"
@@ -325,7 +326,7 @@ static bool valid_broadcast_reception_start_param(
 	return true;
 }
 
-int bt_cap_commander_broadcast_reception_start(
+int cap_commander_broadcast_reception_start(
 	const struct bt_cap_commander_broadcast_reception_start_param *param)
 {
 	struct bt_bap_broadcast_assistant_add_src_param add_src_param = {0};
@@ -333,16 +334,6 @@ int bt_cap_commander_broadcast_reception_start(
 	struct bt_cap_common_proc *active_proc;
 	struct bt_conn *conn;
 	int err;
-
-	if (!valid_broadcast_reception_start_param(param)) {
-		return -EINVAL;
-	}
-
-	if (bt_cap_common_test_and_set_proc_active()) {
-		LOG_DBG("A CAP procedure is already in progress");
-
-		return -EBUSY;
-	}
 
 	broadcast_assistant_cb.add_src = cap_commander_broadcast_assistant_add_src_cb;
 	if (!broadcast_assistant_cb_registered) {
@@ -404,6 +395,22 @@ int bt_cap_commander_broadcast_reception_start(
 	}
 
 	return 0;
+}
+
+int bt_cap_commander_broadcast_reception_start(
+	const struct bt_cap_commander_broadcast_reception_start_param *param)
+{
+	if (!valid_broadcast_reception_start_param(param)) {
+		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	return cap_commander_broadcast_reception_start(param);
 }
 
 static void
@@ -875,6 +882,18 @@ static void cap_commander_proc_complete(void)
 	failed_conn = active_proc->failed_conn;
 	err = active_proc->err;
 	proc_type = active_proc->proc_type;
+
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_handover_is_active()) {
+		/* Complete handover procedure. At this point we do not know if the remote
+		 * device will attempt to use PAST or scan for itself, so it's best to leave
+		 * this up to the application layer
+		 */
+		__ASSERT_NO_MSG(proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START);
+
+		bt_cap_handover_proc_complete();
+		return;
+	}
+
 	bt_cap_common_clear_active_proc();
 
 	if (cap_cb == NULL) {
