@@ -111,9 +111,7 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 	uintptr_t pa = (uintptr_t) virt;
 	uintptr_t *va = phys;
 
-	uint32_t found, regionId;
-
-	found = 0;
+	uint32_t regionId;
 
 	for (regionId = 0; regionId < translate_config.num_regions; regionId++) {
 		uint64_t start_addr, end_addr;
@@ -126,21 +124,21 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 
 		end_addr = start_addr + size_mask;
 
-		if (pa >= start_addr && pa <= end_addr) {
-			found = 1;
-			break;
+		if (pa < start_addr || pa > end_addr) {
+			continue;
 		}
-	}
-	if (found) {
+
 		/* translate input address to output address */
 		uint32_t offset =
 			pa - translate_config.region_config[regionId].system_addr;
 
 		*va = (translate_config.region_config[regionId].local_addr + offset);
-	} else {
-		/* no mapping found, set output = input with 32b truncation */
-		*va = pa;
+
+		return 0;
 	}
+
+	/* no mapping found, set output = input with 32b truncation */
+	*va = pa;
 
 	return 0;
 }
