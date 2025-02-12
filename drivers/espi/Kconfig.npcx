@@ -98,6 +98,14 @@ config ESPI_TAF_NPCX_RPMC_SUPPORT
 	help
 	  This option enable the handler for eSPI TAF RPMC request.
 
+config ESPI_TAF_NPCX_STS_AWAIT_TIMEOUT
+	int "A timeout value in microseconds to wait for automatic read status"
+	depends on ESPI_TAF_NPCX
+	default 20000
+	help
+	  This option specifies the timeout value in microseconds (us) for checking
+	  automatic read status.
+
 # The default value 'y' for the existing options if ESPI_NPCX is selected.
 if ESPI_NPCX
 
