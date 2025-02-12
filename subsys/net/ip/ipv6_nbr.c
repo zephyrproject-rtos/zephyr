@@ -1770,7 +1770,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 	if (na_hdr->flags & NET_ICMPV6_NA_FLAG_OVERRIDE ||
 	    (!(na_hdr->flags & NET_ICMPV6_NA_FLAG_OVERRIDE) &&
-	     tllao_offset && !lladdr_changed)) {
+	     !lladdr_changed)) {
 
 		if (lladdr_changed) {
 			dbg_update_neighbor_lladdr_raw(
