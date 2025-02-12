@@ -21,7 +21,7 @@
 		zephyr,sram = &sramg;
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &fmu;
-		zephyr,code-partition = &cpu1_partition;
+		zephyr,code-partition = &slot1_partition;
 		zephyr,console = &flexcomm2_lpuart2;
 		zephyr,shell-uart = &flexcomm2_lpuart2;
 	};
