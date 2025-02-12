@@ -22,6 +22,14 @@ LOG_MODULE_REGISTER(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 
 static const uint16_t lsm6dso_odr_map[] = {0, 12, 26, 52, 104, 208, 417, 833,
 					1667, 3333, 6667};
+static const uint8_t lsm6dso_lp_filter_map[] = {0,
+						LSM6DSO_LP_ODR_DIV_10,
+						LSM6DSO_LP_ODR_DIV_20,
+						LSM6DSO_LP_ODR_DIV_45,
+						LSM6DSO_LP_ODR_DIV_100,
+						LSM6DSO_LP_ODR_DIV_200,
+						LSM6DSO_LP_ODR_DIV_400,
+						LSM6DSO_LP_ODR_DIV_800};
 
 static int lsm6dso_freq_to_odr_val(uint16_t freq)
 {
@@ -812,6 +820,19 @@ static int lsm6dso_init_chip(const struct device *dev)
 		return -EIO;
 	}
 
+	if (cfg->accel_lp_filter) {
+		if (lsm6dso_xl_filter_lp2_set(ctx, 1)) {
+			LOG_DBG("failed to enable low pass filter (LPF2)");
+			return -EIO;
+		}
+
+		if (lsm6dso_xl_hp_path_on_out_set(ctx,
+				lsm6dso_lp_filter_map[cfg->accel_lp_filter])) {
+			LOG_DBG("failed to configure low pass filter (LPF2)");
+			return -EIO;
+		}
+	}
+
 	return 0;
 }
 
@@ -886,6 +907,7 @@ static int lsm6dso_init(const struct device *dev)
 #define LSM6DSO_CONFIG_COMMON(inst)					\
 	.accel_pm = DT_INST_PROP(inst, accel_pm),			\
 	.accel_odr = DT_INST_PROP(inst, accel_odr),			\
+	.accel_lp_filter = DT_INST_PROP(inst, accel_lp_filter),		\
 	.accel_range = DT_INST_PROP(inst, accel_range) |		\
 		(DT_INST_NODE_HAS_COMPAT(inst, st_lsm6dso32) ?	        \
 			ACCEL_RANGE_DOUBLE : 0),			\
