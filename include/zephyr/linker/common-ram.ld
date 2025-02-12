@@ -147,3 +147,5 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 #ifdef CONFIG_USERSPACE
 	_static_kernel_objects_end = .;
 #endif
+
+#include <iterable-structs-ram-sections.ld>
