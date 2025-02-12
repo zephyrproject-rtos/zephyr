@@ -488,7 +488,12 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 			 * GPIO_INT_TRIG_BOTH is not supported on Ambiq Apollo4 Plus Platform
 			 * ERR008: GPIO: Dual-edge interrupts are not vectoring
 			 */
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
 			return -ENOTSUP;
+#elif defined(CONFIG_SOC_SERIES_APOLLO5X)
+			pincfg.GP.cfg_b.eIntDir = AM_HAL_GPIO_PIN_INTDIR_BOTH;
+			break;
+#endif
 		default:
 			return -EINVAL;
 		}
