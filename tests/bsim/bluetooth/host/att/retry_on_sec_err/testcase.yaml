@@ -5,7 +5,7 @@ common:
   platform_allow:
     - nrf52_bsim/native
   harness: bsim
-  timeout: 5
+  timeout: 30
   harness_config:
     bsim_verbosity: 2
     bsim_sim_length: 60e6

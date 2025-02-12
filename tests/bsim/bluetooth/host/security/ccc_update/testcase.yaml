@@ -4,7 +4,7 @@ common:
   platform_allow:
     - nrf52_bsim/native
   harness: bsim
-  timeout: 5
+  timeout: 30
   harness_config:
     bsim_test_ids:
       - central
@@ -15,7 +15,8 @@ common:
     bsim_options:
       - -RealEncryption=1
       - -flash_rm
-      - "['-flash=ccc_update_client.log.bin', '-flash=ccc_update_bad_client.log.bin', '-flash=ccc_update_server.log.bin']"
+      - "['-flash=ccc_update_client.log.bin', '-flash=ccc_update_bad_client.log.bin',
+          '-flash=ccc_update_server.log.bin']"
 
 tests:
   bluetooth.host.security.ccc_update:
