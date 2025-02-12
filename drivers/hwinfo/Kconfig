@@ -239,7 +239,7 @@ config HWINFO_RW61X
 config HWINFO_AMBIQ
 	bool "AMBIQ hwinfo"
 	default y
-	depends on SOC_SERIES_APOLLO4X
+	depends on SOC_SERIES_APOLLO4X || SOC_SERIES_APOLLO5X
 	select HWINFO_HAS_DRIVER
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_HWINFO
