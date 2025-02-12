@@ -314,7 +314,7 @@ struct z_device_mmio_rom {
 #ifdef DEVICE_MMIO_IS_IN_RAM
 #define DEVICE_MMIO_GET(dev)	(*DEVICE_MMIO_RAM_PTR(dev))
 #else
-#define DEVICE_MMIO_GET(dev)	(DEVICE_MMIO_ROM_PTR(dev)->addr)
+#define DEVICE_MMIO_GET(dev)	(DEVICE_MMIO_ROM_PTR(dev)->phys_addr)
 #endif
 /** @} */
 
