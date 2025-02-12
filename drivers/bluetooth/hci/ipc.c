@@ -250,6 +250,7 @@ static int bt_ipc_send(const struct device *dev, struct net_buf *buf)
 	struct ipc_data *data = dev->data;
 	int err;
 	uint8_t pkt_indicator;
+	uint8_t retries = 0;
 
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
@@ -265,19 +266,34 @@ static int bt_ipc_send(const struct device *dev, struct net_buf *buf)
 		break;
 	default:
 		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
+		err = -ENOMSG;
 		goto done;
 	}
 	net_buf_push_u8(buf, pkt_indicator);
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
-	err = ipc_service_send(&data->hci_ept, buf->data, buf->len);
+
+	do {
+		err = ipc_service_send(&data->hci_ept, buf->data, buf->len);
+		if (err < 0) {
+			retries++;
+#if (USEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC) > CONFIG_BT_HCI_IPC_SEND_RETRY_DELAY_US
+			k_busy_wait(CONFIG_BT_HCI_IPC_SEND_RETRY_DELAY_US);
+#else
+			k_usleep(CONFIG_BT_HCI_IPC_SEND_RETRY_DELAY_US);
+#endif
+		}
+	} while ((err == -ENOMEM) && (retries < CONFIG_BT_HCI_IPC_SEND_RETRY_COUNT));
+
 	if (err < 0) {
 		LOG_ERR("Failed to send (err %d)", err);
+	} else {
+		err = 0;
 	}
 
 done:
 	net_buf_unref(buf);
-	return 0;
+	return err;
 }
 
 static void hci_ept_bound(void *priv)
