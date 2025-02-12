@@ -400,6 +400,12 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kSENSE_BASE_to_ADC);
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1U);
 #endif
+
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(os_timer_cpu0), okay) || \
+		DT_NODE_HAS_STATUS(DT_NODELABEL(os_timer_cpu1), okay))
+	CLOCK_AttachClk(kLPOSC_to_OSTIMER);
+	CLOCK_SetClkDiv(kCLOCK_DivOstimerClk, 1U);
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)
