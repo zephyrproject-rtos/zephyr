@@ -1190,3 +1190,12 @@ li>a.code-sample-link.reference.internal.current {
     text-overflow: ellipsis;
     max-width:80%;
 }
+
+#supported-features>div>table>tbody>tr>td>p {
+    white-space: normal;
+}
+
+#supported-features td {
+    background-color: var(--table-row-odd-background-color);
+    border-left-width: 1px;
+}

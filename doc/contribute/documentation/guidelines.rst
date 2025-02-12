@@ -1231,6 +1231,20 @@ Boards
    This directive is used to generate a catalog of Zephyr-supported boards that can be used to
    quickly browse the list of all supported boards and filter them according to various criteria.
 
+.. rst:directive:: .. zephyr:board-supported-hw::
+
+   This directive is used to show supported hardware features for all the targets of the board
+   documented in the current page. The tables are automatically generated based on the board's
+   Devicetree.
+
+   The directive must be used in a document that also contains a :rst:dir:`zephyr:board` directive,
+   as it relies on the board information to generate the table.
+
+   .. note::
+
+      This directive requires that the documentation is built with hardware features generation enabled
+      (``zephyr_generate_hw_features`` config option set to ``True``). If disabled, a warning message
+      will be shown instead of the hardware features tables.
 
 References
 **********
