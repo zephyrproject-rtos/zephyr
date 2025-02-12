@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Copyright 2023 Nordic Semiconductor ASA
+# Copyright 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 test_name='ccc_update'
-test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_security_${test_name}_overlay-no_lazy_load_conf"
-simulation_id="${test_name}_no_lazy_load"
+test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_security_${test_name}_overlay-no_long_wq_conf"
+simulation_id="${test_name}_no_long_wq"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin
