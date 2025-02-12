@@ -190,7 +190,7 @@ void dns_dispatcher_svc_handler(struct net_socket_service_event *pev)
 
 	ret = recv_data(pev);
 	if (ret < 0 && ret != DNS_EAI_ALLDONE && ret != -ENOENT) {
-		NET_ERR("DNS recv error (%d)", ret);
+		NET_DBG("DNS recv error (%d)", ret);
 	}
 }
 
