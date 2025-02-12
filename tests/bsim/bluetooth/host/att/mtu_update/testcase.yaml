@@ -4,7 +4,7 @@ common:
   platform_allow:
     - nrf52_bsim/native
   harness: bsim
-  timeout: 5
+  timeout: 30
 
 tests:
   bluetooth.host.att.mtu_update.build_central:

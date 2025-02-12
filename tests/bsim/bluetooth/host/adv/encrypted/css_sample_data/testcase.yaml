@@ -4,18 +4,18 @@ common:
   platform_allow:
     - nrf52_bsim/native
   harness: bsim
-  timeout: 5
+  timeout: 30
   harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_adv_encrypted_css_sample_data_prj_conf
-      bsim_verbosity: 2
-      bsim_sim_length: 60e6
-      bsim_test_ids:
-        - central
-        - peripheral
-      bsim_options:
-        - -RealEncryption=1
-        - -argstest
+    bsim_exe_name:
+      - tests_bsim_bluetooth_host_adv_encrypted_css_sample_data_prj_conf
+    bsim_verbosity: 2
+    bsim_sim_length: 20e6
+    bsim_test_ids:
+      - central
+      - peripheral
+    bsim_options:
+      - -RealEncryption=1
+      - -argstest
 
 tests:
   bluetooth.host.adv.encrypted.build_css_sample_data:

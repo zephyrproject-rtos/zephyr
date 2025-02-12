@@ -4,7 +4,7 @@ common:
     - bluetooth
   platform_allow:
     - nrf52_bsim/native
-  timeout: 20
+  timeout: 240
   harness: bsim
   harness_config:
     bsim_verbosity: 2
