@@ -49,7 +49,6 @@ LOG_MODULE_REGISTER(nxp_wifi, CONFIG_WIFI_LOG_LEVEL);
  ******************************************************************************/
 static int s_nxp_wifi_State = NXP_WIFI_NOT_INITIALIZED;
 static bool s_nxp_wifi_StaConnected;
-static bool s_nxp_wifi_UapActivated;
 static struct k_event s_nxp_wifi_SyncEvent;
 
 static struct nxp_wifi_dev nxp_wifi0; /* static instance */
@@ -59,13 +58,13 @@ static struct wlan_network nxp_wlan_network;
 static struct wlan_network nxp_wlan_uap_network;
 #endif
 
-#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
-static char uap_ssid[IEEEtypes_SSID_SIZE + 1];
-#endif
-
 extern struct interface g_mlan;
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 extern struct interface g_uap;
+static bool s_nxp_wifi_UapActivated;
+#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
+static char uap_ssid[IEEEtypes_SSID_SIZE + 1];
+#endif
 #endif
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 extern const rtos_wpa_supp_dev_ops wpa_supp_ops;
@@ -103,9 +102,9 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	struct in_addr dhcps_addr4;
 	struct in_addr base_addr;
 	struct in_addr netmask_addr;
-#endif
 	struct wifi_iface_status status = { 0 };
 	struct wifi_ap_sta_info ap_sta_info = { 0 };
+#endif
 
 	LOG_DBG("WLAN: received event %d", reason);
 
