@@ -59,6 +59,10 @@
 		};
 	};
 
+	vcom: vcom {
+		compatible = "silabs,vcom-uart";
+		en-gpios = <&gpiob 0 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL)>;
+	};
 };
 
 &cpu0 {
@@ -118,6 +122,11 @@
 	status = "okay";
 };
 
+&vcom {
+	controller = <&usart0>;
+	status = "okay";
+};
+
 &gpio {
 	location-swo = <0>;
 	status = "okay";
@@ -129,12 +138,6 @@
 
 &gpiob {
 	status = "okay";
-
-	board-controller-enable {
-		gpio-hog;
-		gpios = <0 GPIO_ACTIVE_HIGH>;
-		output-high;
-	};
 };
 
 &gpioc {
