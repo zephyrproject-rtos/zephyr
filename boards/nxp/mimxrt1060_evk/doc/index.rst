@@ -137,6 +137,10 @@ The MIMXRT1060 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_01 | LPI2C1_SDA      | I2C                       |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_04 | LPUART3_CTS     | UART BT HCI               |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_05 | LPUART3_RTS     | UART BT HCI               |
++---------------+-----------------+---------------------------+
 | GPIO_AD_B1_06 | LPUART3_TX      | UART BT HCI               |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_07 | LPUART3_RX      | UART BT HCI               |
@@ -427,6 +431,14 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! mimxrt1060_evk//qspi
+
+Shield for M.2 Wi-Fi and BT Interface
+=====================================
+
+Rev C version is tested with :ref:`nxp_m2_wifi_bt` shield to attach any M.2 module
+with BT HCI UART interface and Wi-Fi SDIO interface. The shield binds the required NXP
+HCI driver or SDIO driver to perform firmware-load and other setup configurations
+for NXP SoC IW416/IW612.
 
 Troubleshooting
 ===============

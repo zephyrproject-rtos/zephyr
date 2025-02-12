@@ -1,0 +1,91 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_NXP_M2_1XK_WIFI_BT
+
+if BT
+
+choice BT_NXP_MODULE
+	default BT_NXP_IW416
+endchoice
+
+endif # BT
+
+if WIFI
+
+config WIFI_NXP
+	default y
+
+choice NXP_WIFI_PART
+	default NXP_IW416
+endchoice
+
+choice NXP_IW416_MODULE
+	default NXP_IW416_MURATA_1XK_M2
+endchoice
+
+endif # WIFI
+
+endif # SHIELD_NXP_M2_1XK_WIFI_BT
+
+if SHIELD_NXP_M2_2EL_WIFI_BT
+
+if BT
+
+choice BT_NXP_MODULE
+	default BT_NXP_NW612
+endchoice
+
+endif # BT
+
+if WIFI
+
+config WIFI_NXP
+	default y
+
+choice NXP_WIFI_PART
+	default NXP_IW61X
+endchoice
+
+choice NXP_IW61X_MODULE
+	default NXP_IW612_MURATA_2EL_M2
+endchoice
+
+endif # WIFI
+
+endif # SHIELD_NXP_M2_2EL_WIFI_BT
+
+if (BT_NXP_IW416) || (BT_NXP_NW612) || (NXP_IW416) || (NXP_IW61X)
+
+if BT
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+config BT_LONG_WQ_STACK_SIZE
+	default 2560
+
+config MAIN_STACK_SIZE
+	default 2560
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 4096
+
+endif # SHELL
+
+endif # BT
+
+if WIFI_NXP
+
+if SHELL
+
+config NXP_WIFI_SHELL
+	default y
+
+endif # SHELL
+
+endif # WIFI_NXP
+
+endif

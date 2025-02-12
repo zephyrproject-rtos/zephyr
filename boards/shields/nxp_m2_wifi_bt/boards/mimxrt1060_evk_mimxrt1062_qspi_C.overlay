@@ -1,0 +1,90 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,uart-pipe = &lpuart1;
+	};
+};
+
+&m2_hci_bt_uart {
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+	/delete-property/ pinctrl-2;
+	/delete-property/ pinctrl-names;
+	pinctrl-0 = <&pinmux_lpuart3_flow_control>;
+	pinctrl-1 = <&pinmux_lpuart3_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	bt_hci_uart: bt_hci_uart {
+		m2_bt_module: m2_bt_module {
+			sdio-reset-gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+			w-disable-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&m2_wifi_sdio {
+	/* Use dat3 detection method */
+	detect-dat3;
+	pinctrl-4 = <&pinmux_usdhc1_dat3_nopull>;
+	pinctrl-names = "default", "slow", "med", "fast", "nopull";
+};
+
+&pinctrl {
+	/* removes pull on dat3 for card detect */
+	pinmux_usdhc1_dat3_nopull: pinmux_usdhc1_dat3_nopull {
+
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b0_01_usdhc1_clk>;
+			bias-disable;
+			drive-strength = "r0";
+			input-schmitt-enable;
+			slew-rate = "fast";
+			nxp,speed = "100-mhz";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_b1_12_gpio2_io28>,
+				<&iomuxc_gpio_sd_b0_00_usdhc1_cmd>,
+				<&iomuxc_gpio_sd_b0_02_usdhc1_data0>,
+				<&iomuxc_gpio_sd_b0_03_usdhc1_data1>,
+				<&iomuxc_gpio_sd_b0_04_usdhc1_data2>;
+			drive-strength = "r0";
+			input-schmitt-enable;
+			bias-pull-up;
+			bias-pull-up-value = "47k";
+			slew-rate = "fast";
+			nxp,speed = "100-mhz";
+		};
+
+		group2 {
+			pinmux = <&iomuxc_gpio_b1_14_usdhc1_vselect>;
+			drive-strength = "r0-4";
+			input-schmitt-enable;
+			bias-pull-up;
+			bias-pull-up-value = "47k";
+			slew-rate = "fast";
+			nxp,speed = "100-mhz";
+		};
+
+		group3 {
+			pinmux = <&iomuxc_gpio_ad_b0_05_gpio1_io05>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+
+		group4 {
+			pinmux = <&iomuxc_gpio_sd_b0_05_usdhc1_data3>;
+			bias-disable;
+			drive-strength = "r0";
+			slew-rate = "fast";
+			nxp,speed = "100-mhz";
+			input-schmitt-enable;
+		};
+	};
+};
