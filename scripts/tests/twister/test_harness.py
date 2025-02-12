@@ -1211,6 +1211,8 @@ def test_gtest_repeated_run(gtest):
 
 
 def test_bsim_build(monkeypatch, tmp_path):
+    monkeypatch.setenv("BSIM_OUT_PATH", str(tmp_path))
+
     mocked_instance = mock.Mock()
     build_dir = tmp_path / "build_dir"
     os.makedirs(build_dir)
@@ -1219,9 +1221,8 @@ def test_bsim_build(monkeypatch, tmp_path):
     mocked_instance.testsuite.harness_config = {}
 
     harness = Bsim()
-    harness.instance = mocked_instance
+    harness.configure(mocked_instance)
 
-    monkeypatch.setenv("BSIM_OUT_PATH", str(tmp_path))
     os.makedirs(os.path.join(tmp_path, "bin"), exist_ok=True)
     zephyr_exe_path = os.path.join(build_dir, "zephyr", "zephyr.exe")
     os.makedirs(os.path.dirname(zephyr_exe_path), exist_ok=True)

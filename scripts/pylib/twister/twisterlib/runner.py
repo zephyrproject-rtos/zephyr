@@ -45,7 +45,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
 from twisterlib.coverage import run_coverage_instance
 from twisterlib.environment import TwisterEnv
-from twisterlib.harness import Ctest, HarnessImporter, Pytest, Bsim
+from twisterlib.harness import Bsim, Ctest, HarnessImporter, Pytest
 from twisterlib.log_helper import log_command
 from twisterlib.platform import Platform
 from twisterlib.testinstance import TestInstance
@@ -1797,7 +1797,7 @@ class ProjectBuilder(FilterBuilder):
                     harness.bsim_run(instance.handler.get_test_timeout())
                 else:
                     instance.status = TwisterStatus.ERROR
-                    instance.reason = str("BSIM not ready")
+                    instance.reason = "BSIM not ready"
                     logger.error(instance.reason)
             else:
                 instance.handler.handle(harness)
@@ -1993,7 +1993,8 @@ class TwisterRunner:
                         expr_parser.reserved.keys()
                     )
 
-                if test_only or instance.testsuite.no_build and instance.run:
+                if (test_only and instance.run) or\
+                    (instance.testsuite.no_build and instance.testsuite.harness == 'bsim'):
                     task_list.append({"op": "run", "test": instance})
                 elif instance.filter_stages and "full" not in instance.filter_stages:
                     task_list.append({"op": "filter", "test": instance})

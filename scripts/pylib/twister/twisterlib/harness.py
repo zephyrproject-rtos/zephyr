@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+
 from __future__ import annotations
 
 import glob
@@ -6,6 +7,7 @@ import json
 import logging
 import os
 import platform
+import random
 import re
 import shlex
 import shutil
@@ -14,7 +16,6 @@ import sys
 import threading
 import time
 import xml.etree.ElementTree as ET
-import random
 from collections import OrderedDict
 from enum import Enum
 
@@ -991,6 +992,9 @@ class Bsim(Harness):
         return self._exe_paths[index if index < len(self._exe_paths) else 0]
 
     def configure(self, instance):
+        def replacer(exe_name):
+            return exe_name.replace(os.path.sep, '_').replace('.', '_').replace('@', '_')
+
         super().configure(instance)
 
         if not self._bsim_out_path:
@@ -999,11 +1003,10 @@ class Bsim(Harness):
         exe_names = []
         for exe_name in self.instance.testsuite.harness_config.get('bsim_exe_name', []):
             new_exe_name = f'bs_{self.instance.platform.name}_{exe_name}'
-            exe_names.append(
-                new_exe_name.replace(os.path.sep, '_').replace('.', '_').replace('@', '_'))
+            exe_names.append(replacer(new_exe_name))
 
         if not exe_names:
-            exe_names = [f'bs_{self.instance.name}']
+            exe_names = [f'bs_{replacer(self.instance.name)}']
 
         self._exe_paths = \
             [os.path.join(self._bsim_out_path, exe_name) for exe_name in exe_names]
