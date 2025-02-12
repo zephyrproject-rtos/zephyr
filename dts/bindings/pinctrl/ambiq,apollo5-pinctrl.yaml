@@ -1,0 +1,156 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The Ambiq Apollo5 pin controller is a node responsible for controlling
+    pin function selection and pin properties, such as routing a UART0 TX
+    to pin 60 and enabling the pullup resistor on that pin.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+
+      /* include pre-defined combinations for the SoC variant used by the board */
+      #include <dt-bindings/pinctrl/ambiq-apollo5-pinctrl.h>
+
+      &pinctrl {
+        uart0_default: uart0_default {
+          group1 {
+            pinmux = <UART0TX_P60>;
+          };
+          group2 {
+            pinmux = <UART0RX_P47>;
+            input-enable;
+          };
+        };
+      };
+
+    The 'uart0_default' child node encodes the pin configurations for a
+    particular state of a device; in this case, the default (that is, active)
+    state.
+
+    As shown, pin configurations are organized in groups within each child node.
+    Each group can specify a list of pin function selections in the 'pinmux'
+    property.
+
+    A group can also specify shared pin properties common to all the specified
+    pins, such as the 'input-enable' property in group 2.
+
+compatible: "ambiq,apollo5-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Definitions for a pinctrl state.
+  child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-enable
+          - drive-push-pull
+          - drive-open-drain
+          - bias-high-impedance
+          - bias-pull-up
+          - bias-pull-down
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. Each
+          element of the array is an integer constructed from the
+          pin number and the alternative function of the pin.
+      drive-strength:
+        type: string
+        enum:
+          - "0.1"
+          - "0.5"
+          - "0.75"
+          - "1.0"
+        default: "0.1"
+        description: |
+          The drive strength of a pin, relative to full-driver strength.
+          The default value is 0.1, which is the reset value.
+      ambiq,pull-up-ohms:
+        type: int
+        enum:
+          - 1500
+          - 6000
+          - 12000
+          - 24000
+          - 50000
+          - 100000
+        default: 1500
+        description: |
+          The pullup resistor value. The default value is 1500 ohms.
+      ambiq,nce-src:
+        type: int
+        default: 0
+        description: |
+          IOM0CE0 = 0x0 - IOM 0 NCE 0 module
+          IOM0CE1 = 0x1 - IOM 0 NCE 1 module
+          IOM0CE2 = 0x2 - IOM 0 NCE 2 module
+          IOM0CE3 = 0x3 - IOM 0 NCE 3 module
+          IOM1CE0 = 0x4 - IOM 1 NCE 0 module
+          IOM1CE1 = 0x5 - IOM 1 NCE 1 module
+          IOM1CE2 = 0x6 - IOM 1 NCE 2 module
+          IOM1CE3 = 0x7 - IOM 1 NCE 3 module
+          IOM2CE0 = 0x8 - IOM 2 NCE 0 module
+          IOM2CE1 = 0x9 - IOM 2 NCE 1 module
+          IOM2CE2 = 0xA - IOM 2 NCE 2 module
+          IOM2CE3 = 0xB - IOM 2 NCE 3 module
+          IOM3CE0 = 0xC - IOM 3 NCE 0 module
+          IOM3CE1 = 0xD - IOM 3 NCE 1 module
+          IOM3CE2 = 0xE - IOM 3 NCE 2 module
+          IOM3CE3 = 0xF - IOM 3 NCE 3 module
+          IOM4CE0 = 0x10 - IOM 4 NCE 0 module
+          IOM4CE1 = 0x11 - IOM 4 NCE 1 module
+          IOM4CE2 = 0x12 - IOM 4 NCE 2 module
+          IOM4CE3 = 0x13 - IOM 4 NCE 3 module
+          IOM5CE0 = 0x14 - IOM 5 NCE 0 module
+          IOM5CE1 = 0x15 - IOM 5 NCE 1 module
+          IOM5CE2 = 0x16 - IOM 5 NCE 2 module
+          IOM5CE3 = 0x17 - IOM 5 NCE 3 module
+          IOM6CE0 = 0x18 - IOM 6 NCE 0 module
+          IOM6CE1 = 0x19 - IOM 6 NCE 1 module
+          IOM6CE2 = 0x1A - IOM 6 NCE 2 module
+          IOM6CE3 = 0x1B - IOM 6 NCE 3 module
+          IOM7CE0 = 0x1C - IOM 7 NCE 0 module
+          IOM7CE1 = 0x1D - IOM 7 NCE 1 module
+          IOM7CE2 = 0x1E - IOM 7 NCE 2 module
+          IOM7CE3 = 0x1F - IOM 7 NCE 3 module
+          DC_DPI_DE = 0x30 - DC DPI DE module
+          DISP_CONT_CSX = 0x31 - DISP CONT CSX module
+          DC_SPI_CS_N = 0x32 - DC SPI CS_N module
+          DC_QSPI_CS_N = 0x33 - DC QSPI CS_N module
+          DC_RESX = 0x34 - DC module RESX
+      ambiq,nce-pol:
+        type: int
+        default: 0
+        description: |
+          Polarity select for NCE
+          LOW = 0x0 - Polarity is active low
+          HIGH = 0x1 - Polarity is active high
+      ambiq,sdif-cdwp:
+        type: int
+        default: 0
+        description: |
+          Configure SD Card Detection and Write Protection pin
+          0x0 - Not SDIF pin
+          0x1 - SDIF0CD
+          0x2 - SDIF0WP
+          0x3 - SDIF1CD
+          0x4 - SDIF1WP
