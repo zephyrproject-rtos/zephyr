@@ -2613,12 +2613,6 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 	nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
 				net_pkt_get_data(pkt, &nd_access);
 
-	/* Add neighbor cache entry using link local address, regardless of link layer address
-	 * presence in Router Advertisement.
-	 */
-	nbr = net_ipv6_nbr_add(net_pkt_iface(pkt), (struct in6_addr *)NET_IPV6_HDR(pkt)->src, NULL,
-				true, NET_IPV6_NBR_STATE_INCOMPLETE);
-
 	while (nd_opt_hdr) {
 		net_pkt_acknowledge_data(pkt, &nd_access);
 
@@ -2717,6 +2711,15 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 
 		nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
 					net_pkt_get_data(pkt, &nd_access);
+	}
+
+	if (nbr == NULL) {
+		/* Add neighbor cache entry using link local address, regardless
+		 * of link layer address presence in Router Advertisement.
+		 */
+		nbr = net_ipv6_nbr_add(net_pkt_iface(pkt),
+				       (struct in6_addr *)NET_IPV6_HDR(pkt)->src,
+				       NULL, true, NET_IPV6_NBR_STATE_INCOMPLETE);
 	}
 
 	router = net_if_ipv6_router_lookup(net_pkt_iface(pkt),
