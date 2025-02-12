@@ -1,0 +1,6 @@
+board:
+  name: apollo510_eb
+  full_name: Apollo510 SOC Engineering Board
+  vendor: ambiq
+  socs:
+  - name: apollo510
