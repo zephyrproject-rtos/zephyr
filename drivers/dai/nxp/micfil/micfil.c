@@ -159,7 +159,7 @@ static int dai_nxp_micfil_remove(const struct device *dev)
 	return 0;
 }
 
-const struct dai_driver_api dai_nxp_micfil_ops = {
+static DEVICE_API(dai, dai_nxp_micfil_ops) = {
 	.probe			= dai_nxp_micfil_probe,
 	.remove			= dai_nxp_micfil_remove,
 	.config_set		= dai_nxp_micfil_set_config,
