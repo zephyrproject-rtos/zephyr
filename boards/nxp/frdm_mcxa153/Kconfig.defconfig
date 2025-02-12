@@ -1,0 +1,11 @@
+# FRDM-MCXA153 board
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_MCXA153
+
+config BOARD_EARLY_INIT_HOOK
+	default y
+
+endif # BOARD_FRDM_MCXA156
