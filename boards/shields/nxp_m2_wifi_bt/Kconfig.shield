@@ -1,0 +1,8 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_NXP_M2_1XK_WIFI_BT
+	def_bool $(shields_list_contains,nxp_m2_1xk_wifi_bt)
+
+config SHIELD_NXP_M2_2EL_WIFI_BT
+	def_bool $(shields_list_contains,nxp_m2_2el_wifi_bt)
