@@ -1,20 +1,23 @@
 /*
  * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ * Copyright (c) 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
-#include <dt-bindings/pinctrl/renesas-rzt2m-pinctrl.h>
-#include <arm/renesas/rz/rzt2m.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <arm/renesas/rz/rzt/r9a07g075.dtsi>
+#include "rzt2m_rsk-pinctrl.dtsi"
 
 / {
-	model = "RZT/2M Starter Kit";
-	compatible = "renesas,rzt2m_starter_kit";
+	model = "Renesas Starter Kit+ for RZ/T2M";
+	compatible = "renesas,rzt2m-rsk";
 
 	chosen {
 		zephyr,sram = &cpu0_atcm;
+		zephyr,flash = &xspi0_cs0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
@@ -26,18 +29,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led0 {
 			gpios = <&gpio19 6 0>;
 			label = "led0";
 		};
+
 		led1: led1 {
 			gpios = <&gpio19 4 0>;
 			label = "led1";
 		};
+
 		led2: led2 {
 			gpios = <&gpio20 0 0>;
 			label = "led2";
 		};
+
 		led3: led3 {
 			gpios = <&gpio23 4 0>;
 			label = "led3";
@@ -46,11 +53,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		sw1: sw1 {
 			label = "sw1";
 			gpios = <&gpio10 5 0>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		sw2: sw2 {
 			label = "sw2";
 			gpios = <&gpio16 3 0>;
@@ -59,36 +68,41 @@
 	};
 };
 
+&sci0 {
+	pinctrl-0 = <&sci0_default>;
+	pinctrl-names = "default";
+	status = "okay";
 
-&pinctrl {
-	uart0_default: uart0_default {
-		group1 {
-			pinmux = <UART0TX_P16_5>;
-		};
-		group2 {
-			pinmux = <UART0RX_P16_6>;
-			input-enable;
-		};
-	};
-	uart3_default: uart3_default {
-		group1 {
-			pinmux = <UART3TX_P18_0>;
-		};
-		group2 {
-			pinmux = <UART3RX_P17_7>;
-			input-enable;
-		};
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
 	};
 };
 
-&uart0 {
-	status = "okay";
-	pinctrl-0 = <&uart0_default>;
+&irq2 {
+	trigger-type = "falling";
+	pinctrl-0 = <&irq2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
-&uart3 {
+&gpio10 {
+	irqs = <5 2>;
 	status = "okay";
-	pinctrl-0 = <&uart3_default>;
-	pinctrl-names = "default";
+};
+
+&gpio16 {
+	status = "okay";
+};
+
+&gpio19 {
+	status = "okay";
+};
+
+&gpio20 {
+	status = "okay";
+};
+
+&gpio23 {
+	status = "okay";
 };
