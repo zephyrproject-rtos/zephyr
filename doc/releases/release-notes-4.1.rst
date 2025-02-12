@@ -279,8 +279,10 @@ New Boards
    * :zephyr:board:`nucleo_c071rb` (``nucleo_c071rb``)
    * :zephyr:board:`nucleo_f072rb` (``nucleo_f072rb``)
    * :zephyr:board:`nucleo_h7s3l8` (``nucleo_h7s3l8``)
+   * :zephyr:board:`nucleo_n657x0_q` (``nucleo_n657x0_q``)
    * :zephyr:board:`nucleo_wb07cc` (``nucleo_wb07cc``)
    * :zephyr:board:`stm32f413h_disco` (``stm32f413h_disco``)
+   * :zephyr:board:`stm32n6570_dk` (``stm32n6570_dk``)
 
 * Seeed Technology Co., Ltd
 
