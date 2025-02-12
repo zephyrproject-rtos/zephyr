@@ -94,6 +94,9 @@ STM32
   as it was introduced earlier.
   The Kconfig method for configuration is now removed.
 
+* ADC properties ``st,adc-sequencer`` and ``st,adc-clock-source`` now uses
+  string values instead of integer values.
+
 Modules
 *******
 
