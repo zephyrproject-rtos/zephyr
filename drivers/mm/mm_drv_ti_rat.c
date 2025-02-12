@@ -99,8 +99,8 @@ void sys_mm_drv_ti_rat_init(struct address_trans_region_config *region_config, u
 
 int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 {
-	if (virt == NULL) {
-		return -EINVAL;
+	if (phys == NULL) {
+		return 0;
 	}
 	uintptr_t pa = (uintptr_t) virt;
 	uintptr_t *va = phys;
@@ -136,8 +136,5 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 		*va = pa;
 	}
 
-	if (va == NULL) {
-		return -EFAULT;
-	}
 	return 0;
 }
