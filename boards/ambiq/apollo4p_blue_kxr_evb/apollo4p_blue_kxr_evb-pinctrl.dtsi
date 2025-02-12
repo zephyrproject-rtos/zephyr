@@ -128,7 +128,7 @@
 			pinmux = <NCE57_P57>;
 			drive-push-pull;
 			drive-strength = "0.5";
-			ambiq,iom-nce-module = <32>;
+			ambiq,nce-src = <32>;
 		};
 	};
 	mspi1_default: mspi1_default{
@@ -141,7 +141,7 @@
 			pinmux = <NCE56_P56>;
 			drive-push-pull;
 			drive-strength = "0.5";
-			ambiq,iom-nce-module = <34>;
+			ambiq,nce-src = <34>;
 		};
 	};
 	mspi2_default: mspi2_default{
@@ -154,7 +154,7 @@
 			pinmux = <NCE52_P52>;
 			drive-push-pull;
 			drive-strength = "0.5";
-			ambiq,iom-nce-module = <36>;
+			ambiq,nce-src = <36>;
 		};
 	};
 
