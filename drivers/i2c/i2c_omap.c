@@ -12,6 +12,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #ifdef CONFIG_I2C_OMAP_BUS_RECOVERY
 #include "i2c_bitbang.h"
@@ -104,6 +105,7 @@ struct i2c_omap_cfg {
 	DEVICE_MMIO_NAMED_ROM(base);
 	uint32_t irq;
 	uint32_t speed;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 enum i2c_omap_speed {
@@ -680,6 +682,13 @@ static int i2c_omap_init(const struct device *dev)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
 	const struct i2c_omap_cfg *cfg = DEV_CFG(dev);
+	int ret;
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("failed to apply pinctrl");
+		return ret;
+	}
 
 	k_sem_init(&data->lock, 1, 1);
 	/* Set the speed for I2C */
@@ -692,17 +701,24 @@ static int i2c_omap_init(const struct device *dev)
 }
 
 #define I2C_OMAP_INIT(inst)                                                                        \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	LOG_INSTANCE_REGISTER(omap_i2c, inst, CONFIG_I2C_LOG_LEVEL);                               \
 	static const struct i2c_omap_cfg i2c_omap_cfg_##inst = {                                   \
 		DEVICE_MMIO_NAMED_ROM_INIT(base, DT_DRV_INST(inst)),                               \
 		.irq = DT_INST_IRQN(inst),                                                         \
 		.speed = DT_INST_PROP(inst, clock_frequency),                                      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 	};                                                                                         \
                                                                                                    \
 	static struct i2c_omap_data i2c_omap_data_##inst;                                          \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_omap_init, NULL, &i2c_omap_data_##inst,                \
-				  &i2c_omap_cfg_##inst, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \
-				  &i2c_omap_api);
+	I2C_DEVICE_DT_INST_DEFINE(inst,                                                            \
+		i2c_omap_init,                                                                     \
+		NULL,                                                                              \
+		&i2c_omap_data_##inst,                                                             \
+		&i2c_omap_cfg_##inst,                                                              \
+		POST_KERNEL,                                                                       \
+		CONFIG_I2C_INIT_PRIORITY,                                                          \
+		&i2c_omap_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_OMAP_INIT)
