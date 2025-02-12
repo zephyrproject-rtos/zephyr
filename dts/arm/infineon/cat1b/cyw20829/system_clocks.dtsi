@@ -7,6 +7,13 @@
 
 #include "clock_source_def.h"
 / {
+	srss_power: srss_power {
+		#clock-cells = <0>;
+		compatible = "infineon,cat1b-power";
+		power-profile = "POWER_PROFILE_0";
+		status = "okay";
+	};
+
 	clocks {
 		/* iho */
 		clk_iho: clk_iho {
