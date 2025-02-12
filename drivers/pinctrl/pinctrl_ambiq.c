@@ -45,6 +45,24 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 	pin_config.GP.cfg_b.eDriveStrength = pin->drive_strength;
 #if defined(CONFIG_SOC_SERIES_APOLLO4X)
 	pin_config.GP.cfg_b.uSlewRate = pin->slew_rate;
+#else
+	switch (pin->sdif_cdwp) {
+	case 1:
+		am_hal_gpio_cd0_pin_config(pin->pin_num);
+		break;
+	case 2:
+		am_hal_gpio_wp0_pin_config(pin->pin_num);
+		break;
+	case 3:
+		am_hal_gpio_cd1_pin_config(pin->pin_num);
+		break;
+	case 4:
+		am_hal_gpio_wp1_pin_config(pin->pin_num);
+		break;
+	default:
+		/* not a sdif pin */
+		break;
+	}
 #endif
 	pin_config.GP.cfg_b.uNCE = pin->nce;
 	pin_config.GP.cfg_b.eCEpol = pin->nce_pol;
