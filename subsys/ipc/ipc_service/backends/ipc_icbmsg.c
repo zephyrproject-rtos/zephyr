@@ -144,9 +144,6 @@ LOG_MODULE_REGISTER(ipc_icbmsg,
 /** Flag indicating that ICMsg was bounded for this instance. */
 #define CONTROL_BOUNDED BIT(31)
 
-/** Registered endpoints count mask in flags. */
-#define FLAG_EPT_COUNT_MASK 0xFFFF
-
 /** Workqueue stack size for bounding processing (this configuration is not optimized). */
 #define EP_BOUND_WORK_Q_STACK_SIZE (768U)
 
@@ -162,10 +159,15 @@ enum msg_type {
 				 * that the endpoint bounding was fully processed on
 				 * the sender side.
 				 */
+	MSG_UNBOUND,		/* Unbound endpoint */
 };
 
 enum ept_bounding_state {
 	EPT_UNCONFIGURED = 0,	/* Endpoint in not configured (initial state). */
+	EPT_RESERVED,		/* Endpoint is taken for configuration.
+				 * Thread that takes it would configure it in a moment.
+				 * Added to safely support multithreading endpoint allocation
+				 */
 	EPT_CONFIGURED,		/* Endpoint is configured, waiting for work queue to
 				 * start bounding process.
 				 */
@@ -174,14 +176,6 @@ enum ept_bounding_state {
 				 * we are waiting for any incoming messages.
 				 */
 	EPT_READY,		/* Bounding is done. Bound callback was called. */
-};
-
-enum ept_rebound_state {
-	EPT_NORMAL = 0,		/* No endpoint rebounding is needed. */
-	EPT_DEREGISTERED,	/* Endpoint was deregistered. */
-	EPT_REBOUNDING,		/* Rebounding was requested, waiting for work queue to
-				 * start rebounding process.
-				 */
 };
 
 struct channel_status {
@@ -227,7 +221,6 @@ struct icbmsg_config {
 struct ept_data {
 	const struct ipc_ept_cfg *cfg;	/* Endpoint configuration. */
 	atomic_t state;			/* Bounding state. */
-	atomic_t rebound_state;		/* Rebounding state. */
 	uint8_t addr;			/* Endpoint address. */
 };
 
@@ -850,12 +843,14 @@ static int find_ept_by_name(struct backend_data *dev_data, const char *name)
 	 * can be corrupted. Extra care must be taken to avoid out of
 	 * bounds reads.
 	 */
-	name_size = strnlen(name, buffer_end - name - 1) + 1;
+	name_size = name ? strnlen(name, buffer_end - name - 1) + 1 : 0;
 
 	for (i = 0; i < NUM_EPT; i++) {
 		ept = &dev_data->ept[i];
+		/* Test the name, extra care for NULL as a name argument */
 		if (atomic_get(&ept->state) == EPT_CONFIGURED &&
-		    strncmp(ept->cfg->name, name, name_size) == 0) {
+		    (ept->cfg->name == name ||
+		     strncmp(ept->cfg->name, name, name_size) == 0)) {
 			return i;
 		}
 	}
@@ -885,11 +880,15 @@ static int match_bound_msg(struct backend_data *dev_data, size_t rx_block_index,
 	int r;
 	bool valid_state;
 
+	/* Note that this is internal function and this fact should be checked before calling */
+	__ASSERT(ept_addr < NUM_EPT, "Endpoint address in bound message exceeds the limit");
+
 	/* Find endpoint that matches requested name. */
 	block = block_from_index(&conf->rx, rx_block_index);
 	buffer = block->data;
-	ept_index = find_ept_by_name(dev_data, buffer);
+	ept_index = find_ept_by_name(dev_data, buffer[0] == '\0' ? NULL : buffer);
 	if (ept_index < 0) {
+		LOG_ERR("Endpoint name \"%s\"not found", buffer);
 		return 0;
 	}
 
@@ -898,6 +897,7 @@ static int match_bound_msg(struct backend_data *dev_data, size_t rx_block_index,
 	ept->addr = ept_addr;
 	dev_data->ept_map[ept->addr] = ept_index;
 	valid_state = atomic_cas(&ept->state, EPT_CONFIGURED, EPT_READY);
+
 	if (!valid_state) {
 		LOG_ERR("Unexpected bounding from remote on endpoint %d", ept_addr);
 		return -EINVAL;
@@ -905,6 +905,7 @@ static int match_bound_msg(struct backend_data *dev_data, size_t rx_block_index,
 
 	/* Endpoint is ready to send messages, so call bound callback. */
 	if (ept->cfg->cb.bound != NULL) {
+		LOG_INF("Calling bound");
 		ept->cfg->cb.bound(ept->cfg->priv);
 	}
 
@@ -931,15 +932,27 @@ static int send_bound_message(struct backend_data *dev_data, struct ept_data *ep
 	uint8_t *buffer;
 	int r;
 
-	msg_len = strlen(ept->cfg->name) + 1;
+	msg_len = ept->cfg->name ? strlen(ept->cfg->name) + 1 : 1;
 	alloc_size = msg_len;
 	r = alloc_tx_buffer(dev_data, &alloc_size, &buffer, K_FOREVER);
 	if (r >= 0) {
-		strcpy(buffer, ept->cfg->name);
+		strcpy(buffer, ept->cfg->name ? ept->cfg->name : "");
 		r = send_block(dev_data, MSG_BOUND, ept->addr, r, msg_len);
 	}
 
 	return r;
+}
+
+/**
+ * Send unbound message on specified endpoint.
+ *
+ * @param[in] ept	Endpoint to use.
+ *
+ * @return		non-negative value in case of success or negative error code.
+ */
+static int send_unbound_message(struct backend_data *dev_data, struct ept_data *ept)
+{
+	return send_control_message(dev_data, MSG_UNBOUND, ept->addr, 0);
 }
 
 #ifdef CONFIG_MULTITHREADING
@@ -1017,18 +1030,6 @@ static void ept_bound_process(struct backend_data *dev_data)
 		k_mutex_unlock(&dev_data->mutex);
 #endif
 	}
-
-	/* Check if any endpoint is ready to rebound and call the callback if it is. */
-	for (i = 0; i < NUM_EPT; i++) {
-		ept = &dev_data->ept[i];
-		matching_state = atomic_cas(&ept->rebound_state, EPT_REBOUNDING,
-						EPT_NORMAL);
-		if (matching_state) {
-			if (ept->cfg->cb.bound != NULL) {
-				ept->cfg->cb.bound(ept->cfg->priv);
-			}
-		}
-	}
 }
 
 /**
@@ -1052,10 +1053,7 @@ static struct ept_data *get_ept_and_rx_validate(struct backend_data *dev_data,
 	state = atomic_get(&ept->state);
 
 	if (state == EPT_READY) {
-		/* Ready state, ensure that it is not deregistered nor rebounding. */
-		if (atomic_get(&ept->rebound_state) != EPT_NORMAL) {
-			return NULL;
-		}
+		/* Valid state - nothing to do */
 	} else if (state == EPT_BOUNDING) {
 		/* Endpoint bound callback was not called yet - call it. */
 		atomic_set(&ept->state, EPT_READY);
@@ -1129,6 +1127,8 @@ static int received_bound(struct backend_data *dev_data, size_t rx_block_index,
 	size_t size;
 	uint8_t *buffer;
 
+	LOG_INF("%s: %u, %u", __func__, rx_block_index, ept_addr);
+
 	/* Validate */
 	buffer = buffer_from_index_validate(&conf->rx, rx_block_index, &size, true);
 	if (buffer == NULL) {
@@ -1151,6 +1151,41 @@ static int received_bound(struct backend_data *dev_data, size_t rx_block_index,
 #else
 	ept_bound_process(dev_data);
 #endif
+
+	return 0;
+}
+
+/**
+ * Unbound endpoint message received.
+ */
+static int received_unbound(struct backend_data *dev_data, uint8_t ept_addr)
+{
+	struct ept_data *ept;
+	atomic_val_t last_state;
+	bool matching_state;
+
+	if (ept_addr >= NUM_EPT || dev_data->ept_map[ept_addr] >= NUM_EPT) {
+		LOG_ERR("Received invalid endpoint addr %d", ept_addr);
+		return -EINVAL;
+	}
+
+	ept = &dev_data->ept[dev_data->ept_map[ept_addr]];
+
+	do {
+		last_state = atomic_get(&ept->state);
+		if (last_state <= EPT_CONFIGURED) {
+			LOG_ERR("Unexpected unbounding from remote on endpoint %d, state: %lu",
+			ept_addr, last_state);
+			return -EINVAL;
+		}
+		matching_state = atomic_cas(&ept->state, last_state, EPT_UNCONFIGURED);
+	} while (!matching_state);
+
+	if (ept->cfg->cb.unbound != NULL) {
+		ept->cfg->cb.unbound(ept->cfg->priv);
+	}
+
+	LOG_INF("Endpoint %d unbounded done", ept_addr);
 
 	return 0;
 }
@@ -1200,10 +1235,14 @@ static void control_received(const void *data, size_t len, void *priv)
 	case MSG_BOUND:
 		r = received_bound(dev_data, message->block_index, ept_addr);
 		break;
+	case MSG_UNBOUND:
+		r = received_unbound(dev_data, ept_addr);
+		break;
 	case MSG_DATA:
 		r = received_data(dev_data, message->block_index, ept_addr);
 		break;
 	default:
+		LOG_ERR("Unknown msg type: %d", message->msg_type);
 		/* Silently ignore other messages types. They can be used in future
 		 * protocol version.
 		 */
@@ -1216,6 +1255,29 @@ exit:
 	}
 }
 
+static void initialize_rx_buffer_usage(const struct device *instance)
+{
+	const struct icbmsg_config *conf = instance->config;
+
+	/* Initialize buffer used state */
+	sys_cache_data_invd_range(conf->rx.send_bitmask,
+				  ATOMIC_BITMAP_SIZE(conf->rx.block_count) * sizeof(atomic_val_t));
+	__sync_synchronize();
+
+	ATOMIC_VAL_DEFINE(send_bitmask, conf->rx.block_count);
+	ATOMIC_VAL_DEFINE(rx_hold, conf->rx.block_count);
+
+	bitpool_atomic_read(conf->rx.send_bitmask, send_bitmask, conf->rx.block_count);
+	bitpool_atomic_read(conf->rx_hold_bm, rx_hold, conf->rx.block_count);
+	bitpool_xor(send_bitmask, send_bitmask, rx_hold, conf->rx.block_count);
+
+	bitpool_atomic_write(conf->tx.proc_bitmask, send_bitmask, conf->rx.block_count);
+	__sync_synchronize();
+	sys_cache_data_flush_range(conf->tx.proc_bitmask,
+				   ATOMIC_BITMAP_SIZE(conf->rx.block_count) * sizeof(atomic_val_t));
+
+}
+
 /**
  * Callback called when ICMsg is bound.
  */
@@ -1224,13 +1286,47 @@ static void control_bound(void *priv)
 	const struct device *instance = priv;
 	struct backend_data *dev_data = instance->data;
 
+	initialize_rx_buffer_usage(instance);
+
 	/* Set flag that ICMsg is bounded and now, endpoint bounding may start. */
 	atomic_or(&dev_data->flags, CONTROL_BOUNDED);
+
 #ifdef CONFIG_MULTITHREADING
 	schedule_ept_bound_process(dev_data);
 #else
 	ept_bound_process(dev_data);
 #endif
+}
+
+static void control_unbound(void *priv)
+{
+	const struct device *instance = priv;
+	struct backend_data *dev_data = instance->data;
+
+	/* Clear flag that ICMsg is bounded and now, endpoint bounding may start. */
+	atomic_and(&dev_data->flags, ~CONTROL_BOUNDED);
+
+	for (int i = 0; i < NUM_EPT; i++) {
+		struct ept_data *ept = &dev_data->ept[i];
+
+		if (atomic_get(&ept->state) == EPT_READY) {
+			atomic_val_t last_state;
+			bool matching_state;
+
+			do {
+				last_state = atomic_get(&ept->state);
+				matching_state = atomic_cas(
+					&ept->state,
+					last_state,
+					(last_state > EPT_CONFIGURED) ?
+						EPT_UNCONFIGURED : last_state);
+			} while (!matching_state);
+
+			if ((last_state > EPT_CONFIGURED) && ept->cfg->cb.unbound) {
+				ept->cfg->cb.unbound(ept->cfg->priv);
+			}
+		}
+	}
 }
 
 /**
@@ -1243,6 +1339,8 @@ static int open(const struct device *instance)
 
 	static const struct ipc_service_cb cb = {
 		.bound = control_bound,
+		.unbound = IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_ICBMSG_UNBOUND_ENABLED) ?
+				control_unbound : NULL,
 		.received = control_received,
 		.error = NULL,
 	};
@@ -1263,22 +1361,7 @@ static int open(const struct device *instance)
 			   BLOCK_HEADER_SIZE));
 
 	/* Initialize buffer used state */
-	sys_cache_data_invd_range(conf->rx.send_bitmask,
-				  ATOMIC_BITMAP_SIZE(conf->rx.block_count) * sizeof(atomic_val_t));
-	__sync_synchronize();
-
-	ATOMIC_VAL_DEFINE(send_bitmask, conf->rx.block_count);
-	ATOMIC_VAL_DEFINE(rx_hold, conf->rx.block_count);
-
-	bitpool_atomic_read(conf->rx.send_bitmask, send_bitmask, conf->rx.block_count);
-	bitpool_atomic_read(conf->rx_hold_bm, rx_hold, conf->rx.block_count);
-	LOG_DBG("  Initialized send_bitmask: %lx, rx_hold: %lx", send_bitmask[0], rx_hold[0]);
-	bitpool_xor(send_bitmask, send_bitmask, rx_hold, conf->rx.block_count);
-
-	bitpool_atomic_write(conf->tx.proc_bitmask, send_bitmask, conf->rx.block_count);
-	__sync_synchronize();
-	sys_cache_data_flush_range(conf->tx.proc_bitmask,
-				   ATOMIC_BITMAP_SIZE(conf->rx.block_count) * sizeof(atomic_val_t));
+	// initialize_rx_buffer_usage(instance);
 
 	/* Clear waiting threads */
 	atomic_set(conf->tx.waiting_cnt, 0);
@@ -1327,30 +1410,29 @@ static int register_ept(const struct device *instance, void **token,
 {
 	struct backend_data *dev_data = instance->data;
 	struct ept_data *ept = NULL;
-	bool matching_state;
 	int ept_index;
 	int r = 0;
 
-	/* Try to find endpoint to rebound */
-	for (ept_index = 0; ept_index < NUM_EPT; ept_index++) {
-		ept = &dev_data->ept[ept_index];
-		if (ept->cfg == cfg) {
-			matching_state = atomic_cas(&ept->rebound_state, EPT_DEREGISTERED,
-						   EPT_REBOUNDING);
-			if (!matching_state) {
-				return -EINVAL;
-			}
-#ifdef CONFIG_MULTITHREADING
-			schedule_ept_bound_process(dev_data);
-#else
-			ept_bound_process(dev_data);
-#endif
-			return 0;
-		}
+	LOG_DBG("Register endpoint %s", cfg->name ? cfg->name : "(NULL)");
+
+	/* Empty name string is not allowed as it marks NULL name value */
+	if (cfg->name && cfg->name[0] == '\0') {
+		LOG_ERR("Empty endpoint name is not allowed as it is reserved for NULL value");
+		return -EINVAL;
+	}
+	/* Check name consistency */
+	if (find_ept_by_name(dev_data, cfg->name) >= 0) {
+		LOG_ERR("Endpoint with name \"%s\" already exists",
+			cfg->name ? cfg->name : "(NULL)");
+		return -EEXIST;
 	}
 
-	/* Reserve new endpoint index. */
-	ept_index = atomic_inc(&dev_data->flags) & FLAG_EPT_COUNT_MASK;
+	/* Find first free endpoint structure */
+	for (ept_index = 0; ept_index < NUM_EPT; ept_index++) {
+		if (atomic_cas(&dev_data->ept[ept_index].state, EPT_UNCONFIGURED, EPT_RESERVED)) {
+			break;
+		}
+	}
 	if (ept_index >= NUM_EPT) {
 		LOG_ERR("Too many endpoints");
 		__ASSERT_NO_MSG(false);
@@ -1369,6 +1451,7 @@ static int register_ept(const struct device *instance, void **token,
 	/* Keep endpoint address in token. */
 	*token = ept;
 
+	LOG_INF("Adding new endpoint %s", cfg->name ? cfg->name : "(NULL)");
 #ifdef CONFIG_MULTITHREADING
 	/* Rest of the bounding will be done in the system workqueue. */
 	schedule_ept_bound_process(dev_data);
@@ -1385,14 +1468,28 @@ static int register_ept(const struct device *instance, void **token,
 static int deregister_ept(const struct device *instance, void *token)
 {
 	struct ept_data *ept = token;
+	atomic_val_t last_state;
 	bool matching_state;
 
-	matching_state = atomic_cas(&ept->rebound_state, EPT_NORMAL, EPT_DEREGISTERED);
+	LOG_DBG("Deregister endpoint %s", ept->cfg->name ? ept->cfg->name : "(NULL)");
 
-	if (!matching_state) {
-		return -EINVAL;
+	do {
+		last_state = atomic_get(&ept->state);
+		if (last_state < EPT_CONFIGURED) {
+			LOG_ERR("Unexpected deregistration of endpoint %s, state: %lu",
+				ept->cfg->name ? ept->cfg->name : "(NULL)", last_state);
+			return -EINVAL;
+		}
+		matching_state = atomic_cas(&ept->state, last_state, EPT_UNCONFIGURED);
+	} while (!matching_state);
+
+	if (last_state > EPT_CONFIGURED) {
+		int r = send_unbound_message(instance->data, ept);
+
+		if (r < 0) {
+			return r;
+		}
 	}
-
 	return 0;
 }
 
@@ -1728,6 +1825,8 @@ const static struct ipc_service_backend backend_ops = {
 		DT_INST_PROP(i, loc##_blocks),					\
 		DT_INST_PROP(i, rem##_blocks))
 
+#define UNBOUND_MODE(i) CONCAT(ICMSG_UNBOUND_MODE_, DT_INST_STRING_UPPER_TOKEN(i, unbound))
+
 #define DEFINE_BACKEND_DEVICE(i)							\
 	static ATOMIC_VAL_DEFINE(tx_usage_bitmap_##i, DT_INST_PROP(i, tx_blocks));	\
 	static ATOMIC_VAL_DEFINE(tx_allocated_bitmap_##i, DT_INST_PROP(i, tx_blocks));	\
@@ -1735,11 +1834,15 @@ const static struct ipc_service_backend backend_ops = {
 	PBUF_DEFINE(tx_icbmsg_pb_##i,							\
 			GET_MEM_ADDR_INST(i, tx),					\
 			GET_ICMSG_SIZE_INST(i, tx, rx),					\
-			GET_CACHE_ALIGNMENT(i), 0, 0);					\
+			GET_CACHE_ALIGNMENT(i),						\
+			UNBOUND_MODE(i) != ICMSG_UNBOUND_MODE_DISABLE,			\
+			UNBOUND_MODE(i) == ICMSG_UNBOUND_MODE_DETECT);			\
 	PBUF_DEFINE(rx_icbmsg_pb_##i,							\
 			GET_MEM_ADDR_INST(i, rx),					\
 			GET_ICMSG_SIZE_INST(i, rx, tx),					\
-			GET_CACHE_ALIGNMENT(i), 0, 0);					\
+			GET_CACHE_ALIGNMENT(i),						\
+			UNBOUND_MODE(i) != ICMSG_UNBOUND_MODE_DISABLE,			\
+			UNBOUND_MODE(i) == ICMSG_UNBOUND_MODE_DETECT);			\
 	static struct backend_data backend_data_##i = {					\
 		.control_data = {							\
 			.tx_pb = &tx_icbmsg_pb_##i,					\
@@ -1751,7 +1854,7 @@ const static struct ipc_service_backend backend_ops = {
 		.control_config = {							\
 			.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),			\
 			.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),			\
-			.unbound_mode = ICMSG_UNBOUND_MODE_DISABLE,			\
+			.unbound_mode = UNBOUND_MODE(i),				\
 		},									\
 		.tx = {									\
 			.blocks_ptr = (uint8_t *)GET_BLOCKS_ADDR_INST(i, tx, rx),	\
@@ -1779,6 +1882,10 @@ const static struct ipc_service_backend backend_ops = {
 		.tx_allocated_bm = tx_allocated_bitmap_##i,				\
 		.rx_hold_bm = rx_hold_bitmap_##i,					\
 	};										\
+	BUILD_ASSERT(((UNBOUND_MODE(i) != ICMSG_UNBOUND_MODE_ENABLE &&			\
+		       UNBOUND_MODE(i) != ICMSG_UNBOUND_MODE_DETECT)) ||		\
+		     IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_ICBMSG_UNBOUND_ENABLED),	\
+		     "Unbounding is disabled in Kconfig");				\
 	BUILD_ASSERT(IS_POWER_OF_TWO(GET_CACHE_ALIGNMENT(i)),				\
 		     "This module supports only power of two cache alignment");		\
 	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, tx, rx) >= BLOCK_ALIGNMENT) &&		\
