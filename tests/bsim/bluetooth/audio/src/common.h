@@ -81,14 +81,17 @@ static const uint8_t mock_iso_data[] = {
 
 #define MIN_SEND_COUNT 100
 #define WAIT_SECONDS   100                           /* seconds */
-#define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
+#define WAIT_TIME      (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
 
-#define WAIT_FOR_COND(cond) while (!(cond)) { k_sleep(K_MSEC(1)); }
+#define WAIT_FOR_COND(cond)                                                                        \
+	while (!(cond)) {                                                                          \
+		k_sleep(K_MSEC(1));                                                                \
+	}
 
-#define CREATE_FLAG(flag) static atomic_t flag = (atomic_t)false
-#define SET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)true)
-#define UNSET_FLAG(flag) (void)atomic_clear(&flag)
-#define TEST_FLAG(flag) (atomic_get(&flag) == (atomic_t)true)
+#define CREATE_FLAG(flag) static atomic_t flag = (atomic_t) false
+#define SET_FLAG(flag)    (void)atomic_set(&flag, (atomic_t) true)
+#define UNSET_FLAG(flag)  (void)atomic_clear(&flag)
+#define TEST_FLAG(flag)   (atomic_get(&flag) == (atomic_t) true)
 #define WAIT_FOR_FLAG(flag)                                                                        \
 	while (!(bool)atomic_get(&flag)) {                                                         \
 		(void)k_sleep(K_MSEC(1));                                                          \
@@ -97,26 +100,26 @@ static const uint8_t mock_iso_data[] = {
 	while (!(bool)atomic_clear(&flag)) {                                                       \
 		(void)k_sleep(K_MSEC(1));                                                          \
 	}
-#define WAIT_FOR_UNSET_FLAG(flag) \
-	while (atomic_get(&flag) != (atomic_t)false) { \
-		(void)k_sleep(K_MSEC(1)); \
+#define WAIT_FOR_UNSET_FLAG(flag)                                                                  \
+	while (atomic_get(&flag) != (atomic_t) false) {                                            \
+		(void)k_sleep(K_MSEC(1));                                                          \
 	}
 
 extern enum bst_result_t bst_result;
-#define FAIL(...) \
-	do { \
-		bst_result = Failed; \
-		bs_trace_error_time_line(__VA_ARGS__); \
+#define FAIL(...)                                                                                  \
+	do {                                                                                       \
+		bst_result = Failed;                                                               \
+		bs_trace_error_time_line(__VA_ARGS__);                                             \
 	} while (0)
 
-#define PASS(...) \
-	do { \
-		bst_result = Passed; \
-		bs_trace_info_time(1, "PASSED: " __VA_ARGS__); \
+#define PASS(...)                                                                                  \
+	do {                                                                                       \
+		bst_result = Passed;                                                               \
+		bs_trace_info_time(1, "PASSED: " __VA_ARGS__);                                     \
 	} while (0)
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP         5
+#define PA_SYNC_SKIP                      5
 
 #define PBP_STREAMS_TO_SEND 2
 
