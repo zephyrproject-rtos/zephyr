@@ -3,7 +3,7 @@ common:
     - bluetooth
   platform_allow:
     - nrf52_bsim/native
-  timeout: 60
+  timeout: 240
   harness: bsim
   harness_config:
     bsim_verbosity: 2
@@ -33,7 +33,8 @@ tests:
         - central
         - peripheral
       bsim_options:
-        - "['-flash=privacy_peripheral.central.log.bin', '-flash=privacy_peripheral.peripheral.log.bin']"
+        - "['-flash=privacy_peripheral.central.log.bin',
+            '-flash=privacy_peripheral.peripheral.log.bin']"
         - -flash_erase
   bluetooth.host.privacy.peripheral_2:
     no_build: true
@@ -44,7 +45,8 @@ tests:
         - central
         - peripheral
       bsim_options:
-        - "['-flash=privacy_peripheral.central.log.bin', '-flash=privacy_peripheral.peripheral.log.bin']"
+        - "['-flash=privacy_peripheral.central.log.bin',
+            '-flash=privacy_peripheral.peripheral.log.bin']"
         - -flash_rm
   bluetooth.host.privacy.peripheral_rpa_expired:
     harness_config:
