@@ -16,6 +16,7 @@ config NUCLEI_ECLIC
 	depends on DT_HAS_NUCLEI_ECLIC_ENABLED
 	select CLIC
 	select CLIC_SMCLICSHV_EXT if RISCV_VECTORED_MODE
+	select CLIC_SMCLICCONFIG_EXT
 	help
 	  Interrupt controller for Nuclei SoC core.
 
@@ -35,6 +36,12 @@ config CLIC_SMCLICSHV_EXT
 	  The selective hardware vectoring extension gives users the flexibility
 	  to select the behavior for each interrupt. The CLIC driver needs to
 	  implement the riscv_clic_irq_vector_set() function.
+
+config CLIC_SMCLICCONFIG_EXT
+	bool
+	help
+	  Enables the SMCLICCONFIG extension, allowing configuration of CLIC
+	  parameters such as the number of interrupt level bits.
 
 config LEGACY_CLIC
 	bool "Use the legacy clic specification"
