@@ -117,10 +117,15 @@ static ALWAYS_INLINE uint8_t read_clic8(const struct device *dev, uint32_t offse
  */
 void riscv_clic_irq_enable(uint32_t irq)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
-	union CLICINTIE clicintie = {.b = {.IE = 0x1}};
+	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
+		const struct device *dev = DEVICE_DT_INST_GET(0);
+		union CLICINTIE clicintie = {.b = {.IE = 0x1}};
 
-	write_clic8(dev, CLIC_INTIE(irq), clicintie.w);
+		write_clic8(dev, CLIC_INTIE(irq), clicintie.w);
+	} else {
+		csr_write(CSR_MISELECT, CLIC_INTIE(irq));
+		csr_set(CSR_MIREG2, BIT(irq % 32));
+	}
 }
 
 /**
@@ -128,10 +133,15 @@ void riscv_clic_irq_enable(uint32_t irq)
  */
 void riscv_clic_irq_disable(uint32_t irq)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
-	union CLICINTIE clicintie = {.b = {.IE = 0x0}};
+	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
+		const struct device *dev = DEVICE_DT_INST_GET(0);
+		union CLICINTIE clicintie = {.b = {.IE = 0x0}};
 
-	write_clic8(dev, CLIC_INTIE(irq), clicintie.w);
+		write_clic8(dev, CLIC_INTIE(irq), clicintie.w);
+	} else {
+		csr_write(CSR_MISELECT, CLIC_INTIE(irq));
+		csr_clear(CSR_MIREG2, BIT(irq % 32));
+	}
 }
 
 /**
@@ -139,10 +149,19 @@ void riscv_clic_irq_disable(uint32_t irq)
  */
 int riscv_clic_irq_is_enabled(uint32_t irq)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
-	union CLICINTIE clicintie = {.w = read_clic8(dev, CLIC_INTIE(irq))};
+	int is_enabled = 0;
 
-	return clicintie.b.IE;
+	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
+		const struct device *dev = DEVICE_DT_INST_GET(0);
+		union CLICINTIE clicintie = {.w = read_clic8(dev, CLIC_INTIE(irq))};
+
+		is_enabled = clicintie.b.IE;
+	} else {
+		csr_write(CSR_MISELECT, CLIC_INTIE(irq));
+		is_enabled = csr_read(CSR_MIREG2) & BIT(irq % 32);
+	}
+
+	return !!is_enabled;
 }
 
 /**
@@ -172,12 +191,32 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 			  (MIN(pri, max_level) << (8U - data->nlbits)) |
 			  BIT_MASK(8U - data->intctlbits);
 
-	write_clic8(dev, CLIC_INTCTRL(irq), intctrl);
+	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
+		write_clic8(dev, CLIC_INTCTRL(irq), intctrl);
+	} else {
+		uint32_t clicintctl, bit_offset = 8 * (irq % 4);
+
+		csr_write(CSR_MISELECT, CLIC_INTCTRL(irq));
+		clicintctl = csr_read(CSR_MIREG);
+		clicintctl &= ~GENMASK(bit_offset + 7, bit_offset);
+		clicintctl |= intctrl << bit_offset;
+		csr_write(CSR_MIREG, clicintctl);
+	}
 
 	/* Set the IRQ operates in machine mode, non-vectoring and the trigger type. */
 	union CLICINTATTR clicattr = {.b = {.mode = 0x3, .shv = 0x0, .trg = flags & BIT_MASK(3)}};
 
-	write_clic8(dev, CLIC_INTATTR(irq), clicattr.w);
+	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
+		write_clic8(dev, CLIC_INTATTR(irq), clicattr.w);
+	} else {
+		uint32_t clicintattr, bit_offset = 8 * (irq % 4);
+
+		csr_write(CSR_MISELECT, CLIC_INTATTR(irq));
+		clicintattr = csr_read(CSR_MIREG2);
+		clicintattr &= ~GENMASK(bit_offset + 7, bit_offset);
+		clicintattr |= clicattr.w << bit_offset;
+		csr_write(CSR_MIREG2, clicintattr);
+	}
 }
 
 /**
@@ -185,12 +224,22 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
  */
 void riscv_clic_irq_vector_set(uint32_t irq)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
-	union CLICINTATTR clicattr = {.w = read_clic8(dev, CLIC_INTATTR(irq))};
+	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
+		const struct device *dev = DEVICE_DT_INST_GET(0);
+		union CLICINTATTR clicattr = {.w = read_clic8(dev, CLIC_INTATTR(irq))};
 
-	/* Set Selective Hardware Vectoring. */
-	clicattr.b.shv = 1;
-	write_clic8(dev, CLIC_INTATTR(irq), clicattr.w);
+		/* Set Selective Hardware Vectoring. */
+		clicattr.b.shv = 1;
+		write_clic8(dev, CLIC_INTATTR(irq), clicattr.w);
+	} else {
+		uint32_t clicintattr, bit_offset = 8 * (irq % 4);
+		union CLICINTATTR clicattr = {.b = {.shv = 1}};
+
+		csr_write(CSR_MISELECT, CLIC_INTATTR(irq));
+		clicintattr = csr_read(CSR_MIREG2);
+		clicintattr |= clicattr.w << bit_offset;
+		csr_write(CSR_MIREG2, clicintattr);
+	}
 }
 
 /**
@@ -198,10 +247,15 @@ void riscv_clic_irq_vector_set(uint32_t irq)
  */
 void riscv_clic_irq_set_pending(uint32_t irq)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
-	union CLICINTIP clicintip = {.b = {.IP = 0x1}};
+	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
+		const struct device *dev = DEVICE_DT_INST_GET(0);
+		union CLICINTIP clicintip = {.b = {.IP = 0x1}};
 
-	write_clic8(dev, CLIC_INTIP(irq), clicintip.w);
+		write_clic8(dev, CLIC_INTIP(irq), clicintip.w);
+	} else {
+		csr_write(CSR_MISELECT, CLIC_INTIP(irq));
+		csr_set(CSR_MIREG, BIT(irq % 32));
+	}
 }
 
 static int clic_init(const struct device *dev)
@@ -228,16 +282,40 @@ static int clic_init(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_CLIC_SMCLICCONFIG_EXT)) {
-		/* Configure the number of bits assigned to interrupt levels. */
-		union CLICCFG cliccfg = {.qw = read_clic32(dev, CLIC_CFG)};
+		if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
+			/* Configure the number of bits assigned to interrupt levels. */
+			union CLICCFG cliccfg = {.qw = read_clic32(dev, CLIC_CFG)};
 
-		cliccfg.w.nlbits = data->nlbits;
-		write_clic32(dev, CLIC_CFG, cliccfg.qw);
+			cliccfg.w.nlbits = data->nlbits;
+			write_clic32(dev, CLIC_CFG, cliccfg.qw);
+		} else {
+			csr_write(CSR_MISELECT, CLIC_CFG);
+			union CLICCFG cliccfg = {.qw = csr_read(CSR_MIREG)};
+
+			cliccfg.w.nlbits = data->nlbits;
+			csr_write(CSR_MIREG, cliccfg.qw);
+		}
 	}
 
-	/* Reset all interrupt control register */
-	for (int i = 0; i < CONFIG_NUM_IRQS; i++) {
-		write_clic32(dev, CLIC_CTRL(i), 0);
+	if (IS_ENABLED(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS)) {
+		/* Reset all interrupt control register. */
+		for (int i = 0; i < CONFIG_NUM_IRQS; i++) {
+			write_clic32(dev, CLIC_CTRL(i), 0);
+		}
+	} else {
+		/* Reset all clicintip, clicintie register. */
+		for (int i = 0; i < CONFIG_NUM_IRQS; i += 32) {
+			csr_write(CSR_MISELECT, CLIC_INTIP(i));
+			csr_write(CSR_MIREG, 0);
+			csr_write(CSR_MIREG2, 0);
+		}
+
+		/* Reset all clicintctl, clicintattr register. */
+		for (int i = 0; i < CONFIG_NUM_IRQS; i += 4) {
+			csr_write(CSR_MISELECT, CLIC_INTCTRL(i));
+			csr_write(CSR_MIREG, 0);
+			csr_write(CSR_MIREG2, 0);
+		}
 	}
 
 	return 0;
@@ -250,7 +328,8 @@ static int clic_init(const struct device *dev)
 	};
 #define CLIC_INTC_CONFIG_INIT(n)                                                                   \
 	const static struct clic_config clic_config_##n = {                                        \
-		.base = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
+		.base = COND_CODE_1(CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS,                           \
+				   (DT_REG_ADDR(DT_DRV_INST(n))), (0)),                            \
 	};
 #define CLIC_INTC_DEVICE_INIT(n)                                                                   \
 	CLIC_INTC_DATA_INIT(n)                                                                     \
