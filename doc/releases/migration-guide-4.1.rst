@@ -578,6 +578,16 @@ Bluetooth Host
 Bluetooth Crypto
 ================
 
+Bluetooth Services
+==================
+
+* The :kconfig:option:`CONFIG_BT_DIS_MODEL` and :kconfig:option:`CONFIG_BT_DIS_MANUF` have been
+  deprecated. Application developers should now use the
+  :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER_STR` and
+  :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME_STR` Kconfig options to set the string values in the
+  Model Number String and Manufacturer Name String characteristics that are part of the Device
+  Information Service (DIS).
+
 Networking
 **********
 
