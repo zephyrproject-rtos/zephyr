@@ -22,6 +22,59 @@ EDT_PICKLE_PATH = "zephyr/edt.pickle"
 logger = logging.getLogger(__name__)
 
 
+class DeviceTreeUtils:
+    _compat_description_cache = {}
+
+    @classmethod
+    def get_first_sentence(cls, text):
+        """Extract the first sentence from a text block (typically a node description).
+
+        Args:
+            text: The text to extract the first sentence from.
+
+        Returns:
+            The first sentence found in the text, or the entire text if no sentence
+            boundary is found.
+        """
+        # Split the text into lines
+        lines = text.splitlines()
+
+        # Trim leading and trailing whitespace from each line and ignore completely blank lines
+        lines = [line.strip() for line in lines]
+
+        if not lines:
+            return ""
+
+        # Case 1: Single line followed by blank line(s) or end of text
+        if len(lines) == 1 or (len(lines) > 1 and lines[1] == ""):
+            first_line = lines[0]
+            # Check for the first period
+            period_index = first_line.find(".")
+            # If there's a period, return up to the period; otherwise, return the full line
+            return first_line[: period_index + 1] if period_index != -1 else first_line
+
+        # Case 2: Multiple contiguous lines, treat as a block
+        block = " ".join(lines)
+        period_index = block.find(".")
+        # If there's a period, return up to the period; otherwise, return the full block
+        return block[: period_index + 1] if period_index != -1 else block
+
+    @classmethod
+    def get_cached_description(cls, node):
+        """Get the cached description for a devicetree node.
+
+        Args:
+            node: A devicetree node object with matching_compat and description attributes.
+
+        Returns:
+            The cached description for the node's compatible, creating it if needed.
+        """
+        return cls._compat_description_cache.setdefault(
+            node.matching_compat,
+            cls.get_first_sentence(node.description)
+        )
+
+
 def guess_file_from_patterns(directory, patterns, name, extensions):
     for pattern in patterns:
         for ext in extensions:
@@ -197,13 +250,10 @@ def get_catalog(generate_hw_features=False):
         doc_page = guess_doc_page(board)
 
         supported_features = {}
-        targets = set()
 
         # Use pre-gathered build info and DTS files
         if board.name in board_devicetrees:
             for board_target, edt in board_devicetrees[board.name].items():
-                targets.add(board_target)
-
                 okay_nodes = [
                     node
                     for node in edt.nodes
@@ -218,13 +268,13 @@ def get_catalog(generate_hw_features=False):
                         if binding_path.is_relative_to(ZEPHYR_BINDINGS)
                         else "misc"
                     )
-                    target_features.setdefault(binding_type, set()).add(node.matching_compat)
+                    description = DeviceTreeUtils.get_cached_description(node)
+                    target_features.setdefault(binding_type, {}).setdefault(
+                        node.matching_compat, description
+                    )
 
-
-                # for now we do the union of all supported features for all of board's targets but
-                # in the future it's likely the catalog will be organized so that the list of
-                # supported features is also available per target.
-                supported_features.update(target_features)
+                # Store features for this specific target
+                supported_features[board_target] = target_features
 
         # Grab all the twister files for this board and use them to figure out all the archs it
         # supports.
@@ -246,7 +296,6 @@ def get_catalog(generate_hw_features=False):
             "archs": list(archs),
             "socs": list(socs),
             "supported_features": supported_features,
-            "targets": list(targets),
             "image": guess_image(board),
         }
 
