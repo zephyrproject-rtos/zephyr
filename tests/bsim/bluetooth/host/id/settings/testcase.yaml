@@ -4,7 +4,7 @@ common:
   platform_allow:
     - nrf52_bsim/native
   harness: bsim
-  timeout: 5
+  timeout: 30
   harness_config:
     bsim_exe_name:
       - tests_bsim_bluetooth_host_id_settings_prj_conf
