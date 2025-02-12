@@ -55,7 +55,7 @@ static int adc_ambiq_set_resolution(am_hal_adc_slot_prec_e *prec, uint8_t adc_re
 	case 12:
 		*prec = AM_HAL_ADC_SLOT_12BIT;
 		break;
-#if !defined(CONFIG_SOC_SERIES_APOLLO4X)
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	case 14:
 		*prec = AM_HAL_ADC_SLOT_14BIT;
 		break;
@@ -83,7 +83,7 @@ static int adc_ambiq_slot_config(const struct device *dev, const struct adc_sequ
 	ADCSlotConfig.eChannel = channel;
 	ADCSlotConfig.bWindowCompare = false;
 	ADCSlotConfig.bEnabled = true;
-#if defined(CONFIG_SOC_SERIES_APOLLO4X)
+#if !defined(CONFIG_SOC_SERIES_APOLLO3X)
 	ADCSlotConfig.ui32TrkCyc = AM_HAL_ADC_MIN_TRKCYC;
 #endif
 	if (AM_HAL_STATUS_SUCCESS !=
@@ -119,7 +119,9 @@ static void adc_ambiq_isr(const struct device *dev)
 						&Sample);
 			*data->buffer++ = Sample.ui32Sample;
 		}
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
 		am_hal_adc_disable(data->adcHandle);
+#endif
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 }
@@ -186,6 +188,10 @@ static int adc_ambiq_start_read(const struct device *dev, const struct adc_seque
 	}
 	__ASSERT_NO_MSG(channels == 0);
 
+#if !defined(CONFIG_SOC_SERIES_APOLLO3X)
+	/* Enable the ADC. */
+	am_hal_adc_enable(data->adcHandle);
+#endif
 	data->active_channels = active_channels;
 	data->buffer = sequence->buffer;
 	/* Start ADC conversion */
@@ -267,8 +273,10 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct adc_ambiq_data *data = CONTAINER_OF(ctx, struct adc_ambiq_data, ctx);
 
 	data->repeat_buffer = data->buffer;
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	/* Enable the ADC. */
 	am_hal_adc_enable(data->adcHandle);
+#endif
 	/*Trigger the ADC*/
 	am_hal_adc_sw_trigger(data->adcHandle);
 }
@@ -283,7 +291,7 @@ static int adc_ambiq_init(const struct device *dev)
 
 	/* Initialize the ADC and get the handle*/
 	if (AM_HAL_STATUS_SUCCESS !=
-	    am_hal_adc_initialize((cfg->base - ADC_BASE) / (cfg->size * 4), &data->adcHandle)) {
+		am_hal_adc_initialize(0, &data->adcHandle)) {
 		ret = -ENODEV;
 		LOG_ERR("Faile to initialize ADC, code:%d", ret);
 		return ret;
@@ -295,7 +303,7 @@ static int adc_ambiq_init(const struct device *dev)
 	/* Set up the ADC configuration parameters. These settings are reasonable
 	 *  for accurate measurements at a low sample rate.
 	 */
-#if !defined(CONFIG_SOC_SERIES_APOLLO4X)
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	ADCConfig.eClock = AM_HAL_ADC_CLKSEL_HFRC;
 	ADCConfig.eReference = AM_HAL_ADC_REFSEL_INT_1P5;
 #else
