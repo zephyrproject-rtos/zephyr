@@ -55,6 +55,7 @@ SECTIONS
 
     *libkernel.a:kheap.*(.literal .text .literal.* .text.*)
     *libkernel.a:mempool.*(.literal .text .literal.* .text.*)
+    *libkernel.a:device.*(.literal .text .literal.* .text.*)
 
     *libzephyr.a:esp_loader.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
