@@ -89,6 +89,12 @@
 	pinctrl-names = "default";
 };
 
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
 &counter0 {
 	status = "disabled";
 };
