@@ -1592,7 +1592,7 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 					data->ns_count);
 
 				ret = net_ipv6_send_ns(nbr->iface, NULL, NULL,
-						       NULL, &data->addr,
+						       &data->addr, &data->addr,
 						       false);
 				if (ret < 0) {
 					NET_DBG("Cannot send NS (%d)", ret);
