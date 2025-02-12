@@ -307,7 +307,7 @@ static void uart_cc23x0_isr(const struct device *dev)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_cc23x0_driver_api = {
+static DEVICE_API(uart, uart_cc23x0_driver_api) = {
 	.poll_in = uart_cc23x0_poll_in,
 	.poll_out = uart_cc23x0_poll_out,
 	.err_check = uart_cc23x0_err_check,
