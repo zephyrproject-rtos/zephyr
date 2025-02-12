@@ -222,15 +222,17 @@ static int clic_init(const struct device *dev)
 		if (data->nlbits > data->intctlbits) {
 			data->nlbits = data->intctlbits;
 		}
+	} else {
+		/* Configure the interrupt level threshold by CSR mintthresh. */
+		csr_write(CSR_MINTTHRESH, 0x0);
+	}
 
+	if (IS_ENABLED(CONFIG_CLIC_SMCLICCONFIG_EXT)) {
 		/* Configure the number of bits assigned to interrupt levels. */
 		union CLICCFG cliccfg = {.qw = read_clic32(dev, CLIC_CFG)};
 
 		cliccfg.w.nlbits = data->nlbits;
 		write_clic32(dev, CLIC_CFG, cliccfg.qw);
-	} else {
-		/* Configure the interrupt level threshold by CSR mintthresh. */
-		csr_write(CSR_MINTTHRESH, 0x0);
 	}
 
 	/* Reset all interrupt control register */
