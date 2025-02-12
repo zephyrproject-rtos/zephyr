@@ -223,7 +223,7 @@ static void flash_cc23x0_layout(const struct device *dev, const struct flash_pag
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_driver_api flash_cc23x0_api = {
+static DEVICE_API(flash, flash_cc23x0_api) = {
 	.erase = flash_cc23x0_erase,
 	.write = flash_cc23x0_write,
 	.read = flash_cc23x0_read,
