@@ -247,3 +247,35 @@
 		};
 	};
 };
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&eth1_rgmii_gtx_clk_pf0
+		     &eth1_rgmii_clk125_pf2
+		     &eth1_rgmii_rx_clk_pf7
+		     &eth1_rgmii_rxd2_pf8
+		     &eth1_rgmii_rxd3_pf9
+		     &eth1_rgmii_rx_ctl_pf10
+		     &eth1_rgmii_tx_ctl_pf11
+		     &eth1_rgmii_txd1_pf13
+		     &eth1_rgmii_txd0_pf12
+		     &eth1_rgmii_rxd0_pf14
+		     &eth1_rgmii_rxd1_pf15
+		     &eth1_rgmii_txd2_pg3
+		     &eth1_rgmii_txd3_pg4
+		     &eth1_phy_intn_pd3>;
+	pinctrl-names = "default";
+	phy-connection-type = "rgmii";
+	phy-handle = <&eth_phy>;
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth1_mdio_pd12 &eth1_mdc_pd1>;
+	pinctrl-names = "default";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x0>;
+	};
+};
