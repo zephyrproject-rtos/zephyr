@@ -17,6 +17,7 @@ config NUCLEI_ECLIC
 	select CLIC
 	select CLIC_SMCLICSHV_EXT if RISCV_VECTORED_MODE
 	select CLIC_SMCLICCONFIG_EXT
+	select LEGACY_CLIC_MEMORYMAP_ACCESS
 	help
 	  Interrupt controller for Nuclei SoC core.
 
@@ -58,6 +59,12 @@ config CLIC_PARAMETER_MNLBITS
 	help
 	  This option specifies the number of bits in CLICINTCTLBITS assigned to
 	  encode the interrupt level at machine mode.
+
+config LEGACY_CLIC_MEMORYMAP_ACCESS
+	bool
+	help
+	  Enables legacy CLIC, allowing access to CLIC registers through
+	  memory-mapped access instead of indirect CSR access.
 
 config LEGACY_CLIC
 	bool "Use the legacy clic specification"
