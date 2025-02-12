@@ -48,13 +48,13 @@ static struct address_trans_params {
  * @param enable Region status
  */
 
-static void address_trans_set_region(struct address_trans_params *addr_translate_config,
+static void address_trans_set_region(struct address_trans_region_config *region_config,
 			uint16_t region_num, uint32_t enable)
 {
-	uint32_t rat_base_addr = addr_translate_config->rat_base_addr;
-	uint64_t system_addr = addr_translate_config->region_config[region_num].system_addr;
-	uint32_t local_addr = addr_translate_config->region_config[region_num].local_addr;
-	uint32_t size = addr_translate_config->region_config[region_num].size;
+	uint32_t rat_base_addr = translate_config.rat_base_addr;
+	uint64_t system_addr = region_config->system_addr;
+	uint32_t local_addr = region_config->local_addr;
+	uint32_t size = region_config->size;
 	uint32_t system_addrL, system_addrH;
 
 	if (size > address_trans_region_size_4G) {
@@ -93,8 +93,8 @@ void sys_mm_drv_ti_rat_init(struct address_trans_region_config *region_config,
 	translate_config.region_config = region_config;
 
 	/* enable regions setup by user */
-	for (i = 0; i < translate_config.num_regions; i++) {
-		address_trans_set_region(&translate_config, i, 1);
+	for (i = 0; i < translate_regions; i++) {
+		address_trans_set_region(&region_config[i], i, 1);
 	}
 }
 
@@ -114,25 +114,19 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 	uint32_t regionId;
 
 	for (regionId = 0; regionId < translate_config.num_regions; regionId++) {
-		uint64_t start_addr, end_addr;
-		uint32_t size_mask;
+		struct address_trans_region_config *region_config =
+			&translate_config.region_config[regionId];
 
-		size_mask =
-			((uint32_t)((BIT64_MASK(translate_config.region_config[regionId].size))));
-
-		start_addr = translate_config.region_config[regionId].system_addr;
-
-		end_addr = start_addr + size_mask;
+		uint64_t start_addr = region_config->system_addr;
+		uint64_t end_addr = start_addr + BIT64_MASK(region_config->size);
 
 		if (pa < start_addr || pa > end_addr) {
 			continue;
 		}
 
 		/* translate input address to output address */
-		uint32_t offset =
-			pa - translate_config.region_config[regionId].system_addr;
-
-		*va = (translate_config.region_config[regionId].local_addr + offset);
+		uint32_t offset = pa - start_addr;
+		*va = region_config->local_addr + offset;
 
 		return 0;
 	}
