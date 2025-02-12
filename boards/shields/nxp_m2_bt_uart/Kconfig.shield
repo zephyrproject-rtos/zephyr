@@ -1,0 +1,5 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_NXP_M2_BT_UART
+	def_bool $(shields_list_contains,nxp_m2_bt_uart)
