@@ -88,7 +88,7 @@ LOG_MODULE_REGISTER(can_renesas_ra, CONFIG_CAN_LOG_LEVEL);
 #define CANFD_CFG_GLOBAL                                                                           \
 	((0U << R_CANFD_CFDGCFG_TPRI_Pos) | /* Transmission Priority: ID priority */               \
 	 (0U << R_CANFD_CFDGCFG_DCE_Pos) |  /* DLC check disabled */                               \
-	 (1U << R_CANFD_CFDGCFG_DCS_Pos))   /* DLL Clock Select: CANFDCLK */
+	 (0U << R_CANFD_CFDGCFG_DCS_Pos))   /* DLL Clock Select: CANFDCLK */
 
 /*
  * TX Message Buffer Interrupt Enable Configuration: refer to '34.2.43 CFDTMIEC : TX Message Buffer
