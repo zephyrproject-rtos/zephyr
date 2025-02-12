@@ -612,7 +612,7 @@ static int mfxstm32l152_init(const struct device *dev)
 	return ret;
 }
 
-static const struct gpio_driver_api mfxstm32l152_drv_api = {
+static DEVICE_API(gpio, mfxstm32l152_drv_api) = {
 	.pin_configure = mfxstm32l152_configure,
 	.port_get_raw = mfxstm32l152_port_get_raw,
 	.port_set_masked_raw = NULL,
