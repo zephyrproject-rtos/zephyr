@@ -23,6 +23,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_npcx_fiu_nor, CONFIG_FLASH_LOG_LEVEL);
 
+#if defined(CONFIG_ESPI_TAF)
+static const struct device *const espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
+#endif
+
 #define BLOCK_64K_SIZE KB(64)
 #define BLOCK_4K_SIZE  KB(4)
 
@@ -47,6 +51,8 @@ struct flash_npcx_nor_config {
 
 /* Device data */
 struct flash_npcx_nor_data {
+	/* mutex for flash write and erase operation */
+	struct k_sem nor_flash_sem;
 	/* Specific control operation for Quad-SPI Nor Flash */
 	uint32_t operation;
 };
@@ -192,16 +198,32 @@ static int flash_npcx_nor_write_status_regs(const struct device *dev, uint8_t *s
 #if defined(CONFIG_FLASH_JESD216_API)
 static int flash_npcx_nor_read_jedec_id(const struct device *dev, uint8_t *id)
 {
+	int ret;
+
 	if (id == NULL) {
 		return -EINVAL;
 	}
 
-	return flash_npcx_uma_read(dev, SPI_NOR_CMD_RDID, id, SPI_NOR_MAX_ID_LEN);
+#if defined(CONFIG_ESPI_TAF)
+	if (espi_taf_npcx_block(espi_dev, true) != 0) {
+		LOG_ERR("TAF LOCK TIMEOUT");
+		return -ETIMEDOUT;
+	}
+#endif
+
+	ret = flash_npcx_uma_read(dev, SPI_NOR_CMD_RDID, id, SPI_NOR_MAX_ID_LEN);
+
+#if defined(CONFIG_ESPI_TAF)
+	espi_taf_npcx_block(espi_dev, false);
+#endif
+
+	return ret;
 }
 
 static int flash_npcx_nor_read_sfdp(const struct device *dev, off_t addr,
 				    void *data, size_t size)
 {
+	int ret;
 	uint8_t sfdp_addr[4];
 	struct npcx_uma_cfg cfg = { .opcode = JESD216_CMD_READ_SFDP,
 					.tx_buf = sfdp_addr,
@@ -217,8 +239,22 @@ static int flash_npcx_nor_read_sfdp(const struct device *dev, off_t addr,
 	sfdp_addr[0] = (addr >> 16) & 0xff;
 	sfdp_addr[1] = (addr >> 8) & 0xff;
 	sfdp_addr[2] = addr & 0xff;
-	return flash_npcx_uma_transceive(dev, &cfg, NPCX_UMA_ACCESS_WRITE |
+
+#if defined(CONFIG_ESPI_TAF)
+	if (espi_taf_npcx_block(espi_dev, true) != 0) {
+		LOG_ERR("TAF LOCK TIMEOUT");
+		return -ETIMEDOUT;
+	}
+#endif
+
+	ret = flash_npcx_uma_transceive(dev, &cfg, NPCX_UMA_ACCESS_WRITE |
 					 NPCX_UMA_ACCESS_READ);
+
+#if defined(CONFIG_ESPI_TAF)
+	espi_taf_npcx_block(espi_dev, false);
+#endif
+
+	return ret;
 }
 #endif /* CONFIG_FLASH_JESD216_API */
 
@@ -260,32 +296,47 @@ static int flash_npcx_nor_read(const struct device *dev, off_t addr,
 static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t size)
 {
 	const struct flash_npcx_nor_config *config = dev->config;
+	struct flash_npcx_nor_data *dev_data = dev->data;
 	int ret = 0;
+
+	k_sem_take(&dev_data->nor_flash_sem, K_FOREVER);
 
 	/* Out of the region of nor flash device? */
 	if (!is_within_region(addr, size, 0, config->flash_size)) {
 		LOG_ERR("Addr %ld, size %d are out of range", addr, size);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out_nor_erase;
 	}
 
 	/* address must be sector-aligned */
 	if (!SPI_NOR_IS_SECTOR_ALIGNED(addr)) {
 		LOG_ERR("Addr %ld is not sector-aligned", addr);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out_nor_erase;
 	}
 
 	/* size must be a multiple of sectors */
 	if ((size % BLOCK_4K_SIZE) != 0) {
 		LOG_ERR("Size %d is not a multiple of sectors", size);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out_nor_erase;
 	}
+
+#if defined(CONFIG_ESPI_TAF)
+	if (espi_taf_npcx_block(espi_dev, true) != 0) {
+		LOG_ERR("TAF LOCK TIMEOUT");
+		ret = -ETIMEDOUT;
+		goto out_nor_erase;
+	}
+#endif
 
 	/* Select erase opcode by size */
 	if (size == config->flash_size) {
 		flash_npcx_uma_cmd_only(dev, SPI_NOR_CMD_WREN);
 		/* Send chip erase command */
 		flash_npcx_uma_cmd_only(dev, SPI_NOR_CMD_CE);
-		return flash_npcx_nor_wait_until_ready(dev);
+		ret = flash_npcx_nor_wait_until_ready(dev);
+		goto out_nor_erase_unblock;
 	}
 
 	while (size > 0) {
@@ -305,6 +356,12 @@ static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t siz
 			break;
 		}
 	}
+out_nor_erase_unblock:
+#if defined(CONFIG_ESPI_TAF)
+	espi_taf_npcx_block(espi_dev, false);
+#endif
+out_nor_erase:
+	k_sem_give(&dev_data->nor_flash_sem);
 
 	return ret;
 }
@@ -313,12 +370,16 @@ static int flash_npcx_nor_write(const struct device *dev, off_t addr,
 				  const void *data, size_t size)
 {
 	const struct flash_npcx_nor_config *config = dev->config;
+	struct flash_npcx_nor_data *dev_data = dev->data;
 	uint8_t *tx_buf = (uint8_t *)data;
 	int ret = 0;
 	size_t sz_write;
 
+	k_sem_take(&dev_data->nor_flash_sem, K_FOREVER);
+
 	/* Out of the region of nor flash device? */
 	if (!is_within_region(addr, size, 0, config->flash_size)) {
+		k_sem_give(&dev_data->nor_flash_sem);
 		return -EINVAL;
 	}
 
@@ -338,19 +399,37 @@ static int flash_npcx_nor_write(const struct device *dev, off_t addr,
 	}
 
 	while (size > 0) {
+#if defined(CONFIG_ESPI_TAF)
+		if (espi_taf_npcx_block(espi_dev, true) != 0) {
+			LOG_ERR("TAF LOCK TIMEOUT");
+			k_sem_give(&dev_data->nor_flash_sem);
+
+			return -ETIMEDOUT;
+		}
+#endif
 		/* Start to write */
 		flash_npcx_uma_cmd_only(dev, SPI_NOR_CMD_WREN);
 		ret = flash_npcx_uma_write_by_addr(dev, SPI_NOR_CMD_PP, tx_buf,
 						   sz_write, addr);
 		if (ret != 0) {
+#if defined(CONFIG_ESPI_TAF)
+			espi_taf_npcx_block(espi_dev, false);
+#endif
 			break;
 		}
 
 		/* Wait for writing completed */
 		ret = flash_npcx_nor_wait_until_ready(dev);
 		if (ret != 0) {
+#if defined(CONFIG_ESPI_TAF)
+			espi_taf_npcx_block(espi_dev, false);
+#endif
 			break;
 		}
+
+#if defined(CONFIG_ESPI_TAF)
+		espi_taf_npcx_block(espi_dev, false);
+#endif
 
 		size -= sz_write;
 		tx_buf += sz_write;
@@ -362,6 +441,8 @@ static int flash_npcx_nor_write(const struct device *dev, off_t addr,
 			sz_write = size;
 		}
 	}
+
+	k_sem_give(&dev_data->nor_flash_sem);
 
 	return ret;
 }
@@ -462,7 +543,16 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 		}
 #endif
 
+#if defined(CONFIG_ESPI_TAF)
+		if (espi_taf_npcx_block(espi_dev, true) != 0) {
+			LOG_ERR("TAF LOCK TIMEOUT");
+			return -ETIMEDOUT;
+		}
+#endif
 		ret = flash_npcx_nor_ex_exec_uma(dev, op_in, op_out);
+#if defined(CONFIG_ESPI_TAF)
+		espi_taf_npcx_block(espi_dev, false);
+#endif
 #ifdef CONFIG_USERSPACE
 		if (ret == 0 && syscall_trap) {
 			K_OOPS(k_usermode_to_copy(out, op_out, sizeof(out_copy)));
@@ -532,6 +622,7 @@ static DEVICE_API(flash, flash_npcx_nor_driver_api) = {
 static int flash_npcx_nor_init(const struct device *dev)
 {
 	const struct flash_npcx_nor_config *config = dev->config;
+	struct flash_npcx_nor_data *dev_data = dev->data;
 	int ret;
 
 	if (!IS_ENABLED(CONFIG_FLASH_NPCX_FIU_NOR_INIT)) {
@@ -593,6 +684,8 @@ static int flash_npcx_nor_init(const struct device *dev)
 	if (config->qspi_cfg.is_logical_low_dev && IS_ENABLED(CONFIG_FLASH_NPCX_FIU_DRA_V2)) {
 		qspi_npcx_fiu_set_spi_size(config->qspi_bus, &config->qspi_cfg);
 	}
+
+	k_sem_init(&dev_data->nor_flash_sem, 1, 1);
 
 	return 0;
 }
