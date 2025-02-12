@@ -16,6 +16,7 @@ supported:
   - spi
   - i2c
   - rtc
+  - hwinfo
   - clock_control
   - mspi
 testing:
