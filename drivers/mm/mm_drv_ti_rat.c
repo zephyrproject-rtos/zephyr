@@ -100,8 +100,13 @@ void sys_mm_drv_ti_rat_init(struct address_trans_region_config *region_config,
 
 int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 {
-	if (virt == NULL) {
-		return -EINVAL;
+	if (phys == NULL) {
+		/*
+		 * NULL phys means the caller wants to check if a virtual address is
+		 * valid. For RAT, even addresses without a mapping are still valid and
+		 * are mapped as pass-through in HW, so we always return 0(valid) here.
+		 */
+		return 0;
 	}
 	uintptr_t pa = (uintptr_t) virt;
 	uintptr_t *va = phys;
@@ -137,8 +142,5 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 		*va = pa;
 	}
 
-	if (va == NULL) {
-		return -EFAULT;
-	}
 	return 0;
 }
