@@ -647,7 +647,7 @@ static int set_supported_contexts(void)
 	return 0;
 }
 
-void test_start_adv(void)
+static void test_start_adv(void)
 {
 	struct bt_le_ext_adv *ext_adv;
 
