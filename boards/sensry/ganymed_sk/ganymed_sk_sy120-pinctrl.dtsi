@@ -90,6 +90,160 @@
 		pinmux = <SY1XX_I2C3_PAD_CFG0 SY1XX_PAD(1)>;
 	};
 
+	/* SPI Port 0 */
+	/omit-if-no-ref/ spi0_cs1: spi0_cs1 {
+		pinmux = <SY1XX_SPI0_PAD_CFG0 SY1XX_PAD(0)>;
+	};
+
+	/omit-if-no-ref/ spi0_cs0: spi0_cs0 {
+		pinmux = <SY1XX_SPI0_PAD_CFG0 SY1XX_PAD(1)>;
+	};
+
+	/omit-if-no-ref/ spi0_miso: spi0_miso {
+		pinmux = <SY1XX_SPI0_PAD_CFG0 SY1XX_PAD(2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ spi0_mosi: spi0_mosi {
+		pinmux = <SY1XX_SPI0_PAD_CFG0 SY1XX_PAD(3)>;
+	};
+
+	/omit-if-no-ref/ spi0_clk: spi0_clk {
+		pinmux = <SY1XX_SPI0_PAD_CFG1 SY1XX_PAD(0)>;
+	};
+
+	/* SPI Port 1 */
+	/omit-if-no-ref/ spi1_cs1: spi1_cs1 {
+		pinmux = <SY1XX_SPI1_PAD_CFG0 SY1XX_PAD(0)>;
+	};
+
+	/omit-if-no-ref/ spi1_cs0: spi1_cs0 {
+		pinmux = <SY1XX_SPI1_PAD_CFG0 SY1XX_PAD(1)>;
+	};
+
+	/omit-if-no-ref/ spi1_miso: spi1_miso {
+		pinmux = <SY1XX_SPI1_PAD_CFG0 SY1XX_PAD(2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ spi1_mosi: spi1_mosi {
+		pinmux = <SY1XX_SPI1_PAD_CFG0 SY1XX_PAD(3)>;
+	};
+
+	/omit-if-no-ref/ spi1_clk: spi1_clk {
+		pinmux = <SY1XX_SPI1_PAD_CFG1 SY1XX_PAD(0)>;
+	};
+
+	/* SPI Port 2 */
+	/omit-if-no-ref/ spi2_cs1: spi2_cs1 {
+		pinmux = <SY1XX_SPI2_PAD_CFG0 SY1XX_PAD(0)>;
+	};
+
+	/omit-if-no-ref/ spi2_cs0: spi2_cs0 {
+		pinmux = <SY1XX_SPI2_PAD_CFG0 SY1XX_PAD(1)>;
+	};
+
+	/omit-if-no-ref/ spi2_miso: spi2_miso {
+		pinmux = <SY1XX_SPI2_PAD_CFG0 SY1XX_PAD(2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ spi2_mosi: spi2_mosi {
+		pinmux = <SY1XX_SPI2_PAD_CFG0 SY1XX_PAD(3)>;
+	};
+
+	/omit-if-no-ref/ spi2_clk: spi2_clk {
+		pinmux = <SY1XX_SPI2_PAD_CFG1 SY1XX_PAD(0)>;
+	};
+
+	/* SPI Port 3 */
+	/omit-if-no-ref/ spi3_cs1: spi3_cs1 {
+		pinmux = <SY1XX_SPI3_PAD_CFG0 SY1XX_PAD(0)>;
+	};
+
+	/omit-if-no-ref/ spi3_cs0: spi3_cs0 {
+		pinmux = <SY1XX_SPI3_PAD_CFG0 SY1XX_PAD(1)>;
+	};
+
+	/omit-if-no-ref/ spi3_miso: spi3_miso {
+		pinmux = <SY1XX_SPI3_PAD_CFG0 SY1XX_PAD(2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ spi3_mosi: spi3_mosi {
+		pinmux = <SY1XX_SPI3_PAD_CFG0 SY1XX_PAD(3)>;
+	};
+
+	/omit-if-no-ref/ spi3_clk: spi3_clk {
+		pinmux = <SY1XX_SPI3_PAD_CFG1 SY1XX_PAD(0)>;
+	};
+
+	/* SPI Port 4 */
+	/omit-if-no-ref/ spi4_cs1: spi4_cs1 {
+		pinmux = <SY1XX_SPI4_PAD_CFG0 SY1XX_PAD(0)>;
+	};
+
+	/omit-if-no-ref/ spi4_cs0: spi4_cs0 {
+		pinmux = <SY1XX_SPI4_PAD_CFG0 SY1XX_PAD(1)>;
+	};
+
+	/omit-if-no-ref/ spi4_miso: spi4_miso {
+		pinmux = <SY1XX_SPI4_PAD_CFG0 SY1XX_PAD(2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ spi4_mosi: spi4_mosi {
+		pinmux = <SY1XX_SPI4_PAD_CFG0 SY1XX_PAD(3)>;
+	};
+
+	/omit-if-no-ref/ spi4_clk: spi4_clk {
+		pinmux = <SY1XX_SPI4_PAD_CFG1 SY1XX_PAD(0)>;
+	};
+
+	/* SPI Port 5 */
+	/omit-if-no-ref/ spi5_cs1: spi5_cs1 {
+		pinmux = <SY1XX_SPI5_PAD_CFG0 SY1XX_PAD(0)>;
+	};
+
+	/omit-if-no-ref/ spi5_cs0: spi5_cs0 {
+		pinmux = <SY1XX_SPI5_PAD_CFG0 SY1XX_PAD(1)>;
+	};
+
+	/omit-if-no-ref/ spi5_miso: spi5_miso {
+		pinmux = <SY1XX_SPI5_PAD_CFG0 SY1XX_PAD(2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ spi5_mosi: spi5_mosi {
+		pinmux = <SY1XX_SPI5_PAD_CFG0 SY1XX_PAD(3)>;
+	};
+
+	/omit-if-no-ref/ spi5_clk: spi5_clk {
+		pinmux = <SY1XX_SPI5_PAD_CFG1 SY1XX_PAD(0)>;
+	};
+
+	/* SPI Port 6 */
+	/omit-if-no-ref/ spi6_cs1: spi6_cs1 {
+		pinmux = <SY1XX_SPI6_PAD_CFG0 SY1XX_PAD(0)>;
+	};
+
+	/omit-if-no-ref/ spi6_cs0: spi6_cs0 {
+		pinmux = <SY1XX_SPI6_PAD_CFG0 SY1XX_PAD(1)>;
+	};
+
+	/omit-if-no-ref/ spi6_miso: spi6_miso {
+		pinmux = <SY1XX_SPI6_PAD_CFG0 SY1XX_PAD(2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ spi6_mosi: spi6_mosi {
+		pinmux = <SY1XX_SPI6_PAD_CFG0 SY1XX_PAD(3)>;
+	};
+
+	/omit-if-no-ref/ spi6_clk: spi6_clk {
+		pinmux = <SY1XX_SPI6_PAD_CFG1 SY1XX_PAD(0)>;
+	};
+
 	/* MDIO */
 	/omit-if-no-ref/ mdio_io: mdio_io {
 		pinmux = <SY1XX_RGMII0_PAD_CFG3 SY1XX_PAD(0)>;
@@ -194,6 +348,41 @@
 
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl &i2c3_sda>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_miso &spi0_mosi &spi0_clk &spi0_cs0 &spi0_cs1>;
+	pinctrl-names = "default";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_miso &spi1_mosi &spi1_clk &spi1_cs0 &spi1_cs1>;
+	pinctrl-names = "default";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_miso &spi2_mosi &spi2_clk &spi2_cs0 &spi2_cs1>;
+	pinctrl-names = "default";
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_miso &spi3_mosi &spi3_clk &spi3_cs0 &spi3_cs1>;
+	pinctrl-names = "default";
+};
+
+&spi4 {
+	pinctrl-0 = <&spi4_miso &spi4_mosi &spi4_clk &spi4_cs0 &spi4_cs1>;
+	pinctrl-names = "default";
+};
+
+&spi5 {
+	pinctrl-0 = <&spi5_miso &spi5_mosi &spi5_clk &spi5_cs0 &spi5_cs1>;
+	pinctrl-names = "default";
+};
+
+&spi6 {
+	pinctrl-0 = <&spi6_miso &spi6_mosi &spi6_clk &spi6_cs0 &spi6_cs1>;
 	pinctrl-names = "default";
 };
 
