@@ -43,6 +43,22 @@ config CLIC_SMCLICCONFIG_EXT
 	  Enables the SMCLICCONFIG extension, allowing configuration of CLIC
 	  parameters such as the number of interrupt level bits.
 
+config CLIC_PARAMETER_INTCTLBITS
+	int "The number of modifiable bits in the clicintctl registers"
+	range 0 8
+	default 8
+	help
+	  This option specifies the number of modifiable bits in the clicintctl
+	  registers.
+
+config CLIC_PARAMETER_MNLBITS
+	int "The number of bits in CLICINTCTLBITS to encode the interrupt level"
+	range 0 CLIC_PARAMETER_INTCTLBITS
+	default 0
+	help
+	  This option specifies the number of bits in CLICINTCTLBITS assigned to
+	  encode the interrupt level at machine mode.
+
 config LEGACY_CLIC
 	bool "Use the legacy clic specification"
 	depends on RISCV_HAS_CLIC
