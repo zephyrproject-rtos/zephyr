@@ -9,9 +9,12 @@
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 
+#if (CONFIG_SOC_SERIES_APOLLO5X)
+extern uint32_t g_ui32TrimVer;
+#endif
+
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
-
 	struct ambiq_hwinfo {
 		/* Ambiq Chip ID0 */
 		uint32_t chip_id_0;
@@ -27,7 +30,11 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	/* Contains the HAL hardware information about the device. */
 	am_hal_mcuctrl_device_t mcu_ctrl_device;
 
+#if (CONFIG_SOC_SERIES_APOLLO5X)
+	dev_hw_info.factory_trim_version = g_ui32TrimVer;
+#else
 	am_hal_mram_info_read(1, AM_REG_INFO1_TRIM_REV_O / 4, 1, &dev_hw_info.factory_trim_version);
+#endif
 	am_hal_mcuctrl_info_get(AM_HAL_MCUCTRL_INFO_DEVICEID, &mcu_ctrl_device);
 
 	dev_hw_info.chip_id_0 = mcu_ctrl_device.ui32ChipID0;
@@ -61,9 +68,15 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	}
 
 	/* POWER CYCLE */
+#if (CONFIG_SOC_SERIES_APOLLO5X)
+	if (reset_status & AM_HAL_RESET_STATUS_POA) {
+		flags |= RESET_POR;
+	}
+#else
 	if (reset_status & AM_HAL_RESET_STATUS_POR) {
 		flags |= RESET_POR;
 	}
+#endif
 
 	/* BROWNOUT DETECTOR */
 	if (reset_status & AM_HAL_RESET_STATUS_BOD) {
@@ -110,6 +123,13 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_HARDWARE;
 	}
 
+#if (CONFIG_SOC_SERIES_APOLLO5X)
+	/* AIRCR */
+	if (reset_status & AM_HAL_RESET_STATUS_AIRCR) {
+		flags |= RESET_SOFTWARE;
+	}
+#endif
+
 	*cause = flags;
 	return 0;
 }
@@ -127,11 +147,7 @@ int z_impl_hwinfo_clear_reset_cause(void)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = RESET_PIN
-			| RESET_SOFTWARE
-			| RESET_POR
-			| RESET_WATCHDOG
-			| RESET_HARDWARE
-			| RESET_BROWNOUT;
+	*supported = RESET_PIN | RESET_SOFTWARE | RESET_POR | RESET_WATCHDOG | RESET_HARDWARE |
+		     RESET_BROWNOUT;
 	return 0;
 }
