@@ -213,6 +213,12 @@ module-str = "Common Audio Profile Commander"
 source "subsys/logging/Kconfig.template.log_config_inherit"
 endif # BT_CAP_COMMANDER
 
+if BT_CAP_HANDOVER
+module = BT_CAP_HANDOVER
+module-str = "Common Audio Profile Handover"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+endif # BT_CAP_HANDOVER
+
 if BT_AUDIO
 module = BT_CAP_COMMON
 module-str = "Common Audio Profile Common"

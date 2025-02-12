@@ -30,6 +30,8 @@ extern struct bst_test_list *test_cap_acceptor_install(struct bst_test_list *tes
 extern struct bst_test_list *test_cap_commander_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_cap_initiator_broadcast_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_cap_initiator_unicast_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_cap_handover_central_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_cap_handover_peripheral_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_has_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_has_client_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_ias_install(struct bst_test_list *tests);
@@ -70,6 +72,8 @@ bst_test_install_t test_installers[] = {
 	test_cap_acceptor_install,
 	test_cap_initiator_broadcast_install,
 	test_cap_initiator_unicast_install,
+	test_cap_handover_central_install,
+	test_cap_handover_peripheral_install,
 	test_has_install,
 	test_has_client_install,
 	test_ias_install,
