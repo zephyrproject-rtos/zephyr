@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
 
 import glob
 import json
@@ -13,12 +12,13 @@ import subprocess
 import sys
 import threading
 import time
-import xml.etree.ElementTree as ET
 import random
-from collections import OrderedDict
-from enum import Enum
 
 import junitparser.junitparser as junit
+import xml.etree.ElementTree as ET
+
+from collections import OrderedDict
+from enum import Enum
 from pytest import ExitCode
 from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE

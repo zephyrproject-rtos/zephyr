@@ -16,20 +16,31 @@ import subprocess
 import sys
 import time
 import traceback
+import elftools
+import yaml
+import expr_parser
+
 from math import log10
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
 
-import elftools
-import yaml
 from colorama import Fore
+from packaging import version
+from anytree import Node, RenderTree
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-from packaging import version
+
 from twisterlib.cmakecache import CMakeCache
-from twisterlib.environment import canonical_zephyr_base
+from twisterlib.environment import canonical_zephyr_base, TwisterEnv, ZEPHYR_BASE
 from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
 from twisterlib.statuses import TwisterStatus
+from twisterlib.coverage import run_coverage_instance
+from twisterlib.harness import Ctest, HarnessImporter, Pytest, Bsim
+from twisterlib.log_helper import log_command
+from twisterlib.platform import Platform
+from twisterlib.testinstance import TestInstance
+from twisterlib.testplan import change_skip_to_error_if_integration
+from twisterlib.testsuite import TestSuite
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
@@ -38,26 +49,13 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 if sys.platform == 'linux':
     from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
 
-from twisterlib.environment import ZEPHYR_BASE
-
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
-from twisterlib.coverage import run_coverage_instance
-from twisterlib.environment import TwisterEnv
-from twisterlib.harness import Ctest, HarnessImporter, Pytest, Bsim
-from twisterlib.log_helper import log_command
-from twisterlib.platform import Platform
-from twisterlib.testinstance import TestInstance
-from twisterlib.testplan import change_skip_to_error_if_integration
-from twisterlib.testsuite import TestSuite
 
 try:
     from yaml import CSafeLoader as SafeLoader
 except ImportError:
     from yaml import SafeLoader
-
-import expr_parser
-from anytree import Node, RenderTree
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -1792,7 +1790,7 @@ class ProjectBuilder(FilterBuilder):
                     harness.bsim_run(instance.handler.get_test_timeout())
                 else:
                     instance.status = TwisterStatus.ERROR
-                    instance.reason = str("BSIM not ready")
+                    instance.reason = "BSIM not ready"
                     logger.error(instance.reason)
             else:
                 instance.handler.handle(harness)
