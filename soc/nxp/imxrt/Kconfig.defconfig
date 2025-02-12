@@ -1,4 +1,4 @@
-# Copyright 2017-2024 NXP
+# Copyright 2017-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_FAMILY_NXP_IMXRT
@@ -61,6 +61,26 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 1560
 
 endif # ETH_NXP_ENET
+
+if BT
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+config BT_LONG_WQ_STACK_SIZE
+	default 2560
+
+config MAIN_STACK_SIZE
+	default 2560
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 4096
+
+endif # SHELL
+
+endif # BT
 
 config MEMC
 	default y if !SOC_SERIES_IMXRT118X # RT118X lacks FLEXRAM
