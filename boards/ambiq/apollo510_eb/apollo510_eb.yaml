@@ -1,0 +1,22 @@
+identifier: apollo510_eb
+name: Apollo510 EB
+type: mcu
+arch: arm
+ram: 3072
+flash: 4096
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - watchdog
+  - counter
+  - gpio
+  - sdio
+  - sdhc
+  - dsi
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: ambiq
