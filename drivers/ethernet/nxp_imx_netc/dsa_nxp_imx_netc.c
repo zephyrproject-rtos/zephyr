@@ -256,8 +256,8 @@ static struct dsa_api dsa_netc_api = {
 		.pseudo_mac = DT_ENUM_HAS_VALUE(slave, phy_connection_type, internal),             \
 		.pincfg = PINCTRL_DT_DEV_CONFIG_GET(slave),                                        \
 		.port_idx = DT_REG_ADDR_BY_IDX(slave, 0),                                          \
-		.ethernet_connection = (COND_CODE_1(DT_INST_NODE_HAS_PROP(slave, ethernet),        \
-					(DEVICE_DT_GET(DT_INST_PHANDLE(slave, ethernet))), NULL)), \
+		.ethernet_connection = (COND_CODE_1(DT_NODE_HAS_PROP(slave, ethernet),             \
+					(DEVICE_DT_GET(DT_PHANDLE(slave, ethernet))), NULL)),      \
 	};                                                                                         \
 	NET_DEVICE_INIT_INSTANCE(                                                                  \
 		CONCAT(dsa_slave_port_, slave),                                                    \
