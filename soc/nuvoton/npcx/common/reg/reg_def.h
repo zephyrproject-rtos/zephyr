@@ -753,6 +753,7 @@ struct espi_reg {
 #define NPCX_ESPISTS_VWUPD               8
 #define NPCX_ESPISTS_ESPIRST             9
 #define NPCX_ESPISTS_PLTRST              10
+#define NPCX_ESPISTS_FLAUTORDREQ         14
 #define NPCX_ESPISTS_AMERR               15
 #define NPCX_ESPISTS_AMDONE              16
 #define NPCX_ESPISTS_VWUPDW              17
@@ -762,6 +763,7 @@ struct espi_reg {
 #define NPCX_ESPISTS_BMBURSTERR          22
 #define NPCX_ESPISTS_BMBURSTDONE         23
 #define NPCX_ESPISTS_ESPIRST_LVL         24
+#define NPCX_ESPISTS_AUTO_RD_DIS_STS     29
 #define NPCX_VWSWIRQ_IRQ_NUM             FIELD(0, 7)
 #define NPCX_VWSWIRQ_IRQ_LVL             7
 #define NPCX_VWSWIRQ_INDEX               FIELD(8, 7)
