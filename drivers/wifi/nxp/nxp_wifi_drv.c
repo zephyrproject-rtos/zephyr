@@ -1144,6 +1144,7 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 	} else if (connection_state == WLAN_AUTHENTICATED
 			|| connection_state == WLAN_CONNECTED) {
 		status->state = WIFI_STATE_COMPLETED;
+		wlan_ds_rate ds_rate = {0};
 
 		if (!wlan_get_current_network(&nxp_wlan_network)) {
 			strncpy(status->ssid, nxp_wlan_network.ssid, WIFI_SSID_MAX_LEN - 1);
@@ -1192,6 +1193,22 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 				nxp_wlan_network.security.pwe_derivation);
 			status->mfp = nxp_wlan_network.security.mfpr ? WIFI_MFP_REQUIRED :
 				(nxp_wlan_network.security.mfpc ? WIFI_MFP_OPTIONAL : 0);
+		}
+		ds_rate.sub_command = WIFI_DS_GET_DATA_RATE;
+		if (!wlan_get_data_rate(&ds_rate, WLAN_BSS_TYPE_STA)) {
+			wifi_data_rate_t *datarate = (wifi_data_rate_t *)&ds_rate.param.data_rate;
+			int lg_rate[12] = {1, 2, 5, 11, 6, 9, 12, 18, 24, 36, 48, 54};
+
+			if (datarate->tx_rate_format == MLAN_RATE_FORMAT_LG &&
+			    datarate->tx_data_rate < 12) {
+				/* Legacy rates (in bps) */
+				/* Need to feed Zephyr L2 Wi-Fi with rate value in unit of Mbps*/
+				status->current_phy_tx_rate = lg_rate[datarate->tx_data_rate];
+			} else if (datarate->tx_rate_format <= 3) {
+				/* HT, VHT, HE rates (in bps) */
+				/* Need to feed Zephyr L2 Wi-Fi with rate value in unit of Mbps*/
+				status->current_phy_tx_rate = (datarate->tx_data_rate >> 1);
+			}
 		}
 	}
 
