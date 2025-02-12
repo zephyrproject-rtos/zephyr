@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,11 +27,12 @@ LOG_MODULE_REGISTER(bt_nxp_ctlr);
 
 #include "common/bt_str.h"
 
-#include "bt_nxp_ctlr_fw.h"
-
 #define DT_DRV_COMPAT nxp_bt_hci_uart
 
 #define FW_UPLOAD_CHANGE_TIMEOUT_RETRY_COUNT 6
+
+extern const unsigned char *bt_fw_bin;
+extern const unsigned int bt_fw_bin_len;
 
 static const struct device *uart_dev = DEVICE_DT_GET(DT_INST_GPARENT(0));
 
