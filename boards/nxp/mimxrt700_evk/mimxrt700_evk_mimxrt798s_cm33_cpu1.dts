@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,8 +56,14 @@
 	pinctrl-names = "default";
 };
 
-&systick {
+/*
+ * RT700-EVK board cm33_cpu1 uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer_cpu1 {
 	status = "okay";
+	wakeup-source;
 };
 
 &flexcomm19{
