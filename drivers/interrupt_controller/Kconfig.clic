@@ -36,6 +36,12 @@ config CLIC_SMCLICSHV_EXT
 	  to select the behavior for each interrupt. The CLIC driver needs to
 	  implement the riscv_clic_irq_vector_set() function.
 
+config CLIC_SMCLICCONFIG_EXT
+	bool
+	help
+	  Enables the SMCLICCONFIG extension, allowing configuration of CLIC
+	  parameters such as the number of interrupt level bits.
+
 config LEGACY_CLIC
 	bool "Use the legacy clic specification"
 	depends on RISCV_HAS_CLIC
