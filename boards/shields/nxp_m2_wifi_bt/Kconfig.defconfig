@@ -1,0 +1,26 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_NXP_M2_WIFI_BT
+
+if BT
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+config BT_LONG_WQ_STACK_SIZE
+	default 2560
+
+config MAIN_STACK_SIZE
+	default 2560
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 4096
+
+endif # SHELL
+
+endif # BT
+
+endif # SHIELD_NXP_M2_WIFI_BT
