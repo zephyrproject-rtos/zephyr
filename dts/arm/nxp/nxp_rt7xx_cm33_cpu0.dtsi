@@ -1011,6 +1011,21 @@
 		interrupts = <55 0>;
 		clocks = <&clkctl4 MCUX_FLEXIO0_CLK>;
 	};
+
+	os_timer_cpu0: timers@207000 {
+		compatible = "nxp,os-timer";
+		reg = <0x207000 0x1000>;
+		interrupts = <34 0>;
+		status = "disabled";
+	};
+};
+
+&systick {
+	/*
+	 * RT700 cm33_cpu0 relies by default on the OS Timer for system
+	 * clock implementation, so the SysTick node is not to be enabled.
+	 */
+	status = "disabled";
 };
 
 &xspi0 {
