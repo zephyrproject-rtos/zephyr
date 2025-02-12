@@ -245,8 +245,8 @@ static int clic_init(const struct device *dev)
 
 #define CLIC_INTC_DATA_INIT(n)                                                                     \
 	static struct clic_data clic_data_##n = {                                                  \
-		.nlbits = 0,                                                                       \
-		.intctlbits = 8,                                                                   \
+		.nlbits = CONFIG_CLIC_PARAMETER_MNLBITS,                                           \
+		.intctlbits = CONFIG_CLIC_PARAMETER_INTCTLBITS,                                    \
 	};
 #define CLIC_INTC_CONFIG_INIT(n)                                                                   \
 	const static struct clic_config clic_config_##n = {                                        \
