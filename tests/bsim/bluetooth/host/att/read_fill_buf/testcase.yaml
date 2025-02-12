@@ -14,7 +14,7 @@ tests:
       bsim_verbosity: 2
       bsim_sim_length: 60e6
       bsim_test_ids:
-        - the_test
-        - the_test
+        - cli
+        - srv
       bsim_options:
         - -RealEncryption=1
