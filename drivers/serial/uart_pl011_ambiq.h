@@ -37,6 +37,16 @@ static inline int pl011_ambiq_clk_set(const struct device *dev, uint32_t clk)
 	case 24000000:
 		clksel = PL011_CR_AMBIQ_CLKSEL_24MHZ;
 		break;
+#if !defined(CONFIG_SOC_SERIES_APOLLO3X)
+	case 48000000:
+		clksel = PL011_CR_AMBIQ_CLKSEL_48MHZ;
+		break;
+#if !defined(CONFIG_SOC_SERIES_APOLLO4X)
+	case AM_HAL_UART_PLLCLK_FREQ:
+		clksel = PL011_CR_AMBIQ_CLKSEL_PLL;
+		break;
+#endif
+#endif
 	default:
 		return -EINVAL;
 	}
