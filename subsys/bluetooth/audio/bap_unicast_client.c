@@ -3138,6 +3138,33 @@ int bt_bap_unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
 	return 0;
 }
 
+int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_group,
+					bt_bap_unicast_group_foreach_stream_func_t func,
+					void *user_data)
+{
+	struct bt_bap_stream *stream, *next;
+
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	if (func == NULL) {
+		LOG_DBG("func is NULL");
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_group->streams, stream, next, _node) {
+		const bool stop = func(stream, user_data);
+
+		if (stop) {
+			return -ECANCELED;
+		}
+	}
+
+	return 0;
+}
+
 int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 				 const struct bt_audio_codec_cfg *codec_cfg)
 {
