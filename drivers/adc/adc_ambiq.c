@@ -55,7 +55,7 @@ static int adc_ambiq_set_resolution(am_hal_adc_slot_prec_e *prec, uint8_t adc_re
 	case 12:
 		*prec = AM_HAL_ADC_SLOT_12BIT;
 		break;
-#if !defined(CONFIG_SOC_SERIES_APOLLO4X)
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	case 14:
 		*prec = AM_HAL_ADC_SLOT_14BIT;
 		break;
@@ -83,7 +83,7 @@ static int adc_ambiq_slot_config(const struct device *dev, const struct adc_sequ
 	ADCSlotConfig.eChannel = channel;
 	ADCSlotConfig.bWindowCompare = false;
 	ADCSlotConfig.bEnabled = true;
-#if defined(CONFIG_SOC_SERIES_APOLLO4X)
+#if !defined(CONFIG_SOC_SERIES_APOLLO3X)
 	ADCSlotConfig.ui32TrkCyc = AM_HAL_ADC_MIN_TRKCYC;
 #endif
 	if (AM_HAL_STATUS_SUCCESS !=
@@ -295,7 +295,7 @@ static int adc_ambiq_init(const struct device *dev)
 	/* Set up the ADC configuration parameters. These settings are reasonable
 	 *  for accurate measurements at a low sample rate.
 	 */
-#if !defined(CONFIG_SOC_SERIES_APOLLO4X)
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	ADCConfig.eClock = AM_HAL_ADC_CLKSEL_HFRC;
 	ADCConfig.eReference = AM_HAL_ADC_REFSEL_INT_1P5;
 #else
