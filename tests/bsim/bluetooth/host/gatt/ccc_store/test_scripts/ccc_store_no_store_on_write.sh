@@ -5,7 +5,7 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 test_exe="bs_${BOARD_TS}_$(guess_test_long_name)_overlay-no_store_on_write_conf"
-simulation_id="ccc_no_store_on_write"
+simulation_id="ccc_store_no_store_on_write"
 verbosity_level=2
 EXECUTE_TIMEOUT=60
 
