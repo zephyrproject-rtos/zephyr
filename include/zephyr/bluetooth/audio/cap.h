@@ -147,6 +147,12 @@ struct bt_cap_initiator_cb {
 	 */
 	void (*broadcast_stopped)(struct bt_cap_broadcast_source *source, uint8_t reason);
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+#if defined(CONFIG_BT_CAP_HANDOVER_SUPPORTED)
+	/**
+	 * @brief The unicast to broadcast handover procedure has finished
+	 */
+	void (*unicast_to_broadcast_complete)(int err, struct bt_conn *conn);
+#endif /* CONFIG_BT_CAP_HANDOVER_SUPPORTED */
 };
 
 /**
@@ -397,6 +403,32 @@ int bt_cap_unicast_group_add_streams(struct bt_cap_unicast_group *unicast_group,
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_cap_unicast_group_delete(struct bt_cap_unicast_group *unicast_group);
+
+/** Callback function for bt_bap_unicast_group_foreach_stream()
+ *
+ * @param stream     The audio stream
+ * @param user_data  User data
+ *
+ * @retval true Stop iterating.
+ * @retval false Continue iterating.
+ */
+typedef bool (*bt_cap_unicast_group_foreach_stream_func_t)(struct bt_cap_stream *stream,
+							   void *user_data);
+
+/**
+ * @brief Iterate through all streams in a unicast group
+ *
+ * @param unicast_group  The unicast group
+ * @param func           The callback function
+ * @param user_data      User specified data that sent to the callback function
+ *
+ * @retval 0 Success (even if no streams exists in the group).
+ * @retval -ECANCELED Iteration was stopped by the callback function before complete.
+ * @retval -EINVAL @p unicast_group or @p func were NULL.
+ */
+int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,
+					bt_cap_unicast_group_foreach_stream_func_t func,
+					void *user_data);
 
 /** Stream specific parameters for the bt_cap_initiator_unicast_audio_start() function */
 struct bt_cap_unicast_audio_start_stream_param {
@@ -788,30 +820,30 @@ int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcas
 
 /** Parameters for  bt_cap_initiator_unicast_to_broadcast() */
 struct bt_cap_unicast_to_broadcast_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
 	/** The source unicast group with the streams. */
-	struct bt_bap_unicast_group *unicast_group;
+	struct bt_cap_unicast_group *unicast_group;
 
 	/**
-	 * @brief Whether or not to encrypt the streams.
+	 * @brief The advertising set to use for the broadcast source
 	 *
-	 * If set to true, then the broadcast code in @p broadcast_code
-	 * will be used to encrypt the streams.
+	 * This shall remain valid until the procedure has completed.
 	 */
-	bool encrypt;
+	/* TBD: Is this necessary? Should we, or the app, start the source? */
+	struct bt_le_ext_adv *ext_adv;
+
+	uint8_t sid;
+	uint16_t pa_interval;
+	uint32_t broadcast_id;
 
 	/**
-	 * @brief 16-octet broadcast code.
+	 * @brief Broadcast source parameters
 	 *
-	 * Only valid if @p encrypt is true.
-	 *
-	 * If the value is a string or a the value is less than 16 octets,
-	 * the remaining octets shall be 0.
-	 *
-	 * Example:
-	 *   The string "Broadcast Code" shall be
-	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
+	 * These parameters shall remain valid until the procedure has completed.
 	 */
-	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
+	struct bt_cap_initiator_broadcast_create_param *broadcast_create_param;
 };
 
 /**
@@ -820,10 +852,7 @@ struct bt_cap_unicast_to_broadcast_param {
  * The streams in the unicast group will be stopped and the unicast group
  * will be deleted. This can only be done for source streams.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_HANDOVER_SUPPORTED}
  *
  * @param param         The parameters for the handover.
  * @param source        The resulting broadcast source.
@@ -864,10 +893,7 @@ struct bt_cap_broadcast_to_unicast_param {
  * The streams in the broadcast source will be stopped and the broadcast source
  * will be deleted.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_HANDOVER_SUPPORTED}
  *
  * @param[in]  param          The parameters for the handover.
  * @param[out] unicast_group  The resulting broadcast source.

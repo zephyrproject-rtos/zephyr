@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -338,7 +338,7 @@ int bt_cap_commander_broadcast_reception_start(
 		return -EINVAL;
 	}
 
-	if (bt_cap_common_test_and_set_proc_active()) {
+	if (bt_cap_common_test_and_set_proc_active() && !bt_cap_common_handover_is_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
@@ -798,7 +798,7 @@ int bt_cap_commander_distribute_broadcast_code(
 		return -EINVAL;
 	}
 
-	if (bt_cap_common_test_and_set_proc_active()) {
+	if (bt_cap_common_test_and_set_proc_active() && !bt_cap_common_handover_is_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
@@ -868,6 +868,7 @@ int bt_cap_commander_distribute_broadcast_code(
 static void cap_commander_proc_complete(void)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	const bool is_handover = bt_cap_common_handover_is_active();
 	enum bt_cap_common_proc_type proc_type;
 	struct bt_conn *failed_conn;
 	int err;
@@ -875,27 +876,29 @@ static void cap_commander_proc_complete(void)
 	failed_conn = active_proc->failed_conn;
 	err = active_proc->err;
 	proc_type = active_proc->proc_type;
-	bt_cap_common_clear_active_proc();
 
-	if (cap_cb == NULL) {
+	if (is_handover && err != 0) {
+		bt_cap_handover_proc_complete();
 		return;
+	} else if (!is_handover) {
+		bt_cap_common_clear_active_proc();
 	}
 
 	switch (proc_type) {
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
 	case BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE:
-		if (cap_cb->volume_changed != NULL) {
+		if (cap_cb != NULL && cap_cb->volume_changed != NULL) {
 			cap_cb->volume_changed(failed_conn, err);
 		}
 		break;
 	case BT_CAP_COMMON_PROC_TYPE_VOLUME_MUTE_CHANGE:
-		if (cap_cb->volume_mute_changed != NULL) {
+		if (cap_cb != NULL && cap_cb->volume_mute_changed != NULL) {
 			cap_cb->volume_mute_changed(failed_conn, err);
 		}
 		break;
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 	case BT_CAP_COMMON_PROC_TYPE_VOLUME_OFFSET_CHANGE:
-		if (cap_cb->volume_offset_changed != NULL) {
+		if (cap_cb != NULL && cap_cb->volume_offset_changed != NULL) {
 			cap_cb->volume_offset_changed(failed_conn, err);
 		}
 		break;
@@ -903,13 +906,13 @@ static void cap_commander_proc_complete(void)
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
 	case BT_CAP_COMMON_PROC_TYPE_MICROPHONE_MUTE_CHANGE:
-		if (cap_cb->microphone_mute_changed != NULL) {
+		if (cap_cb != NULL && cap_cb->microphone_mute_changed != NULL) {
 			cap_cb->microphone_mute_changed(failed_conn, err);
 		}
 		break;
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 	case BT_CAP_COMMON_PROC_TYPE_MICROPHONE_GAIN_CHANGE:
-		if (cap_cb->microphone_gain_changed != NULL) {
+		if (cap_cb != NULL && cap_cb->microphone_gain_changed != NULL) {
 			cap_cb->microphone_gain_changed(failed_conn, err);
 		}
 		break;
@@ -917,17 +920,22 @@ static void cap_commander_proc_complete(void)
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
 	case BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START:
-		if (cap_cb->broadcast_reception_start != NULL) {
+		if (is_handover) {
+			/* continue */
+			/* TODO: If PAST, send PAST */
+			LOG_ERR("");
+			bt_cap_handover_proc_complete();
+		} else if (cap_cb != NULL && cap_cb->broadcast_reception_start != NULL) {
 			cap_cb->broadcast_reception_start(failed_conn, err);
 		}
 		break;
 	case BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP:
-		if (cap_cb->broadcast_reception_stop != NULL) {
+		if (cap_cb != NULL && cap_cb->broadcast_reception_stop != NULL) {
 			cap_cb->broadcast_reception_stop(failed_conn, err);
 		}
 		break;
 	case BT_CAP_COMMON_PROC_TYPE_DISTRIBUTE_BROADCAST_CODE:
-		if (cap_cb->distribute_broadcast_code != NULL) {
+		if (cap_cb != NULL && cap_cb->distribute_broadcast_code != NULL) {
 			cap_cb->distribute_broadcast_code(failed_conn, err);
 		}
 		break;
