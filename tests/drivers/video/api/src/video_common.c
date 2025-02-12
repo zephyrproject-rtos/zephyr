@@ -110,7 +110,7 @@ ZTEST(video_common, test_video_closest_frmival_stepwise)
 
 	stepwise.min.numerator = 1;
 	stepwise.min.denominator = 30;
-	stepwise.max.numerator = 30;
+	stepwise.max.numerator = 60;
 	stepwise.max.denominator = 30;
 	stepwise.step.numerator = 1;
 	stepwise.step.denominator = 30;
@@ -131,6 +131,18 @@ ZTEST(video_common, test_video_closest_frmival_stepwise)
 	expected.denominator = 30;
 	video_closest_frmival_stepwise(&stepwise, &desired, &match);
 	zassert_equal(video_frmival_nsec(&match), video_frmival_nsec(&expected), "7 / 80");
+
+	desired.numerator = 29994500;
+	desired.denominator = 20000000;
+	expected.numerator = 30000000;
+	expected.denominator = 20000000;
+	video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	zassert_equal(video_frmival_nsec(&match), video_frmival_nsec(&expected),
+		      "2994500 / 20000000");
 
 	desired.numerator = 1;
 	desired.denominator = 120;
