@@ -1,0 +1,46 @@
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT1B power control
+
+compatible: "infineon,cat1b-power"
+
+include: base.yaml
+
+properties:
+
+  power-profile:
+    type: string
+    description: |
+      Selects the System Active power profile:
+        - POWER_PROFILE_0 (LP MCU + Radio ON): All peripheral and CPU power modes are
+        available with a maximum configurable CPU clock at 96 MHz with a regulated
+        voltage of 1.1 V. Bluetooth® functionality is available because the radio
+        module is powered ON.
+
+        - POWER_PROFILE_1 (ULP MCU + Radio ON): All CPU peripherals and power modes are
+        available with the maximum frequency of 48 MHz and operating at 1.0 V voltage
+        regulation (see Regulator operations). Bluetooth® functionality is available because
+        the radio module is powered ON.
+
+        - POWER_PROFILE_2A (LP MCU Only): All peripheral and CPU power modes are available at
+        full speed (96 MHz) with a regulated voltage of 1.1 V, but Bluetooth® functionality is not
+        available because the radio module is in OFF state. The core buck voltage and mode are set
+        to high power 1.16 V and SDR0 is set to regulated 1.1 V.
+
+        - POWER_PROFILE_2B (LP MCU Only): All peripheral and CPU power modes are available at
+        full speed (96 MHz) with a regulated voltage of 1.1 V, but the Bluetooth® functionality is
+        not available because the radio module is in OFF state. The core buck voltage and mode are
+        set to low-power 1.1 V and SDR0 is set to bypassed 1.1 V.
+
+        - POWER_PROFILE_3 (ULP MCU Only): All CPU peripherals and power modes are available
+        with the maximum frequency of 48 MHz and operating with a regulated voltage of 1.0 V.
+        Bluetooth® radio module is turned OFF.
+    enum:
+      - "POWER_PROFILE_0"
+      - "POWER_PROFILE_1"
+      - "POWER_PROFILE_2A"
+      - "POWER_PROFILE_2B"
+      - "POWER_PROFILE_3"
