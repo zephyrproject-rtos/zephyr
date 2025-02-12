@@ -124,7 +124,7 @@
 			drive-push-pull;
 			drive-strength = "0.5";
 			ambiq,iom-mspi = <0>;
-			ambiq,iom-nce-module = <0>;
+			ambiq,nce-src = <0>;
 			ambiq,iom-num = <0>;
 		};
 	};
@@ -145,7 +145,7 @@
 			drive-push-pull;
 			drive-strength = "0.5";
 			ambiq,iom-mspi = <0>;
-			ambiq,iom-nce-module = <0>;
+			ambiq,nce-src = <0>;
 			ambiq,iom-num = <1>;
 		};
 	};
@@ -162,7 +162,7 @@
 			drive-push-pull;
 			drive-strength = "0.5";
 			ambiq,iom-mspi = <0>;
-			ambiq,iom-nce-module = <0>;
+			ambiq,nce-src = <0>;
 			ambiq,iom-num = <2>;
 		};
 	};
