@@ -123,7 +123,11 @@ int regulator_enable(const struct device *dev)
 	(void)k_mutex_lock(&data->lock, K_FOREVER);
 #endif
 
-	data->refcnt++;
+	if ((config->flags & REGULATOR_NO_REF_COUNT) != 0U) {
+		data->refcnt = 1;
+	} else {
+		data->refcnt++;
+	}
 
 	if (data->refcnt == 1) {
 		ret = api->enable(dev);
@@ -183,7 +187,12 @@ int regulator_disable(const struct device *dev)
 	(void)k_mutex_lock(&data->lock, K_FOREVER);
 #endif
 
-	if (data->refcnt > 0) {
+	if ((config->flags & REGULATOR_NO_REF_COUNT) != 0U) {
+		ret = api->disable(dev);
+		if (ret == 0) {
+			data->refcnt = 0;
+		}
+	} else if (data->refcnt > 0) {
 		data->refcnt--;
 
 		if (data->refcnt == 0) {

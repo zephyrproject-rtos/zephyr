@@ -145,6 +145,8 @@ __subsystem struct regulator_driver_api {
 	(((x) & REGULATOR_ACTIVE_DISCHARGE_MASK) >> REGULATOR_ACTIVE_DISCHARGE_POS)
 /** Indicates regulator must be initialized OFF */
 #define REGULATOR_BOOT_OFF BIT(4)
+/** Indicates regulator does not use refcounting */
+#define REGULATOR_NO_REF_COUNT BIT(5)
 
 /** @} */
 
@@ -188,37 +190,29 @@ struct regulator_common_config {
  *
  * @param node_id Node identifier.
  */
-#define REGULATOR_DT_COMMON_CONFIG_INIT(node_id)                               \
-	{                                                                      \
-		.min_uv = DT_PROP_OR(node_id, regulator_min_microvolt,         \
-				     INT32_MIN),                               \
-		.max_uv = DT_PROP_OR(node_id, regulator_max_microvolt,         \
-				     INT32_MAX),                               \
-		.init_uv = DT_PROP_OR(node_id, regulator_init_microvolt,       \
-				      INT32_MIN),			       \
-		.min_ua = DT_PROP_OR(node_id, regulator_min_microamp,          \
-				     INT32_MIN),                               \
-		.max_ua = DT_PROP_OR(node_id, regulator_max_microamp,          \
-				     INT32_MAX),                               \
-		.init_ua = DT_PROP_OR(node_id, regulator_init_microamp,       \
-				      INT32_MIN),			       \
-		.startup_delay_us = DT_PROP_OR(node_id, startup_delay_us, 0),  \
-		.off_on_delay_us = DT_PROP_OR(node_id, off_on_delay_us, 0),    \
-		.allowed_modes = (const regulator_mode_t [])                   \
-			DT_PROP_OR(node_id, regulator_allowed_modes, {}),      \
-		.allowed_modes_cnt =                                           \
-			DT_PROP_LEN_OR(node_id, regulator_allowed_modes, 0),   \
-		.initial_mode = DT_PROP_OR(node_id, regulator_initial_mode,    \
-					   REGULATOR_INITIAL_MODE_UNKNOWN),    \
-		.flags = ((DT_PROP_OR(node_id, regulator_always_on, 0U) *      \
-			   REGULATOR_ALWAYS_ON) |                              \
-			  (DT_PROP_OR(node_id, regulator_boot_on, 0U) *        \
-			   REGULATOR_BOOT_ON) |                                \
-			  (REGULATOR_ACTIVE_DISCHARGE_SET_BITS(                \
-			   DT_PROP_OR(node_id, regulator_active_discharge,     \
-			   REGULATOR_ACTIVE_DISCHARGE_DEFAULT))) |             \
-			  (DT_PROP_OR(node_id, regulator_boot_off, 0U) *       \
-			   REGULATOR_BOOT_OFF)),                               \
+#define REGULATOR_DT_COMMON_CONFIG_INIT(node_id)                                                   \
+	{                                                                                          \
+		.min_uv = DT_PROP_OR(node_id, regulator_min_microvolt, INT32_MIN),                 \
+		.max_uv = DT_PROP_OR(node_id, regulator_max_microvolt, INT32_MAX),                 \
+		.init_uv = DT_PROP_OR(node_id, regulator_init_microvolt, INT32_MIN),               \
+		.min_ua = DT_PROP_OR(node_id, regulator_min_microamp, INT32_MIN),                  \
+		.max_ua = DT_PROP_OR(node_id, regulator_max_microamp, INT32_MAX),                  \
+		.init_ua = DT_PROP_OR(node_id, regulator_init_microamp, INT32_MIN),                \
+		.startup_delay_us = DT_PROP_OR(node_id, startup_delay_us, 0),                      \
+		.off_on_delay_us = DT_PROP_OR(node_id, off_on_delay_us, 0),                        \
+		.allowed_modes = (const regulator_mode_t[])DT_PROP_OR(                             \
+			node_id, regulator_allowed_modes, {}),                                     \
+		.allowed_modes_cnt = DT_PROP_LEN_OR(node_id, regulator_allowed_modes, 0),          \
+		.initial_mode = DT_PROP_OR(node_id, regulator_initial_mode,                        \
+					   REGULATOR_INITIAL_MODE_UNKNOWN),                        \
+		.flags =                                                                           \
+			((DT_PROP_OR(node_id, regulator_always_on, 0U) * REGULATOR_ALWAYS_ON) |    \
+			 (DT_PROP_OR(node_id, regulator_boot_on, 0U) * REGULATOR_BOOT_ON) |        \
+			 (REGULATOR_ACTIVE_DISCHARGE_SET_BITS(                                     \
+				 DT_PROP_OR(node_id, regulator_active_discharge,                   \
+					    REGULATOR_ACTIVE_DISCHARGE_DEFAULT))) |                \
+			 (DT_PROP_OR(node_id, regulator_boot_off, 0U) * REGULATOR_BOOT_OFF) |      \
+			 (DT_PROP_OR(node_id, regulator_no_refcnt, 0U) * REGULATOR_NO_REF_COUNT)), \
 	}
 
 /**

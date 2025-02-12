@@ -66,6 +66,11 @@ properties:
     description: |
       Regulator should be disabled on boot.
 
+  regulator-no-refcnt:
+    type: boolean
+    description: |
+      Disables reference counting for this regulator.
+
   regulator-allow-bypass:
     type: boolean
     description: allow the regulator to go into bypass mode
