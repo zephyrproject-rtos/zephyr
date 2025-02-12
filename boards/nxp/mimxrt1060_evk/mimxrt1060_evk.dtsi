@@ -1,5 +1,5 @@
 /*
- * Copyright 2018,2024 NXP
+ * Copyright 2018,2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -312,3 +312,5 @@ arduino_spi: &lpspi1 {
 dvp_fpc24_i2c: &lpi2c1 {};
 
 dvp_fpc24_interface: &csi {};
+
+m2_hci_bt_uart: &lpuart3 {};
