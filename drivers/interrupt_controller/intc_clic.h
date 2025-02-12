@@ -12,11 +12,15 @@
 #define CSR_MTVT       (0x307)
 #define CSR_MNXTI      (0x345)
 #define CSR_MINTTHRESH (0x347)
+#define CSR_MISELECT   (0x350)
+#define CSR_MIREG      (0x351)
+#define CSR_MIREG2     (0x352)
 
 #ifndef __ASSEMBLER__
 
 #include <stddef.h>
 
+#ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
 /* CLIC Memory mapped register offset */
 #define CLIC_CFG          (0x0)
 #define CLIC_CTRL(irq)    (0x1000 + 4 * (irq))
@@ -24,6 +28,15 @@
 #define CLIC_INTIE(irq)   (CLIC_CTRL(irq) + offsetof(union CLICCTRL, w.INTIE))
 #define CLIC_INTATTR(irq) (CLIC_CTRL(irq) + offsetof(union CLICCTRL, w.INTATTR))
 #define CLIC_INTCTRL(irq) (CLIC_CTRL(irq) + offsetof(union CLICCTRL, w.INTCTRL))
+#else
+/* Indirect CSR Access miselect offset */
+#define CLIC_CFG          (0x14A0)
+#define CLIC_CTRL(irq)    (0x0) /* Dummy value for driver compatibility */
+#define CLIC_INTIP(irq)   (0x1400 + (irq) / 32)
+#define CLIC_INTIE(irq)   (0x1400 + (irq) / 32)
+#define CLIC_INTATTR(irq) (0x1000 + (irq) / 4)
+#define CLIC_INTCTRL(irq) (0x1000 + (irq) / 4)
+#endif /* !CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS */
 
 /* Nuclei ECLIC memory mapped register offset */
 #define CLIC_INFO (0x4)
