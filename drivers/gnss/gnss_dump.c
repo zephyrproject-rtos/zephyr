@@ -83,11 +83,11 @@ int gnss_dump_info(char *str, uint16_t strsize, const struct gnss_info *info)
 {
 	int ret;
 	const char *fmt = "gnss_info: {satellites_cnt: %u, hdop: %u.%u, fix_status: %s, "
-			  "fix_quality: %s}";
+			  "fix_quality: %s, fix_accuracy: %u.%u}";
 
 	ret = snprintk(str, strsize, fmt, info->satellites_cnt, info->hdop / 1000,
 		       info->hdop % 1000, gnss_fix_status_to_str(info->fix_status),
-		       gnss_fix_quality_to_str(info->fix_quality));
+		       gnss_fix_quality_to_str(info->fix_quality), info->fix_accuracy / 1000);
 
 	return (strsize < ret) ? -ENOMEM : 0;
 }
