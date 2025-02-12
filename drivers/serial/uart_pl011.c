@@ -38,7 +38,7 @@
 #include "uart_pl011_ambiq.h"
 #endif
 
-#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
 #define PM_INST_GET(n) PM_DEVICE_DT_INST_GET(n)
 #else
 #define PM_INST_GET(n) NULL
