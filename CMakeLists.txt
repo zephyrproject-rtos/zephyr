@@ -903,27 +903,17 @@ add_custom_command(
   DEPENDS ${PARSE_SYSCALLS_TARGET}
   )
 
-# This is passed into all calls to the gen_kobject_list.py script.
-set(gen_kobject_list_include_args --include-subsystem-list ${struct_tags_json})
+include(${ZEPHYR_BASE}/cmake/kobj.cmake)
 
 set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/zephyr/driver-validation.h)
-add_custom_command(
-  OUTPUT ${DRV_VALIDATION}
-  COMMAND
-  ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py
-  --validation-output ${DRV_VALIDATION}
-  ${gen_kobject_list_include_args}
-  $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-  DEPENDS
-  ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py
-  ${PARSE_SYSCALLS_TARGET}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+gen_kobject_list(
+  TARGET ${DRIVER_VALIDATION_H_TARGET}
+  OUTPUTS ${DRV_VALIDATION}
+  SCRIPT_ARGS --validation-output ${DRV_VALIDATION}
+  INCLUDES ${struct_tags_json}
   )
-add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
 
-include(${ZEPHYR_BASE}/cmake/kobj.cmake)
-gen_kobj(KOBJ_INCLUDE_PATH)
+gen_kobject_list_headers(INCLUDES ${struct_tags_json})
 
 # Generate sections for kernel device subsystems
 set(
@@ -1122,7 +1112,6 @@ if(CONFIG_USERSPACE)
          NO_COVERAGE_FLAGS "${compiler_flags_priv}"
   )
 
-  set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
 endif()
 
@@ -1276,23 +1265,12 @@ if(CONFIG_USERSPACE)
   set(KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE kobject_prebuilt_hash_preprocessed.c)
   set(KOBJECT_PREBUILT_HASH_OUTPUT_SRC     kobject_prebuilt_hash.c)
 
-  add_custom_command(
+  gen_kobject_list_gperf(
+    TARGET kobj_prebuilt_hash_list
     OUTPUT ${KOBJECT_PREBUILT_HASH_LIST}
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${GEN_KOBJ_LIST}
-    --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
-    --gperf-output ${KOBJECT_PREBUILT_HASH_LIST}
-    ${gen_kobject_list_include_args}
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS
-    ${ZEPHYR_LINK_STAGE_EXECUTABLE}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    KERNEL_TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+    INCLUDES ${struct_tags_json}
     )
-  add_custom_target(
-    kobj_prebuilt_hash_list
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_PREBUILT_HASH_LIST}
-  )
 
   add_custom_command(
     OUTPUT ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE}
@@ -1483,23 +1461,12 @@ if(CONFIG_USERSPACE)
   # Use the script GEN_KOBJ_LIST to scan the kernel binary's
   # (${ZEPHYR_LINK_STAGE_EXECUTABLE}) DWARF information to produce a table of kernel
   # objects (KOBJECT_HASH_LIST) which we will then pass to gperf
-  add_custom_command(
+  gen_kobject_list_gperf(
+    TARGET kobj_hash_list
     OUTPUT ${KOBJECT_HASH_LIST}
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${GEN_KOBJ_LIST}
-    --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
-    --gperf-output ${KOBJECT_HASH_LIST}
-    ${gen_kobject_list_include_args}
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS
-    ${ZEPHYR_LINK_STAGE_EXECUTABLE}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    KERNEL_TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+    INCLUDES ${struct_tags_json}
     )
-  add_custom_target(
-    kobj_hash_list
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_LIST}
-  )
 
   # Use gperf to generate C code (KOBJECT_HASH_OUTPUT_SRC_PRE) which implements a
   # perfect hashtable based on KOBJECT_HASH_LIST
