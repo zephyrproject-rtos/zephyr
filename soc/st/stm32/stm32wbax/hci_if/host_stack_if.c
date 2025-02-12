@@ -21,7 +21,8 @@ uint8_t ll_state_busy;
 #define BLE_CTRL_THREAD_STACK_SIZE (256 * 7)
 #define LL_THREAD_STACK_SIZE (256 * 7)
 #define BLE_CTRL_THREAD_PRIO (14)
-#define LL_THREAD_PRIO (14)
+/* The LL thread has higher priority than the BLE CTRL thread and the Zephyr BLE stack threads */
+#define LL_THREAD_PRIO (4)
 
 K_THREAD_STACK_DEFINE(ble_ctrl_work_area, BLE_CTRL_THREAD_STACK_SIZE);
 K_THREAD_STACK_DEFINE(ll_work_area, LL_THREAD_STACK_SIZE);
