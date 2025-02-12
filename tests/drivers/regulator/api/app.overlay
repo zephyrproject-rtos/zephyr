@@ -35,5 +35,9 @@
 			regulator-boot-off;
 			fake-is-enabled-in-hardware;
 		};
+
+		reg6: REG6 {
+			regulator-no-refcnt;
+		};
 	};
 };

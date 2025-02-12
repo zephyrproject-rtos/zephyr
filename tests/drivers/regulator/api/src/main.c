@@ -22,6 +22,8 @@ static const struct device *const reg3 = DEVICE_DT_GET(DT_NODELABEL(reg3));
 static const struct device *const reg4 = DEVICE_DT_GET(DT_NODELABEL(reg4));
 /* REG5: regulator-boot-off and is_enabled */
 static const struct device *const reg5 = DEVICE_DT_GET(DT_NODELABEL(reg5));
+/* REG6: regulator-no-refcnt */
+static const struct device *const reg6 = DEVICE_DT_GET(DT_NODELABEL(reg6));
 
 static DEVICE_API(regulator, dummy_regulator_api);
 static DEVICE_API(regulator_parent, dummy_regulator_parent_api);
@@ -185,6 +187,51 @@ ZTEST(regulator_api, test_enable_disable)
 	/* REG5: disable */
 	zassert_equal(regulator_disable(reg5), 0);
 	zassert_equal(regulator_fake_disable_fake.call_count, 3U);
+}
+
+ZTEST(regulator_api, test_enable_disable_no_refcnt)
+{
+	struct regulator_common_data *data = reg6->data;
+
+	RESET_FAKE(regulator_fake_enable);
+	RESET_FAKE(regulator_fake_disable);
+
+	/* REG6: enable fails */
+	regulator_fake_enable_fake.return_val = -EFAULT;
+	zassert_equal(regulator_enable(reg6), -EFAULT);
+	zassert_equal(regulator_fake_enable_fake.call_count, 1U);
+	zassert_equal(data->refcnt, 0);
+
+	RESET_FAKE(regulator_fake_enable);
+
+	/* REG6: enable */
+	zassert_equal(data->refcnt, 0);
+	zassert_equal(regulator_enable(reg6), 0);
+	zassert_equal(regulator_fake_enable_fake.call_count, 1U);
+	zassert_equal(data->refcnt, 1);
+
+	/* REG6: enable again */
+	zassert_equal(regulator_enable(reg6), 0);
+	zassert_equal(regulator_fake_enable_fake.call_count, 2U);
+	zassert_equal(data->refcnt, 1);
+
+	/* REG6: disable fails */
+	regulator_fake_disable_fake.return_val = -EFAULT;
+	zassert_equal(regulator_disable(reg6), -EFAULT);
+	zassert_equal(regulator_fake_disable_fake.call_count, 1U);
+	zassert_equal(data->refcnt, 1);
+
+	RESET_FAKE(regulator_fake_disable);
+
+	/* REG6: disable */
+	zassert_equal(regulator_disable(reg6), 0);
+	zassert_equal(regulator_fake_disable_fake.call_count, 1U);
+	zassert_equal(data->refcnt, 0);
+
+	/* REG6: disable again */
+	zassert_equal(regulator_disable(reg6), 0);
+	zassert_equal(regulator_fake_disable_fake.call_count, 2U);
+	zassert_equal(data->refcnt, 0);
 }
 
 ZTEST(regulator_api, test_count_voltages_not_implemented)
