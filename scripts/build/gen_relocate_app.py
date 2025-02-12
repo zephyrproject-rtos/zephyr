@@ -526,10 +526,10 @@ def create_dict_wrt_mem():
     rel_dict = dict()
     phdrs = dict()
 
-    input_rel_dict = args.input_rel_dict.read()
-    if input_rel_dict == '':
+    input_rel_dict = args.input_rel_dict.read().splitlines()
+    if not input_rel_dict:
         sys.exit("Disable CONFIG_CODE_DATA_RELOCATION if no file needs relocation")
-    for line in input_rel_dict.split('|'):
+    for line in input_rel_dict:
         if ':' not in line:
             continue
 
