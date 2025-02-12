@@ -153,6 +153,69 @@
 			ngpios = <32>;
 		};
 
+		spi0: spi@1a102180 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102180 0x80>;
+			instance = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@1a102200 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102200 0x80>;
+			instance = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi@1a102280 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102280 0x80>;
+			instance = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi3: spi@1a102300 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102300 0x80>;
+			instance = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi4: spi@1a102380 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102380 0x80>;
+			instance = <4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi5: spi@1a102400 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102400 0x80>;
+			instance = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi6: spi@1a102480 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102480 0x80>;
+			instance = <6>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@1a104000 {
 			compatible = "sensry,sy1xx-pinctrl";
 			reg = <0x1a104000 0x1000>;
