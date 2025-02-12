@@ -27,7 +27,7 @@
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
 		zephyr,canbus = &flexcan0;
-		zephyr,code-cpu1-partition = &cpu1_partition;
+		zephyr,code-cpu1-partition = &slot1_partition;
 	};
 
 	aliases{
