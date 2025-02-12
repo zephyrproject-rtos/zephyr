@@ -1577,6 +1577,32 @@ int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
  */
 int bt_bap_unicast_group_delete(struct bt_bap_unicast_group *unicast_group);
 
+/** Callback function for bt_bap_unicast_group_foreach_stream()
+ *
+ * @param stream     The audio stream
+ * @param user_data  User data
+ *
+ * @retval true Stop iterating.
+ * @retval false Continue iterating.
+ */
+typedef bool (*bt_bap_unicast_group_foreach_stream_func_t)(struct bt_bap_stream *stream,
+							   void *user_data);
+
+/**
+ * @brief Iterate through all streams in a unicast group
+ *
+ * @param unicast_group  The unicast group
+ * @param func           The callback function
+ * @param user_data      User specified data that sent to the callback function
+ *
+ * @retval 0 Success (even if no streams exists in the group).
+ * @retval -ECANCELED Iteration was stopped by the callback function before complete.
+ * @retval -EINVAL @p unicast_group or @p func were NULL.
+ */
+int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_group,
+					bt_bap_unicast_group_foreach_stream_func_t func,
+					void *user_data);
+
 /** Unicast Client callback structure */
 struct bt_bap_unicast_client_cb {
 	/**
