@@ -29,7 +29,7 @@
 #define MAX_CYCLES   (MAX_TICKS * CYC_PER_TICK)
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 #define MIN_DELAY 1
-#elif defined(CONFIG_SOC_SERIES_APOLLO4X)
+#else
 #define MIN_DELAY 4
 #endif
 
