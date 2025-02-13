@@ -8,10 +8,9 @@
 #include <string.h>
 #include "wrapper.h"
 
-#define TIME_OUT_TICKS  10
+#define TIME_OUT_TICKS 10
 
-K_MEM_SLAB_DEFINE(cv2_mem_slab, sizeof(struct cv2_mslab),
-		  CONFIG_CMSIS_V2_MEM_SLAB_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE(cv2_mem_slab, sizeof(struct cv2_mslab), CONFIG_CMSIS_V2_MEM_SLAB_MAX_COUNT, 4);
 
 static const osMemoryPoolAttr_t init_mslab_attrs = {
 	.name = "ZephyrMemPool",
@@ -30,8 +29,7 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 {
 	struct cv2_mslab *mslab;
 
-	BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE >=
-		     CONFIG_CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE,
+	BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE >= CONFIG_CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE,
 		     "heap must be configured to be at least the max dynamic size");
 
 	if (k_is_in_isr()) {
@@ -53,8 +51,7 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 	}
 
 	if (attr->mp_mem == NULL) {
-		__ASSERT((block_count * block_size) <=
-			 CONFIG_CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE,
+		__ASSERT((block_count * block_size) <= CONFIG_CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE,
 			 "memory slab/pool size exceeds dynamic maximum");
 
 		mslab->pool = k_calloc(block_count, block_size);
@@ -79,8 +76,7 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 	}
 
 	if (attr->name == NULL) {
-		strncpy(mslab->name, init_mslab_attrs.name,
-			sizeof(mslab->name) - 1);
+		strncpy(mslab->name, init_mslab_attrs.name, sizeof(mslab->name) - 1);
 	} else {
 		strncpy(mslab->name, attr->name, sizeof(mslab->name) - 1);
 	}
@@ -107,17 +103,14 @@ void *osMemoryPoolAlloc(osMemoryPoolId_t mp_id, uint32_t timeout)
 	}
 
 	if (timeout == 0U) {
-		retval = k_mem_slab_alloc(
-			(struct k_mem_slab *)(&mslab->z_mslab),
-			(void **)&ptr, K_NO_WAIT);
+		retval = k_mem_slab_alloc((struct k_mem_slab *)(&mslab->z_mslab), (void **)&ptr,
+					  K_NO_WAIT);
 	} else if (timeout == osWaitForever) {
-		retval = k_mem_slab_alloc(
-			(struct k_mem_slab *)(&mslab->z_mslab),
-			(void **)&ptr, K_FOREVER);
+		retval = k_mem_slab_alloc((struct k_mem_slab *)(&mslab->z_mslab), (void **)&ptr,
+					  K_FOREVER);
 	} else {
-		retval = k_mem_slab_alloc(
-			(struct k_mem_slab *)(&mslab->z_mslab),
-			(void **)&ptr, K_TICKS(timeout));
+		retval = k_mem_slab_alloc((struct k_mem_slab *)(&mslab->z_mslab), (void **)&ptr,
+					  K_TICKS(timeout));
 	}
 
 	if (retval == 0) {
