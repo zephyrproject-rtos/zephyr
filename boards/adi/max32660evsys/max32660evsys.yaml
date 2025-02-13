@@ -1,0 +1,13 @@
+identifier: max32660evsys
+name: max32660evsys
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - serial
+ram: 96
+flash: 256
