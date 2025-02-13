@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
+ * Copyright (c) 2025 Siemens AG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,6 +104,38 @@
   #endif
 
   #define GC_SECTION(sym) SECTION .text.##sym, "ax"
+
+#endif /* _ASMLANGUAGE */
+
+/*
+ * General directive for assembly code, to align the following symbol, in bytes.
+ *
+ * Example:
+ *
+ *    BALIGN(4)
+ *    test_symbol:
+ *
+ * 'test_symbol' will get aligned to 4 bytes.
+ */
+
+#ifdef _ASMLANGUAGE
+
+  #if defined(CONFIG_X86) || defined(CONFIG_ARM) || defined(CONFIG_ARM64) || \
+	defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || \
+	defined(CONFIG_XTENSA) || defined(CONFIG_MIPS) || \
+	defined(CONFIG_ARCH_POSIX)
+
+    #define   BALIGN(x)   .balign   x
+
+  #elif defined(CONFIG_ARC) || defined(CONFIG_SPARC)
+
+    #define   BALIGN(x)   .align    x
+
+  #else
+
+    #error Architecture unsupported
+
+  #endif
 
 #endif /* _ASMLANGUAGE */
 
