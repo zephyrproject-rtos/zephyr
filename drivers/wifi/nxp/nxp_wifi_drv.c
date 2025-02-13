@@ -1409,6 +1409,13 @@ static int nxp_wifi_11k_neighbor_request(const struct device *dev, struct wifi_1
 }
 #endif
 
+#ifdef CONFIG_NXP_WIFI_11V
+static int nxp_wifi_btm_query(const struct device *dev, uint8_t reason)
+{
+	return wlan_host_11v_bss_trans_query(reason);
+}
+#endif
+
 static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *params)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
@@ -2067,6 +2074,9 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 #ifdef CONFIG_NXP_WIFI_11K
 	.cfg_11k = nxp_wifi_11k_cfg,
 	.send_11k_neighbor_request = nxp_wifi_11k_neighbor_request,
+#endif
+#ifdef CONFIG_NXP_WIFI_11V
+	.btm_query = nxp_wifi_btm_query,
 #endif
 	.set_power_save = nxp_wifi_power_save,
 	.get_power_save_config = nxp_wifi_get_power_save,
