@@ -9,7 +9,8 @@
 #include <string.h>
 #include "wrapper.h"
 
-K_MEM_SLAB_DEFINE(cv2_msgq_slab, sizeof(struct cv2_msgq), CONFIG_CMSIS_V2_MSGQ_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE(cmsis_rtos_msgq_cb_slab, sizeof(struct cmsis_rtos_msgq_cb),
+		  CONFIG_CMSIS_V2_MSGQ_MAX_COUNT, 4);
 
 static const osMessageQueueAttr_t init_msgq_attrs = {
 	.name = "ZephyrMsgQ",
@@ -26,7 +27,7 @@ static const osMessageQueueAttr_t init_msgq_attrs = {
 osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 				     const osMessageQueueAttr_t *attr)
 {
-	struct cv2_msgq *msgq;
+	struct cmsis_rtos_msgq_cb *msgq;
 
 	BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE >= CONFIG_CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE,
 		     "heap must be configured to be at least the max dynamic size");
@@ -43,8 +44,8 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 		attr = &init_msgq_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cv2_msgq_slab, (void **)&msgq, K_MSEC(100)) == 0) {
-		(void)memset(msgq, 0, sizeof(struct cv2_msgq));
+	if (k_mem_slab_alloc(&cmsis_rtos_msgq_cb_slab, (void **)&msgq, K_MSEC(100)) == 0) {
+		(void)memset(msgq, 0, sizeof(struct cmsis_rtos_msgq_cb));
 	} else {
 		return NULL;
 	}
@@ -56,12 +57,12 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 #if (K_HEAP_MEM_POOL_SIZE > 0)
 		msgq->pool = k_calloc(msg_count, msg_size);
 		if (msgq->pool == NULL) {
-			k_mem_slab_free(&cv2_msgq_slab, (void *)msgq);
+			k_mem_slab_free(&cmsis_rtos_msgq_cb_slab, (void *)msgq);
 			return NULL;
 		}
 		msgq->is_dynamic_allocation = TRUE;
 #else
-		k_mem_slab_free(&cv2_msgq_slab, (void *)msgq);
+		k_mem_slab_free(&cmsis_rtos_msgq_cb_slab, (void *)msgq);
 		return NULL;
 #endif
 	} else {
@@ -86,7 +87,7 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 osStatus_t osMessageQueuePut(osMessageQueueId_t msgq_id, const void *msg_ptr, uint8_t msg_prio,
 			     uint32_t timeout)
 {
-	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
+	struct cmsis_rtos_msgq_cb *msgq = (struct cmsis_rtos_msgq_cb *)msgq_id;
 	int retval;
 
 	ARG_UNUSED(msg_prio);
@@ -123,7 +124,7 @@ osStatus_t osMessageQueuePut(osMessageQueueId_t msgq_id, const void *msg_ptr, ui
 osStatus_t osMessageQueueGet(osMessageQueueId_t msgq_id, void *msg_ptr, uint8_t *msg_prio,
 			     uint32_t timeout)
 {
-	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
+	struct cmsis_rtos_msgq_cb *msgq = (struct cmsis_rtos_msgq_cb *)msgq_id;
 	int retval;
 
 	ARG_UNUSED(msg_prio);
@@ -161,7 +162,7 @@ osStatus_t osMessageQueueGet(osMessageQueueId_t msgq_id, void *msg_ptr, uint8_t 
  */
 uint32_t osMessageQueueGetCapacity(osMessageQueueId_t msgq_id)
 {
-	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
+	struct cmsis_rtos_msgq_cb *msgq = (struct cmsis_rtos_msgq_cb *)msgq_id;
 
 	if (msgq == NULL) {
 		return 0;
@@ -175,7 +176,7 @@ uint32_t osMessageQueueGetCapacity(osMessageQueueId_t msgq_id)
  */
 uint32_t osMessageQueueGetMsgSize(osMessageQueueId_t msgq_id)
 {
-	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
+	struct cmsis_rtos_msgq_cb *msgq = (struct cmsis_rtos_msgq_cb *)msgq_id;
 
 	if (msgq == NULL) {
 		return 0;
@@ -189,7 +190,7 @@ uint32_t osMessageQueueGetMsgSize(osMessageQueueId_t msgq_id)
  */
 uint32_t osMessageQueueGetCount(osMessageQueueId_t msgq_id)
 {
-	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
+	struct cmsis_rtos_msgq_cb *msgq = (struct cmsis_rtos_msgq_cb *)msgq_id;
 
 	if (msgq == NULL) {
 		return 0;
@@ -203,7 +204,7 @@ uint32_t osMessageQueueGetCount(osMessageQueueId_t msgq_id)
  */
 uint32_t osMessageQueueGetSpace(osMessageQueueId_t msgq_id)
 {
-	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
+	struct cmsis_rtos_msgq_cb *msgq = (struct cmsis_rtos_msgq_cb *)msgq_id;
 
 	if (msgq == NULL) {
 		return 0;
@@ -217,7 +218,7 @@ uint32_t osMessageQueueGetSpace(osMessageQueueId_t msgq_id)
  */
 const char *osMessageQueueGetName(osMessageQueueId_t msgq_id)
 {
-	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
+	struct cmsis_rtos_msgq_cb *msgq = (struct cmsis_rtos_msgq_cb *)msgq_id;
 
 	if (!k_is_in_isr() && (msgq_id != NULL)) {
 		return msgq->name;
@@ -231,7 +232,7 @@ const char *osMessageQueueGetName(osMessageQueueId_t msgq_id)
  */
 osStatus_t osMessageQueueReset(osMessageQueueId_t msgq_id)
 {
-	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
+	struct cmsis_rtos_msgq_cb *msgq = (struct cmsis_rtos_msgq_cb *)msgq_id;
 
 	if (msgq == NULL) {
 		return osErrorParameter;
@@ -256,7 +257,7 @@ osStatus_t osMessageQueueReset(osMessageQueueId_t msgq_id)
  */
 osStatus_t osMessageQueueDelete(osMessageQueueId_t msgq_id)
 {
-	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
+	struct cmsis_rtos_msgq_cb *msgq = (struct cmsis_rtos_msgq_cb *)msgq_id;
 
 	if (msgq == NULL) {
 		return osErrorParameter;
@@ -274,7 +275,7 @@ osStatus_t osMessageQueueDelete(osMessageQueueId_t msgq_id)
 	if (msgq->is_dynamic_allocation) {
 		k_free(msgq->pool);
 	}
-	k_mem_slab_free(&cv2_msgq_slab, (void *)msgq);
+	k_mem_slab_free(&cmsis_rtos_msgq_cb_slab, (void *)msgq);
 
 	return osOK;
 }

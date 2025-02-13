@@ -8,7 +8,7 @@
 #include <zephyr/portability/cmsis_types.h>
 #include <string.h>
 
-K_MEM_SLAB_DEFINE(cv2_event_flags_slab, sizeof(struct cv2_event_flags),
+K_MEM_SLAB_DEFINE(cmsis_rtos_event_cb_slab, sizeof(struct cmsis_rtos_event_cb),
 		  CONFIG_CMSIS_V2_EVT_FLAGS_MAX_COUNT, 4);
 
 static const osEventFlagsAttr_t init_event_flags_attrs = {
@@ -25,7 +25,7 @@ static const osEventFlagsAttr_t init_event_flags_attrs = {
  */
 osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 {
-	struct cv2_event_flags *events;
+	struct cmsis_rtos_event_cb *events;
 
 	if (k_is_in_isr()) {
 		return NULL;
@@ -35,8 +35,8 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 		attr = &init_event_flags_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cv2_event_flags_slab, (void **)&events, K_MSEC(100)) == 0) {
-		memset(events, 0, sizeof(struct cv2_event_flags));
+	if (k_mem_slab_alloc(&cmsis_rtos_event_cb_slab, (void **)&events, K_MSEC(100)) == 0) {
+		memset(events, 0, sizeof(struct cmsis_rtos_event_cb));
 	} else {
 		return NULL;
 	}
@@ -60,7 +60,7 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
  */
 uint32_t osEventFlagsSet(osEventFlagsId_t ef_id, uint32_t flags)
 {
-	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
+	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
 	unsigned int key;
 
 	if ((ef_id == NULL) || (flags & osFlagsError)) {
@@ -81,7 +81,7 @@ uint32_t osEventFlagsSet(osEventFlagsId_t ef_id, uint32_t flags)
  */
 uint32_t osEventFlagsClear(osEventFlagsId_t ef_id, uint32_t flags)
 {
-	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
+	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
 	unsigned int key;
 	uint32_t sig;
 
@@ -103,7 +103,7 @@ uint32_t osEventFlagsClear(osEventFlagsId_t ef_id, uint32_t flags)
 uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags, uint32_t options,
 			  uint32_t timeout)
 {
-	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
+	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
 	int retval, key;
 	uint32_t sig;
 	k_timeout_t poll_timeout;
@@ -206,7 +206,7 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags, uint32_t optio
  */
 const char *osEventFlagsGetName(osEventFlagsId_t ef_id)
 {
-	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
+	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
 
 	if (!k_is_in_isr() && (ef_id != NULL)) {
 		return events->name;
@@ -220,7 +220,7 @@ const char *osEventFlagsGetName(osEventFlagsId_t ef_id)
  */
 uint32_t osEventFlagsGet(osEventFlagsId_t ef_id)
 {
-	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
+	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
 
 	if (ef_id == NULL) {
 		return 0;
@@ -234,7 +234,7 @@ uint32_t osEventFlagsGet(osEventFlagsId_t ef_id)
  */
 osStatus_t osEventFlagsDelete(osEventFlagsId_t ef_id)
 {
-	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
+	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
 
 	if (ef_id == NULL) {
 		return osErrorResource;
@@ -248,7 +248,7 @@ osStatus_t osEventFlagsDelete(osEventFlagsId_t ef_id)
 	 * ef_id is incorrect) is not supported in Zephyr.
 	 */
 
-	k_mem_slab_free(&cv2_event_flags_slab, (void *)events);
+	k_mem_slab_free(&cmsis_rtos_event_cb_slab, (void *)events);
 
 	return osOK;
 }
