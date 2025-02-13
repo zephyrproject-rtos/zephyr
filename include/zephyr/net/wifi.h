@@ -672,7 +672,6 @@ static const char * const wifi_ps_param_config_err_code_tbl[] = {
 };
 /** @endcond */
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 /** IEEE 802.11v BTM (BSS transition management) Query reasons.
  * Refer to IEEE Std 802.11v-2011 - Table 7-43x-Transition and Transition Query reasons table.
  */
@@ -684,7 +683,6 @@ enum wifi_btm_query_reason {
 	/** Leaving ESS. */
 	WIFI_BTM_QUERY_REASON_LEAVING_ESS = 20,
 };
-#endif
 
 /** Helper function to get user-friendly power save error code name. */
 static inline const char *wifi_ps_get_config_err_code_str(int16_t err_no)
