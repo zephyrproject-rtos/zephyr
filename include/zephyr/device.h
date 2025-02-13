@@ -135,13 +135,14 @@ typedef int16_t device_handle_t;
 #endif
 
 /**
- * @brief Create a device object and set it up for boot time initialization.
+ * @brief Create a device object and set it up for boot time initialization,
+ * with de-init capabilities.
  *
  * This macro defines a @ref device that is automatically configured by the
  * kernel during system initialization. This macro should only be used when the
  * device is not being allocated from a devicetree node. If you are allocating a
- * device from a devicetree node, use DEVICE_DT_DEFINE() or
- * DEVICE_DT_INST_DEFINE() instead.
+ * device from a devicetree node, use DEVICE_DT_DEINIT_DEFINE() or
+ * DEVICE_DT_INST_DEINIT_DEFINE() instead.
  *
  * @param dev_id A unique token which is used in the name of the global device
  * structure as a C identifier.
@@ -151,6 +152,9 @@ typedef int16_t device_handle_t;
  * (including terminating `NULL`) in order to be looked up from user mode.
  * @param init_fn Pointer to the device's initialization function, which will be
  * run by the kernel during system initialization. Can be `NULL`.
+ * @param deinit_fn Pointer to the device's de-initialization function. Can be
+ * `NULL`. It must release any acquired resources (e.g. pins, bus, clock...) and
+ * leave the device in its reset state.
  * @param pm Pointer to the device's power management resources, a
  * @ref pm_device, which will be stored in @ref device.pm field. Use `NULL` if
  * the device does not use PM.
@@ -164,12 +168,22 @@ typedef int16_t device_handle_t;
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
  */
+#define DEVICE_DEINIT_DEFINE(dev_id, name, init_fn, deinit_fn, pm, data,       \
+			     config, level, prio, api)                         \
+	Z_DEVICE_STATE_DEFINE(dev_id);                                         \
+	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, name, init_fn, deinit_fn, 0U, \
+			pm, data, config, level, prio, api,                    \
+			&Z_DEVICE_STATE_NAME(dev_id))
+
+/**
+ * @brief Create a device object and set it up for boot time initialization.
+ *
+ * @see DEVICE_DEINIT_DEFINE()
+ */
 #define DEVICE_DEFINE(dev_id, name, init_fn, pm, data, config, level, prio,    \
 		      api)                                                     \
-	Z_DEVICE_STATE_DEFINE(dev_id);                                         \
-	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, name, init_fn, NULL, 0U, pm,  \
-			data, config, level, prio, api,                        \
-			&Z_DEVICE_STATE_NAME(dev_id))
+	DEVICE_DEINIT_DEFINE(dev_id, name, init_fn, NULL, pm, data, config,    \
+			     level, prio, api)
 
 /**
  * @brief Return a string name for a devicetree node.
@@ -203,6 +217,9 @@ typedef int16_t device_handle_t;
  * @param node_id The devicetree node identifier.
  * @param init_fn Pointer to the device's initialization function, which will be
  * run by the kernel during system initialization. Can be `NULL`.
+ * @param deinit_fn Pointer to the device's de-initialization function. Can be
+ * `NULL`. It must release any acquired resources (e.g. pins, bus, clock...) and
+ * leave the device in its reset state.
  * @param pm Pointer to the device's power management resources, a
  * @ref pm_device, which will be stored in @ref device.pm. Use `NULL` if the
  * device does not use PM.
@@ -216,15 +233,37 @@ typedef int16_t device_handle_t;
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
  */
-#define DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api, \
-			 ...)                                                  \
+#define DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, deinit_fn, pm, data, config, \
+				level, prio, api, ...)                         \
 	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));                    \
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),                  \
-			DEVICE_DT_NAME(node_id), init_fn, NULL,                \
+			DEVICE_DT_NAME(node_id), init_fn, deinit_fn,           \
 			Z_DEVICE_DT_FLAGS(node_id), pm, data, config, level,   \
 			prio, api,                                             \
 			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),     \
 			__VA_ARGS__)
+
+/**
+ * @brief Create a device object from a devicetree node identifier and set it up
+ * for boot time initialization.
+ *
+ * @see DEVICE_DT_DEINIT_DEFINE()
+ */
+#define DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api, \
+			 ...)                                                  \
+	DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, NULL, pm, data, config,      \
+				level, prio, api, __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_DT_DEINIT_DEFINE(), but uses an instance of a
+ * `DT_DRV_COMPAT` compatible instead of a node identifier.
+ *
+ * @param inst Instance number. The `node_id` argument to DEVICE_DT_DEFINE() is
+ * set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by DEVICE_DT_DEFINE().
+ */
+#define DEVICE_DT_INST_DEINIT_DEFINE(inst, ...)                                \
+	DEVICE_DT_DEINIT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Like DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
