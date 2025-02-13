@@ -635,15 +635,6 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	lll = prepare_param->param;
 	lll->skip_prepare += (lll->lazy_prepare + 1U);
 
-	/* Reset Sync context association with any Aux context as the chain reception is aborted.
-	 * There is no race with ULL execution context assigning lll_aux as this is prepare being
-	 * aborted and no assignment would be done yet before the superior PDU is received.
-	 * TODO: This code here is redundant as isr_rx_done_cleanup() should ensure it is reset
-	 *       on every periodic sync chain done. Remove it if there is no regression running
-	 *       conformance tests.
-	 */
-	lll->lll_aux = NULL;
-
 	/* Extra done event, to check sync lost */
 	e = ull_event_done_extra_get();
 	LL_ASSERT(e);
@@ -823,16 +814,6 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 		 * again a node_rx for periodic report incomplete.
 		 */
 		if (node_type != NODE_RX_TYPE_EXT_AUX_REPORT) {
-			/* Reset Sync context association with any Aux context
-			 * as a new chain is being setup for reception here.
-			 * TODO: This code here is redundant as
-			 *       isr_rx_done_cleanup() should ensure it is reset
-			 *       on every periodic sync chain done. Remove it if
-			 *       there is no regression running conformance
-			 *       tests.
-			 */
-			lll->lll_aux = NULL;
-
 			node_rx = ull_pdu_rx_alloc_peek(4);
 		} else {
 			node_rx = ull_pdu_rx_alloc_peek(3);
