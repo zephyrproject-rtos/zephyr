@@ -165,8 +165,10 @@ static int gpio_mmio32_port_toggle_bits(const struct device *dev, uint32_t mask)
 	return 0;
 }
 
-int gpio_mmio32_pin_interrupt_configure(const struct device *port, gpio_pin_t pin,
-					enum gpio_int_mode, enum gpio_int_trig)
+int gpio_mmio32_pin_interrupt_configure(const struct device *port,
+					gpio_pin_t pin,
+					enum gpio_int_mode mode,
+					enum gpio_int_trig trig)
 {
 	return -ENOTSUP;
 }
