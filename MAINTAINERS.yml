@@ -4072,6 +4072,7 @@ Renesas RA Platforms:
     - dts/arm/renesas/ra/
     - dts/bindings/*/*renesas,ra*
     - soc/renesas/ra/
+    - samples/boards/renesas/
   labels:
     - "platform: Renesas RA"
   description: >-
