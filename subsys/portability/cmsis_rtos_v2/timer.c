@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/portability/cmsis_types.h>
 #include <string.h>
-#include "wrapper.h"
 
 #define ACTIVE     1
 #define NOT_ACTIVE 0

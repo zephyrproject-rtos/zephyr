@@ -10,6 +10,7 @@
 #include <string.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/debug/stack.h>
+#include <zephyr/portability/cmsis_types.h>
 #include "wrapper.h"
 
 static const osThreadAttr_t init_thread_attrs = {

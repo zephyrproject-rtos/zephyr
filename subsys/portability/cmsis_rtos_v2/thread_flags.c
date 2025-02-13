@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel_structs.h>
+#include <zephyr/portability/cmsis_types.h>
 #include "wrapper.h"
 
 #define DONT_CARE (0)

@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/portability/cmsis_types.h>
 #include <string.h>
 #include "wrapper.h"
 
