@@ -186,9 +186,6 @@
 	rur.THREADPTR \SCRATCH_REG
 	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_threadptr_OFFSET
 #endif
-#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
-	FPU_REG_SAVE
-#endif
 
 .endm
 
@@ -352,6 +349,10 @@ _xstack_returned_\@:
 	s32i a2, a1, ___xtensa_irq_bsa_t_scratch_OFFSET
 
 	ODD_REG_SAVE a0, a1
+
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	FPU_REG_SAVE
+#endif
 
 #if defined(CONFIG_XTENSA_HIFI_SHARING)
 	call0 _xtensa_hifi_save    /* Save HiFi registers */
