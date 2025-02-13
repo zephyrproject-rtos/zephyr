@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/portability/cmsis_types.h>
 #include <string.h>
-#include "wrapper.h"
 
 K_MEM_SLAB_DEFINE(cv2_semaphore_slab, sizeof(struct cv2_sem), CONFIG_CMSIS_V2_SEMAPHORE_MAX_COUNT,
 		  4);
