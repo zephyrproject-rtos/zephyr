@@ -8,8 +8,8 @@
 #include <zephyr/portability/cmsis_types.h>
 #include <string.h>
 
-K_MEM_SLAB_DEFINE(cv2_semaphore_slab, sizeof(struct cv2_sem), CONFIG_CMSIS_V2_SEMAPHORE_MAX_COUNT,
-		  4);
+K_MEM_SLAB_DEFINE(cmsis_rtos_semaphore_cb_slab, sizeof(struct cmsis_rtos_semaphore_cb),
+		  CONFIG_CMSIS_V2_SEMAPHORE_MAX_COUNT, 4);
 
 static const osSemaphoreAttr_t init_sema_attrs = {
 	.name = "ZephyrSem",
@@ -24,7 +24,7 @@ static const osSemaphoreAttr_t init_sema_attrs = {
 osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 			       const osSemaphoreAttr_t *attr)
 {
-	struct cv2_sem *semaphore;
+	struct cmsis_rtos_semaphore_cb *semaphore;
 
 	if (k_is_in_isr()) {
 		return NULL;
@@ -34,8 +34,9 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 		attr = &init_sema_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cv2_semaphore_slab, (void **)&semaphore, K_MSEC(100)) == 0) {
-		(void)memset(semaphore, 0, sizeof(struct cv2_sem));
+	if (k_mem_slab_alloc(&cmsis_rtos_semaphore_cb_slab, (void **)&semaphore, K_MSEC(100)) ==
+	    0) {
+		(void)memset(semaphore, 0, sizeof(struct cmsis_rtos_semaphore_cb));
 	} else {
 		return NULL;
 	}
@@ -56,7 +57,7 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
  */
 osStatus_t osSemaphoreAcquire(osSemaphoreId_t semaphore_id, uint32_t timeout)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *)semaphore_id;
+	struct cmsis_rtos_semaphore_cb *semaphore = (struct cmsis_rtos_semaphore_cb *)semaphore_id;
 	int status;
 
 	if (semaphore_id == NULL) {
@@ -87,7 +88,7 @@ osStatus_t osSemaphoreAcquire(osSemaphoreId_t semaphore_id, uint32_t timeout)
 
 uint32_t osSemaphoreGetCount(osSemaphoreId_t semaphore_id)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *)semaphore_id;
+	struct cmsis_rtos_semaphore_cb *semaphore = (struct cmsis_rtos_semaphore_cb *)semaphore_id;
 
 	if (semaphore_id == NULL) {
 		return 0;
@@ -101,7 +102,7 @@ uint32_t osSemaphoreGetCount(osSemaphoreId_t semaphore_id)
  */
 osStatus_t osSemaphoreRelease(osSemaphoreId_t semaphore_id)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *)semaphore_id;
+	struct cmsis_rtos_semaphore_cb *semaphore = (struct cmsis_rtos_semaphore_cb *)semaphore_id;
 
 	if (semaphore_id == NULL) {
 		return osErrorParameter;
@@ -122,7 +123,7 @@ osStatus_t osSemaphoreRelease(osSemaphoreId_t semaphore_id)
  */
 osStatus_t osSemaphoreDelete(osSemaphoreId_t semaphore_id)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *)semaphore_id;
+	struct cmsis_rtos_semaphore_cb *semaphore = (struct cmsis_rtos_semaphore_cb *)semaphore_id;
 
 	if (semaphore_id == NULL) {
 		return osErrorParameter;
@@ -137,14 +138,14 @@ osStatus_t osSemaphoreDelete(osSemaphoreId_t semaphore_id)
 	 * supported in Zephyr.
 	 */
 
-	k_mem_slab_free(&cv2_semaphore_slab, (void *)semaphore);
+	k_mem_slab_free(&cmsis_rtos_semaphore_cb_slab, (void *)semaphore);
 
 	return osOK;
 }
 
 const char *osSemaphoreGetName(osSemaphoreId_t semaphore_id)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *)semaphore_id;
+	struct cmsis_rtos_semaphore_cb *semaphore = (struct cmsis_rtos_semaphore_cb *)semaphore_id;
 
 	if (!k_is_in_isr() && (semaphore_id != NULL)) {
 		return semaphore->name;
