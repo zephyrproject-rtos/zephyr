@@ -9,6 +9,7 @@
 #include <haly/nrfy_saadc.h>
 #include <zephyr/dt-bindings/adc/nrf-saadc-v3.h>
 #include <zephyr/dt-bindings/adc/nrf-saadc-nrf54l.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc-haltium.h>
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
@@ -23,7 +24,7 @@ LOG_MODULE_REGISTER(adc_nrfx_saadc);
 #if (NRF_SAADC_HAS_AIN_AS_PIN)
 
 #if defined(CONFIG_NRF_PLATFORM_HALTIUM)
-static const uint8_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
+static const uint32_t saadc_psels[NRF_SAADC_AIN13 + 1] = {
 	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
 	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
 	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1),
@@ -32,6 +33,12 @@ static const uint8_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
 	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
 	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
 	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
+	[NRF_SAADC_AIN8] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 9),
+	[NRF_SAADC_AIN9] = NRF_PIN_PORT_TO_PIN_NUMBER(1U, 9),
+	[NRF_SAADC_AIN10] = NRF_PIN_PORT_TO_PIN_NUMBER(2U, 9),
+	[NRF_SAADC_AIN11] = NRF_PIN_PORT_TO_PIN_NUMBER(3U, 9),
+	[NRF_SAADC_AIN12] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 9),
+	[NRF_SAADC_AIN13] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 9),
 };
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
