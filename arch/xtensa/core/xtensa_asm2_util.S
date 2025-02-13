@@ -230,6 +230,10 @@ xtensa_switch:
 	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
 	ODD_REG_SAVE a0, a1
 
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	FPU_REG_SAVE
+#endif
+
 	/* Stash our PS register contents and a "restore" PC. */
 	rsr a0, PS
 	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
