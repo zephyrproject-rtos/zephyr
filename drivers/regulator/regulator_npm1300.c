@@ -673,7 +673,7 @@ static DEVICE_API(regulator, api) = {
 		.enable_gpios = GPIO_DT_SPEC_GET_OR(node_id, enable_gpios, {0}),                   \
 		.retention_gpios = GPIO_DT_SPEC_GET_OR(node_id, retention_gpios, {0}),             \
 		.pwm_gpios = GPIO_DT_SPEC_GET_OR(node_id, pwm_gpios, {0}),                         \
-		.ldo_disable_workaround = DT_PROP(node_id, nordic_ldo_disable_workaround)};        \
+		.ldo_disable_workaround = DT_PROP(node_id, nordic_anomaly38_disable_workaround)};  \
                                                                                                    \
 	DEVICE_DT_DEFINE(node_id, regulator_npm1300_init, NULL, &data_##id, &config_##id,          \
 			 POST_KERNEL, CONFIG_REGULATOR_NPM1300_INIT_PRIORITY, &api);
