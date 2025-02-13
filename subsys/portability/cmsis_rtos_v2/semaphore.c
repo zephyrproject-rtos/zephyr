@@ -8,8 +8,8 @@
 #include <string.h>
 #include "wrapper.h"
 
-K_MEM_SLAB_DEFINE(cv2_semaphore_slab, sizeof(struct cv2_sem),
-		  CONFIG_CMSIS_V2_SEMAPHORE_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE(cv2_semaphore_slab, sizeof(struct cv2_sem), CONFIG_CMSIS_V2_SEMAPHORE_MAX_COUNT,
+		  4);
 
 static const osSemaphoreAttr_t init_sema_attrs = {
 	.name = "ZephyrSem",
@@ -34,8 +34,7 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 		attr = &init_sema_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cv2_semaphore_slab,
-			     (void **)&semaphore, K_MSEC(100)) == 0) {
+	if (k_mem_slab_alloc(&cv2_semaphore_slab, (void **)&semaphore, K_MSEC(100)) == 0) {
 		(void)memset(semaphore, 0, sizeof(struct cv2_sem));
 	} else {
 		return NULL;
@@ -44,11 +43,9 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 	k_sem_init(&semaphore->z_semaphore, initial_count, max_count);
 
 	if (attr->name == NULL) {
-		strncpy(semaphore->name, init_sema_attrs.name,
-			sizeof(semaphore->name) - 1);
+		strncpy(semaphore->name, init_sema_attrs.name, sizeof(semaphore->name) - 1);
 	} else {
-		strncpy(semaphore->name, attr->name,
-			sizeof(semaphore->name) - 1);
+		strncpy(semaphore->name, attr->name, sizeof(semaphore->name) - 1);
 	}
 
 	return (osSemaphoreId_t)semaphore;
@@ -59,7 +56,7 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
  */
 osStatus_t osSemaphoreAcquire(osSemaphoreId_t semaphore_id, uint32_t timeout)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *) semaphore_id;
+	struct cv2_sem *semaphore = (struct cv2_sem *)semaphore_id;
 	int status;
 
 	if (semaphore_id == NULL) {
@@ -76,8 +73,7 @@ osStatus_t osSemaphoreAcquire(osSemaphoreId_t semaphore_id, uint32_t timeout)
 	} else if (timeout == 0U) {
 		status = k_sem_take(&semaphore->z_semaphore, K_NO_WAIT);
 	} else {
-		status = k_sem_take(&semaphore->z_semaphore,
-				    K_TICKS(timeout));
+		status = k_sem_take(&semaphore->z_semaphore, K_TICKS(timeout));
 	}
 
 	if (status == -EBUSY) {
@@ -105,15 +101,14 @@ uint32_t osSemaphoreGetCount(osSemaphoreId_t semaphore_id)
  */
 osStatus_t osSemaphoreRelease(osSemaphoreId_t semaphore_id)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *) semaphore_id;
+	struct cv2_sem *semaphore = (struct cv2_sem *)semaphore_id;
 
 	if (semaphore_id == NULL) {
 		return osErrorParameter;
 	}
 
 	/* All tokens have already been released */
-	if (k_sem_count_get(&semaphore->z_semaphore) ==
-	    semaphore->z_semaphore.limit) {
+	if (k_sem_count_get(&semaphore->z_semaphore) == semaphore->z_semaphore.limit) {
 		return osErrorResource;
 	}
 
