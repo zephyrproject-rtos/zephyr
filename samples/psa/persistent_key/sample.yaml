@@ -13,6 +13,7 @@ common:
 tests:
   sample.psa.persistent_key.tfm:
     filter: CONFIG_BUILD_WITH_TFM
+    extra_args: EXTRA_CONF_FILE=overlay-tfm.conf
     tags:
       - trusted-firmware-m
   sample.psa.persistent_key.secure_storage.entropy_driver:
@@ -25,7 +26,7 @@ tests:
   sample.psa.persistent_key.secure_storage.entropy_not_secure:
     filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
             and not CONFIG_ENTROPY_HAS_DRIVER
-    extra_args: EXTRA_CONF_FILE="overlay-secure_storage.conf;overlay-entropy_not_secure.conf"
+    extra_args: EXTRA_CONF_FILE=overlay-secure_storage.conf;overlay-entropy_not_secure.conf
     tags:
       - random
       - settings
