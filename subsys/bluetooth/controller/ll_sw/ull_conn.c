@@ -2179,8 +2179,9 @@ static void ull_conn_update_ticker(struct ll_conn *conn,
 
 	/* start periph/central with new timings */
 	uint8_t ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
-	uint32_t ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-				    ticker_id_conn, ticker_stop_conn_op_cb, (void *)conn);
+	uint32_t ticker_status = ticker_stop_abs(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+						 ticker_id_conn, ticks_at_expire,
+						 ticker_stop_conn_op_cb, (void *)conn);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 	ticker_status = ticker_start(
