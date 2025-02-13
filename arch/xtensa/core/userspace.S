@@ -205,20 +205,7 @@ _id_ok:
 _syscall_returned:
 	call0 xtensa_restore_high_regs
 
-	l32i a3, a1, ___xtensa_irq_bsa_t_sar_OFFSET
-	wsr a3, SAR
-#if XCHAL_HAVE_LOOPS
-	l32i a3, a1, ___xtensa_irq_bsa_t_lbeg_OFFSET
-	wsr a3, LBEG
-	l32i a3, a1, ___xtensa_irq_bsa_t_lend_OFFSET
-	wsr a3, LEND
-	l32i a3, a1, ___xtensa_irq_bsa_t_lcount_OFFSET
-	wsr a3, LCOUNT
-#endif
-#if XCHAL_HAVE_S32C1I
-	l32i a3, a1, ___xtensa_irq_bsa_t_scompare1_OFFSET
-	wsr a3, SCOMPARE1
-#endif
+	ODD_REG_RESTORE a3, a1
 
 #if XCHAL_HAVE_THREADPTR
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
@@ -227,10 +214,6 @@ _syscall_returned:
 	add a0, a3, a0
 	movi a3, 1
 	s32i a3, a0, 0
-#else
-	rsr a3, ZSR_CPU
-	l32i a3, a3, ___cpu_t_current_OFFSET
-	wur.THREADPTR a3
 #endif
 #endif /* XCHAL_HAVE_THREADPTR */
 
