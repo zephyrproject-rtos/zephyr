@@ -202,7 +202,9 @@ void dma_nxp_sdma_callback(sdma_handle_t *handle, void *userData, bool TransferD
 		break;
 	}
 
+	/* prepare next BD for transfer */
 	bd = &chan_data->bd_pool[bdIndex];
+	bd->count = xfer_size;
 	bd->status |= (uint8_t)kSDMA_BDStatusDone;
 
 	SDMA_StartChannelSoftware(dev_cfg->base, chan_data->index);
