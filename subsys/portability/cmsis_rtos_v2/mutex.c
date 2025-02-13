@@ -8,8 +8,7 @@
 #include <string.h>
 #include "wrapper.h"
 
-K_MEM_SLAB_DEFINE(cv2_mutex_slab, sizeof(struct cv2_mutex),
-		  CONFIG_CMSIS_V2_MUTEX_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE(cv2_mutex_slab, sizeof(struct cv2_mutex), CONFIG_CMSIS_V2_MUTEX_MAX_COUNT, 4);
 
 static const osMutexAttr_t init_mutex_attrs = {
 	.name = "ZephyrMutex",
@@ -36,8 +35,7 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
 	__ASSERT(attr->attr_bits & osMutexPrioInherit,
 		 "Zephyr supports osMutexPrioInherit by default. Do not unselect it\n");
 
-	__ASSERT(!(attr->attr_bits & osMutexRobust),
-		 "Zephyr does not support osMutexRobust.\n");
+	__ASSERT(!(attr->attr_bits & osMutexRobust), "Zephyr does not support osMutexRobust.\n");
 
 	if (k_mem_slab_alloc(&cv2_mutex_slab, (void **)&mutex, K_MSEC(100)) == 0) {
 		memset(mutex, 0, sizeof(struct cv2_mutex));
@@ -49,8 +47,7 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
 	mutex->state = attr->attr_bits;
 
 	if (attr->name == NULL) {
-		strncpy(mutex->name, init_mutex_attrs.name,
-			sizeof(mutex->name) - 1);
+		strncpy(mutex->name, init_mutex_attrs.name, sizeof(mutex->name) - 1);
 	} else {
 		strncpy(mutex->name, attr->name, sizeof(mutex->name) - 1);
 	}
@@ -63,7 +60,7 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
  */
 osStatus_t osMutexAcquire(osMutexId_t mutex_id, uint32_t timeout)
 {
-	struct cv2_mutex *mutex = (struct cv2_mutex *) mutex_id;
+	struct cv2_mutex *mutex = (struct cv2_mutex *)mutex_id;
 	int status;
 
 	if (mutex_id == NULL) {
@@ -79,8 +76,7 @@ osStatus_t osMutexAcquire(osMutexId_t mutex_id, uint32_t timeout)
 	} else if (timeout == 0U) {
 		status = k_mutex_lock(&mutex->z_mutex, K_NO_WAIT);
 	} else {
-		status = k_mutex_lock(&mutex->z_mutex,
-				      K_TICKS(timeout));
+		status = k_mutex_lock(&mutex->z_mutex, K_TICKS(timeout));
 	}
 
 	if (timeout != 0 && (status == -EAGAIN || status == -EBUSY)) {
@@ -97,7 +93,7 @@ osStatus_t osMutexAcquire(osMutexId_t mutex_id, uint32_t timeout)
  */
 osStatus_t osMutexRelease(osMutexId_t mutex_id)
 {
-	struct cv2_mutex *mutex = (struct cv2_mutex *) mutex_id;
+	struct cv2_mutex *mutex = (struct cv2_mutex *)mutex_id;
 
 	if (mutex_id == NULL) {
 		return osErrorParameter;
@@ -137,7 +133,6 @@ osStatus_t osMutexDelete(osMutexId_t mutex_id)
 
 	return osOK;
 }
-
 
 osThreadId_t osMutexGetOwner(osMutexId_t mutex_id)
 {

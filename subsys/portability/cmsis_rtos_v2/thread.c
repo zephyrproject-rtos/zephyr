@@ -30,8 +30,7 @@ static atomic_t thread_num;
 static atomic_t thread_num_dynamic;
 
 #if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
-static K_THREAD_STACK_ARRAY_DEFINE(cv2_thread_stack_pool,		     \
-				   CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT, \
+static K_THREAD_STACK_ARRAY_DEFINE(cv2_thread_stack_pool, CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT,
 				   CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE);
 #endif
 
@@ -55,7 +54,7 @@ static inline uint32_t cmsis_to_zephyr_priority(uint32_t c_prio)
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
 	struct cv2_thread *tid = arg2;
-	void * (*fun_ptr)(void *) = arg3;
+	void *(*fun_ptr)(void *) = arg3;
 
 	fun_ptr(arg1);
 
@@ -100,8 +99,7 @@ osThreadId_t get_cmsis_thread_id(k_tid_t tid)
 /**
  * @brief Create a thread and add it to Active Threads.
  */
-osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
-			 const osThreadAttr_t *attr)
+osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAttr_t *attr)
 {
 	int32_t prio;
 	osPriority_t cv2_prio;
@@ -129,27 +127,24 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 		cv2_prio = attr->priority;
 	}
 
-	if ((attr->stack_mem == NULL) && (thread_num_dynamic >=
-					  CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT)) {
+	if ((attr->stack_mem == NULL) &&
+	    (thread_num_dynamic >= CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT)) {
 		return NULL;
 	}
 
 	BUILD_ASSERT(osPriorityISR <= CONFIG_NUM_PREEMPT_PRIORITIES,
 		     "Configure NUM_PREEMPT_PRIORITIES to at least osPriorityISR");
 
-	BUILD_ASSERT(CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT <=
-		     CONFIG_CMSIS_V2_THREAD_MAX_COUNT,
+	BUILD_ASSERT(CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT <= CONFIG_CMSIS_V2_THREAD_MAX_COUNT,
 		     "Number of dynamic threads cannot exceed max number of threads.");
 
 	BUILD_ASSERT(CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE <=
-		     CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE,
+			     CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE,
 		     "Default dynamic thread stack size cannot exceed max stack size");
 
-	__ASSERT(attr->stack_size <= CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE,
-		 "invalid stack size\n");
+	__ASSERT(attr->stack_size <= CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE, "invalid stack size\n");
 
-	__ASSERT((cv2_prio >= osPriorityIdle) && (cv2_prio <= osPriorityISR),
-		 "invalid priority\n");
+	__ASSERT((cv2_prio >= osPriorityIdle) && (cv2_prio <= osPriorityISR), "invalid priority\n");
 
 	if (attr->stack_mem != NULL) {
 		if (attr->stack_size == 0) {
@@ -169,8 +164,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 		uint32_t this_thread_num_dynamic;
 		__ASSERT(CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE > 0,
 			 "dynamic stack size must be configured to be non-zero\n");
-		this_thread_num_dynamic =
-			atomic_inc((atomic_t *)&thread_num_dynamic);
+		this_thread_num_dynamic = atomic_inc((atomic_t *)&thread_num_dynamic);
 		stack_size = CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE;
 		stack = cv2_thread_stack_pool[this_thread_num_dynamic];
 	} else
@@ -181,8 +175,8 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 	}
 
 	k_poll_signal_init(&tid->poll_signal);
-	k_poll_event_init(&tid->poll_event, K_POLL_TYPE_SIGNAL,
-			  K_POLL_MODE_NOTIFY_ONLY, &tid->poll_signal);
+	k_poll_event_init(&tid->poll_event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+			  &tid->poll_signal);
 	tid->signal_results = 0U;
 
 	/* TODO: Do this somewhere only once */
@@ -196,15 +190,11 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 	k_sem_init(&tid->join_guard, 0, 1);
 	tid->has_joined = FALSE;
 
-	(void)k_thread_create(&tid->z_thread,
-			      stack, stack_size,
-			      zephyr_thread_wrapper,
-			      (void *)arg, tid, threadfunc,
-			      prio, 0, K_NO_WAIT);
+	(void)k_thread_create(&tid->z_thread, stack, stack_size, zephyr_thread_wrapper, (void *)arg,
+			      tid, threadfunc, prio, 0, K_NO_WAIT);
 
 	if (attr->name == NULL) {
-		strncpy(tid->name, init_thread_attrs.name,
-			sizeof(tid->name) - 1);
+		strncpy(tid->name, init_thread_attrs.name, sizeof(tid->name) - 1);
 	} else {
 		strncpy(tid->name, attr->name, sizeof(tid->name) - 1);
 	}
@@ -227,8 +217,7 @@ const char *osThreadGetName(osThreadId_t thread_id)
 		if (is_cmsis_rtos_v2_thread(thread_id) == NULL) {
 			name = NULL;
 		} else {
-			struct cv2_thread *tid =
-				(struct cv2_thread *)thread_id;
+			struct cv2_thread *tid = (struct cv2_thread *)thread_id;
 
 			name = k_thread_name_get(&tid->z_thread);
 		}
@@ -255,8 +244,7 @@ osPriority_t osThreadGetPriority(osThreadId_t thread_id)
 	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
 	uint32_t priority;
 
-	if (k_is_in_isr() || (tid == NULL) ||
-	    (is_cmsis_rtos_v2_thread(tid) == NULL) ||
+	if (k_is_in_isr() || (tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL) ||
 	    (_is_thread_cmsis_inactive(&tid->z_thread))) {
 		return osPriorityError;
 	}
@@ -285,8 +273,7 @@ osStatus_t osThreadSetPriority(osThreadId_t thread_id, osPriority_t priority)
 		return osErrorResource;
 	}
 
-	k_thread_priority_set((k_tid_t)&tid->z_thread,
-			      cmsis_to_zephyr_priority(priority));
+	k_thread_priority_set((k_tid_t)&tid->z_thread, cmsis_to_zephyr_priority(priority));
 
 	return osOK;
 }
@@ -299,8 +286,7 @@ osThreadState_t osThreadGetState(osThreadId_t thread_id)
 	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
 	osThreadState_t state;
 
-	if (k_is_in_isr() || (tid == NULL) ||
-	    (is_cmsis_rtos_v2_thread(tid) == NULL)) {
+	if (k_is_in_isr() || (tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL)) {
 		return osThreadError;
 	}
 
@@ -540,7 +526,6 @@ osStatus_t osThreadTerminate(osThreadId_t thread_id)
 	k_thread_abort((k_tid_t)&tid->z_thread);
 	return osOK;
 }
-
 
 /**
  * @brief Get number of active threads.

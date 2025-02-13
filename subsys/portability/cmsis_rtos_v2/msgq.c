@@ -8,8 +8,7 @@
 #include <string.h>
 #include "wrapper.h"
 
-K_MEM_SLAB_DEFINE(cv2_msgq_slab, sizeof(struct cv2_msgq),
-		  CONFIG_CMSIS_V2_MSGQ_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE(cv2_msgq_slab, sizeof(struct cv2_msgq), CONFIG_CMSIS_V2_MSGQ_MAX_COUNT, 4);
 
 static const osMessageQueueAttr_t init_msgq_attrs = {
 	.name = "ZephyrMsgQ",
@@ -28,8 +27,7 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 {
 	struct cv2_msgq *msgq;
 
-	BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE >=
-		     CONFIG_CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE,
+	BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE >= CONFIG_CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE,
 		     "heap must be configured to be at least the max dynamic size");
 
 	if (k_is_in_isr()) {
@@ -51,8 +49,7 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 	}
 
 	if (attr->mq_mem == NULL) {
-		__ASSERT((msg_count * msg_size) <=
-			 CONFIG_CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE,
+		__ASSERT((msg_count * msg_size) <= CONFIG_CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE,
 			 "message queue size exceeds dynamic maximum");
 
 #if (K_HEAP_MEM_POOL_SIZE > 0)
@@ -74,8 +71,7 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 	k_msgq_init(&msgq->z_msgq, msgq->pool, msg_size, msg_count);
 
 	if (attr->name == NULL) {
-		strncpy(msgq->name, init_msgq_attrs.name,
-			sizeof(msgq->name) - 1);
+		strncpy(msgq->name, init_msgq_attrs.name, sizeof(msgq->name) - 1);
 	} else {
 		strncpy(msgq->name, attr->name, sizeof(msgq->name) - 1);
 	}
@@ -86,8 +82,8 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 /**
  * @brief Put a message to a Queue.
  */
-osStatus_t osMessageQueuePut(osMessageQueueId_t msgq_id, const void *msg_ptr,
-			     uint8_t msg_prio, uint32_t timeout)
+osStatus_t osMessageQueuePut(osMessageQueueId_t msgq_id, const void *msg_ptr, uint8_t msg_prio,
+			     uint32_t timeout)
 {
 	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
 	int retval;
@@ -108,8 +104,7 @@ osStatus_t osMessageQueuePut(osMessageQueueId_t msgq_id, const void *msg_ptr,
 	} else if (timeout == osWaitForever) {
 		retval = k_msgq_put(&msgq->z_msgq, (void *)msg_ptr, K_FOREVER);
 	} else {
-		retval = k_msgq_put(&msgq->z_msgq, (void *)msg_ptr,
-				    K_TICKS(timeout));
+		retval = k_msgq_put(&msgq->z_msgq, (void *)msg_ptr, K_TICKS(timeout));
 	}
 
 	if (retval == 0) {
@@ -124,8 +119,8 @@ osStatus_t osMessageQueuePut(osMessageQueueId_t msgq_id, const void *msg_ptr,
 /**
  * @brief Get a message or Wait for a Message from a Queue.
  */
-osStatus_t osMessageQueueGet(osMessageQueueId_t msgq_id, void *msg_ptr,
-			     uint8_t *msg_prio, uint32_t timeout)
+osStatus_t osMessageQueueGet(osMessageQueueId_t msgq_id, void *msg_ptr, uint8_t *msg_prio,
+			     uint32_t timeout)
 {
 	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
 	int retval;
@@ -146,8 +141,7 @@ osStatus_t osMessageQueueGet(osMessageQueueId_t msgq_id, void *msg_ptr,
 	} else if (timeout == osWaitForever) {
 		retval = k_msgq_get(&msgq->z_msgq, msg_ptr, K_FOREVER);
 	} else {
-		retval = k_msgq_get(&msgq->z_msgq, msg_ptr,
-				    K_TICKS(timeout));
+		retval = k_msgq_get(&msgq->z_msgq, msg_ptr, K_TICKS(timeout));
 	}
 
 	if (retval == 0) {

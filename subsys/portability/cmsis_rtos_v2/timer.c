@@ -8,13 +8,12 @@
 #include <string.h>
 #include "wrapper.h"
 
-#define ACTIVE 1
+#define ACTIVE     1
 #define NOT_ACTIVE 0
 
 static void zephyr_timer_wrapper(struct k_timer *timer);
 
-K_MEM_SLAB_DEFINE(cv2_timer_slab, sizeof(struct cv2_timer),
-		  CONFIG_CMSIS_V2_TIMER_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE(cv2_timer_slab, sizeof(struct cv2_timer), CONFIG_CMSIS_V2_TIMER_MAX_COUNT, 4);
 
 static const osTimerAttr_t init_timer_attrs = {
 	.name = "ZephyrTimer",
@@ -34,8 +33,8 @@ static void zephyr_timer_wrapper(struct k_timer *timer)
 /**
  * @brief Create a Timer
  */
-osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type,
-		       void *argument, const osTimerAttr_t *attr)
+osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type, void *argument,
+		       const osTimerAttr_t *attr)
 {
 	struct cv2_timer *timer;
 
@@ -65,8 +64,7 @@ osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type,
 	k_timer_init(&timer->z_timer, zephyr_timer_wrapper, NULL);
 
 	if (attr->name == NULL) {
-		strncpy(timer->name, init_timer_attrs.name,
-			sizeof(timer->name) - 1);
+		strncpy(timer->name, init_timer_attrs.name, sizeof(timer->name) - 1);
 	} else {
 		strncpy(timer->name, attr->name, sizeof(timer->name) - 1);
 	}
@@ -92,8 +90,7 @@ osStatus_t osTimerStart(osTimerId_t timer_id, uint32_t ticks)
 	if (timer->type == osTimerOnce) {
 		k_timer_start(&timer->z_timer, K_TICKS(ticks), K_NO_WAIT);
 	} else if (timer->type == osTimerPeriodic) {
-		k_timer_start(&timer->z_timer,
-			      K_TICKS(ticks), K_TICKS(ticks));
+		k_timer_start(&timer->z_timer, K_TICKS(ticks), K_TICKS(ticks));
 	}
 
 	timer->status = ACTIVE;
@@ -129,7 +126,7 @@ osStatus_t osTimerStop(osTimerId_t timer_id)
  */
 osStatus_t osTimerDelete(osTimerId_t timer_id)
 {
-	struct cv2_timer *timer = (struct cv2_timer *) timer_id;
+	struct cv2_timer *timer = (struct cv2_timer *)timer_id;
 
 	if (timer == NULL) {
 		return osErrorParameter;
