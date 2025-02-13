@@ -1244,3 +1244,9 @@ test_i2c_tmp435: tmp435@a9 {
 	resistance-correction;
 	beta-compensation = <0x0f>;
 };
+
+test_i2c_rrh46410: rrh46410@aa {
+	compatible = "renesas,rrh46410";
+	reg = <0xaa>;
+	reset-gpios = <&test_gpio 0 0>;
+};
