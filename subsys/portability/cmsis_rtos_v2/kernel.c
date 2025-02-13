@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/kernel.h>
-#include <cmsis_os2.h>
+#include <zephyr/portability/cmsis_os2.h>
 
 extern uint32_t sys_clock_tick_get_32(void);
 
