@@ -32,10 +32,23 @@ config SOC_MIMXRT685S_CM33
 	select HAS_MCUX_CTIMER
 	select SOC_EARLY_INIT_HOOK
 
+config SOC_MIMXRT685S_HIFI4
+	select XTENSA
+	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
+	select XTENSA_RESET_VECTOR
+	select XTENSA_USE_CORE_CRT1
+	select CLOCK_CONTROL
+	select HAS_MCUX
+	select HAS_MCUX_SYSCON
+	select SOC_EARLY_INIT_HOOK
+
 if SOC_SERIES_IMXRT6XX
 
 config MCUX_CORE_SUFFIX
 	default "_cm33" if SOC_MIMXRT685S_CM33
+	default "_dsp" if SOC_MIMXRT685S_HIFI4
+
+if SOC_MIMXRT685S_CM33
 
 config INIT_SYS_PLL
 	bool "Initialize SYS PLL"
@@ -62,4 +75,45 @@ config IMXRT6XX_CODE_CACHE
 	  Enable code cache for FlexSPI region at boot. If this Kconfig is
 	  cleared, the CACHE64 controller will be disabled during SOC init
 
-endif
+endif # SOC_MIMXRT685S_CM33
+
+if SOC_MIMXRT685S_HIFI4
+
+DT_ADSP_RESET_MEM := $(dt_nodelabel_path,adsp_reset)
+DT_ADSP_DATA_MEM := $(dt_nodelabel_path,adsp_data)
+DT_ADSP_TEXT_MEM := $(dt_nodelabel_path,adsp_text)
+
+config RT685_ADSP_STACK_SIZE
+	hex "Boot time stack size"
+	default 0x1000
+	help
+	  Stack space is reserved at the end of the RT685_ADSP_DATA_MEM
+	  region, starting at RT685_ADSP_DATA_MEM_ADDR - RT685_ADSP_STACK_SIZE
+
+config RT685_ADSP_RESET_MEM_ADDR
+	hex
+	default $(dt_node_reg_addr_hex,$(DT_ADSP_RESET_MEM))
+
+config RT685_ADSP_RESET_MEM_SIZE
+	hex
+	default $(dt_node_reg_size_hex,$(DT_ADSP_RESET_MEM))
+
+config RT685_ADSP_DATA_MEM_ADDR
+	hex
+	default $(dt_node_reg_addr_hex,$(DT_ADSP_DATA_MEM))
+
+config RT685_ADSP_DATA_MEM_SIZE
+	hex
+	default $(dt_node_reg_size_hex,$(DT_ADSP_DATA_MEM))
+
+config RT685_ADSP_TEXT_MEM_ADDR
+	hex
+	default $(dt_node_reg_addr_hex,$(DT_ADSP_TEXT_MEM))
+
+config RT685_ADSP_TEXT_MEM_SIZE
+	hex
+	default $(dt_node_reg_size_hex,$(DT_ADSP_TEXT_MEM))
+
+endif # SOC_MIMXRT685S_HIFI4
+
+endif # SOC_SERIES_IMXRT6XX
