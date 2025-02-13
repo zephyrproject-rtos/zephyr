@@ -9,7 +9,8 @@
 #include <string.h>
 #include "wrapper.h"
 
-K_MEM_SLAB_DEFINE(cv2_mutex_slab, sizeof(struct cv2_mutex), CONFIG_CMSIS_V2_MUTEX_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE(cmsis_rtos_mutex_cb_slab, sizeof(struct cmsis_rtos_mutex_cb),
+		  CONFIG_CMSIS_V2_MUTEX_MAX_COUNT, 4);
 
 static const osMutexAttr_t init_mutex_attrs = {
 	.name = "ZephyrMutex",
@@ -23,7 +24,7 @@ static const osMutexAttr_t init_mutex_attrs = {
  */
 osMutexId_t osMutexNew(const osMutexAttr_t *attr)
 {
-	struct cv2_mutex *mutex;
+	struct cmsis_rtos_mutex_cb *mutex;
 
 	if (k_is_in_isr()) {
 		return NULL;
@@ -38,8 +39,8 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
 
 	__ASSERT(!(attr->attr_bits & osMutexRobust), "Zephyr does not support osMutexRobust.\n");
 
-	if (k_mem_slab_alloc(&cv2_mutex_slab, (void **)&mutex, K_MSEC(100)) == 0) {
-		memset(mutex, 0, sizeof(struct cv2_mutex));
+	if (k_mem_slab_alloc(&cmsis_rtos_mutex_cb_slab, (void **)&mutex, K_MSEC(100)) == 0) {
+		memset(mutex, 0, sizeof(struct cmsis_rtos_mutex_cb));
 	} else {
 		return NULL;
 	}
@@ -61,7 +62,7 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
  */
 osStatus_t osMutexAcquire(osMutexId_t mutex_id, uint32_t timeout)
 {
-	struct cv2_mutex *mutex = (struct cv2_mutex *)mutex_id;
+	struct cmsis_rtos_mutex_cb *mutex = (struct cmsis_rtos_mutex_cb *)mutex_id;
 	int status;
 
 	if (mutex_id == NULL) {
@@ -94,7 +95,7 @@ osStatus_t osMutexAcquire(osMutexId_t mutex_id, uint32_t timeout)
  */
 osStatus_t osMutexRelease(osMutexId_t mutex_id)
 {
-	struct cv2_mutex *mutex = (struct cv2_mutex *)mutex_id;
+	struct cmsis_rtos_mutex_cb *mutex = (struct cmsis_rtos_mutex_cb *)mutex_id;
 
 	if (mutex_id == NULL) {
 		return osErrorParameter;
@@ -116,7 +117,7 @@ osStatus_t osMutexRelease(osMutexId_t mutex_id)
  */
 osStatus_t osMutexDelete(osMutexId_t mutex_id)
 {
-	struct cv2_mutex *mutex = (struct cv2_mutex *)mutex_id;
+	struct cmsis_rtos_mutex_cb *mutex = (struct cmsis_rtos_mutex_cb *)mutex_id;
 
 	if (mutex_id == NULL) {
 		return osErrorParameter;
@@ -130,14 +131,14 @@ osStatus_t osMutexDelete(osMutexId_t mutex_id)
 	 * mutex_id is in an invalid mutex state) is not supported in Zephyr.
 	 */
 
-	k_mem_slab_free(&cv2_mutex_slab, (void *)mutex);
+	k_mem_slab_free(&cmsis_rtos_mutex_cb_slab, (void *)mutex);
 
 	return osOK;
 }
 
 osThreadId_t osMutexGetOwner(osMutexId_t mutex_id)
 {
-	struct cv2_mutex *mutex = (struct cv2_mutex *)mutex_id;
+	struct cmsis_rtos_mutex_cb *mutex = (struct cmsis_rtos_mutex_cb *)mutex_id;
 
 	if (k_is_in_isr() || (mutex == NULL)) {
 		return NULL;
@@ -153,7 +154,7 @@ osThreadId_t osMutexGetOwner(osMutexId_t mutex_id)
 
 const char *osMutexGetName(osMutexId_t mutex_id)
 {
-	struct cv2_mutex *mutex = (struct cv2_mutex *)mutex_id;
+	struct cmsis_rtos_mutex_cb *mutex = (struct cmsis_rtos_mutex_cb *)mutex_id;
 
 	if (k_is_in_isr() || (mutex == NULL)) {
 		return NULL;

@@ -26,12 +26,13 @@ static const osThreadAttr_t init_thread_attrs = {
 };
 
 static sys_dlist_t thread_list;
-static struct cv2_thread cv2_thread_pool[CONFIG_CMSIS_V2_THREAD_MAX_COUNT];
+static struct cmsis_rtos_thread_cb cmsis_rtos_thread_cb_pool[CONFIG_CMSIS_V2_THREAD_MAX_COUNT];
 static atomic_t thread_num;
 static atomic_t thread_num_dynamic;
 
 #if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
-static K_THREAD_STACK_ARRAY_DEFINE(cv2_thread_stack_pool, CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT,
+static K_THREAD_STACK_ARRAY_DEFINE(cmsis_rtos_thread_stack_pool,
+				   CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT,
 				   CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE);
 #endif
 
@@ -54,7 +55,7 @@ static inline uint32_t cmsis_to_zephyr_priority(uint32_t c_prio)
 
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
-	struct cv2_thread *tid = arg2;
+	struct cmsis_rtos_thread_cb *tid = arg2;
 	void *(*fun_ptr)(void *) = arg3;
 
 	fun_ptr(arg1);
@@ -66,10 +67,10 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 void *is_cmsis_rtos_v2_thread(void *thread_id)
 {
 	sys_dnode_t *pnode;
-	struct cv2_thread *itr;
+	struct cmsis_rtos_thread_cb *itr;
 
 	SYS_DLIST_FOR_EACH_NODE(&thread_list, pnode) {
-		itr = CONTAINER_OF(pnode, struct cv2_thread, node);
+		itr = CONTAINER_OF(pnode, struct cmsis_rtos_thread_cb, node);
 
 		if ((void *)itr == thread_id) {
 			return itr;
@@ -82,11 +83,11 @@ void *is_cmsis_rtos_v2_thread(void *thread_id)
 osThreadId_t get_cmsis_thread_id(k_tid_t tid)
 {
 	sys_dnode_t *pnode;
-	struct cv2_thread *itr;
+	struct cmsis_rtos_thread_cb *itr;
 
 	if (tid != NULL) {
 		SYS_DLIST_FOR_EACH_NODE(&thread_list, pnode) {
-			itr = CONTAINER_OF(pnode, struct cv2_thread, node);
+			itr = CONTAINER_OF(pnode, struct cmsis_rtos_thread_cb, node);
 
 			if (&itr->z_thread == tid) {
 				return (osThreadId_t)itr;
@@ -104,7 +105,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 {
 	int32_t prio;
 	osPriority_t cv2_prio;
-	struct cv2_thread *tid;
+	struct cmsis_rtos_thread_cb *tid;
 	static uint32_t one_time;
 	void *stack;
 	size_t stack_size;
@@ -157,7 +158,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 
 	this_thread_num = atomic_inc((atomic_t *)&thread_num);
 
-	tid = &cv2_thread_pool[this_thread_num];
+	tid = &cmsis_rtos_thread_cb_pool[this_thread_num];
 	tid->attr_bits = attr->attr_bits;
 
 #if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
@@ -167,7 +168,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 			 "dynamic stack size must be configured to be non-zero\n");
 		this_thread_num_dynamic = atomic_inc((atomic_t *)&thread_num_dynamic);
 		stack_size = CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE;
-		stack = cv2_thread_stack_pool[this_thread_num_dynamic];
+		stack = cmsis_rtos_thread_stack_pool[this_thread_num_dynamic];
 	} else
 #endif
 	{
@@ -218,7 +219,7 @@ const char *osThreadGetName(osThreadId_t thread_id)
 		if (is_cmsis_rtos_v2_thread(thread_id) == NULL) {
 			name = NULL;
 		} else {
-			struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+			struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 
 			name = k_thread_name_get(&tid->z_thread);
 		}
@@ -242,7 +243,7 @@ osThreadId_t osThreadGetId(void)
  */
 osPriority_t osThreadGetPriority(osThreadId_t thread_id)
 {
-	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 	uint32_t priority;
 
 	if (k_is_in_isr() || (tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL) ||
@@ -259,7 +260,7 @@ osPriority_t osThreadGetPriority(osThreadId_t thread_id)
  */
 osStatus_t osThreadSetPriority(osThreadId_t thread_id, osPriority_t priority)
 {
-	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 
 	if ((tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL) ||
 	    (priority <= osPriorityNone) || (priority > osPriorityISR)) {
@@ -284,7 +285,7 @@ osStatus_t osThreadSetPriority(osThreadId_t thread_id, osPriority_t priority)
  */
 osThreadState_t osThreadGetState(osThreadId_t thread_id)
 {
-	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 	osThreadState_t state;
 
 	if (k_is_in_isr() || (tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL)) {
@@ -336,7 +337,7 @@ osStatus_t osThreadYield(void)
  */
 uint32_t osThreadGetStackSize(osThreadId_t thread_id)
 {
-	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 
 	__ASSERT(tid, "");
 	__ASSERT(is_cmsis_rtos_v2_thread(tid), "");
@@ -351,7 +352,7 @@ uint32_t osThreadGetStackSize(osThreadId_t thread_id)
  */
 uint32_t osThreadGetStackSpace(osThreadId_t thread_id)
 {
-	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 	size_t unused;
 	int ret;
 
@@ -372,7 +373,7 @@ uint32_t osThreadGetStackSpace(osThreadId_t thread_id)
  */
 osStatus_t osThreadSuspend(osThreadId_t thread_id)
 {
-	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 
 	if ((tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL)) {
 		return osErrorParameter;
@@ -396,7 +397,7 @@ osStatus_t osThreadSuspend(osThreadId_t thread_id)
  */
 osStatus_t osThreadResume(osThreadId_t thread_id)
 {
-	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 
 	if ((tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL)) {
 		return osErrorParameter;
@@ -421,7 +422,7 @@ osStatus_t osThreadResume(osThreadId_t thread_id)
  */
 osStatus_t osThreadDetach(osThreadId_t thread_id)
 {
-	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 
 	if ((tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL)) {
 		return osErrorParameter;
@@ -450,7 +451,7 @@ osStatus_t osThreadDetach(osThreadId_t thread_id)
  */
 osStatus_t osThreadJoin(osThreadId_t thread_id)
 {
-	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 	osStatus_t status = osError;
 
 	if ((tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL)) {
@@ -491,7 +492,7 @@ osStatus_t osThreadJoin(osThreadId_t thread_id)
  */
 __NO_RETURN void osThreadExit(void)
 {
-	struct cv2_thread *tid;
+	struct cmsis_rtos_thread_cb *tid;
 
 	__ASSERT(!k_is_in_isr(), "");
 	tid = osThreadGetId();
@@ -508,7 +509,7 @@ __NO_RETURN void osThreadExit(void)
  */
 osStatus_t osThreadTerminate(osThreadId_t thread_id)
 {
-	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 
 	if ((tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL)) {
 		return osErrorParameter;
