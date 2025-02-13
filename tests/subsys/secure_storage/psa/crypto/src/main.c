@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/ztest.h>
+#include <zephyr/psa/key_ids.h>
 #include <zephyr/sys/util.h>
 #include <psa/crypto.h>
 #include <psa/internal_trusted_storage.h>
@@ -9,7 +10,7 @@
 
 ZTEST_SUITE(secure_storage_psa_crypto, NULL, NULL, NULL, NULL, NULL);
 
-#define ID       PSA_KEY_ID_USER_MIN
+#define ID       ZEPHYR_PSA_APPLICATION_KEY_ID_RANGE_BEGIN
 #define KEY_TYPE PSA_KEY_TYPE_AES
 #define ALG      PSA_ALG_CBC_NO_PADDING
 #define KEY_BITS 256

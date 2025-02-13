@@ -10,5 +10,8 @@ RunTest mesh_adv_send_order adv_tx_send_order adv_rx_receive_order
 overlay=overlay_workq_sys_conf
 RunTest mesh_adv_send_order_workq adv_tx_send_order adv_rx_receive_order
 
+overlay="overlay_multi_adv_sets_conf"
+RunTest mesh_adv_send_order_multi_adv_sets adv_tx_send_order adv_rx_receive_order
+
 overlay=overlay_psa_conf
 RunTest mesh_adv_send_order_psa adv_tx_send_order adv_rx_receive_order

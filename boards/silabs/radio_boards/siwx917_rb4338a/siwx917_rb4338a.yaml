@@ -1,0 +1,18 @@
+identifier: siwx917_rb4338a
+name: SiWx917 Wi-Fi 6 and Bluetooth LE 8MB Flash Radio Board (SLWRB4338A, BRD4338A)
+type: mcu
+arch: arm
+ram: 191
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - i2c
+  - wifi
+vendor: silabs

@@ -56,6 +56,16 @@ The ``mcxw72_evk`` board in Zephyr currently supports the following features:
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 
+Fetch Binary Blobs
+******************
+
+To support Bluetooth, mcxw72_evk requires fetching binary blobs, which can be
+achieved by running the following command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
 Programming and Debugging
 *************************
 
@@ -140,6 +150,21 @@ should see the following message in the terminal:
 
    *** Booting Zephyr OS build v3.7.0-xxx-xxxx ***
    Hello World! mcxw72_evk/mcxw727c/cpu0
+
+Bluetooth
+=========
+
+BLE functionality requires to fetch binary blobs, so make sure to follow
+the ``Fetch Binary Blobs`` section first.
+
+Two images must be written to the board: one for the host (CM33 core0) and one for the NBU (CM33 core1).
+- To flash the application (CM33) refer to the ``Flashing`` section above.
+- To flash the NBU, follow the instructions below:
+
+.. code-block:: console
+
+	JLinkExe -device MCXW727C_CORE1 -if SWD -speed 4000 -autoconnect 1
+	J-Link>loadbin <path to nbu blob file> 0x0
 
 Troubleshooting
 ===============

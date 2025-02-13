@@ -1,3 +1,4 @@
+# Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_SAMD20 || SOC_SERIES_SAMD21 || SOC_SERIES_SAMR21
@@ -34,6 +35,21 @@ config SOC_ATMEL_SAMD_XOSC32K_CRYSTAL
 	help
 	  Enable the crystal oscillator (if disabled, expect a clock signal on
 	  XIN32).
+
+DT_ATMEL_RTC := $(dt_nodelabel_path,rtc)
+DT_ATMEL_RTC_COUNTER_CLOCK_MODE := $(dt_node_str_prop_equals,$(DT_ATMEL_RTC),counter-mode,clock)
+
+config SOC_ATMEL_SAMD_XOSC32K_PRESCALER
+	int "XOSC32 Generic Clock Prescaler"
+	range 1 512
+	default 32 if "$(DT_ATMEL_RTC_COUNTER_CLOCK_MODE)"
+	default 1
+	depends on SOC_ATMEL_SAMD_XOSC32K
+	help
+	  Configure the prescaler for the generic clock output
+	  connected on the xosc32. When using RTC in calendar mode
+	  the GCLK should be divided by 32 to RTC receive the
+	  1024 Hz reference clock.
 
 config SOC_ATMEL_SAMD_XOSC
 	bool "External 0.4..32 MHz clock source"

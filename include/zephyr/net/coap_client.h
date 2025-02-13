@@ -24,6 +24,10 @@
 #include <zephyr/net/coap.h>
 #include <zephyr/kernel.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Maximum size of a CoAP message */
 #define MAX_COAP_MSG_LEN (CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE + \
 			  CONFIG_COAP_CLIENT_MESSAGE_SIZE)
@@ -184,16 +188,11 @@ void coap_client_cancel_request(struct coap_client *client, struct coap_client_r
  *
  * @return CoAP client initial Block2 option structure
  */
-static inline struct coap_client_option coap_client_option_initial_block2(void)
-{
-	struct coap_client_option block2 = {
-		.code = COAP_OPTION_BLOCK2,
-		.len = 1,
-		.value[0] = coap_bytes_to_block_size(CONFIG_COAP_CLIENT_BLOCK_SIZE),
-	};
+struct coap_client_option coap_client_option_initial_block2(void);
 
-	return block2;
+#ifdef __cplusplus
 }
+#endif
 
 /**
  * @}

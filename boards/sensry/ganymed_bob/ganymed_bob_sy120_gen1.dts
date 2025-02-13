@@ -35,3 +35,9 @@
 		microchip,interface-type = "rgmii";
 	};
 };
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&pyh0>;
+};

@@ -88,6 +88,8 @@ hardware features:
 +-----------+------------+-------------------------------+
 | I2C       | on-chip    | i2c                           |
 +-----------+------------+-------------------------------+
+| DAC       | on-chip    | dac                           |
++-----------+------------+-------------------------------+
 
 The default configuration can be found in
 :zephyr_file:`boards/renesas/ek_ra2a1/ek_ra2a1_defconfig`

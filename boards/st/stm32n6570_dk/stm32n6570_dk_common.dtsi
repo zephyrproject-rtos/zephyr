@@ -13,6 +13,7 @@
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &axisram2;
+		zephyr,canbus = &fdcan1;
 	};
 
 	aliases {
@@ -94,10 +95,27 @@
 	apb5-prescaler = <1>;
 };
 
+&fdcan1 {
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
+		 <&rcc STM32_SRC_CKPER FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_ph2>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &usart1 {
 	clocks = <&rcc STM32_CLOCK(APB2, 4)>,
 		 <&rcc STM32_SRC_CKPER USART1_SEL(1)>;
 	pinctrl-0 = <&usart1_tx_pe5 &usart1_rx_pe6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	clocks = <&rcc STM32_CLOCK(APB1, 17)>,
+		 <&rcc STM32_SRC_CKPER USART2_SEL(1)>;
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pf6>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";

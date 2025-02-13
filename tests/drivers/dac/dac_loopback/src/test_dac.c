@@ -165,6 +165,19 @@
 #define ADC_CHANNEL_ID		1
 #define ADC_1ST_CHANNEL_INPUT	NRF_SAADC_INPUT_AIN1
 
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_dac)
+
+#define DAC_DEVICE_NODE DT_NODELABEL(dac0)
+#define DAC_RESOLUTION  12
+#define DAC_CHANNEL_ID  0
+
+#define ADC_DEVICE_NODE      DT_NODELABEL(adc0)
+#define ADC_RESOLUTION       12
+#define ADC_GAIN             ADC_GAIN_1
+#define ADC_REFERENCE        ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
+#define ADC_CHANNEL_ID       0
+
 #else
 #error "Unsupported board."
 #endif

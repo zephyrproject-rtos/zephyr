@@ -125,7 +125,7 @@ manifest:
       revision: d80a49b2bb186317dc1db4ac88da49c0ab77e6e7
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
-      revision: ea987c1ca661be723de83bd159aed815d6cbd430
+      revision: e9328d612ea3ea7d0d210d3ac16ea8667c01abdd
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
@@ -142,7 +142,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: a9ca7d172152789a02439bbdfb94feb72e30553d
+      revision: a5b528b49f4291aba34afefd5543889690536684
       path: modules/hal/adi
       groups:
         - hal
@@ -157,12 +157,12 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: dde7a36d00bd5dafd1ffcd8d243dfbceeb20e856
+      revision: da767444cce3c1d9ccd6b8a35fd7c67dc82d489c
       path: modules/hal/atmel
       groups:
         - hal
     - name: hal_espressif
-      revision: 2b8198796816e085759a96c2844e2d237b7f512d
+      revision: 970156407d42c968c50d4b2e3c85c0c548bd9a9e
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 49ff7e33f848e4b59da59369a77da63e346fb1a3
+      revision: 5e1979c7dd94dc84a09f5deb1b59ab83c94d5e83
       path: modules/hal/nxp
       groups:
         - hal
@@ -228,7 +228,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: df3414d50b321e11b5fb92f76c994aa07141239f
+      revision: 1e60d972b2d05de620ece65cfa48ec33c5f38bac
       path: modules/hal/silabs
       groups:
         - hal
@@ -243,7 +243,7 @@ manifest:
       groups:
         - hal
     - name: hal_tdk
-      revision: e0ade95b29841d915c38bc157bb5509270e8aa21
+      revision: 6727477af1e46fa43878102489b9672a9d24e39f
       path: modules/hal/tdk
       groups:
         - hal
@@ -276,7 +276,7 @@ manifest:
       path: modules/lib/hostap
       revision: 4957416a01c86579aebb333b43f1c23da0375835
     - name: liblc3
-      revision: bb85f7dde4195bfc0fca9e9c7c2eed0f8694203c
+      revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
     - name: libmctp
       revision: b97860e78998551af99931ece149eeffc538bdb1
@@ -295,7 +295,7 @@ manifest:
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 6decbb7f7783f6e48d4591fcb9f7810c2fb08e61
+      revision: 1ed1ddd881c3784049a92bb9fe37c38c6c74d998
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: 4952e1328529ee549d412b498ea71c54f30aa3b1
@@ -303,7 +303,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 06747985eee7c27d891f2529c58e18f4a84ea6a3
+      revision: 9a02794a14fa2e539ffe039a986360590d9e025f
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -318,10 +318,10 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 2570f4a697ce2da860ff39ec34afd91749bd66d3
+      revision: 5dc34b26662c6ec91edf1174d775d78590b1a05b
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 913d9f60b9dd6b92b70169ce857570f5bf5b1e3c
+      revision: e35f707a782b7c4c0eb83a3b06ca4e6eb693f29f
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 52bb1783521c62c019451cee9b05b8eda9d7425f
@@ -358,7 +358,7 @@ manifest:
       groups:
         - tee
     - name: uoscore-uedhoc
-      revision: 84ef879a46d7bfd9a423fbfb502b04289861f9ea
+      revision: 54abc109c9c0adfd53c70077744c14e454f04f4a
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
       revision: 9b07780aca6fb21f82a241ba386ad9b379809337

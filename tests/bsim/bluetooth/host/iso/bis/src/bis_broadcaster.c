@@ -24,7 +24,7 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-static DEFINE_FLAG(flag_iso_connected);
+DEFINE_FLAG_STATIC(flag_iso_connected);
 
 static void send_data_cb(struct k_work *work);
 K_WORK_DELAYABLE_DEFINE(iso_send_work, send_data_cb);

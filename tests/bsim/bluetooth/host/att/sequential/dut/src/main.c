@@ -16,17 +16,17 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/conn.h>
 
-#include "utils.h"
-#include "bstests.h"
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
+
+#include "common_defs.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dut, LOG_LEVEL_INF);
 
-DEFINE_FLAG(is_connected);
-DEFINE_FLAG(is_subscribed);
-DEFINE_FLAG(one_indication);
-DEFINE_FLAG(two_notifications);
-DEFINE_FLAG(flag_data_length_updated);
+DEFINE_FLAG_STATIC(is_connected);
+DEFINE_FLAG_STATIC(is_subscribed);
+DEFINE_FLAG_STATIC(flag_data_length_updated);
 
 static atomic_t nwrites;
 static atomic_t indications;
@@ -44,7 +44,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (conn_err) {
-		FAIL("Failed to connect to %s (%u)", addr, conn_err);
+		TEST_FAIL("Failed to connect to %s (%u)", addr, conn_err);
 		return;
 	}
 
@@ -84,7 +84,7 @@ static void do_dlu(void)
 	param.tx_max_time = 2500;
 
 	err = bt_conn_le_data_len_update(dconn, &param);
-	ASSERT(err == 0, "Can't update data length (err %d)\n", err);
+	TEST_ASSERT(err == 0, "Can't update data length (err %d)", err);
 
 	WAIT_FOR_FLAG(flag_data_length_updated);
 }
@@ -105,7 +105,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 	err = bt_le_scan_stop();
 	if (err) {
-		FAIL("Stop LE scan failed (err %d)", err);
+		TEST_FAIL("Stop LE scan failed (err %d)", err);
 		return;
 	}
 
@@ -115,7 +115,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	param = BT_LE_CONN_PARAM_DEFAULT;
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, param, &conn);
 	if (err) {
-		FAIL("Create conn failed (err %d)", err);
+		TEST_FAIL("Create conn failed (err %d)", err);
 		return;
 	}
 }
@@ -133,7 +133,7 @@ static void connect(void)
 	UNSET_FLAG(is_connected);
 
 	err = bt_le_scan_start(&scan_param, device_found);
-	ASSERT(!err, "Scanning failed to start (err %d)\n", err);
+	TEST_ASSERT(!err, "Scanning failed to start (err %d)", err);
 
 	LOG_DBG("Central initiating connection...");
 	WAIT_FOR_FLAG(is_connected);
@@ -187,8 +187,8 @@ static uint8_t notified(struct bt_conn *conn, struct bt_gatt_subscribe_params *p
 	static uint8_t indication[] = INDICATION_PAYLOAD;
 	bool is_nfy;
 
-	ASSERT(length >= sizeof(indication), "Unexpected data");
-	ASSERT(length <= sizeof(notification), "Unexpected data");
+	TEST_ASSERT(length >= sizeof(indication), "Unexpected data");
+	TEST_ASSERT(length <= sizeof(notification), "Unexpected data");
 
 	LOG_HEXDUMP_DBG(data, length, "HVx data");
 
@@ -210,9 +210,9 @@ static void subscribed(struct bt_conn *conn,
 		       uint8_t err,
 		       struct bt_gatt_subscribe_params *params)
 {
-	ASSERT(!err, "Subscribe failed (err %d)\n", err);
+	TEST_ASSERT(!err, "Subscribe failed (err %d)", err);
 
-	ASSERT(params, "params is NULL\n");
+	TEST_ASSERT(params, "params is NULL");
 
 	SET_FLAG(is_subscribed);
 	/* spoiler: tester doesn't really have attributes */
@@ -233,7 +233,7 @@ void subscribe(void)
 	};
 
 	err = bt_gatt_subscribe(dconn, &params);
-	ASSERT(!err, "Subscribe failed (err %d)\n", err);
+	TEST_ASSERT(!err, "Subscribe failed (err %d)", err);
 
 	WAIT_FOR_FLAG(is_subscribed);
 }
@@ -250,7 +250,7 @@ static void send_write_handle(void)
 	sys_put_le16(handle, data);
 
 	err = bt_gatt_notify(dconn, attr, data, sizeof(data));
-	ASSERT(!err, "Failed to transmit handle for write (err %d)\n", err);
+	TEST_ASSERT(!err, "Failed to transmit handle for write (err %d)", err);
 }
 
 void test_procedure_0(void)
@@ -259,7 +259,7 @@ void test_procedure_0(void)
 	int err;
 
 	err = bt_enable(NULL);
-	ASSERT(err == 0, "Can't enable Bluetooth (err %d)\n", err);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
 	LOG_DBG("Central: Bluetooth initialized.");
 
 	/* Test purpose:
@@ -313,29 +313,12 @@ void test_procedure_0(void)
 	/* Send RSP to LL */
 	bt_conn_suspend_tx(false);
 
-	PASS("DUT done\n");
-}
-
-void test_tick(bs_time_t HW_device_time)
-{
-	bs_trace_debug_time(0, "Simulation ends now.\n");
-	if (bst_result != Passed) {
-		bst_result = Failed;
-		bs_trace_error("Test did not pass before simulation ended.\n");
-	}
-}
-
-void test_init(void)
-{
-	bst_ticker_set_next_tick_absolute(TEST_TIMEOUT_SIMULATED);
-	bst_result = In_progress;
+	TEST_PASS("DUT done");
 }
 
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "dut",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_procedure_0,
 	},
 	BSTEST_END_MARKER,

@@ -27,7 +27,7 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, ENQUEUE_COUNT, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_
 
 BUILD_ASSERT(CONFIG_BT_ISO_MAX_CHAN > 1, "CONFIG_BT_ISO_MAX_CHAN shall be at least 2");
 
-static DEFINE_FLAG(flag_iso_connected);
+DEFINE_FLAG_STATIC(flag_iso_connected);
 
 static void send_data_cb(struct k_work *work)
 {

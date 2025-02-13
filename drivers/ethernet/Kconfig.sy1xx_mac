@@ -1,0 +1,11 @@
+# Copyright (c) 2025 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_SY1XX
+	bool "Sensry SY1XX Ethernet driver"
+	default y
+	depends on DT_HAS_SENSRY_SY1XX_MAC_ENABLED
+	select MDIO
+	select PINCTRL
+	help
+	  Enable Sensry SY1XX Ethernet MAC driver.

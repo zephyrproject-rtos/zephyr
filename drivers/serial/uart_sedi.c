@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include "sedi_driver_uart.h"
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -222,6 +223,8 @@ static int uart_sedi_poll_in(const struct device *dev, unsigned char *data)
 	uint32_t status;
 	int ret = 0;
 
+	(void)pm_device_runtime_get(dev);
+
 	sedi_uart_get_status(instance, (uint32_t *) &status);
 
 	/* In order to check if there is any data to read from UART
@@ -236,6 +239,9 @@ static int uart_sedi_poll_in(const struct device *dev, unsigned char *data)
 			ret = -1;
 		}
 	}
+
+	pm_device_runtime_put(dev);
+
 	return ret;
 }
 
@@ -244,7 +250,11 @@ static void uart_sedi_poll_out(const struct device *dev,
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	(void)pm_device_runtime_get(dev);
+
 	sedi_uart_write(instance, data);
+
+	pm_device_runtime_put(dev);
 }
 
 #ifdef CONFIG_UART_LINE_CTRL
@@ -281,6 +291,8 @@ static int uart_sedi_err_check(const struct device *dev)
 	uint32_t status;
 	int ret_status = 0;
 
+	(void)pm_device_runtime_get(dev);
+
 	sedi_uart_get_status(instance, (uint32_t *const)&status);
 	if (status &  SEDI_UART_RX_OE) {
 		ret_status = UART_ERROR_OVERRUN;
@@ -298,6 +310,8 @@ static int uart_sedi_err_check(const struct device *dev)
 		ret_status = UART_BREAK;
 	}
 
+	pm_device_runtime_put(dev);
+
 	return ret_status;
 }
 
@@ -308,30 +322,52 @@ static int uart_sedi_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 			       int size)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
+	int ret = 0;
 
-	return sedi_uart_fifo_fill(instance, tx_data, size);
+	pm_device_runtime_get(dev);
+
+	ret = sedi_uart_fifo_fill(instance, tx_data, size);
+
+	pm_device_runtime_put(dev);
+
+	return ret;
 }
 
 static int uart_sedi_fifo_read(const struct device *dev, uint8_t *rx_data,
 			       const int size)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
+	int ret = 0;
 
-	return sedi_uart_fifo_read(instance, rx_data, size);
+	pm_device_runtime_get(dev);
+
+	ret = sedi_uart_fifo_read(instance, rx_data, size);
+
+	pm_device_runtime_put(dev);
+
+	return ret;
 }
 
 static void uart_sedi_irq_tx_enable(const struct device *dev)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	pm_device_runtime_get(dev);
+
 	sedi_uart_irq_tx_enable(instance);
+
+	pm_device_runtime_put(dev);
 }
 
 static void uart_sedi_irq_tx_disable(const struct device *dev)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	pm_device_runtime_get(dev);
+
 	sedi_uart_irq_tx_disable(instance);
+
+	pm_device_runtime_put(dev);
 }
 
 static int uart_sedi_irq_tx_ready(const struct device *dev)
@@ -344,15 +380,26 @@ static int uart_sedi_irq_tx_ready(const struct device *dev)
 static int uart_sedi_irq_tx_complete(const struct device *dev)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
+	int ret = 0;
 
-	return sedi_uart_is_tx_complete(instance);
+	pm_device_runtime_get(dev);
+
+	ret = sedi_uart_is_tx_complete(instance);
+
+	pm_device_runtime_put(dev);
+
+	return ret;
 }
 
 static void uart_sedi_irq_rx_enable(const struct device *dev)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_runtime_get(dev);
+#else
 	uart_busy_set(dev);
+#endif
 	sedi_uart_irq_rx_enable(instance);
 }
 
@@ -361,7 +408,11 @@ static void uart_sedi_irq_rx_disable(const struct device *dev)
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
 	sedi_uart_irq_rx_disable(instance);
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_runtime_put(dev);
+#else
 	uart_busy_clear(dev);
+#endif
 }
 
 static int uart_sedi_irq_rx_ready(const struct device *dev)
@@ -375,14 +426,22 @@ static void uart_sedi_irq_err_enable(const struct device *dev)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	pm_device_runtime_get(dev);
+
 	sedi_uart_irq_err_enable(instance);
+
+	pm_device_runtime_put(dev);
 }
 
 static void uart_sedi_irq_err_disable(const struct device *dev)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	pm_device_runtime_get(dev);
+
 	sedi_uart_irq_err_disable(instance);
+
+	pm_device_runtime_put(dev);
 }
 
 static int uart_sedi_irq_is_pending(const struct device *dev)
@@ -397,7 +456,12 @@ static int uart_sedi_irq_update(const struct device *dev)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	pm_device_runtime_get(dev);
+
 	sedi_uart_update_irq_cache(instance);
+
+	pm_device_runtime_put(dev);
+
 	return 1;
 }
 
@@ -444,6 +508,9 @@ static int uart_sedi_line_ctrl_set(struct device *dev,
 	int ret;
 
 	k_mutex_lock(GET_MUTEX(dev), K_FOREVER);
+
+	pm_device_runtime_get(dev);
+
 	switch (ctrl) {
 	case UART_LINE_CTRL_BAUD_RATE:
 		sedi_uart_get_config(instance, &cfg);
@@ -454,6 +521,9 @@ static int uart_sedi_line_ctrl_set(struct device *dev,
 	default:
 		ret = -ENODEV;
 	}
+
+	pm_device_runtime_put(dev);
+
 	k_mutex_unlock(GET_MUTEX(dev));
 	ret = get_xfer_error(ret);
 	return ret;
@@ -468,6 +538,9 @@ static int uart_sedi_line_ctrl_get(struct device *dev,
 	int ret;
 
 	k_mutex_lock(GET_MUTEX(dev), K_FOREVER);
+
+	pm_device_runtime_get(dev);
+
 	switch (ctrl) {
 	case UART_LINE_CTRL_BAUD_RATE:
 		ret = sedi_uart_get_config(instance, &cfg);
@@ -506,6 +579,9 @@ static int uart_sedi_line_ctrl_get(struct device *dev,
 	default:
 		ret = -ENODEV;
 	}
+
+	pm_device_runtime_put(dev);
+
 	k_mutex_unlock(GET_MUTEX(dev));
 	ret = get_xfer_error(ret);
 	return ret;
@@ -561,6 +637,8 @@ static int uart_sedi_init(const struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->uart_irq_config_func(dev);
 #endif  /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+	pm_device_runtime_enable(dev);
 
 	return 0;
 }

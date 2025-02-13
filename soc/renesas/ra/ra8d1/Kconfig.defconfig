@@ -10,4 +10,7 @@ config NUM_IRQS
 config FLASH_FILL_BUFFER_SIZE
 	default 128
 
+config CACHE_MANAGEMENT
+	default y
+
 endif # SOC_SERIES_RA8D1

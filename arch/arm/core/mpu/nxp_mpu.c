@@ -151,7 +151,7 @@ static int region_allocate_and_init(const uint8_t index,
 				  .end  = (reg).dt_addr + (reg).dt_size,	\
 				  .attr = _ATTR,				\
 				}
-
+#ifdef CONFIG_MEM_ATTR
 /* This internal function programs the MPU regions defined in the DT when using
  * the `zephyr,memory-attr = <( DT_MEM_ARM(...) )>` property.
  */
@@ -198,7 +198,7 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 
 	return 0;
 }
-
+#endif /* CONFIG_MEM_ATTR */
 /**
  * This internal function is utilized by the MPU driver to combine a given
  * region attribute configuration and size and fill-in a driver-specific
@@ -700,13 +700,13 @@ int z_arm_mpu_init(void)
 
 	/* Update the number of programmed MPU regions. */
 	static_regions_num = mpu_config.num_regions;
-
+#ifdef CONFIG_MEM_ATTR
 	/* DT-defined MPU regions. */
 	if (mpu_configure_regions_from_dt(&static_regions_num) == -EINVAL) {
 		__ASSERT(0, "Failed to allocate MPU regions from DT\n");
 		return -EINVAL;
 	}
-
+#endif /* CONFIG_MEM_ATTR */
 	arm_core_mpu_enable();
 
 	return 0;

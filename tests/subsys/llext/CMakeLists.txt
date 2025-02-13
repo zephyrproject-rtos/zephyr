@@ -21,6 +21,7 @@ set(ext_names
 	relative_jump
 	object
 	syscalls
+	inspect
 	threads_kernel_objects
 	export_dependent
 	export_dependency

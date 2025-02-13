@@ -13,6 +13,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
+
 void peripheral(void)
 {
 	bs_bt_utils_setup();
@@ -21,10 +24,10 @@ void peripheral(void)
 	int id_b;
 
 	id_a = bt_id_create(NULL, NULL);
-	ASSERT(id_a >= 0, "bt_id_create id_a failed (err %d)\n", id_a);
+	TEST_ASSERT(id_a >= 0, "bt_id_create id_a failed (err %d)", id_a);
 
 	id_b = bt_id_create(NULL, NULL);
-	ASSERT(id_b >= 0, "bt_id_create id_b failed (err %d)\n", id_b);
+	TEST_ASSERT(id_b >= 0, "bt_id_create id_b failed (err %d)", id_b);
 
 	printk("== Bonding id a - global bondable mode ==\n");
 	BUILD_ASSERT(CONFIG_BT_BONDABLE, "CONFIG_BT_BONDABLE must be enabled by default.");
@@ -58,5 +61,5 @@ void peripheral(void)
 	TAKE_FLAG(flag_pairing_complete);
 	TAKE_FLAG(flag_not_bonded);
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -20,6 +20,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -102,5 +103,28 @@
 
 &port_irq0 {
 	interrupts = <27 12>;
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	interrupts = <8 1>, <9 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
+
+&iic1 {
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	interrupts = <10 1>, <11 1>, <12 1>, <13 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 };

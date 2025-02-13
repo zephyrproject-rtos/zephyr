@@ -212,9 +212,10 @@ re-provisioned. The complete list of available options is defined in :c:enum:`bt
    provisioning. In this case, the device stays provisioned and the new composition data takes place
    after re-provisioning using the Remote Provisioning models.
 :c:enumerator:`BT_MESH_DFU_EFFECT_UNPROV`
-  This effect is chosen if the composition data in the new firmware changes, the device doesn't
+  This effect is chosen if the composition data in the new firmware changes, the device does not
   support the remote provisioning, and the new composition data takes effect after applying the
-  firmware.
+  firmware. The effect can also be chosen, if it is necessary to unprovision the device for
+  application-specific reasons.
 
 When the Target node receives the Firmware Update Firmware Metadata Check message, the Firmware
 Update Server model calls the :c:member:`bt_mesh_dfu_srv_cb.check` callback, the application can

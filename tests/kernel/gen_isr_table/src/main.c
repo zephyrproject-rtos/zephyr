@@ -410,9 +410,6 @@ static void *gen_isr_table_setup(void)
 {
 	TC_PRINT("IRQ configuration (total lines %d):\n", CONFIG_NUM_IRQS);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-label"
-
 	return NULL;
 }
 

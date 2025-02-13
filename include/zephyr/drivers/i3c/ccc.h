@@ -515,7 +515,7 @@ struct i3c_ccc_address {
 	 * @note For SETDATA, SETNEWDA and SETGRPA,
 	 * the address is left-shift by 1, and bit[0] is always 0.
 	 *
-	 * @note Fpr SET GETACCCR, the address is left-shift by 1,
+	 * @note For SET GETACCCR, the address is left-shift by 1,
 	 * and bit[0] is the calculated odd parity bit.
 	 */
 	uint8_t addr;
@@ -638,6 +638,9 @@ union i3c_ccc_getstatus {
  */
 #define I3C_CCC_GETSTATUS_ACTIVITY_MODE(status)			\
 	FIELD_GET(I3C_CCC_GETSTATUS_ACTIVITY_MODE_MASK, (status))
+
+/** GETSTATUS Format 1 - Activity Mode Unable to participate in Controller Handoff */
+#define I3C_CCC_GETSTATUS_ACTIVITY_MODE_NCH			0x3
 
 /** GETSTATUS Format 1 - Number of Pending Interrupts bitmask. */
 #define I3C_CCC_GETSTATUS_NUM_INT_MASK				GENMASK(3U, 0U)
@@ -869,7 +872,7 @@ union i3c_ccc_getmxds {
  * @param crhdly1 GETMXDS value.
  */
 #define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE(crhdly1)	\
-	FIELD_GET(I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK, (chrdly1))
+	FIELD_GET(I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK, (crhdly1))
 
 /**
  * @brief Indicate which format of GETCAPS to use.
@@ -2134,6 +2137,24 @@ int i3c_ccc_do_deftgts_all(const struct device *controller,
  */
 int i3c_ccc_do_setbuscon(const struct device *controller,
 				uint8_t *context, uint16_t length);
+
+/**
+ * @brief Direct GETACCCR for Controller Handoff
+ *
+ * Helper function to allow for the Active Controller to pass the
+ * Controller Role to a Secondary Controller. The returned address
+ * should match it's dynamic address along with odd parity.
+ *
+ * Note it is up to the caller to verify the correct returned address
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] handoff_address Pointer to the address returned by the secondary
+ * controller.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_getacccr(const struct i3c_device_desc *target,
+			   struct i3c_ccc_address *handoff_address);
 
 #ifdef __cplusplus
 }

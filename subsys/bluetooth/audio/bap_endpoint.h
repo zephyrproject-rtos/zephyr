@@ -181,6 +181,7 @@ struct bt_bap_broadcast_sink {
 	struct bt_bap_qos_cfg qos_cfg;
 	struct bt_le_per_adv_sync *pa_sync;
 	struct bt_iso_big *big;
+	uint8_t base_size;
 	uint8_t base[BT_BASE_MAX_SIZE];
 	struct bt_bap_broadcast_sink_bis bis[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 	struct bt_bap_broadcast_sink_subgroup subgroups[CONFIG_BT_BAP_BROADCAST_SNK_SUBGROUP_COUNT];

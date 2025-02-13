@@ -36,22 +36,6 @@ static inline bool append_u8(struct coap_packet *cpkt, uint8_t data)
 	return true;
 }
 
-static inline bool append_be16(struct coap_packet *cpkt, uint16_t data)
-{
-	if (!cpkt) {
-		return false;
-	}
-
-	if (cpkt->max_len - cpkt->offset < 2) {
-		return false;
-	}
-
-	cpkt->data[cpkt->offset++] = data >> 8;
-	cpkt->data[cpkt->offset++] = (uint8_t) data;
-
-	return true;
-}
-
 static inline bool append(struct coap_packet *cpkt, const uint8_t *data, uint16_t len)
 {
 	if (!cpkt || !data) {

@@ -42,7 +42,7 @@ ACMP input voltage by changing the voltage input to J25-13.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/mcux_acmp
-   :board: mimxrt1170_evk_cm7
+   :board: mimxrt1170_evk@A/mimxrt1176/cm7
    :goals: flash
    :compact:
 

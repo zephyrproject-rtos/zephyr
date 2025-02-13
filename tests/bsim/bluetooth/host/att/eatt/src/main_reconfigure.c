@@ -15,7 +15,7 @@
 
 #define NEW_MTU 100
 
-static DEFINE_FLAG(flag_reconfigured);
+DEFINE_FLAG_STATIC(flag_reconfigured);
 
 void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {

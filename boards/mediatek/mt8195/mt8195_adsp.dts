@@ -34,9 +34,9 @@
 		cpuclk: cpuclk@10000000 {
 			compatible = "mediatek,mt8195_cpuclk";
 			reg = <0x10000000 380>;
-			cg_reg = <0x10720180>;
-			pll_ctrl_reg = <0x1000c7e0>;
-			freqs_mhz = <26 370 540 720>;
+			cg-reg = <0x10720180>;
+			pll-ctrl-reg = <0x1000c7e0>;
+			freqs-mhz = <26 370 540 720>;
 		};
 
 		core_intc: core_intc@0 {

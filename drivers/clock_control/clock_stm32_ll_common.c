@@ -122,10 +122,8 @@ int enabled_clock(uint32_t src_clk)
 	int r = 0;
 
 	switch (src_clk) {
-#if defined(STM32_SRC_SYSCLK)
 	case STM32_SRC_SYSCLK:
 		break;
-#endif /* STM32_SRC_SYSCLK */
 #if defined(STM32_SRC_PCLK)
 	case STM32_SRC_PCLK:
 		break;
@@ -295,7 +293,6 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 						clock_control_subsys_t sub_system,
 						void *data)
 {
-#if defined(STM32_SRC_SYSCLK)
 	/* At least one alt src clock available */
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	int err;
@@ -320,10 +317,6 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		     STM32_CLOCK_VAL_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
 
 	return 0;
-#else
-	/* No src clock available: Not supported */
-	return -ENOTSUP;
-#endif
 }
 
 static int stm32_clock_control_get_subsys_rate(const struct device *clock,
@@ -395,11 +388,9 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = ahb3_clock;
 		break;
 #endif
-#if defined(STM32_SRC_SYSCLK)
 	case STM32_SRC_SYSCLK:
 		*rate = SystemCoreClock * STM32_CORE_PRESCALER;
 		break;
-#endif
 #if defined(STM32_SRC_PLLCLK) & defined(STM32_SYSCLK_SRC_PLL)
 	case STM32_SRC_PLLCLK:
 		if (get_pllout_frequency() == 0) {

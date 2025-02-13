@@ -136,7 +136,17 @@ config BT_SILABS_EFR32
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
 	  controller.
+
 source "drivers/bluetooth/hci/Kconfig.silabs"
+
+config BT_SILABS_SIWX91X
+	bool "Silabs SiWx91x Bluetooth interface"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_BT_HCI_ENABLED
+	select WISECONNECT_NETWORK_STACK
+	select ENTROPY_GENERATOR
+	help
+	  Use Silicon Labs Wiseconnect 3.x Bluetooth library to connect to the controller.
 
 config BT_USERCHAN
 	bool

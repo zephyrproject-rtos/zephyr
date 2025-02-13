@@ -11,7 +11,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/addr.h>
 
-#include "common.h"
+#include "babblekit/testcase.h"
 
 LOG_MODULE_DECLARE(bt_bsim_id_settings, LOG_LEVEL_DBG);
 
@@ -24,14 +24,14 @@ void run_dut1(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Bluetooth init failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth init failed (err %d)", err);
 	}
 
 	LOG_DBG("Bluetooth initialised");
 
 	err = settings_load();
 	if (err) {
-		FAIL("Failed to load settings (err %d)\n", err);
+		TEST_FAIL("Failed to load settings (err %d)", err);
 	}
 
 	bt_id_get(NULL, &bt_id_count);
@@ -39,7 +39,7 @@ void run_dut1(void)
 
 	err = bt_id_create(NULL, NULL);
 	if (err < 0) {
-		FAIL("Failed to create a new identity (err %d)\n", err);
+		TEST_FAIL("Failed to create a new identity (err %d)", err);
 	}
 
 	bt_id_get(NULL, &bt_id_count);
@@ -48,7 +48,7 @@ void run_dut1(void)
 	/* Wait for the workqueue to complete before switching device */
 	k_msleep(100);
 
-	PASS("Test passed (DUT 1)\n");
+	TEST_PASS("Test passed (DUT 1)");
 }
 
 void run_dut2(void)
@@ -61,22 +61,22 @@ void run_dut2(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Bluetooth init failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth init failed (err %d)", err);
 	}
 
 	LOG_DBG("Bluetooth initialised");
 
 	err = settings_load();
 	if (err) {
-		FAIL("Failed to load settings (err %d)\n", err);
+		TEST_FAIL("Failed to load settings (err %d)", err);
 	}
 
 	LOG_DBG("Settings loaded");
 
 	bt_id_get(NULL, &bt_id_count);
 	if (bt_id_count != expected_id_count) {
-		FAIL("Wrong ID count (got %d; expected %d)\n", bt_id_count, expected_id_count);
+		TEST_FAIL("Wrong ID count (got %d; expected %d)", bt_id_count, expected_id_count);
 	}
 
-	PASS("Test passed (DUT 2)\n");
+	TEST_PASS("Test passed (DUT 2)");
 }

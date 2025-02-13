@@ -1,4 +1,5 @@
 # Copyright (c) 2019 ML!PA Consulting GmbH
+# Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_SAMD51 || SOC_SERIES_SAME51 || SOC_SERIES_SAME53 || SOC_SERIES_SAME54
@@ -17,6 +18,34 @@ config SOC_ATMEL_SAMD5X_XOSC32K_STARTUP
 	default 0x1
 	help
 	  Selects the startup time for the external 32 kHz crystal oscillator.
+
+config SOC_ATMEL_SAMD5X_XOSC32K_CRYSTAL
+	bool "External 32.768 kHz clock is a crystal oscillator"
+	depends on SOC_ATMEL_SAMD5X_XOSC32K
+	default y
+	help
+	  Enable the crystal oscillator (if disabled, expect a clock
+	  signal on XIN32).
+
+config SOC_ATMEL_SAMD5X_XOSC32K_GAIN_HS
+	bool "XOSC32 High Speed gain"
+	depends on SOC_ATMEL_SAMD5X_XOSC32K
+	help
+	  When this option is selected the gain is set High Speed
+	  instead standard.
+
+DT_ATMEL_RTC := $(dt_nodelabel_path,rtc)
+DT_ATMEL_RTC_COUNTER_CLOCK_MODE := $(dt_node_str_prop_equals,$(DT_ATMEL_RTC),counter-mode,clock)
+
+config SOC_ATMEL_SAMD5X_OSC32K_PRESCALER
+	int "XOSC32 Generic Clock Prescaler"
+	range 1 512
+	default 32 if "$(DT_ATMEL_RTC_COUNTER_CLOCK_MODE)"
+	default 1
+	help
+	  Configure the prescaler for the generic clock output connected on the
+	  xosc32 or osculp32k. When using RTC in calendar mode the GCLK should
+	  be divided by 32 to RTC receive the 1024 Hz reference clock.
 
 choice
 	prompt "Main clock source"

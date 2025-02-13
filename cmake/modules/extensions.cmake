@@ -336,6 +336,12 @@ function(process_flags lang input output)
 
   foreach(flag ${${input}})
     set(is_compile_lang_generator_expression 0)
+    # SHELL is used to avoid de-duplication, but when process flags
+    # then this tag must be removed to return real compile/linker flags.
+    if(flag MATCHES "^SHELL:[ ]*(.*)")
+      separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
+    endif()
+
     foreach(l ${languages})
       if(flag MATCHES "<COMPILE_LANGUAGE:${l}>:([^>]+)>")
         set(updated_flag ${CMAKE_MATCH_1})
@@ -356,11 +362,6 @@ function(process_flags lang input output)
     endforeach()
 
     if(NOT is_compile_lang_generator_expression)
-      # SHELL is used to avoid de-duplication, but when process flags
-      # then this tag must be removed to return real compile/linker flags.
-      if(flag MATCHES "SHELL:[ ]*(.*)")
-        separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
-      endif()
       # Flags may be placed inside generator expression, therefore any flag
       # which is not already a generator expression must have commas converted.
       if(NOT flag MATCHES "\\\$<.*>")
@@ -3679,11 +3680,11 @@ function(topological_sort)
 endfunction()
 
 # Usage:
-#   build_info(<tag>... VALUE <value>... )
-#   build_info(<tag>... PATH  <path>... )
+#   build_info(<tag>... VALUE <value>...)
+#   build_info(<tag>... PATH  <path>...)
 #
-# This function populates updates the build_info.yml info file with exchangable build information
-# related to the current build.
+# This function populates the build_info.yml info file with exchangable build
+# information related to the current build.
 #
 # Example:
 #   build_info(devicetree files VALUE file1.dts file2.dts file3.dts)
@@ -3711,6 +3712,14 @@ function(build_info)
 
   if(index EQUAL -1)
     message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) missing a required argument: VALUE or PATH")
+  endif()
+
+  string(GENEX_STRIP "${arg_list}" arg_list_no_genexes)
+  if (NOT "${arg_list}" STREQUAL "${arg_list_no_genexes}")
+    if (convert_path)
+      message(FATAL_ERROR "build_info: generator expressions unsupported on PATH entries")
+    endif()
+    set(genex_flag GENEX)
   endif()
 
   yaml_context(EXISTS NAME build_info result)
@@ -3755,7 +3764,7 @@ function(build_info)
     endif()
   endif()
 
-  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}")
+  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}" ${genex_flag})
 endfunction()
 
 ########################################################
@@ -5873,7 +5882,7 @@ endfunction()
 # depending on the exact use of the function in script mode.
 #
 # Current Zephyr CMake scripts which includes `extensions.cmake` in script mode
-# are: package_helper.cmake, verify-toolchain.cmake
+# are: package_helper.cmake, verify-toolchain.cmake, llext-edk.cmake
 #
 
 if(CMAKE_SCRIPT_MODE_FILE)

@@ -56,5 +56,6 @@ config USBD_MSG_WORK_DELAY
 	  yet ready to publish the message. The delay unit is milliseconds.
 
 rsource "class/Kconfig"
+rsource "app/Kconfig.cdc_acm_serial"
 
 endif # USB_DEVICE_STACK_NEXT

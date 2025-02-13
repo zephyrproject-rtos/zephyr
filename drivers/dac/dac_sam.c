@@ -39,7 +39,7 @@ struct dac_channel {
 
 /* Device run time data */
 struct dac_sam_dev_data {
-#if defined(SOC_SERIES_SAMX7X)
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	struct dac_channel dac_channels[DAC_CHANNEL_NO];
 #else
 	struct dac_channel dac_channel;
@@ -56,7 +56,7 @@ static void dac_sam_isr(const struct device *dev)
 	/* Retrieve interrupt status */
 	int_stat = dac->DACC_ISR & dac->DACC_IMR;
 
-#if defined(SOC_SERIES_SAMX7X)
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	if ((int_stat & DACC_ISR_TXRDY0) != 0) {
 		/* Disable Transmit Ready Interrupt */
 		dac->DACC_IDR = DACC_IDR_TXRDY0;
@@ -110,7 +110,7 @@ static int dac_sam_write_value(const struct device *dev, uint8_t channel,
 		return -EINVAL;
 	}
 
-#if defined(SOC_SERIES_SAMX7X)
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	if (dac->DACC_IMR & (DACC_IMR_TXRDY0 << channel)) {
 #else
 	if (dac->DACC_IMR & DACC_IMR_TXRDY) {
@@ -124,7 +124,7 @@ static int dac_sam_write_value(const struct device *dev, uint8_t channel,
 		return -EINVAL;
 	}
 
-#if defined(SOC_SERIES_SAMX7X)
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	k_sem_take(&dev_data->dac_channels[channel].sem, K_FOREVER);
 
 	/* Trigger conversion */
@@ -153,7 +153,7 @@ static int dac_sam_init(const struct device *dev)
 	const struct dac_sam_dev_cfg *const dev_cfg = dev->config;
 	struct dac_sam_dev_data *const dev_data = dev->data;
 	int retval;
-#if defined(SOC_SERIES_SAMX7X)
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	Dacc *const dac = dev_cfg->regs;
 #endif
 
@@ -161,7 +161,7 @@ static int dac_sam_init(const struct device *dev)
 	dev_cfg->irq_config();
 
 	/* Initialize semaphores */
-#if defined(SOC_SERIES_SAMX7X)
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	for (int i = 0; i < ARRAY_SIZE(dev_data->dac_channels); i++) {
 		k_sem_init(&dev_data->dac_channels[i].sem, 1, 1);
 	}
@@ -178,7 +178,7 @@ static int dac_sam_init(const struct device *dev)
 		return retval;
 	}
 
-#if defined(SOC_SERIES_SAMX7X)
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	/* Set Mode Register */
 	dac->DACC_MR = DACC_MR_PRESCALER(dev_cfg->prescaler);
 #endif

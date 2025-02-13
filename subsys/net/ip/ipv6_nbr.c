@@ -135,21 +135,6 @@ static inline struct net_nbr *get_nbr(int idx)
 	return &net_neighbor_pool[idx].nbr;
 }
 
-static inline struct net_nbr *get_nbr_from_data(struct net_ipv6_nbr_data *data)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		struct net_nbr *nbr = get_nbr(i);
-
-		if (nbr->data == (uint8_t *)data) {
-			return nbr;
-		}
-	}
-
-	return NULL;
-}
-
 static void ipv6_nbr_set_state(struct net_nbr *nbr,
 			       enum net_ipv6_nbr_state new_state)
 {

@@ -153,9 +153,9 @@ RT1170 EVKB (``mimxrt1170_evk@B//cm7/cm4``)
 |           |            | :ref:`rk055hdmipi4ma0`,                        |                 |                 |
 |           |            | and :ref:`g1120b0mipi` shields                 |                 |                 |
 +-----------+------------+------------------------------------------------+-----------------+-----------------+
-| ACMP      | on-chip    | sensor                                         | Supported       | No support      |
+| ACMP      | on-chip    | sensor                                         | Supported       | Supported       |
 +-----------+------------+------------------------------------------------+-----------------+-----------------+
-| CAAM RNG  | on-chip    | entropy                                        | Supported (M7)  | No support      |
+| CAAM RNG  | on-chip    | entropy                                        | Supported (M7)  | Supported (M7)  |
 +-----------+------------+------------------------------------------------+-----------------+-----------------+
 | FLEXSPI   | on-chip    | flash programming                              | Supported (M7)  | Supported (M7)  |
 +-----------+------------+------------------------------------------------+-----------------+-----------------+

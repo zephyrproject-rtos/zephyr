@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Google LLC.
- * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,8 @@
 
 		port-a = &porta;
 		port-b = &portb;
+
+		rtc = &rtc;
 
 		sercom-0 = &sercom0;
 		sercom-1 = &sercom1;
@@ -189,7 +191,12 @@
 			compatible = "atmel,sam0-rtc";
 			reg = <0x40001400 0x1C>;
 			interrupts = <3 0>;
+			clocks = <&gclk 4 4>, <&pm 0x18 5>;
+			clock-names = "GCLK", "PM";
 			status = "disabled";
+
+			alarms-count = <1>;
+			cal-constant = <(1024 * 976)>;
 		};
 
 		adc: adc@42004000 {

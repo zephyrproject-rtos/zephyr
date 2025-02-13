@@ -26,6 +26,12 @@ Build System
 * Support for the build type feature which was deprecated in Zephyr 3.6 has been removed,
   :ref:`application-file-suffixes`/:ref:`sysbuild_file_suffixes` has replaced this.
 
+* Sysbuild
+
+  * The Kconfig ``SB_CONFIG_MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH`` has been deprecated and replaced
+    with ``SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE``, applications should be updated to select this
+    new symbol if they were selecting the old symbol.
+
 BOSSA Runner
 ============
 
@@ -88,6 +94,9 @@ STM32
   as it was introduced earlier.
   The Kconfig method for configuration is now removed.
 
+* ADC properties ``st,adc-sequencer`` and ``st,adc-clock-source`` now uses
+  string values instead of integer values.
+
 Modules
 *******
 
@@ -129,13 +138,16 @@ Device Drivers and Devicetree
   The :c:macro:`DEVICE_API()` macro should be used by out-of-tree driver implementations for
   all the upstream driver classes.
 
-* The :c:func:`video_buffer_alloc` and :c:func:`video_buffer_aligned_alloc` functions in the
-  video API now take an additional timeout parameter.
-
 ADC
 ===
 
 * Renamed the ``compatible`` from ``nxp,kinetis-adc12`` to :dtcompatible:`nxp,adc12`.
+
+Clock
+=====
+* Renamed the devicetree property ``freqs_mhz`` to ``freqs-mhz``.
+* Renamed the devicetree property ``cg_reg`` to ``cg-reg``.
+* Renamed the devicetree property ``pll_ctrl_reg`` to ``pll-ctrl-reg``.
 
 Counter
 =======
@@ -236,6 +248,7 @@ I2C
 ===
 
 * Renamed the ``compatible`` from ``nxp,imx-lpi2c`` to :dtcompatible:`nxp,lpi2c`.
+* Renamed the device tree property ``port_sel`` to ``port-sel```.
 
 I2S
 ===
@@ -372,6 +385,19 @@ Sensors
         };
       };
 
+  * The :dtcompatible:`invensense,icp10125` driver has been renamed to
+    :dtcompatible:`invensense,icp101xx`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        icp101xx:icp101xx@63 {
+           compatible = "invensense,icp101xx";
+           reg = <0x63>;
+        };
+      };
+
 Serial
 ======
 
@@ -451,6 +477,13 @@ Video
   ``pitch = width * video_pix_fmt_bpp(pixfmt)`` needs to be replaced by an equivalent
   ``pitch = width * video_bits_per_pixel(pixfmt) / BITS_PER_BYTE``.
 
+* The :c:func:`video_buffer_alloc` and :c:func:`video_buffer_aligned_alloc` functions in the
+  video API now take an additional timeout parameter.
+
+* The :c:func:`video_stream_start` and :c:func:`video_stream_stop` driver APIs are now merged
+  into the new :c:func:`video_set_stream` driver API. The user APIs are however unchanged to
+  keep backward compatibility with downstream applications.
+
 Watchdog
 ========
 
@@ -483,6 +516,16 @@ Bluetooth Mesh
   library, Kconfig symbol :kconfig:option:`CONFIG_BT_MESH_USES_TINYCRYPT` was
   set as deprecated. Default option for platforms that do not support TF-M
   is :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`.
+
+* Mesh key representations are not backward compatible if images are built with TinyCrypt and
+  crypto libraries based on the PSA API. Mesh no longer stores the key values for those crypto
+  libraries. The crypto library stores the keys in the internal trusted storage.
+  If a provisioned device is going to update its image that was built with
+  the :kconfig:option:`CONFIG_BT_MESH_USES_TINYCRYPT` Kconfig option set on an image
+  that was built with :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA` or
+  :kconfig:option:`CONFIG_BT_MESH_USES_TFM_PSA` without erasing the persistent area,
+  it should be unprovisioned first and reprovisioned after update again.
+  If the image is changed over Mesh DFU, use :c:enumerator:`BT_MESH_DFU_EFFECT_UNPROV`.
 
 * Mesh explicitly depends on the Secure Storage subsystem if storing into
   non-volatile memory (:kconfig:option:`CONFIG_BT_SETTINGS`) is enabled and
@@ -544,6 +587,16 @@ Bluetooth Host
 Bluetooth Crypto
 ================
 
+Bluetooth Services
+==================
+
+* The :kconfig:option:`CONFIG_BT_DIS_MODEL` and :kconfig:option:`CONFIG_BT_DIS_MANUF` have been
+  deprecated. Application developers should now use the
+  :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER_STR` and
+  :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME_STR` Kconfig options to set the string values in the
+  Model Number String and Manufacturer Name String characteristics that are part of the Device
+  Information Service (DIS).
+
 Networking
 **********
 
@@ -602,6 +655,10 @@ hawkBit
 
 MCUmgr
 ======
+
+* The Kconfig :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH` has been
+  deprecated and replaced with :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE`,
+  applications should be updated to select this new symbol if they were selecting the old symbol.
 
 Modem
 =====

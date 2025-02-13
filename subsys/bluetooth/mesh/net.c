@@ -1109,17 +1109,23 @@ BT_MESH_SETTINGS_DEFINE(seq, "Seq", seq_set);
 #if defined(CONFIG_BT_MESH_RPR_SRV)
 static int dev_key_cand_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		   void *cb_arg)
-{	int err;
+{
+	int err;
+	struct bt_mesh_key key;
 
-	if (len_rd < 16) {
-		return -EINVAL;
+	if (len_rd == 0) {
+		LOG_DBG("val (null)");
+
+		bt_mesh_key_destroy(&bt_mesh.dev_key_cand);
+		memset(&bt_mesh.dev_key_cand, 0, sizeof(struct bt_mesh_key));
+		return 0;
 	}
 
-	err = bt_mesh_settings_set(read_cb, cb_arg, &bt_mesh.dev_key_cand,
-				   sizeof(struct bt_mesh_key));
+	err = bt_mesh_settings_set(read_cb, cb_arg, &key, sizeof(struct bt_mesh_key));
 	if (!err) {
 		LOG_DBG("DevKey candidate recovered from storage");
 		atomic_set_bit(bt_mesh.flags, BT_MESH_DEVKEY_CAND);
+		bt_mesh_key_assign(&bt_mesh.dev_key_cand, &key);
 	}
 
 	return err;

@@ -104,6 +104,8 @@ source "drivers/interrupt_controller/Kconfig.vim"
 
 source "drivers/interrupt_controller/Kconfig.renesas_ra"
 
+source "drivers/interrupt_controller/Kconfig.renesas_rz"
+
 source "drivers/interrupt_controller/Kconfig.nxp_irqsteer"
 
 source "drivers/interrupt_controller/Kconfig.mtk_adsp"

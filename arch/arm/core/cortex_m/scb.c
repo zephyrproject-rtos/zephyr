@@ -55,8 +55,7 @@ void z_arm_clear_arm_mpu_config(void)
 {
 	int i;
 
-	int num_regions =
-		((MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos);
+	int num_regions = ((MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos);
 
 	for (i = 0; i < num_regions; i++) {
 		ARM_MPU_ClrRegion(i);
@@ -90,7 +89,7 @@ void z_arm_clear_arm_mpu_config(void)
  */
 void z_arm_init_arch_hw_at_boot(void)
 {
-    /* Disable interrupts */
+	/* Disable interrupts */
 	__disable_irq();
 
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)

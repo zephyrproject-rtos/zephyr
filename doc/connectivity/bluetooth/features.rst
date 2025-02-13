@@ -8,10 +8,10 @@ Supported features
     :depth: 2
 
 Since its inception, Zephyr has had a strong focus on Bluetooth and, in
-particular, on Bluetooth Low Energy (BLE). Through the contributions of
+particular, on Bluetooth Low Energy (LE). Through the contributions of
 several companies and individuals involved in existing open source
 implementations of the Bluetooth specification (Linux's BlueZ) as well as the
-design and development of BLE radio hardware, the protocol stack in Zephyr has
+design and development of Bluetooth LE radio hardware, the protocol stack in Zephyr has
 grown to be mature and feature-rich, as can be seen in the section below.
 
 * Bluetooth v5.3 compliant
@@ -41,7 +41,7 @@ grown to be mature and feature-rich, as can be seen in the section below.
   * All v5.3 specification features supported (except a few minor items)
   * Concurrent multi-protocol support ready
   * Intelligent scheduling of roles to minimize overlap
-  * Portable design to any open BLE radio, currently supports Nordic
+  * Portable design to any open Bluetooth LE radio, currently supports Nordic
     Semiconductor nRF52x and nRF53x SoC Series, as well as proprietary radios
   * Supports little and big endian architectures, and abstracts the hard
     real-time specifics so that they can be encapsulated in a hardware-specific

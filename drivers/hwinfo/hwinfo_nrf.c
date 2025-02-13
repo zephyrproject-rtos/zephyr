@@ -41,7 +41,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	buf[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
 #endif
 #elif NRF_FICR_HAS_DEVICE_ADDR || NRF_FICR_HAS_BLE_ADDR
-	/* DEVICEID is not accessible, use device/ble address instead.
+	/* DEVICEID is not accessible, use device/Bluetooth LE address instead.
 	 * Assume that it is always accessible from the non-secure image.
 	 */
 	buf[0] = nrf_ficr_deviceaddr_get(NRF_FICR, 0);

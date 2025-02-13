@@ -27,11 +27,10 @@
 #define GOOD_CLIENT_CHAN 0
 #define BAD_CLIENT_CHAN 1
 
-static DEFINE_FLAG(connected_flag);
-static DEFINE_FLAG(disconnected_flag);
-static DEFINE_FLAG(security_updated_flag);
-
-static DEFINE_FLAG(ccc_cfg_changed_flag);
+DEFINE_FLAG_STATIC(connected_flag);
+DEFINE_FLAG_STATIC(disconnected_flag);
+DEFINE_FLAG_STATIC(security_updated_flag);
+DEFINE_FLAG_STATIC(ccc_cfg_changed_flag);
 
 static const struct bt_uuid_128 dummy_service = BT_UUID_INIT_128(DUMMY_SERVICE_TYPE);
 

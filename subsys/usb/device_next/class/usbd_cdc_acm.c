@@ -513,8 +513,8 @@ static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 	return 0;
 }
 
-static int cdc_acm_send_notification(const struct device *dev,
-				     const uint16_t serial_state)
+static inline int cdc_acm_send_notification(const struct device *dev,
+					    const uint16_t serial_state)
 {
 	struct cdc_acm_notification notification = {
 		.bmRequestType = 0xA1,
@@ -549,7 +549,11 @@ static int cdc_acm_send_notification(const struct device *dev,
 
 	net_buf_add_mem(buf, &notification, sizeof(struct cdc_acm_notification));
 	ret = usbd_ep_enqueue(c_data, buf);
-	/* FIXME: support for sync transfers */
+	if (ret) {
+		net_buf_unref(buf);
+		return ret;
+	}
+
 	k_sem_take(&data->notif_sem, K_FOREVER);
 
 	return ret;

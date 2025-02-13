@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Benjamin Valentin
- * Copyright (c) 2019-2024 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2019-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,6 +120,12 @@
 
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
+	counter-mode = "clock";
+	prescaler = <1024>;
 };
 
 &sercom0 {

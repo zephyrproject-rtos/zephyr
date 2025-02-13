@@ -77,10 +77,15 @@ Removed APIs and options
   and only supported 8-bit depth to :c:func:`video_bits_per_pixel()` returning
   the *bit* count and supporting any color depth.
 
+* The ``video_stream_start()`` and ``video_stream_stop()`` driver APIs have been
+  replaced by ``video_set_stream()``.
+
 * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO`
 
 * The :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE` option has been removed
   after being deprecated in favor of :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED`.
+
+* The ``z_pm_save_idle_exit()`` PM API function has been removed.
 
 
 Deprecated APIs and options
@@ -112,6 +117,11 @@ Deprecated APIs and options
 * The TinyCrypt library has been deprecated as the upstream version is no longer maintained.
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
 
+* The :kconfig:option:`CONFIG_BT_DIS_MODEL` and :kconfig:option:`CONFIG_BT_DIS_MANUF` have been
+  deprecated. Application developers can achieve the same configuration by using the new
+  :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER_STR` and
+  :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME_STR` Kconfig options.
+
 New APIs and options
 ====================
 
@@ -128,10 +138,40 @@ New APIs and options
 
 * Bluetooth
 
+  * Audio
+
+    * :c:func:`bt_bap_broadcast_source_register_cb`
+    * :c:func:`bt_bap_broadcast_source_unregister_cb`
+    * :c:func:`bt_cap_commander_distribute_broadcast_code`
+    * ``bt_ccp`` API (in progress)
+    * :c:func:`bt_pacs_register`
+    * :c:func:`bt_pacs_unregister`
+
+  * Host
+
+    * :c:func:`bt_conn_is_type`
+
   * Mesh
 
     * :c:member:`bt_mesh_health_cli::update` callback can be used to periodically update the message
       published by the Health Client.
+
+  * Services
+
+    * The :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER` and
+      :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME` Kconfig options can be used to control the
+      presence of the Model Number String and Manufacturer Name String characteristics inside
+      the Device Information Service (DIS). The :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER_STR`
+      and :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME_STR` Kconfig options are now used to set the
+      string values in these characteristics. They replace the functionality of the deprecated
+      :kconfig:option:`CONFIG_BT_DIS_MODEL` and :kconfig:option:`CONFIG_BT_DIS_MANUF` Kconfigs.
+
+* Build system
+
+  * Sysbuild
+
+    * The newly introduced MCUboot swap using offset mode can be selected from sysbuild by using
+      ``SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET``, this mode is experimental.
 
 * Crypto
 
@@ -151,6 +191,16 @@ New APIs and options
 
     * Image management :c:macro:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED` now has image data field
       :c:struct:`img_mgmt_image_confirmed`.
+
+* MCUboot
+
+  * Signed hex files where an encryption key Kconfig is set now have the encrypted flag set in
+    the image header.
+
+* Video
+
+  * :c:func:`video_set_stream()` driver API has replaced :c:func:`video_stream_start()` and
+    :c:func:`video_stream_stop()` driver APIs.
 
 * Other
 
@@ -258,8 +308,10 @@ New Boards
    * :zephyr:board:`nucleo_c071rb` (``nucleo_c071rb``)
    * :zephyr:board:`nucleo_f072rb` (``nucleo_f072rb``)
    * :zephyr:board:`nucleo_h7s3l8` (``nucleo_h7s3l8``)
+   * :zephyr:board:`nucleo_n657x0_q` (``nucleo_n657x0_q``)
    * :zephyr:board:`nucleo_wb07cc` (``nucleo_wb07cc``)
    * :zephyr:board:`stm32f413h_disco` (``stm32f413h_disco``)
+   * :zephyr:board:`stm32n6570_dk` (``stm32n6570_dk``)
 
 * Seeed Technology Co., Ltd
 
@@ -531,6 +583,7 @@ New Drivers
    * :dtcompatible:`adi,adxl366`
    * :dtcompatible:`hc-sr04`
    * :dtcompatible:`invensense,icm42670s`
+   * :dtcompatible:`invensense,icm42370`
    * :dtcompatible:`maxim,ds3231-sensor`
    * :dtcompatible:`melexis,mlx90394`
    * :dtcompatible:`nordic,npm2100-vbat`

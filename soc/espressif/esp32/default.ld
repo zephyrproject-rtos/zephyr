@@ -443,6 +443,7 @@ SECTIONS
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.* .wifiextrairam .wifiextrairam.*)
+    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
 
     /* [mapping:esp_wifi] */
     *(.literal.wifi_clock_enable_wrapper .text.wifi_clock_enable_wrapper)
@@ -948,6 +949,7 @@ SECTIONS
 #ifndef CONFIG_ESP32_WIFI_IRAM_OPT
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.* .wifiextrairam .wifiextrairam.*)
+    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
 #endif
 
 #ifndef CONFIG_ESP32_WIFI_RX_IRAM_OPT

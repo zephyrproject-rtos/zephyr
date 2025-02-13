@@ -421,6 +421,17 @@ class RimageSigner(Signer):
         self.command.dbg(f'rimage config directory={conf_dir}')
         return conf_dir
 
+    def generate_uuid_registry(self):
+        'Runs the uuid-registry.h generator script'
+
+        generate_cmd = [sys.executable, str(self.sof_src_dir / 'scripts' / 'gen-uuid-reg.py'),
+                        str(self.sof_src_dir / 'uuid-registry.txt'),
+                        str(pathlib.Path('zephyr') / 'include' / 'generated' / 'uuid-registry.h')
+                       ]
+
+        self.command.inf(quote_sh_list(generate_cmd))
+        subprocess.run(generate_cmd, check=True, cwd=self.build_dir)
+
     def preprocess_toml(self, config_dir, toml_basename, subdir):
         'Runs the C pre-processor on config_dir/toml_basename.h'
 
@@ -444,6 +455,9 @@ class RimageSigner(Signer):
         preproc_cmd += ['-I', str(self.sof_src_dir / 'src')]
         preproc_cmd += ['-imacros',
                         str(pathlib.Path('zephyr') / 'include' / 'generated' / 'zephyr' / 'autoconf.h')]
+        preproc_cmd += ['-imacros',
+                        str(pathlib.Path('zephyr') / 'include' / 'generated' / 'uuid-registry.h')]
+
         # Need to preprocess the TOML file twice: once with
         # LLEXT_FORCE_ALL_MODULAR defined and once without it
         full_preproc_cmd = preproc_cmd + ['-o', str(subdir / 'rimage_config_full.toml'), '-DLLEXT_FORCE_ALL_MODULAR']
@@ -552,6 +566,7 @@ class RimageSigner(Signer):
         is_sof_build = build_conf.getboolean('CONFIG_SOF')
         if not is_sof_build:
             no_manifest = True
+            self.generate_uuid_registry()
 
         if no_manifest:
             extra_ri_args = [ ]

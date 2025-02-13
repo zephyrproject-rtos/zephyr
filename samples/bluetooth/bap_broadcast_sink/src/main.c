@@ -1275,7 +1275,7 @@ static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
 
 static int init(void)
 {
-	const struct bt_bap_pacs_register_param pacs_param = {
+	const struct bt_pacs_register_param pacs_param = {
 		.snk_pac = true,
 		.snk_loc = true,
 	};

@@ -825,7 +825,13 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 		char *remote_ip;
 		long port;
 
-		err = esp_pull_quoted(&str, str_end, &remote_ip);
+		if (IS_ENABLED(CONFIG_WIFI_ESP_AT_VERSION_1_7)) {
+			/* NOT quoted per AT version 1.7.0 */
+			err = esp_pull_raw(&str, str_end, &remote_ip);
+		} else {
+			/* Quoted per AT version 2.1.0/2.2.0 */
+			err = esp_pull_quoted(&str, str_end, &remote_ip);
+		}
 		if (err) {
 			if (err == -EAGAIN && match_len >= MAX_IPD_LEN) {
 				LOG_ERR("Failed to pull remote_ip");

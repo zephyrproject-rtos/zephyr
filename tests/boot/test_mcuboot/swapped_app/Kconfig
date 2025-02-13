@@ -1,9 +1,13 @@
 # Copyright 2022 NXP
+# Copyright 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 source "Kconfig.zephyr"
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 
 config BUILD_OUTPUT_ADJUST_LMA
+	default "$(dt_node_reg_addr_hex,$(dt_nodelabel_path,slot1_partition))-\
+		$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))+\
+		$(dt_node_int_prop_hex,$(dt_node_parent,$(dt_node_parent,$(dt_nodelabel_path,slot1_partition))),erase-block-size)" if MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET
 	default "$(dt_node_reg_addr_hex,$(dt_nodelabel_path,slot1_partition))-\
 		$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))"

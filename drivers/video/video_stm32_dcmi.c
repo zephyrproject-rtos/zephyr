@@ -246,10 +246,28 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_stream_start(const struct device *dev)
+static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
 {
+	int err;
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
+
+	if (!enable) {
+		if (video_stream_stop(config->sensor_dev)) {
+			return -EIO;
+		}
+
+		err = HAL_DCMI_Stop(&data->hdcmi);
+		if (err != HAL_OK) {
+			LOG_ERR("Failed to stop DCMI");
+			return -EIO;
+		}
+
+		/* Release the video buffer allocated when start streaming */
+		k_fifo_put(&data->fifo_in, data->vbuf);
+
+		return 0;
+	}
 
 	data->vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
 
@@ -258,7 +276,7 @@ static int video_stm32_dcmi_stream_start(const struct device *dev)
 		return -ENOMEM;
 	}
 
-	int err = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
+	err = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
 			(uint32_t)data->vbuf->buffer, data->vbuf->bytesused / 4);
 	if (err != HAL_OK) {
 		LOG_ERR("Failed to start DCMI DMA");
@@ -268,28 +286,6 @@ static int video_stm32_dcmi_stream_start(const struct device *dev)
 	if (video_stream_start(config->sensor_dev)) {
 		return -EIO;
 	}
-
-	return 0;
-}
-
-static int video_stm32_dcmi_stream_stop(const struct device *dev)
-{
-	struct video_stm32_dcmi_data *data = dev->data;
-	const struct video_stm32_dcmi_config *config = dev->config;
-	int err;
-
-	if (video_stream_stop(config->sensor_dev)) {
-		return -EIO;
-	}
-
-	err = HAL_DCMI_Stop(&data->hdcmi);
-	if (err != HAL_OK) {
-		LOG_ERR("Failed to stop DCMI");
-		return -EIO;
-	}
-
-	/* Release the video buffer allocated in stream_start */
-	k_fifo_put(&data->fifo_in, data->vbuf);
 
 	return 0;
 }
@@ -381,8 +377,7 @@ static inline int video_stm32_dcmi_get_ctrl(const struct device *dev, unsigned i
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_format = video_stm32_dcmi_set_fmt,
 	.get_format = video_stm32_dcmi_get_fmt,
-	.stream_start = video_stm32_dcmi_stream_start,
-	.stream_stop = video_stm32_dcmi_stream_stop,
+	.set_stream = video_stm32_dcmi_set_stream,
 	.enqueue = video_stm32_dcmi_enqueue,
 	.dequeue = video_stm32_dcmi_dequeue,
 	.get_caps = video_stm32_dcmi_get_caps,

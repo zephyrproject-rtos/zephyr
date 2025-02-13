@@ -6,16 +6,11 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_MPU_ARM_MPU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_MPU_ARM_MPU_H_
 
-#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
-	defined(CONFIG_CPU_CORTEX_M3) || \
-	defined(CONFIG_CPU_CORTEX_M4) || \
-	defined(CONFIG_CPU_CORTEX_M7) || \
-	defined(CONFIG_ARMV7_R)
+#if defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M3) ||                          \
+	defined(CONFIG_CPU_CORTEX_M4) || defined(CONFIG_CPU_CORTEX_M7) || defined(CONFIG_ARMV7_R)
 #include <zephyr/arch/arm/mpu/arm_mpu_v7m.h>
-#elif defined(CONFIG_CPU_CORTEX_M23) || \
-	defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M55) || \
-	defined(CONFIG_CPU_CORTEX_M85) || \
+#elif defined(CONFIG_CPU_CORTEX_M23) || defined(CONFIG_CPU_CORTEX_M33) ||                          \
+	defined(CONFIG_CPU_CORTEX_M55) || defined(CONFIG_CPU_CORTEX_M85) ||                        \
 	defined(CONFIG_AARCH32_ARMV8_R)
 #include <zephyr/arch/arm/mpu/arm_mpu_v8.h>
 #else
@@ -47,19 +42,19 @@ struct arm_mpu_config {
 };
 
 #if defined(CONFIG_ARMV7_R)
-#define MPU_REGION_ENTRY(_name, _base, _size, _attr) \
-	{\
-		.name = _name, \
-		.base = _base, \
-		.size = _size, \
-		.attr = _attr, \
+#define MPU_REGION_ENTRY(_name, _base, _size, _attr)                                               \
+	{                                                                                          \
+		.name = _name,                                                                     \
+		.base = _base,                                                                     \
+		.size = _size,                                                                     \
+		.attr = _attr,                                                                     \
 	}
 #else
-#define MPU_REGION_ENTRY(_name, _base, _attr) \
-	{\
-		.name = _name, \
-		.base = _base, \
-		.attr = _attr, \
+#define MPU_REGION_ENTRY(_name, _base, _attr)                                                      \
+	{                                                                                          \
+		.name = _name,                                                                     \
+		.base = _base,                                                                     \
+		.attr = _attr,                                                                     \
 	}
 #endif
 

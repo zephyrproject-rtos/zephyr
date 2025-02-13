@@ -1,6 +1,6 @@
 sample:
   name: Bluetooth Scan & Advertise
-  description: Demonstrates combined BLE Broadcaster & Observer role functionality
+  description: Demonstrates combined Bluetooth LE Broadcaster & Observer role functionality
 tests:
   sample.bluetooth.scan_adv:
     harness: bluetooth

@@ -517,12 +517,7 @@ static int ov7725_get_fmt(const struct device *dev,
 	return 0;
 }
 
-static int ov7725_stream_start(const struct device *dev)
-{
-	return 0;
-}
-
-static int ov7725_stream_stop(const struct device *dev)
+static int ov7725_set_stream(const struct device *dev, bool enable)
 {
 	return 0;
 }
@@ -552,8 +547,7 @@ static DEVICE_API(video, ov7725_driver_api) = {
 	.set_format = ov7725_set_fmt,
 	.get_format = ov7725_get_fmt,
 	.get_caps = ov7725_get_caps,
-	.stream_start = ov7725_stream_start,
-	.stream_stop = ov7725_stream_stop,
+	.set_stream = ov7725_set_stream,
 };
 
 static int ov7725_init(const struct device *dev)

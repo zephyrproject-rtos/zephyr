@@ -179,7 +179,7 @@ static bool push_msg_from_delayable_msgs(void)
 	NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_TX_SDU_MAX);
 
 	SYS_SLIST_FOR_EACH_NODE(&msg->chunks, node) {
-		uint16_t tmp = MIN(CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_SIZE, len);
+		uint16_t tmp = MIN((uint16_t)CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_SIZE, len);
 
 		chunk = CONTAINER_OF(node, struct delayable_msg_chunk, node);
 		memcpy(net_buf_simple_add(&buf, tmp), chunk->data, tmp);

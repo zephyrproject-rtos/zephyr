@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+
+#include <host/conn_internal.h>
 
 #include "mocks/addr_internal.h"
 #include "mocks/att_internal.h"
@@ -131,4 +133,30 @@ ZTEST(conn, test_bt_conn_le_create_synced_check_null_conn)
 	conn = NULL;
 	err = bt_conn_le_create_synced(adv, &synced_param, &conn_param, &conn);
 	zassert_not_equal(err, -EINVAL, "Failed starting initiator (err %d)", err);
+}
+
+ZTEST(conn, test_bt_conn_is_type)
+{
+	struct bt_conn conn = {0};
+
+	conn.type = BT_CONN_TYPE_LE;
+	zassert_true(bt_conn_is_type(&conn, BT_CONN_TYPE_LE));
+	zassert_false(bt_conn_is_type(&conn, 0));
+	zassert_false(bt_conn_is_type(&conn, BT_CONN_TYPE_BR));
+	zassert_false(bt_conn_is_type(&conn, BT_CONN_TYPE_SCO));
+	zassert_false(bt_conn_is_type(&conn, BT_CONN_TYPE_ISO));
+
+	zassert_true(bt_conn_is_type(&conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR));
+	zassert_true(bt_conn_is_type(&conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_SCO));
+	zassert_true(bt_conn_is_type(&conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_ISO));
+	zassert_true(bt_conn_is_type(&conn, BT_CONN_TYPE_ALL));
+
+	conn.type = BT_CONN_TYPE_BR;
+	zassert_true(bt_conn_is_type(&conn, BT_CONN_TYPE_BR));
+
+	conn.type = BT_CONN_TYPE_SCO;
+	zassert_true(bt_conn_is_type(&conn, BT_CONN_TYPE_SCO));
+
+	conn.type = BT_CONN_TYPE_ISO;
+	zassert_true(bt_conn_is_type(&conn, BT_CONN_TYPE_ISO));
 }

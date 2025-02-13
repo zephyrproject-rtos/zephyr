@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SILABS_SIWX91X
+	bool "SiWx91x clock control driver"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_CLOCK_ENABLED
+	help
+	 Enable clock management on Silicon Labs SiWx91x chips. This driver
+	 includes support for HP (High Performace), ULP (Ultra Low Power), and
+	 ULP VBAT clocks.
+
+	 The original hardware allow to customize the various clocks offered for
+	 every devices. This driver does not provide such  customizations. It
+	 just hardcodes sane default parameters for every devices.

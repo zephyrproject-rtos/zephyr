@@ -15,8 +15,8 @@
 #include <zephyr/logging/log.h>
 
 #include "util.h"
-#include "fmac_api.h"
-#include "fmac_tx.h"
+#include "system/fmac_api.h"
+#include "system/fmac_tx.h"
 #include "fmac_main.h"
 #include "wifi_mgmt_scan.h"
 
@@ -210,10 +210,10 @@ int nrf_wifi_disp_scan_zep(const struct device *dev, struct wifi_scan_params *pa
 	scan_info->scan_params.passive_scan = 1;
 #endif /* CONFIG_NRF70_PASSIVE_SCAN_ONLY */
 
-	status = nrf_wifi_fmac_scan(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, scan_info);
+	status = nrf_wifi_sys_fmac_scan(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, scan_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_scan failed", __func__);
+		LOG_ERR("%s: nrf_wifi_sys_fmac_scan failed", __func__);
 		goto out;
 	}
 
@@ -249,12 +249,12 @@ enum nrf_wifi_status nrf_wifi_disp_scan_res_get_zep(struct nrf_wifi_vif_ctx_zep 
 		goto out;
 	}
 
-	status = nrf_wifi_fmac_scan_res_get(rpu_ctx_zep->rpu_ctx,
+	status = nrf_wifi_sys_fmac_scan_res_get(rpu_ctx_zep->rpu_ctx,
 					    vif_ctx_zep->vif_idx,
 					    SCAN_DISPLAY);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_scan failed", __func__);
+		LOG_ERR("%s: nrf_wifi_sys_fmac_scan failed", __func__);
 		goto out;
 	}
 

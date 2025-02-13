@@ -64,14 +64,14 @@ struct udc_mcux_event {
 K_MEM_SLAB_DEFINE(udc_event_slab, sizeof(struct udc_mcux_event),
 		  CONFIG_UDC_NXP_EVENT_COUNT, sizeof(void *));
 
-static int udc_mcux_lock(const struct device *dev)
+static void udc_mcux_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int udc_mcux_unlock(const struct device *dev)
+static void udc_mcux_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 static int udc_mcux_control(const struct device *dev, usb_device_control_type_t command,

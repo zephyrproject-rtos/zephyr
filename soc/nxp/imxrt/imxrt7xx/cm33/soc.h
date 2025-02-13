@@ -20,6 +20,12 @@
 #include <zephyr/sys/util.h>
 #include <fsl_common.h>
 
+/* CPU 0 has an instruction and data cache, provide the defines for XCACHE */
+#ifdef CONFIG_SOC_MIMXRT798S_CM33_CPU0
+#define NXP_XCACHE_INSTR XCACHE1
+#define NXP_XCACHE_DATA XCACHE0
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1623,7 +1623,7 @@ static bool valid_register_param(const struct bt_tbs_register_param *param)
 
 int bt_tbs_register_bearer(const struct bt_tbs_register_param *param)
 {
-	int ret;
+	int ret = -ENOEXEC;
 
 	CHECKIF(!valid_register_param(param)) {
 		LOG_DBG("Invalid parameters");

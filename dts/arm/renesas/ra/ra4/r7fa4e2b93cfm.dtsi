@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 /delete-node/ &iic1;
 
 /delete-node/ &adc1;
+/delete-node/ &dac1;
 
 / {
 	soc {
@@ -305,4 +306,8 @@
 	port-irqs = <&port_irq11>;
 	port-irq-names = "port-irq11";
 	port-irq11-pins = <14>;
+};
+
+&dac_global {
+	has-output-amplifier;
 };

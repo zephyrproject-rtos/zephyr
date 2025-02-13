@@ -15,6 +15,7 @@
 	compatible = "bsim,nrf54l15-bsim-nrf54l15-cpuapp", "bsim,nrf54";
 
 	chosen {
+		zephyr,console = &uart20;
 		zephyr,entropy = &rng;
 		zephyr,bt-c2h-uart = &uart20;
 		zephyr,flash-controller = &rram_controller;

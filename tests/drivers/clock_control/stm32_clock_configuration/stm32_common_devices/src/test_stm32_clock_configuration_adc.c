@@ -94,13 +94,11 @@ ZTEST(stm32_common_devices_clocks, test_adc_clk_config)
 		dev_actual_clk_src = GET_ADC_SOURCE();
 
 		switch (pclken[1].bus) {
-#if defined(STM32_SRC_SYSCLK)
 		case STM32_SRC_SYSCLK:
 			zassert_equal(dev_actual_clk_src, ADC_SOURCE_SYSCLK,
 					"Expected ADC1 src: SYSCLK (0x%lx). Actual ADC1 src: 0x%x",
 					ADC_SOURCE_SYSCLK, dev_actual_clk_src);
 			break;
-#endif /* STM32_SRC_SYSCLK */
 #if defined(STM32_SRC_PLL_P)
 		case STM32_SRC_PLL_P:
 			zassert_equal(dev_actual_clk_src, ADC_SOURCE_PLL,

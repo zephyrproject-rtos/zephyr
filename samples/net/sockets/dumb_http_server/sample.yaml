@@ -14,25 +14,3 @@ tests:
   sample.net.sockets.dumb_http_server:
     extra_configs:
       - CONFIG_POSIX_API=y
-  sample.net.sockets.dumb_http_server.netusb:
-    depends_on: usb_device
-    harness: net
-    extra_args: EXTRA_CONF_FILE="overlay-netusb.conf"
-    tags: usb
-    # native_sim usb driver does not work with CONFIG_POSIX_API
-    platform_exclude:
-      - native_sim
-      - native_sim/native/64
-      - native_posix
-      - native_posix/native/64
-  sample.net.sockets.dumb_http_server.netusb_zeroconf:
-    depends_on: usb_device
-    harness: net
-    extra_args: EXTRA_CONF_FILE="overlay-netusb.conf;overlay-zeroconf.conf"
-    tags: usb
-    # native_sim usb driver does not work with CONFIG_POSIX_API
-    platform_exclude:
-      - native_sim
-      - native_sim/native/64
-      - native_posix
-      - native_posix/native/64

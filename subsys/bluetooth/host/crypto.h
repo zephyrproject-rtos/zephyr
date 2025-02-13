@@ -5,4 +5,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-int prng_init(void);
+int bt_crypto_init(void);

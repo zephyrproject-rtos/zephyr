@@ -52,10 +52,6 @@
 			gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
-		red_led_4:led_4 {
-			gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
-			label = "User LD4";
-		};
 	};
 
 	gpio_keys {
@@ -76,7 +72,6 @@
 		led0 = &red_led_1;
 		led1 = &green_led_2;
 		led2 = &green_led_3;
-		led3 = &red_led_4;
 		sw0 = &user_button;
 	};
 

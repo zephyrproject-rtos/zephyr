@@ -46,7 +46,7 @@ static int lps25hb_sample_fetch(const struct device *dev,
 	uint8_t out[5];
 	int offset;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_PRESS || chan == SENSOR_CHAN_ALL);
 
 	for (offset = 0; offset < sizeof(out); ++offset) {
 		if (i2c_reg_read_byte_dt(&config->i2c,

@@ -1599,8 +1599,8 @@ This has been fixed in main for v3.6.0
 :cve:`2024-3077`
 ----------------
 
-Bluetooth: Integer underflow in gatt_find_info_rsp. A malicious BLE
-device can crash BLE victim device by sending malformed gatt packet.
+Bluetooth: Integer underflow in gatt_find_info_rsp. A malicious Bluetooth LE
+device can crash Bluetooth LE victim device by sending malformed gatt packet.
 
 - `Zephyr project bug tracker GHSA-gmfv-4vfh-2mh8
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gmfv-4vfh-2mh8>`_
@@ -1615,8 +1615,8 @@ This has been fixed in main for v3.7.0
 
 Bluetooth: DoS caused by null pointer dereference.
 
-A malicious BLE device can send a specific order of packet
-sequence to cause a DoS attack on the victim BLE device.
+A malicious Bluetooth LE device can send a specific order of packet
+sequence to cause a DoS attack on the victim Bluetooth LE device.
 
 - `Zephyr project bug tracker GHSA-jmr9-xw2v-5vf4
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-jmr9-xw2v-5vf4>`_

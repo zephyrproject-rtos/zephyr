@@ -10,6 +10,7 @@ config USBD_CDC_ACM_CLASS
 	select SERIAL_SUPPORT_INTERRUPT
 	select RING_BUFFER
 	select UART_INTERRUPT_DRIVEN
+	default y
 	help
 	  USB device CDC ACM class implementation.
 

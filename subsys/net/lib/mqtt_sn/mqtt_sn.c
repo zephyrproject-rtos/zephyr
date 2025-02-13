@@ -21,6 +21,10 @@ LOG_MODULE_REGISTER(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
 NET_BUF_POOL_FIXED_DEFINE(mqtt_sn_messages, MQTT_SN_NET_BUFS, CONFIG_MQTT_SN_LIB_MAX_PAYLOAD_SIZE,
 			  0, NULL);
 
+/**
+ * A struct to track attempts for actions that require acknowledgment,
+ * i.e. topic registering, subscribing, or unsubscribing.
+ */
 struct mqtt_sn_confirmable {
 	int64_t last_attempt;
 	uint16_t msg_id;
@@ -38,11 +42,14 @@ struct mqtt_sn_publish {
 };
 
 enum mqtt_sn_topic_state {
-	MQTT_SN_TOPIC_STATE_REGISTERING,
-	MQTT_SN_TOPIC_STATE_REGISTERED,
-	MQTT_SN_TOPIC_STATE_SUBSCRIBING,
-	MQTT_SN_TOPIC_STATE_SUBSCRIBED,
-	MQTT_SN_TOPIC_STATE_UNSUBSCRIBING,
+	MQTT_SN_TOPIC_STATE_REGISTER,      /*!< Topic requested to be registered */
+	MQTT_SN_TOPIC_STATE_REGISTERING,   /*!< Topic in progress of registering */
+	MQTT_SN_TOPIC_STATE_REGISTERED,    /*!< Topic registered */
+	MQTT_SN_TOPIC_STATE_SUBSCRIBE,     /*!< Topic requested to subscribe */
+	MQTT_SN_TOPIC_STATE_SUBSCRIBING,   /*!< Topic in progress of subscribing */
+	MQTT_SN_TOPIC_STATE_SUBSCRIBED,    /*!< Topic subscribed */
+	MQTT_SN_TOPIC_STATE_UNSUBSCRIBE,   /*!< Topic requested to unsubscribe */
+	MQTT_SN_TOPIC_STATE_UNSUBSCRIBING, /*!< Topic in progress of unsubscribing */
 };
 
 struct mqtt_sn_topic {
@@ -197,8 +204,8 @@ static struct mqtt_sn_publish *mqtt_sn_publish_create(struct mqtt_sn_data *data)
 	return pub;
 }
 
-static struct mqtt_sn_publish *mqtt_sn_publish_find_msg_id(struct mqtt_sn_client *client,
-							   uint16_t msg_id)
+static struct mqtt_sn_publish *mqtt_sn_publish_find_by_msg_id(struct mqtt_sn_client *client,
+							      uint16_t msg_id)
 {
 	struct mqtt_sn_publish *pub;
 
@@ -211,8 +218,8 @@ static struct mqtt_sn_publish *mqtt_sn_publish_find_msg_id(struct mqtt_sn_client
 	return NULL;
 }
 
-static struct mqtt_sn_publish *mqtt_sn_publish_find_topic(struct mqtt_sn_client *client,
-							  struct mqtt_sn_topic *topic)
+static struct mqtt_sn_publish *mqtt_sn_publish_find_by_topic(struct mqtt_sn_client *client,
+							     struct mqtt_sn_topic *topic)
 {
 	struct mqtt_sn_publish *pub;
 
@@ -254,8 +261,8 @@ static struct mqtt_sn_topic *mqtt_sn_topic_create(struct mqtt_sn_data *name)
 	return topic;
 }
 
-static struct mqtt_sn_topic *mqtt_sn_topic_find_name(struct mqtt_sn_client *client,
-						     struct mqtt_sn_data *topic_name)
+static struct mqtt_sn_topic *mqtt_sn_topic_find_by_name(struct mqtt_sn_client *client,
+							struct mqtt_sn_data *topic_name)
 {
 	struct mqtt_sn_topic *topic;
 
@@ -269,8 +276,8 @@ static struct mqtt_sn_topic *mqtt_sn_topic_find_name(struct mqtt_sn_client *clie
 	return NULL;
 }
 
-static struct mqtt_sn_topic *mqtt_sn_topic_find_msg_id(struct mqtt_sn_client *client,
-						       uint16_t msg_id)
+static struct mqtt_sn_topic *mqtt_sn_topic_find_by_msg_id(struct mqtt_sn_client *client,
+							  uint16_t msg_id)
 {
 	struct mqtt_sn_topic *topic;
 
@@ -288,7 +295,7 @@ static void mqtt_sn_topic_destroy(struct mqtt_sn_client *client, struct mqtt_sn_
 	struct mqtt_sn_publish *pub;
 
 	/* Destroy all pubs referencing this topic */
-	while ((pub = mqtt_sn_publish_find_topic(client, topic)) != NULL) {
+	while ((pub = mqtt_sn_publish_find_by_topic(client, topic)) != NULL) {
 		LOG_WRN("Destroying publish msg_id %d", pub->con.msg_id);
 		mqtt_sn_publish_destroy(client, pub);
 	}
@@ -305,7 +312,7 @@ static void mqtt_sn_topic_destroy_all(struct mqtt_sn_client *client)
 	while ((next = sys_slist_get(&client->topic)) != NULL) {
 		topic = SYS_SLIST_CONTAINER(next, topic, next);
 		/* Destroy all pubs referencing this topic */
-		while ((pub = mqtt_sn_publish_find_topic(client, topic)) != NULL) {
+		while ((pub = mqtt_sn_publish_find_by_topic(client, topic)) != NULL) {
 			LOG_WRN("Destroying publish msg_id %d", pub->con.msg_id);
 			mqtt_sn_publish_destroy(client, pub);
 		}
@@ -361,7 +368,7 @@ static struct mqtt_sn_gateway *mqtt_sn_gw_create(uint8_t gw_id, short duration,
 	return gw;
 }
 
-static struct mqtt_sn_gateway *mqtt_sn_gw_find_id(struct mqtt_sn_client *client, uint16_t gw_id)
+static struct mqtt_sn_gateway *mqtt_sn_gw_find_by_id(struct mqtt_sn_client *client, uint16_t gw_id)
 {
 	struct mqtt_sn_gateway *gw;
 
@@ -403,6 +410,13 @@ static void mqtt_sn_sleep_internal(struct mqtt_sn_client *client)
 	}
 }
 
+/**
+ * @brief Internal function to send a SUBSCRIBE message for a topic.
+ *
+ * @param client
+ * @param topic
+ * @param dup DUP flag - see MQTT-SN spec
+ */
 static void mqtt_sn_do_subscribe(struct mqtt_sn_client *client, struct mqtt_sn_topic *topic,
 				 bool dup)
 {
@@ -438,6 +452,12 @@ static void mqtt_sn_do_subscribe(struct mqtt_sn_client *client, struct mqtt_sn_t
 	encode_and_send(client, &p, 0);
 }
 
+/**
+ * @brief Internal function to send an UNSUBSCRIBE message for a topic.
+ *
+ * @param client
+ * @param topic
+ */
 static void mqtt_sn_do_unsubscribe(struct mqtt_sn_client *client, struct mqtt_sn_topic *topic)
 {
 	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_UNSUBSCRIBE};
@@ -470,6 +490,12 @@ static void mqtt_sn_do_unsubscribe(struct mqtt_sn_client *client, struct mqtt_sn
 	encode_and_send(client, &p, 0);
 }
 
+/**
+ * @brief Internal function to a register a topic with the MQTT-SN gateway.
+ *
+ * @param client
+ * @param topic
+ */
 static void mqtt_sn_do_register(struct mqtt_sn_client *client, struct mqtt_sn_topic *topic)
 {
 	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_REGISTER};
@@ -498,6 +524,15 @@ static void mqtt_sn_do_register(struct mqtt_sn_client *client, struct mqtt_sn_to
 	encode_and_send(client, &p, 0);
 }
 
+/**
+ * @brief Internal function to send a PUBLISH message.
+ *
+ * Note that this function does not do sanity checks regarding the pub's topic.
+ *
+ * @param client
+ * @param pub
+ * @param dup DUP flag - see MQTT-SN spec.
+ */
 static void mqtt_sn_do_publish(struct mqtt_sn_client *client, struct mqtt_sn_publish *pub, bool dup)
 {
 	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_PUBLISH};
@@ -525,6 +560,11 @@ static void mqtt_sn_do_publish(struct mqtt_sn_client *client, struct mqtt_sn_pub
 	encode_and_send(client, &p, 0);
 }
 
+/**
+ * @brief Internal function to send a SEARCHGW message.
+ *
+ * @param client
+ */
 static void mqtt_sn_do_searchgw(struct mqtt_sn_client *client)
 {
 	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_SEARCHGW};
@@ -534,6 +574,11 @@ static void mqtt_sn_do_searchgw(struct mqtt_sn_client *client)
 	encode_and_send(client, &p, CONFIG_MQTT_SN_LIB_BROADCAST_RADIUS);
 }
 
+/**
+ * @brief Internal function to send a GWINFO message.
+ *
+ * @param client
+ */
 static void mqtt_sn_do_gwinfo(struct mqtt_sn_client *client)
 {
 	struct mqtt_sn_param response = {.type = MQTT_SN_MSG_TYPE_GWINFO};
@@ -555,6 +600,11 @@ static void mqtt_sn_do_gwinfo(struct mqtt_sn_client *client)
 	encode_and_send(client, &response, client->radius_gwinfo);
 }
 
+/**
+ * @brief Internal function to send a PINGREQ message.
+ *
+ * @param client
+ */
 static void mqtt_sn_do_ping(struct mqtt_sn_client *client)
 {
 	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_PINGREQ};
@@ -579,12 +629,21 @@ static void mqtt_sn_do_ping(struct mqtt_sn_client *client)
 	}
 }
 
+/**
+ * @brief Process all publish tasks in the queue.
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ *
+ * @retval 0 on success
+ * @retval -ETIMEDOUT when a publish task ran out of retries
+ */
 static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	struct mqtt_sn_publish *pub, *pubs;
 	const int64_t now = k_uptime_get();
 	int64_t next_attempt;
-	bool dup;
+	bool dup; /* dup flag if message is resent */
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&client->publish, pub, pubs, next) {
 		LOG_HEXDUMP_DBG(pub->topic->name, pub->topic->namelen,
@@ -599,13 +658,9 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 			dup = true;
 		}
 
+		/* Check if action is due */
 		if (next_attempt <= now) {
 			switch (pub->topic->state) {
-			case MQTT_SN_TOPIC_STATE_REGISTERING:
-			case MQTT_SN_TOPIC_STATE_SUBSCRIBING:
-			case MQTT_SN_TOPIC_STATE_UNSUBSCRIBING:
-				LOG_INF("Can't publish; topic is not ready");
-				break;
 			case MQTT_SN_TOPIC_STATE_REGISTERED:
 			case MQTT_SN_TOPIC_STATE_SUBSCRIBED:
 				if (!pub->con.retries--) {
@@ -624,9 +679,13 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 					next_attempt = now + T_RETRY_MSEC;
 				}
 				break;
+			default:
+				LOG_INF("Can't publish; topic is not ready");
+				break;
 			}
 		}
 
+		/* Remember time when next action is due */
 		if (next_attempt > now && (*next_cycle == 0 || next_attempt < *next_cycle)) {
 			*next_cycle = next_attempt;
 		}
@@ -637,13 +696,42 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 	return 0;
 }
 
+/**
+ * @brief Process all topic tasks in the queue.
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ *
+ * @retval 0 on success
+ * @retval -ETIMEDOUT when a publish task ran out of retries
+ */
 static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	struct mqtt_sn_topic *topic;
 	const int64_t now = k_uptime_get();
 	int64_t next_attempt;
-	bool dup;
 
+	bool subscribing = false;
+	bool registering = false;
+
+	bool dup; /* dup flag if message is resent */
+
+	/* First pass to check for REGISTERING, SUBSCRIBING, UNSUBSCRIBING */
+	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {
+		switch (topic->state) {
+		case MQTT_SN_TOPIC_STATE_UNSUBSCRIBING:
+		case MQTT_SN_TOPIC_STATE_SUBSCRIBING:
+			subscribing = true;
+			break;
+		case MQTT_SN_TOPIC_STATE_REGISTERING:
+			registering = true;
+			break;
+		default:
+			break;
+		}
+	}
+
+	/* Second pass */
 	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {
 		LOG_HEXDUMP_DBG(topic->name, topic->namelen, "Processing topic");
 
@@ -655,9 +743,22 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 			dup = true;
 		}
 
+		/* Check if action is due */
 		if (next_attempt <= now) {
 			switch (topic->state) {
+			case MQTT_SN_TOPIC_STATE_SUBSCRIBE:
+				if (subscribing) {
+					/*
+					 * Only one topic can be subscribing or unsubscribing
+					 * at the same time
+					 */
+					break;
+				}
+				topic->state = MQTT_SN_TOPIC_STATE_SUBSCRIBING;
+				LOG_INF("Topic subscription now in progress");
+				__fallthrough;
 			case MQTT_SN_TOPIC_STATE_SUBSCRIBING:
+				subscribing = true;
 				if (!topic->con.retries--) {
 					LOG_WRN("Topic ran out of retries, disconnecting");
 					mqtt_sn_disconnect_internal(client);
@@ -668,7 +769,16 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 				topic->con.last_attempt = now;
 				next_attempt = now + T_RETRY_MSEC;
 				break;
+			case MQTT_SN_TOPIC_STATE_REGISTER:
+				if (registering) {
+					/* Only one topic can be registering at the same time */
+					break;
+				}
+				topic->state = MQTT_SN_TOPIC_STATE_REGISTERING;
+				LOG_INF("Topic registration now in progress");
+				__fallthrough;
 			case MQTT_SN_TOPIC_STATE_REGISTERING:
+				registering = true;
 				if (!topic->con.retries--) {
 					LOG_WRN("Topic ran out of retries, disconnecting");
 					mqtt_sn_disconnect_internal(client);
@@ -679,7 +789,19 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 				topic->con.last_attempt = now;
 				next_attempt = now + T_RETRY_MSEC;
 				break;
+			case MQTT_SN_TOPIC_STATE_UNSUBSCRIBE:
+				if (subscribing) {
+					/*
+					 * Only one topic can be subscribing or unsubscribing
+					 * at the same time
+					 */
+					break;
+				}
+				topic->state = MQTT_SN_TOPIC_STATE_UNSUBSCRIBING;
+				LOG_INF("Topic unsubscription now in progress");
+				__fallthrough;
 			case MQTT_SN_TOPIC_STATE_UNSUBSCRIBING:
+				subscribing = true;
 				if (!topic->con.retries--) {
 					LOG_WRN("Topic ran out of retries, disconnecting");
 					mqtt_sn_disconnect_internal(client);
@@ -695,6 +817,7 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 			}
 		}
 
+		/* Remember time when next action is due */
 		if (next_attempt > now && (*next_cycle == 0 || next_attempt < *next_cycle)) {
 			*next_cycle = next_attempt;
 		}
@@ -705,6 +828,14 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 	return 0;
 }
 
+/**
+ * @brief Housekeeping task for the client ping
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ * @retval 0 on success
+ * @retval -ETIMEDOUT if client ran out of ping retries
+ */
 static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	const int64_t now = k_uptime_get();
@@ -743,6 +874,13 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 	return 0;
 }
 
+/**
+ * @brief Housekeeping task for the gateway search
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ * @retval 0 on success
+ */
 static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	const int64_t now = k_uptime_get();
@@ -774,6 +912,13 @@ static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
 	return 0;
 }
 
+/**
+ * @brief Housekeeping task for gateway advertisements
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ * @return int
+ */
 static int process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	const int64_t now = k_uptime_get();
@@ -798,6 +943,11 @@ static int process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
 	return 0;
 }
 
+/**
+ * @brief Housekeeping task that is called by workqueue item
+ *
+ * @param wrk The work item
+ */
 static void process_work(struct k_work *wrk)
 {
 	struct mqtt_sn_client *client;
@@ -897,7 +1047,7 @@ int mqtt_sn_add_gw(struct mqtt_sn_client *client, uint8_t gw_id, struct mqtt_sn_
 {
 	struct mqtt_sn_gateway *gw;
 
-	gw = mqtt_sn_gw_find_id(client, gw_id);
+	gw = mqtt_sn_gw_find_by_id(client, gw_id);
 
 	if (gw != NULL) {
 		mqtt_sn_gw_destroy(client, gw);
@@ -1004,7 +1154,7 @@ int mqtt_sn_subscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		return -ENOTCONN;
 	}
 
-	topic = mqtt_sn_topic_find_name(client, topic_name);
+	topic = mqtt_sn_topic_find_by_name(client, topic_name);
 	if (!topic) {
 		topic = mqtt_sn_topic_create(topic_name);
 		if (!topic) {
@@ -1012,7 +1162,7 @@ int mqtt_sn_subscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		}
 
 		topic->qos = qos;
-		topic->state = MQTT_SN_TOPIC_STATE_SUBSCRIBING;
+		topic->state = MQTT_SN_TOPIC_STATE_SUBSCRIBE;
 		sys_slist_append(&client->topic, &topic->next);
 	}
 
@@ -1039,13 +1189,18 @@ int mqtt_sn_unsubscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		return -ENOTCONN;
 	}
 
-	topic = mqtt_sn_topic_find_name(client, topic_name);
+	topic = mqtt_sn_topic_find_by_name(client, topic_name);
 	if (!topic) {
 		LOG_HEXDUMP_ERR(topic_name->data, topic_name->size, "Topic not found");
 		return -ENOENT;
 	}
 
-	topic->state = MQTT_SN_TOPIC_STATE_UNSUBSCRIBING;
+	if (topic->state != MQTT_SN_TOPIC_STATE_SUBSCRIBED) {
+		LOG_ERR("Cannot unsubscribe: not subscribed");
+		return -EAGAIN;
+	}
+
+	topic->state = MQTT_SN_TOPIC_STATE_UNSUBSCRIBE;
 	mqtt_sn_con_init(&topic->con);
 
 	err = k_work_reschedule(&client->process_work, K_NO_WAIT);
@@ -1077,7 +1232,7 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		return -ENOTCONN;
 	}
 
-	topic = mqtt_sn_topic_find_name(client, topic_name);
+	topic = mqtt_sn_topic_find_by_name(client, topic_name);
 	if (!topic) {
 		topic = mqtt_sn_topic_create(topic_name);
 		if (!topic) {
@@ -1085,7 +1240,7 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		}
 
 		topic->qos = qos;
-		topic->state = MQTT_SN_TOPIC_STATE_REGISTERING;
+		topic->state = MQTT_SN_TOPIC_STATE_REGISTER;
 		sys_slist_append(&client->topic, &topic->next);
 	}
 
@@ -1115,7 +1270,7 @@ static void handle_advertise(struct mqtt_sn_client *client, struct mqtt_sn_param
 	struct mqtt_sn_evt evt = {.type = MQTT_SN_EVT_ADVERTISE};
 	struct mqtt_sn_gateway *gw;
 
-	gw = mqtt_sn_gw_find_id(client, p->gw_id);
+	gw = mqtt_sn_gw_find_by_id(client, p->gw_id);
 
 	if (gw == NULL) {
 		LOG_DBG("Creating GW 0x%02x with duration %d", p->gw_id, p->duration);
@@ -1262,7 +1417,7 @@ static void handle_register(struct mqtt_sn_client *client, struct mqtt_sn_param_
 
 static void handle_regack(struct mqtt_sn_client *client, struct mqtt_sn_param_regack *p)
 {
-	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_by_msg_id(client, p->msg_id);
 
 	if (!topic) {
 		LOG_ERR("Can't REGACK, no topic found");
@@ -1307,7 +1462,7 @@ static void handle_publish(struct mqtt_sn_client *client, struct mqtt_sn_param_p
 
 static void handle_puback(struct mqtt_sn_client *client, struct mqtt_sn_param_puback *p)
 {
-	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_by_msg_id(client, p->msg_id);
 
 	if (!pub) {
 		LOG_ERR("No matching PUBLISH found for msg id %u", p->msg_id);
@@ -1320,7 +1475,7 @@ static void handle_puback(struct mqtt_sn_client *client, struct mqtt_sn_param_pu
 static void handle_pubrec(struct mqtt_sn_client *client, struct mqtt_sn_param_pubrec *p)
 {
 	struct mqtt_sn_param response = {.type = MQTT_SN_MSG_TYPE_PUBREL};
-	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_by_msg_id(client, p->msg_id);
 
 	if (!pub) {
 		LOG_ERR("No matching PUBLISH found for msg id %u", p->msg_id);
@@ -1346,7 +1501,7 @@ static void handle_pubrel(struct mqtt_sn_client *client, struct mqtt_sn_param_pu
 
 static void handle_pubcomp(struct mqtt_sn_client *client, struct mqtt_sn_param_pubcomp *p)
 {
-	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_by_msg_id(client, p->msg_id);
 
 	if (!pub) {
 		LOG_ERR("No matching PUBLISH found for msg id %u", p->msg_id);
@@ -1358,7 +1513,7 @@ static void handle_pubcomp(struct mqtt_sn_client *client, struct mqtt_sn_param_p
 
 static void handle_suback(struct mqtt_sn_client *client, struct mqtt_sn_param_suback *p)
 {
-	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_by_msg_id(client, p->msg_id);
 
 	if (!topic) {
 		LOG_ERR("No matching SUBSCRIBE found for msg id %u", p->msg_id);
@@ -1376,7 +1531,7 @@ static void handle_suback(struct mqtt_sn_client *client, struct mqtt_sn_param_su
 
 static void handle_unsuback(struct mqtt_sn_client *client, struct mqtt_sn_param_unsuback *p)
 {
-	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_by_msg_id(client, p->msg_id);
 
 	if (!topic || topic->state != MQTT_SN_TOPIC_STATE_UNSUBSCRIBING) {
 		LOG_ERR("No matching UNSUBSCRIBE found for msg id %u", p->msg_id);

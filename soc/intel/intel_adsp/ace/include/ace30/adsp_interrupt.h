@@ -36,6 +36,7 @@
 #define ACE_INTL_DTF      26
 #define ACE_INTL_FLV      27
 #define ACE_INTL_DPDMA    28
+#define ACE_INTL_MIC_PRIV 29
 
 /* Device interrupt control for the low priority interrupts.  It
  * provides per-core masking and status checking: ACE_DINT is an array

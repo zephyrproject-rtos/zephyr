@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 test_name='ccc_update'
 test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_security_${test_name}_overlay-no_lazy_load_conf"
-simulation_id="${test_name}_2"
+simulation_id="${test_name}_no_lazy_load"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

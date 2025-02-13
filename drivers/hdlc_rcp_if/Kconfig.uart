@@ -12,6 +12,7 @@ config HDLC_RCP_IF_UART
 	bool "UART HDLC interface for Zephyr Openthread RCP host"
 	default y
 	depends on DT_HAS_UART_HDLC_RCP_IF_ENABLED
+	depends on UART_INTERRUPT_DRIVEN
 
 config OPENTHREAD_HDLC_RCP_IF_UART_RX_RING_BUFFER_SIZE
 	int "Set HDLC RCP IF UART RX ring buffer size"

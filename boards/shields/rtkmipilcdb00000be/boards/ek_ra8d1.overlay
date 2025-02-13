@@ -23,3 +23,7 @@
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
 };
+
+&zephyr_lcdif {
+	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+};

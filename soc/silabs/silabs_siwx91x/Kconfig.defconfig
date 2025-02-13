@@ -1,0 +1,39 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_SILABS_SIWX91X
+
+config WISECONNECT_NETWORK_STACK
+	bool
+	select CMSIS_RTOS_V2
+	select POLL
+	select DYNAMIC_THREAD
+	select THREAD_NAME
+	select THREAD_STACK_INFO
+	select THREAD_MONITOR
+	select INIT_STACKS
+
+if WISECONNECT_NETWORK_STACK
+
+# WiseConnect create threads with realtime priority. Default (10kHz) clock tick
+# prevent proper use of the system with these threads.
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1024
+
+config NUM_PREEMPT_PRIORITIES
+	default 56
+
+config CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT
+	default 2
+
+config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
+	default 1024
+
+config CMSIS_V2_THREAD_MAX_STACK_SIZE
+	default 2048
+
+endif # WISECONNECT_NETWORK_STACK
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_SILABS_SIWX91X
