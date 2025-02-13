@@ -517,7 +517,8 @@ static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 	nrf_ppi_event_endpoint_setup(NRF_PPI, HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI,
 				     HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT);
 	nrf_ppi_task_endpoint_setup(NRF_PPI, HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI,
-				    HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK(cc_s2));
+				    HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK(
+					    SW_SWITCH_TIMER_EVTS_COMP(group_index)));
 
 	nrf_ppi_channels_enable(
 		NRF_PPI,
