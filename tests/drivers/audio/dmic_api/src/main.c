@@ -21,14 +21,21 @@ static const struct device *dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic_dev));
 #define BYTES_PER_SAMPLE sizeof(int16_t)
 #define SLAB_ALIGN 4
 #define MAX_SAMPLE_RATE  48000
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pdm)
+#define PDM_CHANNELS 2
+#define SAMPLE_BIT_WIDTH 16
+#define BYTES_PER_SAMPLE sizeof(int16_t)
+#define SLAB_ALIGN 4
+#define MAX_SAMPLE_RATE  48000
+#else
+#error "Unsupported DMIC device"
+#endif
+
 /* Milliseconds to wait for a block to be read. */
 #define READ_TIMEOUT 1000
 /* Size of a block for 100 ms of audio data. */
 #define BLOCK_SIZE(_sample_rate, _number_of_channels) \
 	(BYTES_PER_SAMPLE * (_sample_rate / 10) * _number_of_channels)
-#else
-#error "Unsupported DMIC device"
-#endif
 
 /* Driver will allocate blocks from this slab to receive audio data into them.
  * Application, after getting a given block from the driver and processing its
