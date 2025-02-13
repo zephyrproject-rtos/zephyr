@@ -10,6 +10,8 @@
 #include <strings.h>
 LOG_MODULE_DECLARE(net_shell);
 
+#include <zephyr/sys/base64.h>
+
 #if defined(CONFIG_NET_L2_ETHERNET)
 #include <zephyr/net/ethernet.h>
 #endif
@@ -18,6 +20,7 @@ LOG_MODULE_DECLARE(net_shell);
 #endif
 #if defined(CONFIG_NET_L2_VIRTUAL)
 #include <zephyr/net/virtual.h>
+#include <zephyr/net/virtual_mgmt.h>
 #endif
 #if defined(CONFIG_ETH_PHY_DRIVER)
 #include <zephyr/net/phy.h>
@@ -156,6 +159,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
+	int ret;
+
+	ARG_UNUSED(ret); /* could be unused depending on config */
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_if_ipv6_prefix *prefix;
@@ -173,7 +179,6 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #endif
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 	struct ethernet_req_params params;
-	int ret;
 #endif
 	const char *extra;
 #if defined(CONFIG_NET_IP) || defined(CONFIG_NET_L2_ETHERNET_MGMT)
@@ -255,6 +260,38 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			   net_if_get_by_iface(orig_iface),
 			   iface2str(orig_iface, NULL),
 			   orig_iface);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_VPN) &&
+	    net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
+		if (net_virtual_get_iface_capabilities(iface) & VIRTUAL_INTERFACE_VPN) {
+			struct virtual_interface_req_params vparams = { 0 };
+			char public_key[NET_VIRTUAL_MAX_PUBLIC_KEY_LEN * 2];
+			size_t olen;
+
+			ret = net_mgmt(NET_REQUEST_VIRTUAL_INTERFACE_GET_PUBLIC_KEY,
+				       iface, &vparams, sizeof(vparams));
+			if (ret < 0) {
+				PR_WARNING("Cannot get VPN public key (%d)\n", ret);
+			} else {
+				bool all_zeros = true;
+
+				for (int i = 0;
+				     all_zeros && i < NET_VIRTUAL_MAX_PUBLIC_KEY_LEN; i++) {
+					all_zeros = (vparams.public_key.data[i] == 0);
+				}
+
+				if (all_zeros) {
+					PR("Public key: <not set>\n");
+				} else {
+					(void)base64_encode(public_key, sizeof(public_key),
+							    &olen, vparams.public_key.data,
+							    vparams.public_key.len);
+
+					PR("Public key: %s\n", public_key);
+				}
+			}
 		}
 	}
 #endif /* CONFIG_NET_L2_VIRTUAL */
