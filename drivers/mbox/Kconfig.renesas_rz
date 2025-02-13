@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_RENESAS_RZ_MHU
+	bool "Renesas RZ MHU Driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_MHU_MBOX_ENABLED
+	select USE_RZ_FSP_MHU
+	help
+	  Enable the RZ MHU driver.
+
+if MBOX_RENESAS_RZ_MHU
+
+config MBOX_BUSY_WAIT_TIMEOUT_US
+	int "MBOX send api timeout in microseconds"
+	default 10
+	help
+	  This option specifies the timeout duration for the `mbox_send` API to busy-wait for the
+	  remote processor to consume the previous message before sending a new one. If the
+	  message is not consumed within this time, `mbox_send` will return an error.
+	  Setting this value to 0 or a negative number will cause `mbox_send` to wait indefinitely
+	  until the previous message is consumed before sending a new one.
+
+endif
