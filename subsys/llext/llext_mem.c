@@ -62,26 +62,36 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 			      enum llext_mem mem_idx, const struct llext_load_param *ldr_parm)
 {
 	int ret;
+	uintptr_t region_alloc = ldr->sects[mem_idx].sh_size;
+	uintptr_t region_align = ldr->sects[mem_idx].sh_addralign;
 
-	if (!ldr->sects[mem_idx].sh_size) {
+	if (!region_alloc) {
 		return 0;
 	}
-	ext->mem_size[mem_idx] = ldr->sects[mem_idx].sh_size;
+	ext->mem_size[mem_idx] = region_alloc;
 
 	if (IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
 		if (ldr->sects[mem_idx].sh_type != SHT_NOBITS) {
 			/* Directly use data from the ELF buffer if peek() is supported */
 			ext->mem[mem_idx] = llext_peek(ldr, ldr->sects[mem_idx].sh_offset);
 			if (ext->mem[mem_idx]) {
-				llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
-						    ldr->sects[mem_idx].sh_size);
-				ext->mem_on_heap[mem_idx] = false;
-				return 0;
+				if (!IS_ALIGNED(ext->mem[mem_idx], region_align) &&
+				    !(ldr_parm && ldr_parm->pre_located)) {
+					LOG_WRN("Cannot peek region %d: %p not aligned to 0x%zx",
+						mem_idx, ext->mem[mem_idx], (size_t)region_align);
+				} else {
+					llext_init_mem_part(ext, mem_idx,
+							    (uintptr_t)ext->mem[mem_idx],
+							    region_alloc);
+					ext->mem_on_heap[mem_idx] = false;
+					return 0;
+				}
 			}
 		} else if (ldr_parm && ldr_parm->pre_located) {
 			/*
-			 * ldr_parm cannot be NULL here with the current flow, but
-			 * we add a check to make it future-proof
+			 * In pre-located files all regions, including BSS,
+			 * are placed by the user with a linker script. No
+			 * additional memory allocation is needed here.
 			 */
 			ext->mem[mem_idx] = NULL;
 			ext->mem_on_heap[mem_idx] = false;
@@ -90,34 +100,41 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	if (ldr_parm && ldr_parm->pre_located) {
+		/* The ELF file is supposed to be pre-located, but some
+		 * regions are not accessible or not in the correct place.
+		 */
 		return -EFAULT;
 	}
 
-	/* On ARM with an MPU a pow(2, N)*32 sized and aligned region is needed,
-	 * otherwise its typically an mmu page (sized and aligned memory region)
-	 * we are after that we can assign memory permission bits on.
+	/*
+	 * Calculate the desired region size and alignment for a new allocation.
 	 */
-#ifndef CONFIG_ARM_MPU
-	const uintptr_t sect_alloc = ROUND_UP(ldr->sects[mem_idx].sh_size, LLEXT_PAGE_SIZE);
-	const uintptr_t sect_align = LLEXT_PAGE_SIZE;
-#else
-	uintptr_t sect_alloc = LLEXT_PAGE_SIZE;
+	if (IS_ENABLED(CONFIG_ARM_MPU)) {
+		/* On ARM with an MPU, regions must be sized and aligned to the same
+		 * power of two (larger than 32).
+		 */
+		uintptr_t block_size = MAX(MAX(region_alloc, region_align), LLEXT_PAGE_SIZE);
 
-	while (sect_alloc < ldr->sects[mem_idx].sh_size) {
-		sect_alloc *= 2;
+		block_size = 1 << LOG2CEIL(block_size); /* align to next power of two */
+		region_alloc = block_size;
+		region_align = block_size;
+	} else {
+		/* Otherwise, round the region to multiples of LLEXT_PAGE_SIZE. */
+		region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
+		region_align = MAX(region_align, LLEXT_PAGE_SIZE);
 	}
-	uintptr_t sect_align = sect_alloc;
-#endif
 
-	ext->mem[mem_idx] = llext_aligned_alloc(sect_align, sect_alloc);
+	ext->mem[mem_idx] = llext_aligned_alloc(region_align, region_alloc);
 	if (!ext->mem[mem_idx]) {
+		LOG_ERR("Failed allocating %zd bytes %zd-aligned for region %d",
+			(size_t)region_alloc, (size_t)region_align, mem_idx);
 		return -ENOMEM;
 	}
 
-	ext->alloc_size += sect_alloc;
+	ext->alloc_size += region_alloc;
 
 	llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
-		sect_alloc);
+		region_alloc);
 
 	if (ldr->sects[mem_idx].sh_type == SHT_NOBITS) {
 		memset(ext->mem[mem_idx], 0, ldr->sects[mem_idx].sh_size);

@@ -9,7 +9,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/ztest_assert.h>
 
-__section(".detach") void detached_entry(void)
+Z_GENERIC_SECTION(.detach) void detached_entry(void)
 {
 	static int data_cnt = -3;
 	static unsigned int bss_cnt;
