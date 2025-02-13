@@ -264,9 +264,9 @@ static int wm8904_in_update(
 static int wm8904_in_volume_config(const struct device *dev, audio_channel_t channel, int volume)
 {
 	const uint16_t val = WM8904_REGVAL_IN_VOL(0, volume);
-	const uint16_t mask = WM8904_REGMASK_IN_MUTE;
+	const uint16_t mask = WM8904_REGMASK_IN_VOLUME;
 
-	return wm8904_in_update(dev, channel, val, mask);
+	return wm8904_in_update(dev, channel, mask, val);
 }
 
 static int wm8904_in_mute_config(const struct device *dev, audio_channel_t channel, bool mute)
@@ -274,7 +274,7 @@ static int wm8904_in_mute_config(const struct device *dev, audio_channel_t chann
 	const uint16_t val = WM8904_REGVAL_IN_VOL(mute, 0);
 	const uint16_t mask = WM8904_REGMASK_IN_MUTE;
 
-	return wm8904_in_update(dev, channel, val, mask);
+	return wm8904_in_update(dev, channel, mask, val);
 }
 
 static int wm8904_route_input(const struct device *dev, audio_channel_t channel, uint32_t input)
