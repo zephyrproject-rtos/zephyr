@@ -517,11 +517,6 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA2;
 			nxp_wlan_uap_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_uap_network.security.psk, params->psk, params->psk_length);
-		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
-			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA2;
-			nxp_wlan_uap_network.security.key_mgmt = WLAN_KEY_MGMT_PSK_SHA256;
-			nxp_wlan_uap_network.security.psk_len = params->psk_length;
-			strncpy(nxp_wlan_uap_network.security.psk, params->psk, params->psk_length);
 		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
 			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA3_SAE;
 			nxp_wlan_uap_network.security.password_len = params->psk_length;
@@ -721,9 +716,11 @@ static int nxp_wifi_process_results(unsigned int count)
 		if (scan_result.wpa2) {
 			res.security = WIFI_SECURITY_TYPE_PSK;
 		}
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 		if (scan_result.wpa2_sha256) {
 			res.security = WIFI_SECURITY_TYPE_PSK_SHA256;
 		}
+#endif
 		if (scan_result.wpa3_sae) {
 			res.security = WIFI_SECURITY_TYPE_SAE;
 		}
@@ -940,11 +937,6 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2;
 			nxp_wlan_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_network.security.psk, params->psk, params->psk_length);
-		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
-			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2;
-			nxp_wlan_network.security.key_mgmt = WLAN_KEY_MGMT_PSK_SHA256;
-			nxp_wlan_network.security.psk_len = params->psk_length;
-			strncpy(nxp_wlan_network.security.psk, params->psk, params->psk_length);
 		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
 			nxp_wlan_network.security.type = WLAN_SECURITY_WPA3_SAE;
 			nxp_wlan_network.security.password_len = params->psk_length;
@@ -1033,26 +1025,15 @@ static int nxp_wifi_disconnect(const struct device *dev)
 	return 0;
 }
 
-static inline enum wifi_security_type nxp_wifi_key_mgmt_to_zephyr(int key_mgmt, int pwe)
+static inline enum wifi_security_type nxp_wifi_security_type(enum wlan_security_type type)
 {
-	switch (key_mgmt) {
-	case WLAN_KEY_MGMT_NONE:
+	switch (type) {
+	case WLAN_SECURITY_NONE:
 		return WIFI_SECURITY_TYPE_NONE;
-	case WLAN_KEY_MGMT_PSK:
+	case WLAN_SECURITY_WPA2:
 		return WIFI_SECURITY_TYPE_PSK;
-	case WLAN_KEY_MGMT_PSK_SHA256:
-		return WIFI_SECURITY_TYPE_PSK_SHA256;
-	case WLAN_KEY_MGMT_SAE:
-		if (pwe == 1) {
-			return WIFI_SECURITY_TYPE_SAE_H2E;
-		} else if (pwe == 2) {
-			return WIFI_SECURITY_TYPE_SAE_AUTO;
-		} else {
-			return WIFI_SECURITY_TYPE_SAE_HNP;
-		}
+	case WLAN_SECURITY_WPA3_SAE:
 		return WIFI_SECURITY_TYPE_SAE;
-	case WLAN_KEY_MGMT_SAE | WLAN_KEY_MGMT_PSK:
-		return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
 	}
@@ -1128,9 +1109,8 @@ static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_statu
 				status->band = nxp_wlan_uap_network.acs_band;
 			}
 
-			status->security = nxp_wifi_key_mgmt_to_zephyr(
-				nxp_wlan_uap_network.security.key_mgmt,
-				nxp_wlan_uap_network.security.pwe_derivation);
+			status->security =
+				nxp_wifi_security_type(nxp_wlan_uap_network.security.type);
 			status->mfp =
 				nxp_wlan_uap_network.security.mfpr
 					? WIFI_MFP_REQUIRED
@@ -1211,9 +1191,7 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 
 			status->band = nxp_wlan_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
 								     : WIFI_FREQ_BAND_2_4_GHZ;
-			status->security = nxp_wifi_key_mgmt_to_zephyr(
-				nxp_wlan_network.security.key_mgmt,
-				nxp_wlan_network.security.pwe_derivation);
+			status->security = nxp_wifi_security_type(nxp_wlan_network.security.type);
 			status->mfp = nxp_wlan_network.security.mfpr ? WIFI_MFP_REQUIRED :
 				(nxp_wlan_network.security.mfpc ? WIFI_MFP_OPTIONAL : 0);
 		}
