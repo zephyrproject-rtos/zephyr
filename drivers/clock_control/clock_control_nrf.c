@@ -681,6 +681,17 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 	const struct device *dev = CLOCK_DEVICE;
 
 	switch (event) {
+#if NRF_CLOCK_HAS_XO_TUNE
+	case NRFX_CLOCK_EVT_XO_TUNED:
+		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
+		break;
+	case NRFX_CLOCK_EVT_HFCLK_STARTED:
+		/* HFCLK is stable after XOTUNED event.
+		 * HFCLK_STARTED means only that clock has been started.
+		 */
+		break;
+#else
+	/* HFCLK started should be used only if tune operation is done implicitly. */
 	case NRFX_CLOCK_EVT_HFCLK_STARTED:
 	{
 		struct nrf_clock_control_sub_data *data =
@@ -695,6 +706,8 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 
 		break;
 	}
+#endif
+
 #if NRF_CLOCK_HAS_HFCLK192M
 	case NRFX_CLOCK_EVT_HFCLK192M_STARTED:
 		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK192M);
@@ -725,7 +738,6 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 	case NRFX_CLOCK_EVT_PLL_STARTED:
 #endif
 #if NRF_CLOCK_HAS_XO_TUNE
-	case NRFX_CLOCK_EVT_XO_TUNED:
 	case NRFX_CLOCK_EVT_XO_TUNE_ERROR:
 	case NRFX_CLOCK_EVT_XO_TUNE_FAILED:
 #endif
