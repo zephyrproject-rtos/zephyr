@@ -70,30 +70,32 @@ with open(ZEPHYR_BASE / "SDK_VERSION") as f:
 # -- General configuration ------------------------------------------------
 
 extensions = [
-    "sphinx_rtd_theme",
-    "sphinx.ext.todo",
-    "sphinx.ext.extlinks",
+    # zephyr-keep-sorted-start re(^    ")
+    "notfound.extension",
     "sphinx.ext.autodoc",
+    "sphinx.ext.extlinks",
     "sphinx.ext.graphviz",
+    "sphinx.ext.todo",
+    "sphinx_copybutton",
+    "sphinx_rtd_theme",
+    "sphinx_sitemap",
+    "sphinx_tabs.tabs",
+    "sphinx_togglebutton",
     "sphinxcontrib.jquery",
+    "zephyr.api_overview",
     "zephyr.application",
+    "zephyr.domain",
+    "zephyr.doxybridge",
+    "zephyr.doxyrunner",
+    "zephyr.doxytooltip",
+    "zephyr.dtcompatible-role",
+    "zephyr.external_content",
+    "zephyr.gh_utils",
     "zephyr.html_redirects",
     "zephyr.kconfig",
-    "zephyr.dtcompatible-role",
     "zephyr.link-roles",
-    "sphinx_tabs.tabs",
-    "sphinx_sitemap",
-    "zephyr.doxyrunner",
-    "zephyr.doxybridge",
-    "zephyr.doxytooltip",
-    "zephyr.gh_utils",
     "zephyr.manifest_projects_table",
-    "notfound.extension",
-    "sphinx_copybutton",
-    "sphinx_togglebutton",
-    "zephyr.external_content",
-    "zephyr.domain",
-    "zephyr.api_overview",
+    #zephyr-keep-sorted-stop
 ]
 
 # Only use image conversion when it is really needed, e.g. LaTeX build.
