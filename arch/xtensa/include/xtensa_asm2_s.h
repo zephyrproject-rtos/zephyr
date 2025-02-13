@@ -193,6 +193,41 @@
 .endm
 
 /*
+ * ODD_REG_RESTORE
+ *
+ * Restores the oddball shift/loop context registers in the base save
+ * area pointed to by the register specified by parameter BSA_PTR.
+ * On exit, the scratch register specified by parameter SCRATCH_REG
+ * will have been modified.
+ *
+ * Does not restore the PS/PC save locations.
+ */
+.macro ODD_REG_RESTORE SCRATCH_REG, BSA_PTR
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_sar_OFFSET
+	wsr.sar \SCRATCH_REG
+#if XCHAL_HAVE_LOOPS
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lbeg_OFFSET
+	wsr.lbeg \SCRATCH_REG
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lend_OFFSET
+	wsr.lend \SCRATCH_REG
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lcount_OFFSET
+	wsr.lcount \SCRATCH_REG
+#endif
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_exccause_OFFSET
+	wsr.exccause \SCRATCH_REG
+#if XCHAL_HAVE_S32C1I
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_scompare1_OFFSET
+	wsr.scompare1 \SCRATCH_REG
+#endif
+#if XCHAL_HAVE_THREADPTR && \
+	(defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_LOCAL_STORAGE))
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_threadptr_OFFSET
+	wur.THREADPTR \SCRATCH_REG
+#endif
+
+.endm
+
+/*
  * CROSS_STACK_CALL
  *
  * Sets the stack up carefully such that a "cross stack" call can spill
