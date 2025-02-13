@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * Copyright (c) 2025 TOKITA Hiroshi
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -7,6 +6,11 @@
 
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <arm/renesas/ra/ra4/r7fa4m1ax.dtsi>
+
+/delete-node/ &ioport5;
+/delete-node/ &ioport6;
+/delete-node/ &ioport7;
+/delete-node/ &ioport8;
 
 / {
        soc {
