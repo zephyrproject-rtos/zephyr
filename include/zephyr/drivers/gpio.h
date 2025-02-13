@@ -810,7 +810,8 @@ __subsystem struct gpio_driver_api {
 				gpio_port_pins_t pins);
 	int (*pin_interrupt_configure)(const struct device *port,
 				       gpio_pin_t pin,
-				       enum gpio_int_mode, enum gpio_int_trig);
+				       enum gpio_int_mode mode,
+				       enum gpio_int_trig trig);
 	int (*manage_callback)(const struct device *port,
 			       struct gpio_callback *cb,
 			       bool set);
