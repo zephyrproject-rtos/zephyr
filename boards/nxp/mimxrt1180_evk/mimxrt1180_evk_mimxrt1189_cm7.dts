@@ -31,10 +31,6 @@
 	};
 };
 
-&enetc_psi0 {
-	status = "disabled";
-};
-
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
