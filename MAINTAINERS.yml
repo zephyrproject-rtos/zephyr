@@ -525,6 +525,9 @@ Bluetooth Classic:
     - lylezhu2012
   collaborators:
     - jhedberg
+    - MarkWangChinese
+    - gzh-terry
+    - makeshi
   files:
     - doc/connectivity/bluetooth/shell/classic/a2dp.rst
     - subsys/bluetooth/common/
