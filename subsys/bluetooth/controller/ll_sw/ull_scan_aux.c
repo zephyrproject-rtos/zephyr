@@ -847,6 +847,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		if (unlikely(scan->is_stop)) {
 			goto ull_scan_aux_rx_flush;
 		}
+
+		/* Remove auxiliary context association with scan context so
+		 * that LLL can differentiate it to being ULL scheduling.
+		 */
+		if ((lll != NULL) && (lll->lll_aux == lll_aux)) {
+			lll->lll_aux = NULL;
+		}
 	} else {
 		struct ll_sync_set *sync_set;
 
@@ -1423,6 +1430,11 @@ static void flush(void *param)
 	scan = HDR_LLL2ULL(lll);
 	scan = ull_scan_is_valid_get(scan);
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || scan) {
+		/* Remove auxiliary context association with scan context */
+		if (lll->lll_aux == &aux->lll) {
+			lll->lll_aux = NULL;
+		}
+
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		lll->scan_aux_score = aux->lll.hdr.score;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
