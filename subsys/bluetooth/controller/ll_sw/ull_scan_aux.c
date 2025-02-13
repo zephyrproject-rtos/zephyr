@@ -1126,6 +1126,10 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx)
 	param_ull = HDR_LLL2ULL(rx->rx_ftr.param);
 
 	if (ull_scan_is_valid_get(param_ull)) {
+		/* Release aux context when LLL scheduled auxiliary PDU
+		 * reception is_abort on duration expire or aborted in the
+		 * unreserved time space.
+		 */
 		struct lll_scan *lll;
 
 		/* Mark for buffer for release */
@@ -1134,8 +1138,21 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx)
 		lll = rx->rx_ftr.param;
 		lll_aux = rx->rx_ftr.lll_aux;
 
+		/* Under race condition when LLL scheduling a reception of
+		 * auxiliary PDU, a scan aux context may be assigned late and
+		 * the node rx releasing the aux context will not have it.
+		 * Release the scan aux context assigned in the scan context.
+		 */
+		if (!lll_aux) {
+			lll_aux = lll->lll_aux;
+		}
+
 	} else if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) ||
 		   ull_scan_aux_is_valid_get(param_ull)) {
+		/* Release aux context when ULL scheduled auxiliary PDU
+		 * reception is aborted.
+		 */
+
 		/* Mark for buffer for release */
 		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
@@ -1150,8 +1167,20 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx)
 		/* reset data len total */
 		sync->data_len = 0U;
 
+		/* Release aux context in case of chain PDU reception, otherwise
+		 * lll_aux is NULL.
+		 */
 		lll = rx->rx_ftr.param;
 		lll_aux = rx->rx_ftr.lll_aux;
+
+		/* Under race condition when LLL scheduling a reception of
+		 * auxiliary PDU, a scan aux context may be assigned late and
+		 * the node rx releasing the aux context will not have it.
+		 * Release the scan aux context assigned in the sync context.
+		 */
+		if (!lll_aux) {
+			lll_aux = lll->lll_aux;
+		}
 
 		/* Change node type so HCI can dispatch report for truncated
 		 * data properly.
@@ -1183,13 +1212,16 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx)
 		scan = ull_scan_is_valid_get(scan);
 		if (scan) {
 			is_stop = scan->is_stop;
-		} else {
+		} else if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC)) {
 			struct lll_sync *sync_lll;
 			struct ll_sync_set *sync;
 
 			sync_lll = (void *)lll;
 			sync = HDR_LLL2ULL(sync_lll);
 			is_stop = sync->is_stop;
+		} else {
+			LL_ASSERT(0);
+			return;
 		}
 
 		if (!is_stop) {

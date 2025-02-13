@@ -1089,6 +1089,9 @@ static void isr_done_cleanup(void *param)
 		lll->is_stop = 1U;
 	}
 
+	/* LLL scheduled auxiliary PDU reception is_abort on duration expire or
+	 * aborted in the unreserved time space.
+	 */
 	if (lll->is_aux_sched) {
 		struct node_rx_pdu *node_rx2;
 

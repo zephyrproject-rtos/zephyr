@@ -635,7 +635,13 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	lll = prepare_param->param;
 	lll->skip_prepare += (lll->lazy_prepare + 1U);
 
-	/* Reset Sync context association with any Aux context as the chain reception is aborted. */
+	/* Reset Sync context association with any Aux context as the chain reception is aborted.
+	 * There is no race with ULL execution context assigning lll_aux as this is prepare being
+	 * aborted and no assignment would be done yet before the superior PDU is received.
+	 * TODO: This code here is redundant as isr_rx_done_cleanup() should ensure it is reset
+	 *       on every periodic sync chain done. Remove it if there is no regression running
+	 *       conformance tests.
+	 */
 	lll->lll_aux = NULL;
 
 	/* Extra done event, to check sync lost */
@@ -819,6 +825,11 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 		if (node_type != NODE_RX_TYPE_EXT_AUX_REPORT) {
 			/* Reset Sync context association with any Aux context
 			 * as a new chain is being setup for reception here.
+			 * TODO: This code here is redundant as
+			 *       isr_rx_done_cleanup() should ensure it is reset
+			 *       on every periodic sync chain done. Remove it if
+			 *       there is no regression running conformance
+			 *       tests.
 			 */
 			lll->lll_aux = NULL;
 
@@ -1189,7 +1200,11 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_
 {
 	struct event_done_extra *e;
 
-	/* Reset Sync context association with any Aux context as the chain reception is done. */
+	/* Reset Sync context association with any Aux context as the chain reception is done.
+	 * By code inspection there should not be a race that ULL execution context assigns lll_aux
+	 * that would be reset here, because either we are here not receiving a chain PDU or the
+	 * lll_aux has been set in the node rx type NODE_RX_TYPE_EXT_AUX_RELEASE before we are here.
+	 */
 	lll->lll_aux = NULL;
 
 	/* Calculate and place the drift information in done event */
