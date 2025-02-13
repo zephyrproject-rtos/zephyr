@@ -318,10 +318,7 @@ static void ase_enter_state_idle(struct bt_ascs_ase *ase)
 
 	ase->ep.receiver_ready = false;
 
-	if (stream->conn != NULL) {
-		bt_conn_unref(stream->conn);
-		stream->conn = NULL;
-	}
+	bt_bap_stream_detach(stream);
 
 	ops = stream->ops;
 	if (ops != NULL && ops->released != NULL) {
