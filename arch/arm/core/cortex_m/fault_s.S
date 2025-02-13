@@ -108,6 +108,12 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_exc_spurious)
 	 */
 	add sp, #40
 #endif
+#ifdef CONFIG_USE_SWITCH
+	/* Need to hit the standard exit path to allow handlers to
+	 * context switch (e.g. because they aborted the thread).
+	 * Non-switch mode will have hand-flagged a PendSV
+	 */
+	bl arm_m_legacy_exit
+#endif
 	pop {r0, pc}
-
 	.end
