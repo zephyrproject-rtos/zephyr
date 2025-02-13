@@ -1184,7 +1184,6 @@ static int wifi_get_version(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION, wifi_get_version);
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 static int wifi_btm_query(uint32_t mgmt_request, struct net_if *iface, void *data, size_t len)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -1208,7 +1207,6 @@ static int wifi_btm_query(uint32_t mgmt_request, struct net_if *iface, void *dat
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY, wifi_btm_query);
-#endif
 
 static int wifi_get_connection_params(uint32_t mgmt_request, struct net_if *iface,
 			void *data, size_t len)
