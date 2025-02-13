@@ -560,12 +560,6 @@ void log_backend_enable(struct log_backend const *const backend,
 			void *ctx,
 			uint32_t level)
 {
-	/* As first slot in filtering mask is reserved, backend ID has offset.*/
-	uint32_t id = LOG_FILTER_FIRST_BACKEND_SLOT_IDX;
-
-	id += backend - log_backend_get(0);
-
-	log_backend_id_set(backend, id);
 	backend->cb->level = level;
 	backend_filter_set(backend, level);
 	log_backend_activate(backend, ctx);
