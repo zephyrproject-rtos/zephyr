@@ -5,6 +5,7 @@
 source "drivers/sensor/adi/adltc2990/Kconfig"
 source "drivers/sensor/adi/adt7310/Kconfig"
 source "drivers/sensor/adi/adt7420/Kconfig"
+source "drivers/sensor/adi/adt75/Kconfig"
 source "drivers/sensor/adi/adxl345/Kconfig"
 source "drivers/sensor/adi/adxl362/Kconfig"
 source "drivers/sensor/adi/adxl367/Kconfig"
