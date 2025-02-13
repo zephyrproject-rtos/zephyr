@@ -21,4 +21,17 @@
 			low-power-enable;
 		};
 	};
+
+	/omit-if-no-ref/ pwm20_default: pwm20_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 7)>;
+		};
+	};
+
+	/omit-if-no-ref/ pwm20_sleep: pwm20_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 7)>;
+			low-power-enable;
+		};
+	};
 };
