@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config ICM45686
+	bool "ICM45686 High-precision 6-Axis Motion Tracking Device"
+	default y
+	depends on DT_HAS_INVENSENSE_ICM45686_ENABLED
+	select SPI
+	select SPI_RTIO
+	help
+	  Enable driver for ICM45686 High-precision 6-axis motion
+	  tracking device.
