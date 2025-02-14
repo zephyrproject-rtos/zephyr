@@ -82,6 +82,8 @@ static void do_coap_download(struct sockaddr *sa)
 	/* Wait for CoAP request to complete */
 	k_sem_take(&coap_done_sem, K_FOREVER);
 
+	coap_client_cancel_requests(&client);
+
 	zsock_close(sockfd);
 }
 
