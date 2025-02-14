@@ -20,7 +20,6 @@ LOG_MODULE_REGISTER(gpio_max14916);
 #include "gpio_max14916.h"
 #include "gpio_max149x6.h"
 
-#define DT_DRV_COMPAT adi_max14916_gpio
 
 static int gpio_max14916_diag_chan_get(const struct device *dev);
 
@@ -397,4 +396,10 @@ static DEVICE_API(gpio, gpio_max14916_api) = {
 			      &max14916_##id##_cfg, POST_KERNEL,                                   \
 			      CONFIG_GPIO_MAX14916_INIT_PRIORITY, &gpio_max14916_api);
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_max14915_gpio
+DT_INST_FOREACH_STATUS_OKAY(GPIO_MAX14906_DEVICE)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_max14916_gpio
 DT_INST_FOREACH_STATUS_OKAY(GPIO_MAX14906_DEVICE)
