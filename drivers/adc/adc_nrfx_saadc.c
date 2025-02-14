@@ -672,7 +672,7 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async    = adc_nrfx_read_async,
 #endif
-#if defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) ||  defined(CONFIG_SOC_NRF54L15)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 	.ref_internal  = 900,
 #elif defined(CONFIG_NRF_PLATFORM_HALTIUM)
 	.ref_internal  = 1024,
