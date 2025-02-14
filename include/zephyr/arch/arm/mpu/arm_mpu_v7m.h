@@ -38,9 +38,7 @@
 /* Privileged Read Only, Unprivileged Read Only */
 #define P_RO_U_RO       0x6
 #define P_RO_U_RO_Msk   ((P_RO_U_RO << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
-/* Privileged Read Only, Unprivileged Read Only */
-#define RO              0x7
-#define RO_Msk          ((RO << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+/* Note: mode 0x7 is the same as 0x6 but supported only by Cortex-M, not Cortex-R */
 
 /* Attribute flag for not-allowing execution (eXecute Never) */
 #define NOT_EXEC MPU_RASR_XN_Msk
@@ -126,7 +124,8 @@
 #define REGION_FLASH_ATTR(size)                                                                    \
 	{(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE | size | P_RW_U_RO_Msk)}
 #else
-#define REGION_FLASH_ATTR(size) {(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE | size | RO_Msk)}
+#define REGION_FLASH_ATTR(size)                                                                    \
+	{(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE | size | P_RO_U_RO_Msk)}
 #endif
 #define REGION_PPB_ATTR(size)    {(STRONGLY_ORDERED_SHAREABLE | size | P_RW_U_NA_Msk)}
 #define REGION_IO_ATTR(size)     {(DEVICE_NON_SHAREABLE | size | P_RW_U_NA_Msk)}
