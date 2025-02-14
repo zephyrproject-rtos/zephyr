@@ -715,10 +715,10 @@ class KconfigCheck(ComplianceTest):
 
         grep_stdout_boards = git("grep", "--line-number", "-I", "--null",
                                  "--perl-regexp", regex_boards, "--", ":boards",
-                                 cwd=Path(GIT_TOP))
+                                 cwd=ZEPHYR_BASE)
         grep_stdout_socs = git("grep", "--line-number", "-I", "--null",
                                "--perl-regexp", regex_socs, "--", ":soc",
-                               cwd=Path(GIT_TOP))
+                               cwd=ZEPHYR_BASE)
 
         # Board processing
         # splitlines() supports various line terminators
