@@ -503,6 +503,7 @@ struct i3c_device_desc;
 struct i3c_device_id;
 struct i3c_i2c_device_desc;
 struct i3c_target_config;
+struct i3c_config_target;
 
 __subsystem struct i3c_driver_api {
 	/**
@@ -895,7 +896,6 @@ struct i3c_device_desc {
 	const struct device * const dev;
 
 	/** Device Provisioned ID */
-	/* TODO: bring back the bitfield */
 	const uint64_t pid;
 
 	/**
@@ -1378,6 +1378,48 @@ static inline int i3c_configure(const struct device *dev,
 }
 
 /**
+ * @brief Get the controller device configuration for an I3C device.
+ *
+ * This function retrieves the configuration parameters specific to an
+ * I3C controller device. It is a type-safe wrapper around @ref i3c_config_get
+ * that ensures the correct structure type is passed.
+ *
+ * @param dev Pointer to the I3C controller device instance.
+ * @param config Pointer to a @ref i3c_config_controller structure
+ *               where the configuration will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output errors.
+ * @retval -ENOSYS If not implemented.
+ */
+static inline int i3c_configure_controller(const struct device *dev,
+					   struct i3c_config_controller *config)
+{
+	return i3c_configure(dev, I3C_CONFIG_CONTROLLER, config);
+}
+
+/**
+ * @brief Get the target device configuration for an I3C device.
+ *
+ * This function retrieves the configuration parameters specific to an
+ * I3C target device. It is a type-safe wrapper around @ref i3c_config_get
+ * that ensures the correct structure type is passed.
+ *
+ * @param dev Pointer to the I3C controller device instance.
+ * @param config Pointer to a @ref i3c_config_target structure
+ *                    where the configuration will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output errors.
+ * @retval -ENOSYS If not implemented.
+ */
+static inline int i3c_configure_target(const struct device *dev,
+				       struct i3c_config_target *config)
+{
+	return i3c_configure(dev, I3C_CONFIG_TARGET, config);
+}
+
+/**
  * @brief Get configuration of the I3C hardware.
  *
  * This provides a way to get the current configuration of the I3C hardware.
@@ -1408,6 +1450,48 @@ static inline int i3c_config_get(const struct device *dev,
 	}
 
 	return api->config_get(dev, type, config);
+}
+
+/**
+ * @brief Get the controller device configuration for an I3C device.
+ *
+ * This function sets the configuration parameters specific to an
+ * I3C controller device. It is a type-safe wrapper around @ref i3c_config_get
+ * that ensures the correct structure type is passed.
+ *
+ * @param[in] dev Pointer to the I3C controller device instance.
+ * @param[out] config Pointer to a @ref i3c_config_controller structure
+ *                    where the configuration will be used.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output errors.
+ * @retval -ENOSYS If not implemented.
+ */
+static inline int i3c_config_get_controller(const struct device *dev,
+					    struct i3c_config_controller *config)
+{
+	return i3c_config_get(dev, I3C_CONFIG_CONTROLLER, config);
+}
+
+/**
+ * @brief Get the target device configuration for an I3C device.
+ *
+ * This function sets the configuration parameters specific to an
+ * I3C target device. It is a type-safe wrapper around @ref i3c_config_get
+ * that ensures the correct structure type is passed.
+ *
+ * @param[in] dev Pointer to the I3C controller device instance.
+ * @param[out] config Pointer to a @ref i3c_config_target structure
+ *                    where the configuration will be used.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output errors.
+ * @retval -ENOSYS If not implemented.
+ */
+static inline int i3c_config_get_target(const struct device *dev,
+					struct i3c_config_target *config)
+{
+	return i3c_config_get(dev, I3C_CONFIG_TARGET, config);
 }
 
 /**

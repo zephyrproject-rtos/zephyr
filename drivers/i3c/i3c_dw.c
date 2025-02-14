@@ -2001,9 +2001,9 @@ static int dw_i3c_config_get(const struct device *dev, enum i3c_config_type type
 
 		if (!(sys_read32(dev_config->regs + PRESENT_STATE) &
 		      PRESENT_STATE_CURRENT_MASTER)) {
-			target_config->enable = true;
+			target_config->enabled = true;
 		} else {
-			target_config->enable = false;
+			target_config->enabled = false;
 		}
 	} else {
 		return -EINVAL;
