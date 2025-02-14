@@ -27,6 +27,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		sdhc0 = &sdio0;
 	};
 
 	sram0: memory@SSRAM_BASE_NAME {
@@ -133,9 +134,30 @@
 	status = "okay";
 };
 
+&sdio0 {
+	pinctrl-0 = <&sdio0_default>;
+	pinctrl-names = "default";
+	txdelay = <0>;
+	rxdelay = <0>;
+	cd-gpios = <&gpio64_95 16 GPIO_ACTIVE_LOW>;
+	wp-gpios = <&gpio64_95 17 GPIO_ACTIVE_LOW>;
+	status = "okay";
+	mmc {
+		compatible = "zephyr,mmc-disk";
+        disk-name = "SD";
+		status = "okay";
+	};
+};
+
 zephyr_udc0: &usb {
 	vddusb33-gpios = <&gpio64_95 27 (GPIO_PULL_UP)>;
 	vddusb0p9-gpios = <&gpio64_95 26 (GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&pdm0 {
+	pinctrl-0 = <&pdm0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

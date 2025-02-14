@@ -28,6 +28,36 @@ config SD_STACK
 	help
 	  Enable SD card support.
 
+if SDIO_STACK
+config SDIO_CARD_1BIT_WIDTH
+	bool "SDIO CARD 1 bit width support"
+	default n
+	help
+	  Enable SDIO card 1 bit width mode.
+endif # SDIO_STACK
+
+if MMC_STACK
+
+config MMC_DDR50
+	bool "MMC DDR50 mode support"
+	default n
+	help
+	  Enable MMC DDR50 mode.
+
+config MMC_CARD_4BIT_WIDTH
+	bool "MMC CARD 4 bit width support"
+	default n
+	help
+	  Enable MMC card 4 bit width mode.
+
+config MMC_CARD_8BIT_WIDTH
+	bool "MMC CARD 8 bit width support"
+	default n
+	help
+	  Enable MMC card 8 bit width mode.
+
+endif # MMC_STACK
+
 if SD_STACK
 
 module = SD
