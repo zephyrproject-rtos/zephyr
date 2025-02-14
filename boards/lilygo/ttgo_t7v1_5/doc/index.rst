@@ -35,6 +35,8 @@ The ``ttgo_t7v1_5/esp32/procpu`` board target supports the following hardware fe
 +-----------+------------+------------------+
 | I2C       | on-chip    | i2c_esp32        |
 +-----------+------------+------------------+
+| I2S       | on-chip    | i2s_esp32        |
++-----------+------------+------------------+
 | SPI       | on-chip    | spi_esp32_spim   |
 +-----------+------------+------------------+
 | LoRa      | SX1276     | lora_sx127x      |

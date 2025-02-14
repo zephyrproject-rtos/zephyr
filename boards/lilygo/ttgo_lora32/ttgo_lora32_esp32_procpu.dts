@@ -1,8 +1,10 @@
 /*
  * Copyright (c) 2024 Lothar Felten <lothar.felten@gmail.com>
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 /dts-v1/;
 
 #include <espressif/esp32/esp32_pico_d4.dtsi>
@@ -79,6 +81,18 @@
 		com-invdir;
 		prechargep = <0x22>;
 	};
+};
+
+&i2s0 {
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i2s1 {
+	pinctrl-0 = <&i2s1_default>;
+	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &spi3 {
