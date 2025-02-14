@@ -573,7 +573,7 @@ __subsystem struct i3c_driver_api {
 	 * @return See i3c_attach_i3c_device()
 	 */
 	int (*attach_i3c_device)(const struct device *dev,
-			struct i3c_device_desc *target);
+				 struct i3c_device_desc *target);
 
 	/**
 	 * I3C Address Update
@@ -589,8 +589,8 @@ __subsystem struct i3c_driver_api {
 	 * @return See i3c_reattach_i3c_device()
 	 */
 	int (*reattach_i3c_device)(const struct device *dev,
-			struct i3c_device_desc *target,
-			uint8_t old_dyn_addr);
+				   struct i3c_device_desc *target,
+				   uint8_t old_dyn_addr);
 
 	/**
 	 * I3C Device Detach
@@ -605,7 +605,7 @@ __subsystem struct i3c_driver_api {
 	 * @return See i3c_detach_i3c_device()
 	 */
 	int (*detach_i3c_device)(const struct device *dev,
-			struct i3c_device_desc *target);
+				 struct i3c_device_desc *target);
 
 	/**
 	 * I2C Device Attach
@@ -620,7 +620,7 @@ __subsystem struct i3c_driver_api {
 	 * @return See i3c_attach_i2c_device()
 	 */
 	int (*attach_i2c_device)(const struct device *dev,
-			struct i3c_i2c_device_desc *target);
+				 struct i3c_i2c_device_desc *target);
 
 	/**
 	 * I2C Device Detach
@@ -635,7 +635,7 @@ __subsystem struct i3c_driver_api {
 	 * @return See i3c_detach_i2c_device()
 	 */
 	int (*detach_i2c_device)(const struct device *dev,
-			struct i3c_i2c_device_desc *target);
+				 struct i3c_i2c_device_desc *target);
 
 	/**
 	 * Perform Dynamic Address Assignment via ENTDAA.
@@ -809,7 +809,7 @@ __subsystem struct i3c_driver_api {
 	 * @return See i3c_target_tx_write()
 	 */
 	int (*target_tx_write)(const struct device *dev,
-				 uint8_t *buf, uint16_t len, uint8_t hdr_mode);
+			       uint8_t *buf, uint16_t len, uint8_t hdr_mode);
 
 	/**
 	 * ACK or NACK controller handoffs
@@ -827,7 +827,7 @@ __subsystem struct i3c_driver_api {
 	 * @return See i3c_target_controller_handoff()
 	 */
 	int (*target_controller_handoff)(const struct device *dev,
-				      bool accept);
+					 bool accept);
 
 #ifdef CONFIG_I3C_RTIO
 	/**
@@ -841,7 +841,7 @@ __subsystem struct i3c_driver_api {
 	 * @return See i3c_iodev_submit()
 	 */
 	void (*iodev_submit)(const struct device *dev,
-				 struct rtio_iodev_sqe *iodev_sqe);
+			     struct rtio_iodev_sqe *iodev_sqe);
 #endif
 };
 
@@ -1291,7 +1291,7 @@ struct i3c_device_desc *i3c_dev_list_i3c_static_addr_find(const struct device *d
  *         `NULL` if none is found.
  */
 struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
-							   uint16_t addr);
+						       uint16_t addr);
 
 /**
  * @brief Helper function to find a usable address during ENTDAA.
