@@ -3372,27 +3372,15 @@ static void i3c_cdns_deftgts_work_fn(struct k_work *work)
 {
 	const struct cdns_i3c_config *config;
 	struct cdns_i3c_data *data;
-	struct i3c_ccc_deftgts *deftgts;
 	const struct device *dev;
 	uint32_t devs;
+	uint8_t count;
 	uint8_t n = 0;
 
 	data = CONTAINER_OF(work, struct cdns_i3c_data, deftgts_work);
 	dev = data->dev;
 	config = dev->config;
 	data = dev->data;
-	deftgts = data->common.deftgts;
-
-	/* Allocate memory for deftgts if not already */
-	if (!deftgts) {
-		deftgts =
-			malloc(sizeof(uint8_t) + sizeof(struct i3c_ccc_deftgts_active_controller) +
-			       (data->max_devs * sizeof(struct i3c_ccc_deftgts_target)));
-		if (!deftgts) {
-			LOG_ERR("%s: Failed to allocate memory for DEFTGTS", dev->name);
-			return;
-		}
-	}
 
 	devs = sys_read32(config->base + DEVS_CTRL) & DEVS_CTRL_DEVS_ACTIVE_MASK;
 	data->free_rr_slots = GENMASK(data->max_devs, 1) & ~devs;
@@ -3402,7 +3390,24 @@ static void i3c_cdns_deftgts_work_fn(struct k_work *work)
 	 * it was in DEFTGTS. Also, if the IP never had a DA, then the deftgts interrupt will
 	 * never fire. Subtract 1 as the active controller is not included in `count`.
 	 */
-	deftgts->count = POPCOUNT(devs) - 1;
+	count = POPCOUNT(devs) - 1;
+
+	/* Free memory if it was previously allocated */
+	if (data->common.deftgts) {
+		free(data->common.deftgts);
+		data->common.deftgts = NULL;
+	}
+
+	/* Allocate memory for deftgts */
+	data->common.deftgts =
+		malloc(sizeof(uint8_t) + sizeof(struct i3c_ccc_deftgts_active_controller) +
+		       (count * sizeof(struct i3c_ccc_deftgts_target)));
+	if (!data->common.deftgts) {
+		LOG_ERR("%s: Failed to allocate memory for DEFTGTS", dev->name);
+		return;
+	}
+
+	data->common.deftgts->count = count;
 
 	for (uint8_t i = find_lsb_set(devs); i <= find_msb_set(devs); i++) {
 		uint8_t rr_idx = i - 1;
@@ -3420,30 +3425,30 @@ static void i3c_cdns_deftgts_work_fn(struct k_work *work)
 
 			/* RR IDX 1 should always be expected to be the AC */
 			if (rr_idx == 1) {
-				deftgts->active_controller.addr = addr;
-				deftgts->active_controller.dcr = dcr_lvr;
-				deftgts->active_controller.bcr = bcr;
-				deftgts->active_controller.static_addr = 0;
+				data->common.deftgts->active_controller.addr = addr;
+				data->common.deftgts->active_controller.dcr = dcr_lvr;
+				data->common.deftgts->active_controller.bcr = bcr;
+				data->common.deftgts->active_controller.static_addr = 0;
 			} else if (is_i3c) {
-				deftgts->targets[n].addr = addr;
-				deftgts->targets[n].dcr = dcr_lvr;
-				deftgts->targets[n].bcr = bcr;
-				deftgts->targets[n].static_addr = 0;
+				data->common.deftgts->targets[n].addr = addr;
+				data->common.deftgts->targets[n].dcr = dcr_lvr;
+				data->common.deftgts->targets[n].bcr = bcr;
+				data->common.deftgts->targets[n].static_addr = 0;
 				n++;
 			} else {
-				deftgts->targets[n].addr = 0;
-				deftgts->targets[n].lvr = dcr_lvr;
-				deftgts->targets[n].bcr = 0;
-				deftgts->targets[n].static_addr = addr;
+				data->common.deftgts->targets[n].addr = 0;
+				data->common.deftgts->targets[n].lvr = dcr_lvr;
+				data->common.deftgts->targets[n].bcr = 0;
+				data->common.deftgts->targets[n].static_addr = addr;
 				n++;
 			}
 		}
 	}
 	data->common.deftgts_refreshed = true;
-	LOG_HEXDUMP_DBG((uint8_t *)deftgts,
-			sizeof(uint8_t) + sizeof(struct i3c_ccc_deftgts_active_controller) +
-				(deftgts->count * sizeof(struct i3c_ccc_deftgts_target)),
-			"DEFTGTS Received");
+	LOG_HEXDUMP_DBG((uint8_t *)data->common.deftgts,
+			 sizeof(uint8_t) + sizeof(struct i3c_ccc_deftgts_active_controller) +
+			 (data->common.deftgts->count * sizeof(struct i3c_ccc_deftgts_target)),
+			 "DEFTGTS Received");
 }
 
 /**
