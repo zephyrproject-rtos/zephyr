@@ -74,7 +74,7 @@ void radio_high_prio_isr(void)
 
 void radio_low_prio_isr(void)
 {
-	irq_disable((IRQn_Type)RADIO_SW_LOW_INTR_NUM);
+	irq_disable(RADIO_SW_LOW_INTR_NUM);
 
 	low_isr_callback();
 
@@ -85,7 +85,7 @@ void radio_low_prio_isr(void)
 	}
 
 	/* Re-enable SW radio low interrupt */
-	irq_enable((IRQn_Type)RADIO_SW_LOW_INTR_NUM);
+	irq_enable(RADIO_SW_LOW_INTR_NUM);
 
 	ISR_DIRECT_PM();
 }
@@ -96,22 +96,22 @@ void link_layer_register_isr(void)
 	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(RADIO_INTR_NUM, 0, 0, reschedule);
 
 	/* Ensure the IRQ is disabled before enabling it at run time */
-	irq_disable((IRQn_Type)RADIO_INTR_NUM);
+	irq_disable(RADIO_INTR_NUM);
 
-	irq_connect_dynamic((IRQn_Type)RADIO_INTR_NUM, RADIO_INTR_PRIO_HIGH_Z,
+	irq_connect_dynamic(RADIO_INTR_NUM, RADIO_INTR_PRIO_HIGH_Z,
 			    (void (*)(const void *))radio_high_prio_isr, NULL, 0);
 
-	irq_enable((IRQn_Type)RADIO_INTR_NUM);
+	irq_enable(RADIO_INTR_NUM);
 
 	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(RADIO_SW_LOW_INTR_NUM, 0, 0, reschedule);
 
 	/* Ensure the IRQ is disabled before enabling it at run time */
-	irq_disable((IRQn_Type)RADIO_SW_LOW_INTR_NUM);
+	irq_disable(RADIO_SW_LOW_INTR_NUM);
 
-	irq_connect_dynamic((IRQn_Type)RADIO_SW_LOW_INTR_NUM, RADIO_SW_LOW_INTR_PRIO,
+	irq_connect_dynamic(RADIO_SW_LOW_INTR_NUM, RADIO_SW_LOW_INTR_PRIO,
 			    (void (*)(const void *))radio_low_prio_isr, NULL, 0);
 
-	irq_enable((IRQn_Type)RADIO_SW_LOW_INTR_NUM);
+	irq_enable(RADIO_SW_LOW_INTR_NUM);
 }
 
 
@@ -124,19 +124,15 @@ void LINKLAYER_PLAT_TriggerSwLowIT(uint8_t priority)
 	/* Check if a SW low interrupt as already been raised.
 	 * Nested call far radio low isr are not supported
 	 **/
-
-	if (NVIC_GetActive(RADIO_SW_LOW_INTR_NUM) == 0) {
+	if (NVIC_GetActive((IRQn_Type)RADIO_SW_LOW_INTR_NUM) == 0) {
 		/* No nested SW low ISR, default behavior */
-
 		if (priority == 0) {
 			low_isr_priority = RADIO_SW_LOW_INTR_PRIO;
 		}
-
 		NVIC_SetPriority((IRQn_Type)RADIO_SW_LOW_INTR_NUM, low_isr_priority);
 	} else {
 		/* Nested call detected */
 		/* No change for SW radio low interrupt priority for the moment */
-
 		if (priority != 0) {
 			/* At the end of current SW radio low ISR, this pending SW
 			 * low interrupt will run with RADIO_INTR_PRIO_LOW_Z priority
@@ -208,11 +204,23 @@ void LINKLAYER_PLAT_DisableSpecificIRQ(uint8_t isr_type)
 	}
 }
 
+void LINKLAYER_PLAT_EnableRadioIT(void)
+{
+	LOG_DBG("Enable RADIO IRQ");
+	irq_enable(RADIO_INTR_NUM);
+}
+
+void LINKLAYER_PLAT_DisableRadioIT(void)
+{
+	LOG_DBG("Disable RADIO IRQ");
+	irq_disable(RADIO_INTR_NUM);
+}
+
 void LINKLAYER_PLAT_StartRadioEvt(void)
 {
 	__HAL_RCC_RADIO_CLK_SLEEP_ENABLE();
 
-	NVIC_SetPriority(RADIO_INTR_NUM, RADIO_INTR_PRIO_HIGH_Z);
+	NVIC_SetPriority((IRQn_Type)RADIO_INTR_NUM, RADIO_INTR_PRIO_HIGH_Z);
 
 	scm_notifyradiostate(SCM_RADIO_ACTIVE);
 }
@@ -221,7 +229,7 @@ void LINKLAYER_PLAT_StopRadioEvt(void)
 {
 	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
 
-	NVIC_SetPriority(RADIO_INTR_NUM, RADIO_INTR_PRIO_LOW_Z);
+	NVIC_SetPriority((IRQn_Type)RADIO_INTR_NUM, RADIO_INTR_PRIO_LOW_Z);
 
 	scm_notifyradiostate(SCM_RADIO_NOT_ACTIVE);
 }
