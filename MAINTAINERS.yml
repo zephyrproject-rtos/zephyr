@@ -4088,7 +4088,6 @@ Renesas RZ Platforms:
     - dts/arm/renesas/rz/
     - dts/bindings/*/*rzt2m*
     - dts/bindings/*/*renesas,rz*
-    - soc/renesas/rzt2m/
     - soc/renesas/rz/
   labels:
     - "platforms: Renesas RZ"
