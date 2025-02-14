@@ -21,6 +21,8 @@
 
 	aliases {
 		watchdog0 = &wdt0;
+		sdhc0 = &sdio0;
+		sdhc1 = &sdio1;
 	};
 };
 
@@ -41,6 +43,29 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&sdio0 {
+	pinctrl-0 = <&sdio0_default>;
+	pinctrl-names = "default";
+	txdelay = <0>;
+	rxdelay = <0>;
+	cd-gpios = <&gpio160_191 1 GPIO_ACTIVE_LOW>;
+	status = "okay";
+	mmc {
+		compatible = "zephyr,mmc-disk";
+        disk-name = "SD";
+		status = "okay";
+	};
+};
+
+&sdio1 {
+	pinctrl-0 = <&sdio1_default>;
+	pinctrl-names = "default";
+	txdelay = <9>;
+	rxdelay = <11>;
+	cd-gpios = <&gpio160_191 15 GPIO_ACTIVE_LOW>;
 	status = "okay";
 };
 

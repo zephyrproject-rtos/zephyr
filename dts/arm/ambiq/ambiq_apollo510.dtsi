@@ -457,6 +457,22 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x20000>;
 		};
 
+		sdio0: sdio@40070000 {
+			compatible = "ambiq,sdio";
+			reg = <0x40070000 0x104>;
+			interrupts = <26 0>;
+			status = "disabled";
+			zephyr,pm-device-runtime-auto;
+		};
+
+		sdio1: sdio@40071000 {
+			compatible = "ambiq,sdio";
+			reg = <0x40071000 0x104>;
+			interrupts = <84 0>;
+			status = "disabled";
+			zephyr,pm-device-runtime-auto;
+		};
+
 		usb: usb@400b0000 {
 			compatible = "ambiq,usb";
 			reg = <0x400b0000 0x2428>;

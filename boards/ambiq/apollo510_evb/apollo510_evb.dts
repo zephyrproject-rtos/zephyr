@@ -27,6 +27,8 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		sdhc0 = &sdio0;
+		sdhc1 = &sdio1;
 	};
 
 	leds {
@@ -114,6 +116,29 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&sdio0 {
+	pinctrl-0 = <&sdio0_default>;
+	pinctrl-names = "default";
+	txdelay = <0>;
+	rxdelay = <0>;
+	cd-gpios = <&gpio64_95 16 GPIO_ACTIVE_LOW>;
+	status = "okay";
+	mmc {
+		compatible = "zephyr,mmc-disk";
+        disk-name = "SD";
+		status = "okay";
+	};
+};
+
+&sdio1 {
+	pinctrl-0 = <&sdio1_default>;
+	pinctrl-names = "default";
+	txdelay = <9>;
+	rxdelay = <11>;
+	cd-gpios = <&gpio64_95 14 GPIO_ACTIVE_LOW>;
 	status = "okay";
 };
 
