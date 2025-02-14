@@ -31,27 +31,30 @@ struct i3c_driver_api;
  * @brief Configuration parameters for I3C hardware to act as target device.
  *
  * This can also be used to configure the controller if it is to act as
- * a secondary controller on the bus.
+ * a target on the bus.
  */
 struct i3c_config_target {
 	/**
-	 * If the hardware is to act as a target device
+	 * If the hardware is currently acting as a target device
 	 * on the bus.
 	 */
-	bool enable;
+	bool enabled;
 
 	/**
 	 * I3C target dynamic address.
 	 *
-	 * Used when operates as secondary controller
-	 * or as a target device.
+	 * Currently assigned dynamic address. 0 if no address
+	 * assigned.
+	 *
+	 * @note Only writeable if the hardware acts as a primary
+	 *       controller
 	 */
 	uint8_t dynamic_addr;
 
 	/**
 	 * I3C target static address.
 	 *
-	 * Used used when operates as secondary controller
+	 * Used used when operating as a secondary controller
 	 * or as a target device.
 	 */
 	uint8_t static_addr;
@@ -81,9 +84,6 @@ struct i3c_config_target {
 
 	/**
 	 * Bit mask of supported HDR modes (0 - 7).
-	 *
-	 * This can be used to enable or disable HDR mode
-	 * supported by the hardware at runtime.
 	 */
 	uint8_t supported_hdr;
 };
