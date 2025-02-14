@@ -410,7 +410,7 @@ static int xbr818_init(const struct device *dev)
 	return ret;
 }
 
-static const struct sensor_driver_api xbr818_api = {
+static DEVICE_API(sensor, xbr818_api) = {
 	.sample_fetch = xbr818_sample_fetch,
 	.channel_get = xbr818_channel_get,
 	.attr_set = xbr818_attr_set,
