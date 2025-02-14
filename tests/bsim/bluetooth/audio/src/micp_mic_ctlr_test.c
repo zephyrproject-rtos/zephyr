@@ -33,7 +33,7 @@ static volatile uint8_t g_aics_count;
 static volatile int8_t g_aics_gain;
 static volatile uint8_t g_aics_input_mute;
 static volatile uint8_t g_aics_mode;
-static volatile uint8_t g_aics_input_type;
+static volatile enum bt_aics_input_type g_aics_input_type;
 static volatile uint8_t g_aics_units;
 static volatile uint8_t g_aics_gain_max;
 static volatile uint8_t g_aics_gain_min;
@@ -71,8 +71,7 @@ static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 	g_cb = true;
 }
 
-static void aics_input_type_cb(struct bt_aics *inst, int err,
-			       uint8_t input_type)
+static void aics_input_type_cb(struct bt_aics *inst, int err, enum bt_aics_input_type input_type)
 {
 	if (err != 0) {
 		FAIL("AICS input type cb err (%d)", err);
@@ -207,7 +206,7 @@ static int test_aics(void)
 	int8_t expected_gain;
 	uint8_t expected_input_mute;
 	uint8_t expected_mode;
-	uint8_t expected_input_type;
+	enum bt_aics_input_type expected_input_type;
 	char expected_aics_desc[AICS_DESC_SIZE];
 	struct bt_conn *cached_conn;
 
