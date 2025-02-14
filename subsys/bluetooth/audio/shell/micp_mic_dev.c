@@ -61,14 +61,13 @@ static void micp_mic_dev_aics_gain_setting_cb(struct bt_aics *inst, int err,
 	}
 }
 static void micp_mic_dev_aics_input_type_cb(struct bt_aics *inst, int err,
-					    uint8_t input_type)
+					    enum bt_aics_input_type input_type)
 {
 	if (err != 0) {
 		bt_shell_error("AICS input type get failed (%d) for inst %p",
 			       err, inst);
 	} else {
-		bt_shell_print("AICS inst %p input type %u",
-			       inst, input_type);
+		bt_shell_print("AICS inst %p input type %d", inst, input_type);
 	}
 }
 static void micp_mic_dev_aics_status_cb(struct bt_aics *inst, int err,

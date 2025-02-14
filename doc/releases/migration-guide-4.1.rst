@@ -605,6 +605,10 @@ Bluetooth Audio
   depend on :kconfig:option:`CONFIG_BT_SMP` and may need to be explicitly enabled.
   (:github:`84994``)
 
+* ``bt_aics_register_param.type`` and ``bt_aics_type_cb`` now uses
+  :c:enumerator:`bt_aics_input_type` as the type for the input type, and uses of these will need to
+  use ``enum bt_aics_input_type`` instead of ``uint8_t``. (:github:`85772`)
+
 Bluetooth Classic
 =================
 

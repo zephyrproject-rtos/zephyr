@@ -367,8 +367,7 @@ static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 	LOG_DBG("AICS gain setting callback (%d)", err);
 }
 
-static void aics_input_type_cb(struct bt_aics *inst, int err,
-			       uint8_t input_type)
+static void aics_input_type_cb(struct bt_aics *inst, int err, enum bt_aics_input_type input_type)
 {
 	LOG_DBG("AICS input type callback (%d)", err);
 }
