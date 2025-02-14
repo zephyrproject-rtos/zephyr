@@ -177,11 +177,11 @@
 	pinctrl-names = "default";
 	txdelay = <0>;
 	rxdelay = <0>;
-	status = "disabled";
+	status = "okay";
 	mmc {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
-		status = "disabled";
+		status = "okay";
 	};
 };
 
