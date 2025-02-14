@@ -87,6 +87,12 @@ Default Zephyr Peripheral Mapping:
 - I2C4_SDA : PE14
 - LD1 : PO1
 - LD2 : PG10
+- SDMMC2_CK : PC2
+- SDMMC2_CMD : PC3
+- SDMMC2_D0 : PC4
+- SDMMC2_D1 : PC5
+- SDMMC2_D2 : PC0
+- SDMMC2_D3 : PE4
 - SPI5_SCK : PE15
 - SPI5_MOSI : PG2
 - SPI5_MISO : PH8

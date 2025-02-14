@@ -59,6 +59,15 @@
 	status = "okay";
 };
 
+&pll2 {
+	clocks = <&clk_hsi>;
+	div-m = <4>;
+	mul-n = <24>;
+	div-p1 = <2>;
+	div-p2 = <2>;
+	status = "okay";
+};
+
 &ic1 {
 	pll-src = <1>;
 	ic-div = <2>;
@@ -68,6 +77,12 @@
 &ic2 {
 	pll-src = <1>;
 	ic-div = <3>;
+	status = "okay";
+};
+
+&ic4 {
+	pll-src = <2>;
+	ic-div = <2>;
 	status = "okay";
 };
 
@@ -138,6 +153,19 @@
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	status = "okay";
+};
+
+&sdmmc2 {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(AHB5, 7)>,
+		 <&rcc STM32_SRC_IC4 SDMMC2_SEL(2)>;
+	pinctrl-0 = <&sdmmc2_d0_pc4 &sdmmc2_d1_pc5
+			&sdmmc2_d2_pc0 &sdmmc2_d3_pe4
+			&sdmmc2_ck_pc2 &sdmmc2_cmd_pc3>;
+	pinctrl-names = "default";
+	bus-width = <4>;
+	cd-gpios = <&gpion 8 GPIO_ACTIVE_HIGH>;
+	pwr-gpios = <&gpioq 7 GPIO_ACTIVE_HIGH>;
 };
 
 &spi5 {
