@@ -486,8 +486,6 @@
 #define I3C_CMDR_THR 1
 /* command tx fifo threshold - unused */
 #define I3C_CMDD_THR 1
-/* in-band-interrupt data fifo threshold - unused */
-#define I3C_IBID_THR 1
 /* in-band-interrupt response queue threshold */
 #define I3C_IBIR_THR 1
 /* tx data threshold - unused */
@@ -3559,8 +3557,8 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	sys_write32(CTRL_DEV_EN | ctrl, config->base + CTRL);
 
 	/* Set fifo thresholds. */
-	sys_write32(CMD_THR(I3C_CMDD_THR) | IBI_THR(I3C_IBID_THR) | CMDR_THR(I3C_CMDR_THR) |
-			    IBIR_THR(config->ibid_thr),
+	sys_write32(CMD_THR(I3C_CMDD_THR) | IBI_THR(config->ibid_thr) | CMDR_THR(I3C_CMDR_THR) |
+		    IBIR_THR(I3C_IBIR_THR),
 		    config->base + CMD_IBI_THR_CTRL);
 
 	/* Set TX/RX interrupt thresholds. */
