@@ -664,7 +664,7 @@ class KconfigCheck(ComplianceTest):
 
         # Grep samples/ and tests/ for symbol definitions
         grep_stdout = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
-                          ":samples", ":tests", cwd=ZEPHYR_BASE)
+                          ":samples", ":tests", cwd=ZEPHYR_BASE, ignore_non_zero=True)
 
         names = re.findall(regex, grep_stdout, re.MULTILINE)
 
@@ -715,10 +715,10 @@ class KconfigCheck(ComplianceTest):
 
         grep_stdout_boards = git("grep", "--line-number", "-I", "--null",
                                  "--perl-regexp", regex_boards, "--", ":boards",
-                                 cwd=Path(GIT_TOP))
+                                 cwd=Path(GIT_TOP), ignore_non_zero=True)
         grep_stdout_socs = git("grep", "--line-number", "-I", "--null",
                                "--perl-regexp", regex_socs, "--", ":soc",
-                               cwd=Path(GIT_TOP))
+                               cwd=Path(GIT_TOP), ignore_non_zero=True)
 
         # Board processing
         # splitlines() supports various line terminators
