@@ -58,13 +58,13 @@ static int stm32wba_ble_ctrl_init(void)
 {
 	k_work_queue_init(&ble_ctrl_work_q);
 	k_work_queue_start(&ble_ctrl_work_q, ble_ctrl_work_area,
-				       K_THREAD_STACK_SIZEOF(ble_ctrl_work_area),
-				       BLE_CTRL_THREAD_PRIO, NULL);
+			   K_THREAD_STACK_SIZEOF(ble_ctrl_work_area),
+			   BLE_CTRL_THREAD_PRIO, NULL);
 
 	k_work_queue_init(&ll_work_q);
 	k_work_queue_start(&ll_work_q, ll_work_area,
-				       K_THREAD_STACK_SIZEOF(ll_work_area),
-				       LL_THREAD_PRIO, NULL);
+			   K_THREAD_STACK_SIZEOF(ll_work_area),
+			   LL_THREAD_PRIO, NULL);
 
 	k_work_init(&ble_ctrl_stack_work, &ble_ctrl_stack_handler);
 	k_work_init(&bpka_work, &bpka_work_handler);
