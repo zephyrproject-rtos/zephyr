@@ -585,6 +585,9 @@ config MBEDTLS_PSA_P256M_DRIVER_RAW
 	  Warning: Usage of this Kconfig option is prohibited in Zephyr's codebase.
 	           Users can enable it in case of very memory-constrained devices, but be aware that the p256-m interface is absolutely not guaranted to remain stable over time.
 
+config MBEDTLS_PSA_CRYPTO_STORAGE_C
+	bool
+
 config MBEDTLS_PSA_STATIC_KEY_SLOTS
 	bool "Use statically allocated key buffers to store key material"
 	default y if !MBEDTLS_ENABLE_HEAP
