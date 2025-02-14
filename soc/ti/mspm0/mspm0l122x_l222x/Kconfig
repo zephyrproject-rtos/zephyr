@@ -12,5 +12,6 @@ config SOC_SERIES_MSPM0L122X_L222X
 	select BUILD_OUTPUT_BIN
 	select BUILD_OUTPUT_HEX
 	select HAS_MSPM0_SDK
+	select HAS_PM
 	help
 	  Enable support for TI MSPM0L122X_L222X.
