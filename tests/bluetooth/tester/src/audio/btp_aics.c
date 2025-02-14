@@ -7,6 +7,7 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
 #include <errno.h>
 
 #include <zephyr/types.h>
@@ -540,12 +541,12 @@ static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units, i
 	LOG_DBG("AICS gain setting callback (%d)", err);
 }
 
-static void aics_input_type_cb(struct bt_aics *inst, int err, uint8_t input_type)
+static void aics_input_type_cb(struct bt_aics *inst, int err, enum bt_aics_input_type input_type)
 {
 	struct bt_conn *conn;
 
 	bt_aics_client_conn_get(inst, &conn);
-	btp_send_aics_input_type_event(conn, err, input_type);
+	btp_send_aics_input_type_event(conn, err, (uint8_t)input_type);
 
 	LOG_DBG("AICS input type callback (%d)", err);
 }
