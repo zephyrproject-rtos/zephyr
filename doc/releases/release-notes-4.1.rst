@@ -673,8 +673,10 @@ New Samples
 * :zephyr:code-sample:`rtc`
 * :zephyr:code-sample:`sensor_batch_processing`
 * :zephyr:code-sample:`sensor_clock`
+* :zephyr:code-sample:`stepper`
 * :zephyr:code-sample:`stream_fifo`
 * :zephyr:code-sample:`tdk_apex`
+* :zephyr:code-sample:`tmc50xx`
 * :zephyr:code-sample:`uart`
 * :zephyr:code-sample:`webusb-next`
 
