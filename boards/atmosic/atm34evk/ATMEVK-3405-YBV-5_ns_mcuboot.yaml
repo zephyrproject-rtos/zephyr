@@ -1,0 +1,7 @@
+identifier: ATMEVK-3405-YBV-5@mcuboot/ATM34xx-5/ns
+name: ATMEVK-3405-YBV-5_ns
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+vendor: atmosic

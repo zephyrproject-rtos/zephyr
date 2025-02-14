@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+        chosen {
+                zephyr,code-partition = &boot_partition;
+        };
+};
+
+/ {
+	sram0: memory@30000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x30000000 0x20000>;
+	};
+};
+
+#ifdef USE_ATM_SECURE_DEBUG
+&uart0 {
+       status = "okay";
+};
+#endif

@@ -9,8 +9,8 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	model = "Atmosic EVK 3425-PQK-2";
-	compatible = "atmosic,ATMEVK-3425-PQK-2";
+	model = "Atmosic EVK 3425-YQK-5";
+	compatible = "atmosic,ATMEVK-3425-YQK-5";
 
 	chosen {
 		zephyr,console = &uart1;
@@ -73,12 +73,12 @@
 };
 
 &flash_controller {
-	clk-pin = <18>;
-	csn-pin = <19>;
-	d0-pin = <20>;
-	d1-pin = <21>;
-	d2-pin = <22>;
-	d3-pin = <17>;
+	clk-pin = <35>;
+	csn-pin = <31>;
+	d0-pin = <34>;
+	d1-pin = <32>;
+	d2-pin = <33>;
+	d3-pin = <36>;
 };
 
 &i2c0 {
@@ -115,10 +115,8 @@
 	cts-pin = <12>;
 };
 
-i2s_tx: &i2s {
-	sck-out-pin = <3>;
-	ws-out-pin = <4>;
-	sd-out-pin = <5>;
+&pmu {
+	vddpa-src = <1>;
 };
 
 arduino_i2c: &i2c0 {};

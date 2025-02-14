@@ -1,7 +1,7 @@
 # Copyright (c) 2021-2025 Atmosic
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_ATMEVK_3430E_WQN_5
+config BOARD_ATMEVK_3430E_YQN_5
 	select SOC_ATM34XX_5
 
 # power manage the onboard stacked flash

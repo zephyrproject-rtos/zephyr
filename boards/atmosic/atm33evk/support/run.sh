@@ -194,6 +194,7 @@ FLASH=1
 is_unset FLASH_ONLY || BUILD=0
 is_unset BUILD_ONLY || FLASH=0
 
+[[ -n $SYDNEY_SERIAL ]] && export FTDI_SERIAL=$SYDNEY_SERIAL
 [ $FLASH -eq 0 ] || [[ -n $JLINK_SERIAL ]] || [[ -n $FTDI_SERIAL ]] || \
     die 'Neither JLINK_SERIAL nor FTDI_SERIAL set'
 

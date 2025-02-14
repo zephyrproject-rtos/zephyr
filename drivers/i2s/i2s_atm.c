@@ -341,7 +341,7 @@ static void dma_i2s_tx_callback(void const *ctx)
 	struct i2s_atm_stream *stream = (struct i2s_atm_stream *)&i2s_data->tx;
 	if (!stream->cur_block.buffer) {
 		if (stream->state != I2S_STATE_READY) {
-			LOG_ERR("TX block NULL. state: %" PRId32, stream->state);
+			LOG_ERR("TX block NULL. state: %u", stream->state);
 		}
 		return;
 	}
@@ -415,7 +415,7 @@ static int i2s_atm_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 	switch (cmd) {
 	case I2S_TRIGGER_START:
 		if (stream->state != I2S_STATE_READY) {
-			LOG_ERR("START - Invalid state: %" PRId32, stream->state);
+			LOG_ERR("START - Invalid state: %u", stream->state);
 			return -EIO;
 		}
 		int ret = i2s_tx_start_transfer(dev);
@@ -428,14 +428,14 @@ static int i2s_atm_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		break;
 	case I2S_TRIGGER_STOP:
 		if (stream->state != I2S_STATE_RUNNING) {
-			LOG_ERR("STOP - Invalid state: %" PRId32, stream->state);
+			LOG_ERR("STOP - Invalid state: %u", stream->state);
 			return -EIO;
 		}
 		stream->state = I2S_STATE_STOPPING;
 		break;
 	case I2S_TRIGGER_DRAIN:
 		if (stream->state != I2S_STATE_RUNNING) {
-			LOG_ERR("DRAIN - Invalid state: %" PRId32, stream->state);
+			LOG_ERR("DRAIN - Invalid state: %u", stream->state);
 			return -EIO;
 		}
 		if (k_msgq_num_used_get(stream->queue) > 0) {
@@ -445,7 +445,7 @@ static int i2s_atm_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		break;
 	case I2S_TRIGGER_DROP:
 		if (stream->state == I2S_STATE_NOT_READY) {
-			LOG_ERR("DROP - invalid state: %" PRId32, stream->state);
+			LOG_ERR("DROP - invalid state: %u", stream->state);
 			return -EIO;
 		}
 		stream->state = I2S_STATE_STOPPING;
@@ -471,7 +471,7 @@ static int i2s_atm_write(const struct device *dev, void *mem_block, size_t size)
 {
 	struct i2s_atm_data *dev_data = dev->data;
 	if (dev_data->tx.state != I2S_STATE_RUNNING && dev_data->tx.state != I2S_STATE_READY) {
-		LOG_ERR("invalid state %" PRId32, dev_data->tx.state);
+		LOG_ERR("invalid state %u", dev_data->tx.state);
 		ASSERT_ERR(0);
 		return -EIO;
 	}

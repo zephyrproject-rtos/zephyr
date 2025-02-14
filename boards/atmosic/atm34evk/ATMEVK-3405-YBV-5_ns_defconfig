@@ -1,0 +1,33 @@
+# Copyright (c) 2025 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_CORTEX_M_SYSTICK=y
+CONFIG_CORTEX_M_SYSTICK_EXTERNAL_REF=y
+CONFIG_RUNTIME_NMI=y
+CONFIG_USE_DT_CODE_PARTITION=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable TrustZone-M
+CONFIG_ARM_TRUSTZONE_M=y
+
+# This Board implies building Non-Secure firmware
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# GPIOs
+CONFIG_GPIO=y
+
+# Watchdog
+CONFIG_WATCHDOG=y

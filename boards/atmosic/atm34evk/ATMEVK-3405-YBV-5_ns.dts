@@ -1,26 +1,27 @@
 /*
- * Copyright (c) 2021-2024 Atmosic
+ * Copyright (c) 2025 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
-#include <arm/atmosic/ATM34xx.dtsi>
+#include <arm/atmosic/ATM34xx_ns.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	model = "Atmosic EVK 3430e-WQN-5";
-	compatible = "atmosic,ATMEVK-3430e-WQN-5";
+	model = "Atmosic EVK 3405-YBV-5";
+	compatible = "atmosic,ATMEVK-3405-YBV-5";
 
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart1;
+		zephyr,bt-c2h-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash-controller = &rram_controller;
 		zephyr,flash = &rram0;
-		zephyr,code-partition = &spe_partition;
+		zephyr,code-partition = &nspe_partition;
 		zephyr,entropy = &trng;
 	};
 
@@ -62,7 +63,7 @@
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
-		i2c-1 = &i2c1;
+		i2c-1 = &i2c0;
 		led0 = &led0;
 		pwm-0 = &pwm3;
 		pwm-led0 = &pwm_led0;
@@ -71,17 +72,17 @@
 };
 
 &flash_controller {
-	clk-pin = <32>;
-	csn-pin = <36>;
-	d0-pin = <31>;
-	d1-pin = <35>;
-	d2-pin = <34>;
-	d3-pin = <33>;
+	clk-pin = <35>;
+	csn-pin = <31>;
+	d0-pin = <34>;
+	d1-pin = <32>;
+	d2-pin = <33>;
+	d3-pin = <36>;
 };
 
-&i2c1 {
-        sda-pin = <7>;
-        scl-pin = <6>;
+&i2c0 {
+        sda-pin = <17>;
+        scl-pin = <16>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
@@ -91,26 +92,15 @@
 };
 
 &spi0 {
-        clk-pin = <17>;
-        cs-pin = <20>;
-        mosi-pin = <18>;
-        miso-pin = <19>;
-};
-
-&spi1 {
-        clk-pin = <5>;
-        cs-pin = <4>;
-        mosi-pin = <22>;
-        miso-pin = <15>;
+	clk-pin = <17>;
+	cs-pin = <8>;
+	mosi-pin = <2>;
+	miso-pin = <3>;
 };
 
 &adc {
-    ch-cell = <1>;
-    ch-batt = <11>;
-};
-
-&uart1 {
-	tx-pin = <27>;
+	ch-cell = <1>;
+	ch-batt = <11>;
 };
 
 &uart0 {
@@ -119,3 +109,21 @@
 	rts-pin = <13>;
 	cts-pin = <12>;
 };
+
+&uart1 {
+	tx-pin = <27>;
+};
+
+&uart2 {
+	rx-pin = <41>;
+	tx-pin = <42>;
+	rts-pin = <44>;
+	cts-pin = <43>;
+};
+
+&pmu {
+	vddpa-src = <1>;
+};
+
+arduino_i2c: &i2c0 {};
+arduino_spi: &spi0 {};

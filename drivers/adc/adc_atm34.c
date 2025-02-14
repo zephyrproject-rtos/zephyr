@@ -82,6 +82,14 @@ typedef enum {
 	GROUND,
 	/// Calibration
 	CALIBRATION,
+#ifdef GADC_GADC_CTRL__EXT_VDD1_SEL__SET
+	// P3 single-ended channel
+	PORT2_SINGLE_ENDED,
+	// P8 single-ended channel
+	PORT3_SINGLE_ENDED,
+	// P9 single-ended channel
+	PORT4_SINGLE_ENDED,
+#endif
 	/** Max channels */
 	CHANNEL_NUM_MAX,
 } GADC_CHANNEL_ID;
@@ -159,6 +167,11 @@ static gadc_gain_ext_t const gextmap[CHANNEL_NUM_MAX][GAIN_EXT_MAX] = {
 	{GAIN_EXT_HALF, GAIN_EXT_X1, GAIN_EXT_END},
 	{GAIN_EXT_EIGHTH, GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_X1, GAIN_EXT_END},
 	{GAIN_EXT_EIGHTH, GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_X1, GAIN_EXT_END},
+#ifdef GADC_GADC_CTRL__EXT_VDD1_SEL__SET
+	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_END},
+	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_END},
+	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_END},
+#endif
 };
 
 static struct gadc_cal_s gcal;
@@ -188,7 +201,7 @@ static struct gadc_fifo_s gadc_read_ch_data(void)
 }
 
 /* Enable/Disable GADC analog side */
-__INLINE void gadc_analog_control(bool enable)
+__INLINE void gadc_analog_control(bool enable, GADC_CHANNEL_ID ch)
 {
 	WRPR_CTRL_PUSH(CMSDK_PSEQ, WRPR_CTRL__CLK_ENABLE)
 	{
@@ -204,20 +217,30 @@ __INLINE void gadc_analog_control(bool enable)
 		}
 	}
 	WRPR_CTRL_POP();
+
+#ifdef GADC_GADC_CTRL__EXT_VDD1_SEL__SET
+	if (enable) {
+		WRPR_CTRL_PUSH(CMSDK_PMU, WRPR_CTRL__CLK_ENABLE) {
+			uint32_t gadc_ctrl = PMU_GADC_READ(GADC_CTRL_REG_ADDR);
+			if (ch == PORT2_SINGLE_ENDED) {
+				GADC_GADC_CTRL__EXT_VDD1_SEL__SET(gadc_ctrl);
+			} else if (ch == PORT3_SINGLE_ENDED) {
+				GADC_GADC_CTRL__EXT_VSTOR_SEL__SET(gadc_ctrl);
+			} else if (ch == PORT4_SINGLE_ENDED) {
+				GADC_GADC_CTRL__EXT_VBAT_SEL__SET(gadc_ctrl);
+			}
+			PMU_GADC_WRITE(GADC_CTRL_REG_ADDR, gadc_ctrl);
+		} WRPR_CTRL_POP();
+	}
+#endif
 }
 
 static void gadc_apply_calibration(void)
 {
 	if (CAL_PRESENT(gcal, offset_comp3)) {
 		CMSDK_GADC->CTRL1 = gcal.ctrl1;
-		CMSDK_GADC->GAIN_COMP0 = gcal.gain_comp0;
-		CMSDK_GADC->GAIN_COMP1 = gcal.gain_comp1;
 		CMSDK_GADC->GAIN_COMP2 = gcal.gain_comp2;
 		CMSDK_GADC->GAIN_COMP3 = gcal.gain_comp3;
-		CMSDK_GADC->GAIN_COMP4 = gcal.gain_comp4;
-		CMSDK_GADC->GAIN_COMP5 = gcal.gain_comp5;
-		CMSDK_GADC->GAIN_COMP6 = gcal.gain_comp6;
-		CMSDK_GADC->GAIN_COMP7 = gcal.gain_comp7;
 		CMSDK_GADC->OFFSET_COMP0 = gcal.offset_comp0;
 		CMSDK_GADC->OFFSET_COMP1 = gcal.offset_comp1;
 		CMSDK_GADC->OFFSET_COMP2 = gcal.offset_comp2;
@@ -230,7 +253,7 @@ static void gadc_start_measurement(struct device const *dev, GADC_CHANNEL_ID ch)
 	WRPR_CTRL_SET(CMSDK_GADC, WRPR_CTRL__CLK_ENABLE | WRPR_CTRL__CLK_SEL);
 	gadc_apply_calibration();
 
-	gadc_analog_control(true);
+	gadc_analog_control(true, ch);
 
 	NVIC_EnableIRQ(DT_INST_IRQN(0));
 
@@ -238,6 +261,8 @@ static void gadc_start_measurement(struct device const *dev, GADC_CHANNEL_ID ch)
 	CMSDK_GADC->INTERRUPT_CLEAR = DGADC_INTERRUPT_CLEAR__WRITE;
 	CMSDK_GADC->INTERRUPT_CLEAR = 0;
 
+	// Set the gain and watch channel for the specified channel
+	GADC_CHANNEL_ID watch_ch = ch;
 	switch (ch) {
 	case VBATT: {
 		DGADC_GAIN_CONFIG0__CH1_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
@@ -314,6 +339,20 @@ static void gadc_start_measurement(struct device const *dev, GADC_CHANNEL_ID ch)
 		DGADC_GAIN_CONFIG1__CH12_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG1, gext[ch]);
 #endif
 	} break;
+#ifdef GADC_GADC_CTRL__EXT_VDD1_SEL__SET
+	case PORT2_SINGLE_ENDED: {
+		watch_ch = CORE;
+		DGADC_GAIN_CONFIG0__CH3_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
+	} break;
+	case PORT3_SINGLE_ENDED: {
+		watch_ch = VSTORE;
+		DGADC_GAIN_CONFIG0__CH2_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
+	} break;
+	case PORT4_SINGLE_ENDED: {
+		watch_ch = VBATT;
+		DGADC_GAIN_CONFIG0__CH1_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
+	} break;
+#endif
 	case UNUSED:
 	case CHANNEL_NUM_MAX:
 	default: {
@@ -324,7 +363,7 @@ static void gadc_start_measurement(struct device const *dev, GADC_CHANNEL_ID ch)
 
 	uint8_t clkdiv = DT_PROP(DT_NODELABEL(adc), clock_freq);
 	uint8_t savg = DT_PROP(DT_NODELABEL(adc), sample_avg);
-	CMSDK_GADC->CTRL = DGADC_CTRL__WATCH_CHANNELS__WRITE(1 << ch) |
+	CMSDK_GADC->CTRL = DGADC_CTRL__WATCH_CHANNELS__WRITE(1 << watch_ch) |
 			   DGADC_CTRL__AVERAGING_AMOUNT__WRITE(savg) |
 			   DGADC_CTRL__WAIT_AMOUNT__WRITE(GADC_WAIT_AMOUNT) |
 			   DGADC_CTRL__CLKDIV__WRITE(clkdiv) |
@@ -533,7 +572,7 @@ static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID c
 	struct gadc_fifo_s raw_fifo = gadc_read_ch_data();
 
 	// Disable clocks between samples
-	gadc_analog_control(false);
+	gadc_analog_control(false, UNUSED);
 	WRPR_CTRL_SET(CMSDK_GADC, WRPR_CTRL__SRESET);
 
 	// raw_fifo:  4 bit channel + 16 bit data = 20 bits
@@ -551,7 +590,11 @@ static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID c
 		}
 		WRPR_CTRL_POP();
 		result *= 6;
-	} else if ((ch == PORT0_SINGLE_ENDED_1) || (ch == PORT1_SINGLE_ENDED_1)) {
+	} else if ((ch == PORT0_SINGLE_ENDED_1) || (ch == PORT1_SINGLE_ENDED_1)
+#ifdef GADC_GADC_CTRL__EXT_VDD1_SEL__SET
+	|| (ch == PORT2_SINGLE_ENDED) || (ch == PORT3_SINGLE_ENDED) || (ch == PORT4_SINGLE_ENDED)
+#endif
+	) {
 		// need to invert sign
 		result *= -1;
 	} else if (ch == TEMP) {

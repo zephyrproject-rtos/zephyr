@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2024 Atmosic
+# Copyright (c) 2023-2025 Atmosic
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -17,6 +17,18 @@ config SOC_FLASH_ATM_FORCE_PUYA
 	bool "Force recovered manufactuer ID to PUYA"
 	depends on SOC_FLASH_ATM
 	depends on SOC_SERIES_ATMX2
+
+config SOC_FLASH_ATM_USE_BREAK_IN
+	bool "Allow the use of Atmosic flash break-in support if available"
+	default y
+	depends on SOC_FLASH_ATM
+	depends on MULTITHREADING
+	depends on !MCUBOOT
+
+config SOC_FLASH_ATM_BREAK_IN_SUSPEND_US
+	int "Atmosic break-in suspend time in microseconds"
+	default 50
+	depends on SOC_FLASH_ATM_USE_BREAK_IN
 
 config SOC_FLASH_ATM_RRAM
 	bool "Atmosic RRAM driver"

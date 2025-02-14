@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(spi_atm, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/sys/math_extras.h>
 #ifdef CONFIG_PM
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
@@ -30,7 +31,7 @@ LOG_MODULE_REGISTER(spi_atm, CONFIG_SPI_LOG_LEVEL);
 
 
 #define SPI_CLK at_clkrstgen_get_bp()
-#define SPI_CLK_DIV(freq) (((SPI_CLK / (freq)) >> 1) - 1)
+#define SPI_CLK_DIV(freq) ((DIV_ROUND_UP(SPI_CLK, freq) >> 1) - 1)
 #define SPI_CLK_MIN (SPI_CLK / (1 << (SPI_TRANSACTION_SETUP__CLKDIV__WIDTH + 1)))
 #define SPI_CLK_MAX (SPI_CLK >> 1)
 #define DEV_CFG(dev) ((struct spi_atm_config *)(dev)->config)

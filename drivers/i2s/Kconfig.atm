@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig I2S_ATM
-	bool "Atmosic controller driver"
+	bool "Atmosic I2S driver"
 	default y
 	depends on DT_HAS_ATMOSIC_ATM_I2S_ENABLED
 	select CONFIG_ATM_DMA

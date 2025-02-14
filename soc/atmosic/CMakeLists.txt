@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024 Atmosic
+# Copyright (c) 2021-2025 Atmosic
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -31,4 +31,12 @@ if(CONFIG_COVERAGE AND CONFIG_AUTO_TEST)
         endforeach()
     endforeach()
   endfunction()
+endif()
+
+# Checking SOC_SERIES includes in ATM_SOC_ALLOW when ATM_SOC_ALLOW not ""
+if (NOT "${CONFIG_ATM_SOC_ALLOW}" STREQUAL "")
+  string(FIND ${CONFIG_ATM_SOC_ALLOW} ${CONFIG_SOC_SERIES} matched)
+  if("${matched}" STREQUAL "-1")
+    message(FATAL_ERROR "Application ${CONFIG_SOC_SERIES} not support")
+  endif()
 endif()

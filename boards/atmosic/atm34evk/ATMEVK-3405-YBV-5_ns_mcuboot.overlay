@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2025 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/atmosic/ATM34xx_mcuboot_partitions.dtsi>

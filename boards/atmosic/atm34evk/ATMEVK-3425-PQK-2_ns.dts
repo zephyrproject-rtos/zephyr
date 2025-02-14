@@ -115,10 +115,8 @@
 	cts-pin = <12>;
 };
 
-&i2s {
-	sck-out-pin = <3>;
-	ws-out-pin = <4>;
-	sd-out-pin = <5>;
+&pmu {
+	vddpa-src = <0>;
 };
 
 arduino_i2c: &i2c0 {};

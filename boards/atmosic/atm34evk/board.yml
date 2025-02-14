@@ -38,7 +38,7 @@ boards:
       variants:
       - name: 'ns'
 
-- name: ATMEVK-3425-PQK-5
+- name: ATMEVK-3425-YQK-5
   vendor: atmosic
   revision:
     format: custom
@@ -64,7 +64,20 @@ boards:
       variants:
       - name: 'ns'
 
-- name: ATMEVK-3430e-WQN-5
+- name: ATMEVK-3430e-YQN-5
+  vendor: atmosic
+  revision:
+    format: custom
+    default: normal
+    revisions:
+    - name: mcuboot
+    - name: normal
+  socs:
+    - name: ATM34xx-5
+      variants:
+      - name: 'ns'
+
+- name: ATMEVK-3405-YBV-5
   vendor: atmosic
   revision:
     format: custom

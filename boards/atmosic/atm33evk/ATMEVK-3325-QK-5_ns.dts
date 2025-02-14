@@ -117,10 +117,4 @@
 	cts-pin = <12>;
 };
 
-&i2s {
-	sck-out-pin = <18>;
-	ws-out-pin = <19>;
-	sd-out-pin = <20>;
-};
-
 arduino_i2c: &i2c1 {};

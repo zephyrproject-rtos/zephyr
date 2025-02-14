@@ -9,8 +9,8 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	model = "Atmosic EVK 3430e-WQN-2";
-	compatible = "atmosic,ATMEVK-3430e-WQN-2";
+	model = "Atmosic EVK 3430e-YQN-5";
+	compatible = "atmosic,ATMEVK-3430e-YQN-5";
 
 	chosen {
 		zephyr,console = &uart1;
@@ -31,11 +31,11 @@
 			label = "Red LED1";
 		};
 		led1: led_1 {
-			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
 			label = "Yellow LED2";
 		};
 		led2: led_2 {
-			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED3";
 		};
 	};
@@ -45,6 +45,14 @@
                 pwm_led0: pwm_led_0 {
                         pwms = <&pwm3 3 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
 			label = "Red LED1";
+                };
+                pwm_led1: pwm_led_1 {
+                        pwms = <&pwm4 4 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "Yellow LED1";
+                };
+                pwm_led2: pwm_led_2 {
+                        pwms = <&pwm7 7 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "Blue LED1";
                 };
         };
 
@@ -65,18 +73,22 @@
 		i2c-1 = &i2c1;
 		led0 = &led0;
 		pwm-0 = &pwm3;
+		pwm-1 = &pwm4;
+		pwm-2 = &pwm7;
 		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+		pwm-led2 = &pwm_led2;
 		sw0 = &button0;
 	};
 };
 
 &flash_controller {
-	clk-pin = <32>;
-	csn-pin = <36>;
-	d0-pin = <31>;
-	d1-pin = <35>;
-	d2-pin = <34>;
-	d3-pin = <33>;
+	clk-pin = <35>;
+	csn-pin = <31>;
+	d0-pin = <34>;
+	d1-pin = <32>;
+	d2-pin = <33>;
+	d3-pin = <36>;
 };
 
 &i2c1 {
@@ -87,6 +99,16 @@
 
 &pwm3 {
 	pin = <29>;
+	status = "okay";
+};
+
+&pwm4 {
+	pin = <4>;
+	status = "okay";
+};
+
+&pwm7 {
+	pin = <7>;
 	status = "okay";
 };
 

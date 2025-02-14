@@ -1,5 +1,8 @@
 
 &i2s {
+	sck-out-pin = <18>;
+	ws-out-pin = <19>;
+	sd-out-pin = <20>;
 	status = "okay";
 };
 

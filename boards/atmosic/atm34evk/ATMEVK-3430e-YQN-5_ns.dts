@@ -5,23 +5,25 @@
  */
 
 /dts-v1/;
-#include <arm/atmosic/ATM34xx.dtsi>
+#include <arm/atmosic/ATM34xx_ns.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	model = "Atmosic EVK 3430e-WQN-2";
-	compatible = "atmosic,ATMEVK-3430e-WQN-2";
+	model = "Atmosic EVK 3430e-YQN-5";
+	compatible = "atmosic,ATMEVK-3430e-YQN-5";
 
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart1;
+		zephyr,bt-c2h-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash-controller = &rram_controller;
 		zephyr,flash = &rram0;
-		zephyr,code-partition = &spe_partition;
+		zephyr,code-partition = &nspe_partition;
 		zephyr,entropy = &trng;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -31,11 +33,11 @@
 			label = "Red LED1";
 		};
 		led1: led_1 {
-			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
 			label = "Yellow LED2";
 		};
 		led2: led_2 {
-			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED3";
 		};
 	};
@@ -45,6 +47,14 @@
                 pwm_led0: pwm_led_0 {
                         pwms = <&pwm3 3 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
 			label = "Red LED1";
+                };
+                pwm_led1: pwm_led_1 {
+                        pwms = <&pwm4 4 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "Yellow LED1";
+                };
+                pwm_led2: pwm_led_2 {
+                        pwms = <&pwm7 7 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "Blue LED1";
                 };
         };
 
@@ -62,21 +72,31 @@
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
-		i2c-1 = &i2c1;
+		i2c-1 = &i2c0;
 		led0 = &led0;
 		pwm-0 = &pwm3;
+		pwm-1 = &pwm4;
+		pwm-2 = &pwm7;
 		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+		pwm-led2 = &pwm_led2;
 		sw0 = &button0;
 	};
 };
 
 &flash_controller {
-	clk-pin = <32>;
-	csn-pin = <36>;
-	d0-pin = <31>;
-	d1-pin = <35>;
-	d2-pin = <34>;
-	d3-pin = <33>;
+	clk-pin = <35>;
+	csn-pin = <31>;
+	d0-pin = <34>;
+	d1-pin = <32>;
+	d2-pin = <33>;
+	d3-pin = <36>;
+};
+
+&i2c0 {
+        sda-pin = <17>;
+        scl-pin = <16>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
 &i2c1 {
@@ -90,11 +110,14 @@
 	status = "okay";
 };
 
-&spi0 {
-        clk-pin = <17>;
-        cs-pin = <20>;
-        mosi-pin = <18>;
-        miso-pin = <19>;
+&pwm4 {
+	pin = <4>;
+	status = "okay";
+};
+
+&pwm7 {
+	pin = <7>;
+	status = "okay";
 };
 
 &spi1 {
@@ -123,3 +146,6 @@
 &pmu {
 	vddpa-src = <0>;
 };
+
+arduino_i2c: &i2c0 {};
+arduino_spi: &spi1 {};

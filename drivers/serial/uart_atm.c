@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, Linaro Limited.
- * Copyright (c) 2022-2024, Atmosic
+ * Copyright (c) 2022-2025, Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -702,7 +702,6 @@ static void uart_atm_isr(const struct device *dev)
 	const struct uart_atm_config *const dev_cfg = dev->config;
 	if ((dev_cfg->uart->ctrl & UART_TX_IN_EN) && (dev_cfg->uart->intstatus & UART_TX_IN)) {
 		if (data->tx_poll_stream_on) {
-			dev_cfg->uart->intclear = UART_TX_IN;
 			if (dev_cfg->uart->tx_fifo_spaces == UART_FIFO_SIZE) {
 				/* A poll stream transmission just completed.
 				 * Allow system to suspend. */
@@ -710,6 +709,7 @@ static void uart_atm_isr(const struct device *dev)
 				data->tx_poll_stream_on = false;
 				uart_atm_pm_tx_constraint_release(dev);
 			}
+			dev_cfg->uart->intclear = UART_TX_IN;
 		} else {
 			/* Stream transmission was IRQ based.  Constraint will
 			 * be released at the same time TX_IN is disabled.

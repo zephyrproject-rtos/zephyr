@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Atmosic
+ * Copyright (c) 2021-2025 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,8 +91,8 @@
 };
 
 &adc {
-    ch-cell = <1>;
-    ch-batt = <11>;
+	ch-cell = <1>;
+	ch-batt = <11>;
 };
 
 &uart1 {
@@ -104,4 +104,8 @@
 	tx-pin = <15>;
 	rts-pin = <13>;
 	cts-pin = <12>;
+};
+
+&pmu {
+	vddpa-src = <0>;
 };

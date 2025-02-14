@@ -1,9 +1,17 @@
-# Copyright (c) 2021-2024 Atmosic
+# Copyright (c) 2021-2025 Atmosic
 #
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_FAMILY_ATM
 
 rsource "*/Kconfig"
+
+config ATM_SOC_ALLOW
+        string "list of specific soc series support list"
+        help
+          Used when build with test item in sample.yaml. When specified, the
+          build will checking if SOC support or not. Default will be empty.
+          It should be the value of SOC_SERIES, split with comma when multiple
+          soc support, ex: ATM33 or ATM33,ATM34
 
 endif # SOC_FAMILY_ATM
