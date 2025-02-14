@@ -12,8 +12,8 @@ on:
       - v*-branch
       - collab-*
   schedule:
-    # Run at 03:00 UTC on every Sunday
-    - cron: '0 3 * * 0'
+    # Run at 17:00 UTC on every Saturday
+    - cron: '0 17 * * 6'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
