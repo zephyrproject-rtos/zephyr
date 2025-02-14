@@ -21,7 +21,7 @@ config BT_SILABS_EFR32_USER_ADVERTISERS
 	int "User advertisement sets"
 	default 1
 	help
-	  Amount of advertisement sets reserved for application.
+	  Number of advertisement sets reserved for the application.
 
 config BT_SILABS_EFR32_ACCEPT_LIST_SIZE
 	int "Accept list size"
@@ -33,19 +33,188 @@ config BT_SILABS_EFR32_COMPLETED_PACKETS_THRESHOLD
 	int "Completed packet reporting threshold"
 	default 1
 	help
-	  Completed packet reporting threshold value.
+	  The number of transmitted air interface ACL packets to trigger the
+	  Number Of Completed Packets HCI event. In most cases, this should be
+	  set to 1, because the host stack uses this to determine whether a
+	  packet has been sent over the air.
 
 config BT_SILABS_EFR32_COMPLETED_PACKETS_TIMEOUT
 	int "Completed packet report event timeout"
 	default 3
 	help
-	  Completed packet report event timeout.
+	  The maximum number of connection events since the previous Number Of
+	  Completed Packets HCI event to trigger reporting of any unreported
+	  completed ACL packets.
 
-config BT_SILABS_EFR32_ACCEPT_LINK_LAYER_STACK_SIZE
-	int "Link layer stack size"
+config BT_SILABS_EFR32_LINK_LAYER_STACK_SIZE
+	int "Link layer thread stack size"
 	default 1024
 	help
-	  Link layer stack size.
+	  Link layer thread stack size.
+
+config BT_SILABS_EFR32_MAX_QUEUED_ADV_REPORTS
+	int "Maximum queued advertising reports"
+	default 10
+	help
+	  Maximum queued advertising reports.
+	  Additional advertising reports are dropped.
+
+config BT_SILABS_EFR32_HIGH_POWER
+	bool "High power transmission"
+	help
+	  Normally the transmit power is limited to 10 dBm. Enable this option
+	  to allow the controller to transmit at higher power levels. Note that
+	  this feature is not available on all devices.
+
+config BT_SILABS_EFR32_HIGH_POWER_AFH
+	bool "Adaptive frequency hopping for high power transmitters"
+	depends on BT_SILABS_EFR32_HIGH_POWER
+	help
+	  When high power is used, the controller may be required to perform
+	  adaptive frequency hopping to comply with regulatory requirements.
+
+config BT_SILABS_EFR32_MAX_CS_CONFIGS_PER_CONNECTION
+	int "Maximum number of CS configurations per connection"
+	default 4
+	help
+	  Defines the number of Channel Sounding configurations the application
+	  needs per Bluetooth connection.
+
+config BT_SILABS_EFR32_MAX_CS_PROCEDURES
+	int "Maximum number of CS procedures per CS configuration"
+	default 2
+	help
+	  Defines the number of Channel Sounding procedures the application
+	  needs per Channel Sounding configuration.
+
+config BT_SILABS_EFR32_MAX_PAWR_SYNCHRONIZERS
+	int "Maximum number of PAWR synchronizers"
+	default 1
+	depends on BT_PER_ADV_SYNC
+	range 1 BT_PER_ADV_SYNC_MAX
+	help
+	  Define the number of periodic synchronizing instances that the
+	  application needs to use concurrently for Periodic Advertising
+	  with Responses. This number must not exceed the number of periodic
+	  advertising synchronization instances.
+
+config BT_SILABS_EFR32_MAX_PERIODIC_ADVERTISERS
+	int "Maximum number of periodic advertisers"
+	default 1
+	depends on BT_PER_ADV
+	range 1 BT_EXT_ADV_MAX_ADV_SET
+	help
+	  Define the number of periodic advertising instances that the
+	  application needs to use concurrently. This number must not exceed
+	  the number of total advertisement sets.
+
+if BT_PER_ADV_RSP
+
+config BT_SILABS_EFR32_MAX_PAWR_ADVERTISERS
+	int "Maximum numbers of Periodic Advertising With Response advertisers"
+	default 0
+	range 0 BT_SILABS_EFR32_MAX_PERIODIC_ADVERTISERS
+
+config BT_SILABS_EFR32_MAX_PAWR_ADVERTISED_DATA_LENGTH_HINT
+	int "Give a hint to the controller about the maximum PAwR data length"
+	default 61
+	range 0 251
+	help
+	  The maximum data length that the application expects to send in a
+	  Periodic Advertising with Response packet. The controller will use
+	  this hint to optimize the scheduling of concurrent connections.
+	  This value does not preclude using longer data lengths.
+
+config BT_SILABS_EFR32_PAWR_PACKET_REQUEST_COUNT
+	int "Number of PAwR packets from host per request"
+	default 4
+	range 1 12
+	help
+	  The number of packets the controller requests from the host in one LE
+	  Periodic Advertising Subevent Data Request event. This is a tradeoff
+	  between the controller's memory usage and the number of separate HCI
+	  events the controller must send. This value is applied to each PAwR
+	  advertiser separately. Note that the request count is limited by the
+	  number of subevents in the PAwR train, and the request advance
+	  configuration.
+
+config BT_SILABS_EFR32_PAWR_PACKET_REQUEST_ADVANCE
+	int "Number of subevents in advance to request PAwR data"
+	default 1
+	range 1 6
+	help
+	  The controller asks the host to provide data for upcoming subevents
+	  before the subevents are sent over the air. This parameter is used to
+	  configure how many subevents in advance the requests are sent to the
+	  host. The bigger the advance is, the more time the host has to
+	  process the request, but the controller has to reserve more memory
+	  for buffering the subevent data. Note that the maximum advance is
+	  limited by the number of subevents configured for a PAwR train.
+	  Therefore, the actual advance may be less than the number configured
+	  in this parameter.
+
+endif # BT_PER_ADV_RSP
+
+if BT_TRANSMIT_POWER_CONTROL
+
+config BT_SILABS_EFR32_ACTIVATE_POWER_CONTROL
+	bool "EFR32 LE Power Control"
+	default y
+	help
+	  Enable power control to adjust the transmit power based on the
+	  received signal strength. The controller will ask the transmitter
+	  to adjust its transmit power to keep the RSSI of the received
+	  packets within the golden ranges, specified separately for each PHY.
+
+config BT_SILABS_EFR32_GOLDEN_RSSI_MIN_1M
+	int "Lower bound of the golden RSSI range for 1M PHY"
+	default -60
+	help
+	  The lower bound of the golden RSSI range for 1M PHY.
+
+config BT_SILABS_EFR32_GOLDEN_RSSI_MAX_1M
+	int "Upper bound of the golden RSSI range for 1M PHY"
+	default -40
+	help
+	  The upper bound of the golden RSSI range for 1M PHY.
+
+config BT_SILABS_EFR32_GOLDEN_RSSI_MIN_2M
+	int "Lower bound of the golden RSSI range for 2M PHY"
+	default -60
+	help
+	  The lower bound of the golden RSSI range for 2M PHY.
+
+config BT_SILABS_EFR32_GOLDEN_RSSI_MAX_2M
+	int "Upper bound of the golden RSSI range for 2M PHY"
+	default -40
+	help
+	  The upper bound of the golden RSSI range for 2M PHY.
+
+config BT_SILABS_EFR32_GOLDEN_RSSI_MIN_CODED_S8
+	int "Lower bound of the golden RSSI range for Coded S=8 PHY"
+	default -60
+	help
+	  The lower bound of the golden RSSI range for Coded S=8 PHY.
+
+config BT_SILABS_EFR32_GOLDEN_RSSI_MAX_CODED_S8
+	int "Upper bound of the golden RSSI range for Coded S=8 PHY"
+	default -40
+	help
+	  The upper bound of the golden RSSI range for Coded S=8 PHY.
+
+config BT_SILABS_EFR32_GOLDEN_RSSI_MIN_CODED_S2
+	int "Lower bound of the golden RSSI range for Coded S=2 PHY"
+	default -60
+	help
+	  The lower bound of the golden RSSI range for Coded S=2 PHY.
+
+config BT_SILABS_EFR32_GOLDEN_RSSI_MAX_CODED_S2
+	int "Upper bound of the golden RSSI range for Coded S=2 PHY"
+	default -40
+	help
+	  The upper bound of the golden RSSI range for Coded S=2 PHY.
+
+endif # BT_TRANSMIT_POWER_CONTROL
 
 config BT_SILABS_EFR32_LL_THREAD_PRIO
 	# Hidden option for Co-Operative Link Layer thread priority
