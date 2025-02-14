@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DMA block append Test"
+
+source "Kconfig.zephyr"
+
+config DMA_BA_XFER_SIZE
+	int "Number of bytes to transfer"
+	default 4096
