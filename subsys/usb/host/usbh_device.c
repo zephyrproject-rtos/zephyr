@@ -58,6 +58,19 @@ struct usb_device *usbh_device_get_any(struct usbh_contex *const uhs_ctx)
 	return udev;
 }
 
+struct usb_device *usbh_device_get(struct usbh_contex *const uhs_ctx, const uint8_t addr)
+{
+	struct usb_device *udev;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&uhs_ctx->udevs, udev, node) {
+		if (addr == udev->addr) {
+			return udev;
+		}
+	}
+
+	return NULL;
+}
+
 static int validate_device_mps0(const struct usb_device *const udev)
 {
 	const uint8_t mps0 = udev->dev_desc.bMaxPacketSize0;
