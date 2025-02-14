@@ -22,6 +22,7 @@ supported:
   - pdm
   - i2s
   - mspi
+  - sdhc
 testing:
   ignore_tags:
     - net
