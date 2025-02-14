@@ -22,6 +22,8 @@ typedef int (*usbh_udev_cb_t)(struct usb_device *const udev,
  */
 struct usb_device *usbh_device_get_any(struct usbh_contex *const ctx);
 
+struct usb_device *usbh_device_get(struct usbh_contex *const uhs_ctx, const uint8_t addr);
+
 /* Allocate/free USB device */
 struct usb_device *usbh_device_alloc(struct usbh_contex *const uhs_ctx);
 void usbh_device_free(struct usb_device *const udev);
