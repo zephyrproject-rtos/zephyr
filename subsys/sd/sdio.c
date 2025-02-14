@@ -58,6 +58,10 @@ static int sdio_send_ocr(struct sd_card *card, uint32_t ocr)
 				/* Card is not a supported SD device */
 				return -ENOTSUP;
 			}
+
+			/* Save OCR value from CMD5 response */
+			card->ocr = cmd.response[0];
+
 			/* Card has IO present, return zero to
 			 * indicate SDIO card
 			 */
@@ -567,6 +571,9 @@ int sdio_card_init(struct sd_card *card)
 		/* See if the card also supports 1.8V */
 		ocr_arg |= SD_OCR_SWITCH_18_REQ_FLAG;
 	}
+	/* Set OCR_ARG based on OCR value */
+	ocr_arg = card->ocr & 0x01FFFF00;
+
 	ret = sdio_send_ocr(card, ocr_arg);
 	if (ret) {
 		return ret;
@@ -646,7 +653,11 @@ int sdio_card_init(struct sd_card *card)
 		((card->cccr_flags & SDIO_SUPPORT_HS) ||
 		(card->cccr_flags & SDIO_SUPPORT_4BIT_LS_BUS))) {
 		/* Raise bus width to 4 bits */
+#ifdef CONFIG_SDIO_CARD_1BIT_WIDTH
+		ret = sdio_set_bus_width(card, SDHC_BUS_WIDTH1BIT);
+#else
 		ret = sdio_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
+#endif
 		if (ret) {
 			return ret;
 		}

@@ -29,6 +29,9 @@
 #define MMC_SWITCH_8_BIT_BUS_ARG                                                                   \
 	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (183U << 16)) +    \
 		(0x0000FF00 & (2U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
+#define MMC_SWITCH_4_BIT_DDR_BUS_ARG                                                               \
+	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (183U << 16)) +    \
+		(0x0000FF00 & (5U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
 #define MMC_SWITCH_4_BIT_BUS_ARG                                                                   \
 	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (183U << 16)) +    \
 		(0x0000FF00 & (1U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
@@ -41,7 +44,7 @@
 #define MMC_SWITCH_HS200_TIMING_ARG                                                                \
 	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (185U << 16)) +    \
 		(0x0000FF00 & (2U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
-#define MMC_RCA_ARG	(CONFIG_MMC_RCA << 16U)
+#define MMC_RCA_ARG     (CONFIG_MMC_RCA << 16U)
 #define MMC_REL_ADR_ARG (card->relative_addr << 16U)
 #define MMC_SWITCH_PWR_CLASS_ARG                                                                   \
 	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (187U << 16)) +    \
@@ -89,8 +92,13 @@ static inline int mmc_set_max_freq(struct sd_card *card, struct sd_csd *card_csd
 /* Sends CMD6 to switch bus width*/
 static int mmc_set_bus_width(struct sd_card *card);
 
+#ifdef CONFIG_MMC_DDR50
+/* Sets card to DDR50 mode (using CMD6) */
+static int mmc_set_ddr50_timing(struct sd_card *card, struct mmc_ext_csd *card_ext_csd);
+#else
 /* Sets card to the fastest timing mode (using CMD6) and SDHC to max frequency */
 static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *card_ext_csd);
+#endif /*CONFIG_MMC_DDR50*/
 
 /* Enable cache for emmc if applicable */
 static int mmc_set_cache(struct sd_card *card, struct mmc_ext_csd *card_ext_csd);
@@ -187,11 +195,19 @@ int mmc_card_init(struct sd_card *card)
 		return ret;
 	}
 
+#ifdef CONFIG_MMC_DDR50
+	/* Set MMC DDR50 timing */
+	ret = mmc_set_ddr50_timing(card, &card_ext_csd);
+	if (ret) {
+		return ret;
+	}
+#else
 	/* Set timing to fastest supported */
 	ret = mmc_set_timing(card, &card_ext_csd);
 	if (ret) {
 		return ret;
 	}
+#endif /*CONFIG_MMC_DDR50*/
 
 	/* Turn on cache if it exists */
 	ret = mmc_set_cache(card, &card_ext_csd);
@@ -380,6 +396,12 @@ static int mmc_set_bus_width(struct sd_card *card)
 	int ret;
 	struct sdhc_command cmd = {0};
 
+#if defined(MMC_CARD_8BIT_WIDTH)
+	card->bus_width = 8;
+#elif defined(MMC_CARD_4BIT_WIDTH)
+	card->bus_width = 4;
+#endif
+
 	if (card->host_props.host_caps.bus_8_bit_support && card->bus_width == 8) {
 		cmd.arg = MMC_SWITCH_8_BIT_BUS_ARG;
 		card->bus_io.bus_width = SDHC_BUS_WIDTH8BIT;
@@ -412,6 +434,57 @@ static int mmc_set_bus_width(struct sd_card *card)
 	return ret;
 }
 
+#ifdef CONFIG_MMC_DDR50
+static int mmc_set_ddr50_timing(struct sd_card *card, struct mmc_ext_csd *ext)
+{
+	int ret = 0;
+	struct sdhc_command cmd = {0};
+
+	if (ext->device_type.MMC_HS_DDR_1800MV && card->host_props.host_caps.ddr50_support &&
+	    (card->bus_io.bus_width >= SDHC_BUS_WIDTH4BIT)) {
+
+		cmd.arg = MMC_SWITCH_HS_TIMING_ARG;
+		cmd.opcode = SD_SWITCH;
+		cmd.response_type = SD_RSP_TYPE_R1b;
+		cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+		ret = sdhc_request(card->sdhc, &cmd, NULL);
+		sdmmc_wait_ready(card);
+		if (ret) {
+			LOG_ERR("Setting HS Timing mode failed: %d", ret);
+			return ret;
+		}
+
+		if (card->bus_io.bus_width == SDHC_BUS_WIDTH4BIT) {
+			cmd.arg = MMC_SWITCH_4_BIT_DDR_BUS_ARG;
+		} else {
+			cmd.arg = MMC_SWITCH_8_BIT_DDR_BUS_ARG;
+		}
+		cmd.opcode = SD_SWITCH;
+		cmd.response_type = SD_RSP_TYPE_R1b;
+		cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+		ret = sdhc_request(card->sdhc, &cmd, NULL);
+		sdmmc_wait_ready(card);
+		if (ret) {
+			LOG_ERR("Setting DDR data bus width failed: %d", ret);
+			return ret;
+		}
+
+		/* Max frequency in DDR50 mode is 52 MHz */
+		card->bus_io.clock = MMC_CLOCK_DDR52;
+		card->bus_io.timing = SDHC_TIMING_DDR52;
+		/* Change SDHC bus timing */
+		ret = sdhc_set_io(card->sdhc, &card->bus_io);
+		if (ret) {
+			return ret;
+		}
+		card->card_speed = MMC_HS_TIMING;
+	} else {
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#else
 static int mmc_set_hs_timing(struct sd_card *card)
 {
 	int ret = 0;
@@ -565,6 +638,7 @@ static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
 	}
 	return ret;
 }
+#endif /*CONFIG_MMC_DDR50*/
 
 static int mmc_read_ext_csd(struct sd_card *card, struct mmc_ext_csd *card_ext_csd)
 {
