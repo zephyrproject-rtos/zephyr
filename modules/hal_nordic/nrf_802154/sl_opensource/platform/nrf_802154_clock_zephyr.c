@@ -12,6 +12,7 @@
 #include <compiler_abstraction.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <nrf_sys_event.h>
 
 static bool hfclk_is_running;
 
@@ -52,6 +53,14 @@ void nrf_802154_clock_hfclk_start(void)
 
 	sys_notify_init_callback(&hfclk_cli.notify, hfclk_on_callback);
 
+	/*
+	 * todo: replace constlat request with PM policy API when
+	 * controlling the event latency becomes possible.
+	 */
+	if (IS_ENABLED(CONFIG_NRF_802154_CONSTLAT_CONTROL)) {
+		nrf_sys_event_request_global_constlat();
+	}
+
 	int ret = onoff_request(mgr, &hfclk_cli);
 	__ASSERT_NO_MSG(ret >= 0);
 	(void)ret;
@@ -67,6 +76,11 @@ void nrf_802154_clock_hfclk_stop(void)
 	int ret = onoff_cancel_or_release(mgr, &hfclk_cli);
 	__ASSERT_NO_MSG(ret >= 0);
 	(void)ret;
+
+	if (IS_ENABLED(CONFIG_NRF_802154_CONSTLAT_CONTROL)) {
+		nrf_sys_event_release_global_constlat();
+	}
+
 	hfclk_is_running = false;
 }
 
