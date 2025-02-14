@@ -202,7 +202,7 @@ static void micp_mic_ctlr_aics_gain_setting_cb(struct bt_aics *inst, int err, ui
 	}
 }
 
-static void micp_mic_ctlr_aics_type_cb(struct bt_aics *inst, int err, uint8_t type)
+static void micp_mic_ctlr_aics_type_cb(struct bt_aics *inst, int err, enum bt_aics_input_type type)
 {
 	struct bt_micp_mic_ctlr_cb *listener, *next;
 
