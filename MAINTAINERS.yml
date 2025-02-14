@@ -205,6 +205,7 @@ ARM64 arch:
     - sgrrzhf
     - wearyzen
     - ithinuel
+    - JiafeiPan
   files:
     - arch/arm64/
     - include/zephyr/arch/arm64/
