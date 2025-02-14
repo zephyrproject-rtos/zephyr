@@ -64,7 +64,21 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     # prebuilt libs
     add_prebuilt_library(liblinklayer protocol/bluetooth/bgstack/ll/build/gcc/xg${SILABS_DEVICE_FAMILY_NUMBER}/release/liblinklayer.a)
     add_prebuilt_library(libbgcommon  protocol/bluetooth/bgcommon/lib/build/gcc/cortex-m33/bgcommon/release/libbgcommon.a)
+    if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+      # There is a circular dependency between the libs: libbgcommon depends on the symbol
+      # bg_pool_pools while liblinklayer depends on many symbols in libbgcommon
+      target_link_libraries(libbgcommon INTERFACE liblinklayer)
+      target_link_libraries(liblinklayer INTERFACE libbgcommon)
+      # Only two functions need to be stubbed if this is not included when no blobs are used.
+      # The contents of the init/deinit functions are provided by the Link Layer from SiSDK,
+      # and we should not care about their exact implementation and which calls they make.
+      zephyr_library_sources(
+        ${BLUETOOTH_DIR}/bgstack/ll/src/sl_btctrl_init.c
+        ${BLUETOOTH_DIR}/bgstack/ll/src/sl_btctrl_init_tasklets.c
+      )
+    endif()
     zephyr_library_sources(src/sl_btctrl_hci_reset_shim.c)
+    zephyr_include_directories(config/ll)
 
     # link mbedTLS
     if(CONFIG_MBEDTLS)
