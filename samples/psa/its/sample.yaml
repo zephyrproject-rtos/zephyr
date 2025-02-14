@@ -19,7 +19,7 @@ tests:
   sample.psa.its.secure_storage.entropy_driver:
     filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
             and CONFIG_ENTROPY_HAS_DRIVER
-    extra_args: EXTRA_CONF_FILE=overlay-secure_storage.conf;overlay-entropy_driver.conf
+    extra_args: EXTRA_CONF_FILE=overlay-secure_storage.conf
     tags:
       - drivers.entropy
       - settings
