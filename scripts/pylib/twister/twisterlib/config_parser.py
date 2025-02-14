@@ -52,6 +52,7 @@ class TwisterConfigParser:
                        "extra_dtc_overlay_files": {"type": "list", "default": []},
                        "required_snippets": {"type": "list"},
                        "build_only": {"type": "bool", "default": False},
+                       "no_build": {"type": "bool", "default": False},
                        "build_on_all": {"type": "bool", "default": False},
                        "skip": {"type": "bool", "default": False},
                        "slow": {"type": "bool", "default": False},
@@ -176,7 +177,7 @@ class TwisterConfigParser:
                 if k == "filter":
                     d[k] = f"({d[k]}) and ({v})"
                 elif k not in ("extra_conf_files", "extra_overlay_confs",
-                               "extra_dtc_overlay_files"):
+                               "extra_dtc_overlay_files", "harness_config"):
                     if isinstance(d[k], str) and isinstance(v, list):
                         d[k] = [d[k]] + v
                     elif isinstance(d[k], list) and isinstance(v, str):
@@ -197,6 +198,22 @@ class TwisterConfigParser:
                         d[k] = v
             else:
                 d[k] = v
+
+        harness_config = copy.deepcopy(self.common.get("harness_config", {}))
+        if 'harness_config' in self.scenarios[name]:
+            if harness_config:
+                for k, v in self.scenarios[name]['harness_config'].items():
+                    if k in harness_config:
+                        if isinstance(harness_config[k], list):
+                            harness_config[k] += v if isinstance(v, list) else [v]
+                        else:
+                            harness_config[k] = v
+                    else:
+                        harness_config[k] = v
+            else:
+                harness_config = self.scenarios[name]['harness_config']
+
+        d['harness_config'] = harness_config
 
         # Compile conf files in to a single list. The order to apply them is:
         #  (1) CONF_FILEs extracted from common['extra_args']

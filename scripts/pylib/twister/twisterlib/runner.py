@@ -16,20 +16,31 @@ import subprocess
 import sys
 import time
 import traceback
+import elftools
+import yaml
+import expr_parser
+
 from math import log10
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
 
-import elftools
-import yaml
 from colorama import Fore
+from packaging import version
+from anytree import Node, RenderTree
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-from packaging import version
+
 from twisterlib.cmakecache import CMakeCache
-from twisterlib.environment import canonical_zephyr_base
+from twisterlib.environment import canonical_zephyr_base, TwisterEnv, ZEPHYR_BASE
 from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
 from twisterlib.statuses import TwisterStatus
+from twisterlib.coverage import run_coverage_instance
+from twisterlib.harness import Ctest, HarnessImporter, Pytest, Bsim
+from twisterlib.log_helper import log_command
+from twisterlib.platform import Platform
+from twisterlib.testinstance import TestInstance
+from twisterlib.testplan import change_skip_to_error_if_integration
+from twisterlib.testsuite import TestSuite
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
@@ -38,26 +49,13 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 if sys.platform == 'linux':
     from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
 
-from twisterlib.environment import ZEPHYR_BASE
-
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
-from twisterlib.coverage import run_coverage_instance
-from twisterlib.environment import TwisterEnv
-from twisterlib.harness import Ctest, HarnessImporter, Pytest
-from twisterlib.log_helper import log_command
-from twisterlib.platform import Platform
-from twisterlib.testinstance import TestInstance
-from twisterlib.testplan import change_skip_to_error_if_integration
-from twisterlib.testsuite import TestSuite
 
 try:
     from yaml import CSafeLoader as SafeLoader
 except ImportError:
     from yaml import SafeLoader
-
-import expr_parser
-from anytree import Node, RenderTree
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -629,6 +627,10 @@ class CMake:
 
         return ret
 
+    @property
+    def is_bsim_test(self):
+        return self.instance.testsuite.harness == 'bsim'
+
     def run_cmake(self, args="", filter_stages=None):
         if filter_stages is None:
             filter_stages = []
@@ -655,7 +657,7 @@ class CMake:
             f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}'
         ]
 
-        if self.instance.testsuite.harness == 'bsim':
+        if self.is_bsim_test:
             cmake_args.extend([
                 '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
                 '-DCONFIG_ASSERT=y',
@@ -1122,10 +1124,17 @@ class ProjectBuilder(FilterBuilder):
 
         # Run the generated binary using one of the supported handlers
         elif op == "run":
-            try:
+            def run():
                 logger.debug(f"run test: {self.instance.name}")
                 self.run()
                 logger.debug(f"run status: {self.instance.name} {self.instance.status}")
+
+            try:
+                if self.is_bsim_test:
+                    with lock:
+                        run()
+                else:
+                    run()
 
                 # to make it work with pickle
                 self.instance.handler.thread = None
@@ -1695,6 +1704,9 @@ class ProjectBuilder(FilterBuilder):
         return args_expanded
 
     def cmake(self, filter_stages=None):
+        if self.is_bsim_test:
+            HarnessImporter.get_harness(self.instance).clean_exes()
+
         if filter_stages is None:
             filter_stages = []
         args = []
@@ -1724,10 +1736,10 @@ class ProjectBuilder(FilterBuilder):
             self.options.extra_args, # CMake extra args
             self.instance.build_dir,
         )
-        return self.run_cmake(args,filter_stages)
+        return self.run_cmake(args, filter_stages)
 
     def build(self):
-        harness = HarnessImporter.get_harness(self.instance.testsuite.harness.capitalize())
+        harness = HarnessImporter.get_harness(self.instance)
         build_result = self.run_build(['--build', self.build_dir])
         try:
             if harness:
@@ -1760,7 +1772,7 @@ class ProjectBuilder(FilterBuilder):
             if self.options.extra_test_args and instance.platform.arch == "posix":
                 instance.handler.extra_test_args = self.options.extra_test_args
 
-            harness = HarnessImporter.get_harness(instance.testsuite.harness.capitalize())
+            harness = HarnessImporter.get_harness(instance)
             try:
                 harness.configure(instance)
             except ConfigurationError as error:
@@ -1773,6 +1785,13 @@ class ProjectBuilder(FilterBuilder):
                 harness.pytest_run(instance.handler.get_test_timeout())
             elif isinstance(harness, Ctest):
                 harness.ctest_run(instance.handler.get_test_timeout())
+            elif isinstance(harness, Bsim):
+                if harness.wait_bsim_ready():
+                    harness.bsim_run(instance.handler.get_test_timeout())
+                else:
+                    instance.status = TwisterStatus.ERROR
+                    instance.reason = "BSIM not ready"
+                    logger.error(instance.reason)
             else:
                 instance.handler.handle(harness)
 
@@ -1932,6 +1951,7 @@ class TwisterRunner:
         test_only=False,
         retry_build_errors=False
     ):
+        task_list = []
         for instance in self.instances.values():
             if build_only:
                 instance.run = False
@@ -1966,17 +1986,22 @@ class TwisterRunner:
                         expr_parser.reserved.keys()
                     )
 
-                if test_only and instance.run:
-                    pipeline.put({"op": "run", "test": instance})
+                if test_only or instance.testsuite.no_build and instance.run:
+                    task_list.append({"op": "run", "test": instance})
                 elif instance.filter_stages and "full" not in instance.filter_stages:
-                    pipeline.put({"op": "filter", "test": instance})
+                    task_list.append({"op": "filter", "test": instance})
                 else:
                     cache_file = os.path.join(instance.build_dir, "CMakeCache.txt")
                     if os.path.exists(cache_file) and self.env.options.aggressive_no_clean:
-                        pipeline.put({"op": "build", "test": instance})
+                        task_list.append({"op": "build", "test": instance})
                     else:
-                        pipeline.put({"op": "cmake", "test": instance})
+                        task_list.append({"op": "cmake", "test": instance})
 
+        if all([inst.testsuite.harness == 'bsim' for inst in self.instances.values()]):
+            task_list.sort(key=lambda t: t['op'] == 'cmake')
+
+        for task in task_list:
+            pipeline.put(task)
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
         try:
