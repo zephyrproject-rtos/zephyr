@@ -971,7 +971,7 @@ static int cap_initiator_unicast_audio_configure(
 	/* Store the information about the active procedure so that we can
 	 * continue the procedure after each step
 	 */
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_START, param->count);
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_START, param->count);
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG);
 
 	proc_param = get_next_proc_param(active_proc);
@@ -1008,15 +1008,16 @@ static int cap_initiator_unicast_audio_configure(
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
 {
 	bool all_streaming = true;
-
-	if (bt_cap_common_proc_is_active()) {
-		LOG_DBG("A CAP procedure is already in progress");
-
-		return -EBUSY;
-	}
+	int err;
 
 	if (!valid_unicast_audio_start_param(param)) {
 		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
 	}
 
 	for (size_t i = 0U; i < param->count; i++) {
@@ -1030,10 +1031,18 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 
 	if (all_streaming) {
 		LOG_DBG("All streams are already in the streaming state");
+
+		bt_cap_common_clear_active_proc();
+
 		return -EALREADY;
 	}
 
-	return cap_initiator_unicast_audio_configure(param);
+	err = cap_initiator_unicast_audio_configure(param);
+	if (err != 0) {
+		bt_cap_common_clear_active_proc();
+	}
+
+	return err;
 }
 
 void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
@@ -1639,14 +1648,14 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	size_t meta_len;
 	int err;
 
-	if (bt_cap_common_proc_is_active()) {
+	if (!valid_unicast_audio_update_param(param)) {
+		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
-	}
-
-	if (!valid_unicast_audio_update_param(param)) {
-		return -EINVAL;
 	}
 
 	for (size_t i = 0U; i < param->count; i++) {
@@ -1663,7 +1672,7 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 		       stream_param->meta_len);
 	}
 
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_UPDATE, param->count);
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_UPDATE, param->count);
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE);
 
 	proc_param = get_next_proc_param(active_proc);
@@ -1902,14 +1911,14 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 	bool can_stop = false;
 	int err;
 
-	if (bt_cap_common_proc_is_active()) {
+	if (!valid_unicast_audio_stop_param(param)) {
+		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
-	}
-
-	if (!valid_unicast_audio_stop_param(param)) {
-		return -EINVAL;
 	}
 
 	for (size_t i = 0U; i < param->count; i++) {
@@ -1939,10 +1948,13 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 		LOG_DBG("Cannot %s any streams", !can_disable ? "disable"
 						 : !can_stop  ? "stop"
 							      : "release");
+
+		bt_cap_common_clear_active_proc();
+
 		return -EALREADY;
 	}
 
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_STOP, param->count);
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_STOP, param->count);
 	/** TODO: If this is a CSIP set, then the order of the procedures may
 	 * not match the order in the parameters, and the CSIP ordered access
 	 * procedure should be used.
