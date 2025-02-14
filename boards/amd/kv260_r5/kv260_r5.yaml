@@ -8,6 +8,7 @@ flash: 32768
 supported:
   - i2c
   - eeprom
+  - gpio
 testing:
   ignore_tags:
     - net
