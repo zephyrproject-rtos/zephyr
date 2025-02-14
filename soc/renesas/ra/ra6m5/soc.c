@@ -55,6 +55,9 @@ void soc_early_init_hook(void)
 	R_CPSCU->ICUSARG = 0;
 	R_CPSCU->ICUSARH = 0;
 	R_CPSCU->ICUSARI = 0;
+	for (int i = 0; i < 16; i++) {
+		NVIC->ITNS[i] = 0;
+	}
 
 	/* Enable protection using PRCR register. */
 	R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_SAR);
