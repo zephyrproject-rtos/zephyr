@@ -195,9 +195,9 @@ class Binding:
         self.path: Optional[str] = path
         self._fname2path: dict[str, str] = fname2path
 
-        if raw is None:
-            if path is None:
-                _err("you must provide either a 'path' or a 'raw' argument")
+        if raw is None and path is None:
+            _err("you must provide either a 'path' or a 'raw' argument")
+        elif raw is None:
             with open(path, encoding="utf-8") as f:
                 raw = yaml.load(f, Loader=_BindingLoader)
 
@@ -209,10 +209,10 @@ class Binding:
         # Recursively initialize any child bindings. These don't
         # require a 'compatible' or 'description' to be well defined,
         # but they must be dicts.
-        if "child-binding" in raw:
-            if not isinstance(raw["child-binding"], dict):
-                _err(f"malformed 'child-binding:' in {self.path}, "
-                     "expected a binding (dictionary with keys/values)")
+        if ("child-binding" in raw
+            and not isinstance(raw["child-binding"], dict)):
+            _err(f"malformed 'child-binding:' in {self.path}, "
+                 "expected a binding (dictionary with keys/values)")
             self.child_binding: Optional['Binding'] = Binding(
                 path, fname2path,
                 raw=raw["child-binding"],
@@ -421,11 +421,11 @@ class Binding:
         self._check_properties()
 
         for key, val in raw.items():
-            if key.endswith("-cells"):
-                if (not isinstance(val, list)
-                    or not all(isinstance(elem, str) for elem in val)):
-                    _err(f"malformed '{key}:' in {self.path}, "
-                         "expected a list of strings")
+            if (key.endswith("-cells")
+                and not isinstance(val, list)
+                or not all(isinstance(elem, str) for elem in val)):
+                _err(f"malformed '{key}:' in {self.path}, "
+                     "expected a list of strings")
 
     def _check_properties(self) -> None:
         # _check() helper for checking the contents of 'properties:'.
@@ -2678,11 +2678,12 @@ def _check_prop_by_type(prop_name: str,
         _err(f"'specifier-space' in 'properties: {prop_name}' "
              f"has type '{prop_type}', expected 'phandle-array'")
 
-    if prop_type == "phandle-array":
-        if not prop_name.endswith("s") and "specifier-space" not in options:
-            _err(f"'{prop_name}' in 'properties:' in {binding_path} "
-                 f"has type 'phandle-array' and its name does not end in 's', "
-                 f"but no 'specifier-space' was provided.")
+    if (prop_type == "phandle-array"
+        and not prop_name.endswith("s")
+        and "specifier-space" not in options):
+        _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+             f"has type 'phandle-array' and its name does not end in 's', "
+             f"but no 'specifier-space' was provided.")
 
     # If you change const_types, be sure to update the type annotation
     # for PropertySpec.const.
@@ -2955,10 +2956,10 @@ def _map(
     #   to have a <prefix>-controller property.
 
     map_prop = parent.props.get(prefix + "-map")
-    if not map_prop:
-        if require_controller and prefix + "-controller" not in parent.props:
-            _err(f"expected '{prefix}-controller' property on {parent!r} "
-                 f"(referenced by {child!r})")
+    if (not map_prop and require_controller
+        and prefix + "-controller" not in parent.props):
+        _err(f"expected '{prefix}-controller' property on {parent!r} "
+             f"(referenced by {child!r})")
 
         # No mapping
         return (parent, child_spec)
@@ -3214,11 +3215,10 @@ def _check_dt(dt: DT) -> None:
                      " (see the devicetree specification)")
 
         ranges_prop = node.props.get("ranges")
-        if ranges_prop:
-            if ranges_prop.type not in (Type.EMPTY, Type.NUMS):
-                _err(f"expected 'ranges = < ... >;' in {node.path} in "
-                     f"{node.dt.filename}, not '{ranges_prop}' "
-                     "(see the devicetree specification)")
+        if ranges_prop and ranges_prop.type not in (Type.EMPTY, Type.NUMS):
+            _err(f"expected 'ranges = < ... >;' in {node.path} in "
+                 f"{node.dt.filename}, not '{ranges_prop}' "
+                 "(see the devicetree specification)")
 
 
 def _err(msg) -> NoReturn:
