@@ -308,31 +308,10 @@ SECTIONS
     *libzephyr.a:soc_random.*(.literal .text .literal.* .text.*)
 
     *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__l2__ethernet.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__lib__config.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__ip.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net.a:(.literal .text .literal.* .text.*)
-    *libkernel.a:(.literal .text .literal.* .text.*)
+    *libkernel.a:init.*(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
-    *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
-    *libdrivers__timer.a:esp32c3_sys_timer.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:cbprintf_complete.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
-    *libzephyr.a:log_msg.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:log_list.*(.literal .text .literal.* .text.*)
-    *libdrivers__console.a:uart_console.*(.literal.console_out .text.console_out)
-    *libzephyr.a:log_output.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:rtc_*.*(.literal .text .literal.* .text.*)
-    *liblib__libc__newlib.a:string.*(.literal .text .literal.* .text.*)
-    *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
-    *liblib__libc__picolib.a:string.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
-    *libc.a:*(.literal .text .literal.* .text.*)
 
     /* [mapping:hal] */
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
@@ -406,9 +385,6 @@ SECTIONS
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache.*(.literal .literal.* .text .text.*)
     *libzephyr.a:cache_utils.*(.literal .text .literal.* .text.*)
-
-    *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable)
-    *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable)
 
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
