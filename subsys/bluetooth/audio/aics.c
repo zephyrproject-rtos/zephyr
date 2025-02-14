@@ -487,7 +487,7 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 		return -EINVAL;
 	}
 
-	CHECKIF(param->type > BT_AICS_INPUT_TYPE_STREAMING) {
+	CHECKIF(param->type > BT_AICS_INPUT_TYPE_AMBIENT) {
 		LOG_DBG("Invalid AICS input type value: %u", param->type);
 		return -EINVAL;
 	}
