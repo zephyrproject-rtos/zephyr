@@ -78,6 +78,58 @@ static int pm_cmd_resume(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int pm_cmd_turn_on(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct device *dev;
+	int ret;
+
+	dev = shell_device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Invalid device: %s", argv[1]);
+		return -ENODEV;
+	}
+
+	if (pm_device_runtime_is_enabled(dev)) {
+		shell_error(sh, "Device %s uses runtime PM, use the runtime functions instead",
+			    dev->name);
+		return -EINVAL;
+	}
+
+	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_TURN_ON);
+	if (ret < 0) {
+		shell_error(sh, "Device %s error: %d", "turn on", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int pm_cmd_turn_off(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct device *dev;
+	int ret;
+
+	dev = shell_device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Invalid device: %s", argv[1]);
+		return -ENODEV;
+	}
+
+	if (pm_device_runtime_is_enabled(dev)) {
+		shell_error(sh, "Device %s uses runtime PM, use the runtime functions instead",
+			    dev->name);
+		return -EINVAL;
+	}
+
+	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_TURN_OFF);
+	if (ret < 0) {
+		shell_error(sh, "Device %s error: %d", "turn off", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_PM_DEVICE_RUNTIME)
 static int pm_cmd_runtime_get(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -163,6 +215,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(resume, &dsub_device_name,
 		      "Call the PM resume action on a device",
 		      pm_cmd_resume, 2, 0),
+	SHELL_CMD_ARG(turn-on, &dsub_device_name,
+		      "Call the PM turn on action on a device",
+		      pm_cmd_turn_on, 2, 0),
+	SHELL_CMD_ARG(turn-off, &dsub_device_name,
+		      "Call the PM turn off action on a device",
+		      pm_cmd_turn_off, 2, 0),
 #if defined(CONFIG_PM_DEVICE_RUNTIME)
 	SHELL_CMD_ARG(runtime-get, &dsub_device_name,
 		      "Call the PM runtime get on a device",
