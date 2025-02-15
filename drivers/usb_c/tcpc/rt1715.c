@@ -427,8 +427,9 @@ static int rt1715_tcpc_mask_status_register(const struct device *dev, enum tcpc_
 static int rt1715_tcpc_set_drp_toggle(const struct device *dev, bool enable)
 {
 	const struct rt1715_cfg *cfg = dev->config;
+	uint8_t pd_int_rev = 0x10;
 
-	return tcpci_tcpm_set_drp_toggle(&cfg->bus, enable);
+	return tcpci_tcpm_set_drp_toggle(&cfg->bus, pd_int_rev, enable);
 }
 
 static int rt1715_tcpc_get_chip_info(const struct device *dev, struct tcpc_chip_info *chip_info)
