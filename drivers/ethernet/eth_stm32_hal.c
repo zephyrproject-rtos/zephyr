@@ -1252,11 +1252,13 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 	return ret;
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
 static const struct device *eth_stm32_hal_get_phy(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return eth_stm32_phy_dev;
 }
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio) */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 static const struct device *eth_stm32_get_ptp_clock(const struct device *dev)
@@ -1283,7 +1285,9 @@ static const struct ethernet_api eth_api = {
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.set_config = eth_stm32_hal_set_config,
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
 	.get_phy = eth_stm32_hal_get_phy,
+#endif
 #if defined(CONFIG_NET_DSA)
 	.send = dsa_tx,
 #else
