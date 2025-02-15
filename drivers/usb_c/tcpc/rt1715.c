@@ -543,16 +543,6 @@ void rt1715_alert_work_cb(struct k_work *work)
 							 (uint16_t)fault);
 
 			LOG_DBG("fault: %02x", fault);
-		} else if (alert_type == TCPC_ALERT_EXTENDED_STATUS) {
-			uint8_t ext_status;
-
-			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_EXTENDED_STATUS,
-						       (uint16_t *)&ext_status);
-			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_EXTENDED_STATUS,
-							 (uint16_t)ext_status);
-
-			data->cc_changed = true;
-			LOG_DBG("ext status: %02x", ext_status);
 		} else if (alert_type == TCPC_ALERT_POWER_STATUS) {
 			uint8_t pwr_status;
 
@@ -560,15 +550,6 @@ void rt1715_alert_work_cb(struct k_work *work)
 						       (uint16_t *)&pwr_status);
 
 			LOG_DBG("power status: %02x", pwr_status);
-		} else if (alert_type == TCPC_ALERT_EXTENDED) {
-			uint8_t alert_status;
-
-			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_EXTENDED_ALERT_STATUS,
-						       (uint16_t *)&alert_status);
-			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_EXTENDED_ALERT_STATUS,
-							 (uint16_t)alert_status);
-
-			LOG_DBG("ext alert: %02x", alert_status);
 		} else if (alert_type == TCPC_ALERT_MSG_STATUS) {
 			LOG_DBG("MSG pending");
 
