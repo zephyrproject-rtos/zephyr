@@ -23,6 +23,10 @@
 #include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
 #include <zephyr/irq.h>
 
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+#include <stm32_ll_gpio.h>  /* for EXTI GPIO lines 0 to 15 support */
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
+
 #include "stm32_hsem.h"
 
 
