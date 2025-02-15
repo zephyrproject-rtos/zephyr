@@ -684,3 +684,54 @@ int tcpci_tcpm_mask_status_register(const struct i2c_dt_spec *bus, enum tcpc_sta
 		return -EINVAL;
 	}
 }
+
+int tcpci_tcpm_set_snk_ctrl(const struct i2c_dt_spec *bus, bool enable)
+{
+	return tcpci_write_reg8(bus, TCPC_REG_COMMAND,
+			enable ? TCPC_REG_COMMAND_SNK_CTRL_HIGH : TCPC_REG_COMMAND_SNK_CTRL_LOW);
+}
+
+int tcpci_tcpm_set_src_ctrl(const struct i2c_dt_spec *bus, bool enable)
+{
+	return tcpci_write_reg8(bus, TCPC_REG_COMMAND,
+			enable ? TCPC_REG_COMMAND_SRC_CTRL_DEF : TCPC_REG_COMMAND_SRC_CTRL_LOW);
+}
+
+int tcpci_tcpm_get_snk_ctrl(const struct i2c_dt_spec *bus, bool *sinking)
+{
+	uint16_t reg;
+	int ret;
+
+	ret = tcpci_tcpm_get_status_register(bus, TCPC_REG_POWER_STATUS, &reg);
+	if (ret == 0) {
+		*sinking = reg & TCPC_REG_POWER_STATUS_SINKING_VBUS;
+	}
+
+	return ret;
+}
+
+int tcpci_tcpm_get_src_ctrl(const struct i2c_dt_spec *bus, bool *sourcing)
+{
+	uint16_t reg;
+	int ret;
+
+	ret = tcpci_tcpm_get_status_register(bus, TCPC_REG_POWER_STATUS, &reg);
+	if (ret == 0) {
+		*sourcing = reg & TCPC_REG_POWER_STATUS_SOURCING_VBUS;
+	}
+
+	return ret;
+}
+
+int tcpci_tcpm_set_debug_accessory(const struct i2c_dt_spec *bus, bool enable)
+{
+	return tcpci_update_reg8(bus, TCPC_REG_CONFIG_STD_OUTPUT,
+				 TCPC_REG_CONFIG_STD_OUTPUT_DBG_ACC_CONN_N,
+				 enable ? 0 : TCPC_REG_CONFIG_STD_OUTPUT_DBG_ACC_CONN_N);
+}
+
+int tcpci_tcpm_set_low_power_mode(const struct i2c_dt_spec *bus, bool enable)
+{
+	return tcpci_write_reg8(bus, TCPC_REG_COMMAND,
+			enable ? TCPC_REG_COMMAND_I2CIDLE : TCPC_REG_COMMAND_WAKE_I2C);
+}
