@@ -75,7 +75,12 @@ struct stm32_exti_range {
 	uint8_t len;
 };
 
-#define NUM_EXTI_LINES DT_PROP(DT_NODELABEL(exti), num_lines)
+/* Takes elements with indexes 0,2,4,.. with weight 0 and the others as-is */
+#define SEL2ND(node_id, prop, idx) \
+	(DT_PROP_BY_IDX(node_id, prop, idx) * (idx % 2))
+
+#define NUM_EXTI_LINES \
+	DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(exti), line_ranges, SEL2ND, (+))
 
 static IRQn_Type exti_irq_table[NUM_EXTI_LINES] = {[0 ... NUM_EXTI_LINES - 1] = 0xFF};
 

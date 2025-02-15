@@ -14,11 +14,6 @@ properties:
   interrupt-names:
     required: true
 
-  num-lines:
-    type: int
-    required: true
-    description: Number of lines supported by the interrupt controller.
-
   line-ranges:
     type: array
     required: true
