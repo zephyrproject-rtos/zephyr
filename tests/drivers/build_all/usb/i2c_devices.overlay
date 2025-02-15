@@ -44,6 +44,16 @@
 				vconn-ctrl-gpios = <&test_gpio 0 0>;
 				vconn-disc-gpios = <&test_gpio 0 0>;
 			};
+
+			test_i2c_fusb307: fusb307@3 {
+				compatible = "onnn,fusb307-tcpc";
+				reg = <3>;
+				irq-gpios = <&test_gpio 0 0>;
+
+				fusb307_vbus: fusb307_vbus {
+					compatible = "zephyr,usb-c-vbus-tcpci";
+				};
+			};
 		};
 	};
 };
