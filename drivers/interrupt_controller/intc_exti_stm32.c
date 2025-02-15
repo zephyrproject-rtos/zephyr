@@ -172,144 +172,59 @@ static void stm32_exti_isr(const void *exti_range)
 	}
 }
 
-static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
-{
-	/*
-	 * Some stm32 peripherals like GPIO does not have other ability to generate
-	 * interrupts other than over EXTI. This function fills the exti_irq_table
-	 * with the corresponding irqn for the given EXTI line range.
-	 * Please refer to NVIC section of the reference manual, to find out which
-	 * EXTI line corresponds to which IRQn for your certain STM32 MCU.
-	*/
-	for (int i = 0; i < len; i++) {
-		exti_irq_table[start + i] = irqn;
-	}
-}
-
-/* TODO Review STM32_EXTI_INIT_LINE_RANGE() macro regarding:
- *  - idx - there is only one EXTI. Why idx is needed then?
- *  - IRQ_CONNECT() - peripherals shall define own EXTI irqs and reset corresponding flags
-*/
-/* This macro:
- * - populates line_range_x from line_range dt property
- * - fill exti_irq_table through stm32_fill_irq_table()
- * - calls IRQ_CONNECT for each interrupt and matching line_range
- */
-#define STM32_EXTI_INIT_LINE_RANGE(node_id, interrupts, idx)			\
-	static const struct stm32_exti_range line_range_##idx = {		\
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),		\
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx)))	\
-	};									\
-	stm32_fill_irq_table(line_range_##idx.start,				\
-			     line_range_##idx.len,				\
-			     DT_IRQ_BY_IDX(node_id, idx, irq));			\
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),				\
-		DT_IRQ_BY_IDX(node_id, idx, priority),				\
-		stm32_exti_isr, &line_range_##idx, 0);
-
-/**
- * @brief Initializes the EXTI GPIO interrupt controller driver
- */
-static int stm32_exti_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
-			     interrupt_names,
-			     STM32_EXTI_INIT_LINE_RANGE);
-
-	/* TODO: Verify EXTI clock is always enabled */
-	return 0;
-}
-
-static struct stm32_exti_data exti_data;
-DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
-		 NULL,
-		 &exti_data, NULL,
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		 NULL);
-
-/**
- * @brief EXTI GPIO interrupt controller API implementation
- */
-
 void stm32_exti_enable_irq(uint32_t linenum)
 {
-	unsigned int irqnum;
 	const uint32_t ll_exti_line = linenum_to_ll_exti_line(linenum);
 
-	__ASSERT_NO_MSG(linenum < NUM_EXTI_LINES);
-
-	/* Get matching exti irq provided line number thanks to irq_table */
-	irqnum = exti_irq_table[linenum];
-	__ASSERT_NO_MSG(irqnum != 0xFF);
+	if(linenum < NUM_EXTI_LINES) {
+		/* Get matching exti irq provided line number thanks to irq_table */
+		const unsigned int irqnum = exti_irq_table[linenum];
+		__ASSERT_NO_MSG(irqnum != 0xFF);
+		/* Disable exti irq interrupt */
+		irq_enable(irqnum);
+	}
 
 	/* Enable requested line interrupt */
 	EXTI_ENABLE_IT_0_31(ll_exti_line);
-
-	/* Enable exti irq interrupt */
-	irq_enable(irqnum);
 }
 
 void stm32_exti_disable_irq(uint32_t linenum)
 {
 	const uint32_t ll_exti_line = linenum_to_ll_exti_line(linenum);
+
+	if(linenum < NUM_EXTI_LINES) {
+		/* Get matching exti irq provided line number thanks to irq_table */
+		const unsigned int irqnum = exti_irq_table[linenum];
+		__ASSERT_NO_MSG(irqnum != 0xFF);
+		/* Disable exti irq interrupt */
+		irq_disable(irqnum);
+	}
+
+	/* Disable requested line interrupt */
 	EXTI_DISABLE_IT_0_31(ll_exti_line);
 }
 
-void stm32_exti_set_trigger_type(uint32_t linenum, uint32_t trigger)
+void stm32_exti_enable_event(uint32_t linenum)
 {
-	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-	/* TODO: compare with intc_gpio_stm32wb0.c implementation */
 	const uint32_t ll_exti_line = linenum_to_ll_exti_line(linenum);
-	switch (trigger) {
-	case STM32_EXTI_TRIG_NONE:
-		EXTI_DISABLE_RISING_TRIG_0_31(ll_exti_line);
-		EXTI_DISABLE_FALLING_TRIG_0_31(ll_exti_line);
-		break;
-	case STM32_EXTI_TRIG_RISING:
-		EXTI_ENABLE_RISING_TRIG_0_31(ll_exti_line);
-		EXTI_DISABLE_FALLING_TRIG_0_31(ll_exti_line);
-		break;
-	case STM32_EXTI_TRIG_FALLING:
-		EXTI_ENABLE_FALLING_TRIG_0_31(ll_exti_line);
-		EXTI_DISABLE_RISING_TRIG_0_31(ll_exti_line);
-		break;
-	case STM32_EXTI_TRIG_BOTH:
-		EXTI_ENABLE_RISING_TRIG_0_31(ll_exti_line);
-		EXTI_ENABLE_FALLING_TRIG_0_31(ll_exti_line);
-		break;
-	default:
-		__ASSERT_NO_MSG(0);
-		break;
-	}
-	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+	EXTI_ENABLE_EVENT_0_31(ll_exti_line);
 }
 
-void stm32_exti_set_mode(uint32_t linenum, uint32_t mode)
+void stm32_exti_disable_event(uint32_t linenum)
 {
-	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	const uint32_t ll_exti_line = linenum_to_ll_exti_line(linenum);
-	switch (mode) {
-	case STM32_EXTI_MODE_IT:
-		EXTI_DISABLE_EVENT_0_31(ll_exti_line);
-		EXTI_ENABLE_IT_0_31(ll_exti_line);
-		break;
-	case STM32_EXTI_MODE_EVENT:
-		EXTI_DISABLE_IT_0_31(ll_exti_line);
-		EXTI_ENABLE_EVENT_0_31(ll_exti_line);
-		break;
-	case STM32_EXTI_MODE_BOTH:
-		EXTI_ENABLE_IT_0_31(ll_exti_line);
-		EXTI_ENABLE_EVENT_0_31(ll_exti_line);
-		break;
-	default:
-		__ASSERT_NO_MSG(0);
-		break;
-	}
-	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+	EXTI_DISABLE_EVENT_0_31(ll_exti_line);
 }
 
+
+ /**
+  * @brief Set callback invoked when an interrupt occurs on specified EXTI line number
+  *
+  * @param linenum	EXTI interrupt line number
+  * @param cb	Interrupt callback function
+  * @param user	Custom user data for usage by the callback
+  * @returns 0 on success, -EBUSY if a callback is already set for @p line
+  */
 int stm32_exti_set_irq_callback(uint32_t linenum, stm32_exti_irq_cb_t cb, void *user)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
@@ -330,6 +245,11 @@ int stm32_exti_set_irq_callback(uint32_t linenum, stm32_exti_irq_cb_t cb, void *
 	return 0;
 }
 
+/**
+ * @brief Removes the interrupt callback of specified EXTI line number
+ *
+ * @param linenum	EXTI interrupt line number
+ */
 void stm32_exti_remove_irq_callback(uint32_t linenum)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
@@ -397,3 +317,153 @@ uint32_t stm32_exti_get_line_src_port(uint32_t linenum)
 
 	return port;
 }
+
+/**
+ * @brief Configures the trigger type for the specified EXTI line
+ *
+ * @param linenum EXTI line number
+ * @param mode EXTI trigger type
+ */
+void stm32_exti_set_trigger_type(uint32_t linenum, stm32_exti_trigger_type trigger)
+{
+	const uint32_t ll_exti_line = linenum_to_ll_exti_line(linenum);
+	/* TODO: compare with intc_gpio_stm32wb0.c implementation */
+	switch (trigger) {
+	case STM32_EXTI_TRIG_NONE:
+		EXTI_DISABLE_RISING_TRIG_0_31(ll_exti_line);
+		EXTI_DISABLE_FALLING_TRIG_0_31(ll_exti_line);
+		break;
+	case STM32_EXTI_TRIG_RISING:
+		EXTI_ENABLE_RISING_TRIG_0_31(ll_exti_line);
+		EXTI_DISABLE_FALLING_TRIG_0_31(ll_exti_line);
+		break;
+	case STM32_EXTI_TRIG_FALLING:
+		EXTI_ENABLE_FALLING_TRIG_0_31(ll_exti_line);
+		EXTI_DISABLE_RISING_TRIG_0_31(ll_exti_line);
+		break;
+	case STM32_EXTI_TRIG_BOTH:
+		EXTI_ENABLE_RISING_TRIG_0_31(ll_exti_line);
+		EXTI_ENABLE_FALLING_TRIG_0_31(ll_exti_line);
+		break;
+	default:
+		__ASSERT_NO_MSG(0);
+		break;
+	}
+}
+
+/**
+ * @brief Enables external interrupt/event for specified EXTI line
+ *
+ * @param linenum EXTI line number
+ * @param mode EXTI mode
+ */
+void stm32_exti_set_mode(uint32_t linenum, stm32_exti_mode mode)
+{
+	switch (mode) {
+	case STM32_EXTI_MODE_NONE:
+		stm32_exti_disable_event(linenum);
+		stm32_exti_disable_irq(linenum);
+		break;
+	case STM32_EXTI_MODE_IT:
+		stm32_exti_disable_event(linenum);
+		stm32_exti_enable_irq(linenum);
+		break;
+	case STM32_EXTI_MODE_EVENT:
+		stm32_exti_disable_irq(linenum);
+		stm32_exti_enable_event(linenum);
+		break;
+	case STM32_EXTI_MODE_BOTH:
+		stm32_exti_enable_irq(linenum);
+		stm32_exti_enable_event(linenum);
+		break;
+	default:
+		__ASSERT_NO_MSG(0);
+		break;
+	}
+}
+
+int stm32_exti_enable(uint32_t linenum, stm32_exti_trigger_type trigger,
+					stm32_exti_mode mode, stm32_exti_irq_cb_t cb, void *user)
+{
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	int ret = 0;
+	ret = stm32_exti_set_irq_callback(linenum, cb, user);
+	if (ret != 0) {
+		return ret;
+	}
+
+	stm32_exti_set_trigger_type(linenum, trigger);
+	stm32_exti_set_mode(linenum, mode);
+
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+
+	return ret;
+}
+
+void stm32_exti_disable(uint32_t linenum)
+{
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	stm32_exti_set_trigger_type(linenum, STM32_EXTI_TRIG_NONE);
+	stm32_exti_set_mode(linenum, STM32_EXTI_MODE_NONE);
+	stm32_exti_remove_irq_callback(linenum);
+
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+}
+
+static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
+{
+	/*
+	 * Some stm32 peripherals like GPIO does not have other ability to generate
+	 * interrupts other than over EXTI. This function fills the exti_irq_table
+	 * with the corresponding irqn for the given EXTI line range.
+	 * Please refer to NVIC section of the reference manual, to find out which
+	 * EXTI line corresponds to which IRQn for your certain STM32 MCU.
+	*/
+	for (int i = 0; i < len; i++) {
+		exti_irq_table[start + i] = irqn;
+	}
+}
+
+/* TODO Review STM32_EXTI_INIT_LINE_RANGE() macro regarding:
+ *  - idx - there is only one EXTI. Why idx is needed then?
+ *  - IRQ_CONNECT() - peripherals shall define own EXTI irqs and reset corresponding flags
+*/
+/* This macro:
+ * - populates line_range_x from line_range dt property
+ * - fill exti_irq_table through stm32_fill_irq_table()
+ * - calls IRQ_CONNECT for each interrupt and matching line_range
+ */
+#define STM32_EXTI_INIT_LINE_RANGE(node_id, interrupts, idx)			\
+	static const struct stm32_exti_range line_range_##idx = {		\
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),		\
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx)))	\
+	};									\
+	stm32_fill_irq_table(line_range_##idx.start,				\
+			     line_range_##idx.len,				\
+			     DT_IRQ_BY_IDX(node_id, idx, irq));			\
+	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),				\
+		DT_IRQ_BY_IDX(node_id, idx, priority),				\
+		stm32_exti_isr, &line_range_##idx, 0);
+
+/**
+ * @brief Initializes the EXTI device interrupt controller driver
+ */
+static int stm32_exti_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti), interrupt_names,
+						  STM32_EXTI_INIT_LINE_RANGE);
+
+	/* TODO: Verify EXTI clock is always enabled or enable it */
+	return 0;
+}
+
+static struct stm32_exti_data exti_data;
+DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
+		 NULL,
+		 &exti_data, NULL,
+		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
+		 NULL);

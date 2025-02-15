@@ -23,7 +23,7 @@ extern "C" {
 /**
  * @brief EXTI interrupt trigger type
  */
-enum stm32_exti_trigger_type {
+typedef enum {
 	/* No trigger */
 	STM32_EXTI_TRIG_NONE  = 0x0,
 	/* Trigger on rising edge */
@@ -36,19 +36,21 @@ enum stm32_exti_trigger_type {
 	STM32_EXTI_TRIG_HIGH_LEVEL = 0x4,
 	/* Trigger on low level */
 	STM32_EXTI_TRIG_LOW_LEVEL = 0x5
-};
+} stm32_exti_trigger_type;
 
 /**
  * @brief EXTI line mode
  */
-enum stm32_exti_mode {
+typedef enum {
 	/* Generate interrupts only */
 	STM32_EXTI_MODE_IT  = 0x0,
 	/* Generate events only */
 	STM32_EXTI_MODE_EVENT  = 0x1,
 	/* Generate interrupts and events */
 	STM32_EXTI_MODE_BOTH = 0x2,
-};
+	/* Disable interrupts and events */
+	STM32_EXTI_MODE_NONE = 0x3,
+} stm32_exti_mode;
 
 /**
  * @brief EXTI interrupt callback function signature
@@ -61,38 +63,28 @@ enum stm32_exti_mode {
 typedef void (*stm32_exti_irq_cb_t)(uint32_t linenum, void *user);
 
 /**
- * @brief Set callback invoked when an interrupt occurs on specified EXTI line number
- *
- * @param linenum	EXTI interrupt line number
- * @param cb	Interrupt callback function
- * @param user	Custom user data for usage by the callback
- * @returns 0 on success, -EBUSY if a callback is already set for @p line
- */
-int stm32_exti_set_irq_callback(uint32_t linenum, stm32_exti_irq_cb_t cb,
-	void *user);
-
-/**
- * @brief Removes the interrupt callback of specified EXTI line number
- *
- * @param linenum	EXTI interrupt line number
- */
-void stm32_exti_remove_irq_callback(uint32_t linenum);
-
-/**
- * @brief Set EXTI trigger type for a line and enables it.
+ * @brief Enable EXTI line given by line number
+ * @note Depending on mode either interrupt or event for corresponding line
+ * 		 will be enabled. IRQ callback will bes	set if provided.
  *
  * @param linenum	EXTI line number
  * @param trigger	EXTI trigger type (see @ref stm32_exti_trigger_type)
+ * @param mode		EXTI mode (see @ref stm32_exti_mode)
+ * @param cb		Interrupt callback function
+ * @param user	Custom user data for usage by the callback
+ * @returns 0 on success, -EBUSY if a callback is already set for @p line
  */
-void stm32_exti_set_trigger_type(uint32_t linenum, uint32_t trigger);
+int stm32_exti_enable(uint32_t linenum, stm32_exti_trigger_type trigger,
+					 stm32_exti_mode mode, stm32_exti_irq_cb_t cb, void *user);
 
 /**
- * @brief Set EXTI mode for a line
+ * @brief Disable EXTI line given by line number
+ * @note Interrupt and event for given line number will be disabled and trigger
+ * 		 will be set to none. Also interrupt callback will be removed.
  *
  * @param linenum	EXTI line number
- * @param mode	EXTI mode (see @ref stm32_exti_mode)
  */
-void stm32_exti_set_mode(uint32_t linenum, uint32_t mode);
+void stm32_exti_disable(uint32_t linenum);
 
 /**
  * @brief Clears interrupt pending bit for specified EXTI line number
@@ -119,7 +111,6 @@ uint32_t stm32_exti_get_line_src_port(uint32_t linenum);
 
 /**
  * @brief Enable EXTI interrupts for specified line number
- * @note TODO: Shall be dropped since trigger mode enables either IT or Event
  *
  * @param linenum	EXTI line number
  */
@@ -127,11 +118,24 @@ void stm32_exti_enable_irq(uint32_t linenum);
 
 /**
  * @brief Disable EXTI interrupts for specified line number
- * @note TODO: Shall be dropped since trigger mode enables either IT or Event
  *
  * @param linenum	EXTI line number
  */
 void stm32_exti_disable_irq(uint32_t linenum);
+
+/**
+ * @brief Enable EXTI event for specified line number
+ *
+ * @param linenum	EXTI line number
+ */
+void stm32_exti_enable_event(uint32_t linenum);
+
+/**
+ * @brief Disable EXTI interrupts for specified line number
+ *
+ * @param linenum	EXTI line number
+ */
+void stm32_exti_disable_event(uint32_t linenum);
 
 #ifdef __cplusplus
 }

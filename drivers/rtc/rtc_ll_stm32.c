@@ -147,8 +147,8 @@ static inline void ll_func_exti_enable_rtc_alarm_it(uint32_t linenum)
 #if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* in STM32U5 & STM32WBAX series, RTC Alarm event is not routed to EXTI */
 #else
-	stm32_exti_set_mode(linenum, STM32_EXTI_MODE_IT);
-	stm32_exti_set_trigger_type(linenum, STM32_EXTI_TRIG_RISING);
+	stm32_exti_enable(linenum, STM32_EXTI_TRIG_RISING, STM32_EXTI_MODE_IT,
+					NULL, NULL);
 #endif
 }
 

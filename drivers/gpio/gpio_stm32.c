@@ -211,9 +211,7 @@ static inline void gpio_stm32_disable_pin_irqs(uint32_t port, gpio_pin_t pin)
 	 * GPIO pins are connected to EXTI lines 0 to 15 and directly represent EXTI
 	 * line number
 	 */
-	stm32_exti_disable_irq(pin);  /* TODO: do we need to do more than just disable IRQ? */
-	stm32_exti_remove_irq_callback(pin);
-	stm32_exti_set_trigger_type(pin, STM32_EXTI_TRIG_NONE);
+	stm32_exti_disable(pin);
 }
 
 /**
@@ -623,17 +621,15 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		}
 	}
 
-	if (stm32_exti_set_irq_callback(pin, gpio_stm32_isr, data) != 0) {
-		err = -EBUSY;
-		goto exit;
-	}
-
 #if defined(CONFIG_EXTI_STM32)
 	stm32_exti_set_line_src_port(pin, cfg->port);
 #endif
 
-	stm32_exti_set_trigger_type(pin, irq_trigger);
-	stm32_exti_enable_irq(pin);
+	err = stm32_exti_enable(pin, irq_trigger, STM32_EXTI_MODE_IT, gpio_stm32_isr,
+						  data);
+	if (err != 0) {
+		err = -EBUSY;
+	}
 
 exit:
 	return err;
