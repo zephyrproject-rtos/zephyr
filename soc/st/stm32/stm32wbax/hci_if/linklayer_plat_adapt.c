@@ -29,6 +29,8 @@ volatile int32_t prio_high_isr_counter;
 volatile int32_t prio_low_isr_counter;
 volatile int32_t prio_sys_isr_counter;
 volatile uint32_t local_basepri_value;
+volatile uint8_t irq_counter;
+static uint32_t primask_bit;
 
 /* Radio SW low ISR global variable */
 volatile uint8_t radio_sw_low_isr_is_running_high_prio;
@@ -147,6 +149,26 @@ void LINKLAYER_PLAT_TriggerSwLowIT(uint8_t priority)
 void LINKLAYER_PLAT_Assert(uint8_t condition)
 {
 	__ASSERT_NO_MSG(condition);
+}
+
+void LINKLAYER_PLAT_EnableIRQ(void)
+{
+	if (irq_counter > 0) {
+		irq_counter--;
+		if (irq_counter == 0) {
+			__set_PRIMASK(primask_bit);
+		}
+	}
+}
+
+void LINKLAYER_PLAT_DisableIRQ(void)
+{
+	if (irq_counter == 0) {
+		/* Save primask bit at first time interrupts disabling */
+		primask_bit = __get_PRIMASK();
+	}
+	__disable_irq();
+	irq_counter++;
 }
 
 void LINKLAYER_PLAT_EnableSpecificIRQ(uint8_t isr_type)
