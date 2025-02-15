@@ -326,7 +326,7 @@
 			interrupts = <26 0>;
 			interrupt-names = "ldma";
 			#dma-cells = <1>;
-			dma_channels = <8>;
+			dma-channels = <8>;
 			status = "disabled";
 		};
 
