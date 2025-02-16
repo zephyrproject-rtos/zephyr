@@ -1815,18 +1815,21 @@ static int uart_stm32_async_init(const struct device *dev)
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
 	struct uart_stm32_data *data = dev->data;
+	int ret;
 
 	data->uart_dev = dev;
 
 	if (data->dma_rx.dma_dev != NULL) {
-		if (!device_is_ready(data->dma_rx.dma_dev)) {
-			return -ENODEV;
+		ret = device_get(data->dma_rx.dma_dev);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
 	if (data->dma_tx.dma_dev != NULL) {
-		if (!device_is_ready(data->dma_tx.dma_dev)) {
-			return -ENODEV;
+		ret = device_get(data->dma_tx.dma_dev);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
@@ -1998,9 +2001,10 @@ static int uart_stm32_clocks_enable(const struct device *dev)
 
 	__uart_stm32_get_clock(dev);
 
-	if (!device_is_ready(data->clock)) {
+	err = device_get(data->clock);
+	if (err < 0) {
 		LOG_ERR("clock control device not ready");
-		return -ENODEV;
+		return err;
 	}
 
 	/* enable clock */
@@ -2029,12 +2033,14 @@ static int uart_stm32_registers_configure(const struct device *dev)
 	USART_TypeDef *usart = config->usart;
 	struct uart_stm32_data *data = dev->data;
 	struct uart_config *uart_cfg = data->uart_cfg;
+	int ret;
 
 	LL_USART_Disable(usart);
 
-	if (!device_is_ready(config->reset.dev)) {
+	ret = device_get(config->reset.dev);
+	if (ret < 0) {
 		LOG_ERR("reset controller not ready");
-		return -ENODEV;
+		return ret;
 	}
 
 	/* Reset UART to default state using RCC */
@@ -2172,6 +2178,33 @@ static int uart_stm32_init(const struct device *dev)
 #else
 	return 0;
 #endif
+}
+
+static int uart_stm32_deinit(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
+	USART_TypeDef *usart = config->usart;
+
+	/* TODO: is this correct? */
+	while (!LL_USART_IsActiveFlag_TC(usart)) {
+	}
+
+	/* Reset UART to default state using RCC */
+	(void)reset_line_toggle_dt(&config->reset);
+
+	(void)clock_control_off(data->clock, (clock_control_subsys_t)&config->pclken[0]);
+
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_RESET);
+
+#ifdef CONFIG_UART_ASYNC_API
+	(void)device_put(data->dma_tx.dma_dev);
+	(void)device_put(data->dma_rx.dma_dev);
+#endif
+	(void)device_put(config->reset.dev);
+	(void)device_put(data->clock);
+
+	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -2463,8 +2496,9 @@ static struct uart_stm32_data uart_stm32_data_##index = {		\
 									\
 PM_DEVICE_DT_INST_DEFINE(index, uart_stm32_pm_action);			\
 									\
-DEVICE_DT_INST_DEFINE(index,						\
+DEVICE_DT_INST_DEINIT_DEFINE(index,					\
 		    uart_stm32_init,					\
+		    uart_stm32_deinit,					\
 		    PM_DEVICE_DT_INST_GET(index),			\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\

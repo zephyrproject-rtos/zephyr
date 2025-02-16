@@ -25,7 +25,7 @@ int main(void)
 	int ret;
 	bool led_state = true;
 
-	if (!gpio_is_ready_dt(&led)) {
+	if (gpio_get_dt(&led) < 0) {
 		return 0;
 	}
 
