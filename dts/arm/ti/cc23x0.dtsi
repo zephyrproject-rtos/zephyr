@@ -79,6 +79,14 @@
 			clocks = <&sysclk>;
 			status = "disabled";
 		};
+
+		dma: dma@40026000 {
+			compatible = "ti,cc23x0-dma";
+			reg = <0x40026000 0x524>;
+			interrupts = <8 0>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
 	};
 };
 
