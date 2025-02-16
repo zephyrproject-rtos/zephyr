@@ -98,13 +98,19 @@ config KERNEL_DIRECT_MAP
 
 endif # KERNEL_VM_SUPPORT
 
-menuconfig MMU
-	bool "MMU features"
-	depends on CPU_HAS_MMU
-	select KERNEL_VM_SUPPORT
+config CPU_USE_MMU
+	bool
 	help
 	  This option is enabled when the CPU's memory management unit is active
 	  and the arch_mem_map() API is available.
+
+menuconfig MMU
+	bool "MMU features"
+	depends on CPU_USE_MMU
+	default y
+	select KERNEL_VM_SUPPORT
+	help
+	  Enable this option to use the kernel memory management unit API.
 
 if MMU
 config MMU_PAGE_SIZE
