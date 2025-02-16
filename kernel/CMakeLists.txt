@@ -115,6 +115,16 @@ list(APPEND kernel_files
   )
 endif()
 
+if(CONFIG_CBS)
+list(APPEND kernel_files
+  sched_server/cbs.c
+  )
+if(CONFIG_CBS_LOG)
+list(APPEND kernel_files
+  sched_server/cbs_log.c
+  )
+endif() # CONFIG_CBS_LOG
+endif()
 
 if(CONFIG_THREAD_MONITOR)
 list(APPEND kernel_files
