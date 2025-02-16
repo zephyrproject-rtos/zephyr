@@ -1,0 +1,13 @@
+levels:
+  - name: basic
+    description: >
+      A plan to verify basic API functionality
+    adds:
+      - drivers.stepper.stepper_api
+  - name: constant_velocity
+    description: >
+      A plan to evaluate constant velocity drivers
+    inherits:
+      - basic
+    adds:
+      - drivers.stepper.stepper_const_velocity
