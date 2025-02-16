@@ -1,0 +1,11 @@
+power_states:
+  k_cpu_idle:
+    rms: 56.0
+  state_0:
+    rms: 4.0
+  state_1:
+    rms: 1.3
+  state_2:
+    rms: 0.27
+  active:
+    rms: 134
