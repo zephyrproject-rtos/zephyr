@@ -317,31 +317,10 @@ SECTIONS
     *libzephyr.a:soc_random.*(.literal .text .literal.* .text.*)
 
     *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__l2__ethernet.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__lib__config.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__ip.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net.a:(.literal .text .literal.* .text.*)
-    *libkernel.a:(.literal .text .literal.* .text.*)
+    *libkernel.a:init.*(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
-    *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
-    *libdrivers__timer.a:esp32c6_sys_timer.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:cbprintf_complete.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
-    *libzephyr.a:log_msg.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:log_list.*(.literal .text .literal.* .text.*)
-    *libdrivers__console.a:uart_console.*(.literal.console_out .text.console_out)
-    *libzephyr.a:log_output.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:rtc_*.*(.literal .text .literal.* .text.*)
-    *liblib__libc__newlib.a:string.*(.literal .text .literal.* .text.*)
-    *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
-    *liblib__libc__picolib.a:string.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
-    *libc.a:*(.literal .text .literal.* .text.*)
 
     /* [mapping:hal] */
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
@@ -383,7 +362,6 @@ SECTIONS
     *libzephyr.a:flash_ops.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_system] */
-    *libzephyr.a:reset_reason.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
     *(.literal.esp_system_abort .text.esp_system_abort)
 
@@ -467,7 +445,6 @@ SECTIONS
     *libzephyr.a:bootloader_sha.*(.literal .text .literal.* .text.*)
 
     *libzephyr.a:esp_image_format.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:flash_ops.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_encrypt.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_encryption_secure_features.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_partitions.*(.literal .text .literal.* .text.*)
