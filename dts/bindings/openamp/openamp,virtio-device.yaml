@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenAMP RPMSG VirtIO device
+
+compatible: "openamp,virtio-device"
+
+include: base.yaml
+
+properties:
+  device-id:
+    type: int
+    description: VirtIO device ID
+
+  vrings:
+    type: phandle-array
+    required: true
+    description: VirtIO Rings
+
+  vring-names:
+    type: string-array
+    required: true
+    description: I/O region for the vring1, usually a carvout region
+
+  "#vring-cells":
+    type: int
+    const: 0
