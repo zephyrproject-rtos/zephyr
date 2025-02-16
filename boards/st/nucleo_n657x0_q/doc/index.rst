@@ -150,6 +150,13 @@ The board is configured to be programmed using west `STM32CubeProgrammer`_ runne
 so its :ref:`installation <stm32cubeprog-flash-host-tools>` is needed.
 Version 2.18.0 or later of `STM32CubeProgrammer`_ is required.
 
+.. note::
+   Firmware is ran in secure mode of execution, which requires a signature.
+   West build command is designed to sign generated binary automaticlly using
+   STM32CubeProgrammer utility STM32_SigningTool_CLI.
+   This utility is installed along with STM32CubeProgrammer, but make sure it is
+   available in your PATH variable.
+
 To program the board, there are two options:
 
 - Program the firmware in external flash. At boot, it will then be loaded on RAM
