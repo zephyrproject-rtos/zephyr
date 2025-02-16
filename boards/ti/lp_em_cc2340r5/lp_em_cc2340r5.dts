@@ -73,3 +73,14 @@
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
 };
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_ch0
+		     &adc0_ch2
+		     &adc0_ch3
+		     &adc0_ch4
+		     &adc0_ch6
+		     &adc0_ch8>;
+	pinctrl-names = "default";
+};
