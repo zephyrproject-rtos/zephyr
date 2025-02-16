@@ -1,4 +1,6 @@
 tests:
   testing.ztest.summary.shared_unit_test:
+    platform_key:
+      - arch
     tags:
       - test_framework
