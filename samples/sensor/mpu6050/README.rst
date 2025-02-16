@@ -12,8 +12,8 @@ This sample application periodically (0.5 Hz) measures the sensor
 temperature, acceleration, and angular velocity, displaying the values
 on the console along with a timestamp since startup.
 
-When triggered mode is enabled the measurements are displayed at the
-rate they are produced by the sensor.
+When triggered mode is enabled the measurements are displayed at a rate
+of 32Hz governed by the sensor's internal clock and divider.
 
 Wiring
 *******

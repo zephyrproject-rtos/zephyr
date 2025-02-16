@@ -224,6 +224,12 @@ int mpu6050_init(const struct device *dev)
 
 	drv_data->gyro_sensitivity_x10 = mpu6050_gyro_sensitivity_x10[i];
 
+	if (i2c_reg_write_byte_dt(&cfg->i2c, MPU6050_REG_SMPLRT_DIV,
+				  CONFIG_MPU6050_SMPLRT_DIV) < 0) {
+		LOG_ERR("Failed to write samplerate divider.");
+		return -EIO;
+	}
+
 #ifdef CONFIG_MPU6050_TRIGGER
 	if (cfg->int_gpio.port) {
 		if (mpu6050_init_interrupt(dev) < 0) {
