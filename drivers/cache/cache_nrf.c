@@ -160,7 +160,7 @@ static inline int _cache_checks(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, v
 				size_t size, bool is_range)
 {
 	/* Check if the cache is enabled */
-	if (!(cache->ENABLE & CACHE_ENABLE_ENABLE_Enabled)) {
+	if (!nrf_cache_enable_check(cache)) {
 		return -EAGAIN;
 	}
 
