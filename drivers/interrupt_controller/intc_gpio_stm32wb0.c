@@ -22,7 +22,7 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/drivers/interrupt_controller/gpio_intc_stm32.h>
+#include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
 #include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h>	/* For PORTA/PORTB defines */
 
 #define INTC_NODE DT_DRV_INST(0)
@@ -44,7 +44,7 @@ BUILD_ASSERT(GPIO_PORT_TABLE_INDEX(STM32_PORTB) == NUM_PINS_PER_GPIO_PORT);
 
 /* wrapper for user callback */
 struct gpio_irq_cb_wrp {
-	stm32_gpio_irq_cb_t fn;
+	stm32_exti_irq_cb_t fn;
 	void *data;
 };
 
@@ -70,9 +70,9 @@ struct stm32wb0_gpio_intc_data {
 /**
  * @returns the LL_EXTI_LINE_Pxy define for pin @p pin on GPIO port @p port
  */
-static inline stm32_gpio_irq_line_t portpin_to_ll_exti_line(uint32_t port, gpio_pin_t pin)
+static inline uint32_t portpin_to_ll_exti_line(uint32_t port, gpio_pin_t pin)
 {
-	stm32_gpio_irq_line_t line = (1U << pin);
+	uint32_t line = (1U << pin);
 
 	if (port == STM32_PORTB) {
 		line <<= SYSCFG_IO_DTR_PB0_DT_Pos;
@@ -92,7 +92,7 @@ static inline stm32_gpio_irq_line_t portpin_to_ll_exti_line(uint32_t port, gpio_
  *
  * The returned value is always between 0~31.
  */
-static inline uint32_t ll_exti_line_to_portpin(stm32_gpio_irq_line_t line)
+static inline uint32_t ll_exti_line_to_portpin(uint32_t line)
 {
 	return LOG2(line);
 }
@@ -100,7 +100,7 @@ static inline uint32_t ll_exti_line_to_portpin(stm32_gpio_irq_line_t line)
 /**
  * @brief Retrieves the user callback block for a given line
  */
-static struct gpio_irq_cb_wrp *irq_cb_wrp_for_line(stm32_gpio_irq_line_t line)
+static struct gpio_irq_cb_wrp *irq_cb_wrp_for_line(uint32_t line)
 {
 	const struct device *const dev = DEVICE_DT_GET(INTC_NODE);
 	struct stm32wb0_gpio_intc_data *const data = dev->data;
@@ -186,20 +186,7 @@ DEVICE_DT_DEFINE(INTC_NODE, &stm32wb0_gpio_intc_init,
  * @brief STM32 GPIO interrupt controller API implementation
  */
 
-/**
- * @internal
- * STM32WB0 GPIO interrupt controller driver:
- * The type @ref stm32_gpio_irq_line_t is used to hold the LL_EXTI_LINE_Pxy
- * defines that corresponds to the specified pin. Note that these defines
- * also contain the target GPIO port.
- * @endinternal
- */
-stm32_gpio_irq_line_t stm32_gpio_intc_get_pin_irq_line(uint32_t port, gpio_pin_t pin)
-{
-	return portpin_to_ll_exti_line(port, pin);
-}
-
-void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line)
+void stm32_exti_enable_irq(uint32_t line)
 {
 	/* Enable line interrupt at INTC level */
 	LL_EXTI_EnableIT(line);
@@ -210,43 +197,43 @@ void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line)
 	 */
 }
 
-void stm32_gpio_intc_disable_line(stm32_gpio_irq_line_t line)
+void stm32_exti_disable_irq(uint32_t line)
 {
 	/* Disable line interrupt at INTC level */
 	LL_EXTI_DisableIT(line);
 }
 
-void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t trg)
+void stm32_exti_set_trigger_type(uint32_t line, uint32_t trg)
 {
 	switch (trg) {
-	case STM32_GPIO_IRQ_TRIG_NONE:
+	case STM32_EXTI_TRIG_NONE:
 		/**
 		 * There is no NONE trigger on STM32WB0.
 		 * We could disable the line interrupts here, but it isn't
 		 * really necessary: the GPIO driver already does it by
-		 * calling @ref stm32_gpio_intc_disable_line before calling
+		 * calling @ref stm32_exti_disable_irq before calling
 		 * us with @p trigger = STM32_EXTI_TRIG_NONE.
 		 */
 		break;
-	case STM32_GPIO_IRQ_TRIG_RISING:
+	case STM32_EXTI_TRIG_RISING:
 		LL_EXTI_EnableEdgeDetection(line);
 		LL_EXTI_DisableBothEdgeTrig(line);
 		LL_EXTI_EnableRisingTrig(line);
 		break;
-	case STM32_GPIO_IRQ_TRIG_FALLING:
+	case STM32_EXTI_TRIG_FALLING:
 		LL_EXTI_EnableEdgeDetection(line);
 		LL_EXTI_DisableBothEdgeTrig(line);
 		LL_EXTI_DisableRisingTrig(line);
 		break;
-	case STM32_GPIO_IRQ_TRIG_BOTH:
+	case STM32_EXTI_TRIG_BOTH:
 		LL_EXTI_EnableEdgeDetection(line);
 		LL_EXTI_EnableBothEdgeTrig(line);
 		break;
-	case STM32_GPIO_IRQ_TRIG_HIGH_LEVEL:
+	case STM32_EXTI_TRIG_HIGH_LEVEL:
 		LL_EXTI_DisableEdgeDetection(line);
 		LL_EXTI_EnableRisingTrig(line);
 		break;
-	case STM32_GPIO_IRQ_TRIG_LOW_LEVEL:
+	case STM32_EXTI_TRIG_LOW_LEVEL:
 		LL_EXTI_DisableEdgeDetection(line);
 		LL_EXTI_DisableRisingTrig(line);
 		break;
@@ -267,8 +254,8 @@ void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t tr
 	LL_EXTI_ClearFlag(line);
 }
 
-int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line,
-					stm32_gpio_irq_cb_t cb, void *user)
+int stm32_exti_set_irq_callback(uint32_t line,
+					stm32_exti_irq_cb_t cb, void *user)
 {
 	struct gpio_irq_cb_wrp *cb_wrp = irq_cb_wrp_for_line(line);
 
@@ -287,7 +274,7 @@ int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line,
 	return 0;
 }
 
-void stm32_gpio_intc_remove_irq_callback(uint32_t line)
+void stm32_exti_remove_irq_callback(uint32_t line)
 {
 	struct gpio_irq_cb_wrp *cb_wrp = irq_cb_wrp_for_line(line);
 
