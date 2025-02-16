@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(net_samples_common, LOG_LEVEL_DBG);
 
 #include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 
 #if defined(CONFIG_NET_CONNECTION_MANAGER)
 #if defined(CONFIG_NET_SAMPLE_COMMON_WAIT_DNS_SERVER_ADDITION)
@@ -42,6 +43,7 @@ void wait_for_network(void)
 {
 	net_mgmt_init_event_callback(&l4_cb, l4_event_handler, L4_EVENT_MASK);
 	net_mgmt_add_event_callback(&l4_cb);
+	conn_mgr_mon_resend_status();
 
 	LOG_INF("Waiting for network...");
 
