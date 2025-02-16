@@ -6,7 +6,6 @@ tests:
       - shell
       - backend
       - uart
-    filter: ( CONFIG_SHELL )
     platform_allow:
       - qemu_x86
       - qemu_riscv32
