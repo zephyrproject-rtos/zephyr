@@ -264,8 +264,8 @@ enum {
 #define __z_posix_sysconf_SC_XOPEN_UUCP                   (-1L)
 #define __z_posix_sysconf_SC_XOPEN_VERSION                _XOPEN_VERSION
 #define __z_posix_sysconf_SC_CLK_TCK                      (100L)
-#define __z_posix_sysconf_SC_GETGR_R_SIZE_MAX             (0L)
-#define __z_posix_sysconf_SC_GETPW_R_SIZE_MAX             (0L)
+#define __z_posix_sysconf_SC_GETGR_R_SIZE_MAX             CONFIG_POSIX_GETGR_R_SIZE_MAX
+#define __z_posix_sysconf_SC_GETPW_R_SIZE_MAX             CONFIG_POSIX_GETPW_R_SIZE_MAX
 #define __z_posix_sysconf_SC_AIO_LISTIO_MAX               AIO_LISTIO_MAX
 #define __z_posix_sysconf_SC_AIO_MAX                      AIO_MAX
 #define __z_posix_sysconf_SC_AIO_PRIO_DELTA_MAX           AIO_PRIO_DELTA_MAX
