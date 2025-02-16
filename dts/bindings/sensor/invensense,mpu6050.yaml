@@ -16,3 +16,14 @@ properties:
       The INT signal default configuration is active-high.  The
       property value should ensure the flags properly describe the
       signal that is presented to the driver.
+
+  smplrt-div:
+    type: int
+    default: 7
+    description: |
+      Sensor Data Sample Rate Divider.
+      Sensor data Sample Rate = 8000Hz / (1 + Sample Rate Divider).
+      While using I2C minimal Data Sample Rate Divider is 4, which results in
+      1600Hz Sensor Data Sample Rate. Sample Rates higher than this are not
+      recommended while using I2C.
+      Valid range: 4 - 255
