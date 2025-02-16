@@ -43,20 +43,69 @@ config CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
 	  This is set to y by default when the hardware clock is fast enough
 	  to wrap sys_clock_cycle_get_32() in about a minute or less.
 
-config CORTEX_M_SYSTICK_IDLE_TIMER
-	bool "Use an additional timer while entering IDLE"
-	default $(dt_chosen_enabled,$(DT_CHOSEN_IDLE_TIMER))
-	depends on COUNTER
-	depends on TICKLESS_KERNEL
-	depends on PM
+choice CORTEX_M_SYSTICK_LPM_TIMER
+	prompt "SysTick companion low-power mode timer"
+	# If all dependencies are enabled, and /chosen/cortex-m-idle-timer
+	# is enabled, default to using the Counter API-based LPM timer.
+	# Otherwise, the first choice (LPM_TIMER_NONE) will be selected
+	# automatically, and no LPM timer will be enabled.
+	default CORTEX_M_SYSTICK_LPM_TIMER_COUNTER
 	help
-	  There are chips e.g. STMFX family that use SysTick as a system timer,
-	  but SysTick is not clocked in low power mode. These chips usually have
-	  another timer that is not stopped, but it has lower frequency e.g.
-	  RTC, thus it can't be used as a main system timer.
+	  It is common for SoCs equipped with SysTick to use it as system timer.
+	  However, depending on the SoC implementation, entering low-power mode
+	  may turn off the SysTick clock or place SysTick under reset.
 
-	  Use the IDLE timer for timeout (wakeup) when the system is entering
-	  IDLE state.
+	  On such SoCs, a vendor-specific timer that remains active in low-power
+	  mode will usually be provided - however, it may be unfit for usage as
+	  system timer, for example because its frequency is too low.
 
-	  The chosen IDLE timer node has to support setting alarm from the
-	  counter API.
+	  With this option, such vendor-specific timer can be selected and used by
+	  the SysTick driver to ensure proper system operation in low-power mode.
+
+	  NOTE: since Power Management has to be enabled if the SoC may enter in
+	  low-power mode, no LPM timer can be selected if PM is not enabled.
+	  Tickless kernel must also be enabled, since periodic interrupts would
+	  prevent the system from entering in low-power modes.
+
+config CORTEX_M_SYSTICK_LPM_TIMER_NONE
+	bool "None"
+	help
+	  Use no additional device as low-power mode timer.
+
+	  The SoC must never enter a low-power mode where SysTick is disabled when
+	  this option is selected; otherwise, system behavior becomes unpredictable.
+
+if TICKLESS_KERNEL && PM
+
+config CORTEX_M_SYSTICK_LPM_TIMER_COUNTER
+	bool "Counter API timer"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_IDLE_TIMER))
+	depends on COUNTER
+	help
+	  Use a device that implements the counter API as low-power mode timer.
+
+	  The device is selected by property "/chosen/cortex-m-idle-timer".
+
+config CORTEX_M_SYSTICK_LPM_TIMER_HOOKS
+	bool "Hook-based timer"
+	help
+	  Use hooks in the SysTick driver to configure the low-power mode timer.
+	  Refer to `include/drivers/timer/cortex_m_systick.h` for more details.
+
+endif # PM
+endchoice # CORTEX_M_SYSTICK_LPM_TIMER
+
+config CORTEX_M_SYSTICK_RESET_BY_LPM
+	bool
+	depends on !CORTEX_M_SYSTICK_LPM_TIMER_NONE
+	help
+	  Some SoCs provide one or more low-power mode which, as part of their
+	  operation, place SysTick or the entire CPU under reset. This requires
+	  special care from the driver - notably, SysTick needs to be restarted
+	  after waking up from such a low-power mode.
+
+	  Select this symbol if your SoC has a low-power mode that places SysTick
+	  under reset. Note that this requires that the platform provides a timer
+	  active in low-power mode, since SysTick cannot be used for timekeeping.
+
+	  Refer to CONFIG_CORTEX_M_SYSTICK_LPM_TIMER for more details.
