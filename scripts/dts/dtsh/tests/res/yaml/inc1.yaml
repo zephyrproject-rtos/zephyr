@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  inc1_depth0_p1:
+    type: int
+    description: Defined here.
+  inc1_depth0_p2:
+    type: int
+    description: Defined here.
+  inc1_depth0_p3:
+    # No description.
+    type: int
+
+child-binding:
+  properties:
+    inc1_depth1_p1:
+      type: int
+      description: Defined here.
+    inc1_depth1_p2:
+      type: int
+      description: Defined here.
+
+  child-binding:
+    properties:
+      inc1_depth2_p1:
+        type: int
+        description: Defined here.
+      inc1_depth2_p2:
+        type: int
+        description: Defined here.
