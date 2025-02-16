@@ -1,0 +1,45 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Jorge Ramirez-Ortiz <jorge.ramirez@oss.qualcomm.com>
+ */
+
+/ {
+	latmon: latency-monitor {
+		compatible = "latency-monitor";
+
+		latmon_pulse: latmon_pulse {
+			gpios = <&gpioe 24 GPIO_ACTIVE_HIGH>;
+			pinctrl-0 = <&pinmux_pulse>;
+			pinctrl-names = "default";
+		};
+
+		latmon_ack: latmon_ack {
+			gpios = <&gpioe 25 GPIO_ACTIVE_HIGH>;
+			pinctrl-0 = <&pinmux_ack>;
+			pinctrl-names = "default";
+		};
+	};
+};
+
+&pinctrl {
+	pinmux_pulse:pinmux_pulse {
+		group0 {
+			pinmux = <PTE24>;
+			drive-strength = "high";
+			slew-rate = "slow";
+		};
+	};
+
+	pinmux_ack:pinmux_ack {
+		group0 {
+			pinmux = <PTE25>;
+			drive-strength = "high";
+			slew-rate = "slow";
+		};
+	};
+};
+
+&i2c0 {
+	status = "disabled";
+};
