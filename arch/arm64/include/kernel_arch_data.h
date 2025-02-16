@@ -39,6 +39,16 @@ extern "C" {
 typedef struct arch_esf _esf_t;
 typedef struct __basic_sf _basic_sf_t;
 
+#ifdef CONFIG_ZVM
+#include <zephyr/zvm/arm/cpu.h>
+#include <zephyr/zvm/vm.h>
+
+typedef struct zvm_vcpu_context zvm_vcpu_context_t;
+typedef struct arch_commom_regs arch_commom_regs_t;
+typedef struct z_vcpu vcpu_t;
+typedef struct vcpu_arch vcpu_arch_t;
+#endif
+
 #ifdef __cplusplus
 }
 #endif
