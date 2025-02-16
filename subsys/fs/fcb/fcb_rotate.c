@@ -11,7 +11,7 @@
 int
 fcb_rotate(struct fcb *fcb)
 {
-	struct flash_sector *sector;
+	const struct flash_sector *sector;
 	int rc = 0;
 
 	rc = k_mutex_lock(&fcb->f_mtx, K_FOREVER);
