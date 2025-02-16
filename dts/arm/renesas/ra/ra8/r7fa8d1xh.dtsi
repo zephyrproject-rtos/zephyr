@@ -155,6 +155,7 @@
 
 			cpuclk: cpuclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <480000000>;
 				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
