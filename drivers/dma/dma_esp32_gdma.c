@@ -137,46 +137,82 @@ static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_
 }
 #endif
 
-static int dma_esp32_config_rx_descriptor(struct dma_esp32_channel *dma_channel,
-						struct dma_block_config *block)
+static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
+					struct dma_block_config *block)
 {
 	if (!block) {
 		LOG_ERR("At least one dma block is required");
 		return -EINVAL;
 	}
 
-	if (!esp_ptr_dma_capable((uint32_t *)block->dest_address)
-#if defined(CONFIG_ESP_SPIRAM)
-	&& !esp_ptr_dma_ext_capable((uint32_t *)block->dest_address)
-#endif
-	) {
-		LOG_ERR("Rx buffer not in DMA capable memory: %p", (uint32_t *)block->dest_address);
-		return -EINVAL;
-	}
-
+	uint32_t target_address = 0, block_size = 0;
 	dma_descriptor_t *desc_iter = dma_channel->desc_list;
 
 	for (int i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM; ++i) {
-		if (block->block_size > DMA_DESCRIPTOR_BUFFER_MAX_SIZE) {
-			LOG_ERR("Size of block %d is too large", i);
-			return -EINVAL;
+		if (block_size == 0) {
+			if (dma_channel->dir == DMA_TX) {
+				target_address = block->source_address;
+			} else {
+				target_address = block->dest_address;
+			}
+
+			if (!esp_ptr_dma_capable((uint32_t *)target_address)
+#if defined(CONFIG_ESP_SPIRAM)
+			&& !esp_ptr_dma_ext_capable((uint32_t *)target_address)
+#endif
+			) {
+				if (dma_channel->dir == DMA_TX) {
+					LOG_ERR("Tx buffer not in DMA capable memory: %p",
+						(uint32_t *)target_address);
+				} else {
+					LOG_ERR("Rx buffer not in DMA capable memory: %p",
+						(uint32_t *)target_address);
+				}
+
+				return -EINVAL;
+			}
+
+			block_size = block->block_size;
 		}
+
+		uint32_t buffer_size;
+
+		if (block_size > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+			buffer_size = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+		} else {
+			buffer_size = block_size;
+		}
+
 		memset(desc_iter, 0, sizeof(dma_descriptor_t));
-		desc_iter->buffer = (void *)block->dest_address;
-		desc_iter->dw0.size = block->block_size;
-		desc_iter->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-		if (!block->next_block) {
-			desc_iter->next = NULL;
-			break;
+		desc_iter->buffer = (void *)target_address;
+		desc_iter->dw0.size = buffer_size;
+		if (dma_channel->dir == DMA_TX) {
+			desc_iter->dw0.length = buffer_size;
 		}
+		desc_iter->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+
+		target_address += buffer_size;
+		block_size -= buffer_size;
+
+		if (!block_size) {
+			if (block->next_block) {
+				block = block->next_block;
+			} else {
+				desc_iter->next = NULL;
+				if (dma_channel->dir == DMA_TX) {
+					desc_iter->dw0.suc_eof = 1;
+				}
+				break;
+			}
+		}
+
 		desc_iter->next = desc_iter + 1;
 		desc_iter += 1;
-		block = block->next_block;
 	}
 
 	if (desc_iter->next) {
 		memset(dma_channel->desc_list, 0, sizeof(dma_channel->desc_list));
-		LOG_ERR("Too many dma blocks. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
+		LOG_ERR("Run out of descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -EINVAL;
 	}
 
@@ -213,60 +249,16 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
 
-	gdma_ll_rx_clear_interrupt_status(data->hal.dev, dma_channel->channel_id, UINT32_MAX);
-	gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id, UINT32_MAX,
+	gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id, GDMA_LL_RX_EVENT_MASK,
+				    false);
+
+	gdma_ll_rx_clear_interrupt_status(data->hal.dev, dma_channel->channel_id,
+					  GDMA_LL_RX_EVENT_MASK);
+
+	gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id, GDMA_LL_RX_EVENT_MASK,
 				    config_dma->dma_callback != NULL);
 
-	return dma_esp32_config_rx_descriptor(dma_channel, config_dma->head_block);
-}
-
-static int dma_esp32_config_tx_descriptor(struct dma_esp32_channel *dma_channel,
-						struct dma_block_config *block)
-{
-	if (!block) {
-		LOG_ERR("At least one dma block is required");
-		return -EINVAL;
-	}
-
-	if (!esp_ptr_dma_capable((uint32_t *)block->source_address)
-#if defined(CONFIG_ESP_SPIRAM)
-	&& !esp_ptr_dma_ext_capable((uint32_t *)block->source_address)
-#endif
-	) {
-		LOG_ERR("Tx buffer not in DMA capable memory: %p",
-			(uint32_t *)block->source_address);
-		return -EINVAL;
-	}
-
-	dma_descriptor_t *desc_iter = dma_channel->desc_list;
-
-	for (int i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM; ++i) {
-		if (block->block_size > DMA_DESCRIPTOR_BUFFER_MAX_SIZE) {
-			LOG_ERR("Size of block %d is too large", i);
-			return -EINVAL;
-		}
-		memset(desc_iter, 0, sizeof(dma_descriptor_t));
-		desc_iter->buffer = (void *)block->source_address;
-		desc_iter->dw0.size = block->block_size;
-		desc_iter->dw0.length = block->block_size;
-		desc_iter->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-		if (!block->next_block) {
-			desc_iter->next = NULL;
-			desc_iter->dw0.suc_eof = 1;
-			break;
-		}
-		desc_iter->next = desc_iter + 1;
-		desc_iter += 1;
-		block = block->next_block;
-	}
-
-	if (desc_iter->next) {
-		memset(dma_channel->desc_list, 0, sizeof(dma_channel->desc_list));
-		LOG_ERR("Too many dma blocks. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
-		return -EINVAL;
-	}
-
-	return 0;
+	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block);
 }
 
 static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channel *dma_channel,
@@ -296,12 +288,16 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
 
-	gdma_ll_tx_clear_interrupt_status(data->hal.dev, dma_channel->channel_id, UINT32_MAX);
+	gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id, GDMA_LL_TX_EVENT_MASK,
+				    false);
+
+	gdma_ll_tx_clear_interrupt_status(data->hal.dev, dma_channel->channel_id,
+					  GDMA_LL_TX_EVENT_MASK);
 
 	gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id, GDMA_LL_EVENT_TX_EOF,
 				    config_dma->dma_callback != NULL);
 
-	return dma_esp32_config_tx_descriptor(dma_channel, config_dma->head_block);
+	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block);
 }
 
 static int dma_esp32_config(const struct device *dev, uint32_t channel,
