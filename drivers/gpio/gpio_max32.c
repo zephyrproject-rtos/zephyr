@@ -11,6 +11,7 @@
 #include <zephyr/drivers/clock_control/adi_max32_clock_control.h>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <gpio.h>
+#include <wrap_max32_lp.h>
 
 #define DT_DRV_COMPAT adi_max32_gpio
 
@@ -137,6 +138,12 @@ static int api_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flag
 		} else if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			MXC_GPIO_OutSet(cfg->regs, BIT(pin));
 		}
+	}
+
+	/* Enable wakeup source if flag exist */
+	if (flags & MAX32_GPIO_WAKEUP_EN) {
+		MXC_LP_EnableGPIOWakeup(&gpio_cfg);
+		MXC_GPIO_SetWakeEn(gpio_cfg.port, gpio_cfg.mask);
 	}
 
 	return 0;
