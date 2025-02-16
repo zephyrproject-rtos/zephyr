@@ -3,5 +3,8 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
 
-rsource "Kconfig.hal"
-rsource "Kconfig.components"
+config AMBIQ_COMPONENT_USE_BT
+	bool
+	depends on SOC_AMBIQ_BT_SUPPORTED
+	help
+	  Use Bluetooth component from Ambiq
