@@ -1,0 +1,58 @@
+# ICM40627 Six-Axis Motion Tracking device configuration options
+#
+# Copyright 2024 PHYTEC America, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ICM40627
+	bool "ICM40627 Six-Axis Motion Tracking Device"
+	default y
+	depends on DT_HAS_INVENSENSE_ICM40627_ENABLED
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM40627),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM40627),i2c)
+	help
+	  Enable driver for ICM40627 SPI-based six-axis motion tracking device.
+
+if ICM40627
+
+choice ICM40627_TRIGGER_MODE
+	prompt "Trigger mode"
+	default ICM40627_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config ICM40627_TRIGGER_NONE
+	bool "No trigger"
+
+config ICM40627_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM40627),int-gpios)
+	select ICM40627_TRIGGER
+
+config ICM40627_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM40627),int-gpios)
+	select ICM40627_TRIGGER
+
+endchoice
+
+config ICM40627_TRIGGER
+	bool
+
+config ICM40627_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ICM40627_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ICM40627_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ICM40627_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # ICM40627
