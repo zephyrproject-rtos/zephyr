@@ -191,12 +191,19 @@ The current minimum required version for the main dependencies are:
          .. code-block:: bat
 
             choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-            choco install ninja gperf python311 git dtc-msys2 wget 7zip
+            choco install ninja gperf python311 git dtc-msys2 wget 7zip strawberryperl
 
          .. warning::
 
             As of November 2024, Python 3.13 is not recommended for Zephyr development on Windows,
             as some required Python dependencies may be difficult to install.
+
+         .. note::
+            If the .pl extension has not yet been associated with an application,
+            then the first time a .pl file is run without specifying an
+            interpreter, Windows will ask what application will open Perl files.
+            Set the default app to Strawberry Perl. By default the executable is
+            installed at ``C:\Strawberry\perl\bin\perl.exe``.
 
       #. Close the terminal window.
 
