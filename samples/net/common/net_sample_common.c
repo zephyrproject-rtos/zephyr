@@ -42,6 +42,7 @@ void wait_for_network(void)
 {
 	net_mgmt_init_event_callback(&l4_cb, l4_event_handler, L4_EVENT_MASK);
 	net_mgmt_add_event_callback(&l4_cb);
+	conn_mgr_mon_resend_status();
 
 	LOG_INF("Waiting for network...");
 
