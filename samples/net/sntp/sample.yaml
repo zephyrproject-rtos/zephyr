@@ -1,0 +1,18 @@
+sample:
+  description: Simple Network Time Protocol sample application
+  name: SNTP
+common:
+  harness: net
+  tags:
+    - net
+    - sntp
+tests:
+  net.sntp.native:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME=y
+    extra_args:
+      - OVERLAY_CONFIG="overlay-nsos.conf"
