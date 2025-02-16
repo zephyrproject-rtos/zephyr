@@ -284,12 +284,6 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		s_nxp_wifi_UapActivated = true;
 		break;
 	case WLAN_REASON_UAP_CLIENT_ASSOC:
-		LOG_DBG("WLAN: UAP a Client Associated");
-		LOG_DBG("Client => ");
-		print_mac((const char *)data);
-		LOG_DBG("Associated with Soft AP");
-		break;
-	case WLAN_REASON_UAP_CLIENT_CONN:
 		wlan_get_current_uap_network(&nxp_wlan_uap_network);
 #ifdef CONFIG_NXP_WIFI_11AX
 		if (nxp_wlan_uap_network.dot11ax) {
@@ -312,6 +306,12 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		ap_sta_info.twt_capable = status.twt_capable;
 
 		wifi_mgmt_raise_ap_sta_connected_event(g_uap.netif, &ap_sta_info);
+		LOG_DBG("WLAN: UAP a Client Associated");
+		LOG_DBG("Client => ");
+		print_mac((const char *)data);
+		LOG_DBG("Associated with Soft AP");
+		break;
+	case WLAN_REASON_UAP_CLIENT_CONN:
 		LOG_DBG("WLAN: UAP a Client Connected");
 		LOG_DBG("Client => ");
 		print_mac((const char *)data);
