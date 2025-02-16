@@ -81,7 +81,14 @@ ZTEST(mheap_api, test_mheap_malloc_free)
 		}
 	}
 
-	block_fail = k_malloc(BLK_SIZE_MIN);
+	/* Some platforms have components that variably add to the mem pool
+	 * size and make it larger than the known CONFIG_HEAP_MEM_POOL_SIZE
+	 */
+	if (CONFIG_HEAP_MEM_POOL_SIZE < K_HEAP_MEM_POOL_SIZE) {
+		block_fail = k_malloc(K_HEAP_MEM_POOL_SIZE * 2);
+	} else {
+		block_fail = k_malloc(BLK_SIZE_MIN);
+	}
 	/** TESTPOINT: Return NULL if fail.*/
 	zassert_is_null(block_fail, NULL);
 
@@ -116,7 +123,7 @@ ZTEST(mheap_api, test_mheap_realloc)
 	zassert_is_null(block2);
 
 	/* Keep making the allocated buffer bigger until the heap is depleted */
-	for (nb = 2; nb < (2 * BLK_NUM_MAX); nb++) {
+	for (nb = 2; nb < (2 * (K_HEAP_MEM_POOL_SIZE / BLK_SIZE_MIN)); nb++) {
 		void *last_block1 = block1;
 
 		block1 = k_realloc(block1, nb * BLK_SIZE_MIN);
@@ -128,8 +135,14 @@ ZTEST(mheap_api, test_mheap_realloc)
 
 	/* Allocate buffer2 when the heap has been depleted */
 	block2 = k_realloc(NULL, BLK_SIZE_MIN);
-	/* Should fail and return NULL */
-	zassert_is_null(block2);
+	/* Should fail and return NULL. However, for boards where components
+	 * like ACPI add to K_HEAP_MEM_POOL_SIZE and do their own allocation / free
+	 * operations before the test runs, there will be random holes in
+	 * memory where block2 can be placed. Skip this check in that case.
+	 */
+	if (CONFIG_HEAP_MEM_POOL_SIZE >= K_HEAP_MEM_POOL_SIZE) {
+		zassert_is_null(block2);
+	}
 
 	/* Now, make block1 smaller */
 	block1 = k_realloc(block1, BLK_SIZE_MIN);
@@ -186,7 +199,7 @@ ZTEST(mheap_api, test_mheap_calloc)
 	zassert_is_null(mem, "calloc operation failed");
 
 	/* Requesting a space large than heap memory lead to failure */
-	mem = k_calloc(NMEMB * 3, SIZE);
+	mem = k_calloc(K_HEAP_MEM_POOL_SIZE * 3, SIZE);
 	zassert_is_null(mem, "calloc operation failed");
 
 	mem = k_calloc(NMEMB, SIZE);
@@ -235,7 +248,7 @@ ZTEST(mheap_api, test_k_aligned_alloc)
 /**
  * @brief Validate allocation and free from system heap memory pool.
 
- * @details Set heap memory as resource pool. It will success when alloc
+ * @details Set heap memory as resource pool. It will succeed when alloc
  * a block of memory smaller than the pool and will fail when alloc
  * a block of memory larger than the pool.
  *
@@ -256,8 +269,16 @@ ZTEST(mheap_api, test_sys_heap_mem_pool_assign)
 	zassert_not_null(ptr, "bytes allocation failed from system pool");
 	k_free(ptr);
 
-	zassert_is_null((char *)z_thread_malloc(BLK_SIZE_MAX * 2),
+	/* Some platforms have components that variably add to the mem pool
+	 * size and make it larger than the known CONFIG_HEAP_MEM_POOL_SIZE
+	 */
+	if (CONFIG_HEAP_MEM_POOL_SIZE < K_HEAP_MEM_POOL_SIZE) {
+		zassert_is_null((char *)z_thread_malloc(K_HEAP_MEM_POOL_SIZE * 2),
 						"overflow check failed");
+	} else {
+		zassert_is_null((char *)z_thread_malloc(BLK_SIZE_MAX * 2),
+						"overflow check failed");
+	}
 }
 
 /**
