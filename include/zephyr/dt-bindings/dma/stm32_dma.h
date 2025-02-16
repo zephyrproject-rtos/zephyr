@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_STM32_DMA_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_STM32_DMA_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_DMA_STM32_DMA_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_DMA_STM32_DMA_H_
 
 /**
  * @name custom DMA flags for channel configuration
@@ -70,4 +70,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_STM32_DMA_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_DMA_STM32_DMA_H_ */
