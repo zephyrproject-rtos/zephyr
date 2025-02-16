@@ -1313,6 +1313,8 @@ class ProjectBuilder(FilterBuilder):
             'recording.csv',
             'rom.json',
             'ram.json',
+            'build_info.yml',
+            'zephyr/zephyr.dts',
             # below ones are needed to make --test-only work as well
             'Makefile',
             'CMakeCache.txt',
