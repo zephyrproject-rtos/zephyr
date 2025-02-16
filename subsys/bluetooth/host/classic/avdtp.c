@@ -986,7 +986,6 @@ static int avdtp_send(struct bt_avdtp *session, struct net_buf *buf, struct bt_a
 	result = bt_l2cap_chan_send(&session->br_chan.chan, buf);
 	if (result < 0) {
 		LOG_ERR("Error:L2CAP send fail - result = %d", result);
-		net_buf_unref(buf);
 		bt_avdtp_clear_req(session);
 		return result;
 	}
@@ -1306,6 +1305,7 @@ int bt_avdtp_init(void)
 int bt_avdtp_discover(struct bt_avdtp *session, struct bt_avdtp_discover_params *param)
 {
 	struct net_buf *buf;
+	int err;
 
 	LOG_DBG("");
 	if (!param || !session) {
@@ -1319,7 +1319,12 @@ int bt_avdtp_discover(struct bt_avdtp *session, struct bt_avdtp_discover_params 
 		return -ENOMEM;
 	}
 
-	return avdtp_send(session, buf, &param->req);
+	err = avdtp_send(session, buf, &param->req);
+	if (err) {
+		net_buf_unref(buf);
+	}
+
+	return err;
 }
 
 int bt_avdtp_parse_sep(struct net_buf *buf, struct bt_avdtp_sep_info *sep_info)
@@ -1345,6 +1350,7 @@ int bt_avdtp_get_capabilities(struct bt_avdtp *session,
 			      struct bt_avdtp_get_capabilities_params *param)
 {
 	struct net_buf *buf;
+	int err;
 
 	LOG_DBG("");
 	if (!param || !session) {
@@ -1362,7 +1368,12 @@ int bt_avdtp_get_capabilities(struct bt_avdtp *session,
 	/* Body of the message */
 	net_buf_add_u8(buf, (param->stream_endpoint_id << 2U));
 
-	return avdtp_send(session, buf, &param->req);
+	err = avdtp_send(session, buf, &param->req);
+	if (err) {
+		net_buf_unref(buf);
+	}
+
+	return err;
 }
 
 int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
@@ -1433,6 +1444,7 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 					   struct bt_avdtp_set_configuration_params *param)
 {
 	struct net_buf *buf;
+	int err;
 
 	LOG_DBG("");
 	if (!param || !session) {
@@ -1466,7 +1478,12 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 	/* Codec Info Element */
 	net_buf_add_mem(buf, param->codec_specific_ie, param->codec_specific_ie_len);
 
-	return avdtp_send(session, buf, &param->req);
+	err = avdtp_send(session, buf, &param->req);
+	if (err) {
+		net_buf_unref(buf);
+	}
+
+	return err;
 }
 
 int bt_avdtp_set_configuration(struct bt_avdtp *session,
@@ -1502,6 +1519,7 @@ static int bt_avdtp_ctrl(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *
 			 uint8_t check_state)
 {
 	struct net_buf *buf;
+	int err;
 
 	LOG_DBG("");
 	if (!param || !session || !param->sep) {
@@ -1523,7 +1541,12 @@ static int bt_avdtp_ctrl(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *
 	/* ACP Stream Endpoint ID */
 	net_buf_add_u8(buf, (param->acp_stream_ep_id << 2U));
 
-	return avdtp_send(session, buf, &param->req);
+	err = avdtp_send(session, buf, &param->req);
+	if (err) {
+		net_buf_unref(buf);
+	}
+
+	return err;
 }
 
 int bt_avdtp_open(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
