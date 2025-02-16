@@ -869,7 +869,12 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux, uint8_t phy_flags_rx,
 			rx = ull_pdu_rx_alloc_peek(3);
 		}
 
-		if (!rx) {
+		static uint8_t s_skip;
+
+		s_skip++;
+
+		/* Simulate RF noise by not responding with CONNECT_RSP */
+		if (!rx || (s_skip & 0x01) == 1U) {
 			return -ENOBUFS;
 		}
 
