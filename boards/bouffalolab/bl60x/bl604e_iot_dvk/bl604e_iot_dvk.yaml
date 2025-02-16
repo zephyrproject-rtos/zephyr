@@ -1,0 +1,19 @@
+# Copyright (c) 2022-2025 ATL Electronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: bl604e_iot_dvk
+name: BL604E IOT DVK development board
+type: mcu
+arch: riscv
+ram: 64
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - pinctrl
+  - uart
+vendor: bflb
