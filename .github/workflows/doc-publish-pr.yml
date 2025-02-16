@@ -60,6 +60,9 @@ jobs:
         if [ -f api-coverage/api-coverage.tar.xz ]; then
           tar xf api-coverage/api-coverage.tar.xz -C api-coverage
         fi
+        if [ -f rustdocs/rustdocs-output.tar.xz ]; then
+          tar xf rustdocs/rustdocs-output.tar.xz -C rustdocs
+        fi
 
     - name: Configure AWS Credentials
       if: steps.download-artifacts.outputs.found_artifact == 'true'
@@ -80,5 +83,10 @@ jobs:
         if [ -d api-coverage/coverage-report ]; then
           aws s3 sync --quiet api-coverage/coverage-report/ \
             s3://builds.zephyrproject.org/${{ github.event.repository.name }}/pr/${PR_NUM}/api-coverage \
+            --delete
+        fi
+        if [ -d rustdocs/rustdocs ]; then
+          aws s3 sync --quiet rustdocs/rustdocs/ \
+            s3://builds.zephyrproject.org/${{ github.event.repository.name }}/pr/${PR_NUM}/rustdocs \
             --delete
         fi
