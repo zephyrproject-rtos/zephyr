@@ -83,6 +83,8 @@ the hardware features below.
 +-----------+------------+-------------------------------------+
 | OS_TIMER  | on-chip    | os timer                            |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
