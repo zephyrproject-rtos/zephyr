@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <errno.h>
@@ -2963,6 +2964,20 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #if defined(CONFIG_BT_SUBRATING)
 		info->le.subrate = &conn->le.subrate;
 #endif
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
+		info->le.per_adv_sync_transfer_sender = conn->state == BT_CONN_CONNECTED &&
+							BT_FEAT_LE_PAST_SEND(bt_dev.le.features) &&
+							BT_FEAT_LE_PAST_RECV(conn->le.features);
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER*/
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
+		info->le.per_adv_sync_transfer_receiver =
+			conn->state == BT_CONN_CONNECTED &&
+			BT_FEAT_LE_PAST_RECV(bt_dev.le.features) &&
+			BT_FEAT_LE_PAST_SEND(conn->le.features);
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER*/
+
 		if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_SC)) {
 			info->security.flags |= BT_SECURITY_FLAG_SC;
 		}

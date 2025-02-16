@@ -768,6 +768,16 @@ struct bt_conn_le_info {
 	/* Connection subrating parameters */
 	const struct bt_conn_le_subrating_info *subrate;
 #endif /* defined(CONFIG_BT_SUBRATING) */
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
+	/** Determines if periodic advertising sync transfer as sender is supported */
+	bool per_adv_sync_transfer_sender;
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER*/
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
+	/** Determines if periodic advertising sync transfer as sender is supported */
+	bool per_adv_sync_transfer_receiver;
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER*/
 };
 
 /** @brief Convert connection interval to milliseconds

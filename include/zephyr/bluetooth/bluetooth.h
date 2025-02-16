@@ -2061,6 +2061,19 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 				const struct bt_conn *conn,
 				uint16_t service_data);
 
+/**
+ * @brief Check if periodic advertising sync transfer is supported for the connection as sender
+ *
+ * To use periodic advertising sync transfer (PAST) both sides need to support the feature.
+ * This check can be used before calling bt_le_per_adv_sync_transfer().
+ *
+ * @kconfig_dep{CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER}
+ *
+ * @param conn          The peer device.
+ *
+ * @return true if PAST can be performed as the sender
+ */
+bool bt_le_per_adv_sync_transfer_supported(const struct bt_conn *conn);
 
 /**
  * @brief Transfer the information about a periodic advertising set.
