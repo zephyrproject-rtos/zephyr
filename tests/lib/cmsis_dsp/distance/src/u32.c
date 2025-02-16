@@ -44,7 +44,7 @@ static void test_arm_distance(int op, const uint16_t *dims,
 
 	/* Enumerate input */
 	for (index = 0; index < length; index++) {
-		float32_t val;
+		float32_t val = 0.0f;
 
 		/* Run test function */
 		switch (op) {
