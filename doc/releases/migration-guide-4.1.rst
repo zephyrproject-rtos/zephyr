@@ -85,6 +85,9 @@ Devicetree
   The :kconfig:option:`CONFIG_INPUT_CAP1203_PERIOD` has been replaced with
   the devicetree property ``poll-interval-ms``.
   In interrupt mode, the devicetree property ``repeat`` is supported.
+* Property names in devicetree and bindings use hyphens(``-``) as separators, and replacing
+  all previously used underscores(``_``). For local code, you can migrate property names in
+  bindings to use hyphens by running the ``scripts/migrate_bindings_style.py`` script.
 
 Raspberry Pi
 ============
