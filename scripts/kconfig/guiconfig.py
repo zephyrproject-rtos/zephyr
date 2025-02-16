@@ -95,10 +95,10 @@ _USE_EMBEDDED_IMAGES = True
 
 # Help text for the jump-to dialog
 _JUMP_TO_HELP = """\
-Type one or more strings/regexes and press Enter to list items that match all
-of them. Python's regex flavor is used (see the 're' module). Double-clicking
-an item will jump to it. Item values can be toggled directly within the dialog.\
-"""
+                Type one or more strings/regexes and press Enter to list items that match all
+                of them. Python's regex flavor is used (see the 're' module). Double-clicking
+                an item will jump to it. Item values can be toggled directly within the dialog.
+                """
 
 
 def _main():
@@ -224,9 +224,8 @@ def menuconfig(kconf):
     _root.update_idletasks()
 
     # Center the window
-    _root.geometry("+{}+{}".format(
-        (_root.winfo_screenwidth() - _root.winfo_reqwidth())//2,
-        (_root.winfo_screenheight() - _root.winfo_reqheight())//2))
+    _root.geometry(f"+{(_root.winfo_screenwidth() - _root.winfo_reqwidth())//2}"
+                   f"+{(_root.winfo_screenheight() - _root.winfo_reqheight())//2}")
 
     # Show it
     _root.deiconify()
@@ -340,7 +339,7 @@ def _load_images():
     # keep it alive.
 
     def load_image(name, data):
-        var_name = "_{}_img".format(name)
+        var_name = f"_{name}_img"
 
         if _USE_EMBEDDED_IMAGES:
             globals()[var_name] = PhotoImage(data=data, format="gif")
@@ -797,7 +796,7 @@ def _node_str(node):
 
     if node.prompt:
         if node.item == COMMENT:
-            s = "*** {} ***".format(node.prompt[0])
+            s = f"*** {node.prompt[0]} ***"
         else:
             s = node.prompt[0]
 
@@ -814,7 +813,7 @@ def _node_str(node):
 
     elif isinstance(node.item, Symbol):
         # Symbol without prompt (can show up in show-all)
-        s = "<{}>".format(node.item.name)
+        s = f"<{node.item.name}>"
 
     else:
         # Choice without prompt. Use standard_sc_expr_str() so that it shows up
@@ -827,7 +826,7 @@ def _node_str(node):
         if sym.orig_type == STRING:
             s += ": " + sym.str_value
         elif sym.orig_type in (INT, HEX):
-            s = "({}) {}".format(sym.str_value, s)
+            s = f"({sym.str_value}) {s}"
 
     elif isinstance(node.item, Choice) and node.item.tri_value == 2:
         # Print the prompt of the selected symbol after the choice for
@@ -838,14 +837,14 @@ def _node_str(node):
                 # Use the prompt used at this choice location, in case the
                 # choice symbol is defined in multiple locations
                 if sym_node.parent is node and sym_node.prompt:
-                    s += " ({})".format(sym_node.prompt[0])
+                    s += f" ({sym_node.prompt[0]})"
                     break
             else:
                 # If the symbol isn't defined at this choice location, then
                 # just use whatever prompt we can find for it
                 for sym_node in sym.nodes:
                     if sym_node.prompt:
-                        s += " ({})".format(sym_node.prompt[0])
+                        s += f" ({sym_node.prompt[0]})"
                         break
 
     # In single-menu mode, print "--->" next to nodes that have menus that can
@@ -1200,7 +1199,7 @@ def _set_val_dialog(node, parent):
     sym = node.item
 
     dialog = Toplevel(parent)
-    dialog.title("Enter {} value".format(TYPE_TO_STR[sym.type]))
+    dialog.title(f"Enter {TYPE_TO_STR[sym.type]} value")
     dialog.resizable(False, False)
     dialog.transient(parent)
     dialog.protocol("WM_DELETE_WINDOW", cancel)
@@ -1288,7 +1287,7 @@ def _center_on_root(dialog):
     elif y < 0:
         y = 0
 
-    dialog.geometry("+{}+{}".format(x, y))
+    dialog.geometry(f"+{x}+{y}")
 
     dialog.deiconify()
 
@@ -1307,8 +1306,7 @@ def _check_valid(dialog, entry, sym, s):
     except ValueError:
         messagebox.showerror(
             "Bad value",
-            "'{}' is a malformed {} value".format(
-                s, TYPE_TO_STR[sym.type]),
+            f"'{s}' is a malformed {TYPE_TO_STR[sym.type]} value",
             parent=dialog)
         entry.focus_set()
         return False
@@ -1321,7 +1319,7 @@ def _check_valid(dialog, entry, sym, s):
             if not int(low_s, base) <= int(s, base) <= int(high_s, base):
                 messagebox.showerror(
                     "Value out of range",
-                    "{} is outside the range {}-{}".format(s, low_s, high_s),
+                    f"{s} is outside the range {low_s}-{high_s}",
                     parent=dialog)
                 entry.focus_set()
                 return False
@@ -1338,7 +1336,7 @@ def _range_info(sym):
     if sym.type in (INT, HEX):
         for low, high, cond in sym.ranges:
             if expr_value(cond):
-                return "Range: {}-{}".format(low.str_value, high.str_value)
+                return f"Range: {low.str_value}-{high.str_value}"
 
     return None
 
@@ -1669,7 +1667,7 @@ def _on_quit(_=None):
     # Called when the user wants to exit
 
     if not _conf_changed:
-        _quit("No changes to save (for '{}')".format(_conf_filename))
+        _quit(f"No changes to save (for '{_conf_filename}')")
         return
 
     while True:
@@ -1678,7 +1676,7 @@ def _on_quit(_=None):
             return
 
         if not ync:
-            _quit("Configuration ({}) was not saved".format(_conf_filename))
+            _quit(f"Configuration ({_conf_filename}) was not saved")
             return
 
         if _try_save(_kconf.write_config, _conf_filename, "configuration"):
@@ -1715,10 +1713,10 @@ def _try_save(save_fn, filename, description):
         return True
     except EnvironmentError as e:
         messagebox.showerror(
-            "Error saving " + description,
-            "Error saving {} to '{}': {} (errno: {})"
-            .format(description, e.filename, e.strerror,
-                    errno.errorcode[e.errno]))
+            f"Error saving {description}"
+            f"Error saving {description} to "
+            f"'{e.filename}': {e.strerror} "
+            f"(errno: {errno.errorcode[e.errno]})")
         return False
 
 
@@ -1737,8 +1735,7 @@ def _try_load(filename):
     except EnvironmentError as e:
         messagebox.showerror(
             "Error loading configuration",
-            "Error loading '{}': {} (errno: {})"
-            .format(filename, e.strerror, errno.errorcode[e.errno]))
+            f"Error loading '{filename}': {e.strerror} (errno: {errno.errorcode[e.errno]})")
         return False
 
 
@@ -1786,15 +1783,15 @@ def _jump_to_dialog(_=None):
 
 
     dialog = Toplevel(_root)
-    dialog.geometry("+{}+{}".format(
-        _root.winfo_rootx() + 50, _root.winfo_rooty() + 50))
+    dialog.geometry(f"+{_root.winfo_rootx() + 50}"
+                    f"+{_root.winfo_rooty() + 50}")
     dialog.title("Jump to symbol/choice/menu/comment")
     dialog.minsize(128, 128)  # See _create_ui()
     dialog.transient(_root)
 
-    ttk.Label(dialog, text=_JUMP_TO_HELP) \
-        .grid(column=0, row=0, columnspan=2, sticky="w", padx=".1c",
-              pady=".1c")
+    ttk.Label(dialog, text=_JUMP_TO_HELP).grid(column=0, row=0,
+                                               columnspan=2, sticky="w",
+                                               padx=".1c", pady=".1c")
 
     entry = ttk.Entry(dialog)
     entry.grid(column=0, row=1, sticky="ew", padx=".1c", pady=".1c")
@@ -1803,8 +1800,8 @@ def _jump_to_dialog(_=None):
     entry.bind("<Return>", search)
     entry.bind("<KP_Enter>", search)
 
-    ttk.Button(dialog, text="Search", command=search) \
-        .grid(column=1, row=1, padx="0 .1c", pady="0 .1c")
+    ttk.Button(dialog, text="Search", command=search).grid(column=1, row=1,
+                                                           padx="0 .1c", pady="0 .1c")
 
     msglabel = ttk.Label(dialog)
     msglabel.grid(column=0, row=2, sticky="w", pady="0 .1c")
@@ -1931,8 +1928,7 @@ def _update_jump_to_display():
     for node in _jump_to_matches:
         item(id_(node),
              text=node_str(node),
-             tags=img_tag(node) if visible(node) else
-                 img_tag(node) + " invisible")
+             tags=img_tag(node) if visible(node) else f"{img_tag(node)} invisible")
 
     _jump_to_tree.set_children("", *map(id, _jump_to_matches))
 
@@ -2056,15 +2052,13 @@ def _info_str(node):
     if isinstance(node.item, Choice):
         choice = node.item
 
-        return (
-            _name_info(choice) +
-            _help_info(choice) +
-            'Mode: {}\n\n'.format(choice.str_value) +
-            _choice_syms_info(choice) +
-            _direct_dep_info(choice) +
-            _defaults_info(choice) +
-            _kconfig_def_info(choice)
-        )
+        return (f"{_name_info(choice)}"
+                f"{_help_info(choice)}"
+                f"Mode: {choice.str_value}\n\n"
+                f"{_choice_syms_info(choice)}"
+                f"{_direct_dep_info(choice)}"
+                f"{_defaults_info(choice)}"
+                f"{_kconfig_def_info(choice)}")
 
     # node.item in (MENU, COMMENT)
     return _kconfig_def_info(node)
@@ -2074,17 +2068,19 @@ def _name_info(sc):
     # Returns a string with the name of the symbol/choice. Choices are shown as
     # <choice (name if any)>.
 
-    return (sc.name if sc.name else standard_sc_expr_str(sc)) + "\n\n"
+    return sc.name if sc.name else f"{standard_sc_expr_str(sc)}\n\n"
 
 
 def _value_info(sym):
     # Returns a string showing 'sym's value
 
     # Only put quotes around the value for string symbols
-    return "Value: {}\n".format(
-        '"{}"'.format(sym.str_value)
-        if sym.orig_type == STRING
-        else sym.str_value)
+    if sym.orig_type == STRING:
+        str_value = f'"{sym.str_value}"'
+    else:
+        str_value = sym.str_value
+
+    return f"Value: {str_value}\n"
 
 
 def _choice_syms_info(choice):
@@ -2122,10 +2118,9 @@ def _direct_dep_info(sc):
     # definition location. The dependencies at each definition location come
     # from 'depends on' and dependencies inherited from parent items.
 
-    return "" if sc.direct_dep is _kconf.y else \
-        'Direct dependencies (={}):\n{}\n' \
-        .format(TRI_TO_STR[expr_value(sc.direct_dep)],
-                _split_expr_info(sc.direct_dep, 2))
+    return "" if sc.direct_dep is _kconf.y else (f'Direct dependencies ('
+                                                 f'={TRI_TO_STR[expr_value(sc.direct_dep)]}):\n'
+                                                 f'{_split_expr_info(sc.direct_dep, 2)}\n')
 
 
 def _defaults_info(sc):
@@ -2150,7 +2145,7 @@ def _defaults_info(sc):
             # This also avoids showing the tristate value for string/int/hex
             # defaults, which wouldn't make any sense.
             if isinstance(val, tuple):
-                s += '  (={})'.format(TRI_TO_STR[expr_value(val)])
+                s += f'  (={TRI_TO_STR[expr_value(val)]})'
         else:
             # Don't print the value next to the symbol name for choice
             # defaults, as it looks a bit confusing
@@ -2158,11 +2153,10 @@ def _defaults_info(sc):
         s += "\n"
 
         if cond is not _kconf.y:
-            s += "    Condition (={}):\n{}" \
-                 .format(TRI_TO_STR[expr_value(cond)],
-                         _split_expr_info(cond, 4))
+            s += (f"    Condition (={TRI_TO_STR[expr_value(cond)]}):"
+                  f"\n{_split_expr_info(cond, 4)}")
 
-    return s + "\n"
+    return f"{s}\n"
 
 
 def _split_expr_info(expr, indent):
@@ -2183,14 +2177,12 @@ def _split_expr_info(expr, indent):
 
     s = ""
     for i, term in enumerate(split_expr(expr, split_op)):
-        s += "{}{} {}".format(indent*" ",
-                              "  " if i == 0 else op_str,
-                              _expr_str(term))
+        s += f"{indent * ' '}{'  ' if i == 0 else op_str} {_expr_str(term)}"
 
         # Don't bother showing the value hint if the expression is just a
         # single symbol. _expr_str() already shows its value.
         if isinstance(term, tuple):
-            s += "  (={})".format(TRI_TO_STR[expr_value(term)])
+            s += f"  (={TRI_TO_STR[expr_value(term)]})"
 
         s += "\n"
 
@@ -2210,7 +2202,7 @@ def _select_imply_info(sym):
 
         res = title
         for si in sis:
-            res += "  - {}\n".format(split_expr(si, AND)[0].name)
+            res += f"  - {split_expr(si, AND)[0].name}\n"
         return res + "\n"
 
     s = ""
@@ -2240,20 +2232,17 @@ def _kconfig_def_info(item):
 
     nodes = [item] if isinstance(item, MenuNode) else item.nodes
 
-    s = "Kconfig definition{}, with parent deps. propagated to 'depends on'\n" \
-        .format("s" if len(nodes) > 1 else "")
+    s = (f"Kconfig definition{"s" if len(nodes) > 1 else ""}, "
+          "with parent deps. propagated to 'depends on'\n")
+
     s += (len(s) - 1)*"="
 
     for node in nodes:
-        s += "\n\n" \
-             "At {}:{}\n" \
-             "{}" \
-             "Menu path: {}\n\n" \
-             "{}" \
-             .format(node.filename, node.linenr,
-                     _include_path_info(node),
-                     _menu_path_info(node),
-                     node.custom_str(_name_and_val_str))
+        s += ("\n\n"
+              f"At {node.filename}:{node.linenr}\n"
+              f"{_include_path_info(node)}"
+              f"Menu path: {_menu_path_info(node)}\n\n"
+              f"{node.custom_str(_name_and_val_str)}")
 
     return s
 
@@ -2262,10 +2251,8 @@ def _include_path_info(node):
     if not node.include_path:
         # In the top-level Kconfig file
         return ""
-
-    return "Included via {}\n".format(
-        " -> ".join("{}:{}".format(filename, linenr)
-                    for filename, linenr in node.include_path))
+    info = ' -> '.join(f"{filename}:{linenr}" for filename, linenr in node.include_path)
+    return f"Included via {info}\n"
 
 
 def _menu_path_info(node):
@@ -2279,10 +2266,10 @@ def _menu_path_info(node):
         # Promptless choices might appear among the parents. Use
         # standard_sc_expr_str() for them, so that they show up as
         # '<choice (name if any)>'.
-        path = " -> " + (node.prompt[0] if node.prompt else
-                         standard_sc_expr_str(node.item)) + path
+        path = (f" -> {node.prompt[0] if node.prompt else standard_sc_expr_str(node.item)}"
+                f"{path}")
 
-    return "(Top)" + path
+    return f"(Top){path}"
 
 
 def _name_and_val_str(sc):
@@ -2295,9 +2282,9 @@ def _name_and_val_str(sc):
     if isinstance(sc, Symbol) and not sc.is_constant and not _is_num(sc.name):
         if not sc.nodes:
             # Undefined symbol reference
-            return "{}(undefined/n)".format(sc.name)
+            return f"{sc.name}(undefined/n)"
 
-        return '{}(={})'.format(sc.name, sc.str_value)
+        return f'{sc.name}(={sc.str_value})'
 
     # For other items, use the standard format
     return standard_sc_expr_str(sc)
