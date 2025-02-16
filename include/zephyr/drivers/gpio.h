@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025 Baylibre SAS
  * Copyright (c) 2019-2020 Nordic Semiconductor ASA
  * Copyright (c) 2019 Piotr Mienkowski
  * Copyright (c) 2017 ARM Ltd
@@ -819,6 +820,14 @@ __subsystem struct gpio_driver_api {
 	int (*port_get_direction)(const struct device *port, gpio_port_pins_t map,
 				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs);
 #endif /* CONFIG_GPIO_GET_DIRECTION */
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+	int (*manage_diag_callback)(const struct device *port,
+				    struct gpio_callback *cb,
+				    bool set);
+	int (*port_diag_fetch)(const struct device *dev);
+	int (*port_diag_get)(const struct device *dev, int chan, uint8_t *data);
+	int (*pin_diag_get)(const struct device *dev, int chan, gpio_pin_t pin);
+#endif
 };
 
 /**
@@ -1894,6 +1903,241 @@ static inline int z_impl_gpio_get_pending_int(const struct device *dev)
 	return ret;
 }
 
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+/**
+ * @brief Helper to initialize a struct gpio_diag_callback properly
+ * @param callback A valid Application's callback structure pointer.
+ * @param handler A valid handler function pointer.
+ */
+static inline void gpio_init_diag_callback(struct gpio_callback *callback,
+					   gpio_callback_handler_t handler)
+{
+	__ASSERT(callback, "Callback pointer should not be NULL");
+	__ASSERT(handler, "Callback handler pointer should not be NULL");
+
+	callback->handler = handler;
+	callback->pin_mask = 0x1;
+}
+
+/**
+ * @brief Add an application callback for diagnostics.
+ * @param port Pointer to the device structure for the driver instance.
+ * @param callback A valid Application's callback structure pointer.
+ * @retval 0 If successful
+ * @retval -ENOSYS If driver does not implement the operation
+ * @retval -errno Other negative errno code on failure.
+ *
+ * @note Callbacks may be added to the device from within a callback
+ * handler invocation, but whether they are invoked for the current
+ * GPIO event is not specified.
+ *
+ * Note: enables to add as many callback as needed on the same port.
+ */
+static inline int gpio_add_diag_callback(const struct device *port,
+					 struct gpio_callback *callback)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->api;
+
+	if (api->manage_diag_callback == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->manage_diag_callback(port, callback, true);
+}
+
+/**
+ * @brief Add an application diagnostic callback.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_add_diag_callback(spec->port, callback);
+ *
+ * @param spec GPIO specification from devicetree.
+ * @param callback A valid application's callback structure pointer.
+ * @return a value from gpio_add_diag_callback().
+ */
+static inline int gpio_add_diag_callback_dt(const struct gpio_dt_spec *spec,
+					    struct gpio_callback *callback)
+{
+	return gpio_add_diag_callback(spec->port, callback);
+}
+
+/**
+ * @brief Remove an application callback.
+ * @param port Pointer to the device structure for the driver instance.
+ * @param callback A valid application's callback structure pointer.
+ * @retval 0 If successful
+ * @retval -ENOSYS If driver does not implement the operation
+ * @retval -errno Other negative errno code on failure.
+ *
+ * @warning It is explicitly permitted, within a callback handler, to
+ * remove the registration for the callback that is running, i.e. @p
+ * callback.  Attempts to remove other registrations on the same
+ * device may result in undefined behavior, including failure to
+ * invoke callbacks that remain registered and unintended invocation
+ * of removed callbacks.
+ *
+ * Note: enables to remove as many callbacks as added through
+ *       gpio_add_diag_callback().
+ */
+static inline int gpio_remove_diag_callback(const struct device *port,
+					    struct gpio_callback *callback)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->api;
+
+	if (api->manage_diag_callback == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->manage_diag_callback(port, callback, false);
+}
+
+/**
+ * @brief Remove an application callback.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_remove_diag_callback(spec->port, callback);
+ *
+ * @param spec GPIO specification from devicetree.
+ * @param callback A valid application's callback structure pointer.
+ * @return a value from gpio_remove_callback().
+ */
+static inline int gpio_remove_diag_callback_dt(const struct gpio_dt_spec *spec,
+					       struct gpio_callback *callback)
+{
+	return gpio_remove_diag_callback(spec->port, callback);
+}
+
+/**
+ * @brief Get pre-fetched diagnostic information
+ *
+ * @param spec GPIO specification from devicetree.
+ * @param callback A valid application's callback structure pointer.
+ * @return a value from gpio_remove_callback().
+ */
+__syscall int gpio_port_diag_get(const struct device *dev, int chan, uint8_t *data);
+
+static inline int z_impl_gpio_port_diag_get(const struct device *dev, int chan, uint8_t *data)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)dev->api;
+
+	if (api->port_diag_get == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->port_diag_get(dev, chan, data);
+}
+
+/**
+ * @brief Get pre-fetched diagnostic information
+ *
+ * This is equivalent to:
+ *
+ *     gpio_port_diag_get(spec->port, chan, data);
+ *
+ * @param spec GPIO specification from devicetree.
+ * @param callback A valid application's callback structure pointer.
+ * @return a value from gpio_remove_callback().
+ */
+__syscall int gpio_port_diag_get_dt(const struct gpio_dt_spec *spec, int chan, uint8_t *data);
+
+static inline int z_impl_gpio_port_diag_get_dt(const struct gpio_dt_spec *spec, int chan,
+					       uint8_t *data)
+{
+	return gpio_port_diag_get(spec->port, chan, data);
+}
+
+/**
+ * @brief Fetch diagnostic information
+ *
+ * @param spec GPIO specification from devicetree.
+ * @param callback A valid application's callback structure pointer.
+ * @return a value from gpio_remove_callback().
+ */
+__syscall int gpio_port_diag_fetch(const struct device *port);
+
+static inline int z_impl_gpio_port_diag_fetch(const struct device *port)
+{
+	const struct gpio_driver_api *api = (const struct gpio_driver_api *)port->api;
+
+	if (api->port_diag_fetch == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->port_diag_fetch(port);
+}
+
+/**
+ * @brief Fetch diagnostic information
+ *
+ * This is equivalent to:
+ *
+ *     gpio_port_diag_fetch(spec->port);
+ *
+ * @param spec GPIO specification from devicetree.
+ * @param callback A valid application's callback structure pointer.
+ * @return a value from gpio_port_diag_fetch().
+ */
+__syscall int gpio_port_diag_fetch_dt(const struct gpio_dt_spec *spec);
+
+static inline int z_impl_gpio_port_diag_fetch_dt(const struct gpio_dt_spec *spec)
+{
+	return gpio_port_diag_fetch(spec->port);
+}
+
+/**
+ * @brief Get pin pre-fetched diagnostic
+ *
+ * Get logical level of an input pin taking into account GPIO_ACTIVE_LOW flag.
+ * If pin is configured as Active High, a low physical level will be interpreted
+ * as logical value 0. If pin is configured as Active Low, a low physical level
+ * will be interpreted as logical value 1.
+ *
+ * Note: If pin is configured as Active High, the default, gpio_pin_get()
+ *       function is equivalent to gpio_pin_get_raw().
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pin Pin number.
+ *
+ * @retval 1 If pin logical value is 1 / active.
+ * @retval 0 If pin logical value is 0 / inactive.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
+ */
+__syscall int gpio_pin_diag_get(const struct device *port, int chan, gpio_pin_t pin);
+
+static inline int z_impl_gpio_pin_diag_get(const struct device *port, int chan, gpio_pin_t pin)
+{
+	const struct gpio_driver_api *api = (const struct gpio_driver_api *)port->api;
+
+	if (api->pin_diag_get == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->pin_diag_get(port, chan, pin);
+}
+
+/**
+ * @brief Get pin pre-fetched diagnostic @p gpio_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_diag_get(spec->port, chan, spec->pin);
+ *
+ * @param spec GPIO specification from devicetree
+ * @return a value from gpio_pin_get()
+ */
+__syscall int gpio_pin_diag_get_dt(const struct gpio_dt_spec *spec, int chan);
+
+static inline int z_impl_gpio_pin_diag_get_dt(const struct gpio_dt_spec *spec, int chan)
+{
+	return gpio_pin_diag_get(spec->port, chan, spec->pin);
+}
+#endif /* CONFIG_GPIO_DIAGNOSTICS */
 /**
  * @}
  */
