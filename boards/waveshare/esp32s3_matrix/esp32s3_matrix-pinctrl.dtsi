@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 Joel Guittet
+ * Copyright (c) 2025 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	spim2_ws2812_led: spim2_ws2812_led {
+		group1 {
+			pinmux = <SPIM2_MOSI_GPIO14>;
+			output-low;
+		};
+	};
+};

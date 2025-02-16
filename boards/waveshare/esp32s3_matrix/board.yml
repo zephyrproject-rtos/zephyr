@@ -1,0 +1,6 @@
+board:
+  name: esp32s3_matrix
+  full_name: ESP32-S3-Matrix
+  vendor: waveshare
+  socs:
+  - name: esp32s3
