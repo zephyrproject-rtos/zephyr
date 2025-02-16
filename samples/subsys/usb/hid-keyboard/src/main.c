@@ -175,6 +175,12 @@ int main(void)
 	const struct device *hid_dev;
 	int ret;
 
+	/*
+	 * Set the report buffer to 0, since it can be placed in a memory area
+	 * that is not initialized during boot.
+	 */
+	memset(report, 0, sizeof(report));
+
 	for (unsigned int i = 0; i < ARRAY_SIZE(kb_leds); i++) {
 		if (kb_leds[i].port == NULL) {
 			continue;
