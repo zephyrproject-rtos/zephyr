@@ -1,10 +1,6 @@
 """
 Utility script to generate headers for the following macros
 - Z_LISTIFY
-- Z_UTIL_INC
-- Z_UTIL_DEC
-- Z_UTIL_X2
-- Z_IS_EQ
 
 .. note::
     The script will simply create the header files in the current working directory,
@@ -59,95 +55,35 @@ def gen_util_listify(limit:int):
         file.write("\n")
         write_hidden_stop(file)
 
-
-def gen_util_internal_is_eq(limit):
-    with open("util_internal_is_eq.h", "w") as file:
+def gen_util_expr_num(limit:int):
+    with open("util_expr_num.h", "w") as file:
         write_hidden_start(file)
-        file.write("\n")
-        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_\n")
-        file.write("#error \"This header should not be used directly, \
-please include util_internal.h instead\"\n")
-        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */\n")
-        file.write("\n")
-        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_IS_EQ_H_\n")
-        file.write("#define ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_IS_EQ_H_\n")
-        file.write("\n")
-
-        for i in range(0, limit + 1):
-            file.write(f"#define Z_IS_{i}_EQ_{i}(...) \\,\n")
 
         file.write("\n")
-        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_IS_EQ_H_ */\n")
+        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_EXPR_NUM_H_\n")
+        file.write("#define ZEPHYR_INCLUDE_SYS_UTIL_EXPR_NUM_H_\n")
         file.write("\n")
-        write_hidden_stop(file)
 
-
-def gen_util_internal_util_inc(limit):
-    with open("util_internal_util_inc.h", "w") as file:
-        write_hidden_start(file)
-        file.write("\n")
-        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_\n")
-        file.write("#error \"This header should not be used directly, \
-please include util_internal.h instead\"\n")
-        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */\n")
-        file.write("\n")
-        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_INC_H_\n")
-        file.write("#define ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_INC_H_\n")
-        file.write("\n")
 
         for i in range(0, limit + 2):
-            file.write(f"#define Z_UTIL_INC_{i} {i + 1}\n")
+            file.write(f"#define Z_EXPR_DEC_{i} " + ", ".join(f"{i:032b}") + "\n")
 
         file.write("\n")
-        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_INC_H_ */\n")
+        for i in range(0, limit + 2):
+            file.write(f"#define Z_EXPR_DEC_{i}U " + f"Z_EXPR_DEC_{i}" + "\n")
+
+        file.write("\n")
+        for i in range(0, limit + 2):
+            file.write(f"#define Z_EXPR_HEX_0x{i:x} " + f"Z_EXPR_DEC_{i}" + "\n")
+
+        file.write("\n")
+        for i in range(0, limit + 2):
+            file.write(f"#define Z_EXPR_HEX2DEC_0x{i:x} " + f"{i}" + "\n")
+
+        file.write("\n")
+        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_EXPR_NUM_H_ */\n")
         file.write("\n")
         write_hidden_stop(file)
-
-
-def gen_util_internal_util_dec(limit):
-    with open("util_internal_util_dec.h", "w") as file:
-        write_hidden_start(file)
-        file.write("\n")
-        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_\n")
-        file.write("#error \"This header should not be used directly, \
-please include util_internal.h instead\"\n")
-        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */\n")
-        file.write("\n")
-        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_DEC_H_\n")
-        file.write("#define ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_DEC_H_\n")
-        file.write("\n")
-
-        file.write(f"#define Z_UTIL_DEC_0 0\n")
-        for i in range(1, limit + 2):
-            file.write(f"#define Z_UTIL_DEC_{i} {i - 1}\n")
-
-        file.write("\n")
-        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_DEC_H_ */\n")
-        file.write("\n")
-        write_hidden_stop(file)
-
-
-def gen_util_internal_util_x2(limit):
-    with open("util_internal_util_x2.h", "w") as file:
-        write_hidden_start(file)
-        file.write("\n")
-        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_\n")
-        file.write("#error \"This header should not be used directly, \
-please include util_internal.h instead\"\n")
-        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */\n")
-        file.write("\n")
-        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_X2_H_\n")
-        file.write("#define ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_X2_H_\n")
-        file.write("\n")
-
-        for i in range(0, limit + 1):
-            file.write(f"#define Z_UTIL_X2_{i} {i *2}\n")
-
-        file.write("\n")
-        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_X2_H_ */\n")
-        file.write("\n")
-        write_hidden_stop(file)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -157,7 +93,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     gen_util_listify(args.limit)
-    gen_util_internal_is_eq(args.limit)
-    gen_util_internal_util_inc(args.limit)
-    gen_util_internal_util_dec(args.limit)
-    gen_util_internal_util_x2(args.limit)
+    gen_util_expr_num(args.limit)
