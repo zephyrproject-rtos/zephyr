@@ -14,8 +14,7 @@ if LLEXT
 choice LLEXT_BINARY_TYPE
 	prompt "Binary object type for llext"
 	default LLEXT_TYPE_ELF_OBJECT if ARM || ARM64
-	default LLEXT_TYPE_ELF_SHAREDLIB if XTENSA
-	default LLEXT_TYPE_ELF_RELOCATABLE if RISCV
+	default LLEXT_TYPE_ELF_RELOCATABLE if XTENSA || RISCV
 	help
 	  Object type for llext
 
