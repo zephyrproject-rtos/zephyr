@@ -2,7 +2,6 @@
    :name: TMC50XX stepper
    :relevant-api: stepper_interface
 
-
    Rotate a TMC50XX stepper motor and change velocity at runtime.
 
 Description
@@ -46,4 +45,4 @@ Sample Output
    stepper_callback steps completed changing direction
    stepper_callback steps completed changing direction
 
-<repeats endlessly>
+   <repeats endlessly>
