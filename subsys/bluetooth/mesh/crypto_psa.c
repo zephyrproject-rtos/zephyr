@@ -353,7 +353,7 @@ end:
 	return err;
 }
 
-__weak psa_key_id_t bt_mesh_user_keyid_alloc(void)
+static psa_key_id_t bt_mesh_psa_keyid_alloc(void)
 {
 	for (int i = 0; i < BT_MESH_PSA_KEY_ID_RANGE_SIZE; i++) {
 		if (!atomic_test_bit(pst_keys, i)) {
@@ -365,7 +365,7 @@ __weak psa_key_id_t bt_mesh_user_keyid_alloc(void)
 	return PSA_KEY_ID_NULL;
 }
 
-__weak int bt_mesh_user_keyid_free(psa_key_id_t key_id)
+static int bt_mesh_psa_keyid_free(psa_key_id_t key_id)
 {
 	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_MIN,
 			BT_MESH_PSA_KEY_ID_MIN + BT_MESH_PSA_KEY_ID_RANGE_SIZE - 1)) {
@@ -376,7 +376,7 @@ __weak int bt_mesh_user_keyid_free(psa_key_id_t key_id)
 	return -EIO;
 }
 
-__weak void bt_mesh_user_keyid_assign(psa_key_id_t key_id)
+static void bt_mesh_psa_keyid_assign(psa_key_id_t key_id)
 {
 	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_MIN,
 				BT_MESH_PSA_KEY_ID_MIN + BT_MESH_PSA_KEY_ID_RANGE_SIZE - 1)) {
@@ -412,7 +412,7 @@ int bt_mesh_key_import(enum bt_mesh_key_type type, const uint8_t in[16], struct 
 		break;
 	case BT_MESH_KEY_TYPE_NET:
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			key_id = bt_mesh_user_keyid_alloc();
+			key_id = bt_mesh_psa_keyid_alloc();
 
 			if (key_id == PSA_KEY_ID_NULL) {
 				return -ENOMEM;
@@ -428,7 +428,7 @@ int bt_mesh_key_import(enum bt_mesh_key_type type, const uint8_t in[16], struct 
 	case BT_MESH_KEY_TYPE_APP:
 	case BT_MESH_KEY_TYPE_DEV:
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			key_id = bt_mesh_user_keyid_alloc();
+			key_id = bt_mesh_psa_keyid_alloc();
 
 			if (key_id == PSA_KEY_ID_NULL) {
 				return -ENOMEM;
@@ -456,7 +456,7 @@ int bt_mesh_key_import(enum bt_mesh_key_type type, const uint8_t in[16], struct 
 		status == PSA_ERROR_ALREADY_EXISTS ? -EALREADY : -EIO;
 
 	if (err && key_id != PSA_KEY_ID_NULL) {
-		bt_mesh_user_keyid_free(key_id);
+		bt_mesh_psa_keyid_free(key_id);
 	}
 
 	psa_reset_key_attributes(&key_attributes);
@@ -483,7 +483,7 @@ void bt_mesh_key_assign(struct bt_mesh_key *dst, const struct bt_mesh_key *src)
 {
 	memcpy(dst, src, sizeof(struct bt_mesh_key));
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_user_keyid_assign(dst->key);
+		bt_mesh_psa_keyid_assign(dst->key);
 	}
 }
 
@@ -494,7 +494,7 @@ int bt_mesh_key_destroy(const struct bt_mesh_key *key)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		return bt_mesh_user_keyid_free(key->key);
+		return bt_mesh_psa_keyid_free(key->key);
 	}
 
 	return 0;
