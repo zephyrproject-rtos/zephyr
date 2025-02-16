@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Michael Hope
+ * Copyright (c) 2024 Paul Wedeck <paulwedeck@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +11,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/ch32v00x-clocks.h>
+#include <zephyr/dt-bindings/dma/ch32v003-dma.h>
 
 / {
 	clocks {
@@ -113,6 +115,16 @@
 			reg = <0x40021000 0x10>;
 			#clock-cells = <1>;
 			status = "okay";
+		};
+
+		dma1: dma@40020000 {
+			compatible = "wch,wch-dma";
+			reg = <0x40020000 0x90>;
+			clocks = <&rcc CH32V00X_CLOCK_DMA1>;
+			#dma-cells = <1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <22>, <23>, <24>, <25>, <26>, <27>, <28>;
+			dma-channels = <7>;
 		};
 	};
 };
