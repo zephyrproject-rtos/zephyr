@@ -69,6 +69,8 @@
 	/* Channels 7-11 reserved for Zero Latency IRQs, 3-4 for FLPR */
 	child-owned-channels = <3 4 7 8 9 10 11>;
 	status = "okay";
+	/delete-property/ clocks;
+	/delete-property/ clock-names;
 };
 
 &cpuapp_rram {
