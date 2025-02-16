@@ -9,3 +9,17 @@ config FUEL_GAUGE_COMPOSITE
 	depends on DT_HAS_ZEPHYR_FUEL_GAUGE_COMPOSITE_ENABLED
 	help
 	  Enable driver for the Zephyr composite fuel gauge device.
+
+config FUEL_GAUGE_COMPOSITE_VOLTAGE_REUSE_TIMEOUT_MS
+	int "Maximum age of a cached voltage reading to use in SoC conversion"
+	depends on FUEL_GAUGE_COMPOSITE
+	default 100
+	help
+	  Since the fuel gauge API reads values one call at a time, reading the battery
+	  voltage and charge percentage are by necessity the product of two calls.
+	  Unfortunately voltage measurements can be noisy, so two calls back to back may
+	  return slightly different values. This can result in the voltage and charge
+	  percentage not exactly matching each other when querying both back to back.
+	  To mitigate this, if a charge percentage call is made within N milliseconds of
+	  a previous `FUEL_GAUGE_VOLTAGE` call, the voltage from the previous call is
+	  used directly in the percentage calulation.
