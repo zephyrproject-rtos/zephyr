@@ -253,11 +253,19 @@ To enable this mode, set the following option when invoking cmake::
 
    -DDT_TURBO_MODE=1
 
-or invoke make with the following target::
+Another step that typically takes a long time is the generation of the list of
+supported features for each board. This can be disabled by setting the following
+option when invoking cmake::
+
+   -DHW_FEATURES_TURBO_MODE=1
+
+Invoking :command:`make` with the following target will build the documentation
+without either of the aforementioned features::
 
    cd ~/zephyrproject/zephyr/doc
 
-   # To generate HTML output without detailed Kconfig
+   # To generate HTML output without detailed Devicetree bindings documentation
+   # and supported features index
    make html-fast
 
 Viewing generated documentation locally
