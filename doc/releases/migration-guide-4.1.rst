@@ -164,6 +164,11 @@ Counter
 Controller Area Network (CAN)
 =============================
 
+DMA
+===
+* Renamed the devicetree propertys ``nxp,a_on`` and ``dma_channels``
+  to ``nxp,a-on`` and ``dma-channels``.
+
 Display
 =======
 
