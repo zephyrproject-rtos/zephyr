@@ -211,7 +211,7 @@ def test_debugserver(require, cc, pyocd_args, expected, pyocd):
 @patch('runners.pyocd.PyOcdBinaryRunner.check_call')
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 def test_flash_args(require, cc, bc, pyocd_args, flash_addr, expected, pyocd):
-    with patch.object(PyOcdBinaryRunner, 'get_flash_address',
+    with patch.object(PyOcdBinaryRunner, 'flash_address_from_build_conf',
                       return_value=flash_addr):
         pyocd(pyocd_args).run('flash')
         assert require.called

@@ -77,8 +77,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
-                          dev_id=True, flash_addr=True, erase=True,
-                          tool_opt=True, rtt=True)
+                          dev_id=True, erase=True, tool_opt=True, rtt=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -116,7 +115,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def do_create(cls, cfg, args):
         build_conf = BuildConfiguration(cfg.build_dir)
-        flash_addr = cls.get_flash_address(args, build_conf)
+        flash_addr = cls.flash_address_from_build_conf(build_conf)
 
         ret = PyOcdBinaryRunner(
             cfg, args.target,
