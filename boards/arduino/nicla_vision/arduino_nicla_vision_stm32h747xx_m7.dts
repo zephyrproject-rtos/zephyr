@@ -225,7 +225,7 @@ zephyr_udc0: &usbotg_hs {
 
 		port {
 			gc2145_ep_out: endpoint {
-				remote-endpoint = <&dcmi_ep_in>;
+				remote-endpoint-label = "dcmi_ep_in";
 			};
 		};
 
@@ -241,10 +241,6 @@ zephyr_udc0: &usbotg_hs {
 	status = "okay";
 
 	sensor = <&gc2145>;
-	bus-width = <8>;
-	hsync-active = <0>;
-	vsync-active = <0>;
-	pixelclk-active = <0>;
 	capture-rate = <1>;
 	dmas = <&dma1 0 38 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
 		STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
@@ -252,7 +248,11 @@ zephyr_udc0: &usbotg_hs {
 
 	port {
 		dcmi_ep_in: endpoint {
-			remote-endpoint = <&gc2145_ep_out>;
+			remote-endpoint-label = "gc2145_ep_out";
+			bus-width = <8>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			pclk-sample = <0>;
 		};
 	};
 };
