@@ -27,7 +27,7 @@
 		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &ocram;
 		nxp,m4-partition = &slot1_partition;
-		zephyr,ipc = &mailbox_b;
+		zephyr,ipc = &mbox;
 	};
 
 	sdram0: memory@80000000 {
@@ -67,6 +67,6 @@
 	status = "okay";
 };
 
-&mailbox_b {
+&mbox {
 	status = "okay";
 };

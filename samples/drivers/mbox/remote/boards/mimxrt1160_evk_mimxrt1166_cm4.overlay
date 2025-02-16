@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,19 +24,6 @@
 			compatible = "nxp,gpt-hw-timer";
 			reg = <0x400f0000 0x4000>;
 			interrupts = <120 0>;
-			status = "okay";
-		};
-
-		/* Delete IPM Driver node nxp,imx-mu */
-		/delete-node/ mailbox@40c4c000;
-
-		/* Attach MBOX driver to MU Unit */
-		mbox:mbox@40c4c000 {
-			compatible = "nxp,mbox-imx-mu";
-			reg = <0x40c4c000 0x4000>;
-			interrupts = <118 0>;
-			rx-channels = <4>;
-			#mbox-cells = <1>;
 			status = "okay";
 		};
 	};

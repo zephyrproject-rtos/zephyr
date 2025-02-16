@@ -54,7 +54,7 @@
 	status = "okay";
 };
 
-&mailbox0 {
+&mbox {
 	status = "okay";
 };
 
