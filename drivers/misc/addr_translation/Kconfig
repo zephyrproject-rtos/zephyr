@@ -1,0 +1,11 @@
+# Address translation for OpenAMP
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config OPENAMP_ADDR_TRANSLATION
+	bool "Address translation support for OpenAMP"
+	depends on DT_HAS_ZEPHYR_ADDR_TRANSLATION_ENABLED
+	depends on OPENAMP
+	help
+	  Enable support for address translation from remote driver to device
