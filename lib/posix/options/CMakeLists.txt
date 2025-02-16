@@ -67,6 +67,12 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_FD_MGMT)
   )
 endif()
 
+if (NOT CONFIG_TC_PROVIDES_POSIX_FILE_LOCKING)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_LOCKING
+    file_locking.c
+  )
+endif()
+
 if (NOT CONFIG_TC_PROVIDES_POSIX_FILE_SYSTEM)
   zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_SYSTEM fs.c)
 endif()
