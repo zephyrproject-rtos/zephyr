@@ -1,0 +1,36 @@
+{
+    "name": "Bluetooth w/ babblesim",
+    "build": {"dockerfile": "../Dockerfile"},
+
+    "containerEnv": {
+        "HISTCONTROL": "ignoredups:erasedups",
+        "ZEPHYR_BASE": "/workspaces/zephyr",
+        "ZEPHYR_TOOLCHAIN_VARIANT": "zephyr",
+        "BSIM_OUT_PATH": "/opt/bsim/",
+        "BSIM_COMPONENTS_PATH": "/opt/bsim/components",
+        "EDTT_PATH": "../tools/edtt"
+    },
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "xaver.clang-format",
+                "EditorConfig.EditorConfig"
+            ],
+            "settings": {
+                "files.watcherExclude": {
+                    "${localWorkspaceFolder}/bsim_out/*/**": true
+                }
+            }
+        }
+    },
+
+    "initializeCommand": "mkdir -p ${localWorkspaceFolder}/.cache && touch ${localWorkspaceFolder}/.cache/.bash_history",
+    "onCreateCommand": "git config --global --add safe.directory '*'",
+    "updateContentCommand": "${ZEPHYR_BASE}/.devcontainer/scripts/setup-env.sh && ${ZEPHYR_BASE}/.devcontainer/scripts/setup-bsim.sh",
+
+    "mounts": [
+        "source=${localWorkspaceFolder}/.cache/.bash_history,target=/home/user/.bash_history,type=bind,consistency=cached"
+    ]
+}
