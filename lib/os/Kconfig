@@ -106,6 +106,16 @@ config MPSC_CLEAR_ALLOCATED
 	  When enabled packet space is zeroed before returning from allocation.
 endif
 
+if SCHED_DEADLINE
+
+config P4WQ_INIT_STAGE_EARLY
+	bool "Early initialization of P4WQ threads"
+	help
+	  Initialize P4WQ threads early so that the P4WQ can be used on devices
+	  initialization sequence.
+
+endif
+
 config REBOOT
 	bool "Reboot functionality"
 	help
