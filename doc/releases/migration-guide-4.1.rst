@@ -641,6 +641,13 @@ Networking
 Other Subsystems
 ****************
 
+CFB
+===
+
+* Change using signed values to represent the coordinates.
+  As a result, :c:func:`cfb_print`, :c:func:`cfb_invert_area`,
+  and :c:struct:`cfb_position` definitions are changed.
+
 Flash map
 =========
 
