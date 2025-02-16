@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/sensor/lis2dh.h>
+
+&SHIELD_CONN_N {
+	SHIELD_CONVENTIONAL_LABEL(lis3dh): lis3dh@SHIELD_ADDR_HEX {
+		compatible = "st,lis3dh", "st,lis2dh";
+		reg = <SHIELD_0X_ADDR>;
+
+#if SHIELD_OPTION_EXISTS(IRQ_GPIO_PIN) || SHIELD_OPTION_EXISTS(IRQ_GPIO_PORT)
+		irq-gpios = <&SHIELD_OPTION_STRING_UNQUOTED(IRQ_GPIO_PORT)
+			      SHIELD_OPTION(IRQ_GPIO_PIN)
+			      SHIELD_OPTION_STRING_UNQUOTED(IRQ_GPIO_FLAG)>;
+#endif
+	};
+};
