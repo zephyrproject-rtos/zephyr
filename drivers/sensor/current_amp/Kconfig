@@ -11,3 +11,11 @@ config CURRENT_AMP
 	select ADC
 	help
 	  Enable current sense amplifier driver.
+
+config CURRENT_AMP_HIGH_RANGE
+	bool "Support voltages outside +-32V"
+	depends on CURRENT_AMP
+	help
+	  Support handling voltages outside +-32V at the
+	  cost of reducing the output resolution to milliamps
+	  instead of microamps.
