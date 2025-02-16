@@ -9,6 +9,7 @@
 #include <st/u0/stm32u083mctx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/input/stm32-tsc-defines.h>
 
 / {
 	model = "STMicroelectronics STM32U83C-DK board";
@@ -122,5 +123,40 @@
 		pinctrl-0 = <&tim2_ch1_pa5>;
 		pinctrl-names = "default";
 		status = "okay";
+	};
+};
+
+&tsc {
+	status = "okay";
+	pinctrl-0 = <&tsc_g1_io1_pb12 &tsc_g1_io2_pb13 &tsc_g6_io1_pd10 &tsc_g6_io2_pd11>;
+	pinctrl-names = "default";
+
+	st,pulse-generator-prescaler = <2>;
+	st,charge-transfer-pulse-high = <2>;
+	st,charge-transfer-pulse-low = <2>;
+	st,spread-spectrum;
+	st,spread-spectrum-prescaler = <2>;
+	st,spread-spectrum-deviation = <100>;
+	st,max-count-value = <8191>;
+
+	tsc_group1: g1 {
+		group = <1>;
+		st,use-as-shield;
+		channel-ios = <TSC_IO2>;
+		sampling-io = <TSC_IO1>;
+	};
+
+	tsc_group6: g6 {
+		group = <6>;
+		channel-ios = <TSC_IO2>;
+		sampling-io = <TSC_IO1>;
+		ts1 {
+			compatible = "tsc-keys";
+			sampling-interval-ms = <10>;
+			oversampling = <10>;
+			noise-threshold = <50>;
+			sticky-key-timeout-ms = <10000>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 };

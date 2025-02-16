@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2024 Arif Balik <arifbalik@outlook.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		/* This will be used to trigger the SYNC pin high and low programmatically.
+		 * They have to be connected.
+		 */
+		signal-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&tsc {
+	status = "okay";
+
+	pinctrl-0 = <&tsc_g1_io1_pb12 &tsc_g1_io2_pb13 &tsc_g6_io1_pd10
+					&tsc_g6_io2_pd11 &tsc_sync_pd2>;
+	pinctrl-names = "default";
+
+	st,pulse-generator-prescaler = <128>;
+
+	st,spread-spectrum;
+	st,spread-spectrum-prescaler = <2>;
+	st,spread-spectrum-deviation = <10>;
+
+	st,max-count-value = <16383>;
+
+	st,synced-acquisition;
+	st,syncpol-rising;
+};
