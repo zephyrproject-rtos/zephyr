@@ -2232,12 +2232,56 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) && defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+#if defined(CONFIG_BT_CAP_COMMANDER) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE) &&                 \
+	defined(CONFIG_BT_BAP_UNICAST_CLIENT) && defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
+
+static bool valid_unicast_to_broadcast_param(const struct bt_cap_unicast_to_broadcast_param *param)
+{
+	const struct bt_bap_unicast_group *unicast_group;
+
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	unicast_group = param->unicast_group;
+	if (unicast_group == NULL) {
+		LOG_DBG("param->unicast_group is NULL");
+		return false;
+	}
+
+	if (unicast_group->cig == NULL) {
+		LOG_DBG("param->unicast_group is not configured");
+		return false;
+	}
+
+	return true;
+}
 
 int bt_cap_initiator_unicast_to_broadcast(
 	const struct bt_cap_unicast_to_broadcast_param *param,
 	struct bt_cap_broadcast_source **source)
 {
+	struct bt_cap_unicast_audio_stop_param stop_param = {0};
+	int err;
+
+	if (source == NULL) {
+		LOG_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	if (!valid_unicast_to_broadcast_param(param)) {
+		return -EINVAL;
+	}
+
+	stop_param.type = param->type;
+	stop_param.release = true;
+	/* TODO: Populate array of streams
+	 * Since input is a BAP group, how do we ensure they are CAP streams?
+	 */
+
+	err = bt_cap_initiator_unicast_audio_stop(&stop_param);
+
 	return -ENOSYS;
 }
 
@@ -2247,4 +2291,6 @@ int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unica
 	return -ENOSYS;
 }
 
-#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE && CONFIG_BT_BAP_UNICAST_CLIENT */
+#endif /* CONFIG_BT_CAP_COMMANDER && CONFIG_BT_BAP_BROADCAST_SOURCE &&                             \
+	* CONFIG_BT_BAP_UNICAST_CLIENT && CONFIG_BT_BAP_BROADCAST_ASSISTANT                        \
+	*/
