@@ -652,6 +652,12 @@ static inline const char *extract_conversion(struct conversion *conv,
 	 * fast-exit.
 	 */
 	++sp;
+	/* Ensure that sp is still valid string */
+	if (*sp == '\0') {
+		// Mark the conversion as invalid
+		conv->invalid = true;
+		return sp;
+	}
 	if (*sp == '%') {
 		conv->specifier = *sp;
 		++sp;
@@ -795,7 +801,10 @@ static char *encode_uint(uint_value_type value,
 	bool upcase = isupper((int)conv->specifier) != 0;
 	const unsigned int radix = conversion_radix(conv->specifier);
 	char *bp = bps + (bpe - bps);
-
+	if (bps >= bpe) {
+		/* Return without writing if no space available */
+		return bps;
+	}
 	do {
 		unsigned int lsv = (unsigned int)(value % radix);
 
