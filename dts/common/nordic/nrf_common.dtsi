@@ -32,7 +32,7 @@
 
 	rng_hci: entropy_bt_hci {
 		compatible = "zephyr,bt-hci-entropy";
-		status = "okay";
+		status = "disabled";
 	};
 
 	sw_pwm: sw-pwm {
