@@ -1013,14 +1013,12 @@ static void cancel_requests_with(struct coap_client *client, int error)
 			 * request was cancelled anyway.
 			 */
 			report_callback_error(&client->requests[i], error);
-			release_internal_request(&client->requests[i]);
 		}
-		/* If our socket has failed, clear all requests, even completed ones,
-		 * so that our handle_poll() does not poll() anymore for this socket.
+
+		/* Clear all requests, even completed ones, so that our
+		 * handle_poll() does not poll() anymore for this socket.
 		 */
-		if (error == -EIO) {
-			reset_internal_request(&client->requests[i]);
-		}
+		reset_internal_request(&client->requests[i]);
 	}
 	k_mutex_unlock(&client->lock);
 

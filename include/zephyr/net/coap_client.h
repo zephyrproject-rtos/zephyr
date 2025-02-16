@@ -157,6 +157,8 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
  *
  * This is intended for canceling long-running requests (e.g. GETs with the OBSERVE option set)
  * which has gone stale for some reason.
+ * The function should also be called before the corresponding client socket is closed,
+ * to prevent the socket from being monitored by the internal polling thread.
  *
  * @param client Client instance.
  */
