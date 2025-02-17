@@ -16,6 +16,7 @@
 #include "sl_net_constants.h"
 #include "sl_wifi_types.h"
 #include "sl_wifi_callback_framework.h"
+#include "sl_net_default_values.h"
 #include "sl_wifi.h"
 #include "sl_net.h"
 
@@ -37,6 +38,34 @@ static int siwx91x_sl_to_z_mode(sl_wifi_interface_t interface)
 	}
 
 	return 0;
+}
+
+static int siwx91x_bandwidth(enum wifi_frequency_bandwidths bandwidth)
+{
+	switch (bandwidth) {
+	case WIFI_FREQ_BANDWIDTH_20MHZ:
+		return SL_WIFI_BANDWIDTH_20MHz;
+	case WIFI_FREQ_BANDWIDTH_40MHZ:
+		return SL_WIFI_BANDWIDTH_40MHz;
+	case WIFI_FREQ_BANDWIDTH_80MHZ:
+		return SL_WIFI_BANDWIDTH_80MHz;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int siwx91x_security(enum wifi_security_type security)
+{
+	switch (security) {
+	case WIFI_SECURITY_TYPE_NONE:
+		return SL_WIFI_OPEN;
+	case WIFI_SECURITY_TYPE_WPA_PSK:
+		return SL_WIFI_WPA;
+	case WIFI_SECURITY_TYPE_PSK:
+		return SL_WIFI_WPA2;
+	default:
+		return -EINVAL;
+	}
 }
 
 static unsigned int siwx91x_on_join(sl_wifi_event_t event,
@@ -62,6 +91,91 @@ static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 	siwx91x_on_join_ipv6(sidev);
 
 	return 0;
+}
+
+static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *params)
+{
+	struct siwx91x_dev *sidev = dev->data;
+	/* Wiseconnect requires a valid PSK even if WIFI_SECURITY_TYPE_NONE is selected */
+	static const char dummy_psk[] = "dummy_value";
+	sl_status_t ret;
+	int sec;
+
+	sl_wifi_ap_configuration_t siwx91x_ap_cfg = {
+		.credential_id       = SL_NET_DEFAULT_WIFI_AP_CREDENTIAL_ID,
+		.keepalive_type      = SL_SI91X_AP_NULL_BASED_KEEP_ALIVE,
+		.rate_protocol       = SL_WIFI_RATE_PROTOCOL_AUTO,
+		.encryption          = SL_WIFI_DEFAULT_ENCRYPTION,
+		.ssid.length         = params->ssid_length,
+		.tdi_flags           = SL_WIFI_TDI_NONE,
+		.client_idle_timeout = 0xFF,
+		.beacon_interval     = 100,
+		.dtim_beacon_count   = 3,
+		.maximum_clients     = 4,
+		.beacon_stop         = 0,
+		.options             = 0,
+		.is_11n_enabled      = 1,
+	};
+
+	if (params->band != WIFI_FREQ_BAND_UNKNOWN && params->band != WIFI_FREQ_BAND_2_4_GHZ) {
+		return -ENOTSUP;
+	}
+
+	if (params->channel == WIFI_CHANNEL_ANY) {
+		siwx91x_ap_cfg.channel.channel = SL_WIFI_AUTO_CHANNEL;
+	} else {
+		siwx91x_ap_cfg.channel.channel = params->channel;
+	}
+
+	if (siwx91x_bandwidth(params->bandwidth) < 0) {
+		return -EINVAL;
+	}
+
+	siwx91x_ap_cfg.channel.bandwidth = siwx91x_bandwidth(params->bandwidth);
+	strncpy(siwx91x_ap_cfg.ssid.value, params->ssid, params->ssid_length);
+
+	sec = siwx91x_security(params->security);
+	if (sec < 0) {
+		return -EINVAL;
+	}
+
+	siwx91x_ap_cfg.security = sec;
+
+	if (params->security == WIFI_SECURITY_TYPE_NONE) {
+		ret = sl_net_set_credential(siwx91x_ap_cfg.credential_id, SL_NET_WIFI_PSK,
+					    dummy_psk, strlen(dummy_psk));
+	} else {
+		ret = sl_net_set_credential(siwx91x_ap_cfg.credential_id, SL_NET_WIFI_PSK,
+					    params->psk, params->psk_length);
+	}
+
+	if (ret != SL_STATUS_OK) {
+		return -EINVAL;
+	}
+
+	ret = sl_wifi_start_ap(SL_WIFI_AP_INTERFACE | SL_WIFI_2_4GHZ_INTERFACE, &siwx91x_ap_cfg);
+	if (ret != SL_STATUS_OK) {
+		LOG_ERR("Failed to enable AP mode: 0x%x", ret);
+		return -EIO;
+	}
+
+	sidev->state = WIFI_STATE_COMPLETED;
+	return 0;
+}
+
+static int siwx91x_ap_disable(const struct device *dev)
+{
+	struct siwx91x_dev *sidev = dev->data;
+	int ret;
+
+	ret = sl_wifi_stop_ap(SL_WIFI_AP_2_4GHZ_INTERFACE);
+	if (ret) {
+		LOG_ERR("Failed to disable Wi-Fi AP mode: 0x%x", ret);
+		return -EIO;
+	}
+
+	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
+	return ret;
 }
 
 static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *params)
@@ -434,7 +548,6 @@ static void siwx91x_iface_init(struct net_if *iface)
 
 	sl_wifi_set_scan_callback(siwx91x_on_scan, sidev);
 	sl_wifi_set_join_callback(siwx91x_on_join, sidev);
-
 	status = sl_wifi_get_mac_address(SL_WIFI_CLIENT_INTERFACE, &sidev->macaddr);
 	if (status) {
 		LOG_ERR("sl_wifi_get_mac_address(): %#04x", status);
@@ -454,11 +567,13 @@ static int siwx91x_dev_init(const struct device *dev)
 }
 
 static const struct wifi_mgmt_ops siwx91x_mgmt = {
-	.scan         = siwx91x_scan,
-	.connect      = siwx91x_connect,
-	.disconnect   = siwx91x_disconnect,
-	.iface_status = siwx91x_status,
-	.mode         = siwx91x_mode,
+	.scan		= siwx91x_scan,
+	.connect	= siwx91x_connect,
+	.disconnect	= siwx91x_disconnect,
+	.ap_enable	= siwx91x_ap_enable,
+	.ap_disable	= siwx91x_ap_disable,
+	.iface_status	= siwx91x_status,
+	.mode           = siwx91x_mode,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_api = {
