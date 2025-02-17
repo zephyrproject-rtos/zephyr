@@ -165,6 +165,9 @@ set_compiler_property(PROPERTY coverage "")
 # mwdt compiler flags for imacros. The specific header must be appended by user.
 set_compiler_property(PROPERTY imacros -imacros)
 
+# assembler compiler flags for imacros. The specific header must be appended by user.
+set_property(TARGET asm PROPERTY imacros -imacros)
+
 # Security canaries.
 #no support of -mstack-protector-guard=global"
 set_compiler_property(PROPERTY security_canaries -fstack-protector)
