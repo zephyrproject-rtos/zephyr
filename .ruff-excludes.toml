@@ -442,7 +442,6 @@
 ]
 "./scripts/dts/python-devicetree/src/devicetree/edtlib.py" = [
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
-    "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
