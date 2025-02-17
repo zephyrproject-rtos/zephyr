@@ -1,0 +1,152 @@
+/dts-v1/;
+#include <ambiq/ambiq_apollo510.dtsi>
+#include "apollo510_evb-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Ambiq Apollo510 evaluation board";
+	compatible = "ambiq,apollo510_evb";
+
+	chosen {
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart0;
+		ambiq,xo32m = &xo32m_xtal;
+		ambiq,xo32k = &xo32k_xtal;
+		ambiq,extrefclk = &extrefclk;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio160_191 5 GPIO_ACTIVE_LOW>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpio64_95 25 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio64_95 28 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		polling-mode;
+		button0: button_0 {
+			gpios = <&gpio64_95 29 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BTN0";
+			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
+		};
+		button1: button_1 {
+			gpios = <&gpio64_95 30 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BTN1";
+			zephyr,code = <INPUT_KEY_1>;
+			status = "okay";
+		};
+	};
+};
+
+&itm {
+	pinctrl-0 = <&swo_default>;
+	pinctrl-names = "default";
+};
+
+&counter0 {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(6)>;
+	clk-source = <1>;
+};
+
+&rtc0 {
+	status = "okay";
+	clock = "XTAL";
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0_31 29 GPIO_ACTIVE_LOW>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	scl-gpios = <&gpio0_31 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+	sda-gpios = <&gpio0_31 6 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&stimer0 {
+	clk-source = <3>;
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	vddusb33-gpios = <&gpio64_95 27 (GPIO_PULL_UP)>;
+	vddusb0p9-gpios = <&gpio64_95 26 (GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&gpio0_31 {
+	status = "okay";
+};
+
+&gpio32_63 {
+	status = "okay";
+};
+
+&gpio64_95 {
+	status = "okay";
+};
+
+&gpio96_127 {
+	status = "okay";
+};
+
+&gpio128_159 {
+	status = "okay";
+};
+
+&gpio160_191 {
+	status = "okay";
+};
+
+&gpio192_223 {
+	status = "okay";
+};
