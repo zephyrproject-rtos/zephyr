@@ -431,11 +431,11 @@ class Binding:
         self._check_properties()
 
         for key, val in raw.items():
-            if key.endswith("-cells"):
-                if (not isinstance(val, list)
-                    or not all(isinstance(elem, str) for elem in val)):
-                    _err(f"malformed '{key}:' in {self.path}, "
-                         "expected a list of strings")
+            if (key.endswith("-cells")
+                and not isinstance(val, list)
+                or not all(isinstance(elem, str) for elem in val)):
+                _err(f"malformed '{key}:' in {self.path}, "
+                     "expected a list of strings")
 
     def _check_properties(self) -> None:
         # _check() helper for checking the contents of 'properties:'.
@@ -2705,11 +2705,12 @@ def _check_prop_by_type(prop_name: str,
         _err(f"'specifier-space' in 'properties: {prop_name}' "
              f"has type '{prop_type}', expected 'phandle-array'")
 
-    if prop_type == "phandle-array":
-        if not prop_name.endswith("s") and "specifier-space" not in options:
-            _err(f"'{prop_name}' in 'properties:' in {binding_path} "
-                 f"has type 'phandle-array' and its name does not end in 's', "
-                 f"but no 'specifier-space' was provided.")
+    if (prop_type == "phandle-array"
+        and not prop_name.endswith("s")
+        and "specifier-space" not in options):
+        _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+             f"has type 'phandle-array' and its name does not end in 's', "
+             f"but no 'specifier-space' was provided.")
 
     # If you change const_types, be sure to update the type annotation
     # for PropertySpec.const.
@@ -3241,11 +3242,10 @@ def _check_dt(dt: DT) -> None:
                      " (see the devicetree specification)")
 
         ranges_prop = node.props.get("ranges")
-        if ranges_prop:
-            if ranges_prop.type not in (Type.EMPTY, Type.NUMS):
-                _err(f"expected 'ranges = < ... >;' in {node.path} in "
-                     f"{node.dt.filename}, not '{ranges_prop}' "
-                     "(see the devicetree specification)")
+        if ranges_prop and ranges_prop.type not in (Type.EMPTY, Type.NUMS):
+            _err(f"expected 'ranges = < ... >;' in {node.path} in "
+                 f"{node.dt.filename}, not '{ranges_prop}' "
+                  "(see the devicetree specification)")
 
 
 def _err(msg) -> NoReturn:
