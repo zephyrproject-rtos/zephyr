@@ -16,7 +16,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #    comp data with corresponding bytes in local comp data.
 # 4. Client requests the next sample from server's composition data.
 # 5. When server status arrive, remove status field data and compare received
-#    comp data with correspending bytes in local comp data.
+#    comp data with corresponding bytes in local comp data.
 # 6. Client merges the two samples and checks that the collected data is
 #    correctly merged, continuous, and matches its local comp data.
 overlay=overlay_pst_conf
