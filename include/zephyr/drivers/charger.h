@@ -201,6 +201,8 @@ enum charger_health {
 	CHARGER_HEALTH_GOOD,
 	/** The charger device is overheated */
 	CHARGER_HEALTH_OVERHEAT,
+	/* The battery is dead */
+	CHARGER_HEALTH_DEAD,
 	/** The battery voltage has exceeded its overvoltage threshold */
 	CHARGER_HEALTH_OVERVOLTAGE,
 	/**
