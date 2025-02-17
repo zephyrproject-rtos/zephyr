@@ -439,7 +439,6 @@
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
 ]
 "./scripts/dts/python-devicetree/src/devicetree/edtlib.py" = [
-    "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
 ]
 "./scripts/dts/python-devicetree/src/devicetree/grutils.py" = [

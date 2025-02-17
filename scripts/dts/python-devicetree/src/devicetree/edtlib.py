@@ -236,7 +236,7 @@ class Binding:
 
         # Initialize look up tables.
         self.prop2specs: dict[str, PropertySpec] = {}
-        for prop_name in self.raw.get("properties", {}).keys():
+        for prop_name in self.raw.get("properties", {}):
             self.prop2specs[prop_name] = PropertySpec(prop_name, self)
         self.specifier2cells: dict[str, list[str]] = {}
         for key, val in self.raw.items():
