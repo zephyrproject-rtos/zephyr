@@ -81,6 +81,21 @@ include(CheckCXXCompilerFlag)
 #  zephyr_compile_options()     --->  target_compile_options()
 #
 
+# Internal function used to ensure paths passed to target_include_directories
+# are absolute and in standard CMake format (no backslashes).
+function(zephyr_cleanup_include_paths_internal out_list)
+  set(reserved_words SYSTEM AFTER BEFORE INTERFACE PUBLIC PRIVATE)
+  foreach(arg ${ARGV})
+    if(arg IN_LIST reserved_words)
+      list(APPEND cmake_args ${arg})
+    else()
+      cmake_path(SET cmake_path "${arg}")
+      cmake_path(ABSOLUTE_PATH cmake_path)
+      list(APPEND cmake_args "${cmake_path}")
+    endif()
+  endforeach()
+  set(${out_list} "${cmake_args}" PARENT_SCOPE)
+endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_sources.html
 function(zephyr_sources)
@@ -94,12 +109,14 @@ endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_include_directories.html
 function(zephyr_include_directories)
-  target_include_directories(zephyr_interface INTERFACE ${ARGV})
+  zephyr_cleanup_include_paths_internal(cleaned_args ${ARGV})
+  target_include_directories(zephyr_interface INTERFACE ${cleaned_args})
 endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_include_directories.html
 function(zephyr_system_include_directories)
-  target_include_directories(zephyr_interface SYSTEM INTERFACE ${ARGV})
+  zephyr_cleanup_include_paths_internal(cleaned_args ${ARGV})
+  target_include_directories(zephyr_interface SYSTEM INTERFACE ${cleaned_args})
 endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_compile_definitions.html
