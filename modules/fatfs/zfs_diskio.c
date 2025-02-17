@@ -8,7 +8,7 @@
 /* The file is based on template file by (C)ChaN, 2019, as
  * available from FAT FS module source:
  * https://github.com/zephyrproject-rtos/fatfs/blob/master/diskio.c
- * and has been previously avaialble from directory for that module
+ * and has been previously available from directory for that module
  * under name zfs_diskio.c.
  */
 #include <ff.h>
