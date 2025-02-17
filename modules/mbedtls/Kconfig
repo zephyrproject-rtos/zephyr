@@ -52,7 +52,7 @@ config CUSTOM_MBEDTLS_CFG_FILE
 config MBEDTLS_CFG_FILE
 	string "mbed TLS configuration file" if CUSTOM_MBEDTLS_CFG_FILE
 	depends on MBEDTLS_BUILTIN
-	default "config-tls-generic.h"
+	default "config-mbedtls.h"
 	help
 	  Use a specific mbedTLS configuration file. The default config file
 	  file can be tweaked with Kconfig. The default configuration is
@@ -61,7 +61,7 @@ config MBEDTLS_CFG_FILE
 	  special TLS usage, use available Kconfig options, or select an
 	  alternative config.
 
-rsource "Kconfig.tls-generic"
+rsource "Kconfig.mbedtls"
 
 config MBEDTLS_SSL_MAX_CONTENT_LEN
 	int "Max payload size for TLS protocol message"
