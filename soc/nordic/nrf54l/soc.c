@@ -13,45 +13,38 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <zephyr/dt-bindings/regulator/nrf5x.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
-#include <zephyr/dt-bindings/regulator/nrf5x.h>
+#include <soc/nrfx_coredep.h>
+#include <system_nrf54l.h>
+#include <soc.h>
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-#if defined(NRF_APPLICATION)
-#include <cmsis_core.h>
+#if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
+	!defined(__ZEPHYR__)
+
+#include <nrf_erratas.h>
 #include <hal/nrf_glitchdet.h>
 #include <hal/nrf_oscillators.h>
 #include <hal/nrf_power.h>
 #include <hal/nrf_regulators.h>
-#endif
-#include <soc/nrfx_coredep.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 
-#include <nrf_erratas.h>
-#include <system_nrf54l.h>
-#include <zephyr/drivers/clock_control/nrf_clock_control.h>
-
-LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
-
-#if defined(NRF_APPLICATION)
 #define LFXO_NODE DT_NODELABEL(lfxo)
 #define HFXO_NODE DT_NODELABEL(hfxo)
-#endif
 
-static int nordicsemi_nrf54l_init(void)
+static inline void power_and_clock_configuration(void)
 {
-	/* Update the SystemCoreClock global variable with current core clock
-	 * retrieved from the DT.
-	 */
-	SystemCoreClock = NRF_PERIPH_GET_FREQUENCY(DT_NODELABEL(cpu));
-
-#if defined(NRF_APPLICATION)
-	/* Enable ICACHE */
-	sys_cache_instr_enable();
-
+/* NRF_REGULATORS and NRF_OSCILLATORS are configured to be secure
+ * as NRF_REGULATORS.POFCON is needed by the secure image to
+ * prevent glitches when the power supply is attacked.
+ *
+ * NRF_OSCILLATORS is also configured as secure because of a HW limitation
+ * that requires them to be configured with the same security property.
+ */
 #if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
 	uint32_t xosc32ktrim = NRF_FICR->XOSC32KTRIM;
 
@@ -165,7 +158,22 @@ static int nordicsemi_nrf54l_init(void)
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
 #endif
 
-#endif /* NRF_APPLICATION */
+}
+#endif /* NRF_APPLICATION && !CONFIG_TRUSTED_EXECUTION_NONSECURE */
+
+int nordicsemi_nrf54l_init(void)
+{
+	/* Update the SystemCoreClock global variable with current core clock
+	 * retrieved from the DT.
+	 */
+	SystemCoreClock = NRF_PERIPH_GET_FREQUENCY(DT_NODELABEL(cpu));
+
+	sys_cache_instr_enable();
+
+#if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
+	!defined(__ZEPHYR__)
+	power_and_clock_configuration();
+#endif
 
 	return 0;
 }
