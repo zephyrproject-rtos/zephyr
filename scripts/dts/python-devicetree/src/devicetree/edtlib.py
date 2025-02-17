@@ -2113,7 +2113,7 @@ class EDT:
         try:
             return self._graph.scc_order()
         except Exception as e:
-            raise EDTError(e)
+            raise EDTError(e) from None
 
     def _process_properties_r(self, root_node: Node, props_node: Node) -> None:
         """
