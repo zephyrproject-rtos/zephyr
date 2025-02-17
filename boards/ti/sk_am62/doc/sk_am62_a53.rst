@@ -45,7 +45,7 @@ The sk_am62 configuration supports the following hardware features:
 | ARM TIMER | on-chip    | system clock                        |
 +-----------+------------+-------------------------------------+
 | PINCTRL   | on-chip    | pinctrl                             |
-+-----------+------------+=====================================+
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
 | Mailbox   | on-chip    | IPC Mailbox                         |
