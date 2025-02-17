@@ -164,6 +164,9 @@ Counter
 Controller Area Network (CAN)
 =============================
 
+* Renamed the :dtcompatible:`infineon,xmc4xxx-can-node` devicetree property ``clock_div8`` to
+  ``clock-div8`` (:github:`83782`).
+
 Display
 =======
 
