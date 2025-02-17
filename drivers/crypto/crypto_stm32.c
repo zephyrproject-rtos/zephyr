@@ -123,7 +123,7 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
 	/* Device is initialized from the configuration in the encryption/decryption function
-	 * called bellow.
+	 * called below.
 	 */
 	memcpy(&data->hcryp.Init, &session->config, sizeof(session->config));
 #else
