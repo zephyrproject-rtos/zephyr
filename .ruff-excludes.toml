@@ -436,7 +436,6 @@
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
 "./scripts/dts/python-devicetree/src/devicetree/dtlib.py" = [
-    "E701",     # https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon
     "SIM201",   # https://docs.astral.sh/ruff/rules/negate-equal-op
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
 ]
