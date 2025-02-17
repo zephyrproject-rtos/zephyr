@@ -90,10 +90,8 @@ if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
     )
 endif()
 
-if(CONFIG_DEBUG)
-  # GCC defaults to Dwarf 5 output
-  list(APPEND IAR_ASM_FLAGS -gdwarf-4)
-endif()
+# IAR needs Dwarf 4 output
+list(APPEND IAR_ASM_FLAGS -gdwarf-4)
 
 if(DEFINED CONFIG_ARM_SECURE_FIRMWARE)
   list(APPEND IAR_COMMON_FLAGS --cmse)
