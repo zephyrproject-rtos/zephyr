@@ -102,7 +102,7 @@ class Node:
 
         if name.count("@") > 1:
             dt._parse_error("multiple '@' in node name")
-        if not name == "/":
+        if name != "/":
             for char in name:
                 if char not in _nodename_chars:
                     dt._parse_error(f"{self.path}: bad character '{char}' "
