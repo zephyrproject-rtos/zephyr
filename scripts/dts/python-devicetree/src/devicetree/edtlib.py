@@ -1250,10 +1250,10 @@ class Node:
         if "gpio-hog" not in self.props:
             return []
 
-        if not self.parent or not "gpio-controller" in self.parent.props:
+        if not self.parent or "gpio-controller" not in self.parent.props:
             _err(f"GPIO hog {self!r} lacks parent GPIO controller node")
 
-        if not "#gpio-cells" in self.parent._node.props:
+        if "#gpio-cells" not in self.parent._node.props:
             _err(f"GPIO hog {self!r} parent node lacks #gpio-cells")
 
         n_cells = self.parent._node.props["#gpio-cells"].to_num()
@@ -2706,7 +2706,7 @@ def _check_prop_by_type(prop_name: str,
              f"has type '{prop_type}', expected 'phandle-array'")
 
     if prop_type == "phandle-array":
-        if not prop_name.endswith("s") and not "specifier-space" in options:
+        if not prop_name.endswith("s") and "specifier-space" not in options:
             _err(f"'{prop_name}' in 'properties:' in {binding_path} "
                  f"has type 'phandle-array' and its name does not end in 's', "
                  f"but no 'specifier-space' was provided.")
