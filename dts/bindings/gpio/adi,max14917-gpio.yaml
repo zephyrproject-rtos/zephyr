@@ -1,0 +1,59 @@
+# Copyright (c) 2025 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI  MAX14917 is octal industrial output
+
+compatible: "adi,max14917-gpio"
+
+properties:
+  "#gpio-cells":
+    const: 2
+  ngpios:
+    type: int
+    required: true
+    const: 8
+    description: Number of gpios supported
+  vddok-gpios:
+    description: |
+      High-Side Open-Drain Output. VDDOK is passive low when the internal
+      logic supply is higher than the UVLO threshold, indicating that the
+      registers have adequate supply voltage.
+    type: phandle-array
+  ready-gpios:
+    description: |
+      Ready pin indicates when the device is ready to be used.
+    type: phandle-array
+  comerr-gpios:
+    description: |
+      Communication Error pin indicates when there is a communication error
+      on the SPI bus.
+    type: phandle-array
+  fault-gpios:
+    description: |
+      Fault pin indicates cases of overload or undervoltage conditions
+    type: phandle-array
+  en-gpios:
+    description: |
+      Enable Pin. Drive the EN pin high to enable the outputs.
+      Drive EN low to disable/three-state all outputs.
+    type: phandle-array
+  sync-gpios:
+    description: |
+      All eight output switches are updated simultaneously on the rising edge
+      of SYNCH, as determined by the content of the SPI command
+    type: phandle-array
+  crcen-gpios:
+    description: |
+      Drive CRCEN high to enable CRC generation and error detection on the
+      serial data.
+    type: phandle-array
+  crc-en:
+    description: |
+      Notify driver if crc pin is enabled.
+    type: boolean
+
+gpio-cells:
+  - pin
+  - flags
+
+include: [gpio-controller.yaml, spi-device.yaml]
