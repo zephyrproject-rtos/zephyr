@@ -50,4 +50,11 @@ config NET_MGMT_EVENT_QUEUE_SIZE
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	default 1
 
+config SIWX91X_ENHANCED_MAX_PSP
+	bool "Enhanced Max PSP Support"
+	default y
+	help
+	 Enable this option to allow the device to configure
+	 Enhanced Maximum Power Save (PSP) support during
+	 device initialization.
 endif
