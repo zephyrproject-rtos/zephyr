@@ -18,7 +18,7 @@
 #define HELP_NONE "[none]"
 #define HELP_INIT "call \"cfb init\" first"
 #define HELP_PRINT "<col: pos> <row: pos> \"<text>\""
-#define HELP_DRAW_POINT "<x> <y0>"
+#define HELP_DRAW_POINT "<x> <y>"
 #define HELP_DRAW_LINE "<x0> <y0> <x1> <y1>"
 #define HELP_DRAW_RECT "<x0> <y0> <x1> <y1>"
 #define HELP_INVERT "[<x> <y> <width> <height>]"
@@ -282,7 +282,7 @@ static int cmd_set_font(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	shell_print(sh, "Font idx=%d height=%d widht=%d set", idx, height,
+	shell_print(sh, "Font idx=%d height=%d width=%d set", idx, height,
 		    width);
 
 	return err;
@@ -396,8 +396,8 @@ static int cmd_get_param_height(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_HEIGH],
-		    cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGH));
+	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_HEIGHT],
+		    cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGHT));
 
 	return 0;
 }
