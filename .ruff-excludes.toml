@@ -443,7 +443,6 @@
 ]
 "./scripts/dts/python-devicetree/src/devicetree/edtlib.py" = [
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
