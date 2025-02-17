@@ -101,10 +101,6 @@ static void port_pin_get(gpio_port_pins_t reserved_mask, const char **line_names
 #define GPIO_CTRL_PIN_GET_FN(node_id)                                                              \
 	static const char *node_id##line_names[] = DT_PROP_OR(node_id, gpio_line_names, {NULL});   \
                                                                                                    \
-	static void node_id##cmd_gpio_pin_get(size_t idx, struct shell_static_entry *entry);       \
-                                                                                                   \
-	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_gpio_pin, node_id##cmd_gpio_pin_get);                \
-                                                                                                   \
 	static void node_id##cmd_gpio_pin_get(size_t idx, struct shell_static_entry *entry)        \
 	{                                                                                          \
 		gpio_port_pins_t reserved_mask = GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL(node_id);    \
@@ -112,7 +108,9 @@ static void port_pin_get(gpio_port_pins_t reserved_mask, const char **line_names
                                                                                                    \
 		port_pin_get(reserved_mask, node_id##line_names, line_names_len, idx, entry);      \
 		entry->subcmd = NULL;                                                              \
-	}
+	}                                                                                          \
+                                                                                                   \
+	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_gpio_pin, node_id##cmd_gpio_pin_get);
 
 #define IS_GPIO_CTRL_PIN_GET(node_id)                                                              \
 	COND_CODE_1(DT_PROP(node_id, gpio_controller), (GPIO_CTRL_PIN_GET_FN(node_id)), ())
