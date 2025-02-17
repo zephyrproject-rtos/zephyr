@@ -221,7 +221,7 @@ class Binding:
             if not isinstance(raw["child-binding"], dict):
                 _err(f"malformed 'child-binding:' in {self.path}, "
                      "expected a binding (dictionary with keys/values)")
-            self.child_binding: Optional['Binding'] = Binding(
+            self.child_binding: Optional[Binding] = Binding(
                 path, fname2path,
                 raw=raw["child-binding"],
                 require_compatible=False,
@@ -233,7 +233,7 @@ class Binding:
         self._check(require_compatible, require_description)
 
         # Initialize look up tables.
-        self.prop2specs: dict[str, 'PropertySpec'] = {}
+        self.prop2specs: dict[str, PropertySpec] = {}
         for prop_name in self.raw.get("properties", {}).keys():
             self.prop2specs[prop_name] = PropertySpec(prop_name, self)
         self.specifier2cells: dict[str, list[str]] = {}
@@ -1034,7 +1034,7 @@ class Node:
         self._binding: Optional[Binding] = None
 
         # Public, some of which are initialized properly later:
-        self.edt: 'EDT' = edt
+        self.edt: EDT = edt
         self.dep_ordinal: int = -1
         self.compats: list[str] = compats
         self.ranges: list[Range] = []
