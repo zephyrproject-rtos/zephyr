@@ -167,8 +167,8 @@
 };
 
 &usart3 {
-	clocks = <&rcc STM32_CLOCK(APB1, 17)>,
-		 <&rcc STM32_SRC_CKPER USART2_SEL(1)>;
+	clocks = <&rcc STM32_CLOCK(APB1, 18)>,
+		 <&rcc STM32_SRC_CKPER USART3_SEL(1)>;
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
