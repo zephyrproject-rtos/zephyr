@@ -22,8 +22,8 @@ LOG_MODULE_REGISTER(bosch_bmi323);
 /* Value taken from BMI323 Datasheet section 5.8.1 */
 #define IMU_BOSCH_FEATURE_ENGINE_STARTUP_CONFIG (0x012C)
 
-#define IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELCIUS (23000000LL)
-#define IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELCIUS_LSB    (1953L)
+#define IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELSIUS (23000000LL)
+#define IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELSIUS_LSB    (1953L)
 
 typedef void (*bosch_bmi323_gpio_callback_ptr)(const struct device *dev, struct gpio_callback *cb,
 					       uint32_t pins);
@@ -991,9 +991,9 @@ static int bosch_bmi323_driver_api_fetch_temperature(const struct device *dev)
 		return -ENODATA;
 	}
 
-	micro = bosch_bmi323_value_to_micro(buf, IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELCIUS_LSB);
+	micro = bosch_bmi323_value_to_micro(buf, IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELSIUS_LSB);
 
-	micro += IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELCIUS;
+	micro += IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELSIUS;
 
 	bosch_bmi323_sensor_value_from_micro(&data->temperature, micro);
 

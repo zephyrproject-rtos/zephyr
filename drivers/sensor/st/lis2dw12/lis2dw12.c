@@ -97,11 +97,11 @@ static inline void lis2dw12_channel_get_temp(const struct device *dev, struct se
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	int64_t dval_uc;
 
-	/* The calcul is in micro Celcius to keep it efficient */
+	/* The calcul is in micro Celsius to keep it efficient */
 	dval_uc = ((lis2dw12->temp >> LIS2DW12_SHIFT_TEMP) * LIS2DW12_TEMP_SCALE_FACTOR);
 	dval_uc += 25000000;
 
-	/* switch to Celcius when we split the integer and fractional parts of the value */
+	/* switch to Celsius when we split the integer and fractional parts of the value */
 	val->val1 = dval_uc / 1000000LL;
 	val->val2 = dval_uc % 1000000LL;
 }
