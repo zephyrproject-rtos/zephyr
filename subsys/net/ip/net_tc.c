@@ -40,6 +40,9 @@ BUILD_ASSERT(NET_TC_TX_SLOTS > 0,
 		"CONFIG_NET_TC_TX_COUNT or disable CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO");
 #endif
 
+#if NET_TC_RX_EFFECTIVE_COUNT > 1
+#define NET_TC_RETRY_CNT 1
+#endif
 /* Template for thread name. The "xx" is either "TX" denoting transmit thread,
  * or "RX" denoting receive thread. The "q[y]" denotes the traffic class queue
  * where y indicates the traffic class id. The value of y can be from 0 to 7.
@@ -68,7 +71,7 @@ enum net_verdict net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt)
 	net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
 
 #if NET_TC_TX_EFFECTIVE_COUNT > 1
-	if (k_sem_take(&tx_classes[tc].fifo_slot, K_NO_WAIT) != 0) {
+	if (k_sem_take(&tx_classes[tc].fifo_slot, K_FOREVER) != 0) {
 		return NET_DROP;
 	}
 #endif
@@ -85,11 +88,22 @@ enum net_verdict net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt)
 enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt)
 {
 #if NET_TC_RX_COUNT > 0
+#if NET_TC_RX_EFFECTIVE_COUNT > 1
+	uint8_t retry_cnt = NET_TC_RETRY_CNT;
+#endif
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
 #if NET_TC_RX_EFFECTIVE_COUNT > 1
-	if (k_sem_take(&rx_classes[tc].fifo_slot, K_NO_WAIT) != 0) {
-		return NET_DROP;
+	while (k_sem_take(&rx_classes[tc].fifo_slot, K_NO_WAIT) != 0) {
+		if (retry_cnt == 0) {
+			return NET_DROP;
+		}
+
+		retry_cnt--;
+		/* Let thread with same priority run,
+		 * try to reduce dropping packets
+		 */
+		k_yield();
 	}
 #endif
 
