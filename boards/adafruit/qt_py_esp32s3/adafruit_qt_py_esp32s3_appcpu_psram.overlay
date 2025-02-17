@@ -27,8 +27,7 @@
 
 /* 2MB psram */
 &psram0 {
-	reg = <0x3c000000 DT_SIZE_M(2)>;
-	status = "okay";
+	size = <DT_SIZE_M(2)>;
 };
 
 #include <espressif/partitions_0x0_amp.dtsi>

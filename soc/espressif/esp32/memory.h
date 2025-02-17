@@ -87,16 +87,19 @@
 
 #define APPCPU_SRAM_SIZE (APPCPU_IRAM_SIZE + APPCPU_DRAM_SIZE)
 
+/* Cached memories */
+#define ICACHE0_START DT_REG_ADDR(DT_NODELABEL(icache0))
+#define ICACHE0_SIZE  DT_REG_SIZE(DT_NODELABEL(icache0))
+#define DCACHE0_START DT_REG_ADDR(DT_NODELABEL(dcache0))
+#define DCACHE0_SIZE  DT_REG_SIZE(DT_NODELABEL(dcache0))
+#define DCACHE1_START DT_REG_ADDR(DT_NODELABEL(dcache1))
+#define DCACHE1_SIZE  DT_REG_SIZE(DT_NODELABEL(dcache1))
+
+#define CACHE_ALIGN        CONFIG_MMU_PAGE_SIZE
+
 /* Flash */
 #ifdef CONFIG_FLASH_SIZE
 #define FLASH_SIZE          CONFIG_FLASH_SIZE
 #else
 #define FLASH_SIZE          0x400000
 #endif
-
-/* Cached memories */
-#define CACHE_ALIGN        CONFIG_MMU_PAGE_SIZE
-#define IROM_SEG_ORG       0x400d0000
-#define IROM_SEG_LEN       (FLASH_SIZE - 0x1000)
-#define DROM_SEG_ORG       0x3f400000
-#define DROM_SEG_LEN       (FLASH_SIZE - 0x1000)
