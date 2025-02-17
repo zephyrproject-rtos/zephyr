@@ -49,6 +49,8 @@ enum charger_property {
 	/** Represents the charging algo type of the charger. */
 	/** Value should be of type enum charger_charge_type */
 	CHARGER_PROP_CHARGE_TYPE,
+	/** Represents USB charge type based on BC 1.2 */
+	CHARGER_PROP_USB_TYPE,
 	/** Represents the health of the charger. */
 	/** Value should be of type enum charger_health */
 	CHARGER_PROP_HEALTH,
@@ -186,6 +188,22 @@ enum charger_charge_type {
 };
 
 /**
+ * @brief Charger USB types
+ */
+enum charger_usb_type {
+	CHARGER_USB_TYPE_UNKNOWN = 0,
+	CHARGER_USB_TYPE_SDP,			/* Standard Downstream Port */
+	CHARGER_USB_TYPE_DCP,			/* Dedicated Charging Port */
+	CHARGER_USB_TYPE_CDP,			/* Charging Downstream Port */
+	CHARGER_USB_TYPE_ACA,			/* Accessory Charger Adapters */
+	CHARGER_USB_TYPE_C,			/* Type C Port */
+	CHARGER_USB_TYPE_PD,			/* Power Delivery Port */
+	CHARGER_USB_TYPE_PD_DRP,		/* PD Dual Role Port */
+	CHARGER_USB_TYPE_PD_PPS,		/* PD Programmable Power Supply */
+	CHARGER_USB_TYPE_APPLE_BRICK_ID,	/* Apple Charging Method */
+};
+
+/**
  * @brief Charger health conditions
  *
  * These conditions determine the ability to, or the rate of, charge
@@ -281,6 +299,8 @@ union charger_propval {
 	enum charger_status status;
 	/** CHARGER_PROP_CHARGE_TYPE */
 	enum charger_charge_type charge_type;
+	/** CHARGER_PROP_USB_TYPE */
+	enum charger_usb_type usb_type;
 	/** CHARGER_PROP_HEALTH */
 	enum charger_health health;
 	/** CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA */
