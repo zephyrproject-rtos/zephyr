@@ -58,28 +58,27 @@ struct fsmbm_regs {
 #define FSMBM_SMBUS_BUSY                0x1A
 #define FSMBM_STOP_FAIL                 0x1E
 #define FSMBM_PEC_ERROR                 0x1F
-/* Packet Form */
-#define ___NONE                         0x00
-#define ___STOP                         0x01
-#define __PEC_                          0x02
-#define __PEC_STOP                      0x03
-#define _CNT__                          0x04
-#define _CNT__STOP                      0x05
-#define _CNT_PEC_                       0x06
-#define _CNT_PEC_STOP                   0x07
-#define CMD___                          0x08
-#define CMD___STOP                      0x09
-#define CMD__PEC_                       0x0A
-#define CMD__PEC_STOP                   0x0B
-#define CMD_CNT__                       0x0C
-#define CMD_CNT__STOP                   0x0D
-#define CMD_CNT_PEC_                    0x0E
-#define CMD_CNT_PEC_STOP                0x0F
+#define FSMBM_SDA_TIMEOUT               0x80
+#define FSMBM_MAX_TIMEOUT               200         /* Unit: ms */
 
-#define FLEXIBLE_CMD                    0x08
-#define FLEXIBLE_CNT                    0x04
-#define FLEXIBLE_PEC                    0x02
-#define FLEXIBLE_STOP                   0x01
+/* Packet Form */
+#define FRT_NONE                        0x00
+#define FRT_STOP                        0x01
+#define FRT_PEC                         0x02
+#define FRT_CNT                         0x04
+#define FRT_CMD                         0x08
+#define FRT_PEC_STOP                    (FRT_PEC | FRT_STOP)
+#define FRT_CNT_STOP                    (FRT_CNT | FRT_STOP)
+#define FRT_CNT_PEC                     (FRT_CNT | FRT_PEC)
+#define FRT_CNT_PEC_STOP                (FRT_CNT | FRT_PEC | FRT_STOP)
+#define FRT_CMD_STOP                    (FRT_CMD | FRT_STOP)
+#define FRT_CMD_PEC                     (FRT_CMD | FRT_PEC)
+#define FRT_CMD_PEC_STOP                (FRT_CMD | FRT_PEC | FRT_STOP)
+#define FRT_CMD_CNT                     (FRT_CMD | FRT_CNT)
+#define FRT_CMD_CNT_STOP                (FRT_CMD | FRT_CNT | FRT_STOP)
+#define FRT_CMD_CNT_PEC                 (FRT_CMD | FRT_CNT | FRT_PEC)
+#define FRT_CMD_CNT_PEC_STOP            (FRT_CMD | FRT_CNT | FRT_PEC | FRT_STOP)
+
 /* HW */
 #define FSMBM_BUFFER_SIZE               0x20
 #define FSMBM_MAXCNT                    0xFF
@@ -109,6 +108,7 @@ struct fsmbm_regs {
 #define FSMBM_CLK_10K                   0x6363
 /* Other(non 50% Duty Cycle) */
 #define FSMBM_CLK_400K                  0x0102
+#define FSMBM_CLK_666K                  0x0001
 
 #define FSMBM_COMPLETE_EVENT            0x01
 #define FSMBM_HOST_NOTIFY_EVENT         0x02
