@@ -10,7 +10,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #
 # Test procedure:
 # 0. Provisioning and setup. Server and client has same comp data.
-# 1. Client requests a sample exceeding the maximum avaialble payload from the
+# 1. Client requests a sample exceeding the maximum available payload from the
 #    server's composition data.
 # 2. Client fetch its local comp data.
 # 3. When server status arrive, remove status field data and compare received
