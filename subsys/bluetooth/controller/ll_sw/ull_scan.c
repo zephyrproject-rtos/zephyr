@@ -610,6 +610,9 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	ret_cb = TICKER_STATUS_BUSY;
 
 #if defined(CONFIG_BT_TICKER_EXT)
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	ll_scan_ticker_ext[handle].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	ret = ticker_start_ext(
 #else
 	ret = ticker_start(
