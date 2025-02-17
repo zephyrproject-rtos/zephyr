@@ -9,3 +9,12 @@ void wait_for_network(void);
 #else
 static inline void wait_for_network(void) { }
 #endif /* CONFIG_NET_CONNECTION_MANAGER */
+
+#if defined(CONFIG_WIREGUARD)
+int init_vpn(void);
+#else
+static inline int init_vpn(void)
+{
+	return 0;
+}
+#endif /* CONFIG_WIREGUARD */
