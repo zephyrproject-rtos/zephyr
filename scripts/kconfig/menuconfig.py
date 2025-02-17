@@ -195,7 +195,7 @@ try:
 except ImportError as e:
     if not _IS_WINDOWS:
         raise
-    sys.exit("""\
+    sys.exit(f"""\
 menuconfig failed to import the standard Python 'curses' library. Try
 installing a package like windows-curses
 (https://github.com/zephyrproject-rtos/windows-curses) by running this command
@@ -208,7 +208,7 @@ installed when installing Kconfiglib via pip on Windows (because it breaks
 installation on MSYS2).
 
 Exception:
-{}: {}""".format(type(e).__name__, e))
+{type(e).__name__}: {e}""")
 
 import errno
 import locale
@@ -572,9 +572,9 @@ def _style_to_curses(style_def):
                 return -1
 
         if not -1 <= color_num < curses.COLORS:
-            _warn("Ignoring color {}, which is outside the range "
-                  "-1..curses.COLORS-1 (-1..{})"
-                  .format(color_def, curses.COLORS - 1))
+            _warn(f"Ignoring color {color_def}, which is outside the range "
+                  f"-1..curses.COLORS-1 (-1..{curses.COLORS - 1})"
+                  )
             return -1
 
         return color_num
@@ -937,7 +937,7 @@ def _menuconfig(stdscr):
 
 def _quit_dialog():
     if not _conf_changed:
-        return "No changes to save (for '{}')".format(_conf_filename)
+        return f"No changes to save (for '{_conf_filename}')"
 
     while True:
         c = _key_dialog(
@@ -957,7 +957,7 @@ def _quit_dialog():
                 return msg
 
         elif c == "n":
-            return "Configuration ({}) was not saved".format(_conf_filename)
+            return f"Configuration ({_conf_filename}) was not saved"
 
 
 def _init():
@@ -1582,7 +1582,7 @@ def _change_node(node):
 
         while True:
             s = _input_dialog(
-                "{} ({})".format(node.prompt[0], TYPE_TO_STR[sc.orig_type]),
+                f"{node.prompt[0]} ({TYPE_TO_STR[sc.orig_type]})",
                 s, _range_info(sc))
 
             if s is None:
@@ -1860,8 +1860,7 @@ def _try_load(filename):
         _kconf.load_config(filename)
         return True
     except EnvironmentError as e:
-        _error("Error loading '{}'\n\n{} (errno: {})"
-               .format(filename, e.strerror, errno.errorcode[e.errno]))
+        _error(f"Error loading '{filename}'\n\n{e.strerror} (errno: {errno.errorcode[e.errno]})")
         return False
 
 
@@ -1882,7 +1881,7 @@ def _save_dialog(save_fn, default_filename, description):
 
     filename = default_filename
     while True:
-        filename = _input_dialog("Filename to save {} to".format(description),
+        filename = _input_dialog(f"Filename to save {description} to",
                                  filename, _load_save_info())
         if filename is None:
             return None
@@ -1912,9 +1911,8 @@ def _try_save(save_fn, filename, description):
         # save_fn() returns a message to print
         return save_fn(filename)
     except EnvironmentError as e:
-        _error("Error saving {} to '{}'\n\n{} (errno: {})"
-               .format(description, e.filename, e.strerror,
-                       errno.errorcode[e.errno]))
+        _error(f"Error saving {description} to '{e.filename}'\n\n"
+               f"{e.strerror} (errno: {errno.errorcode[e.errno]})")
         return None
 
 
@@ -2309,11 +2307,11 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
             if isinstance(node.item, (Symbol, Choice)):
                 node_str = _name_and_val_str(node.item)
                 if node.prompt:
-                    node_str += ' "{}"'.format(node.prompt[0])
+                    node_str += f' "{node.prompt[0]}"'
             elif node.item == MENU:
-                node_str = 'menu "{}"'.format(node.prompt[0])
+                node_str = f'menu "{node.prompt[0]}"'
             else:  # node.item == COMMENT
-                node_str = 'comment "{}"'.format(node.prompt[0])
+                node_str = f'comment "{node.prompt[0]}"'
 
             _safe_addstr(matches_win, i - scroll, 0, node_str,
                          _style["selection" if i == sel_node_i else "list"])
@@ -2556,7 +2554,7 @@ def _info_str(node):
         return (
             _name_info(sym) +
             _prompt_info(sym) +
-            "Type: {}\n".format(TYPE_TO_STR[sym.type]) +
+            f"Type: {TYPE_TO_STR[sym.type]}\n" +
             _value_info(sym) +
             _help_info(sym) +
             _direct_dep_info(sym) +
@@ -2571,8 +2569,8 @@ def _info_str(node):
         return (
             _name_info(choice) +
             _prompt_info(choice) +
-            "Type: {}\n".format(TYPE_TO_STR[choice.type]) +
-            'Mode: {}\n'.format(choice.str_value) +
+            f"Type: {TYPE_TO_STR[choice.type]}\n" +
+            f'Mode: {choice.str_value}\n' +
             _help_info(choice) +
             _choice_syms_info(choice) +
             _direct_dep_info(choice) +
@@ -2587,7 +2585,7 @@ def _name_info(sc):
     # Returns a string with the name of the symbol/choice. Names are optional
     # for choices.
 
-    return "Name: {}\n".format(sc.name) if sc.name else ""
+    return f"Name: {sc.name}\n" if sc.name else ""
 
 
 def _prompt_info(sc):
@@ -2597,7 +2595,7 @@ def _prompt_info(sc):
 
     for node in sc.nodes:
         if node.prompt:
-            s += "Prompt: {}\n".format(node.prompt[0])
+            s += f"Prompt: {node.prompt[0]}\n"
 
     return s
 
@@ -2607,7 +2605,7 @@ def _value_info(sym):
 
     # Only put quotes around the value for string symbols
     return "Value: {}\n".format(
-        '"{}"'.format(sym.str_value)
+        f'"{sym.str_value}"'
         if sym.orig_type == STRING
         else sym.str_value)
 
@@ -2636,7 +2634,7 @@ def _help_info(sc):
 
     for node in sc.nodes:
         if node.help is not None:
-            s += "Help:\n\n{}\n\n".format(_indent(node.help, 2))
+            s += f"Help:\n\n{_indent(node.help, 2)}\n\n"
 
     return s
 
@@ -2648,9 +2646,8 @@ def _direct_dep_info(sc):
     # from 'depends on' and dependencies inherited from parent items.
 
     return "" if sc.direct_dep is _kconf.y else \
-        'Direct dependencies (={}):\n{}\n' \
-        .format(TRI_TO_STR[expr_value(sc.direct_dep)],
-                _split_expr_info(sc.direct_dep, 2))
+        f'Direct dependencies (={TRI_TO_STR[expr_value(sc.direct_dep)]}):\n{_split_expr_info(sc.direct_dep, 2)}\n' \
+        
 
 
 def _defaults_info(sc):
@@ -2675,7 +2672,7 @@ def _defaults_info(sc):
             # This also avoids showing the tristate value for string/int/hex
             # defaults, which wouldn't make any sense.
             if isinstance(val, tuple):
-                s += '  (={})'.format(TRI_TO_STR[expr_value(val)])
+                s += f'  (={TRI_TO_STR[expr_value(val)]})'
         else:
             # Don't print the value next to the symbol name for choice
             # defaults, as it looks a bit confusing
@@ -2683,9 +2680,8 @@ def _defaults_info(sc):
         s += "\n"
 
         if cond is not _kconf.y:
-            s += "    Condition (={}):\n{}" \
-                 .format(TRI_TO_STR[expr_value(cond)],
-                         _split_expr_info(cond, 4))
+            s += f"    Condition (={TRI_TO_STR[expr_value(cond)]}):\n{_split_expr_info(cond, 4)}" \
+                 
 
     return s + "\n"
 
@@ -2715,7 +2711,7 @@ def _split_expr_info(expr, indent):
         # Don't bother showing the value hint if the expression is just a
         # single symbol. _expr_str() already shows its value.
         if isinstance(term, tuple):
-            s += "  (={})".format(TRI_TO_STR[expr_value(term)])
+            s += f"  (={TRI_TO_STR[expr_value(term)]})"
 
         s += "\n"
 
@@ -2735,7 +2731,7 @@ def _select_imply_info(sym):
 
         res = title
         for si in sis:
-            res += "  - {}\n".format(split_expr(si, AND)[0].name)
+            res += f"  - {split_expr(si, AND)[0].name}\n"
         return res + "\n"
 
     s = ""
@@ -2771,14 +2767,11 @@ def _kconfig_def_info(item):
 
     for node in nodes:
         s += "\n\n" \
-             "At {}:{}\n" \
-             "{}" \
-             "Menu path: {}\n\n" \
-             "{}" \
-             .format(node.filename, node.linenr,
-                     _include_path_info(node),
-                     _menu_path_info(node),
-                     _indent(node.custom_str(_name_and_val_str), 2))
+             f"At {node.filename}:{node.linenr}\n" \
+             f"{_include_path_info(node)}" \
+             f"Menu path: {_menu_path_info(node)}\n\n" \
+             f"{_indent(node.custom_str(_name_and_val_str), 2)}" \
+             
 
     return s
 
@@ -2789,7 +2782,7 @@ def _include_path_info(node):
         return ""
 
     return "Included via {}\n".format(
-        " -> ".join("{}:{}".format(filename, linenr)
+        " -> ".join(f"{filename}:{linenr}"
                     for filename, linenr in node.include_path))
 
 
@@ -2827,9 +2820,9 @@ def _name_and_val_str(sc):
     if isinstance(sc, Symbol) and not sc.is_constant and not _is_num(sc.name):
         if not sc.nodes:
             # Undefined symbol reference
-            return "{}(undefined/n)".format(sc.name)
+            return f"{sc.name}(undefined/n)"
 
-        return '{}(={})'.format(sc.name, sc.str_value)
+        return f'{sc.name}(={sc.str_value})'
 
     # For other items, use the standard format
     return standard_sc_expr_str(sc)
@@ -2978,7 +2971,7 @@ def _node_str(node):
 
     if _should_show_name(node):
         if isinstance(node.item, Symbol):
-            s += " <{}>".format(node.item.name)
+            s += f" <{node.item.name}>"
         else:
             # For choices, use standard_sc_expr_str(). That way they show up as
             # '<choice (name if any)>'.
@@ -2986,7 +2979,7 @@ def _node_str(node):
 
     if node.prompt:
         if node.item == COMMENT:
-            s += " *** {} ***".format(node.prompt[0])
+            s += f" *** {node.prompt[0]} ***"
         else:
             s += " " + node.prompt[0]
 
@@ -3010,14 +3003,14 @@ def _node_str(node):
                 # Use the prompt used at this choice location, in case the
                 # choice symbol is defined in multiple locations
                 if sym_node.parent is node and sym_node.prompt:
-                    s += " ({})".format(sym_node.prompt[0])
+                    s += f" ({sym_node.prompt[0]})"
                     break
             else:
                 # If the symbol isn't defined at this choice location, then
                 # just use whatever prompt we can find for it
                 for sym_node in sym.nodes:
                     if sym_node.prompt:
-                        s += " ({})".format(sym_node.prompt[0])
+                        s += f" ({sym_node.prompt[0]})"
                         break
 
     # Print "--->" next to nodes that have menus that can potentially be
@@ -3052,7 +3045,7 @@ def _value_str(node):
         return ""
 
     if item.orig_type in (STRING, INT, HEX):
-        return "({})".format(item.str_value)
+        return f"({item.str_value})"
 
     # BOOL or TRISTATE
 
@@ -3063,15 +3056,15 @@ def _value_str(node):
 
     if len(item.assignable) <= 1:
         # Pinned to a single value
-        return "" if isinstance(item, Choice) else "-{}-".format(tri_val_str)
+        return "" if isinstance(item, Choice) else f"-{tri_val_str}-"
 
     if item.type == BOOL:
-        return "[{}]".format(tri_val_str)
+        return f"[{tri_val_str}]"
 
     # item.type == TRISTATE
     if item.assignable == (1, 2):
-        return "{{{}}}".format(tri_val_str)  # {M}/{*}
-    return "<{}>".format(tri_val_str)
+        return f"{{{tri_val_str}}}"  # {M}/{*}
+    return f"<{tri_val_str}>"
 
 
 def _is_y_mode_choice_sym(item):
@@ -3092,8 +3085,8 @@ def _check_valid(sym, s):
     try:
         int(s, base)
     except ValueError:
-        _error("'{}' is a malformed {} value"
-               .format(s, TYPE_TO_STR[sym.orig_type]))
+        _error(f"'{s}' is a malformed {TYPE_TO_STR[sym.orig_type]} value"
+               )
         return False
 
     for low_sym, high_sym, cond in sym.ranges:
@@ -3102,8 +3095,8 @@ def _check_valid(sym, s):
             high_s = high_sym.str_value
 
             if not int(low_s, base) <= int(s, base) <= int(high_s, base):
-                _error("{} is outside the range {}-{}"
-                       .format(s, low_s, high_s))
+                _error(f"{s} is outside the range {low_s}-{high_s}"
+                       )
                 return False
 
             break
@@ -3118,7 +3111,7 @@ def _range_info(sym):
     if sym.orig_type in (INT, HEX):
         for low, high, cond in sym.ranges:
             if expr_value(cond):
-                return "Range: {}-{}".format(low.str_value, high.str_value)
+                return f"Range: {low.str_value}-{high.str_value}"
 
     return None
 
