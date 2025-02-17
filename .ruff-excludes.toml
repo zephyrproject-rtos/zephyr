@@ -437,14 +437,12 @@
 ]
 "./scripts/dts/python-devicetree/src/devicetree/dtlib.py" = [
     "E701",     # https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM201",   # https://docs.astral.sh/ruff/rules/negate-equal-op
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
 ]
 "./scripts/dts/python-devicetree/src/devicetree/edtlib.py" = [
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
