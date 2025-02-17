@@ -36,6 +36,8 @@ enum charger_property {
 	/** Indicates if external supply is present for the charger. */
 	/** Value should be of type enum charger_online */
 	CHARGER_PROP_ONLINE = 0,
+	/** Represents the manufacturer of the charger */
+	CHARGER_PROP_MANUFACTURER,
 	/** Reports whether or not a battery is present. */
 	/** Value should be of type bool*/
 	CHARGER_PROP_PRESENT,
@@ -267,6 +269,8 @@ union charger_propval {
 
 	/** CHARGER_PROP_ONLINE */
 	enum charger_online online;
+	/** CHARGER_PROP_MANUFACTURER */
+	const char *manufacturer;
 	/** CHARGER_PROP_PRESENT */
 	bool present;
 	/** CHARGER_PROP_STATUS */
