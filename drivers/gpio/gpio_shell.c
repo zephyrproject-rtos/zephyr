@@ -172,7 +172,7 @@ static int get_gpio_pin(const struct shell *sh, const struct gpio_ctrl *ctrl, ch
 	gpio_pin_t i;
 	int result;
 
-	for (i = 0; i < ctrl->ngpios; i++) {
+	for (i = 0; i < ctrl->ngpios && i < ctrl->line_names_len; i++) {
 		result = line_cmp(line_name, ctrl->line_names[i]);
 		if (result == 0) {
 			if ((BIT64(i) & ctrl->reserved_mask) != 0) {
