@@ -2447,7 +2447,7 @@ def load_vendor_prefixes_txt(vendor_prefixes: str) -> dict[str, str]:
     representation mapping a vendor prefix to the vendor name.
     """
     vnd2vendor: dict[str, str] = {}
-    with open(vendor_prefixes, 'r', encoding='utf-8') as f:
+    with open(vendor_prefixes, encoding='utf-8') as f:
         for line in f:
             line = line.strip()
 
