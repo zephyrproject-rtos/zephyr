@@ -150,7 +150,7 @@ static const struct gpio_ctrl *get_gpio_ctrl(const char *name)
 	return NULL;
 }
 
-int line_cmp(const char *input, const char *line_name)
+static int line_cmp(const char *input, const char *line_name)
 {
 	int i = 0;
 
