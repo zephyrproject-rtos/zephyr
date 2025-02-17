@@ -12,6 +12,9 @@
  * for the Nordic Semiconductor nRF54L family processor.
  */
 
+/* Include autoconf for cases when this file is used in special build (e.g. TFM) */
+#include <zephyr/autoconf.h>
+
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
