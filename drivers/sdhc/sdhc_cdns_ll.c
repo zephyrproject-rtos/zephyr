@@ -165,7 +165,7 @@ void cdns_sdhc_set_sdmmc_params(struct sdhc_cdns_combo_phy *sdhc_cdns_combo_phy_
 	sdhc_cdns_sdmmc_reg->sdhc_wrdata1_sdclk_dly = 0;
 }
 
-/* Phy register programing for phy init */
+/* Phy register programming for phy init */
 static int sdhc_cdns_program_phy_reg(struct sdhc_cdns_combo_phy *sdhc_cdns_combo_phy_reg,
 	struct sdhc_cdns_sdmmc *sdhc_cdns_sdmmc_reg)
 {
