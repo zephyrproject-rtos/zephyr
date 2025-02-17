@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CLIENT_SERIAL_NUMBER	"345000123"
 #define CLIENT_FIRMWARE_VER	"1.0"
 #define CLIENT_HW_VER		"1.0.1"
-#define TEMP_SENSOR_UNITS	"Celcius"
+#define TEMP_SENSOR_UNITS       "Celsius"
 
 /* Macros used to subscribe to specific Zephyr NET management events. */
 #if defined(CONFIG_WAIT_DNS_SERVER_ADDITION)
