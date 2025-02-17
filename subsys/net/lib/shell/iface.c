@@ -278,6 +278,20 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	   net_if_is_admin_up(iface) ? "UP" : "DOWN",
 	   net_if_is_carrier_ok(iface) ? "ON" : "OFF");
 
+#if defined(CONFIG_NET_IF_LOG_LEVEL_DBG)
+	/* Print low level details only if debug is enabled */
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		PR("IPv4 TTL             : %d\n", net_if_ipv4_get_ttl(iface));
+		PR("IPv4 mcast TTL       : %d\n", net_if_ipv4_get_mcast_ttl(iface));
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		PR("IPv6 hop limit       : %d\n", net_if_ipv6_get_hop_limit(iface));
+		PR("IPv6 mcast hop limit : %d\n",
+		   net_if_ipv6_get_mcast_hop_limit(iface));
+	}
+#endif /* CONFIG_NET_IF_LOG_LEVEL_DBG */
+
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		count = 0;
