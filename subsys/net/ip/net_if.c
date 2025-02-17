@@ -1298,21 +1298,25 @@ void net_if_ipv6_start_dad(struct net_if *iface,
 
 		ifaddr->dad_count = 1U;
 
-		if (!net_ipv6_start_dad(iface, ifaddr)) {
-			ifaddr->dad_start = k_uptime_get_32();
-			ifaddr->ifindex = net_if_get_by_iface(iface);
+		if (net_ipv6_start_dad(iface, ifaddr) != 0) {
+			NET_ERR("Interface %p failed to send DAD query for %s",
+				iface,
+				net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
+		}
 
-			k_mutex_lock(&lock, K_FOREVER);
-			sys_slist_find_and_remove(&active_dad_timers,
-						  &ifaddr->dad_node);
-			sys_slist_append(&active_dad_timers, &ifaddr->dad_node);
-			k_mutex_unlock(&lock);
+		ifaddr->dad_start = k_uptime_get_32();
+		ifaddr->ifindex = net_if_get_by_iface(iface);
 
-			/* FUTURE: use schedule, not reschedule. */
-			if (!k_work_delayable_remaining_get(&dad_timer)) {
-				k_work_reschedule(&dad_timer,
-						  K_MSEC(DAD_TIMEOUT));
-			}
+		k_mutex_lock(&lock, K_FOREVER);
+		sys_slist_find_and_remove(&active_dad_timers,
+					  &ifaddr->dad_node);
+		sys_slist_append(&active_dad_timers, &ifaddr->dad_node);
+		k_mutex_unlock(&lock);
+
+		/* FUTURE: use schedule, not reschedule. */
+		if (!k_work_delayable_remaining_get(&dad_timer)) {
+			k_work_reschedule(&dad_timer,
+					  K_MSEC(DAD_TIMEOUT));
 		}
 	} else {
 		NET_DBG("Interface %p is down, starting DAD for %s later.",
