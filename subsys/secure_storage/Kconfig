@@ -27,6 +27,12 @@ source "subsys/logging/Kconfig.template.log_config"
 choice SECURE_STORAGE_ITS_IMPLEMENTATION
 	prompt "Internal Trusted Storage (ITS) API implementation"
 
+config SECURE_STORAGE_ITS_IMPLEMENTATION_MBEDTLS
+	bool "MbedTLS ITS implementation"
+	depends on ARCH_POSIX
+	help
+	  Use MbedTLS's implementation of the ITS API.
+
 config SECURE_STORAGE_ITS_IMPLEMENTATION_ZEPHYR
 	bool "Zephyr's ITS implementation"
 	select SECURE_STORAGE_ITS_TRANSFORM_MODULE
