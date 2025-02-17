@@ -32,16 +32,95 @@ struct clic_config {
 	mem_addr_t base;
 };
 
+struct pmp_stack_guard_key_t {
+	unsigned long mstatus;
+	unsigned int irq_key;
+};
+
+/*
+ * M-mode CLIC memory-mapped registers are accessible only in M-mode.
+ * Temporarily disable the PMP stack guard (set mstatus.MPRV = 0) to configure
+ * CLIC registers, then restore the PMP stack guard using these functions.
+ */
+static ALWAYS_INLINE void disable_pmp_stack_guard(struct pmp_stack_guard_key_t *key)
+{
+	if (IS_ENABLED(CONFIG_PMP_STACK_GUARD)) {
+		key->irq_key = irq_lock();
+		key->mstatus = csr_read_clear(mstatus, MSTATUS_MPRV);
+	} else {
+		ARG_UNUSED(key);
+	}
+}
+
+static ALWAYS_INLINE void restore_pmp_stack_guard(struct pmp_stack_guard_key_t key)
+{
+	if (IS_ENABLED(CONFIG_PMP_STACK_GUARD)) {
+		csr_write(mstatus, key.mstatus);
+		irq_unlock(key.irq_key);
+	} else {
+		ARG_UNUSED(key);
+	}
+}
+
+static ALWAYS_INLINE void write_clic32(const struct device *dev, uint32_t offset, uint32_t value)
+{
+	const struct clic_config *config = dev->config;
+	mem_addr_t reg_addr = config->base + offset;
+	struct pmp_stack_guard_key_t key;
+
+	disable_pmp_stack_guard(&key);
+	sys_write32(value, reg_addr);
+	restore_pmp_stack_guard(key);
+}
+
+static ALWAYS_INLINE uint32_t read_clic32(const struct device *dev, uint32_t offset)
+{
+	const struct clic_config *config = dev->config;
+	mem_addr_t reg_addr = config->base + offset;
+	struct pmp_stack_guard_key_t key;
+	uint32_t reg;
+
+	disable_pmp_stack_guard(&key);
+	reg = sys_read32(reg_addr);
+	restore_pmp_stack_guard(key);
+
+	return reg;
+}
+
+static ALWAYS_INLINE void write_clic8(const struct device *dev, uint32_t offset, uint8_t value)
+{
+	const struct clic_config *config = dev->config;
+	mem_addr_t reg_addr = config->base + offset;
+	struct pmp_stack_guard_key_t key;
+
+	disable_pmp_stack_guard(&key);
+	sys_write8(value, reg_addr);
+	restore_pmp_stack_guard(key);
+}
+
+static ALWAYS_INLINE uint8_t read_clic8(const struct device *dev, uint32_t offset)
+{
+	const struct clic_config *config = dev->config;
+	mem_addr_t reg_addr = config->base + offset;
+	struct pmp_stack_guard_key_t key;
+	uint32_t reg;
+
+	disable_pmp_stack_guard(&key);
+	reg = sys_read8(reg_addr);
+	restore_pmp_stack_guard(key);
+
+	return reg;
+}
+
 /**
  * @brief Enable interrupt
  */
 void riscv_clic_irq_enable(uint32_t irq)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
-	const struct clic_config *config = dev->config;
 	union CLICINTIE clicintie = {.b = {.IE = 0x1}};
 
-	sys_write8(clicintie.w, config->base + CLIC_INTIE(irq));
+	write_clic8(dev, CLIC_INTIE(irq), clicintie.w);
 }
 
 /**
@@ -50,10 +129,9 @@ void riscv_clic_irq_enable(uint32_t irq)
 void riscv_clic_irq_disable(uint32_t irq)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
-	const struct clic_config *config = dev->config;
 	union CLICINTIE clicintie = {.b = {.IE = 0x0}};
 
-	sys_write8(clicintie.w, config->base + CLIC_INTIE(irq));
+	write_clic8(dev, CLIC_INTIE(irq), clicintie.w);
 }
 
 /**
@@ -62,8 +140,7 @@ void riscv_clic_irq_disable(uint32_t irq)
 int riscv_clic_irq_is_enabled(uint32_t irq)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
-	const struct clic_config *config = dev->config;
-	union CLICINTIE clicintie = {.w = sys_read8(config->base + CLIC_INTIE(irq))};
+	union CLICINTIE clicintie = {.w = read_clic8(dev, CLIC_INTIE(irq))};
 
 	return clicintie.b.IE;
 }
@@ -74,7 +151,6 @@ int riscv_clic_irq_is_enabled(uint32_t irq)
 void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
-	const struct clic_config *config = dev->config;
 	const struct clic_data *data = dev->data;
 
 	/*
@@ -96,12 +172,12 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 			  (MIN(pri, max_level) << (8U - data->nlbits)) |
 			  BIT_MASK(8U - data->intctlbits);
 
-	sys_write8(intctrl, config->base + CLIC_INTCTRL(irq));
+	write_clic8(dev, CLIC_INTCTRL(irq), intctrl);
 
 	/* Set the IRQ operates in machine mode, non-vectoring and the trigger type. */
 	union CLICINTATTR clicattr = {.b = {.mode = 0x3, .shv = 0x0, .trg = flags & BIT_MASK(3)}};
 
-	sys_write8(clicattr.w, config->base + CLIC_INTATTR(irq));
+	write_clic8(dev, CLIC_INTATTR(irq), clicattr.w);
 }
 
 /**
@@ -110,12 +186,11 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 void riscv_clic_irq_vector_set(uint32_t irq)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
-	const struct clic_config *config = dev->config;
-	union CLICINTATTR clicattr = {.w = sys_read8(config->base + CLIC_INTATTR(irq))};
+	union CLICINTATTR clicattr = {.w = read_clic8(dev, CLIC_INTATTR(irq))};
 
 	/* Set Selective Hardware Vectoring. */
 	clicattr.b.shv = 1;
-	sys_write8(clicattr.w, config->base + CLIC_INTATTR(irq));
+	write_clic8(dev, CLIC_INTATTR(irq), clicattr.w);
 }
 
 /**
@@ -124,25 +199,23 @@ void riscv_clic_irq_vector_set(uint32_t irq)
 void riscv_clic_irq_set_pending(uint32_t irq)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
-	const struct clic_config *config = dev->config;
 	union CLICINTIP clicintip = {.b = {.IP = 0x1}};
 
-	sys_write8(clicintip.w, config->base + CLIC_INTIP(irq));
+	write_clic8(dev, CLIC_INTIP(irq), clicintip.w);
 }
 
 static int clic_init(const struct device *dev)
 {
-	const struct clic_config *config = dev->config;
 	struct clic_data *data = dev->data;
 
 	if (IS_ENABLED(CONFIG_NUCLEI_ECLIC)) {
 		/* Configure the interrupt level threshold. */
 		union CLICMTH clicmth = {.b = {.mth = 0x0}};
 
-		sys_write32(clicmth.qw, config->base + CLIC_MTH);
+		write_clic32(dev, CLIC_MTH, clicmth.qw);
 
 		/* Detect the number of bits for the clicintctl register. */
-		union CLICINFO clicinfo = {.qw = sys_read32(config->base + CLIC_INFO)};
+		union CLICINFO clicinfo = {.qw = read_clic32(dev, CLIC_INFO)};
 
 		data->intctlbits = clicinfo.b.intctlbits;
 
@@ -151,10 +224,10 @@ static int clic_init(const struct device *dev)
 		}
 
 		/* Configure the number of bits assigned to interrupt levels. */
-		union CLICCFG cliccfg = {.qw = sys_read32(config->base + CLIC_CFG)};
+		union CLICCFG cliccfg = {.qw = read_clic32(dev, CLIC_CFG)};
 
 		cliccfg.w.nlbits = data->nlbits;
-		sys_write32(cliccfg.qw, config->base + CLIC_CFG);
+		write_clic32(dev, CLIC_CFG, cliccfg.qw);
 	} else {
 		/* Configure the interrupt level threshold by CSR mintthresh. */
 		csr_write(CSR_MINTTHRESH, 0x0);
@@ -162,7 +235,7 @@ static int clic_init(const struct device *dev)
 
 	/* Reset all interrupt control register */
 	for (int i = 0; i < CONFIG_NUM_IRQS; i++) {
-		sys_write32(0, config->base + CLIC_CTRL(i));
+		write_clic32(dev, CLIC_CTRL(i), 0);
 	}
 
 	return 0;
