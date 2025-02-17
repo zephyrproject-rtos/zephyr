@@ -23,6 +23,6 @@ config MAX_IRQ_PER_AGGREGATOR
 	default 186
 
 config NUM_IRQS
-	default 186
+	default 199
 
 endif # SOC_SERIES_POLARFIRE
