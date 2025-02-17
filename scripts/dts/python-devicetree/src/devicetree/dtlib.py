@@ -20,9 +20,8 @@ import re
 import string
 import sys
 import textwrap
-from typing import (Any, Iterable,
-                    NamedTuple, NoReturn, Optional,
-                    TYPE_CHECKING, Union)
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, Optional, Union
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 

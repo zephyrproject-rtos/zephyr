@@ -67,31 +67,32 @@ bindings_from_paths() helper function.
 #   @properties are documented in the class docstring, as if they were
 #   variables. See the existing @properties for a template.
 
-from collections import defaultdict
-from copy import deepcopy
-from dataclasses import dataclass
-from typing import (Any, Callable, Iterable, NoReturn,
-                    Optional, TYPE_CHECKING, Union)
 import base64
 import hashlib
-from collections.abc import Callable, Iterable
 import logging
 import os
 import re
+from collections import defaultdict
+from collections.abc import Callable, Iterable
+from copy import deepcopy
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, NoReturn, Optional, Union
 
 import yaml
+
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
     # This makes e.g. gen_defines.py more than twice as fast.
     from yaml import CLoader as Loader
 except ImportError:
-    from yaml import Loader     # type: ignore
+    from yaml import Loader  # type: ignore
 
-from devicetree.dtlib import DT, DTError, to_num, to_nums, Type
+from devicetree._private import _slice_helper
+from devicetree.dtlib import DT, DTError, Type, to_num, to_nums
 from devicetree.dtlib import Node as dtlib_Node
 from devicetree.dtlib import Property as dtlib_Property
 from devicetree.grutils import Graph
-from devicetree._private import _slice_helper
+
 
 def _compute_hash(path: str) -> str:
     # Calculates the hash associated with the node's full path.
