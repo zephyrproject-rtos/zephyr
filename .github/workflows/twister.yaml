@@ -236,14 +236,15 @@ jobs:
           junitparser merge artifacts/*/*/twister.xml junit.xml
           junit2html junit.xml junit.html
 
-      - name: Upload Unit Test Results in HTML
+      - name: Upload Unit Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: HTML Unit Test Results
+          name: Unit Test Results
           if-no-files-found: ignore
           path: |
             junit.html
+            junit.xml
 
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
