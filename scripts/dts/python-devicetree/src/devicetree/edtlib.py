@@ -74,6 +74,7 @@ from typing import (Any, Callable, Iterable, NoReturn,
                     Optional, TYPE_CHECKING, Union)
 import base64
 import hashlib
+from collections.abc import Callable, Iterable
 import logging
 import os
 import re
