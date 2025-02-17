@@ -36,6 +36,20 @@
 		zephyr,memory-region = "SRAM_NO_CACHE";
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
 	};
+
+	regulator_mspi1_device: regulator-mspi1-device-pwr {
+		compatible = "regulator-fixed";
+		regulator-name = "mspi1 device power";
+		enable-gpios = <&gpio192_223 16 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+
+	regulator_mspi2_device: regulator-mspi2-device-pwr {
+		compatible = "regulator-fixed";
+		regulator-name = "mspi2 device power";
+		enable-gpios = <&gpio0_31 11 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
 };
 
 &timer0 {
@@ -99,6 +113,50 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
+&mspi1 {
+	pinctrl-0 = <&mspi1_default>;
+	pinctrl-1 = <&mspi1_sleep>;
+	pinctrl-2 = <&mspi1_psram>;
+	pinctrl-names = "default","sleep","psram";
+	status = "okay";
+
+	ce-gpios = <&gpio32_63 21 GPIO_ACTIVE_LOW>;
+
+	cmdq-buffer-location = "SRAM_NO_CACHE";
+	cmdq-buffer-size = <256>;
+
+	dqs-support;
+
+	aps6404l: aps6404l@0 {
+		compatible = "ambiq,mspi-device", "mspi-aps6404l";
+		size = <DT_SIZE_M(64)>;
+		reg = <0>;
+		status = "okay";
+		mspi-max-frequency = <48000000>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+		read-command = <0xEB>;
+		write-command = <0x38>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_3_BYTE";
+		rx-dummy = <6>;
+		tx-dummy = <0>;
+		xip-config = <1 0 DT_SIZE_M(8) 0>;
+		ce-break-config = <1024 3>;
+		ambiq,timing-config-mask = <3>;
+		ambiq,timing-config = <0 6 0 0 0 0 16 0>;
+	};
+};
+
 &gpio64_95 {
+	status = "okay";
+};
+
+&gpio0_31 {
+	status = "okay";
+};
+
+&gpio32_63 {
 	status = "okay";
 };

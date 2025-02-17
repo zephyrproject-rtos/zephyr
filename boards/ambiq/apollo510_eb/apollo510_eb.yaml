@@ -16,6 +16,7 @@ supported:
   - sdhc
   - dsi
   - pdm
+  - mspi
 testing:
   ignore_tags:
     - net
