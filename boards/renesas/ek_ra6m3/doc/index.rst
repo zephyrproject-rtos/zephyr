@@ -20,7 +20,7 @@ The key features of the EK-RA6M3 board are categorized in three groups as follow
 - MCU and USB current measurement points for precision current consumption measurement
 - Multiple clock sources - RA6M3 MCU oscillator and sub-clock oscillator crystals,
   providing precision 24.000 MHz and 32,768 Hz reference clock.
-  Additional low precision clocks are avaialbe internal to the RA6M3 MCU
+  Additional low precision clocks are available internal to the RA6M3 MCU
 
 **System Control and Ecosystem Access**
 
@@ -129,7 +129,7 @@ Flashing
 ========
 
 Program can be flashed to EK-RA6M3 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 
