@@ -13,6 +13,5 @@
 
 /* 2MB psram */
 &psram0 {
-	status = "okay";
-	reg = <0x3f500000 DT_SIZE_M(2)>;
+	size = <DT_SIZE_M(2)>;
 };
