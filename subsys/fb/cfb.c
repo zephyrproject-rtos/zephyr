@@ -532,7 +532,7 @@ int cfb_framebuffer_finalize(const struct device *dev)
 		.pitch = fb->x_res,
 	};
 
-	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) != !(fb->inverted)) {
+	if ((fb->pixel_format == PIXEL_FORMAT_MONO10) == fb->inverted) {
 		cfb_invert(fb);
 		err = api->write(dev, 0, 0, &desc, fb->buf);
 		cfb_invert(fb);
