@@ -1868,7 +1868,7 @@ class Node:
                  f"{controller._node!r} - {len(cell_names)} "
                  f"instead of {len(data_list)}")
 
-        return dict(zip(cell_names, data_list))
+        return dict(zip(cell_names, data_list, strict=False))
 
 
 class EDT:
@@ -2830,7 +2830,7 @@ def _add_names(node: dtlib_Node, names_ident: str, objs: Any) -> None:
                  f"in {node.dt.filename} has {len(names)} strings, "
                  f"expected {len(objs)} strings")
 
-        for obj, name in zip(objs, names):
+        for obj, name in zip(objs, names, strict=False):
             if obj is None:
                 continue
             obj.name = name
@@ -3106,7 +3106,7 @@ def _and(b1: bytes, b2: bytes) -> bytes:
     # Pad on the left, to equal length
     maxlen = max(len(b1), len(b2))
     return bytes(x & y for x, y in zip(b1.rjust(maxlen, b'\xff'),
-                                       b2.rjust(maxlen, b'\xff')))
+                                       b2.rjust(maxlen, b'\xff'), strict=False))
 
 
 def _or(b1: bytes, b2: bytes) -> bytes:
@@ -3116,7 +3116,7 @@ def _or(b1: bytes, b2: bytes) -> bytes:
     # Pad on the left, to equal length
     maxlen = max(len(b1), len(b2))
     return bytes(x | y for x, y in zip(b1.rjust(maxlen, b'\x00'),
-                                       b2.rjust(maxlen, b'\x00')))
+                                       b2.rjust(maxlen, b'\x00'), strict=False))
 
 
 def _not(b: bytes) -> bytes:
