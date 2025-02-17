@@ -113,4 +113,20 @@ config KCONFIG_MAX_10_3_2
 	int
 	default $(max, 10, 3, 2)
 
+config KCONFIG_EQ_1_2
+	bool
+	default $(equal, 1, 2)
+
+config KCONFIG_EQ_2_2
+	bool
+	default $(equal, 2, 2)
+
+config KCONFIG_EQ_AB_CD
+	bool
+	default $(equal, ab, cd)
+
+config KCONFIG_EQ_EF_EF
+	bool
+	default $(equal, ef, ef)
+
 source "Kconfig.zephyr"
