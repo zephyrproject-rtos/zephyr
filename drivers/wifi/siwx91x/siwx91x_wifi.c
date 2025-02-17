@@ -20,6 +20,11 @@
 #include "sl_wifi.h"
 #include "sl_net.h"
 
+#define SIWX91X_PS_MAX_MONITOR_INTERVAL_MS    1000
+#define SIWX91X_PS_DEFAULT_BEACON_INTERVAL_MS 100
+#define SIWX91X_PS_MAX_LISTEN_INTERVAL        10
+
+/*TODO remove here */
 #define SIWX91X_INTERFACE_MASK (0x03)
 
 LOG_MODULE_REGISTER(siwx91x_wifi);
@@ -100,6 +105,8 @@ static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_p
 	static const char dummy_psk[] = "dummy_value";
 	sl_status_t ret;
 	int sec;
+
+	/*TODO check state and ap config command*/
 
 	sl_wifi_ap_configuration_t siwx91x_ap_cfg = {
 		.credential_id       = SL_NET_DEFAULT_WIFI_AP_CREDENTIAL_ID,
@@ -743,6 +750,179 @@ static int siwx91x_dev_init(const struct device *dev)
 	return 0;
 }
 
+sl_si91x_performance_profile_t req_ps_mode;
+
+static int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *params)
+{
+	sl_wifi_performance_profile_t sl_ps_profile;
+	sl_wifi_interface_t interface;
+	sl_status_t status;
+
+	__ASSERT(params, "params cannot be NULL");
+
+	interface = sl_wifi_get_default_interface();
+	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
+		params->fail_reason = WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED;
+		LOG_ERR("Wi-Fi not in station mode");
+		return -EIO;
+	}
+
+	get_wifi_current_performance_profile(&sl_ps_profile);
+
+	switch (params->type) {
+	case WIFI_PS_PARAM_STATE:
+		if (params->enabled) {
+			if (sl_ps_profile.profile == HIGH_PERFORMANCE) {
+				if (req_ps_mode == HIGH_PERFORMANCE) {
+					sl_ps_profile.profile = ASSOCIATED_POWER_SAVE_LOW_LATENCY;
+				} else {
+					sl_ps_profile.profile = req_ps_mode;
+				}
+			} else {
+				return -EAGAIN;
+			}
+		} else {
+			if (sl_ps_profile.profile == HIGH_PERFORMANCE) {
+				return -EAGAIN;
+			}
+
+			sl_ps_profile.profile = HIGH_PERFORMANCE;
+		}
+
+		break;
+	case WIFI_PS_PARAM_MODE:
+		if (params->mode != WIFI_PS_MODE_LEGACY) {
+			params->fail_reason = WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED;
+			/* Only legacy mode is supported */
+			return -ENOTSUP;
+		}
+
+		break;
+	case WIFI_PS_PARAM_LISTEN_INTERVAL:
+		/* why dont use the local macro same as MAX for MIN to maintain consistency? */
+		if (params->listen_interval < WIFI_LISTEN_INTERVAL_MIN ||
+		    params->listen_interval > SIWX91X_PS_MAX_LISTEN_INTERVAL) {
+			params->fail_reason = WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID;
+			return -EINVAL;
+		}
+
+		/* Converts the beacon unit to TU */
+		/*TODO check the behaviour if its zero */
+		sl_ps_profile.listen_interval =
+			(params->listen_interval * SIWX91X_PS_DEFAULT_BEACON_INTERVAL_MS);
+		break;
+	case WIFI_PS_PARAM_WAKEUP_MODE:
+		if (params->wakeup_mode == WIFI_PS_WAKEUP_MODE_DTIM) {
+			sl_ps_profile.dtim_aligned_type = 1;
+			sl_ps_profile.listen_interval = 0;
+		} else if (params->wakeup_mode == WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL) {
+			sl_ps_profile.dtim_aligned_type = 0;
+		}
+
+		break;
+	case WIFI_PS_PARAM_TIMEOUT:
+		if (params->timeout_ms < DEFAULT_MONITOR_INTERVAL ||
+		    params->timeout_ms > SIWX91X_PS_MAX_MONITOR_INTERVAL_MS) {
+			params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
+			return -EINVAL;
+		}
+
+		sl_ps_profile.monitor_interval = (uint16_t)params->timeout_ms;
+		break;
+	case WIFI_PS_PARAM_EXIT_STRATEGY:
+		if (params->exit_strategy == WIFI_PS_EXIT_EVERY_TIM) {
+			if (req_ps_mode == ASSOCIATED_POWER_SAVE_LOW_LATENCY) {
+			/* jeorme's comment applied here, same as mode change in AP*/
+				return 0;
+			}
+
+			req_ps_mode = ASSOCIATED_POWER_SAVE_LOW_LATENCY;
+		} else if (params->exit_strategy == WIFI_PS_EXIT_CUSTOM_ALGO) {
+			if (req_ps_mode == ASSOCIATED_POWER_SAVE) {
+				return 0;
+			}
+
+			req_ps_mode = ASSOCIATED_POWER_SAVE;
+		} else {
+			params->fail_reason = WIFI_PS_PARAM_FAIL_INVALID_EXIT_STRATEGY;
+			return -EINVAL;
+		}
+
+		if (sl_ps_profile.profile != HIGH_PERFORMANCE) {
+			sl_ps_profile.profile = req_ps_mode;
+		} else {
+			return 0;
+		}
+
+		break;
+	default:
+		params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
+		return -ENOTSUP;
+	}
+
+	status = sl_wifi_set_performance_profile(&sl_ps_profile);
+	if (status != SL_STATUS_OK) {
+		params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/* For exit strategy it will give the correct result only if device is in ON state */
+static int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_config *config)
+{
+	sl_wifi_performance_profile_t sl_ps_profile;
+	sl_wifi_interface_t interface;
+	sl_status_t status;
+
+	__ASSERT(config, "config cannot be NULL");
+
+	interface = sl_wifi_get_default_interface();
+	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
+		LOG_ERR("Wi-Fi not in station mode");
+		return -EIO;
+	}
+
+	status = sl_wifi_get_performance_profile(&sl_ps_profile);
+	if (status != SL_STATUS_OK) {
+		return -EINVAL;
+	}
+
+	switch (sl_ps_profile.profile) {
+	case HIGH_PERFORMANCE:
+		config->ps_params.enabled = WIFI_PS_DISABLED;
+		/* Default power save state is FAST PSP */
+		// config->ps_params.exit_strategy = WIFI_PS_EXIT_EVERY_TIM;
+		break;
+	case ASSOCIATED_POWER_SAVE_LOW_LATENCY:
+		config->ps_params.enabled = WIFI_PS_ENABLED;
+		config->ps_params.exit_strategy = WIFI_PS_EXIT_EVERY_TIM;
+		break;
+	case ASSOCIATED_POWER_SAVE:
+		config->ps_params.enabled = WIFI_PS_ENABLED;
+		config->ps_params.exit_strategy = WIFI_PS_EXIT_CUSTOM_ALGO;
+		break;
+	default:
+		break;
+	}
+
+	if (sl_ps_profile.dtim_aligned_type == 1) {
+		config->ps_params.wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM;
+	} else if (sl_ps_profile.dtim_aligned_type == 0) {
+		config->ps_params.wakeup_mode = WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL;
+		/* converts TU to beacon unit */
+		config->ps_params.listen_interval =
+			(sl_ps_profile.listen_interval / SIWX91X_PS_DEFAULT_BEACON_INTERVAL_MS);
+	}
+
+	/* Device supports only legacy power-save mode */
+	config->ps_params.mode = WIFI_PS_MODE_LEGACY;
+	config->ps_params.timeout_ms = sl_ps_profile.monitor_interval;
+
+	return 0;
+}
+
 static const struct wifi_mgmt_ops siwx91x_mgmt = {
 	.scan			= siwx91x_scan,
 	.connect		= siwx91x_connect,
@@ -755,6 +935,8 @@ static const struct wifi_mgmt_ops siwx91x_mgmt = {
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats		= siwx91x_stats,
 #endif
+	.set_power_save		= siwx91x_set_power_save,
+	.get_power_save_config	= siwx91x_get_power_save_config,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_api = {
