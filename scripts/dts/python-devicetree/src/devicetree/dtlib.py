@@ -1942,13 +1942,20 @@ class DT:
 
         def sub(match):
             esc = match.group(1)
-            if esc == b"a": return b"\a"
-            if esc == b"b": return b"\b"
-            if esc == b"t": return b"\t"
-            if esc == b"n": return b"\n"
-            if esc == b"v": return b"\v"
-            if esc == b"f": return b"\f"
-            if esc == b"r": return b"\r"
+            if esc == b"a":
+                return b"\a"
+            if esc == b"b":
+                return b"\b"
+            if esc == b"t":
+                return b"\t"
+            if esc == b"n":
+                return b"\n"
+            if esc == b"v":
+                return b"\v"
+            if esc == b"f":
+                return b"\f"
+            if esc == b"r":
+                return b"\r"
 
             if esc[0] in b"01234567":
                 # Octal escape
