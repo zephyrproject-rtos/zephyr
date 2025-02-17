@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Mbed TLS configuration"
-	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
+	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-mbedtls.h"
 
 menu "TLS"
 
