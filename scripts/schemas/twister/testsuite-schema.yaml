@@ -107,6 +107,9 @@ schema;scenario-schema:
       type: map
       required: false
       mapping:
+        "power_measurements":
+          type: any
+          required: false
         "shell_commands_file":
           type: str
           required: false
