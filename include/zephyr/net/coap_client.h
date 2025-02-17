@@ -192,6 +192,23 @@ void coap_client_cancel_request(struct coap_client *client, struct coap_client_r
  */
 struct coap_client_option coap_client_option_initial_block2(void);
 
+/**
+ * @brief Check if client has ongoing exchange.
+ *
+ * @note Function not only considers ongoing requests, but also lifetime of completed requests
+ * (which provides graceful duplicates handling).
+ *
+ * @note For socket handling.
+ * Function does no consider a socket POLL that has started before this call,
+ * therefore it is recommended to wait out POLL timeout before closing socket
+ * (e.g. call coap_client_cancel_requests() which applies delay for timeout).
+ *
+ * @param client Pointer to the CoAP client instance.
+ *
+ * @return true if there is an ongoing exchange, false otherwise.
+ */
+bool coap_client_has_ongoing_exchange(struct coap_client *client);
+
 #ifdef __cplusplus
 }
 #endif
