@@ -1,0 +1,50 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bindings for the ADI AD4130 Analog-to-Digital Converter.
+compatible: adi,ad4130-adc
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  bipolar:
+    type: boolean
+    description: |
+      Bipolar configuration for AD4130
+  internal-reference-value:
+    type: int
+    enum: [0, 1]
+    default: 0
+    description: |
+      Internal reference value selection:
+      - AD4130_INTREF_2_5V
+      - AD4130_INTREF_1_25V
+  adc-mode:
+    type: int
+    enum: [0, 1, 2, 3, 4]
+    default: 0
+    description: |
+      ADC operating mode for AD4130
+      - 0 AD4130_CONTINUOUS
+      - 1 AD4130_SINGLE
+      - 2 AD4130_STANDBY
+      - 3 AD4130_POWER_DOWN
+      - 4 AD4130_IDLE
+      The default is set to 0 because the continuous conversion mode
+      is enabled for control setup upon power-up or after reset.
+  clock-type:
+    type: int
+    enum: [0, 1, 2, 3]
+    default: 0
+    description: |
+      Clock selection:
+      - AD4130_INT_76_8_KHZ_OUT_OFF
+      - AD4130_INT_76_8_KHZ_OUT_ON
+      - AD4130_EXT_76_8KHZ
+      - AD4130_EXT_153_6_KHZ_DIV_2
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
