@@ -39,10 +39,12 @@ void soc_early_init_hook(void)
 	SystemCoreClock = BSP_MOCO_HZ;
 	g_protect_pfswe_counter = 0;
 
+#ifdef CONFIG_ICACHE
 	SCB->CCR = (uint32_t)CCR_CACHE_ENABLE;
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
-
+#endif
+#if defined(CONFIG_DCACHE) && defined(CONFIG_CACHE_MANAGEMENT)
 	/* Apply Arm Cortex-M85 errata workarounds for D-Cache
 	 * Attributing all cacheable memory as write-through set FORCEWT bit in MSCR register.
 	 * Set bit 16 in ACTLR to 1.
@@ -58,4 +60,5 @@ void soc_early_init_hook(void)
 	barrier_isync_fence_full();
 
 	sys_cache_data_enable();
+#endif
 }
