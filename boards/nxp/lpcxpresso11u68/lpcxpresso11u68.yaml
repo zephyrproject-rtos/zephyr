@@ -11,6 +11,7 @@ supported:
   - clock_controller
   - gpio
   - i2c
+  - minimal
   - serial
   - eeprom
 vendor: nxp

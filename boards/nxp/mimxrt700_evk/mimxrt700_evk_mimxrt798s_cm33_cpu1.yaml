@@ -14,8 +14,9 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - counter
   - gpio
+  - minimal
   - uart
-  - adc
 vendor: nxp

@@ -17,6 +17,7 @@ supported:
   - net
   - gpio
   - i2c
+  - minimal
 testing:
   ignore_tags:
     - bluetooth

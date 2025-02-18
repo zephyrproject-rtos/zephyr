@@ -17,5 +17,6 @@ supported:
   - counter
   - gpio
   - i2c
+  - minimal
   - spi
 vendor: nxp

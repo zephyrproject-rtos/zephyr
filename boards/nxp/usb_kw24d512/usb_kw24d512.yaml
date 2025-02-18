@@ -9,6 +9,7 @@ toolchain:
   - gnuarmemb
 supported:
   - flash
+  - minimal
   - usb_device
   - watchdog
 vendor: nxp

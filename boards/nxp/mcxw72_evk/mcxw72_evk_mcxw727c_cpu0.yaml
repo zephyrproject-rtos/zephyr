@@ -13,6 +13,7 @@ supported:
   - counter
   - gpio
   - i2c
+  - minimal
   - pinctrl
   - pwm
   - spi

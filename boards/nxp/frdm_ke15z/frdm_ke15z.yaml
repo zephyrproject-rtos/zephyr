@@ -10,4 +10,5 @@ ram: 24
 supported:
   - flash
   - gpio
+  - minimal
   - uart

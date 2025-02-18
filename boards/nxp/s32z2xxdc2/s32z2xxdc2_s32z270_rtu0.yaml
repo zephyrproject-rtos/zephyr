@@ -9,15 +9,15 @@ ram: 1024
 toolchain:
   - zephyr
 supported:
-  - uart
-  - gpio
-  - watchdog
-  - netif:eth
-  - can
-  - spi
-  - counter
   - adc
-  - i2c
+  - can
+  - counter
   - dma
+  - gpio
+  - i2c
+  - netif:eth
   - pwm
+  - spi
+  - uart
+  - watchdog
 vendor: nxp

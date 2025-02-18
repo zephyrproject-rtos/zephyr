@@ -12,4 +12,6 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+supported:
+  - minimal
 vendor: snps

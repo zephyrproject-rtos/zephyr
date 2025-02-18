@@ -16,4 +16,5 @@ supported:
   - can
   - flash
   - gpio
+  - minimal
 vendor: nxp

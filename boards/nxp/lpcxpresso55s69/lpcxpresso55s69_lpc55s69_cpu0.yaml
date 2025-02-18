@@ -24,6 +24,7 @@ supported:
   - gpio
   - i2c
   - i2s
+  - minimal
   - spi
   - sdhc
   - usb_device
