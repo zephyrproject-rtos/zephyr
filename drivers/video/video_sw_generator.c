@@ -115,7 +115,8 @@ uint16_t rgb565_colorbar_value[] = {0x0000, 0x001F, 0xF800, 0xF81F, 0x07E0, 0x07
 uint32_t xrgb32_colorbar_value[] = {0xFF000000, 0xFF0000FF, 0xFFFF0000, 0xFFFF00FF,
 				    0xFF00FF00, 0xFF00FFFF, 0xFFFFFF00, 0xFFFFFFFF};
 
-static void __fill_buffer_colorbar(struct video_sw_generator_data *data, struct video_buffer *vbuf)
+static void video_sw_generator_fill_colorbar(struct video_sw_generator_data *data,
+					     struct video_buffer *vbuf)
 {
 	int bw = data->fmt.width / 8;
 	int h, w, i = 0;
@@ -140,7 +141,7 @@ static void __fill_buffer_colorbar(struct video_sw_generator_data *data, struct 
 	vbuf->line_offset = 0;
 }
 
-static void __buffer_work(struct k_work *work)
+static void video_sw_generator_worker(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct video_sw_generator_data *data;
@@ -157,7 +158,7 @@ static void __buffer_work(struct k_work *work)
 
 	switch (data->pattern) {
 	case VIDEO_PATTERN_COLOR_BAR:
-		__fill_buffer_colorbar(data, vbuf);
+		video_sw_generator_fill_colorbar(data, vbuf);
 		break;
 	}
 
@@ -333,7 +334,7 @@ static int video_sw_generator_init(const struct device *dev)
 	data->dev = dev;
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
-	k_work_init_delayable(&data->buf_work, __buffer_work);
+	k_work_init_delayable(&data->buf_work, video_sw_generator_worker);
 
 	return video_sw_generator_init_controls(dev);
 }
