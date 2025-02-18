@@ -259,15 +259,13 @@ int send_settings_frame(struct http_client_ctx *client, bool ack)
 
 		setting = (struct http2_settings_field *)
 			(settings_frame + HTTP2_FRAME_HEADER_SIZE);
-		UNALIGNED_PUT(htons(HTTP2_SETTINGS_HEADER_TABLE_SIZE),
-			      &setting->id);
-		UNALIGNED_PUT(0, &setting->value);
+		setting->id = htons(HTTP2_SETTINGS_HEADER_TABLE_SIZE);
+		setting->value = 0;
 
 		setting++;
-		UNALIGNED_PUT(htons(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS),
-			      &setting->id);
-		UNALIGNED_PUT(htonl(CONFIG_HTTP_SERVER_MAX_STREAMS),
-			      &setting->value);
+		setting->id = htons(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
+		setting->value = htonl(CONFIG_HTTP_SERVER_MAX_STREAMS);
+
 
 		len = HTTP2_FRAME_HEADER_SIZE +
 		      2 * sizeof(struct http2_settings_field);
