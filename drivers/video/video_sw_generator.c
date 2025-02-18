@@ -11,6 +11,7 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "video_ctrls.h"
 #include "video_device.h"
@@ -118,29 +119,50 @@ uint32_t xrgb32_colorbar_value[] = {
 	0xFF00FF00, 0xFF00FFFF, 0xFFFFFF00, 0xFFFFFFFF,
 };
 
+static inline int video_sw_generator_get_color_idx(uint16_t w, uint16_t width, bool hflip)
+{
+	/* If hflip is on, start from the right instead */
+	w = (hflip) ? (width - w - 1) : (w);
+
+	/* Downscale from w/width to #/8 */
+	return 8 * w / width;
+}
+
 static void video_sw_generator_fill_colorbar(struct video_sw_generator_data *data,
 					     struct video_buffer *vbuf)
 {
 	int bw = data->fmt.width / 8;
-	int h, w, i = 0;
+	struct video_format *fmt = &data->fmt;
+	size_t pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	bool hflip = data->ctrls.hflip.val;
 
-	for (h = 0; h < data->fmt.height; h++) {
-		for (w = 0; w < data->fmt.width; w++) {
-			int color_idx = data->ctrls.hflip.val ? 7 - w / bw : w / bw;
-			if (data->fmt.pixelformat == VIDEO_PIX_FMT_RGB565) {
-				uint16_t *pixel = (uint16_t *)&vbuf->buffer[i];
-				*pixel = rgb565_colorbar_value[color_idx];
-				i += 2;
-			} else if (data->fmt.pixelformat == VIDEO_PIX_FMT_XRGB32) {
-				uint32_t *pixel = (uint32_t *)&vbuf->buffer[i];
-				*pixel = xrgb32_colorbar_value[color_idx];
-				i += 4;
-			}
+	vbuf->bytesused = 0;
+
+	/* Generate the first line of data */
+	for (int w = 0, i = 0; w < data->fmt.width; w++) {
+		int color_idx = video_sw_generator_get_color_idx(w, width, hflip);
+
+		if (data->fmt.pixelformat == VIDEO_PIX_FMT_RGB565) {
+			uint16_t *pixel = (uint16_t *)&vbuf->buffer[i];
+			*pixel = sys_cpu_to_le16(rgb565_colorbar_value[color_idx]);
+		} else if (data->fmt.pixelformat == VIDEO_PIX_FMT_XRGB32) {
+			uint32_t *pixel = (uint32_t *)&vbuf->buffer[i];
+			*pixel = sys_cpu_to_le32(xrgb32_colorbar_value[color_idx]);
 		}
+		i += video_bits_per_pixel(data->fmt.pixelformat) / BITS_PER_BYTE;
+	}
+
+	/* Duplicate the first line all over the buffer */
+	for (int h = 1; h < data->fmt.height; h++) {
+		if (vbuf->size < vbuf->bytesused + pitch) {
+			break;
+		}
+
+		memcpy(vbuf->buffer + h * pitch, vbuf->buffer, pitch);
+		vbuf->bytesused += pitch;
 	}
 
 	vbuf->timestamp = k_uptime_get_32();
-	vbuf->bytesused = i;
 	vbuf->line_offset = 0;
 }
 
