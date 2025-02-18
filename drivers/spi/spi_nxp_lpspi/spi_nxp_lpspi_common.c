@@ -9,6 +9,24 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi_common, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
 
+static LPSPI_Type *const lpspi_bases[] = LPSPI_BASE_PTRS;
+static const clock_ip_name_t lpspi_clocks[] = LPSPI_CLOCKS;
+
+static inline clock_ip_name_t lpspi_get_clock(LPSPI_Type *const base)
+{
+	clock_ip_name_t clk = -1; /* invalid initial value */
+
+	ARRAY_FOR_EACH(lpspi_bases, idx) {
+		if (lpspi_bases[idx] == base) {
+			clk = lpspi_clocks[idx];
+			break;
+		}
+	}
+
+	__ASSERT_NO_MSG(clk != -1);
+	return clk;
+}
+
 int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct spi_mcux_data *data = dev->data;
@@ -122,6 +140,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 
 int spi_nxp_init_common(const struct device *dev)
 {
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	int err = 0;
@@ -134,6 +153,8 @@ int spi_nxp_init_common(const struct device *dev)
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
+
+	CLOCK_EnableClock(lpspi_get_clock(base));
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
