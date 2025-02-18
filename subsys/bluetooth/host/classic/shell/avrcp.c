@@ -49,6 +49,24 @@ static void avrcp_unit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_unit_inf
 		       rsp->unit_type, rsp->company_id);
 }
 
+static void avrcp_unit_info_cmd_recv(struct bt_avrcp *avrcp)
+{
+	struct bt_avrcp_unit_info_rsp rsp;
+	int err;
+
+	bt_shell_print("AVRCP target unit info command received");
+
+	rsp.unit_type = 0x9;
+	rsp.company_id = 0x001958; /*BT SIG registered Company ID*/
+
+	err = bt_avrcp_response_unit_info(avrcp, &rsp);
+	if (!err) {
+		bt_shell_print("AVRCP target response unit info");
+	} else {
+		bt_shell_print("failed to response unit info");
+	}
+}
+
 static void avrcp_subunit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_subunit_info_rsp *rsp)
 {
 	int i;
@@ -80,6 +98,7 @@ static struct bt_avrcp_cb avrcp_cb = {
 	.unit_info_rsp = avrcp_unit_info_rsp,
 	.subunit_info_rsp = avrcp_subunit_info_rsp,
 	.passthrough_rsp = avrcp_passthrough_rsp,
+	.unit_info_cmd_recv = avrcp_unit_info_cmd_recv,
 };
 
 static int register_cb(const struct shell *sh)
