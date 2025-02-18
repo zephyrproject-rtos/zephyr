@@ -22,6 +22,26 @@ LOG_MODULE_REGISTER(siwx91x_wifi);
 
 NET_BUF_POOL_FIXED_DEFINE(siwx91x_tx_pool, 1, _NET_ETH_MAX_FRAME_SIZE, 0, NULL);
 
+static inline int siwx91x_get_mode(uint8_t mode, sl_wifi_interface_t iface)
+{
+	switch (mode) {
+	case WIFI_STA_MODE:
+		if (FIELD_GET(SL_WIFI_CLIENT_INTERFACE, iface)) {
+			return -EALREADY;
+		}
+
+		return SL_SI91X_CLIENT_MODE;
+	case WIFI_AP_MODE:
+		if (FIELD_GET(SL_WIFI_AP_INTERFACE, iface)) {
+			return -EALREADY;
+		}
+
+		return SL_SI91X_ACCESS_POINT_MODE;
+	default:
+		return -EINVAL;
+	}
+}
+
 static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 				    char *result, uint32_t result_size, void *arg)
 {
@@ -289,6 +309,54 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 	return 0;
 }
 
+static int siwx91x_mode(const struct device *dev, struct wifi_mode_info *mode)
+{
+	struct siwx91x_dev *sidev = dev->data;
+	sl_wifi_interface_t interface;
+	int status;
+
+	sl_wifi_device_configuration_t network_config = {
+		.boot_option = LOAD_NWP_FW,
+		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
+		.region_code = DEFAULT_REGION,
+		.boot_config = {.coex_mode = SL_SI91X_WLAN_ONLY_MODE,
+				.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN,
+				.tcp_ip_feature_bit_map = (SL_SI91X_TCP_IP_FEAT_DHCPV4_SERVER |
+							   SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID |
+							   SL_SI91X_TCP_IP_FEAT_BYPASS),
+				.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID,
+				.ext_custom_feature_bit_map = 0,
+				.bt_feature_bit_map = 0,
+				.ext_tcp_ip_feature_bit_map = 0,
+				.ble_feature_bit_map = 0,
+				.ble_ext_feature_bit_map = 0,
+				.config_feature_bit_map = 0}};
+
+	__ASSERT(mode, "mode cannot be NULL");
+
+	interface = sl_wifi_get_default_interface();
+	status = siwx91x_get_mode(mode->mode, interface);
+	if (status < 0) {
+		return status;
+	}
+
+	network_config.boot_config.oper_mode = status;
+
+	status = sl_wifi_deinit();
+	if (status != SL_STATUS_OK) {
+		return -ETIMEDOUT;
+	}
+
+	status = sl_wifi_init(&network_config, NULL, sl_wifi_default_event_handler);
+	if (status != SL_STATUS_OK) {
+		return -ETIMEDOUT;
+	}
+
+	sidev->state = WIFI_STATE_INACTIVE;
+
+	return 0;
+}
+
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE
 
 static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
@@ -400,6 +468,7 @@ static const struct wifi_mgmt_ops siwx91x_mgmt = {
 	.connect      = siwx91x_connect,
 	.disconnect   = siwx91x_disconnect,
 	.iface_status = siwx91x_status,
+	.mode         = siwx91x_mode,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_api = {
