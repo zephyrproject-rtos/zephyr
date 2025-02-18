@@ -324,7 +324,7 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	frag = pkt->frags;
 	while (frag && pkt_len) {
 		write_len = MIN(pkt_len, frag->len);
-		dev->mctx.iface.write(&dev->mctx.iface, frag->data, write_len);
+		modem_cmd_send_data_nolock(&dev->mctx.iface, frag->data, write_len);
 		pkt_len -= write_len;
 		frag = frag->frags;
 	}
