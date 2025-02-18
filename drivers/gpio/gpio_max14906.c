@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(gpio_max14906);
 
 #define DT_DRV_COMPAT adi_max14906_gpio
 
+#define MAX14906_GET_DIAG_BY_CHAN(attr, idx) attr##idx
+
 static int gpio_max14906_diag_chan_get(const struct device *dev);
 
 static int max14906_pars_spi_diag(const struct device *dev, uint8_t *rx_diag_buff, uint8_t rw)
@@ -352,6 +354,143 @@ static int gpio_max14906_config_diag(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+static void max14906_fault_diag(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+	struct max14906_data *data = CONTAINER_OF(cb, struct max22190_data, diag_cb_data);
+
+	gpio_fire_callbacks(&data->diag_callbacks, data->dev, 0x1);
+}
+
+static int gpio_max14906_manage_diag_callback(const struct device *port, struct gpio_callback *cb,
+					      bool set)
+{
+	struct max14906_data *data = dev->data;
+
+	int ret = gpio_manage_callback(&data->diag_callbacks, cb, set);
+
+	return ret;
+}
+
+/* Get generic IC diagnostic */
+static int gpio_max14906_port_diag_get(const struct device *dev, enum gpoi_diag chan, uint8_t *data)
+{
+	struct max14906_data *dev_data = dev->data;
+	int ret = -ENXIO;
+
+	/* TODO: Add mask bits */
+	switch (chan) {
+	/* Interrupt reg*/
+	case GPIO_MAX14906_DIAG_OVER_LD_FAULT:
+		*data = dev_data->glob.interrupt.OVER_LD_FAULT;
+		break;
+	case GPIO_MAX14906_DIAG_CURR_LIM:
+		*data = dev_data->glob.interrupt.CURR_LIM;
+		break;
+	case GPIO_MAX14906_DIAG_OW_OFF_FLT:
+		*data = dev_data->glob.interrupt.OW_OFF_FAULT;
+		break;
+	case GPIO_MAX14906_DIAG_SHT_VDD_FLT:
+		*data = dev_data->glob.interrupt.SHT_VDD_FAULT;
+		break;
+	case GPIO_MAX14906_DIAG_DE_MAG_FLT:
+		*data = dev_data->glob.interrupt.DE_MAG_FAULT;
+		break;
+	case GPIO_MAX14906_DIAG_SUPPLY_ERR:
+		*data = dev_data->glob.interrupt.SUPPLY_ERR;
+		break;
+	case GPIO_MAX14906_DIAG_COM_ERR:
+		*data = dev_data->glob.interrupt.COM_ERR;
+		break;
+
+	/* GLOB_ERR reg*/
+	case GPIO_MAX14906_DIAG_VINT_UV:
+		*data = dev_data->glob.glob_err.VINT_UV;
+		break;
+	case GPIO_MAX14906_DIAG_V5_UVLO:
+		*data = dev_data->glob.glob_err.V5_UVLO;
+		break;
+	case GPIO_MAX14906_DIAG_VDD_LOW:
+		*data = dev_data->glob.glob_err.VDD_LOW;
+		break;
+	case GPIO_MAX14906_DIAG_VDD_WARN:
+		*data = dev_data->glob.glob_err.VDD_WARN;
+		break;
+	case GPIO_MAX14906_DIAG_VDD_UVLO:
+		*data = dev_data->glob.glob_err.VDD_UVLO;
+		break;
+	case GPIO_MAX14906_DIAG_THRMSHUTD:
+		*data = dev_data->glob.glob_err.THRMSHUTD;
+		break;
+	case GPIO_MAX14906_DIAG_LOSSGND:
+		*data = dev_data->glob.glob_err.LOSSGND;
+		break;
+	case GPIO_MAX14906_DIAG_WDOG_ERR:
+		*data = dev_data->glob.glob_err.WDOG_ERR;
+		break;
+	}
+
+	return ret;
+}
+
+/* Fetch data from IC */
+static int max14906_port_diag_fetch(const struct device *dev)
+{
+	const struct max14906_config *config = dev->config;
+	struct max14906_data *data = dev->data;
+
+	data->glob.interrupt.reg_raw =
+		max149x6_reg_transceive(dev, MAX14906_INT_REG, 0, NULL, MAX149x6_READ);
+
+	data->chan.ovr_ld.reg_raw =
+		max149x6_reg_transceive(dev, MAX14906_OVR_LD_REG, 0, NULL, MAX149x6_READ);
+
+	data->chan.opn_wir.reg_raw =
+		max149x6_reg_transceive(dev, MAX14906_OPN_WIR_FLT_REG, 0, NULL, MAX149x6_READ);
+
+	data->chan.sht_vdd.reg_raw =
+		max149x6_reg_transceive(dev, MAX14906_SHT_VDD_FLT_REG, 0, NULL, MAX149x6_READ);
+
+	data->chan.doi_level.reg_raw =
+		max149x6_reg_transceive(dev, MAX14906_DOILEVEL_REG, 0, NULL, MAX149x6_READ);
+
+	data->glob.glob_err.reg_raw =
+		max149x6_reg_transceive(dev, MAX14906_GLOB_ERR_REG, 0, NULL, MAX149x6_READ);
+}
+
+/* get per pin diagnostics */
+static int max14906_chan_diag_get(const struct device *dev, enum gpoi_diag chan, gpio_pin_t pin)
+{
+	struct max14906_data *data = dev->data;
+
+	int ret = -ENXIO;
+
+	/* Mask them with _EN bits */
+	switch (chan) {
+	case GPIO_MAX14906_DIAG_OVL:
+		ret = MAX14906_GET_DIAG_BY_CHAN(data->chan.ovr_ld.reg_bits.OVL, chan);
+		break;
+	case GPIO_MAX14906_DIAG_CL:
+		ret = MAX14906_GET_DIAG_BY_CHAN(data->chan.ovr_ld.reg_bits.CL, chan);
+		break;
+	case GPIO_MAX14906_DIAG_OW_OFF:
+		ret = MAX14906_GET_DIAG_BY_CHAN(data->chan.opn_wir.reg_bits.OW_OFF, chan);
+		break;
+	case GPIO_MAX14906_DIAG_ABOVE_VDD:
+		ret = MAX14906_GET_DIAG_BY_CHAN(data->chan.opn_wir.reg_bits.ABOVE_VDD, chan);
+		break;
+	case GPIO_MAX14906_DIAG_SHVDD:
+		ret = MAX14906_GET_DIAG_BY_CHAN(data->chan.sht_vdd.reg_bits.SHVDD, chan);
+		break;
+	case GPIO_MAX14906_DIAG_VDDOV:
+		ret = MAX14906_GET_DIAG_BY_CHAN(data->chan.doi_level.reg_bits.VDDOK, chan);
+		break;
+	}
+
+	return ret;
+}
+#endif
+
 static int gpio_max14906_init(const struct device *dev)
 {
 	const struct max14906_config *config = dev->config;
@@ -376,6 +515,20 @@ static int gpio_max14906_init(const struct device *dev)
 		return err;
 	}
 
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+	data->dev = dev;
+
+	err = gpio_pin_interrupt_configure_dt(&config->fault_gpio, GPIO_INT_EDGE_TO_INACTIVE);
+	if (err != 0) {
+		printk("Error %d: failed to configure interrupt on %s pin %d\n", err,
+		       config->fault_gpio.port->name, config->fault_gpio.pin);
+	} else {
+		/* Setup call back in case interrupt config success */
+		gpio_init_callback(&data->button_cb_data, max14906_fault_diag,
+				   BIT(config->fault_gpio.pin));
+		gpio_add_callback(config->fault_gpio.port, &data->button_cb_data);
+	}
+#else
 	/* setup FAULT gpio - normal high */
 	if (!gpio_is_ready_dt(&config->fault_gpio)) {
 		LOG_ERR("FAULT GPIO device not ready");
@@ -387,7 +540,7 @@ static int gpio_max14906_init(const struct device *dev)
 		LOG_ERR("Failed to configure DC GPIO");
 		return err;
 	}
-
+#endif
 	/* setup LATCH gpio - normal high */
 	if (!gpio_is_ready_dt(&config->sync_gpio)) {
 		LOG_ERR("SYNC GPIO device not ready");
@@ -437,6 +590,12 @@ static DEVICE_API(gpio, gpio_max14906_api) = {
 	.port_set_bits_raw = gpio_max14906_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_max14906_port_clear_bits_raw,
 	.port_toggle_bits = gpio_max14906_port_toggle_bits,
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+	.manage_diag_callback = gpio_max14906_manage_diag_callback,
+	.port_diag_get = gpio_max14906_port_diag_get,
+	.port_diag_fetch = max14906_port_diag_fetch,
+	.pin_diag_get = max14906_chan_diag_get,
+#endif
 };
 
 #define GPIO_MAX14906_DEVICE(id)                                                                   \
