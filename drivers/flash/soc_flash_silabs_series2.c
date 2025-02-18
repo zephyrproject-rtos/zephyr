@@ -32,6 +32,7 @@ struct flash_silabs_data {
 struct flash_silabs_config {
 	struct flash_parameters flash_parameters;
 	struct flash_pages_layout page_layout;
+	bool lpwrite;
 };
 
 static bool flash_silabs_read_range_is_valid(off_t offset, uint32_t size)
@@ -191,8 +192,13 @@ static int flash_silabs_get_size(const struct device *dev, uint64_t *size)
 static int flash_silabs_init(const struct device *dev)
 {
 	struct flash_silabs_data *const dev_data = dev->data;
+	const struct flash_silabs_config *config = dev->config;
 
 	MSC_Init();
+
+	if (config->lpwrite) {
+		MSC->WRITECTRL_SET = MSC_WRITECTRL_LPWRITE;
+	}
 
 	/* Lock the MSC module. */
 	flash_silabs_write_protection(true);
@@ -236,6 +242,7 @@ static const struct flash_silabs_config flash_silabs_config_0 = {
 				DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 		.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 	},
+	.lpwrite = DT_INST_PROP(0, low_power_write),
 };
 /* clang-format on */
 
