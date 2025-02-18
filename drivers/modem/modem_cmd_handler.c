@@ -570,13 +570,7 @@ int modem_cmd_send_ext(struct modem_iface *iface,
 	iface->write(iface, data->eol, data->eol_len);
 
 	if (sem) {
-		ret = k_sem_take(sem, timeout);
-
-		if (ret == 0) {
-			ret = data->last_error;
-		} else if (ret == -EAGAIN) {
-			ret = -ETIMEDOUT;
-		}
+		ret = modem_cmd_handler_await(data, sem, timeout);
 	}
 
 	if (!(flags & MODEM_NO_UNSET_CMDS)) {
