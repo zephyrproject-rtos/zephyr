@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Dipak Shetty <shetty.dipak@gmx.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Everlight Ambient Light Sensor
+
+compatible: "everlight,als-pt19"
+
+include: seeed,grove-light.yaml
+
+properties:
+  load-resistor:
+    type: int
+    required: true
+    description: |
+      Load resistor value in ohms
