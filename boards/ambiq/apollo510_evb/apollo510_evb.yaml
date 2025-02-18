@@ -22,6 +22,7 @@ supported:
   - sdhc
   - clock_control
   - usbd
+  - pdm
 testing:
   ignore_tags:
     - net

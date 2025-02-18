@@ -229,4 +229,10 @@
 				 ambiq,pull-up-ohms = <12000>;
 		};
 	};
+	pdm0_default: pdm0_default {
+		group0 {
+			pinmux = <PDM0_CLK_P50>,
+                                 <PDM0_DATA_P51>;
+		};
+	};
 };

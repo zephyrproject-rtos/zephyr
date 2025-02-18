@@ -75,6 +75,12 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
+&pdm0 {
+	pinctrl-0 = <&pdm0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &gpio64_95 {
 	status = "okay";
 };

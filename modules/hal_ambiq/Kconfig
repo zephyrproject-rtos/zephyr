@@ -95,4 +95,9 @@ config AMBIQ_HAL_USE_DSI
 	help
 	  Use the DSI driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_PDM
+	bool
+	help
+	  Use the PDM driver from Ambiq HAL
+
 endif # AMBIQ_HAL

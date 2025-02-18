@@ -483,6 +483,14 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x1000000>;
 		};
 
+		pdm0: pdm@40201000 {
+			compatible = "ambiq,pdm";
+			reg = <0x40201000 0x254>;
+			interrupts = <48 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0xc 0x4>;
+		};
+
 		pinctrl: pin-controller@40010000 {
 			compatible = "ambiq,apollo5-pinctrl";
 			reg = <0x40010000 0x610>;

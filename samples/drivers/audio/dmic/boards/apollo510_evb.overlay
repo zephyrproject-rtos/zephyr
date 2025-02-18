@@ -1,0 +1,3 @@
+dmic_dev: &pdm0 {
+	status = "okay";
+};

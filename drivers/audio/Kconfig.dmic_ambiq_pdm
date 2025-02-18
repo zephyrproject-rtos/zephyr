@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DMIC_AMBIQ_PDM
+	bool "Ambiq PDM driver"
+	default y
+	depends on DT_HAS_AMBIQ_PDM_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_PDM
+	select PINCTRL
+	help
+	  Enable support for Ambiq PDM driver for Apollo 5 MCU.
+
+config PDM_DMA_TCB_BUFFER_SIZE
+	int "DMA Transfer Control Buffer size in words."
+	default 1536
+	help
+	  DMA Transfer Control Buffer size in words
