@@ -486,6 +486,10 @@ New Drivers
 
    * :dtcompatible:`nxp,netc-switch`
 
+* :abbr:`EEPROM (Electrically Erasable Programmable Read-Only Memory)`
+
+  *  :dtcompatible:`fujitsu,mb85rsxx`
+
 * Ethernet
 
    * :dtcompatible:`davicom,dm8806-phy`
@@ -607,7 +611,6 @@ New Drivers
 
 * :abbr:`MTD (Memory Technology Device)`
 
-   * :dtcompatible:`fujitsu,mb85rsxx`
    * :dtcompatible:`nxp,s32-qspi-hyperflash`
    * :dtcompatible:`nxp,xspi-mx25um51345g`
    * :dtcompatible:`ti,cc23x0-ccfg-flash`
