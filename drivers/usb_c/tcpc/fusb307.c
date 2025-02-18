@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Jianxiong Gu <jianxiong.gu@outlook.com>
+ * Copyright (c) 2025 Jianxiong Gu <jianxiong.gu@outlook.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,13 +11,13 @@
 #include <zephyr/usb_c/usbc.h>
 #include <zephyr/usb_c/tcpci.h>
 #include <zephyr/shell/shell.h>
-#include "rt1715.h"
+#include "fusb307.h"
 
-#define DT_DRV_COMPAT richtek_rt1715
-LOG_MODULE_REGISTER(rt1715, CONFIG_USBC_LOG_LEVEL);
+#define DT_DRV_COMPAT onnn_fusb307_tcpc
+LOG_MODULE_REGISTER(tcpc_fusb307, CONFIG_USBC_LOG_LEVEL);
 
 /** Data structure for device instances */
-struct rt1715_data {
+struct fusb307_data {
 	/** Device structure used to retrieve it in k_work functions */
 	const struct device *const dev;
 	/** Delayable work item for chip initialization */
@@ -56,18 +56,19 @@ struct rt1715_data {
 	/** State of CC2 line */
 	enum tc_cc_voltage_state cc2;
 
-	/* Flag to receive or ignore SOP Prime messages */
+	/** Power role of the device */
+	enum tc_power_role power_role;
+
+	/** Flag to receive or ignore SOP Prime messages */
 	bool rx_sop_prime_enable;
 };
 
 /** Configuration structure for device instances */
-struct rt1715_cfg {
+struct fusb307_cfg {
 	/** I2C bus and address used for communication */
 	const struct i2c_dt_spec bus;
 	/** GPIO specification for alert pin */
 	const struct gpio_dt_spec alert_gpio;
-	/** GPIO specification for VCONN power control pin */
-	const struct gpio_dt_spec vconn_ctrl_gpio;
 	/** GPIO specification for VCONN discharge control pin */
 	const struct gpio_dt_spec vconn_disc_gpio;
 	/** Maximum number of packet retransmissions done by TCPC */
@@ -76,7 +77,7 @@ struct rt1715_cfg {
 
 static int tcpci_init_alert_mask(const struct device *dev)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
 
 	uint16_t mask = TCPC_REG_ALERT_TX_COMPLETE | TCPC_REG_ALERT_RX_STATUS |
 			TCPC_REG_ALERT_RX_HARD_RST | TCPC_REG_ALERT_CC_STATUS |
@@ -86,12 +87,12 @@ static int tcpci_init_alert_mask(const struct device *dev)
 	return tcpci_tcpm_mask_status_register(&cfg->bus, TCPC_ALERT_STATUS, mask);
 }
 
-static int rt1715_tcpc_init(const struct device *dev)
+static int fusb307_tcpc_init(const struct device *dev)
 {
-	struct rt1715_data *data = dev->data;
+	struct fusb307_data *data = dev->data;
 
 	if (!data->initialized) {
-		if (data->init_retries > CONFIG_USBC_TCPC_RT1715_INIT_RETRIES) {
+		if (data->init_retries > CONFIG_USBC_TCPC_FUSB307_INIT_RETRIES) {
 			LOG_ERR("TCPC was not initialized correctly");
 			return -EIO;
 		}
@@ -103,15 +104,15 @@ static int rt1715_tcpc_init(const struct device *dev)
 	data->msg_pending = false;
 	memset(&data->rx_msg, 0x00, sizeof(data->rx_msg));
 
-	LOG_INF("RT1715 TCPC initialized");
+	LOG_INF("FUSB307 TCPC initialized");
 	return 0;
 }
 
-static int rt1715_tcpc_get_cc(const struct device *dev, enum tc_cc_voltage_state *cc1,
+static int fusb307_tcpc_get_cc(const struct device *dev, enum tc_cc_voltage_state *cc1,
 			      enum tc_cc_voltage_state *cc2)
 {
-	const struct rt1715_cfg *cfg = dev->config;
-	struct rt1715_data *data = dev->data;
+	const struct fusb307_cfg *cfg = dev->config;
+	struct fusb307_data *data = dev->data;
 	int ret;
 
 	if (!data->initialized) {
@@ -138,27 +139,27 @@ static int rt1715_tcpc_get_cc(const struct device *dev, enum tc_cc_voltage_state
 	return ret;
 }
 
-static int rt1715_tcpc_select_rp_value(const struct device *dev, enum tc_rp_value rp)
+static int fusb307_tcpc_select_rp_value(const struct device *dev, enum tc_rp_value rp)
 {
-	const struct rt1715_cfg *cfg = dev->config;
-	struct rt1715_data *data = dev->data;
+	const struct fusb307_cfg *cfg = dev->config;
+	struct fusb307_data *data = dev->data;
 
 	data->cc_changed = true;
 
 	return tcpci_tcpm_select_rp_value(&cfg->bus, rp);
 }
 
-static int rt1715_tcpc_get_rp_value(const struct device *dev, enum tc_rp_value *rp)
+static int fusb307_tcpc_get_rp_value(const struct device *dev, enum tc_rp_value *rp)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
 
 	return tcpci_tcpm_get_rp_value(&cfg->bus, rp);
 }
 
-static int rt1715_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
+static int fusb307_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 {
-	const struct rt1715_cfg *cfg = dev->config;
-	struct rt1715_data *data = dev->data;
+	const struct fusb307_cfg *cfg = dev->config;
+	struct fusb307_data *data = dev->data;
 
 	if (!data->initialized) {
 		return -EIO;
@@ -169,27 +170,27 @@ static int rt1715_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 	return tcpci_tcpm_set_cc(&cfg->bus, pull);
 }
 
-static void rt1715_tcpc_set_vconn_discharge_cb(const struct device *dev,
+static void fusb307_tcpc_set_vconn_discharge_cb(const struct device *dev,
 					       tcpc_vconn_discharge_cb_t cb)
 {
-	struct rt1715_data *data = dev->data;
+	struct fusb307_data *data = dev->data;
 
 	data->vconn_discharge_cb = cb;
 }
 
-static void rt1715_tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb)
+static void fusb307_tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb)
 {
-	struct rt1715_data *data = dev->data;
+	struct fusb307_data *data = dev->data;
 
 	data->vconn_cb = vconn_cb;
 }
 
-static int rt1715_tcpc_vconn_discharge(const struct device *dev, bool enable)
+static int fusb307_tcpc_vconn_discharge(const struct device *dev, bool enable)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
 
 	if (cfg->vconn_disc_gpio.port == NULL) {
-		/* RT1715 does not have built-in VCONN discharge path */
+		/* FUSB307 does not have built-in VCONN discharge path */
 		LOG_ERR("VCONN discharge GPIO is not defined");
 		return -EIO;
 	}
@@ -197,19 +198,14 @@ static int rt1715_tcpc_vconn_discharge(const struct device *dev, bool enable)
 	return gpio_pin_set_dt(&cfg->vconn_disc_gpio, enable);
 }
 
-static int rt1715_tcpc_set_vconn(const struct device *dev, bool enable)
+static int fusb307_tcpc_set_vconn(const struct device *dev, bool enable)
 {
-	const struct rt1715_cfg *cfg = dev->config;
-	struct rt1715_data *data = dev->data;
+	const struct fusb307_cfg *cfg = dev->config;
+	struct fusb307_data *data = dev->data;
 	int ret;
 
 	if (!data->initialized) {
 		return -EIO;
-	}
-
-	if (enable == true && cfg->vconn_ctrl_gpio.port != NULL) {
-		/* Enable external VCONN power supply */
-		gpio_pin_set_dt(&cfg->vconn_ctrl_gpio, true);
 	}
 
 	data->cc_changed = true;
@@ -219,11 +215,6 @@ static int rt1715_tcpc_set_vconn(const struct device *dev, bool enable)
 		return ret;
 	}
 
-	if (enable == false && cfg->vconn_ctrl_gpio.port != NULL) {
-		/* Disable external VCONN power supply */
-		gpio_pin_set_dt(&cfg->vconn_ctrl_gpio, false);
-	}
-
 	if (data->vconn_cb != NULL) {
 		ret = data->vconn_cb(dev, data->cc_polarity, enable);
 	}
@@ -231,17 +222,25 @@ static int rt1715_tcpc_set_vconn(const struct device *dev, bool enable)
 	return ret;
 }
 
-static int rt1715_tcpc_set_roles(const struct device *dev, enum tc_power_role power_role,
+static int fusb307_tcpc_set_roles(const struct device *dev, enum tc_power_role power_role,
 				 enum tc_data_role data_role)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
+	struct fusb307_data *data = dev->data;
+	int ret;
 
-	return tcpci_tcpm_set_roles(&cfg->bus, PD_REV30, power_role, data_role);
+	ret = tcpci_tcpm_set_roles(&cfg->bus, PD_REV20, power_role, data_role);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->power_role = power_role;
+	return 0;
 }
 
-static int rt1715_tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
+static int fusb307_tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
 {
-	struct rt1715_data *data = dev->data;
+	struct fusb307_data *data = dev->data;
 
 	/* Rx message pending? */
 	if (!data->msg_pending) {
@@ -261,10 +260,10 @@ static int rt1715_tcpc_get_rx_pending_msg(const struct device *dev, struct pd_ms
 	return 1;
 }
 
-static int rt1715_tcpc_rx_fifo_enqueue(const struct device *dev)
+static int fusb307_tcpc_rx_fifo_enqueue(const struct device *dev)
 {
-	const struct rt1715_cfg *const cfg = dev->config;
-	struct rt1715_data *data = dev->data;
+	const struct fusb307_cfg *const cfg = dev->config;
+	struct fusb307_data *data = dev->data;
 	uint8_t buf[4];
 	uint8_t rxbcnt;
 	uint8_t rxftype;
@@ -317,10 +316,10 @@ static int rt1715_tcpc_rx_fifo_enqueue(const struct device *dev)
 	return ret;
 }
 
-static int rt1715_tcpc_set_rx_enable(const struct device *dev, bool enable)
+static int fusb307_tcpc_set_rx_enable(const struct device *dev, bool enable)
 {
-	const struct rt1715_cfg *cfg = dev->config;
-	struct rt1715_data *data = dev->data;
+	const struct fusb307_cfg *cfg = dev->config;
+	struct fusb307_data *data = dev->data;
 
 	if (!enable) {
 		return tcpci_tcpm_set_rx_type(&cfg->bus, 0);
@@ -334,10 +333,11 @@ static int rt1715_tcpc_set_rx_enable(const struct device *dev, bool enable)
 	}
 }
 
-static int rt1715_tcpc_set_cc_polarity(const struct device *dev, enum tc_cc_polarity polarity)
+static int fusb307_tcpc_set_cc_polarity(const struct device *dev, enum tc_cc_polarity polarity)
 {
-	const struct rt1715_cfg *cfg = dev->config;
-	struct rt1715_data *data = dev->data;
+	const struct fusb307_cfg *cfg = dev->config;
+	struct fusb307_data *data = dev->data;
+	enum tc_cc_voltage_state cc1, cc2;
 	int ret;
 
 	if (!data->initialized) {
@@ -345,9 +345,23 @@ static int rt1715_tcpc_set_cc_polarity(const struct device *dev, enum tc_cc_pola
 	}
 
 	ret = tcpci_tcpm_set_cc_polarity(&cfg->bus, polarity);
-
 	if (ret != 0) {
 		return ret;
+	}
+
+	tcpci_tcpm_get_cc(&cfg->bus, &cc1, &cc2);
+	if (cc1) {
+		tcpci_update_reg8(&cfg->bus, TCPC_REG_ROLE_CTRL, TCPC_REG_ROLE_CTRL_CC2_MASK,
+				  TCPC_REG_ROLE_CTRL_SET(0, 0, 0, TC_CC_OPEN));
+	} else if (cc2) {
+		tcpci_update_reg8(&cfg->bus, TCPC_REG_ROLE_CTRL, TCPC_REG_ROLE_CTRL_CC1_MASK,
+				  TCPC_REG_ROLE_CTRL_SET(0, 0, TC_CC_OPEN, 0));
+	} else {
+		if (data->power_role == TC_ROLE_SINK) {
+			tcpci_tcpm_set_cc(&cfg->bus, TC_CC_RD);
+		} else {
+			tcpci_tcpm_set_cc(&cfg->bus, TC_CC_RP);
+		}
 	}
 
 	data->cc_changed = true;
@@ -355,72 +369,121 @@ static int rt1715_tcpc_set_cc_polarity(const struct device *dev, enum tc_cc_pola
 	return 0;
 }
 
-static int rt1715_tcpc_transmit_data(const struct device *dev, struct pd_msg *msg)
+static int fusb307_tcpc_transmit_data(const struct device *dev, struct pd_msg *msg)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
 
 	return tcpci_tcpm_transmit_data(&cfg->bus, msg, cfg->transmit_retries);
 }
 
-static int rt1715_tcpc_dump_std_reg(const struct device *dev)
+static int fusb307_tcpc_dump_std_reg(const struct device *dev)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
 
 	LOG_INF("TCPC %s:%s registers:", cfg->bus.bus->name, dev->name);
 
 	return tcpci_tcpm_dump_std_reg(&cfg->bus);
 }
 
-void rt1715_tcpc_alert_handler_cb(const struct device *dev, void *data, enum tcpc_alert alert)
+void fusb307_tcpc_alert_handler_cb(const struct device *dev, void *data, enum tcpc_alert alert)
 {
 }
 
-static int rt1715_tcpc_get_status_register(const struct device *dev, enum tcpc_status_reg reg,
+static int fusb307_tcpc_get_status_register(const struct device *dev, enum tcpc_status_reg reg,
 					   uint32_t *status)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
 
 	if (reg == TCPC_VENDOR_DEFINED_STATUS) {
-		return tcpci_read_reg8(&cfg->bus, RT1715_REG_RT_INT, (uint8_t *)status);
+		return tcpci_read_reg8(&cfg->bus, FUSB307_REG_ALERT_VD, (uint8_t *)status);
 	}
 
 	return tcpci_tcpm_get_status_register(&cfg->bus, reg, (uint16_t *)status);
 }
 
-static int rt1715_tcpc_clear_status_register(const struct device *dev, enum tcpc_status_reg reg,
+static int fusb307_tcpc_clear_status_register(const struct device *dev, enum tcpc_status_reg reg,
 					     uint32_t mask)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
 
 	if (reg == TCPC_VENDOR_DEFINED_STATUS) {
-		return tcpci_write_reg8(&cfg->bus, RT1715_REG_RT_INT, (uint8_t)mask);
+		return tcpci_write_reg8(&cfg->bus, FUSB307_REG_ALERT_VD, (uint8_t)mask);
 	}
 
 	return tcpci_tcpm_clear_status_register(&cfg->bus, reg, (uint16_t)mask);
 }
 
-static int rt1715_tcpc_mask_status_register(const struct device *dev, enum tcpc_status_reg reg,
+static int fusb307_tcpc_mask_status_register(const struct device *dev, enum tcpc_status_reg reg,
 					    uint32_t mask)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
 
 	if (reg == TCPC_VENDOR_DEFINED_STATUS) {
-		return tcpci_write_reg8(&cfg->bus, RT1715_REG_RT_INT_MASK, (uint8_t)mask);
+		return tcpci_write_reg8(&cfg->bus, FUSB307_REG_ALERT_VD_MASK, (uint8_t)mask);
 	}
 
 	return tcpci_tcpm_mask_status_register(&cfg->bus, reg, (uint16_t)mask);
 }
 
-static int rt1715_tcpc_set_drp_toggle(const struct device *dev, bool enable)
+static int fusb307_tcpc_set_drp_toggle(const struct device *dev, bool enable)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
 
 	return tcpci_tcpm_set_drp_toggle(&cfg->bus, enable);
 }
 
-static int rt1715_tcpc_get_chip_info(const struct device *dev, struct tcpc_chip_info *chip_info)
+static int fusb307_tcpc_set_debug_accessory(const struct device *dev, bool enable)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
+
+	return tcpci_tcpm_set_debug_accessory(&cfg->bus, enable);
+}
+
+static int fusb307_tcpc_get_snk_ctrl(const struct device *dev)
+{
+	const struct fusb307_cfg *cfg = dev->config;
+	bool sinking;
+	int ret;
+
+	ret = tcpci_tcpm_get_snk_ctrl(&cfg->bus, &sinking);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return sinking;
+}
+
+static int fusb307_tcpc_set_snk_ctrl(const struct device *dev, bool enable)
+{
+	const struct fusb307_cfg *cfg = dev->config;
+
+	return tcpci_tcpm_set_snk_ctrl(&cfg->bus, enable);
+}
+
+static int fusb307_tcpc_get_src_ctrl(const struct device *dev)
+{
+	const struct fusb307_cfg *cfg = dev->config;
+	bool sourcing;
+	int ret;
+
+	ret = tcpci_tcpm_get_src_ctrl(&cfg->bus, &sourcing);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return sourcing;
+}
+
+static int fusb307_tcpc_set_src_ctrl(const struct device *dev, bool enable)
+{
+	const struct fusb307_cfg *cfg = dev->config;
+
+	return tcpci_tcpm_set_src_ctrl(&cfg->bus, enable);
+}
+
+static int fusb307_tcpc_get_chip_info(const struct device *dev, struct tcpc_chip_info *chip_info)
+{
+	const struct fusb307_cfg *cfg = dev->config;
 
 	if (chip_info == NULL) {
 		return -EIO;
@@ -432,41 +495,33 @@ static int rt1715_tcpc_get_chip_info(const struct device *dev, struct tcpc_chip_
 	return tcpci_tcpm_get_chip_info(&cfg->bus, chip_info);
 }
 
-static int rt1715_tcpc_set_low_power_mode(const struct device *dev, bool enable)
+static int fusb307_tcpc_set_low_power_mode(const struct device *dev, bool enable)
 {
-	const struct rt1715_cfg *cfg = dev->config;
-	int ret;
+	const struct fusb307_cfg *cfg = dev->config;
 
-	ret = tcpci_write_reg8(&cfg->bus, RT1715_REG_SYS_WAKEUP, RT1715_REG_SYS_WAKEUP_EN);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return tcpci_update_reg8(&cfg->bus, RT1715_REG_SYS_CTRL_1,
-				 RT1715_REG_SYS_CTRL_1_BMCIO_LP_EN,
-				 enable ? RT1715_REG_SYS_CTRL_1_BMCIO_LP_EN : 0);
+	return tcpci_tcpm_set_low_power_mode(&cfg->bus, enable);
 }
 
-static int rt1715_tcpc_sop_prime_enable(const struct device *dev, bool enable)
+static int fusb307_tcpc_sop_prime_enable(const struct device *dev, bool enable)
 {
-	struct rt1715_data *data = dev->data;
+	struct fusb307_data *data = dev->data;
 
 	data->rx_sop_prime_enable = enable;
 
 	return 0;
 }
 
-static int rt1715_tcpc_set_bist_test_mode(const struct device *dev, bool enable)
+static int fusb307_tcpc_set_bist_test_mode(const struct device *dev, bool enable)
 {
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
 
 	return tcpci_tcpm_set_bist_test_mode(&cfg->bus, enable);
 }
 
-static int rt1715_tcpc_set_alert_handler_cb(const struct device *dev,
+static int fusb307_tcpc_set_alert_handler_cb(const struct device *dev,
 					    tcpc_alert_handler_cb_t handler, void *handler_data)
 {
-	struct rt1715_data *data = dev->data;
+	struct fusb307_data *data = dev->data;
 
 	if (data->alert_handler == handler && data->alert_handler_data == handler_data) {
 		return 0;
@@ -478,46 +533,52 @@ static int rt1715_tcpc_set_alert_handler_cb(const struct device *dev,
 	return 0;
 }
 
-static DEVICE_API(tcpc, rt1715_driver_api) = {
-	.init = rt1715_tcpc_init,
-	.get_cc = rt1715_tcpc_get_cc,
-	.select_rp_value = rt1715_tcpc_select_rp_value,
-	.get_rp_value = rt1715_tcpc_get_rp_value,
-	.set_cc = rt1715_tcpc_set_cc,
-	.set_vconn_discharge_cb = rt1715_tcpc_set_vconn_discharge_cb,
-	.set_vconn_cb = rt1715_tcpc_set_vconn_cb,
-	.vconn_discharge = rt1715_tcpc_vconn_discharge,
-	.set_vconn = rt1715_tcpc_set_vconn,
-	.set_roles = rt1715_tcpc_set_roles,
-	.get_rx_pending_msg = rt1715_tcpc_get_rx_pending_msg,
-	.set_rx_enable = rt1715_tcpc_set_rx_enable,
-	.set_cc_polarity = rt1715_tcpc_set_cc_polarity,
-	.transmit_data = rt1715_tcpc_transmit_data,
-	.dump_std_reg = rt1715_tcpc_dump_std_reg,
-	.alert_handler_cb = rt1715_tcpc_alert_handler_cb,
-	.get_status_register = rt1715_tcpc_get_status_register,
-	.clear_status_register = rt1715_tcpc_clear_status_register,
-	.mask_status_register = rt1715_tcpc_mask_status_register,
-	.set_drp_toggle = rt1715_tcpc_set_drp_toggle,
-	.get_chip_info = rt1715_tcpc_get_chip_info,
-	.set_low_power_mode = rt1715_tcpc_set_low_power_mode,
-	.sop_prime_enable = rt1715_tcpc_sop_prime_enable,
-	.set_bist_test_mode = rt1715_tcpc_set_bist_test_mode,
-	.set_alert_handler_cb = rt1715_tcpc_set_alert_handler_cb,
+static DEVICE_API(tcpc, fusb307_driver_api) = {
+	.init = fusb307_tcpc_init,
+	.get_cc = fusb307_tcpc_get_cc,
+	.select_rp_value = fusb307_tcpc_select_rp_value,
+	.get_rp_value = fusb307_tcpc_get_rp_value,
+	.set_cc = fusb307_tcpc_set_cc,
+	.set_vconn_discharge_cb = fusb307_tcpc_set_vconn_discharge_cb,
+	.set_vconn_cb = fusb307_tcpc_set_vconn_cb,
+	.vconn_discharge = fusb307_tcpc_vconn_discharge,
+	.set_vconn = fusb307_tcpc_set_vconn,
+	.set_roles = fusb307_tcpc_set_roles,
+	.get_rx_pending_msg = fusb307_tcpc_get_rx_pending_msg,
+	.set_rx_enable = fusb307_tcpc_set_rx_enable,
+	.set_cc_polarity = fusb307_tcpc_set_cc_polarity,
+	.transmit_data = fusb307_tcpc_transmit_data,
+	.dump_std_reg = fusb307_tcpc_dump_std_reg,
+	.alert_handler_cb = fusb307_tcpc_alert_handler_cb,
+	.get_status_register = fusb307_tcpc_get_status_register,
+	.clear_status_register = fusb307_tcpc_clear_status_register,
+	.mask_status_register = fusb307_tcpc_mask_status_register,
+	.set_debug_accessory = fusb307_tcpc_set_debug_accessory,
+	.set_debug_detach = NULL,
+	.set_drp_toggle = fusb307_tcpc_set_drp_toggle,
+	.get_snk_ctrl = fusb307_tcpc_get_snk_ctrl,
+	.set_snk_ctrl = fusb307_tcpc_set_snk_ctrl,
+	.get_src_ctrl = fusb307_tcpc_get_src_ctrl,
+	.set_src_ctrl = fusb307_tcpc_set_src_ctrl,
+	.get_chip_info = fusb307_tcpc_get_chip_info,
+	.set_low_power_mode = fusb307_tcpc_set_low_power_mode,
+	.sop_prime_enable = fusb307_tcpc_sop_prime_enable,
+	.set_bist_test_mode = fusb307_tcpc_set_bist_test_mode,
+	.set_alert_handler_cb = fusb307_tcpc_set_alert_handler_cb,
 };
 
-void rt1715_alert_cb(const struct device *port, struct gpio_callback *cb, gpio_port_pins_t pins)
+void fusb307_alert_cb(const struct device *port, struct gpio_callback *cb, gpio_port_pins_t pins)
 {
-	struct rt1715_data *data = CONTAINER_OF(cb, struct rt1715_data, alert_cb);
+	struct fusb307_data *data = CONTAINER_OF(cb, struct fusb307_data, alert_cb);
 
 	k_work_submit(&data->alert_work);
 }
 
-void rt1715_alert_work_cb(struct k_work *work)
+void fusb307_alert_work_cb(struct k_work *work)
 {
-	struct rt1715_data *data = CONTAINER_OF(work, struct rt1715_data, alert_work);
+	struct fusb307_data *data = CONTAINER_OF(work, struct fusb307_data, alert_work);
 	const struct device *dev = data->dev;
-	const struct rt1715_cfg *cfg = dev->config;
+	const struct fusb307_cfg *cfg = dev->config;
 	uint16_t alert_reg = 0;
 	uint16_t clear_flags = 0;
 
@@ -553,7 +614,7 @@ void rt1715_alert_work_cb(struct k_work *work)
 		} else if (alert_type == TCPC_ALERT_MSG_STATUS) {
 			LOG_DBG("MSG pending");
 
-			if (rt1715_tcpc_rx_fifo_enqueue(dev) == 0) {
+			if (fusb307_tcpc_rx_fifo_enqueue(dev) == 0) {
 				data->msg_pending = true;
 			}
 		} else if (alert_type == TCPC_ALERT_CC_STATUS) {
@@ -577,65 +638,76 @@ void rt1715_alert_work_cb(struct k_work *work)
 	}
 }
 
-void rt1715_init_work_cb(struct k_work *work)
+void fusb307_init_work_cb(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct rt1715_data *data = CONTAINER_OF(dwork, struct rt1715_data, init_dwork);
+	struct fusb307_data *data = CONTAINER_OF(dwork, struct fusb307_data, init_dwork);
 
-	const struct rt1715_cfg *cfg = data->dev->config;
-	uint8_t power_reg, lp_reg = 0;
+	const struct fusb307_cfg *cfg = data->dev->config;
+	uint8_t power_reg = 0;
 	struct tcpc_chip_info chip_info;
 	int ret;
 
-	LOG_INF("Initializing RT1715 chip: %s", data->dev->name);
+	LOG_INF("Initializing FUSB307 chip: %s", data->dev->name);
 
 	ret = tcpci_tcpm_get_status_register(&cfg->bus, TCPC_POWER_STATUS, (uint16_t *)&power_reg);
 	if (ret != 0 || (power_reg & TCPC_REG_POWER_STATUS_UNINIT)) {
 		data->init_retries++;
 
-		if (data->init_retries > CONFIG_USBC_TCPC_RT1715_INIT_RETRIES) {
+		if (data->init_retries > CONFIG_USBC_TCPC_FUSB307_INIT_RETRIES) {
 			LOG_ERR("Chip didn't respond");
 			return;
 		}
 
 		LOG_DBG("Postpone chip initialization %d", data->init_retries);
-		k_work_schedule(&data->init_dwork, K_MSEC(CONFIG_USBC_TCPC_RT1715_INIT_DELAY));
+		k_work_schedule(&data->init_dwork, K_MSEC(CONFIG_USBC_TCPC_FUSB307_INIT_DELAY));
 
 		return;
 	}
 
-	rt1715_tcpc_get_chip_info(data->dev, &chip_info);
+	fusb307_tcpc_get_chip_info(data->dev, &chip_info);
 	LOG_INF("Initialized chip is: %04x:%04x:%04x", chip_info.vendor_id, chip_info.product_id,
 		chip_info.device_id);
 
-	/* Exit shutdown mode & Enable ext messages */
-	lp_reg = RT1715_REG_LP_CTRL_SHUTDOWN_OFF | RT1715_REG_LP_CTRL_ENEXTMSG;
-	/* Disable idle mode */
-	lp_reg &= ~RT1715_REG_LP_CTRL_AUTOIDLE_EN;
-	tcpci_write_reg8(&cfg->bus, RT1715_REG_LP_CTRL, lp_reg);
+	/* Clear reset flag */
+	tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_FAULT_STATUS,
+					 TCPC_REG_FAULT_STATUS_ALL_REGS_RESET);
+
+	/* Mask all vendor defined alerts */
+	tcpci_write_reg8(&cfg->bus, FUSB307_REG_ALERT_VD_MASK, 0);
+
+	/* Mask all alerts */
+	tcpci_tcpm_mask_status_register(&cfg->bus, TCPC_ALERT_STATUS, 0);
+
+	/* Clear the current alert register */
+	tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_ALERT_STATUS, 0xff);
 
 	/* Initialize alert interrupt */
 	gpio_pin_configure_dt(&cfg->alert_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&data->alert_cb, rt1715_alert_cb, BIT(cfg->alert_gpio.pin));
+	gpio_init_callback(&data->alert_cb, fusb307_alert_cb, BIT(cfg->alert_gpio.pin));
 	gpio_add_callback(cfg->alert_gpio.port, &data->alert_cb);
 	gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	tcpci_init_alert_mask(data->dev);
 	data->initialized = true;
 
-	/* Disable the vconn and open CC lines to reinitialize the communication with partner */
-	rt1715_tcpc_set_vconn(data->dev, false);
-	rt1715_tcpc_set_cc(data->dev, TC_CC_OPEN);
+	/* Disable DRP Toggle */
+	fusb307_tcpc_set_drp_toggle(data->dev, false);
+
+	/* Set DebugAccessoryControl control by TCPM */
+	tcpci_update_reg8(&cfg->bus, TCPC_REG_TCPC_CTRL,
+			  TCPC_REG_TCPC_CTRL_DEBUG_ACC_CONTROL,
+			  TCPC_REG_TCPC_CTRL_DEBUG_ACC_CONTROL);
 
 	/* Check and clear any alert set after initialization */
 	k_work_submit(&data->alert_work);
 }
 
-static int rt1715_dev_init(const struct device *dev)
+static int fusb307_dev_init(const struct device *dev)
 {
-	const struct rt1715_cfg *cfg = dev->config;
-	struct rt1715_data *data = dev->data;
+	const struct fusb307_cfg *cfg = dev->config;
+	struct fusb307_data *data = dev->data;
 	int ret;
 
 	if (!device_is_ready(cfg->bus.bus)) {
@@ -643,50 +715,46 @@ static int rt1715_dev_init(const struct device *dev)
 	}
 
 	/* Resets the chip */
-	ret = tcpci_write_reg8(&cfg->bus, RT1715_REG_SW_RST, RT1715_REG_SW_RST_EN);
+	ret = tcpci_write_reg8(&cfg->bus, FUSB307_REG_RESET, FUSB307_REG_RESET_SW_RST);
 	if (ret != 0) {
 		LOG_ERR("Failed to reset chip: %d", ret);
 		return ret;
 	}
 
-	k_work_init_delayable(&data->init_dwork, rt1715_init_work_cb);
-	k_work_schedule(&data->init_dwork, K_MSEC(CONFIG_USBC_TCPC_RT1715_INIT_DELAY));
+	k_work_init_delayable(&data->init_dwork, fusb307_init_work_cb);
+	k_work_schedule(&data->init_dwork, K_MSEC(CONFIG_USBC_TCPC_FUSB307_INIT_DELAY));
 
-	k_work_init(&data->alert_work, rt1715_alert_work_cb);
+	k_work_init(&data->alert_work, fusb307_alert_work_cb);
 
 	return 0;
 }
 
-#define RT1715_DRIVER_DATA_INIT(node)                                                              \
+#define FUSB307_DRIVER_DATA_INIT(node)                                                             \
 	{                                                                                          \
 		.dev = DEVICE_DT_GET(node),                                                        \
 		.init_retries = 0,                                                                 \
 		.cc_changed = true,                                                                \
 	}
 
-#define VCONN_CTRL_GPIO(node)                                                                      \
-	.vconn_ctrl_gpio = COND_CODE_1(DT_INST_NODE_HAS_PROP(node, vconn_ctrl_gpios),              \
-				       (GPIO_DT_SPEC_INST_GET(node, vconn_ctrl_gpios)), ({0}))
-
 #define VCONN_DISC_GPIO(node)                                                                      \
 	.vconn_disc_gpio = COND_CODE_1(DT_INST_NODE_HAS_PROP(node, vconn_disc_gpios),              \
 				       (GPIO_DT_SPEC_INST_GET(node, vconn_disc_gpios)), ({0}))
 
-#define RT1715_DRIVER_CFG_INIT(node)                                                               \
+#define FUSB307_DRIVER_CFG_INIT(node)                                                              \
 	{                                                                                          \
 		.bus = I2C_DT_SPEC_GET(node),                                                      \
 		.alert_gpio = GPIO_DT_SPEC_GET(node, irq_gpios),                                   \
 		.transmit_retries = DT_PROP(node, transmit_retries),                               \
-		VCONN_CTRL_GPIO(node),                                                             \
 		VCONN_DISC_GPIO(node),                                                             \
 	}
 
-#define RT1715_DRIVER_INIT(inst)                                                                   \
-	static struct rt1715_data drv_data_rt1715##inst =                                          \
-		RT1715_DRIVER_DATA_INIT(DT_DRV_INST(inst));                                        \
-	static struct rt1715_cfg drv_cfg_rt1715##inst = RT1715_DRIVER_CFG_INIT(DT_DRV_INST(inst)); \
-	DEVICE_DT_INST_DEFINE(inst, &rt1715_dev_init, NULL, &drv_data_rt1715##inst,                \
-			      &drv_cfg_rt1715##inst, POST_KERNEL, CONFIG_USBC_TCPC_INIT_PRIORITY,  \
-			      &rt1715_driver_api);
+#define FUSB307_DRIVER_INIT(inst)                                                                  \
+	static struct fusb307_data drv_data_fusb307##inst =                                        \
+		FUSB307_DRIVER_DATA_INIT(DT_DRV_INST(inst));                                       \
+	static struct fusb307_cfg drv_cfg_fusb307##inst =                                          \
+		FUSB307_DRIVER_CFG_INIT(DT_DRV_INST(inst));                                        \
+	DEVICE_DT_INST_DEFINE(inst, &fusb307_dev_init, NULL, &drv_data_fusb307##inst,              \
+			      &drv_cfg_fusb307##inst, POST_KERNEL, CONFIG_USBC_TCPC_INIT_PRIORITY, \
+			      &fusb307_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(RT1715_DRIVER_INIT)
+DT_INST_FOREACH_STATUS_OKAY(FUSB307_DRIVER_INIT)
