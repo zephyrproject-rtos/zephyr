@@ -2764,6 +2764,18 @@ Modem:
   tests:
     - modem
 
+NEORV32 platform:
+  status: maintained
+  maintainers:
+    - henrikbrixandersen
+  files:
+    - boards/others/neorv32/
+    - drivers/*/*neorv32*
+    - dts/bindings/*/*neorv32*
+    - soc/neorv32/
+  labels:
+    - "platform: NEORV32"
+
 OSDP:
   status: maintained
   maintainers:
