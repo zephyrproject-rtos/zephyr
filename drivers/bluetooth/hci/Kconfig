@@ -40,6 +40,24 @@ config BT_HCI_IPC
 	  Bluetooth HCI driver for communication with another CPU
 	  using the IPC subsystem.
 
+config BT_HCI_IPC_SEND_RETRY_COUNT
+	int "HCI IPC send retry count"
+	depends on BT_HCI_IPC
+	default 3
+	help
+	  Number of times to retry sending a message via IPC.
+	  The retries occur in case of a failure to send a message
+	  through IPC (-ENOMEM returned by ipc_service_send).
+
+config BT_HCI_IPC_SEND_RETRY_DELAY_US
+	int "HCI IPC send retry delay (us)"
+	depends on BT_HCI_IPC
+	default 75
+	help
+	  Delay in microseconds between retries when sending a message via IPC.
+	  When a single tick (CONFIG_SYS_CLOCK_TICKS_PER_SEC) is bigger then
+	  the retry delay the k_busy_wait function is used. Set with care.
+
 config BT_SPI
 	bool
 	select SPI
