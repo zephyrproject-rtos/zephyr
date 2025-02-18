@@ -177,6 +177,13 @@ struct bt_avrcp_cb {
 	 *  @param rsp The response for PASS THROUGH command.
 	 */
 	void (*passthrough_rsp)(struct bt_avrcp *avrcp, struct bt_avrcp_passthrough_rsp *rsp);
+	/** @brief Callback function called when received unit info command
+	 *
+	 *  This callback notifies the application that a avrcp unit info command is received.
+	 *
+	 *  @param avrcp AVRCP connection object.
+	 */
+	void (*unit_info_cmd_recv)(struct bt_avrcp *avrcp);
 };
 
 /** @brief Connect AVRCP.
@@ -249,6 +256,17 @@ int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp);
 int bt_avrcp_passthrough(struct bt_avrcp *avrcp, bt_avrcp_opid_t operation_id,
 			 bt_avrcp_button_state_t state, const uint8_t *payload, uint8_t len);
 
+/** @brief Response unit info command.
+ *
+ *  Send the response unit info command when the receiver will be notified by the registered
+ *  callback (unit_info_cmd_recv).
+ *
+ *  @param avrcp The AVRCP instance.
+ *  @param rsp The response for UNIT INFO command.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_response_unit_info(struct bt_avrcp *avrcp, struct bt_avrcp_unit_info_rsp *rsp);
 #ifdef __cplusplus
 }
 #endif

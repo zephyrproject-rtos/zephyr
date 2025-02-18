@@ -253,9 +253,26 @@ static void avrcp_unit_info_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
 {
 	struct bt_avrcp_header *avrcp_hdr;
 	struct bt_avrcp_unit_info_rsp rsp;
+	bt_avrcp_subunit_type_t subunit_type;
 
 	if (cr == BT_AVCTP_CMD) {
-		/* ToDo */
+		if ((avrcp_cb != NULL) && (avrcp_cb->unit_info_cmd_recv != NULL)) {
+			avrcp_hdr = (void *)buf->data;
+			net_buf_pull(buf, sizeof(*avrcp_hdr));
+
+			if (buf->len != 5) {
+				LOG_ERR("Invalid unit info length");
+				return;
+			}
+
+			subunit_type = BT_AVRCP_HDR_GET_SUBUNIT_TYPE(avrcp_hdr);
+			if ((subunit_type != BT_AVRCP_SUBUNIT_TYPE_UNIT) ||
+				(avrcp_hdr->opcode != BT_AVRCP_OPC_UNIT_INFO)) {
+				LOG_ERR("Invalid unit info command");
+				return;
+			}
+			avrcp_cb->unit_info_cmd_recv(avrcp);
+		}
 	} else { /* BT_AVCTP_RESPONSE */
 		if ((avrcp_cb != NULL) && (avrcp_cb->unit_info_rsp != NULL)) {
 			net_buf_pull(buf, sizeof(*avrcp_hdr));
@@ -648,4 +665,28 @@ int bt_avrcp_register_cb(const struct bt_avrcp_cb *cb)
 {
 	avrcp_cb = cb;
 	return 0;
+}
+
+int bt_avrcp_response_unit_info(struct bt_avrcp *avrcp, struct bt_avrcp_unit_info_rsp *rsp)
+{
+	struct net_buf *buf;
+	uint8_t data[5];
+	uint8_t i = 0;
+
+	buf = avrcp_create_unit_pdu(avrcp, BT_AVCTP_RESPONSE);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	/* Add additional info */
+	data[i++] = 0x07;
+	/* Add Unit Type info */
+	data[i++] = (rsp->unit_type) << 3;
+	/* Company ID */
+	data[i++] = (uint8_t)((rsp->company_id) >> 16);
+	data[i++] = (uint8_t)((rsp->company_id) >> 8);
+	data[i++] = (uint8_t)(rsp->company_id);
+
+	net_buf_add_mem(buf, data, sizeof(data));
+	return avrcp_send(avrcp, buf);
 }
