@@ -15,10 +15,16 @@ if(CONFIG_TEST_MSB_FIRST_FONT)
 				   src/draw_line.c
 				   src/draw_rect.c
 				   src/draw_text_rectspace1016.c
+				   src/draw_text_rectspace1123.c
+				   src/draw_text_dot0101.c
 				   src/invert.c
 				   src/invert_area.c
 				   src/print_rectspace1016.c
-				   src/cfb_font_rectspace1016_msb.c)
+				   src/print_rectspace1123.c
+				   src/print_dot0101.c
+				   src/cfb_font_rectspace1016_msb.c
+				   src/cfb_font_rectspace1123_msb.c
+				   src/cfb_font_dot0101_msb.c)
 else()
 	target_sources(app PRIVATE src/testdata.c
 				   src/utils.c
@@ -27,8 +33,14 @@ else()
 				   src/draw_line.c
 				   src/draw_rect.c
 				   src/draw_text_rectspace1016.c
+				   src/draw_text_rectspace1123.c
+				   src/draw_text_dot0101.c
 				   src/invert.c
 				   src/invert_area.c
 				   src/print_rectspace1016.c
-				   src/cfb_font_rectspace1016.c)
+				   src/print_rectspace1123.c
+				   src/print_dot0101.c
+				   src/cfb_font_rectspace1016.c
+				   src/cfb_font_rectspace1123.c
+				   src/cfb_font_dot0101.c)
 endif()
