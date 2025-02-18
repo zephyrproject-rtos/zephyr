@@ -4,8 +4,11 @@
 
 # Override the default CMake's IAR ILINK linker signature
 
-string(APPEND CMAKE_C_LINK_FLAGS --no-wrap-diagnostics  )
+string(APPEND CMAKE_C_LINK_FLAGS --no-wrap-diagnostics)
 
+if(CONFIG_IAR_DATA_INIT)
+  string(APPEND CMAKE_C_LINK_FLAGS " --redirect z_data_copy=__iar_data_init3")
+endif()
 foreach(lang C CXX ASM)
   set(commands "--log modules,libraries,initialization,redirects,sections")
   set(CMAKE_${lang}_LINK_EXECUTABLE
