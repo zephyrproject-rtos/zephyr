@@ -22,7 +22,7 @@
 #define DMA_CH_PRIORITY_HIGH   1
 #define DMA_CH_PRIORITY_LOW    0
 #define VALID_BURST_LENGTH     0
-#define UDMA_ADDR_INC_NONE     0X03
+#define UDMA_ADDR_INC_NONE     0x03
 
 LOG_MODULE_REGISTER(si91x_dma, CONFIG_DMA_LOG_LEVEL);
 
@@ -40,8 +40,9 @@ struct dma_siwx91x_data {
 	UDMA_Channel_Info *chan_info;
 	dma_callback_t dma_callback;         /* User callback */
 	void *cb_data;                       /* User callback data */
-	RSI_UDMA_DATACONTEXT_T dma_rom_buff; /* Buffer to store UDMA handle */
-					     /* related information */
+	RSI_UDMA_DATACONTEXT_T dma_rom_buff; /* Buffer to store UDMA handle
+					      * related information
+					      */
 };
 
 static inline int siwx91x_dma_is_peripheral_request(uint32_t dir)
@@ -49,9 +50,11 @@ static inline int siwx91x_dma_is_peripheral_request(uint32_t dir)
 	if (dir == MEMORY_TO_MEMORY) {
 		return 0;
 	}
+
 	if (dir == MEMORY_TO_PERIPHERAL || dir == PERIPHERAL_TO_MEMORY) {
 		return 1;
 	}
+
 	return -1;
 }
 
@@ -108,12 +111,14 @@ static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_h
 	RSI_UDMA_CHA_CFG_T channel_config = {};
 	int status;
 
-	channel_config.channelPrioHigh = config->channel_priority;
 	if (siwx91x_dma_is_peripheral_request(config->channel_direction) < 0) {
 		return -EINVAL;
 	}
+
+	channel_config.channelPrioHigh = config->channel_priority;
 	channel_config.periphReq = siwx91x_dma_is_peripheral_request(config->channel_direction);
 	channel_config.dmaCh = channel;
+
 	if (channel_config.periphReq) {
 		/* Arbitration power for peripheral<->memory transfers */
 		channel_control.rPower = ARBSIZE_1;
@@ -121,6 +126,7 @@ static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_h
 		/* Arbitration power for mem-mem transfers */
 		channel_control.rPower = ARBSIZE_1024;
 	}
+
 	/* Obtain the number of transfers */
 	config->head_block->block_size /= config->source_data_size;
 	if (config->head_block->block_size >= DMA_MAX_TRANSFER_COUNT) {
@@ -129,6 +135,7 @@ static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_h
 	} else {
 		channel_control.totalNumOfDMATrans = config->head_block->block_size;
 	}
+
 	if (siwx91x_dma_data_width(config->source_data_size) < 0 ||
 	    siwx91x_dma_data_width(config->dest_data_size) < 0) {
 		return -EINVAL;
@@ -137,22 +144,26 @@ static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_h
 	    siwx91x_dma_burst_length(config->dest_burst_length) < 0) {
 		return -EINVAL;
 	}
+
 	channel_control.srcSize = siwx91x_dma_data_width(config->source_data_size);
 	channel_control.dstSize = siwx91x_dma_data_width(config->dest_data_size);
 	if (siwx91x_dma_addr_adjustment(config->head_block->source_addr_adj) < 0 ||
 	    siwx91x_dma_addr_adjustment(config->head_block->dest_addr_adj) < 0) {
 		return -EINVAL;
 	}
+
 	if (siwx91x_dma_addr_adjustment(config->head_block->source_addr_adj) == 0) {
 		channel_control.srcInc = channel_control.srcSize;
 	} else {
 		channel_control.srcInc = UDMA_SRC_INC_NONE;
 	}
+
 	if (siwx91x_dma_addr_adjustment(config->head_block->dest_addr_adj) == 0) {
 		channel_control.dstInc = channel_control.dstSize;
 	} else {
 		channel_control.dstInc = UDMA_DST_INC_NONE;
 	}
+
 	status = UDMAx_ChannelConfigure(&udma_resources, (uint8_t)channel,
 					config->head_block->source_address,
 					config->head_block->dest_address,
@@ -161,6 +172,7 @@ static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_h
 	if (status) {
 		return -EIO;
 	}
+
 	return 0;
 }
 
@@ -193,8 +205,10 @@ static int dma_siwx91x_configure(const struct device *dev, uint32_t channel,
 	if (status) {
 		return status;
 	}
+
 	data->dma_callback = config->dma_callback;
 	data->cb_data = config->user_data;
+
 	return 0;
 }
 
@@ -231,6 +245,7 @@ static int dma_siwx91x_reload(const struct device *dev, uint32_t channel, uint32
 	} else {
 		data->chan_info[channel].Cnt = size;
 	}
+
 	/* Program the DMA descriptors with new transfer data information. */
 	if (udma_table[channel].vsUDMAChaConfigData1.srcInc != UDMA_SRC_INC_NONE) {
 		length = data->chan_info[channel].Cnt
@@ -238,12 +253,14 @@ static int dma_siwx91x_reload(const struct device *dev, uint32_t channel, uint32
 		desc_src_addr = src + (length - 1);
 		udma_table[channel].pSrcEndAddr = (void *)desc_src_addr;
 	}
+
 	if (udma_table[channel].vsUDMAChaConfigData1.dstInc != UDMA_SRC_INC_NONE) {
 		length = data->chan_info[channel].Cnt
 			 << udma_table[channel].vsUDMAChaConfigData1.dstInc;
 		desc_dst_addr = dst + (length - 1);
 		udma_table[channel].pDstEndAddr = (void *)desc_dst_addr;
 	}
+
 	udma_table[channel].vsUDMAChaConfigData1.totalNumOfDMATrans = data->chan_info[channel].Cnt;
 	udma_table[channel].vsUDMAChaConfigData1.transferType = UDMA_MODE_BASIC;
 
@@ -262,6 +279,7 @@ static int dma_siwx91x_start(const struct device *dev, uint32_t channel)
 	if (channel >= cfg->channels) {
 		return -EINVAL;
 	}
+
 	if (RSI_UDMA_ChannelEnable(udma_handle, channel) != 0) {
 		return -EINVAL;
 	}
@@ -272,6 +290,7 @@ static int dma_siwx91x_start(const struct device *dev, uint32_t channel)
 		/* Apply software trigger to start transfer */
 		sys_set_bit((mem_addr_t)&cfg->reg->CHNL_SW_REQUEST, channel);
 	}
+
 	return 0;
 }
 
@@ -286,9 +305,11 @@ static int dma_siwx91x_stop(const struct device *dev, uint32_t channel)
 	if (channel >= cfg->channels) {
 		return -EINVAL;
 	}
+
 	if (RSI_UDMA_ChannelDisable(udma_handle, channel) != 0) {
 		return -EIO;
 	}
+
 	return 0;
 }
 
@@ -303,6 +324,7 @@ static int dma_siwx91x_get_status(const struct device *dev, uint32_t channel,
 	if (channel >= cfg->channels) {
 		return -EINVAL;
 	}
+
 	/* Read the channel status register */
 	stat->busy = sys_test_bit((mem_addr_t)&cfg->reg->CHANNEL_STATUS_REG, channel);
 
@@ -314,6 +336,7 @@ static int dma_siwx91x_get_status(const struct device *dev, uint32_t channel,
 	} else {
 		stat->dir = MEMORY_TO_MEMORY;
 	}
+
 	return 0;
 }
 
@@ -347,6 +370,7 @@ static int dma_siwx91x_init(const struct device *dev)
 	if (UDMAx_DMAEnable(&udma_resources, udma_handle) != 0) {
 		return -EBUSY;
 	}
+
 	return 0;
 }
 
@@ -361,9 +385,11 @@ static void dma_siwx91x_isr(const struct device *dev)
 	};
 	uint8_t channel;
 
-	/* Disable the IRQ to prevent the ISR from being triggered by */
-	/* interrupts from other DMA channels */
+	/* Disable the IRQ to prevent the ISR from being triggered by
+	 * interrupts from other DMA channels.
+	 */
 	irq_disable(cfg->irq_number);
+
 	channel = find_lsb_set(cfg->reg->UDMA_DONE_STATUS_REG);
 	/* Identify the interrupt channel */
 	if (!channel || channel > cfg->channels) {
@@ -371,6 +397,7 @@ static void dma_siwx91x_isr(const struct device *dev)
 	}
 	/* find_lsb_set() returns 1 indexed value */
 	channel -= 1;
+
 	if (data->chan_info[channel].Cnt == data->chan_info[channel].Size) {
 		if (data->dma_callback) {
 			/* Transfer complete, call user callback */
@@ -388,6 +415,7 @@ static void dma_siwx91x_isr(const struct device *dev)
 			sys_set_bit((mem_addr_t)&cfg->reg->CHNL_SW_REQUEST, channel);
 		}
 	}
+
 out:
 	/* Enable the IRQ to restore interrupt functionality for other DMA channels */
 	irq_enable(cfg->irq_number);
