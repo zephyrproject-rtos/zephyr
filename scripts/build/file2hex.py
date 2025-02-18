@@ -78,8 +78,14 @@ def main():
                     gz_obj.write(fg.read(args.length))
 
             content.seek(0)
-            for chunk in iter(lambda: content.read(8), b''):
-                make_hex(chunk)
+            if args.format == "literal":
+                print('"', end='')
+                for chunk in iter(lambda: content.read(1024), b''):
+                    make_string_literal(chunk)
+                print('"', end='')
+            else:
+                for chunk in iter(lambda: content.read(1024), b''):
+                    make_hex(chunk)
     else:
         with open(args.file, "rb") as fp:
             fp.seek(args.offset)
