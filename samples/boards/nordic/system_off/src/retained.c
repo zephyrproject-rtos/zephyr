@@ -16,12 +16,21 @@
 #include <zephyr/sys/crc.h>
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(retainedmemdevice))
+#if CONFIG_SOC_NRF54H20_CPUAPP
+#include <hal/nrf_memconf.h>
+#else
+#endif
 const static struct device *retained_mem_device = DEVICE_DT_GET(DT_ALIAS(retainedmemdevice));
+#if CONFIG_SOC_NRF54H20_CPUAPP
+	/* Core is using global RAM memory which will be retained. Nothing to be done here. */
+	return 0;
+#else
 #else
 #error "retained_mem region not defined"
 #endif
 
 struct retained_data retained;
+#endif
 
 #define RETAINED_CRC_OFFSET offsetof(struct retained_data, crc)
 #define RETAINED_CHECKED_SIZE (RETAINED_CRC_OFFSET + sizeof(retained.crc))
