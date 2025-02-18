@@ -443,7 +443,7 @@ New Drivers
    * :dtcompatible:`wch,ch32v00x-pll-clock`
    * :dtcompatible:`wch,rcc`
 
-* comparator
+* Comparator
 
    * :dtcompatible:`silabs,acmp`
 
@@ -485,6 +485,10 @@ New Drivers
 * :abbr:`DSA (Distributed Switch Architecture)`
 
    * :dtcompatible:`nxp,netc-switch`
+
+* :abbr:`EEPROM (Electrically Erasable Programmable Read-Only Memory)`
+
+  *  :dtcompatible:`fujitsu,mb85rsxx`
 
 * Ethernet
 
@@ -607,7 +611,6 @@ New Drivers
 
 * :abbr:`MTD (Memory Technology Device)`
 
-   * :dtcompatible:`fujitsu,mb85rsxx`
    * :dtcompatible:`nxp,s32-qspi-hyperflash`
    * :dtcompatible:`nxp,xspi-mx25um51345g`
    * :dtcompatible:`ti,cc23x0-ccfg-flash`
