@@ -192,6 +192,8 @@ static int dma_siwx91x_configure(const struct device *dev, uint32_t channel,
 	if (status) {
 		return status;
 	}
+	data->dma_callback = config->dma_callback;
+	data->cb_data = config->user_data;
 	return 0;
 }
 
