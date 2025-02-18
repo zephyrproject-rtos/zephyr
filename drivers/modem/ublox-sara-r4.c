@@ -423,13 +423,8 @@ static ssize_t send_socket_data(void *obj,
 		ret = 0;
 		goto exit;
 	}
-	ret = k_sem_take(&mdata.sem_response, timeout);
 
-	if (ret == 0) {
-		ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
-	} else if (ret == -EAGAIN) {
-		ret = -ETIMEDOUT;
-	}
+	ret = modem_cmd_handler_await(&mdata.cmd_handler_data, &mdata.sem_response, timeout);
 
 exit:
 	/* unset handler commands and ignore any errors */
@@ -496,13 +491,7 @@ static ssize_t send_cert(struct modem_socket *sock,
 	k_sleep(MDM_PROMPT_CMD_DELAY);
 	modem_cmd_send_data_nolock(&mctx.iface, cert_data, cert_len);
 
-	ret = k_sem_take(&mdata.sem_response, K_MSEC(1000));
-
-	if (ret == 0) {
-		ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
-	} else if (ret == -EAGAIN) {
-		ret = -ETIMEDOUT;
-	}
+	ret = modem_cmd_handler_await(&mdata.cmd_handler_data, &mdata.sem_response, K_MSEC(1000));
 
 exit:
 	/* unset handler commands and ignore any errors */
