@@ -677,6 +677,17 @@ LoRa
   additional ``user_data`` parameter, which is a void pointer. This parameter can be used to reference
   any user-defined data structure. To maintain the current behavior, set this parameter to ``NULL``.
 
+State Machine Framework
+=======================
+
+* :c:func:`smf_set_handled` has been removed.
+* State run actions now return an :c:enum:`smf_state_result` value instead of void. and the return
+  code determines if the event is propagated to parent run actions or has been handled. A run action
+  that handles the event completely should return :c:enum:`SMF_EVENT_HANDLED`, and run actions that
+  propagate handling to parent states should return :c:enum:`SMF_EVENT_PROPAGATE`.
+* Flat state machines ignore the return value; returning :c:enum:`SMF_EVENT_HANDLED`
+  would be the most technically accurate response.
+
 Stream Flash
 ============
 
