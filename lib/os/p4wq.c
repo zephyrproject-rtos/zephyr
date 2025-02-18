@@ -213,7 +213,11 @@ void k_p4wq_enable_static_thread(struct k_p4wq *queue, struct k_thread *thread,
  * so they can initialize in parallel instead of serially on the main
  * CPU.
  */
+#if defined(CONFIG_P4WQ_INIT_STAGE_EARLY)
+SYS_INIT(static_init, POST_KERNEL, 1);
+#else
 SYS_INIT(static_init, APPLICATION, 99);
+#endif
 
 void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 {
