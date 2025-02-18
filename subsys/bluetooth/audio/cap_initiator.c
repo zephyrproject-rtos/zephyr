@@ -971,7 +971,7 @@ static int cap_initiator_unicast_audio_configure(
 	/* Store the information about the active procedure so that we can
 	 * continue the procedure after each step
 	 */
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_START, param->count);
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_START, param->count);
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG);
 
 	proc_param = get_next_proc_param(active_proc);
@@ -1008,15 +1008,16 @@ static int cap_initiator_unicast_audio_configure(
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
 {
 	bool all_streaming = true;
-
-	if (bt_cap_common_proc_is_active()) {
-		LOG_DBG("A CAP procedure is already in progress");
-
-		return -EBUSY;
-	}
+	int err;
 
 	if (!valid_unicast_audio_start_param(param)) {
 		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
 	}
 
 	for (size_t i = 0U; i < param->count; i++) {
@@ -1030,10 +1031,18 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 
 	if (all_streaming) {
 		LOG_DBG("All streams are already in the streaming state");
+
+		bt_cap_common_clear_active_proc();
+
 		return -EALREADY;
 	}
 
-	return cap_initiator_unicast_audio_configure(param);
+	err = cap_initiator_unicast_audio_configure(param);
+	if (err != 0) {
+		bt_cap_common_clear_active_proc();
+	}
+
+	return err;
 }
 
 void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
@@ -1639,14 +1648,14 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	size_t meta_len;
 	int err;
 
-	if (bt_cap_common_proc_is_active()) {
+	if (!valid_unicast_audio_update_param(param)) {
+		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
-	}
-
-	if (!valid_unicast_audio_update_param(param)) {
-		return -EINVAL;
 	}
 
 	for (size_t i = 0U; i < param->count; i++) {
@@ -1663,7 +1672,7 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 		       stream_param->meta_len);
 	}
 
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_UPDATE, param->count);
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_UPDATE, param->count);
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE);
 
 	proc_param = get_next_proc_param(active_proc);
@@ -1902,14 +1911,14 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 	bool can_stop = false;
 	int err;
 
-	if (bt_cap_common_proc_is_active()) {
+	if (!valid_unicast_audio_stop_param(param)) {
+		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
-	}
-
-	if (!valid_unicast_audio_stop_param(param)) {
-		return -EINVAL;
 	}
 
 	for (size_t i = 0U; i < param->count; i++) {
@@ -1939,10 +1948,13 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 		LOG_DBG("Cannot %s any streams", !can_disable ? "disable"
 						 : !can_stop  ? "stop"
 							      : "release");
+
+		bt_cap_common_clear_active_proc();
+
 		return -EALREADY;
 	}
 
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_STOP, param->count);
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_STOP, param->count);
 	/** TODO: If this is a CSIP set, then the order of the procedures may
 	 * not match the order in the parameters, and the CSIP ordered access
 	 * procedure should be used.
@@ -2232,13 +2244,82 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) && defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+#if defined(CONFIG_BT_CAP_COMMANDER) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE) &&                 \
+	defined(CONFIG_BT_BAP_UNICAST_CLIENT) && defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
+
+static bool valid_unicast_to_broadcast_param(const struct bt_cap_unicast_to_broadcast_param *param)
+{
+	const struct bt_bap_unicast_group *unicast_group;
+
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	unicast_group = param->unicast_group;
+	if (unicast_group == NULL) {
+		LOG_DBG("param->unicast_group is NULL");
+		return false;
+	}
+
+	if (unicast_group->cig == NULL) {
+		LOG_DBG("param->unicast_group is not configured");
+		return false;
+	}
+
+	/**
+	 * 1) Get all sink streams in the streaming state from unicast group
+	 * 2) If number of sink streams exceed the number of broadcast source streams supported
+return error
+	 * 3) If number of unique metadata configurations exceed number of subgroups supported
+return error
+	 * 4) Check if remote device supports broadcast before doing anything
+	 * 5) Release all sink streams with bt_cap_initiator_unicast_audio_stop
+	 * 6) Once completed, call bt_cap_initiator_broadcast_audio_start
+	 * 7) Call handover callback once completed
+	 */
+
+	return true;
+}
 
 int bt_cap_initiator_unicast_to_broadcast(
 	const struct bt_cap_unicast_to_broadcast_param *param,
 	struct bt_cap_broadcast_source **source)
 {
-	return -ENOSYS;
+	struct bt_cap_unicast_audio_stop_param stop_param = {0};
+	int err;
+
+	if (source == NULL) {
+		LOG_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	if (!valid_unicast_to_broadcast_param(param)) {
+		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	stop_param.type = param->type;
+	stop_param.release = true;
+	/* TODO: Populate array of streams
+	 * Since input is a BAP group, how do we ensure they are CAP streams?
+	 */
+
+	err = bt_cap_initiator_unicast_audio_stop(&stop_param);
+	if (err != 0) {
+		LOG_DBG("Failed to stop unicast audio: %d", err);
+
+		bt_cap_common_clear_active_proc();
+
+		return -ENOEXEC;
+	}
+
+	return 0;
 }
 
 int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unicast_param *param,
@@ -2247,4 +2328,6 @@ int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unica
 	return -ENOSYS;
 }
 
-#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE && CONFIG_BT_BAP_UNICAST_CLIENT */
+#endif /* CONFIG_BT_CAP_COMMANDER && CONFIG_BT_BAP_BROADCAST_SOURCE &&                             \
+	* CONFIG_BT_BAP_UNICAST_CLIENT && CONFIG_BT_BAP_BROADCAST_ASSISTANT                        \
+	*/
