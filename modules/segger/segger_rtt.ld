@@ -1,3 +1,4 @@
+//Remember to keep this in sync with the cmake file
 SECTION_DATA_PROLOGUE(_RTT_SECTION_NAME,(NOLOAD),)
 {
 __rtt_buff_data_start = .;
