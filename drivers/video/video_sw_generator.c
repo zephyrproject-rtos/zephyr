@@ -318,13 +318,14 @@ static int video_sw_generator_enum_frmival(const struct device *dev, enum video_
 		return -EINVAL;
 	}
 
-	while (fmts[i].pixelformat && (fmts[i].pixelformat != fie->format->pixelformat)) {
+	while (fmts[i].pixelformat && (fmts[i].pixelformat != fie->format->pixelformat) &&
+	       IN_RANGE(fie->format->width, fmts[i].width_min, fmts[i].width_max) &&
+	       IN_RANGE(fie->format->height, fmts[i].height_min, fmts[i].height_max)) {
 		i++;
 	}
 
-	if ((i == ARRAY_SIZE(fmts)) ||
-	    !IN_RANGE(fie->format->width, fmts[i].width_min, fmts[i].width_max) &&
-	    !IN_RANGE(fie->format->height, fmts[i].height_min, fmts[i].height_max)) {
+	if (i == ARRAY_SIZE(fmts) - 1) {
+		LOG_ERR("Nothing matching the requested format was found");
 		return -EINVAL;
 	}
 
