@@ -44,24 +44,27 @@ struct video_sw_generator_data {
 	uint32_t frame_rate;
 };
 
-static const struct video_format_cap fmts[] = {{
-						       .pixelformat = VIDEO_PIX_FMT_RGB565,
-						       .width_min = 64,
-						       .width_max = 1920,
-						       .height_min = 64,
-						       .height_max = 1080,
-						       .width_step = 1,
-						       .height_step = 1,
-					       }, {
-						       .pixelformat = VIDEO_PIX_FMT_XRGB32,
-						       .width_min = 64,
-						       .width_max = 1920,
-						       .height_min = 64,
-						       .height_max = 1080,
-						       .width_step = 1,
-						       .height_step = 1,
-					       },
-					       {0}};
+static const struct video_format_cap fmts[] = {
+	{
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+		.width_min = 64,
+		.width_max = 1920,
+		.height_min = 64,
+		.height_max = 1080,
+		.width_step = 1,
+		.height_step = 1,
+	},
+	{
+		.pixelformat = VIDEO_PIX_FMT_XRGB32,
+		.width_min = 64,
+		.width_max = 1920,
+		.height_min = 64,
+		.height_max = 1080,
+		.width_step = 1,
+		.height_step = 1,
+	},
+	{0},
+};
 
 static int video_sw_generator_set_fmt(const struct device *dev, struct video_format *fmt)
 {
@@ -112,10 +115,14 @@ static int video_sw_generator_set_stream(const struct device *dev, bool enable,
 }
 
 /* Black, Blue, Red, Purple, Green, Aqua, Yellow, White */
-uint16_t rgb565_colorbar_value[] = {0x0000, 0x001F, 0xF800, 0xF81F, 0x07E0, 0x07FF, 0xFFE0, 0xFFFF};
+uint16_t rgb565_colorbar_value[] = {
+	0x0000, 0x001F, 0xF800, 0xF81F, 0x07E0, 0x07FF, 0xFFE0, 0xFFFF,
+};
 
-uint32_t xrgb32_colorbar_value[] = {0xFF000000, 0xFF0000FF, 0xFFFF0000, 0xFFFF00FF,
-				    0xFF00FF00, 0xFF00FFFF, 0xFFFFFF00, 0xFFFFFFFF};
+uint32_t xrgb32_colorbar_value[] = {
+	0xFF000000, 0xFF0000FF, 0xFFFF0000, 0xFFFF00FF,
+	0xFF00FF00, 0xFF00FFFF, 0xFFFFFF00, 0xFFFFFFFF,
+};
 
 static void video_sw_generator_fill_colorbar(struct video_sw_generator_data *data,
 					     struct video_buffer *vbuf)
