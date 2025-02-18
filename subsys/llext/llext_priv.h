@@ -49,12 +49,6 @@ static inline void llext_free(void *ptr)
 int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		  const struct llext_load_param *ldr_parm);
 
-static inline const char *llext_string(const struct llext_loader *ldr, const struct llext *ext,
-				       enum llext_mem mem_idx, unsigned int idx)
-{
-	return (char *)ext->mem[mem_idx] + idx;
-}
-
 /*
  * Relocation (llext_link.c)
  */

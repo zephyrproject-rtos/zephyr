@@ -12,6 +12,7 @@
 #include <zephyr/llext/llext_internal.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
+#include <zephyr/arch/riscv/elf.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
@@ -143,12 +144,9 @@ static const void *llext_find_extension_sym(const char *sym_name, struct llext *
 	return se.addr;
 }
 
-/*
- * Determine address of a symbol.
- */
-static int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *link_addr,
-			       const elf_rela_t *rel, const elf_sym_t *sym, const char *name,
-			       const elf_shdr_t *shdr)
+int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *link_addr,
+			const elf_rela_t *rel, const elf_sym_t *sym, const char *name,
+			const elf_shdr_t *shdr)
 {
 	if (ELF_R_SYM(rel->r_info) == 0) {
 		/*
