@@ -52,6 +52,7 @@
 			interrupts = <74 0>, <75 0>, <76 0>, <77 0>;
 			interrupt-names = "ep1_out", "ep1_in", "wkup", "otghs";
 			num-bidir-endpoints = <9>;
+			num-host-channels = <16>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
 			clocks = <&rcc STM32_CLOCK(AHB1, 25U)>,
@@ -66,6 +67,7 @@
 			interrupts = <98 0>, <99 0>, <100 0>, <101 0>;
 			interrupt-names = "ep1_out", "ep1_in", "wkup", "otgfs";
 			num-bidir-endpoints = <9>;
+			num-host-channels = <16>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
 			clocks = <&rcc STM32_CLOCK(AHB1, 27U)>,
