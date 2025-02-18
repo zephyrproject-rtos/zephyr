@@ -178,6 +178,68 @@ static int lsm6dso_accel_range_set(const struct device *dev, int32_t range)
 	return 0;
 }
 
+#if defined(CONFIG_LSM6DSO_TRIGGER)
+static int lsm6dso_accel_slope_config_th(const struct device *dev,
+			  enum sensor_attribute attr,
+			  const struct sensor_value *val)
+{
+	const struct lsm6dso_config *cfg = dev->config;
+	struct lsm6dso_data *data = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	int rc;
+	int32_t slope_th_ug, fs_ug;
+	bool range_double = !!(cfg->accel_range & ACCEL_RANGE_DOUBLE);
+	uint8_t wake_up_ths = 0;
+
+	slope_th_ug = abs(sensor_ms2_to_ug(val));
+
+	/* Ensure the threshold is within full scale. */
+	fs_ug = (lsm6dso_accel_fs_map[data->accel_fs] << range_double) * 1000000;
+	if (slope_th_ug > fs_ug) {
+		return -EINVAL;
+	}
+
+	/* Register is in units of 1/64 FS when WAKE_THS_W is 0. */
+	wake_up_ths = (slope_th_ug * 64) / fs_ug;
+	rc = lsm6dso_wkup_threshold_set(ctx, wake_up_ths);
+	if (rc < 0) {
+		LOG_DBG("failed to set accelerometer slope threshold");
+		return -EIO;
+	}
+
+	LOG_DBG("slope_th_ug: %d, fs_ug: %d, lsb: %d",
+				slope_th_ug, fs_ug, wake_up_ths);
+
+	return 0;
+}
+
+static int lsm6dso_accel_slope_config_dur(const struct device *dev,
+			  enum sensor_attribute attr,
+			  const struct sensor_value *val)
+{
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	int rc;
+	uint8_t wake_up_dur = 0;
+
+	/* Ensure number of samples is within range. */
+	if (val->val1 < 1 || val->val1 > 4) {
+		return -EINVAL;
+	}
+
+	wake_up_dur = val->val1 - 1;
+	rc = lsm6dso_wkup_dur_set(ctx, wake_up_dur);
+	if (rc < 0) {
+		LOG_DBG("failed to set accelerometer slope duration");
+		return -EIO;
+	}
+
+	LOG_DBG("slope_dur_samples: %d, slope_dur: %d", val->val1, wake_up_dur);
+
+	return 0;
+}
+#endif
+
 static int lsm6dso_accel_config(const struct device *dev,
 				enum sensor_channel chan,
 				enum sensor_attribute attr,
@@ -188,6 +250,12 @@ static int lsm6dso_accel_config(const struct device *dev,
 		return lsm6dso_accel_range_set(dev, sensor_ms2_to_g(val));
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return lsm6dso_accel_odr_set(dev, val->val1);
+#if defined(CONFIG_LSM6DSO_TRIGGER)
+	case SENSOR_ATTR_SLOPE_TH:
+		return lsm6dso_accel_slope_config_th(dev, attr, val);
+	case SENSOR_ATTR_SLOPE_DUR:
+		return lsm6dso_accel_slope_config_dur(dev, attr, val);
+#endif
 	default:
 		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
