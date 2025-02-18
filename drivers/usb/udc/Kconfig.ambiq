@@ -25,10 +25,39 @@ config UDC_AMBIQ_THREAD_PRIORITY
 	help
 	  AMBIQ driver thread priority.
 
-
 config UDC_AMBIQ_MAX_QMESSAGES
 	int "UDC AMBIQ maximum number of ISR event messages"
 	range 4 64
 	default 8
 	help
 	  AMBIQ maximum number of ISR event messages.
+
+config UDC_AMBIQ_DMA_MODE
+	int "USB DMA Mode"
+	range 0 2
+	default 0
+	help
+	  DMA mode for non-control USB EP.
+	  0 = PIO mode
+	  1 = DMA0 Mode
+	  2 = DMA1 Mode
+	  It is recommended to select DMA1 mode for best througput
+	  if no asynchronous endpoint is required, and DMA0 mode
+	  if asynchronous endpoint is needed.
+
+config UDC_AMBIQ_DEB_ENABLE
+	hex "EP Double Buffer Enable"
+	default 0x0000
+	depends on SOC_SERIES_APOLLO5X
+	help
+	  Double Endpoint Buffer acceleration (DEB) is doubles an EP's FIFO size
+	  so that USB transfer could continue to happen while waiting for DMA/CPU to
+	  load/unload data from the EP FIFO.
+	  This hex value is a bitmap of endpoints for DEB to be enabled. BIT0-4
+	  represents OUT_EP 1-5, while BIT16-20 represents IN_EP 1-8.
+	  Take note that this feature is limited by total EP FIFO size. Proper
+	  calculation should be done before enabling DEB such that the total usage
+	  of FIFO for all endpoint doesn't exceed the FIFO available on SoC.
+	  The list of Soc with its FIFO size is listed below. The FIFO size here
+	  includes 128 bytes required by control endpoints.
+	  - Apollo510: (4096 Bytes FIFO)
