@@ -26,12 +26,12 @@ properties:
   lower-temperature-limit:
     required: true
     type: int
-    description: Lowest temperature supported by the device in celcius degrees.
+    description: Lowest temperature supported by the device in celsius degrees.
 
   higher-temperature-limit:
     required: true
     type: int
-    description: Highest temperature supported by the device in celcius degrees.
+    description: Highest temperature supported by the device in celsius degrees.
 
   data-bits:
     required: true

@@ -149,7 +149,7 @@ static void recv_cb(struct bt_le_per_adv_sync *recv_sync,
 	}
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s advertisment received\n",
+	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s advertisement received\n",
 	       bt_le_per_adv_sync_get_index(recv_sync), le_addr);
 
 	while (buf->len > 0) {
@@ -355,7 +355,7 @@ static void main_per_adv_long_data_sync(void)
 
 	create_pa_sync(&sync);
 
-	printk("Waiting to receive periodic advertisment...\n");
+	printk("Waiting to receive periodic advertisement...\n");
 	WAIT_FOR_FLAG(flag_per_adv_recv);
 
 	printk("Waiting for periodic sync lost...\n");

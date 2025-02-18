@@ -9,7 +9,7 @@
 #     child-binding:
 #       include: base.yaml
 #
-# Which properties are specified at which levels is summarized bellow
+# Which properties are specified at which levels is summarized below
 # for convenience.
 #
 # Child-binding level:

@@ -20,7 +20,7 @@ The key features of the EK-RA8M1 board are categorized in three groups as follow
 - MCU current measurement points for precision current consumption measurement
 - Multiple clock sources - RA8M1 MCU oscillator and sub-clock oscillator crystals,
   providing precision 20.000MHz and 32,768 Hz refeence clocks.
-  Additional low precision clocks are avaialbe internal to the RA8M1 MCU
+  Additional low precision clocks are available internal to the RA8M1 MCU
 
 **System Control and Ecosystem Access**
 
@@ -147,7 +147,7 @@ Flashing
 ========
 
 Program can be flashed to EK-RA8M1 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 
