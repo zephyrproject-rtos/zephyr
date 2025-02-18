@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 TOKITA Hiroshi
+ */
+
+/* W5500-EVB-Pico2 is compatible with the Raspberry Pi Pico, so reuse. */
+#include "rpi_pico.overlay"
+
+&adc {
+	status = "okay";
+};
