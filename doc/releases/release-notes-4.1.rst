@@ -178,6 +178,11 @@ New APIs and options
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS`
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT`
 
+* Display
+
+  * Added function ``display_clear`` to the display subsystem to clear the target devices
+    screen display, resetting it to black. (:github:`12937`)
+
 * Management
 
   * hawkBit
