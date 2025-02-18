@@ -45,7 +45,7 @@ struct dma_siwx91x_data {
 					      */
 };
 
-static inline int siwx91x_dma_is_peripheral_request(uint32_t dir)
+static int siwx91x_is_peripheral_request(uint32_t dir)
 {
 	if (dir == MEMORY_TO_MEMORY) {
 		return 0;
@@ -58,7 +58,7 @@ static inline int siwx91x_dma_is_peripheral_request(uint32_t dir)
 	return -1;
 }
 
-static inline int siwx91x_dma_data_width(uint32_t data_width)
+static int siwx91x_data_width(uint32_t data_width)
 {
 	switch (data_width) {
 	case 1:
@@ -72,7 +72,7 @@ static inline int siwx91x_dma_data_width(uint32_t data_width)
 	}
 }
 
-static inline int siwx91x_dma_burst_length(uint32_t blen)
+static int siwx91x_burst_length(uint32_t blen)
 {
 	switch (blen / 8) {
 	case 1:
@@ -82,7 +82,7 @@ static inline int siwx91x_dma_burst_length(uint32_t blen)
 	}
 }
 
-static inline int siwx91x_dma_addr_adjustment(uint32_t adjustment)
+static int siwx91x_addr_adjustment(uint32_t adjustment)
 {
 	switch (adjustment) {
 	case 0:
@@ -94,9 +94,9 @@ static inline int siwx91x_dma_addr_adjustment(uint32_t adjustment)
 	}
 }
 
-static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_handle,
-			      uint32_t channel, const struct dma_config *config,
-			      UDMA_Channel_Info *channel_info)
+static int siwx91x_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_handle,
+				  uint32_t channel, const struct dma_config *config,
+				  UDMA_Channel_Info *channel_info)
 {
 	uint32_t dma_transfer_num = config->head_block->block_size / config->source_data_size;
 	const struct dma_siwx91x_config *cfg = dev->config;
@@ -112,12 +112,12 @@ static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_h
 	RSI_UDMA_CHA_CFG_T channel_config = {};
 	int status;
 
-	if (siwx91x_dma_is_peripheral_request(config->channel_direction) < 0) {
+	if (siwx91x_is_peripheral_request(config->channel_direction) < 0) {
 		return -EINVAL;
 	}
 
 	channel_config.channelPrioHigh = config->channel_priority;
-	channel_config.periphReq = siwx91x_dma_is_peripheral_request(config->channel_direction);
+	channel_config.periphReq = siwx91x_is_peripheral_request(config->channel_direction);
 	channel_config.dmaCh = channel;
 
 	if (channel_config.periphReq) {
@@ -136,29 +136,29 @@ static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_h
 		channel_control.totalNumOfDMATrans = dma_transfer_num;
 	}
 
-	if (siwx91x_dma_data_width(config->source_data_size) < 0 ||
-	    siwx91x_dma_data_width(config->dest_data_size) < 0) {
+	if (siwx91x_data_width(config->source_data_size) < 0 ||
+	    siwx91x_data_width(config->dest_data_size) < 0) {
 		return -EINVAL;
 	}
-	if (siwx91x_dma_burst_length(config->source_burst_length) < 0 ||
-	    siwx91x_dma_burst_length(config->dest_burst_length) < 0) {
-		return -EINVAL;
-	}
-
-	channel_control.srcSize = siwx91x_dma_data_width(config->source_data_size);
-	channel_control.dstSize = siwx91x_dma_data_width(config->dest_data_size);
-	if (siwx91x_dma_addr_adjustment(config->head_block->source_addr_adj) < 0 ||
-	    siwx91x_dma_addr_adjustment(config->head_block->dest_addr_adj) < 0) {
+	if (siwx91x_burst_length(config->source_burst_length) < 0 ||
+	    siwx91x_burst_length(config->dest_burst_length) < 0) {
 		return -EINVAL;
 	}
 
-	if (siwx91x_dma_addr_adjustment(config->head_block->source_addr_adj) == 0) {
+	channel_control.srcSize = siwx91x_data_width(config->source_data_size);
+	channel_control.dstSize = siwx91x_data_width(config->dest_data_size);
+	if (siwx91x_addr_adjustment(config->head_block->source_addr_adj) < 0 ||
+	    siwx91x_addr_adjustment(config->head_block->dest_addr_adj) < 0) {
+		return -EINVAL;
+	}
+
+	if (siwx91x_addr_adjustment(config->head_block->source_addr_adj) == 0) {
 		channel_control.srcInc = channel_control.srcSize;
 	} else {
 		channel_control.srcInc = UDMA_SRC_INC_NONE;
 	}
 
-	if (siwx91x_dma_addr_adjustment(config->head_block->dest_addr_adj) == 0) {
+	if (siwx91x_addr_adjustment(config->head_block->dest_addr_adj) == 0) {
 		channel_control.dstInc = channel_control.dstSize;
 	} else {
 		channel_control.dstInc = UDMA_DST_INC_NONE;
@@ -178,7 +178,7 @@ static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_h
 }
 
 /* Function to configure UDMA channel for transfer */
-static int dma_siwx91x_configure(const struct device *dev, uint32_t channel,
+static int siwx91x_dma_configure(const struct device *dev, uint32_t channel,
 				 struct dma_config *config)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
@@ -202,7 +202,7 @@ static int dma_siwx91x_configure(const struct device *dev, uint32_t channel,
 	}
 
 	/* Configure dma channel for transfer */
-	status = dma_channel_config(dev, udma_handle, channel, config, data->chan_info);
+	status = siwx91x_channel_config(dev, udma_handle, channel, config, data->chan_info);
 	if (status) {
 		return status;
 	}
@@ -214,7 +214,7 @@ static int dma_siwx91x_configure(const struct device *dev, uint32_t channel,
 }
 
 /* Function to reload UDMA channel for new transfer */
-static int dma_siwx91x_reload(const struct device *dev, uint32_t channel, uint32_t src,
+static int siwx91x_dma_reload(const struct device *dev, uint32_t channel, uint32_t src,
 			      uint32_t dst, size_t size)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
@@ -269,7 +269,7 @@ static int dma_siwx91x_reload(const struct device *dev, uint32_t channel, uint32
 }
 
 /* Function to start a DMA transfer */
-static int dma_siwx91x_start(const struct device *dev, uint32_t channel)
+static int siwx91x_dma_start(const struct device *dev, uint32_t channel)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
 	RSI_UDMA_DESC_T *udma_table = cfg->sram_desc_addr;
@@ -296,7 +296,7 @@ static int dma_siwx91x_start(const struct device *dev, uint32_t channel)
 }
 
 /* Function to stop a DMA transfer */
-static int dma_siwx91x_stop(const struct device *dev, uint32_t channel)
+static int siwx91x_dma_stop(const struct device *dev, uint32_t channel)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
@@ -315,7 +315,7 @@ static int dma_siwx91x_stop(const struct device *dev, uint32_t channel)
 }
 
 /* Function to fetch DMA channel status */
-static int dma_siwx91x_get_status(const struct device *dev, uint32_t channel,
+static int siwx91x_dma_get_status(const struct device *dev, uint32_t channel,
 				  struct dma_status *stat)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
@@ -342,7 +342,7 @@ static int dma_siwx91x_get_status(const struct device *dev, uint32_t channel,
 }
 
 /* Function to initialize DMA peripheral */
-static int dma_siwx91x_init(const struct device *dev)
+static int siwx91x_dma_init(const struct device *dev)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
@@ -375,7 +375,7 @@ static int dma_siwx91x_init(const struct device *dev)
 	return 0;
 }
 
-static void dma_siwx91x_isr(const struct device *dev)
+static void siwx91x_dma_isr(const struct device *dev)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
@@ -424,11 +424,11 @@ out:
 
 /* Store the Si91x DMA APIs */
 static DEVICE_API(dma, siwx91x_dma_api) = {
-	.config = dma_siwx91x_configure,
-	.reload = dma_siwx91x_reload,
-	.start = dma_siwx91x_start,
-	.stop = dma_siwx91x_stop,
-	.get_status = dma_siwx91x_get_status,
+	.config = siwx91x_dma_configure,
+	.reload = siwx91x_dma_reload,
+	.start = siwx91x_dma_start,
+	.stop = siwx91x_dma_stop,
+	.get_status = siwx91x_dma_get_status,
 };
 
 #define SIWX91X_DMA_INIT(inst)                                                                     \
@@ -438,7 +438,7 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 	};                                                                                         \
 	static void siwx91x_dma##inst##_irq_configure(void)                                        \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ(inst, irq), DT_INST_IRQ(inst, priority), dma_siwx91x_isr,  \
+		IRQ_CONNECT(DT_INST_IRQ(inst, irq), DT_INST_IRQ(inst, priority), siwx91x_dma_isr,  \
 			    DEVICE_DT_INST_GET(inst), 0);                                          \
 		irq_enable(DT_INST_IRQ(inst, irq));                                                \
 	}                                                                                          \
@@ -451,7 +451,7 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 		.sram_desc_addr = (RSI_UDMA_DESC_T *)DT_INST_PROP(inst, silabs_sram_desc_addr),    \
 		.irq_configure = siwx91x_dma##inst##_irq_configure,                                \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &dma_siwx91x_init, NULL, &dma##inst##_data, &dma##inst##_cfg,  \
+	DEVICE_DT_INST_DEFINE(inst, &siwx91x_dma_init, NULL, &dma##inst##_data, &dma##inst##_cfg,  \
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &siwx91x_dma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_DMA_INIT)
