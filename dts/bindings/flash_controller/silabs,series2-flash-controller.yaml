@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silicon Labs Series 2 flash controller
+
+compatible: "silabs,series2-flash-controller"
+
+include: flash-controller.yaml
