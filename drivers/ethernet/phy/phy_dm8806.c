@@ -673,9 +673,9 @@ static DEVICE_API(ethphy, phy_dm8806_api) = {
 	static const struct phy_dm8806_config phy_dm8806_config_##n = {                            \
 		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),                                             \
 		.phy_addr = DT_INST_REG_ADDR(n),                                                   \
-		.switch_addr = DT_PROP(DT_NODELABEL(dm8806_phy##n), reg_switch),                   \
-		.gpio_int = GPIO_DT_SPEC_INST_GET(n, interrupt_gpio),                              \
-		.gpio_rst = GPIO_DT_SPEC_INST_GET(n, reset_gpio),                                  \
+		.switch_addr = DT_INST_PROP(n, reg_switch),                                        \
+		.gpio_int = GPIO_DT_SPEC_INST_GET(n, int_gpios),                                   \
+		.gpio_rst = GPIO_DT_SPEC_INST_GET(n, reset_gpios),                                 \
 	}
 
 #define DM8806_PHY_INITIALIZE(n)                                                                   \
