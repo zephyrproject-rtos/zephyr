@@ -19,6 +19,7 @@ supported:
   - dac
   - flash
   - gpio
+  - minimal
   - pwm
   - usb_device
   - usbd

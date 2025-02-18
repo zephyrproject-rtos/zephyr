@@ -3,6 +3,8 @@ sample:
   name: minimal
 common:
   tags: footprint
+  depends_on:
+    - minimal
   harness: console
   harness_config:
     type: one_line

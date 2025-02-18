@@ -9,11 +9,12 @@ toolchain:
   - zephyr
   - llvm
 supported:
-  - pci
-  - nvs
-  - netif:serial-net
-  - eeprom
   - can
+  - eeprom
+  - minimal
+  - netif:serial-net
+  - nvs
+  - pci
   - rtc
 testing:
   default: true

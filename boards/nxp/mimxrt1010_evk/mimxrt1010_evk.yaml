@@ -25,6 +25,7 @@ supported:
   - flash
   - gpio
   - i2c
+  - minimal
   - spi
   - usb_device
 vendor: nxp
