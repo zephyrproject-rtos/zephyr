@@ -880,6 +880,10 @@ static int tcp_conn_close(struct tcp *conn, int status)
 			conn->connect_cb = NULL;
 		}
 
+		if (status == -ECONNREFUSED) {
+			conn->context->user_data = INT_TO_POINTER(ECONNREFUSED);
+		}
+
 		conn->in_connect = false;
 		k_sem_reset(&conn->connect_sem);
 	} else if (conn->context->recv_cb) {
@@ -3952,7 +3956,11 @@ int net_tcp_connect(struct net_context *context,
 
 	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
 		if (conn->state == TCP_UNUSED || conn->state == TCP_CLOSED) {
-			ret = -ENOTCONN;
+			if (POINTER_TO_INT(context->user_data) == ECONNREFUSED) {
+				ret = -ECONNREFUSED;
+			} else {
+				ret = -ENOTCONN;
+			}
 			goto out_unref;
 		} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
 			   conn->state != TCP_ESTABLISHED) {
