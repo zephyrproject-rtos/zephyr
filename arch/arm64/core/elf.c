@@ -6,6 +6,7 @@
 
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/llext_internal.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
@@ -430,12 +431,18 @@ static int imm_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t loc
  * @retval -ENOTSUP Unsupported relocation
  * @retval -ENOEXEC Invalid relocation
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc, uintptr_t sym_base_addr, const char *sym_name,
-		      uintptr_t load_bias)
+int arch_elf_relocate(struct llext_loader *ldr, const struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr, const elf_sym_t *sym, uintptr_t loc,
+		      uintptr_t sym_base_addr, const char *sym_name)
 {
 	int ret = 0;
 	bool overflow_check = true;
 	elf_word reloc_type = ELF_R_TYPE(rel->r_info);
+
+	ARG_UNUSED(ext);
+	ARG_UNUSED(ldr);
+	ARG_UNUSED(shdr);
+	ARG_UNUSED(sym);
 
 	switch (reloc_type) {
 	case R_ARM_NONE:

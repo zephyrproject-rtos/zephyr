@@ -7,6 +7,7 @@
 
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/llext_internal.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
@@ -316,11 +317,17 @@ static void thm_movs_handler(elf_word reloc_type, uint32_t loc,
  * Do NOT mix them with not 'Thumb instructions' in the below switch/case: they are not
  * intended to work together.
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc, uintptr_t sym_base_addr,
-			const char *sym_name, uintptr_t load_bias)
+int arch_elf_relocate(struct llext_loader *ldr, const struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr, const elf_sym_t *sym, uintptr_t loc,
+		      uintptr_t sym_base_addr, const char *sym_name)
 {
 	int ret = 0;
 	elf_word reloc_type = ELF32_R_TYPE(rel->r_info);
+	const uintptr_t load_bias = llext_text_start(ext);
+
+	ARG_UNUSED(ldr);
+	ARG_UNUSED(shdr);
+	ARG_UNUSED(sym);
 
 	LOG_DBG("%d %lx %lx %s", reloc_type, loc, sym_base_addr, sym_name);
 

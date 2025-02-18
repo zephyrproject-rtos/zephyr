@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#include <zephyr/llext/llext.h>
+
 /**
  * @file
  * @brief Private header for linkable loadable extensions
@@ -18,8 +20,11 @@ extern "C" {
 
 /** @cond ignore */
 
-struct llext_loader;
-struct llext;
+static inline const char *llext_string(const struct llext_loader *ldr, const struct llext *ext,
+				       enum llext_mem mem_idx, unsigned int idx)
+{
+	return (char *)ext->mem[mem_idx] + idx;
+}
 
 struct llext_elf_sect_map {
 	enum llext_mem mem_idx;
@@ -27,6 +32,18 @@ struct llext_elf_sect_map {
 };
 
 const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx);
+
+static inline uintptr_t llext_text_start(const struct llext *ext)
+{
+	return (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
+}
+
+/**
+ * Determine address of a symbol.
+ */
+int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *link_addr,
+			const elf_rela_t *rel, const elf_sym_t *sym, const char *name,
+			const elf_shdr_t *shdr);
 
 /** @endcond */
 
