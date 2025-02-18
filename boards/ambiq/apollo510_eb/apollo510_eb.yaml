@@ -15,6 +15,7 @@ supported:
   - sdio
   - sdhc
   - dsi
+  - pdm
 testing:
   ignore_tags:
     - net
