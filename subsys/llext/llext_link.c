@@ -26,8 +26,8 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 #define SYM_NAME_OR_SLID(name, slid) name
 #endif
 
-__weak int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
-			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias)
+__weak int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *rel,
+			     const elf_shdr_t *shdr)
 {
 	return -ENOTSUP;
 }
@@ -142,22 +142,31 @@ static const void *llext_find_extension_sym(const char *sym_name, struct llext *
 	return se.addr;
 }
 
-/**
- * @brief Determine address of a symbol.
- *
- * @param ext llext extension
- * @param ldr llext loader
- * @param link_addr (output) resolved address
- * @param rel relocation entry
- * @param sym symbol entry
- * @param name symbol name
- * @param shdr section header
- *
- * @return 0 for OK, negative for error
+/*
+ * Read the symbol entry corresponding to a relocation from the binary.
  */
-static int llext_lookup_symbol(struct llext *ext, struct llext_loader *ldr, uintptr_t *link_addr,
-			       const elf_rela_t *rel, const elf_sym_t *sym, const char *name,
-			       const elf_shdr_t *shdr)
+int llext_read_symbol(struct llext_loader *ldr, struct llext *ext, const elf_rela_t *rel,
+		      elf_sym_t *sym)
+{
+	int ret;
+
+	ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset
+		+ ELF_R_SYM(rel->r_info) * sizeof(elf_sym_t));
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = llext_read(ldr, sym, sizeof(elf_sym_t));
+
+	return ret;
+}
+
+/*
+ * Determine address of a symbol.
+ */
+int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *link_addr,
+			const elf_rela_t *rel, const elf_sym_t *sym, const char *name,
+			const elf_shdr_t *shdr)
 {
 	if (ELF_R_SYM(rel->r_info) == 0) {
 		/*
@@ -218,7 +227,6 @@ static int llext_lookup_symbol(struct llext *ext, struct llext_loader *ldr, uint
 
 	return 0;
 }
-
 
 static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_t *shdr,
 			   const struct llext_load_param *ldr_parm, elf_shdr_t *tgt)
@@ -359,7 +367,6 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 {
 	uintptr_t sect_base = 0;
 	elf_rela_t rel;
-	elf_sym_t sym;
 	elf_word rel_cnt = 0;
 	const char *name;
 	int i, ret;
@@ -446,7 +453,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			return -ENOEXEC;
 		}
 
-		sect_base = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
+		sect_base = (uintptr_t) llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
 
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
@@ -460,47 +467,49 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 				return ret;
 			}
 
-			/* get corresponding symbol */
-			ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset
-				    + ELF_R_SYM(rel.r_info) * sizeof(elf_sym_t));
-			if (ret != 0) {
-				return ret;
+#ifdef CONFIG_LLEXT_LOG_LEVEL
+			if (CONFIG_LLEXT_LOG_LEVEL >= LOG_LEVEL_INF) {
+				uintptr_t link_addr;
+				uintptr_t op_loc =
+					llext_get_reloc_instruction_location(ldr, ext,
+									     shdr->sh_info,
+									     &rel);
+				elf_sym_t sym;
+
+				ret = llext_read_symbol(ldr, ext, &rel, &sym);
+
+				if (ret != 0) {
+					return ret;
+				}
+
+				name = llext_symbol_name(ldr, ext, &sym);
+
+				ret = llext_lookup_symbol(ldr, ext, &link_addr, &rel, &sym, name,
+							  shdr);
+
+				if (ret != 0) {
+					LOG_ERR("Could not find symbol %s!", name);
+					return ret;
+				}
+
+				LOG_DBG("relocation %d:%d info 0x%zx (type %zd, sym %zd) offset %zd"
+					" sym_name %s sym_type %d sym_bind %d sym_ndx %d",
+					i, j, (size_t)rel.r_info, (size_t)ELF_R_TYPE(rel.r_info),
+					(size_t)ELF_R_SYM(rel.r_info), (size_t)rel.r_offset,
+					name, ELF_ST_TYPE(sym.st_info),
+					ELF_ST_BIND(sym.st_info), sym.st_shndx);
+
+				LOG_INF("writing relocation symbol %s type %zd sym %zd at addr "
+					"0x%lx addr 0x%lx",
+					name, (size_t)ELF_R_TYPE(rel.r_info),
+					(size_t)ELF_R_SYM(rel.r_info),
+					op_loc, link_addr);
 			}
+#endif /* CONFIG_LLEXT_LOG_LEVEL */
 
-			ret = llext_read(ldr, &sym, sizeof(elf_sym_t));
-			if (ret != 0) {
-				return ret;
-			}
-
-			name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
-
-			LOG_DBG("relocation %d:%d info 0x%zx (type %zd, sym %zd) offset %zd "
-				"sym_name %s sym_type %d sym_bind %d sym_ndx %d",
-				i, j, (size_t)rel.r_info, (size_t)ELF_R_TYPE(rel.r_info),
-				(size_t)ELF_R_SYM(rel.r_info), (size_t)rel.r_offset,
-				name, ELF_ST_TYPE(sym.st_info),
-				ELF_ST_BIND(sym.st_info), sym.st_shndx);
-
-			uintptr_t link_addr, op_loc;
-
-			op_loc = sect_base + rel.r_offset;
-
-			ret = llext_lookup_symbol(ext, ldr, &link_addr, &rel, &sym, name, shdr);
-
-			if (ret != 0) {
-				LOG_ERR("Failed to lookup symbol in rela section %d entry %d!", i,
-					j);
-				return ret;
-			}
-
-			LOG_INF("writing relocation symbol %s type %zd sym %zd at addr 0x%lx "
-				"addr 0x%lx",
-				name, (size_t)ELF_R_TYPE(rel.r_info), (size_t)ELF_R_SYM(rel.r_info),
-				op_loc, link_addr);
 
 			/* relocation */
-			ret = arch_elf_relocate(&rel, op_loc, link_addr, name,
-					     (uintptr_t)ext->mem[LLEXT_MEM_TEXT]);
+			ret = arch_elf_relocate(ldr, ext, &rel, shdr);
 			if (ret != 0) {
 				return ret;
 			}
