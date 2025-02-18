@@ -8,6 +8,7 @@
 #include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/irq.h>
 
 #include "../spi_context.h"
@@ -15,8 +16,6 @@
 #if CONFIG_NXP_LP_FLEXCOMM
 #include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
 #endif
-
-#include <fsl_lpspi.h>
 
 /* If any hardware revisions change this, make it into a DT property.
  * DONT'T make #ifdefs here by platform.
@@ -30,10 +29,6 @@
 #define DEV_CFG(_dev)  ((const struct spi_mcux_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct spi_mcux_data *)(_dev)->data)
 
-/* flag for SDK API for master transfers */
-#define LPSPI_MASTER_XFER_CFG_FLAGS(slave)                                                         \
-	kLPSPI_MasterPcsContinuous | (slave << LPSPI_MASTER_PCS_SHIFT)
-
 struct spi_mcux_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
 	const struct device *clock_dev;
@@ -43,8 +38,8 @@ struct spi_mcux_config {
 	uint32_t sck_pcs_delay;
 	uint32_t transfer_delay;
 	const struct pinctrl_dev_config *pincfg;
-	lpspi_pin_config_t data_pin_config;
-	bool output_config;
+	uint8_t data_pin_config;
+	bool tristate_output;
 	uint8_t tx_fifo_size;
 	uint8_t rx_fifo_size;
 	uint8_t irqn;
@@ -58,7 +53,7 @@ struct spi_mcux_data {
 	size_t transfer_len;
 };
 
-/* common configure function that verifies spi_cfg validity and set up configuration parameters */
+/* verifies spi_cfg validity and set up configuration of hardware for xfer */
 int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg);
 
 /* Does these things:
@@ -74,9 +69,6 @@ int spi_nxp_init_common(const struct device *dev);
 int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg);
 
 void lpspi_wait_tx_fifo_empty(const struct device *dev);
-
-/* Argument to MCUX SDK IRQ handler */
-#define LPSPI_IRQ_HANDLE_ARG COND_CODE_1(CONFIG_NXP_LP_FLEXCOMM, (LPSPI_GetInstance(base)), (base))
 
 #define SPI_MCUX_LPSPI_IRQ_FUNC_LP_FLEXCOMM(n)                                                     \
 	nxp_lp_flexcomm_setirqhandler(DEVICE_DT_GET(DT_INST_PARENT(n)), DEVICE_DT_INST_GET(n),     \
@@ -108,8 +100,8 @@ void lpspi_wait_tx_fifo_empty(const struct device *dev);
 		.transfer_delay = UTIL_AND(DT_INST_NODE_HAS_PROP(n, transfer_delay),               \
 					   DT_INST_PROP(n, transfer_delay)),                       \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.data_pin_config = DT_INST_ENUM_IDX(n, data_pin_config),                           \
-		.output_config = DT_INST_PROP(n, tristate_output),                                 \
+		.data_pin_config = (uint8_t)DT_INST_ENUM_IDX(n, data_pin_config),                  \
+		.tristate_output = DT_INST_PROP(n, tristate_output),                               \
 		.rx_fifo_size = (uint8_t)DT_INST_PROP(n, rx_fifo_size),                            \
 		.tx_fifo_size = (uint8_t)DT_INST_PROP(n, tx_fifo_size),                            \
 		.irqn = (uint8_t)LPSPI_IRQN(n),                                                    \
