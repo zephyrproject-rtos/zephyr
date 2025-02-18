@@ -6,3 +6,9 @@ description: Silicon Labs Series 2 flash controller
 compatible: "silabs,series2-flash-controller"
 
 include: flash-controller.yaml
+
+properties:
+  low-power-write:
+    type: boolean
+    description: |
+      Reduce current consumption during write, doubling write time
