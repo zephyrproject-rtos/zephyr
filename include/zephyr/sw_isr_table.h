@@ -15,7 +15,6 @@
 #define ZEPHYR_INCLUDE_SW_ISR_TABLE_H_
 
 #if !defined(_ASMLANGUAGE)
-#include <zephyr/device.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/types.h>
 #include <zephyr/toolchain.h>
@@ -24,6 +23,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct device;
 
 /* Default vector for the IRQ vector table */
 void _isr_wrapper(void);
