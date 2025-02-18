@@ -2994,7 +2994,7 @@ static int cdns_i3c_config_get(const struct device *dev, enum i3c_config_type ty
 		uint32_t slv_status1 = sys_read32(dev_config->base + SLV_STATUS1);
 
 		/* if we are currently a target */
-		target_config->enable =
+		target_config->enabled =
 			!!!(sys_read32(dev_config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE);
 		if (data->common.ctrl_config.is_secondary) {
 			target_config->dynamic_addr = SLV_STATUS1_DA(slv_status1);
