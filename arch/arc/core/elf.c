@@ -6,6 +6,7 @@
 
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/llext_internal.h>
 #include <zephyr/llext/loader.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
@@ -31,12 +32,18 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
  * https://github.com/foss-for-synopsys-dwc-arc-processors/arc-ABI-manual/blob/master/ARCv2_ABI.pdf
  * https://github.com/zephyrproject-rtos/binutils-gdb
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc, uintptr_t sym_base_addr, const char *sym_name,
-		      uintptr_t load_bias)
+int arch_elf_relocate(struct llext_loader *ldr, const struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr, const elf_sym_t *sym, uintptr_t loc,
+		      uintptr_t sym_base_addr, const char *sym_name)
 {
 	int ret = 0;
 	uint32_t insn = UNALIGNED_GET((uint32_t *)loc);
 	uint32_t value;
+	const uintptr_t load_bias = llext_text_start(ext);
+
+	ARG_UNUSED(ldr);
+	ARG_UNUSED(shdr);
+	ARG_UNUSED(sym);
 
 	sym_base_addr += rel->r_addend;
 

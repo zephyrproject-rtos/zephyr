@@ -26,8 +26,9 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 #define SYM_NAME_OR_SLID(name, slid) name
 #endif
 
-__weak int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
-			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias)
+__weak int arch_elf_relocate(struct llext_loader *ldr, const struct llext *ext, elf_rela_t *rel,
+			     const elf_shdr_t *shdr, const elf_sym_t *sym, uintptr_t loc,
+			     uintptr_t sym_base_addr, const char *sym_name)
 {
 	return -ENOTSUP;
 }
@@ -142,20 +143,10 @@ static const void *llext_find_extension_sym(const char *sym_name, struct llext *
 	return se.addr;
 }
 
-/**
- * @brief Determine address of a symbol.
- *
- * @param ext llext extension
- * @param ldr llext loader
- * @param link_addr (output) resolved address
- * @param rel relocation entry
- * @param sym symbol entry
- * @param name symbol name
- * @param shdr section header
- *
- * @return 0 for OK, negative for error
+/*
+ * Determine address of a symbol.
  */
-static int llext_lookup_symbol(struct llext *ext, struct llext_loader *ldr, uintptr_t *link_addr,
+static int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *link_addr,
 			       const elf_rela_t *rel, const elf_sym_t *sym, const char *name,
 			       const elf_shdr_t *shdr)
 {
@@ -218,7 +209,6 @@ static int llext_lookup_symbol(struct llext *ext, struct llext_loader *ldr, uint
 
 	return 0;
 }
-
 
 static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_t *shdr,
 			   const struct llext_load_param *ldr_parm, elf_shdr_t *tgt)
@@ -485,7 +475,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 			op_loc = sect_base + rel.r_offset;
 
-			ret = llext_lookup_symbol(ext, ldr, &link_addr, &rel, &sym, name, shdr);
+			ret = llext_lookup_symbol(ldr, ext, &link_addr, &rel, &sym, name, shdr);
 
 			if (ret != 0) {
 				LOG_ERR("Failed to lookup symbol in rela section %d entry %d!", i,
@@ -499,8 +489,8 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 				op_loc, link_addr);
 
 			/* relocation */
-			ret = arch_elf_relocate(&rel, op_loc, link_addr, name,
-					     (uintptr_t)ext->mem[LLEXT_MEM_TEXT]);
+			ret = arch_elf_relocate(ldr, ext, &rel, shdr, &sym, op_loc, link_addr,
+						name);
 			if (ret != 0) {
 				return ret;
 			}

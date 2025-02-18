@@ -28,6 +28,11 @@ struct llext_elf_sect_map {
 
 const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx);
 
+static inline uintptr_t llext_text_start(const struct llext *ext)
+{
+	return (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
+}
+
 /** @endcond */
 
 #ifdef __cplusplus

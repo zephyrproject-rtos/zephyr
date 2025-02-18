@@ -68,11 +68,13 @@ static long long last_u_type_jump_target;
  * https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-elf.adoc
  *
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc_unsigned, uintptr_t sym_base_addr_unsigned,
-		      const char *sym_name, uintptr_t load_bias)
+int arch_elf_relocate(struct llext_loader *ldr, const struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr, const elf_sym_t *sym, uintptr_t loc_unsigned,
+		      uintptr_t sym_base_addr_unsigned, const char *sym_name)
 {
 	/* FIXME currently, RISC-V relocations all fit in ELF_32_R_TYPE */
 	elf_word reloc_type = ELF32_R_TYPE(rel->r_info);
+	const uintptr_t load_bias = llext_text_start(ext);
 	/*
 	 * The RISC-V specification uses the following symbolic names for the relocations:
 	 *
@@ -104,6 +106,10 @@ int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc_unsigned, uintptr_t sym_bas
 	LOG_DBG("Relocating symbol %s at %p with base address %p load address %p type %" PRIu64,
 		sym_name, (void *)loc, (void *)sym_base_addr, (void *)load_bias,
 		(uint64_t)reloc_type);
+
+	ARG_UNUSED(ldr);
+	ARG_UNUSED(shdr);
+	ARG_UNUSED(sym);
 
 	/* FIXME not all types of relocations currently supported, especially TLS */
 
