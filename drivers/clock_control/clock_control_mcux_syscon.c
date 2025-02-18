@@ -359,7 +359,6 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #endif /* MRT */
 #if defined(CONFIG_PWM_MCUX_SCTIMER)
 	case MCUX_SCTIMER_CLK:
-#endif
 #ifdef CONFIG_SOC_SERIES_RW6XX
 		/* RW6XX uses core clock for SCTimer, not bus clock */
 		*rate = CLOCK_GetCoreSysClkFreq();
@@ -368,6 +367,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	case MCUX_BUS_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
 		break;
+#endif
 #endif
 
 #if defined(CONFIG_I3C_MCUX)
