@@ -24,6 +24,8 @@
 #define LPSPI_CHIP_SELECT_COUNT   4
 #define LPSPI_MIN_FRAME_SIZE_BITS 8
 
+#define LPSPI_INTERRUPT_BITS GENMASK(8, 13)
+
 /* Required by DEVICE_MMIO_NAMED_* macros */
 #define DEV_CFG(_dev)  ((const struct spi_mcux_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct spi_mcux_data *)(_dev)->data)
