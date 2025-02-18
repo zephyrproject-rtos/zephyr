@@ -23,7 +23,7 @@
 #endif
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(openamp_rsc_table);
 
 #define SHM_DEVICE_NAME	"shm"
 
@@ -133,7 +133,7 @@ int mailbox_notify(void *priv, uint32_t id)
 	ARG_UNUSED(priv);
 
 	LOG_DBG("%s: msg received", __func__);
-	ipm_send(ipm_handle, 0, id, NULL, 0);
+	ipm_send(ipm_handle, 0, id, &id, 4);
 
 	return 0;
 }
