@@ -1037,16 +1037,13 @@ static int nxp_wifi_disconnect(const struct device *dev)
 static int nxp_wifi_uap_disconnect_sta(const struct device *dev, const uint8_t *mac)
 {
 	int ret;
-	const uint8_t *const_mac = mac;
 
 	if (!is_uap_started()) {
 		LOG_ERR("Please start uap first!");
 		return -EAGAIN;
 	}
 
-	t_u16 reason_code = WLAN_REASON_CODE_PREV_AUTH_NOT_VALID;
-
-	ret = wlan_uap_disconnect_sta((uint8_t *)const_mac);
+	ret = wlan_uap_disconnect_sta((uint8_t *)mac);
 	if (ret != WM_SUCCESS) {
 		LOG_ERR("Failed to disconnect STA");
 	}
