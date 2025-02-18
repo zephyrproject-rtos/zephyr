@@ -486,6 +486,20 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
 	return 0;
 }
 
+int modem_cmd_send_data_nolock(struct modem_iface *iface,
+			       const uint8_t *buf, size_t len)
+{
+#if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
+	if (len > 256) {
+		/* Truncate the message, since too long log messages gets dropped somewhere. */
+		LOG_HEXDUMP_DBG(buf, 256, "SENT DIRECT DATA (truncated)");
+	} else {
+		LOG_HEXDUMP_DBG(buf, len, "SENT DIRECT DATA");
+	}
+#endif
+	return iface->write(iface, buf, len);
+}
+
 int modem_cmd_send_ext(struct modem_iface *iface,
 		       struct modem_cmd_handler *handler,
 		       const struct modem_cmd *handler_cmds,
