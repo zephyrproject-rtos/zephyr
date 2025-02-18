@@ -1,0 +1,8 @@
+board:
+  name: chipyard_riscv64
+  full_name: Chipyard RISCV64 SoCs
+  vendor: chipyard 
+  socs:
+    - name: spike_virt_riscv64
+      variants:
+        - name: smp
