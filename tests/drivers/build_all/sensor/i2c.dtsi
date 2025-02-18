@@ -1251,3 +1251,9 @@ test_i2c_xbr818: xbr818@aa {
 	int-gpios = <&test_gpio 0 0>;
 	i2c-en-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_rrh46410: rrh46410@ab {
+	compatible = "renesas,rrh46410";
+	reg = <0xab>;
+	reset-gpios = <&test_gpio 0 0>;
+};
