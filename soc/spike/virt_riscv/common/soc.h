@@ -1,0 +1,7 @@
+
+#ifndef __CHIPYARD_SOC_H_
+#define __CHIPYARD_SOC_H_
+
+#define SIFIVE_PERIPHERAL_CLOCK_FREQUENCY 50000000
+
+#endif /* __CHIPYARD_SOC_H_ */
