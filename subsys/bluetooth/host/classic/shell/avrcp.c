@@ -49,6 +49,11 @@ static void avrcp_unit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_unit_inf
 		       rsp->unit_type, rsp->company_id);
 }
 
+static void avrcp_unit_info_req(struct bt_avrcp *avrcp)
+{
+	bt_shell_print("AVRCP unit info request received");
+}
+
 static void avrcp_subunit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_subunit_info_rsp *rsp)
 {
 	int i;
@@ -80,6 +85,7 @@ static struct bt_avrcp_cb avrcp_cb = {
 	.unit_info_rsp = avrcp_unit_info_rsp,
 	.subunit_info_rsp = avrcp_subunit_info_rsp,
 	.passthrough_rsp = avrcp_passthrough_rsp,
+	.unit_info_req = avrcp_unit_info_req,
 };
 
 static int register_cb(const struct shell *sh)
@@ -169,6 +175,34 @@ static int cmd_get_unit_info(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_send_unit_info_rsp(const struct shell *sh, int32_t argc, char *argv[])
+{
+	struct bt_avrcp_unit_info_rsp rsp;
+	int err;
+
+	if (!avrcp_registered) {
+		if (register_cb(sh) != 0) {
+			return -ENOEXEC;
+		}
+	}
+
+	rsp.unit_type = BT_AVRCP_SUBUNIT_TYPE_PANEL;
+	rsp.company_id = 0x001958; /*BT SIG registered Company ID*/
+
+	if (default_avrcp != NULL) {
+		err = bt_avrcp_send_unit_info_rsp(default_avrcp, &rsp);
+		if (!err) {
+			bt_shell_print("AVRCP send unit info response");
+		} else {
+			shell_error(sh, "Failed to send unit info response");
+		}
+	} else {
+		shell_error(sh, "AVRCP is not connected");
+	}
+
+	return 0;
+}
+
 static int cmd_get_subunit_info(const struct shell *sh, int32_t argc, char *argv[])
 {
 	if (!avrcp_registered) {
@@ -223,6 +257,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(connect, NULL, "connect AVRCP", cmd_connect, 1, 0),
 	SHELL_CMD_ARG(disconnect, NULL, "disconnect AVRCP", cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(get_unit, NULL, "get unit info", cmd_get_unit_info, 1, 0),
+	SHELL_CMD_ARG(send_unit_rsp, NULL, "send unit info response", cmd_send_unit_info_rsp, 1, 0),
 	SHELL_CMD_ARG(get_subunit, NULL, "get subunit info", cmd_get_subunit_info, 1, 0),
 	SHELL_CMD_ARG(play, NULL, "request a play at the remote player", cmd_play, 1, 0),
 	SHELL_CMD_ARG(pause, NULL, "request a pause at the remote player", cmd_pause, 1, 0),
