@@ -18,7 +18,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/drivers/interrupt_controller/gpio_intc_stm32.h>
+#include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/misc/stm32_wkup_pins/stm32_wkup_pins.h>
@@ -224,11 +224,11 @@ static inline void gpio_stm32_disable_pin_irqs(uint32_t port, gpio_pin_t pin)
 		return;
 	}
 #endif
-	stm32_gpio_irq_line_t irq_line = stm32_gpio_intc_get_pin_irq_line(port, pin);
-
-	stm32_gpio_intc_disable_line(irq_line);
-	stm32_gpio_intc_remove_irq_callback(irq_line);
-	stm32_gpio_intc_select_line_trigger(irq_line, STM32_GPIO_IRQ_TRIG_NONE);
+	/**
+	 * GPIO pins are connected to EXTI lines 0 to 15 and directly represent EXTI
+	 * line number
+	 */
+	stm32_exti_disable(pin);
 }
 
 /**
@@ -585,16 +585,15 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	struct gpio_stm32_data *data = dev->data;
-	const stm32_gpio_irq_line_t irq_line = stm32_gpio_intc_get_pin_irq_line(cfg->port, pin);
 	uint32_t irq_trigger = 0;
 	int err = 0;
 
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
 	if (mode == GPIO_INT_MODE_DISABLE_ONLY) {
-		stm32_gpio_intc_disable_line(irq_line);
+		stm32_exti_disable_irq(pin);
 		goto exit;
 	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
-		stm32_gpio_intc_enable_line(irq_line);
+		stm32_exti_enable_irq(pin);
 		goto exit;
 	}
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
@@ -612,10 +611,10 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		} else {
 			switch (trig) {
 			case GPIO_INT_TRIG_LOW:
-				irq_trigger = STM32_GPIO_IRQ_TRIG_LOW_LEVEL;
+				irq_trigger = STM32_EXTI_TRIG_LOW_LEVEL;
 				break;
 			case GPIO_INT_TRIG_HIGH:
-				irq_trigger = STM32_GPIO_IRQ_TRIG_HIGH_LEVEL;
+				irq_trigger = STM32_EXTI_TRIG_HIGH_LEVEL;
 				break;
 			default:
 				err = -EINVAL;
@@ -625,13 +624,13 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 	} else {
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
-			irq_trigger = STM32_GPIO_IRQ_TRIG_FALLING;
+			irq_trigger = STM32_EXTI_TRIG_FALLING;
 			break;
 		case GPIO_INT_TRIG_HIGH:
-			irq_trigger = STM32_GPIO_IRQ_TRIG_RISING;
+			irq_trigger = STM32_EXTI_TRIG_RISING;
 			break;
 		case GPIO_INT_TRIG_BOTH:
-			irq_trigger = STM32_GPIO_IRQ_TRIG_BOTH;
+			irq_trigger = STM32_EXTI_TRIG_BOTH;
 			break;
 		default:
 			err = -EINVAL;
@@ -639,18 +638,15 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		}
 	}
 
-	if (stm32_gpio_intc_set_irq_callback(irq_line, gpio_stm32_isr, data) != 0) {
-		err = -EBUSY;
-		goto exit;
-	}
-
 #if defined(CONFIG_EXTI_STM32)
 	stm32_exti_set_line_src_port(pin, cfg->port);
 #endif
 
-	stm32_gpio_intc_select_line_trigger(irq_line, irq_trigger);
-
-	stm32_gpio_intc_enable_line(irq_line);
+	err = stm32_exti_enable(pin, irq_trigger, STM32_EXTI_MODE_IT, gpio_stm32_isr,
+						  data);
+	if (err != 0) {
+		err = -EBUSY;
+	}
 
 exit:
 	return err;
