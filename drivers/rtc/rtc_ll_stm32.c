@@ -78,7 +78,7 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 /* Timeout in microseconds used to wait for flags */
 #define RTC_TIMEOUT 1000000
 
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 #define RTC_STM32_ALARMS_COUNT	DT_INST_PROP(0, alarms_count)
 
 #define RTC_STM32_ALRM_A	0U
@@ -95,7 +95,7 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 #else
 #define RTC_STM32_EXTI_LINE	0
 #endif /* DT_INST_NODE_HAS_PROP(0, alrm_exti_line) */
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 #if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
 /*
@@ -120,7 +120,7 @@ struct rtc_stm32_config {
 #endif
 };
 
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 struct rtc_stm32_alrm {
 	LL_RTC_AlarmTypeDef ll_rtc_alrm;
 	/* user-defined alarm mask, values from RTC_ALARM_TIME_MASK */
@@ -129,14 +129,14 @@ struct rtc_stm32_alrm {
 	void *user_data;
 	bool is_pending;
 };
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 struct rtc_stm32_data {
 	struct k_mutex lock;
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 	struct rtc_stm32_alrm rtc_alrm_a;
 	struct rtc_stm32_alrm rtc_alrm_b;
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 };
 
 static int rtc_stm32_configure(const struct device *dev)
@@ -185,7 +185,7 @@ static int rtc_stm32_configure(const struct device *dev)
 	return err;
 }
 
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 static inline ErrorStatus rtc_stm32_init_alarm(RTC_TypeDef *rtc, uint32_t format,
 					LL_RTC_AlarmTypeDef *ll_alarm_struct, uint16_t id)
 {
@@ -329,7 +329,7 @@ static void rtc_stm32_irq_config(const struct device *dev)
 		    rtc_stm32_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 static int rtc_stm32_init(const struct device *dev)
 {
@@ -421,7 +421,7 @@ static int rtc_stm32_init(const struct device *dev)
 	LL_PWR_DisableBkUpAccess();
 #endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 	rtc_stm32_irq_config(dev);
 
 	ll_func_exti_enable_rtc_alarm_it(RTC_STM32_EXTI_LINE);
@@ -430,7 +430,7 @@ static int rtc_stm32_init(const struct device *dev)
 	memset(&(data->rtc_alrm_a), 0, sizeof(struct rtc_stm32_alrm));
 	memset(&(data->rtc_alrm_b), 0, sizeof(struct rtc_stm32_alrm));
 	k_mutex_unlock(&data->lock);
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 	return err;
 }
@@ -600,7 +600,7 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 	return 0;
 }
 
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 static void rtc_stm32_init_ll_alrm_struct(LL_RTC_AlarmTypeDef *p_rtc_alarm,
 					const struct rtc_time *timeptr, uint16_t mask)
 {
@@ -995,7 +995,7 @@ unlock:
 	k_mutex_unlock(&data->lock);
 	return ret;
 }
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 #ifdef CONFIG_RTC_CALIBRATION
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
@@ -1078,13 +1078,13 @@ static int rtc_stm32_get_calibration(const struct device *dev, int32_t *calibrat
 static DEVICE_API(rtc, rtc_stm32_driver_api) = {
 	.set_time = rtc_stm32_set_time,
 	.get_time = rtc_stm32_get_time,
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 	.alarm_get_supported_fields = rtc_stm32_alarm_get_supported_fields,
 	.alarm_set_time = rtc_stm32_alarm_set_time,
 	.alarm_get_time = rtc_stm32_alarm_get_time,
 	.alarm_set_callback = rtc_stm32_alarm_set_callback,
 	.alarm_is_pending = rtc_stm32_alarm_is_pending,
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 #ifdef CONFIG_RTC_CALIBRATION
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
 	!(defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SMOOTHCALIB_SUPPORT))
