@@ -9,6 +9,49 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi_common, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
 
+#if defined(LPSPI_RSTS) || defined(LPSPI_CLOCKS)
+static LPSPI_Type *const lpspi_bases[] = LPSPI_BASE_PTRS;
+#endif
+
+#ifdef LPSPI_RSTS
+static const reset_ip_name_t lpspi_resets[] = LPSPI_RSTS;
+
+static inline reset_ip_name_t lpspi_get_reset(LPSPI_Type *const base)
+{
+	reset_ip_name_t rst = -1; /* invalid initial value */
+
+	ARRAY_FOR_EACH(lpspi_bases, idx) {
+		if (lpspi_bases[idx] == base) {
+			rst = lpspi_resets[idx];
+			break;
+		}
+	}
+
+	__ASSERT_NO_MSG(rst != -1);
+	return rst;
+
+}
+#endif
+
+#ifdef LPSPI_CLOCKS
+static const clock_ip_name_t lpspi_clocks[] = LPSPI_CLOCKS;
+
+static inline clock_ip_name_t lpspi_get_clock(LPSPI_Type *const base)
+{
+	clock_ip_name_t clk = -1; /* invalid initial value */
+
+	ARRAY_FOR_EACH(lpspi_bases, idx) {
+		if (lpspi_bases[idx] == base) {
+			clk = lpspi_clocks[idx];
+			break;
+		}
+	}
+
+	__ASSERT_NO_MSG(clk != -1);
+	return clk;
+}
+#endif
+
 void lpspi_wait_tx_fifo_empty(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
@@ -128,6 +171,17 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	return 0;
 }
 
+static void lpspi_module_system_init(LPSPI_Type *base)
+{
+#ifdef LPSPI_CLOCKS
+	CLOCK_EnableClock(lpspi_get_clock(base));
+#endif
+
+#ifdef LPSPI_RSTS
+	RESET_ReleasePeripheralReset(lpspi_get_reset(base));
+#endif
+}
+
 int spi_nxp_init_common(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
@@ -143,6 +197,8 @@ int spi_nxp_init_common(const struct device *dev)
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
+
+	lpspi_module_system_init(base);
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
