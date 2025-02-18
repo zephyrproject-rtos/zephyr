@@ -47,7 +47,8 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 				struct in_addr *request_ip,
 				struct in_addr *current_ip);
 enum net_verdict net_arp_input(struct net_pkt *pkt,
-			       struct net_eth_hdr *eth_hdr);
+			       struct net_eth_addr *src,
+			       struct net_eth_addr *dst);
 
 int net_arp_clear_pending(struct net_if *iface,
 				struct in_addr *dst);
