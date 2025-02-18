@@ -2318,12 +2318,14 @@ static int dwc2_driver_preinit(const struct device *dev)
 
 static void udc_dwc2_lock(const struct device *dev)
 {
+	k_sched_lock();
 	udc_lock_internal(dev, K_FOREVER);
 }
 
 static void udc_dwc2_unlock(const struct device *dev)
 {
 	udc_unlock_internal(dev);
+	k_sched_unlock();
 }
 
 static void dwc2_on_bus_reset(const struct device *dev)
