@@ -16,7 +16,7 @@
 static void test_iface_init(struct net_if *iface)
 {
 	/* Fake link layer address is needed to silence assertions inside the net core */
-	static uint8_t fake_lladdr[] = { 0x01 };
+	static uint8_t fake_lladdr[] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x01 };
 
 	net_if_set_link_addr(iface, fake_lladdr, sizeof(fake_lladdr), NET_LINK_DUMMY);
 
