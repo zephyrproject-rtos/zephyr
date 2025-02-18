@@ -205,20 +205,23 @@ class TwisterConfigParser:
                 d[k] = v
 
         harness_config = copy.deepcopy(self.common.get("harness_config", {}))
-        if 'harness_config' in self.scenarios[name]:
+        if "harness_config" in self.scenarios[name]:
             if harness_config:
-                for k, v in self.scenarios[name]['harness_config'].items():
+                for k, v in self.scenarios[name]["harness_config"].items():
                     if k in harness_config:
                         if isinstance(harness_config[k], list):
-                            harness_config[k] += v if isinstance(v, list) else [v]
+                            if d["harness"] == "bsim":
+                                harness_config[k] += v if isinstance(v, list) else [v]
+                            else:
+                                harness_config[k] = v if isinstance(v, list) else [v]
                         else:
                             harness_config[k] = v
                     else:
                         harness_config[k] = v
             else:
-                harness_config = self.scenarios[name]['harness_config']
+                harness_config = self.scenarios[name]["harness_config"]
 
-        d['harness_config'] = harness_config
+        d["harness_config"] = harness_config
 
         # Compile conf files in to a single list. The order to apply them is:
         #  (1) CONF_FILEs extracted from common['extra_args']
