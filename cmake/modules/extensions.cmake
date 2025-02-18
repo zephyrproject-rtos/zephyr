@@ -94,12 +94,30 @@ endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_include_directories.html
 function(zephyr_include_directories)
-  target_include_directories(zephyr_interface INTERFACE ${ARGV})
+  # ensure paths are CMake-style
+  foreach(arg ${ARGV})
+    if(IS_DIRECTORY ${arg})
+      cmake_path(SET cmake_path "${arg}")
+      list(APPEND cmake_args "${cmake_path}")
+    else()
+      list(APPEND cmake_args "${arg}")
+    endif()
+  endforeach()
+  target_include_directories(zephyr_interface INTERFACE ${cmake_args})
 endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_include_directories.html
 function(zephyr_system_include_directories)
-  target_include_directories(zephyr_interface SYSTEM INTERFACE ${ARGV})
+  # ensure paths are CMake-style
+  foreach(arg ${ARGV})
+    if(IS_DIRECTORY ${arg})
+      cmake_path(SET cmake_path "${arg}")
+      list(APPEND cmake_args "${cmake_path}")
+    else()
+      list(APPEND cmake_args "${arg}")
+    endif()
+  endforeach()
+  target_include_directories(zephyr_interface SYSTEM INTERFACE ${cmake_args})
 endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_compile_definitions.html
