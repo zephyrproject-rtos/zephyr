@@ -35,7 +35,7 @@ static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t of
 	struct spi_context *ctx = &data->ctx;
 	uint8_t num_bytes = MIN(lpspi_data->word_size_bytes, ctx->rx_len);
 	uint8_t *buf = ctx->rx_buf + offset;
-	uint32_t word = LPSPI_ReadData(base);
+	uint32_t word = base->RDR;
 
 	if (!spi_context_rx_buf_on(ctx) && spi_context_rx_on(ctx)) {
 		/* receive no actual data if rx buf is NULL */
@@ -77,7 +77,7 @@ static inline void lpspi_handle_rx_irq(const struct device *dev)
 	uint8_t total_words_read = 0;
 	uint8_t words_read;
 
-	LPSPI_ClearStatusFlags(base, kLPSPI_RxDataReadyFlag);
+	base->SR = LPSPI_SR_RDF_MASK;
 
 	LOG_DBG("RX FIFO: %d, RX BUF: %p", rx_fsr, ctx->rx_buf);
 
@@ -91,8 +91,8 @@ static inline void lpspi_handle_rx_irq(const struct device *dev)
 	LOG_DBG("RX done %d words to spi buf", total_words_written);
 
 	if (spi_context_rx_len_left(ctx) == 0) {
-		LPSPI_DisableInterrupts(base, (uint32_t)kLPSPI_RxInterruptEnable);
-		LPSPI_FlushFifo(base, false, true);
+		base->IER &= ~LPSPI_IER_RDIE_MASK;
+		base->CR |= LPSPI_CR_RRF_MASK; /* flush rx fifo */
 	}
 }
 
@@ -121,7 +121,7 @@ static inline void lpspi_fill_tx_fifo(const struct device *dev)
 	size_t offset;
 
 	for (offset = 0; offset < bytes_in_xfer; offset += lpspi_data->word_size_bytes) {
-		LPSPI_WriteData(base, lpspi_next_tx_word(dev, offset));
+		base->TDR = lpspi_next_tx_word(dev, offset);
 	}
 
 	LOG_DBG("Filled TX FIFO to %d words (%d bytes)", lpspi_data->fill_len, offset);
@@ -134,7 +134,7 @@ static void lpspi_fill_tx_fifo_nop(const struct device *dev)
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 
 	for (int i = 0; i < lpspi_data->fill_len; i++) {
-		LPSPI_WriteData(base, 0);
+		base->TDR = 0;
 	}
 
 	LOG_DBG("Filled TX fifo with %d NOPs", lpspi_data->fill_len);
@@ -169,10 +169,10 @@ static inline void lpspi_handle_tx_irq(const struct device *dev)
 
 	spi_context_update_tx(ctx, lpspi_data->word_size_bytes, lpspi_data->fill_len);
 
-	LPSPI_ClearStatusFlags(base, kLPSPI_TxDataRequestFlag);
+	base->SR = LPSPI_SR_TDF_MASK;
 
 	if (!spi_context_tx_on(ctx)) {
-		LPSPI_DisableInterrupts(base, (uint32_t)kLPSPI_TxInterruptEnable);
+		base->IER &= ~LPSPI_IER_TDIE_MASK;
 		return;
 	}
 
@@ -183,16 +183,16 @@ static void lpspi_isr(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	const struct spi_mcux_config *config = dev->config;
-	uint32_t status_flags = LPSPI_GetStatusFlags(base);
 	struct spi_mcux_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
+	uint32_t status_flags = base->SR;
 
-	if (status_flags & kLPSPI_RxDataReadyFlag) {
+	if (status_flags & LPSPI_SR_RDF_MASK) {
 		lpspi_handle_rx_irq(dev);
 	}
 
-	if (status_flags & kLPSPI_TxDataRequestFlag) {
+	if (status_flags & LPSPI_SR_TDF_MASK) {
 		lpspi_handle_tx_irq(dev);
 	}
 
@@ -250,15 +250,15 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		goto error;
 	}
 
-	LPSPI_FlushFifo(base, true, true);
-	LPSPI_ClearStatusFlags(base, (uint32_t)kLPSPI_AllStatusFlag);
-	LPSPI_DisableInterrupts(base, (uint32_t)kLPSPI_AllInterruptEnable);
+	base->CR |= LPSPI_CR_RTF_MASK | LPSPI_CR_RRF_MASK; /* flush fifos */
+	base->IER = 0;                                     /* disable all interrupts */
+	base->FCR = 0;                                     /* set watermarks to 0 */
+	base->SR |= LPSPI_INTERRUPT_BITS;
 
 	LOG_DBG("Starting LPSPI transfer");
 	spi_context_cs_control(ctx, true);
 
-	LPSPI_SetFifoWatermarks(base, 0, 0);
-	LPSPI_Enable(base, true);
+	base->CR |= LPSPI_CR_MEN_MASK;
 
 	/* keep the chip select asserted until the end of the zephyr xfer */
 	base->TCR |= LPSPI_TCR_CONT_MASK;
@@ -268,8 +268,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	/* start the transfer sequence which are handled by irqs */
 	lpspi_next_tx_fill(dev);
 
-	LPSPI_EnableInterrupts(base, (uint32_t)kLPSPI_TxInterruptEnable |
-				     (uint32_t)kLPSPI_RxInterruptEnable);
+	base->IER |= LPSPI_IER_TDIE_MASK | LPSPI_IER_RDIE_MASK;
 
 	ret = spi_context_wait_for_completion(ctx);
 	if (ret >= 0) {
