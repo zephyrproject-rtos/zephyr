@@ -186,4 +186,16 @@ ZTEST(cmsis_mutex, test_mutex_static_allocation)
 
 	zassert_true(osMutexDelete(id) == osOK, "osMutexDelete failed");
 }
+
+ZTEST(cmsis_mutex, test_mutex_static_multiple_new)
+{
+	osMutexId_t id;
+
+	for (int i = 0; i < 100; ++i) {
+		id = osMutexNew(&mutex_attrs2);
+		zassert_not_null(id, "Failed creating mutex using static cb");
+
+		zassert_true(osMutexDelete(id) == osOK, "osMutexDelete failed");
+	}
+}
 ZTEST_SUITE(cmsis_mutex, NULL, NULL, NULL, NULL, NULL);
