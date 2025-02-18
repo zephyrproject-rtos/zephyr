@@ -10,6 +10,12 @@
 	soc {
 		compatible = "st,stm32f072", "st,stm32f0", "simple-bus";
 
+		rom_bootloader: rom_bootloader@0x1FFFC800 {
+			compatible = "st,stm32-bootloader";
+			reg = <0x1FFFC800 DT_SIZE_K(12)>;
+			status = "okay";
+		};
+
 		can1: can@40006400 {
 			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
