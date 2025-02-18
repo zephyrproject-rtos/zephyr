@@ -436,26 +436,26 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 };
 
 #define SIWX91X_DMA_INIT(inst)                                                                     \
-	static UDMA_Channel_Info dma##inst##_channel_info[DT_INST_PROP(inst, dma_channels)];       \
-	static struct dma_siwx91x_data dma##inst##_data = {                                        \
-		.chan_info = dma##inst##_channel_info,                                             \
+	static UDMA_Channel_Info dma_channel_info_##inst[DT_INST_PROP(inst, dma_channels)];        \
+	static struct dma_siwx91x_data dma_data_##inst = {                                         \
+		.chan_info = dma_channel_info_##inst,                                              \
 	};                                                                                         \
-	static void siwx91x_dma##inst##_irq_configure(void)                                        \
+	static void siwx91x_dma_irq_configure_##inst(void)                                         \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQ(inst, irq), DT_INST_IRQ(inst, priority), siwx91x_dma_isr,  \
 			    DEVICE_DT_INST_GET(inst), 0);                                          \
 		irq_enable(DT_INST_IRQ(inst, irq));                                                \
 	}                                                                                          \
-	static const struct dma_siwx91x_config dma##inst##_cfg = {                                 \
+	static const struct dma_siwx91x_config dma_cfg_##inst = {                                  \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
 		.reg = (UDMA0_Type *)DT_INST_REG_ADDR(inst),                                       \
 		.channels = DT_INST_PROP(inst, dma_channels),                                      \
 		.irq_number = DT_INST_PROP_BY_IDX(inst, interrupts, 0),                            \
 		.sram_desc_addr = (RSI_UDMA_DESC_T *)DT_INST_PROP(inst, silabs_sram_desc_addr),    \
-		.irq_configure = siwx91x_dma##inst##_irq_configure,                                \
+		.irq_configure = siwx91x_dma_irq_configure_##inst,                                 \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &siwx91x_dma_init, NULL, &dma##inst##_data, &dma##inst##_cfg,  \
+	DEVICE_DT_INST_DEFINE(inst, &siwx91x_dma_init, NULL, &dma_data_##inst, &dma_cfg_##inst,    \
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &siwx91x_dma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_DMA_INIT)
