@@ -484,8 +484,8 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 	}
 
 	/* Write all data on the console and send CTRL+Z. */
-	mctx.iface.write(&mctx.iface, buf, buf_len);
-	mctx.iface.write(&mctx.iface, &ctrlz, 1);
+	modem_cmd_send_data_nolock(&mctx.iface, buf, buf_len);
+	modem_cmd_send_data_nolock(&mctx.iface, &ctrlz, 1);
 
 	/* Wait for 'SEND OK' or 'SEND FAIL' */
 	k_sem_reset(&mdata.sem_response);
