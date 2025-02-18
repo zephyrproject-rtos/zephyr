@@ -11,6 +11,8 @@ SECTION_DATA_PROLOGUE(.fsp_dtc_vector_table,(NOLOAD),)
 	*(.fsp_dtc_vector_table)
 } GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_ofs))
+
 SECTION_PROLOGUE(.option_setting_ofs,,)
 {
 	__OPTION_SETTING_OFS_Start = .;
@@ -22,12 +24,20 @@ SECTION_PROLOGUE(.option_setting_ofs,,)
 	__OPTION_SETTING_OFS_End = .;
 } GROUP_LINK_IN(OPTION_SETTING_OFS) = 0xFF
 
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_sas))
+
 SECTION_PROLOGUE(.option_setting_sas,,)
 {
 	__OPTION_SETTING_SAS_Start = .;
 	KEEP(*(.option_setting_sas))
 	__OPTION_SETTING_SAS_End = .;
 } GROUP_LINK_IN(OPTION_SETTING_SAS) = 0xFF
+
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_s))
 
 SECTION_PROLOGUE(.option_setting_s,,)
 {
@@ -69,3 +79,5 @@ SECTION_PROLOGUE(.option_setting_s,,)
 	KEEP(*(.option_setting_bps_sel3))
 	__OPTION_SETTING_S_End = .;
 } GROUP_LINK_IN(OPTION_SETTING_S) = 0xFF
+
+#endif
