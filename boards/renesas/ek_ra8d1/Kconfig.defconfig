@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_EK_RA8D1
@@ -10,10 +10,20 @@ config NET_L2_ETHERNET
 
 endif # NETWORKING
 
-if SHIELD_RTKMIPILCDB00000BE
+if DISPLAY
+
+if SHIELD_RTKMIPILCDB00000BE || SHIELD_RTK7EKA6M3B00001BU
 
 config MEMC
 	default y
+
+config RENESAS_RA_GLCDC_FRAME_BUFFER_SECTION
+	default ".sdram"
+	depends on RENESAS_RA_GLCDC
+
+endif # SHIELD_RTKMIPILCDB00000BE || SHIELD_RTK7EKA6M3B00001BU
+
+endif # DISPLAY
 
 if LVGL
 
@@ -21,7 +31,5 @@ config LV_Z_VDB_CUSTOM_SECTION
 	default y
 
 endif # LVGL
-
-endif # SHIELD_RTKMIPILCDB00000BE
 
 endif # BOARD_EK_RA8D1
