@@ -16,7 +16,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <em_usart.h>
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_silabs_ldma.h>
 #endif
@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(uart_silabs_usart, CONFIG_UART_LOG_LEVEL);
 #define SILABS_USART_TIMEOUT_TO_TIMERCOUNTER(timeout, baudrate)                                    \
 	((timeout * NSEC_PER_USEC) / ((NSEC_PER_SEC / baudrate) * SILABS_USART_TIMER_COMPARE_VALUE))
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 struct uart_dma_channel {
 	const struct device *dma_dev;
 	uint32_t dma_channel;
@@ -64,7 +64,7 @@ struct uart_silabs_data {
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	const struct device *uart_dev;
 	uart_callback_t async_cb;
 	void *async_user_data;
@@ -303,7 +303,7 @@ static void uart_silabs_irq_callback_set(const struct device *dev, uart_irq_call
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 static inline void async_user_callback(struct uart_silabs_data *data, struct uart_event *event)
 {
 	if (data->async_cb) {
@@ -741,7 +741,7 @@ static int uart_silabs_async_init(const struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* CONFIG_UART_SILABS_USART_ASYNC */
 
 static void uart_silabs_isr(const struct device *dev)
 {
@@ -749,7 +749,7 @@ static void uart_silabs_isr(const struct device *dev)
 	const struct uart_silabs_config *config = dev->config;
 	USART_TypeDef *usart = config->base;
 	uint32_t flags = USART_IntGet(usart);
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	struct dma_status stat;
 #endif
 
@@ -764,7 +764,7 @@ static void uart_silabs_isr(const struct device *dev)
 		data->callback(dev, data->cb_data);
 	}
 #endif
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	if (flags & USART_IF_TCMP1) {
 
 		data->dma_rx.timeout_cnt++;
@@ -814,7 +814,7 @@ static void uart_silabs_isr(const struct device *dev)
 
 		USART_IntClear(usart, USART_IF_TCMP2);
 	}
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* CONFIG_UART_SILABS_USART_ASYNC */
 }
 
 static inline USART_Parity_TypeDef uart_silabs_cfg2ll_parity(
@@ -971,7 +971,7 @@ static int uart_silabs_configure(const struct device *dev,
 	USART_TypeDef *base = config->base;
 	struct uart_silabs_data *data = dev->data;
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	if (data->dma_rx.enabled || data->dma_tx.enabled) {
 		return -EBUSY;
 	}
@@ -1027,7 +1027,7 @@ static int uart_silabs_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	err = uart_silabs_async_init(dev);
 	if (err < 0) {
 		return err;
@@ -1056,7 +1056,7 @@ static int uart_silabs_pm_action(const struct device *dev, enum pm_device_action
 
 		USART_Enable(config->base, usartEnable);
 	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 		/* Entering suspend requires there to be no active asynchronous calls. */
 		__ASSERT_NO_MSG(!data->dma_rx.enabled);
 		__ASSERT_NO_MSG(!data->dma_tx.enabled);
@@ -1105,7 +1105,7 @@ static DEVICE_API(uart, uart_silabs_driver_api) = {
 	.irq_update = uart_silabs_irq_update,
 	.irq_callback_set = uart_silabs_irq_callback_set,
 #endif
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	.callback_set = uart_silabs_async_callback_set,
 	.tx = uart_silabs_async_tx,
 	.tx_abort = uart_silabs_async_tx_abort,
@@ -1115,7 +1115,7 @@ static DEVICE_API(uart, uart_silabs_driver_api) = {
 #endif
 };
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 
 #define UART_DMA_CHANNEL_INIT(index, dir)                                                          \
 	.dma_##dir = {                                                                             \
