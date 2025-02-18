@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/kernel.h>
@@ -113,7 +114,7 @@ struct bt_aics_server {
 	struct bt_aics_state state;
 	struct bt_aics_gain_settings gain_settings;
 	bool initialized;
-	uint8_t type;
+	enum bt_aics_input_type type;
 	uint8_t status;
 	struct bt_aics *inst;
 	char description[BT_AICS_MAX_DESC_SIZE];

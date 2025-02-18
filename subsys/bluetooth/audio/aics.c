@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -151,11 +151,11 @@ static ssize_t read_type(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	uint8_t type_u8 = (uint8_t)inst->srv.type;
 
-	LOG_DBG("%u", inst->srv.type);
+	LOG_DBG("%u", type_u8);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.type,
-				 sizeof(inst->srv.type));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &type_u8, sizeof(type_u8));
 }
 
 static void aics_input_status_cfg_changed(const struct bt_gatt_attr *attr,
@@ -484,11 +484,6 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 
 	CHECKIF(param->gain_mode > BT_AICS_MODE_AUTO) {
 		LOG_DBG("Invalid AICS mode value: %u", param->gain_mode);
-		return -EINVAL;
-	}
-
-	CHECKIF(param->type > BT_AICS_INPUT_TYPE_AMBIENT) {
-		LOG_DBG("Invalid AICS input type value: %u", param->type);
 		return -EINVAL;
 	}
 
