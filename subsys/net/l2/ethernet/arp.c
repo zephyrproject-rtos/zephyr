@@ -787,14 +787,6 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 	struct net_pkt *reply;
 	struct in_addr *addr;
 
-	if (net_pkt_get_len(pkt) < (sizeof(struct net_arp_hdr) -
-				    (net_pkt_ip_data(pkt) - (uint8_t *)eth_hdr))) {
-		NET_DBG("Invalid ARP header (len %zu, min %zu bytes) %p",
-			net_pkt_get_len(pkt), sizeof(struct net_arp_hdr) -
-			(net_pkt_ip_data(pkt) - (uint8_t *)eth_hdr), pkt);
-		return NET_DROP;
-	}
-
 	arp_hdr = NET_ARP_HDR(pkt);
 	if (!arp_hdr_check(arp_hdr)) {
 		return NET_DROP;
@@ -1022,15 +1014,25 @@ static enum net_verdict arp_recv(struct net_if *iface,
 				 uint16_t ptype,
 				 struct net_pkt *pkt)
 {
-	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+	struct net_eth_hdr hdr;
 
 	ARG_UNUSED(iface);
-	ARG_UNUSED(ptype);
+
+	/* Construct a simulated Ethernet header as we cannot access
+	 * the real Ethernet header directly any more because the caller
+	 * has pulled the Ethernet header and thus moved the buf->data
+	 * pointer.
+	 */
+	memcpy(hdr.dst.addr, net_pkt_lladdr_dst(pkt)->addr,
+	       sizeof(struct net_eth_addr));
+	memcpy(hdr.src.addr, net_pkt_lladdr_src(pkt)->addr,
+	       sizeof(struct net_eth_addr));
+	hdr.type = ptype;
 
 	net_pkt_set_family(pkt, AF_INET);
 
 	NET_DBG("ARP packet from %s received",
-		net_sprint_ll_addr((uint8_t *)hdr->src.addr,
+		net_sprint_ll_addr((uint8_t *)hdr.src.addr,
 				   sizeof(struct net_eth_addr)));
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_ACD) &&
@@ -1038,7 +1040,7 @@ static enum net_verdict arp_recv(struct net_if *iface,
 		return NET_DROP;
 	}
 
-	return net_arp_input(pkt, hdr);
+	return net_arp_input(pkt, &hdr);
 }
 
 ETH_NET_L3_REGISTER(ARP, NET_ETH_PTYPE_ARP, arp_recv);
