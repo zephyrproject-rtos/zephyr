@@ -18,14 +18,6 @@ struct lpspi_driver_data {
 	uint8_t word_size_bytes;
 };
 
-static inline void lpspi_wait_tx_fifo_empty(const struct device *dev)
-{
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-
-	while (LPSPI_GetTxFifoCount(base) != 0) {
-	}
-}
-
 /* Reads a word from the RX fifo and handles writing it into the RX spi buf */
 static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t offset)
 {
