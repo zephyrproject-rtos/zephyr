@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Ambiq
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq TIMER timer
+
+compatible: "ambiq,timer"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-source:
+    type: int
+    required: true
+    description: Counter Clock Source
