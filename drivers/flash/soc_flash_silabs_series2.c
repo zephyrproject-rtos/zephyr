@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/dma.h>
 #include <soc.h>
 #include <em_msc.h>
 
@@ -22,6 +23,10 @@ LOG_MODULE_REGISTER(flash_silabs, CONFIG_FLASH_LOG_LEVEL);
 
 struct flash_silabs_data {
 	struct k_sem lock;
+#ifdef CONFIG_SOC_FLASH_SILABS_S2_DMA_WRITE
+	const struct device *dma_dev;
+	uint32_t dma_channel;
+#endif
 };
 
 struct flash_silabs_config {
@@ -89,7 +94,11 @@ static int flash_silabs_write(const struct device *dev, off_t offset, const void
 	flash_silabs_write_protection(false);
 
 	address = (uint8_t *)DT_REG_ADDR(SOC_NV_FLASH_NODE) + offset;
+#ifdef CONFIG_SOC_FLASH_SILABS_S2_DMA_WRITE
+	ret = MSC_WriteWordDma(dev_data->dma_channel, address, data, size);
+#else
 	ret = MSC_WriteWord(address, data, size);
+#endif
 	if (ret < 0) {
 		ret = -EIO;
 	}
@@ -188,6 +197,10 @@ static int flash_silabs_init(const struct device *dev)
 	/* Lock the MSC module. */
 	flash_silabs_write_protection(true);
 
+#ifdef CONFIG_SOC_FLASH_SILABS_S2_DMA_WRITE
+	dev_data->dma_channel = dma_request_channel(dev_data->dma_dev, NULL);
+#endif
+
 	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
@@ -207,6 +220,10 @@ static DEVICE_API(flash, flash_silabs_driver_api) = {
 /* clang-format off */
 static struct flash_silabs_data flash_silabs_data_0 = {
 	.lock = Z_SEM_INITIALIZER(flash_silabs_data_0.lock, 1, 1),
+#ifdef CONFIG_SOC_FLASH_SILABS_S2_DMA_WRITE
+	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR(0)),
+	.dma_channel = -1,
+#endif
 };
 
 static const struct flash_silabs_config flash_silabs_config_0 = {

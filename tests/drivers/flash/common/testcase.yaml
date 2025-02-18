@@ -94,3 +94,8 @@ tests:
       - gd32vf103v_eval
       - gd32a503v_eval
       - gd32f470i_eval
+  drivers.flash.common.silabs.dma:
+    platform_allow:
+      - xg24_rb4187c
+    extra_configs:
+      - CONFIG_DMA=y
