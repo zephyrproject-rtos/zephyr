@@ -276,6 +276,10 @@ static int video_sw_generator_enum_frmival(const struct device *dev, struct vide
 	size_t idx;
 	int ret;
 
+	if (fie->index >= 1) {
+		return -ERANGE;
+	}
+
 	ret = video_format_caps_index(fmts, fie->format, &idx);
 	if (ret < 0) {
 		LOG_ERR("Unsupported pixel format or resolution");
