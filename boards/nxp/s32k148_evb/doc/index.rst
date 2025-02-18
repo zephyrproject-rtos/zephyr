@@ -60,6 +60,10 @@ The ``s32k148_evb`` board supports the following hardware features:
 The default configuration can be found in the Kconfig file
 :zephyr_file:`boards/nxp/s32k148_evb/s32k148_evb_defconfig`.
 
+.. note::
+   Before using the Ethernet interface, please take note of the following:
+   - For boards with the part number ``LSF24D`` at ``U16``, ``R553`` needs to be depopulated.
+
 Connections and IOs
 ===================
 

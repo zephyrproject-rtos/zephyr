@@ -1,0 +1,12 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_NXP_ADTJA1101
+
+config NETWORKING
+	default y
+
+config PHY_TJA11xx
+	default y
+
+endif # SHIELD_NXP_ADTJA1101
