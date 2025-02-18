@@ -415,7 +415,7 @@ static ssize_t send_socket_data(void *obj,
 		if (len == 0) {
 			break;
 		}
-		mctx.iface.write(&mctx.iface, msg->msg_iov[i].iov_base, len);
+		modem_cmd_send_data_nolock(&mctx.iface, msg->msg_iov[i].iov_base, len);
 		buf_len -= len;
 	}
 
@@ -494,7 +494,7 @@ static ssize_t send_cert(struct modem_socket *sock,
 
 	/* slight pause per spec so that @ prompt is received */
 	k_sleep(MDM_PROMPT_CMD_DELAY);
-	mctx.iface.write(&mctx.iface, cert_data, cert_len);
+	modem_cmd_send_data_nolock(&mctx.iface, cert_data, cert_len);
 
 	ret = k_sem_take(&mdata.sem_response, K_MSEC(1000));
 
