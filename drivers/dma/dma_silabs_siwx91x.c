@@ -44,7 +44,7 @@ struct dma_siwx91x_data {
 	UDMA_Channel_Info *chan_info;
 	dma_callback_t dma_callback;         /* User callback */
 	void *cb_data;                       /* User callback data */
-	RSI_UDMA_DATACONTEXT_T dma_rom_buff; /* Buffer to store UDMA handle
+	RSI_UDMA_DATACONTEXT_T udma_handle;  /* Buffer to store UDMA handle
 					      * related information
 					      */
 };
@@ -187,7 +187,7 @@ static int siwx91x_dma_configure(const struct device *dev, uint32_t channel,
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
-	void *udma_handle = &data->dma_rom_buff;
+	void *udma_handle = &data->udma_handle;
 	int status;
 
 	/* Expecting a fixed channel number between 0-31 for dma0 and 0-11 for ulpdma */
@@ -223,7 +223,7 @@ static int siwx91x_dma_reload(const struct device *dev, uint32_t channel, uint32
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
-	void *udma_handle = &data->dma_rom_buff;
+	void *udma_handle = &data->udma_handle;
 	uint32_t desc_src_addr;
 	uint32_t desc_dst_addr;
 	uint32_t length;
@@ -278,7 +278,7 @@ static int siwx91x_dma_start(const struct device *dev, uint32_t channel)
 	const struct dma_siwx91x_config *cfg = dev->config;
 	RSI_UDMA_DESC_T *udma_table = cfg->sram_desc_addr;
 	struct dma_siwx91x_data *data = dev->data;
-	void *udma_handle = &data->dma_rom_buff;
+	void *udma_handle = &data->udma_handle;
 
 	/* Expecting a fixed channel number between 0-31 for dma0 and 0-11 for ulpdma */
 	if (channel >= cfg->channels) {
@@ -304,7 +304,7 @@ static int siwx91x_dma_stop(const struct device *dev, uint32_t channel)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
-	void *udma_handle = &data->dma_rom_buff;
+	void *udma_handle = &data->udma_handle;
 
 	/* Expecting a fixed channel number between 0-31 for dma0 and 0-11 for ulpdma */
 	if (channel >= cfg->channels) {
@@ -364,8 +364,8 @@ static int siwx91x_dma_init(const struct device *dev)
 	}
 
 	udma_handle = UDMAx_Initialize(&udma_resources, udma_resources.desc, NULL,
-				       (uint32_t *)&data->dma_rom_buff);
-	if (udma_handle != &data->dma_rom_buff) {
+				       (uint32_t *)&data->udma_handle);
+	if (udma_handle != &data->udma_handle) {
 		return -EINVAL;
 	}
 
