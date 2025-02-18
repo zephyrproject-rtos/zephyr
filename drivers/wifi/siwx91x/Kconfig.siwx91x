@@ -49,5 +49,4 @@ config NET_MGMT_EVENT_QUEUE_SIZE
 # This device supports filtering scan results for only one SSID.
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	default 1
-
 endif

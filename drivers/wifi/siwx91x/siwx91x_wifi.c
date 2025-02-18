@@ -7,6 +7,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
+#include <nwp.h>
 
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_socket.h"
@@ -23,6 +24,20 @@
 LOG_MODULE_REGISTER(siwx91x_wifi);
 
 NET_BUF_POOL_FIXED_DEFINE(siwx91x_tx_pool, 1, _NET_ETH_MAX_FRAME_SIZE, 0, NULL);
+
+static int siwx91x_sl_to_z_mode(sl_wifi_interface_t interface)
+{
+	switch (interface) {
+	case SL_WIFI_CLIENT_INTERFACE:
+		return WIFI_STA_MODE;
+	case SL_WIFI_AP_INTERFACE:
+		return WIFI_AP_MODE;
+	default:
+		return -EIO;
+	}
+
+	return 0;
+}
 
 static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 				    char *result, uint32_t result_size, void *arg)
@@ -302,6 +317,35 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 	return 0;
 }
 
+static int siwx91x_mode(const struct device *dev, struct wifi_mode_info *mode)
+{
+	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
+	struct siwx91x_dev *sidev = dev->data;
+	int cur_mode;
+	int ret = 0;
+
+	__ASSERT(mode, "mode cannot be NULL");
+
+	cur_mode = siwx91x_sl_to_z_mode(FIELD_GET(SIWX91X_INTERFACE_MASK, interface));
+	if (cur_mode < 0) {
+		return -EIO;
+	}
+
+	if (mode->oper == WIFI_MGMT_GET) {
+		mode->mode = cur_mode;
+	} else if (mode->oper == WIFI_MGMT_SET) {
+		if (cur_mode != mode->mode) {
+			ret = siwx91x_nwp_mode_switch(mode->mode);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+		sidev->state = WIFI_STATE_INACTIVE;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE
 
 static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
@@ -414,6 +458,7 @@ static const struct wifi_mgmt_ops siwx91x_mgmt = {
 	.connect      = siwx91x_connect,
 	.disconnect   = siwx91x_disconnect,
 	.iface_status = siwx91x_status,
+	.mode         = siwx91x_mode,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_api = {
