@@ -19,6 +19,9 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/dma/dma_silabs_ldma.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 #include <em_cmu.h>
 #include <em_eusart.h>
 
@@ -118,7 +121,7 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 
 	if (spi_context_configured(&data->ctx, config)) {
 		/* Already configured. No need to do it again, but must re-enable in case
-		 * TXEN/RXEN were cleared due to deep sleep.
+		 * TXEN/RXEN were cleared.
 		 */
 		EUSART_Enable(eusart_config->base, eusartEnable);
 
@@ -228,7 +231,8 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 	/* Enable EUSART clock */
 	err = clock_control_on(eusart_config->clock_dev,
 			       (clock_control_subsys_t)&eusart_config->clock_cfg);
-	if (err < 0) {
+
+	if (err < 0 && err != -EALREADY) {
 		return err;
 	}
 
@@ -240,6 +244,60 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 	return 0;
 }
 
+static inline void spi_silabs_eusart_pm_policy_get(const struct device *dev)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static inline void spi_silabs_eusart_pm_policy_put(const struct device *dev)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static int spi_silabs_eusart_pm_action(const struct device *dev,
+						     enum pm_device_action action)
+{
+	const struct spi_silabs_eusart_config *eusart_config = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = clock_control_on(eusart_config->clock_dev,
+				       (clock_control_subsys_t)&eusart_config->clock_cfg);
+
+		if (ret == -EALREADY) {
+			/* Ignore if clock is already on */
+			ret = 0U;
+		} else if (ret < 0) {
+			return ret;
+		}
+
+		pinctrl_apply_state(eusart_config->pcfg, PINCTRL_STATE_DEFAULT);
+
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		pinctrl_apply_state(eusart_config->pcfg, PINCTRL_STATE_SLEEP);
+
+		EUSART_Enable(eusart_config->base, eusartDisable);
+		ret = clock_control_off(eusart_config->clock_dev,
+					(clock_control_subsys_t)&eusart_config->clock_cfg);
+
+		if (ret == -EALREADY) {
+			/* Ignore if clock is already on */
+			ret = 0U;
+		} else if (ret < 0) {
+			return ret;
+		}
+
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
 
 #ifdef CONFIG_SPI_SILABS_EUSART_DMA
 static inline void spi_silabs_eusart_clear_txrx_fifos(EUSART_TypeDef *eusart)
@@ -831,6 +889,7 @@ static DEVICE_API(spi, spi_silabs_eusart_api) = {
 		.mosi_overrun = (uint8_t)SPI_MOSI_OVERRUN_DT(n), \
 		.clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000), \
 		}; \
+	PM_DEVICE_DT_INST_DEFINE(n, spi_silabs_eusart_pm_action); \
 	SPI_DEVICE_DT_INST_DEFINE(n, spi_silabs_eusart_init, PM_DEVICE_DT_INST_GET(n), \
 				  &spi_silabs_eusart_data_##n, &spi_silabs_eusart_cfg_##n, \
 				  POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_silabs_eusart_api);
