@@ -153,9 +153,6 @@ static struct hapd_global hglobal;
 #define HOSTAPD_CLEANUP_INTERVAL 10
 #endif /* HOSTAPD_CLEANUP_INTERVAL */
 
-static void zephyr_hostap_ctrl_iface_msg_cb(void *ctx, int level, enum wpa_msg_type type,
-					    const char *txt, size_t len);
-
 static int hostapd_periodic_call(struct hostapd_iface *iface, void *ctx)
 {
 	hostapd_periodic_iface(iface);
@@ -292,6 +289,93 @@ static int get_iface_count(struct supplicant_context *ctx)
 	}
 
 	return count;
+}
+
+static void zephyr_wpa_supplicant_msg(void *ctx, const char *txt, size_t len)
+{
+	struct wpa_supplicant *wpa_s = (struct wpa_supplicant *)ctx;
+
+	if (!ctx || !txt) {
+		return;
+	}
+
+	/* Only interested in CTRL-EVENTs */
+	/* wpa_supplicant_ctrl_iface_msg_cb only send msg to wpa_s->ctrl_iface->ctrl_dst,
+	  because wpa_s->global->ctrl_iface->ctrl_dst is not attatched, so only one process here is okay */
+	if (strncmp(txt, "CTRL-EVENT", 10) == 0) {
+		if (strncmp(txt, "CTRL-EVENT-SIGNAL-CHANGE", 24) == 0) {
+			supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+						NET_EVENT_WIFI_CMD_SIGNAL_CHANGE,
+						(void *)txt, len);
+		} else {
+			supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+						NET_EVENT_WIFI_CMD_SUPPLICANT,
+						(void *)txt, len);
+		}
+	} else if (strncmp(txt, "RRM-NEIGHBOR-REP-RECEIVED", 25) == 0) {
+			supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+						NET_EVENT_WIFI_CMD_NEIGHBOR_REP_RECEIVED,
+						(void *)txt, len);
+	}
+}
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+static void zephyr_hostapd_msg(void *ctx, const char *txt, size_t len)
+{
+	struct hostapd_data *hapd = (struct hostapd_data *)ctx;
+
+	if (!ctx || !txt) {
+		return;
+	}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
+	if (strncmp(txt, "DPP", 3) == 0) {
+		hostapd_handle_dpp_event(hapd, (char *)txt, len);
+	}
+#endif
+}
+
+static const char *zephyr_hostap_msg_ifname_cb(void *ctx)
+{
+	if (ctx == NULL) {
+		return NULL;
+	}
+
+	if ((*((int *)ctx)) == 0) {
+		struct wpa_supplicant *wpa_s = ctx;
+
+		return wpa_s->ifname;
+	}
+
+	struct hostapd_data *hapd = ctx;
+
+	if (hapd && hapd->conf) {
+		return hapd->conf->iface;
+	}
+
+	return NULL;
+}
+#endif
+
+static void zephyr_hostap_ctrl_iface_msg_cb(void *ctx, int level, enum wpa_msg_type type,
+					    const char *txt, size_t len)
+{
+	ARG_UNUSED(level);
+	ARG_UNUSED(type);
+
+	if (ctx == NULL) {
+		return;
+	}
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	if ((*((int *)ctx)) == 0) {
+		zephyr_wpa_supplicant_msg(ctx, txt, len);
+	} else {
+		zephyr_hostapd_msg(ctx, txt, len);
+	}
+#else
+	zephyr_wpa_supplicant_msg(ctx, txt, len);
+#endif
 }
 
 static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
@@ -1093,41 +1177,6 @@ static void zephyr_hostapd_init(struct supplicant_context *ctx)
 
 out:
 	return;
-}
-
-static const char *zephyr_hostap_msg_ifname_cb(void *ctx)
-{
-	if (ctx == NULL) {
-		return NULL;
-	}
-
-	if ((*((int *)ctx)) == 0) {
-		struct wpa_supplicant *wpa_s = ctx;
-
-		return wpa_s->ifname;
-	}
-
-	struct hostapd_data *hapd = ctx;
-
-	if (hapd && hapd->conf) {
-		return hapd->conf->iface;
-	}
-
-	return NULL;
-}
-
-static void zephyr_hostap_ctrl_iface_msg_cb(void *ctx, int level, enum wpa_msg_type type,
-					    const char *txt, size_t len)
-{
-	if (ctx == NULL) {
-		return;
-	}
-
-	if ((*((int *)ctx)) == 0) {
-		wpa_supplicant_msg_send(ctx, level, type, txt, len);
-	} else {
-		hostapd_msg_send(ctx, level, type, txt, len);
-	}
 }
 #endif
 
