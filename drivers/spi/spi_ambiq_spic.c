@@ -23,6 +23,24 @@ LOG_MODULE_REGISTER(spi_ambiq);
 #include "spi_context.h"
 #include <am_mcu_apollo.h>
 
+#include <zephyr/mem_mgmt/mem_attr.h>
+
+#ifdef CONFIG_DCACHE
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#endif /* CONFIG_DCACHE */
+
+#ifdef CONFIG_NOCACHE_MEMORY
+#include <zephyr/linker/linker-defs.h>
+#elif defined(CONFIG_CACHE_MANAGEMENT)
+#include <zephyr/arch/cache.h>
+#endif /* CONFIG_NOCACHE_MEMORY */
+
+#if defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY)
+#define SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED 1
+#else
+#define SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED 0
+#endif /* defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
+
 #define PWRCTRL_MAX_WAIT_US 5
 
 typedef int (*ambiq_spi_pwr_func_t)(void);
@@ -76,9 +94,15 @@ static void spi_ambiq_pm_policy_state_lock_put(const struct device *dev)
 }
 
 #ifdef CONFIG_SPI_AMBIQ_DMA
+/*
+ * If Nocache Memory is supported, buffer will be placed in nocache region by
+ * the linker to avoid potential DMA cache-coherency problems.
+ * If Nocache Memory is not supported, cache coherency might need to be kept
+ * manually. See SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED.
+ */
 static __aligned(32) struct {
 	__aligned(32) uint32_t buf[CONFIG_SPI_DMA_TCB_BUFFER_SIZE];
-} spi_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)] __attribute__((__section__(".nocache")));
+} spi_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)] __nocache;
 
 static void spi_ambiq_callback(void *callback_ctxt, uint32_t status)
 {
@@ -92,6 +116,41 @@ static void spi_ambiq_callback(void *callback_ctxt, uint32_t status)
 	}
 	spi_context_complete(ctx, dev, (status == AM_HAL_STATUS_SUCCESS) ? 0 : -EIO);
 }
+
+#ifdef CONFIG_DCACHE
+static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
+{
+	bool buf_within_nocache = false;
+
+#ifdef CONFIG_NOCACHE_MEMORY
+	/* Check if buffer is in nocache region defined by the linker */
+	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
+			     ((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
+	if (buf_within_nocache) {
+		return true;
+	}
+#endif /* CONFIG_NOCACHE_MEMORY */
+
+	/* Check if buffer is in nocache memory region defined in DT */
+	buf_within_nocache =
+		mem_attr_check_buf((void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
+
+	return buf_within_nocache;
+}
+
+static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
+{
+	for (size_t i = 0; i < bufs->count; i++) {
+		const struct spi_buf *buf = &bufs->buffers[i];
+
+		if (!buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
+			return false;
+		}
+	}
+	return true;
+}
+#endif /* CONFIG_DCACHE */
+
 #endif
 
 static void spi_ambiq_reset(const struct device *dev)
@@ -239,6 +298,13 @@ static int spi_ambiq_xfer_half_duplex(const struct device *dev, am_hal_iom_dir_e
 			is_last = true;
 		}
 #ifdef CONFIG_SPI_AMBIQ_DMA
+#if SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED
+		/* Clean Dcache before DMA write */
+		if ((trans.eDirection == AM_HAL_IOM_TX) && (trans.pui32TxBuffer)) {
+			sys_cache_data_flush_range((void *)trans.pui32TxBuffer,
+							    trans.ui32NumBytes);
+		}
+#endif /* SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED */
 		if (AM_HAL_STATUS_SUCCESS !=
 		    am_hal_iom_nonblocking_transfer(data->iom_handler, &trans,
 						    ((is_last == true) ? spi_ambiq_callback : NULL),
@@ -247,6 +313,13 @@ static int spi_ambiq_xfer_half_duplex(const struct device *dev, am_hal_iom_dir_e
 		}
 		if (is_last) {
 			ret = spi_context_wait_for_completion(ctx);
+#if SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED
+			/* Invalidate Dcache after DMA read */
+			if ((trans.eDirection == AM_HAL_IOM_RX) && (trans.pui32RxBuffer)) {
+				sys_cache_data_invd_range((void *)trans.pui32RxBuffer,
+								    trans.ui32NumBytes);
+			}
+#endif /* SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED */
 		}
 #else
 		ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
@@ -374,6 +447,13 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 	if (!tx_bufs && !rx_bufs) {
 		return 0;
 	}
+
+#ifdef CONFIG_DCACHE
+	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
+	    (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
+		return -EFAULT;
+	}
+#endif /* CONFIG_DCACHE */
 
 	/* context setup */
 	spi_context_lock(&data->ctx, false, NULL, NULL, config);
