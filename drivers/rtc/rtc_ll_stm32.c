@@ -350,6 +350,36 @@ static int rtc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/**
+	 * The STM32WB0 series has no bit for clock gating of RTC's APB
+	 * interface. On the other hand, the RTCEN bit that would control
+	 * whether the RTC IP is clock gated or not exists, and has been
+	 * placed in APB0ENR. The call to clock_control_on() that just
+	 * completed should have set this bit to 1.
+	 *
+	 * However, according to RefMan, the software must wait two slow
+	 * clock cycles before the IP is actually usable, due to clock
+	 * resynchronization delays. Sadly, there is no hardware register
+	 * we can poll to wait until RTC is ready...
+	 *
+	 * In worst case scenario of 24 kHz LSI, we have to wait for:
+	 *		tREADY = (2 cycles / 24'000 Hz) ≅ 84µs
+	 *
+	 * Spin until that much time has elapsed, and RTC should be up.
+	 *
+	 * N.B.: we can't use k_busy_wait because it uses the SysTick
+	 * as time base, but SysTick is initialized after the RTC...
+	 */
+	const uint32_t cycles_to_waste =
+		84 * (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / USEC_PER_SEC);
+	volatile uint32_t i = cycles_to_waste;
+
+	while (--i > 0) {
+		/* Do nothing - loop itself burns enough cycles */
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
+
 	k_mutex_init(&data->lock);
 
 	/* Enable Backup access */
@@ -362,16 +392,22 @@ static int rtc_stm32_init(const struct device *dev)
 	LL_RCC_SetRTC_HSEPrescaler(cfg->hse_prescaler);
 #endif
 	/* Enable RTC clock source */
-	if (clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL) != 0) {
-		LOG_ERR("clock configure failed\n");
-		return -EIO;
+	if (cfg->pclken[1].enr != NO_SEL) {
+		err = clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL);
+
+		if (err < 0) {
+			LOG_ERR("clock configure failed\n");
+			return -EIO;
+		}
 	}
 
 /*
  * On STM32WBAX series, there is no bit in BCDR register to enable RTC.
  * Enabling RTC is done directly via the RCC APB register bit.
+ * On STM32WB0 series, LL_RCC_EnableRTC is not provided by STM32CubeWB0,
+ * but RTC IP clock has already been turned on - skip the call as well.
  */
-#ifndef CONFIG_SOC_SERIES_STM32WBAX
+#if !defined(CONFIG_SOC_SERIES_STM32WBAX) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	LL_RCC_EnableRTC();
