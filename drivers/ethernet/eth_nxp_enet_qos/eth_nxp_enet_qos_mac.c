@@ -73,13 +73,14 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 		frags_count++;
 		total_bytes += fragment->len;
 		fragment = fragment->frags;
+
+		if (total_bytes > config->hw_info.max_frame_len ||
+			frags_count > NUM_TX_BUFDESC) {
+			LOG_ERR("TX packet too large");
+			return -E2BIG;
+		}
 	}
 
-	if (total_bytes > config->hw_info.max_frame_len ||
-	    frags_count > NUM_TX_BUFDESC) {
-		LOG_ERR("TX packet too large");
-		return -E2BIG;
-	}
 
 	/* One TX at a time in the current implementation */
 	k_sem_take(&data->tx.tx_sem, K_FOREVER);
