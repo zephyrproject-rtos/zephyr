@@ -252,7 +252,7 @@ config ARM_MMU
 	bool "ARM MMU Support"
 	default n if CPU_AARCH64_CORTEX_R
 	default y
-	select MMU
+	select CPU_USE_MMU
 	select SRAM_REGION_PERMISSIONS
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
