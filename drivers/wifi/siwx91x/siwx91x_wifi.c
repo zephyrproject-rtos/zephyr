@@ -178,6 +178,62 @@ static int siwx91x_ap_disable(const struct device *dev)
 	return ret;
 }
 
+static int siwx91x_ap_sta_disconnect(const struct device *dev, const uint8_t *mac_addr)
+{
+	ARG_UNUSED(dev);
+	sl_mac_address_t mac = { };
+	int ret;
+
+	__ASSERT(mac_addr, "mac_addr cannot be NULL");
+
+	memcpy(mac.octet, mac_addr, ARRAY_SIZE(mac.octet));
+
+	ret = sl_wifi_disconnect_ap_client(SL_WIFI_AP_INTERFACE | SL_WIFI_2_4GHZ_INTERFACE,
+					  &mac, SL_WIFI_DEAUTH);
+	if (ret) {
+		LOG_ERR("Failed	to disconnect: 0x%x", ret);
+		return -EIO;
+	}
+
+	return ret;
+}
+
+static sl_status_t siwx91x_on_ap_sta_connect(sl_wifi_event_t event, void *data,
+					     uint32_t data_length, void *arg)
+{
+	ARG_UNUSED(event);
+	struct siwx91x_dev *sidev = arg;
+	struct wifi_ap_sta_info sta_info = { };
+
+	__ASSERT(data, "data cannot be NULL");
+	__ASSERT(arg, "arg cannot be NULL");
+
+	memcpy(sta_info.mac, data, data_length);
+	sta_info.mac_length = data_length;
+	sta_info.link_mode = WIFI_LINK_MODE_UNKNOWN;
+
+	wifi_mgmt_raise_ap_sta_connected_event(sidev->iface, &sta_info);
+
+	return SL_STATUS_OK;
+}
+
+static sl_status_t siwx91x_on_ap_sta_disconnect(sl_wifi_event_t event, void *data,
+						uint32_t data_length, void *arg)
+{
+	ARG_UNUSED(event);
+	struct siwx91x_dev *sidev = arg;
+	struct wifi_ap_sta_info sta_info = { };
+
+	__ASSERT(data, "data cannot be NULL");
+	__ASSERT(arg, "arg cannot be NULL");
+
+	memcpy(sta_info.mac, data, data_length);
+	sta_info.mac_length = data_length;
+	wifi_mgmt_raise_ap_sta_disconnected_event(sidev->iface, &sta_info);
+
+	return SL_STATUS_OK;
+}
+
 static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *params)
 {
 	sl_wifi_client_configuration_t wifi_config = {
@@ -347,7 +403,7 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 	sl_wifi_scan_configuration_t sl_scan_config = { };
 	struct siwx91x_dev *sidev = dev->data;
 	sl_wifi_interface_t interface;
-	sl_wifi_ssid_t ssid = {};
+	sl_wifi_ssid_t ssid = { };
 	int ret;
 
 	__ASSERT(z_scan_config, "z_scan_config cannot be NULL");
@@ -546,8 +602,14 @@ static void siwx91x_iface_init(struct net_if *iface)
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
 	sidev->iface = iface;
 
-	sl_wifi_set_scan_callback(siwx91x_on_scan, sidev);
-	sl_wifi_set_join_callback(siwx91x_on_join, sidev);
+	sl_wifi_set_callback(SL_WIFI_SCAN_RESULT_EVENTS,
+			     (sl_wifi_callback_function_t)siwx91x_on_scan, sidev);
+	sl_wifi_set_callback(SL_WIFI_JOIN_EVENTS, (sl_wifi_callback_function_t)siwx91x_on_join,
+			     sidev);
+	sl_wifi_set_callback(SL_WIFI_CLIENT_CONNECTED_EVENTS, siwx91x_on_ap_sta_connect, sidev);
+	sl_wifi_set_callback(SL_WIFI_CLIENT_DISCONNECTED_EVENTS, siwx91x_on_ap_sta_disconnect,
+			     sidev);
+
 	status = sl_wifi_get_mac_address(SL_WIFI_CLIENT_INTERFACE, &sidev->macaddr);
 	if (status) {
 		LOG_ERR("sl_wifi_get_mac_address(): %#04x", status);
@@ -567,13 +629,14 @@ static int siwx91x_dev_init(const struct device *dev)
 }
 
 static const struct wifi_mgmt_ops siwx91x_mgmt = {
-	.scan		= siwx91x_scan,
-	.connect	= siwx91x_connect,
-	.disconnect	= siwx91x_disconnect,
-	.ap_enable	= siwx91x_ap_enable,
-	.ap_disable	= siwx91x_ap_disable,
-	.iface_status	= siwx91x_status,
-	.mode           = siwx91x_mode,
+	.scan			= siwx91x_scan,
+	.connect		= siwx91x_connect,
+	.disconnect		= siwx91x_disconnect,
+	.ap_enable		= siwx91x_ap_enable,
+	.ap_disable		= siwx91x_ap_disable,
+	.ap_sta_disconnect	= siwx91x_ap_sta_disconnect,
+	.iface_status		= siwx91x_status,
+	.mode			= siwx91x_mode,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_api = {
