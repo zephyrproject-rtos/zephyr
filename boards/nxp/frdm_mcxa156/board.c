@@ -15,7 +15,7 @@
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
-static int frdm_mcxa156_init(void)
+void board_early_init_hook(void)
 {
 	uint32_t coreFreq;
 	spc_active_mode_core_ldo_option_t ldoOption;
@@ -238,8 +238,4 @@ static int frdm_mcxa156_init(void)
 
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
-
-	return 0;
 }
-
-SYS_INIT(frdm_mcxa156_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);
