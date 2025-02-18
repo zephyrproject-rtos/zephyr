@@ -436,24 +436,10 @@
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
 "./scripts/dts/python-devicetree/src/devicetree/dtlib.py" = [
-    "E701",     # https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM201",   # https://docs.astral.sh/ruff/rules/negate-equal-op
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-    "UP037",    # https://docs.astral.sh/ruff/rules/quoted-annotation
 ]
 "./scripts/dts/python-devicetree/src/devicetree/edtlib.py" = [
-    "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-    "UP037",    # https://docs.astral.sh/ruff/rules/quoted-annotation
 ]
 "./scripts/dts/python-devicetree/src/devicetree/grutils.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
