@@ -443,7 +443,7 @@ New Drivers
    * :dtcompatible:`wch,ch32v00x-pll-clock`
    * :dtcompatible:`wch,rcc`
 
-* comparator
+* Comparator
 
    * :dtcompatible:`silabs,acmp`
 
