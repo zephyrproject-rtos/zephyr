@@ -76,9 +76,6 @@ enum mgmt_cb_return {
 	MGMT_CB_ERROR_ERR,
 };
 
-/* Deprecated after Zephyr 3.4, use MGMT_CB_ERROR_ERR instead */
-#define MGMT_CB_ERROR_RET __DEPRECATED_MACRO MGMT_CB_ERROR_ERR
-
 /**
  * @typedef mgmt_cb
  * @brief Function to be called on MGMT notification/event.
