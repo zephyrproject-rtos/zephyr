@@ -273,8 +273,8 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	}
 
 	/* Send data */
-	mctx.iface.write(&mctx.iface, buf, len);
-	mctx.iface.write(&mctx.iface, &ctrlz, 1);
+	modem_cmd_send_data_nolock(&mctx.iface, buf, len);
+	modem_cmd_send_data_nolock(&mctx.iface, &ctrlz, 1);
 
 	/* Wait for the OK */
 	k_sem_reset(&mdata.sem_response);
