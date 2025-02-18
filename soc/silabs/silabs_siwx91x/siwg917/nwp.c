@@ -6,38 +6,43 @@
  * on the SiWx91x platform. The component is responsible for setting up the necessary
  * hardware and software components to enable network communication.
  *
- * Copyright (c) 2024 Silicon Laboratories Inc.
+ * Copyright (c) 2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/wifi.h>
+#include <zephyr/logging/log.h>
 
-#include "sl_wifi.h"
+#include "nwp.h"
 #include "sl_wifi_callback_framework.h"
 #ifdef CONFIG_BT_SILABS_SIWX91X
 #include "rsi_ble_common_config.h"
 #endif
 
-static int siwg917_nwp_init(void)
+LOG_MODULE_REGISTER(siwx91x_nwp);
+
+int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *get_config)
 {
-	sl_wifi_device_configuration_t network_config = {
-		.boot_option = LOAD_NWP_FW,
+	sl_wifi_device_configuration_t default_config = {
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
 		.region_code = DEFAULT_REGION,
+		.boot_option = LOAD_NWP_FW,
 		.boot_config = {
-			.oper_mode = SL_SI91X_CLIENT_MODE,
+			.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN,
 			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
-			.ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID,
-			.config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP,
 			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID,
 			.ext_custom_feature_bit_map =
 				MEMORY_CONFIG |
-				SL_SI91X_EXT_FEAT_XTAL_CLK |
-				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0,
+				SL_SI91X_EXT_FEAT_XTAL_CLK,
 		}
 	};
-	sl_si91x_boot_configuration_t *cfg = &network_config.boot_config;
 
+	__ASSERT(get_config, "get_config cannot be NULL");
+
+	sl_si91x_boot_configuration_t *cfg = &default_config.boot_config;
+
+#ifndef CONFIG_WIFI_SILABS_SIWX91X_AP_MODE
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X) && IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
 		cfg->coex_mode = SL_SI91X_WLAN_BLE_MODE;
 	} else if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
@@ -52,7 +57,7 @@ static int siwg917_nwp_init(void)
 	}
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
-	cfg->feature_bit_map |= SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE,
+	cfg->feature_bit_map |= SL_SI91X_FEAT_WPS_DISABLE,
 	cfg->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
 		cfg->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
@@ -86,11 +91,93 @@ static int siwg917_nwp_init(void)
 					SL_SI91X_BLE_ENABLE_ADV_EXTN |
 					SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS);
 #endif
+#endif /* WIFI_SILABS_SIWX91X_AP_MODE */
 
+	if (wifi_oper_mode == SL_SI91X_CLIENT_MODE) {
+		cfg->oper_mode = SL_SI91X_CLIENT_MODE;
+		cfg->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
+		cfg->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
+		cfg->ext_custom_feature_bit_map |=
+			SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0;
+
+		memcpy(get_config, &default_config, sizeof(default_config));
+		return 0;
+	} else if (wifi_oper_mode == SL_SI91X_ACCESS_POINT_MODE) {
+		cfg->oper_mode = SL_SI91X_ACCESS_POINT_MODE;
+		cfg->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
+
+		memcpy(get_config, &default_config, sizeof(default_config));
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int siwx91x_nwp_mode_switch(uint8_t oper_mode)
+{
+	sl_wifi_device_configuration_t nwp_config;
+	sl_wifi_interface_t interface;
+	sl_status_t status;
+
+	interface = sl_wifi_get_default_interface();
+	switch (oper_mode) {
+	case WIFI_STA_MODE:
+		if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_CLIENT_INTERFACE) {
+			return 0;
+		}
+
+		siwg91x_get_nwp_config(SL_SI91X_CLIENT_MODE, &nwp_config);
+		break;
+	case WIFI_AP_MODE:
+		if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_AP_INTERFACE) {
+			return 0;
+		}
+
+		siwg91x_get_nwp_config(SL_SI91X_ACCESS_POINT_MODE, &nwp_config);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	/* FIXME: Calling sl_wifi_deinit() impacts Bluetooth if coexistence is enabled */
+	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X) && oper_mode == WIFI_AP_MODE) {
+		LOG_WRN("Bluetooth is not supported in AP mode");
+	}
+
+	status = sl_wifi_deinit();
+	if (status != SL_STATUS_OK) {
+		return -ETIMEDOUT;
+	}
+
+	status = sl_wifi_init(&nwp_config, NULL, sl_wifi_default_event_handler);
+	if (status != SL_STATUS_OK) {
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
+static int siwg917_nwp_init(void)
+{
+	sl_wifi_device_configuration_t network_config;
+	int wifi_oper_mode;
+	sl_status_t status;
+
+#ifdef CONFIG_WIFI_SILABS_SIWX91X_AP_MODE
+	wifi_oper_mode = SL_SI91X_ACCESS_POINT_MODE;
+#else
+	wifi_oper_mode = SL_SI91X_CLIENT_MODE;
+#endif
+	siwg91x_get_nwp_config(wifi_oper_mode, &network_config);
 	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call
 	 * sl_net_set_profile() here. Currently these are unused.
 	 */
-	return sl_wifi_init(&network_config, NULL, sl_wifi_default_event_handler);
+	status = sl_wifi_init(&network_config, NULL, sl_wifi_default_event_handler);
+	if (status != SL_STATUS_OK) {
+		return -EINVAL;
+	}
+
+	return 0;
 }
 SYS_INIT(siwg917_nwp_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 

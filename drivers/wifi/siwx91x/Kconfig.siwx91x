@@ -50,4 +50,9 @@ config NET_MGMT_EVENT_QUEUE_SIZE
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	default 1
 
+config WIFI_SILABS_SIWX91X_AP_MODE
+	bool "AP Mode"
+	help
+	 This option allows the device to operate in Access Point (AP) mode
+	 in default instead of the Station (STA) mode.
 endif
