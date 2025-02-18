@@ -417,13 +417,6 @@ int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 		nrfy_grtc_timeout_get(NRF_GRTC) * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 32768 +
 		MAX_CC_LATCH_WAIT_TIME_US;
 	k_busy_wait(wait_time);
-#if NRF_GRTC_HAS_CLKSEL
-#if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)
-	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFLPRC);
-#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lfxo))
-	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFXO);
-#endif
-#endif
 	k_spin_unlock(&lock, key);
 	return 0;
 }
@@ -463,6 +456,18 @@ static int sys_clock_driver_init(void)
 	IRQ_CONNECT(DT_IRQN(GRTC_NODE), DT_IRQ(GRTC_NODE, priority), nrfx_isr,
 		    nrfx_grtc_irq_handler, 0);
 
+#if defined(CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT) && NRF_GRTC_HAS_CLKSEL
+#if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)
+	/* Switch to LFPRC as the low-frequency clock source. */
+	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFLPRC);
+#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lfxo))
+	/* Switch to LFXO as the low-frequency clock source. */
+	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFXO);
+#else
+	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFCLK);
+#endif
+#endif
+
 	err_code = nrfx_grtc_init(0);
 	if (err_code != NRFX_SUCCESS) {
 		return -EPERM;
@@ -494,16 +499,6 @@ static int sys_clock_driver_init(void)
 				   : CLOCK_CONTROL_NRF_LF_START_STABLE);
 
 	z_nrf_clock_control_lf_on(mode);
-#endif
-
-#if defined(CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT) && NRF_GRTC_HAS_CLKSEL
-#if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)
-	/* Switch to LFPRC as the low-frequency clock source. */
-	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFLPRC);
-#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lfxo))
-	/* Switch to LFXO as the low-frequency clock source. */
-	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFXO);
-#endif
 #endif
 
 #if defined(CONFIG_NRF_GRTC_ALWAYS_ON)
