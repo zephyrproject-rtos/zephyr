@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "memc_nxp_flexram.h"
+#include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 #include <zephyr/dt-bindings/memory-controller/nxp,flexram.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>

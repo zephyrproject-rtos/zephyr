@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <zephyr/linker/section_tags.h>
-#include "memc_nxp_flexram.h"
+#include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 #include <zephyr/kernel.h>
 #include <zephyr/console/console.h>
 #include <zephyr/cache.h>
