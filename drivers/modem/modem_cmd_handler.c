@@ -486,6 +486,20 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
 	return 0;
 }
 
+int modem_cmd_handler_await(struct modem_cmd_handler_data *data,
+			    struct k_sem *sem, k_timeout_t timeout)
+{
+	int ret = k_sem_take(sem, timeout);
+
+	if (ret == 0) {
+		ret = modem_cmd_handler_get_error(data);
+	} else if (ret == -EAGAIN) {
+		ret = -ETIMEDOUT;
+	}
+
+	return ret;
+}
+
 int modem_cmd_send_data_nolock(struct modem_iface *iface,
 			       const uint8_t *buf, size_t len)
 {
