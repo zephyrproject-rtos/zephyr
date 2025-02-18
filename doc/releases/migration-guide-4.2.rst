@@ -228,6 +228,15 @@ Stepper
 * Refactored the ``stepper_enable(const struct device * dev, bool enable)`` function to
   :c:func:`stepper_enable` & :c:func:`stepper_disable`.
 
+Misc
+====
+
+* Moved file ``drivers/memc/memc_nxp_flexram.h`` to
+  :zephyr_file:`include/zephyr/drivers/misc/flexram/nxp_flexram.h` so that the
+  file can be included using ``<zephyr/drivers/misc/flexram/nxp_flexram.h>``.
+  Modification to CMakeList.txt to use include this driver is no longer
+  required.
+
 Bluetooth
 *********
 
