@@ -107,6 +107,12 @@ schema;scenario-schema:
       type: map
       required: false
       mapping:
+        "pm_probe":
+          type: str
+          required: false
+        "pm_probe_port":
+          type: str
+          required: false
         "shell_commands_file":
           type: str
           required: false
