@@ -131,25 +131,40 @@ static void video_sw_generator_fill_colorbar(struct video_sw_generator_data *dat
 					     struct video_buffer *vbuf)
 {
 	int bw = data->fmt.width / 8;
-	int h, w, i = 0;
 
-	for (h = 0; h < data->fmt.height; h++) {
-		for (w = 0; w < data->fmt.width; w++) {
-			int color_idx = data->ctrl_vflip ? 7 - w / bw : w / bw;
-			if (data->fmt.pixelformat == VIDEO_PIX_FMT_RGB565) {
-				uint16_t *pixel = (uint16_t *)&vbuf->buffer[i];
-				*pixel = rgb565_colorbar_value[color_idx];
-				i += 2;
-			} else if (data->fmt.pixelformat == VIDEO_PIX_FMT_XRGB32) {
-				uint32_t *pixel = (uint32_t *)&vbuf->buffer[i];
-				*pixel = xrgb32_colorbar_value[color_idx];
-				i += 4;
-			}
+	vbuf->bytesused = 0;
+
+	if (vbuf->size < data->fmt.pitch) {
+		LOG_WRN("Buffer %p has only %u bytes, shorter than pitch %u",
+			vbuf, vbuf->size, data->fmt.pitch);
+		return;
+	}
+
+	/* Generate the first line of data */
+	for (int w = 0, i = 0; w < data->fmt.width; w++) {
+		int color_idx = data->ctrl_vflip ? 7 - w / bw : w / bw;
+
+		if (data->fmt.pixelformat == VIDEO_PIX_FMT_RGB565) {
+			uint16_t *pixel = (uint16_t *)&vbuf->buffer[i];
+			*pixel = sys_cpu_to_le16(rgb565_colorbar_value[color_idx]);
+		} else if (data->fmt.pixelformat == VIDEO_PIX_FMT_XRGB32) {
+			uint32_t *pixel = (uint32_t *)&vbuf->buffer[i];
+			*pixel = sys_cpu_to_le32(xrgb32_colorbar_value[color_idx]);
 		}
+		i += video_bits_per_pixel(data->fmt.pixelformat) / BITS_PER_BYTE;
+	}
+
+	/* Duplicate the first line all over the buffer */
+	for (int h = 1; h < data->fmt.height; h++) {
+		if (vbuf->size < vbuf->bytesused + data->fmt.pitch) {
+			break;
+		}
+
+		memcpy(vbuf->buffer + h * data->fmt.pitch, vbuf->buffer, data->fmt.pitch);
+		vbuf->bytesused += data->fmt.pitch;
 	}
 
 	vbuf->timestamp = k_uptime_get_32();
-	vbuf->bytesused = i;
 	vbuf->line_offset = 0;
 }
 
