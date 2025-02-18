@@ -22,26 +22,22 @@ BUILD_ASSERT(BT_CTLR_ISO_TX_SDU_LEN_MAX == CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX,
  * Based on the internal ISO Tx SDU maximum length, calculate the required ISO Tx buffers (PDUs)
  * required to fragment the SDU into PDU sizes scheduled for transmission.
  */
-#if defined(CONFIG_BT_CTLR_ADV_ISO) && defined(CONFIG_BT_CTLR_CONN_ISO)
-#define BT_CTLR_ISO_TX_PDU_BUFFERS (DIV_ROUND_UP(BT_CTLR_ISO_TX_SDU_LEN_MAX, \
-						 MIN((CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE - \
-						      BT_HCI_ISO_SDU_TS_HDR_SIZE), \
-						     MIN(CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX, \
-							 CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX))) * \
-				    CONFIG_BT_CTLR_ISO_TX_BUFFERS)
-#elif defined(CONFIG_BT_CTLR_ADV_ISO)
-#define BT_CTLR_ISO_TX_PDU_BUFFERS (DIV_ROUND_UP(BT_CTLR_ISO_TX_SDU_LEN_MAX, \
-						 MIN((CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE - \
-						      BT_HCI_ISO_SDU_TS_HDR_SIZE), \
-						     CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX)) * \
-				    CONFIG_BT_CTLR_ISO_TX_BUFFERS)
-#else /* CONFIG_BT_CTLR_CONN_ISO */
-#define BT_CTLR_ISO_TX_PDU_BUFFERS (DIV_ROUND_UP(BT_CTLR_ISO_TX_SDU_LEN_MAX, \
-						 MIN((CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE - \
-						      BT_HCI_ISO_SDU_TS_HDR_SIZE), \
-						     CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX)) * \
-				    CONFIG_BT_CTLR_ISO_TX_BUFFERS)
-#endif /* CONFIG_BT_CTLR_CONN_ISO */
+/* Defines the minimum required PDU length to help calculate the number of PDU buffers required
+ * At least one of CONFIG_BT_CTLR_ADV_ISO or CONFIG_BT_CTLR_CONN_ISO will always be enabled,
+ * so if either of them is not defined, it can default to the other
+ */
+#define BT_CTLR_ISO_TX_MIN_PDU_LEN \
+	MIN(COND_CODE_1(IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO), \
+			(CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX), \
+			(CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX)), \
+	    COND_CODE_1(IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO), \
+			(CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX), \
+			(CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX)))
+#define BT_CTLR_ISO_TX_PDU_BUFFERS \
+	(DIV_ROUND_UP(BT_CTLR_ISO_TX_SDU_LEN_MAX, \
+		      MIN((CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE - BT_HCI_ISO_SDU_TS_HDR_SIZE), \
+			  BT_CTLR_ISO_TX_MIN_PDU_LEN)) * \
+	 CONFIG_BT_CTLR_ISO_TX_BUFFERS)
 #else /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_CONN_ISO */
 #define BT_CTLR_ISO_TX_PDU_BUFFERS 0
 #endif /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_CONN_ISO */
