@@ -43,10 +43,13 @@ config SYSTEM_WORKQUEUE_PRIORITY
 if BT_HCI
 
 config BT_HCI_RAW
-	bool "RAW HCI access"
+	bool "Zephyr bt_hci_raw"
 	help
-	  This option allows to access Bluetooth controller
-	  from the application with the RAW HCI protocol.
+	  Enables a default implementation of <bluetooth/hci_raw.h>
+	  and <bluetooth/buf.h>.
+
+	  This API is a wrapper around the HCI driver interface,
+	  providing an alternative interface.
 
 config BT_HCI_RAW_H4
 	bool "RAW HCI H:4 transport"

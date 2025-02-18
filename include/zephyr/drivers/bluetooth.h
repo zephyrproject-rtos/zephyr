@@ -156,6 +156,14 @@ static inline int bt_hci_close(const struct device *dev)
  *
  * @note This function must only be called from a cooperative thread.
  *
+ * Buffer retention: The user of this API must assume the buffers given
+ * to this API may be retained for as long as the corresponding
+ * controller buffer is occupied.
+ *
+ * In practice this means the result of the LE Read Buffer Size command
+ * is only an upper bound and it is the user that must provide these
+ * buffers.
+ *
  * @param dev HCI device
  * @param buf Buffer containing data to be sent to the controller.
  *
