@@ -11,7 +11,7 @@ description: |
 
 compatible: "nxp,mbox-mailbox"
 
-include: [base.yaml, mailbox-controller.yaml]
+include: [base.yaml, mailbox-controller.yaml , reset-device.yaml]
 
 properties:
   interrupts:

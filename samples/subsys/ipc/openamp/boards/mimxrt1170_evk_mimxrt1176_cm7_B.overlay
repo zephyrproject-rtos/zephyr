@@ -9,6 +9,7 @@
 / {
 	chosen {
 		zephyr,ipc_shm = &ocram2_overlay;
+        zephyr,ipc = &mailbox0;
 	};
 
 	/* OpenAMP fails with full 512K OCRAM2 memory region as shared memory.
@@ -20,5 +21,11 @@
 		reg = <0x202c0000 DT_SIZE_K(16)>;
 		zephyr,memory-region="OCRAM2_OVERLAY";
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+	};
+
+    mailbox0: ipm-mbox {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox 1>, <&mbox 0>;
+		mbox-names = "tx", "rx";
 	};
 };
