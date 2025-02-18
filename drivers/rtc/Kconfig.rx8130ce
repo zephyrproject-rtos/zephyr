@@ -3,9 +3,9 @@
 #SPDX-License-Identifier: Apache-2.0
 
 config RTC_RX8130CE
-	bool "EPSON rx8130ce rtc driver"
+	bool "EPSON RX8130CE RTC driver"
 	default y
 	depends on DT_HAS_EPSON_RX8130CE_RTC_ENABLED
 	select I2C
 	help
-	  Enable RTC driver for the Epson rx8130ce rtc
+	   Enable RTC driver for the Epson RX8130CE RTC
