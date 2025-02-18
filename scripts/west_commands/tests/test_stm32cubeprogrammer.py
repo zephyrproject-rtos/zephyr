@@ -11,6 +11,7 @@ import pytest
 from runners.stm32cubeprogrammer import STM32CubeProgrammerBinaryRunner
 from conftest import RC_KERNEL_HEX, RC_KERNEL_ELF
 
+RC_KERNEL_SIGNED_BIN = 'test-zephyr.signed.bin'
 
 CLI_PATH = Path("STM32_Programmer_CLI")
 """Default CLI path used in tests."""
@@ -436,7 +437,7 @@ TEST_CASES = (
                 "--connect",
                 "port=swd",
                 "--download",
-                RC_KERNEL_HEX,
+                RC_KERNEL_SIGNED_BIN,
                 "0x80000000",
                 "0x1",
                 "--start",
