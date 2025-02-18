@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(spi_mcux_lpspi_common, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
+#include <fsl_lpspi.h>
 
 #if defined(LPSPI_RSTS) || defined(LPSPI_CLOCKS)
 static LPSPI_Type *const lpspi_bases[] = LPSPI_BASE_PTRS;
@@ -170,8 +171,8 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	master_config.pcsActiveHighOrLow = (spi_cfg->operation & SPI_CS_ACTIVE_HIGH)
 				    ? kLPSPI_PcsActiveHigh : kLPSPI_PcsActiveLow;
 	master_config.pinCfg = config->data_pin_config;
-	master_config.dataOutConfig = config->output_config ? kLpspiDataOutTristate :
-							      kLpspiDataOutRetained;
+	master_config.dataOutConfig = config->tristate_output ? kLpspiDataOutTristate :
+								kLpspiDataOutRetained;
 
 	LPSPI_MasterInit(base, &master_config, clock_freq);
 	LPSPI_SetDummyData(base, 0);
