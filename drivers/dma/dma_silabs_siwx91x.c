@@ -95,9 +95,10 @@ static inline int siwx91x_dma_addr_adjustment(uint32_t adjustment)
 }
 
 static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_handle,
-			      uint32_t channel, struct dma_config *config,
+			      uint32_t channel, const struct dma_config *config,
 			      UDMA_Channel_Info *channel_info)
 {
+	uint32_t dma_transfer_num = config->head_block->block_size / config->source_data_size;
 	const struct dma_siwx91x_config *cfg = dev->config;
 	UDMA_RESOURCES udma_resources = {
 		.reg = cfg->reg,
@@ -128,12 +129,11 @@ static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_h
 	}
 
 	/* Obtain the number of transfers */
-	config->head_block->block_size /= config->source_data_size;
-	if (config->head_block->block_size >= DMA_MAX_TRANSFER_COUNT) {
+	if (dma_transfer_num >= DMA_MAX_TRANSFER_COUNT) {
 		/* Maximum number of transfers is 1024 */
 		channel_control.totalNumOfDMATrans = DMA_MAX_TRANSFER_COUNT - 1;
 	} else {
-		channel_control.totalNumOfDMATrans = config->head_block->block_size;
+		channel_control.totalNumOfDMATrans = dma_transfer_num;
 	}
 
 	if (siwx91x_dma_data_width(config->source_data_size) < 0 ||
@@ -167,8 +167,9 @@ static int dma_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_h
 	status = UDMAx_ChannelConfigure(&udma_resources, (uint8_t)channel,
 					config->head_block->source_address,
 					config->head_block->dest_address,
-					config->head_block->block_size, channel_control,
-					&channel_config, NULL, channel_info, udma_handle);
+					dma_transfer_num, channel_control,
+					&channel_config, NULL, channel_info,
+					udma_handle);
 	if (status) {
 		return -EIO;
 	}
