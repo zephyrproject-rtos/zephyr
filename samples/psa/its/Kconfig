@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+# We explicitly don't want SECURE_STORAGE_ITS_IMPLEMENTATION_MBEDTLS here
+choice SECURE_STORAGE_ITS_IMPLEMENTATION
+	default SECURE_STORAGE_ITS_IMPLEMENTATION_ZEPHYR
+	default SECURE_STORAGE_ITS_IMPLEMENTATION_CUSTOM
+endchoice
+
+source "Kconfig.zephyr"
