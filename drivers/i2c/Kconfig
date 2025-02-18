@@ -254,6 +254,14 @@ config I2C_RV32M1_LPI2C
 	help
 	  Enable the RV32M1 LPI2C driver.
 
+config I2C_RPI_PICO_PIO
+	bool "Raspberry Pi Pico PIO based I2C driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_PIO_I2C_ENABLED
+	select PICOSDK_USE_PIO
+	help
+	  Enable the Raspberry Pi Pico PIO I2C driver.
+
 config GPIO_I2C_SWITCH
 	bool "GPIO controlled I2C bus switch"
 	default y
