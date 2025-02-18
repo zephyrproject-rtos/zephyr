@@ -43,7 +43,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
-#include <zephyr/drivers/i2c.h>
+#include <zephyr/devicetree/nvmem.h>
+#include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <soc.h>
@@ -1729,24 +1730,21 @@ static int eth_initialize(const struct device *dev)
 	return retval;
 }
 
-#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
-static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
+#if DT_INST_NODE_HAS_PROP(0, nvmem_cells) && defined(CONFIG_ETH_SAM_GMAC_MAC_EEPROM)
+static void get_mac_addr_from_eeprom(uint8_t mac_addr[6])
 {
-	uint32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
 	int ret;
-	const struct i2c_dt_spec i2c = I2C_DT_SPEC_GET(DT_INST_PHANDLE(0, mac_eeprom));
+	const struct device *eeprom_dev = DT_NVMEM_DEV_BY_IDX(DT_DRV_INST(0), 0);
+	uint32_t addr = DT_NVMEM_ADDR_BY_IDX(DT_DRV_INST(0), 0);
 
-	if (!device_is_ready(i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+	if (!device_is_ready(eeprom_dev)) {
+		LOG_ERR("EEPROM device not ready.");
 		return;
 	}
 
-	ret = i2c_write_read_dt(&i2c,
-			   &iaddr, CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
-			   mac_addr, 6);
-
-	if (ret != 0) {
-		LOG_ERR("I2C: failed to read MAC addr");
+	ret = eeprom_read(eeprom_dev, addr, mac_addr, 6);
+	if (ret < 0) {
+		LOG_ERR("Error reading MAC address from EEPROM [%d]", ret);
 		return;
 	}
 }
@@ -1754,8 +1752,8 @@ static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 
 static void generate_mac(uint8_t mac_addr[6])
 {
-#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
-	get_mac_addr_from_i2c_eeprom(mac_addr);
+#if DT_INST_NODE_HAS_PROP(0, nvmem_cells) && defined(CONFIG_ETH_SAM_GMAC_MAC_EEPROM)
+	get_mac_addr_from_eeprom(mac_addr);
 #elif DT_INST_PROP(0, zephyr_random_mac_address)
 	gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
 #endif
