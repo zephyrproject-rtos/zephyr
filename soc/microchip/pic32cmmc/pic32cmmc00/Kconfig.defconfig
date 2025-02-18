@@ -1,0 +1,11 @@
+# Microchip PIC32CM MC00 series config options
+
+# Copyright (c) 2025 GP Orcullo
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_PIC32CMMC00
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_SERIES_PIC32CMMC00

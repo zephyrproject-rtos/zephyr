@@ -1,0 +1,35 @@
+# Microchip PIC32CM MC00 series
+
+# Copyright (c) 2025 GP Orcullo
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PIC32CMMC00
+	bool
+	select SOC_FAMILY_MICROCHIP_PIC32CMMC
+	help
+	  Enable support for Microhip PIC32CM MC00 Cortex-M0+ microcontrollers.
+
+config SOC_SERIES
+	default "pic32cmmc00" if SOC_SERIES_PIC32CMMC00
+
+config SOC_PIC32CM6408MC00032
+	bool
+	select SOC_SERIES_PIC32CMMC00
+
+config SOC_PIC32CM6408MC00048
+	bool
+	select SOC_SERIES_PIC32CMMC00
+
+config SOC_PIC32CM1216MC00032
+	bool
+	select SOC_SERIES_PIC32CMMC00
+
+config SOC_PIC32CM1216MC00048
+	bool
+	select SOC_SERIES_PIC32CMMC00
+
+config SOC
+	default "pic32cm6408mc00032" if SOC_PIC32CM6408MC00032
+	default "pic32cm6408mc00048" if SOC_PIC32CM6408MC00048
+	default "pic32cm1216mc00032" if SOC_PIC32CM1216MC00032
+	default "pic32cm1216mc00048" if SOC_PIC32CM1216MC00048
