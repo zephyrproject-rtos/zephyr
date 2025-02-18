@@ -19,13 +19,14 @@ enabled, for example:
    :board: reel_board
    :goals: build flash
 
-For boards that do not have a sensor, a simple fake sensor driver is provided, for example:
+For boards that do not have a sensor, a simple fake sensor driver is provided and can enabled by
+adding the following overlay:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/sensor_shell
    :board: qemu_riscv64
    :goals: run
-   :gen-args: -DCONFIG_SAMPLES_SENSOR_SHELL_FAKE_SENSOR=y
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE=fake_sensor.overlay
 
 Shell Module Command Help
 =========================
