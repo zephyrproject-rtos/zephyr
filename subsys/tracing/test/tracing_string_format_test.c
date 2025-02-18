@@ -204,6 +204,11 @@ void sys_trace_idle(void)
 	TRACING_STRING("%s\n", __func__);
 }
 
+void sys_trace_idle_exit(void)
+{
+	TRACING_STRING("%s\n", __func__);
+}
+
 void sys_trace_k_condvar_broadcast_enter(struct k_condvar *condvar)
 {
 	TRACING_STRING("%s: %p\n", __func__, condvar);
