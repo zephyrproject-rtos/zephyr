@@ -159,6 +159,21 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
 				  bool reset_error_flag);
 
 /**
+ * @brief  Wait until semaphore is given
+ *
+ * This function does the same wait behavior as @ref modem_cmd_send, but can wait without sending
+ * any command first. Useful for waiting for asynchronous responses.
+ *
+ * @param  data: handler data to use
+ * @param  sem: wait for semaphore.
+ * @param  timeout: wait timeout.
+ *
+ * @retval 0 if ok, < 0 if error.
+ */
+int modem_cmd_handler_await(struct modem_cmd_handler_data *data,
+			    struct k_sem *sem, k_timeout_t timeout);
+
+/**
  * @brief  send data directly to interface w/o TX lock.
  *
  * This function just writes directly to the modem interface.
