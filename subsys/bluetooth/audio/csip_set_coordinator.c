@@ -52,7 +52,6 @@
 #include "common/bt_str.h"
 #include "host/conn_internal.h"
 #include "host/keys.h"
-#include "host/hci_core.h"
 
 LOG_MODULE_REGISTER(bt_csip_set_coordinator, CONFIG_BT_CSIP_SET_COORDINATOR_LOG_LEVEL);
 
