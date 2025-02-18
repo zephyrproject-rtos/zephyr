@@ -51,8 +51,8 @@ struct cfb_font {
 };
 
 struct cfb_position {
-	uint16_t x;
-	uint16_t y;
+	int16_t x;
+	int16_t y;
 };
 
 /**
@@ -86,7 +86,7 @@ struct cfb_position {
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint16_t y);
+int cfb_print(const struct device *dev, const char *const str, int16_t x, int16_t y);
 
 /**
  * @brief Print a string into the framebuffer.
@@ -166,7 +166,7 @@ int cfb_framebuffer_invert(const struct device *dev);
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
+int cfb_invert_area(const struct device *dev, int16_t x, int16_t y,
 		    uint16_t width, uint16_t height);
 
 /**
