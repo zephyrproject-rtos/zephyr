@@ -10,6 +10,8 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
 LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
@@ -64,21 +66,21 @@ static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpo
 				      struct video_format *fmt)
 {
 	struct video_sw_generator_data *data = dev->data;
-	int i = 0;
+	int i;
 
 	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(fmts); ++i) {
-		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
-		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
-		    fmt->height <= fmts[i].height_max) {
+	for (i = 0; fmts[i].pixelformat != 0; ++i) {
+		if (fmt->pixelformat == fmts[i].pixelformat &&
+		    IN_RANGE(fmt->width, fmts[i].width_min, fmts[i].width_max) &&
+		    IN_RANGE(fmt->height, fmts[i].height_min, fmts[i].height_max)) {
 			break;
 		}
 	}
 
-	if (i == ARRAY_SIZE(fmts)) {
+	if (fmts[i].pixelformat == 0) {
 		LOG_ERR("Unsupported pixel format or resolution");
 		return -ENOTSUP;
 	}
@@ -313,18 +315,20 @@ static int video_sw_generator_enum_frmival(const struct device *dev, enum video_
 {
 	int i = 0;
 
-	if (ep != VIDEO_EP_OUT || fie->index) {
+	if (ep != VIDEO_EP_OUT || fie->index > 0) {
 		return -EINVAL;
 	}
 
-	while (fmts[i].pixelformat && (fmts[i].pixelformat != fie->format->pixelformat)) {
-		i++;
+	for (i = 0; fmts[i].pixelformat != 0; ++i) {
+		if (fie->format->pixelformat == fmts[i].pixelformat &&
+		    IN_RANGE(fie->format->width, fmts[i].width_min, fmts[i].width_max) &&
+		    IN_RANGE(fie->format->height, fmts[i].height_min, fmts[i].height_max)) {
+			break;
+		}
 	}
 
-	if ((i == ARRAY_SIZE(fmts)) || (fie->format->width > fmts[i].width_max) ||
-	    (fie->format->width < fmts[i].width_min) ||
-	    (fie->format->height > fmts[i].height_max) ||
-	    (fie->format->height < fmts[i].height_min)) {
+	if (fmts[i].pixelformat == 0) {
+		LOG_ERR("Nothing matching the requested format was found");
 		return -EINVAL;
 	}
 
