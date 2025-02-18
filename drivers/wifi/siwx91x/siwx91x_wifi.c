@@ -51,38 +51,31 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 {
 	sl_wifi_client_configuration_t wifi_config = {
 		.bss_type = SL_WIFI_BSS_TYPE_INFRASTRUCTURE,
+		.encryption = SL_WIFI_DEFAULT_ENCRYPTION,
+		.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
 	};
 	int ret;
 
 	switch (params->security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		wifi_config.security = SL_WIFI_OPEN;
-		wifi_config.encryption = SL_WIFI_NO_ENCRYPTION;
 		break;
 	case WIFI_SECURITY_TYPE_WPA_PSK:
 		wifi_config.security = SL_WIFI_WPA;
-		wifi_config.encryption = SL_WIFI_DEFAULT_ENCRYPTION;
-		wifi_config.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID;
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
-		wifi_config.security = SL_WIFI_WPA2;
-		wifi_config.encryption = SL_WIFI_TKIP_ENCRYPTION;
-		wifi_config.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID;
-		break;
+		/* This case is meant to fall through to the next */
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
+		/* Use WPA2 security as the device supports only SHA256
+		 * key derivation for WPA2-PSK
+		 */
 		wifi_config.security = SL_WIFI_WPA2;
-		wifi_config.encryption = SL_WIFI_CCMP_ENCRYPTION;
-		wifi_config.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID;
 		break;
-	case WIFI_SECURITY_TYPE_SAE:
-		/* TODO: Support the case where MFP is not required */
+	case WIFI_SECURITY_TYPE_SAE_AUTO:
+		/* Use WPA3 security as the device supports only HNP and H2E
+		 * methods for SAE
+		 */
 		wifi_config.security = SL_WIFI_WPA3;
-		wifi_config.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID;
-		break;
-	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
-		wifi_config.security = SL_WIFI_WPA2;
-		wifi_config.encryption = SL_WIFI_DEFAULT_ENCRYPTION;
-		wifi_config.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID;
 		break;
 	/* Zephyr WiFi shell doesn't specify how to pass credential for these
 	 * key managements.
