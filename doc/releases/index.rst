@@ -55,15 +55,24 @@ For more information, see  :ref:`Security Vulnerability Reporting <reporting>`.
 Supported Releases
 ******************
 
-+-----------------+----------------+---------------+
-| Release         | Release date   | EOL           |
-+=================+================+===============+
-| `Zephyr 3.7.0`_ | 2024-07-26     | 2027-01-26    |
-+-----------------+----------------+---------------+
-| `Zephyr 4.0.0`_ | 2024-11-15     | 2025-07-18    |
-+-----------------+----------------+---------------+
++------------------------+----------------+---------------+
+| Release                | Release date   | EOL           |
++========================+================+===============+
+| `Zephyr 4.0.0`_        | 2024-11-15     | 2025-07-18    |
++------------------------+----------------+---------------+
+| `Zephyr 3.7.0 (LTS3)`_ | 2024-07-26     | 2027-01-26    |
++------------------------+----------------+---------------+
 
-As of 2022-01-01, LTS1 (1.14.x) is not supported and has reached end of life (EOL).
+Previous LTS
+************
+
++-------------------------+---------------+
+| Release                 | EOL           |
++=========================+===============+
+| `Zephyr 2.7.6 (LTS2)`_  | 2025-01-26    |
++-------------------------+---------------+
+| `Zephyr 1.14.1 (LTS1)`_ | 2022-01-01    |
++-------------------------+---------------+
 
 Release Notes
 *************
@@ -128,5 +137,7 @@ Release notes and migration guides for end-of-life releases of Zephyr RTOS can b
 
 .. _`GitHub repository`: https://github.com/zephyrproject-rtos/zephyr
 .. _`GitHub tagged releases`: https://github.com/zephyrproject-rtos/zephyr/tags
-.. _`Zephyr 3.7.0`: https://docs.zephyrproject.org/3.7.0/
+.. _`Zephyr 1.14.1 (LTS1)`: https://docs.zephyrproject.org/1.14.1/
+.. _`Zephyr 2.7.6 (LTS2)`: https://docs.zephyrproject.org/2.7.6/
+.. _`Zephyr 3.7.0 (LTS3)`: https://docs.zephyrproject.org/3.7.0/
 .. _`Zephyr 4.0.0`: https://docs.zephyrproject.org/4.0.0/
