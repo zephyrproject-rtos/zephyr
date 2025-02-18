@@ -25,6 +25,7 @@ supported:
   - dma
   - gpio
   - i2c
+  - minimal
   - netif:eth
   - sdhc
   - spi

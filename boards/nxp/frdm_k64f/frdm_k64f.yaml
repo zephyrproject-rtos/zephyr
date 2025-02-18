@@ -20,6 +20,7 @@ supported:
   - flash
   - gpio
   - i2c
+  - minimal
   - netif:eth
   - nvs
   - pwm

@@ -24,6 +24,7 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - minimal
   - pwm
   - spi
   - usb_device

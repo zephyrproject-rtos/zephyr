@@ -10,4 +10,5 @@ flash: 1024
 supported:
   - flash
   - i2c
+  - minimal
 vendor: nxp

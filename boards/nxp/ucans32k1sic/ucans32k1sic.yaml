@@ -11,14 +11,15 @@ flash: 1024
 toolchain:
   - zephyr
 supported:
-  - mpu
-  - gpio
-  - uart
-  - pinctrl
-  - i2c
-  - spi
-  - pwm
-  - can
-  - watchdog
-  - counter
   - adc
+  - can
+  - counter
+  - gpio
+  - i2c
+  - minimal
+  - mpu
+  - pinctrl
+  - pwm
+  - spi
+  - uart
+  - watchdog

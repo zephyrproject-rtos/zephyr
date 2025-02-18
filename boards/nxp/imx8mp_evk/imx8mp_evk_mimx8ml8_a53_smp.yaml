@@ -13,9 +13,10 @@ toolchain:
   - cross-compile
 ram: 1024
 supported:
+  - minimal
+  - net
   - smp
   - uart
-  - net
 testing:
   ignore_tags:
     - bluetooth

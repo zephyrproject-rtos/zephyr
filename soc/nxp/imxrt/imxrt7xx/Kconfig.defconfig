@@ -12,6 +12,7 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 237500000 if CORTEX_M_SYSTICK
 	default 1000000 if MCUX_OS_TIMER
+	default 100
 
 choice CACHE_TYPE
 	default EXTERNAL_CACHE
@@ -27,6 +28,7 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 100000000 if CORTEX_M_SYSTICK
 	default 1000000 if MCUX_OS_TIMER
+	default 100
 
 endif # SOC_MIMXRT798S_CM33_CPU1
 

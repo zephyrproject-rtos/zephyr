@@ -15,6 +15,7 @@ config CORTEX_M_SYSTICK
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 	default $(dt_node_int_prop_int,/soc/lptmr@40040000,clock-frequency) if MCUX_LPTMR_TIMER
+	default 100
 
 config NUM_IRQS
 	default 32

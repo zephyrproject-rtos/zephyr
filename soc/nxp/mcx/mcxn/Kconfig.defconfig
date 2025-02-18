@@ -22,6 +22,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1000000 if MCUX_OS_TIMER
 	default 16000 if MCUX_LPTMR_TIMER
 	default 150000000 if CORTEX_M_SYSTICK
+	default 100
 
 # Set to the minimal size of data which can be written.
 config FLASH_FILL_BUFFER_SIZE
