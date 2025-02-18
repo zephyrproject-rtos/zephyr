@@ -440,7 +440,6 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	LL_RTC_TimeTypeDef rtc_time;
 	LL_RTC_DateTypeDef rtc_date;
 	uint32_t real_year = timeptr->tm_year + TM_YEAR_REF;
-	int err = 0;
 
 	if (real_year < RTC_YEAR_REF) {
 		/* RTC does not support years before 2000 */
@@ -452,19 +451,10 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 		return -EINVAL;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&data->lock);
-
-	LOG_DBG("Setting clock");
-
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_EnableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
-
 	/* Enter Init mode inside the LL_RTC_Time and Date Init functions */
 	rtc_time.Hours = bin2bcd(timeptr->tm_hour);
 	rtc_time.Minutes = bin2bcd(timeptr->tm_min);
 	rtc_time.Seconds = bin2bcd(timeptr->tm_sec);
-	LL_RTC_TIME_Init(RTC, LL_RTC_FORMAT_BCD, &rtc_time);
 
 	/* Set Date after Time to be sure the DR is correctly updated on stm32F2 serie. */
 	rtc_date.Year = bin2bcd((real_year - RTC_YEAR_REF));
@@ -474,6 +464,16 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	/* WeekDay sunday (tm_wday = 0) is not represented by the same value in hardware,
 	 * all the other values are consistent with what is expected by hardware.
 	 */
+
+	LOG_DBG("Setting clock");
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
+	LL_PWR_EnableBkUpAccess();
+#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+
+	LL_RTC_TIME_Init(RTC, LL_RTC_FORMAT_BCD, &rtc_time);
 	LL_RTC_DATE_Init(RTC, LL_RTC_FORMAT_BCD, &rtc_date);
 
 #if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
@@ -490,8 +490,6 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	}
 #endif /* CONFIG_SOC_SERIES_STM32F2X */
 
-	k_spin_unlock(&data->lock, key);
-
 	LOG_DBG("Calendar set : %d/%d/%d - %dh%dm%ds",
 			LL_RTC_DATE_GetDay(RTC),
 			LL_RTC_DATE_GetMonth(RTC),
@@ -501,7 +499,9 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 			LL_RTC_TIME_GetSecond(RTC)
 	);
 
-	return err;
+	k_spin_unlock(&data->lock, key);
+
+	return 0;
 }
 
 static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr)
