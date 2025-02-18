@@ -1,8 +1,5 @@
 .. zephyr:board:: ek_ra2l1
 
-RA2L1 Evaluation Kit
-####################
-
 Overview
 ********
 

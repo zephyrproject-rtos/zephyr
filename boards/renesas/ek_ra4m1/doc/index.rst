@@ -1,8 +1,5 @@
 .. zephyr:board:: ek_ra4m1
 
-RA4M1 Evaluation Kit
-####################
-
 Overview
 ********
 
