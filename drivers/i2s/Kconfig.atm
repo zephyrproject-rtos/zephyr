@@ -13,8 +13,10 @@ menuconfig I2S_ATM
 
 if I2S_ATM
 
-config I2S_SAMPLE_WIDTH_32
-	bool
-	default y
+config I2S_WSCNT
+	int "force I2S word select count"
+	default 0
+	help
+	  Force the number of word select count. 0 means no force.
 
 endif # I2S_ATM

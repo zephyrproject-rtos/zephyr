@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Iron Device Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_SMA1303
+	bool "Iron Device SMA1303 codec support"
+	depends on DT_HAS_IRON_SMA1303_ENABLED
+	default y
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_IRON_SMA1303),i2c)
+	help
+	  Enable driver for SMA1303 amplifier
+

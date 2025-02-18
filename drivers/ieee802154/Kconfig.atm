@@ -1,10 +1,11 @@
-# Copyright (c) 2023 Atmosic
+# Copyright (c) 2023-2025 Atmosic
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig IEEE802154_ATM34
 	bool "Atmosic ATM34 15.4 driver support"
 	default y
 	depends on DT_HAS_ATMOSIC_ATM34_IEEE802154_ENABLED
+	select ATM_EUI
 
 if IEEE802154_ATM34
 

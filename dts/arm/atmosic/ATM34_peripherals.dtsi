@@ -324,3 +324,8 @@ brownout: brownout {
 	interrupts = <92 2>;
 	status = "okay";
 };
+
+atm_antenna: atm_antenna {
+	compatible = "atmosic,antenna";
+	status = "disabled";
+};

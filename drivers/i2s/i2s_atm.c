@@ -208,8 +208,8 @@ static int i2s_config_convert(const struct device *dev, const struct i2s_config 
 	}
 
 	uint16_t ws_cnt[] = {
-#ifdef CONFIG_I2S_ATM_WSCNT
-		CONFIG_I2S_ATM_WSCNT
+#if CONFIG_I2S_WSCNT
+		CONFIG_I2S_WSCNT
 #else
 		16, 24, 32
 #endif

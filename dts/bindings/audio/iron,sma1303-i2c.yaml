@@ -1,0 +1,12 @@
+# Copyright 2025 Iron Device Corporation
+# SPDX-Identifier: Apache-2.0
+
+description: Iron Device SMA1303 Audio Amplifier
+
+compatible: "iron,sma1303"
+
+include: ["i2c-device.yaml"]
+
+properties:
+  reg:
+    required: true
