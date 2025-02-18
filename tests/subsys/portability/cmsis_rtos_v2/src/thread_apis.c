@@ -417,4 +417,34 @@ ZTEST(cmsis_thread_apis, test_thread_apis_join_after_exit)
 	status = osThreadJoin(id);
 	zassert_equal(status, osOK, "osThreadJoin failed with status=%d!", status);
 }
+
+static K_THREAD_STACK_DEFINE(test_stack9, STACKSZ);
+static struct cmsis_rtos_thread_cb test_cb9;
+static const osThreadAttr_t os_thread9_attr = {
+	.name = "Thread9",
+	.attr_bits = osThreadJoinable,
+	.cb_mem = &test_cb9,
+	.cb_size = sizeof(test_cb9),
+	.stack_mem = &test_stack9,
+	.stack_size = STACKSZ,
+	.priority = osPriorityNormal,
+};
+static void thread9(void *argument)
+{
+	osThreadExit();
+}
+ZTEST(cmsis_thread_apis, test_thread_apis_multiple_new_static)
+{
+	osThreadId_t id;
+	osStatus_t status;
+
+	for (int i = 0; i < 100; i++) {
+		id = osThreadNew(thread9, NULL, &os_thread9_attr);
+		zassert_not_null(id,
+				 "Failed to create thread with osThreadNew using static cb/stack");
+
+		status = osThreadJoin(id);
+		zassert_equal(status, osOK, "osThreadJoin failed with status=%d!", status);
+	}
+}
 ZTEST_SUITE(cmsis_thread_apis, NULL, NULL, NULL, NULL, NULL);
