@@ -246,6 +246,15 @@ Interrupt Controller
 LED Strip
 =========
 
+Misc
+====
+
+* Moved :zephyr_file:`drivers/memc/memc_nxp_flexram.h` to
+  :zephyr_file:`include/drivers/misc/flexram/memc_nxp_flexram.h` so that the
+  file can be included using <zephyr/drivers/misc/flexram/memc_nxp_flexram.h>.
+  Modification to CMakeList.txt to use include this driver is no longer
+  required.
+
 MMU/MPU
 =======
 
