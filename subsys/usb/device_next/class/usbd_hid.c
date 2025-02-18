@@ -267,13 +267,25 @@ static int handle_get_report(const struct device *dev,
 	return 0;
 }
 
-static int handle_set_protocol(const struct device *dev,
-			       const struct usb_setup_packet *const setup)
+static void handle_set_protocol(const struct device *dev, uint16_t protocol)
+{
+	struct hid_device_data *const ddata = dev->data;
+	const struct hid_device_ops *const ops = ddata->ops;
+
+	LOG_DBG("Set Protocol: %s", protocol ? "Report" : "Boot");
+	if (ddata->protocol != protocol) {
+		ddata->protocol = protocol;
+		if (ops->set_protocol) {
+			ops->set_protocol(dev, protocol);
+		}
+	}
+}
+
+static int handle_set_protocol_setup(const struct device *dev,
+				     const struct usb_setup_packet *const setup)
 {
 	const struct hid_device_config *dcfg = dev->config;
-	struct hid_device_data *const ddata = dev->data;
 	struct usbd_hid_descriptor *const desc = dcfg->desc;
-	const struct hid_device_ops *const ops = ddata->ops;
 	const uint16_t protocol = setup->wValue;
 
 	if (protocol > HID_PROTOCOL_REPORT) {
@@ -291,16 +303,7 @@ static int handle_set_protocol(const struct device *dev,
 		return 0;
 	}
 
-	LOG_DBG("Set Protocol: %s", protocol ? "Report" : "Boot");
-
-	if (ddata->protocol != protocol) {
-		ddata->protocol = protocol;
-
-		if (ops->set_protocol) {
-			ops->set_protocol(dev, protocol);
-		}
-	}
-
+	handle_set_protocol(dev, protocol);
 	return 0;
 }
 
@@ -375,7 +378,7 @@ static int usbd_hid_ctd(struct usbd_class_data *const c_data,
 		ret = handle_set_report(dev, setup, buf);
 		break;
 	case USB_HID_SET_PROTOCOL:
-		ret = handle_set_protocol(dev, setup);
+		ret = handle_set_protocol_setup(dev, setup);
 		break;
 	default:
 		errno = -ENOTSUP;
@@ -433,7 +436,7 @@ static void usbd_hid_enable(struct usbd_class_data *const c_data)
 	struct usbd_hid_descriptor *const desc = dcfg->desc;
 
 	atomic_set_bit(&ddata->state, HID_DEV_CLASS_ENABLED);
-	ddata->protocol = HID_PROTOCOL_REPORT;
+	handle_set_protocol(dev, HID_PROTOCOL_REPORT);
 	if (ops->iface_ready) {
 		ops->iface_ready(dev, true);
 	}
