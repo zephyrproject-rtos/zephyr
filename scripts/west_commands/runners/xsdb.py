@@ -31,7 +31,7 @@ class XSDBBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(flash_addr=True)
+        return RunnerCaps()
 
     @classmethod
     def do_add_parser(cls, parser):
