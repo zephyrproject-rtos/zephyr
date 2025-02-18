@@ -34,7 +34,9 @@ Getting Started
 ***************
 
 Welcome to Zephyr! See the `Introduction to Zephyr`_ for a high-level overview,
-and the documentation's `Getting Started Guide`_ to start developing.
+and the documentation's `Getting Started Guide`_ to start developing. Alternatively,
+you can try out Zephyr by creating a GitHub codespace without any installation; see
+`Create GitHub codespace`_ for details.
 
 .. start_include_here
 
