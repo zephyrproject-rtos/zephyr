@@ -1172,7 +1172,6 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 
 	cp->opcode = BT_BAP_BASS_OP_SCAN_START;
 
-	atomic_clear_bit(inst->flags, BAP_BA_FLAG_SCANNING);
 	err = bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
 	if (err != 0 && start_scan) {
 		/* bt_bap_broadcast_assistant_common_cp clears the busy flag on error */
