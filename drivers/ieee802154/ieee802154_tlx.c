@@ -634,9 +634,14 @@ static void ALWAYS_INLINE tlx_rf_rx_isr(const struct device *dev)
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_PKT_TXTIME)
 	uint64_t rx_time = k_ticks_to_us_near64(k_uptime_ticks());
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 	uint32_t delta_time = (stimer_get_tick() - ZB_RADIO_TIMESTAMP_GET(tlx->rx_buffer)) /
 		SYSTEM_TIMER_TICK_1US;
-
+#endif
+#if CONFIG_SOC_RISCV_TELINK_TL721X
+	uint32_t delta_time = (rf_bb_timer_get_tick() - ZB_RADIO_TIMESTAMP_GET(tlx->rx_buffer)) /
+		BB_TIMER_TICK_1US;
+#endif
 	rx_time -= delta_time;
 #endif /* CONFIG_NET_PKT_TIMESTAMP && CONFIG_NET_PKT_TXTIME */
 
@@ -1005,8 +1010,10 @@ static int tlx_start(const struct device *dev)
 		riscv_plic_set_priority(DT_INST_IRQN(0), DT_INST_IRQ(0, priority));
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 		if (!tlx_rf_zigbee_250K_mode) {
-#if CONFIG_SOC_RISCV_TELINK_TL721X && CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
 			ske_dig_en();
+#endif
 #endif
 			rf_mode_init();
 			rf_set_zigbee_250K_mode();
