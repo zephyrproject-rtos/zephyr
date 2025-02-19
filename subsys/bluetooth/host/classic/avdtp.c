@@ -141,7 +141,7 @@ void bt_avdtp_media_l2cap_connected(struct bt_l2cap_chan *chan)
 		bt_avdtp_clear_req(session);
 
 		if (req->func != NULL) {
-			req->func(req);
+			req->func(req, NULL);
 		}
 	}
 }
@@ -171,7 +171,7 @@ void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
 		bt_avdtp_clear_req(session);
 
 		if (req->func != NULL) {
-			req->func(req);
+			req->func(req, NULL);
 		}
 	} else if (sep->state > AVDTP_OPENING) {
 		bt_avdtp_set_state(sep, AVDTP_IDLE);
@@ -321,18 +321,11 @@ static void avdtp_discover_rsp(struct bt_avdtp *session, struct net_buf *buf, ui
 	}
 
 	k_work_cancel_delayable(&session->timeout_work);
-
-	if (msg_type == BT_AVDTP_ACCEPT) {
-		DISCOVER_REQ(req)->buf = buf;
-	} else {
-		DISCOVER_REQ(req)->buf = NULL;
-	}
-
 	avdtp_set_status(req, buf, msg_type);
 	bt_avdtp_clear_req(session);
 
 	if (req->func != NULL) {
-		req->func(req);
+		req->func(req, buf);
 	}
 }
 
@@ -420,17 +413,11 @@ static void avdtp_get_capabilities_rsp(struct bt_avdtp *session, struct net_buf 
 	}
 
 	k_work_cancel_delayable(&session->timeout_work);
-	GET_CAP_REQ(session->req)->buf = NULL;
-
-	if (msg_type == BT_AVDTP_ACCEPT) {
-		GET_CAP_REQ(req)->buf = buf;
-	}
-
 	avdtp_set_status(req, buf, msg_type);
 	bt_avdtp_clear_req(session);
 
 	if (req->func != NULL) {
-		req->func(req);
+		req->func(req, buf);
 	}
 }
 
@@ -551,7 +538,7 @@ static void avdtp_process_configuration_rsp(struct bt_avdtp *session, struct net
 	bt_avdtp_clear_req(session);
 
 	if (req->func != NULL) {
-		req->func(req);
+		req->func(req, NULL);
 	}
 }
 
@@ -653,7 +640,7 @@ static void avdtp_open_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8_
 		bt_avdtp_clear_req(session);
 
 		if (req->func != NULL) {
-			req->func(req);
+			req->func(req, NULL);
 		}
 	}
 }
@@ -747,7 +734,7 @@ static void avdtp_start_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 	bt_avdtp_clear_req(session);
 
 	if (req->func != NULL) {
-		req->func(req);
+		req->func(req, NULL);
 	}
 }
 
@@ -826,7 +813,7 @@ static void avdtp_close_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 	bt_avdtp_clear_req(session);
 
 	if (req->func != NULL) {
-		req->func(req);
+		req->func(req, NULL);
 	}
 }
 
@@ -904,7 +891,7 @@ static void avdtp_suspend_rsp(struct bt_avdtp *session, struct net_buf *buf, uin
 	bt_avdtp_clear_req(session);
 
 	if (req->func != NULL) {
-		req->func(req);
+		req->func(req, NULL);
 	}
 }
 
@@ -995,7 +982,7 @@ static void avdtp_abort_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 	bt_avdtp_clear_req(session);
 
 	if (req->func != NULL) {
-		req->func(req);
+		req->func(req, NULL);
 	}
 }
 
@@ -1019,7 +1006,7 @@ static void avdtp_timeout(struct k_work *work)
 		case BT_AVDTP_START:
 		case BT_AVDTP_SUSPEND:
 			req->status = BT_AVDTP_TIME_OUT;
-			req->func(req);
+			req->func(req, NULL);
 			break;
 		default:
 			break;
@@ -1115,7 +1102,7 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 		bt_avdtp_clear_req(session);
 
 		if (req->func != NULL) {
-			req->func(req);
+			req->func(req, NULL);
 		}
 	}
 
