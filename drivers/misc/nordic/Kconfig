@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config MISC_NORDIC
+	bool
+
+config NORDIC_NRF_POWER
+	bool "Nordic nRF POWER driver"
+	default y
+	select NRFX_POWER
+	select MISC_NORDIC
+	depends on DT_HAS_NORDIC_NRF_POWER_ENABLED

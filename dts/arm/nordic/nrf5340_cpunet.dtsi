@@ -18,7 +18,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@1 {
+		cpu1: cpu@1 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <1>;
@@ -29,6 +29,17 @@
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
+		};
+	};
+
+	event-domains {
+		wakeup_event_domain: wakeup {
+			compatible = "event-domain";
+			event-devices = <&cpu1 &power>;
+			event-latencies-us = <18 17 10>;
+			event-device-states = <0 0>,
+					      <0 1>,
+					      <1 0>;
 		};
 	};
 
