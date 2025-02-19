@@ -132,4 +132,11 @@ config PM_EVENT_DOMAIN
 	help
 	  Enable event domain power management.
 
+config PM_EVENT_DOMAIN_SHELL
+	bool "Event domain PM shell commands"
+	depends on SHELL
+	depends on PM_EVENT_DOMAIN
+	help
+	  Enable event domain power management shell.
+
 endmenu
