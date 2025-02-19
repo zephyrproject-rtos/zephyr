@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2022,2024 NXP
+ * Copyright 2017-2022, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,8 @@
 #define IMX_CCM_UART4_CLK		0x0803UL
 
 #define IMX_CCM_CAN_CLK			0x0900UL
+#define IMX_CCM_CAN1_CLK		0x0900UL
+#define IMX_CCM_CAN2_CLK		0x0901UL
 
 #define IMX_CCM_GPT_CLK			0x0A00UL
 
