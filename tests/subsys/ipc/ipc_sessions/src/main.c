@@ -359,6 +359,11 @@ ZTEST(ipc_sessions, test_tx_long)
 
 	/* Check current status */
 	ret = ipc_service_send(&ep, &cmd_rxget, sizeof(cmd_rxget));
+	if (ret == -ENOMEM) {
+		/* Wait a few ms and retry - only one retry */
+		k_sleep(K_MSEC(10));
+		ret = ipc_service_send(&ep, &cmd_rxget, sizeof(cmd_rxget));
+	}
 	zassert_equal(ret, sizeof(cmd_rxget), "ipc_service_send failed: %d, expected: %u", ret,
 		      sizeof(cmd_rxget));
 	cmd_rxstat = data_queue_get(&ipc_data_queue, &cmd_rsp_size, K_MSEC(1000));
