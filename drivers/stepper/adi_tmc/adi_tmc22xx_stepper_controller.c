@@ -21,6 +21,7 @@ struct tmc22xx_config {
 struct tmc22xx_data {
 	struct step_dir_stepper_common_data common;
 	enum stepper_micro_step_resolution resolution;
+	bool enabled;
 };
 
 STEP_DIR_STEPPER_STRUCT_CHECK(struct tmc22xx_config, struct tmc22xx_data);
@@ -28,11 +29,14 @@ STEP_DIR_STEPPER_STRUCT_CHECK(struct tmc22xx_config, struct tmc22xx_data);
 static int tmc22xx_stepper_enable(const struct device *dev, const bool enable)
 {
 	const struct tmc22xx_config *config = dev->config;
+	struct tmc22xx_data *data = dev->data;
 
 	LOG_DBG("Stepper motor controller %s %s", dev->name, enable ? "enabled" : "disabled");
+	data->enabled = enable;
 	if (enable) {
 		return gpio_pin_set_dt(&config->enable_pin, 1);
 	} else {
+		config->common.timing_source->stop(dev);
 		return gpio_pin_set_dt(&config->enable_pin, 0);
 	}
 }
@@ -71,7 +75,7 @@ static int tmc22xx_stepper_set_micro_step_res(const struct device *dev,
 	}
 
 	LOG_ERR("Unsupported microstep resolution: %d", micro_step_res);
-	return -EINVAL;
+	return -ENOTSUP;
 }
 
 static int tmc22xx_stepper_get_micro_step_res(const struct device *dev,
@@ -101,6 +105,42 @@ static int tmc22xx_stepper_configure_msx_pins(const struct device *dev)
 		}
 	}
 	return 0;
+}
+
+static int tmc22xx_stepper_move_to(const struct device *dev, int32_t target)
+{
+	struct tmc22xx_data *data = dev->data;
+
+	if (!data->enabled) {
+		LOG_ERR("Failed to move to target position, device is not enabled");
+		return -ECANCELED;
+	}
+
+	return step_dir_stepper_common_move_to(dev, target);
+}
+
+static int tmc22xx_stepper_move_by(const struct device *dev, int32_t steps)
+{
+	struct tmc22xx_data *data = dev->data;
+
+	if (!data->enabled) {
+		LOG_ERR("Failed to move by delta, device is not enabled");
+		return -ECANCELED;
+	}
+
+	return step_dir_stepper_common_move_by(dev, steps);
+}
+
+static int tmc22xx_stepper_run(const struct device *dev, enum stepper_direction direction)
+{
+	struct tmc22xx_data *data = dev->data;
+
+	if (!data->enabled) {
+		LOG_ERR("Failed to run stepper, device is not enabled");
+		return -ECANCELED;
+	}
+
+	return step_dir_stepper_common_run(dev, direction);
 }
 
 static int tmc22xx_stepper_init(const struct device *dev)
@@ -145,13 +185,13 @@ static int tmc22xx_stepper_init(const struct device *dev)
 
 static DEVICE_API(stepper, tmc22xx_stepper_api) = {
 	.enable = tmc22xx_stepper_enable,
-	.move_by = step_dir_stepper_common_move_by,
+	.move_by = tmc22xx_stepper_move_by,
 	.is_moving = step_dir_stepper_common_is_moving,
 	.set_reference_position = step_dir_stepper_common_set_reference_position,
 	.get_actual_position = step_dir_stepper_common_get_actual_position,
-	.move_to = step_dir_stepper_common_move_to,
+	.move_to = tmc22xx_stepper_move_to,
 	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
-	.run = step_dir_stepper_common_run,
+	.run = tmc22xx_stepper_run,
 	.set_event_callback = step_dir_stepper_common_set_event_callback,
 	.set_micro_step_res = tmc22xx_stepper_set_micro_step_res,
 	.get_micro_step_res = tmc22xx_stepper_get_micro_step_res,
