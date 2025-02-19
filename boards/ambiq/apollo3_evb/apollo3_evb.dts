@@ -177,7 +177,6 @@
 &timer2 {
 	pwm2: pwm {
 		timer-segment = "SEGMENT_B";
-		clock-select = "CLK_SELECT_HFRC_187_5KHZ";
 		pwm-type = "PWM_REPEAT";
 		pinctrl-0 = <&pwm2_default>;
 		pinctrl-names = "default";
