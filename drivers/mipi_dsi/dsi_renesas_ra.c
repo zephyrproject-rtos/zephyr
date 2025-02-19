@@ -50,8 +50,8 @@ struct mipi_dsi_renesas_ra_config {
 struct mipi_dsi_renesas_ra_data {
 	mipi_dsi_instance_ctrl_t mipi_dsi_ctrl;
 	mipi_dsi_cfg_t mipi_dsi_cfg;
-	volatile bool message_sent;
-	volatile bool fatal_error;
+	struct k_sem in_transmission;
+	atomic_t status;
 };
 
 void mipi_dsi_seq0(void);
@@ -70,20 +70,9 @@ void mipi_dsi_callback(mipi_dsi_callback_args_t *p_args)
 	const struct device *dev = (struct device *)p_args->p_context;
 	struct mipi_dsi_renesas_ra_data *data = dev->data;
 
-	switch (p_args->event) {
-	case MIPI_DSI_EVENT_SEQUENCE_0: {
-		if (MIPI_DSI_SEQUENCE_STATUS_DESCRIPTORS_FINISHED == p_args->tx_status) {
-			data->message_sent = true;
-		}
-		break;
-	}
-	case MIPI_DSI_EVENT_FATAL: {
-		data->fatal_error = true;
-		break;
-	}
-	default: {
-		break;
-	}
+	if (p_args->event == MIPI_DSI_EVENT_SEQUENCE_0) {
+		atomic_set(&data->status, p_args->tx_status);
+		k_sem_give(&data->in_transmission);
 	}
 }
 
@@ -98,6 +87,12 @@ static int mipi_dsi_renesas_ra_attach(const struct device *dev, uint8_t channel,
 		LOG_ERR("DSI host supports video mode only!");
 		return -ENOTSUP;
 	}
+
+	if (channel == 0 && (mdev->mode_flags & MIPI_DSI_MODE_LPM) == 0) {
+		LOG_ERR("This channel support LP mode transfer only");
+		return -ENOTSUP;
+	}
+
 	cfg.virtual_channel_id = channel;
 	cfg.num_lanes = mdev->data_lanes;
 	if (mdev->pixfmt == MIPI_DSI_PIXFMT_RGB888) {
@@ -130,53 +125,104 @@ static int mipi_dsi_renesas_ra_attach(const struct device *dev, uint8_t channel,
 	return 0;
 }
 
+#define MIPI_DSI_SEQUENCE_STATUS_ERROR                                                             \
+	(MIPI_DSI_SEQUENCE_STATUS_DESCRIPTOR_ABORT | MIPI_DSI_SEQUENCE_STATUS_SIZE_ERROR |         \
+	 MIPI_DSI_SEQUENCE_STATUS_TX_INTERNAL_BUS_ERROR |                                          \
+	 MIPI_DSI_SEQUENCE_STATUS_RX_FATAL_ERROR | MIPI_DSI_SEQUENCE_STATUS_RX_FAIL |              \
+	 MIPI_DSI_SEQUENCE_STATUS_RX_PACKET_DATA_FAIL |                                            \
+	 MIPI_DSI_SEQUENCE_STATUS_RX_CORRECTABLE_ERROR |                                           \
+	 MIPI_DSI_SEQUENCE_STATUS_RX_ACK_AND_ERROR)
+
+static ssize_t mipi_dsi_renesas_ra_dcs_write(const struct device *dev, uint8_t channel,
+					     struct mipi_dsi_msg *msg)
+{
+	struct mipi_dsi_renesas_ra_data *data = dev->data;
+	uint8_t payload[msg->tx_len + 1];
+	mipi_dsi_cmd_t fsp_msg = {.channel = channel,
+				  .cmd_id = msg->type,
+				  .p_tx_buffer = payload,
+				  .tx_len = msg->tx_len + 1,
+				  .flags = (msg->flags & MIPI_DSI_MSG_USE_LPM) != 0
+						   ? MIPI_DSI_CMD_FLAG_LOW_POWER
+						   : 0};
+
+	payload[0] = msg->cmd;
+	memcpy(&payload[1], msg->tx_buf, msg->tx_len);
+
+	atomic_clear(&data->status);
+	k_sem_reset(&data->in_transmission);
+
+	if (R_MIPI_DSI_Command(&data->mipi_dsi_ctrl, &fsp_msg) != FSP_SUCCESS) {
+		LOG_ERR("DSI write fail");
+		return -EIO;
+	}
+
+	k_sem_take(&data->in_transmission, K_FOREVER);
+
+	if ((data->status & MIPI_DSI_SEQUENCE_STATUS_ERROR) != MIPI_DSI_SEQUENCE_STATUS_NONE) {
+		return -EIO;
+	}
+
+	return (ssize_t)msg->tx_len;
+}
+
+static ssize_t mipi_dsi_renesas_ra_generic_write(const struct device *dev, uint8_t channel,
+						 struct mipi_dsi_msg *msg)
+{
+	struct mipi_dsi_renesas_ra_data *data = dev->data;
+	mipi_dsi_cmd_t fsp_msg = {.channel = channel,
+				  .cmd_id = msg->type,
+				  .p_tx_buffer = msg->tx_buf,
+				  .tx_len = msg->tx_len,
+				  .flags = (msg->flags & MIPI_DSI_MSG_USE_LPM) != 0
+						   ? MIPI_DSI_CMD_FLAG_LOW_POWER
+						   : 0};
+
+	atomic_clear(&data->status);
+	k_sem_reset(&data->in_transmission);
+
+	if (R_MIPI_DSI_Command(&data->mipi_dsi_ctrl, &fsp_msg) != FSP_SUCCESS) {
+		LOG_ERR("DSI write fail");
+		return -EIO;
+	}
+
+	k_sem_take(&data->in_transmission, K_FOREVER);
+
+	if ((data->status & MIPI_DSI_SEQUENCE_STATUS_ERROR) != MIPI_DSI_SEQUENCE_STATUS_NONE) {
+		return -EIO;
+	}
+
+	return (ssize_t)msg->tx_len;
+}
+
 static ssize_t mipi_dsi_renesas_ra_transfer(const struct device *dev, uint8_t channel,
 					    struct mipi_dsi_msg *msg)
 {
-	struct mipi_dsi_renesas_ra_data *data = dev->data;
-	ssize_t len;
-	int ret;
-	uint8_t combined_tx_buffer[msg->tx_len + 1];
-
-	combined_tx_buffer[0] = msg->cmd;
-	memcpy(&combined_tx_buffer[1], msg->tx_buf, msg->tx_len);
-
-	mipi_dsi_cmd_t fsp_msg = {
-		.channel = channel,
-		.cmd_id = msg->type,
-		.flags = MIPI_DSI_CMD_FLAG_LOW_POWER,
-		.tx_len = msg->tx_len + 1,
-		.p_tx_buffer = combined_tx_buffer,
-	};
-	data->message_sent = false;
-	data->fatal_error = false;
-
-	switch (msg->type) {
-	case MIPI_DSI_DCS_READ:
-		LOG_ERR("DCS Read not yet implemented or used");
-		return -ENOTSUP;
-	case MIPI_DSI_DCS_SHORT_WRITE:
-	case MIPI_DSI_DCS_SHORT_WRITE_PARAM:
-	case MIPI_DSI_DCS_LONG_WRITE:
-		ret = R_MIPI_DSI_Command(&data->mipi_dsi_ctrl, &fsp_msg);
-		if (ret) {
-			LOG_ERR("DSI write fail: err: (%d)", ret);
-			return -EIO;
-		}
-		while (!(data->message_sent)) {
-			if (data->fatal_error) {
-				LOG_ERR("fatal error");
-				return -EIO;
-			}
-		}
-		len = msg->tx_len;
-		break;
-	default:
-		LOG_ERR("Unsupported message type (%d)", msg->type);
+	if (channel == 0 && (msg->flags & MIPI_DSI_MSG_USE_LPM) == 0) {
+		LOG_ERR("This channel support LP mode transfer only");
 		return -ENOTSUP;
 	}
 
-	return len;
+	switch (msg->type) {
+	case MIPI_DSI_DCS_SHORT_WRITE:
+		__fallthrough;
+	case MIPI_DSI_DCS_SHORT_WRITE_PARAM:
+		__fallthrough;
+	case MIPI_DSI_DCS_LONG_WRITE:
+		return mipi_dsi_renesas_ra_dcs_write(dev, channel, msg);
+	case MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM:
+		__fallthrough;
+	case MIPI_DSI_GENERIC_SHORT_WRITE_1_PARAM:
+		__fallthrough;
+	case MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM:
+		__fallthrough;
+	case MIPI_DSI_GENERIC_LONG_WRITE:
+		return mipi_dsi_renesas_ra_generic_write(dev, channel, msg);
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
 
 static DEVICE_API(mipi_dsi, mipi_dsi_api) = {
@@ -201,6 +247,8 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 		LOG_ERR("Enable DSI peripheral clock failed! (%d)", ret);
 		return ret;
 	}
+
+	k_sem_init(&data->in_transmission, 0, 1);
 
 	config->irq_configure();
 	data->mipi_dsi_cfg.p_context = dev;
