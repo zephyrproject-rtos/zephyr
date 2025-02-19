@@ -37,6 +37,7 @@ config PINCTRL_DYNAMIC
 source "drivers/pinctrl/Kconfig.b91"
 source "drivers/pinctrl/Kconfig.ambiq"
 source "drivers/pinctrl/Kconfig.arm_mps2"
+source "drivers/pinctrl/Kconfig.arm_mps3"
 source "drivers/pinctrl/Kconfig.gd32"
 source "drivers/pinctrl/Kconfig.it8xxx2"
 source "drivers/pinctrl/Kconfig.npcx"
