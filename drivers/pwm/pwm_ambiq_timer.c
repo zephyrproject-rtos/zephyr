@@ -185,7 +185,7 @@ static DEVICE_API(pwm, pwm_ambiq_timer_driver_api) = {
 	static const struct pwm_ambiq_timer_config pwm_ambiq_timer_config_##n = {                  \
 		.timer_num = (DT_REG_ADDR(DT_INST_PARENT(n)) - TIMER_BASE) /                       \
 			     DT_REG_SIZE(DT_INST_PARENT(n)),                                       \
-		.clock_sel = DT_INST_ENUM_IDX(n, clock_select),                                    \
+		.clock_sel = DT_ENUM_IDX(DT_INST_PARENT(n), clk_source),                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                      \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, ambiq_timer_pwm_init, NULL, &pwm_ambiq_timer_data_##n,            \

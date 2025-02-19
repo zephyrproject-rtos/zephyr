@@ -97,7 +97,6 @@
 
 &timer2 {
 	pwm2: pwm {
-		clock-select = "CLK_SELECT_HFRC_DIV64";
 		pinctrl-0 = <&pwm2_default>;
 		pinctrl-names = "default";
 		status = "disabled";
