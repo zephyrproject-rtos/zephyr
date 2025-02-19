@@ -107,7 +107,7 @@ the board.
    https://www.silabs.com/wireless/wi-fi/siwx917-wireless-socs
 
 .. _SiWG917 Datasheet:
-   https://www.silabs.com/documents/public/data-sheets/siw917x-datasheet.pdf
+   https://www.silabs.com/documents/public/data-sheets/siwg917-datasheet.pdf
 
 .. _SiWG917 Reference Manual:
    https://www.silabs.com/documents/public/reference-manuals/siw917x-family-rm.pdf
