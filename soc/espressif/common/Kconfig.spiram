@@ -140,6 +140,16 @@ config SPIRAM_ECC_ENABLE
 	  Enable MSPI Error-Correcting Code function when accessing SPIRAM.
 	  If enabled, 1/16 of the SPI RAM total size will be reserved for error-correcting code.
 
+config ESP_SPIRAM_ALLOC_MBED_HEAP
+	bool "Place MbedTLS heap into spiram"
+	depends on ESP_SPIRAM 
+	depends on MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_HEAP_CUSTOM_SECTION
+	default n
+	help
+	  If enable this will place mbedtls_heap into spi ram
+
+
 if SOC_SERIES_ESP32
 
 menu "PSRAM clock and cs IO for ESP32-DOWD"

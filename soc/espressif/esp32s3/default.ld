@@ -1012,7 +1012,10 @@ SECTIONS
 #endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
     . = ALIGN(16);
     _ext_ram_noinit_end = ABSOLUTE(.);
-
+#ifdef CONFIG_ESP_SPIRAM_ALLOC_MBED_HEAP
+    *(.mbedtls_heap)
+    . = ALIGN(16);
+#endif /* CONFIG_ESP_SPIRAM_ALLOC_MBED_HEAP */
     _ext_ram_bss_start = ABSOLUTE(.);
     *(.ext_ram.bss*)
     . = ALIGN(16);
