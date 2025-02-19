@@ -94,3 +94,8 @@ west-commands:
       - name: patch
         class: Patch
         help: manage patches for Zephyr modules
+  - file: scripts/west_commands/gtags.py
+    commands:
+      - name: gtags
+        class: Gtags
+        help: create a GNU global tags file for the current workspace
