@@ -321,6 +321,17 @@ static LLEXT_CONST uint8_t inspect_ext[] ELF_ALIGN = {
 	#include "inspect.inc"
 };
 
+#ifdef CONFIG_RISCV
+/* RISC-V uses ".s"-prefixed sections for variables up to 8 bytes in size */
+#define BSS_SECTION ".sbss"
+#define DATA_SECTION ".sdata"
+#define RODATA_SECTION ".srodata"
+#else
+#define BSS_SECTION ".bss"
+#define DATA_SECTION ".data"
+#define RODATA_SECTION ".rodata"
+#endif
+
 void do_inspect_checks(struct llext_loader *ldr, struct llext *ext, enum llext_mem reg_idx,
 		       const char *sect_name, const char *sym_name)
 {
@@ -329,6 +340,9 @@ void do_inspect_checks(struct llext_loader *ldr, struct llext *ext, enum llext_m
 	uintptr_t reg_addr = 0, sym_addr = 0;
 	size_t reg_size = 0, sect_offset = 0;
 	int sect_shndx, res;
+
+	printk("Testing symbol '%s' matches section '%s' and region %d\n",
+	       sym_name, sect_name, reg_idx);
 
 	res = llext_get_region_info(ldr, ext, reg_idx,
 				    &reg_hdr, (const void **)&reg_addr, &reg_size);
@@ -370,9 +384,9 @@ ZTEST(llext, test_inspect)
 	res = llext_load(ldr, "inspect", &ext, &ldr_parm);
 	zassert_ok(res, "load should succeed");
 
-	do_inspect_checks(ldr, ext, LLEXT_MEM_BSS, ".bss", "number_in_bss");
-	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".data", "number_in_data");
-	do_inspect_checks(ldr, ext, LLEXT_MEM_RODATA, ".rodata", "number_in_rodata");
+	do_inspect_checks(ldr, ext, LLEXT_MEM_BSS, BSS_SECTION, "number_in_bss");
+	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, DATA_SECTION, "number_in_data");
+	do_inspect_checks(ldr, ext, LLEXT_MEM_RODATA, RODATA_SECTION, "number_in_rodata");
 	do_inspect_checks(ldr, ext, LLEXT_MEM_RODATA, ".my_rodata", "number_in_my_rodata");
 	do_inspect_checks(ldr, ext, LLEXT_MEM_TEXT, ".text", "function_in_text");
 
