@@ -1,0 +1,54 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Event domain
+
+  Event domains map combinations of event device states to
+  the resulting maximum latency of events within said domain.
+
+  Example:
+
+    / {
+            event-domains {
+                    wakeup_event_domain: wakeup {
+                            compatible = "event-domain";
+
+                            /*
+                             * List of resulting maximum event latencies within domain
+                             * mapped to event-device-states by index.
+                             */
+                            event-latencies-us = <260 /* Mapped to event-device-states idx 0 */
+                                                  30  /* Mapped to event-device-states idx 1 */
+                                                  9   /* Mapped to event-device-states idx 2 */
+                                                  6>; /* Mapped to event-device-states idx 3 */
+
+                            /* List of devices for which event states will be applied */
+                            event-devices = <&cpu &power &rram>;
+
+                            /*
+                             * Combinations of event device states. Each combination maps
+                             * to event-latencies-us by index. Each state within each
+                             * combination maps to an event device in event-devices by
+                             * index.
+                             */
+                            event-device-states = <0 0 0>, /* &cpu=0, &power=0, &rram=0, 260us */
+                                                  <0 1 0>, /* &cpu=0, &power=1, &rram=0, 30us  */
+                                                  <1 1 0>, /* &cpu=1, &power=1, &rram=0, 9us   */
+                                                  <2 1 1>; /* &cpu=2, &power=1, &rram=1, 6us   */
+                    };
+            };
+    };
+
+compatible: "event-domain"
+
+properties:
+  event-latencies-us:
+    type: array
+    required: true
+
+  event-devices:
+    type: phandles
+
+  event-device-states:
+    type: array
