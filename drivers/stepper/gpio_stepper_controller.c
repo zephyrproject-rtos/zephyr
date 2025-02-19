@@ -289,6 +289,7 @@ static int gpio_stepper_set_micro_step_res(const struct device *dev,
 					   enum stepper_micro_step_resolution micro_step_res)
 {
 	struct gpio_stepper_data *data = dev->data;
+	int ret = 0;
 
 	K_SPINLOCK(&data->lock) {
 		switch (micro_step_res) {
@@ -298,10 +299,10 @@ static int gpio_stepper_set_micro_step_res(const struct device *dev,
 			break;
 		default:
 			LOG_ERR("Unsupported micro step resolution %d", micro_step_res);
-			return -ENOTSUP;
+			ret = -ENOTSUP;
 		}
 	}
-	return 0;
+	return ret;
 }
 
 static int gpio_stepper_get_micro_step_res(const struct device *dev,
@@ -327,6 +328,7 @@ static int gpio_stepper_set_event_callback(const struct device *dev,
 static int gpio_stepper_enable(const struct device *dev, bool enable)
 {
 	struct gpio_stepper_data *data = dev->data;
+	int ret = 0;
 
 	K_SPINLOCK(&data->lock) {
 
@@ -339,11 +341,11 @@ static int gpio_stepper_enable(const struct device *dev, bool enable)
 			const int err = power_down_coils(dev);
 
 			if (err != 0) {
-				return -EIO;
+				ret = -EIO;
 			}
 		}
 	}
-	return 0;
+	return ret;
 }
 
 static int gpio_stepper_init(const struct device *dev)
