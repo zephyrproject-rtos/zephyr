@@ -121,6 +121,26 @@ Use Jailhouse hypervisor, after root cell linux is up:
     #jailhouse cell load 1 zephyr.bin -a 0xc0000000
     #jailhouse cell start 1
 
+CAN bus (FlexCAN) (A53)
+=======================
+The FlexCAN controller is a CAN 2.0B controller that supports both standard
+and extended frames. The FlexCAN controller has two independent FlexCAN
+modules, FlexCAN1 and FlexCAN2. By default, they are disabled in the device tree.
+To enable any of them, you need to add the following overlay to the
+device tree:
+:zephyr_file:`boards/nxp/imx8mp_evk/dts/flexcan1.overlay`.
+:zephyr_file:`boards/nxp/imx8mp_evk/dts/flexcan2.overlay`.
+
+For example, building the :zephyr:code-sample:`hello_world` sample with the CAN shell and
+CAN statistics enabled, and using the FlexCAN1 controller, you can use the following
+configuration:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: imx8mp_evk/mimx8ml8/a53
+   :gen-args: -DCONFIG_SHELL=y -DCONFIG_CAN=y -DCONFIG_CAN_SHELL=y -DCONFIG_STATS=y -DCONFIG_CAN_STATS=y -DEXTRA_DTC_OVERLAY_FILE=flexcan1.overlay
+   :goals: build
+
 Programming and Debugging (M7)
 ******************************
 
