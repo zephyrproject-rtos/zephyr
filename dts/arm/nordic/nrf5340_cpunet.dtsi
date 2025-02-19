@@ -32,17 +32,6 @@
 		};
 	};
 
-	event-domains {
-		wakeup_event_domain: wakeup {
-			compatible = "event-domain";
-			event-devices = <&cpu1 &power>;
-			event-latencies-us = <18 17 10>;
-			event-device-states = <0 0>,
-					      <0 1>,
-					      <1 0>;
-		};
-	};
-
 	soc {
 		ficr: ficr@1ff0000 {
 			compatible = "nordic,nrf-ficr";

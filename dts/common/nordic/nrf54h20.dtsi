@@ -209,6 +209,10 @@
 		#power-domain-cells = <1>;
 	};
 
+	cpuapp_lrcconf: lrcconf {
+		compatible = "nordic,nrf-lrcconf";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
