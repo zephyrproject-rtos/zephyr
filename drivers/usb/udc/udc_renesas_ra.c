@@ -490,7 +490,7 @@ static int udc_renesas_ra_disable(const struct device *dev)
 		return -EIO;
 	}
 
-	LOG_DBG("Enable device %p", dev);
+	LOG_DBG("Disable device %p", dev);
 
 	return 0;
 }
