@@ -667,6 +667,8 @@ MCUmgr
   deprecated and replaced with :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE`,
   applications should be updated to select this new symbol if they were selecting the old symbol.
 
+* The deprecated macro ``MGMT_CB_ERROR_RET`` has been removed.
+
 Modem
 =====
 
