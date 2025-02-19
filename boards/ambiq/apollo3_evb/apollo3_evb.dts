@@ -142,14 +142,12 @@
 };
 
 &timer0 {
-	status = "okay";
 	counter0: counter {
 		status = "okay";
 	};
 };
 
 &timer2 {
-	status = "okay";
 	pwm2: pwm {
 		timer-segment = "SEGMENT_B";
 		clock-select = "CLK_SELECT_HFRC_187_5KHZ";
