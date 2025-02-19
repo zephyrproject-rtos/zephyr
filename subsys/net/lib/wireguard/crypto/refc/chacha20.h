@@ -30,10 +30,13 @@
  * Author: Daniel Hope <daniel.hope@smartalock.com>
  */
 
-// RFC7539 implementation of ChaCha20 with modified nonce size for WireGuard
-// https://tools.ietf.org/html/rfc7539
-// Adapted from https://cr.yp.to/streamciphers/timings/estreambench/submissions/salsa20/chacha8/ref/chacha.c by D. J. Bernstein (Public Domain)
-// HChaCha20 is described here: https://tools.ietf.org/id/draft-arciszewski-xchacha-02.html
+/*  RFC7539 implementation of ChaCha20 with modified nonce size for WireGuard */
+/*  https://tools.ietf.org/html/rfc7539 */
+/*  Adapted from
+ * https://cr.yp.to/streamciphers/timings/estreambench/submissions/salsa20/chacha8/ref/chacha.c by
+ * D. J. Bernstein (Public Domain)
+ */
+/*  HChaCha20 is described here: https://tools.ietf.org/id/draft-arciszewski-xchacha-02.html */
 
 /* SPDX-License-Identifier: BSD-3-Clause */
 
@@ -42,8 +45,8 @@
 
 #include <stdint.h>
 
-#define CHACHA20_BLOCK_SIZE		(64)
-#define CHACHA20_KEY_SIZE		(32)
+#define CHACHA20_BLOCK_SIZE (64)
+#define CHACHA20_KEY_SIZE   (32)
 
 struct chacha20_ctx {
 	uint32_t state[16];

@@ -1,5 +1,5 @@
-// Taken from https://github.com/floodyberry/poly1305-donna - public domain or MIT
-// Copyright (c) 2014 Andrew Moon
+/*  Taken from https://github.com/floodyberry/poly1305-donna - public domain or MIT */
+/* Copyright (c) 2014 Andrew Moon */
 
 /* SPDX-License-Identifier: MIT */
 
