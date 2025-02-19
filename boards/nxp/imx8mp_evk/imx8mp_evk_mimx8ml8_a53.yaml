@@ -13,10 +13,11 @@ toolchain:
   - cross-compile
 ram: 1024
 supported:
-  - uart
-  - net
+  - can
   - gpio
   - i2c
+  - net
+  - uart
 testing:
   ignore_tags:
     - bluetooth
