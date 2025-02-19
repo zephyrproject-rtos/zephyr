@@ -20,6 +20,9 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/dma/dma_silabs_ldma.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 #include <em_cmu.h>
 #include <em_eusart.h>
 
@@ -89,6 +92,15 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 
 	int err;
 
+	if (spi_context_configured(&data->ctx, config)) {
+		/* Already configured. No need to do it again, but must re-enable in case
+		 * TXEN/RXEN were cleared.
+		 */
+		EUSART_Enable(eusart_cfg->base, eusartEnable);
+
+		return 0;
+	}
+
 	err = clock_control_get_rate(eusart_cfg->clock_dev,
 				     (clock_control_subsys_t)&eusart_cfg->clock_cfg,
 				     &spi_frequency);
@@ -97,15 +109,6 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 	}
 	/* Max supported SPI frequency is half the source clock */
 	spi_frequency /= 2;
-
-	if (spi_context_configured(&data->ctx, config)) {
-		/* Already configured. No need to do it again, but must re-enable in case
-		 * TXEN/RXEN were cleared due to deep sleep.
-		 */
-		EUSART_Enable(eusart_cfg->base, eusartEnable);
-
-		return 0;
-	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
@@ -232,6 +235,55 @@ exit:
 	return err;
 }
 
+static inline void spi_silabs_eusart_pm_policy_get(const struct device *dev)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static inline void spi_silabs_eusart_pm_policy_put(const struct device *dev)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static int spi_silabs_eusart_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct spi_silabs_eusart_config *eusart_config = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = clock_control_on(eusart_config->clock_dev,
+				       (clock_control_subsys_t)&eusart_config->clock_cfg);
+
+		if (ret == -EALREADY) {
+			ret = 0;
+		} else if (ret < 0) {
+			break;
+		}
+
+		pinctrl_apply_state(eusart_config->pcfg, PINCTRL_STATE_DEFAULT);
+
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		pinctrl_apply_state(eusart_config->pcfg, PINCTRL_STATE_SLEEP);
+
+		EUSART_Enable(eusart_config->base, eusartDisable);
+		ret = clock_control_off(eusart_config->clock_dev,
+					(clock_control_subsys_t)&eusart_config->clock_cfg);
+		if (ret == -EALREADY) {
+			ret = 0;
+		}
+
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+
 #ifdef CONFIG_SPI_SILABS_EUSART_DMA
 static void spi_silabs_dma_rx_callback(const struct device *dev, void *user_data, uint32_t channel,
 				       int status)
@@ -252,6 +304,7 @@ static void spi_silabs_dma_rx_callback(const struct device *dev, void *user_data
 	}
 
 	spi_context_cs_control(instance_ctx, false);
+	spi_silabs_eusart_pm_policy_put(spi_dev);
 	spi_context_complete(instance_ctx, spi_dev, status);
 }
 
@@ -517,6 +570,8 @@ static int spi_silabs_eusart_xfer_dma(const struct device *dev, const struct spi
 		return ret;
 	}
 
+	spi_silabs_eusart_pm_policy_get(dev);
+
 	spi_context_cs_control(ctx, true);
 
 	/* RX channel needs to be ready before TX channel actually starts */
@@ -542,19 +597,22 @@ force_transaction_close:
 	dma_stop(data->dma_chan_rx.dma_dev, data->dma_chan_rx.chan_nb);
 	dma_stop(data->dma_chan_tx.dma_dev, data->dma_chan_tx.chan_nb);
 	spi_context_cs_control(ctx, false);
+	spi_silabs_eusart_pm_policy_put(dev);
 	return ret;
 #else
 	return -ENOTSUP;
 #endif
 }
 
-static int spi_silabs_eusart_xfer_polling(const struct device *dev, const struct spi_config *config)
+static int spi_silabs_eusart_xfer_polling(const struct device *dev,
+					  const struct spi_config *config)
 {
 	const struct spi_silabs_eusart_config *eusart_config = dev->config;
 	struct spi_silabs_eusart_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int ret;
 
+	spi_silabs_eusart_pm_policy_get(dev);
 	spi_context_cs_control(ctx, true);
 
 	ret = 0;
@@ -565,6 +623,7 @@ static int spi_silabs_eusart_xfer_polling(const struct device *dev, const struct
 	spi_context_cs_control(ctx, false);
 	spi_context_complete(ctx, dev, 0);
 
+	spi_silabs_eusart_pm_policy_put(dev);
 	return ret;
 }
 
@@ -611,22 +670,17 @@ out:
 /* API Functions */
 static int spi_silabs_eusart_init(const struct device *dev)
 {
-	int err;
-	const struct spi_silabs_eusart_config *eusart_config = dev->config;
 	struct spi_silabs_eusart_data *data = dev->data;
-
-	err = pinctrl_apply_state(eusart_config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		return err;
-	}
+	int err;
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
 		return err;
 	}
+
 	spi_context_unlock_unconditionally(&data->ctx);
 
-	return 0;
+	return pm_device_driver_init(dev, spi_silabs_eusart_pm_action);
 }
 
 static int spi_silabs_eusart_transceive_sync(const struct device *dev,
@@ -710,7 +764,8 @@ static DEVICE_API(spi, spi_silabs_eusart_api) = {
 		.mosi_overrun = (uint8_t)SPI_MOSI_OVERRUN_DT(n), \
 		.clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000), \
 	}; \
-	SPI_DEVICE_DT_INST_DEFINE(n, spi_silabs_eusart_init, NULL, \
+	PM_DEVICE_DT_INST_DEFINE(n, spi_silabs_eusart_pm_action); \
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_silabs_eusart_init, PM_DEVICE_DT_INST_GET(n), \
 				  &spi_silabs_eusart_data_##n, &spi_silabs_eusart_cfg_##n, \
 				  POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_silabs_eusart_api);
 
