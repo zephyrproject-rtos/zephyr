@@ -443,7 +443,7 @@ static void counter_ambiq_isr(void *arg)
 	static const struct counter_ambiq_config counter_config_##idx = {                          \
 		.instance = (DT_REG_ADDR(DT_INST_PARENT(idx)) - SOC_TIMER_BASE) /                  \
 			    DT_REG_SIZE(DT_INST_PARENT(idx)),                                      \
-		.clk_src = DT_PROP(DT_INST_PARENT(idx), clk_source),                               \
+		.clk_src = DT_ENUM_IDX(DT_INST_PARENT(idx), clk_source),                               \
 		.counter_info = {.max_top_value = UINT32_MAX,                                      \
 				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
 				 .channels = 1},                                                   \
