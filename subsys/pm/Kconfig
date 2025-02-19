@@ -121,4 +121,9 @@ config PM_DEVICE_SYSTEM_MANAGED
 
 endif # PM_DEVICE
 
+config PM_EVENT_DEVICE
+	bool "Event device PM support"
+	help
+	  Enable event device power management.
+
 endmenu
