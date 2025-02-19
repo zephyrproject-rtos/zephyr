@@ -180,6 +180,25 @@ display the following console output:
     thread_b: Hello World from cpu 0 on mimx8mp_evk!
     thread_a: Hello World from cpu 0 on mimx8mp_evk!
 
+CAN bus (FlexCAN) (A53)
+=======================
+The FlexCAN controller is a CAN 2.0B controller that supports both standard
+and extended frames. The FlexCAN controller has two independent FlexCAN
+modules, FlexCAN1 and FlexCAN2. By default, FlexCAN1 is enabled in the device
+tree. To enable FlexCAN2, you need to add the following overlay to the
+device tree:
+:zephyr_file:`boards/nxp/imx8mp_evk/dts/flexcan2.overlay`.
+
+For example, building the :zephyr:code-sample:`hello_world` sample with the CAN shell and
+CAN statistics enabled, and using the FlexCAN1 controller, you can use the following
+configuration:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: imx8mp_evk/mimx8ml8/a53
+   :gen-args: -DCONFIG_SHELL=y -DCONFIG_CAN=y -DCONFIG_CAN_SHELL=y -DCONFIG_STATS=y -DCONFIG_CAN_STATS=y
+   :goals: build
+
 Programming and Debugging (M7)
 ******************************
 
