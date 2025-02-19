@@ -18,6 +18,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver);
 
+#if defined(CONFIG_BT_CONN)
+BUILD_ASSERT(IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL),
+	     "IPC transport is not reliable without Controller-to-Host ACL flow control");
+#endif
+
 #define DT_DRV_COMPAT zephyr_bt_hci_ipc
 
 #define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
