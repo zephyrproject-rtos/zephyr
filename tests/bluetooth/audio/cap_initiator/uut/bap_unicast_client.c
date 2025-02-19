@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 Codecoup
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "bap_iso.h"
 
 static struct bt_bap_unicast_client_cb *unicast_client_cb;
+static struct bt_bap_unicast_group bap_unicast_group;
 
 bool bt_bap_ep_is_unicast_client(const struct bt_bap_ep *ep)
 {
@@ -358,6 +359,107 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 int bt_bap_unicast_client_register_cb(struct bt_bap_unicast_client_cb *cb)
 {
 	unicast_client_cb = cb;
+
+	return 0;
+}
+
+int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
+				struct bt_bap_unicast_group **unicast_group)
+{
+	if (bap_unicast_group.allocated) {
+		return -ENOMEM;
+	}
+
+	bap_unicast_group.allocated = true;
+	*unicast_group = &bap_unicast_group;
+
+	sys_slist_init(&bap_unicast_group.streams);
+	for (size_t i = 0U; i < param->params_count; i++) {
+		if (param->params[i].rx_param != NULL) {
+			sys_slist_append(&bap_unicast_group.streams,
+					 &param->params[i].rx_param->stream->_node);
+		}
+
+		if (param->params[i].tx_param != NULL) {
+			sys_slist_append(&bap_unicast_group.streams,
+					 &param->params[i].tx_param->stream->_node);
+		}
+	}
+
+	return 0;
+}
+
+int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
+				  const struct bt_bap_unicast_group_param *param)
+{
+	if (unicast_group == NULL || param == NULL) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
+				     struct bt_bap_unicast_group_stream_pair_param params[],
+				     size_t num_param)
+{
+	if (unicast_group == NULL || params == NULL) {
+		return -EINVAL;
+	}
+
+	for (size_t i = 0U; i < num_param; i++) {
+		if (params[i].rx_param != NULL) {
+			sys_slist_append(&unicast_group->streams,
+					 &params[i].rx_param->stream->_node);
+		}
+
+		if (params[i].tx_param != NULL) {
+			sys_slist_append(&unicast_group->streams,
+					 &params[i].tx_param->stream->_node);
+		}
+	}
+
+	return 0;
+}
+
+int bt_bap_unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
+{
+	struct bt_bap_stream *stream, *next;
+
+	if (unicast_group == NULL) {
+		return -EINVAL;
+	}
+
+	unicast_group->allocated = false;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_group->streams, stream, next, _node) {
+		sys_slist_remove(&unicast_group->streams, NULL, &stream->_node);
+	}
+
+	return 0;
+}
+
+int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_group,
+					bt_bap_unicast_group_foreach_stream_func_t func,
+					void *user_data)
+{
+	struct bt_bap_stream *stream, *next;
+
+	if (unicast_group == NULL) {
+		return -EINVAL;
+	}
+
+	if (func == NULL) {
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_group->streams, stream, next, _node) {
+		const bool stop = func(stream, user_data);
+
+		if (stop) {
+			return -ECANCELED;
+		}
+	}
 
 	return 0;
 }
