@@ -1,24 +1,18 @@
 /*
- * Copyright (c) 2021 Katsuhiro Suzuki
+ * Copyright (c) 2025 Dima Nikiforov <vnikiforov@berkeley.edu>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief QEMU RISC-V virt machine hardware depended interface
+ * @brief FESVR HTIF Reboot Support
  */
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/htif.h>
-
-/*
- * Exit QEMU and tell error number.
- *   Higher 16bits: indicates error number.
- *   Lower 16bits : set FINISHER_FAIL
- */
 
 
 #if defined(CONFIG_UART_HTIF)

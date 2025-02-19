@@ -3,6 +3,6 @@ board:
   full_name: Chipyard RISCV64 SoCs
   vendor: chipyard 
   socs:
-    - name: spike_virt_riscv64
+    - name: rocketchip_virt_riscv64
       variants:
         - name: smp

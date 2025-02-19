@@ -3,6 +3,6 @@ board:
   full_name: DSP24 SoC from Berkeley Tapeout Class
   vendor: chipyard 
   socs:
-    - name: spike_virt_riscv64
+    - name: rocketchip_virt_riscv64
       variants:
         - name: smp

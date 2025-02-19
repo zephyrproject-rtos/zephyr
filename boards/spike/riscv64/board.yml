@@ -3,6 +3,6 @@ board:
   full_name: SPIKE Emulation for RISCV64
   vendor: spike 
   socs:
-    - name: spike_virt_riscv64
+    - name: rocketchip_virt_riscv64
       variants:
         - name: smp

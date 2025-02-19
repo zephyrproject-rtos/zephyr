@@ -2,7 +2,7 @@ identifier: chipyard_riscv64
 name: Chipyard Generated RISCV SoCs 
 type: chipyard 
 simulation:
-  - name: spike
+  - name: chipyard
 arch: riscv
 toolchain:
   - zephyr

@@ -1,0 +1,4 @@
+family:
+- name: rocketchip_virt_riscv
+  socs:
+  - name: rocketchip_virt_riscv64
