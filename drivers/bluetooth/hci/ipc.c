@@ -19,6 +19,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver);
 
+BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL),
+	     "HCI IPC driver can drop ACL data without Controller-to-Host ACL flow control");
+
 #define DT_DRV_COMPAT zephyr_bt_hci_ipc
 
 #define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
