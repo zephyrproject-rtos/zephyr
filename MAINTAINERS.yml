@@ -1417,12 +1417,13 @@ Release Notes:
     - drivers.espi
 
 "Drivers: Ethernet":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - maass-hamburg
   collaborators:
     - decsny
     - lmajewski
     - pdgendt
-    - maass-hamburg
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
