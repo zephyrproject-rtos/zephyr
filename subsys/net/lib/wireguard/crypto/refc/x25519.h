@@ -1,4 +1,4 @@
-// Taken from https://sourceforge.net/p/strobe (MIT Licence)
+/*  Taken from https://sourceforge.net/p/strobe (MIT Licence) */
 
 /* SPDX-License-Identifier: MIT */
 
@@ -14,7 +14,7 @@
 #ifndef __X25519_H__
 #define __X25519_H__
 
-#define X25519_BYTES (256/8)
+#define X25519_BYTES (256 / 8)
 
 /* The base point (9) */
 extern const unsigned char X25519_BASE_POINT[X25519_BYTES];
@@ -54,17 +54,13 @@ extern const unsigned char X25519_BASE_POINT[X25519_BYTES];
  * RFC 7748 says to ignore this bit.  For compatibility with RFC 7748,
  * you must also clear this bit by running base[EC_PUBLIC_BYTES-1] &= 0x7F.
  * This library won't clear it for you because it takes the base point as
- * const, and (depending on build flags) dosen't copy it.
+ * const, and (depending on build flags) doesn't copy it.
  *
  * If clamp==0, or if X25519_INTEROP_SUPPORT_CLAMP==0, then this function
  * always returns 0.
  */
-int x25519 (
-    unsigned char out[EC_PUBLIC_BYTES],
-    const unsigned char scalar[EC_PRIVATE_BYTES],
-    const unsigned char base[EC_PUBLIC_BYTES],
-    int clamp
-);
+int x25519(unsigned char out[EC_PUBLIC_BYTES], const unsigned char scalar[EC_PRIVATE_BYTES],
+	   const unsigned char base[EC_PUBLIC_BYTES], int clamp);
 
 /**
  * Returns 0 on success, -1 on failure.
@@ -79,12 +75,10 @@ int x25519 (
  * Same as x255(out,scalar,X255_BASE_POINT), except that
  * other implementations may optimize it.
  */
-static inline int x25519_base (
-    unsigned char out[EC_PUBLIC_BYTES],
-    const unsigned char scalar[EC_PRIVATE_BYTES],
-    int clamp
-) {
-    return x25519(out,scalar,X25519_BASE_POINT,clamp);
+static inline int x25519_base(unsigned char out[EC_PUBLIC_BYTES],
+			      const unsigned char scalar[EC_PRIVATE_BYTES], int clamp)
+{
+	return x25519(out, scalar, X25519_BASE_POINT, clamp);
 }
 
 /**
@@ -94,11 +88,10 @@ static inline int x25519_base (
  * This is used for signing.  Implementors must replace it for
  * curves that require more bytes for uniformity (Brainpool).
  */
-static inline void x25519_base_uniform (
-    unsigned char out[EC_PUBLIC_BYTES],
-    const unsigned char scalar[EC_UNIFORM_BYTES]
-) {
-    (void)x25519_base(out,scalar,0);
+static inline void x25519_base_uniform(unsigned char out[EC_PUBLIC_BYTES],
+				       const unsigned char scalar[EC_UNIFORM_BYTES])
+{
+	(void)x25519_base(out, scalar, 0);
 }
 
 /**
@@ -108,12 +101,10 @@ static inline void x25519_base_uniform (
  * a random ephemeral secret key.  They then call a Schnorr oracle to
  * get a challenge, and compute the response using this function.
  */
-void x25519_sign_p2 (
-    unsigned char response[EC_PRIVATE_BYTES],
-    const unsigned char challenge[EC_CHALLENGE_BYTES],
-    const unsigned char eph_secret[EC_UNIFORM_BYTES],
-    const unsigned char secret[EC_PRIVATE_BYTES]
-);
+void x25519_sign_p2(unsigned char response[EC_PRIVATE_BYTES],
+		    const unsigned char challenge[EC_CHALLENGE_BYTES],
+		    const unsigned char eph_secret[EC_UNIFORM_BYTES],
+		    const unsigned char secret[EC_PRIVATE_BYTES]);
 
 /**
  * STROBE-compatible signature verification using curve25519 (not ed25519).
@@ -122,11 +113,8 @@ void x25519_sign_p2 (
  *
  * Returns -1 on failure and 0 on success.
  */
-int x25519_verify_p2 (
-    const unsigned char response[X25519_BYTES],
-    const unsigned char challenge[X25519_BYTES],
-    const unsigned char eph[X25519_BYTES],
-    const unsigned char pub[X25519_BYTES]
-);
+int x25519_verify_p2(const unsigned char response[X25519_BYTES],
+		     const unsigned char challenge[X25519_BYTES],
+		     const unsigned char eph[X25519_BYTES], const unsigned char pub[X25519_BYTES]);
 
 #endif /* __X25519_H__ */
