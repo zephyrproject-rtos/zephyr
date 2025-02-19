@@ -23,9 +23,15 @@ LOG_MODULE_REGISTER(flash_silabs, CONFIG_FLASH_LOG_LEVEL);
 
 struct flash_silabs_data {
 	struct k_sem lock;
-#ifdef CONFIG_SOC_FLASH_SILABS_S2_DMA_WRITE
+#if defined(CONFIG_SOC_FLASH_SILABS_S2_DMA_WRITE) || defined(CONFIG_SOC_FLASH_SILABS_S2_DMA_READ)
 	const struct device *dma_dev;
 	uint32_t dma_channel;
+#endif
+#if defined(CONFIG_SOC_FLASH_SILABS_S2_DMA_READ)
+	struct k_sem sync;
+	int sync_status;
+	struct dma_config dma_cfg;
+	struct dma_block_config dma_block_cfg;
 #endif
 };
 
@@ -62,6 +68,66 @@ static void flash_silabs_write_protection(bool enable)
 	}
 }
 
+#if defined(CONFIG_SOC_FLASH_SILABS_S2_DMA_READ)
+static void flash_silabs_read_callback(const struct device *dma_dev, void *user_data,
+				       uint32_t channel, int status)
+{
+	const struct device *dev = user_data;
+	struct flash_silabs_data *data = dev->data;
+
+	data->sync_status = status;
+	k_sem_give(&data->sync);
+}
+#endif
+
+static int flash_silabs_read_dma(const struct device *dev, off_t offset, void *data, size_t size)
+{
+#if defined(CONFIG_SOC_FLASH_SILABS_S2_DMA_READ)
+	struct flash_silabs_data *const dev_data = dev->data;
+	size_t data_size = 1;
+	int err;
+
+	if (IS_ALIGNED(offset, sizeof(uint32_t)) && IS_ALIGNED(data, sizeof(uint32_t)) &&
+	    IS_ALIGNED(size, 4)) {
+		data_size = 4;
+	}
+
+	k_sem_take(&dev_data->lock, K_FOREVER);
+
+	dev_data->dma_cfg.source_data_size = data_size;
+	dev_data->dma_cfg.dest_data_size = data_size;
+	dev_data->dma_cfg.source_burst_length = data_size;
+	dev_data->dma_cfg.dest_burst_length = data_size;
+
+	dev_data->dma_block_cfg = (struct dma_block_config){
+		.block_size = size,
+		.source_address = DT_REG_ADDR(SOC_NV_FLASH_NODE) + offset,
+		.dest_address = (uint32_t)data,
+	};
+
+	err = dma_config(dev_data->dma_dev, dev_data->dma_channel, &dev_data->dma_cfg);
+	if (err < 0) {
+		goto cleanup;
+	}
+
+	err = dma_start(dev_data->dma_dev, dev_data->dma_channel);
+	if (err < 0) {
+		goto cleanup;
+	}
+
+	k_sem_take(&dev_data->sync, K_FOREVER);
+	if (dev_data->sync_status != DMA_STATUS_COMPLETE) {
+		err = dev_data->sync_status;
+	}
+
+cleanup:
+	k_sem_give(&dev_data->lock);
+	return err;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 static int flash_silabs_read(const struct device *dev, off_t offset, void *data, size_t size)
 {
 	if (!flash_silabs_read_range_is_valid(offset, size)) {
@@ -70,6 +136,10 @@ static int flash_silabs_read(const struct device *dev, off_t offset, void *data,
 
 	if (!size) {
 		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_SOC_FLASH_SILABS_S2_DMA_READ)) {
+		return flash_silabs_read_dma(dev, offset, data, size);
 	}
 
 	memcpy(data, (uint8_t *)DT_REG_ADDR(SOC_NV_FLASH_NODE) + offset, size);
@@ -96,6 +166,11 @@ static int flash_silabs_write(const struct device *dev, off_t offset, const void
 
 	address = (uint8_t *)DT_REG_ADDR(SOC_NV_FLASH_NODE) + offset;
 #ifdef CONFIG_SOC_FLASH_SILABS_S2_DMA_WRITE
+	/* If the DMA channel has previously been used for a different purpose,
+	 * clear any lingering configuration that the MSC API doesn't tolerate.
+	 */
+	LDMA->IEN_CLR = BIT(dev_data->dma_channel);
+	LDMA->CHDONE_CLR = BIT(dev_data->dma_channel);
 	ret = MSC_WriteWordDma(dev_data->dma_channel, address, data, size);
 #else
 	ret = MSC_WriteWord(address, data, size);
@@ -191,7 +266,7 @@ static int flash_silabs_get_size(const struct device *dev, uint64_t *size)
 
 static int flash_silabs_init(const struct device *dev)
 {
-	struct flash_silabs_data *const dev_data = dev->data;
+	__maybe_unused struct flash_silabs_data *const dev_data = dev->data;
 	const struct flash_silabs_config *config = dev->config;
 
 	MSC_Init();
@@ -203,7 +278,7 @@ static int flash_silabs_init(const struct device *dev)
 	/* Lock the MSC module. */
 	flash_silabs_write_protection(true);
 
-#ifdef CONFIG_SOC_FLASH_SILABS_S2_DMA_WRITE
+#if defined(CONFIG_SOC_FLASH_SILABS_S2_DMA_WRITE) || defined(CONFIG_SOC_FLASH_SILABS_S2_DMA_READ)
 	dev_data->dma_channel = dma_request_channel(dev_data->dma_dev, NULL);
 #endif
 
@@ -226,9 +301,20 @@ static DEVICE_API(flash, flash_silabs_driver_api) = {
 /* clang-format off */
 static struct flash_silabs_data flash_silabs_data_0 = {
 	.lock = Z_SEM_INITIALIZER(flash_silabs_data_0.lock, 1, 1),
-#ifdef CONFIG_SOC_FLASH_SILABS_S2_DMA_WRITE
+#if defined(CONFIG_SOC_FLASH_SILABS_S2_DMA_WRITE) || defined(CONFIG_SOC_FLASH_SILABS_S2_DMA_READ)
 	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR(0)),
 	.dma_channel = -1,
+#endif
+#if defined(CONFIG_SOC_FLASH_SILABS_S2_DMA_READ)
+	.sync = Z_SEM_INITIALIZER(flash_silabs_data_0.sync, 0, 1),
+	.sync_status = -EIO,
+	.dma_cfg = {
+		.channel_direction = MEMORY_TO_MEMORY,
+		.block_count = 1,
+		.head_block = &flash_silabs_data_0.dma_block_cfg,
+		.dma_callback = flash_silabs_read_callback,
+		.user_data = (void *)DEVICE_DT_INST_GET(0),
+	},
 #endif
 };
 
