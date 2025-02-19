@@ -10,3 +10,9 @@ config NORDIC_NRF_POWER
 	select NRFX_POWER
 	select MISC_NORDIC
 	depends on DT_HAS_NORDIC_NRF_POWER_ENABLED
+
+config NORDIC_NRF_LRCCONF
+	bool "Nordic nRF LRRCONF driver"
+	default y
+	select MISC_NORDIC
+	depends on DT_HAS_NORDIC_NRF_LRCCONF_ENABLED
