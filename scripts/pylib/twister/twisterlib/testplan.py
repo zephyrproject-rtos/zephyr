@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import collections
 import copy
+import importlib.util
 import itertools
 import json
 import logging
@@ -15,6 +16,8 @@ import random
 import re
 import subprocess
 import sys
+import inspect
+import importlib
 from argparse import Namespace
 from collections import OrderedDict
 from itertools import islice
@@ -35,6 +38,7 @@ from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
+from plugin_filters.filter_framework import FilterFramework
 from zephyr_module import parse_modules
 
 logger = logging.getLogger('twister')
@@ -493,6 +497,30 @@ class TestPlan:
     def add_testsuites(self, testsuite_filter=None):
         if testsuite_filter is None:
             testsuite_filter = []
+
+        def get_filter(module_name, filter_path='plugin_filters.', filter_name='Filter'):
+            module_name = f"{ filter_path }{ module_name }"
+
+            if (
+                importlib.util.find_spec(module_name) and 
+                (filter_class := getattr(importlib.import_module(module_name), filter_name, None)) and
+                inspect.isclass(filter_class)
+            ):
+                return filter_class()
+
+        dynamic_filters: list[FilterFramework] = []
+
+        if dynamic_filter := self.options.dynamic_filter:
+            for filter_file, (filter_args, filter_kwargs) in dynamic_filter.items():
+                logger.info(f"Initialising filter: {filter_file}")
+                
+                filter_obj = get_filter(filter_file)
+            
+                if isinstance(filter_obj, FilterFramework):
+                    filter_obj.setup(*filter_args, **filter_kwargs)
+
+                    dynamic_filters.append(filter_obj)
+
         for root in self.env.test_roots:
             root = os.path.abspath(root)
 
@@ -577,6 +605,10 @@ class TestPlan:
                                 raise TwisterRuntimeError(msg)
                         else:
                             self.testsuites[suite.name] = suite
+
+                        for filter_obj in dynamic_filters:
+                            if filter_obj.filter(suite):
+                                suite.skip = True
 
                 except Exception as e:
                     logger.error(f"{suite_path}: can't load (skipping): {e!r}")

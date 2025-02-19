@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import sys
+import shlex
 from collections.abc import Generator
 from datetime import datetime, timezone
 from importlib import metadata
@@ -151,6 +152,17 @@ Artificially long but functional example:
         action="store_true",
         help="Run only those tests that failed the previous twister run "
              "invocation.")
+
+    case_select.add_argument(
+        "--dynamic-filter",
+        nargs="+",
+        help="""
+            Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. 
+            Because the filter files might require arguments to work properly, the arguments will be divided in "blocks". 
+            The symbol to split them is the semicolon (;). The argument should have the following format: 
+            --dynamic-filter filter1.py arg1 arg2 kwarg1=1234 kwarg2=5678; filter2.py arg3
+        """
+    )
 
     test_plan_report_xor.add_argument("--list-tests", action="store_true",
                              help="""List of all sub-test functions recursively found in
@@ -1032,6 +1044,63 @@ def parse_arguments(
     elif on_init and options.allow_installed_plugin and PYTEST_PLUGIN_INSTALLED:
         logger.warning("You work with installed version of "
                        "pytest-twister-harness plugin.")
+
+    if filter_parameters := options.dynamic_filter:
+        filters = {}
+        current_args = []
+        current_kwargs = {}
+        parsing_args = False
+        parsing_kwargs = False
+
+        def initialize_filter(filter_list, filter):
+            args = []
+            kwargs = {}
+
+            filter_list[filter] = [args, kwargs]
+
+            return args, kwargs
+
+        def handle_kwarg(arg, kwarg_dict):
+            kwarg, value = arg.split('=', 1)
+            kwarg_dict[kwarg] = value
+
+        for args_wrapper in filter_parameters:
+            for arg in shlex.split(args_wrapper):
+                if arg.endswith(';;'):
+                    arg = arg[:-2]
+
+                    if not parsing_args and not parsing_kwargs:
+                        current_args, current_kwargs = initialize_filter(filters, arg)
+                    elif parsing_args:
+                        current_args.append(arg)
+                    elif parsing_kwargs:
+                        handle_kwarg(arg, current_kwargs)
+
+                    parsing_args = False
+                    parsing_kwargs = True
+                elif arg.endswith(';'):
+                    arg = arg[:-1]
+
+                    if not parsing_args and not parsing_kwargs:
+                        current_args, current_kwargs = initialize_filter(filters, arg)
+                    elif parsing_args:
+                        current_args.append(arg)
+                    elif parsing_kwargs:
+                        handle_kwarg(arg, current_kwargs)
+
+                    parsing_args = False
+                    parsing_kwargs = False
+                elif parsing_args:
+                    current_args.append(arg)
+                elif parsing_kwargs:
+                    handle_kwarg(arg, current_kwargs)
+                else:
+                    current_args, current_kwargs = initialize_filter(filters, arg)
+
+                    parsing_args = True
+                    parsing_kwargs = False
+
+        options.dynamic_filter = filters
 
     return options
 
