@@ -1,0 +1,15 @@
+identifier: chipyard_dsp24
+name: DSP24 SoC from Berkeley Tapeout Class
+type: chipyard 
+simulation:
+  - name: spike
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - netif
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
