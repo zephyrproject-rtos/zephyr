@@ -167,7 +167,7 @@ zephyr_udc0: &usb {
 		xip-config = <1 0 DT_SIZE_M(32) 0>;
 		ce-break-config = <1024 4>;
 		ambiq,timing-config-mask = <0x62>;
-		ambiq,timing-config = <5 5 1 0 0 3 10 0>;
+		ambiq,timing-config = <5 5 1 0 0 3 10>;
 	};
 };
 
@@ -205,7 +205,7 @@ zephyr_udc0: &usb {
 		xip-config = <1 0 DT_SIZE_M(8) 0>;
 		ce-break-config = <1024 3>;
 		ambiq,timing-config-mask = <0x62>;
-		ambiq,timing-config = <0 6 1 0 0 0 16 0>;
+		ambiq,timing-config = <0 6 1 0 0 0 16>;
 	};
 
 	is25wx064: is25wx064@1 {
@@ -227,7 +227,7 @@ zephyr_udc0: &usb {
 		xip-config = <1 0 DT_SIZE_M(8) 0>;
 		ce-break-config = <0 0>;
 		ambiq,timing-config-mask = <0x62>;
-		ambiq,timing-config = <0 16 1 0 0 5 23 0>;
+		ambiq,timing-config = <0 16 1 0 0 5 23>;
 		reset-gpios = <&gpio32_63 22 GPIO_ACTIVE_LOW>;
 		t-reset-pulse = <10000000>; /* min tSHRH */
 		t-reset-recovery = <200000000>; /* typical tSSE */
@@ -269,7 +269,7 @@ zephyr_udc0: &usb {
 		xip-config = <1 0 DT_SIZE_M(32) 0>;
 		ce-break-config = <1024 4>;
 		ambiq,timing-config-mask = <0x62>;
-		ambiq,timing-config = <5 5 1 0 0 3 10 0>;
+		ambiq,timing-config = <5 5 1 0 0 3 10>;
 	};
 };
 

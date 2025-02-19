@@ -219,7 +219,7 @@ zephyr_udc0: &usb {
 		xip-config = <1 0 DT_SIZE_M(64) 0>;
 		ce-break-config = <1024 4>;
 		ambiq,timing-config-mask = <0x62>;
-		ambiq,timing-config = <8 7 1 0 0 3 10 0>;
+		ambiq,timing-config = <8 7 1 0 0 3 10>;
 	};
 };
 
@@ -256,7 +256,7 @@ zephyr_udc0: &usb {
 		xip-config = <1 0 DT_SIZE_M(8) 0>;
 		ce-break-config = <0 0>;
 		ambiq,timing-config-mask = <0x62>;
-		ambiq,timing-config = <0 16 1 0 0 5 20 0>;
+		ambiq,timing-config = <0 16 1 0 0 5 20>;
 		reset-gpios = <&gpio32_63 22 GPIO_ACTIVE_LOW>;
 		t-reset-pulse = <10000000>; /* min tSHRH */
 		t-reset-recovery = <200000000>; /* typical tSSE */
