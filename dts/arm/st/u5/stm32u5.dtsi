@@ -52,18 +52,21 @@
 				power-state-name = "suspend-to-idle";
 				substate-id = <1>;
 				min-residency-us = <100>;
+				exit-latency-us = <1>;
 			};
 			stop1: state1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
 				min-residency-us = <500>;
+				exit-latency-us = <2>;
 			};
 			stop2: state2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <3>;
 				min-residency-us = <900>;
+				exit-latency-us = <3>;
 			};
 			/omit-if-no-ref/ stop3: state3 {
 				compatible = "zephyr,power-state";
@@ -72,6 +75,15 @@
 				min-residency-us = <200000>;
 				exit-latency-us = <130>;
 			};
+		};
+	};
+
+	event-domains {
+		wakeup_event_domain: wakeup {
+			compatible = "event-domain";
+			event-latencies-us = <155 103 9>;
+			event-devices = <&cpu0>;
+			event-device-states = <0>, <1>, <2>;
 		};
 	};
 

@@ -74,6 +74,18 @@
 		};
 	};
 
+	event-domains {
+		cpuapp_wakeup_event_domain: cpuapp_wakeup {
+			compatible = "event-domain";
+			event-devices = <&cpuapp &power &rram_controller>;
+			event-latencies-us = <21 13 7 6>;
+			event-device-states = <0 0 0>,
+					      <0 0 1>,
+					      <0 0 2>,
+					      <0 1 2>;
+		};
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;

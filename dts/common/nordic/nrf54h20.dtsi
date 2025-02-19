@@ -213,6 +213,18 @@
 		compatible = "nordic,nrf-lrcconf";
 	};
 
+	event-domains {
+		cpuapp_wakeup_event_domain: cpuapp_wakeup {
+			compatible = "event-domain";
+			event-devices = <&cpuapp &cpuapp_lrcconf>;
+			event-latencies-us = <201 21 19 8>;
+			event-device-states = <0 0>,
+					      <1 0>,
+					      <1 1>,
+					      <2 0>;
+		};
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
