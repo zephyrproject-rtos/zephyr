@@ -33,6 +33,14 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
 
+#if CONFIG_STM32_HAL2
+#define STM32_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period) \
+	LL_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period)
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period) \
+	__LL_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period)
+#endif /* CONFIG_STM32_HAL2 */
+
 #ifdef CONFIG_I2C_STM32_V2_TIMING
 /* Use the algorithm to calcuate the I2C timing */
 #ifndef I2C_STM32_VALID_TIMING_NBR
@@ -592,7 +600,7 @@ void i2c_stm32_event(const struct device *dev)
 	 * i2c controller had a chance to clear its interrupt flags due
 	 * to bus delays
 	 */
-	(void)LL_I2C_ReadReg(regs, ISR);
+	(void)stm32_reg_read(&regs->ISR);
 	return;
 
 irq_xfer_completed:
@@ -1331,8 +1339,9 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 			continue;
 		}
 
-		timing = __LL_I2C_CONVERT_TIMINGS(presc - 1,
+		timing = STM32_I2C_CONVERT_TIMINGS(presc - 1,
 					scldel - 1, sdadel, sclh - 1, scll - 1);
+
 		break;
 	} while (presc < 16);
 
