@@ -126,4 +126,10 @@ config PM_EVENT_DEVICE
 	help
 	  Enable event device power management.
 
+config PM_EVENT_DOMAIN
+	bool "Event domain PM support"
+	depends on PM_EVENT_DEVICE
+	help
+	  Enable event domain power management.
+
 endmenu
