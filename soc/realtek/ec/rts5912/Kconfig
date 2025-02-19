@@ -22,4 +22,11 @@ config RTS5912_ON_ENTER_CPU_IDLE_HOOK
 	  If needed, this hook can be used to prevent the CPU from actually
 	  entering sleep by skipping the WFE/WFI instruction.
 
+config RTS5912_DEBUG_SWJ
+	bool "Serial wire JTAG"
+	default y
+	depends on DT_HAS_SWJ_CONNECTOR_ENABLED
+	help
+	  Enables the serial wire JTAG connection on the RTS5912 EC.
+
 endif # SOC_SERIES_RTS5912
