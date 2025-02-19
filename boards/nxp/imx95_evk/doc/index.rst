@@ -239,6 +239,13 @@ system. After starting these cores, it enters a service mode where it provides a
 to clocking, power, sensor, and pin control via a client RPC API based on ARM's
 `System Control and Management Interface (SCMI)`_.
 
+Be aware of the fact that System Manager uses an SCMI implementation that optionally
+can apply CRC validation on the data transfers. Zephyr does not apply CRC validation
+since it is not part of the SCMI specification. However, this can be enabled by
+configuring CONFIG_ARM_SCMI_SHMEM_VENDOR_NXP and consequently enable
+ARM_SCMI_SHMEM_USE_CRC. Make sure these CRC settings match between Zephyr and System
+Manager otherwise the M7 software will fail enabling its peripherals.
+
 To program M7, an i.MX container image ``flash.bin`` must be made, which contains
 multiple elements required, like ELE+V2X firmware, System Manager, TCM OEI, Cortex-M7
 image and so on.
