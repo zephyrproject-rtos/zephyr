@@ -106,3 +106,9 @@ tests:
       - CONFIG_DMA=y
     extra_args:
       - DTC_OVERLAY_FILE=boards/xg24_rb4187c_lpwrite.overlay
+  drivers.flash.common.silabs.dma_read:
+    platform_allow:
+      - xg24_rb4187c
+    extra_configs:
+      - CONFIG_DMA=y
+      - CONFIG_SOC_FLASH_SILABS_S2_DMA_READ=y
