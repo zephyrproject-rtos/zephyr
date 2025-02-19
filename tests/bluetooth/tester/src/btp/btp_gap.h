@@ -319,6 +319,11 @@ struct btp_gap_padv_sync_transfer_recv_cmd {
 	uint8_t flags;
 } __packed;
 
+#define BTP_GAP_SET_RPA_TIMEOUT                 0x30
+struct btp_gap_set_rpa_timeout_cmd {
+	uint16_t rpa_timeout;
+} __packed;
+
 /* events */
 #define BTP_GAP_EV_NEW_SETTINGS			0x80
 struct btp_gap_new_settings_ev {
