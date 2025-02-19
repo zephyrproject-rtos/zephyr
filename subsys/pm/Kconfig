@@ -139,4 +139,10 @@ config PM_EVENT_DOMAIN_SHELL
 	help
 	  Enable event domain power management shell.
 
+config PM_EVENT_DEVICE_CPU
+	bool "Implement CPU event device using default PM policy"
+	depends on PM_POLICY_DEFAULT
+	depends on PM_EVENT_DEVICE
+	default y
+
 endmenu
