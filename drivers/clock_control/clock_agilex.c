@@ -35,7 +35,19 @@ static int clk_get_rate(const struct device *dev,
 	return 0;
 }
 
+static int clk_on_off(const struct device *dev,
+					     clock_control_subsys_t sys)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(sys);
+
+	/* On/off functionality is not supported */
+	return 0;
+}
+
 static DEVICE_API(clock_control, clk_api) = {
+	.on = clk_on_off,
+	.off = clk_on_off,
 	.get_rate = clk_get_rate
 };
 
