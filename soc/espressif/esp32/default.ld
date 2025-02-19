@@ -821,7 +821,10 @@ SECTIONS
 
     . = ALIGN(16);
     _ext_ram_noinit_end = ABSOLUTE(.);
-
+#ifdef CONFIG_ESP_MBEDTLS_HEAP_ALLOC_SPIRAM
+    *(.mbedtls_heap)
+    . = ALIGN(16);
+#endif /* CONFIG_ESP_MBEDTLS_HEAP_ALLOC_SPIRAM */
     _ext_ram_bss_start = ABSOLUTE(.);
 
     *(.ext_ram.bss*)
