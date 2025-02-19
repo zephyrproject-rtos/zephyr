@@ -392,7 +392,7 @@ static int a2dp_abort_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, ui
 	return a2dp_ctrl_ind(session, sep, errcode, req_cb, done_cb, true);
 }
 
-static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req)
+static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
 	struct bt_a2dp *a2dp = SET_CONF_PARAM(SET_CONF_REQ(req));
 	struct bt_a2dp_ep *ep;
@@ -422,7 +422,7 @@ static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req)
 	return 0;
 }
 
-static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req)
+static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
 	int err;
 	uint8_t *codec_info_element;
@@ -431,7 +431,7 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req)
 	uint8_t codec_type;
 	uint8_t user_ret;
 
-	if (GET_CAP_REQ(req) != &a2dp->get_capabilities_param) {
+	if (GET_CAP_REQ(req) != &a2dp->get_capabilities_param || buf == NULL) {
 		return -EINVAL;
 	}
 
@@ -444,7 +444,7 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req)
 		return 0;
 	}
 
-	err = bt_avdtp_parse_capability_codec(a2dp->get_capabilities_param.buf, &codec_type,
+	err = bt_avdtp_parse_capability_codec(buf, &codec_type,
 					      &codec_info_element, &codec_info_element_len);
 	if (err) {
 		LOG_DBG("codec capability parsing fail");
@@ -522,14 +522,14 @@ static int bt_a2dp_get_sep_caps(struct bt_a2dp *a2dp)
 	return -EINVAL;
 }
 
-static int bt_a2dp_discover_cb(struct bt_avdtp_req *req)
+static int bt_a2dp_discover_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
 	struct bt_a2dp *a2dp = DISCOVER_PARAM(DISCOVER_REQ(req));
 	struct bt_avdtp_sep_info *sep_info;
 	int err;
 
 	LOG_DBG("DISCOVER result:%d", req->status);
-	if (a2dp->discover_cb_param == NULL) {
+	if (a2dp->discover_cb_param == NULL || buf == NULL) {
 		return -EINVAL;
 	}
 
@@ -547,7 +547,7 @@ static int bt_a2dp_discover_cb(struct bt_avdtp_req *req)
 
 		do {
 			sep_info = &a2dp->discover_cb_param->seps_info[a2dp->peer_seps_count];
-			err = bt_avdtp_parse_sep(DISCOVER_REQ(req)->buf, sep_info);
+			err = bt_avdtp_parse_sep(buf, sep_info);
 
 			if (err) {
 				break;
@@ -692,7 +692,7 @@ static int bt_a2dp_ctrl_cb(struct bt_avdtp_req *req, bt_a2dp_rsp_cb rsp_cb, bt_a
 	return 0;
 }
 
-static int bt_a2dp_open_cb(struct bt_avdtp_req *req)
+static int bt_a2dp_open_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
 	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
 	bt_a2dp_rsp_cb rsp_cb = a2dp_cb != NULL ? a2dp_cb->establish_rsp : NULL;
@@ -703,7 +703,7 @@ static int bt_a2dp_open_cb(struct bt_avdtp_req *req)
 	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, false);
 }
 
-static int bt_a2dp_start_cb(struct bt_avdtp_req *req)
+static int bt_a2dp_start_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
 	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
 	bt_a2dp_rsp_cb rsp_cb = a2dp_cb != NULL ? a2dp_cb->start_rsp : NULL;
@@ -713,7 +713,7 @@ static int bt_a2dp_start_cb(struct bt_avdtp_req *req)
 	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, false);
 }
 
-static int bt_a2dp_suspend_cb(struct bt_avdtp_req *req)
+static int bt_a2dp_suspend_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
 	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
 	bt_a2dp_rsp_cb rsp_cb = a2dp_cb != NULL ? a2dp_cb->suspend_rsp : NULL;
@@ -723,7 +723,7 @@ static int bt_a2dp_suspend_cb(struct bt_avdtp_req *req)
 	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, false);
 }
 
-static int bt_a2dp_close_cb(struct bt_avdtp_req *req)
+static int bt_a2dp_close_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
 	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
 	bt_a2dp_rsp_cb rsp_cb = a2dp_cb != NULL ? a2dp_cb->release_rsp : NULL;
@@ -733,7 +733,7 @@ static int bt_a2dp_close_cb(struct bt_avdtp_req *req)
 	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, true);
 }
 
-static int bt_a2dp_abort_cb(struct bt_avdtp_req *req)
+static int bt_a2dp_abort_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
 	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
 	bt_a2dp_rsp_cb rsp_cb = a2dp_cb != NULL ? a2dp_cb->abort_rsp : NULL;
