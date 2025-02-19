@@ -30,8 +30,38 @@ Zephyr 4.1.0 (Working Draft)
 ############################
 
 We are pleased to announce the release of Zephyr version 4.1.0.
-
 Major enhancements with this release include:
+
+**Performance improvements**
+  Multiple performance improvements of core Zephyr kernel functions have been implemented,
+  benefiting all supported hardware architectures.
+
+  An official port of the :zephyr_file:`thread_metric <tests/benchmarks/thread_metric>` RTOS
+  benchmark has also been added to make it easier for developers to measure the performance of
+  Zephyr on their hardware and compare it to other RTOSes.
+
+**Experimental support for IAR compiler**
+  :ref:`toolchain_iar_arm` can now be used to build Zephyr applications. This is an experimental
+  feature that is expected to be improved in future releases.
+
+**Initial support for Rust on Zephyr**
+  It is now possible to write Zephyr applications in Rust. :ref:`language_rust` is available through
+  an optional Zephyr module, and several code samples are available as a starting point.
+
+**USB MIDI Class Driver**
+  Introduction of a new :ref:`USB MIDI 2.0 <usbd_midi2>` device driver, allowing Zephyr devices to
+  communicate with MIDI controllers and instruments over USB.
+
+**Expanded Board Support**
+  Support for 70 :ref:`new boards <boards_added_in_zephyr_4_1>` and 11
+  :ref:`new shields <shields_added_in_zephyr_4_1>` has been added in this release.
+
+  This includes highly popular boards such as :zephyr:board:`rpi_pico2` and
+  :zephyr:board:`ch32v003evt`, several boards with CAN+USB capabilities making them good candidates
+  for running the Zephyr-based open source `CANnectivity`_ firmware, and dozens of other boards
+  across all supported architectures.
+
+.. _CANnectivity: https://cannectivity.org/
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.0.0 to Zephyr v4.1.0 can be found in the separate :ref:`migration guide<migration_4.1>`.
@@ -228,6 +258,8 @@ New APIs and options
   * :c:struct:`led_dt_spec`
   * :kconfig:option:`CONFIG_STEP_DIR_STEPPER`
 
+.. _boards_added_in_zephyr_4_1:
+
 New Boards
 **********
 ..
@@ -400,13 +432,30 @@ New Boards
    * :zephyr:board:`we_oceanus1ev` (``we_oceanus1ev``)
    * :zephyr:board:`we_orthosie1ev` (``we_orthosie1ev``)
 
-* others
+* Others
 
    * :zephyr:board:`canbardo` (``canbardo``)
    * :zephyr:board:`candlelight` (``candlelight``)
    * :zephyr:board:`candlelightfd` (``candlelightfd``)
    * :zephyr:board:`esp32c3_supermini` (``esp32c3_supermini``)
    * :zephyr:board:`promicro_nrf52840` (``promicro_nrf52840``)
+
+.. _shields_added_in_zephyr_4_1:
+
+New shields
+============
+
+  * :ref:`Abrobot ESP32 C3 OLED Shield <abrobot_esp32c3oled_shield>`
+  * :ref:`Adafruit Adalogger Featherwing Shield <adafruit_adalogger_featherwing_shield>`
+  * :ref:`Adafruit AW9523 GPIO Expander and LED Driver <adafruit_aw9523>`
+  * :ref:`MikroElektronika ETH 3 Click <mikroe_eth3_click>`
+  * :ref:`P3T1755DP Arduino® Shield Evaluation Board <p3t1755dp_ard_i2c_shield>`
+  * :ref:`P3T1755DP Arduino® Shield Evaluation Board <p3t1755dp_ard_i3c_shield>`
+  * :ref:`Digilent Pmod SD <pmod_sd>`
+  * :ref:`Renesas DA14531 Pmod Board <renesas_us159_da14531evz_shield>`
+  * :ref:`RTKMIPILCDB00000BE MIPI Display <rtkmipilcdb00000be>`
+  * :ref:`Seeed W5500 Ethernet Shield <seeed_w5500>`
+  * :ref:`ST B-CAMS-OMV-MB1683 <st_b_cams_omv_mb1683>`
 
 New Drivers
 ***********
