@@ -20,16 +20,13 @@ config ESP32_BT_RESERVE_DRAM
 	default 0xdb5c if BT
 	default 0
 
-config ESP_HEAP_MEM_POOL_REGION_1_SIZE
-	int "Internal DRAM region 1 mempool size"
-	default 0 if MCUBOOT
-	default 1024 if SOC_ESP32_PROCPU
-	default 49152
+config ESP32_REGION_1_NOINIT
+	bool "Use DRAM region 1 to spill noinit section"
+	default n
 	help
 	  ESP32 has two banks of size 192K and 128K which can be used
-	  as DRAM, system heap allocates area from region 0.
-	  This configuration can be used to add memory from region 1
-	  to heap and can be allocated using k_malloc.
+	  as DRAM. Enabling this option would allocate .noinit sections
+	  in the DRAM region 1, instead of default region 0.
 
 config ESP32_DEEP_SLEEP_WAKEUP_DELAY
 	int "Extra delay in deep sleep wake stub (in us)"
