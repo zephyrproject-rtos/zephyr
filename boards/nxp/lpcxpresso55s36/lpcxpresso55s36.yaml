@@ -17,6 +17,7 @@ supported:
   - arduino_gpio
   - can
   - dac
+  - dma
   - flash
   - gpio
   - pwm
