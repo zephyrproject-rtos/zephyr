@@ -19,4 +19,10 @@
 		compatible = "mmio-sram";
 		reg = <0x20040000 DT_SIZE_K(16)>;
 	};
+
+    mailbox0: ipm-mbox {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox 1>, <&mbox 0>;
+		mbox-names = "tx", "rx";
+	};
 };

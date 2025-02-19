@@ -13,6 +13,7 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,ipc_shm = &ocram2_overlay;
+        zephyr,ipc = &mailbox0;
 	};
 
 	soc {
@@ -36,6 +37,12 @@
 		reg = <0x202c0000 DT_SIZE_K(16)>;
 		zephyr,memory-region="OCRAM2_OVERLAY";
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+	};
+
+    mailbox0: ipm-mbox {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox 0>, <&mbox 1>;
+		mbox-names = "tx", "rx";
 	};
 };
 

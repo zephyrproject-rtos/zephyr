@@ -53,10 +53,12 @@
 			#gpio-cells = <2>;
 		};
 
-		mailbox_b: mailbox@40c4c000 {
-			compatible = "nxp,imx-mu";
+		mbox:mbox@40c4c000 {
+			compatible = "nxp,mbox-imx-mu";
 			reg = <0x40c4c000 0x4000>;
 			interrupts = <118 0>;
+			rx-channels = <4>;
+			#mbox-cells = <1>;
 			rdc = <0>;
 		};
 	};
