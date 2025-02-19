@@ -70,8 +70,7 @@ static int reboot_by_wdt(void)
 		.window.max = 10,
 	};
 	static const uint8_t wdt_options[] = {
-		WDT_OPT_PAUSE_HALTED_BY_DBG | WDT_OPT_PAUSE_IN_SLEEP,
-		WDT_OPT_PAUSE_IN_SLEEP,
+		WDT_OPT_PAUSE_HALTED_BY_DBG,
 		0
 	};
 
@@ -99,6 +98,7 @@ static int reboot_by_wdt(void)
 			 * just wait for the WDT to trigger
 			 */
 			for (;;) {
+				LOG_INF("Waiting for WDT");
 				k_cpu_idle();
 			}
 		}
@@ -114,6 +114,7 @@ FUNC_NORETURN static void reboot_anyway(void)
 {
 	reboot_by_wdt();
 	/* If WDT restart fails - try another way */
+	LOG_INF("WDT did not work, trying COLD REBOOT");
 	sys_reboot(SYS_REBOOT_COLD);
 }
 
@@ -185,7 +186,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 		break;
 	}
 	case IPC_TEST_CMD_REBOND: {
-		LOG_INF("Command processing: REBOOT");
+		LOG_INF("Command processing: REBOND");
 
 		struct ipc_test_cmd_rebond *cmd_rebond = (struct ipc_test_cmd_rebond *)cmd;
 
