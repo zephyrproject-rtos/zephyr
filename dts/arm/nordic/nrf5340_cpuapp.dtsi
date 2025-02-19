@@ -87,6 +87,7 @@
 			interrupts = <13 5>;
 			status = "disabled";
 			instance = <0>;
+
 		};
 
 		/* Additional Non-Secure GPIOTE instance */
@@ -96,6 +97,7 @@
 			interrupts = <47 5>;
 			status = "disabled";
 			instance = <1>;
+
 		};
 
 		cryptocell: crypto@50844000 {

@@ -4,6 +4,16 @@
 config MISC_NORDIC
 	bool
 
+config NORDIC_NRF_CPU
+	bool "Nordic nRF CPU driver"
+	default y
+	select IDLE_ENTER_HOOK
+	select MISC_NORDIC
+	depends on (SOC_SERIES_NRF51X || \
+		    SOC_SERIES_NRF52X || \
+		    SOC_SERIES_NRF53X || \
+		    SOC_SERIES_NRF54LX)
+
 config NORDIC_NRF_POWER
 	bool "Nordic nRF POWER driver"
 	default y
