@@ -70,8 +70,16 @@ config ETH_STM32_HAL_PHY_ADDRESS
 	help
 	  The phy address to use.
 
+config ETH_STM32_CARRIER_CHECK
+	bool "Check PHY carrier periodically"
+	default y
+	help
+	  Enables or disables checking of the PHY's carrier status.
+	  See also CONFIG_ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
+
 config ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
 	int "Carrier check timeout period (ms)"
+	depends on ETH_STM32_CARRIER_CHECK
 	default 500
 	range 100 30000
 	help
