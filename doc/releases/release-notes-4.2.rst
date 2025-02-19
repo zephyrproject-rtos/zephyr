@@ -379,3 +379,7 @@ Other notable changes
   PXN attribute is set for these regions if compiled with ``CONFIG_ARM_MPU_PXN`` and ``CONFIG_USERSPACE``.
   This results in a change in behaviour for code being executed from these regions because,
   if these regions have pxn attribute set in them, they cannot be executed in privileged mode.
+
+* Removed support for Nucleo WBA52CG board (``nucleo_wba52cg``) since it is NRND (Not Recommended
+  for New Design) and it is not supported anymore in the STM32CubeWBA from version 1.1.0 (July 2023).
+  The migration to :zephyr:board:`nucleo_wba55cg` (``nucleo_wba55cg``) is recommended instead.

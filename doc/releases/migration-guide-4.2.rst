@@ -62,6 +62,11 @@ Boards
   - :dtcompatible:`renesas,ra-pinctrl-pfs`
   - :dtcompatible:`renesas,ra-cgc-pclk-block`
 
+* Nucleo WBA52CG board (``nucleo_wba52cg``) is not supported anymore since it is NRND
+  (Not Recommended for New Design) and it is not supported anymore in the STM32CubeWBA from
+  version 1.1.0 (July 2023). The migration to :zephyr:board:`nucleo_wba55cg` (``nucleo_wba55cg``)
+  is recommended and it could be done without any change.
+
 Device Drivers and Devicetree
 *****************************
 
