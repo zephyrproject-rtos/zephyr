@@ -8,5 +8,6 @@ config MIPI_DSI_RENESAS_RA
 	default y
 	depends on DT_HAS_RENESAS_RA_MIPI_DSI_ENABLED
 	select USE_RA_FSP_MIPI_DSI
+	select PINCTRL
 	help
 	  Renesas RA MIPI DSI controller driver
