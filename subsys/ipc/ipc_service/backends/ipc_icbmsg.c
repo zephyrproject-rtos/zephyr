@@ -162,6 +162,12 @@ enum msg_type {
 	MSG_UNBOUND,		/* Unbound endpoint */
 };
 
+enum control_ept_state {
+	CTRL_EPT_STATE_UNBOUND = 0,	/* Control endpoint is not bound. */
+	CTRL_EPT_STATE_BOUNDING,	/* Bounding process started, waiting for bound callback */
+	CTRL_EPT_STATE_READY,		/* Control endpoint is bound. */
+};
+
 enum ept_bounding_state {
 	EPT_UNCONFIGURED = 0,	/* Endpoint in not configured (initial state). */
 	EPT_RESERVED,		/* Endpoint is taken for configuration.
@@ -237,9 +243,7 @@ struct backend_data {
 	struct ept_data ept[NUM_EPT];	/* Array of registered endpoints. */
 	uint8_t ept_map[NUM_EPT];	/* Array that maps endpoint address to index. */
 	uint16_t waiting_bound[NUM_EPT];/* The bound messages waiting to be registered. */
-	atomic_t flags;			/* Flags on higher bits, number of registered
-					 * endpoints on lower.
-					 */
+	atomic_t control_state;		/* Control endpoint state, enum control_ept_state. */
 	bool is_initiator;		/* This side has an initiator role. */
 };
 
@@ -974,6 +978,7 @@ static void ept_bound_process(struct k_work *item)
 static void ept_bound_process(struct backend_data *dev_data)
 #endif
 {
+	LOG_DBG("%s", __func__);
 #ifdef CONFIG_MULTITHREADING
 	struct backend_data *dev_data = CONTAINER_OF(item, struct backend_data,
 						     ep_bound_work);
@@ -984,7 +989,7 @@ static void ept_bound_process(struct backend_data *dev_data)
 	bool matching_state;
 
 	/* Skip processing if ICMsg was not bounded yet. */
-	if (!(atomic_get(&dev_data->flags) & CONTROL_BOUNDED)) {
+	if (atomic_get(&dev_data->control_state) != CTRL_EPT_STATE_READY) {
 		return;
 	}
 
@@ -995,6 +1000,7 @@ static void ept_bound_process(struct backend_data *dev_data)
 			matching_state = atomic_cas(&ept->state, EPT_CONFIGURED,
 						    EPT_BOUNDING);
 			if (matching_state) {
+				LOG_DBG("  Sending bound message");
 				r = send_bound_message(dev_data, ept);
 				if (r < 0) {
 					atomic_set(&ept->state, EPT_UNCONFIGURED);
@@ -1023,6 +1029,8 @@ static void ept_bound_process(struct backend_data *dev_data)
 					if (r < 0) {
 						LOG_ERR("Failed bound, err %d", r);
 					}
+				} else {
+					LOG_DBG("  Bound processed");
 				}
 			}
 		}
@@ -1285,17 +1293,24 @@ static void control_bound(void *priv)
 {
 	const struct device *instance = priv;
 	struct backend_data *dev_data = instance->data;
+	bool matching;
 
 	initialize_rx_buffer_usage(instance);
 
 	/* Set flag that ICMsg is bounded and now, endpoint bounding may start. */
-	atomic_or(&dev_data->flags, CONTROL_BOUNDED);
+	matching = atomic_cas(&dev_data->control_state, CTRL_EPT_STATE_BOUNDING,
+			      CTRL_EPT_STATE_READY);
 
+	if (!matching) {
+		LOG_ERR("Unexpected ICMsg bound");
+		return;
+	}
 #ifdef CONFIG_MULTITHREADING
 	schedule_ept_bound_process(dev_data);
 #else
 	ept_bound_process(dev_data);
 #endif
+	LOG_INF("CONTROL BOUND");
 }
 
 static void control_unbound(void *priv)
@@ -1303,8 +1318,9 @@ static void control_unbound(void *priv)
 	const struct device *instance = priv;
 	struct backend_data *dev_data = instance->data;
 
+
 	/* Clear flag that ICMsg is bounded and now, endpoint bounding may start. */
-	atomic_and(&dev_data->flags, ~CONTROL_BOUNDED);
+	atomic_set(&dev_data->control_state, CTRL_EPT_STATE_UNBOUND);
 
 	for (int i = 0; i < NUM_EPT; i++) {
 		struct ept_data *ept = &dev_data->ept[i];
@@ -1327,16 +1343,11 @@ static void control_unbound(void *priv)
 			}
 		}
 	}
+	LOG_INF("CONTROL UNBOUND");
 }
 
-/**
- * Open the backend instance callback.
- */
-static int open(const struct device *instance)
+static int control_safe_start_bound(const struct device *instance)
 {
-	const struct icbmsg_config *conf = instance->config;
-	struct backend_data *dev_data = instance->data;
-
 	static const struct ipc_service_cb cb = {
 		.bound = control_bound,
 		.unbound = IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_ICBMSG_UNBOUND_ENABLED) ?
@@ -1344,6 +1355,16 @@ static int open(const struct device *instance)
 		.received = control_received,
 		.error = NULL,
 	};
+	const struct icbmsg_config *conf = instance->config;
+	struct backend_data *dev_data = instance->data;
+	bool matching;
+
+	matching = atomic_cas(&dev_data->control_state, CTRL_EPT_STATE_UNBOUND,
+			      CTRL_EPT_STATE_BOUNDING);
+	if (!matching) {
+		/* No need for bounding control endpoint */
+		return 0;
+	}
 
 	LOG_DBG("Open instance 0x%08X, initiator=%d", (uint32_t)instance,
 		dev_data->is_initiator ? 1 : 0);
@@ -1360,16 +1381,26 @@ static int open(const struct device *instance)
 		(uint32_t)(conf->rx.block_size * conf->rx.block_count -
 			   BLOCK_HEADER_SIZE));
 
+	return icmsg_open(&conf->control_config, &dev_data->control_data, &cb,
+			  (void *)instance);
+}
+
+/**
+ * Open the backend instance callback.
+ */
+static int open(const struct device *instance)
+{
+	const struct icbmsg_config *conf = instance->config;
+
 	/* Initialize buffer used state */
-	// initialize_rx_buffer_usage(instance);
+	initialize_rx_buffer_usage(instance);
 
 	/* Clear waiting threads */
 	atomic_set(conf->tx.waiting_cnt, 0);
 	__sync_synchronize();
 	sys_cache_data_flush_range(conf->tx.waiting_cnt, sizeof(conf->tx.waiting_cnt));
 
-	return icmsg_open(&conf->control_config, &dev_data->control_data, &cb,
-			  (void *)instance);
+	return 0;
 }
 
 /**
@@ -1411,9 +1442,14 @@ static int register_ept(const struct device *instance, void **token,
 	struct backend_data *dev_data = instance->data;
 	struct ept_data *ept = NULL;
 	int ept_index;
-	int r = 0;
+	int r;
 
 	LOG_DBG("Register endpoint %s", cfg->name ? cfg->name : "(NULL)");
+
+	r = control_safe_start_bound(instance);
+	if (r < 0) {
+		return r;
+	}
 
 	/* Empty name string is not allowed as it marks NULL name value */
 	if (cfg->name && cfg->name[0] == '\0') {
