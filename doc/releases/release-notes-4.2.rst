@@ -158,6 +158,12 @@ New APIs and options
     * :c:macro:`BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW`
     * :c:func:`bt_csip_set_member_set_size_and_rank`
     * :c:func:`bt_csip_set_member_get_info`
+    * :c:func:`bt_bap_unicast_group_foreach_stream`
+    * :c:func:`bt_cap_unicast_group_create`
+    * :c:func:`bt_cap_unicast_group_reconfig`
+    * :c:func:`bt_cap_unicast_group_add_streams`
+    * :c:func:`bt_cap_unicast_group_delete`
+    * :c:func:`bt_cap_unicast_group_foreach_stream`
 
   * Host
 
