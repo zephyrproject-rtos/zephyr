@@ -80,6 +80,10 @@ New APIs and options
     * :c:macro:`BT_BAP_ADV_PARAM_BROADCAST_SLOW`
     * :c:macro:`BT_BAP_PER_ADV_PARAM_BROADCAST_FAST`
     * :c:macro:`BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW`
+    * :c:func:`bt_cap_unicast_group_create`
+    * :c:func:`bt_cap_unicast_group_reconfig`
+    * :c:func:`bt_cap_unicast_group_add_streams`
+    * :c:func:`bt_cap_unicast_group_delete`
 
   * Host
 

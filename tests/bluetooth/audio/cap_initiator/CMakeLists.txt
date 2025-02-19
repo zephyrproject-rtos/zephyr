@@ -16,6 +16,7 @@ target_sources(testbinary
   PRIVATE
     src/main.c
     src/test_common.c
+    src/test_unicast_group.c
     src/test_unicast_start.c
     src/test_unicast_stop.c
 )

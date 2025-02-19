@@ -613,14 +613,14 @@ static int gmap_unicast_ac_create_unicast_group(const struct gmap_unicast_ac_par
 						size_t snk_cnt,
 						struct unicast_stream *src_uni_streams[],
 						size_t src_cnt,
-						struct bt_bap_unicast_group **unicast_group)
+						struct bt_cap_unicast_group **unicast_group)
 {
-	struct bt_bap_unicast_group_stream_param
+	struct bt_cap_unicast_group_stream_param
 		snk_group_stream_params[GMAP_UNICAST_AC_MAX_SNK] = {0};
-	struct bt_bap_unicast_group_stream_param
+	struct bt_cap_unicast_group_stream_param
 		src_group_stream_params[GMAP_UNICAST_AC_MAX_SRC] = {0};
-	struct bt_bap_unicast_group_stream_pair_param pair_params[GMAP_UNICAST_AC_MAX_PAIR] = {0};
-	struct bt_bap_unicast_group_param group_param = {0};
+	struct bt_cap_unicast_group_stream_pair_param pair_params[GMAP_UNICAST_AC_MAX_PAIR] = {0};
+	struct bt_cap_unicast_group_param group_param = {0};
 	size_t snk_stream_cnt = 0U;
 	size_t src_stream_cnt = 0U;
 	size_t pair_cnt = 0U;
@@ -631,14 +631,14 @@ static int gmap_unicast_ac_create_unicast_group(const struct gmap_unicast_ac_par
 	 * and direction
 	 */
 	for (size_t i = 0U; i < snk_cnt; i++) {
-		snk_group_stream_params[i].qos = &snk_uni_streams[i]->qos;
+		snk_group_stream_params[i].qos_cfg = &snk_uni_streams[i]->qos;
 		snk_group_stream_params[i].stream =
-			bap_stream_from_audio_test_stream(&snk_uni_streams[i]->stream);
+			cap_stream_from_audio_test_stream(&snk_uni_streams[i]->stream);
 	}
 	for (size_t i = 0U; i < src_cnt; i++) {
-		src_group_stream_params[i].qos = &src_uni_streams[i]->qos;
+		src_group_stream_params[i].qos_cfg = &src_uni_streams[i]->qos;
 		src_group_stream_params[i].stream =
-			bap_stream_from_audio_test_stream(&src_uni_streams[i]->stream);
+			cap_stream_from_audio_test_stream(&src_uni_streams[i]->stream);
 	}
 
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
@@ -665,13 +665,13 @@ static int gmap_unicast_ac_create_unicast_group(const struct gmap_unicast_ac_par
 	group_param.params = pair_params;
 	group_param.params_count = pair_cnt;
 
-	return bt_bap_unicast_group_create(&group_param, unicast_group);
+	return bt_cap_unicast_group_create(&group_param, unicast_group);
 }
 
 static int gmap_ac_cap_unicast_start(const struct gmap_unicast_ac_param *param,
 				     struct unicast_stream *snk_uni_streams[], size_t snk_cnt,
 				     struct unicast_stream *src_uni_streams[], size_t src_cnt,
-				     struct bt_bap_unicast_group *unicast_group)
+				     struct bt_cap_unicast_group *unicast_group)
 {
 	struct bt_cap_unicast_audio_start_stream_param stream_params[GMAP_UNICAST_AC_MAX_STREAM] = {
 		0};
@@ -813,7 +813,7 @@ static int gmap_ac_cap_unicast_start(const struct gmap_unicast_ac_param *param,
 }
 
 static int gmap_ac_unicast(const struct gmap_unicast_ac_param *param,
-			   struct bt_bap_unicast_group **unicast_group)
+			   struct bt_cap_unicast_group **unicast_group)
 {
 	/* Allocate params large enough for any params, but only use what is required */
 	struct unicast_stream *snk_uni_streams[GMAP_UNICAST_AC_MAX_SNK];
@@ -900,7 +900,7 @@ static int gmap_ac_unicast(const struct gmap_unicast_ac_param *param,
 	return 0;
 }
 
-static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
+static void unicast_audio_stop(struct bt_cap_unicast_group *unicast_group)
 {
 	struct bt_cap_unicast_audio_stop_param param;
 	int err;
@@ -924,11 +924,11 @@ static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 	memset(started_unicast_streams, 0, sizeof(started_unicast_streams));
 }
 
-static void unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
+static void unicast_group_delete(struct bt_cap_unicast_group *unicast_group)
 {
 	int err;
 
-	err = bt_bap_unicast_group_delete(unicast_group);
+	err = bt_cap_unicast_group_delete(unicast_group);
 	if (err != 0) {
 		FAIL("Failed to create group: %d\n", err);
 		return;
@@ -937,7 +937,7 @@ static void unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
 
 static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 {
-	struct bt_bap_unicast_group *unicast_group;
+	struct bt_cap_unicast_group *unicast_group;
 	bool expect_tx = false;
 	bool expect_rx = false;
 
@@ -1165,10 +1165,10 @@ static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *para
 	uint8_t stereo_data[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT)};
-	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
-						    BT_AUDIO_LOCATION_FRONT_RIGHT)};
-	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
-						   BT_AUDIO_LOCATION_FRONT_LEFT)};
+	uint8_t right_data[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC, BT_AUDIO_LOCATION_FRONT_RIGHT)};
+	uint8_t left_data[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC, BT_AUDIO_LOCATION_FRONT_LEFT)};
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {0};
 	struct bt_cap_initiator_broadcast_create_param create_param = {0};
 	struct bt_cap_initiator_broadcast_stream_param
