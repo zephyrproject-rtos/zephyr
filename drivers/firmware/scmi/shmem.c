@@ -26,15 +26,6 @@ struct scmi_shmem_data {
 	mm_reg_t regmap;
 };
 
-struct scmi_shmem_layout {
-	volatile uint32_t res0;
-	volatile uint32_t chan_status;
-	volatile uint32_t res1[2];
-	volatile uint32_t chan_flags;
-	volatile uint32_t len;
-	volatile uint32_t msg_hdr;
-};
-
 int scmi_shmem_get_channel_status(const struct device *dev, uint32_t *status)
 {
 	struct scmi_shmem_data *data;
@@ -55,6 +46,16 @@ static void scmi_shmem_memcpy(mm_reg_t dst, mm_reg_t src, uint32_t bytes)
 	for (i = 0; i < bytes; i++) {
 		sys_write8(*(uint8_t *)(src + i), dst + i);
 	}
+}
+
+__weak int scmi_shmem_vendor_read_message(const struct scmi_shmem_layout *layout)
+{
+	return 0;
+}
+
+__weak int scmi_shmem_vendor_write_message(struct scmi_shmem_layout *layout)
+{
+	return 0;
 }
 
 int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg)
@@ -93,6 +94,11 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 	if (layout->msg_hdr != msg->hdr) {
 		LOG_ERR("bad message header. Expected 0x%x, got 0x%x",
 			msg->hdr, layout->msg_hdr);
+		return -EINVAL;
+	}
+
+	if (scmi_shmem_vendor_read_message(layout) < 0) {
+		LOG_ERR("vendor specific validation failed");
 		return -EINVAL;
 	}
 
@@ -137,6 +143,10 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 	if (msg->content) {
 		scmi_shmem_memcpy(data->regmap + sizeof(*layout),
 				  POINTER_TO_UINT(msg->content), msg->len);
+	}
+
+	if (scmi_shmem_vendor_write_message(layout) < 0) {
+		return -EINVAL;
 	}
 
 	/* done, mark channel as busy and proceed */
