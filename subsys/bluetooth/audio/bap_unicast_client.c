@@ -2728,30 +2728,32 @@ static bool valid_unicast_group_stream_param(const struct bt_bap_unicast_group *
 {
 	const struct bt_bap_qos_cfg *qos;
 
-	CHECKIF(param->stream == NULL) {
+	if (param->stream == NULL) {
 		LOG_DBG("param->stream is NULL");
-		return -EINVAL;
+		return false;
 	}
 
 	CHECKIF(param->qos == NULL) {
 		LOG_DBG("param->qos is NULL");
-		return -EINVAL;
+		return false;
 	}
 
-	if (param->stream != NULL && param->stream->group != NULL) {
-		if (unicast_group != NULL && param->stream->group != unicast_group) {
+	/* If unicast_group is non-NULL then we are doing a reconfigure */
+	if (unicast_group != NULL) {
+		if (param->stream->group != unicast_group) {
 			LOG_DBG("stream %p not part of group %p (%p)", param->stream, unicast_group,
 				param->stream->group);
-		} else {
-			LOG_DBG("stream %p already part of group %p", param->stream,
-				param->stream->group);
+			return false;
 		}
-		return -EALREADY;
+	} else if (param->stream->group != NULL) {
+		LOG_DBG("stream %p already part of group %p", param->stream, param->stream->group);
+
+		return false;
 	}
 
 	CHECKIF(bt_audio_verify_qos(param->qos) != BT_BAP_ASCS_REASON_NONE) {
 		LOG_DBG("Invalid QoS");
-		return -EINVAL;
+		return false;
 	}
 
 	qos = param->qos;

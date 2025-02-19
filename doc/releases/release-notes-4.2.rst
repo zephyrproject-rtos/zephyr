@@ -65,6 +65,13 @@ New APIs and options
 
 * Bluetooth
 
+  * Audio
+
+    * :c:func:`bt_cap_unicast_group_create`
+    * :c:func:`bt_cap_unicast_group_reconfig`
+    * :c:func:`bt_cap_unicast_group_add_streams`
+    * :c:func:`bt_cap_unicast_group_delete`
+
   * Host
 
     * :c:func:`bt_le_get_local_features`
