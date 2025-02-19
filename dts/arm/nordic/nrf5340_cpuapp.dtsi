@@ -38,6 +38,17 @@
 		zephyr,flash-controller = &flash_controller;
 	};
 
+	event-domains {
+		wakeup_event_domain: wakeup {
+			compatible = "event-domain";
+			event-devices = <&cpu0 &power>;
+			event-latencies-us = <19 15 7>;
+			event-device-states = <0 0>,
+					      <0 1>,
+					      <1 0>;
+		};
+	};
+
 	soc {
 		ficr: ficr@ff0000 {
 			compatible = "nordic,nrf-ficr";
