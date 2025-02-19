@@ -20,6 +20,7 @@ supported:
   - flash
   - gpio
   - i2c
+  - mbox
   - netif:eth
   - pwm
   - uart
