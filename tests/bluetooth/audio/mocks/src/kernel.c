@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  * Copyright (c) 2023 Codecoup
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -19,6 +19,10 @@
 #define FFF_FAKES_LIST(FAKE)                                                                       \
 	FAKE(z_timeout_remaining)                                                                  \
 	FAKE(k_work_cancel_delayable_sync)                                                         \
+	FAKE(k_sem_take)                                                                           \
+	FAKE(k_sem_give)                                                                           \
+	FAKE(k_mutex_lock)                                                                         \
+	FAKE(k_mutex_unlock)
 
 /* List of k_work items to be worked. */
 static sys_slist_t work_pending;
@@ -28,6 +32,8 @@ DEFINE_FAKE_VALUE_FUNC(bool, k_work_cancel_delayable_sync, struct k_work_delayab
 		       struct k_work_sync *);
 DEFINE_FAKE_VALUE_FUNC(int, k_sem_take, struct k_sem *, k_timeout_t);
 DEFINE_FAKE_VOID_FUNC(k_sem_give, struct k_sem *);
+DEFINE_FAKE_VALUE_FUNC(int, k_mutex_lock, struct k_mutex *, k_timeout_t);
+DEFINE_FAKE_VALUE_FUNC(int, k_mutex_unlock, struct k_mutex *);
 
 void k_work_init_delayable(struct k_work_delayable *dwork, k_work_handler_t handler)
 {

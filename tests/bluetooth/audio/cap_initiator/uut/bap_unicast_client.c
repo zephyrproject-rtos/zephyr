@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 Codecoup
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "bap_iso.h"
 
 static struct bt_bap_unicast_client_cb *unicast_client_cb;
+static struct bt_bap_unicast_group bap_unicast_group;
 
 bool bt_bap_ep_is_unicast_client(const struct bt_bap_ep *ep)
 {
@@ -358,6 +359,51 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 int bt_bap_unicast_client_register_cb(struct bt_bap_unicast_client_cb *cb)
 {
 	unicast_client_cb = cb;
+
+	return 0;
+}
+
+int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
+				struct bt_bap_unicast_group **unicast_group)
+{
+	if (bap_unicast_group.allocated) {
+		return -ENOMEM;
+	}
+
+	bap_unicast_group.allocated = true;
+	*unicast_group = &bap_unicast_group;
+
+	return 0;
+}
+
+int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
+				  const struct bt_bap_unicast_group_param *param)
+{
+	if (unicast_group == NULL || param == NULL) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
+				     struct bt_bap_unicast_group_stream_pair_param params[],
+				     size_t num_param)
+{
+	if (unicast_group == NULL || params == NULL) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int bt_bap_unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
+{
+	if (unicast_group == NULL) {
+		return -EINVAL;
+	}
+
+	unicast_group->allocated = false;
 
 	return 0;
 }
