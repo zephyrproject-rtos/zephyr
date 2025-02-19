@@ -152,11 +152,15 @@ static int convert_whd_security_to_zephyr(whd_security_t security)
 	case WHD_SECURITY_OPEN:
 		zephyr_security = WIFI_SECURITY_TYPE_NONE;
 		break;
+
 	case WHD_SECURITY_WEP_PSK:
 		zephyr_security = WIFI_SECURITY_TYPE_WEP;
 		break;
 
 	case WHD_SECURITY_WPA3_WPA2_PSK:
+		zephyr_security = WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
+		break;
+
 	case WHD_SECURITY_WPA2_AES_PSK:
 		zephyr_security = WIFI_SECURITY_TYPE_PSK;
 		break;
@@ -199,7 +203,7 @@ static void scan_callback(whd_scan_result_t **result_ptr, void *user_data, whd_s
 {
 	struct airoc_wifi_data *data = user_data;
 	whd_scan_result_t whd_scan_result;
-	struct wifi_scan_result zephyr_scan_result;
+	struct wifi_scan_result zephyr_scan_result = {0};
 
 	if (status == WHD_SCAN_COMPLETED_SUCCESSFULLY || status == WHD_SCAN_ABORTED) {
 		data->scan_rslt_cb(data->iface, 0, NULL);
@@ -548,6 +552,11 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 		ret = -EAGAIN;
 		LOG_ERR("Could not scan device");
 		goto error;
+	}
+
+	if (usr_result.security == WHD_SECURITY_WPA3_WPA2_PSK)
+	{
+		usr_result.security = WHD_SECURITY_WPA2_AES_PSK;
 	}
 
 	/* Connect to the network */
