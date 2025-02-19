@@ -108,6 +108,13 @@ static const clock_ip_name_t i2c_clk_root[] = {
 };
 #endif
 
+#if defined(CONFIG_CAN_MCUX_FLEXCAN) && defined(CONFIG_SOC_MIMX8ML8)
+static const clock_ip_name_t flexcan_clk_root[] = {
+	kCLOCK_RootFlexCan1,
+	kCLOCK_RootFlexCan2,
+};
+#endif
+
 static int mcux_ccm_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
 {
@@ -383,6 +390,22 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
+#ifdef CONFIG_SOC_MIMX8ML8
+	case IMX_CCM_CAN1_CLK:
+	case IMX_CCM_CAN2_CLK:
+	{
+		uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
+		uint32_t can_mux = CLOCK_GetRootMux(flexcan_clk_root[instance]);
+
+		if (can_mux == 0) {
+			*rate = MHZ(24);
+		} else if (can_mux == 4) { /* SYSTEM_PLL1_CLK */
+			*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+				(CLOCK_GetRootPreDivider(flexcan_clk_root[instance])) /
+				(CLOCK_GetRootPostDivider(flexcan_clk_root[instance]));
+		}
+	} break;
+#else
 	case IMX_CCM_CAN_CLK:
 	{
 		uint32_t can_mux = CLOCK_GetMux(kCLOCK_CanMux);
@@ -398,6 +421,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 				/ (CLOCK_GetDiv(kCLOCK_CanDiv) + 1);
 		}
 	} break;
+#endif
 #endif
 
 #ifdef CONFIG_COUNTER_MCUX_GPT
