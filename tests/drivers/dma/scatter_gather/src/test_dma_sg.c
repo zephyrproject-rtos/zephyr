@@ -101,6 +101,7 @@ static int test_sg(void)
 	memset(dma_block_cfgs, 0, sizeof(dma_block_cfgs));
 	for (int i = 0; i < XFERS; i++) {
 		dma_block_cfgs[i].source_gather_en = 1U;
+		dma_block_cfgs[i].source_gather_interval = 1U*dma_cfg.dest_data_size;
 		dma_block_cfgs[i].block_size = CONFIG_DMA_SG_XFER_SIZE;
 #ifdef CONFIG_DMA_64BIT
 		dma_block_cfgs[i].source_address = (uint64_t)(tx_data);
