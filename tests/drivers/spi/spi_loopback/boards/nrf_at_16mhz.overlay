@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+&dut_fast {
+	spi-max-frequency = <DT_FREQ_M(16)>;
+};

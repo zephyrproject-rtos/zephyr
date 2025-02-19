@@ -227,10 +227,37 @@ tests:
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
             CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
     platform_allow: mimxrt1040_evk
-  drivers.spi.nrf_fast:
+  drivers.spi.nrf54h_fast_8mhz:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54h_fast_16mhz:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_16mhz.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54h_fast_32mhz:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54l_8mhz:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_8mhz.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+  drivers.spi.nrf54l_16mhz:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_16mhz.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+  drivers.spi.nrf54l_32mhz:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
   drivers.spi.ke1xz_flexio_spi.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_spi.overlay"
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
