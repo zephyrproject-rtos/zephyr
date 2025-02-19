@@ -143,6 +143,7 @@ void *test_suite_setup(void)
  */
 void test_suite_before(void *fixture)
 {
+	zassert_true(ipc0_bounded, "IPC is not bounded, skipping the test");
 	ep_received_override_cb = NULL;
 	k_msgq_purge(&ipc_events);
 }
@@ -294,7 +295,7 @@ ZTEST(ipc_sessions, test_local_rebond)
 	zassert_true((ret >= 0), "ipc_service_register_endpoint() failure: %d", ret);
 	do {
 		ret = k_msgq_get(&ipc_events, &ev, K_MSEC(1000));
-		zassert_ok(ret, "Cannot bound to the remote interface");
+		zassert_ok(ret, "Cannot bound to the remote interface: %d", ret);
 	} while (!ipc0_bounded);
 
 	/* After reconnection - test communication */
