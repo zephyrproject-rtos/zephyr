@@ -30,7 +30,7 @@ Hardware
 ********
 - Module Demo Board build by MDBT50Q-512K
 - Nordic nRF52833 SoC Solution
-- A recommnded 3rd-party module by Nordic Semiconductor.
+- A recommended 3rd-party module by Nordic Semiconductor.
 - BT5.2&BT5.1&BT5 Bluetooth Specification Cerified
 - Supports BT5 Long Range Features
 - Cerifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC

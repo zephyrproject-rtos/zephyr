@@ -47,7 +47,7 @@ Hardware
 ********
 - Module Demo Board build by MDBT53V-1M
 - Nordic nRF5340 SoC Solution
-- A recommnded 3rd-party module by Nordic Semiconductor.
+- A recommended 3rd-party module by Nordic Semiconductor.
 - Dual-core Arm® Cortex® M33
 - 1MB/256KB Flash Memory; 512kB/ 64kB RAM
 - Supports BT5 Long Range Features
