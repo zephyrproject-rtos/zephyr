@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(GEN_KOBJECT_LIST ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py)
+find_program(GEN_KOBJECT_LIST NAMES gen_kobject_list gen_kobject_list.py PATHS ${ZEPHYR_BASE}/scripts/build)
+message(STATUS "Found gen_kobject_list: ${GEN_KOBJECT_LIST}")
+if(GEN_KOBJECT_LIST MATCHES "\.py$")
+  set(GEN_KOBJECT_LIST_INTERPRETER ${PYTHON_EXECUTABLE})
+endif()
 
 # Invokes gen_kobject_list.py with the given SCRIPT_ARGS, creating a TARGET that depends on the
 # script's OUTPUTS
@@ -16,7 +20,7 @@ function(gen_kobject_list)
   add_custom_command(
     OUTPUT ${arg_OUTPUTS}
     COMMAND
-      ${PYTHON_EXECUTABLE}
+      ${GEN_KOBJECT_LIST_INTERPRETER}
       ${GEN_KOBJECT_LIST}
       ${arg_SCRIPT_ARGS}
       $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
