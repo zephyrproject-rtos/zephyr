@@ -26,6 +26,14 @@ LOG_MODULE_REGISTER(mspi_ambiq_ap3);
 #define PWRCTRL_MAX_WAIT_US  5
 #define MSPI_BUSY            BIT(2)
 
+#if defined(CONFIG_SOC_APOLLO3_BLUE)
+#define MSPI_BASE_ADDR       MSPI_BASE
+#define MSPI_ADDR_INTERVAL   1
+#else
+#define MSPI_BASE_ADDR       MSPI0_BASE
+#define MSPI_ADDR_INTERVAL   (MSPI1_BASE - MSPI0_BASE)
+#endif
+
 typedef int (*mspi_ambiq_pwr_func_t)(void);
 typedef void (*irq_config_func_t)(void);
 
@@ -1356,8 +1364,8 @@ static DEVICE_API(mspi, mspi_ambiq_driver_api) = {
 
 #define MSPI_CONFIG(n)                                                                           \
 	{                                                                                        \
-		.channel_num           = (DT_INST_REG_ADDR(n) - MSPI0_BASE) /                    \
-					 (DT_INST_REG_SIZE(n) * 4),                              \
+		.channel_num           = (DT_INST_REG_ADDR(n) - MSPI_BASE_ADDR) /                \
+									 MSPI_ADDR_INTERVAL,     \
 		.op_mode               = MSPI_OP_MODE_CONTROLLER,                                \
 		.duplex                = MSPI_HALF_DUPLEX,                                       \
 		.max_freq              = MSPI_MAX_FREQ,                                          \
