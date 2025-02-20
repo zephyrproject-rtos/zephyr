@@ -6,3 +6,26 @@ description: Texas Instruments TMP114 temperature sensor
 compatible: "ti,tmp114"
 
 include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  odr:
+    type: int
+    default: 4
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Specify the default temperature output data rate in milliseconds (ms).
+      Default is power-up configuration (250ms).
+
+      - 0    # TMP114_DT_ODR_6_4_MS
+      - 1    # TMP114_DT_ODR_32_25_MS
+      - 2    # TMP114_DT_ODR_62_5_MS
+      - 3    # TMP114_DT_ODR_125_MS
+      - 4    # TMP114_DT_ODR_250_MS
+      - 5    # TMP114_DT_ODR_500_MS
+      - 6    # TMP114_DT_ODR_1000_MS
+      - 7    # TMP114_DT_ODR_2000_MS
+
+  oversampling:
+    type: boolean
+    description: |
+      Set averaging of samples.
