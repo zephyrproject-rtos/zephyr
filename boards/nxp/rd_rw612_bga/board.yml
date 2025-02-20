@@ -6,4 +6,3 @@ board:
     - name: rw612
       variants:
         - name: ethernet
-        - name: "ns"
