@@ -8,3 +8,68 @@ config SOC_SERIES_RX130
 	select CLOCK_CONTROL_RENESAS_RX_CGC if CLOCK_CONTROL
 	select HAS_RENESAS_RX_RDP
 	select CLOCK_CONTROL
+
+if SOC_SERIES_RX130
+if WDT_RENESAS_RX_IWDT_AUTO_START_MODE
+
+config WDT_RENESAS_RX_IWDTSTRT
+	int "IWDT OFS0 Start Mode Select"
+	default 0
+	help
+	  0: IWDT is automatically activated in auto-start mode after a reset
+	  1: IWDT is halted after a reset
+
+config WDT_RENESAS_RX_OFS0_IWDTTOPS
+	int "IWDT Timeout Period Select"
+	default 3
+	help
+	  0: 128 cycles (007Fh)
+	  1: 512 cycles (01FFh)
+	  2: 1024 cycles (03FFh)
+	  3: 2048 cycles (07FFh)
+
+config WDT_RENESAS_RX_OFS0_IWDTCKS
+	int "IWDT Clock Divide Ratio Select"
+	default 15
+	help
+	  0: No division
+	  2: Divide-by-16
+	  3: Divide-by-32
+	  4: Divide-by-64
+	  15: Divide-by-128
+	  5: Divide-by-256
+
+config WDT_RENESAS_RX_OFS0_IWDTRPSS
+	int "IWDT Window Start Position Select"
+	default 3
+	help
+	  0: 25%
+	  1: 50%
+	  2: 75%
+	  3: 100% (window start position is not specified.)
+
+config WDT_RENESAS_RX_OFS0_IWDTRPES
+	int "IWDT Window End Position Select"
+	default 3
+	help
+	  0: 75%
+	  1: 50%
+	  2: 25%
+	  3: 0% (window end position is not specified.)
+
+config WDT_RENESAS_RX_OFS0_IWDTRSTIRQS
+	int "IWDT Reset Interrupt Request Select"
+	default 0
+	help
+	  0: Non-maskable interrupt request output is enabled.
+	  1: Reset output is enabled.
+
+config WDT_RENESAS_RX_OFS0_IWDTSLCSTP
+	int "IWDT Sleep Mode Count Stop Control"
+	default 0
+	help
+	  0: Count stop is disabled.
+	  1: Count is stopped at a transition to sleep mode, software standby mode, or deep sleep mode.
+
+endif # WDT_RENESAS_RX_IWDT_AUTO_START_MODE
+endif # SOC_SERIES_RX130
