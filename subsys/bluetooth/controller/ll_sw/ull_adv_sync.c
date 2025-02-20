@@ -804,16 +804,9 @@ uint32_t ull_adv_sync_evt_init(struct ll_adv_set *adv,
 
 	time_us = sync_time_get(sync, pdu);
 
-	/* TODO: active_to_start feature port */
-	sync->ull.ticks_active_to_start = 0U;
-	sync->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	sync->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
-	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
-				sync->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {

@@ -657,16 +657,9 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	}
 
-	/* TODO: active_to_start feature port */
-	sync_iso->ull.ticks_active_to_start = 0U;
-	sync_iso->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	sync_iso->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	sync_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
-	ticks_slot_offset = MAX(sync_iso->ull.ticks_active_to_start,
-				sync_iso->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {

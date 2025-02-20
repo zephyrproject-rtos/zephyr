@@ -180,8 +180,7 @@ void ull_sched_mfy_after_cen_offset_get(void *param)
 
 	conn = HDR_LLL2ULL(lll->conn);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(conn->ull.ticks_active_to_start,
-					  conn->ull.ticks_prepare_to_start);
+		ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	} else {
 		ticks_slot_overhead = 0U;
 	}
@@ -204,12 +203,10 @@ void ull_sched_mfy_after_cen_offset_get(void *param)
 
 void ull_sched_mfy_win_offset_use(void *param)
 {
-	struct ll_conn *conn = param;
 	uint32_t ticks_slot_overhead;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(conn->ull.ticks_active_to_start,
-					  conn->ull.ticks_prepare_to_start);
+		ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	} else {
 		ticks_slot_overhead = 0U;
 	}
@@ -508,25 +505,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		ticks_to_expire_normal = ticks_to_expire;
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
-#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-		if (hdr->ticks_prepare_to_start & XON_BITMASK) {
-			const uint32_t ticks_prepare_to_start =
-				MAX(hdr->ticks_active_to_start,
-				    hdr->ticks_preempt_to_start);
-
-			ticks_slot_abs_curr = hdr->ticks_prepare_to_start &
-					      ~XON_BITMASK;
-			ticks_to_expire_normal -= ticks_slot_abs_curr -
-						  ticks_prepare_to_start;
-		} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-		{
-			const uint32_t ticks_prepare_to_start =
-				MAX(hdr->ticks_active_to_start,
-				    hdr->ticks_prepare_to_start);
-
-			ticks_slot_abs_curr = ticks_prepare_to_start;
-		}
+		ticks_slot_abs_curr = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 #endif
 
 		ticks_slot_abs_curr += ticks_slot;
