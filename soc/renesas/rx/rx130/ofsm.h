@@ -33,7 +33,21 @@
  * by programming the OFS0 register. When enabled, IWDT starts counting automatically
  * starts after a reset.
  */
+
+#ifdef CONFIG_WDT_RENESAS_RX_IWDT_AUTO_START_MODE
+#define SOC_RX_OFS0                                                                                \
+	((CONFIG_WDT_RENESAS_RX_OFS0_IWDTSTRT << 1) |                      /* bit 1 */             \
+	 ((CONFIG_WDT_RENESAS_RX_OFS0_TIMEOUT_IWDTTOPS & 0x3) << 2) |      /* bits 2-3 */          \
+	 ((CONFIG_WDT_RENESAS_RX_OFS0_CLKDIV_IWDTCKS & 0xF) << 4) |        /* bits 4-7 */          \
+	 ((CONFIG_WDT_RENESAS_RX_OFS0_WINDOW_END_IWDTRPES & 0x3) << 8) |   /* bits 8-9 */          \
+	 ((CONFIG_WDT_RENESAS_RX_OFS0_WINDOW_STRT_IWDTRPSS & 0x3) << 10) | /* bits 10-11 */        \
+	 ((CONFIG_WDT_RENESAS_RX_OFS0_IRQ_SEL_IWDTRSTIRQS & 0x1) << 12) |  /* bit 12 */            \
+	 ((CONFIG_WDT_RENESAS_RX_OFS0_IWDTSLCSTP & 0x1) << 14) |           /* bit 14 */            \
+	 0xFFFFA001UL /* reserved bits 0,13,15..31 */                                              \
+	)
+#else
 #define SOC_RX_OFS0 (0xFFFFFFFFUL)
+#endif
 
 /* Option Function Select Register 1 (OFS1) (Voltage detection and HOCO)
  */
