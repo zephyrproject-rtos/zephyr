@@ -1064,16 +1064,10 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		 */
 
 		/* Populate the ULL hdr with event timings overheads */
-		cig->ull.ticks_active_to_start = 0U;
-		cig->ull.ticks_prepare_to_start =
-			HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-		cig->ull.ticks_preempt_to_start =
-			HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 		cig->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 	}
 
-	ticks_slot_offset = MAX(cig->ull.ticks_active_to_start,
-				cig->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
