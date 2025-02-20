@@ -103,7 +103,7 @@ struct i3c_stm32_msg {
 	size_t num_msgs;                  /* Number of messages */
 	size_t ctrl_msg_idx;              /* Current control message index */
 	size_t status_msg_idx;            /* Current status message index */
-	size_t xfer_msg_idx;              /* Current trasnfer message index */
+	size_t xfer_msg_idx;              /* Current transfer message index */
 	size_t xfer_offset;               /* Current message transfer offset */
 	uint32_t msg_type;                /* Either LL_I3C_CONTROLLER_MTYPE_PRIVATE or
 					   * LL_I3C_CONTROLLER_MTYPE_LEGACY_I2C
