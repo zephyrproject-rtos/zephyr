@@ -416,7 +416,7 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
     # reset or not. If this is not specified in the board/soc file, leave it up to
     # the runner's default configuration to decide if a reset should occur.
     if runner_cls.capabilities().reset:
-        if board_image_count is not None:
+        if board_image_count is not None and board_image_count != defaultdict(ImagesFlashed):
             reset = True
 
             for cmd in used_cmds:
