@@ -57,6 +57,7 @@ struct i2c_ambiq_config {
 #endif /* CONFIG_I2C_AMBIQ_BUS_RECOVERY */
 	uint32_t base;
 	int size;
+	int inst_idx;
 	uint32_t bitrate;
 	const struct pinctrl_dev_config *pcfg;
 	ambiq_i2c_pwr_func_t pwr_func;
@@ -72,7 +73,6 @@ struct i2c_ambiq_data {
 	struct k_sem transfer_sem;
 	i2c_ambiq_callback_t callback;
 	void *callback_data;
-	int inst_idx;
 	uint32_t transfer_status;
 	bool pm_policy_state_on;
 };
@@ -251,6 +251,7 @@ static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *msg, uint16
 static int i2c_ambiq_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_ambiq_data *data = dev->data;
+	const struct i2c_ambiq_config *cfg = dev->config;
 
 	if (!(I2C_MODE_CONTROLLER & dev_config)) {
 		return -EINVAL;
@@ -271,7 +272,7 @@ static int i2c_ambiq_configure(const struct device *dev, uint32_t dev_config)
 	}
 
 #ifdef CONFIG_I2C_AMBIQ_DMA
-	data->iom_cfg.pNBTxnBuf = i2c_dma_tcb_buf[data->inst_idx].buf;
+	data->iom_cfg.pNBTxnBuf = i2c_dma_tcb_buf[cfg->inst_idx].buf;
 	data->iom_cfg.ui32NBTxnBufLength = CONFIG_I2C_DMA_TCB_BUFFER_SIZE;
 #endif
 
@@ -414,8 +415,7 @@ static int i2c_ambiq_init(const struct device *dev)
 
 	data->iom_cfg.eInterfaceMode = AM_HAL_IOM_I2C_MODE;
 
-	if (AM_HAL_STATUS_SUCCESS !=
-	    am_hal_iom_initialize((config->base - IOM0_BASE) / config->size, &data->iom_handler)) {
+	if (AM_HAL_STATUS_SUCCESS != am_hal_iom_initialize(config->inst_idx, &data->iom_handler)) {
 		LOG_ERR("Fail to initialize I2C\n");
 		return -ENXIO;
 	}
@@ -508,12 +508,11 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 	};                                                                                         \
 	static struct i2c_ambiq_data i2c_ambiq_data##n = {                                         \
 		.bus_sem = Z_SEM_INITIALIZER(i2c_ambiq_data##n.bus_sem, 1, 1),                     \
-		.transfer_sem = Z_SEM_INITIALIZER(i2c_ambiq_data##n.transfer_sem, 0, 1),           \
-		.inst_idx = n,                                                                     \
-	};                                                                                         \
+		.transfer_sem = Z_SEM_INITIALIZER(i2c_ambiq_data##n.transfer_sem, 0, 1)};          \
 	static const struct i2c_ambiq_config i2c_ambiq_config##n = {                               \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.size = DT_INST_REG_SIZE(n),                                                       \
+		.inst_idx = (DT_INST_REG_ADDR(n) - IOM0_BASE) / (IOM1_BASE - IOM0_BASE),           \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = i2c_irq_config_func_##n,                                        \
