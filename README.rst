@@ -15,7 +15,7 @@
 Ambiq® is an Austin-based SoC vendor who at the forefront of enabling ambient intelligence on billions of
 devices with the unique SPOT platform and extreme-low power semiconductor solutions.
 
-Whether it’s the Real Time Clock (RTC) IC, or a System-on-a-Chip (SoC), Ambiq® is committed to enabling the 
+Whether it’s the Real Time Clock (RTC) IC, or a System-on-a-Chip (SoC), Ambiq® is committed to enabling the
 lowest power consumption with the highest computing performance possible for our customers to make the most
 innovative battery-power endpoint devices for their end-users. `Ambiq Products`_
 
@@ -35,23 +35,27 @@ As well as the following Evaluation Kits:
   | Apollo4 Plus EVB
   | Apollo4 Blue Plus KXR EVB
 
-As of now, Ambiq provides zephyr support for a set of peripherals:
+As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 
   | ADC
-  | Bluetooth hci
+  | Bluetooth HCI
   | Counter
-  | Flash controller
-  | GPIO controller
-  | I2C controller
-  | Power management
+  | Flash Controller
+  | GPIO Controller
+  | HW Info
+  | I2C Controller
+  | ITM
+  | Power Management
+  | PWM
   | RTC
-  | SPI controller
-  | SPI device
-  | MSPI controller
-  | System timer
+  | Serial (PL011)
+  | SPI Controller
+  | SPI Device
+  | MSPI Controller
+  | System Timer
   | Watchdog
 
-Together with generic support for ARM Cortex-M peripherals like cache, interrupt controller, serial, etc.
+Together with generic support for ARM Cortex-M peripherals like cache, interrupt controller, etc.
 
 .. below included in doc/introduction/introduction.rst
 
