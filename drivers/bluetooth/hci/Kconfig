@@ -148,6 +148,10 @@ config BT_SILABS_SIWX91X
 	help
 	  Use Silicon Labs Wiseconnect 3.x Bluetooth library to connect to the controller.
 
+	# SiWx917 BLE controller currently does not support HCI Command: Host Number of Completed Packets
+	configdefault BT_HCI_ACL_FLOW_CONTROL
+		default n if BT_SILABS_SIWX91X
+
 config BT_USERCHAN
 	bool
 	depends on (BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM)
