@@ -1024,6 +1024,7 @@ flagged.
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
         "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
         "BOOT_FIRMWARE_LOADER", # Used in sysbuild for MCUboot configuration
+        "BOOT_FIRMWARE_LOADER_BOOT_MODE", # Used in sysbuild for MCUboot configuration
         "BOOT_MAX_IMG_SECTORS_AUTO", # Used in sysbuild
         "BOOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
         "BOOT_SERIAL_BOOT_MODE",     # Used in (sysbuild-based) test/
