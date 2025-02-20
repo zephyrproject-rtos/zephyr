@@ -3,9 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-config MISRA_SANE
-	default y
-
 config PICOLIBC_SUPPORTED
 	default n
 
