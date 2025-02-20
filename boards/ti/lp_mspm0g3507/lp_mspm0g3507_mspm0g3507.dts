@@ -6,6 +6,7 @@
 #include <ti/mspm0g1x0x_g3x0x/mspm0g350x-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/mspm0_adc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	model = "TI LP_MSPM0G3507/MSPM0G3507";
@@ -18,6 +19,7 @@
 		led3 = &led3;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		pwm-led0 = &pwm_led;
 	};
 
 	chosen {
@@ -59,6 +61,14 @@
 			gpios = <&gpioa 18 (GPIO_ACTIVE_HIGH)>;
 			label = "Switch 2";
 			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led: pwm_led {
+			pwms = <&pwm7 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 };

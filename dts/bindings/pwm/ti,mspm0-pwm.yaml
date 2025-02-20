@@ -99,3 +99,8 @@ properties:
     required: true
     description: |
       TIMCLK clock source divider.
+
+pwm-cells:
+  - channel
+  - period
+  - flags

@@ -282,7 +282,7 @@
 				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
 				clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 				interrupts = <16 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				status = "disabled";
 			};
 		};
@@ -296,7 +296,7 @@
 				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
 				clocks = <&clkmux MSPM0_CLOCK_BUS_MCLK>;
 				interrupts = <20 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				status = "disabled";
 			};
 		};
@@ -310,7 +310,7 @@
 				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
 				clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 				interrupts = <2 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				status = "disabled";
 			};
 		};
@@ -324,7 +324,7 @@
 				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
 				clocks = <&clkmux MSPM0_CLOCK_BUS_MCLK>;
 				interrupts = <18 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				ti,advanced;
 				status = "disabled";
 			};
@@ -339,7 +339,7 @@
 				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
 				clocks = <&clkmux MSPM0_CLOCK_BUS_MCLK>;
 				interrupts = <19 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				ti,advanced;
 				status = "disabled";
 			};
