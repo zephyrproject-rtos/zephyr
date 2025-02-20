@@ -227,7 +227,8 @@ static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv, void 
 	gpio_flags_t flags = 0;
 	gpio_flags_t vendor_specific;
 	struct sh_gpio gpio;
-	int ret = 0;
+	int ret;
+	size_t len;
 
 	ret = get_sh_gpio(sh, argv, &gpio);
 	if (ret != 0) {
@@ -235,7 +236,8 @@ static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv, void 
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	for (int i = 0; i < strlen(argv[ARGV_CONF]); i++) {
+	len = strlen(argv[ARGV_CONF]);
+	for (int i = 0; i < len; i++) {
 		switch (argv[ARGV_CONF][i]) {
 		case 'i':
 			flags |= GPIO_INPUT;
@@ -361,7 +363,7 @@ static int cmd_gpio_set(const struct shell *sh, size_t argc, char **argv)
 {
 	struct sh_gpio gpio;
 	unsigned long value;
-	int ret = 0;
+	int ret;
 
 	ret = get_sh_gpio(sh, argv, &gpio);
 	if (ret != 0) {
@@ -387,7 +389,7 @@ static int cmd_gpio_set(const struct shell *sh, size_t argc, char **argv)
 static int cmd_gpio_toggle(const struct shell *sh, size_t argc, char **argv)
 {
 	struct sh_gpio gpio;
-	int ret = 0;
+	int ret;
 
 	ret = get_sh_gpio(sh, argv, &gpio);
 	if (ret != 0) {
@@ -523,9 +525,7 @@ static void print_gpio_ctrl_info(const struct shell *sh, const struct gpio_ctrl 
 	const char *line_name;
 
 	shell_print(sh, " ngpios: %u", ctrl->ngpios);
-	shell_print(sh, " Reserved pin mask: 0x%08X", ctrl->reserved_mask);
-
-	shell_print(sh, "");
+	shell_print(sh, " Reserved pin mask: 0x%08X\n", ctrl->reserved_mask);
 
 	shell_print(sh, " Reserved  Pin  Line Name");
 	for (pin = 0; pin < ctrl->ngpios; pin++) {
