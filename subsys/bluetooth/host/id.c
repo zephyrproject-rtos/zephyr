@@ -267,7 +267,7 @@ static void adv_rpa_clear_data(struct bt_le_ext_adv *adv, void *data)
 		atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
 		bt_addr_copy(&bt_dev.rpa[adv->id], BT_ADDR_NONE);
 	} else {
-		LOG_WRN("Adv sets rpa expired cb with id %d returns false\n", adv->id);
+		LOG_WRN("Adv sets rpa expired cb with id %d returns false", adv->id);
 	}
 }
 #endif
