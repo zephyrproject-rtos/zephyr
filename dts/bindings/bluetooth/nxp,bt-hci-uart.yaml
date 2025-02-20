@@ -11,11 +11,17 @@ include: base.yaml
 properties:
   sdio-reset-gpios:
     type: phandle-array
-    required: true
+    description: |
+      sd-card io to reset standalone BT CPU/WLAN CPU. If not defined
+      Coex (WIFI + BT use case) overlay uses the same IO
+      for CPU reset to avoid BT CPU reset post WLAN init.
 
   w-disable-gpios:
     type: phandle-array
-    required: true
+    description: |
+      wlan-power io to reset standalone BT CPU/WLAN CPU. If not defined
+      Coex (WIFI + BT use case) overlay uses the same IO
+      for CPU reset to avoid BT CPU reset post WLAN init.
 
   hci-operation-speed:
     type: int
