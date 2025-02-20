@@ -7,6 +7,8 @@
 
 #include <zephyr/kernel.h>
 
+#include "net_sample_common.h"
+
 /* Value of 0 will cause the IP stack to select next free port */
 #define MY_PORT 0
 
