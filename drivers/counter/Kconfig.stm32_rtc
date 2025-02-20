@@ -7,6 +7,7 @@ menuconfig COUNTER_RTC_STM32
 	bool "STM32 Counter RTC driver"
 	default y if !RTC
 	depends on DT_HAS_ST_STM32_RTC_ENABLED
+	depends on !SOC_SERIES_STM32WB0X
 	select USE_STM32_LL_RTC
 	select USE_STM32_LL_PWR
 	select USE_STM32_LL_RCC
