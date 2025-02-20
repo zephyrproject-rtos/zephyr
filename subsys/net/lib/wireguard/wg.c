@@ -103,6 +103,10 @@ struct wg_iface_context {
 	struct wg_context *wg_ctx;
 	struct wg_peer *peer;
 
+#if defined(CONFIG_NET_STATISTICS_VPN)
+	struct net_stats_vpn stats;
+#endif /* CONFIG_NET_STATISTICS_VPN */
+
 	uint8_t public_key[WG_PUBLIC_KEY_LEN];
 	uint8_t private_key[WG_PRIVATE_KEY_LEN];
 
@@ -116,6 +120,8 @@ struct wg_iface_context {
 	bool status : 1;
 	bool init_done : 1;
 };
+
+#include "wg_stats.h"
 
 static int create_packet(struct net_if *iface,
 			 struct net_sockaddr *src,
@@ -322,6 +328,7 @@ static int wg_send_keepalive(struct wg_iface_context *ctx,
 	ret = select_target_iface(peer, addr, &peer->endpoint, &target_iface);
 	if (ret < 0) {
 		NET_DBG("Unknown address family %d", peer->endpoint.ss_family);
+		vpn_stats_update_invalid_ip_family(ctx);
 		return -EAFNOSUPPORT;
 	}
 
@@ -336,6 +343,7 @@ static int wg_send_keepalive(struct wg_iface_context *ctx,
 					PKT_ALLOC_WAIT_TIME);
 	if (pkt == NULL) {
 		NET_DBG("Packet creation failed (%d)", ret);
+		vpn_stats_update_alloc_failed(ctx);
 		return -ENOMEM;
 	}
 
@@ -352,7 +360,9 @@ static int wg_send_keepalive(struct wg_iface_context *ctx,
 		net_if_get_by_iface(ctx->iface),
 		ret);
 
-	if (ret < 0) {
+	if (ret == 0) {
+		vpn_stats_update_keepalive_tx(ctx);
+	} else {
 		net_pkt_unref(pkt);
 	}
 
@@ -409,7 +419,7 @@ static void wg_periodic_timer(struct k_work *work)
 		}
 
 		if (should_send_keepalive(peer)) {
-			wg_send_keepalive(peer->ctx, peer);
+			(void)wg_send_keepalive(peer->ctx, peer);
 		}
 
 		if (should_send_init(peer)) {
@@ -583,6 +593,8 @@ static int handle_handshake_init(struct wg_peer *peer,
 
 	status = wg_check_initiation_message(peer->ctx, msg, peer_addr);
 	if (status) {
+		vpn_stats_update_handshake_init_rx(peer->ctx);
+
 		peer = wg_process_initiation_message(peer->ctx, msg);
 		if (peer) {
 			memcpy(&peer->endpoint, peer_addr, sizeof(peer->endpoint));
@@ -629,6 +641,8 @@ static int handle_handshake_response(struct wg_peer *peer,
 	}
 
 	wg_process_response_message(peer->ctx, peer, msg, peer_addr);
+
+	vpn_stats_update_handshake_resp_rx(peer->ctx);
 
 	return 0;
 }
@@ -1098,6 +1112,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 
 	if (!(keypair->is_valid && (keypair->is_initiator || keypair->last_rx != 0))) {
 		/* Keys are invalid. */
+		vpn_stats_update_invalid_key(ctx);
 		return -ENOTCONN;
 	}
 
@@ -1105,7 +1120,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 	    keypair->sending_counter >= REJECT_AFTER_MESSAGES) {
 		/* Keys are expired. */
 		keypair_destroy(keypair);
-
+		vpn_stats_update_key_expired(ctx);
 		return -EKEYEXPIRED;
 	}
 
@@ -1115,6 +1130,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 	buf = net_buf_alloc(&msg_pool, BUF_ALLOC_TIMEOUT);
 	if (buf == NULL) {
 		NET_DBG("Failed to allocate %s buffer", "encrypt");
+		vpn_stats_update_alloc_failed(ctx);
 		return -ENOMEM;
 	}
 
@@ -1131,6 +1147,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 				   pkt->buffer, 0, pkt_len);
 	if (copied != pkt_len) {
 		net_buf_unref(buf);
+		vpn_stats_update_alloc_failed(ctx);
 		return -EMSGSIZE;
 	}
 
@@ -1210,6 +1227,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 	net_buf_unref(buf);
 
 	if (ret < 0) {
+		vpn_stats_update_alloc_failed(ctx);
 		return ret;
 	}
 
@@ -1221,8 +1239,11 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 			  iface, pkt_encrypted);
 	if (ret < 0) {
 		net_pkt_unref(pkt_encrypted);
+		vpn_stats_update_drop_tx(ctx);
 		goto out;
 	}
+
+	vpn_stats_update_valid_tx(ctx);
 
 	peer->last_tx = keypair->last_tx = sys_clock_tick_get_32();
 
@@ -1564,6 +1585,7 @@ static int wg_send_handshake_init(struct wg_iface_context *ctx,
 	ret = select_target_iface(peer, addr, &peer->endpoint, &target_iface);
 	if (ret < 0) {
 		NET_DBG("Unknown address family %d", peer->endpoint.ss_family);
+		vpn_stats_update_invalid_ip_family(ctx);
 		return -EAFNOSUPPORT;
 	}
 
@@ -1576,6 +1598,7 @@ static int wg_send_handshake_init(struct wg_iface_context *ctx,
 			    sizeof(*packet), NET_IPV4_DSCP_AF41, 0, &pkt);
 	if (ret < 0) {
 		NET_DBG("Packet creation failed (%d)", ret);
+		vpn_stats_update_alloc_failed(ctx);
 		return -ENOMEM;
 	}
 
@@ -1600,6 +1623,8 @@ static int wg_send_handshake_init(struct wg_iface_context *ctx,
 		goto drop;
 	}
 
+	vpn_stats_update_handshake_init_tx(ctx);
+
 	return 0;
 drop:
 	if (pkt) {
@@ -1623,6 +1648,7 @@ static void wg_send_handshake_response(struct wg_iface_context *ctx,
 	int ret;
 
 	if (!wg_create_handshake_response(ctx, peer, &packet)) {
+		vpn_stats_update_invalid_handshake(ctx);
 		return;
 	}
 
@@ -1630,6 +1656,7 @@ static void wg_send_handshake_response(struct wg_iface_context *ctx,
 			    sizeof(packet), NET_IPV4_DSCP_AF41, 0, &pkt);
 	if (ret < 0) {
 		NET_DBG("Packet creation failed (%d)", ret);
+		vpn_stats_update_alloc_failed(ctx);
 		return;
 	}
 
@@ -1649,6 +1676,7 @@ static void wg_send_handshake_response(struct wg_iface_context *ctx,
 		goto drop;
 	}
 
+	vpn_stats_update_handshake_resp_tx(ctx);
 	return;
 drop:
 	if (pkt) {
@@ -1677,6 +1705,7 @@ static void wg_send_handshake_cookie(struct wg_iface_context *ctx,
 			    &pkt);
 	if (ret < 0) {
 		NET_DBG("Packet creation failed (%d)", ret);
+		vpn_stats_update_alloc_failed(ctx);
 		return;
 	}
 
@@ -2091,5 +2120,64 @@ void wireguard_peer_foreach(wg_peer_cb_t cb, void *user_data)
 
 	k_mutex_unlock(&lock);
 }
+
+#if defined(CONFIG_NET_STATISTICS_VPN) && defined(CONFIG_NET_STATISTICS_USER_API)
+
+static int wg_stats_get(uint64_t mgmt_request, struct net_if *iface,
+			 void *data, size_t len)
+{
+	size_t len_chk = 0;
+	struct net_stats_vpn *src = NULL;
+	struct wg_peer *peer, *next;
+	int ret = -ENOENT;
+
+	switch (NET_MGMT_GET_COMMAND(mgmt_request)) {
+	case NET_REQUEST_STATS_CMD_GET_VPN:
+		if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+			return -ENOENT;
+		}
+
+		if (net_virtual_get_iface_capabilities(iface) != VIRTUAL_INTERFACE_VPN) {
+			return -ENOENT;
+		}
+
+		len_chk = sizeof(struct net_stats_vpn);
+
+		k_mutex_lock(&lock, K_FOREVER);
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_peers, peer, next, node) {
+			if (peer->iface != iface) {
+				continue;
+			}
+
+			src = &peer->ctx->stats;
+			ret = 0;
+			break;
+		}
+
+		k_mutex_unlock(&lock);
+		break;
+
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (len != len_chk || src == NULL) {
+		return -EINVAL;
+	}
+
+	memcpy(data, src, len);
+
+	return 0;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_VPN, wg_stats_get);
+
+#endif /* CONFIG_NET_STATISTICS_USER_API && CONFIG_NET_STATISTICS_VPN */
 
 SYS_INIT(wireguard_init, APPLICATION, CONFIG_NET_INIT_PRIO);
