@@ -544,6 +544,7 @@ New Drivers
 
 * :abbr:`I2C (Inter-Integrated Circuit)`
 
+   * :dtcompatible:`nordic,nrf-twis`
    * :dtcompatible:`nxp,ii2c`
    * :dtcompatible:`ti,omap-i2c`
    * :dtcompatible:`ti,tca9544a`
