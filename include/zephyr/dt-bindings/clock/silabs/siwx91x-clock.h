@@ -12,5 +12,6 @@
 #define SIWX91X_CLK_I2C0          5
 #define SIWX91X_CLK_I2C1          6
 #define SIWX91X_CLK_DMA0          7
+#define SIWX91X_CLK_PWM           9
 
 #endif

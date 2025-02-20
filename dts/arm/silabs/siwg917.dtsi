@@ -261,6 +261,19 @@
 			dma-channels = <12>;
 			status = "disabled";
 		};
+
+		pwm: pwm@47070000 {
+			compatible = "silabs,siwx91x-pwm";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x47070000 0x14C>;
+			interrupts = <48 0>;
+			interrupt-names = "pwm";
+			clocks = <&clock0 SIWX91X_CLK_PWM>;
+			#pwm-cells = <2>;
+			silabs,ch_prescaler = <64 64 64 64>;
+			status = "disabled";
+		};
 	};
 };
 

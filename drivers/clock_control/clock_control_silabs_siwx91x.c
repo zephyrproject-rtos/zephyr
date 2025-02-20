@@ -64,6 +64,10 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
 		RSI_CLK_PeripheralClkEnable(M4CLK, UDMA_CLK, ENABLE_STATIC_CLK);
 		break;
+	case SIWX91X_CLK_PWM:
+		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
+		RSI_CLK_PeripheralClkEnable(M4CLK, PWM_CLK, ENABLE_STATIC_CLK);
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -120,6 +124,10 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 		return 0;
 	case SIWX91X_CLK_UART2:
 		*rate = RSI_CLK_GetBaseClock(M4_UART1);
+		return 0;
+	case SIWX91X_CLK_PWM:
+		/* PWM peripheral operates at the system clock frequency */
+		*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 		return 0;
 	default:
 		/* For now, no other driver need clock rate */
