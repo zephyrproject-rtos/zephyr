@@ -173,12 +173,12 @@ static inline ssize_t mipi_dsi_transfer(const struct device *dev,
  * @param nparams Number of parameters.
  * @param buf Buffer where read data will be stored.
  * @param len Length of the reception buffer.
+ * @param flags Flags controlling message transmission.
  *
  * @return Size of the read data on success, negative on error.
  */
-ssize_t mipi_dsi_generic_read(const struct device *dev, uint8_t channel,
-			      const void *params, size_t nparams,
-			      void *buf, size_t len);
+ssize_t mipi_dsi_generic_read(const struct device *dev, uint8_t channel, const void *params,
+			      size_t nparams, void *buf, size_t len, uint16_t flags);
 
 /**
  * @brief MIPI-DSI generic write.
@@ -186,12 +186,13 @@ ssize_t mipi_dsi_generic_read(const struct device *dev, uint8_t channel,
  * @param dev MIPI-DSI host device.
  * @param channel Device channel (VID).
  * @param buf Transmission buffer.
- * @param len Length of the transmission buffer
+ * @param len Length of the transmission buffer.
+ * @param flags Flags controlling message transmission.
  *
  * @return Size of the written data on success, negative on error.
  */
-ssize_t mipi_dsi_generic_write(const struct device *dev, uint8_t channel,
-			       const void *buf, size_t len);
+ssize_t mipi_dsi_generic_write(const struct device *dev, uint8_t channel, const void *buf,
+			       size_t len, uint16_t flags);
 
 /**
  * @brief MIPI-DSI DCS read.
@@ -201,11 +202,12 @@ ssize_t mipi_dsi_generic_write(const struct device *dev, uint8_t channel,
  * @param cmd DCS command.
  * @param buf Buffer where read data will be stored.
  * @param len Length of the reception buffer.
+ * @param flags Flags controlling message transmission.
  *
  * @return Size of the read data on success, negative on error.
  */
-ssize_t mipi_dsi_dcs_read(const struct device *dev, uint8_t channel,
-			  uint8_t cmd, void *buf, size_t len);
+ssize_t mipi_dsi_dcs_read(const struct device *dev, uint8_t channel, uint8_t cmd, void *buf,
+			  size_t len, uint16_t flags);
 
 /**
  * @brief MIPI-DSI DCS write.
@@ -214,13 +216,13 @@ ssize_t mipi_dsi_dcs_read(const struct device *dev, uint8_t channel,
  * @param channel Device channel (VID).
  * @param cmd DCS command.
  * @param buf Transmission buffer.
- * @param len Length of the transmission buffer
+ * @param len Length of the transmission buffer.
+ * @param flags Flags controlling message transmission.
  *
  * @return Size of the written data on success, negative on error.
  */
-ssize_t mipi_dsi_dcs_write(const struct device *dev, uint8_t channel,
-			   uint8_t cmd, const void *buf, size_t len);
-
+ssize_t mipi_dsi_dcs_write(const struct device *dev, uint8_t channel, uint8_t cmd, const void *buf,
+			   size_t len, uint16_t flags);
 
 /**
  * @brief Detach a device from the MIPI-DSI bus
