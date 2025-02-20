@@ -859,10 +859,10 @@ static inline uint16_t adc_ref_internal(const struct device *dev)
 }
 
 /**
- * @brief Convert a raw ADC value to millivolts.
+ * @brief Conversion from raw ADC units to a specific output unit
  *
  * This function performs the necessary conversion to transform a raw
- * ADC measurement to a voltage in millivolts.
+ * ADC measurement to a physical voltage.
  *
  * @param ref_mv the reference voltage used for the measurement, in
  * millivolts.  This may be from adc_ref_internal() or a known
@@ -875,15 +875,21 @@ static inline uint16_t adc_ref_internal(const struct device *dev)
  * resolution in struct adc_sequence.
  *
  * @param valp pointer to the raw measurement value on input, and the
- * corresponding millivolt value on successful conversion.  If
+ * corresponding output value on successful conversion.  If
  * conversion fails the stored value is left unchanged.
  *
  * @retval 0 on successful conversion
  * @retval -EINVAL if the gain is not reversible
  */
-static inline int adc_raw_to_millivolts(int32_t ref_mv,
-					enum adc_gain gain,
-					uint8_t resolution,
+typedef int (*adc_raw_to_x_fn)(int32_t ref_mv, enum adc_gain gain, uint8_t resolution,
+			       int32_t *valp);
+
+/**
+ * @brief Convert a raw ADC value to millivolts.
+ *
+ * @see adc_raw_to_x_fn
+ */
+static inline int adc_raw_to_millivolts(int32_t ref_mv, enum adc_gain gain, uint8_t resolution,
 					int32_t *valp)
 {
 	int32_t adc_mv = *valp * ref_mv;
@@ -895,6 +901,72 @@ static inline int adc_raw_to_millivolts(int32_t ref_mv,
 
 	return ret;
 }
+
+/**
+ * @brief Convert a raw ADC value to microvolts.
+ *
+ * @see adc_raw_to_x_fn
+ */
+static inline int adc_raw_to_microvolts(int32_t ref_mv, enum adc_gain gain, uint8_t resolution,
+					int32_t *valp)
+{
+	int64_t adc_uv = (int64_t)*valp * ref_mv * 1000;
+	int ret = adc_gain_invert_64(gain, &adc_uv);
+
+	if (ret == 0) {
+		*valp = (int32_t)(adc_uv >> resolution);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Convert a raw ADC value to an arbitrary output unit
+ *
+ * @param[in] conv_func Function that converts to the final output unit.
+ * @param[in] spec ADC specification from Devicetree.
+ * @param[in] channel_cfg Channel configuration used for sampling. This can be
+ * either the configuration from @a spec, or an alternate sampling configuration
+ * based on @a spec, for example a different gain value.
+ * @param[in,out] valp Pointer to the raw measurement value on input, and the
+ * corresponding output value on successful conversion. If conversion fails
+ * the stored value is left unchanged.
+ *
+ * @return A value from adc_raw_to_x_fn or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see adc_raw_to_x_fn
+ */
+static inline int adc_raw_to_x_dt_chan(adc_raw_to_x_fn conv_func,
+					    const struct adc_dt_spec *spec,
+					    const struct adc_channel_cfg *channel_cfg,
+					    int32_t *valp)
+{
+	int32_t vref_mv;
+	uint8_t resolution;
+
+	if (!spec->channel_cfg_dt_node_exists) {
+		return -ENOTSUP;
+	}
+
+	if (channel_cfg->reference == ADC_REF_INTERNAL) {
+		vref_mv = (int32_t)adc_ref_internal(spec->dev);
+	} else {
+		vref_mv = spec->vref_mv;
+	}
+
+	resolution = spec->resolution;
+
+	/*
+	 * For differential channels, one bit less needs to be specified
+	 * for resolution to achieve correct conversion.
+	 */
+	if (channel_cfg->differential) {
+		resolution -= 1U;
+	}
+
+	return conv_func(vref_mv, channel_cfg->gain, resolution, valp);
+}
+
 
 /**
  * @brief Convert a raw ADC value to millivolts using information stored
@@ -909,34 +981,27 @@ static inline int adc_raw_to_millivolts(int32_t ref_mv,
  * Devicetree is not valid.
  * @see adc_raw_to_millivolts()
  */
-static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec *spec,
-					   int32_t *valp)
+static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec *spec, int32_t *valp)
 {
-	int32_t vref_mv;
-	uint8_t resolution;
+	return adc_raw_to_x_dt_chan(adc_raw_to_millivolts, spec, &spec->channel_cfg, valp);
+}
 
-	if (!spec->channel_cfg_dt_node_exists) {
-		return -ENOTSUP;
-	}
-
-	if (spec->channel_cfg.reference == ADC_REF_INTERNAL) {
-		vref_mv = (int32_t)adc_ref_internal(spec->dev);
-	} else {
-		vref_mv = spec->vref_mv;
-	}
-
-	resolution = spec->resolution;
-
-	/*
-	 * For differential channels, one bit less needs to be specified
-	 * for resolution to achieve correct conversion.
-	 */
-	if (spec->channel_cfg.differential) {
-		resolution -= 1U;
-	}
-
-	return adc_raw_to_millivolts(vref_mv, spec->channel_cfg.gain,
-				     resolution, valp);
+/**
+ * @brief Convert a raw ADC value to microvolts using information stored
+ * in a struct adc_dt_spec.
+ *
+ * @param[in] spec ADC specification from Devicetree.
+ * @param[in,out] valp Pointer to the raw measurement value on input, and the
+ * corresponding microvolt value on successful conversion. If conversion fails
+ * the stored value is left unchanged.
+ *
+ * @return A value from adc_raw_to_microvolts() or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see adc_raw_to_microvolts()
+ */
+static inline int adc_raw_to_microvolts_dt(const struct adc_dt_spec *spec, int32_t *valp)
+{
+	return adc_raw_to_x_dt_chan(adc_raw_to_microvolts, spec, &spec->channel_cfg, valp);
 }
 
 /**
