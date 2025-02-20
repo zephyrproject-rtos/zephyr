@@ -24,12 +24,19 @@ LOG_MODULE_REGISTER(spi_ambiq_spid);
 
 #define AMBIQ_SPID_PWRCTRL_MAX_WAIT_US 5
 
+#if defined(CONFIG_SOC_SERIES_APOLLO5X)
+#define SPID_ADDR_INTERVAL (IOSLAVEFD1_BASE - IOSLAVEFD0_BASE)
+#else
+#define SPID_ADDR_INTERVAL 1
+#endif
+
 typedef int (*ambiq_spi_pwr_func_t)(void);
 
 struct spi_ambiq_config {
 	const struct gpio_dt_spec int_gpios;
 	uint32_t base;
 	int size;
+	int inst_idx;
 	const struct pinctrl_dev_config *pcfg;
 	ambiq_spi_pwr_func_t pwr_func;
 	void (*irq_config_func)(void);
@@ -39,7 +46,6 @@ struct spi_ambiq_data {
 	struct spi_context ctx;
 	am_hal_ios_config_t ios_cfg;
 	void *ios_handler;
-	int inst_idx;
 	struct k_sem spim_wrcmp_sem;
 };
 
@@ -336,8 +342,7 @@ static int spi_ambiq_init(const struct device *dev)
 	const struct spi_ambiq_config *cfg = dev->config;
 	int ret = 0;
 
-	if (AM_HAL_STATUS_SUCCESS !=
-	    am_hal_ios_initialize((cfg->base - IOSLAVE_BASE) / cfg->size, &data->ios_handler)) {
+	if (AM_HAL_STATUS_SUCCESS != am_hal_ios_initialize(cfg->inst_idx, &data->ios_handler)) {
 		LOG_ERR("Fail to initialize SPID\n");
 		return -ENXIO;
 	}
@@ -413,12 +418,12 @@ static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 	static struct spi_ambiq_data spi_ambiq_data##n = {                                         \
 		SPI_CONTEXT_INIT_LOCK(spi_ambiq_data##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx),                                     \
-		.spim_wrcmp_sem = Z_SEM_INITIALIZER(spi_ambiq_data##n.spim_wrcmp_sem, 0, 1),       \
-		.inst_idx = n};                                                                    \
+		.spim_wrcmp_sem = Z_SEM_INITIALIZER(spi_ambiq_data##n.spim_wrcmp_sem, 0, 1)};      \
 	static const struct spi_ambiq_config spi_ambiq_config##n = {                               \
 		.int_gpios = GPIO_DT_SPEC_INST_GET(n, int_gpios),                                  \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.size = DT_INST_REG_SIZE(n),                                                       \
+		.inst_idx = (DT_INST_REG_ADDR(n) - IOSLAVE_BASE) / SPID_ADDR_INTERVAL,             \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = spi_irq_config_func_##n,                                        \
 		.pwr_func = pwr_on_ambiq_spi_##n};                                                 \
