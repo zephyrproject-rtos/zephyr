@@ -16,6 +16,7 @@ supported:
   - gpio
   - i2c
   - pwm
+  - rtc
   - spi
   - bluetooth
 vendor: st

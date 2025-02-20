@@ -66,6 +66,7 @@
 	};
 
 	aliases {
+		rtc = &rtc;
 		led0 = &blue_led_1;
 		led1 = &green_led_1;
 		led2 = &red_led_1;
@@ -102,6 +103,16 @@
 	clock-frequency = <DT_FREQ_M(64)>;
 	clksys-prescaler = <1>;
 	slow-clock = <&clk_lse>;
+};
+
+&rtc {
+	/**
+	 * STM32_SRC_LSE reflects the "slow-clock" selected on RCC node.
+	 * NO_SEL reflects STM32WB0's lack of RTC clock mux to configure.
+	 */
+	clocks = <&rcc STM32_CLOCK(APB0, 12)>,
+		<&rcc STM32_SRC_LSE NO_SEL>;
+	status = "okay";
 };
 
 &bt_hci_wb0 {
