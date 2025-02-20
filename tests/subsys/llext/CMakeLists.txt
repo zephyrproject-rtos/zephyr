@@ -25,6 +25,7 @@ set(ext_names
 	threads_kernel_objects
 	export_dependent
 	export_dependency
+	align
 )
 
 if(CONFIG_ARM)
