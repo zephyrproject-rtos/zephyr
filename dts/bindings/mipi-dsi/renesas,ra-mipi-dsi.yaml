@@ -18,3 +18,81 @@ properties:
     type: string-array
     required: true
     description: name of each interrupt
+
+  pll-div:
+    type: int
+    enum: [1, 2, 3, 4]
+    description:
+      PHY PLL divisor.
+
+  pll-mul-int:
+    type: int
+    description:
+      PHY PLL integer multiplier.
+
+  pll-mul-frac:
+    type: string
+    enum: ["0.00", "0.33", "0.66", "0.50"]
+    description:
+      PHY PLL fractional multiplier.
+
+  lp-divisor:
+    type: int
+    description:
+      PHY PLL LP speed divisor.
+
+  ulps-wakeup-period:
+    type: int
+    description: ULPS wakeup period.
+
+  video-mode-delay:
+    type: int
+    description: |
+      Set the delay value inside DSI Host until the transfer begins.
+
+  timing:
+    type: array
+    description: |
+      MIPI DSI timing parameter: <CLKSTPT CLKBFHT CLKKPT GOLPBKT>
+
+child-binding:
+  description: |
+    MIPI PHY timing configuration. The child node must be named "phys-timing".
+    Refer to '57. MIPI PHY - RA8D1 MCU group HWM' for detail parameter description.
+
+  properties:
+    t-init:
+      type: int
+      required: true
+      description: |
+        Minimum duration of the TINIT state (Units: operation clock cycles).
+
+    t-clk-prep:
+      type: int
+      required: true
+      description: |
+        Duration of the clock lane LP-00 state (immediately before entry to the HS-0 state).
+
+    t-hs-prep:
+      type: int
+      required: true
+      description: |
+        Duration of the data lane LP-00 state (immediately before entry to the HS-0 state).
+
+    t-lp-exit:
+      type: int
+      required: true
+      description:
+        Low-power transition time to High-Speed mode.
+
+    dphytim4:
+      type: array
+      required: true
+      description: |
+        Clock lane pre and post data timing parameter: <TCLKZERO TCLKPRE TCLKPOST TCLKTRL>
+
+    dphytim5:
+      type: array
+      required: true
+      description: |
+        High-Speed data lane timing parameter: <THSZERO THSTRL THSEXIT>
