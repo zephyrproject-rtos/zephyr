@@ -368,6 +368,92 @@ static int cmd_wg_keepalive(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_STATISTICS_VPN) && defined(CONFIG_NET_STATISTICS_USER_API)
+static void print_vpn_stats(struct net_if *iface, struct net_stats_vpn *data,
+			    const struct shell *sh)
+{
+	PR("Statistics for VPN interface %p [%d]\n", iface,
+	       net_if_get_by_iface(iface));
+
+	PR("Keepalive RX       : %u\n", data->keepalive_rx);
+	PR("Keepalive TX       : %u\n", data->keepalive_tx);
+	PR("Handshake init RX  : %u\n", data->handshake_init_rx);
+	PR("Handshake init TX  : %u\n", data->handshake_init_tx);
+	PR("Handshake resp RX  : %u\n", data->handshake_resp_rx);
+	PR("Handshake resp TX  : %u\n", data->handshake_resp_tx);
+	PR("Peer not found     : %u\n", data->peer_not_found);
+	PR("Key expired        : %u\n", data->key_expired);
+	PR("Invalid packet     : %u\n", data->invalid_packet);
+	PR("Invalid key        : %u\n", data->invalid_key);
+	PR("Invalid packet len : %u\n", data->invalid_packet_len);
+	PR("Invalid keepalive  : %u\n", data->invalid_keepalive);
+	PR("Invalid handshake  : %u\n", data->invalid_handshake);
+	PR("Invalid cookie     : %u\n", data->invalid_cookie);
+	PR("Invalid MIC        : %u\n", data->invalid_mic);
+	PR("Invalid MAC1       : %u\n", data->invalid_mac1);
+	PR("Invalid MAC2       : %u\n", data->invalid_mac2);
+	PR("Decrypt failed     : %u\n", data->decrypt_failed);
+	PR("Dropped RX         : %u\n", data->drop_rx);
+	PR("Dropped TX         : %u\n", data->drop_tx);
+	PR("Allocation failed  : %u\n", data->alloc_failed);
+	PR("Invalid IP version : %u\n", data->invalid_ip_version);
+	PR("Invalid IP family  : %u\n", data->invalid_ip_family);
+	PR("Denied IP address  : %u\n", data->denied_ip);
+	PR("Replay error       : %u\n", data->replay_error);
+	PR("RX data packets    : %u\n", data->valid_rx);
+	PR("TX data packets    : %u\n", data->valid_tx);
+}
+
+static void iface_cb(struct net_if *iface, void *user_data)
+{
+	struct net_shell_user_data *data = user_data;
+	const struct shell *sh = data->sh;
+	int *count = data->user_data;
+
+	if (iface && net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
+		struct net_stats_vpn vpn_data;
+		int ret;
+
+		if (net_virtual_get_iface_capabilities(iface) != VIRTUAL_INTERFACE_VPN) {
+			return;
+		}
+
+		ret = net_mgmt(NET_REQUEST_STATS_GET_VPN, iface,
+			       &vpn_data, sizeof(vpn_data));
+		if (!ret) {
+			print_vpn_stats(iface, &vpn_data, sh);
+			(*count)++;
+		}
+	}
+}
+#endif /* CONFIG_NET_STATISTICS_VPN && CONFIG_NET_STATISTICS_USER_API */
+
+static int cmd_wg_stats(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_STATISTICS_VPN) && defined(CONFIG_NET_STATISTICS_USER_API)
+	struct net_shell_user_data user_data;
+	int count = 0;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	user_data.sh = sh;
+	user_data.user_data = &count;
+
+	net_if_foreach(iface_cb, &user_data);
+
+	if (count == 0) {
+		PR("No connections\n");
+	}
+#else
+	PR_INFO("Set %s to enable %s support.\n",
+		"CONFIG_NET_STATISTICS_VPN, CONFIG_NET_STATISTICS_USER_API and CONFIG_WIREGUARD",
+		"Wireguard VPN statistics");
+#endif /* CONFIG_NET_STATISTICS_VPN */
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_wg,
 	SHELL_CMD_ARG(add, NULL,
 		      "Add a peer in order to establish a VPN connection.\n"
@@ -385,6 +471,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_wg,
 	SHELL_CMD_ARG(show, NULL,
 		      "Show information about the Wireguard VPN connections.\n",
 		      cmd_net_wg, 1, 1),
+	SHELL_CMD_ARG(stats, NULL,
+		      "Show statistics information about the Wireguard VPN connections.\n"
+		      "The statistics can be reset by using the 'reset' command.\n",
+		      cmd_wg_stats, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 
