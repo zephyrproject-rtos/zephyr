@@ -12,6 +12,7 @@ LOG_LEVEL_SET(CONFIG_MSPI_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/drivers/gpio.h>
@@ -58,6 +59,8 @@ struct mspi_ambiq_config {
 
 	const struct pinctrl_dev_config *pcfg;
 	irq_config_func_t                irq_cfg_func;
+
+	bool                             pm_dev_runtime_auto;
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 };
@@ -509,6 +512,18 @@ static int mspi_ambiq_deinit(const struct device *controller)
 		return -EBUSY;
 	}
 
+	ret = pm_device_runtime_get(controller);
+	if (ret) {
+		LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_get.", __LINE__);
+		goto e_deinit_return;
+	}
+
+	ret = pm_device_runtime_disable(controller);
+	if (ret) {
+		LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_disable.", __LINE__);
+		goto e_deinit_return;
+	}
+
 	ret = am_hal_mspi_interrupt_disable(data->mspiHandle, 0xFFFFFFFF);
 	if (ret) {
 		LOG_INST_ERR(cfg->log, "%u, fail to disable interrupt, code:%d.",
@@ -637,6 +652,38 @@ static int mspi_xfer_config(const struct device    *controller,
 	return ret;
 }
 
+static int mspi_ambiq_pm_action(const struct device *controller, enum pm_device_action action)
+{
+	const struct mspi_ambiq_config *cfg  = controller->config;
+	struct mspi_ambiq_data         *data = controller->data;
+	int                             ret  = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = am_hal_mspi_power_control(data->mspiHandle, AM_HAL_SYSCTRL_WAKE, true);
+		if (ret) {
+			LOG_INST_ERR(cfg->log, "%u, fail to resume MSPI, code:%d.", __LINE__,
+				     ret);
+			return -EHOSTDOWN;
+		}
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = am_hal_mspi_power_control(data->mspiHandle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+		if (ret) {
+			LOG_INST_ERR(cfg->log, "%u, fail to suspend MSPI, code:%d.", __LINE__,
+				     ret);
+			return -EHOSTDOWN;
+		}
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+
 static int mspi_ambiq_config(const struct mspi_dt_spec *spec)
 {
 	const struct mspi_cfg *config = &spec->config;
@@ -735,6 +782,14 @@ static int mspi_ambiq_config(const struct mspi_dt_spec *spec)
 
 	cfg->irq_cfg_func();
 
+	if (cfg->pm_dev_runtime_auto) {
+		ret = pm_device_runtime_enable(spec->bus);
+		if (ret) {
+			LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_enable.", __LINE__);
+			return ret;
+		}
+	}
+
 	mspi_context_unlock_unconditionally(&data->ctx);
 
 	if (config->re_init) {
@@ -763,6 +818,12 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 
 		ret = mspi_verify_device(controller, dev_id);
 		if (ret) {
+			goto e_return;
+		}
+
+		ret = pm_device_runtime_get(controller);
+		if (ret) {
+			LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_get.", __LINE__);
 			goto e_return;
 		}
 	}
@@ -1202,6 +1263,9 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 	return ret;
 
 e_return:
+	if (pm_device_runtime_put(controller)) {
+		LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_put.", __LINE__);
+	}
 	k_mutex_unlock(&data->lock);
 	return ret;
 }
@@ -1386,6 +1450,9 @@ static int mspi_ambiq_get_channel_status(const struct device *controller, uint8_
 	}
 
 	data->dev_id = NULL;
+	if (pm_device_runtime_put(controller)) {
+		LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_put.", __LINE__);
+	}
 	k_mutex_unlock(&data->lock);
 
 	return ret;
@@ -1747,44 +1814,6 @@ static int mspi_ambiq_register_callback(const struct device          *controller
 	return 0;
 }
 
-#if CONFIG_PM_DEVICE
-static int mspi_ambiq_pm_action(const struct device *controller, enum pm_device_action action)
-{
-	const struct mspi_ambiq_config *cfg  = controller->config;
-	struct mspi_ambiq_data         *data = controller->data;
-	int                             ret  = 0;
-
-	if (mspi_is_inp(controller)) {
-		return -EBUSY;
-	}
-
-	switch (action) {
-	case PM_DEVICE_ACTION_TURN_ON:
-		ret = am_hal_mspi_power_control(data->mspiHandle, AM_HAL_SYSCTRL_WAKE, true);
-		if (ret) {
-			LOG_INST_ERR(cfg->log, "%u, fail to power on MSPI, code:%d.", __LINE__,
-				     ret);
-			return -EHOSTDOWN;
-		}
-		break;
-
-	case PM_DEVICE_ACTION_TURN_OFF:
-		ret = am_hal_mspi_power_control(data->mspiHandle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
-		if (ret) {
-			LOG_INST_ERR(cfg->log, "%u, fail to power off MSPI, code:%d.", __LINE__,
-				     ret);
-			return -EHOSTDOWN;
-		}
-		break;
-
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-#endif
-
 static int mspi_ambiq_init(const struct device *controller)
 {
 	const struct mspi_ambiq_config *cfg  = controller->config;
@@ -1965,6 +1994,7 @@ static DEVICE_API(mspi, mspi_ambiq_driver_api) = {
 		.mspicfg.re_init       = false,                                                  \
 		.pcfg                  = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                      \
 		.irq_cfg_func          = mspi_ambiq_irq_cfg_func_##n,                            \
+		.pm_dev_runtime_auto   = DT_INST_PROP(n, zephyr_pm_device_runtime_auto),         \
 		LOG_INSTANCE_PTR_INIT(log, DT_DRV_INST(n), mspi##n)                              \
 	};                                                                                       \
 	PM_DEVICE_DT_INST_DEFINE(n, mspi_ambiq_pm_action);                                       \

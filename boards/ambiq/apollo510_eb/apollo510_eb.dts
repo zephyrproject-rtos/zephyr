@@ -138,6 +138,7 @@ zephyr_udc0: &usb {
 	pinctrl-2 = <&mspi0_psram>;
 	pinctrl-names = "default","sleep","psram";
 	status = "okay";
+	zephyr,pm-device-runtime-auto;
 
 	ce-gpios = <&gpio192_223 7 GPIO_ACTIVE_LOW>;
 
@@ -178,6 +179,7 @@ zephyr_udc0: &usb {
 	pinctrl-3 = <&mspi1_flash>;
 	pinctrl-names = "default","sleep","psram","flash";
 	status = "okay";
+	zephyr,pm-device-runtime-auto;
 
 	ce-gpios = <&gpio32_63 21 GPIO_ACTIVE_LOW>,
 		   <&gpio32_63 21 GPIO_ACTIVE_LOW>;
@@ -240,6 +242,7 @@ zephyr_udc0: &usb {
 	pinctrl-2 = <&mspi3_psram>;
 	pinctrl-names = "default","sleep","psram";
 	status = "okay";
+	zephyr,pm-device-runtime-auto;
 
 	ce-gpios = <&gpio96_127 18 GPIO_ACTIVE_LOW>;
 
