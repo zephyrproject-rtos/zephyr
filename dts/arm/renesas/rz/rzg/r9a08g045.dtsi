@@ -10,6 +10,7 @@
 #include <freq.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/renesas_rzg_clock.h>
+#include <zephyr/dt-bindings/dma/renesas_rz_dma.h>
 
 / {
 	compatible = "renesas,r9a08g045";
@@ -915,6 +916,61 @@
 			interrupts = <61 2>;
 			interrupt-names = "mhuns";
 			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		spi0: spi@400aa000 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x400aa000 0x24>;
+			interrupts = <358 1>, <359 1>, <360 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@400aa400 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x400aa400 0x24>;
+			interrupts = <361 1>, <362 1>, <363 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi@400aa800 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x400aa800 0x24>;
+			interrupts = <364 1>, <365 1>, <366 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi3: spi@400aac00 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x400aac00 0x24>;
+			interrupts = <367 1>, <368 1>, <369 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi4: spi@400ab000 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x400ab000 0x24>;
+			interrupts = <370 1>, <371 1>, <372 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};
