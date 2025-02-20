@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SUPPORT_FIRMWARE_LOADER_SMP_SVR
+	bool
+	default y
+
+choice FIRMWARE_LOADER
+	prompt "Firmware loader image"
+	default FIRMWARE_LOADER_IMAGE_NONE
+	depends on MCUBOOT_MODE_FIRMWARE_UPDATER
+
+config FIRMWARE_LOADER_IMAGE_NONE
+	bool "None"
+	help
+	  Do not Include a firmware loader image in the build.
+
+config FIRMWARE_LOADER_IMAGE_SMP_SVR
+	bool "smp_svr"
+	depends on SUPPORT_FIRMWARE_LOADER_SMP_SVR
+	help
+	  Include the MCUmgr ``smp_svr`` sample as the firmware loader image to use.
+
+endchoice
+
+config FIRMWARE_LOADER_IMAGE_NAME
+	string
+	default "smp_svr" if FIRMWARE_LOADER_IMAGE_SMP_SVR
+	help
+	  Name of firmware loader image.
+
+config FIRMWARE_LOADER_IMAGE_PATH
+	string
+	default "${ZEPHYR_BASE}/samples/subsys/mgmt/mcumgr/smp_svr" if FIRMWARE_LOADER_IMAGE_SMP_SVR
+	help
+	  Source directory of firmware loader image.
