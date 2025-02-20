@@ -62,7 +62,7 @@ static inline size_t lpspi_rx_buf_write_words(const struct device *dev, uint8_t 
 	struct spi_mcux_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
-	size_t buf_len = ctx->rx_len / lpspi_data->word_size_bytes;
+	size_t buf_len = DIV_ROUND_UP(ctx->rx_len, lpspi_data->word_size_bytes);
 	uint8_t words_read = 0;
 	size_t offset = 0;
 
@@ -158,7 +158,7 @@ static void lpspi_next_tx_fill(const struct device *dev)
 	size_t max_chunk;
 
 	/* Convert bytes to words for this xfer */
-	max_chunk = ctx->tx_len / lpspi_data->word_size_bytes;
+	max_chunk = DIV_ROUND_UP(ctx->tx_len, lpspi_data->word_size_bytes);
 	max_chunk = MIN(max_chunk, config->tx_fifo_size);
 	lpspi_data->fill_len = max_chunk;
 
