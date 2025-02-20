@@ -509,7 +509,7 @@ int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 {
 	int64_t offset;
-	uint64_t delay = ptp_clk.current_ds.mean_delay >> 16;
+	int64_t delay = ptp_clk.current_ds.mean_delay >> 16;
 
 	ptp_clk.timestamp.t1 = egress;
 	ptp_clk.timestamp.t2 = ingress;
@@ -518,7 +518,7 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 		return;
 	}
 
-	offset = ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1 - delay;
+	offset = (int64_t)(ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1) - delay;
 
 	/* If diff is too big, ptp_clk needs to be set first. */
 	if ((offset > (int64_t)NSEC_PER_SEC) || (offset < -(int64_t)NSEC_PER_SEC)) {
@@ -559,8 +559,9 @@ void ptp_clock_delay(uint64_t egress, uint64_t ingress)
 	ptp_clk.timestamp.t3 = egress;
 	ptp_clk.timestamp.t4 = ingress;
 
-	delay = ((ptp_clk.timestamp.t2 - ptp_clk.timestamp.t3) +
-		 (ptp_clk.timestamp.t4 - ptp_clk.timestamp.t1)) / 2;
+	delay = ((int64_t)(ptp_clk.timestamp.t2 - ptp_clk.timestamp.t3) +
+		 (int64_t)(ptp_clk.timestamp.t4 - ptp_clk.timestamp.t1)) /
+		2LL;
 
 	LOG_DBG("Delay %lldns", delay);
 	ptp_clk.current_ds.mean_delay = clock_ns_to_timeinterval(delay);
