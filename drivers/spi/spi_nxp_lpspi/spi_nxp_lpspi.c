@@ -13,8 +13,6 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 
 struct lpspi_driver_data {
 	size_t fill_len;
-	size_t tx_total_len;
-	size_t rx_total_len;
 	uint8_t word_size_bytes;
 };
 
@@ -252,9 +250,6 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	}
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, lpspi_data->word_size_bytes);
-
-	lpspi_data->tx_total_len = spi_context_total_tx_len(&data->ctx);
-	lpspi_data->rx_total_len = spi_context_total_rx_len(&data->ctx);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
