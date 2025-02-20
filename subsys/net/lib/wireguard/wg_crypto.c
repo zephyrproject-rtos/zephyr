@@ -479,6 +479,7 @@ static struct wg_peer *wg_process_initiation_message(struct wg_iface_context *ct
 
 	if (crypto_equal(dh_calculation, zero_key, WG_PUBLIC_KEY_LEN)) {
 		NET_DBG("Bad X25519 (%d)", __LINE__);
+		vpn_stats_update_invalid_key(ctx);
 		goto out;
 	}
 
@@ -490,6 +491,7 @@ static struct wg_peer *wg_process_initiation_message(struct wg_iface_context *ct
 				    sizeof(msg->enc_static),
 				    hash, WG_HASH_LEN, 0, key)) {
 		NET_DBG("Failed to decrypt AEAD (%d)", __LINE__);
+		vpn_stats_update_decrypt_failed(ctx);
 		goto out;
 	}
 
@@ -499,6 +501,7 @@ static struct wg_peer *wg_process_initiation_message(struct wg_iface_context *ct
 	peer = peer_lookup_by_pubkey(ctx, s);
 	if (peer == NULL) {
 		NET_DBG("No such peer");
+		vpn_stats_update_peer_not_found(ctx);
 		goto out;
 	}
 
@@ -513,6 +516,7 @@ static struct wg_peer *wg_process_initiation_message(struct wg_iface_context *ct
 				   sizeof(msg->enc_timestamp), hash,
 				   WG_HASH_LEN, 0, key)) {
 		NET_DBG("Failed to decrypt AEAD (%d)", __LINE__);
+		vpn_stats_update_decrypt_failed(ctx);
 		goto out;
 	}
 
@@ -530,6 +534,7 @@ static struct wg_peer *wg_process_initiation_message(struct wg_iface_context *ct
 	if (replay || rate_limit) {
 		NET_DBG("Too many initiations (replay %d, rate_limit %d)",
 			replay, rate_limit);
+		vpn_stats_update_replay_error(ctx);
 		goto out;
 	}
 
@@ -578,6 +583,7 @@ static bool wg_process_handshake_response(struct wg_iface_context *ctx,
 	uint8_t tau[WG_PUBLIC_KEY_LEN];
 
 	if (!(handshake->is_valid && handshake->is_initiator)) {
+		vpn_stats_update_invalid_handshake(ctx);
 		goto out;
 	}
 
@@ -606,6 +612,7 @@ static bool wg_process_handshake_response(struct wg_iface_context *ctx,
 
 	if (crypto_equal(dh_calculation, zero_key, WG_PUBLIC_KEY_LEN)) {
 		NET_DBG("Bad X25519 (%d)", __LINE__);
+		vpn_stats_update_invalid_key(ctx);
 		goto out;
 	}
 
@@ -617,6 +624,7 @@ static bool wg_process_handshake_response(struct wg_iface_context *ctx,
 	wireguard_x25519(dh_calculation, ctx->private_key, e);
 	if (crypto_equal(dh_calculation, zero_key, WG_PUBLIC_KEY_LEN)) {
 		NET_DBG("Bad X25519 (%d)", __LINE__);
+		vpn_stats_update_invalid_key(ctx);
 		goto out;
 	}
 
@@ -633,6 +641,7 @@ static bool wg_process_handshake_response(struct wg_iface_context *ctx,
 	if (!wireguard_aead_decrypt(NULL, src->enc_empty, sizeof(src->enc_empty),
 				    hash, WG_HASH_LEN, 0, key)) {
 		NET_DBG("Failed to decrypt AEAD (%d)", __LINE__);
+		vpn_stats_update_decrypt_failed(ctx);
 		goto out;
 	}
 
@@ -668,6 +677,7 @@ static bool wg_process_cookie_message(struct wg_iface_context *ctx,
 
 	if (!peer->handshake_mac1_valid) {
 		NET_DBG("Handshake mac1 not valid");
+		vpn_stats_update_invalid_handshake(ctx);
 		goto out;
 	}
 
@@ -680,6 +690,7 @@ static bool wg_process_cookie_message(struct wg_iface_context *ctx,
 				      peer->label_cookie_key);
 	if (!ret) {
 		NET_DBG("Failed to decrypt AEAD (%d)", __LINE__);
+		vpn_stats_update_decrypt_failed(ctx);
 		goto out;
 	}
 
@@ -741,6 +752,7 @@ static bool wg_create_handshake_init(struct wg_iface_context *ctx,
 
 	if (crypto_equal(dh_calculation, zero_key, WG_PUBLIC_KEY_LEN)) {
 		NET_DBG("Bad X25519 (%d)", __LINE__);
+		vpn_stats_update_invalid_key(ctx);
 		goto out;
 	}
 
@@ -819,6 +831,7 @@ static bool wg_create_handshake_response(struct wg_iface_context *ctx,
 	memset(dst, 0, sizeof(struct msg_handshake_response));
 
 	if (!(handshake->is_valid && !handshake->is_initiator)) {
+		vpn_stats_update_invalid_handshake(ctx);
 		goto out;
 	}
 
@@ -849,6 +862,7 @@ static bool wg_create_handshake_response(struct wg_iface_context *ctx,
 
 	if (crypto_equal(dh_calculation, zero_key, WG_PUBLIC_KEY_LEN)) {
 		NET_DBG("Bad X25519 (%d)", __LINE__);
+		vpn_stats_update_invalid_key(ctx);
 		goto out;
 	}
 
@@ -862,6 +876,7 @@ static bool wg_create_handshake_response(struct wg_iface_context *ctx,
 
 	if (crypto_equal(dh_calculation, zero_key, WG_PUBLIC_KEY_LEN)) {
 		NET_DBG("Bad X25519 (%d)", __LINE__);
+		vpn_stats_update_invalid_key(ctx);
 		goto out;
 	}
 
@@ -965,6 +980,7 @@ static bool wg_check_initiation_message(struct wg_iface_context *ctx,
 	if (!wg_check_mac1(ctx, (uint8_t *)msg,
 			   sizeof(struct msg_handshake_init) - (2 * WG_COOKIE_LEN),
 			   msg->mac1)) {
+		vpn_stats_update_invalid_mac1(ctx);
 		goto out;
 	}
 
@@ -990,6 +1006,7 @@ static bool wg_check_initiation_message(struct wg_iface_context *ctx,
 		 * respond with a cookie reply message
 		 */
 		wg_send_handshake_cookie(ctx, msg->mac1, msg->sender, addr);
+		vpn_stats_update_invalid_mac2(ctx);
 	}
 
 out:
@@ -1005,6 +1022,7 @@ static bool wg_check_response_message(struct wg_iface_context *ctx,
 	if (!wg_check_mac1(ctx, (uint8_t *)msg,
 			   sizeof(struct msg_handshake_response) - (2 * WG_COOKIE_LEN),
 			   msg->mac1)) {
+		vpn_stats_update_invalid_mac1(ctx);
 		return false;
 	}
 
@@ -1030,6 +1048,7 @@ static bool wg_check_response_message(struct wg_iface_context *ctx,
 		 * with a cookie reply message
 		 */
 		wg_send_handshake_cookie(ctx, msg->mac1, msg->sender, addr);
+		vpn_stats_update_invalid_mac2(ctx);
 	}
 
 out:
@@ -1045,6 +1064,7 @@ static void wg_process_response_message(struct wg_iface_context *ctx,
 
 	ret = wg_process_handshake_response(ctx, peer, response);
 	if (!ret) {
+		vpn_stats_update_invalid_handshake(ctx);
 		return;
 	}
 
@@ -1078,6 +1098,7 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 
 	keypair = get_peer_keypair_for_index(peer, idx);
 	if (keypair == NULL) {
+		vpn_stats_update_invalid_key(ctx);
 		return -ENOENT;
 	}
 
@@ -1092,6 +1113,7 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		 * through the 1-RTT handshake.
 		 */
 		keypair_destroy(keypair);
+		vpn_stats_update_key_expired(ctx);
 
 		return -EKEYEXPIRED;
 	}
@@ -1110,6 +1132,7 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		NET_DBG("Keepalive message received from %s",
 			net_sprint_addr(addr->sa_family,
 					(const void *)&net_sin(addr)->sin_addr));
+		vpn_stats_update_keepalive_rx(ctx);
 		return 0;
 	}
 
@@ -1119,6 +1142,7 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 	buf = net_buf_alloc(&msg_pool, BUF_ALLOC_TIMEOUT);
 	if (buf == NULL) {
 		NET_DBG("Failed to allocate %s buffer", "decrypt");
+		vpn_stats_update_alloc_failed(ctx);
 		return -ENOMEM;
 	}
 
@@ -1128,6 +1152,7 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 	if (copied != data_len) {
 		NET_DBG("Failed to linearize data (%zu != %zu)", copied, data_len);
 		ret = -EMSGSIZE;
+		vpn_stats_update_alloc_failed(ctx);
 		goto out;
 	}
 
@@ -1138,6 +1163,7 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 	status = wg_decrypt_packet(buf->data, buf->data, data_len, nonce, keypair);
 	if (!status) {
 		ret = -ENOMSG;
+		vpn_stats_update_decrypt_failed(ctx);
 		goto out;
 	}
 
@@ -1164,6 +1190,7 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 	/* Check for packet replay / dupes */
 	if (!wg_check_replay(keypair, nonce)) {
 		ret = -EINVAL;
+		vpn_stats_update_replay_error(ctx);
 		goto out;
 	}
 
@@ -1174,6 +1201,7 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 	if (pkt_decrypted == NULL) {
 		NET_DBG("Failed to allocate packet");
 		ret = -ENOMEM;
+		vpn_stats_update_alloc_failed(ctx);
 		goto out;
 	}
 
@@ -1248,17 +1276,20 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 	} else {
 		NET_DBG("Unknown IP version %d", vtc_vhl >> 4);
 		ret = -EINVAL;
+		vpn_stats_update_invalid_ip_version(ctx);
 		goto out;
 	}
 
 	if (!addr_found) {
 		ret = -ENOENT;
+		vpn_stats_update_denied_ip(ctx);
 		goto out;
 	}
 
 	if (data_len < pkt_len) {
 		NET_DBG("Packet length mismatch %d < %d", data_len, pkt_len);
 		ret = -EINVAL;
+		vpn_stats_update_invalid_packet_len(ctx);
 		goto out;
 	}
 
@@ -1277,12 +1308,14 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 	verdict = net_if_l2(ctx->iface)->recv(ctx->iface, pkt_decrypted);
 	if (verdict == NET_DROP) {
 		ret = -ENETRESET;
+		vpn_stats_update_drop_rx(ctx);
 		goto out;
 	} else {
 		/* The packet has been consumed by the core stack,
 		 * don't free it.
 		 */
 		pkt_decrypted = NULL;
+		vpn_stats_update_valid_rx(ctx);
 	}
 
 	ret = 0;

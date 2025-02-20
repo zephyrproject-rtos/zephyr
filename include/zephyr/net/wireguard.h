@@ -88,6 +88,64 @@ struct wireguard_peer_config {
 	int keepalive_interval;
 };
 
+/** Wireguard VPN statistics */
+struct net_stats_vpn {
+	/** Number of keepalive packets received */
+	uint32_t keepalive_rx;
+	/** Number of keepalive packets sent */
+	uint32_t keepalive_tx;
+	/** Number of invalid keepalive errors */
+	uint32_t invalid_keepalive;
+	/** Number of handshake init packets received */
+	uint32_t handshake_init_rx;
+	/** Number of handshake init packets sent */
+	uint32_t handshake_init_tx;
+	/** Number of handshake response packets received */
+	uint32_t handshake_resp_rx;
+	/** Number of handshake response packets sent */
+	uint32_t handshake_resp_tx;
+	/** Number of invalid handshake errors */
+	uint32_t invalid_handshake;
+	/** Number of peer not found errors */
+	uint32_t peer_not_found;
+	/** Number of key expired errors */
+	uint32_t key_expired;
+	/** Number of invalid packets */
+	uint32_t invalid_packet;
+	/** Number of invalid key errors */
+	uint32_t invalid_key;
+	/** Number of invalid MIC errors */
+	uint32_t invalid_mic;
+	/** Number of invalid packet length errors */
+	uint32_t invalid_packet_len;
+	/** Number of invalid cookie errors */
+	uint32_t invalid_cookie;
+	/** Number of invalid MAC1 errors */
+	uint32_t invalid_mac1;
+	/** Number of invalid MAC2 errors */
+	uint32_t invalid_mac2;
+	/** Number of decrypt failed errors */
+	uint32_t decrypt_failed;
+	/** Number of dropped RX packets */
+	uint32_t drop_rx;
+	/** Number of dropped TX packets */
+	uint32_t drop_tx;
+	/** Number of allocation failures */
+	uint32_t alloc_failed;
+	/** Number of invalid IP version */
+	uint32_t invalid_ip_version;
+	/** Number of invalid IP address family */
+	uint32_t invalid_ip_family;
+	/** Number of denied IP address */
+	uint32_t denied_ip;
+	/** Number of replay errors */
+	uint32_t replay_error;
+	/** Number of valid packets received */
+	uint32_t valid_rx;
+	/** Number of valid packets sent */
+	uint32_t valid_tx;
+};
+
 /**
  * @brief Add a Wireguard peer to the system.
  *
