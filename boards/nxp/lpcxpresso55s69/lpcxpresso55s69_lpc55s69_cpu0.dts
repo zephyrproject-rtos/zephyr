@@ -155,6 +155,19 @@ zephyr_udc0: &usbhs {
 	phy-handle = <&usbphy1>;
 };
 
+zephyr_uhc0: &usbhfs {
+	pinctrl-0 = <&pinmux_usbhfs>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_uhc1: &usbhhs {
+	pinctrl-0 = <&pinmux_usbhhs>;
+	pinctrl-names = "default";
+	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
 &usbphy1 {
 	status = "okay";
 	tx-d-cal = <5>;

@@ -7,8 +7,9 @@
 
 if(CONFIG_HAS_MCUX OR CONFIG_HAS_IMX_HAL OR CONFIG_HAS_NXP_S32_HAL)
   add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} hal_nxp)
-  add_subdirectory_ifdef(CONFIG_USB_DEVICE_DRIVER usb)
-  add_subdirectory_ifdef(CONFIG_UDC_DRIVER usb)
+  if(CONFIG_USB_DEVICE_DRIVER OR CONFIG_UDC_DRIVER OR CONFIG_UHC_DRIVER)
+    add_subdirectory(usb)
+  endif()
 
   zephyr_sources_ifdef(CONFIG_PWM_MCUX_CTIMER ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk/drivers/ctimer/fsl_ctimer.c)
   zephyr_include_directories_ifdef(CONFIG_PWM_MCUX_CTIMER
@@ -25,6 +26,7 @@ if(CONFIG_HAS_MCUX OR CONFIG_HAS_IMX_HAL OR CONFIG_HAS_NXP_S32_HAL)
   if(CONFIG_NOCACHE_MEMORY)
     zephyr_compile_definitions_ifdef(CONFIG_USB_DEVICE_DRIVER DATA_SECTION_IS_CACHEABLE=1)
     zephyr_compile_definitions_ifdef(CONFIG_UDC_DRIVER DATA_SECTION_IS_CACHEABLE=1)
+    zephyr_compile_definitions_ifdef(CONFIG_UHC_DRIVER DATA_SECTION_IS_CACHEABLE=1)
   endif()
 
   zephyr_compile_definitions_ifdef(CONFIG_ETH_NXP_IMX_NETC FSL_ETH_ENABLE_CACHE_CONTROL=1)
