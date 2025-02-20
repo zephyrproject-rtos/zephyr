@@ -71,7 +71,9 @@ enum net_verdict net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt)
 	net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
 
 #if NET_TC_TX_EFFECTIVE_COUNT > 1
-	if (k_sem_take(&tx_classes[tc].fifo_slot, K_FOREVER) != 0) {
+	k_timeout_t timeout = k_is_in_isr() ? K_NO_WAIT : K_FOREVER;
+
+	if (k_sem_take(&tx_classes[tc].fifo_slot, timeout) != 0) {
 		return NET_DROP;
 	}
 #endif
@@ -95,7 +97,7 @@ enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt)
 
 #if NET_TC_RX_EFFECTIVE_COUNT > 1
 	while (k_sem_take(&rx_classes[tc].fifo_slot, K_NO_WAIT) != 0) {
-		if (retry_cnt == 0) {
+		if (k_is_in_isr() || retry_cnt == 0) {
 			return NET_DROP;
 		}
 
