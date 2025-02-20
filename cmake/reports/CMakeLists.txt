@@ -11,7 +11,7 @@ elseif(DEFINED WEST_TOPDIR)
   set(workspace_arg "--workspace=${WEST_TOPDIR}")
 endif()
 
-foreach(report ram_report rom_report footprint)
+foreach(report ram_report rom_report)
   add_custom_target(
     ${report}
     ${PYTHON_EXECUTABLE}
@@ -29,8 +29,13 @@ foreach(report ram_report rom_report footprint)
     )
 endforeach()
 
+add_custom_target(
+  footprint
+  DEPENDS ram_report rom_report
+  )
+
 if(CONFIG_BUILD_WITH_TFM)
-  foreach(report ram_report rom_report footprint)
+  foreach(report ram_report rom_report)
     add_custom_target(
       tfm_${report}
       ${PYTHON_EXECUTABLE}
@@ -47,10 +52,15 @@ if(CONFIG_BUILD_WITH_TFM)
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       )
   endforeach()
+
+  add_custom_target(
+    tfm_footprint
+    DEPENDS tfm_ram_report tfm_rom_report
+    )
 endif()
 
 if(CONFIG_TFM_BL2)
-  foreach(report ram_report rom_report footprint)
+  foreach(report ram_report rom_report)
     add_custom_target(
       bl2_${report}
       ${PYTHON_EXECUTABLE}
@@ -67,6 +77,11 @@ if(CONFIG_TFM_BL2)
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       )
   endforeach()
+
+  add_custom_target(
+    bl2_footprint
+    DEPENDS bl2_ram_report bl2_rom_report
+    )
 endif()
 
 find_program(PUNCOVER puncover)
