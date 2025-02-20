@@ -7,7 +7,7 @@
 #ifndef INTERRUPT_UTIL_H_
 #define INTERRUPT_UTIL_H_
 
-#define MS_TO_US(ms)  (ms * USEC_PER_MSEC)
+#define MS_TO_US(ms) (ms * USEC_PER_MSEC)
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <cmsis_core.h>
@@ -60,9 +60,9 @@ static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
 static inline void trigger_irq(int irq)
 {
 	printk("Triggering irq : %d\n", irq);
-#if defined(CONFIG_SOC_TI_LM3S6965_QEMU) || defined(CONFIG_CPU_CORTEX_M0) \
-	|| defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M1)\
-	|| defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#if defined(CONFIG_SOC_TI_LM3S6965_QEMU) || defined(CONFIG_CPU_CORTEX_M0) ||                       \
+	defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M1) ||                      \
+	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* QEMU does not simulate the STIR register: this is a workaround */
 	NVIC_SetPendingIRQ(irq);
 #else
@@ -86,8 +86,7 @@ static inline void trigger_irq(int irq)
 	 * requesting CPU.
 	 */
 #if CONFIG_GIC_VER <= 2
-	sys_write32(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(irq),
-		    GICD_SGIR);
+	sys_write32(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(irq), GICD_SGIR);
 #else
 	uint64_t mpidr = GET_MPIDR();
 	uint8_t aff0 = MPIDR_AFFLVL(mpidr, 0);
@@ -110,7 +109,7 @@ static inline void trigger_irq(int irq)
 #define VECTOR_MASK 0xFF
 #else
 #include <zephyr/arch/arch_interface.h>
-#define LOAPIC_ICR_IPI_TEST  0x00004000U
+#define LOAPIC_ICR_IPI_TEST 0x00004000U
 #endif
 
 /*
@@ -177,9 +176,7 @@ static inline void trigger_irq(int irq)
 {
 	uint32_t mip;
 
-	__asm__ volatile ("csrrs %0, mip, %1\n"
-			  : "=r" (mip)
-			  : "r" (1 << irq));
+	__asm__ volatile("csrrs %0, mip, %1\n" : "=r"(mip) : "r"(1 << irq));
 }
 #endif
 #elif defined(CONFIG_XTENSA)
@@ -211,6 +208,17 @@ extern void z_vim_arm_enter_irq(int);
 static inline void trigger_irq(int irq)
 {
 	z_vim_arm_enter_irq(irq);
+}
+
+#elif defined(CONFIG_CPU_CORTEX_R5) && defined(CONFIG_TIC)
+
+#include <zephyr/dt-bindings/interrupt-controller/tcc-tic.h>
+
+extern void z_tic_arm_enter_irq(int);
+
+static inline void trigger_irq(int irq)
+{
+	z_tic_arm_enter_irq(irq);
 }
 
 #else
