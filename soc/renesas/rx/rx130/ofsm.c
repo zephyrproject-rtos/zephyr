@@ -15,6 +15,8 @@
  */
 
 #define __OFS_MDE __attribute__((section(".ofs_mde")))
+#define __OFS0    __attribute__((section(".ofs0")))
+#define __OFS1    __attribute__((section(".ofs1")))
 
 /* Endian Select Register (MDE) at 0xFE7F5D00
  *
@@ -28,22 +30,29 @@
  */
 const unsigned long __OFS_MDE __MDEreg = 0xffffffff; /* little */
 
-struct st_ofs0 {
-	unsigned long res0: 1;
-	unsigned long IWDTSTRT: 1;
-	unsigned long IWDTTOPS: 2;
-	unsigned long IWDTCKS: 4;
-	unsigned long IWDTRPES: 2;
-	unsigned long IWDTRPSS: 2;
-	unsigned long IWDTRSTIRQS: 1;
-	unsigned long res1: 1;
-	unsigned long IWDTSLCSTP: 1;
-	unsigned long res2: 16;
+#ifdef CONFIG_IWDT_RENESAS_RX_AUTO_START_MODE
+/* Option Function Select Register 0 (OFS0)
+ * This section sets the IWDT (Independent Watchdog Timer) behavior immediately after reset
+ * by programming the OFS0 register. When enabled, IWDT starts counting automatically
+ * starts after a reset.
+ */
+struct st_ofs0 __OFS0 __OFS0reg = {
+	.res0 = 1,
+	.IWDTSTRT = CONFIG_IWDT_RENESAS_RX_IWDTSTRT,
+	.IWDTTOPS = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTTOPS,
+	.IWDTCKS = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTCKS,
+	.IWDTRPES = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTRPES,
+	.IWDTRPSS = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTRPSS,
+	.IWDTRSTIRQS = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTRSTIRQS,
+	.res1 = 1,
+	.IWDTSLCSTP = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTSLCSTP,
+	.res2 = 0xFFFF,
 };
-
-const unsigned long __OFS_MDE __OFS0reg = 0xffffffff;
+#else
+const unsigned long __OFS0 __OFS0reg = 0xffffffff;
+#endif
 
 /* Option Function Select Register 1 (OFS1) at 0xFE7F5D08 (Voltage detection and
  * HOCO)
  */
-const unsigned long __OFS_MDE __OFS1reg = 0xffffffff;
+const unsigned long __OFS1 __OFS1reg = 0xffffffff;
