@@ -872,19 +872,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		aux->rx_head = rx;
 	}
 
-	/* TODO: active_to_start feature port */
-	aux->ull.ticks_active_to_start = 0;
-	aux->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	aux->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
 		EVENT_OVERHEAD_START_US + ready_delay_us +
 		PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll_aux->phy) +
 		EVENT_OVERHEAD_END_US);
 
-	ticks_slot_offset = MAX(aux->ull.ticks_active_to_start,
-				aux->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
@@ -2765,19 +2758,12 @@ static void chain_start_ticker(struct ll_scan_aux_chain *chain, bool replace)
 
 	ready_delay_us = lll_radio_rx_ready_delay_get(chain->lll.phy, PHY_FLAGS_S8);
 
-	/* TODO: active_to_start feature port */
-	scan_aux_set.ull.ticks_active_to_start = 0;
-	scan_aux_set.ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	scan_aux_set.ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	scan_aux_set.ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
 		EVENT_OVERHEAD_START_US + ready_delay_us +
 		PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, chain->lll.phy) +
 		EVENT_OVERHEAD_END_US);
 
-	ticks_slot_offset = MAX(scan_aux_set.ull.ticks_active_to_start,
-				scan_aux_set.ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
