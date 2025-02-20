@@ -245,7 +245,7 @@ __weak void clock_init(void)
 	/* enable usb0 host clock */
 	CLOCK_EnableClock(kCLOCK_Usbhsl0);
 	/*
-	 * According to reference mannual, device mode setting has to be set by access
+	 * According to reference manual, device mode setting has to be set by access
 	 * usb host register
 	 */
 	USBFSH->PORTMODE |= USBFSH_PORTMODE_DEV_ENABLE_MASK;
