@@ -1016,6 +1016,10 @@ SECTIONS
     *(.mbedtls_heap)
     . = ALIGN(16);
 #endif /* CONFIG_ESP_SPIRAM_ALLOC_MBED_HEAP */
+#ifdef CONFIG_ESP_SPIRAM_LVGL_FRAMEBUFFER
+    *(.lvgl_buf)
+    . = ALIGN(16);
+#endif /* CONFIG_ESP_SPIRAM_LVGL_FRAMEBUFFER */
     _ext_ram_bss_start = ABSOLUTE(.);
     *(.ext_ram.bss*)
     . = ALIGN(16);
