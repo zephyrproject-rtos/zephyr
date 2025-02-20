@@ -801,6 +801,11 @@ Other notable changes
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
 
+* A header file has been introduced to allocate ID ranges for persistent keys in the PSA Crypto API.
+  It defines the ID ranges allocated to different users of the API (application, subsystems...).
+  Users of the API must now use this header file to construct persistent key IDs.
+  See :zephyr_file:`include/zephyr/psa/key_ids.h` for more information. (:github:`85581`)
+
 * Space-separated lists support has been removed from Twister configuration
   files. This feature was deprecated a long time ago. Projects that do still use
   them can use the :zephyr_file:`scripts/utils/twister_to_list.py` script to
