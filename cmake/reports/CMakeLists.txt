@@ -35,9 +35,9 @@ add_custom_target(
   )
 
 if(CONFIG_BUILD_WITH_TFM)
-  foreach(report ram_report rom_report)
+  foreach(report ram rom)
     add_custom_target(
-      tfm_${report}
+      tfm_${report}_report
       ${PYTHON_EXECUTABLE}
       ${ZEPHYR_BASE}/scripts/footprint/size_report
       -k $<TARGET_PROPERTY:tfm,TFM_S_ELF_FILE>
@@ -46,7 +46,7 @@ if(CONFIG_BUILD_WITH_TFM)
       ${workspace_arg}
       -d ${report_depth}
       --json tfm_${report}.json
-      ${flag_for_${report}}
+      ${flag_for_${report}_report}
       DEPENDS tfm
       USES_TERMINAL
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
@@ -60,9 +60,9 @@ if(CONFIG_BUILD_WITH_TFM)
 endif()
 
 if(CONFIG_TFM_BL2)
-  foreach(report ram_report rom_report)
+  foreach(report ram rom)
     add_custom_target(
-      bl2_${report}
+      bl2_${report}_report
       ${PYTHON_EXECUTABLE}
       ${ZEPHYR_BASE}/scripts/footprint/size_report
       -k $<TARGET_PROPERTY:tfm,BL2_ELF_FILE>
@@ -71,7 +71,7 @@ if(CONFIG_TFM_BL2)
       ${workspace_arg}
       -d ${report_depth}
       --json bl2_${report}.json
-      ${flag_for_${report}}
+      ${flag_for_${report}_report}
       DEPENDS tfm
       USES_TERMINAL
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
