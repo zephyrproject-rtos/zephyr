@@ -52,6 +52,7 @@ struct video_sw_generator_data {
 	}
 
 static const struct video_format_cap fmts[] = {
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGB24),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_YUYV),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGB565),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_XRGB32),
@@ -161,6 +162,16 @@ static int video_sw_generator_fill_xrgb32(uint8_t *buffer, uint16_t width)
 	return 1;
 }
 
+static int video_sw_generator_fill_rgb24(uint8_t *buffer, uint16_t width)
+{
+	for (size_t w = 0; w < width; w++) {
+		buffer[w * 3 + 0] = pattern_8bars_rgb[8 * w / width][0];
+		buffer[w * 3 + 1] = pattern_8bars_rgb[8 * w / width][1];
+		buffer[w * 3 + 2] = pattern_8bars_rgb[8 * w / width][2];
+	}
+	return 1;
+}
+
 static int video_sw_generator_fill_rgb565(uint8_t *buffer, uint16_t width)
 {
 	for (size_t w = 0; w < width; w++) {
@@ -206,6 +217,9 @@ static void video_sw_generator_fill(const struct device *const dev, struct video
 		break;
 	case VIDEO_PIX_FMT_XRGB32:
 		lines = video_sw_generator_fill_xrgb32(vbuf->buffer, fmt->width);
+		break;
+	case VIDEO_PIX_FMT_RGB24:
+		lines = video_sw_generator_fill_rgb24(vbuf->buffer, fmt->width);
 		break;
 	case VIDEO_PIX_FMT_RGB565:
 		lines = video_sw_generator_fill_rgb565(vbuf->buffer, fmt->width);
