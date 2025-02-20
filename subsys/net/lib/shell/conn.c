@@ -51,7 +51,6 @@ static void context_cb(struct net_context *context, void *user_data)
 }
 #endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_NATIVE */
 
-#if CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG
 static void conn_handler_cb(struct net_conn *conn, void *user_data)
 {
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
@@ -95,14 +94,13 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 			 conn->local_addr.sa_family);
 	}
 
-	PR("[%2d] %p %p\t%s\t%16s\t%16s\n",
+	PR("[%2d] %p %p  %s\t%16s\t%16s\n",
 	   (*count) + 1, conn, conn->cb,
 	   net_proto2str(conn->local_addr.sa_family, conn->proto),
 	   addr_local, addr_remote);
 
 	(*count)++;
 }
-#endif /* CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 struct tcp_detail_info {
@@ -227,8 +225,7 @@ static int cmd_net_conn(const struct shell *sh, size_t argc, char *argv[])
 		PR("No connections\n");
 	}
 
-#if CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG
-	PR("\n     Handler    Callback  \tProto\tLocal           \tRemote\n");
+	PR("\n     Handler    Callback  Proto            Local                  Remote\n");
 
 	count = 0;
 
@@ -237,7 +234,6 @@ static int cmd_net_conn(const struct shell *sh, size_t argc, char *argv[])
 	if (count == 0) {
 		PR("No connection handlers found.\n");
 	}
-#endif
 
 #if defined(CONFIG_NET_TCP)
 	PR("\nTCP        Context   Src port Dst port   "
