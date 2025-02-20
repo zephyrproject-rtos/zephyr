@@ -210,7 +210,7 @@ REDIRECTS = [
     ('reference/peripherals/uart', 'hardware/peripherals/uart'),
     ('reference/peripherals/video', 'hardware/peripherals/video'),
     ('reference/pm/index', 'services/pm/api/index'),
-    ('reference/settings/index', 'services/settings/index'),
+    ('reference/settings/index', 'services/storage/settings/index'),
     ('reference/shell/index', 'services/shell/index'),
     ('reference/storage/fcb/fcb', 'services/storage/fcb/fcb'),
     ('reference/storage/index', 'services/storage/index'),
@@ -308,5 +308,7 @@ REDIRECTS = [
     ('samples/subsys/video/video', 'samples/drivers/video/video'),
     ('services/crypto/tinycrypt', 'services/crypto/psa_crypto'),
     ('services/portability/posix', 'services/portability/posix/index'),
+    ('services/secure_storage', 'services/storage/secure_storage/index'),
+    ('services/settings/index', 'services/storage/settings/index'),
     # zephyr-keep-sorted-stop
 ]

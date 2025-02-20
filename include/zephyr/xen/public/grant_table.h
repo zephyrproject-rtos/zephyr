@@ -324,7 +324,23 @@ struct gnttab_setup_table {
 typedef struct gnttab_setup_table gnttab_setup_table_t;
 DEFINE_XEN_GUEST_HANDLE(gnttab_setup_table_t);
 
-
+/*
+ * GNTTABOP_query_size: Query the current and maximum sizes of the shared
+ * grant table.
+ * NOTES:
+ *  1. <dom> may be specified as DOMID_SELF.
+ *  2. Only a sufficiently-privileged domain may specify <dom> != DOMID_SELF.
+ */
+struct gnttab_query_size {
+	/* IN parameters. */
+	domid_t  dom;
+	/* OUT parameters. */
+	uint32_t nr_frames;
+	uint32_t max_nr_frames;
+	int16_t  status;	/* => enum grant_status */
+};
+typedef struct gnttab_query_size gnttab_query_size_t;
+DEFINE_XEN_GUEST_HANDLE(gnttab_query_size_t);
 
 /*
  * Bitfield values for gnttab_map_grant_ref.flags.

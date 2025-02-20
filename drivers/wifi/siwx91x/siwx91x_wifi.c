@@ -51,38 +51,31 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 {
 	sl_wifi_client_configuration_t wifi_config = {
 		.bss_type = SL_WIFI_BSS_TYPE_INFRASTRUCTURE,
+		.encryption = SL_WIFI_DEFAULT_ENCRYPTION,
+		.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
 	};
 	int ret;
 
 	switch (params->security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		wifi_config.security = SL_WIFI_OPEN;
-		wifi_config.encryption = SL_WIFI_NO_ENCRYPTION;
 		break;
 	case WIFI_SECURITY_TYPE_WPA_PSK:
 		wifi_config.security = SL_WIFI_WPA;
-		wifi_config.encryption = SL_WIFI_DEFAULT_ENCRYPTION;
-		wifi_config.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID;
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
-		wifi_config.security = SL_WIFI_WPA2;
-		wifi_config.encryption = SL_WIFI_TKIP_ENCRYPTION;
-		wifi_config.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID;
-		break;
+		/* This case is meant to fall through to the next */
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
+		/* Use WPA2 security as the device supports only SHA256
+		 * key derivation for WPA2-PSK
+		 */
 		wifi_config.security = SL_WIFI_WPA2;
-		wifi_config.encryption = SL_WIFI_CCMP_ENCRYPTION;
-		wifi_config.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID;
 		break;
-	case WIFI_SECURITY_TYPE_SAE:
-		/* TODO: Support the case where MFP is not required */
+	case WIFI_SECURITY_TYPE_SAE_AUTO:
+		/* Use WPA3 security as the device supports only HNP and H2E
+		 * methods for SAE
+		 */
 		wifi_config.security = SL_WIFI_WPA3;
-		wifi_config.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID;
-		break;
-	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
-		wifi_config.security = SL_WIFI_WPA2;
-		wifi_config.encryption = SL_WIFI_DEFAULT_ENCRYPTION;
-		wifi_config.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID;
 		break;
 	/* Zephyr WiFi shell doesn't specify how to pass credential for these
 	 * key managements.
@@ -155,6 +148,7 @@ static void siwx91x_report_scan_res(struct siwx91x_dev *sidev, sl_wifi_scan_resu
 		{ SL_WIFI_WPA_ENTERPRISE,  WIFI_SECURITY_TYPE_EAP     },
 		{ SL_WIFI_WPA2_ENTERPRISE, WIFI_SECURITY_TYPE_EAP     },
 	};
+
 	struct wifi_scan_result tmp = {
 		.channel = result->scan_info[item].rf_channel,
 		.rssi = result->scan_info[item].rssi_val,
@@ -162,16 +156,27 @@ static void siwx91x_report_scan_res(struct siwx91x_dev *sidev, sl_wifi_scan_resu
 		.mac_length = sizeof(result->scan_info[item].bssid),
 		.security = WIFI_SECURITY_TYPE_UNKNOWN,
 		.mfp = WIFI_MFP_UNKNOWN,
-		/* FIXME: fill .mfp, .band and .channel */
+		.band = WIFI_FREQ_BAND_2_4_GHZ,
 	};
+
+	if (result->scan_count == 0) {
+		return;
+	}
+
+	if (result->scan_info[item].rf_channel <= 0 || result->scan_info[item].rf_channel > 14) {
+		LOG_WRN("Unexpected scan result");
+		tmp.band = WIFI_FREQ_BAND_UNKNOWN;
+	}
 
 	memcpy(tmp.ssid, result->scan_info[item].ssid, tmp.ssid_length);
 	memcpy(tmp.mac, result->scan_info[item].bssid, tmp.mac_length);
+
 	ARRAY_FOR_EACH(security_convert, i) {
 		if (security_convert[i].sl_val == result->scan_info[item].security_mode) {
 			tmp.security = security_convert[i].z_val;
 		}
 	}
+
 	sidev->scan_res_cb(sidev->iface, 0, &tmp);
 }
 
@@ -179,16 +184,29 @@ static unsigned int siwx91x_on_scan(sl_wifi_event_t event, sl_wifi_scan_result_t
 				    uint32_t result_size, void *arg)
 {
 	struct siwx91x_dev *sidev = arg;
-	int i;
+	int i, scan_count;
 
 	if (!sidev->scan_res_cb) {
 		return -EFAULT;
 	}
-	for (i = 0; i < result->scan_count; i++) {
+
+	if (event & SL_WIFI_EVENT_FAIL_INDICATION) {
+		memset(result, 0, sizeof(*result));
+	}
+
+	if (sidev->scan_max_bss_cnt) {
+		scan_count = MIN(result->scan_count, sidev->scan_max_bss_cnt);
+	} else {
+		scan_count = result->scan_count;
+	}
+
+	for (i = 0; i < scan_count; i++) {
 		siwx91x_report_scan_res(sidev, result, i);
 	}
+
 	sidev->scan_res_cb(sidev->iface, 0, NULL);
 	sidev->state = WIFI_STATE_INACTIVE;
+
 	return 0;
 }
 
@@ -197,6 +215,7 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 {
 	sl_wifi_scan_configuration_t sl_scan_config = { };
 	struct siwx91x_dev *sidev = dev->data;
+	sl_wifi_ssid_t ssid = {};
 	int ret;
 
 	__ASSERT(z_scan_config, "z_scan_config cannot be NULL");
@@ -205,14 +224,44 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 		return -EBUSY;
 	}
 
-	/* The enum values are same, no conversion needed */
-	sl_scan_config.type = z_scan_config->scan_type;
+	if (z_scan_config->scan_type == WIFI_SCAN_TYPE_ACTIVE) {
+		sl_scan_config.type = SL_WIFI_SCAN_TYPE_ACTIVE;
+		if (!z_scan_config->dwell_time_active) {
+			ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_ACTIVE_SCAN_TIMEOUT,
+							 SL_WIFI_DEFAULT_ACTIVE_CHANNEL_SCAN_TIME);
+		} else {
+			ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_ACTIVE_SCAN_TIMEOUT,
+							 z_scan_config->dwell_time_active);
+		}
 
-	sl_scan_config.channel_bitmap_2g4 = 0xFFFF;
+		if (ret) {
+			return -EINVAL;
+		}
+	} else {
+		sl_scan_config.type = SL_WIFI_SCAN_TYPE_PASSIVE;
+		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_PASSIVE_SCAN_TIMEOUT,
+						 z_scan_config->dwell_time_passive);
+		if (ret) {
+			return -EINVAL;
+		}
+	}
+
+	for (int i = 0; i < WIFI_MGMT_SCAN_CHAN_MAX_MANUAL; i++) {
+		sl_scan_config.channel_bitmap_2g4 |= BIT(z_scan_config->band_chan[i].channel - 1);
+	}
+
 	memset(sl_scan_config.channel_bitmap_5g, 0xFF, sizeof(sl_scan_config.channel_bitmap_5g));
+	if (IS_ENABLED(CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX)) {
+		if (z_scan_config->ssids[0]) {
+			strncpy(ssid.value, z_scan_config->ssids[0], WIFI_SSID_MAX_LEN);
+			ssid.length = strlen(z_scan_config->ssids[0]);
+		}
+	}
 
+	sidev->scan_max_bss_cnt = z_scan_config->max_bss_cnt;
 	sidev->scan_res_cb = cb;
-	ret = sl_wifi_start_scan(SL_WIFI_CLIENT_INTERFACE, NULL, &sl_scan_config);
+	ret = sl_wifi_start_scan(SL_WIFI_CLIENT_2_4GHZ_INTERFACE, (ssid.length > 0) ? &ssid : NULL,
+				 &sl_scan_config);
 	if (ret != SL_STATUS_IN_PROGRESS) {
 		return -EIO;
 	}

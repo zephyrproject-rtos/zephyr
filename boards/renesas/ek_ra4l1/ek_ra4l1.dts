@@ -1,0 +1,182 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra4/r7fa4l1bd4cfp.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include "ek_ra4l1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas EK-RA4L1";
+	compatible = "renesas,ra4l1", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash1;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+		zephyr,canbus = &canfd0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport6 9 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&ioport6 10 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+
+		led3: led3 {
+			gpios = <&ioport6 1 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: s1 {
+			gpios = <&ioport0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: s2 {
+			gpios = <&ioport0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "microchip,mcp2562fd", "can-transceiver-gpio";
+		standby-gpios = <&ioport1 6 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(8)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	clocks = <&xtal>;
+	div = <1>;
+	mul = <10 0>;
+	status = "okay";
+};
+
+&canfdclk {
+	clocks = <&pll>;
+	div = <2>;
+	status = "okay";
+};
+
+&sci5 {
+	pinctrl-0 = <&sci5_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart5: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&port_irq6 {
+	interrupts = <14 12>;
+	status = "okay";
+};
+
+&port_irq7 {
+	interrupts = <15 12>;
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	interrupts = <8 1>, <9 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
+
+&iic0 {
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	interrupts = <10 1>, <11 1>, <12 1>, <13 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&canfd_global {
+	status = "okay";
+
+	canfd0 {
+		pinctrl-0 = <&canfd0_default>;
+		pinctrl-names = "default";
+		phys = <&transceiver0>;
+		rx-max-filters = <16>;
+		status = "okay";
+	};
+};

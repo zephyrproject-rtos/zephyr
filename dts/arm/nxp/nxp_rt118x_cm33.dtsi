@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,12 @@
 			ranges = <0x0 0x30484000 0x10000000>;
 		};
 
+		m7_itcm: itcm@303c0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "M7_ITCM";
+			reg = <0x303c0000 DT_SIZE_K(256)>;
+		};
+
 		peripheral: peripheral@50000000 {
 			ranges = <0x0 0x50000000 0x10000000>;
 		};
@@ -48,6 +54,26 @@
 	};
 };
 
+&peripheral {
+	mbox1_a: mbox@4220000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x4220000 0x4000>;
+		interrupts = <21 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "okay";
+	};
+
+	mbox2_a: mbox@2430000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x2430000 0x4000>;
+		interrupts = <22 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "okay";
+	};
+};
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
@@ -60,7 +86,7 @@
 
 &gpio1{
 	pinmux = <&iomuxc_aon_gpio_aon_00_gpio1_io00>,
-	    <&iomuxc_aon_gpio_aon_01_gpio1_io01>,
+		<&iomuxc_aon_gpio_aon_01_gpio1_io01>,
 		<&iomuxc_aon_gpio_aon_02_gpio1_io02>,
 		<&iomuxc_aon_gpio_aon_03_gpio1_io03>,
 		<&iomuxc_aon_gpio_aon_04_gpio1_io04>,
@@ -91,7 +117,7 @@
 
 &gpio2{
 	pinmux = <&iomuxc_gpio_emc_b1_00_gpio2_io00>,
-	    <&iomuxc_gpio_emc_b1_01_gpio2_io01>,
+		<&iomuxc_gpio_emc_b1_01_gpio2_io01>,
 		<&iomuxc_gpio_emc_b1_02_gpio2_io02>,
 		<&iomuxc_gpio_emc_b1_03_gpio2_io03>,
 		<&iomuxc_gpio_emc_b1_04_gpio2_io04>,
@@ -126,7 +152,7 @@
 
 &gpio3{
 	pinmux = <&iomuxc_gpio_emc_b1_32_gpio3_io00>,
-	    <&iomuxc_gpio_emc_b1_33_gpio3_io01>,
+		<&iomuxc_gpio_emc_b1_33_gpio3_io01>,
 		<&iomuxc_gpio_emc_b1_34_gpio3_io02>,
 		<&iomuxc_gpio_emc_b1_35_gpio3_io03>,
 		<&iomuxc_gpio_emc_b1_36_gpio3_io04>,

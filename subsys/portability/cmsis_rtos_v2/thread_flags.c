@@ -5,9 +5,10 @@
  */
 
 #include <zephyr/kernel_structs.h>
+#include <zephyr/portability/cmsis_types.h>
 #include "wrapper.h"
 
-#define DONT_CARE               (0)
+#define DONT_CARE (0)
 
 /**
  * @brief Set the specified Thread Flags of a thread.
@@ -15,10 +16,10 @@
 uint32_t osThreadFlagsSet(osThreadId_t thread_id, uint32_t flags)
 {
 	unsigned int key;
-	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 
-	if ((thread_id == NULL) || (is_cmsis_rtos_v2_thread(thread_id) == NULL)
-	    || (flags & 0x80000000)) {
+	if ((thread_id == NULL) || (is_cmsis_rtos_v2_thread(thread_id) == NULL) ||
+	    (flags & 0x80000000)) {
 		return osFlagsErrorParameter;
 	}
 
@@ -36,13 +37,13 @@ uint32_t osThreadFlagsSet(osThreadId_t thread_id, uint32_t flags)
  */
 uint32_t osThreadFlagsGet(void)
 {
-	struct cv2_thread *tid;
+	struct cmsis_rtos_thread_cb *tid;
 
 	if (k_is_in_isr()) {
 		return 0;
 	}
 
-	tid = (struct cv2_thread *)osThreadGetId();
+	tid = (struct cmsis_rtos_thread_cb *)osThreadGetId();
 	if (tid == NULL) {
 		return 0;
 	} else {
@@ -55,7 +56,7 @@ uint32_t osThreadFlagsGet(void)
  */
 uint32_t osThreadFlagsClear(uint32_t flags)
 {
-	struct cv2_thread *tid;
+	struct cmsis_rtos_thread_cb *tid;
 	int sig, key;
 
 	if (k_is_in_isr()) {
@@ -66,7 +67,7 @@ uint32_t osThreadFlagsClear(uint32_t flags)
 		return osFlagsErrorParameter;
 	}
 
-	tid = (struct cv2_thread *)osThreadGetId();
+	tid = (struct cmsis_rtos_thread_cb *)osThreadGetId();
 	if (tid == NULL) {
 		return osFlagsErrorUnknown;
 	}
@@ -85,7 +86,7 @@ uint32_t osThreadFlagsClear(uint32_t flags)
  */
 uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 {
-	struct cv2_thread *tid;
+	struct cmsis_rtos_thread_cb *tid;
 	int retval, key;
 	uint32_t sig;
 	uint32_t time_delta_ms, timeout_ms = k_ticks_to_ms_floor64(timeout);
@@ -99,7 +100,7 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 		return osFlagsErrorParameter;
 	}
 
-	tid = (struct cv2_thread *)osThreadGetId();
+	tid = (struct cmsis_rtos_thread_cb *)osThreadGetId();
 	if (tid == NULL) {
 		return osFlagsErrorUnknown;
 	}
@@ -116,8 +117,7 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 			retval = k_poll(&tid->poll_event, 1, K_FOREVER);
 			break;
 		default:
-			retval = k_poll(&tid->poll_event, 1,
-					K_MSEC(timeout_ms));
+			retval = k_poll(&tid->poll_event, 1, K_MSEC(timeout_ms));
 			break;
 		}
 
@@ -132,8 +132,7 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 
 		__ASSERT(tid->poll_event.state == K_POLL_STATE_SIGNALED,
 			 "event state not signalled!");
-		__ASSERT(tid->poll_event.signal->signaled == 1U,
-			 "event signaled is not 1");
+		__ASSERT(tid->poll_event.signal->signaled == 1U, "event signaled is not 1");
 
 		/* Reset the states to facilitate the next trigger */
 		tid->poll_event.signal->signaled = 0U;
@@ -151,11 +150,9 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 			 * adjust the timeout value accordingly based on
 			 * the time that has already elapsed.
 			 */
-			hwclk_cycles_delta =
-				(uint64_t)k_cycle_get_32() - time_stamp_start;
+			hwclk_cycles_delta = (uint64_t)k_cycle_get_32() - time_stamp_start;
 
-			time_delta_ns =
-				(uint32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
+			time_delta_ns = (uint32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
 
 			time_delta_ms = (uint32_t)time_delta_ns / NSEC_PER_MSEC;
 

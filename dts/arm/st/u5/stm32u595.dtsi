@@ -108,7 +108,8 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "high-speed";
-			clocks = <&rcc STM32_CLOCK(AHB2, 14U)>;
+			/* Enable OTG_HS PHY and peripheral clocks (OTGHSPHYEN | OTGEN) */
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 ((1 << 15) | (1 << 14))>;
 			phys = <&otghs_phy>;
 			status = "disabled";
 		};

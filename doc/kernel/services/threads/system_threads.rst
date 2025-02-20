@@ -35,9 +35,6 @@ The kernel spawns the following system threads:
     and never terminates.
 
     The idle thread always uses the lowest configured thread priority.
-    If this makes it a cooperative thread, the idle thread repeatedly
-    yields the CPU to allow the application's other threads to run when
-    they need to.
 
     The idle thread is an essential thread, which means a fatal system error
     is raised if the thread aborts.

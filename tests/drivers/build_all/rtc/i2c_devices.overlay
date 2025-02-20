@@ -90,6 +90,14 @@
 				reg = <0x8>;
 				irq-gpios = <&test_gpio 0 0>;
 			};
+
+			test_ds1337: ds1337@9 {
+				compatible = "maxim,ds1337";
+				status = "okay";
+				reg = <0x9>;
+				int-gpios = <&test_gpio 0 0>;
+				sqw-frequency = <4096>;
+			};
 		};
 	};
 };

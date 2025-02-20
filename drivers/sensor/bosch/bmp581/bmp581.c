@@ -408,7 +408,7 @@ static int bmp581_channel_get(const struct device *dev, enum sensor_channel chan
 		*val = drv->last_sample.pressure;
 		return BMP5_OK;
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		/* returns temperature in Celcius */
+		/* returns temperature in Celsius */
 		*val = drv->last_sample.temperature;
 		return BMP5_OK;
 	default:

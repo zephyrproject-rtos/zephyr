@@ -16,7 +16,7 @@ RunTest dfu_all_tgts_lost_on_metadata \
 	dfu_target_fail_on_metadata \
 	-- -argstest targets=3
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTest dfu_all_tgts_lost_on_metadata_psa \
 	dfu_cli_all_targets_lost_on_metadata \
 	dfu_target_fail_on_metadata \

@@ -22,6 +22,9 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - panb511evb/nrf54l15/cpuapp
+      - panb511evb/nrf54l15/cpuflpr
+      - panb511evb/nrf54l15/cpuflpr/xip
   sample.drivers.watchdog.stm32_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")

@@ -413,7 +413,7 @@ Boards & SoC Support
   * Added support for :zephyr:board:`Seeed Studio XIAO RP2040 board <xiao_rp2040>`: ``xiao_rp2040``.
   * Added support for :zephyr:board:`Mikroe RA4M1 Clicker board <mikroe_clicker_ra4m1>`: ``mikroe_clicker_ra4m1``.
   * Added support for :ref:`Arduino UNO R4 WiFi board <arduino_uno_r4>`: ``arduino_uno_r4_wifi``.
-  * Added support for :ref:`Renesas EK-RA8M1 board <ek_ra8m1>`: ``ek_ra8m1``.
+  * Added support for :zephyr:board:`Renesas EK-RA8M1 board <ek_ra8m1>`: ``ek_ra8m1``.
   * Added support for :zephyr:board:`ST Nucleo H533RE <nucleo_h533re>`: ``nucleo_h533re``.
   * Added support for :zephyr:board:`ST STM32C0116-DK Discovery Kit <stm32c0116_dk>`: ``stm32c0116_dk``.
   * Added support for :zephyr:board:`ST STM32H745I Discovery <stm32h745i_disco>`: ``stm32h745i_disco``.

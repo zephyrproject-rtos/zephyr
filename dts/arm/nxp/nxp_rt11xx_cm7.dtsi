@@ -34,23 +34,6 @@
 			flexram,bank-size = <32>;
 			flexram,num-ram-banks = <16>;
 			flexram,has-magic-addr;
-			/* same as default fuse value */
-			flexram,bank-spec = <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>;
 
 			itcm: itcm@0 {
 				compatible = "zephyr,memory-region", "nxp,imx-itcm";

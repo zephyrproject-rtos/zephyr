@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  */
@@ -155,6 +155,29 @@
 		};
 	};
 
+	pinmux_lpuart12: pinmux_lpuart12 {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_20_lpuart12_rxd>,
+				<&iomuxc_aon_gpio_aon_19_lpuart12_txd>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart12_sleep: pinmux_lpuart12_sleep {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_20_lpuart12_rxd>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+		group1 {
+			pinmux = <&iomuxc_aon_gpio_aon_19_lpuart12_txd>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_lpuart3: pinmux_lpuart3 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_14_lpuart3_rxd>,
@@ -265,6 +288,63 @@
 			pinmux = <&iomuxc_gpio_ad_17_i3c2_pur>;
 			slew-rate = "fast";
 			drive-strength = "high";
+		};
+	};
+
+	pinmux_usdhc1: pinmux_usdhc1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b1_00_usdhc1_cmd>,
+				<&iomuxc_gpio_sd_b1_01_usdhc1_clk>,
+				<&iomuxc_gpio_sd_b1_02_usdhc1_data0>,
+				<&iomuxc_gpio_sd_b1_03_usdhc1_data1>,
+				<&iomuxc_gpio_sd_b1_04_usdhc1_data2>,
+				<&iomuxc_gpio_sd_b1_05_usdhc1_data3>;
+			bias-pull-up;
+			input-enable;
+		};
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_34_usdhc1_vselect>,
+				<&iomuxc_gpio_ad_15_gpio4_io15>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+		group2 {
+			pinmux = <&iomuxc_gpio_ad_14_gpio4_io14>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+	};
+
+	/* removes pull on dat3 for card detect */
+	pinmux_usdhc1_dat3_nopull: pinmux_usdhc1_dat3_nopull {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b1_05_usdhc1_data3>;
+			bias-disable;
+			input-enable;
+		};
+		group1 {
+			pinmux = <&iomuxc_gpio_sd_b1_00_usdhc1_cmd>,
+				<&iomuxc_gpio_sd_b1_01_usdhc1_clk>,
+				<&iomuxc_gpio_sd_b1_02_usdhc1_data0>,
+				<&iomuxc_gpio_sd_b1_03_usdhc1_data1>,
+				<&iomuxc_gpio_sd_b1_04_usdhc1_data2>;
+			bias-pull-up;
+			input-enable;
+		};
+		group2 {
+			pinmux = <&iomuxc_gpio_ad_34_usdhc1_vselect>,
+				<&iomuxc_gpio_ad_15_gpio4_io15>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+		group3 {
+			pinmux = <&iomuxc_gpio_ad_14_gpio4_io14>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
 		};
 	};
 };

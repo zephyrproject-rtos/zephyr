@@ -715,10 +715,10 @@ class KconfigCheck(ComplianceTest):
 
         grep_stdout_boards = git("grep", "--line-number", "-I", "--null",
                                  "--perl-regexp", regex_boards, "--", ":boards",
-                                 cwd=Path(GIT_TOP))
+                                 cwd=ZEPHYR_BASE)
         grep_stdout_socs = git("grep", "--line-number", "-I", "--null",
                                "--perl-regexp", regex_socs, "--", ":soc",
-                               cwd=Path(GIT_TOP))
+                               cwd=ZEPHYR_BASE)
 
         # Board processing
         # splitlines() supports various line terminators
@@ -924,7 +924,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         # so we extract the references from each line ourselves instead.
         #
         # The regex uses word boundaries (\b) to isolate the reference, and
-        # negative lookahead to automatically whitelist the following:
+        # negative lookahead to automatically allowlist the following:
         #
         #  - ##, for token pasting (CONFIG_FOO_##X)
         #
@@ -1059,6 +1059,11 @@ flagged.
         "FOO_SETTING_2",
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+        "IAR_BUFFERED_WRITE",
+        "IAR_LIBCPP",
+        "IAR_SEMIHOSTING",
+        "IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS", # Used in ICMsg tests for intercompatibility
+                                                      # with older versions of the ICMsg.
         "LIBGCC_RTLIB",
         "LLVM_USE_LD",   # Both LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
         "LLVM_USE_LLD",  # which are only included if LLVM is selected but

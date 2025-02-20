@@ -48,6 +48,14 @@ LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define INF(dev, subsys, ...) CLOCK_LOG(INF, dev, subsys, __VA_ARGS__)
 #define DBG(dev, subsys, ...) CLOCK_LOG(DBG, dev, subsys, __VA_ARGS__)
 
+#if defined(NRF54L05_XXAA) || defined(NRF54L10_XXAA) || defined(NRF54L15_XXAA)
+#if NRFX_RELEASE_VER_AT_LEAST(3, 11, 0)
+#error "Remove workaround for XOSTART as it is already done in the nrfx clock"
+#endif
+
+#define USE_WORKAROUND_FOR_CLOCK_XOSTART_ANOMALY 1
+#endif
+
 /* Clock subsys structure */
 struct nrf_clock_control_sub_data {
 	clock_control_cb_t cb;
@@ -235,6 +243,9 @@ static void hfclk_start(void)
 		hf_start_tstamp = k_uptime_get();
 	}
 
+#ifdef USE_WORKAROUND_FOR_CLOCK_XOSTART_ANOMALY
+	nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_PLLSTART);
+#endif
 	nrfx_clock_hfclk_start();
 }
 
@@ -245,6 +256,9 @@ static void hfclk_stop(void)
 	}
 
 	nrfx_clock_hfclk_stop();
+#ifdef USE_WORKAROUND_FOR_CLOCK_XOSTART_ANOMALY
+	nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_PLLSTOP);
+#endif
 }
 
 #if NRF_CLOCK_HAS_HFCLK192M

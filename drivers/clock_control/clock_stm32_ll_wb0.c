@@ -252,8 +252,8 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 						void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
-	const uint32_t shift = STM32_CLOCK_SHIFT_GET(pclken->enr);
-	mem_addr_t reg = RCC_REG(STM32_CLOCK_REG_GET(pclken->enr));
+	const uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(pclken->enr);
+	mem_addr_t reg = RCC_REG(STM32_DT_CLKSEL_REG_GET(pclken->enr));
 	int err;
 
 	ARG_UNUSED(dev);
@@ -265,8 +265,8 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
-	sys_clear_bits(reg, STM32_CLOCK_MASK_GET(pclken->enr) << shift);
-	sys_set_bits(reg, STM32_CLOCK_VAL_GET(pclken->enr) << shift);
+	sys_clear_bits(reg, STM32_DT_CLKSEL_MASK_GET(pclken->enr) << shift);
+	sys_set_bits(reg, STM32_DT_CLKSEL_VAL_GET(pclken->enr) << shift);
 
 	return 0;
 }

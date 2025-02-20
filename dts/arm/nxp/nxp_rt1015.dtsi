@@ -12,11 +12,6 @@
 	/* Note: RT1015 has five flexram banks, but only 4 of the 5 can
 	 * be used at the same time, for a total of 128KB of RAM.
 	 */
-	flexram,bank-spec = <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_ITCM>;
 };
 
 &sysclk {

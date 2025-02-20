@@ -48,6 +48,7 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTAN
 
 #include "common/bt_str.h"
 
+#include "audio_internal.h"
 #include "bap_internal.h"
 #include "../host/conn_internal.h"
 #include "../host/hci_core.h"
@@ -514,8 +515,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 	}
 
 	if (length != 0) {
-		const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
-		const uint16_t max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
+		const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(conn);
 
 		/* Cancel any pending long reads containing now obsolete information */
 		(void)k_work_cancel_delayable(&inst->bap_read_work);
@@ -1172,7 +1172,6 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 
 	cp->opcode = BT_BAP_BASS_OP_SCAN_START;
 
-	atomic_clear_bit(inst->flags, BAP_BA_FLAG_SCANNING);
 	err = bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
 	if (err != 0 && start_scan) {
 		/* bt_bap_broadcast_assistant_common_cp clears the busy flag on error */

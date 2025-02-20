@@ -21,6 +21,7 @@ config I2C_SAM0_DMA_DRIVEN
 
 config I2C_SAM0_TRANSFER_TIMEOUT
 	int "Transfer timeout [ms]"
+	depends on I2C_SAM0
 	default 500
 	help
 	  Timeout in milliseconds used for each I2C transfer.

@@ -182,6 +182,7 @@ comment "Device Drivers"
 rsource "Kconfig.nxp"
 rsource "Kconfig.cdns"
 rsource "Kconfig.npcx"
+rsource "Kconfig.dw"
 rsource "Kconfig.test"
 rsource "Kconfig.stm32"
 

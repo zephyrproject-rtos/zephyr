@@ -9,3 +9,5 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
+  - usbd
+vendor: renesas

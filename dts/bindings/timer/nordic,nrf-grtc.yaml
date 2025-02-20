@@ -4,17 +4,39 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: Nordic GRTC (Global RTC)
+description: |
+  Nordic GRTC (Global RTC)
+
+      Example of using clock outputs:
+        &grtc {
+          pinctrl-0 = <&grtc_default>;
+          pinctrl-1 = <&grtc_sleep>;
+          pinctrl-names = "default", "sleep";
+          clkout-fast-frequency-hz = <8000000>;
+          clkout-32k;
+          /* In case of nRF54H20 devices: */
+          nordic,clockpin-enable = <NRF_FUN_GRTC_CLKOUT_FAST>;
+        };
 
 compatible: "nordic,nrf-grtc"
 
 include:
   - "base.yaml"
   - "nordic,split-channels.yaml"
+  - "pinctrl-device.yaml"
+  - "nordic-clockpin.yaml"
 
 properties:
   reg:
     required: true
+
+  clkout-fast-frequency-hz:
+    type: int
+    description: Fast output clock frequency.
+
+  clkout-32k:
+    type: boolean
+    description: 32768 Hz output clock frequency enable.
 
   interrupts:
     required: true

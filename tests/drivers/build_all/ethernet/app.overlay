@@ -79,6 +79,15 @@
 					compatible = "adi,adin2111-phy";
 					status = "okay";
 				};
+				ethernet-phy@7 {
+					reg = <0x7>;
+					compatible = "davicom,dm8806-phy";
+					status = "okay";
+					reg-switch = <8>;
+					reset-gpios = <&test_gpio 0 0>;
+					int-gpios = <&test_gpio 0 0>;
+					davicom,interface-type = "rmii";
+				};
 			};
 		};
 	};

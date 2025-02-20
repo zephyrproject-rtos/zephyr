@@ -60,6 +60,19 @@
 	status = "okay";
 };
 
+&pll2 {
+	clocks = <&hoco>;
+	div = <2>;
+	mul = <24 0>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pll2>;
+	div = <5>;
+	status = "okay";
+};
+
 &sci3 {
 	interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
@@ -108,5 +121,15 @@
 			label = "storage";
 			reg = <0X0 DT_SIZE_K(8)>;
 		};
+	};
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+	status = "okay";
+	zephyr_udc0: udc {
+		status = "okay";
 	};
 };

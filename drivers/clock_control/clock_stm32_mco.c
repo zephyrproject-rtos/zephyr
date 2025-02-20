@@ -41,24 +41,24 @@ static int stm32_mco_init(const struct device *dev)
 
 	/* MCO source */
 	sys_clear_bits(
-		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_MCO_CFGR_REG_GET(pclken->enr),
-		STM32_MCO_CFGR_MASK_GET(pclken->enr) <<
-			STM32_MCO_CFGR_SHIFT_GET(pclken->enr));
+		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
+		STM32_DT_CLKSEL_MASK_GET(pclken->enr) <<
+			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
 	sys_set_bits(
-		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_MCO_CFGR_REG_GET(pclken->enr),
-		STM32_MCO_CFGR_VAL_GET(pclken->enr) <<
-			STM32_MCO_CFGR_SHIFT_GET(pclken->enr));
+		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
+		STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
+			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
 
 #if defined(HAS_PRESCALER)
 	/* MCO prescaler */
 	sys_clear_bits(
-		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_MCO_CFGR_REG_GET(config->prescaler),
-		STM32_MCO_CFGR_MASK_GET(config->prescaler) <<
-			STM32_MCO_CFGR_SHIFT_GET(config->prescaler));
+		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(config->prescaler),
+		STM32_DT_CLKSEL_MASK_GET(config->prescaler) <<
+			STM32_DT_CLKSEL_SHIFT_GET(config->prescaler));
 	sys_set_bits(
-		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_MCO_CFGR_REG_GET(config->prescaler),
-		STM32_MCO_CFGR_VAL_GET(config->prescaler) <<
-			STM32_MCO_CFGR_SHIFT_GET(config->prescaler));
+		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(config->prescaler),
+		STM32_DT_CLKSEL_VAL_GET(config->prescaler) <<
+			STM32_DT_CLKSEL_SHIFT_GET(config->prescaler));
 #endif
 
 	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);

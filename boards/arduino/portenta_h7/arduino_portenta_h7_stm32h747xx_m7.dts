@@ -86,6 +86,54 @@
 
 &i2c1 {
 	status = "okay";
+
+	pf1550: pmic@8 {
+		status = "okay";
+		reg = <0x8>;
+		compatible = "nxp,pf1550";
+
+		pmic_regulators: regulators {
+			status = "okay";
+			compatible = "nxp,pf1550-regulator";
+			pf1550_sw1: BUCK1 {
+				regulator-init-microvolt = <3000000>;
+				regulator-boot-on;
+			};
+			pf1550_sw2: BUCK2 {
+				regulator-init-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+			pf1550_sw3: BUCK3 {
+				regulator-init-microvolt = <3300000>;
+				regulator-init-microamp = <2000000>;
+				regulator-boot-on;
+			};
+			pf1550_ldo1: LDO1 {
+				regulator-init-microvolt = <1000000>;
+				regulator-boot-on;
+			};
+			pf1550_ldo2: LDO2 {
+				regulator-init-microvolt = <1800000>;
+				regulator-boot-on;
+			};
+			pf1550_ldo3: LDO3 {
+				regulator-init-microvolt = <1200000>;
+				regulator-boot-on;
+			};
+		};
+
+		pmic_charger: charger {
+			status = "okay";
+			compatible = "nxp,pf1550-charger";
+			constant-charge-current-max-microamp = <100000>;
+			constant-charge-voltage-max-microvolt = <4200000>;
+			pf1550,int-gpios = <&gpiok 0 0>;
+			pf1550,led-behaviour = "manual-off";
+			pf1550,system-voltage-min-threshold-microvolt = <3500000>;
+			pf1550,thermistor-monitoring-mode = "thermistor";
+			pf1550,vbus-current-limit-microamp = <1500000>;
+		};
+	};
 };
 
 /* Only one should be enabled */

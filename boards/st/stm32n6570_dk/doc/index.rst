@@ -69,6 +69,8 @@ The Zephyr ``stm32n6570_dk`` board supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
 | CAN/CANFD | on-chip    | canbus                              |
@@ -77,7 +79,11 @@ The Zephyr ``stm32n6570_dk`` board supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
@@ -101,10 +107,20 @@ For more details please refer to `STM32N6570_DK User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+- ADC1_INP10 : PA9
+- ADC1_INP11 : PA10
 - FDCAN1_TX : PH2
 - FDCAN1_RX : PD0
+- I2C1_SCL : PH9
+- I2C1_SDA : PC1
+- I2C4_SCL : PE13
+- I2C4_SDA : PE14
 - LD1 : PO1
 - LD2 : PG10
+- SPI5_SCK : PE15
+- SPI5_MOSI : PG2
+- SPI5_MISO : PH8
+- SPI5_NSS : PA3
 - USART_1_TX : PE5
 - USART_1_RX : PE6
 - USART_2_TX : PD5

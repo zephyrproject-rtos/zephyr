@@ -87,7 +87,8 @@
 			reg = <0x58001400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB4, 5U)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI6_SEL(0)>;
-			dmas = <&dmamux2 0 12 0x20440 &dmamux2 1 11 0x20480>;
+			dmas = <&dmamux2 0 12 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
+				&dmamux2 1 11 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			interrupts = <86 0>;
 			status = "disabled";

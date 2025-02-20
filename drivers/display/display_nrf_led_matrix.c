@@ -339,7 +339,7 @@ static void timer_irq_handler(void *arg)
 	const struct display_drv_config *dev_config = dev->config;
 	uint8_t iteration = dev_data->iteration;
 	uint8_t pixel_idx;
-	uint8_t row_idx;
+	uint8_t row_idx = 0;
 
 	/* The timer is automagically stopped and cleared by shortcuts
 	 * on the same event (COMPARE0) that generates this interrupt.

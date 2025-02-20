@@ -107,9 +107,20 @@ schema;scenario-schema:
       type: map
       required: false
       mapping:
-        "shell_params_file":
+        "shell_commands_file":
           type: str
           required: false
+        "shell_commands":
+          type: seq
+          required: false
+          sequence:
+            - type: map
+              mapping:
+                "command":
+                  type: str
+                  required: true
+                "expected":
+                  type: str
         "type":
           type: str
           required: false

@@ -172,6 +172,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi bus                             |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | usb                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -215,6 +217,7 @@ Default Zephyr Peripheral Mapping:
 - LD3 (red) : PM2
 - LD4 (blue) : PM3
 - ADC1 channel 6 input : PF12
+- USB OTG FS DM/DP : PM12/PM11
 
 System Clock
 ------------
@@ -229,6 +232,11 @@ Serial Port
 STM32H7S78-DK Discovery board has 2 U(S)ARTs. The Zephyr console output is
 assigned to USART4. Default settings are 115200 8N1.
 
+USB
+---
+
+STM32H7S78-DK Discovery board has 2 USB Type-C connectors. Currently, only
+USB port2 (FS) is supported.
 
 Programming and Debugging
 *************************

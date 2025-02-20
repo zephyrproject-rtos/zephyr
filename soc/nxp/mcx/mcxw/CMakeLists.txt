@@ -1,4 +1,4 @@
-# Copyright 2023-2024 NXP
+# Copyright 2023-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,4 +14,6 @@ zephyr_include_directories(.)
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
 
-zephyr_linker_sources_ifdef(CONFIG_BT RAM_SECTIONS sections.ld)
+if (CONFIG_BT OR CONFIG_IEEE802154)
+  zephyr_linker_sources(RAM_SECTIONS sections.ld)
+endif()

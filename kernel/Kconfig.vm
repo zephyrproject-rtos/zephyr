@@ -98,8 +98,10 @@ config KERNEL_DIRECT_MAP
 
 endif # KERNEL_VM_SUPPORT
 
-menuconfig MMU
-	bool "MMU features"
+menu "MMU Features"
+
+config MMU
+	bool
 	depends on CPU_HAS_MMU
 	select KERNEL_VM_SUPPORT
 	help
@@ -206,6 +208,7 @@ config DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS
 
 endif # DEMAND_PAGING
 endif # MMU
+endmenu
 
 config KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK
 	bool

@@ -6,7 +6,8 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <cmsis_os2.h>
+#include <zephyr/portability/cmsis_os2.h>
+#include <zephyr/portability/cmsis_types.h>
 
 struct sample_data {
 	int data1;
@@ -14,11 +15,11 @@ struct sample_data {
 	unsigned int data3;
 };
 
-#define MESSAGE1        512
-#define MESSAGE2        123456
-#define TIMEOUT_TICKS   50
-#define Q_LEN           5
-#define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
+#define MESSAGE1      512
+#define MESSAGE2      123456
+#define TIMEOUT_TICKS 50
+#define Q_LEN         5
+#define STACKSZ       CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 osMessageQueueId_t message_id;
 
@@ -27,7 +28,7 @@ void send_msg_thread(void *argument)
 	int i;
 	osStatus_t status;
 	struct sample_data sample;
-	struct sample_data data[Q_LEN] = { { 0 } };
+	struct sample_data data[Q_LEN] = {{0}};
 
 	/* Wait for message_recv to complete initial checks */
 	osDelay(TIMEOUT_TICKS);
@@ -48,10 +49,8 @@ void send_msg_thread(void *argument)
 		data[i].data1 = i * 3;
 		data[i].data2 = i * 3 + 1;
 		data[i].data3 = i * 3 + 2;
-		status = osMessageQueuePut(message_id, data + i,
-					   0, osWaitForever);
-		zassert_true(status == osOK,
-			     "osMessageQueuePut failure for message!");
+		status = osMessageQueuePut(message_id, data + i, 0, osWaitForever);
+		zassert_true(status == osOK, "osMessageQueuePut failure for message!");
 	}
 
 	/* The Queue should be full at this point */
@@ -65,22 +64,19 @@ void send_msg_thread(void *argument)
 	 */
 	sample.data1 = MESSAGE2;
 	status = osMessageQueuePut(message_id, &sample, 0, 0);
-	zassert_true(status == osErrorResource,
-		     "Something's wrong with osMessageQueuePut!");
+	zassert_true(status == osErrorResource, "Something's wrong with osMessageQueuePut!");
 
 	/* Try putting message to a full queue within a duration
 	 * less than TIMEOUT_TICKS, before the queue is emptied out
 	 */
 	sample.data1 = MESSAGE2;
 	status = osMessageQueuePut(message_id, &sample, 0, TIMEOUT_TICKS / 2);
-	zassert_true(status == osErrorTimeout,
-		     "Something's wrong with osMessageQueuePut!");
+	zassert_true(status == osErrorTimeout, "Something's wrong with osMessageQueuePut!");
 
 	/* Send another message after the queue is emptied */
 	sample.data1 = MESSAGE2;
 	status = osMessageQueuePut(message_id, &sample, 0, TIMEOUT_TICKS * 2);
-	zassert_true(status == osOK,
-		     "osMessageQueuePut failure for message!");
+	zassert_true(status == osOK, "osMessageQueuePut failure for message!");
 }
 
 void message_recv(void)
@@ -91,25 +87,20 @@ void message_recv(void)
 
 	/* Try getting message immediately before the queue is populated */
 	status = osMessageQueueGet(message_id, (void *)&recv_data, NULL, 0);
-	zassert_true(status == osErrorResource,
-		     "Something's wrong with osMessageQueueGet!");
+	zassert_true(status == osErrorResource, "Something's wrong with osMessageQueueGet!");
 
 	/* Try receiving message within a duration of TIMEOUT */
-	status = osMessageQueueGet(message_id, (void *)&recv_data,
-				   NULL, TIMEOUT_TICKS);
-	zassert_true(status == osErrorTimeout,
-		     "Something's wrong with osMessageQueueGet!");
+	status = osMessageQueueGet(message_id, (void *)&recv_data, NULL, TIMEOUT_TICKS);
+	zassert_true(status == osErrorTimeout, "Something's wrong with osMessageQueueGet!");
 
 	zassert_equal(osMessageQueueGetCapacity(message_id), Q_LEN,
 		      "Something's wrong with osMessageQueueGetCapacity!");
 
-	zassert_equal(osMessageQueueGetMsgSize(message_id),
-		      sizeof(struct sample_data),
+	zassert_equal(osMessageQueueGetMsgSize(message_id), sizeof(struct sample_data),
 		      "Something's wrong with osMessageQueueGetMsgSize!");
 
 	/* Receive 1st message */
-	status = osMessageQueueGet(message_id, (void *)&recv_data,
-				   NULL, osWaitForever);
+	status = osMessageQueueGet(message_id, (void *)&recv_data, NULL, osWaitForever);
 	zassert_true(status == osOK, "osMessageQueueGet failure");
 	zassert_equal(recv_data.data1, MESSAGE1);
 
@@ -118,8 +109,7 @@ void message_recv(void)
 
 	/* Empty the queue */
 	for (i = 0; i < Q_LEN; i++) {
-		status = osMessageQueueGet(message_id, (void *)&recv_data, NULL,
-					   osWaitForever);
+		status = osMessageQueueGet(message_id, (void *)&recv_data, NULL, osWaitForever);
 		zassert_true(status == osOK, "osMessageQueueGet failure");
 
 		zassert_equal(recv_data.data1, i * 3);
@@ -128,8 +118,7 @@ void message_recv(void)
 	}
 
 	/* Receive the next message */
-	status = osMessageQueueGet(message_id, (void *)&recv_data,
-				   NULL, osWaitForever);
+	status = osMessageQueueGet(message_id, (void *)&recv_data, NULL, osWaitForever);
 	zassert_true(status == osOK, "osMessageQueueGet failure");
 	zassert_equal(recv_data.data1, MESSAGE2);
 }
@@ -158,9 +147,8 @@ ZTEST(cmsis_msgq, test_messageq)
 	struct sample_data sample;
 	osThreadId_t tid;
 
-	message_id = osMessageQueueNew(Q_LEN, sizeof(struct sample_data),
-				       &init_mem_attrs);
-	zassert_true(message_id != NULL, "Message creation failed");
+	message_id = osMessageQueueNew(Q_LEN, sizeof(struct sample_data), &init_mem_attrs);
+	zassert_true(message_id != NULL, "Message Queue creation failed");
 
 	tid = osThreadNew(send_msg_thread, NULL, &thread_attr);
 	zassert_true(tid != NULL, "Thread creation failed");
@@ -189,6 +177,27 @@ ZTEST(cmsis_msgq, test_messageq)
 	/* After reset msgq must be empty */
 	zassert_equal(osMessageQueueGetCount(message_id), 0,
 		      "Something's wrong with osMessageQueueGetCount!");
+
+	status = osMessageQueueDelete(message_id);
+	zassert_true(status == osOK, "osMessageQueueDelete failure");
+}
+
+static struct cmsis_rtos_msgq_cb msgq_cb2;
+static const osMessageQueueAttr_t msgq_attrs2 = {
+	.name = "TestMsgQ2",
+	.attr_bits = 0,
+	.cb_mem = &msgq_cb2,
+	.cb_size = sizeof(msgq_cb2),
+	.mq_mem = sample_mem,
+	.mq_size = sizeof(struct sample_data) * Q_LEN,
+};
+ZTEST(cmsis_msgq, test_messageq_static_allocation)
+{
+	osMessageQueueId_t message_id;
+	osStatus_t status;
+
+	message_id = osMessageQueueNew(Q_LEN, sizeof(struct sample_data), &msgq_attrs2);
+	zassert_true(message_id != NULL, "Message Queue creation failed with static cb");
 
 	status = osMessageQueueDelete(message_id);
 	zassert_true(status == osOK, "osMessageQueueDelete failure");

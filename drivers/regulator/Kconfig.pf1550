@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_PF1550
+	bool "NXP PF1550 PMIC regulator driver"
+	default y
+	depends on DT_HAS_NXP_PF1550_REGULATOR_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable the NXP PF1550 PMIC regulator driver

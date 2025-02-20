@@ -65,34 +65,6 @@
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB1
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB5
 
-#define STM32_CLOCK_REG_MASK	0xFFFU
-#define STM32_CLOCK_REG_SHIFT	0U
-#define STM32_CLOCK_SHIFT_MASK	0x1FU
-#define STM32_CLOCK_SHIFT_SHIFT	12U
-#define STM32_CLOCK_MASK_MASK	0x7U
-#define STM32_CLOCK_MASK_SHIFT	17U
-#define STM32_CLOCK_VAL_MASK	0x7U
-#define STM32_CLOCK_VAL_SHIFT	20U
-
-/**
- * @brief STM32U5 clock configuration bit field.
- *
- * - reg   (1/2/3)         [ 0 : 11 ]
- * - shift (0..31)         [ 12 : 16 ]
- * - mask  (0x1, 0x3, 0x7) [ 17 : 19 ]
- * - val   (0..7)          [ 20 : 22 ]
- *
- * @param reg RCC_CCIPRx register offset
- * @param shift Position within RCC_CCIPRx.
- * @param mask Mask for the RCC_CCIPRx field.
- * @param val Clock value (0, 1, ... 7).
- */
-#define STM32_DOMAIN_CLOCK(val, mask, shift, reg)					\
-	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |		\
-	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
-	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |		\
-	 (((val) & STM32_CLOCK_VAL_MASK) << STM32_CLOCK_VAL_SHIFT))
-
 /** @brief RCC_CCIPRx register offset (RM0468.pdf) */
 #define CCIPR1_REG		0x144
 #define CCIPR2_REG		0x148
@@ -109,85 +81,85 @@
 
 /** @brief Device domain clocks selection helpers */
 /** CCIPR1 devices */
-#define ADF1_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 0, CCIPR1_REG)
-#define ADC12_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 4, CCIPR1_REG)
-#define DCMIPP_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 20, CCIPR1_REG)
+#define ADF1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 0, CCIPR1_REG)
+#define ADC12_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 4, CCIPR1_REG)
+#define DCMIPP_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 20, CCIPR1_REG)
 /** CCIPR2 devices */
-#define ETH1PTP_SEL(val)	STM32_DOMAIN_CLOCK((val), 3, 0, CCIPR2_REG)
-#define ETH1CLK_SEL(val)	STM32_DOMAIN_CLOCK((val), 3, 12, CCIPR2_REG)
-#define ETH1_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 16, CCIPR2_REG)
-#define ETH1REFCLK_SEL(val)	STM32_DOMAIN_CLOCK((val), 1, 20, CCIPR2_REG)
-#define ETH1GTXCLK_SEL(val)	STM32_DOMAIN_CLOCK((val), 1, 24, CCIPR2_REG)
+#define ETH1PTP_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR2_REG)
+#define ETH1CLK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR2_REG)
+#define ETH1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 16, CCIPR2_REG)
+#define ETH1REFCLK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 20, CCIPR2_REG)
+#define ETH1GTXCLK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 24, CCIPR2_REG)
 /** CCIPR3 devices */
-#define FDCAN_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 0, CCIPR3_REG)
-#define FMC_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 4, CCIPR3_REG)
+#define FDCAN_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR3_REG)
+#define FMC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 4, CCIPR3_REG)
 /** CCIPR4 devices */
-#define I2C1_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 0, CCIPR4_REG)
-#define I2C2_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 4, CCIPR4_REG)
-#define I2C3_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 8, CCIPR4_REG)
-#define I2C4_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 12, CCIPR4_REG)
-#define I3C1_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 16, CCIPR4_REG)
-#define I3C2_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 20, CCIPR4_REG)
-#define LTDC_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 24, CCIPR4_REG)
+#define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 0, CCIPR4_REG)
+#define I2C2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 4, CCIPR4_REG)
+#define I2C3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 8, CCIPR4_REG)
+#define I2C4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 12, CCIPR4_REG)
+#define I3C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 16, CCIPR4_REG)
+#define I3C2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 20, CCIPR4_REG)
+#define LTDC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 24, CCIPR4_REG)
 /** CCIPR5 devices */
-#define MCO1_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 0, CCIPR5_REG)
-#define MCO2_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 8, CCIPR5_REG)
-#define MDF1SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 16, CCIPR5_REG)
+#define MCO1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 0, CCIPR5_REG)
+#define MCO2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 8, CCIPR5_REG)
+#define MDF1SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 16, CCIPR5_REG)
 /** CCIPR6 devices */
-#define XSPI1_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 0, CCIPR6_REG)
-#define XSPI2_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 4, CCIPR6_REG)
-#define XSPI3_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 8, CCIPR6_REG)
-#define OTGPHY1_SEL(val)	STM32_DOMAIN_CLOCK((val), 3, 12, CCIPR6_REG)
-#define OTGPHY1CKREF_SEL(val)	STM32_DOMAIN_CLOCK((val), 1, 16, CCIPR6_REG)
-#define OTGPHY2_SEL(val)	STM32_DOMAIN_CLOCK((val), 3, 20, CCIPR6_REG)
-#define OTGPHY2CKREF_SEL(val)	STM32_DOMAIN_CLOCK((val), 1, 24, CCIPR6_REG)
+#define XSPI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR6_REG)
+#define XSPI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 4, CCIPR6_REG)
+#define XSPI3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, CCIPR6_REG)
+#define OTGPHY1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR6_REG)
+#define OTGPHY1CKREF_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 16, CCIPR6_REG)
+#define OTGPHY2_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 20, CCIPR6_REG)
+#define OTGPHY2CKREF_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 24, CCIPR6_REG)
 /** CCIPR7 devices */
-#define PER_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 0, CCIPR7_REG)
-#define PSSI_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 4, CCIPR7_REG)
-#define RTC_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 8, CCIPR7_REG)
-#define SAI1_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 20, CCIPR7_REG)
-#define SAI2_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 24, CCIPR7_REG)
+#define PER_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 0, CCIPR7_REG)
+#define PSSI_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 4, CCIPR7_REG)
+#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, CCIPR7_REG)
+#define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 20, CCIPR7_REG)
+#define SAI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 24, CCIPR7_REG)
 /** CCIPR8 devices */
-#define SDMMC1_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 0, CCIPR8_REG)
-#define SDMMC2_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 4, CCIPR8_REG)
+#define SDMMC1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR8_REG)
+#define SDMMC2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 4, CCIPR8_REG)
 /** CCIPR9 devices */
-#define SPDIFRX1_SEL(val)	STM32_DOMAIN_CLOCK((val), 7, 0, CCIPR9_REG)
-#define SPI1_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 4, CCIPR9_REG)
-#define SPI2_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 8, CCIPR9_REG)
-#define SPI3_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 12, CCIPR9_REG)
-#define SPI4_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 16, CCIPR9_REG)
-#define SPI5_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 20, CCIPR9_REG)
-#define SPI6_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 24, CCIPR9_REG)
+#define SPDIFRX1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 7, 0, CCIPR9_REG)
+#define SPI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 4, CCIPR9_REG)
+#define SPI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 8, CCIPR9_REG)
+#define SPI3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 12, CCIPR9_REG)
+#define SPI4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 16, CCIPR9_REG)
+#define SPI5_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 20, CCIPR9_REG)
+#define SPI6_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 24, CCIPR9_REG)
 /** CCIPR12 devices */
-#define LPTIM1_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 8, CCIPR12_REG)
-#define LPTIM2_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 12, CCIPR12_REG)
-#define LPTIM3_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 16, CCIPR12_REG)
-#define LPTIM4_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 20, CCIPR12_REG)
-#define LPTIM5_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 24, CCIPR12_REG)
+#define LPTIM1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 8, CCIPR12_REG)
+#define LPTIM2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 12, CCIPR12_REG)
+#define LPTIM3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 16, CCIPR12_REG)
+#define LPTIM4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 20, CCIPR12_REG)
+#define LPTIM5_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 24, CCIPR12_REG)
 /** CCIPR13 devices */
-#define USART1_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 0, CCIPR13_REG)
-#define USART2_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 4, CCIPR13_REG)
-#define USART3_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 8, CCIPR13_REG)
-#define UART4_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 12, CCIPR13_REG)
-#define UART5_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 16, CCIPR13_REG)
-#define USART6_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 20, CCIPR13_REG)
-#define UART7_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 24, CCIPR13_REG)
-#define UART8_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 28, CCIPR13_REG)
+#define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 0, CCIPR13_REG)
+#define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 4, CCIPR13_REG)
+#define USART3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 8, CCIPR13_REG)
+#define UART4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 12, CCIPR13_REG)
+#define UART5_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 16, CCIPR13_REG)
+#define USART6_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 20, CCIPR13_REG)
+#define UART7_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 24, CCIPR13_REG)
+#define UART8_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 28, CCIPR13_REG)
 /** CCIPR14 devices */
-#define UART9_SEL(val)		STM32_DOMAIN_CLOCK((val), 7, 0, CCIPR14_REG)
-#define USART10_SEL(val)	STM32_DOMAIN_CLOCK((val), 7, 4, CCIPR14_REG)
-#define LPUART1_SEL(val)	STM32_DOMAIN_CLOCK((val), 7, 8, CCIPR14_REG)
+#define UART9_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 0, CCIPR14_REG)
+#define USART10_SEL(val)	STM32_DT_CLOCK_SELECT((val), 7, 4, CCIPR14_REG)
+#define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 7, 8, CCIPR14_REG)
 
 /** @brief RCC_ICxCFGR register offset (RM0468.pdf) */
 #define ICxCFGR_REG(ic)		(0xC4 + ((ic) - 1) * 4)
 
 /** @brief Divider ICx source selection */
-#define ICx_PLLy_SEL(ic, pll)	STM32_DOMAIN_CLOCK((pll) - 1, 3, 28, ICxCFGR_REG(ic))
+#define ICx_PLLy_SEL(ic, pll)	STM32_DT_CLOCK_SELECT((pll) - 1, 3, 28, ICxCFGR_REG(ic))
 
 /** @brief RCC_CFGR1 register offset (RM0468.pdf) */
 #define CFGR1_REG		0x20
 
 /** @brief CPU clock switch selection */
-#define CPU_SEL(val)		STM32_DOMAIN_CLOCK((val), 3, 16, CFGR1_REG)
+#define CPU_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 16, CFGR1_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32N6_CLOCK_H_ */

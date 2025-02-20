@@ -14,15 +14,23 @@ This script provides a robust way to re-order the memory contents without
 actually having to modify the code.  In simple terms this script will do the job
 of ``__attribute__((section("name")))`` for a bunch of files together.
 
+A regular expression filter can be used to select only the required sections to be relocated.
+
 Details
 *******
-The memory region and file are given to the :ref:`gen_relocate_app.py` script in the form of a string.
+The memory region and file are given to the :ref:`gen_relocate_app.py` script
+through a file where each line specifies a list of files to be placed in the
+given region.
 
-An example of such a string is:
-``SRAM2:/home/xyz/zephyr/samples/hello_world/src/main.c,SRAM1:/home/xyz/zephyr/samples/hello_world/src/main2.c``
+An example of such a file is:
+
+  .. code-block:: none
+
+     SRAM2:/home/xyz/zephyr/samples/hello_world/src/main.c,
+     SRAM1:/home/xyz/zephyr/samples/hello_world/src/main2.c,
 
 This script is invoked with the following parameters:
-``python3 gen_relocate_app.py -i input_string -o generated_linker -c generated_code``
+``python3 gen_relocate_app.py -i input_file -o generated_linker -c generated_code``
 
 Kconfig :kconfig:option:`CONFIG_CODE_DATA_RELOCATION` option,  when enabled in
 ``prj.conf``, will invoke the script and do the required relocation.
@@ -96,6 +104,24 @@ This section shows additional configuration options that can be set in
      file(GLOB sources "file*.c")
      zephyr_code_relocate(FILES ${sources} LOCATION SRAM)
      zephyr_code_relocate(FILES $<TARGET_PROPERTY:my_tgt,SOURCES> LOCATION SRAM)
+
+Section Filtering
+=================
+
+By default, all sections of the specified files will be relocated. If
+``FILTER`` is used, a regular expression is provided to select only
+the sections to be relocated.
+
+The regular expression applies to sections names which can be used to
+select the file's symbols when this one has been built with
+``-ffunction-sections`` and ``-fdata-sections`` which is the case by
+default.
+
+  .. code-block:: none
+
+     zephyr_code_relocate(FILES src/file1.c FILTER ".*\\.func1|.*\\.func2" LOCATION SRAM2_TEXT)
+
+The example above will only relocate ``func1()`` and ``func2()`` of file ``src/file1.c``
 
 NOKEEP flag
 ===========

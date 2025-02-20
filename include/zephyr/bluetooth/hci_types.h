@@ -3203,6 +3203,14 @@ struct bt_hci_evt_le_phy_update_complete {
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE 2
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED  0xFF
 
+/* Advertising Coding Selection extended advertising report PHY values.
+ * Only used when Kconfig BT_EXT_ADV_CODING_SELECTION is enabled.
+ */
+#define BT_HCI_LE_ADV_EVT_PHY_1M                0x01
+#define BT_HCI_LE_ADV_EVT_PHY_2M                0x02
+#define BT_HCI_LE_ADV_EVT_PHY_CODED_S8          0x03
+#define BT_HCI_LE_ADV_EVT_PHY_CODED_S2          0x04
+
 struct bt_hci_evt_le_ext_advertising_info {
 	uint16_t     evt_type;
 	bt_addr_le_t addr;

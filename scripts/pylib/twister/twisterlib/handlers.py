@@ -59,9 +59,10 @@ def terminate_process(proc):
     so we need to use try_kill_process_by_pid.
     """
 
-    for child in psutil.Process(proc.pid).children(recursive=True):
-        with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
-            os.kill(child.pid, signal.SIGTERM)
+    with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
+        for child in psutil.Process(proc.pid).children(recursive=True):
+            with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
+                os.kill(child.pid, signal.SIGTERM)
     proc.terminate()
     # sleep for a while before attempting to kill
     time.sleep(0.5)
@@ -565,14 +566,13 @@ class DeviceHandler(Handler):
 
                 board_id = hardware.probe_id or hardware.id
                 product = hardware.product
-                serial_port = hardware.serial
                 if board_id is not None:
                     if runner in ("pyocd", "nrfjprog", "nrfutil"):
                         command_extra_args.append("--dev-id")
                         command_extra_args.append(board_id)
                     elif runner == "esp32":
                         command_extra_args.append("--esp-device")
-                        command_extra_args.append(serial_port)
+                        command_extra_args.append(board_id)
                     elif (
                         runner == "openocd"
                         and product == "STM32 STLink"

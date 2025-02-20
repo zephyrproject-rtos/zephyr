@@ -123,6 +123,12 @@
 	status ="okay";
 };
 
+&uclk {
+	clocks = <&pll>;
+	div = <5>;
+	status = "okay";
+};
+
 &usbhs {
 	pinctrl-0 = <&usbhs_default>;
 	pinctrl-names = "default";
@@ -178,4 +184,10 @@
 			reg = <0X0 DT_SIZE_K(64)>;
 		};
 	};
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
 };

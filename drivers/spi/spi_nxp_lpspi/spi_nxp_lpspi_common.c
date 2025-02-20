@@ -57,6 +57,10 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 		return ret;
 	}
 
+	base->CR |= LPSPI_CR_RST_MASK;
+	base->CR |= LPSPI_CR_RRF_MASK | LPSPI_CR_RTF_MASK;
+	base->CR = 0x00U;
+
 	if (data->ctx.config != NULL) {
 		/* Setting the baud rate in LPSPI_MasterInit requires module to be disabled. Only
 		 * disable if already configured, otherwise the clock is not enabled and the

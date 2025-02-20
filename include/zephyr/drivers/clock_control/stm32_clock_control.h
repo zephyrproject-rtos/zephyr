@@ -658,68 +658,36 @@ struct stm32_pclken {
 /** Clock source binding accessors */
 
 /**
- * @brief Obtain register field from clock configuration.
+ * @brief Obtain register field from clock source selection configuration.
  *
  * @param clock clock bit field value.
  */
-#define STM32_CLOCK_REG_GET(clock) \
-	(((clock) >> STM32_CLOCK_REG_SHIFT) & STM32_CLOCK_REG_MASK)
+#define STM32_DT_CLKSEL_REG_GET(clock) \
+	(((clock) >> STM32_DT_CLKSEL_REG_SHIFT) & STM32_DT_CLKSEL_REG_MASK)
 
 /**
- * @brief Obtain position field from clock configuration.
+ * @brief Obtain position field from clock source selection configuration.
  *
  * @param clock Clock bit field value.
  */
-#define STM32_CLOCK_SHIFT_GET(clock) \
-	(((clock) >> STM32_CLOCK_SHIFT_SHIFT) & STM32_CLOCK_SHIFT_MASK)
+#define STM32_DT_CLKSEL_SHIFT_GET(clock) \
+	(((clock) >> STM32_DT_CLKSEL_SHIFT_SHIFT) & STM32_DT_CLKSEL_SHIFT_MASK)
 
 /**
- * @brief Obtain mask field from clock configuration.
+ * @brief Obtain mask field from clock source selection configuration.
  *
  * @param clock Clock bit field value.
  */
-#define STM32_CLOCK_MASK_GET(clock) \
-	(((clock) >> STM32_CLOCK_MASK_SHIFT) & STM32_CLOCK_MASK_MASK)
+#define STM32_DT_CLKSEL_MASK_GET(clock) \
+	(((clock) >> STM32_DT_CLKSEL_MASK_SHIFT) & STM32_DT_CLKSEL_MASK_MASK)
 
 /**
- * @brief Obtain value field from clock configuration.
+ * @brief Obtain value field from clock source selection configuration.
  *
  * @param clock Clock bit field value.
  */
-#define STM32_CLOCK_VAL_GET(clock) \
-	(((clock) >> STM32_CLOCK_VAL_SHIFT) & STM32_CLOCK_VAL_MASK)
-
-/**
- * @brief Obtain register field from MCO configuration.
- *
- * @param mco_cfgr MCO configuration bit field value.
- */
-#define STM32_MCO_CFGR_REG_GET(mco_cfgr) \
-	(((mco_cfgr) >> STM32_MCO_CFGR_REG_SHIFT) & STM32_MCO_CFGR_REG_MASK)
-
-/**
- * @brief Obtain position field from MCO configuration.
- *
- * @param mco_cfgr MCO configuration bit field value.
- */
-#define STM32_MCO_CFGR_SHIFT_GET(mco_cfgr) \
-	(((mco_cfgr) >> STM32_MCO_CFGR_SHIFT_SHIFT) & STM32_MCO_CFGR_SHIFT_MASK)
-
-/**
- * @brief Obtain mask field from MCO configuration.
- *
- * @param mco_cfgr MCO configuration bit field value.
- */
-#define STM32_MCO_CFGR_MASK_GET(mco_cfgr) \
-	(((mco_cfgr) >> STM32_MCO_CFGR_MASK_SHIFT) & STM32_MCO_CFGR_MASK_MASK)
-
-/**
- * @brief Obtain value field from MCO configuration.
- *
- * @param mco_cfgr MCO configuration bit field value.
- */
-#define STM32_MCO_CFGR_VAL_GET(mco_cfgr) \
-	(((mco_cfgr) >> STM32_MCO_CFGR_VAL_SHIFT) & STM32_MCO_CFGR_VAL_MASK)
+#define STM32_DT_CLKSEL_VAL_GET(clock) \
+	(((clock) >> STM32_DT_CLKSEL_VAL_SHIFT) & STM32_DT_CLKSEL_VAL_MASK)
 
 #if defined(STM32_HSE_CSS)
 /**

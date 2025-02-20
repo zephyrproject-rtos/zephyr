@@ -13,10 +13,6 @@ common:
   platform_exclude:
     # linker_zephyr_pre0.cmd:140: syntax error (??)
     - qemu_xtensa/dc233c
-    # CONFIG_MMU=y but no arch_mem_map() or arch_mem_unmap()
-    - intel_ish_5_4_1
-    - intel_ish_5_6_0
-    - intel_ish_5_8_0
     - native_sim
     - native_sim/native/64
 tests:

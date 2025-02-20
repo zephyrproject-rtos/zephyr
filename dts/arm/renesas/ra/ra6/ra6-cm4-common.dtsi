@@ -319,6 +319,22 @@
 			};
 		};
 
+		usbfs: usbfs@40090000 {
+			compatible = "renesas,ra-usbfs";
+			reg = <0x40090000 0x2000>;
+			interrupts = <55 12>, <56 12>;
+			interrupt-names = "usbfs-i", "usbfs-r";
+			num-bidir-endpoints = <10>;
+			phys = <&usbfs_phy>;
+			phys-clock = <&uclk>;
+			status = "disabled";
+
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+		};
+
 		id_code: id_code@100a150 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0100a150 0x10>;
@@ -608,6 +624,11 @@
 			interrupts = <49 1>, <50 1>;
 			interrupt-names = "frdyi", "fiferr";
 		};
+	};
+
+	usbfs_phy: usbfs-phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 };
 

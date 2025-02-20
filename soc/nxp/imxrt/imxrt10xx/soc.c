@@ -51,7 +51,7 @@ const clock_sys_pll_config_t sysPllConfig = {
 #endif
 
 #if CONFIG_USB_DC_NXP_EHCI
-/* USB PHY condfiguration */
+/* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL (0x0CU)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)

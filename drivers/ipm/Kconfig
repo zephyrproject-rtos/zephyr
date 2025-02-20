@@ -59,7 +59,7 @@ config IPM_MBOX
 	bool "IPM over MBOX driver"
 	default y
 	depends on DT_HAS_ZEPHYR_MBOX_IPM_ENABLED
-	depends on MBOX
+	select MBOX
 	help
 	  IPM driver using a MBOX driver as the backend mechanism.
 

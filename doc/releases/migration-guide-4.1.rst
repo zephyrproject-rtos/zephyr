@@ -67,6 +67,10 @@ Boards
   always erase only the sectors of the external flash used by the new firmware,
   and the ``nrfutil`` one would always erase the whole external flash.
 
+* CAN1 and USART1 have been disabled on the ``stm32f4_disco``, because of
+  conflicting pinctrl on I2C1, which is now used to control the audio codec
+  connected to the audio jack output.
+
 Devicetree
 **********
 
@@ -159,6 +163,9 @@ Counter
 
 Controller Area Network (CAN)
 =============================
+
+* Renamed the :dtcompatible:`infineon,xmc4xxx-can-node` devicetree property ``clock_div8`` to
+  ``clock-div8`` (:github:`83782`).
 
 Display
 =======

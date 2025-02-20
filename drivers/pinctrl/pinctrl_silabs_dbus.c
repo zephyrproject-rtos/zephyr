@@ -40,7 +40,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		sys_write32(pins[i].port | FIELD_PREP(PIN_MASK, pins[i].pin), route_reg);
 
 		if (pins[i].en_bit != SILABS_PINCTRL_UNUSED) {
-			sys_set_bit(enable_reg, pins[i].en_bit);
+			if (pins[i].mode == gpioModeDisabled) {
+				sys_clear_bit(enable_reg, pins[i].en_bit);
+			} else {
+				sys_set_bit(enable_reg, pins[i].en_bit);
+			}
 		}
 	}
 

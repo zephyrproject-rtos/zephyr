@@ -141,6 +141,7 @@
 
 			iclk: iclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <48000000>;
 				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
@@ -173,8 +174,13 @@
 				status = "disabled";
 			};
 
-
 			sdadcclk: sdadcclk {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			uclk: uclk {
 				compatible = "renesas,ra-cgc-pclk";
 				#clock-cells = <2>;
 				status = "disabled";

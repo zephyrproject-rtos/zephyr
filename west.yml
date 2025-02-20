@@ -137,12 +137,12 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 427159bf95ea49b7680facffaa29ad506b42709b
+      revision: 16245c7c41d2b79e74984f49b5202551786b8a9b
       path: modules/fs/fatfs
       groups:
         - fs
     - name: hal_adi
-      revision: a5b528b49f4291aba34afefd5543889690536684
+      revision: 633fcecf3717aaa22079cf6121627a879f24df51
       path: modules/hal/adi
       groups:
         - hal
@@ -162,7 +162,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 970156407d42c968c50d4b2e3c85c0c548bd9a9e
+      revision: a459b40356f5e6fb55d92bcb458cec45365d5ec5
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -193,7 +193,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: a1db06a2f6a1d069994d595cef563f58e44c4344
+      revision: 1e1048562ff98563d492c8dcab1ee85775547abc
       path: modules/hal/nordic
       groups:
         - hal
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 5e1979c7dd94dc84a09f5deb1b59ab83c94d5e83
+      revision: 605560a680318ec417c1ee38d05ac092c383dc1d
       path: modules/hal/nxp
       groups:
         - hal
@@ -219,7 +219,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: abca7ee376c86fe4f0032d083c1af39e2600cbe5
+      revision: bcbd9fe909b9da739a2e61adddcc1a30fba7774d
       groups:
         - hal
     - name: hal_rpi_pico
@@ -228,7 +228,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 1e60d972b2d05de620ece65cfa48ec33c5f38bac
+      revision: 8a173e9e566a396a19d18da4661cb54ce098f268
       path: modules/hal/silabs
       groups:
         - hal
@@ -303,7 +303,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 9a02794a14fa2e539ffe039a986360590d9e025f
+      revision: 346f7374ff4467e40b5594658f8ac67a5e9813c9
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -311,14 +311,14 @@ manifest:
       path: modules/debug/mipi-sys-t
       groups:
         - debug
-      revision: 71ace1f5caa03e56c8740a09863e685efb4b2360
+      revision: 33e5c23cbedda5ba12dbe50c4baefb362a791001
     - name: net-tools
       revision: 93acc8bac4661e74e695eb1aea94c7c5262db2e2
       path: tools/net-tools
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 5dc34b26662c6ec91edf1174d775d78590b1a05b
+      revision: 73a5d5827a94820be65b7d276d28173ec10bab9f
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: e35f707a782b7c4c0eb83a3b06ca4e6eb693f29f

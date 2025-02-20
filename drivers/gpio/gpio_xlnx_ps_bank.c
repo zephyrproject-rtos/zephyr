@@ -454,7 +454,7 @@ static const struct gpio_xlnx_ps_bank_dev_cfg gpio_xlnx_ps_bank##idx##_cfg = {\
 	.common = {\
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),\
 	},\
-	.bank_index = idx,\
+	.bank_index = DT_INST_REG_ADDR(idx),\
 };\
 static struct gpio_xlnx_ps_bank_dev_data gpio_xlnx_ps_bank##idx##_data = {\
 	.base = 0,\

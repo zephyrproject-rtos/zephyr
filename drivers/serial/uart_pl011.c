@@ -74,6 +74,7 @@ struct pl011_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	volatile bool sw_call_txdrdy;
 	uart_irq_callback_user_data_t irq_cb;
+	struct k_spinlock irq_cb_lock;
 	void *irq_cb_data;
 #endif
 };
@@ -342,26 +343,36 @@ static void pl011_irq_tx_enable(const struct device *dev)
 	struct pl011_data *data = dev->data;
 
 	get_uart(dev)->imsc |= PL011_IMSC_TXIM;
-	if (data->sw_call_txdrdy) {
-		data->sw_call_txdrdy = false;
+	if (!data->sw_call_txdrdy) {
+		return;
+	}
+	data->sw_call_txdrdy = false;
 
-		/* Verify if the callback has been registered */
-		if (data->irq_cb) {
-			/*
-			 * Due to HW limitation, the first TX interrupt should
-			 * be triggered by the software.
-			 *
-			 * PL011 TX interrupt is based on a transition through
-			 * a level, rather than on the level itself[1]. So that,
-			 * enable TX interrupt can not trigger TX interrupt if
-			 * no data was filled to TX FIFO at the beginning.
-			 *
-			 * [1]: PrimeCell UART (PL011) Technical Reference Manual
-			 *      functional-overview/interrupts
-			 */
-			while (get_uart(dev)->imsc & PL011_IMSC_TXIM) {
-				data->irq_cb(dev, data->irq_cb_data);
-			}
+	/*
+	 * Verify if the callback has been registered. Due to HW limitation, the
+	 * first TX interrupt should be triggered by the software.
+	 *
+	 * PL011 TX interrupt is based on a transition through a level, rather
+	 * than on the level itself[1]. So that, enable TX interrupt can not
+	 * trigger TX interrupt if no data was filled to TX FIFO at the
+	 * beginning.
+	 *
+	 * [1]: PrimeCell UART (PL011) Technical Reference Manual
+	 *      functional-overview/interrupts
+	 */
+	if (!data->irq_cb) {
+		return;
+	}
+
+	/*
+	 * Execute callback while TX interrupt remains enabled. If
+	 * uart_fifo_fill() is called with small amounts of data, the 1/8 TX
+	 * FIFO threshold may never be reached, and the hardware TX interrupt
+	 * will never trigger.
+	 */
+	while (get_uart(dev)->imsc & PL011_IMSC_TXIM) {
+		K_SPINLOCK(&data->irq_cb_lock) {
+			data->irq_cb(dev, data->irq_cb_data);
 		}
 	}
 }
@@ -626,7 +637,9 @@ void pl011_isr(const struct device *dev)
 
 	/* Verify if the callback has been registered */
 	if (data->irq_cb) {
-		data->irq_cb(dev, data->irq_cb_data);
+		K_SPINLOCK(&data->irq_cb_lock) {
+			data->irq_cb(dev, data->irq_cb_data);
+		}
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

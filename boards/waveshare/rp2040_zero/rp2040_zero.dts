@@ -28,7 +28,7 @@
 };
 
 &flash0 {
-	reg = <0x10000000 DT_SIZE_M(16)>;
+	reg = <0x10000000 DT_SIZE_M(2)>;
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -44,11 +44,11 @@
 
 		/*
 		 * Usable flash. Starts at 0x100, after the bootloader. The partition
-		 * size is 16MB minus the 0x100 bytes taken by the bootloader.
+		 * size is 2MB minus the 0x100 bytes taken by the bootloader.
 		 */
 		code_partition: partition@100 {
 			label = "code-partition";
-			reg = <0x100 (DT_SIZE_M(16) - 0x100)>;
+			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
 			read-only;
 		};
 	};

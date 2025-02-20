@@ -260,7 +260,7 @@ static void avrcp_unit_info_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
 		if ((avrcp_cb != NULL) && (avrcp_cb->unit_info_rsp != NULL)) {
 			net_buf_pull(buf, sizeof(*avrcp_hdr));
 			if (buf->len != 5) {
-				LOG_ERR("Invalid unit info length");
+				LOG_ERR("Invalid unit info length: %d", buf->len);
 				return;
 			}
 			net_buf_pull_u8(buf); /* Always 0x07 */
@@ -284,7 +284,7 @@ static void avrcp_subunit_info_handler(struct bt_avrcp *avrcp, struct net_buf *b
 		if ((avrcp_cb != NULL) && (avrcp_cb->subunit_info_rsp != NULL)) {
 			net_buf_pull(buf, sizeof(*avrcp_hdr));
 			if (buf->len < 5) {
-				LOG_ERR("Invalid subunit info length");
+				LOG_ERR("Invalid subunit info length: %d", buf->len);
 				return;
 			}
 			net_buf_pull_u8(buf); /* Always 0x07 */
@@ -305,7 +305,31 @@ static void avrcp_subunit_info_handler(struct bt_avrcp *avrcp, struct net_buf *b
 static void avrcp_pass_through_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
 					   bt_avctp_cr_t cr)
 {
-	/* ToDo */
+	struct bt_avrcp_header *avrcp_hdr;
+	struct bt_avrcp_passthrough_rsp rsp;
+	uint8_t tmp;
+
+	if (cr == BT_AVCTP_CMD) {
+		/* ToDo */
+	} else { /* BT_AVCTP_RESPONSE */
+		if ((avrcp_cb != NULL) && (avrcp_cb->subunit_info_rsp != NULL)) {
+			avrcp_hdr = (struct bt_avrcp_header *)buf->data;
+			net_buf_pull(buf, sizeof(*avrcp_hdr));
+			if (buf->len < 2) {
+				LOG_ERR("Invalid passthrough length: %d", buf->len);
+				return;
+			}
+
+			rsp.response = BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr);
+			tmp = net_buf_pull_u8(buf);
+			rsp.operation_id = FIELD_GET(GENMASK(6, 0), tmp);
+			rsp.state = FIELD_GET(GENMASK(7, 7), tmp);
+			rsp.len = net_buf_pull_u8(buf);
+			rsp.payload = rsp.len ? buf->data : NULL;
+
+			avrcp_cb->passthrough_rsp(avrcp, &rsp);
+		}
+	}
 }
 
 static const struct avrcp_handler handler[] = {
@@ -323,7 +347,7 @@ static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
 	struct bt_avrcp_header *avrcp_hdr;
 	uint8_t tid, i;
 	bt_avctp_cr_t cr;
-	bt_avrcp_ctype_t ctype;
+	bt_avrcp_rsp_t rsp;
 	bt_avrcp_subunit_id_t subunit_id;
 	bt_avrcp_subunit_type_t subunit_type;
 
@@ -337,7 +361,7 @@ static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
 	avrcp_hdr = (void *)buf->data;
 	tid = BT_AVCTP_HDR_GET_TRANSACTION_LABLE(avctp_hdr);
 	cr = BT_AVCTP_HDR_GET_CR(avctp_hdr);
-	ctype = BT_AVRCP_HDR_GET_CTYPE(avrcp_hdr);
+	rsp = BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr);
 	subunit_id = BT_AVRCP_HDR_GET_SUBUNIT_ID(avrcp_hdr);
 	subunit_type = BT_AVRCP_HDR_GET_SUBUNIT_TYPE(avrcp_hdr);
 
@@ -345,11 +369,11 @@ static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
 		return -EINVAL; /* Ignore other profile */
 	}
 
-	LOG_DBG("AVRCP msg received, cr:0x%X, tid:0x%X, ctype: 0x%X, opc:0x%02X,", cr, tid, ctype,
+	LOG_DBG("AVRCP msg received, cr:0x%X, tid:0x%X, rsp: 0x%X, opc:0x%02X,", cr, tid, rsp,
 		avrcp_hdr->opcode);
 	if (cr == BT_AVCTP_RESPONSE) {
 		if (avrcp_hdr->opcode == BT_AVRCP_OPC_VENDOR_DEPENDENT &&
-		    ctype == BT_AVRCP_CTYPE_CHANGED) {
+		    rsp == BT_AVRCP_RSP_CHANGED) {
 			/* Status changed notifiation, do not reset timer */
 		} else if (avrcp_hdr->opcode == BT_AVRCP_OPC_PASS_THROUGH) {
 			/* No max response time for pass through commands  */
@@ -474,17 +498,17 @@ static struct net_buf *avrcp_create_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr
 static struct net_buf *avrcp_create_unit_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr)
 {
 	struct net_buf *buf;
-	struct bt_avrcp_unit_info_cmd *cmd;
+	struct bt_avrcp_frame *cmd;
 
 	buf = avrcp_create_pdu(avrcp, cr);
 	if (!buf) {
-		return buf;
+		return NULL;
 	}
 
 	cmd = net_buf_add(buf, sizeof(*cmd));
 	memset(cmd, 0, sizeof(*cmd));
-	BT_AVRCP_HDR_SET_CTYPE(&cmd->hdr, cr == BT_AVCTP_CMD ? BT_AVRCP_CTYPE_STATUS
-							     : BT_AVRCP_CTYPE_IMPLEMENTED_STABLE);
+	BT_AVRCP_HDR_SET_CTYPE_OR_RSP(&cmd->hdr, cr == BT_AVCTP_CMD ? BT_AVRCP_CTYPE_STATUS
+								    : BT_AVRCP_RSP_STABLE);
 	BT_AVRCP_HDR_SET_SUBUNIT_ID(&cmd->hdr, BT_AVRCP_SUBUNIT_ID_IGNORE);
 	BT_AVRCP_HDR_SET_SUBUNIT_TYPE(&cmd->hdr, BT_AVRCP_SUBUNIT_TYPE_UNIT);
 	cmd->hdr.opcode = BT_AVRCP_OPC_UNIT_INFO;
@@ -495,20 +519,41 @@ static struct net_buf *avrcp_create_unit_pdu(struct bt_avrcp *avrcp, bt_avctp_cr
 static struct net_buf *avrcp_create_subunit_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr)
 {
 	struct net_buf *buf;
-	struct bt_avrcp_unit_info_cmd *cmd;
+	struct bt_avrcp_frame *cmd;
 
 	buf = avrcp_create_pdu(avrcp, cr);
 	if (!buf) {
-		return buf;
+		return NULL;
 	}
 
 	cmd = net_buf_add(buf, sizeof(*cmd));
 	memset(cmd, 0, sizeof(*cmd));
-	BT_AVRCP_HDR_SET_CTYPE(&cmd->hdr, cr == BT_AVCTP_CMD ? BT_AVRCP_CTYPE_STATUS
-							     : BT_AVRCP_CTYPE_IMPLEMENTED_STABLE);
+	BT_AVRCP_HDR_SET_CTYPE_OR_RSP(&cmd->hdr, cr == BT_AVCTP_CMD ? BT_AVRCP_CTYPE_STATUS
+								    : BT_AVRCP_RSP_STABLE);
 	BT_AVRCP_HDR_SET_SUBUNIT_ID(&cmd->hdr, BT_AVRCP_SUBUNIT_ID_IGNORE);
 	BT_AVRCP_HDR_SET_SUBUNIT_TYPE(&cmd->hdr, BT_AVRCP_SUBUNIT_TYPE_UNIT);
 	cmd->hdr.opcode = BT_AVRCP_OPC_SUBUNIT_INFO;
+
+	return buf;
+}
+
+static struct net_buf *avrcp_create_passthrough_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr,
+						    bt_avrcp_ctype_t ctype)
+{
+	struct net_buf *buf;
+	struct bt_avrcp_frame *cmd;
+
+	buf = avrcp_create_pdu(avrcp, cr);
+	if (!buf) {
+		return NULL;
+	}
+
+	cmd = net_buf_add(buf, sizeof(*cmd));
+	memset(cmd, 0, sizeof(*cmd));
+	BT_AVRCP_HDR_SET_CTYPE_OR_RSP(&cmd->hdr, ctype);
+	BT_AVRCP_HDR_SET_SUBUNIT_ID(&cmd->hdr, BT_AVRCP_SUBUNIT_ID_ZERO);
+	BT_AVRCP_HDR_SET_SUBUNIT_TYPE(&cmd->hdr, BT_AVRCP_SUBUNIT_TYPE_PANEL);
+	cmd->hdr.opcode = BT_AVRCP_OPC_PASS_THROUGH;
 
 	return buf;
 }
@@ -521,13 +566,15 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
 		(struct bt_avrcp_header *)(buf->data + sizeof(*avctp_hdr));
 	uint8_t tid = BT_AVCTP_HDR_GET_TRANSACTION_LABLE(avctp_hdr);
 	bt_avctp_cr_t cr = BT_AVCTP_HDR_GET_CR(avctp_hdr);
-	bt_avrcp_ctype_t ctype = BT_AVRCP_HDR_GET_CTYPE(avrcp_hdr);
+	bt_avrcp_ctype_t ctype = BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr);
 	bt_avrcp_subunit_type_t subunit_type = BT_AVRCP_HDR_GET_SUBUNIT_TYPE(avrcp_hdr);
 
 	LOG_DBG("AVRCP send cr:0x%X, tid:0x%X, ctype: 0x%X, opc:0x%02X\n", cr, tid, ctype,
 		avrcp_hdr->opcode);
 	err = bt_avctp_send(&(avrcp->session), buf);
 	if (err < 0) {
+		net_buf_unref(buf);
+		LOG_ERR("AVCTP send fail, err = %d", err);
 		return err;
 	}
 
@@ -572,6 +619,27 @@ int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp)
 	param[0] = FIELD_PREP(GENMASK(6, 4), AVRCP_SUBUNIT_PAGE) |
 		   FIELD_PREP(GENMASK(2, 0), AVRCP_SUBUNIT_EXTENSION_COED);
 	net_buf_add_mem(buf, param, sizeof(param));
+
+	return avrcp_send(avrcp, buf);
+}
+
+int bt_avrcp_passthrough(struct bt_avrcp *avrcp, bt_avrcp_opid_t operation_id,
+			 bt_avrcp_button_state_t state, const uint8_t *payload, uint8_t len)
+{
+	struct net_buf *buf;
+	uint8_t param[2];
+
+	buf = avrcp_create_passthrough_pdu(avrcp, BT_AVCTP_CMD, BT_AVRCP_CTYPE_CONTROL);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	param[0] = FIELD_PREP(GENMASK(7, 7), state) | FIELD_PREP(GENMASK(6, 0), operation_id);
+	param[1] = len;
+	net_buf_add_mem(buf, param, sizeof(param));
+	if (len) {
+		net_buf_add_mem(buf, payload, len);
+	}
 
 	return avrcp_send(avrcp, buf);
 }

@@ -10,3 +10,5 @@ toolchain:
 supported:
   - gpio
   - uart
+  - usbd
+vendor: renesas

@@ -313,6 +313,7 @@ ZTEST(arp_fn_tests, test_arp)
 	}
 
 	struct net_eth_hdr *eth_hdr = NULL;
+	struct net_eth_addr dst_lladdr;
 	struct net_pkt *pkt;
 	struct net_pkt *pkt2;
 	struct net_if *iface;
@@ -329,6 +330,8 @@ ZTEST(arp_fn_tests, test_arp)
 	struct in_addr gw = { { { 192, 0, 2, 42 } } };
 
 	net_arp_init();
+
+	(void)memset(&dst_lladdr, 0xff, sizeof(struct net_eth_addr));
 
 	iface = net_if_lookup_by_dev(DEVICE_GET(net_arp_test));
 
@@ -528,7 +531,9 @@ ZTEST(arp_fn_tests, test_arp)
 	zassert_not_null(pkt2, "ARP reply generation failed.");
 
 	/* The pending packet should now be sent */
-	switch (net_arp_input(pkt2, eth_hdr)) {
+	switch (net_arp_input(pkt2,
+			      (struct net_eth_addr *)net_pkt_lladdr_src(pkt2)->addr,
+			      &dst_lladdr)) {
 	case NET_OK:
 	case NET_CONTINUE:
 		break;
@@ -573,7 +578,9 @@ ZTEST(arp_fn_tests, test_arp)
 
 	req_test = true;
 
-	switch (net_arp_input(pkt2, eth_hdr)) {
+	switch (net_arp_input(pkt2,
+			      (struct net_eth_addr *)net_pkt_lladdr_src(pkt2)->addr,
+			      &dst_lladdr)) {
 	case NET_OK:
 	case NET_CONTINUE:
 		break;
@@ -630,7 +637,10 @@ ZTEST(arp_fn_tests, test_arp)
 
 		net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
 
-		verdict = net_arp_input(pkt, eth_hdr);
+		verdict = net_arp_input(pkt,
+					(struct net_eth_addr *)net_pkt_lladdr_src(pkt)->addr,
+					&dst_lladdr);
+
 		zassert_not_equal(verdict, NET_DROP, "Gratuitous ARP failed");
 
 		/* Then check that the HW address is changed for an existing

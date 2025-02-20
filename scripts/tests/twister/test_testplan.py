@@ -1110,167 +1110,7 @@ def test_testplan_add_configurations(
     expected_platform_names,
     expected_defaults
 ):
-    # tmp_path
-    # └ boards  <- board root
-    #   ├ zephyr
-    #   │ ├ p1
-    #   │ | ├ p1e1.yaml
-    #   │ | └ p1e2.yaml
-    #   │ └ p2
-    #   │   ├ p2.yaml
-    #   │   └ p2-1.yaml <- duplicate
-    #   │   └ p2-2.yaml <- load error
-    #   └ arm
-    #     └ p3
-    #       ├ p3.yaml
-    #       └ p3_B.conf
-    tmp_soc_root_dir = tmp_path / 'soc'
-    tmp_soc_root_dir.mkdir()
-
-    tmp_vend1_dir = tmp_soc_root_dir / 'zephyr'
-    tmp_vend1_dir.mkdir()
-
-    tmp_soc1_dir = tmp_vend1_dir / 's1'
-    tmp_soc1_dir.mkdir()
-
-    soc1_yaml = """\
-family:
-  - name: zephyr
-    series:
-      - name: zephyr_testing
-        socs:
-          - name: unit_testing
-"""
-    soc1_yamlfile = tmp_soc1_dir / 'soc.yml'
-    soc1_yamlfile.write_text(soc1_yaml)
-
-    tmp_board_root_dir = tmp_path / 'boards'
-    tmp_board_root_dir.mkdir()
-
-    tmp_vend1_dir = tmp_board_root_dir / 'zephyr'
-    tmp_vend1_dir.mkdir()
-
-    tmp_p1_dir = tmp_vend1_dir / 'p1'
-    tmp_p1_dir.mkdir()
-
-    p1e1_bs_yaml = """\
-boards:
-
-  - name: p1e1
-    vendor: zephyr
-    socs:
-      - name: unit_testing
-  - name: p1e2
-    vendor: zephyr
-    socs:
-      - name: unit_testing
-"""
-    p1e1_yamlfile = tmp_p1_dir / 'board.yml'
-    p1e1_yamlfile.write_text(p1e1_bs_yaml)
-
-    p1e1_yaml = """\
-identifier: p1e1
-name: Platform 1 Edition 1
-type: native
-arch: x86
-vendor: zephyr
-toolchain:
-  - zephyr
-twister: False
-"""
-    p1e1_yamlfile = tmp_p1_dir / 'p1e1.yaml'
-    p1e1_yamlfile.write_text(p1e1_yaml)
-
-    p1e2_yaml = """\
-identifier: p1e2
-name: Platform 1 Edition 2
-type: native
-arch: x86
-vendor: zephyr
-toolchain:
-  - zephyr
-"""
-    p1e2_yamlfile = tmp_p1_dir / 'p1e2.yaml'
-    p1e2_yamlfile.write_text(p1e2_yaml)
-
-    tmp_p2_dir = tmp_vend1_dir / 'p2'
-    tmp_p2_dir.mkdir()
-
-    p2_bs_yaml = """\
-boards:
-
-  - name: p2
-    vendor: zephyr
-    socs:
-      - name: unit_testing
-  - name: p2_2
-    vendor: zephyr
-    socs:
-      - name: unit_testing
-"""
-    p2_yamlfile = tmp_p2_dir / 'board.yml'
-    p2_yamlfile.write_text(p2_bs_yaml)
-
-    p2_yaml = """\
-identifier: p2/unit_testing
-name: Platform 2
-type: sim
-arch: x86
-vendor: vendor2
-toolchain:
-  - zephyr
-testing:
-  default: True
-"""
-    p2_yamlfile = tmp_p2_dir / 'p2.yaml'
-    p2_yamlfile.write_text(p2_yaml)
-
-
-    p2_2_yaml = """\
-testing:
-  ć#@%!#!#^#@%@:1.0
-identifier: p2_2
-name: Platform 2 2
-type: sim
-arch: x86
-vendor: vendor2
-toolchain:
-  - zephyr
-"""
-    p2_2_yamlfile = tmp_p2_dir / 'p2-2.yaml'
-    p2_2_yamlfile.write_text(p2_2_yaml)
-
-    tmp_vend2_dir = tmp_board_root_dir / 'arm'
-    tmp_vend2_dir.mkdir()
-
-    tmp_p3_dir = tmp_vend2_dir / 'p3'
-    tmp_p3_dir.mkdir()
-
-    p3_bs_yaml = """\
-boards:
-  - name: p3
-    vendor: zephyr
-    socs:
-      - name: unit_testing
-"""
-    p3_yamlfile = tmp_p3_dir / 'board.yml'
-    p3_yamlfile.write_text(p3_bs_yaml)
-
-    p3_yaml = """\
-identifier: p3
-name: Platform 3
-type: unit
-arch: arm
-vendor: vendor3
-toolchain:
-  - zephyr
-testing:
-  default: True
-"""
-    p3_yamlfile = tmp_p3_dir / 'p3.yaml'
-    p3_yamlfile.write_text(p3_yaml)
-
-    env = mock.Mock(board_roots=[tmp_board_root_dir],soc_roots=[tmp_path], arch_roots=[tmp_path])
+    env = mock.Mock(board_roots=[tmp_path / 'boards'], soc_roots=[tmp_path], arch_roots=[tmp_path])
 
     testplan = TestPlan(env=env)
 
@@ -1281,8 +1121,23 @@ testing:
         }
     }
 
+    def mock_gen_plat(board_roots, soc_roots, arch_roots):
+        assert [tmp_path] == board_roots
+        assert [tmp_path] == soc_roots
+        assert [tmp_path] == arch_roots
 
-    testplan.add_configurations()
+        platforms = [
+            mock.Mock(aliases=['p1e1/unit_testing', 'p1e1'], twister=False, default=False),
+            mock.Mock(aliases=['p1e2/unit_testing', 'p1e2'], twister=True, default=False),
+            mock.Mock(aliases=['p2/unit_testing', 'p2'], twister=True, default=True),
+            mock.Mock(aliases=['p3/unit_testing', 'p3'], twister=True, default=True),
+        ]
+        for platform in platforms:
+            type(platform).name = mock.PropertyMock(return_value=platform.aliases[0])
+            yield platform
+
+    with mock.patch('twisterlib.testplan.generate_platforms', mock_gen_plat):
+        testplan.add_configurations()
 
     if expected_defaults is not None:
         print(expected_defaults)

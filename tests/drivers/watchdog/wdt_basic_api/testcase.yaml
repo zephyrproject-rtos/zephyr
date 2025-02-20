@@ -20,6 +20,9 @@ tests:
       - mps2/an383
       - mps2/an386
       - mps2/an500
+      - panb511evb/nrf54l15/cpuapp
+      - panb511evb/nrf54l15/cpuflpr
+      - panb511evb/nrf54l15/cpuflpr/xip
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"

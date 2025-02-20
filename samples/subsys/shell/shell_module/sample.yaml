@@ -1,7 +1,7 @@
 sample:
   name: Shell Sample
 common:
-  filter: not CONFIG_NATIVE_LIBC
+  filter: not CONFIG_NATIVE_LIBC and not CONFIG_SOC_SERIES_BSIM_NRFXX
   platform_exclude:
     - native_posix
     - native_posix/native/64

@@ -103,4 +103,14 @@
 			drive-strength = "highspeed-high";
 		};
 	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			/* USBP USBN */
+			psels = <RA_PSEL(RA_PSEL_USBFS, 8, 15)>,
+				<RA_PSEL(RA_PSEL_USBFS, 8, 14)>,
+				<RA_PSEL(RA_PSEL_USBFS, 4, 7)>;
+			drive-strength = "high";
+		};
+	};
 };

@@ -2169,8 +2169,6 @@ enum {
 	BT_LE_SCAN_OPT_NO_1M = BIT(3),
 };
 
-#define BT_LE_SCAN_OPT_FILTER_WHITELIST __DEPRECATED_MACRO BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST
-
 enum {
 	/** Scan without requesting additional information from advertisers. */
 	BT_LE_SCAN_TYPE_PASSIVE = 0x00,

@@ -72,7 +72,7 @@ const clock_frg_clk_config_t g_frg12Config_clock_init = {
 	.num = 12, .sfg_clock_src = kCLOCK_FrgMainClk, .divider = 255U, .mult = 167};
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
-/* USB PHY condfiguration */
+/* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL     (0x0CU)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)

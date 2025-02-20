@@ -18,7 +18,8 @@
 
 #ifndef _ASMLANGUAGE
 
-void __esp_platform_start(void);
+void __esp_platform_mcuboot_start(void);
+void __esp_platform_app_start(void);
 
 static inline uint32_t esp_core_id(void)
 {

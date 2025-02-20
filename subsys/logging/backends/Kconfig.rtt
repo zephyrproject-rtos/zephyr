@@ -4,7 +4,7 @@
 config LOG_BACKEND_RTT
 	bool "Segger J-Link RTT backend"
 	depends on USE_SEGGER_RTT
-	default y if !SHELL_BACKEND_RTT
+	default y if !SHELL_LOG_BACKEND
 	select SEGGER_RTT_CUSTOM_LOCKING
 	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	help

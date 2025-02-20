@@ -212,6 +212,7 @@ SECTIONS
     *libzephyr.a:console_init.*(.literal .text .literal.* .text.*)
     *libzephyr.a:soc_init.*(.literal .text .literal.* .text.*)
     *libzephyr.a:hw_init.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:soc_random.*(.literal .text .literal.* .text.*)
     *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
     *libsubsys__net__l2__ethernet.a:(.literal .text .literal.* .text.*)
     *libsubsys__net__lib__config.a:(.literal .text .literal.* .text.*)
@@ -357,7 +358,6 @@ SECTIONS
 
     *libzephyr.a:esp_image_format.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_ops.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:flash_ops_esp32c2.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_encrypt.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_encryption_secure_features.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_partitions.*(.literal .text .literal.* .text.*)
@@ -463,6 +463,7 @@ SECTIONS
     *libzephyr.a:console_init.*(.rodata .rodata.*)
     *libzephyr.a:soc_init.*(.rodata .rodata.*)
     *libzephyr.a:hw_init.*(.rodata .rodata.*)
+    *libzephyr.a:soc_random.*(.rodata .rodata.*)
     *libzephyr.a:cache_utils.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:hal] */

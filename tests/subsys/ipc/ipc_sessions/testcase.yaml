@@ -1,0 +1,50 @@
+sample:
+  name: IPC Service integration test
+  description: IPC Service integration and efficiency test
+
+common:
+  sysbuild: true
+  tags: ipc ipc_sessions
+  harness: ztest
+
+tests:
+  sample.ipc.ipc_sessions.nrf5340dk:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+  sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpurad:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - CONFIG_IPC_TEST_SKIP_CORE_RESET=y
+  sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpuppr:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - FILE_SUFFIX=cpuppr
+      - ipc_sessions_SNIPPET=nordic-ppr
+  sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_no_unbound_cpuppr:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - FILE_SUFFIX=cpuppr
+      - ipc_sessions_SNIPPET=nordic-ppr
+      - CONFIG_IPC_TEST_SKIP_UNBOUND=y
+      - CONFIG_IPC_SERVICE_BACKEND_ICMSG_V1=y
+  sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpuppr_no_unbound:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - FILE_SUFFIX=cpuppr
+      - ipc_sessions_SNIPPET=nordic-ppr
+      - CONFIG_IPC_TEST_SKIP_UNBOUND=y
+      - remote_CONFIG_IPC_SERVICE_BACKEND_ICMSG_V1=y

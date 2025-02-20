@@ -78,6 +78,7 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 		return -ENOTSUP;
 	}
 
+#if CONFIG_GPIO_RA_HAS_VBTICTLR
 	if (config->vbatt_pins[0] != 0xFF) {
 		uint32_t clear = 0;
 
@@ -93,6 +94,7 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 
 		R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_OM_LPC_BATT);
 	}
+#endif
 
 	pincfg.port_num = config->port_num;
 	pincfg.pin_num = pin;

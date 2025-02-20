@@ -7,8 +7,6 @@
 #ifndef INTERRUPT_UTIL_H_
 #define INTERRUPT_UTIL_H_
 
-#define MS_TO_US(ms)  (ms * USEC_PER_MSEC)
-
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <cmsis_core.h>
 

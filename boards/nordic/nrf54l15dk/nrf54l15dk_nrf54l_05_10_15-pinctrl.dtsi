@@ -77,4 +77,19 @@
 			low-power-enable;
 		};
 	};
+
+	/omit-if-no-ref/ grtc_default: grtc_default {
+		group1 {
+			psels = <NRF_PSEL(GRTC_CLKOUT_FAST, 1, 8)>,
+				<NRF_PSEL(GRTC_CLKOUT_32K, 0, 4)>;
+		};
+	};
+
+	/omit-if-no-ref/ grtc_sleep: grtc_sleep {
+		group1 {
+			psels = <NRF_PSEL(GRTC_CLKOUT_FAST, 1, 8)>,
+				<NRF_PSEL(GRTC_CLKOUT_32K, 0, 4)>;
+			low-power-enable;
+		};
+	};
 };
