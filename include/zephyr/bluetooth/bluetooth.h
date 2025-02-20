@@ -19,6 +19,7 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <zephyr/sys/util.h>
@@ -47,6 +48,13 @@ extern "C" {
  * supported.
  */
 #define BT_ID_DEFAULT 0
+
+/**
+ * @brief Number of octets for local supported
+ *
+ * The value of 8 correspond to page 0 in the LE Controller supported features
+ */
+#define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE 8
 
 /** Opaque type representing an advertiser. */
 struct bt_le_ext_adv;
@@ -516,6 +524,78 @@ size_t bt_data_get_len(const struct bt_data data[], size_t data_count);
  * @return Number of bytes written in @p output.
  */
 size_t bt_data_serialize(const struct bt_data *input, uint8_t *output);
+
+struct bt_le_local_features {
+	/**
+	 * @brief Local LE controller supported features.
+	 *
+	 * Refer to BT_LE_FEAT_BIT_* for values.
+	 * Refer to the BT_FEAT_LE_* macros for value comparionson.
+	 * See Bluetooth Core Specification, Vol 6, Part B, Section 4.6.
+	 */
+	uint8_t features[BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE];
+
+	/**
+	 * @brief Local LE controller supported states
+	 *
+	 * Refer to BT_LE_STATES_* for values.
+	 * See Bluetooth Core Specification 6.0, Vol 4, Part E, Section 7.8.27
+	 */
+	uint64_t states;
+
+	/**
+	 * @brief ACL data packet length
+	 *
+	 * This represents the maximum ACL HCI Data packet which can be sent from the Host to the
+	 * Controller.
+	 * The Host may support L2CAP and ATT MTUs larger than this value.
+	 * See Bluetooth Core Specification, Vol 6, Part E, Section 7.8.2.
+	 */
+	uint16_t acl_mtu;
+	/** Total number of ACL data packets */
+	uint8_t acl_pkts;
+
+	/**
+	 * @brief ISO data packet length
+	 *
+	 * This represents the maximum ISO HCI Data packet which can be sent from the Host to the
+	 * Controller.
+	 * ISO SDUs above this size can be fragmented assuming that the number of
+	 * @ref bt_le_local_features.iso_pkts support the maximum size.
+	 */
+	uint16_t iso_mtu;
+	/** Total number of ISO data packets */
+	uint8_t iso_pkts;
+
+	/**
+	 * @brief Maximum size of the controller resolving list.
+	 *
+	 * See Bluetooth Core Specification, Vol 6, Part E, Section 7.8.41.
+	 */
+	uint8_t rl_size;
+
+	/**
+	 * @brief Maximum advertising data length
+	 *
+	 * @note The maximum advertising data length also depends on advertising type.
+	 *
+	 * See Bluetooth Core Specification, Vol 6, Part E, Section 7.8.57.
+	 */
+	uint16_t max_adv_data_len;
+};
+
+/**
+ * @brief Get local Bluetooth LE controller features
+ *
+ * Can only be called after bt_enable()
+ *
+ * @param local_features Local features struct to be populated with information.
+ *
+ * @retval 0 Success
+ * @retval -EAGAIN The information is not yet available.
+ * @retval -EINVAL @p local_features is NULL.
+ */
+int bt_le_get_local_features(struct bt_le_local_features *local_features);
 
 /** Advertising options */
 enum {
