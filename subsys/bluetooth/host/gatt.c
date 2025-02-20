@@ -720,7 +720,7 @@ static int db_hash_setup(struct gen_hash_state *state, uint8_t *key)
 		LOG_ERR("Unable to import the key for AES CMAC %d", ret);
 		return -EIO;
 	}
-	state->operation = psa_mac_operation_init();
+	memset(&state->operation, 0, sizeof(state->operation));
 
 	ret = psa_mac_sign_setup(&(state->operation), state->key, PSA_ALG_CMAC);
 	if (ret != PSA_SUCCESS) {
