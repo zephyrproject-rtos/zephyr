@@ -55,6 +55,7 @@ static const struct video_format_cap fmts[] = {
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_YUYV),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGB565),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_XRGB32),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGB24),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGGB8),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_GRBG8),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_BGGR8),
@@ -156,6 +157,16 @@ static int video_sw_generator_fill_xrgb32(uint8_t *buffer, uint16_t pitch)
 	return 1;
 }
 
+static int video_sw_generator_fill_rgb24(uint8_t *buffer, uint16_t pitch)
+{
+	for (size_t i = 0; i < pitch; i += 3) {
+		buffer[i + 0] = pattern_8bars_rgb[8 * i / pitch][0];
+		buffer[i + 1] = pattern_8bars_rgb[8 * i / pitch][1];
+		buffer[i + 2] = pattern_8bars_rgb[8 * i / pitch][2];
+	}
+	return 1;
+}
+
 static int video_sw_generator_fill_rgb565(uint8_t *buffer, uint16_t pitch)
 {
 	for (size_t i = 0; i < pitch; i += 1) {
@@ -201,6 +212,9 @@ static void video_sw_generator_fill(const struct device *const dev, struct video
 		break;
 	case VIDEO_PIX_FMT_XRGB32:
 		lines = video_sw_generator_fill_xrgb32(vbuf->buffer, fmt->pitch);
+		break;
+	case VIDEO_PIX_FMT_RGB24:
+		lines = video_sw_generator_fill_rgb24(vbuf->buffer, fmt->pitch);
 		break;
 	case VIDEO_PIX_FMT_RGB565:
 		lines = video_sw_generator_fill_rgb565(vbuf->buffer, fmt->pitch);
