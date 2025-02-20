@@ -15,28 +15,6 @@
 
 LOG_MODULE_REGISTER(dsi_renesas_ra, CONFIG_MIPI_DSI_LOG_LEVEL);
 
-/* MIPI PHY Macros */
-#define MIPI_PHY_CLKSTPT (1183)
-#define MIPI_PHY_CLKBFHT (11)
-#define MIPI_PHY_CLKKPT  (26)
-#define MIPI_PHY_GOLPBKT (40)
-
-#define MIPI_PHY_TINIT     (71999)
-#define MIPI_PHY_TCLKPREP  (8)
-#define MIPI_PHY_THSPREP   (5)
-#define MIPI_PHY_TCLKTRAIL (7)
-#define MIPI_PHY_TCLKPOST  (19)
-#define MIPI_PHY_TCLKPRE   (1)
-#define MIPI_PHY_TCLKZERO  (27)
-#define MIPI_PHY_THSEXIT   (11)
-#define MIPI_PHY_THSTRAIL  (8)
-#define MIPI_PHY_THSZERO   (19)
-#define MIPI_PHY_TLPEXIT   (7)
-#define LP_DIVISOR         (4)
-#define PLL_MUL_SETTING    (49)
-#define VIDEO_MODE_DELAY   (186)
-#define ULPS_WAKEUP_PERIOD (97)
-
 struct mipi_dsi_renesas_ra_config {
 	const struct device *clock_dev;
 	struct clock_control_ra_subsys_cfg clock_dsi_subsys;
@@ -246,6 +224,65 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 	return 0;
 }
 
+#define RENESAS_RA_MIPI_PHYS_SETTING_DEFINE(n)                                                     \
+	static const mipi_phy_timing_t mipi_phy_##n##_timing = {                                   \
+		.t_init = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_init), 0, 0x7FFF),        \
+		.t_clk_prep = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_clk_prep), 0, 0xFF),  \
+		.t_hs_prep = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_hs_prep), 0, 0xFF),    \
+		.t_lp_exit = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_lp_exit), 0, 0xFF),    \
+		.dphytim4_b =                                                                      \
+			{                                                                          \
+				.t_clk_zero = DT_PROP_BY_IDX(DT_INST_CHILD(n, phys_timing),        \
+							     dphytim4, 0),                         \
+				.t_clk_pre = DT_PROP_BY_IDX(DT_INST_CHILD(n, phys_timing),         \
+							    dphytim4, 1),                          \
+				.t_clk_post = DT_PROP_BY_IDX(DT_INST_CHILD(n, phys_timing),        \
+							     dphytim4, 2),                         \
+				.t_clk_trail = DT_PROP_BY_IDX(DT_INST_CHILD(n, phys_timing),       \
+							      dphytim4, 3),                        \
+			},                                                                         \
+		.dphytim5_b =                                                                      \
+			{                                                                          \
+				.t_hs_zero = DT_PROP_BY_IDX(DT_INST_CHILD(n, phys_timing),         \
+							    dphytim5, 0),                          \
+				.t_hs_trail = DT_PROP_BY_IDX(DT_INST_CHILD(n, phys_timing),        \
+							     dphytim5, 1),                         \
+				.t_hs_exit = DT_PROP_BY_IDX(DT_INST_CHILD(n, phys_timing),         \
+							    dphytim5, 2),                          \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static const mipi_phy_cfg_t mipi_phy_##n##_cfg = {                                         \
+		.pll_settings =                                                                    \
+			{                                                                          \
+				.div = DT_INST_PROP(n, pll_div) - 1,                               \
+				.mul_frac = DT_INST_ENUM_IDX(n, pll_mul_frac),                     \
+				.mul_int = CLAMP(DT_INST_PROP(n, pll_mul_int), 20, 180) - 1,       \
+			},                                                                         \
+		.lp_divisor = CLAMP(DT_INST_PROP(n, lp_divisor), 1, 32) - 1,                       \
+		.p_timing = &mipi_phy_##n##_timing,                                                \
+	};                                                                                         \
+                                                                                                   \
+	mipi_phy_ctrl_t mipi_phy_##n##_ctrl;                                                       \
+                                                                                                   \
+	static const mipi_phy_instance_t mipi_phy##n = {                                           \
+		.p_ctrl = &mipi_phy_##n##_ctrl,                                                    \
+		.p_cfg = &mipi_phy_##n##_cfg,                                                      \
+		.p_api = &g_mipi_phy,                                                              \
+	};
+
+#define RENESAS_RA_MIPI_DSI_PHYS_GET(n) &mipi_phy##n
+
+#define RENESAS_RA_MIPI_DSI_TIMING_DEFINE(n)                                                       \
+	static const mipi_dsi_timing_t mipi_dsi_##n##_timing = {                                   \
+		.clock_stop_time = DT_INST_PROP_BY_IDX(n, timing, 0),                              \
+		.clock_beforehand_time = DT_INST_PROP_BY_IDX(n, timing, 1),                        \
+		.clock_keep_time = DT_INST_PROP_BY_IDX(n, timing, 2),                              \
+		.go_lp_and_back = DT_INST_PROP_BY_IDX(n, timing, 3),                               \
+	};
+
+#define RENESAS_RA_MIPI_DSI_TIMING_GET(n) &mipi_dsi_##n##_timing
+
 #define RENESAS_MIPI_DSI_DEVICE(id)                                                                \
 	static void mipi_dsi_ra_configure_func_##id(void)                                          \
 	{                                                                                          \
@@ -256,33 +293,8 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 		irq_enable(DT_INST_IRQ_BY_NAME(id, sq0, irq));                                     \
 	}                                                                                          \
                                                                                                    \
-	mipi_phy_ctrl_t mipi_phy_##id##_ctrl;                                                      \
-                                                                                                   \
-	static const mipi_phy_timing_t mipi_phy_##id##_timing = {                                  \
-		.t_init = 0x3FFFF & (uint32_t)MIPI_PHY_TINIT,                                      \
-		.t_clk_prep = (uint8_t)MIPI_PHY_TCLKPREP,                                          \
-		.t_hs_prep = (uint8_t)MIPI_PHY_THSPREP,                                            \
-		.dphytim4_b.t_clk_trail = (uint32_t)MIPI_PHY_TCLKTRAIL,                            \
-		.dphytim4_b.t_clk_post = (uint32_t)MIPI_PHY_TCLKPOST,                              \
-		.dphytim4_b.t_clk_pre = (uint32_t)MIPI_PHY_TCLKPRE,                                \
-		.dphytim4_b.t_clk_zero = (uint32_t)MIPI_PHY_TCLKZERO,                              \
-		.dphytim5_b.t_hs_exit = (uint32_t)MIPI_PHY_THSEXIT,                                \
-		.dphytim5_b.t_hs_trail = (uint32_t)MIPI_PHY_THSTRAIL,                              \
-		.dphytim5_b.t_hs_zero = (uint32_t)MIPI_PHY_THSZERO,                                \
-		.t_lp_exit = (uint32_t)MIPI_PHY_TLPEXIT,                                           \
-	};                                                                                         \
-                                                                                                   \
-	static const mipi_phy_cfg_t mipi_phy_##id##_cfg = {                                        \
-		.pll_settings = {.div = 0, .mul_int = PLL_MUL_SETTING, .mul_frac = 0},             \
-		.lp_divisor = LP_DIVISOR,                                                          \
-		.p_timing = &mipi_phy_##id##_timing,                                               \
-	};                                                                                         \
-                                                                                                   \
-	static const mipi_phy_instance_t mipi_phy##id = {                                          \
-		.p_ctrl = &mipi_phy_##id##_ctrl,                                                   \
-		.p_cfg = &mipi_phy_##id##_cfg,                                                     \
-		.p_api = &g_mipi_phy,                                                              \
-	};                                                                                         \
+	RENESAS_RA_MIPI_DSI_TIMING_DEFINE(id)                                                      \
+	RENESAS_RA_MIPI_PHYS_SETTING_DEFINE(id)                                                    \
                                                                                                    \
 	static const mipi_dsi_extended_cfg_t mipi_dsi_##id##_extended_cfg = {                      \
 		.dsi_seq0.ipl = DT_INST_IRQ_BY_NAME(id, sq0, priority),                            \
@@ -324,51 +336,46 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 			       R_DSILINK_SQCH1IER_RXAKE_Msk,                                       \
 	};                                                                                         \
                                                                                                    \
-	static const mipi_dsi_timing_t mipi_dsi_##id##_timing = {                                  \
-		.clock_stop_time = MIPI_PHY_CLKSTPT,                                               \
-		.clock_beforehand_time = MIPI_PHY_CLKBFHT,                                         \
-		.clock_keep_time = MIPI_PHY_CLKKPT,                                                \
-		.go_lp_and_back = MIPI_PHY_GOLPBKT,                                                \
-	};                                                                                         \
-                                                                                                   \
 	static const struct mipi_dsi_renesas_ra_config ra_config_##id = {                          \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
-		.clock_dsi_subsys = {                                                              \
-			.mstp = DT_INST_CLOCKS_CELL(id, mstp),                                     \
-			.stop_bit = DT_INST_CLOCKS_CELL(id, stop_bit),                             \
-		},                                                                                 \
+		.clock_dsi_subsys =                                                                \
+			{                                                                          \
+				.mstp = DT_INST_CLOCKS_CELL(id, mstp),                             \
+				.stop_bit = DT_INST_CLOCKS_CELL(id, stop_bit),                     \
+			},                                                                         \
 		.irq_configure = mipi_dsi_ra_configure_func_##id,                                  \
 	};                                                                                         \
                                                                                                    \
 	static struct mipi_dsi_renesas_ra_data ra_data_##id = {                                    \
-		.mipi_dsi_cfg = {                                                                  \
-			.p_mipi_phy_instance = &mipi_phy##id,                                      \
-			.p_timing = &mipi_dsi_##id##_timing,                                       \
-			.sync_pulse = (0),                                                         \
-			.vertical_sync_polarity = 1,                                               \
-			.horizontal_sync_polarity = 1,                                             \
-			.video_mode_delay = VIDEO_MODE_DELAY,                                      \
-			.hsa_no_lp = R_DSILINK_VMSET0R_HSANOLP_Msk,                                \
-			.hbp_no_lp = R_DSILINK_VMSET0R_HBPNOLP_Msk,                                \
-			.hfp_no_lp = R_DSILINK_VMSET0R_HFPNOLP_Msk,                                \
-			.ulps_wakeup_period = ULPS_WAKEUP_PERIOD,                                  \
-			.continuous_clock = (1),                                                   \
-			.hs_tx_timeout = 0,                                                        \
-			.lp_rx_timeout = 0,                                                        \
-			.turnaround_timeout = 0,                                                   \
-			.bta_timeout = 0,                                                          \
-			.lprw_timeout = 0,                                                         \
-			.hsrw_timeout = 0,                                                         \
-			.max_return_packet_size = 1,                                               \
-			.ecc_enable = (1),                                                         \
-			.crc_check_mask = (mipi_dsi_vc_t)(0x0),                                    \
-			.scramble_enable = (0),                                                    \
-			.tearing_detect = (0),                                                     \
-			.eotp_enable = (1),                                                        \
-			.p_extend = &mipi_dsi_##id##_extended_cfg,                                 \
-			.p_callback = mipi_dsi_callback,                                           \
-			.p_context = DEVICE_DT_INST_GET(id),                                       \
-		},                                                                                 \
+		.mipi_dsi_cfg =                                                                    \
+			{                                                                          \
+				.p_mipi_phy_instance = RENESAS_RA_MIPI_DSI_PHYS_GET(id),           \
+				.p_timing = RENESAS_RA_MIPI_DSI_TIMING_GET(id),                    \
+				.sync_pulse = (0),                                                 \
+				.vertical_sync_polarity = 1,                                       \
+				.horizontal_sync_polarity = 1,                                     \
+				.video_mode_delay = DT_INST_PROP(id, video_mode_delay),            \
+				.hsa_no_lp = R_DSILINK_VMSET0R_HSANOLP_Msk,                        \
+				.hbp_no_lp = R_DSILINK_VMSET0R_HBPNOLP_Msk,                        \
+				.hfp_no_lp = R_DSILINK_VMSET0R_HFPNOLP_Msk,                        \
+				.ulps_wakeup_period = DT_INST_PROP(id, ulps_wakeup_period),        \
+				.continuous_clock = (1),                                           \
+				.hs_tx_timeout = 0,                                                \
+				.lp_rx_timeout = 0,                                                \
+				.turnaround_timeout = 0,                                           \
+				.bta_timeout = 0,                                                  \
+				.lprw_timeout = 0,                                                 \
+				.hsrw_timeout = 0,                                                 \
+				.max_return_packet_size = 1,                                       \
+				.ecc_enable = (1),                                                 \
+				.crc_check_mask = (mipi_dsi_vc_t)(0x0),                            \
+				.scramble_enable = (0),                                            \
+				.tearing_detect = (0),                                             \
+				.eotp_enable = (1),                                                \
+				.p_extend = &mipi_dsi_##id##_extended_cfg,                         \
+				.p_callback = mipi_dsi_callback,                                   \
+				.p_context = DEVICE_DT_INST_GET(id),                               \
+			},                                                                         \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(id, &mipi_dsi_renesas_ra_init, NULL, &ra_data_##id, &ra_config_##id, \
