@@ -352,7 +352,6 @@ static int mimxrt595_evk_init(void)
 	INPUTMUX_EnableSignal(INPUTMUX,
 			kINPUTMUX_I3c1TxToDmac1Ch31RequestEna, true);
 #endif /* dma1 */
-	INPUTMUX_Deinit(INPUTMUX);
 
 #ifdef CONFIG_REBOOT
 	/*
