@@ -216,7 +216,7 @@ endfunction()
 #                             and debugging.
 #
 function(ExternalZephyrProject_Add)
-  set(app_types MAIN BOOTLOADER)
+  set(app_types MAIN BOOTLOADER FIRMWARE_LOADER)
   cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE;BUILD_ONLY" "" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
