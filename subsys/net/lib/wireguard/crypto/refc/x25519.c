@@ -145,7 +145,7 @@ static void __attribute__((unused)) swapout(uint8_t *out, limb_t *x)
 	memcpy(out, x, sizeof(fe));
 }
 
-static void mul(fe out, const fe a, const fe b, unsigned int nb)
+static void mul(fe out, const fe a, const limb_t b[], unsigned int nb)
 {
 	/* GCC at least produces pretty decent asm for this, so don't need to have dedicated asm. */
 	limb_t accum[2 * NLIMBS] = {0};
