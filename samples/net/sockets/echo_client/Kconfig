@@ -58,4 +58,5 @@ config NET_SAMPLE_SEND_ITERATIONS
 	  Send sample data this many times before exiting. A value of
 	  zero means that the sample application is run forever.
 
+source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"
