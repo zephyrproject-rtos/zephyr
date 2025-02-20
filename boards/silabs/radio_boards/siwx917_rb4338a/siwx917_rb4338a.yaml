@@ -14,5 +14,6 @@ supported:
   - flash
   - gpio
   - i2c
+  - pwm
   - wifi
 vendor: silabs
