@@ -18,6 +18,7 @@ struct current_sense_amplifier_dt_spec {
 	uint16_t sense_gain_div;
 	uint16_t noise_threshold;
 	int16_t zero_current_voltage_mv;
+	enum adc_gain gain_extended_range;
 	bool enable_calibration;
 };
 
@@ -40,6 +41,7 @@ struct current_sense_amplifier_dt_spec {
 		.sense_gain_div = DT_PROP(node_id, sense_gain_div),                                \
 		.noise_threshold = DT_PROP(node_id, zephyr_noise_threshold),                       \
 		.zero_current_voltage_mv = DT_PROP(node_id, zero_current_voltage_mv),              \
+		.gain_extended_range = DT_STRING_TOKEN_OR(node_id, gain_extended_range, 0xFF),     \
 		.enable_calibration = DT_PROP_OR(node_id, enable_calibration, false),              \
 	}
 
