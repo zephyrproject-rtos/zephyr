@@ -5573,6 +5573,9 @@ endfunction()
 # in the Zephyr build, but with some important modifications. The list of
 # flags to remove and flags to append is controlled respectively by the
 # LLEXT_REMOVE_FLAGS and LLEXT_APPEND_FLAGS global variables.
+# In case Link-Time Optimization (LTO) is enabled (CONFIG_LLEXT_SYMBOL_GC),
+# the additional toolchain-specific flags controlled by the
+# LLEXT_LTO_COMPILE_FLAGS and LLEXT_LTO_LINK_FLAGS are added as well.
 #
 # The following custom properties of <target_name> are defined and can be
 # retrieved using the get_target_property() function:
@@ -5664,6 +5667,17 @@ function(add_llext_target target_name)
       ${LLEXT_APPEND_FLAGS}
     )
 
+  endif()
+
+  # toolchain-specific options for garbage collection
+  if(CONFIG_LLEXT_SYMBOL_GC)
+	target_compile_options(
+		${llext_lib_target} PRIVATE
+		${LLEXT_SYMBOL_GC_COMPILE_FLAGS}
+	)
+	target_link_options(${llext_lib_target} PRIVATE
+		${LLEXT_SYMBOL_GC_LINK_FLAGS}
+	)
   endif()
 
   target_compile_definitions(${llext_lib_target} PRIVATE

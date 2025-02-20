@@ -89,11 +89,16 @@ list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT -mabi=${riscv_mabi} -march=${riscv_march
 set(LLEXT_REMOVE_FLAGS
   -fno-pic
   -fno-pie
-  -ffunction-sections
-  -fdata-sections
   -g.*
   -Os
 )
+
+if(NOT DEFINED(CONFIG_LLEXT_SYMBOL_GC))
+  list(APPEND LLEXT_REMOVE_FLAGS
+    -ffunction-sections
+    -fdata-sections
+  )
+endif()
 
 # Flags to be added to llext code compilation
 # mno-relax is needed to stop gcc from generating R_RISCV_ALIGN relocations,
