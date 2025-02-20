@@ -12,6 +12,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mspi.h>
+#include <zephyr/pm/device_runtime.h>
 #include "memc_mspi_aps_z8.h"
 #if CONFIG_SOC_FAMILY_AMBIQ
 #include "mspi_ambiq.h"
@@ -50,6 +51,7 @@ struct memc_mspi_aps_z8_config {
 	MSPI_XIP_BASE_ADDR_DECLARE(xip_base_addr)
 
 	bool                           sw_multi_periph;
+	bool                           pm_dev_rt_auto;
 };
 
 struct memc_mspi_aps_z8_data {
@@ -555,7 +557,10 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 	}
 #endif /* MSPI_SCRAMBLE */
 
-	release(psram);
+	if (!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) ||
+	    !cfg->pm_dev_rt_auto) {
+		release(psram);
+	}
 
 	return 0;
 }
@@ -609,7 +614,8 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_TIMING,                                 \
 					      timing_cfg_mask, MSPI_TIMING_CONFIG_MASK(n))        \
 		MSPI_XIP_BASE_ADDR_INIT(xip_base_addr, DT_INST_BUS(n))                            \
-		.sw_multi_periph    = DT_PROP(DT_INST_BUS(n), software_multiperipheral)           \
+		.sw_multi_periph    = DT_PROP(DT_INST_BUS(n), software_multiperipheral),          \
+		.pm_dev_rt_auto     = DT_INST_PROP(n, zephyr_pm_device_runtime_auto)              \
 	};                                                                                        \
 	static struct memc_mspi_aps_z8_data                                                       \
 		memc_mspi_aps_z8_data_##n = {                                                     \

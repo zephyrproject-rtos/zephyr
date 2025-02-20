@@ -221,6 +221,7 @@ zephyr_udc0: &usb {
 		ce-break-config = <1024 4>;
 		ambiq,timing-config-mask = <0x62>;
 		ambiq,timing-config = <8 7 1 0 0 3 10>;
+		zephyr,pm-device-runtime-auto;
 	};
 };
 

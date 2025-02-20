@@ -10,3 +10,15 @@
 		psram0 = &psram0;
 	};
 };
+
+&mspi0 {
+	/delete-property/ zephyr,pm-device-runtime-auto;
+};
+
+&psram0 {
+	/delete-property/ zephyr,pm-device-runtime-auto;
+};
+
+&mspi1 {
+	/delete-property/ zephyr,pm-device-runtime-auto;
+};
