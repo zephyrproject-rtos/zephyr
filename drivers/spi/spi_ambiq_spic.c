@@ -44,6 +44,7 @@ LOG_MODULE_REGISTER(spi_ambiq);
 struct spi_ambiq_config {
 	uint32_t base;
 	int size;
+	int inst_idx;
 	uint32_t clock_freq;
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_config_func)(void);
@@ -53,7 +54,6 @@ struct spi_ambiq_data {
 	struct spi_context ctx;
 	am_hal_iom_config_t iom_cfg;
 	void *iom_handler;
-	int inst_idx;
 	bool cont;
 	bool pm_policy_state_on;
 };
@@ -244,7 +244,7 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	ctx->config = config;
 
 #ifdef CONFIG_SPI_AMBIQ_DMA
-	data->iom_cfg.pNBTxnBuf = spi_dma_tcb_buf[data->inst_idx].buf;
+	data->iom_cfg.pNBTxnBuf = spi_dma_tcb_buf[cfg->inst_idx].buf;
 	data->iom_cfg.ui32NBTxnBufLength = CONFIG_SPI_DMA_TCB_BUFFER_SIZE;
 #endif
 
@@ -506,8 +506,7 @@ static int spi_ambiq_init(const struct device *dev)
 	const struct spi_ambiq_config *cfg = dev->config;
 	int ret = 0;
 
-	if (AM_HAL_STATUS_SUCCESS !=
-	    am_hal_iom_initialize((cfg->base - IOM0_BASE) / cfg->size, &data->iom_handler)) {
+	if (AM_HAL_STATUS_SUCCESS != am_hal_iom_initialize(cfg->inst_idx, &data->iom_handler)) {
 		LOG_ERR("Fail to initialize SPI\n");
 		return -ENXIO;
 	}
@@ -575,10 +574,11 @@ static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 	static struct spi_ambiq_data spi_ambiq_data##n = {                                         \
 		SPI_CONTEXT_INIT_LOCK(spi_ambiq_data##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx),                                     \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx).inst_idx = n};                \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
 	static const struct spi_ambiq_config spi_ambiq_config##n = {                               \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.size = DT_INST_REG_SIZE(n),                                                       \
+		.inst_idx = (DT_INST_REG_ADDR(n) - IOM0_BASE) / (IOM1_BASE - IOM0_BASE),           \
 		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = spi_irq_config_func_##n};                                       \
