@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Atmosic 2021-2024
+ * Copyright (C) Atmosic 2021-2025
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,15 @@ LOG_MODULE_REGISTER(i2c_atm, CONFIG_I2C_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_ATMX2) || defined(CONFIG_SOC_SERIES_ATM33)
 #define I2C_GPIO_REQUIRED 1
+#endif
+
+#ifdef CONFIG_SOC_ATM34XX_2
+#define I2C_CLK_STRETCH_CHECK_REQUIRED 1
+#define I2C_MAX_WAIT_MS	5
+#endif
+
+#ifdef I2C_CLOCK_CONTROL__CLK_STRETCH_EN__MASK
+#define I2C_CLK_STRETCH_SUPPORTED 1
 #endif
 
 typedef enum i2c_head_e {
@@ -80,6 +89,12 @@ struct i2c_atm_config {
 #endif
 	uint32_t mode;
 	uint32_t speed;
+#ifdef I2C_CLK_STRETCH_SUPPORTED
+	bool clk_stretch_enabled;
+#endif
+#ifdef I2C_CLK_STRETCH_CHECK_REQUIRED
+	bool (*check_clk_stretch)(void);
+#endif
 };
 
 static int i2c_out_sync(struct device const *dev, i2c_head_t head, uint8_t val, i2c_tail_t tail)
@@ -260,6 +275,15 @@ static int i2c_atm_transfer(struct device const *dev, struct i2c_msg *msgs, uint
 
 	k_sem_take(&data->xfer_sem, K_FOREVER);
 
+#ifdef I2C_CLK_STRETCH_CHECK_REQUIRED
+	struct i2c_atm_config const *config = dev->config;
+	if (config->clk_stretch_enabled && !config->check_clk_stretch()) {
+		LOG_ERR("I2C clock stretch check failed");
+		k_sem_give(&data->xfer_sem);
+		return -EIO;
+	}
+#endif
+
 	/* Mask out unused address bits, and make room for R/W bit */
 	int ret = 0;
 	for (uint8_t i = 0; i < num_msgs; i++) {
@@ -296,6 +320,11 @@ static int i2c_atm_set_speed(struct device const *dev, uint32_t speed)
 	uint32_t clkdiv = (at_clkrstgen_get_bp() / (hertz * 4)) - 1;
 	struct i2c_atm_config const *config = dev->config;
 	config->base->CLOCK_CONTROL = I2C(CLOCK_CONTROL__CLKDIV__WRITE(clkdiv));
+#ifdef I2C_CLK_STRETCH_SUPPORTED
+	if (config->clk_stretch_enabled) {
+		config->base->CLOCK_CONTROL |= I2C_CLOCK_CONTROL__CLK_STRETCH_EN__WRITE(1);
+	}
+#endif
 
 	return 0;
 }
@@ -442,6 +471,22 @@ static int i2c_atm_init(struct device const *dev)
 	}                                                                                          \
 	)) /* CONFIG_PM */                                                                         \
 	)) /* I2C_GPIO_REQUIRED */                                                                 \
+	IF_ENABLED(I2C_CLK_STRETCH_CHECK_REQUIRED, (                                               \
+	static bool i2c_atm_check_clk_stretch_##n(void)                                            \
+	{                                                                                          \
+		GPIO_SET_INPUT_PULLUP(PIN2GPIO(DT_INST_PROP(n, scl_pin)));                         \
+		PIN_SELECT(DT_INST_PROP(n, scl_pin), GPIO);                                        \
+		int64_t start_time = k_uptime_get();                                               \
+		while (!GPIO_READ_DATA(PIN2GPIO(DT_INST_PROP(n, scl_pin)))) {                      \
+			if (k_uptime_get() - start_time > I2C_MAX_WAIT_MS) {                       \
+				return false;                                                      \
+			}                                                                          \
+			k_sleep(K_MSEC(1));                                                        \
+		}                                                                                  \
+		PIN_SELECT(DT_INST_PROP(n, scl_pin), I2C_SCK(n));                                  \
+		return true;                                                                       \
+	}                                                                                          \
+	))                                                                                         \
 	static struct i2c_atm_config const i2c_atm_config_##n = {                                  \
 		.instance = n,                                                                     \
 		.base = I2C_BASE(n),                                                               \
@@ -455,10 +500,19 @@ static int i2c_atm_init(struct device const *dev)
 		)) /* I2C_GPIO_REQUIRED */                                                         \
 		.mode = I2C_MODE_CONTROLLER,                                                       \
 		.speed = DT_INST_PROP(n, clock_frequency),                                         \
+		IF_ENABLED(I2C_CLK_STRETCH_SUPPORTED, (                                            \
+		.clk_stretch_enabled = DT_INST_PROP(n, clk_stretch),                               \
+		))                                                                                 \
+		IF_ENABLED(I2C_CLK_STRETCH_CHECK_REQUIRED, (                                       \
+		.check_clk_stretch = i2c_atm_check_clk_stretch_##n,                                \
+		))                                                                                 \
 	};                                                                                         \
 	static struct i2c_atm_data i2c_atm_data_##n;                                               \
 	DEVICE_DT_INST_DEFINE(n, &i2c_atm_init, NULL, &i2c_atm_data_##n, &i2c_atm_config_##n,      \
 			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_atm_driver_api);         \
+	IF_DISABLED(I2C_CLK_STRETCH_SUPPORTED, (                                                   \
+	BUILD_ASSERT(!DT_INST_PROP(n, clk_stretch));                                               \
+	))                                                                                         \
 	BUILD_ASSERT(I2C_BASE(n) == (CMSDK_AT_APB_I2C_TypeDef *)DT_REG_ADDR(DT_NODELABEL(          \
 					    CONCAT(i2c, DT_INST_PROP(n, instance)))));
 

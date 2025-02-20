@@ -35,3 +35,8 @@ properties:
       type: boolean
       required: false
       description: Data pullup requirement
+
+    clk-stretch:
+      type: boolean
+      required: false
+      description: Set clock stretching
