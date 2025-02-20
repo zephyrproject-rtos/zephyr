@@ -438,12 +438,14 @@ static void counter_ambiq_isr(void *arg)
 #endif
 
 #define AMBIQ_COUNTER_INIT(idx)                                                                    \
+	BUILD_ASSERT(DT_CHILD_NUM_STATUS_OKAY(DT_INST_PARENT(idx)) == 1,                           \
+		     "Too many children for Timer!");                                              \
 	static void counter_irq_config_func_##idx(void);                                           \
 	static struct counter_ambiq_data counter_data_##idx;                                       \
 	static const struct counter_ambiq_config counter_config_##idx = {                          \
 		.instance = (DT_REG_ADDR(DT_INST_PARENT(idx)) - SOC_TIMER_BASE) /                  \
 			    DT_REG_SIZE(DT_INST_PARENT(idx)),                                      \
-		.clk_src = DT_ENUM_IDX(DT_INST_PARENT(idx), clk_source),                               \
+		.clk_src = DT_ENUM_IDX(DT_INST_PARENT(idx), clk_source),                           \
 		.counter_info = {.max_top_value = UINT32_MAX,                                      \
 				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
 				 .channels = 1},                                                   \

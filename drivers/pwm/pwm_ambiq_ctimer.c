@@ -225,6 +225,8 @@ static DEVICE_API(pwm, pwm_ambiq_timer_driver_api) = {
 };
 
 #define PWM_AMBIQ_TIMER_DEVICE_INIT(n)                                                             \
+	BUILD_ASSERT(DT_CHILD_NUM_STATUS_OKAY(DT_INST_PARENT(n)) == 1,                             \
+		     "Too many children for Timer!");                                              \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static struct pwm_ambiq_timer_data pwm_ambiq_timer_data_##n = {                            \
 		.cycles = 0,                                                                       \
@@ -233,7 +235,7 @@ static DEVICE_API(pwm, pwm_ambiq_timer_driver_api) = {
 		.timer_num = (DT_REG_ADDR(DT_INST_PARENT(n)) - CTIMER_BASE) /                      \
 			     DT_REG_SIZE(DT_INST_PARENT(n)),                                       \
 		.timer_seg = DT_INST_ENUM_IDX(n, timer_segment),                                   \
-		.clock_sel = DT_ENUM_IDX(DT_INST_PARENT(n), clk_source),                    \
+		.clock_sel = DT_ENUM_IDX(DT_INST_PARENT(n), clk_source),                           \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.pwm_type = DT_INST_ENUM_IDX(n, pwm_type)};                                        \
                                                                                                    \
