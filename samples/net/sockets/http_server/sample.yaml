@@ -16,3 +16,9 @@ tests:
   sample.net.sockets.http.server: {}
   sample.net.sockets.https.server:
     extra_args: EXTRA_CONF_FILE="overlay-tls.conf"
+  sample.net.sockets.http_server.vpn:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-vpn.conf"
