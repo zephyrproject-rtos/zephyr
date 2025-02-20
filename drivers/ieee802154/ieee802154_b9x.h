@@ -77,7 +77,7 @@ struct b9x_enh_ack_table {
 };
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 
-#ifdef CONFIG_IEEE802154_TELINK_B9X_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 /* radio MAC keys type */
 struct b9x_mac_keys {
 	struct {
@@ -88,7 +88,7 @@ struct b9x_mac_keys {
 	} item[B9X_MAC_KEYS_ITEMS];
 	uint32_t frame_cnt;
 };
-#endif /* CONFIG_IEEE802154_TELINK_B9X_ENCRYPTION */
+#endif
 
 /* data structure */
 struct b9x_data {
@@ -117,9 +117,9 @@ struct b9x_data {
 	atomic_t current_pm_lock;
 #endif /* CONFIG_PM_DEVICE */
 	ieee802154_event_cb_t event_handler;
-#ifdef CONFIG_IEEE802154_TELINK_B9X_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 	struct b9x_mac_keys *mac_keys;
-#endif /* CONFIG_IEEE802154_TELINK_B9X_ENCRYPTION */
+#endif
 };
 
 #endif

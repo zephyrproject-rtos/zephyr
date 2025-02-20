@@ -604,7 +604,7 @@ b9x_ieee802154_get_data(const uint8_t *payload,
  * Cryptography functionality
  */
 
-#ifdef CONFIG_IEEE802154_TELINK_B9X_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 #include <aes.h>
 
 ALWAYS_INLINE static void
@@ -813,4 +813,4 @@ ieee802154_b9x_crypto_decrypt(
 
 	return result;
 }
-#endif /* CONFIG_IEEE802154_TELINK_B9X_ENCRYPTION */
+#endif

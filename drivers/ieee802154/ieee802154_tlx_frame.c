@@ -604,7 +604,7 @@ tlx_ieee802154_get_data(const uint8_t *payload,
  * Cryptography functionality
  */
 
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 #if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
 #include <ske.h>
 #include <ske_portable.h>
@@ -823,4 +823,4 @@ ieee802154_tlx_crypto_decrypt(
 
 	return result;
 }
-#endif /* CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION */
+#endif

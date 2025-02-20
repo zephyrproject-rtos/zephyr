@@ -55,10 +55,10 @@ static struct tlx_src_match_table src_match_table;
 static struct tlx_enh_ack_table enh_ack_table;
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 /* mac keys data */
 static struct tlx_mac_keys mac_keys;
-#endif /* CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION */
+#endif
 
 /* TLX data structure */
 static struct  tlx_data data = {
@@ -68,10 +68,10 @@ static struct  tlx_data data = {
 #ifdef CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
 	.enh_ack_table = &enh_ack_table,
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 /* mac keys data */
 	.mac_keys = &mac_keys,
-#endif /* CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION */
+#endif
 };
 
 #ifdef CONFIG_OPENTHREAD_FTD
@@ -267,7 +267,7 @@ static void tlx_enh_ack_table_remove(
 
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 
 /* Clean mac keys data */
 static void tlx_mac_keys_data_clean(struct tlx_mac_keys *mac_keys_data)
@@ -325,7 +325,7 @@ static void tlx_mac_keys_frame_cnt_inc(struct tlx_mac_keys *mac_keys_data, uint8
 	}
 }
 
-#endif /* CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION */
+#endif
 
 /* Disable power management by device */
 static void tlx_disable_pm(const struct device *dev)
@@ -545,11 +545,7 @@ ALWAYS_INLINE tlx_handle_ack(const struct device *dev,
 		}
 		tlx_update_rssi_and_lqi(dev, ack_pkt);
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_PKT_TXTIME)
-		struct net_ptp_time timestamp = {
-			.second = rx_time / USEC_PER_SEC,
-			.nanosecond = (rx_time % USEC_PER_SEC) * NSEC_PER_USEC
-		};
-		net_pkt_set_timestamp(ack_pkt, &timestamp);
+		net_pkt_set_timestamp_ns(ack_pkt, rx_time * NSEC_PER_USEC);
 #endif /* CONFIG_NET_PKT_TIMESTAMP && CONFIG_NET_PKT_TXTIME */
 		net_pkt_cursor_init(ack_pkt);
 		if (ieee802154_handle_ack(tlx->iface, ack_pkt) != NET_OK) {
@@ -570,7 +566,7 @@ ALWAYS_INLINE tlx_send_ack(const struct device *dev, struct ieee802154_frame *fr
 	struct tlx_data *tlx = dev->data;
 	uint8_t ack_buf[64];
 	size_t ack_len;
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 	const uint8_t *key = NULL;
 	uint32_t frame_cnt = tlx_mac_keys_frame_cnt_get(tlx->mac_keys, 1);
 	const uint8_t sec_header[] = {
@@ -593,13 +589,13 @@ ALWAYS_INLINE tlx_send_ack(const struct device *dev, struct ieee802154_frame *fr
 			frame->payload_len = sizeof(payload);
 		}
 	}
-#endif /* CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION */
+#endif
 
 	if (tlx_ieee802154_frame_build(frame, ack_buf, sizeof(ack_buf), &ack_len)) {
 		tlx->ack_sending = true;
 		k_sem_reset(&tlx->tx_wait);
 		rf_set_txmode();
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 		if (frame->sec_header) {
 			if (ieee802154_tlx_crypto_encrypt(key, tlx->filter_ieee_addr,
 				frame_cnt,
@@ -617,7 +613,7 @@ ALWAYS_INLINE tlx_send_ack(const struct device *dev, struct ieee802154_frame *fr
 		}
 #else
 		delay_us(CONFIG_IEEE802154_TLX_SET_TXRX_DELAY_US);
-#endif /* CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION */
+#endif
 		tlx_set_tx_payload(dev, ack_buf, ack_len);
 		rf_tx_pkt(tlx->tx_buffer);
 	} else {
@@ -791,11 +787,7 @@ static void ALWAYS_INLINE tlx_rf_rx_isr(const struct device *dev)
 		}
 		tlx_update_rssi_and_lqi(dev, pkt);
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_PKT_TXTIME)
-		struct net_ptp_time timestamp = {
-			.second = rx_time / USEC_PER_SEC,
-			.nanosecond = (rx_time % USEC_PER_SEC) * NSEC_PER_USEC
-		};
-		net_pkt_set_timestamp(pkt, &timestamp);
+		net_pkt_set_timestamp_ns(pkt, rx_time * NSEC_PER_USEC);
 #endif /* CONFIG_NET_PKT_TIMESTAMP && CONFIG_NET_PKT_TXTIME */
 		status = net_recv_data(tlx->iface, pkt);
 		if (status < 0) {
@@ -876,9 +868,9 @@ static int tlx_init(const struct device *dev)
 	tlx_enh_ack_table_clean(tlx->enh_ack_table);
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 	tlx->event_handler = NULL;
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 	tlx_mac_keys_data_clean(tlx->mac_keys);
-#endif /* CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION */
+#endif
 	return 0;
 }
 
@@ -907,9 +899,9 @@ static enum ieee802154_hw_caps tlx_get_capabilities(const struct device *dev)
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_PKT_TXTIME)
 	caps |= IEEE802154_HW_TXTIME;
 #endif /* CONFIG_NET_PKT_TIMESTAMP && CONFIG_NET_PKT_TXTIME */
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 	caps |= IEEE802154_HW_TX_SEC;
-#endif /* CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION */
+#endif
 	return caps;
 }
 
@@ -1010,7 +1002,7 @@ static int tlx_start(const struct device *dev)
 		riscv_plic_set_priority(DT_INST_IRQN(0), DT_INST_IRQ(0, priority));
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 		if (!tlx_rf_zigbee_250K_mode) {
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 #if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
 			ske_dig_en();
 #endif
@@ -1096,7 +1088,7 @@ static int tlx_tx(const struct device *dev,
 		}
 	}
 
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 
 	struct ieee802154_frame frame;
 	uint8_t key_id = 0;
@@ -1260,7 +1252,7 @@ static int tlx_tx(const struct device *dev,
 
 	} while (0);
 
-#endif /* CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION */
+#endif
 
 	/* prepare tx buffer */
 	tlx_set_tx_payload(dev, frag->data, frag->len);
@@ -1274,7 +1266,7 @@ static int tlx_tx(const struct device *dev,
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_PKT_TXTIME)
 	if (mode == IEEE802154_TX_MODE_TXTIME_CCA) {
-		k_sleep(K_TIMEOUT_ABS_TICKS(k_ns_to_ticks_near64(net_pkt_txtime(pkt))));
+		k_sleep(K_TIMEOUT_ABS_TICKS(k_ns_to_ticks_near64(net_pkt_timestamp_ns(pkt))));
 	} else
 #endif /* CONFIG_NET_PKT_TIMESTAMP && CONFIG_NET_PKT_TXTIME */
 	{
@@ -1301,11 +1293,11 @@ static int tlx_tx(const struct device *dev,
 		}
 		tlx->ack_handler_en = false;
 	}
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 	if (!status) {
 		tlx_mac_keys_frame_cnt_inc(tlx->mac_keys, key_id);
 	}
-#endif /* CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION */
+#endif
 
 	return status;
 }
@@ -1380,7 +1372,7 @@ static int tlx_configure(const struct device *dev,
 	case IEEE802154_CONFIG_EVENT_HANDLER:
 		tlx->event_handler = config->event_handler;
 		break;
-#ifdef CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 	case IEEE802154_CONFIG_MAC_KEYS:
 		{
 			uint32_t cnt = tlx->mac_keys->frame_cnt;
@@ -1406,7 +1398,7 @@ static int tlx_configure(const struct device *dev,
 	case IEEE802154_CONFIG_FRAME_COUNTER:
 		tlx->mac_keys->frame_cnt = config->frame_counter;
 		break;
-#endif /* CONFIG_IEEE802154_TELINK_TLX_ENCRYPTION */
+#endif
 	default:
 		LOG_WRN("Unhandled cfg %d", type);
 		result = -ENOTSUP;
