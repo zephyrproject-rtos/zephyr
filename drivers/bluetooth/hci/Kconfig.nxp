@@ -110,3 +110,19 @@ config BT_NXP_IW610
 endchoice # BT_NXP_MODULE
 
 endif # BT_H4_NXP_CTLR
+
+if (BT_NXP_NW612 && NXP_IW61X) || (BT_NXP_IW416 && NXP_IW416)
+
+config BT_NXP_CTRL_BSP_TRIGGER
+	bool "Trigger to Wakeup BSP enabled NXP BT CPU"
+	default y
+	select UART_LINE_CTRL
+	help
+		Enable/Disable Boot-Sleep-Patch(BSP) wakeup trigger for NXP BT IW414/NW612 BT FW.
+		In WIFI+BT Parallel FW Download, If FW is BSP enabled, Once WIFI CPU has valid
+		FW loaded (on CPU1), it puts BT CPU (CPU2) in Sleep due to which BT bootloader
+		stops sending out signature bytes for FW Load. To wakeup BT CPU from the sleep,
+		BT HCI UART RTS line needs to be de-asserted (high to low) before host hci-driver
+		begin FW load procedure on BT CPU.
+
+endif # BT_NXP_NW612 || BT_NXP_IW416

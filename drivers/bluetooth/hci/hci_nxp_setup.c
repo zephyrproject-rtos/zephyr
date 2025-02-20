@@ -1152,6 +1152,23 @@ static int bt_nxp_ctlr_init(void)
 #endif /* DT_NODE_HAS_PROP(DT_DRV_INST(0), w_disable_gpios) */
 #endif
 
+#ifdef CONFIG_BT_NXP_CTRL_BSP_TRIGGER
+	/* this feature sends boot-sleep-patch trigger to BT CPU to wake up
+	 * if BT CPU is put in sleep by WIFI CPU in coex (WIFI+BT) Scenario
+	 */
+	err = uart_line_ctrl_set(uart_dev, UART_LINE_CTRL_RTS, 0);
+	if (err) {
+		LOG_ERR("fail to set rts low, err %d", err);
+		return err;
+	}
+	k_sleep(K_MSEC(5));
+	err = uart_line_ctrl_set(uart_dev, UART_LINE_CTRL_RTS, 1);
+	if (err) {
+		LOG_ERR("fail to set rts high, err %d", err);
+		return err;
+	}
+	k_sleep(K_MSEC(5));
+#endif /*CONFIG_BT_NXP_CTRL_BSP_TRIGGER*/
 	uart_irq_rx_disable(uart_dev);
 	uart_irq_tx_disable(uart_dev);
 
