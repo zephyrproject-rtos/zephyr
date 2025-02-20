@@ -43,6 +43,8 @@ set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 target_sources_ifdef(CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE app PRIVATE src/ws.c)
 target_sources_ifdef(CONFIG_USB_DEVICE_STACK app PRIVATE src/usb.c)
 
+include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
+
 target_link_libraries(app PRIVATE zephyr_interface zephyr)
 
 zephyr_linker_sources(SECTIONS sections-rom.ld)

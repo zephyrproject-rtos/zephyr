@@ -21,6 +21,7 @@
 #include <zephyr/sys/util_macro.h>
 
 #include "ws.h"
+#include "net_sample_common.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_http_server_sample, LOG_LEVEL_DBG);
@@ -359,6 +360,7 @@ static inline int init_usb(void)
 int main(void)
 {
 	init_usb();
+	init_vpn();
 
 	setup_tls();
 	http_server_start();
