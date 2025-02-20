@@ -67,7 +67,6 @@ zephyr_library_sources_ifdef(CONFIG_ETH_WCH eth_wch.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_XILINX_AXIENET eth_xilinx_axienet.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_XILINX_AXI_ETHERNET_LITE eth_xilinx_axi_ethernet_lite.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_XLNX_GEM eth_xlnx_gem.c)
-zephyr_library_sources_ifdef(CONFIG_ETH_XLNX_GEM phy_xlnx_gem.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_XMC4XXX eth_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_SLIP_TAP eth_slip_tap.c)
 # zephyr-keep-sorted-stop
