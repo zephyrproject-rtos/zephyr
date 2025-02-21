@@ -243,10 +243,87 @@ static void avrcp_disconnected(struct bt_avctp *session)
 	}
 }
 
+static void process_get_capabilities_rsp(struct bt_avrcp *avrcp, struct net_buf *buf)
+{
+	struct bt_avrcp_get_capabilities_rsp rsp;
+	uint16_t length;
+	uint16_t expected_length;
+
+	if (buf->len < 3) {
+		LOG_ERR("Invalid vendor payload length: %d", buf->len);
+		return;
+	}
+
+	net_buf_pull_u8(buf); /**< Packet Type 0x0 - single frame*/
+	length = net_buf_pull_be16(buf);
+
+	if (length < 2 || length < buf->len) {
+		LOG_ERR("Invalid capability length: %d, buf length = %d", length, buf->len);
+		return;
+	}
+
+	if ((avrcp_cb == NULL) || (avrcp_cb->get_capabilities_rsp == NULL)) {
+		return;
+	}
+
+	rsp.capability_id = net_buf_pull_u8(buf);
+	rsp.capability_count = net_buf_pull_u8(buf);
+	rsp.capability = buf->data;
+
+	switch (rsp.capability_id) {
+	case BT_AVRCP_CAP_COMPANY_ID:
+		expected_length = rsp.capability_count * AVRCP_COMPANY_ID_SIZE;
+		break;
+	case BT_AVRCP_CAP_EVENTS_SUPPORTED:
+		expected_length = rsp.capability_count;
+		break;
+	default:
+		LOG_ERR("Unrecognized capability = 0x%x", rsp.capability_id);
+		return;
+	}
+
+	if (buf->len < expected_length) {
+		LOG_ERR("Invalid capability payload length: %d, expected: %d", buf->len,
+			expected_length);
+		return;
+	}
+
+	avrcp_cb->get_capabilities_rsp(avrcp, &rsp);
+}
+
 static void avrcp_vendor_dependent_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
 					   bt_avctp_cr_t cr)
 {
-	/* ToDo */
+	struct bt_avrcp_header *avrcp_hdr;
+	uint32_t company_id;
+	uint8_t pdu_id;
+
+	if (buf->len < (sizeof(*avrcp_hdr) + AVRCP_COMPANY_ID_SIZE + sizeof(pdu_id))) {
+		LOG_ERR("Invalid vendor frame length: %d", buf->len);
+		return;
+	}
+
+	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
+	company_id = net_buf_pull_be24(buf);
+	if (company_id != BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG) {
+		LOG_ERR("Invalid company id: 0x%06x", company_id);
+		return;
+	}
+
+	pdu_id = net_buf_pull_u8(buf);
+
+	if (cr == BT_AVCTP_CMD) {
+		LOG_DBG("Unhandled command: 0x%02x", pdu_id);
+	} else { /* BT_AVCTP_RESPONSE */
+		switch (pdu_id) {
+		case BT_AVRCP_PDU_ID_GET_CAPABILITIES:
+			process_get_capabilities_rsp(avrcp, buf);
+			break;
+		default:
+			LOG_DBG("Unhandled response: 0x%02x", pdu_id);
+			break;
+		}
+	}
 }
 
 static void avrcp_unit_info_handler(struct bt_avrcp *avrcp, struct net_buf *buf, bt_avctp_cr_t cr)
@@ -254,11 +331,12 @@ static void avrcp_unit_info_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
 	struct bt_avrcp_header *avrcp_hdr;
 	struct bt_avrcp_unit_info_rsp rsp;
 
+	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
+
 	if (cr == BT_AVCTP_CMD) {
 		/* ToDo */
 	} else { /* BT_AVCTP_RESPONSE */
 		if ((avrcp_cb != NULL) && (avrcp_cb->unit_info_rsp != NULL)) {
-			net_buf_pull(buf, sizeof(*avrcp_hdr));
 			if (buf->len != 5) {
 				LOG_ERR("Invalid unit info length: %d", buf->len);
 				return;
@@ -278,11 +356,12 @@ static void avrcp_subunit_info_handler(struct bt_avrcp *avrcp, struct net_buf *b
 	struct bt_avrcp_subunit_info_rsp rsp;
 	uint8_t tmp;
 
+	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
+
 	if (cr == BT_AVCTP_CMD) {
 		/* ToDo */
 	} else { /* BT_AVCTP_RESPONSE */
 		if ((avrcp_cb != NULL) && (avrcp_cb->subunit_info_rsp != NULL)) {
-			net_buf_pull(buf, sizeof(*avrcp_hdr));
 			if (buf->len < 5) {
 				LOG_ERR("Invalid subunit info length: %d", buf->len);
 				return;
@@ -309,12 +388,12 @@ static void avrcp_pass_through_handler(struct bt_avrcp *avrcp, struct net_buf *b
 	struct bt_avrcp_passthrough_rsp rsp;
 	uint8_t tmp;
 
+	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
+
 	if (cr == BT_AVCTP_CMD) {
 		/* ToDo */
 	} else { /* BT_AVCTP_RESPONSE */
 		if ((avrcp_cb != NULL) && (avrcp_cb->subunit_info_rsp != NULL)) {
-			avrcp_hdr = (struct bt_avrcp_header *)buf->data;
-			net_buf_pull(buf, sizeof(*avrcp_hdr));
 			if (buf->len < 2) {
 				LOG_ERR("Invalid passthrough length: %d", buf->len);
 				return;
@@ -351,8 +430,7 @@ static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
 	bt_avrcp_subunit_id_t subunit_id;
 	bt_avrcp_subunit_type_t subunit_type;
 
-	avctp_hdr = (void *)buf->data;
-	net_buf_pull(buf, sizeof(*avctp_hdr));
+	avctp_hdr = net_buf_pull_mem(buf, sizeof(*avctp_hdr));
 	if (buf->len < sizeof(*avrcp_hdr)) {
 		LOG_ERR("invalid AVRCP header received");
 		return -EINVAL;
@@ -379,7 +457,7 @@ static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
 			/* No max response time for pass through commands  */
 		} else if (tid != avrcp->req.tid || subunit_type != avrcp->req.subunit ||
 			   avrcp_hdr->opcode != avrcp->req.opcode) {
-			LOG_WRN("unexpected AVRCP response, expected tid:0x%X, subunit:0x%X, "
+			LOG_DBG("unexpected AVRCP response, expected tid:0x%X, subunit:0x%X, "
 				"opc:0x%02X",
 				avrcp->req.tid, avrcp->req.subunit, avrcp->req.opcode);
 		} else {
@@ -538,7 +616,7 @@ static struct net_buf *avrcp_create_subunit_pdu(struct bt_avrcp *avrcp, bt_avctp
 }
 
 static struct net_buf *avrcp_create_passthrough_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr,
-						    bt_avrcp_ctype_t ctype)
+						    uint8_t ctype_or_rsp)
 {
 	struct net_buf *buf;
 	struct bt_avrcp_frame *cmd;
@@ -550,10 +628,31 @@ static struct net_buf *avrcp_create_passthrough_pdu(struct bt_avrcp *avrcp, bt_a
 
 	cmd = net_buf_add(buf, sizeof(*cmd));
 	memset(cmd, 0, sizeof(*cmd));
-	BT_AVRCP_HDR_SET_CTYPE_OR_RSP(&cmd->hdr, ctype);
+	BT_AVRCP_HDR_SET_CTYPE_OR_RSP(&cmd->hdr, ctype_or_rsp);
 	BT_AVRCP_HDR_SET_SUBUNIT_ID(&cmd->hdr, BT_AVRCP_SUBUNIT_ID_ZERO);
 	BT_AVRCP_HDR_SET_SUBUNIT_TYPE(&cmd->hdr, BT_AVRCP_SUBUNIT_TYPE_PANEL);
 	cmd->hdr.opcode = BT_AVRCP_OPC_PASS_THROUGH;
+
+	return buf;
+}
+
+static struct net_buf *avrcp_create_vendor_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr,
+					       uint8_t ctype_or_rsp)
+{
+	struct net_buf *buf;
+	struct bt_avrcp_frame *cmd;
+
+	buf = avrcp_create_pdu(avrcp, cr);
+	if (!buf) {
+		return NULL;
+	}
+
+	cmd = net_buf_add(buf, sizeof(*cmd));
+	memset(cmd, 0, sizeof(*cmd));
+	BT_AVRCP_HDR_SET_CTYPE_OR_RSP(&cmd->hdr, ctype_or_rsp);
+	BT_AVRCP_HDR_SET_SUBUNIT_ID(&cmd->hdr, BT_AVRCP_SUBUNIT_ID_ZERO);
+	BT_AVRCP_HDR_SET_SUBUNIT_TYPE(&cmd->hdr, BT_AVRCP_SUBUNIT_TYPE_PANEL);
+	cmd->hdr.opcode = BT_AVRCP_OPC_VENDOR_DEPENDENT;
 
 	return buf;
 }
@@ -587,6 +686,26 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
 	}
 
 	return 0;
+}
+
+int bt_avrcp_get_capabilities(struct bt_avrcp *avrcp, bt_avrcp_cap_t capability_id)
+{
+	struct net_buf *buf;
+	uint8_t param[5];
+
+	buf = avrcp_create_vendor_pdu(avrcp, BT_AVCTP_CMD, BT_AVRCP_CTYPE_STATUS);
+	if (!buf) {
+		return -ENOMEM;
+	}
+	net_buf_add_be24(buf, BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG);
+	param[0] = BT_AVRCP_PDU_ID_GET_CAPABILITIES;
+	param[1] = 0x00;
+	param[2] = 0x00;
+	param[3] = 0x01;
+	param[4] = capability_id;
+	net_buf_add_mem(buf, param, sizeof(param));
+
+	return avrcp_send(avrcp, buf);
 }
 
 int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp)
