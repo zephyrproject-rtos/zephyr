@@ -342,7 +342,7 @@ void net_process_tx_packet(struct net_pkt *pkt)
 #endif
 }
 
-void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
+void net_if_try_queue_tx(struct net_if *iface, struct net_pkt *pkt, k_timeout_t timeout)
 {
 	if (!net_pkt_filter_send_ok(pkt)) {
 		/* silently drop the packet */
@@ -368,7 +368,7 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 
 		net_if_tx(net_pkt_iface(pkt), pkt);
 	} else {
-		if (net_tc_submit_to_tx_queue(tc, pkt) != NET_OK) {
+		if (net_tc_try_submit_to_tx_queue(tc, pkt, timeout) != NET_OK) {
 			goto drop;
 		}
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
@@ -451,7 +451,8 @@ static inline void init_iface(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_NATIVE)
-enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
+enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
+				      k_timeout_t timeout)
 {
 	const struct net_l2 *l2;
 	struct net_context *context = net_pkt_context(pkt);
@@ -550,7 +551,7 @@ done:
 		}
 	} else if (verdict == NET_OK) {
 		/* Packet is ready to be sent by L2, let's queue */
-		net_if_queue_tx(iface, pkt);
+		net_if_try_queue_tx(iface, pkt, timeout);
 	}
 
 	return verdict;
