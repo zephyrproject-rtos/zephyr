@@ -185,6 +185,19 @@ static void uart_send(const uint8_t *data, size_t len)
 {
 	uart_pipe_send(data, len);
 }
+#elif defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+extern void bsim_btp_register_tester(uint8_t *buffer, size_t len, uart_pipe_recv_cb cb);
+extern void bsim_btp_send_to_bsim(const uint8_t *data, size_t len);
+
+static void uart_init(uint8_t *data)
+{
+	bsim_btp_register_tester(data, BTP_MTU, recv_cb);
+}
+
+static void uart_send(const uint8_t *data, size_t len)
+{
+	bsim_btp_send_to_bsim(data, len);
+}
 #else /* !CONFIG_UART_PIPE */
 static uint8_t *recv_buf;
 static size_t recv_off;
