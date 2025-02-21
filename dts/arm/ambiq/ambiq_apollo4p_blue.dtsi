@@ -601,6 +601,7 @@
 		};
 
 		adc0: adc@40038000 {
+			compatible = "ambiq,adc";
 			reg = <0x40038000 0x400>;
 			interrupts = <19 0>;
 			interrupt-names = "ADC";

@@ -53,6 +53,7 @@ As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
   | SPI Device
   | MSPI Controller
   | System Timer
+  | USB device
   | Watchdog
 
 Together with generic support for ARM Cortex-M peripherals like cache, interrupt controller, etc.
