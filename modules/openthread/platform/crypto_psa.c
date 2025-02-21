@@ -226,7 +226,7 @@ otError otPlatCryptoHmacSha256Init(otCryptoContext *aContext)
 	}
 
 	operation = aContext->mContext;
-	*operation = psa_mac_operation_init();
+	memset(operation, 0, sizeof(*operation));
 
 	return OT_ERROR_NONE;
 }
@@ -347,7 +347,7 @@ otError otPlatCryptoSha256Init(otCryptoContext *aContext)
 	}
 
 	operation = aContext->mContext;
-	*operation = psa_hash_operation_init();
+	memset(operation, 0, sizeof(*operation));
 
 	return OT_ERROR_NONE;
 }
