@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -226,9 +226,9 @@ static int esp32_ipm_init(const struct device *dev)
 				ESP_PRIO_TO_FLAGS(cfg->irq_priority_pro_cpu) |
 				ESP_INT_FLAGS_CHECK(cfg->irq_flags_pro_cpu) |
 					ESP_INTR_FLAG_IRAM,
-				(intr_handler_t)esp32_ipm_isr,
-				(void *)dev,
-				NULL);
+			esp32_ipm_isr,
+			(void *)dev,
+			NULL);
 
 		if (ret != 0) {
 			LOG_ERR("could not allocate interrupt (err %d)", ret);
@@ -244,7 +244,7 @@ static int esp32_ipm_init(const struct device *dev)
 				ESP_PRIO_TO_FLAGS(cfg->irq_priority_app_cpu) |
 				ESP_INT_FLAGS_CHECK(cfg->irq_flags_app_cpu) |
 					ESP_INTR_FLAG_IRAM,
-				(intr_handler_t)esp32_ipm_isr,
+			esp32_ipm_isr,
 				(void *)dev,
 				NULL);
 
