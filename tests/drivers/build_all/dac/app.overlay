@@ -302,6 +302,14 @@
 					status = "okay";
 				};
 			};
+
+			test_spi_dac161s997: dac161s997@12 {
+				compatible = "ti,dac161s997";
+				reg = <0x12>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				errb-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
