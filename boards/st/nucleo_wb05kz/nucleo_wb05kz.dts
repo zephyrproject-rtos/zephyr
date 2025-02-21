@@ -75,6 +75,7 @@
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
 		sw2 = &user_button_3;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -113,6 +114,10 @@
 	 */
 	clocks = <&rcc STM32_CLOCK(APB0, 12)>,
 		<&rcc STM32_SRC_LSE NO_SEL>;
+	status = "okay";
+};
+
+&iwdg {
 	status = "okay";
 };
 
