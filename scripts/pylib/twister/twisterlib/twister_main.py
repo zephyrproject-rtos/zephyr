@@ -22,6 +22,20 @@ from twisterlib.runner import TwisterRunner
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
+# Define the custom log level
+STEP = 15
+logging.STEP = STEP
+logging.addLevelName(logging.STEP, 'STEP')
+
+# Define a custom logging method for the new level
+def step(self, message, *args, **kwargs):
+    if self.isEnabledFor(logging.STEP):
+        self._log(logging.STEP, message, args, **kwargs)
+
+
+# Add the custom logging method to the logger class
+logging.Logger.step = step
+
 logger = logging.getLogger("twister")
 logger.setLevel(logging.DEBUG)
 

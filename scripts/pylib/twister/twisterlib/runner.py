@@ -985,6 +985,7 @@ class ProjectBuilder(FilterBuilder):
         self.instance.setup_handler(self.env)
 
         if op == "filter":
+            logger.step(f"Applying filters {self.instance.name}")
             try:
                 ret = self.cmake(filter_stages=self.instance.filter_stages)
                 if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
@@ -1012,6 +1013,7 @@ class ProjectBuilder(FilterBuilder):
 
         # The build process, call cmake and build with configured generator
         elif op == "cmake":
+            logger.step(f"running cmake : {self.instance.name}")
             try:
                 ret = self.cmake()
                 if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
@@ -1044,6 +1046,7 @@ class ProjectBuilder(FilterBuilder):
                 self._add_to_pipeline(pipeline, next_op)
 
         elif op == "build":
+            logger.step(f"building : {self.instance.name}")
             try:
                 logger.debug(f"build test: {self.instance.name}")
                 ret = self.build()
@@ -1093,6 +1096,7 @@ class ProjectBuilder(FilterBuilder):
                 self._add_to_pipeline(pipeline, next_op)
 
         elif op == "gather_metrics":
+            logger.step(f"Gathering metrics for '{self.instance.name}'")
             try:
                 ret = self.gather_metrics(self.instance)
                 if not ret or ret.get('returncode', 1) > 0:
@@ -1125,6 +1129,7 @@ class ProjectBuilder(FilterBuilder):
 
         # Run the generated binary using one of the supported handlers
         elif op == "run":
+            logger.step(f"run test: {self.instance.name}")
             try:
                 logger.debug(f"run test: {self.instance.name}")
                 self.run()
@@ -1152,6 +1157,7 @@ class ProjectBuilder(FilterBuilder):
 
         # Run per-instance code coverage
         elif op == "coverage":
+            logger.step(f"Run coverage for '{self.instance.name}'")
             try:
                 logger.debug(f"Run coverage for '{self.instance.name}'")
                 self.instance.coverage_status, self.instance.coverage = \
@@ -1174,6 +1180,7 @@ class ProjectBuilder(FilterBuilder):
 
         # Report results and output progress to screen
         elif op == "report":
+            logger.step(f"Report for '{self.instance.name}'")
             try:
                 with lock:
                     done.put(self.instance)
@@ -1202,6 +1209,7 @@ class ProjectBuilder(FilterBuilder):
                 self._add_to_pipeline(pipeline, next_op, additionals)
 
         elif op == "cleanup":
+            logger.step(f"Cleanup for '{self.instance.name}'")
             try:
                 mode = message.get("mode")
                 if mode == "device":
