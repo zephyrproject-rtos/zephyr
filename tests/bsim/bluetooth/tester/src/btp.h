@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <stdint.h>
+#include <string.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/net_buf.h>
+
+#include "btp/btp.h"
+
+void btp_send_to_tester(const uint8_t *data, size_t len);
+void btp_wait_for_evt(uint8_t service, uint8_t opcode, uint8_t evt_buffer[BTP_MTU]);
+
+static inline void btp_core_register(uint8_t id)
+{
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	struct btp_hdr *cmd_hdr;
+	struct btp_core_register_service_cmd *cmd;
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_CORE;
+	cmd_hdr->opcode = BTP_CORE_REGISTER_SERVICE;
+	cmd_hdr->index = BTP_INDEX_NONE;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->id = id;
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void btp_gap_set_discoverable(uint8_t discoverable)
+{
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	struct btp_hdr *cmd_hdr;
+	struct btp_gap_set_discoverable_cmd *cmd;
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_SET_DISCOVERABLE;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->discoverable = discoverable;
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void btp_gap_start_advertising(uint8_t adv_data_len, uint8_t scan_rsp_len,
+					     const uint8_t adv_sr_data[], uint32_t duration,
+					     uint8_t own_addr_type)
+{
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	struct btp_hdr *cmd_hdr;
+	struct btp_gap_start_advertising_cmd *cmd;
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_START_ADVERTISING;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->adv_data_len = adv_data_len;
+	cmd->scan_rsp_len = scan_rsp_len;
+	if (adv_data_len > 0U) {
+		net_buf_simple_add_mem(&cmd_buffer, adv_sr_data, adv_data_len);
+	}
+	if (scan_rsp_len > 0U) {
+		net_buf_simple_add_mem(&cmd_buffer, adv_sr_data, scan_rsp_len);
+	}
+	net_buf_simple_add_le32(&cmd_buffer, duration);
+	net_buf_simple_add_u8(&cmd_buffer, own_addr_type);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void btp_gap_start_discovery(uint8_t flags)
+{
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	struct btp_hdr *cmd_hdr;
+	struct btp_gap_start_discovery_cmd *cmd;
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_START_DISCOVERY;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->flags = flags;
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void btp_gap_connect(const bt_addr_le_t *address, uint8_t own_addr_type)
+{
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	struct btp_hdr *cmd_hdr;
+	struct btp_gap_connect_cmd *cmd;
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_START_DISCOVERY;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+	cmd->own_addr_type = own_addr_type;
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}

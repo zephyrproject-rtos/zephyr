@@ -87,6 +87,8 @@
 
 #define BTP_STATUS_VAL(err) (err) ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS
 
+#define BTP_EVENT_OPCODE 0x80
+
 /* TODO indicate delay response, should be removed when all commands are
  * converted to cmd+status+ev pattern
  */
