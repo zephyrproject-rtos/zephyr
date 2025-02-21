@@ -16,22 +16,13 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 
 #include <soc.h>
 #include <esp_memory_utils.h>
+#include <soc/soc_memory_types.h>
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/drivers/clock_control.h>
-#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
-#else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#endif
-
-#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
-#define ISR_HANDLER isr_handler_t
-#else
-#define ISR_HANDLER intr_handler_t
-#endif
 
 #define DMA_MAX_CHANNEL SOC_GDMA_PAIRS_PER_GROUP
 
@@ -61,7 +52,10 @@ struct dma_esp32_channel {
 	int periph_id;
 	dma_callback_t cb;
 	void *user_data;
-	dma_descriptor_t desc_list[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
+	dma_descriptor_t desc;
+#if defined(CONFIG_SOC_SERIES_ESP32S3)
+	intr_handle_t *intr_handle;
+#endif
 };
 
 struct dma_esp32_config {
@@ -546,7 +540,7 @@ static int dma_esp32_configure_irq(const struct device *dev)
 		int ret = esp_intr_alloc(irq_cfg[i].irq_source,
 			ESP_PRIO_TO_FLAGS(irq_cfg[i].irq_priority) |
 				ESP_INT_FLAGS_CHECK(irq_cfg[i].irq_flags) | ESP_INTR_FLAG_IRAM,
-			(ISR_HANDLER)config->irq_handlers[i],
+			(intr_handler_t)config->irq_handlers[i],
 			(void *)dev,
 			NULL);
 		if (ret != 0) {
