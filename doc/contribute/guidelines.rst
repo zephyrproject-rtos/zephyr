@@ -561,6 +561,13 @@ before opening a new Pull Request:
 
    ./scripts/ci/check_compliance.py -c upstream/main..
 
+.. note::
+   On Windows if the .pl extension has not yet been associated with an
+   application, then the first time a .pl file is run without specifying an
+   interpreter, Windows will ask what application will open Perl files.
+   Set the default app to Strawberry Perl. By default the executable is
+   installed at ``C:\Strawberry\perl\bin\perl.exe``.
+
 twister
 -------
 
