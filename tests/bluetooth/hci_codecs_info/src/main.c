@@ -208,6 +208,8 @@ ZTEST(test_hci_codecs_info, test_read_codec_capabilities)
 	ptr = &rp->capabilities[0];
 	zassert_mem_equal(ptr, codec_capabilities, sizeof(codec_capabilities),
 			  0, "Reading codec capabilities content failed");
+
+	net_buf_unref(rsp);
 }
 
 #define READ_DELAY_CODING_FMT 0xff
@@ -290,4 +292,6 @@ ZTEST(test_hci_codecs_info, test_read_ctlr_delay)
 		      "Reading controller min delay failed");
 	zassert_equal(sys_get_le24(rp->max_ctlr_delay), MAX_CTLR_DELAY,
 		      "Reading controller max delay failed");
+
+	net_buf_unref(rsp);
 }

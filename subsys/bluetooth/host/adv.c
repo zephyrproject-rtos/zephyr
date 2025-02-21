@@ -1127,9 +1127,24 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	uint16_t size;
 	bool dir_adv = param->peer != NULL, scannable;
 	struct net_buf *buf, *rsp;
+	uint8_t own_addr_type;
 	int err;
 	enum adv_name_type name_type;
 	uint16_t props = 0;
+
+	adv->options = param->options;
+
+	err = bt_id_set_adv_own_addr(adv, param->options, dir_adv,
+				     &own_addr_type);
+	if (err) {
+		return err;
+	}
+
+	if (dir_adv) {
+		bt_addr_le_copy(&adv->target_addr, param->peer);
+	} else {
+		bt_addr_le_copy(&adv->target_addr, BT_ADDR_LE_ANY);
+	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV_CODING_SELECTION) &&
 	    BT_FEAT_LE_ADV_CODING_SEL(bt_dev.le.features)) {
@@ -1148,31 +1163,15 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	cp = net_buf_add(buf, size);
 	(void)memset(cp, 0, size);
 
-	adv->options = param->options;
-
-	err = bt_id_set_adv_own_addr(adv, param->options, dir_adv,
-				     &cp->own_addr_type);
-	if (err) {
-		net_buf_unref(buf);
-		return err;
-	}
-
-	if (dir_adv) {
-		bt_addr_le_copy(&adv->target_addr, param->peer);
-	} else {
-		bt_addr_le_copy(&adv->target_addr, BT_ADDR_LE_ANY);
-	}
-
-	name_type = get_adv_name_type_param(param);
-
 	cp->handle = adv->handle;
 	sys_put_le24(param->interval_min, cp->prim_min_interval);
 	sys_put_le24(param->interval_max, cp->prim_max_interval);
 	cp->prim_channel_map = get_adv_channel_map(param->options);
+	cp->own_addr_type = own_addr_type;
 	cp->filter_policy = get_filter_policy(param->options);
 	cp->tx_power = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
-
 	cp->prim_adv_phy = BT_HCI_LE_PHY_1M;
+
 	if ((param->options & BT_LE_ADV_OPT_EXT_ADV) &&
 	    !(param->options & BT_LE_ADV_OPT_NO_2M)) {
 		cp->sec_adv_phy = BT_HCI_LE_PHY_2M;
@@ -1229,6 +1228,8 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		}
 	}
 
+	name_type = get_adv_name_type_param(param);
+
 	if ((param->options & BT_LE_ADV_OPT_SCANNABLE) || has_scan_data ||
 	    (name_type == ADV_NAME_TYPE_SD)) {
 		props |= BT_HCI_LE_ADV_PROP_SCAN;
@@ -1250,6 +1251,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	cp->sec_adv_max_skip = param->secondary_max_skip;
 
 	cp->props = sys_cpu_to_le16(props);
+
 	err = bt_hci_cmd_send_sync(opcode, buf, &rsp);
 	if (err) {
 		return err;
