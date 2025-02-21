@@ -118,12 +118,12 @@ struct bt_hfp_ag_cb {
 	/** HF memory dialing request Callback
 	 *
 	 *  If this callback is provided it will be called whenever a
-	 *  new call is requested with memory dialing from HFP unit.
+	 *  new call is requested with memory dialing from HF.
 	 *  Get the phone number according to the given AG memory location.
 	 *
 	 *  @param ag HFP AG object.
 	 *  @param location AG memory location
-	 *  @param number Dailing number
+	 *  @param number Dialing number
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
@@ -152,7 +152,7 @@ struct bt_hfp_ag_cb {
 	 *
 	 *  @param ag HFP AG object.
 	 *  @param call HFP AG call object.
-	 *  @param number Dailing number
+	 *  @param number Dialing number
 	 */
 	void (*outgoing)(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const char *number);
 
@@ -448,7 +448,7 @@ int bt_hfp_ag_disconnect(struct bt_hfp_ag *ag);
  *  Notify HFP Unit of an incoming call.
  *
  *  @param ag HFP AG object.
- *  @param number Dailing number.
+ *  @param number Dialing number.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
@@ -519,7 +519,7 @@ int bt_hfp_ag_hold(struct bt_hfp_ag_call *call);
  *  Dial a call.
  *
  *  @param ag HFP AG object.
- *  @param number Dailing number.
+ *  @param number Dialing number.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
