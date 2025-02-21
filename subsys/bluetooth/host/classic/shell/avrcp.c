@@ -43,6 +43,26 @@ static void avrcp_disconnected(struct bt_avrcp *avrcp)
 	bt_shell_print("AVRCP disconnected");
 }
 
+static void avrcp_get_capabilities_rsp(struct bt_avrcp *avrcp,
+				       struct bt_avrcp_get_capabilities_rsp *rsp)
+{
+	uint8_t i;
+
+	switch (rsp->capability_id) {
+	case BT_AVRCP_CAP_COMPANY_ID:
+		for (i = 0; i < rsp->capability_count; i++) {
+			bt_shell_print("Remote CompanyID = 0x%02x%02x%02x", rsp->capability[3 * i],
+				       rsp->capability[3 * i + 1], rsp->capability[3 * i + 2]);
+		}
+		break;
+	case BT_AVRCP_CAP_EVENTS_SUPPORTED:
+		for (i = 0; i < rsp->capability_count; i++) {
+			bt_shell_print("Remote supported EventID = 0x%02x", rsp->capability[i]);
+		}
+		break;
+	}
+}
+
 static void avrcp_unit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_unit_info_rsp *rsp)
 {
 	bt_shell_print("AVRCP unit info received, unit type = 0x%02x, company_id = 0x%06x",
@@ -77,6 +97,7 @@ static void avrcp_passthrough_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_passth
 static struct bt_avrcp_cb avrcp_cb = {
 	.connected = avrcp_connected,
 	.disconnected = avrcp_disconnected,
+	.get_capabilities_rsp = avrcp_get_capabilities_rsp,
 	.unit_info_rsp = avrcp_unit_info_rsp,
 	.subunit_info_rsp = avrcp_subunit_info_rsp,
 	.passthrough_rsp = avrcp_passthrough_rsp,
@@ -217,6 +238,31 @@ static int cmd_pause(const struct shell *sh, int32_t argc, char *argv[])
 	return cmd_passthrough(sh, BT_AVRCP_OPID_PAUSE, NULL, 0);
 }
 
+static int cmd_get_capabilities(const struct shell *sh, int32_t argc, char *argv[])
+{
+	const char *cap_id;
+
+	if (!avrcp_registered) {
+		if (register_cb(sh) != 0) {
+			return -ENOEXEC;
+		}
+	}
+
+	if (default_avrcp == NULL) {
+		shell_error(sh, "AVRCP is not connected");
+		return 0;
+	}
+
+	cap_id = argv[1];
+	if (!strcmp(cap_id, "company")) {
+		bt_avrcp_get_capabilities(default_avrcp, BT_AVRCP_CAP_COMPANY_ID);
+	} else if (!strcmp(cap_id, "events")) {
+		bt_avrcp_get_capabilities(default_avrcp, BT_AVRCP_CAP_EVENTS_SUPPORTED);
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	avrcp_cmds,
 	SHELL_CMD_ARG(register_cb, NULL, "register avrcp callbacks", cmd_register_cb, 1, 0),
@@ -224,6 +270,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(disconnect, NULL, "disconnect AVRCP", cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(get_unit, NULL, "get unit info", cmd_get_unit_info, 1, 0),
 	SHELL_CMD_ARG(get_subunit, NULL, "get subunit info", cmd_get_subunit_info, 1, 0),
+	SHELL_CMD_ARG(get_cap, NULL, "get capabilities <cap_id: company or events>",
+		      cmd_get_capabilities, 2, 0),
 	SHELL_CMD_ARG(play, NULL, "request a play at the remote player", cmd_play, 1, 0),
 	SHELL_CMD_ARG(pause, NULL, "request a pause at the remote player", cmd_pause, 1, 0),
 	SHELL_SUBCMD_SET_END);
