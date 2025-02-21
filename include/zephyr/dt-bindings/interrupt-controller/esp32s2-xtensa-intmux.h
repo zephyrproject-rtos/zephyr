@@ -106,9 +106,7 @@
 #define ICACHE_SYNC_INTR_SOURCE             94  /* instruction cache sync done, level */
 #define MAX_INTR_SOURCE                     95  /* total number of interrupt sources */
 
-/* For Xtensa architecture, zero will allocate low/medium
- * levels of priority (ESP_INTR_FLAG_LOWMED)
- */
+/* Zero will allocate low/medium levels of priority (ESP_INTR_FLAG_LOWMED) */
 #define IRQ_DEFAULT_PRIORITY	0
 
 #define ESP_INTR_FLAG_SHARED	(1<<8)	/* Interrupt can be shared between ISRs */
