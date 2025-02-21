@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -252,7 +252,7 @@ void __start(void)
 {
 #ifdef CONFIG_RISCV_GP
 
-	__asm__ __volatile__("la t0, _esp_vector_table\n"
+	__asm__ __volatile__("la t0, _vector_table\n"
 			     "csrw mtvec, t0\n");
 
 	/* Disable normal interrupts. */
