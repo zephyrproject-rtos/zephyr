@@ -531,7 +531,10 @@ static void arp_gratuitous_send(struct net_if *iface,
 
 	NET_DBG("Sending gratuitous ARP pkt %p", pkt);
 
-	if (net_if_send_data(iface, pkt) == NET_DROP) {
+	/* send without timeout, so we do not risk being blocked by tx when
+	 * being flooded
+	 */
+	if (net_if_try_send_data(iface, pkt, K_NO_WAIT) == NET_DROP) {
 		net_pkt_unref(pkt);
 	}
 }
@@ -874,7 +877,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 		/* Send reply */
 		reply = arp_prepare_reply(net_pkt_iface(pkt), pkt, dst_hw_addr);
 		if (reply) {
-			net_if_queue_tx(net_pkt_iface(reply), reply);
+			net_if_try_queue_tx(net_pkt_iface(reply), reply, K_NO_WAIT);
 		} else {
 			NET_DBG("Cannot send ARP reply");
 		}
