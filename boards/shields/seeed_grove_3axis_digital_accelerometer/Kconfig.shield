@@ -1,0 +1,5 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SEEED_GROVE_LIS3DHTR
+	def_bool $(shields_list_contains,seeed_grove_lis3dhtr)
