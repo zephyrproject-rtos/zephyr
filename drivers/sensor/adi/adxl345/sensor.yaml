@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "adi"
+  part: "adxl345"
+supported-buses:
+  - i2c
+description: |
+  ADXL345 accelerometer
+channels:
+  accel_x: []
+  accel_y: []
+  accel_z: []
+  accel_xyz: []
+attributes:
+  - attribute: "sampling_frequency"
+    channel: "accel_xyz"
+    units: "frequency"
+triggers:
+  - data_ready
+  - fifo_watermark

@@ -1,0 +1,37 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "bosch"
+  part: "bmg160"
+supported-buses:
+  - i2c
+description: |
+  BMG160 gyroscope
+channels:
+  die_temp: []
+  gyro_x: []
+  gyro_y: []
+  gyro_z: []
+  gyro_xyz: []
+attributes:
+  - attribute: full_scale
+    channel: gyro_xyz
+    units: angular_velocity
+  - attribute: sampling_frequency
+    channel: gyro_xyz
+    units: frequency
+  - attribute: slope_dur
+    channel: gyro_xyz
+    units: time
+  - attribute: slope_th
+    channel: gyro_xyz
+    units: angular_velocity
+triggers:
+  - data_ready
+  - delta

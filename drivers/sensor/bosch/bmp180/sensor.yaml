@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "bosch"
+  part: "bmp180"
+supported-buses:
+  - i2c
+description: |
+  BMP180 pressure sensor
+channels:
+  die_temp: []
+  press: []
+attributes:
+  - attribute: oversampling
+    channel: press
+    units: none

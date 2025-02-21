@@ -1,0 +1,29 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "bosch"
+  part: "bmp581"
+supported-buses:
+  - i2c
+description: |
+  BMP581 temperature/pressure sensor
+channels:
+  ambient_temp: []
+  press: []
+attributes:
+  - attribute: oversampling
+    units: none
+  - attribute: oversampling
+    channel: ambient_temp
+    units: none
+  - attribute: oversampling
+    channel: press
+    units: none
+  - attribute: sampling_frequency
+    units: frequency

@@ -1,0 +1,41 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "bosch"
+  part: "bmi323"
+supported-buses:
+  - spi
+description: |
+  BMI323 accel/gyro
+channels:
+  accel_xyz: []
+  gyro_xyz: []
+  die_temp: []
+attributes:
+  - attribute: full_scale
+    channel: accel_xyz
+    units: acceleration
+  - attribute: full_scale
+    channel: gyro_xyz
+    units: angular_velocity
+  - attribute: sampling_frequency
+    channel: accel_xyz
+    units: frequency
+  - attribute: sampling_frequency
+    channel: gyro_xyz
+    units: frequency
+  - attribute: feature_mask
+    channel: accel_xyz
+    units: none
+  - attribute: feature_mask
+    channel: gyro_xyz
+    units: none
+triggers:
+  - data_ready
+  - motion

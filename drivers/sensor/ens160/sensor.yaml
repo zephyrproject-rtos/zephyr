@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+  - "drivers/sensor/ens160/defs.yaml"
+compatible:
+  org: "sciosense"
+  part: "ens160"
+supported-buses:
+  - i2c
+  - spi
+description: |
+  ENS160 air quality sensor
+channels:
+  co2: []
+  voc: []
+  ens160_aqi: []
+attributes:
+  - attribute: ens160_rh
+    units: percent
+  - attribute: ens160_temp
+    units: temperature
+triggers:
+  - data_ready

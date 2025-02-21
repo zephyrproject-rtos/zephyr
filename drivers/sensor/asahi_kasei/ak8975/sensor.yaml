@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "asahi_kasei"
+  part: "ak8975"
+supported-buses:
+  - i2c
+description: |
+  AK8975 magnetometer
+channels:
+  magn_x: []
+  magn_y: []
+  magn_z: []
+  magn_xyz: []

@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+  - "drivers/sensor/ams/tcs3400/attributes.yaml"
+compatible:
+  org: "ams"
+  part: "tcs3400"
+supported-buses:
+  - i2c
+description: |
+  TCS3400 RGBC light sensor
+channels:
+  blue: []
+  green: []
+  light: []
+  red: []
+attributes:
+  - attribute: tcs3400_integration_cycles
+    units: time

@@ -217,7 +217,7 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 		goto exit;
 	}
 
-	switch ((enum sensor_attribute_tsl2540)attr) {
+	switch (attr) {
 	case SENSOR_ATTR_INT_APERS:
 		temp = (uint8_t)val->val1;
 
@@ -231,7 +231,7 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 			goto exit;
 		}
 		break;
-	case SENSOR_ATTR_INTEGRATION_TIME:
+	case SENSOR_ATTR_TSL2540_INTEGRATION_TIME:
 		it = sensor_value_to_double(val);
 		it /= TSL2540_INTEGRATION_TIME_MS;
 		if (it < 1 || it > 256) {
@@ -263,6 +263,9 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 		ret = i2c_reg_update_byte_dt(&cfg->i2c_spec, TSL2540_CFG3_ADDR, TSL2540_CFG3_MASK,
 						TSL2540_CFG3_DFLT);
 		break;
+	default:
+		ret = -EINVAL;
+		break;
 	}
 
 exit:
@@ -285,7 +288,7 @@ static int tsl2540_setup(const struct device *dev)
 
 	sensor_value_from_double(&integration_time, 500.0);
 	tsl2540_attr_set(dev, (enum sensor_channel)SENSOR_CHAN_LIGHT,
-			 (enum sensor_attribute)SENSOR_ATTR_INTEGRATION_TIME, &integration_time);
+			 SENSOR_ATTR_TSL2540_INTEGRATION_TIME, &integration_time);
 
 	return 0;
 }

@@ -6,7 +6,6 @@
 
 #define DT_DRV_COMPAT sciosense_ens160
 
-#include <zephyr/drivers/sensor/ens160.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
@@ -161,7 +160,7 @@ static int ens160_attr_set(const struct device *dev, enum sensor_channel chan,
 {
 	int ret = 0;
 
-	switch ((uint32_t)attr) {
+	switch (attr) {
 	case SENSOR_ATTR_ENS160_TEMP:
 		ret = ens160_set_temperature(dev, val);
 		break;

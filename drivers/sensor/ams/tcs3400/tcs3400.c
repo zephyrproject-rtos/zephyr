@@ -9,7 +9,6 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/sensor/tcs3400.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
