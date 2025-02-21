@@ -1126,7 +1126,11 @@ def install_static_assets_as_needed(
 
 
 def load_board_catalog_into_domain(app: Sphinx) -> None:
-    board_catalog = get_catalog(generate_hw_features=app.config.zephyr_generate_hw_features)
+    board_catalog = get_catalog(
+        generate_hw_features=(
+            app.builder.format == "html" and app.config.zephyr_generate_hw_features
+        )
+    )
     app.env.domaindata["zephyr"]["boards"] = board_catalog["boards"]
     app.env.domaindata["zephyr"]["vendors"] = board_catalog["vendors"]
     app.env.domaindata["zephyr"]["socs"] = board_catalog["socs"]
