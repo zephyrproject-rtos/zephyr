@@ -239,6 +239,17 @@
 					      140 0 141 0 142 0 143 0>;
 			};
 		};
+
+		wdog: watchdog@4000c000 {
+			compatible = "realtek,rts5912-watchdog";
+			reg = <0x4000c000 0x14>;
+			interrupt-parent = <&nvic>;
+			interrupts = <209 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP2 PERIPH_GRP2_WDT_CLKPWR>;
+			clock-names = "watchdog";
+			clk-divider = <33>;
+			status = "disabled";
+		};
 	};
 
 	swj_port: swj-port {
