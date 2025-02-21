@@ -79,7 +79,8 @@ LOG_MODULE_REGISTER(bt_driver);
 /*                             Private functions                              */
 /* -------------------------------------------------------------------------- */
 
-#if defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP) || defined(CONFIG_HCI_NXP_SET_CAL_DATA)
+#if defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP) || defined(CONFIG_HCI_NXP_SET_CAL_DATA) ||\
+	defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR)
 static int nxp_bt_send_vs_command(uint16_t opcode, const uint8_t *params, uint8_t params_len)
 {
 	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
@@ -101,7 +102,7 @@ static int nxp_bt_send_vs_command(uint16_t opcode, const uint8_t *params, uint8_
 		return 0;
 	}
 }
-#endif /* CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP || CONFIG_HCI_NXP_SET_CAL_DATA */
+#endif
 
 #if defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP)
 static int nxp_bt_enable_controller_autosleep(void)
@@ -170,7 +171,10 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 	uint8_t addrOUI[BD_ADDR_OUI_PART_SIZE] = {BD_ADDR_OUI};
 	uint8_t uid[16] = {0};
 	uint8_t uuidLen;
-	uint8_t hciBuffer[12];
+	uint8_t params[HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH] = {
+		BT_USER_BD,
+		0x06U
+	};
 
 	/* If no public address is provided by the user, use a unique address made
 	 * from the device's UID (unique ID)
@@ -190,18 +194,12 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 		bt_addr_copy((bt_addr_t *)bleDeviceAddress, public_addr);
 	}
 
-	hciBuffer[0] = BT_HCI_H4_CMD;
-	memcpy((void *)&hciBuffer[1], (const void *)&opcode, 2U);
-	/* Set HCI parameter length */
-	hciBuffer[3] = HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH;
-	/* Set command parameter ID */
-	hciBuffer[4] = BT_USER_BD;
-	/* Set command parameter length */
-	hciBuffer[5] = (uint8_t)6U;
-	memcpy(hciBuffer + 6U, (const void *)bleDeviceAddress,
-	       BD_ADDR_UUID_PART_SIZE + BD_ADDR_OUI_PART_SIZE);
+	memcpy(&params[2], (const void *)bleDeviceAddress,
+		BD_ADDR_UUID_PART_SIZE + BD_ADDR_OUI_PART_SIZE);
+
 	/* Send the command */
-	return PLATFORM_SendHciMessage(hciBuffer, 12U);
+	return nxp_bt_send_vs_command(opcode, params,
+					HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH);
 }
 #endif /* CONFIG_BT_HCI_SET_PUBLIC_ADDR */
 
