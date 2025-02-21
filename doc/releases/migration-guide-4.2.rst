@@ -64,6 +64,13 @@ GPIO
 Bluetooth
 *********
 
+Bluetooth Host
+==============
+
+* The symbols ``BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_<NUMBER>`` in
+  :zephyr_file:`include/zephyr/bluetooth/conn.h` have been renamed
+  to ``BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A<NUMBER>_B<NUMBER>``.
+
 Networking
 **********
 
