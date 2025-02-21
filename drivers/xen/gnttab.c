@@ -2,7 +2,7 @@
 /*
  ****************************************************************************
  * (C) 2006 - Cambridge University
- * (C) 2021-2022 - EPAM Systems
+ * (C) 2021-2024 - EPAM Systems
  ****************************************************************************
  *
  *        File: gnttab.c
@@ -35,16 +35,13 @@ LOG_MODULE_REGISTER(xen_gnttab);
 /* Timeout for grant table ops retrying */
 #define GOP_RETRY_DELAY 200
 
-#define GNTTAB_SIZE DT_REG_SIZE_BY_IDX(DT_INST(0, xen_xen), 0)
-BUILD_ASSERT(!(GNTTAB_SIZE % XEN_PAGE_SIZE), "Size of gnttab have to be aligned on XEN_PAGE_SIZE");
+#define GNTTAB_GREF_USED	(UINT32_MAX - 1)
+#define GNTTAB_SIZE		(CONFIG_NR_GRANT_FRAMES * XEN_PAGE_SIZE)
+#define NR_GRANT_ENTRIES	(GNTTAB_SIZE / sizeof(grant_entry_v1_t))
 
-/* NR_GRANT_FRAMES must be less than or equal to that configured in Xen */
-#define NR_GRANT_FRAMES (GNTTAB_SIZE / XEN_PAGE_SIZE)
-#define NR_GRANT_ENTRIES \
-	(NR_GRANT_FRAMES * XEN_PAGE_SIZE / sizeof(grant_entry_v1_t))
-
+BUILD_ASSERT(GNTTAB_SIZE <= DT_REG_SIZE_BY_IDX(DT_INST(0, xen_xen), 0),
+	     "Number of grant frames is bigger than grant table DT region!");
 BUILD_ASSERT(GNTTAB_SIZE <= CONFIG_KERNEL_VM_SIZE);
-DEVICE_MMIO_TOPLEVEL_STATIC(grant_tables, DT_INST(0, xen_xen));
 
 static struct gnttab {
 	struct k_sem sem;
@@ -64,6 +61,7 @@ static grant_ref_t get_free_entry(void)
 	__ASSERT((gref >= GNTTAB_NR_RESERVED_ENTRIES &&
 		gref < NR_GRANT_ENTRIES), "Invalid gref = %d", gref);
 	gnttab.gref_list[0] = gnttab.gref_list[gref];
+	gnttab.gref_list[gref] = GNTTAB_GREF_USED;
 	irq_unlock(flags);
 
 	return gref;
@@ -74,6 +72,12 @@ static void put_free_entry(grant_ref_t gref)
 	unsigned int flags;
 
 	flags = irq_lock();
+	if (gnttab.gref_list[gref] != GNTTAB_GREF_USED) {
+		LOG_WRN("Trying to put already free gref = %u", gref);
+
+		return;
+	}
+
 	gnttab.gref_list[gref] = gnttab.gref_list[0];
 	gnttab.gref_list[0] = gref;
 
@@ -277,7 +281,7 @@ int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count)
 	return 0;
 }
 
-int gnttab_unmap_refs(struct gnttab_map_grant_ref *unmap_ops, unsigned int count)
+int gnttab_unmap_refs(struct gnttab_unmap_grant_ref *unmap_ops, unsigned int count)
 {
 	return HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap_ops, count);
 }
@@ -295,44 +299,68 @@ const char *gnttabop_error(int16_t status)
 	}
 }
 
+/* Picked from Linux implementation */
+#define LEGACY_MAX_GNT_FRAMES_SUPPORTED		4
+static unsigned long gnttab_get_max_frames(void)
+{
+	int ret;
+	struct gnttab_query_size q = {
+		.dom = DOMID_SELF,
+	};
+
+	ret = HYPERVISOR_grant_table_op(GNTTABOP_query_size, &q, 1);
+	if ((ret < 0) || (q.status != GNTST_okay)) {
+		return LEGACY_MAX_GNT_FRAMES_SUPPORTED;
+	}
+
+	return q.max_nr_frames;
+}
+
 static int gnttab_init(void)
 {
 	grant_ref_t gref;
 	struct xen_add_to_physmap xatp;
-	struct gnttab_setup_table setup;
-	xen_pfn_t frames[NR_GRANT_FRAMES];
 	int rc = 0, i;
+	unsigned long xen_max_grant_frames;
+	uintptr_t gnttab_base = DT_REG_ADDR_BY_IDX(DT_INST(0, xen_xen), 0);
+	mm_reg_t gnttab_reg;
 
-	/* Will be taken/given during gnt_refs allocation/release */
-	k_sem_init(&gnttab.sem, 0, NR_GRANT_ENTRIES - GNTTAB_NR_RESERVED_ENTRIES);
-
-	for (
-		gref = GNTTAB_NR_RESERVED_ENTRIES;
-		gref < NR_GRANT_ENTRIES;
-		gref++
-	    ) {
-		put_free_entry(gref);
+	xen_max_grant_frames = gnttab_get_max_frames();
+	if (xen_max_grant_frames < CONFIG_NR_GRANT_FRAMES) {
+		LOG_ERR("Xen max_grant_frames is less than CONFIG_NR_GRANT_FRAMES!");
+		k_panic();
 	}
 
-	for (i = 0; i < NR_GRANT_FRAMES; i++) {
+	/* Will be taken/given during gnt_refs allocation/release */
+	k_sem_init(&gnttab.sem, NR_GRANT_ENTRIES - GNTTAB_NR_RESERVED_ENTRIES,
+		   NR_GRANT_ENTRIES - GNTTAB_NR_RESERVED_ENTRIES);
+
+	/* Initialize O(1) allocator, gnttab.gref_list[0] always shows first free entry */
+	gnttab.gref_list[0] = GNTTAB_NR_RESERVED_ENTRIES;
+	gnttab.gref_list[NR_GRANT_ENTRIES - 1] = 0;
+	for (gref = GNTTAB_NR_RESERVED_ENTRIES; gref < NR_GRANT_ENTRIES - 1; gref++) {
+		gnttab.gref_list[gref] = gref + 1;
+	}
+
+	for (i = CONFIG_NR_GRANT_FRAMES - 1; i >= 0; i--) {
 		xatp.domid = DOMID_SELF;
 		xatp.size = 0;
 		xatp.space = XENMAPSPACE_grant_table;
 		xatp.idx = i;
-		xatp.gpfn = xen_virt_to_gfn(Z_TOPLEVEL_ROM_NAME(grant_tables).phys_addr) + i;
+		xatp.gpfn = xen_virt_to_gfn(gnttab_base) + i;
 		rc = HYPERVISOR_memory_op(XENMEM_add_to_physmap, &xatp);
 		__ASSERT(!rc, "add_to_physmap failed; status = %d\n", rc);
 	}
 
-	setup.dom = DOMID_SELF;
-	setup.nr_frames = NR_GRANT_FRAMES;
-	set_xen_guest_handle(setup.frame_list, frames);
-	rc = HYPERVISOR_grant_table_op(GNTTABOP_setup_table, &setup, 1);
-	__ASSERT((!rc) && (!setup.status), "Table setup failed; status = %s\n",
-		gnttabop_error(setup.status));
-
-	DEVICE_MMIO_TOPLEVEL_MAP(grant_tables, K_MEM_CACHE_WB | K_MEM_PERM_RW);
-	gnttab.table = (grant_entry_v1_t *)DEVICE_MMIO_TOPLEVEL_GET(grant_tables);
+	/*
+	 * Xen DT region reserved for grant table (first reg in hypervisor node)
+	 * may be much bigger than CONFIG_NR_GRANT_FRAMES multiplied by page size.
+	 * Thus, we need to map only part of region, that is limited by config.
+	 * The size of this part is calculated in GNTTAB_SIZE macro and used as
+	 * parameter for device_map()
+	 */
+	device_map(&gnttab_reg, gnttab_base, GNTTAB_SIZE, K_MEM_CACHE_WB | K_MEM_PERM_RW);
+	gnttab.table = (grant_entry_v1_t *)gnttab_reg;
 
 	LOG_DBG("%s: grant table mapped\n", __func__);
 

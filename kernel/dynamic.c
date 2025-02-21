@@ -31,11 +31,6 @@ static K_THREAD_STACK_ARRAY_DEFINE(dynamic_stack, CONFIG_DYNAMIC_THREAD_POOL_SIZ
 				   CONFIG_DYNAMIC_THREAD_STACK_SIZE);
 SYS_BITARRAY_DEFINE_STATIC(dynamic_ba, BA_SIZE);
 
-static k_thread_stack_t *z_thread_stack_alloc_dyn(size_t align, size_t size)
-{
-	return z_thread_aligned_alloc(align, size);
-}
-
 static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size)
 {
 	int rv;
@@ -61,7 +56,7 @@ static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size)
 	return stack;
 }
 
-static k_thread_stack_t *stack_alloc_dyn(size_t size, int flags)
+static k_thread_stack_t *z_thread_stack_alloc_dyn(size_t size, int flags)
 {
 	if ((flags & K_USER) == K_USER) {
 #ifdef CONFIG_DYNAMIC_OBJECTS
@@ -74,8 +69,7 @@ static k_thread_stack_t *stack_alloc_dyn(size_t size, int flags)
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 	}
 
-	return z_thread_stack_alloc_dyn(Z_KERNEL_STACK_OBJ_ALIGN,
-					K_KERNEL_STACK_LEN(size));
+	return z_thread_aligned_alloc(Z_KERNEL_STACK_OBJ_ALIGN, K_KERNEL_STACK_LEN(size));
 }
 
 k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
@@ -83,7 +77,7 @@ k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
 	k_thread_stack_t *stack = NULL;
 
 	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC)) {
-		stack = stack_alloc_dyn(size, flags);
+		stack = z_thread_stack_alloc_dyn(size, flags);
 		if (stack == NULL && CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0) {
 			stack = z_thread_stack_alloc_pool(size);
 		}
@@ -93,7 +87,7 @@ k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
 		}
 
 		if ((stack == NULL) && IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
-			stack = stack_alloc_dyn(size, flags);
+			stack = z_thread_stack_alloc_dyn(size, flags);
 		}
 	}
 

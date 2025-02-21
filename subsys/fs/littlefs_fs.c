@@ -657,7 +657,7 @@ static int littlefs_flash_init(struct fs_littlefs *fs, void *dev_id)
 	/* Open flash area */
 	ret = flash_area_open(area_id, fap);
 	if ((ret < 0) || (*fap == NULL)) {
-		LOG_ERR("can't open flash area %d", area_id);
+		LOG_ERR("can't open flash area %d, err %d", area_id, ret);
 		return -ENODEV;
 	}
 
@@ -789,6 +789,14 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 		lookahead_size = CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE;
 	}
 
+#ifdef CONFIG_FS_LITTLEFS_DISK_VERSION
+	uint32_t disk_version = lcp->disk_version;
+
+	if (disk_version == 0) {
+		disk_version = LFS_DISK_VERSION;
+	}
+#endif /* CONFIG_FS_LITTLEFS_DISK_VERSION */
+
 	/* No, you don't get to override this. */
 	lfs_size_t block_count = 0;
 
@@ -817,7 +825,7 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 			dev->name,
 			(uint32_t)((struct flash_area *)fs->backend)->fa_off,
 			block_count, block_size, block_cycles);
-		LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
+		LOG_INF("partition sizes: rd %u ; pr %u ; ca %u ; la %u",
 			read_size, prog_size, cache_size, lookahead_size);
 	}
 #endif /* CONFIG_FS_LITTLEFS_FMP_DEV */
@@ -836,9 +844,6 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 	lcp->context = fs->backend;
 	/* Set the validated/defaulted values. */
 	if (littlefs_on_blkdev(flags)) {
-		lfs_size_t new_cache_size = block_size;
-		lfs_size_t new_lookahead_size = block_size * 4;
-
 		lcp->read = lfs_api_read_blk;
 		lcp->prog = lfs_api_prog_blk;
 		lcp->erase = lfs_api_erase_blk;
@@ -846,23 +851,17 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 		lcp->read_size = block_size;
 		lcp->prog_size = block_size;
 
-		if (lcp->cache_size < new_cache_size) {
-			LOG_ERR("Configured cache size is too small: %d < %d", lcp->cache_size,
-				new_cache_size);
-			return -ENOMEM;
+		if (cache_size < block_size) {
+			LOG_ERR("Configured cache size is too small: %d < %d", cache_size,
+				block_size);
 		}
-		lcp->cache_size = new_cache_size;
+		lcp->cache_size = ROUND_DOWN(cache_size, block_size);
 
-		if (lcp->lookahead_size < new_lookahead_size) {
-			LOG_ERR("Configured lookahead size is too small: %d < %d",
-				lcp->lookahead_size, new_lookahead_size);
-			return -ENOMEM;
-		}
-		lcp->lookahead_size = new_lookahead_size;
+		lcp->lookahead_size = lookahead_size;
 
 		lcp->sync = lfs_api_sync_blk;
 
-		LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
+		LOG_INF("partition sizes: rd %u ; pr %u ; ca %u ; la %u",
 			lcp->read_size, lcp->prog_size, lcp->cache_size,
 			lcp->lookahead_size);
 	} else {
@@ -881,6 +880,13 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 		lcp->lookahead_size = lookahead_size;
 		lcp->sync = lfs_api_sync;
 	}
+
+#ifdef CONFIG_FS_LITTLEFS_DISK_VERSION
+	lcp->disk_version = disk_version;
+	LOG_INF("partition disk version: %u.%u",
+		(uint32_t)FS_LITTLEFS_DISK_VERSION_MAJOR_GET(disk_version),
+		(uint32_t)FS_LITTLEFS_DISK_VERSION_MINOR_GET(disk_version));
+#endif /* CONFIG_FS_LITTLEFS_DISK_VERSION */
 
 	lcp->block_size = block_size;
 	lcp->block_count = block_count;
@@ -1054,6 +1060,12 @@ static const struct fs_file_system_t littlefs_fs = {
 
 #define DT_DRV_COMPAT zephyr_fstab_littlefs
 #define FS_PARTITION(inst) DT_PHANDLE_BY_IDX(DT_DRV_INST(inst), partition, 0)
+#ifdef CONFIG_FS_LITTLEFS_DISK_VERSION
+#define FS_DISK_VERSION(inst) \
+	.disk_version = DT_INST_PROP_OR(inst, disk_version, LFS_DISK_VERSION),
+#else
+#define FS_DISK_VERSION(inst)
+#endif
 
 #define DEFINE_FS(inst) \
 static uint8_t __aligned(4) \
@@ -1081,6 +1093,7 @@ static struct fs_littlefs fs_data_##inst = { \
 		.read_buffer = read_buffer_##inst, \
 		.prog_buffer = prog_buffer_##inst, \
 		.lookahead_buffer = lookahead_buffer_##inst, \
+		FS_DISK_VERSION(inst) \
 	}, \
 }; \
 struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = { \

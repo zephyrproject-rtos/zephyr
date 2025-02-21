@@ -1071,12 +1071,13 @@ The :ref:`bluetooth_mesh_blob_cli` can be added to the mesh shell by enabling th
 	* ``Addr``: Unicast address of the Target node's BLOB Transfer Server model.
 
 
-``mesh models blob cli bounds [<Group>]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``mesh models blob cli caps [<Group> [<TimeoutBase>]]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	Get the total boundary parameters of all Target nodes.
+	Retrieve transfer capabilities for Target nodes.
 
 	* ``Group``: Optional group address to use when communicating with Target nodes. If omitted, the BLOB Transfer Client will address each Target node individually.
+	* ``TimeoutBase``: Optional time to wait for responses from Target nodes, in 10-second increments.
 
 
 ``mesh models blob cli tx <Id> <Size> <BlockSizeLog> <ChunkSize> [<Group> [<Mode(push, pull)>]]``
@@ -1168,6 +1169,27 @@ receiving any BLOB data, but the implementation in the mesh shell will discard t
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Get a list of all BLOB Transfer Server model instances on the node.
+
+
+Binary Large Object (BLOB) Transfer flash stream
+------------------------------------------------
+BLOB flash stream configuration can be added to the mesh shell by enabling the
+:kconfig:option:`CONFIG_BT_MESH_SHELL_BLOB_IO_FLASH` option. By default, the shell uses a
+dummy BLOB stream. This option allows the user to specify which area in the flash to use.
+See :ref:`flash_map_api` for information on how to obtain related parameters.
+
+``mesh models blob flash-stream-set <AreaID> [<Offset>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Set the BLOB stream to a specified area.
+
+	* ``AreaID``: Flash area ID to write/read the BLOB to/from.
+	* ``Offset``: Optional offset into the flash area to place the BLOB at (in bytes).
+
+``mesh models blob flash-stream-unset``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Set the BLOB stream back to the dummy stream.
 
 
 Firmware Update Client model
@@ -1471,9 +1493,9 @@ commands, a Firmware Distribution Server must be instantiated by the application
 DFU metadata
 ------------
 
-The DFU metadata commands allow generating metadata that can be used by a Target node to check the
-firmware before accepting it. The commands are enabled through the
-:kconfig:option:`CONFIG_BT_MESH_DFU_METADATA` configuration option.
+The DFU metadata shell commands allow generating metadata that can be used by a Target node to
+check the firmware before accepting it. The commands are enabled through the
+:kconfig:option:`CONFIG_BT_MESH_SHELL_DFU_METADATA` configuration option.
 
 ``mesh models dfu metadata comp-clear``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

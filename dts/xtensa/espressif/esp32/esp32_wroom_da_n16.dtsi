@@ -14,7 +14,7 @@
 };
 
 &gpio1 {
-	gpio-reserved-ranges = <6 2>; // GPIO37-38 NC
+	gpio-reserved-ranges = <5 2>; // GPIO37-38 NC
 };
 
 /* 16MB flash */

@@ -27,7 +27,6 @@
 		zephyr,ieee802154 = &cpuapp_ieee802154;
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
-		zephyr,canbus = &can120;
 	};
 
 	aliases {
@@ -273,16 +272,6 @@ ipc0: &cpuapp_cpurad_ipc {
 
 zephyr_udc0: &usbhs {
 	status = "okay";
-};
-
-&canpll {
-	status = "okay";
-};
-
-&can120 {
-	status = "okay";
-	pinctrl-0 = <&can120_default>;
-	pinctrl-names = "default";
 };
 
 &pwm130 {

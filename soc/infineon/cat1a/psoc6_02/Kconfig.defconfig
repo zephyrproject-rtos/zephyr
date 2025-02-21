@@ -13,6 +13,12 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 100000000
 
+config BUILD_OUTPUT_HEX
+	default y
+
+config MAIN_STACK_SIZE
+	default 2048
+
 # add additional die specific params
 
 endif # SOC_DIE_PSOC6_02

@@ -23,7 +23,7 @@ manifest:
       groups:
         - optional
     - name: nanopb
-      revision: 98bf4db69897b53434f3d0ba72e0a3ab1a902824
+      revision: 7307ce399b81ddcb3c3a5dc862c52d4754328d38
       path: modules/lib/nanopb
       remote: upstream
       groups:
@@ -35,7 +35,7 @@ manifest:
       groups:
         - optional
     - name: sof
-      revision: 316f414b64dee8e4aefce503af6c2c2e57d266f4
+      revision: bc08c9c606324cfba0c104f4ffaf5dd456cb11d6
       path: modules/audio/sof
       remote: upstream
       groups:
@@ -47,7 +47,7 @@ manifest:
       groups:
         - optional
     - name: tflite-micro
-      revision: 48613f7ba1ffbda46ad771a77a35408f48f922e9
+      revision: 8d404de73acf7687831e16d88e86e4f73cfddf8e
       path: optional/modules/lib/tflite-micro
       repo-path: tflite-micro
       remote: upstream
@@ -60,7 +60,7 @@ manifest:
       groups:
         - optional
     - name: zephyr-lang-rust
-      revision: 7af3db47bf7335ac6a6fe7480df6b41fb46dbe9d
+      revision: 49c6712fe53b5b82e5c09e94548a4a51a021acfe
       path: modules/lang/rust
       remote: upstream
       groups:

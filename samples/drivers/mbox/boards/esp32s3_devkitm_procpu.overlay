@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,ipc_shm = &shm0;
 		zephyr,ipc = &mbox0;
 	};

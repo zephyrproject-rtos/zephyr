@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,34 +36,18 @@ int hardware_init(void)
 #ifdef CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE
 	esp_cpu_configure_region_protection();
 #endif
-#if CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V
-	rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
-
-	if (cfg.enable == 1 && cfg.tieh == RTC_VDDSDIO_TIEH_1_8V) {
-		cfg.drefh = 3;
-		cfg.drefm = 3;
-		cfg.drefl = 3;
-		cfg.force = 1;
-		rtc_vddsdio_set_config(cfg);
-		esp_rom_delay_us(10);
-	}
-#endif /* CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V */
 
 	bootloader_clock_configure();
 
+#ifdef CONFIG_ESP_CONSOLE
 	/* initialize console, from now on, we can log */
 	esp_console_init();
 	print_banner();
-
-	spi_flash_init_chip_state();
-	err = esp_flash_init_default_chip();
-	if (err != 0) {
-		ESP_EARLY_LOGE(TAG, "Failed to init flash chip, error %d", err);
-		return err;
-	}
+#endif /* CONFIG_ESP_CONSOLE */
 
 	cache_hal_init();
 	mmu_hal_init();
+
 	flash_update_id();
 
 	err = bootloader_flash_xmc_startup();
@@ -89,6 +73,8 @@ int hardware_init(void)
 
 	check_wdt_reset();
 	config_wdt();
+
+	soc_random_enable();
 
 	return 0;
 }

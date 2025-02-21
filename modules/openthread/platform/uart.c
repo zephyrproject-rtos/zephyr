@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
+#define LOG_LEVEL CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL
 #define LOG_MODULE_NAME net_otPlat_uart
 
 #include <zephyr/logging/log.h>

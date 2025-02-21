@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
 #include <zephyr/posix/fcntl.h>
+#include <zephyr/zvfs/eventfd.h>
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #include <zephyr/net/tls_credentials.h>
@@ -105,7 +106,6 @@ static struct zsock_pollfd sock_fds[MAX_POLL_FD];
 
 static struct lwm2m_ctx *sock_ctx[MAX_POLL_FD];
 static int sock_nfds;
-static int control_sock;
 
 /* Resource wrappers */
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
@@ -128,7 +128,7 @@ static int lwm2m_socket_update(struct lwm2m_ctx *ctx);
 void lwm2m_engine_wake_up(void)
 {
 	if (IS_ENABLED(CONFIG_LWM2M_TICKLESS)) {
-		zsock_send(control_sock, &(char){0}, 1, 0);
+		zvfs_eventfd_write(sock_fds[MAX_POLL_FD - 1].fd, 1);
 	}
 }
 
@@ -870,12 +870,12 @@ static void socket_loop(void *p1, void *p2, void *p3)
 		for (i = 0; i < MAX_POLL_FD; i++) {
 			short revents = sock_fds[i].revents;
 
-			if ((revents & ZSOCK_POLLIN) && sock_fds[i].fd != -1 &&
-			    sock_ctx[i] == NULL) {
+			if (IS_ENABLED(CONFIG_LWM2M_TICKLESS) && (revents & ZSOCK_POLLIN) &&
+			    i == (MAX_POLL_FD - 1)) {
 				/* This is the control socket, just read and ignore the data */
-				char tmp;
+				zvfs_eventfd_t tmp;
 
-				zsock_recv(sock_fds[i].fd, &tmp, 1, 0);
+				zvfs_eventfd_read(sock_fds[i].fd, &tmp);
 				continue;
 			}
 			if (sock_ctx[i] != NULL && sock_ctx[i]->sock_fd < 0) {
@@ -1348,31 +1348,17 @@ static int lwm2m_engine_init(void)
 	}
 
 	if (IS_ENABLED(CONFIG_LWM2M_TICKLESS)) {
-		/* Create socketpair that is used to wake zsock_poll() in the main loop */
-		int s[2];
-		int ret = zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, s);
+		/* Create eventfd that is used to wake zsock_poll() in the main loop */
+		int efd = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 
-		if (ret) {
-			LOG_ERR("Error; socketpair() returned %d", ret);
-			return ret;
+		if (efd == -1) {
+			int err = errno;
+
+			LOG_ERR("Error; eventfd() returned %d", err);
+			return -err;
 		}
-		/* Last poll-handle is reserved for control socket */
-		sock_fds[MAX_POLL_FD - 1].fd = s[0];
-		control_sock = s[1];
-		ret = zsock_fcntl(s[0], F_SETFL, O_NONBLOCK);
-		if (ret) {
-			LOG_ERR("zsock_fcntl() %d", ret);
-			zsock_close(s[0]);
-			zsock_close(s[1]);
-			return ret;
-		}
-		ret = zsock_fcntl(s[1], F_SETFL, O_NONBLOCK);
-		if (ret) {
-			LOG_ERR("zsock_fcntl() %d", ret);
-			zsock_close(s[0]);
-			zsock_close(s[1]);
-			return ret;
-		}
+		/* Last poll-handle is reserved for control eventfd */
+		sock_fds[MAX_POLL_FD - 1].fd = efd;
 	}
 
 	lwm2m_clear_block_contexts();

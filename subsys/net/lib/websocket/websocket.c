@@ -99,8 +99,6 @@ static int websocket_context_unref(struct websocket_context *ctx)
 
 static inline bool websocket_context_is_used(struct websocket_context *ctx)
 {
-	NET_ASSERT(ctx);
-
 	return !!atomic_get(&ctx->refcount);
 }
 
@@ -278,6 +276,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	ctx->recv_buf.size = wreq->tmp_buf_len;
 	ctx->sec_accept_key = sec_accept_key;
 	ctx->http_cb = wreq->http_cb;
+	ctx->is_client = 1;
 
 	mbedtls_sha1((const unsigned char *)&rnd_value, sizeof(rnd_value),
 			 sec_accept_key);
@@ -1072,9 +1071,8 @@ static int websocket_send(struct websocket_context *ctx, const uint8_t *buf,
 
 	NET_DBG("[%p] Sending %zd bytes", ctx, buf_len);
 
-	ret = websocket_send_msg(ctx->sock, buf, buf_len,
-				 WEBSOCKET_OPCODE_DATA_TEXT,
-				 true, true, timeout);
+	ret = websocket_send_msg(ctx->sock, buf, buf_len, WEBSOCKET_OPCODE_DATA_TEXT,
+				 ctx->is_client, true, timeout);
 	if (ret < 0) {
 		errno = -ret;
 		return -1;
@@ -1186,6 +1184,7 @@ int websocket_register(int sock, uint8_t *recv_buf, size_t recv_buf_len)
 	ctx->real_sock = sock;
 	ctx->recv_buf.buf = recv_buf;
 	ctx->recv_buf.size = recv_buf_len;
+	ctx->is_client = 0;
 
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {

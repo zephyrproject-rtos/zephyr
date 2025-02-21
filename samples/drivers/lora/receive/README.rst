@@ -36,20 +36,48 @@ Sample Output
 
 .. code-block:: console
 
-    [00:00:00.235,000] <inf> lora_receive: Synchronous reception
-    [00:00:00.956,000] <inf> lora_receive: Received data: helloworld (RSSI:-60dBm, SNR:7dBm)
-    [00:00:02.249,000] <inf> lora_receive: Received data: helloworld (RSSI:-57dBm, SNR:9dBm)
-    [00:00:03.541,000] <inf> lora_receive: Received data: helloworld (RSSI:-57dBm, SNR:9dBm)
-    [00:00:04.834,000] <inf> lora_receive: Received data: helloworld (RSSI:-55dBm, SNR:9dBm)
-    [00:00:04.834,000] <inf> lora_receive: Asynchronous reception
-    [00:00:06.127,000] <inf> lora_receive: Received data: helloworld (RSSI:-55dBm, SNR:9dBm)
-    [00:00:07.419,000] <inf> lora_receive: Received data: helloworld (RSSI:-55dBm, SNR:9dBm)
-    [00:00:08.712,000] <inf> lora_receive: Received data: helloworld (RSSI:-55dBm, SNR:9dBm)
-    [00:00:10.004,000] <inf> lora_receive: Received data: helloworld (RSSI:-55dBm, SNR:9dBm)
-    [00:00:11.297,000] <inf> lora_receive: Received data: helloworld (RSSI:-55dBm, SNR:9dBm)
-    [00:00:12.590,000] <inf> lora_receive: Received data: helloworld (RSSI:-55dBm, SNR:9dBm)
-    [00:00:13.884,000] <inf> lora_receive: Received data: helloworld (RSSI:-55dBm, SNR:9dBm)
-    [00:00:15.177,000] <inf> lora_receive: Received data: helloworld (RSSI:-55dBm, SNR:9dBm)
-    [00:00:16.470,000] <inf> lora_receive: Received data: helloworld (RSSI:-55dBm, SNR:9dBm)
-    [00:00:17.762,000] <inf> lora_receive: Received data: helloworld (RSSI:-55dBm, SNR:9dBm)
-    [00:00:17.762,000] <inf> lora_receive: Stopping packet receptions
+   [00:00:00.235,000] <inf> lora_receive: Synchronous reception
+   [00:00:00.956,000] <inf> lora_receive: LoRa RX RSSI: -60dBm, SNR: 7dB
+   [00:00:00.956,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:02.249,000] <inf> lora_receive: LoRa RX RSSI: -57dBm, SNR: 9dB
+   [00:00:02.249,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:03.541,000] <inf> lora_receive: LoRa RX RSSI: -57dBm, SNR: 9dB
+   [00:00:03.541,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:04.834,000] <inf> lora_receive: LoRa RX RSSI: -55dBm, SNR: 9dB
+   [00:00:04.834,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:04.834,000] <inf> lora_receive: Asynchronous reception
+   [00:00:06.127,000] <inf> lora_receive: LoRa RX RSSI: -55dBm, SNR: 9dB
+   [00:00:06.127,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:07.419,000] <inf> lora_receive: LoRa RX RSSI: -55dBm, SNR: 9dB
+   [00:00:07.419,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:08.712,000] <inf> lora_receive: LoRa RX RSSI: -55dBm, SNR: 9dB
+   [00:00:08.712,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:10.004,000] <inf> lora_receive: LoRa RX RSSI: -55dBm, SNR: 9dB
+   [00:00:10.004,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:11.297,000] <inf> lora_receive: LoRa RX RSSI: -55dBm, SNR: 9dB
+   [00:00:11.297,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:12.590,000] <inf> lora_receive: LoRa RX RSSI: -55dBm, SNR: 9dB
+   [00:00:12.590,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:13.884,000] <inf> lora_receive: LoRa RX RSSI: -55dBm, SNR: 9dB
+   [00:00:13.884,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:15.177,000] <inf> lora_receive: LoRa RX RSSI: -55dBm, SNR: 9dB
+   [00:00:15.177,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:16.470,000] <inf> lora_receive: LoRa RX RSSI: -55dBm, SNR: 9dB
+   [00:00:16.470,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:17.762,000] <inf> lora_receive: LoRa RX RSSI: -55dBm, SNR: 9dB
+   [00:00:17.762,000] <inf> lora_receive: LoRa RX payload
+                                          68 65 6c 6c 6f 77 6f 72  6c 64                   |hellowor ld
+   [00:00:17.762,000] <inf> lora_receive: Stopping packet receptions

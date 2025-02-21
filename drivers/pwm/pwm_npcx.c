@@ -15,7 +15,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(pwm_npcx, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(pwm_npcx, CONFIG_PWM_LOG_LEVEL);
 
 /* 16-bit period cycles/prescaler in NPCX PWM modules */
 #define NPCX_PWM_MAX_PRESCALER      (1UL << (16))
@@ -163,7 +163,7 @@ static int pwm_npcx_get_cycles_per_sec(const struct device *dev,
 }
 
 /* PWM driver registration */
-static const struct pwm_driver_api pwm_npcx_driver_api = {
+static DEVICE_API(pwm, pwm_npcx_driver_api) = {
 	.set_cycles = pwm_npcx_set_cycles,
 	.get_cycles_per_sec = pwm_npcx_get_cycles_per_sec
 };

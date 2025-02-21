@@ -32,76 +32,85 @@
 		};
 	};
 
-	irqsteer: interrupt-controller@510a0000 {
-		compatible = "nxp,irqsteer-intc";
-		reg = <0x510a0000 DT_SIZE_K(64)>;
-		power-domains = <&irqstr_pd>;
-
-		#size-cells = <0>;
-		#address-cells = <1>;
-
-		master0: interrupt-controller@0 {
-			compatible = "nxp,irqsteer-master";
-			reg = <0>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			interrupts-extended = <&clic 19 0 0>;
+	scu: system-controller {
+		ccm: clock-controller {
+			compatible = "nxp,imx-ccm";
+			#clock-cells = <3>;
 		};
 
-		master1: interrupt-controller@1 {
-			compatible = "nxp,irqsteer-master";
-			reg = <1>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			interrupts-extended = <&clic 20 0 0>;
+		iomuxc: iomuxc {
+			compatible = "nxp,imx-iomuxc-scu";
+			pinctrl: pinctrl {
+				compatible = "nxp,imx8-pinctrl";
+			};
 		};
 
-		master2: interrupt-controller@2 {
-			compatible = "nxp,irqsteer-master";
-			reg = <2>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			interrupts-extended = <&clic 21 0 0>;
-		};
+		power-domains {
+			#address-cells = <1>;
+			#size-cells = <0>;
 
-		master3: interrupt-controller@3 {
-			compatible = "nxp,irqsteer-master";
-			reg = <3>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			interrupts-extended = <&clic 22 0 0>;
-		};
+			irqstr_pd: pd@0 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <0>;
+				nxp,resource-id = <IMX_SC_R_IRQSTR_DSP>;
+				#power-domain-cells = <0>;
+			};
 
-		master4: interrupt-controller@4 {
-			compatible = "nxp,irqsteer-master";
-			reg = <4>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			interrupts-extended = <&clic 23 0 0>;
-		};
+			edma0_ch6_pd: pd@1 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <1>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH6>;
+				#power-domain-cells = <0>;
+			};
 
-		master5: interrupt-controller@5 {
-			compatible = "nxp,irqsteer-master";
-			reg = <5>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			interrupts-extended = <&clic 24 0 0>;
-		};
+			edma0_ch7_pd: pd@2 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <2>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH7>;
+				#power-domain-cells = <0>;
+			};
 
-		master6: interrupt-controller@6 {
-			compatible = "nxp,irqsteer-master";
-			reg = <6>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			interrupts-extended = <&clic 25 0 0>;
-		};
+			edma0_ch14_pd: pd@3 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <3>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH14>;
+				#power-domain-cells = <0>;
+			};
 
-		master7: interrupt-controller@7 {
-			compatible = "nxp,irqsteer-master";
-			reg = <7>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			interrupts-extended = <&clic 26 0 0>;
+			edma0_ch15_pd: pd@4 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <4>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH15>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch6_pd: pd@5 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <5>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH6>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch7_pd: pd@6 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <6>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH7>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch14_pd: pd@7 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <7>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH14>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch15_pd: pd@8 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <8>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH15>;
+				#power-domain-cells = <0>;
+			};
 		};
 	};
 
@@ -121,6 +130,8 @@
 		compatible = "nxp,edma";
 		reg = <0x591f0000 (DT_SIZE_K(64) * 33)>;
 		valid-channels = <6>, <7>, <14>, <15>;
+		power-domains = <&edma0_ch6_pd>, <&edma0_ch7_pd>,
+				<&edma0_ch14_pd>, <&edma0_ch15_pd>;
 		interrupts-extended = <&master6 58>, <&master6 58>,
 				<&master5 29>, <&master5 29>;
 		#dma-cells = <2>;
@@ -159,34 +170,8 @@
 		reg = <0x5d1d0000 DT_SIZE_K(64)>;
 	};
 
-	scu: system-controller {
-		ccm: clock-controller {
-			compatible = "nxp,imx-ccm";
-			#clock-cells = <3>;
-		};
-
-		iomuxc: iomuxc {
-			compatible = "nxp,imx-iomuxc-scu";
-			pinctrl: pinctrl {
-				compatible = "nxp,imx8-pinctrl";
-			};
-		};
-
-		power-domains {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			irqstr_pd: pd@0 {
-				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
-				reg = <0>;
-				nxp,resource-id = <IMX_SC_R_IRQSTR_DSP>;
-				#power-domain-cells = <0>;
-			};
-		};
-	};
-
 	lpuart2: serial@5a080000 {
-		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
 		reg = <0x5a080000 DT_SIZE_K(4)>;
 		interrupt-parent = <&master4>;
 		interrupts = <3>;

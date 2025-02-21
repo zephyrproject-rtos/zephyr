@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2024 EPAM Systems
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/renesas-rz-gpio.h>
+#include <arm/renesas/rz/rzg/r9a08g045.dtsi>
+#include "rzg3s_smarc-pinctrl.dtsi"
+
+/ {
+	model = "Renesas RZ/G3S SMARC";
+	compatible = "renesas,rzg3s-smarc";
+
+	chosen {
+		zephyr,sram = &sram_mcpu0;
+		zephyr,flash = &spi_flash;
+		zephyr,console = &scif1;
+		zephyr,shell-uart = &scif1;
+	};
+
+	aliases {
+		sw0 = &sw_1;
+		sw1 = &sw_2;
+		sw2 = &sw_3;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		sw_1: button_1 {
+			gpios = <&gpio18 0 GPIO_ACTIVE_LOW>;
+			label = "SW1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		sw_2: button_2 {
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		sw_3: button_3 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			label = "SW3";
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+
+	ddr: memory@60000000 {
+		compatible ="zephyr,memory-region", "mmio-sram";
+		reg = <0x60000000 DT_SIZE_M(16)>;
+		zephyr,memory-region = "DDR";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	sram_mcpu0: memory@23000 {
+		compatible = "mmio-sram";
+		reg = <0x23000 DT_SIZE_K(243)>;
+	};
+
+	/*
+	 * This node is defined to enable west flash support.
+	 * The base addr and size depends on ATF-F configuration, which is running on Cortex-A55 and
+	 * loading Zephyr app from xSPI flash.
+	 */
+	spi_flash: memory@80200000 {
+		compatible = "mmio-sram";
+		reg = <0x80200000 DT_SIZE_K(256)>;
+	};
+
+};
+
+&scif1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&scif1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0{
+	status = "okay";
+};
+
+&gpio18{
+	status = "okay";
+};

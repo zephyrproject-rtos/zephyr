@@ -17,8 +17,4 @@ supported:
   - spi
   - counter
   - entropy
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: espressif

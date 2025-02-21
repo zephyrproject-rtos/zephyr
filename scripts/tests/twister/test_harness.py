@@ -30,6 +30,7 @@ from twisterlib.harness import (
     Test,
 )
 from twisterlib.statuses import TwisterStatus
+from twisterlib.testsuite import TestSuite
 from twisterlib.testinstance import TestInstance
 
 GTEST_START_STATE = " RUN      "
@@ -60,26 +61,77 @@ def process_logs(harness, logs):
 
 
 TEST_DATA_RECORDING = [
-    ([""], "^START:(?P<foo>.*):END", [], None),
-    (["START:bar:STOP"], "^START:(?P<foo>.*):END", [], None),
-    (["START:bar:END"], "^START:(?P<foo>.*):END", [{"foo": "bar"}], None),
+    ([""], ["^START:(?P<foo>.*):END"], [], None, None),
+    (["START:bar:STOP"], ["^START:(?P<foo>.*):END"], [], None, None),
+    (["START:bar:END"], ["^START:(?P<foo>.*):END"], [{"foo": "bar"}], None, None),
     (
         ["START:bar:baz:END"],
-        "^START:(?P<foo>.*):(?P<boo>.*):END",
+        ["^START:(?P<foo>.*):(?P<boo>.*):END"],
         [{"foo": "bar", "boo": "baz"}],
         None,
+        None,
+    ),
+    (
+        ["START:bar:END"],
+        ["^(START:(?P<foo>[a-z]+):END)|(START:(?P<boo>[0-9]+):END)"],
+        [{"foo": "bar", "boo": ""}],
+        None,
+        None,
+    ),
+    (
+        ["START:bar:baz:END"],
+        ["^START:(?P<foo>.*):baz:END", "^START:bar:(?P<boo>.*):END"],
+        [{"foo": "bar"}, {"boo": "baz"}],
+        None,
+        None,
+    ),
+    (
+        ["START:bar:END", "START:123:END"],
+        ["^START:(?P<foo>[a-z]+):END", "^START:(?P<boo>[0-9]+):END"],
+        [{"foo": "bar"}, {"boo": "123"}],
+        None,
+        None,
+    ),
+    (
+        ["START:bar:END", "START:123:END"],
+        ["^START:(?P<foo>[a-z]+):END", "^START:(?P<foo>[0-9]+):END"],
+        [{"foo": "bar"}, {"foo": "123"}],
+        None,
+        None,
+    ),
+    (
+        ["START:bar:END", "START:123:END"],
+        ["^START:(?P<foo>[a-z]+):END", "^START:(?P<foo>[0-9]+):END"],
+        [{"foo": ["bar", "123"]}],
+        None,
+        True,
+    ),
+    (
+        ["START:bar:baz:END"],
+        ["^START:(?P<foo>.*):baz:END", "^START:bar:(?P<boo>.*):END"],
+        [{"foo": "bar", "boo": "baz"}],
+        None,
+        True,
+    ),
+    (
+        ["START:bar:baz:END"],
+        ["^START:(?P<foo>.*):baz:END", "^START:bar:(?P<foo>.*):END"],
+        [{"foo": ["bar", "baz"]}],
+        None,
+        True,
     ),
     (
         ["START:bar:baz:END", "START:may:jun:END"],
-        "^START:(?P<foo>.*):(?P<boo>.*):END",
+        ["^START:(?P<foo>.*):(?P<boo>.*):END"],
         [{"foo": "bar", "boo": "baz"}, {"foo": "may", "boo": "jun"}],
         None,
+        None,
     ),
-    (["START:bar:END"], "^START:(?P<foo>.*):END", [{"foo": "bar"}], []),
-    (["START:bar:END"], "^START:(?P<foo>.*):END", [{"foo": "bar"}], ["boo"]),
+    (["START:bar:END"], ["^START:(?P<foo>.*):END"], [{"foo": "bar"}], [], None),
+    (["START:bar:END"], ["^START:(?P<foo>.*):END"], [{"foo": "bar"}], ["boo"], None),
     (
         ["START:bad_json:END"],
-        "^START:(?P<foo>.*):END",
+        ["^START:(?P<foo>.*):END"],
         [
             {
                 "foo": {
@@ -91,37 +143,66 @@ TEST_DATA_RECORDING = [
             }
         ],
         ["foo"],
+        None,
     ),
-    (["START::END"], "^START:(?P<foo>.*):END", [{"foo": {}}], ["foo"]),
+    (["START::END"], ["^START:(?P<foo>.*):END"], [{"foo": {}}], ["foo"], None),
     (
         ['START: {"one":1, "two":2} :END'],
-        "^START:(?P<foo>.*):END",
+        ["^START:(?P<foo>.*):END"],
         [{"foo": {"one": 1, "two": 2}}],
         ["foo"],
+        None,
     ),
     (
         ['START: {"one":1, "two":2} :STOP:oops:END'],
-        "^START:(?P<foo>.*):STOP:(?P<boo>.*):END",
+        ["^START:(?P<foo>.*):STOP:(?P<boo>.*):END"],
         [{"foo": {"one": 1, "two": 2}, "boo": "oops"}],
         ["foo"],
+        None,
     ),
     (
         ['START: {"one":1, "two":2} :STOP:{"oops":0}:END'],
-        "^START:(?P<foo>.*):STOP:(?P<boo>.*):END",
+        ["^START:(?P<foo>.*):STOP:(?P<boo>.*):END"],
         [{"foo": {"one": 1, "two": 2}, "boo": {"oops": 0}}],
         ["foo", "boo"],
+        None,
+    ),
+    (
+        ['START: {"one":1, "two":2} :STOP:{"oops":0}:END'],
+        ["^START:(?P<foo>.*):STOP:.*:END",
+         "^START:.*:STOP:(?P<boo>.*):END"
+        ],
+        [{"foo": {"one": 1, "two": 2}}, {"boo": {"oops": 0}}],
+        ["foo", "boo"],
+        None,
+    ),
+    (
+        ['START: {"one":1, "two":2} :STOP:{"oops":0}:END'],
+        ["^START:(?P<foo>.*):STOP:.*:END",
+         "^START:.*:STOP:(?P<foo>.*):END"
+        ],
+        [{"foo": [{"one": 1, "two": 2}, {"oops": 0}]}],
+        ["foo"],
+        True,
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "lines, pattern, expected_records, as_json",
+    "lines, patterns, expected_records, as_json, merge",
     TEST_DATA_RECORDING,
     ids=[
         "empty",
         "no match",
         "match 1 field",
         "match 2 fields",
+        "2 or-ed groups one miss",
+        "one line, two patters, match 2 fields -> 2 records",
+        "two lines, two patters -> 2 records",
+        "two lines, two patters same field -> 2 same records",
+        "two lines, two patters same field merge -> 1 records 2 values",
+        "one line, two patters, match 2 fields, merge -> 1 record",
+        "one line, two patters, match 1 field, merge -> 1 record list",
         "match 2 records",
         "as_json empty",
         "as_json no such field",
@@ -130,13 +211,16 @@ TEST_DATA_RECORDING = [
         "simple json",
         "plain field and json field",
         "two json fields",
+        "two json fields in two patterns -> 2 records",
+        "two json fields in two patterns merge -> 1 records 2 items",
     ],
 )
-def test_harness_parse_record(lines, pattern, expected_records, as_json):
+def test_harness_parse_record(lines, patterns, expected_records, as_json, merge):
     harness = Harness()
-    harness.record = {"regex": pattern}
-    harness.record_pattern = re.compile(pattern)
+    harness.record = {"regex": patterns}
+    harness.record_patterns = [re.compile(p) for p in patterns]
 
+    harness.record_merge = merge
     harness.record_as_json = as_json
     if as_json is not None:
         harness.record["as_json"] = as_json
@@ -206,7 +290,7 @@ def test_robot_configure(tmp_path):
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr',  outdir=outdir
     )
     instance.testsuite.harness_config = {
         "robot_testsuite": "/path/to/robot/test",
@@ -237,7 +321,7 @@ def test_robot_handle(tmp_path):
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
 
     handler = Robot()
@@ -287,7 +371,7 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
     instance.build_dir = "build_dir"
 
@@ -341,7 +425,7 @@ def test_console_configure(tmp_path, type, num_patterns):
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
     instance.testsuite.harness_config = {
         "type": type,
@@ -402,7 +486,7 @@ def test_console_handle(
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
 
     console = Console()
@@ -464,7 +548,7 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
 
     handler = mock.Mock()
@@ -562,7 +646,7 @@ def test_pytest_run(tmp_path, caplog):
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
     instance.handler = handler
 
@@ -594,6 +678,7 @@ def test_get_harness(name):
 
 TEST_DATA_7 = [
     (
+        True,
         "",
         "Running TESTSUITE suite_name",
         ["suite_name"],
@@ -604,17 +689,19 @@ TEST_DATA_7 = [
         TwisterStatus.NONE,
     ),
     (
-        "On TC_START: Ztest case 'testcase' is not known in {} running suite(s)",
+        True,
+        "TC_START: Ztest case 'testcase' is not known in {} running suite(s)",
         "START - test_testcase",
         [],
         {},
-        { 'test_id.testcase': { 'count': 1 } },
+        { 'dummy.test_id.testcase': { 'count': 1 } },
         TwisterStatus.STARTED,
         True,
         TwisterStatus.NONE
     ),
     (
-        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
+        True,
+        "TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "PASS - test_example in 0 seconds",
         [],
         {},
@@ -624,7 +711,8 @@ TEST_DATA_7 = [
         TwisterStatus.NONE,
     ),
     (
-        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
+        True,
+        "TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "SKIP - test_example in 0 seconds",
         [],
         {},
@@ -634,7 +722,8 @@ TEST_DATA_7 = [
         TwisterStatus.NONE,
     ),
     (
-        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
+        True,
+        "TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "FAIL - test_example in 0 seconds",
         [],
         {},
@@ -644,21 +733,34 @@ TEST_DATA_7 = [
         TwisterStatus.NONE,
     ),
     (
-        "not a ztest and no state for test_id",
+        True,
+        "not a ztest and no state for dummy.test_id",
         "START - test_testcase",
         [],
         {},
-        { 'test_id.testcase': { 'count': 1 } },
+        { 'dummy.test_id.testcase': { 'count': 1 } },
         TwisterStatus.PASS,
         False,
         TwisterStatus.PASS,
     ),
     (
-        "not a ztest and no state for test_id",
+        False,
+        "not a ztest and no state for dummy.test_id",
         "START - test_testcase",
         [],
         {},
-        { 'test_id.testcase': { 'count': 1 } },
+        { 'testcase': { 'count': 1 } },
+        TwisterStatus.PASS,
+        False,
+        TwisterStatus.PASS,
+    ),
+    (
+        True,
+        "not a ztest and no state for dummy.test_id",
+        "START - test_testcase",
+        [],
+        {},
+        { 'dummy.test_id.testcase': { 'count': 1 } },
         TwisterStatus.FAIL,
         False,
         TwisterStatus.FAIL,
@@ -667,12 +769,12 @@ TEST_DATA_7 = [
 
 
 @pytest.mark.parametrize(
-    "exp_out, line, exp_suite_name, exp_started_suites, exp_started_cases, exp_status, ztest, state",
+    "detailed_id, exp_out, line, exp_suite_name, exp_started_suites, exp_started_cases, exp_status, ztest, state",
     TEST_DATA_7,
-    ids=["testsuite", "testcase", "pass", "skip", "failed", "ztest pass", "ztest fail"],
+    ids=["testsuite", "testcase", "pass", "skip", "failed", "ztest pass", "ztest pass short id", "ztest fail"],
 )
 def test_test_handle(
-    tmp_path, caplog, exp_out, line,
+    tmp_path, caplog, detailed_id, exp_out, line,
     exp_suite_name, exp_started_suites, exp_started_cases,
     exp_status, ztest, state
 ):
@@ -682,24 +784,28 @@ def test_test_handle(
     mock_platform.name = "mock_platform"
     mock_platform.normalized_name = "mock_platform"
 
-    mock_testsuite = mock.Mock(id="id", testcases=[])
-    mock_testsuite.name = "mock_testsuite"
+    mock_testsuite = mock.Mock(id="dummy.test_id", testcases=[])
+    mock_testsuite.name = "dummy_suite/dummy.test_id"
     mock_testsuite.harness_config = {}
     mock_testsuite.ztest_suite_names = []
+    mock_testsuite.detailed_test_id = detailed_id
+    mock_testsuite.source_dir_rel = "dummy_suite"
+    mock_testsuite.compose_case_name.return_value = TestSuite.compose_case_name_(mock_testsuite, "testcase")
 
-    outdir = tmp_path / "gtest_out"
-    outdir.mkdir()
-
-    instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
-    )
+    outdir = tmp_path / "ztest_out"
+    with mock.patch('twisterlib.testsuite.TestSuite.get_unique', return_value="dummy_suite"):
+        instance = TestInstance(
+            testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
+        )
+    instance.handler = mock.Mock(options=mock.Mock(verbose=0), type_str="handler_type")
 
     test_obj = Test()
     test_obj.configure(instance)
-    test_obj.id = "test_id"
+    test_obj.id = "dummy.test_id"
     test_obj.ztest = ztest
     test_obj.status = state
-    test_obj.id = "test_id"
+    test_obj.started_cases = {}
+
     # Act
     test_obj.handle(line)
 
@@ -730,7 +836,7 @@ def gtest(tmp_path):
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
 
     harness = Gtest()

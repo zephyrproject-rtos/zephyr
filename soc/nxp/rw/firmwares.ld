@@ -15,7 +15,7 @@ KEEP(*(.fw_cpu1))
 . += 4;
 #endif
 
-#if defined(CONFIG_NXP_MONOLITHIC_BT)
+#if defined(CONFIG_NXP_MONOLITHIC_NBU)
 . = ALIGN(4);
-KEEP(*(.fw_cpu2_ble))
+KEEP(*(.fw_cpu2))
 #endif

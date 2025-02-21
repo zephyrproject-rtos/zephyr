@@ -10,7 +10,7 @@
 #include <adsp_interrupt.h>
 #include "dma_intel_adsp_hda.h"
 
-static const struct dma_driver_api intel_adsp_hda_dma_host_in_api = {
+static DEVICE_API(dma, intel_adsp_hda_dma_host_in_api) = {
 	.config = intel_adsp_hda_dma_host_in_config,
 	.reload = intel_adsp_hda_dma_host_reload,
 	.start = intel_adsp_hda_dma_start,

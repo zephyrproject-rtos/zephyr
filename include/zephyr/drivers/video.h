@@ -16,7 +16,7 @@
  * @brief Video Interface
  * @defgroup video_interface Video Interface
  * @since 2.1
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -302,20 +302,17 @@ typedef int (*video_api_dequeue_t)(const struct device *dev, enum video_endpoint
 typedef int (*video_api_flush_t)(const struct device *dev, enum video_endpoint_id ep, bool cancel);
 
 /**
- * @typedef video_api_stream_start_t
- * @brief Start the capture or output process.
+ * @typedef video_api_set_stream_t
+ * @brief Start or stop streaming on the video device.
  *
- * See video_stream_start() for argument descriptions.
- */
-typedef int (*video_api_stream_start_t)(const struct device *dev);
-
-/**
- * @typedef video_api_stream_stop_t
- * @brief Stop the capture or output process.
+ * Start (enable == true) or stop (enable == false) streaming on the video device.
  *
- * See video_stream_stop() for argument descriptions.
+ * @param dev Pointer to the device structure.
+ * @param enable If true, start streaming, otherwise stop streaming.
+ *
+ * @retval 0 on success, otherwise a negative errno code.
  */
-typedef int (*video_api_stream_stop_t)(const struct device *dev);
+typedef int (*video_api_set_stream_t)(const struct device *dev, bool enable);
 
 /**
  * @typedef video_api_set_ctrl_t
@@ -355,8 +352,7 @@ __subsystem struct video_driver_api {
 	/* mandatory callbacks */
 	video_api_set_format_t set_format;
 	video_api_get_format_t get_format;
-	video_api_stream_start_t stream_start;
-	video_api_stream_stop_t stream_stop;
+	video_api_set_stream_t set_stream;
 	video_api_get_caps_t get_caps;
 	/* optional callbacks */
 	video_api_enqueue_t enqueue;
@@ -598,11 +594,11 @@ static inline int video_stream_start(const struct device *dev)
 {
 	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
-	if (api->stream_start == NULL) {
+	if (api->set_stream == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->stream_start(dev);
+	return api->set_stream(dev, true);
 }
 
 /**
@@ -619,11 +615,11 @@ static inline int video_stream_stop(const struct device *dev)
 	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 	int ret;
 
-	if (api->stream_stop == NULL) {
+	if (api->set_stream == NULL) {
 		return -ENOSYS;
 	}
 
-	ret = api->stream_stop(dev);
+	ret = api->set_stream(dev, false);
 	video_flush(dev, VIDEO_EP_ALL, true);
 
 	return ret;
@@ -732,19 +728,21 @@ static inline int video_set_signal(const struct device *dev, enum video_endpoint
  *
  * @param size Size of the video buffer (in bytes).
  * @param align Alignment of the requested memory, must be a power of two.
+ * @param timeout Timeout duration or K_NO_WAIT
  *
  * @retval pointer to allocated video buffer
  */
-struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align);
+struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout);
 
 /**
  * @brief Allocate video buffer.
  *
  * @param size Size of the video buffer (in bytes).
+ * @param timeout Timeout duration or K_NO_WAIT
  *
  * @retval pointer to allocated video buffer
  */
-struct video_buffer *video_buffer_alloc(size_t size);
+struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout);
 
 /**
  * @brief Release a video buffer.
@@ -753,28 +751,127 @@ struct video_buffer *video_buffer_alloc(size_t size);
  */
 void video_buffer_release(struct video_buffer *buf);
 
-/* fourcc - four-character-code */
-#define video_fourcc(a, b, c, d)                                                                   \
-	((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
+/**
+ * @brief Search for a format that matches in a list of capabilities
+ *
+ * @param fmts The format capability list to search.
+ * @param fmt The format to find in the list.
+ * @param idx The pointer to a number of the first format that matches.
+ *
+ * @return 0 when a format is found.
+ * @return -ENOENT when no matching format is found.
+ */
+int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
+			    size_t *idx);
+
+/**
+ * @brief Compute the difference between two frame intervals
+ *
+ * @param frmival Frame interval to turn into microseconds.
+ *
+ * @return The frame interval value in microseconds.
+ */
+static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
+{
+	return (uint64_t)NSEC_PER_SEC * frmival->numerator / frmival->denominator;
+}
+
+/**
+ * @brief Find the closest match to a frame interval value within a stepwise frame interval.
+ *
+ * @param stepwise The stepwise frame interval range to search
+ * @param desired The frame interval for which find the closest match
+ * @param match The resulting frame interval closest to @p desired
+ */
+void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
+				    const struct video_frmival *desired,
+				    struct video_frmival *match);
+
+/**
+ * @brief Find the closest match to a frame interval value within a video device.
+ *
+ * To compute the closest match, fill @p match with the following fields:
+ *
+ * - @c match->format to the @ref video_format of interest.
+ * - @c match->type to @ref VIDEO_FRMIVAL_TYPE_DISCRETE.
+ * - @c match->discrete to the desired frame interval.
+ *
+ * The result will be loaded into @p match, with the following fields set:
+ *
+ * - @c match->discrete to the value of the closest frame interval.
+ * - @c match->index to the index of the closest frame interval.
+ *
+ * @param dev Video device to query.
+ * @param ep Video endpoint ID to query.
+ * @param match Frame interval enumerator with the query, and loaded with the result.
+ */
+void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
+			   struct video_frmival_enum *match);
 
 /**
  * @defgroup video_pixel_formats Video pixel formats
+ * The @c | characters separate the pixels, and spaces separate the bytes.
+ * The uppercase letter represents the most significant bit.
+ * The lowercase letters represent the rest of the bits.
  * @{
  */
 
 /**
- * @name Bayer formats
+ * @brief Four-character-code uniquely identifying the pixel format
+ */
+#define VIDEO_FOURCC(a, b, c, d)                                                                   \
+	((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
+
+/**
+ * @brief Convert a four-character-string to a four-character-code
+ *
+ * Convert a string literal or variable into a four-character-code
+ * as defined by @ref VIDEO_FOURCC.
+ *
+ * @param str String to be converted
+ * @return Four-character-code.
+ */
+#define VIDEO_FOURCC_FROM_STR(str) VIDEO_FOURCC((str)[0], (str)[1], (str)[2], (str)[3])
+
+/**
+ * @name Bayer formats (R, G, B channels).
+ *
+ * The full color information is spread over multiple pixels.
+ *
  * @{
  */
 
-/** BGGR8 pixel format */
-#define VIDEO_PIX_FMT_BGGR8 video_fourcc('B', 'G', 'G', 'R') /*  8  BGBG.. GRGR.. */
-/** GBRG8 pixel format */
-#define VIDEO_PIX_FMT_GBRG8 video_fourcc('G', 'B', 'R', 'G') /*  8  GBGB.. RGRG.. */
-/** GRBG8 pixel format */
-#define VIDEO_PIX_FMT_GRBG8 video_fourcc('G', 'R', 'B', 'G') /*  8  GRGR.. BGBG.. */
-/** RGGB8 pixel format */
-#define VIDEO_PIX_FMT_RGGB8 video_fourcc('R', 'G', 'G', 'B') /*  8  RGRG.. GBGB.. */
+/**
+ * @verbatim
+ * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ...
+ * | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_BGGR8 VIDEO_FOURCC('B', 'A', '8', '1')
+
+/**
+ * @verbatim
+ * | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | ...
+ * | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_GBRG8 VIDEO_FOURCC('G', 'B', 'R', 'G')
+
+/**
+ * @verbatim
+ * | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | ...
+ * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_GRBG8 VIDEO_FOURCC('G', 'R', 'B', 'G')
+
+/**
+ * @verbatim
+ * | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | ...
+ * | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_RGGB8 VIDEO_FOURCC('R', 'G', 'G', 'B')
 
 /**
  * @}
@@ -782,14 +879,40 @@ void video_buffer_release(struct video_buffer *buf);
 
 /**
  * @name RGB formats
+ * Per-color (R, G, B) channels.
  * @{
  */
 
-/** RGB565 pixel format */
-#define VIDEO_PIX_FMT_RGB565 video_fourcc('R', 'G', 'B', 'P') /* 16  RGB-5-6-5 */
+/**
+ * 5 red bits [15:11], 6 green bits [10:5], 5 blue bits [4:0].
+ * This 16-bit integer is then packed in big endian format over two bytes:
+ *
+ * @verbatim
+ *   15.....8 7......0
+ * | RrrrrGgg gggBbbbb | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_RGB565X VIDEO_FOURCC('R', 'G', 'B', 'R')
 
-/** XRGB32 pixel format */
-#define VIDEO_PIX_FMT_XRGB32 video_fourcc('B', 'X', '2', '4') /* 32  XRGB-8-8-8-8 */
+/**
+ * 5 red bits [15:11], 6 green bits [10:5], 5 blue bits [4:0].
+ * This 16-bit integer is then packed in little endian format over two bytes:
+ *
+ * @verbatim
+ *   7......0 15.....8
+ * | gggBbbbb RrrrrGgg | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_RGB565 VIDEO_FOURCC('R', 'G', 'B', 'P')
+
+/**
+ * The first byte is empty (X) for each pixel.
+ *
+ * @verbatim
+ * | Xxxxxxxx Rrrrrrrr Gggggggg Bbbbbbbb | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_XRGB32 VIDEO_FOURCC('B', 'X', '2', '4')
 
 /**
  * @}
@@ -797,59 +920,78 @@ void video_buffer_release(struct video_buffer *buf);
 
 /**
  * @name YUV formats
+ * Luminance (Y) and chrominance (U, V) channels.
  * @{
  */
 
-/** YUYV pixel format */
-#define VIDEO_PIX_FMT_YUYV video_fourcc('Y', 'U', 'Y', 'V') /* 16  Y0-Cb0 Y1-Cr0 */
-
-/** XYUV32 pixel format */
-#define VIDEO_PIX_FMT_XYUV32 video_fourcc('X', 'Y', 'U', 'V') /* 32  XYUV-8-8-8-8 */
+/**
+ * There is either a missing channel per pixel, U or V.
+ * The value is to be averaged over 2 pixels to get the value of individual pixel.
+ *
+ * @verbatim
+ * | Yyyyyyyy Uuuuuuuu | Yyyyyyyy Vvvvvvvv | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_YUYV VIDEO_FOURCC('Y', 'U', 'Y', 'V')
 
 /**
+ * The first byte is empty (X) for each pixel.
  *
+ * @verbatim
+ * | Xxxxxxxx Yyyyyyyy Uuuuuuuu Vvvvvvvv | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_XYUV32 VIDEO_FOURCC('X', 'Y', 'U', 'V')
+
+/**
  * @}
  */
 
 /**
- * @name JPEG formats
+ * @name Compressed formats
  * @{
  */
 
-/** JPEG pixel format */
-#define VIDEO_PIX_FMT_JPEG video_fourcc('J', 'P', 'E', 'G') /*  8  JPEG */
+/**
+ * Both JPEG (single frame) and Motion-JPEG (MJPEG, multiple JPEG frames concatenated)
+ */
+#define VIDEO_PIX_FMT_JPEG VIDEO_FOURCC('J', 'P', 'E', 'G')
 
 /**
  * @}
  */
 
 /**
- * @}
- */
-
-/**
- * @brief Get number of bytes per pixel of a pixel format
+ * @brief Get number of bits per pixel of a pixel format
  *
- * @param pixfmt FourCC pixel format value (\ref video_pixel_formats).
+ * @param pixfmt FourCC pixel format value (@ref video_pixel_formats).
+ *
+ * @retval 0 if the format is unhandled or if it is variable number of bits
+ * @retval bit size of one pixel for this format
  */
-static inline unsigned int video_pix_fmt_bpp(uint32_t pixfmt)
+static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 {
 	switch (pixfmt) {
 	case VIDEO_PIX_FMT_BGGR8:
 	case VIDEO_PIX_FMT_GBRG8:
 	case VIDEO_PIX_FMT_GRBG8:
 	case VIDEO_PIX_FMT_RGGB8:
-		return 1;
+		return 8;
 	case VIDEO_PIX_FMT_RGB565:
 	case VIDEO_PIX_FMT_YUYV:
-		return 2;
+		return 16;
 	case VIDEO_PIX_FMT_XRGB32:
 	case VIDEO_PIX_FMT_XYUV32:
-		return 4;
+		return 32;
 	default:
+		/* Variable number of bits per pixel or unknown format */
 		return 0;
 	}
 }
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

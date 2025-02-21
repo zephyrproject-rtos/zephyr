@@ -162,6 +162,14 @@
 #define NRF_FUN_CAN_TX 46U
 /** CAN RX */
 #define NRF_FUN_CAN_RX 47U
+/** TWIS SCL */
+#define NRF_FUN_TWIS_SCL 48U
+/** TWIS SDA */
+#define NRF_FUN_TWIS_SDA 49U
+/** GRTC fast clock output */
+#define NRF_FUN_GRTC_CLKOUT_FAST 55U
+/** GRTC slow clock output */
+#define NRF_FUN_GRTC_CLKOUT_32K  56U
 
 /** @} */
 

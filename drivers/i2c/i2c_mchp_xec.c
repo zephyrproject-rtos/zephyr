@@ -829,7 +829,7 @@ static int i2c_xec_target_unregister(const struct device *dev,
 }
 #endif
 
-static const struct i2c_driver_api i2c_xec_driver_api = {
+static DEVICE_API(i2c, i2c_xec_driver_api) = {
 	.configure = i2c_xec_configure,
 	.transfer = i2c_xec_transfer,
 #ifdef CONFIG_I2C_TARGET

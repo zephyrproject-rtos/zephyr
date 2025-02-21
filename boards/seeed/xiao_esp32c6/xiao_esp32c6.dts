@@ -17,7 +17,7 @@
 	compatible = "seeed,xiao-esp32c6";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sramhp;
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
@@ -53,6 +53,13 @@
 
 &usb_serial {
 	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
 };
 
 &spi2 {

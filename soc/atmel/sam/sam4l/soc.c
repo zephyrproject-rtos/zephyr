@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2020-2025 Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,33 +15,6 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/sys/util.h>
-
-/** Watchdog control register first write keys */
-#define WDT_FIRST_KEY     0x55ul
-/** Watchdog control register second write keys */
-#define WDT_SECOND_KEY    0xAAul
-
-/**
- * @brief Sets the WatchDog Timer Control register to the \a ctrl value thanks
- *        to the WatchDog Timer key.
- *
- * @param ctrl  Value to set the WatchDog Timer Control register to.
- */
-static ALWAYS_INLINE void wdt_set_ctrl(uint32_t ctrl)
-{
-	volatile uint32_t dly;
-
-	/** Calculate delay for internal synchronization
-	 *    see 45.1.3 WDT errata
-	 */
-	dly = DIV_ROUND_UP(48000000 * 2, 115000);
-	dly >>= 3; /* ~8 cycles for one while loop */
-	while (dly--) {
-		;
-	}
-	WDT->CTRL = ctrl | WDT_CTRL_KEY(WDT_FIRST_KEY);
-	WDT->CTRL = ctrl | WDT_CTRL_KEY(WDT_SECOND_KEY);
-}
 
 #define XTAL_FREQ 12000000
 #define NR_PLLS 1
@@ -81,6 +54,19 @@ static inline bool osc_is_ready(uint8_t id)
 		/* unhandled_case(id); */
 		return false;
 	}
+}
+
+/**
+ * Enable Backup System Control Oscilator RC32K
+ */
+static inline void osc_priv_enable_rc32k(void)
+{
+	uint32_t temp = BSCIF->RC32KCR;
+	uint32_t addr = (uint32_t)&BSCIF->RC32KCR - (uint32_t)BSCIF;
+
+	BSCIF->UNLOCK = BSCIF_UNLOCK_KEY(0xAAu)
+		      | BSCIF_UNLOCK_ADDR(addr);
+	BSCIF->RC32KCR = temp | BSCIF_RC32KCR_EN32K | BSCIF_RC32KCR_EN;
 }
 
 /**
@@ -180,6 +166,8 @@ static inline void flashcalw_issue_command(uint32_t command, int page_number)
  */
 static ALWAYS_INLINE void clock_init(void)
 {
+	uint32_t gen_clk_conf;
+
 	/* Disable PicoCache and Enable HRAMC1 as extended RAM */
 	soc_pmc_peripheral_enable(
 		PM_CLOCK_MASK(PM_CLK_GRP_HSB, SYSCLK_HRAMC1_DATA));
@@ -251,17 +239,28 @@ static ALWAYS_INLINE void clock_init(void)
 	PM->UNLOCK = PM_UNLOCK_KEY(0xAAu) |
 		     PM_UNLOCK_ADDR((uint32_t)&PM->MCCTRL - (uint32_t)PM);
 	PM->MCCTRL = OSC_SRC_PLL0;
+
+	/** Enable RC32K Oscilator */
+	osc_priv_enable_rc32k();
+	while (!osc_is_ready(OSC_ID_RC32K)) {
+		;
+	}
+
+	/** Enable Generic Clock 5
+	 *   Source: RC32K
+	 *      Div: 32
+	 *      Clk: 1024 Hz
+	 *  The GCLK-5 can be used by GLOC, TC0 and RC32KIFB_REF
+	 */
+	gen_clk_conf = SCIF_GCCTRL_RESETVALUE;
+	gen_clk_conf |= SCIF_GCCTRL_OSCSEL(GEN_CLK_SRC_RC32K);
+	gen_clk_conf |= SCIF_GCCTRL_DIVEN;
+	gen_clk_conf |= SCIF_GCCTRL_DIV(((32 + 1) / 2) - 1);
+	SCIF->GCCTRL[GEN_CLK_TC0_GLOC_RC32] = gen_clk_conf | SCIF_GCCTRL_CEN;
 }
 
 void soc_reset_hook(void)
 {
-#if defined(CONFIG_WDT_DISABLE_AT_BOOT)
-	wdt_set_ctrl(WDT->CTRL & ~WDT_CTRL_EN);
-	while (WDT->CTRL & WDT_CTRL_EN) {
-		;
-	}
-#endif
-
 	/* Setup system clocks. */
 	clock_init();
 }

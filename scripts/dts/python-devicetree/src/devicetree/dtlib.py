@@ -20,8 +20,9 @@ import re
 import string
 import sys
 import textwrap
-from typing import Any, Dict, Iterable, List, \
-    NamedTuple, NoReturn, Optional, Set, Tuple, TYPE_CHECKING, Union
+from typing import (Any, Iterable,
+                    NamedTuple, NoReturn, Optional,
+                    TYPE_CHECKING, Union)
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -91,9 +92,9 @@ class Node:
         # Remember to update DT.__deepcopy__() if you change this.
 
         self._name = name
-        self.props: Dict[str, 'Property'] = {}
-        self.nodes: Dict[str, 'Node'] = {}
-        self.labels: List[str] = []
+        self.props: dict[str, Property] = {}
+        self.nodes: dict[str, Node] = {}
+        self.labels: list[str] = []
         self.parent = parent
         self.dt = dt
 
@@ -308,13 +309,13 @@ class Property:
 
         self.name = name
         self.value = b""
-        self.labels: List[str] = []
+        self.labels: list[str] = []
         # We have to wait to set this until later, when we've got
         # the entire tree.
-        self.offset_labels: Dict[str, int] = {}
+        self.offset_labels: dict[str, int] = {}
         self.node: Node = node
 
-        self._label_offset_lst: List[Tuple[str, int]] = []
+        self._label_offset_lst: list[tuple[str, int]] = []
 
         # A list of [offset, label, type] lists (sorted by offset),
         # giving the locations of references within the value. 'type'
@@ -322,7 +323,7 @@ class Property:
         # _MarkerType.PHANDLE, for a phandle reference, or
         # _MarkerType.LABEL, for a label on/within data. Node paths
         # and phandles need to be patched in after parsing.
-        self._markers: List[List] = []
+        self._markers: list[list] = []
 
     @property
     def type(self) -> Type:
@@ -353,8 +354,8 @@ class Property:
         if types == [_MarkerType.PATH]:
             return Type.PATH
 
-        if types == [_MarkerType.UINT32, _MarkerType.PHANDLE] and \
-                len(self.value) == 4:
+        if (types == [_MarkerType.UINT32, _MarkerType.PHANDLE]
+            and len(self.value) == 4):
             return Type.PHANDLE
 
         if set(types) == {_MarkerType.UINT32, _MarkerType.PHANDLE}:
@@ -380,14 +381,13 @@ class Property:
           unsigned.
         """
         if self.type is not Type.NUM:
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = < (number) >;', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = < (number) >;', not '{self}'")
 
         return int.from_bytes(self.value, "big", signed=signed)
 
-    def to_nums(self, signed=False) -> List[int]:
+    def to_nums(self, signed=False) -> list[int]:
         """
         Returns the value of the property as a list of numbers.
 
@@ -401,10 +401,9 @@ class Property:
           unsigned.
         """
         if self.type not in (Type.NUM, Type.NUMS):
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = < (number) (number) ... >;', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = < (number) (number) ... >;', not '{self}'")
 
         return [int.from_bytes(self.value[i:i + 4], "big", signed=signed)
                 for i in range(0, len(self.value), 4)]
@@ -420,10 +419,9 @@ class Property:
             foo = [ 01 ... ];
         """
         if self.type is not Type.BYTES:
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = [ (byte) (byte) ... ];', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} "
+                 f"in {self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = [ (byte) (byte) ... ];', not '{self}'")
 
         return self.value
 
@@ -440,10 +438,9 @@ class Property:
         not valid UTF-8.
         """
         if self.type is not Type.STRING:
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = \"string\";', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} "
+                 f"in {self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = \"string\";', not '{self}'")
 
         try:
             ret = self.value.decode("utf-8")[:-1]  # Strip null
@@ -454,7 +451,7 @@ class Property:
 
         return ret  # The separate 'return' appeases the type checker.
 
-    def to_strings(self) -> List[str]:
+    def to_strings(self) -> list[str]:
         """
         Returns the value of the property as a list of strings.
 
@@ -466,10 +463,9 @@ class Property:
         Also raises DTError if any of the strings are not valid UTF-8.
         """
         if self.type not in (Type.STRING, Type.STRINGS):
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = \"string\", \"string\", ... ;', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = \"string\", \"string\", ... ;', not '{self}'")
 
         try:
             ret = self.value.decode("utf-8").split("\0")[:-1]
@@ -490,14 +486,13 @@ class Property:
             foo = < &bar >;
         """
         if self.type is not Type.PHANDLE:
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = < &foo >;', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = < &foo >;', not '{self}'")
 
         return self.node.dt.phandle2node[int.from_bytes(self.value, "big")]
 
-    def to_nodes(self) -> List[Node]:
+    def to_nodes(self) -> list[Node]:
         """
         Returns a list with the Nodes the phandles in the property point to.
 
@@ -516,10 +511,9 @@ class Property:
             return self.type is Type.NUMS and not self.value
 
         if not type_ok():
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = < &foo &bar ... >;', not '{3}'"
-                 .format(self.name, self.node.path,
-                         self.node.dt.filename, self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = < &foo &bar ... >;', not '{self}'")
 
         return [self.node.dt.phandle2node[int.from_bytes(self.value[i:i + 4],
                                                          "big")]
@@ -538,10 +532,10 @@ class Property:
         For the second case, DTError is raised if the path does not exist.
         """
         if self.type not in (Type.PATH, Type.STRING):
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "either '{0} = &foo' or '{0} = \"/path/to/node\"', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with either "
+                 f"'{self.name} = &foo' or '{self.name} = \"/path/to/node\"', "
+                 f"not '{self}'")
 
         try:
             path = self.value.decode("utf-8")[:-1]
@@ -608,9 +602,10 @@ class Property:
 
                     pos += elm_size
 
-                if pos != 0 and \
-                   (not next_marker or
-                    next_marker[1] not in (_MarkerType.PHANDLE, _MarkerType.LABEL)):
+                if (pos != 0
+                    and (not next_marker
+                         or next_marker[1]
+                         not in (_MarkerType.PHANDLE, _MarkerType.LABEL))):
 
                     s += _N_BYTES_TO_END_STR[elm_size]
                     if pos != len(self.value):
@@ -620,8 +615,8 @@ class Property:
 
 
     def __repr__(self):
-        return f"<Property '{self.name}' at '{self.node.path}' in " \
-            f"'{self.node.dt.filename}'>"
+        return (f"<Property '{self.name}' at '{self.node.path}' in "
+                f"'{self.node.dt.filename}'>")
 
     #
     # Internal functions
@@ -759,12 +754,12 @@ class DT:
         # Remember to update __deepcopy__() if you change this.
 
         self._root: Optional[Node] = None
-        self.alias2node: Dict[str, Node] = {}
-        self.label2node: Dict[str, Node] = {}
-        self.label2prop: Dict[str, Property] = {}
-        self.label2prop_offset: Dict[str, Tuple[Property, int]] = {}
-        self.phandle2node: Dict[int, Node] = {}
-        self.memreserves: List[Tuple[Set[str], int, int]] = []
+        self.alias2node: dict[str, Node] = {}
+        self.label2node: dict[str, Node] = {}
+        self.label2prop: dict[str, Property] = {}
+        self.label2prop_offset: dict[str, tuple[Property, int]] = {}
+        self.phandle2node: dict[int, Node] = {}
+        self.memreserves: list[tuple[set[str], int, int]] = []
         self.filename = filename
 
         self._force = force
@@ -772,7 +767,7 @@ class DT:
         if filename is not None:
             self._parse_file(filename, include_path)
         else:
-            self._include_path: List[str] = []
+            self._include_path: list[str] = []
 
     @property
     def root(self) -> Node:
@@ -914,8 +909,8 @@ class DT:
         the DT instance is evaluated.
         """
         if self.filename:
-            return f"DT(filename='{self.filename}', " \
-                f"include_path={self._include_path})"
+            return (f"DT(filename='{self.filename}', "
+                    f"include_path={self._include_path})")
         return super().__repr__()
 
     def __deepcopy__(self, memo):
@@ -1025,7 +1020,7 @@ class DT:
             self._file_contents = f.read()
 
         self._tok_i = self._tok_end_i = 0
-        self._filestack: List[_FileStackElt] = []
+        self._filestack: list[_FileStackElt] = []
 
         self._lexer_state: int = _DEFAULT
         self._saved_token: Optional[_Token] = None
@@ -1634,8 +1629,8 @@ class DT:
 
             # State handling
 
-            if tok_id in (_T.DEL_PROP, _T.DEL_NODE, _T.OMIT_IF_NO_REF) or \
-               tok_val in ("{", ";"):
+            if (tok_id in (_T.DEL_PROP, _T.DEL_NODE, _T.OMIT_IF_NO_REF)
+                or tok_val in ("{", ";")):
 
                 self._lexer_state = _EXPECT_PROPNODENAME
 
@@ -1709,8 +1704,8 @@ class DT:
     def _leave_file(self):
         # Leaves an /include/d file, returning to the file that /include/d it
 
-        self.filename, self._lineno, self._file_contents, self._tok_end_i = \
-            self._filestack.pop()
+        self.filename, self._lineno, self._file_contents, self._tok_end_i = (
+            self._filestack.pop())
 
     def _next_ref2node(self):
         # Checks that the next token is a label/path reference and returns the
@@ -2025,7 +2020,7 @@ def to_num(data: bytes, length: Optional[int] = None,
 
     return int.from_bytes(data, "big", signed=signed)
 
-def to_nums(data: bytes, length: int = 4, signed: bool = False) -> List[int]:
+def to_nums(data: bytes, length: int = 4, signed: bool = False) -> list[int]:
     """
     Like Property.to_nums(), but takes an arbitrary 'bytes' array. The values
     are assumed to be in big-endian format, which is standard in devicetree.
@@ -2067,10 +2062,10 @@ def _decode_and_escape(b):
     # 'backslashreplace' bytes.translate() can't map to more than a single
     # byte, but str.translate() can map to more than one character, so it's
     # nice here. There's probably a nicer way to do this.
-    return b.decode("utf-8", "surrogateescape") \
-            .translate(_escape_table) \
-            .encode("utf-8", "surrogateescape") \
-            .decode("utf-8", "backslashreplace")
+    return (b.decode("utf-8", "surrogateescape")
+            .translate(_escape_table)
+            .encode("utf-8", "surrogateescape")
+            .decode("utf-8", "backslashreplace"))
 
 def _root_and_path_to_node(cur, path, fullpath):
     # Returns the node pointed at by 'path', relative to the Node 'cur'. For

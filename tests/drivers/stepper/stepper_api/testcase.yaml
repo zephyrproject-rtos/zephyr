@@ -9,4 +9,5 @@ tests:
       - api
     platform_allow:
       - nucleo_g071rb
+      - nucleo_f767zi
       - qemu_x86_64

@@ -115,7 +115,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 #endif
 
 	LL_I2C_Disable(i2c);
-#if defined(I2C_CR1_SMBDEN) && defined(I2C_CR1_SMBHEN)
+#if defined(I2C_CR1_SMBUS) || defined(I2C_CR1_SMBDEN) || defined(I2C_CR1_SMBHEN)
 	i2c_stm32_set_smbus_mode(dev, data->mode);
 #endif
 	ret = stm32_i2c_configure_timing(dev, i2c_clock);
@@ -310,7 +310,7 @@ restore:
 }
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 
-static const struct i2c_driver_api api_funcs = {
+static DEVICE_API(i2c, api_funcs) = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
 	.get_config = i2c_stm32_get_config,
@@ -480,7 +480,7 @@ void i2c_stm32_smbalert_set_callback(const struct device *dev, i2c_stm32_smbaler
 }
 #endif /* CONFIG_SMBUS_STM32_SMBALERT */
 
-#if defined(I2C_CR1_SMBDEN) && defined(I2C_CR1_SMBHEN)
+#if defined(I2C_CR1_SMBUS) || defined(I2C_CR1_SMBDEN) || defined(I2C_CR1_SMBHEN)
 void i2c_stm32_set_smbus_mode(const struct device *dev, enum i2c_stm32_mode mode)
 {
 	const struct i2c_stm32_config *cfg = dev->config;

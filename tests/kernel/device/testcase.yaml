@@ -7,7 +7,9 @@ tests:
   kernel.device:
     integration_platforms:
       - native_sim
-    platform_exclude: xenvm
+    platform_exclude:
+      - xenvm
+      - xenvm/xenvm/gicv3
   kernel.device.metadata:
     platform_allow:
       - qemu_x86
@@ -21,11 +23,16 @@ tests:
       - libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
-    platform_exclude: xenvm
+    platform_exclude:
+      - xenvm
+      - xenvm/xenvm/gicv3
   kernel.device.pm:
     integration_platforms:
       - native_sim
-    platform_exclude: mec15xxevb_assy6853 xenvm
+    platform_exclude:
+      - mec15xxevb_assy6853
+      - xenvm
+      - xenvm/xenvm/gicv3
     extra_configs:
       - CONFIG_PM_DEVICE=y
   kernel.device.linker_generator:

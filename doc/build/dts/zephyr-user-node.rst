@@ -79,19 +79,16 @@ device pointers like this:
    const struct device *my_device =
    	DEVICE_DT_GET(DT_PROP(ZEPHYR_USER_NODE, handle));
 
-   #define PHANDLE_TO_DEVICE(node_id, prop, idx) \
-        DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),
-
    /*
     * Same thing as:
     *
     * ... *my_devices[] = {
     *         DEVICE_DT_GET(DT_NODELABEL(gpio0)),
-    *         DEVICE_DT_GET(DT_NODELABEL(gpio1)),
+    *         DEVICE_DT_GET(DT_NODELABEL(gpio1))
     * };
     */
    const struct device *my_devices[] = {
-   	DT_FOREACH_PROP_ELEM(ZEPHYR_USER_NODE, handles, PHANDLE_TO_DEVICE)
+        DT_FOREACH_PROP_ELEM_SEP(ZEPHYR_USER_NODE, handles, DEVICE_DT_GET_BY_IDX, (,))
    };
 
 GPIOs

@@ -5,8 +5,10 @@ tests:
     min_ram: 32
     extra_args:
       # Will be ignored for other platforms
-      - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
-    tags: wifi net
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    tags:
+      - wifi
+      - net
     platform_exclude:
       - rd_rw612_bga/rw612/ethernet # Requires binary blobs to build
       - frdm_rw612 # Requires binary blobs to build

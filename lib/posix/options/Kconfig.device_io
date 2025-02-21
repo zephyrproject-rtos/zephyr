@@ -5,8 +5,7 @@
 menu "POSIX device I/O"
 
 config POSIX_DEVICE_IO
-	bool "POSIX device I/O [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "POSIX device I/O"
 	select REQUIRES_FULL_LIBC
 	select ZVFS
 	select ZVFS_POLL
@@ -16,7 +15,7 @@ config POSIX_DEVICE_IO
 	  Group such as FD_CLR(), FD_ISSET(), FD_SET(), FD_ZERO(), close(), fdopen(), fileno(), open(),
 	  poll(), pread(), pselect(), pwrite(), read(), select(), and write().
 
-	  For more informnation, please see
+	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
 
 if POSIX_DEVICE_IO

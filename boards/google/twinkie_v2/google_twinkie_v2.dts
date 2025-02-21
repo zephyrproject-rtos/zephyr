@@ -101,7 +101,7 @@
 		     &adc1_in18_pc5	/* CSA_CC2	 */
 		    >;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 

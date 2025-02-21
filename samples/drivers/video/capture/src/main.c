@@ -9,13 +9,12 @@
 
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
 #ifdef CONFIG_TEST
-#include <zephyr/drivers/video-controls.h>
-
 #include "check_test_pattern.h"
 
 #define LOG_LEVEL LOG_LEVEL_DBG
@@ -145,9 +144,7 @@ int main(void)
 #endif
 
 	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
-		fmt.pixelformat =
-			video_fourcc(CONFIG_VIDEO_PIXEL_FORMAT[0], CONFIG_VIDEO_PIXEL_FORMAT[1],
-				     CONFIG_VIDEO_PIXEL_FORMAT[2], CONFIG_VIDEO_PIXEL_FORMAT[3]);
+		fmt.pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_PIXEL_FORMAT);
 	}
 
 	LOG_INF("- Video format: %c%c%c%c %ux%u", (char)fmt.pixelformat,
@@ -177,6 +174,11 @@ int main(void)
 			       fie.stepwise.step.numerator, fie.stepwise.step.denominator);
 		}
 		fie.index++;
+	}
+
+	/* Set controls */
+	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
+		video_set_ctrl(video_dev, VIDEO_CID_HFLIP, (void *)1);
 	}
 
 #ifdef CONFIG_TEST
@@ -211,7 +213,8 @@ int main(void)
 		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
 		 * buffer alignment is needed in order to achieve the best performance
 		 */
-		buffers[i] = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN);
+		buffers[i] = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+							K_FOREVER);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;

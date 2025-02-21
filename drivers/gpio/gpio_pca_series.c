@@ -376,7 +376,7 @@ static inline int gpio_pca_series_reg_write(const struct device *dev,
 
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	if (gpio_pca_series_reg_cache_offset(dev, reg_type) != PCA_REG_INVALID) {
-		gpio_pca_series_reg_cache_update(dev, reg_type, buf);
+		(void)gpio_pca_series_reg_cache_update(dev, reg_type, buf);
 	}
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 
@@ -853,11 +853,11 @@ void gpio_pca_series_cache_test(const struct device *dev)
 		expected_offset += cache_size;
 
 		LOG_WRN("testing reg %d size %d", reg_type,  cache_size);
-		gpio_pca_series_reg_cache_update(dev, reg_type, reset_value_0);
+		(void)gpio_pca_series_reg_cache_update(dev, reg_type, reset_value_0);
 		*buffer_p = 0;
 		gpio_pca_series_reg_cache_read(dev, reg_type, buffer);
 		LOG_WRN("fill 00, result: 0x%16.16x", *buffer_p);
-		gpio_pca_series_reg_cache_update(dev, reg_type, reset_value_1);
+		(void)gpio_pca_series_reg_cache_update(dev, reg_type, reset_value_1);
 		*buffer_p = 0;
 		gpio_pca_series_reg_cache_read(dev, reg_type, buffer);
 		LOG_WRN("fill ff, result: 0x%16.16x", *buffer_p);
@@ -898,7 +898,7 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 {
 	const struct gpio_pca_series_config *cfg = dev->config;
 	struct gpio_pca_series_data *data = dev->data;
-	uint32_t reg_value;
+	uint32_t reg_value = 0;
 	int ret = 0;
 
 	if ((flags & GPIO_INPUT) && (flags & GPIO_OUTPUT)) {
@@ -1474,9 +1474,9 @@ static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
 {
 	struct gpio_pca_series_data *data = dev->data;
 	int ret = 0;
-	uint32_t input_old, int_rise, int_fall;
-	uint32_t input;
-	uint32_t transitioned_pins;
+	uint32_t input_old = 0, int_rise = 0, int_fall = 0;
+	uint32_t input = 0;
+	uint32_t transitioned_pins = 0;
 	uint32_t int_status = 0;
 
 	k_sem_take(&data->lock, K_FOREVER);

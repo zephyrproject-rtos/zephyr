@@ -127,7 +127,7 @@
 		};
 
 		lpi2c3: i2c@42530000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -138,7 +138,7 @@
 		};
 
 		lpi2c4: i2c@42540000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -148,8 +148,32 @@
 			status = "disabled";
 		};
 
+		lpspi3: spi@42550000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42550000 0x4000>;
+			interrupts = <61 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI3>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
+		};
+
+		lpspi4: spi@42560000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42560000 0x4000>;
+			interrupts = <62 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI4>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
+		};
+
 		lpuart3: serial@42570000 {
-			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42570000 DT_SIZE_K(64)>;
 			interrupts = <64 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART3>;
@@ -157,7 +181,7 @@
 		};
 
 		lpuart4: serial@42580000 {
-			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42580000 DT_SIZE_K(64)>;
 			interrupts = <65 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART4>;
@@ -165,7 +189,7 @@
 		};
 
 		lpuart5: serial@42590000 {
-			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42590000 DT_SIZE_K(64)>;
 			interrupts = <66 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART5>;
@@ -173,7 +197,7 @@
 		};
 
 		lpuart6: serial@425a0000 {
-			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x425a0000 DT_SIZE_K(64)>;
 			interrupts = <67 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART6>;
@@ -194,7 +218,7 @@
 		};
 
 		lpuart7: serial@42690000 {
-			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42690000 DT_SIZE_K(64)>;
 			interrupts = <68 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART7>;
@@ -202,7 +226,7 @@
 		};
 
 		lpuart8: serial@426a0000 {
-			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x426a0000 DT_SIZE_K(64)>;
 			interrupts = <69 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART8>;
@@ -210,7 +234,7 @@
 		};
 
 		lpi2c5: i2c@426b0000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -221,7 +245,7 @@
 		};
 
 		lpi2c6: i2c@426c0000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -232,7 +256,7 @@
 		};
 
 		lpi2c7: i2c@426d0000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -243,7 +267,7 @@
 		};
 
 		lpi2c8: i2c@426e0000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -251,6 +275,54 @@
 			interrupts = <184 0>;
 			clocks = <&scmi_clk IMX95_CLK_LPI2C8>;
 			status = "disabled";
+		};
+
+		lpspi5: spi@426f0000 {
+			compatible = "nxp,lpspi";
+			reg = <0x426f0000 0x4000>;
+			interrupts = <177 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI5>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
+		};
+
+		lpspi6: spi@42700000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42700000 0x4000>;
+			interrupts = <178 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI6>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
+		};
+
+		lpspi7: spi@42710000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42710000 0x4000>;
+			interrupts = <179 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI7>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
+		};
+
+		lpspi8: spi@42720000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42720000 0x4000>;
+			interrupts = <180 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI8>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		tpm1: pwm@44310000 {
@@ -274,7 +346,7 @@
 		};
 
 		lpi2c1: i2c@44340000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -285,7 +357,7 @@
 		};
 
 		lpi2c2: i2c@44350000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -295,8 +367,32 @@
 			status = "disabled";
 		};
 
+		lpspi1: spi@44360000 {
+			compatible = "nxp,lpspi";
+			reg = <0x44360000 0x4000>;
+			interrupts = <16 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
+		};
+
+		lpspi2: spi@44370000 {
+			compatible = "nxp,lpspi";
+			reg = <0x44370000 0x4000>;
+			interrupts = <17 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI2>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
+		};
+
 		lpuart1: serial@44380000 {
-			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x44380000 DT_SIZE_K(64)>;
 			interrupts = <19 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART1>;
@@ -304,7 +400,7 @@
 		};
 
 		lpuart2: serial@44390000 {
-			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x44390000 DT_SIZE_K(64)>;
 			interrupts = <20 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART2>;

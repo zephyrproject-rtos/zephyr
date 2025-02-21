@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Arrel Neumiller
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: esp32c3_supermini
+name: ESP32-C3-SUPERMINI
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - dma
+  - pwm
+  - spi
+  - counter
+  - entropy
+vendor: others

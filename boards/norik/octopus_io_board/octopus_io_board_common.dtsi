@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2024 Norik Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "octopus_io_board_common-pinctrl.dtsi"
+#include "../octopus_som/octopus_som_common.dtsi"
+
+/ {
+	model = "Norik Octopus IO-Board";
+	compatible = "norik,octopus-io-board";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	bq25180: bq25180@6a {
+		compatible = "ti,bq25180";
+		status = "okay";
+		reg = <0x6a>;
+		constant-charge-current-max-microamp = <10000>;
+	};
+};
+
+&spi3 {
+	status = "okay";
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>,<&gpio0 5 GPIO_ACTIVE_LOW>;
+
+	adxl362: adxl362@0 {
+		compatible = "adi,adxl362";
+		spi-max-frequency = <8000000>;
+		reg = <0>;
+		int1-gpios = <&gpio0 12 0>;
+	};
+
+	w25q64: w25q64@1 {
+		compatible = "jedec,spi-nor";
+		status = "okay";
+		reg = <1>;
+		spi-max-frequency = <8000000>;
+		jedec-id = [ef 40 17];
+		size = <0x4000000>;
+		has-dpd;
+		t-enter-dpd = <3500>;
+		t-exit-dpd = <3500>;
+	};
+};

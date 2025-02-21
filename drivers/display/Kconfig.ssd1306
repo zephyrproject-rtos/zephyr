@@ -6,9 +6,11 @@
 menuconfig SSD1306
 	bool "SSD1306 display driver"
 	default y
-	depends on DT_HAS_SOLOMON_SSD1306FB_ENABLED || DT_HAS_SINOWEALTH_SH1106_ENABLED
+	depends on DT_HAS_SOLOMON_SSD1306FB_ENABLED || DT_HAS_SOLOMON_SSD1309FB_ENABLED || DT_HAS_SINOWEALTH_SH1106_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306FB),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306FB),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1309FB),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1309FB),spi)
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SINOWEALTH_SH1106),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SINOWEALTH_SH1106),spi)
 	help

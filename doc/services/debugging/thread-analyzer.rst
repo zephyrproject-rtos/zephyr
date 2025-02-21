@@ -67,19 +67,25 @@ Configuration
 *************
 Configure this module using the following options.
 
-* ``THREAD_ANALYZER``: enable the module.
-* ``THREAD_ANALYZER_USE_PRINTK``: use printk for thread statistics.
-* ``THREAD_ANALYZER_USE_LOG``: use the logger for thread statistics.
-* ``THREAD_ANALYZER_AUTO``: run the thread analyzer automatically.
-  You do not need to add any code to the application when using this option.
-* ``THREAD_ANALYZER_AUTO_INTERVAL``: the time for which the module sleeps
-  between consecutive printing of thread analysis in automatic mode.
-* ``THREAD_ANALYZER_AUTO_STACK_SIZE``: the stack for thread analyzer
-  automatic thread.
-* ``THREAD_NAME``: enable this option in the kernel to print the name of the
-  thread instead of its ID.
-* ``THREAD_RUNTIME_STATS``: enable this option to print thread runtime data such
-  as utilization (This options is automatically selected by THREAD_ANALYZER).
+:kconfig:option:`CONFIG_THREAD_ANALYZER`
+   Enable the module.
+:kconfig:option:`CONFIG_THREAD_ANALYZER_USE_PRINTK`
+   Use printk for thread statistics.
+:kconfig:option:`CONFIG_THREAD_ANALYZER_USE_LOG`
+   Use the logger for thread statistics.
+:kconfig:option:`CONFIG_THREAD_ANALYZER_AUTO`
+   Run the thread analyzer automatically.
+   You do not need to add any code to the application when using this option.
+:kconfig:option:`CONFIG_THREAD_ANALYZER_AUTO_INTERVAL`
+   The time for which the module sleeps between consecutive printing of thread analysis in automatic
+   mode.
+:kconfig:option:`CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE`
+  The stack for thread analyzer automatic thread.
+:kconfig:option:`CONFIG_THREAD_NAME`
+  Print the name of the thread instead of its ID.
+:kconfig:option:`CONFIG_THREAD_RUNTIME_STATS`
+  Print thread runtime data such as utilization.
+  This options is automatically selected by :kconfig:option:`CONFIG_THREAD_ANALYZER`.
 
 API documentation
 *****************

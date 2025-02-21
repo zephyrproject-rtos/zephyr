@@ -2,27 +2,29 @@
 #
 # Copyright (c) 2018-2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
+import logging
+import traceback
+
+logger = logging.getLogger('twister')
+logger.setLevel(logging.DEBUG)
 
 class TwisterException(Exception):
-    pass
-
+    def __init__(self, message="TwisterException"):
+        super().__init__(message)
+        logger.error(''.join(["Twister call stack dump:\n"] + traceback.format_stack()[:-1]))
 
 class TwisterRuntimeError(TwisterException):
     pass
-
 
 class ConfigurationError(TwisterException):
     def __init__(self, cfile, message):
         TwisterException.__init__(self, str(cfile) + ": " + message)
 
-
 class BuildError(TwisterException):
     pass
 
-
 class ExecutionError(TwisterException):
     pass
-
 
 class StatusAttributeError(TwisterException):
     def __init__(self, cls : type, value):

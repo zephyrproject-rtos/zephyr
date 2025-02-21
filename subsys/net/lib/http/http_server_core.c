@@ -237,6 +237,7 @@ int http_server_init(struct http_server_ctx *ctx)
 		LOG_DBG("Initialized HTTP Service %s:%u",
 			svc->host ? svc->host : "<any>", *svc->port);
 
+		*svc->fd = fd;
 		ctx->fds[count].fd = fd;
 		ctx->fds[count].events = ZSOCK_POLLIN;
 		count++;
@@ -299,12 +300,17 @@ static void close_all_sockets(struct http_server_ctx *ctx)
 
 		ctx->fds[i].fd = -1;
 	}
+
+	HTTP_SERVICE_FOREACH(svc) {
+		*svc->fd = -1;
+	}
 }
 
 static void client_release_resources(struct http_client_ctx *client)
 {
 	struct http_resource_detail *detail;
 	struct http_resource_detail_dynamic *dynamic_detail;
+	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 
 	HTTP_SERVICE_FOREACH(service) {
@@ -331,8 +337,10 @@ static void client_release_resources(struct http_client_ctx *client)
 				continue;
 			}
 
-			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED, NULL, 0, &response_ctx,
-					   dynamic_detail->user_data);
+			populate_request_ctx(&request_ctx, NULL, 0, NULL);
+
+			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED, &request_ctx,
+					   &response_ctx, dynamic_detail->user_data);
 		}
 	}
 }
@@ -390,9 +398,22 @@ void http_client_timer_restart(struct http_client_ctx *client)
 	k_work_reschedule(&client->inactivity_timer, INACTIVITY_TIMEOUT);
 }
 
-static void init_client_ctx(struct http_client_ctx *client, int new_socket)
+static const struct http_service_desc *lookup_service(int server_fd)
+{
+	HTTP_SERVICE_FOREACH(svc) {
+		if (*svc->fd == server_fd) {
+			return svc;
+		}
+	}
+
+	return NULL;
+}
+
+static void init_client_ctx(struct http_client_ctx *client, const struct http_service_desc *svc,
+			    int new_socket)
 {
 	client->fd = new_socket;
+	client->service = svc;
 	client->data_len = 0;
 	client->server_state = HTTP_SERVER_PREFACE_STATE;
 	client->has_upgrade_header = false;
@@ -421,11 +442,11 @@ static int handle_http_preface(struct http_client_ctx *client)
 		return -EAGAIN;
 	}
 
-#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
-	client->header_capture_ctx.count = 0;
-	client->header_capture_ctx.cursor = 0;
-	client->header_capture_ctx.status = HTTP_HEADER_STATUS_OK;
-#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
+		client->header_capture_ctx.count = 0;
+		client->header_capture_ctx.cursor = 0;
+		client->header_capture_ctx.status = HTTP_HEADER_STATUS_OK;
+	}
 
 	if (strncmp(client->cursor, HTTP2_PREFACE, sizeof(HTTP2_PREFACE) - 1) != 0) {
 		return enter_http1_request(client);
@@ -520,6 +541,7 @@ static int handle_http_request(struct http_client_ctx *client)
 static int http_server_run(struct http_server_ctx *ctx)
 {
 	struct http_client_ctx *client;
+	const struct http_service_desc *service;
 	eventfd_t value;
 	bool found_slot;
 	int new_socket;
@@ -597,6 +619,9 @@ static int http_server_run(struct http_server_ctx *ctx)
 					continue;
 				}
 
+				service = lookup_service(ctx->fds[i].fd);
+				__ASSERT(NULL != service, "fd not associated with a service");
+
 				found_slot = false;
 
 				for (j = ctx->listen_fds; j < ARRAY_SIZE(ctx->fds); j++) {
@@ -612,7 +637,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 					LOG_DBG("Init client #%d", j - ctx->listen_fds);
 
-					init_client_ctx(&ctx->clients[j - ctx->listen_fds],
+					init_client_ctx(&ctx->clients[j - ctx->listen_fds], service,
 							new_socket);
 					found_slot = true;
 					break;
@@ -675,20 +700,34 @@ closing:
 	return ret;
 }
 
-/* Compare two strings where the terminator is either "\0" or "?" */
-static int compare_strings(const char *s1, const char *s2)
+/* Compare a path and a resource string. The path string comes from the HTTP request and may be
+ * terminated by either '?' or '\0'. The resource string is registered along with the resource and
+ * may only be terminated by `\0`.
+ */
+static int compare_strings(const char *path, const char *resource)
 {
-	while ((*s1 && *s2) && (*s1 == *s2) && (*s1 != '?')) {
-		s1++;
-		s2++;
+	while ((*path && *resource) && (*path == *resource) && (*path != '?')) {
+		path++;
+		resource++;
 	}
 
-	/* Check if both strings have reached their terminators or '?' */
-	if ((*s1 == '\0' || *s1 == '?') && (*s2 == '\0' || *s2 == '?')) {
+	/* Check if both strings have reached their terminators */
+	if ((*path == '\0' || *path == '?') && (*resource == '\0')) {
 		return 0; /* Strings are equal */
 	}
 
 	return 1; /* Strings are not equal */
+}
+
+static int path_len_without_query(const char *path)
+{
+	int len = 0;
+
+	while ((path[len] != '\0') && (path[len] != '?')) {
+		len++;
+	}
+
+	return len;
 }
 
 static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
@@ -710,34 +749,35 @@ static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
 	return false;
 }
 
-struct http_resource_detail *get_resource_detail(const char *path,
-						 int *path_len,
-						 bool is_websocket)
+struct http_resource_detail *get_resource_detail(const struct http_service_desc *service,
+						 const char *path, int *path_len, bool is_websocket)
 {
-	HTTP_SERVICE_FOREACH(service) {
-		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
-			if (skip_this(resource, is_websocket)) {
-				continue;
-			}
+	HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
+		if (skip_this(resource, is_websocket)) {
+			continue;
+		}
 
-			if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
-				int ret;
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
+			int ret;
 
-				ret = fnmatch(resource->resource, path,
-					      (FNM_PATHNAME | FNM_LEADING_DIR));
-				if (ret == 0) {
-					*path_len = strlen(resource->resource);
-					return resource->detail;
-				}
-			}
-
-			if (compare_strings(path, resource->resource) == 0) {
-				NET_DBG("Got match for %s", resource->resource);
-
+			ret = fnmatch(resource->resource, path, (FNM_PATHNAME | FNM_LEADING_DIR));
+			if (ret == 0) {
 				*path_len = strlen(resource->resource);
 				return resource->detail;
 			}
 		}
+
+		if (compare_strings(path, resource->resource) == 0) {
+			NET_DBG("Got match for %s", resource->resource);
+
+			*path_len = strlen(resource->resource);
+			return resource->detail;
+		}
+	}
+
+	if (service->res_fallback != NULL) {
+		*path_len = path_len_without_query(path);
+		return service->res_fallback;
 	}
 
 	NET_DBG("No match for %s", path);
@@ -827,6 +867,23 @@ bool http_response_is_provided(struct http_response_ctx *rsp)
 	}
 
 	return false;
+}
+
+void populate_request_ctx(struct http_request_ctx *req_ctx, uint8_t *data, size_t len,
+			  struct http_header_capture_ctx *header_ctx)
+{
+	req_ctx->data = data;
+	req_ctx->data_len = len;
+
+	if (NULL == header_ctx || header_ctx->status == HTTP_HEADER_STATUS_NONE) {
+		req_ctx->headers = NULL;
+		req_ctx->header_count = 0;
+		req_ctx->headers_status = HTTP_HEADER_STATUS_NONE;
+	} else {
+		req_ctx->headers = header_ctx->headers;
+		req_ctx->header_count = header_ctx->count;
+		req_ctx->headers_status = header_ctx->status;
+	}
 }
 
 int http_server_start(void)

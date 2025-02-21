@@ -236,7 +236,7 @@ static void stream_enabled(struct bt_bap_stream *stream)
 	k_sem_give(&sem_stream_enabled);
 }
 
-static bool stream_is_tx(const struct bt_bap_stream *stream)
+static bool stream_tx_can_send(const struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep_info info;
 	int err;
@@ -272,7 +272,7 @@ static void stream_started(struct bt_bap_stream *stream)
 {
 	printk("Audio Stream %p started\n", stream);
 	/* Register the stream for TX if it can send */
-	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && stream_is_tx(stream)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && stream_tx_can_send(stream)) {
 		const int err = stream_tx_register(stream);
 
 		if (err != 0) {
@@ -298,7 +298,7 @@ static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 	printk("Audio Stream %p stopped with reason 0x%02X\n", stream, reason);
 
 	/* Unregister the stream for TX if it can send */
-	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && stream_is_tx(stream)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && stream_tx_can_send(stream)) {
 		const int err = stream_tx_unregister(stream);
 
 		if (err != 0) {

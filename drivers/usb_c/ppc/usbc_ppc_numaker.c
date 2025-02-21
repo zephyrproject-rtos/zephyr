@@ -198,7 +198,7 @@ static int numaker_ppc_dump_regs(const struct device *dev)
 	return numaker_tcpc_ppc_dump_regs(tcpc_dev);
 }
 
-static const struct usbc_ppc_driver_api numaker_ppc_driver_api = {
+static DEVICE_API(usbc_ppc, numaker_ppc_driver_api) = {
 	.is_dead_battery_mode = numaker_ppc_is_dead_battery_mode,
 	.exit_dead_battery_mode = numaker_ppc_exit_dead_battery_mode,
 	.is_vbus_source = numaker_ppc_is_vbus_source,

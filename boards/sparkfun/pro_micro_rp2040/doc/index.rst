@@ -103,8 +103,8 @@ Default Zephyr Peripheral Mapping:
 - I2C1_SDA : P2
 - I2C1_SCL : P3
 - SPI0_RX : P20
-- SPI0_SCK : P18
-- SPI0_TX : P19
+- SPI0_SCK : P22
+- SPI0_TX : P23
 
 Programming and Debugging
 *************************

@@ -49,17 +49,20 @@ LOG_MODULE_REGISTER(intc_esp32c3, CONFIG_LOG_DEFAULT_LEVEL);
 #define ESP32C6_INTC_SRCS_PER_IRQ       2
 #define ESP32C6_INTC_AVAILABLE_IRQS     31
 
-/* For ESP32C6 only CPU peripheral interrupts number
- * 1, 2, 5, 6, 8 ~ 31 are available.
- * IRQ 31 is reserved for disabled interrupts
+/* Interrupt overview for ESP32C6:
+ * - 0, 3, 4, and 7 are used by the CPU for core-local interrupts (CLINT)
+ * - 1 is used for Wi-Fi in Espressif HAL
+ * - 2, 5, 6, 8 .. 31 are available for Zephyr
+ * - 31 is reserved for disabled interrupts
  */
 static uint8_t esp_intr_irq_alloc[ESP32C6_INTC_AVAILABLE_IRQS][ESP32C6_INTC_SRCS_PER_IRQ] = {
 	[0] = {IRQ_NA, IRQ_NA},
+	[1] = {IRQ_NA, IRQ_NA},
+	[2] = {IRQ_FREE, IRQ_FREE},
 	[3] = {IRQ_NA, IRQ_NA},
 	[4] = {IRQ_NA, IRQ_NA},
+	[5 ... 6] = {IRQ_FREE, IRQ_FREE},
 	[7] = {IRQ_NA, IRQ_NA},
-	[1 ... 2]  = {IRQ_FREE, IRQ_FREE},
-	[5 ... 6]  = {IRQ_FREE, IRQ_FREE},
 	[8 ... 30] = {IRQ_FREE, IRQ_FREE}
 };
 #endif

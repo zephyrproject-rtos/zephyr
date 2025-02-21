@@ -664,7 +664,7 @@ static int esai_remove(const struct device *dev)
 	return 0;
 }
 
-static const struct dai_driver_api esai_api = {
+static DEVICE_API(dai, esai_api) = {
 	.config_set = esai_config_set,
 	.config_get = esai_config_get,
 	.trigger = esai_trigger,

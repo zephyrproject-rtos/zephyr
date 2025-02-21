@@ -42,9 +42,15 @@ LOG_MODULE_REGISTER(mcuboot_dfu, LOG_LEVEL_DBG);
 #define BOOT_HEADER_MAGIC_V1 0x96f3b83d
 #define BOOT_HEADER_SIZE_V1 32
 
+enum IMAGE_INDEXES {
+	IMAGE_INDEX_INVALID = -1,
+	IMAGE_INDEX_0,
+	IMAGE_INDEX_1,
+	IMAGE_INDEX_2
+};
+
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
 /* For RAM LOAD mode, the active image must be fetched from the bootloader */
-static uint8_t boot_fetch_active_slot(void);
 #define ACTIVE_SLOT_FLASH_AREA_ID boot_fetch_active_slot()
 #define INVALID_SLOT_ID 255
 #else
@@ -76,7 +82,7 @@ struct mcuboot_v1_raw_header {
  */
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
-static uint8_t boot_fetch_active_slot(void)
+uint8_t boot_fetch_active_slot(void)
 {
 	int rc;
 	uint8_t slot;
@@ -93,13 +99,76 @@ static uint8_t boot_fetch_active_slot(void)
 
 	return slot;
 }
+#else  /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD */
+uint8_t boot_fetch_active_slot(void)
+{
+	return ACTIVE_SLOT_FLASH_AREA_ID;
+}
+#endif /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD */
+
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET)
+size_t boot_get_image_start_offset(uint8_t area_id)
+{
+	size_t off = 0;
+	int image = IMAGE_INDEX_INVALID;
+
+	if (area_id == FIXED_PARTITION_ID(slot1_partition)) {
+		image = IMAGE_INDEX_0;
+#if FIXED_PARTITION_EXISTS(slot3_partition)
+	} else if (area_id == FIXED_PARTITION_ID(slot3_partition)) {
+		image = IMAGE_INDEX_1;
 #endif
+#if FIXED_PARTITION_EXISTS(slot5_partition)
+	} else if (area_id == FIXED_PARTITION_ID(slot5_partition)) {
+		image = IMAGE_INDEX_2;
+#endif
+	}
+
+	if (image != IMAGE_INDEX_INVALID) {
+		/* Need to check status from primary slot to get correct offset for secondary
+		 * slot image header
+		 */
+		const struct flash_area *fa;
+		uint32_t num_sectors = SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN;
+		struct flash_sector sector_data;
+		int rc;
+
+		rc = flash_area_open(area_id, &fa);
+		if (rc) {
+			LOG_ERR("Flash open area %u failed: %d", area_id, rc);
+			goto done;
+		}
+
+		if (mcuboot_swap_type_multi(image) != BOOT_SWAP_TYPE_REVERT) {
+			/* For swap using offset mode, the image starts in the second sector of
+			 * the upgrade slot, so apply the offset when this is needed, do this by
+			 * getting information on first sector only, this is expected to return an
+			 * error as there are more slots, so allow the not enough memory error
+			 */
+			rc = flash_area_get_sectors(area_id, &num_sectors, &sector_data);
+			if ((rc != 0 && rc != -ENOMEM) ||
+			    num_sectors != SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN) {
+				LOG_ERR("Failed to get sector details: %d", rc);
+			} else {
+				off = sector_data.fs_size;
+			}
+		}
+
+		flash_area_close(fa);
+	}
+
+done:
+	LOG_DBG("Start offset for area %u: 0x%x", area_id, off);
+	return off;
+}
+#endif /* CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET */
 
 static int boot_read_v1_header(uint8_t area_id,
 			       struct mcuboot_v1_raw_header *v1_raw)
 {
 	const struct flash_area *fa;
 	int rc;
+	size_t off = boot_get_image_start_offset(area_id);
 
 	rc = flash_area_open(area_id, &fa);
 	if (rc) {
@@ -107,27 +176,19 @@ static int boot_read_v1_header(uint8_t area_id,
 	}
 
 	/*
-	 * Read and sanity-check the raw header.
+	 * Read and validty-check the raw header.
 	 */
-	rc = flash_area_read(fa, 0, v1_raw, sizeof(*v1_raw));
+	rc = flash_area_read(fa, off, v1_raw, sizeof(*v1_raw));
 	flash_area_close(fa);
 	if (rc) {
 		return rc;
 	}
 
 	v1_raw->header_magic = sys_le32_to_cpu(v1_raw->header_magic);
-	v1_raw->image_load_address =
-		sys_le32_to_cpu(v1_raw->image_load_address);
 	v1_raw->header_size = sys_le16_to_cpu(v1_raw->header_size);
-	v1_raw->image_size = sys_le32_to_cpu(v1_raw->image_size);
-	v1_raw->image_flags = sys_le32_to_cpu(v1_raw->image_flags);
-	v1_raw->version.revision =
-		sys_le16_to_cpu(v1_raw->version.revision);
-	v1_raw->version.build_num =
-		sys_le32_to_cpu(v1_raw->version.build_num);
 
 	/*
-	 * Sanity checks.
+	 * Validity checks.
 	 *
 	 * Larger values in header_size than BOOT_HEADER_SIZE_V1 are
 	 * possible, e.g. if Zephyr was linked with
@@ -137,6 +198,16 @@ static int boot_read_v1_header(uint8_t area_id,
 	    (v1_raw->header_size < BOOT_HEADER_SIZE_V1)) {
 		return -EIO;
 	}
+
+	v1_raw->image_load_address =
+		sys_le32_to_cpu(v1_raw->image_load_address);
+	v1_raw->header_size = sys_le16_to_cpu(v1_raw->header_size);
+	v1_raw->image_size = sys_le32_to_cpu(v1_raw->image_size);
+	v1_raw->image_flags = sys_le32_to_cpu(v1_raw->image_flags);
+	v1_raw->version.revision =
+		sys_le16_to_cpu(v1_raw->version.revision);
+	v1_raw->version.build_num =
+		sys_le32_to_cpu(v1_raw->version.build_num);
 
 	return 0;
 }
@@ -227,7 +298,7 @@ bool boot_is_img_confirmed(void)
 	const struct flash_area *fa;
 	int rc;
 
-	rc = flash_area_open(FLASH_AREA_IMAGE_PRIMARY, &fa);
+	rc = flash_area_open(ACTIVE_SLOT_FLASH_AREA_ID, &fa);
 	if (rc) {
 		return false;
 	}

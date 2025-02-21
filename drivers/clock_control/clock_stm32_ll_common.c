@@ -17,7 +17,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
-#include "clock_stm32_ll_mco.h"
 #include "stm32_hsem.h"
 
 /* Macros to fill up prescaler values */
@@ -123,10 +122,8 @@ int enabled_clock(uint32_t src_clk)
 	int r = 0;
 
 	switch (src_clk) {
-#if defined(STM32_SRC_SYSCLK)
 	case STM32_SRC_SYSCLK:
 		break;
-#endif /* STM32_SRC_SYSCLK */
 #if defined(STM32_SRC_PCLK)
 	case STM32_SRC_PCLK:
 		break;
@@ -215,6 +212,13 @@ int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_PLL_R */
+#if defined(STM32_SRC_PLLI2S_Q)
+	case STM32_SRC_PLLI2S_Q:
+		if (!IS_ENABLED(STM32_PLLI2S_Q_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLI2S_Q */
 #if defined(STM32_SRC_PLLI2S_R)
 	case STM32_SRC_PLLI2S_R:
 		if (!IS_ENABLED(STM32_PLLI2S_R_ENABLED)) {
@@ -289,7 +293,6 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 						clock_control_subsys_t sub_system,
 						void *data)
 {
-#if defined(STM32_SRC_SYSCLK)
 	/* At least one alt src clock available */
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	int err;
@@ -308,16 +311,14 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		return 0;
 	}
 
-	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
-		       STM32_CLOCK_MASK_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
-		     STM32_CLOCK_VAL_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
+	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
+		       STM32_DT_CLKSEL_MASK_GET(pclken->enr) <<
+			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
+		     STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
+			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
 
 	return 0;
-#else
-	/* No src clock available: Not supported */
-	return -ENOTSUP;
-#endif
 }
 
 static int stm32_clock_control_get_subsys_rate(const struct device *clock,
@@ -389,11 +390,9 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = ahb3_clock;
 		break;
 #endif
-#if defined(STM32_SRC_SYSCLK)
 	case STM32_SRC_SYSCLK:
 		*rate = SystemCoreClock * STM32_CORE_PRESCALER;
 		break;
-#endif
 #if defined(STM32_SRC_PLLCLK) & defined(STM32_SYSCLK_SRC_PLL)
 	case STM32_SRC_PLLCLK:
 		if (get_pllout_frequency() == 0) {
@@ -426,6 +425,14 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 					      STM32_PLL_R_DIVISOR);
 		break;
 #endif
+#if defined(STM32_SRC_PLLI2S_Q) & STM32_PLLI2S_Q_ENABLED & STM32_PLLI2S_ENABLED
+	case STM32_SRC_PLLI2S_Q:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLLI2S_M_DIVISOR,
+					      STM32_PLLI2S_N_MULTIPLIER,
+					      STM32_PLLI2S_Q_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLI2S_Q */
 #if defined(STM32_SRC_PLLI2S_R) & STM32_PLLI2S_ENABLED
 	case STM32_SRC_PLLI2S_R:
 		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
@@ -434,6 +441,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 					      STM32_PLLI2S_R_DIVISOR);
 		break;
 #endif /* STM32_SRC_PLLI2S_R */
+
 /* PLLSAI1x not supported yet */
 /* PLLSAI2x not supported yet */
 #if defined(STM32_SRC_LSE)
@@ -466,8 +474,18 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = STM32_HSI48_FREQ;
 		break;
 #endif /* STM32_HSI48_ENABLED */
+#if defined(STM32_CK48_ENABLED)
+	case STM32_SRC_CK48:
+		*rate = get_ck48_frequency();
+		break;
+#endif /* STM32_CK48_ENABLED */
+
 	default:
 		return -ENOTSUP;
+	}
+
+	if (pclken->div) {
+		*rate /= (pclken->div + 1);
 	}
 
 	return 0;
@@ -544,7 +562,11 @@ static void set_up_plls(void)
 		stm32_clock_switch_to_hsi();
 		LL_RCC_SetAHBPrescaler(ahb_prescaler(1));
 	}
+	/* Disable PLL */
 	LL_RCC_PLL_Disable();
+	while (LL_RCC_PLL_IsReady() != 0U) {
+		/* Wait for PLL to be disabled */
+	}
 
 #endif
 
@@ -555,6 +577,9 @@ static void set_up_plls(void)
 	 * since PLL source can be PLL2.
 	 */
 	LL_RCC_PLL2_Disable();
+	while (LL_RCC_PLL2_IsReady() != 0U) {
+		/* Wait for PLL2 to be disabled */
+	}
 
 	config_pll2();
 
@@ -869,9 +894,6 @@ int stm32_clock_control_init(const struct device *dev)
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc34_prescaler)
 	LL_RCC_SetADCClockSource(adc34_prescaler(STM32_ADC34_PRESCALER));
 #endif
-
-	/* configure MCO1/MCO2 based on Kconfig */
-	stm32_clock_control_mco_init();
 
 	return 0;
 }

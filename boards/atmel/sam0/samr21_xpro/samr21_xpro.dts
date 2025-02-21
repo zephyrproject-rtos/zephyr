@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Benjamin Valentin
- * Copyright (c) 2019-2024 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2019-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,6 +106,12 @@
 	clock-frequency = <48000000>;
 };
 
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+};
+
 &tcc0 {
 	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
@@ -114,6 +120,12 @@
 
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
+	counter-mode = "clock";
+	prescaler = <1024>;
 };
 
 &sercom0 {

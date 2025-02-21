@@ -4,11 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig LSM6DSV16X
-	bool "LSM6DSV16X I2C/SPI accelerometer and gyroscope Chip"
+	bool "LSM6DSV16X I3C/I2C/SPI accelerometer and gyroscope Chip"
 	default y
 	depends on DT_HAS_ST_LSM6DSV16X_ENABLED
 	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i2c)
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),spi)
 	select HAS_STMEMSC
 	select USE_STDC_LSM6DSV16X
@@ -23,12 +24,14 @@ config LSM6DSV16X_STREAM
 	bool "Use hardware FIFO to stream data"
 	select LSM6DSV16X_TRIGGER
 	default y
-	depends on I2C_RTIO || SPI_RTIO
+	depends on I2C_RTIO || SPI_RTIO || I3C_RTIO
 	depends on SENSOR_ASYNC_API
 	help
 	  Use this config option to enable streaming sensor data via RTIO subsystem.
 
 choice LSM6DSV16X_TRIGGER_MODE
+	default LSM6DSV16X_TRIGGER_GLOBAL_THREAD if LSM6DSV16X_STREAM
+	default LSM6DSV16X_TRIGGER_NONE
 	prompt "Trigger mode"
 	help
 	  Specify the type of triggering to be used by the driver.
@@ -38,16 +41,18 @@ config LSM6DSV16X_TRIGGER_NONE
 
 config LSM6DSV16X_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
-	depends on GPIO
+	depends on GPIO || I3C
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int1-gpios) ||\
-		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-gpios)
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-gpios) ||\
+		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c)
 	select LSM6DSV16X_TRIGGER
 
 config LSM6DSV16X_TRIGGER_OWN_THREAD
 	bool "Use own thread"
-	depends on GPIO
+	depends on GPIO || I3C
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int1-gpios) ||\
-		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-gpios)
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-gpios) ||\
+		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c)
 	select LSM6DSV16X_TRIGGER
 
 endchoice

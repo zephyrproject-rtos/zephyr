@@ -47,6 +47,9 @@ enum os_mgmt_err_code_t {
 
 	/** RTC command failed */
 	OS_MGMT_ERR_RTC_COMMAND_FAILED,
+
+	/** Query was recognized but there is no valid value for the response. */
+	OS_MGMT_ERR_QUERY_RESPONSE_VALUE_NOT_VALID,
 };
 
 /* Bitmask values used by the os info command handler. Note that the width of this variable is

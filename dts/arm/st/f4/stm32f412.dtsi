@@ -13,7 +13,14 @@
 	clocks {
 		plli2s: plli2s {
 			#clock-cells = <0>;
-			compatible = "st,stm32f412-plli2s-clock";
+			compatible = "st,stm32f411-plli2s-clock";
+			status = "disabled";
+		};
+
+		clk48: clk48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-clock-mux";
+			clocks = <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
 		};
 	};
@@ -77,8 +84,8 @@
 			reg = <0x40013400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 13U)>;
 			interrupts = <84 5>;
-			dmas = <&dma2 1 4 0x400 0x3
-				&dma2 0 4 0x400 0x3>;
+			dmas = <&dma2 1 4 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL
+				&dma2 0 4 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
 			dma-names = "tx", "rx";
 			status = "disabled";
 		};
@@ -202,10 +209,10 @@
 
 		sdmmc1: sdmmc@40012c00 {
 			clocks = <&rcc STM32_CLOCK(APB2, 11U)>,
-				 <&rcc STM32_SRC_SYSCLK SDIO_SEL(1)>;
+				 <&rcc STM32_SRC_CK48 SDIO_SEL(0)>;
 		};
 
-		quadspi: quadspi@a0001000 {
+		quadspi: spi@a0001000 {
 			compatible = "st,stm32-qspi";
 			#address-cells = <0x1>;
 			#size-cells = <0x0>;
@@ -230,9 +237,13 @@
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			/* also enabling clock for can1 (master instance) */
-			clocks = <&rcc STM32_CLOCK(APB1, 26U)>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x06000000>;
 			master-can-reg = <0x40006400>;
 			status = "disabled";
 		};
+	};
+
+	die_temp: dietemp {
+		io-channels = <&adc1 18>;
 	};
 };

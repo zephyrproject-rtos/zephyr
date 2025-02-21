@@ -100,7 +100,9 @@ source "drivers/adc/Kconfig.ads1119"
 
 source "drivers/adc/Kconfig.ads7052"
 
-source "drivers/adc/Kconfig.ads114s0x"
+source "drivers/adc/Kconfig.ads1x4s0x"
+
+source "drivers/adc/Kconfig.ads131m02"
 
 source "drivers/adc/Kconfig.rpi_pico"
 
@@ -112,7 +114,7 @@ source "drivers/adc/Kconfig.ifx_cat1"
 
 source "drivers/adc/Kconfig.smartbond"
 
-source "drivers/adc/Kconfig.tla2021"
+source "drivers/adc/Kconfig.tla202x"
 
 source "drivers/adc/Kconfig.nxp_s32"
 
@@ -133,5 +135,9 @@ source "drivers/adc/Kconfig.ambiq"
 source "drivers/adc/Kconfig.renesas_ra"
 
 source "drivers/adc/Kconfig.max32"
+
+source "drivers/adc/Kconfig.ad4114"
+
+source "drivers/adc/Kconfig.ad7124"
 
 endif # ADC

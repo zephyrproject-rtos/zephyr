@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -34,6 +35,7 @@
 
 #include "bstests.h"
 #include "common.h"
+#include "bap_common.h"
 
 #if defined(CONFIG_BT_CAP_COMMANDER)
 
@@ -60,6 +62,7 @@ static struct k_sem sem_mics_discovered;
 static struct k_sem sem_bass_discovered;
 
 CREATE_FLAG(flag_mtu_exchanged);
+CREATE_FLAG(flag_cap_canceled);
 CREATE_FLAG(flag_volume_changed);
 CREATE_FLAG(flag_volume_mute_changed);
 CREATE_FLAG(flag_volume_offset_changed);
@@ -103,6 +106,12 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
 static void cap_volume_changed_cb(struct bt_conn *conn, int err)
 {
+	if (err == -ECANCELED) {
+		printk("CAP command cancelled for conn %p\n", conn);
+		SET_FLAG(flag_cap_canceled);
+		return;
+	}
+
 	if (err != 0) {
 		FAIL("Failed to change volume for conn %p: %d\n", conn, err);
 		return;
@@ -113,6 +122,12 @@ static void cap_volume_changed_cb(struct bt_conn *conn, int err)
 
 static void cap_volume_mute_changed_cb(struct bt_conn *conn, int err)
 {
+	if (err == -ECANCELED) {
+		printk("CAP command cancelled for conn %p\n", conn);
+		SET_FLAG(flag_cap_canceled);
+		return;
+	}
+
 	if (err != 0) {
 		FAIL("Failed to change volume mute for conn %p: %d\n", conn, err);
 		return;
@@ -124,6 +139,12 @@ static void cap_volume_mute_changed_cb(struct bt_conn *conn, int err)
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
 {
+	if (err == -ECANCELED) {
+		printk("CAP command cancelled for conn %p\n", conn);
+		SET_FLAG(flag_cap_canceled);
+		return;
+	}
+
 	if (err != 0) {
 		FAIL("Failed to change volume offset for conn %p: %d\n", conn, err);
 		return;
@@ -137,6 +158,12 @@ static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
 static void cap_microphone_mute_changed_cb(struct bt_conn *conn, int err)
 {
+	if (err == -ECANCELED) {
+		printk("CAP command cancelled for conn %p\n", conn);
+		SET_FLAG(flag_cap_canceled);
+		return;
+	}
+
 	if (err != 0) {
 		FAIL("Failed to change microphone mute for conn %p: %d\n", conn, err);
 		return;
@@ -148,6 +175,12 @@ static void cap_microphone_mute_changed_cb(struct bt_conn *conn, int err)
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 static void cap_microphone_gain_changed_cb(struct bt_conn *conn, int err)
 {
+	if (err == -ECANCELED) {
+		printk("CAP command cancelled for conn %p\n", conn);
+		SET_FLAG(flag_cap_canceled);
+		return;
+	}
+
 	if (err != 0) {
 		FAIL("Failed to change microphone gain for conn %p: %d\n", conn, err);
 		return;
@@ -161,6 +194,12 @@ static void cap_microphone_gain_changed_cb(struct bt_conn *conn, int err)
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
 static void cap_broadcast_reception_start_cb(struct bt_conn *conn, int err)
 {
+	if (err == -ECANCELED) {
+		printk("CAP command cancelled for conn %p\n", conn);
+		SET_FLAG(flag_cap_canceled);
+		return;
+	}
+
 	if (err != 0) {
 		FAIL("Failed to perform broadcast reception start for conn %p: %d\n", conn, err);
 		return;
@@ -171,6 +210,12 @@ static void cap_broadcast_reception_start_cb(struct bt_conn *conn, int err)
 
 static void cap_broadcast_reception_stop_cb(struct bt_conn *conn, int err)
 {
+	if (err == -ECANCELED) {
+		printk("CAP command cancelled for conn %p\n", conn);
+		SET_FLAG(flag_cap_canceled);
+		return;
+	}
+
 	if (err != 0) {
 		FAIL("Failed to perform broadcast reception stop for conn %p: %d\n", conn, err);
 		return;
@@ -507,8 +552,75 @@ static struct bt_bap_broadcast_assistant_cb ba_cbs = {
 	.add_src = bap_broadcast_assistant_add_src_cb,
 };
 
+static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_data)
+{
+	char addr_str[BT_ADDR_LE_STR_LEN];
+	bt_addr_le_t *addr = user_data;
+	const struct bt_uuid *uuid;
+	uint16_t uuid_val;
+	int err;
+
+	printk("data->type %u\n", data->type);
+
+	if (data->type != BT_DATA_SVC_DATA16) {
+		return true; /* Continue parsing to next AD data type */
+	}
+
+	if (data->data_len < sizeof(uuid_val)) {
+		return true; /* Continue parsing to next AD data type */
+	}
+
+	/* We are looking for the CAS service data */
+	uuid_val = sys_get_le16(data->data);
+	uuid = BT_UUID_DECLARE_16(uuid_val);
+	if (bt_uuid_cmp(uuid, BT_UUID_CAS) != 0) {
+		return true; /* Continue parsing to next AD data type */
+	}
+
+	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	printk("Device found: %s\n", addr_str);
+
+	printk("Stopping scan\n");
+	if (bt_le_scan_stop()) {
+		FAIL("Could not stop scan");
+		return false;
+	}
+
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+				BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN,
+						 0, BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
+				&connected_conns[connected_conn_cnt]);
+	if (err != 0) {
+		FAIL("Could not connect to peer: %d", err);
+	}
+
+	return false; /* Stop parsing */
+}
+
+static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, info->addr);
+	if (conn != NULL) {
+		/* Already connected to this device */
+		bt_conn_unref(conn);
+		return;
+	}
+
+	/* Check for connectable, extended advertising */
+	if (((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0) &&
+	    ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE)) != 0) {
+		/* Check for TMAS support in advertising data */
+		bt_data_parse(buf, check_audio_support_and_connect_cb, (void *)info->addr);
+	}
+}
+
 static void init(size_t acceptor_cnt)
 {
+	static struct bt_le_scan_cb scan_callbacks = {
+		.recv = scan_recv_cb,
+	};
 	static struct bt_conn_cb conn_cb = {
 		.disconnected = cap_disconnected_cb,
 	};
@@ -521,6 +633,12 @@ static void init(size_t acceptor_cnt)
 	}
 
 	bt_gatt_cb_register(&gatt_callbacks);
+	err = bt_le_scan_cb_register(&scan_callbacks);
+	if (err != 0) {
+		FAIL("Failed to register scan callbacks (err %d)\n", err);
+		return;
+	}
+
 	bt_conn_cb_register(&conn_cb);
 
 	err = bt_cap_commander_register_cb(&cap_cb);
@@ -557,6 +675,7 @@ static void init(size_t acceptor_cnt)
 	k_sem_init(&sem_mics_discovered, 0, acceptor_cnt);
 
 	UNSET_FLAG(flag_mtu_exchanged);
+	UNSET_FLAG(flag_cap_canceled);
 	UNSET_FLAG(flag_volume_changed);
 	UNSET_FLAG(flag_volume_mute_changed);
 	UNSET_FLAG(flag_volume_offset_changed);
@@ -573,56 +692,13 @@ static void init(size_t acceptor_cnt)
 	UNSET_FLAG(flag_syncable);
 }
 
-static void cap_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-			     struct net_buf_simple *ad)
-{
-	char addr_str[BT_ADDR_LE_STR_LEN];
-	struct bt_conn *conn;
-	int err;
-
-	/* We're only interested in connectable events */
-	if (type != BT_HCI_ADV_IND && type != BT_HCI_ADV_DIRECT_IND) {
-		return;
-	}
-
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
-	if (conn != NULL) {
-		/* Already connected to this device */
-		bt_conn_unref(conn);
-		return;
-	}
-
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
-
-	/* connect only to devices in close proximity */
-	if (rssi < -70) {
-		FAIL("RSSI too low");
-		return;
-	}
-
-	printk("Stopping scan\n");
-	if (bt_le_scan_stop()) {
-		FAIL("Could not stop scan");
-		return;
-	}
-
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN,
-						 0, BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
-				&connected_conns[connected_conn_cnt]);
-	if (err) {
-		FAIL("Could not connect to peer: %d", err);
-	}
-}
-
 static void scan_and_connect(void)
 {
 	int err;
 
 	UNSET_FLAG(flag_connected);
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, cap_device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return;
@@ -812,7 +888,7 @@ static void discover_mics(size_t acceptor_cnt)
 	}
 }
 
-static void test_change_volume(void)
+static void init_change_volume(void)
 {
 	union bt_cap_set_member members[CONFIG_BT_MAX_CONN];
 	const struct bt_cap_commander_change_volume_param param = {
@@ -824,7 +900,6 @@ static void test_change_volume(void)
 	int err;
 
 	printk("Changing volume to %u\n", param.volume);
-	UNSET_FLAG(flag_volume_changed);
 
 	for (size_t i = 0U; i < param.count; i++) {
 		param.members[i].member = connected_conns[i];
@@ -835,9 +910,13 @@ static void test_change_volume(void)
 		FAIL("Failed to change volume: %d\n", err);
 		return;
 	}
+}
 
+static void test_change_volume(void)
+{
+	UNSET_FLAG(flag_volume_changed);
+	init_change_volume();
 	WAIT_FOR_FLAG(flag_volume_changed);
-	printk("Volume changed to %u\n", param.volume);
 }
 
 static void test_change_volume_mute(bool mute)
@@ -1026,6 +1105,39 @@ static void test_broadcast_reception_stop(size_t acceptor_count)
 	WAIT_FOR_FLAG(flag_broadcast_reception_stop);
 }
 
+static void test_distribute_broadcast_code(size_t acceptor_count)
+{
+	struct bt_cap_commander_distribute_broadcast_code_param distribute_broadcast_code_param = {
+		0};
+	struct bt_cap_commander_distribute_broadcast_code_member_param param[CONFIG_BT_MAX_CONN] = {
+		0};
+
+	distribute_broadcast_code_param.type = BT_CAP_SET_TYPE_AD_HOC;
+	distribute_broadcast_code_param.param = param;
+	distribute_broadcast_code_param.count = acceptor_count;
+	memcpy(distribute_broadcast_code_param.broadcast_code, BROADCAST_CODE,
+	       sizeof(BROADCAST_CODE));
+	for (size_t i = 0; i < acceptor_count; i++) {
+
+		distribute_broadcast_code_param.param[i].member.member = connected_conns[i];
+		distribute_broadcast_code_param.param[i].src_id = src_id[i];
+	}
+
+	bt_cap_commander_distribute_broadcast_code(&distribute_broadcast_code_param);
+}
+
+static void test_cancel(bool cap_in_progress)
+{
+	const int expected_err = cap_in_progress ? 0 : -EALREADY;
+	int err;
+
+	err = bt_cap_commander_cancel();
+	if (err != expected_err) {
+		FAIL("Could not cancel CAP command: %d\n", err);
+		return;
+	}
+}
+
 static void test_main_cap_commander_capture_and_render(void)
 {
 	const size_t acceptor_cnt = get_dev_cnt() - 1; /* Assume all other devices are acceptors
@@ -1103,9 +1215,9 @@ static void test_main_cap_commander_broadcast_reception(void)
 
 	test_broadcast_reception_start(acceptor_count);
 
-	backchannel_sync_wait_any(); /* wait for the acceptor to receive data */
+	test_distribute_broadcast_code(acceptor_count);
 
-	backchannel_sync_wait_any(); /* wait for the acceptor to receive a metadata update */
+	backchannel_sync_wait_any(); /* wait for the acceptor to receive data */
 
 	test_broadcast_reception_stop(acceptor_count);
 
@@ -1113,6 +1225,51 @@ static void test_main_cap_commander_broadcast_reception(void)
 
 	/* Disconnect all CAP acceptors */
 	disconnect_acl(acceptor_count);
+
+	PASS("Broadcast reception passed\n");
+}
+
+static void test_main_cap_commander_cancel(void)
+{
+	size_t acceptor_count;
+
+	/* The test consists of N devices
+	 * 1 device is the broadcast source
+	 * 1 device is the CAP commander
+	 * This leaves N - 2 devices for the acceptor
+	 */
+	acceptor_count = get_dev_cnt() - 1;
+	printk("Acceptor count: %d\n", acceptor_count);
+
+	init(acceptor_count);
+
+	for (size_t i = 0U; i < acceptor_count; i++) {
+		scan_and_connect();
+
+		WAIT_FOR_FLAG(flag_mtu_exchanged);
+	}
+
+	/* TODO: We should use CSIP to find set members */
+	discover_cas(acceptor_count);
+
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_COORDINATOR)) {
+		if (IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR)) {
+			discover_vcs(acceptor_count);
+
+			init_change_volume();
+
+			test_cancel(true);
+			WAIT_FOR_FLAG(flag_cap_canceled);
+		}
+	}
+
+	test_cancel(false);
+
+	/* Disconnect all CAP acceptors */
+	disconnect_acl(acceptor_count);
+
+	/* restore the default callback */
+	cap_cb.volume_changed = cap_volume_changed_cb;
 
 	PASS("Broadcast reception passed\n");
 }
@@ -1129,6 +1286,12 @@ static const struct bst_test_instance test_cap_commander[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_cap_commander_broadcast_reception,
+	},
+	{
+		.test_id = "cap_commander_cancel",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_cap_commander_cancel,
 	},
 	BSTEST_END_MARKER,
 };

@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_mimx93_a55.dtsi>
 #include "imx93_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP i.MX93 A55";
@@ -16,7 +17,8 @@
 	chosen {
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
-		zephyr,sram = &sram0;
+		/* sram node actually locates at DDR DRAM */
+		zephyr,sram = &dram;
 		zephyr,canbus = &flexcan2;
 	};
 
@@ -26,7 +28,7 @@
 		};
 	};
 
-	sram0: memory@d0000000 {
+	dram: memory@d0000000 {
 		reg = <0xd0000000 DT_SIZE_M(1)>;
 	};
 
@@ -58,11 +60,13 @@
 		btn_1: btn_1{
 			label = "BTN1";
 			gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 
 		btn_2: btn_2{
 			label = "BTN2";
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 

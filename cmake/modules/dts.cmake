@@ -327,8 +327,7 @@ execute_process(
   COMMAND_ERROR_IS_FATAL ANY
   )
 zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
-file(REMOVE ${ZEPHYR_DTS}.new ${DEVICETREE_GENERATED_H}.new)
-message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
+file(REMOVE ${DEVICETREE_GENERATED_H}.new)
 message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")
 
 #

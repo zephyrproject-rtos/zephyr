@@ -963,17 +963,22 @@ const struct bt_mesh_model_op _bt_mesh_dfu_cli_op[] = {
 
 static int dfu_cli_init(const struct bt_mesh_model *mod)
 {
+	int err;
 	struct bt_mesh_dfu_cli *cli = mod->rt->user_data;
+	cli->mod = mod;
 
-	if (mod->rt->elem_idx != 0) {
-		LOG_ERR("DFU update client must be instantiated on first elem");
+	const struct bt_mesh_model *blob_cli =
+		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_BLOB_CLI);
+
+	if (blob_cli == NULL) {
+		LOG_ERR("Missing BLOB Cli.");
 		return -EINVAL;
 	}
 
-	cli->mod = mod;
+	err = bt_mesh_model_extend(mod, cli->blob.mod);
 
-	if (IS_ENABLED(CONFIG_BT_MESH_MODEL_EXTENSIONS)) {
-		bt_mesh_model_extend(mod, cli->blob.mod);
+	if (err) {
+		return err;
 	}
 
 	k_sem_init(&cli->req.sem, 0, 1);

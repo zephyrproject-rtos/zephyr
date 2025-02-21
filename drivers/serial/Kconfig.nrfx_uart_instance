@@ -20,7 +20,7 @@ config UART_$(nrfx_uart_num)_ASYNC
 
 config UART_$(nrfx_uart_num)_ENHANCED_POLL_OUT
 	bool "Efficient poll out on port $(nrfx_uart_num)"
-	depends on !$(dt_nodelabel_has_prop,uart$(nrfx_uart_num),endtx-stoptx-supported)
+	depends on !$(dt_nodelabel_bool_prop,uart$(nrfx_uart_num),endtx-stoptx-supported)
 	default y
 	depends on HAS_HW_NRF_UARTE$(nrfx_uart_num)
 	depends on HAS_HW_NRF_PPI || HAS_HW_NRF_DPPIC
@@ -49,17 +49,22 @@ config UART_$(nrfx_uart_num)_NRF_TX_BUFFER_SIZE
 	  particular SoC.
 
 config UART_$(nrfx_uart_num)_NRF_HW_ASYNC
-	bool "Use hardware RX byte counting"
+	bool "[DEPRECATED] Use hardware RX byte counting"
 	depends on HAS_HW_NRF_UARTE$(nrfx_uart_num)
 	depends on UART_ASYNC_API
 	depends on UART_NRFX_UARTE_LEGACY_SHIM
+	depends on !UART_NRFX_UARTE_ENHANCED_RX
 	depends on HAS_HW_NRF_PPI || HAS_HW_NRF_DPPIC
 	select NRFX_GPPI
+	select DEPRECATED
 	help
 	  If default driver uses interrupts to count incoming bytes, it is possible
 	  that with higher speeds and/or high cpu load some data can be lost.
 	  It is recommended to use hardware byte counting in such scenarios.
 	  Hardware RX byte counting requires timer instance and one PPI channel.
+
+	  This options is deprecated. Use UART_NRFX_UARTE_ENHANCED_RX which supports
+	  reliable byte counting without additional HW resources (TIMER and (D)PPI).
 
 config UART_$(nrfx_uart_num)_NRF_ASYNC_LOW_POWER
 	bool "Low power mode"

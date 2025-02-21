@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2024 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nuvoton/npcx9mfp.dtsi>
+#include <nuvoton/npcx/npcx9/npcx9-pinctrl.dtsi>
+
+/ {
+	model = "Google Quincy development board";
+	compatible = "google,quincy-fpmcu";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &int_flash;
+	};
+
+	aliases {
+		/* For watchdog sample */
+		watchdog0 = &twd0;
+	};
+};
+
+/* UART1: Servo UART (console) */
+&uart1 {
+	/* Use UART1_SL2 ie. PIN64.65 */
+	pinctrl-0 = <&uart1_2_sin_gp64
+		     &uart1_2_sout_gp65>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* UART2: AP UART (Host Commands and MKBP) */
+&uart2 {
+	pinctrl-0 = <&uart2_sin_gp75
+		     &uart2_sout_gp86>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* SHI0: communication with the AP */
+&shi0 {
+	status = "okay";
+	pinctrl-0 = <&shi_gp46_47_53_55>;
+	pinctrl-names = "default";
+};
+
+/* SPIP0: communication with the fingerprint sensor */
+&spip0 {
+	pinctrl-0 = <&spip_sclk_mosi_miso_gp95_gpa1_gpa3_gpa5_sl
+		     &spip_sclk_mosi_miso_gp95_gpa1_gpa3_gpa5_no_spip_inv>;
+	cs-gpios = <&gpioa 6 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	status = "okay";
+};

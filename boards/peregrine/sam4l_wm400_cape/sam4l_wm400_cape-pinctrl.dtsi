@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2022-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/sam4lcXb-pinctrl.h>
+
+&pinctrl {
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <PA21A_SPI_MISO>,
+				 <PA22A_SPI_MOSI>,
+				 <PA23A_SPI_SCK>,
+				 <PA13C_SPI_NPCS1>,
+				 <PA14C_SPI_NPCS2>;
+		};
+	};
+
+	twi1_default: twi1_default {
+		group1 {
+			pinmux = <PB1A_TWIMS1_TWCK>,
+				 <PB0A_TWIMS1_TWD>;
+		};
+	};
+
+	usart0_default: usart0_default {
+		group1 {
+			pinmux = <PB14A_USART0_RXD>,
+				 <PB15A_USART0_TXD>;
+		};
+	};
+
+	usart0_hw_ctrl_flow: usart0_hw_ctrl_flow {
+		group1 {
+			pinmux = <PB14A_USART0_RXD>,
+				 <PB12A_USART0_RTS>;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <PB15A_USART0_TXD>,
+				 <PB11A_USART0_CTS>,
+				 <PB13A_USART0_CLK>;
+		};
+	};
+
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <PA15A_USART1_RXD>,
+				 <PA16A_USART1_TXD>;
+		};
+	};
+
+	usbc_default: usbc_default {
+		group1 {
+			pinmux = <PA25A_USBC_DM>,
+				 <PA26A_USBC_DP>;
+		};
+	};
+};

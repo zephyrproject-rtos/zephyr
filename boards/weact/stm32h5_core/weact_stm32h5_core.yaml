@@ -1,0 +1,20 @@
+identifier: weact_stm32h5_core
+name: WeAct Studio STM32H5 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 640
+flash: 1024
+supported:
+  - gpio
+  - can
+  - uart
+  - entropy
+  - spi
+  - usb_device
+  - rtc
+  - watchdog
+vendor: weact

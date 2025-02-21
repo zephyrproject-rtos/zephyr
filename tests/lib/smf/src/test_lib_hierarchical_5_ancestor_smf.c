@@ -412,11 +412,11 @@ static void d_entry(void *obj)
 }
 
 static const struct smf_state test_states[] = {
-	[P05] SMF_CREATE_STATE(p05_entry, p05_run, p05_exit, NULL, NULL),
-	[P04] SMF_CREATE_STATE(p04_entry, p04_run, p04_exit, &test_states[P05], NULL),
-	[P03] SMF_CREATE_STATE(p03_entry, p03_run, p03_exit, &test_states[P04], NULL),
-	[P02] SMF_CREATE_STATE(p02_entry, p02_run, p02_exit, &test_states[P03], NULL),
-	[P01] SMF_CREATE_STATE(p01_entry, p01_run, p01_exit, &test_states[P02], NULL),
+	[P05] = SMF_CREATE_STATE(p05_entry, p05_run, p05_exit, NULL, NULL),
+	[P04] = SMF_CREATE_STATE(p04_entry, p04_run, p04_exit, &test_states[P05], NULL),
+	[P03] = SMF_CREATE_STATE(p03_entry, p03_run, p03_exit, &test_states[P04], NULL),
+	[P02] = SMF_CREATE_STATE(p02_entry, p02_run, p02_exit, &test_states[P03], NULL),
+	[P01] = SMF_CREATE_STATE(p01_entry, p01_run, p01_exit, &test_states[P02], NULL),
 	[A] = SMF_CREATE_STATE(a_entry, a_run, a_exit, &test_states[P01], NULL),
 	[B] = SMF_CREATE_STATE(b_entry, b_run, b_exit, &test_states[P01], NULL),
 	[C] = SMF_CREATE_STATE(c_entry, c_run, c_exit, NULL, NULL),

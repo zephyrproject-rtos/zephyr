@@ -325,7 +325,7 @@ static int intel_sha_device_hw_caps(const struct device *dev)
 	return (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS);
 }
 
-static struct crypto_driver_api hash_enc_funcs = {
+static DEVICE_API(crypto, hash_enc_funcs) = {
 	.hash_begin_session = intel_sha_device_set_hash_type,
 	.hash_free_session = intel_sha_device_free,
 	.hash_async_callback_set = NULL,

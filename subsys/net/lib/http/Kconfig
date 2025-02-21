@@ -188,6 +188,13 @@ config HTTP_SERVER_TLS_USE_ALPN
 	  protocol for TLS connections. Web browsers use this mechanism to determine
 	  whether HTTP2 is supported.
 
+config HTTP_SERVER_REPORT_FAILURE_REASON
+	bool "Report failure reason in HTTP 500 Internal Server Error reply"
+	help
+	  If enabled, the server will include the failure reason within
+	  HTTP 500 Internal Server Error response. Otherwise, no information
+	  is provided within the message.
+
 config WEBSOCKET_CONSOLE
 	bool
 	default y if HTTP_SERVER_WEBSOCKET && SHELL_BACKEND_WEBSOCKET

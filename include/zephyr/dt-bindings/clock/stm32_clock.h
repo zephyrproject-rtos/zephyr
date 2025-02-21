@@ -22,5 +22,11 @@
 #define STM32_CLOCK_BUS_APB5    12
 #define STM32_CLOCK_BUS_AXI     13
 #define STM32_CLOCK_BUS_MLAHB   14
+#define STM32_CLOCK_BUS_APB4_2  15
+
+#define STM32_CLOCK_DIV_SHIFT	12
+
+/** Clock divider */
+#define STM32_CLOCK_DIV(div)	(((div) - 1) << STM32_CLOCK_DIV_SHIFT)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32_CLOCK_H_ */

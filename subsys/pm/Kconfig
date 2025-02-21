@@ -101,14 +101,6 @@ config PM_DEVICE_RUNTIME
 	  enabled, devices can be suspended or resumed based on the device
 	  usage even while the CPU or system is running.
 
-config PM_DEVICE_RUNTIME_EXCLUSIVE
-	depends on PM_DEVICE_RUNTIME
-	bool "[DEPRECATED] Use only on Runtime Power Management on system suspend / resume"
-	select DEPRECATED
-	help
-	  On system suspend / resume do not trigger the Device PM hooks but
-	  only rely on Runtime PM to manage the devices power states.
-
 config PM_DEVICE_SHELL
 	bool "Device Power Management shell"
 	depends on SHELL
@@ -118,7 +110,7 @@ config PM_DEVICE_SHELL
 
 config PM_DEVICE_SYSTEM_MANAGED
 	bool "System-Managed Device Power Management"
-	default y if !PM_DEVICE_RUNTIME_EXCLUSIVE && !PM_DEVICE_RUNTIME
+	default y if !PM_DEVICE_RUNTIME
 	help
 	  This option enables the system-managed device power
 	  management.  The power management subsystem will suspend

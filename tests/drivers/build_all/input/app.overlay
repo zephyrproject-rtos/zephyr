@@ -210,8 +210,8 @@
 				rst-gpios = <&test_gpio 1 0>;
 			};
 
-			cap1203@3 {
-				compatible = "microchip,cap1203";
+			cap12xx@3 {
+				compatible = "microchip,cap12xx";
 				reg = <0x3>;
 				int-gpios = <&test_gpio 0 0>;
 				input-codes = <0 1 2>;
@@ -267,6 +267,21 @@
 				reg = <0x9>;
 				irq-gpios = <&test_gpio 0 0>;
 				rst-gpios = <&test_gpio 1 0>;
+			};
+
+			nunchuk@a {
+				reg = <0xa>;
+				compatible= "nintendo,nunchuk";
+			};
+
+			cy8cmbr3xxx@b {
+				compatible = "cypress,cy8cmbr3xxx";
+				status= "okay";
+				reg = <0xb>;
+				int-gpios = <&test_gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+				rst-gpios = <&test_gpio 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+				input-codes = <0 1 2 3 4 5 6 7>;
+				proximity-codes = <8>;
 			};
 		};
 

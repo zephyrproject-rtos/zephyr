@@ -297,7 +297,18 @@ struct bt_gatt_attr {
 	 *
 	 *  @sa bt_gatt_discover_func_t about this field.
 	 */
-	uint16_t perm;
+	uint16_t perm: 15;
+
+	/** @cond INTERNAL_HIDDEN
+	 *  Indicates if the attribute handle was assigned automatically.
+	 *
+	 *  This flag is set to 1 if the attribute handle was assigned by the stack,
+	 *  and 0 if it was manually set by the application.
+	 *
+	 *  @note Applications must not modify this field.
+	 */
+	bool _auto_assigned_handle: 1;
+	/** @endcond */
 };
 
 /** @brief GATT Service structure */
@@ -706,7 +717,8 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr);
  *
  * @param attr A Characteristic Attribute.
  *
- * @note The ``user_data`` of the attribute must of type @ref bt_gatt_chrc.
+ * @note The ``user_data`` of the attribute must of type @ref bt_gatt_chrc and the ``uuid`` shall be
+ * BT_UUID_GATT_CHRC
  *
  * @return the handle of the corresponding Characteristic Value. The value will
  *         be zero (the invalid handle) if @p attr was not a characteristic

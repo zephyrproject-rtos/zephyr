@@ -11,7 +11,7 @@ import string
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from enum import Enum
-from pathlib import PosixPath
+from pathlib import Path
 
 from colorama import Fore
 from twisterlib.statuses import TwisterStatus
@@ -27,6 +27,13 @@ class ReportStatus(str, Enum):
     ERROR = 'error'
     FAIL = 'failure'
     SKIP = 'skipped'
+
+
+class ReportingJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Path):
+            return str(obj)
+        return super().default(obj)
 
 
 class Reporting:
@@ -51,6 +58,7 @@ class Reporting:
         self.outdir = os.path.abspath(env.options.outdir)
         self.instance_fail_count = plan.instance_fail_count
         self.footprint = None
+        self.coverage_status = None
 
 
     @staticmethod
@@ -171,6 +179,7 @@ class Reporting:
             runnable = suite.get('runnable', 0)
             duration += float(handler_time)
             ts_status = TwisterStatus(suite.get('status'))
+            classname = Path(suite.get("name","")).name
             for tc in suite.get("testcases", []):
                 status = TwisterStatus(tc.get('status'))
                 reason = tc.get('reason', suite.get('reason', 'Unknown'))
@@ -178,7 +187,6 @@ class Reporting:
 
                 tc_duration = tc.get('execution_time', handler_time)
                 name = tc.get("identifier")
-                classname = ".".join(name.split(".")[:2])
                 fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
                     name, classname, status, ts_status, reason, tc_duration, runnable,
                     (fails, passes, errors, skips), log, True)
@@ -191,6 +199,7 @@ class Reporting:
             eleTestsuite.attrib['skipped'] = f"{skips}"
             eleTestsuite.attrib['tests'] = f"{total}"
 
+        ET.indent(eleTestsuites, space="\t", level=0)
         result = ET.tostring(eleTestsuites)
         with open(filename, 'wb') as report:
             report.write(result)
@@ -252,6 +261,7 @@ class Reporting:
                 ):
                     continue
                 if full_report:
+                    classname = Path(ts.get("name","")).name
                     for tc in ts.get("testcases", []):
                         status = TwisterStatus(tc.get('status'))
                         reason = tc.get('reason', ts.get('reason', 'Unknown'))
@@ -259,7 +269,6 @@ class Reporting:
 
                         tc_duration = tc.get('execution_time', handler_time)
                         name = tc.get("identifier")
-                        classname = ".".join(name.split(".")[:2])
                         fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
                             name, classname, status, ts_status, reason, tc_duration, runnable,
                             (fails, passes, errors, skips), log, True)
@@ -280,6 +289,7 @@ class Reporting:
             eleTestsuite.attrib['skipped'] = f"{skips}"
             eleTestsuite.attrib['tests'] = f"{total}"
 
+        ET.indent(eleTestsuites, space="\t", level=0)
         result = ET.tostring(eleTestsuites)
         with open(filename, 'wb') as report:
             report.write(result)
@@ -291,10 +301,6 @@ class Reporting:
             report_options = vars(self.env.options)
         else:
             report_options = self.env.non_default_options()
-
-        # Resolve known JSON serialization problems.
-        for k,v in report_options.items():
-            report_options[k] = str(v) if type(v) in [PosixPath] else v
 
         report = {}
         report["environment"] = {"os": os.name,
@@ -355,6 +361,8 @@ class Reporting:
                 suite["used_rom"] = used_rom
 
             suite['retries'] = instance.retries
+            if instance.toolchain:
+                suite['toolchain'] = instance.toolchain
 
             if instance.dut:
                 suite["dut"] = instance.dut
@@ -364,7 +372,6 @@ class Reporting:
                 suite["available_rom"] = available_rom
             if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
                 suite['status'] = instance.status
-                suite["reason"] = instance.reason
                 # FIXME
                 if os.path.exists(pytest_log):
                     suite["log"] = self.process_log(pytest_log)
@@ -374,6 +381,11 @@ class Reporting:
                     suite["log"] = self.process_log(device_log)
                 else:
                     suite["log"] = self.process_log(build_log)
+
+                suite["reason"] = self.get_detailed_reason(instance.reason, suite["log"])
+                # update the reason to get more details also in other reports (e.g. junit)
+                # where build log is not available
+                instance.reason = suite["reason"]
             elif instance.status == TwisterStatus.FILTER:
                 suite["status"] = TwisterStatus.FILTER
                 suite["reason"] = instance.reason
@@ -479,7 +491,7 @@ class Reporting:
 
         report["testsuites"] = suites
         with open(filename, 'w') as json_file:
-            json.dump(report, json_file, indent=4, separators=(',',':'))
+            json.dump(report, json_file, indent=4, separators=(',',':'), cls=ReportingJSONEncoder)
 
 
     def compare_metrics(self, filename):
@@ -790,3 +802,55 @@ class Reporting:
                 self.json_report(json_platform_file + "_footprint.json",
                                  version=self.env.version, platform=platform.name,
                                  filters=self.json_filters['footprint.json'])
+
+    def get_detailed_reason(self, reason: str, log: str) -> str:
+        if reason == 'CMake build failure':
+            if error_key := self._parse_cmake_build_failure(log):
+                return f"{reason} - {error_key}"
+        elif reason == 'Build failure':  # noqa SIM102
+            if error_key := self._parse_build_failure(log):
+                return f"{reason} - {error_key}"
+        return reason
+
+    @staticmethod
+    def _parse_cmake_build_failure(log: str) -> str | None:
+        last_warning = 'no warning found'
+        lines = log.splitlines()
+        for i, line in enumerate(lines):
+            if "warning: " in line:
+                last_warning = line
+            elif "devicetree error: " in line:
+                return "devicetree error"
+            elif "fatal error: " in line:
+                return line[line.index('fatal error: ') :].strip()
+            elif "error: " in line:  # error: Aborting due to Kconfig warnings
+                if "undefined symbol" in last_warning:
+                    return last_warning[last_warning.index('undefined symbol') :].strip()
+                return last_warning
+            elif "CMake Error at" in line:
+                for next_line in lines[i + 1 :]:
+                    if next_line.strip():
+                        return line + ' ' + next_line
+                return line
+        return None
+
+    @staticmethod
+    def _parse_build_failure(log: str) -> str | None:
+        last_warning = ''
+        lines = log.splitlines()
+        for i, line in enumerate(lines):
+            if "undefined reference" in line:
+                return line[line.index('undefined reference') :].strip()
+            elif "error: ld returned" in line:
+                if last_warning:
+                    return last_warning
+                elif "overflowed by" in lines[i - 1]:
+                    return "ld.bfd: region overflowed"
+                elif "ld.bfd: warning: " in lines[i - 1]:
+                    return "ld.bfd:" + lines[i - 1].split("ld.bfd:", 1)[-1]
+                return line
+            elif "error: " in line:
+                return line[line.index('error: ') :].strip()
+            elif ": in function " in line:
+                last_warning = line[line.index('in function') :].strip()
+        return None

@@ -1,0 +1,18 @@
+# Copyright (c) 2024, Mario Paja
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    LAN9250 standalone 10/100BASE-T Ethernet controller with SPI interface
+
+compatible: "microchip,lan9250"
+
+include: [spi-device.yaml, ethernet-controller.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The interrupt pin of LAN9250 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.

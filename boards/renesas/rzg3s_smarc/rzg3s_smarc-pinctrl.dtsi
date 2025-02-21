@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2024 EPAM Systems
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg-common.h>
+
+&pinctrl {
+	/omit-if-no-ref/ scif0_pins: scif0 {
+		scif0-pinmux {
+			pinmux = <RZG_PINMUX(PORT_06, 3, 1)>, /* TXD */
+				 <RZG_PINMUX(PORT_06, 4, 1)>; /* RXD */
+		};
+	};
+
+	/omit-if-no-ref/ scif1_pins: scif1 {
+		scif1-pinmux {
+			pinmux = <RZG_PINMUX(PORT_14, 0, 1)>, /* TXD */
+				 <RZG_PINMUX(PORT_14, 1, 1)>; /* RXD */
+		};
+	};
+
+	/omit-if-no-ref/ scif3_pins: scif3 {
+		scif3-pinmux {
+			pinmux = <RZG_PINMUX(PORT_17, 3, 7)>, /* TXD */
+				 <RZG_PINMUX(PORT_17, 2, 7)>; /* RXD */
+		};
+	};
+
+	/omit-if-no-ref/ scif5_pins: scif5 {
+		scif5-pinmux {
+			pinmux = <RZG_PINMUX(PORT_15, 1, 6)>, /* RXD */
+				 <RZG_PINMUX(PORT_15, 2, 6)>; /* TXD */
+		};
+	};
+
+	/omit-if-no-ref/ gpt0_pins: gpt0 {
+		gpt0-pinmux {
+			pinmux = <RZG_PINMUX(PORT_13, 0, 2)>, /* GTIOCA */
+				 <RZG_PINMUX(PORT_13, 1, 2)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ gpt3_pins: gpt3 {
+		gpt3-pinmux {
+			pinmux = <RZG_PINMUX(PORT_18, 0, 7)>, /* GTIOCA */
+				 <RZG_PINMUX(PORT_18, 1, 7)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ gpt6_pins: gpt6 {
+		gpt6-pinmux {
+			pinmux = <RZG_PINMUX(PORT_13, 4, 7)>; /* GTIOCA */
+		};
+	};
+};

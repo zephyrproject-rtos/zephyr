@@ -247,10 +247,8 @@ int nrf_wifi_config_sr_switch(bool separate_antennas)
 
 	if (separate_antennas) {
 		gpio_pin_set_dt(&sr_rf_switch_spec, 0x0);
-		LOG_INF("GPIO P1.10 set to 0");
 	} else {
 		gpio_pin_set_dt(&sr_rf_switch_spec, 0x1);
-		LOG_INF("GPIO P1.10 set to 1");
 	}
 
 	return 0;

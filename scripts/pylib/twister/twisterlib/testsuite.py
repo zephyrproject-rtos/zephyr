@@ -387,6 +387,10 @@ class TestCase(DisablePyTestCollectionMixin):
         self.freeform = False
 
     @property
+    def detailed_name(self) -> str:
+        return TestSuite.get_case_name_(self.testsuite, self.name, detailed=True)
+
+    @property
     def status(self) -> TwisterStatus:
         return self._status
 
@@ -477,20 +481,31 @@ class TestSuite(DisablePyTestCollectionMixin):
                 'Harness config error: console harness defined without a configuration.'
             )
 
+    @staticmethod
+    def get_case_name_(test_suite, tc_name, detailed=True) -> str:
+        return f"{test_suite.id}.{tc_name}" \
+            if test_suite and detailed and not test_suite.detailed_test_id else f"{tc_name}"
+
+    @staticmethod
+    def compose_case_name_(test_suite, tc_name) -> str:
+        return f"{test_suite.id}.{tc_name}" \
+            if test_suite and test_suite.detailed_test_id else f"{tc_name}"
+
+    def compose_case_name(self, tc_name) -> str:
+        return self.compose_case_name_(self, tc_name)
+
     def add_subcases(self, data, parsed_subcases=None, suite_names=None):
         testcases = data.get("testcases", [])
         if testcases:
             for tc in testcases:
-                self.add_testcase(name=f"{self.id}.{tc}")
+                self.add_testcase(name=self.compose_case_name(tc))
         else:
             if not parsed_subcases:
                 self.add_testcase(self.id, freeform=True)
             else:
                 # only add each testcase once
-                for sub in set(parsed_subcases):
-                    name = f"{self.id}.{sub}"
-                    self.add_testcase(name)
-
+                for tc in set(parsed_subcases):
+                    self.add_testcase(name=self.compose_case_name(tc))
         if suite_names:
             self.ztest_suite_names = suite_names
 

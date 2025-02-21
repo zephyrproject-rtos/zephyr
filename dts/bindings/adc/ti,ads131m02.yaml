@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instrument 2 channels SPI ADC
+
+compatible: "ti,ads131m02"
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  drdy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for data ready, becomes active when a conversion result is ready.
+      By default, it is active low signal.
+
+io-channel-cells:
+  - input

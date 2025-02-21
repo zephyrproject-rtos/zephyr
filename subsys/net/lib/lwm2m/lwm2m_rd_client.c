@@ -785,7 +785,11 @@ static int sm_send_bootstrap_registration(void)
 	LOG_DBG("Register ID with bootstrap server as '%s'",
 		query_buffer);
 
-	lwm2m_send_message_async(msg);
+	ret = lwm2m_send_message_async(msg);
+	if (ret < 0) {
+		LOG_ERR("Failed to send bootstrap message (err: %d)", ret);
+		goto cleanup;
+	}
 
 	return 0;
 
@@ -987,7 +991,10 @@ static int sm_send_registration(bool send_obj_support_data,
 		}
 	}
 
-	lwm2m_send_message_async(msg);
+	ret = lwm2m_send_message_async(msg);
+	if (ret < 0) {
+		goto cleanup;
+	}
 
 	/* log the registration attempt */
 	LOG_DBG("registration sent [%s]",
@@ -1259,7 +1266,11 @@ static int sm_do_deregister(void)
 
 	LOG_INF("Deregister from '%s'", client.server_ep);
 
-	lwm2m_send_message_async(msg);
+	ret = lwm2m_send_message_async(msg);
+	if (ret < 0) {
+		LOG_ERR("Failed to send deregistration message (err:%d).", ret);
+		goto cleanup;
+	}
 
 	set_sm_state(ENGINE_DEREGISTER_SENT);
 	return 0;

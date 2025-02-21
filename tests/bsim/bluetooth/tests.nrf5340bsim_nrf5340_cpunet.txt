@@ -2,3 +2,15 @@
 # built in the net core)
 # This file is used in CI to select which tests are run
 tests/bsim/bluetooth/ll/
+tests/bsim/bluetooth/host/att/eatt_notif
+tests/bsim/bluetooth/host/misc/disable
+tests/bsim/bluetooth/host/misc/unregister_conn_cb
+tests/bsim/bluetooth/host/adv/periodic
+tests/bsim/bluetooth/host/adv/extended
+tests/bsim/bluetooth/host/adv/chain
+tests/bsim/bluetooth/host/l2cap/send_on_connect
+tests/bsim/bluetooth/host/central
+tests/bsim/bluetooth/host/privacy/central
+tests/bsim/bluetooth/host/gatt/authorization
+tests/bsim/bluetooth/host/gatt/general
+tests/bsim/bluetooth/host/gatt/caching

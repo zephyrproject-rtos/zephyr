@@ -6,7 +6,8 @@ description: |
     pin function selection and pin properties. For example, you can use this
     node to route USART0 RX to pin PA1 and enable the pull-up resistor on the
     pin. This pin controller is used for devices that use DBUS (Digital Bus)
-    for alternate function configuration, including Series 2 devices.
+    for alternate function configuration, including Series 2 devices. It is
+    also capable of ABUS (Analog Bus) allocation.
 
     The pinctrl settings are referenced in a device tree peripheral node. For
     example when configuring a USART:
@@ -81,6 +82,24 @@ description: |
                                      Allowed in drive-push-pull and
                                      drive-open-drain modes.
 
+    ABUS allocation is performed using the 'silabs,analog-bus' property. This
+    property takes an array of buses to allocate. Example:
+
+      &pinctrl {
+        iadc0_default: iadc0_default {
+          group0 {
+            /* Allocate even bus 0 and odd bus 1 from GPIO port A for ADC use */
+            silabs,analog-bus = <ABUS_AEVEN0_IADC0>, <ABUS_AODD1_IADC0>;
+          }
+        };
+      };
+
+    A given group may contain a mix of analog bus allocations and digital pin
+    selections. Digital pin properties only apply to digital pins. Analog input
+    selection is not done through the pin controller, this is done in the devicetree
+    node for the respective peripheral using properties such as 'zephyr,input-positive'
+    for ADC.
+
 compatible: "silabs,dbus-pinctrl"
 
 include: base.yaml
@@ -107,7 +126,6 @@ child-binding:
 
     properties:
       pins:
-        required: true
         type: array
         description: |
           An array of pins sharing the same group properties. The pins should be
@@ -126,3 +144,10 @@ child-binding:
           for this pin. May be used in drive-push-pull and drive-open-drain
           modes.
         type: boolean
+
+      silabs,analog-bus:
+        type: array
+        description: |
+          Assign one or more analog buses to the given GPIO port. The bus should
+          be defined using the ABUS_<bus>_<peripheral> macros available from the
+          SoC DeviceTree files.

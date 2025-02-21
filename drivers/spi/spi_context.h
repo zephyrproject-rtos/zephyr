@@ -92,14 +92,14 @@ static inline void spi_context_lock(struct spi_context *ctx,
 				    void *callback_data,
 				    const struct spi_config *spi_cfg)
 {
-	if ((spi_cfg->operation & SPI_LOCK_ON) &&
-		(k_sem_count_get(&ctx->lock) == 0) &&
-		(ctx->owner == spi_cfg)) {
-			return;
-	}
+	bool already_locked = (spi_cfg->operation & SPI_LOCK_ON) &&
+			      (k_sem_count_get(&ctx->lock) == 0) &&
+			      (ctx->owner == spi_cfg);
 
-	k_sem_take(&ctx->lock, K_FOREVER);
-	ctx->owner = spi_cfg;
+	if (!already_locked) {
+		k_sem_take(&ctx->lock, K_FOREVER);
+		ctx->owner = spi_cfg;
+	}
 
 #ifdef CONFIG_SPI_ASYNC
 	ctx->asynchronous = asynchronous;
@@ -437,28 +437,49 @@ static inline size_t spi_context_longest_current_buf(struct spi_context *ctx)
 	return ctx->tx_len > ctx->rx_len ? ctx->tx_len : ctx->rx_len;
 }
 
-static inline size_t spi_context_total_tx_len(struct spi_context *ctx)
+static size_t spi_context_count_tx_buf_lens(struct spi_context *ctx, size_t start_index)
 {
 	size_t n;
 	size_t total_len = 0;
 
-	for (n = 0; n < ctx->tx_count; ++n) {
+	for (n = start_index; n < ctx->tx_count; ++n) {
 		total_len += ctx->current_tx[n].len;
 	}
 
 	return total_len;
 }
 
-static inline size_t spi_context_total_rx_len(struct spi_context *ctx)
+static size_t spi_context_count_rx_buf_lens(struct spi_context *ctx, size_t start_index)
 {
 	size_t n;
 	size_t total_len = 0;
 
-	for (n = 0; n < ctx->rx_count; ++n) {
+	for (n = start_index; n < ctx->rx_count; ++n) {
 		total_len += ctx->current_rx[n].len;
 	}
 
 	return total_len;
+}
+
+
+static inline size_t spi_context_total_tx_len(struct spi_context *ctx)
+{
+	return spi_context_count_tx_buf_lens(ctx, 0);
+}
+
+static inline size_t spi_context_total_rx_len(struct spi_context *ctx)
+{
+	return spi_context_count_rx_buf_lens(ctx, 0);
+}
+
+static inline size_t spi_context_tx_len_left(struct spi_context *ctx)
+{
+	return ctx->tx_len + spi_context_count_tx_buf_lens(ctx, 1);
+}
+
+static inline size_t spi_context_rx_len_left(struct spi_context *ctx)
+{
+	return ctx->rx_len + spi_context_count_rx_buf_lens(ctx, 1);
 }
 
 #ifdef __cplusplus

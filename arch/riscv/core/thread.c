@@ -106,6 +106,15 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->soc_context = soc_esf_init;
 #endif
 
+#ifdef CONFIG_RISCV_SOC_HAS_ISR_STACKING
+	SOC_ISR_STACKING_ESR_INIT;
+#endif
+
+#ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
+	/* Clear the previous interrupt level. */
+	stack_init->mcause = 0;
+#endif
+
 	thread->callee_saved.sp = (unsigned long)stack_init;
 
 	/* where to go when returning from z_riscv_switch() */
@@ -132,29 +141,28 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 	/* Set up privileged stack */
 #ifdef CONFIG_GEN_PRIV_STACKS
-	arch_current_thread()->arch.priv_stack_start =
-			(unsigned long)z_priv_stack_find(arch_current_thread()->stack_obj);
+	_current->arch.priv_stack_start =
+			(unsigned long)z_priv_stack_find(_current->stack_obj);
 	/* remove the stack guard from the main stack */
-	arch_current_thread()->stack_info.start -= K_THREAD_STACK_RESERVED;
-	arch_current_thread()->stack_info.size += K_THREAD_STACK_RESERVED;
+	_current->stack_info.start -= K_THREAD_STACK_RESERVED;
+	_current->stack_info.size += K_THREAD_STACK_RESERVED;
 #else
-	arch_current_thread()->arch.priv_stack_start =
-		(unsigned long)arch_current_thread()->stack_obj;
+	_current->arch.priv_stack_start = (unsigned long)_current->stack_obj;
 #endif /* CONFIG_GEN_PRIV_STACKS */
-	top_of_priv_stack = Z_STACK_PTR_ALIGN(arch_current_thread()->arch.priv_stack_start +
+	top_of_priv_stack = Z_STACK_PTR_ALIGN(_current->arch.priv_stack_start +
 					      K_KERNEL_STACK_RESERVED +
 					      CONFIG_PRIVILEGED_STACK_SIZE);
 
 #ifdef CONFIG_INIT_STACKS
 	/* Initialize the privileged stack */
-	(void)memset((void *)arch_current_thread()->arch.priv_stack_start, 0xaa,
+	(void)memset((void *)_current->arch.priv_stack_start, 0xaa,
 		     Z_STACK_PTR_ALIGN(K_KERNEL_STACK_RESERVED + CONFIG_PRIVILEGED_STACK_SIZE));
 #endif /* CONFIG_INIT_STACKS */
 
 	top_of_user_stack = Z_STACK_PTR_ALIGN(
-				arch_current_thread()->stack_info.start +
-				arch_current_thread()->stack_info.size -
-				arch_current_thread()->stack_info.delta);
+				_current->stack_info.start +
+				_current->stack_info.size -
+				_current->stack_info.delta);
 
 	status = csr_read(mstatus);
 
@@ -170,12 +178,12 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	/* reconfigure as the kernel mode stack will be different */
-	z_riscv_pmp_stackguard_prepare(arch_current_thread());
+	z_riscv_pmp_stackguard_prepare(_current);
 #endif
 
 	/* Set up Physical Memory Protection */
-	z_riscv_pmp_usermode_prepare(arch_current_thread());
-	z_riscv_pmp_usermode_enable(arch_current_thread());
+	z_riscv_pmp_usermode_prepare(_current);
+	z_riscv_pmp_usermode_enable(_current);
 
 	/* preserve stack pointer for next exception entry */
 	arch_curr_cpu()->arch.user_exc_sp = top_of_priv_stack;

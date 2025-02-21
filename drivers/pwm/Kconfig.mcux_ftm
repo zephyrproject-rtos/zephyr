@@ -6,10 +6,10 @@
 config PWM_MCUX_FTM
 	bool "MCUX FTM PWM driver"
 	default y
-	depends on DT_HAS_NXP_KINETIS_FTM_PWM_ENABLED
+	depends on DT_HAS_NXP_FTM_PWM_ENABLED
 	select PINCTRL
 	help
-	  Enable support for mcux ftm pwm driver.
+	  Enable support for MCUX FTM PWM driver.
 
 config PWM_CAPTURE_MCUX_FTM_FILTER_VALUE
 	int "MCUX FTM PWM capture filter value"

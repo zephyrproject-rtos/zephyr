@@ -703,7 +703,7 @@ static struct spi_qmspi_data spi_qmspi_0_dev_data = {
 	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(0), ctx)
 };
 
-DEVICE_DT_INST_DEFINE(0,
+SPI_DEVICE_DT_INST_DEFINE(0,
 		    qmspi_init, NULL, &spi_qmspi_0_dev_data,
 		    &spi_qmspi_0_config, POST_KERNEL,
 		    CONFIG_SPI_INIT_PRIORITY, &spi_qmspi_driver_api);

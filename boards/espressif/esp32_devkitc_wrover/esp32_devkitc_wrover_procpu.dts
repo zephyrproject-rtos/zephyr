@@ -9,7 +9,7 @@
 #include "esp32_devkitc_wrover-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
-#include <espressif/partitions_0x1000_default.dtsi>
+#include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
 	model = "Espressif ESP32-DevkitC WROVER-E PROCPU";
@@ -32,7 +32,7 @@
 	};
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;

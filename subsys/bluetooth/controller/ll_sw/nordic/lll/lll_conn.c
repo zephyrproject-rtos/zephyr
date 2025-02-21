@@ -67,6 +67,7 @@ static struct pdu_data *get_last_tx_pdu(struct lll_conn *lll);
 static uint8_t crc_expire;
 static uint8_t crc_valid;
 static uint8_t is_aborted;
+static uint16_t tx_cnt;
 static uint16_t trx_cnt;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -147,6 +148,7 @@ void lll_conn_flush(uint16_t handle, struct lll_conn *lll)
 
 void lll_conn_prepare_reset(void)
 {
+	tx_cnt = 0U;
 	trx_cnt = 0U;
 	crc_valid = 0U;
 	crc_expire = 0U;
@@ -193,7 +195,7 @@ int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 	/* Do not be aborted by same event if a single peripheral trx has not
 	 * been exchanged.
 	 */
-	if ((next == curr) && (trx_cnt <= 1U)) {
+	if ((next == curr) && (tx_cnt < 1U)) {
 		return -EBUSY;
 	}
 
@@ -216,7 +218,7 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		 * back to central, otherwise let the supervision timeout
 		 * countdown be started.
 		 */
-		if ((lll->role == BT_HCI_ROLE_PERIPHERAL) && (trx_cnt <= 1U)) {
+		if ((lll->role == BT_HCI_ROLE_PERIPHERAL) && (tx_cnt < 1U)) {
 			is_aborted = 1U;
 		}
 
@@ -263,6 +265,8 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	e->type = EVENT_DONE_EXTRA_TYPE_CONN;
 	e->trx_cnt = 0U;
 	e->crc_valid = 0U;
+	e->is_aborted = 1U;
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	e->mic_state = LLL_CONN_MIC_NONE;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -607,6 +611,8 @@ void lll_conn_isr_tx(void *param)
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
 
+	tx_cnt++;
+
 	lll = param;
 
 	/* setup tIFS switching */
@@ -692,10 +698,26 @@ void lll_conn_isr_tx(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 
+#if !defined(CONFIG_BOARD_NRF52_BSIM) && \
+	!defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET) && \
+	!defined(CONFIG_BOARD_NRF54L15BSIM_NRF54L15_CPUAPP)
+
 	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
 	hcto = radio_tmr_tifs_base_get() + lll->tifs_hcto_us +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
+
+#else /* FIXME: Why different for BabbleSIM? */
+	/* HACK: Have exact 150 us */
+	hcto = radio_tmr_tifs_base_get() + lll->tifs_hcto_us;
+
+	/* HACK: Could wrong MODE register value (next in tIFS switching) being
+	 *       use for Rx Chain Delay in BabbleSIM? or is there a bug in
+	 *       target implementation?
+	 */
+	hcto += radio_rx_chain_delay_get(lll->phy_tx, PHY_FLAGS_S8);
+#endif /* FIXME: Why different for BabbleSIM? */
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 	hcto += cte_len;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
@@ -749,9 +771,9 @@ void lll_conn_isr_tx(void *param)
 
 	radio_isr_set(lll_conn_isr_rx, param);
 
-#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+#if defined(CONFIG_BT_CTLR_LOW_LAT)
 	ull_conn_lll_tx_demux_sched(lll);
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+#endif /* CONFIG_BT_CTLR_LOW_LAT */
 }
 
 void lll_conn_rx_pkt_set(struct lll_conn *lll)
@@ -987,7 +1009,7 @@ static void isr_done(void *param)
 
 #if defined(CONFIG_BT_CTLR_PHY)
 			preamble_to_addr_us =
-				addr_us_get(lll->phy_rx);
+				addr_us_get(lll->periph.phy_rx_event);
 #else /* !CONFIG_BT_CTLR_PHY */
 			preamble_to_addr_us =
 				addr_us_get(0);

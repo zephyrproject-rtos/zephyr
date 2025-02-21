@@ -1,0 +1,12 @@
+identifier: fpb_ra4e1
+name: Renesas FPB-RA4E1
+type: mcu
+arch: arm
+ram: 128
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart

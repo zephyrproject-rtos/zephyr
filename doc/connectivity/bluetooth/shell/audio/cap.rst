@@ -271,6 +271,7 @@ the optionally included CSIS instance by calling (:code:`cap_commander discover`
                                  <type: public/random> <adv_sid> <broadcast_id>
                                  [<pa_interval>] [<sync_bis>] [<metadata>]
      broadcast_reception_stop  : Stop broadcast reception <src_id [...]>
+     distribute_broadcast_code : Distribute broadcast code <src_id [...]> <broadcast_code>
 
 
 Before being able to perform any stream operation, the device must also perform the
@@ -460,3 +461,21 @@ Starting and stopping broadcast reception
    uart:~$ cap_commander broadcast_reception_stop 0
    Stopping broadcast reception on 1 connection(s)
    Broadcast reception stop completed
+
+Distributing the broadcast code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+   uart:~$ bt connect <device A>
+   Connected: <device A>
+   uart:~$ bap_init
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ bap_broadcast_assistant discover
+   BASS discover done with 1 recv states
+   uart:~$ cap_commander broadcast_reception_start <device B> 0 4
+   Starting broadcast reception on 1 connection(s)
+   Broadcast reception start completed
+   uart:~$ cap_commander distribute_broadcast_code 0 "BroadcastCode"
+   Distribute broadcast code completed

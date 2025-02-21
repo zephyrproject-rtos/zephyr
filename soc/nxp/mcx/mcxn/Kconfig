@@ -9,7 +9,6 @@ config SOC_SERIES_MCXN
 	select HAS_MCUX_FLEXCOMM
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_DWT
-	select SOC_RESET_HOOK
 
 config SOC_MCXN947_CPU0
 	select CPU_CORTEX_M33
@@ -17,8 +16,12 @@ config SOC_MCXN947_CPU0
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
+	select SOC_RESET_HOOK
 	select ARM_TRUSTZONE_M
 	select HAS_MCUX_CACHE
+
+config SOC_MCXN947_CPU1
+	select CPU_CORTEX_M33
 
 config SOC_MCXN236
 	select CPU_CORTEX_M33
@@ -26,8 +29,8 @@ config SOC_MCXN236
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
+	select SOC_RESET_HOOK
 	select ARM_TRUSTZONE_M
-	select HAS_MCUX_CACHE
 
 if SOC_SERIES_MCXN
 

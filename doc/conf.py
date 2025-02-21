@@ -35,7 +35,7 @@ except ImportError:
 # -- Project --------------------------------------------------------------
 
 project = "Zephyr Project"
-copyright = "2015-2024 Zephyr Project members and individual contributors"
+copyright = "2015-2025 Zephyr Project members and individual contributors"
 author = "The Zephyr Project Contributors"
 
 # parse version from 'VERSION' file
@@ -198,8 +198,6 @@ html_context = {
         ("latest", "/"),
         ("4.0.0", "/4.0.0/"),
         ("3.7.0 (LTS)", "/3.7.0/"),
-        ("3.6.0", "/3.6.0/"),
-        ("2.7.6 (LTS)", "/2.7.6/"),
     ),
     "display_gh_links": True,
     "reference_links": {
@@ -247,15 +245,22 @@ latex_engine = "xelatex"
 # -- Options for zephyr.doxyrunner plugin ---------------------------------
 
 doxyrunner_doxygen = os.environ.get("DOXYGEN_EXECUTABLE", "doxygen")
-doxyrunner_doxyfile = ZEPHYR_BASE / "doc" / "zephyr.doxyfile.in"
-doxyrunner_outdir = ZEPHYR_BUILD / "doxygen"
-doxyrunner_fmt = True
-doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE), "ZEPHYR_VERSION": version}
-doxyrunner_outdir_var = "DOXY_OUT"
+doxyrunner_projects = {
+    "zephyr": {
+        "doxyfile": ZEPHYR_BASE / "doc" / "zephyr.doxyfile.in",
+        "outdir": ZEPHYR_BUILD / "doxygen",
+        "fmt": True,
+        "fmt_vars": {
+            "ZEPHYR_BASE": str(ZEPHYR_BASE),
+            "ZEPHYR_VERSION": version,
+        },
+        "outdir_var": "DOXY_OUT",
+    },
+}
 
 # -- Options for zephyr.doxybridge plugin ---------------------------------
 
-doxybridge_dir = doxyrunner_outdir
+doxybridge_projects = {"zephyr": doxyrunner_projects["zephyr"]["outdir"]}
 
 # -- Options for html_redirect plugin -------------------------------------
 
@@ -293,6 +298,8 @@ gh_link_exclude = [
 
 kconfig_generate_db = True
 kconfig_ext_paths = [ZEPHYR_BASE]
+kconfig_gh_link_base_url = "https://github.com/zephyrproject-rtos/zephyr"
+kconfig_zephyr_version = f"v{version}" if is_release else "main"
 
 # -- Options for zephyr.external_content ----------------------------------
 
@@ -318,6 +325,7 @@ external_content_keep = [
 # -- Options for zephyr.domain --------------------------------------------
 
 zephyr_breathe_insert_related_samples = True
+zephyr_generate_hw_features = not tags.has("hw_features_turbo")  # pylint: disable=undefined-variable  # noqa: F821
 
 # -- Options for sphinx.ext.graphviz --------------------------------------
 
@@ -357,7 +365,8 @@ linkcheck_anchors = False
 
 # -- Options for zephyr.api_overview --------------------------------------
 
-api_overview_doxygen_base_url = "../../doxygen/html"
+api_overview_doxygen_out_dir = str(doxyrunner_projects["zephyr"]["outdir"])
+api_overview_base_url = "https://github.com/zephyrproject-rtos/zephyr"
 
 def setup(app):
     # theme customizations

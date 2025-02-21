@@ -1,13 +1,41 @@
+common:
+  tags:
+    - drivers
+    - gpio
+  depends_on: gpio
+  min_flash: 48
 tests:
   drivers.gpio.1pin:
-    tags:
-      - drivers
-      - gpio
-    depends_on: gpio
-    min_flash: 48
+    filter: >
+      dt_enabled_alias_with_parent_compat("led0", "gpio-leds")
+      and not dt_compat_enabled("test-gpio-external-pulldown")
     # Fix exclude when we can exclude just sim run
     platform_exclude:
       - mps2/an385
       - mps2/an521/cpu0
+      - mps2/an383
+      - mps2/an386
+      - mps2/an500
       - neorv32
-    filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")
+  drivers.gpio.1pin.aw9523b:
+    tags:
+      - drivers
+      - gpio
+    depends_on:
+      - gpio
+      - arduino_gpio
+      - i2c
+      - arduino_i2c
+    min_flash: 48
+    harness_config:
+      fixture: aw9523b_on_arduino_header
+    filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
+            dt_compat_enabled("arduino-header-r3")
+    extra_dtc_overlay_files:
+      - "boards/aw9523b_on_arduino_header.overlay"
+  drivers.gpio.1pin.external_pull_down:
+    # For testing boards that require a test fixture that provides a pulldown
+    # resistor on the GPIO used for the test.
+    filter: dt_compat_enabled("test-gpio-external-pulldown")
+    harness_config:
+      fixture: gpio_external_pull_down

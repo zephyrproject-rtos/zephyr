@@ -378,7 +378,7 @@ static int usart_si32_init(const struct device *dev)
 	static const struct usart_si32_config usart_si32_cfg_##index = {                           \
 		.usart = (SI32_USART_A_Type *)DT_INST_REG_ADDR(index),                             \
 		.hw_flow_control = DT_INST_PROP(index, hw_flow_control),                           \
-		.parity = DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE),                \
+		.parity = DT_INST_ENUM_IDX(index, parity),                                         \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
 		SI32_USART_IRQ_HANDLER_FUNC(index)};                                               \
                                                                                                    \

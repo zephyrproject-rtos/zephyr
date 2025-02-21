@@ -23,6 +23,11 @@ config SOC_GECKO_CORE
 	help
 	  Set if the Core interrupt handling (CORE) HAL module is used.
 
+config SOC_SILABS_ACMP
+	bool
+	help
+	  Set if the Analog comparator (ACMP) HAL module is used.
+
 config SOC_GECKO_ADC
 	bool
 	help
@@ -63,6 +68,11 @@ config SOC_GECKO_LEUART
 	help
 	  Set if the Low Energy Universal Asynchronous Receiver/Transmitter (LEUART)
 	  HAL module is used.
+
+config SOC_GECKO_LDMA
+	bool
+	help
+	  Set if the Linked Direct Memory Access (LDMA) HAL module is used.
 
 config SOC_GECKO_MSC
 	bool
@@ -124,7 +134,7 @@ config SOC_GECKO_TRNG
 config SOC_SILABS_SLEEPTIMER
 	bool
 	select SOC_GECKO_PRS
-	select SOC_GECKO_RTCC if SOC_SERIES_EFR32BG22 || SOC_SERIES_EFR32BG27 || SOC_SERIES_EFR32MG21
+	select SOC_GECKO_RTCC if SOC_FAMILY_SILABS_S2 && $(dt_nodelabel_enabled,rtcc0)
 	help
 	  Set if the Sleeptimer HAL module is used.
 
@@ -203,7 +213,7 @@ config SOC_GECKO_CMU
 	help
 	  Set if the clock management unit (CMU) is present in the SoC.
 
-if SOC_GECKO_CMU
+if SOC_GECKO_CMU && (SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1)
 
 config CMU_NEED_LFXO
 	bool

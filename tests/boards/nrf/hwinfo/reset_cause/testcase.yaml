@@ -1,0 +1,38 @@
+common:
+  tags:
+    - drivers
+    - hwinfo
+  harness: console
+
+tests:
+  drivers.hwinfo.reset_cause:
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "HW Info reset reason test on"
+        - "PASS: RESET_PIN detected"
+        - "PASS: reset causes were cleared"
+        - "Supported reset causes are"
+        - "RESET_PIN is supported"
+        - "RESET_SOFTWARE is supported"
+        - "RESET_WATCHDOG is supported"
+        - "RESET_DEBUG is supported"
+        - "RESET_LOW_POWER_WAKE is supported"
+        - "RESET_CPU_LOCKUP is supported"
+        - "Rebooting"
+        - "HW Info reset reason test on"
+        - "PASS: RESET_SOFTWARE detected"
+        - "PASS: reset causes were cleared"
+        - "Watchdog shall fire"
+        - "HW Info reset reason test on"
+        - "PASS: RESET_WATCHDOG detected"
+        - "PASS: reset causes were cleared"
+        - "All tests done"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp

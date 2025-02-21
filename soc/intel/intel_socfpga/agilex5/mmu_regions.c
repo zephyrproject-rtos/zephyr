@@ -8,6 +8,10 @@
 #include <zephyr/arch/arm64/arm_mmu.h>
 
 static const struct arm_mmu_region mmu_regions[] = {
+	MMU_REGION_FLAT_ENTRY("CLOCK",
+			      DT_REG_ADDR(DT_NODELABEL(clock)),
+			      DT_REG_SIZE(DT_NODELABEL(clock)),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
 
 	/* System manager register that required by clock driver */
 	MMU_REGION_FLAT_ENTRY("SYSTEM_MANAGER",

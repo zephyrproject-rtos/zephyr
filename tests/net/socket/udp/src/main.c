@@ -1508,13 +1508,14 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	/* Test recvmsg(MSG_PEEK) */
 	recved = zsock_recvmsg(server_sock, msg, ZSOCK_MSG_PEEK);
 	zassert_true(recved > 0, "recvmsg fail, %s (%d)", strerror(errno), -errno);
-	zassert_equal(recved, strlen(TEST_STR_SMALL),
-		      "unexpected received bytes (%d vs %d)",
-		      recved, strlen(TEST_STR_SMALL));
+	zassert_equal(recved, len, "unexpected received bytes (%d vs %d)",
+		      recved, len);
 	zassert_equal(sent, recved, "sent(%d)/received(%d) mismatch",
 		      sent, recved);
-
-	zassert_mem_equal(buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
+	zassert_equal(msg->msg_iovlen, 1, "recvmsg should not modify msg_iovlen");
+	zassert_equal(msg->msg_iov[0].iov_len, sizeof(buf),
+		      "recvmsg should not modify buffer length");
+	zassert_mem_equal(buf, TEST_STR_SMALL, len,
 			  "wrong data (%s)", rx_buf);
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
 
@@ -1522,9 +1523,11 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	clear_buf(rx_buf);
 	recved = zsock_recvmsg(server_sock, msg, 0);
 	zassert_true(recved > 0, "recvfrom fail");
-	zassert_equal(recved, strlen(TEST_STR_SMALL),
-		      "unexpected received bytes");
-	zassert_mem_equal(buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
+	zassert_equal(recved, len, "unexpected received bytes");
+	zassert_equal(msg->msg_iovlen, 1, "recvmsg should not modify msg_iovlen");
+	zassert_equal(msg->msg_iov[0].iov_len, sizeof(buf),
+		      "recvmsg should not modify buffer length");
+	zassert_mem_equal(buf, TEST_STR_SMALL, len,
 			  "wrong data (%s)", rx_buf);
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
 
@@ -1582,30 +1585,40 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	/* Test recvmsg(MSG_PEEK) */
 	recved = zsock_recvmsg(server_sock, msg, ZSOCK_MSG_PEEK);
 	zassert_true(recved >= 0, "recvfrom fail (errno %d)", errno);
-	zassert_equal(recved, strlen(TEST_STR_SMALL),
-		      "unexpected received bytes (%d vs %d)", recved, strlen(TEST_STR_SMALL));
+	zassert_equal(recved, len,
+		      "unexpected received bytes (%d vs %d)", recved, len);
 	zassert_equal(sent, recved, "sent(%d)/received(%d) mismatch",
 		      sent, recved);
 
+	zassert_equal(msg->msg_iovlen, 2, "recvmsg should not modify msg_iovlen");
+	zassert_equal(msg->msg_iov[0].iov_len, sizeof(buf2),
+		      "recvmsg should not modify buffer length");
+	zassert_equal(msg->msg_iov[1].iov_len, sizeof(buf),
+		      "recvmsg should not modify buffer length");
 	zassert_mem_equal(msg->msg_iov[0].iov_base, TEST_STR_SMALL, msg->msg_iov[0].iov_len,
 			  "wrong data in %s", "iov[0]");
 	zassert_mem_equal(msg->msg_iov[1].iov_base, &TEST_STR_SMALL[msg->msg_iov[0].iov_len],
-			  msg->msg_iov[1].iov_len,
+			  len - msg->msg_iov[0].iov_len,
 			  "wrong data in %s", "iov[1]");
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
 
 	/* Test normal recvfrom() */
 	recved = zsock_recvmsg(server_sock, msg, ZSOCK_MSG_PEEK);
 	zassert_true(recved >= 0, "recvfrom fail (errno %d)", errno);
-	zassert_equal(recved, strlen(TEST_STR_SMALL),
-		      "unexpected received bytes (%d vs %d)", recved, strlen(TEST_STR_SMALL));
+	zassert_equal(recved, len,
+		      "unexpected received bytes (%d vs %d)", recved, len);
 	zassert_equal(sent, recved, "sent(%d)/received(%d) mismatch",
 		      sent, recved);
 
+	zassert_equal(msg->msg_iovlen, 2, "recvmsg should not modify msg_iovlen");
+	zassert_equal(msg->msg_iov[0].iov_len, sizeof(buf2),
+		      "recvmsg should not modify buffer length");
+	zassert_equal(msg->msg_iov[1].iov_len, sizeof(buf),
+		      "recvmsg should not modify buffer length");
 	zassert_mem_equal(msg->msg_iov[0].iov_base, TEST_STR_SMALL, msg->msg_iov[0].iov_len,
 			  "wrong data in %s", "iov[0]");
 	zassert_mem_equal(msg->msg_iov[1].iov_base, &TEST_STR_SMALL[msg->msg_iov[0].iov_len],
-			  msg->msg_iov[1].iov_len,
+			  len - msg->msg_iov[0].iov_len,
 			  "wrong data in %s", "iov[1]");
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
 
@@ -1647,6 +1660,9 @@ static void comm_sendmsg_recvmsg(int client_sock,
 		      recved, sizeof(buf2));
 	zassert_true(msg->msg_flags & ZSOCK_MSG_TRUNC, "Message not truncated");
 
+	zassert_equal(msg->msg_iovlen, 1, "recvmsg should not modify msg_iovlen");
+	zassert_equal(msg->msg_iov[0].iov_len, sizeof(buf2),
+		      "recvmsg should not modify buffer length");
 	zassert_mem_equal(buf2, TEST_STR_SMALL, sizeof(buf2),
 			  "wrong data (%s)", buf2);
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");

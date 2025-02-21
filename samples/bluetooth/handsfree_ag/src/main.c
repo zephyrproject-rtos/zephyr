@@ -111,7 +111,8 @@ static struct bt_hfp_ag_cb ag_cb = {
 	.terminate = ag_terminate,
 };
 
-static uint8_t sdp_discover_cb(struct bt_conn *conn, struct bt_sdp_client_result *result)
+static uint8_t sdp_discover_cb(struct bt_conn *conn, struct bt_sdp_client_result *result,
+			       const struct bt_sdp_discover_params *params)
 {
 	int err;
 	uint16_t value;
@@ -136,6 +137,7 @@ static uint8_t sdp_discover_cb(struct bt_conn *conn, struct bt_sdp_client_result
 }
 
 static struct bt_sdp_discover_params sdp_discover = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
 	.func = sdp_discover_cb,
 	.pool = &sdp_discover_pool,
 	.uuid = BT_UUID_DECLARE_16(BT_SDP_HANDSFREE_SVCLASS),

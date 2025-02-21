@@ -21,6 +21,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -34,6 +35,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
+#include "bap_stream_tx.h"
 #include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
@@ -64,17 +66,6 @@
 #define GMAP_UNICAST_AC_MAX_SRC      (2U * GMAP_UNICAST_AC_MAX_CONN)
 #define GMAP_UNICAST_AC_MAX_PAIR     MAX(GMAP_UNICAST_AC_MAX_SNK, GMAP_UNICAST_AC_MAX_SRC)
 #define GMAP_UNICAST_AC_MAX_STREAM   (GMAP_UNICAST_AC_MAX_SNK + GMAP_UNICAST_AC_MAX_SRC)
-
-#define MAX_ISO_CHAN_COUNT 2U
-#define ISO_ENQUEUE_COUNT 2U
-#define TOTAL_BUF_NEEDED       (ISO_ENQUEUE_COUNT * MAX_ISO_CHAN_COUNT)
-
-BUILD_ASSERT(
-	CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
-	"CONFIG_BT_ISO_TX_BUF_COUNT should be at least ISO_ENQUEUE_COUNT * MAX_ISO_CHAN_COUNT");
-
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, TOTAL_BUF_NEEDED, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 extern enum bst_result_t bst_result;
 static const struct named_lc3_preset *snk_named_preset;
@@ -178,52 +169,6 @@ const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_au
 	return NULL;
 }
 
-static void stream_sent_cb(struct bt_bap_stream *bap_stream)
-{
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(bap_stream);
-	struct bt_cap_stream *cap_stream = cap_stream_from_audio_test_stream(test_stream);
-	struct net_buf *buf;
-	int ret;
-
-	if (!test_stream->tx_active) {
-		return;
-	}
-
-	if ((test_stream->tx_cnt % 100U) == 0U) {
-		printk("[%zu]: Stream %p sent with seq_num %u\n", test_stream->tx_cnt, cap_stream,
-		       test_stream->seq_num);
-	}
-
-	if (test_stream->tx_sdu_size > CONFIG_BT_ISO_TX_MTU) {
-		FAIL("Invalid SDU %u for the MTU: %d", test_stream->tx_sdu_size,
-		     CONFIG_BT_ISO_TX_MTU);
-		return;
-	}
-
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
-	if (buf == NULL) {
-		printk("Could not allocate buffer when sending on %p\n", bap_stream);
-		return;
-	}
-
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-	net_buf_add_mem(buf, mock_iso_data, test_stream->tx_sdu_size);
-	ret = bt_cap_stream_send(cap_stream, buf, test_stream->seq_num++);
-	if (ret < 0) {
-		/* This will end broadcasting on this stream. */
-		net_buf_unref(buf);
-
-		/* Only fail if tx is active (may fail if we are disabling the stream) */
-		if (test_stream->tx_active) {
-			FAIL("Unable to broadcast data on %p: %d\n", cap_stream, ret);
-		}
-
-		return;
-	}
-
-	test_stream->tx_cnt++;
-}
-
 static void stream_configured_cb(struct bt_bap_stream *stream,
 				 const struct bt_bap_qos_cfg_pref *pref)
 {
@@ -247,6 +192,17 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	printk("Started stream %p\n", stream);
+
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_register(stream);
+		if (err != 0) {
+			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	}
+
 	k_sem_give(&sem_stream_started);
 }
 
@@ -263,6 +219,17 @@ static void stream_disabled_cb(struct bt_bap_stream *stream)
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_unregister(stream);
+		if (err != 0) {
+			FAIL("Failed to unregister stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	}
+
 	k_sem_give(&sem_stream_stopped);
 }
 
@@ -280,7 +247,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.disabled = stream_disabled_cb,
 	.stopped = stream_stopped_cb,
 	.released = stream_released_cb,
-	.sent = stream_sent_cb,
+	.sent = bap_stream_tx_sent_cb,
 };
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
@@ -458,6 +425,49 @@ static const struct bt_gmap_cb gmap_cb = {
 	.discover = gmap_discover_cb,
 };
 
+static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
+{
+	char addr_str[BT_ADDR_LE_STR_LEN];
+	struct bt_conn *conn;
+	int err;
+
+	/* Check for connectable, extended advertising */
+	if (((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) == 0) ||
+	    ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE)) == 0) {
+		/* We're only interested in connectable extended advertising */
+	}
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, info->addr);
+	if (conn != NULL) {
+		/* Already connected to this device */
+		bt_conn_unref(conn);
+		return;
+	}
+
+	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	printk("Device found: %s (RSSI %d)\n", addr_str, info->rssi);
+
+	/* connect only to devices in close proximity */
+	if (info->rssi < -70) {
+		FAIL("RSSI too low");
+		return;
+	}
+
+	printk("Stopping scan\n");
+	if (bt_le_scan_stop()) {
+		FAIL("Could not stop scan");
+		return;
+	}
+
+	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN,
+				BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN,
+						 0, BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
+				&connected_conns[connected_conn_cnt]);
+	if (err != 0) {
+		FAIL("Could not connect to peer: %d", err);
+	}
+}
+
 static void init(void)
 {
 	const struct bt_gmap_feat features = {
@@ -465,6 +475,9 @@ static void init(void)
 			     BT_GMAP_UGG_FEAT_MULTISINK),
 	};
 	const enum bt_gmap_role role = BT_GMAP_ROLE_UGG;
+	static struct bt_le_scan_cb scan_cb = {
+		.recv = scan_recv_cb,
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -473,7 +486,15 @@ static void init(void)
 		return;
 	}
 
+	printk("Bluetooth initialized\n");
+	bap_stream_tx_init();
+
 	bt_gatt_cb_register(&gatt_callbacks);
+	err = bt_le_scan_cb_register(&scan_cb);
+	if (err != 0) {
+		FAIL("Failed to register scan callbacks (err %d)\n", err);
+		return;
+	}
 
 	err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
 	if (err != 0) {
@@ -511,56 +532,13 @@ static void init(void)
 	}
 }
 
-static void gmap_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-			      struct net_buf_simple *ad)
-{
-	char addr_str[BT_ADDR_LE_STR_LEN];
-	struct bt_conn *conn;
-	int err;
-
-	/* We're only interested in connectable events */
-	if (type != BT_HCI_ADV_IND && type != BT_HCI_ADV_DIRECT_IND) {
-		return;
-	}
-
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
-	if (conn != NULL) {
-		/* Already connected to this device */
-		bt_conn_unref(conn);
-		return;
-	}
-
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
-
-	/* connect only to devices in close proximity */
-	if (rssi < -70) {
-		FAIL("RSSI too low");
-		return;
-	}
-
-	printk("Stopping scan\n");
-	if (bt_le_scan_stop()) {
-		FAIL("Could not stop scan");
-		return;
-	}
-
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN,
-						 0, BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
-				&connected_conns[connected_conn_cnt]);
-	if (err) {
-		FAIL("Could not connect to peer: %d", err);
-	}
-}
-
 static void scan_and_connect(void)
 {
 	int err;
 
 	UNSET_FLAG(flag_connected);
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, gmap_device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return;
@@ -1153,10 +1131,6 @@ static void broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_sourc
 
 	printk("Stopping broadcast source\n");
 
-	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
-		broadcast_streams[i].tx_active = false;
-	}
-
 	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 	if (err != 0) {
 		FAIL("Failed to stop broadcast source: %d\n", err);
@@ -1255,18 +1229,6 @@ static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *para
 	printk("Waiting for broadcast_streams to be started\n");
 	for (size_t i = 0U; i < param->stream_cnt; i++) {
 		k_sem_take(&sem_stream_started, K_FOREVER);
-	}
-
-	/* Initialize sending */
-	printk("Starting sending\n");
-	for (size_t i = 0U; i < param->stream_cnt; i++) {
-		struct audio_test_stream *test_stream = &broadcast_streams[i];
-
-		test_stream->tx_active = true;
-
-		for (unsigned int j = 0U; j < ISO_ENQUEUE_COUNT; j++) {
-			stream_sent_cb(bap_stream_from_audio_test_stream(test_stream));
-		}
 	}
 
 	/* Wait for other devices to have received what they wanted */

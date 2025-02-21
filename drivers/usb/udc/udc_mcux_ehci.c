@@ -64,14 +64,14 @@ struct udc_mcux_event {
 K_MEM_SLAB_DEFINE(udc_event_slab, sizeof(struct udc_mcux_event),
 		  CONFIG_UDC_NXP_EVENT_COUNT, sizeof(void *));
 
-static int udc_mcux_lock(const struct device *dev)
+static void udc_mcux_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int udc_mcux_unlock(const struct device *dev)
+static void udc_mcux_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 static int udc_mcux_control(const struct device *dev, usb_device_control_type_t command,
@@ -359,7 +359,7 @@ static bool udc_mcux_handler_zlt(const struct device *dev, uint8_t ep, struct ne
 			usb_status_t status;
 
 			udc_ep_buf_clear_zlp(buf);
-			status = mcux_if->deviceRecv(priv->mcux_device.controllerHandle,
+			status = mcux_if->deviceSend(priv->mcux_device.controllerHandle,
 					ep, NULL, 0);
 			if (status != kStatus_USB_Success) {
 				udc_submit_event(dev, UDC_EVT_ERROR, -EIO);
@@ -695,8 +695,7 @@ static int udc_mcux_init(const struct device *dev)
 
 #ifdef CONFIG_DT_HAS_NXP_USBPHY_ENABLED
 	if (config->phy_config != NULL) {
-		USB_EhciPhyInit(priv->controller_id, 0u,
-			(usb_phy_config_struct_t *)&config->phy_config);
+		USB_EhciPhyInit(priv->controller_id, 0u, config->phy_config);
 	}
 #endif
 

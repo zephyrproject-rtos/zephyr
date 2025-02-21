@@ -10,6 +10,6 @@
 
 #define PORT_MUX_GPIO kPORT_MuxAsGpio
 
-#define ble_hci_handler RF_IMU0_IRQHandler
+#define nbu_handler RF_IMU0_IRQHandler
 
 #endif /* _SOC__H_ */

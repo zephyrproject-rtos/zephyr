@@ -45,7 +45,8 @@ struct lll_conn_iso_stream {
 	struct lll_conn_iso_stream_rxtx tx; /* TX parameters */
 
 	/* Event and payload counters */
-	uint64_t event_count:39;    /* cisEventCount */
+	uint64_t event_count_prepare:39; /* cisEventCount in overlapping CIG prepare */
+	uint64_t event_count:39;         /* cisEventCount in current CIG event */
 
 	/* Acknowledgment and flow control */
 	uint8_t sn:1;               /* Sequence number */

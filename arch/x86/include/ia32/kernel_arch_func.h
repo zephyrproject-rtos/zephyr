@@ -37,6 +37,8 @@ arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 
 extern void arch_cpu_atomic_idle(unsigned int key);
 
+int arch_swap(unsigned int key);
+
 /* ASM code to fiddle with registers to enable the MMU with PAE paging */
 void z_x86_enable_paging(void);
 

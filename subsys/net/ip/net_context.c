@@ -2566,23 +2566,49 @@ skip_alloc:
 
 		if (net_context_get_proto(context) == IPPROTO_RAW) {
 			char type = (NET_IPV6_HDR(pkt)->vtc & 0xf0);
+			struct sockaddr_ll *ll_addr;
 
 			/* Set the family to pkt if detected */
 			switch (type) {
 			case 0x60:
 				net_pkt_set_family(pkt, AF_INET6);
+				net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IPV6);
 				break;
 			case 0x40:
 				net_pkt_set_family(pkt, AF_INET);
+				net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
 				break;
 			default:
 				/* Not IP traffic, let it go forward as it is */
+				ll_addr = (struct sockaddr_ll *)dst_addr;
+
+				net_pkt_set_ll_proto_type(pkt,
+							  ntohs(ll_addr->sll_protocol));
 				break;
 			}
 
 			/* Pass to L2: */
 			ret = net_send_data(pkt);
 		} else {
+			struct sockaddr_ll_ptr *ll_src_addr;
+			struct sockaddr_ll *ll_dst_addr;
+
+			/* The destination address is set in remote for this
+			 * socket type.
+			 */
+			ll_dst_addr = (struct sockaddr_ll *)&context->remote;
+			ll_src_addr = (struct sockaddr_ll_ptr *)&context->local;
+
+			net_pkt_lladdr_dst(pkt)->addr = ll_dst_addr->sll_addr;
+			net_pkt_lladdr_dst(pkt)->len =
+						sizeof(struct net_eth_addr);
+			net_pkt_lladdr_src(pkt)->addr = ll_src_addr->sll_addr;
+			net_pkt_lladdr_src(pkt)->len =
+						sizeof(struct net_eth_addr);
+
+			net_pkt_set_ll_proto_type(pkt,
+						  ntohs(ll_dst_addr->sll_protocol));
+
 			net_if_queue_tx(net_pkt_iface(pkt), pkt);
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN &&

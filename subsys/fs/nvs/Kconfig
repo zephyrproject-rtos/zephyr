@@ -37,6 +37,14 @@ config NVS_DATA_CRC
 	  The CRC-32 is transparently stored at the end of the data field,
 	  in the NVS data section, so 4 more bytes are needed per NVS element.
 
+config NVS_INIT_BAD_MEMORY_REGION
+	bool "Non-volatile Storage bad memory region recovery"
+	help
+	  Enable automatic initialization of a NVS on a memory region that does
+	  not contain a valid NVS. A region containing an invalid NVS can be
+	  caused by corruption or by providing a non-empty region. This option
+	  ensures a new NVS can be created.
+
 module = NVS
 module-str = nvs
 source "subsys/logging/Kconfig.template.log_config"

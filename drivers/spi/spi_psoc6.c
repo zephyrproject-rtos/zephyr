@@ -430,7 +430,7 @@ static DEVICE_API(spi, spi_psoc6_driver_api) = {
 		SPI_CONTEXT_INIT_SYNC(spi_psoc6_dev_data_##n, ctx),	\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, spi_psoc6_init, NULL,			\
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_psoc6_init, NULL,		\
 			      &spi_psoc6_dev_data_##n,			\
 			      &spi_psoc6_config_##n, POST_KERNEL,	\
 			      CONFIG_SPI_INIT_PRIORITY,			\

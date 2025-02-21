@@ -498,6 +498,7 @@ static int decode_delta(uint8_t *data, uint16_t offset, uint16_t *pos, uint16_t 
 			uint16_t opt, uint16_t *opt_ext, uint16_t *hdr_len)
 {
 	int ret = 0;
+	*hdr_len = 0;
 
 	if (opt == COAP_OPTION_EXT_13) {
 		uint8_t val;
@@ -1172,7 +1173,7 @@ bool coap_packet_is_request(const struct coap_packet *cpkt)
 {
 	uint8_t code = coap_header_get_code(cpkt);
 
-	return !(code & ~COAP_REQUEST_MASK);
+	return (code != COAP_CODE_EMPTY) && !(code & ~COAP_REQUEST_MASK);
 }
 
 int coap_handle_request_len(struct coap_packet *cpkt,
@@ -1183,7 +1184,7 @@ int coap_handle_request_len(struct coap_packet *cpkt,
 			    struct sockaddr *addr, socklen_t addr_len)
 {
 	if (!coap_packet_is_request(cpkt)) {
-		return 0;
+		return -ENOTSUP;
 	}
 
 	/* FIXME: deal with hierarchical resources */
@@ -1394,7 +1395,7 @@ int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value,
 	uint16_t opt_len = 0;
 	uint16_t last_opt = 0;
 	uint16_t last_offset = cpkt->hdr_len;
-	struct coap_option option;
+	struct coap_option option = {0};
 	int r;
 
 	while (offset < cpkt->hdr_len + cpkt->opt_len) {
@@ -1548,7 +1549,7 @@ int coap_next_block_for_option(const struct coap_packet *cpkt,
 			       enum coap_option_num option)
 {
 	int block;
-	uint16_t block_len;
+	uint16_t block_len = 0;
 
 	if (option != COAP_OPTION_BLOCK1 && option != COAP_OPTION_BLOCK2) {
 		return -EINVAL;
@@ -1808,32 +1809,63 @@ struct coap_reply *coap_response_received(
 {
 	struct coap_reply *r;
 	uint8_t token[COAP_TOKEN_MAX_LEN];
+	bool piggybacked = false;
+	uint8_t type;
 	uint16_t id;
 	uint8_t tkl;
 	size_t i;
 
-	if (!is_empty_message(response) && coap_packet_is_request(response)) {
-		/* Request can't be response */
+	type = coap_header_get_type(response);
+	id = coap_header_get_id(response);
+	tkl = coap_header_get_token(response, token);
+
+	if ((type == COAP_TYPE_ACK && is_empty_message(response)) ||
+	    coap_packet_is_request(response)) {
+		/* Request or empty ACK can't be response */
 		return NULL;
 	}
 
-	id = coap_header_get_id(response);
-	tkl = coap_header_get_token(response, token);
+	if (type == COAP_TYPE_ACK) {
+		piggybacked = true;
+	}
 
 	for (i = 0, r = replies; i < len; i++, r++) {
 		int age;
 
-		if ((r->id == 0U) && (r->tkl == 0U)) {
+		/* Skip unused entry. */
+		if (r->reply == NULL) {
 			continue;
 		}
 
-		/* Piggybacked must match id when token is empty */
-		if ((r->id != id) && (tkl == 0U)) {
+		/* Reset should only be handled if Message ID matches. */
+		if (type == COAP_TYPE_RESET) {
+			if (r->id != id) {
+				continue;
+			}
+
+			goto handle_reply;
+		}
+
+		/* In a piggybacked response, the Message ID of the Confirmable
+		 * request and the Acknowledgment MUST match, and the tokens of
+		 * the response and original request MUST match.  In a separate
+		 * response, just the tokens of the response and original request
+		 * MUST match.
+		 */
+		if (piggybacked) {
+			if (r->id != id) {
+				continue;
+			}
+		}
+
+		if (r->tkl != tkl) {
 			continue;
 		}
 
-		if (tkl > 0 && memcmp(r->token, token, tkl)) {
-			continue;
+		if (r->tkl > 0) {
+			if (memcmp(r->token, token, r->tkl) != 0) {
+				continue;
+			}
 		}
 
 		age = coap_get_option_int(response, COAP_OPTION_OBSERVE);
@@ -1841,6 +1873,7 @@ struct coap_reply *coap_response_received(
 		if (age == -ENOENT || coap_age_is_newer(r->age, age)) {
 			r->age = age;
 			if (coap_header_get_code(response) != COAP_RESPONSE_CODE_CONTINUE) {
+handle_reply:
 				r->reply(response, r, from);
 			}
 		}

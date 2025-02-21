@@ -18,27 +18,20 @@ description: |
         channel = <0>;
         pwm-mode = "OPWFMB";
         prescaler = <8>;
-        period = <65534>;
-        duty-cycle = <32768>;
-        polarity = "ACTIVE_HIGH";
       };
 
       pwm_1 {
         channel = <1>;
         master-bus = <&emios1_bus_a>;
         pwm-mode = "OPWMB";
-        duty-cycle = <32768>;
         phase-shift = <100>;
-        polarity = "ACTIVE_LOW";
       };
 
       pwm_2 {
         channel = <2>;
         master-bus = <&emios1_bus_b>;
         pwm-mode = "OPWMCB_LEAD_EDGE";
-        duty-cycle = <32768>;
         dead-time = <100>;
-        polarity = "ACTIVE_LOW";
       };
 
       pwm_3 {
@@ -50,10 +43,8 @@ description: |
     };
 
   OPWMB and OPWMCB modes use reference timebase, the master bus is chosen over
-  phandle 'master-bus'. For OPWMB mode, PWM's period is master bus's period and
-  is 2 * master bus's period - 2 for OPWMCB mode. Please notice that the devicetree
-  node for master bus should be enabled and configured for using, please see
-  'nxp,s32-emios' bindings.
+  phandle 'master-bus'. Please notice that the devicetree node for master bus
+  should be enabled and configured for using, please see 'nxp,s32-emios' bindings.
 
 compatible: "nxp,s32-emios-pwm"
 
@@ -123,25 +114,6 @@ child-binding:
         - "OPWMCB_TRAIL_EDGE"
         - "OPWMCB_LEAD_EDGE"
         - "SAIC"
-
-    polarity:
-      type: string
-      description: |
-        Output polarity for PWM channel.
-      enum:
-        - "ACTIVE_LOW"
-        - "ACTIVE_HIGH"
-
-    duty-cycle:
-      type: int
-      description: |
-        Duty-cycle (in ticks) for PWM channel at boot time.
-
-    period:
-      type: int
-      description: |
-        Period (in ticks) for OPWFMB at boot time. Period for the rest
-        of PWM mode depends on period's master bus. Must be in range [2 ... 65535].
 
     freeze:
       type: boolean

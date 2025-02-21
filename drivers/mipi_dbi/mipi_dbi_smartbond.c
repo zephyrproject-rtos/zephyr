@@ -536,7 +536,7 @@ static int mipi_dbi_smartbond_init(const struct device *dev)
 	return ret;
 }
 
-static const struct mipi_dbi_driver_api mipi_dbi_smartbond_driver_api = {
+static DEVICE_API(mipi_dbi, mipi_dbi_smartbond_driver_api) = {
 #if MIPI_DBI_SMARTBOND_IS_RESET_AVAILABLE
 	.reset = mipi_dbi_smartbond_reset,
 #endif

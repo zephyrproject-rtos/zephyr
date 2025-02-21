@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2023 Codecoup
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,8 @@
 #include <stddef.h>
 #include <errno.h>
 
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -115,12 +118,18 @@ static void stream_started(struct bt_bap_stream *stream)
 {
 	struct btp_bap_broadcast_remote_source *broadcaster;
 	struct btp_bap_broadcast_stream *b_stream = stream_bap_to_broadcast(stream);
+	int err;
 
 	/* Callback called on transition to Streaming state */
 
 	LOG_DBG("Started stream %p", stream);
 
-	btp_bap_audio_stream_started(&b_stream->audio_stream);
+	/* Start TX */
+	err = btp_bap_audio_stream_tx_register(&b_stream->audio_stream);
+	if (err != 0) {
+		LOG_ERR("Failed to register stream: %d", err);
+	}
+
 	b_stream->bis_synced = true;
 	broadcaster = &remote_broadcast_sources[b_stream->source_id];
 
@@ -130,10 +139,16 @@ static void stream_started(struct bt_bap_stream *stream)
 static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
 	struct btp_bap_broadcast_stream *b_stream = stream_bap_to_broadcast(stream);
+	int err;
 
 	LOG_DBG("Stopped stream %p with reason 0x%02X", stream, reason);
 
-	btp_bap_audio_stream_stopped(&b_stream->audio_stream);
+	/* Stop TX */
+	err = btp_bap_audio_stream_tx_unregister(&b_stream->audio_stream);
+	if (err != 0) {
+		LOG_ERR("Failed to unregister stream: %d", err);
+	}
+
 	b_stream->bis_synced = false;
 
 	k_sem_give(&sem_stream_stopped);
@@ -173,24 +188,24 @@ static void stream_recv(struct bt_bap_stream *stream,
 		/* For now, send just a first packet, to limit the number
 		 * of logs and not unnecessarily spam through btp.
 		 */
-		LOG_DBG("Incoming audio on stream %p len %u", stream, buf->len);
-		b_stream->already_sent = true;
-		broadcaster = &remote_broadcast_sources[b_stream->source_id];
-		send_bis_stream_received_ev(&broadcaster->address, broadcaster->broadcast_id,
-					    b_stream->bis_id, buf->len, buf->data);
-	}
-}
+		LOG_DBG("Incoming audio on stream %p len %u flags 0x%02X seq_num %u and ts %u",
+			stream, buf->len, info->flags, info->seq_num, info->ts);
 
-static void stream_sent(struct bt_bap_stream *stream)
-{
-	LOG_DBG("Stream %p sent", stream);
+		if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
+			b_stream->already_sent = true;
+			broadcaster = &remote_broadcast_sources[b_stream->source_id];
+			send_bis_stream_received_ev(&broadcaster->address,
+						    broadcaster->broadcast_id, b_stream->bis_id,
+						    buf->len, buf->data);
+		}
+	}
 }
 
 static struct bt_bap_stream_ops stream_ops = {
 	.started = stream_started,
 	.stopped = stream_stopped,
 	.recv = stream_recv,
-	.sent = stream_sent,
+	.sent = btp_bap_audio_stream_sent_cb,
 };
 
 struct btp_bap_broadcast_stream *btp_bap_broadcast_stream_alloc(
@@ -294,11 +309,21 @@ static int setup_broadcast_source(uint8_t streams_per_subgroup,	uint8_t subgroup
 uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len)
 {
+	struct bt_le_per_adv_param per_adv_param =
+		*BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(150),
+				     BT_GAP_MS_TO_PER_ADV_INTERVAL(150), BT_LE_PER_ADV_OPT_NONE);
+	/* Zephyr Controller works best while Extended Advertising interval is a multiple
+	 * of the ISO Interval minus 10 ms (max. advertising random delay). This is
+	 * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
+	 * Broadcast ISO radio events.
+	 */
+	struct bt_le_adv_param ext_adv_param =
+		*BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(140),
+				 BT_GAP_MS_TO_ADV_INTERVAL(140), NULL);
 	int err;
 	struct bt_audio_codec_cfg codec_cfg;
 	const struct btp_bap_broadcast_source_setup_cmd *cp = cmd;
 	struct btp_bap_broadcast_source_setup_rp *rp = rsp;
-	struct bt_le_adv_param param = *BT_LE_EXT_ADV_NCONN;
 	uint32_t broadcast_id;
 
 	/* Only one local source/BIG supported for now */
@@ -356,17 +381,15 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	base_ad[1].type = BT_DATA_NAME_COMPLETE;
 	base_ad[1].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
 	base_ad[1].data = CONFIG_BT_DEVICE_NAME;
-	err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY, base_ad, 2, NULL,
-					     0, &gap_settings);
+	err = tester_gap_create_adv_instance(&ext_adv_param, BTP_GAP_ADDR_TYPE_IDENTITY, base_ad, 2,
+					     NULL, 0, &gap_settings);
 	if (err != 0) {
 		LOG_DBG("Failed to create extended advertising instance: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}
 
-	err = tester_gap_padv_configure(BT_LE_PER_ADV_PARAM(BT_GAP_PER_ADV_FAST_INT_MIN_2,
-							    BT_GAP_PER_ADV_FAST_INT_MAX_2,
-							    BT_LE_PER_ADV_OPT_NONE));
+	err = tester_gap_padv_configure(&per_adv_param);
 	if (err != 0) {
 		LOG_DBG("Failed to configure periodic advertising: %d", err);
 

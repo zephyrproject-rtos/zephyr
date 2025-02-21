@@ -93,6 +93,14 @@ extern "C" {
  */
 #define IS_BIT_MASK(m) IS_SHIFTED_BIT_MASK(m, 0)
 
+/**
+ * @brief Check if bit is set in a value
+ *
+ * @param value Value that contain checked bit
+ * @param bit Bit number
+ */
+#define IS_BIT_SET(value, bit) ((((value) >> (bit)) & (0x1)) != 0)
+
 /** @brief Extract the Least Significant Bit from @p value. */
 #define LSB_GET(value) ((value) & -(value))
 
@@ -296,7 +304,19 @@ extern "C" {
  * @brief Like <tt>a == b</tt>, but does evaluation and
  * short-circuiting at C preprocessor time.
  *
- * This however only works for integer literal from 0 to 4095.
+ * This however only works for integer literal from 0 to 4096 (literals with U suffix,
+ * e.g. 0U are also included).
+ *
+ * Examples:
+ *
+ *   IS_EQ(1, 1)   -> 1
+ *   IS_EQ(1U, 1U) -> 1
+ *   IS_EQ(1U, 1)  -> 1
+ *   IS_EQ(1, 1U)  -> 1
+ *   IS_EQ(1, 0)   -> 0
+ *
+ * @param a Integer literal (can be with U suffix)
+ * @param b Integer literal
  *
  */
 #define IS_EQ(a, b) Z_IS_EQ(a, b)

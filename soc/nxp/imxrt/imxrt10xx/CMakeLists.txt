@@ -11,7 +11,7 @@ if(CONFIG_PM)
   zephyr_code_relocate(FILES power.c LOCATION ITCM_TEXT)
   if(CONFIG_SOC_MIMXRT1064)
     zephyr_sources(lpm_rt1064.c)
-    zephyr_code_relocate(FILES lpm_rt1064 LOCATION ITCM_TEXT)
+    zephyr_code_relocate(FILES lpm_rt1064.c LOCATION ITCM_TEXT)
   endif()
 endif()
 

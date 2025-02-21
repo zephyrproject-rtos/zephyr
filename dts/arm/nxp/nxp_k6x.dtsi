@@ -101,7 +101,7 @@
 		};
 
 		rtc: rtc@4003d000 {
-			compatible = "nxp,kinetis-rtc";
+			compatible = "nxp,rtc";
 			reg = <0x4003d000 0x1000>;
 			interrupts = <46 0>, <47 0>;
 			interrupt-names = "alarm", "seconds";
@@ -335,7 +335,7 @@
 		};
 
 		spi0: spi@4002c000 {
-			compatible = "nxp,kinetis-dspi";
+			compatible = "nxp,dspi";
 			reg = <0x4002c000 0x88>;
 			interrupts = <26 3>;
 			dmas = <&edma0 0 14>, <&edma0 0 15>;
@@ -349,7 +349,7 @@
 		};
 
 		spi1: spi@4002d000 {
-			compatible = "nxp,kinetis-dspi";
+			compatible = "nxp,dspi";
 			reg = <0x4002d000 0x88>;
 			interrupts = <27 3>;
 			dmas = <&edma0 0 16>, <&edma0 0 16>;
@@ -364,7 +364,7 @@
 		};
 
 		spi2: spi@400ac000 {
-			compatible = "nxp,kinetis-dspi";
+			compatible = "nxp,dspi";
 			reg = <0x400ac000 0x88>;
 			interrupts = <65 3>;
 			dmas = <&edma0 0 38>, <&edma0 0 39>;
@@ -386,7 +386,7 @@
 		};
 
 		ftm0: ftm@40038000{
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
@@ -395,7 +395,7 @@
 		};
 
 		ftm1: ftm@40039000{
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
@@ -404,7 +404,7 @@
 		};
 
 		ftm2: ftm@4003a000{
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
@@ -413,7 +413,7 @@
 		};
 
 		ftm3: ftm@400b9000{
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x400b9000 0x98>;
 			interrupts = <71 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;

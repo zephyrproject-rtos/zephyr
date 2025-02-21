@@ -18,4 +18,12 @@
 		/* 0x14 is address of padconfig register of p8.22 and 14 is mux mode */
 		pinmux = <K3_PINMUX(0x14, PIN_INPUT, MUX_MODE_14)>;
 	};
+	i2c6_scl_default: i2c6_scl_default {
+		/* 0x1e0 is the address of padconfig register of p9.17 and 2 is mux mode */
+		pinmux = <K3_PINMUX(0x1d0, PIN_INPUT_PULLUP, MUX_MODE_2)>;
+	};
+	i2c6_sda_default: i2c6_sda_default {
+		/* 0x1dc is the address of padconfig register of p9.18 and 2 is mux mode */
+		pinmux = <K3_PINMUX(0x1e4, PIN_INPUT_PULLUP, MUX_MODE_2)>;
+	};
 };

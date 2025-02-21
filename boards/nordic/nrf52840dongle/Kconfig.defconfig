@@ -22,62 +22,6 @@ config FLASH_LOAD_OFFSET
 	default 0x1000
 	depends on BOARD_HAS_NRF5_BOOTLOADER && (MCUBOOT || !USE_DT_CODE_PARTITION)
 
-if BOARD_SERIAL_BACKEND_CDC_ACM
-
-config USB_DEVICE_STACK
-	default y
-
-config USB_CDC_ACM
-	default SERIAL
-
-config CONSOLE
-	default y
-
-config UART_CONSOLE
-	default CONSOLE
-
-config USB_DEVICE_INITIALIZE_AT_BOOT
-	default y if !MCUBOOT && CONSOLE
-
-config SHELL_BACKEND_SERIAL_CHECK_DTR
-	default SHELL
-	depends on UART_LINE_CTRL
-
-config UART_LINE_CTRL
-	default SHELL
-
-config USB_DEVICE_REMOTE_WAKEUP
-	default n
-
-if LOG
-
-# Logger cannot use itself to log
-choice USB_CDC_ACM_LOG_LEVEL_CHOICE
-	default USB_CDC_ACM_LOG_LEVEL_OFF
-endchoice
-
-# Set USB log level to error only
-choice USB_DEVICE_LOG_LEVEL_CHOICE
-	default USB_DEVICE_LOG_LEVEL_ERR
-endchoice
-
-# Wait 4000ms at startup for logging
-config LOG_PROCESS_THREAD_STARTUP_DELAY_MS
-	default 4000
-
-endif # LOG
-
-if USB_DEVICE_STACK
-
-# Enable UART driver, needed for CDC ACM
-config SERIAL
-	default y
-
-endif # USB_DEVICE_STACK
-
-endif # BOARD_SERIAL_BACKEND_CDC_ACM
-
-config BT_CTLR
-	default BT
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
 
 endif # BOARD_NRF52840DONGLE

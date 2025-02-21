@@ -9,7 +9,7 @@
 
 #include <freq.h>
 
-#include <rpi_pico/rp2040.dtsi>
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
 #include "w5500_evb_pico-pinctrl.dtsi"
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
@@ -110,11 +110,6 @@
 			read-only;
 		};
 	};
-};
-
-&clocks {
-	pinctrl-0 = <&clocks_default>;
-	pinctrl-names = "default";
 };
 
 &uart0 {

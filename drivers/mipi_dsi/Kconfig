@@ -24,5 +24,6 @@ config MIPI_DSI_INIT_PRIORITY
 source "drivers/mipi_dsi/Kconfig.mcux"
 source "drivers/mipi_dsi/Kconfig.stm32"
 source "drivers/mipi_dsi/Kconfig.test"
+source "drivers/mipi_dsi/Kconfig.renesas_ra"
 
 endif

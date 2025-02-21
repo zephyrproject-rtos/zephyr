@@ -4,7 +4,6 @@ type: qemu
 arch: x86
 toolchain:
   - zephyr
-  - xtools
 supported:
   - smp
 simulation:

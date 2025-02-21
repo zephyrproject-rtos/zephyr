@@ -1,0 +1,42 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_COMPAT_XSPI := nxp,xspi
+
+DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+
+DT_FLASH_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_XSPI))
+DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
+		if $(DT_FLASH_PARENT_IS_XSPI)
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config FLASH_SIZE
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb)
+
+config FLASH_MCUX_XSPI_XIP
+	bool
+	default $(DT_FLASH_PARENT_IS_XSPI)
+	select XIP
+	help
+	  Allows the soc to safely initialize the clocks for the
+	  XSpi when planning to execute code in XSpi Memory.
+
+if FLASH_MCUX_XSPI_XIP
+
+config CODE_DATA_RELOCATION_SRAM
+	default y
+
+config FLASH_MCUX_XSPI_XIP_MEM
+	string
+	prompt "Xspi drivers memory location"
+	default "RAM"
+	help
+	  Select the location to run the XSPI drivers when using
+	  the flash API.
+
+endif

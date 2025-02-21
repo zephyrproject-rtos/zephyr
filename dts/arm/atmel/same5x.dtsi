@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
  * Copyright (c) 2023 Sebastian Schlupp
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,15 +15,17 @@
 			reg = <0x42000800 0x400>;
 			interrupts = <84 0>;
 			interrupt-names = "gmac";
+			status = "disabled";
+
 			num-queues = <1>;
 			local-mac-address = [00 00 00 00 00 00];
-			status = "disabled";
 		};
 
 		mdio: mdio@42000800 {
 			compatible = "atmel,sam-mdio";
 			reg = <0x42000800 0x400>;
 			status = "disabled";
+
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -34,9 +37,12 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&gclk 27>, <&mclk 0x10 17>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+
 			bosch,mram-cfg = <0x0 128 64 64 64 64 32 32>;
 			divider = <12>;
-			status = "disabled";
 		};
 
 		can1: can@42000400 {
@@ -46,9 +52,12 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&gclk 28>, <&mclk 0x10 18>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+
 			bosch,mram-cfg = <0x0 128 64 64 64 64 32 32>;
 			divider = <12>;
-			status = "disabled";
 		};
 	};
 };

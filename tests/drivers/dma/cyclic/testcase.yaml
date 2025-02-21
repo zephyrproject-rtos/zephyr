@@ -1,0 +1,10 @@
+tests:
+  drivers.dma.cyclic:
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    platform_allow:
+      - xmc47_relax_kit
+      - xmc45_relax_kit
+    filter: dt_alias_exists("dma0")

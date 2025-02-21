@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Junho Lee <junho@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config PCIE_BRCMSTB
+	bool "Broadcom Set-top box SoC PCIe Driver"
+	default y
+	depends on DT_HAS_BRCM_BRCMSTB_PCIE_ENABLED
+	help
+	  Enable Driver for Broadcom Set-top box SoC PCIe controllers.

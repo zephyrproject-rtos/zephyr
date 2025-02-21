@@ -83,8 +83,6 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "EAP-TTLS-MSCHAPV2";
 	case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
 		return "EAP-PEAP-TLS";
-	case WIFI_SECURITY_TYPE_EAP_TLS_SHA256:
-		return "EAP-TLS-SHA256";
 	case WIFI_SECURITY_TYPE_FT_PSK:
 		return "FT-PSK";
 	case WIFI_SECURITY_TYPE_FT_SAE:
@@ -93,9 +91,25 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "FT-EAP";
 	case WIFI_SECURITY_TYPE_FT_EAP_SHA384:
 		return "FT-EAP-SHA384";
+	case WIFI_SECURITY_TYPE_SAE_EXT_KEY:
+		return "WPA3-SAE-EXT-KEY";
 	case WIFI_SECURITY_TYPE_UNKNOWN:
 	default:
 		return "UNKNOWN";
+	}
+}
+
+const char *wifi_wpa3_enterprise_txt(enum wifi_wpa3_enterprise_type wpa3_ent)
+{
+	switch (wpa3_ent) {
+	case WIFI_WPA3_ENTERPRISE_SUITEB:
+		return "WPA3-SuiteB";
+	case WIFI_WPA3_ENTERPRISE_SUITEB_192:
+		return "WPA3-SuiteB-192";
+	case WIFI_WPA3_ENTERPRISE_ONLY:
+		return "WPA3-Enterprise-Only";
+	default:
+		return "";
 	}
 }
 
@@ -124,6 +138,21 @@ const char *wifi_band_txt(enum wifi_frequency_bands band)
 	case WIFI_FREQ_BAND_6_GHZ:
 		return "6GHz";
 	case WIFI_FREQ_BAND_UNKNOWN:
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth)
+{
+	switch (bandwidth) {
+	case WIFI_FREQ_BANDWIDTH_20MHZ:
+		return "20 MHz";
+	case WIFI_FREQ_BANDWIDTH_40MHZ:
+		return "40 MHz";
+	case WIFI_FREQ_BANDWIDTH_80MHZ:
+		return "80 MHz";
+	case WIFI_FREQ_BANDWIDTH_UNKNOWN:
 	default:
 		return "UNKNOWN";
 	}
@@ -292,7 +321,7 @@ const char *wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode)
 	}
 }
 
-const char * const wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy)
+const char *wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy)
 {
 	switch (ps_exit_strategy) {
 	case WIFI_PS_EXIT_EVERY_TIM:
@@ -307,8 +336,13 @@ const char * const wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_
 static const struct wifi_mgmt_ops *const get_wifi_api(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct net_wifi_mgmt_offload *off_api =
-			(struct net_wifi_mgmt_offload *) dev->api;
+	struct net_wifi_mgmt_offload *off_api;
+
+	if (dev == NULL) {
+		return NULL;
+	}
+
+	off_api = (struct net_wifi_mgmt_offload *) dev->api;
 #ifdef CONFIG_WIFI_NM
 	struct wifi_nm_instance *nm = wifi_nm_get_instance_iface(iface);
 
@@ -330,6 +364,10 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->connect == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	LOG_HEXDUMP_DBG(params->ssid, params->ssid_length, "ssid");
@@ -404,6 +442,10 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 #ifdef CONFIG_WIFI_MGMT_FORCED_PASSIVE_SCAN
 	struct wifi_scan_params default_params = {0};
 
@@ -426,6 +468,10 @@ static int wifi_disconnect(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->disconnect == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	return wifi_mgmt_api->disconnect(dev);
@@ -462,26 +508,39 @@ static int wifi_start_roaming(uint32_t mgmt_request, struct net_if *iface,
 	const struct device *dev = net_if_get_device(iface);
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
 
+	if (wifi_mgmt_api == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	if (roaming_params.is_11r_used) {
-		if (wifi_mgmt_api == NULL ||
-		    wifi_mgmt_api->start_11r_roaming == NULL) {
+		if (wifi_mgmt_api->start_11r_roaming == NULL) {
 			return -ENOTSUP;
 		}
 
 		return wifi_mgmt_api->start_11r_roaming(dev);
 	} else if (roaming_params.is_11k_enabled) {
 		memset(&roaming_params.neighbor_rep, 0x0, sizeof(roaming_params.neighbor_rep));
-		if (wifi_mgmt_api == NULL
-		    || wifi_mgmt_api->send_11k_neighbor_request == NULL) {
+		if (wifi_mgmt_api->send_11k_neighbor_request == NULL) {
 			return -ENOTSUP;
 		}
 
 		return wifi_mgmt_api->send_11k_neighbor_request(dev, NULL);
-	} else if (wifi_mgmt_api == NULL || wifi_mgmt_api->btm_query == NULL) {
+	} else if (wifi_mgmt_api->bss_ext_capab &&
+			wifi_mgmt_api->bss_ext_capab(dev, WIFI_EXT_CAPAB_BSS_TRANSITION)) {
+		if (wifi_mgmt_api->btm_query) {
+			return wifi_mgmt_api->btm_query(dev, 0x10);
+		} else {
+			return -ENOTSUP;
+		}
+	} else if (wifi_mgmt_api->legacy_roam) {
+		return wifi_mgmt_api->legacy_roam(dev);
+	} else {
 		return -ENOTSUP;
 	}
-
-	return wifi_mgmt_api->btm_query(dev, 0x10);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING, wifi_start_roaming);
@@ -492,6 +551,10 @@ static int wifi_neighbor_rep_complete(uint32_t mgmt_request, struct net_if *ifac
 	const struct device *dev = net_if_get_device(iface);
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
 	struct wifi_scan_params params = {0};
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
 
 	for (int i = 0; i < roaming_params.neighbor_rep.neighbor_cnt; i++) {
 		params.band_chan[i].channel = roaming_params.neighbor_rep.neighbor_ap[i].channel;
@@ -589,6 +652,10 @@ static int wifi_ap_enable(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->ap_enable(dev, params);
 }
 
@@ -600,8 +667,12 @@ static int wifi_ap_disable(uint32_t mgmt_request, struct net_if *iface,
 	const struct device *dev = net_if_get_device(iface);
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
 
-	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_enable == NULL) {
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_disable == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	return wifi_mgmt_api->ap_disable(dev);
@@ -622,6 +693,10 @@ static int wifi_ap_sta_disconnect(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_sta_disconnect == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (!data || len != sizeof(uint8_t) * WIFI_MAC_ADDR_LEN) {
@@ -649,6 +724,10 @@ static int wifi_ap_config_params(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	if (!data || len != sizeof(*params)) {
 		return -EINVAL;
 	}
@@ -666,6 +745,30 @@ static int wifi_ap_config_params(uint32_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM, wifi_ap_config_params);
+
+static int wifi_ap_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
+				  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	unsigned int *rts_threshold = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->set_rts_threshold == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (data == NULL || len != sizeof(*rts_threshold)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->set_rts_threshold(dev, *rts_threshold);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_RTS_THRESHOLD, wifi_ap_set_rts_threshold);
 
 static int wifi_iface_status(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
@@ -740,6 +843,10 @@ static int wifi_11k_cfg(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 	if (params->oper == WIFI_MGMT_SET) {
 		roaming_params.is_11k_enabled = params->enable_11k;
@@ -762,6 +869,10 @@ static int wifi_11k_neighbor_request(uint32_t mgmt_request, struct net_if *iface
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->send_11k_neighbor_request(dev, params);
 }
 
@@ -778,6 +889,10 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->set_power_save == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	switch (ps_params->type) {
@@ -829,6 +944,10 @@ static int wifi_get_power_save_config(uint32_t mgmt_request, struct net_if *ifac
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	if (!data || len != sizeof(*ps_config)) {
 		return -EINVAL;
 	}
@@ -850,6 +969,10 @@ static int wifi_set_twt(uint32_t mgmt_request, struct net_if *iface,
 		twt_params->fail_reason =
 			WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (twt_params->operation == WIFI_TWT_TEARDOWN) {
@@ -901,6 +1024,39 @@ fail:
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_TWT, wifi_set_twt);
 
+static int wifi_set_btwt(uint32_t mgmt_request, struct net_if *iface,
+			  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_twt_params *twt_params = data;
+	struct wifi_iface_status info = { 0 };
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->set_btwt == NULL) {
+		twt_params->fail_reason =
+			WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &info,
+			sizeof(struct wifi_iface_status))) {
+		twt_params->fail_reason =
+			WIFI_TWT_FAIL_UNABLE_TO_GET_IFACE_STATUS;
+		goto fail;
+	}
+
+	return wifi_mgmt_api->set_btwt(dev, twt_params);
+fail:
+	return -ENOEXEC;
+
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BTWT, wifi_set_btwt);
+
 void wifi_mgmt_raise_twt_event(struct net_if *iface, struct wifi_twt_params *twt_params)
 {
 	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_TWT,
@@ -917,6 +1073,10 @@ static int wifi_reg_domain(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->reg_domain == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (!data || len != sizeof(*reg_domain)) {
@@ -951,6 +1111,10 @@ static int wifi_mode(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->mode(dev, mode_info);
 }
 
@@ -971,6 +1135,10 @@ static int wifi_packet_filter(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->filter(dev, filter_info);
 }
 
@@ -989,6 +1157,10 @@ static int wifi_channel(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->channel == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	return wifi_mgmt_api->channel(dev, channel_info);
@@ -1012,7 +1184,6 @@ static int wifi_get_version(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION, wifi_get_version);
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 static int wifi_btm_query(uint32_t mgmt_request, struct net_if *iface, void *data, size_t len)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -1021,6 +1192,10 @@ static int wifi_btm_query(uint32_t mgmt_request, struct net_if *iface, void *dat
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->btm_query == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (query_reason >= WIFI_BTM_QUERY_REASON_UNSPECIFIED &&
@@ -1032,7 +1207,6 @@ static int wifi_btm_query(uint32_t mgmt_request, struct net_if *iface, void *dat
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY, wifi_btm_query);
-#endif
 
 static int wifi_get_connection_params(uint32_t mgmt_request, struct net_if *iface,
 			void *data, size_t len)
@@ -1043,6 +1217,10 @@ static int wifi_get_connection_params(uint32_t mgmt_request, struct net_if *ifac
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->get_conn_params == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	return wifi_mgmt_api->get_conn_params(dev, conn_params);
@@ -1060,6 +1238,10 @@ static int wifi_wps_config(uint32_t mgmt_request, struct net_if *iface, void *da
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->wps_config(dev, params);
 }
 
@@ -1074,6 +1256,10 @@ static int wifi_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->set_rts_threshold == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (!data || len != sizeof(*rts_threshold)) {
@@ -1097,6 +1283,10 @@ static int wifi_dpp(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->dpp_dispatch(dev, params);
 }
 
@@ -1114,6 +1304,10 @@ static int wifi_pmksa_flush(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->pmksa_flush(dev);
 }
 
@@ -1128,6 +1322,10 @@ static int wifi_get_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->get_rts_threshold == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (!data || len != sizeof(*rts_threshold)) {
@@ -1149,6 +1347,10 @@ static int wifi_set_enterprise_creds(uint32_t mgmt_request, struct net_if *iface
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->enterprise_creds == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	return wifi_mgmt_api->enterprise_creds(dev, params);

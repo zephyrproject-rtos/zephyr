@@ -331,7 +331,8 @@ ZTEST(flash_driver, test_get_size)
 	uint64_t size;
 
 	zassert_ok(flash_get_size(flash_dev, &size));
-	zassert_equal(size, CONFIG_TEST_DRIVER_FLASH_SIZE, "Unexpected size");
+	zassert_equal(size, (uint64_t)CONFIG_TEST_DRIVER_FLASH_SIZE, "Expected %llu, got %llu\n",
+		      (uint64_t)CONFIG_TEST_DRIVER_FLASH_SIZE, size);
 #else
 	/* The test is sipped only because there is no uniform way to get device size */
 	ztest_test_skip();

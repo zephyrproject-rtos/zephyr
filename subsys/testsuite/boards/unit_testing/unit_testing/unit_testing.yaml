@@ -2,5 +2,8 @@ identifier: unit_testing
 name: Unit Testing
 type: unit
 arch: unit
+toolchain:
+  - host
+  - llvm
 testing:
   default: true

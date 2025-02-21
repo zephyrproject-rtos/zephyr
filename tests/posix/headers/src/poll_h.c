@@ -23,12 +23,12 @@ ZTEST(posix_headers, test_poll_h)
 	zassert_not_equal(-1, offsetof(struct pollfd, events));
 	zassert_not_equal(-1, offsetof(struct pollfd, revents));
 
-	/* zassert_true(sizeof(nfds_t) <= sizeof(long)); */ /* not implemented */
+	zassert_true(sizeof(nfds_t) <= sizeof(long));
 
 	zassert_not_equal(-1, POLLIN);
 	/* zassert_not_equal(-1, POLLRDNORM); */ /* not implemented */
 	/* zassert_not_equal(-1, POLLRDBAND); */ /* not implemented */
-	/* zassert_not_equal(-1, POLLPRI); */ /* not implemented */
+	zassert_not_equal(-1, POLLPRI);
 	zassert_not_equal(-1, POLLOUT);
 	/* zassert_not_equal(-1, POLLWRNORM); */ /* not implemented */
 	/* zassert_not_equal(-1, POLLWRBAND); */ /* not implemented */

@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &kbd;
+
+&i2c4 {
+	status = "okay";
+
+	it8801_mfd: it8801@38 {
+		compatible = "ite,it8801-mfd";
+		reg = <0x38>;
+		irq-gpios = <&gpioa 1 0>;
+	};
+};
+
+#include <ite/it8801-common-cfg.dtsi>
+
+&ioex_it8801_kbd {
+	status = "okay";
+	/* GP00, GP01, GP21, GP22, GP23 can be configured as alternate KSO pins */
+	mfdctrl = <&kso18_gp01_default &kso20_gp23_default>;
+	kso-mapping = <0 1 20 3 4 5 6 17 18 16 15 11 12>;
+	row-size = <8>;
+	col-size = <13>;
+
+	kscan_input: kscan-input {
+		compatible = "zephyr,kscan-input";
+	};
+};

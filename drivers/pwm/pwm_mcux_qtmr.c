@@ -149,7 +149,7 @@ static int mcux_qtmr_pwm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_mcux_qtmr_driver_api = {
+static DEVICE_API(pwm, pwm_mcux_qtmr_driver_api) = {
 	.set_cycles = mcux_qtmr_pwm_set_cycles,
 	.get_cycles_per_sec = mcux_qtmr_pwm_get_cycles_per_sec,
 };

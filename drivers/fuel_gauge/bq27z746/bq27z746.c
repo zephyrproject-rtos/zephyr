@@ -270,7 +270,7 @@ static int bq27z746_init(const struct device *dev)
 	return 0;
 }
 
-static const struct fuel_gauge_driver_api bq27z746_driver_api = {
+static DEVICE_API(fuel_gauge, bq27z746_driver_api) = {
 	.get_property = &bq27z746_get_prop,
 	.set_property = &bq27z746_set_prop,
 	.get_buffer_property = &bq27z746_get_buffer_prop,

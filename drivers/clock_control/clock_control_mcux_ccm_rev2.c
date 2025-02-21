@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2024 NXP
+ * Copyright 2021,2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,11 +74,24 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 #endif
 
+#ifdef CONFIG_I3C_MCUX
+	case IMX_CCM_I3C1_CLK:
+	case IMX_CCM_I3C2_CLK:
+		clock_root = kCLOCK_Root_I3c1 + instance;
+		break;
+#endif
+
 #ifdef CONFIG_SPI_MCUX_LPSPI
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_LPSPI0102_CLK:
+		clock_root = kCLOCK_Root_Lpspi0102 + instance;
+		break;
+#else
 	case IMX_CCM_LPSPI1_CLK:
 		clock_root = kCLOCK_Root_Lpspi1 + instance;
 		break;
-#endif
+#endif /* CONFIG_SOC_SERIES_IMXRT118X */
+#endif /* CONFIG_SPI_MCUX_LPSPI */
 
 #ifdef CONFIG_UART_MCUX_LPUART
 #if defined(CONFIG_SOC_SERIES_IMXRT118X)
@@ -107,6 +120,15 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 	case IMX_CCM_EDMA_LPSR_CLK:
 		clock_root = kCLOCK_Root_Bus_Lpsr;
+		break;
+#endif
+
+#ifdef CONFIG_DMA_MCUX_EDMA_V4
+	case IMX_CCM_EDMA3_CLK:
+		clock_root = kCLOCK_Root_M33;
+		break;
+	case IMX_CCM_EDMA4_CLK:
+		clock_root = kCLOCK_Root_Wakeup_Axi;
 		break;
 #endif
 
@@ -178,10 +200,28 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 		return 0;
 #endif
-#ifdef CONFIG_COUNTER_MCUX_TPM
+#if defined(CONFIG_COUNTER_MCUX_TPM) || defined(CONFIG_PWM_MCUX_TPM)
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_TPM_CLK:
+		switch (instance) {
+		case 0:
+			clock_root = kCLOCK_Root_Bus_Aon;
+			break;
+		case 1:
+			clock_root = kCLOCK_Root_Tpm2;
+			break;
+		case 2:
+			clock_root = kCLOCK_Root_Bus_Wakeup;
+			break;
+		default:
+			clock_root = (kCLOCK_Root_Tpm4 + instance - 3);
+		}
+		break;
+#else
 	case IMX_CCM_TPM_CLK:
 		clock_root = kCLOCK_Root_Tpm1 + instance;
 		break;
+#endif
 #endif
 
 #ifdef CONFIG_MCUX_FLEXIO
@@ -247,7 +287,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	default:
 		return -EINVAL;
 	}
-#ifdef CONFIG_SOC_MIMX9352
+#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
 	*rate = CLOCK_GetIpFreq(clock_root);
 #else
 	*rate = CLOCK_GetRootClockFreq(clock_root);

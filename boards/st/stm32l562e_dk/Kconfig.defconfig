@@ -42,4 +42,14 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 
 endif # BUILD_WITH_TFM
 
+config INPUT
+	default y if LVGL
+
+if INPUT
+
+config INPUT_FT5336_INTERRUPT
+	default y
+
+endif # INPUT
+
 endif # BOARD_STM32L562E_DK

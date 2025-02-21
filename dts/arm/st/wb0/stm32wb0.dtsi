@@ -259,6 +259,22 @@
 			dma-requests= <25>;
 			status = "disabled";
 		};
+
+		/**
+		 * This node is valid for STM32WB05, STM32WB06 and
+		 * STM32WB07, all equipped with the same IRQ-less
+		 * TRNG instance. Since all those properties are
+		 * also valid on STM32SWB09, except "compatible",
+		 * we pretend this node is valid for all SoCs of
+		 * the series and clean up in `stm32wb09.dtsi`.
+		 */
+		rng: rng@48600000 {
+			compatible = "st,stm32-rng-noirq";
+			reg = <0x48600000 DT_SIZE_K(4)>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 18)>;
+			generation-delay-ns = <1250>; /* 1.25us */
+			status = "disabled";
+		};
 	};
 
 	bt_hci_wb0: bt_hci_wb0 {

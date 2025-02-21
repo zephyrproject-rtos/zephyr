@@ -264,38 +264,38 @@ def test_add_instances_short(tmp_path, class_env, all_testsuites_dict, platforms
     platform = plan.get_platform("demo_board_2")
     instance_list = []
     for _, testcase in all_testsuites_dict.items():
-        instance = TestInstance(testcase, platform, class_env.outdir)
+        instance = TestInstance(testcase, platform, 'zephyr', class_env.outdir)
         instance_list.append(instance)
     plan.add_instances(instance_list)
     assert list(plan.instances.keys()) == \
-		   [platform.name + '/' + s for s in list(all_testsuites_dict.keys())]
+		   [platform.name + '/zephyr/' + s for s in list(all_testsuites_dict.keys())]
     assert all(isinstance(n, TestInstance) for n in list(plan.instances.values()))
     assert list(plan.instances.values()) == instance_list
 
 
 QUARANTINE_BASIC = {
-    'demo_board_1/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1' : 'a1 on board_1 and board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1' : 'a1 on board_1 and board_3'
+    'demo_board_1/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1' : 'a1 on board_1 and board_3',
+    'demo_board_3/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1' : 'a1 on board_1 and board_3'
 }
 
 QUARANTINE_WITH_REGEXP = {
-    'demo_board_2/unit_testing/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_2' : 'a2 and c2 on x86',
-    'demo_board_1/unit_testing/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
-    'demo_board_3/unit_testing/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
-    'demo_board_2/unit_testing/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
-    'demo_board_2/unit_testing/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2' : 'a2 and c2 on x86'
+    'demo_board_2/unit_testing/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_2' : 'a2 and c2 on x86',
+    'demo_board_1/unit_testing/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
+    'demo_board_3/unit_testing/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
+    'demo_board_2/unit_testing/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
+    'demo_board_2/unit_testing/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2' : 'a2 and c2 on x86'
 }
 
 QUARANTINE_PLATFORM = {
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_2' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_b/test_b.check_1' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_b/test_b.check_2' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_1' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_e/test_e.check_1' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_config/test_config.main' : 'all on board_3'
+    'demo_board_3/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1' : 'all on board_3',
+    'demo_board_3/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_2' : 'all on board_3',
+    'demo_board_3/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all on board_3',
+    'demo_board_3/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_b/test_b.check_1' : 'all on board_3',
+    'demo_board_3/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_b/test_b.check_2' : 'all on board_3',
+    'demo_board_3/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_1' : 'all on board_3',
+    'demo_board_3/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2' : 'all on board_3',
+    'demo_board_3/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_e/test_e.check_1' : 'all on board_3',
+    'demo_board_3/zephyr/scripts/tests/twister/test_data/testsuites/tests/test_config/test_config.main' : 'all on board_3'
 }
 
 QUARANTINE_MULTIFILES = {
@@ -381,7 +381,6 @@ def test_required_snippets_short(
                             'testsuites', 'tests', testpath)
     testsuite = class_testplan.testsuites.get(testpath)
     plan.platforms = platforms_list
-    print(platforms_list)
     plan.platform_names = [p.name for p in platforms_list]
     plan.testsuites = {testpath: testsuite}
 
@@ -621,21 +620,25 @@ def test_testplan_load(
         {
             "name": "ts1",
             "platform": "t-p1",
+            "toolchain": "zephyr",
             "testcases": []
         },
         {
             "name": "ts1",
             "platform": "t-p2",
+            "toolchain": "zephyr",
             "testcases": []
         },
         {
             "name": "ts2",
             "platform": "t-p3",
+            "toolchain": "zephyr",
             "testcases": []
         },
         {
             "name": "ts2",
             "platform": "t-p4",
+            "toolchain": "zephyr",
             "testcases": []
         }
     ]
@@ -650,21 +653,25 @@ def test_testplan_load(
         {
             "name": "ts1",
             "platform": "ts-p1",
+            "toolchain": "zephyr",
             "testcases": []
         },
         {
             "name": "ts1",
             "platform": "ts-p2",
+            "toolchain": "zephyr",
             "testcases": []
         },
         {
             "name": "ts2",
             "platform": "ts-p3",
+            "toolchain": "zephyr",
             "testcases": []
         },
         {
             "name": "ts2",
             "platform": "ts-p4",
+            "toolchain": "zephyr",
             "testcases": []
         }
     ]
@@ -679,21 +686,25 @@ def test_testplan_load(
         {
             "name": "ts1",
             "platform": "lt-p1",
+            "toolchain": "zephyr",
             "testcases": []
         },
         {
             "name": "ts1",
             "platform": "lt-p2",
+            "toolchain": "zephyr",
             "testcases": []
         },
         {
             "name": "ts2",
             "platform": "lt-p3",
+            "toolchain": "zephyr",
             \"testcases": []
         },
         {
             "name": "ts2",
             "platform": "lt-p4",
+            "toolchain": "zephyr",
             "testcases": []
         }
     ]
@@ -1099,167 +1110,7 @@ def test_testplan_add_configurations(
     expected_platform_names,
     expected_defaults
 ):
-    # tmp_path
-    # └ boards  <- board root
-    #   ├ zephyr
-    #   │ ├ p1
-    #   │ | ├ p1e1.yaml
-    #   │ | └ p1e2.yaml
-    #   │ └ p2
-    #   │   ├ p2.yaml
-    #   │   └ p2-1.yaml <- duplicate
-    #   │   └ p2-2.yaml <- load error
-    #   └ arm
-    #     └ p3
-    #       ├ p3.yaml
-    #       └ p3_B.conf
-    tmp_soc_root_dir = tmp_path / 'soc'
-    tmp_soc_root_dir.mkdir()
-
-    tmp_vend1_dir = tmp_soc_root_dir / 'zephyr'
-    tmp_vend1_dir.mkdir()
-
-    tmp_soc1_dir = tmp_vend1_dir / 's1'
-    tmp_soc1_dir.mkdir()
-
-    soc1_yaml = """\
-family:
-  - name: zephyr
-    series:
-      - name: zephyr_testing
-        socs:
-          - name: unit_testing
-"""
-    soc1_yamlfile = tmp_soc1_dir / 'soc.yml'
-    soc1_yamlfile.write_text(soc1_yaml)
-
-    tmp_board_root_dir = tmp_path / 'boards'
-    tmp_board_root_dir.mkdir()
-
-    tmp_vend1_dir = tmp_board_root_dir / 'zephyr'
-    tmp_vend1_dir.mkdir()
-
-    tmp_p1_dir = tmp_vend1_dir / 'p1'
-    tmp_p1_dir.mkdir()
-
-    p1e1_bs_yaml = """\
-boards:
-
-  - name: p1e1
-    vendor: zephyr
-    socs:
-      - name: unit_testing
-  - name: p1e2
-    vendor: zephyr
-    socs:
-      - name: unit_testing
-"""
-    p1e1_yamlfile = tmp_p1_dir / 'board.yml'
-    p1e1_yamlfile.write_text(p1e1_bs_yaml)
-
-    p1e1_yaml = """\
-identifier: p1e1
-name: Platform 1 Edition 1
-type: native
-arch: x86
-vendor: zephyr
-toolchain:
-  - zephyr
-twister: False
-"""
-    p1e1_yamlfile = tmp_p1_dir / 'p1e1.yaml'
-    p1e1_yamlfile.write_text(p1e1_yaml)
-
-    p1e2_yaml = """\
-identifier: p1e2
-name: Platform 1 Edition 2
-type: native
-arch: x86
-vendor: zephyr
-toolchain:
-  - zephyr
-"""
-    p1e2_yamlfile = tmp_p1_dir / 'p1e2.yaml'
-    p1e2_yamlfile.write_text(p1e2_yaml)
-
-    tmp_p2_dir = tmp_vend1_dir / 'p2'
-    tmp_p2_dir.mkdir()
-
-    p2_bs_yaml = """\
-boards:
-
-  - name: p2
-    vendor: zephyr
-    socs:
-      - name: unit_testing
-  - name: p2_2
-    vendor: zephyr
-    socs:
-      - name: unit_testing
-"""
-    p2_yamlfile = tmp_p2_dir / 'board.yml'
-    p2_yamlfile.write_text(p2_bs_yaml)
-
-    p2_yaml = """\
-identifier: p2/unit_testing
-name: Platform 2
-type: sim
-arch: x86
-vendor: vendor2
-toolchain:
-  - zephyr
-testing:
-  default: True
-"""
-    p2_yamlfile = tmp_p2_dir / 'p2.yaml'
-    p2_yamlfile.write_text(p2_yaml)
-
-
-    p2_2_yaml = """\
-testing:
-  ć#@%!#!#^#@%@:1.0
-identifier: p2_2
-name: Platform 2 2
-type: sim
-arch: x86
-vendor: vendor2
-toolchain:
-  - zephyr
-"""
-    p2_2_yamlfile = tmp_p2_dir / 'p2-2.yaml'
-    p2_2_yamlfile.write_text(p2_2_yaml)
-
-    tmp_vend2_dir = tmp_board_root_dir / 'arm'
-    tmp_vend2_dir.mkdir()
-
-    tmp_p3_dir = tmp_vend2_dir / 'p3'
-    tmp_p3_dir.mkdir()
-
-    p3_bs_yaml = """\
-boards:
-  - name: p3
-    vendor: zephyr
-    socs:
-      - name: unit_testing
-"""
-    p3_yamlfile = tmp_p3_dir / 'board.yml'
-    p3_yamlfile.write_text(p3_bs_yaml)
-
-    p3_yaml = """\
-identifier: p3
-name: Platform 3
-type: unit
-arch: arm
-vendor: vendor3
-toolchain:
-  - zephyr
-testing:
-  default: True
-"""
-    p3_yamlfile = tmp_p3_dir / 'p3.yaml'
-    p3_yamlfile.write_text(p3_yaml)
-
-    env = mock.Mock(board_roots=[tmp_board_root_dir],soc_roots=[tmp_path], arch_roots=[tmp_path])
+    env = mock.Mock(board_roots=[tmp_path / 'boards'], soc_roots=[tmp_path], arch_roots=[tmp_path])
 
     testplan = TestPlan(env=env)
 
@@ -1270,8 +1121,23 @@ testing:
         }
     }
 
+    def mock_gen_plat(board_roots, soc_roots, arch_roots):
+        assert [tmp_path] == board_roots
+        assert [tmp_path] == soc_roots
+        assert [tmp_path] == arch_roots
 
-    testplan.add_configurations()
+        platforms = [
+            mock.Mock(aliases=['p1e1/unit_testing', 'p1e1'], twister=False, default=False),
+            mock.Mock(aliases=['p1e2/unit_testing', 'p1e2'], twister=True, default=False),
+            mock.Mock(aliases=['p2/unit_testing', 'p2'], twister=True, default=True),
+            mock.Mock(aliases=['p3/unit_testing', 'p3'], twister=True, default=True),
+        ]
+        for platform in platforms:
+            type(platform).name = mock.PropertyMock(return_value=platform.aliases[0])
+            yield platform
+
+    with mock.patch('twisterlib.testplan.generate_platforms', mock_gen_plat):
+        testplan.add_configurations()
 
     if expected_defaults is not None:
         print(expected_defaults)
@@ -1509,20 +1375,25 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     ts1tc1.name = 'TS1.tc1'
     ts1 = mock.Mock(testcases=[ts1tc1])
     ts1.name = 'TestSuite 1'
+    ts1.toolchain = 'zephyr'
     ts2 = mock.Mock(testcases=[])
     ts2.name = 'TestSuite 2'
+    ts2.toolchain = 'zephyr'
     ts3tc1 = mock.Mock()
     ts3tc1.name = 'TS3.tc1'
     ts3tc2 = mock.Mock()
     ts3tc2.name = 'TS3.tc2'
     ts3 = mock.Mock(testcases=[ts3tc1, ts3tc2])
     ts3.name = 'TestSuite 3'
+    ts3.toolchain = 'zephyr'
     ts4tc1 = mock.Mock()
     ts4tc1.name = 'TS4.tc1'
     ts4 = mock.Mock(testcases=[ts4tc1])
     ts4.name = 'TestSuite 4'
+    ts4.toolchain = 'zephyr'
     ts5 = mock.Mock(testcases=[])
     ts5.name = 'TestSuite 5'
+    ts5.toolchain = 'zephyr'
 
     testplan = TestPlan(env=mock.Mock(outdir=os.path.join('out', 'dir')))
     testplan.options = mock.Mock(device_testing=device_testing, test_only=True, report_summary=None)
@@ -1549,6 +1420,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
             "used_rom": 1024,
             "available_rom": 1047552,
             "status": "passed",
+            "toolchain": "zephyr",
             "reason": "OK",
             "testcases": [
                 {
@@ -1562,7 +1434,8 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
         },
         {
             "name": "TestSuite 2",
-            "platform": "Platform 1"
+            "platform": "Platform 1",
+            "toolchain": "zephyr"
         },
         {
             "name": "TestSuite 3",
@@ -1574,6 +1447,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
             "used_rom": 1024,
             "available_rom": 1047552,
             "status": "error",
+            "toolchain": "zephyr",
             "reason": "File Not Found Error",
             "testcases": [
                 {
@@ -1597,6 +1471,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
             "used_rom": 1024,
             "available_rom": 1047552,
             "status": "skipped",
+            "toolchain": "zephyr",
             "reason": "Not in requested test list.",
             "testcases": [
                 {
@@ -1613,7 +1488,8 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
         },
         {
             "name": "TestSuite 5",
-            "platform": "Platform 2"
+            "platform": "Platform 2",
+            "toolchain": "zephyr"
         }
     ]
 }
@@ -1629,7 +1505,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
         testplan.load_from_file('dummy.yaml', filter_platform)
 
     expected_instances = {
-        'Platform 1/TestSuite 1': {
+        'Platform 1/zephyr/TestSuite 1': {
             'metrics': {
                 'handler_time': 60.0,
                 'used_ram': 4096,
@@ -1638,6 +1514,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                 'available_rom': 1047552
             },
             'retries': 0,
+            'toolchain': 'zephyr',
             'testcases': {
                 'TS1.tc1': {
                     'status': TwisterStatus.PASS,
@@ -1647,7 +1524,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                 }
             }
         },
-        'Platform 1/TestSuite 2': {
+        'Platform 1/zephyr/TestSuite 2': {
             'metrics': {
                 'handler_time': 0,
                 'used_ram': 0,
@@ -1656,9 +1533,10 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                 'available_rom': 0
             },
             'retries': 0,
+            'toolchain': 'zephyr',
             'testcases': []
         },
-        'Platform 1/TestSuite 3': {
+        'Platform 1/zephyr/TestSuite 3': {
             'metrics': {
                 'handler_time': 360.0,
                 'used_ram': 4096,
@@ -1667,6 +1545,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                 'available_rom': 1047552
             },
             'retries': 1,
+            'toolchain': 'zephyr',
             'testcases': {
                     'TS3.tc1': {
                         'status': TwisterStatus.ERROR,
@@ -1682,7 +1561,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                     }
             }
         },
-        'Platform 1/TestSuite 4': {
+        'Platform 1/zephyr/TestSuite 4': {
             'metrics': {
                 'handler_time': 360.0,
                 'used_ram': 4096,
@@ -1691,6 +1570,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                 'available_rom': 1047552
             },
             'retries': 0,
+            'toolchain': 'zephyr',
             'testcases': {
                 'TS4.tc1': {
                     'status': TwisterStatus.SKIP,

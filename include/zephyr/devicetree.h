@@ -243,6 +243,16 @@
 #define DT_HAS_ALIAS(alias_name) DT_NODE_EXISTS(DT_ALIAS(alias_name))
 
 /**
+ * @brief Get the hash associated with a DT node
+ *
+ * Get the hash for the specified node_id. The hash is calculated on the
+ * full devicetree path of the node.
+ * @param node_id node identifier
+ * @return hash value as a preprocessor token
+ */
+#define DT_NODE_HASH(node_id) DT_CAT(node_id, _HASH)
+
+/**
  * @brief Get a node identifier for an instance of a compatible
  *
  * All nodes with a particular compatible property value are assigned
@@ -897,6 +907,17 @@
  */
 #define DT_PROP_BY_IDX(node_id, prop, idx) \
 	DT_CAT5(node_id, _P_, prop, _IDX_, idx)
+
+/**
+ * @brief Get the last element of an array type property
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ *
+ * @return a representation of the last element of the property
+ */
+#define DT_PROP_LAST(node_id, prop) \
+	DT_PROP_BY_IDX(node_id, prop, UTIL_DEC(DT_PROP_LEN(node_id, prop)))
 
 /**
  * @brief Like DT_PROP(), but with a fallback to @p default_value
@@ -2908,6 +2929,36 @@
  * @defgroup devicetree-generic-foreach "For-each" macros
  * @ingroup devicetree
  * @{
+ *
+ * IMPORTANT: you can't use the DT for-each macros in their own expansions.
+ *
+ * For example, something like this won't work the way you might expect:
+ *
+ * @code{.c}
+ * #define FOO(node_id) [...] DT_FOREACH_NODE(...) [...]
+ * DT_FOREACH_NODE(FOO)
+ * @endcode
+ *
+ * In this example, the C preprocessor won't expand the
+ * DT_FOREACH_NODE() macro inside of FOO() while it's already
+ * expanding DT_FOREACH_NODE() at the top level of the file.
+ *
+ * This is true of any macro, not just DT_FOREACH_NODE(). The C
+ * language works this way to avoid infinite recursions inside of
+ * macro expansions.
+ *
+ * If you need to "nest" calls to one of these macros, you can work
+ * around this preprocessor limitation by using a different, related
+ * macro instead, like this:
+ *
+ * @code{.c}
+ * #define BAR(node_id) [...] DT_FOREACH_NODE_VARGS(...) [...]
+ * DT_FOREACH_NODE(BAR)
+ * @endcode
+ *
+ * Here, we use DT_FOREACH_NODE_VARGS() "inside" BAR() "inside"
+ * DT_FOREACH_NODE(). Because of this, the preprocessor will expand
+ * both DT_FOREACH_NODE_VARGS() and DT_FOREACH_NODE() as expected.
  */
 
 /**
@@ -2963,6 +3014,55 @@
  * @param ... variable number of arguments to pass to @p fn
  */
 #define DT_FOREACH_STATUS_OKAY_NODE_VARGS(fn, ...) DT_FOREACH_OKAY_VARGS_HELPER(fn, __VA_ARGS__)
+
+/**
+ * @brief Invokes @p fn for each ancestor of @p node_id
+ *
+ * The macro @p fn must take one parameter, which will be the identifier
+ * of a child node of @p node_id to enable traversal of all ancestor nodes.
+ *
+ * The ancestor will be iterated over in the same order as they
+ * appear in the final devicetree.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n: node1 {
+ *             foobar = "foo1";
+ *
+ *             n_2: node2 {
+ *                        foobar = "foo2";
+ *
+ *                        n_3: node3 {
+ *                                   foobar = "foo3";
+ *                        };
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define GET_PROP(n) DT_PROP(n, foobar),
+ *
+ *     const char *ancestor_names[] = {
+ *         DT_FOREACH_ANCESTOR(DT_NODELABEL(n_3), GET_PROP)
+ *     };
+ * @endcode
+ *
+ * This expands to:
+ *
+ * @code{.c}
+ *     const char *ancestor_names[] = {
+ *         "foo2", "foo1",
+ *     };
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ */
+#define DT_FOREACH_ANCESTOR(node_id, fn) \
+	DT_CAT(node_id, _FOREACH_ANCESTOR)(fn)
 
 /**
  * @brief Invokes @p fn for each child of @p node_id
@@ -4605,7 +4705,7 @@
 #define DT_INST_STRING_UNQUOTED_OR(inst, name, default_value) \
 	DT_STRING_UNQUOTED_OR(DT_DRV_INST(inst), name, default_value)
 
-/*
+/**
  * @brief Test if any enabled node with the given compatible is on
  *        the given bus type
  *
@@ -5242,5 +5342,6 @@
 #include <zephyr/devicetree/can.h>
 #include <zephyr/devicetree/reset.h>
 #include <zephyr/devicetree/mbox.h>
+#include <zephyr/devicetree/port-endpoint.h>
 
 #endif /* ZEPHYR_INCLUDE_DEVICETREE_H_ */

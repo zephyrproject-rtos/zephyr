@@ -1,0 +1,11 @@
+family:
+- name: rpi_pico
+  series:
+  - name: rp2040
+    socs:
+    - name: rp2040
+  - name: rp2350
+    socs:
+    - name: rp2350a
+      cpuclusters:
+      - name: m33

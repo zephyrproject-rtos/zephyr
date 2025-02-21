@@ -7,12 +7,12 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - counter
   - gpio
   - nvs
   - uart
+  - dma
   - watchdog
 testing:
   ignore_tags:

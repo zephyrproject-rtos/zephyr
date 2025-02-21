@@ -57,9 +57,6 @@
 		};
 	};
 
-	clocks_default: clocks_default {
-	};
-
 	ws2812_pio0_default: ws2812_pio0_default {
 		ws2812 {
 			pinmux = <PIO0_P12>;

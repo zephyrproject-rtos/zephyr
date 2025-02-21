@@ -54,5 +54,6 @@ source "drivers/charger/Kconfig.sbs_charger"
 source "drivers/charger/Kconfig.bq24190"
 source "drivers/charger/Kconfig.bq25180"
 source "drivers/charger/Kconfig.max20335"
+source "drivers/charger/Kconfig.pf1550"
 
 endif # CHARGER

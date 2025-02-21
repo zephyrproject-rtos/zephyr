@@ -183,7 +183,7 @@ static void SOC_CacheInit(void)
 }
 
 /* Initialize clock. */
-static void SOC_ClockInit(void)
+void __weak SOC_ClockInit(void)
 {
 	/* OSC/PLL is already initialized by Cortex-A9 core */
 

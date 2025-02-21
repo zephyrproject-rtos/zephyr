@@ -5,7 +5,4 @@
 
 if BOARD_PARTICLE_ARGON
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_PARTICLE_ARGON

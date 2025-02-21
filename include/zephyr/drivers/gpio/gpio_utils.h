@@ -16,6 +16,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/tracing/tracing.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,10 +93,14 @@ static inline void gpio_fire_callbacks(sys_slist_t *list,
 {
 	struct gpio_callback *cb, *tmp;
 
+	sys_port_trace_gpio_fire_callbacks_enter(list, port, pins);
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, cb, tmp, node) {
 		if (cb->pin_mask & pins) {
 			__ASSERT(cb->handler, "No callback handler!");
+
 			cb->handler(port, cb, cb->pin_mask & pins);
+			sys_port_trace_gpio_fire_callback(port, cb);
 		}
 	}
 }

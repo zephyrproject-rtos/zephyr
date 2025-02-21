@@ -10,16 +10,17 @@ flash: 1024
 toolchain:
   - zephyr
 supported:
-  - gpio
-  - uart
-  - can
-  - i2c
   - adc
-  - spi
-  - watchdog
+  - can
+  - counter
+  - display
+  - dma
+  - flash
+  - gpio
+  - i2c
   - netif:eth
   - pwm
-  - dma
-  - display
-  - counter
+  - spi
+  - uart
+  - watchdog
 vendor: nxp

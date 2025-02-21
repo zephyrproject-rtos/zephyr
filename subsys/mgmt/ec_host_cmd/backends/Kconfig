@@ -120,3 +120,15 @@ config EC_HOST_CMD_BACKEND_SPI_STM32
 endchoice
 
 endif # EC_HOST_CMD_BACKEND_SPI
+
+if EC_HOST_CMD_BACKEND_UART
+
+config EC_HOST_CMD_BACKEND_UART_TIMEOUT
+	int "Timeout waiting for a rest of a message in ms"
+	default 150
+	help
+	  Host can send a message in chunks. Use this config to say how much time in ms
+	  UART backend should wait for the rest of a message after receiving first
+	  chunk.
+
+endif # EC_HOST_CMD_BACKEND_UART

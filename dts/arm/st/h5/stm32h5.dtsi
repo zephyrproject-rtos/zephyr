@@ -39,6 +39,15 @@
 				reg = <0xe000ed90 0x40>;
 			};
 		};
+
+		power-states {
+			stop: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <20>;
+			};
+		};
 	};
 
 	clocks {
@@ -135,15 +144,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 28U)>;
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
-		};
-
-		power-states {
-			stop: state0 {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				substate-id = <1>;
-				min-residency-us = <20>;
-			};
 		};
 
 		rcc: rcc@44020c00 {
@@ -319,7 +319,8 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		rtc: rtc@44007800 {
@@ -454,6 +455,32 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 22U)>;
 			interrupts = <53 0>, <54 0>;
 			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i3c1: i3c@40005c00 {
+			compatible = "st,stm32-i3c";
+			reg = <0x40005c00 0x400>;
+			interrupts = <123 0>, <124 0>;
+			interrupt-names = "event", "error";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 23U)>;
+			resets = <&rctl STM32_RESET(APB1L, 23U)>;
+			zephyr,pm-device-runtime-auto;
+			status = "disabled";
+		};
+
+		i3c2: i3c@44003000 {
+			compatible = "st,stm32-i3c";
+			reg = <0x44003000 0x400>;
+			interrupts = <131 0>, <132 0>;
+			interrupt-names = "event", "error";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB3, 9U)>;
+			resets = <&rctl STM32_RESET(APB3, 9U)>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 

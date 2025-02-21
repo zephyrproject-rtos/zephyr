@@ -31,10 +31,18 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
-uintptr_t xtensa_syscall_helper(uintptr_t arg1, uintptr_t arg2,
-				uintptr_t arg3, uintptr_t arg4,
-				uintptr_t arg5, uintptr_t arg6,
-				uintptr_t call_id);
+uintptr_t xtensa_syscall_helper_args_6(uintptr_t arg1, uintptr_t arg2,
+				       uintptr_t arg3, uintptr_t arg4,
+				       uintptr_t arg5, uintptr_t arg6,
+				       uintptr_t call_id);
+
+uintptr_t xtensa_syscall_helper_args_5(uintptr_t arg1, uintptr_t arg2,
+				       uintptr_t arg3, uintptr_t arg4,
+				       uintptr_t arg5, uintptr_t call_id);
+
+uintptr_t xtensa_syscall_helper_args_4(uintptr_t arg1, uintptr_t arg2,
+				       uintptr_t arg3, uintptr_t arg4,
+				       uintptr_t call_id);
 
 #define SYSINL ALWAYS_INLINE
 #else
@@ -50,13 +58,14 @@ uintptr_t xtensa_syscall_helper(uintptr_t arg1, uintptr_t arg2,
  *
  **/
 
+
 static SYSINL uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg3, uintptr_t arg4,
 					     uintptr_t arg5, uintptr_t arg6,
 					     uintptr_t call_id)
 {
 #ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
-	return xtensa_syscall_helper(arg1, arg2, arg3, arg4, arg5, arg6, call_id);
+	return xtensa_syscall_helper_args_6(arg1, arg2, arg3, arg4, arg5, arg6, call_id);
 #else
 	register uintptr_t a2 __asm__("%a2") = call_id;
 	register uintptr_t a6 __asm__("%a6") = arg1;
@@ -77,11 +86,11 @@ static SYSINL uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 }
 
 static SYSINL uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
-					uintptr_t arg3, uintptr_t arg4,
-					uintptr_t arg5, uintptr_t call_id)
+					     uintptr_t arg3, uintptr_t arg4,
+					     uintptr_t arg5, uintptr_t call_id)
 {
 #ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
-	return xtensa_syscall_helper(arg1, arg2, arg3, arg4, arg5, 0, call_id);
+	return xtensa_syscall_helper_args_5(arg1, arg2, arg3, arg4, arg5, call_id);
 #else
 	register uintptr_t a2 __asm__("%a2") = call_id;
 	register uintptr_t a6 __asm__("%a6") = arg1;
@@ -101,11 +110,11 @@ static SYSINL uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 }
 
 static SYSINL uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
-					uintptr_t arg3, uintptr_t arg4,
-					uintptr_t call_id)
+					     uintptr_t arg3, uintptr_t arg4,
+					     uintptr_t call_id)
 {
 #ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
-	return xtensa_syscall_helper(arg1, arg2, arg3, arg4, 0, 0, call_id);
+	return xtensa_syscall_helper_args_4(arg1, arg2, arg3, arg4, call_id);
 #else
 	register uintptr_t a2 __asm__("%a2") = call_id;
 	register uintptr_t a6 __asm__("%a6") = arg1;
@@ -123,12 +132,9 @@ static SYSINL uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 #endif /* CONFIG_XTENSA_SYSCALL_USE_HELPER */
 }
 
-static SYSINL uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
-					uintptr_t arg3, uintptr_t call_id)
+static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t arg3, uintptr_t call_id)
 {
-#ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
-	return xtensa_syscall_helper(arg1, arg2, arg3, 0, 0, 0, call_id);
-#else
 	register uintptr_t a2 __asm__("%a2") = call_id;
 	register uintptr_t a6 __asm__("%a6") = arg1;
 	register uintptr_t a3 __asm__("%a3") = arg2;
@@ -140,15 +146,11 @@ static SYSINL uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 			 : "memory");
 
 	return a2;
-#endif /* CONFIG_XTENSA_SYSCALL_USE_HELPER */
 }
 
-static SYSINL uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
-					uintptr_t call_id)
+static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
+					     uintptr_t call_id)
 {
-#ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
-	return xtensa_syscall_helper(arg1, arg2, 0, 0, 0, 0, call_id);
-#else
 	register uintptr_t a2 __asm__("%a2") = call_id;
 	register uintptr_t a6 __asm__("%a6") = arg1;
 	register uintptr_t a3 __asm__("%a3") = arg2;
@@ -159,15 +161,10 @@ static SYSINL uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 			 : "memory");
 
 	return a2;
-#endif
 }
 
-static SYSINL uintptr_t arch_syscall_invoke1(uintptr_t arg1,
-					uintptr_t call_id)
+static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1, uintptr_t call_id)
 {
-#ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
-	return xtensa_syscall_helper(arg1, 0, 0, 0, 0, 0, call_id);
-#else
 	register uintptr_t a2 __asm__("%a2") = call_id;
 	register uintptr_t a6 __asm__("%a6") = arg1;
 
@@ -177,14 +174,10 @@ static SYSINL uintptr_t arch_syscall_invoke1(uintptr_t arg1,
 			 : "memory");
 
 	return a2;
-#endif
 }
 
-static SYSINL uintptr_t arch_syscall_invoke0(uintptr_t call_id)
+static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 {
-#ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
-	return xtensa_syscall_helper(0, 0, 0, 0, 0, 0, call_id);
-#else
 	register uintptr_t a2 __asm__("%a2") = call_id;
 
 	__asm__ volatile("syscall\n\t"
@@ -193,7 +186,6 @@ static SYSINL uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 			 : "memory");
 
 	return a2;
-#endif
 }
 
 /*

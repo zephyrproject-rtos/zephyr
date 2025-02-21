@@ -116,7 +116,6 @@ static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
-			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
 			udc_ep_set_busy(dev, ep, true);
 		}
@@ -245,7 +244,6 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
-			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
 			udc_ep_set_busy(dev, ep, true);
 		}
@@ -913,14 +911,14 @@ static int udc_nrf_driver_init(const struct device *dev)
 	return 0;
 }
 
-static int udc_nrf_lock(const struct device *dev)
+static void udc_nrf_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int udc_nrf_unlock(const struct device *dev)
+static void udc_nrf_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 static const struct udc_nrf_config udc_nrf_cfg = {

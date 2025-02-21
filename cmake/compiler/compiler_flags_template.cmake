@@ -92,6 +92,9 @@ set_compiler_property(PROPERTY coverage)
 
 # Security canaries flags.
 set_compiler_property(PROPERTY security_canaries)
+set_compiler_property(PROPERTY security_canaries_strong)
+set_compiler_property(PROPERTY security_canaries_all)
+set_compiler_property(PROPERTY security_canaries_explicit)
 
 set_compiler_property(PROPERTY security_fortify_compile_time)
 set_compiler_property(PROPERTY security_fortify_run_time)
@@ -122,6 +125,9 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics)
 # Required ASM flags when compiling
 set_property(TARGET asm PROPERTY required)
 
+# GCC compiler flags for imacros. The specific header must be appended by user.
+set_property(TARGET asm PROPERTY imacros)
+
 # Compiler flag for disabling pointer arithmetic warnings
 set_compiler_property(PROPERTY warning_no_pointer_arithmetic)
 
@@ -143,3 +149,11 @@ set_compiler_property(PROPERTY no_builtin_malloc)
 # Compiler flag for defining specs. Used only by gcc, other compilers may keep
 # this undefined.
 set_compiler_property(PROPERTY specs)
+
+# Compiler flag for defining preinclude files.
+set_compiler_property(PROPERTY include_file)
+
+# Compiler flag for trustzone
+set_compiler_property(PROPERTY cmse)
+
+set_property(TARGET asm PROPERTY cmse)

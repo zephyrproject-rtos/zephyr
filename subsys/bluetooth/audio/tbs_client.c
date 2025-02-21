@@ -19,7 +19,6 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
-#include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -856,9 +855,13 @@ static bool can_add_string_to_net_buf(const struct net_buf_simple *buf, size_t l
 	return buf->len + len + sizeof('\0') <= buf->size;
 }
 
-/* Common function to read tbs_client strings which may require long reads */
-static uint8_t handle_string_long_read(struct bt_tbs_instance *inst, uint8_t err, const void *data,
-				       uint16_t offset, uint16_t length, bool truncatable)
+/**
+ * Common function to read tbs_client strings which may require long reads
+ *
+ * @return BT_GATT_ITER_CONTINUE, BT_GATT_ITER_STOP or a negative value if there's an error
+ */
+static int handle_string_long_read(struct bt_tbs_instance *inst, uint8_t err, const void *data,
+				   uint16_t offset, uint16_t length, bool truncatable)
 {
 	if (err != 0) {
 		LOG_DBG("err: %u", err);
@@ -890,7 +893,9 @@ static uint8_t handle_string_long_read(struct bt_tbs_instance *inst, uint8_t err
 
 			return BT_GATT_ITER_CONTINUE;
 		}
-	}
+	} /* else we are done reading and since the buffer is always 0-initialized, it will have the
+	   *  NULL terminator automatically
+	   */
 
 	return BT_GATT_ITER_STOP;
 }

@@ -545,6 +545,7 @@ ZTEST_F(zms, test_delete)
 	ate_wra = fixture->fs.ate_wra;
 	data_wra = fixture->fs.data_wra;
 
+#ifdef CONFIG_ZMS_NO_DOUBLE_WRITE
 	/* delete already deleted entry */
 	err = zms_delete(&fixture->fs, 1);
 	zassert_true(err == 0, "zms_delete call failure: %d", err);
@@ -558,6 +559,7 @@ ZTEST_F(zms, test_delete)
 	zassert_true(ate_wra == fixture->fs.ate_wra && data_wra == fixture->fs.data_wra,
 		     "delete nonexistent entry should not make"
 		     " any footprint in the storage");
+#endif
 }
 
 /*

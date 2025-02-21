@@ -251,7 +251,7 @@ static DEVICE_API(spi, spi_litex_api) = {
 		.data_width = DT_INST_PROP(n, data_width),                                         \
 		.max_cs = DT_INST_PROP(n, max_cs),                                                 \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n,                                                                   \
+	SPI_DEVICE_DT_INST_DEFINE(n,                                                               \
 			NULL,                                                                      \
 			NULL,                                                                      \
 			&spi_litex_data_##n,                                                       \

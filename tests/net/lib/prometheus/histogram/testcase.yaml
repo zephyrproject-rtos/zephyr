@@ -1,6 +1,6 @@
 tests:
   # section.subsection
-  prometheus.histogram:
+  net.prometheus.histogram:
     depends_on: netif
     integration_platforms:
       - native_sim

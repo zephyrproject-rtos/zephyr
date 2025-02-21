@@ -12,8 +12,4 @@ supported:
   - nvs
   - counter
   - entropy
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: kincony

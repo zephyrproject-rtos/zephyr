@@ -531,4 +531,15 @@ int jesd216_bfp_decode_dw16(const struct jesd216_param_header *php,
 			    const struct jesd216_bfp *bfp,
 			    struct jesd216_bfp_dw16 *res);
 
+/* JESD216D-01 section 6.6: 4-Byte Address Instruction Parameter */
+#define JESD216_SFDP_4B_ADDR_DW1_1S_1S_1S_READ_13_SUP      BIT(0)
+#define JESD216_SFDP_4B_ADDR_DW1_1S_1S_1S_FAST_READ_0C_SUP BIT(1)
+#define JESD216_SFDP_4B_ADDR_DW1_1S_1S_2_FAST_READ_3C_SUP  BIT(2)
+#define JESD216_SFDP_4B_ADDR_DW1_1S_2S_2S_FAST_READ_BC_SUP BIT(3)
+#define JESD216_SFDP_4B_ADDR_DW1_1S_1S_4S_FAST_READ_6C_SUP BIT(4)
+#define JESD216_SFDP_4B_ADDR_DW1_1S_4S_4_FAST_READ_EC_SUP  BIT(5)
+#define JESD216_SFDP_4B_ADDR_DW1_1S_1S_1S_PP_12_SUP        BIT(6)
+#define JESD216_SFDP_4B_ADDR_DW1_1S_1S_4S_PP_34_SUP        BIT(7)
+#define JESD216_SFDP_4B_ADDR_DW1_1S_4S_4S_PP_3E_SUP        BIT(8)
+
 #endif /* ZEPHYR_DRIVERS_FLASH_JESD216_H_ */

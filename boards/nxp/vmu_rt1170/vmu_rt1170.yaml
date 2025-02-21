@@ -11,14 +11,14 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 256
 flash: 65536
 supported:
   - adc
-  - counter
   - can
+  - counter
   - dma
+  - flash
   - gpio
   - hwinfo
   - i2c

@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: we_oceanus1ev@1.1.0
+name: Oceanus-I EV (rev 1.1)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - counter
+  - gpio
+  - i2c
+  - nvs
+  - spi
+  - uart
+  - watchdog
+  - lora
+vendor: we

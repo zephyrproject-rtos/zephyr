@@ -22,18 +22,6 @@ config FILE_SYSTEM
 
 if FILE_SYSTEM
 
-module = FS
-module-str = fs
-source "subsys/logging/Kconfig.template.log_config"
-
-config APP_LINK_WITH_FS
-	bool "Link 'app' with FS"
-	default y
-	help
-	  Add FS header files to the 'app' include path. It may be
-	  disabled if the include paths for FS are causing aliasing
-	  issues for 'app'.
-
 config FILE_SYSTEM_MAX_TYPES
 	int "Maximum number of distinct file system types allowed"
 	default 2
@@ -65,12 +53,20 @@ config FILE_SYSTEM_INIT_PRIORITY
 config FILE_SYSTEM_SHELL
 	bool "File system shell"
 	depends on SHELL
-	depends on HEAP_MEM_POOL_SIZE > 0
 	help
 	  This shell provides basic browsing of the contents of the
 	  file system.
 
 if FILE_SYSTEM_SHELL
+
+config FILE_SYSTEM_SHELL_MOUNT_COMMAND
+	bool "File system shell mount command"
+	depends on FAT_FILESYSTEM_ELM || FILE_SYSTEM_LITTLEFS
+	depends on HEAP_MEM_POOL_SIZE > 0
+	default y
+	help
+	  Enable file system shell command for mounting file systems. This
+	  requires the heap to be present.
 
 config FILE_SYSTEM_SHELL_TEST_COMMANDS
 	bool "File system shell read/write/erase test commands"
@@ -102,11 +98,28 @@ config FUSE_FS_ACCESS
 	help
 	  Expose file system partitions to the host system through FUSE.
 
+endif # FILE_SYSTEM
+
+if FILE_SYSTEM_LIB_LINK
+
+config APP_LINK_WITH_FS
+	bool "Link 'app' with FS"
+	default y
+	help
+	  Add FS header files to the 'app' include path. It may be
+	  disabled if the include paths for FS are causing aliasing
+	  issues for 'app'.
+
+# Logging defined here as modules/fs/littlefs/lfs.c expects CONFIG_FS_LOG_LEVEL
+module = FS
+module-str = fs
+source "subsys/logging/Kconfig.template.log_config"
+
 rsource "Kconfig.fatfs"
 rsource "Kconfig.littlefs"
 rsource "ext2/Kconfig"
 
-endif # FILE_SYSTEM
+endif # FILE_SYSTEM_LIB_LINK
 
 rsource "fcb/Kconfig"
 rsource "nvs/Kconfig"

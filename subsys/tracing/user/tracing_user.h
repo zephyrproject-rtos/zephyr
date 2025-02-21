@@ -7,6 +7,7 @@
 
 #ifndef _TRACE_USER_H
 #define _TRACE_USER_H
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 
@@ -47,6 +48,54 @@ void sys_trace_isr_exit(void);
 void sys_trace_idle(void);
 void sys_trace_sys_init_enter(const struct init_entry *entry, int level);
 void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result);
+
+struct gpio_callback;
+typedef uint8_t gpio_pin_t;
+typedef uint32_t gpio_flags_t;
+typedef uint32_t gpio_port_pins_t;
+typedef uint32_t gpio_port_value_t;
+typedef void (*gpio_callback_handler_t)(const struct device *port, struct gpio_callback *cb,
+					gpio_port_pins_t pins);
+void sys_trace_gpio_pin_interrupt_configure_enter_user(const struct device *port, gpio_pin_t pin,
+						       gpio_flags_t flags);
+void sys_trace_gpio_pin_interrupt_configure_exit_user(const struct device *port, gpio_pin_t pin,
+						      int ret);
+void sys_trace_gpio_pin_configure_enter_user(const struct device *port, gpio_pin_t pin,
+					     gpio_flags_t flags);
+void sys_trace_gpio_pin_configure_exit_user(const struct device *port, gpio_pin_t pin, int ret);
+void sys_trace_gpio_port_get_direction_enter_user(const struct device *port, gpio_port_pins_t map,
+						  gpio_port_pins_t inputs,
+						  gpio_port_pins_t outputs);
+void sys_trace_gpio_port_get_direction_exit_user(const struct device *port, int ret);
+void sys_trace_gpio_pin_get_config_enter_user(const struct device *port, gpio_pin_t pin, int ret);
+void sys_trace_gpio_pin_get_config_exit_user(const struct device *port, gpio_pin_t pin, int ret);
+void sys_trace_gpio_port_get_raw_enter_user(const struct device *port, gpio_port_value_t *value);
+void sys_trace_gpio_port_get_raw_exit_user(const struct device *port, int ret);
+void sys_trace_gpio_port_set_masked_raw_enter_user(const struct device *port, gpio_port_pins_t mask,
+						   gpio_port_value_t value);
+void sys_trace_gpio_port_set_masked_raw_exit_user(const struct device *port, int ret);
+void sys_trace_gpio_port_set_bits_raw_enter_user(const struct device *port, gpio_port_pins_t pins);
+void sys_trace_gpio_port_set_bits_raw_exit_user(const struct device *port, int ret);
+void sys_trace_gpio_port_clear_bits_raw_enter_user(const struct device *port,
+						   gpio_port_pins_t pins);
+void sys_trace_gpio_port_clear_bits_raw_exit_user(const struct device *port, int ret);
+void sys_trace_gpio_port_toggle_bits_enter_user(const struct device *port, gpio_port_pins_t pins);
+void sys_trace_gpio_port_toggle_bits_exit_user(const struct device *port, int ret);
+void sys_trace_gpio_init_callback_enter_user(struct gpio_callback *callback,
+					     gpio_callback_handler_t handler,
+					     gpio_port_pins_t pin_mask);
+void sys_trace_gpio_init_callback_exit_user(struct gpio_callback *callback);
+void sys_trace_gpio_add_callback_enter_user(const struct device *port,
+					    struct gpio_callback *callback);
+void sys_trace_gpio_add_callback_exit_user(const struct device *port, int ret);
+void sys_trace_gpio_remove_callback_enter_user(const struct device *port,
+					       struct gpio_callback *callback);
+void sys_trace_gpio_remove_callback_exit_user(const struct device *port, int ret);
+void sys_trace_gpio_get_pending_int_enter_user(const struct device *dev);
+void sys_trace_gpio_get_pending_int_exit_user(const struct device *dev, int ret);
+void sys_trace_gpio_fire_callbacks_enter_user(sys_slist_t *list, const struct device *port,
+					      gpio_pin_t pins);
+void sys_trace_gpio_fire_callback_user(const struct device *port, struct gpio_callback *callback);
 
 #define sys_port_trace_k_thread_foreach_enter()
 #define sys_port_trace_k_thread_foreach_exit()
@@ -106,6 +155,9 @@ void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int resu
 #define sys_port_trace_k_work_queue_init(queue)
 #define sys_port_trace_k_work_queue_start_enter(queue)
 #define sys_port_trace_k_work_queue_start_exit(queue)
+#define sys_port_trace_k_work_queue_stop_enter(queue, timeout)
+#define sys_port_trace_k_work_queue_stop_blocking(queue, timeout)
+#define sys_port_trace_k_work_queue_stop_exit(queue, timeout, ret)
 #define sys_port_trace_k_work_queue_drain_enter(queue)
 #define sys_port_trace_k_work_queue_drain_exit(queue, ret)
 #define sys_port_trace_k_work_queue_unplug_enter(queue)
@@ -270,7 +322,18 @@ void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int resu
 #define sys_port_trace_k_mbox_get_exit(mbox, timeout, ret)
 #define sys_port_trace_k_mbox_data_get(rx_msg)
 
-#define sys_port_trace_k_pipe_init(pipe)
+#define sys_port_trace_k_pipe_init(pipe, buffer, size)
+#define sys_port_trace_k_pipe_reset_enter(pipe)
+#define sys_port_trace_k_pipe_reset_exit(pipe)
+#define sys_port_trace_k_pipe_close_enter(pipe)
+#define sys_port_trace_k_pipe_close_exit(pipe)
+#define sys_port_trace_k_pipe_write_enter(pipe, data, len, timeout)
+#define sys_port_trace_k_pipe_write_blocking(pipe, timeout)
+#define sys_port_trace_k_pipe_write_exit(pipe, ret)
+#define sys_port_trace_k_pipe_read_enter(pipe, data, len, timeout)
+#define sys_port_trace_k_pipe_read_blocking(pipe, timeout)
+#define sys_port_trace_k_pipe_read_exit(pipe, ret)
+
 #define sys_port_trace_k_pipe_cleanup_enter(pipe)
 #define sys_port_trace_k_pipe_cleanup_exit(pipe, ret)
 #define sys_port_trace_k_pipe_alloc_init_enter(pipe)
@@ -292,6 +355,8 @@ void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int resu
 #define sys_port_trace_k_heap_aligned_alloc_exit(heap, timeout, ret)
 #define sys_port_trace_k_heap_alloc_enter(heap, timeout)
 #define sys_port_trace_k_heap_alloc_exit(heap, timeout, ret)
+#define sys_port_trace_k_heap_calloc_enter(heap, timeout)
+#define sys_port_trace_k_heap_calloc_exit(heap, timeout, ret)
 #define sys_port_trace_k_heap_free(heap)
 #define sys_port_trace_k_heap_realloc_enter(h, ptr, bytes, timeout)
 #define sys_port_trace_k_heap_realloc_exit(h, ptr, bytes, timeout, ret)
@@ -391,6 +456,63 @@ void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int resu
 #define sys_port_trace_net_tx_time(pkt, end_time)
 
 #define sys_trace_named_event(name, arg0, arg1)
+
+#define sys_port_trace_gpio_pin_interrupt_configure_enter(port, pin, flags) \
+	sys_trace_gpio_pin_interrupt_configure_enter_user(port, pin, flags)
+#define sys_port_trace_gpio_pin_interrupt_configure_exit(port, pin, ret) \
+	sys_trace_gpio_pin_interrupt_configure_exit_user(port, pin, ret)
+#define sys_port_trace_gpio_pin_configure_enter(port, pin, flags) \
+	sys_trace_gpio_pin_configure_enter_user(port, pin, flags)
+#define sys_port_trace_gpio_pin_configure_exit(port, pin, ret) \
+	sys_trace_gpio_pin_configure_exit_user(port, pin, ret)
+#define sys_port_trace_gpio_port_get_direction_enter(port, map, inputs, outputs) \
+	sys_trace_gpio_port_get_direction_enter_user(port, map, inputs, outputs)
+#define sys_port_trace_gpio_port_get_direction_exit(port, ret) \
+	sys_trace_gpio_port_get_direction_exit_user(port, ret)
+#define sys_port_trace_gpio_pin_get_config_enter(port, pin, ret) \
+	sys_trace_gpio_pin_get_config_enter_user(port, pin, ret)
+#define sys_port_trace_gpio_pin_get_config_exit(port, pin, ret) \
+	sys_trace_gpio_pin_get_config_exit_user(port, pin, ret)
+#define sys_port_trace_gpio_port_get_raw_enter(port, value) \
+	sys_trace_gpio_port_get_raw_enter_user(port, value)
+#define sys_port_trace_gpio_port_get_raw_exit(port, ret) \
+	sys_trace_gpio_port_get_raw_exit_user(port, ret)
+#define sys_port_trace_gpio_port_set_masked_raw_enter(port, mask, value) \
+	sys_trace_gpio_port_set_masked_raw_enter_user(port, mask, value)
+#define sys_port_trace_gpio_port_set_masked_raw_exit(port, ret) \
+	sys_trace_gpio_port_set_masked_raw_exit_user(port, ret)
+#define sys_port_trace_gpio_port_set_bits_raw_enter(port, pins) \
+	sys_trace_gpio_port_set_bits_raw_enter_user(port, pins)
+#define sys_port_trace_gpio_port_set_bits_raw_exit(port, ret) \
+	sys_trace_gpio_port_set_bits_raw_exit_user(port, ret)
+#define sys_port_trace_gpio_port_clear_bits_raw_enter(port, pins) \
+	sys_trace_gpio_port_clear_bits_raw_enter_user(port, pins)
+#define sys_port_trace_gpio_port_clear_bits_raw_exit(port, ret) \
+	sys_trace_gpio_port_clear_bits_raw_exit_user(port, ret)
+#define sys_port_trace_gpio_port_toggle_bits_enter(port, pins) \
+	sys_trace_gpio_port_toggle_bits_enter_user(port, pins)
+#define sys_port_trace_gpio_port_toggle_bits_exit(port, ret) \
+	sys_trace_gpio_port_toggle_bits_exit_user(port, ret)
+#define sys_port_trace_gpio_init_callback_enter(callback, handler, pin_mask) \
+	sys_trace_gpio_init_callback_enter_user(callback, handler, pin_mask)
+#define sys_port_trace_gpio_init_callback_exit(callback) \
+	sys_trace_gpio_init_callback_exit_user(callback)
+#define sys_port_trace_gpio_add_callback_enter(port, callback) \
+	sys_trace_gpio_add_callback_enter_user(port, callback)
+#define sys_port_trace_gpio_add_callback_exit(port, ret) \
+	sys_trace_gpio_add_callback_exit_user(port, ret)
+#define sys_port_trace_gpio_remove_callback_enter(port, callback) \
+	sys_trace_gpio_remove_callback_enter_user(port, callback)
+#define sys_port_trace_gpio_remove_callback_exit(port, ret) \
+	sys_trace_gpio_remove_callback_exit_user(port, ret)
+#define sys_port_trace_gpio_get_pending_int_enter(dev) \
+	sys_trace_gpio_get_pending_int_enter_user(dev)
+#define sys_port_trace_gpio_get_pending_int_exit(dev, ret) \
+	sys_trace_gpio_get_pending_int_exit_user(dev, ret)
+#define sys_port_trace_gpio_fire_callbacks_enter(list, port, pins) \
+	sys_trace_gpio_fire_callbacks_enter_user(list, port, pins)
+#define sys_port_trace_gpio_fire_callback(port, callback) \
+	sys_trace_gpio_fire_callback_user(port, callback)
 
 #ifdef __cplusplus
 }

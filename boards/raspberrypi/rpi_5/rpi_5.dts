@@ -23,6 +23,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart10;
 		zephyr,shell-uart = &uart10;
+		zephyr,pcie-controller = &pcie1;
 	};
 
 	leds {
@@ -42,4 +43,8 @@
 &uart10 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&gpio0_0 {
+	status = "okay";
 };

@@ -16,21 +16,9 @@
 #ifdef CONFIG_BT_MCS
 extern enum bst_result_t bst_result;
 
-static void start_adv(void)
-{
-	int err;
-
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, AD_SIZE, NULL, 0);
-	if (err) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
-	printk("Advertising successfully started\n");
-}
-
 static void test_main(void)
 {
+	struct bt_le_ext_adv *ext_adv;
 	int err;
 
 	printk("Media Control Server test application.  Board: %s\n", CONFIG_BOARD);
@@ -50,12 +38,22 @@ static void test_main(void)
 	}
 	printk("Bluetooth initialized\n");
 
+	setup_connectable_adv(&ext_adv);
+
 	PASS("MCS passed\n");
 
 	while (1) {
-		start_adv();
 		WAIT_FOR_FLAG(flag_connected);
 		WAIT_FOR_UNSET_FLAG(flag_connected);
+
+		err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0) {
+			FAIL("Failed to start advertising set (err %d)\n", err);
+
+			bt_le_ext_adv_delete(ext_adv);
+
+			return;
+		}
 	}
 }
 

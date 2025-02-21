@@ -901,7 +901,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)	\
 		SPI_DMA_CHANNELS(id)		\
 	};								\
-	DEVICE_DT_INST_DEFINE(id,					\
+	SPI_DEVICE_DT_INST_DEFINE(id,					\
 			    spi_mcux_init,				\
 			    NULL,					\
 			    &spi_mcux_data_##id,			\

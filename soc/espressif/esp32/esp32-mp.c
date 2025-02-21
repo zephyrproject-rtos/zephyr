@@ -1,35 +1,32 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <soc/dport_reg.h>
-#include <soc/gpio_periph.h>
-#include <soc/rtc_periph.h>
-
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#include <soc.h>
-#include <ksched.h>
-#include <ipi.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel_structs.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
-#define Z_REG(base, off) (*(volatile uint32_t *)((base) + (off)))
+#include <soc.h>
+#include <esp_cpu.h>
+#include "esp_rom_uart.h"
 
-#define RTC_CNTL_BASE             0x3ff48000
-#define RTC_CNTL_OPTIONS0     Z_REG(RTC_CNTL_BASE, 0x0)
-#define RTC_CNTL_SW_CPU_STALL Z_REG(RTC_CNTL_BASE, 0xac)
-
-#define DPORT_BASE                 0x3ff00000
-#define DPORT_APPCPU_CTRL_A    Z_REG(DPORT_BASE, 0x02C)
-#define DPORT_APPCPU_CTRL_B    Z_REG(DPORT_BASE, 0x030)
-#define DPORT_APPCPU_CTRL_C    Z_REG(DPORT_BASE, 0x034)
+#include "esp_mcuboot_image.h"
+#include "esp_memory_utils.h"
 
 #ifdef CONFIG_SMP
+
+#include <ipi.h>
+
+#ifndef CONFIG_SOC_ESP32_PROCPU
+static struct k_spinlock loglock;
+#endif
+
 struct cpustart_rec {
 	int cpu;
 	arch_cpustart_t fn;
@@ -42,7 +39,7 @@ struct cpustart_rec {
 volatile struct cpustart_rec *start_rec;
 static void *appcpu_top;
 static bool cpus_active[CONFIG_MP_MAX_NUM_CPUS];
-#endif
+static struct k_spinlock loglock;
 
 /* Note that the logging done here is ACTUALLY REQUIRED FOR RELIABLE
  * OPERATION!  At least one particular board will experience spurious
@@ -61,7 +58,6 @@ static bool cpus_active[CONFIG_MP_MAX_NUM_CPUS];
  */
 void smp_log(const char *msg)
 {
-#ifndef CONFIG_SOC_ESP32_PROCPU
 	k_spinlock_key_t key = k_spin_lock(&loglock);
 
 	while (*msg) {
@@ -71,10 +67,8 @@ void smp_log(const char *msg)
 	esp_rom_uart_tx_one_char('\n');
 
 	k_spin_unlock(&loglock, key);
-#endif
 }
 
-#ifdef CONFIG_SMP
 static void appcpu_entry2(void)
 {
 	volatile int ps, ie;
@@ -167,7 +161,6 @@ static void appcpu_entry1(void)
 {
 	z_appcpu_stack_switch(appcpu_top, appcpu_entry2);
 }
-#endif
 
 /* The calls and sequencing here were extracted from the ESP-32
  * FreeRTOS integration with just a tiny bit of cleanup.  None of the
@@ -176,7 +169,7 @@ static void appcpu_entry1(void)
  */
 void esp_appcpu_start(void *entry_point)
 {
-	smp_log("ESP32: starting APPCPU");
+	ets_printf("ESP32: starting APPCPU");
 
 	/* These two calls are wrapped in a "stall_other_cpu" API in
 	 * esp-idf.  But in this context the appcpu is stalled by
@@ -188,15 +181,10 @@ void esp_appcpu_start(void *entry_point)
 
 	esp_rom_ets_set_appcpu_boot_addr((void *)0);
 
-	RTC_CNTL_SW_CPU_STALL &= ~RTC_CNTL_SW_STALL_APPCPU_C1;
-	RTC_CNTL_OPTIONS0     &= ~RTC_CNTL_SW_STALL_APPCPU_C0;
-	DPORT_APPCPU_CTRL_B   |= DPORT_APPCPU_CLKGATE_EN;
-	DPORT_APPCPU_CTRL_C   &= ~DPORT_APPCPU_RUNSTALL;
-
-	/* Pulse the RESETTING bit */
-	DPORT_APPCPU_CTRL_A |= DPORT_APPCPU_RESETTING;
-	DPORT_APPCPU_CTRL_A &= ~DPORT_APPCPU_RESETTING;
-
+	DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
+	DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
+	DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
+	DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
 
 	/* extracted from SMP LOG above, THIS IS REQUIRED FOR AMP RELIABLE
 	 * OPERATION AS WELL, PLEASE DON'T touch on the dummy write below!
@@ -222,10 +210,9 @@ void esp_appcpu_start(void *entry_point)
 	 */
 	esp_rom_ets_set_appcpu_boot_addr((void *)entry_point);
 
-	smp_log("ESP32: APPCPU start sequence complete");
+	ets_printf("ESP32: APPCPU start sequence complete");
 }
 
-#ifdef CONFIG_SMP
 IRAM_ATTR static void esp_crosscore_isr(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -316,3 +303,160 @@ IRAM_ATTR bool arch_cpu_active(int cpu_num)
 	return cpus_active[cpu_num];
 }
 #endif /* CONFIG_SMP */
+
+void esp_appcpu_start2(void *entry_point)
+{
+	esp_cpu_unstall(1);
+
+	if (!DPORT_GET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN)) {
+		DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
+		DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
+		DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
+		DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
+	}
+
+	esp_rom_ets_set_appcpu_boot_addr((void *)entry_point);
+
+	esp_cpu_reset(1);
+}
+
+/* AMP support */
+#ifdef CONFIG_SOC_ENABLE_APPCPU
+
+#include "bootloader_flash_priv.h"
+
+#define sys_mmap   bootloader_mmap
+#define sys_munmap bootloader_munmap
+
+static int load_segment(uint32_t src_addr, uint32_t src_len, uint32_t dst_addr)
+{
+	const uint32_t *data = (const uint32_t *)sys_mmap(src_addr, src_len);
+
+	if (!data) {
+		ets_printf("%s: mmap failed", __func__);
+		return -1;
+	}
+
+	volatile uint32_t *dst = (volatile uint32_t *)dst_addr;
+
+	for (int i = 0; i < src_len / 4; i++) {
+		dst[i] = data[i];
+	}
+
+	sys_munmap(data);
+
+	return 0;
+}
+
+int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry_addr)
+{
+	const uint32_t img_off = FIXED_PARTITION_OFFSET(slot0_appcpu_partition);
+	const uint32_t fa_size = FIXED_PARTITION_SIZE(slot0_appcpu_partition);
+	const uint8_t fa_id = FIXED_PARTITION_ID(slot0_appcpu_partition);
+
+	if (entry_addr == NULL) {
+		ets_printf("Can't return the entry address. Aborting!\n");
+		abort();
+		return -1;
+	}
+
+	uint32_t mcuboot_header[8] = {0};
+	esp_image_load_header_t image_header = {0};
+
+	const uint32_t *data = (const uint32_t *)sys_mmap(img_off, 0x40);
+
+	memcpy((void *)&mcuboot_header, data, sizeof(mcuboot_header));
+	memcpy((void *)&image_header, data + (hdr_offset / sizeof(uint32_t)),
+	       sizeof(esp_image_load_header_t));
+
+	sys_munmap(data);
+
+	if (image_header.header_magic == ESP_LOAD_HEADER_MAGIC) {
+		ets_printf("APPCPU image, area id: %d, offset: 0x%x, hdr.off: 0x%x, size: %d kB\n",
+			   fa_id, img_off, hdr_offset, fa_size / 1024);
+	} else if ((image_header.header_magic & 0xff) == 0xE9) {
+		ets_printf("ESP image format is not supported\n");
+		abort();
+	} else {
+		ets_printf("Unknown or empty image detected. Aborting!\n");
+		abort();
+	}
+
+	if (!esp_ptr_in_iram((void *)image_header.iram_dest_addr) ||
+	    !esp_ptr_in_iram((void *)(image_header.iram_dest_addr + image_header.iram_size))) {
+		ets_printf("IRAM region in load header is not valid. Aborting");
+		abort();
+	}
+
+	if (!esp_ptr_in_dram((void *)image_header.dram_dest_addr) ||
+	    !esp_ptr_in_dram((void *)(image_header.dram_dest_addr + image_header.dram_size))) {
+		ets_printf("DRAM region in load header is not valid. Aborting");
+		abort();
+	}
+
+	if (!esp_ptr_in_iram((void *)image_header.entry_addr)) {
+		ets_printf("Application entry point (%xh) is not in IRAM. Aborting",
+			   image_header.entry_addr);
+		abort();
+	}
+
+	ets_printf("IRAM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) load\n",
+		   (img_off + image_header.iram_flash_offset), image_header.iram_dest_addr,
+		   image_header.iram_size, image_header.iram_size);
+
+	load_segment(img_off + image_header.iram_flash_offset, image_header.iram_size,
+		     image_header.iram_dest_addr);
+
+	ets_printf("DRAM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) load\n",
+		   (img_off + image_header.dram_flash_offset), image_header.dram_dest_addr,
+		   image_header.dram_size, image_header.dram_size);
+
+	load_segment(img_off + image_header.dram_flash_offset, image_header.dram_size,
+		     image_header.dram_dest_addr);
+
+	ets_printf("Application start=%xh\n\n", image_header.entry_addr);
+	esp_rom_uart_tx_wait_idle(0);
+
+	assert(entry_addr != NULL);
+	*entry_addr = image_header.entry_addr;
+
+	return 0;
+}
+
+void esp_appcpu_image_stop(void)
+{
+	esp_cpu_stall(1);
+}
+
+void esp_appcpu_image_start(unsigned int hdr_offset)
+{
+	static int started;
+	unsigned int entry_addr = 0;
+
+	if (started) {
+		printk("APPCPU already started.\r\n");
+		return;
+	}
+
+	/* Input image meta header, output appcpu entry point */
+	esp_appcpu_image_load(hdr_offset, &entry_addr);
+
+	esp_appcpu_start2((void *)entry_addr);
+}
+
+int esp_appcpu_init(void)
+{
+	/* Load APPCPU image using image header offset
+	 * (skipping the MCUBoot header)
+	 */
+	esp_appcpu_image_start(0x20);
+
+	return 0;
+}
+
+#if !defined(CONFIG_MCUBOOT)
+extern int esp_appcpu_init(void);
+SYS_INIT(esp_appcpu_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
+
+#endif /* CONFIG_SOC_ENABLE_APPCPU */

@@ -28,10 +28,10 @@ jobs:
     env:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 20
-      DAILY_MATRIX_SIZE: 80
+      WEEKLY_MATRIX_SIZE: 200
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
-      TESTS_PER_BUILDER: 700
+      TESTS_PER_BUILDER: 900
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
@@ -67,6 +67,7 @@ jobs:
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
           rm -fr ".git/rebase-apply"
+          rm -fr ".git/rebase-merge"
           git rebase origin/${BASE_REF}
           git clean -f -d
           git log  --pretty=oneline | head -n 10
@@ -115,10 +116,10 @@ jobs:
     env:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 20
-      DAILY_MATRIX_SIZE: 80
+      WEEKLY_MATRIX_SIZE: 200
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
-      TESTS_PER_BUILDER: 700
+      TESTS_PER_BUILDER: 900
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
@@ -135,8 +136,8 @@ jobs:
             subset="[$(seq -s',' 1 ${PUSH_MATRIX_SIZE})]"
             size=${MATRIX_SIZE}
           elif [ "${{github.event_name}}" = "schedule" -a "${{github.repository}}" = "zephyrproject-rtos/zephyr" ]; then
-            subset="[$(seq -s',' 1 ${DAILY_MATRIX_SIZE})]"
-            size=${DAILY_MATRIX_SIZE}
+            subset="[$(seq -s',' 1 ${WEEKLY_MATRIX_SIZE})]"
+            size=${WEEKLY_MATRIX_SIZE}
           else
             size=0
           fi

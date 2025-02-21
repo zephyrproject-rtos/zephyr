@@ -113,20 +113,20 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_MCP23SXX_DEVICE(inst, num_gpios, open_drain)                                     \
-	static struct mcp23xxx_drv_data mcp23sxx_##inst##_drvdata = {                         \
+#define GPIO_MCP23SXX_DEVICE(inst, num_gpios, open_drain, model)                              \
+	static struct mcp23xxx_drv_data mcp##model##_##inst##_drvdata = {                     \
 		/* Default for registers according to datasheet */                            \
 		.reg_cache.iodir = 0xFFFF, .reg_cache.ipol = 0x0,   .reg_cache.gpinten = 0x0, \
 		.reg_cache.defval = 0x0,   .reg_cache.intcon = 0x0, .reg_cache.iocon = 0x0,   \
 		.reg_cache.gppu = 0x0,	   .reg_cache.intf = 0x0,   .reg_cache.intcap = 0x0,  \
 		.reg_cache.gpio = 0x0,	   .reg_cache.olat = 0x0,                             \
 	};                                                                                    \
-	static struct mcp23xxx_config mcp23sxx_##inst##_config = {                            \
+	static struct mcp23xxx_config mcp##model##_##inst##_config = {                        \
 		.config = {					                              \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),                  \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),               \
 		},						                              \
 		.bus = {                                                                      \
-			.spi = SPI_DT_SPEC_INST_GET(inst,                                        \
+			.spi = SPI_DT_SPEC_INST_GET(inst,                                     \
 				SPI_OP_MODE_MASTER | SPI_MODE_CPOL |                          \
 				SPI_MODE_CPHA | SPI_WORD_SET(8), 0)                           \
 		},                                                                            \
@@ -138,20 +138,20 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 		.write_fn = mcp23sxx_write_port_regs,                                         \
 		.bus_fn = mcp23sxx_bus_is_ready                                               \
 	};                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, gpio_mcp23xxx_init, NULL, &mcp23sxx_##inst##_drvdata,        \
-			      &mcp23sxx_##inst##_config, POST_KERNEL,                         \
+	DEVICE_DT_INST_DEFINE(inst, gpio_mcp23xxx_init, NULL, &mcp##model##_##inst##_drvdata, \
+			      &mcp##model##_##inst##_config, POST_KERNEL,                     \
 			      CONFIG_GPIO_MCP23SXX_INIT_PRIORITY, &gpio_mcp23xxx_api_table);
 
 
 #define DT_DRV_COMPAT microchip_mcp23s08
-DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 8, false)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 8, false, 23s08)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT microchip_mcp23s09
-DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 8, true)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 8, true, 23s09)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT microchip_mcp23s17
-DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 16, false)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 16, false, 23s17)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT microchip_mcp23s18
-DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 16, true)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 16, true, 23s18)
 #undef DT_DRV_COMPAT

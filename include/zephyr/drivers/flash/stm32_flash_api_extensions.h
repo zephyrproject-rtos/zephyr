@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef __ZEPHYR_INCLUDE_DRIVERS_FLASH_STM32_FLASH_API_EXTENSIONS_H__
+#define __ZEPHYR_INCLUDE_DRIVERS_FLASH_STM32_FLASH_API_EXTENSIONS_H__
+
 #include <zephyr/drivers/flash.h>
 
 enum stm32_ex_ops {
@@ -45,16 +48,30 @@ enum stm32_ex_ops {
 	 * erasing or writing.
 	 */
 	FLASH_STM32_EX_OP_BLOCK_CONTROL_REG,
+	/*
+	 * STM32 option bytes read.
+	 *
+	 * Read the option bytes content, out takes a *uint32_t, in is unused.
+	 */
+	FLASH_STM32_EX_OP_OPTB_READ,
+	/*
+	 * STM32 option bytes write.
+	 *
+	 * Write the option bytes content, in takes the new value, out is
+	 * unused. Note that the new value only takes effect after the device
+	 * is restarted.
+	 */
+	FLASH_STM32_EX_OP_OPTB_WRITE,
 };
 
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 struct flash_stm32_ex_op_sector_wp_in {
-	uint32_t enable_mask;
-	uint32_t disable_mask;
+	uint64_t enable_mask;
+	uint64_t disable_mask;
 };
 
 struct flash_stm32_ex_op_sector_wp_out {
-	uint32_t protected_mask;
+	uint64_t protected_mask;
 };
 #endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
 
@@ -64,3 +81,5 @@ struct flash_stm32_ex_op_rdp {
 	bool permanent;
 };
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+
+#endif /* __ZEPHYR_INCLUDE_DRIVERS_FLASH_STM32_FLASH_API_EXTENSIONS_H__ */

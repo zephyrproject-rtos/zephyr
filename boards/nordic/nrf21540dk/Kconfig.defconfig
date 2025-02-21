@@ -5,7 +5,4 @@
 
 if BOARD_NRF21540DK
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_NRF21540DK

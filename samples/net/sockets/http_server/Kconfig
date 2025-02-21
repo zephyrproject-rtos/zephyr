@@ -17,11 +17,29 @@ config NET_SAMPLE_HTTP_SERVER_SERVICE_PORT
 config NET_SAMPLE_HTTPS_SERVICE
 	bool "Enable https service"
 	depends on NET_SOCKETS_SOCKOPT_TLS || TLS_CREDENTIALS
+	imply MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+
+if NET_SAMPLE_HTTPS_SERVICE
 
 config NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT
 	int "Port number for https service"
 	default 443
 	depends on NET_SAMPLE_HTTPS_SERVICE
+
+config NET_SAMPLE_HTTPS_USE_ALPN
+	bool "Allow HTTP2 connectivity with web browsers by using ALPN"
+	select MBEDTLS_SSL_ALPN
+	select HTTP_SERVER_TLS_USE_ALPN
+	help
+	  Web browsers only use HTTP/2 over HTTPS, and use ALPN to determine if a
+	  server supports HTTP/2. If this option is enabled, web browsers can use
+	  HTTP/2 to communicate with the server. However web browsers are stricter
+	  with security when using HTTP/2, at a minimum you will need to add the CA
+	  certificate used to sign the server certificate into your web browser's
+	  trusted authorities. Otherwise the connection can fail with a security
+	  error, without giving an option to ignore this and proceed anyway.
+
+endif # NET_SAMPLE_HTTPS_SERVICE
 
 config NET_SAMPLE_PSK_HEADER_FILE
 	string "Header file containing PSK"
@@ -30,13 +48,6 @@ config NET_SAMPLE_PSK_HEADER_FILE
 	help
 	  Name of a header file containing a
 	  pre-shared key.
-
-config NET_SAMPLE_CERTS_WITH_SC
-	bool "Signed certificates"
-	depends on NET_SOCKETS_SOCKOPT_TLS
-	help
-	  Enable this flag, if you are interested to run this
-	  application with signed certificates and keys.
 
 config NET_SAMPLE_WEBSOCKET_SERVICE
 	bool "Enable websocket service"

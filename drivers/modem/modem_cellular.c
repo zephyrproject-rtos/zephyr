@@ -1464,6 +1464,7 @@ static void modem_cellular_event_handler(struct modem_cellular_data *data,
 
 	case MODEM_CELLULAR_STATE_RUN_SHUTDOWN_SCRIPT:
 		modem_cellular_run_shutdown_script_event_handler(data, evt);
+		break;
 
 	case MODEM_CELLULAR_STATE_POWER_OFF_PULSE:
 		modem_cellular_power_off_pulse_event_handler(data, evt);

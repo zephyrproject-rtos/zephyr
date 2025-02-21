@@ -15,6 +15,8 @@ module-str = Log level for Ethernet PHY driver
 module-help = Sets log level for Ethernet PHY Device Drivers.
 source "subsys/net/Kconfig.template.log_config.net"
 source "drivers/ethernet/phy/Kconfig.tja1103"
+source "drivers/ethernet/phy/Kconfig.dm8806"
+source "drivers/ethernet/phy/Kconfig.microchip_t1s"
 
 config PHY_INIT_PRIORITY
 	int "Ethernet PHY driver init priority"
@@ -48,6 +50,15 @@ config PHY_MICROCHIP_KSZ8081
 	depends on GPIO
 	help
 	  Enable Microchip KSZ8081 Ethernet PHY Driver
+
+config PHY_MICROCHIP_VSC8541
+	bool "Microchip VSC8541 PHY Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_VSC8541_ENABLED
+	depends on MDIO
+	depends on GPIO
+	help
+	  Enable Microchip VSC8541 Ethernet PHY Driver
 
 config PHY_TI_DP83825
 	bool "TI DP83825 PHY Driver"
@@ -90,5 +101,16 @@ config PHY_MONITOR_PERIOD
 	  Monitor task execution period in milliseconds. The monitor task is
 	  periodically executed to detect and report any changes in the
 	  PHY link status to the operating system.
+
+config PHY_OA_TC14_PLCA_LIB
+	bool "Open Alliance TC14 PLCA generic lib"
+	help
+	  Enable Open Alliance TC14 PLCA generic lib.
+
+config PHY_VERIFY_DEVICE_IDENTIFICATION
+	bool "Verify selected phy to actual reported phy chip id"
+	help
+	  Verify the organizationally unique identifier that is reported
+	  by the phy chip.
 
 endif # "Ethernet PHY Drivers"

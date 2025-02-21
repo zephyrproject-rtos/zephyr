@@ -379,9 +379,7 @@ static int fxls8974_channel_get(const struct device *dev,
 
 			val += FXLS8974_MAX_ACCEL_CHANNELS;
 
-			if (fxls8974_get_temp_data(dev, val)) {
-				return -EIO;
-			}
+			return fxls8974_get_temp_data(dev, val);
 			break;
 		case SENSOR_CHAN_ACCEL_XYZ:
 			return fxls8974_get_accel_data(dev, val, SENSOR_CHAN_ACCEL_XYZ);
@@ -401,7 +399,7 @@ static int fxls8974_channel_get(const struct device *dev,
 		return 0;
 }
 
-int fxls8974_get_active(const struct device *dev, enum fxls8974_active *active)
+int fxls8974_get_active(const struct device *dev, uint8_t *active)
 {
 		const struct fxls8974_config *cfg = dev->config;
 		uint8_t val;
@@ -417,7 +415,7 @@ int fxls8974_get_active(const struct device *dev, enum fxls8974_active *active)
 		return 0;
 }
 
-int fxls8974_set_active(const struct device *dev, enum fxls8974_active active)
+int fxls8974_set_active(const struct device *dev, uint8_t active)
 {
 		const struct fxls8974_config *cfg = dev->config;
 
@@ -500,7 +498,7 @@ static int fxls8974_init(const struct device *dev)
 			return -EIO;
 		}
 
-		if (fxls8974_get_active(dev, (enum fxls8974_active *)&regVal)) {
+		if (fxls8974_get_active(dev, &regVal)) {
 			LOG_ERR("Failed to set standby mode");
 			return -EIO;
 		}
@@ -562,7 +560,7 @@ static int fxls8974_init(const struct device *dev)
 			return -EIO;
 		}
 
-		if (fxls8974_get_active(dev, (enum fxls8974_active *)&regVal)) {
+		if (fxls8974_get_active(dev, &regVal)) {
 			LOG_ERR("Failed to get active mode");
 			return -EIO;
 		}

@@ -7,7 +7,6 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - arduino_gpio
@@ -18,6 +17,7 @@ supported:
   - counter
   - dac
   - dma
+  - flash
   - gpio
   - i2c
   - netif:eth

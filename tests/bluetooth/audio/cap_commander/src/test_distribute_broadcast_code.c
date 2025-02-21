@@ -6,12 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
 
-#include "bluetooth.h"
 #include "cap_commander.h"
 #include "conn.h"
 #include "expects_util.h"
@@ -19,6 +25,7 @@
 #include "test_common.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(bt_distribute_broadcast_code, CONFIG_BT_CAP_COMMANDER_LOG_LEVEL);
 
@@ -244,6 +251,10 @@ ZTEST_F(cap_commander_test_distribute_broadcast_code,
 	test_commander_distribute_broadcast_code_double_conn)
 {
 	int err;
+
+	if (CONFIG_BT_MAX_CONN == 1) {
+		ztest_test_skip();
+	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->broadcast_code_member_params); i++) {
 		fixture->broadcast_code_member_params[i].member.member = &fixture->conns[0];

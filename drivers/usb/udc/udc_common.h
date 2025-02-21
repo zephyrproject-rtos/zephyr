@@ -325,7 +325,7 @@ bool udc_ctrl_stage_is_status_in(const struct device *dev);
  *
  * @param[in] dev   Pointer to device struct of the driver instance
  *
- * @return true if stage is Data Stage IN
+ * @return true if stage is Data Stage OUT
  */
 bool udc_ctrl_stage_is_status_out(const struct device *dev);
 

@@ -268,13 +268,17 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 			sync_lll = NULL;
 
 			/* Node that does not have valid aux context but has
-			 * valid scan set was scheduled from LLL. We can
-			 * retrieve aux context from lll_scan as it was stored
-			 * there when superior PDU was handled.
+			 * valid scan set was scheduled from LLL.
 			 */
 			lll = ftr->param;
 
-			lll_aux = lll->lll_aux;
+			/* We can not retrieve aux context that was stored in
+			 * lll_scan when superior PDU was handled, as it may be
+			 * reset to NULL before this node rx is processed here.
+			 * The reset happens when new extended advertising chain
+			 * is being received before we process the node here.
+			 */
+			lll_aux = ftr->lll_aux;
 			LL_ASSERT(lll_aux);
 
 			aux = HDR_LLL2ULL(lll_aux);
@@ -289,7 +293,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 			 */
 			sync_lll = ftr->param;
 
-			lll_aux = sync_lll->lll_aux;
+			/* We can not retrieve aux context that was stored in
+			 * lll_sync when superior PDU was handled, as it may be
+			 * reset to NULL before this node rx is processed here.
+			 * The reset happens when new Periodic Advertising chain
+			 * is being received before we process the node here.
+			 */
+			lll_aux =  ftr->lll_aux;
 			LL_ASSERT(lll_aux);
 
 			aux = HDR_LLL2ULL(lll_aux);
@@ -440,19 +450,30 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	ptr = h->data;
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	bool is_aux_addr_match = false;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
 	if (h->adv_addr) {
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		/* Check if Periodic Advertising Synchronization to be created
 		 */
 		if (sync && (scan->periodic.state != LL_SYNC_STATE_CREATED)) {
-			/* Check address and update internal state */
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-			ull_sync_setup_addr_check(sync, scan, pdu->tx_addr, ptr,
-						  ftr->rl_idx);
+			uint8_t rl_idx = ftr->rl_idx;
 #else /* !CONFIG_BT_CTLR_PRIVACY */
-			ull_sync_setup_addr_check(sync, scan, pdu->tx_addr, ptr, 0U);
+			uint8_t rl_idx = 0U;
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
+			/* Check address and update internal state */
+			is_aux_addr_match =
+				ull_sync_setup_addr_check(sync, scan->periodic.filter_policy,
+							  pdu->tx_addr, ptr, rl_idx);
+			if (is_aux_addr_match) {
+				scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
+			} else {
+				scan->periodic.state = LL_SYNC_STATE_IDLE;
+			}
 		}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
@@ -485,14 +506,21 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		si = (void *)ptr;
 		ptr += sizeof(*si);
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		/* Check if Periodic Advertising Synchronization to be created.
 		 * Setup synchronization if address and SID match in the
 		 * Periodic Advertiser List or with the explicitly supplied.
+		 *
+		 * is_aux_addr_match, device address in auxiliary channel PDU;
+		 * scan->periodic.param has not been assigned yet.
+		 * Otherwise, address was in primary channel PDU and we are now
+		 * checking SID (in SyncInfo) in auxiliary channel PDU.
 		 */
-		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && aux && sync && adi &&
+		if (sync && aux && (is_aux_addr_match || (scan->periodic.param == aux)) && adi &&
 		    ull_sync_setup_sid_match(sync, scan, PDU_ADV_ADI_SID_GET(adi))) {
 			ull_sync_setup(scan, aux->lll.phy, rx, si);
 		}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	}
 
 	if (h->tx_pwr) {
@@ -688,6 +716,15 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		/* Store the aux context that has Periodic Advertising
+		 * Synchronization address match.
+		 */
+		if (sync && (scan->periodic.state == LL_SYNC_STATE_ADDR_MATCH)) {
+			scan->periodic.param = aux;
+		}
+
+		/* Store the node rx allocated for incomplete report, if needed.
+		 */
 		aux->rx_incomplete = rx_incomplete;
 		rx_incomplete = NULL;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
@@ -912,6 +949,7 @@ ull_scan_aux_rx_flush:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	if (sync && (scan->periodic.state != LL_SYNC_STATE_CREATED)) {
 		scan->periodic.state = LL_SYNC_STATE_IDLE;
+		scan->periodic.param = NULL;
 	}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
@@ -1088,16 +1126,33 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx)
 	param_ull = HDR_LLL2ULL(rx->rx_ftr.param);
 
 	if (ull_scan_is_valid_get(param_ull)) {
+		/* Release aux context when LLL scheduled auxiliary PDU
+		 * reception is_abort on duration expire or aborted in the
+		 * unreserved time space.
+		 */
 		struct lll_scan *lll;
 
 		/* Mark for buffer for release */
 		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		lll = rx->rx_ftr.param;
-		lll_aux = lll->lll_aux;
+		lll_aux = rx->rx_ftr.lll_aux;
+
+		/* Under race condition when LLL scheduling a reception of
+		 * auxiliary PDU, a scan aux context may be assigned late and
+		 * the node rx releasing the aux context will not have it.
+		 * Release the scan aux context assigned in the scan context.
+		 */
+		if (!lll_aux) {
+			lll_aux = lll->lll_aux;
+		}
 
 	} else if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) ||
 		   ull_scan_aux_is_valid_get(param_ull)) {
+		/* Release aux context when ULL scheduled auxiliary PDU
+		 * reception is aborted.
+		 */
+
 		/* Mark for buffer for release */
 		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
@@ -1112,8 +1167,20 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx)
 		/* reset data len total */
 		sync->data_len = 0U;
 
+		/* Release aux context in case of chain PDU reception, otherwise
+		 * lll_aux is NULL.
+		 */
 		lll = rx->rx_ftr.param;
-		lll_aux = lll->lll_aux;
+		lll_aux = rx->rx_ftr.lll_aux;
+
+		/* Under race condition when LLL scheduling a reception of
+		 * auxiliary PDU, a scan aux context may be assigned late and
+		 * the node rx releasing the aux context will not have it.
+		 * Release the scan aux context assigned in the sync context.
+		 */
+		if (!lll_aux) {
+			lll_aux = lll->lll_aux;
+		}
 
 		/* Change node type so HCI can dispatch report for truncated
 		 * data properly.
@@ -1145,13 +1212,16 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx)
 		scan = ull_scan_is_valid_get(scan);
 		if (scan) {
 			is_stop = scan->is_stop;
-		} else {
+		} else if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC)) {
 			struct lll_sync *sync_lll;
 			struct ll_sync_set *sync;
 
 			sync_lll = (void *)lll;
 			sync = HDR_LLL2ULL(sync_lll);
 			is_stop = sync->is_stop;
+		} else {
+			LL_ASSERT(0);
+			return;
 		}
 
 		if (!is_stop) {
@@ -1514,7 +1584,16 @@ static void ticker_op_cb(uint32_t status, void *param)
 }
 
 #else /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
-
+/* NOTE: BT_CTLR_SCAN_AUX_USE_CHAINS is alternative new design with less RAM
+ *       usage for supporting Extended Scanning of simultaneous interleaved
+ *       Extended Advertising chains.
+ *
+ * TODO: As the previous design has Bluetooth Qualified Design Listing by
+ *       Nordic Semiconductor ASA, both implementation are present in this file,
+ *       and default builds use CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS=n. Remove old
+ *       implementation when we have a new Bluetooth Qualified Design Listing
+ *       with the new Extended Scanning and Periodic Sync implementation.
+ */
 void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 {
 	struct node_rx_pdu *rx_incomplete;
@@ -1774,19 +1853,30 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	ptr = h->data;
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	bool is_aux_addr_match = false;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
 	if (h->adv_addr) {
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		/* Check if Periodic Advertising Synchronization to be created
 		 */
 		if (sync && (scan->periodic.state != LL_SYNC_STATE_CREATED)) {
-			/* Check address and update internal state */
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-			ull_sync_setup_addr_check(sync, scan, pdu->tx_addr, ptr,
-						  ftr->rl_idx);
+			uint8_t rl_idx = ftr->rl_idx;
 #else /* !CONFIG_BT_CTLR_PRIVACY */
-			ull_sync_setup_addr_check(sync, scan, pdu->tx_addr, ptr, 0U);
+			uint8_t rl_idx = 0U;
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
+			/* Check address and update internal state */
+			is_aux_addr_match =
+				ull_sync_setup_addr_check(sync, scan->periodic.filter_policy,
+							  pdu->tx_addr, ptr, rl_idx);
+			if (is_aux_addr_match) {
+				scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
+			} else {
+				scan->periodic.state = LL_SYNC_STATE_IDLE;
+			}
 		}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
@@ -1819,14 +1909,21 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		si = (void *)ptr;
 		ptr += sizeof(*si);
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		/* Check if Periodic Advertising Synchronization to be created.
 		 * Setup synchronization if address and SID match in the
 		 * Periodic Advertiser List or with the explicitly supplied.
+		 *
+		 * is_aux_addr_match, device address in auxiliary channel PDU;
+		 * scan->periodic.param has not been assigned yet.
+		 * Otherwise, address was in primary channel PDU and we are now
+		 * checking SID (in SyncInfo) in auxiliary channel PDU.
 		 */
-		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && chain && sync && adi &&
-		    ull_sync_setup_sid_match(sync, scan, PDU_ADV_ADI_SID_GET(adi))) {
+		if (sync && chain && (is_aux_addr_match || (scan->periodic.param == chain)) &&
+		    adi && ull_sync_setup_sid_match(sync, scan, PDU_ADV_ADI_SID_GET(adi))) {
 			ull_sync_setup(scan, chain->lll.phy, rx, si);
 		}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	}
 
 	if (h->tx_pwr) {
@@ -2008,6 +2105,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		/* Store the chain context that has Periodic Advertising
+		 * Synchronization address match.
+		 */
+		if (sync && (scan->periodic.state == LL_SYNC_STATE_ADDR_MATCH)) {
+			scan->periodic.param = chain;
+		}
+
 		if (sync_lll) {
 			struct ll_sync_set *sync_set = HDR_LLL2ULL(sync_lll);
 
@@ -2149,6 +2253,7 @@ ull_scan_aux_rx_flush:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	if (sync && (scan->periodic.state != LL_SYNC_STATE_CREATED)) {
 		scan->periodic.state = LL_SYNC_STATE_IDLE;
+		scan->periodic.param = NULL;
 	}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 

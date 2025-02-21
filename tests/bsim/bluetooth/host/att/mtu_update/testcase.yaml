@@ -1,0 +1,19 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.att.mtu_update.central:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_att_mtu_update_prj_central_conf
+    extra_args:
+      CONF_FILE=prj_central.conf
+  bluetooth.host.att.mtu_update.peripheral:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_att_mtu_update_prj_peripheral_conf
+    extra_args:
+      CONF_FILE=prj_peripheral.conf

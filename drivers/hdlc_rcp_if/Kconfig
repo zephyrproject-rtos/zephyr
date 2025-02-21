@@ -14,6 +14,7 @@ menuconfig HDLC_RCP_IF
 if HDLC_RCP_IF
 
 source "drivers/hdlc_rcp_if/Kconfig.nxp"
+source "drivers/hdlc_rcp_if/Kconfig.uart"
 
 config HDLC_RCP_IF_DRV_NAME
 	string "HDLC RCP Interface Driver's name"

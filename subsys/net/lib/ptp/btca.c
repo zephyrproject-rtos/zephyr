@@ -100,7 +100,7 @@ int ptp_btca_ds_cmp(const struct ptp_dataset *a, const struct ptp_dataset *b)
 	if (a->priority1 > b->priority1) {
 		return B_BETTER;
 	}
-	if (a->clk_quality.class > b->clk_quality.class) {
+	if (a->clk_quality.cls > b->clk_quality.cls) {
 		return B_BETTER;
 	}
 	if (a->clk_quality.accuracy > b->clk_quality.accuracy) {
@@ -129,7 +129,7 @@ enum ptp_port_state ptp_btca_state_decision(struct ptp_port *port)
 		return PTP_PS_LISTENING;
 	}
 
-	if (clk_default->clk_quality.class <= 127) {
+	if (clk_default->clk_quality.cls <= 127) {
 		if (ptp_btca_ds_cmp(clk_default, port_best) > 0) {
 			/* M1 */
 			return PTP_PS_GRAND_MASTER;

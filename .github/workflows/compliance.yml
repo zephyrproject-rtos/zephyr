@@ -33,6 +33,8 @@ jobs:
         # Ensure there's no merge commits in the PR
         [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
         (echo "::error ::Merge commits not allowed, rebase instead";false)
+        rm -fr ".git/rebase-apply"
+        rm -fr ".git/rebase-merge"
         git rebase origin/${BASE_REF}
         git clean -f -d
         # debug
@@ -51,10 +53,8 @@ jobs:
 
     - name: Install python dependencies
       run: |
-        pip3 install setuptools
-        pip3 install wheel
-        pip3 install -r scripts/requirements-compliance.txt
-        pip3 install west
+        pip install -r scripts/requirements-compliance.txt
+        pip install west
 
     - name: west setup
       run: |
@@ -82,7 +82,7 @@ jobs:
         git log  --pretty=oneline | head -n 10
         # Increase rename limit to allow for large PRs
         git config diff.renameLimit 10000
-        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic -e ClangFormat \
+        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic -e SysbuildKconfigBasic -e ClangFormat \
         -c origin/${BASE_REF}..
 
     - name: upload-results

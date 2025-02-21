@@ -258,3 +258,41 @@ properties:
       - 0x3 # LSM6DSV16X_DT_TEMP_BATCHED_AT_60Hz
 
     enum: [0x00, 0x01, 0x02, 0x03]
+
+  sflp-odr:
+    type: int
+    default: 0x3
+    description: |
+      Specify the Sensor Fusion Low Power output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dsv16x_sflp_data_rate_t enumerative in hal/st
+      module.
+      Default is power-up configuration.
+
+      - 0x0 # LSM6DSV16X_DT_SFLP_ODR_AT_15Hz
+      - 0x1 # LSM6DSV16X_DT_SFLP_ODR_AT_30Hz
+      - 0x2 # LSM6DSV16X_DT_SFLP_ODR_AT_60Hz
+      - 0x3 # LSM6DSV16X_DT_SFLP_ODR_AT_120Hz
+      - 0x4 # LSM6DSV16X_DT_SFLP_ODR_AT_240Hz
+      - 0x5 # LSM6DSV16X_DT_SFLP_ODR_AT_480Hz
+
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05]
+
+  sflp-fifo-enable:
+    type: int
+    default: 0x0
+    description: |
+      Specify what Sensor Fusion Low Power component has to be batched in FIFO.
+      The values are taken in accordance to lsm6dsv16x_fifo_sflp_raw_t enumerative in hal/st
+      module.
+      Default is power-up configuration.
+
+      - 0x0 # LSM6DSV16X_DT_SFLP_FIFO_OFF
+      - 0x1 # LSM6DSV16X_DT_SFLP_FIFO_GAME_ROTATION
+      - 0x2 # LSM6DSV16X_DT_SFLP_FIFO_GRAVITY
+      - 0x3 # LSM6DSV16X_DT_SFLP_FIFO_GAME_ROTATION_GRAVITY
+      - 0x4 # LSM6DSV16X_DT_SFLP_FIFO_GBIAS
+      - 0x5 # LSM6DSV16X_DT_SFLP_FIFO_GAME_ROTATION_GBIAS
+      - 0x6 # LSM6DSV16X_DT_SFLP_FIFO_GRAVITY_GBIAS
+      - 0x7 # LSM6DSV16X_DT_SFLP_FIFO_GAME_ROTATION_GRAVITY_GBIAS
+
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]

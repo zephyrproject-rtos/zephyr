@@ -62,6 +62,7 @@ class CoredumpLogFile:
         self.log_hdr = None
         self.arch_data = list()
         self.memory_regions = list()
+        self.threads_metadata = {"hdr_ver" : None, "data" : None}
 
     def open(self):
         self.fd = open(self.logfile, "rb")

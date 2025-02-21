@@ -1,5 +1,7 @@
 common:
-  tags: kernel security
+  tags:
+    - kernel
+    - security
   min_ram: 32
   integration_platforms:
     - qemu_x86

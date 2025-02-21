@@ -292,7 +292,7 @@ static DEVICE_API(spi, spi_sifive_api) = {
 		.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY, \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
 	}; \
-	DEVICE_DT_INST_DEFINE(n, \
+	SPI_DEVICE_DT_INST_DEFINE(n, \
 			spi_sifive_init, \
 			NULL, \
 			&spi_sifive_data_##n, \

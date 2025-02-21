@@ -154,9 +154,12 @@ void pe_src_discovery_run(void *obj)
 	 *	1) The SourceCapabilityTimer times out
 	 *	2) And CapsCounter ≤ nCapsCount
 	 */
-	if (usbc_timer_expired(&pe->pd_t_typec_send_source_cap)
-			&& pe->caps_counter <= PD_N_CAPS_COUNT) {
-		pe_set_state(dev, PE_SRC_SEND_CAPABILITIES);
+	if (usbc_timer_expired(&pe->pd_t_typec_send_source_cap)) {
+		if (pe->caps_counter <= PD_N_CAPS_COUNT) {
+			pe_set_state(dev, PE_SRC_SEND_CAPABILITIES);
+		} else {
+			pe_set_state(dev, PE_SRC_DISABLED);
+		}
 	}
 }
 
@@ -408,6 +411,15 @@ void pe_src_ready_run(void *obj)
 			case PD_DATA_REQUEST:
 				pe_set_state(dev, PE_SRC_NEGOTIATE_CAPABILITY);
 				break;
+			case PD_DATA_VENDOR_DEF:
+				/**
+				 * VDM is unsupported. PD2.0 ignores and PD3.0
+				 * reply with not supported.
+				 */
+				if (prl_get_rev(dev, PD_PACKET_SOP) > PD_REV20) {
+					pe_set_state(dev, PE_SEND_NOT_SUPPORTED);
+				}
+				break;
 			default:
 				pe_set_state(dev, PE_SEND_NOT_SUPPORTED);
 			}
@@ -472,6 +484,19 @@ void pe_src_ready_exit(void *obj)
 	if (pe_dpm_initiated_ams(dev)) {
 		prl_first_msg_notificaiton(dev);
 	}
+}
+
+/**
+ * @brief 8.3.3.2.7 PE_SRC_Disabled State
+ */
+void pe_src_disabled_entry(void *obj)
+{
+	LOG_INF("PE_SRC_Disabled");
+
+	/*
+	 * Unresponsive to USB Power Delivery messaging, but not to Hard Reset
+	 * Signaling. See pe_got_hard_reset
+	 */
 }
 
 /**

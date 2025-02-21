@@ -3,6 +3,7 @@ sample:
   name: smp svr
 common:
   sysbuild: true
+  build_only: true
 tests:
   sample.mcumgr.smp_svr.bt:
     harness: bluetooth
@@ -73,8 +74,8 @@ tests:
       - mimxrt1020_evk
       - mimxrt1024_evk
       - mimxrt1040_evk
-      - mimxrt1050_evk
-      - mimxrt1060_evk
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+      - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1062_fmurt6
       - mimxrt1064_evk
       - mimxrt1160_evk/mimxrt1166/cm7
@@ -131,8 +132,8 @@ tests:
       - mimxrt1020_evk
       - mimxrt1024_evk
       - mimxrt1040_evk
-      - mimxrt1050_evk
-      - mimxrt1060_evk
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+      - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1062_fmurt6
       - mimxrt1064_evk
       - mimxrt1160_evk/mimxrt1166/cm7
@@ -146,7 +147,7 @@ tests:
       - mg100
     integration_platforms:
       - nrf52840dk/nrf52840
-      - mimxrt1060_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1064_evk
   sample.mcumgr.smp_svr.shell_mgmt:
     extra_args: EXTRA_CONF_FILE="overlay-shell-mgmt.conf"
@@ -171,15 +172,17 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.ram_load.serial:
-    extra_args: FILE_SUFFIX="ram_load"
-                EXTRA_CONF_FILE="overlay-serial.conf"
+    extra_args:
+      - FILE_SUFFIX="ram_load"
+      - EXTRA_CONF_FILE="overlay-serial.conf"
     platform_allow:
       - nrf52840dk/nrf52840
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.ram_load.serial.fs.shell:
-    extra_args: FILE_SUFFIX="ram_load"
-                EXTRA_CONF_FILE="overlay-serial.conf;overlay-fs.conf;overlay-shell.conf"
+    extra_args:
+      - FILE_SUFFIX="ram_load"
+      - EXTRA_CONF_FILE="overlay-serial.conf;overlay-fs.conf;overlay-shell.conf"
     platform_allow:
       - nrf52840dk/nrf52840
     integration_platforms:

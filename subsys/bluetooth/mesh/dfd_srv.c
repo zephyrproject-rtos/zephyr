@@ -35,12 +35,8 @@ BUILD_ASSERT((DFD_UPLOAD_START_MSG_MAXLEN + BT_MESH_MODEL_OP_LEN(BT_MESH_DFD_OP_
 	     "The Firmware Distribution Upload Start message does not fit into the maximum "
 	     "incoming SDU size.");
 
-#define DFD_RECEIVERS_LIST_MSG_MAXLEN (4 + CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX * 5)
-
-BUILD_ASSERT((DFD_RECEIVERS_LIST_MSG_MAXLEN + BT_MESH_MODEL_OP_LEN(BT_MESH_DFD_OP_RECEIVERS_LIST) +
-	      BT_MESH_MIC_SHORT) <= BT_MESH_TX_SDU_MAX,
-	     "The Firmware Distribution Receivers List message does not fit into the maximum "
-	     "outgoing SDU size.");
+#define DFD_RECEIVERS_LIST_MSG_MAXLEN (BT_MESH_TX_SDU_MAX - BT_MESH_MIC_SHORT - \
+				       BT_MESH_MODEL_OP_LEN(BT_MESH_DFD_OP_RECEIVERS_LIST))
 
 #define DFD_RECEIVERS_ADD_MSG_MAXLEN (CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX * 3)
 
@@ -925,12 +921,34 @@ const struct bt_mesh_blob_srv_cb _bt_mesh_dfd_srv_blob_cb = {
 
 static int dfd_srv_init(const struct bt_mesh_model *mod)
 {
+	int err;
 	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	srv->mod = mod;
 
-	if (IS_ENABLED(CONFIG_BT_MESH_MODEL_EXTENSIONS)) {
-		bt_mesh_model_extend(mod, srv->upload.blob.mod);
+	const struct bt_mesh_model *blob_srv =
+		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_BLOB_SRV);
+
+	if (blob_srv == NULL) {
+		LOG_ERR("Missing BLOB Srv.");
+		return -EINVAL;
+	}
+
+	/** BLOB client also shall be present on the same element, but it is already checked by
+	 * initiation of dfu client which we check here.
+	 */
+	const struct bt_mesh_model *dfu_cli =
+		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_DFU_CLI);
+
+	if (dfu_cli == NULL) {
+		LOG_ERR("Missing FU Cli.");
+		return -EINVAL;
+	}
+
+	err = bt_mesh_model_extend(mod, srv->upload.blob.mod);
+
+	if (err) {
+		return err;
 	}
 
 	return 0;

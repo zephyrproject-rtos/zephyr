@@ -229,7 +229,7 @@ static int pca9685_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static const struct pwm_driver_api pca9685_api = {
+static DEVICE_API(pwm, pca9685_api) = {
 	.set_cycles = pca9685_set_cycles,
 	.get_cycles_per_sec = pca9685_get_cycles_per_sec,
 };

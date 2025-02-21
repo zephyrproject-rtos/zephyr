@@ -33,11 +33,11 @@ Zephyr tree, and it is built as a standard Zephyr application.
 Using the controller with emulators and BlueZ
 *********************************************
 
-The instructions below show how to use a Nordic nRF5x device as a Zephyr BLE
+The instructions below show how to use a Nordic nRF5x device as a Zephyr Bluetooth
 controller and expose it to Linux's BlueZ. This can be very useful for testing
 the Zephyr Link Layer with the BlueZ Host. The Zephyr Bluetooth LE controller can also
 provide a modern Bluetooth LE 5.0 controller to a Linux-based machine for native
-BLE support or QEMU-based development.
+Bluetooth support or QEMU-based development.
 
 First, make sure you have a recent BlueZ version installed by following the
 instructions in the :ref:`bluetooth_bluez` section.
@@ -178,7 +178,7 @@ driver instead of the built-in controller:
 .. code-block:: cfg
 
    CONFIG_BT_HCI=y
-   CONFIG_BT_CTLR=n
+   CONFIG_BT_LL_SW_SPLIT=n
 
 Similarly, the ``zephyr,bt-hci`` DTS property selects which HCI instance to use.
 The UART needs to have as its child node a HCI UART node:

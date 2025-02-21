@@ -37,6 +37,7 @@ static int seq_checker;
 static struct bt_mesh_test_gatt gatt_param;
 static int num_adv_sent;
 static uint8_t previous_checker = 0xff;
+static bool local_sent, relay_sent;
 
 static K_SEM_DEFINE(observer_sem, 0, 1);
 
@@ -501,6 +502,202 @@ static void test_tx_send_order(void)
 	PASS();
 }
 
+static void cancel_adv_send_start(uint16_t duration, int err, void *cb_data)
+{
+	if (cb_data != NULL) {
+		struct bt_mesh_adv *adv_cancel = (struct bt_mesh_adv *)cb_data;
+
+		adv_cancel->ctx.busy = 0;
+
+		bt_mesh_adv_unref(adv_cancel);
+
+		return;
+	}
+
+	ASSERT_FALSE_MSG(true, "The adv should be canceled.\n");
+}
+
+static void cancel_adv_send_end(int err, void *cb_data)
+{
+	k_sem_give(&observer_sem);
+}
+
+static void test_tx_send_cancel(void)
+{
+	static const struct bt_mesh_send_cb local_send_cb = {
+		.start = cancel_adv_send_start,
+		.end = cancel_adv_send_end,
+	};
+	struct bt_mesh_adv *adv_cancel;
+	uint8_t xmit = BT_MESH_TRANSMIT(2, 20);
+	struct bt_mesh_adv *local;
+
+	bt_init();
+	adv_init();
+
+	local = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+				   xmit, K_NO_WAIT);
+	ASSERT_FALSE_MSG(!local, "Out of local advs\n");
+
+	adv_cancel = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+					 xmit, K_NO_WAIT);
+	ASSERT_FALSE_MSG(!adv_cancel, "Out of local advs\n");
+
+	net_buf_simple_add_u8(&local->b, 0x00);
+	net_buf_simple_add_u8(&adv_cancel->b, 0x01);
+
+	bt_mesh_adv_send(local, &local_send_cb, bt_mesh_adv_ref(adv_cancel));
+	bt_mesh_adv_send(adv_cancel, &local_send_cb, NULL);
+
+	bt_mesh_adv_unref(local);
+	bt_mesh_adv_unref(adv_cancel);
+
+	/* Make relay advs sent out. */
+	k_sleep(K_SECONDS(1));
+
+	ASSERT_OK_MSG(k_sem_take(&observer_sem, K_SECONDS(10)),
+		      "Didn't call the last end tx cb.");
+
+	PASS();
+}
+
+static void terminate_adv_send_start(uint16_t duration, int err, void *cb_data)
+{
+	if (cb_data == NULL) {
+		k_sem_give(&observer_sem);
+		return;
+	}
+}
+
+static void terminate_adv_send_end(int err, void *cb_data)
+{
+	ASSERT_FALSE_MSG(true, "The adv should be terminated.\n");
+}
+
+static void test_tx_send_terminate(void)
+{
+	static const struct bt_mesh_send_cb local_send_cb = {
+		.start = terminate_adv_send_start,
+		.end = terminate_adv_send_end,
+	};
+	uint8_t xmit = BT_MESH_TRANSMIT(2, 20);
+	struct bt_mesh_adv *local;
+
+	bt_init();
+	adv_init();
+
+	local = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+				   xmit, K_NO_WAIT);
+	ASSERT_FALSE_MSG(!local, "Out of local advs\n");
+
+	net_buf_simple_add_u8(&local->b, 0x00);
+
+	bt_mesh_adv_send(local, &local_send_cb, NULL);
+
+	bt_mesh_adv_unref(local);
+
+	ASSERT_OK_MSG(k_sem_take(&observer_sem, K_SECONDS(10)),
+		      "Didn't call the last start tx cb.");
+
+	bt_mesh_adv_terminate(local);
+
+	/* Make relay advs sent out. */
+	k_sleep(K_SECONDS(1));
+
+	PASS();
+}
+
+static void local_adv_send_end(int err, void *cb_data)
+{
+	local_sent = true;
+}
+
+static void relay_adv_send_start(uint16_t duration, int err, void *cb_data)
+{
+#if defined(CONFIG_BT_MESH_RELAY_ADV_SETS) && CONFIG_BT_MESH_RELAY_ADV_SETS > 0
+	ASSERT_FALSE_MSG(local_sent,
+			 "The relay adv should sending with the local adv in parallel.\n");
+#else
+	ASSERT_FALSE_MSG(!local_sent,
+			 "The relay adv should start to sending after sent local adv.\n");
+#endif
+}
+
+static void relay_adv_send_end(int err, void *cb_data)
+{
+	relay_sent = true;
+}
+
+static void second_relay_adv_send_start(uint16_t duration, int err, void *cb_data)
+{
+#if defined(CONFIG_BT_MESH_RELAY_ADV_SETS) && CONFIG_BT_MESH_RELAY_ADV_SETS > 0
+	ASSERT_FALSE_MSG(relay_sent,
+			 "The second relay adv should sending with the first relay"
+			 " adv in parallel\n");
+#else
+	ASSERT_FALSE_MSG(!relay_sent,
+			 "The second relay adv should start to sending after sent"
+			 " first relay adv\n");
+#endif
+}
+
+static void second_relay_adv_send_end(int err, void *cb_data)
+{
+	k_sem_give(&observer_sem);
+}
+
+static void test_tx_send_relay(void)
+{
+	static const struct bt_mesh_send_cb local_send_cb = {
+		.end = local_adv_send_end,
+	};
+	static const struct bt_mesh_send_cb relay_first_send_cb = {
+		.start = relay_adv_send_start,
+		.end = relay_adv_send_end,
+	};
+	static const struct bt_mesh_send_cb relay_second_send_cb = {
+		.start = second_relay_adv_send_start,
+		.end = second_relay_adv_send_end,
+	};
+	struct bt_mesh_adv *local, *relay_first, *relay_second;
+	uint8_t xmit = BT_MESH_TRANSMIT(2, 20);
+
+	bt_init();
+	adv_init();
+
+	local = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+				   xmit, K_NO_WAIT);
+	ASSERT_FALSE_MSG(!local, "Out of local advs\n");
+
+	relay_first = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_RELAY,
+					 xmit, K_NO_WAIT);
+	ASSERT_FALSE_MSG(!relay_first, "Out of relay advs\n");
+
+	relay_second = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_RELAY,
+					  xmit, K_NO_WAIT);
+	ASSERT_FALSE_MSG(!relay_second, "Out of relay advs\n");
+
+	net_buf_simple_add_u8(&local->b, 0x00);
+	net_buf_simple_add_u8(&relay_first->b, 0x01);
+	net_buf_simple_add_u8(&relay_second->b, 0x02);
+
+	bt_mesh_adv_send(local, &local_send_cb, NULL);
+	bt_mesh_adv_send(relay_first, &relay_first_send_cb, NULL);
+	bt_mesh_adv_send(relay_second, &relay_second_send_cb, NULL);
+
+	bt_mesh_adv_unref(local);
+	bt_mesh_adv_unref(relay_first);
+	bt_mesh_adv_unref(relay_second);
+
+	/* Make relay advs sent out. */
+	k_sleep(K_SECONDS(1));
+
+	ASSERT_OK_MSG(k_sem_take(&observer_sem, K_SECONDS(10)),
+		      "Didn't call the last end tx cb.");
+
+	PASS();
+}
+
 static void test_tx_reverse_order(void)
 {
 	struct bt_mesh_adv *adv[CONFIG_BT_MESH_ADV_BUF_COUNT];
@@ -765,7 +962,10 @@ static const struct bst_test_instance test_adv[] = {
 	TEST_CASE(tx, cb_single,     "ADV: tx cb parameter checker"),
 	TEST_CASE(tx, cb_multi,      "ADV: tx cb sequence checker"),
 	TEST_CASE(tx, proxy_mixin,   "ADV: proxy mix-in gatt adv"),
+	TEST_CASE(tx, send_cancel,   "ADV: tx send cancel"),
+	TEST_CASE(tx, send_terminate, "ADV: tx send terminate"),
 	TEST_CASE(tx, send_order,    "ADV: tx send order"),
+	TEST_CASE(tx, send_relay,    "ADV: tx relay sent order"),
 	TEST_CASE(tx, reverse_order, "ADV: tx reversed order"),
 	TEST_CASE(tx, random_order,  "ADV: tx random order"),
 	TEST_CASE(tx, disable,       "ADV: test suspending/resuming advertiser"),

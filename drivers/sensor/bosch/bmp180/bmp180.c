@@ -278,10 +278,16 @@ static void bmp180_compensate_temp(struct bmp180_data *data)
 {
 	int32_t partial_data1;
 	int32_t partial_data2;
+	int32_t divisor;
 	struct bmp180_cal_data *cal = &data->cal;
 
 	partial_data1 = (data->raw_temp - cal->ac6) * cal->ac5 / 0x8000;
-	partial_data2 = cal->mc * 0x800 / (partial_data1 + cal->md);
+
+	/* Check divisor before division */
+	divisor = partial_data1 + cal->md;
+	__ASSERT(divisor != 0, "divisor is zero: partial_data1=%d, md=%d", partial_data1, cal->md);
+
+	partial_data2 = cal->mc * 0x800 / divisor;
 
 	/* Store for pressure calculation */
 	data->comp_temp = (partial_data1 + partial_data2);
@@ -327,7 +333,7 @@ static uint32_t bmp180_compensate_press(struct bmp180_data *data)
 	partial_X1 = (cal->ac3 * partial_B6) / 0x2000;
 	partial_X2 = cal->b1 * partial_B6 * (float)(1.0f * partial_B6 / 0x8000000);
 	partial_X3 = (partial_X1 + partial_X2 + 2) / 4;
-	partial_B4 = (uint64_t)(cal->ac4 * (partial_X3 + 32768)) / 0x8000;
+	partial_B4 = (uint64_t)(cal->ac4 * ((int64_t)(partial_X3) + 32768)) >> 15;
 	partial_B7 = (uint64_t)(raw_pressure - partial_B3) * (50000 >> data->osr_pressure);
 
 	comp_press = (uint32_t)(partial_B7 / partial_B4 * 2);

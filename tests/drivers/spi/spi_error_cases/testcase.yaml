@@ -1,6 +1,8 @@
 common:
   depends_on: spi
-  tags: drivers spi
+  tags:
+    - drivers
+    - spi
   harness: ztest
   harness_config:
     fixture: gpio_spi_loopback
@@ -10,6 +12,7 @@ tests:
       - nrf52840dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
     integration_platforms:
       - nrf52840dk/nrf52840
   drivers.spi.spi_error_cases.fast:

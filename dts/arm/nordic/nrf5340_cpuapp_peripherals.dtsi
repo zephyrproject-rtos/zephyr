@@ -287,6 +287,7 @@ adc: adc@e000 {
 	interrupts = <14 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	#io-channel-cells = <1>;
+	zephyr,pm-device-runtime-auto;
 };
 
 timer0: timer@f000 {
@@ -339,7 +340,7 @@ rtc1: rtc@15000 {
 	prescaler = <1>;
 };
 
-dppic: dppic@17000 {
+dppic0: dppic: dppic@17000 {
 	compatible = "nordic,nrf-dppic";
 	reg = <0x17000 0x1000>;
 	status = "okay";

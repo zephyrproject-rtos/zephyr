@@ -1,0 +1,16 @@
+identifier: mks_canable_v20
+name: MKS CANable V2.0
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 32
+flash: 64
+supported:
+  - can
+  - counter
+  - gpio
+  - usb_device
+  - usbd
+vendor: makerbase

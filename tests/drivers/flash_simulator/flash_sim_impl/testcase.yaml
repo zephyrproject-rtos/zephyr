@@ -31,11 +31,15 @@ tests:
       - qemu_x86
   drivers.flash.flash_simulator.native_erase_value_0x00:
     extra_args: DTC_OVERLAY_FILE=boards/native_ev_0x00.overlay
-    platform_allow: native_posix native_sim
+    platform_allow:
+      - native_posix
+      - native_sim
     integration_platforms:
       - native_sim
   drivers.flash.flash_simulator.native_64_erase_value_0x00:
     extra_args: DTC_OVERLAY_FILE=boards/native_64_ev_0x00.overlay
-    platform_allow: native_posix/native/64 native_sim/native/64
+    platform_allow:
+      - native_posix/native/64
+      - native_sim/native/64
     integration_platforms:
       - native_sim/native/64

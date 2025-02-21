@@ -739,6 +739,7 @@ error:
 static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 {
 	struct i2c_dw_dev_config *const dw = dev->data;
+	const struct i2c_dw_rom_config *const rom = dev->config;
 	uint32_t value = 0U;
 	uint32_t rc = 0U;
 	uint32_t reg_base = get_regs(dev);
@@ -752,10 +753,9 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 		/* Following the directions on DW spec page 59, IC_SS_SCL_LCNT
 		 * must have register values larger than IC_FS_SPKLEN + 7
 		 */
-		if (I2C_STD_LCNT <= (read_fs_spklen(reg_base) + 7)) {
+		value = I2C_STD_LCNT + rom->lcnt_offset;
+		if (value <= (read_fs_spklen(reg_base) + 7)) {
 			value = read_fs_spklen(reg_base) + 8;
-		} else {
-			value = I2C_STD_LCNT;
 		}
 
 		dw->lcnt = value;
@@ -763,10 +763,9 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 		/* Following the directions on DW spec page 59, IC_SS_SCL_HCNT
 		 * must have register values larger than IC_FS_SPKLEN + 5
 		 */
-		if (I2C_STD_HCNT <= (read_fs_spklen(reg_base) + 5)) {
+		value = I2C_STD_HCNT + rom->hcnt_offset;
+		if (value <= (read_fs_spklen(reg_base) + 5)) {
 			value = read_fs_spklen(reg_base) + 6;
-		} else {
-			value = I2C_STD_HCNT;
 		}
 
 		dw->hcnt = value;
@@ -776,10 +775,9 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 		 * Following the directions on DW spec page 59, IC_FS_SCL_LCNT
 		 * must have register values larger than IC_FS_SPKLEN + 7
 		 */
-		if (I2C_FS_LCNT <= (read_fs_spklen(reg_base) + 7)) {
+		value = I2C_FS_LCNT + rom->lcnt_offset;
+		if (value <= (read_fs_spklen(reg_base) + 7)) {
 			value = read_fs_spklen(reg_base) + 8;
-		} else {
-			value = I2C_FS_LCNT;
 		}
 
 		dw->lcnt = value;
@@ -788,10 +786,9 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 		 * Following the directions on DW spec page 59, IC_FS_SCL_HCNT
 		 * must have register values larger than IC_FS_SPKLEN + 5
 		 */
-		if (I2C_FS_HCNT <= (read_fs_spklen(reg_base) + 5)) {
+		value = I2C_FS_HCNT + rom->hcnt_offset;
+		if (value <= (read_fs_spklen(reg_base) + 5)) {
 			value = read_fs_spklen(reg_base) + 6;
-		} else {
-			value = I2C_FS_HCNT;
 		}
 
 		dw->hcnt = value;
@@ -801,10 +798,9 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 		 * Following the directions on DW spec page 59, IC_FS_SCL_LCNT
 		 * must have register values larger than IC_FS_SPKLEN + 7
 		 */
-		if (I2C_FSP_LCNT <= (read_fs_spklen(reg_base) + 7)) {
+		value = I2C_FSP_LCNT + rom->lcnt_offset;
+		if (value <= (read_fs_spklen(reg_base) + 7)) {
 			value = read_fs_spklen(reg_base) + 8;
-		} else {
-			value = I2C_FSP_LCNT;
 		}
 
 		dw->lcnt = value;
@@ -813,28 +809,25 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 		 * Following the directions on DW spec page 59, IC_FS_SCL_HCNT
 		 * must have register values larger than IC_FS_SPKLEN + 5
 		 */
-		if (I2C_FSP_HCNT <= (read_fs_spklen(reg_base) + 5)) {
+		value = I2C_FSP_HCNT + rom->hcnt_offset;
+		if (value <= (read_fs_spklen(reg_base) + 5)) {
 			value = read_fs_spklen(reg_base) + 6;
-		} else {
-			value = I2C_FSP_HCNT;
 		}
 
 		dw->hcnt = value;
 		break;
 	case I2C_SPEED_HIGH:
 		if (dw->support_hs_mode) {
-			if (I2C_HS_LCNT <= (read_hs_spklen(reg_base) + 7)) {
+			value = I2C_HS_LCNT + rom->lcnt_offset;
+			if (value <= (read_hs_spklen(reg_base) + 7)) {
 				value = read_hs_spklen(reg_base) + 8;
-			} else {
-				value = I2C_HS_LCNT;
 			}
 
 			dw->lcnt = value;
 
-			if (I2C_HS_HCNT <= (read_hs_spklen(reg_base) + 5)) {
+			value = I2C_HS_HCNT + rom->hcnt_offset;
+			if (value <= (read_hs_spklen(reg_base) + 5)) {
 				value = read_hs_spklen(reg_base) + 6;
-			} else {
-				value = I2C_HS_HCNT;
 			}
 
 			dw->hcnt = value;
@@ -1023,7 +1016,7 @@ static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev)
 }
 #endif /* CONFIG_I2C_TARGET */
 
-static const struct i2c_driver_api funcs = {
+static DEVICE_API(i2c, funcs) = {
 	.configure = i2c_dw_runtime_configure,
 	.transfer = i2c_dw_transfer,
 #ifdef CONFIG_I2C_TARGET
@@ -1147,8 +1140,8 @@ static int i2c_dw_initialize(const struct device *dev)
 #endif
 
 #if defined(CONFIG_RESET)
-#define RESET_DW_CONFIG(n)                                                                         \
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, resets),                          \
+#define RESET_DW_CONFIG(n)                                                    \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                          \
 		   (.reset = RESET_DT_SPEC_INST_GET(n),))
 #else
 #define RESET_DW_CONFIG(n)
@@ -1215,6 +1208,8 @@ static int i2c_dw_initialize(const struct device *dev)
 	static const struct i2c_dw_rom_config i2c_config_dw_##n = {                                \
 		I2C_CONFIG_REG_INIT(n).config_func = i2c_config_##n,                               \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
+		.lcnt_offset = (int16_t)DT_INST_PROP_OR(n, lcnt_offset, 0),                        \
+		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \
 		RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)                        \
 			I2C_CONFIG_DMA_INIT(n)};                                                   \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                                         \

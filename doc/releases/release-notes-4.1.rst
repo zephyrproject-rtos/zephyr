@@ -1,5 +1,29 @@
 :orphan:
 
+..
+  What goes here: removed/deprecated apis, new boards, new drivers, notable
+  features. If you feel like something new can be useful to a user, put it
+  under "Other Enhancements" in the first paragraph, if you feel like something
+  is worth mentioning in the project media (release blog post, release
+  livestream) put it under "Major enhancement".
+..
+  If you are describing a feature or functionality, consider adding it to the
+  actual project documentation rather than the release notes, so that the
+  information does not get lost in time.
+..
+  No list of bugfixes, minor changes, those are already in the git log, this is
+  not a changelog.
+..
+  Does the entry have a link that contains the details? Just add the link, if
+  you think it needs more details, put them in the content that shows up on the
+  link.
+..
+  Are you thinking about generating this? Don't put anything at all.
+..
+  Does the thing require the user to change their application? Put it on the
+  migration guide instead. (TODO: move the removed APIs section in the
+  migration guide)
+
 .. _zephyr_4.1:
 
 Zephyr 4.1.0 (Working Draft)
@@ -24,338 +48,768 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
-Removed APIs in this release
-============================
+Removed APIs and options
+========================
 
- * The deprecated Bluetooth HCI driver API has been removed. It has been replaced by a
-   :c:group:`new API<bt_hci_api>` that follows the normal Zephyr driver model.
+* The legacy Bluetooth HCI driver API has been removed. It has been replaced
+  by a :c:group:`new API<bt_hci_api>` that follows the normal Zephyr driver
+  model.
 
-Deprecated in this release
-==========================
+* The ``CAN_MAX_STD_ID`` (replaced by :c:macro:`CAN_STD_ID_MASK`) and
+  ``CAN_MAX_EXT_ID`` (replaced by :c:macro:`CAN_EXT_ID_MASK`) CAN API macros
+  have been removed.
 
-* Deprecated the :c:func:`bt_le_set_auto_conn` API function. Application developers can achieve
+* The ``can_get_min_bitrate()`` (replaced by :c:func:`can_get_bitrate_min`)
+  and ``can_get_max_bitrate()`` (replaced by :c:func:`can_get_bitrate_max`)
+  CAN API functions have been removed.
+
+* The ``can_calc_prescaler()`` CAN API function has been removed.
+
+* The :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` option has been
+  removed.  It was a legacy option and was used to allow user to call BSD
+  socket API while not enabling POSIX API.  This removal means that in order
+  to use POSIX API socket calls, one needs to enable the
+  :kconfig:option:`CONFIG_POSIX_API` option.  If the application does not want
+  or is not able to enable that option, then the socket API calls need to be
+  prefixed by a ``zsock_`` string.
+
+* Removed ``video_pix_fmt_bpp()`` function that was returning a *byte* count
+  and only supported 8-bit depth to :c:func:`video_bits_per_pixel()` returning
+  the *bit* count and supporting any color depth.
+
+* The ``video_stream_start()`` and ``video_stream_stop()`` driver APIs have been
+  replaced by ``video_set_stream()``.
+
+* :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO`
+
+* The :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE` option has been removed
+  after being deprecated in favor of :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED`.
+
+* The ``z_pm_save_idle_exit()`` PM API function has been removed.
+
+
+Deprecated APIs and options
+===========================
+
+* the :c:func:`bt_le_set_auto_conn` API function. Application developers can achieve
   the same functionality in their application code by reconnecting to the peer when the
   :c:member:`bt_conn_cb.disconnected` callback is invoked.
 
-Architectures
-*************
+* :kconfig:option:`CONFIG_NATIVE_APPLICATION` has been deprecated.
 
-* Common
+* Deprecated the :c:func:`stream_flash_erase_page` from Stream Flash API. The same functionality
+  can be achieved using :c:func:`flash_area_erase` or :c:func:`flash_erase`. Nevertheless
+  erasing of a device, while stream flash is supposed to do so, as configured, will result in
+  data lost from stream flash. There are only two situations where device should be erased
+  directly:
 
-  * Introduced :kconfig:option:`CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL`, which can be selected when
-    an architecture implemented and enabled its own :c:func:`arch_current_thread` and
-    :c:func:`arch_current_thread_set` functions for faster retrieval of the current CPU's thread
-    pointer. When enabled, ``_current`` variable will be routed to the
-    :c:func:`arch_current_thread` (:github:`80716`).
+  1. when Stream Flash is not configured to do erase on its own
+  2. when erase is used for removal of a data prior or after Stream Flash uses the designated area.
 
-* ARC
+* For the native_sim target :kconfig:option:`CONFIG_NATIVE_SIM_NATIVE_POSIX_COMPAT` has been
+  switched to ``n`` by default, and this option has been deprecated.
 
-* ARM
+* :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT`
 
-* ARM64
+* All HWMv1 board name aliases which were added as deprecated in v3.7 are now removed
+  (:github:`82247`).
 
-* RISC-V
+* The TinyCrypt library has been deprecated as the upstream version is no longer maintained.
+  PSA Crypto API is now the recommended cryptographic library for Zephyr.
 
-  * Implements :c:func:`arch_current_thread_set` & :c:func:`arch_current_thread`, which can be enabled
-    by :kconfig:option:`CONFIG_RISCV_CURRENT_VIA_GP` (:github:`80716`).
+* The :kconfig:option:`CONFIG_BT_DIS_MODEL` and :kconfig:option:`CONFIG_BT_DIS_MANUF` have been
+  deprecated. Application developers can achieve the same configuration by using the new
+  :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER_STR` and
+  :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME_STR` Kconfig options.
 
-* Xtensa
+New APIs and options
+====================
 
-* native/POSIX
+..
+  Link to new APIs here, in a group if you think it's necessary, no need to get
+  fancy just list the link, that should contain the documentation. If you feel
+  like you need to add more details, add them in the API documentation code
+  instead.
 
-  * :kconfig:option:`CONFIG_NATIVE_APPLICATION` has been deprecated.
-  * For the native_sim target :kconfig:option:`CONFIG_NATIVE_SIM_NATIVE_POSIX_COMPAT` has been
-    switched to ``n`` by default, and this option has been deprecated.
+* Architectures
 
-Kernel
-******
+  * :kconfig:option:`CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL`
+  * :kconfig:option:`CONFIG_RISCV_CURRENT_VIA_GP`
 
-Bluetooth
-*********
+* Bluetooth
 
-* Audio
+  * Audio
 
-* Host
+    * :c:func:`bt_bap_broadcast_source_register_cb`
+    * :c:func:`bt_bap_broadcast_source_unregister_cb`
+    * :c:func:`bt_cap_commander_distribute_broadcast_code`
+    * ``bt_ccp`` API (in progress)
+    * :c:func:`bt_pacs_register`
+    * :c:func:`bt_pacs_unregister`
 
-  * :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` has been deprecated and
-    :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA` has been added.
+  * Host
 
-* HCI Drivers
+    * :c:func:`bt_conn_is_type`
 
-Boards & SoC Support
-********************
+  * Mesh
 
-* Added support for these SoC series:
+    * :c:member:`bt_mesh_health_cli::update` callback can be used to periodically update the message
+      published by the Health Client.
 
-* Made these changes in other SoC series:
+  * Services
 
-* Added support for these boards:
+    * The :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER` and
+      :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME` Kconfig options can be used to control the
+      presence of the Model Number String and Manufacturer Name String characteristics inside
+      the Device Information Service (DIS). The :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER_STR`
+      and :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME_STR` Kconfig options are now used to set the
+      string values in these characteristics. They replace the functionality of the deprecated
+      :kconfig:option:`CONFIG_BT_DIS_MODEL` and :kconfig:option:`CONFIG_BT_DIS_MANUF` Kconfigs.
 
-* Made these board changes:
+* Build system
 
-  * All HWMv1 board name aliases which were added as deprecated in v3.7 are now removed
-    (:github:`82247`).
+  * Sysbuild
 
-* Added support for the following shields:
-
-Build system and Infrastructure
-*******************************
-
-Drivers and Sensors
-*******************
-
-* ADC
-
-* Battery
-
-* CAN
-
-* Charger
-
-* Clock control
-
-* Counter
-
-* DAC
-
-* Disk
-
-* Display
-
-  * Added flag ``frame_incomplete`` to ``display_write`` that indicates whether a write is the last
-    write of the frame, allowing display drivers to implement double buffering / tearing enable
-    signal handling (:github:`81250`)
-  * Added ``frame_incomplete`` handling to SDL display driver (:dtcompatible:`zephyr,sdl-dc`)
-    (:github:`81250`)
-  * Added transparency support to SDL display driver (:dtcompatible:`zephyr,sdl-dc`) (:github:`81184`)
-
-* Ethernet
-
-* Flash
-
-* FPGA
-
-  * Extracted from :dtcompatible:`lattice,ice40-fpga` the compatible and driver for
-    :dtcompatible:`lattice,ice40-fpga-bitbang`. This replaces the original ``load_mode`` property from
-    the binding, which selected either the SPI or GPIO bitbang load mode.
-
-* GNSS
-
-* GPIO
-
-* Hardware info
-
-* I2C
-
-* I2S
-
-* I3C
-
-* Input
-
-* LED
-
-  * Added a new set of devicetree based LED APIs, see :c:struct:`led_dt_spec`.
-  * lp5569: added use of auto-increment functionality.
-  * lp5569: implemented ``write_channels`` api.
-  * lp5569: demonstrate ``led_write_channels`` in the sample.
-
-* LED Strip
-
-* LoRa
-
-* Mailbox
-
-* MDIO
-
-* MFD
-
-* Modem
-
-* MIPI-DBI
-
-* MSPI
-
-* Pin control
-
-  * Added new driver for Silabs Series 2 (:dtcompatible:`silabs,dbus-pinctrl`).
-
-* PWM
-
-* Regulators
-
-* Reset
-
-* RTC
-
-* RTIO
-
-* SDHC
-
-* Sensors
-
-* Serial
-
-* SPI
-
-* USB
-
-* Video
-
-  * Changed :file:`include/zephyr/drivers/video-controls.h` to have control IDs (CIDs) matching
-    those present in the Linux kernel.
-
-* Watchdog
-
-* Wi-Fi
-
-Networking
-**********
-
-* ARP:
-
-* CoAP:
-
-* Connection manager:
-
-* DHCPv4:
-
-* DHCPv6:
-
-* DNS/mDNS/LLMNR:
-
-* gPTP/PTP:
-
-* HTTP:
-
-* IPSP:
-
-* IPv4:
-
-* IPv6:
-
-* LwM2M:
-
-* Misc:
-
-* MQTT:
-
-* Network Interface:
-
-* OpenThread
-
-* PPP
-
-* Shell:
-
-* Sockets:
-
-* Syslog:
-
-* TCP:
-
-* Websocket:
-
-* Wi-Fi:
-
-* zperf:
-
-USB
-***
-
-Devicetree
-**********
-
-* Added :c:macro:`DT_ANY_INST_HAS_BOOL_STATUS_OKAY`.
-
-Kconfig
-*******
-
-Libraries / Subsystems
-**********************
-
-* Debug
-
-* Demand Paging
-
-* Formatted output
-
-* Management
-
-* Logging
-
-* Modem modules
-
-* Power management
+    * The newly introduced MCUboot swap using offset mode can be selected from sysbuild by using
+      ``SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET``, this mode is experimental.
 
 * Crypto
 
-  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS` was
-    added to allow Mbed TLS to use statically allocated buffers to store key material
-    in its PSA Crypto core instead of heap-allocated ones. This can help reduce
-    (or remove, if no other component makes use of it) heap memory requirements
-    from the final application.
+  * :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS`
+  * :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT`
 
-  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT` was
-    added to allow selecting the number of key slots available in the Mbed TLS
-    implementation of the PSA Crypto core. It defaults to 16. Since each
-    slot consumes RAM memory even if unused, this value can be tweaked in order
-    to minimize RAM usage.
+* Management
 
-* CMSIS-NN
+  * hawkBit
 
-* FPGA
+    * The hawkBit subsystem now uses the State Machine Framework internally.
+    * :kconfig:option:`CONFIG_HAWKBIT_TENANT`
+    * :kconfig:option:`CONFIG_HAWKBIT_EVENT_CALLBACKS`
+    * :kconfig:option:`CONFIG_HAWKBIT_SAVE_PROGRESS`
 
-* Random
+  * MCUmgr
 
-* SD
+    * Image management :c:macro:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED` now has image data field
+      :c:struct:`img_mgmt_image_confirmed`.
 
-* State Machine Framework
+* MCUboot
 
-* Storage
+  * Signed hex files where an encryption key Kconfig is set now have the encrypted flag set in
+    the image header.
 
-* Task Watchdog
+* Video
 
-* POSIX API
+  * :c:func:`video_set_stream()` driver API has replaced :c:func:`video_stream_start()` and
+    :c:func:`video_stream_stop()` driver APIs.
 
-* LoRa/LoRaWAN
+* Other
 
-* ZBus
+  * :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA`
+  * :c:macro:`DT_ANY_INST_HAS_BOOL_STATUS_OKAY`
+  * :c:struct:`led_dt_spec`
+  * :kconfig:option:`CONFIG_STEP_DIR_STEPPER`
 
-HALs
-****
+New Boards
+**********
+..
+  You may update this list as you contribute a new board during the release cycle, in order to make
+  it visible to people who might be looking at the working draft of the release notes. However, note
+  that this list will be recomputed at the time of the release, so you don't *have* to update it.
+  In any case, just link the board, further details go in the board description.
 
-* Nordic
+* Adafruit Industries, LLC
 
-* STM32
+   * :zephyr:board:`adafruit_feather_m4_express` (``adafruit_feather_m4_express``)
+   * :zephyr:board:`adafruit_macropad_rp2040` (``adafruit_macropad_rp2040``)
+   * :zephyr:board:`adafruit_qt_py_esp32s3` (``adafruit_qt_py_esp32s3``)
 
-* ADI
+* Advanced Micro Devices (AMD), Inc.
 
-* Espressif
+   * :zephyr:board:`acp_6_0_adsp` (``acp_6_0_adsp``)
 
-MCUboot
-*******
+* Analog Devices, Inc.
 
-OSDP
-****
+   * :zephyr:board:`ad_swiot1l_sl` (``ad_swiot1l_sl``)
+   * :zephyr:board:`max32650evkit` (``max32650evkit``)
+   * :zephyr:board:`max32650fthr` (``max32650fthr``)
+   * :zephyr:board:`max32660evsys` (``max32660evsys``)
+   * :zephyr:board:`max78000evkit` (``max78000evkit``)
+   * :zephyr:board:`max78000fthr` (``max78000fthr``)
+   * :zephyr:board:`max78002evkit` (``max78002evkit``)
 
-Trusted Firmware-M
-******************
+* Antmicro
 
-LVGL
-****
+   * :zephyr:board:`myra_sip_baseboard` (``myra_sip_baseboard``)
 
-* Added ``frame_incomplete`` support to indicate whether a write is the last
-  write of the frame (:github:`81250`)
+* BeagleBoard.org Foundation
 
-Tests and Samples
-*****************
+   * :zephyr:board:`beagley_ai` (``beagley_ai``)
 
-* Fixed incorrect alpha values in :zephyr_file:`samples/drivers/display`. (:github:`81184`)
-* Added :zephyr_file:`samples/modules/lvgl/screen_transparency`. (:github:`81184`)
+* FANKE Technology Co., Ltd.
 
-Issue Related Items
-*******************
+   * :zephyr:board:`fk750m1_vbt6` (``fk750m1_vbt6``)
 
-Known Issues
-============
+* Google, Inc.
+
+   * :zephyr:board:`google_icetower` (``google_icetower``)
+   * :zephyr:board:`google_quincy` (``google_quincy``)
+
+* Infineon Technologies
+
+   * :zephyr:board:`cy8ckit_062s2_ai` (``cy8ckit_062s2_ai``)
+
+* Khadas
+
+   * :zephyr:board:`khadas_edge2` (``khadas_edge2``)
+
+* Lilygo Shenzhen Xinyuan Electronic Technology Co., Ltd
+
+   * :zephyr:board:`ttgo_t7v1_5` (``ttgo_t7v1_5``)
+   * :zephyr:board:`ttgo_t8s3` (``ttgo_t8s3``)
+
+* M5Stack
+
+   * :zephyr:board:`m5stack_cores3` (``m5stack_cores3``)
+
+* Makerbase Co., Ltd.
+
+   * :zephyr:board:`mks_canable_v20` (``mks_canable_v20``)
+
+* MediaTek Inc.
+
+   * MT8186 (``mt8186``)
+   * MT8188 (``mt8188``)
+   * MT8196 (``mt8196``)
+
+* NXP Semiconductors
+
+   * :zephyr:board:`frdm_mcxw72` (``frdm_mcxw72``)
+   * :zephyr:board:`imx91_evk` (``imx91_evk``)
+   * :zephyr:board:`mcxw72_evk` (``mcxw72_evk``)
+   * :zephyr:board:`mimxrt700_evk` (``mimxrt700_evk``)
+
+* Nordic Semiconductor
+
+   * :zephyr:board:`nrf54l09pdk` (``nrf54l09pdk``)
+
+* Norik Systems
+
+   * :zephyr:board:`octopus_io_board` (``octopus_io_board``)
+   * :zephyr:board:`octopus_som` (``octopus_som``)
+
+* Panasonic Corporation
+
+   * :zephyr:board:`panb511evb` (``panb511evb``)
+
+* Peregrine Consultoria e Servicos
+
+   * :zephyr:board:`sam4l_wm400_cape` (``sam4l_wm400_cape``)
+
+* Qorvo, Inc.
+
+   * :zephyr:board:`decawave_dwm3001cdk` (``decawave_dwm3001cdk``)
+
+* RAKwireless Technology Limited
+
+   * :zephyr:board:`rak3172` (``rak3172``)
+
+* Raspberry Pi Foundation
+
+   * :zephyr:board:`rpi_pico2` (``rpi_pico2``)
+
+* Realtek Semiconductor Corp.
+
+   * :zephyr:board:`rts5912_evb` (``rts5912_evb``)
+
+* Renesas Electronics Corporation
+
+   * :zephyr:board:`ek_ra4l1` (``ek_ra4l1``)
+   * :zephyr:board:`ek_ra4m1` (``ek_ra4m1``)
+   * :zephyr:board:`fpb_ra4e1` (``fpb_ra4e1``)
+   * :zephyr:board:`rzg3s_smarc` (``rzg3s_smarc``)
+   * :zephyr:board:`voice_ra4e1` (``voice_ra4e1``)
+
+* STMicroelectronics
+
+   * :zephyr:board:`nucleo_c071rb` (``nucleo_c071rb``)
+   * :zephyr:board:`nucleo_f072rb` (``nucleo_f072rb``)
+   * :zephyr:board:`nucleo_h7s3l8` (``nucleo_h7s3l8``)
+   * :zephyr:board:`nucleo_n657x0_q` (``nucleo_n657x0_q``)
+   * :zephyr:board:`nucleo_wb07cc` (``nucleo_wb07cc``)
+   * :zephyr:board:`stm32f413h_disco` (``stm32f413h_disco``)
+   * :zephyr:board:`stm32n6570_dk` (``stm32n6570_dk``)
+
+* Seeed Technology Co., Ltd
+
+   * :zephyr:board:`xiao_esp32c6` (``xiao_esp32c6``)
+
+* Shenzhen Fuyuansheng Electronic Technology Co., Ltd.
+
+   * :zephyr:board:`ucan` (``ucan``)
+
+* Silicon Laboratories
+
+   * :zephyr:board:`siwx917_rb4338a` (``siwx917_rb4338a``)
+   * :zephyr:board:`xg23_rb4210a` (``xg23_rb4210a``)
+   * :zephyr:board:`xg24_ek2703a` (``xg24_ek2703a``)
+   * :zephyr:board:`xg29_rb4412a` (``xg29_rb4412a``)
+
+* Texas Instruments
+
+   * :zephyr:board:`lp_em_cc2340r5` (``lp_em_cc2340r5``)
+
+* Toradex AG
+
+   * :zephyr:board:`verdin_imx8mm` (``verdin_imx8mm``)
+
+* Waveshare Electronics
+
+   * :zephyr:board:`rp2040_zero` (``rp2040_zero``)
+
+* WeAct Studio
+
+   * :zephyr:board:`mini_stm32h7b0` (``mini_stm32h7b0``)
+   * :zephyr:board:`weact_stm32h5_core` (``weact_stm32h5_core``)
+
+* WinChipHead
+
+   * :zephyr:board:`ch32v003evt` (``ch32v003evt``)
+
+* Würth Elektronik GmbH.
+
+   * :zephyr:board:`we_oceanus1ev` (``we_oceanus1ev``)
+   * :zephyr:board:`we_orthosie1ev` (``we_orthosie1ev``)
+
+* others
+
+   * :zephyr:board:`canbardo` (``canbardo``)
+   * :zephyr:board:`candlelight` (``candlelight``)
+   * :zephyr:board:`candlelightfd` (``candlelightfd``)
+   * :zephyr:board:`esp32c3_supermini` (``esp32c3_supermini``)
+   * :zephyr:board:`promicro_nrf52840` (``promicro_nrf52840``)
+
+New Drivers
+***********
+..
+  Same as above for boards, this will also be recomputed at the time of the release.
+  Just link the driver, further details go in the binding description
+
+* :abbr:`ADC (Analog to Digital Converter)`
+
+   * :dtcompatible:`adi,ad4114-adc`
+   * :dtcompatible:`adi,ad7124-adc`
+   * :dtcompatible:`st,stm32n6-adc`
+   * :dtcompatible:`ti,ads114s06`
+   * :dtcompatible:`ti,ads124s06`
+   * :dtcompatible:`ti,ads124s08`
+   * :dtcompatible:`ti,ads131m02`
+   * :dtcompatible:`ti,tla2022`
+   * :dtcompatible:`ti,tla2024`
+
+* ARM architecture
+
+   * :dtcompatible:`nxp,nbu`
+
+* Audio
+
+   * :dtcompatible:`cirrus,cs43l22`
+   * :dtcompatible:`intel,adsp-mic-privacy`
+
+* Bluetooth
+
+   * :dtcompatible:`renesas,bt-hci-da1453x`
+   * :dtcompatible:`silabs,siwx91x-bt-hci`
+   * :dtcompatible:`st,hci-stm32wb0`
+
+* Charger
+
+   * :dtcompatible:`nxp,pf1550-charger`
+
+* Clock control
+
+   * :dtcompatible:`atmel,sam0-gclk`
+   * :dtcompatible:`atmel,sam0-mclk`
+   * :dtcompatible:`atmel,sam0-osc32kctrl`
+   * :dtcompatible:`nordic,nrf-hsfll-global`
+   * :dtcompatible:`nuvoton,npcm-pcc`
+   * :dtcompatible:`realtek,rts5912-sccon`
+   * :dtcompatible:`st,stm32n6-cpu-clock-mux`
+   * :dtcompatible:`st,stm32n6-hse-clock`
+   * :dtcompatible:`st,stm32n6-ic-clock-mux`
+   * :dtcompatible:`st,stm32n6-pll-clock`
+   * :dtcompatible:`st,stm32n6-rcc`
+   * :dtcompatible:`wch,ch32v00x-hse-clock`
+   * :dtcompatible:`wch,ch32v00x-hsi-clock`
+   * :dtcompatible:`wch,ch32v00x-pll-clock`
+   * :dtcompatible:`wch,rcc`
+
+* Comparator
+
+   * :dtcompatible:`silabs,acmp`
+
+* Counter
+
+   * :dtcompatible:`adi,max32-rtc-counter`
+   * :dtcompatible:`renesas,rz-gtm-counter`
+
+* CPU
+
+   * :dtcompatible:`wch,qingke-v2`
+
+* :abbr:`DAC (Digital to Analog Converter)`
+
+   * :dtcompatible:`adi,max22017-dac`
+   * :dtcompatible:`renesas,ra-dac`
+   * :dtcompatible:`renesas,ra-dac-global`
+
+* :abbr:`DAI (Digital Audio Interface)`
+
+   * :dtcompatible:`mediatek,afe`
+   * :dtcompatible:`nxp,dai-micfil`
+
+* Display
+
+   * :dtcompatible:`ilitek,ili9806e-dsi`
+   * :dtcompatible:`renesas,ra-glcdc`
+   * :dtcompatible:`solomon,ssd1309fb`
+
+* :abbr:`DMA (Direct Memory Access)`
+
+   * :dtcompatible:`infineon,cat1-dma`
+   * :dtcompatible:`nxp,sdma`
+   * :dtcompatible:`silabs,ldma`
+   * :dtcompatible:`silabs,siwx91x-dma`
+   * :dtcompatible:`xlnx,axi-dma-1.00.a`
+   * :dtcompatible:`xlnx,eth-dma`
+
+* :abbr:`DSA (Distributed Switch Architecture)`
+
+   * :dtcompatible:`nxp,netc-switch`
+
+* :abbr:`EEPROM (Electrically Erasable Programmable Read-Only Memory)`
+
+  *  :dtcompatible:`fujitsu,mb85rsxx`
+
+* Ethernet
+
+   * :dtcompatible:`davicom,dm8806-phy`
+   * :dtcompatible:`microchip,lan9250`
+   * :dtcompatible:`microchip,t1s-phy`
+   * :dtcompatible:`microchip,vsc8541`
+   * :dtcompatible:`renesas,ra-ethernet`
+   * :dtcompatible:`sensry,sy1xx-mac`
+
+* Firmware
+
+   * :dtcompatible:`arm,scmi-power`
+
+* Flash controller
+
+   * :dtcompatible:`silabs,siwx91x-flash-controller`
+   * :dtcompatible:`ti,cc23x0-flash-controller`
+
+* :abbr:`FPGA (Field Programmable Gate Array)`
+
+   * :dtcompatible:`lattice,ice40-fpga-base`
+   * :dtcompatible:`lattice,ice40-fpga-bitbang`
+
+* :abbr:`GPIO (General Purpose Input/Output)`
+
+   * :dtcompatible:`adi,max22017-gpio`
+   * :dtcompatible:`adi,max22190-gpio`
+   * :dtcompatible:`awinic,aw9523b-gpio`
+   * :dtcompatible:`ite,it8801-gpio`
+   * :dtcompatible:`microchip,mec5-gpio`
+   * :dtcompatible:`nordic,npm2100-gpio`
+   * :dtcompatible:`nxp,pca6416`
+   * :dtcompatible:`raspberrypi,rp1-gpio`
+   * :dtcompatible:`realtek,rts5912-gpio`
+   * :dtcompatible:`renesas,ra-gpio-mipi-header`
+   * :dtcompatible:`renesas,rz-gpio`
+   * :dtcompatible:`renesas,rz-gpio-int`
+   * :dtcompatible:`sensry,sy1xx-gpio`
+   * :dtcompatible:`silabs,siwx91x-gpio`
+   * :dtcompatible:`silabs,siwx91x-gpio-port`
+   * :dtcompatible:`silabs,siwx91x-gpio-uulp`
+   * :dtcompatible:`st,dcmi-camera-fpu-330zh`
+   * :dtcompatible:`st,mfxstm32l152`
+   * :dtcompatible:`stemma-qt-connector`
+   * :dtcompatible:`ti,cc23x0-gpio`
+   * :dtcompatible:`wch,gpio`
+
+* IEEE 802.15.4 HDLC RCP interface
+
+   * :dtcompatible:`nxp,hdlc-rcp-if`
+   * :dtcompatible:`uart,hdlc-rcp-if`
+
+* :abbr:`I2C (Inter-Integrated Circuit)`
+
+   * :dtcompatible:`nordic,nrf-twis`
+   * :dtcompatible:`nxp,ii2c`
+   * :dtcompatible:`ti,omap-i2c`
+   * :dtcompatible:`ti,tca9544a`
+
+* :abbr:`I3C (Improved Inter-Integrated Circuit)`
+
+   * :dtcompatible:`snps,designware-i3c`
+   * :dtcompatible:`st,stm32-i3c`
+
+* IEEE 802.15.4
+
+   * :dtcompatible:`nxp,mcxw-ieee802154`
+
+* Input
+
+   * :dtcompatible:`cypress,cy8cmbr3xxx`
+   * :dtcompatible:`ite,it8801-kbd`
+   * :dtcompatible:`microchip,cap12xx`
+   * :dtcompatible:`nintendo,nunchuk`
+
+* Interrupt controller
+
+   * :dtcompatible:`renesas,rz-ext-irq`
+   * :dtcompatible:`wch,pfic`
+
+* Mailbox
+
+   * :dtcompatible:`linaro,ivshmem-mbox`
+   * :dtcompatible:`ti,omap-mailbox`
+
+* :abbr:`MDIO (Management Data Input/Output)`
+
+   * :dtcompatible:`microchip,lan865x-mdio`
+   * :dtcompatible:`renesas,ra-mdio`
+   * :dtcompatible:`sensry,sy1xx-mdio`
+
+* Memory controller
+
+   * :dtcompatible:`renesas,ra-sdram`
+
+* :abbr:`MFD (Multi-Function Device)`
+
+   * :dtcompatible:`adi,max22017`
+   * :dtcompatible:`awinic,aw9523b`
+   * :dtcompatible:`ite,it8801-altctrl`
+   * :dtcompatible:`ite,it8801-mfd`
+   * :dtcompatible:`ite,it8801-mfd-map`
+   * :dtcompatible:`maxim,ds3231-mfd`
+   * :dtcompatible:`nordic,npm2100`
+   * :dtcompatible:`nxp,pf1550`
+
+* :abbr:`MIPI DSI (Mobile Industry Processor Interface Display Serial Interface)`
+
+   * :dtcompatible:`renesas,ra-mipi-dsi`
+
+* Miscellaneous
+
+   * :dtcompatible:`nordic,nrf-bicr`
+   * :dtcompatible:`nordic,nrf-ppib`
+   * :dtcompatible:`renesas,ra-external-interrupt`
+
+* :abbr:`MMU / MPU (Memory Management Unit / Memory Protection Unit)`
+
+   * :dtcompatible:`nxp,sysmpu`
+
+* :abbr:`MTD (Memory Technology Device)`
+
+   * :dtcompatible:`nxp,s32-qspi-hyperflash`
+   * :dtcompatible:`nxp,xspi-mx25um51345g`
+   * :dtcompatible:`ti,cc23x0-ccfg-flash`
+
+* Networking
+
+   * :dtcompatible:`silabs,series2-radio`
+
+* :abbr:`PCIe (Peripheral Component Interconnect Express)`
+
+   * :dtcompatible:`brcm,brcmstb-pcie`
+
+* PHY
+
+   * :dtcompatible:`renesas,ra-usbphyc`
+   * :dtcompatible:`st,stm32u5-otghs-phy`
+
+* Pin control
+
+   * :dtcompatible:`realtek,rts5912-pinctrl`
+   * :dtcompatible:`renesas,rzg-pinctrl`
+   * :dtcompatible:`sensry,sy1xx-pinctrl`
+   * :dtcompatible:`silabs,dbus-pinctrl`
+   * :dtcompatible:`silabs,siwx91x-pinctrl`
+   * :dtcompatible:`ti,cc23x0-pinctrl`
+   * :dtcompatible:`wch,afio`
+
+* :abbr:`PWM (Pulse Width Modulation)`
+
+   * :dtcompatible:`atmel,sam0-tc-pwm`
+   * :dtcompatible:`ite,it8801-pwm`
+   * :dtcompatible:`renesas,rz-gpt-pwm`
+   * :dtcompatible:`zephyr,fake-pwm`
+
+* Quad SPI
+
+   * :dtcompatible:`nxp,s32-qspi-sfp-frad`
+   * :dtcompatible:`nxp,s32-qspi-sfp-mdad`
+
+* Regulator
+
+   * :dtcompatible:`nordic,npm2100-regulator`
+   * :dtcompatible:`nxp,pf1550-regulator`
+
+* :abbr:`RNG (Random Number Generator)`
+
+   * :dtcompatible:`nordic,nrf-cracen-ctrdrbg`
+   * :dtcompatible:`nxp,ele-trng`
+   * :dtcompatible:`renesas,ra-sce5-rng`
+   * :dtcompatible:`renesas,ra-sce7-rng`
+   * :dtcompatible:`renesas,ra-sce9-rng`
+   * :dtcompatible:`renesas,ra-trng`
+   * :dtcompatible:`sensry,sy1xx-trng`
+   * :dtcompatible:`silabs,siwx91x-rng`
+   * :dtcompatible:`st,stm32-rng-noirq`
+
+* :abbr:`RTC (Real Time Clock)`
+
+   * :dtcompatible:`epson,rx8130ce-rtc`
+   * :dtcompatible:`maxim,ds1337`
+   * :dtcompatible:`maxim,ds3231-rtc`
+   * :dtcompatible:`microcrystal,rv8803`
+   * :dtcompatible:`ti,bq32002`
+
+* SDHC
+
+   * :dtcompatible:`renesas,ra-sdhc`
+
+* Sensors
+
+   * :dtcompatible:`adi,adxl366`
+   * :dtcompatible:`hc-sr04`
+   * :dtcompatible:`invensense,icm42370p`
+   * :dtcompatible:`invensense,icm42670s`
+   * :dtcompatible:`invensense,icp101xx`
+   * :dtcompatible:`maxim,ds3231-sensor`
+   * :dtcompatible:`melexis,mlx90394`
+   * :dtcompatible:`nordic,npm2100-vbat`
+   * :dtcompatible:`phosense,xbr818`
+   * :dtcompatible:`renesas,hs400x`
+   * :dtcompatible:`sensirion,scd40`
+   * :dtcompatible:`sensirion,scd41`
+   * :dtcompatible:`sensirion,sts4x`
+   * :dtcompatible:`st,lis2duxs12`
+   * :dtcompatible:`st,lsm6dsv16x`
+   * :dtcompatible:`ti,tmag3001`
+   * :dtcompatible:`ti,tmp435`
+   * :dtcompatible:`we,wsen-pads-2511020213301`
+   * :dtcompatible:`we,wsen-pdus-25131308XXXXX`
+   * :dtcompatible:`we,wsen-tids-2521020222501`
+
+* Serial controller
+
+   * :dtcompatible:`microchip,mec5-uart`
+   * :dtcompatible:`realtek,rts5912-uart`
+   * :dtcompatible:`renesas,rz-scif-uart`
+   * :dtcompatible:`silabs,eusart-uart`
+   * :dtcompatible:`silabs,usart-uart`
+   * :dtcompatible:`ti,cc23x0-uart`
+   * :dtcompatible:`wch,usart`
+
+* :abbr:`SPI (Serial Peripheral Interface)`
+
+   * :dtcompatible:`ite,it8xxx2-spi`
+   * :dtcompatible:`nxp,lpspi`
+   * :dtcompatible:`nxp,xspi`
+   * :dtcompatible:`renesas,ra-spi`
+
+* Stepper
+
+   * :dtcompatible:`adi,tmc2209`
+   * :dtcompatible:`ti,drv8424`
+
+* :abbr:`TCPC (USB Type-C Port Controller)`
+
+   * :dtcompatible:`richtek,rt1715`
+
+* Timer
+
+   * :dtcompatible:`mediatek,ostimer64`
+   * :dtcompatible:`realtek,rts5912-rtmr`
+   * :dtcompatible:`realtek,rts5912-slwtimer`
+   * :dtcompatible:`renesas,rz-gpt`
+   * :dtcompatible:`renesas,rz-gtm`
+   * :dtcompatible:`riscv,machine-timer`
+   * :dtcompatible:`ti,cc23x0-systim-timer`
+   * :dtcompatible:`wch,systick`
+
+* USB
+
+   * :dtcompatible:`ambiq,usb`
+   * :dtcompatible:`renesas,ra-udc`
+   * :dtcompatible:`renesas,ra-usbfs`
+   * :dtcompatible:`renesas,ra-usbhs`
+   * :dtcompatible:`zephyr,midi2-device`
+
+* Video
+
+   * :dtcompatible:`zephyr,video-emul-imager`
+   * :dtcompatible:`zephyr,video-emul-rx`
+
+* Watchdog
+
+   * :dtcompatible:`atmel,sam4l-watchdog`
+   * :dtcompatible:`nordic,npm2100-wdt`
+   * :dtcompatible:`nxp,rtwdog`
+
+* Wi-Fi
+
+   * :dtcompatible:`infineon,airoc-wifi`
+   * :dtcompatible:`silabs,siwx91x-wifi`
+
+New Samples
+***********
+
+..
+  Same as above for boards and drivers, this will also be recomputed at the time of the release.
+ Just link the sample, further details go in the sample documentation itself.
+
+* :zephyr:code-sample:`6dof_motion_drdy`
+* :zephyr:code-sample:`ble_cs`
+* :zephyr:code-sample:`bluetooth_ccp_call_control_client`
+* :zephyr:code-sample:`bluetooth_ccp_call_control_server`
+* :zephyr:code-sample:`coresight_stm_sample`
+* :zephyr:code-sample:`dfu-next`
+* :zephyr:code-sample:`i2c-rtio-loopback`
+* :zephyr:code-sample:`lvgl-screen-transparency`
+* :zephyr:code-sample:`mctp_endpoint_sample`
+* :zephyr:code-sample:`mctp_host_sample`
+* :zephyr:code-sample:`openthread-shell`
+* :zephyr:code-sample:`ot-coap`
+* :zephyr:code-sample:`rtc`
+* :zephyr:code-sample:`sensor_batch_processing`
+* :zephyr:code-sample:`sensor_clock`
+* :zephyr:code-sample:`stream_fifo`
+* :zephyr:code-sample:`tdk_apex`
+* :zephyr:code-sample:`tmc50xx`
+* :zephyr:code-sample:`uart`
+* :zephyr:code-sample:`usb-midi2-device`
+* :zephyr:code-sample:`usbd-cdc-acm-console`
+* :zephyr:code-sample:`webusb-next`
+
+Other notable changes
+*********************
+
+..
+  Any more descriptive subsystem or driver changes. Do you really want to write
+  a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* Space-separated lists support has been removed from Twister configuration
+  files. This feature was deprecated a long time ago. Projects that do still use
+  them can use the :zephyr_file:`scripts/utils/twister_to_list.py` script to
+  automatically migrate Twister configuration files.
+
+* Test case names for Ztest now include the Ztest suite name, meaning the resulting identifier has
+  three sections and looks like: ``<test_scenario_name>.<ztest_suite_name>.<ztest_name>``.
+  These extended identifiers are used in log output, twister.json and testplan.json,
+  as well as for ``--sub-test`` command line parameters.
+
+* The ``--no-detailed-test-id`` command line option can be used to shorten the test case name
+  by excluding the test scenario name prefix which is the same as the parent test suite id.

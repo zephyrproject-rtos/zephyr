@@ -25,13 +25,17 @@ config NRFX_COMP
 	bool "COMP driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_COMP))
 
+config NRFX_CRACEN
+	bool "CRACEN drivers"
+	depends on SOC_COMPATIBLE_NRF54LX
+
 config NRFX_DPPI
 	bool
 
 config NRFX_DPPI0
 	bool "DPPI0 driver instance"
 	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_has_compat,dppic,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	depends on $(dt_nodelabel_has_compat,dppic0,$(DT_COMPAT_NORDIC_NRF_DPPIC))
 	select NRFX_DPPI
 
 config NRFX_DPPI00
@@ -1208,5 +1212,9 @@ config NRFX_PRS_BOX_4
 	select NRFX_PRS
 
 endmenu
+
+config NRFX_RESERVED_RESOURCES_HEADER
+	string
+	default "nrfx_reserved_resources.h"
 
 endmenu # "nrfx drivers"

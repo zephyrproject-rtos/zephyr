@@ -21,4 +21,3 @@ Requirements
 Hardware support for:
 
 - :kconfig:option:`CONFIG_BT`
-- :kconfig:option:`CONFIG_BT_CTLR`

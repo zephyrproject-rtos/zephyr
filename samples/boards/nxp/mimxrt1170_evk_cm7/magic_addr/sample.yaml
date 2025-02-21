@@ -1,12 +1,13 @@
 sample:
-  description: RT1170 FLEXRAM Magic Addr example
+  description: RT11xx FLEXRAM Magic Addr example
   name: magic addr
 common:
   integration_platforms:
     - mimxrt1170_evk/mimxrt1176/cm7
     - mimxrt1160_evk/mimxrt1166/cm7
+  tags:
+    - pytest
 tests:
-  sample.boards.mimxrt1170_evk.magic_addr:
-    platform_allow:
-      - mimxrt1170_evk/mimxrt1176/cm7
-      - mimxrt1160_evk/mimxrt1166/cm7
+  sample.boards.magic_addr:
+    filter: dt_node_prop_enabled("flexram", "flexram,has-magic-addr")
+    harness: pytest

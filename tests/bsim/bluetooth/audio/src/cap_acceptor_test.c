@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -51,11 +52,6 @@
 				NULL)
 
 extern enum bst_result_t bst_result;
-
-#define SINK_CONTEXT                                                                               \
-	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_MEDIA |                         \
-	 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL)
-#define SOURCE_CONTEXT (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS)
 
 CREATE_FLAG(flag_broadcaster_found);
 CREATE_FLAG(flag_broadcast_code);
@@ -399,6 +395,11 @@ static void broadcast_code_cb(struct bt_conn *conn,
 {
 	printk("Broadcast code received for %p\n", recv_state);
 
+	if (memcmp(broadcast_code, BROADCAST_CODE, sizeof(BROADCAST_CODE)) != 0) {
+		FAIL("Failed to receive correct broadcast code\n");
+		return;
+	}
+
 	SET_FLAG(flag_broadcast_code);
 }
 
@@ -407,12 +408,6 @@ static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
 	.pa_sync_term_req = pa_sync_term_req_cb,
 	.bis_sync_req = bis_sync_req_cb,
 	.broadcast_code = broadcast_code_cb,
-};
-
-/* TODO: Expand with CAP service data */
-static const struct bt_data cap_acceptor_ad[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
 };
 
 static struct bt_csip_set_member_svc_inst *csip_set_member;
@@ -615,32 +610,9 @@ static int set_supported_contexts(void)
 
 void test_start_adv(void)
 {
-	int err;
 	struct bt_le_ext_adv *ext_adv;
 
-	/* Create a connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_CUSTOM, NULL, &ext_adv);
-	if (err != 0) {
-		FAIL("Failed to create advertising set (err %d)\n", err);
-
-		return;
-	}
-
-	/* Add cap acceptor advertising data */
-	err = bt_le_ext_adv_set_data(ext_adv, cap_acceptor_ad, ARRAY_SIZE(cap_acceptor_ad), NULL,
-				     0);
-	if (err != 0) {
-		FAIL("Failed to set advertising data (err %d)\n", err);
-
-		return;
-	}
-
-	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err != 0) {
-		FAIL("Failed to start advertising set (err %d)\n", err);
-
-		return;
-	}
+	setup_connectable_adv(&ext_adv);
 }
 
 static void set_available_contexts(void)
@@ -676,6 +648,20 @@ static void init(void)
 		BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
 		BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
 		(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
+	const struct bt_pacs_register_param pacs_param = {
+#if defined(CONFIG_BT_PAC_SNK)
+		.snk_pac = true,
+#endif /* CONFIG_BT_PAC_SNK */
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+		.snk_loc = true,
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC)
+		.src_pac = true,
+#endif /* CONFIG_BT_PAC_SRC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+		.src_loc = true,
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -685,6 +671,12 @@ static void init(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		FAIL("Could not register PACS (err %d)\n", err);
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER)) {
 		err = bt_cap_acceptor_register(&csip_set_member_param, &csip_set_member);
@@ -732,14 +724,6 @@ static void init(void)
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 			bt_cap_stream_ops_register(&unicast_streams[i], &unicast_stream_ops);
 		}
-
-		err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, cap_acceptor_ad,
-				      ARRAY_SIZE(cap_acceptor_ad), NULL, 0);
-		if (err != 0) {
-			FAIL("Advertising failed to start (err %d)\n", err);
-			return;
-		}
-		test_start_adv();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
@@ -858,6 +842,8 @@ static void test_cap_acceptor_unicast(void)
 {
 	init();
 
+	test_start_adv();
+
 	auto_start_sink_streams = true;
 
 	/* TODO: wait for audio stream to pass */
@@ -870,6 +856,8 @@ static void test_cap_acceptor_unicast(void)
 static void test_cap_acceptor_unicast_timeout(void)
 {
 	init();
+
+	test_start_adv();
 
 	auto_start_sink_streams = false; /* Cause unicast_audio_start timeout */
 
@@ -949,7 +937,7 @@ static void create_and_sync_sink(struct bt_bap_stream *bap_streams[], size_t *st
 		bap_streams[i] = bap_stream_from_audio_test_stream(&broadcast_sink_streams[i]);
 	}
 
-	printk("Syncing the sink\n");
+	printk("Syncing the sink to 0x%08x\n", bis_index_bitfield);
 	*stream_count = 0;
 	for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
 		if ((bis_index_bitfield & BIT(i)) != 0) {
@@ -977,11 +965,10 @@ static void sink_wait_for_data(void)
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 }
 
-static void base_wait_for_metadata_update(void)
+static void wait_for_broadcast_code(void)
 {
-	printk("Waiting for meta update\n");
-	WAIT_FOR_FLAG(flag_base_metadata_updated);
-	backchannel_sync_send_all(); /* let others know we have received a metadata update */
+	printk("Waiting for broadcast code\n");
+	WAIT_FOR_FLAG(flag_broadcast_code);
 }
 
 static void wait_for_streams_stop(int stream_count)
@@ -1025,6 +1012,8 @@ static void test_cap_acceptor_broadcast_reception(void)
 
 	init();
 
+	test_start_adv();
+
 	WAIT_FOR_FLAG(flag_pa_request);
 	WAIT_FOR_FLAG(flag_bis_sync_requested);
 
@@ -1032,12 +1021,8 @@ static void test_cap_acceptor_broadcast_reception(void)
 
 	create_and_sync_sink(bap_streams, &stream_count);
 
+	wait_for_broadcast_code();
 	sink_wait_for_data();
-
-	/* Since we are re-using the BAP broadcast source test
-	 * we get a metadata update
-	 */
-	base_wait_for_metadata_update();
 
 	/* when flag_bis_sync_requested is unset the bis_sync for all subgroups were set to 0 */
 	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
@@ -1061,6 +1046,8 @@ static void test_cap_acceptor_broadcast_reception(void)
 static void test_cap_acceptor_capture_and_render(void)
 {
 	init();
+
+	test_start_adv();
 
 	WAIT_FOR_FLAG(flag_connected);
 

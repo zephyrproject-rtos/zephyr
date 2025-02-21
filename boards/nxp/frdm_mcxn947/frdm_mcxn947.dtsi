@@ -132,12 +132,27 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	status = "okay";
 };
 
+&sram {
+	sramg: memory@20050000 {
+		compatible = "mmio-sram";
+		reg = <0x20050000 DT_SIZE_K(64)>;
+	};
+	sramh: memory@20060000 {
+		compatible = "mmio-sram";
+		reg = <0x20060000 DT_SIZE_K(32)>;
+	};
+};
+
 &flash {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 8KB.
+		 */
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
@@ -183,20 +198,21 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		cs-setup-time = <3>;
 		data-valid-time = <2>;
 		column-space = <0>;
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			storage_partition: partition@0 {
-				label = "storage";
-				reg = <0x0 DT_SIZE_M(8)>;
-			};
-		};
 	};
 };
 
 &dac0 {
 	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
+
+&sai0 {
+	pinctrl-0 = <&pinmux_sai0>;
 	pinctrl-names = "default";
 };
 

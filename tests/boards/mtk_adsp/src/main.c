@@ -63,12 +63,10 @@ static bool mbox1_fired;
 
 static void mbox_fn(const struct device *mbox, void *arg)
 {
-	zassert_equal(mbox, MBOX1);
 	zassert_equal(arg, NULL);
 	mbox1_fired = true;
 	k_sem_give(&mbox_sem);
 }
-
 
 /* Test in/out interrupts from the host.  This relies on a SOF driver
  * on the host, which has the behavior of "replying" with an interrupt
@@ -81,6 +79,8 @@ static void mbox_fn(const struct device *mbox, void *arg)
  */
 ZTEST(mtk_adsp, mbox)
 {
+	/* Different SOCs transmit the replies on different devices!  Just listen to both */
+	mtk_adsp_mbox_set_handler(MBOX0, 1, mbox_fn, NULL);
 	mtk_adsp_mbox_set_handler(MBOX1, 1, mbox_fn, NULL);
 
 	/* First signal the host with a reply on the second channel,

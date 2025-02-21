@@ -15,7 +15,7 @@ description: |
         Example:
                 &mco1 {
                         clocks = <&rcc STM32_SRC_LSE MCO1_SEL(7)>;
-                        prescaler = <MCO1_PRE(1)>;
+                        prescaler = <MCO1_PRE(MCO_PRE_DIV_5)>;
                         pinctrl-0 = <&rcc_mco_pa8>;
                         pinctrl-names = "default";
                         status = "okay";

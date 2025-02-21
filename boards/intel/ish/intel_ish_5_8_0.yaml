@@ -11,6 +11,7 @@ simulation:
 supported:
   - serial
 testing:
+  timeout_multiplier: 2
   ignore_tags:
     - net
     - bluetooth

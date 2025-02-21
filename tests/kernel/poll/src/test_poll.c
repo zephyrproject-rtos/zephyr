@@ -33,6 +33,10 @@ static struct k_thread test_thread;
 static struct k_thread test_loprio_thread;
 K_THREAD_STACK_DEFINE(test_stack, STACK_SIZE);
 K_THREAD_STACK_DEFINE(test_loprio_stack, STACK_SIZE);
+K_MSGQ_DEFINE(msgq_high_prio_thread, sizeof(unsigned int), 4, 4);
+static K_THREAD_STACK_DEFINE(high_prio_stack_area, 4096);
+static struct k_thread high_prio_data;
+static volatile bool wake_up_by_poll = true;
 
 /**
  * @brief Test cases to verify poll
@@ -777,6 +781,40 @@ void poll_test_grant_access(void)
 			      &cancel_fifo, &non_cancel_fifo,
 			      &wait_signal, &test_thread, &test_signal,
 			      &test_stack, &multi_sem, &multi_reply);
+}
+
+
+static void high_prio_main(void *param1, void *param2, void *param3)
+{
+	static struct k_poll_event poll_events[1];
+
+	/* Setup wake-up for message queue */
+	k_poll_event_init(&poll_events[0], K_POLL_TYPE_MSGQ_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,
+			  &msgq_high_prio_thread);
+	(void)k_poll(poll_events, 1, K_FOREVER);
+
+	zassert_equal(poll_events[0].state, K_POLL_STATE_MSGQ_DATA_AVAILABLE);
+	zassert_equal(wake_up_by_poll, true);
+}
+
+ZTEST(poll_api_1cpu, test_poll_msgq)
+{
+	int low_prio_thread_priority = 1;
+	int high_prio_thread_priority = -2;
+	unsigned int data_to_high_prio = 0x1234;
+
+	k_thread_priority_set(k_current_get(), low_prio_thread_priority);
+
+	/* Create high priority thread */
+	(void)k_thread_create(&high_prio_data, high_prio_stack_area,
+			      K_THREAD_STACK_SIZEOF(high_prio_stack_area), high_prio_main, NULL,
+			      NULL, NULL, high_prio_thread_priority, 0, K_NO_WAIT);
+	k_sleep(K_MSEC(1));
+	/* Send message to high-priority thread */
+	(void)k_msgq_put(&msgq_high_prio_thread, &data_to_high_prio, K_NO_WAIT);
+
+	/* low priority thread should not execute here before wake up high priority task */
+	wake_up_by_poll = false;
 }
 
 ZTEST(poll_api_1cpu, test_poll_zero_events)

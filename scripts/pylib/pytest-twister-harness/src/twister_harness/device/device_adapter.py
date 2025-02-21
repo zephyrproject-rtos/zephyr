@@ -67,6 +67,8 @@ class DeviceAdapter(abc.ABC):
 
         if not self.command:
             self.generate_command()
+            if self.device_config.extra_test_args:
+                self.command.extend(self.device_config.extra_test_args.split())
 
         if self.device_config.type != 'hardware':
             self._flash_and_run()
@@ -238,7 +240,7 @@ class DeviceAdapter(abc.ABC):
         with open(self.handler_log_path, 'a+') as log_file:
             while self.is_device_running():
                 if self.is_device_connected():
-                    output = self._read_device_output().decode(errors='replace').strip()
+                    output = self._read_device_output().decode(errors='replace').rstrip("\r\n")
                     if output:
                         self._device_read_queue.put(output)
                         log_file.write(f'{output}\n')

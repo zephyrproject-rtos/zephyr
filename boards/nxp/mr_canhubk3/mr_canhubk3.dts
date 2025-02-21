@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -344,6 +344,8 @@
 		readoc = "1-4-4";
 		writeoc = "1-4-4";
 		has-32k-erase;
+		max-program-buffer-size = <256>;
+		write-block-size = <1>;
 		status = "okay";
 
 		partitions {
@@ -499,7 +501,6 @@
 		emios0_bus_a {
 			mode = "MCB_UP_COUNTER";
 			prescaler = <16>;
-			period = <1000>;
 			status = "okay";
 		};
 	};
@@ -513,63 +514,43 @@
 		pwm_0 {
 			channel = <0>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		pwm_1 {
 			channel = <1>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		pwm_2 {
 			channel = <2>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		pwm_3 {
 			channel = <3>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		pwm_4 {
 			channel = <4>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		pwm_5 {
 			channel = <5>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		rgb_red {
 			channel = <19>;
 			master-bus = <&emios0_bus_a>;
-			duty-cycle = <0>;
 			pwm-mode = "OPWMB";
-			polarity = "ACTIVE_LOW";
 		};
 	};
 };
@@ -586,14 +567,12 @@
 		emios1_bus_a {
 			prescaler = <16>;
 			mode = "MCB_UP_COUNTER";
-			period = <1000>;
 			status = "okay";
 		};
 
 		emios1_bus_f {
 			prescaler = <16>;
 			mode = "MCB_UP_COUNTER";
-			period = <1000>;
 			status = "okay";
 		};
 	};
@@ -606,17 +585,13 @@
 		rgb_green {
 			channel = <10>;
 			master-bus = <&emios1_bus_a>;
-			duty-cycle = <0>;
 			pwm-mode = "OPWMB";
-			polarity = "ACTIVE_LOW";
 		};
 
 		rgb_blue {
 			channel = <5>;
 			master-bus = <&emios1_bus_f>;
-			duty-cycle = <0>;
 			pwm-mode = "OPWMB";
-			polarity = "ACTIVE_LOW";
 		};
 	};
 };

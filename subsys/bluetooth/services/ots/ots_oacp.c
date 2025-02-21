@@ -29,6 +29,7 @@ LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 #if defined(CONFIG_BT_OTS_OACP_WRITE_SUPPORT)
 static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn, struct net_buf *buf);
+#endif
 
 static void oacp_l2cap_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn)
@@ -45,7 +46,6 @@ static void oacp_l2cap_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	l2cap_ctx->rx_done = NULL;
 	l2cap_ctx->tx_done = NULL;
 }
-#endif
 
 #if defined(CONFIG_BT_OTS_OACP_CREATE_SUPPORT)
 static enum bt_gatt_ots_oacp_res_code oacp_create_proc_validate(
@@ -506,6 +506,7 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	}
 
 	ots->l2cap.tx_done = oacp_read_proc_cb;
+	ots->l2cap.closed = oacp_l2cap_closed;
 	err = bt_gatt_ots_l2cap_send(&ots->l2cap, obj_chunk, len);
 	if (err) {
 		LOG_ERR("L2CAP CoC error: %d while trying to execute OACP "

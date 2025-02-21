@@ -291,7 +291,7 @@ static DEVICE_API(spi, spi_cc13xx_cc26xx_driver_api) = {
 #define SPI_CC13XX_CC26XX_DEVICE_INIT(n)				    \
 	PM_DEVICE_DT_INST_DEFINE(n, spi_cc13xx_cc26xx_pm_action);	    \
 									    \
-	DEVICE_DT_INST_DEFINE(n,					    \
+	SPI_DEVICE_DT_INST_DEFINE(n,					    \
 		spi_cc13xx_cc26xx_init_##n,				    \
 		PM_DEVICE_DT_INST_GET(n),				    \
 		&spi_cc13xx_cc26xx_data_##n, &spi_cc13xx_cc26xx_config_##n, \

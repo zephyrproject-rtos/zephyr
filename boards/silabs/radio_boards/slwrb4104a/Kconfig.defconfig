@@ -10,10 +10,6 @@ config CMU_HFXO_FREQ
 config CMU_LFXO_FREQ
 	default 32768
 
-config FLASH_BASE_ADDRESS
-	hex
-	default 0x0
-
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000
 	depends on LOG_BACKEND_SWO
@@ -36,9 +32,6 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 config MAIN_STACK_SIZE
 	default 3072 if PM
 	default 2304
-
-config BT_SEND_ECC_EMULATION
-	default y
 
 endif # BT
 

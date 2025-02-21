@@ -29,7 +29,7 @@
 #define SCD4X_CMD_FACTORY_RESET                  17
 #define SCD4X_CMD_MEASURE_SINGLE_SHOT            18
 #define SCD4X_CMD_MEASURE_SINGLE_SHOT_RHT        19
-#define SCD4X_CMD_POWER_DOWN                     10
+#define SCD4X_CMD_POWER_DOWN                     20
 #define SCD4X_CMD_WAKE_UP                        21
 #define SCD4X_CMD_SET_SELF_CALIB_INITIAL_PERIOD  22
 #define SCD4X_CMD_GET_SELF_CALIB_INITIAL_PERIOD  23

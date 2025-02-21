@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2022 SILA Embedded Solutions GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: TI ADS114S0x GPIO controller binding
+
+compatible: "ti,ads1x4s0x-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+on-bus: ads1x4s0x
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    type: int
+    required: true
+    const: 4
+    description: Number of gpios supported
+
+gpio-cells:
+  - pin
+  - flags

@@ -19,6 +19,7 @@
 
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/tracing/tracing.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -339,8 +340,8 @@ struct gpio_dt_spec {
  * @brief Like GPIO_DT_SPEC_GET_BY_IDX(), with a fallback to a default value
  *
  * If the devicetree node identifier 'node_id' refers to a node with a
- * property 'prop', this expands to
- * <tt>GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx)</tt>. The @p
+ * property 'prop', and the index @p idx is valid for that property,
+ * this expands to <tt>GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx)</tt>. The @p
  * default_value parameter is not expanded in this case.
  *
  * Otherwise, this expands to @p default_value.
@@ -353,7 +354,7 @@ struct gpio_dt_spec {
  *         or default_value if the node or property do not exist
  */
 #define GPIO_DT_SPEC_GET_BY_IDX_OR(node_id, prop, idx, default_value)	\
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop),			\
+	COND_CODE_1(DT_PROP_HAS_IDX(node_id, prop, idx),		\
 		    (GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx)),	\
 		    (default_value))
 
@@ -550,7 +551,7 @@ struct gpio_dt_spec {
  *		.ngpios = 32,
  *		.gpios_reserved = 0xdeadbeef,
  *		               // 0b1101 1110 1010 1101 1011 1110 1110 1111
- *
+ *	};
  *	static const struct some_config dev_cfg_b = {
  *		.ngpios = 18,
  *		.gpios_reserved = 0xfffc0418,
@@ -809,7 +810,8 @@ __subsystem struct gpio_driver_api {
 				gpio_port_pins_t pins);
 	int (*pin_interrupt_configure)(const struct device *port,
 				       gpio_pin_t pin,
-				       enum gpio_int_mode, enum gpio_int_trig);
+				       enum gpio_int_mode mode,
+				       enum gpio_int_trig trig);
 	int (*manage_callback)(const struct device *port,
 			       struct gpio_callback *cb,
 			       bool set);
@@ -877,8 +879,12 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 		(const struct gpio_driver_data *)port->data;
 	enum gpio_int_trig trig;
 	enum gpio_int_mode mode;
+	int ret;
+
+	SYS_PORT_TRACING_FUNC_ENTER(gpio_pin, interrupt_configure, port, pin, flags);
 
 	if (api->pin_interrupt_configure == NULL) {
+		SYS_PORT_TRACING_FUNC_EXIT(gpio_pin, interrupt_configure, port, pin, -ENOSYS);
 		return -ENOSYS;
 	}
 
@@ -923,7 +929,9 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 	mode = (enum gpio_int_mode)(flags & (GPIO_INT_EDGE | GPIO_INT_DISABLE | GPIO_INT_ENABLE));
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
-	return api->pin_interrupt_configure(port, pin, mode, trig);
+	ret = api->pin_interrupt_configure(port, pin, mode, trig);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio_pin, interrupt_configure, port, pin, ret);
+	return ret;
 }
 
 /**
@@ -976,6 +984,9 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
 		(const struct gpio_driver_config *)port->config;
 	struct gpio_driver_data *data =
 		(struct gpio_driver_data *)port->data;
+	int ret;
+
+	SYS_PORT_TRACING_FUNC_ENTER(gpio_pin, configure, port, pin, flags);
 
 	__ASSERT((flags & GPIO_INT_MASK) == 0,
 		 "Interrupt flags are not supported");
@@ -1015,7 +1026,9 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
 		data->invert &= ~(gpio_port_pins_t)BIT(pin);
 	}
 
-	return api->pin_configure(port, pin, flags);
+	ret = api->pin_configure(port, pin, flags);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio_pin, configure, port, pin, ret);
+	return ret;
 }
 
 /**
@@ -1064,12 +1077,18 @@ static inline int z_impl_gpio_port_get_direction(const struct device *port, gpio
 						 gpio_port_pins_t *outputs)
 {
 	const struct gpio_driver_api *api = (const struct gpio_driver_api *)port->api;
+	int ret;
+
+	SYS_PORT_TRACING_FUNC_ENTER(gpio_port, get_direction, port, map, inputs, outputs);
 
 	if (api->port_get_direction == NULL) {
+		SYS_PORT_TRACING_FUNC_EXIT(gpio_port, get_direction, port, -ENOSYS);
 		return -ENOSYS;
 	}
 
-	return api->port_get_direction(port, map, inputs, outputs);
+	ret = api->port_get_direction(port, map, inputs, outputs);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio_port, get_direction, port, ret);
+	return ret;
 }
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 
@@ -1188,11 +1207,18 @@ static inline int z_impl_gpio_pin_get_config(const struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->api;
+	int ret;
 
-	if (api->pin_get_config == NULL)
+	SYS_PORT_TRACING_FUNC_ENTER(gpio_pin, get_config, port, pin, *flags);
+
+	if (api->pin_get_config == NULL) {
+		SYS_PORT_TRACING_FUNC_EXIT(gpio_pin, get_config, port, pin, -ENOSYS);
 		return -ENOSYS;
+	}
 
-	return api->pin_get_config(port, pin, flags);
+	ret = api->pin_get_config(port, pin, flags);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio_pin, get_config, port, pin, ret);
+	return ret;
 }
 #endif
 
@@ -1234,13 +1260,16 @@ static inline int gpio_pin_get_config_dt(const struct gpio_dt_spec *spec,
 __syscall int gpio_port_get_raw(const struct device *port,
 				gpio_port_value_t *value);
 
-static inline int z_impl_gpio_port_get_raw(const struct device *port,
-					   gpio_port_value_t *value)
+static inline int z_impl_gpio_port_get_raw(const struct device *port, gpio_port_value_t *value)
 {
-	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->api;
+	const struct gpio_driver_api *api = (const struct gpio_driver_api *)port->api;
+	int ret;
 
-	return api->port_get_raw(port, value);
+	SYS_PORT_TRACING_FUNC_ENTER(gpio_port, get_raw, port, value);
+
+	ret = api->port_get_raw(port, value);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio_port, get_raw, port, ret);
+	return ret;
 }
 
 /**
@@ -1303,8 +1332,13 @@ static inline int z_impl_gpio_port_set_masked_raw(const struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->api;
+	int ret;
 
-	return api->port_set_masked_raw(port, mask, value);
+	SYS_PORT_TRACING_FUNC_ENTER(gpio_port, set_masked_raw, port, mask, value);
+
+	ret = api->port_set_masked_raw(port, mask, value);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio_port, set_masked_raw, port, ret);
+	return ret;
 }
 
 /**
@@ -1357,8 +1391,13 @@ static inline int z_impl_gpio_port_set_bits_raw(const struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->api;
+	int ret;
 
-	return api->port_set_bits_raw(port, pins);
+	SYS_PORT_TRACING_FUNC_ENTER(gpio_port, set_bits_raw, port, pins);
+
+	ret = api->port_set_bits_raw(port, pins);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio_port, set_bits_raw, port, ret);
+	return ret;
 }
 
 /**
@@ -1395,8 +1434,13 @@ static inline int z_impl_gpio_port_clear_bits_raw(const struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->api;
+	int ret;
 
-	return api->port_clear_bits_raw(port, pins);
+	SYS_PORT_TRACING_FUNC_ENTER(gpio_port, clear_bits_raw, port, pins);
+
+	ret = api->port_clear_bits_raw(port, pins);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio_port, clear_bits_raw, port, ret);
+	return ret;
 }
 
 /**
@@ -1433,8 +1477,13 @@ static inline int z_impl_gpio_port_toggle_bits(const struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->api;
+	int ret;
 
-	return api->port_toggle_bits(port, pins);
+	SYS_PORT_TRACING_FUNC_ENTER(gpio_port, toggle_bits, port, pins);
+
+	ret = api->port_toggle_bits(port, pins);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio_port, toggle_bits, port, ret);
+	return ret;
 }
 
 /**
@@ -1697,11 +1746,15 @@ static inline void gpio_init_callback(struct gpio_callback *callback,
 				      gpio_callback_handler_t handler,
 				      gpio_port_pins_t pin_mask)
 {
+	SYS_PORT_TRACING_FUNC_ENTER(gpio, init_callback, callback, handler, pin_mask);
+
 	__ASSERT(callback, "Callback pointer should not be NULL");
 	__ASSERT(handler, "Callback handler pointer should not be NULL");
 
 	callback->handler = handler;
 	callback->pin_mask = pin_mask;
+
+	SYS_PORT_TRACING_FUNC_EXIT(gpio, init_callback, callback);
 }
 
 /**
@@ -1723,12 +1776,18 @@ static inline int gpio_add_callback(const struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->api;
+	int ret;
+
+	SYS_PORT_TRACING_FUNC_ENTER(gpio, add_callback, port, callback);
 
 	if (api->manage_callback == NULL) {
+		SYS_PORT_TRACING_FUNC_EXIT(gpio, add_callback, port, -ENOSYS);
 		return -ENOSYS;
 	}
 
-	return api->manage_callback(port, callback, true);
+	ret = api->manage_callback(port, callback, true);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio, add_callback, port, ret);
+	return ret;
 }
 
 /**
@@ -1771,12 +1830,18 @@ static inline int gpio_remove_callback(const struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->api;
+	int ret;
+
+	SYS_PORT_TRACING_FUNC_ENTER(gpio, remove_callback, port, callback);
 
 	if (api->manage_callback == NULL) {
+		SYS_PORT_TRACING_FUNC_EXIT(gpio, remove_callback, port, -ENOSYS);
 		return -ENOSYS;
 	}
 
-	return api->manage_callback(port, callback, false);
+	ret = api->manage_callback(port, callback, false);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio, remove_callback, port, ret);
+	return ret;
 }
 
 /**
@@ -1816,12 +1881,18 @@ static inline int z_impl_gpio_get_pending_int(const struct device *dev)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)dev->api;
+	int ret;
+
+	SYS_PORT_TRACING_FUNC_ENTER(gpio, get_pending_int, dev);
 
 	if (api->get_pending_int == NULL) {
+		SYS_PORT_TRACING_FUNC_EXIT(gpio, get_pending_int, dev, -ENOSYS);
 		return -ENOSYS;
 	}
 
-	return api->get_pending_int(dev);
+	ret = api->get_pending_int(dev);
+	SYS_PORT_TRACING_FUNC_EXIT(gpio, get_pending_int, dev, ret);
+	return ret;
 }
 
 /**

@@ -416,7 +416,7 @@ static void pwm_numaker_p2_isr(const struct device *dev)
 #endif /* CONFIG_PWM_CAPTURE */
 
 /* PWM driver registration */
-static const struct pwm_driver_api pwm_numaker_driver_api = {
+static DEVICE_API(pwm, pwm_numaker_driver_api) = {
 	.set_cycles = pwm_numaker_set_cycles,
 	.get_cycles_per_sec = pwm_numaker_get_cycles_per_sec,
 #ifdef CONFIG_PWM_CAPTURE

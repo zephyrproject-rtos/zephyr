@@ -68,8 +68,8 @@ static struct http_resource_detail_static main_js_gz_resource_detail = {
 };
 
 static int echo_handler(struct http_client_ctx *client, enum http_data_status status,
-			uint8_t *buffer, size_t len, struct http_response_ctx *response_ctx,
-			void *user_data)
+			const struct http_request_ctx *request_ctx,
+			struct http_response_ctx *response_ctx, void *user_data)
 {
 #define MAX_TEMP_PRINT_LEN 32
 	static char print_str[MAX_TEMP_PRINT_LEN];
@@ -84,11 +84,11 @@ static int echo_handler(struct http_client_ctx *client, enum http_data_status st
 
 	__ASSERT_NO_MSG(buffer != NULL);
 
-	processed += len;
+	processed += request_ctx->data_len;
 
-	snprintf(print_str, sizeof(print_str), "%s received (%zd bytes)",
-		 http_method_str(method), len);
-	LOG_HEXDUMP_DBG(buffer, len, print_str);
+	snprintf(print_str, sizeof(print_str), "%s received (%zd bytes)", http_method_str(method),
+		 request_ctx->data_len);
+	LOG_HEXDUMP_DBG(request_ctx->data, request_ctx->data_len, print_str);
 
 	if (status == HTTP_SERVER_DATA_FINAL) {
 		LOG_DBG("All data received (%zd bytes).", processed);
@@ -96,8 +96,8 @@ static int echo_handler(struct http_client_ctx *client, enum http_data_status st
 	}
 
 	/* Echo data back to client */
-	response_ctx->body = buffer;
-	response_ctx->body_len = len;
+	response_ctx->body = request_ctx->data;
+	response_ctx->body_len = request_ctx->data_len;
 	response_ctx->final_chunk = (status == HTTP_SERVER_DATA_FINAL);
 
 	return 0;
@@ -113,8 +113,8 @@ static struct http_resource_detail_dynamic echo_resource_detail = {
 };
 
 static int uptime_handler(struct http_client_ctx *client, enum http_data_status status,
-			  uint8_t *buffer, size_t len, struct http_response_ctx *response_ctx,
-			  void *user_data)
+			  const struct http_request_ctx *request_ctx,
+			  struct http_response_ctx *response_ctx, void *user_data)
 {
 	int ret;
 	static uint8_t uptime_buf[sizeof(STRINGIFY(INT64_MAX))];
@@ -172,20 +172,20 @@ static void parse_led_post(uint8_t *buf, size_t len)
 }
 
 static int led_handler(struct http_client_ctx *client, enum http_data_status status,
-		       uint8_t *buffer, size_t len, struct http_response_ctx *response_ctx,
-		       void *user_data)
+		       const struct http_request_ctx *request_ctx,
+		       struct http_response_ctx *response_ctx, void *user_data)
 {
 	static uint8_t post_payload_buf[32];
 	static size_t cursor;
 
-	LOG_DBG("LED handler status %d, size %zu", status, len);
+	LOG_DBG("LED handler status %d, size %zu", status, request_ctx->data_len);
 
 	if (status == HTTP_SERVER_DATA_ABORTED) {
 		cursor = 0;
 		return 0;
 	}
 
-	if (len + cursor > sizeof(post_payload_buf)) {
+	if (request_ctx->data_len + cursor > sizeof(post_payload_buf)) {
 		cursor = 0;
 		return -ENOMEM;
 	}
@@ -194,8 +194,8 @@ static int led_handler(struct http_client_ctx *client, enum http_data_status sta
 	 * chunks (e.g. if the header size was such that the whole HTTP request exceeds the size of
 	 * the client buffer).
 	 */
-	memcpy(post_payload_buf + cursor, buffer, len);
-	cursor += len;
+	memcpy(post_payload_buf + cursor, request_ctx->data, request_ctx->data_len);
+	cursor += request_ctx->data_len;
 
 	if (status == HTTP_SERVER_DATA_FINAL) {
 		parse_led_post(post_payload_buf, cursor);
@@ -248,7 +248,7 @@ struct http_resource_detail_websocket ws_netstats_resource_detail = {
 #if defined(CONFIG_NET_SAMPLE_HTTP_SERVICE)
 static uint16_t test_http_service_port = CONFIG_NET_SAMPLE_HTTP_SERVER_SERVICE_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, NULL, &test_http_service_port, 1,
-		    10, NULL);
+		    10, NULL, NULL);
 
 HTTP_RESOURCE_DEFINE(index_html_gz_resource, test_http_service, "/",
 		     &index_html_gz_resource_detail);
@@ -281,7 +281,7 @@ static const sec_tag_t sec_tag_list_verify_none[] = {
 
 static uint16_t test_https_service_port = CONFIG_NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT;
 HTTPS_SERVICE_DEFINE(test_https_service, NULL,
-		     &test_https_service_port, 1, 10, NULL,
+		     &test_https_service_port, 1, 10, NULL, NULL,
 		     sec_tag_list_verify_none, sizeof(sec_tag_list_verify_none));
 
 HTTP_RESOURCE_DEFINE(index_html_gz_resource_https, test_https_service, "/",
@@ -310,16 +310,6 @@ static void setup_tls(void)
 #if defined(CONFIG_NET_SAMPLE_HTTPS_SERVICE)
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	int err;
-
-#if defined(CONFIG_NET_SAMPLE_CERTS_WITH_SC)
-	err = tls_credential_add(HTTP_SERVER_CERTIFICATE_TAG,
-				 TLS_CREDENTIAL_CA_CERTIFICATE,
-				 ca_certificate,
-				 sizeof(ca_certificate));
-	if (err < 0) {
-		LOG_ERR("Failed to register CA certificate: %d", err);
-	}
-#endif /* defined(CONFIG_NET_SAMPLE_CERTS_WITH_SC) */
 
 	err = tls_credential_add(HTTP_SERVER_CERTIFICATE_TAG,
 				 TLS_CREDENTIAL_SERVER_CERTIFICATE,

@@ -1,0 +1,230 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "frdm_rw612-pinctrl.dtsi"
+
+/ {
+	model = "nxp,frdm_rw612";
+
+	aliases {
+		led0 = &green_led;
+		watchdog0 = &wwdt;
+		usart-0 = &flexcomm3;
+		i2c-0 = &flexcomm2;
+		pwm-0 = &sctimer;
+	};
+
+	chosen {
+		zephyr,sram = &sram_data;
+		zephyr,flash = &w25q512jvfiq;
+		zephyr,console = &flexcomm3;
+		zephyr,shell-uart = &flexcomm3;
+		zephyr,flash-controller = &w25q512jvfiq;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm3;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&hsgpio0 12 0>;
+		};
+	};
+};
+
+&flexcomm3 {
+	compatible = "nxp,lpc-usart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm3_usart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+};
+
+&hsgpio0 {
+	status = "okay";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-bufferable;
+	ahb-prefetch;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	ahb-boundary = "1024";
+	rx-clock-source = <1>;
+	rx-clock-source-b = <1>;
+	/* Winbond external flash */
+	w25q512jvfiq: w25q512jvfiq@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(64 * 8)>;
+		status = "okay";
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+		spi-max-frequency = <104000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* The MCUBoot swap-move algorithm uses the last 2 sectors
+			 * of the primary slot0 for swap status and move.
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(2 * 4))>;
+			};
+			slot1_partition: partition@323000 {
+				label = "image-1";
+				reg = <0x00323000 DT_SIZE_M(3)>;
+			};
+			storage_partition: partition@623000 {
+				label = "storage";
+				reg = <0x00623000 (DT_SIZE_M(58) - DT_SIZE_K(136))>;
+			};
+		};
+	};
+	aps6404l: aps6404l@2 {
+			compatible = "nxp,imx-flexspi-aps6404l";
+			/* APS6404L is 8MB, 64MBit pSRAM */
+			size = <DT_SIZE_M(8 * 8)>;
+			reg = <2>;
+			spi-max-frequency = <109000000>;
+			/* PSRAM cannot be enabled while board is in default XIP
+			 * configuration, as it will conflict with flash chip.
+			 */
+			status = "disabled";
+			cs-interval-unit = <1>;
+			cs-interval = <2>;
+			cs-hold-time = <3>;
+			cs-setup-time = <3>;
+			data-valid-time = <6>;
+			column-space = <0>;
+			ahb-write-wait-unit = <2>;
+			ahb-write-wait-interval = <0>;
+	};
+};
+
+&hci {
+	status = "okay";
+	wakeup-source;
+};
+
+&enet_mac {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_mdio>;
+	pinctrl-names = "default";
+	phy: phy@2 {
+		compatible = "microchip,ksz8081";
+		reg = <2>;
+		status = "okay";
+		reset-gpios = <&hsgpio1 23 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&hsgpio0 21 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
+	};
+};
+
+&wwdt {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&pmu {
+	reset-causes-en = <PMU_RESET_CM33_LOCKUP>,
+			  <PMU_RESET_ITRC>,
+			  <PMU_RESET_AP_RESET>;
+};
+
+/* OS Timer is the wakeup source for PM mode 2 */
+&os_timer {
+	status = "okay";
+	wakeup-source;
+};
+
+&systick {
+	status = "disabled";
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+};
+
+&sctimer {
+	status = "okay";
+	pinctrl-0 = <&pinmux_pwm0>;
+	pinctrl-names = "default";
+};
+
+&nbu {
+	status = "okay";
+	wakeup-source;
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
+
+/*
+ * the default resistors on the board breaks out the MOSI/MISO
+ * pins to the nets labelled "UART" which go to J1 2 and 4,
+ * but we are using it for spi mosi and miso here.
+ * SCK is on J2 6 as labelled.
+ */
+&flexcomm1 {
+	compatible = "nxp,lpc-spi";
+	pinctrl-0 = <&pinmux_flexcomm1_spi>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+arduino_i2c: &flexcomm2 {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
+	pinctrl-names = "default";
+};

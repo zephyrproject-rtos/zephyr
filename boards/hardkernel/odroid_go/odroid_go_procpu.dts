@@ -7,7 +7,7 @@
 
 #include <espressif/esp32/esp32_wrover_e_n16r4.dtsi>
 #include "odroid_go-pinctrl.dtsi"
-#include "odroid_go-flash_partition_table.dtsi"
+#include <espressif/partitions_0x1000_amp.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -15,7 +15,7 @@
 	compatible = "hardkernel,odroid_go", "espressif,esp32";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;

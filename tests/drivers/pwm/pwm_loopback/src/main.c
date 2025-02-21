@@ -22,4 +22,18 @@ static void *pwm_loopback_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(pwm_loopback, NULL, pwm_loopback_setup, NULL, NULL, NULL);
+static void pwm_loopback_after(void *f)
+{
+	struct test_pwm in;
+	struct test_pwm out;
+	int err;
+
+	ARG_UNUSED(f);
+
+	get_test_pwms(&out, &in);
+
+	err = pwm_disable_capture(in.dev, in.pwm);
+	zassert_equal(err, 0, "failed to disable pwm capture (err %d)", err);
+}
+
+ZTEST_SUITE(pwm_loopback, NULL, pwm_loopback_setup, NULL, pwm_loopback_after, NULL);

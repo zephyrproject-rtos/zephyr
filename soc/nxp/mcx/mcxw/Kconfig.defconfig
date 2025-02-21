@@ -1,9 +1,10 @@
-# Copyright 2023-2024 NXP
+# Copyright 2023-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_MCXW
 
 config NUM_IRQS
+	default 77 if SOC_MCXW727C
 	default 75
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -13,6 +14,22 @@ config MCUX_FLASH_K4_API
 	default y
 
 if BT
+
+config MAIN_STACK_SIZE
+	default 2560
+
+config BT_LONG_WQ_STACK_SIZE
+	default 2560
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 4096
+
+endif # SHELL
 
 # Include intercore messaging component
 config NXP_RF_IMU
@@ -28,4 +45,14 @@ config HCI_NXP_RX_THREAD
 	default y
 
 endif # BT
+
+if NET_L2_IEEE802154 || NET_L2_OPENTHREAD
+
+# Include intercore messaging component
+config NXP_RF_IMU
+	default y
+
+endif # NET_L2_IEEE802154 || NET_L2_OPENTHREAD
+
+
 endif # SOC_SERIES_MCXW

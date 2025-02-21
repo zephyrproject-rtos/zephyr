@@ -12,10 +12,12 @@ supported:
   - counter
   - gpio
   - uart
+  - dma
   - watchdog
   - clock_control
+  - comparator
+  - adc
 testing:
   ignore_tags:
     - pm
-    - hwinfo
 vendor: silabs

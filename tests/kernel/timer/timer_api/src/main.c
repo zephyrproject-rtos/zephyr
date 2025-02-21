@@ -680,10 +680,20 @@ ZTEST_USER(timer_api, test_timer_remaining)
 	uint32_t dur_ticks = k_ms_to_ticks_ceil32(DURATION);
 	uint32_t target_rem_ticks = k_ms_to_ticks_ceil32(DURATION / 2);
 	uint32_t rem_ms, rem_ticks, exp_ticks;
+	uint32_t latency_ticks;
 	int32_t delta_ticks;
 	uint32_t slew_ticks;
 	uint64_t now;
 
+	/* Test is running in a user space thread so there is an additional latency
+	 * involved in executing k_busy_wait and k_timer_remaining_ticks. Due
+	 * to that latency, returned ticks won't be exact as expected even if
+	 * k_busy_wait is running using the same clock source as the system clock.
+	 * If system clock frequency is low (e.g. 100Hz) 1 tick will be enough but
+	 * for cases where clock frequency is much higher we need to accept higher
+	 * deviation (in ticks). Arbitrary value of 100 us processing overhead is used.
+	 */
+	latency_ticks = k_us_to_ticks_ceil32(100);
 
 	init_timer_data();
 	k_timer_start(&remain_timer, K_MSEC(DURATION), K_NO_WAIT);
@@ -713,7 +723,7 @@ ZTEST_USER(timer_api, test_timer_remaining)
 	 */
 	delta_ticks = (int32_t)(rem_ticks - target_rem_ticks);
 	slew_ticks = BUSY_SLEW_THRESHOLD_TICKS(DURATION * USEC_PER_MSEC / 2U);
-	zassert_true(abs(delta_ticks) <= MAX(slew_ticks, 1U),
+	zassert_true(abs(delta_ticks) <= MAX(slew_ticks, latency_ticks),
 		     "tick/busy slew %d larger than test threshold %u",
 		     delta_ticks, slew_ticks);
 

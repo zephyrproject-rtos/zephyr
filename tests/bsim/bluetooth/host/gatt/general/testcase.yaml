@@ -1,0 +1,11 @@
+tests:
+  bluetooth.host.gatt.general:
+    build_only: true
+    tags:
+      - bluetooth
+    platform_allow:
+      - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpunet
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_general_prj_conf

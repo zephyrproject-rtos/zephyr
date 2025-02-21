@@ -624,7 +624,7 @@ static void cc2520_rx(void *p1, void *p2, void *p3)
 			goto flush;
 		}
 
-		if (!IS_ENABLED(CONFIG_IEEE802154_RAW_MODE)) {
+		if (!IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 			pkt_len -= 2U;
 		}
 
@@ -1397,7 +1397,7 @@ static int cc2520_crypto_init(const struct device *dev)
 	return 0;
 }
 
-struct crypto_driver_api cc2520_crypto_api = {
+DEVICE_API(crypto, cc2520_crypto_api) = {
 	.query_hw_caps			= cc2520_crypto_hw_caps,
 	.cipher_begin_session			= cc2520_crypto_begin_session,
 	.cipher_free_session			= cc2520_crypto_free_session,

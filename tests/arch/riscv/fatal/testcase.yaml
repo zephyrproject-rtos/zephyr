@@ -2,7 +2,9 @@ common:
   ignore_faults: true
   harness: console
   ignore_qemu_crash: true
-  tags: kernel riscv
+  tags:
+    - kernel
+    - riscv
   platform_allow:
     - qemu_riscv64
 tests:

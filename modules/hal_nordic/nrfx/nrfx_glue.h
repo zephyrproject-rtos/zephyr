@@ -312,12 +312,6 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 		(void)size;              \
 	} while (0)
 
-/*------------------------------------------------------------------------------*/
-
-#include "nrfx_config_reserved_resources.h"
-
-//------------------------------------------------------------------------------
-
 /**
  * @brief Function helping to integrate nrfx IRQ handlers with IRQ_CONNECT.
  *

@@ -129,7 +129,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
  *        location, which must be updated.
  */
 static inline void arch_switch(void *switch_to, void **switched_from);
-#else
+#endif /* CONFIG_USE_SWITCH */
+
+#if !defined(CONFIG_USE_SWITCH) || defined(__DOXYGEN__)
+#if defined(__DOXYGEN__)
 /**
  * Cooperatively context switch
  *
@@ -143,6 +146,7 @@ static inline void arch_switch(void *switch_to, void **switched_from);
  *         blocking operation.
  */
 int arch_swap(unsigned int key);
+#endif /* __DOXYGEN__ */
 
 /**
  * Set the return value for the specified thread.
@@ -154,7 +158,7 @@ int arch_swap(unsigned int key);
  */
 static ALWAYS_INLINE void
 arch_thread_return_value_set(struct k_thread *thread, unsigned int value);
-#endif /* CONFIG_USE_SWITCH */
+#endif /* !CONFIG_USE_SWITCH || __DOXYGEN__ */
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 /**

@@ -190,7 +190,7 @@ static int mcux_tpm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api mcux_tpm_driver_api = {
+static DEVICE_API(pwm, mcux_tpm_driver_api) = {
 	.set_cycles = mcux_tpm_set_cycles,
 	.get_cycles_per_sec = mcux_tpm_get_cycles_per_sec,
 };

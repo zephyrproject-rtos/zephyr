@@ -11,20 +11,20 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 960
 flash: 65536
 supported:
+  - adc
+  - counter
+  - dac
   - dma
   - dmic
-  - gpio
-  - spi
-  - i2c
   - entropy
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
   - usb_device
   - watchdog
-  - counter
-  - pwm
-  - hwinfo
-  - adc
-  - dac

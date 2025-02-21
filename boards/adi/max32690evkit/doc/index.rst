@@ -284,7 +284,8 @@ SWD port. SWD debug can be accessed through the Cortex 10-pin connector, J3.
 Logic levels are fixed to VDDIO (1.8V).
 
 Once the debug probe is connected to your host computer, then you can simply run the
-``west flash`` command to write a firmware image into flash.
+``west flash`` command to write a firmware image into flash. To perform a full erase,
+pass the ``--erase`` option when executing ``west flash``.
 
 .. note::
 
@@ -303,7 +304,7 @@ instead of ``west flash``.
 References
 **********
 
-- `MAX32690EVKIT web page`_
+- `MAX32690EVKIT solution center`_
 
-.. _MAX32690EVKIT web page:
-   https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-boards-kits/MAX32690EVKIT.html
+.. _MAX32690EVKIT solution center:
+   https://developer.analog.com/solutions/max32690

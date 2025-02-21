@@ -96,3 +96,13 @@ child-binding:
         - 50000
       description: |
         Soft start current limit in microamps.
+
+    nordic,anomaly38-disable-workaround:
+      type: boolean
+      description: |
+        Disable the SW workaround for nPM1300 anomaly #38.
+        When nPM1300 is in ULP mode, LDO is supplied from VSYS and
+        then LDO is enabled, it can take long time until the LDO
+        output has reached its target voltage. To avoid this, an i2c
+        read is performed shortly after an LDO is enabled.
+        See nPM1300 Errata manual for more details.

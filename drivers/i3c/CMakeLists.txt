@@ -11,6 +11,14 @@ zephyr_library_sources(
   i3c_common.c
 )
 
+if(CONFIG_I3C_NUM_OF_DESC_MEM_SLABS GREATER 0)
+  zephyr_library_sources(i3c_mem_slab.c)
+endif()
+
+if(CONFIG_I3C_I2C_NUM_OF_DESC_MEM_SLABS GREATER 0)
+  zephyr_library_sources(i3c_i2c_mem_slab.c)
+endif()
+
 zephyr_library_sources_ifdef(
   CONFIG_USERSPACE
   i3c_handlers.c
@@ -42,6 +50,22 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_I3C_STM32
+  i3c_stm32.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_I3C_DW
+  i3c_dw.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_I3C_TEST
   i3c_test.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_I3C_RTIO
+	i3c_rtio.c
+	i3c_rtio_default.c
 )

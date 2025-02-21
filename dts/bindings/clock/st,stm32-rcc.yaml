@@ -20,8 +20,8 @@ description: |
            clocks = <&pll>;  /* Select 80MHz pll as SYSCLK source */
            ahb-prescaler = <2>;
            clock-frequency = <DT_FREQ_M(40)>; /* = SYSCLK / AHB prescaler */
-           apb1-presacler = <1>;
-           apb2-presacler = <1>;
+           apb1-prescaler = <1>;
+           apb2-prescaler = <1>;
   }
 
   Specifying a gated clock:
@@ -66,6 +66,17 @@ description: |
   Note 2: Default peripheral clock configuration (ie the one provided in *.dsti files)
           should be the one matching SoC reset state. Confere reference manual to check
           what is the reset value of the clock source for each peripheral.
+
+  Specifying a divided domain clock source:
+
+  Some peripherals are sourced through fixed clock dividers. For such cases there is
+  STM32_CLOCK_DIV() macro, which allows to specify such divider value. Selecting HSE/2 (HSE
+  frequency divided by 2) is done with following clock property:
+  ... {
+           ...
+           clocks = <&rcc (STM32_SRC_HSE | STM32_CLOCK_DIV(2)) ...>;
+           ...
+  }
 
 compatible: "st,stm32-rcc"
 

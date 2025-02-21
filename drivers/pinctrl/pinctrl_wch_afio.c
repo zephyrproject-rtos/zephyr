@@ -28,6 +28,10 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		uint32_t pcfr1 = AFIO->PCFR1;
 		uint8_t cfg = 0;
 
+		if (remap != 0) {
+			RCC->APB2PCENR |= RCC_AFIOEN;
+		}
+
 		if (pins->output_high || pins->output_low) {
 			cfg |= (pins->slew_rate + 1);
 			if (pins->drive_open_drain) {

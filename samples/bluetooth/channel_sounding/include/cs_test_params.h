@@ -33,8 +33,8 @@ static struct bt_le_cs_test_param test_params_get(enum bt_conn_le_cs_role role)
 	params.t_sw_time = 0;
 	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_ONE;
 
-	params.initiator_snr_control = BT_LE_CS_INITIATOR_SNR_CONTROL_NOT_USED;
-	params.reflector_snr_control = BT_LE_CS_REFLECTOR_SNR_CONTROL_NOT_USED;
+	params.initiator_snr_control = BT_LE_CS_SNR_CONTROL_NOT_USED;
+	params.reflector_snr_control = BT_LE_CS_SNR_CONTROL_NOT_USED;
 
 	params.drbg_nonce = 0x1234;
 

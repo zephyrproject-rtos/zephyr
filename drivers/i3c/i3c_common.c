@@ -216,6 +216,24 @@ struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev,
 	return ret;
 }
 
+struct i3c_device_desc *i3c_dev_list_i3c_static_addr_find(const struct device *dev,
+							  uint8_t addr)
+{
+	struct i3c_device_desc *ret = NULL;
+	struct i3c_device_desc *desc;
+
+	__ASSERT_NO_MSG(dev != NULL);
+
+	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+		if (desc->static_addr == addr) {
+			ret = desc;
+			break;
+		}
+	}
+
+	return ret;
+}
+
 struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
 							   uint16_t addr)
 {
@@ -318,6 +336,11 @@ int i3c_detach_i3c_device(struct i3c_device_desc *target)
 	i3c_addr_slots_mark_free(&data->attached_dev.addr_slots,
 				 target->dynamic_addr ? target->dynamic_addr : target->static_addr);
 
+	/* if it was from allocated memory, free it */
+	if (i3c_device_desc_in_pool(target)) {
+		i3c_device_desc_free(target);
+	}
+
 	return status;
 }
 
@@ -370,8 +393,170 @@ int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target)
 
 	i3c_addr_slots_mark_free(&data->attached_dev.addr_slots, target->addr);
 
+	/* if it was from allocated memory, free it */
+	if (i3c_i2c_device_desc_in_pool(target)) {
+		i3c_i2c_device_desc_free(target);
+	}
+
 	return status;
 }
+
+int i3c_sec_get_basic_info(const struct device *dev,
+	uint8_t dynamic_addr, uint8_t static_addr, uint8_t bcr, uint8_t dcr)
+{
+	struct i3c_ccc_getpid getpid;
+	struct i3c_device_desc temp_desc;
+	struct i3c_device_desc *desc;
+	struct i3c_device_id id;
+	const struct i3c_driver_config *config = dev->config;
+	int ret;
+
+	*(const struct device **)&temp_desc.bus = dev;
+	temp_desc.dynamic_addr = dynamic_addr;
+	temp_desc.bcr = bcr;
+	temp_desc.dcr = dcr;
+	/* attach it first with a temperary value so we can at least get the pid */
+	ret = i3c_attach_i3c_device(&temp_desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* First try to look up if this is a known device in the list by PID */
+	ret = i3c_ccc_do_getpid(&temp_desc, &getpid);
+	if (ret != 0) {
+		return ret;
+	}
+
+	*(uint64_t *)&id = sys_get_be48(getpid.pid);
+
+	/* try to see if we already have a device statically allocated */
+	desc = i3c_dev_list_find(&config->dev_list, &id);
+	if (!desc) {
+		/* device was not found so allocate a descriptor */
+		desc = i3c_device_desc_alloc();
+		if (!desc) {
+			return -ENOMEM;
+		}
+		*(uint64_t *)&desc->pid = id.pid;
+		*(uint16_t *)&temp_desc.static_addr = (uint16_t)static_addr;
+	}
+	desc->dynamic_addr = dynamic_addr;
+	desc->bcr = bcr;
+	desc->dcr = dcr;
+
+	/* Detach that temporary device */
+	ret = i3c_detach_i3c_device(&temp_desc);
+	if (ret != 0) {
+		return ret;
+	}
+	ret = i3c_attach_i3c_device(desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Skip reading BCR and DCR as they came from DEFTGTS */
+	ret = i3c_device_adv_info_get(desc);
+
+	return ret;
+}
+
+int i3c_sec_i2c_attach(const struct device *dev, uint8_t static_addr, uint8_t lvr)
+{
+	struct i3c_i2c_device_desc *i2c_desc;
+	int ret;
+
+	/* try to see if we already have a device statically allocated */
+	i2c_desc = i3c_dev_list_i2c_addr_find(dev, (uint16_t)static_addr);
+	if (!i2c_desc) {
+		/* device was not found so allocate a descriptor */
+		i2c_desc = i3c_i2c_device_desc_alloc();
+		if (!i2c_desc) {
+			return -ENOMEM;
+		}
+		*(const struct device **)&i2c_desc->bus = dev;
+		*(uint16_t *)&i2c_desc->addr = (uint16_t)static_addr;
+		*(uint8_t *)&i2c_desc->lvr = lvr;
+	}
+
+	ret = i3c_attach_i2c_device(i2c_desc);
+	return ret;
+}
+
+static void i3c_sec_bus_reset(const struct device *dev)
+{
+	struct i3c_device_desc *i3c_desc;
+	struct i3c_i2c_device_desc *i3c_i2c_desc;
+
+	I3C_BUS_FOR_EACH_I3CDEV(dev, i3c_desc) {
+		i3c_detach_i3c_device(i3c_desc);
+	}
+
+	I3C_BUS_FOR_EACH_I2CDEV(dev, i3c_i2c_desc) {
+		i3c_detach_i2c_device(i3c_i2c_desc);
+	}
+}
+#ifdef CONFIG_I3C_USE_IBI
+/* call this from a workq after the interrupt from a controller */
+void i3c_sec_handoffed(struct k_work *work)
+{
+	struct i3c_ibi_work *ibi_node = CONTAINER_OF(work, struct i3c_ibi_work, work);
+	const struct device *dev = ibi_node->controller;
+	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
+	struct i3c_ccc_deftgts *deftgts = data->deftgts;
+	struct i3c_config_target config_target;
+	uint8_t n, cur_dyn_addr;
+	int ret;
+
+	if (!deftgts) {
+		LOG_ERR("Did not receive DEFTGTS before Handoff");
+		return;
+	}
+
+	if (!data->deftgts_refreshed) {
+		LOG_DBG("Already processed DEFTGTS from previous handoff");
+		return;
+	}
+
+	/* Forget all devices as another controller made changes */
+	i3c_sec_bus_reset(dev);
+
+	/*
+	 * Retrieve the active controller information
+	 */
+	ret = i3c_config_get(dev, I3C_CONFIG_TARGET, &config_target);
+	if (ret != 0) {
+		LOG_ERR("Failed to retrieve active controller info");
+		return;
+	}
+
+	cur_dyn_addr = config_target.dynamic_addr;
+
+	/* Attach the previous AC */
+	ret = i3c_sec_get_basic_info(dev, deftgts->active_controller.addr,
+				deftgts->active_controller.static_addr,
+				deftgts->active_controller.bcr,
+				deftgts->active_controller.dcr);
+
+	/* Attach all Targets */
+	for (n = 0; n < deftgts->count; n++) {
+		if (deftgts->targets[n].addr != 0) {
+			/* Must be an I3C device and skip itself */
+			if (deftgts->targets[n].addr != cur_dyn_addr) {
+				ret = i3c_sec_get_basic_info(dev, deftgts->targets[n].addr,
+					deftgts->targets[n].static_addr, deftgts->targets[n].bcr,
+					deftgts->targets[n].dcr);
+			}
+		} else {
+			/* Must be an I2C device */
+			ret = i3c_sec_i2c_attach(dev, deftgts->targets[n].static_addr,
+				deftgts->targets[n].lvr);
+		}
+	}
+
+	/* Set false, so the next handoff doesn't retrigger regathering info */
+	data->deftgts_refreshed = false;
+}
+#endif
 
 int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 				 const struct i3c_dev_list *dev_list,
@@ -388,6 +573,10 @@ int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 	const struct i3c_device_id i3c_id = I3C_DEVICE_ID(pid);
 
 	desc = i3c_dev_list_find(dev_list, &i3c_id);
+	/* If a device was not found, try to allocate a descriptor */
+	if (desc == NULL) {
+		desc = i3c_device_desc_alloc();
+	}
 	if (must_match && (desc == NULL)) {
 		/*
 		 * No device descriptor matching incoming PID and
@@ -450,39 +639,155 @@ err:
 	return ret;
 }
 
+uint8_t i3c_odd_parity(uint8_t p)
+{
+	p ^= p >> 4;
+	p &= 0xf;
+	return (0x9669 >> p) & 1;
+}
+
+int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool requested)
+{
+	int ret;
+	union i3c_ccc_getstatus status = {0};
+	struct i3c_ccc_events i3c_events;
+	struct i3c_ccc_address handoff_address;
+
+	/*
+	 * If the Active Controller intends to pass the Controller Role to a selected Secondary
+	 * Controller that did not send a Controller Role Request, then the Active Controller should
+	 * verify that the selected Secondary Controller is active and ready to respond to
+	 * additional commands
+	 */
+	if (!requested) {
+		ret = i3c_ccc_do_getstatus_fmt1(target, &status);
+		if (ret != 0) {
+			return ret;
+		}
+
+		if (I3C_CCC_GETSTATUS_ACTIVITY_MODE(status.fmt1.status) ==
+		    I3C_CCC_GETSTATUS_ACTIVITY_MODE_NCH) {
+			return -EBUSY;
+		}
+	}
+
+	/*
+	 * The Active Controller needs to disable Hot-Joins, Target Interrupt Requests, and other
+	 * Bus events that could interfere with the Handoff, then it sends the appropriate
+	 * Broadcast to disable those events before the Handoff. Once the Handoff is complete, the
+	 * new Active Controller should re-enable events that are disabled in this step.
+	 */
+	i3c_events.events = I3C_CCC_EVT_ALL;
+	ret = i3c_ccc_do_events_all_set(target->bus, false, &i3c_events);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/** TODO: reconfigure MLANE if needed */
+
+	/*
+	 * If the Active Controller knows that the selected Secondary Controller must be put into a
+	 * different Activity State before Handoff, then the Active Controller shall send the
+	 * appropriate Broadcast or Direct CCCs to put the Bus (or selected Devices) into a
+	 * different Activity State
+	 */
+	if (target->crhdly1 & I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE) {
+		ret = i3c_ccc_do_entas(
+			target, I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE(target->crhdly1));
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	if ((target->getcaps.getcap3 & I3C_CCC_GETCAPS3_GETSTATUS_DEFINING_BYTE_SUPPORT) &&
+	    (target->crcaps.crcaps2 & I3C_CCC_GETCAPS_CRCAPS2_DEEP_SLEEP_CAPABLE)) {
+		ret = i3c_ccc_do_getstatus_fmt2(target, &status, GETSTATUS_FORMAT_2_PRECR);
+		if (ret != 0) {
+			return ret;
+		}
+
+		/*
+		 * If the Active Controller determines that the indicated Secondary Controller has
+		 * been in a “deep sleep” state and may need to be re-synchronized with the most
+		 * current list of I3C Targets and Group Addresses, then the Active Controller
+		 * should send CCC DEFTGTS and DEFGRPA
+		 */
+		if (status.fmt2.precr & I3C_CCC_GETSTATUS_PRECR_DEEP_SLEEP_DETECTED) {
+			ret = i3c_bus_deftgts(target->bus);
+			if (ret != 0) {
+				return ret;
+			}
+			/* TODO: broadcast DEFGRPA when group address support comes */
+
+			/* Check CRCAPS if the device needs additional time to process */
+			if (target->crcaps.crcaps2 &
+			    I3C_CCC_GETCAPS_CRCAPS2_DELAYED_CONTROLLER_HANDOFF) {
+				/*
+				 * Afterwards, the Active Controller should poll the Secondary
+				 * Controller to ensure that it has successfully processed this data
+				 * and indicates that it is ready to accept the Controller Role
+				 */
+				do {
+					ret = i3c_ccc_do_getstatus_fmt2(target, &status,
+									GETSTATUS_FORMAT_2_PRECR);
+					if (ret != 0) {
+						return ret;
+					}
+				} while (!(status.fmt2.precr &
+					   I3C_CCC_GETSTATUS_PRECR_HANDOFF_DELAY_NACK));
+			}
+		}
+	}
+
+	/*
+	 * After the Active Controller has prepared for Handoff, the Active Controller shall
+	 * then issue a GETACCCR CCC
+	 */
+	ret = i3c_ccc_do_getacccr(target, &handoff_address);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Verify Odd Parity and Correct Dynamic Address Reply */
+	if ((i3c_odd_parity(handoff_address.addr >> 1) != (handoff_address.addr & BIT(0))) ||
+	    (handoff_address.addr >> 1 != target->dynamic_addr)) {
+		return -EIO;
+	}
+
+	return ret;
+}
+
 int i3c_device_basic_info_get(struct i3c_device_desc *target)
 {
 	int ret;
-	uint8_t tmp_bcr;
-
 	struct i3c_ccc_getbcr bcr = {0};
 	struct i3c_ccc_getdcr dcr = {0};
-	struct i3c_ccc_mrl mrl = {0};
-	struct i3c_ccc_mwl mwl = {0};
-	union i3c_ccc_getcaps caps = {0};
-	union i3c_ccc_getmxds mxds = {0};
-
-	/*
-	 * Since some CCC functions requires BCR to function
-	 * correctly, we save the BCR here and update the BCR
-	 * in the descriptor. If any following operations fails,
-	 * we can restore the BCR.
-	 */
-	tmp_bcr = target->bcr;
 
 	/* GETBCR */
 	ret = i3c_ccc_do_getbcr(target, &bcr);
 	if (ret != 0) {
-		goto out;
+		return ret;
 	}
-
-	target->bcr = bcr.bcr;
 
 	/* GETDCR */
 	ret = i3c_ccc_do_getdcr(target, &dcr);
 	if (ret != 0) {
-		goto out;
+		return ret;
 	}
+
+	target->bcr = bcr.bcr;
+	target->dcr = dcr.dcr;
+
+	return 0;
+}
+
+int i3c_device_adv_info_get(struct i3c_device_desc *target)
+{
+	struct i3c_ccc_mrl mrl = {0};
+	struct i3c_ccc_mwl mwl = {0};
+	union i3c_ccc_getcaps caps = {0};
+	union i3c_ccc_getmxds mxds = {0};
+	int ret;
 
 	/* GETMRL */
 	if (i3c_ccc_do_getmrl(target, &mrl) != 0) {
@@ -505,36 +810,44 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target)
 	 * set, then it is expected for GETCAPS to always be supported. Otherwise, then it's a I3C
 	 * v1.0 device without any HDR modes so do not treat as an error if no valid response.
 	 */
-	if (ret == 0) {
-		memcpy(&target->getcaps, &caps, sizeof(target->getcaps));
-	} else if ((ret != 0) && (target->bcr & I3C_BCR_ADV_CAPABILITIES)) {
-		goto out;
+	if ((ret != 0) && (target->bcr & I3C_BCR_ADV_CAPABILITIES)) {
+		return ret;
 	} else {
 		ret = 0;
+	}
+
+	/* CRCAPS */
+	if ((target->getcaps.getcap3 & I3C_CCC_GETCAPS3_GETCAPS_DEFINING_BYTE_SUPPORT) &&
+		    (i3c_device_is_controller_capable(target))) {
+		ret = i3c_ccc_do_getcaps_fmt2(target, &caps, GETCAPS_FORMAT_2_CRCAPS);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	/* GETMXDS */
 	if (target->bcr & I3C_BCR_MAX_DATA_SPEED_LIMIT) {
 		ret = i3c_ccc_do_getmxds_fmt2(target, &mxds);
 		if (ret != 0) {
-			goto out;
+			return ret;
 		}
 
-		target->data_speed.maxrd = mxds.fmt2.maxrd;
-		target->data_speed.maxwr = mxds.fmt2.maxwr;
-		target->data_speed.max_read_turnaround = sys_get_le24(mxds.fmt2.maxrdturn);
+		/* Get CRHDLY if supported */
+		if ((target->data_speed.maxwr & I3C_CCC_GETMXDS_MAXWR_DEFINING_BYTE_SUPPORT) &&
+		    (i3c_device_is_controller_capable(target))) {
+			ret = i3c_ccc_do_getmxds_fmt3(target, &mxds, GETMXDS_FORMAT_3_CRHDLY);
+			if (ret != 0) {
+				return ret;
+			}
+
+			target->crhdly1 = mxds.fmt3.crhdly1;
+		}
 	}
 
-	target->dcr = dcr.dcr;
 	target->data_length.mrl = mrl.len;
 	target->data_length.mwl = mwl.len;
 	target->data_length.max_ibi = mrl.ibi_len;
 
-out:
-	if (ret != 0) {
-		/* Restore BCR is any CCC fails. */
-		target->bcr = tmp_bcr;
-	}
 	return ret;
 }
 
@@ -824,9 +1137,14 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 			continue;
 		}
 
-		ret = i3c_device_basic_info_get(desc);
+		/*
+		 * If static address is 0, then it is assumed that BCR
+		 * and DCR were already read through ENTDAA
+		 */
+		ret = (desc->static_addr == 0) ? i3c_device_adv_info_get(desc)
+					       : i3c_device_info_get(desc);
 		if (ret != 0) {
-			LOG_ERR("Error getting basic device info for 0x%02x",
+			LOG_ERR("Error getting device info for 0x%02x",
 				desc->static_addr);
 		} else {
 			LOG_DBG("Target 0x%02x, BCR 0x%02x, DCR 0x%02x, MRL %d, MWL %d, IBI %d",
@@ -846,8 +1164,6 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	/*
 	 * Only re-enable Hot-Join from targets.
 	 * Target interrupts will be enabled when IBI is enabled.
-	 * And transferring controller role is not supported so not need to
-	 * enable the event.
 	 */
 	i3c_events.events = I3C_CCC_EVT_HJ;
 	ret = i3c_ccc_do_events_all_set(dev, true, &i3c_events);

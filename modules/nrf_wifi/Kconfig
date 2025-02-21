@@ -3,3 +3,5 @@
 
 config ZEPHYR_NRF_WIFI_MODULE
 	bool
+
+source "modules/nrf_wifi/bus/Kconfig"

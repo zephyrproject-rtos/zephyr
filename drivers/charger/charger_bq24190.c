@@ -433,6 +433,21 @@ static int bq24190_set_prop(const struct device *dev, charger_prop_t prop,
 	}
 }
 
+static int bq24190_charge_enable(const struct device *dev, const bool enable)
+{
+	const struct bq24190_config *const config = dev->config;
+
+	if (config->ce_gpio.port != NULL) {
+		if (enable == true) {
+			return gpio_pin_set_dt(&config->ce_gpio, 1);
+		} else {
+			return gpio_pin_set_dt(&config->ce_gpio, 0);
+		}
+	} else {
+		return -ENOTSUP;
+	}
+}
+
 static int bq24190_init(const struct device *dev)
 {
 	const struct bq24190_config *const config = dev->config;
@@ -457,6 +472,19 @@ static int bq24190_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (config->ce_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->ce_gpio)) {
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->ce_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+	} else {
+		LOG_DBG("Assuming charge enable pin is pulled low");
+	}
+
 	ret = bq24190_register_reset(dev);
 	if (ret) {
 		return ret;
@@ -473,12 +501,14 @@ static int bq24190_init(const struct device *dev)
 static DEVICE_API(charger, bq24190_driver_api) = {
 	.get_property = bq24190_get_prop,
 	.set_property = bq24190_set_prop,
+	.charge_enable = bq24190_charge_enable,
 };
 
 #define BQ24190_INIT(inst)                                                                         \
                                                                                                    \
 	static const struct bq24190_config bq24190_config_##inst = {                               \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.ce_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, ce_gpios, {}),                           \
 	};                                                                                         \
                                                                                                    \
 	static struct bq24190_data bq24190_data_##inst = {                                         \

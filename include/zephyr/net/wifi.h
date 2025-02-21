@@ -76,8 +76,6 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2,
 	/** EAP PEAP security - Enterprise. */
 	WIFI_SECURITY_TYPE_EAP_PEAP_TLS,
-	/** EAP TLS SHA256 security - Enterprise. */
-	WIFI_SECURITY_TYPE_EAP_TLS_SHA256,
 	/** FT-PSK security */
 	WIFI_SECURITY_TYPE_FT_PSK,
 	/** FT-SAE security */
@@ -86,6 +84,8 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_FT_EAP,
 	/** FT-EAP-SHA384 security */
 	WIFI_SECURITY_TYPE_FT_EAP_SHA384,
+	/** SAE Extended key (uses group-dependent hashing) */
+	WIFI_SECURITY_TYPE_SAE_EXT_KEY,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
@@ -110,12 +110,35 @@ enum wifi_eap_type {
 	WIFI_EAP_TYPE_MSCHAPV2 = 26,
 };
 
-/** @brief Enterprise security WPA3 suiteb types. */
-enum wifi_suiteb_type {
-	/** suiteb. */
-	WIFI_SUITEB = 1,
-	/** suiteb-192. */
-	WIFI_SUITEB_192,
+/** @brief WPA3 Enterprise security types.
+ *
+ * See Section#3 in WFA WPA3 specification v3.4:
+ * https://www.wi-fi.org/file/wpa3-specification for details.
+ */
+enum wifi_wpa3_enterprise_type {
+	/** No WPA3 enterprise, either WPA2 Enterprise or personal mode */
+	WIFI_WPA3_ENTERPRISE_NA = 0,
+	/** WPA3 enterprise Suite-B (PMFR + WPA3-Suite-B). */
+	WIFI_WPA3_ENTERPRISE_SUITEB = 1,
+	/** WPA3 enterprise Suite-B-192 (PMFR + WPA3-Suite-B-192). */
+	WIFI_WPA3_ENTERPRISE_SUITEB_192,
+	/** WPA3 enterprise only (PMFR + WPA2-ENT disabled). */
+	WIFI_WPA3_ENTERPRISE_ONLY,
+
+	/** @cond INTERNAL_HIDDEN */
+	__WIFI_WPA3_ENTERPRISE_AFTER_LAST,
+	WIFI_WPA3_ENTERPRISE_MAX = __WIFI_WPA3_ENTERPRISE_AFTER_LAST - 1,
+	WIFI_WPA3_ENTERPRISE_UNKNOWN
+	/** @endcond */
+};
+
+enum wifi_eap_tls_cipher_type {
+	/** EAP TLS with NONE */
+	WIFI_EAP_TLS_NONE,
+	/** EAP TLS with ECDH & ECDSA with p384 */
+	WIFI_EAP_TLS_ECC_P384,
+	/** EAP TLS with ECDH & RSA with > 3K */
+	WIFI_EAP_TLS_RSA_3K,
 };
 
 /** @brief Group cipher and pairwise cipher types. */
@@ -168,12 +191,12 @@ struct wifi_eap_cipher_config {
 
 struct wifi_eap_config {
 	/**  Security type. */
-	unsigned int type;
-	/** EPA method type of phase1. */
+	enum wifi_security_type type;
+	/** EAP method type of phase1. */
 	enum wifi_eap_type eap_type_phase1;
-	/** EPA method type of phase2. */
+	/** EAP method type of phase2. */
 	enum wifi_eap_type eap_type_phase2;
-	/** EPA method string. */
+	/** EAP method string. */
 	char *method;
 	/** Phase2 setting string. */
 	char *phase2;
@@ -181,6 +204,9 @@ struct wifi_eap_config {
 
 /** Helper function to get user-friendly security type name. */
 const char *wifi_security_txt(enum wifi_security_type security);
+
+/** Helper function to get user-friendly wpa3 enterprise security type name. */
+const char *wifi_wpa3_enterprise_txt(enum wifi_wpa3_enterprise_type wpa3_ent);
 
 /** @brief IEEE 802.11w - Management frame protection. */
 enum wifi_mfp_options {
@@ -222,6 +248,27 @@ enum wifi_frequency_bands {
 
 /** Helper function to get user-friendly frequency band name. */
 const char *wifi_band_txt(enum wifi_frequency_bands band);
+
+/**
+ * @brief IEEE 802.11 operational frequency bandwidths (not exhaustive).
+ */
+enum wifi_frequency_bandwidths {
+	/** 20 MHz. */
+	WIFI_FREQ_BANDWIDTH_20MHZ = 1,
+	/** 40 MHz. */
+	WIFI_FREQ_BANDWIDTH_40MHZ,
+	/** 80 MHz. */
+	WIFI_FREQ_BANDWIDTH_80MHZ,
+
+	/** Number of frequency bandwidths available. */
+	__WIFI_FREQ_BANDWIDTH_AFTER_LAST,
+	/** Highest frequency bandwidth available. */
+	WIFI_FREQ_BANDWIDTH_MAX = __WIFI_FREQ_BANDWIDTH_AFTER_LAST - 1,
+	/** Invalid frequency bandwidth */
+	WIFI_FREQ_BANDWIDTH_UNKNOWN
+};
+
+const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 
 /** Max SSID length */
 #define WIFI_SSID_MAX_LEN 32
@@ -586,7 +633,7 @@ enum wifi_ps_exit_strategy {
 };
 
 /** Helper function to get user-friendly ps exit strategy name. */
-const char * const wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy);
+const char *wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy);
 
 /** @brief Wi-Fi power save error codes. */
 enum wifi_config_ps_param_fail_reason {
@@ -625,7 +672,6 @@ static const char * const wifi_ps_param_config_err_code_tbl[] = {
 };
 /** @endcond */
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 /** IEEE 802.11v BTM (BSS transition management) Query reasons.
  * Refer to IEEE Std 802.11v-2011 - Table 7-43x-Transition and Transition Query reasons table.
  */
@@ -637,7 +683,6 @@ enum wifi_btm_query_reason {
 	/** Leaving ESS. */
 	WIFI_BTM_QUERY_REASON_LEAVING_ESS = 20,
 };
-#endif
 
 /** Helper function to get user-friendly power save error code name. */
 static inline const char *wifi_ps_get_config_err_code_str(int16_t err_no)
@@ -655,6 +700,12 @@ enum wifi_ap_config_param {
 	WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY = BIT(0),
 	/** Used for AP mode configuration parameter max_num_sta */
 	WIFI_AP_CONFIG_PARAM_MAX_NUM_STA = BIT(1),
+	/** Used for AP mode configuration parameter bandwidth */
+	WIFI_AP_CONFIG_PARAM_BANDWIDTH = BIT(2),
+	/** Used for AP mode configuration parameter ht_capab */
+	WIFI_AP_CONFIG_PARAM_HT_CAPAB = BIT(3),
+	/** Used for AP mode configuration parameter vht_capab */
+	WIFI_AP_CONFIG_PARAM_VHT_CAPAB = BIT(4),
 };
 
 #ifdef __cplusplus

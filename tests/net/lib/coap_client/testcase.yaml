@@ -4,4 +4,6 @@ tests:
   net.coap.client:
     platform_allow:
       - native_sim
-    tags: coap net
+    tags:
+      - coap
+      - net

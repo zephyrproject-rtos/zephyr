@@ -426,7 +426,7 @@ static int rtc_emul_get_calibration(const struct device *dev, int32_t *calibrati
 }
 #endif /* CONFIG_RTC_CALIBRATION */
 
-static const struct rtc_driver_api rtc_emul_driver_api = {
+static DEVICE_API(rtc, rtc_emul_driver_api) = {
 	.set_time = rtc_emul_set_time,
 	.get_time = rtc_emul_get_time,
 #ifdef CONFIG_RTC_ALARM

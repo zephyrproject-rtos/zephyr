@@ -28,6 +28,11 @@
 #endif
 
 /*
+ * Subprofiling Considerations
+ */
+#define _POSIX_SUBPROFILE 1
+
+/*
  * POSIX System Interfaces
  */
 
@@ -201,9 +206,9 @@
 /*
  * POSIX2 Options
  */
-#define _POSIX2_VERSION _POSIX_VERSION
-#define _POSIX2_C_BIND  _POSIX2_VERSION
-#define _POSIX2_C_DEV   _POSIX2_VERSION
+/* #define _POSIX2_VERSION (-1) */
+#define _POSIX2_C_BIND _POSIX_VERSION
+/* #define _POSIX2_C_DEV (-1) */
 /* #define _POSIX2_CHAR_TERM (-1L) */
 /* #define _POSIX2_FORT_DEV (-1L) */
 /* #define _POSIX2_FORT_RUN (-1L) */
@@ -223,7 +228,13 @@
 #define _XOPEN_VERSION 700
 /* #define _XOPEN_CRYPT (-1L) */
 /* #define _XOPEN_ENH_I18N (-1L) */
-/* #define _XOPEN_REALTIME (-1L) */
+#if defined(CONFIG_XSI_REALTIME) ||                                                                \
+	(defined(CONFIG_POSIX_FSYNC) && defined(CONFIG_POSIX_MEMLOCK) &&                           \
+	 defined(CONFIG_POSIX_MEMLOCK_RANGE) && defined(CONFIG_POSIX_MESSAGE_PASSING) &&           \
+	 defined(CONFIG_POSIX_PRIORITY_SCHEDULING) &&                                              \
+	 defined(CONFIG_POSIX_SHARED_MEMORY_OBJECTS) && defined(CONFIG_POSIX_SYNCHRONIZED_IO))
+#define _XOPEN_REALTIME _XOPEN_VERSION
+#endif
 /* #define _XOPEN_REALTIME_THREADS (-1L) */
 /* #define _XOPEN_SHM (-1L) */
 

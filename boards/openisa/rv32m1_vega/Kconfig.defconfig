@@ -5,9 +5,6 @@ if BOARD_RV32M1_VEGA
 
 if BT
 
-config BT_CTLR
-	default y
-
 #TODO: Resolve the complete non-BLE support for crypto CAU3 firmware/driver
 #config HAS_RV32M1_CAU3
 #	bool

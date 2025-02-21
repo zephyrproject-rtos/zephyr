@@ -1,5 +1,7 @@
 common:
-  tags: llext edk
+  tags:
+    - llext
+    - edk
   arch_allow:
     - arm
   filter: CONFIG_ARCH_HAS_USERSPACE
@@ -9,4 +11,6 @@ sample:
 tests:
   sample.edk.app:
     build_only: true
-    tags: edk llext
+    tags:
+      - edk
+      - llext

@@ -7,12 +7,14 @@
 
 #include <nxp/nxp_mcxw71.dtsi>
 #include "frdm_mcxw71-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP FRDM-MCXW71 board";
 
 	aliases {
 		led0 = &blue_led;
+		sw0 = &user_button_0;
 		blue-pwm-led = &blue_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
@@ -27,6 +29,7 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,canbus = &flexcan0;
+		zephyr,uart-mcumgr = &lpuart0;
 	};
 
 	user_led {
@@ -46,6 +49,16 @@
 		};
 		red_pwm_led: pwm_led_2 {
 			pwms = <&tpm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: button_0 {
+			label = "User SW2";
+			gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
 		};
 	};
 };
@@ -82,6 +95,28 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	pcs-sck-delay = <5>;
+	sck-pcs-delay = <5>;
+	transfer-delay = <125>;
+
+	mx25r6435fm2il0: flash@0 {
+		compatible = "jedec,spi-nor";
+		jedec-id = [c2 28 17];
+		reg = <0>;
+		/* only wp-gpio on default board configuration,
+		 * there is a reset gpio line but the line is
+		 * DNP by default on the board (R4 on schematic)
+		 */
+		wp-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+		size = <DT_SIZE_M(64)>;
+		has-dpd;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		t-enter-dpd = <10000>;
+		/* this is the default (reset) mode for this flash */
+		mxicy,mx25r-power-mode = "low-power";
+		/* 8 MHz for low power mode */
+		spi-max-frequency = <8000000>;
+	};
 };
 
 &flash {
@@ -89,21 +124,20 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-
+		/* The MCUBoot swap-move algorithm uses the last 2 sectors
+		 * of the primary slot0 for swap status and move.
+		 */
 		boot_partition: partition@0 {
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
-
 		slot0_partition: partition@10000 {
-			reg = <0x10000 DT_SIZE_K(416)>;
+			reg = <0x10000 (DT_SIZE_K(416) + DT_SIZE_K(16))>;
 		};
-
-		slot1_partition: partition@78000 {
-			reg = <0x78000 DT_SIZE_K(416)>;
+		slot1_partition: partition@7C000 {
+			reg = <0x7C000 DT_SIZE_K(416)>;
 		};
-
-		storage_partition: partition@e0000 {
-			reg = <0xe0000 DT_SIZE_K(128)>;
+		storage_partition: partition@E4000 {
+			reg = <0xE4000 DT_SIZE_K(112)>;
 		};
 	};
 };
@@ -135,5 +169,14 @@
 &adc0 {
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&nbu {
+	status = "okay";
+	wakeup-source;
+};
+
+&rtc {
 	status = "okay";
 };

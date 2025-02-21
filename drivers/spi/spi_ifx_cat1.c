@@ -45,11 +45,14 @@ struct ifx_cat1_spi_data {
 
 static int32_t get_hw_block_num(CySCB_Type *reg_addr)
 {
+	extern const uint8_t _CYHAL_SCB_BASE_ADDRESS_INDEX[_SCB_ARRAY_SIZE];
+	extern CySCB_Type *const _CYHAL_SCB_BASE_ADDRESSES[_SCB_ARRAY_SIZE];
+
 	uint32_t i;
 
 	for (i = 0u; i < _SCB_ARRAY_SIZE; i++) {
 		if (_CYHAL_SCB_BASE_ADDRESSES[i] == reg_addr) {
-			return i;
+			return _CYHAL_SCB_BASE_ADDRESS_INDEX[i];
 		}
 	}
 
@@ -332,20 +335,21 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.scb_spi_config =                                                                  \
-			{.spiMode = CY_SCB_SPI_MASTER,       /* overwrite by cfg  */               \
-			 .sclkMode = CY_SCB_SPI_CPHA0_CPOL0, /* overwrite by cfg  */               \
-			 .rxDataWidth = 8,                   /* overwrite by cfg  */               \
-			 .txDataWidth = 8,                   /* overwrite by cfg  */               \
-			 .enableMsbFirst = true,             /* overwrite by cfg  */               \
-			 .subMode = CY_SCB_SPI_MOTOROLA,                                           \
-			 .oversample = IFX_CAT1_SPI_DEFAULT_OVERSAMPLE,                            \
-			 .enableMisoLateSample = true,                                             \
-			 .ssPolarity = CY_SCB_SPI_ACTIVE_LOW,                                      \
-		},                                                                                 \
+			{                                                                          \
+				.spiMode = CY_SCB_SPI_MASTER,       /* overwrite by cfg  */        \
+				.sclkMode = CY_SCB_SPI_CPHA0_CPOL0, /* overwrite by cfg  */        \
+				.rxDataWidth = 8,                   /* overwrite by cfg  */        \
+				.txDataWidth = 8,                   /* overwrite by cfg  */        \
+				.enableMsbFirst = true,             /* overwrite by cfg  */        \
+				.subMode = CY_SCB_SPI_MOTOROLA,                                    \
+				.oversample = IFX_CAT1_SPI_DEFAULT_OVERSAMPLE,                     \
+				.enableMisoLateSample = true,                                      \
+				.ssPolarity = CY_SCB_SPI_ACTIVE_LOW,                               \
+			},                                                                         \
 		.irq_priority = DT_INST_IRQ(n, priority),                                          \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, ifx_cat1_spi_init, NULL, &spi_cat1_data_##n,                      \
-			      &spi_cat1_config_##n, POST_KERNEL,                                   \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_cat1_spi_api);
+	SPI_DEVICE_DT_INST_DEFINE(n, ifx_cat1_spi_init, NULL, &spi_cat1_data_##n,                  \
+				  &spi_cat1_config_##n, POST_KERNEL,                               \
+				  CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_cat1_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_CAT1_SPI_INIT)

@@ -65,7 +65,7 @@ static int sample_driver_foo_state_set(const struct device *dev, bool active)
 	return 0;
 }
 
-static struct sample_driver_api sample_driver_foo_api = {
+static DEVICE_API(sample, sample_driver_foo_api) = {
 	.write = sample_driver_foo_write,
 	.set_callback = sample_driver_foo_set_callback,
 	.state_set = sample_driver_foo_state_set

@@ -114,8 +114,8 @@ class TestReport:
             os.path.join(TEST_DATA, 'tests', 'one_fail_two_error_one_pass'),
             ['qemu_x86/atom'],
             [r'one_fail_two_error_one_pass.agnostic.group1.subgroup2 on qemu_x86/atom FAILED \(.*\)',
-            r'one_fail_two_error_one_pass.agnostic.group1.subgroup3 on qemu_x86/atom ERROR \(Build failure\)',
-            r'one_fail_two_error_one_pass.agnostic.group1.subgroup4 on qemu_x86/atom ERROR \(Build failure\)'],
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup3 on qemu_x86/atom ERROR \(Build failure.*\)',
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup4 on qemu_x86/atom ERROR \(Build failure.*\)'],
         )
     ]
 
@@ -174,7 +174,7 @@ class TestReport:
                 pytest.fail(f"Unsupported file type: '{path}'")
 
         for f_platform in test_platforms:
-            platform_path = os.path.join(out_path, f_platform.replace("/", "_"))
+            platform_path = os.path.join(out_path, f_platform.replace("/", "_") + ".json", )
             assert os.path.exists(platform_path), f'file not found {f_platform}'
 
         assert str(sys_exit.value) == '0'

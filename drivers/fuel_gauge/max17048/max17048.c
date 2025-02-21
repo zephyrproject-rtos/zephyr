@@ -279,7 +279,7 @@ static int max17048_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	return ret;
 }
 
-static const struct fuel_gauge_driver_api max17048_driver_api = {
+static DEVICE_API(fuel_gauge, max17048_driver_api) = {
 	.get_property = &max17048_get_prop,
 };
 

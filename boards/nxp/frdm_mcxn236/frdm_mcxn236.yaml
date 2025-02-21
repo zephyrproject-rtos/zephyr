@@ -13,16 +13,18 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
-  - can
-  - dma
-  - gpio
-  - spi
-  - i2c
-  - watchdog
-  - pwm
-  - counter
-  - regulator
   - adc
+  - can
+  - counter
+  - dma
+  - flash
+  - gpio
+  - i2c
+  - i3c
+  - pwm
+  - regulator
+  - spi
+  - watchdog
+  - usb_device
 vendor: nxp

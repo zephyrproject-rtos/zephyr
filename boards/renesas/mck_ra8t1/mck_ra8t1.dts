@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,7 +7,7 @@
 
 #include <renesas/ra/ra8/r7fa8t1ahecbd.dtsi>
 #include <dt-bindings/gpio/gpio.h>
-
+#include <zephyr/dt-bindings/adc/adc.h>
 #include "mck_ra8t1-pinctrl.dtsi"
 
 / {
@@ -46,6 +46,7 @@
 
 	aliases {
 		led0 = &led1;
+		sdhc0 = &sdhc0;
 	};
 };
 
@@ -67,6 +68,8 @@
 	};
 
 	pllq {
+		div = <4>;
+		freq = <DT_FREQ_M(240)>;
 		status = "okay";
 	};
 
@@ -82,8 +85,18 @@
 };
 
 &canfdclk {
-	clocks = <&pll>;
+	clocks = <&pllp>;
+	div = <6>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pllq>;
 	div = <5>;
+	status = "okay";
+};
+
+&ioport3 {
 	status = "okay";
 };
 
@@ -152,4 +165,58 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+};
+
+&eth {
+	local-mac-address = [74 90 50 6D 81 75];
+	status = "okay";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	pinctrl-0 = <&ether_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@5 {
+		compatible = "ethernet-phy";
+		reg = <5>;
+		status = "okay";
+	};
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	average-count = <4>;
+};
+
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sdhc0 {
+	compatible = "renesas,ra-sdhc";
+	pinctrl-0 = <&sdhc0_default>;
+	enable-gpios = <&ioport3 11 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default";
+	status = "okay";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+	status = "okay";
+	zephyr_udc0: udc {
+		status = "okay";
+	};
 };

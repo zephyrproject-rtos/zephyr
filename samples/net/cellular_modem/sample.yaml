@@ -2,10 +2,14 @@ sample:
   description: Sample for cellular modem
   name: Sample for cellular modem using native networking
 common:
-  tags: cellular modem
+  tags:
+    - cellular
+    - modem
 tests:
   sample.net.cellular_modem:
-    tags: cellular modem
+    tags:
+      - cellular
+      - modem
     filter: dt_alias_exists("modem")
     platform_allow:
       - b_u585i_iot02a

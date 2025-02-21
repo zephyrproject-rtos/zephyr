@@ -179,11 +179,16 @@ config CLOCK_CONTROL_NRF2
 	depends on SOC_SERIES_NRF54HX && !RISCV_CORE_NORDIC_VPR
 	select ONOFF
 	select NRFS if HAS_NRFS
-	imply NRFS_LOCAL_DOMAIN_DVFS_SCALE_DOWN_AFTER_INIT if NRFS_DVFS_LOCAL_DOMAIN
 	help
 	  Support for nRF clock control devices.
 
 if CLOCK_CONTROL_NRF2
+
+config CLOCK_CONTROL_NRF2_HSFLL_REQ_LOW_FREQ
+	bool "Local domain scale down after init"
+	default y if NRFS_DVFS_LOCAL_DOMAIN
+	help
+	  Request the lowest operating point after DVFS initialization.
 
 config CLOCK_CONTROL_NRF2_NRFS_DVFS_TIMEOUT_MS
 	int "Timeout waiting for nrfs dvfs service callback in milliseconds"
@@ -192,5 +197,38 @@ config CLOCK_CONTROL_NRF2_NRFS_DVFS_TIMEOUT_MS
 config CLOCK_CONTROL_NRF2_NRFS_CLOCK_TIMEOUT_MS
 	int "Timeout waiting for nrfs clock service callback in milliseconds"
 	default 1000
+
+config CLOCK_CONTROL_NRF2_GLOBAL_HSFLL
+	bool "Clock control for global HSFLL"
+	depends on NRFS_GDFS_SERVICE_ENABLED
+	default y
+
+if CLOCK_CONTROL_NRF2_GLOBAL_HSFLL
+
+config CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_TIMEOUT_MS
+	int "Frequency request timeout in milliseconds"
+	default 10000
+
+config CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_REQ_LOW_FREQ
+	bool "Request LOW frequency on init"
+	default y
+	help
+	  The GDFS service will default to HIGH frequency until it receives
+	  a lower frequency request. The NRF2 clock controller drivers
+	  expect the clock to be initialized to their lowest frequency, so
+	  we need to send a request on init to align GDFS with the NRF2
+	  clock controller driver.
+
+	  This initial request can be disabled to prevent a potentially
+	  unnecessary HIGH -> LOW -> HIGH cycle given some module will
+	  request a HIGH frequency on init anyway.
+
+config CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY
+	int "Init priority of global HSFLL device driver"
+	default 52
+	help
+	  Must be higher than NRFS backend
+
+endif # CLOCK_CONTROL_NRF2_GLOBAL_HSFLL
 
 endif # CLOCK_CONTROL_NRF2

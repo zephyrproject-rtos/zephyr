@@ -1,0 +1,21 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: System Control and Management Interface (SCMI) power domain protocol
+
+compatible: "arm,scmi-power"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    const: [0x11]
+
+  "#power-domain-cells":
+    type: int
+    required: true
+    const: 1
+
+power-domain-cells:
+  - name

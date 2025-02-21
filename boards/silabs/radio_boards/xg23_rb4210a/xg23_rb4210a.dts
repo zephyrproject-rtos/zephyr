@@ -1,0 +1,255 @@
+/*
+ * Copyright (c) 2024 Yishai Jaffe
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efr32zg23b020f512im48.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+#include "xg23_rb4210a-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs BRD4210A";
+	compatible = "silabs,xg23_rb4210a", "silabs,efr32zg23";
+
+	chosen {
+		zephyr,console = &eusart0;
+		zephyr,shell-uart = &eusart0;
+		zephyr,uart-pipe = &eusart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &ls0xx_ls013b7dh03;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdog0;
+		dht0 = &si7021;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+			label = "LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: button_1 {
+			gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	sensor_disp_enable: sensor_disp_enable {
+		compatible = "regulator-fixed";
+		regulator-name = "sensor_disp_enable";
+		enable-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
+&cpu0 {
+	clock-frequency = <78000000>;
+};
+
+&pstate_em3 {
+	status = "disabled";
+};
+
+&hfxo {
+	status = "okay";
+	ctune = <106>;
+	precision = <50>;
+};
+
+&lfxo {
+	status = "okay";
+	ctune = <38>;
+	precision = <50>;
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_M(78)>;
+	clocks = <&hfxo>;
+	dpll-n = <3839>;
+	dpll-m = <1919>;
+	dpll-edge = "fall";
+	dpll-lock = "phase";
+	dpll-autorecover;
+};
+
+&em23grpaclk {
+	clocks = <&lfxo>;
+};
+
+&em4grpaclk {
+	clocks = <&lfxo>;
+};
+
+&sysrtcclk {
+	clocks = <&lfxo>;
+};
+
+&wdog0clk {
+	clocks = <&lfxo>;
+};
+
+&wdog1clk {
+	clocks = <&lfxo>;
+};
+
+&eusart0 {
+	compatible = "silabs,eusart-uart";
+	current-speed = <115200>;
+	pinctrl-0 = <&eusart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&eusart1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>, <&gpioc 4 GPIO_ACTIVE_LOW>;
+
+	ls0xx_ls013b7dh03: ls0xx@0 {
+		compatible = "sharp,ls0xx";
+		spi-max-frequency = <DT_FREQ_K(1100)>;
+		reg = <0>;
+		width = <128>;
+		height = <128>;
+		extcomin-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+		extcomin-frequency = <60>;
+		disp-en-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+	};
+
+	mx25r80: mx25r8035f@1 {
+		compatible = "jedec,spi-nor";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(33)>;
+		size = <DT_SIZE_M(8)>;
+		jedec-id = [c2 28 14];
+		has-dpd;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		t-enter-dpd = <0>;
+		mxicy,mx25r-power-mode = "low-power";
+	};
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+		vin-supply = <&sensor_disp_enable>;
+		status = "okay";
+	};
+};
+
+&gpio {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+
+	board-controller-enable {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&sysrtc0 {
+	status = "okay";
+};
+
+&se {
+	status = "okay";
+};
+
+&dcdc {
+	status = "okay";
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+	silabs,pfmx-peak-current-milliamp = <80>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 48 kB for the bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(48)>;
+			read-only;
+		};
+
+		/* Reserve 208 kB for the application in slot 0 */
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(208)>;
+		};
+
+		/* Reserve 208 kB for the application in slot 1 */
+		slot1_partition: partition@40000 {
+			label = "image-1";
+			reg = <0x00040000 DT_SIZE_K(208)>;
+		};
+
+		/* Reserve 32 kB for the scratch partition */
+		scratch_partition: partition@74000 {
+			label = "image-scratch";
+			reg = <0x00074000 DT_SIZE_K(32)>;
+		};
+
+		/* Set 16 kB of storage at the end of the 1536 kB of flash */
+		storage_partition: partition@7c000 {
+			label = "storage";
+			reg = <0x0007c000 DT_SIZE_K(16)>;
+		};
+	};
+};

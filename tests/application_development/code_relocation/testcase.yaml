@@ -2,21 +2,22 @@ common:
   tags: linker
 tests:
   application_development.code_relocation:
-    filter: not CONFIG_CPU_HAS_NXP_MPU and CONFIG_MINIMAL_LIBC and dt_chosen_enabled("zephyr,itcm")
+    filter: not CONFIG_CPU_HAS_NXP_SYSMPU and CONFIG_MINIMAL_LIBC and
+            dt_chosen_enabled("zephyr,itcm")
     arch_allow: arm
     extra_configs:
       - CONFIG_RELOCATE_TO_ITCM=y
     platform_allow:
-      - mimxrt1060_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
   application_development.code_relocation_kinetis:
-    filter: CONFIG_CPU_HAS_NXP_MPU
+    filter: CONFIG_CPU_HAS_NXP_SYSMPU
     arch_allow: arm
     extra_configs:
       - CONFIG_MPU_ALLOW_FLASH_WRITE=y
     platform_allow:
       - frdm_k64f
   application_development.code_relocation.no_itcm:
-    filter: not CONFIG_CPU_HAS_NXP_MPU and not dt_chosen_enabled("zephyr,itcm")
+    filter: not CONFIG_CPU_HAS_NXP_SYSMPU and not dt_chosen_enabled("zephyr,itcm")
     arch_allow: arm
     extra_sections:
       - _SRAM2_RODATA_SECTION_NAME

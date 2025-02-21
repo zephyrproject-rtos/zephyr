@@ -81,11 +81,14 @@ static const cy_stc_scb_i2c_config_t _cyhal_i2c_default_config = {
 
 static int32_t _get_hw_block_num(CySCB_Type *reg_addr)
 {
+	extern const uint8_t _CYHAL_SCB_BASE_ADDRESS_INDEX[_SCB_ARRAY_SIZE];
+	extern CySCB_Type *const _CYHAL_SCB_BASE_ADDRESSES[_SCB_ARRAY_SIZE];
+
 	uint32_t i;
 
 	for (i = 0u; i < _SCB_ARRAY_SIZE; i++) {
 		if (_CYHAL_SCB_BASE_ADDRESSES[i] == reg_addr) {
-			return i;
+			return _CYHAL_SCB_BASE_ADDRESS_INDEX[i];
 		}
 	}
 
@@ -492,7 +495,7 @@ static int ifx_cat1_i2c_target_unregister(const struct device *dev, struct i2c_t
 }
 
 /* I2C API structure */
-static const struct i2c_driver_api i2c_cat1_driver_api = {
+static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 	.configure = ifx_cat1_i2c_configure,
 	.transfer = ifx_cat1_i2c_transfer,
 	.get_config = ifx_cat1_i2c_get_config,

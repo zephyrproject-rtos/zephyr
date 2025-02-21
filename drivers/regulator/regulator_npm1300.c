@@ -87,6 +87,7 @@ struct regulator_npm1300_config {
 	struct gpio_dt_spec retention_gpios;
 	struct gpio_dt_spec pwm_gpios;
 	uint8_t soft_start;
+	bool ldo_disable_workaround;
 };
 
 struct regulator_npm1300_data {
@@ -357,6 +358,7 @@ int regulator_npm1300_set_mode(const struct device *dev, regulator_mode_t mode)
 int regulator_npm1300_enable(const struct device *dev)
 {
 	const struct regulator_npm1300_config *config = dev->config;
+	int ret;
 
 	switch (config->source) {
 	case NPM1300_SOURCE_BUCK1:
@@ -364,12 +366,27 @@ int regulator_npm1300_enable(const struct device *dev)
 	case NPM1300_SOURCE_BUCK2:
 		return mfd_npm1300_reg_write(config->mfd, BUCK_BASE, BUCK_OFFSET_EN_SET + 2U, 1U);
 	case NPM1300_SOURCE_LDO1:
-		return mfd_npm1300_reg_write(config->mfd, LDSW_BASE, LDSW_OFFSET_EN_SET, 1U);
+		ret = mfd_npm1300_reg_write(config->mfd, LDSW_BASE, LDSW_OFFSET_EN_SET, 1U);
+		break;
 	case NPM1300_SOURCE_LDO2:
-		return mfd_npm1300_reg_write(config->mfd, LDSW_BASE, LDSW_OFFSET_EN_SET + 2U, 1U);
+		ret = mfd_npm1300_reg_write(config->mfd, LDSW_BASE, LDSW_OFFSET_EN_SET + 2U, 1U);
+		break;
 	default:
 		return 0;
 	}
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!config->ldo_disable_workaround) {
+		uint8_t unused;
+
+		k_msleep(2);
+		return mfd_npm1300_reg_read(config->mfd, LDSW_BASE, LDSW_OFFSET_STATUS, &unused);
+	}
+
+	return ret;
 }
 
 int regulator_npm1300_disable(const struct device *dev)
@@ -655,7 +672,8 @@ static DEVICE_API(regulator, api) = {
 		.soft_start = DT_ENUM_IDX_OR(node_id, soft_start_microamp, UINT8_MAX),             \
 		.enable_gpios = GPIO_DT_SPEC_GET_OR(node_id, enable_gpios, {0}),                   \
 		.retention_gpios = GPIO_DT_SPEC_GET_OR(node_id, retention_gpios, {0}),             \
-		.pwm_gpios = GPIO_DT_SPEC_GET_OR(node_id, pwm_gpios, {0})};                        \
+		.pwm_gpios = GPIO_DT_SPEC_GET_OR(node_id, pwm_gpios, {0}),                         \
+		.ldo_disable_workaround = DT_PROP(node_id, nordic_anomaly38_disable_workaround)};  \
                                                                                                    \
 	DEVICE_DT_DEFINE(node_id, regulator_npm1300_init, NULL, &data_##id, &config_##id,          \
 			 POST_KERNEL, CONFIG_REGULATOR_NPM1300_INIT_PRIORITY, &api);

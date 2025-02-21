@@ -18,6 +18,15 @@ config BT_CLASSIC
 	  This option enables Bluetooth BR/EDR support
 
 if BT_CLASSIC
+config BT_BR_MIN_ENC_KEY_SIZE
+	int
+	prompt "Minimum encryption key size accepted in octets" if !BT_SMP_SC_ONLY
+	default BT_SMP_MIN_ENC_KEY_SIZE
+	range 7 16
+	help
+	  This option sets the minimum encryption key size accepted during pairing
+	  for classic.
+
 config BT_MAX_SCO_CONN
 	int "Maximum number of simultaneous SCO connections"
 	default 1
@@ -52,8 +61,7 @@ config BT_RFCOMM_TX_MAX
 
 config BT_RFCOMM_DLC_STACK_SIZE
 	int "Stack size of DLC for RFCOMM"
-	default 512 if BT_HFP_AG
-	default 256
+	default 512
 	help
 	  Stack size of DLC for RFCOMM. This is the context from which
 	  all data of upper layer are sent and disconnect

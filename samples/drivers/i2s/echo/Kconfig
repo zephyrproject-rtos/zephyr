@@ -5,3 +5,15 @@ source "Kconfig.zephyr"
 
 config I2C
 	default $(dt_compat_on_bus,$(DT_COMPAT_WOLFSON_WM8731),i2c)
+
+config TOGGLE_ECHO_EFFECT_SW0
+	bool "Toggle echo effect when pressing sw0"
+	depends on $(dt_alias_enabled,sw0)
+	select GPIO
+	default y
+
+config STOP_START_STREAMS_SW1
+	bool "Start/stop I2S streams when pressing sw1"
+	depends on $(dt_alias_enabled,sw1)
+	select GPIO
+	default y

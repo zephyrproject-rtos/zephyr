@@ -123,7 +123,7 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
 	/* Device is initialized from the configuration in the encryption/decryption function
-	 * called bellow.
+	 * called below.
 	 */
 	memcpy(&data->hcryp.Init, &session->config, sizeof(session->config));
 #else
@@ -541,7 +541,7 @@ static int crypto_stm32_init(const struct device *dev)
 	return 0;
 }
 
-static struct crypto_driver_api crypto_enc_funcs = {
+static DEVICE_API(crypto, crypto_enc_funcs) = {
 	.cipher_begin_session = crypto_stm32_session_setup,
 	.cipher_free_session = crypto_stm32_session_free,
 	.cipher_async_callback_set = NULL,

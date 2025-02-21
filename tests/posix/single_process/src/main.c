@@ -7,4 +7,17 @@
 
 #include <zephyr/ztest.h>
 
-ZTEST_SUITE(posix_single_process, NULL, NULL, NULL, NULL, NULL);
+void test_env_before(void);
+void test_env_after(void);
+
+static void before(void *arg)
+{
+	test_env_before();
+}
+
+static void after(void *arg)
+{
+	test_env_after();
+}
+
+ZTEST_SUITE(posix_single_process, NULL, NULL, before, after, NULL);

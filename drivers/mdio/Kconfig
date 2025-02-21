@@ -37,6 +37,9 @@ source "drivers/mdio/Kconfig.stm32_hal"
 source "drivers/mdio/Kconfig.xmc4xxx"
 source "drivers/mdio/Kconfig.nxp_enet_qos"
 source "drivers/mdio/Kconfig.dwcxgmac"
+source "drivers/mdio/Kconfig.renesas_ra"
+source "drivers/mdio/Kconfig.lan865x"
+source "drivers/mdio/Kconfig.sy1xx"
 
 config MDIO_INIT_PRIORITY
 	int "Init priority"

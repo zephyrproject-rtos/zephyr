@@ -68,7 +68,7 @@ static inline void *get_sock_vtable(int sock,
 
 	if (ctx == NULL) {
 		NET_DBG("Invalid access on sock %d by thread %p (%s)", sock,
-			arch_current_thread(), k_thread_name_get(arch_current_thread()));
+			_current, k_thread_name_get(_current));
 	}
 
 	return ctx;

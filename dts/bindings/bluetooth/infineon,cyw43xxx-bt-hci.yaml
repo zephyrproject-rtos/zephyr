@@ -21,12 +21,17 @@ description: |
         /* HW Flow control must be enabled for HCI H4 */
         hw-flow-control;
 
-        bt-hci {
+        bt_hci_uart: bt_hci_uart {
+          compatible = "zephyr,bt-hci-uart";
           status = "okay";
-          compatible = "infineon,cyw43xxx-bt-hci";
-          bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
 
-          fw-download-speed = <3000000>;
+          bt-hci {
+            status = "okay";
+            compatible = "infineon,cyw43xxx-bt-hci";
+            bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
+
+            fw-download-speed = <3000000>;
+          };
         };
       };
 

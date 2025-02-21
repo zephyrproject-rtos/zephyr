@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <wch/ch32v00x.dtsi>
+#include <wch/ch32v0/ch32v003f4p.dtsi>
 #include "ch32v003evt-pinctrl.dtsi"
 
 / {

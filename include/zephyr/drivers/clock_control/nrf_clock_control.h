@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 
 #include <zephyr/device.h>
-#ifdef NRF_CLOCK
+#if defined(NRF_CLOCK) && !defined(NRF_LFRC)
 #include <hal/nrf_clock.h>
 #endif
 #include <zephyr/sys/onoff.h>
@@ -116,6 +116,13 @@ int z_nrf_clock_calibration_count(void);
  * @return Number of calibrations or -1 if feature is disabled.
  */
 int z_nrf_clock_calibration_skips_count(void);
+
+
+/** @brief Returns information if LF clock calibration is in progress.
+ *
+ * @return True if calibration is in progress, false otherwise.
+ */
+bool z_nrf_clock_calibration_is_in_progress(void);
 
 /** @brief Get onoff service for given clock subsystem.
  *
@@ -236,6 +243,24 @@ int nrf_clock_control_request(const struct device *dev,
 }
 
 /**
+ * @brief Synchronously request a reservation to use a given clock with specified attributes.
+ *
+ * Function can only be called from thread context as it blocks until request is completed.
+ * @see nrf_clock_control_request().
+ *
+ * @param dev pointer to the clock device structure.
+ * @param spec See nrf_clock_control_request().
+ * @param timeout Request timeout.
+ *
+ * @retval 0 if request is fulfilled.
+ * @retval -EWOULDBLOCK if request is called from the interrupt context.
+ * @retval negative See error codes returned by nrf_clock_control_request().
+ */
+int nrf_clock_control_request_sync(const struct device *dev,
+				   const struct nrf_clock_spec *spec,
+				   k_timeout_t timeout);
+
+/**
  * @brief Release a reserved use of a clock.
  *
  * @param dev pointer to the clock device structure.
@@ -292,7 +317,50 @@ int nrf_clock_control_cancel_or_release(const struct device *dev,
 	return api->cancel_or_release(dev, spec, cli);
 }
 
+/** @brief Request the HFXO from Zero Latency Interrupt context.
+ *
+ * Function is optimized for use in Zero Latency Interrupt context.
+ * It does not give notification when the HFXO is ready, so each
+ * user must put the request early enough to make sure the HFXO
+ * ramp-up has finished on time.
+ *
+ * This function uses reference counting so the caller must ensure
+ * that every nrf_clock_control_hfxo_request() call has a matching
+ * nrf_clock_control_hfxo_release() call.
+ */
+void nrf_clock_control_hfxo_request(void);
+
+/** @brief Release the HFXO from Zero Latency Interrupt context.
+ *
+ * Function is optimized for use in Zero Latency Interrupt context.
+ *
+ * Calls to this function must be coupled with prior calls
+ * to nrf_clock_control_hfxo_request(), because it uses basic
+ * reference counting to make sure the HFXO is released when
+ * there are no more pending requests.
+ */
+void nrf_clock_control_hfxo_release(void);
+
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF2) */
+
+/** @brief Get clock frequency that is used for the given node.
+ *
+ * Macro checks if node has clock property and if yes then if clock has clock_frequency property
+ * then it is returned. If it has supported_clock_frequency property with the list of supported
+ * frequencies then the last one is returned with assumption that they are ordered and the last
+ * one is the highest. If node does not have clock then 16 MHz is returned which is the default
+ * frequency.
+ *
+ * @param node Devicetree node.
+ *
+ * @return Frequency of the clock that is used for the node.
+ */
+#define NRF_PERIPH_GET_FREQUENCY(node) \
+	COND_CODE_1(DT_CLOCKS_HAS_IDX(node, 0),							\
+		(COND_CODE_1(DT_NODE_HAS_PROP(DT_CLOCKS_CTLR(node), clock_frequency),		\
+			     (DT_PROP(DT_CLOCKS_CTLR(node), clock_frequency)),			\
+			     (DT_PROP_LAST(DT_CLOCKS_CTLR(node), supported_clock_frequency)))),	\
+		(NRFX_MHZ_TO_HZ(16)))
 
 #ifdef __cplusplus
 }

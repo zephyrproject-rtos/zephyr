@@ -12,8 +12,8 @@ flash: 256
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
-  - gpio
   - can
+  - flash
+  - gpio
 vendor: nxp

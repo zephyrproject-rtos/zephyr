@@ -7,6 +7,10 @@ zephyr_sources(
   flexspi_clock_setup.c
   )
 
+zephyr_sources_ifdef(CONFIG_NXP_NBU
+  ../common/nxp_nbu.c
+  )
+
 zephyr_sources_ifdef(CONFIG_PM
   power.c
   )

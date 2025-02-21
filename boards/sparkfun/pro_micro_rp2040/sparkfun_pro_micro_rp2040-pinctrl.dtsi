@@ -29,14 +29,14 @@
 
 	spi0_default: spi0_default {
 		group1 {
-			pinmux = <SPI0_TX_P19>;
+			pinmux = <SPI0_TX_P23>;
 		};
 		group2 {
 			pinmux = <SPI0_RX_P20>;
 			input-enable;
 		};
 		group3 {
-			pinmux = <SPI0_SCK_P18>;
+			pinmux = <SPI0_SCK_P22>;
 		};
 	};
 
@@ -45,9 +45,6 @@
 			pinmux = <ADC_CH0_P26>, <ADC_CH1_P27>, <ADC_CH2_P28>, <ADC_CH3_P29>;
 			input-enable;
 		};
-	};
-
-	clocks_default: clocks_default {
 	};
 
 	ws2812_pio0_default: ws2812_pio_default {

@@ -722,12 +722,6 @@ Given the following example project layout:
 * If this is build with ``FILE_SUFFIX`` set to ``mouse`` for ``qemu_cortex_m3`` then
   ``prj_mouse.conf`` will be used and ``boards/qemu_cortex_m3_mouse.overlay`` will be used.
 
-.. note::
-
-   When ``CONF_FILE`` is set in the form of ``prj_X.conf`` then the ``X`` will be used as the
-   build type. If this is combined with ``FILE_SUFFIX`` then the file suffix option will take
-   priority over the build type.
-
 Application-Specific Code
 *************************
 

@@ -655,7 +655,7 @@ static int gicv3_its_init(const struct device *dev)
 	return 0;
 }
 
-struct its_driver_api gicv3_its_api = {
+DEVICE_API(its, gicv3_its_api) = {
 	.alloc_intid = gicv3_its_alloc_intid,
 	.setup_deviceid = gicv3_its_init_device_id,
 	.map_intid = gicv3_its_map_intid,

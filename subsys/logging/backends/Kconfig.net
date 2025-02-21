@@ -5,7 +5,8 @@
 # rsyslog message to be malformed.
 config LOG_BACKEND_NET
 	bool "Networking backend"
-	depends on NETWORKING && (NET_UDP || NET_TCP) && !LOG_MODE_IMMEDIATE
+	depends on NETWORKING && (NET_UDP || NET_TCP) && NET_SOCKETS && !LOG_MODE_IMMEDIATE
+	depends on POSIX_C_LANG_SUPPORT_R
 	help
 	  Send syslog messages to network server.
 	  See RFC 5424 (syslog protocol) and RFC 5426 (syslog over UDP) and

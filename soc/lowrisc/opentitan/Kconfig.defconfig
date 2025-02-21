@@ -18,4 +18,9 @@ config 2ND_LVL_INTR_00_OFFSET
 config NUM_IRQS
 	default 256
 
+# The OpenTitan SoC requires a manifest in front of the
+# application binary.
+config ROM_START_OFFSET
+	default 0x400
+
 endif # SOC_OPENTITAN

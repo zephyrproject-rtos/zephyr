@@ -64,14 +64,14 @@ struct udc_mcux_event {
 K_MEM_SLAB_DEFINE(udc_event_slab, sizeof(struct udc_mcux_event),
 		  CONFIG_UDC_NXP_EVENT_COUNT, sizeof(void *));
 
-static int udc_mcux_lock(const struct device *dev)
+static void udc_mcux_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int udc_mcux_unlock(const struct device *dev)
+static void udc_mcux_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 static int udc_mcux_control(const struct device *dev, usb_device_control_type_t command,
@@ -695,8 +695,7 @@ static int udc_mcux_init(const struct device *dev)
 
 #ifdef CONFIG_DT_HAS_NXP_USBPHY_ENABLED
 	if (config->phy_config != NULL) {
-		USB_EhciPhyInit(priv->controller_id, 0u,
-			(usb_phy_config_struct_t *)&config->phy_config);
+		USB_EhciPhyInit(priv->controller_id, 0u, config->phy_config);
 	}
 #endif
 

@@ -5,12 +5,12 @@
 #pragma once
 
 /* SRAM0 (16kB) memory */
-#define SRAM0_IRAM_START   0x4037c000
-#define SRAM0_SIZE         0x4000
+#define SRAM0_IRAM_START   DT_REG_ADDR(DT_NODELABEL(sram0))
+#define SRAM0_SIZE         DT_REG_SIZE(DT_NODELABEL(sram0))
 /* SRAM1 (384kB) memory */
-#define SRAM1_DRAM_START   0x3fc80000
-#define SRAM1_IRAM_START   0x40380000
-#define SRAM1_SIZE         0x60000
+#define SRAM1_DRAM_START   DT_REG_ADDR(DT_NODELABEL(sram1))
+#define SRAM1_IRAM_START   (SRAM1_DRAM_START + IRAM_DRAM_OFFSET)
+#define SRAM1_SIZE         DT_REG_SIZE(DT_NODELABEL(sram1))
 /* ICache size is fixed to 16KB on ESP32-C3 */
 #define ICACHE_SIZE        SRAM0_SIZE
 
@@ -47,7 +47,7 @@
 #define BOOTLOADER_STACK_OVERHEAD      0x0
 /* These lengths can be adjusted, if necessary: */
 #define BOOTLOADER_DRAM_SEG_LEN        0x9800
-#define BOOTLOADER_IRAM_SEG_LEN        0x9800
+#define BOOTLOADER_IRAM_SEG_LEN        0x9C00
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1400
 
 /* Start of the lower region is determined by region size and the end of the higher region */

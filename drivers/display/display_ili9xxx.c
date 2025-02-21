@@ -139,7 +139,7 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT((desc->pitch * data->bytes_per_pixel * desc->height) <=
 			 desc->buf_size,
-		 "Input buffer to small");
+		 "Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
 		x, y);
@@ -207,7 +207,7 @@ static int ili9xxx_read(const struct device *dev, const uint16_t x,
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT((desc->pitch * data->bytes_per_pixel * desc->height) <=
 			 desc->buf_size,
-		 "Output buffer to small");
+		 "Output buffer too small");
 
 	LOG_DBG("Reading %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
 		x, y);
@@ -517,7 +517,7 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 #define ILI9XXX_INIT(n, t)                                                     \
 	ILI##t##_REGS_INIT(n);                                                 \
 									       \
-	static const struct ili9xxx_config ili9xxx_config_##n = {              \
+	static const struct ili9xxx_config ili9##t##_config_##n = {            \
 		.quirks = &ili##t##_quirks,                                    \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI9XXX(n, t))),   \
 		.dbi_config = {                                                \
@@ -535,15 +535,15 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 		.x_resolution = ILI##t##_X_RES,                                \
 		.y_resolution = ILI##t##_Y_RES,                                \
 		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),\
-		.regs = &ili9xxx_regs_##n,                                     \
+		.regs = &ili##t##_regs_##n,                                    \
 		.regs_init_fn = ili##t##_regs_init,                            \
 	};                                                                     \
 									       \
-	static struct ili9xxx_data ili9xxx_data_##n;                           \
+	static struct ili9xxx_data ili9##t##_data_##n;                         \
 									       \
 	DEVICE_DT_DEFINE(INST_DT_ILI9XXX(n, t), ili9xxx_init,                  \
-			    NULL, &ili9xxx_data_##n,                           \
-			    &ili9xxx_config_##n, POST_KERNEL,                  \
+			    NULL, &ili9##t##_data_##n,                         \
+			    &ili9##t##_config_##n, POST_KERNEL,                \
 			    CONFIG_DISPLAY_INIT_PRIORITY, &ili9xxx_api)
 
 #define DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(t)                                 \

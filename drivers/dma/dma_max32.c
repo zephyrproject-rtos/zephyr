@@ -318,7 +318,7 @@ static int max32_dma_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dma_driver_api max32_dma_driver_api = {
+static DEVICE_API(dma, max32_dma_driver_api) = {
 	.config = max32_dma_config,
 	.reload = max32_dma_reload,
 	.start = max32_dma_start,

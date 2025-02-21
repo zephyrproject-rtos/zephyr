@@ -18,7 +18,8 @@
 
 LOG_MODULE_DECLARE(ext2);
 
-K_MEM_SLAB_DEFINE(file_struct_slab, sizeof(struct ext2_file), CONFIG_MAX_FILES, sizeof(void *));
+K_MEM_SLAB_DEFINE(file_struct_slab, sizeof(struct ext2_file), CONFIG_EXT2_MAX_FILES,
+		  sizeof(void *));
 
 /* File operations */
 
@@ -28,7 +29,7 @@ static int ext2_open(struct fs_file_t *filp, const char *fs_path, fs_mode_t flag
 	struct ext2_file *file;
 	struct ext2_data *fs = filp->mp->fs_data;
 
-	if (fs->open_files >= CONFIG_MAX_FILES) {
+	if (fs->open_files >= CONFIG_EXT2_MAX_FILES) {
 		LOG_DBG("Too many open files");
 		return -EMFILE;
 	}

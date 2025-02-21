@@ -4,18 +4,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimxrt1170_evk/mimxrt1176/cm4
+identifier: mimxrt1170_evk@A/mimxrt1176/cm4
 name: NXP MIMXRT1170-EVK CM4
 type: mcu
 arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 128
 flash: 128
 supported:
   - dma
+  - flash
   - gpio
   - i2c
   - pwm

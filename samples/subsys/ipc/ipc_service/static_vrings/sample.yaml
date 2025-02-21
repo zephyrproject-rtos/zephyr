@@ -9,6 +9,7 @@ tests:
       - mimxrt1160_evk/mimxrt1166/cm7
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1170_evk@B/mimxrt1176/cm7
+      - frdm_mcxn947/mcxn947/cpu0
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp

@@ -9,8 +9,13 @@ common:
     - native_sim
 tests:
   drivers.flash.api:
-    tags: drivers flash
+    tags:
+      - drivers
+      - flash
   drivers.flash.api.userspace:
-    tags: driver flash userspace
+    tags:
+      - driver
+      - flash
+      - userspace
     extra_configs:
       - CONFIG_USERSPACE=y

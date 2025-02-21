@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_ftm_pwm
+#define DT_DRV_COMPAT nxp_ftm_pwm
 
 #include <zephyr/drivers/clock_control.h>
 #include <errno.h>
@@ -492,7 +492,7 @@ static int mcux_ftm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api mcux_ftm_driver_api = {
+static DEVICE_API(pwm, mcux_ftm_driver_api) = {
 	.set_cycles = mcux_ftm_set_cycles,
 	.get_cycles_per_sec = mcux_ftm_get_cycles_per_sec,
 #ifdef CONFIG_PWM_CAPTURE

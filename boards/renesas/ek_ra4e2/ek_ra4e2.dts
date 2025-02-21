@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,6 +7,8 @@
 
 #include <renesas/ra/ra4/r7fa4e2b93cfm.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include "ek_ra4e2-pinctrl.dtsi"
 
 / {
@@ -15,9 +17,12 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash1;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,canbus = &canfd0;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -36,8 +41,31 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+		button0: s1 {
+			gpios = <&ioport0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: s2 {
+			gpios = <&ioport3 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "nxp,tja1043t", "can-transceiver-gpio";
+		standby-gpios = <&ioport4 0 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
 	};
 };
 
@@ -69,6 +97,10 @@
 	};
 };
 
+&ioport0 {
+	status = "okay";
+};
+
 &ioport1 {
 	status = "okay";
 };
@@ -81,4 +113,77 @@
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&canfdclk {
+	clocks = <&pll>;
+	div = <8>;
+	status = "okay";
+};
+
+&canfd_global {
+	status = "okay";
+	canfd0 {
+		pinctrl-0 = <&canfd0_default>;
+		pinctrl-names = "default";
+		phys = <&transceiver0>;
+		rx-max-filters = <16>;
+		status = "okay";
+	};
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&port_irq9 {
+	interrupts = <4 12>;
+	status = "okay";
+};
+
+&port_irq10 {
+	interrupts = <5 12>;
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	interrupts = <63 1>, <64 1>;
+	interrupt-names = "gtioca", "overflow";
+	divider = <RA_PWM_SOURCE_DIV_256>;
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(4)>;
+		};
+	};
 };

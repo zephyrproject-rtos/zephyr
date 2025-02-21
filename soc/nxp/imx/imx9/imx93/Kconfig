@@ -21,6 +21,7 @@ config SOC_MIMX9352_M33
 	select HAS_MCUX
 	select HAS_MCUX_IOMUXC if PINCTRL
 	select HAS_MCUX_CACHE
+	select SOC_EARLY_INIT_HOOK
 
 config MCUX_CORE_SUFFIX
 	default "_ca55" if SOC_MIMX9352_A55

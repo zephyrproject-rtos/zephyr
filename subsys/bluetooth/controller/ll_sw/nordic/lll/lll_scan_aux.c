@@ -365,7 +365,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	hcto += window_size_us;
 	hcto += radio_rx_chain_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_aux);
-	radio_tmr_hcto_configure(hcto);
+	radio_tmr_hcto_configure_abs(hcto);
 
 	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
 	 * channel chaining, create connection or to create periodic sync.
@@ -676,7 +676,10 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 	LL_ASSERT(e);
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 	e->lll = param;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 
 	lll_done(param);
 }
@@ -707,6 +710,7 @@ static void isr_done(void *param)
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
 		node_rx->rx_ftr.param = lll;
+		node_rx->rx_ftr.lll_aux = lll->lll_aux;
 		node_rx->rx_ftr.aux_failed = 1U;
 
 		ull_rx_put_sched(node_rx->hdr.link, node_rx);
@@ -716,7 +720,10 @@ static void isr_done(void *param)
 
 		e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 		LL_ASSERT(e);
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 		e->lll = param;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	}
 
 	lll_isr_cleanup(param);
@@ -891,6 +898,7 @@ isr_rx_do_close:
 			 * free it.
 			 */
 			node_rx2->rx_ftr.param = lll;
+			node_rx2->rx_ftr.lll_aux = lll->lll_aux;
 
 			ull_rx_put_sched(node_rx2->hdr.link, node_rx2);
 		}
@@ -1209,6 +1217,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 			lll_aux->state = 1U;
 		} else {
 			ftr->param = lll;
+			ftr->lll_aux = lll->lll_aux;
 			radio_isr_set(isr_tx_scan_req_lll_schedule,
 				      node_rx);
 			lll->lll_aux->state = 1U;
@@ -1278,6 +1287,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 			 * LLL scheduling in the reception of this current PDU.
 			 */
 			ftr->param = lll;
+			ftr->lll_aux = lll->lll_aux;
 			ftr->scan_rsp = lll->lll_aux->state;
 
 			/* Further auxiliary PDU reception will be chain PDUs */
@@ -1612,7 +1622,8 @@ isr_rx_connect_rsp_do_close:
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
-		node_rx->rx_ftr.param = lll->lll_aux;
+		node_rx->rx_ftr.param = lll;
+		node_rx->rx_ftr.lll_aux = lll->lll_aux;
 
 		ull_rx_put_sched(node_rx->hdr.link, node_rx);
 
@@ -1661,7 +1672,10 @@ static void isr_early_abort(void *param)
 
 	e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 	LL_ASSERT(e);
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 	e->lll = param;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 
 	lll_isr_early_abort(param);
 }

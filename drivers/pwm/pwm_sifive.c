@@ -208,7 +208,7 @@ static int pwm_sifive_get_cycles_per_sec(const struct device *dev,
 
 /* Device Instantiation */
 
-static const struct pwm_driver_api pwm_sifive_api = {
+static DEVICE_API(pwm, pwm_sifive_api) = {
 	.set_cycles = pwm_sifive_set_cycles,
 	.get_cycles_per_sec = pwm_sifive_get_cycles_per_sec,
 };

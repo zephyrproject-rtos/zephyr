@@ -4,14 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimxrt1060_evk@hyperflash
+identifier: mimxrt1060_evk/mimxrt1062/hyperflash
 name: NXP MIMXRT1060-EVK-HYPERFLASH
 type: mcu
 arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 32768
 flash: 65536
 supported:
@@ -22,6 +21,7 @@ supported:
   - counter
   - display
   - dma
+  - flash
   - gpio
   - i2c
   - netif:eth

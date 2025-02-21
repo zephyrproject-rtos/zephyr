@@ -94,7 +94,7 @@ static int bbram_stm32_get_size(const struct device *dev, size_t *size)
 	return 0;
 }
 
-static const struct bbram_driver_api bbram_stm32_driver_api = {
+static DEVICE_API(bbram, bbram_stm32_driver_api) = {
 	.read = bbram_stm32_read,
 	.write = bbram_stm32_write,
 	.get_size = bbram_stm32_get_size,

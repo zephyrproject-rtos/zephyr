@@ -43,6 +43,7 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_XSPI flash_stm32_xspi.c)
 zephyr_library_sources_ifdef(CONFIG_INFINEON_CAT1_QSPI_FLASH flash_ifx_cat1_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC13XX_CC26XX soc_flash_cc13xx_cc26xx.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC23X0 soc_flash_cc23x0.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ESP32 flash_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_GECKO flash_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ITE_IT8XXX2 flash_ite_it8xxx2.c)
@@ -59,6 +60,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_RV32M1 soc_flash_rv32m1.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SAM flash_sam.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SAM0 flash_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SI32 flash_si32.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SILABS_SIWX91X soc_flash_silabs_siwx91x.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SMARTBOND flash_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_TELINK_B91 soc_flash_b91.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_XMC4XXX soc_flash_xmc4xxx.c)
@@ -90,13 +92,14 @@ if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
 endif()
 
 if(CONFIG_SOC_FLASH_STM32)
+  zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED flash_stm32_ex_op.c)
   if(CONFIG_SOC_SERIES_STM32H7X)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32H7_FLASH_CONTROLLER_ENABLED flash_stm32h7x.c)
   elseif(CONFIG_SOC_SERIES_STM32H7RSX)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32H7_FLASH_CONTROLLER_ENABLED flash_stm32h7x.c)
   elseif(CONFIG_SOC_SERIES_STM32WBAX)
     if(CONFIG_BT_STM32WBA)
-      # BLE is enabled. Use implementation over Flash Manager for coexistence wit RF activities
+      # BLE is enabled. Use implementation over Flash Manager for coexistence with RF activities
       zephyr_library_sources(flash_stm32wba_fm.c)
     else()
       zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32_FLASH_CONTROLLER_ENABLED flash_stm32.c flash_stm32wbax.c)
@@ -106,7 +109,6 @@ if(CONFIG_SOC_FLASH_STM32)
   else()
     if(CONFIG_DT_HAS_ST_STM32_FLASH_CONTROLLER_ENABLED)
       zephyr_library_sources(flash_stm32.c)
-      zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED flash_stm32_ex_op.c)
 
 # zephyr-keep-sorted-start
       zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32F1_FLASH_CONTROLLER_ENABLED flash_stm32f1x.c)
@@ -149,10 +151,11 @@ zephyr_library_include_directories_ifdef(
 )
 
 zephyr_library_sources_ifdef(CONFIG_FLASH_NXP_S32_QSPI_NOR flash_nxp_s32_qspi_nor.c)
-zephyr_library_include_directories_ifdef(
-  CONFIG_FLASH_NXP_S32_QSPI_NOR
-  ${ZEPHYR_BASE}/drivers/memc
-)
+zephyr_library_sources_ifdef(CONFIG_FLASH_NXP_S32_QSPI_HYPERFLASH flash_nxp_s32_qspi_hyperflash.c)
+if(CONFIG_FLASH_NXP_S32_QSPI_NOR OR CONFIG_FLASH_NXP_S32_QSPI_HYPERFLASH)
+  zephyr_library_sources(flash_nxp_s32_qspi.c)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/memc)
+endif()
 
 if(CONFIG_RA_FLASH_HP)
   zephyr_library_sources(flash_hp_ra.c)

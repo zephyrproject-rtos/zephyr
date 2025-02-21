@@ -56,8 +56,9 @@ tests:
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk
       - mimxrt1040_evk
-      - mimxrt1060_evk
-      - mimxrt1060_evkb
+      - mimxrt1060_evk@A/mimxrt1062/qspi
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+      - mimxrt1060_evk@C/mimxrt1062/qspi
       - lpcxpresso55s69/lpc55s69/cpu0
       - lpcxpresso55s36
   drivers.gpio.2pin_arduino_customized:
@@ -70,8 +71,7 @@ tests:
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk
       - mimxrt1040_evk
-      - mimxrt1060_evk
-      - mimxrt1060_evkb
+      - mimxrt1060_evk/mimxrt1062/qspi
       - lpcxpresso55s69/lpc55s69/cpu0
       - lpcxpresso55s36
       - nucleo_wb09ke
@@ -95,3 +95,19 @@ tests:
       - nucleo_wb05kz
       - nucleo_wb09ke
       - nucleo_wba55cg
+  drivers.gpio.2pin_aw9523b:
+    depends_on:
+      - gpio
+      - arduino_gpio
+      - i2c
+      - arduino_i2c
+    harness_config:
+      fixture: aw9523b_on_arduino_header
+    filter: dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3") and
+            dt_nodelabel_enabled("arduino_i2c")
+    extra_dtc_overlay_files:
+      - boards/aw9523b_on_arduino_header.overlay
+  drivers.gpio.2pin_siwx91x_uulp:
+    platform_allow:
+      - siwx917_rb4338a
+    extra_args: "DTC_OVERLAY_FILE=boards/siwx917_rb4338a-uulp.overlay"

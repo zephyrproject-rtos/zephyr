@@ -33,8 +33,6 @@ power consumption, and features.
   mass storage, Virtual COM port, and debug port
 - Comprehensive free software libraries and examples available with the
   STM32CubeWL MCU Package
-- Support of a wide choice of Integrated Development Environments (IDEs)
-  including IAR Embedded Workbench®, MDK-ARM, and STM32CubeIDE
 - Suitable for rapid prototyping of end nodes based on LoRaWAN, Sigfox, wM-Bus,
   and many other proprietary protocols
 - Fully open hardware platform

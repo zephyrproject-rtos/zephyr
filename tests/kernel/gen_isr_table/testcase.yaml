@@ -56,7 +56,7 @@ tests:
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
   arch.interrupt.gen_isr_table_local.arm_mainline:
     <<: *arm-mainline
-    filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE and not CONFIG_USERSPACE
+    filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV7_M_ARMV8_M_MAINLINE and not CONFIG_USERSPACE
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
@@ -72,6 +72,8 @@ tests:
     platform_exclude:
       - m2gl025_miv
       - adp_xc7k/ae350
+      - nrf9280pdk/nrf9280/cpuppr
+      - nrf9280pdk/nrf9280/cpuppr/xip
     filter: CONFIG_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=y

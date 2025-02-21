@@ -25,6 +25,14 @@ config SEGGER_RTT_CUSTOM_LOCKING
 	help
 	  Enable custom locking using Zephyr APIs.
 
+config SEGGER_RTT_CB_ALIGNMENT
+	int "Alignment of the RTT control block"
+	default 16
+	help
+	  Specify the alignment of the RTT control block in memory. The default
+	  alignment of 16 bytes is chosen because PyOCD fails to discover blocks
+	  where the 16 byte `acID` field falls across a 32 byte boundary.
+
 config SEGGER_RTT_MAX_NUM_UP_BUFFERS
 	int "Maximum number of up-buffers"
 	default 3
@@ -39,7 +47,6 @@ config SEGGER_RTT_BUFFER_SIZE_UP
 
 config SEGGER_RTT_BUFFER_SIZE_DOWN
 	int "Size of the buffer for terminal input of target, from host"
-	default 32 if SHELL_BACKEND_RTT
 	default 16
 
 config SEGGER_RTT_PRINTF_BUFFER_SIZE
@@ -106,7 +113,7 @@ endif
 choice SEGGER_RTT_INIT_MODE
 	prompt "RTT Initialization mode"
 	help
-		RTT inizialization function can avoid re-init of Cntrol Block
+		RTT initialization function can avoid re-init of Control Block
 		if another program (e.g. bootloader) has already initialized it.
 	default SEGGER_RTT_INIT_MODE_STRONG_CHECK if SEGGER_RTT_SECTION_CUSTOM
 	default SEGGER_RTT_INIT_MODE_STRONG_CHECK

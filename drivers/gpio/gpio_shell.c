@@ -101,10 +101,6 @@ static void port_pin_get(gpio_port_pins_t reserved_mask, const char **line_names
 #define GPIO_CTRL_PIN_GET_FN(node_id)                                                              \
 	static const char *node_id##line_names[] = DT_PROP_OR(node_id, gpio_line_names, {NULL});   \
                                                                                                    \
-	static void node_id##cmd_gpio_pin_get(size_t idx, struct shell_static_entry *entry);       \
-                                                                                                   \
-	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_gpio_pin, node_id##cmd_gpio_pin_get);                \
-                                                                                                   \
 	static void node_id##cmd_gpio_pin_get(size_t idx, struct shell_static_entry *entry)        \
 	{                                                                                          \
 		gpio_port_pins_t reserved_mask = GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL(node_id);    \
@@ -112,7 +108,9 @@ static void port_pin_get(gpio_port_pins_t reserved_mask, const char **line_names
                                                                                                    \
 		port_pin_get(reserved_mask, node_id##line_names, line_names_len, idx, entry);      \
 		entry->subcmd = NULL;                                                              \
-	}
+	}                                                                                          \
+                                                                                                   \
+	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_gpio_pin, node_id##cmd_gpio_pin_get);
 
 #define IS_GPIO_CTRL_PIN_GET(node_id)                                                              \
 	COND_CODE_1(DT_PROP(node_id, gpio_controller), (GPIO_CTRL_PIN_GET_FN(node_id)), ())
@@ -134,9 +132,10 @@ DT_FOREACH_STATUS_OKAY_NODE(IS_GPIO_CTRL_PIN_GET)
 
 static const struct gpio_ctrl gpio_list[] = {DT_FOREACH_STATUS_OKAY_NODE(IS_GPIO_CTRL_LIST)};
 
-static const struct gpio_ctrl *get_gpio_ctrl_helper(const struct device *dev)
+static const struct gpio_ctrl *get_gpio_ctrl(const char *name)
 {
 	size_t i;
+	const struct device *dev = shell_device_get_binding(name);
 
 	if (dev == NULL) {
 		return NULL;
@@ -151,30 +150,7 @@ static const struct gpio_ctrl *get_gpio_ctrl_helper(const struct device *dev)
 	return NULL;
 }
 
-/* Look up a device by some human-readable string identifier. We
- * always search among device names. If the feature is available, we
- * search by node label as well.
- */
-static const struct gpio_ctrl *get_gpio_ctrl(char *id)
-{
-	const struct gpio_ctrl *ctrl;
-
-	ctrl = get_gpio_ctrl_helper(device_get_binding(id));
-	if (ctrl != NULL) {
-		return ctrl;
-	}
-
-#ifdef CONFIG_DEVICE_DT_METADATA
-	ctrl = get_gpio_ctrl_helper(device_get_by_dt_nodelabel(id));
-	if (ctrl != NULL) {
-		return ctrl;
-	}
-#endif	/* CONFIG_DEVICE_DT_METADATA */
-
-	return NULL;
-}
-
-int line_cmp(const char *input, const char *line_name)
+static int line_cmp(const char *input, const char *line_name)
 {
 	int i = 0;
 
@@ -196,7 +172,7 @@ static int get_gpio_pin(const struct shell *sh, const struct gpio_ctrl *ctrl, ch
 	gpio_pin_t i;
 	int result;
 
-	for (i = 0; i < ctrl->ngpios; i++) {
+	for (i = 0; i < ctrl->ngpios && i < ctrl->line_names_len; i++) {
 		result = line_cmp(line_name, ctrl->line_names[i]);
 		if (result == 0) {
 			if ((BIT64(i) & ctrl->reserved_mask) != 0) {

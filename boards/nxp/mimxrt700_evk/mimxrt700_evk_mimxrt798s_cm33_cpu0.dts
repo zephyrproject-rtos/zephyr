@@ -1,0 +1,150 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt7xx_cm33_cpu0.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "mimxrt700_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP MIMXRT700-EVK board";
+	compatible = "nxp,mimxrt798s";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &blue_led;
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+	};
+
+	chosen {
+		zephyr,flash-controller = &mx25um51345g;
+		zephyr,flash = &mx25um51345g;
+		zephyr,sram = &sram0;
+		zephyr,console = &flexcomm0_lpuart0;
+		zephyr,shell-uart = &flexcomm0_lpuart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_0 {
+			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+			label = "User LED_GREEN";
+		};
+		blue_led: led_1 {
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+			label = "User LED_BLUE";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User SW5";
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_2: button_1 {
+			label = "User SW7";
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+/*
+ * RT700-EVK board cm33_cpu0 uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer_cpu0 {
+	status = "okay";
+	wakeup-source;
+};
+
+&flexcomm0{
+	status = "okay";
+};
+
+&flexcomm0_lpuart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_lpuart>;
+	pinctrl-names = "default";
+};
+
+&lpspi14 {
+	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI14 RX and TX */
+	dmas = <&edma0 0 73>, <&edma0 1 74>;
+	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi14>;
+	pinctrl-names = "default";
+};
+
+&flexcomm8{
+	status = "okay";
+};
+
+&flexcomm8_lpi2c8 {
+	pinctrl-0 = <&pinmux_flexcomm8_i2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&lpadc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&blue_led {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&xspi0 {
+	status = "okay";
+
+	mx25um51345g: mx25um51345g@0 {
+		compatible = "nxp,xspi-mx25um51345g";
+		/* MX25UM51245G is 64MB, 512MBit flash part */
+		size = <DT_SIZE_M(64 * 8)>;
+		reg = <0>;
+		spi-max-frequency = <200000000>;
+		status = "okay";
+		jedec-id = [c2 81 3a];
+		erase-block-size = <4096>;
+		write-block-size = <2>;
+	};
+};
+
+p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};

@@ -17,6 +17,9 @@ properties:
   clocks:
     required: true
 
+  clock-names:
+    required: true
+
   pinctrl-0:
     required: true
 

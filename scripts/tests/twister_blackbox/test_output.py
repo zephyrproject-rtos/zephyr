@@ -14,6 +14,7 @@ import pytest
 import sys
 import json
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
@@ -74,7 +75,12 @@ class TestOutput:
         assert len(filtered_j) > 0, "No dummy tests found."
 
         expected_start = os.path.relpath(TEST_DATA, ZEPHYR_BASE) if expect_paths else 'dummy.'
-        assert all([testsuite.startswith(expected_start)for _, testsuite, _ in filtered_j])
+        assert all([testsuite.startswith(expected_start) for _, testsuite, _ in filtered_j])
+        if expect_paths:
+            assert all([(tc_name.count('.') > 1) for _, _, tc_name in filtered_j])
+        else:
+            assert all([(tc_name.count('.') == 1) for _, _, tc_name in filtered_j])
+
 
     def test_inline_logs(self, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
@@ -91,7 +97,7 @@ class TestOutput:
         assert str(sys_exit.value) == '1'
 
         rel_path = os.path.relpath(path, ZEPHYR_BASE)
-        build_path = os.path.join(out_path, 'qemu_x86_atom', rel_path, 'always_fail.dummy', 'build.log')
+        build_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr', rel_path, 'always_fail.dummy', 'build.log')
         with open(build_path) as f:
             build_log = f.read()
 
@@ -141,12 +147,13 @@ class TestOutput:
         matches = []
         for line in err.split('\n'):
             columns = line.split()
-            if len(columns) == 8:
-                for i in range(8):
-                    match = re.fullmatch(regex_line[i], columns[i])
+            regexes = len(regex_line)
+            if len(columns) == regexes:
+                for i, column in enumerate(columns):
+                    match = re.fullmatch(regex_line[i], column)
                     if match:
                         matches.append(match)
-                if len(matches) == 8:
+                if len(matches) == regexes:
                     return matches
                 else:
                     matches = []
@@ -186,7 +193,7 @@ class TestOutput:
             assert 'Total test suites: ' not in out
 
         # Brief summary shows up only on verbosity 0 - instance-by-instance otherwise
-        regex_info_line = [r'INFO', r'-', r'\d+/\d+', r'\S+', r'\S+', r'[A-Z]+', r'\(\w+', r'[\d.]+s\)']
+        regex_info_line = [r'INFO', r'-', r'\d+/\d+', r'\S+', r'\S+', r'[A-Z]+', r'\(\w+', r'[\d.]+s', r'<\S+>\)']
         info_matches = self._get_matches(err, regex_info_line)
         if not any(f in flags for f in ['-v', '-vv']):
             assert not info_matches

@@ -22,7 +22,7 @@
 #include "media_proxy_internal.h"
 #include "mcs_internal.h"
 
-LOG_MODULE_REGISTER(media_proxy, CONFIG_MCTL_LOG_LEVEL);
+LOG_MODULE_REGISTER(bt_media_proxy, CONFIG_MCTL_LOG_LEVEL);
 
 /* Media player */
 struct media_player {

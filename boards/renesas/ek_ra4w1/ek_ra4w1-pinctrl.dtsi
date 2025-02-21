@@ -21,4 +21,29 @@
 			<RA_PSEL(RA_PSEL_SPI, 1, 12)>;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group1 {
+			/* input */
+			psels = <RA_PSEL(RA_PSEL_ADC, 0, 4)>;
+			renesas,analog-enable;
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			/* GTIOC1A GTIOC1B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 1, 5)>,
+				<RA_PSEL(RA_PSEL_GPT1, 1, 4)>;
+		};
+	};
+
+	iic0_default: iic0_default {
+		group1 {
+			/* SCL0 SDA0 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 4, 7)>,
+			<RA_PSEL(RA_PSEL_I2C, 2, 4)>;
+			drive-strength = "medium";
+		};
+	};
 };

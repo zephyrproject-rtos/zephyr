@@ -78,6 +78,13 @@
 	status = "okay";
 };
 
+&i3c1 {
+	pinctrl-0 =  <&i3c1_scl_pd12 &i3c1_sda_pd13>;
+	pinctrl-names = "default";
+	i3c-scl-hz = <12500000>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(240)>;
@@ -149,7 +156,7 @@
 		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 	pinctrl-0 = <&adc1_inp3_pa6 &adc1_inp15_pa3>; /* Zio A0, Zio D35 */
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <6>;
 	status = "okay";
 };

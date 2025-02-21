@@ -170,6 +170,29 @@ static int uart_esp32_err_check(const struct device *dev)
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+
+static uint32_t uart_esp32_get_standard_baud(uint32_t calc_baud)
+{
+	const uint32_t standard_bauds[] = {9600,  14400,  19200,  38400,  57600,
+					   74880, 115200, 230400, 460800, 921600};
+	int num_bauds = ARRAY_SIZE(standard_bauds);
+	uint32_t baud = calc_baud;
+
+	/* Find the standard baudrate within 0.1% range. If no close
+	 * value is found, input is returned.
+	 */
+	for (int i = 0; i < num_bauds; i++) {
+		float range = (float)abs(calc_baud - standard_bauds[i]) / standard_bauds[i];
+
+		if (range < 0.001f) {
+			baud = standard_bauds[i];
+			break;
+		}
+	}
+
+	return baud;
+}
+
 static int uart_esp32_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct uart_esp32_data *data = dev->data;
@@ -179,11 +202,14 @@ static int uart_esp32_config_get(const struct device *dev, struct uart_config *c
 	uart_hw_flowcontrol_t hw_flow;
 	uart_sclk_t src_clk;
 	uint32_t sclk_freq;
+	uint32_t calc_baud;
 
 	uart_hal_get_sclk(&data->hal, &src_clk);
 	esp_clk_tree_src_get_freq_hz((soc_module_clk_t)src_clk,
 		ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
-	uart_hal_get_baudrate(&data->hal, &cfg->baudrate, sclk_freq);
+
+	uart_hal_get_baudrate(&data->hal, &calc_baud, sclk_freq);
+	cfg->baudrate = uart_esp32_get_standard_baud(calc_baud);
 
 	uart_hal_get_parity(&data->hal, &parity);
 	switch (parity) {
@@ -276,6 +302,7 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
 	uart_hal_set_txfifo_empty_thr(&data->hal, UART_TX_FIFO_THRESH);
 	uart_hal_rxfifo_rst(&data->hal);
+	uart_hal_txfifo_rst(&data->hal);
 
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
@@ -1028,11 +1055,9 @@ static DEVICE_API(uart, uart_esp32_api) = {
                                                                                                    \
 	static struct uart_esp32_data uart_esp32_data_##idx = {                                    \
 		.uart_config = {.baudrate = DT_INST_PROP(idx, current_speed),                      \
-				.parity = DT_INST_ENUM_IDX_OR(idx, parity, UART_CFG_PARITY_NONE),  \
-				.stop_bits = DT_INST_ENUM_IDX_OR(idx, stop_bits,                   \
-								 UART_CFG_STOP_BITS_1),            \
-				.data_bits = DT_INST_ENUM_IDX_OR(idx, data_bits,                   \
-								 UART_CFG_DATA_BITS_8),            \
+				.parity = DT_INST_ENUM_IDX(idx, parity),                           \
+				.stop_bits = DT_INST_ENUM_IDX(idx, stop_bits),                     \
+				.data_bits = DT_INST_ENUM_IDX(idx, data_bits),                     \
 				.flow_ctrl = MAX(COND_CODE_1(DT_INST_PROP(idx, hw_rs485_hd_mode),  \
 							     (UART_CFG_FLOW_CTRL_RS485),           \
 							     (UART_CFG_FLOW_CTRL_NONE)),           \

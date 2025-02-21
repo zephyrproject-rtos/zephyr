@@ -49,6 +49,45 @@
 					int-gpios = <&test_gpio 0 0>;
 					microchip,interface-type = "rmii";
 				};
+
+				ethernet-phy@3 {
+					reg = <0x3>;
+					compatible = "microchip,ksz8794";
+					status = "okay";
+					reset-gpios = <&test_gpio 0 0>;
+					int-gpios = <&test_gpio 0 0>;
+					microchip,interface-type = "rmii";
+				};
+
+				ethernet-phy@4 {
+					reg = <0x4>;
+					compatible = "microchip,ksz8863";
+					status = "okay";
+					reset-gpios = <&test_gpio 0 0>;
+					int-gpios = <&test_gpio 0 0>;
+					microchip,interface-type = "rmii";
+				};
+
+				ethernet-phy@5 {
+					reg = <0x5>;
+					compatible = "adi,adin1100-phy";
+					status = "okay";
+				};
+
+				ethernet-phy@6 {
+					reg = <0x6>;
+					compatible = "adi,adin2111-phy";
+					status = "okay";
+				};
+				ethernet-phy@7 {
+					reg = <0x7>;
+					compatible = "davicom,dm8806-phy";
+					status = "okay";
+					reg-switch = <8>;
+					reset-gpios = <&test_gpio 0 0>;
+					int-gpios = <&test_gpio 0 0>;
+					davicom,interface-type = "rmii";
+				};
 			};
 		};
 	};

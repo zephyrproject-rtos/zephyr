@@ -1,0 +1,83 @@
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP DSPI controller
+
+compatible: "nxp,dspi"
+
+include: ["spi-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pcs-sck-delay:
+    type: int
+    description: |
+      Delay in nanoseconds from the chip select assert to the first clock
+      edge. If not set, the minimum supported delay is used.
+
+  sck-pcs-delay:
+    type: int
+    description: |
+      Delay in nanoseconds from the last clock edge to the chip select
+      deassert. If not set, the minimum supported delay is used.
+
+  transfer-delay:
+    type: int
+    description: |
+      Delay in nanoseconds from the chip select deassert to the next chip
+      select assert. If not set, the minimum supported delay is used.
+
+  pinctrl-0:
+    required: true
+
+  nxp,rx-tx-chn-share:
+    type: boolean
+    description: If the edma channel shared with tx and rx
+
+  ctar:
+    type: int
+    description: |
+      ctar register selection range form 0-1 for master mode, 0 for slave mode
+
+  sample-point:
+    type: int
+    description: |
+      Controls when the DSPI master samples SIN in the Modified Transfer Format.
+      This field is valid only when the CPHA bit in the CTAR register is 0.
+
+  continuous-sck:
+    type: boolean
+    description: |
+      continuous SCK enable. Note that the continuous SCK is only
+      supported for CPHA = 1.
+
+  rx-fifo-overwrite:
+    type: boolean
+    description: |
+      receive FIFO overflow overwrite enable. If ROOE = 0, the incoming
+      data is ignored and the data from the transfer that generated the overflow
+      is also ignored. If ROOE = 1, the incoming data is shifted to the
+      shift register.
+
+  modified-timing-format:
+    type: boolean
+    description: |
+      Enables a modified transfer format to be used if true.
+
+  tx-fifo-size:
+    type: int
+    description: |
+      tx fifo size
+
+  rx-fifo-size:
+    type: int
+    description: |
+      rx fifo size

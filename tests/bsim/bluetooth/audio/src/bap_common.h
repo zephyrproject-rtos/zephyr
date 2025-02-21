@@ -11,8 +11,10 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -53,6 +55,9 @@ struct named_lc3_preset {
 	const char *name;
 	struct bt_bap_lc3_preset preset;
 };
+
+extern struct bt_audio_codec_cfg vs_codec_cfg;
+extern struct bt_audio_codec_cap vs_codec_cap;
 
 void print_hex(const uint8_t *ptr, size_t len);
 void print_codec_cap(const struct bt_audio_codec_cap *codec_cap);

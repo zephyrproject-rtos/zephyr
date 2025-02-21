@@ -3,7 +3,4 @@
 
 if BOARD_WE_PROTEUS2EV_NRF52832
 
-config BT_CTLR
-	default BT
-
 endif

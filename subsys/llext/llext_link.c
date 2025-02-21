@@ -33,13 +33,13 @@ __weak int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
 }
 
 __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
-				    const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset,
+				    const elf_rela_t *rel, const elf_sym_t *sym, uint8_t *rel_addr,
 				    const struct llext_load_param *ldr_parm)
 {
 }
 
 __weak void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext,
-				     const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset,
+				     const elf_rela_t *rel, const elf_sym_t *sym, uint8_t *rel_addr,
 				     const void *link_addr)
 {
 }
@@ -48,7 +48,7 @@ __weak void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext
  * Find the memory region containing the supplied offset and return the
  * corresponding file offset
  */
-static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
+ssize_t llext_file_offset(struct llext_loader *ldr, uintptr_t offset)
 {
 	unsigned int i;
 
@@ -59,7 +59,7 @@ static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
 		}
 	}
 
-	return offset;
+	return -ENOEXEC;
 }
 
 /*
@@ -188,7 +188,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			ret = llext_read(ldr, &sym, sizeof(sym));
 		}
 
-		if (ret < 0) {
+		if (ret != 0) {
 			LOG_ERR("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
 				j, i);
 			continue;
@@ -216,14 +216,23 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 		 * This is valid only when CONFIG_LLEXT_STORAGE_WRITABLE=y
 		 * and peek() is usable on the source ELF file.
 		 */
-		size_t got_offset;
+		uint8_t *rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
+			ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 
 		if (tgt) {
-			got_offset = rela.r_offset + tgt->sh_offset -
-				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+			/* Relocatable / partially linked ELF. */
+			rel_addr += rela.r_offset + tgt->sh_offset;
 		} else {
-			got_offset = llext_file_offset(ldr, rela.r_offset) -
-				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+			/* Shared / dynamically linked ELF */
+			ssize_t offset = llext_file_offset(ldr, rela.r_offset);
+
+			if (offset < 0) {
+				LOG_ERR("Offset %#zx not found in ELF, trying to continue",
+					(size_t)rela.r_offset);
+				continue;
+			}
+
+			rel_addr += offset;
 		}
 
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
@@ -256,14 +265,14 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			}
 
 			/* Resolve the symbol */
-			arch_elf_relocate_global(ldr, ext, &rela, &sym, got_offset, link_addr);
+			arch_elf_relocate_global(ldr, ext, &rela, &sym, rel_addr, link_addr);
 			break;
 		case STB_LOCAL:
-			arch_elf_relocate_local(ldr, ext, &rela, &sym, got_offset, ldr_parm);
+			arch_elf_relocate_local(ldr, ext, &rela, &sym, rel_addr, ldr_parm);
 		}
 
-		LOG_DBG("symbol %s offset %#zx r-offset %#zx .text offset %#zx stb %u",
-			name, got_offset,
+		LOG_DBG("symbol %s relocation @%p r-offset %#zx .text offset %#zx stb %u",
+			name, (void *)rel_addr,
 			(size_t)rela.r_offset, (size_t)ldr->sects[LLEXT_MEM_TEXT].sh_offset, stb);
 	}
 }
@@ -341,6 +350,11 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			}
 
 			llext_link_plt(ldr, ext, shdr, ldr_parm, tgt);
+			continue;
+		}
+
+		if (!(ext->sect_hdrs[shdr->sh_info].sh_flags & SHF_ALLOC)) {
+			/* ignore relocations acting on volatile (debug) sections */
 			continue;
 		}
 

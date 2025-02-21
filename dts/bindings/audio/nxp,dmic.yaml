@@ -32,8 +32,11 @@ child-binding:
   description: |
     NXP DMIC channel. Can be used to configure filtering and gain attributes
     of each channel
-  include: base.yaml
-  compatible: "nxp,dmic-channel"
+  include:
+    - name: base.yaml
+      property-allowlist:
+        - reg
+        - dmas
   properties:
     reg:
       required: true

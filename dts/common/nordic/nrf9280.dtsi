@@ -74,6 +74,10 @@
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		suit_storage_partition: memory@e6b7000 {
+			reg = <0xe6b7000 DT_SIZE_K(40)>;
+		};
 	};
 
 	clocks {
@@ -87,6 +91,17 @@
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
+		};
+
+		hsfll120: hsfll120 {
+			compatible = "nordic,nrf-hsfll-global";
+			clocks = <&fll16m>;
+			#clock-cells = <0>;
+			clock-frequency = <320000000>;
+			supported-clock-frequencies = <64000000
+						       128000000
+						       256000000
+						       320000000>;
 		};
 	};
 
@@ -149,7 +164,7 @@
 			ranges = <0x0 0x52000000 0x1000000>;
 
 			cpuapp_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
@@ -201,7 +216,7 @@
 			ranges = <0x0 0x53000000 0x1000000>;
 
 			cpurad_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
@@ -261,7 +276,7 @@
 				cc-num = <8>;
 				interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
+				clocks = <&hfxo>;
 				prescaler = <0>;
 			};
 
@@ -272,7 +287,7 @@
 				cc-num = <8>;
 				interrupts = <41 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
+				clocks = <&hfxo>;
 				prescaler = <0>;
 			};
 
@@ -283,7 +298,7 @@
 				cc-num = <8>;
 				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
+				clocks = <&hfxo>;
 				prescaler = <0>;
 			};
 
@@ -430,26 +445,6 @@
 				global-domain-id = <12>;
 			};
 
-			can120: can@8d8000 {
-				compatible = "nordic,nrf-can";
-				reg = <0x8d8000 0x400>, <0x2fbef800 0x800>, <0x2fbe8000 0x7800>;
-				reg-names = "wrapper", "m_can", "message_ram";
-				interrupts = <216 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&canpll>;
-				bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
-				status = "disabled";
-			};
-
-			can121: can@8db000 {
-				compatible = "nordic,nrf-can";
-				reg = <0x8db000 0x400>, <0x2fbf7800 0x800>, <0x2fbf0000 0x7800>;
-				reg-names = "wrapper", "m_can", "message_ram";
-				interrupts = <219 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&canpll>;
-				bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
-				status = "disabled";
-			};
-
 			dppic120: dppic@8e1000 {
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x8e1000 0x1000>;
@@ -463,7 +458,7 @@
 				cc-num = <6>;
 				interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(320)>;
+				clocks = <&hsfll120>;
 				prescaler = <0>;
 			};
 
@@ -474,7 +469,7 @@
 				cc-num = <6>;
 				interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(320)>;
+				clocks = <&hsfll120>;
 				prescaler = <0>;
 			};
 
@@ -669,16 +664,6 @@
 				port = <9>;
 			};
 
-			gpio10: gpio@939400 {
-				compatible = "nordic,nrf-gpio";
-				reg = <0x939400 0x200>;
-				status = "disabled";
-				#gpio-cells = <2>;
-				gpio-controller;
-				ngpios = <8>;
-				port = <10>;
-			};
-
 			gpio11: gpio@939600 {
 				compatible = "nordic,nrf-gpio";
 				reg = <0x939600 0x200>;
@@ -688,28 +673,6 @@
 				gpiote-instance = <&gpiote131>;
 				ngpios = <8>;
 				port = <11>;
-			};
-
-			gpio12: gpio@939800 {
-				compatible = "nordic,nrf-gpio";
-				reg = <0x939800 0x200>;
-				status = "disabled";
-				#gpio-cells = <2>;
-				gpio-controller;
-				gpiote-instance = <&gpiote131>;
-				ngpios = <3>;
-				port = <12>;
-			};
-
-			gpio13: gpio@939a00 {
-				compatible = "nordic,nrf-gpio";
-				reg = <0x939a00 0x200>;
-				status = "disabled";
-				#gpio-cells = <2>;
-				gpio-controller;
-				gpiote-instance = <&gpiote131>;
-				ngpios = <4>;
-				port = <13>;
 			};
 
 			dppic131: dppic@981000 {
@@ -724,6 +687,7 @@
 				interrupts = <386 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 				#io-channel-cells = <1>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			comp: comparator@983000 {

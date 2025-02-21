@@ -22,35 +22,27 @@ struct lvgl_disp_data {
 };
 
 struct lvgl_display_flush {
-	lv_disp_drv_t *disp_drv;
+	lv_display_t *display;
 	uint16_t x;
 	uint16_t y;
 	struct display_buffer_descriptor desc;
 	void *buf;
 };
 
-void lvgl_flush_cb_mono(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p);
-void lvgl_flush_cb_16bit(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p);
-void lvgl_flush_cb_24bit(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p);
-void lvgl_flush_cb_32bit(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p);
+void lvgl_flush_cb_mono(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
+void lvgl_flush_cb_16bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
+void lvgl_flush_cb_24bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
+void lvgl_flush_cb_32bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
 
-void lvgl_set_px_cb_mono(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x,
-			 lv_coord_t y, lv_color_t color, lv_opa_t opa);
-void lvgl_set_px_cb_16bit(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x,
-			  lv_coord_t y, lv_color_t color, lv_opa_t opa);
-void lvgl_set_px_cb_24bit(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x,
-			  lv_coord_t y, lv_color_t color, lv_opa_t opa);
-void lvgl_set_px_cb_32bit(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x,
-			  lv_coord_t y, lv_color_t color, lv_opa_t opa);
+void lvgl_rounder_cb_mono(lv_event_t *e);
+void lvgl_set_mono_conversion_buffer(uint8_t *buffer, uint32_t buffer_size);
 
-void lvgl_rounder_cb_mono(lv_disp_drv_t *disp_drv, lv_area_t *area);
-
-int set_lvgl_rendering_cb(lv_disp_drv_t *disp_drv);
+int set_lvgl_rendering_cb(lv_display_t *display);
 
 void lvgl_flush_display(struct lvgl_display_flush *request);
 
 #ifdef CONFIG_LV_Z_USE_ROUNDER_CB
-void lvgl_rounder_cb(lv_disp_drv_t *disp_drv, lv_area_t *area);
+void lvgl_rounder_cb(lv_event_t *e);
 #endif
 
 #ifdef __cplusplus

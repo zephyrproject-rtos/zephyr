@@ -5,17 +5,15 @@ arch: xtensa
 toolchain:
   - zephyr
 supported:
-  - dma
+  - gpio
+  - uart
   - i2c
   - spi
-  - uart
+  - can
+  - counter
   - watchdog
-testing:
-  ignore_tags:
-    - bluetooth
-    - gpio
-    - net
-    - pinmux
-    - pwm
-    - regulator
+  - entropy
+  - pwm
+  - dma
+  - pinmux
 vendor: m5stack

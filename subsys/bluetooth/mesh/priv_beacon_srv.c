@@ -195,6 +195,7 @@ const struct bt_mesh_model_op bt_mesh_priv_beacon_srv_op[] = {
 
 static int priv_beacon_srv_init(const struct bt_mesh_model *mod)
 {
+	int err;
 	const struct bt_mesh_model *config_srv =
 		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_CFG_SRV);
 
@@ -206,7 +207,11 @@ static int priv_beacon_srv_init(const struct bt_mesh_model *mod)
 	priv_beacon_srv = mod;
 	mod->keys[0] = BT_MESH_KEY_DEV_LOCAL;
 
-	bt_mesh_model_extend(mod, config_srv);
+	err = bt_mesh_model_extend(mod, config_srv);
+
+	if (err) {
+		return err;
+	}
 
 	return 0;
 }

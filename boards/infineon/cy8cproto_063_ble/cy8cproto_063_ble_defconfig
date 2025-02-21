@@ -6,8 +6,6 @@
 
 # General configuration
 CONFIG_CORTEX_M_SYSTICK=y
-CONFIG_BUILD_OUTPUT_HEX=y
-
 CONFIG_ARM_MPU=y
 CONFIG_HW_STACK_PROTECTION=y
 
@@ -23,9 +21,6 @@ CONFIG_GPIO=y
 
 # Enable clock controller
 CONFIG_CLOCK_CONTROL=y
-
-# Main Stack Size
-CONFIG_MAIN_STACK_SIZE=2048
 
 # Add catcm0p sleep images for CM0 Devices
 CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP=y

@@ -3,7 +3,9 @@ sample:
 tests:
   sample.kernel.bootargs.multiboot:
     extra_args: EXTRA_CONF_FILE=prj_multiboot.conf
-    platform_allow: qemu_x86 qemu_x86_64
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
     harness: console
     harness_config:
       type: one_line

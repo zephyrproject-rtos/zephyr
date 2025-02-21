@@ -13,16 +13,16 @@ flash: 64
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
-  - gpio
-  - uart
-  - i2c
-  - usb_device
-  - usbd
-  - pwm
   - adc
   - counter
+  - flash
+  - gpio
+  - i2c
+  - pwm
+  - uart
+  - usb_device
+  - usbd
 testing:
   ignore_tags:
     - net

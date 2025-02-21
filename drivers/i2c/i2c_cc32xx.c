@@ -379,7 +379,7 @@ static int i2c_cc32xx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct i2c_driver_api i2c_cc32xx_driver_api = {
+static DEVICE_API(i2c, i2c_cc32xx_driver_api) = {
 	.configure = i2c_cc32xx_configure,
 	.transfer = i2c_cc32xx_transfer,
 #ifdef CONFIG_I2C_RTIO

@@ -43,7 +43,7 @@ static const sec_tag_t server_tag_list_verify[] = {
 
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTPS_SERVICE_DEFINE(test_http_service, MY_IPV4_ADDR, &test_http_service_port,
-		     1, 10, NULL, server_tag_list_verify,
+		     1, 10, NULL, NULL, server_tag_list_verify,
 		     sizeof(server_tag_list_verify));
 
 static const unsigned char ca[] = {
@@ -167,8 +167,8 @@ static void test_tls(void)
 				       sec_tag_list, sec_tag_list_size);
 		zassert_not_equal(ret, -1, "failed to set TLS_SEC_TAG_LIST (%d)", errno);
 
-		ret = zsock_setsockopt(client_fd, SOL_TLS, TLS_HOSTNAME,
-				       "localhost", sizeof("localhost"));
+		ret = zsock_setsockopt(client_fd, SOL_TLS, TLS_HOSTNAME, "zephyr.local",
+				       sizeof("zephyr.local"));
 		zassert_not_equal(ret, -1, "failed to set TLS_HOSTNAME (%d)", errno);
 	}
 

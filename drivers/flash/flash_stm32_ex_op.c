@@ -28,7 +28,7 @@ int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
 		(const struct flash_stm32_ex_op_sector_wp_in *)in;
 	struct flash_stm32_ex_op_sector_wp_out *result =
 		(struct flash_stm32_ex_op_sector_wp_out *)out;
-	uint32_t change_mask;
+	uint64_t change_mask;
 	int rc = 0, rc2 = 0;
 #ifdef CONFIG_USERSPACE
 	bool syscall_trap = z_syscall_trap();
@@ -225,3 +225,71 @@ int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
 	return rc;
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+
+int flash_stm32_ex_op(const struct device *dev, uint16_t code,
+			     const uintptr_t in, void *out)
+{
+	int rv = -ENOTSUP;
+
+	flash_stm32_sem_take(dev);
+
+	switch (code) {
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+	case FLASH_STM32_EX_OP_SECTOR_WP:
+		rv = flash_stm32_ex_op_sector_wp(dev, in, out);
+		break;
+#endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+	case FLASH_STM32_EX_OP_RDP:
+		rv = flash_stm32_ex_op_rdp(dev, in, out);
+		break;
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+#if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
+	case FLASH_STM32_EX_OP_BLOCK_OPTION_REG:
+		rv = flash_stm32_option_bytes_disable(dev);
+		break;
+	case FLASH_STM32_EX_OP_BLOCK_CONTROL_REG:
+		rv = flash_stm32_control_register_disable(dev);
+		break;
+#endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
+#if defined(CONFIG_FLASH_STM32_OPTION_BYTES) && ( \
+		defined(CONFIG_DT_HAS_ST_STM32F4_FLASH_CONTROLLER_ENABLED) || \
+		defined(CONFIG_DT_HAS_ST_STM32F7_FLASH_CONTROLLER_ENABLED) || \
+		defined(CONFIG_DT_HAS_ST_STM32G4_FLASH_CONTROLLER_ENABLED) || \
+		defined(CONFIG_DT_HAS_ST_STM32L4_FLASH_CONTROLLER_ENABLED))
+	case FLASH_STM32_EX_OP_OPTB_READ:
+		if (out == NULL) {
+			rv = -EINVAL;
+			break;
+		}
+
+		*(uint32_t *)out = flash_stm32_option_bytes_read(dev);
+		rv = 0;
+
+		break;
+	case FLASH_STM32_EX_OP_OPTB_WRITE:
+		int rv2;
+
+		rv = flash_stm32_option_bytes_lock(dev, false);
+		if (rv > 0) {
+			break;
+		}
+
+		rv2 = flash_stm32_option_bytes_write(dev, UINT32_MAX, (uint32_t)in);
+		/* returned later, we always re-lock */
+
+		rv = flash_stm32_option_bytes_lock(dev, true);
+		if (rv > 0) {
+			break;
+		}
+
+		rv = rv2;
+
+		break;
+#endif
+	}
+
+	flash_stm32_sem_give(dev);
+
+	return rv;
+}

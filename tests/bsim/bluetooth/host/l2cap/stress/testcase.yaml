@@ -1,0 +1,20 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.l2cap.stress:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_stress_prj_conf
+  bluetooth.host.l2cap.stress_nofrag:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_stress_prj_conf_overlay-nofrag_conf
+    extra_args: EXTRA_CONF_FILE="overlay-nofrag.conf"
+  bluetooth.host.l2cap.stress_syswq:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_stress_prj_conf_overlay-syswq_conf
+    extra_args: EXTRA_CONF_FILE="overlay-syswq.conf"

@@ -2,6 +2,7 @@ common:
   platform_key:
     - arch
   min_ram: 32
+  timeout: 120
   tags:
     - kernel
     - benchmark
@@ -13,6 +14,11 @@ common:
     type: one_line
     regex:
       - "PROJECT EXECUTION SUCCESSFUL"
+    record:
+      regex:
+        - "REC: (?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+  extra_configs:
+    - CONFIG_BENCHMARK_RECORDING=y
 
 tests:
   benchmark.sched_queues.dumb:

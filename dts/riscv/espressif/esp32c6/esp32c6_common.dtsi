@@ -1,11 +1,13 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-esp32c6-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
 #include <dt-bindings/pinctrl/esp32c6-pinctrl.h>
@@ -67,9 +69,16 @@
 		compatible = "simple-bus";
 		ranges;
 
-		sram0: memory@40800000 {
-			compatible = "mmio-sram";
-			reg = <0x40800000 0x50000>;
+		sramhp: memory@40800000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x40800000 DT_SIZE_K(512)>;
+			zephyr,memory-region = "SRAMHP";
+		};
+
+		sramlp: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(16)>;
+			zephyr,memory-region = "SRAMLP ";
 		};
 
 		intc: interrupt-controller@60010000 {
@@ -87,6 +96,28 @@
 			interrupts = <SYSTIMER_TARGET0_EDGE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "okay";
+		};
+
+		timer0: counter@60008000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x60008000 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG0_MODULE>;
+			group = <0>;
+			index = <0>;
+			interrupts = <TG0_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		timer1: counter@60009000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x60009000 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG1_MODULE>;
+			group = <1>;
+			index = <0>;
+			interrupts = <TG1_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
 		};
 
 		rtc: rtc@600b0000 {
@@ -158,6 +189,16 @@
 			};
 		};
 
+		adc0: adc@6000e000 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x6000E000 4>;
+			clocks = <&rtc ESP32_SARADC_MODULE>;
+			unit = <1>;
+			channel-count = <7>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		dma: dma@60080000 {
 			compatible = "espressif,esp32-gdma";
 			reg = <0x60080000 DT_SIZE_K(4)>;
@@ -184,6 +225,17 @@
 			interrupts = <GPIO_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			ngpios = <30>;   /* 0..29 */
+		};
+
+		i2c0: i2c@60004000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x60004000 0x1000>;
+			interrupts = <I2C_EXT0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_I2C0_MODULE>;
+			status = "disabled";
 		};
 
 		uart0: uart@60000000 {
@@ -220,6 +272,16 @@
 			#pwm-cells = <3>;
 			reg = <0x60007000 0x1000>;
 			clocks = <&rtc ESP32_LEDC_MODULE>;
+			status = "disabled";
+		};
+
+		mcpwm0: mcpwm@60014000 {
+			compatible = "espressif,esp32-mcpwm";
+			reg = <0x60014000 DT_SIZE_K(4)>;
+			interrupts = <MCPWM0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_MCPWM0_MODULE>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};

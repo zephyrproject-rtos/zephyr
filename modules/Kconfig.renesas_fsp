@@ -1,12 +1,17 @@
 # Renesas FSP HAL config
 
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config HAS_RENESAS_RA_FSP
 	bool
 	help
 	  Enable Renesas RA FSP support
+
+config HAS_RENESAS_RZ_FSP
+	bool
+	help
+	  Enable Renesas RZ FSP support
 
 if HAS_RENESAS_RA_FSP
 
@@ -50,9 +55,37 @@ if USE_RA_FSP_SCE
 config HAS_RENESAS_RA_RSIP_E51A
 	bool
 	default y
-	depends on ENTROPY_RENESAS_RA_RSIP_E51A_TRNG
+	depends on DT_HAS_RENESAS_RA_RSIP_E51A_TRNG_ENABLED
 	help
 	  Includes RSIP-E51A implementation for SCE driver
+
+config HAS_RENESAS_RA_SCE9
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RA_SCE9_RNG_ENABLED
+	help
+	  Includes SCE9 implementation for SCE driver
+
+config HAS_RENESAS_RA_SCE7
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RA_SCE7_RNG_ENABLED
+	help
+	  Includes SCE7 implementation for SCE driver
+
+config HAS_RENESAS_RA_SCE5
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RA_SCE5_RNG_ENABLED
+	help
+	  Includes SCE5 implementation for SCE driver
+
+config HAS_RENESAS_RA_TRNG
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RA_TRNG_ENABLED
+	help
+	  Includes TRNG implementation for SCE driver
 
 endif
 
@@ -81,4 +114,78 @@ config USE_RA_FSP_CANFD
 	help
 	  Enable RA FSP CANFD driver
 
+config USE_RA_FSP_ETHER_PHY
+	bool
+	help
+	  Enable RA FSP Ethernet phy driver
+
+config USE_RA_FSP_ETHER
+	bool
+	help
+	  Enable RA FSP Ethernet driver
+
+config USE_RA_FSP_USB_DEVICE
+	bool
+	help
+	  Enable RA FSP USB Device Controller driver
+
+config USE_RA_FSP_SDRAM
+	bool
+	help
+	  Enable RA FSP SDRAM support
+
+config USE_RA_FSP_DISPLAY
+	bool
+	help
+	  Enable RA FSP Display driver
+
+config USE_RA_FSP_MIPI_DSI
+	bool
+	help
+	  Enable RA FSP MIPI DSI driver
+
+config USE_RA_FSP_SDHI
+	bool
+	help
+	  Enable RA FSP SDHI driver
+
+config USE_RA_FSP_DAC
+	bool
+	help
+	  Enable RA FSP DAC driver
+
 endif # HAS_RENESAS_RA_FSP
+
+if HAS_RENESAS_RZ_FSP
+
+config USE_RZ_FSP_IOPORT
+	bool
+	help
+	  Enable RZ FSP IOPORT driver
+
+config USE_RZ_FSP_SCIF_UART
+	bool
+	help
+	  Enable RZ FSP SCIF UART driver
+
+config USE_RZ_FSP_GTM
+	bool
+	help
+	  Enable RZ FSP GTM driver
+
+config USE_RZ_FSP_GPT
+	bool
+	help
+	  Enable RZ FSP GPT driver
+
+config USE_RZ_FSP_EXT_IRQ
+	bool
+	help
+	  Enable RZ FSP External IRQ driver
+
+config USE_RZ_FSP_CPG
+	bool
+	help
+	  Enable RZ FSP CLOCK CONTROL driver
+
+endif

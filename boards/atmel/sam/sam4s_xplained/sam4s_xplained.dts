@@ -190,6 +190,13 @@
 	tracking-time = <2>;
 };
 
+&dacc {
+	status = "okay";
+
+	pinctrl-0 = <&dacc_default>;
+	pinctrl-names = "default";
+};
+
 &wdt {
 	status = "okay";
 };

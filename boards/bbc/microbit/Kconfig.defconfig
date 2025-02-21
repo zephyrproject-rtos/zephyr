@@ -5,9 +5,6 @@
 
 if BOARD_BBC_MICROBIT
 
-config BT_CTLR
-	default BT
-
 if FXOS8700
 
 choice FXOS8700_MODE

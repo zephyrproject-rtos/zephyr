@@ -320,7 +320,7 @@ static int i2c_sc18im_init(const struct device *dev)
 	return 0;
 }
 
-static const struct i2c_driver_api i2c_sc18im_driver_api = {
+static DEVICE_API(i2c, i2c_sc18im_driver_api) = {
 	.configure = i2c_sc18im_configure,
 	.get_config = i2c_sc18im_get_config,
 	.transfer = i2c_sc18im_transfer,

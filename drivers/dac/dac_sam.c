@@ -5,10 +5,6 @@
 
 /** @file
  * @brief DAC driver for Atmel SAM MCU family.
- *
- * Remarks:
- * Only SAME70, SAMV71 series devices are currently supported. Please submit a
- * patch.
  */
 
 #define DT_DRV_COMPAT atmel_sam_dac
@@ -24,10 +20,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dac_sam, CONFIG_DAC_LOG_LEVEL);
-
-BUILD_ASSERT(IS_ENABLED(CONFIG_SOC_SERIES_SAME70) ||
-	     IS_ENABLED(CONFIG_SOC_SERIES_SAMV71),
-	     "Only SAME70, SAMV71 series devices are currently supported.");
 
 #define DAC_CHANNEL_NO  2
 
@@ -47,7 +39,11 @@ struct dac_channel {
 
 /* Device run time data */
 struct dac_sam_dev_data {
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	struct dac_channel dac_channels[DAC_CHANNEL_NO];
+#else
+	struct dac_channel dac_channel;
+#endif
 };
 
 static void dac_sam_isr(const struct device *dev)
@@ -60,6 +56,7 @@ static void dac_sam_isr(const struct device *dev)
 	/* Retrieve interrupt status */
 	int_stat = dac->DACC_ISR & dac->DACC_IMR;
 
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	if ((int_stat & DACC_ISR_TXRDY0) != 0) {
 		/* Disable Transmit Ready Interrupt */
 		dac->DACC_IDR = DACC_IDR_TXRDY0;
@@ -70,6 +67,13 @@ static void dac_sam_isr(const struct device *dev)
 		dac->DACC_IDR = DACC_IDR_TXRDY1;
 		k_sem_give(&dev_data->dac_channels[1].sem);
 	}
+#else
+	if ((int_stat & DACC_ISR_TXRDY) != 0) {
+		/* Disable Transmit Ready Interrupt */
+		dac->DACC_IDR = DACC_IDR_TXRDY;
+		k_sem_give(&dev_data->dac_channel.sem);
+	}
+#endif
 }
 
 static int dac_sam_channel_setup(const struct device *dev,
@@ -106,7 +110,11 @@ static int dac_sam_write_value(const struct device *dev, uint8_t channel,
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	if (dac->DACC_IMR & (DACC_IMR_TXRDY0 << channel)) {
+#else
+	if (dac->DACC_IMR & DACC_IMR_TXRDY) {
+#endif
 		/* Attempting to send data on channel that's already in use */
 		return -EINVAL;
 	}
@@ -116,6 +124,7 @@ static int dac_sam_write_value(const struct device *dev, uint8_t channel,
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	k_sem_take(&dev_data->dac_channels[channel].sem, K_FOREVER);
 
 	/* Trigger conversion */
@@ -123,6 +132,18 @@ static int dac_sam_write_value(const struct device *dev, uint8_t channel,
 
 	/* Enable Transmit Ready Interrupt */
 	dac->DACC_IER = DACC_IER_TXRDY0 << channel;
+#else
+	k_sem_take(&dev_data->dac_channel.sem, K_FOREVER);
+
+	/* Select the channel */
+	dac->DACC_MR = DACC_MR_USER_SEL(channel) | DACC_MR_ONE;
+
+	/* Trigger conversion */
+	dac->DACC_CDR = DACC_CDR_DATA(value);
+
+	/* Enable Transmit Ready Interrupt */
+	dac->DACC_IER = DACC_IER_TXRDY;
+#endif
 
 	return 0;
 }
@@ -131,16 +152,22 @@ static int dac_sam_init(const struct device *dev)
 {
 	const struct dac_sam_dev_cfg *const dev_cfg = dev->config;
 	struct dac_sam_dev_data *const dev_data = dev->data;
-	Dacc *const dac = dev_cfg->regs;
 	int retval;
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
+	Dacc *const dac = dev_cfg->regs;
+#endif
 
 	/* Configure interrupts */
 	dev_cfg->irq_config();
 
 	/* Initialize semaphores */
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	for (int i = 0; i < ARRAY_SIZE(dev_data->dac_channels); i++) {
 		k_sem_init(&dev_data->dac_channels[i].sem, 1, 1);
 	}
+#else
+	k_sem_init(&dev_data->dac_channel.sem, 1, 1);
+#endif
 
 	/* Enable DAC clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
@@ -151,8 +178,10 @@ static int dac_sam_init(const struct device *dev)
 		return retval;
 	}
 
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	/* Set Mode Register */
 	dac->DACC_MR = DACC_MR_PRESCALER(dev_cfg->prescaler);
+#endif
 
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);

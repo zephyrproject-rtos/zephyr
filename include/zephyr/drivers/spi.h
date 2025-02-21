@@ -628,6 +628,17 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 #endif /*CONFIG_SPI_STATS*/
 
 /**
+ * @brief Like SPI_DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
+ * compatible instead of a node identifier.
+ *
+ * @param inst Instance number. The `node_id` argument to SPI_DEVICE_DT_DEFINE() is
+ * set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by SPI_DEVICE_DT_DEFINE().
+ */
+#define SPI_DEVICE_DT_INST_DEFINE(inst, ...)                                       \
+	SPI_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
  * @typedef spi_api_io
  * @brief Callback API for I/O
  * See spi_transceive() for argument descriptions
@@ -1045,7 +1056,7 @@ static inline int spi_write_signal(const struct device *dev,
  */
 static inline void spi_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
-	const struct spi_dt_spec *dt_spec = iodev_sqe->sqe.iodev->data;
+	const struct spi_dt_spec *dt_spec = (const struct spi_dt_spec *)iodev_sqe->sqe.iodev->data;
 	const struct device *dev = dt_spec->bus;
 	const struct spi_driver_api *api = (const struct spi_driver_api *)dev->api;
 
@@ -1080,7 +1091,7 @@ extern const struct rtio_iodev_api spi_iodev_api;
  */
 static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
 {
-	struct spi_dt_spec *spec = spi_iodev->data;
+	struct spi_dt_spec *spec = (struct spi_dt_spec *)spi_iodev->data;
 
 	return spi_is_ready_dt(spec);
 }

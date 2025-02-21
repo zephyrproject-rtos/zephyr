@@ -128,6 +128,20 @@ config QEMU_EXTRA_FLAGS
 	  to setup devices, for example to allocate interface for Zephyr
 	  GDBstub over serial with `-serial tcp:127.0.0.1:5678,server`
 
+config BOARD_REQUIRES_SERIAL_BACKEND_CDC_ACM
+	bool
+	help
+	  Indicates that a board has no other capabilities than to use the CDC
+	  ACM UART as a backend for logging or shell.
+
+config BOARD_SERIAL_BACKEND_CDC_ACM
+	bool "Board uses USB CDC ACM UART as serial backend"
+	depends on BOARD_REQUIRES_SERIAL_BACKEND_CDC_ACM
+	default y
+	help
+	  USB stack and CDC ACM UART are configured and initialized at boot
+	  time to be used as a backend for logging or shell.
+
 # There might not be any board options, hence the optional source
 osource "$(KCONFIG_BOARD_DIR)/Kconfig"
 endmenu

@@ -200,17 +200,6 @@ static void ase_free(struct bt_ascs_ase *ase)
 	(void)k_work_cancel_delayable(&ase->state_transition_work);
 }
 
-static uint16_t get_max_ntf_size(struct bt_conn *conn)
-{
-	const uint16_t mtu = conn == NULL ? 0 : bt_gatt_get_mtu(conn);
-
-	if (mtu > NTF_HEADER_SIZE) {
-		return mtu - NTF_HEADER_SIZE;
-	}
-
-	return 0U;
-}
-
 static int ase_state_notify(struct bt_ascs_ase *ase)
 {
 	struct bt_conn *conn = ase->conn;
@@ -238,7 +227,7 @@ static int ase_state_notify(struct bt_ascs_ase *ase)
 
 	ascs_ep_get_status(&ase->ep, &ase_buf);
 
-	max_ntf_size = get_max_ntf_size(conn);
+	max_ntf_size = bt_audio_get_max_ntf_size(conn);
 
 	ntf_size = MIN(max_ntf_size, ase_buf.len);
 	if (ntf_size < ase_buf.len) {
@@ -329,10 +318,7 @@ static void ase_enter_state_idle(struct bt_ascs_ase *ase)
 
 	ase->ep.receiver_ready = false;
 
-	if (stream->conn != NULL) {
-		bt_conn_unref(stream->conn);
-		stream->conn = NULL;
-	}
+	bt_bap_stream_detach(stream);
 
 	ops = stream->ops;
 	if (ops != NULL && ops->released != NULL) {
@@ -1488,32 +1474,12 @@ static void ascs_cp_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
 
-struct codec_cap_lookup_id_data {
-	uint8_t id;
-	uint16_t cid;
-	uint16_t vid;
-	const struct bt_audio_codec_cap *codec_cap;
-};
-
-static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)
-{
-	struct codec_cap_lookup_id_data *data = user_data;
-
-	if (cap->codec_cap->id == data->id && cap->codec_cap->cid == data->cid &&
-	    cap->codec_cap->vid == data->vid) {
-		data->codec_cap = cap->codec_cap;
-
-		return false;
-	}
-
-	return true;
-}
-
 static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uint16_t vid,
 			     uint8_t *cc, uint8_t len, struct bt_bap_ascs_rsp *rsp)
 {
+	const struct bt_audio_codec_cap *codec_cap;
 	struct bt_audio_codec_cfg *codec_cfg;
-	struct codec_cap_lookup_id_data lookup_data = {
+	const struct bt_pac_codec codec_id = {
 		.id = id,
 		.cid = cid,
 		.vid = vid,
@@ -1530,11 +1496,11 @@ static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uin
 	LOG_DBG("ep %p dir %s codec id 0x%02x cid 0x%04x vid 0x%04x len %u",
 		ep, bt_audio_dir_str(ep->dir), id, cid, vid, len);
 
-	bt_pacs_cap_foreach(ep->dir, codec_lookup_id, &lookup_data);
-
-	if (lookup_data.codec_cap == NULL) {
-		LOG_DBG("Codec with id %u for dir %s is not supported by our capabilities",
-			id, bt_audio_dir_str(ep->dir));
+	codec_cap = bt_pacs_get_codec_cap(ep->dir, &codec_id);
+	if (codec_cap == NULL) {
+		LOG_DBG("Codec with id 0x%02x cid 0x%04x and vid 0x%04x for dir %s is not "
+			"supported by our capabilities",
+			codec_id.id, codec_id.cid, codec_id.vid, bt_audio_dir_str(ep->dir));
 
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
 				       BT_BAP_ASCS_REASON_CODEC);
@@ -1546,7 +1512,7 @@ static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uin
 	codec_cfg->vid = vid;
 	codec_cfg->data_len = len;
 	memcpy(codec_cfg->data, cc, len);
-	codec_cfg->path_id = lookup_data.codec_cap->path_id;
+	codec_cfg->path_id = codec_cap->path_id;
 
 	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
 
@@ -1728,10 +1694,11 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		       struct bt_audio_codec_cfg *codec_cfg,
 		       const struct bt_bap_qos_cfg_pref *qos_pref)
 {
-	int err;
+	const struct bt_audio_codec_cap *codec_cap;
 	struct bt_ascs_ase *ase = NULL;
+	struct bt_pac_codec codec_id;
 	struct bt_bap_ep *ep;
-	struct codec_cap_lookup_id_data lookup_data;
+	int err;
 
 	CHECKIF(conn == NULL || stream == NULL || codec_cfg == NULL || qos_pref == NULL) {
 		LOG_DBG("NULL value(s) supplied)");
@@ -1763,15 +1730,15 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		return -EINVAL;
 	}
 
-	lookup_data.id = codec_cfg->id;
-	lookup_data.cid = codec_cfg->cid;
-	lookup_data.vid = codec_cfg->vid;
+	codec_id.id = codec_cfg->id;
+	codec_id.cid = codec_cfg->cid;
+	codec_id.vid = codec_cfg->vid;
 
-	bt_pacs_cap_foreach(ep->dir, codec_lookup_id, &lookup_data);
-
-	if (lookup_data.codec_cap == NULL) {
-		LOG_DBG("Codec with id %u for dir %s is not supported by our capabilities",
-			codec_cfg->id, bt_audio_dir_str(ep->dir));
+	codec_cap = bt_pacs_get_codec_cap(ep->dir, &codec_id);
+	if (codec_cap == NULL) {
+		LOG_DBG("Codec with id 0x%02x cid 0x%04x and vid 0x%04x for dir %s is not "
+			"supported by our capabilities",
+			codec_id.id, codec_id.cid, codec_id.vid, bt_audio_dir_str(ep->dir));
 		return -ENOENT;
 	}
 
@@ -1793,7 +1760,7 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 
 static uint16_t get_max_ase_rsp_for_conn(struct bt_conn *conn)
 {
-	const uint16_t max_ntf_size = get_max_ntf_size(conn);
+	const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(conn);
 	const size_t rsp_hdr_size = sizeof(struct bt_ascs_cp_rsp);
 
 	if (max_ntf_size > rsp_hdr_size) {
@@ -3290,7 +3257,7 @@ int bt_ascs_unregister(void)
 	}
 
 	err = bt_gatt_service_unregister(&ascs_svc);
-	/* If unregistration was succesfull, make sure to reset ascs_attrs so it can be used for
+	/* If unregistration was successful, make sure to reset ascs_attrs so it can be used for
 	 * new registrations
 	 */
 	if (err != 0) {

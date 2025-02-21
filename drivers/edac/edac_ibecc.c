@@ -257,7 +257,7 @@ static int notify_callback_set(const struct device *dev,
 	return 0;
 }
 
-static const struct edac_driver_api api = {
+static DEVICE_API(edac, api) = {
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 	/* Error Injection functions */
 	.inject_set_param1 = inject_set_param1,

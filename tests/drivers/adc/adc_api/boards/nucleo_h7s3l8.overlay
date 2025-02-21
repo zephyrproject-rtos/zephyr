@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		/* Adjust channel number according to pinmux in board.dts */
+		io-channels = <&adc1 6>;
+	};
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A3 */
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@6 {
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};

@@ -13,6 +13,12 @@
 #define EVENTS_IDX_MIN NRF_VPR_EVENTS_TRIGGERED_MIN
 #define EVENTS_IDX_MAX NRF_VPR_EVENTS_TRIGGERED_MAX
 
+#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+#define VEVIF_54L_EVENT_IDX 20
+BUILD_ASSERT(DT_INST_PROP(0, nordic_events) == 1);
+BUILD_ASSERT(DT_INST_PROP(0, nordic_events_mask) & BIT(VEVIF_54L_EVENT_IDX));
+#endif
+
 /* callbacks */
 struct mbox_vevif_event_rx_cbs {
 	mbox_callback_t cb[EVENTS_IDX_MAX - EVENTS_IDX_MIN + 1U];
@@ -27,24 +33,34 @@ struct mbox_vevif_event_rx_conf {
 	void (*irq_connect)(void);
 };
 
+static void trigger_callback(const struct device *dev, struct mbox_vevif_event_rx_cbs *cbs,
+			     uint8_t id)
+{
+	uint8_t idx = id - EVENTS_IDX_MIN;
+
+	if ((cbs->enabled_mask & BIT(id)) && (cbs->cb[idx] != NULL)) {
+		cbs->cb[idx](dev, id, cbs->user_data[idx], NULL);
+	}
+}
+
 static void vevif_event_rx_isr(const void *device)
 {
 	const struct device *dev = (struct device *)device;
-	const struct mbox_vevif_event_rx_conf *config = dev->config;
 	struct mbox_vevif_event_rx_cbs *cbs = dev->data;
+
+#if !defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+	const struct mbox_vevif_event_rx_conf *config = dev->config;
 
 	for (uint8_t id = EVENTS_IDX_MIN; id < EVENTS_IDX_MAX + 1U; id++) {
 		nrf_vpr_event_t event = nrfy_vpr_triggered_event_get(id);
-
 		if (nrfy_vpr_event_check(config->vpr, event)) {
 			nrfy_vpr_event_clear(config->vpr, event);
-			uint8_t idx = id - EVENTS_IDX_MIN;
-
-			if ((cbs->enabled_mask & BIT(id)) && (cbs->cb[idx] != NULL)) {
-				cbs->cb[idx](dev, id, cbs->user_data[idx], NULL);
-			}
+			trigger_callback(dev, cbs, id);
 		}
 	}
+#else
+	trigger_callback(dev, cbs, VEVIF_54L_EVENT_IDX);
+#endif
 }
 
 static inline bool vevif_event_rx_event_is_valid(uint32_t events_mask, uint32_t id)
@@ -104,7 +120,7 @@ static int vevif_event_rx_set_enabled(const struct device *dev, uint32_t id, boo
 	return 0;
 }
 
-static const struct mbox_driver_api vevif_event_rx_driver_api = {
+static DEVICE_API(mbox, vevif_event_rx_driver_api) = {
 	.max_channels_get = vevif_event_rx_max_channels_get,
 	.register_callback = vevif_event_rx_register_callback,
 	.set_enabled = vevif_event_rx_set_enabled,
@@ -135,7 +151,7 @@ static int vevif_event_rx_init(const struct device *dev)
 		.enabled_mask = 0,                                                                 \
 	};                                                                                         \
 	static const struct mbox_vevif_event_rx_conf conf##inst = {                                \
-		.vpr = (NRF_VPR_Type *)DT_INST_REG_ADDR(inst),                                     \
+		.vpr = (NRF_VPR_Type *)DT_REG_ADDR(DT_INST_PARENT(inst)),                          \
 		.events = DT_INST_PROP(inst, nordic_events),                                       \
 		.events_mask = DT_INST_PROP(inst, nordic_events_mask),                             \
 		.irq_connect = irq_connect##inst,                                                  \

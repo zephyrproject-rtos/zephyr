@@ -1,6 +1,7 @@
 /**
  * Copyright (c) 2019-2020, Juan Linietsky, Ariel Manzur and the Godot community
  * Copyright (c) 2021, Teslabs Engineering S.L.
+ * Copyright (c) 2023-2025, The Linux Foundation.
  * SPDX-License-Identifier: CC-BY-3.0
  *
  * Various tweaks to the Read the Docs theme to better conform with Zephyr's
@@ -1128,6 +1129,10 @@ li>a.code-sample-link.reference.internal.current {
     }
 }
 
+.sidebar.board-overview {
+    color: var(--admonition-note-color);
+}
+
 .sidebar.board-overview .sidebar-title {
     font-family: var(--header-font-family);
     background: var(--admonition-note-title-background-color);
@@ -1135,10 +1140,6 @@ li>a.code-sample-link.reference.internal.current {
     border-radius: 12px 12px 0px 0px;
     margin: 0px;
     text-align: center;
-}
-
-.sidebar.board-overview * {
-    color: var(--admonition-note-color);
 }
 
 .sidebar.board-overview figure {
@@ -1174,4 +1175,27 @@ li>a.code-sample-link.reference.internal.current {
 
 .sidebar.board-overview dl.field-list>dd code {
     font-size: 0.9em;
+}
+
+.sidebar.board-overview #board-github-link {
+    text-align: center;
+    margin-bottom: 1em;
+    font-size: 0.9em;
+}
+
+.sidebar.board-overview #board-github-link a {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width:80%;
+}
+
+#supported-features>div>table>tbody>tr>td>p {
+    white-space: normal;
+}
+
+#supported-features td {
+    background-color: var(--table-row-odd-background-color);
+    border-left-width: 1px;
 }

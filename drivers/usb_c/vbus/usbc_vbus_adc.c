@@ -191,7 +191,7 @@ static int adc_vbus_init(const struct device *dev)
 	return 0;
 }
 
-static const struct usbc_vbus_driver_api driver_api = {
+static DEVICE_API(usbc_vbus, driver_api) = {
 	.measure = adc_vbus_measure,
 	.check_level = adc_vbus_check_level,
 	.discharge = adc_vbus_discharge,

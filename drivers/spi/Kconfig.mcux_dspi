@@ -5,13 +5,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SPI_MCUX_DSPI
-	bool "MCUX SPI driver"
+	bool "MCUX DSPI driver"
 	default y
-	depends on DT_HAS_NXP_KINETIS_DSPI_ENABLED
+	depends on DT_HAS_NXP_DSPI_ENABLED
 	depends on CLOCK_CONTROL
 	select PINCTRL
 	help
-	  Enable support for mcux spi driver.
+	  Enable the MCUX DSPI driver.
 
 if SPI_MCUX_DSPI
 
@@ -19,7 +19,7 @@ config DSPI_MCUX_EDMA
 	bool "ENABLE EDMA for DSPI driver"
 	depends on HAS_MCUX && HAS_MCUX_EDMA
 	help
-	  Enable the MCUX DSPI driver.
+	  Enable DMA support for the MCUX DSPI driver.
 
 if DSPI_MCUX_EDMA
 

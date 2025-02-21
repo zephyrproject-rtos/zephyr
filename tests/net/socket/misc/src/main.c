@@ -51,6 +51,36 @@ ZTEST_USER(socket_misc_test_suite, test_inet_pton)
 
 	res = zsock_inet_pton(AF_INET6, "a:b:c:d:0:1:2:3z", buf);
 	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "192.0.2.400", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "0.0", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "0.1", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "0", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "1", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "256", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "00.0.0.0", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "0.0.0.0", buf);
+	zassert_equal(res, 1, "");
+
+	res = zsock_inet_pton(AF_INET, "0.0..0", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "1.2.3.0.", buf);
+	zassert_equal(res, 0, "");
 }
 
 #define TEST_MY_IPV4_ADDR "192.0.1.1"

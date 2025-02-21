@@ -7,17 +7,16 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
-  - gpio
-  - uart
-  - counter
-  - pwm
-  - watchdog
-  - pinctrl
-  - flash
-  - spi
-  - i2c
-  - can
-  - regulator
   - adc
+  - can
+  - counter
+  - flash
+  - gpio
+  - i2c
+  - pinctrl
+  - pwm
+  - regulator
+  - spi
+  - uart
+  - watchdog

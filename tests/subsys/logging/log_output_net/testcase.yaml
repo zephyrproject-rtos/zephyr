@@ -1,0 +1,26 @@
+common:
+  depends_on: netif
+  integration_platforms:
+    - native_sim
+
+tests:
+  logging.output.net:
+    tags:
+      - log_output
+      - logging
+    extra_configs:
+      - CONFIG_LOG_TIMESTAMP_64BIT=n
+  logging.output.net.ts64:
+    tags:
+      - log_output
+      - logging
+    extra_configs:
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+  logging.output.net.fulllibc:
+    tags:
+      - log_output
+      - logging
+    extra_configs:
+      - CONFIG_LOG_TIMESTAMP_64BIT=n
+      - CONFIG_REQUIRES_FULL_LIBC=y
+    filter: CONFIG_FULL_LIBC_SUPPORTED

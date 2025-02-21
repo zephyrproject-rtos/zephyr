@@ -21,16 +21,15 @@ jobs:
 
     - name: Install python dependencies
       run: |
-        pip3 install unidiff
-        pip3 install wheel
-        pip3 install sh
+        pip install unidiff
+        pip install sh
 
     - name: Install Packages
       run: |
         sudo apt-get update
         sudo apt-get install coccinelle
 
-    - name: Run Coding Guildeines Checks
+    - name: Run Coding Guidelines Checks
       continue-on-error: true
       id: coding_guidelines
       env:
@@ -40,6 +39,8 @@ jobs:
         git config --global user.email "actions@zephyrproject.org"
         git config --global user.name "Github Actions"
         git remote -v
+        rm -fr ".git/rebase-apply"
+        rm -fr ".git/rebase-merge"
         git rebase origin/${BASE_REF}
         git clean -f -d
         source zephyr-env.sh

@@ -174,7 +174,17 @@ endif()
 
 # @Intent: Set compiler flags to detect general stack overflows across all functions
 if(CONFIG_STACK_CANARIES)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,security_canaries>)
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries>>")
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries>>")
+elseif(CONFIG_STACK_CANARIES_STRONG)
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries_strong>>")
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_strong>>")
+elseif(CONFIG_STACK_CANARIES_ALL)
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries_all>>")
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_all>>")
+elseif(CONFIG_STACK_CANARIES_EXPLICIT)
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries_explicit>>")
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_explitic>>")
 endif()
 
 # @Intent: Obtain compiler optimizations flags and store in variables
@@ -221,7 +231,8 @@ SOC_* symbol.")
 endif()
 
 # Apply the final optimization flag(s)
-zephyr_compile_options(${OPTIMIZATION_FLAG})
+zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${OPTIMIZATION_FLAG}>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${OPTIMIZATION_FLAG}>)
 
 if(CONFIG_LTO)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
@@ -309,7 +320,9 @@ if(CONFIG_CODING_GUIDELINE_CHECK)
 endif()
 
 # @Intent: Set compiler specific macro inclusion of AUTOCONF_H
-zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${AUTOCONF_H}")
+zephyr_compile_options("SHELL: $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,imacros> ${AUTOCONF_H}>")
+zephyr_compile_options("SHELL: $<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,imacros> ${AUTOCONF_H}>")
+zephyr_compile_options("SHELL: $<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,imacros> ${AUTOCONF_H}>")
 
 if(CONFIG_COMPILER_FREESTANDING)
   # @Intent: Set compiler specific flag for bare metal freestanding option
@@ -354,7 +367,9 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,required>
 # @Intent: Enforce standard integer type correspondence to match Zephyr usage.
 # (must be after compiler specific flags)
 if(CONFIG_ENFORCE_ZEPHYR_STDINT)
-  zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h")
+  zephyr_compile_options("SHELL:$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h>")
+  zephyr_compile_options("SHELL:$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h>")
+  zephyr_compile_options("SHELL:$<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,imacros> ${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h>")
 endif()
 
 # Common toolchain-agnostic assembly flags
@@ -842,7 +857,12 @@ if(CONFIG_LEGACY_GENERATED_INCLUDE_PATH)
     ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 endif()
 
-add_custom_command(OUTPUT include/generated/zephyr/syscall_dispatch.c ${syscall_list_h}
+add_custom_command(
+  OUTPUT
+  include/generated/zephyr/syscall_dispatch.c
+  include/generated/zephyr/syscall_exports_llext.c
+  syscall_weakdefs_llext.c
+  ${syscall_list_h}
   # Also, some files are written to include/generated/zephyr/syscalls/
   COMMAND
   ${PYTHON_EXECUTABLE}
@@ -850,7 +870,8 @@ add_custom_command(OUTPUT include/generated/zephyr/syscall_dispatch.c ${syscall_
   --json-file        ${syscalls_json}                     # Read this file
   --base-output      include/generated/zephyr/syscalls    # Write to this dir
   --syscall-dispatch include/generated/zephyr/syscall_dispatch.c # Write this file
-  --syscall-export-llext  include/generated/zephyr/syscall_export_llext.c
+  --syscall-exports-llext  include/generated/zephyr/syscall_exports_llext.c
+  --syscall-weakdefs-llext syscall_weakdefs_llext.c # compiled in CMake library 'syscall_weakdefs'
   --syscall-list     ${syscall_list_h}
   $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
   ${SYSCALL_LONG_REGISTERS_ARG}
@@ -1009,6 +1030,16 @@ else()
   set(NO_WHOLE_ARCHIVE_LIBS kernel)
 endif()
 
+if(CONFIG_LLEXT)
+  # LLEXT exports symbols for all syscalls, including unimplemented ones.
+  # Weak definitions for these must be added at the end of the link order
+  # to avoid shadowing actual implementations.
+  add_library(syscall_weakdefs syscall_weakdefs_llext.c)
+  add_dependencies(syscall_weakdefs zephyr_generated_headers)
+  target_link_libraries(syscall_weakdefs zephyr_interface)
+  list(APPEND NO_WHOLE_ARCHIVE_LIBS syscall_weakdefs)
+endif()
+
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
 if (CONFIG_CODE_DATA_RELOCATION)
@@ -1087,10 +1118,10 @@ set_ifndef(  TOPT "${COMPILER_TOPT}")
 set_ifndef(  TOPT -Wl,-T) # Use this if the compiler driver doesn't set a value
 
 if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
-  set(LINKER_SCRIPT ${APPLICATION_SOURCE_DIR}/${CONFIG_CUSTOM_LINKER_SCRIPT})
+  string(CONFIGURE ${APPLICATION_SOURCE_DIR}/${CONFIG_CUSTOM_LINKER_SCRIPT} LINKER_SCRIPT)
   if(NOT EXISTS ${LINKER_SCRIPT})
-    set(LINKER_SCRIPT ${CONFIG_CUSTOM_LINKER_SCRIPT})
-    assert_exists(CONFIG_CUSTOM_LINKER_SCRIPT)
+    string(CONFIGURE ${CONFIG_CUSTOM_LINKER_SCRIPT} LINKER_SCRIPT)
+    assert_exists(LINKER_SCRIPT)
   endif()
 elseif(DEFINED BOARD_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${BOARD_LINKER_SCRIPT})
@@ -1968,7 +1999,6 @@ if (CONFIG_LLEXT AND CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
     --elf-file ${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
     --slid-listing ${PROJECT_BINARY_DIR}/slid_listing.txt
   )
-
 endif()
 
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
@@ -2199,51 +2229,57 @@ if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
 endif()
 
 # Extension Development Kit (EDK) generation.
-set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
+if(CONFIG_LLEXT_EDK)
+  if(CONFIG_LLEXT_EDK_FORMAT_TAR_XZ)
+    set(llext_edk_extension "tar.xz")
+  elseif(CONFIG_LLEXT_EDK_FORMAT_TAR_ZSTD)
+    set(llext_edk_extension "tar.Z")
+  elseif(CONFIG_LLEXT_EDK_FORMAT_ZIP)
+    set(llext_edk_extension "zip")
+  else()
+    message(FATAL_ERROR "Unsupported LLEXT_EDK_FORMAT choice")
+  endif()
+  set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.${llext_edk_extension})
 
-# TODO maybe generate flags for C CXX ASM
-zephyr_get_compile_definitions_for_lang(C zephyr_defs)
-zephyr_get_compile_options_for_lang(C zephyr_flags)
+  # TODO maybe generate flags for C CXX ASM
+  zephyr_get_compile_definitions_for_lang(C zephyr_defs)
+  zephyr_get_compile_options_for_lang(C zephyr_flags)
 
-# Filter out non LLEXT and LLEXT_EDK flags - and add required ones
-llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_filt_flags)
-llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_filt_flags} llext_filt_flags)
+  # Filter out non LLEXT and LLEXT_EDK flags - and add required ones
+  llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_filt_flags)
+  llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_filt_flags} llext_filt_flags)
 
-set(llext_edk_cflags ${zephyr_defs} -DLL_EXTENSION_BUILD)
-list(APPEND llext_edk_cflags ${llext_filt_flags})
-list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
-list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
+  set(llext_edk_cflags ${zephyr_defs} -DLL_EXTENSION_BUILD)
+  list(APPEND llext_edk_cflags ${llext_filt_flags})
+  list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
+  list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
 
-add_custom_command(
+  build_info(llext-edk file PATH ${llext_edk_file})
+  build_info(llext-edk cflags VALUE ${llext_edk_cflags})
+  build_info(llext-edk include-dirs VALUE "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>")
+
+  add_custom_command(
     OUTPUT ${llext_edk_file}
     # Regenerate syscalls in case CONFIG_LLEXT_EDK_USERSPACE_ONLY
     COMMAND ${CMAKE_COMMAND}
-        -E make_directory edk/include/generated/zephyr
+      -E make_directory edk/include/generated/zephyr
     COMMAND
-        ${PYTHON_EXECUTABLE}
-        ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
-        --json-file        ${syscalls_json}                     # Read this file
-        --base-output      edk/include/generated/zephyr/syscalls           # Write to this dir
-        --syscall-dispatch edk/include/generated/zephyr/syscall_dispatch.c # Write this file
-        --syscall-list     ${edk_syscall_list_h}
-        $<$<BOOL:${CONFIG_LLEXT_EDK_USERSPACE_ONLY}>:--userspace-only>
-        ${SYSCALL_LONG_REGISTERS_ARG}
-        ${SYSCALL_SPLIT_TIMEOUT_ARG}
+      ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
+      --json-file        ${syscalls_json}                     # Read this file
+      --base-output      edk/include/generated/zephyr/syscalls           # Write to this dir
+      --syscall-dispatch edk/include/generated/zephyr/syscall_dispatch.c # Write this file
+      --syscall-list     ${edk_syscall_list_h}
+      $<$<BOOL:${CONFIG_LLEXT_EDK_USERSPACE_ONLY}>:--userspace-only>
+      ${SYSCALL_LONG_REGISTERS_ARG}
+      ${SYSCALL_SPLIT_TIMEOUT_ARG}
     COMMAND ${CMAKE_COMMAND}
-        -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}
-        -DAPPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
-        -DINTERFACE_INCLUDE_DIRECTORIES="$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>"
-        -Dllext_edk_file=${llext_edk_file}
-        -Dllext_edk_cflags="${llext_edk_cflags}"
-        -Dllext_edk_name=${CONFIG_LLEXT_EDK_NAME}
-        -DWEST_TOPDIR=${WEST_TOPDIR}
-        -DZEPHYR_BASE=${ZEPHYR_BASE}
-        -DCONFIG_LLEXT_EDK_USERSPACE_ONLY=${CONFIG_LLEXT_EDK_USERSPACE_ONLY}
         -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
-    DEPENDS ${logical_target_for_zephyr_elf}
+    DEPENDS ${logical_target_for_zephyr_elf} build_info_yaml_saved
     COMMAND_EXPAND_LISTS
-)
-add_custom_target(llext-edk DEPENDS ${llext_edk_file})
+  )
+  add_custom_target(llext-edk DEPENDS ${llext_edk_file})
+endif()
 
 # @Intent: Set compiler specific flags for standard C/C++ includes
 # Done at the very end, so any other system includes which may
@@ -2264,9 +2300,8 @@ add_subdirectory_ifdef(
 
 toolchain_linker_finalize()
 
-yaml_context(EXISTS NAME build_info result)
-if(result)
-  build_info(zephyr version VALUE ${PROJECT_VERSION_STR})
-  build_info(zephyr zephyr-base VALUE ${ZEPHYR_BASE})
-  yaml_save(NAME build_info)
-endif()
+# export build information
+build_info(zephyr version VALUE ${PROJECT_VERSION_STR})
+build_info(zephyr zephyr-base VALUE ${ZEPHYR_BASE})
+
+yaml_save(NAME build_info)

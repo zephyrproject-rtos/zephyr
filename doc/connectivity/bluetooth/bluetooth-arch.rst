@@ -10,15 +10,14 @@ This page describes the software architecture of Zephyr's Bluetooth protocol
 stack.
 
 .. note::
-   Zephyr supports mainly Bluetooth Low Energy (BLE), the low-power
+   Zephyr supports mainly Bluetooth Low Energy (LE), the low-power
    version of the Bluetooth specification. Zephyr also has limited support
-   for portions of the BR/EDR Host. Throughout this architecture document we
-   use BLE interchangeably for Bluetooth except when noted.
+   for portions of the BR/EDR Host.
 
 .. _bluetooth-layers:
 
-BLE Layers
-==========
+Bluetooth LE Layers
+===================
 
 There are 3 main layers that together constitute a full Bluetooth Low Energy
 protocol stack:
@@ -62,7 +61,7 @@ following configurations are commonly used:
 
 * **Single-chip configuration**: In this configuration, a single microcontroller
   implements all three layers and the application itself. This can also be called a
-  system-on-chip (SoC) implementation. In this case the BLE Host and the BLE
+  system-on-chip (SoC) implementation. In this case the Bluetooth Host and the Bluetooth
   Controller communicate directly through function calls and queues in RAM. The
   Bluetooth specification does not specify how HCI is implemented in this
   single-chip configuration and so how HCI commands, events, and data flows between
@@ -75,11 +74,11 @@ following configurations are commonly used:
   configuration. This configuration allows for a wider variety of combinations of
   Hosts when using the Zephyr OS as a Controller. Since HCI ensures
   interoperability among Host and Controller implementations, including of course
-  Zephyr's very own BLE Host and Controller, users of the Zephyr Controller can
+  Zephyr's very own Bluetooth Host and Controller, users of the Zephyr Controller can
   choose to use whatever Host running on any platform they prefer. For example,
-  the host can be the Linux BLE Host stack (BlueZ) running on any processor
+  the host can be the Linux Bluetooth Host stack (BlueZ) running on any processor
   capable of supporting Linux. The Host processor may of course also run Zephyr
-  and the Zephyr OS BLE Host. Conversely, combining an IC running the Zephyr
+  and the Zephyr OS Bluetooth Host. Conversely, combining an IC running the Zephyr
   Host with an external Controller that does not run Zephyr is also supported.
 
 .. _bluetooth-build-types:
@@ -88,12 +87,12 @@ Build Types
 ===========
 
 The Zephyr software stack as an RTOS is highly configurable, and in particular,
-the BLE subsystem can be configured in multiple ways during the build process to
+the Bluetooth subsystem can be configured in multiple ways during the build process to
 include only the features and layers that are required to reduce RAM and ROM
 footprint as well as power consumption. Here's a short list of the different
-BLE-enabled builds that can be produced from the Zephyr project codebase:
+Bluetooth-enabled builds that can be produced from the Zephyr project codebase:
 
-* **Controller-only build**: When built as a BLE Controller, Zephyr includes
+* **Controller-only build**: When built as a Bluetooth Controller, Zephyr includes
   the Link Layer and a special application. This application is different
   depending on the physical transport chosen for HCI:
 
@@ -109,17 +108,22 @@ BLE-enabled builds that can be produced from the Zephyr project codebase:
   * :kconfig:option:`CONFIG_BT` ``=y``
   * :kconfig:option:`CONFIG_BT_HCI` ``=y``
   * :kconfig:option:`CONFIG_BT_HCI_RAW` ``=y``
-  * :kconfig:option:`CONFIG_BT_CTLR` ``=y``
-  * :kconfig:option:`CONFIG_BT_LL_SW_SPLIT` ``=y`` (if using the open source Link Layer)
+
+  The controller itself needs to be enabled as well, typically by making sure the
+  corresponding device tree node is enabled.
 
 * **Host-only build**: A Zephyr OS Host build will contain the Application and
-  the BLE Host, along with an HCI driver (UART or SPI) to interface with an
+  the Bluetooth Host, along with an HCI driver (UART or SPI) to interface with an
   external Controller chip.
   A build of this type sets the following Kconfig option values:
 
   * :kconfig:option:`CONFIG_BT` ``=y``
   * :kconfig:option:`CONFIG_BT_HCI` ``=y``
-  * :kconfig:option:`CONFIG_BT_CTLR` ``=n``
+
+  Additionally, if the platform supports also a local controller, it needs to be
+  disabled, typically by disabling the corresponding device tree node. This is done
+  together with enabling the device tree node for some other HCI driver and making
+  sure that the ``zephyr,bt-hci`` device tree chosen property points at it.
 
   All of the samples located in ``samples/bluetooth`` except for the ones
   used for Controller-only builds can be built as Host-only
@@ -130,19 +134,20 @@ BLE-enabled builds that can be produced from the Zephyr project codebase:
 
   * :kconfig:option:`CONFIG_BT` ``=y``
   * :kconfig:option:`CONFIG_BT_HCI` ``=y``
-  * :kconfig:option:`CONFIG_BT_CTLR` ``=y``
-  * :kconfig:option:`CONFIG_BT_LL_SW_SPLIT` ``=y`` (if using the open source Link Layer)
+
+  The controller itself needs to be enabled as well, typically by making sure the
+  corresponding device tree node is enabled.
 
   All of the samples located in ``samples/bluetooth`` except for the ones
   used for Controller-only builds can be built as Combined
 
 The picture below shows the SoC or single-chip configuration when using a Zephyr
-combined build (a build that includes both a BLE Host and a Controller in the
+combined build (a build that includes both a Bluetooth Host and a Controller in the
 same firmware image that is programmed onto the chip):
 
 .. figure:: img/ble_cfg_single.png
    :align: center
-   :alt: BLE Combined build on a single chip
+   :alt: Bluetooth Combined build on a single chip
 
    A Combined build on a Single-Chip configuration
 
@@ -151,25 +156,25 @@ combinations are possible, some of which are depicted below:
 
 .. figure:: img/ble_cfg_dual.png
    :align: center
-   :alt: BLE dual-chip configuration builds
+   :alt: Bluetooth dual-chip configuration builds
 
    Host-only and Controller-only builds on dual-chip configurations
 
 When using a Zephyr Host (left side of image), two instances of Zephyr OS
 must be built with different configurations, yielding two separate images that
 must be programmed into each of the chips respectively. The Host build image
-contains the application, the BLE Host and the selected HCI driver (UART or
+contains the application, the Bluetooth Host and the selected HCI driver (UART or
 SPI), while the Controller build runs either the
 :zephyr:code-sample:`bluetooth_hci_uart`, or the
 :zephyr:code-sample:`bluetooth_hci_spi` app to provide an interface to
-the BLE Controller.
+the Bluetooth Controller.
 
 This configuration is not limited to using a Zephyr OS Host, as the right side
 of the image shows. One can indeed take one of the many existing GNU/Linux
-distributions, most of which include Linux's own BLE Host (BlueZ), to connect it
+distributions, most of which include Linux's own Bluetooth Host (BlueZ), to connect it
 via UART or USB to one or more instances of the Zephyr OS Controller build.
 BlueZ as a Host supports multiple Controllers simultaneously for applications
-that require more than one BLE radio operating at the same time but sharing the
+that require more than one Bluetooth radio operating at the same time but sharing the
 same Host stack.
 
 Source tree layout

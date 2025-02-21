@@ -6,6 +6,7 @@
 
 #include "efr32bg2x.dtsi"
 #include <dt-bindings/clock/silabs/xg27-clock.h>
+#include <dt-bindings/dma/silabs/xg27-dma.h>
 #include <mem.h>
 
 / {
@@ -33,6 +34,13 @@
 			compatible = "fixed-clock";
 			reg = <0x5003c460 0x4>;
 			clock-frequency = <DT_FREQ_M(38)>;
+		};
+		acmp0: acmp@5a008000 {
+			compatible = "silabs,acmp";
+			reg = <0x5a008000 0x4000>;
+			interrupts = <48 0>;
+			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_EM01GRPACLK>;
+			status = "disabled";
 		};
 	};
 };
@@ -102,4 +110,16 @@
 
 &dcdc {
 	interrupts = <8 0>;
+};
+
+&dma0 {
+	interrupts = <26 0>;
+};
+
+&radio {
+	interrupts = <36 0>, <37 0>, <38 0>, <39 0>, <40 0>, <41 0>,
+		     <42 0>, <43 0>, <44 0>, <45 0>, <46 0>, <47 0>;
+	interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "protimer",
+		     "rac_rsm", "rac_seq", "rdmailbox", "rfsense", "synth",
+		     "prortc";
 };

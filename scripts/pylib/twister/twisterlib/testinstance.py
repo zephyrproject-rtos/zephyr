@@ -1,6 +1,6 @@
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 2018-2022 Intel Corporation
+# Copyright (c) 2018-2025 Intel Corporation
 # Copyright 2022 NXP
 # Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
 #
@@ -49,7 +49,7 @@ class TestInstance:
 
     __test__ = False
 
-    def __init__(self, testsuite, platform, outdir):
+    def __init__(self, testsuite, platform, toolchain, outdir):
 
         self.testsuite: TestSuite = testsuite
         self.platform: Platform = platform
@@ -59,16 +59,21 @@ class TestInstance:
         self.metrics = dict()
         self.handler = None
         self.recording = None
+        self.coverage = None
+        self.coverage_status = None
         self.outdir = outdir
         self.execution_time = 0
         self.build_time = 0
         self.retries = 0
+        self.toolchain = toolchain
 
-        self.name = os.path.join(platform.name, testsuite.name)
+        self.name = os.path.join(platform.name, toolchain, testsuite.name)
         self.dut = None
 
         if testsuite.detailed_test_id:
-            self.build_dir = os.path.join(outdir, platform.normalized_name, testsuite.name)
+            self.build_dir = os.path.join(
+                outdir, platform.normalized_name, self.toolchain, testsuite.name
+            )
         else:
             # if suite is not in zephyr,
             # keep only the part after ".." in reconstructed dir structure
@@ -76,10 +81,11 @@ class TestInstance:
             self.build_dir = os.path.join(
                 outdir,
                 platform.normalized_name,
+                self.toolchain,
                 source_dir_rel,
                 testsuite.name
             )
-        self.run_id = self._get_run_id()
+        self.run_id = None
         self.domains = None
         # Instance need to use sysbuild if a given suite or a platform requires it
         self.sysbuild = testsuite.sysbuild or platform.sysbuild
@@ -90,6 +96,9 @@ class TestInstance:
         self.filters = []
         self.filter_type = None
 
+    def setup_run_id(self):
+        self.run_id = self._get_run_id()
+
     def record(self, recording, fname_csv="recording.csv"):
         if recording:
             if self.recording is None:
@@ -98,9 +107,12 @@ class TestInstance:
                 self.recording.extend(recording)
 
             filename = os.path.join(self.build_dir, fname_csv)
+            fieldnames = set()
+            for r in self.recording:
+                fieldnames.update(r)
             with open(filename, 'w') as csvfile:
                 cw = csv.DictWriter(csvfile,
-                                    fieldnames = self.recording[0].keys(),
+                                    fieldnames = sorted(list(fieldnames)),
                                     lineterminator = os.linesep,
                                     quoting = csv.QUOTE_NONNUMERIC)
                 cw.writeheader()
@@ -170,6 +182,9 @@ class TestInstance:
     def __lt__(self, other):
         return self.name < other.name
 
+    def compose_case_name(self, tc_name) -> str:
+        return self.testsuite.compose_case_name(tc_name)
+
     def set_case_status_by_name(self, name, status, reason=None):
         tc = self.get_case_or_create(name)
         tc.status = status
@@ -203,7 +218,16 @@ class TestInstance:
     def testsuite_runnable(testsuite, fixtures):
         can_run = False
         # console harness allows us to run the test and capture data.
-        if testsuite.harness in [ 'console', 'ztest', 'pytest', 'test', 'gtest', 'robot']:
+        if testsuite.harness in [
+            'console',
+            'ztest',
+            'pytest',
+            'test',
+            'gtest',
+            'robot',
+            'ctest',
+            'shell'
+            ]:
             can_run = True
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
@@ -246,6 +270,8 @@ class TestInstance:
             handler.ready = True
         else:
             handler = Handler(self, "", *common_args)
+            if self.testsuite.harness == "ctest":
+                handler.ready = True
 
         self.handler = handler
 
@@ -261,9 +287,9 @@ class TestInstance:
         simulation = options.sim_name
 
         simulator = self.platform.simulator_by_name(simulation)
-        if os.name == 'nt':
+        if os.name == 'nt' and simulator:
             # running on simulators is currently supported only for QEMU on Windows
-            if (not simulator) or simulator.name not in ('na', 'qemu'):
+            if simulator.name not in ('na', 'qemu'):
                 return False
 
             # check presence of QEMU on Windows
@@ -281,12 +307,13 @@ class TestInstance:
 
         target_ready = bool(self.testsuite.type == "unit" or \
                             self.platform.type == "native" or \
+                            self.testsuite.harness == "ctest" or \
                             (simulator and simulator.name in SUPPORTED_SIMS and \
                              simulator.name not in self.testsuite.simulation_exclude) or \
                             device_testing)
 
         # check if test is runnable in pytest
-        if self.testsuite.harness == 'pytest':
+        if self.testsuite.harness in ['pytest', 'shell']:
             target_ready = bool(
                 filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST
             )
@@ -301,7 +328,7 @@ class TestInstance:
 
         if hardware_map:
             for h in hardware_map.duts:
-                if (h.platform == self.platform.name and
+                if (h.platform in self.platform.aliases and
                         self.testsuite_runnable(self.testsuite, h.fixtures)):
                     testsuite_runnable = True
                     break

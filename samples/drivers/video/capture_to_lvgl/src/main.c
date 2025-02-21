@@ -97,7 +97,7 @@ int main(void)
 
 	/* Alloc video buffers and enqueue for capture */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-		buffers[i] = video_buffer_alloc(bsize);
+		buffers[i] = video_buffer_alloc(bsize, K_FOREVER);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
@@ -131,11 +131,10 @@ int main(void)
 	display_blanking_off(display_dev);
 
 	const lv_img_dsc_t video_img = {
-		.header.always_zero = 0,
 		.header.w = CONFIG_VIDEO_WIDTH,
 		.header.h = CONFIG_VIDEO_HEIGHT,
 		.data_size = CONFIG_VIDEO_WIDTH * CONFIG_VIDEO_HEIGHT * sizeof(lv_color_t),
-		.header.cf = LV_IMG_CF_TRUE_COLOR,
+		.header.cf = LV_COLOR_FORMAT_NATIVE,
 		.data = (const uint8_t *)buffers[0]->buffer,
 	};
 

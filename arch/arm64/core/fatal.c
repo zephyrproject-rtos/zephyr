@@ -306,9 +306,8 @@ static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, u
 		}
 	}
 #ifdef CONFIG_USERSPACE
-	else if ((arch_current_thread()->base.user_options & K_USER) != 0 &&
-		 GET_ESR_EC(esr) == 0x24) {
-		sp_limit = (uint64_t)arch_current_thread()->stack_info.start;
+	else if ((_current->base.user_options & K_USER) != 0 && GET_ESR_EC(esr) == 0x24) {
+		sp_limit = (uint64_t)_current->stack_info.start;
 		guard_start = sp_limit - Z_ARM64_STACK_GUARD_SIZE;
 		sp = esf->sp;
 		if (sp <= sp_limit || (guard_start <= far && far <= sp_limit)) {
@@ -435,7 +434,7 @@ void z_arm64_do_kernel_oops(struct arch_esf *esf)
 	 * User mode is only allowed to induce oopses and stack check
 	 * failures via software-triggered system fatal exceptions.
 	 */
-	if (((arch_current_thread()->base.user_options & K_USER) != 0) &&
+	if (((_current->base.user_options & K_USER) != 0) &&
 		reason != K_ERR_STACK_CHK_FAIL) {
 		reason = K_ERR_KERNEL_OOPS;
 	}

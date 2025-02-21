@@ -115,7 +115,7 @@
 		};
 
 		lpuart0: lpuart@40054000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x40054000 0x18>;
 			interrupts = <12 0>;
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1038 20>;
@@ -171,7 +171,7 @@
 		};
 
 		spi0: spi@4002c000 {
-			compatible = "nxp,kinetis-dspi";
+			compatible = "nxp,dspi";
 			reg = <0x4002c000 0x9C>;
 			interrupts = <10 3>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
@@ -182,7 +182,7 @@
 		};
 
 		spi1: spi@4002d000 {
-			compatible = "nxp,kinetis-dspi";
+			compatible = "nxp,dspi";
 			reg = <0x4002d000 0x9C>;
 			interrupts = <29 3>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;

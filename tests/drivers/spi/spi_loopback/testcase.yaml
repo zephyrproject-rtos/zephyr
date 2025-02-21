@@ -65,6 +65,7 @@ tests:
     extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma.conf"
     platform_allow:
       - b_u585i_iot02a
+      - nucleo_c071rb
       - nucleo_g474re
       - nucleo_f207zg
       - nucleo_f429zi
@@ -120,6 +121,7 @@ tests:
     extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-interrupt.conf"
     platform_allow:
       - b_u585i_iot02a
+      - nucleo_c071rb
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
@@ -167,35 +169,43 @@ tests:
     integration_platforms:
       - gd32f403z_eval
   drivers.spi.pl022_spi_interrupt.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=n
     platform_allow: rpi_pico
   drivers.spi.pl022_spi_dma.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
     platform_allow: rpi_pico
   drivers.spi.pl022_spi_dma_and_interrupt.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
     platform_allow: rpi_pico
   drivers.spi.pl022_spi_dma_no_dma_props.loopback:
-    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
     platform_allow: rpi_pico
   drivers.spi.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
-    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
+    platform_allow: rpi_pico
+  drivers.spi.pio_spi.loopback:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/rpi_pico_pio.overlay"
+      - EXTRA_CONF_FILE="overlay-rpi-pico-pio.conf"
     platform_allow: rpi_pico
   drivers.spi.mcux_flexio_spi.loopback:
     extra_args: DTC_OVERLAY_FILE="overlay-mcux-flexio-spi.overlay"
@@ -228,3 +238,8 @@ tests:
     filter: CONFIG_SOC_FAMILY_MAX32
     platform_allow:
       - apard32690/max32690/m4
+  drivers.spi.nrf_pm_runtime:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+    filter: CONFIG_SOC_FAMILY_NORDIC_NRF

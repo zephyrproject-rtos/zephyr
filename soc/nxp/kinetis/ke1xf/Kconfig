@@ -8,7 +8,7 @@ config SOC_SERIES_KINETIS_KE1XF
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_NXP_MPU
+	select CPU_HAS_NXP_SYSMPU
 	select CPU_HAS_FPU
 	select CLOCK_CONTROL
 	select HAS_MCUX

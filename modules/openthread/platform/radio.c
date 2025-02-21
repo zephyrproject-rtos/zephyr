@@ -11,6 +11,7 @@
  *
  */
 
+#include <openthread/error.h>
 #define LOG_MODULE_NAME net_otPlat_radio
 
 #include <zephyr/logging/log.h>
@@ -721,6 +722,13 @@ uint16_t platformRadioChannelGet(otInstance *aInstance)
 	return channel;
 }
 
+#if defined(CONFIG_OPENTHREAD_DIAG)
+void platformRadioChannelSet(uint8_t aChannel)
+{
+	channel = aChannel;
+}
+#endif
+
 void otPlatRadioSetPanId(otInstance *aInstance, uint16_t aPanId)
 {
 	ARG_UNUSED(aInstance);
@@ -755,19 +763,25 @@ bool otPlatRadioIsEnabled(otInstance *aInstance)
 
 otError otPlatRadioEnable(otInstance *aInstance)
 {
-	if (!otPlatRadioIsEnabled(aInstance)) {
-		sState = OT_RADIO_STATE_SLEEP;
+	ARG_UNUSED(aInstance);
+
+	if (sState != OT_RADIO_STATE_DISABLED && sState != OT_RADIO_STATE_SLEEP) {
+		return OT_ERROR_INVALID_STATE;
 	}
 
+	sState = OT_RADIO_STATE_SLEEP;
 	return OT_ERROR_NONE;
 }
 
 otError otPlatRadioDisable(otInstance *aInstance)
 {
-	if (otPlatRadioIsEnabled(aInstance)) {
-		sState = OT_RADIO_STATE_DISABLED;
+	ARG_UNUSED(aInstance);
+
+	if (sState != OT_RADIO_STATE_DISABLED && sState != OT_RADIO_STATE_SLEEP) {
+		return OT_ERROR_INVALID_STATE;
 	}
 
+	sState = OT_RADIO_STATE_DISABLED;
 	return OT_ERROR_NONE;
 }
 
@@ -775,22 +789,23 @@ otError otPlatRadioSleep(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
 
-	otError error = OT_ERROR_INVALID_STATE;
-
-	if (sState == OT_RADIO_STATE_SLEEP ||
-	    sState == OT_RADIO_STATE_RECEIVE ||
-	    sState == OT_RADIO_STATE_TRANSMIT) {
-		error = OT_ERROR_NONE;
-		radio_api->stop(radio_dev);
-		sState = OT_RADIO_STATE_SLEEP;
+	if (sState != OT_RADIO_STATE_SLEEP && sState != OT_RADIO_STATE_RECEIVE) {
+		return OT_ERROR_INVALID_STATE;
 	}
 
-	return error;
+	radio_api->stop(radio_dev);
+	sState = OT_RADIO_STATE_SLEEP;
+
+	return OT_ERROR_NONE;
 }
 
 otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 {
 	ARG_UNUSED(aInstance);
+
+	if (sState == OT_RADIO_STATE_DISABLED) {
+		return OT_ERROR_INVALID_STATE;
+	}
 
 	channel = aChannel;
 
@@ -846,6 +861,34 @@ otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 
 	return OT_ERROR_NONE;
 }
+
+otError platformRadioTransmitModulatedCarrier(otInstance *aInstance, bool aEnable,
+					      const uint8_t *aData)
+{
+	if (radio_api->modulated_carrier == NULL) {
+		return OT_ERROR_NOT_IMPLEMENTED;
+	}
+
+	if (aEnable && sState == OT_RADIO_STATE_RECEIVE) {
+		if (aData == NULL) {
+			return OT_ERROR_INVALID_ARGS;
+		}
+
+		radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
+
+		if (radio_api->modulated_carrier(radio_dev, aData) != 0) {
+			return OT_ERROR_FAILED;
+		}
+		sState = OT_RADIO_STATE_TRANSMIT;
+	} else if ((!aEnable) && sState == OT_RADIO_STATE_TRANSMIT) {
+		return otPlatRadioReceive(aInstance, channel);
+	} else {
+		return OT_ERROR_INVALID_STATE;
+	}
+
+	return OT_ERROR_NONE;
+}
+
 #endif /* CONFIG_IEEE802154_CARRIER_FUNCTIONS */
 
 otRadioState otPlatRadioGetState(otInstance *aInstance)
@@ -868,7 +911,9 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aPacket)
 
 	radio_caps = radio_api->get_capabilities(radio_dev);
 
-	if ((sState == OT_RADIO_STATE_RECEIVE) || (radio_caps & IEEE802154_HW_SLEEP_TO_TX)) {
+	if (sState == OT_RADIO_STATE_RECEIVE ||
+	    (sState == OT_RADIO_STATE_SLEEP &&
+	     radio_caps & IEEE802154_HW_SLEEP_TO_TX)) {
 		if (run_tx_task(aInstance) == 0) {
 			error = OT_ERROR_NONE;
 		}

@@ -66,6 +66,7 @@
 		clk_hsi: clk-hsi {
 			#clock-cells = <0>;
 			compatible = "st,stm32h7-hsi-clock";
+			hsi-div = <1>;	/* HSI RC: 64MHz, hsi_clk = 64MHz */
 			clock-frequency = <DT_FREQ_M(64)>;
 			status = "disabled";
 		};
@@ -861,7 +862,8 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		adc2: adc@40022100 {
@@ -877,7 +879,8 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		/* dual mode: adc1 and adc2 coupled */
@@ -894,7 +897,8 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		adc3: adc@58026000 {
@@ -910,7 +914,8 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		dac1: dac@40007400 {
@@ -1060,7 +1065,7 @@
 			status = "disabled";
 		};
 
-		quadspi: quadspi@52005000 {
+		quadspi: spi@52005000 {
 			compatible = "st,stm32-qspi";
 			#address-cells = <0x1>;
 			#size-cells = <0x0>;
@@ -1102,6 +1107,7 @@
 		compatible = "st,stm32-vref";
 		vrefint-cal-addr = <0x1FF1E860>;
 		vrefint-cal-mv = <3300>;
+		vrefint-cal-resolution = <16>;
 		status = "disabled";
 	};
 

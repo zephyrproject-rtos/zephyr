@@ -24,7 +24,7 @@ tests:
   sample.tracing.format.sysview:
     platform_allow:
       - nrf52840dk/nrf52840
-      - mimxrt1050_evk
+      - mimxrt1050_evk/mimxrt1052/hyperflash
       - mimxrt1064_evk
     integration_platforms:
       - nrf52840dk/nrf52840
@@ -76,3 +76,21 @@ tests:
     extra_args: CONF_FILE="prj_percepio.conf"
     modules:
       - percepio
+  sample.tracing.gpio:
+    depends_on: gpio
+    harness_config:
+      type: multi_line
+      regex:
+        - "port: gpio_emul, pin: [01] flags: (.*)"
+        - "port: gpio_emul, pin: [01] ret: 0"
+        - "port: gpio_emul, pins: [01]"
+        - "port: gpio_emul, ret: 0"
+        - "Interrupt detected!"
+        - "thread_a: Hello World from (.*)!"
+        - "thread_b: Hello World from (.*)!"
+        - "sys_trace_.*_user.*"
+    extra_args:
+      - CONF_FILE="prj_gpio.conf"
+      - EXTRA_DTC_OVERLAY_FILE="gpio.overlay"
+    integration_platforms:
+      - native_sim

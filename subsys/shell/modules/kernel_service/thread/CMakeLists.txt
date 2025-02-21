@@ -16,3 +16,9 @@ zephyr_sources_ifdef(CONFIG_KERNEL_THREAD_SHELL_MASK pin.c)
 zephyr_sources_ifdef(CONFIG_KERNEL_THREAD_SHELL_STACKS stacks.c)
 
 zephyr_sources_ifdef(CONFIG_KERNEL_THREAD_SHELL_UNWIND unwind.c)
+
+zephyr_sources_ifdef(CONFIG_KERNEL_THREAD_SHELL_SUSPEND suspend.c)
+
+zephyr_sources_ifdef(CONFIG_KERNEL_THREAD_SHELL_RESUME resume.c)
+
+zephyr_sources_ifdef(CONFIG_KERNEL_THREAD_SHELL_KILL kill.c)

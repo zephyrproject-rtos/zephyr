@@ -420,6 +420,81 @@ ZTEST(regulator_api, test_get_voltage_error)
 	zassert_equal(regulator_fake_get_voltage_fake.arg1_val, NULL);
 }
 
+ZTEST(regulator_api, test_count_current_limits_not_implemented)
+{
+	unsigned int ret = regulator_count_current_limits(dummy_reg);
+
+	zassert_equal(ret, 0);
+}
+
+ZTEST(regulator_api, test_count_current_limits_ok)
+{
+	RESET_FAKE(regulator_fake_count_current_limits);
+
+	regulator_fake_count_current_limits_fake.return_val = 10;
+
+	zassert_equal(regulator_count_current_limits(reg0), 10U);
+	zassert_equal(regulator_fake_count_current_limits_fake.arg0_val, reg0);
+	zassert_equal(regulator_fake_count_current_limits_fake.call_count, 1U);
+}
+
+ZTEST(regulator_api, test_count_current_limits_fail)
+{
+	RESET_FAKE(regulator_fake_count_current_limits);
+
+	regulator_fake_count_current_limits_fake.return_val = -EINVAL;
+
+	zassert_equal(regulator_count_current_limits(reg0), -EINVAL);
+	zassert_equal(regulator_fake_count_current_limits_fake.arg0_val, reg0);
+	zassert_equal(regulator_fake_count_current_limits_fake.call_count, 1U);
+}
+
+ZTEST(regulator_api, test_list_current_limit_not_implemented)
+{
+	zassert_equal(regulator_list_current_limit(dummy_reg, 0, NULL), -EINVAL);
+}
+
+static int list_current_limit_ok(const struct device *dev, unsigned int idx, int32_t *curr_ua)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(idx);
+
+	*curr_ua = 100;
+
+	return 0;
+}
+
+ZTEST(regulator_api, test_list_current_limit_ok)
+{
+	RESET_FAKE(regulator_fake_list_current_limit);
+
+	int32_t curr_ua;
+
+	regulator_fake_list_current_limit_fake.custom_fake = list_current_limit_ok;
+
+	zassert_equal(regulator_list_current_limit(reg0, 1, &curr_ua), 0);
+	zassert_equal(curr_ua, 100);
+	zassert_equal(regulator_fake_list_current_limit_fake.arg0_val, reg0);
+	zassert_equal(regulator_fake_list_current_limit_fake.arg1_val, 1U);
+	zassert_equal(regulator_fake_list_current_limit_fake.arg2_val, &curr_ua);
+	zassert_equal(regulator_fake_list_current_limit_fake.call_count, 1U);
+}
+
+ZTEST(regulator_api, test_list_current_limit_fail)
+{
+	RESET_FAKE(regulator_fake_list_current_limit);
+
+	int32_t curr_ua;
+
+	regulator_fake_list_current_limit_fake.return_val = -EIO;
+
+	zassert_equal(regulator_list_current_limit(reg0, 1, &curr_ua), -EIO);
+	zassert_equal(regulator_fake_list_current_limit_fake.arg0_val, reg0);
+	zassert_equal(regulator_fake_list_current_limit_fake.arg1_val, 1U);
+	zassert_equal(regulator_fake_list_current_limit_fake.arg2_val, &curr_ua);
+	zassert_equal(regulator_fake_list_current_limit_fake.call_count, 1U);
+}
+
 ZTEST(regulator_api, test_set_current_limit_not_implemented)
 {
 	int ret = regulator_set_current_limit(dummy_reg, 0, 0);

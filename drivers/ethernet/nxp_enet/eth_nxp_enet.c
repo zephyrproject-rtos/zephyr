@@ -882,9 +882,6 @@ static const struct ethernet_api api_funcs = {
 		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));			\
 	} while (false);
 
-#define NXP_ENET_DT_PHY_DEV(node_id, phy_phandle, idx)						\
-	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, phy_phandle, idx))
-
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && \
 	CONFIG_ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
 #define _nxp_enet_dma_desc_section __dtcm_bss_section
@@ -893,9 +890,9 @@ static const struct ethernet_api api_funcs = {
 #define driver_cache_maintain	false
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define _nxp_enet_dma_desc_section __nocache
-#define _nxp_enet_dma_buffer_section __nocache
+#define _nxp_enet_dma_buffer_section
 #define _nxp_enet_driver_buffer_section
-#define driver_cache_maintain	false
+#define driver_cache_maintain	true
 #else
 #define _nxp_enet_dma_desc_section
 #define _nxp_enet_dma_buffer_section

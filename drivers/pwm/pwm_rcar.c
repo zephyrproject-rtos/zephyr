@@ -243,7 +243,7 @@ static int pwm_rcar_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_rcar_driver_api = {
+static DEVICE_API(pwm, pwm_rcar_driver_api) = {
 	.set_cycles = pwm_rcar_set_cycles,
 	.get_cycles_per_sec = pwm_rcar_get_cycles_per_sec,
 };

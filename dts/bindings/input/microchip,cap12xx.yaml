@@ -1,0 +1,30 @@
+# Copyright (c) 2022 Keiya Nobuta
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip CAP12xx family of 3, 6 and 8-channel capacitive touch sensors.
+
+compatible: "microchip,cap12xx"
+
+include: i2c-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt GPIO when not using polling mode.
+
+  repeat:
+    type: boolean
+    description: |
+      Property to enable the interrupt repeat mode for prolonged touch events.
+
+  poll-interval-ms:
+    type: int
+    description: |
+      Polling interval in ms when not using interrupt mode.
+
+  input-codes:
+    type: array
+    required: true
+    description: |
+      Array of input event key codes (INPUT_KEY_* or INPUT_BTN_*).

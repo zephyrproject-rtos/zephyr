@@ -1,5 +1,6 @@
 board:
   name: ttgo_t7v1_5
+  full_name: TTGO T7 Mini32 V1.5
   vendor: lilygo
   socs:
   - name: esp32

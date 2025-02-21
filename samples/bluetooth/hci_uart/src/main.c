@@ -54,7 +54,7 @@ static K_FIFO_DEFINE(uart_tx_queue);
 #define ST_DISCARD 3	/* Dropping packet. */
 
 /* Length of a discard/flush buffer.
- * This is sized to align with a BLE HCI packet:
+ * This is sized to align with a Bluetooth HCI packet:
  * 1 byte H:4 header + 32 bytes ACL/event data
  * Bigger values might overflow the stack since this is declared as a local
  * variable, smaller ones will force the caller to call into discard more
@@ -232,17 +232,19 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
 
-	if (!(uart_irq_rx_ready(hci_uart_dev) ||
-	      uart_irq_tx_ready(hci_uart_dev))) {
-		LOG_DBG("spurious interrupt");
-	}
+	while (uart_irq_update(hci_uart_dev) && uart_irq_is_pending(hci_uart_dev)) {
+		if (!(uart_irq_rx_ready(hci_uart_dev) ||
+		      uart_irq_tx_ready(hci_uart_dev))) {
+			LOG_DBG("spurious interrupt");
+		}
 
-	if (uart_irq_tx_ready(hci_uart_dev)) {
-		tx_isr();
-	}
+		if (uart_irq_tx_ready(hci_uart_dev)) {
+			tx_isr();
+		}
 
-	if (uart_irq_rx_ready(hci_uart_dev)) {
-		rx_isr();
+		if (uart_irq_rx_ready(hci_uart_dev)) {
+			rx_isr();
+		}
 	}
 }
 

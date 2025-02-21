@@ -62,8 +62,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}
     - name: install python dependencies
       run: |
-        pip3 install wheel
-        pip3 install pytest pyyaml tox
+        pip install pytest pyyaml tox
     - name: run tox
       working-directory: scripts/dts/python-devicetree
       run: |

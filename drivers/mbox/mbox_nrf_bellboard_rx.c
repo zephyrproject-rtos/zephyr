@@ -135,7 +135,7 @@ static int bellboard_rx_set_enabled(const struct device *dev, uint32_t id, bool 
 	return 0;
 }
 
-static const struct mbox_driver_api bellboard_rx_driver_api = {
+static DEVICE_API(mbox, bellboard_rx_driver_api) = {
 	.max_channels_get = bellboard_rx_max_channels_get,
 	.register_callback = bellboard_rx_register_callback,
 	.set_enabled = bellboard_rx_set_enabled,

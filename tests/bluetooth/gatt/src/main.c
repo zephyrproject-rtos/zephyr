@@ -142,6 +142,191 @@ ZTEST(test_gatt, test_gatt_unregister)
 		     "Test service unregister failed");
 }
 
+/* Test that a service A can be re-registered after registering it once, unregistering it, and then
+ * registering another service B.
+ * No pre-allocated handles. Repeat the process multiple times.
+ */
+ZTEST(test_gatt, test_gatt_reregister)
+{
+	struct bt_gatt_attr local_test_attrs[] = {
+		/* Vendor Primary Service Declaration */
+		BT_GATT_PRIMARY_SERVICE(&test_uuid),
+
+		BT_GATT_CHARACTERISTIC(&test_chrc_uuid.uuid, BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+				       BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN,
+				       read_test, write_test, test_value),
+	};
+
+	struct bt_gatt_attr local_test1_attrs[] = {
+		/* Vendor Primary Service Declaration */
+		BT_GATT_PRIMARY_SERVICE(&test1_uuid),
+
+		BT_GATT_CHARACTERISTIC(&test1_nfy_uuid.uuid, BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE,
+				       NULL, NULL, &nfy_enabled),
+		BT_GATT_CCC(test1_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	};
+	struct bt_gatt_service local_test_svc = BT_GATT_SERVICE(local_test_attrs);
+	struct bt_gatt_service local_test1_svc = BT_GATT_SERVICE(local_test1_attrs);
+
+	/* Check that the procedure is successful for a few iterations to verify stability and
+	 * detect residual state or memory issues.
+	 */
+	for (int i = 0; i < 10; i++) {
+
+		/* Check that the handles are initially 0x0000 before registering the service */
+		for (int j = 0; j < local_test_svc.attr_count; j++) {
+			zassert_equal(local_test_svc.attrs[j].handle, 0x0000,
+				      "Test service A handle not initially reset");
+		}
+
+		zassert_false(bt_gatt_service_register(&local_test_svc),
+			      "Test service A registration failed");
+
+		zassert_false(bt_gatt_service_unregister(&local_test_svc),
+			      "Test service A unregister failed");
+
+		/* Check that the handles are the same as before registering the service */
+		for (int j = 0; j < local_test_svc.attr_count; j++) {
+			zassert_equal(local_test_svc.attrs[j].handle, 0x0000,
+				      "Test service A handle not reset");
+		}
+
+		zassert_false(bt_gatt_service_register(&local_test1_svc),
+			      "Test service B registration failed");
+
+		zassert_false(bt_gatt_service_register(&local_test_svc),
+			      "Test service A re-registering failed...");
+
+		/* Clean up */
+		zassert_false(bt_gatt_service_unregister(&local_test_svc),
+			      "Test service A unregister failed");
+		zassert_false(bt_gatt_service_unregister(&local_test1_svc),
+			      "Test service B unregister failed");
+	}
+}
+
+/* Test that a service A can be re-registered after registering it once, unregistering it, and then
+ * registering another service B.
+ * Service A and B both have pre-allocated handles for their attributes.
+ * Check that pre-allocated handles are the same after unregistering as they were before
+ * registering the service.
+ */
+ZTEST(test_gatt, test_gatt_reregister_pre_allocated_handles)
+{
+	struct bt_gatt_attr local_test_attrs[] = {
+		/* Vendor Primary Service Declaration */
+		BT_GATT_PRIMARY_SERVICE(&test_uuid),
+
+		BT_GATT_CHARACTERISTIC(&test_chrc_uuid.uuid, BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+				       BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN,
+				       read_test, write_test, test_value),
+	};
+
+	struct bt_gatt_attr local_test1_attrs[] = {
+		/* Vendor Primary Service Declaration */
+		BT_GATT_PRIMARY_SERVICE(&test1_uuid),
+
+		BT_GATT_CHARACTERISTIC(&test1_nfy_uuid.uuid, BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE,
+				       NULL, NULL, &nfy_enabled),
+		BT_GATT_CCC(test1_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	};
+
+	struct bt_gatt_service prealloc_test_svc = BT_GATT_SERVICE(local_test_attrs);
+	struct bt_gatt_service prealloc_test1_svc = BT_GATT_SERVICE(local_test1_attrs);
+
+	/* Pre-allocate handles for both services */
+	for (int i = 0; i < prealloc_test_svc.attr_count; i++) {
+		prealloc_test_svc.attrs[i].handle = 0x0100 + i;
+	}
+	for (int i = 0; i < prealloc_test1_svc.attr_count; i++) {
+		prealloc_test1_svc.attrs[i].handle = 0x0200 + i;
+	}
+
+	zassert_false(bt_gatt_service_register(&prealloc_test_svc),
+		      "Test service A registration failed");
+
+	zassert_false(bt_gatt_service_unregister(&prealloc_test_svc),
+		      "Test service A unregister failed");
+
+	/* Check that the handles are the same as before registering the service */
+	for (int i = 0; i < prealloc_test_svc.attr_count; i++) {
+		zassert_equal(prealloc_test_svc.attrs[i].handle, 0x0100 + i,
+			      "Test service A handle not reset");
+	}
+
+	zassert_false(bt_gatt_service_register(&prealloc_test1_svc),
+		      "Test service B registration failed");
+
+	zassert_false(bt_gatt_service_register(&prealloc_test_svc),
+		      "Test service A re-registering failed...");
+
+	/* Clean up */
+	zassert_false(bt_gatt_service_unregister(&prealloc_test_svc),
+		      "Test service A unregister failed");
+	zassert_false(bt_gatt_service_unregister(&prealloc_test1_svc),
+		      "Test service B unregister failed");
+}
+
+/* Test that a service A can be re-registered after registering it once, unregistering it, and then
+ * registering another service B.
+ * Service A has pre-allocated handles for its attributes, while Service B has handles assigned by
+ * the stack when registered.
+ * Check that pre-allocated handles are the same after unregistering as they were before
+ * registering the service.
+ */
+ZTEST(test_gatt, test_gatt_reregister_pre_allocated_handle_single)
+{
+	struct bt_gatt_attr local_test_attrs[] = {
+		/* Vendor Primary Service Declaration */
+		BT_GATT_PRIMARY_SERVICE(&test_uuid),
+
+		BT_GATT_CHARACTERISTIC(&test_chrc_uuid.uuid, BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+				       BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN,
+				       read_test, write_test, test_value),
+	};
+
+	struct bt_gatt_attr local_test1_attrs[] = {
+		/* Vendor Primary Service Declaration */
+		BT_GATT_PRIMARY_SERVICE(&test1_uuid),
+
+		BT_GATT_CHARACTERISTIC(&test1_nfy_uuid.uuid, BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE,
+				       NULL, NULL, &nfy_enabled),
+		BT_GATT_CCC(test1_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	};
+
+	struct bt_gatt_service prealloc_test_svc = BT_GATT_SERVICE(local_test_attrs);
+	struct bt_gatt_service auto_test_svc = BT_GATT_SERVICE(local_test1_attrs);
+
+	/* Pre-allocate handles for one service only */
+	for (int j = 0; j < prealloc_test_svc.attr_count; j++) {
+		prealloc_test_svc.attrs[j].handle = 0x0100 + j;
+	}
+
+	zassert_false(bt_gatt_service_register(&prealloc_test_svc),
+		      "Test service A registration failed");
+
+	zassert_false(bt_gatt_service_unregister(&prealloc_test_svc),
+		      "Test service A unregister failed");
+
+	/* Check that the handles are the same as before registering the service */
+	for (int i = 0; i < prealloc_test_svc.attr_count; i++) {
+		zassert_equal(prealloc_test_svc.attrs[i].handle, 0x0100 + i,
+			      "Test service A handle not reset");
+	}
+
+	zassert_false(bt_gatt_service_register(&auto_test_svc),
+		      "Test service B registration failed");
+
+	zassert_false(bt_gatt_service_register(&prealloc_test_svc),
+		      "Test service A re-registering failed...");
+
+	/* Clean up */
+	zassert_false(bt_gatt_service_unregister(&prealloc_test_svc),
+		      "Test service A unregister failed");
+	zassert_false(bt_gatt_service_unregister(&auto_test_svc),
+		      "Test service B unregister failed");
+}
+
 static uint8_t count_attr(const struct bt_gatt_attr *attr, uint16_t handle,
 			  void *user_data)
 {

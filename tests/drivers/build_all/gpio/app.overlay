@@ -172,8 +172,8 @@
 						gpio-controller;
 						#gpio-cells = <2>;
 						ngpios = <8>;
-						pin_mask = <0xff>;
-						pinmux_mask = <0xf7>;
+						pin-mask = <0xff>;
+						pinmux-mask = <0xf7>;
 					};
 
 					gpio@1 {
@@ -182,7 +182,7 @@
 						gpio-controller;
 						#gpio-cells = <2>;
 						ngpios = <8>;
-						pin_mask = <0xff>;
+						pin-mask = <0xff>;
 					};
 				};
 			};
@@ -201,8 +201,8 @@
 						gpio-controller;
 						#gpio-cells = <2>;
 						ngpios = <8>;
-						pin_mask = <0xdc>;
-						pinmux_mask = <0xff>;
+						pin-mask = <0xdc>;
+						pinmux-mask = <0xff>;
 					};
 				};
 			};
@@ -221,8 +221,8 @@
 						gpio-controller;
 						#gpio-cells = <2>;
 						ngpios = <8>;
-						pin_mask = <0xdc>;
-						pinmux_mask = <0xff>;
+						pin-mask = <0xdc>;
+						pinmux-mask = <0xff>;
 					};
 				};
 			};
@@ -338,6 +338,81 @@
 				};
 			};
 
+			test_i2c_npm2100: pmic@15 {
+				compatible = "nordic,npm2100";
+				reg = <0x15>;
+
+				npm2100_gpio: gpio-controller {
+					compatible = "nordic,npm2100-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <2>;
+				};
+			};
+
+			test_i2c_aw9523b: aw9523b@16 {
+				status = "okay";
+				reg = <0x16>;
+				compatible = "awinic,aw9523b";
+
+				aw9523_gpio: gpio {
+					compatible = "awinic,aw9523b-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					int-gpios = <&test_gpio 0 0>;
+					reset-gpios = <&test_gpio 0 0>;
+				};
+			};
+
+			test_i2c_mcp23008: mcp23008@17 {
+				compatible = "microchip,mcp23008";
+				reg = <0x17>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+			};
+
+			test_i2c_mcp23009: mcp23009@18 {
+				compatible = "microchip,mcp23009";
+				reg = <0x18>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+			};
+
+			test_i2c_mcp23016: mcp23016@19 {
+				compatible = "microchip,mcp23016";
+				reg = <0x19>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+			};
+
+			test_i2c_mcp23018: mcp23016@1a {
+				compatible = "microchip,mcp23018";
+				reg = <0x1a>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+			};
+
+			test_i2c_pca9554: pca9554@1b {
+				compatible = "nxp,pca9554";
+				reg = <0x1b>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_pca9555: pca9555@1c {
+				compatible = "nxp,pca9555";
+				reg = <0x1c>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				int-gpios = <&test_gpio 0 0>;
+			};
 		};
 
 		nct3807_alert_1 {
@@ -362,6 +437,10 @@
 				    &test_gpio 0 0
 				    &test_gpio 0 0
 				    &test_gpio 0 0
+				    &test_gpio 0 0
+				    &test_gpio 0 0
+				    &test_gpio 0 0
+				    &test_gpio 0 0
 				    &test_gpio 0 0>;
 
 			test_spi_mcp23s17: mcp23s17@0 {
@@ -373,8 +452,8 @@
 				ngpios = <16>;
 			};
 
-			test_spi_mcp23sxx: mcp23sxx@1 {
-				compatible = "microchip,mcp23sxx";
+			test_spi_mcp23sxx: mcp23s18@1 {
+				compatible = "microchip,mcp23s18";
 				spi-max-frequency = <0>;
 				reg = <0x01>;
 				gpio-controller;
@@ -480,6 +559,56 @@
 				fault-gpios = <&test_gpio 0 0>;
 				sync-gpios = <&test_gpio 0 0>;
 				en-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_mcp23s08: mcp23s08@8 {
+				compatible = "microchip,mcp23s08";
+				spi-max-frequency = <0>;
+				reg = <0x08>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+			};
+
+			test_spi_mcp23s09: mcp23s09@9 {
+				compatible = "microchip,mcp23s09";
+				spi-max-frequency = <0>;
+				reg = <0x09>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+			};
+
+			test_spi_max22190: max22190@a {
+				compatible = "adi,max22190-gpio";
+				status = "okay";
+				reg = <0x0a>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				max22190-mode = <1>;
+				filter-wbes = <1 0 1 0  1 0 1 0>;
+				filter-fbps = <0 0 0 0  0 0 0 0>;
+				filter-delays = <50 100 400 800 1600 3200 12800 20000>;
+				drdy-gpios = <&test_gpio 0 0>;
+				fault-gpios = <&test_gpio 0 0>;
+				latch-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max22017: max22017_mfd@b {
+				compatible = "adi,max22017";
+				status = "okay";
+				reg = <0x0b>;
+				spi-max-frequency = <0>;
+
+				max22017_gpio0: max22017_gpio {
+					compatible = "adi,max22017-gpio";
+					status = "okay";
+					gpio-controller;
+					ngpios = <5>;
+					#gpio-cells = <2>;
+				};
 			};
 		};
 	};

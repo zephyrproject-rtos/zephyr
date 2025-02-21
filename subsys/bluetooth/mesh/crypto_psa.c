@@ -7,6 +7,7 @@
 #include <errno.h>
 
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/psa/key_ids.h>
 #include <zephyr/sys/check.h>
 
 #define LOG_LEVEL CONFIG_BT_MESH_CRYPTO_LOG_LEVEL
@@ -26,13 +27,13 @@ LOG_MODULE_REGISTER(bt_mesh_crypto_psa);
 #else
 #define BT_MESH_CDB_KEY_ID_RANGE_SIZE  0
 #endif
-#define BT_MESH_KEY_ID_RANGE_SIZE (2 * CONFIG_BT_MESH_SUBNET_COUNT + \
-		2 * CONFIG_BT_MESH_APP_KEY_COUNT + 2 + BT_MESH_CDB_KEY_ID_RANGE_SIZE)
-#define BT_MESH_PSA_KEY_ID_USER_MIN (PSA_KEY_ID_USER_MIN + \
-		CONFIG_BT_MESH_PSA_KEY_ID_USER_MIN_OFFSET)
 
-BUILD_ASSERT(BT_MESH_PSA_KEY_ID_USER_MIN + BT_MESH_KEY_ID_RANGE_SIZE <= PSA_KEY_ID_USER_MAX,
-	"BLE Mesh PSA key id range overlaps maximum allowed boundary.");
+#define BT_MESH_PSA_KEY_ID_MIN ZEPHYR_PSA_BT_MESH_KEY_ID_RANGE_BEGIN
+
+#define BT_MESH_PSA_KEY_ID_RANGE_SIZE (2 * CONFIG_BT_MESH_SUBNET_COUNT + \
+		2 * CONFIG_BT_MESH_APP_KEY_COUNT + 2 + BT_MESH_CDB_KEY_ID_RANGE_SIZE)
+BUILD_ASSERT(BT_MESH_PSA_KEY_ID_RANGE_SIZE <= ZEPHYR_PSA_BT_MESH_KEY_ID_RANGE_SIZE,
+	"PSA key ID range exceeds officially allocated range.");
 
 BUILD_ASSERT(PSA_MAC_LENGTH(PSA_KEY_TYPE_AES, 128, PSA_ALG_CMAC) == 16,
 	"MAC length should be 16 bytes for 128-bits key for CMAC-AES");
@@ -46,7 +47,7 @@ static struct {
 	uint8_t public_key_be[PUB_KEY_SIZE + 1];
 } dh_pair;
 
-static ATOMIC_DEFINE(pst_keys, BT_MESH_KEY_ID_RANGE_SIZE);
+static ATOMIC_DEFINE(pst_keys, BT_MESH_PSA_KEY_ID_RANGE_SIZE);
 
 int bt_mesh_crypto_init(void)
 {
@@ -286,12 +287,12 @@ const uint8_t *bt_mesh_pub_key_get(void)
 	return dh_pair.is_ready ? dh_pair.public_key_be + 1 : NULL;
 }
 
-BUILD_ASSERT(PSA_RAW_KEY_AGREEMENT_OUTPUT_SIZE(
-	PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1), 256) == DH_KEY_SIZE,
-	"Diffie-Hellman shared secret size should be the same in PSA and BLE Mesh");
+BUILD_ASSERT(PSA_RAW_KEY_AGREEMENT_OUTPUT_SIZE(PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1),
+					       256) == DH_KEY_SIZE,
+	     "Diffie-Hellman shared secret size should be the same in PSA and Bluetooth Mesh");
 
 BUILD_ASSERT(PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(256) == PUB_KEY_SIZE + 1,
-	"Exported PSA public key should be 1 byte larger than BLE Mesh public key");
+	     "Exported PSA public key should be 1 byte larger than Bluetooth Mesh public key");
 
 int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key, uint8_t *dhkey)
 {
@@ -352,34 +353,34 @@ end:
 	return err;
 }
 
-__weak psa_key_id_t bt_mesh_user_keyid_alloc(void)
+static psa_key_id_t bt_mesh_psa_keyid_alloc(void)
 {
-	for (int i = 0; i < BT_MESH_KEY_ID_RANGE_SIZE; i++) {
+	for (int i = 0; i < BT_MESH_PSA_KEY_ID_RANGE_SIZE; i++) {
 		if (!atomic_test_bit(pst_keys, i)) {
 			atomic_set_bit(pst_keys, i);
-			return BT_MESH_PSA_KEY_ID_USER_MIN + i;
+			return BT_MESH_PSA_KEY_ID_MIN + i;
 		}
 	}
 
 	return PSA_KEY_ID_NULL;
 }
 
-__weak int bt_mesh_user_keyid_free(psa_key_id_t key_id)
+static int bt_mesh_psa_keyid_free(psa_key_id_t key_id)
 {
-	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_USER_MIN,
-			BT_MESH_PSA_KEY_ID_USER_MIN + BT_MESH_KEY_ID_RANGE_SIZE - 1)) {
-		atomic_clear_bit(pst_keys, key_id - BT_MESH_PSA_KEY_ID_USER_MIN);
+	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_MIN,
+			BT_MESH_PSA_KEY_ID_MIN + BT_MESH_PSA_KEY_ID_RANGE_SIZE - 1)) {
+		atomic_clear_bit(pst_keys, key_id - BT_MESH_PSA_KEY_ID_MIN);
 		return 0;
 	}
 
 	return -EIO;
 }
 
-__weak void bt_mesh_user_keyid_assign(psa_key_id_t key_id)
+static void bt_mesh_psa_keyid_assign(psa_key_id_t key_id)
 {
-	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_USER_MIN,
-				BT_MESH_PSA_KEY_ID_USER_MIN + BT_MESH_KEY_ID_RANGE_SIZE - 1)) {
-		atomic_set_bit(pst_keys, key_id - BT_MESH_PSA_KEY_ID_USER_MIN);
+	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_MIN,
+				BT_MESH_PSA_KEY_ID_MIN + BT_MESH_PSA_KEY_ID_RANGE_SIZE - 1)) {
+		atomic_set_bit(pst_keys, key_id - BT_MESH_PSA_KEY_ID_MIN);
 	}
 }
 
@@ -411,7 +412,7 @@ int bt_mesh_key_import(enum bt_mesh_key_type type, const uint8_t in[16], struct 
 		break;
 	case BT_MESH_KEY_TYPE_NET:
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			key_id = bt_mesh_user_keyid_alloc();
+			key_id = bt_mesh_psa_keyid_alloc();
 
 			if (key_id == PSA_KEY_ID_NULL) {
 				return -ENOMEM;
@@ -427,7 +428,7 @@ int bt_mesh_key_import(enum bt_mesh_key_type type, const uint8_t in[16], struct 
 	case BT_MESH_KEY_TYPE_APP:
 	case BT_MESH_KEY_TYPE_DEV:
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			key_id = bt_mesh_user_keyid_alloc();
+			key_id = bt_mesh_psa_keyid_alloc();
 
 			if (key_id == PSA_KEY_ID_NULL) {
 				return -ENOMEM;
@@ -455,7 +456,7 @@ int bt_mesh_key_import(enum bt_mesh_key_type type, const uint8_t in[16], struct 
 		status == PSA_ERROR_ALREADY_EXISTS ? -EALREADY : -EIO;
 
 	if (err && key_id != PSA_KEY_ID_NULL) {
-		bt_mesh_user_keyid_free(key_id);
+		bt_mesh_psa_keyid_free(key_id);
 	}
 
 	psa_reset_key_attributes(&key_attributes);
@@ -482,7 +483,7 @@ void bt_mesh_key_assign(struct bt_mesh_key *dst, const struct bt_mesh_key *src)
 {
 	memcpy(dst, src, sizeof(struct bt_mesh_key));
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_user_keyid_assign(dst->key);
+		bt_mesh_psa_keyid_assign(dst->key);
 	}
 }
 
@@ -493,7 +494,7 @@ int bt_mesh_key_destroy(const struct bt_mesh_key *key)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		return bt_mesh_user_keyid_free(key->key);
+		return bt_mesh_psa_keyid_free(key->key);
 	}
 
 	return 0;

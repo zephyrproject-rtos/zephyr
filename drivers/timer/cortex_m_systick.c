@@ -169,6 +169,10 @@ static uint32_t elapsed(void)
 ARCH_ISR_DIAG_OFF
 __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 {
+#ifdef CONFIG_TRACING_ISR
+	sys_trace_isr_enter();
+#endif /* CONFIG_TRACING_ISR */
+
 	uint32_t dcycles;
 	uint32_t dticks;
 
@@ -217,6 +221,11 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 	}
 
 	ISR_DIRECT_PM();
+
+#ifdef CONFIG_TRACING_ISR
+	sys_trace_isr_exit();
+#endif /* CONFIG_TRACING_ISR */
+
 	z_arm_int_exit();
 }
 ARCH_ISR_DIAG_ON

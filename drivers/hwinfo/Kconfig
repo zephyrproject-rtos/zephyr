@@ -122,7 +122,7 @@ config HWINFO_MCUX_SYSCON
 config HWINFO_IMXRT
 	bool "NXP i.mx RT device ID"
 	default y
-	depends on SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+	depends on SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 	select HWINFO_HAS_DRIVER
 	help
 	  Enable NXP i.mx RT hwinfo driver.
@@ -130,7 +130,7 @@ config HWINFO_IMXRT
 config HWINFO_RPI_PICO
 	bool "Raspberry Pi Pico hwinfo driver"
 	default y
-	depends on SOC_SERIES_RP2XXX
+	depends on SOC_FAMILY_RPI_PICO
 	select HWINFO_HAS_DRIVER
 	select PICOSDK_USE_FLASH
 	help
@@ -204,13 +204,20 @@ config HWINFO_PSOC6
 config HWINFO_GECKO
 	bool "GECKO hwinfo"
 	default y
-	depends on SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
-	depends on !SOC_SERIES_EFR32MG21
-	depends on !SOC_SERIES_EFR32BG22
+	depends on SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
 	select HWINFO_HAS_DRIVER
 	select SOC_GECKO_RMU
 	help
 	  Enable Silabs GECKO hwinfo driver.
+
+config HWINFO_SILABS_S2
+	bool "Silabs Series 2 hwinfo"
+	default y
+	depends on SOC_FAMILY_SILABS_S2
+	select HWINFO_HAS_DRIVER
+	select SOC_GECKO_RMU
+	help
+	  Enable Silabs Series 2 hwinfo driver.
 
 config HWINFO_ANDES
 	bool "Andes system ID"
@@ -256,5 +263,14 @@ config HWINFO_NUMAKER_RMC
 	select HAS_NUMAKER_RMC
 	help
 	  Enable Nuvoton NuMaker hwinfo driver backed up by RMC
+
+config HWINFO_MAX32
+	bool "MAX32 hwinfo"
+	default y
+	depends on SOC_FAMILY_MAX32
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable MAX32 hwinfo driver.
 
 endif

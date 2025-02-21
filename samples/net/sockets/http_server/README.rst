@@ -34,11 +34,20 @@ There are configuration files for various setups in the
     * - :zephyr_file:`overlay-netusb.conf <samples/net/sockets/http_server/overlay-netusb.conf>`
       - This overlay config can be added for connecting via network USB.
 
-To build and run the application:
+    * - :zephyr_file:`overlay-tls.conf <samples/net/sockets/http_server/overlay-tls.conf>`
+      - This overlay config can be added to build the HTTPS variant.
+
+To build and run the HTTP server application:
 
 .. code-block:: bash
 
    $ west build -p auto -b <board_to_use> -t run samples/net/sockets/http_server
+
+For the HTTPS version:
+
+.. code-block:: bash
+
+   $ west build -p auto -b <board_to_use> -t run --test samples/net/sockets/http_server/sample.net.sockets.https.server
 
 When the server is up, we can make requests to the server using either HTTP/1.1 or
 HTTP/2 protocol from the host machine.
@@ -54,6 +63,36 @@ HTTP/2 protocol from the host machine.
 - Using nghttp client: ``nghttp -v --no-dep http://192.0.2.1/``
 - Using curl: ``curl --http2 -v --compressed http://192.0.2.1/``
 - Using h2load: ``h2load -n10 http://192.0.2.1/``
+
+Web browsers use stricter security settings for the HTTP/2 protocol. So to use HTTP/2
+with a web browser, you must ALPN (add ``-DCONFIG_NET_SAMPLE_HTTPS_USE_ALPN`` to
+the west build command) on top of the HTTPS build shown above.
+Additionally the server certificate must be signed by a CA certificate trusted
+by your browser.
+
+The best way to do this is to generate your own CA certificate:
+
+.. code-block:: bash
+
+   $ west build -b <board_to_use> -t sample_ca_cert samples/net/sockets/http_server
+
+Generate a server certificate signed by this CA certificate:
+
+.. code-block:: bash
+
+   $ west build -t sample_server_cert samples/net/sockets/http_server
+
+And then build the application with the newly generated server certificate and key:
+
+.. code-block:: bash
+
+   $ west build samples/net/sockets/http_server
+
+The CA certificate should be added to your browser's list of trusted authorities to
+enable usage of HTTP/2. If using Firefox, it may also be required to change the setting
+``network.http.http2.enforce-tls-profile`` to false, since it seems that using a CA
+certificate issued by an authority unknown to Firefox is considered a security error when
+using HTTP/2.
 
 Server Customization
 ---------------------
@@ -107,6 +146,61 @@ connectivity.
      print(ws.recv())
    ws.close()
 
+
+Testing over USB
+----------------
+
+Let's see a real example on how the HTTP(S) server can be tested on a real device
+using an USB connection toward a Linux host PC. For this purpose let's take an
+NRF52840 board as example.
+
+First of all build the sample enabling HTTPS service and flash the board:
+
+.. zephyr-app-commands::
+         :zephyr-app: samples/net/sockets/http_server/
+         :board: nrf52840dk/nrf52840
+         :goals: build
+         :gen-args: -DCONFIG_NET_SAMPLE_HTTPS_SERVICE=y -DEXTRA_CONF_FILE=overlay-netusb.conf
+
+Then connect the USB cable to the host PC and issue:
+
+.. code-block:: bash
+
+   $ ip link show
+
+to get the device name Linux assigned to the USB-Ethernet interface. For the
+following let's assume that the name is ``eth-device``.
+
+Now we need to configure IP and routing for this interface:
+
+.. code-block:: bash
+
+   $ sudo ip addr add 192.0.2.2/24 dev eth-device
+   $ sudo ip route add 192.0.2.0/24 dev eth-device
+
+Here:
+
+* we picked an IP address for the interface, i.e. ``192.0.2.2/24``, which is
+  different form the server one, i.e. :kconfig:option:`CONFIG_NET_CONFIG_MY_IPV4_ADDR`,
+  but in the allowed IP range defined by the ``/24`` mask.
+* we assume that 192.168.0.x range do not conflict with other addresses and
+  routes in the host system. If that's the case, then all IP addresses should
+  be fixed (sample, host IP interface, certificate).
+
+Once this is done, it should be possible to test either HTTP and HTTPS with
+``curl``:
+
+.. code-block:: bash
+
+   $ curl -v --compressed http://192.0.2.1
+   $ curl -v --compressed https://192.0.2.1
+
+.. note::
+
+   To have a successful HTTPS connection ensure to update the CA certificates
+   of the host Linux system adding
+   :zephyr_file:`samples/net/sockets/http_server/src/certs/ca_cert.pem` to the
+   list of known CAs.
 
 Performance Analysis
 --------------------

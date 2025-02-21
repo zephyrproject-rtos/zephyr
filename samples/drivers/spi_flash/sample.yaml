@@ -8,7 +8,9 @@ tests:
     filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("st,stm32-qspi-nor")
       or dt_compat_enabled("st,stm32-ospi-nor") or dt_compat_enabled("st,stm32-xspi-nor")
       or (dt_compat_enabled("nordic,qspi-nor") and CONFIG_NORDIC_QSPI_NOR)
-    platform_exclude: hifive_unmatched/fu740/s7 hifive_unmatched/fu740/u74
+    platform_exclude:
+      - hifive_unmatched/fu740/s7
+      - hifive_unmatched/fu740/u74
     harness: console
     harness_config:
       type: multi_line

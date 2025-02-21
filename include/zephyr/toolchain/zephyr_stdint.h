@@ -16,6 +16,33 @@
  * common expectations and usage.
  */
 
+/*
+ * If the compiler does not define __SIZEOF_INT__ deduce it from __INT_MAX__
+ * or INT_MAX.
+ */
+#if !defined(__SIZEOF_INT__)
+
+#if defined(__INT_MAX__)
+/* GCC >= 3.3.0 has __<val>__ implicitly defined. */
+#define __Z_INT_MAX __INT_MAX__
+#else
+/* Fall back to POSIX versions from <limits.h> */
+#define __Z_INT_MAX INT_MAX
+#include <limits.h>
+#endif
+
+#if __Z_INT_MAX == 0x7fff
+#define __SIZEOF_INT__ 2
+#elif __Z_INT_MAX == 0x7fffffffL
+#define __SIZEOF_INT__ 4
+#elif __Z_INT_MAX > 0x7fffffffL
+#define __SIZEOF_INT__ 8
+#endif
+
+#undef __Z_INT_MAX
+
+#endif
+
 #if __SIZEOF_INT__ != 4
 #error "unexpected int width"
 #endif

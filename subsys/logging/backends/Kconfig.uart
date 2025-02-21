@@ -4,7 +4,7 @@
 config LOG_BACKEND_UART
 	bool "UART backend"
 	depends on UART_CONSOLE
-	default y if !SHELL_BACKEND_SERIAL && !SHELL_BACKEND_RTT
+	default y if !SHELL_BACKEND_SERIAL
 	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	help
 	  When enabled backend is using UART to output logs.

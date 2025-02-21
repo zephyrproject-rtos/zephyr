@@ -1,0 +1,20 @@
+common:
+  sysbuild: true
+  tags: sysbuild_snippets sysbuild
+  platform_allow:
+  - native_sim
+  integration_platforms:
+  - native_sim
+
+tests:
+  # Test the initial state with no snippets applied
+  buildsystem.sysbuild.snippets.none:
+    extra_args:
+    - SB_CONFIG_EXPECTED_SB_TEST_FOO_VAL=0
+    - SB_CONFIG_EXPECTED_APP_TEST_FOO_VAL=12
+  # Test the `foo` snippet in sysbuild
+  buildsystem.sysbuild.snippets.applied:
+    extra_args:
+    - SNIPPET=foo
+    - SB_CONFIG_EXPECTED_SB_TEST_FOO_VAL=464372
+    - SB_CONFIG_EXPECTED_APP_TEST_FOO_VAL=18382

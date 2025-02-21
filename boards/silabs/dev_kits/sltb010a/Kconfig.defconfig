@@ -1,12 +1,6 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config CMU_HFXO_FREQ
-	default 38400000
-
-config CMU_LFXO_FREQ
-	default 32768
-
 if SOC_GECKO_USE_RAIL
 
 config FPU
@@ -25,9 +19,6 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 config MAIN_STACK_SIZE
 	default 3072 if PM
 	default 2304
-
-config BT_SEND_ECC_EMULATION
-	default y
 
 endif # BT
 

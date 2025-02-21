@@ -37,6 +37,24 @@ config SPI_RTIO
 	  This option enables the RTIO API calls. RTIO support is
 	  experimental as the API itself is unstable.
 
+if SPI_RTIO
+
+config SPI_RTIO_FALLBACK_MSGS
+	int "Number of available spi_buf structs for the default handler to use"
+	default 4
+	help
+		When RTIO is used with a driver that does not yet implement the submit API
+		natively the submissions are converted back to struct spi_buf values that
+		are given to spi_transfer. This requires some number of msgs be available to convert
+		the submissions into on the stack. MISRA rules dictate we must know this in
+		advance.
+
+		In all likelihood 4 is going to work for everyone, but in case you do end up with
+		an issue where you are using RTIO, your driver does not implement submit natively,
+		and get an error relating to not enough spi msgs this is the Kconfig to manipulate.
+
+endif # SPI_RTIO
+
 config SPI_SLAVE
 	bool "Slave support [EXPERIMENTAL]"
 	select EXPERIMENTAL
@@ -75,96 +93,53 @@ module = SPI
 module-str = spi
 source "subsys/logging/Kconfig.template.log_config"
 
-source "drivers/spi/Kconfig.b91"
-
-source "drivers/spi/Kconfig.stm32"
-
-source "drivers/spi/Kconfig.dw"
-
-source "drivers/spi/Kconfig.mcux_dspi"
-
-source "drivers/spi/Kconfig.mcux_ecspi"
-
-source "drivers/spi/Kconfig.mcux_flexcomm"
-
-source "drivers/spi/Kconfig.mcux_flexio"
-
-source "drivers/spi/Kconfig.mcux_lpspi"
-
-source "drivers/spi/Kconfig.rv32m1_lpspi"
-
-source "drivers/spi/Kconfig.sam"
-
-source "drivers/spi/Kconfig.sam0"
-
-source "drivers/spi/Kconfig.sifive"
-
-source "drivers/spi/Kconfig.spi_emul"
-
-source "drivers/spi/Kconfig.nrfx"
-
-source "drivers/spi/Kconfig.cc13xx_cc26xx"
-
-source "drivers/spi/Kconfig.litex"
-
-source "drivers/spi/Kconfig.oc_simple"
-
-source "drivers/spi/Kconfig.xec_qmspi"
-
-source "drivers/spi/Kconfig.gecko_usart"
-
-source "drivers/spi/Kconfig.gecko_eusart"
-
-source "drivers/spi/Kconfig.xlnx"
-
-source "drivers/spi/Kconfig.esp32"
-
-source "drivers/spi/Kconfig.test"
-
-source "drivers/spi/Kconfig.psoc6"
-
-source "drivers/spi/Kconfig.bitbang"
-
-source "drivers/spi/Kconfig.gd32"
-
-source "drivers/spi/Kconfig.mchp_mss_qspi"
-
-source "drivers/spi/Kconfig.pl022"
-
-source "drivers/spi/Kconfig.andes_atcspi200"
-
-source "drivers/spi/Kconfig.nxp_s32"
-
-source "drivers/spi/Kconfig.xmc4xxx"
-
-source "drivers/spi/Kconfig.pw"
-
-source "drivers/spi/Kconfig.smartbond"
-
-source "drivers/spi/Kconfig.opentitan"
-
-source "drivers/spi/Kconfig.numaker"
-
+# zephyr-keep-sorted-start
 source "drivers/spi/Kconfig.ambiq"
-
-source "drivers/spi/Kconfig.rpi_pico"
-
-source "drivers/spi/Kconfig.ifx_cat1"
-
-source "drivers/spi/Kconfig.sedi"
-
-source "drivers/spi/Kconfig.npcx"
-
-source "drivers/spi/Kconfig.mchp_mss"
-
+source "drivers/spi/Kconfig.andes_atcspi200"
+source "drivers/spi/Kconfig.b91"
+source "drivers/spi/Kconfig.bitbang"
+source "drivers/spi/Kconfig.cc13xx_cc26xx"
+source "drivers/spi/Kconfig.dw"
+source "drivers/spi/Kconfig.esp32"
+source "drivers/spi/Kconfig.gd32"
 source "drivers/spi/Kconfig.grlib_spimctrl"
-
-source "drivers/spi/Kconfig.max32"
-
-source "drivers/spi/Kconfig.renesas_ra8"
-
+source "drivers/spi/Kconfig.ifx_cat1"
 source "drivers/spi/Kconfig.it8xxx2"
-
+source "drivers/spi/Kconfig.litex"
+source "drivers/spi/Kconfig.max32"
+source "drivers/spi/Kconfig.mchp_mss"
+source "drivers/spi/Kconfig.mchp_mss_qspi"
+source "drivers/spi/Kconfig.mcux_dspi"
+source "drivers/spi/Kconfig.mcux_ecspi"
+source "drivers/spi/Kconfig.mcux_flexcomm"
+source "drivers/spi/Kconfig.mcux_flexio"
+source "drivers/spi/Kconfig.npcx"
+source "drivers/spi/Kconfig.nrfx"
+source "drivers/spi/Kconfig.numaker"
+source "drivers/spi/Kconfig.nxp_s32"
+source "drivers/spi/Kconfig.oc_simple"
+source "drivers/spi/Kconfig.opentitan"
+source "drivers/spi/Kconfig.pl022"
+source "drivers/spi/Kconfig.psoc6"
+source "drivers/spi/Kconfig.pw"
 source "drivers/spi/Kconfig.renesas_ra"
+source "drivers/spi/Kconfig.renesas_ra8"
+source "drivers/spi/Kconfig.rpi_pico"
+source "drivers/spi/Kconfig.rv32m1_lpspi"
+source "drivers/spi/Kconfig.sam"
+source "drivers/spi/Kconfig.sam0"
+source "drivers/spi/Kconfig.sedi"
+source "drivers/spi/Kconfig.sifive"
+source "drivers/spi/Kconfig.silabs_eusart"
+source "drivers/spi/Kconfig.silabs_usart"
+source "drivers/spi/Kconfig.smartbond"
+source "drivers/spi/Kconfig.spi_emul"
+source "drivers/spi/Kconfig.stm32"
+source "drivers/spi/Kconfig.test"
+source "drivers/spi/Kconfig.xec_qmspi"
+source "drivers/spi/Kconfig.xlnx"
+source "drivers/spi/Kconfig.xmc4xxx"
+source "drivers/spi/spi_nxp_lpspi/Kconfig"
+# zephyr-keep-sorted-stop
 
 endif # SPI

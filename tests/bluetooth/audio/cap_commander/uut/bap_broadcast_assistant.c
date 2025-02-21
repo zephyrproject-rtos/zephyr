@@ -3,11 +3,37 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#include "zephyr/bluetooth/audio/bap.h"
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/ztest_assert.h>
+
+#include "bap_broadcast_assistant.h"
 #include "test_common.h"
 
 static sys_slist_t broadcast_assistant_cbs = SYS_SLIST_STATIC_INIT(&broadcast_assistant_cbs);
+
+/* when > 0 immediately return from the add_src callback the specified number of times
+ * This allows us to test the CAP cancel command by not successfully sending all the
+ * requests, so that we can cancel before the CAP commander implementation is done
+ * with the procedure.
+ * This is based on the fact that we are not actually sending any requests on air, and
+ * that we are using this function as a synchronous function, rather than an asynchronous
+ * function.
+ */
+static unsigned int add_src_skip;
+
+void set_skip_add_src(unsigned int setting)
+{
+	add_src_skip = setting;
+}
 
 struct bap_broadcast_assistant_recv_state_info {
 	uint8_t src_id;
@@ -82,6 +108,12 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	struct bap_broadcast_assistant_instance *inst;
 	struct bt_bap_scan_delegator_recv_state state;
 	struct bt_bap_broadcast_assistant_cb *listener, *next;
+
+	if (add_src_skip != 0) {
+		add_src_skip--;
+
+		return 0;
+	}
 
 	/* Note that proper parameter checking is done in the caller */
 	zassert_not_null(conn, "conn is NULL");
@@ -182,13 +214,10 @@ int bt_bap_broadcast_assistant_set_broadcast_code(
 	struct bt_conn *conn, uint8_t src_id,
 	const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
-	struct bap_broadcast_assistant_instance *inst;
 	struct bt_bap_broadcast_assistant_cb *listener, *next;
 	int err;
 
 	zassert_not_null(conn, "conn is NULL");
-
-	inst = inst_by_conn(conn);
 
 	zassert_equal(src_id, RANDOM_SRC_ID, "Invalid src_id");
 

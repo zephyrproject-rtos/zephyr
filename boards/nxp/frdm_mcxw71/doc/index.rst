@@ -60,6 +60,8 @@ The ``frdm_mcxw71`` board target in Zephyr currently supports the following feat
 +-----------+------------+-------------------------------------+
 | LPTMR     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 | BLE       | on-chip    | Bluetooth                           |
 +-----------+------------+-------------------------------------+
 | FLEXCAN   | on-chip    | can                                 |
@@ -67,6 +69,10 @@ The ``frdm_mcxw71`` board target in Zephyr currently supports the following feat
 | VREF      | on-chip    | regulator                           |
 +-----------+------------+-------------------------------------+
 | LPADC     | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| ELE       | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| PHY       | on-chip    | ieee802154                          |
 +-----------+------------+-------------------------------------+
 
 Fetch Binary Blobs
@@ -90,6 +96,16 @@ Configuring a Debug Probe
 
 A debug probe is used for both flashing and debugging the board. This board is
 configured by default to use the MCU-Link CMSIS-DAP Onboard Debug Probe.
+
+Using LinkServer
+----------------
+
+Linkserver is the default runner for this board, and supports the factory
+default MCU-Link firmware. Follow the instructions in
+:ref:`mcu-link-cmsis-onboard-debug-probe` to reprogram the default MCU-Link
+firmware. This only needs to be done if the default onboard debug circuit
+firmware was changed. To put the board in ``DFU mode`` to program the firmware,
+short jumper J5.
 
 Using J-Link
 ------------
@@ -118,8 +134,26 @@ Connect a USB cable from your PC to J10, and use the serial terminal of your cho
 - Parity: None
 - Stop bits: 1
 
-Flashing
-========
+Application Building
+====================
+
+Openthread applications
+-----------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_server
+   :board: frdm_mcxw71
+   :goals: build
+   :gen-args: -DEXTRA_CONF_FILE=overlay-ot.conf
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_client
+   :board: frdm_mcxw71
+   :goals: build
+   :gen-args: -DEXTRA_CONF_FILE=overlay-ot.conf
+
+Application Flashing
+====================
 
 Here is an example for the :zephyr:code-sample:`hello_world` application.
 
@@ -154,15 +188,17 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v3.7.0-xxx-xxxx ***
    Hello World! frdm_mcxw71/mcxw716c
 
-Bluetooth
-=========
+NBU Flashing
+============
 
 BLE functionality requires to fetch binary blobs, so make sure to follow
 the ``Fetch Binary Blobs`` section first.
 
 Two images must be written to the board: one for the host (CM33) and one for the NBU (CM3).
-- To flash the application (CM33) refer to the ``Flashing`` section above.
-- To flash the NBU, follow the instructions below:
+
+- To flash the application (CM33) refer to the ``Application Flashing`` section above.
+
+- To flash the ``NBU Flashing``, follow the instructions below:
 
    * Install ``blhost`` from NXP's website. This is the tool that will allow you to flash the NBU.
    * Enter ISP mode. To boot the MCU in ISP mode, follow these steps:
@@ -172,17 +208,39 @@ Two images must be written to the board: one for the host (CM33) and one for the
       - Reconnect any external power supply, if needed.
    * Use the following command to flash NBU file:
 
-.. code-block:: console
+.. tabs::
 
-   # On Windows
-   blhost.exe -p COMxx -- receive-sb-file mcxw71_nbu_ble.sb3
+   .. group-tab:: BLE NBU - Windows
 
-   # On Linux
-   ./blhost -p /dev/ttyxx -- receive-sb-file mcxw71_nbu_ble.sb3
+      .. code-block:: console
+         :caption: Flash BLE only NBU on Windows
+
+         blhost.exe -p COMxx -- receive-sb-file mcxw71_nbu_ble.sb3
+
+   .. group-tab:: BLE NBU - Linux
+
+      .. code-block:: console
+         :caption: Flash BLE only NBU on Linux
+
+         ./blhost -p /dev/ttyxx -- receive-sb-file mcxw71_nbu_ble.sb3
+
+   .. group-tab:: DYN NBU - Windows
+
+      .. code-block:: console
+         :caption: Flash Dynamic NBU (BLE + 15.4) on Windows
+
+         blhost.exe -p COMxx -- receive-sb-file mcxw71_nbu_ble_15_4_dyn.sb3
+
+   .. group-tab:: DYN NBU - Linux
+
+      .. code-block:: console
+         :caption: Flash Dynamic NBU (BLE + 15.4) on Linux
+
+         ./blhost -p /dev/ttyxx -- receive-sb-file mcxw71_nbu_ble_15_4_dyn.sb3
 
 Please consider changing ``COMxx`` on Windows or ``ttyxx`` on Linux to the serial port used by your board.
 
-The NBU file can be found in : ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/mcxw71/mcxw71_nbu_ble.sb3``
+The NBU files can be found in : ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/mcxw71/`` folder.
 
 For more details:
 

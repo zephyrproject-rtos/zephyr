@@ -54,9 +54,11 @@
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	cs-gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
+	zephyr,pm-device-runtime-auto;
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(16)>;
 	};
 };
 

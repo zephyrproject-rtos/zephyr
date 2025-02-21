@@ -350,11 +350,12 @@ static int dma_sedi_stop(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static const struct dma_driver_api dma_funcs = { .config = dma_sedi_chan_config,
-						 .start = dma_sedi_start,
-						 .stop = dma_sedi_stop,
-						 .reload = dma_sedi_reload,
-						 .get_status = NULL
+static DEVICE_API(dma, dma_funcs) = {
+	.config = dma_sedi_chan_config,
+	.start = dma_sedi_start,
+	.stop = dma_sedi_stop,
+	.reload = dma_sedi_reload,
+	.get_status = NULL,
 };
 
 static int dma_sedi_init(const struct device *dev)
@@ -375,7 +376,7 @@ static int dma_sedi_init(const struct device *dev)
 		.chn_num = DT_INST_PROP(inst, dma_channels), \
 		.irq_config = dma_sedi_##inst##_irq_config \
 	}; \
-	DEVICE_DT_DEFINE(DT_INST(inst, DT_DRV_COMPAT), &dma_sedi_init, \
+	DEVICE_DT_INST_DEFINE(inst, &dma_sedi_init, \
 	      NULL, &dma_sedi_dev_data_##inst, &dma_sedi_config_data_##inst, PRE_KERNEL_2, \
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&dma_funcs); \
 									\

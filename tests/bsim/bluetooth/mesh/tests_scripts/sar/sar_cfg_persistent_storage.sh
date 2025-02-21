@@ -12,6 +12,6 @@ overlay=overlay_pst_conf
 RunTestFlash sar_persistence sar_srv_cfg_store -flash_erase
 RunTestFlash sar_persistence sar_srv_cfg_restore -flash_rm
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash sar_persistence_psa sar_srv_cfg_store -flash_erase
 RunTestFlash sar_persistence_psa sar_srv_cfg_restore -flash_rm

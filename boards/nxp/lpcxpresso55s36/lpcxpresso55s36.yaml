@@ -13,13 +13,13 @@ flash: 256
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
+  - arduino_gpio
   - can
+  - dac
+  - flash
   - gpio
   - pwm
-  - dac
   - usb_device
   - usbd
-  - arduino_gpio
 vendor: nxp

@@ -84,6 +84,10 @@ list(APPEND kernel_files
   thread.c
   sched.c
   )
+# FIXME: Once the prior pipe implementation is removed, this should be included in the above list
+if(NOT CONFIG_PIPES)
+list(APPEND kernel_files pipe.c)
+endif() # NOT CONFIG_PIPES
 if(CONFIG_SMP)
 list(APPEND kernel_files
      smp.c
@@ -140,7 +144,7 @@ set_target_properties(
   __ZEPHYR_SUPERVISOR__
   )
 
-target_sources_ifdef(CONFIG_STACK_CANARIES        kernel PRIVATE compiler_stack_protect.c)
+target_sources_ifdef(CONFIG_REQUIRES_STACK_CANARIES   kernel PRIVATE compiler_stack_protect.c)
 target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer.c)
 target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_MMU                   kernel PRIVATE mmu.c)

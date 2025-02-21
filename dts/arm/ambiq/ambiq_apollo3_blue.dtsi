@@ -77,17 +77,17 @@
 	soc {
 		compatible = "ambiq,apollo3-blue", "ambiq,apollo3x", "simple-bus";
 
-		flash: flash-controller@c000 {
+		flash: flash-controller@0 {
 			compatible = "ambiq,flash-controller";
-			reg = <0x0000c000 0xf4000>;
+			reg = <0x00000000 0x100000>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			/* Flash region */
-			flash0: flash@c000 {
+			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				reg = <0x0000c000 0xf4000>;
+				reg = <0x00000000 0x100000>;
 			};
 		};
 
@@ -274,6 +274,7 @@
 		};
 
 		spi0: spi@50004000 {
+			compatible = "ambiq,spi";
 			reg = <0x50004000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -284,6 +285,7 @@
 		};
 
 		spi1: spi@50005000 {
+			compatible = "ambiq,spi";
 			reg = <0x50005000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -294,6 +296,7 @@
 		};
 
 		spi2: spi@50006000 {
+			compatible = "ambiq,spi";
 			reg = <0x50006000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -304,6 +307,7 @@
 		};
 
 		spi3: spi@50007000 {
+			compatible = "ambiq,spi";
 			reg = <0x50007000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -314,6 +318,7 @@
 		};
 
 		spi4: spi@50008000 {
+			compatible = "ambiq,spi";
 			reg = <0x50008000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -324,6 +329,7 @@
 		};
 
 		spi5: spi@50009000 {
+			compatible = "ambiq,spi";
 			reg = <0x50009000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -334,6 +340,7 @@
 		};
 
 		i2c0: i2c@50004000 {
+			compatible = "ambiq,i2c";
 			reg = <0x50004000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -344,6 +351,7 @@
 		};
 
 		i2c1: i2c@50005000 {
+			compatible = "ambiq,i2c";
 			reg = <0x50005000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -354,6 +362,7 @@
 		};
 
 		i2c2: i2c@50006000 {
+			compatible = "ambiq,i2c";
 			reg = <0x50006000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -364,6 +373,7 @@
 		};
 
 		i2c3: i2c@50007000 {
+			compatible = "ambiq,i2c";
 			reg = <0x50007000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -374,6 +384,7 @@
 		};
 
 		i2c4: i2c@50008000 {
+			compatible = "ambiq,i2c";
 			reg = <0x50008000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -384,6 +395,7 @@
 		};
 
 		i2c5: i2c@50009000 {
+			compatible = "ambiq,i2c";
 			reg = <0x50009000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -394,6 +406,7 @@
 		};
 
 		adc0: adc@50010000 {
+			compatible = "ambiq,adc";
 			reg = <0x50010000 0x400>;
 			interrupts = <18 0>;
 			interrupt-names = "ADC";
@@ -412,6 +425,14 @@
 			#size-cells = <0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x800>;
+		};
+
+		rtc0: rtc@40004240 {
+			compatible = "ambiq,rtc";
+			reg = <0x40004240 0xD0>;
+			interrupts = <2 0>;
+			alarms-count = <1>;
+			status = "disabled";
 		};
 
 		bleif: spi@5000c000 {

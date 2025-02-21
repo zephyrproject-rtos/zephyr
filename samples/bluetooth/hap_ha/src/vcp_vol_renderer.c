@@ -8,13 +8,17 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
+#include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/audio/vocs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
 static struct bt_vcp_included vcp_included;
 

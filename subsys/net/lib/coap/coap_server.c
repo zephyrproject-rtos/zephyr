@@ -135,10 +135,13 @@ static int coap_server_process(int sock_fd)
 	uint8_t type;
 	ssize_t received;
 	int ret;
+	int flags = ZSOCK_MSG_DONTWAIT;
 
-	received = zsock_recvfrom(sock_fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT, &client_addr,
-				  &client_addr_len);
-	__ASSERT_NO_MSG(received <= sizeof(buf));
+	if (IS_ENABLED(CONFIG_COAP_SERVER_TRUNCATE_MSGS)) {
+		flags |= ZSOCK_MSG_TRUNC;
+	}
+
+	received = zsock_recvfrom(sock_fd, buf, sizeof(buf), flags, &client_addr, &client_addr_len);
 
 	if (received < 0) {
 		if (errno == EWOULDBLOCK) {
@@ -149,7 +152,7 @@ static int coap_server_process(int sock_fd)
 		return -errno;
 	}
 
-	ret = coap_packet_parse(&request, buf, received, options, opt_num);
+	ret = coap_packet_parse(&request, buf, MIN(received, sizeof(buf)), options, opt_num);
 	if (ret < 0) {
 		LOG_ERR("Failed To parse coap message (%d)", ret);
 		return ret;
@@ -169,6 +172,42 @@ static int coap_server_process(int sock_fd)
 	}
 
 	type = coap_header_get_type(&request);
+
+	if (received > sizeof(buf)) {
+		/* The message was truncated and can't be processed further */
+		struct coap_packet response;
+		uint8_t token[COAP_TOKEN_MAX_LEN];
+		uint8_t tkl = coap_header_get_token(&request, token);
+		uint16_t id = coap_header_get_id(&request);
+
+		if (type == COAP_TYPE_CON) {
+			type = COAP_TYPE_ACK;
+		} else {
+			type = COAP_TYPE_NON_CON;
+		}
+
+		ret = coap_packet_init(&response, buf, sizeof(buf), COAP_VERSION_1, type, tkl,
+				       token, COAP_RESPONSE_CODE_REQUEST_TOO_LARGE, id);
+		if (ret < 0) {
+			LOG_ERR("Failed to init response (%d)", ret);
+			goto unlock;
+		}
+
+		ret = coap_append_option_int(&response, COAP_OPTION_SIZE1,
+					     CONFIG_COAP_SERVER_MESSAGE_SIZE);
+		if (ret < 0) {
+			LOG_ERR("Failed to add SIZE1 option (%d)", ret);
+			goto unlock;
+		}
+
+		ret = coap_service_send(service, &response, &client_addr, client_addr_len, NULL);
+		if (ret < 0) {
+			LOG_ERR("Failed to reply \"Request Entity Too Large\" (%d)", ret);
+			goto unlock;
+		}
+
+		goto unlock;
+	}
 
 	pending = coap_pending_received(&request, service->data->pending, MAX_PENDINGS);
 	if (pending) {

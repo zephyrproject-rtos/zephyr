@@ -30,16 +30,16 @@
 		};
 	};
 
-	sram0: memory@8e000000 {
+	sram0: memory@1a000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x8e000000 DT_SIZE_K(512)>;
+		reg = <0x1a000000 DT_SIZE_K(512)>;
 	};
 
-	sram1: memory@8e800000 {
+	sram1: memory@1a800000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x8e800000 DT_SIZE_K(512)>;
+		reg = <0x1a800000 DT_SIZE_K(512)>;
 	};
 
 	pcc4: clock-controller@29800000 {
@@ -61,7 +61,7 @@
 	 * from LPUART7.
 	 */
 	lpuart7: serial@29870000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x29870000 DT_SIZE_K(4)>;
 		clocks = <&pcc4 IMX8ULP_CLOCK_LPUART7 0x0>;
 		status = "disabled";

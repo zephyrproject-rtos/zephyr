@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/dt-bindings/gpio/ene-kb1200-gpio.h>
 #include <reg/gpio.h>
 #include <reg/gptd.h>
 
@@ -42,35 +43,51 @@ static int kb1200_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, g
 	const struct gpio_kb1200_config *config = dev->config;
 
 	WRITE_BIT(config->gpio_regs->GPIOFS, pin, 0);
-	if ((flags & GPIO_OUTPUT) != 0) {
-		WRITE_BIT(config->gpio_regs->GPIOIE, pin, 1);
-		if ((flags & GPIO_SINGLE_ENDED) != 0) {
+	/* ene specific flags. low voltage mode,input voltage threshold (ViH & ViL) support 1.8V */
+	if (flags & KB1200_GPIO_VOLTAGE_POS) {
+		WRITE_BIT(config->gpio_regs->GPIOLV, pin, 1);
+	} else {
+		WRITE_BIT(config->gpio_regs->GPIOLV, pin, 0);
+	}
+	/* ene specific flags. max current driving ability, max support 16 mA */
+	if (flags & KB1200_GPIO_DRIVING_16MA) {
+		WRITE_BIT(config->gpio_regs->GPIODC, pin, 1);
+	} else {
+		WRITE_BIT(config->gpio_regs->GPIODC, pin, 0);
+	}
+	/* pull-up function */
+	if (flags & GPIO_PULL_UP) {
+		WRITE_BIT(config->gpio_regs->GPIOPU, pin, 1);
+	} else {
+		WRITE_BIT(config->gpio_regs->GPIOPU, pin, 0);
+	}
+	/* output data high/low */
+	if (flags & GPIO_OUTPUT_INIT_HIGH) {
+		WRITE_BIT(config->gpio_regs->GPIOD, pin, 1);
+	} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+		WRITE_BIT(config->gpio_regs->GPIOD, pin, 0);
+	}
+	/* output enable function */
+	if (flags & GPIO_OUTPUT) {
+		/* setting open-drain only when output is enabled */
+		/* output type push-pull/open-drain */
+		if (flags & GPIO_SINGLE_ENDED) {
 			if (flags & GPIO_LINE_OPEN_DRAIN) {
 				WRITE_BIT(config->gpio_regs->GPIOOD, pin, 1);
+			} else {
+				WRITE_BIT(config->gpio_regs->GPIOOD, pin, 0);
 			}
 		} else {
 			WRITE_BIT(config->gpio_regs->GPIOOD, pin, 0);
 		}
-		if (flags & GPIO_PULL_UP) {
-			WRITE_BIT(config->gpio_regs->GPIOPU, pin, 1);
-		} else {
-			WRITE_BIT(config->gpio_regs->GPIOPU, pin, 0);
-		}
-		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
-			WRITE_BIT(config->gpio_regs->GPIOD, pin, 1);
-		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
-			WRITE_BIT(config->gpio_regs->GPIOD, pin, 0);
-		}
 		WRITE_BIT(config->gpio_regs->GPIOOE, pin, 1);
 	} else {
 		WRITE_BIT(config->gpio_regs->GPIOOE, pin, 0);
-		if (flags & GPIO_PULL_UP) {
-			WRITE_BIT(config->gpio_regs->GPIOPU, pin, 1);
-		} else {
-			WRITE_BIT(config->gpio_regs->GPIOPU, pin, 0);
-		}
-		WRITE_BIT(config->gpio_regs->GPIOIE, pin, 1);
+		/* disable open-drain when output is disabled */
+		WRITE_BIT(config->gpio_regs->GPIOOD, pin, 0);
 	}
+	/* input function always enable */
+	WRITE_BIT(config->gpio_regs->GPIOIE, pin, 1);
 	return 0;
 }
 
@@ -203,8 +220,8 @@ static DEVICE_API(gpio, kb1200_gpio_api) = {
 		.gptd_regs = (struct gptd_regs *)DT_INST_REG_ADDR_BY_IDX(n, 1),                    \
 	};                                                                                         \
 	static struct gpio_kb1200_data gpio_kb1200_##n##_data;                                     \
-	DEVICE_DT_INST_DEFINE(n, &kb1200_gpio_##n##_init, NULL, &gpio_kb1200_##n##_data,           \
-			      &port_##n##_kb1200_config, POST_KERNEL,                              \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &kb1200_gpio_api);
+	DEVICE_DT_INST_DEFINE(n, kb1200_gpio_##n##_init, NULL, &gpio_kb1200_##n##_data,            \
+			      &port_##n##_kb1200_config, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,  \
+			      &kb1200_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(KB1200_GPIO_INIT)

@@ -12,12 +12,13 @@ on:
       - "dts/*/nordic/**"
       - "tests/bluetooth/common/testlib/**"
       - "samples/bluetooth/**"
-      - "boards/posix/**"
-      - "soc/posix/**"
+      - "boards/native/**"
+      - "soc/native/**"
       - "arch/posix/**"
       - "include/zephyr/arch/posix/**"
       - "scripts/native_simulator/**"
       - "samples/net/sockets/echo_*/**"
+      - "modules/hal_nordic/**"
       - "modules/mbedtls/**"
       - "modules/openthread/**"
       - "subsys/net/l2/openthread/**"
@@ -77,6 +78,7 @@ jobs:
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
           rm -fr ".git/rebase-apply"
+          rm -fr ".git/rebase-merge"
           git rebase origin/${BASE_REF}
           git clean -f -d
           git log  --pretty=oneline | head -n 10
@@ -96,8 +98,8 @@ jobs:
             .github/workflows/bsim-tests.yaml
             .github/workflows/bsim-tests-publish.yaml
             west.yml
-            boards/posix/
-            soc/posix/
+            boards/native/
+            soc/native/
             arch/posix/
             include/zephyr/arch/posix/
             scripts/native_simulator/
@@ -105,6 +107,7 @@ jobs:
             boards/nordic/nrf5*/*dt*
             dts/*/nordic/
             modules/mbedtls/**
+            modules/hal_nordic/**
 
       - name: Check if Bluethooth files changed
         uses: tj-actions/changed-files@v45
@@ -169,7 +172,7 @@ jobs:
 
       - name: Merge Test Results
         run: |
-          pip3 install junitparser junit2html
+          pip install junitparser junit2html
           junitparser merge --glob "./bsim_*/*bsim_results.*.xml" "./twister-out/twister.xml" junit.xml
           junit2html junit.xml junit.html
 

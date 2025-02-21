@@ -1,0 +1,17 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx91_evk/mimx9131
+name: NXP i.MX91 EVK
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+supported:
+  - uart
+vendor: nxp

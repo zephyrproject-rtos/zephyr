@@ -12,8 +12,8 @@ on:
       - v*-branch
       - collab-*
   schedule:
-    # Run at 03:00 UTC on every Sunday
-    - cron: '0 3 * * 0'
+    # Run at 17:00 UTC on every Saturday
+    - cron: '0 17 * * 6'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
@@ -50,6 +50,7 @@ jobs:
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
+      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
     steps:
       - name: Print cloud service information
         run: |
@@ -84,6 +85,7 @@ jobs:
             git config --global user.email "bot@zephyrproject.org"
             git config --global user.name "Zephyr Builder"
             rm -fr ".git/rebase-apply"
+            rm -fr ".git/rebase-merge"
             git rebase origin/${BASE_REF}
             git clean -f -d
             git log  --pretty=oneline | head -n 10
@@ -158,7 +160,7 @@ jobs:
           fi
 
       - if: github.event_name == 'schedule'
-        name: Run Tests with Twister (Daily)
+        name: Run Tests with Twister (Weekly)
         id: run_twister_sched
         run: |
           export ZEPHYR_BASE=${PWD}
@@ -196,7 +198,7 @@ jobs:
           timestamp="$(date)"
           version="$(git describe --abbrev=12 --always)"
           echo -e "# Generated at $timestamp ($version)\n" > $FREEZE_FILE
-          pip3 freeze | tee -a $FREEZE_FILE
+          pip freeze | tee -a $FREEZE_FILE
 
       - if: matrix.subset == 1 && github.event_name == 'push'
         name: Upload the list of Python packages
@@ -215,6 +217,14 @@ jobs:
     if: success() || failure()
 
     steps:
+      - name: Check out source code
+        if: needs.twister-build.result == 'failure'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -222,18 +232,19 @@ jobs:
 
       - name: Merge Test Results
         run: |
-          pip3 install junitparser junit2html
+          pip install junitparser junit2html
           junitparser merge artifacts/*/*/twister.xml junit.xml
           junit2html junit.xml junit.html
 
-      - name: Upload Unit Test Results in HTML
+      - name: Upload Unit Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: HTML Unit Test Results
+          name: Unit Test Results
           if-no-files-found: ignore
           path: |
             junit.html
+            junit.xml
 
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
@@ -241,6 +252,25 @@ jobs:
           check_name: Unit Test Results
           files: "**/twister.xml"
           comment_mode: off
+
+      - name: Analyze Twister Reports
+        if: needs.twister-build.result == 'failure'
+        run: |
+          ./scripts/ci/twister_report_analyzer.py artifacts/*/*/twister.json --long-summary --platforms --output-md errors.md
+          if [[ -s "errors.md" ]]; then
+            echo '### Error Summary! 🚀' >> $GITHUB_STEP_SUMMARY
+            cat errors.md  >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Twister Analysis Results
+        if: needs.twister-build.result == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Twister Analysis Results
+          if-no-files-found: ignore
+          path: |
+            twister_report_summary.json
+
   twister-status-check:
     if: always()
     name: "Check Twister Status"

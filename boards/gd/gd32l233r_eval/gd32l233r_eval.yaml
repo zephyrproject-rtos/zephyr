@@ -10,5 +10,4 @@ flash: 256
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 vendor: gd

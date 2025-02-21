@@ -103,6 +103,10 @@
 #define FUNC_ALIAS(real_func, new_alias, return_type) \
 	return_type new_alias() ALIAS_OF(real_func)
 
+#if TOOLCHAIN_GCC_VERSION < 40500
+#define __builtin_unreachable() __builtin_trap()
+#endif
+
 #if defined(CONFIG_ARCH_POSIX) && !defined(_ASMLANGUAGE)
 #include <zephyr/arch/posix/posix_trace.h>
 
@@ -186,10 +190,14 @@ do {                                                                    \
 				"." Z_STRINGIFY(c))))
 #define __in_section(a, b, c) ___in_section(a, b, c)
 
+#ifndef __in_section_unique
 #define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
+#endif
 
+#ifndef __in_section_unique_named
 #define __in_section_unique_named(seg, name) \
 	___in_section(seg, __FILE__, name)
+#endif
 
 /* When using XIP, using '__ramfunc' places a function into RAM instead
  * of FLASH. Make sure '__ramfunc' is defined only when
@@ -679,4 +687,19 @@ do {                                                                    \
 	_Pragma("GCC diagnostic pop")
 
 #endif /* !_LINKER */
+
+#define _TOOLCHAIN_DISABLE_WARNING(compiler, warning)                                              \
+	TOOLCHAIN_PRAGMA(compiler diagnostic push)                                                 \
+	TOOLCHAIN_PRAGMA(compiler diagnostic ignored warning)
+
+#define _TOOLCHAIN_ENABLE_WARNING(compiler, warning) TOOLCHAIN_PRAGMA(compiler diagnostic pop)
+
+#define TOOLCHAIN_DISABLE_WARNING(warning) _TOOLCHAIN_DISABLE_WARNING(GCC, warning)
+#define TOOLCHAIN_ENABLE_WARNING(warning) _TOOLCHAIN_ENABLE_WARNING(GCC, warning)
+
+#if defined(__GNUC__) && !defined(__clang__)
+#define TOOLCHAIN_DISABLE_GCC_WARNING(warning) _TOOLCHAIN_DISABLE_WARNING(GCC, warning)
+#define TOOLCHAIN_ENABLE_GCC_WARNING(warning)  _TOOLCHAIN_ENABLE_WARNING(GCC, warning)
+#endif
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

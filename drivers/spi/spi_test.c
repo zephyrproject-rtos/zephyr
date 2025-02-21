@@ -52,9 +52,8 @@ static DEVICE_API(spi, vnd_spi_api) = {
 	.release = vnd_spi_release,
 };
 
-#define VND_SPI_INIT(n)							\
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,	\
-			      CONFIG_SPI_INIT_PRIORITY,			\
-			      &vnd_spi_api);
+#define VND_SPI_INIT(n)                                                                            \
+	SPI_DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,                          \
+				  CONFIG_SPI_INIT_PRIORITY, &vnd_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_SPI_INIT)

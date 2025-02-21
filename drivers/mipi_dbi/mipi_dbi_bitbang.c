@@ -275,7 +275,7 @@ fail:
 	return ret;
 }
 
-static const struct mipi_dbi_driver_api mipi_dbi_bitbang_driver_api = {
+static DEVICE_API(mipi_dbi, mipi_dbi_bitbang_driver_api) = {
 	.reset = mipi_dbi_bitbang_reset,
 	.command_write = mipi_dbi_bitbang_command_write,
 	.write_display = mipi_dbi_bitbang_write_display
@@ -337,7 +337,7 @@ static const struct mipi_dbi_driver_api mipi_dbi_bitbang_driver_api = {
 		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),                             \
 		DATA_LUT_OPTIMIZATION(n)                                                           \
 	};                                                                                         \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, data_gpios) < MIPI_DBI_MAX_DATA_BUS_WIDTH,                \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, data_gpios) <= MIPI_DBI_MAX_DATA_BUS_WIDTH,               \
 		     "Number of data GPIOs in DT exceeds MIPI_DBI_MAX_DATA_BUS_WIDTH");            \
 	static struct mipi_dbi_bitbang_data mipi_dbi_bitbang_data_##n;                             \
 	DEVICE_DT_INST_DEFINE(n, mipi_dbi_bitbang_init, NULL, &mipi_dbi_bitbang_data_##n,          \

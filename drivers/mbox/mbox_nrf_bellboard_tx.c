@@ -45,7 +45,7 @@ static uint32_t bellboard_tx_max_channels_get(const struct device *dev)
 	return BELLBOARD_TASKS_TRIGGER_MaxCount;
 }
 
-static const struct mbox_driver_api bellboard_tx_driver_api = {
+static DEVICE_API(mbox, bellboard_tx_driver_api) = {
 	.send = bellboard_tx_send,
 	.mtu_get = bellboard_tx_mtu_get,
 	.max_channels_get = bellboard_tx_max_channels_get,

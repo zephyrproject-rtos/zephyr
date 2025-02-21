@@ -429,6 +429,8 @@ int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);
 int pthread_once(pthread_once_t *once, void (*initFunc)(void));
 #endif
 FUNC_NORETURN void pthread_exit(void *retval);
+int pthread_timedjoin_np(pthread_t thread, void **status, const struct timespec *abstime);
+int pthread_tryjoin_np(pthread_t thread, void **status);
 int pthread_join(pthread_t thread, void **status);
 int pthread_cancel(pthread_t pthread);
 int pthread_detach(pthread_t thread);

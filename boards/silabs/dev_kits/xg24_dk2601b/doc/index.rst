@@ -17,7 +17,7 @@ Hardware
 - Transmit power: up to +20 dBm
 - Operation frequency: 2.4 GHz
 - Crystals for LFXO (32.768 kHz) and HFXO (38.4 MHz).
-- On board sensors:
+- On board devices:
 
   - Silicon Labs Si7021 relative humidity & temperature sensor
   - Silicon Labs Si7210 hall effect sensor
@@ -25,6 +25,7 @@ Hardware
   - TDK InvenSense ICM-20689 6-axis inertial measurement sensor
   - Vishay VEML6035 ambient light sensor
   - Bosch BMP384 pressure sensor with internal temperature sensor
+  - MX25R3235F 32 Mbit SPI data flash
 
 For more information about the EFR32MG24 SoC and BRD2601B board, refer to these
 documents:
@@ -39,31 +40,37 @@ Supported Features
 
 The board configuration supports the following hardware features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | stimer                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | semailbox                           |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| I2C(M/S)  | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | bluetooth                           |
-+-----------+------------+-------------------------------------+
++-----------+------------+------------------------------------+
+| Interface | Controller | Driver/Component                   |
++===========+============+====================================+
+| MPU       | on-chip    | memory protection unit             |
++-----------+------------+------------------------------------+
+| NVIC      | on-chip    | nested vector interrupt controller |
++-----------+------------+------------------------------------+
+| SYSTICK   | on-chip    | systick                            |
++-----------+------------+------------------------------------+
+| SYSRTC    | on-chip    | counter, timer                     |
++-----------+------------+------------------------------------+
+| MSC       | on-chip    | flash memory                       |
++-----------+------------+------------------------------------+
+| GPIO      | on-chip    | gpio                               |
++-----------+------------+------------------------------------+
+| EUSART    | on-chip    | serial, spi                        |
++-----------+------------+------------------------------------+
+| USART     | on-chip    | serial, spi                        |
++-----------+------------+------------------------------------+
+| LDMA      | on-chip    | dma                                |
++-----------+------------+------------------------------------+
+| SE        | on-chip    | entropy                            |
++-----------+------------+------------------------------------+
+| WDOG      | on-chip    | watchdog                           |
++-----------+------------+------------------------------------+
+| I2C       | on-chip    | i2c                                |
++-----------+------------+------------------------------------+
+| RADIO     | on-chip    | bluetooth                          |
++-----------+------------+------------------------------------+
+| ACMP      | on-chip    | comparator                         |
++-----------+------------+------------------------------------+
 
 Other hardware features are currently not supported by the port.
 
@@ -71,23 +78,37 @@ Connections and IOs
 ===================
 
 In the following table, the column **Name** contains Pin names. For example, PA2
-means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
+means Pin number 2 on Port A, as used in the board's datasheets and manuals.
 
-+-------+-------------+-------------------------------------+
-| Name  | Function    | Usage                               |
-+=======+=============+=====================================+
-| PA4   | GPIO        | LED0                                |
-+-------+-------------+-------------------------------------+
-| PB0   | GPIO        | LED1                                |
-+-------+-------------+-------------------------------------+
-| PB2   | GPIO        | Push Button 0                       |
-+-------+-------------+-------------------------------------+
-| PB3   | GPIO        | Push Button 1                       |
-+-------+-------------+-------------------------------------+
-| PA5   | USART0_TX   | UART Console VCOM_TX US0_TX         |
-+-------+-------------+-------------------------------------+
-| PA6   | USART0_RX   | UART Console VCOM_RX US0_RX         |
-+-------+-------------+-------------------------------------+
++------+--------------+---------------------+
+| Name | Function     | Usage               |
++======+==============+=====================+
+| PA4  | GPIO         | LED0                |
++------+--------------+---------------------+
+| PB0  | GPIO         | LED1                |
++------+--------------+---------------------+
+| PD2  | GPIO         | LED2                |
++------+--------------+---------------------+
+| PB2  | GPIO         | Push Button 0       |
++------+--------------+---------------------+
+| PB3  | GPIO         | Push Button 1       |
++------+--------------+---------------------+
+| PA5  | USART0_TX    | UART Console        |
++------+--------------+---------------------+
+| PA6  | USART0_RX    | UART Console        |
++------+--------------+---------------------+
+| PC3  | EUSART1_TX   | SPI bus: flash, IMU |
++------+--------------+---------------------+
+| PC2  | EUSART1_RX   | SPI bus: flash, IMU |
++------+--------------+---------------------+
+| PC1  | EUSART1_SCLK | SPI bus: flash, IMU |
++------+--------------+---------------------+
+| PC0  | EUSART1_CS   | SPI bus: flash      |
++------+--------------+---------------------+
+| PC4  | I2C0_SCL     | I2C bus             |
++------+--------------+---------------------+
+| PC5  | I2C0_SDA     | I2C bus             |
++------+--------------+---------------------+
 
 The default configuration can be found in
 :zephyr_file:`boards/silabs/dev_kits/xg24_dk2601b/xg24_dk2601b_defconfig`
@@ -109,7 +130,7 @@ Programming and Debugging
 
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
-   from `J-Link-Downloads`_
+   in Simplicity Studio.
 
 Flashing
 ========
@@ -169,6 +190,3 @@ this example.
 
 .. _BRD2601B User Guide:
    https://www.silabs.com/documents/public/user-guides/ug524-brd2601b-user-guide.pdf
-
-.. _J-Link-Downloads:
-   https://www.segger.com/downloads/jlink

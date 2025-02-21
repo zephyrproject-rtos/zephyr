@@ -121,7 +121,7 @@ void pm_system_resume(void)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		sys_clock_idle_exit();
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
-		z_cpus_pm_state[id] = (struct pm_state_info){PM_STATE_ACTIVE,
+		z_cpus_pm_state[id] = (struct pm_state_info){PM_STATE_ACTIVE, 0, false,
 			0, 0};
 	}
 }
@@ -258,14 +258,4 @@ int pm_notifier_unregister(struct pm_notifier *notifier)
 const struct pm_state_info *pm_state_next_get(uint8_t cpu)
 {
 	return &z_cpus_pm_state[cpu];
-}
-
-void z_pm_save_idle_exit(void)
-{
-	/* Some CPU low power states require notification at the ISR
-	 * to allow any operations that needs to be done before kernel
-	 * switches task or processes nested interrupts.
-	 * This can be simply ignored if not required.
-	 */
-	pm_system_resume();
 }

@@ -105,7 +105,7 @@ int main(void)
 
 	/* Alloc Buffers */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-		buffers[i] = video_buffer_alloc(fmt.pitch * fmt.height);
+		buffers[i] = video_buffer_alloc(fmt.pitch * fmt.height, K_FOREVER);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;

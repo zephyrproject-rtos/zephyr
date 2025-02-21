@@ -50,7 +50,7 @@
 #define Z_IS_ENABLED3(ignore_this, val, ...) val
 
 /* Implementation of IS_EQ(). Returns 1 if _0 and _1 are the same integer from
- * 0 to 4095, 0 otherwise.
+ * 0 to 4096, 0 otherwise.
  */
 #define Z_IS_EQ(_0, _1) Z_HAS_COMMA(Z_CAT4(Z_IS_, _0, _EQ_, _1)())
 

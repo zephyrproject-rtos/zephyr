@@ -17,6 +17,7 @@
 #include <zephyr/data/json.h>
 #include <zephyr/random/random.h>
 #include <zephyr/logging/log.h>
+#include "net_sample_common.h"
 
 
 #if defined(CONFIG_MBEDTLS_MEMORY_DEBUG)
@@ -126,6 +127,7 @@ static int publish_message(const char *topic, size_t topic_len, uint8_t *payload
 	struct mqtt_publish_param msg;
 
 	msg.retain_flag = 0u;
+	msg.dup_flag = 0u;
 	msg.message.topic.topic.utf8 = topic;
 	msg.message.topic.topic.size = topic_len;
 	msg.message.topic.qos = CONFIG_AWS_QOS;
@@ -451,6 +453,8 @@ static int resolve_broker_addr(struct sockaddr_in *broker)
 int main(void)
 {
 	setup_credentials();
+
+	wait_for_network();
 
 	for (;;) {
 		resolve_broker_addr(&aws_broker);

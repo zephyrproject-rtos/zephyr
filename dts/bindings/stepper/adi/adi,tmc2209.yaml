@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices TMC2209 stepper motor driver.
+
+  Example:
+  tmc2209: tmc2209 {
+      compatible = "adi,tmc2209";
+      enable-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+      msx-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>,
+                  <&gpio0 2 GPIO_ACTIVE_HIGH>;
+      step-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+      dir-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+      dual-edge-step;
+  }
+
+compatible: "adi,tmc2209"
+
+include:
+  - name: stepper-controller.yaml
+    property-allowlist:
+      - micro-step-res
+      - step-gpios
+      - dir-gpios
+      - en-gpios
+      - counter
+
+properties:
+  msx-gpios:
+    type: phandle-array
+    description: |
+      An array of GPIO pins for configuring the microstep resolution of the driver.
+      The pins should be listed in the following order:
+      - MS1
+      - MS2
+
+  dual-edge-step:
+    type: boolean
+    description: |
+      If present, the stepper motor controller supports dual edge step signals.
+      This means that the step signal can be toggled on both the rising and falling edge.

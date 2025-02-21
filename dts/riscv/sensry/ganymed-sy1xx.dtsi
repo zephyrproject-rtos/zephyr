@@ -3,9 +3,15 @@
 
 /dts-v1/;
 
+#include <zephyr/dt-bindings/pinctrl/sy1xx-pinctrl.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	chosen {
+		zephyr,entropy = &trng;
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -38,34 +44,34 @@
 
 	soc {
 		#address-cells = <1>;
-		#size-cells = <0>;
+		#size-cells = <1>;
 
 		event0: interrupt-controller@1000 {
 			compatible = "sensry,sy1xx-event-unit";
-			reg = <0x1000>;
+			reg = <0x1000 0x40>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 		};
 
 		systick: timer@1a10b040 {
 			compatible = "sensry,sy1xx-sys-timer";
-			reg = <0x1a10b040>;
+			reg = <0x1a10b040 0x04>;
 			interrupt-parent = <&event0>;
 			interrupts = <10 0>;
-			ticks_us = <1000>;
+			ticks-us = <1000>;
 		};
 
 		timer1: timer@1a10b044 {
 			compatible = "sensry,sy1xx-sys-timer";
-			reg = <0x1a10b044>;
+			reg = <0x1a10b044 0x04>;
 			interrupt-parent = <&event0>;
 			interrupts = <11 0>;
-			ticks_us = <1000>;
+			ticks-us = <1000>;
 		};
 
 		uart0: uart@1a102000 {
 			compatible = "sensry,sy1xx-uart";
-			reg = <0x1a102000>;
+			reg = <0x1a102000 0x80>;
 			instance = <0>;
 			current-speed = <1000000>;
 			status = "okay";
@@ -73,7 +79,7 @@
 
 		uart1: uart@1a102080 {
 			compatible = "sensry,sy1xx-uart";
-			reg = <0x1a102080>;
+			reg = <0x1a102080 0x80>;
 			instance = <1>;
 			current-speed = <1000000>;
 			status = "okay";
@@ -81,11 +87,50 @@
 
 		uart2: uart@1a102100 {
 			compatible = "sensry,sy1xx-uart";
-			reg = <0x1a102100>;
+			reg = <0x1a102100 0x80>;
 			instance = <2>;
 			current-speed = <1000000>;
 			status = "okay";
 		};
 
+		trng: random@1d030100 {
+			compatible = "sensry,sy1xx-trng";
+			reg = <0x1d030100 0x100>;
+			status = "okay";
+		};
+
+		gpio0: gpio@1a101000 {
+			compatible = "sensry,sy1xx-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x1a101000 0x20>;
+			pad-cfg = <SY1XX_GPIO0_PAD_CFG0>;
+			status = "okay";
+			ngpios = <32>;
+		};
+
+		pinctrl: pinctrl@1a104000 {
+			compatible = "sensry,sy1xx-pinctrl";
+			reg = <0x1a104000 0x1000>;
+			status = "okay";
+		};
+
+		mdio0: mdio@1a120020 {
+			compatible = "sensry,sy1xx-mdio";
+			reg = <0x1a120020 0x20>;
+			status = "disabled";
+
+			clock-frequency = <450000>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		eth0: ethernet@1a120000 {
+			compatible = "sensry,sy1xx-mac";
+			reg = <0x1a120000 0x1000>, <0x1a102a00 0x100>;
+			reg-names = "ctrl", "data";
+			status = "disabled";
+		};
 	};
 };

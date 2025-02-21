@@ -10,8 +10,8 @@ tests:
   drivers.charger.sbs.emulated:
     filter: dt_compat_enabled("sbs,sbs-charger")
     extra_args:
-      CONF_FILE="prj.conf;boards/emulated_board.conf"
-      DTC_OVERLAY_FILE="boards/emulated_board.overlay"
+      - CONF_FILE="prj.conf;boards/emulated_board.conf"
+      - DTC_OVERLAY_FILE="boards/emulated_board.overlay"
     platform_exclude:
       - qemu_cortex_a53
       - qemu_cortex_a53/qemu_cortex_a53/smp
@@ -34,5 +34,5 @@ tests:
     integration_platforms:
       - qemu_cortex_a53
     extra_args:
-      CONF_FILE="prj.conf;boards/qemu_cortex_a53.conf"
-      DTC_OVERLAY_FILE="boards/qemu_cortex_a53.overlay"
+      - CONF_FILE="prj.conf;boards/qemu_cortex_a53.conf"
+      - DTC_OVERLAY_FILE="boards/qemu_cortex_a53.overlay"

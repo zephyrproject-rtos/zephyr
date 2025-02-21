@@ -29,6 +29,12 @@ Currently, the following resource types are supported:
 * Static resources - content defined compile-time, cannot be modified at runtime
   (:c:enumerator:`HTTP_RESOURCE_TYPE_STATIC`).
 
+* Static file system resources - the path at which the filesystem is mounted,
+  and the URL at which the filesystem is made available are fixed at build time,
+  but the content within the filesystem can be changed dynamically. This means that
+  the files can be created, modified or deleted by some other code outside the HTTP
+  server (:c:enumerator:`HTTP_RESOURCE_TYPE_STATIC_FS`).
+
 * Dynamic resources - content provided at runtime by respective application
   callback (:c:enumerator:`HTTP_RESOURCE_TYPE_DYNAMIC`).
 
@@ -101,7 +107,7 @@ macro:
 
     static uint16_t http_service_port = 80;
 
-    HTTP_SERVICE_DEFINE(my_service, "0.0.0.0", &http_service_port, 1, 10, NULL);
+    HTTP_SERVICE_DEFINE(my_service, "0.0.0.0", &http_service_port, 1, 10, NULL, NULL);
 
 Alternatively, an HTTPS service can be defined with
 :c:macro:`HTTPS_SERVICE_DEFINE`:
@@ -119,7 +125,43 @@ Alternatively, an HTTPS service can be defined with
     };
 
     HTTPS_SERVICE_DEFINE(my_service, "0.0.0.0", &https_service_port, 1, 10,
-                         NULL, sec_tag_list, sizeof(sec_tag_list));
+                         NULL, NULL, sec_tag_list, sizeof(sec_tag_list));
+
+The ``_res_fallback`` parameter can be used when defining an HTTP/HTTPS service to
+specify a fallback resource which will be used if no other resource matches the
+URL. This can be used for example to serve an index page for all unknown paths
+(useful for a single-page app which handles routing in the frontend), or for a
+customised 404 response.
+
+.. code-block:: c
+
+    static int default_handler(struct http_client_ctx *client, enum http_data_status status,
+		       const struct http_request_ctx *request_ctx,
+		       struct http_response_ctx *response_ctx, void *user_data)
+    {
+        static const char response_404[] = "Oops, page not found!";
+
+        if (status == HTTP_SERVER_DATA_FINAL) {
+            response_ctx->status = 404;
+            response_ctx->body = response_404;
+            response_ctx->body_len = sizeof(response_404) - 1;
+            response_ctx->final_chunk = true;
+        }
+
+        return 0;
+    }
+
+    static struct http_resource_detail_dynamic default_detail = {
+        .common = {
+            .type = HTTP_RESOURCE_TYPE_DYNAMIC,
+            .bitmask_of_supported_http_methods = BIT(HTTP_GET),
+        },
+        .cb = default_handler,
+        .user_data = NULL,
+    };
+
+    /* Register a fallback resource to handle any unknown path */
+    HTTP_SERVICE_DEFINE(my_service, "0.0.0.0", &http_service_port, 1, 10, NULL, &default_detail);
 
 .. note::
 
@@ -190,7 +232,8 @@ where ``src/index.html`` is the location of the webpage to be compressed.
 Static filesystem resources
 ===========================
 
-Static filesystem resource content is defined build-time and is immutable. The following
+Static filesystem resource content is defined build-time and is immutable. Note that only
+``GET`` operation is supported, user is not able to upload files to the filesystem. The following
 example shows how the path can be defined as a static resource in the application:
 
 .. code-block:: c
@@ -231,8 +274,8 @@ resource handler, which echoes received data back to the client:
 .. code-block:: c
 
     static int dyn_handler(struct http_client_ctx *client, enum http_data_status status,
-			               uint8_t *buffer, size_t len, struct http_response_ctx *response_ctx,
-			               void *user_data)
+                           const struct http_request_ctx *request_ctx,
+                           struct http_response_ctx *response_ctx, void *user_data)
     {
     #define MAX_TEMP_PRINT_LEN 32
         static char print_str[MAX_TEMP_PRINT_LEN];
@@ -247,11 +290,11 @@ resource handler, which echoes received data back to the client:
             return 0;
         }
 
-        processed += len;
+        processed += request_ctx->data_len;
 
         snprintf(print_str, sizeof(print_str), "%s received (%zd bytes)",
-                 http_method_str(method), len);
-        LOG_HEXDUMP_DBG(buffer, len, print_str);
+                 http_method_str(method), request_ctx->data_len);
+        LOG_HEXDUMP_DBG(request_ctx->data, request_ctx->data_len, print_str);
 
         if (status == HTTP_SERVER_DATA_FINAL) {
             LOG_DBG("All data received (%zd bytes).", processed);
@@ -259,8 +302,8 @@ resource handler, which echoes received data back to the client:
         }
 
         /* Echo data back to client */
-        response_ctx->body = buffer;
-        response_ctx->body_len = len;
+        response_ctx->body = request_ctx->data;
+        response_ctx->body_len = request_ctx->data_len;
         response_ctx->final_chunk = (status == HTTP_SERVER_DATA_FINAL);
 
         return 0;
@@ -295,6 +338,14 @@ complete payload has been received), the server reports
 the application shall reset any progress recorded for the resource, and await
 a new request to come. The server guarantees that the resource can only be
 accessed by single client at a time.
+
+The ``request_ctx`` parameter is used to pass request data to the application:
+
+* The ``data`` and ``data_len`` fields pass request data to the application.
+
+* The ``headers``, ``header_count`` and ``headers_status`` fields pass request
+  headers to the application, if
+  :kconfig:option:`CONFIG_HTTP_SERVER_CAPTURE_HEADERS` is enabled.
 
 The ``response_ctx`` field is used by the application to pass response data to
 the HTTP server:
@@ -334,7 +385,7 @@ release it when done.
     static int ws_socket;
     static uint8_t ws_recv_buffer[1024];
 
-    int ws_setup(int sock, void *user_data)
+    int ws_setup(int sock, struct http_request_ctx *request_ctx, void *user_data)
     {
         ws_socket = sock;
         return 0;
@@ -365,7 +416,9 @@ Accessing request headers
 
 The application can register an interest in any specific HTTP request headers.
 These headers are then stored for each incoming request, and can be accessed
-from within a dynamic resource callback.
+from within a dynamic resource callback. Request headers are only included in
+the first callback for a given request, and are not passed to any subsequent
+callbacks.
 
 This feature must first be enabled with
 :kconfig:option:`CONFIG_HTTP_SERVER_CAPTURE_HEADERS` Kconfig option.

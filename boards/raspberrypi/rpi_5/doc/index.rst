@@ -42,10 +42,16 @@ The Raspberry Pi 5 board configuration supports the following hardware features:
      - :dtcompatible:`arm,gic-v2`
    * - GPIO
      - :kconfig:option:`CONFIG_GPIO`
+     - :dtcompatible:`raspberrypi,rp1-gpio`
+   * - GPIO (Internal)
+     - :kconfig:option:`CONFIG_GPIO`
      - :dtcompatible:`brcm,brcmstb-gpio`
    * - UART
      - :kconfig:option:`CONFIG_SERIAL`
      - :dtcompatible:`arm,pl011`
+   * - PCIE
+     - :kconfig:option:`CONFIG_PCIE`
+     - :dtcompatible:`brcm,brcmstb-pcie`
 
 Not all hardware features are supported yet. See `Raspberry Pi hardware`_ for the complete list of hardware features.
 

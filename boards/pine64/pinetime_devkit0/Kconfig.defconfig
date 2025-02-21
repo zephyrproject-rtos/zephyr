@@ -5,9 +5,6 @@
 
 if BOARD_PINETIME_DEVKIT0
 
-config BT_CTLR
-	default BT
-
 config INPUT
 	default y if LVGL
 

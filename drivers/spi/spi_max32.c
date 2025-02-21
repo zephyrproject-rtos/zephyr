@@ -539,6 +539,8 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 
 	spi_context_lock(ctx, async, cb, userdata, config);
 
+	MXC_SPI_ClearTXFIFO(spi);
+
 	ret = dma_get_status(cfg->tx_dma.dev, cfg->tx_dma.channel, &status);
 	if (ret < 0 || status.busy) {
 		ret = ret < 0 ? ret : -EBUSY;
@@ -568,13 +570,13 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 	/* Assert the CS line if HW control disabled */
 	if (!hw_cs_ctrl) {
 		spi_context_cs_control(ctx, true);
+	} else {
+		spi->ctrl0 = (spi->ctrl0 & ~MXC_F_SPI_CTRL0_START) | MXC_F_SPI_CTRL0_SS_CTRL;
 	}
 
 	MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
 
 	do {
-		spi->ctrl0 &= ~(MXC_F_SPI_CTRL0_EN);
-
 		len = spi_context_max_continuous_chunk(ctx);
 		dfs_shift = spi_max32_get_dfs_shift(ctx);
 		word_count = len >> dfs_shift;
@@ -603,17 +605,24 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 			goto unlock;
 		}
 
-		spi->ctrl0 |= MXC_F_SPI_CTRL0_EN;
-
 		data->dma_stat = 0;
 		MXC_SPI_StartTransmission(spi);
 		ret = spi_context_wait_for_completion(ctx);
 	} while (!ret && (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)));
 
+	if (ret < 0) {
+		dma_stop(cfg->tx_dma.dev, cfg->tx_dma.channel);
+		dma_stop(cfg->rx_dma.dev, cfg->rx_dma.channel);
+	}
+
 unlock:
 	/* Deassert the CS line if hw control disabled */
 	if (!hw_cs_ctrl) {
 		spi_context_cs_control(ctx, false);
+	} else {
+		spi->ctrl0 &=
+			~(MXC_F_SPI_CTRL0_START | MXC_F_SPI_CTRL0_SS_CTRL | MXC_F_SPI_CTRL0_EN);
+		spi->ctrl0 |= MXC_F_SPI_CTRL0_EN;
 	}
 
 	spi_context_release(ctx, ret);
@@ -965,7 +974,7 @@ static DEVICE_API(spi, spi_max32_api) = {
 		SPI_CONTEXT_INIT_SYNC(max32_spi_data_##_num, ctx),                                 \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(_num), ctx)                            \
 		IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &max32_spi_rtio_##_num))};                \
-	DEVICE_DT_INST_DEFINE(_num, spi_max32_init, NULL, &max32_spi_data_##_num,                  \
+	SPI_DEVICE_DT_INST_DEFINE(_num, spi_max32_init, NULL, &max32_spi_data_##_num,              \
 			      &max32_spi_config_##_num, PRE_KERNEL_2, CONFIG_SPI_INIT_PRIORITY,    \
 			      &spi_max32_api);
 

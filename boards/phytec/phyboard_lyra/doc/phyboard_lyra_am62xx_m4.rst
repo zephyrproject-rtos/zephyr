@@ -56,6 +56,8 @@ The phyboard_lyra/am6234/m4 configuration supports the following hardware featur
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| Mailbox   | on-chip    | IPC Mailbox                         |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 

@@ -156,6 +156,7 @@
 			interrupts = <0x08 0 0>;
 			interrupt-parent = <&ace_intc>;
 			power-domains = <&hub_ulp_domain>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		dmic1: dmic1@10000 {
@@ -166,6 +167,7 @@
 			interrupts = <0x09 0 0>;
 			interrupt-parent = <&ace_intc>;
 			power-domains = <&hub_ulp_domain>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		/*
@@ -290,12 +292,13 @@
 			dmas = <&lpgpdma0 2
 					&lpgpdma0 3>;
 			dma-names = "tx", "rx";
-			power-domains = <&io0_domain>;
 			ssp-index = <0>;
 			status = "okay";
 
 			ssp00: ssp@0 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 				reg = <0x0>;
 			};
@@ -312,12 +315,13 @@
 			dmas = <&lpgpdma0 4
 					&lpgpdma0 5>;
 			dma-names = "tx", "rx";
-			power-domains = <&io0_domain>;
 			ssp-index = <1>;
 			status = "okay";
 
 			ssp10: ssp@10 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 				reg = <0x10>;
 			};
@@ -334,12 +338,13 @@
 			dmas = <&lpgpdma0 6
 					&lpgpdma0 7>;
 			dma-names = "tx", "rx";
-			power-domains = <&io0_domain>;
 			ssp-index = <2>;
 			status = "okay";
 
 			ssp20: ssp@20 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 				reg = <0x20>;
 			};
@@ -478,7 +483,8 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <16>;
-			power-domains = <&io0_domain>;
+			power-domains = <&hub_ulp_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 		};
 
@@ -490,7 +496,8 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <16>;
-			power-domains = <&io0_domain>;
+			power-domains = <&hub_ulp_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 		};
 
@@ -503,6 +510,7 @@
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <16>;
 			power-domains = <&hst_domain>;
+			zephyr,pm-device-runtime-auto;
 			interrupts = <13 0 0>;
 			interrupt-parent = <&ace_intc>;
 			status = "okay";
@@ -517,6 +525,7 @@
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <16>;
 			power-domains = <&hst_domain>;
+			zephyr,pm-device-runtime-auto;
 			interrupts = <12 0 0>;
 			interrupt-parent = <&ace_intc>;
 			status = "okay";
@@ -612,96 +621,134 @@
 
 		hda0: hda@0 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <0>;
 		};
 		hda1: hda@1 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <1>;
 		};
 		hda2: hda@2 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <2>;
 		};
 		hda3: hda@3 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <3>;
 		};
 		hda4: hda@4 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <4>;
 		};
 		hda5: hda@5 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <5>;
 		};
 		hda6: hda@6 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <6>;
 		};
 		hda7: hda@7 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <7>;
 		};
 		hda8: hda@8 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <8>;
 		};
 		hda9: hda@9 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <9>;
 		};
 		hda10: hda@a {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <0x0a>;
 		};
 		hda11: hda@b {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <0x0b>;
 		};
 		hda12: hda@c {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <0x0c>;
 		};
 		hda13: hda@d {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <0x0d>;
 		};
 		hda14: hda@e {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <0x0e>;
 		};
 		hda15: hda@f {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <0x0f>;
 		};
 		hda16: hda@10 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <0x10>;
 		};
 		hda17: hda@11 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <0x11>;
 		};
 		hda18: hda@12 {
 			compatible = "intel,hda-dai";
+			power-domains = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 			reg = <0x12>;
 		};

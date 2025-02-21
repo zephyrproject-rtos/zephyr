@@ -38,7 +38,7 @@ config SOC_ATMEL_SAM_PLLA_MULA
 	int "PLL MULA"
 	default  6 if SOC_SERIES_SAM3X
 	default  9 if SOC_SERIES_SAM4S  || SOC_SERIES_SAM4E
-	default 24 if SOC_SERIES_SAME70 || SOC_SERIES_SAMV71
+	default 24 if SOC_SERIES_SAMX7X
 	range 1 62
 	help
 	  This is the multiplier (MULA) used by the PLL.
@@ -65,7 +65,7 @@ config SOC_ATMEL_SAM_PLLA_DIVA
 
 config SOC_ATMEL_SAM_MDIV
 	int "MDIV"
-	depends on SOC_SERIES_SAME70 || SOC_SERIES_SAMV71
+	depends on SOC_SERIES_SAMX7X
 	default 2
 	range 1 4
 	help

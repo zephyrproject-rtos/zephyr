@@ -12,7 +12,9 @@ tests:
       - nrf52840dk/nrf52840
   filesystem.fcb.no_erase:
     platform_allow:
+      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
   filesystem.fcb.native_sim.no_erase:
     extra_args: CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=n
     platform_allow: native_sim

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,7 +7,10 @@
 
 #include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
 #include <dt-bindings/gpio/gpio.h>
-
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/memory-controller/renesas,ra-sdram.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include "ek_ra8d1-pinctrl.dtsi"
 
 / {
@@ -40,8 +43,45 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+		button0: s1 {
+			gpios = <&ioport0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: s2 {
+			gpios = <&ioport0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	sdram1: sdram@68000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0x68000000 DT_SIZE_M(64)>;	/* 512 Mbits */
+		zephyr,memory-region = "SDRAM";
+		status = "okay";
+	};
+
+	renesas_mipi_connector: mipi-connector {
+		compatible = "renesas,ra-gpio-mipi-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<14 0 &ioport5 11 0>,	/* IIC_SDA */
+				<15 0 &ioport4 4 0>,	/* DISP_BLEN */
+				<16 0 &ioport5 12 0>,	/* IIC_SCL */
+				<17 0 &ioport5 10 0>,	/* DISP_INT */
+				<18 0 &ioporta 1 0>;	/* DISP_RST */
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		mipi-dsi = &mipi_dsi;
 	};
 };
 
@@ -63,6 +103,8 @@
 	};
 
 	pllq {
+		div = <4>;
+		freq = <DT_FREQ_M(240)>;
 		status = "okay";
 	};
 
@@ -71,7 +113,6 @@
 	};
 };
 
-
 &sciclk {
 	clocks = <&pllp>;
 	div = <4>;
@@ -79,8 +120,24 @@
 };
 
 &canfdclk {
+	clocks = <&pllp>;
+	div = <6>;
+	status = "okay";
+};
+
+&lcdclk {
 	clocks = <&pll>;
+	div = <2>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pllq>;
 	div = <5>;
+	status = "okay";
+};
+
+&ioport0 {
 	status = "okay";
 };
 
@@ -92,14 +149,16 @@
 	status = "okay";
 };
 
+&ioport5 {
+	status = "okay";
+};
+
 &ioport6 {
 	status = "okay";
 };
 
-&sci0 {
-	/* sci0 and spi0 cannot be enabled together */
-	pinctrl-0 = <&sci9_default>;
-	pinctrl-names = "default";
+&ioporta {
+	status = "okay";
 };
 
 &sci9 {
@@ -116,8 +175,8 @@
 	status = "okay";
 };
 
-&spi0 {
-	pinctrl-0 = <&spi0_default>;
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -159,4 +218,98 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+};
+
+&eth {
+	local-mac-address = [74 90 50 B0 5D E9];
+	status = "okay";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	pinctrl-0 = <&ether_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@5 {
+		compatible = "ethernet-phy";
+		reg = <5>;
+		status = "okay";
+	};
+};
+
+&usbhs {
+	pinctrl-0 = <&usbhs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "high-speed";
+	status = "okay";
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
+&usbhs_phy {
+	phys-clock-src = "xtal";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&port_irq12 {
+	interrupts = <88 12>;
+	status = "okay";
+};
+
+&port_irq13 {
+	interrupts = <89 12>;
+	status = "okay";
+};
+
+&sdram {
+	pinctrl-0 = <&sdram_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
+	auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
+	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
+	multiplex-addr-shift = "10-bit";
+	edian-mode = "little-endian";
+	continuous-access;
+	bus-width = "16-bit";
+	bank@0 {
+		reg = <0>;
+		renesas,ra-sdram-timing = <SDRAM_TRAS_6CYCLES
+		SDRAM_TRCD_3CYCLES
+		SDRAM_TRP_3CYCLES
+		SDRAM_TWR_2CYCLES
+		SDRAM_TCL_3CYCLES
+		937
+		SDRAM_TREFW_8CYCLES>;
+	};
+};
+
+zephyr_lcdif: &lcdif {
+	pinctrl-0 = <&glcdc_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_mipi_dsi: &mipi_dsi {};
+
+renesas_mipi_i2c: &iic1{};
+
+pmod_sd_shield: &sdhc1 {};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
 };

@@ -401,11 +401,31 @@ config NET_TC_RX_COUNT
 	  enable at least 1 RX thread.
 
 config NET_TC_SKIP_FOR_HIGH_PRIO
+	bool "Push high priority packets directly to network driver [DEPRECATED]"
+	select DEPRECATED
+	help
+	  Deprecated, use NET_TC_TX_SKIP_FOR_HIGH_PRIO instead.
+
+config NET_TC_TX_SKIP_FOR_HIGH_PRIO
 	bool "Push high priority packets directly to network driver"
+	default NET_TC_SKIP_FOR_HIGH_PRIO
 	help
 	  If this is set, then high priority (>= NET_PRIORITY_CA) net_pkt will
 	  be pushed directly to network driver and will skip the traffic class
 	  queues. This is currently not enabled by default.
+
+config NET_TC_RX_SKIP_FOR_HIGH_PRIO
+	bool "Push high priority packets directly to the application"
+	help
+	  If this is set, then high priority (>= NET_PRIORITY_CA) net_pkt will
+	  be pushed directly to the application and will skip the traffic class
+	  queues. If you select this option, then it means that high priority
+	  network traffic is pushed from the driver to the application thread
+	  without any intermediate RX queue. If the network device driver is
+	  running in IRQ context, it will handle the packet all the way to the
+	  application. This might cause other incoming packets to be lost if
+	  the RX processing takes long time.
+	  This is currently not enabled by default.
 
 choice NET_TC_THREAD_TYPE
 	prompt "How the network RX/TX threads should work"
@@ -822,7 +842,7 @@ config NET_BUF_TX_COUNT
 	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
 	  header (sizeof(struct net_buf)) amount of data.
 
-choice
+choice NET_PKT_DATA_ALLOC_TYPE
 	prompt "Network packet data allocator type"
 	default NET_BUF_FIXED_DATA_SIZE
 	help
@@ -851,18 +871,10 @@ config NET_BUF_DATA_SIZE
 	help
 	  This value tells what is the fixed size of each network buffer.
 
-config NET_BUF_DATA_POOL_SIZE
-	int "[DEPRECATED] Size of the memory pool where buffers are allocated from"
-	default 4096 if NET_L2_ETHERNET
-	default 2048
-	depends on NET_BUF_VARIABLE_DATA_SIZE
-	help
-	  This config is deprecated, use NET_PKT_BUF_RX_DATA_POOL_SIZE and
-	  NET_PKT_BUF_TX_DATA_POOL_SIZE instead.
-
 config NET_PKT_BUF_RX_DATA_POOL_SIZE
 	int "Size of the RX memory pool where buffers are allocated from"
-	default NET_BUF_DATA_POOL_SIZE
+	default 4096 if NET_L2_ETHERNET
+	default 2048
 	depends on NET_BUF_VARIABLE_DATA_SIZE
 	help
 	  This value tell what is the size of the RX memory pool where each
@@ -870,7 +882,8 @@ config NET_PKT_BUF_RX_DATA_POOL_SIZE
 
 config NET_PKT_BUF_TX_DATA_POOL_SIZE
 	int "Size of the TX memory pool where buffers are allocated from"
-	default NET_BUF_DATA_POOL_SIZE
+	default 4096 if NET_L2_ETHERNET
+	default 2048
 	depends on NET_BUF_VARIABLE_DATA_SIZE
 	help
 	  This value tell what is the size of the TX memory pool where each
@@ -936,6 +949,9 @@ config NET_DEFAULT_IF_CANBUS_RAW
 config NET_DEFAULT_IF_PPP
 	bool "PPP interface"
 	depends on NET_L2_PPP
+
+config NET_DEFAULT_IF_OFFLOADED_NETDEV
+	bool "Offloaded network device"
 
 config NET_DEFAULT_IF_WIFI
 	bool "WiFi interface"

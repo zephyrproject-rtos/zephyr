@@ -16,7 +16,7 @@
 	chosen {
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
-		zephyr,sram = &sram0;
+		zephyr,sram = &dram;
 	};
 
 	psci {
@@ -24,7 +24,7 @@
 		method = "smc";
 	};
 
-	sram0: memory@d0000000 {
+	dram: memory@d0000000 {
 		reg = <0xd0000000 DT_SIZE_M(1)>;
 	};
 };

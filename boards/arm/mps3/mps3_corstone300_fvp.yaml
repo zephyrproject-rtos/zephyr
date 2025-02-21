@@ -13,12 +13,10 @@ simulation:
 toolchain:
   - gnuarmemb
   - zephyr
-  - xtools
 supported:
   - gpio
 testing:
   ignore_tags:
-    - drivers
     - bluetooth
     - net
     - timer

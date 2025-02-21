@@ -114,17 +114,17 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	key = k_spin_lock(&lock);
 
-	if (likely((mutex->lock_count == 0U) || (mutex->owner == arch_current_thread()))) {
+	if (likely((mutex->lock_count == 0U) || (mutex->owner == _current))) {
 
 		mutex->owner_orig_prio = (mutex->lock_count == 0U) ?
-					arch_current_thread()->base.prio :
+					_current->base.prio :
 					mutex->owner_orig_prio;
 
 		mutex->lock_count++;
-		mutex->owner = arch_current_thread();
+		mutex->owner = _current;
 
 		LOG_DBG("%p took mutex %p, count: %d, orig prio: %d",
-			arch_current_thread(), mutex, mutex->lock_count,
+			_current, mutex, mutex->lock_count,
 			mutex->owner_orig_prio);
 
 		k_spin_unlock(&lock, key);
@@ -144,7 +144,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mutex, lock, mutex, timeout);
 
-	new_prio = new_prio_for_inheritance(arch_current_thread()->base.prio,
+	new_prio = new_prio_for_inheritance(_current->base.prio,
 					    mutex->owner->base.prio);
 
 	LOG_DBG("adjusting prio up on mutex %p", mutex);
@@ -157,7 +157,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	LOG_DBG("on mutex %p got_mutex value: %d", mutex, got_mutex);
 
-	LOG_DBG("%p got mutex %p (y/n): %c", arch_current_thread(), mutex,
+	LOG_DBG("%p got mutex %p (y/n): %c", _current, mutex,
 		got_mutex ? 'y' : 'n');
 
 	if (got_mutex == 0) {
@@ -167,7 +167,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	/* timed out */
 
-	LOG_DBG("%p timeout on mutex %p", arch_current_thread(), mutex);
+	LOG_DBG("%p timeout on mutex %p", _current, mutex);
 
 	key = k_spin_lock(&lock);
 
@@ -224,7 +224,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	/*
 	 * The current thread does not own the mutex.
 	 */
-	CHECKIF(mutex->owner != arch_current_thread()) {
+	CHECKIF(mutex->owner != _current) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, -EPERM);
 
 		return -EPERM;

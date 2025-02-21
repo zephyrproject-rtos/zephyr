@@ -15,3 +15,14 @@ config SOC_SERIES_MCXW
 	select SOC_RESET_HOOK
 	select SOC_EARLY_INIT_HOOK
 	select CLOCK_CONTROL
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
+	rsource "../../common/Kconfig.nbu"
+
+if SOC_MCXW727C
+
+config MCUX_CORE_SUFFIX
+	default "_cm33_core0" if SOC_MCXW727C_CPU0
+	default "_cm33_core1" if SOC_MCXW727C_CPU1
+
+endif # SOC_MCXW727C

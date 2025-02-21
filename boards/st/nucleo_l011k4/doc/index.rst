@@ -28,7 +28,6 @@ Nucleo L011K4 provides the following hardware components:
 
   - Arduino* Nano V3 connectivity
 
-- ARM* mbed*
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector:
 
   - Selection-mode switch to use the kit as a standalone ST-LINK/V2-1
@@ -49,11 +48,6 @@ Nucleo L011K4 provides the following hardware components:
   - Mass storage
   - Debug port
 
-- Support of wide choice of Integrated Development Environments (IDEs) including:
-
-  - IAR
-  - ARM Keil
-  - GCC-based IDEs
 
 More information about STM32L011K4 can be found in the
 `STM32L0x1 reference manual`_

@@ -263,7 +263,7 @@
 			status = "disabled";
 		};
 
-		quadspi: quadspi@a0001000 {
+		quadspi: spi@a0001000 {
 			compatible = "st,stm32-qspi";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -406,7 +406,8 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		adc2: adc@50040100 {
@@ -421,7 +422,8 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		dma1: dma@40020000 {

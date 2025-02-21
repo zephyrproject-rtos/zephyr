@@ -83,6 +83,8 @@ enum usbc_pe_state {
 	PE_SRC_TRANSITION_SUPPLY,
 	/** PE_SRC_Ready */
 	PE_SRC_READY,
+	/** PE_SRC_Disabled */
+	PE_SRC_DISABLED,
 	/** PE_SRC_Hard_Reset */
 	PE_SRC_HARD_RESET,
 	/** PE_SRC_Hard_Reset_Received */

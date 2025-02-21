@@ -9,6 +9,12 @@ config COUNTER_NRF_RTC
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_RTC_ENABLED
 
+config COUNTER_NRFX_TIMER_USE_CLOCK_CONTROL
+	def_bool y
+	depends on $(dt_nodelabel_enabled,timer120) || \
+		 $(dt_nodelabel_enabled,timer121)
+	select CLOCK_CONTROL
+
 # Internal flag which detects if PPI wrap feature is enabled for any instance
 config COUNTER_RTC_WITH_PPI_WRAP
 	def_bool $(dt_nodelabel_bool_prop,rtc0,ppi-wrap) || \

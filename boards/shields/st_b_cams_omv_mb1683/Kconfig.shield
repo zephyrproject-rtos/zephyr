@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Charles Dias <charlesdias.cd@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ST_B_CAMS_OMV_MB1683
+	def_bool $(shields_list_contains,st_b_cams_omv_mb1683)

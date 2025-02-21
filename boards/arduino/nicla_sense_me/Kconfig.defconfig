@@ -5,7 +5,4 @@
 
 if BOARD_ARDUINO_NICLA_SENSE_ME
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_ARDUINO_NICLA_SENSE_ME

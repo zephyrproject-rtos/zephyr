@@ -350,7 +350,7 @@ static int i2c_sam_twi_initialize(const struct device *dev)
 	return 0;
 }
 
-static const struct i2c_driver_api i2c_sam_twi_driver_api = {
+static DEVICE_API(i2c, i2c_sam_twi_driver_api) = {
 	.configure = i2c_sam_twi_configure,
 	.transfer = i2c_sam_twi_transfer,
 #ifdef CONFIG_I2C_RTIO

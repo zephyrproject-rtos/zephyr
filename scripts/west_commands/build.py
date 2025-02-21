@@ -9,7 +9,7 @@ import shlex
 import sys
 import yaml
 
-from west.commands import Verbosity
+from west import log
 from west.configuration import config
 from west.util import west_topdir
 from west.version import __version__
@@ -55,6 +55,9 @@ is done. A bare '--pristine' with no value is the same as
 --pristine=always. Setting --pristine=auto uses heuristics to
 guess if a pristine build may be necessary."""
 
+def _banner(msg):
+    log.inf('-- west build: ' + msg, colorize=True)
+
 def config_get(option, fallback):
     return config.get('build', option, fallback=fallback)
 
@@ -94,9 +97,6 @@ class Build(Forceable):
 
         self.cmake_cache = None
         '''Final parsed CMake cache for the build, or None on error.'''
-
-    def _banner(self, msg):
-        self.inf('-- west build: ' + msg, colorize=True)
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
@@ -189,8 +189,8 @@ class Build(Forceable):
     def do_run(self, args, remainder):
         self.args = args        # Avoid having to pass them around
         self.config_board = config_get('board', None)
-        self.dbg('args: {} remainder: {}'.format(args, remainder),
-                level=Verbosity.DBG_EXTREME)
+        log.dbg('args: {} remainder: {}'.format(args, remainder),
+                level=log.VERBOSE_EXTREME)
         # Store legacy -s option locally
         source_dir = self.args.source_dir
         self._parse_remainder(remainder)
@@ -205,18 +205,18 @@ class Build(Forceable):
             if test_path and os.path.exists(test_path):
                 self.args.source_dir = test_path
                 if not self._parse_test_item(item):
-                    self.die("No test metadata found")
+                    log.die("No test metadata found")
             else:
-                self.die("test item path does not exist")
+                log.die("test item path does not exist")
 
         if source_dir:
             if self.args.source_dir:
-                self.die("source directory specified twice:({} and {})".format(
+                log.die("source directory specified twice:({} and {})".format(
                                             source_dir, self.args.source_dir))
             self.args.source_dir = source_dir
-        self.dbg('source_dir: {} cmake_opts: {}'.format(self.args.source_dir,
+        log.dbg('source_dir: {} cmake_opts: {}'.format(self.args.source_dir,
                                                        self.args.cmake_opts),
-                level=Verbosity.DBG_EXTREME)
+                level=log.VERBOSE_EXTREME)
         self._sanity_precheck()
         self._setup_build_dir()
 
@@ -226,15 +226,15 @@ class Build(Forceable):
             # Load the pristine={auto, always, never} configuration value
             pristine = config_get('pristine', 'never')
             if pristine not in ['auto', 'always', 'never']:
-                self.wrn(
+                log.wrn(
                     'treating unknown build.pristine value "{}" as "never"'.
                     format(pristine))
                 pristine = 'never'
         self.auto_pristine = pristine == 'auto'
 
-        self.dbg('pristine: {} auto_pristine: {}'.format(pristine,
+        log.dbg('pristine: {} auto_pristine: {}'.format(pristine,
                                                         self.auto_pristine),
-                level=Verbosity.DBG_MORE)
+                level=log.VERBOSE_VERY)
         if is_zephyr_build(self.build_dir):
             if pristine == 'always':
                 self._run_pristine()
@@ -265,7 +265,7 @@ class Build(Forceable):
                 with open(build_info_file, "w") as f:
                     yaml.dump(build_command, f, default_flow_style=False)
             except Exception as e:
-                self.wrn(f'Failed to create info file: {build_info_file},', e)
+                log.wrn(f'Failed to create info file: {build_info_file},', e)
 
         board, origin = self._find_board()
         self._run_cmake(board, origin, self.args.cmake_opts)
@@ -326,13 +326,13 @@ class Build(Forceable):
                 try:
                     y = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
-                    self.die(exc)
+                    log.die(exc)
             common = y.get('common')
             tests = y.get('tests')
             if not tests:
-                self.die(f"No tests found in {yf}")
+                log.die(f"No tests found in {yf}")
             if test_item not in tests:
-                self.die(f"Test item {test_item} not found in {yf}")
+                log.die(f"Test item {test_item} not found in {yf}")
             item = tests.get(test_item)
 
             sysbuild = False
@@ -361,19 +361,7 @@ class Build(Forceable):
                         arg_list = extra
 
                     if data == 'extra_configs':
-                        args = []
-                        for arg in arg_list:
-                            equals = arg.find('=')
-                            colon = arg.rfind(':', 0, equals)
-                            if colon != -1:
-                                # conditional configs (xxx:yyy:CONFIG_FOO=bar)
-                                # are not supported by 'west build'
-                                self.wrn('"west build" does not support '
-                                         'conditional config "{}". Add "-D{}" '
-                                         'to the supplied CMake arguments if '
-                                         'desired.'.format(arg, arg[colon+1:]))
-                                continue
-                            args.append("-D{}".format(arg.replace('"', '\"')))
+                        args = ["-D{}".format(arg.replace('"', '\"')) for arg in arg_list]
                     elif data == 'extra_args':
                         # Retain quotes around config options
                         config_options = [arg for arg in arg_list if arg.startswith("CONFIG_")]
@@ -443,7 +431,7 @@ class Build(Forceable):
     def _setup_build_dir(self):
         # Initialize build_dir and created_build_dir attributes.
         # If we created the build directory, we must run CMake.
-        self.dbg('setting up build directory', level=Verbosity.DBG_EXTREME)
+        log.dbg('setting up build directory', level=log.VERBOSE_EXTREME)
         # The CMake Cache has not been loaded yet, so this is safe
         board, _ = self._find_board()
         source_dir = self._find_source_dir()
@@ -451,12 +439,12 @@ class Build(Forceable):
         build_dir = find_build_dir(self.args.build_dir, board=board,
                                    source_dir=source_dir, app=app)
         if not build_dir:
-            self.die('Unable to determine a default build folder. Check '
+            log.die('Unable to determine a default build folder. Check '
                     'your build.dir-fmt configuration option')
 
         if os.path.exists(build_dir):
             if not os.path.isdir(build_dir):
-                self.die('build directory {} exists and is not a directory'.
+                log.die('build directory {} exists and is not a directory'.
                         format(build_dir))
         else:
             os.makedirs(build_dir, exist_ok=False)
@@ -469,7 +457,7 @@ class Build(Forceable):
         # Initialize source_dir attribute, either from command line argument,
         # implicitly from the build directory's CMake cache, or using the
         # default (current working directory).
-        self.dbg('setting up source directory', level=Verbosity.DBG_EXTREME)
+        log.dbg('setting up source directory', level=log.VERBOSE_EXTREME)
         if self.args.source_dir:
             source_dir = self.args.source_dir
         elif self.cmake_cache:
@@ -484,7 +472,7 @@ class Build(Forceable):
             if not source_dir:
                 # This really ought to be there. The build directory
                 # must be corrupted somehow. Let's see what we can do.
-                self.die('build directory', self.build_dir,
+                log.die('build directory', self.build_dir,
                         'CMake cache has no CMAKE_HOME_DIRECTORY;',
                         'please give a source_dir')
         else:
@@ -494,7 +482,7 @@ class Build(Forceable):
     def _sanity_check_source_dir(self):
         if self.source_dir == self.build_dir:
             # There's no forcing this.
-            self.die('source and build directory {} cannot be the same; '
+            log.die('source and build directory {} cannot be the same; '
                     'use --build-dir {} to specify a build directory'.
                     format(self.source_dir, self.build_dir))
 
@@ -515,7 +503,7 @@ class Build(Forceable):
     def _sanity_check(self):
         # Sanity check the build configuration.
         # Side effect: may update cmake_cache attribute.
-        self.dbg('sanity checking the build', level=Verbosity.DBG_EXTREME)
+        log.dbg('sanity checking the build', level=log.VERBOSE_EXTREME)
         self._sanity_check_source_dir()
 
         if not self.cmake_cache:
@@ -534,12 +522,12 @@ class Build(Forceable):
         if cached_app is None and cached_proj:
             cached_app = cached_proj
 
-        self.dbg('APP_DIR:', cached_app, level=Verbosity.DBG_EXTREME)
+        log.dbg('APP_DIR:', cached_app, level=log.VERBOSE_EXTREME)
         source_abs = (os.path.abspath(self.args.source_dir)
                       if self.args.source_dir else None)
         cached_abs = os.path.abspath(cached_app) if cached_app else None
 
-        self.dbg('pristine:', self.auto_pristine, level=Verbosity.DBG_EXTREME)
+        log.dbg('pristine:', self.auto_pristine, level=log.VERBOSE_EXTREME)
 
         # If the build directory specifies a source app, make sure it's
         # consistent with --source-dir.
@@ -559,7 +547,7 @@ class Build(Forceable):
         # If CACHED_BOARD is not defined, we need some other way to
         # find the board.
         cached_board = self.cmake_cache.get('CACHED_BOARD')
-        self.dbg('CACHED_BOARD:', cached_board, level=Verbosity.DBG_EXTREME)
+        log.dbg('CACHED_BOARD:', cached_board, level=log.VERBOSE_EXTREME)
         # If apps_mismatched and self.auto_pristine are true, we will
         # run pristine on the build, invalidating the cached
         # board. In that case, we need some way of getting the board.
@@ -585,7 +573,7 @@ class Build(Forceable):
         if self.auto_pristine and (apps_mismatched or boards_mismatched):
             self._run_pristine()
             self.cmake_cache = None
-            self.dbg('run_cmake:', True, level=Verbosity.DBG_EXTREME)
+            log.dbg('run_cmake:', True, level=log.VERBOSE_EXTREME)
             self.run_cmake = True
 
             # Tricky corner-case: The user has not specified a build folder but
@@ -598,16 +586,16 @@ class Build(Forceable):
 
     def _run_cmake(self, board, origin, cmake_opts):
         if board is None and config_getboolean('board_warn', True):
-            self.wrn('This looks like a fresh build and BOARD is unknown;',
+            log.wrn('This looks like a fresh build and BOARD is unknown;',
                     "so it probably won't work. To fix, use",
                     '--board=<your-board>.')
-            self.inf('Note: to silence the above message, run',
+            log.inf('Note: to silence the above message, run',
                     "'west config build.board_warn false'")
 
         if not self.run_cmake:
             return
 
-        self._banner('generating a build system')
+        _banner('generating a build system')
 
         if board is not None and origin != 'CMakeCache.txt':
             cmake_opts = ['-DBOARD={}'.format(board)]
@@ -654,10 +642,10 @@ class Build(Forceable):
         run_cmake(final_cmake_args, dry_run=self.args.dry_run)
 
     def _run_pristine(self):
-        self._banner('making build dir {} pristine'.format(self.build_dir))
+        _banner('making build dir {} pristine'.format(self.build_dir))
         if not is_zephyr_build(self.build_dir):
-            self.die('Refusing to run pristine on a folder that is not a '
-                     'Zephyr build system')
+            log.die('Refusing to run pristine on a folder that is not a '
+                    'Zephyr build system')
 
         cache = CMakeCache.from_build_dir(self.build_dir)
 
@@ -671,9 +659,9 @@ class Build(Forceable):
 
     def _run_build(self, target, domain):
         if target:
-            self._banner('running target {}'.format(target))
+            _banner('running target {}'.format(target))
         elif self.run_cmake:
-            self._banner('building application')
+            _banner('building application')
         extra_args = ['--target', target] if target else []
         if self.args.build_opt:
             extra_args.append('--')
@@ -690,7 +678,7 @@ class Build(Forceable):
             # will build all domains.
             build_dir_list = [domains.get_top_build_dir()]
         else:
-            self._banner('building domain(s): {}'.format(' '.join(domain)))
+            _banner('building domain(s): {}'.format(' '.join(domain)))
             domain_list = domains.get_domains(domain)
             for d in domain_list:
                 build_dir_list.append(d.build_dir)

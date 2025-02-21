@@ -15,6 +15,7 @@ config SOC_SERIES_IMXRT11XX
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPADC
+	select HAS_MCUX_ADC_ETC
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_ELCDIF
 	select HAS_MCUX_MIPI_DSI
@@ -41,7 +42,6 @@ config SOC_SERIES_IMXRT11XX
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
-	select HAS_MCUX_XBARA
 	select HAS_SWO
 	select HAS_PM
 

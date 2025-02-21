@@ -1098,6 +1098,9 @@ struct net_buf_pool {
 	/** Total size of the pool. */
 	const uint16_t pool_size;
 
+	/** Maximum count of used buffers. */
+	uint16_t max_used;
+
 	/** Name of the pool. Used when printing pool information. */
 	const char *name;
 #endif /* CONFIG_NET_BUF_POOL_USAGE */
@@ -1115,6 +1118,7 @@ struct net_buf_pool {
 /** @cond INTERNAL_HIDDEN */
 #define NET_BUF_POOL_USAGE_INIT(_pool, _count) \
 	IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.avail_count = ATOMIC_INIT(_count),)) \
+	IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.max_used = 0,)) \
 	IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.name = STRINGIFY(_pool),))
 
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
@@ -1325,19 +1329,14 @@ int net_buf_id(const struct net_buf *buf);
 /**
  * @brief Allocate a new fixed buffer from a pool.
  *
- * @note Some types of data allocators do not support
- *       blocking (such as the HEAP type). In this case it's still possible
- *       for net_buf_alloc() to fail (return NULL) even if it was given
- *       K_FOREVER.
- *
- * @note The timeout value will be overridden to K_NO_WAIT if called from the
- *       system workqueue.
- *
  * @param pool Which pool to allocate the buffer from.
  * @param timeout Affects the action taken should the pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait until the specified
- *        timeout.
+ *        timeout. Note that some types of data allocators do not support
+ *        blocking (such as the HEAP type). In this case it's still possible
+ *        for net_buf_alloc() to fail (return NULL) even if it was given
+ *        K_FOREVER.
  *
  * @return New buffer or NULL if out of buffers.
  */
@@ -1365,20 +1364,15 @@ static inline struct net_buf * __must_check net_buf_alloc(struct net_buf_pool *p
 /**
  * @brief Allocate a new variable length buffer from a pool.
  *
- * @note Some types of data allocators do not support
- *       blocking (such as the HEAP type). In this case it's still possible
- *       for net_buf_alloc() to fail (return NULL) even if it was given
- *       K_FOREVER.
- *
- * @note The timeout value will be overridden to K_NO_WAIT if called from the
- *       system workqueue.
- *
  * @param pool Which pool to allocate the buffer from.
  * @param size Amount of data the buffer must be able to fit.
  * @param timeout Affects the action taken should the pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait until the specified
- *        timeout.
+ *        timeout. Note that some types of data allocators do not support
+ *        blocking (such as the HEAP type). In this case it's still possible
+ *        for net_buf_alloc() to fail (return NULL) even if it was given
+ *        K_FOREVER.
  *
  * @return New buffer or NULL if out of buffers.
  */
@@ -1402,21 +1396,16 @@ struct net_buf * __must_check net_buf_alloc_len(struct net_buf_pool *pool,
  * Allocate a new buffer from a pool, where the data pointer comes from the
  * user and not from the pool.
  *
- * @note Some types of data allocators do not support
- *       blocking (such as the HEAP type). In this case it's still possible
- *       for net_buf_alloc() to fail (return NULL) even if it was given
- *       K_FOREVER.
- *
- * @note The timeout value will be overridden to K_NO_WAIT if called from the
- *       system workqueue.
- *
  * @param pool Which pool to allocate the buffer from.
  * @param data External data pointer
  * @param size Amount of data the pointed data buffer if able to fit.
  * @param timeout Affects the action taken should the pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait until the specified
- *        timeout.
+ *        timeout. Note that some types of data allocators do not support
+ *        blocking (such as the HEAP type). In this case it's still possible
+ *        for net_buf_alloc() to fail (return NULL) even if it was given
+ *        K_FOREVER.
  *
  * @return New buffer or NULL if out of buffers.
  */

@@ -871,7 +871,7 @@ static int spi_pw_init(const struct device *dev)
 		.clock_freq = DT_INST_PROP(n, clock_frequency),	     \
 		INIT_PCIE(n)					     \
 	};							     \
-	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL,		     \
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL,		     \
 			      &spi_##n##_data, &spi_##n##_config,    \
 			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
 			      &pw_spi_api);
@@ -891,7 +891,7 @@ static int spi_pw_init(const struct device *dev)
 		.clock_freq = DT_INST_PROP(n, clock_frequency),	     \
 		INIT_PCIE(n)					     \
 	};							     \
-	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL,		     \
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL,		     \
 			      &spi_##n##_data, &spi_##n##_config,    \
 			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
 			      &pw_spi_api);

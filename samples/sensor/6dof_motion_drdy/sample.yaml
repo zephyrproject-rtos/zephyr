@@ -1,0 +1,9 @@
+sample:
+  name: 6DOF Motion dataready sample
+tests:
+  sample.sensor.6dof_motion_drdy:
+    build_only: true
+    tags: sensors
+    filter: dt_alias_exists("6dof_motion_drdy0")
+    integration_platforms:
+      - nrf52dk/nrf52832

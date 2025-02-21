@@ -331,15 +331,15 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
 	if (k_current_get() == rwl->wr_owner) {
 		/* Write unlock */
 		rwl->wr_owner = NULL;
-		sys_sem_give(&rwl->reader_active);
-		sys_sem_give(&rwl->wr_sem);
+		(void)sys_sem_give(&rwl->reader_active);
+		(void)sys_sem_give(&rwl->wr_sem);
 	} else {
 		/* Read unlock */
-		sys_sem_give(&rwl->rd_sem);
+		(void)sys_sem_give(&rwl->rd_sem);
 
 		if (sys_sem_count_get(&rwl->rd_sem) == CONCURRENT_READER_LIMIT) {
 			/* Last read lock, unlock writer */
-			sys_sem_give(&rwl->reader_active);
+			(void)sys_sem_give(&rwl->reader_active);
 		}
 	}
 	return 0;
@@ -350,9 +350,9 @@ static uint32_t read_lock_acquire(struct posix_rwlock *rwl, int32_t timeout)
 	uint32_t ret = 0U;
 
 	if (sys_sem_take(&rwl->wr_sem, SYS_TIMEOUT_MS(timeout)) == 0) {
-		sys_sem_take(&rwl->reader_active, K_NO_WAIT);
-		sys_sem_take(&rwl->rd_sem, K_NO_WAIT);
-		sys_sem_give(&rwl->wr_sem);
+		(void)sys_sem_take(&rwl->reader_active, K_NO_WAIT);
+		(void)sys_sem_take(&rwl->rd_sem, K_NO_WAIT);
+		(void)sys_sem_give(&rwl->wr_sem);
 	} else {
 		ret = EBUSY;
 	}
@@ -383,7 +383,7 @@ static uint32_t write_lock_acquire(struct posix_rwlock *rwl, int32_t timeout)
 		if (sys_sem_take(&rwl->reader_active, k_timeout) == 0) {
 			rwl->wr_owner = k_current_get();
 		} else {
-			sys_sem_give(&rwl->wr_sem);
+			(void)sys_sem_give(&rwl->wr_sem);
 			ret = EBUSY;
 		}
 

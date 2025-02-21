@@ -80,9 +80,16 @@
 		compatible = "simple-bus";
 		ranges;
 
-		sram0: memory@3fc7c000 {
-			compatible = "mmio-sram";
-			reg = <0x3fc7c000 0x50000>;
+		sram0: memory@4037c000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x4037c000 DT_SIZE_K(16)>;
+			zephyr,memory-region = "SRAM0";
+		};
+
+		sram1: memory@3fc80000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3fc80000 DT_SIZE_K(384)>;
+			zephyr,memory-region = "SRAM1";
 		};
 
 		intc: interrupt-controller@600c2000 {
@@ -224,6 +231,7 @@
 		timer0: counter@6001f000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x6001F000 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG0_MODULE>;
 			group = <0>;
 			index = <0>;
 			interrupts = <TG0_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -234,6 +242,7 @@
 		timer1: counter@60020000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x60020000 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG1_MODULE>;
 			group = <1>;
 			index = <0>;
 			interrupts = <TG1_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -295,17 +304,9 @@
 		adc0: adc@60040000 {
 			compatible = "espressif,esp32-adc";
 			reg = <0x60040000 4>;
+			clocks = <&rtc ESP32_SARADC_MODULE>;
 			unit = <1>;
 			channel-count = <5>;
-			#io-channel-cells = <1>;
-			status = "disabled";
-		};
-
-		adc1: adc@60040004 {
-			compatible = "espressif,esp32-adc";
-			reg = <0x60040004 4>;
-			unit = <2>;
-			channel-count = <2>;
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};

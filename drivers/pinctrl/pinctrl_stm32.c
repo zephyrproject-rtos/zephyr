@@ -63,6 +63,7 @@ static const struct device *const gpio_ports[] = {
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpion)),
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioo)),
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiop)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioq)),
 };
 
 /** Number of GPIO ports. */
@@ -168,17 +169,21 @@ static int stm32_pins_remap(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt)
 	uint32_t reg_val;
 	uint16_t remap;
 
-	remap = (uint16_t)STM32_DT_PINMUX_REMAP(pins[0].pinmux);
+	remap = NO_REMAP;
+
+	for (size_t i = 0U; i < pin_cnt; i++) {
+		if (remap == NO_REMAP) {
+			remap = STM32_DT_PINMUX_REMAP(pins[i].pinmux);
+		} else if (STM32_DT_PINMUX_REMAP(pins[i].pinmux) == NO_REMAP) {
+			continue;
+		} else if (STM32_DT_PINMUX_REMAP(pins[i].pinmux) != remap) {
+			return -EINVAL;
+		}
+	}
 
 	/* not remappable */
 	if (remap == NO_REMAP) {
 		return 0;
-	}
-
-	for (size_t i = 1U; i < pin_cnt; i++) {
-		if (STM32_DT_PINMUX_REMAP(pins[i].pinmux) != remap) {
-			return -EINVAL;
-		}
 	}
 
 	/* A valid remapping configuration is available */

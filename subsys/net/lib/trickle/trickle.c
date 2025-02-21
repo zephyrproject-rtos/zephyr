@@ -161,7 +161,9 @@ int net_trickle_create(struct net_trickle *trickle,
 		       uint8_t Imax,
 		       uint8_t k)
 {
-	NET_ASSERT(trickle && Imax > 0 && k > 0 && !CHECK_IMIN(Imin));
+	if (!(trickle && Imax > 0 && k > 0 && !CHECK_IMIN(Imin))) {
+		return -EINVAL;
+	}
 
 	(void)memset(trickle, 0, sizeof(struct net_trickle));
 
@@ -170,7 +172,9 @@ int net_trickle_create(struct net_trickle *trickle,
 	trickle->Imax_abs = Imin << Imax;
 	trickle->k = k;
 
-	NET_ASSERT(trickle->Imax_abs);
+	if (!trickle->Imax_abs) {
+		return -EINVAL;
+	}
 
 	NET_DBG("Imin %d Imax %u k %u Imax_abs %u",
 		trickle->Imin, trickle->Imax, trickle->k,
@@ -185,7 +189,9 @@ int net_trickle_start(struct net_trickle *trickle,
 		      net_trickle_cb_t cb,
 		      void *user_data)
 {
-	NET_ASSERT(trickle && cb);
+	if (!(trickle && cb)) {
+		return -EINVAL;
+	}
 
 	trickle->cb = cb;
 	trickle->user_data = user_data;
@@ -206,7 +212,9 @@ int net_trickle_start(struct net_trickle *trickle,
 
 int net_trickle_stop(struct net_trickle *trickle)
 {
-	NET_ASSERT(trickle);
+	if (trickle == NULL) {
+		return -EINVAL;
+	}
 
 	k_work_cancel_delayable(&trickle->timer);
 
@@ -217,7 +225,9 @@ int net_trickle_stop(struct net_trickle *trickle)
 
 void net_trickle_consistency(struct net_trickle *trickle)
 {
-	NET_ASSERT(trickle);
+	if (trickle == NULL) {
+		return;
+	}
 
 	if (trickle->c < 0xFF) {
 		trickle->c++;
@@ -228,7 +238,9 @@ void net_trickle_consistency(struct net_trickle *trickle)
 
 void net_trickle_inconsistency(struct net_trickle *trickle)
 {
-	NET_ASSERT(trickle);
+	if (trickle == NULL) {
+		return;
+	}
 
 	if (trickle->I != trickle->Imin) {
 		NET_DBG("inconsistency");

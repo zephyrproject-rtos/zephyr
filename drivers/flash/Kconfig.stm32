@@ -33,7 +33,7 @@ if SOC_FLASH_STM32
 
 config FLASH_STM32_WRITE_PROTECT
 	bool "Extended operation for flash write protection control"
-	depends on SOC_SERIES_STM32F4X
+	depends on SOC_SERIES_STM32F4X || SOC_SERIES_STM32H7X
 	select FLASH_HAS_EX_OP
 	default n
 	help
@@ -51,7 +51,8 @@ config FLASH_STM32_WRITE_PROTECT_DISABLE_PREVENTION
 config FLASH_STM32_READOUT_PROTECTION
 	bool "Extended operation for flash readout protection control"
 	depends on SOC_SERIES_STM32F4X || SOC_SERIES_STM32L4X || \
-			   SOC_SERIES_STM32G4X || SOC_SERIES_STM32F7X
+			   SOC_SERIES_STM32G4X || SOC_SERIES_STM32F7X || \
+			   SOC_SERIES_STM32H7X
 	select FLASH_HAS_EX_OP
 	default n
 	help
@@ -83,6 +84,14 @@ config FLASH_STM32_BLOCK_REGISTERS
 	  to option and control registers until reset. Disabling access to these
 	  registers improves system security, because flash content (or
 	  protection settings) can't be changed even when exploit was found.
+
+config FLASH_STM32_OPTION_BYTES
+	bool "Extended operation for option bytes access"
+	select FLASH_HAS_EX_OP
+	default n
+	help
+	  Enables flash extended operations that can be used to read and write
+	  STM32 option bytes.
 
 config USE_MICROCHIP_QSPI_FLASH_WITH_STM32
 	bool "Include patch for Microchip qspi flash when running with stm32"
