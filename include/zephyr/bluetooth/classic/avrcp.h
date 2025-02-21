@@ -16,6 +16,31 @@
 extern "C" {
 #endif
 
+#define BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG 0x001958
+
+/** @brief AVRCP Capability ID */
+typedef enum __packed {
+	BT_AVRCP_CAP_COMPANY_ID = 0x2,
+	BT_AVRCP_CAP_EVENTS_SUPPORTED = 0x3,
+} bt_avrcp_cap_t;
+
+/** @brief AVRCP Notification Events */
+typedef enum __packed {
+	BT_AVRCP_EVENT_PLAYBACK_STATUS_CHANGED = 0x01,
+	BT_AVRCP_EVENT_TRACK_CHANGED = 0x02,
+	BT_AVRCP_EVENT_TRACK_REACHED_END = 0x03,
+	BT_AVRCP_EVENT_TRACK_REACHED_START = 0x04,
+	BT_AVRCP_EVENT_PLAYBACK_POS_CHANGED = 0x05,
+	BT_AVRCP_EVENT_BATT_STATUS_CHANGED = 0x06,
+	BT_AVRCP_EVENT_SYSTEM_STATUS_CHANGED = 0x07,
+	BT_AVRCP_EVENT_PLAYER_APPLICATION_SETTING_CHANGED = 0x08,
+	BT_AVRCP_EVENT_NOW_PLAYING_CONTENT_CHANGED = 0x09,
+	BT_AVRCP_EVENT_AVAILABLE_PLAYERS_CHANGED = 0x0a,
+	BT_AVRCP_EVENT_ADDRESSED_PLAYER_CHANGED = 0x0b,
+	BT_AVRCP_EVENT_UIDS_CHANGED = 0x0c,
+	BT_AVRCP_EVENT_VOLUME_CHANGED = 0x0d,
+} bt_avrcp_event_t;
+
 /** @brief AV/C command types */
 typedef enum __packed {
 	BT_AVRCP_CTYPE_CONTROL = 0x0,
@@ -125,11 +150,17 @@ struct bt_avrcp_subunit_info_rsp {
 };
 
 struct bt_avrcp_passthrough_rsp {
-	uint8_t response;     /**< bt_avrcp_rsp_t */
-	uint8_t operation_id; /**< bt_avrcp_opid_t */
-	uint8_t state;        /**< bt_avrcp_button_state_t */
+	bt_avrcp_rsp_t response;
+	bt_avrcp_opid_t operation_id;
+	bt_avrcp_button_state_t state;
 	uint8_t len;
 	const uint8_t *payload;
+};
+
+struct bt_avrcp_get_capabilities_rsp {
+	bt_avrcp_cap_t capability_id;
+	uint8_t capability_count;  /**< number of items contained in *capability */
+	const uint8_t *capability; /**< 1 or 3 octets each depends on capability_id */
 };
 
 struct bt_avrcp_cb {
@@ -150,6 +181,16 @@ struct bt_avrcp_cb {
 	 *  @param avrcp AVRCP connection object.
 	 */
 	void (*disconnected)(struct bt_avrcp *avrcp);
+
+	/** @brief Callback function for bt_avrcp_get_capabilities().
+	 *
+	 *  Called when the get capabilities process is completed.
+	 *
+	 *  @param avrcp AVRCP connection object.
+	 *  @param rsp The response for Get Capabilities command.
+	 */
+	void (*get_capabilities_rsp)(struct bt_avrcp *avrcp,
+				     struct bt_avrcp_get_capabilities_rsp *rsp);
 
 	/** @brief Callback function for bt_avrcp_get_unit_info().
 	 *
@@ -211,6 +252,17 @@ int bt_avrcp_disconnect(struct bt_avrcp *avrcp);
  *  @return 0 in case of success or error code in case of error.
  */
 int bt_avrcp_register_cb(const struct bt_avrcp_cb *cb);
+
+/** @brief Get AVRCP Capabilities.
+ *
+ *  This function gets the capabilities supported by remote device.
+ *
+ *  @param avrcp The AVRCP instance.
+ *  @param capability_id Specific capability requested
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_get_capabilities(struct bt_avrcp *avrcp, bt_avrcp_cap_t capability_id);
 
 /** @brief Get AVRCP Unit Info.
  *
