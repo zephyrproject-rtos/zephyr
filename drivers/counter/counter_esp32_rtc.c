@@ -1,15 +1,11 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT espressif_esp32_rtc_timer
 
-/*
- * Include esp-idf headers first to avoid
- * redefining BIT() macro
- */
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc.h"
 #include <esp_rom_sys.h>
@@ -21,21 +17,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/esp32_clock_control.h>
-
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3)
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
-#else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_counter_rtc, CONFIG_COUNTER_LOG_LEVEL);
-
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3)
-#define ESP32_COUNTER_RTC_ISR_HANDLER isr_handler_t
-#else
-#define ESP32_COUNTER_RTC_ISR_HANDLER intr_handler_t
-#endif
 
 static void counter_esp32_isr(void *arg);
 
@@ -65,9 +50,10 @@ static int counter_esp32_init(const struct device *dev)
 			       &data->clk_src_freq);
 
 	flags = ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INT_FLAGS_CHECK(cfg->irq_flags) |
-		ESP_INTR_FLAG_SHARED;
+			     ESP_INTR_FLAG_SHARED;
+
 	ret = esp_intr_alloc(cfg->irq_source, flags,
-			     (ESP32_COUNTER_RTC_ISR_HANDLER)counter_esp32_isr, (void *)dev, NULL);
+			     (intr_handler_t)counter_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
@@ -246,6 +232,6 @@ DEVICE_DT_INST_DEFINE(0,
 		      NULL,
 		      &counter_data,
 		      &counter_config,
-		      POST_KERNEL,
+		      PRE_KERNEL_2,
 		      CONFIG_COUNTER_INIT_PRIORITY,
 		      &rtc_timer_esp32_api);
