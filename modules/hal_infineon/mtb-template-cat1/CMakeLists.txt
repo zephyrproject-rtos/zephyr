@@ -32,7 +32,7 @@ if(CONFIG_SOC_FAMILY_INFINEON_CAT1C)
   zephyr_include_directories(${cat1c_dir}/COMPONENT_MTB)
   zephyr_include_directories(${cat1c_dir}/COMPONENT_MTB/HEADER_FILES)
   zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M0PLUS
-   ${cat1c_dir}/COMPONENT_MTB/COMPONENT_CM0P/system_cm0plus.c)
+   ${cat1c_dir}/COMPONENT_MTB/COMPONENT_CM0P/system_cm0plus_zephyr.c)
   zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M7
    ${cat1c_dir}/COMPONENT_MTB/COMPONENT_CM7/system_cm7.c)
 endif()

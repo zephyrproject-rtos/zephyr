@@ -21,8 +21,8 @@
 	};
 
 	chosen {
-		zephyr,sram = &cm7_1_data;
-		zephyr,flash = &cm7_1_code;
+		zephyr,sram = &cm7_1_code;
+		zephyr,flash = &cm7_1_data;
 		zephyr,console = &uart3;
 		zephyr,shell-uart = &uart3;
 	};
