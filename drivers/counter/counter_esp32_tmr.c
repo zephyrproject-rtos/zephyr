@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,21 +14,11 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/kernel.h>
-#if defined(CONFIG_RISCV)
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
-#else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#endif
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
-
-#if defined(CONFIG_RISCV)
-#define ISR_HANDLER isr_handler_t
-#else
-#define ISR_HANDLER intr_handler_t
-#endif
 
 static void counter_esp32_isr(void *arg);
 
@@ -97,7 +87,7 @@ static int counter_esp32_init(const struct device *dev)
 	int ret = esp_intr_alloc(cfg->irq_source,
 				 ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
 					 ESP_INT_FLAGS_CHECK(cfg->irq_flags),
-				 (ISR_HANDLER)counter_esp32_isr, (void *)dev, NULL);
+				 (intr_handler_t)counter_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
