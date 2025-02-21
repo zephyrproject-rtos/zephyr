@@ -772,6 +772,7 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != sizeof(*cp) + cp->adv_data_len + cp->scan_rsp_len +
 			    sizeof(duration) + sizeof(own_addr_type))) {
+		LOG_DBG("Invalid command length: %u", cmd_len);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -809,6 +810,7 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 	err = tester_gap_create_adv_instance(&param, own_addr_type, ad, adv_len, sd,
 					     sd_len, NULL, &ext_adv);
 	if (err != 0) {
+		LOG_DBG("Failed to create adv instance: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -821,7 +823,7 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 
 	/* BTP API don't allow to set empty scan response data. */
 	if (err < 0) {
-		LOG_ERR("Failed to start advertising");
+		LOG_ERR("Failed to start advertising: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}

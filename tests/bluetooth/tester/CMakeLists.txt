@@ -7,6 +7,13 @@ LIST(APPEND QEMU_EXTRA_FLAGS -serial unix:/tmp/bt-stack-tester)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(tester)
 
+if(CONFIG_SOC_SERIES_BSIM_NRFXX)
+zephyr_include_directories(
+  ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
+  ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
+  )
+endif() # CONFIG_SOC_SERIES_BSIM_NRFXX
+
 zephyr_library_include_directories(${ZEPHYR_BASE}/samples/bluetooth)
 zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/bluetooth/mesh)
 zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/bluetooth/host)
