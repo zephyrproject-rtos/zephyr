@@ -378,11 +378,11 @@ static int regulator_pf1550_common_init(const struct device *dev)
 	return 0;
 }
 
-static const struct regulator_parent_driver_api parent_api = {
+static DEVICE_API(regulator_parent, parent_api) = {
 	.ship_mode = regulator_pf1550_power_off,
 };
 
-static const struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_pf1550_enable,
 	.disable = regulator_pf1550_disable,
 	.count_voltages = regulator_pf1550_count_voltages,
