@@ -4,18 +4,18 @@
 
 # MAX22190 GPIO configuration options
 
-menuconfig GPIO_MAX22190
-	bool "MAX22190 GPIO driver"
+menuconfig GPIO_MAX2219X
+	bool "MAX2219X GPIO driver"
 	default y
 	depends on SPI
-	depends on DT_HAS_ADI_MAX22190_GPIO_ENABLED
+	depends on DT_HAS_ADI_MAX22190_GPIO_ENABLED || DT_HAS_ADI_MAX22199_GPIO_ENABLED
 	help
-	  Enabe MAX22190 Octal industrial digital
+	  Enabe MAX2219X Octal industrial digital
 	  input with diagnostics
 
 config GPIO_MAX22190_INIT_PRIORITY
 	int "Driver init priority"
 	default 99
-	depends on GPIO_MAX22190
+	depends on GPIO_MAX2219X
 	help
 	  Device driver initialization priority.
