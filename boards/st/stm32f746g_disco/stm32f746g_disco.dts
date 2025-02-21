@@ -57,6 +57,15 @@
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 
+	/* Declare attributes for the External flash Mem to allow code execution there */
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(16)>; /* max addressable area */
+		zephyr,memory-region = "EXTMEM";
+		/* Override ATTR_MPU_EXTMEM with ATTR_MPU_IO to allow access */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+	};
+
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
