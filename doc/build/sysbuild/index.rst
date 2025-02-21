@@ -815,3 +815,9 @@ each image that is part of a project. Alternatively, there are
 which can be used to include CMake and Kconfig files for the overall sysbuild
 image itself, this is where e.g. a custom image for a particular board or SoC
 can be added.
+
+
+.. toctree::
+    :maxdepth: 1
+
+    images.rst
