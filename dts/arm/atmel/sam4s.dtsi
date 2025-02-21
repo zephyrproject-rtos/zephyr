@@ -55,7 +55,7 @@
 			status = "okay";
 		};
 
-		sram0: memory@20100000 {
+		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
 
