@@ -177,7 +177,7 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_RADIO_END_TIME_CAPTURE_PPI,
-		(uint32_t)&(NRF_RADIO->HAL_RADIO_TRX_EVENTS_END),
+		(uint32_t)&(NRF_RADIO->HAL_RADIO_EVENTS_END),
 		(uint32_t)&(EVENT_TIMER->TASKS_CAPTURE[HAL_EVENT_TIMER_TRX_END_CC_OFFSET]));
 }
 
