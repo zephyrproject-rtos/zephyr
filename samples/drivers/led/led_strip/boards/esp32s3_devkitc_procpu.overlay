@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,10 +12,15 @@
 	};
 };
 
+&i2s0_default {
+	group1 {
+		pinmux = <I2S0_O_SD_GPIO38>;
+		output-enable;
+	};
+};
+
 i2s_led: &i2s0 {
 	status = "okay";
-
-	pinctrl-0 = <&i2s0_pinconf>;
 
 	dmas = <&dma 3>;
 	dma-names = "tx";
@@ -24,7 +29,7 @@ i2s_led: &i2s0 {
 		compatible = "worldsemi,ws2812-i2s";
 
 		reg = <0>;
-		chain-length = <46>;
+		chain-length = <1>;
 		color-mapping = <LED_COLOR_ID_GREEN
 				 LED_COLOR_ID_RED
 				 LED_COLOR_ID_BLUE>;
@@ -34,13 +39,4 @@ i2s_led: &i2s0 {
 
 &dma {
 	status = "okay";
-};
-
-&pinctrl {
-	i2s0_pinconf: i2s0_pinconf {
-		group1 {
-			pinmux = <I2S0_O_SD_GPIO38>;
-			output-enable;
-		};
-	};
 };
