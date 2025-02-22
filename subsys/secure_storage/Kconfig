@@ -65,7 +65,6 @@ endif
 
 menuconfig SECURE_STORAGE_ITS_STORE_MODULE
 	bool "ITS store module"
-	imply FLASH # for FLASH_HAS_DRIVER_ENABLED
 	help
 	  The module that handles the storage/retrieval of the ITS data to/from NVM.
 	  Zephyr's ITS implementation calls into it.
