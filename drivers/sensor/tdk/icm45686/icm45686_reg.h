@@ -30,6 +30,11 @@
 #define REG_TEMP_DATA1_UI			0x0C
 #define REG_TEMP_DATA0_UI			0x0D
 #define REG_PWR_MGMT0				0x10
+#define REG_INT1_CONFIG0			0x16
+#define REG_INT1_CONFIG1			0x17
+#define REG_INT1_CONFIG2			0x18
+#define REG_INT1_STATUS0			0x19
+#define REG_INT1_STATUS1			0x1A
 #define REG_ACCEL_CONFIG0			0x1B
 #define REG_GYRO_CONFIG0			0x1C
 #define REG_DRIVE_CONFIG0			0x32
@@ -49,6 +54,18 @@
 #define REG_DRIVE_CONFIG0_SPI_SLEW(val)			(((val) & BIT_MASK(2)) << 1)
 
 #define REG_MISC2_SOFT_RST(val)				((val << 1) & BIT(1))
+
+#define REG_INT1_CONFIG0_STATUS_EN_DRDY(val)		(((val) & BIT_MASK(1)) << 2)
+#define REG_INT1_CONFIG0_STATUS_EN_FIFO_THS(val)	(((val) & BIT_MASK(1)) << 1)
+#define REG_INT1_CONFIG0_STATUS_EN_FIFO_FULL(val)	((val) & BIT_MASK(1))
+
+#define REG_INT1_CONFIG2_EN_OPEN_DRAIN(val)		(((val) & BIT_MASK(1)) << 2)
+#define REG_INT1_CONFIG2_EN_LATCH_MODE(val)		(((val) & BIT_MASK(1)) << 1)
+#define REG_INT1_CONFIG2_EN_ACTIVE_HIGH(val)		((val) & BIT_MASK(1))
+
+#define REG_INT1_STATUS0_DRDY(val)			(((val) & BIT_MASK(1)) << 2)
+#define REG_INT1_STATUS0_FIFO_THS(val)			(((val) & BIT_MASK(1)) << 1)
+#define REG_INT1_STATUS0_FIFO_FULL(val)			((val) & BIT_MASK(1))
 
 /* Misc. Defines */
 #define WHO_AM_I_ICM45686 0xE9
