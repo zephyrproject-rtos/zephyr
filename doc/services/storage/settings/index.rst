@@ -5,9 +5,9 @@ Settings
 
 The settings subsystem gives modules a way to store persistent per-device
 configuration and runtime state.  A variety of storage implementations are
-provided behind a common API using FCB, NVS, or a file system.  These different
-implementations give the application developer flexibility to select an
-appropriate storage medium, and even change it later as needs change.  This
+provided behind a common API using FCB, NVS, ZMS or a file system.  These
+different implementations give the application developer flexibility to select
+an appropriate storage medium, and even change it later as needs change.  This
 subsystem is used by various Zephyr components and can be used simultaneously by
 user applications.
 
@@ -23,8 +23,8 @@ For an example of the settings subsystem refer to :zephyr:code-sample:`settings`
 
 .. note::
 
-   As of Zephyr release 2.1 the recommended backend for non-filesystem
-   storage is :ref:`NVS <nvs_api>`.
+   As of Zephyr release 4.1 the recommended backends for non-filesystem
+   storage are :ref:`NVS <nvs_api>` and :ref:`ZMS <zms_api>`.
 
 Handlers
 ********
@@ -39,7 +39,7 @@ for static handlers.
     :c:func:`settings_runtime_get()` from the runtime backend.
 
 **h_set**
-    This gets called when the value is loaded from persisted storage with
+    This gets called when the value is loaded from persistent storage with
     :c:func:`settings_load()`, or when using :c:func:`settings_runtime_set()` from the
     runtime backend.
 
@@ -93,10 +93,12 @@ backend.
 Zephyr Storage Backends
 ***********************
 
-Zephyr has three storage backends: a Flash Circular Buffer
-(:kconfig:option:`CONFIG_SETTINGS_FCB`), a file in the filesystem
-(:kconfig:option:`CONFIG_SETTINGS_FILE`), or non-volatile storage
-(:kconfig:option:`CONFIG_SETTINGS_NVS`).
+Zephyr offers the following storage backends:
+
+* Flash Circular Buffer (:kconfig:option:`CONFIG_SETTINGS_FCB`).
+* A file in the filesystem (:kconfig:option:`CONFIG_SETTINGS_FILE`).
+* Non-Volatile Storage (:kconfig:option:`CONFIG_SETTINGS_NVS`).
+* Zephyr Memory Storage (:kconfig:option:`CONFIG_SETTINGS_ZMS`).
 
 You can declare multiple sources for settings; settings from
 all of these are restored when :c:func:`settings_load()` is called.
@@ -109,14 +111,27 @@ using :c:func:`settings_fcb_dst()`. As a side-effect,  :c:func:`settings_fcb_src
 initializes the FCB area, so it must be called before calling
 :c:func:`settings_fcb_dst()`. File read target is registered using
 :c:func:`settings_file_src()`, and write target by using :c:func:`settings_file_dst()`.
+
 Non-volatile storage read target is registered using
 :c:func:`settings_nvs_src()`, and write target by using
 :c:func:`settings_nvs_dst()`.
 
+Zephyr Memory Storage (ZMS) read target is registered using :c:func:`settings_zms_src()`,
+and write target is registered using :c:func:`settings_zms_dst()`.
+
+ZMS backend has the particularity of using hash functions to hash the settings
+key before storing it to the persistent storage. This implementation implies
+that some collisions between key's hashes could occur if a big number of
+different keys are stored. This number depends on the selected hash function.
+
+ZMS backend can handle :math:`2^n` maximum collisions where n is defined by
+(:kconfig:option:`SETTINGS_ZMS_MAX_COLLISIONS_BITS`).
+
+
 Storage Location
 ****************
 
-The FCB and non-volatile storage (NVS) backends both look for a fixed
+The FCB, non-volatile storage (NVS) and ZMS backends look for a fixed
 partition with label "storage" by default. A different partition can be
 selected by setting the ``zephyr,settings-partition`` property of the
 chosen node in the devicetree.
@@ -124,8 +139,8 @@ chosen node in the devicetree.
 The file path used by the file backend to store settings is selected via the
 option :kconfig:option:`CONFIG_SETTINGS_FILE_PATH`.
 
-Loading data from persisted storage
-***********************************
+Loading data from persistent storage
+************************************
 
 A call to :c:func:`settings_load()` uses an ``h_set`` implementation
 to load settings data from storage to volatile memory.
@@ -146,7 +161,7 @@ A call to :c:func:`settings_save_one()` uses a backend implementation to store
 settings data to the storage medium. A call to :c:func:`settings_save()` uses an
 ``h_export`` implementation to store different data in one operation using
 :c:func:`settings_save_one()`.
-A key need to be covered by a ``h_export`` only if it is supposed to be stored
+A key needs to be covered by a ``h_export`` only if it is supposed to be stored
 by :c:func:`settings_save()` call.
 
 For both FCB and file back-end only storage requests with data which
@@ -227,7 +242,7 @@ Example: Persist Runtime State
 
 This is a simple example showing how to persist runtime state. In this example,
 only ``h_set`` is defined, which is used when restoring value from
-persisted storage.
+persistent storage.
 
 In this example, the ``main`` function increments ``foo_val``, and then
 persists the latest number. When the system restarts, the application calls
