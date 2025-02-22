@@ -48,6 +48,23 @@ struct icm45686_encoded_data {
 	struct icm45686_encoded_payload payload;
 };
 
+struct icm45686_triggers {
+		struct gpio_callback cb;
+		const struct device *dev;
+		struct k_mutex lock;
+		struct {
+			struct sensor_trigger trigger;
+			sensor_trigger_handler_t handler;
+		} entry;
+#if defined(CONFIG_ICM45686_TRIGGER_OWN_THREAD)
+		K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ICM45686_THREAD_STACK_SIZE);
+		struct k_thread thread;
+		struct k_sem sem;
+#elif defined(CONFIG_ICM45686_TRIGGER_GLOBAL_THREAD)
+		struct k_work work;
+#endif
+};
+
 struct icm45686_data {
 	struct {
 		struct rtio_iodev *iodev;
@@ -55,6 +72,9 @@ struct icm45686_data {
 	} rtio;
 	/** Single-shot encoded data instance to support fetch/get API */
 	struct icm45686_encoded_data edata;
+#if defined(CONFIG_ICM45686_TRIGGER)
+	struct icm45686_triggers triggers;
+#endif /* CONFIG_ICM45686_TRIGGER */
 };
 
 struct icm45686_config {
@@ -72,6 +92,7 @@ struct icm45686_config {
 			uint8_t lpf : 3;
 		} gyro;
 	} settings;
+	struct gpio_dt_spec int_gpio;
 };
 
 static inline void icm45686_accel_ms(struct icm45686_encoded_data *edata,
