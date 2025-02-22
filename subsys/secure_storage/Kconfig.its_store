@@ -31,8 +31,6 @@ config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
 	     && $(dt_node_has_compat,$(dt_node_parent,$(DT_SETTINGS_PARTITIION)),fixed-partitions))\
 	  || ($(dt_path_enabled,$(DT_STORAGE_PARTITION)) \
 	      && $(dt_node_has_compat,$(dt_node_parent,$(DT_STORAGE_PARTITION)),fixed-partitions)))
-	imply FLASH_MAP
-	imply NVS
 	select SETTINGS
 
 config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
