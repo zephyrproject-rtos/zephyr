@@ -55,6 +55,8 @@ struct i2s_esp32_stream_data {
 	struct k_msgq queue;
 	struct intr_handle_data_t *irq_handle;
 	bool dma_pending;
+	uint8_t chunks_rem;
+	uint8_t chunk_idx;
 };
 
 struct i2s_esp32_stream_conf {
@@ -188,6 +190,47 @@ static void i2s_esp32_rx_callback(void *arg, int status)
 		}
 	}
 
+#if SOC_GDMA_SUPPORTED
+	const i2s_hal_context_t *hal = &(dev_cfg->hal);
+	uint16_t chunk_len;
+
+	if (stream->data->chunks_rem) {
+		uint32_t dst;
+
+		stream->data->chunk_idx++;
+		stream->data->chunks_rem--;
+		if (stream->data->chunks_rem) {
+			chunk_len = I2S_ESP32_DMA_BUFFER_MAX_SIZE;
+		} else {
+			chunk_len = stream->data->mem_block_len % I2S_ESP32_DMA_BUFFER_MAX_SIZE;
+			if (chunk_len == 0) {
+				chunk_len = I2S_ESP32_DMA_BUFFER_MAX_SIZE;
+			}
+		}
+
+		dst = (uint32_t)stream->data->mem_block + (stream->data->chunk_idx *
+							   I2S_ESP32_DMA_BUFFER_MAX_SIZE);
+		err = dma_reload(stream->conf->dma_dev, stream->conf->dma_channel, (uint32_t)NULL,
+				(uint32_t)dst, chunk_len);
+		if (err < 0) {
+			LOG_ERR("Failed to reload DMA channel: %"PRIu32, stream->conf->dma_channel);
+			goto rx_disable;
+		}
+
+		i2s_ll_rx_set_eof_num(hal->dev, chunk_len);
+
+		err = dma_start(stream->conf->dma_dev, stream->conf->dma_channel);
+		if (err < 0) {
+			LOG_ERR("Failed to start DMA channel: %"PRIu32, stream->conf->dma_channel);
+			goto rx_disable;
+		}
+
+		stream->data->dma_pending = true;
+
+		return;
+	}
+#endif /* SOC_GDMA_SUPPORTED */
+
 	struct queue_item item = {
 		.buffer = stream->data->mem_block,
 		.size = stream->data->mem_block_len
@@ -259,16 +302,9 @@ static int i2s_esp32_rx_start_transfer(const struct device *dev)
 	}
 	stream->data->mem_block_len = stream->data->i2s_cfg.block_size;
 
-	i2s_hal_rx_stop(hal);
-	i2s_hal_rx_reset(hal);
-#if !SOC_GDMA_SUPPORTED
-	i2s_hal_rx_reset_dma(hal);
-#endif /* !SOC_GDMA_SUPPORTED */
-	i2s_hal_rx_reset_fifo(hal);
-
 	err = i2s_esp32_start_dma(dev, I2S_DIR_RX);
 	if (err < 0) {
-		LOG_DBG("Failed to start RX DMA transfer: %d", err);
+		LOG_ERR("Failed to start RX DMA transfer: %d", err);
 		return -EIO;
 	}
 
@@ -358,7 +394,6 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 			stream->data->state = I2S_STATE_READY;
 			goto tx_disable;
 		}
-		/*else: DRAIN trigger, so continue until queue is empty*/
 	}
 
 	if (stream->data->last_block) {
@@ -369,7 +404,7 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 	err = k_msgq_get(&stream->data->queue, &item, K_NO_WAIT);
 	if (err < 0) {
 		stream->data->state = I2S_STATE_ERROR;
-		LOG_WRN("TX queue empty: %d", err);
+		LOG_ERR("TX queue empty: %d", err);
 		goto tx_disable;
 	}
 
@@ -430,16 +465,9 @@ static int i2s_esp32_tx_start_transfer(const struct device *dev)
 	stream->data->mem_block = item.buffer;
 	stream->data->mem_block_len = item.size;
 
-	i2s_hal_tx_stop(hal);
-	i2s_hal_tx_reset(hal);
-#if !SOC_GDMA_SUPPORTED
-	i2s_hal_tx_reset_dma(hal);
-#endif /* !SOC_GDMA_SUPPORTED */
-	i2s_hal_tx_reset_fifo(hal);
-
 	err = i2s_esp32_start_dma(dev, I2S_DIR_TX);
 	if (err < 0) {
-		LOG_DBG("Failed to start TX DMA transfer: %d", err);
+		LOG_ERR("Failed to start TX DMA transfer: %d", err);
 		return -EIO;
 	}
 
@@ -512,19 +540,19 @@ int i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
 
 	err = dma_config(stream->conf->dma_dev, stream->conf->dma_channel, &dma_cfg);
 	if (err < 0) {
-		LOG_DBG("Failed to configure DMA channel: %"PRIu32, stream->conf->dma_channel);
+		LOG_ERR("Failed to configure DMA channel: %"PRIu32, stream->conf->dma_channel);
 		return -EINVAL;
 	}
 #else
 	lldesc_t *desc_iter = stream->conf->dma_desc;
 
 	if (!mem_block) {
-		LOG_DBG("At least one dma block is required");
+		LOG_ERR("At least one dma block is required");
 		return -EINVAL;
 	}
 
 	if (!esp_ptr_dma_capable((void *)mem_block)) {
-		LOG_DBG("Buffer is not in DMA capable memory: %p",
+		LOG_ERR("Buffer is not in DMA capable memory: %p",
 			(uint32_t *)mem_block);
 
 		return -EINVAL;
@@ -566,7 +594,7 @@ int i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
 
 	if (desc_iter->empty)  {
 		stream->data->dma_pending = false;
-		LOG_DBG("Run out of descriptors. Increase CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX");
+		LOG_ERR("Run out of descriptors. Increase CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX");
 		return -EINVAL;
 	}
 #endif /* SOC_GDMA_SUPPORTED */
@@ -587,7 +615,7 @@ static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir)
 	} else if (dir == I2S_DIR_TX) {
 		stream = &dev_cfg->tx;
 	} else {
-		LOG_DBG("Invalid DMA direction");
+		LOG_ERR("Invalid DMA direction");
 		return -EINVAL;
 	}
 
@@ -595,31 +623,54 @@ static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir)
 
 	err = i2s_esp32_config_dma(dev, dir, stream);
 	if (err < 0) {
-		LOG_DBG("Dma configuration failed: %i", err);
+		LOG_ERR("Dma configuration failed: %i", err);
 		goto unlock;
 	}
 
+#if I2S_ESP32_IS_DIR_EN(rx)
 	if (dir == I2S_DIR_RX) {
-		i2s_ll_rx_set_eof_num(hal->dev, stream->data->mem_block_len);
+		uint16_t chunk_len;
+
+#if SOC_GDMA_SUPPORTED
+		if (stream->data->mem_block_len < I2S_ESP32_DMA_BUFFER_MAX_SIZE) {
+			chunk_len = stream->data->mem_block_len;
+			stream->data->chunks_rem = 0;
+		} else {
+			chunk_len = I2S_ESP32_DMA_BUFFER_MAX_SIZE;
+			stream->data->chunks_rem = ((stream->data->mem_block_len +
+						     (I2S_ESP32_DMA_BUFFER_MAX_SIZE - 1)) /
+						    I2S_ESP32_DMA_BUFFER_MAX_SIZE) - 1;
+		}
+		stream->data->chunk_idx = 0;
+#else
+		chunk_len = stream->data->mem_block_len;
+#endif
+		i2s_ll_rx_set_eof_num(hal->dev, chunk_len);
 	}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
 
 #if SOC_GDMA_SUPPORTED
 	err = dma_start(stream->conf->dma_dev, stream->conf->dma_channel);
 	if (err < 0) {
-		LOG_DBG("Failed to start DMA channel: %"PRIu32, stream->conf->dma_channel);
+		LOG_ERR("Failed to start DMA channel: %"PRIu32, stream->conf->dma_channel);
 		goto unlock;
 	}
 	stream->data->dma_pending = true;
 #else
+#if I2S_ESP32_IS_DIR_EN(rx)
 	if (dir == I2S_DIR_RX) {
 		i2s_hal_rx_enable_dma(hal);
 		i2s_hal_rx_enable_intr(hal);
 		i2s_hal_rx_start_link(hal, (uint32_t)&(stream->conf->dma_desc[0]));
-	} else {
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+
+#if I2S_ESP32_IS_DIR_EN(tx)
+	if (dir == I2S_DIR_TX) {
 		i2s_hal_tx_enable_dma(hal);
 		i2s_hal_tx_enable_intr(hal);
 		i2s_hal_tx_start_link(hal, (uint32_t)&(stream->conf->dma_desc[0]));
 	}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
 #endif /* SOC_GDMA_SUPPORTED */
 
 unlock:
@@ -646,61 +697,74 @@ static int i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir)
 #if SOC_GDMA_SUPPORTED
 	void *src = NULL, *dst = NULL;
 
-	if (dir == I2S_DIR_RX) {
 #if I2S_ESP32_IS_DIR_EN(rx)
+	uint16_t chunk_len;
+
+	if (dir == I2S_DIR_RX) {
 		dst = stream->data->mem_block;
-#endif /* I2S_ESP32_IS_DIR_EN(rx) */
-	} else {
-#if I2S_ESP32_IS_DIR_EN(tx)
-		src = stream->data->mem_block;
-#endif /* I2S_ESP32_IS_DIR_EN(tx) */
+
+		if (stream->data->mem_block_len < I2S_ESP32_DMA_BUFFER_MAX_SIZE) {
+			chunk_len = stream->data->mem_block_len;
+			stream->data->chunks_rem = 0;
+		} else {
+			chunk_len = I2S_ESP32_DMA_BUFFER_MAX_SIZE;
+			stream->data->chunks_rem = ((stream->data->mem_block_len +
+						     (I2S_ESP32_DMA_BUFFER_MAX_SIZE - 1)) /
+						    I2S_ESP32_DMA_BUFFER_MAX_SIZE) - 1;
+		}
+		stream->data->chunk_idx = 0;
 	}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+
+#if I2S_ESP32_IS_DIR_EN(tx)
+	if (dir == I2S_DIR_TX) {
+		src = stream->data->mem_block;
+		chunk_len = stream->data->mem_block_len;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
 
 	err = dma_reload(stream->conf->dma_dev, stream->conf->dma_channel, (uint32_t)src,
-			 (uint32_t)dst, stream->data->mem_block_len);
+			(uint32_t)dst, chunk_len);
 	if (err < 0) {
-		LOG_DBG("Failed to reload DMA channel: %"PRIu32, stream->conf->dma_channel);
-	} else {
+		LOG_ERR("Failed to reload DMA channel: %"PRIu32, stream->conf->dma_channel);
+		return -EIO;
+	}
+
 #if I2S_ESP32_IS_DIR_EN(rx)
-		if (dir == I2S_DIR_RX) {
-			i2s_ll_rx_set_eof_num(hal->dev, stream->data->mem_block_len);
-		}
+	if (dir == I2S_DIR_RX) {
+		i2s_ll_rx_set_eof_num(hal->dev, chunk_len);
+	}
 #endif /* I2S_ESP32_IS_DIR_EN(rx) */
 
-		err = dma_start(stream->conf->dma_dev, stream->conf->dma_channel);
-		if (err < 0) {
-			LOG_DBG("Failed to start DMA channel: %"PRIu32, stream->conf->dma_channel);
-			return -EIO;
-		}
+	err = dma_start(stream->conf->dma_dev, stream->conf->dma_channel);
+	if (err < 0) {
+		LOG_ERR("Failed to start DMA channel: %"PRIu32, stream->conf->dma_channel);
+		return -EIO;
 	}
-	stream->data->dma_pending = true;
 #else
 	err = i2s_esp32_config_dma(dev, dir, stream);
 	if (err < 0) {
-		LOG_DBG("Failed to configure DMA");
-	} else {
-		if (dir == I2S_DIR_RX) {
-#if I2S_ESP32_IS_DIR_EN(rx)
-			i2s_ll_rx_set_eof_num(hal->dev, stream->data->mem_block_len);
-			i2s_hal_rx_enable_intr(hal);
-			i2s_hal_rx_enable_dma(hal);
-			i2s_hal_rx_start_link(hal, (uint32_t)stream->conf->dma_desc);
-#endif /* I2S_ESP32_IS_DIR_EN(rx) */
-		} else {
-#if I2S_ESP32_IS_DIR_EN(tx)
-			i2s_hal_tx_enable_intr(hal);
-			i2s_hal_tx_enable_dma(hal);
-			i2s_hal_tx_start_link(hal, (uint32_t)stream->conf->dma_desc);
-#endif /* I2S_ESP32_IS_DIR_EN(tx) */
-		}
+		LOG_ERR("Failed to configure DMA");
+		return -EIO;
 	}
+
+#if I2S_ESP32_IS_DIR_EN(rx)
+	if (dir == I2S_DIR_RX) {
+		i2s_ll_rx_set_eof_num(hal->dev, stream->data->mem_block_len);
+		i2s_hal_rx_start_link(hal, (uint32_t)stream->conf->dma_desc);
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+
+#if I2S_ESP32_IS_DIR_EN(tx)
+	if (dir == I2S_DIR_TX) {
+		i2s_hal_tx_start_link(hal, (uint32_t)stream->conf->dma_desc);
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
 #endif /* SOC_GDMA_SUPPORTED */
 
-	if (err < 0) {
-		LOG_ERR("Error restarting DMA: %i", err);
-	}
+	stream->data->dma_pending = true;
 
-	return err;
+	return 0;
 }
 
 static int i2s_esp32_initialize(const struct device *dev)
@@ -1116,6 +1180,8 @@ static const struct i2s_config *i2s_esp32_config_get(const struct device *dev, e
 static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_esp32_stream *stream,
 				    enum i2s_dir dir, enum i2s_trigger_cmd cmd)
 {
+	const struct i2s_esp32_cfg *dev_cfg = dev->config;
+	const i2s_hal_context_t *hal = &dev_cfg->hal;
 	unsigned int key;
 	int err;
 
@@ -1127,6 +1193,23 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 		}
 
 		key = irq_lock();
+
+		if (dir == I2S_DIR_RX) {
+			i2s_hal_rx_stop(hal);
+			i2s_hal_rx_reset(hal);
+#if !SOC_GDMA_SUPPORTED
+			i2s_hal_rx_reset_dma(hal);
+#endif /* !SOC_GDMA_SUPPORTED */
+			i2s_hal_rx_reset_fifo(hal);
+		} else if (dir == I2S_DIR_TX) {
+			i2s_hal_tx_stop(hal);
+			i2s_hal_tx_reset(hal);
+#if !SOC_GDMA_SUPPORTED
+			i2s_hal_tx_reset_dma(hal);
+#endif /* !SOC_GDMA_SUPPORTED */
+			i2s_hal_tx_reset_fifo(hal);
+		}
+
 		err = stream->conf->start_transfer(dev);
 		if (err < 0) {
 			LOG_ERR("START - Transfer start failed: %d", err);
@@ -1166,8 +1249,8 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 			return -EIO;
 		}
 
-		if (dir == I2S_DIR_TX) {
 #if I2S_ESP32_IS_DIR_EN(tx)
+		if (dir == I2S_DIR_TX) {
 			if (k_msgq_num_used_get(&stream->data->queue) > 0 ||
 			    stream->data->dma_pending) {
 				stream->data->stop_without_draining = false;
@@ -1176,9 +1259,11 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 				stream->conf->stop_transfer(dev);
 				stream->data->state = I2S_STATE_READY;
 			}
+		}
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
-		} else if (dir == I2S_DIR_RX) {
+
 #if I2S_ESP32_IS_DIR_EN(rx)
+		if (dir == I2S_DIR_RX) {
 			if (stream->data->dma_pending) {
 				stream->data->stop_without_draining = true;
 				stream->data->state = I2S_STATE_STOPPING;
@@ -1187,12 +1272,8 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 				stream->data->last_block = true;
 				stream->data->state = I2S_STATE_READY;
 			}
-#endif /* I2S_ESP32_IS_DIR_EN(rx) */
-		} else {
-			irq_unlock(key);
-			LOG_ERR("Invalid direction: %d", (int)dir);
-			return -EINVAL;
 		}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
 
 		irq_unlock(key);
 		break;
