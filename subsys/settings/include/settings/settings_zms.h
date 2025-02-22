@@ -60,10 +60,9 @@ extern "C" {
 #define ZMS_COLLISIONS_MASK GENMASK(CONFIG_SETTINGS_ZMS_MAX_COLLISIONS_BITS, 1)
 #define ZMS_HASH_TOTAL_MASK GENMASK(29, 1)
 #define ZMS_MAX_COLLISIONS  (BIT(CONFIG_SETTINGS_ZMS_MAX_COLLISIONS_BITS) - 1)
-#define ZMS_HEADER_HASH     0x80000000
 
 /* some useful macros */
-#define ZMS_NAME_HASH_ID(x) (x & ZMS_HASH_TOTAL_MASK)
+#define ZMS_NAME_ID_FROM_LL_NODE(x) (x & ~BIT(0))
 #define ZMS_UPDATE_COLLISION_NUM(x, y)                                                             \
 	((x & ~ZMS_COLLISIONS_MASK) | ((y << 1) & ZMS_COLLISIONS_MASK))
 #define ZMS_COLLISION_NUM(x) ((x & ZMS_COLLISIONS_MASK) >> 1)
