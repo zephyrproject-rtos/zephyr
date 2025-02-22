@@ -207,7 +207,9 @@ static uint8_t bme680_calc_gas_wait(uint16_t dur)
 			dur = dur / 4;
 			factor += 1;
 		}
-		durval = dur + (factor * 64);
+		uint16_t max_duration = dur + (factor * 64);
+
+		durval = max_duration > 0xff ? 0xff : max_duration;
 	}
 
 	return durval;
