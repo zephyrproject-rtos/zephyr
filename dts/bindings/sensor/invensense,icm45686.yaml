@@ -160,3 +160,11 @@ properties:
       - 4 # ICM45686_DT_GYRO_LPF_BW_1_32
       - 5 # ICM45686_DT_GYRO_LPF_BW_1_64
       - 6 # ICM45686_DT_GYRO_LPF_BW_1_128
+
+  fifo-watermark:
+    type: int
+    default: 0
+    description: |
+      Specify the FIFO watermark level in frame count.
+      Default is power-up configuration (disabled).
+      Valid range: 0 - 104
