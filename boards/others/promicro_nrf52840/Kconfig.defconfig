@@ -23,7 +23,4 @@ config FLASH_LOAD_OFFSET
 	default 0x1000
 	depends on BOARD_HAS_NRF5_BOOTLOADER && (MCUBOOT || !USE_DT_CODE_PARTITION)
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_PROMICRO_NRF52840
