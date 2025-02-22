@@ -3,6 +3,6 @@
 
 config CH32V00X_SYSTICK
 	bool "CH32V00X systick timer"
-	depends on SOC_CH32V003
+	depends on SOC_CH32V003 || SOC_SERIES_QINGKE_V4C
 	default y
 	depends on DT_HAS_WCH_SYSTICK_ENABLED
