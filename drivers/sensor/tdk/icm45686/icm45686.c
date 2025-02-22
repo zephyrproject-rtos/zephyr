@@ -21,6 +21,7 @@
 #include "icm45686_reg.h"
 #include "icm45686_bus.h"
 #include "icm45686_decoder.h"
+#include "icm45686_trigger.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM45686, CONFIG_SENSOR_LOG_LEVEL);
@@ -224,6 +225,9 @@ static void icm45686_submit(const struct device *dev, struct rtio_iodev_sqe *iod
 static DEVICE_API(sensor, icm45686_driver_api) = {
 	.sample_fetch = icm45686_sample_fetch,
 	.channel_get = icm45686_channel_get,
+#if defined(CONFIG_ICM45686_TRIGGER)
+	.trigger_set = icm45686_trigger_set,
+#endif /* CONFIG_ICM45686_TRIGGER */
 #if defined(CONFIG_SENSOR_ASYNC_API)
 	.get_decoder = icm45686_get_decoder,
 	.submit = icm45686_submit,
@@ -344,6 +348,14 @@ static int icm45686_init(const struct device *dev)
 		return err;
 	}
 
+	if (IS_ENABLED(CONFIG_ICM45686_TRIGGER)) {
+		err = icm45686_trigger_init(dev);
+		if (err) {
+			LOG_ERR("Failed to initialize triggers: %d", err);
+			return err;
+		}
+	}
+
 	LOG_DBG("Init OK");
 
 	return 0;
@@ -382,6 +394,7 @@ static int icm45686_init(const struct device *dev)
 				.lpf = DT_INST_PROP_OR(inst, gyro_lpf, 0),			   \
 			},									   \
 		},										   \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \
 	};											   \
 	static struct icm45686_data icm45686_data_##inst = {					   \
 		.edata.header = {								   \
