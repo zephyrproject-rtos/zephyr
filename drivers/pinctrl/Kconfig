@@ -73,6 +73,7 @@ source "drivers/pinctrl/Kconfig.mec5"
 source "drivers/pinctrl/Kconfig.wch_afio"
 source "drivers/pinctrl/Kconfig.sy1xx"
 source "drivers/pinctrl/Kconfig.realtek_rts5912"
+source "drivers/pinctrl/Kconfig.wch_20x_30x_afio"
 
 rsource "renesas/Kconfig"
 
