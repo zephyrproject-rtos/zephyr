@@ -3,7 +3,7 @@
 
 menuconfig SECURE_STORAGE
 	bool "Secure storage subsystem"
-	depends on !BUILD_WITH_TFM
+	depends on MBEDTLS_PSA_ITS_BACKEND_SECURE_STORAGE
 	select EXPERIMENTAL
 	help
 	  The secure storage subsystem provides an implementation of the PSA Secure Storage API

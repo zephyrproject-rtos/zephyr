@@ -243,3 +243,27 @@ config APP_LINK_WITH_MBEDTLS
 	  issues for 'app'.
 
 endif # MBEDTLS
+
+choice MBEDTLS_PSA_ITS_BACKEND
+	prompt "PSA Internal-Trusted-Storage backend implementation"
+
+config MBEDTLS_PSA_ITS_BACKEND_TFM
+	bool "Trusted-Firmware-M"
+	depends on BUILD_WITH_TFM
+
+config MBEDTLS_PSA_ITS_BACKEND_SECURE_STORAGE
+	bool "Zephyr Secure Storage"
+	depends on !BUILD_WITH_TFM
+
+config MBEDTLS_PSA_ITS_BACKEND_MBEDTLS_FILE
+	bool "MbedTLS builtin file"
+	depends on !BUILD_WITH_TFM
+	depends on ARCH_POSIX
+	select MBEDTLS
+	select MBEDTLS_PSA_CRYPTO_C
+	help
+	  Native filesystem based implementation of PSA ITS. Note that multiple
+	  instances of the sample application running at the same time will all
+	  share the same backed.
+
+endchoice
