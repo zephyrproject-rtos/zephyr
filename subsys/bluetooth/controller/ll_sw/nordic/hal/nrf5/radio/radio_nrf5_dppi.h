@@ -233,7 +233,7 @@ static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 /* DPPI setup used for SW-based auto-switching during TIFS. */
 
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) && !defined(CONFIG_BT_CTLR_DF)
 #define HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END     HAL_NRF_RADIO_EVENT_END
 #define HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END HAL_RADIO_PUBLISH_END
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
