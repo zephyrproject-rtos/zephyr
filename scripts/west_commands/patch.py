@@ -302,12 +302,8 @@ class Patch(WestCommand):
         if args.dst_modules is not None:
             args.dst_modules = [self.get_module_path(m) for m in args.dst_modules]
 
-    def load_yml(self, args, allow_missing):
+    def load_yml(self, args):
         if not os.path.isfile(args.patch_yml):
-            if not allow_missing:
-                self.inf(f"no patches to apply: {args.patch_yml} not found")
-                return None
-
             # Return the schema defaults
             return pykwalify.core.Core(source_data={}, schema_data=patches_schema).validate()
 
@@ -325,10 +321,7 @@ class Patch(WestCommand):
         if not os.path.isfile(west_config):
             self.die(f"{args.west_workspace} is not a valid west workspace")
 
-        yml = self.load_yml(args, args.subcommand in ["gh-fetch"])
-        if yml is None:
-            return
-
+        yml = self.load_yml(args)
         if not args.subcommand:
             args.subcommand = "list"
 
