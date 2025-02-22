@@ -1,6 +1,8 @@
 /*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright 2025 Stefan Golinschi <stefan.golinschi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
 #include <dt-bindings/pinctrl/esp32s3-pinctrl.h>

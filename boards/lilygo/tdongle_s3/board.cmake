@@ -1,4 +1,5 @@
-# SPDX-License-Identifier: Apache-2.0
+# Copyright(c) 2025 Stefan Golinschi < stefan.golinschi @gmail.com>
+# SPDX - License - Identifier : Apache - 2.0
 
 if(NOT "${OPENOCD}" MATCHES "^${ESPRESSIF_TOOLCHAIN_PATH}/.*")
   set(OPENOCD OPENOCD-NOTFOUND)

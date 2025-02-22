@@ -1,5 +1,5 @@
-# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
-# SPDX-License-Identifier: Apache-2.0
+# Copyright(c) 2025 Stefan Golinschi < stefan.golinschi @gmail.com>
+# SPDX - License - Identifier : Apache - 2.0
 
 choice BOOTLOADER
 	default BOOTLOADER_MCUBOOT

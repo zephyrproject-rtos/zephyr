@@ -1,8 +1,9 @@
 /*
-* Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright 2025 Stefan Golinschi <stefan.golinschi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
 
 #include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
@@ -15,7 +16,7 @@
 / {
 	model = "TDONGLE S3 PROCPU";
 	compatible = "espressif,esp32s3";
-	
+
 	aliases {
 		watchdog0 = &wdt0;
 		sdhc0 = &sdhc0;
@@ -23,7 +24,7 @@
 		sw0 = &button0;
 		led-strip = &apa102;
 	};
-	
+
 	chosen {
 		zephyr,sram = &sram0;
 		/* console can be UART or USB CDC */
@@ -37,7 +38,7 @@
 		zephyr,display = &st7735r;
 		zephyr,sdhc = &sdhc0;
 	};
-	
+
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
@@ -47,7 +48,7 @@
 		};
 		status="okay";
 	};
-	
+
 	mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
 		/* Enable D/C line for 4wire mode */
@@ -58,7 +59,7 @@
 		#size-cells = <0>;
 		write-only;
 		status = "okay";
-		
+
 		st7735r: st7735r@0 {
 			compatible = "sitronix,st7735r";
 			mipi-max-frequency = <20000000>;
