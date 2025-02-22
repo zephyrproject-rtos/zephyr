@@ -12,3 +12,6 @@ zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API
 zephyr_library_sources_ifdef(CONFIG_ICM45686_TRIGGER
 	icm45686_trigger.c
 )
+zephyr_library_sources_ifdef(CONFIG_ICM45686_STREAM
+	icm45686_stream.c
+)
