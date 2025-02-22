@@ -89,7 +89,8 @@ static inline void hal_radio_disable_on_hcto_ppi_config(void)
  */
 static inline void hal_radio_end_time_capture_ppi_config(void)
 {
-	nrf_radio_publish_set(NRF_RADIO, HAL_NRF_RADIO_EVENT_END, HAL_RADIO_END_TIME_CAPTURE_PPI);
+	nrf_radio_publish_set(NRF_RADIO, HAL_NRF_RADIO_EVENT_END,
+			      HAL_RADIO_END_TIME_CAPTURE_PPI);
 	nrf_timer_subscribe_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_END_TASK,
 				HAL_RADIO_END_TIME_CAPTURE_PPI);
 }
