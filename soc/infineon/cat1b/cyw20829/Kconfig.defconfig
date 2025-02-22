@@ -25,6 +25,9 @@ config BUILD_OUTPUT_ADJUST_LMA
 config MAIN_STACK_SIZE
 	default 2048
 
+config IDLE_STACK_SIZE
+	default 1024 if PM
+
 # add additional die specific params
 
 endif # SOC_DIE_CYW20829
