@@ -10,3 +10,6 @@ zephyr_library_sources(
 zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API
 	icm45686_decoder.c
 )
+zephyr_library_sources_ifdef(CONFIG_ICM45686_TRIGGER
+	icm45686_trigger.c
+)
