@@ -573,7 +573,7 @@ twister
 
 .. note::
    twister is only fully supported on Linux; on Windows and MacOS the execution
-   of tests is not supported, only building.
+   of tests is not supported on all target devices.
 
 If you think your change may break some test, you can submit your PR as a draft
 and let the project CI automatically run the :ref:`twister_script` for you.
