@@ -15,12 +15,9 @@ config SOC_NEORV32
 
 if SOC_NEORV32
 
-config SOC_NEORV32_V1_8_6
-	bool "v1.8.6"
-
 config SOC_NEORV32_VERSION
 	hex
-	default 0x01080600 if SOC_NEORV32_V1_8_6
+	default 0x01080600
 	help
 	  The targeted NEORV32 version as BCD-coded number. The format is
 	  identical to that of the NEORV32 Machine implementation ID (mimpid)
