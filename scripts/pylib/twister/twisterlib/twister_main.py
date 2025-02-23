@@ -28,15 +28,15 @@ logger.setLevel(logging.DEBUG)
 def setup_logging(outdir, log_file, log_level, timestamps):
     # create file handler which logs even debug messages
     if log_file:
-        fh = logging.FileHandler(log_file)
+        file_handler = logging.FileHandler(log_file)
     else:
-        fh = logging.FileHandler(os.path.join(outdir, "twister.log"))
+        file_handler = logging.FileHandler(os.path.join(outdir, "twister.log"))
 
-    fh.setLevel(logging.DEBUG)
+    file_handler.setLevel(logging.DEBUG)
 
     # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(getattr(logging, log_level))
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(getattr(logging, log_level))
 
     # create formatter and add it to the handlers
     if timestamps:
@@ -47,12 +47,12 @@ def setup_logging(outdir, log_file, log_level, timestamps):
     formatter_file = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
-    ch.setFormatter(formatter)
-    fh.setFormatter(formatter_file)
+    console_handler.setFormatter(formatter)
+    file_handler.setFormatter(formatter_file)
 
     # add the handlers to logger
-    logger.addHandler(ch)
-    logger.addHandler(fh)
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
 
 
 def init_color(colorama_strip):
