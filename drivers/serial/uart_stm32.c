@@ -2,7 +2,6 @@
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2016 Linaro Limited.
  * Copyright (c) 2024 STMicroelectronics
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -100,6 +99,21 @@ uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint32_t baud_rate)
 #ifdef CONFIG_UART_ASYNC_API
 #define STM32_ASYNC_STATUS_TIMEOUT (DMA_STATUS_BLOCK + 1)
 #endif
+
+/* The RS485 DE management is now handled based on de_enable and de_pin fields:
+ * - If de_enable is false, no DE control is performed.
+ * - If de_enable is true and de_pin is not specified (port is NULL), the hardware
+ *   method is assumed (HW control via driver enable functions).
+ * - If de_enable is true and de_pin is defined, a software (SW) method is used.
+ */
+
+static void rs485_de_time_expire_callback(struct k_timer *timer)
+{
+	const struct uart_stm32_config *config = k_timer_user_data_get(timer);
+
+	/* SW method: deassert DE signal */
+	gpio_pin_set(config->de_pin.port, config->de_pin.pin, !config->de_invert);
+}
 
 #ifdef CONFIG_PM
 static void uart_stm32_pm_policy_state_lock_get_unconditional(void)
@@ -585,14 +599,13 @@ static int uart_stm32_configure(const struct device *dev,
 	}
 
 	/* Driver supports only RTS/CTS and RS485 flow control */
-	if (!(cfg->flow_ctrl == UART_CFG_FLOW_CTRL_NONE
-		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS &&
-			IS_UART_HWFLOW_INSTANCE(usart))
+	if (!(cfg->flow_ctrl == UART_CFG_FLOW_CTRL_NONE ||
+	      (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS && IS_UART_HWFLOW_INSTANCE(usart))
 #if HAS_DRIVER_ENABLE
-		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485 &&
-			IS_UART_DRIVER_ENABLE_INSTANCE(usart))
+	      ||
+	      (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485 && IS_UART_DRIVER_ENABLE_INSTANCE(usart))
 #endif
-		)) {
+		      )) {
 		return -ENOTSUP;
 	}
 
@@ -663,10 +676,9 @@ static int uart_stm32_poll_in_visitor(const struct device *dev, void *in, poll_i
 	return 0;
 }
 
-typedef void (*poll_out_fn)(
-	USART_TypeDef *usart, uint16_t out);
+typedef void (*poll_out_fn)(USART_TypeDef *usart, void *out);
 
-static void uart_stm32_poll_out_visitor(const struct device *dev, uint16_t out, poll_out_fn set_fn)
+static void uart_stm32_poll_out_visitor(const struct device *dev, void *out, poll_out_fn set_fn)
 {
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
@@ -719,9 +731,9 @@ static void poll_in_u8(USART_TypeDef *usart, void *in)
 	*((unsigned char *)in) = (unsigned char)LL_USART_ReceiveData8(usart);
 }
 
-static void poll_out_u8(USART_TypeDef *usart, uint16_t out)
+static void poll_out_u8(USART_TypeDef *usart, void *out)
 {
-	LL_USART_TransmitData8(usart, (uint8_t)out);
+	LL_USART_TransmitData8(usart, *((uint8_t *)out));
 }
 
 static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
@@ -731,14 +743,14 @@ static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
 
 static void uart_stm32_poll_out(const struct device *dev, unsigned char c)
 {
-	uart_stm32_poll_out_visitor(dev, c, poll_out_u8);
+	uart_stm32_poll_out_visitor(dev, (void *)&c, poll_out_u8);
 }
 
 #ifdef CONFIG_UART_WIDE_DATA
 
-static void poll_out_u9(USART_TypeDef *usart, uint16_t out)
+static void poll_out_u9(USART_TypeDef *usart, void *out)
 {
-	LL_USART_TransmitData9(usart, out);
+	LL_USART_TransmitData9(usart, *((uint16_t *)out));
 }
 
 static void poll_in_u9(USART_TypeDef *usart, void *in)
@@ -753,7 +765,7 @@ static int uart_stm32_poll_in_u16(const struct device *dev, uint16_t *in_u16)
 
 static void uart_stm32_poll_out_u16(const struct device *dev, uint16_t out_u16)
 {
-	uart_stm32_poll_out_visitor(dev, out_u16, poll_out_u9);
+	uart_stm32_poll_out_visitor(dev, (void *)&out_u16, poll_out_u9);
 }
 
 #endif
@@ -828,14 +840,14 @@ static inline void __uart_stm32_get_clock(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-typedef void (*fifo_fill_fn)(USART_TypeDef *usart, const void *tx_data, const int offset);
+typedef void (*fifo_fill_fn)(USART_TypeDef *usart, const void *tx_data, const uint8_t offset);
 
 static int uart_stm32_fifo_fill_visitor(const struct device *dev, const void *tx_data, int size,
 					fifo_fill_fn fill_fn)
 {
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
-	int num_tx = 0U;
+	uint8_t num_tx = 0U;
 	unsigned int key;
 
 	if (!LL_USART_IsActiveFlag_TXE(usart)) {
@@ -858,7 +870,7 @@ static int uart_stm32_fifo_fill_visitor(const struct device *dev, const void *tx
 	return num_tx;
 }
 
-static void fifo_fill_with_u8(USART_TypeDef *usart, const void *tx_data, const int offset)
+static void fifo_fill_with_u8(USART_TypeDef *usart, const void *tx_data, const uint8_t offset)
 {
 	const uint8_t *data = (const uint8_t *)tx_data;
 	/* Send a character (8bit) */
@@ -875,14 +887,14 @@ static int uart_stm32_fifo_fill(const struct device *dev, const uint8_t *tx_data
 					    fifo_fill_with_u8);
 }
 
-typedef void (*fifo_read_fn)(USART_TypeDef *usart, void *rx_data, const int offset);
+typedef void (*fifo_read_fn)(USART_TypeDef *usart, void *rx_data, const uint8_t offset);
 
 static int uart_stm32_fifo_read_visitor(const struct device *dev, void *rx_data, const int size,
 					fifo_read_fn read_fn)
 {
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
-	int num_rx = 0U;
+	uint8_t num_rx = 0U;
 
 	while ((size - num_rx > 0) && LL_USART_IsActiveFlag_RXNE(usart)) {
 		/* RXNE flag will be cleared upon read from DR|RDR register */
@@ -903,7 +915,7 @@ static int uart_stm32_fifo_read_visitor(const struct device *dev, void *rx_data,
 	return num_rx;
 }
 
-static void fifo_read_with_u8(USART_TypeDef *usart, void *rx_data, const int offset)
+static void fifo_read_with_u8(USART_TypeDef *usart, void *rx_data, const uint8_t offset)
 {
 	uint8_t *data = (uint8_t *)rx_data;
 
@@ -922,7 +934,7 @@ static int uart_stm32_fifo_read(const struct device *dev, uint8_t *rx_data, cons
 
 #ifdef CONFIG_UART_WIDE_DATA
 
-static void fifo_fill_with_u16(USART_TypeDef *usart, const void *tx_data, const int offset)
+static void fifo_fill_with_u16(USART_TypeDef *usart, const void *tx_data, const uint8_t offset)
 {
 	const uint16_t *data = (const uint16_t *)tx_data;
 
@@ -936,11 +948,10 @@ static int uart_stm32_fifo_fill_u16(const struct device *dev, const uint16_t *tx
 	    UART_CFG_DATA_BITS_9) {
 		return -ENOTSUP;
 	}
-	return uart_stm32_fifo_fill_visitor(dev, (const void *)tx_data, size,
-					    fifo_fill_with_u16);
+	return uart_stm32_fifo_fill_visitor(dev, (const void *)tx_data, size, fifo_fill_with_u16);
 }
 
-static void fifo_read_with_u16(USART_TypeDef *usart, void *rx_data, const int offset)
+static void fifo_read_with_u16(USART_TypeDef *usart, void *rx_data, const uint8_t offset)
 {
 	uint16_t *data = (uint16_t *)rx_data;
 
@@ -953,8 +964,7 @@ static int uart_stm32_fifo_read_u16(const struct device *dev, uint16_t *rx_data,
 	    UART_CFG_DATA_BITS_9) {
 		return -ENOTSUP;
 	}
-	return uart_stm32_fifo_read_visitor(dev, (void *)rx_data, size,
-					    fifo_read_with_u16);
+	return uart_stm32_fifo_read_visitor(dev, (void *)rx_data, size, fifo_read_with_u16);
 }
 
 #endif
@@ -966,6 +976,20 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 	struct uart_stm32_data *data = dev->data;
 	unsigned int key;
 #endif
+
+	/* RS485 DE management:
+	 * If DE is enabled, check if de_pin is specified.
+	 * If yes, use SW method: manually set DE pin active.
+	 * If not, assume HW control – no action required.
+	 */
+	if (config->de_enable) {
+		if (config->de_pin.port != NULL) {
+			/* SW method: set DE active */
+			gpio_pin_set(config->de_pin.port, config->de_pin.pin, config->de_invert);
+		} else {
+			/* HW method: hardware manages DE, no action required */
+		}
+	}
 
 #ifdef CONFIG_PM
 	key = irq_lock();
@@ -983,8 +1007,31 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 static void uart_stm32_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
-#ifdef CONFIG_PM
 	struct uart_stm32_data *data = dev->data;
+
+	/* RS485 DE management:
+	 * If DE is enabled, check if de_pin is specified.
+	 * If yes, use SW method: if deassertion time is set, start timer to deassert;
+	 * otherwise, immediately deassert.
+	 * If not, assume HW control – no action required.
+	 */
+	if (config->de_enable) {
+		if (config->de_pin.port != NULL) {
+			/* SW method: handle DE deassertion */
+			if (config->de_deassert_time_us) {
+				k_timer_start(&data->rs485_timer,
+					      K_USEC(config->de_deassert_time_us),
+					      K_NO_WAIT);
+			} else {
+				gpio_pin_set(config->de_pin.port, config->de_pin.pin,
+					     !config->de_invert);
+			}
+		} else {
+			/* HW method: no action required, hardware handles DE deassertion */
+		}
+	}
+
+#ifdef CONFIG_PM
 	unsigned int key;
 
 	key = irq_lock();
@@ -995,9 +1042,6 @@ static void uart_stm32_irq_tx_disable(const struct device *dev)
 #ifdef CONFIG_PM
 	data->tx_int_stream_on = false;
 	uart_stm32_pm_policy_state_lock_put(dev);
-#endif
-
-#ifdef CONFIG_PM
 	irq_unlock(key);
 #endif
 }
@@ -1909,24 +1953,15 @@ static int uart_stm32_async_init(const struct device *dev)
 
 	data->dma_rx.blk_cfg.fifo_mode_control = data->dma_rx.fifo_threshold;
 
-	data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg;
-	data->dma_rx.dma_cfg.user_data = (void *)dev;
-	data->rx_next_buffer = NULL;
-	data->rx_next_buffer_len = 0;
-
 	/* Configure dma tx config */
 	memset(&data->dma_tx.blk_cfg, 0, sizeof(data->dma_tx.blk_cfg));
 
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(CONFIG_SOC_SERIES_STM32F2X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L1X)
-	data->dma_tx.blk_cfg.dest_address =
-			LL_USART_DMA_GetRegAddr(usart);
+#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32F2X) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32L1X)
+	data->dma_tx.blk_cfg.dest_address = LL_USART_DMA_GetRegAddr(usart);
 #else
 	data->dma_tx.blk_cfg.dest_address =
-			LL_USART_DMA_GetRegAddr(usart,
-					LL_USART_DMA_REG_DATA_TRANSMIT);
+		LL_USART_DMA_GetRegAddr(usart, LL_USART_DMA_REG_DATA_TRANSMIT);
 #endif
 
 	data->dma_tx.blk_cfg.source_address = 0; /* not ready */
@@ -1978,7 +2013,7 @@ static int uart_stm32_async_rx_buf_rsp_u16(const struct device *dev, uint16_t *b
 
 #endif /* CONFIG_UART_ASYNC_API */
 
-static DEVICE_API(uart, uart_stm32_driver_api) = {
+static const struct uart_driver_api uart_stm32_driver_api = {
 	.poll_in = uart_stm32_poll_in,
 	.poll_out = uart_stm32_poll_out,
 #ifdef CONFIG_UART_WIDE_DATA
@@ -2111,7 +2146,12 @@ static int uart_stm32_registers_configure(const struct device *dev)
 			return -EINVAL;
 		}
 
-		uart_stm32_set_driver_enable(dev, true);
+		/* If hardware DE control is desired, de_pin is not set.
+		 * Otherwise, SW method will be used.
+		 */
+		if (config->de_pin.port == NULL) {
+			uart_stm32_set_driver_enable(dev, true);
+		}
 		LL_USART_SetDEAssertionTime(usart, config->de_assert_time);
 		LL_USART_SetDEDeassertionTime(usart, config->de_deassert_time);
 
@@ -2178,6 +2218,7 @@ static int uart_stm32_registers_configure(const struct device *dev)
 static int uart_stm32_init(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
 	int err;
 
 	err = uart_stm32_clocks_enable(dev);
@@ -2196,9 +2237,24 @@ static int uart_stm32_init(const struct device *dev)
 		return err;
 	}
 
-#if defined(CONFIG_PM) || \
-	defined(CONFIG_UART_INTERRUPT_DRIVEN) || \
-	defined(CONFIG_UART_ASYNC_API)
+	/* Init DE assert timer and pin for RS485 mode.
+	 * RS485 DE management is now based on de_enable and de_pin:
+	 * - If de_enable is true and de_pin is defined, use SW method.
+	 * - If de_enable is true and de_pin is not defined, use HW method.
+	 */
+	if (config->de_enable) {
+		if (config->de_pin.port != NULL) {
+			/* SW method: configure DE pin and initialize timer */
+			gpio_pin_configure_dt(&config->de_pin, GPIO_ACTIVE_LOW | GPIO_OUTPUT_ACTIVE);
+			gpio_pin_set(config->de_pin.port, config->de_pin.pin, config->de_invert);
+			k_timer_init(&data->rs485_timer, rs485_de_time_expire_callback, NULL);
+			k_timer_user_data_set(&data->rs485_timer, (void *)config);
+		} else {
+			/* HW method: enable hardware DE control */
+		}
+	}
+
+#if defined(CONFIG_PM) || defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	config->irq_config_func(dev);
 #endif /* CONFIG_PM || CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API */
 
@@ -2303,7 +2359,7 @@ static int uart_stm32_pm_action(const struct device *dev,
 	.dma_cfg = {							\
 		.dma_slot = STM32_DMA_SLOT(index, dir, slot),\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(	\
-					STM32_DMA_CHANNEL_CONFIG(index, dir)),\
+					STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
 		.cyclic =  STM32_DMA_CONFIG_CYCLIC(			\
 				STM32_DMA_CHANNEL_CONFIG(index, dir)),  \
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
@@ -2359,7 +2415,6 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 		 (UART_DMA_CHANNEL_INIT(index, dir, DIR, src, dest)),	\
 		 (NULL))						\
 	},
-
 #else
 #define UART_DMA_CHANNEL(index, dir, DIR, src, dest)
 #endif
@@ -2481,11 +2536,12 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.tx_rx_swap = DT_INST_PROP(index, tx_rx_swap),			\
 	.rx_invert = DT_INST_PROP(index, rx_invert),			\
 	.tx_invert = DT_INST_PROP(index, tx_invert),			\
-	.de_enable = DT_INST_PROP(index, de_enable),			\
-	.de_assert_time = DT_INST_PROP(index, de_assert_time),		\
-	.de_deassert_time = DT_INST_PROP(index, de_deassert_time),	\
-	.de_invert = DT_INST_PROP(index, de_invert),			\
-	.fifo_enable = DT_INST_PROP(index, fifo_enable),		\
+	.de_enable = DT_INST_PROP(index, rs485_enabled),                                   \
+	.de_assert_time_us = DT_INST_PROP(index, rs485_assertion_time_de_us),              \
+	.de_deassert_time_us = DT_INST_PROP(index, rs485_deassertion_time_de_us),          \
+	.de_invert = DT_INST_PROP(index, rs485_de_active_low),                             \
+	.de_pin = GPIO_DT_SPEC_INST_GET_OR(index, rs485_de_gpios, {0}),                    \
+	.fifo_enable = DT_INST_PROP(index, fifo_enable),                                   \
 	STM32_UART_IRQ_HANDLER_FUNC(index)				\
 	STM32_UART_PM_WAKEUP(index)					\
 };									\

@@ -1,0 +1,9 @@
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	rs485-enabled;
+	rs485-de-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+	rs485-deassertion-time-de-us = <500>;
+	status = "okay";
+};
