@@ -27,6 +27,7 @@ Ambiq SoCs that support zephyr now include:
   | Apollo3 Blue Plus
   | Apollo4 Plus
   | Apollo4 Blue Plus KXR
+  | Apollo510
 
 As well as the following Evaluation Kits:
 
@@ -34,6 +35,7 @@ As well as the following Evaluation Kits:
   | Apollo3 Blue Plus EVB
   | Apollo4 Plus EVB
   | Apollo4 Blue Plus KXR EVB
+  | Apollo510 EVB
 
 As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 
@@ -45,9 +47,11 @@ As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
   | HW Info
   | I2C Controller
   | ITM
+  | PDM
   | Power Management
   | PWM
   | RTC
+  | SDHC
   | Serial (PL011)
   | SPI Controller
   | SPI Device
@@ -67,6 +71,7 @@ Getting Started
 Welcome to Ambiq Zephyr! See the `Introduction to Zephyr`_ for a high-level overview,
 and the documentation's `Getting Started Guide`_ to start developing.
 Check `Ambiq SoC`_ for Ambiq Apollo SoCs documents.
+Make sure to use the correct `Ambiq HAL Repository`_ commit before building.
 
 .. start_include_here
 
@@ -121,6 +126,11 @@ Additional Resources
   | 🌐 `Zephyr Project Website`_
   | 📺 `Zephyr Tech Talks`_
 
+Ambiq Resources
+--------------------
+  | 📖 `Ambiq SoC`_
+  | 📦 `Ambiq Products`_
+
 .. _Zephyr Project Website: https://www.zephyrproject.org
 .. _Discord Server: https://chat.zephyrproject.org
 .. _Zephyr Documentation: https://docs.zephyrproject.org
@@ -141,4 +151,4 @@ Additional Resources
 .. _Zephyr Tech Talks: https://www.zephyrproject.org/tech-talks
 .. _Ambiq SoC: https://contentportal.ambiq.com/soc
 .. _Ambiq Products: https://ambiq.com/products/
-.. _Source Code Repository: https://github.com/AmbiqMicro/ambiqhal_ambiq
+.. _Ambiq HAL Repository: https://github.com/AmbiqMicro/ambiqhal_ambiq
