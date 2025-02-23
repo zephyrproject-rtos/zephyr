@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2025 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/infineon/cat1c/xmc7200/system_clocks.dtsi>
+#include <arm/infineon/cat1c/mpns/XMC7200_E272K8384.dtsi>
+
+/ {
+	aliases {
+		uart-3 = &uart3;
+	};
+
+};
+
+uart3: &scb3 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+
+	/* UART pins */
+	pinctrl-0 = <&p13_1_scb3_uart_tx &p13_0_scb3_uart_rx
+			&p13_2_scb3_uart_rts &p13_3_scb3_uart_cts>;
+	pinctrl-names = "default";
+};
+
+&gpio_prt13 {
+	status = "okay";
+};
+
+&path_mux0 {
+	status = "okay";
+};
+
+&path_mux1 {
+	status = "okay";
+};
+
+&path_mux2 {
+	status = "okay";
+};
+
+&path_mux3 {
+	status = "okay";
+};
+
+&clk_mem {
+	status = "okay";
+};
+
+&clk_peri {
+	status = "okay";
+};
+
+&clk_slow {
+	status = "okay";
+};
