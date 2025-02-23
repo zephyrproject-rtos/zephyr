@@ -39,8 +39,7 @@ struct video_sw_generator_data {
 	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
-	struct k_work_delayable buf_work;
-	struct k_work_sync work_sync;
+	struct k_work_delayable work;
 	int pattern;
 	struct k_poll_signal *sig;
 	uint32_t frame_rate;
@@ -100,11 +99,12 @@ static int video_sw_generator_set_stream(const struct device *dev, bool enable,
 					 enum video_buf_type type)
 {
 	struct video_sw_generator_data *data = dev->data;
+	struct k_work_sync work_sync = {0};
 
 	if (enable) {
-		k_work_schedule(&data->buf_work, K_MSEC(1000 / data->frame_rate));
+		k_work_schedule(&data->work, K_MSEC(1000 / data->frame_rate));
 	} else {
-		k_work_cancel_delayable_sync(&data->buf_work, &data->work_sync);
+		k_work_cancel_delayable_sync(&data->work, &work_sync);
 	}
 
 	return 0;
@@ -291,9 +291,9 @@ static void video_sw_generator_worker(struct k_work *work)
 	struct video_sw_generator_data *data;
 	struct video_buffer *vbuf;
 
-	data = CONTAINER_OF(dwork, struct video_sw_generator_data, buf_work);
+	data = CONTAINER_OF(dwork, struct video_sw_generator_data, work);
 
-	k_work_reschedule(&data->buf_work, K_MSEC(1000 / data->frame_rate));
+	k_work_reschedule(&data->work, K_MSEC(1000 / data->frame_rate));
 
 	vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
 	if (vbuf == NULL) {
@@ -478,7 +478,7 @@ static int video_sw_generator_init(const struct device *dev)
 	data->dev = dev;
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
-	k_work_init_delayable(&data->buf_work, video_sw_generator_worker);
+	k_work_init_delayable(&data->work, video_sw_generator_worker);
 
 	return video_sw_generator_init_controls(dev);
 }
