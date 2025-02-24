@@ -1,0 +1,78 @@
+/*
+ * Copyright 2025 Variscite Ltd.
+ * Copyright 2022,2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mimx93_a55.dtsi>
+#include "imx93_var_dart-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Variscite DART-MX93 A55";
+	compatible = "fsl,mimx93";
+
+	chosen {
+		zephyr,console = &lpuart7;
+		zephyr,shell-uart = &lpuart7;
+		zephyr,sram = &sram0;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@80400000 {
+		reg = <0x80400000 DT_SIZE_M(1)>;
+	};
+
+	lpuart7: serial@42690000 {
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
+		reg = <0x42690000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPUART7_CLK 0x6c 24>;
+		status = "okay";
+		current-speed = <115200>;
+		pinctrl-0 = <&uart7_default>;
+		pinctrl-names = "default";
+	};
+
+	aliases {
+		led0 = &blinky0;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blinky0: blinky_0 {
+			gpios = <&gpio4 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button0: btn_0 {
+			label = "BTN0";
+			gpios = <&gpio2 27 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
