@@ -398,6 +398,7 @@ SECTIONS
     *libzephyr.a:esp_psram_impl_octal.*(.literal .literal.* .text .text.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_hal_iram.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.literal .text .literal.* .text.*)
