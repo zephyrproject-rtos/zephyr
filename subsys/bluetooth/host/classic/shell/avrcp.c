@@ -43,21 +43,20 @@ static void avrcp_disconnected(struct bt_avrcp *avrcp)
 	bt_shell_print("AVRCP disconnected");
 }
 
-static void avrcp_get_capabilities_rsp(struct bt_avrcp *avrcp,
-				       struct bt_avrcp_get_capabilities_rsp *rsp)
+static void avrcp_get_cap_rsp(struct bt_avrcp *avrcp, const struct bt_avrcp_get_cap_rsp *rsp)
 {
 	uint8_t i;
 
-	switch (rsp->capability_id) {
+	switch (rsp->cap_id) {
 	case BT_AVRCP_CAP_COMPANY_ID:
-		for (i = 0; i < rsp->capability_count; i++) {
-			bt_shell_print("Remote CompanyID = 0x%02x%02x%02x", rsp->capability[3 * i],
-				       rsp->capability[3 * i + 1], rsp->capability[3 * i + 2]);
+		for (i = 0; i < rsp->cap_cnt; i++) {
+			bt_shell_print("Remote CompanyID = 0x%02x%02x%02x", rsp->cap[3 * i],
+				       rsp->cap[3 * i + 1], rsp->cap[3 * i + 2]);
 		}
 		break;
 	case BT_AVRCP_CAP_EVENTS_SUPPORTED:
-		for (i = 0; i < rsp->capability_count; i++) {
-			bt_shell_print("Remote supported EventID = 0x%02x", rsp->capability[i]);
+		for (i = 0; i < rsp->cap_cnt; i++) {
+			bt_shell_print("Remote supported EventID = 0x%02x", rsp->cap[i]);
 		}
 		break;
 	}
@@ -81,23 +80,25 @@ static void avrcp_subunit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_subun
 	}
 }
 
-static void avrcp_passthrough_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_passthrough_rsp *rsp)
+static void avrcp_passthrough_rsp(struct bt_avrcp *avrcp, bt_avrcp_rsp_t result,
+				  const struct bt_avrcp_passthrough_rsp *rsp)
 {
-	if (rsp->response == BT_AVRCP_RSP_ACCEPTED) {
+	if (result == BT_AVRCP_RSP_ACCEPTED) {
 		bt_shell_print(
 			"AVRCP passthough command accepted, operation id = 0x%02x, state = %d",
-			rsp->operation_id, rsp->state);
+			BT_AVRCP_PASSTHROUGH_GET_OPID(rsp), BT_AVRCP_PASSTHROUGH_GET_STATE(rsp));
 	} else {
 		bt_shell_print("AVRCP passthough command rejected, operation id = 0x%02x, state = "
 			       "%d, response = %d",
-			       rsp->operation_id, rsp->state, rsp->response);
+			       BT_AVRCP_PASSTHROUGH_GET_OPID(rsp),
+			       BT_AVRCP_PASSTHROUGH_GET_STATE(rsp), result);
 	}
 }
 
 static struct bt_avrcp_cb avrcp_cb = {
 	.connected = avrcp_connected,
 	.disconnected = avrcp_disconnected,
-	.get_capabilities_rsp = avrcp_get_capabilities_rsp,
+	.get_cap_rsp = avrcp_get_cap_rsp,
 	.unit_info_rsp = avrcp_unit_info_rsp,
 	.subunit_info_rsp = avrcp_subunit_info_rsp,
 	.passthrough_rsp = avrcp_passthrough_rsp,
@@ -207,8 +208,8 @@ static int cmd_get_subunit_info(const struct shell *sh, int32_t argc, char *argv
 	return 0;
 }
 
-static int cmd_passthrough(const struct shell *sh, bt_avrcp_opid_t operation_id,
-			   const uint8_t *payload, uint8_t len)
+static int cmd_passthrough(const struct shell *sh, bt_avrcp_opid_t opid, const uint8_t *payload,
+			   uint8_t len)
 {
 	if (!avrcp_registered) {
 		if (register_cb(sh) != 0) {
@@ -217,10 +218,8 @@ static int cmd_passthrough(const struct shell *sh, bt_avrcp_opid_t operation_id,
 	}
 
 	if (default_avrcp != NULL) {
-		bt_avrcp_passthrough(default_avrcp, operation_id, BT_AVRCP_BUTTON_PRESSED, payload,
-				     len);
-		bt_avrcp_passthrough(default_avrcp, operation_id, BT_AVRCP_BUTTON_RELEASED, payload,
-				     len);
+		bt_avrcp_passthrough(default_avrcp, opid, BT_AVRCP_BUTTON_PRESSED, payload, len);
+		bt_avrcp_passthrough(default_avrcp, opid, BT_AVRCP_BUTTON_RELEASED, payload, len);
 	} else {
 		shell_error(sh, "AVRCP is not connected");
 	}
@@ -238,7 +237,7 @@ static int cmd_pause(const struct shell *sh, int32_t argc, char *argv[])
 	return cmd_passthrough(sh, BT_AVRCP_OPID_PAUSE, NULL, 0);
 }
 
-static int cmd_get_capabilities(const struct shell *sh, int32_t argc, char *argv[])
+static int cmd_get_cap(const struct shell *sh, int32_t argc, char *argv[])
 {
 	const char *cap_id;
 
@@ -255,9 +254,9 @@ static int cmd_get_capabilities(const struct shell *sh, int32_t argc, char *argv
 
 	cap_id = argv[1];
 	if (!strcmp(cap_id, "company")) {
-		bt_avrcp_get_capabilities(default_avrcp, BT_AVRCP_CAP_COMPANY_ID);
+		bt_avrcp_get_cap(default_avrcp, BT_AVRCP_CAP_COMPANY_ID);
 	} else if (!strcmp(cap_id, "events")) {
-		bt_avrcp_get_capabilities(default_avrcp, BT_AVRCP_CAP_EVENTS_SUPPORTED);
+		bt_avrcp_get_cap(default_avrcp, BT_AVRCP_CAP_EVENTS_SUPPORTED);
 	}
 
 	return 0;
@@ -270,8 +269,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(disconnect, NULL, "disconnect AVRCP", cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(get_unit, NULL, "get unit info", cmd_get_unit_info, 1, 0),
 	SHELL_CMD_ARG(get_subunit, NULL, "get subunit info", cmd_get_subunit_info, 1, 0),
-	SHELL_CMD_ARG(get_cap, NULL, "get capabilities <cap_id: company or events>",
-		      cmd_get_capabilities, 2, 0),
+	SHELL_CMD_ARG(get_cap, NULL, "get capabilities <cap_id: company or events>", cmd_get_cap, 2,
+		      0),
 	SHELL_CMD_ARG(play, NULL, "request a play at the remote player", cmd_play, 1, 0),
 	SHELL_CMD_ARG(pause, NULL, "request a pause at the remote player", cmd_pause, 1, 0),
 	SHELL_SUBCMD_SET_END);
