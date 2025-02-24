@@ -75,15 +75,6 @@ void stop_tcp(void);
 
 void quit(void);
 
-#if defined(CONFIG_NET_VLAN)
-int init_vlan(void);
-#else
-static inline int init_vlan(void)
-{
-	return 0;
-}
-#endif /* CONFIG_NET_VLAN */
-
 #if defined(CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE)
 int init_ws(void);
 #else
