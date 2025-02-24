@@ -482,12 +482,6 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         action="store_true",
         help="Collect and report ROM/RAM section sizes for each test image built.")
 
-    parser.add_argument(
-        "--disable-unrecognized-section-test",
-        action="store_true",
-        default=False,
-        help="Don't error on unrecognized sections in the binary images.")
-
     footprint_group.add_argument(
         "--footprint-from-buildlog",
         action = "store_true",
