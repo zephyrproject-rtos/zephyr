@@ -707,7 +707,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      EEPROM, EEPROM emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, All
      Ethernet, :ref:`Eth native_tap <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_TAP`, All
      Flash, :ref:`Flash simulator <nsim_per_flash_simu>`, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, All
-     Flash, :ref:`Host based flash access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, Host libC
+     Flash, :ref:`Host based flash access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, All
      GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All
      GPIO, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, All
      I2C, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, All
