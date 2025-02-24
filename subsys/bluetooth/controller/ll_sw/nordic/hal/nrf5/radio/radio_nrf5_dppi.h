@@ -528,11 +528,7 @@ static inline void hal_radio_sw_switch_b2b_rx_disable(uint8_t compare_reg_index)
 static inline void hal_radio_sw_switch_cleanup(void)
 {
 	hal_radio_sw_switch_disable();
-	nrf_dppi_channels_disable(NRF_DPPIC,
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-				  BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-				  BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
+	nrf_dppi_channels_disable(NRF_DPPIC, BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(0));
 	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(1));
 }
