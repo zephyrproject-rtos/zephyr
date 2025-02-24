@@ -41,4 +41,6 @@ config ARCH_POSIX_TRAP_ON_FATAL
 	  Raise a SIGTRAP signal on fatal error before exiting.
 	  This automatically suspends the target if a debugger is attached.
 
+rsource "Kconfig.natsim_optional"
+
 endmenu
