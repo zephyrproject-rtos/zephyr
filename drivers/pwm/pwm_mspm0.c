@@ -59,21 +59,9 @@ struct pwm_mspm0_data {
 #endif
 };
 
-static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
-			       uint32_t period_cycles, uint32_t pulse_cycles,
-			       pwm_flags_t flags)
+static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config,
+				struct pwm_mspm0_data *data)
 {
-	const struct pwm_mspm0_config *config = dev->config;
-	struct pwm_mspm0_data *data = dev->data;
-
-	if (channel != 0) {
-		LOG_ERR("Invalid channel");
-		return -EINVAL;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	data->period = period_cycles;
 	if (config->is_advanced) {
 		DL_TimerA_PWMConfig pwmcfg = { 0 };
 
@@ -92,10 +80,43 @@ static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		DL_Timer_initPWMMode(config->base, &pwmcfg);
 	}
 
-	data->pulse_cycle = pulse_cycles;
 	DL_Timer_setCaptureCompareValue(config->base,
-					pulse_cycles,
+					data->pulse_cycle,
 					config->cc_idx);
+
+	DL_Timer_clearInterruptStatus(config->base,
+				      DL_TIMER_INTERRUPT_ZERO_EVENT);
+	DL_Timer_enableInterrupt(config->base,
+				 DL_TIMER_INTERRUPT_ZERO_EVENT);
+	DL_Timer_enableClock(config->base);
+	DL_Timer_setCCPDirection(config->base, 1 << config->cc_idx);
+
+	DL_Timer_startCounter(config->base);
+}
+
+static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
+			       uint32_t period_cycles, uint32_t pulse_cycles,
+			       pwm_flags_t flags)
+{
+	const struct pwm_mspm0_config *config = dev->config;
+	struct pwm_mspm0_data *data = dev->data;
+
+	if (channel != 0) {
+		LOG_ERR("Invalid channel");
+		return -EINVAL;
+	}
+
+	if (period_cycles > UINT16_MAX) {
+		LOG_ERR("period cycles exceeds 16-bit timer limit");
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	data->pulse_cycle = pulse_cycles;
+	data->period = period_cycles;
+
+	mspm0_setup_pwm_out(config, data);
 	k_mutex_unlock(&data->lock);
 
 	return 0;
@@ -278,41 +299,6 @@ static int mspm0_capture_disable(const struct device *dev, uint32_t channel)
 	return 0;
 }
 #endif
-
-static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config,
-				struct pwm_mspm0_data *data)
-{
-	if (config->is_advanced) {
-		DL_TimerA_PWMConfig pwmcfg = { 0 };
-
-		pwmcfg.period = data->period;
-		pwmcfg.pwmMode = data->out_mode;
-		if (config->cc_idx >= MSPM0_TIMER_CC_COUNT) {
-			pwmcfg.isTimerWithFourCC = true;
-		}
-
-		DL_TimerA_initPWMMode(config->base, &pwmcfg);
-	} else {
-		DL_Timer_PWMConfig pwmcfg = { 0 };
-
-		pwmcfg.period = data->period;
-		pwmcfg.pwmMode = data->out_mode;
-		DL_Timer_initPWMMode(config->base, &pwmcfg);
-	}
-
-	DL_Timer_setCaptureCompareValue(config->base,
-					data->pulse_cycle,
-					config->cc_idx);
-
-	DL_Timer_clearInterruptStatus(config->base,
-				      DL_TIMER_INTERRUPT_ZERO_EVENT);
-	DL_Timer_enableInterrupt(config->base,
-				 DL_TIMER_INTERRUPT_ZERO_EVENT);
-
-	DL_Timer_enableClock(config->base);
-	DL_Timer_setCCPDirection(config->base, 1 << config->cc_idx);
-	DL_Timer_startCounter(config->base);
-}
 
 static int pwm_mspm0_init(const struct device *dev)
 {
