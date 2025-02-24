@@ -378,18 +378,11 @@ static void z_sys_init_run_level(enum init_level level)
 
 int z_impl_device_init(const struct device *dev)
 {
-	const struct device *devs;
-	size_t devc;
-
-	devc = z_device_get_all_static(&devs);
-
-	for (const struct device *dev_ = devs; dev_ < (devs + devc); dev_++) {
-		if ((dev_ == dev) && ((dev->flags & DEVICE_FLAG_INIT_DEFERRED) != 0U)) {
-			return do_device_init(dev);
-		}
+	if (dev->state->initialized) {
+		return -EALREADY;
 	}
 
-	return -ENOENT;
+	return do_device_init(dev);
 }
 
 #ifdef CONFIG_USERSPACE
