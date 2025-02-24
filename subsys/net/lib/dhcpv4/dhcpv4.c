@@ -1583,6 +1583,11 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
 
+		/* If the previous state was 'selecting', restart as new */
+		if (iface->config.dhcpv4.state == NET_DHCPV4_SELECTING) {
+			dhcpv4_enter_selecting(iface);
+		}
+
 		/* We should not call dhcpv4_send_request() directly here as
 		 * the CONFIG_NET_MGMT_EVENT_STACK_SIZE is not large
 		 * enough. Instead we can force a request timeout
