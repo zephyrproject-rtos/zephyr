@@ -264,6 +264,7 @@ xtensa_switch:
 	/* Flush the stack.  The top of stack was stored for us by
 	 * arch_cohere_stacks().  It can be NULL for a dummy thread.
 	 */
+	rsync
 	rsr a0, ZSR_FLUSH
 	beqz a0, noflush
 	mov a3, a1
