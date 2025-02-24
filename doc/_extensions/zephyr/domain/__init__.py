@@ -798,14 +798,53 @@ class BoardSupportedHardwareDirective(SphinxDirective):
             return result_nodes
 
         # Add the note before any tables
-        note = nodes.admonition()
-        note += nodes.title(text="Note")
-        note["classes"].append("note")
-        note += nodes.paragraph(
-            text="The tables below were automatically generated using information from the "
-            "Devicetree. They may not be fully representative of all the hardware features "
-            "supported by the board."
+        note = nodes.admonition(classes=["legend"])
+        note += nodes.title(text="Table Legend", classes=["note"])
+
+        legend = nodes.definition_list(classes=["supported-hardware field-list"])
+
+        def add_legend_item(legend_list, term_text, term_classes, definition_text):
+            dl_item = nodes.definition_list_item()
+            dt = nodes.term()
+            dt += nodes.inline("", term_text, classes=term_classes)
+            dd = nodes.definition()
+            dd += nodes.Text(definition_text)
+            dl_item += dt
+            dl_item += dd
+            legend_list += dl_item
+
+        add_legend_item(
+            legend, "on-chip", ["location-chip", "onchip"], "Feature integrated in the SoC."
         )
+        add_legend_item(
+            legend, "on-board", ["location-chip", "onboard"], "Feature present on the board."
+        )
+        add_legend_item(
+            legend,
+            "2",
+            ["count", "okay-count"],
+            "Number of instances of the feature that are present and enabled.",
+        )
+        add_legend_item(
+            legend,
+            "2",
+            ["count", "disabled-count"],
+            "Number of instances of the feature that are present but initially disabled.",
+        )
+
+        dl_item = nodes.definition_list_item()
+        dt = nodes.term()
+        dt += nodes.literal(text="vnd,foo")
+        dd = nodes.definition()
+        dd += nodes.Text(
+            "Compatible string for the Devicetree binding matching the feature. "
+            "Click on the link to checkout the binding documentation."
+        )
+        dl_item += dt
+        dl_item += dd
+        legend += dl_item
+
+        note += legend
         result_nodes.append(note)
 
         for target, features in sorted(supported_features.items()):
@@ -819,18 +858,21 @@ class BoardSupportedHardwareDirective(SphinxDirective):
             target_heading += heading
             result_nodes.append(target_heading)
 
-            table = nodes.table(classes=["colwidths-given"])
-            tgroup = nodes.tgroup(cols=3)
+            table = nodes.table(classes=["colwidths-given", "hardware-features"])
+            tgroup = nodes.tgroup(cols=4)
 
-            tgroup += nodes.colspec(colwidth=20, classes=["col-1"])
-            tgroup += nodes.colspec(colwidth=50)
-            tgroup += nodes.colspec(colwidth=30)
+            tgroup += nodes.colspec(colwidth=15, classes=["type"])
+            tgroup += nodes.colspec(colwidth=12, classes=["location"])
+            tgroup += nodes.colspec(colwidth=53, classes=["description"])
+            tgroup += nodes.colspec(colwidth=20, classes=["compatible"])
 
             thead = nodes.thead()
             row = nodes.row()
-            headers = ["Type", "Description", "Compatible"]
+            headers = ["Type", "Location", "Description", "Compatible"]
             for header in headers:
-                row += nodes.entry("", nodes.paragraph(text=header))
+                entry = nodes.entry(classes=[header.lower()])
+                entry += nodes.paragraph(text=header)
+                row += entry
             thead += row
             tgroup += thead
 
@@ -851,10 +893,12 @@ class BoardSupportedHardwareDirective(SphinxDirective):
 
                 for i, (key, value) in enumerate(items):
                     row = nodes.row()
+                    if value.get("disabled_count", 0) > 0 and value.get("okay_count", 0) == 0:
+                        row["classes"].append("disabled")
 
-                    # Add type column only for first row of a feature
+                    # TYPE column
                     if i == 0:
-                        type_entry = nodes.entry(morerows=num_items - 1)
+                        type_entry = nodes.entry(morerows=num_items - 1, classes=["type"])
                         type_entry += nodes.paragraph(
                             "",
                             "",
@@ -864,9 +908,54 @@ class BoardSupportedHardwareDirective(SphinxDirective):
                         )
                         row += type_entry
 
-                    row += nodes.entry("", nodes.paragraph(text=value))
+                    # LOCATION column
+                    location_entry = nodes.entry(classes=["location"])
+                    location_para = nodes.paragraph()
 
-                    # Create compatible xref
+                    if "board" in value["locations"]:
+                        location_chip = nodes.inline(
+                            classes=["location-chip", "onboard"],
+                            text="on-board",
+                        )
+                        location_para += location_chip
+                    elif "soc" in value["locations"]:
+                        location_chip = nodes.inline(
+                            classes=["location-chip", "onchip"],
+                            text="on-chip",
+                        )
+                        location_para += location_chip
+
+                    location_entry += location_para
+                    row += location_entry
+
+                    # DESCRIPTION column
+                    desc_entry = nodes.entry(classes=["description"])
+                    desc_para = nodes.paragraph(classes=["status"])
+                    desc_para += nodes.Text(value["description"])
+
+                    # Add count indicators for okay and not-okay instances
+                    okay_count = value.get("okay_count", 0)
+                    disabled_count = value.get("disabled_count", 0)
+
+                    if okay_count > 0:
+                        okay_count_indicator = nodes.inline(
+                            classes=["count", "okay-count"],
+                            text=str(okay_count),
+                        )
+                        desc_para += okay_count_indicator
+
+                    if disabled_count > 0:
+                        disabled_count_indicator = nodes.inline(
+                            classes=["count", "disabled-count"],
+                            text=str(disabled_count),
+                        )
+                        desc_para += disabled_count_indicator
+
+                    desc_entry += desc_para
+                    row += desc_entry
+
+                    # COMPATIBLE column
+                    compatible_entry = nodes.entry(classes=["compatible"])
                     xref = addnodes.pending_xref(
                         "",
                         refdomain="std",
@@ -876,7 +965,8 @@ class BoardSupportedHardwareDirective(SphinxDirective):
                         refwarn=True,
                     )
                     xref += nodes.literal(text=key)
-                    row += nodes.entry("", nodes.paragraph("", "", xref))
+                    compatible_entry += nodes.paragraph("", "", xref)
+                    row += compatible_entry
 
                     tbody += row
 

@@ -254,24 +254,45 @@ def get_catalog(generate_hw_features=False):
         # Use pre-gathered build info and DTS files
         if board.name in board_devicetrees:
             for board_target, edt in board_devicetrees[board.name].items():
-                okay_nodes = [
-                    node
-                    for node in edt.nodes
-                    if node.status == "okay" and node.matching_compat is not None
-                ]
-
                 target_features = {}
-                for node in okay_nodes:
+                for node in edt.nodes:
+                    if node.binding_path is None:
+                        continue
+
                     binding_path = Path(node.binding_path)
                     binding_type = (
                         binding_path.relative_to(ZEPHYR_BINDINGS).parts[0]
                         if binding_path.is_relative_to(ZEPHYR_BINDINGS)
                         else "misc"
                     )
+
+                    if node.matching_compat is None:
+                        continue
+
                     description = DeviceTreeUtils.get_cached_description(node)
-                    target_features.setdefault(binding_type, {}).setdefault(
-                        node.matching_compat, description
+                    filename = node.filename
+                    locations = set()
+                    if Path(filename).is_relative_to(ZEPHYR_BASE):
+                        filename = Path(filename).relative_to(ZEPHYR_BASE)
+                        if filename.parts[0] == "boards":
+                            locations.add("board")
+                        else:
+                            locations.add("soc")
+
+                    existing_feature = target_features.get(binding_type, {}).get(
+                        node.matching_compat
                     )
+                    if existing_feature:
+                        locations.update(existing_feature["locations"])
+                        key = "okay_count" if node.status == "okay" else "disabled_count"
+                        existing_feature[key] = existing_feature.get(key, 0) + 1
+                    else:
+                        key = "okay_count" if node.status == "okay" else "disabled_count"
+                        target_features.setdefault(binding_type, {})[node.matching_compat] = {
+                            "description": description,
+                            "locations": locations,
+                            key: 1
+                        }
 
                 # Store features for this specific target
                 supported_features[board_target] = target_features
