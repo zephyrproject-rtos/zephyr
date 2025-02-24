@@ -208,8 +208,9 @@ if(CONFIG_ARCMWDT_LIBC)
   set_property(TARGET asm APPEND PROPERTY required "-I${NOSTDINC}")
 endif()
 
-# Remove after testing that -Wshadow works
+# Update after testing that -Wshadow and -Wno-array-bounds works
 set_compiler_property(PROPERTY warning_shadow_variables)
+set_compiler_property(PROPERTY warning_no_array_bounds)
 
 set_compiler_property(PROPERTY no_builtin -fno-builtin)
 set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
