@@ -18,7 +18,8 @@
  * or reception of a PDU on air. In case of regular PDU it is generated when last bit of CRC is
  * received or transmitted.
  */
-#define HAL_RADIO_TRX_EVENTS_END HAL_RADIO_EVENTS_END
+#define HAL_RADIO_TRX_EVENTS_END    HAL_RADIO_EVENTS_END
+#define HAL_NRF_RADIO_TRX_EVENT_END HAL_NRF_RADIO_EVENT_END
 
 /* Wrapper for RADIO_SHORTS mask connecting EVENTS_END to EVENTS_DISABLE.
  * This is a default shortcut used to automatically disable Radio after end of PDU.
@@ -75,7 +76,8 @@
  * or reception of a PDU on air. In case of regular PDU it is generated when last bit of CRC is
  * received or transmitted.
  */
-#define HAL_RADIO_TRX_EVENTS_END HAL_RADIO_EVENTS_END
+#define HAL_RADIO_TRX_EVENTS_END    HAL_RADIO_EVENTS_END
+#define HAL_NRF_RADIO_TRX_EVENT_END HAL_NRF_RADIO_EVENT_END
 
 /* Wrapper for RADIO_SHORTS mask connecting EVENTS_END to EVENTS_DISABLE.
  * This is a default shortcut used to automatically disable Radio after end of PDU.
@@ -109,7 +111,8 @@
  * or reception of a PDU on air. In case of regular PDU it is generated when last bit of CRC is
  * received or transmitted.
  */
-#define HAL_RADIO_TRX_EVENTS_END HAL_RADIO_EVENTS_END
+#define HAL_RADIO_TRX_EVENTS_END    HAL_RADIO_EVENTS_END
+#define HAL_NRF_RADIO_TRX_EVENT_END HAL_NRF_RADIO_EVENT_END
 
 /* Wrapper for RADIO_SHORTS mask connecting EVENTS_END to EVENTS_DISABLE.
  * This is a default shortcut used to automatically disable Radio after end of PDU.
@@ -173,7 +176,8 @@
  * including CTE EVENTS_PHYEND event is generated at very end of a PDU. In case there is no CTE in
  * a PDU the EVENTS_PHYEND event is generated in the same instant as EVENTS_END event.
  */
-#define HAL_RADIO_TRX_EVENTS_END HAL_RADIO_EVENTS_PHYEND
+#define HAL_RADIO_TRX_EVENTS_END    HAL_RADIO_EVENTS_PHYEND
+#define HAL_NRF_RADIO_TRX_EVENT_END HAL_NRF_RADIO_EVENT_PHYEND
 
 /* Wrapper for RADIO_SHORTS mask connecting EVENTS_PHYEND to EVENTS_DISABLE.
  * This is a mask for SOC that has Direction Finding Extension in a Radio peripheral.
@@ -196,7 +200,8 @@
  * or reception of a PDU on air. In case of regular PDU it is generated when last bit of CRC is
  * received or transmitted.
  */
-#define HAL_RADIO_TRX_EVENTS_END HAL_RADIO_EVENTS_END
+#define HAL_RADIO_TRX_EVENTS_END    HAL_RADIO_EVENTS_END
+#define HAL_NRF_RADIO_TRX_EVENT_END HAL_NRF_RADIO_EVENT_END
 
 /* Wrapper for RADIO_SHORTS mask connecting EVENTS_END to EVENTS_DISABLE.
  * This is a default shortcut used to automatically disable Radio after end of PDU.
