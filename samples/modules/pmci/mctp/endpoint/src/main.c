@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <zephyr/mctp/mctp_uart.h>
+#include <zephyr/pmci/mctp/mctp_uart.h>
 #include <libmctp.h>
 
 #include <zephyr/logging/log.h>
