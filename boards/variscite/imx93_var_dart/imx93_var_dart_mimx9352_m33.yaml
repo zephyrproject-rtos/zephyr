@@ -1,0 +1,15 @@
+# Copyright 2025 Variscite Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: imx93_var_dart/mimx9352/m33
+name: Variscite DART-MX93 M33
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+flash: 128
+supported:
+  - gpio
+  - uart
