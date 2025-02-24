@@ -715,6 +715,7 @@ class BoardDirective(SphinxDirective):
             )
             return []
         else:
+            self.env.domaindata["zephyr"]["has_board"][self.env.docname] = True
             board = boards[board_name]
             # flag board in the domain data as now having a documentation page so that it can be
             # cross-referenced etc.
@@ -920,6 +921,7 @@ class ZephyrDomain(Domain):
         # keep track of documents containing special directives
         "has_code_sample_listing": {},  # docname -> bool
         "has_board_catalog": {},  # docname -> bool
+        "has_board": {},  # docname -> bool
     }
 
     def clear_doc(self, docname: str) -> None:
@@ -939,6 +941,7 @@ class ZephyrDomain(Domain):
 
         self.data["has_code_sample_listing"].pop(docname, None)
         self.data["has_board_catalog"].pop(docname, None)
+        self.data["has_board"].pop(docname, None)
 
     def merge_domaindata(self, docnames: list[str], otherdata: dict) -> None:
         self.data["code-samples"].update(otherdata["code-samples"])
@@ -971,6 +974,7 @@ class ZephyrDomain(Domain):
             self.data["has_board_catalog"][docname] = otherdata["has_board_catalog"].get(
                 docname, False
             )
+            self.data["has_board"][docname] = otherdata["has_board"].get(docname, False)
 
     def get_objects(self):
         for _, code_sample in self.data["code-samples"].items():
@@ -1123,6 +1127,10 @@ def install_static_assets_as_needed(
     if app.env.domaindata["zephyr"]["has_board_catalog"].get(pagename, False):
         app.add_css_file("css/board-catalog.css")
         app.add_js_file("js/board-catalog.js")
+
+    if app.env.domaindata["zephyr"]["has_board"].get(pagename, False):
+        app.add_css_file("css/board.css")
+        app.add_js_file("js/board.js")
 
 
 def load_board_catalog_into_domain(app: Sphinx) -> None:
