@@ -469,7 +469,7 @@ The following peripherals are currently provided with this board:
   Some more information can be found in :ref:`the emulators page <emul_flash_simu_brief>`.
 
   The flash content can be accessed from the host system, as explained in the
-  `Host based flash access`_ section.
+  `Host (FUSE) filesystem access`_ section.
 
 **Input events**
   Two optional native input drivers are available:
@@ -646,21 +646,18 @@ All :ref:`available HW emulators <emulators>` can be used with native_sim.
 
 .. _native_fuse_flash:
 
-Host based flash access
-***********************
+Host (FUSE) filesystem access
+*****************************
 
-If a flash device is present, the file system partitions on the flash
-device can be exposed through the host file system by enabling
-:kconfig:option:`CONFIG_FUSE_FS_ACCESS`. This option enables a FUSE
-(File system in User space) layer that maps the Zephyr file system calls to
-the required UNIX file system calls, and provides access to the flash file
-system partitions with normal operating system commands such as ``cd``,
-``ls`` and ``mkdir``.
+When building Zephyr with a filesystem, the device partitions can be exposed through the host file
+system by enabling :kconfig:option:`CONFIG_FUSE_FS_ACCESS`. This option enables a FUSE
+(File system in User space) layer that mounts the simulated embedded filesystem in the host
+filesystem, maps the Zephyr file system calls to the required UNIX file system calls, and provides
+access to its partitions with normal operating system commands such as ``cd``, ``ls`` and ``mkdir``.
 
 By default the partitions are exposed through the directory :file:`flash/` in the
 current working directory. This directory can be changed via the command line
-option ``--flash-mount``. As this directory operates as a mount point for FUSE
-you have to ensure that it exists before starting the native_sim board.
+option ``--flash-mount``.
 
 On exit, the native_sim board application will take care of unmounting the
 directory. In the unfortunate case that the native_sim board application
@@ -707,7 +704,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      EEPROM, EEPROM emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, All
      Ethernet, :ref:`Eth native_tap <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_TAP`, All
      Flash, :ref:`Flash simulator <nsim_per_flash_simu>`, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, All
-     Flash, :ref:`Host based flash access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, All
+     FUSE, :ref:`Host based filesystem access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, All
      GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All
      GPIO, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, All
      I2C, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, All
