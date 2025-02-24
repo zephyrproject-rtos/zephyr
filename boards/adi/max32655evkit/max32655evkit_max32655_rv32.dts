@@ -13,7 +13,7 @@
 	 compatible = "adi,max32655evkit";
 
 	 chosen {
-		 zephyr,sram = &sram3;
+		 zephyr,sram = &rv32_sram;
 		 zephyr,flash = &rv32_partition;
 	 };
 };
