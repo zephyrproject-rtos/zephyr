@@ -3188,6 +3188,20 @@ PHYTEC Platforms:
   labels:
     - "platform: PHYTEC"
 
+PMCI:
+  status: maintained
+  maintainers:
+    - teburd
+  collaborators:
+    - nashif
+    - inteljiangwe1
+    - kehintel
+  files:
+    - subsys/pmci/
+    - samples/modules/pmci/
+  labels:
+    - "area: PMCI"
+
 POSIX API layer:
   status: maintained
   maintainers:
@@ -5189,8 +5203,7 @@ West:
   collaborators:
     - nashif
     - inteljiangwe1
-  files:
-    - samples/modules/mctp/
+  files: []
   labels:
     - "area: MCTP"
 

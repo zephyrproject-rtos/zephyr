@@ -11,7 +11,7 @@
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 #include <libmctp.h>
-#include <zephyr/mctp/mctp_uart.h>
+#include <zephyr/pmci/mctp/mctp_uart.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mctp_host);
