@@ -38,6 +38,12 @@
 	};
 };
 
+&timer0 {
+	counter0: counter {
+		status = "okay";
+	};
+};
+
 &itm {
 	pinctrl-0 = <&swo_default>;
 	pinctrl-names = "default";
