@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -275,7 +275,8 @@ static int display_init(const struct device *dev)
 #define IRQ_CONFIGURE_FUNC(id)                                                                     \
 	static void glcdc_renesas_ra_configure_func_##id(void)                                     \
 	{                                                                                          \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(id, line, irq)] = ELC_EVENT_GLCDC_LINE_DETECT;    \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(id, line, irq)] =                                 \
+			BSP_PRV_IELS_ENUM(EVENT_GLCDC_LINE_DETECT);                                \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(id, line, irq),                                    \
 			    DT_INST_IRQ_BY_NAME(id, line, priority), renesas_ra_glcdc_isr,         \
 			    DEVICE_DT_INST_GET(id), 0);                                            \
