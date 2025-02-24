@@ -48,6 +48,18 @@
 		#mbox-cells = <1>;
 	};
 
+	/* Padconfig Partition 0 */
+	padcfg_part0: padcfg_part0@4080000 {
+		compatible = "ti,k3-ctrl-partition";
+		reg = <0x4080000 0x2000>;
+	};
+
+	/* Padconfig Partition 1 */
+	padcfg_part1: padcfg_part1@408400 {
+		compatible = "ti,k3-ctrl-partition";
+		reg = <0x4084000 0x2000>;
+	};
+
 	pinctrl: pinctrl@4084000 {
 		compatible = "ti,k3-pinctrl";
 		reg = <0x04084000 0x88>;

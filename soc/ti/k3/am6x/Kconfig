@@ -18,6 +18,7 @@ config SOC_SERIES_AM6X_M4
 	select MM_DRV
 	select MM_TI_RAT
 	select SOC_EARLY_INIT_HOOK
+	select SOC_LATE_INIT_HOOK
 
 config SOC_SERIES_AM6X_R5
 	select ARM
