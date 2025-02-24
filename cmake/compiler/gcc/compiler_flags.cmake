@@ -249,6 +249,7 @@ set_compiler_property(PROPERTY no_position_independent
 set_compiler_property(PROPERTY no_global_merge "")
 
 set_compiler_property(PROPERTY warning_shadow_variables -Wshadow)
+set_compiler_property(PROPERTY warning_no_array_bounds -Wno-array-bounds)
 
 set_compiler_property(PROPERTY no_builtin -fno-builtin)
 set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
