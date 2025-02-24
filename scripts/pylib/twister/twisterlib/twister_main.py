@@ -15,6 +15,7 @@ from colorama import Fore
 from twisterlib.coverage import run_coverage
 from twisterlib.environment import TwisterEnv
 from twisterlib.hardwaremap import HardwareMap
+from twisterlib.log_helper import setup_logging
 from twisterlib.package import Artifacts
 from twisterlib.reports import Reporting
 from twisterlib.runner import TwisterRunner
@@ -23,37 +24,6 @@ from twisterlib.testplan import TestPlan
 
 logger = logging.getLogger("twister")
 logger.setLevel(logging.DEBUG)
-
-
-def setup_logging(outdir, log_file, log_level, timestamps):
-    # create file handler which logs even debug messages
-    if log_file:
-        file_handler = logging.FileHandler(log_file)
-    else:
-        file_handler = logging.FileHandler(os.path.join(outdir, "twister.log"))
-
-    file_handler.setLevel(logging.DEBUG)
-
-    # create console handler with a higher log level
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(getattr(logging, log_level))
-
-    # create formatter and add it to the handlers
-    if timestamps:
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    else:
-        formatter = logging.Formatter("%(levelname)-7s - %(message)s")
-
-    formatter_file = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    console_handler.setFormatter(formatter)
-    file_handler.setFormatter(formatter_file)
-
-    # add the handlers to logger
-    logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
-
 
 def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
