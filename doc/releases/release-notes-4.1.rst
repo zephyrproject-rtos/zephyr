@@ -323,6 +323,7 @@ New Boards
 
 * Renesas Electronics Corporation
 
+   * :zephyr:board:`ek_ra2l1` (``ek_ra2l1``)
    * :zephyr:board:`ek_ra4l1` (``ek_ra4l1``)
    * :zephyr:board:`ek_ra4m1` (``ek_ra4m1``)
    * :zephyr:board:`fpb_ra4e1` (``fpb_ra4e1``)
@@ -433,6 +434,7 @@ New Drivers
    * :dtcompatible:`nordic,nrf-hsfll-global`
    * :dtcompatible:`nuvoton,npcm-pcc`
    * :dtcompatible:`realtek,rts5912-sccon`
+   * :dtcompatible:`renesas,rz-cpg`
    * :dtcompatible:`st,stm32n6-cpu-clock-mux`
    * :dtcompatible:`st,stm32n6-hse-clock`
    * :dtcompatible:`st,stm32n6-ic-clock-mux`
