@@ -1482,6 +1482,7 @@ TESTDATA_6 = [
 def test_projectbuilder_process(
     caplog,
     mocked_jobserver,
+    tmp_path,
     message,
     instance_status,
     instance_reason,
@@ -1529,6 +1530,9 @@ def test_projectbuilder_process(
     pb.options.prep_artifacts_for_testing = options_prep_artifacts
     pb.options.runtime_artifact_cleanup = options_runtime_artifacts
     pb.options.cmake_only = options_cmake_only
+    pb.options.outdir = tmp_path
+    pb.options.log_file = None
+    pb.options.log_level = "DEBUG"
 
     pb.cmake = mock.Mock(return_value=cmake_res)
     pb.build = mock.Mock(return_value=build_res)
