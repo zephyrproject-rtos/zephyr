@@ -177,6 +177,9 @@ zephyr_iterable_section(NAME log_strings KVMA RAM_REGION GROUP RODATA_REGION SUB
 
 zephyr_iterable_section(NAME log_const KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 
+zephyr_linker_section(NAME symbol_to_keep GROUP RODATA_REGION NOINPUT)
+zephyr_linker_section_configure(SECTION symbol_to_keep INPUT ".symbol_to_keep*" KEEP SORT NAME)
+
 zephyr_iterable_section(NAME shell KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 
 zephyr_iterable_section(NAME shell_root_cmds KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
