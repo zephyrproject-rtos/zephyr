@@ -1,0 +1,66 @@
+/*
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/arm-v2m_beetle-pinctrl.h>
+
+&pinctrl {
+	/omit-if-no-ref/  uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TXD_EXP>;
+		};
+
+		group2 {
+			pinmux = <UART0_RXD_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TXD_EXP>;
+		};
+
+		group2 {
+			pinmux = <UART1_RXD_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ spi0_default: spi0_default {
+		group1 {
+			pinmux = <SPI0_SS_EXP>, <SPI0_MOSI_EXP>, <SPI0_SCK_EXP>;
+		};
+		group2 {
+			pinmux = <SPI0_MISO_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ spi1_default: spi1_default {
+		group1 {
+			pinmux = <SPI1_SCK_EXP>, <SPI1_SS_EXP>, <SPI0_MOSI_EXP>;
+
+		};
+		group2 {
+			pinmux = <SPI1_MISO_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ sbcon0_default: sbcon0_default {
+		group1 {
+			pinmux = <SBCON0_SDA_EXP>, <SBCON0_SCL_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ sbcon1_default: sbcon1_default {
+		group1 {
+			pinmux = <SBCON1_SDA_EXP>, <SBCON1_SCL_EXP>;
+			input-enable;
+		};
+	};
+};
