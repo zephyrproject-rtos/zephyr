@@ -181,7 +181,7 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
     if options.verbose > 1:
         runner.results.summary()
 
-    report.summary(runner.results, options.disable_unrecognized_section_test, duration)
+    report.summary(runner.results, duration)
 
     report.coverage_status = True
     if options.coverage and not options.disable_coverage_aggregation:
