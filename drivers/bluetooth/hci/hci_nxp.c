@@ -368,19 +368,23 @@ K_THREAD_DEFINE(nxp_hci_rx_thread, CONFIG_BT_DRV_RX_STACK_SIZE, bt_rx_thread, NU
 static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
 {
 	struct hci_data hci_rx_frame;
+	int ret;
 
 	hci_rx_frame.packetType = packetType;
 	hci_rx_frame.data = k_malloc(len);
 
 	if (!hci_rx_frame.data) {
 		LOG_ERR("Failed to allocate RX buffer");
+		return;
 	}
 
 	memcpy(hci_rx_frame.data, data, len);
 	hci_rx_frame.len = len;
 
-	if (k_msgq_put(&rx_msgq, &hci_rx_frame, K_NO_WAIT) < 0) {
-		LOG_ERR("Failed to push RX data to message queue");
+	ret = k_msgq_put(&rx_msgq, &hci_rx_frame, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Failed to push RX data to message queue: %d", ret);
+		k_free(hci_rx_frame.data);
 	}
 }
 
