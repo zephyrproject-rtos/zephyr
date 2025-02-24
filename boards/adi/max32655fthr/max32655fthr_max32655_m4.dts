@@ -18,9 +18,23 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,sram = &sram2;
+		zephyr,sram = &m4_sram;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &code_partition;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * Concatenate SRAM0(32KB), SRAM1(32KB) and SRAM2(48KB) for the M4
+		 */
+		m4_sram: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(112)>;
+		};
 	};
 
 	leds {
@@ -190,6 +204,7 @@
 
 	spi0_cs1_flash: w25q128jv@1 {
 		compatible = "jedec,spi-nor";
+		status = "disabled";
 		/* 134217728 bits = 16 Mbytes */
 		size = <0x8000000>;
 		reg = <1>;

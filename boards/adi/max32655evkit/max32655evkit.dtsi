@@ -12,6 +12,28 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * Concatenate SRAM0(32KB), SRAM1(32KB) and SRAM2(48KB) for the M4
+		 */
+		m4_sram: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(112)>;
+		};
+
+		/*
+		 * Use SRAM3(16KB) for the RV32
+		 */
+		rv32_sram: memory@2001c000 {
+			compatible = "mmio-sram";
+			reg = <0x2001c000 DT_SIZE_K(16)>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
