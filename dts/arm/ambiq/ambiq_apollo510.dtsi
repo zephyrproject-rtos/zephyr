@@ -155,11 +155,196 @@
 			status = "okay";
 		};
 
-		counter0: counter@40008200 {
-			compatible = "ambiq,counter";
+		timer0: timer@40008200 {
+			compatible = "ambiq,timer";
 			reg = <0x40008200 0x20>;
 			interrupts = <67 0>;
-			status = "disabled";
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer1: timer@40008220 {
+			compatible = "ambiq,timer";
+			reg = <0x40008220 0x20>;
+			interrupts = <68 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer2: timer@40008240 {
+			compatible = "ambiq,timer";
+			reg = <0x40008240 0x20>;
+			interrupts = <69 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer3: timer@40008260 {
+			compatible = "ambiq,timer";
+			reg = <0x40008260 0x20>;
+			interrupts = <70 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer4: timer@40008280 {
+			compatible = "ambiq,timer";
+			reg = <0x40008280 0x20>;
+			interrupts = <71 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer5: timer@400082a0 {
+			compatible = "ambiq,timer";
+			reg = <0x400082a0 0x20>;
+			interrupts = <72 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer6: timer@400082c0 {
+			compatible = "ambiq,timer";
+			reg = <0x400082c0 0x20>;
+			interrupts = <73 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer7: timer@400082e0 {
+			compatible = "ambiq,timer";
+			reg = <0x400082e0 0x20>;
+			interrupts = <74 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer8: timer@40008300 {
+			compatible = "ambiq,timer";
+			reg = <0x40008300 0x20>;
+			interrupts = <75 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer9: timer@40008320 {
+			compatible = "ambiq,timer";
+			reg = <0x40008320 0x20>;
+			interrupts = <76 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer10: timer@40008340 {
+			compatible = "ambiq,timer";
+			reg = <0x40008340 0x20>;
+			interrupts = <77 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer11: timer@40008360 {
+			compatible = "ambiq,timer";
+			reg = <0x40008360 0x20>;
+			interrupts = <78 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer12: timer@40008380 {
+			compatible = "ambiq,timer";
+			reg = <0x40008380 0x20>;
+			interrupts = <79 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer13: timer@400083a0 {
+			compatible = "ambiq,timer";
+			reg = <0x400083a0 0x20>;
+			interrupts = <80 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer14: timer@400083c0 {
+			compatible = "ambiq,timer";
+			reg = <0x400083c0 0x20>;
+			interrupts = <81 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+		};
+
+		timer15: timer@400083e0 {
+			compatible = "ambiq,timer";
+			reg = <0x400083e0 0x20>;
+			interrupts = <82 0>;
+			clk-source = "CLK_SELECT_HFRC_DIV64";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
 		};
 
 		rtc0: rtc@RTC_BASE_NAME {

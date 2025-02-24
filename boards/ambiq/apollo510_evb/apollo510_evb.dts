@@ -85,10 +85,10 @@
 	pinctrl-names = "default";
 };
 
-&counter0 {
-	status = "okay";
-	clock-frequency = <DT_FREQ_M(6)>;
-	clk-source = <1>;
+&timer0 {
+	counter0: counter {
+		status = "okay";
+	};
 };
 
 &rtc0 {
