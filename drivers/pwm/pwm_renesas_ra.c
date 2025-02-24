@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -485,11 +485,10 @@ static int pwm_renesas_ra_init(const struct device *dev)
 	return 0;
 }
 
-#define _ELC_EVENT_GPT_CAPTURE_COMPARE_A(channel) ELC_EVENT_GPT##channel##_CAPTURE_COMPARE_A
-#define _ELC_EVENT_GPT_COUNTER_OVERFLOW(channel)  ELC_EVENT_GPT##channel##_COUNTER_OVERFLOW
-
-#define ELC_EVENT_GPT_CAPTURE_COMPARE_A(channel) _ELC_EVENT_GPT_CAPTURE_COMPARE_A(channel)
-#define ELC_EVENT_GPT_COUNTER_OVERFLOW(channel)  _ELC_EVENT_GPT_COUNTER_OVERFLOW(channel)
+#define EVENT_GPT_CAPTURE_COMPARE_A(channel)                                                       \
+	BSP_PRV_IELS_ENUM(CONCAT(EVENT_GPT, channel, _CAPTURE_COMPARE_A))
+#define EVENT_GPT_COUNTER_OVERFLOW(channel)                                                        \
+	BSP_PRV_IELS_ENUM(CONCAT(EVENT_GPT, channel, _COUNTER_OVERFLOW))
 
 #ifdef CONFIG_PWM_CAPTURE
 #define PWM_RA_IRQ_CONFIG_INIT(index)                                                              \
@@ -546,8 +545,8 @@ static int pwm_renesas_ra_init(const struct device *dev)
 				.cycle_end_irq = DT_INST_IRQ_BY_NAME(index, overflow, irq),        \
 			},                                                                         \
 		.extend_cfg = g_timer1_extend_##index,                                             \
-		.capture_a_event = ELC_EVENT_GPT_CAPTURE_COMPARE_A(DT_INST_PROP(index, channel)),  \
-		.overflow_event = ELC_EVENT_GPT_COUNTER_OVERFLOW(DT_INST_PROP(index, channel)),    \
+		.capture_a_event = EVENT_GPT_CAPTURE_COMPARE_A(DT_INST_PROP(index, channel)),      \
+		.overflow_event = EVENT_GPT_COUNTER_OVERFLOW(DT_INST_PROP(index, channel)),        \
 	};                                                                                         \
 	static const struct pwm_renesas_ra_config pwm_renesas_ra_config_##index = {                \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                   \
