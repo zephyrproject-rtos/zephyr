@@ -243,57 +243,62 @@ static void avrcp_disconnected(struct bt_avctp *session)
 	}
 }
 
-static void process_get_capabilities_rsp(struct bt_avrcp *avrcp, struct net_buf *buf)
+static void process_get_cap_rsp(struct bt_avrcp *avrcp, struct net_buf *buf)
 {
-	struct bt_avrcp_get_capabilities_rsp rsp;
-	uint16_t length;
-	uint16_t expected_length;
+	struct bt_avrcp_avc_pdu *pdu;
+	struct bt_avrcp_get_cap_rsp *rsp;
+	uint16_t len;
+	uint16_t expected_len;
 
-	if (buf->len < 3) {
+	if (buf->len < sizeof(*pdu)) {
 		LOG_ERR("Invalid vendor payload length: %d", buf->len);
 		return;
 	}
 
-	net_buf_pull_u8(buf); /**< Packet Type 0x0 - single frame*/
-	length = net_buf_pull_be16(buf);
+	pdu = net_buf_pull_mem(buf, sizeof(*pdu));
 
-	if (length < 2 || length < buf->len) {
-		LOG_ERR("Invalid capability length: %d, buf length = %d", length, buf->len);
+	if (BT_AVRCP_AVC_PDU_GET_PACKET_TYPE(pdu) != BT_AVRVP_PKT_TYPE_SINGLE) {
+		LOG_ERR("Invalid packet type");
 		return;
 	}
 
-	if ((avrcp_cb == NULL) || (avrcp_cb->get_capabilities_rsp == NULL)) {
+	len = sys_be16_to_cpu(pdu->param_len);
+
+	if (len < sizeof(*rsp) || buf->len < len) {
+		LOG_ERR("Invalid capability length: %d, buf length = %d", len, buf->len);
 		return;
 	}
 
-	rsp.capability_id = net_buf_pull_u8(buf);
-	rsp.capability_count = net_buf_pull_u8(buf);
-	rsp.capability = buf->data;
+	if ((avrcp_cb == NULL) || (avrcp_cb->get_cap_rsp == NULL)) {
+		return;
+	}
 
-	switch (rsp.capability_id) {
+	rsp = (struct bt_avrcp_get_cap_rsp *)buf->data;
+
+	switch (rsp->cap_id) {
 	case BT_AVRCP_CAP_COMPANY_ID:
-		expected_length = rsp.capability_count * AVRCP_COMPANY_ID_SIZE;
+		expected_len = rsp->cap_cnt * AVRCP_COMPANY_ID_SIZE;
 		break;
 	case BT_AVRCP_CAP_EVENTS_SUPPORTED:
-		expected_length = rsp.capability_count;
+		expected_len = rsp->cap_cnt;
 		break;
 	default:
-		LOG_ERR("Unrecognized capability = 0x%x", rsp.capability_id);
+		LOG_ERR("Unrecognized capability = 0x%x", rsp->cap_id);
 		return;
 	}
 
-	if (buf->len < expected_length) {
-		LOG_ERR("Invalid capability payload length: %d, expected: %d", buf->len,
-			expected_length);
+	if (buf->len < sizeof(*rsp) + expected_len) {
+		LOG_ERR("Invalid capability payload length: %d", buf->len);
 		return;
 	}
 
-	avrcp_cb->get_capabilities_rsp(avrcp, &rsp);
+	avrcp_cb->get_cap_rsp(avrcp, rsp);
 }
 
 static void avrcp_vendor_dependent_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
 					   bt_avctp_cr_t cr)
 {
+	struct bt_avrcp_avc_pdu *pdu;
 	struct bt_avrcp_header *avrcp_hdr;
 	uint32_t company_id;
 	uint8_t pdu_id;
@@ -310,17 +315,17 @@ static void avrcp_vendor_dependent_handler(struct bt_avrcp *avrcp, struct net_bu
 		return;
 	}
 
-	pdu_id = net_buf_pull_u8(buf);
+	pdu = (struct bt_avrcp_avc_pdu *)buf->data;
 
 	if (cr == BT_AVCTP_CMD) {
-		LOG_DBG("Unhandled command: 0x%02x", pdu_id);
+		LOG_DBG("Unhandled command: 0x%02x", pdu->pdu_id);
 	} else { /* BT_AVCTP_RESPONSE */
-		switch (pdu_id) {
-		case BT_AVRCP_PDU_ID_GET_CAPABILITIES:
-			process_get_capabilities_rsp(avrcp, buf);
+		switch (pdu->pdu_id) {
+		case BT_AVRCP_PDU_ID_GET_CAPS:
+			process_get_cap_rsp(avrcp, buf);
 			break;
 		default:
-			LOG_DBG("Unhandled response: 0x%02x", pdu_id);
+			LOG_DBG("Unhandled response: 0x%02x", pdu->pdu_id);
 			break;
 		}
 	}
@@ -385,8 +390,8 @@ static void avrcp_pass_through_handler(struct bt_avrcp *avrcp, struct net_buf *b
 					   bt_avctp_cr_t cr)
 {
 	struct bt_avrcp_header *avrcp_hdr;
-	struct bt_avrcp_passthrough_rsp rsp;
-	uint8_t tmp;
+	struct bt_avrcp_passthrough_rsp *rsp;
+	bt_avrcp_rsp_t result;
 
 	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
 
@@ -399,14 +404,10 @@ static void avrcp_pass_through_handler(struct bt_avrcp *avrcp, struct net_buf *b
 				return;
 			}
 
-			rsp.response = BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr);
-			tmp = net_buf_pull_u8(buf);
-			rsp.operation_id = FIELD_GET(GENMASK(6, 0), tmp);
-			rsp.state = FIELD_GET(GENMASK(7, 7), tmp);
-			rsp.len = net_buf_pull_u8(buf);
-			rsp.payload = rsp.len ? buf->data : NULL;
+			result = BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr);
+			rsp = (struct bt_avrcp_passthrough_rsp *)buf->data;
 
-			avrcp_cb->passthrough_rsp(avrcp, &rsp);
+			avrcp_cb->passthrough_rsp(avrcp, result, rsp);
 		}
 	}
 }
@@ -688,22 +689,22 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
 	return 0;
 }
 
-int bt_avrcp_get_capabilities(struct bt_avrcp *avrcp, bt_avrcp_cap_t capability_id)
+int bt_avrcp_get_cap(struct bt_avrcp *avrcp, bt_avrcp_cap_t cap_id)
 {
 	struct net_buf *buf;
-	uint8_t param[5];
+	struct bt_avrcp_avc_pdu pdu;
 
 	buf = avrcp_create_vendor_pdu(avrcp, BT_AVCTP_CMD, BT_AVRCP_CTYPE_STATUS);
 	if (!buf) {
 		return -ENOMEM;
 	}
+
 	net_buf_add_be24(buf, BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG);
-	param[0] = BT_AVRCP_PDU_ID_GET_CAPABILITIES;
-	param[1] = 0x00;
-	param[2] = 0x00;
-	param[3] = 0x01;
-	param[4] = capability_id;
-	net_buf_add_mem(buf, param, sizeof(param));
+	pdu.pdu_id = BT_AVRCP_PDU_ID_GET_CAPS;
+	BT_AVRCP_AVC_PDU_SET_PACKET_TYPE(&pdu, BT_AVRVP_PKT_TYPE_SINGLE);
+	pdu.param_len = sys_cpu_to_be16(sizeof(cap_id));
+	net_buf_add_mem(buf, &pdu, sizeof(pdu));
+	net_buf_add_u8(buf, cap_id);
 
 	return avrcp_send(avrcp, buf);
 }
@@ -736,26 +737,24 @@ int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp)
 
 	memset(param, 0xFF, ARRAY_SIZE(param));
 	param[0] = FIELD_PREP(GENMASK(6, 4), AVRCP_SUBUNIT_PAGE) |
-		   FIELD_PREP(GENMASK(2, 0), AVRCP_SUBUNIT_EXTENSION_COED);
+		   FIELD_PREP(GENMASK(2, 0), AVRCP_SUBUNIT_EXTENSION_CODE);
 	net_buf_add_mem(buf, param, sizeof(param));
 
 	return avrcp_send(avrcp, buf);
 }
 
-int bt_avrcp_passthrough(struct bt_avrcp *avrcp, bt_avrcp_opid_t operation_id,
+int bt_avrcp_passthrough(struct bt_avrcp *avrcp, bt_avrcp_opid_t opid,
 			 bt_avrcp_button_state_t state, const uint8_t *payload, uint8_t len)
 {
 	struct net_buf *buf;
-	uint8_t param[2];
 
 	buf = avrcp_create_passthrough_pdu(avrcp, BT_AVCTP_CMD, BT_AVRCP_CTYPE_CONTROL);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	param[0] = FIELD_PREP(GENMASK(7, 7), state) | FIELD_PREP(GENMASK(6, 0), operation_id);
-	param[1] = len;
-	net_buf_add_mem(buf, param, sizeof(param));
+	net_buf_add_u8(buf, FIELD_PREP(BIT(7), state) | FIELD_PREP(GENMASK(6, 0), opid));
+	net_buf_add_u8(buf, len);
 	if (len) {
 		net_buf_add_mem(buf, payload, len);
 	}
