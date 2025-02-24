@@ -50,4 +50,9 @@ config NET_MGMT_EVENT_QUEUE_SIZE
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	default 1
 
+# Override the WIFI_MGMT_SCAN_CHAN_MAX_MANUAL parameter for the Wi-Fi subsystem.
+# Maximum number of channels that can be manually specified (Range: 1-110)
+config WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
+	default 50
+
 endif
