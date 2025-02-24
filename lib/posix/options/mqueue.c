@@ -424,7 +424,7 @@ static mqueue_object *find_in_list(const char *name)
 
 	while (mq != NULL) {
 		msg_queue = (mqueue_object *)mq;
-		if (strcmp(msg_queue->name, name) == 0) {
+		if ((msg_queue->name != NULL) && (strcmp(msg_queue->name, name) == 0)) {
 			return msg_queue;
 		}
 
