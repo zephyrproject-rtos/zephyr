@@ -1,0 +1,14 @@
+# PMCI configuration options
+
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Platform Management Communication Infrastruction (PMCI)"
+
+# zephyr-keep-sorted-start
+
+source "subsys/pmci/mctp/Kconfig"
+
+# zephyr-keep-sorted-stop
+
+endmenu
