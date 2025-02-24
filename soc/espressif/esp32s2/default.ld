@@ -510,7 +510,6 @@ SECTIONS
     *libzephyr.a:secure_boot.*(.literal .text .literal.* .text.*)
     *libzephyr.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*)
     *libzephyr.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_table.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_fields.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_api.*(.literal .text .literal.* .text.*)
@@ -619,6 +618,7 @@ SECTIONS
     *libzephyr.a:esp_psram_impl_quad.*(.rodata .rodata.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.*)
@@ -735,8 +735,6 @@ SECTIONS
     *libzephyr.a:spi_flash_hal_common.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_spi_init.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-
-    *libzephyr.a:efuse_hal.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     . = ALIGN(4);
     _loader_data_end = ABSOLUTE(.);
