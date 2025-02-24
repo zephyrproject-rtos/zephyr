@@ -149,6 +149,15 @@ config ESP_MBEDTLS_HEAP_ALLOC_SPIRAM
 	help
 	  If enable this will place mbedtls_heap into spi ram
 
+config ESP_LVGL_FRAMEBUFFER_ALLOC_SPIRAM
+	bool "Place LVGL Framebuffer into spiram"
+	depends on ESP_SPIRAM
+	depends on LV_Z_BUFFER_ALLOC_STATIC
+	select LV_Z_VDB_CUSTOM_SECTION
+	default n
+	help
+	  If enable this will place LVGL framebuffer into spi ram
+
 if SOC_SERIES_ESP32
 
 menu "PSRAM clock and cs IO for ESP32-DOWD"
