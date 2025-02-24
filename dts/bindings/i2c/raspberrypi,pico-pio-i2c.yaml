@@ -1,0 +1,11 @@
+description: Raspberry Pi Pico I2C implemented on PIO
+
+compatible: raspberrypi,pico-pio-i2c
+
+include:
+- i2c-controller.yaml
+- pinctrl-device.yaml
+- raspberrypi,pico-pio-device.yaml
+- reset-device.yaml
+
+properties: {}
