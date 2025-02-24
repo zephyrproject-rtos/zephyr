@@ -231,15 +231,15 @@ static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
 
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
-
 /* DPPI setup used for SW-based auto-switching during TIFS. */
+
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-#define HAL_NRF_RADIO_TIFS_DPPI_EVENT_END HAL_NRF_RADIO_EVENT_END
-#define HAL_RADIO_TIFS_DPPI_PUBLISH_END   HAL_RADIO_PUBLISH_END
-#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-#define HAL_NRF_RADIO_TIFS_DPPI_EVENT_END HAL_NRF_RADIO_EVENT_PHYEND
-#define HAL_RADIO_TIFS_DPPI_PUBLISH_END   HAL_RADIO_PUBLISH_PHYEND
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#define HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END     HAL_NRF_RADIO_EVENT_END
+#define HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END HAL_RADIO_PUBLISH_END
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
+#define HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END     HAL_NRF_RADIO_EVENT_PHYEND
+#define HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END HAL_RADIO_PUBLISH_PHYEND
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
 
 /* Clear SW-switch timer on packet end:
  * wire the RADIO EVENTS_END event to SW_SWITCH_TIMER TASKS_CLEAR task.
@@ -251,7 +251,7 @@ static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
  */
 static inline void hal_sw_switch_timer_clear_ppi_config(void)
 {
-	nrf_radio_publish_set(NRF_RADIO, HAL_NRF_RADIO_TIFS_DPPI_EVENT_END,
+	nrf_radio_publish_set(NRF_RADIO, HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END,
 			      HAL_SW_SWITCH_TIMER_CLEAR_PPI);
 	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
 				NRF_TIMER_TASK_CLEAR, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
@@ -322,7 +322,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * a PPI to publish RADIO END event.
  */
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_EVT \
-	(NRF_RADIO->HAL_RADIO_TIFS_DPPI_PUBLISH_END)
+	(NRF_RADIO->HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END)
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT \
 	(((HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI << \
 		RADIO_PUBLISH_END_CHIDX_Pos) \
