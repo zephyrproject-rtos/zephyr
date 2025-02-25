@@ -30,6 +30,14 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	uint32_t clock_freq;
 	int ret;
 
+	/* fast path to avoid reconfigure */
+	/* TODO: S32K3 errata ERR050456 requiring module reset before every transfer,
+	 * investigate alternative workaround so we don't have this latency for S32.
+	 */
+	if (spi_context_configured(ctx, spi_cfg) && !IS_ENABLED(CONFIG_SOC_FAMILY_NXP_S32)) {
+		return 0;
+	}
+
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
 		/* the IP DOES support half duplex, need to implement driver support */
 		LOG_ERR("Half-duplex not supported");
