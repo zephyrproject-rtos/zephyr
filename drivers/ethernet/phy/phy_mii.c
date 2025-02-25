@@ -146,12 +146,10 @@ static int update_link_state(const struct device *dev)
 	bool link_up;
 
 	uint16_t anar_reg = 0;
-	uint16_t bmcr_reg = 0;
 	uint16_t bmsr_reg = 0;
 	uint16_t anlpar_reg = 0;
 	uint16_t c1kt_reg = 0;
 	uint16_t s1kt_reg = 0;
-	uint32_t timeout = CONFIG_PHY_AUTONEG_TIMEOUT_MS / 100;
 
 	if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
 		return -EIO;
@@ -172,54 +170,10 @@ static int update_link_state(const struct device *dev)
 		return 0;
 	}
 
-	/**
-	 * Perform auto-negotiation sequence.
-	 */
-	LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence",
-		cfg->phy_addr);
-
 	/* Read PHY default advertising parameters */
 	if (phy_mii_reg_read(dev, MII_ANAR, &anar_reg) < 0) {
 		return -EIO;
 	}
-
-	/* Configure and start auto-negotiation process */
-	if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
-		return -EIO;
-	}
-
-	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE | MII_BMCR_AUTONEG_RESTART;
-	bmcr_reg &= ~MII_BMCR_ISOLATE;  /* Don't isolate the PHY */
-
-	if (phy_mii_reg_write(dev, MII_BMCR, bmcr_reg) < 0) {
-		return -EIO;
-	}
-
-	/* Wait for the auto-negotiation process to complete */
-	do {
-		if (timeout-- == 0U) {
-			LOG_DBG("PHY (%d) auto-negotiate timedout",
-				cfg->phy_addr);
-			return -ETIMEDOUT;
-		}
-
-		k_sleep(K_MSEC(100));
-
-		/* On some PHY chips, the BMSR bits are latched, so the first read may
-		 * show incorrect status. A second read ensures correct values.
-		 */
-		if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
-			return -EIO;
-		}
-
-		/* Second read, clears the latched bits and gives the correct status */
-		if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
-			return -EIO;
-		}
-	} while (!(bmsr_reg & MII_BMSR_AUTONEG_COMPLETE));
-
-	LOG_DBG("PHY (%d) auto-negotiate sequence completed",
-		cfg->phy_addr);
 
 	/** Read peer device capability */
 	if (phy_mii_reg_read(dev, MII_ANLPAR, &anlpar_reg) < 0) {
@@ -317,7 +271,11 @@ static int phy_mii_cfg_link(const struct device *dev,
 	struct phy_mii_dev_data *const data = dev->data;
 	uint16_t anar_reg;
 	uint16_t bmcr_reg;
+	uint16_t bmsr_reg;
 	uint16_t c1kt_reg;
+
+	uint16_t anar_orig;
+	uint16_t bmcr_orig;
 
 	if (phy_mii_reg_read(dev, MII_ANAR, &anar_reg) < 0) {
 		return -EIO;
@@ -326,6 +284,10 @@ static int phy_mii_cfg_link(const struct device *dev,
 	if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		return -EIO;
 	}
+
+	/* Store to check for changes */
+	anar_orig = anar_reg;
+	bmcr_orig = bmcr_reg;
 
 	if (data->gigabit_supported) {
 		if (phy_mii_reg_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
@@ -376,6 +338,19 @@ static int phy_mii_cfg_link(const struct device *dev,
 	}
 
 	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE;
+	bmcr_reg &= ~MII_BMCR_ISOLATE;  /* Don't isolate the PHY */
+
+	if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+		return -EIO;
+	}
+
+	bool link_down = (bmsr_reg & MII_BMSR_LINK_STATUS) == 0;
+	bool config_change = (anar_orig != anar_reg) || (bmcr_orig != bmcr_reg);
+
+	/* Restart auto-negotiation if configuration changed or the link is down */
+	if (config_change || link_down) {
+		bmcr_reg |= MII_BMCR_AUTONEG_RESTART;
+	}
 
 	if (phy_mii_reg_write(dev, MII_ANAR, anar_reg) < 0) {
 		return -EIO;
