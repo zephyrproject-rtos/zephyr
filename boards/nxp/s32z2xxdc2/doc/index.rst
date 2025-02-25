@@ -197,6 +197,16 @@ This board supports West runners for the following debug tools:
 Follow the installation steps of the debug tool you plan to use before loading
 your firmware.
 
+If using TRACE32, ensure you have version >= 2024.09 installed. If your TRACE32
+installation doesn't include the S32Z27 demo scripts under ``demo/arm/hardware/s32z27``,
+follow these steps:
+
+1. Search for "s32z27-misc" in `TRACE32 scripts repo`_ and download all files
+   (e.g. ``hardware-arm-s32z27-misc_20250208000800_all_files.zip``).
+2. Create the sub-directories ``s32z27/misc/`` under ``demo/arm/hardware/`` in
+   your TRACE32 installation directory.
+3. Extract the downloaded files to the created directory.
+
 Set-up the Board
 ================
 
@@ -349,3 +359,6 @@ References
 
 .. _pySerial miniterm:
    https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.miniterm
+
+.. _TRACE32 scripts repo:
+   https://repo.lauterbach.com/scripts.html
