@@ -9,9 +9,6 @@ config PICOLIBC_SUPPORTED
 config TOOLCHAIN_HAS_BUILTIN_FFS
 	default n
 
-config FP16
-	default y
-
 config IAR_LIBC_SUPPORTED
 	default y
 
