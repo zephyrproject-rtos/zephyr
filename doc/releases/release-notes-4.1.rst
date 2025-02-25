@@ -96,6 +96,8 @@ Removed APIs and options
 
 * The ``z_pm_save_idle_exit()`` PM API function has been removed.
 
+* Struct ``z_arch_esf_t`` has been removed. Use ``struct arch_esf`` instead.
+
 
 Deprecated APIs and options
 ===========================
