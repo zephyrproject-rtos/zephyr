@@ -22,12 +22,25 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 
 #define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
 
+#define INC_MSGQ_PROCESSING_THREAD_STACK_SIZE 512
+#define INC_MSGQ_PROCESSING_THREAD_PRIORITY 5
+
+#if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG)
+#include <openamp/rpmsg_virtio.h>
+#endif
+
+struct hci_pkt {
+	uint8_t *data;
+	size_t len;
+};
+
 struct ipc_data {
 	bt_hci_recv_t recv;
 	struct ipc_ept hci_ept;
 	struct ipc_ept_cfg hci_ept_cfg;
 	struct k_sem bound_sem;
 	const struct device *ipc;
+	struct k_msgq inc_msgq;
 };
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
@@ -126,7 +139,7 @@ static struct net_buf *bt_ipc_acl_recv(const uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
-	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 	if (buf) {
 		memcpy((void *)&hdr, data, sizeof(hdr));
 		data += sizeof(hdr);
@@ -169,7 +182,7 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
-	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_FOREVER);
 	if (buf) {
 		memcpy((void *)&hdr, data, sizeof(hdr));
 		data += sizeof(hdr);
@@ -207,9 +220,8 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 	return buf;
 }
 
-static void bt_ipc_rx(const struct device *dev, const uint8_t *data, size_t len)
+static void bt_ipc_rx(struct ipc_data *ipc, const uint8_t *data, size_t len)
 {
-	struct ipc_data *ipc = dev->data;
 	uint8_t pkt_indicator;
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
@@ -239,9 +251,29 @@ static void bt_ipc_rx(const struct device *dev, const uint8_t *data, size_t len)
 
 	if (buf) {
 		LOG_DBG("Calling bt_recv(%p)", buf);
-		ipc->recv(dev, buf);
+		ipc->recv(ipc->ipc, buf);
 
 		LOG_HEXDUMP_DBG(buf->data, buf->len, "RX buf payload:");
+	}
+}
+
+static void inc_msgq_proc(void *p1, void *p2, void *p3)
+{
+	struct ipc_data *ipc = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (true) {
+		struct hci_pkt pkt;
+		int err;
+
+		k_msgq_get(&ipc->inc_msgq, &pkt, K_FOREVER);
+
+		bt_ipc_rx(ipc, pkt.data, pkt.len);
+
+		err = ipc_service_release_rx_buffer(&ipc->hci_ept, pkt.data);
+		__ASSERT(err == 0, "Failed to release rx buffer");
 	}
 }
 
@@ -291,8 +323,18 @@ static void hci_ept_bound(void *priv)
 static void hci_ept_recv(const void *data, size_t len, void *priv)
 {
 	const struct device *dev = priv;
+	struct ipc_data *ipc = dev->data;
+	struct hci_pkt pkt = {
+		.data = (uint8_t *)data,
+		.len = len,
+	};
+	int err;
 
-	bt_ipc_rx(dev, data, len);
+	err = ipc_service_hold_rx_buffer(&ipc->hci_ept, (void *) data);
+	__ASSERT(err == 0, "Failed to hold rx buffer");
+
+	err = k_msgq_put(&ipc->inc_msgq, &pkt, K_NO_WAIT);
+	__ASSERT(err == 0, "Failed to put data into inc_msgq");
 }
 
 int __weak bt_hci_transport_setup(const struct device *dev)
@@ -385,7 +427,19 @@ static DEVICE_API(bt_hci, drv) = {
 	.send		= bt_ipc_send,
 };
 
+#define BT_HCI_IPC_INST(inst) DT_DRV_INST(inst)
+#define IPC_INST(inst) DT_PARENT(BT_HCI_IPC_INST(inst))
+
+#define MAX_IPC_BLOCKS(inst) \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(IPC_INST(inst), zephyr_ipc_openamp_static_vrings), \
+		    (DIV_ROUND_UP(DT_REG_SIZE(DT_PHANDLE(IPC_INST(inst), memory_region)) / 2, \
+				  DT_PROP_OR(IPC_INST(inst), zephyr_buffer_size,\
+					     RPMSG_BUFFER_SIZE))), \
+		    (DT_PROP(IPC_INST(inst), rx_blocks)))
+
 #define IPC_DEVICE_INIT(inst) \
+	static char __aligned(4) \
+		ipc_data_buf_##inst[MAX_IPC_BLOCKS(inst) * sizeof(struct hci_pkt)]; \
 	static struct ipc_data ipc_data_##inst = { \
 		.bound_sem = Z_SEM_INITIALIZER(ipc_data_##inst.bound_sem, 0, 1), \
 		.hci_ept_cfg = { \
@@ -397,8 +451,15 @@ static DEVICE_API(bt_hci, drv) = {
 			.priv = (void *)DEVICE_DT_INST_GET(inst), \
 		}, \
 		.ipc = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
+		.inc_msgq = Z_MSGQ_INITIALIZER(ipc_data_##inst.inc_msgq, \
+					       ipc_data_buf_##inst, \
+					       sizeof(struct hci_pkt), \
+					       MAX_IPC_BLOCKS(inst)), \
 	}; \
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &ipc_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv) \
+	K_THREAD_DEFINE(inc_msgq_thread_tid_##inst, INC_MSGQ_PROCESSING_THREAD_STACK_SIZE, \
+			inc_msgq_proc, &ipc_data_##inst, NULL, NULL, \
+			INC_MSGQ_PROCESSING_THREAD_PRIORITY, 0, 0);
 
 DT_INST_FOREACH_STATUS_OKAY(IPC_DEVICE_INIT)

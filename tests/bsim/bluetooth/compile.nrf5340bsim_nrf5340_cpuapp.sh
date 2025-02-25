@@ -12,6 +12,8 @@ export BOARD="${BOARD:-nrf5340bsim/nrf5340/cpuapp}"
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
+${ZEPHYR_BASE}/tests/bsim/bluetooth/host/compile.sh
+
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf sysbuild=1  compile
 app=tests/bsim/bluetooth/ll/throughput sysbuild=1 compile
 app=tests/bsim/bluetooth/ll/multiple_id sysbuild=1 compile
