@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(net_txtime_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_mgmt.h>
 
+#include "net_sample_common.h"
+
 #define APP_BANNER "Run SO_TXTIME client"
 
 #define DHCPV4_MASK (NET_EVENT_IPV4_DHCP_BOUND | \
@@ -62,8 +64,6 @@ static struct k_thread rx_thread;
 K_SEM_DEFINE(run_app, 0, 1);
 static bool want_to_quit;
 static bool connected;
-
-extern int init_vlan(void);
 
 static void quit(void)
 {
