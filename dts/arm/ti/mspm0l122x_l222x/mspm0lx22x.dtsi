@@ -236,7 +236,7 @@
 			#size-cells = <0>;
 			reg = <0x400f0000 0x2000>;
 			interrupts = <24 0>;
-			clocks = <&clkmux MSPM0_CLOCK_BUS_MFCLK>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 			status = "disabled";
 		};
 
@@ -283,7 +283,7 @@
 			reg = <0x40108000 0x2000>;
 			interrupts = <15 0>;
 			current-speed = <115200>;
-			clocks = <&clkmux MSPM0_CLOCK_BUS_MFCLK>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 			status = "disabled";
 		};
 
@@ -292,7 +292,7 @@
 			reg = <0x4010a000 0x2000>;
 			interrupts = <16 0>;
 			current-speed = <115200>;
-			clocks = <&clkmux MSPM0_CLOCK_BUS_MFCLK>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 			status = "disabled";
 		};
 
@@ -300,7 +300,7 @@
 			compatible = "ti,mspm0-spi";
 			reg = <0x40468000 0x2000>;
 			interrupts = <9 0>;
-			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_MCLK>;
 			clock-frequency = <8000000>;
 			status = "disabled";
 		};
@@ -309,7 +309,7 @@
 			compatible = "ti,mspm0-spi";
 			reg = <0x4046a000 0x2000>;
 			interrupts = <10 0>;
-			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_MCLK>;
 			clock-frequency = <8000000>;
 			status = "disabled";
 		};
