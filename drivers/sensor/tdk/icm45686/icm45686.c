@@ -312,6 +312,38 @@ static int icm45686_init(const struct device *dev)
 		return err;
 	}
 
+	/** Write Low-pass filter settings through indirect register access */
+	uint8_t gyro_lpf_write_array[] = REG_IREG_PREPARE_WRITE_ARRAY(
+						REG_IPREG_SYS1_OFFSET,
+						REG_IPREG_SYS1_REG_172,
+						REG_IPREG_SYS1_REG_172_GYRO_LPFBW_SEL(
+							cfg->settings.gyro.lpf));
+
+	err = icm45686_bus_write(dev, REG_IREG_ADDR_15_8, gyro_lpf_write_array,
+				 sizeof(gyro_lpf_write_array));
+	if (err) {
+		LOG_ERR("Failed to set Gyro BW settings: %d", err);
+		return err;
+	}
+
+	/** Wait before indirect register write is made effective
+	 * before proceeding with next one.
+	 */
+	k_sleep(K_MSEC(1));
+
+	uint8_t accel_lpf_write_array[] = REG_IREG_PREPARE_WRITE_ARRAY(
+						REG_IPREG_SYS2_OFFSET,
+						REG_IPREG_SYS2_REG_131,
+						REG_IPREG_SYS2_REG_131_ACCEL_LPFBW_SEL(
+							cfg->settings.accel.lpf));
+
+	err = icm45686_bus_write(dev, REG_IREG_ADDR_15_8, accel_lpf_write_array,
+				 sizeof(accel_lpf_write_array));
+	if (err) {
+		LOG_ERR("Failed to set Accel BW settings: %d", err);
+		return err;
+	}
+
 	LOG_DBG("Init OK");
 
 	return 0;
@@ -341,11 +373,13 @@ static int icm45686_init(const struct device *dev)
 				.pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),			   \
 				.fs = DT_INST_PROP(inst, accel_fs),				   \
 				.odr = DT_INST_PROP(inst, accel_odr),				   \
+				.lpf = DT_INST_PROP_OR(inst, accel_lpf, 0),			   \
 			},									   \
 			.gyro = {								   \
 				.pwr_mode = DT_INST_PROP(inst, gyro_pwr_mode),			   \
 				.fs = DT_INST_PROP(inst, gyro_fs),				   \
 				.odr = DT_INST_PROP(inst, gyro_odr),				   \
+				.lpf = DT_INST_PROP_OR(inst, gyro_lpf, 0),			   \
 			},									   \
 		},										   \
 	};											   \

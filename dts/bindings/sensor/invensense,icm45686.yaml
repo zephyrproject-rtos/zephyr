@@ -79,6 +79,22 @@ properties:
       - 3 # ICM45686_DT_ACCEL_FS_4
       - 4 # ICM45686_DT_ACCEL_FS_2
 
+  accel-lpf:
+    type: int
+    default: 0
+    description: |
+      Specify the accelerometer low pass filter cut-off frequency
+      as a fraction of the output data rate.
+      Default is power-up configuration.
+    enum:
+      - 0 # ICM45686_DT_ACCEL_LPF_BW_OFF
+      - 1 # ICM45686_DT_ACCEL_LPF_BW_1_4
+      - 2 # ICM45686_DT_ACCEL_LPF_BW_1_8
+      - 3 # ICM45686_DT_ACCEL_LPF_BW_1_16
+      - 4 # ICM45686_DT_ACCEL_LPF_BW_1_32
+      - 5 # ICM45686_DT_ACCEL_LPF_BW_1_64
+      - 6 # ICM45686_DT_ACCEL_LPF_BW_1_128
+
   gyro-pwr-mode:
     type: int
     default: 0
@@ -128,3 +144,19 @@ properties:
       - 6 # ICM45686_DT_GYRO_FS_62_5
       - 7 # ICM45686_DT_GYRO_FS_31_25
       - 8 # ICM45686_DT_GYRO_FS_15_625
+
+  gyro-lpf:
+    type: int
+    default: 0
+    description: |
+      Specify the gyro low pass filter cut-off frequency
+      as a fraction of the output data rate.
+      Default is power-up configuration.
+    enum:
+      - 0 # ICM45686_DT_GYRO_LPF_BW_OFF
+      - 1 # ICM45686_DT_GYRO_LPF_BW_1_4
+      - 2 # ICM45686_DT_GYRO_LPF_BW_1_8
+      - 3 # ICM45686_DT_GYRO_LPF_BW_1_16
+      - 4 # ICM45686_DT_GYRO_LPF_BW_1_32
+      - 5 # ICM45686_DT_GYRO_LPF_BW_1_64
+      - 6 # ICM45686_DT_GYRO_LPF_BW_1_128

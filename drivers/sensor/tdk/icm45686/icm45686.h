@@ -63,11 +63,13 @@ struct icm45686_config {
 			uint8_t pwr_mode : 2;
 			uint8_t fs : 4;
 			uint8_t odr : 4;
+			uint8_t lpf : 3;
 		} accel;
 		struct {
 			uint8_t pwr_mode : 2;
 			uint8_t fs : 4;
 			uint8_t odr : 4;
+			uint8_t lpf : 3;
 		} gyro;
 	} settings;
 };
