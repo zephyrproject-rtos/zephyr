@@ -2820,7 +2820,7 @@ hawkBit:
   tests:
     - sample.net.updatehub
 
-Native POSIX/Sim and POSIX arch:
+Native_sim and POSIX arch:
   status: maintained
   maintainers:
     - aescolar
@@ -2843,7 +2843,7 @@ Native POSIX/Sim and POSIX arch:
   labels:
     - "area: native port"
   description: >-
-    POSIX architecture and SOC, native_posix & native_sim boards, and related drivers
+    POSIX architecture and SOC, native_sim boards, and related drivers
   tests:
     - boards.native_sim
 
