@@ -145,7 +145,18 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	adc_cc23x0_pm_policy_state_lock_get();
 
-	ADCManualTrigger();
+	/* Set trigger source to software */
+	ADCSetTriggerSource(ADC_TRIGGER_SOURCE_SOFTWARE);
+
+	/* Set sampling mode to automatic, to use the sample duration configured
+	 *  with ADCSetSampleDuration()
+	 */
+	ADCSetSamplingMode(ADC_SAMPLE_MODE_AUTO);
+
+	/* Enable conversion. The ADC will wait for the software trigger */
+	ADCEnableConversion();
+
+	ADCStartConversion();
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
@@ -221,10 +232,8 @@ static void adc_cc23x0_isr(const struct device *dev)
 #endif
 }
 
-static int adc_cc23x0_read_common(const struct device *dev,
-				  const struct adc_sequence *sequence,
-				  bool asynchronous,
-				  struct k_poll_signal *sig)
+static int adc_cc23x0_read_common(const struct device *dev, const struct adc_sequence *sequence,
+				  bool asynchronous, struct k_poll_signal *sig)
 {
 #ifndef CONFIG_ADC_CC23X0_DMA_DRIVEN
 	const struct adc_cc23x0_config *cfg = dev->config;
@@ -252,6 +261,9 @@ static int adc_cc23x0_read_common(const struct device *dev,
 		LOG_ERR("Resolution is not valid");
 		return -EINVAL;
 	}
+
+	/* Make sure conversion is disabled to allow configuration changes */
+	ADCDisableConversion();
 
 	ADCSetResolution(data->res);
 
@@ -338,15 +350,13 @@ static int adc_cc23x0_read_common(const struct device *dev,
 	return ret;
 }
 
-static int adc_cc23x0_read(const struct device *dev,
-			   const struct adc_sequence *sequence)
+static int adc_cc23x0_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	return adc_cc23x0_read_common(dev, sequence, false, NULL);
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_cc23x0_read_async(const struct device *dev,
-				 const struct adc_sequence *sequence,
+static int adc_cc23x0_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				 struct k_poll_signal *async)
 {
 	return adc_cc23x0_read_common(dev, sequence, true, async);
@@ -587,9 +597,9 @@ static DEVICE_API(adc, adc_cc23x0_driver_api) = {
 };
 
 #ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
-#define ADC_CC23X0_DMA_INIT(n)						\
-	.dma_dev = DEVICE_DT_GET(TI_CC23X0_DT_INST_DMA_CTLR(n, dma)),	\
-	.dma_channel = TI_CC23X0_DT_INST_DMA_CHANNEL(n, dma),		\
+#define ADC_CC23X0_DMA_INIT(n)                                                                     \
+	.dma_dev = DEVICE_DT_GET(TI_CC23X0_DT_INST_DMA_CTLR(n, dma)),                              \
+	.dma_channel = TI_CC23X0_DT_INST_DMA_CHANNEL(n, dma),                                      \
 	.dma_trigsrc = TI_CC23X0_DT_INST_DMA_TRIGSRC(n, dma),
 #else
 #define ADC_CC23X0_DMA_INIT(n)
