@@ -42,6 +42,7 @@ source "drivers/mdio/Kconfig.lan865x"
 source "drivers/mdio/Kconfig.sy1xx"
 source "drivers/mdio/Kconfig.xilinx_axienet"
 source "drivers/mdio/Kconfig.intel_igc"
+source "drivers/mdio/Kconfig.xlnx_gem"
 
 config MDIO_INIT_PRIORITY
 	int "Init priority"
