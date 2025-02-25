@@ -8,3 +8,6 @@ board_runner_args(openocd "--cmd-pre-load=flash erase_sector 1 0 last")
 #board_runner_args(openocd "--cmd-reset-halt=flash info 1")
 
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
+
+board_runner_args(jlink "--device=MSPM0L2228" "--speed=4000")
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
