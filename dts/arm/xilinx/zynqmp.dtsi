@@ -111,9 +111,6 @@
 				     <GIC_SPI 58 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
-			phy-poll-interval = <1000>;
-			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
 			amba-ahb-dbus-width = <XLNX_GEM_AMBA_AHB_DBUS_WIDTH_32BIT>;
 			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_SINGLE>;
 			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
@@ -125,7 +122,13 @@
 			tx-buffer-size = <512>;
 			discard-rx-fcs;
 			unicast-hash;
-			full-duplex;
+		};
+
+		gem0_mdio: gem0_mdio {
+			compatible = "xlnx,gem-mdio";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		gem1: ethernet@ff0c0000 {
@@ -138,9 +141,6 @@
 				     <GIC_SPI 60 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
-			phy-poll-interval = <1000>;
-			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
 			amba-ahb-dbus-width = <XLNX_GEM_AMBA_AHB_DBUS_WIDTH_32BIT>;
 			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_SINGLE>;
 			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
@@ -152,7 +152,13 @@
 			tx-buffer-size = <512>;
 			discard-rx-fcs;
 			unicast-hash;
-			full-duplex;
+		};
+
+		gem1_mdio: gem1_mdio {
+			compatible = "xlnx,gem-mdio";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		gem2: ethernet@ff0d0000 {
@@ -165,9 +171,6 @@
 				     <GIC_SPI 62 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
-			phy-poll-interval = <1000>;
-			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
 			amba-ahb-dbus-width = <XLNX_GEM_AMBA_AHB_DBUS_WIDTH_32BIT>;
 			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_SINGLE>;
 			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
@@ -179,7 +182,13 @@
 			tx-buffer-size = <512>;
 			discard-rx-fcs;
 			unicast-hash;
-			full-duplex;
+		};
+
+		gem2_mdio: gem2_mdio {
+			compatible = "xlnx,gem-mdio";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		gem3: ethernet@ff0e0000 {
@@ -192,9 +201,6 @@
 				     <GIC_SPI 64 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
-			phy-poll-interval = <1000>;
-			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
 			amba-ahb-dbus-width = <XLNX_GEM_AMBA_AHB_DBUS_WIDTH_32BIT>;
 			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_SINGLE>;
 			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
@@ -206,7 +212,13 @@
 			tx-buffer-size = <512>;
 			discard-rx-fcs;
 			unicast-hash;
-			full-duplex;
+		};
+
+		gem3_mdio: gem3_mdio {
+			compatible = "xlnx,gem-mdio";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		psgpio: gpio@ff0a0000 {
