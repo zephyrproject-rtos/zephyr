@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mdio.h>
+#include <zephyr/net/mdio.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(xlnx_gem_mdio, CONFIG_MDIO_LOG_LEVEL);
@@ -31,12 +32,13 @@ LOG_MODULE_REGISTER(xlnx_gem_mdio, CONFIG_MDIO_LOG_LEVEL);
  * [02]       PHY management idle bit
  * [01]       MDIO input status
  * gem.phy_maint:
- * [31 .. 30] constant values
- * [17 .. 16] constant values
- * [29]       Read operation control bit
- * [28]       Write operation control bit
+ * [31]       constant zero
+ * [30]       Clause 22 indication if set to 1
+ * [29 .. 28] MDIO operation identifier, comp. enum mdio_opcode
+ *            in zephyr/net/mdio.h
  * [27 .. 23] PHY address
  * [22 .. 18] Register address
+ * [17 .. 16] constant 10b
  * [15 .. 00] 16-bit data word
  */
 #define ETH_XLNX_GEM_NWCTRL_OFFSET   0x00000000
@@ -50,9 +52,9 @@ LOG_MODULE_REGISTER(xlnx_gem_mdio, CONFIG_MDIO_LOG_LEVEL);
 #define ETH_XLNX_GEM_NWSR_MDIO_IDLE_BIT BIT(2)
 
 #define ETH_XLNX_GEM_PHY_MAINTENANCE_OFFSET      0x00000034
-#define ETH_XLNX_GEM_PHY_MAINT_CONST_BITS        0x40020000
-#define ETH_XLNX_GEM_PHY_MAINT_READ_OP_BIT       BIT(29)
-#define ETH_XLNX_GEM_PHY_MAINT_WRITE_OP_BIT      BIT(28)
+#define ETH_XLNX_GEM_PHY_MAINT_CLAUSE22_BIT      BIT(30)
+#define ETH_XLNX_GEM_PHY_MAINT_MDIO_OP_MASK      0x3
+#define ETH_XLNX_GEM_PHY_MAINT_MDIO_OP_SHIFT     28
 #define ETH_XLNX_GEM_PHY_MAINT_PHY_ADDRESS_MASK  0x0000001F
 #define ETH_XLNX_GEM_PHY_MAINT_PHY_ADDRESS_SHIFT 23
 #define ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_MASK  0x0000001F
@@ -89,7 +91,99 @@ struct xlnx_gem_mdio_config {
 };
 
 /**
- * @brief GEM MDIO interface data read function
+ * @brief GEM MDIO transfer function
+ *
+ * Implements MDIO read and write operations for both Clause 22
+ * and Clause 45.
+ *
+ * @param dev      Pointer to the GEM MDIO device
+ * @param prtad    MDIO address of the PHY to be accessed
+ * @param regad    Index of the PHY register to be read or written
+ * @param op       MDIO operation to be performed
+ * @param c45      Indicates a Clause 45 operation
+ * @param data_in  Data to be written to the target PHY register
+ * @param data_out Pointer to a data word for data read from the target
+ *                 PHY register.
+ * @return         0 in case of success, -ETIMEDOUT if the read operation
+ *                 timed out (idle bit not set as expected)
+ */
+static int xlnx_gem_mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
+				  enum mdio_opcode op, bool c45, uint16_t data_in,
+				  uint16_t *data_out)
+{
+	/*
+	 * MDIO read and write operations as described in Zynq-7000 TRM,
+	 * chapter 16.3.4, p. 517.
+	 */
+	const struct xlnx_gem_mdio_config *const dev_conf = dev->config;
+
+	uint32_t reg_val;
+	uint32_t poll_cnt = 0;
+
+	/*
+	 * Wait until gem.net_status[phy_mgmt_idle] == 1 before issuing the
+	 * current command.
+	 */
+	do {
+		if (poll_cnt++ > 0) {
+			k_busy_wait(CONFIG_MDIO_XLNX_GEM_POLL_DELAY);
+		}
+		reg_val = sys_read32(dev_conf->gem_base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
+	} while ((reg_val & ETH_XLNX_GEM_NWSR_MDIO_IDLE_BIT) == 0 &&
+		 poll_cnt < CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES);
+	if (poll_cnt == CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES) {
+		LOG_ERR("%s: MDIO operation 0x%1X, PHY address %hhu, register address "
+			"%hhu timed out", dev->name, (uint32_t)op, prtad, regad);
+		return -ETIMEDOUT;
+	}
+
+	/* Assemble the contents of gem.phy_maint */
+	reg_val  = (c45 ? 0 : ETH_XLNX_GEM_PHY_MAINT_CLAUSE22_BIT);
+	reg_val |= ((uint32_t)op & ETH_XLNX_GEM_PHY_MAINT_MDIO_OP_MASK) <<
+		   ETH_XLNX_GEM_PHY_MAINT_MDIO_OP_SHIFT;
+	reg_val |= ((uint32_t)prtad & ETH_XLNX_GEM_PHY_MAINT_PHY_ADDRESS_MASK) <<
+		   ETH_XLNX_GEM_PHY_MAINT_PHY_ADDRESS_SHIFT;
+	reg_val |= ((uint32_t)regad & ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_MASK) <<
+		   ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_SHIFT;
+	reg_val |= BIT(17);
+	reg_val |= ((uint32_t)data_in & ETH_XLNX_GEM_PHY_MAINT_DATA_MASK);
+
+	sys_write32(reg_val, dev_conf->gem_base_addr + ETH_XLNX_GEM_PHY_MAINTENANCE_OFFSET);
+
+	/*
+	 * Wait until gem.net_status[phy_mgmt_idle] == 1 -> current command
+	 * completed.
+	 */
+	poll_cnt = 0;
+	do {
+		if (poll_cnt++ > 0) {
+			k_busy_wait(CONFIG_MDIO_XLNX_GEM_POLL_DELAY);
+		}
+		reg_val = sys_read32(dev_conf->gem_base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
+	} while ((reg_val & ETH_XLNX_GEM_NWSR_MDIO_IDLE_BIT) == 0 &&
+		 poll_cnt < CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES);
+	if (poll_cnt == CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES) {
+		LOG_ERR("%s: MDIO operation 0x%1X, PHY address %hhu, register address "
+			"%hhu timed out", dev->name, (uint32_t)op, prtad, regad);
+		return -ETIMEDOUT;
+	}
+
+	/*
+	 * Return data read from the PHY if the current operation is a read operation.
+	 * The data read from the PHY is provided in gem.phy_maint[15 .. 00] once the
+	 * read operation is done.
+	 */
+	if (data_out != NULL) {
+		reg_val = sys_read32(dev_conf->gem_base_addr +
+				     ETH_XLNX_GEM_PHY_MAINTENANCE_OFFSET);
+		*data_out = (uint16_t)reg_val;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief GEM MDIO interface data read function for Clause 22
  *
  * @param dev   Pointer to the GEM MDIO device
  * @param prtad MDIO address of the PHY to be accessed
@@ -101,78 +195,38 @@ struct xlnx_gem_mdio_config {
 static int xlnx_gem_mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			      uint16_t *data)
 {
-	const struct xlnx_gem_mdio_config *const dev_conf = dev->config;
-
-	uint32_t reg_val;
-	uint32_t poll_cnt = 0;
-
-	/*
-	 * MDIO read operation as described in Zynq-7000 TRM,
-	 * chapter 16.3.4, p. 517.
-	 */
-
-	/*
-	 * Wait until gem.net_status[phy_mgmt_idle] == 1 before issuing the
-	 * current command.
-	 */
-	do {
-		if (poll_cnt++ > 0) {
-			k_busy_wait(CONFIG_MDIO_XLNX_GEM_POLL_DELAY);
-		}
-		reg_val = sys_read32(dev_conf->gem_base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
-	} while ((reg_val & ETH_XLNX_GEM_NWSR_MDIO_IDLE_BIT) == 0 &&
-		 poll_cnt < CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES);
-	if (poll_cnt == CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES) {
-		LOG_ERR("%s: read from PHY address %hhu, register address %hhu timed out",
-			dev->name, prtad, regad);
-		return -ETIMEDOUT;
-	}
-
-	/* Assemble & write the read command to the gem.phy_maint register */
-
-	/* Set the bits constant for any operation */
-	reg_val = ETH_XLNX_GEM_PHY_MAINT_CONST_BITS;
-	/* Indicate a read operation */
-	reg_val |= ETH_XLNX_GEM_PHY_MAINT_READ_OP_BIT;
-	/* PHY address */
-	reg_val |= (((uint32_t)prtad & ETH_XLNX_GEM_PHY_MAINT_PHY_ADDRESS_MASK)
-		    << ETH_XLNX_GEM_PHY_MAINT_PHY_ADDRESS_SHIFT);
-	/* Register address */
-	reg_val |= (((uint32_t)regad & ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_MASK)
-		    << ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_SHIFT);
-
-	sys_write32(reg_val, dev_conf->gem_base_addr + ETH_XLNX_GEM_PHY_MAINTENANCE_OFFSET);
-
-	/*
-	 * Wait until gem.net_status[phy_mgmt_idle] == 1 -> current command
-	 * completed.
-	 */
-	poll_cnt = 0;
-	do {
-		if (poll_cnt++ > 0) {
-			k_busy_wait(CONFIG_MDIO_XLNX_GEM_POLL_DELAY);
-		}
-		reg_val = sys_read32(dev_conf->gem_base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
-	} while ((reg_val & ETH_XLNX_GEM_NWSR_MDIO_IDLE_BIT) == 0 &&
-		 poll_cnt < CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES);
-	if (poll_cnt == CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES) {
-		LOG_ERR("%s: read from PHY address %hhu, register address %hhu timed out",
-			dev->name, prtad, regad);
-		return -ETIMEDOUT;
-	}
-
-	/*
-	 * Read the data returned by the PHY -> lower 16 bits of the PHY main-
-	 * tenance register
-	 */
-	reg_val = sys_read32(dev_conf->gem_base_addr + ETH_XLNX_GEM_PHY_MAINTENANCE_OFFSET);
-
-	*data = (uint16_t)reg_val;
-	return 0;
+	return xlnx_gem_mdio_transfer(dev, prtad, regad, MDIO_OP_C22_READ, false,
+				      0, data);
 }
 
 /**
- * @brief GEM MDIO interface data write function
+ * @brief GEM MDIO interface data read function for Clause 45
+ *
+ * @param dev   Pointer to the GEM MDIO device
+ * @param prtad MDIO address of the PHY to be accessed
+ * @param devad Device address
+ * @param regad Index of the PHY register to be read
+ * @param data  Read data output pointer
+ * @return      0 in case of success, -ETIMEDOUT if the read operation
+ *              timed out (idle bit not set as expected)
+ */
+static int xlnx_gem_mdio_read_c45(const struct device *dev, uint8_t prtad,
+				  uint8_t devad, uint16_t regad, uint16_t *data)
+{
+	int ret;
+
+	ret = xlnx_gem_mdio_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true,
+				     regad, NULL);
+	if (ret == 0) {
+		ret = xlnx_gem_mdio_transfer(dev, prtad, devad, MDIO_OP_C45_READ,
+					     true, 0, data);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief GEM MDIO interface data write function for Clause 22
  *
  * @param dev   Pointer to the GEM MDIO device
  * @param prtad MDIO address of the PHY to be accessed
@@ -184,69 +238,34 @@ static int xlnx_gem_mdio_read(const struct device *dev, uint8_t prtad, uint8_t r
 static int xlnx_gem_mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 			       uint16_t data)
 {
-	const struct xlnx_gem_mdio_config *const dev_conf = dev->config;
+	return xlnx_gem_mdio_transfer(dev, prtad, regad, MDIO_OP_C22_WRITE, false,
+				      data, NULL);
+}
 
-	uint32_t reg_val;
-	uint32_t poll_cnt = 0;
+/**
+ * @brief GEM MDIO interface data write function for Clause 45
+ *
+ * @param dev   Pointer to the GEM MDIO device
+ * @param prtad MDIO address of the PHY to be accessed
+ * @param devad Device address
+ * @param regad Index of the PHY register to write to
+ * @param data  Data word to be written to the target register
+ * @return      0 in case of success, -ETIMEDOUT if the read operation
+ *              timed out (idle bit not set as expected)
+ */
+static int xlnx_gem_mdio_write_c45(const struct device *dev, uint8_t prtad,
+				   uint8_t devad, uint16_t regad, uint16_t data)
+{
+	int ret;
 
-	/*
-	 * MDIO write operation as described in Zynq-7000 TRM,
-	 * chapter 16.3.4, p. 517.
-	 */
-
-	/*
-	 * Wait until gem.net_status[phy_mgmt_idle] == 1 before issuing the
-	 * current command.
-	 */
-	do {
-		if (poll_cnt++ > 0) {
-			k_busy_wait(CONFIG_MDIO_XLNX_GEM_POLL_DELAY);
-		}
-		reg_val = sys_read32(dev_conf->gem_base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
-	} while ((reg_val & ETH_XLNX_GEM_NWSR_MDIO_IDLE_BIT) == 0 &&
-		 poll_cnt < CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES);
-	if (poll_cnt == CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES) {
-		LOG_ERR("%s: write to PHY address %hhu, register address %hhu timed out", dev->name,
-			prtad, regad);
-		return -ETIMEDOUT;
+	ret = xlnx_gem_mdio_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true,
+				     regad, NULL);
+	if (ret == 0) {
+		ret = xlnx_gem_mdio_transfer(dev, prtad, devad, MDIO_OP_C45_WRITE,
+					     true, data, NULL);
 	}
 
-	/* Assemble & write the read command to the gem.phy_maint register */
-
-	/* Set the bits constant for any operation */
-	reg_val = ETH_XLNX_GEM_PHY_MAINT_CONST_BITS;
-	/* Indicate a read operation */
-	reg_val |= ETH_XLNX_GEM_PHY_MAINT_WRITE_OP_BIT;
-	/* PHY address */
-	reg_val |= (((uint32_t)prtad & ETH_XLNX_GEM_PHY_MAINT_PHY_ADDRESS_MASK)
-		    << ETH_XLNX_GEM_PHY_MAINT_PHY_ADDRESS_SHIFT);
-	/* Register address */
-	reg_val |= (((uint32_t)regad & ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_MASK)
-		    << ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_SHIFT);
-	/* 16 bits of data for the destination register */
-	reg_val |= ((uint32_t)data & ETH_XLNX_GEM_PHY_MAINT_DATA_MASK);
-
-	sys_write32(reg_val, dev_conf->gem_base_addr + ETH_XLNX_GEM_PHY_MAINTENANCE_OFFSET);
-
-	/*
-	 * Wait until gem.net_status[phy_mgmt_idle] == 1 -> current command
-	 * completed.
-	 */
-	poll_cnt = 0;
-	do {
-		if (poll_cnt++ > 0) {
-			k_busy_wait(CONFIG_MDIO_XLNX_GEM_POLL_DELAY);
-		}
-		reg_val = sys_read32(dev_conf->gem_base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
-	} while ((reg_val & ETH_XLNX_GEM_NWSR_MDIO_IDLE_BIT) == 0 &&
-		 poll_cnt < CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES);
-	if (poll_cnt == CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES) {
-		LOG_ERR("%s: write to PHY address %hhu, register address %hhu timed out", dev->name,
-			prtad, regad);
-		return -ETIMEDOUT;
-	}
-
-	return 0;
+	return ret;
 }
 
 /**
@@ -283,6 +302,8 @@ static int xlnx_gem_mdio_initialize(const struct device *dev)
 static DEVICE_API(mdio, xlnx_gem_mdio_api) = {
 	.read = xlnx_gem_mdio_read,
 	.write = xlnx_gem_mdio_write,
+	.read_c45 = xlnx_gem_mdio_read_c45,
+	.write_c45 = xlnx_gem_mdio_write_c45,
 };
 
 #define XLNX_GEM_MDIO_DEV_CONFIG(port)\
