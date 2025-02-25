@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sample-request-button = &button1;
+		sample-response-led = &led1;
+		sample-event-domain = &wakeup_event_domain;
+	};
+};
