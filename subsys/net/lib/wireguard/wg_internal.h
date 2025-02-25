@@ -221,6 +221,9 @@ struct wg_peer {
 	 * initiate a new handshake.
 	 */
 	bool send_handshake : 1;
+
+	/* First valid message received (this will trigger VPN connected event) */
+	bool first_valid : 1;
 };
 
 static inline bool wg_is_under_load(void)
