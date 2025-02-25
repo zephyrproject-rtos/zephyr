@@ -45,6 +45,9 @@ The following CVEs are addressed by this release:
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
+* :cve:`2025-1673` `Zephyr project bug tracker GHSA-jjhx-rrh4-j8mx
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-jjhx-rrh4-j8mx>`_
+
 API Changes
 ***********
 
