@@ -210,7 +210,7 @@ static void lpspi_isr(const struct device *dev)
 	}
 
 	if (spi_context_rx_len_left(ctx) == 1) {
-		base->TCR = 0;
+		base->TCR &= ~LPSPI_TCR_CONT_MASK;
 	} else if (spi_context_rx_on(ctx)) {
 		size_t rx_fifo_len = rx_fifo_cur_len(base);
 		size_t expected_rx_left = rx_fifo_len < ctx->rx_len ? ctx->rx_len - rx_fifo_len : 0;
@@ -224,7 +224,7 @@ static void lpspi_isr(const struct device *dev)
 	} else {
 		spi_context_complete(ctx, dev, 0);
 		NVIC_ClearPendingIRQ(config->irqn);
-		base->TCR = 0;
+		base->TCR &= ~LPSPI_TCR_CONT_MASK;
 		lpspi_wait_tx_fifo_empty(dev);
 		spi_context_cs_control(ctx, false);
 		spi_context_release(&data->ctx, 0);
@@ -267,7 +267,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	LPSPI_Enable(base, true);
 
 	/* keep the chip select asserted until the end of the zephyr xfer */
-	base->TCR |= LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK;
+	base->TCR |= LPSPI_TCR_CONT_MASK;
 	/* tcr is written to tx fifo */
 	lpspi_wait_tx_fifo_empty(dev);
 
