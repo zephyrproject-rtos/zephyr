@@ -1960,6 +1960,7 @@ int wireguard_peer_add(struct wireguard_peer_config *peer_config,
 {
 	static int id;
 	uint8_t public_key[WG_PUBLIC_KEY_LEN];
+	struct net_event_vpn_peer event;
 	struct wg_iface_context *ctx;
 	struct net_if *iface = NULL;
 	struct wg_peer *peer;
@@ -2052,6 +2053,22 @@ int wireguard_peer_add(struct wireguard_peer_config *peer_config,
 	NET_DBG("Peer %d attached to interface %d", ret,
 		net_if_get_by_iface(peer->iface));
 
+	event.id = ret;
+	event.public_key = peer_config->public_key;
+	event.keepalive_interval = peer->keepalive_interval;
+	event.endpoint = net_sad(&peer->cfg_endpoint);
+
+	ARRAY_FOR_EACH(peer->allowed_ip, i) {
+		struct wg_allowed_ip *allowed_ip = &peer->allowed_ip[i];
+
+		event.allowed_ip[i] = (struct wireguard_allowed_ip *)allowed_ip;
+	}
+
+	event.allowed_ip[WIREGUARD_MAX_SRC_IPS] = NULL;
+
+	net_mgmt_event_notify_with_info(NET_EVENT_VPN_PEER_ADD, peer->iface,
+					&event, sizeof(event));
+
 out:
 	k_mutex_unlock(&lock);
 
@@ -2063,6 +2080,7 @@ static void wg_peer_cleanup(struct wg_peer *peer)
 	memset(&peer->key, 0, sizeof(peer->key));
 
 	peer->id = 0;
+	peer->first_valid = false;
 }
 
 int wireguard_peer_remove(int peer_id)
@@ -2090,6 +2108,10 @@ int wireguard_peer_remove(int peer_id)
 
 	sys_slist_prepend(&peer_list, &peer->node);
 
+	net_mgmt_event_notify_with_info(NET_EVENT_VPN_PEER_DEL, peer->iface,
+					&peer->id,
+					sizeof(peer->id));
+
 	wg_peer_cleanup(peer);
 
 	/* Detach the virtual interface from the control interface and
@@ -2097,6 +2119,8 @@ int wireguard_peer_remove(int peer_id)
 	 * sent through it.
 	 */
 	(void)net_virtual_interface_attach(peer->iface, NULL);
+
+	net_mgmt_event_notify(NET_EVENT_VPN_DISCONNECTED, peer->iface);
 
 	net_if_down(peer->iface);
 
