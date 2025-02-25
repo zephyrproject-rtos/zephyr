@@ -59,7 +59,6 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #define USB_VBUS_SENSING false
 #endif
 
-#define USB_BASE_ADDRESS	DT_INST_REG_ADDR(0)
 #define USB_IRQ			DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, irq)
 #define USB_IRQ_PRI		DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
@@ -473,23 +472,14 @@ static int usb_dc_stm32_init(void)
 	int ret;
 	unsigned int i;
 
+	usb_dc_stm32_state.pcd.Instance = (PCD_TypeDef *)DT_INST_REG_ADDR(0);
 #if defined(USB) || defined(USB_DRD_FS)
-#ifdef USB
-	usb_dc_stm32_state.pcd.Instance = USB;
-#else
-	usb_dc_stm32_state.pcd.Instance = USB_DRD_FS;
-#endif
 	usb_dc_stm32_state.pcd.Init.speed = PCD_SPEED_FULL;
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS || USB_OTG_HS */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	usb_dc_stm32_state.pcd.Instance = USB_OTG_HS;
-#else
-	usb_dc_stm32_state.pcd.Instance = USB_OTG_FS;
-#endif
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
 #if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
