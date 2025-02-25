@@ -481,6 +481,22 @@ static char *get_l4_desc(struct event_msg *msg,
 		*desc = "Capture";
 		*desc2 = "stopped";
 		break;
+	case NET_EVENT_VPN_PEER_ADD:
+		*desc = "VPN peer";
+		*desc2 = "add";
+		break;
+	case NET_EVENT_VPN_PEER_DEL:
+		*desc = "VPN peer";
+		*desc2 = "del";
+		break;
+	case NET_EVENT_VPN_CONNECTED:
+		*desc = "VPN";
+		*desc2 = "connected";
+		break;
+	case NET_EVENT_VPN_DISCONNECTED:
+		*desc = "VPN";
+		*desc2 = "disconnected";
+		break;
 	}
 
 	return info;
@@ -491,7 +507,7 @@ static char *get_l4_desc(struct event_msg *msg,
  */
 static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 {
-	char extra_info[NET_IPV6_ADDR_LEN];
+	char extra_info[NET_IPV6_ADDR_LEN + sizeof("id 0123456789 ")];
 	struct event_msg msg;
 
 	ARG_UNUSED(p2);
@@ -535,15 +551,15 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 		if (layer == NET_MGMT_LAYER_L2) {
 			layer_str = "L2";
 			info = get_l2_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		} else if (layer == NET_MGMT_LAYER_L3) {
 			layer_str = "L3";
 			info = get_l3_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		} else if (layer == NET_MGMT_LAYER_L4) {
 			layer_str = "L4";
 			info = get_l4_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		}
 
 		if (desc == unknown_event_str) {
