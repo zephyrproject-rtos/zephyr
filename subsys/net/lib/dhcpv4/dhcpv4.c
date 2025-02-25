@@ -23,6 +23,9 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include "net_private.h"
 
+#if defined(CONFIG_NET_DHCPV4_FALLBACK_AUTO)
+#include <zephyr/net/ipv4_autoconf.h>
+#endif
 #include <zephyr/net/udp.h>
 #include "udp_internal.h"
 #include <zephyr/net/dhcpv4.h>
@@ -688,6 +691,10 @@ fail:
 
 static void dhcpv4_enter_selecting(struct net_if *iface)
 {
+#if defined(CONFIG_NET_DHCPV4_FALLBACK_AUTO)
+	net_ipv4_autoconf_reset(iface);
+#endif
+
 	iface->config.dhcpv4.attempts = 0U;
 
 	iface->config.dhcpv4.lease_time = 0U;
@@ -801,6 +808,15 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 		dhcpv4_enter_selecting(iface);
 		__fallthrough;
 	case NET_DHCPV4_SELECTING:
+#if defined(CONFIG_NET_DHCPV4_FALLBACK_AUTO)
+		if (iface->config.ipv4auto.state !=
+					NET_IPV4_AUTOCONF_ASSIGNED
+		    && iface->config.dhcpv4.attempts >=
+					DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
+			NET_DBG("too many attempts, request link-local address");
+			net_ipv4_autoconf_start(iface);
+		}
+#endif
 		/* Failed to get OFFER message, send DISCOVER again */
 		return dhcpv4_send_discover(iface);
 	case NET_DHCPV4_REQUESTING:
