@@ -1,6 +1,5 @@
 #
 # Copyright (c) 2021, Weidmueller Interface GmbH & Co. KG
-# Copyright (c) 2025, Immo Birnbaum
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -25,66 +24,6 @@ properties:
       which it will be adjusted at run-time. Therefore, the value of this
       item must be set to the clock frequency of the PLL supplying the
       respective GEM's TX clock - by default, this is the IO PLL.
-
-  mdc-divider:
-    type: int
-    required: true
-    description: |
-      The MDC clock divider for the respective GEM. This is the divider
-      applied to the LPD_LSBUS clock in order to derive MDIO interface
-      clock driving communications with the attached PHY. Refer to the
-      ZynqMP register documentation (ug1087), network_config (GEM) Register
-      Description, bits [20:18] to determine the appropriate divider for
-      the current target's LPD LSBUS clock frequency.
-
-  init-mdio-phy:
-    type: boolean
-    description: |
-      Activates the management of a PHY associated with the controller in-
-      stance. If this parameter is activated at the board level, the de-
-      fault values of the associated parameters mdio-phy-address, phy-poll-
-      interval, link-speed and advertise-lower-link-speeds should be checked
-      and overwritten at the board level if required.
-
-  mdio-phy-address:
-    type: int
-    required: true
-    description: |
-      The address on the MDIO bus of the PHY associated with the controller
-      instance. Set the address to 0 for auto-detection (first responding
-      PHY will be claimed by the driver, watch out in case of shared MDIO
-      use), or to a fixed address between 1 and 32.
-
-  phy-poll-interval:
-    type: int
-    required: true
-    description: |
-      PHY status polling interval in milliseconds for a driver instance
-      managing an associated PHY.
-
-  link-speed:
-    type: int
-    required: true
-    description: |
-      Nominal link speed. If no PHY is managed by an instance of this driver,
-      the respective controller will be configured to match the link speed
-      specified here. If a PHY is managed by the driver, advertisement of
-      the link speed specified here will be requested. If the optional pro-
-      perty advertise-lower-link-speeds is set, advertisement of the link
-      speed specified here plus any valid link speed below this value will
-      be requested.
-    enum:
-      - 1
-      - 2
-      - 3
-
-  advertise-lower-link-speeds:
-    type: boolean
-    description: |
-      Indicates to a driver instance which manages an associated PHY on
-      the MDIO bus to include link speeds lower than the nominal value
-      set in the link-speed property in the advertisement when requesting
-      link speed auto-negotiation with a peer system.
 
   handle-rx-in-isr:
     type: boolean
@@ -308,11 +247,6 @@ properties:
     type: boolean
     description: Optional feature flag - Discard non-VLAN frames. When set,
       only VLAN tagged frames will be passed to the address matching logic.
-
-  full-duplex:
-    type: boolean
-    description: |
-      Optional feature flag - Enables full duplex reception and transmission.
 
   discard-rx-frame-ahb-unavail:
     type: boolean
