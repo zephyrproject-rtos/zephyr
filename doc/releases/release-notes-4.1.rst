@@ -48,6 +48,9 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 * :cve:`2025-1673` `Zephyr project bug tracker GHSA-jjhx-rrh4-j8mx
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-jjhx-rrh4-j8mx>`_
 
+* :cve:`2025-1674` `Zephyr project bug tracker GHSA-x975-8pgf-qh66
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-x975-8pgf-qh66>`_
+
 API Changes
 ***********
 
