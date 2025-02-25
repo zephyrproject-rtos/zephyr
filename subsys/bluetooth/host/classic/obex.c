@@ -2285,63 +2285,91 @@ int bt_obex_add_header_conn_id(struct net_buf *buf, uint32_t conn_id)
 	return 0;
 }
 
-int bt_obex_add_header_app_param(struct net_buf *buf, uint16_t len, const uint8_t *app_param)
+int bt_obex_add_header_app_param(struct net_buf *buf, size_t count, const struct bt_obex_tlv data[])
 {
 	size_t total;
+	uint16_t len = 0;
 
-	if (!buf || !app_param || !len) {
+	if (!buf || !data || !count) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < count; i++) {
+		if (data[i].data_len && !data[i].data) {
+			LOG_WRN("Invalid parameter");
+			return -EINVAL;
+		}
+		len += data[i].data_len + sizeof(data[i].type) + sizeof(data[i].data_len);
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
-	}
-
-	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_APP_PARAM, len, app_param)) {
-		LOG_WRN("Invalid string");
-		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_APP_PARAM);
 	net_buf_add_be16(buf, (uint16_t)total);
-	net_buf_add_mem(buf, app_param, len);
+	for (size_t i = 0; i < count; i++) {
+		len += data[i].data_len + sizeof(data[i].type) + sizeof(data[i].data_len);
+		net_buf_add_u8(buf, data[i].type);
+		net_buf_add_u8(buf, data[i].data_len);
+		net_buf_add_mem(buf, data[i].data, (size_t)data[i].data_len);
+	}
 	return 0;
 }
 
-int bt_obex_add_header_auth_challenge(struct net_buf *buf, uint16_t len, const uint8_t *auth)
+int bt_obex_add_header_auth_challenge(struct net_buf *buf, size_t count,
+				      const struct bt_obex_tlv data[])
 {
 	size_t total;
+	uint16_t len = 0;
 
-	if (!buf || !auth || !len) {
+	if (!buf || !data || !count) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < count; i++) {
+		if (data[i].data_len && !data[i].data) {
+			LOG_WRN("Invalid parameter");
+			return -EINVAL;
+		}
+		len += data[i].data_len + sizeof(data[i].type) + sizeof(data[i].data_len);
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
-	}
-
-	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_AUTH_CHALLENGE, len, auth)) {
-		LOG_WRN("Invalid string");
-		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_AUTH_CHALLENGE);
 	net_buf_add_be16(buf, (uint16_t)total);
-	net_buf_add_mem(buf, auth, len);
+	for (size_t i = 0; i < count; i++) {
+		len += data[i].data_len + sizeof(data[i].type) + sizeof(data[i].data_len);
+		net_buf_add_u8(buf, data[i].type);
+		net_buf_add_u8(buf, data[i].data_len);
+		net_buf_add_mem(buf, data[i].data, (size_t)data[i].data_len);
+	}
 	return 0;
 }
 
-int bt_obex_add_header_auth_rsp(struct net_buf *buf, uint16_t len, const uint8_t *auth)
+int bt_obex_add_header_auth_rsp(struct net_buf *buf, size_t count, const struct bt_obex_tlv data[])
 {
 	size_t total;
+	uint16_t len = 0;
 
-	if (!buf || !auth || !len) {
+	if (!buf || !data || !count) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < count; i++) {
+		if (data[i].data_len && !data[i].data) {
+			LOG_WRN("Invalid parameter");
+			return -EINVAL;
+		}
+		len += data[i].data_len + sizeof(data[i].type) + sizeof(data[i].data_len);
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
@@ -2349,14 +2377,14 @@ int bt_obex_add_header_auth_rsp(struct net_buf *buf, uint16_t len, const uint8_t
 		return -ENOMEM;
 	}
 
-	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_AUTH_RSP, len, auth)) {
-		LOG_WRN("Invalid string");
-		return -EINVAL;
-	}
-
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_AUTH_RSP);
 	net_buf_add_be16(buf, (uint16_t)total);
-	net_buf_add_mem(buf, auth, len);
+	for (size_t i = 0; i < count; i++) {
+		len += data[i].data_len + sizeof(data[i].type) + sizeof(data[i].data_len);
+		net_buf_add_u8(buf, data[i].type);
+		net_buf_add_u8(buf, data[i].data_len);
+		net_buf_add_mem(buf, data[i].data, (size_t)data[i].data_len);
+	}
 	return 0;
 }
 
@@ -3007,6 +3035,34 @@ int bt_obex_get_header_conn_id(struct net_buf *buf, uint32_t *conn_id)
 	}
 
 	*conn_id = sys_get_be32(data.hdr.data);
+	return 0;
+}
+
+int bt_obex_tlv_parse(uint16_t len, const uint8_t *data,
+		      bool (*func)(struct bt_obex_tlv *tlv, void *user_data), void *user_data)
+{
+	uint16_t index = 0;
+	struct bt_obex_tlv tlv;
+
+	if (!len || !data || !func) {
+		LOG_WRN("Invalid parameter");
+		return -EINVAL;
+	}
+
+	while ((index + 2) <= len) {
+		tlv.type = data[index];
+		tlv.data_len = data[index + 1];
+		index += 2;
+		if ((index + tlv.data_len) > len) {
+			break;
+		}
+
+		tlv.data = &data[index];
+		index += tlv.data_len;
+		if (!func(&tlv, user_data)) {
+			return 0;
+		}
+	}
 	return 0;
 }
 
