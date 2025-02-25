@@ -26,7 +26,7 @@ See `Peripherals`_ for more information.
 
 .. note::
 
-   | ``native_sim`` is an evolution of the older :ref:`native_posix<native_posix>`.
+   | ``native_sim`` is an evolution of its predecessor ``native_posix``.
    | Some components, code, options names, and documentation will still use the old native_posix
      names. But all components which worked with native_posix will work with native_sim.
 
