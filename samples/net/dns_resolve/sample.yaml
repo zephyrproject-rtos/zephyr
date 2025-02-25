@@ -4,9 +4,6 @@ common:
   tags:
     - net
     - dns
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
 sample:
   description: DNS resolver, mDNS and LLMNR responder
   name: DNS resolver and responder sample application

@@ -7,7 +7,6 @@ common:
 tests:
   bindesc.read:
     platform_allow:
-      - native_posix
       - native_sim
   bindesc.read.c99:
     extra_configs:

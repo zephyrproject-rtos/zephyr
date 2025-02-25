@@ -10,10 +10,6 @@ common:
     - net
     - socket
     - http
-  # native_posix does not work with CONFIG_POSIX_API
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
 tests:
   sample.net.sockets.dumb_http_server_mt:
     extra_configs:
