@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# Copyright (c) 2025 Dima Nikiforov <vnikiforov@berkeley.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ROCKETCHIP_VIRT_RISCV
+	bool
+
+config SOC_FAMILY
+	default "rocketchip_virt_riscv" if SOC_FAMILY_ROCKETCHIP_VIRT_RISCV
+
+rsource "*/Kconfig.soc"

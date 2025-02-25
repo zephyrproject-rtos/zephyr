@@ -1,7 +1,7 @@
 board:
-  name: spike_riscv64
-  full_name: SPIKE Emulation for RISCV64
-  vendor: spike 
+  name: chipyard_riscv64
+  full_name: Chipyard RISCV64 SoCs
+  vendor: chipyard 
   socs:
     - name: rocketchip_virt_riscv64
       variants:

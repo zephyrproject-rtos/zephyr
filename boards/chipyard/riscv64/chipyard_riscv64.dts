@@ -1,0 +1,27 @@
+/dts-v1/;
+
+#include <chipyard/chipyard-riscv64.dtsi>
+
+/ {
+	chosen {
+		zephyr,console= &htif;
+		zephyr,shell-uart = &htif;
+		zephyr,sram = &ram0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;  // Set appropriate baud rate
+};
+
+&htif {
+	status = "okay";
+};
+
+&flash0 {
+	status = "disabled";
+};
+
+
+

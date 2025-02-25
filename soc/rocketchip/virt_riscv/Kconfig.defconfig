@@ -1,8 +1,9 @@
 # Copyright (c) 2020 Cobham Gaisler AB
 # Copyright (c) 2024 Antmicro <www.antmicro.com>
+# Copyright (c) 2025 Dima Nikiforov <vnikiforov@berkeley.edu>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_SPIKE_VIRT_RISCV
+if SOC_FAMILY_ROCKETCHIP_VIRT_RISCV
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 10000000
@@ -28,4 +29,4 @@ config NUM_IRQS
 config PMP_SLOTS
 	default 16
 
-endif # SOC_FAMILY_SPIKE_VIRT_RISCV
+endif # SOC_FAMILY_ROCKETCHIP_VIRT_RISCV

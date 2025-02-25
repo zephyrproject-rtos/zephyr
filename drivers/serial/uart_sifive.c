@@ -13,7 +13,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/uart.h>
+
+#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
+#endif
+
 #include <soc.h>
 #include <zephyr/irq.h>
 
@@ -384,7 +388,9 @@ static struct uart_sifive_data uart_sifive_data_0;
 static void uart_sifive_irq_cfg_func_0(void);
 #endif
 
+#ifdef CONFIG_PINCTRL
 PINCTRL_DT_INST_DEFINE(0);
+#endif
 
 static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
 	.port         = DT_INST_REG_ADDR(0),
@@ -392,7 +398,9 @@ static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
 	.baud_rate    = DT_INST_PROP(0, current_speed),
 	.rxcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_RXCNT_IRQ,
 	.txcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_TXCNT_IRQ,
+#ifdef CONFIG_PINCTRL
 	.pcfg	      = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.cfg_func     = uart_sifive_irq_cfg_func_0,
 #endif

@@ -1,0 +1,2 @@
+config BOARD_CHIPYARD_RISCV64
+	select QEMU_TARGET

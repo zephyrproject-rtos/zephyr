@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SPIKE_VIRT_RISCV64
+config SOC_ROCKETCHIP_VIRT_RISCV64
 	select 64BIT
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select RISCV_ISA_RV64I

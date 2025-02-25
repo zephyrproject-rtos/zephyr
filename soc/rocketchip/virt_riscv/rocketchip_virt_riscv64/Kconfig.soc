@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ROCKETCHIP_VIRT_RISCV64
+	bool
+	select SOC_FAMILY_ROCKETCHIP_VIRT_RISCV
+
+config SOC
+	default "spike_rocketchip_riscv64" if SOC_ROCKETCHIP_VIRT_RISCV64
