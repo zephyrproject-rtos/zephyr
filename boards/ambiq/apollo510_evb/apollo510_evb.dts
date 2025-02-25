@@ -27,6 +27,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		rtc = &rtc0;
 		sdhc0 = &sdio0;
 	};
 

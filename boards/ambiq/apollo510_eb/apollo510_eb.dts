@@ -21,6 +21,7 @@
 
 	aliases {
 		watchdog0 = &wdt0;
+		rtc = &rtc0;
 		sdhc0 = &sdio0;
 		sdhc1 = &sdio1;
 	};
