@@ -146,6 +146,10 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_add_parser(cls, parser):
+        # To accept arguments in hex format, a wrapper lambda around int() must be used.
+        # Wrapping the lambda with functools.wraps() makes it so that 'invalid int value'
+        # is displayed when an invalid value is provided for these arguments.
+        multi_base=functools.wraps(int)(lambda s: int(s, base=0))
         parser.add_argument(
             "--port",
             type=str,
@@ -164,12 +168,9 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         )
         parser.add_argument(
             "--download-address",
-            # To accept arguments in hex format, a wrapper lambda around int() must be used.
-            # Wrapping the lambda with functools.wraps() makes it so that 'invalid int value'
-            # is displayed when an invalid value is provided for this argument.
-            type=functools.wraps(int)(lambda s: int(s, base=0)),
+            type=multi_base,
             required=False,
-            help="Flashing location address. To be used only with .bin files"
+            help="Flashing location address. If present, .bin used instead of .hex"
         )
         parser.add_argument(
             "--download-modifiers",
@@ -180,10 +181,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         )
         parser.add_argument(
             "--start-address",
-            # To accept arguments in hex format, a wrapper lambda around int() must be used.
-            # Wrapping the lambda with functools.wraps() makes it so that 'invalid int value'
-            # is displayed when an invalid value is provided for this argument.
-            type=functools.wraps(int)(lambda s: int(s, base=0)),
+            type=multi_base,
             required=False,
             help="Address where execution should begin after flashing"
         )
