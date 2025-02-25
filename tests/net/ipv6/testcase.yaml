@@ -4,9 +4,6 @@ common:
     - ipv6
     - ipv6_pe
   depends_on: netif
-  platform_exclude:
-    - native_posix/native/64
-    - native_posix
 tests:
   net.ipv6:
     extra_configs:
