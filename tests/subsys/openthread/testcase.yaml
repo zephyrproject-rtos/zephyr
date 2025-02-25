@@ -2,9 +2,6 @@ common:
   platform_allow:
     - native_sim
     - native_sim/native/64
-  platform_exclude:
-    - native_posix/native/64
-    - native_posix
   integration_platforms:
     - native_sim
   tags:
