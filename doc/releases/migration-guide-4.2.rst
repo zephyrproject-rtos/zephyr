@@ -32,6 +32,9 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+* Removed Kconfig option ``ETH_STM32_HAL_MII`` (:github:`86074`).
+  PHY interface type is now selected via the ``phy-connection-type`` property in the device tree.
+
 Bluetooth
 *********
 
