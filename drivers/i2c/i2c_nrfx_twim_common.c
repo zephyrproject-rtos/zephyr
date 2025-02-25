@@ -136,5 +136,13 @@ int i2c_nrfx_twim_common_init(const struct device *dev)
 		return -EIO;
 	}
 
+	/* Adding an I2C bus recovery function at the end of the driver initialization
+	 * ensures that all devices on the I2C bus are properly reset after a system restart.
+	 * If a reset occurs during I2C communication, some devices might remain in an unstable
+	 * state. Running the bus recovery after initializing the driver helps restore them
+	 * to a proper state, preventing communication issues at startup.
+	 */
+	(void)i2c_nrfx_twim_recover_bus(dev);
+
 	return pm_device_driver_init(dev, twim_nrfx_pm_action);
 }
