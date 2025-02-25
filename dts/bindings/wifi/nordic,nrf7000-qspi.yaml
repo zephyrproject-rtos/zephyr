@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: This is a representation of the nRF7002 Wi-Fi chip with QSPI interface.
+description: nRF7002 Wi-Fi chip with QSPI interface.
 
 compatible: nordic,nrf7000-qspi
 
