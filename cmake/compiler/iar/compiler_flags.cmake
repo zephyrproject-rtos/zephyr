@@ -17,6 +17,8 @@ set_compiler_property(PROPERTY optimization_size -Ohz)
 
 set_compiler_property(PROPERTY optimization_size_aggressive -Ohz)
 
+set_compiler_property(PROPERTY optimization_fast --no_size_constraints)
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################
