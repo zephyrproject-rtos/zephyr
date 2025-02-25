@@ -20,9 +20,15 @@ static int expect_code;
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	if (expect_fault) {
+#ifdef CONFIG_X86_64
+		zassert_equal(pEsf->vector, IV_CTRL_PROTECTION_EXCEPTION,
+					  "unexpected exception");
+		zassert_equal(pEsf->code, expect_code, "unexpected error code");
+#else
 		zassert_equal(z_x86_exception_vector, IV_CTRL_PROTECTION_EXCEPTION,
 					  "unexpected exception");
 		zassert_equal(pEsf->errorCode, expect_code, "unexpected error code");
+#endif
 		printk("fatal error expected as part of test case\n");
 		expect_fault = false;
 	} else {
