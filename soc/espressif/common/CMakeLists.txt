@@ -12,7 +12,7 @@ math(EXPR esptoolpy_flashsize "${CONFIG_FLASH_SIZE} / 0x100000")
 
 # Get UART baudrate from DT
 dt_chosen(dts_shell_uart PROPERTY "zephyr,shell-uart")
-if(${dts_shell_uart})
+if(DEFINED dts_shell_uart AND dts_shell_uart)
   dt_prop(monitor_baud PATH ${dts_shell_uart} PROPERTY "current-speed")
 endif()
 
@@ -51,10 +51,10 @@ else()
 endif()
 
 dt_reg_addr(image_off PATH ${dts_partition_path})
-board_finalize_runner_args(esp32 "--esp-app-address=${image_off}")
-board_finalize_runner_args(esp32 "--esp-flash-size=${esptoolpy_flashsize}MB")
-board_finalize_runner_args(esp32 "--esp-flash-freq=${CONFIG_ESPTOOLPY_FLASHFREQ}")
-board_finalize_runner_args(esp32 "--esp-flash-mode=${CONFIG_ESPTOOLPY_FLASHMODE}")
+board_runner_args(esp32 "--esp-app-address=${image_off}")
+board_runner_args(esp32 "--esp-flash-size=${esptoolpy_flashsize}MB")
+board_runner_args(esp32 "--esp-flash-freq=${CONFIG_ESPTOOLPY_FLASHFREQ}")
+board_runner_args(esp32 "--esp-flash-mode=${CONFIG_ESPTOOLPY_FLASHMODE}")
 board_finalize_runner_args(esp32 "--esp-monitor-baud=${monitor_baud}")
 
 message("-- Image partition ${dts_partition_path}")
