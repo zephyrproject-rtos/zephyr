@@ -1859,3 +1859,25 @@ This has been fixed in main for v4.1.0
 
 - `PR 82288 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/82288>`_
+
+:cve:`2025-1674`
+----------------
+
+Out of bounds read when unpacking DNS answers
+
+A lack of input validation allows for out of bounds reads caused by malicious or
+malformed packets.
+
+- `Zephyr project bug tracker GHSA-x975-8pgf-qh66
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-x975-8pgf-qh66>`_
+
+This has been fixed in main for v4.1.0
+
+- `PR 82072 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82072>`_
+
+- `PR 82289 fix for 4.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82289>`_
+
+- `PR 82288 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82288>`_
