@@ -268,6 +268,19 @@ static void gpio_mspm0_isr(const struct device *port)
 
 	gpio_fire_callbacks(&data_b->callbacks, dev_b, status_b);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiob), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioc), okay)
+	const struct device *dev_c = DEVICE_DT_GET(GPIOC_NODE);
+	struct gpio_mspm0_data *data_c= dev_b->data;
+	const struct gpio_mspm0_config *config_c = dev_c->config;
+
+	uint32_t status_c = DL_GPIO_getRawInterruptStatus(config_c->base, 0xFFFFFFFF);
+
+	DL_GPIO_clearInterruptStatus(config_c->base, status_c);
+
+	gpio_fire_callbacks(&data_c->callbacks, dev_c, status_c);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioc), okay) */
+
 }
 
 static bool init_irq = true;
@@ -293,6 +306,10 @@ static int gpio_mspm0_init(const struct device *port)
 		IRQ_CONNECT(DT_IRQN(GPIOA_NODE), DT_IRQ(GPIOA_NODE, priority), gpio_mspm0_isr,
 			    DEVICE_DT_GET(GPIOA_NODE), 0);
 		irq_enable(DT_IRQN(GPIOA_NODE));
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(gpioc), okay)
+		IRQ_CONNECT(DT_IRQN(GPIOC_NODE), DT_IRQ(GPIOC_NODE, priority), gpio_mspm0_isr,
+			    DEVICE_DT_GET(GPIOC_NODE), 0);
+		irq_enable(DT_IRQN(GPIOC_NODE));
 #endif
 	}
 
