@@ -505,7 +505,7 @@ Drivers and Sensors
 
 * CAN
 
-  * A driver for bridging from :ref:`native_posix` to Linux SocketCAN has been added.
+  * A driver for bridging from ``native_posix`` to Linux SocketCAN has been added.
   * A driver for the Espressif ESP32 TWAI has been added. See the
     :dtcompatible:`espressif,esp32-twai` devicetree binding for more information.
   * The STM32 CAN-FD CAN driver clock configuration has been moved from Kconfig to :ref:`devicetree
