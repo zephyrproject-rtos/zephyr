@@ -97,6 +97,33 @@
 #define ICM45686_DT_GYRO_ODR_1_5625	15 /* LP-mode only */
 /** @} */
 
+/**
+ * @defgroup ICM45686_GYRO_LPF Gyroscope Low-pass Filtering options
+ * @{
+ */
+#define ICM45686_DT_GYRO_LPF_BW_OFF	0
+#define ICM45686_DT_GYRO_LPF_BW_1_4	1
+#define ICM45686_DT_GYRO_LPF_BW_1_8	2
+#define ICM45686_DT_GYRO_LPF_BW_1_16	3
+#define ICM45686_DT_GYRO_LPF_BW_1_32	4
+#define ICM45686_DT_GYRO_LPF_BW_1_64	5
+#define ICM45686_DT_GYRO_LPF_BW_1_128	6
+/** @} */
+
+/**
+ * @defgroup ICM45686_ACCEL_LPF Accelerometer Low-pass Filtering options
+ * @{
+ */
+#define ICM45686_DT_ACCEL_LPF_BW_OFF	0
+#define ICM45686_DT_ACCEL_LPF_BW_1_4	1
+#define ICM45686_DT_ACCEL_LPF_BW_1_8	2
+#define ICM45686_DT_ACCEL_LPF_BW_1_16	3
+#define ICM45686_DT_ACCEL_LPF_BW_1_32	4
+#define ICM45686_DT_ACCEL_LPF_BW_1_64	5
+#define ICM45686_DT_ACCEL_LPF_BW_1_128	6
+/** @} */
+
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_TDK_ICM45686_H_ */
