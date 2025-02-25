@@ -140,12 +140,20 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	if (region->sh_type == SHT_NOBITS) {
 		memset(ext->mem[mem_idx], 0, region->sh_size);
 	} else {
-		ret = llext_seek(ldr, region->sh_offset);
+		/* fill prepad bytes, if any, with zeroes */
+		memset(ext->mem[mem_idx], 0, region->sh_info);
+
+		/* actual data area without prepad bytes */
+		size_t offset = region->sh_offset + region->sh_info;
+		size_t length = region->sh_size - region->sh_info;
+		uintptr_t base = (uintptr_t)ext->mem[mem_idx] + region->sh_info;
+
+		ret = llext_seek(ldr, offset);
 		if (ret != 0) {
 			goto err;
 		}
 
-		ret = llext_read(ldr, ext->mem[mem_idx], region->sh_size);
+		ret = llext_read(ldr, (void *)base, length);
 		if (ret != 0) {
 			goto err;
 		}
