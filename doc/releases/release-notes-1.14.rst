@@ -704,7 +704,7 @@ Boards & SoC Support
 Drivers and Sensors
 *******************
 
-* Added new drivers and backends for :ref:`native_posix <native_posix>`:
+* Added new drivers and backends for ``native_posix``:
 
   * A UART driver that maps the Zephyr UART to a new host PTY
   * A USB driver that can expose a host connected USB device

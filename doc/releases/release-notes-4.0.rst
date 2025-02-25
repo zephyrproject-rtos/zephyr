@@ -112,7 +112,7 @@ Deprecated in this release
 
 * Deprecated the TinyCrypt shim driver ``CONFIG_CRYPTO_TINYCRYPT_SHIM``.
 
-* :ref:`native_posix<native_posix>` has been deprecated in favour of
+* ``native_posix`` has been deprecated in favour of
   :ref:`native_sim<native_sim>`.
 
 * ``include/zephyr/net/buf.h`` is deprecated in favor of
@@ -1543,7 +1543,7 @@ zcbor
 Tests and Samples
 *****************
 
-* Together with the deprecation of :ref:`native_posix<native_posix>`, many tests which were
+* Together with the deprecation of ``native_posix``, many tests which were
   explicitly run in native_posix now run in :ref:`native_sim<native_sim>` instead.
   native_posix as a platform remains tested though.
 * Extended the tests of counter_basic_api with a testcase for counters without alarms
