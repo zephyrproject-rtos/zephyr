@@ -17,8 +17,6 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/irq.h>
 
-#include "phy_xlnx_gem.h"
-
 #define ETH_XLNX_BUFFER_ALIGNMENT			4 /* RX/TX buffer alignment (in bytes) */
 
 /* Buffer descriptor (BD) related defines */
@@ -279,7 +277,6 @@
 #define ETH_XLNX_GEM_NWCFG_DBUSW_SHIFT			21
 #define ETH_XLNX_GEM_NWCFG_MDC_MASK			0x7
 #define ETH_XLNX_GEM_NWCFG_MDC_SHIFT			18
-#define ETH_XLNX_GEM_NWCFG_MDCCLKDIV_MASK		0x001C0000
 #define ETH_XLNX_GEM_NWCFG_FCSREM_BIT			0x00020000
 #define ETH_XLNX_GEM_NWCFG_LENGTHERRDSCRD_BIT		0x00010000
 #define ETH_XLNX_GEM_NWCFG_RXOFFS_MASK			0x00000003
@@ -376,35 +373,6 @@
 #define ETH_XLNX_GEM_IXR_ALL_MASK			0x03FC7FFE
 #define ETH_XLNX_GEM_IXR_ERRORS_MASK			0x00000C60
 
-/* Bits / bit masks relating to the GEM's MDIO interface */
-
-/*
- * gem.net_status:
- * [02]       PHY management idle bit
- * [01]       MDIO input status
- */
-#define ETH_XLNX_GEM_MDIO_IDLE_BIT			0x00000004
-#define ETH_XLNX_GEM_MDIO_IN_STATUS_BIT			0x00000002
-
-/*
- * gem.phy_maint:
- * [31 .. 30] constant values
- * [17 .. 16] constant values
- * [29]       Read operation control bit
- * [28]       Write operation control bit
- * [27 .. 23] PHY address
- * [22 .. 18] Register address
- * [15 .. 00] 16-bit data word
- */
-#define ETH_XLNX_GEM_PHY_MAINT_CONST_BITS		0x40020000
-#define ETH_XLNX_GEM_PHY_MAINT_READ_OP_BIT		0x20000000
-#define ETH_XLNX_GEM_PHY_MAINT_WRITE_OP_BIT		0x10000000
-#define ETH_XLNX_GEM_PHY_MAINT_PHY_ADDRESS_MASK		0x0000001F
-#define ETH_XLNX_GEM_PHY_MAINT_PHY_ADDRESS_SHIFT	23
-#define ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_MASK		0x0000001F
-#define ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_SHIFT	18
-#define ETH_XLNX_GEM_PHY_MAINT_DATA_MASK		0x0000FFFF
-
 /*
  * gem.design_cfg5:
  * [11 .. 10] Data bus width of the current target SoC
@@ -413,7 +381,7 @@
 #define ETH_XLNX_GEM_DESIGN_CFG5_DBUSW_SHIFT		10
 
 /* Device initialization macro */
-#define ETH_XLNX_GEM_NET_DEV_INIT(port) \
+#define ETH_XLNX_GEM_NET_DEV_INIT(port)\
 ETH_NET_DEVICE_DT_INST_DEFINE(port,\
 	eth_xlnx_gem_dev_init,\
 	NULL,\
@@ -423,21 +391,17 @@ ETH_NET_DEVICE_DT_INST_DEFINE(port,\
 	&eth_xlnx_gem_apis,\
 	NET_ETH_MTU);
 
+#define ETH_XLNX_GEM_PHY_DEV(port)\
+	DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(port, phy_handle))
+
 /* Device configuration data declaration macro */
 #define ETH_XLNX_GEM_DEV_CONFIG(port) \
 static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
-	.base_addr			= DT_REG_ADDR_BY_IDX(DT_INST(port, xlnx_gem), 0),\
+	.phy_dev			= ETH_XLNX_GEM_PHY_DEV(port),\
+	.base_addr			= DT_REG_ADDR_BY_IDX(DT_INST_PARENT(port), 0),\
 	.config_func			= eth_xlnx_gem##port##_irq_config,\
 	.pll_clock_frequency		= DT_INST_PROP(port, clock_frequency),\
-	.clk_ctrl_reg_address		= DT_REG_ADDR_BY_IDX(DT_INST(port, xlnx_gem), 1),\
-	.mdc_divider			= (enum eth_xlnx_mdc_clock_divider)\
-		(DT_INST_PROP(port, mdc_divider)),\
-	.max_link_speed			= (enum eth_xlnx_link_speed)\
-		(DT_INST_PROP(port, link_speed)),\
-	.init_phy			= DT_INST_PROP(port, init_mdio_phy),\
-	.phy_mdio_addr_fix		= DT_INST_PROP(port, mdio_phy_address),\
-	.phy_advertise_lower		= DT_INST_PROP(port, advertise_lower_link_speeds),\
-	.phy_poll_interval		= DT_INST_PROP(port, phy_poll_interval),\
+	.clk_ctrl_reg_address		= DT_REG_ADDR_BY_IDX(DT_INST_PARENT(port), 1),\
 	.defer_rxp_to_queue		= !DT_INST_PROP(port, handle_rx_in_isr),\
 	.defer_txd_to_queue		= DT_INST_PROP(port, handle_tx_in_workq),\
 	.ahb_burst_length		= (enum eth_xlnx_ahb_burst_length)\
@@ -473,7 +437,6 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 	.enable_mcast_hash		= DT_INST_PROP(port, multicast_hash),\
 	.disable_bcast			= DT_INST_PROP(port, reject_broadcast),\
 	.discard_non_vlan		= DT_INST_PROP(port, discard_non_vlan),\
-	.enable_fdx			= DT_INST_PROP(port, full_duplex),\
 	.disc_rx_ahb_unavail		= DT_INST_PROP(port, discard_rx_frame_ahb_unavail),\
 	.disable_tx_chksum_offload	= UTIL_OR(IS_ENABLED(CONFIG_QEMU_TARGET),\
 					  DT_INST_PROP(port, disable_tx_checksum_offload)),\
@@ -487,10 +450,6 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 static struct eth_xlnx_gem_dev_data eth_xlnx_gem##port##_dev_data = {\
 	.mac_addr        = DT_INST_PROP_OR(port, local_mac_address, {0}),\
 	.started         = 0,\
-	.eff_link_speed  = LINK_DOWN,\
-	.phy_addr        = 0,\
-	.phy_id          = 0,\
-	.phy_access_api  = NULL,\
 	.first_rx_buffer = NULL,\
 	.first_tx_buffer = NULL\
 };
@@ -529,7 +488,7 @@ static void eth_xlnx_gem##port##_irq_config(const struct device *dev)\
 
 /* RX/TX BD Ring initialization macro */
 #define ETH_XLNX_GEM_INIT_BD_RING(port) \
-if (dev_conf->base_addr == DT_REG_ADDR_BY_IDX(DT_INST(port, xlnx_gem), 0)) {\
+if (dev_conf->base_addr == DT_REG_ADDR_BY_IDX(DT_INST_PARENT(port), 0)) {\
 	dev_data->rxbd_ring.first_bd = &(eth_xlnx_gem##port##_dma_area.rx_bd[0]);\
 	dev_data->txbd_ring.first_bd = &(eth_xlnx_gem##port##_dma_area.tx_bd[0]);\
 	dev_data->first_rx_buffer = (uint8_t *)eth_xlnx_gem##port##_dma_area.rx_buffer;\
@@ -543,49 +502,12 @@ ETH_XLNX_GEM_DEV_CONFIG(port);\
 ETH_XLNX_GEM_DEV_DATA(port);\
 ETH_XLNX_GEM_DMA_AREA_DECL(port);\
 ETH_XLNX_GEM_DMA_AREA_INST(port);\
-ETH_XLNX_GEM_NET_DEV_INIT(port);\
+ETH_XLNX_GEM_NET_DEV_INIT(port);
 
 /* IRQ handler function type */
 typedef void (*eth_xlnx_gem_config_irq_t)(const struct device *dev);
 
 /* Enums for bitfields representing configuration settings */
-
-/**
- * @brief Link speed configuration enumeration type.
- *
- * Enumeration type for link speed indication, contains 'link down'
- * plus all link speeds supported by the controller (10/100/1000).
- */
-enum eth_xlnx_link_speed {
-	/* The values of this enum are consecutively numbered */
-	LINK_DOWN = 0,
-	LINK_10MBIT,
-	LINK_100MBIT,
-	LINK_1GBIT
-};
-
-/**
- * @brief MDC clock divider configuration enumeration type.
- *
- * Enumeration type containing the supported clock divider values
- * used to generate the MDIO interface clock (MDC) from either the
- * cpu_1x clock (Zynq-7000) or the LPD LSBUS clock (UltraScale).
- * This is a configuration item in the controller's net_cfg register.
- */
-enum eth_xlnx_mdc_clock_divider {
-	/* The values of this enum are consecutively numbered */
-	MDC_DIVIDER_8 = 0,
-	MDC_DIVIDER_16,
-	MDC_DIVIDER_32,
-	MDC_DIVIDER_48,
-#ifdef CONFIG_SOC_FAMILY_XILINX_ZYNQ7000
-	/* Dividers > 48 are only available in the Zynq-7000 */
-	MDC_DIVIDER_64,
-	MDC_DIVIDER_96,
-	MDC_DIVIDER_128,
-	MDC_DIVIDER_224
-#endif
-};
 
 /**
  * @brief DMA RX buffer size configuration enumeration type.
@@ -674,18 +596,13 @@ struct eth_xlnx_gem_bdring {
  * UltraScale SoCs, which both contain the GEM.
  */
 struct eth_xlnx_gem_dev_cfg {
+	const struct device		*phy_dev;
 	uint32_t			base_addr;
 	eth_xlnx_gem_config_irq_t	config_func;
 
 	uint32_t			pll_clock_frequency;
 	uint32_t			clk_ctrl_reg_address;
-	enum eth_xlnx_mdc_clock_divider	mdc_divider;
 
-	enum eth_xlnx_link_speed	max_link_speed;
-	bool				init_phy;
-	uint8_t				phy_mdio_addr_fix;
-	uint8_t				phy_advertise_lower;
-	uint32_t			phy_poll_interval;
 	uint8_t				defer_rxp_to_queue;
 	uint8_t				defer_txd_to_queue;
 
@@ -734,16 +651,10 @@ struct eth_xlnx_gem_dev_cfg {
 struct eth_xlnx_gem_dev_data {
 	struct net_if			*iface;
 	uint8_t				mac_addr[6];
-	enum eth_xlnx_link_speed	eff_link_speed;
 
 	struct k_work			tx_done_work;
 	struct k_work			rx_pend_work;
 	struct k_sem			tx_done_sem;
-
-	uint8_t				phy_addr;
-	uint32_t			phy_id;
-	struct k_work_delayable		phy_poll_delayed_work;
-	struct phy_xlnx_gem_api		*phy_access_api;
 
 	uint8_t				*first_rx_buffer;
 	uint8_t				*first_tx_buffer;
