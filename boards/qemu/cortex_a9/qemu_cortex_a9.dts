@@ -55,9 +55,19 @@
 	clock-frequency = <50000000>;
 };
 
-&gem0 {
+&gem0_mac {
 	status = "okay";
+	phy-handle = <&gem0_phy>;
 	clock-frequency = <1000000000>;
-	mdc-divider = <XLNX_GEM_MDC_DIVIDER_224>;
 	local-mac-address = [00 00 00 01 02 03];
+};
+
+&gem0_mdio {
+	status = "okay";
+
+	gem0_phy: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
 };
