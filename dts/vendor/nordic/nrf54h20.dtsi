@@ -366,6 +366,7 @@
 			dppic020: dppic@22000 {
 				compatible = "nordic,nrf-dppic-local";
 				reg = <0x22000 0x1000>;
+				channels = <32>;
 				status = "disabled";
 			};
 
