@@ -1133,6 +1133,12 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 			net_sprint_addr(addr->sa_family,
 					(const void *)&net_sin(addr)->sin_addr));
 		vpn_stats_update_keepalive_rx(ctx);
+
+		if (!peer->first_valid) {
+			net_mgmt_event_notify(NET_EVENT_VPN_CONNECTED, peer->iface);
+			peer->first_valid = true;
+		}
+
 		return 0;
 	}
 
@@ -1165,6 +1171,11 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		ret = -ENOMSG;
 		vpn_stats_update_decrypt_failed(ctx);
 		goto out;
+	}
+
+	if (!peer->first_valid) {
+		net_mgmt_event_notify(NET_EVENT_VPN_CONNECTED, peer->iface);
+		peer->first_valid = true;
 	}
 
 	/* Since the packet has authenticated correctly, the source IP of
