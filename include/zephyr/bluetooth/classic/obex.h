@@ -1,7 +1,7 @@
 /* obex.h - IrDA Oject Exchange Protocol handling */
 
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1029,15 +1029,30 @@ int bt_obex_add_header_who(struct net_buf *buf, uint16_t len, const uint8_t *who
  */
 int bt_obex_add_header_conn_id(struct net_buf *buf, uint32_t conn_id);
 
+/**
+ * @brief Bluetooth OBEX TLV triplet.
+ *
+ * Description of different data types that can be encoded into
+ * TLV triplet. Used to form arrays that are passed to the
+ * bt_obex_add_header_app_param(), bt_obex_add_header_auth_challenge(),
+ * and bt_obex_add_header_auth_rsp() function.
+ */
+struct bt_obex_tlv {
+	uint8_t type;
+	uint8_t data_len;
+	const uint8_t *data;
+};
+
 /** @brief Add Header: extended application request & response information.
  *
  *  @param buf Buffer needs to be sent.
- *  @param len Length of app_param.
- *  @param app_param Application parameter.
+ *  @param count Number of @ref bt_obex_tlv structures in @p data.
+ *  @param data Array of @ref bt_obex_tlv structures.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_add_header_app_param(struct net_buf *buf, uint16_t len, const uint8_t *app_param);
+int bt_obex_add_header_app_param(struct net_buf *buf, size_t count,
+				 const struct bt_obex_tlv data[]);
 
 /**
  * OBEX digest-challenge tag: Nonce
@@ -1067,12 +1082,13 @@ int bt_obex_add_header_app_param(struct net_buf *buf, uint16_t len, const uint8_
 /** @brief Add Header: authentication digest-challenge.
  *
  *  @param buf Buffer needs to be sent.
- *  @param len Length of auth_challenge.
- *  @param auth Authentication challenge.
+ *  @param count Number of @ref bt_obex_tlv structures in @p data.
+ *  @param data Array of @ref bt_obex_tlv structures.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_add_header_auth_challenge(struct net_buf *buf, uint16_t len, const uint8_t *auth);
+int bt_obex_add_header_auth_challenge(struct net_buf *buf, size_t count,
+				      const struct bt_obex_tlv data[]);
 
 /**
  * OBEX digest-Response tag: Request-digest
@@ -1095,12 +1111,12 @@ int bt_obex_add_header_auth_challenge(struct net_buf *buf, uint16_t len, const u
 /** @brief Add Header: authentication digest-response.
  *
  *  @param buf Buffer needs to be sent.
- *  @param len Length of authentication response.
- *  @param auth Authentication response.
+ *  @param count Number of @ref bt_obex_tlv structures in @p data.
+ *  @param data Array of @ref bt_obex_tlv structures.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_add_header_auth_rsp(struct net_buf *buf, uint16_t len, const uint8_t *auth);
+int bt_obex_add_header_auth_rsp(struct net_buf *buf, size_t count, const struct bt_obex_tlv data[]);
 
 /** @brief Add Header: indicates the creator of an object.
  *
@@ -1351,7 +1367,31 @@ int bt_obex_get_header_who(struct net_buf *buf, uint16_t *len, const uint8_t **w
  */
 int bt_obex_get_header_conn_id(struct net_buf *buf, uint32_t *conn_id);
 
+/** @brief Helper for parsing OBEX TLV triplet.
+ *
+ *  A helper for parsing the TLV triplet structure for OBEX packets. The most common scenario is to
+ *  call this helper on the in the callback of OBEX server and client.
+ *  The @p data is encoded by using A Tag-Length-Value encoding scheme. Usually, it is the header
+ *  value of the header `Application Request-Response Parameters`, `Authenticate Challenge`, and
+ *  `Authenticate Response`. It means the @p data is the output of the
+ *  @ref bt_obex_get_header_app_param, @ref bt_obex_get_header_auth_challenge, or
+ *  @ref bt_obex_get_header_auth_rsp.
+ *
+ *  @param len The length of the @p data.
+ *  @param data The data as given to the callback of OBEX server and client.
+ *  @param func Callback function which will be called for each TLV triplet that's found from the
+ *              @p data. The callback should return true to continue parsing, or false to stop
+ *              parsing.
+ *  @param user_data User data to be passed to the callback.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_obex_tlv_parse(uint16_t len, const uint8_t *data,
+		      bool (*func)(struct bt_obex_tlv *tlv, void *user_data), void *user_data);
+
 /** @brief Get header value: extended application request & response information.
+ *
+ *  The parameter can be parsed by calling @ref bt_obex_tlv_parse.
  *
  *  @param buf Buffer needs to be sent.
  *  @param len Length of app_param.
@@ -1363,6 +1403,8 @@ int bt_obex_get_header_app_param(struct net_buf *buf, uint16_t *len, const uint8
 
 /** @brief Get header value: authentication digest-challenge.
  *
+ *  The options can be parsed by calling @ref bt_obex_tlv_parse.
+ *
  *  @param buf Buffer needs to be sent.
  *  @param len Length of auth_challenge.
  *  @param auth Authentication challenge.
@@ -1372,6 +1414,8 @@ int bt_obex_get_header_app_param(struct net_buf *buf, uint16_t *len, const uint8
 int bt_obex_get_header_auth_challenge(struct net_buf *buf, uint16_t *len, const uint8_t **auth);
 
 /** @brief Get header value: authentication digest-response.
+ *
+ *  The options can be parsed by calling @ref bt_obex_tlv_parse.
  *
  *  @param buf Buffer needs to be sent.
  *  @param len Length of authentication response.
