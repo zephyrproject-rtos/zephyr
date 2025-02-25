@@ -1017,20 +1017,12 @@ static void priv_pcd_prepare(const struct device *dev)
 	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
 	priv->pcd.Init.ep0_mps = cfg->ep0_mps;
 	priv->pcd.Init.speed = PCD_SPEED_FULL;
-
+	priv->pcd.Instance = (PCD_TypeDef *)DT_INST_REG_ADDR(0);
 	/* Per controller/Phy values */
-#if defined(USB)
-	priv->pcd.Instance = USB;
-#elif defined(USB_DRD_FS)
-	priv->pcd.Instance = USB_DRD_FS;
-#elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
+
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
 	priv->pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	priv->pcd.Instance = USB_OTG_HS;
-#else
-	priv->pcd.Instance = USB_OTG_FS;
 #endif
-#endif /* USB */
 
 #if USB_OTG_HS_EMB_PHY
 	priv->pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
