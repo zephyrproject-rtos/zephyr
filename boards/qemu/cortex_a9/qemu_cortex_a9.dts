@@ -61,7 +61,6 @@
 	status = "okay";
 	phy-handle = <&gem0_phy>;
 	clock-frequency = <1000000000>;
-	mdc-divider = <XLNX_GEM_MDC_DIVIDER_224>;
 	local-mac-address = [00 00 00 01 02 03];
 };
 
