@@ -1,0 +1,283 @@
+/*
+ * Copyright (c) 2025 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <freq.h>
+
+/ {
+	aliases {
+		rtc = &rtc0;
+	};
+
+	chosen {
+		zephyr,flash-controller = &flashctl;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	sram0: memory@20200000 {
+		compatible = "mmio-sram";
+		reg = <0x20200000 0x8000>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(32)>;
+		#clock-cells = <0>;
+	};
+
+	clkmux: clock-controller {
+		compatible = "ti,mspm0-clock-mux";
+		mclk-div = <1>;
+		uclk-div = <1>;
+		#clock-cells = <1>;
+	};
+
+	clocks: clocks {
+		sysosc: sysosc {
+			compatible = "ti,mspm0-oscillator";
+			clock-frequency = <32000000>;
+			#clock-cells = <1>;
+		};
+
+		lfosc: lfosc {
+			compatible = "ti,mspm0-oscillator";
+			clock-frequency = <32678>;
+			#clock-cells = <1>;
+		};
+	};
+
+	soc {
+		adc0: adc@40004000 {
+			compatible = "ti,mspm0-adc12";
+			reg = <0x40004000 0x2000>;
+			interrupts = <4 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		wdt0: wdt0@40080000 {
+			compatible = "ti,mspm0-watchdog";
+			reg = <0x40080000 0x2000>;
+			status = "disabled";
+			ti,watchdog-reset-action = <1>;
+		};
+
+		gpt0: timg@40084000 {
+			compatible = "ti,mspm0g1x0x_g3x0x-timer";
+			reg = <0x40084000 0x2000>;
+			status = "disabled";
+
+			pwm0: pwm {
+				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
+				clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+				interrupts = <21 0>;
+				#pwm-cells = <2>;
+				status = "disabled";
+			};
+		};
+
+		gpt4: timg@4008c000 {
+			compatible = "ti,mspm0g1x0x_g3x0x-timer";
+			reg = <0x4008c000 0x2000>;
+			status = "disabled";
+		};
+
+		gpt5: timg@4008e000 {
+			compatible = "ti,mspm0g1x0x_g3x0x-timer";
+			reg = <0x4008e000 0x2000>;
+			status = "disabled";
+		};
+
+		gpt8: timg@40090000 {
+			compatible = "ti,mspm0g1x0x_g3x0x-timer";
+			reg = <0x40090000 0x2000>;
+			status = "disabled";
+
+			pwm8: pwm {
+				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
+				clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+				interrupts = <20 0>;
+				#pwm-cells = <2>;
+				status = "disabled";
+			};
+		};
+
+		rtc0: rtc@40095100 {
+			compatible = "ti,rtc";
+			reg = <0x40095100 0xfd>;
+			interrupts = <30 0>;
+			prescaler = <1>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@400a0000 {
+			compatible = "ti,mspm0-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x400a0000 0x4000>;
+
+			gpioa: gpio@400a0000 {
+				compatible = "ti,mspm0-gpio";
+				reg = <0x400a0000 0x2000>;
+				interrupts = <1 0>;
+				status = "disabled";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpiob: gpio@400a2000 {
+				compatible = "ti,mspm0-gpio";
+				reg = <0x400a2000 0x2000>;
+				interrupts = <1 0>;
+				status = "disabled";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpioc: gpio@400a4000 {
+				compatible = "ti,mspm0-gpio";
+				reg = <0x400a2000 0x2000>;
+				interrupts = <1 0>;
+				status = "disabled";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+
+		flashctl: flash-controller@400cd000 {
+			compatible = "ti,mspm0-flash-controller";
+			reg = <0x400cd000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			nvm: nvm-flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+			};
+		};
+
+		i2c0: i2c@400f0000 {
+			compatible = "ti,mspm0-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400f0000 0x2000>;
+			interrupts = <24 0>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_MFCLK>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@400f2000 {
+			compatible = "ti,mspm0-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400f2000 0x2000>;
+			interrupts = <25 0>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			status = "disabled";
+		};
+
+		uart2: uart@40100000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40100000 0x2000>;
+			interrupts = <13 0>;
+			current-speed = <115200>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			status = "disabled";
+		};
+
+		uart3: uart@40102000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40102000 0x2000>;
+			interrupts = <14 0>;
+			current-speed = <115200>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			status = "disabled";
+		};
+
+		uart4: uart@40104000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40104000 0x2000>;
+			interrupts = <3 0>;
+			current-speed = <115200>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			status = "disabled";
+		};
+
+		uart0: uart@40108000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40108000 0x2000>;
+			interrupts = <15 0>;
+			current-speed = <115200>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_MFCLK>;
+			status = "disabled";
+		};
+
+		uart1: uart@4010a000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x4010a000 0x2000>;
+			interrupts = <16 0>;
+			current-speed = <115200>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_MFCLK>;
+			status = "disabled";
+		};
+
+		spi0: spi@40468000 {
+			compatible = "ti,mspm0-spi";
+			reg = <0x40468000 0x2000>;
+			interrupts = <9 0>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			clock-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		spi1: spi@4046a000 {
+			compatible = "ti,mspm0-spi";
+			reg = <0x4046a000 0x2000>;
+			interrupts = <10 0>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			clock-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		gpta0: tima@40860000 {
+			compatible = "ti,mspm0g1x0x_g3x0x-timer";
+			reg = <0x40860000 0x2000>;
+			status = "disabled";
+
+			pwma0: pwma0 {
+				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
+				clocks = <&clkmux MSPM0_CLOCK_BUS_MCLK>;
+				interrupts = <18 0>;
+				#pwm-cells = <2>;
+				ti,advanced;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

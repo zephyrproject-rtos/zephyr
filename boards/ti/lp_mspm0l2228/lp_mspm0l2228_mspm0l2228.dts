@@ -3,8 +3,9 @@
 /dts-v1/;
 
 #include <ti/mspm0l122x_l222x/mspm0l2228.dtsi>
-#include <ti/mspm0l122x_l222x/mspm0l222x-pinctrl.dtsi>
+#include <ti/mspm0l122x_l222x/mspm0l2228-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/mspm0_adc.h>
 
 / {
 	model = "TI LP_MSPM0L2228/MSPM0L2228";
@@ -19,7 +20,7 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
+		zephyr,flash = &nvm;
 		zephyr,flash-controller = &flashctl;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -65,6 +66,32 @@
 	clock-frequency = <DT_FREQ_M(32)>;
 };
 
+&nvm {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x8000>;
+		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 0xB000>;
+		};
+		slot1_partition: partition@13000 {
+			label = "image-1";
+			reg = <0x00013000 0xB000>;
+		};
+		scratch_partition: partition@15000 {
+			label = "image-scratch";
+			reg = <0x00015000 0x2000>;
+		};
+	};
+};
+
 &gpioa {
 	status = "okay";
 };
@@ -84,10 +111,10 @@
 	pinctrl-names = "default";
 };
 
-&i2c1 {
-	pinctrl-0 = <&i2c1_scl_pa17_pull_up &i2c1_sda_pa18_pull_up>;
+&i2c0 {
+	pinctrl-0 = <&i2c0_scl_pa1_pull_up &i2c0_sda_pa0_pull_up>;
 	pinctrl-names = "default";
-	status = "disabled";
+	status = "okay";
 };
 
 &adc0 {

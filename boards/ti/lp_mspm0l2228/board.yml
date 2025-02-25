@@ -2,4 +2,4 @@ board:
   name: lp_mspm0l2228
   vendor: ti
   socs:
-    - name: mspm0l222x
+    - name: mspm0l2228

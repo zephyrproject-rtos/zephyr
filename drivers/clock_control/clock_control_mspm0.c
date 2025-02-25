@@ -13,9 +13,9 @@
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pll), okay)
 #define MSPM0_PLL_ENABLED 1
+static const DL_SYSCTL_SYSPLLConfig clock_mspm0_cfg_syspll;
 #endif
 
-static const DL_SYSCTL_SYSPLLConfig clock_mspm0_cfg_syspll;
 
 static int clock_mspm0_on(const struct device *dev, clock_control_subsys_t sys)
 {
@@ -82,10 +82,12 @@ static int clock_mspm0_init(const struct device *dev)
 	/* setup clocks based on specific rates */
 	DL_SYSCTL_setSYSOSCFreq(DL_SYSCTL_SYSOSC_FREQ_BASE);
 
+#if MSPM0_PLL_ENABLED
 	DL_SYSCTL_configSYSPLL((DL_SYSCTL_SYSPLLConfig *)&clock_mspm0_cfg_syspll);
 
 	DL_SYSCTL_setULPCLKDivider(ULPCLK_DIV);
 	DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK, DL_SYSCTL_HSCLK_SOURCE_SYSPLL);
+#endif
 
 	return 0;
 }

@@ -3,7 +3,7 @@
 # Copyright (c) 2024 Texas Instruments
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_MSPM0L2228
+if SOC_MSPM0L222X
 
 config SOC
 	default "mspm0l2228"
