@@ -4,7 +4,7 @@
  * Provide some Bluetooth shell commands that can be useful to applications.
  */
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,13 @@ static struct bt_goep_app goep_app;
 static struct bt_goep_transport_rfcomm_server rfcomm_server;
 static struct bt_goep_transport_l2cap_server l2cap_server;
 
+#define TLV_COUNT       3
+#define TLV_BUFFER_SIZE 64
+
+static struct bt_obex_tlv tlvs[TLV_COUNT];
+static uint8_t tlv_buffers[TLV_COUNT][TLV_BUFFER_SIZE];
+static uint8_t tlv_count;
+
 static struct bt_goep_app *goep_alloc(struct bt_conn *conn)
 {
 	if (goep_app.conn) {
@@ -76,10 +83,33 @@ struct bt_goep_transport_ops goep_transport_ops = {
 	.disconnected = goep_transport_disconnected,
 };
 
+static bool goep_parse_tlvs_cb(struct bt_obex_tlv *tlv, void *user_data)
+{
+	bt_shell_print("T %02x L %d", tlv->type, tlv->data_len);
+	bt_shell_hexdump(tlv->data, tlv->data_len);
+
+	return true;
+}
+
 static bool goep_parse_headers_cb(struct bt_obex_hdr *hdr, void *user_data)
 {
 	bt_shell_print("HI %02x Len %d", hdr->id, hdr->len);
-	bt_shell_hexdump(hdr->data, hdr->len);
+
+	switch (hdr->id) {
+	case BT_OBEX_HEADER_ID_APP_PARAM:
+	case BT_OBEX_HEADER_ID_AUTH_CHALLENGE:
+	case BT_OBEX_HEADER_ID_AUTH_RSP:
+		int err;
+
+		err = bt_obex_tlv_parse(hdr->len, hdr->data, goep_parse_tlvs_cb, NULL);
+		if (err) {
+			bt_shell_error("Fail to parse OBEX TLV triplet");
+		}
+		break;
+	default:
+		bt_shell_hexdump(hdr->data, hdr->len);
+		break;
+	}
 
 	return true;
 }
@@ -659,19 +689,48 @@ static int cmd_add_header_app_param(const struct shell *sh, size_t argc, char *a
 {
 	size_t len;
 	int err;
-	const char *hex_payload = argv[1];
-	size_t hex_payload_size = strlen(hex_payload);
+	uint8_t tag;
+	bool last = false;
 
-	len = hex2bin(hex_payload, hex_payload_size, add_head_buffer, sizeof(add_head_buffer));
+	if (tlv_count >= TLV_COUNT) {
+		shell_warn(sh, "No space of TLV array, add app_param and clear tlvs");
+		goto add_header;
+	}
+
+	len = hex2bin(argv[1], strlen(argv[1]), &tag, sizeof(tag));
+	if (len < 1) {
+		shell_error(sh, "Length should not be zero");
+		return -ENOEXEC;
+	}
+
+	len = hex2bin(argv[2], strlen(argv[2]), &tlv_buffers[tlv_count][0], TLV_BUFFER_SIZE);
 	if (len > UINT16_MAX) {
 		shell_error(sh, "Length exceeds max length (%x > %x)", len, UINT16_MAX);
 		return -ENOEXEC;
 	}
 
-	err = bt_obex_add_header_app_param(goep_app.tx_buf, (uint16_t)len, add_head_buffer);
+	if (argc > 3) {
+		if (!strcmp(argv[3], "last")) {
+			last = true;
+		}
+	}
+
+	tlvs[tlv_count].type = tag;
+	tlvs[tlv_count].data_len = len;
+	tlvs[tlv_count].data = &tlv_buffers[tlv_count][0];
+
+	tlv_count++;
+
+	if (!last) {
+		return 0;
+	}
+
+add_header:
+	err = bt_obex_add_header_app_param(goep_app.tx_buf, (size_t)tlv_count, tlvs);
 	if (err) {
 		shell_error(sh, "Fail to add header app_param");
 	}
+	tlv_count = 0;
 	return err;
 }
 
@@ -679,19 +738,48 @@ static int cmd_add_header_auth_challenge(const struct shell *sh, size_t argc, ch
 {
 	size_t len;
 	int err;
-	const char *hex_payload = argv[1];
-	size_t hex_payload_size = strlen(hex_payload);
+	uint8_t tag;
+	bool last = false;
 
-	len = hex2bin(hex_payload, hex_payload_size, add_head_buffer, sizeof(add_head_buffer));
+	if (tlv_count >= TLV_COUNT) {
+		shell_warn(sh, "No space of TLV array, add auth_challenge and clear tlvs");
+		goto add_header;
+	}
+
+	len = hex2bin(argv[1], strlen(argv[1]), &tag, sizeof(tag));
+	if (len < 1) {
+		shell_error(sh, "Length should not be zero");
+		return -ENOEXEC;
+	}
+
+	len = hex2bin(argv[2], strlen(argv[2]), &tlv_buffers[tlv_count][0], TLV_BUFFER_SIZE);
 	if (len > UINT16_MAX) {
 		shell_error(sh, "Length exceeds max length (%x > %x)", len, UINT16_MAX);
 		return -ENOEXEC;
 	}
 
-	err = bt_obex_add_header_auth_challenge(goep_app.tx_buf, (uint16_t)len, add_head_buffer);
+	if (argc > 3) {
+		if (!strcmp(argv[3], "last")) {
+			last = true;
+		}
+	}
+
+	tlvs[tlv_count].type = tag;
+	tlvs[tlv_count].data_len = len;
+	tlvs[tlv_count].data = &tlv_buffers[tlv_count][0];
+
+	tlv_count++;
+
+	if (!last) {
+		return 0;
+	}
+
+add_header:
+	err = bt_obex_add_header_auth_challenge(goep_app.tx_buf, (size_t)tlv_count, tlvs);
 	if (err) {
 		shell_error(sh, "Fail to add header auth_challenge");
 	}
+	tlv_count = 0;
 	return err;
 }
 
@@ -699,19 +787,48 @@ static int cmd_add_header_auth_rsp(const struct shell *sh, size_t argc, char *ar
 {
 	size_t len;
 	int err;
-	const char *hex_payload = argv[1];
-	size_t hex_payload_size = strlen(hex_payload);
+	uint8_t tag;
+	bool last = false;
 
-	len = hex2bin(hex_payload, hex_payload_size, add_head_buffer, sizeof(add_head_buffer));
+	if (tlv_count >= TLV_COUNT) {
+		shell_warn(sh, "No space of TLV array, add auth_rsp and clear tlvs");
+		goto add_header;
+	}
+
+	len = hex2bin(argv[1], strlen(argv[1]), &tag, sizeof(tag));
+	if (len < 1) {
+		shell_error(sh, "Length should not be zero");
+		return -ENOEXEC;
+	}
+
+	len = hex2bin(argv[2], strlen(argv[2]), &tlv_buffers[tlv_count][0], TLV_BUFFER_SIZE);
 	if (len > UINT16_MAX) {
 		shell_error(sh, "Length exceeds max length (%x > %x)", len, UINT16_MAX);
 		return -ENOEXEC;
 	}
 
-	err = bt_obex_add_header_auth_rsp(goep_app.tx_buf, (uint16_t)len, add_head_buffer);
+	if (argc > 3) {
+		if (!strcmp(argv[3], "last")) {
+			last = true;
+		}
+	}
+
+	tlvs[tlv_count].type = tag;
+	tlvs[tlv_count].data_len = len;
+	tlvs[tlv_count].data = &tlv_buffers[tlv_count][0];
+
+	tlv_count++;
+
+	if (!last) {
+		return 0;
+	}
+
+add_header:
+	err = bt_obex_add_header_auth_rsp(goep_app.tx_buf, (size_t)tlv_count, tlvs);
 	if (err) {
 		shell_error(sh, "Fail to add header auth_rsp");
 	}
+	tlv_count = 0;
 	return err;
 }
 
@@ -1417,12 +1534,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(obex_add_header_cmds,
 		      cmd_add_header_who, 2, 0),
 	SHELL_CMD_ARG(conn_id, NULL, "<an identifier used for OBEX connection multiplexing>",
 		      cmd_add_header_conn_id, 2, 0),
-	SHELL_CMD_ARG(app_param, NULL, "<extended application request & response information>",
-		      cmd_add_header_app_param, 2, 0),
-	SHELL_CMD_ARG(auth_challenge, NULL, "<authentication digest-challenge>",
-		      cmd_add_header_auth_challenge, 2, 0),
-	SHELL_CMD_ARG(auth_rsp, NULL, "<authentication digest-response>", cmd_add_header_auth_rsp,
-		      2, 0),
+	SHELL_CMD_ARG(app_param, NULL, "application parameter: <tag> <value> [last]",
+		      cmd_add_header_app_param, 3, 1),
+	SHELL_CMD_ARG(auth_challenge, NULL, "authentication digest-challenge: <tag> <value> [last]",
+		      cmd_add_header_auth_challenge, 3, 1),
+	SHELL_CMD_ARG(auth_rsp, NULL, "authentication digest-response: <tag> <value> [last]",
+		      cmd_add_header_auth_rsp, 3, 1),
 	SHELL_CMD_ARG(creator_id, NULL, "<indicates the creator of an object>",
 		      cmd_add_header_creator_id, 2, 0),
 	SHELL_CMD_ARG(wan_uuid, NULL, "<uniquely identifies the network client (OBEX server)>",
