@@ -24,19 +24,16 @@
 		zephyr,flash-controller = &flashctl;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpioa 23 GPIO_ACTIVE_HIGH>;
-			label = "Blue LED";
+			gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+			label = "RED LED";
 		};
 		led1: led_1 {
-			gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
-			label = "Red LED";
-		};
-		led2: led_2 {
 			gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
 		};
@@ -122,11 +119,28 @@
 	ti,clk-divider = <8>;
 	ti,clk-range = <MSP_ADC_CLOCK_RANGE_24TO32>;
 	vref-mv = <2500>;
-	pinctrl-0 = <&adc0_pa25>;
+	pinctrl-0 = <&adc0_pa27>;
 	pinctrl-names = "default";
-	status = "disabled";
+	status = "okay";
 };
 
 &wdt0 {
 	status = "disabled";
 }; 
+
+&spi1 {
+	pinctrl-0 = <&spi1_sclk_pa17 &spi1_pico_pb8 &spi1_poci_pb7 &spi1_cs0_pb6>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	cs-gpios = <&gpiob 6 (GPIO_ACTIVE_LOW)>;
+	ads1310: ads1310@0 {
+		compatible = "ti,ads131m02";
+		reg = <0>;
+		#io-channel-cells = <1>;
+		drdy-gpios = <&gpiob 5 (GPIO_ACTIVE_LOW)>;
+		spi-max-frequency = <8000000>;
+	};
+};
