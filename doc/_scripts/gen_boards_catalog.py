@@ -4,6 +4,7 @@
 import logging
 import os
 import pickle
+import re
 import subprocess
 import sys
 from collections import namedtuple
@@ -288,6 +289,16 @@ def get_catalog(generate_hw_features=False):
             except Exception as e:
                 logger.error(f"Error parsing twister file {twister_file}: {e}")
 
+        # Infer supported runners from board.cmake file
+        runners = set()
+        board_cmake = board.dir / "board.cmake"
+        if board_cmake.exists():
+            with open(board_cmake) as f:
+                for line in f:
+                    match = re.search(r"include\((.*\.board\.cmake)\)", line)
+                    if match:
+                        runners.add(match.group(1).split("/")[-1].split(".")[0])
+
         board_catalog[board.name] = {
             "name": board.name,
             "full_name": full_name,
@@ -297,6 +308,7 @@ def get_catalog(generate_hw_features=False):
             "socs": list(socs),
             "supported_features": supported_features,
             "image": guess_image(board),
+            "runners": list(runners),
         }
 
     socs_hierarchy = {}

@@ -292,6 +292,7 @@ class ConvertBoardNode(SphinxTransform):
                 ("Vendor", node["vendor"]),
                 ("Architecture", ", ".join(node["archs"])),
                 ("SoC", ", ".join(node["socs"])),
+                ("Runners", ", ".join(node["runners"])),
             ]
 
             for property_name, value in details:
@@ -727,6 +728,7 @@ class BoardDirective(SphinxDirective):
             board_node["archs"] = board["archs"]
             board_node["socs"] = board["socs"]
             board_node["image"] = board["image"]
+            board_node["runners"] = board["runners"]
             return [board_node]
 
 
