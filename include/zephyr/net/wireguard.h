@@ -147,6 +147,30 @@ struct net_stats_vpn {
 };
 
 /**
+ * @brief Network Management event information structure
+ * Used to pass information on network event
+ *   NET_EVENT_VPN_PEER_ADD
+ * when CONFIG_NET_MGMT_EVENT_INFO enabled and event generator pass the
+ * information.
+ * The network event NET_EVENT_VPN_PEER_DEL will pass the peer id only
+ * as a pointer in the event info.
+ * Note that the pointers to the peer information are only valid during the
+ * event handling and should not be used after the event is processed.
+ */
+struct net_event_vpn_peer {
+	/** VPN peer identifier */
+	uint32_t id;
+	/** VPN peer public key */
+	const char *public_key;
+	/** VPN peer endpoint */
+	struct net_sockaddr *endpoint;
+	/** VPN peer allowed IP address (null terminated list) */
+	struct wireguard_allowed_ip *allowed_ip[WIREGUARD_MAX_SRC_IPS + 1];
+	/** VPN peer keepalive interval */
+	int keepalive_interval;
+};
+
+/**
  * @brief Add a Wireguard peer to the system.
  *
  * @details If successful, a virtual network interface is
