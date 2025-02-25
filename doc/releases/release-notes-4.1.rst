@@ -189,6 +189,14 @@ New APIs and options
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS`
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT`
 
+* I3C
+
+  * :kconfig:option:`CONFIG_I3C_TARGET_BUFFER_MODE`
+  * :kconfig:option:`CONFIG_I3C_RTIO`
+  * :c:func:`i3c_ibi_hj_response`
+  * :c:func:`i3c_ccc_do_getacccr`
+  * :c:func:`i3c_device_controller_handoff`
+
 * Management
 
   * hawkBit
