@@ -137,6 +137,71 @@ and these are the routes setup in the host:
   2001:db8:100::2 dev zwg0 proto kernel metric 256 pref medium
   2001:db8:100::/64 dev zwg0 metric 1024 pref medium
 
+Here is an example how to run Wireguard VPN over a VLAN when using the
+``echo-server`` sample.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_server
+   :host-os: unix
+   :board: native_sim
+   :conf: "prj.conf overlay-vpn-vlan.conf"
+   :goals: run
+   :compact:
+
+You host setup the Wireguard VPN can be done like this:
+
+.. code-block:: console
+
+    $ cd tools/net-setup
+    $ ./net-setup.sh -c wireguard-vpn-vlan.conf
+
+This VLAN example will setup the network so that the Wireguard data
+is run over an IPv6 tunnel over an VLAN. So in host side there is extra
+network interface for the VLAN and the IPv6 VPN tunnel.
+
+.. code-block:: console
+
+  vlan.200: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 203.0.113.2  netmask 255.255.255.0  broadcast 0.0.0.0
+        inet6 2001:db8:200::2  prefixlen 64  scopeid 0x0<global>
+        ether 00:00:5e:00:53:ff  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+  zwg1: flags=209<UP,POINTOPOINT,RUNNING,NOARP>  mtu 1420
+        inet6 2001:db8:300::2  prefixlen 128  scopeid 0x0<global>
+        unspec 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00  txqueuelen 1000  (UNSPEC)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+The host is configured so that the network traffic to ``2001:db8:300::/64`` is
+tunneled via ``2001:db8:200::2`` found in the VLAN interface to ``2001:db8:200::1``
+which is the Zephyr endpoint address. The IPv6 routes look like this:
+
+.. code-block:: console
+
+  2001:db8::/64 dev zeth proto kernel metric 256 pref medium
+  2001:db8::/64 dev zeth metric 1024 pref medium
+  2001:db8:100::2 dev zwg0 proto kernel metric 256 pref medium
+  2001:db8:100::/64 dev zwg0 metric 1024 pref medium
+  2001:db8:200::/64 dev vlan.200 proto kernel metric 256 pref medium
+  2001:db8:200::/64 dev vlan.200 metric 1024 pref medium
+  2001:db8:300::2 dev zwg1 proto kernel metric 256 pref medium
+  2001:db8:300::/64 dev zwg1 metric 1024 pref medium
+
+In Zephyr side, there is an extra network interface ``VLAN-200`` having IPv6 address
+``2001:db8:200::1`` configured to it. So when user pings Zephyr IPv6 address
+``2001:db8:300::1``, the ICMPv6 packet is encrypted by ``zwg1`` host interface, then
+placed to the ``vlan.200`` host network interface and sent to Zephyr via the ``zeth``
+interface. Zephyr then receives the packet in the ``eth0`` interface, removes the
+VLAN header and places the packet to the ``VLAN-200`` interface. Then Wireguard
+library will decrypt it and place it to ``wg0`` interface where the ICMPv6 module
+will then handle it and respond with ICMPv6 echo-reply packet.
+
 .. warning::
 
    The IPv4 and IPv6 addresses used in the samples are not to be used
