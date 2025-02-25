@@ -995,7 +995,15 @@ fail:
 		report_callback_error(internal_req, ret);
 	}
 	if (!internal_req->is_observe) {
-		release_internal_request(internal_req);
+		if (response_type == COAP_TYPE_ACK) {
+			/* This is piggybacked ACK,
+			 * no need to wait for lifetime to expire, all data is already transferred
+			 * and acknowledged
+			 */
+			reset_internal_request(internal_req);
+		} else {
+			release_internal_request(internal_req);
+		}
 	}
 	return ret;
 }
