@@ -6,6 +6,7 @@ config WDT_RENESAS_RA
 	default y
 	depends on DT_HAS_RENESAS_RA_WDT_ENABLED
 	select HAS_WDT_DISABLE_AT_BOOT
+	select SOC_OPTION_SETTING_MEMORY if SOC_SERIES_RA4M1
 	select USE_RA_FSP_WDT
 	help
 	  Enable watchdog driver for Renesas RA MCUs
