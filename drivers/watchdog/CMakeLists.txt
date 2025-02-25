@@ -54,6 +54,7 @@ zephyr_library_sources_ifdef(CONFIG_WWDT_NUMAKER wdt_wwdt_numaker.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_ENE_KB106X wdt_ene_kb106x.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_ENE_KB1200 wdt_ene_kb1200.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_IWDG_WCH wdt_iwdg_wch.c)
+zephyr_library_sources_ifdef(CONFIG_XILINX_WINDOW_WATCHDOG wdt_xilinx_wwdt.c)
 
 zephyr_library_sources_ifdef(CONFIG_WDT_DW wdt_dw.c wdt_dw_common.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_INTEL_ADSP wdt_intel_adsp.c wdt_dw_common.c)
