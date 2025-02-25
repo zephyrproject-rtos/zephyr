@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/rts5912_clock.h>
 #include <zephyr/dt-bindings/gpio/realtek-gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	cpus {
@@ -363,6 +364,70 @@
 			clock-names = "tacho";
 			interrupts = <192 0>;
 			status = "disabled";
+		};
+
+		pwm0: pwm@4000f000 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM0_CLKPWR>;
+			reg = <0x4000f000 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm1: pwm@4000f00c {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM1_CLKPWR>;
+			reg = <0x4000f00c 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm2: pwm@4000f018 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM2_CLKPWR>;
+			reg = <0x4000f018 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm3: pwm@4000f024 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM3_CLKPWR>;
+			reg = <0x4000f024 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm4: pwm@4000f030 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM4_CLKPWR>;
+			reg = <0x4000f030 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm5: pwm@4000f03c {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM5_CLKPWR>;
+			reg = <0x4000f03c 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm6: pwm@4000f048 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM6_CLKPWR>;
+			reg = <0x4000f048 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm7: pwm@4000f054 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM7_CLKPWR>;
+			reg = <0x4000f054 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
 		};
 	};
 
