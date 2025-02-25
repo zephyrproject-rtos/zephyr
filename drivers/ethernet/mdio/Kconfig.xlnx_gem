@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Immo Birnbaum
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_XLNX_GEM
+	bool "Xilinx GEM MDIO controller driver"
+	default y
+	depends on DT_HAS_XLNX_GEM_MDIO_ENABLED
+	help
+	  Enable Xilinx GEM MDIO support.
+
+if MDIO_XLNX_GEM
+
+config MDIO_XLNX_GEM_MAX_POLL_RETRIES
+	int "Poll MDIO transaction completion max. retries"
+	default 10
+	help
+	  The number of times the completion of an MDIO
+	  transaction is polled before it is considered
+	  timed out.
+
+config MDIO_XLNX_GEM_POLL_DELAY
+	int "Poll MDIO transaction completion delay"
+	default 50
+	help
+	  Delay in microseconds between two MDIO transaction
+	  completion polling operations.
+
+endif # MDIO_XLNX_GEM
