@@ -22,8 +22,10 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
+	bool configured = ctx->config != NULL;
 	lpspi_master_config_t master_config;
 	uint32_t clock_freq;
 	int ret;
@@ -57,11 +59,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 		return ret;
 	}
 
-	base->CR |= LPSPI_CR_RST_MASK;
-	base->CR |= LPSPI_CR_RRF_MASK | LPSPI_CR_RTF_MASK;
-	base->CR = 0x00U;
-
-	if (data->ctx.config != NULL) {
+	if (configured) {
 		/* Setting the baud rate in LPSPI_MasterInit requires module to be disabled. Only
 		 * disable if already configured, otherwise the clock is not enabled and the
 		 * CR register cannot be written.
@@ -73,6 +71,11 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 			 * completed the current transfer and is idle.
 			 */
 		}
+
+		/* this is workaround for ERR050456 */
+		base->CR |= LPSPI_CR_RST_MASK;
+		base->CR |= LPSPI_CR_RRF_MASK | LPSPI_CR_RTF_MASK;
+		base->CR = 0x00U;
 	}
 
 	data->ctx.config = spi_cfg;
