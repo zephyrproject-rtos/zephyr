@@ -37,7 +37,7 @@ static struct data_queue ipc_data_queue;
 struct test_cmd_xdata {
 	struct ipc_test_cmd base;
 	uint8_t data[CONFIG_IPC_TEST_BLOCK_SIZE];
-};
+} __packed;
 
 static void (*ep_received_override_cb)(const void *data, size_t len, void *priv);
 
