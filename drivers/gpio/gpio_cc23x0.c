@@ -54,6 +54,7 @@ static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_fl
 		config |= IOC_IOC0_WUENSB;
 	}
 
+	/* In single-ended mode a GPIO is either open drain or open source */
 	if (!(flags & GPIO_SINGLE_ENDED)) {
 		config |= IOC_IOC0_IOMODE_NORMAL;
 	} else {
@@ -70,12 +71,14 @@ static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_fl
 	GPIOSetConfigDio(iocfg_reg, config);
 
 	if (flags & GPIO_OUTPUT) {
+
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			GPIOSetDio(pin);
 		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
 			GPIOClearDio(pin);
 		}
 		GPIOSetOutputEnableDio(pin, GPIO_OUTPUT_ENABLE);
+
 	} else {
 		GPIOSetOutputEnableDio(pin, GPIO_OUTPUT_DISABLE);
 	}
@@ -97,8 +100,9 @@ static int gpio_cc23x0_get_config(const struct device *port, gpio_pin_t pin, gpi
 	if (GPIOGetOutputEnableDio(pin)) {
 		out_flag |= GPIO_OUTPUT;
 
-		if (GPIOReadDio(pin)) {
-			out_flag |= GPIO_OUTPUT_INIT_HIGH;
+		if (GPIOReadDioOutputBuffer(pin)) {
+
+			outFlag |= GPIO_OUTPUT_INIT_HIGH;
 		} else {
 			/* This is the default value. If not explicitly set,
 			 * the returned config will not be symmetric
@@ -124,12 +128,12 @@ static int gpio_cc23x0_get_config(const struct device *port, gpio_pin_t pin, gpi
 	}
 
 	/* GPIO pin drive flags */
-	if (config & IOC_IOC0_IOMODE_OPENS) {
-		out_flag |= GPIO_OPEN_SOURCE;
-	}
-
-	if (config & IOC_IOC0_IOMODE_OPEND) {
-		out_flag |= IOC_IOC0_IOMODE_OPEND;
+	if (!(config & IOC_IOC0_IOMODE_NORMAL)) {
+		if (config & IOC_IOC0_IOMODE_OPEND) {
+			outFlag |= GPIO_OPEN_DRAIN;
+		} else if (config & IOC_IOC0_IOMODE_OPENS) {
+			outFlag |= GPIO_OPEN_SOURCE;
+		}
 	}
 
 	if (config & IOC_IOC0_PULLCTL_PULL_UP) {
@@ -140,7 +144,11 @@ static int gpio_cc23x0_get_config(const struct device *port, gpio_pin_t pin, gpi
 		out_flag |= GPIO_PULL_DOWN;
 	}
 
-	*flags = out_flag;
+	if (config & IOC_IOC0_WUENSB) {
+		outFlag |= GPIO_INT_WAKEUP;
+	}
+
+	*flags = outFlag;
 
 	return 0;
 }
@@ -191,7 +199,7 @@ static int gpio_cc23x0xx_pin_interrupt_configure(const struct device *port, gpio
 	uint32_t config = GPIOGetConfigDio(IOC_ADDR(pin)) & ~IOC_IOC0_EDGEDET_M;
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		config |= IOC_IOC1_EDGEDET_EDGE_DIS;
+		config |= IOC_IOC0_EDGEDET_EDGE_DIS;
 
 		GPIOSetConfigDio(IOC_ADDR(pin), config);
 
@@ -201,13 +209,13 @@ static int gpio_cc23x0xx_pin_interrupt_configure(const struct device *port, gpio
 	} else if (mode == GPIO_INT_MODE_EDGE) {
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
-			config |= IOC_IOC1_EDGEDET_EDGE_NEG;
+			config |= IOC_IOC0_EDGEDET_EDGE_NEG;
 			break;
 		case GPIO_INT_TRIG_HIGH:
-			config |= IOC_IOC1_EDGEDET_EDGE_POS;
+			config |= IOC_IOC0_EDGEDET_EDGE_POS;
 			break;
 		case GPIO_INT_TRIG_BOTH:
-			config |= IOC_IOC1_EDGEDET_EDGE_BOTH;
+			config |= IOC_IOC0_EDGEDET_EDGE_BOTH;
 			break;
 		default:
 			return -ENOTSUP;
@@ -303,5 +311,5 @@ static struct gpio_cc23x0_data gpio_cc23x0_data_0;
 PM_DEVICE_DT_DEFINE(0, gpio_cc23x0_pm_action);
 
 DEVICE_DT_INST_DEFINE(0, gpio_cc23x0_init, PM_DEVICE_DT_GET(0), &gpio_cc23x0_data_0,
-		      &gpio_cc23x0_config_0, PRE_KERNEL_1,
-		      CONFIG_GPIO_INIT_PRIORITY, &gpio_cc23x0_driver_api);
+		      &gpio_cc23x0_config_0, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
+		      &gpio_cc23x0_driver_api);
