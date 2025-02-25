@@ -1,0 +1,7 @@
+tests:
+  drivers.pinctrl.mchp:
+    tags:
+      - drivers
+      - pinctrl
+    platform_allow:
+      - sam_e54_xpro
