@@ -1,0 +1,9 @@
+# Copyright (c) 2021, Weidmueller Interface GmbH & Co. KG
+# Copyright (c) 2025 Immo Birnbaum
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx GEM MDIO node
+
+compatible: "xlnx,gem-mdio"
+
+include: mdio-controller.yaml
