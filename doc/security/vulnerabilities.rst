@@ -1837,3 +1837,25 @@ This has been fixed in main for v4.0.0
 
 - `PR 81370 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/81370>`_
+
+:cve:`2025-1673`
+----------------
+
+Out of bounds read when calling crc16_ansi and strlen in dns_validate_msg
+
+A malicious or malformed DNS packet without a payload can cause an out-of-bounds
+read, resulting in a crash (denial of service) or an incorrect computation.
+
+- `Zephyr project bug tracker GHSA-jjhx-rrh4-j8mx
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-jjhx-rrh4-j8mx>`_
+
+This has been fixed in main for v4.1.0
+
+- `PR 82072 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82072>`_
+
+- `PR 82289 fix for 4.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82289>`_
+
+- `PR 82288 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82288>`_
