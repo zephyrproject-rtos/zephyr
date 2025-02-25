@@ -8,6 +8,18 @@
 GTEXT(should_work)
 GTEXT(should_not_work)
 
+#if defined(CONFIG_X86_64)
+should_work:
+    endbr64
+    mov %rdi, %rax
+    inc %rax
+    ret
+
+should_not_work:
+    mov %rdi, %rax
+    inc %rax
+    ret
+#else
 should_work:
     endbr32
     push %ebp
@@ -24,3 +36,4 @@ should_not_work:
     inc %eax
     pop %ebp
     ret
+#endif

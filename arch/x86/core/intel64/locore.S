@@ -498,17 +498,17 @@ __resume:
 
 #ifdef CONFIG_X86_KPTI
 #define EXCEPT_CODE(nr, ist)						\
-	vector_ ## nr: pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;	\
+	vector_ ## nr: endbr64; pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;	\
 	pushq $nr;							\
 	jmp except
 #define EXCEPT(nr, ist)							\
-	vector_ ## nr: pushq $0;					\
+	vector_ ## nr: endbr64; pushq $0;					\
 	pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;			\
 	pushq $nr; \
 	jmp except
 #else
-#define EXCEPT_CODE(nr) vector_ ## nr: pushq $nr; jmp except
-#define EXCEPT(nr)	vector_ ## nr: pushq $0; pushq $nr; jmp except
+#define EXCEPT_CODE(nr) vector_ ## nr: endbr64; pushq $nr; jmp except
+#define EXCEPT(nr)	vector_ ## nr: endbr64; pushq $0; pushq $nr; jmp except
 #endif
 
 /*
@@ -849,7 +849,7 @@ irq_exit_nested:
 	popq %rax
 	iretq
 
-#define IRQ(nr) vector_ ## nr: pushq $(nr - IV_IRQS); jmp irq
+#define IRQ(nr) vector_ ## nr: endbr64; pushq $(nr - IV_IRQS); jmp irq
 
 IRQ( 33); IRQ( 34); IRQ( 35); IRQ( 36); IRQ( 37); IRQ( 38); IRQ( 39)
 IRQ( 40); IRQ( 41); IRQ( 42); IRQ( 43); IRQ( 44); IRQ( 45); IRQ( 46); IRQ( 47)

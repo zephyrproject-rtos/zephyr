@@ -15,11 +15,19 @@
 
 void z_x86_cet_enable(void)
 {
+#ifdef CONFIG_X86_64
+	__asm volatile (
+			"movq %cr4, %rax\n\t"
+			"orq $0x800000, %rax\n\t"
+			"movq %rax, %cr4\n\t"
+			);
+#else
 	__asm volatile (
 			"movl %cr4, %eax\n\t"
 			"orl $0x800000, %eax\n\t"
 			"movl %eax, %cr4\n\t"
 			);
+#endif
 }
 
 #ifdef CONFIG_X86_CET_IBT
