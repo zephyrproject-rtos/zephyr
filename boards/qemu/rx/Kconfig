@@ -1,0 +1,2 @@
+config BOARD_QEMU_RX
+	select QEMU_TARGET
