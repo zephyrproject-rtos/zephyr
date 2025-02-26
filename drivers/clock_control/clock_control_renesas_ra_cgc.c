@@ -23,7 +23,7 @@ static volatile uint32_t *mstp_regs[] = {
 static volatile uint32_t *mstp_regs[] = {};
 #endif
 
-#if !defined(CONFIG_PM)
+#if defined(CONFIG_CORTEX_M_SYSTICK)
 /* If a CPU clock exists in the system, it will be the source for the CPU */
 #if BSP_FEATURE_CGC_HAS_CPUCLK
 #define sys_clk DT_NODELABEL(cpuclk)
