@@ -1,7 +1,4 @@
-.. _it8xxx2_evb:
-
-ITE IT8XXX2 series
-######################
+.. zephyr:board:: it8xxx2_evb
 
 Overview
 ********
