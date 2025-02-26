@@ -10,6 +10,7 @@ tests:
       - native_posix/native/64
       - native_sim
       - native_sim/native/64
+      - apollo510_eb
     integration_platforms:
       - native_sim/native/64
     harness: console

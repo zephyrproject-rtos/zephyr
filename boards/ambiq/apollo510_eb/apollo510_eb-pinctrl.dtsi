@@ -72,6 +72,15 @@
 		};
 	};
 
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <M0SCL_P5>, <M0SDAWIR3_P6>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
 	mspi0_default: mspi0_default {
 		group0 {
 			pinmux = <MSPI0_0_P64>,

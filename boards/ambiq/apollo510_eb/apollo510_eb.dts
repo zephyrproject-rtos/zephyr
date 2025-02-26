@@ -24,6 +24,7 @@
 		rtc = &rtc0;
 		sdhc0 = &sdio0;
 		sdhc1 = &sdio1;
+		eeprom-0 = &i2c_eeprom;
 	};
 
 	sram0: memory@SSRAM_BASE_NAME {
@@ -62,6 +63,21 @@
 &itm {
 	pinctrl-0 = <&swo_default>;
 	pinctrl-names = "default";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	scl-gpios = <&gpio0_31 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+	sda-gpios = <&gpio0_31 6 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+	status = "okay";
+	i2c_eeprom: eeprom@50 {
+		compatible = "fujitsu,mb85rcxx";
+		reg = <0x50>;
+		size = <DT_SIZE_K(128)>;
+		address-width = <16>;
+	};
 };
 
 &uart0 {

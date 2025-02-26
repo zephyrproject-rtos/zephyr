@@ -448,7 +448,7 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 		return 0;
 	}
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_SPI_AMBIQ_DMA) && defined(CONFIG_DCACHE)
 	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 	    (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
 		return -EFAULT;
