@@ -4,3 +4,6 @@ family:
       - name: rx130
         socs:
           - name: r5f513083xfb
+      - name: rx62n
+        socs:
+          - name: r5f562n8
