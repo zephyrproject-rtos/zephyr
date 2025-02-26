@@ -1,7 +1,4 @@
-.. _ene_kb1200_evb:
-
-ENE KB1200_EVB
-##############
+.. zephyr:board:: kb1200_evb
 
 Overview
 ********
