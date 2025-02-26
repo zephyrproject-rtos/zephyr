@@ -267,7 +267,7 @@ function(section_to_string)
     get_property(min_size   GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_MIN_SIZE)
     get_property(max_size   GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_MAX_SIZE)
 
-    if(DEFINED SETTINGS_ALIGN)
+    if(DEFINED align)
       set(TEMP "${TEMP}\n  . = ALIGN(${align});")
     endif()
 
