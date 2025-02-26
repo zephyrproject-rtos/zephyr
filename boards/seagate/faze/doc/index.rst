@@ -1,7 +1,4 @@
-.. _faze:
-
-Seagate FireCuda Gaming SSD (FaZe) board
-########################################
+.. zephyr:board:: faze
 
 Overview
 ********
@@ -13,10 +10,6 @@ the latter is dedicated to the LED effects. The two chips are connected together
 through I2C and GPIOs.
 
 This Zephyr port is running on the NXP LPC11U67 MCU.
-
-.. image:: firecuda-gaming-ssd.jpg
-   :align: center
-   :alt: Seagate FireCuda Gaming SSD
 
 Hardware
 ********

@@ -1,7 +1,4 @@
-.. _legend:
-
-Legend
-######
+.. zephyr:board:: legend
 
 Overview
 ********
