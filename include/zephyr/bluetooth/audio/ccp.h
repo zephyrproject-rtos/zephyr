@@ -141,8 +141,10 @@ struct bt_ccp_call_control_client_cb {
 	void (*discover)(struct bt_ccp_call_control_client *client, int err,
 			 struct bt_ccp_call_control_client_bearers *bearers);
 
-	/** @internal Internally used field for list handling */
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used field for list handling */
 	sys_snode_t _node;
+	/** @endcond */
 };
 
 /**
