@@ -9,7 +9,7 @@
 #include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/ztest.h>
 #if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
-#include "timer_model.h"
+#include "nsi_timer_model.h"
 #endif
 #include "stubs.h"
 
