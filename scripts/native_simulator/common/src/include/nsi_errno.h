@@ -103,7 +103,13 @@
 #define NSI_ERRNO_MID_EOVERFLOW       139 /**< Value overflow */
 #define NSI_ERRNO_MID_ECANCELED       140 /**< Operation canceled */
 
+/* Convert a errno value to the intermediate represetation to pass it to the other side */
 int nsi_errno_to_mid(int err);
+/* Convert a errno value from the intermediate representation into the local libC value */
 int nsi_errno_from_mid(int err);
+/* Return the middleground representation of the current host libC errno */
+int nsi_get_errno_in_mid(void);
+/* Return the local representation of the current host libC errno */
+int nsi_host_get_errno(void);
 
 #endif /* NSI_COMMON_SRC_NSI_ERRNO_H */
