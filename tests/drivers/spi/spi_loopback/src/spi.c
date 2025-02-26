@@ -18,9 +18,6 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <zephyr/logging/log.h>
-
-LOG_MODULE_REGISTER(spi_loopback);
 
 /*
  **********************
@@ -145,6 +142,19 @@ static const struct spi_buf_set spi_loopback_setup_xfer(struct spi_buf *pool, si
 	return buf_set;
 }
 
+/* compare two buffers and print fail if they are not the same */
+static void spi_loopback_compare_bufs(const uint8_t *buf1, const uint8_t *buf2, size_t size,
+				      uint8_t *printbuf1, uint8_t *printbuf2)
+{
+	if (memcmp(buf1, buf2, size)) {
+		to_display_format(buf1, size, printbuf1);
+		to_display_format(buf2, size, printbuf2);
+		TC_PRINT("Buffer contents are different:\n %s\nvs:\n %s\n",
+				buffer_print_tx, buffer_print_rx);
+		ztest_test_fail();
+	}
+}
+
 /*
  **************
  * Test cases *
@@ -162,27 +172,12 @@ ZTEST(spi_loopback, test_spi_complete_multiple)
 							      buffer_rx, BUF_SIZE,
 							      buffer2_rx, BUF2_SIZE);
 
-	LOG_INF("Start complete multiple");
-
 	spi_loopback_transceive(spec, &tx, &rx);
 
-	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
-		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
-		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
-		zassert_false(1, "Buffer contents are different");
-	}
-
-	if (memcmp(buffer2_tx, buffer2_rx, BUF2_SIZE)) {
-		to_display_format(buffer2_tx, BUF2_SIZE, buffer_print_tx2);
-		to_display_format(buffer2_rx, BUF2_SIZE, buffer_print_rx2);
-		LOG_ERR("Buffer 2 contents are different: %s", buffer_print_tx2);
-		LOG_ERR("                             vs: %s", buffer_print_rx2);
-		zassert_false(1, "Buffer 2 contents are different");
-	}
-
-	LOG_INF("Passed");
+	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
+				  buffer_print_tx, buffer_print_rx);
+	spi_loopback_compare_bufs(buffer2_tx, buffer2_rx, BUF2_SIZE,
+				  buffer_print_tx2, buffer_print_rx2);
 }
 
 ZTEST(spi_loopback, test_spi_complete_loop)
@@ -193,25 +188,16 @@ ZTEST(spi_loopback, test_spi_complete_loop)
 	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
 							      buffer_rx, BUF_SIZE);
 
-	LOG_INF("Start complete loop");
-
 	spi_loopback_transceive(spec, &tx, &rx);
 
-	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
-		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
-		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
-		zassert_false(1, "Buffer contents are different");
-	}
-
-	LOG_INF("Passed");
+	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
+				  buffer_print_tx, buffer_print_rx);
 }
 
 ZTEST(spi_loopback, test_spi_null_tx_buf)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
-	static const uint8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = { 0 };
+	static const uint8_t expected_nop_return_buf[BUF_SIZE] = { 0 };
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
 							      NULL, BUF_SIZE);
 	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
@@ -219,18 +205,10 @@ ZTEST(spi_loopback, test_spi_null_tx_buf)
 
 	(void)memset(buffer_rx, 0x77, BUF_SIZE);
 
-	LOG_INF("Start null tx");
-
 	spi_loopback_transceive(spec, &tx, &rx);
 
-	if (memcmp(buffer_rx, EXPECTED_NOP_RETURN_BUF, BUF_SIZE)) {
-		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
-		LOG_ERR("Rx Buffer should contain NOP frames but got: %s",
-			buffer_print_rx);
-		zassert_false(1, "Buffer not as expected");
-	}
-
-	LOG_INF("Passed");
+	spi_loopback_compare_bufs(expected_nop_return_buf, buffer_rx, BUF_SIZE,
+				  buffer_print_rx, buffer_print_rx);
 }
 
 ZTEST(spi_loopback, test_spi_rx_half_start)
@@ -245,63 +223,40 @@ ZTEST(spi_loopback, test_spi_rx_half_start)
 
 	spi_loopback_transceive(spec, &tx, &rx);
 
-	if (memcmp(buffer_tx, buffer_rx, 8)) {
-		to_display_format(buffer_tx, 8, buffer_print_tx);
-		to_display_format(buffer_rx, 8, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
-		zassert_false(1, "Buffer contents are different");
-	}
-
-	LOG_INF("Passed");
+	spi_loopback_compare_bufs(buffer_tx, buffer_rx, 8,
+				  buffer_print_tx, buffer_print_rx);
 }
 
 ZTEST(spi_loopback, test_spi_rx_half_end)
 {
-	struct spi_dt_spec *spec = loopback_specs[spec_idx];
-
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
-		LOG_INF("Skip half end");
+		TC_PRINT("Skipped spi_rx_hald_end");
 		return;
 	}
 
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
 							      buffer_tx, BUF_SIZE);
 	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 2,
 							      NULL, 8,
 							      buffer_rx, 8);
 
-	LOG_INF("Start half end");
-
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
 	spi_loopback_transceive(spec, &tx, &rx);
 
-	if (memcmp(buffer_tx + 8, buffer_rx, 8)) {
-		to_display_format(buffer_tx + 8, 8, buffer_print_tx);
-		to_display_format(buffer_rx, 8, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
-		zassert_false(1, "Buffer contents are different");
-	}
-
-	LOG_INF("Passed");
+	spi_loopback_compare_bufs(buffer_tx+8, buffer_rx, 8,
+				  buffer_print_tx, buffer_print_rx);
 }
 
 ZTEST(spi_loopback, test_spi_rx_every_4)
 {
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
+		TC_PRINT("Skipped spi_rx_every_4");
+		return;
+	};
+
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
-
-	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
-		LOG_INF("Skip every 4");
-		return;
-	}
-
-	if (IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
-		LOG_INF("Skip every 4");
-		return;
-	}
-
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
 							      buffer_tx, BUF_SIZE);
 	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 4,
@@ -310,81 +265,45 @@ ZTEST(spi_loopback, test_spi_rx_every_4)
 							      NULL, 4,
 							      buffer_rx+4, 4);
 
-	LOG_INF("Start every 4");
-
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
 	spi_loopback_transceive(spec, &tx, &rx);
 
-	if (memcmp(buffer_tx + 4, buffer_rx, 4)) {
-		to_display_format(buffer_tx + 4, 4, buffer_print_tx);
-		to_display_format(buffer_rx, 4, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
-		zassert_false(1, "Buffer contents are different");
-	} else if (memcmp(buffer_tx + 12, buffer_rx + 4, 4)) {
-		to_display_format(buffer_tx + 12, 4, buffer_print_tx);
-		to_display_format(buffer_rx + 4, 4, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
-		zassert_false(1, "Buffer contents are different");
-	}
-
-	LOG_INF("Passed");
+	spi_loopback_compare_bufs(buffer_tx+4, buffer_rx, 4,
+				  buffer_print_tx, buffer_print_rx);
+	spi_loopback_compare_bufs(buffer_tx+12, buffer_rx+4, 4,
+				  buffer_print_tx, buffer_print_rx);
 }
 
 ZTEST(spi_loopback, test_spi_rx_bigger_than_tx)
 {
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
+		TC_PRINT("Skipped spi_rx_bigger_than_tx");
+		return;
+	}
+
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 	const uint32_t tx_buf_size = 8;
 
 	BUILD_ASSERT(tx_buf_size < BUF_SIZE,
 		"Transmit buffer is expected to be smaller than the receive buffer");
 
-	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
-		LOG_INF("Skip rx bigger than tx");
-		return;
-	}
-
-	if (IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
-		LOG_INF("Skip rx bigger than tx");
-		return;
-	}
-
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
 							      buffer_tx, tx_buf_size);
 	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
 							      buffer_rx, BUF_SIZE);
 
-	LOG_INF("Start rx bigger than tx");
-
 	(void)memset(buffer_rx, 0xff, BUF_SIZE);
 
 	spi_loopback_transceive(spec, &tx, &rx);
 
-	if (memcmp(buffer_tx, buffer_rx, tx_buf_size)) {
-		to_display_format(buffer_tx, tx_buf_size, buffer_print_tx);
-		to_display_format(buffer_rx, tx_buf_size, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
-		zassert_false(1, "Buffer contents are different");
-	}
+	spi_loopback_compare_bufs(buffer_tx, buffer_rx, tx_buf_size,
+				  buffer_print_tx, buffer_print_rx);
 
-	const uint8_t all_zeroes_buf[BUF_SIZE] = {0};
+	static const uint8_t all_zeroes_buf[BUF_SIZE] = {0};
 
-	if (memcmp(all_zeroes_buf, buffer_rx + tx_buf_size, BUF_SIZE - tx_buf_size)) {
-		to_display_format(
-			buffer_rx + tx_buf_size,  BUF_SIZE - tx_buf_size, buffer_print_tx);
-
-		to_display_format(
-			all_zeroes_buf, BUF_SIZE - tx_buf_size, buffer_print_rx);
-
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
-		zassert_false(1, "Buffer contents are different");
-	}
-
-	LOG_INF("Passed");
+	spi_loopback_compare_bufs(all_zeroes_buf, buffer_rx + tx_buf_size, BUF_SIZE - tx_buf_size,
+				  buffer_print_tx, buffer_print_rx);
 }
 
 /* test transferring different buffers on the same dma channels */
@@ -396,16 +315,12 @@ ZTEST(spi_loopback, test_spi_complete_large_transfers)
 	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
 							      large_buffer_rx, BUF3_SIZE);
 
-	LOG_INF("Start complete large transfers");
-
 	spi_loopback_transceive(spec, &tx, &rx);
 
-	if (memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE)) {
-		zassert_false(1, "Large Buffer contents are different");
-	}
-
-	LOG_INF("Passed");
+	zassert_false(memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE),
+			"Large Buffer contents are different");
 }
+
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
@@ -425,13 +340,11 @@ static void spi_async_call_cb(void *p1,
 
 	struct k_poll_event *evt = p1;
 	struct k_sem *caller_sem = p2;
-	int ret;
 
-	LOG_DBG("Polling...");
+	TC_PRINT("Polling...");
 
 	while (1) {
-		ret = k_poll(evt, 1, K_MSEC(2000));
-		zassert_false(ret, "one or more events are not ready");
+		zassert_false(k_poll(evt, 1, K_MSEC(2000)), "one or more events are not ready");
 
 		result = evt->signal->result;
 		k_sem_give(caller_sem);
@@ -454,7 +367,6 @@ ZTEST(spi_loopback, test_spi_async_call)
 							      buffer2_rx, BUF2_SIZE,
 							      large_buffer_rx, BUF3_SIZE);
 
-	LOG_INF("Start async call");
 	memset(buffer_rx, 0, sizeof(buffer_rx));
 	memset(buffer2_rx, 0, sizeof(buffer2_rx));
 	memset(large_buffer_rx, 0, sizeof(large_buffer_rx));
@@ -462,43 +374,23 @@ ZTEST(spi_loopback, test_spi_async_call)
 	int ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
 
 	if (ret == -ENOTSUP) {
-		LOG_DBG("Not supported");
+		TC_PRINT("Skipping ASYNC test");
 		return;
 	}
 
-	if (ret) {
-		LOG_ERR("Code %d", ret);
-		zassert_false(ret, "SPI transceive failed");
-	}
+	zassert_false(ret, "SPI transceive failed, code %d", ret);
 
 	k_sem_take(&caller, K_FOREVER);
 
-	if (result) {
-		LOG_ERR("Call code %d", ret);
-		zassert_false(result, "SPI transceive failed");
-	}
+	zassert_false(result, "SPI async transceive failed, result %d", result);
 
-	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
-		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
-		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
-		zassert_false(1, "Buffer contents are different");
-	}
+	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
+				  buffer_print_tx, buffer_print_rx);
+	spi_loopback_compare_bufs(buffer2_tx, buffer2_rx, BUF2_SIZE,
+				  buffer_print_tx2, buffer_print_rx2);
 
-	if (memcmp(buffer2_tx, buffer2_rx, BUF2_SIZE)) {
-		to_display_format(buffer2_tx, BUF2_SIZE, buffer_print_tx2);
-		to_display_format(buffer2_rx, BUF2_SIZE, buffer_print_rx2);
-		LOG_ERR("Buffer 2 contents are different: %s", buffer_print_tx2);
-		LOG_ERR("                             vs: %s", buffer_print_rx2);
-		zassert_false(1, "Buffer 2 contents are different");
-	}
-
-	if (memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE)) {
-		zassert_false(1, "Buffer 3 contents are different");
-	}
-
-	LOG_INF("Passed");
+	zassert_false(memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE),
+			"Large Buffer contents are different");
 }
 #endif
 
@@ -513,10 +405,7 @@ ZTEST(spi_extra_api_features, test_spi_lock_release)
 
 	spi_loopback_transceive(lock_spec, &tx, &rx);
 
-	if (spi_release_dt(lock_spec)) {
-		LOG_ERR("Deadlock now?");
-		zassert_false(1, "SPI release failed");
-	}
+	zassert_false(spi_release_dt(lock_spec), "SPI release failed");
 
 	spi_loopback_transceive(try_spec, &tx, &rx);
 
@@ -560,25 +449,19 @@ k_tid_t async_thread_id;
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 K_THREAD_STACK_DEFINE(spi_async_stack, STACK_SIZE);
 
-#if defined(CONFIG_DMA) && defined(CONFIG_NOCACHE_MEMORY)
-#define DMA_ENABLED_STR ", DMA enabled"
-#elif defined(CONFIG_DMA)
-#define DMA_ENABLED_STR ", DMA enabled (without CONFIG_NOCACHE_MEMORY)"
-#else
-#define DMA_ENABLED_STR
-#endif /* CONFIG_DMA */
-
-#ifdef CONFIG_SPI_LOOPBACK_16BITS_FRAMES
-#define FRAME_SIZE_STR ", frame size = 16"
-#else
-#define FRAME_SIZE_STR ", frame size = 8"
-#endif /* CONFIG_SPI_LOOPBACK_16BITS_FRAMES */
-
 void test_main(void)
 {
-	LOG_INF("SPI test on buffers TX/RX %p/%p" FRAME_SIZE_STR DMA_ENABLED_STR,
+	printf("SPI test on buffers TX/RX %p/%p, frame size = %d"
+#ifdef CONFIG_DMA
+		", DMA enabled"
+#ifndef CONFIG_NOCACHE_MEMORY
+		" (without CONFIG_NOCACHE_MEMORY)"
+#endif
+#endif /* CONFIG_DMA */
+			"\n",
 			buffer_tx,
-			buffer_rx);
+			buffer_rx,
+			FRAME_SIZE);
 
 #if (CONFIG_SPI_ASYNC)
 	async_thread_id = k_thread_create(&async_thread,
