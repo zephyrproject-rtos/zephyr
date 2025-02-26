@@ -5,8 +5,8 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf9161ns_laca.dtsi>
-#include "ctcc_nrf9161_common.dtsi"
+#include <sip/nordic/nrf9161_laca_nrf9120ns.dtsi>
+#include "ctcc_nrf9161_nrf9120_common.dtsi"
 
 / {
 	chosen {

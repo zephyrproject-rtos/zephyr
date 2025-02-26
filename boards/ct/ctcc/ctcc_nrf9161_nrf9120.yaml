@@ -1,4 +1,4 @@
-identifier: ctcc/nrf9161
+identifier: ctcc/nrf9161/nrf9120
 name: CTHINGS.CO Connectivity Card nRF9161
 type: mcu
 arch: arm

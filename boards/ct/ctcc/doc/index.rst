@@ -42,7 +42,7 @@ Connectivity Card has following features:
      :align: center
      :alt: CTCC nRF9161 mPCIe
 
-     ctcc/nrf9161 mPCIe board
+     ctcc/nrf9161/nrf9120 mPCIe board
 
 More information about the board can be found at the
 `Connectivity Cards Website`_ and for SoC information: `Nordic Semiconductor Infocenter`_.
@@ -51,7 +51,7 @@ Hardware
 ********
 
 * The ``ctcc/nrf52840`` board target has one external oscillator of the 32.768 kHz.
-* The ``ctcc/nrf9161`` board target has one external SPI NOR 64Mbit memory and one on-board USB-UART
+* The ``ctcc/nrf9161/nrf9120`` board target has one external SPI NOR 64Mbit memory and one on-board USB-UART
   converter (CP210X).
 
 Supported Features
@@ -83,7 +83,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-The ``ctcc/nrf9161`` board target supports the following
+The ``ctcc/nrf9161/nrf9120`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -202,7 +202,7 @@ for MCUboot as described on :ref:`west-sign`.
 
          .. zephyr-app-commands::
             :app: mcuboot/boot/zephyr
-            :board: ctcc/nrf9161
+            :board: ctcc/nrf9161/nrf9120
             :build-dir: mcuboot
             :goals: build
 
@@ -228,7 +228,7 @@ for MCUboot as described on :ref:`west-sign`.
 
          .. zephyr-app-commands::
             :zephyr-app: samples/basic/blinky
-            :board: ctcc/nrf9161
+            :board: ctcc/nrf9161/nrf9120
             :goals: build
             :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"path/to/mcuboot/boot/root-rsa-2048.pem\"
 
@@ -248,7 +248,7 @@ with the additional step of connecting an external debugger.
 To test flashed software, plug in ``ctcc`` card to mPCIe/M.2 slot or use mPCIe/M.2 adapter to USB and plug such adapter to USB port.
 
    * For ``ctcc/nrf52840`` check on Linux system by entering ``lsusb`` command if the following device appears: ``NordicSemiconductor MCUBOOT`` or ``NordicSemiconductor USB-DEV`` (when booted into blinky example).
-   * For ``ctcc/nrf9161`` it's not possible to see a change in ``lsusb`` due to the on-board USB-UART converter. Intead, connect to the UART console using a terminal emulation program of your choice.
+   * For ``ctcc/nrf9161/nrf9120`` it's not possible to see a change in ``lsusb`` due to the on-board USB-UART converter. Intead, connect to the UART console using a terminal emulation program of your choice.
 
 References
 **********
