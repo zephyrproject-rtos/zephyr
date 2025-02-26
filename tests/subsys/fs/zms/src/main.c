@@ -4,17 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * This test is designed to be run using flash-simulator which provide
- * functionality for flash property customization and emulating errors in
- * flash operation in parallel to regular flash API.
- * Test should be run on qemu_x86 or native_sim target.
- */
-
-#if !defined(CONFIG_BOARD_QEMU_X86) && !defined(CONFIG_ARCH_POSIX)
-#error "Run only on qemu_x86 or a posix architecture based target (for ex. native_sim)"
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/ztest.h>
@@ -37,8 +26,10 @@ static const struct device *const flash_dev = TEST_ZMS_AREA_DEV;
 
 struct zms_fixture {
 	struct zms_fs fs;
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
 	struct stats_hdr *sim_stats;
 	struct stats_hdr *sim_thresholds;
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
 };
 
 static void *setup(void)
@@ -66,22 +57,26 @@ static void *setup(void)
 
 static void before(void *data)
 {
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
 	struct zms_fixture *fixture = (struct zms_fixture *)data;
 
 	fixture->sim_stats = stats_group_find("flash_sim_stats");
 	fixture->sim_thresholds = stats_group_find("flash_sim_thresholds");
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
 }
 
 static void after(void *data)
 {
 	struct zms_fixture *fixture = (struct zms_fixture *)data;
 
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
 	if (fixture->sim_stats) {
 		stats_reset(fixture->sim_stats);
 	}
 	if (fixture->sim_thresholds) {
 		stats_reset(fixture->sim_thresholds);
 	}
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
 
 	/* Clear ZMS */
 	if (fixture->fs.ready) {
@@ -137,6 +132,7 @@ ZTEST_F(zms, test_zms_write)
 	execute_long_pattern_write(TEST_DATA_ID, &fixture->fs);
 }
 
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
 static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg, const char *name,
 				      uint16_t off)
 {
@@ -453,6 +449,7 @@ ZTEST_F(zms, test_zms_corrupted_sector_close_operation)
 	/* Ensure that the ZMS is able to store new content. */
 	execute_long_pattern_write(max_id, &fixture->fs);
 }
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
 
 /**
  * @brief Test case when storage become full, so only deletion is possible.
@@ -562,6 +559,7 @@ ZTEST_F(zms, test_delete)
 #endif
 }
 
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
 /*
  * Test that garbage-collection can recover all ate's even when the last ate,
  * ie close_ate, is corrupt. In this test the close_ate is set to point to the
@@ -639,6 +637,7 @@ ZTEST_F(zms, test_zms_gc_corrupt_close_ate)
 	zassert_true(len == sizeof(data), "zms_read should have read %d bytes", sizeof(data));
 	zassert_true(data == 0xaa55aa55, "unexpected value %d", data);
 }
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
 
 /*
  * Test that garbage-collection correctly handles corrupt ate's.
