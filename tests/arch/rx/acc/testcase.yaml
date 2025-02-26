@@ -1,0 +1,3 @@
+tests:
+  arch.rx.acc:
+    platform_allow: renesas_rx
