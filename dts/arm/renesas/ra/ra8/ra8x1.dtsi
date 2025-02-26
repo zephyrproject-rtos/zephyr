@@ -22,10 +22,26 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&stop0 &stop1>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8.1m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			stop0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <450>;
+			};
+
+			stop1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <5000>;
+				exit-latency-us = <3000>;
 			};
 		};
 	};
@@ -542,6 +558,32 @@
 			reg = <0x40322d00 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+		};
+
+		ulpt0: ulpt@40220000 {
+			compatible = "renesas,ra-ulpt";
+			reg = <0x40220000 0x100>;
+			channel = <0>;
+			interrupt-names = "ulpti";
+			interrupts = <36 1>;
+			status = "disabled";
+
+			timer {
+				compatible = "renesas,ra-ulpt-timer";
+				status = "disabled";
+			};
+		};
+
+		ulpt1: ulpt@40220100 {
+			compatible = "renesas,ra-ulpt";
+			reg = <0x40220100 0x100>;
+			channel = <1>;
+			status = "disabled";
+
+			timer {
+				compatible = "renesas,ra-ulpt-timer";
+				status = "disabled";
+			};
 		};
 
 		option_setting_ofs: option_setting_ofs@300a100 {
