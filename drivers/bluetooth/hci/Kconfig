@@ -175,6 +175,7 @@ config BT_USERCHAN
 	depends on (BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM)
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
+	select NATIVE_USE_NSI_ERRNO
 	help
 	  This driver provides access to the local Linux host's Bluetooth
 	  adapter using a User Channel HCI socket to the Linux kernel. It
