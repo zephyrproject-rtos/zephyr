@@ -488,6 +488,7 @@
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
 			phys = <&usb_fs_phy>;
+			phy-type = "PCD_PHY_EMBEDDED";
 			clocks = <&rcc STM32_CLOCK(APB1, 26U)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			status = "disabled";
