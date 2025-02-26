@@ -282,4 +282,11 @@
                                  <PDM0_DATA_P51>;
 		};
 	};
+	pwm2_default: pwm2_default{
+		group1 {
+			pinmux = <CT165_P165>;
+			drive-open-drain;
+			drive-strength = "0.5";
+		};
+	};
 };
