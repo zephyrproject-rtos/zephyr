@@ -55,6 +55,8 @@
 
 #include "hal/debug.h"
 
+xyz
+
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
 /* First PDU contains up to PDU_AC_EXT_AD_DATA_LEN_MAX, next ones PDU_AC_EXT_PAYLOAD_SIZE_MAX */
 #define PAYLOAD_BASED_FRAG_COUNT \
