@@ -120,6 +120,44 @@ static int settings_zms_unlink_ll_node(struct settings_zms *cf, uint32_t name_ha
 	return rc;
 }
 
+#if CONFIG_SETTINGS_ZMS_NAME_CACHE
+static void settings_zms_cache_add(struct settings_zms *cf, uint32_t name_hash, uint8_t flags)
+{
+	cf->cache[cf->cache_next].name_hash = name_hash;
+	cf->cache[cf->cache_next].flags = flags;
+	cf->cache_next = cf->cache_next + 1;
+
+	cf->cache_next %= CONFIG_SETTINGS_ZMS_NAME_CACHE_SIZE;
+}
+
+static uint8_t settings_zms_cache_match(struct settings_zms *cf, uint32_t name_hash)
+{
+	int cache_index;
+
+	if (!cf->cache_next) {
+		cache_index = CONFIG_SETTINGS_ZMS_NAME_CACHE_SIZE - 1;
+	} else {
+		cache_index = cf->cache_next - 1;
+	}
+
+	for (int i = 0; i < CONFIG_SETTINGS_ZMS_NAME_CACHE_SIZE; i++) {
+		/* we check cache from recent values to old values */
+		if (cf->cache[cache_index].name_hash != name_hash) {
+			cache_index--;
+			if (cache_index < 0) {
+				cache_index = CONFIG_SETTINGS_ZMS_NAME_CACHE_SIZE - 1;
+			}
+			continue;
+		}
+
+		/* set the BIT(0) to indicate that the name_hash exist in cache */
+		return ZMS_CACHE_FLAG_SET_EXIST(cf->cache[cache_index].flags);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_SETTINGS_ZMS_NAME_CACHE */
+
 static int settings_zms_delete(struct settings_zms *cf, uint32_t name_hash)
 {
 	int rc = 0;
@@ -131,7 +169,6 @@ static int settings_zms_delete(struct settings_zms *cf, uint32_t name_hash)
 	if (rc < 0) {
 		return rc;
 	}
-
 	rc = settings_zms_unlink_ll_node(cf, name_hash);
 	if (rc < 0) {
 		return rc;
@@ -143,6 +180,17 @@ static int settings_zms_delete(struct settings_zms *cf, uint32_t name_hash)
 		return rc;
 	}
 
+#ifdef CONFIG_SETTINGS_ZMS_NAME_CACHE
+	/* Update the flag of the Settings entry in cache. */
+	uint8_t cache_flags = 0;
+
+	if (ZMS_COLLISION_NUM(name_hash) > 0) {
+		cache_flags = ZMS_CACHE_FLAG_SET_COLLISION(cache_flags);
+	}
+	/* set the delete BIT(2) indicating that the entry is deleted. */
+	cache_flags = ZMS_CACHE_FLAG_SET_DELETED(cache_flags);
+	settings_zms_cache_add(cf, name_hash & ZMS_HASH_MASK, cache_flags);
+#endif
 	return rc;
 }
 
@@ -194,6 +242,16 @@ static int settings_zms_load(struct settings_store *cs, const struct settings_lo
 		read_fn_arg.fs = &cf->cf_zms;
 		read_fn_arg.id = ZMS_NAME_ID_FROM_LL_NODE(ll_hash_id) + ZMS_DATA_ID_OFFSET;
 
+#if CONFIG_SETTINGS_ZMS_NAME_CACHE
+		/* Add the linked list node to cache */
+		uint8_t cache_flags = 0;
+
+		if (ZMS_COLLISION_NUM(ll_hash_id) > 0) {
+			cache_flags = ZMS_CACHE_FLAG_SET_COLLISION(cache_flags);
+		}
+		settings_zms_cache_add(cf, ll_hash_id & ZMS_HASH_MASK, cache_flags);
+#endif
+
 		ret = settings_call_set_handler(name, rc2, settings_zms_read_fn, &read_fn_arg,
 						(void *)arg);
 		if (ret) {
@@ -222,7 +280,6 @@ static int settings_zms_save(struct settings_store *cs, const char *name, const 
 	uint32_t collision_num = 0;
 	bool delete;
 	bool write_name;
-	bool hash_collision;
 	int rc = 0;
 	int first_available_hash_index = -1;
 
@@ -237,9 +294,22 @@ static int settings_zms_save(struct settings_store *cs, const char *name, const 
 	/* MSB is always 1 */
 	name_hash |= BIT(31);
 
-	/* Let's find out if there are hash collisions in the storage */
+#ifdef CONFIG_SETTINGS_ZMS_NAME_CACHE
+	uint8_t cache_flags = 0;
+
+	cache_flags = settings_zms_cache_match(cf, name_hash & ZMS_HASH_MASK);
+	if (ZMS_CACHE_EXIST(cache_flags) && !ZMS_CACHE_HAS_COLLISION(cache_flags)) {
+		if (ZMS_CACHE_IS_DELETED(cache_flags)) {
+			write_name = true;
+		} else {
+			write_name = false;
+		}
+		goto no_hash_collision;
+	}
+#endif
+
+	/* Let's find out if there is no hash collisions in the storage */
 	write_name = true;
-	hash_collision = true;
 
 	for (int i = 0; i <= cf->hash_collision_num; i++) {
 		rc = zms_read(&cf->cf_zms, name_hash + i * LSB_GET(ZMS_COLLISIONS_MASK), &rdname,
@@ -296,7 +366,6 @@ no_hash_collision:
 			/* hash doesn't exist, do not write anything here */
 			return 0;
 		}
-
 		rc = settings_zms_delete(cf, name_hash);
 		return rc;
 	}
@@ -342,6 +411,14 @@ no_hash_collision:
 		cf->second_to_last_hash_id = cf->last_hash_id;
 		cf->last_hash_id = name_hash | 1;
 	}
+#ifdef CONFIG_SETTINGS_ZMS_NAME_CACHE
+	/* Add the flags of the written settings entry in cache */
+	cache_flags = 0;
+	if (ZMS_COLLISION_NUM(name_hash) > 0) {
+		cache_flags = ZMS_CACHE_FLAG_SET_COLLISION(cache_flags);
+	}
+	settings_zms_cache_add(cf, name_hash & ZMS_HASH_MASK, cache_flags);
+#endif /* CONFIG_SETTINGS_ZMS_NAME_CACHE */
 
 	return 0;
 }
