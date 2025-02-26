@@ -4,62 +4,46 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+/* To run this loopback test, connect MOSI pin to the MISO of the SPI */
+
+/*
+ ************************
+ * Include dependencies *
+ ************************
+ */
+
+#include <zephyr/ztest.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/kernel.h>
+#include <stdio.h>
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(spi_loopback);
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
-#include <zephyr/ztest.h>
+/*
+ **********************
+ * SPI configurations *
+ **********************
+ */
 
-#include <zephyr/drivers/spi.h>
+#define FRAME_SIZE COND_CODE_1(CONFIG_SPI_LOOPBACK_16BITS_FRAMES, (16), (8))
+#define MODE_LOOP  COND_CODE_1(CONFIG_SPI_LOOPBACK_MODE_LOOP, (SPI_MODE_LOOP), (0))
 
-#define SPI_FAST_DEV	DT_COMPAT_GET_ANY_STATUS_OKAY(test_spi_loopback_fast)
-#define SPI_SLOW_DEV	DT_COMPAT_GET_ANY_STATUS_OKAY(test_spi_loopback_slow)
+#define SPI_OP(frame_size)                                                                         \
+	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | MODE_LOOP | SPI_MODE_CPHA |                           \
+		SPI_WORD_SET(frame_size) | SPI_LINES_SINGLE
 
-#if CONFIG_SPI_LOOPBACK_MODE_LOOP
-#define MODE_LOOP SPI_MODE_LOOP
-#else
-#define MODE_LOOP 0
-#endif
-
-#ifdef CONFIG_SPI_LOOPBACK_16BITS_FRAMES
-#define FRAME_SIZE (16)
-#define FRAME_SIZE_STR ", frame size = 16"
-#else
-#define FRAME_SIZE (8)
-#define FRAME_SIZE_STR ", frame size = 8"
-#endif /* CONFIG_SPI_LOOPBACK_16BITS_FRAMES */
-
-#ifdef CONFIG_DMA
-
-#ifdef CONFIG_NOCACHE_MEMORY
-#define DMA_ENABLED_STR ", DMA enabled"
-#else /* CONFIG_NOCACHE_MEMORY */
-#define DMA_ENABLED_STR ", DMA enabled (without CONFIG_NOCACHE_MEMORY)"
-#endif
-
-#else /* CONFIG_DMA */
-
-#define DMA_ENABLED_STR
-#endif /* CONFIG_DMA */
-
-#define SPI_OP(frame_size) SPI_OP_MODE_MASTER | SPI_MODE_CPOL | MODE_LOOP | \
-	       SPI_MODE_CPHA | SPI_WORD_SET(frame_size) | SPI_LINES_SINGLE
-
+#define SPI_FAST_DEV DT_COMPAT_GET_ANY_STATUS_OKAY(test_spi_loopback_fast)
 static struct spi_dt_spec spi_fast = SPI_DT_SPEC_GET(SPI_FAST_DEV, SPI_OP(FRAME_SIZE), 0);
+
+#define SPI_SLOW_DEV DT_COMPAT_GET_ANY_STATUS_OKAY(test_spi_loopback_slow)
 static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_SIZE), 0);
 
-/* to run this test, connect MOSI pin to the MISO of the SPI */
-
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
-#define BUF_SIZE 18
-#define BUF2_SIZE 36
-#define BUF3_SIZE CONFIG_SPI_LARGE_BUFFER_SIZE
-
+/*
+ ********************
+ * SPI test buffers *
+ ********************
+ */
 
 #if CONFIG_NOCACHE_MEMORY
 #define __NOCACHE	__attribute__((__section__(".nocache")))
@@ -69,26 +53,40 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_
 #define __NOCACHE
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#define BUF_SIZE 18
 static const char tx_data[BUF_SIZE] = "0123456789abcdef-\0";
-static __aligned(32) char buffer_tx[BUF_SIZE] __used __NOCACHE;
-static __aligned(32) char buffer_rx[BUF_SIZE] __used __NOCACHE;
+static __aligned(32) char buffer_tx[BUF_SIZE] __NOCACHE;
+static __aligned(32) char buffer_rx[BUF_SIZE] __NOCACHE;
+
+#define BUF2_SIZE 36
 static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
-static __aligned(32) char buffer2_tx[BUF2_SIZE] __used __NOCACHE;
-static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __NOCACHE;
+static __aligned(32) char buffer2_tx[BUF2_SIZE] __NOCACHE;
+static __aligned(32) char buffer2_rx[BUF2_SIZE] __NOCACHE;
+
+#define BUF3_SIZE CONFIG_SPI_LARGE_BUFFER_SIZE
 static const char large_tx_data[BUF3_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
-static __aligned(32) char large_buffer_tx[BUF3_SIZE] __used __NOCACHE;
-static __aligned(32) char large_buffer_rx[BUF3_SIZE] __used __NOCACHE;
+static __aligned(32) char large_buffer_tx[BUF3_SIZE] __NOCACHE;
+static __aligned(32) char large_buffer_rx[BUF3_SIZE] __NOCACHE;
+
+/*
+ ********************
+ * Helper functions *
+ ********************
+ */
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
  * byte in hex, plus a null.
  */
-static uint8_t buffer_print_tx[BUF_SIZE * 5 + 1];
-static uint8_t buffer_print_rx[BUF_SIZE * 5 + 1];
+#define PRINT_BUF_SIZE(size) ((size * 5) + 1)
 
-static uint8_t buffer_print_tx2[BUF2_SIZE * 5 + 1];
-static uint8_t buffer_print_rx2[BUF2_SIZE * 5 + 1];
+static uint8_t buffer_print_tx[PRINT_BUF_SIZE(BUF_SIZE)];
+static uint8_t buffer_print_rx[PRINT_BUF_SIZE(BUF_SIZE)];
 
+static uint8_t buffer_print_tx2[PRINT_BUF_SIZE(BUF2_SIZE)];
+static uint8_t buffer_print_rx2[PRINT_BUF_SIZE(BUF2_SIZE)];
+
+/* function for displaying the data in the buffers */
 static void to_display_format(const uint8_t *src, size_t size, char *dst)
 {
 	size_t i;
@@ -97,6 +95,12 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 		sprintf(dst + 5 * i, "0x%02x,", src[i]);
 	}
 }
+
+/*
+ **************
+ * Test cases *
+ **************
+ */
 
 /* test transferring different buffers on the same dma channels */
 static int spi_complete_multiple(struct spi_dt_spec *spec)
@@ -576,7 +580,6 @@ static struct k_poll_event async_evt =
 				 K_POLL_MODE_NOTIFY_ONLY,
 				 &async_sig);
 static K_SEM_DEFINE(caller, 0, 1);
-K_THREAD_STACK_DEFINE(spi_async_stack, STACK_SIZE);
 static int result = 1;
 
 static void spi_async_call_cb(void *p1,
@@ -721,6 +724,29 @@ static int spi_resource_lock_test(struct spi_dt_spec *lock_spec,
 
 	return 0;
 }
+
+/*
+ *************************
+ * Test suite definition *
+ *************************
+ */
+
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+K_THREAD_STACK_DEFINE(spi_async_stack, STACK_SIZE);
+
+#if defined(CONFIG_DMA) && defined(CONFIG_NOCACHE_MEMORY)
+#define DMA_ENABLED_STR ", DMA enabled"
+#elif defined(CONFIG_DMA)
+#define DMA_ENABLED_STR ", DMA enabled (without CONFIG_NOCACHE_MEMORY)"
+#else
+#define DMA_ENABLED_STR
+#endif /* CONFIG_DMA */
+
+#ifdef CONFIG_SPI_LOOPBACK_16BITS_FRAMES
+#define FRAME_SIZE_STR ", frame size = 16"
+#else
+#define FRAME_SIZE_STR ", frame size = 8"
+#endif /* CONFIG_SPI_LOOPBACK_16BITS_FRAMES */
 
 ZTEST(spi_loopback, test_spi_loopback)
 {
