@@ -29,8 +29,7 @@
 
 LOG_MODULE_REGISTER(bis_broadcaster, LOG_LEVEL_INF);
 
-#define LATENCY_MS      10U                 /* 10ms */
-#define SDU_INTERVAL_US 10U * USEC_PER_MSEC /* 10 ms */
+#define LATENCY_MS 10U /* 10ms */
 
 extern enum bst_result_t bst_result;
 static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];

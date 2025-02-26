@@ -82,14 +82,15 @@ static void iso_log_data(uint8_t *data, size_t data_len)
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		     struct net_buf *buf)
 {
-	static size_t rx_cnt;
-	static uint16_t last_buf_len;
-
 	if (IS_FLAG_SET(flag_data_received)) {
 		return;
 	}
 
 	if (info->flags & BT_ISO_FLAGS_VALID) {
+		static uint16_t last_buf_len;
+		static uint32_t last_ts;
+		static size_t rx_cnt;
+
 		LOG_DBG("Incoming data channel %p len %u", chan, buf->len);
 		iso_log_data(buf->data, buf->len);
 
@@ -98,12 +99,16 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 		} else if (last_buf_len != 0U && buf->len != 1U && buf->len != last_buf_len + 1) {
 			TEST_FAIL("Unexpected data length (%u) received (expected 1 or %u)",
 				  buf->len, last_buf_len);
+		} else if (last_ts != 0U && info->ts > last_ts + 2 * SDU_INTERVAL_US) {
+			TEST_FAIL("Unexpected timestamp (%u) received (expected %u)", info->ts,
+				  last_ts + SDU_INTERVAL_US);
 		} else if (rx_cnt++ > RX_CNT_TO_PASS) {
 			LOG_INF("Data received");
 			SET_FLAG(flag_data_received);
 		}
 
 		last_buf_len = buf->len;
+		last_ts = info->ts;
 	}
 }
 
