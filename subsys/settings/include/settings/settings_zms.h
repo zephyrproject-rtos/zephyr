@@ -61,6 +61,15 @@ extern "C" {
 #define ZMS_HASH_TOTAL_MASK GENMASK(29, 1)
 #define ZMS_MAX_COLLISIONS  (BIT(CONFIG_SETTINGS_ZMS_MAX_COLLISIONS_BITS) - 1)
 
+#if CONFIG_SETTINGS_ZMS_NAME_CACHE
+#define ZMS_CACHE_EXIST(x)              (x & BIT(0))
+#define ZMS_CACHE_HAS_COLLISION(x)      (x & BIT(1))
+#define ZMS_CACHE_IS_DELETED(x)         (x & BIT(2))
+#define ZMS_CACHE_FLAG_SET_EXIST(x)     (x | BIT(0))
+#define ZMS_CACHE_FLAG_SET_COLLISION(x) (x | BIT(1))
+#define ZMS_CACHE_FLAG_SET_DELETED(x)   (x | BIT(2))
+#endif /* CONFIG_SETTINGS_ZMS_NAME_CACHE */
+
 /* some useful macros */
 #define ZMS_NAME_ID_FROM_LL_NODE(x) (x & ~BIT(0))
 #define ZMS_UPDATE_COLLISION_NUM(x, y)                                                             \
@@ -71,6 +80,14 @@ struct settings_zms {
 	struct settings_store cf_store;
 	struct zms_fs cf_zms;
 	const struct device *flash_dev;
+#if CONFIG_SETTINGS_ZMS_NAME_CACHE
+	struct {
+		uint32_t name_hash;
+		uint8_t flags;
+	} cache[CONFIG_SETTINGS_ZMS_NAME_CACHE_SIZE];
+
+	uint32_t cache_next;
+#endif
 	uint32_t last_hash_id;
 	uint32_t second_to_last_hash_id;
 	uint8_t hash_collision_num;

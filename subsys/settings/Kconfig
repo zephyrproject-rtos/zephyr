@@ -47,6 +47,25 @@ config SETTINGS_ZMS
 	help
 	  Use ZMS as settings storage backend.
 
+if SETTINGS_ZMS
+
+config SETTINGS_ZMS_NAME_CACHE
+	bool "ZMS name lookup cache"
+	select SYS_HASH_FUNC32
+	help
+	  Enable ZMS lookup cache, used to reduce the Settings name
+	  lookup time by checking if its hash had a collision.
+
+config SETTINGS_ZMS_NAME_CACHE_SIZE
+	int "ZMS name lookup cache size"
+	default 128
+	range 1 $(UINT32_MAX)
+	depends on SETTINGS_ZMS_NAME_CACHE
+	help
+	  Number of entries in Settings ZMS name cache.
+
+endif # SETTINGS_ZMS
+
 config SETTINGS_FCB
 	bool "FCB"
 	depends on FCB
