@@ -149,5 +149,5 @@
 	status = "okay";
 	pinctrl-0 = <&spi1a_mosi_p0_8 &spi1a_sck_p0_17>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpio0 18 (GPIO_ACTIVE_LOW | MAX32_VSEL_VDDIOH)>;
+	cs-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 };
