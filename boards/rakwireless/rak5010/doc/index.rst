@@ -1,8 +1,5 @@
 .. zephyr:board:: rak5010
 
-RAK5010
-#######
-
 Overview
 ********
 
