@@ -91,15 +91,10 @@ struct uart_shakti_regs_t {
     uint16_t reserv3;
     uint16_t control;
     uint16_t reserv4;
-    uint8_t  ie; 
-    uint8_t  reserv5;
-    uint16_t reserv6;
-    uint8_t  iqcycles;
-    uint8_t  reserv7;
-    uint16_t reserv8;
+    uint16_t  ie; 
+    uint16_t  reserv5;
     uint8_t  rx_threshold;
-    uint8_t  reserv9;
-    uint16_t reserv10;
+
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -169,7 +164,7 @@ static int uart_shakti_poll_in(struct device *dev, unsigned char *c)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	if (uart->status & STS_RX_NOT_EMPTY)
+	if (uart->status & STS_RX_NOT_EMPTY==0)
 		return -1;
 
 	volatile uint32_t read_val = uart->rx;
@@ -430,12 +425,39 @@ static const struct uart_driver_api uart_shakti_driver_api = {
 	.irq_rx_disable   = uart_shakti_irq_rx_disable,
 	.irq_err_enable   = uart_shakti_irq_err_enable,
 	.irq_err_disable  = uart_shakti_irq_err_disable,
+	
 #endif
 };
 
-	// #ifdef CONFIG_UART_INTERRUPT_DRIVEN\
-	// static void uart_shakti_irq_cfg_func_##n (void);						\
-	// #endif\
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_shakti_irq_cfg_func_0 (void){
+// IRQ_CONNECT(47+32, 1,
+// 		    uart_shakti_irq_handler, NULL,
+// 		    0);
+
+// 	irq_enable(47+32);
+}						
+#endif
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_shakti_irq_cfg_func_1 (void){
+// IRQ_CONNECT(47+32+1, 1,
+// 		    uart_shakti_irq_handler, NULL,
+// 		    0);
+
+// 	irq_enable(47+32+1);
+}						
+#endif
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_shakti_irq_cfg_func_2 (void){
+// IRQ_CONNECT(47+32+2, 1,
+// 		    uart_shakti_irq_handler, NULL,
+// 		    0);
+
+// 	irq_enable(47+32+2);
+}						
+#endif
 
 
 	// #ifdef CONFIG_UART_INTERRUPT_DRIVEN \
@@ -447,8 +469,10 @@ static const struct uart_driver_api uart_shakti_driver_api = {
 	.port         = DT_INST_PROP(n, base),							\
 	.sys_clk_freq = SHAKTI_NEXYS_FREQUENCY,							\
 	.baud_rate    = DT_INST_PROP(n, current_speed),					\
-	.rxcnt_irq    = 0,												\	
-	.txcnt_irq    = 0,												\	
+	.cfg_func     =	 &uart_shakti_irq_cfg_func_##n,                   \
+	.rxcnt_irq    = 0,                                              \	
+	.txcnt_irq    = 0,		                                        \
+										                        \	
 	};																\
 	DEVICE_DT_INST_DEFINE(n,										\
 		    uart_shakti_init,										\
