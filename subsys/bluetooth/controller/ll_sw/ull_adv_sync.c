@@ -2690,7 +2690,7 @@ static void mfy_sync_offset_get(void *param)
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
 	struct pdu_adv *pdu;
-	uint32_t remainder;
+	uint32_t remainder = 0U;
 	uint8_t chm_first;
 	uint8_t ticker_id;
 	uint16_t lazy;

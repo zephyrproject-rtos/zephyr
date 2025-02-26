@@ -2381,14 +2381,16 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		if (adv->lll.aux) {
 			uint32_t ticks_to_expire;
-			uint32_t other_remainder;
+			uint32_t other_remainder = 0U;
 
 			LL_ASSERT(context->other_expire_info);
 
 			/* Adjust ticks to expire based on remainder value */
 			ticks_to_expire = context->other_expire_info->ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 			other_remainder = context->other_expire_info->remainder;
 			hal_ticker_remove_jitter(&ticks_to_expire, &other_remainder);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 
 			/* Store the ticks and remainder offset for aux ptr population in LLL */
 			adv->lll.aux->ticks_pri_pdu_offset = ticks_to_expire;

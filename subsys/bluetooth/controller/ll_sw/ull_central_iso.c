@@ -1090,7 +1090,7 @@ static void mfy_cis_offset_get(void *param)
 	uint32_t ticks_current;
 	uint32_t offset_min_us;
 	struct ll_conn *conn;
-	uint32_t remainder;
+	uint32_t remainder = 0U;
 	uint8_t ticker_id;
 	uint16_t lazy;
 	uint8_t retry;
