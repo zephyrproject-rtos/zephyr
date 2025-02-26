@@ -2,8 +2,8 @@
 
 board_runner_args(openocd "--cmd-pre-load=reset init")
 # unprotect sectors before running
-board_runner_args(openocd "--cmd-pre-load=flash protect 1 0 last off")
-board_runner_args(openocd "--cmd-pre-load=flash erase_sector 1 0 last")
+board_runner_args(openocd "--cmd-pre-load=flash protect 0 0 last off")
+board_runner_args(openocd "--cmd-pre-load=flash erase_sector 0 0 last")
 
 #board_runner_args(openocd "--cmd-reset-halt=flash info 1")
 
