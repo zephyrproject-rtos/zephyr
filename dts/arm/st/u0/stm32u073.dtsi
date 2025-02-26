@@ -56,6 +56,7 @@
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
 			phys = <&usb_fs_phy>;
+			physel = "USB_OTG_FS_PHY_EMBEDDED";
 			clocks = <&rcc STM32_CLOCK(APB1, 13U)>;
 			status = "disabled";
 		};
