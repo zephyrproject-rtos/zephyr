@@ -12,7 +12,7 @@
 #include <zephyr/sys/mpsc_lockfree.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(spi_rtio, CONFIG_SPI_LOG_LEVEL);
+LOG_MODULE_REGISTER(spi_rtio, CONFIG_SPI_LOG_LEVEL);
 
 const struct rtio_iodev_api spi_iodev_api = {
 	.submit = spi_iodev_submit,
