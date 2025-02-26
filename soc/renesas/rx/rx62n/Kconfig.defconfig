@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RX62N
+
+config INITIALIZATION_STACK_SIZE
+	default 512
+
+endif # SOC_SERIES_RX62N
