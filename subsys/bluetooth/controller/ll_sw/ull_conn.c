@@ -2744,7 +2744,7 @@ static uint32_t get_ticker_offset(uint8_t ticker_id, uint16_t *lazy)
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
 	uint32_t sync_remainder_us;
-	uint32_t remainder;
+	uint32_t remainder = 0U;
 	uint32_t start_us;
 	uint32_t ret;
 	uint8_t id;

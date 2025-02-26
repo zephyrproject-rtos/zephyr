@@ -3197,7 +3197,7 @@ static void mfy_aux_offset_get(void *param)
 	uint16_t chan_counter;
 	struct pdu_adv *pdu;
 	uint32_t ticks_now;
-	uint32_t remainder;
+	uint32_t remainder = 0U;
 	uint32_t offset_us;
 	uint8_t ticker_id;
 	uint16_t pdu_us;
@@ -3222,12 +3222,20 @@ static void mfy_aux_offset_get(void *param)
 		ticks_previous = ticks_current;
 
 		ret_cb = TICKER_STATUS_BUSY;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR,
 					       TICKER_USER_ID_ULL_LOW,
 					       &id, &ticks_current,
 					       &ticks_to_expire, &remainder,
 					       NULL, NULL, NULL,
 					       ticker_op_cb, (void *)&ret_cb);
+#else /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
+		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
+					   TICKER_USER_ID_ULL_LOW,
+					   &id, &ticks_current,
+					   &ticks_to_expire,
+					   ticker_op_cb, (void *)&ret_cb);
+#endif /* !CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 		if (ret == TICKER_STATUS_BUSY) {
 			while (ret_cb == TICKER_STATUS_BUSY) {
 				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
@@ -3369,7 +3377,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		sync = HDR_LLL2ULL(adv->lll.sync);
 		if (sync->is_started) {
 			uint32_t ticks_to_expire;
-			uint32_t sync_remainder_us;
+			uint32_t sync_remainder_us = 0U;
 
 			LL_ASSERT(context->other_expire_info);
 
@@ -3377,6 +3385,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			 * value.
 			 */
 			ticks_to_expire = context->other_expire_info->ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 			sync_remainder_us = context->other_expire_info->remainder;
 			hal_ticker_remove_jitter(&ticks_to_expire, &sync_remainder_us);
 
@@ -3384,6 +3393,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			 * value.
 			 */
 			hal_ticker_add_jitter(&ticks_to_expire, &remainder);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 
 			/* Store the offset in us */
 			lll_sync->us_adv_sync_pdu_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
