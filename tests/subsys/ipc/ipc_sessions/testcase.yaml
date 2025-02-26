@@ -16,8 +16,10 @@ tests:
   sample.ipc.ipc_sessions.icbmsg:
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
     extra_configs:
       - FILE_SUFFIX=icbmsg
   sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpurad_icmsg:
@@ -35,6 +37,16 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - FILE_SUFFIX=cpuppr
+      # Note that currently only XIP variant of PPR properly resets itself
+      - ipc_sessions_SNIPPET=nordic-ppr-xip
+      - remote_CONFIG_XIP=y
+  sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpuppr_icbmsg:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - FILE_SUFFIX=cpuppr_icbmsg
       # Note that currently only XIP variant of PPR properly resets itself
       - ipc_sessions_SNIPPET=nordic-ppr-xip
       - remote_CONFIG_XIP=y
