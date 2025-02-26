@@ -404,10 +404,11 @@ struct bt_a2dp_cb {
 	 *  In case the err parameter is non-zero it means that the
 	 *  connection establishment failed.
 	 *
+	 *  @param conn pointer to bt_conn structure.
 	 *  @param a2dp a2dp connection object.
 	 *  @param err error code.
 	 */
-	void (*connected)(struct bt_a2dp *a2dp, int err);
+	void (*connected)(struct bt_conn *conn, struct bt_a2dp *a2dp, int err);
 	/** @brief A a2dp connection has been disconnected.
 	 *
 	 *  This callback notifies the application that a a2dp connection

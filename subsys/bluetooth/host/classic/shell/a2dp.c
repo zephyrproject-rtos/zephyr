@@ -287,7 +287,7 @@ static void shell_a2dp_print_capabilities(struct bt_a2dp_ep_info *ep_info)
 	}
 }
 
-void app_connected(struct bt_a2dp *a2dp, int err)
+void app_connected(struct bt_conn *conn, struct bt_a2dp *a2dp, int err)
 {
 	if (!err) {
 		default_a2dp = a2dp;
