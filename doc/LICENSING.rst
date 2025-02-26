@@ -59,8 +59,8 @@ ENE KB1200_EVB Board OpenOCD Configuration
 ------------------------------------------
 
 * *Licensing:* `GPLv2 License`_
-* *Impact:* This file is used by `OpenOCD`_ when programming and debugging the :ref:`ene_kb1200_evb`
-  board. It is never linked into the firmware.
+* *Impact:* This file is used by `OpenOCD`_ when programming and debugging the
+  :zephyr:board:`kb1200_evb` board. It is never linked into the firmware.
 * *Files:*
 
   * :zephyr_file:`boards/ene/kb1200_evb/support/openocd.cfg`
