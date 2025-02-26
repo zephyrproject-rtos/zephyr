@@ -1,4 +1,5 @@
 /*
+ * Copyright 2025 NXP
  * Copyright (c) 2017 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -96,6 +97,16 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 	}
 }
 
+/* just a wrapper of the driver transceive call with ztest error assert */
+static void spi_loopback_transceive(struct spi_dt_spec *const spec,
+				    const struct spi_buf_set *const tx,
+				    const struct spi_buf_set *const rx)
+{
+	int ret = spi_transceive_dt(spec, tx, rx);
+
+	zassert_false(ret, "SPI transceive failed, code %d", ret);
+}
+
 /*
  **************
  * Test cases *
@@ -130,16 +141,10 @@ static int spi_complete_multiple(struct spi_dt_spec *spec)
 	rx_bufs[1].buf = buffer2_rx;
 	rx_bufs[1].len = BUF2_SIZE;
 
-	int ret;
 
 	LOG_INF("Start complete multiple");
 
-	ret = spi_transceive_dt(spec, &tx, &rx);
-	if (ret) {
-		LOG_ERR("Code %d", ret);
-		zassert_false(ret, "SPI transceive failed");
-		return ret;
-	}
+	spi_loopback_transceive(spec, &tx, &rx);
 
 	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
 		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
@@ -187,16 +192,9 @@ static int spi_complete_loop(struct spi_dt_spec *spec)
 		.count = ARRAY_SIZE(rx_bufs)
 	};
 
-	int ret;
-
 	LOG_INF("Start complete loop");
 
-	ret = spi_transceive_dt(spec, &tx, &rx);
-	if (ret) {
-		LOG_ERR("Code %d", ret);
-		zassert_false(ret, "SPI transceive failed");
-		return ret;
-	}
+	spi_loopback_transceive(spec, &tx, &rx);
 
 	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
 		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
@@ -242,17 +240,9 @@ static int spi_null_tx_buf(struct spi_dt_spec *spec)
 		.count = ARRAY_SIZE(rx_bufs)
 	};
 
-	int ret;
-
 	LOG_INF("Start null tx");
 
-	ret = spi_transceive_dt(spec, &tx, &rx);
-	if (ret) {
-		LOG_ERR("Code %d", ret);
-		zassert_false(ret, "SPI transceive failed");
-		return ret;
-	}
-
+	spi_loopback_transceive(spec, &tx, &rx);
 
 	if (memcmp(buffer_rx, EXPECTED_NOP_RETURN_BUF, BUF_SIZE)) {
 		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
@@ -289,18 +279,10 @@ static int spi_rx_half_start(struct spi_dt_spec *spec)
 		.buffers = rx_bufs,
 		.count = ARRAY_SIZE(rx_bufs)
 	};
-	int ret;
-
-	LOG_INF("Start half start");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive_dt(spec, &tx, &rx);
-	if (ret) {
-		LOG_ERR("Code %d", ret);
-		zassert_false(ret, "SPI transceive failed");
-		return -1;
-	}
+	spi_loopback_transceive(spec, &tx, &rx);
 
 	if (memcmp(buffer_tx, buffer_rx, 8)) {
 		to_display_format(buffer_tx, 8, buffer_print_tx);
@@ -342,7 +324,6 @@ static int spi_rx_half_end(struct spi_dt_spec *spec)
 		.buffers = rx_bufs,
 		.count = ARRAY_SIZE(rx_bufs)
 	};
-	int ret;
 
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
 		LOG_INF("Skip half end");
@@ -353,12 +334,7 @@ static int spi_rx_half_end(struct spi_dt_spec *spec)
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive_dt(spec, &tx, &rx);
-	if (ret) {
-		LOG_ERR("Code %d", ret);
-		zassert_false(ret, "SPI transceive failed");
-		return -1;
-	}
+	spi_loopback_transceive(spec, &tx, &rx);
 
 	if (memcmp(buffer_tx + 8, buffer_rx, 8)) {
 		to_display_format(buffer_tx + 8, 8, buffer_print_tx);
@@ -408,7 +384,6 @@ static int spi_rx_every_4(struct spi_dt_spec *spec)
 		.buffers = rx_bufs,
 		.count = ARRAY_SIZE(rx_bufs)
 	};
-	int ret;
 
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
 		LOG_INF("Skip every 4");
@@ -424,12 +399,7 @@ static int spi_rx_every_4(struct spi_dt_spec *spec)
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive_dt(spec, &tx, &rx);
-	if (ret) {
-		LOG_ERR("Code %d", ret);
-		zassert_false(ret, "SPI transceive failed");
-		return -1;
-	}
+	spi_loopback_transceive(spec, &tx, &rx);
 
 	if (memcmp(buffer_tx + 4, buffer_rx, 4)) {
 		to_display_format(buffer_tx + 4, 4, buffer_print_tx);
@@ -479,7 +449,6 @@ static int spi_rx_bigger_than_tx(struct spi_dt_spec *spec)
 		.buffers = rx_bufs,
 		.count = ARRAY_SIZE(rx_bufs)
 	};
-	int ret;
 
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
 		LOG_INF("Skip rx bigger than tx");
@@ -495,12 +464,7 @@ static int spi_rx_bigger_than_tx(struct spi_dt_spec *spec)
 
 	(void)memset(buffer_rx, 0xff, BUF_SIZE);
 
-	ret = spi_transceive_dt(spec, &tx, &rx);
-	if (ret) {
-		LOG_ERR("Code %d", ret);
-		zassert_false(ret, "SPI transceive failed");
-		return -1;
-	}
+	spi_loopback_transceive(spec, &tx, &rx);
 
 	if (memcmp(buffer_tx, buffer_rx, tx_buf_size)) {
 		to_display_format(buffer_tx, tx_buf_size, buffer_print_tx);
@@ -553,16 +517,9 @@ static int spi_complete_large_transfers(struct spi_dt_spec *spec)
 	rx_bufs.buf = large_buffer_rx;
 	rx_bufs.len = BUF3_SIZE;
 
-	int ret;
-
 	LOG_INF("Start complete large transfers");
 
-	ret = spi_transceive_dt(spec, &tx, &rx);
-	if (ret) {
-		LOG_ERR("Code %d", ret);
-		zassert_false(ret, "SPI transceive failed");
-		return ret;
-	}
+	spi_loopback_transceive(spec, &tx, &rx);
 
 	if (memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE)) {
 		zassert_false(1, "Large Buffer contents are different");
