@@ -31,5 +31,19 @@ properties:
     type: phandle
     description: PHY provider specifier
 
+  phy-type:
+    type: string
+    required: true
+    enum:
+      - "USB_OTG_ULPI_PHY"
+      - "PCD_PHY_EMBEDDED"
+      - "USB_OTG_HS_EMBEDDED_PHY"
+    description: |
+      Type of PHY (Physical Layer) interface used by the OTG_FS/OTG_HS interface.
+      The general features of the OTG_FS/OTG_HS interface are as follows:
+        - "USB_OTG_ULPI_PHY": Uses the ULPI interface for an external high-speed PHY for OTG_HS.
+        - "PCD_PHY_EMBEDDED": Uses the on-chip full-speed PHY for OTG_FS.
+        - "USB_OTG_HS_EMBEDDED_PHY": Uses the on-chip full-speed PHY for OTG_HS.
+
   clocks:
     required: true
