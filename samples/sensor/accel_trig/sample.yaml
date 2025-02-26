@@ -37,8 +37,10 @@ tests:
       - apard32690/max32690/m4
   sample.sensor.accel_trig.shield-tap:
     harness: console
+    filter: dt_compat_enabled("st,lis2dw12")
     tags: sensors
     harness_config:
+      fixture: sensor_accel_tap
       type: one_line
       regex:
         - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
@@ -57,6 +59,7 @@ tests:
             dt_compat_enabled("st,iis2dlpc") or dt_compat_enabled("st,lis2dw12")
     tags: sensors
     harness_config:
+      fixture: sensor_accel_tap
       type: one_line
       regex:
         - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
