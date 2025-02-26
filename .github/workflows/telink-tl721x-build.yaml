@@ -151,7 +151,7 @@ jobs:
         cp ../build_ot_echo_client_pm_deep_tl721x/zephyr/zephyr.bin    telink_build_artifacts/tl721x_ot_echo_client_pm_retention.bin
         cp ../build_crypto_mbedtls_tl721x/zephyr/zephyr.bin            telink_build_artifacts/tl721x_mbedtls.bin
         cp ../build_spi_flash_tl721x/zephyr/zephyr.bin                 telink_build_artifacts/tl721x_spi_flash.bin
-        cp ../build_mcuboot_chip_id_tl721x/zephyr/zephyr.bin telink_build_artifacts/tl721x_mcuboot_chip_id.bin
+        cp ../build_mcuboot_chip_id_tl721x/zephyr/zephyr.bin           telink_build_artifacts/tl721x_mcuboot_chip_id.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v4

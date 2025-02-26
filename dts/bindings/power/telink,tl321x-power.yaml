@@ -16,6 +16,7 @@ properties:
     required: true
     enum:
       - "LDO_1P25_LDO_1P8"
+      - "DCDC_1P25_LDO_1P8"
 
   vbat-type:
     type: string

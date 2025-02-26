@@ -76,7 +76,7 @@
 #define PIN_NUM_MAX ((uint8_t)7u)
 
 /* IRQ Enable registers */
-#if CONFIG_SOC_RISCV_TELINK_TL721X
+#if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
 #define reg_irq_risc0_en(i)      REG_ADDR8(0x140c08 + (i << 4))
 #define reg_irq_risc1_en(i)      REG_ADDR8(0x140c09 + (i << 4))
 #endif
@@ -107,9 +107,7 @@
 #if CONFIG_SOC_RISCV_TELINK_TL721X
 #define IRQ_GPIO2_RISC0          ((uint8_t)26u)
 #define IRQ_GPIO2_RISC1          ((uint8_t)27u)
-#endif
-
-#if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
+#elif CONFIG_SOC_RISCV_TELINK_TL321X
 #define IRQ_GPIO0                ((uint8_t)34u)
 #define IRQ_GPIO1                ((uint8_t)35u)
 #define IRQ_GPIO2                ((uint8_t)36u)
@@ -118,6 +116,9 @@
 #define IRQ_GPIO5                ((uint8_t)39u)
 #define IRQ_GPIO6                ((uint8_t)40u)
 #define IRQ_GPIO7                ((uint8_t)41u)
+#define IRQ_GPIO                 IRQ_GPIO0
+#define IRQ_GPIO2_RISC0          IRQ_GPIO1
+#define IRQ_GPIO2_RISC1          IRQ_GPIO2
 #endif
 
 /* tlx GPIO registers structure */
@@ -786,7 +787,7 @@ static int gpio_tlx_pm_action(const struct device *dev, enum pm_device_action ac
 					analog_write_reg8(areg_gpio_pc_ie,
 					data->gpio_tlx_retention.analog_in_conf);
 #if CONFIG_SOC_RISCV_TELINK_TL321X
-				} else if (IS_PORT_B(gpio) && ((pin >= 4) && (pin <= 7))) {
+				} else if (IS_PORT_B(gpio)) {
 					analog_write_reg8(areg_gpio_pb_ie,
 					data->gpio_tlx_retention.analog_in_conf);
 #elif CONFIG_SOC_RISCV_TELINK_TL721X
@@ -820,22 +821,22 @@ static int gpio_tlx_pm_action(const struct device *dev, enum pm_device_action ac
 				 * pending bit and restoring the edge mode
 				 */
 				if (irq_num == IRQ_GPIO) {
-					BM_SET(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO);
+					BM_SET(GPIO_IRQ_REG, FLD_GPIO_CORE_INTERRUPT_EN);
 				} else if (irq_num == IRQ_GPIO2_RISC0) {
-					BM_SET(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO2RISC0);
+					BM_SET(GPIO_IRQ_REG, FLD_GPIO_CORE_INTERRUPT_EN);
 				} else if (irq_num == IRQ_GPIO2_RISC1) {
-					BM_SET(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO2RISC1);
+					BM_SET(GPIO_IRQ_REG, FLD_GPIO_CORE_INTERRUPT_EN);
 				}
 
 				riscv_plic_irq_enable(IRQ_TO_L2(irq_num));
 				riscv_plic_set_priority(IRQ_TO_L2(irq_num), irq_priority);
 
 				if (irq_num == IRQ_GPIO) {
-					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO);
+					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_CORE_INTERRUPT_EN);
 				} else if (irq_num == IRQ_GPIO2_RISC0) {
-					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO2RISC0);
+					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_CORE_INTERRUPT_EN);
 				} else if (irq_num == IRQ_GPIO2_RISC1) {
-					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO2RISC1);
+					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_CORE_INTERRUPT_EN);
 				}
 			}
 		}
@@ -855,7 +856,7 @@ static int gpio_tlx_pm_action(const struct device *dev, enum pm_device_action ac
 			data->gpio_tlx_retention.analog_in_conf
 			= analog_read_reg8(areg_gpio_pc_ie);
 #if CONFIG_SOC_RISCV_TELINK_TL321X
-		} else if (IS_PORT_B(gpio) && ((pin >= 4) && (pin <= 7))) {
+		} else if (IS_PORT_B(gpio)) {
 			data->gpio_tlx_retention.analog_in_conf
 			= analog_read_reg8(areg_gpio_pb_ie);
 #elif CONFIG_SOC_RISCV_TELINK_TL721X

@@ -38,8 +38,8 @@
 		state0: state0 {
 			compatible = "zephyr,power-state";
 			power-state-name = "suspend-to-idle";
-			min-residency-us = <500>;
-			exit-latency-us = <10>;
+			min-residency-us = <20000>;
+			exit-latency-us = <3000>;
 		};
 	};
 
@@ -81,7 +81,7 @@
 		power: power@80140180 {
 			compatible = "telink,tl321x-power";
 			reg = <0x80140180 0x40>;
-			power-mode = "LDO_1P25_LDO_1P8";
+			power-mode = "DCDC_1P25_LDO_1P8";
 			vbat-type = "VBAT_MAX_VALUE_GREATER_THAN_3V6";
 			status = "okay";
 		};

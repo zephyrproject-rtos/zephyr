@@ -107,6 +107,16 @@ jobs:
         cd ..
         west build -b tl3218x     -d build_usb_console_tl321x                 zephyr/samples/subsys/usb/console              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
+    - name: Build TL321X boards/telink/tl321x/basic
+      run: |
+        cd ..
+        west build -b tl3218x_retention        -d build_retention_basic_tl321x           zephyr/samples/boards/tlsr9x/basic              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_SOC_SERIES_RISCV_TELINK_TLX_NON_RETENTION_RAM_CODE=y
+
+    - name: Build TL321X net/sockets/echo_client for OpenThread with PM deep-sleep
+      run: |
+        cd ..
+        west build -b tl3218x_retention        -d build_ot_echo_client_pm_deep_tl321x    zephyr/samples/net/sockets/echo_client          -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y -DCONFIG_SOC_SERIES_RISCV_TELINK_TLX_NON_RETENTION_RAM_CODE=y -DCONFIG_TELINK_TLX_2_WIRE_SPI_ENABLE=y
+
     - name: Build TL321X crypto/mbedtls
       run: |
         cd ..
@@ -138,6 +148,8 @@ jobs:
         cp ../build_ot_cli_tl321x/zephyr/zephyr.bin                     telink_build_artifacts/tl321x_ot_cli.bin
         cp ../build_ot_coprocessor_rcp_uart_tl321x/zephyr/zephyr.bin    telink_build_artifacts/tl321x_ot_coprocessor_rcp_uart.bin
         cp ../build_usb_console_tl321x/zephyr/zephyr.bin                telink_build_artifacts/tl321x_usb_console.bin
+        cp ../build_retention_basic_tl321x/zephyr/zephyr.bin            telink_build_artifacts/tl321x_retention_basic.bin
+        cp ../build_ot_echo_client_pm_deep_tl321x/zephyr/zephyr.bin     telink_build_artifacts/tl321x_ot_echo_client_pm_retention.bin
         cp ../build_crypto_mbedtls_tl321x/zephyr/zephyr.bin             telink_build_artifacts/tl321x_mbedtls.bin
         cp ../build_mcuboot_chip_id_tl321x/zephyr/zephyr.bin            telink_build_artifacts/tl321x_mcuboot_chip_id.bin
 
