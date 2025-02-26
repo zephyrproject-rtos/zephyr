@@ -112,7 +112,10 @@ ZTEST(threads_lifecycle, test_essential_thread_abort)
 	k_msleep(100);
 	k_thread_abort(&kthread_thread1);
 	zassert_true(fatal_error_signaled, "fatal error was not signaled");
+}
 
+ZTEST(threads_lifecycle, test_essential_thread_abort_self)
+{
 	fatal_error_signaled = false;
 	k_thread_create(&kthread_thread1, kthread_stack, STACKSIZE,
 			abort_thread_self,
