@@ -695,7 +695,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
    :header: Driver class, driver name, driver kconfig, libC choices
 
      ADC, ADC emul, :kconfig:option:`CONFIG_ADC_EMUL`, All
-     Bluetooth, :ref:`Userchan <nsim_bt_host_cont>`, :kconfig:option:`CONFIG_BT_USERCHAN`, Host libC
+     Bluetooth, :ref:`Userchan <nsim_bt_host_cont>`, :kconfig:option:`CONFIG_BT_USERCHAN`, Host and pico libC
      CAN, CAN native Linux, :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`, All
      Console backend, :ref:`POSIX arch console <nsim_back_console>`, :kconfig:option:`CONFIG_POSIX_ARCH_CONSOLE`, All
      Display, :ref:`Display SDL <nsim_per_disp_sdl>`, :kconfig:option:`CONFIG_SDL_DISPLAY`, All
