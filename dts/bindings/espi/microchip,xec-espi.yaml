@@ -12,17 +12,17 @@ properties:
     description: mmio register space
     required: true
 
-  io_girq:
+  io-girq:
     type: int
     description: soc group irq index for eSPI I/O
     required: true
 
-  vw_girqs:
+  vw-girqs:
     type: array
     description: soc group irq indexes for eSPI virtual wires channel
     required: true
 
-  pc_girq:
+  pc-girq:
     type: int
     description: soc group irq index for eSPI peripheral channel
     required: true
