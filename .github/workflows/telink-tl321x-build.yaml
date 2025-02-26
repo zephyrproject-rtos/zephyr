@@ -115,7 +115,7 @@ jobs:
     - name: Build TL321X bootloader/mcuboot/boot for compressed LZMA image
       run: |
         cd ..
-        west build -b tl3218x     -d build_mcuboot_tl321x_lzma                bootloader/mcuboot/boot/zephyr                -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_COMPRESS_LZMA=y -DCONFIG_BOOT_UPGRADE_ONLY=y
+        west build -b tl3218x     -d build_mcuboot_tl321x_lzma                bootloader/mcuboot/boot/zephyr                -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_COMPRESS_LZMA=y -DCONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=78000 -DCONFIG_BOOT_UPGRADE_ONLY=y
 
     - name: Build TL321X bootloader/mcuboot/boot - chip id
       run: |

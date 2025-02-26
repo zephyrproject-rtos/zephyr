@@ -122,6 +122,16 @@ jobs:
         cd ..
         west build -b tl7218x                  -d build_crypto_mbedtls_tl721x           zephyr/tests/crypto/mbedtls                              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_MBEDTLS_ECP_C=y -DCONFIG_MBEDTLS_ECP_ALL_ENABLED=y
 
+    - name: Build TL721X bootloader/mcuboot/boot for compressed LZMA image
+      run: |
+        cd ..
+        west build -b tl7218x                  -d build_mcuboot_tl721x_lzma             bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_COMPRESS_LZMA=y -DCONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=78000 -DCONFIG_BOOT_UPGRADE_ONLY=y
+
+    - name: Build TL721X bootloader/mcuboot/boot - chip id
+      run: |
+        cd ..
+        west build -b tl7218x                  -d build_mcuboot_chip_id_tl721x          bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_LOG_DEFAULT_LEVEL=3
+
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
@@ -141,6 +151,7 @@ jobs:
         cp ../build_ot_echo_client_pm_deep_tl721x/zephyr/zephyr.bin    telink_build_artifacts/tl721x_ot_echo_client_pm_retention.bin
         cp ../build_crypto_mbedtls_tl721x/zephyr/zephyr.bin            telink_build_artifacts/tl721x_mbedtls.bin
         cp ../build_spi_flash_tl721x/zephyr/zephyr.bin                 telink_build_artifacts/tl721x_spi_flash.bin
+        cp ../build_mcuboot_chip_id_tl721x/zephyr/zephyr.bin telink_build_artifacts/tl721x_mcuboot_chip_id.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v4

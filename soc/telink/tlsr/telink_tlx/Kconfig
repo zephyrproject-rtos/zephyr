@@ -123,6 +123,14 @@ config COMPRESS_LZMA_DICTIONARY_SIZE
 	help
 		This option sets LZMA compression dictionary size
 
+# Fix ram overflow during bootloader compilation after config LZMA
+config TELINK_TLX_MATTER_RETENTION_LAYOUT
+	bool "link mcu_boot_tlx.ld for tl321X"
+	default y if SOC_RISCV_TELINK_TL321X
+	default n
+	help
+		This option link mcu_boot_tlx.ld to optimize RAM usage
+
 endif # BOOTLOADER_MCUBOOT || MCUBOOT
 
 endif # SOC_RISCV_TELINK_TLX
