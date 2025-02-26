@@ -32,6 +32,7 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
+			physel = "USB_OTG_FS_EMBEDDED_PHY";
 			clocks = <&rcc STM32_CLOCK(APB1, 23U)>,
 				 <&rcc STM32_SRC_HSI48 HSI48_SEL(1)>;
 			status = "disabled";
