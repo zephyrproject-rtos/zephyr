@@ -462,6 +462,7 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
  */
 void bt_tbs_register_cb(struct bt_tbs_cb *cbs);
 
+/** Parameters for registering a Telephone Bearer Service */
 struct bt_tbs_register_param {
 	/** The name of the provider, for example a cellular service provider */
 	char *provider_name;
