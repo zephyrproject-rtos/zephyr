@@ -17,6 +17,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(spi_loopback);
@@ -107,6 +108,39 @@ static void spi_loopback_transceive(struct spi_dt_spec *const spec,
 	zassert_false(ret, "SPI transceive failed, code %d", ret);
 }
 
+/* The most spi buf currently used by any test case is 4, change if needed */
+#define MAX_SPI_BUF_COUNT 4
+struct spi_buf tx_bufs_pool[MAX_SPI_BUF_COUNT];
+struct spi_buf rx_bufs_pool[MAX_SPI_BUF_COUNT];
+
+/* A function for creating a spi_buf_set. Simply provide the spi_buf pool (either rx or tx),
+ * the number of bufs that will be in the set, and then an ordered list of pairs of buf
+ * pointer (void *) and buf size (size_t).
+ */
+static const struct spi_buf_set spi_loopback_setup_xfer(struct spi_buf *pool, size_t num_bufs, ...)
+{
+	struct spi_buf_set buf_set;
+
+	zassert_true(num_bufs <= MAX_SPI_BUF_COUNT, "SPI xfer need more buf in test");
+	zassert_true(pool == tx_bufs_pool || pool == rx_bufs_pool, "Invalid spi buf pool");
+
+	va_list args;
+
+	va_start(args, num_bufs);
+
+	for (int i = 0; i < num_bufs; i++) {
+		pool[i].buf = va_arg(args, void *);
+		pool[i].len = va_arg(args, size_t);
+	}
+
+	va_end(args);
+
+	buf_set.buffers = pool;
+	buf_set.count = num_bufs;
+
+	return buf_set;
+}
+
 /*
  **************
  * Test cases *
@@ -116,31 +150,12 @@ static void spi_loopback_transceive(struct spi_dt_spec *const spec,
 /* test transferring different buffers on the same dma channels */
 static int spi_complete_multiple(struct spi_dt_spec *spec)
 {
-	struct spi_buf tx_bufs[2];
-	const struct spi_buf_set tx = {
-		.buffers = tx_bufs,
-		.count = ARRAY_SIZE(tx_bufs)
-	};
-
-	tx_bufs[0].buf = buffer_tx;
-	tx_bufs[0].len = BUF_SIZE;
-
-	tx_bufs[1].buf = buffer2_tx;
-	tx_bufs[1].len = BUF2_SIZE;
-
-
-	struct spi_buf rx_bufs[2];
-	const struct spi_buf_set rx = {
-		.buffers = rx_bufs,
-		.count = ARRAY_SIZE(rx_bufs)
-	};
-
-	rx_bufs[0].buf = buffer_rx;
-	rx_bufs[0].len = BUF_SIZE;
-
-	rx_bufs[1].buf = buffer2_rx;
-	rx_bufs[1].len = BUF2_SIZE;
-
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 2,
+							      buffer_tx, BUF_SIZE,
+							      buffer2_tx, BUF2_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 2,
+							      buffer_rx, BUF_SIZE,
+							      buffer2_rx, BUF2_SIZE);
 
 	LOG_INF("Start complete multiple");
 
@@ -171,26 +186,10 @@ static int spi_complete_multiple(struct spi_dt_spec *spec)
 
 static int spi_complete_loop(struct spi_dt_spec *spec)
 {
-	const struct spi_buf tx_bufs[] = {
-		{
-			.buf = buffer_tx,
-			.len = BUF_SIZE,
-		},
-	};
-	const struct spi_buf rx_bufs[] = {
-		{
-			.buf = buffer_rx,
-			.len = BUF_SIZE,
-		},
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_bufs,
-		.count = ARRAY_SIZE(tx_bufs)
-	};
-	const struct spi_buf_set rx = {
-		.buffers = rx_bufs,
-		.count = ARRAY_SIZE(rx_bufs)
-	};
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      buffer_tx, BUF_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      buffer_rx, BUF_SIZE);
 
 	LOG_INF("Start complete loop");
 
@@ -213,32 +212,12 @@ static int spi_complete_loop(struct spi_dt_spec *spec)
 static int spi_null_tx_buf(struct spi_dt_spec *spec)
 {
 	static const uint8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = { 0 };
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      NULL, BUF_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      buffer_rx, BUF_SIZE);
 
 	(void)memset(buffer_rx, 0x77, BUF_SIZE);
-
-	const struct spi_buf tx_bufs[] = {
-		/* According to documentation, when sending NULL tx buf -
-		 *  NOP frames should be sent on MOSI line
-		 */
-		{
-			.buf = NULL,
-			.len = BUF_SIZE,
-		},
-	};
-	const struct spi_buf rx_bufs[] = {
-		{
-			.buf = buffer_rx,
-			.len = BUF_SIZE,
-		},
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_bufs,
-		.count = ARRAY_SIZE(tx_bufs)
-	};
-	const struct spi_buf_set rx = {
-		.buffers = rx_bufs,
-		.count = ARRAY_SIZE(rx_bufs)
-	};
 
 	LOG_INF("Start null tx");
 
@@ -259,26 +238,10 @@ static int spi_null_tx_buf(struct spi_dt_spec *spec)
 
 static int spi_rx_half_start(struct spi_dt_spec *spec)
 {
-	const struct spi_buf tx_bufs[] = {
-		{
-			.buf = buffer_tx,
-			.len = BUF_SIZE,
-		},
-	};
-	const struct spi_buf rx_bufs[] = {
-		{
-			.buf = buffer_rx,
-			.len = 8,
-		},
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_bufs,
-		.count = ARRAY_SIZE(tx_bufs)
-	};
-	const struct spi_buf_set rx = {
-		.buffers = rx_bufs,
-		.count = ARRAY_SIZE(rx_bufs)
-	};
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      buffer_tx, BUF_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      buffer_rx, 8);
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
@@ -300,35 +263,16 @@ static int spi_rx_half_start(struct spi_dt_spec *spec)
 
 static int spi_rx_half_end(struct spi_dt_spec *spec)
 {
-	const struct spi_buf tx_bufs[] = {
-		{
-			.buf = buffer_tx,
-			.len = BUF_SIZE,
-		},
-	};
-	const struct spi_buf rx_bufs[] = {
-		{
-			.buf = NULL,
-			.len = 8,
-		},
-		{
-			.buf = buffer_rx,
-			.len = 8,
-		},
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_bufs,
-		.count = ARRAY_SIZE(tx_bufs)
-	};
-	const struct spi_buf_set rx = {
-		.buffers = rx_bufs,
-		.count = ARRAY_SIZE(rx_bufs)
-	};
-
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
 		LOG_INF("Skip half end");
 		return 0;
 	}
+
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      buffer_tx, BUF_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 2,
+							      NULL, 8,
+							      buffer_rx, 8);
 
 	LOG_INF("Start half end");
 
@@ -352,39 +296,6 @@ static int spi_rx_half_end(struct spi_dt_spec *spec)
 
 static int spi_rx_every_4(struct spi_dt_spec *spec)
 {
-	const struct spi_buf tx_bufs[] = {
-		{
-			.buf = buffer_tx,
-			.len = BUF_SIZE,
-		},
-	};
-	const struct spi_buf rx_bufs[] = {
-		{
-			.buf = NULL,
-			.len = 4,
-		},
-		{
-			.buf = buffer_rx,
-			.len = 4,
-		},
-		{
-			.buf = NULL,
-			.len = 4,
-		},
-		{
-			.buf = buffer_rx + 4,
-			.len = 4,
-		},
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_bufs,
-		.count = ARRAY_SIZE(tx_bufs)
-	};
-	const struct spi_buf_set rx = {
-		.buffers = rx_bufs,
-		.count = ARRAY_SIZE(rx_bufs)
-	};
-
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
 		LOG_INF("Skip every 4");
 		return 0;
@@ -394,6 +305,14 @@ static int spi_rx_every_4(struct spi_dt_spec *spec)
 		LOG_INF("Skip every 4");
 		return 0;
 	}
+
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      buffer_tx, BUF_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 4,
+							      NULL, 4,
+							      buffer_rx, 4,
+							      NULL, 4,
+							      buffer_rx+4, 4);
 
 	LOG_INF("Start every 4");
 
@@ -429,27 +348,6 @@ static int spi_rx_bigger_than_tx(struct spi_dt_spec *spec)
 	BUILD_ASSERT(tx_buf_size < BUF_SIZE,
 		"Transmit buffer is expected to be smaller than the receive buffer");
 
-	const struct spi_buf tx_bufs[] = {
-		{
-			.buf = buffer_tx,
-			.len = tx_buf_size,
-		},
-	};
-	const struct spi_buf rx_bufs[] = {
-		{
-			.buf = buffer_rx,
-			.len = BUF_SIZE,
-		}
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_bufs,
-		.count = ARRAY_SIZE(tx_bufs)
-	};
-	const struct spi_buf_set rx = {
-		.buffers = rx_bufs,
-		.count = ARRAY_SIZE(rx_bufs)
-	};
-
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
 		LOG_INF("Skip rx bigger than tx");
 		return 0;
@@ -459,6 +357,11 @@ static int spi_rx_bigger_than_tx(struct spi_dt_spec *spec)
 		LOG_INF("Skip rx bigger than tx");
 		return 0;
 	}
+
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      buffer_tx, tx_buf_size);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      buffer_rx, BUF_SIZE);
 
 	LOG_INF("Start rx bigger than tx");
 
@@ -498,24 +401,10 @@ static int spi_rx_bigger_than_tx(struct spi_dt_spec *spec)
 /* test transferring different buffers on the same dma channels */
 static int spi_complete_large_transfers(struct spi_dt_spec *spec)
 {
-	struct spi_buf tx_bufs;
-	const struct spi_buf_set tx = {
-		.buffers = &tx_bufs,
-		.count = 1
-	};
-
-	tx_bufs.buf = large_buffer_tx;
-	tx_bufs.len = BUF3_SIZE;
-
-
-	struct spi_buf rx_bufs;
-	const struct spi_buf_set rx = {
-		.buffers = &rx_bufs,
-		.count = 1
-	};
-
-	rx_bufs.buf = large_buffer_rx;
-	rx_bufs.len = BUF3_SIZE;
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      large_buffer_tx, BUF3_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      large_buffer_rx, BUF3_SIZE);
 
 	LOG_INF("Start complete large transfers");
 
@@ -568,50 +457,22 @@ static void spi_async_call_cb(void *p1,
 
 static int spi_async_call(struct spi_dt_spec *spec)
 {
-	const struct spi_buf tx_bufs[] = {
-		{
-			.buf = buffer_tx,
-			.len = BUF_SIZE,
-		},
-		{
-			.buf = buffer2_tx,
-			.len = BUF2_SIZE,
-		},
-		{
-			.buf = large_buffer_tx,
-			.len = BUF3_SIZE,
-		},
-	};
-	const struct spi_buf rx_bufs[] = {
-		{
-			.buf = buffer_rx,
-			.len = BUF_SIZE,
-		},
-		{
-			.buf = buffer2_rx,
-			.len = BUF2_SIZE,
-		},
-		{
-			.buf = large_buffer_rx,
-			.len = BUF3_SIZE,
-		},
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_bufs,
-		.count = ARRAY_SIZE(tx_bufs)
-	};
-	const struct spi_buf_set rx = {
-		.buffers = rx_bufs,
-		.count = ARRAY_SIZE(rx_bufs)
-	};
-	int ret;
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 3,
+							      buffer_tx, BUF_SIZE,
+							      buffer2_tx, BUF2_SIZE,
+							      large_buffer_tx, BUF3_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 3,
+							      buffer_rx, BUF_SIZE,
+							      buffer2_rx, BUF2_SIZE,
+							      large_buffer_rx, BUF3_SIZE);
 
 	LOG_INF("Start async call");
 	memset(buffer_rx, 0, sizeof(buffer_rx));
 	memset(buffer2_rx, 0, sizeof(buffer2_rx));
 	memset(large_buffer_rx, 0, sizeof(large_buffer_rx));
 
-	ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
+	int ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
+
 	if (ret == -ENOTSUP) {
 		LOG_DBG("Not supported");
 		return 0;
