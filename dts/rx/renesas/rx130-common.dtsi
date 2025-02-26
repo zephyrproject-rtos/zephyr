@@ -71,13 +71,38 @@
 			};
 		};
 
-		cmt0: timer@88004 {
-			compatible = "renesas,rx-timer-cmt";
-			reg = <0x00088004 0x02>,
-			      <0x00088000 0x02>,
-			      <0x00088002 0x02>,
-			      <0x00088006 0x02>;
-			status = "disabled";
+		cmt: timer@88000 {
+			compatible = "renesas,rx-timer-cmt-start-control";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x00088000 0x02>;
+			clocks = <&pclkb MSTPA 15>;
+			reg-names = "CMSTR0";
+			status = "okay";
+
+			cmt0: timer@88002 {
+				compatible = "renesas,rx-timer-cmt";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				reg = <0x00088002 0x02>,
+				      <0x00088004 0x02>,
+				      <0x00088006 0x02>;
+				reg-names = "CMCR", "CMCNT", "CMCOR";
+				interrupts = <28 1>;
+				interrupt-names = "cmi";
+				status = "okay";
+			};
+
+			cmt1: timer@88008 {
+				compatible = "renesas,rx-timer-cmt";
+				reg = <0x00088008 0x02>,
+				      <0x0008800A 0x02>,
+				      <0x0008800C 0x02>;
+				reg-names = "CMCR", "CMCNT", "CMCOR";
+				interrupts = <29 1>;
+				interrupt-names = "cmi";
+				status = "disabled";
+			};
 		};
 
 		ofsm: ofsm@ffffff80 {
