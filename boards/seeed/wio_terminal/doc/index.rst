@@ -33,58 +33,7 @@ Hardware
 Supported Features
 ==================
 
-The wio_terminal board configuration supports the following hardware features:
-
-.. list-table::
-    :header-rows: 1
-
-    * - Interface
-      - Controller
-      - Driver / Component
-    * - NVIC
-      - on-chip
-      - Nested vector interrupt controller
-    * - Flash
-      - on-chip
-      - Can be used with LittleFS to store files
-    * - SYSTICK
-      - on-chip
-      - Systick
-    * - WDT
-      - on-chip
-      - Watchdog
-    * - GPIO
-      - on-chip
-      - I/O ports
-    * - USART
-      - on-chip
-      - Serial port
-    * - I2C
-      - on-chip
-      - Inter-Integrated Circuit
-    * - SPI
-      - on-chip
-      - Serial Peripheral Interface port
-    * - TRNG
-      - on-chip
-      - True Random Number Generator
-    * - HWINFO
-      - on-chip
-      - Unique 128 bit serial number
-    * - RTC
-      - on-chip
-      - Real-Time Counter
-    * - USB
-      - on-chip
-      - USB device
-    * - PWM
-      - on-chip
-      - PWM
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/seeed/wio_terminal/wio_terminal_defconfig`.
+.. zephyr:board-supported-hw::
 
 Zephyr can use the default Cortex-M SYSTICK timer or the SAM0 specific RTC.
 To use the RTC, set :kconfig:option:`CONFIG_CORTEX_M_SYSTICK=n` and set
