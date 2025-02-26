@@ -17,6 +17,8 @@
 void test_init(void);
 void test_tick(bs_time_t HW_device_time);
 
+#define SDU_INTERVAL_US 10U * USEC_PER_MSEC /* 10 ms */
+
 /* Generate 1 KiB of mock data going 0x00, 0x01, ..., 0xff, 0x00, 0x01, ..., 0xff, etc */
 #define ISO_DATA_GEN(_i, _) (uint8_t)_i
 static const uint8_t mock_iso_data[] = {
