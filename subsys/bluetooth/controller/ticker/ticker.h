@@ -136,7 +136,9 @@ typedef void (*ticker_timeout_func) (uint32_t ticks_at_expire,
 
 struct ticker_expire_info {
 	uint32_t ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 	uint32_t remainder;
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 	uint16_t lazy;
 };
 
