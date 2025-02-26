@@ -605,6 +605,12 @@ static int uarte_nrfx_configure(const struct device *dev,
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 	uarte_cfg.frame_timeout = NRF_UARTE_FRAME_TIMEOUT_EN;
 #endif
+
+#if NRF_UARTE_HAS_FRAME_SIZE
+	uarte_cfg.frame_size = NRF_UARTE_FRAME_SIZE_8_BIT;
+	uarte_cfg.endian = NRF_UARTE_ENDIAN_MSB;
+#endif
+
 	nrf_uarte_configure(get_uarte_instance(dev), &uarte_cfg);
 
 	data->uart_config = *cfg;
