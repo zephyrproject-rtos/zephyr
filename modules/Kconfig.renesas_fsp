@@ -154,6 +154,18 @@ config USE_RA_FSP_DAC
 	help
 	  Enable RA FSP DAC driver
 
+config USE_RA_FSP_ULPT
+	bool
+	help
+	  Enable RA FSP ULPT driver
+
+config USE_RA_FSP_LPM
+	bool
+	default y
+	depends on PM
+	help
+	  Enable RA FSP LPM driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP

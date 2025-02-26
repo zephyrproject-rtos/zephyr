@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config USE_RENESAS_RA_ULPT_TIMER
+	bool "Use the Renesas RA Series ULPT Timer"
+
+config RENESAS_RA_ULPT_TIMER
+	bool "Renesas RA Series ULPT Timer"
+	default y
+	depends on DT_HAS_RENESAS_RA_ULPT_TIMER_ENABLED
+	depends on PM || USE_RENESAS_RA_ULPT_TIMER
+	select TICKLESS_CAPABLE
+	help
+    	  This module implements a kernel device driver for the Renesas RA series
+    	  ULPT timer and provides the standard "system clock driver" interfaces.
