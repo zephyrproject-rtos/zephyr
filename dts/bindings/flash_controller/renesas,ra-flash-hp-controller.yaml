@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: Renesas RA family flash high-performance controller
@@ -8,19 +8,33 @@ compatible: "renesas,ra-flash-hp-controller"
 include: flash-controller.yaml
 
 properties:
-  block-32kb-linear-end:
+  interrupts:
+    description: |
+      IRQ number and priority to use for Flash controller.
+      Note: If the config FLASH_RENESAS_RA_HP_BGO is not set,
+            no need to define interrupt for flash controller.
+
+  interrupt-names:
+    enum:
+      - "frdyi"
+      - "fiferr"
+    description: |
+      Interrupts must be given corresponding names so that the driver can recognize them.
+
+  flash-hardware-version:
     type: int
     required: true
-    description: The final 32kb block index of the code-flash in the linear mode.
+    enum:
+      - 4
+      - 40
+    description: |
+      Version of the Flash peripheral/hardware.
 
-  block-32kb-dual-low-end:
+  "#erase-block-cells":
     type: int
-    description: The final 32kb block index of the code-flash's lower Bank in the dual mode
+    const: 2
+    description: Number of items to expect in a flash layout.
 
-  block-32kb-dual-high-end:
-    type: int
-    description: The final 32kb block index of the code-flash's higher Bank in the dual mode
-
-  reserved-area-num:
-    type: int
-    description: The number of the code-flash's reserved blocks in the dual mode
+erase-block-cells:
+  - pages_count
+  - pages_size

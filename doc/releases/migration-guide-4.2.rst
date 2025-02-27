@@ -262,6 +262,11 @@ Flash
 * The Flash HP Renesas RA write protect Kconfig symbol :kconfig:option:`CONFIG_FLASH_RA_WRITE_PROTECT`
   has been renamed to :kconfig:option:`CONFIG_FLASH_RENESAS_RA_HP_WRITE_PROTECT`.
 
+* Separate the file ``renesas,ra-nv-flash.yaml`` into 2 files ``renesas,ra-nv-code-flash.yaml``
+  and ``renesas,ra-nv-data-flash.yaml``.
+* Separate the ``compatible`` from ``renesas,ra-nv-flash`` to :dtcompatible:`renesas,ra-nv-code-flash.yaml`
+  and :dtcompatible:`renesas,ra-nv-data-flash.yaml`.
+
 
 Stepper
 =======

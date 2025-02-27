@@ -19,33 +19,26 @@
 
 LOG_MODULE_REGISTER(flash_renesas_ra_hp, CONFIG_FLASH_LOG_LEVEL);
 
-#define ERASE_BLOCK_SIZE_0 DT_PROP(DT_INST(0, renesas_ra_nv_flash), erase_block_size)
-#define ERASE_BLOCK_SIZE_1 DT_PROP(DT_INST(1, renesas_ra_nv_flash), erase_block_size)
+static struct flash_pages_layout code_flash_ra_layout[FLASH_HP_CF_LAYOUT_SIZE];
+static struct flash_pages_layout data_flash_ra_layout[FLASH_HP_DF_LAYOUT_SIZE];
 
-BUILD_ASSERT((ERASE_BLOCK_SIZE_0 % FLASH_HP_CF_BLOCK_8KB_SIZE) == 0,
-	     "erase-block-size expected to be a multiple of a block size");
-BUILD_ASSERT((ERASE_BLOCK_SIZE_1 % FLASH_HP_DF_BLOCK_SIZE) == 0,
-	     "erase-block-size expected to be a multiple of a block size");
-
-/* Flags, set from Callback function */
-static volatile struct event_flash g_event_flash = {
-	.erase_complete = false,
-	.write_complete = false,
-};
-
-static struct flash_pages_layout flash_ra_layout[5];
-
+#if defined(CONFIG_FLASH_RENESAS_RA_HP_BGO)
 void fcu_frdyi_isr(void);
 void fcu_fiferr_isr(void);
 
-void bgo_callback(flash_callback_args_t *p_args)
+void flash_bgo_callback(flash_callback_args_t *p_args)
 {
+	atomic_t *event_flag = (atomic_t *)(p_args->p_context);
+
 	if (FLASH_EVENT_ERASE_COMPLETE == p_args->event) {
-		g_event_flash.erase_complete = true;
+		atomic_or(event_flag, FLASH_FLAG_ERASE_COMPLETE);
+	} else if (FLASH_EVENT_WRITE_COMPLETE == p_args->event) {
+		atomic_or(event_flag, FLASH_FLAG_WRITE_COMPLETE);
 	} else {
-		g_event_flash.write_complete = true;
+		atomic_or(event_flag, FLASH_FLAG_GET_ERROR);
 	}
 }
+#endif /* CONFIG_FLASH_RENESAS_RA_HP_BGO */
 
 static bool flash_ra_valid_range(struct flash_hp_ra_data *flash_data, off_t offset, size_t len)
 {
@@ -83,7 +76,7 @@ static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
 	static struct flash_pages_info page_info_off, page_info_len;
 	fsp_err_t err;
 	uint32_t block_num;
-	int rc, rc2;
+	int rc, rc2, ret = 0;
 	int key = 0;
 	bool is_contain_end_block = false;
 
@@ -109,12 +102,12 @@ static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
 
 	if (flash_data->FlashRegion == CODE_FLASH) {
 		if ((offset + len) == (uint32_t)DT_REG_SIZE(DT_NODELABEL(flash0))) {
-			page_info_len.index = FLASH_HP_CF_BLOCK_32KB_LINEAR_END + 1;
+			page_info_len.index = FLASH_HP_CF_END_BLOCK;
 			is_contain_end_block = true;
 		}
 	} else {
-		if ((offset + len) == (uint32_t)DT_REG_SIZE(DT_NODELABEL(flash1))) {
-			page_info_len.index = FLASH_HP_DF_BLOCK_END;
+		if ((offset + len) == (uint32_t)FLASH_HP_DF_SIZE) {
+			page_info_len.index = FLASH_HP_DF_END_BLOCK;
 			is_contain_end_block = true;
 		}
 	}
@@ -129,7 +122,7 @@ static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
 		}
 	}
 
-	block_num = (uint32_t)((page_info_len.index) - page_info_off.index);
+	block_num = (uint32_t)(page_info_len.index - page_info_off.index);
 
 	if (block_num > 0) {
 		if (flash_data->FlashRegion == CODE_FLASH) {
@@ -143,24 +136,26 @@ static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
 				       (long)(flash_data->area_address + offset), block_num);
 
 		if (err != FSP_SUCCESS) {
-			if (flash_data->FlashRegion == CODE_FLASH) {
-				irq_unlock(key);
-			} else {
-				k_sem_give(&dev_ctrl->ctrl_sem);
-			}
-			return -EIO;
+			ret = -EIO;
+			goto end;
 		}
 
+#if defined(CONFIG_FLASH_RENESAS_RA_HP_BGO)
 		if (flash_data->FlashRegion == DATA_FLASH) {
 			/* Wait for the erase complete event flag, if BGO is SET  */
-			if (true == dev_ctrl->fsp_config.data_flash_bgo) {
-				while (!g_event_flash.erase_complete) {
-					k_sleep(K_USEC(10));
+			while (!(dev_ctrl->flags & FLASH_FLAG_ERASE_COMPLETE)) {
+				if (dev_ctrl->flags & FLASH_FLAG_GET_ERROR) {
+					ret = -EIO;
+					atomic_and(&dev_ctrl->flags, ~FLASH_FLAG_GET_ERROR);
+					break;
 				}
-				g_event_flash.erase_complete = false;
+				k_sleep(K_USEC(10));
 			}
+			atomic_and(&dev_ctrl->flags, ~FLASH_FLAG_ERASE_COMPLETE);
 		}
+#endif /* CONFIG_FLASH_RENESAS_RA_HP_BGO */
 
+end:
 		if (flash_data->FlashRegion == CODE_FLASH) {
 			irq_unlock(key);
 		} else {
@@ -168,7 +163,7 @@ static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static int flash_ra_write(const struct device *dev, off_t offset, const void *data, size_t len)
@@ -177,6 +172,7 @@ static int flash_ra_write(const struct device *dev, off_t offset, const void *da
 	struct flash_hp_ra_data *flash_data = dev->data;
 	struct flash_hp_ra_controller *dev_ctrl = flash_data->controller;
 	int key = 0;
+	int ret = 0;
 
 	if (!flash_ra_valid_range(flash_data, offset, len)) {
 		return -EINVAL;
@@ -199,31 +195,33 @@ static int flash_ra_write(const struct device *dev, off_t offset, const void *da
 			       (long)(offset + flash_data->area_address), len);
 
 	if (err != FSP_SUCCESS) {
-		if (flash_data->FlashRegion == CODE_FLASH) {
-			irq_unlock(key);
-		} else {
-			k_sem_give(&dev_ctrl->ctrl_sem);
-		}
-		return -EIO;
+		ret = -EIO;
+		goto end;
 	}
 
+#if defined(CONFIG_FLASH_RENESAS_RA_HP_BGO)
 	if (flash_data->FlashRegion == DATA_FLASH) {
 		/* Wait for the write complete event flag, if BGO is SET  */
-		if (true == dev_ctrl->fsp_config.data_flash_bgo) {
-			while (!g_event_flash.write_complete) {
-				k_sleep(K_USEC(10));
+		while (!(dev_ctrl->flags & FLASH_FLAG_WRITE_COMPLETE)) {
+			if (dev_ctrl->flags & FLASH_FLAG_GET_ERROR) {
+				ret = -EIO;
+				atomic_and(&dev_ctrl->flags, ~FLASH_FLAG_GET_ERROR);
+				break;
 			}
-			g_event_flash.write_complete = false;
+			k_sleep(K_USEC(10));
 		}
+		atomic_and(&dev_ctrl->flags, ~FLASH_FLAG_WRITE_COMPLETE);
 	}
+#endif /* CONFIG_FLASH_RENESAS_RA_HP_BGO */
 
+end:
 	if (flash_data->FlashRegion == CODE_FLASH) {
 		irq_unlock(key);
 	} else {
 		k_sem_give(&dev_ctrl->ctrl_sem);
 	}
 
-	return 0;
+	return ret;
 }
 
 static int flash_ra_get_size(const struct device *dev, uint64_t *size)
@@ -241,25 +239,23 @@ void flash_ra_page_layout(const struct device *dev, const struct flash_pages_lay
 	struct flash_hp_ra_data *flash_data = dev->data;
 
 	if (flash_data->FlashRegion == DATA_FLASH) {
-		flash_ra_layout[0].pages_count = flash_data->area_size / FLASH_HP_DF_BLOCK_SIZE;
-		flash_ra_layout[0].pages_size = FLASH_HP_DF_BLOCK_SIZE;
-
-		*layout_size = 1;
+		data_flash_ra_layout[0].pages_count = FLASH_HP_DF_BLOCKS_COUNT;
+		data_flash_ra_layout[0].pages_size = FLASH_HP_DF_BLOCK_SIZE;
+		*layout = data_flash_ra_layout;
+		*layout_size = FLASH_HP_DF_LAYOUT_SIZE;
 	} else {
-		flash_ra_layout[0].pages_count =
-			(FLASH_HP_CF_BLOCK_8KB_LOW_END - FLASH_HP_CF_BLOCK_8KB_LOW_START) + 1;
-		flash_ra_layout[0].pages_size = FLASH_HP_CF_BLOCK_8KB_SIZE;
-		flash_ra_layout[1].pages_count =
-			(FLASH_HP_CF_BLOCK_32KB_LINEAR_END - FLASH_HP_CF_BLOCK_32KB_LINEAR_START) +
-			1;
-		flash_ra_layout[1].pages_size = FLASH_HP_CF_BLOCK_32KB_SIZE;
+		code_flash_ra_layout[0].pages_count = FLASH_HP_CF_REGION0_BLOCKS_COUNT;
+		code_flash_ra_layout[0].pages_size = FLASH_HP_CF_REGION0_BLOCK_SIZE;
+#if (FLASH_HP_VERSION == 40)
+		code_flash_ra_layout[1].pages_count = FLASH_HP_CF_REGION1_BLOCKS_COUNT;
+		code_flash_ra_layout[1].pages_size = FLASH_HP_CF_REGION1_BLOCK_SIZE;
 
-		*layout_size = 2;
+#endif /* FLASH_HP_VERSION == 40 */
+		*layout = code_flash_ra_layout;
+		*layout_size = FLASH_HP_CF_LAYOUT_SIZE;
 	}
-
-	*layout = flash_ra_layout;
 }
-#endif
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 static const struct flash_parameters *flash_ra_get_parameters(const struct device *dev)
 {
@@ -270,13 +266,15 @@ static const struct flash_parameters *flash_ra_get_parameters(const struct devic
 
 static struct flash_hp_ra_controller flash_hp_ra_controller = {
 	.fsp_config = {
-		.data_flash_bgo = true,
-		.p_callback = bgo_callback,
+		.data_flash_bgo = IS_ENABLED(CONFIG_FLASH_RENESAS_RA_HP_BGO),
+#if defined(CONFIG_FLASH_RENESAS_RA_HP_BGO)
+		.p_callback = flash_bgo_callback,
 		.p_context = NULL,
 		.irq = (IRQn_Type)DT_INST_IRQ_BY_NAME(0, frdyi, irq),
 		.err_irq = (IRQn_Type)DT_INST_IRQ_BY_NAME(0, fiferr, irq),
 		.err_ipl = DT_INST_IRQ_BY_NAME(0, fiferr, priority),
 		.ipl = DT_INST_IRQ_BY_NAME(0, frdyi, priority),
+#endif /* CONFIG_FLASH_RENESAS_RA_HP_BGO */
 	}};
 
 #ifdef CONFIG_FLASH_EX_OP_ENABLED
@@ -297,7 +295,7 @@ static int flash_ra_ex_op(const struct device *dev, uint16_t code, const uintptr
 
 	return err;
 }
-#endif
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
 
 static int flash_ra_init(const struct device *dev)
 {
@@ -308,7 +306,7 @@ static int flash_ra_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (flash_data->area_address == FLASH_HP_DF_START) {
+	if (flash_data->area_address == FLASH_HP_DF_START_ADDRESS) {
 		flash_data->FlashRegion = DATA_FLASH;
 	} else {
 		flash_data->FlashRegion = CODE_FLASH;
@@ -319,33 +317,38 @@ static int flash_ra_init(const struct device *dev)
 	return 0;
 }
 
-static void flash_controller_ra_irq_config_func(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	R_ICU->IELSR[DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, irq)] =
-		BSP_PRV_IELS_ENUM(EVENT_FCU_FRDYI);
-	R_ICU->IELSR[DT_IRQ_BY_NAME(DT_DRV_INST(0), fiferr, irq)] =
-		BSP_PRV_IELS_ENUM(EVENT_FCU_FIFERR);
-
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, irq),
-		    DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, priority), fcu_frdyi_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), fiferr, irq),
-		    DT_IRQ_BY_NAME(DT_DRV_INST(0), fiferr, priority), fcu_fiferr_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-
-	irq_enable(DT_INST_IRQ_BY_NAME(0, frdyi, irq));
-	irq_enable(DT_INST_IRQ_BY_NAME(0, fiferr, irq));
-}
+#if defined(CONFIG_FLASH_RENESAS_RA_HP_BGO)
+#define FLASH_CONTROLLER_RA_IRQ_INIT                                                               \
+	{                                                                                          \
+		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, irq)] =                         \
+			BSP_PRV_IELS_ENUM(EVENT_FCU_FRDYI);                                        \
+		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_DRV_INST(0), fiferr, irq)] =                        \
+			BSP_PRV_IELS_ENUM(EVENT_FCU_FIFERR);                                       \
+                                                                                                   \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, irq),                            \
+			    DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, priority), fcu_frdyi_isr,        \
+			    DEVICE_DT_INST_GET(0), 0);                                             \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), fiferr, irq),                           \
+			    DT_IRQ_BY_NAME(DT_DRV_INST(0), fiferr, priority), fcu_fiferr_isr,      \
+			    DEVICE_DT_INST_GET(0), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQ_BY_NAME(0, frdyi, irq));                                    \
+		irq_enable(DT_INST_IRQ_BY_NAME(0, fiferr, irq));                                   \
+	}
+#endif /* CONFIG_FLASH_RENESAS_RA_HP_BGO */
 
 static int flash_controller_ra_init(const struct device *dev)
 {
 	fsp_err_t err;
-	const struct flash_hp_ra_controller_config *cfg = dev->config;
 	struct flash_hp_ra_controller *data = dev->data;
 
-	cfg->irq_config(dev);
+#if defined(CONFIG_FLASH_RENESAS_RA_HP_BGO)
+	FLASH_CONTROLLER_RA_IRQ_INIT
+#endif /* CONFIG_FLASH_RENESAS_RA_HP_BGO */
+
+	k_sem_init(&data->ctrl_sem, 1, 1);
+
+	data->fsp_config.p_context = &data->flags;
 
 	err = R_FLASH_HP_Open(&data->flash_ctrl, &data->fsp_config);
 
@@ -354,14 +357,8 @@ static int flash_controller_ra_init(const struct device *dev)
 		return -EIO;
 	}
 
-	k_sem_init(&data->ctrl_sem, 1, 1);
-
 	return 0;
 }
-
-static struct flash_hp_ra_controller_config flash_hp_ra_controller_config = {
-	.irq_config = flash_controller_ra_irq_config_func,
-};
 
 static DEVICE_API(flash, flash_ra_api) = {
 	.erase = flash_ra_erase,
@@ -382,8 +379,7 @@ static DEVICE_API(flash, flash_ra_api) = {
 							    .area_size = DT_REG_SIZE(index)};      \
 	static struct flash_hp_ra_config flash_hp_ra_config_##index = {                            \
 		.flash_ra_parameters = {                                                           \
-			.write_block_size = GET_SIZE(                                              \
-				(CHECK_EQ(DT_REG_ADDR(index), FLASH_HP_DF_START)), 4, 128),        \
+			.write_block_size = DT_PROP(index, write_block_size),                      \
 			.erase_value = 0xff,                                                       \
 		}};                                                                                \
                                                                                                    \
@@ -394,5 +390,5 @@ static DEVICE_API(flash, flash_ra_api) = {
 DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(0), RA_FLASH_INIT);
 
 /* define the flash controller device just to run the init. */
-DEVICE_DT_DEFINE(DT_DRV_INST(0), flash_controller_ra_init, NULL, &flash_hp_ra_controller,
-		 &flash_hp_ra_controller_config, PRE_KERNEL_1, CONFIG_FLASH_INIT_PRIORITY, NULL);
+DEVICE_DT_DEFINE(DT_DRV_INST(0), flash_controller_ra_init, NULL, &flash_hp_ra_controller, NULL,
+		 PRE_KERNEL_1, CONFIG_FLASH_INIT_PRIORITY, NULL);

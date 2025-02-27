@@ -25,4 +25,10 @@ config FLASH_RENESAS_RA_HP_WRITE_PROTECT
 	  Enables flash extended operation to enable/disable flash write
 	  protection from external devices
 
+config FLASH_RENESAS_RA_HP_BGO
+	bool "Background operations feature"
+	default y
+	help
+	  Enable Background operations (BGOs)
+
 endif # SOC_FLASH_RENESAS_RA_HP
