@@ -247,7 +247,6 @@ static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *msg, uint16
 static int i2c_ambiq_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_ambiq_data *data = dev->data;
-	const struct i2c_ambiq_config *cfg = dev->config;
 
 	if (!(I2C_MODE_CONTROLLER & dev_config)) {
 		return -EINVAL;
@@ -268,6 +267,8 @@ static int i2c_ambiq_configure(const struct device *dev, uint32_t dev_config)
 	}
 
 #ifdef CONFIG_I2C_AMBIQ_DMA
+	const struct i2c_ambiq_config *cfg = dev->config;
+
 	data->iom_cfg.pNBTxnBuf = i2c_dma_tcb_buf[cfg->inst_idx].buf;
 	data->iom_cfg.ui32NBTxnBufLength = CONFIG_I2C_DMA_TCB_BUFFER_SIZE;
 #endif
@@ -287,7 +288,7 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		return 0;
 	}
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_I2C_AMBIQ_DMA) && defined(CONFIG_DCACHE)
 	if (!i2c_buf_set_in_nocache(msgs, num_msgs)) {
 		return -EFAULT;
 	}
@@ -490,17 +491,18 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static void i2c_irq_config_func_##n(void)                                                  \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_ambiq_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(n)), DT_IRQ(DT_INST_PARENT(n), priority),       \
+			    i2c_ambiq_isr, DEVICE_DT_INST_GET(n), 0);                              \
+		irq_enable(DT_IRQN(DT_INST_PARENT(n)));                                            \
 	};                                                                                         \
 	static struct i2c_ambiq_data i2c_ambiq_data##n = {                                         \
 		.bus_sem = Z_SEM_INITIALIZER(i2c_ambiq_data##n.bus_sem, 1, 1),                     \
 		.transfer_sem = Z_SEM_INITIALIZER(i2c_ambiq_data##n.transfer_sem, 0, 1)};          \
 	static const struct i2c_ambiq_config i2c_ambiq_config##n = {                               \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.size = DT_INST_REG_SIZE(n),                                                       \
-		.inst_idx = (DT_INST_REG_ADDR(n) - IOM0_BASE) / (IOM1_BASE - IOM0_BASE),           \
+		.base = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
+		.size = DT_REG_SIZE(DT_INST_PARENT(n)),                                            \
+		.inst_idx =                                                                        \
+			(DT_REG_ADDR(DT_INST_PARENT(n)) - IOM0_BASE) / (IOM1_BASE - IOM0_BASE),    \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = i2c_irq_config_func_##n,                                        \

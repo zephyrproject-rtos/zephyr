@@ -88,5 +88,5 @@
 	};
 };
 
-ambiq_spi0: &spi0 {};
-ambiq_i2c3: &i2c3 {};
+ambiq_spi0: &iom0 {};
+ambiq_i2c3: &iom3 {};

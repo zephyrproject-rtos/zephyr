@@ -165,10 +165,11 @@ static DEVICE_API(spi, spi_ambiq_driver_api) = {
 static int spi_ambiq_init(const struct device *dev)
 {
 	struct spi_ambiq_data *data = dev->data;
-	const struct spi_ambiq_config *cfg = dev->config;
 	int ret;
 
 #if defined(CONFIG_SPI_AMBIQ_BLEIF_TIMING_TRACE)
+	const struct spi_ambiq_config *cfg = dev->config;
+
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
