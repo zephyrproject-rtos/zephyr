@@ -467,13 +467,21 @@ static int cmd_add_header_name(const struct shell *sh, size_t argc, char *argv[]
 {
 	size_t len;
 	int err;
-	const char *hex_payload = argv[1];
-	size_t hex_payload_size = strlen(hex_payload);
+	const char *hex_payload;
+	size_t hex_payload_size;
 
-	len = hex2bin(hex_payload, hex_payload_size, add_head_buffer, sizeof(add_head_buffer));
-	if (len > UINT16_MAX) {
-		shell_error(sh, "Length exceeds max length (%x > %x)", len, UINT16_MAX);
-		return -ENOEXEC;
+	if (argc > 1) {
+		hex_payload = argv[1];
+		hex_payload_size = strlen(hex_payload);
+
+		len = hex2bin(hex_payload, hex_payload_size, add_head_buffer,
+			      sizeof(add_head_buffer));
+		if (len > UINT16_MAX) {
+			shell_error(sh, "Length exceeds max length (%x > %x)", len, UINT16_MAX);
+			return -ENOEXEC;
+		}
+	} else {
+		len = 0;
 	}
 
 	err = bt_obex_add_header_name(goep_app.tx_buf, (uint16_t)len, add_head_buffer);
@@ -1511,8 +1519,8 @@ static int cmd_goep_server_action(const struct shell *sh, size_t argc, char *arg
 SHELL_STATIC_SUBCMD_SET_CREATE(obex_add_header_cmds,
 	SHELL_CMD_ARG(count, NULL, "<number of objects (used by Connect)>", cmd_add_header_count, 2,
 		      0),
-	SHELL_CMD_ARG(name, NULL, "<name of the object (often a file name)>", cmd_add_header_name,
-		      2, 0),
+	SHELL_CMD_ARG(name, NULL, "[name of the object (often a file name)]", cmd_add_header_name,
+		      1, 1),
 	SHELL_CMD_ARG(type, NULL,
 		      "<type of object - e.g. text, html, binary, manufacturer specific>",
 		      cmd_add_header_type, 2, 0),
