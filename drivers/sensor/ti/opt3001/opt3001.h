@@ -10,6 +10,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 
 #define OPT3001_REG_RESULT 0x00
@@ -29,11 +30,17 @@
 #define OPT3001_SAMPLE_EXPONENT_SHIFT 12
 #define OPT3001_MANTISSA_MASK 0xfff
 
+struct opt3001_trigger {
+	const struct sensor_trigger *trigger;
+	sensor_trigger_handler_t handler;
+};
+
 struct opt3001_data {
 	const struct device *dev;
 	uint16_t sample;
 	struct gpio_callback gpio_cb_int;
 	struct k_work work_int;
+	struct opt3001_trigger trig;
 };
 
 struct opt3001_config {
