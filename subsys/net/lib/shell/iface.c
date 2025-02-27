@@ -724,13 +724,51 @@ static int cmd_net_iface(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
-	PR("Hostname: %s\n\n", net_hostname_get());
+	PR("Hostname: %s\n", net_hostname_get());
 #endif
+	PR("Default interface: %d\n\n",
+	   net_if_get_by_iface(net_if_get_default()));
 
 	user_data.sh = sh;
 	user_data.user_data = iface;
 
 	net_if_foreach(iface_cb, &user_data);
+
+	return 0;
+}
+
+static int cmd_net_default_iface(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = NULL;
+	int idx;
+
+	if (argc < 2) {
+		iface = net_if_get_default();
+		if (!iface) {
+			PR_WARNING("No default interface\n");
+			return -ENOEXEC;
+		}
+
+		idx = net_if_get_by_iface(iface);
+		PR("Default interface: %d\n", idx);
+	} else {
+		int new_idx;
+
+		idx = get_iface_idx(sh, argv[1]);
+		if (idx < 0) {
+			return -ENOEXEC;
+		}
+
+		net_if_set_default(net_if_get_by_index(idx));
+
+		new_idx = net_if_get_by_iface(net_if_get_default());
+		if (new_idx != idx) {
+			PR_WARNING("Failed to set default interface to %d\n", idx);
+			return -ENOEXEC;
+		}
+
+		PR("Default interface: %d\n", new_idx);
+	}
 
 	return 0;
 }
@@ -756,6 +794,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 	SHELL_CMD(set_mac, IFACE_DYN_CMD,
 		  "'net iface set_mac <index> <MAC>' sets MAC address for the network interface.",
 		  cmd_net_set_mac),
+	SHELL_CMD(default, IFACE_DYN_CMD,
+		  "'net iface default [<index>]' displays or sets the default network interface.",
+		  cmd_net_default_iface),
 	SHELL_SUBCMD_SET_END
 );
 
