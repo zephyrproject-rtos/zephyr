@@ -15,7 +15,8 @@
  * Memory management (llext_mem.c)
  */
 
-int llext_copy_strings(struct llext_loader *ldr, struct llext *ext);
+int llext_copy_strings(struct llext_loader *ldr, struct llext *ext,
+		       const struct llext_load_param *ldr_parm);
 int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 		       const struct llext_load_param *ldr_parm);
 void llext_free_regions(struct llext *ext);
