@@ -51,6 +51,9 @@ API Changes
 Removed APIs and options
 ========================
 
+* Twister's ``--disable-unrecognized-section-test`` option removed. Test has been removed and the
+  option became the default behavior.
+
 Deprecated APIs and options
 ===========================
 
