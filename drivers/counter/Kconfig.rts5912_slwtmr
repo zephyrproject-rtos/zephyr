@@ -1,0 +1,12 @@
+# Realtek counter configuration options
+
+# Copyright (c) 2025 Realtek Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_REALTEK_RTS5912_SLWTMR
+	bool "Realtek rts5912 series slow timer counter driver"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_SLWTIMER_ENABLED
+	help
+	  Enable counter driver for Realtek RTS5912 MCU series. Such driver
+	  will expose the slow timer devices present on the MCU.
