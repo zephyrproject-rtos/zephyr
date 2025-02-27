@@ -56,7 +56,7 @@ int main(void)
                                       thread_stacks[i], STACK_SIZE,
                                       thread_function, 
                                       (void *)(uintptr_t)i, NULL, NULL,
-                                      NULL, 0, K_FOREVER);
+                                      K_PRIO_PREEMPT(1), 0, K_FOREVER);
         // k_thread_cpu_mask_clear(tid) ;
         k_thread_cpu_pin(tid, hart_id);
         k_thread_start(tid);
