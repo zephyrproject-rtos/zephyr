@@ -16,7 +16,8 @@
 extern "C" {
 #endif
 
-#define BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG 0x001958
+#define BT_AVRCP_COMPANY_ID_SIZE          (3)
+#define BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG (0x001958)
 
 /** @brief AVRCP Capability ID */
 typedef enum __packed {
@@ -262,11 +263,11 @@ int bt_avrcp_register_cb(const struct bt_avrcp_cb *cb);
  *  This function gets the capabilities supported by remote device.
  *
  *  @param avrcp The AVRCP instance.
- *  @param cap_id Specific capability requested
+ *  @param cap_id Specific capability requested, see @ref bt_avrcp_cap_t.
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_get_cap(struct bt_avrcp *avrcp, bt_avrcp_cap_t cap_id);
+int bt_avrcp_get_cap(struct bt_avrcp *avrcp, uint8_t cap_id);
 
 /** @brief Get AVRCP Unit Info.
  *
@@ -295,15 +296,15 @@ int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp);
  *  to transfer user operation information from a CT to Panel subunit of TG.
  *
  *  @param avrcp The AVRCP instance.
- *  @param opid The user operation id.
- *  @param state The button state.
+ *  @param opid The user operation id, see @ref bt_avrcp_opid_t.
+ *  @param state The button state, see @ref bt_avrcp_button_state_t.
  *  @param payload The payload of the pass through command. Should not be NULL if len is not zero.
  *  @param len The length of the payload.
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_passthrough(struct bt_avrcp *avrcp, bt_avrcp_opid_t opid,
-			 bt_avrcp_button_state_t state, const uint8_t *payload, uint8_t len);
+int bt_avrcp_passthrough(struct bt_avrcp *avrcp, uint8_t opid, uint8_t state,
+			 const uint8_t *payload, uint8_t len);
 
 #ifdef __cplusplus
 }

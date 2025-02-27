@@ -19,7 +19,6 @@
 
 #define AVRCP_SUBUNIT_PAGE           (0) /* Fixed value according to AVRCP */
 #define AVRCP_SUBUNIT_EXTENSION_CODE (7) /* Fixed value according to TA Document 2001012 */
-#define AVRCP_COMPANY_ID_SIZE        (3) /* Length for each company ID */
 
 typedef enum __packed {
 	BT_AVRCP_SUBUNIT_ID_ZERO = 0x0,
