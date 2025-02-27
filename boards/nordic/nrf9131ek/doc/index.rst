@@ -8,7 +8,7 @@ Overview
 
 The nRF9131 EK (PCA10165) is a single-board evaluation kit for the nRF9131 SiP
 for DECT NR+ and LTE-M/NB-IoT with GNSS.
-The ``nrf9131ek/nrf9131`` board configuration provides support for the Nordic Semiconductor nRF9131 ARM
+The ``nrf9131ek/nrf9131/nrf9120`` board configuration provides support for the Nordic Semiconductor nRF9131 ARM
 Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`
@@ -46,7 +46,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The ``nrf9131ek/nrf9131`` board configuration supports the following
+The ``nrf9131ek/nrf9131/nrf9120`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -110,7 +110,7 @@ Security components
 Programming and Debugging
 *************************
 
-``nrf9131ek/nrf9131`` supports the Armv8m Security Extension, and by default boots
+``nrf9131ek/nrf9131/nrf9120`` supports the Armv8m Security Extension, and by default boots
 in the Secure state.
 
 Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
@@ -130,9 +130,9 @@ Building the Secure firmware using Zephyr
 
 The process requires the following steps:
 
-1. Build the Secure Zephyr application using ``-DBOARD=nrf9131ek/nrf9131`` and
+1. Build the Secure Zephyr application using ``-DBOARD=nrf9131ek/nrf9131/nrf9120`` and
    ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the application project configuration file.
-2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9131ek/nrf9131/ns``.
+2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9131ek/nrf9131/nrf9120/ns``.
 3. Merge the two binaries together.
 
 Building the Secure firmware with TF-M
@@ -142,7 +142,7 @@ The process to build the Secure firmware image using TF-M and the Non-Secure
 firmware image using Zephyr requires the following action:
 
 1. Build the Non-Secure Zephyr application
-   using ``-DBOARD=nrf9131ek/nrf9131/ns``.
+   using ``-DBOARD=nrf9131ek/nrf9131/nrf9120/ns``.
    To invoke the building of TF-M the Zephyr build system requires the
    Kconfig option ``BUILD_WITH_TFM`` to be enabled, which is done by
    default when building Zephyr as a Non-Secure application.
@@ -168,7 +168,7 @@ Building a Secure only application
 ==================================
 
 Build the Zephyr app in the usual way (see :ref:`build_an_application`
-and :ref:`application_run`), using ``-DBOARD=nrf9131ek/nrf9131``.
+and :ref:`application_run`), using ``-DBOARD=nrf9131ek/nrf9131/nrf9120``.
 
 
 Flashing
@@ -195,7 +195,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf9131ek/nrf9131
+   :board: nrf9131ek/nrf9131/nrf9120
    :goals: build flash
 
 Debugging
@@ -216,7 +216,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/nordic/nrf9131ek/nrf9131ek_nrf9131_common.dtsi`.
+:zephyr_file:`boards/nordic/nrf9131ek/nrf9131ek_nrf9131_nrf9120_common.dtsi`.
 
 References
 **********

@@ -3,7 +3,7 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF9131EK_NRF9131 || BOARD_NRF9131EK_NRF9131_NS
+if BOARD_NRF9131EK_NRF9131_NRF9120 || BOARD_NRF9131EK_NRF9131_NRF9120_NS
 
 # For the secure version of the board the firmware is linked at the beginning
 # of the flash, or into the code-partition defined in DT if it is intended to
@@ -20,9 +20,9 @@ DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 
 config FLASH_LOAD_SIZE
 	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
-	depends on BOARD_NRF9131EK_NRF9131 && TRUSTED_EXECUTION_SECURE
+	depends on BOARD_NRF9131EK_NRF9131_NRF9120 && TRUSTED_EXECUTION_SECURE
 
-if BOARD_NRF9131EK_NRF9131_NS
+if BOARD_NRF9131EK_NRF9131_NRF9120_NS
 
 config FLASH_LOAD_OFFSET
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
@@ -30,6 +30,6 @@ config FLASH_LOAD_OFFSET
 config FLASH_LOAD_SIZE
 	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
-endif # BOARD_NRF9131EK_NRF9131_NS
+endif # BOARD_NRF9131EK_NRF9131_NRF9120_NS
 
-endif # BOARD_NRF9131EK_NRF9131 || BOARD_NRF9131EK_NRF9131_NS
+endif # BOARD_NRF9131EK_NRF9131_NRF9120 || BOARD_NRF9131EK_NRF9131_NRF9120_NS

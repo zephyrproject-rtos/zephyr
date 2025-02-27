@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "nrf9131ek_nrf9131_common-pinctrl.dtsi"
+#include "nrf9131ek_nrf9131_nrf9120_common-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
