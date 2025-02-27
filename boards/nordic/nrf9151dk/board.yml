@@ -2,7 +2,8 @@ board:
   name: nrf9151dk
   full_name: nRF9151 DK
   vendor: nordic
-  socs:
+  sips:
   - name: nrf9151
     variants:
     - name: 'ns'
+      soc: nrf9120

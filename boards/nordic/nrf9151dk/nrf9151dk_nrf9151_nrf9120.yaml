@@ -1,19 +1,21 @@
-identifier: nrf9151dk/nrf9151/ns
-name: nRF9151-DK-NRF9151-Non-Secure
+identifier: nrf9151dk/nrf9151/nrf9120
+name: nRF9151-DK-NRF9151
 type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
   - zephyr
-ram: 128
-flash: 192
+ram: 88
+flash: 1024
 supported:
   - arduino_gpio
   - arduino_i2c
   - arduino_serial
   - arduino_spi
+  - gpio
   - i2c
   - pwm
+  - spi
   - watchdog
-  - netif:modem
+  - counter
 vendor: nordic

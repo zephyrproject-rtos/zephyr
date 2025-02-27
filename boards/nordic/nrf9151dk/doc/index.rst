@@ -7,7 +7,7 @@ Overview
 ********
 
 The nRF9151 DK (PCA10171) is a single-board development kit for evaluation and
-development on the nRF9151 SiP for DECT NR+ and LTE-M/NB-IoT with GNSS. The ``nrf9151dk/nrf9151``
+development on the nRF9151 SiP for DECT NR+ and LTE-M/NB-IoT with GNSS. The ``nrf9151dk/nrf9151/nrf9120``
 board configuration provides support for the Nordic Semiconductor nRF9151 ARM
 Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
 
@@ -39,7 +39,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The ``nrf9151dk/nrf9151`` board configuration supports the following
+The ``nrf9151dk/nrf9151/nrf9120`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -117,7 +117,7 @@ Security components
 Programming and Debugging
 *************************
 
-``nrf9151dk/nrf9151`` supports the Armv8m Security Extension, and by default boots
+``nrf9151dk/nrf9151/nrf9120`` supports the Armv8m Security Extension, and by default boots
 in the Secure state.
 
 Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
@@ -139,7 +139,7 @@ Building a Secure only application
 ==================================
 
 Build the Zephyr app in the usual way (see :ref:`build_an_application`
-and :ref:`application_run`), using ``-DBOARD=nrf9151dk/nrf9151``.
+and :ref:`application_run`), using ``-DBOARD=nrf9151dk/nrf9151/nrf9120``.
 
 Flashing
 ========
@@ -165,7 +165,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf9151dk/nrf9151
+   :board: nrf9151dk/nrf9151/nrf9120
    :goals: build flash
 
 Debugging
@@ -186,7 +186,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/nordic/nrf9151dk/nrf9151dk_nrf9151_common.dtsi`.
+:zephyr_file:`boards/nordic/nrf9151dk/nrf9151dk_nrf9151_nrf9120_common.dtsi`.
 
 References
 **********

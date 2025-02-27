@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF9151DK
-	select SOC_NRF9151_LACA
+	select SIP_NRF9151_NRF9120_LACA
