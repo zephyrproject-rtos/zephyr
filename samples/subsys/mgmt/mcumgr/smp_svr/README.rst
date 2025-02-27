@@ -12,7 +12,7 @@ This sample application implements a Simple Management Protocol (SMP) server.
 SMP is a basic transfer encoding for use with the MCUmgr management protocol.
 For more information about MCUmgr and SMP, please see :ref:`device_mgmt`.
 
-This sample application supports the following mcumgr transports by default:
+This sample application supports the following MCUmgr transports by default:
 
     * Shell
     * Bluetooth
@@ -41,7 +41,8 @@ Use of a tool
 
 To interact remotely with the management subsystem on a device, a tool is required to interact with
 it. There are various tools available which are listed on the :ref:`mcumgr_tools_libraries` page
-of the Management subsystem documentation.
+of the Management subsystem documentation which can be used as a client for a Zephyr MCUmgr SMP
+server.
 
 Building a BLE Controller
 =========================
@@ -54,30 +55,13 @@ Bluetooth Low Energy (BLE) and do not have a built-in or pluggable BLE radio,
 you can build one and use it following the instructions in
 :ref:`bluetooth-hci-uart-bluez`.
 
-Building and flashing MCUboot
-*****************************
-
-The below steps describe how to build and run the MCUboot bootloader.
-Detailed instructions can be found in the :ref:`mcuboot` documentation page.
-
-The Zephyr port of MCUboot is essentially a normal Zephyr application, which means that
-it can be built and flashed like normal using ``west``, like so:
-
-.. code-block:: console
-
-   west build -b <board> -d build_mcuboot bootloader/mcuboot/boot/zephyr
-   west flash -d build_mcuboot
-
-Substitute <board> for one of the boards supported by the sample, see
-:file:`sample.yaml`.
-
 .. _smp_svr_sample_build:
 
 Building the sample application
 *******************************
 
-The below steps describe how to build and run the ``smp_svr`` sample in
-Zephyr. The ``smp_svr`` sample comes in different flavours.
+The below steps describe how to build and run the ``smp_svr`` sample in Zephyr with ``MCUboot``
+included. The ``smp_svr`` sample comes in different flavours.
 
 .. tabs::
 
@@ -85,50 +69,53 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
 
       To build the bluetooth sample:
 
-      .. code-block:: console
-
-         west build \
-            -b nrf52dk/nrf52832 \
-            samples/subsys/mgmt/mcumgr/smp_svr \
-            -- \
-            -DEXTRA_CONF_FILE=overlay-bt.conf
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: nrf52dk/nrf52832
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="overlay-bt.conf"
+         :compact:
 
    .. group-tab:: Serial
 
       To build the serial sample with file-system and shell management support:
 
-      .. code-block:: console
-
-         west build \
-            -b frdm_k64f \
-            samples/subsys/mgmt/mcumgr/smp_svr \
-            -- \
-            -DEXTRA_CONF_FILE='overlay-serial.conf;overlay-fs.conf;overlay-shell-mgmt.conf'
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: frdm_k64f
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="overlay-serial.conf;overlay-fs.conf;overlay-shell-mgmt.conf"
+         :compact:
 
    .. group-tab:: USB CDC_ACM
 
       To build the serial sample with USB CDC_ACM backend:
 
-      .. code-block:: console
-
-         west build \
-            -b nrf52840dk/nrf52840 \
-            samples/subsys/mgmt/mcumgr/smp_svr \
-            -- \
-            -DEXTRA_CONF_FILE=overlay-cdc.conf \
-            -DDTC_OVERLAY_FILE=usb.overlay
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: nrf52840dk/nrf52840
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="overlay-cdc.conf" -DEXTRA_DTC_OVERLAY_FILE="usb.overlay"
+         :compact:
 
    .. group-tab:: Shell
 
       To build the shell sample:
 
-      .. code-block:: console
-
-         west build \
-            -b frdm_k64f \
-            samples/subsys/mgmt/mcumgr/smp_svr \
-            -- \
-            -DEXTRA_CONF_FILE='overlay-shell.conf'
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: frdm_k64f
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="overlay-shell.conf"
+         :compact:
 
    .. group-tab:: UDP
 
@@ -138,49 +125,24 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
 
       To build the UDP sample:
 
-      .. code-block:: console
-
-         west build \
-            -b frdm_k64f \
-            samples/subsys/mgmt/mcumgr/smp_svr \
-            -- \
-            -DEXTRA_CONF_FILE=overlay-udp.conf
-
-.. _smp_svr_sample_sign:
-
-Signing the sample image
-************************
-
-A key feature of MCUboot is that images must be signed before they can be successfully
-uploaded and run on a target. To sign images, the MCUboot tool :file:`imgtool` can be used.
-
-To sign the sample image built in the previous step:
-
-.. code-block:: console
-
-    west sign -t imgtool -- --key bootloader/mcuboot/root-rsa-2048.pem
-
-The above command creates an image file called :file:`zephyr.signed.bin` in the
-build directory.
-
-For more information on image signing and ``west sign``, see the :ref:`west-sign`
-documentation.
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: frdm_k64f
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="overlay-udp.conf"
+         :compact:
 
 Flashing the sample image
 *************************
 
-Upload the :file:`zephyr.signed.bin` file from the previous to image slot-0 of your
-board.  See :ref:`flash_map_api` for details on flash partitioning.
-
-To upload the initial image file to an empty slot-0, use ``west flash`` like normal.
-``west flash`` will automatically detect slot-0 address and confirm the image.
+The original application will be built for slot-0, see :ref:`flash_map_api` for details on flash
+partitioning. Flash both MCUboot and the sample application:
 
 .. code-block:: console
 
-    west flash --bin-file build/zephyr/zephyr.signed.bin
-
-The *signed* image file needs to be used specifically, otherwise the non-signed version
-will be used and the image won't be runnable.
+    west flash
 
 Sample image: hello world!
 ==========================
@@ -204,24 +166,23 @@ instructions on :ref:`nordic_segger_msd` to disable MSD support.
 Device Firmware Upgrade (DFU)
 *****************************
 
-Now that the SMP server is running on your board and you are able to communicate
-with it using :file:`mcumgr`, you might want to test what is commonly called
-"OTA DFU", or Over-The-Air Device Firmware Upgrade. This works for both BT and UDP.
+Now that the SMP server is running on your board and you are able to communicate with it using a
+client, you might want to test what is commonly called "OTA DFU", or Over-The-Air Device Firmware
+Upgrade. This works for both BT and UDP.
 
 The general sequence of a DFU process is as follows:
 
-* Build an MCUboot enabled application, see :ref:`smp_svr_sample_build`
-* Sign the application image, see :ref:`smp_svr_sample_sign`
-* Upload the signed image using :file:`mcumgr`
-* Listing the images on the device using :file:`mcumgr`
-* Mark the uploaded image for testing using :file:`mcumgr`
-* Reset the device remotely using :file:`mcumgr`
-* Confirm the uploaded image using :file:`mcumgr` (optional)
+* Build an MCUboot enabled application using sysbuild, see :ref:`smp_svr_sample_build`
+* Upload the signed image using an MCUmgr client
+* Listing the images on the device using an MCUmgr client
+* Mark the uploaded image for testing using an MCUmgr client
+* Reset the device remotely using an MCUmgr client
+* Confirm the uploaded image using an MCUmgr client (optional)
 
 Direct image upload and Image mapping to MCUboot slot
 =====================================================
 
-Currently the mcumgr supports, for direct upload, 4 target images, of which first two are mapped
+Currently MCUmgr supports, for direct upload, 4 target images, of which first two are mapped
 into MCUboot primary (slot-0) and secondary (slot-1) respectively.
 
 For clarity, here is DTS label to slot to ``<image>`` translation table:
@@ -238,6 +199,12 @@ For clarity, here is DTS label to slot to ``<image>`` translation table:
     | "image-3" |        |     3      |
     +-----------+--------+------------+
 
+.. note::
+
+   There is a slot info command that can be used to see information on all slots and get the
+   upload ``image`` ID to use to update that slot, see :ref:`mcumgr_smp_group_1_slot_info` for
+   details.
+
 Upload the signed image
 =======================
 
@@ -246,15 +213,15 @@ firmware file to upload and begin the upload.
 
 .. note::
 
-   At the beginning of the upload process, the target might start erasing
-   the image slot, taking several dozen seconds for some targets.
+   At the beginning of the upload process, the target might start erasing the image slot, taking
+   several dozen seconds for some targets.
 
 List the images
 ===============
 
-A list of images (slot-0 and slot-1) that are present can now be obtained on the remote target device using
-the tool of your choice, which should print the status and hash values of each of the images
-present.
+A list of images (slot-0 and slot-1) that are present can now be obtained on the remote target
+device using the tool of your choice, which should print the status and hash values of each of
+the images present.
 
 Test the image
 ==============
@@ -264,8 +231,35 @@ boots, see the instructions in the tool of your choice. Upon reboot, MCUBoot wil
 image.
 
 .. note::
-   There is not yet any way of getting the image hash without actually uploading the
-   image and getting the hash.
+
+   Some tools may allow for listing the hash of an image without needing to upload them.
+   ``imgtool`` can also be used to list the image hash, albeit in a C hex-array format, by using
+   the ``dumpinfo`` command on the signed update file, e.g.
+
+   .. code-block:: console
+
+       imgtool dumpinfo smp_svr/zephyr/zephyr.signed.bin
+
+       Printing content of signed image: zephyr.signed.bin
+
+       #### Image header (offset: 0x0) ############################
+       magic:              0x96f3b83d
+       ...
+       #### TLV area (offset: 0xbfa0) #############################
+       magic:     0x6907
+       area size: 0x150
+               ---------------------------------------------
+               type: SHA256 (0x10)
+               len:  0x20
+               data: 0x9b 0xa9 0x84 0x48 0xe5 0x4d 0xac 0x40
+                     0x62 0x29 0xe2 0x11 0x17 0x96 0x66 0xd9
+                     0xae 0x83 0x9a 0x37 0x71 0x00 0xfc 0xe2
+                     0xc0 0x30 0x30 0x4f 0xfc 0x40 0x58 0xaa
+               ---------------------------------------------
+       ...
+
+   The full SHA256 hash for the above output would be:
+   9ba98448e54dac406229e211179666d9ae839a377100fce2c030304ffc4058aa
 
 Reset remotely
 ==============
@@ -280,14 +274,16 @@ Confirm new image
 The new image is now loaded into slot-0, but it will be swapped back into slot-1 on the next
 reset unless the image is confirmed. Confirm the image using the tool of your choice.
 
-Note that if you try to send the very same image that is already flashed in
-slot-0 then the procedure will not complete successfully since the hash values
-for both slots will be identical.
+.. note::
 
-Download file from File System
-******************************
+   If you try to send the very same image that is already flashed in slot-0 then the procedure
+   will not complete successfully since the hash values for both slots will be identical.
 
-SMP server supports downloading files from File System on device via
-:file:`mcumgr`. This is useful with FS log backend, when files are stored in
-non-volatile memory. Build and flash both MCUboot and smp_svr applications and
-then use the tool of your choice to download files from the file system.
+Download files from/upload files to file system
+***********************************************
+
+SMP server supports downloading files from/uploading files to the on-device
+:ref:`file_system_api`, this is useful with e.g. FS log backend, when files are stored in
+non-volatile memory. Build and flash ``smp_svr`` using sysbuild and then use the tool of your
+choice to download files from the file system. The full path of the file on the device must be
+known and used.

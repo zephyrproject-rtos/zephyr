@@ -5261,10 +5261,18 @@ static int gatt_prepare_write(struct bt_conn *conn,
 			      struct bt_gatt_write_params *params)
 {
 	uint16_t len, req_len;
+	uint16_t mtu = bt_att_get_mtu(conn);
 
 	req_len = sizeof(struct bt_att_prepare_write_req);
 
-	len = bt_att_get_mtu(conn) - req_len - 1;
+	/** MTU size is bigger than the ATT_PREPARE_WRITE_REQ header (5 bytes),
+	 * unless there's no connection.
+	 */
+	if (mtu == 0) {
+		return -ENOTCONN;
+	}
+
+	len = mtu - req_len - 1;
 	len = MIN(params->length, len);
 	len += req_len;
 

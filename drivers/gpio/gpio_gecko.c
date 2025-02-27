@@ -292,10 +292,10 @@ static int gpio_gecko_pin_interrupt_configure(const struct device *dev,
 	} else {
 		/* Interrupt line is already in use */
 		if ((GPIO->IEN & BIT(pin)) != 0) {
-			/* TODO: Return an error only if request is done for
-			 * a pin from a different port.
-			 */
-			return -EBUSY;
+			/* Check if the interrupt is already configured for this port */
+			if (!(data->int_enabled_mask & BIT(pin))) {
+				return -EBUSY;
+			}
 		}
 
 		bool rising_edge = true;

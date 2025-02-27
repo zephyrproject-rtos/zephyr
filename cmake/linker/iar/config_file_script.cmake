@@ -335,6 +335,7 @@ function(group_to_string)
     get_property(name_clean GLOBAL PROPERTY ${section}_NAME_CLEAN)
 
     get_property(parent   GLOBAL PROPERTY ${section}_PARENT)
+    get_property(noinit   GLOBAL PROPERTY ${section}_NOINIT)
     # This is only a trick to get the memories
     get_property(parent_type GLOBAL PROPERTY ${parent}_OBJ_TYPE)
     if(${parent_type} STREQUAL GROUP)
@@ -351,7 +352,7 @@ function(group_to_string)
     endif()
 
     set(${STRING_STRING} "${${STRING_STRING}}\"${name}\": place in ${ILINK_CURRENT_NAME} { block ${name_clean} };\n")
-    if(DEFINED vma AND DEFINED lma)
+    if(DEFINED vma AND DEFINED lma AND NOT ${noinit})
       set(${STRING_STRING} "${${STRING_STRING}}\"${name}_init\": place in ${lma} { block ${name_clean}_init };\n")
     endif()
 
@@ -518,18 +519,8 @@ function(section_to_string)
       set_property(GLOBAL APPEND PROPERTY ILINK_SYMBOL_ICF "__${name_clean}_end = END(${name_clean})")
     endif()
   endif()
-
-  # Add keep to the sections that have 'KEEP:TRUE'
-  foreach(idx ${indicies})
-    get_property(keep     GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_KEEP)
-    get_property(input    GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_INPUT)
-    foreach(setting ${input})
-      if(keep)
-        # keep { section .abc* };
-        set(TEMP "${TEMP}keep { section ${setting} };\n")
-      endif()
-    endforeach()
-  endforeach()
+  # section patterns and blocks to keep { }
+  set(to_be_kept "")
 
   if(DEFINED first_index_section)
     set(TEMP "${TEMP}${first_index_section}\n")
@@ -606,6 +597,12 @@ function(section_to_string)
     # Get the next offset and use that as this ones size!
     get_property(offset   GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx_next}_OFFSET)
 
+    if(keep)
+      list(APPEND to_be_kept "block ${name_clean}_${idx}")
+      foreach(setting ${input})
+        list(APPEND to_be_kept "section ${setting}")
+      endforeach()
+    endif()
     if(DEFINED symbols)
       list(LENGTH symbols symbols_count)
       if(${symbols_count} GREATER 0)
@@ -810,7 +807,14 @@ function(section_to_string)
   get_property(current_sections GLOBAL PROPERTY ILINK_CURRENT_SECTIONS)
 
   if(DEFINED group_parent_vma AND DEFINED group_parent_lma)
-    if(DEFINED current_sections)
+    if(${noinit})
+      list(JOIN current_sections ", " SELECTORS)
+      set(TEMP "${TEMP}\ndo not initialize {\n${SELECTORS}\n};")
+    else()
+      # Generate the _init block and the initialize manually statement.
+      # Note that we need to have the X_init block defined even if we have
+      # no sections, since there will come a "place in XXX" statement later.
+
       # "${TEMP}" is there too keep the ';' else it will be a list
       string(REGEX REPLACE "(block[ \t\r\n]+)([^ \t\r\n]+)" "\\1\\2_init" INIT_TEMP "${TEMP}")
       string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)([^ \t\r\n,]+)" "\\1\\2\\3\\4_init" INIT_TEMP "${INIT_TEMP}")
@@ -818,16 +822,28 @@ function(section_to_string)
       string(REGEX REPLACE "alphabetical order, " "" INIT_TEMP "${INIT_TEMP}")
       string(REGEX REPLACE "{ readwrite }" "{ }" INIT_TEMP "${INIT_TEMP}")
 
+      # If any content is marked as keep, is has to be applied to the init block
+      # too, esp. for blocks that are not referenced (e.g. empty blocks wiht min_size)
+      if(to_be_kept)
+        list(APPEND to_be_kept "block ${name_clean}_init")
+      endif()
       set(TEMP "${TEMP}\n${INIT_TEMP}\n")
-      set(TEMP "${TEMP}\ninitialize manually with copy friendly\n")
-      set(TEMP "${TEMP}{\n")
-      foreach(section ${current_sections})
-        set(TEMP "${TEMP}  ${section},\n")
-      endforeach()
-      set(TEMP "${TEMP}};")
-      set(current_sections)
-
+      if(DEFINED current_sections)
+        set(TEMP "${TEMP}\ninitialize manually with copy friendly\n")
+        set(TEMP "${TEMP}{\n")
+        foreach(section ${current_sections})
+          set(TEMP "${TEMP}  ${section},\n")
+        endforeach()
+        set(TEMP "${TEMP}};")
+        set(current_sections)
+      endif()
     endif()
+  endif()
+
+  # Finally, add the keeps.
+  if(to_be_kept)
+    list(JOIN to_be_kept ", " K)
+    set(TEMP "${TEMP}\nkeep { ${K} };\n")
   endif()
 
   set(${STRING_STRING} "${${STRING_STRING}}\n${TEMP}\n" PARENT_SCOPE)

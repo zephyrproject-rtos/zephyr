@@ -544,7 +544,7 @@ static void *mark_update;
 #endif /* CONFIG_BT_CONN */
 
 static MFIFO_DEFINE(tx_ack, sizeof(struct lll_tx),
-		    BT_CTLR_TX_BUFFERS + BT_CTLR_ISO_TX_BUFFERS);
+		    BT_CTLR_TX_BUFFERS + BT_CTLR_ISO_TX_PDU_BUFFERS);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 
 static void *mark_disable;

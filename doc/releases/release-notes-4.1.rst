@@ -30,8 +30,38 @@ Zephyr 4.1.0 (Working Draft)
 ############################
 
 We are pleased to announce the release of Zephyr version 4.1.0.
-
 Major enhancements with this release include:
+
+**Performance improvements**
+  Multiple performance improvements of core Zephyr kernel functions have been implemented,
+  benefiting all supported hardware architectures.
+
+  An official port of the :zephyr_file:`thread_metric <tests/benchmarks/thread_metric>` RTOS
+  benchmark has also been added to make it easier for developers to measure the performance of
+  Zephyr on their hardware and compare it to other RTOSes.
+
+**Experimental support for IAR compiler**
+  :ref:`toolchain_iar_arm` can now be used to build Zephyr applications. This is an experimental
+  feature that is expected to be improved in future releases.
+
+**Initial support for Rust on Zephyr**
+  It is now possible to write Zephyr applications in Rust. :ref:`language_rust` is available through
+  an optional Zephyr module, and several code samples are available as a starting point.
+
+**USB MIDI Class Driver**
+  Introduction of a new :ref:`USB MIDI 2.0 <usbd_midi2>` device driver, allowing Zephyr devices to
+  communicate with MIDI controllers and instruments over USB.
+
+**Expanded Board Support**
+  Support for 70 :ref:`new boards <boards_added_in_zephyr_4_1>` and 11
+  :ref:`new shields <shields_added_in_zephyr_4_1>` has been added in this release.
+
+  This includes highly popular boards such as :zephyr:board:`rpi_pico2` and
+  :zephyr:board:`ch32v003evt`, several boards with CAN+USB capabilities making them good candidates
+  for running the Zephyr-based open source `CANnectivity`_ firmware, and dozens of other boards
+  across all supported architectures.
+
+.. _CANnectivity: https://cannectivity.org/
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.0.0 to Zephyr v4.1.0 can be found in the separate :ref:`migration guide<migration_4.1>`.
@@ -44,6 +74,15 @@ The following CVEs are addressed by this release:
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+* :cve:`2025-1673` `Zephyr project bug tracker GHSA-jjhx-rrh4-j8mx
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-jjhx-rrh4-j8mx>`_
+
+* :cve:`2025-1674` `Zephyr project bug tracker GHSA-x975-8pgf-qh66
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-x975-8pgf-qh66>`_
+
+* :cve:`2025-1675` `Zephyr project bug tracker GHSA-2m84-5hfw-m8v4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2m84-5hfw-m8v4>`_
 
 API Changes
 ***********
@@ -86,6 +125,8 @@ Removed APIs and options
   after being deprecated in favor of :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED`.
 
 * The ``z_pm_save_idle_exit()`` PM API function has been removed.
+
+* Struct ``z_arch_esf_t`` has been removed. Use ``struct arch_esf`` instead.
 
 
 Deprecated APIs and options
@@ -178,6 +219,14 @@ New APIs and options
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS`
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT`
 
+* I3C
+
+  * :kconfig:option:`CONFIG_I3C_TARGET_BUFFER_MODE`
+  * :kconfig:option:`CONFIG_I3C_RTIO`
+  * :c:func:`i3c_ibi_hj_response`
+  * :c:func:`i3c_ccc_do_getacccr`
+  * :c:func:`i3c_device_controller_handoff`
+
 * Management
 
   * hawkBit
@@ -208,6 +257,8 @@ New APIs and options
   * :c:macro:`DT_ANY_INST_HAS_BOOL_STATUS_OKAY`
   * :c:struct:`led_dt_spec`
   * :kconfig:option:`CONFIG_STEP_DIR_STEPPER`
+
+.. _boards_added_in_zephyr_4_1:
 
 New Boards
 **********
@@ -323,6 +374,7 @@ New Boards
 
 * Renesas Electronics Corporation
 
+   * :zephyr:board:`ek_ra2l1` (``ek_ra2l1``)
    * :zephyr:board:`ek_ra4l1` (``ek_ra4l1``)
    * :zephyr:board:`ek_ra4m1` (``ek_ra4m1``)
    * :zephyr:board:`fpb_ra4e1` (``fpb_ra4e1``)
@@ -380,13 +432,30 @@ New Boards
    * :zephyr:board:`we_oceanus1ev` (``we_oceanus1ev``)
    * :zephyr:board:`we_orthosie1ev` (``we_orthosie1ev``)
 
-* others
+* Others
 
    * :zephyr:board:`canbardo` (``canbardo``)
    * :zephyr:board:`candlelight` (``candlelight``)
    * :zephyr:board:`candlelightfd` (``candlelightfd``)
    * :zephyr:board:`esp32c3_supermini` (``esp32c3_supermini``)
    * :zephyr:board:`promicro_nrf52840` (``promicro_nrf52840``)
+
+.. _shields_added_in_zephyr_4_1:
+
+New shields
+============
+
+  * :ref:`Abrobot ESP32 C3 OLED Shield <abrobot_esp32c3oled_shield>`
+  * :ref:`Adafruit Adalogger Featherwing Shield <adafruit_adalogger_featherwing_shield>`
+  * :ref:`Adafruit AW9523 GPIO Expander and LED Driver <adafruit_aw9523>`
+  * :ref:`MikroElektronika ETH 3 Click <mikroe_eth3_click>`
+  * :ref:`P3T1755DP Arduino® Shield Evaluation Board <p3t1755dp_ard_i2c_shield>`
+  * :ref:`P3T1755DP Arduino® Shield Evaluation Board <p3t1755dp_ard_i3c_shield>`
+  * :ref:`Digilent Pmod SD <pmod_sd>`
+  * :ref:`Renesas DA14531 Pmod Board <renesas_us159_da14531evz_shield>`
+  * :ref:`RTKMIPILCDB00000BE MIPI Display <rtkmipilcdb00000be>`
+  * :ref:`Seeed W5500 Ethernet Shield <seeed_w5500>`
+  * :ref:`ST B-CAMS-OMV-MB1683 <st_b_cams_omv_mb1683>`
 
 New Drivers
 ***********
@@ -433,6 +502,7 @@ New Drivers
    * :dtcompatible:`nordic,nrf-hsfll-global`
    * :dtcompatible:`nuvoton,npcm-pcc`
    * :dtcompatible:`realtek,rts5912-sccon`
+   * :dtcompatible:`renesas,rz-cpg`
    * :dtcompatible:`st,stm32n6-cpu-clock-mux`
    * :dtcompatible:`st,stm32n6-hse-clock`
    * :dtcompatible:`st,stm32n6-ic-clock-mux`
@@ -544,6 +614,7 @@ New Drivers
 
 * :abbr:`I2C (Inter-Integrated Circuit)`
 
+   * :dtcompatible:`nordic,nrf-twis`
    * :dtcompatible:`nxp,ii2c`
    * :dtcompatible:`ti,omap-i2c`
    * :dtcompatible:`ti,tca9544a`
@@ -799,6 +870,11 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* A header file has been introduced to allocate ID ranges for persistent keys in the PSA Crypto API.
+  It defines the ID ranges allocated to different users of the API (application, subsystems...).
+  Users of the API must now use this header file to construct persistent key IDs.
+  See :zephyr_file:`include/zephyr/psa/key_ids.h` for more information. (:github:`85581`)
 
 * Space-separated lists support has been removed from Twister configuration
   files. This feature was deprecated a long time ago. Projects that do still use

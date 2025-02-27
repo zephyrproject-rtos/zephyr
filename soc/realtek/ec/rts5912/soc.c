@@ -28,6 +28,10 @@ bool z_arm_on_enter_cpu_idle(void)
  */
 void soc_early_init_hook(void)
 {
+	if (!IS_ENABLED(CONFIG_RTS5912_DEBUG_SWJ)) {
+		return;
+	}
+
 	int ret;
 
 	/* Apply device related preinit configuration */

@@ -3,17 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-config MISRA_SANE
-	default y
-
 config PICOLIBC_SUPPORTED
 	default n
 
 config TOOLCHAIN_HAS_BUILTIN_FFS
 	default n
-
-config FP16
-	default y
 
 config IAR_LIBC_SUPPORTED
 	default y

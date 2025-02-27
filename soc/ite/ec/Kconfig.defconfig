@@ -5,4 +5,8 @@ if SOC_FAMILY_ITE_EC
 
 rsource "*/Kconfig.defconfig.series"
 
+choice PM_POLICY
+	default PM_POLICY_CUSTOM if SOC_FAMILY_ITE_EC
+endchoice
+
 endif # SOC_FAMILY_ITE_EC

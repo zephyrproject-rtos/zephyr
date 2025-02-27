@@ -190,7 +190,7 @@ zephyr_iterable_section(NAME cfb_font KVMA RAM_REGION GROUP RODATA_REGION SUBALI
 zephyr_iterable_section(NAME tracing_backend KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 
 zephyr_linker_section(NAME zephyr_dbg_info KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION zephyr_dbg_info INPUT ".zephyr_dbg_info" KEEP)
+zephyr_linker_section_configure(SECTION zephyr_dbg_info INPUT ".dbg_thread_info" KEEP)
 
 if(CONFIG_SYMTAB)
   zephyr_linker_section(NAME symtab KVMA FLASH GROUP RODATA_REGION SUBALIGN 4 NOINPUT)

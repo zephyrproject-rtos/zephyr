@@ -561,12 +561,19 @@ before opening a new Pull Request:
 
    ./scripts/ci/check_compliance.py -c upstream/main..
 
+.. note::
+   On Windows if the .pl extension has not yet been associated with an
+   application, then the first time a .pl file is run without specifying an
+   interpreter, Windows will ask what application will open Perl files.
+   Set the default app to Strawberry Perl. By default the executable is
+   installed at ``C:\Strawberry\perl\bin\perl.exe``.
+
 twister
 -------
 
 .. note::
    twister is only fully supported on Linux; on Windows and MacOS the execution
-   of tests is not supported, only building.
+   of tests is not supported on all target devices.
 
 If you think your change may break some test, you can submit your PR as a draft
 and let the project CI automatically run the :ref:`twister_script` for you.
@@ -736,13 +743,6 @@ workflow here:
 #. Click on the submit button and your pull request is sent and awaits
    review.  Email will be sent as review comments are made, or you can check
    on your pull request at https://github.com/zephyrproject-rtos/zephyr/pulls.
-
-   .. note:: As more commits are merged upstream, the GitHub PR page will show
-      a ``This branch is out-of-date with the base branch`` message and a
-      ``Update branch`` button on the PR page. That message should be ignored,
-      as the commits will be rebased as part of merging anyway, and triggering
-      a branch update from the GitHub UI will cause the PR approvals to be
-      dropped.
 
 #. While you're waiting for your pull request to be accepted and merged, you
    can create another branch to work on another issue. (Be sure to make your

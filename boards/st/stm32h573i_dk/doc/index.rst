@@ -250,7 +250,7 @@ OpenOCD Support
 
 For now, OpenOCD support  for STM32H5 is not available on upstream OpenOCD.
 You can check `OpenOCD official Github mirror`_.
-In order to use it though, you should clone from the cutomized
+In order to use it though, you should clone from the customized
 `STMicroelectronics OpenOCD Github`_ and compile it following usual README guidelines.
 Once it is done, you can set the OPENOCD and OPENOCD_DEFAULT_PATH variables in
 :zephyr_file:`boards/st/stm32h573i_dk/board.cmake` to point the build

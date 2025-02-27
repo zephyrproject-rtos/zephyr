@@ -659,6 +659,7 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 	close_ate.id = 0xffff;
 	close_ate.offset = fixture->fs.sector_size - sizeof(struct nvs_ate) * 5;
 	close_ate.len = 0;
+	close_ate.part = 0xff;
 	close_ate.crc8 = 0xff; /* Incorrect crc8 */
 
 	ate.id = 0x1;
@@ -667,6 +668,7 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 #ifdef CONFIG_NVS_DATA_CRC
 	ate.len += sizeof(data_crc);
 #endif
+	ate.part = 0xff;
 	ate.crc8 = crc8_ccitt(0xff, &ate,
 			      offsetof(struct nvs_ate, crc8));
 
@@ -722,12 +724,14 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_ate)
 	close_ate.id = 0xffff;
 	close_ate.offset = fixture->fs.sector_size / 2;
 	close_ate.len = 0;
+	close_ate.part = 0xff;
 	close_ate.crc8 = crc8_ccitt(0xff, &close_ate,
 				    offsetof(struct nvs_ate, crc8));
 
 	corrupt_ate.id = 0xdead;
 	corrupt_ate.offset = 0;
 	corrupt_ate.len = 20;
+	corrupt_ate.part = 0xff;
 	corrupt_ate.crc8 = 0xff; /* Incorrect crc8 */
 
 	/* Mark sector 0 as closed */

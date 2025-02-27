@@ -59,14 +59,14 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define EDMA_DID           0x7U
 
 /* When CM33 sets TRDC, CM7 must NOT require TRDC ownership from ELE */
-#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_MIMXRT1189_CM33)
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_MIMXRT1189_CM7)
 /* When CONFIG_SECOND_CORE_MCUX then TRDC(AON/WAKEUP) ownership cannot be released
  * to CM33 and CM7 both in one ELE reset cycle.
  * Only CM33 will set TRDC.
  */
-#define CM33_SET_TRDC 1U
-#else
 #define CM33_SET_TRDC 0U
+#else
+#define CM33_SET_TRDC 1U
 #endif
 
 #ifdef CONFIG_INIT_ARM_PLL

@@ -1,14 +1,16 @@
-#Copyright (c) 2024 BayLibre SAS
+# Copyright (c) 2024 BayLibre SAS
 
-#SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
-#Zephyr Memory Storage ZMS
+# Zephyr Memory Storage ZMS
 
 config ZMS
 	bool "Zephyr Memory Storage"
 	select CRC
 	help
-	  Enable support of Zephyr Memory Storage.
+	  Enable Zephyr Memory Storage, which is a key-value storage system designed to work with
+	  all types of non-volatile storage technologies.
+	  It supports classical on-chip NOR flash as well as new technologies like RRAM and MRAM.
 
 if ZMS
 
@@ -20,19 +22,16 @@ config ZMS_LOOKUP_CACHE
 	  table entry (ATE) for all ZMS IDs that fall into that cache position.
 
 config ZMS_LOOKUP_CACHE_SIZE
-	int "ZMS Storage lookup cache size"
+	int "ZMS lookup cache size"
 	default 128
 	range 1 65536
 	depends on ZMS_LOOKUP_CACHE
 	help
-	  Number of entries in ZMS lookup cache.
-	  It is recommended that it should be a power of 2.
-	  Every additional entry in cache will add 8 bytes in RAM
+	  Number of entries in the ZMS lookup cache.
+	  Every additional entry in cache will use 8 bytes of RAM.
 
 config ZMS_DATA_CRC
-	bool "ZMS DATA CRC"
-	help
-	  Enables DATA CRC
+	bool "ZMS data CRC"
 
 config ZMS_CUSTOMIZE_BLOCK_SIZE
 	bool "Customize the size of the buffer used internally for reads and writes"
@@ -40,8 +39,8 @@ config ZMS_CUSTOMIZE_BLOCK_SIZE
 	  ZMS uses an internal buffer to read/write and compare stored data.
 	  Increasing the size of this buffer should be done carefully in order to not
 	  overflow the stack.
-	  Increasing this buffer means as well that ZMS could work with storage devices
-	  that have larger write-block-size which decreases ZMS performance
+	  Increasing it makes ZMS able to work with storage devices
+	  that have a larger `write-block-size` (which decreases the performance of ZMS).
 
 config ZMS_CUSTOM_BLOCK_SIZE
 	int "ZMS internal buffer size"

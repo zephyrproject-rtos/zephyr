@@ -2499,3 +2499,59 @@ def test_move_node():
     with dtlib_raises("can't move '/newpath' to '/foo/bar': "
                       "parent node '/foo' doesn't exist"):
         dt.move_node(parent, '/foo/bar')
+
+def test_filename_and_lineno():
+    """Test that filename and lineno are correctly tracked for nodes and properties."""
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        included_file = os.path.join(tmpdir, 'included.dtsi')
+        with open(included_file, 'w') as f:
+            f.write('''/* a new node */
+/ {
+	node1: test-node1 {
+		prop1A = "value1A";
+	};
+};
+''')
+
+        main_file = os.path.join(tmpdir, 'test_with_include.dts')
+        with open(main_file, 'w') as f:
+            f.write('''/dts-v1/;
+
+/include/ "included.dtsi"
+
+/ {
+	node2: test-node2 {
+		prop2A = "value2A";
+		prop2B = "value2B";
+	};
+};
+
+&node1 {
+	prop1B = "value1B";
+};
+''')
+
+        dt = dtlib.DT(main_file, include_path=[tmpdir])
+
+        test_node2 = dt.get_node('/test-node2')
+        prop2A = test_node2.props['prop2A']
+        prop2B = test_node2.props['prop2B']
+
+        assert os.path.samefile(test_node2.filename, main_file)
+        assert test_node2.lineno == 6
+        assert os.path.samefile(prop2A.filename, main_file)
+        assert prop2A.lineno == 7
+        assert os.path.samefile(prop2B.filename, main_file)
+        assert prop2B.lineno == 8
+
+        test_node1 = dt.get_node('/test-node1')
+        prop1A = test_node1.props['prop1A']
+        prop1B = test_node1.props['prop1B']
+
+        assert os.path.samefile(test_node1.filename, included_file)
+        assert test_node1.lineno == 3
+        assert os.path.samefile(prop1A.filename, included_file)
+        assert prop1A.lineno == 4
+        assert os.path.samefile(prop1B.filename, main_file)
+        assert prop1B.lineno == 13

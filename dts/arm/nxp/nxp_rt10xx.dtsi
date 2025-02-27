@@ -14,9 +14,12 @@
 #include <zephyr/dt-bindings/memory-controller/nxp,flexram.h>
 
 / {
+	aliases {
+		die-temp0 = &tempmon;
+	};
+
 	chosen {
 		zephyr,entropy = &trng;
-		die-temp0 = &tempmon;
 	};
 
 	cpus {

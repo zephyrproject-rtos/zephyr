@@ -76,26 +76,67 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 #include <stdint.h>
 #include <string.h>
 
+#ifdef CONFIG_MCUBOOT
+#define READ_BUFFER_SIZE 32
+static bool flash_esp32_is_aligned(off_t address, void *buffer, size_t length)
+{
+	/* check if address, buffer pointer, and length are 4-byte aligned */
+	return ((address & 3) == 0) && (((uintptr_t)buffer & 3) == 0) && ((length & 3) == 0);
+}
+#endif
+
 static int flash_esp32_read(const struct device *dev, off_t address, void *buffer, size_t length)
 {
 	int ret = 0;
 
 #ifdef CONFIG_MCUBOOT
-	/* ensure everything is 4-byte aligned */
-	size_t aligned_length = ROUND_UP(length, 4);
-	off_t aligned_address = ROUND_DOWN(address, 4);
-	size_t address_offset = address - aligned_address;
-	uint32_t temp_buf[aligned_length / 4];
+	uint8_t *dest_ptr = (uint8_t *)buffer;
+	size_t remaining = length;
+	size_t copy_size = 0;
+	size_t aligned_size = 0;
+	bool allow_decrypt = esp_flash_encryption_enabled();
 
-	if (!esp_flash_encryption_enabled()) {
-		ret = esp_rom_flash_read(aligned_address, temp_buf, aligned_length, false);
-	} else {
-		ret = esp_rom_flash_read(aligned_address, temp_buf, aligned_length, true);
+	if (flash_esp32_is_aligned(address, buffer, length)) {
+		ret = esp_rom_flash_read(address, buffer, length, allow_decrypt);
+		return (ret == ESP_OK) ? 0 : -EIO;
 	}
 
-	memcpy((void *)buffer, ((uint8_t *)temp_buf) + address_offset, length);
-#else
+	/* handle unaligned reading */
+	uint8_t __aligned(4) temp_buf[READ_BUFFER_SIZE + 8];
+	while (remaining > 0) {
+		size_t addr_offset = address & 3;
+		size_t buf_offset = (uintptr_t)dest_ptr & 3;
 
+		copy_size = (remaining > READ_BUFFER_SIZE) ? READ_BUFFER_SIZE : remaining;
+
+		if (addr_offset == 0 && buf_offset == 0 && copy_size >= 4) {
+			aligned_size = copy_size & ~3;
+			ret = esp_rom_flash_read(address, dest_ptr, aligned_size, allow_decrypt);
+			if (ret != ESP_OK) {
+				return -EIO;
+			}
+
+			address += aligned_size;
+			dest_ptr += aligned_size;
+			remaining -= aligned_size;
+		} else {
+			size_t start_addr = address - addr_offset;
+
+			aligned_size = (copy_size + addr_offset + 3) & ~3;
+
+			ret = esp_rom_flash_read(start_addr, temp_buf, aligned_size, allow_decrypt);
+			if (ret != ESP_OK) {
+				return -EIO;
+			}
+
+			memcpy(dest_ptr, temp_buf + addr_offset, copy_size);
+
+			address += copy_size;
+			dest_ptr += copy_size;
+			remaining -= copy_size;
+		}
+	}
+#else
 	flash_esp32_sem_take(dev);
 
 	if (esp_flash_encryption_enabled()) {
@@ -105,7 +146,6 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 	}
 
 	flash_esp32_sem_give(dev);
-
 #endif
 
 	if (ret != 0) {
@@ -124,21 +164,15 @@ static int flash_esp32_write(const struct device *dev,
 	int ret = 0;
 
 #ifdef CONFIG_MCUBOOT
-	/* ensure everything is 4-byte aligned */
-	size_t aligned_length = ROUND_UP(length, 4);
-	off_t aligned_address = ROUND_DOWN(address, 4);
-	size_t address_offset = address - aligned_address;
-	uint32_t temp_buf[aligned_length / 4];
-
-	if (!esp_flash_encryption_enabled()) {
-		ret = esp_rom_flash_write(aligned_address, temp_buf, aligned_length, false);
-	} else {
-		ret = esp_rom_flash_write(aligned_address, temp_buf, aligned_length, true);
+	if (!flash_esp32_is_aligned(address, (void *)buffer, length)) {
+		LOG_ERR("Unaligned flash write is not supported");
+		return -EINVAL;
 	}
 
-	memcpy((void *)buffer, ((uint8_t *)temp_buf) + address_offset, length);
-#else
+	bool encrypt = esp_flash_encryption_enabled();
 
+	ret = esp_rom_flash_write(address, (void *)buffer, length, encrypt);
+#else
 	flash_esp32_sem_take(dev);
 
 	if (esp_flash_encryption_enabled()) {
@@ -148,7 +182,6 @@ static int flash_esp32_write(const struct device *dev,
 	}
 
 	flash_esp32_sem_give(dev);
-
 #endif
 
 	if (ret != 0) {

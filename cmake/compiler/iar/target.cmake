@@ -81,6 +81,11 @@ if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
   )
 endif()
 
+# Enable VLA if CONFIG_MISRA_SANE is not set and warnings are not enabled.
+if(NOT CONFIG_MISRA_SANE AND NOT DEFINED W)
+  list(APPEND IAR_COMMON_FLAGS --vla)
+endif()
+
 # Minimal ASM compiler flags
 if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
   list(APPEND IAR_ASM_FLAGS

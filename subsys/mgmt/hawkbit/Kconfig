@@ -19,7 +19,6 @@ menuconfig HAWKBIT
 	select MPU_ALLOW_FLASH_WRITE
 	select IMG_ENABLE_IMAGE_CHECK
 	select IMG_ERASE_PROGRESSIVELY
-	imply HWINFO if !HAWKBIT_CUSTOM_DEVICE_ID
 	help
 	  hawkBit is a domain independent back-end framework for polling out
 	  software updates to constrained edge devices as well as more powerful
@@ -113,11 +112,20 @@ config HAWKBIT_STATUS_BUFFER_SIZE
 	  json strings, that are sent to the hawkBit server. It might
 	  be increased if the custom attributes are used extensively.
 
+choice HAWKBIT_DEVICE_ID_SOURCE
+	prompt "Source of the Hawkbit device ID"
+
+config HAWKBIT_HWINFO_DEVICE_ID
+	bool "Device ID through HWINFO module"
+	depends on HWINFO
+
 config HAWKBIT_CUSTOM_DEVICE_ID
 	bool "Custom device id through callback function"
 	help
 	  Be able to customize the device id during runtime to a custom value,
 	  by configuring the callback function. See `hawkbit_set_device_identity_cb`
+
+endchoice
 
 config HAWKBIT_DEVICE_ID_MAX_LENGTH
 	int "Maximum length of the device id"

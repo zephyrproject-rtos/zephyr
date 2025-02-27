@@ -249,7 +249,7 @@ static void adxl372_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	((struct adxl372_fifo_data *)buf)->fifo_byte_count = read_len;
 
-	__ASSERT_NO_MSG(read_len % pkt_size == 0);
+	__ASSERT_NO_MSG(read_len % sample_set_size == 0);
 
 	uint8_t *read_buf = buf + sizeof(*hdr);
 

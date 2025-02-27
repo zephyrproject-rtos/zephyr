@@ -3037,6 +3037,16 @@ endfunction()
 # This function extends the CMake string function by providing additional
 # manipulation arguments to CMake string.
 #
+# ESCAPE:   Ensure that any single '\', except '\"', in the input string is
+#           escaped with the escape char '\'. For example the string 'foo\bar'
+#           will be escaped so that it becomes 'foo\\bar'.
+#           Backslashes which are already escaped will not be escaped further,
+#           for example 'foo\\bar' will not be modified.
+#           This is useful for handling of windows path separator in strings or
+#           when strings contains newline escapes such as '\n' and this can
+#           cause issues when writing to a file where a '\n' is desired in the
+#           string instead of a newline.
+#
 # SANITIZE: Ensure that the output string does not contain any special
 #           characters. Special characters, such as -, +, =, $, etc. are
 #           converted to underscores '_'.
@@ -3048,8 +3058,10 @@ endfunction()
 #
 # returns the updated string
 function(zephyr_string)
-  set(options SANITIZE TOUPPER)
+  set(options SANITIZE TOUPPER ESCAPE)
   cmake_parse_arguments(ZEPHYR_STRING "${options}" "" "" ${ARGN})
+
+  zephyr_check_flags_exclusive(${CMAKE_CURRENT_FUNCTION} ZEPHYR_STRING SANITIZE ESCAPE)
 
   if (NOT ZEPHYR_STRING_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "Function zephyr_string() called without a return variable")
@@ -3066,6 +3078,13 @@ function(zephyr_string)
 
   if(ZEPHYR_STRING_TOUPPER)
     string(TOUPPER ${work_string} work_string)
+  endif()
+
+  if(ZEPHYR_STRING_ESCAPE)
+    # If a single '\' is discovered, such as 'foo\bar', then it must be escaped like: 'foo\\bar'
+    # \\1 and \\2 are keeping the match patterns, the \\\\ --> \\ meaning an escaped '\',
+    # which then becomes a single '\' in the final string.
+    string(REGEX REPLACE "([^\\][\\])([^\\\"])" "\\1\\\\\\2" work_string "${ZEPHYR_STRING_UNPARSED_ARGUMENTS}")
   endif()
 
   set(${return_arg} ${work_string} PARENT_SCOPE)

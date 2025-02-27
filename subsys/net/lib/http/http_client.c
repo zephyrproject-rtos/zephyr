@@ -502,8 +502,16 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 			ret = -errno;
 			goto error;
 		}
-		if (fds[0].revents & (ZSOCK_POLLERR | ZSOCK_POLLNVAL)) {
-			ret = -errno;
+
+		if (fds[0].revents & ZSOCK_POLLERR) {
+			int sock_err;
+			socklen_t optlen = sizeof(sock_err);
+
+			(void)zsock_getsockopt(sock, SOL_SOCKET, SO_ERROR, &sock_err, &optlen);
+			ret = -sock_err;
+			goto error;
+		} else if (fds[0].revents & ZSOCK_POLLNVAL) {
+			ret = -EBADF;
 			goto error;
 		} else if (fds[0].revents & ZSOCK_POLLHUP) {
 			/* Connection closed */

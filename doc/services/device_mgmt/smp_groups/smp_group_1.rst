@@ -519,6 +519,8 @@ where:
     :c:enumerator:`MGMT_ERR_EBADSTATE`, which means that the secondary
     image has been marked for next boot already and may not be erased.
 
+.. _mcumgr_smp_group_1_slot_info:
+
 Slot info
 *********
 

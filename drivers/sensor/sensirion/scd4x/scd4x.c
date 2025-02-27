@@ -630,7 +630,7 @@ static int scd4x_channel_get(const struct device *dev, enum sensor_channel chan,
 			     struct sensor_value *val)
 {
 	const struct scd4x_data *data = dev->data;
-	int32_t tmp_val;
+	int64_t tmp_val;
 
 	switch ((enum sensor_channel)chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:

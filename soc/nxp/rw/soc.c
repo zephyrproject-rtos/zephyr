@@ -134,6 +134,8 @@ __weak __ramfunc void clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivSystickClk, 1U);
 	CLOCK_AttachClk(kSYSTICK_DIV_to_SYSTICK_CLK);
 
+	SystemCoreClockUpdate();
+
 	/* Set PLL FRG clock to 20MHz. */
 	CLOCK_SetClkDiv(kCLOCK_DivPllFrgClk, 13U);
 

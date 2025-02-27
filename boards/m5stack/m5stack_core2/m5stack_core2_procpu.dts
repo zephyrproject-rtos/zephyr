@@ -87,8 +87,7 @@
 };
 
 &psram0 {
-	reg = <0x3f800000 DT_SIZE_M(8)>;
-	status = "disabled";
+	size = <DT_SIZE_M(8)>;
 };
 
 &uart0 {

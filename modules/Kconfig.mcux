@@ -18,11 +18,6 @@ config MCUX_CORE_SUFFIX
 	  String describing the core identifer used by MCUX SDK when using
 	  dual core parts
 
-config HAS_MCUX_12B1MSPS_SAR
-	bool
-	help
-	  Set if the 12B1MSPS SAR ADC module is present in the SoC.
-
 config HAS_MCUX_ADC12
 	bool
 	help

@@ -10,22 +10,19 @@
 #include <esp_private/esp_psram_extram.h>
 #include <zephyr/multi_heap/shared_multi_heap.h>
 
-#define PSRAM_ADDR (DT_REG_ADDR(DT_NODELABEL(psram0)))
-
-extern int _spiram_heap_start;
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
+extern int _ext_ram_heap_start;
 
 struct shared_multi_heap_region smh_psram = {
-	.addr = (uintptr_t)&_spiram_heap_start,
-	.size = CONFIG_ESP_SPIRAM_SIZE,
+	.addr = (uintptr_t)&_ext_ram_heap_start,
+	.size = CONFIG_ESP_SPIRAM_HEAP_SIZE,
 	.attr = SMH_REG_ATTR_EXTERNAL,
 };
 
 int esp_psram_smh_init(void)
 {
 	shared_multi_heap_pool_init();
-	smh_psram.size = CONFIG_ESP_SPIRAM_SIZE - ((int)&_spiram_heap_start - PSRAM_ADDR);
 	return shared_multi_heap_add(&smh_psram, NULL);
 }
 

@@ -111,16 +111,6 @@ int mmc_card_init(struct sd_card *card)
 		return -EINVAL;
 	}
 
-	/* Probe to see if card is an MMC card */
-	ret = mmc_send_op_cond(card, ocr_arg);
-	if (ret) {
-		return ret;
-	}
-	/* Card is MMC card if no error
-	 * (Only MMC protocol supports CMD1)
-	 */
-	card->type = CARD_MMC;
-
 	/* Set OCR Arguments */
 	if (card->host_props.host_caps.vol_180_support) {
 		ocr_arg |= MMC_OCR_VDD170_195FLAG;
@@ -137,7 +127,7 @@ int mmc_card_init(struct sd_card *card)
 	/* CMD1 */
 	ret = mmc_send_op_cond(card, ocr_arg);
 	if (ret) {
-		LOG_ERR("Failed to query card OCR");
+		LOG_DBG("Failed to query card OCR");
 		return ret;
 	}
 
@@ -221,9 +211,11 @@ static int mmc_send_op_cond(struct sd_card *card, int ocr)
 			/* OCR failed */
 			return ret;
 		}
-		if (ocr == 0) {
-			/* Just probing */
-			return 0;
+		if (retries == 0) {
+			/* Card is MMC card if no error
+			 * (Only MMC protocol supports CMD1)
+			 */
+			card->type = CARD_MMC;
 		}
 		sd_delay(10);
 	}

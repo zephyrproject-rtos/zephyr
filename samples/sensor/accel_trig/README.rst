@@ -41,6 +41,7 @@ You can build it with the following command:
    :board: nrf52dk/nrf52832
    :shield: x_nucleo_iks01a3
    :goals: build
+   :west-args: --extra-dtc-overlay x_nucleo_iks01a3.overlay
    :compact:
 
 

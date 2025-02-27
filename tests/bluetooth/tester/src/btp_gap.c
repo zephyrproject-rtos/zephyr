@@ -368,7 +368,7 @@ static void oob_data_request(struct bt_conn *conn,
 	switch (oob_info->type) {
 	case BT_CONN_OOB_LE_SC:
 	{
-		if (!IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY)) {
+		if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
 			LOG_ERR("OOB LE SC not supported");
 			break;
 		}
@@ -412,7 +412,7 @@ static void oob_data_request(struct bt_conn *conn,
 	}
 
 	case BT_CONN_OOB_LE_LEGACY:
-		if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		if (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY)) {
 			LOG_ERR("OOB LE Legacy not supported");
 			break;
 		}

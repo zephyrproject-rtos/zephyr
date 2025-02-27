@@ -159,6 +159,16 @@ config BT_CTLR_HCI
 	  This should almost always be enabled, except in a few special
 	  cases, like for unit testing.
 
+config BT_CTLR_HCI_NUM_CMD_PKT_MAX
+	# Hidden Controller implementation supported Num_HCI_Command_Packets value.
+	# This value will be used to calculate the total number of HCI command buffers to be
+	# allocated, BT_BUF_CMD_TX_COUNT, dependent on HCI Controller to Host data flow control
+	# being enabled.
+	int
+	depends on BT_CTLR_HCI
+	default 1 if BT_LL_SW_SPLIT
+	default 1
+
 if HAS_BT_CTLR
 
 comment "Bluetooth Controller configuration"
@@ -1061,13 +1071,13 @@ config BT_CTLR_CONN_ISO_PDU_LEN_MAX
 	help
 	  Maximum Connected Isochronous Channel PDU Length.
 
-config BT_CTLR_CONN_ISO_SDU_LEN_MAX
-	int "Maximum Connected Isochronous Channel SDU Length"
-	depends on BT_CTLR_CONN_ISO
+config BT_CTLR_ISO_TX_SDU_LEN_MAX
+	int "Maximum Isochronous Channel Transmit SDU Length"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	range 1 4095
-	default 251
+	default 1
 	help
-	  Maximum Connected Isochronous Channel SDU Length.
+	  Maximum Isochronous Channel Transmit SDU Length.
 
 config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
 	int "LE Connected Isochronous Streams max number of subevents"

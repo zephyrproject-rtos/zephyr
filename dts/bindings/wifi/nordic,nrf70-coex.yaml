@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  This is a representation of an external radio coexistence setup for coexistence
+  An external radio coexistence setup for coexistence
   with nRF70 WiFi chips.
 
 properties:

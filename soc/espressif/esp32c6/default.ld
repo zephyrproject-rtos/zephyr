@@ -421,7 +421,6 @@ SECTIONS
     *libzephyr.a:esp_rom_systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_wdt.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_hp_regi2c_esp32c6.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:efuse_hal.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache.*(.literal .literal.* .text .text.*)
@@ -572,6 +571,7 @@ SECTIONS
     *libzephyr.a:cache_utils.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_hal_iram.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.* .srodata .srodata.*)
@@ -647,7 +647,6 @@ SECTIONS
     *libzephyr.a:esp_rom_efuse.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_rom_systimer.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_rom_hp_regi2c_esp32c6.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:efuse_hal.*(.rodata .rodata.* .srodata .srodata.*)
 
     . = ALIGN(4);
     #include <snippets-rwdata.ld>

@@ -21,7 +21,10 @@ config CLOCK_CONTROL
 config FLASH_FILL_BUFFER_SIZE
 	default 128
 
+config DCACHE
+	default n
+
 config CACHE_MANAGEMENT
-	default y
+	default n
 
 endif # SOC_SERIES_RA8D1
