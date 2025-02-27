@@ -72,7 +72,8 @@ int main(void)
         k_thread_join(thread_ids[i], K_FOREVER);
     }
 
-    printf("All threads finished execution. Rebooting...\n");
-    sys_reboot(SYS_REBOOT_COLD);
+    printf("All threads finished execution.\n");
+    // printf("All threads finished execution. Rebooting...\n");
+    // sys_reboot(SYS_REBOOT_COLD);
     return 0;
 }
