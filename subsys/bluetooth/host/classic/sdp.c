@@ -2053,7 +2053,7 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 
 	/* Get total value of all attributes to be collected */
 	frame_len -= sdp_client_get_total(session, buf, &total);
-	if (frame_len != total) {
+	if (total && (frame_len > total)) {
 		LOG_ERR("Invalid attribute lists");
 		return 0;
 	}
