@@ -545,6 +545,35 @@ static int h4_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
+int __weak bt_hci_transport_teardown(const struct device *dev)
+{
+	return 0;
+}
+
+static int h4_close(const struct device *dev)
+{
+	const struct h4_config *cfg = dev->config;
+	struct h4_data *h4 = dev->data;
+	int err;
+
+	LOG_DBG("");
+
+	uart_irq_rx_disable(cfg->uart);
+	uart_irq_tx_disable(cfg->uart);
+
+	err = bt_hci_transport_teardown(cfg->uart);
+	if (err < 0) {
+		return err;
+	}
+
+	/* Abort RX thread */
+	k_thread_abort(cfg->rx_thread);
+
+	h4->recv = NULL;
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_HCI_SETUP)
 static int h4_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
@@ -567,6 +596,7 @@ static int h4_setup(const struct device *dev, const struct bt_hci_setup_params *
 static DEVICE_API(bt_hci, h4_driver_api) = {
 	.open = h4_open,
 	.send = h4_send,
+	.close = h4_close,
 #if defined(CONFIG_BT_HCI_SETUP)
 	.setup = h4_setup,
 #endif
