@@ -50,8 +50,8 @@ static void avrcp_get_cap_rsp(struct bt_avrcp *avrcp, const struct bt_avrcp_get_
 	switch (rsp->cap_id) {
 	case BT_AVRCP_CAP_COMPANY_ID:
 		for (i = 0; i < rsp->cap_cnt; i++) {
-			bt_shell_print("Remote CompanyID = 0x%02x%02x%02x", rsp->cap[3 * i],
-				       rsp->cap[3 * i + 1], rsp->cap[3 * i + 2]);
+			bt_shell_print("Remote CompanyID = 0x%06x",
+				       sys_get_be24(&rsp->cap[BT_AVRCP_COMPANY_ID_SIZE * i]));
 		}
 		break;
 	case BT_AVRCP_CAP_EVENTS_SUPPORTED:
