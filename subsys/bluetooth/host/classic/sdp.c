@@ -2053,7 +2053,13 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 
 	/* Get total value of all attributes to be collected */
 	frame_len -= sdp_client_get_total(session, buf, &total);
-	if (frame_len != total) {
+	/*
+	 * If total is not 0, there are two valid cases,
+	 * Case 1, the continuation state length is 0, the frame_len should equal total,
+	 * Case 2, the continuation state length is not 0, it means there are more data will be
+	 * received. So the frame_len is less than total.
+	 */
+	if (total && (frame_len > total)) {
 		LOG_ERR("Invalid attribute lists");
 		return 0;
 	}
