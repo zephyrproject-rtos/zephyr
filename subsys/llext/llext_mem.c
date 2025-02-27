@@ -87,10 +87,11 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 				ext->mem_on_heap[mem_idx] = false;
 				return 0;
 			}
-		} else if (ldr_parm && ldr_parm->pre_located) {
+		} else if (ldr_parm->pre_located) {
 			/*
-			 * ldr_parm cannot be NULL here with the current flow, but
-			 * we add a check to make it future-proof
+			 * In pre-located files all regions, including BSS,
+			 * are placed by the user with a linker script. No
+			 * additional memory allocation is needed here.
 			 */
 			ext->mem[mem_idx] = NULL;
 			ext->mem_on_heap[mem_idx] = false;
@@ -98,7 +99,11 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 		}
 	}
 
-	if (ldr_parm && ldr_parm->pre_located) {
+	if (ldr_parm->pre_located) {
+		/*
+		 * The ELF file is supposed to be pre-located, but some
+		 * regions are not accessible or not in the correct place.
+		 */
 		return -EFAULT;
 	}
 
@@ -153,12 +158,13 @@ err:
 	return ret;
 }
 
-int llext_copy_strings(struct llext_loader *ldr, struct llext *ext)
+int llext_copy_strings(struct llext_loader *ldr, struct llext *ext,
+		       const struct llext_load_param *ldr_parm)
 {
-	int ret = llext_copy_region(ldr, ext, LLEXT_MEM_SHSTRTAB, NULL);
+	int ret = llext_copy_region(ldr, ext, LLEXT_MEM_SHSTRTAB, ldr_parm);
 
 	if (!ret) {
-		ret = llext_copy_region(ldr, ext, LLEXT_MEM_STRTAB, NULL);
+		ret = llext_copy_region(ldr, ext, LLEXT_MEM_STRTAB, ldr_parm);
 	}
 
 	return ret;

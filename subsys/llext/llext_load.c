@@ -560,7 +560,7 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext,
 		 */
 		const char *name = NULL;
 
-		if (ldr_parm && ldr_parm->pre_located) {
+		if (ldr_parm->pre_located) {
 			ssize_t name_offset = llext_file_offset(ldr, (uintptr_t)sym->name);
 
 			if (name_offset > 0) {
@@ -706,7 +706,7 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	LOG_DBG("Allocate and copy strings...");
-	ret = llext_copy_strings(ldr, ext);
+	ret = llext_copy_strings(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to copy ELF string sections, ret %d", ret);
 		goto out;
@@ -772,7 +772,7 @@ out:
 	 * Note that this exploits the fact that freeing a NULL pointer has no effect.
 	 */
 
-	if (ret != 0 || !ldr_parm || !ldr_parm->keep_section_info) {
+	if (ret != 0 || !ldr_parm->keep_section_info) {
 		llext_free_inspection_data(ldr, ext);
 	}
 
