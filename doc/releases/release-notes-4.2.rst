@@ -55,6 +55,9 @@ Removed APIs and options
 
 * Removed the deprecated ``include/zephyr/net/buf.h`` header file.
 
+* Removed the ``--disable-unrecognized-section-test`` Twister option. Test has been removed and the
+  option became the default behavior.
+
 Deprecated APIs and options
 
 * The scheduler Kconfig options CONFIG_SCHED_DUMB and CONFIG_WAITQ_DUMB were
