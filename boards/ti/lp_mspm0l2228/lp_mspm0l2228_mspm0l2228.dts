@@ -6,6 +6,7 @@
 #include <ti/mspm0l122x_l222x/mspm0l2228-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/mspm0_adc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	model = "TI LP_MSPM0L2228/MSPM0L2228";
@@ -16,6 +17,7 @@
 		led1 = &led1;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		pwm-led0 = &pwm_led;
 	};
 
 	chosen {
@@ -36,6 +38,14 @@
 		led1: led_1 {
 			gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led: pwm_led {
+			pwms = <&pwm4 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -143,4 +153,47 @@
 		drdy-gpios = <&gpiob 5 (GPIO_ACTIVE_LOW)>;
 		spi-max-frequency = <8000000>;
 	};
+};
+
+&gpt0 {
+	status = "okay";
+};
+
+&gpt4 {
+	status = "okay";
+};
+
+&pwm4 {
+	status = "okay";
+	pinctrl-0 = <&timg4c0_pb2>;
+	pinctrl-names = "default";
+	ti,cc-index = <0>;
+	ti,clk-prescaler = <255>;
+	ti,clk-div = <1>;
+	ti,cc-mode = "PULSE_WIDTH";
+	ti,period = <65535>;
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&timg0c0_pb0>;
+	pinctrl-names = "default";
+	ti,cc-index = <0>;
+	ti,clk-prescaler = <255>;
+	ti,clk-div = <1>;
+	ti,pwm-mode = "EDGE_ALIGN";
+	ti,pulse-cycle = <500>;
+	ti,period = <1000>;
+};
+
+&pwma0 {
+	status = "okay";
+	pinctrl-0 = <&tima0c0_pa8>;
+	pinctrl-names = "default";
+	ti,cc-index = <0>;
+	ti,clk-prescaler = <9>;
+	ti,clk-div = <1>;
+	ti,pwm-mode = "CENTER_ALIGN";
+	ti,pulse-cycle = <3>;
+	ti,period = <10>;
 };
