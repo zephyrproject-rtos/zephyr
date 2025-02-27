@@ -5327,6 +5327,10 @@ endfunction()
 # ANY                 : ANY section flag in scatter file.
 #                       The FLAGS and ANY arguments only has effect for scatter files.
 # INPUT <input>       : Input section name or list of input section names.
+#                       <input> is either just a section name ".data*" or
+#                       <file-pattern>(<section-patterns>... )
+#                       <file-pattern> is [library.a:]file
+#                       e.g. foo.a:bar.o(.data*)
 #
 function(zephyr_linker_section_configure)
   set(options     "ANY;FIRST;KEEP")
