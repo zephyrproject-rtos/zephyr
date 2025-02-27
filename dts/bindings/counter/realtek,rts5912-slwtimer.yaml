@@ -7,7 +7,7 @@ description: Realtek RTS5912 32-bit slow timer
 
 compatible: "realtek,rts5912-slwtimer"
 
-include: rtc.yaml
+include: base.yaml
 
 properties:
   reg:
@@ -22,7 +22,9 @@ properties:
     description: Maximum counter value the instance can handle
 
   clock-frequency:
+    type: int
     required: true
+    description: Clock frequency information for timer operation
 
   prescaler:
     type: int
