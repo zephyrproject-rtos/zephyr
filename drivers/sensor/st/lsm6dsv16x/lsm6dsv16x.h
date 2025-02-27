@@ -124,6 +124,12 @@ struct lsm6dsv16x_ibi_payload {
 	uint8_t mlc_status;
 } __packed;
 
+struct trigger_config {
+	uint8_t int_fifo_th : 1;
+	uint8_t int_fifo_full : 1;
+	uint8_t int_drdy : 1;
+};
+
 struct lsm6dsv16x_data {
 	const struct device *dev;
 	int16_t acc[3];
@@ -157,16 +163,17 @@ struct lsm6dsv16x_data {
 	struct rtio_iodev_sqe *streaming_sqe;
 	struct rtio *rtio_ctx;
 	struct rtio_iodev *iodev;
-	uint64_t fifo_timestamp;
+	uint64_t timestamp;
+	uint8_t status;
 	uint8_t fifo_status[2];
 	uint16_t fifo_count;
-	uint8_t fifo_irq;
-	uint8_t accel_batch_odr : 4;
-	uint8_t gyro_batch_odr : 4;
-	uint8_t temp_batch_odr : 2;
-	uint8_t bus_type : 2; /* I2C is 0, SPI is 1, I3C is 2 */
-	uint8_t sflp_batch_odr : 3;
-	uint8_t reserved : 1;
+	struct trigger_config trig_cfg;
+	uint16_t accel_batch_odr : 4;
+	uint16_t gyro_batch_odr : 4;
+	uint16_t temp_batch_odr : 2;
+	uint16_t bus_type : 2; /* I2C is 0, SPI is 1, I3C is 2 */
+	uint16_t sflp_batch_odr : 3;
+	uint16_t reserved : 1;
 	int32_t gbias_x_udps;
 	int32_t gbias_y_udps;
 	int32_t gbias_z_udps;
