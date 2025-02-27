@@ -31,28 +31,50 @@ function(zephyr_mcuboot_tasks)
                       "CONFIG_MCUBOOT_SIGNATURE_KEY_FILE are set, the generated build will not be "
                       "bootable by MCUboot unless it is signed manually/externally.")
       return()
+    elseif(NOT (CONFIG_BUILD_OUTPUT_BIN OR CONFIG_BUILD_OUTPUT_HEX))
+      message(FATAL_ERROR "Can't sign images for MCUboot: Neither "
+                          "CONFIG_BUILD_OUTPUT_BIN nor CONFIG_BUILD_OUTPUT_HEX "
+                          "is enabled, so there's nothing to sign.")
     endif()
-  endif()
 
-  if(NOT WEST)
-    # This feature requires west.
-    message(FATAL_ERROR "Can't sign images for MCUboot: west not found. To fix, install west and ensure it's on PATH.")
-  endif()
+    foreach(file keyfile keyfile_enc)
+      if("${${file}}" STREQUAL "")
+        continue()
+      endif()
 
-  foreach(file keyfile keyfile_enc)
-    if(NOT "${${file}}" STREQUAL "")
+      # Find the key files in the order of preference for a simple search
+      # modeled by the if checks across the various locations
+      #
+      #  1. absolute
+      #  2. application config
+      #  3. west topdir (optional when the workspace is not west managed)
+      #
       if(NOT IS_ABSOLUTE "${${file}}")
-        # Relative paths are relative to 'west topdir'.
-        set(${file} "${WEST_TOPDIR}/${${file}}")
+        if(EXISTS "${APPLICATION_CONFIG_DIR}/${${file}}")
+          set(${file} "${APPLICATION_CONFIG_DIR}/${${file}}")
+        else()
+          # Relative paths are relative to 'west topdir'.
+          #
+          # This is the only file that has a relative check to topdir likely
+          # from the historical callouts to "west" itself before using
+          # imgtool. So, this is maintained here for backward compatibility
+          #
+          if(NOT WEST OR NOT WEST_TOPDIR)
+            message(FATAL_ERROR "Can't sign images for MCUboot: west workspace undefined. "
+                                "To fix, ensure `west topdir` is a valid workspace directory.")
+          endif()
+          set(${file} "${WEST_TOPDIR}/${${file}}")
+        endif()
       endif()
 
-      if(NOT EXISTS "${${file}}" AND NOT "${CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE}")
-        message(FATAL_ERROR "west sign can't find file ${${file}} (Note: Relative paths are relative to the west workspace topdir \"${WEST_TOPDIR}\")")
-      elseif(NOT (CONFIG_BUILD_OUTPUT_BIN OR CONFIG_BUILD_OUTPUT_HEX))
-        message(FATAL_ERROR "Can't sign images for MCUboot: Neither CONFIG_BUILD_OUTPUT_BIN nor CONFIG_BUILD_OUTPUT_HEX is enabled, so there's nothing to sign.")
+      if(NOT EXISTS "${${file}}")
+        message(FATAL_ERROR "Can't sign images for MCUboot: can't find file ${${file}} "
+                            "(Note: Relative paths are searched through "
+                            "APPLICATION_CONFIG_DIR=\"${APPLICATION_CONFIG_DIR}\" "
+                            "and WEST_TOPDIR=\"${WEST_TOPDIR}\")")
       endif()
-    endif()
-  endforeach()
+    endforeach()
+  endif()
 
   # No imgtool, no signed binaries.
   if(NOT DEFINED IMGTOOL)
