@@ -360,6 +360,42 @@ ZTEST(spi_loopback, test_nop_nil_bufs)
 	/* nothing really to check here, check is done in spi_loopback_transceive */
 }
 
+/* test using the same buffer for RX and TX will write same data back */
+ZTEST(spi_loopback, test_spi_write_back)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      buffer_rx, BUF_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      buffer_rx, BUF_SIZE);
+
+	memcpy(buffer_rx, tx_data, sizeof(tx_data));
+
+	spi_loopback_transceive(spec, &tx, &rx);
+
+	spi_loopback_compare_bufs(tx_data, buffer_rx, BUF_SIZE,
+				  buffer_print_tx, buffer_print_rx);
+}
+
+/* similar to test_spi_write_back, simulates the real common case of 1 word command */
+ZTEST(spi_loopback, test_spi_same_buf_cmd)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(rx_bufs_pool, 2,
+							      buffer_rx, 1,
+							      NULL, BUF_SIZE - 1);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      NULL, BUF_SIZE - 1,
+							      buffer_rx+(BUF_SIZE - 1), 1);
+
+	memcpy(buffer_rx, tx_data, sizeof(tx_data));
+
+	spi_loopback_transceive(spec, &tx, &rx);
+
+	spi_loopback_compare_bufs(tx_data, buffer_rx, BUF_SIZE,
+				  buffer_print_tx, buffer_print_rx);
+}
+
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
