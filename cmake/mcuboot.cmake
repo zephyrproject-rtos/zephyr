@@ -32,11 +32,6 @@ function(zephyr_mcuboot_tasks)
     endif()
   endif()
 
-  if(NOT WEST)
-    # This feature requires west.
-    message(FATAL_ERROR "Can't sign images for MCUboot: west not found. To fix, install west and ensure it's on PATH.")
-  endif()
-
   foreach(file keyfile keyfile_enc)
     if(NOT "${${file}}" STREQUAL "")
       if(NOT IS_ABSOLUTE "${${file}}")
