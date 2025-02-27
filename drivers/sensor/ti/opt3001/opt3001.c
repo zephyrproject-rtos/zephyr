@@ -107,7 +107,27 @@ static int opt3001_channel_get(const struct device *dev,
 	return 0;
 }
 
+static int opt3001_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			       sensor_trigger_handler_t handler)
+{
+	struct opt3001_data *dat = dev->data;
+
+	if (trig->chan != SENSOR_CHAN_LIGHT) {
+		return -EINVAL;
+	}
+
+	if (trig->type != SENSOR_TRIG_DATA_READY) {
+		return -EINVAL;
+	}
+
+	dat->trig.trigger = trig;
+	dat->trig.handler = handler;
+
+	return 0;
+}
+
 static DEVICE_API(sensor, opt3001_driver_api) = {
+	.trigger_set = opt3001_trigger_set,
 	.sample_fetch = opt3001_sample_fetch,
 	.channel_get = opt3001_channel_get,
 };
@@ -129,6 +149,10 @@ static void opt3001_int_work(struct k_work *work)
 	if (ret) {
 		LOG_ERR("Failed to read config, ret: %d", ret);
 		return;
+	}
+
+	if (dat->trig.handler) {
+		dat->trig.handler(dat->dev, dat->trig.trigger);
 	}
 }
 
@@ -235,7 +259,7 @@ int opt3001_init(const struct device *dev)
 }
 
 #define OPT3001_DEFINE(inst)									\
-	static struct opt3001_data opt3001_data_##inst;						\
+	static struct opt3001_data opt3001_data_##inst = {0};					\
 												\
 	static const struct opt3001_config opt3001_config_##inst = {				\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
