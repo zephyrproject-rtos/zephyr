@@ -112,12 +112,18 @@
 
 	encoder {
 		compatible = "gpio-qdec";
-		gpios = <&gpio0 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
-			<&gpio0 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		gpios = <&gpio0 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+			<&gpio0 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		zephyr,axis = <INPUT_REL_WHEEL>;
 		steps-per-period = <4>;
 		sample-time-us = <2000>;
 		idle-timeout-ms = <200>;
+	};
+
+	lvgl_encoder_input {
+		compatible = "zephyr,lvgl-encoder-input";
+		rotation-input-code = <INPUT_REL_WHEEL>;
+		button-input-code = <INPUT_KEY_ENTER>;
 	};
 
 	stemma_connector: stemma_connector {
