@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/r5f526tfddfp.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include "mcb_rx26t-pinctrl.dtsi"
+
+/ {
+	model = "Renesas MCB-RX26T KIT";
+	compatible = "renesas,mcb_rx26t";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &code_flash;
+		zephyr,console = &uart12;
+		zephyr,shell-uart = &uart12;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport2 1 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&ioport2 0 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+
+		led3: led3 {
+			gpios = <&ioport6 5 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+
+		led4: led4 {
+			gpios = <&ioport6 4 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+		led3 = &led4;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(10)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&pll {
+	div = <1>;
+	mul = <RX_PLL_MUL_24>;
+	status = "okay";
+};
+
+&cmt {
+	clock-frequency = <60000000>;
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&sci12 {
+	pinctrl-0 = <&sci12_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart12: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};

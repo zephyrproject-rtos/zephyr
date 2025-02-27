@@ -1,0 +1,8 @@
+set(RX26T_REVISIONS "typea" "typeb" "typec")
+if (NOT DEFINED BOARD_REVISION)
+  set(BOARD_REVISION "RX26T_REVISIONS")
+else()
+  if (NOT BOARD_REVISION IN_LIST RX26T_REVISIONS)
+    message(FATAL_ERROR "${BOARD_REVISION} is not a valid revision for mcb_rx26t. Accepted revisions: ${RX26T_REVISIONS}")
+  endif()
+endif()
