@@ -7,13 +7,13 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - bluetooth
   - gpio
   - uart
   - dma
   - watchdog
+  - comparator
 testing:
   ignore_tags:
     - pm

@@ -145,7 +145,7 @@ static const scg_spll_config_t scg_spll_config = {
 	.mult        = (SCG_CLOCK_MULT(pll) - 16U)
 };
 
-static ALWAYS_INLINE void clk_init(void)
+__weak void clk_init(void)
 {
 	const scg_sys_clk_config_t scg_sys_clk_config_safe = {
 		.divSlow = kSCG_SysClkDivBy4,

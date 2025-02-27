@@ -67,7 +67,7 @@ const clock_audio_pll_config_t g_audioPllConfig = {.audio_pll_src = kCLOCK_Audio
 #endif
 
 #if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
-/* USB PHY condfiguration */
+/* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL     (0x0CU)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
@@ -168,7 +168,7 @@ static void usb_device_clock_init(void)
 	while (SYSCTL0->USBCLKSTAT & SYSCTL0_USBCLKSTAT_HOST_NEED_CLKST_MASK) {
 		__ASM("nop");
 	}
-	/* According to reference mannual, device mode setting has to be set by
+	/* According to reference manual, device mode setting has to be set by
 	 * access usb host register
 	 */
 	USBHSH->PORTMODE |= USBHSH_PORTMODE_DEV_ENABLE_MASK;
@@ -181,7 +181,7 @@ static void usb_device_clock_init(void)
 /**
  * @brief Initialize the system clock
  */
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 #ifdef CONFIG_SOC_MIMXRT685S_CM33
 	/* Configure LPOSC clock*/

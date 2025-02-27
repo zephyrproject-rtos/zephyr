@@ -498,6 +498,7 @@ static int decode_delta(uint8_t *data, uint16_t offset, uint16_t *pos, uint16_t 
 			uint16_t opt, uint16_t *opt_ext, uint16_t *hdr_len)
 {
 	int ret = 0;
+	*hdr_len = 0;
 
 	if (opt == COAP_OPTION_EXT_13) {
 		uint8_t val;
@@ -1394,7 +1395,7 @@ int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value,
 	uint16_t opt_len = 0;
 	uint16_t last_opt = 0;
 	uint16_t last_offset = cpkt->hdr_len;
-	struct coap_option option;
+	struct coap_option option = {0};
 	int r;
 
 	while (offset < cpkt->hdr_len + cpkt->opt_len) {
@@ -1548,7 +1549,7 @@ int coap_next_block_for_option(const struct coap_packet *cpkt,
 			       enum coap_option_num option)
 {
 	int block;
-	uint16_t block_len;
+	uint16_t block_len = 0;
 
 	if (option != COAP_OPTION_BLOCK1 && option != COAP_OPTION_BLOCK2) {
 		return -EINVAL;

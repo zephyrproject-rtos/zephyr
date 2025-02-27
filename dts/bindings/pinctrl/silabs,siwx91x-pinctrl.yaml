@@ -1,0 +1,63 @@
+# Copyright (c) 2023 Antmicro
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The Silabs SiWx91x pin controller is a devicetree node tasked with selecting
+  the proper IO function for a given pin.
+
+  The pinctrl settings are referenced in a device tree peripheral node. For
+  example when configuring a UART:
+
+    &ulpuart {
+      pinctrl-0 = <&ulpuart_default>;
+      pinctrl-names = "default";
+    }
+
+  pinctrl-0 is a phandle that stores the pin settings for the peripheral, in
+  this example &ulpuart_default. This phandle is defined as a child node of the
+  'pinctrl' node, typically in a board-pinctrl.dtsi file in the board directory
+  or a device tree overlay in the application:
+
+    &pinctrl {
+      ulpuart_default: ulpuart_default {
+        out {
+          pinmux = <ULPUART_TX_ULP11>; /* Configure ULP pin 11 as ULPUART TX */
+        };
+        in {
+          pinmux = <ULPUART_RX_ULP9>; /* Configure ULP pin 9 as ULPUART RX */
+        };
+      };
+    };
+
+  The 'ulpuart_default' child node encodes the pin configurations for a
+  particular state of the device, the default (active) state.
+
+  Pin configurations are organized in groups within each child node. The name
+  given to groups is arbitrary. Each group can specify a list of pin function
+  selections in the `pinmux` property, as well as a selection of pin properties
+  as given by the rest of the properties on the group.
+
+compatible: "silabs,siwx91x-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Silabs SiWx91x pin configuration. Each child node defines
+    the configuration for a particular group of pins.
+  child-binding:
+    description: |
+      Silabs SiWx91x pin configuration group.
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist: []
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should be
+          defined using the <peripheral>_<signal>_<pin> macros available from
+          the SoC DeviceTree files.

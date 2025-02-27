@@ -50,6 +50,6 @@ dut2: &uart120 {
 	pinctrl-0 = <&uart120_default_alt>;
 	pinctrl-1 = <&uart120_sleep_alt>;
 	pinctrl-names = "default", "sleep";
-	current-speed = <115200>;
+	current-speed = <4000000>;
 	zephyr,pm-device-runtime-auto;
 };

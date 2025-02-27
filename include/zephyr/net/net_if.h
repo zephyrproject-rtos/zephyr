@@ -136,7 +136,10 @@ struct net_if_addr {
 	 */
 	uint8_t is_temporary : 1;
 
-	uint8_t _unused : 4;
+	/** Was this address added or not */
+	uint8_t is_added : 1;
+
+	uint8_t _unused : 3;
 };
 
 /**
@@ -614,7 +617,8 @@ struct net_traffic_class {
 	/** Fifo for handling this Tx or Rx packet */
 	struct k_fifo fifo;
 
-#if NET_TC_COUNT > 1 || defined(CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO)
+#if NET_TC_COUNT > 1 || defined(CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO) \
+	|| defined(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO)
 	/** Semaphore for tracking the available slots in the fifo */
 	struct k_sem fifo_slot;
 #endif
@@ -1216,9 +1220,10 @@ int net_if_set_link_addr_locked(struct net_if *iface,
 extern int net_if_addr_unref_debug(struct net_if *iface,
 				   sa_family_t family,
 				   const void *addr,
+				   struct net_if_addr **ifaddr,
 				   const char *caller, int line);
-#define net_if_addr_unref(iface, family, addr) \
-	net_if_addr_unref_debug(iface, family, addr, __func__, __LINE__)
+#define net_if_addr_unref(iface, family, addr, ifaddr)			\
+	net_if_addr_unref_debug(iface, family, addr, ifaddr, __func__, __LINE__)
 
 extern struct net_if_addr *net_if_addr_ref_debug(struct net_if *iface,
 						 sa_family_t family,
@@ -1230,7 +1235,8 @@ extern struct net_if_addr *net_if_addr_ref_debug(struct net_if *iface,
 #else
 extern int net_if_addr_unref(struct net_if *iface,
 			     sa_family_t family,
-			     const void *addr);
+			     const void *addr,
+			     struct net_if_addr **ifaddr);
 extern struct net_if_addr *net_if_addr_ref(struct net_if *iface,
 					   sa_family_t family,
 					   const void *addr);

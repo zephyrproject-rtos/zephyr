@@ -46,7 +46,7 @@ struct bt_pacs_cap {
 };
 
 /** Structure for registering PACS */
-struct bt_bap_pacs_register_param {
+struct bt_pacs_register_param {
 #if defined(CONFIG_BT_PAC_SNK) || defined(__DOXYGEN__)
 	/**
 	 * @brief Enables or disables registration of Sink PAC Characteristic.
@@ -58,7 +58,7 @@ struct bt_bap_pacs_register_param {
 	/**
 	 * @brief Enables or disables registration of Sink Location Characteristic.
 	 *
-	 * Registration of Sink Location is dependent on @ref bt_bap_pacs_register_param.snk_pac
+	 * Registration of Sink Location is dependent on @ref bt_pacs_register_param.snk_pac
 	 * also being set.
 	 */
 	bool snk_loc;
@@ -75,7 +75,7 @@ struct bt_bap_pacs_register_param {
 	/**
 	 * @brief Enables or disables registration of Source Location Characteristic.
 	 *
-	 * Registration of Source Location is dependent on @ref bt_bap_pacs_register_param.src_pac
+	 * Registration of Source Location is dependent on @ref bt_pacs_register_param.src_pac
 	 * also being set.
 	 */
 	bool src_loc;
@@ -113,9 +113,12 @@ void bt_pacs_cap_foreach(enum bt_audio_dir dir,
  *
  * @param param PACS register parameters.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 Success
+ * @retval -EINVAL @p param is NULL or bad combination of values in @p param
+ * @retval -EALREADY Already registered
+ * @retval -ENOEXEC Request was rejected by GATT
  */
-int bt_pacs_register(const struct bt_bap_pacs_register_param *param);
+int bt_pacs_register(const struct bt_pacs_register_param *param);
 
 /**
  * @brief Unregister the Published Audio Capability Service instance.

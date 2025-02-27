@@ -189,7 +189,7 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 		atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
 
 		/* Return known errors */
-		if (err == -EBUSY) {
+		if (err == -EBUSY || err == -ENOTCONN) {
 			return err;
 		}
 

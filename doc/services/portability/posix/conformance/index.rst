@@ -95,7 +95,7 @@ POSIX System Interfaces
     _POSIX_TRACE_LOG, -1,
     _POSIX_TYPED_MEMORY_OBJECTS, -1,
     _XOPEN_CRYPT, -1,
-    _XOPEN_REALTIME, -1,
+    :ref:`_XOPEN_REALTIME <posix_option_group_xsi_realtime>`, 700, :kconfig:option:`CONFIG_XSI_REALTIME`
     _XOPEN_REALTIME_THREADS, -1,
     :ref:`_XOPEN_STREAMS<posix_option_xopen_streams>`, 200809L, :kconfig:option:`CONFIG_XOPEN_STREAMS`
     _XOPEN_UNIX, -1,

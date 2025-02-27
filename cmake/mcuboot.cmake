@@ -183,8 +183,18 @@ function(zephyr_mcuboot_tasks)
     set(BYPRODUCT_KERNEL_SIGNED_HEX_NAME "${output}.signed.hex"
         CACHE FILEPATH "Signed kernel hex file" FORCE
     )
-    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-                 ${imgtool_sign} ${imgtool_args} ${output}.hex ${output}.signed.hex)
+
+    if(NOT "${keyfile_enc}" STREQUAL "")
+      # When encryption is enabled, set the encrypted bit when signing the image but do not
+      # encrypt the data, this means that when the image is moved out of the primary into the
+      # secondary, it will be encrypted rather than being in unencrypted
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                   ${imgtool_sign} ${imgtool_args} --encrypt "${keyfile_enc}" --clear
+                   ${output}.hex ${output}.signed.hex)
+    else()
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                   ${imgtool_sign} ${imgtool_args} ${output}.hex ${output}.signed.hex)
+    endif()
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND byproducts ${output}.signed.confirmed.hex)

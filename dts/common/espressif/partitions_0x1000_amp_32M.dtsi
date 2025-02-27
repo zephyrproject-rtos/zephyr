@@ -1,10 +1,9 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /* 32MB flash partition table */
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -13,42 +12,56 @@
 
 		boot_partition: partition@1000 {
 			label = "mcuboot";
-			reg = <0x1000 DT_SIZE_K(60)>;
+			reg = <0x1000 DT_SIZE_K(124)>;
 		};
 
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x20000 DT_SIZE_K(12352)>;
+			reg = <0x20000 DT_SIZE_K(12096)>;
 		};
 
-		slot0_appcpu_partition: partition@C30000 {
-			label = "image-0-appcpu";
-			reg = <0xC24000 DT_SIZE_K(3840)>;
-		};
-
-		slot1_partition: partition@FF0000 {
+		slot1_partition: partition@bf0000 {
 			label = "image-1";
-			reg = <0xFF0000 DT_SIZE_K(12352)>;
+			reg = <0xBF0000 DT_SIZE_K(12096)>;
 		};
 
-		slot1_appcpu_partition: partition@1C00000 {
+		slot0_appcpu_partition: partition@17c0000 {
+			label = "image-0-appcpu";
+			reg = <0x17C0000 DT_SIZE_K(4032)>;
+		};
+
+		slot1_appcpu_partition: partition@1bb0000 {
 			label = "image-1-appcpu";
-			reg = <0x1C00000 DT_SIZE_K(3840)>;
+			reg = <0x1BB0000 DT_SIZE_K(4032)>;
 		};
 
-		storage_partition: partition@1FC0000 {
+		slot0_lpcore_partition: partition@1fa0000 {
+			label = "image-0-lpcore";
+			reg = <0x1FA0000 DT_SIZE_K(32)>;
+		};
+
+		slot1_lpcore_partition: partition@1fa8000 {
+			label = "image-1-lpcore";
+			reg = <0x1FA8000 DT_SIZE_K(32)>;
+		};
+
+		storage_partition: partition@1fb0000 {
 			label = "storage";
-			reg = <0x1FC0000 DT_SIZE_K(128)>;
+			reg = <0x1FB0000 DT_SIZE_K(192)>;
 		};
 
-		scratch_partition: partition@1FE0000 {
-			   label = "image-scratch";
-			   reg = <0x1FE0000 DT_SIZE_K(64)>;
+		scratch_partition: partition@1fe0000 {
+			label = "image-scratch";
+			reg = <0x1FE0000 DT_SIZE_K(124)>;
 		};
 
-		coredump_partition: partition@1FF0000 {
-			label = "coredump-partition";
-			reg = <0x1FF0000 DT_SIZE_K(4)>;
+		coredump_partition: partition@1fff000 {
+			label = "coredump";
+			reg = <0x1FFF000 DT_SIZE_K(4)>;
 		};
 	};
 };
+
+/* Remaining flash size is 0kB
+ * Last used address is 0x1FFFFFF
+ */

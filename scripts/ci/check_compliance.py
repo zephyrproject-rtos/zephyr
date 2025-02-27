@@ -212,16 +212,29 @@ class CheckPatch(ComplianceTest):
         if not os.path.exists(checkpatch):
             self.skip(f'{checkpatch} not found')
 
+        # check for Perl installation on Windows
+        if os.name == 'nt':
+            if not shutil.which('perl'):
+                self.failure("Perl not installed - required for checkpatch.pl. Please install Perl or add to PATH.")
+                return
+            else:
+                cmd = ['perl', checkpatch]
+
+        # Linux and MacOS
+        else:
+            cmd = [checkpatch]
+
+        cmd.extend(['--mailback', '--no-tree', '-'])
         diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
                                 stdout=subprocess.PIPE,
                                 cwd=GIT_TOP)
         try:
-            subprocess.run((checkpatch, '--mailback', '--no-tree', '-'),
+            subprocess.run(cmd,
                            check=True,
                            stdin=diff.stdout,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT,
-                           shell=True, cwd=GIT_TOP)
+                           shell=False, cwd=GIT_TOP)
 
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
@@ -387,6 +400,7 @@ class KconfigCheck(ComplianceTest):
         self.check_no_enable_in_boolean_prompt(kconf)
         self.check_soc_name_sync(kconf)
         self.check_no_undef_outside_kconfig(kconf)
+        self.check_disallowed_defconfigs(kconf)
 
     def get_modules(self, modules_file, sysbuild_modules_file, settings_file):
         """
@@ -661,6 +675,84 @@ class KconfigCheck(ComplianceTest):
 
         return set(kconf_syms)
 
+    def check_disallowed_defconfigs(self, kconf):
+        """
+        Checks that there are no disallowed Kconfigs used in board/SoC defconfig files
+        """
+        # Grep for symbol references.
+        #
+        # Example output line for a reference to CONFIG_FOO at line 17 of
+        # foo/bar.c:
+        #
+        #   foo/bar.c<null>17<null>#ifdef CONFIG_FOO
+        #
+        # 'git grep --only-matching' would get rid of the surrounding context
+        # ('#ifdef '), but it was added fairly recently (second half of 2018),
+        # so we extract the references from each line ourselves instead.
+        #
+        # The regex uses word boundaries (\b) to isolate the reference, and
+        # negative lookahead to automatically allowlist the following:
+        #
+        #  - ##, for token pasting (CONFIG_FOO_##X)
+        #
+        #  - $, e.g. for CMake variable expansion (CONFIG_FOO_${VAR})
+        #
+        #  - @, e.g. for CMakes's configure_file() (CONFIG_FOO_@VAR@)
+        #
+        #  - {, e.g. for Python scripts ("CONFIG_FOO_{}_BAR".format(...)")
+        #
+        #  - *, meant for comments like '#endif /* CONFIG_FOO_* */
+
+        disallowed_symbols = {
+            "PINCTRL": "Drivers requiring PINCTRL must SELECT it instead.",
+        }
+
+        disallowed_regex = "(" + "|".join(disallowed_symbols.keys()) + ")$"
+
+        # Warning: Needs to work with both --perl-regexp and the 're' module
+        regex_boards = r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
+        regex_socs = r"\bconfig\s+[A-Z0-9_]+$"
+
+        grep_stdout_boards = git("grep", "--line-number", "-I", "--null",
+                                 "--perl-regexp", regex_boards, "--", ":boards",
+                                 cwd=ZEPHYR_BASE)
+        grep_stdout_socs = git("grep", "--line-number", "-I", "--null",
+                               "--perl-regexp", regex_socs, "--", ":soc",
+                               cwd=ZEPHYR_BASE)
+
+        # Board processing
+        # splitlines() supports various line terminators
+        for grep_line in grep_stdout_boards.splitlines():
+            path, lineno, line = grep_line.split("\0")
+
+            # Extract symbol references (might be more than one) within the line
+            for sym_name in re.findall(regex_boards, line):
+                sym_name = sym_name[len("CONFIG_"):]
+                # Only check in Kconfig fragment files, references might exist in documentation
+                if re.match(disallowed_regex, sym_name) and (path[-len("conf"):] == "conf" or
+                path[-len("defconfig"):] == "defconfig"):
+                    reason = disallowed_symbols.get(sym_name)
+                    self.fmtd_failure("error", "BoardDisallowedKconfigs", path, lineno, desc=f"""
+Found disallowed Kconfig symbol in board Kconfig files: CONFIG_{sym_name:35}
+{reason}
+""")
+
+        # SoCs processing
+        # splitlines() supports various line terminators
+        for grep_line in grep_stdout_socs.splitlines():
+            path, lineno, line = grep_line.split("\0")
+
+            # Extract symbol references (might be more than one) within the line
+            for sym_name in re.findall(regex_socs, line):
+                sym_name = sym_name[len("config"):].strip()
+                # Only check in Kconfig defconfig files
+                if re.match(disallowed_regex, sym_name) and "defconfig" in path:
+                    reason = disallowed_symbols.get(sym_name, "Unknown reason")
+                    self.fmtd_failure("error", "SoCDisallowedKconfigs", path, lineno, desc=f"""
+Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
+{reason}
+""")
+
     def get_defined_syms(self, kconf):
         # Returns a set() with the names of all defined Kconfig symbols (with no
         # 'CONFIG_' prefix). This is complicated by samples and tests defining
@@ -832,7 +924,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         # so we extract the references from each line ourselves instead.
         #
         # The regex uses word boundaries (\b) to isolate the reference, and
-        # negative lookahead to automatically whitelist the following:
+        # negative lookahead to automatically allowlist the following:
         #
         #  - ##, for token pasting (CONFIG_FOO_##X)
         #
@@ -938,6 +1030,7 @@ flagged.
         "BOOT_SIGNATURE_TYPE_NONE",       # MCUboot setting used by sysbuild
         "BOOT_SIGNATURE_TYPE_RSA",        # MCUboot setting used by sysbuild
         "BOOT_SWAP_USING_MOVE", # Used in sysbuild for MCUboot configuration
+        "BOOT_SWAP_USING_OFFSET", # Used in sysbuild for MCUboot configuration
         "BOOT_SWAP_USING_SCRATCH", # Used in sysbuild for MCUboot configuration
         "BOOT_UPGRADE_ONLY", # Used in example adjusting MCUboot config, but
                              # symbol is defined in MCUboot itself.
@@ -966,6 +1059,11 @@ flagged.
         "FOO_SETTING_2",
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+        "IAR_BUFFERED_WRITE",
+        "IAR_LIBCPP",
+        "IAR_SEMIHOSTING",
+        "IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS", # Used in ICMsg tests for intercompatibility
+                                                      # with older versions of the ICMsg.
         "LIBGCC_RTLIB",
         "LLVM_USE_LD",   # Both LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
         "LLVM_USE_LLD",  # which are only included if LLVM is selected but

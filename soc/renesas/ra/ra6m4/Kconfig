@@ -14,3 +14,4 @@ config SOC_SERIES_RA6M4
 	select HAS_SWO
 	select XIP
 	select SOC_EARLY_INIT_HOOK
+	select GPIO_RA_HAS_VBTICTLR

@@ -5,6 +5,7 @@ config DRV8424
 	bool "TI DRV8424 stepper motor driver"
 	default y
 	depends on DT_HAS_TI_DRV8424_ENABLED
+	select STEPPER_TI
 	select STEP_DIR_STEPPER
 	select STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS
 	help

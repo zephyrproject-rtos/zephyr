@@ -747,8 +747,16 @@ enum {
 	BT_GAP_LE_PHY_1M                      = BIT(0),
 	 /** LE 2M PHY */
 	BT_GAP_LE_PHY_2M                      = BIT(1),
-	/** LE Coded PHY */
+	/** LE Coded PHY, coding scheme not specified */
 	BT_GAP_LE_PHY_CODED                   = BIT(2),
+	/** LE Coded S=8 PHY. Only used for advertising reports
+	 * when Kconfig BT_EXT_ADV_CODING_SELECTION is enabled.
+	 */
+	BT_GAP_LE_PHY_CODED_S8                = BIT(3),
+	/** LE Coded S=2 PHY. Only used for advertising reports
+	 * when Kconfig BT_EXT_ADV_CODING_SELECTION is enabled.
+	 */
+	BT_GAP_LE_PHY_CODED_S2                = BIT(4),
 };
 
 /** Advertising PDU types */

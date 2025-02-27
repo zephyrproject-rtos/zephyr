@@ -231,6 +231,9 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe
 # Required ASM flags when using gcc
 set_property(TARGET asm PROPERTY required "-xassembler-with-cpp")
 
+# GCC compiler flags for imacros. The specific header must be appended by user.
+set_property(TARGET asm PROPERTY imacros "-imacros")
+
 # gcc flag for colourful diagnostic messages
 check_set_compiler_property(PROPERTY diagnostic -fdiagnostics-color=always)
 
@@ -253,3 +256,7 @@ set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
 set_compiler_property(PROPERTY specs -specs=)
 
 set_compiler_property(PROPERTY include_file -include)
+
+set_compiler_property(PROPERTY cmse -mcmse)
+
+set_property(TARGET asm PROPERTY cmse -mcmse)

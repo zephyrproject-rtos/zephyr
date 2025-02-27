@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/toolchain.h>
 
 #include "audio_internal.h"
 
@@ -255,5 +256,17 @@ ssize_t bt_audio_ccc_cfg_write(struct bt_conn *conn, const struct bt_gatt_attr *
 	}
 
 	return sizeof(value);
+}
+
+uint16_t bt_audio_get_max_ntf_size(struct bt_conn *conn)
+{
+	const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
+	const uint16_t mtu = conn == NULL ? 0 : bt_gatt_get_mtu(conn);
+
+	if (mtu > att_ntf_header_size) {
+		return mtu - att_ntf_header_size;
+	}
+
+	return 0U;
 }
 #endif /* CONFIG_BT_CONN */

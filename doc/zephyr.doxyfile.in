@@ -980,6 +980,7 @@ INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/subsys/testsuite/include/ \
                          @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
                          @ZEPHYR_BASE@/subsys/secure_storage/include/ \
+                         @ZEPHYR_BASE@/subsys/fs/zms/zms_priv.h \
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses

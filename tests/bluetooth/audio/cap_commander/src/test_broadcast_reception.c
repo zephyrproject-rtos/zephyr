@@ -5,20 +5,32 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
 
-#include "bluetooth.h"
 #include "cap_commander.h"
 #include "conn.h"
 #include "expects_util.h"
 #include "cap_mocks.h"
 #include "test_common.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_broadcast_reception_test, CONFIG_BT_CAP_COMMANDER_LOG_LEVEL);
 
@@ -435,8 +447,12 @@ ZTEST_F(cap_commander_test_broadcast_reception, test_commander_reception_start_i
 {
 	int err;
 
+	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE >= UINT8_MAX) {
+		ztest_test_skip();
+	}
+
 	fixture->start_param.param[0].subgroups[0].metadata_len =
-		CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE + 1;
+		(uint8_t)(CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE + 1);
 
 	err = bt_cap_commander_broadcast_reception_start(&fixture->start_param);
 	zassert_equal(-EINVAL, err, "Unexpected return value %d", err);

@@ -1,0 +1,40 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 STMicroelectronics
+ */
+
+/ {
+	zephyr,user {
+		/* adjust channel number according to pinmux in board.dts */
+		io-channels = <&adc1 10>, <&adc1 11>;
+	};
+};
+
+&adc1 {
+	dmas = <&gpdma1 0 7 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_32BITS | STM32_DMA_PERIPH_32BITS)>;
+	dma-names = "gpdma";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@a {
+		reg = <10>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@b {
+		reg = <11>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&gpdma1 {
+	status = "okay";
+};

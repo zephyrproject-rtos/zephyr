@@ -221,12 +221,17 @@ static const struct jesd216_erase_type minimal_erase_types_4b[JESD216_NUM_ERASE_
 };
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 
+
 /* Register writes should be ready extremely quickly */
 #define WAIT_READY_REGISTER K_NO_WAIT
 /* Page writes range from sub-ms to 10ms */
 #define WAIT_READY_WRITE K_TICKS(1)
-/* Erases can range from 45ms to 240sec */
-#define WAIT_READY_ERASE K_MSEC(50)
+
+#ifdef CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
+#define WAIT_READY_ERASE K_MSEC(CONFIG_SPI_NOR_SLEEP_ERASE_MS)
+#else
+#define WAIT_READY_ERASE K_NO_WAIT
+#endif
 
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect);
@@ -300,12 +305,12 @@ static inline void record_entered_dpd(const struct device *const dev)
 #endif
 }
 
+#if ANY_INST_HAS_DPD
 /* Check the current time against the time DPD was entered and delay
  * until it's ok to initiate the DPD exit process.
  */
 static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 {
-#if ANY_INST_HAS_DPD
 	const struct spi_nor_config *const driver_config = dev->config;
 
 	if (driver_config->dpd_exist) {
@@ -333,10 +338,8 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 			}
 		}
 	}
-#else
-	ARG_UNUSED(dev);
-#endif /* ANY_INST_HAS_DPD */
 }
+#endif /* ANY_INST_HAS_DPD */
 
 /* Indicates that an access command includes bytes for the address.
  * If not provided the opcode is not followed by address bytes.
@@ -1136,12 +1139,25 @@ static int spi_nor_set_address_mode(const struct device *dev,
 
 	/* This currently only supports command 0xB7 (Enter 4-Byte
 	 * Address Mode), with or without preceding WREN.
+	 * Or when BIT(3) is set where the 4-byte address mode can be entered
+	 * by setting BIT(7) in a register via a 0x17 write
+	 * instruction. See JEDEC 216F 16th DWORD.
 	 */
-	if ((enter_4byte_addr & 0x03) == 0) {
+	if ((enter_4byte_addr & 0x0b) == 0) {
 		return -ENOTSUP;
 	}
 
 	acquire_device(dev);
+
+	if ((enter_4byte_addr & 0x08) != 0) {
+		/* Enter 4-byte address mode by setting BIT(7) in a register
+		 * via a 0x17 write instruction.
+		 */
+		uint8_t sr = BIT(7);
+
+		ret = spi_nor_access(dev, 0x17, NOR_ACCESS_WRITE, 0, &sr, sizeof(sr));
+		goto done;
+	}
 
 	if ((enter_4byte_addr & 0x02) != 0) {
 		/* Enter after WREN. */
@@ -1150,12 +1166,13 @@ static int spi_nor_set_address_mode(const struct device *dev,
 
 	if (ret == 0) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_4BA);
+	}
 
-		if (ret == 0) {
-			struct spi_nor_data *data = dev->data;
+done:
+	if (ret == 0) {
+		struct spi_nor_data *data = dev->data;
 
-			data->flag_access_32bit = true;
-		}
+		data->flag_access_32bit = true;
 	}
 
 	release_device(dev);

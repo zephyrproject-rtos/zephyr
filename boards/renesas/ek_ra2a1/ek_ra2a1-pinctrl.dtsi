@@ -43,4 +43,12 @@
 			drive-strength = "medium";
 		};
 	};
+
+	dac0_default: dac0_default {
+		group1 {
+			/* output */
+			psels = <RA_PSEL(RA_PSEL_CAC_DAC, 5, 0)>;
+			renesas,analog-enable;
+		};
+	};
 };

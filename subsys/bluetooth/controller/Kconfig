@@ -45,6 +45,10 @@ config BT_CTLR_PHY_CODED_SUPPORT
 config BT_CTLR_ADV_EXT_SUPPORT
 	bool
 
+config BT_CTLR_ADV_EXT_CODING_SELECTION_SUPPORT
+	depends on BT_CTLR_PHY_CODED_SUPPORT
+	bool
+
 config BT_CTLR_ADV_PERIODIC_SUPPORT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	bool
@@ -139,12 +143,12 @@ config BT_CTLR
 	  the HAS_BT_CTLR option.
 
 config BT_LL_SW_SPLIT
-	bool "Software-based BLE Link Layer"
+	bool "Software-based Bluetooth LE Link Layer"
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_LL_SW_SPLIT_ENABLED
 	select HAS_BT_CTLR
 	help
-	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
+	  Use Zephyr software Bluetooth LE Link Layer ULL LLL split implementation.
 
 config BT_CTLR_HCI
 	bool "Host Controller Interface (HCI)"
@@ -155,9 +159,19 @@ config BT_CTLR_HCI
 	  This should almost always be enabled, except in a few special
 	  cases, like for unit testing.
 
+config BT_CTLR_HCI_NUM_CMD_PKT_MAX
+	# Hidden Controller implementation supported Num_HCI_Command_Packets value.
+	# This value will be used to calculate the total number of HCI command buffers to be
+	# allocated, BT_BUF_CMD_TX_COUNT, dependent on HCI Controller to Host data flow control
+	# being enabled.
+	int
+	depends on BT_CTLR_HCI
+	default 1 if BT_LL_SW_SPLIT
+	default 1
+
 if HAS_BT_CTLR
 
-comment "BLE Controller configuration"
+comment "Bluetooth Controller configuration"
 
 config BT_CTLR_ENTROPY
 	bool "Random number generation in Controller"
@@ -212,7 +226,7 @@ config BT_CTLR_DUP_FILTER_LEN
 	depends on BT_LL_SW_SPLIT
 	default 16
 	help
-	  Set the number of unique BLE addresses that can be filtered as
+	  Set the number of unique Bluetooth LE addresses that can be filtered as
 	  duplicates while scanning.
 
 config BT_CTLR_DUP_FILTER_ADV_SET_MAX
@@ -318,7 +332,7 @@ choice BT_CTLR_TX_PWR
 	default BT_CTLR_TX_PWR_0
 	depends on BT_CTLR_TX_PWR_ANTENNA = 0 || BT_LL_SW_SPLIT
 	help
-	  Select a supported BLE Radio transmit power level in dBm.
+	  Select a supported Bluetooth LE Radio transmit power level in dBm.
 	  Only values supported natively by the SoC are available.
 	  The value set here represents the actual default power level fed
 	  to the antenna.
@@ -535,7 +549,7 @@ config BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 	  Provides HCI VS commands to set and get the current Tx
 	  power on an individual role/connection basis.
 
-comment "BLE Controller features"
+comment "Bluetooth Controller features"
 
 if BT_CONN
 
@@ -550,7 +564,7 @@ config BT_CTLR_LE_ENC
 config BT_CTLR_ECDH
 	bool "Elliptic Curve Diffie-Hellman (ECDH)"
 	depends on BT_CTLR_ECDH_SUPPORT
-	default y
+	default y if BT_HCI_RAW
 	help
 	  Enable support for Bluetooth v4.2 Elliptic Curve Diffie-Hellman
 	  feature in the controller.
@@ -779,6 +793,15 @@ config BT_CTLR_ADV_PERIODIC_RSP
 	help
 	  Enable support for Bluetooth 5.4 LE Periodic Advertising with
 	  Responses in the Controller.
+
+config BT_CTLR_ADV_EXT_CODING_SELECTION
+	bool "Advertising Coding Selection support"
+	depends on BT_CTLR_PHY_CODED && BT_CTLR_ADV_EXT_CODING_SELECTION_SUPPORT
+	select BT_CTLR_SET_HOST_FEATURE if BT_OBSERVER
+	default y if BT_EXT_ADV_CODING_SELECTION
+	help
+	  Enable support for Bluetooth 6.0 Advertising Coding Selection
+	  in the Controller.
 
 if BT_CTLR_ADV_PERIODIC
 
@@ -1048,13 +1071,13 @@ config BT_CTLR_CONN_ISO_PDU_LEN_MAX
 	help
 	  Maximum Connected Isochronous Channel PDU Length.
 
-config BT_CTLR_CONN_ISO_SDU_LEN_MAX
-	int "Maximum Connected Isochronous Channel SDU Length"
-	depends on BT_CTLR_CONN_ISO
+config BT_CTLR_ISO_TX_SDU_LEN_MAX
+	int "Maximum Isochronous Channel Transmit SDU Length"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	range 1 4095
-	default 251
+	default 1
 	help
-	  Maximum Connected Isochronous Channel SDU Length.
+	  Maximum Isochronous Channel Transmit SDU Length.
 
 config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
 	int "LE Connected Isochronous Streams max number of subevents"
@@ -1152,6 +1175,6 @@ config BT_CTLR_DEBUG_PINS_CPUAPP
 	bool "Bluetooth Controller Debug Pins"
 	depends on BOARD_NRF5340DK_NRF5340_CPUAPP
 	help
-	  Route debug GPIO toggling for the BLE Controller. Enable this when
+	  Route debug GPIO toggling for the Bluetooth Controller. Enable this when
 	  using Bluetooth Controller Debug Pins in co-processor and the main
 	  processor needs to setup and/or route the signals.

@@ -37,6 +37,16 @@ struct sensor_ds3231_conf {
 	const struct device *mfd;
 };
 
+static inline void sensor_ds3231_temp_from_raw(struct sensor_ds3231_data *data,
+					       struct sensor_value *val)
+{
+	const uint16_t raw_temp = data->raw_temp;
+	uint8_t frac = raw_temp & 3;
+
+	val->val1 = (int8_t)(raw_temp & GENMASK(8, 2)) >> 2;
+	val->val2 = (frac * 25) * pow(10, 4);
+}
+
 int sensor_ds3231_read_temp(const struct device *dev, uint16_t *raw_temp)
 {
 	const struct sensor_ds3231_conf *config = dev->config;
@@ -74,13 +84,7 @@ static int sensor_ds3231_channel_get(const struct device *dev, enum sensor_chann
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		const uint16_t raw_temp = data->raw_temp;
-
-		val->val1 = (int8_t)(raw_temp & GENMASK(8, 2)) >> 2;
-
-		uint8_t frac = raw_temp & 3;
-
-		val->val2 = (frac * 25) * pow(10, 4);
+		sensor_ds3231_temp_from_raw(data, val);
 		break;
 	default:
 		return -ENOTSUP;

@@ -8,6 +8,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(EMLIB_DIR      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/emlib)
+set(EMDRV_DIR      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/emdrv)
 set(COMMON_DIR     ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/common)
 set(DEVICE_DIR     ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/Device)
 set(DRIVER_DIR     ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/driver)
@@ -39,8 +40,11 @@ endfunction()
 
 if(CONFIG_SOC_GECKO_HAS_RADIO)
   zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
-    ${RADIO_DIR}/rail_lib/plugin/pa-conversions/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}/config
     ${RADIO_DIR}/rail_lib/chip/efr32/efr32xg2x
+  )
+
+  zephyr_compile_definitions(
+    SL_RAIL_UTIL_PA_CONFIG_HEADER="sl_rail_util_pa_config.h"
   )
 
   zephyr_include_directories(
@@ -96,6 +100,10 @@ zephyr_include_directories(
   ${COMMON_DIR}/config
   ${COMMON_DIR}/inc
   ${DRIVER_DIR}/gpio/inc
+  ${EMDRV_DIR}/common/inc
+  ${EMDRV_DIR}/dmadrv/config/s2_8ch/
+  ${EMDRV_DIR}/dmadrv/inc
+  ${EMDRV_DIR}/dmadrv/inc/s2_signals/
   ${EMLIB_DIR}/inc
   ${PERIPHERAL_DIR}/inc
   ${SERVICE_DIR}/clock_manager/inc
@@ -209,6 +217,7 @@ if(CONFIG_SOC_GECKO_CORE)
     SL_CODE_COMPONENT_CORE=core
   )
 endif()
+zephyr_library_sources_ifdef(CONFIG_SOC_SILABS_ACMP        ${EMLIB_DIR}/src/em_acmp.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CRYOTIMER    ${EMLIB_DIR}/src/em_cryotimer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EMU          ${EMLIB_DIR}/src/em_emu.c)
 if(CONFIG_SOC_GECKO_GPIO)
@@ -222,6 +231,9 @@ if(CONFIG_SOC_GECKO_GPIO)
     SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
   )
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMDRV_DIR}/dmadrv/src/dmadrv.c)
+
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_I2C          ${EMLIB_DIR}/src/em_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LETIMER      ${EMLIB_DIR}/src/em_letimer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LEUART       ${EMLIB_DIR}/src/em_leuart.c)

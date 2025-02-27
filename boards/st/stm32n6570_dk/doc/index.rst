@@ -55,6 +55,11 @@ Hardware
 - On-board STLINK-V3EC debugger/programmer with USB re-enumeration capability:
   Virtual COM port, and debug port
 
+For more details, please refer to:
+
+* `STM32N6570_DK website`_
+* `STM32N657X0 on www.st.com`_
+* `STM32N657 reference manual`_
 
 Supported Features
 ==================
@@ -64,11 +69,21 @@ The Zephyr ``stm32n6570_dk`` board supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
++-----------+------------+-------------------------------------+
+| CAN/CANFD | on-chip    | canbus                              |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | Direct Memory Access Controller     |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
@@ -92,10 +107,24 @@ For more details please refer to `STM32N6570_DK User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+- ADC1_INP10 : PA9
+- ADC1_INP11 : PA10
+- FDCAN1_TX : PH2
+- FDCAN1_RX : PD0
+- I2C1_SCL : PH9
+- I2C1_SDA : PC1
+- I2C4_SCL : PE13
+- I2C4_SDA : PE14
 - LD1 : PO1
 - LD2 : PG10
+- SPI5_SCK : PE15
+- SPI5_MOSI : PG2
+- SPI5_MISO : PH8
+- SPI5_NSS : PA3
 - USART_1_TX : PE5
 - USART_1_RX : PE6
+- USART_2_TX : PD5
+- USART_2_RX : PF6
 
 System Clock
 ------------
@@ -114,42 +143,93 @@ Programming and Debugging
 *************************
 
 STM32N6570_DK board includes an ST-LINK/V3 embedded debug tool interface.
-This probe allows to flash the board using various tools.
+This probe allows to flash and debug the board using various tools.
 
-Flashing
-========
 
-The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
-so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+Flashing or loading
+===================
+
+The board is configured to be programmed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is needed.
 Version 2.18.0 or later of `STM32CubeProgrammer`_ is required.
 
-Flashing an application to STM32N6570_DK
-------------------------------------------
-
-Connect the STM32N6570_DK to your host computer using the USB port.
-Then build and flash an application.
-
 .. note::
-   For flashing, BOOT0 pin should be set to 0 and BOOT1 to 1 before powering on
-   the board.
+   Firmware is run in secure mode of execution, which requires a signature.
+   After build, the build system  will automatically generate a signed version of the
+   binary using `STM32CubeProgrammer`_ utility ``STM32_SigningTool_CLI``.
+   This utility is installed along with `STM32CubeProgrammer`_, but make sure it is
+   available in your ``PATH`` variable.
 
-   To run the application after flashing, BOOT1 should be set to 0 and the board
-   should be powered off and on again.
+To program the board, there are two options:
 
-Here is an example for the :zephyr:code-sample:`hello_world` application.
+- Program the firmware in external flash. At boot, it will then be loaded on RAM
+  and executed from there.
+- Optionally, it can also be taken advantage from the serial boot interface provided
+  by the boot ROM. In that case, firmware is directly loaded in RAM and executed from
+  there. It is not retained.
+
+Programming an application to STM32N6570_DK
+-------------------------------------------
+
+Here is an example to build and run :zephyr:code-sample:`hello_world` application.
+
+First, connect the STM32N6570_DK to your host computer using the ST-Link USB port.
+
+   .. tabs::
+
+      .. group-tab:: ST-Link
+
+         Build and flash an application using ``stm32n6570_dk`` target.
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: stm32n6570_dk
+            :goals: build flash
+
+         .. note::
+            For flashing, before powering the board, set the boot pins in the following configuration:
+
+            * BOOT0: 0
+            * BOOT1: 1
+
+            After flashing, to run the application, set the boot pins in the following configuration:
+
+            * BOOT1: 0
+
+	    Power off and on the board again.
+
+         Run a serial host program to connect to your board:
+
+         .. code-block:: console
+
+            $ minicom -D /dev/ttyACM0
+
+      .. group-tab:: Serial Boot Loader (USB)
+
+         Additionally, connect the STM32N6570_DK to your host computer using the USB port.
+         In this configuration, ST-Link is used to power the board and for serial communication
+         over the Virtual COM Port.
+
+         .. note::
+            Before powering the board, set the boot pins in the following configuration:
+
+            * BOOT0: 1
+            * BOOT1: 0
+
+         Build and load an application using ``stm32n6570_dk/stm32n657xx/sb`` target (you
+         can also use the shortened form: ``stm32n6570_dk//sb``)
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: stm32n6570_dk//sb
+            :goals: build flash
+
 
 Run a serial host program to connect with your Disco board:
 
 .. code-block:: console
 
    $ minicom -D /dev/ttyACM0
-
-Then build and flash the application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: stm32n6570_dk
-   :goals: build flash
 
 You should see the following message on the console:
 
@@ -162,15 +242,34 @@ Debugging
 =========
 
 For now debugging is only available through STM32CubeIDE:
-* Go to File > Import and select C/C++ > STM32 Cortex-M Executable
-* In Executable field, browse to your <ZEPHYR_PATH>/build/zephyr/zephyr.elf
+
+* Go to File > Import and select C/C++ > STM32 Cortex-M Executable.
+* In Executable field, browse to your <ZEPHYR_PATH>/build/zephyr/zephyr.elf.
 * In MCU field, select STM32N657X0HxQ.
-* Click on Finish
-* Then click on Debug to start the debugging session
+* Click on Finish.
+* Finally, click on Debug to start the debugging session.
 
 .. note::
-   For debugging, BOOT0 pin should be set to 0 and BOOT1 to 1 before powering on the
-   board.
+   For debugging, before powering on the board, set the boot pins in the following configuration:
+
+   * BOOT0: 0
+   * BOOT1: 1
+
+
+Running tests with twister
+==========================
+
+Due to the BOOT switches manipulation required when flashing the board using ``stm32n6570_dk``
+board target, it is only possible to run twister tests campaign on ``stm32n6570_dk/stm32n657xx/sb``
+board target which doesn't require BOOT pins changes to load and execute binaries.
+To do so, it is advised to use Twister's hardware map feature with the following settings:
+
+.. code-block:: yaml
+
+   - platform: stm32n6570_dk/stm32n657xx/sb
+     product: BOOT-SERIAL
+     pre_script: <path_to_zephyr>/boards/st/common/scripts/board_power_reset.sh
+     runner: stm32cubeprogrammer
 
 .. _STM32N6570_DK website:
    https://www.st.com/en/evaluation-tools/stm32n6570-dk.html

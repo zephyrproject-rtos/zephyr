@@ -1599,8 +1599,8 @@ This has been fixed in main for v3.6.0
 :cve:`2024-3077`
 ----------------
 
-Bluetooth: Integer underflow in gatt_find_info_rsp. A malicious BLE
-device can crash BLE victim device by sending malformed gatt packet.
+Bluetooth: Integer underflow in gatt_find_info_rsp. A malicious Bluetooth LE
+device can crash Bluetooth LE victim device by sending malformed gatt packet.
 
 - `Zephyr project bug tracker GHSA-gmfv-4vfh-2mh8
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gmfv-4vfh-2mh8>`_
@@ -1615,8 +1615,8 @@ This has been fixed in main for v3.7.0
 
 Bluetooth: DoS caused by null pointer dereference.
 
-A malicious BLE device can send a specific order of packet
-sequence to cause a DoS attack on the victim BLE device.
+A malicious Bluetooth LE device can send a specific order of packet
+sequence to cause a DoS attack on the victim Bluetooth LE device.
 
 - `Zephyr project bug tracker GHSA-jmr9-xw2v-5vf4
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-jmr9-xw2v-5vf4>`_
@@ -1804,7 +1804,20 @@ This has been fixed in main for v4.0.0
 :cve:`2024-10395`
 -----------------
 
-Under embargo until 2025-01-23
+net: lib: http_server: Buffer Under-read
+
+No proper validation of the length of user input in
+http_server_get_content_type_from_extension could cause a
+segmentation fault or crash by causing memory to be read
+outside of the bounds of the buffer.
+
+- `Zephyr project bug tracker GHSA-hfww-j92m-x8fv
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hfww-j92m-x8fv>`_
+
+This has been fixed in main for v4.0.0
+
+- `PR 80396 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/80396>`_
 
 :cve:`2024-11263`
 -----------------

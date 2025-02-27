@@ -10,7 +10,7 @@
 /** Macro used to iterate over USB-C connector and call a function if the node has PPC property */
 #define CALL_IF_HAS_PPC(usb_node, func)                                                            \
 	COND_CODE_1(DT_NODE_HAS_PROP(usb_node, ppc),                                               \
-		    (ret |= func(DEVICE_DT_GET(DT_PHANDLE_BY_IDX(usb_node, ppc, 0)));), ())
+		    (ret |= func(DEVICE_DT_GET_BY_IDX(usb_node, ppc, 0));), ())
 
 /**
  * @brief Command that dumps registers of one or all of the PPCs

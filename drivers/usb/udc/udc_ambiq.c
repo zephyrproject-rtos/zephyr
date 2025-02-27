@@ -594,14 +594,14 @@ static int udc_ambiq_shutdown(const struct device *dev)
 	return 0;
 }
 
-static int udc_ambiq_lock(const struct device *dev)
+static void udc_ambiq_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int udc_ambiq_unlock(const struct device *dev)
+static void udc_ambiq_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 static void ambiq_handle_evt_setup(const struct device *dev)

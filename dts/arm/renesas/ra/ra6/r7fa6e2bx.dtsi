@@ -6,6 +6,7 @@
 
 #include <arm/renesas/ra/ra6/ra6-cm33-common.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
 /delete-node/ &agt0;
 /delete-node/ &agt1;
@@ -13,9 +14,9 @@
 /delete-node/ &agt3;
 /delete-node/ &agt4;
 /delete-node/ &agt5;
-#include <zephyr/dt-bindings/pwm/ra_pwm.h>
-
 /delete-node/ &adc1;
+/delete-node/ &usbfs;
+/delete-node/ &usbfs_phy;
 
 / {
 	soc {
@@ -52,6 +53,7 @@
 			interrupt-names = "rxf", "glerr";
 			clocks = <&pclkb 0 0>, <&pclka 0 0>;
 			clock-names = "opclk", "ramclk";
+			dll-max-freq = <DT_FREQ_M(40)>;
 			reg = <0x400b0000 0x2000>;
 			status = "disabled";
 
@@ -151,6 +153,7 @@
 
 			iclk: iclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <200000000>;
 				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
@@ -305,4 +308,8 @@
 	port-irqs = <&port_irq11>;
 	port-irq-names = "port-irq11";
 	port-irq11-pins = <14>;
+};
+
+&dac_global {
+	has-output-amplifier;
 };

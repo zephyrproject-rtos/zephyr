@@ -90,8 +90,12 @@ config BT_RECV_WORKQ_SYS
 	  High priority HCI packets will processed in the context of the caller of bt_recv().
 	  The application needs to ensure the system workqueue stack size (SYSTEM_WORKQUEUE_STACK_SIZE)
 	  is large enough, refer to BT_RX_STACK_SIZE for the recommended minimum.
-	  Note: When this option is used, other users of the system work queue will influence the
-	  latency of incoming Bluetooth events.
+	  Warning: Enabling this option will cause the latency of incoming Bluetooth events to be
+	  affected by other tasks using the system work queue. When this option is active, the Host
+	  will process Bluetooth events in a blocking manner. This can lead to deadlocks if the
+	  application waits for the system work queue while handling Bluetooth events. This feature
+	  is intended for advanced users to allow aggressive memory optimization for devices with
+	  very limited memory. It is strongly advised not to use this option.
 
 config BT_RECV_WORKQ_BT
 	bool "Process low priority HCI packets in the bluetooth-specific work queue"
@@ -283,7 +287,7 @@ config BT_FILTER_ACCEPT_LIST
 	bool "Filter accept list support"
 	help
 	  This option enables the filter accept list API. This takes advantage of the
-	  filtering feature of a BLE controller.
+	  filtering feature of a Bluetooth LE controller.
 	  The filter accept list is a global list and the same list is used
 	  by both scanner and advertiser. The filter accept list cannot be modified while
 	  it is in use.
@@ -1002,10 +1006,11 @@ config BT_ECC
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_ECC_SECP_R1_256
 	imply MBEDTLS_PSA_P256M_DRIVER_ENABLED if MBEDTLS_PSA_CRYPTO_C
-	select BT_LONG_WQ
+	imply BT_LONG_WQ
 	help
-	  If this option is set, internal APIs will be available to perform ECDH operations
-	  through the long work queue. operations needed e.g. by LE Secure Connections.
+	  If this option is set, internal APIs will be available to perform ECDH operations through
+	  the long work queue (or system work queue). The operations are used e.g. by LE Secure
+	  Connections.
 
 endif # BT_HCI_HOST
 

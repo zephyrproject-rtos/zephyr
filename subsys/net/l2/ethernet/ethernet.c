@@ -149,19 +149,21 @@ static inline void ethernet_update_length(struct net_if *iface,
 	}
 }
 
-static void ethernet_update_rx_stats(struct net_if *iface,
-				     struct net_eth_hdr *hdr, size_t length)
+
+static void ethernet_update_rx_stats(struct net_if *iface, size_t length,
+				     bool dst_broadcast, bool dst_eth_multicast)
 {
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	if (!IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
+		return;
+	}
+
 	eth_stats_update_bytes_rx(iface, length);
 	eth_stats_update_pkts_rx(iface);
-
-	if (net_eth_is_addr_broadcast(&hdr->dst)) {
+	if (dst_broadcast) {
 		eth_stats_update_broadcast_rx(iface);
-	} else if (net_eth_is_addr_multicast(&hdr->dst)) {
+	} else if (dst_eth_multicast) {
 		eth_stats_update_multicast_rx(iface);
 	}
-#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 }
 
 static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
@@ -169,6 +171,7 @@ static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 	return (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN_TAG_STRIP);
 }
 
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 /* Drop packet if it has broadcast destination MAC address but the IP
  * address is not multicast or broadcast address. See RFC 1122 ch 3.3.6
  */
@@ -176,6 +179,10 @@ static inline
 enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 						struct net_eth_hdr *hdr)
 {
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_ACCEPT_MISMATCH_L3_L2_ADDR)) {
+		return NET_OK;
+	}
+
 	if (net_eth_is_addr_broadcast(&hdr->dst) &&
 	    !(net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
 	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
@@ -185,6 +192,7 @@ enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 
 	return NET_OK;
 }
+#endif
 
 #if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
 static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_addr *addr,
@@ -237,12 +245,14 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	uint8_t hdr_len = sizeof(struct net_eth_hdr);
+	size_t body_len;
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 	enum net_verdict verdict = NET_CONTINUE;
 	bool is_vlan_pkt = false;
 	bool handled = false;
 	struct net_linkaddr *lladdr;
 	uint16_t type;
+	bool dst_broadcast, dst_eth_multicast, dst_iface_addr;
 
 	/* This expects that the Ethernet header is in the first net_buf
 	 * fragment. This is a safe expectation here as it would not make
@@ -281,19 +291,26 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		    !eth_is_vlan_tag_stripped(iface)) {
 			struct net_eth_vlan_hdr *hdr_vlan =
 				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+			struct net_if *vlan_iface;
 
 			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
 			type = ntohs(hdr_vlan->type);
 			hdr_len = sizeof(struct net_eth_vlan_hdr);
 			is_vlan_pkt = true;
 
-			net_pkt_set_iface(pkt,
-					  net_eth_get_vlan_iface(iface,
-						       net_pkt_vlan_tag(pkt)));
-
 			/* If we receive a packet with a VLAN tag, for that we don't
 			 * have a VLAN interface, drop the packet.
 			 */
+			vlan_iface = net_eth_get_vlan_iface(iface,
+							    net_pkt_vlan_tag(pkt));
+			if (vlan_iface == NULL) {
+				NET_DBG("Dropping frame, no VLAN interface for tag %d",
+					net_pkt_vlan_tag(pkt));
+				goto drop;
+			}
+
+			net_pkt_set_iface(pkt, vlan_iface);
+
 			if (net_if_l2(net_pkt_iface(pkt)) == NULL) {
 				goto drop;
 			}
@@ -325,6 +342,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	lladdr->type = NET_LINK_ETHERNET;
 
 	net_pkt_set_ll_proto_type(pkt, type);
+	dst_broadcast = net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr);
+	dst_eth_multicast = net_eth_is_addr_group((struct net_eth_addr *)lladdr->addr);
+	dst_iface_addr = net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr);
 
 	if (is_vlan_pkt) {
 		print_vlan_ll_addrs(pkt, type, net_pkt_vlan_tci(pkt),
@@ -338,10 +358,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			       net_pkt_lladdr_dst(pkt));
 	}
 
-	if (!net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr) &&
-	    !net_eth_is_addr_multicast((struct net_eth_addr *)lladdr->addr) &&
-	    !net_eth_is_addr_group((struct net_eth_addr *)lladdr->addr) &&
-	    !net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr)) {
+	if (!(dst_broadcast || dst_eth_multicast || dst_iface_addr)) {
 		/* The ethernet frame is not for me as the link addresses
 		 * are different.
 		 */
@@ -354,6 +371,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	/* Get rid of the Ethernet header. */
 	net_buf_pull(pkt->frags, hdr_len);
 
+	body_len = net_pkt_get_len(pkt);
+
 	STRUCT_SECTION_FOREACH(net_l3_register, l3) {
 		if (l3->ptype != type || l3->l2 != &NET_L2_GET_NAME(ETHERNET) ||
 		    l3->handler == NULL) {
@@ -364,11 +383,17 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			l3->name, type, net_if_get_by_iface(iface), iface);
 
 		verdict = l3->handler(iface, type, pkt);
-		if (verdict == NET_DROP) {
+		if (verdict == NET_OK) {
+			/* the packet was consumed by the l3-handler */
+			goto out;
+		} else if (verdict == NET_DROP) {
 			NET_DBG("Dropping frame, packet rejected by %s", l3->name);
 			goto drop;
 		}
 
+		/* The packet will be processed further by IP-stack
+		 * when NET_CONTINUE is returned
+		 */
 		handled = true;
 		break;
 	}
@@ -384,20 +409,12 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		}
 	}
 
-	/* FIXME: ARP eats the packet and the pkt is no longer a valid one,
-	 * so we cannot update the stats here. Fix the code to be more generic
-	 * so that we do not need this check.
-	 */
-	if (type == NET_ETH_PTYPE_ARP) {
-		return verdict;
-	}
-
-	ethernet_update_rx_stats(iface, hdr, net_pkt_get_len(pkt) + hdr_len);
-
 	if (type != NET_ETH_PTYPE_EAPOL) {
 		ethernet_update_length(iface, pkt);
 	}
 
+out:
+	ethernet_update_rx_stats(iface, body_len + hdr_len, dst_broadcast, dst_eth_multicast);
 	return verdict;
 drop:
 	eth_stats_update_errors_rx(iface);
@@ -653,10 +670,13 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	return hdr_frag;
 }
 
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+	if (!IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
+		return;
+	}
 
 	eth_stats_update_bytes_tx(iface, net_pkt_get_len(pkt));
 	eth_stats_update_pkts_tx(iface);
@@ -667,9 +687,6 @@ static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
 		eth_stats_update_broadcast_tx(iface);
 	}
 }
-#else
-#define ethernet_update_tx_stats(...)
-#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {

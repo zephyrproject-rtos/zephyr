@@ -153,6 +153,10 @@ void lsm6dsv16x_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 
 void lsm6dsv16x_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
+	if (!lsm6dsv16x_is_active(dev)) {
+		return;
+	}
+
 	struct rtio_work_req *req = rtio_work_req_alloc();
 
 	if (req == NULL) {

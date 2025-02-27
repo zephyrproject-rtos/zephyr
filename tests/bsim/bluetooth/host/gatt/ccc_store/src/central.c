@@ -29,10 +29,10 @@
 
 #define SERVER_CHAN 0
 
-static DEFINE_FLAG(connected_flag);
-static DEFINE_FLAG(disconnected_flag);
-static DEFINE_FLAG(security_updated_flag);
-static DEFINE_FLAG(notification_received_flag);
+DEFINE_FLAG_STATIC(connected_flag);
+DEFINE_FLAG_STATIC(disconnected_flag);
+DEFINE_FLAG_STATIC(security_updated_flag);
+DEFINE_FLAG_STATIC(notification_received_flag);
 
 #define BT_UUID_DUMMY_SERVICE BT_UUID_DECLARE_128(DUMMY_SERVICE_TYPE)
 #define BT_UUID_DUMMY_SERVICE_NOTIFY BT_UUID_DECLARE_128(DUMMY_SERVICE_NOTIFY_TYPE)
@@ -41,7 +41,7 @@ static struct bt_conn *default_conn;
 
 static struct bt_conn_cb central_cb;
 
-static DEFINE_FLAG(gatt_subscribed_flag);
+DEFINE_FLAG_STATIC(gatt_subscribed_flag);
 
 static uint8_t notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
 			 const void *data, uint16_t length)

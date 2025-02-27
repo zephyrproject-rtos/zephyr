@@ -100,7 +100,9 @@ REGION_ALIAS("rtc_data_location", rtc_iram_seg );
 /*  Default entry point:  */
 ENTRY(CONFIG_KERNEL_ENTRY)
 
+/* Heap size calculations */
 _heap_sentry = DRAM_RESERVED_START;
+_libc_heap_size = _heap_sentry - _end;
 
 SECTIONS
 {
@@ -419,7 +421,6 @@ SECTIONS
     *libzephyr.a:esp_rom_systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_wdt.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_hp_regi2c_esp32c6.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:efuse_hal.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache.*(.literal .literal.* .text .text.*)
@@ -428,7 +429,7 @@ SECTIONS
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.* .wifi_extra_iram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.* .wifi_extra_iram.*)
-    *libcoexist.a:(.wifi_slp_iram .wifi_slp_iram.*)
+    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
 
     /* [mapping:esp_wifi] */
     *(.literal.wifi_clock_enable_wrapper .text.wifi_clock_enable_wrapper)
@@ -570,6 +571,7 @@ SECTIONS
     *libzephyr.a:cache_utils.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_hal_iram.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.* .srodata .srodata.*)
@@ -645,7 +647,6 @@ SECTIONS
     *libzephyr.a:esp_rom_efuse.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_rom_systimer.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_rom_hp_regi2c_esp32c6.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:efuse_hal.*(.rodata .rodata.* .srodata .srodata.*)
 
     . = ALIGN(4);
     #include <snippets-rwdata.ld>
@@ -776,6 +777,7 @@ SECTIONS
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.* .wifi_extra_iram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.* .wifi_extra_iram.*)
+    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
 #endif /* CONFIG_ESP32_WIFI_IRAM_OPT */
 
 #if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)

@@ -253,7 +253,7 @@ void z_ztest_check_expected_data(const char *fn, const char *name, void *data, u
 		ztest_test_fail();
 	} else if (data != NULL) {
 		if (memcmp(data, expected, length) != 0) {
-			PRINT_DATA("%s:%s data provided don't match\n", fn, name);
+			PRINT_DATA("%s:%s data provided doesn't match\n", fn, name);
 			ztest_test_fail();
 		}
 	}
@@ -329,7 +329,7 @@ int z_cleanup_mock(void)
 		fail = 1;
 	}
 	if (return_value_list.next) {
-		PRINT_DATA("Return value no used by mock: %s\n", return_value_list.next->fn);
+		PRINT_DATA("Return value not used by mock: %s\n", return_value_list.next->fn);
 		fail = 2;
 	}
 

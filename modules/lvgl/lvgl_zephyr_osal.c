@@ -13,8 +13,8 @@ LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 typedef void (*lv_thread_entry)(void *);
 static void thread_entry(void *thread, void *cb, void *user_data);
 
-lv_result_t lv_thread_init(lv_thread_t *thread, lv_thread_prio_t prio, void (*callback)(void *),
-			   size_t stack_size, void *user_data)
+lv_result_t lv_thread_init(lv_thread_t *thread, const char *const name, lv_thread_prio_t prio,
+			   void (*callback)(void *), size_t stack_size, void *user_data)
 {
 	int thread_priority;
 
@@ -28,6 +28,8 @@ lv_result_t lv_thread_init(lv_thread_t *thread, lv_thread_prio_t prio, void (*ca
 
 	thread->tid = k_thread_create(&thread->thread, thread->stack, stack_size, thread_entry,
 				      thread, callback, user_data, thread_priority, 0, K_NO_WAIT);
+
+	k_thread_name_set(thread->tid, name);
 
 	return LV_RESULT_OK;
 }

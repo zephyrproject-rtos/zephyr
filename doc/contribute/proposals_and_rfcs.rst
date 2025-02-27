@@ -33,8 +33,22 @@ feature as it is being designed, and incorporate important constraints into the
 design while it's easier to change, before the design has been fully
 implemented.
 
-Some changes do not require an RFC:
+For a Major Feature, first open an issue and outline your proposal so that it
+can be discussed. This will also allow us to better coordinate our efforts,
+prevent duplication of work, and help you to craft the change so that it is
+successfully accepted into the project. Providing the following information
+will increase the chances of your issue being dealt with quickly:
 
+  * Overview of the Proposal
+  * Motivation for or Use Case
+  * Design Details
+  * Alternatives
+  * Test Strategy
+
+Some changes or contributions do not require an RFC, the rationale and details
+of the changes should however be part of the pull-request:
+
+- Small enhancements and modifications to existing and established subsystems.
 - Rephrasing, reorganizing or refactoring
 - Addition or removal of warnings
 - Addition of new boards, SoCs or drivers to existing subsystems

@@ -279,21 +279,51 @@ class Lcov(CoverageTool):
         coveragefile = os.path.join(outdir, "coverage.info")
         ztestfile = os.path.join(outdir, "ztest.info")
 
-        cmd = ["--capture", "--directory", outdir, "--output-file", coveragefile]
-        self.run_lcov(cmd, coveragelog)
+        if build_dirs:
+            files = []
+            for dir_ in build_dirs:
+                files_ = [fname for fname in
+                            [os.path.join(dir_, "coverage.info"),
+                             os.path.join(dir_, "ztest.info")]
+                          if os.path.exists(fname)]
+                if not files_:
+                    logger.debug("Coverage merge no files in: %s", dir_)
+                    continue
+                files += files_
+            logger.debug("Coverage merge %d reports in %s", len(files), outdir)
+            cmd = ["--output-file", coveragefile]
+            for filename in files:
+                cmd.append("--add-tracefile")
+                cmd.append(filename)
+        else:
+            cmd = ["--capture", "--directory", outdir, "--output-file", coveragefile]
+            if self.coverage_per_instance and len(self.instances) == 1:
+                invalid_chars = re.compile(r"[^A-Za-z0-9_]")
+                cmd.append("--test-name")
+                cmd.append(invalid_chars.sub("_", next(iter(self.instances))))
+        ret = self.run_lcov(cmd, coveragelog)
+        if ret:
+            logger.error("LCOV capture report stage failed with %s", ret)
+            return ret, {}
 
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
         cmd = ["--extract", coveragefile,
                os.path.join(self.base_dir, "tests", "ztest", "*"),
                "--output-file", ztestfile]
-        self.run_lcov(cmd, coveragelog)
+        ret = self.run_lcov(cmd, coveragelog)
+        if ret:
+            logger.error("LCOV extract report stage failed with %s", ret)
+            return ret, {}
 
         files = []
         if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
             cmd = ["--remove", ztestfile,
                    os.path.join(self.base_dir, "tests/ztest/test/*"),
                    "--output-file", ztestfile]
-            self.run_lcov(cmd, coveragelog)
+            ret = self.run_lcov(cmd, coveragelog)
+            if ret:
+                logger.error("LCOV remove ztest report stage failed with %s", ret)
+                return ret, {}
 
             files = [coveragefile, ztestfile]
         else:
@@ -301,15 +331,23 @@ class Lcov(CoverageTool):
 
         for i in self.ignores:
             cmd = ["--remove", coveragefile, i, "--output-file", coveragefile]
-            self.run_lcov(cmd, coveragelog)
+            ret = self.run_lcov(cmd, coveragelog)
+            if ret:
+                logger.error("LCOV remove ignores report stage failed with %s", ret)
+                return ret, {}
 
         if 'html' not in self.output_formats.split(','):
             return 0, {}
 
         cmd = ["genhtml", "--legend", "--branch-coverage",
                "--prefix", self.base_dir,
-               "-output-directory", os.path.join(outdir, "coverage")] + files
+               "-output-directory", os.path.join(outdir, "coverage")]
+        if self.coverage_per_instance:
+            cmd.append("--show-details")
+        cmd += files
         ret = self.run_command(cmd, coveragelog)
+        if ret:
+            logger.error("LCOV genhtml report stage failed with %s", ret)
 
         # TODO: Add LCOV summary coverage report.
         return ret, { 'report': coveragefile, 'ztest': ztestfile, 'summary': None }

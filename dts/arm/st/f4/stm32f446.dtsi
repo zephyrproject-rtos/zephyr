@@ -25,8 +25,8 @@
 			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12U)>;
 			interrupts = <35 5>;
-			dmas = <&dma2 3 3 0x400 0x3
-				&dma2 2 3 0x400 0x3>;
+			dmas = <&dma2 3 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL
+				&dma2 2 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
 			dma-names = "tx", "rx";
 			status = "disabled";
 		};

@@ -275,7 +275,7 @@ int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio)
 	}
 
 	if (!found_gpio) {
-		LOG_DBG("Couldn't find a wake-up event correspending to GPIO %s pin %d\n",
+		LOG_DBG("Couldn't find a wake-up event corresponding to GPIO %s pin %d\n",
 			gpio->port->name, gpio->pin);
 		LOG_DBG("=> It cannot be used as a wake-up source\n");
 		return -EINVAL;

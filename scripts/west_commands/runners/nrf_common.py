@@ -40,6 +40,9 @@ UICR_RANGES = {
         'Application': (0x0FFF8000, 0x0FFF8800),
         'Network': (0x0FFFA000, 0x0FFFA800),
     },
+    'nrf54l': {
+        'Application': (0x00FFD000, 0x00FFDA00),
+    },
     'nrf91': {
         'Application': (0x00FF8000, 0x00FF8800),
     },
@@ -75,13 +78,14 @@ def _get_suit_starter():
 class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
 
-    def __init__(self, cfg, family, softreset, dev_id, erase=False,
+    def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
                  reset=True, tool_opt=None, force=False, recover=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         # The old --nrf-family options takes upper-case family names
         self.family = family.lower() if family else None
         self.softreset = softreset
+        self.pinreset = pinreset
         self.dev_id = dev_id
         self.erase = bool(erase)
         self.reset = bool(reset)
@@ -114,9 +118,14 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                                      'NRF54H', 'NRF91', 'NRF92'],
                             help='''MCU family; still accepted for
                             compatibility only''')
+        # Not using a mutual exclusive group for softreset and pinreset due to
+        # the way dump_runner_option_help() works in run_common.py
         parser.add_argument('--softreset', required=False,
                             action='store_true',
-                            help='use reset instead of pinreset')
+                            help='use softreset instead of pinreset')
+        parser.add_argument('--pinreset', required=False,
+                            action='store_true',
+                            help='use pinreset instead of softreset')
         parser.add_argument('--snr', required=False, dest='dev_id',
                             help='obsolete synonym for -i/--dev-id')
         parser.add_argument('--force', required=False,
@@ -295,30 +304,38 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
         self.exec_op('recover')
 
+    def _get_core(self):
+        if self.family in ('nrf54h', 'nrf92'):
+            if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUFLPR') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUPPR') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUAPP')):
+                return 'Application'
+            if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPURAD')):
+                return 'Network'
+            raise RuntimeError(f'Core not found for family: {self.family}')
+
+        if self.family in ('nrf53'):
+            if self.build_conf.getboolean('CONFIG_SOC_NRF5340_CPUAPP'):
+                return 'Application'
+            if self.build_conf.getboolean('CONFIG_SOC_NRF5340_CPUNET'):
+                return 'Network'
+            raise RuntimeError(f'Core not found for family: {self.family}')
+
+        return None
+
     def program_hex(self):
         # Get the command use to actually program self.hex_.
         self.logger.info(f'Flashing file: {self.hex_}')
 
         # What type of erase/core arguments should we pass to the tool?
-        core = None
+        core = self._get_core()
 
         if self.family in ('nrf54h', 'nrf92'):
             erase_arg = 'ERASE_NONE'
 
-            cpuapp = (
-                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') or
-                self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUAPP')
-            )
-            cpurad = (
-                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or
-                self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPURAD')
-            )
             generated_uicr = self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR')
-
-            if cpuapp:
-                core = 'Application'
-            elif cpurad:
-                core = 'Network'
 
             if generated_uicr and not self.hex_get_uicrs().get(core):
                 raise RuntimeError(
@@ -328,8 +345,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 )
 
             if self.erase:
-                self.exec_op('erase', core='Application')
-                self.exec_op('erase', core='Network')
+                self.exec_op('erase', core='Application', kind='all')
+                self.exec_op('erase', core='Network', kind='all')
 
             # Manage SUIT artifacts.
             # This logic should be executed only once per build.
@@ -367,7 +384,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 # Handle SUIT root manifest if application manifests are not used.
                 # If an application firmware is built, the root envelope is merged
                 # with other application manifests as well as the output HEX file.
-                if not cpuapp and self.sysbuild_conf.get('SB_CONFIG_SUIT_ENVELOPE'):
+                if core != 'Application' and self.sysbuild_conf.get('SB_CONFIG_SUIT_ENVELOPE'):
                     app_root_envelope_hex_file = os.fspath(
                         mpi_hex_dir / 'suit_installed_envelopes_application_merged.hex'
                     )
@@ -381,8 +398,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                         )
 
             if not self.erase and generated_uicr:
-                self.exec_op('erase', core=core, option={'chip_erase_mode': 'ERASE_UICR',
-                                                         'ext_mem_erase_mode': 'ERASE_NONE'})
+                self.exec_op('erase', core=core, kind='uicr')
         else:
             if self.erase:
                 erase_arg = 'ERASE_ALL'
@@ -397,94 +413,26 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family in xip_ranges:
             xip_start, xip_end = xip_ranges[self.family]
             if self.hex_refers_region(xip_start, xip_end):
-                ext_mem_erase_opt = 'ERASE_ALL'
+                ext_mem_erase_opt = erase_arg
 
-        # What tool commands do we need to flash this target?
-        if self.family == 'nrf53':
-            # nRF53 requires special treatment due to the extra coprocessor.
-            self.program_hex_nrf53(erase_arg, ext_mem_erase_opt)
-        else:
-            self.op_program(self.hex_, erase_arg, ext_mem_erase_opt, defer=True, core=core)
-
+        self.op_program(self.hex_, erase_arg, ext_mem_erase_opt, defer=True, core=core)
         self.flush(force=False)
 
-    def program_hex_nrf53(self, erase_arg, ext_mem_erase_opt):
-        # program_hex() helper for nRF53.
-
-        # *********************** NOTE *******************************
-        # self.hex_ can contain code for both the application core and
-        # the network core.
-        #
-        # We can't assume, for example, that
-        # CONFIG_SOC_NRF5340_CPUAPP=y means self.hex_ only contains
-        # data for the app core's flash: the user can put arbitrary
-        # addresses into one of the files in HEX_FILES_TO_MERGE.
-        #
-        # Therefore, on this family, we may need to generate two new
-        # hex files, one for each core, and flash them individually
-        # with the correct '--coprocessor' arguments.
-        #
-        # Kind of hacky, but it works, and the tools are not capable of
-        # flashing to both cores at once. If self.hex_ only affects
-        # one core's flash, then we skip the extra work to save time.
-        # ************************************************************
-
-        # Address range of the network coprocessor's flash. From nRF5340 OPS.
-        # We should get this from DTS instead if multiple values are possible,
-        # but this is fine for now.
-        net_flash_start = 0x01000000
-        net_flash_end   = 0x0103FFFF
-
-        # If there is nothing in the hex file for the network core,
-        # only the application core is programmed.
-        if not self.hex_refers_region(net_flash_start, net_flash_end):
-            self.op_program(self.hex_, erase_arg, ext_mem_erase_opt, defer=True,
-                            core='Application')
-        # If there is some content that addresses a region beyond the network
-        # core flash range, two hex files are generated and the two cores
-        # are programmed one by one.
-        elif self.hex_contents.minaddr() < net_flash_start or \
-             self.hex_contents.maxaddr() > net_flash_end:
-
-            net_hex, app_hex = IntelHex(), IntelHex()
-            for start, end in self.hex_contents.segments():
-                if net_flash_start <= start <= net_flash_end:
-                    net_hex.merge(self.hex_contents[start:end])
-                else:
-                    app_hex.merge(self.hex_contents[start:end])
-
-            hex_path = Path(self.hex_)
-            hex_dir, hex_name = hex_path.parent, hex_path.name
-
-            net_hex_file = os.fspath(
-                hex_dir / f'GENERATED_CP_NETWORK_{hex_name}')
-            app_hex_file = os.fspath(
-                hex_dir / f'GENERATED_CP_APPLICATION_{hex_name}')
-
-            self.logger.info(
-                f'{self.hex_} targets both nRF53 coprocessors; '
-                f'splitting it into: {net_hex_file} and {app_hex_file}')
-
-            net_hex.write_hex_file(net_hex_file)
-            app_hex.write_hex_file(app_hex_file)
-
-            self.op_program(net_hex_file, erase_arg, None, defer=True,
-                            core='Network')
-            self.op_program(app_hex_file, erase_arg, ext_mem_erase_opt, defer=True,
-                            core='Application')
-        # Otherwise, only the network core is programmed.
-        else:
-            self.op_program(self.hex_, erase_arg, None, defer=True,
-                            core='Network')
 
     def reset_target(self):
-        if self.family == 'nrf52' and not self.softreset:
+        sw_reset = "RESET_HARD" if self.family in ('nrf54h', 'nrf92') else "RESET_SYSTEM"
+        # Default to soft reset on nRF52 only, because ICs in these series can
+        # reconfigure the reset pin as a regular GPIO
+        default = sw_reset if self.family == 'nrf52' else "RESET_PIN"
+        kind = (sw_reset if self.softreset else "RESET_PIN" if
+                self.pinreset else default)
+
+        if self.family == 'nrf52' and kind == "RESET_PIN":
+            # Write to the UICR enabling nRESET in the corresponding pin
             self.exec_op('pinreset-enable')
 
-        if self.softreset:
-            self.exec_op('reset', kind="RESET_SYSTEM")
-        else:
-            self.exec_op('reset', kind="RESET_PIN")
+        self.logger.debug(f'Reset kind: {kind}')
+        self.exec_op('reset', kind=kind)
 
     @abc.abstractmethod
     def do_require(self):
@@ -553,6 +501,10 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.do_require()
+
+        if self.softreset and self.pinreset:
+            raise RuntimeError('Options --softreset and --pinreset are mutually '
+                               'exclusive.')
 
         self.ensure_output('hex')
         if IntelHex is None:

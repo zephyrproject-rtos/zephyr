@@ -336,6 +336,12 @@ function(process_flags lang input output)
 
   foreach(flag ${${input}})
     set(is_compile_lang_generator_expression 0)
+    # SHELL is used to avoid de-duplication, but when process flags
+    # then this tag must be removed to return real compile/linker flags.
+    if(flag MATCHES "^SHELL:[ ]*(.*)")
+      separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
+    endif()
+
     foreach(l ${languages})
       if(flag MATCHES "<COMPILE_LANGUAGE:${l}>:([^>]+)>")
         set(updated_flag ${CMAKE_MATCH_1})
@@ -356,11 +362,6 @@ function(process_flags lang input output)
     endforeach()
 
     if(NOT is_compile_lang_generator_expression)
-      # SHELL is used to avoid de-duplication, but when process flags
-      # then this tag must be removed to return real compile/linker flags.
-      if(flag MATCHES "SHELL:[ ]*(.*)")
-        separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
-      endif()
       # Flags may be placed inside generator expression, therefore any flag
       # which is not already a generator expression must have commas converted.
       if(NOT flag MATCHES "\\\$<.*>")
@@ -1452,7 +1453,7 @@ endmacro()
 # - PHDR [program_header]: add program header. Used on Xtensa platforms.
 function(zephyr_code_relocate)
   set(options NOCOPY NOKEEP)
-  set(single_args LIBRARY LOCATION PHDR)
+  set(single_args LIBRARY LOCATION PHDR FILTER)
   set(multi_args FILES)
   cmake_parse_arguments(CODE_REL "${options}" "${single_args}"
     "${multi_args}" ${ARGN})
@@ -1521,7 +1522,7 @@ function(zephyr_code_relocate)
   if(CODE_REL_PHDR)
     set(CODE_REL_LOCATION "${CODE_REL_LOCATION}\ :${CODE_REL_PHDR}")
   endif()
-  # We use the "|" character to separate code relocation directives, instead of
+  # Each code relocation directive is placed on an independent line, instead of
   # using set_property(APPEND) to produce a ";"-separated CMake list. This way,
   # each directive can embed multiple CMake lists, representing flags and files,
   # the latter of which can come from generator expressions.
@@ -1529,7 +1530,7 @@ function(zephyr_code_relocate)
     PROPERTY INTERFACE_SOURCES)
   set_property(TARGET code_data_relocation_target
     PROPERTY INTERFACE_SOURCES
-    "${code_rel_str}|${CODE_REL_LOCATION}:${flag_list}:${file_list}")
+    "${code_rel_str}\n${CODE_REL_LOCATION}:${flag_list}:${file_list},${CODE_REL_FILTER}")
 endfunction()
 
 # Usage:
@@ -3036,6 +3037,16 @@ endfunction()
 # This function extends the CMake string function by providing additional
 # manipulation arguments to CMake string.
 #
+# ESCAPE:   Ensure that any single '\', except '\"', in the input string is
+#           escaped with the escape char '\'. For example the string 'foo\bar'
+#           will be escaped so that it becomes 'foo\\bar'.
+#           Backslashes which are already escaped will not be escaped further,
+#           for example 'foo\\bar' will not be modified.
+#           This is useful for handling of windows path separator in strings or
+#           when strings contains newline escapes such as '\n' and this can
+#           cause issues when writing to a file where a '\n' is desired in the
+#           string instead of a newline.
+#
 # SANITIZE: Ensure that the output string does not contain any special
 #           characters. Special characters, such as -, +, =, $, etc. are
 #           converted to underscores '_'.
@@ -3047,8 +3058,10 @@ endfunction()
 #
 # returns the updated string
 function(zephyr_string)
-  set(options SANITIZE TOUPPER)
+  set(options SANITIZE TOUPPER ESCAPE)
   cmake_parse_arguments(ZEPHYR_STRING "${options}" "" "" ${ARGN})
+
+  zephyr_check_flags_exclusive(${CMAKE_CURRENT_FUNCTION} ZEPHYR_STRING SANITIZE ESCAPE)
 
   if (NOT ZEPHYR_STRING_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "Function zephyr_string() called without a return variable")
@@ -3065,6 +3078,13 @@ function(zephyr_string)
 
   if(ZEPHYR_STRING_TOUPPER)
     string(TOUPPER ${work_string} work_string)
+  endif()
+
+  if(ZEPHYR_STRING_ESCAPE)
+    # If a single '\' is discovered, such as 'foo\bar', then it must be escaped like: 'foo\\bar'
+    # \\1 and \\2 are keeping the match patterns, the \\\\ --> \\ meaning an escaped '\',
+    # which then becomes a single '\' in the final string.
+    string(REGEX REPLACE "([^\\][\\])([^\\\"])" "\\1\\\\\\2" work_string "${ZEPHYR_STRING_UNPARSED_ARGUMENTS}")
   endif()
 
   set(${return_arg} ${work_string} PARENT_SCOPE)
@@ -3679,11 +3699,11 @@ function(topological_sort)
 endfunction()
 
 # Usage:
-#   build_info(<tag>... VALUE <value>... )
-#   build_info(<tag>... PATH  <path>... )
+#   build_info(<tag>... VALUE <value>...)
+#   build_info(<tag>... PATH  <path>...)
 #
-# This function populates updates the build_info.yml info file with exchangable build information
-# related to the current build.
+# This function populates the build_info.yml info file with exchangable build
+# information related to the current build.
 #
 # Example:
 #   build_info(devicetree files VALUE file1.dts file2.dts file3.dts)
@@ -3711,6 +3731,14 @@ function(build_info)
 
   if(index EQUAL -1)
     message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) missing a required argument: VALUE or PATH")
+  endif()
+
+  string(GENEX_STRIP "${arg_list}" arg_list_no_genexes)
+  if (NOT "${arg_list}" STREQUAL "${arg_list_no_genexes}")
+    if (convert_path)
+      message(FATAL_ERROR "build_info: generator expressions unsupported on PATH entries")
+    endif()
+    set(genex_flag GENEX)
   endif()
 
   yaml_context(EXISTS NAME build_info result)
@@ -3755,7 +3783,7 @@ function(build_info)
     endif()
   endif()
 
-  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}")
+  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}" ${genex_flag})
 endfunction()
 
 ########################################################
@@ -5873,7 +5901,7 @@ endfunction()
 # depending on the exact use of the function in script mode.
 #
 # Current Zephyr CMake scripts which includes `extensions.cmake` in script mode
-# are: package_helper.cmake, verify-toolchain.cmake
+# are: package_helper.cmake, verify-toolchain.cmake, llext-edk.cmake
 #
 
 if(CMAKE_SCRIPT_MODE_FILE)

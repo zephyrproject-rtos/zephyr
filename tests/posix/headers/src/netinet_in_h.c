@@ -12,8 +12,6 @@
 #include <zephyr/posix/netinet/in.h>
 #endif
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
 /**
  * @brief existence test for `<netinet/in.h>`
  *
@@ -100,4 +98,3 @@ ZTEST(posix_headers, test_netinet_in_h)
 	zexpect_true(IN6_IS_ADDR_MC_ORGLOCAL(&mcol6));
 	zexpect_true(IN6_IS_ADDR_MC_GLOBAL(&mcg6));
 }
-#pragma GCC diagnostic pop

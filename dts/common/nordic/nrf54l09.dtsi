@@ -30,6 +30,7 @@
 			clocks = <&hfpll>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			itm: itm@e0000000 {
 				compatible = "arm,armv8m-itm";
 				reg = <0xe0000000 0x1000>;
@@ -386,6 +387,7 @@
 				interrupts = <213 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 				#io-channel-cells = <1>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			temp: temp@d7000 {

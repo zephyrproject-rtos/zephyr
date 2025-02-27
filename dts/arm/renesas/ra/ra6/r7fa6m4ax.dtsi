@@ -302,6 +302,7 @@
 
 			iclk: iclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <200000000>;
 				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
@@ -482,4 +483,8 @@
 			 "port-irq11";
 	port-irq10-pins = <9>;
 	port-irq11-pins = <8>;
+};
+
+&dac_global {
+	has-output-amplifier;
 };

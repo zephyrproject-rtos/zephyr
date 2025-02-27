@@ -23,6 +23,7 @@ pylink-square
 pyserial
 requests
 semver
+tqdm
 
 # for ram/rom reports
 anytree

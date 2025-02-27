@@ -72,6 +72,10 @@
 	status = "okay";
 };
 
+&clk_hsi {
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&clk_hse>;
 	clock-frequency = <DT_FREQ_M(48)>;
@@ -121,9 +125,16 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa7 &i2c2_sda_pa6>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
 &spi1 {
-	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
-		     &spi1_miso_pa11 &spi1_mosi_pa12>;
+	pinctrl-0 = <&spi1_nss_pb0 &spi1_sck_pb3
+		     &spi1_miso_pb4 &spi1_mosi_pb5>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -131,7 +142,9 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1 &adc1_in4_pa4>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
+	st,adc-clock-source = "ASYNC";
+	clocks = <&rcc STM32_CLOCK(APB1_2, 20U)>,
+		 <&rcc STM32_SRC_HSI ADC_SEL(2)>;
 	st,adc-prescaler = <4>;
 	status = "okay";
 	vref-mv = <3300>;

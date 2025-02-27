@@ -7,7 +7,7 @@
 Overview
 ********
 
-A simple application demonstrating the responder side of the BLE
+A simple application demonstrating the responder side of the Bluetooth LE
 Periodic Advertising Connection Procedure.
 
 This sample will send its address in response to the advertiser when receiving

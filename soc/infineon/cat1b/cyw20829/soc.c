@@ -89,7 +89,7 @@ void soc_early_init_hook(void)
 {
 #ifdef CONFIG_ARM_MPU
 	disable_mpu_rasr_xn();
-#endif	/* CONFIG_ARM_MPU */
+#endif /* CONFIG_ARM_MPU */
 
 	/* Initializes the system */
 	SystemInit();

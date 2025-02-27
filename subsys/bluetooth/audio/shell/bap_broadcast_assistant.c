@@ -32,8 +32,9 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
+#include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
-#include "../../host/hci_core.h"
+#include "host/hci_core.h"
 #include "audio.h"
 
 static uint8_t received_base[UINT8_MAX];

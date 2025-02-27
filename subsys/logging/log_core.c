@@ -330,8 +330,14 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 
 	int backend_index = 0;
 
-	/* Activate autostart backends */
 	STRUCT_SECTION_FOREACH(log_backend, backend) {
+		uint32_t id;
+		/* As first slot in filtering mask is reserved, backend ID has offset.*/
+		id = LOG_FILTER_FIRST_BACKEND_SLOT_IDX;
+		id += backend - log_backend_get(0);
+		log_backend_id_set(backend, id);
+
+		/* Activate autostart backends */
 		if (backend->autostart) {
 			log_backend_init(backend);
 
@@ -557,9 +563,9 @@ bool z_impl_log_process(void)
 	msg = z_log_msg_claim(&backoff);
 
 	if (msg) {
-		atomic_dec(&buffered_cnt);
 		msg_process(msg);
 		z_log_msg_free(msg);
+		atomic_dec(&buffered_cnt);
 	} else if (CONFIG_LOG_PROCESSING_LATENCY_US > 0 && !K_TIMEOUT_EQ(backoff, K_NO_WAIT)) {
 		/* If backoff is requested, it means that there are pending
 		 * messages but they are too new and processing shall back off
@@ -996,10 +1002,9 @@ static int enable_logger(void)
 void log_flush(void)
 {
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
-		while (log_data_pending()) {
+		while (atomic_get(&buffered_cnt)) {
 			k_sleep(K_MSEC(10));
 		}
-		k_sleep(K_MSEC(10));
 	} else {
 		while (LOG_PROCESS()) {
 		}

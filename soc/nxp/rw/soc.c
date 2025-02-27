@@ -80,7 +80,7 @@ const clock_avpll_config_t avpll_config = {
  * clock needs to be re-initialized on exit from Standby mode. Hence
  * this function is relocated to RAM.
  */
-__ramfunc void clock_init(void)
+__weak __ramfunc void clock_init(void)
 {
 	POWER_DisableGDetVSensors();
 
@@ -133,6 +133,8 @@ __ramfunc void clock_init(void)
 	/* Set SYSTICKFCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivSystickClk, 1U);
 	CLOCK_AttachClk(kSYSTICK_DIV_to_SYSTICK_CLK);
+
+	SystemCoreClockUpdate();
 
 	/* Set PLL FRG clock to 20MHz. */
 	CLOCK_SetClkDiv(kCLOCK_DivPllFrgClk, 13U);

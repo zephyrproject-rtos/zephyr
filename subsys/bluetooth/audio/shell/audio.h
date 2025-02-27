@@ -13,6 +13,7 @@
 #ifndef AUDIO_SHELL_AUDIO_H
 #define AUDIO_SHELL_AUDIO_H
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -32,7 +33,6 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
 
 #define SHELL_PRINT_INDENT_LEVEL_SIZE 2
@@ -40,17 +40,17 @@
 
 extern struct bt_csip_set_member_svc_inst *svc_inst;
 
-ssize_t audio_ad_data_add(struct bt_data *data, const size_t data_size, const bool discoverable,
-			  const bool connectable);
-ssize_t audio_pa_data_add(struct bt_data *data_array, const size_t data_array_size);
-ssize_t csis_ad_data_add(struct bt_data *data, const size_t data_size, const bool discoverable);
+size_t audio_ad_data_add(struct bt_data *data, const size_t data_size, const bool discoverable,
+			 const bool connectable);
+size_t audio_pa_data_add(struct bt_data *data_array, const size_t data_array_size);
+size_t csis_ad_data_add(struct bt_data *data, const size_t data_size, const bool discoverable);
 size_t cap_acceptor_ad_data_add(struct bt_data data[], size_t data_size, bool discoverable);
 size_t bap_scan_delegator_ad_data_add(struct bt_data data[], size_t data_size);
 size_t gmap_ad_data_add(struct bt_data data[], size_t data_size);
 size_t pbp_ad_data_add(struct bt_data data[], size_t data_size);
-ssize_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
-				  const bool discoverable, const bool connectable);
-ssize_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size);
+size_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
+				 const bool discoverable, const bool connectable);
+size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size);
 
 #if defined(CONFIG_BT_AUDIO)
 /* Must guard before including audio.h as audio.h uses Kconfigs guarded by

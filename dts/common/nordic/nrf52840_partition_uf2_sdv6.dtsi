@@ -35,6 +35,7 @@
 			read-only;
 			reg = <0x00000000 0x00026000>;
 		};
+
 		code_partition: partition@26000 {
 			label = "Application";
 			reg = <0x00026000 0x000C6000>;

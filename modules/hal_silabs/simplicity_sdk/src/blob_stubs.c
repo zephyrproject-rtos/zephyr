@@ -31,6 +31,11 @@ void BTLE_LL_Process(uint32_t events)
 {
 }
 
+int16_t BTLE_LL_SetMaxPower(int16_t power)
+{
+	return 0;
+}
+
 void sl_btctrl_disable_2m_phy(void)
 {
 }
@@ -106,6 +111,10 @@ void sl_btctrl_hci_parser_init_adv(void)
 }
 
 void sl_btctrl_hci_parser_init_phy(void)
+{
+}
+
+void sl_bthci_init_vs(void)
 {
 }
 

@@ -105,12 +105,13 @@ static inline int z_vrfy_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 #include <zephyr/syscalls/k_pipe_alloc_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-static inline void handle_poll_events(struct k_pipe *pipe)
+static inline bool handle_poll_events(struct k_pipe *pipe)
 {
 #ifdef CONFIG_POLL
-	z_handle_obj_poll_events(&pipe->poll_events, K_POLL_STATE_PIPE_DATA_AVAILABLE);
+	return z_handle_obj_poll_events(&pipe->poll_events, K_POLL_STATE_PIPE_DATA_AVAILABLE);
 #else
 	ARG_UNUSED(pipe);
+	return false;
 #endif /* CONFIG_POLL */
 }
 
@@ -468,7 +469,7 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, const void *data,
 	 */
 
 	if ((pipe->bytes_used != 0U) && (*bytes_written != 0U)) {
-		handle_poll_events(pipe);
+		reschedule_needed = handle_poll_events(pipe) || reschedule_needed;
 	}
 
 	/*

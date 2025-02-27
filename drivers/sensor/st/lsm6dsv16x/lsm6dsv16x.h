@@ -30,6 +30,8 @@
 #include <zephyr/drivers/i3c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c) */
 
+bool lsm6dsv16x_is_active(const struct device *dev);
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	#define ON_I3C_BUS(cfg)  (cfg->i3c.bus != NULL)
 	#define I3C_INT_PIN(cfg) (cfg->int_en_i3c)
@@ -172,8 +174,8 @@ struct lsm6dsv16x_data {
 	const struct sensor_trigger *trig_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_gyr;
 	const struct sensor_trigger *trig_drdy_gyr;
-	sensor_trigger_handler_t handler_drdy_temp;
-	const struct sensor_trigger *trig_drdy_temp;
+	sensor_trigger_handler_t handler_wakeup;
+	const struct sensor_trigger *trig_wakeup;
 
 #if defined(CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LSM6DSV16X_THREAD_STACK_SIZE);

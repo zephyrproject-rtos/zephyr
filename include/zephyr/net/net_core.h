@@ -169,7 +169,14 @@ struct net_l3_register {
 	const char * const name;
 	/** What L2 layer this is for */
 	const struct net_l2 * const l2;
-	/** Handler function for the given protocol type */
+	/** Handler function for the specified protocol type. If the handler
+	 * has taken ownership of the pkt, it must return NET_OK. If it wants to
+	 * continue processing at the next level (e.g. ipv4), it must return
+	 * NET_CONTINUE. If instead something is wrong with the packet (for
+	 * example, a multicast address that does not match the protocol type)
+	 * it must return NET_DROP so that the statistics can be updated
+	 * accordingly
+	 */
 	enum net_verdict (*handler)(struct net_if *iface,
 				    uint16_t ptype,
 				    struct net_pkt *pkt);

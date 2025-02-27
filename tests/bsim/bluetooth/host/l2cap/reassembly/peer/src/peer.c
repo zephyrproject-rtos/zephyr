@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/hci_raw.h>
 #include <zephyr/bluetooth/hci_types.h>
 
+#include "common/hci_common_internal.h"
 #include "common/bt_str.h"
 
 #include "host/conn_internal.h"
@@ -45,7 +46,7 @@ DEFINE_FLAG(is_connected);
 static K_FIFO_DEFINE(rx_queue);
 
 #define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
-NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT,
 			  CMD_BUF_SIZE, 8, NULL);
 
 #define MAX_CMD_COUNT 1
@@ -283,7 +284,7 @@ static void send_cmd(uint16_t opcode, struct net_buf *cmd, struct net_buf **rsp)
 	}
 
 	k_sem_take(&cmd_sem, K_FOREVER);
-	TEST_ASSERT(active_opcode == 0xFFFF, "");
+	TEST_ASSERT_NO_MSG(active_opcode == 0xFFFF);
 
 	__ASSERT_NO_MSG(opcode);
 	active_opcode = opcode;
@@ -353,7 +354,7 @@ static void set_event_mask(uint16_t opcode)
 
 	/* The two commands have the same length/params */
 	buf = bt_hci_cmd_create(opcode, sizeof(*cp_mask));
-	TEST_ASSERT(buf, "");
+	TEST_ASSERT_NO_MSG(buf);
 
 	/* Forward all events */
 	cp_mask = net_buf_add(buf, sizeof(*cp_mask));
@@ -371,7 +372,7 @@ static void set_random_address(void)
 	LOG_DBG("%s", bt_addr_str(&addr.a));
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(addr.a));
-	TEST_ASSERT(buf, "");
+	TEST_ASSERT_NO_MSG(buf);
 
 	net_buf_add_mem(buf, &addr.a, sizeof(addr.a));
 	send_cmd(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);

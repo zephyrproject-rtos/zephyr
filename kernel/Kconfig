@@ -53,7 +53,7 @@ config NUM_PREEMPT_PRIORITIES
 	int "Number of preemptible priorities" if MULTITHREADING
 	default 0 if !MULTITHREADING
 	default 15
-	range 0 128
+	range 0 127
 	help
 	  Number of preemptible priorities available in the system. Gives access
 	  to priorities 0 to CONFIG_NUM_PREEMPT_PRIORITIES - 1.

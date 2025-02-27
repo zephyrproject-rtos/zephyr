@@ -78,6 +78,7 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 		return -ENOTSUP;
 	}
 
+#if CONFIG_GPIO_RA_HAS_VBTICTLR
 	if (config->vbatt_pins[0] != 0xFF) {
 		uint32_t clear = 0;
 
@@ -93,6 +94,7 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 
 		R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_OM_LPC_BATT);
 	}
+#endif
 
 	pincfg.port_num = config->port_num;
 	pincfg.pin_num = pin;
@@ -175,6 +177,37 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	return pinctrl_configure_pins(&pincfg, 1, PINCTRL_REG_NONE);
 }
 
+__maybe_unused static int gpio_ra_pin_get_config(const struct device *dev, gpio_pin_t pin,
+						 gpio_flags_t *flags)
+{
+	const struct gpio_ra_config *config = dev->config;
+	uint32_t pincfg;
+
+	if (pin >= RA_PINCTRL_PIN_NUM) {
+		return -EINVAL;
+	}
+
+	memset(flags, 0, sizeof(gpio_flags_t));
+
+	pincfg = R_PFS->PORT[config->port_num].PIN[pin].PmnPFS;
+
+	if (pincfg & BIT(R_PFS_PORT_PIN_PmnPFS_PDR_Pos)) {
+		*flags |= GPIO_OUTPUT;
+	} else {
+		*flags |= GPIO_INPUT;
+	}
+
+	if (pincfg & BIT(R_PFS_PORT_PIN_PmnPFS_NCODR_Pos)) {
+		*flags |= GPIO_LINE_OPEN_DRAIN;
+	}
+
+	if (pincfg & BIT(R_PFS_PORT_PIN_PmnPFS_PCR_Pos)) {
+		*flags |= GPIO_PULL_UP;
+	}
+
+	return 0;
+}
+
 static int gpio_ra_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	const struct gpio_ra_config *config = dev->config;
@@ -230,7 +263,15 @@ static int gpio_ra_port_toggle_bits(const struct device *dev, gpio_port_pins_t p
 static int gpio_ra_pin_interrupt_configure(const struct device *port, gpio_pin_t pin,
 					   enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
-	return gpio_ra_pin_configure(port, pin, (mode | trig));
+	gpio_flags_t flags;
+	int err;
+
+	err = gpio_ra_pin_get_config(port, pin, &flags);
+	if (err) {
+		return err;
+	}
+
+	return gpio_ra_pin_configure(port, pin, (flags | mode | trig));
 }
 
 static int gpio_ra_manage_callback(const struct device *dev, struct gpio_callback *callback,
@@ -244,6 +285,9 @@ static int gpio_ra_manage_callback(const struct device *dev, struct gpio_callbac
 
 static DEVICE_API(gpio, gpio_ra_drv_api_funcs) = {
 	.pin_configure = gpio_ra_pin_configure,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_ra_pin_get_config,
+#endif
 	.port_get_raw = gpio_ra_port_get_raw,
 	.port_set_masked_raw = gpio_ra_port_set_masked_raw,
 	.port_set_bits_raw = gpio_ra_port_set_bits_raw,

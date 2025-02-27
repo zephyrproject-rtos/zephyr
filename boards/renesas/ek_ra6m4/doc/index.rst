@@ -1,7 +1,4 @@
-.. _ek_ra6m4:
-
-RA6M4 Evaluation Kit
-####################
+.. zephyr:board:: ek_ra6m4
 
 Overview
 ********
@@ -24,7 +21,7 @@ The key features of the EK-RA6M4 board are categorized in three groups as follow
 - MCU current measurement points for precision current consumption measurement
 - Multiple clock sources - RA6M4 MCU oscillator and sub-clock oscillator crystals,
   providing precision 24.000 MHz and 32,768 Hz reference clock.
-  Additional low precision clocks are avaialbe internal to the RA6M4 MCU
+  Additional low precision clocks are available internal to the RA6M4 MCU
 
 **System Control and Ecosystem Access**
 
@@ -64,15 +61,9 @@ The key features of the EK-RA6M4 board are categorized in three groups as follow
 - 32 Mb (256 Mb) External Quad-SPI Flash
 - 64 Mb (512 Mb) External Octo-SPI Flash
 
-.. figure:: ek_ra6m4.webp
-	:align: center
-	:alt: RA6M4 Evaluation Kit
-
-	EK-RA6M4 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
-
 Hardware
 ********
-Detailed hardware feature for the RA6M4 MCU group can be found at `RA6M4 Group User's Manual Hardware`_
+Detailed hardware features for the RA6M4 MCU group can be found at `RA6M4 Group User's Manual Hardware`_
 
 .. figure:: ra6m4_block_diagram.webp
 	:width: 442px
@@ -81,12 +72,12 @@ Detailed hardware feature for the RA6M4 MCU group can be found at `RA6M4 Group U
 
 	RA6M4 Block diagram (Credit: Renesas Electronics Corporation)
 
-Detailed hardware feature for the EK-RA6M4 MCU can be found at `EK-RA6M4 - User's Manual`_
+Detailed hardware features for the EK-RA6M4 MCU can be found at `EK-RA6M4 - User's Manual`_
 
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr OS for EK-RA6M4 board:
+The below features are currently supported on Zephyr for EK-RA6M4 board:
 
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
@@ -115,6 +106,10 @@ The below features are currently supported on Zephyr OS for EK-RA6M4 board:
 +-----------+------------+----------------------+
 | ENTROPY   | on-chip    | entropy              |
 +-----------+------------+----------------------+
+| DAC       | on-chip    | dac                  |
++-----------+------------+----------------------+
+| USBFS     | on-chip    | udc                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
@@ -130,15 +125,15 @@ Flashing
 ========
 
 Program can be flashed to EK-RA6M4 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 
-  1. Connect to J-Link OB via USB port to host PC
+1. Connect to J-Link OB via USB port to host PC
 
-  2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA6M4 - User's Manual`_
+2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA6M4 - User's Manual`_
 
-  3. Execute west command
+3. Execute west command
 
 	.. code-block:: console
 

@@ -38,6 +38,12 @@ class Node:
     name:
       The name of the node (a string).
 
+    filename:
+      The name of the .dts file where the node is defined
+
+    lineno:
+      The line number in the .dts file where the node starts.
+
     unit_addr:
       The portion after the '@' in the node's name, or the empty string if the
       name has no '@' in it.
@@ -85,13 +91,15 @@ class Node:
     # Public interface
     #
 
-    def __init__(self, name: str, parent: Optional['Node'], dt: 'DT'):
+    def __init__(self, name: str, parent: Optional["Node"], dt: "DT", filename: str, lineno: int):
         """
         Node constructor. Not meant to be called directly by clients.
         """
         # Remember to update DT.__deepcopy__() if you change this.
 
         self._name = name
+        self._filename = filename
+        self._lineno = lineno
         self.props: dict[str, Property] = {}
         self.nodes: dict[str, Node] = {}
         self.labels: list[str] = []
@@ -117,6 +125,20 @@ class Node:
         # Converted to a property to discourage renaming -- that has to be done
         # via DT.move_node.
         return self._name
+
+    @property
+    def lineno(self) -> int:
+        """
+        See the class documentation.
+        """
+        return self._lineno
+
+    @property
+    def filename(self) -> str:
+        """
+        See the class documentation.
+        """
+        return self._filename
 
     @property
     def unit_addr(self) -> str:
@@ -240,6 +262,12 @@ class Property:
     name:
       The name of the property (a string).
 
+    filename:
+      The name of the .dts file where the property is defined
+
+    lineno:
+      The line number in the .dts file where the property starts.
+
     value:
       The value of the property, as a 'bytes' string. Numbers are stored in
       big-endian format, and strings are null-terminated. Putting multiple
@@ -308,6 +336,8 @@ class Property:
             node.dt._parse_error("'@' is only allowed in node names")
 
         self.name = name
+        self.filename = ""
+        self.lineno = -1
         self.value = b""
         self.labels: list[str] = []
         # We have to wait to set this until later, when we've got
@@ -612,7 +642,6 @@ class Property:
                         s += ","
 
         return s + ";"
-
 
     def __repr__(self):
         return (f"<Property '{self.name}' at '{self.node.path}' in "
@@ -927,7 +956,7 @@ class DT:
         # them without any properties. We will recursively initialize
         # copies of parents before copies of children next.
         path2node_copy = {
-            node.path: Node(node.name, None, ret)
+            node.path: Node(node.name, None, ret, node.filename, node.lineno)
             for node in self.node_iter()
         }
 
@@ -956,6 +985,8 @@ class DT:
                 prop_copy.offset_labels = prop.offset_labels.copy()
                 prop_copy._label_offset_lst = prop._label_offset_lst[:]
                 prop_copy._markers = [marker[:] for marker in prop._markers]
+                prop_copy.filename = prop.filename
+                prop_copy.lineno = prop.lineno
             node_copy.props = prop_name2prop_copy
 
             node_copy.nodes = {
@@ -1083,7 +1114,9 @@ class DT:
             if tok.val == "/":
                 # '/ { ... };', the root node
                 if not self._root:
-                    self._root = Node(name="/", parent=None, dt=self)
+                    self._root = Node(
+                        name="/", parent=None, dt=self, filename=self.filename, lineno=self._lineno
+                    )
                 self._parse_node(self.root)
 
             elif tok.id in (_T.LABEL, _T.REF):
@@ -1146,7 +1179,13 @@ class DT:
                         if child.name in current_child_names:
                             self._parse_error(f'{child.path}: duplicate node name')
                     else:
-                        child = Node(name=tok.val, parent=node, dt=self)
+                        child = Node(
+                            name=tok.val,
+                            parent=node,
+                            dt=self,
+                            filename=self.filename,
+                            lineno=self._lineno,
+                        )
                         current_child_names.add(tok.val)
 
                     for label in labels:
@@ -1166,6 +1205,8 @@ class DT:
                             "/omit-if-no-ref/ can only be used on nodes")
 
                     prop = node._get_prop(tok.val)
+                    prop.filename = self.filename
+                    prop.lineno = self._lineno
 
                     if self._check_token("="):
                         self._parse_assignment(prop)

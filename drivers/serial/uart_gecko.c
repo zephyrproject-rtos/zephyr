@@ -669,6 +669,31 @@ static int uart_gecko_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int uart_gecko_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	__maybe_unused const struct uart_gecko_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+#ifdef USART_STATUS_TXIDLE
+		/* Wait for TX FIFO to flush before suspending */
+		while (!(USART_StatusGet(config->base) & USART_STATUS_TXIDLE)) {
+		}
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 static DEVICE_API(uart, uart_gecko_driver_api) = {
 	.poll_in = uart_gecko_poll_in,
 	.poll_out = uart_gecko_poll_out,
@@ -810,6 +835,7 @@ static DEVICE_API(uart, uart_gecko_driver_api) = {
 	VALIDATE_GECKO_UART_RTS_CTS_PIN_LOCATIONS(idx);				\
 										\
 	GECKO_UART_IRQ_HANDLER_DECL(idx);					\
+	PM_DEVICE_DT_INST_DEFINE(idx, uart_gecko_pm_action);			\
 										\
 	static struct uart_config uart_cfg_##idx = {				\
 		.baudrate  = DT_INST_PROP(idx, current_speed),			\
@@ -836,12 +862,10 @@ static DEVICE_API(uart, uart_gecko_driver_api) = {
 		.uart_cfg = &uart_cfg_##idx,					\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(idx, uart_gecko_init,				\
-			    NULL, &uart_gecko_data_##idx,			\
-			    &uart_gecko_cfg_##idx, PRE_KERNEL_1,		\
-			    CONFIG_SERIAL_INIT_PRIORITY,			\
-			    &uart_gecko_driver_api);				\
-										\
+	DEVICE_DT_INST_DEFINE(idx, uart_gecko_init, PM_DEVICE_DT_INST_GET(idx),	\
+			      &uart_gecko_data_##idx, &uart_gecko_cfg_##idx,	\
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,	\
+			      &uart_gecko_driver_api);				\
 										\
 	GECKO_UART_IRQ_HANDLER(idx)
 

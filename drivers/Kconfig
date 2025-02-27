@@ -8,6 +8,7 @@ menu "Device Drivers"
 # zephyr-keep-sorted-start
 source "drivers/adc/Kconfig"
 source "drivers/audio/Kconfig"
+source "drivers/audio/mic_privacy/intel/Kconfig.mic_privacy"
 source "drivers/auxdisplay/Kconfig"
 source "drivers/bbram/Kconfig"
 source "drivers/bluetooth/Kconfig"

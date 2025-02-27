@@ -1766,7 +1766,7 @@ static void test_tx_priv_node_id(void)
 	/* Wait for Node ID advertising to end */
 	k_sleep(K_SECONDS(65));
 
-	/* Check that advertisment has stopped */
+	/* Check that advertisement has stopped */
 	ASSERT_OK_MSG(bt_mesh_subnet_priv_node_id_get(TEST_NET_IDX1, &state),
 		      "Failed to get private node ID");
 	ASSERT_EQUAL(state, BT_MESH_NODE_IDENTITY_STOPPED);
@@ -1796,7 +1796,7 @@ static void test_rx_priv_node_id(void)
 
 	uint64_t last_pp_random = beacon.pp_random;
 
-	/* Wait for first node ID advertisment to finish, then scan for
+	/* Wait for first node ID advertisement to finish, then scan for
 	 * second node ID and verify that random field has changed
 	 */
 
@@ -2098,7 +2098,7 @@ static void test_rx_priv_multi_net_id(void)
 			if (beacon.pp_hash ==
 			    proxy_adv_hash_calc(net_ctx[i].net, beacon.pp_random, NULL, true)) {
 				if (old_idx == 0xff) {
-					/* Received first Net ID advertisment */
+					/* Received first Net ID advertisement */
 					old_idx = i;
 					net_ctx[i].start = k_uptime_get();
 					net_ctx[i].recv_cnt++;

@@ -145,6 +145,24 @@ struct bt_ccp_call_control_client_cb {
 	sys_snode_t _node;
 };
 
+/**
+ * @brief Discovers the Telephone Bearer Service (TBS) support on a remote device.
+ *
+ * This will discover the Telephone Bearer Service (TBS) and Generic Telephone Bearer Service (GTBS)
+ * on the remote device.
+ *
+ * @kconfig_dep{CONFIG_BT_CCP_CALL_CONTROL_CLIENT}.
+ *
+ * @param conn Connection to a remote server.
+ * @param out_client Pointer to client instance on success
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p conn or @p out_client is NULL
+ * @retval -ENOTCONN @p conn is not connected
+ * @retval -ENOMEM Could not allocated memory for the request
+ * @retval -EBUSY Already doing discovery for @p conn
+ * @retval -ENOEXEC Rejected by the GATT layer
+ */
 int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 					struct bt_ccp_call_control_client **out_client);
 

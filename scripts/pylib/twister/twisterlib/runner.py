@@ -1207,7 +1207,7 @@ class ProjectBuilder(FilterBuilder):
                     mode == "passed"
                     or (mode == "all" and self.instance.reason != "CMake build failure")
                 ):
-                    self.cleanup_artifacts()
+                    self.cleanup_artifacts(self.options.keep_artifacts)
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
@@ -1313,6 +1313,8 @@ class ProjectBuilder(FilterBuilder):
             'recording.csv',
             'rom.json',
             'ram.json',
+            'build_info.yml',
+            'zephyr/zephyr.dts',
             # below ones are needed to make --test-only work as well
             'Makefile',
             'CMakeCache.txt',
@@ -2017,7 +2019,7 @@ class TwisterRunner:
                             break
                 return True
         except Exception as e:
-            logger.error(f"General exception: {e}")
+            logger.error(f"General exception: {e}\n{traceback.format_exc()}")
             sys.exit(1)
 
     def execute(self, pipeline, done):

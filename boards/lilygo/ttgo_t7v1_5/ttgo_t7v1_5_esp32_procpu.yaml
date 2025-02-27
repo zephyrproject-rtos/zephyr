@@ -1,5 +1,5 @@
-identifier: ttgo_lora32/esp32/procpu
-name: TTGO LoRa32 PROCPU
+identifier: ttgo_t7v1_5/esp32/procpu
+name: TTGO T7 V1.5 PROCPU
 type: mcu
 arch: xtensa
 toolchain:
@@ -12,6 +12,5 @@ supported:
   - uart
   - pinmux
   - display
-  - lora
   - nvs
 vendor: lilygo

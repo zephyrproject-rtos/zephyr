@@ -162,6 +162,15 @@ ARC arch:
   tests:
     - arch.arc
 
+Arduino Platforms:
+  status: maintained
+  maintainers:
+    - pillo79
+  collaborators:
+    - facchinm
+  files:
+    - boards/arduino/
+
 ARM arch:
   status: maintained
   maintainers:
@@ -173,6 +182,7 @@ ARM arch:
     - MaureenHelm
     - stephanosio
     - bbolen
+    - ithinuel
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -193,6 +203,9 @@ ARM64 arch:
     - npitre
     - povergoing
     - sgrrzhf
+    - wearyzen
+    - ithinuel
+    - JiafeiPan
   files:
     - arch/arm64/
     - include/zephyr/arch/arm64/
@@ -209,6 +222,8 @@ ARM Platforms:
   status: maintained
   maintainers:
     - wearyzen
+  collaborators:
+    - ithinuel
   files:
     - boards/arm/mps*/
     - boards/arm/v2m_*/
@@ -511,6 +526,9 @@ Bluetooth Classic:
     - lylezhu2012
   collaborators:
     - jhedberg
+    - MarkWangChinese
+    - gzh-terry
+    - makeshi
   files:
     - doc/connectivity/bluetooth/shell/classic/a2dp.rst
     - subsys/bluetooth/common/
@@ -1243,6 +1261,8 @@ Release Notes:
   status: maintained
   maintainers:
     - ceolin
+  collaborators:
+    - valeriosetti
   files:
     - drivers/crypto/
     - dts/bindings/crypto/
@@ -1397,12 +1417,13 @@ Release Notes:
     - drivers.espi
 
 "Drivers: Ethernet":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - maass-hamburg
   collaborators:
     - decsny
     - lmajewski
     - pdgendt
-    - maass-hamburg
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -1631,6 +1652,9 @@ Release Notes:
   status: maintained
   maintainers:
     - carlocaione
+  collaborators:
+    - wearyzen
+    - ithinuel
   files:
     - include/zephyr/drivers/mbox.h
     - drivers/mbox/
@@ -1776,8 +1800,6 @@ Release Notes:
   maintainers:
     - Mani-Sadhasivam
     - simonguinot
-  collaborators:
-    - bbilas
   files:
     - drivers/led/
     - include/zephyr/drivers/led/
@@ -2112,6 +2134,7 @@ Release Notes:
     - include/zephyr/drivers/stepper.h
     - dts/bindings/stepper/
     - doc/hardware/peripherals/stepper.rst
+    - samples/drivers/stepper/
     - tests/drivers/build_all/stepper/
   labels:
     - "area: Stepper"
@@ -2742,6 +2765,18 @@ Modem:
   tests:
     - modem
 
+NEORV32 platform:
+  status: maintained
+  maintainers:
+    - henrikbrixandersen
+  files:
+    - boards/others/neorv32/
+    - drivers/*/*neorv32*
+    - dts/bindings/*/*neorv32*
+    - soc/neorv32/
+  labels:
+    - "platform: NEORV32"
+
 OSDP:
   status: maintained
   maintainers:
@@ -3343,7 +3378,7 @@ Settings:
     - subsys/settings/
     - tests/subsys/settings/
     - samples/subsys/settings/
-    - doc/services/settings/
+    - doc/services/storage/settings/
   labels:
     - "area: Settings"
   tests:
@@ -3431,6 +3466,7 @@ ADI Platforms:
   collaborators:
     - ozersa
     - ttmut
+    - yasinustunerg
     - galak
     - microbuilder
   files:
@@ -3560,6 +3596,8 @@ Raspberry Pi Pico Platforms:
     - soburi
   collaborators:
     - yonsch
+    - threeeights
+    - ajf58
   files:
     - boards/raspberrypi/
     - boards/adafruit/kb2040/
@@ -3577,9 +3615,10 @@ Silabs Platforms:
   status: maintained
   maintainers:
     - jhedberg
+    - asmellby
   collaborators:
     - jerome-pouiller
-    - asmellby
+    - Martinhoff-maker
   files:
     - soc/silabs/
     - boards/silabs/
@@ -3588,6 +3627,7 @@ Silabs Platforms:
     - drivers/*/*gecko*
     - drivers/bluetooth/hci/hci_silabs_*
     - drivers/*/*silabs*
+    - tests/boards/silabs/
   labels:
     - "platform: Silabs"
 
@@ -3717,6 +3757,7 @@ NXP Drivers:
     - decsny
     - manuargue
     - dbaluta
+    - Raymond0225
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
@@ -4026,13 +4067,19 @@ Renesas RZ Platforms:
   status: maintained
   maintainers:
     - tgorochowik
+  collaborators:
+    - binhnguyen2434
+    - nhutnguyenkc
   files:
-    - boards/renesas/rzt2m_*/
+    - boards/renesas/rz*/
     - drivers/*/*rzt2m*
+    - drivers/*/*renesas_rz*
     - drivers/pinctrl/renesas/rz/
     - dts/arm/renesas/rz/
     - dts/bindings/*/*rzt2m*
+    - dts/bindings/*/*renesas,rz*
     - soc/renesas/rzt2m/
+    - soc/renesas/rz/
   labels:
     - "platforms: Renesas RZ"
   description: >-
@@ -4114,6 +4161,17 @@ STM32 Wireless Platforms:
   description: >-
     STM32WB SOCs, dts files and related drivers. STM32WB development boards
     and ST bluetooth shields.
+
+Enclustra Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+  collaborators:
+    - tgorochowik
+  files:
+    - boards/enclustra/
+  labels:
+    - "platform: Enclustra"
 
 Espressif Platforms:
   status: maintained
@@ -4301,13 +4359,25 @@ Secure storage:
     - tomi-font
   files:
     - subsys/secure_storage/
+    - include/zephyr/psa/
     - samples/psa/
-    - doc/services/secure_storage.rst
+    - doc/services/storage/secure_storage/index.rst
     - tests/subsys/secure_storage/
   labels:
     - "area: Secure storage"
   tests:
     - psa.secure_storage
+
+Sensry Platforms:
+  status: maintained
+  maintainers:
+    - tswaehn
+  files:
+    - boards/sensry/
+  files-regex:
+    - .*sy1xx.*
+  labels:
+    - "platform: sensry"
 
 Storage:
   status: odd fixes
@@ -4437,6 +4507,18 @@ TDK Sensors:
     - cmake/linker/armlink/
     - include/zephyr/toolchain/armclang.h
     - lib/libc/armstdc/*
+  labels:
+    - "area: Toolchains"
+
+"Toolchain IAR":
+  status: maintained
+  maintainers:
+    - RobinKastberg
+  files:
+    - cmake/*/iar/
+    - include/zephyr/toolchain/iar.h
+    - include/zephyr/toolchain/iar/*
+    - lib/libc/iar/*
   labels:
     - "area: Toolchains"
 
@@ -4741,6 +4823,7 @@ West:
     - wearyzen
   collaborators:
     - tomi-font
+    - ithinuel
   files: []
   labels:
     - "area: CMSIS_6"
@@ -4772,6 +4855,7 @@ West:
   collaborators:
     - ozersa
     - ttmut
+    - yasinustunerg
   files: []
   labels:
     - "platform: ADI"
@@ -4836,6 +4920,8 @@ West:
   maintainers:
     - kristofer-jonsson-arm
     - wearyzen
+  collaborators:
+    - ithinuel
   files:
     - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
@@ -4959,6 +5045,8 @@ West:
     - soburi
   collaborators:
     - yonsch
+    - threeeights
+    - ajf58
   files:
     - modules/hal_rpi_pico/
   labels:
@@ -4968,13 +5056,14 @@ West:
   status: maintained
   maintainers:
     - jhedberg
+    - asmellby
   collaborators:
     - jerome-pouiller
-    - asmellby
     - sateeshkotapati
     - yonsch
     - mnkp
     - rettichschnidi
+    - Martinhoff-maker
   files:
     - modules/hal_silabs/
   labels:
@@ -5165,6 +5254,7 @@ West:
     - wearyzen
     - valeriosetti
     - tomi-font
+    - ithinuel
   files:
     - modules/mbedtls/
     - tests/crypto/mbedtls/
@@ -5355,6 +5445,7 @@ West:
     - wearyzen
     - valeriosetti
     - tomi-font
+    - ithinuel
   files:
     - modules/trusted-firmware-m/
     - samples/tfm_integration/
@@ -5372,6 +5463,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
   files: []
   labels:
     - "area: TF-M"
@@ -5384,6 +5476,7 @@ West:
   collaborators:
     - carlocaione
     - wearyzen
+    - ithinuel
   files:
     - modules/trusted-firmware-a/
   labels:
@@ -5396,6 +5489,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
   files: []
   labels:
     - "area: TF-M"
@@ -5557,6 +5651,15 @@ Random:
     - include/zephyr/random/
   labels:
     - "area: Random"
+
+Peregrine Platforms:
+  status: maintained
+  maintainers:
+    - nandojve
+  files:
+    - boards/peregrine/
+  labels:
+    - "platform: Peregrine"
 
 # This area is to be converted to a subarea
 Testing with Renode:

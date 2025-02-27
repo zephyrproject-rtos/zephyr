@@ -2134,7 +2134,7 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
 int bt_iso_cig_create(const struct bt_iso_cig_param *param, struct bt_iso_cig **out_cig)
 {
 	int err;
-	struct net_buf *rsp;
+	struct net_buf *rsp = NULL;
 	struct bt_iso_cig *cig;
 	struct bt_hci_rp_le_set_cig_params *cig_rsp;
 	struct bt_iso_chan *cis;
@@ -2255,7 +2255,7 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig, const struct bt_iso_cig_param
 	struct bt_hci_rp_le_set_cig_params *cig_rsp;
 	uint8_t existing_num_cis;
 	bool advanced = false;
-	struct net_buf *rsp;
+	struct net_buf *rsp = NULL;
 	int err;
 
 	CHECKIF(cig == NULL) {

@@ -174,5 +174,19 @@
 			interrupts = <67 0>;
 			status = "disabled";
 		};
+
+		sdhc0: sdhc@400b6000 {
+			compatible = "adi,max32-sdhc";
+			reg = <0x400b6000 0x1000>;
+			interrupts = <66 0>;
+			status = "disabled";
+			mmc {
+				compatible = "zephyr,sdmmc-disk";
+				status = "disabled";
+				disk-name = "SD";
+			};
+			power-delay-ms = <1500>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 10>;
+		};
 	};
 };

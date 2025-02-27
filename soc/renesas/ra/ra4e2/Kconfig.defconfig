@@ -6,6 +6,17 @@ if SOC_SERIES_RA4E2
 config NUM_IRQS
 	default 96
 
+DT_ICLK_PATH := $(dt_nodelabel_path,iclk)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_ICLK_PATH),clock-frequency)
+
+config BUILD_OUTPUT_HEX
+	default y
+
+config CLOCK_CONTROL
+	default y
+
 # Set to the minimal size of data which can be written.
 config FLASH_FILL_BUFFER_SIZE
 	default 128

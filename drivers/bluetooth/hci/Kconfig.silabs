@@ -4,6 +4,11 @@
 menu "EFR32 Bluetooth Controller Configuration"
 	depends on BT_SILABS_EFR32
 
+config BT_SILABS_EFR32_HCI_VS
+	bool "Silicon Labs vendor specific HCI extensions"
+	help
+	  Enable Silicon Labs vendor specific HCI extensions.
+
 config BT_SILABS_EFR32_BUFFER_MEMORY
 	int "Memory buffer size"
 	default 6144

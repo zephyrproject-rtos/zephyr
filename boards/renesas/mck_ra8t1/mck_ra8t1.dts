@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -68,6 +68,8 @@
 	};
 
 	pllq {
+		div = <4>;
+		freq = <DT_FREQ_M(240)>;
 		status = "okay";
 	};
 
@@ -83,7 +85,13 @@
 };
 
 &canfdclk {
-	clocks = <&pll>;
+	clocks = <&pllp>;
+	div = <6>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pllq>;
 	div = <5>;
 	status = "okay";
 };
@@ -184,6 +192,12 @@
 	average-count = <4>;
 };
 
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &sdhc0 {
 	compatible = "renesas,ra-sdhc";
 	pinctrl-0 = <&sdhc0_default>;
@@ -193,6 +207,16 @@
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";
+		status = "okay";
+	};
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+	status = "okay";
+	zephyr_udc0: udc {
 		status = "okay";
 	};
 };
