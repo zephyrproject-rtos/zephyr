@@ -40,8 +40,12 @@ struct k_work_delayable call_remote_accept_work;
 NET_BUF_POOL_DEFINE(sdp_discover_pool, 10, BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-static void ag_connected(struct bt_hfp_ag *ag)
+static void ag_connected(struct bt_conn *conn, struct bt_hfp_ag *ag)
 {
+	if (conn != default_conn) {
+		printk("The conn %p is not aligned with ACL conn %p", conn, default_conn);
+	}
+
 	if (!hfp_ag) {
 		hfp_ag = ag;
 	}

@@ -231,7 +231,7 @@ static void bt_hfp_ag_set_state(struct bt_hfp_ag *ag, bt_hfp_state_t state)
 		break;
 	case BT_HFP_CONNECTED:
 		if (bt_ag && bt_ag->connected) {
-			bt_ag->connected(ag);
+			bt_ag->connected(ag->acl_conn, ag);
 		}
 		break;
 	case BT_HFP_DISCONNECTING:

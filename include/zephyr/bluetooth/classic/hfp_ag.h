@@ -84,9 +84,10 @@ struct bt_hfp_ag_cb {
 	 *  If this callback is provided it will be called whenever the
 	 *  AG connection completes.
 	 *
+	 *  @param conn Connection object.
 	 *  @param ag HFP AG object.
 	 */
-	void (*connected)(struct bt_hfp_ag *ag);
+	void (*connected)(struct bt_conn *conn, struct bt_hfp_ag *ag);
 	/** HF disconnected callback to application
 	 *
 	 *  If this callback is provided it will be called whenever the
