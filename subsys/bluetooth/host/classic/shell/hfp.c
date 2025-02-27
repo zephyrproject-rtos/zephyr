@@ -982,8 +982,11 @@ static void ag_remove_a_call(struct bt_hfp_ag_call *call)
 	}
 }
 
-static void ag_connected(struct bt_hfp_ag *ag)
+static void ag_connected(struct bt_conn *conn, struct bt_hfp_ag *ag)
 {
+	if (conn != default_conn) {
+		bt_shell_warn("The conn %p is not aligned with ACL conn %p", conn, default_conn);
+	}
 	hfp_ag = ag;
 	bt_shell_print("ag connected");
 }
