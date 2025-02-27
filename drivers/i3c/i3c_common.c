@@ -1070,6 +1070,8 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	if (need_aasa) {
 		ret = i3c_ccc_do_setaasa_all(dev);
 		if (ret != 0) {
+			LOG_ERR("failed to perform setaasa");
+		} else {
 			for (i = 0; i < dev_list->num_i3c; i++) {
 				struct i3c_device_desc *desc = &dev_list->i3c[i];
 				/*
