@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2c-0 = &i2c9;
+		gy271 = &i2c9;
+
+	};
+};
+
+&sci9 {
+	status = "okay";
+
+	i2c9: i2c {
+		status = "okay";
+		sda-output-delay = <250>;
+	};
+};
