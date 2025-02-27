@@ -45,6 +45,15 @@ The following CVEs are addressed by this release:
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
+* :cve:`2025-1673` `Zephyr project bug tracker GHSA-jjhx-rrh4-j8mx
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-jjhx-rrh4-j8mx>`_
+
+* :cve:`2025-1674` `Zephyr project bug tracker GHSA-x975-8pgf-qh66
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-x975-8pgf-qh66>`_
+
+* :cve:`2025-1675` `Zephyr project bug tracker GHSA-2m84-5hfw-m8v4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2m84-5hfw-m8v4>`_
+
 API Changes
 ***********
 
@@ -86,6 +95,8 @@ Removed APIs and options
   after being deprecated in favor of :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED`.
 
 * The ``z_pm_save_idle_exit()`` PM API function has been removed.
+
+* Struct ``z_arch_esf_t`` has been removed. Use ``struct arch_esf`` instead.
 
 
 Deprecated APIs and options
@@ -177,6 +188,14 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS`
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT`
+
+* I3C
+
+  * :kconfig:option:`CONFIG_I3C_TARGET_BUFFER_MODE`
+  * :kconfig:option:`CONFIG_I3C_RTIO`
+  * :c:func:`i3c_ibi_hj_response`
+  * :c:func:`i3c_ccc_do_getacccr`
+  * :c:func:`i3c_device_controller_handoff`
 
 * Management
 
@@ -323,6 +342,7 @@ New Boards
 
 * Renesas Electronics Corporation
 
+   * :zephyr:board:`ek_ra2l1` (``ek_ra2l1``)
    * :zephyr:board:`ek_ra4l1` (``ek_ra4l1``)
    * :zephyr:board:`ek_ra4m1` (``ek_ra4m1``)
    * :zephyr:board:`fpb_ra4e1` (``fpb_ra4e1``)
@@ -433,6 +453,7 @@ New Drivers
    * :dtcompatible:`nordic,nrf-hsfll-global`
    * :dtcompatible:`nuvoton,npcm-pcc`
    * :dtcompatible:`realtek,rts5912-sccon`
+   * :dtcompatible:`renesas,rz-cpg`
    * :dtcompatible:`st,stm32n6-cpu-clock-mux`
    * :dtcompatible:`st,stm32n6-hse-clock`
    * :dtcompatible:`st,stm32n6-ic-clock-mux`

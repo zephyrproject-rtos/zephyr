@@ -23,12 +23,22 @@ user_iram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
 #endif
 
 /* User available SRAM memory segments */
-user_iram_seg_org = SRAM_IRAM_START + SRAM_CACHE_SIZE;
-user_dram_seg_org = SRAM_DRAM_START + SRAM_CACHE_SIZE;
+user_iram_org = SRAM_IRAM_START + SRAM_CACHE_SIZE;
+user_dram_org = SRAM_DRAM_START + SRAM_CACHE_SIZE;
 user_dram_end = user_iram_end - IRAM_DRAM_OFFSET;
-user_sram_size = (user_dram_end - user_dram_seg_org);
-user_iram_seg_len = user_sram_size;
-user_dram_seg_len = user_sram_size;
+user_sram_size = (user_dram_end - user_dram_org);
+user_iram_len = user_sram_size;
+user_dram_len = user_sram_size;
+
+user_irom_org = ICACHE0_START;
+user_irom_len = ICACHE0_SIZE;
+user_drom_org = DCACHE0_START;
+user_drom_len = DCACHE0_SIZE;
+
+#if defined(CONFIG_ESP_SPIRAM)
+ext_ram_org = DCACHE1_START;
+ext_ram_len = DCACHE1_SIZE;
+#endif
 
 /* Aliases */
 #define FLASH_CODE_REGION irom0_0_seg
@@ -67,11 +77,11 @@ MEMORY
   FLASH (R): org = 0x0, len = FLASH_SIZE - 0x100
 #endif
 
-  iram0_0_seg(RX): org = user_iram_seg_org, len = user_iram_seg_len
-  dram0_0_seg(RW): org = user_dram_seg_org, len = user_dram_seg_len
+  iram0_0_seg(RX): org = user_iram_org, len = user_iram_len
+  dram0_0_seg(RW): org = user_dram_org, len = user_dram_len
 
-  irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
-  drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
+  irom0_0_seg(RX): org = user_irom_org, len = user_irom_len
+  drom0_0_seg(R):  org = user_drom_org, len = user_drom_len
 
   rtc_iram_seg(RWX): org = 0x40070000, len = 0x2000 - CONFIG_RESERVE_RTC_MEM
   rtc_slow_seg(RW):  org = 0x50000000, len = 0x2000
@@ -90,7 +100,7 @@ MEMORY
 #endif
 
 #ifdef CONFIG_ESP_SPIRAM
-  ext_ram_seg(RW): org = 0x3f800000, len = CONFIG_ESP_SPIRAM_SIZE /* OR 0x780000 */
+  ext_ram_seg(RW): org = ext_ram_org, len = ext_ram_len
 #endif /* CONFIG_ESP_SPIRAM */
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -500,7 +510,6 @@ SECTIONS
     *libzephyr.a:secure_boot.*(.literal .text .literal.* .text.*)
     *libzephyr.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*)
     *libzephyr.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_table.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_fields.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_api.*(.literal .text .literal.* .text.*)
@@ -551,7 +560,7 @@ SECTIONS
     /* This section is required to skip .iram0.text area because iram0_0_seg and
      * dram0_0_seg reflect the same address space on different buses.
      */
-    . = ORIGIN(dram0_0_seg) + MAX(_iram_end, user_iram_seg_org) - user_iram_seg_org;
+    . = ORIGIN(dram0_0_seg) + MAX(_iram_end, user_iram_org) - user_iram_org;
     . = ALIGN(4) + 16;
   } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -609,6 +618,7 @@ SECTIONS
     *libzephyr.a:esp_psram_impl_quad.*(.rodata .rodata.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.*)
@@ -726,8 +736,6 @@ SECTIONS
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_spi_init.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
-    *libzephyr.a:efuse_hal.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-
     . = ALIGN(4);
     _loader_data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
@@ -791,24 +799,21 @@ SECTIONS
     *libsubsys__net__lib__config.a:(.noinit .noinit.*)
     *libsubsys__net__ip.a:(.noinit .noinit.*)
     *libsubsys__net.a:(.noinit .noinit.*)
-#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+#endif
     . = ALIGN(16);
-
     *(.ext_ram_noinit*)
-    *(.ext_ram_noinit.*)
-
     . = ALIGN(16);
     _ext_ram_noinit_end = ABSOLUTE(.);
 
     _ext_ram_bss_start = ABSOLUTE(.);
-
     *(.ext_ram.bss*)
-
     . = ALIGN(16);
     _ext_ram_bss_end = ABSOLUTE(.);
 
-    _spiram_heap_start = ABSOLUTE(.);
+    _ext_ram_heap_start = ABSOLUTE(.);
     . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
+    . = ALIGN(16);
+    _ext_ram_heap_end = ABSOLUTE(.);
 
     _ext_ram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(ext_ram_seg)

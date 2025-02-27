@@ -14,7 +14,7 @@ config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
 	depends on FLASH_HAS_DRIVER_ENABLED \
 	 && $(dt_path_enabled,$(DT_ITS_PARTITION)) \
 	 && $(dt_node_has_compat,$(dt_node_parent,$(DT_ITS_PARTITION)),fixed-partitions)
-	select ZMS
+	depends on ZMS
 	help
 	  This implementation of the ITS store module makes direct use of ZMS for storage.
 	  It needs a `secure_storage_its_partition` devicetree chosen property that points
@@ -31,9 +31,7 @@ config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
 	     && $(dt_node_has_compat,$(dt_node_parent,$(DT_SETTINGS_PARTITIION)),fixed-partitions))\
 	  || ($(dt_path_enabled,$(DT_STORAGE_PARTITION)) \
 	      && $(dt_node_has_compat,$(dt_node_parent,$(DT_STORAGE_PARTITION)),fixed-partitions)))
-	imply FLASH_MAP
-	imply NVS
-	select SETTINGS
+	depends on SETTINGS
 
 config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
 	bool "No ITS store module implementation"

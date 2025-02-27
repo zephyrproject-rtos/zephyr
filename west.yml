@@ -162,7 +162,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: a459b40356f5e6fb55d92bcb458cec45365d5ec5
+      revision: 202c59552dc98e5cd02386313e1977ecb17a131f
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 2a1d73aeb863a73bb06ba8b236de7da6d3e31847
+      revision: 3fc5f811fb8c0bdd90a8d965c50707172ce80d05
       path: modules/hal/nxp
       groups:
         - hal
@@ -274,7 +274,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 4957416a01c86579aebb333b43f1c23da0375835
+      revision: 697fd2cf5cbbd0c5375fc34761b6a9d7489a67d2
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -353,7 +353,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 2f138475047d566f1446f62657aa546b0e0b52c2
+      revision: 918f32d9fce5e0ee59fc33844b5317b7626ce37a
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

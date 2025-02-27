@@ -24,13 +24,23 @@ procpu_dram_len = SRAM2_DRAM_USER_SIZE - CONFIG_ESP32_BT_RESERVE_DRAM;
 user_dram_2_seg_org = SRAM1_DRAM_USER_START;
 user_dram_2_seg_len = SRAM1_USER_SIZE;
 
+procpu_irom_org = ICACHE0_START;
+procpu_irom_len = ICACHE0_SIZE;
+procpu_drom_org = DCACHE0_START;
+procpu_drom_len = DCACHE0_SIZE;
+
+#ifdef CONFIG_ESP_SPIRAM
+procpu_ext_ram_org = DCACHE1_START;
+procpu_ext_ram_len = DCACHE1_SIZE;
+#endif
+
 /* Aliases */
-#define FLASH_CODE_REGION   irom0_0_seg
-#define RODATA_REGION       drom0_0_seg
-#define IRAM_REGION         iram0_0_seg
-#define DRAM_REGION         dram0_0_seg
-#define RAMABLE_REGION      dram0_0_seg
-#define ROMABLE_REGION      FLASH
+#define FLASH_CODE_REGION irom0_0_seg
+#define RODATA_REGION     drom0_0_seg
+#define IRAM_REGION       iram0_0_seg
+#define DRAM_REGION       dram0_0_seg
+#define RAMABLE_REGION    dram0_0_seg
+#define ROMABLE_REGION    FLASH
 
 #undef GROUP_DATA_LINK_IN
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
@@ -58,33 +68,34 @@ MEMORY
   FLASH (R):       org = 0x80, len = FLASH_SIZE - 0x80
 #else
   /* Make safety margin in the FLASH memory size so the
-   * (esp_img_header + (n*esp_seg_headers)) would fit */
+   * (esp_img_header + (n*esp_seg_headers)) would fit
+   */
   FLASH (R):       org = 0x0,  len = FLASH_SIZE - 0x100
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
   iram0_0_seg(RX): org = procpu_iram_org, len = procpu_iram_len
   dram0_0_seg(RW): org = procpu_dram_org, len = procpu_dram_len
 
-  irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
-  drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
+  irom0_0_seg(RX): org = procpu_irom_org, len = procpu_irom_len
+  drom0_0_seg(R):  org = procpu_drom_org, len = procpu_drom_len
 
   rtc_iram_seg(RWX): org = 0x400c0000, len = 0x2000
   rtc_slow_seg(RW):  org = 0x50000000, len = 0x2000 - CONFIG_RESERVE_RTC_MEM
   rtc_data_seg(RW):  org = 0x3ff80000, len = 0x2000
 
   /* We reduced the size of rtc_slow_seg by CONFIG_RESERVE_RTC_MEM value.
-     It reserves the amount of RTC slow memory that we use for this memory segment.
-     This segment is intended for keeping rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
-     The aim of this is to keep data that will not be moved around and have a fixed address.
-     org = 0x50000000 + 0x2000 - CONFIG_RESERVE_RTC_MEM
-  */
+   *  It reserves the amount of RTC slow memory that we use for this memory segment.
+   *  This segment is intended for keeping rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
+   *  The aim of this is to keep data that will not be moved around and have a fixed address.
+   *  org = 0x50000000 + 0x2000 - CONFIG_RESERVE_RTC_MEM
+   */
 #if (CONFIG_RESERVE_RTC_MEM > 0)
   rtc_slow_reserved_seg(RW): org = 0x50000000 + 0x2000 - CONFIG_RESERVE_RTC_MEM,
                              len = CONFIG_RESERVE_RTC_MEM
 #endif
 
 #ifdef CONFIG_ESP_SPIRAM
-  ext_ram_seg(RW): org = 0x3f800000, len = CONFIG_ESP_SPIRAM_SIZE
+  ext_ram_seg(RW): org = procpu_ext_ram_org, len = procpu_ext_ram_len
 #endif /* CONFIG_ESP_SPIRAM */
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -491,7 +502,6 @@ SECTIONS
     *libzephyr.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*)
     *libzephyr.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*)
 
-    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_table.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_fields.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_api.*(.literal .text .literal.* .text.*)
@@ -593,6 +603,7 @@ SECTIONS
     *libzephyr.a:esp_psram_impl_quad.*(.rodata .rodata.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.*)
@@ -700,7 +711,6 @@ SECTIONS
     *libzephyr.a:esp_clk.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:rtc_clk_init.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:rtc_time.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-    *libzephyr.a:efuse_hal.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:cpu_region_protect.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     *libzephyr.a:periph_ctrl.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
@@ -813,25 +823,21 @@ SECTIONS
     *libsubsys__net__lib__config.a:(.noinit .noinit.*)
     *libsubsys__net__ip.a:(.noinit .noinit.*)
     *libsubsys__net.a:(.noinit .noinit.*)
-#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+#endif
     . = ALIGN(16);
-
     *(.ext_ram_noinit*)
-    *(.ext_ram_noinit.*)
-
     . = ALIGN(16);
     _ext_ram_noinit_end = ABSOLUTE(.);
 
     _ext_ram_bss_start = ABSOLUTE(.);
-
     *(.ext_ram.bss*)
-
     . = ALIGN(16);
     _ext_ram_bss_end = ABSOLUTE(.);
 
-    _spiram_heap_start = ABSOLUTE(.);
+    _ext_ram_heap_start = ABSOLUTE(.);
     . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE;
-    . = ALIGN(4);
+    . = ALIGN(16);
+    _ext_ram_heap_end = ABSOLUTE(.);
 
     _ext_ram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(ext_ram_seg)

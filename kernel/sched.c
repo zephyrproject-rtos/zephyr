@@ -434,7 +434,9 @@ static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_
 		halt_thread(thread, terminate ? _THREAD_DEAD : _THREAD_SUSPENDED);
 		if ((thread == _current) && !arch_is_in_isr()) {
 			if (z_is_thread_essential(thread)) {
+				k_spin_unlock(&_sched_spinlock, key);
 				k_panic();
+				key = k_spin_lock(&_sched_spinlock);
 			}
 			z_swap(&_sched_spinlock, key);
 			__ASSERT(!terminate, "aborted _current back from dead");
