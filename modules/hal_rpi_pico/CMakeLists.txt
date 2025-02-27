@@ -155,6 +155,19 @@ if(CONFIG_HAS_RPI_PICO)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_CLAIM
           ${common_dir}/hardware_claim/include)
 
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_RAND
+    ${rp2_common_dir}/hardware_timer/timer.c
+    ${rp2_common_dir}/pico_rand/rand.c
+  )
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_RAND
+    ${common_dir}/pico_sync/include
+    ${common_dir}/pico_time/include
+    ${rp2_common_dir}/pico_rand/include
+    ${rp2_common_dir}/pico_time_adapter/include
+    ${rp2_common_dir}/pico_unique_id/include
+  )
+  zephyr_linker_sources_ifdef(CONFIG_PICOSDK_USE_RAND DATA_SECTIONS uninit_data.ld)
+
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_RP2350
           ${rp2_common_dir}/pico_runtime_init/runtime_init.c)
   zephyr_include_directories_ifdef(CONFIG_SOC_SERIES_RP2350
