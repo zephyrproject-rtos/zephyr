@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nrf9161dk_nrf9161_common_0_7_0.dtsi"
+#include "nrf9161dk_nrf9161_nrf9120_common_0_7_0.dtsi"
