@@ -797,55 +797,32 @@ class BoardSupportedHardwareDirective(SphinxDirective):
             result_nodes.append(note)
             return result_nodes
 
-        # Add the note before any tables
-        note = nodes.admonition(classes=["legend"])
-        note += nodes.title(text="Table Legend", classes=["note"])
-
-        legend = nodes.definition_list(classes=["supported-hardware field-list"])
-
-        def add_legend_item(legend_list, term_text, term_classes, definition_text):
-            dl_item = nodes.definition_list_item()
-            dt = nodes.term()
-            dt += nodes.inline("", term_text, classes=term_classes)
-            dd = nodes.definition()
-            dd += nodes.Text(definition_text)
-            dl_item += dt
-            dl_item += dd
-            legend_list += dl_item
-
-        add_legend_item(
-            legend, "on-chip", ["location-chip", "onchip"], "Feature integrated in the SoC."
-        )
-        add_legend_item(
-            legend, "on-board", ["location-chip", "onboard"], "Feature present on the board."
-        )
-        add_legend_item(
-            legend,
-            "2",
-            ["count", "okay-count"],
-            "Number of instances of the feature that are present and enabled.",
-        )
-        add_legend_item(
-            legend,
-            "2",
-            ["count", "disabled-count"],
-            "Number of instances of the feature that are present but initially disabled.",
-        )
-
-        dl_item = nodes.definition_list_item()
-        dt = nodes.term()
-        dt += nodes.literal(text="vnd,foo")
-        dd = nodes.definition()
-        dd += nodes.Text(
-            "Compatible string for the Devicetree binding matching the feature. "
-            "Click on the link to checkout the binding documentation."
-        )
-        dl_item += dt
-        dl_item += dd
-        legend += dl_item
-
-        note += legend
-        result_nodes.append(note)
+        html_contents = """<div class="legend admonition">
+  <dl class="supported-hardware field-list">
+    <dt>
+      <span class="location-chip onchip">on-chip</span> /
+      <span class="location-chip onboard">on-board</span>
+    </dt>
+    <dd>
+      Feature integrated in the SoC / present on the board.
+    </dd>
+    <dt>
+      <span class="count okay-count">2</span> /
+      <span class="count disabled-count">2</span>
+    </dt>
+    <dd>
+      Number of instances that are enabled / disabled.
+    </dd>
+    <dt>
+      <code class="docutils literal notranslate"><span class="pre">vnd,foo</span></code>
+    </dt>
+    <dd>
+      Compatible string for the Devicetree binding matching the feature. <br/>
+      Click on the link to view the binding documentation.
+    </dd>
+  </dl>
+</div>"""
+        result_nodes.append(nodes.raw("", html_contents, format="html"))
 
         for target, features in sorted(supported_features.items()):
             if not features:
