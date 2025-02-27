@@ -2007,7 +2007,14 @@ int bt_obex_add_header_name(struct net_buf *buf, uint16_t len, const uint8_t *na
 {
 	size_t total;
 
-	if (!buf || !name || !len) {
+	/*
+	 * OBEX Version 1.5, section 2.2.2 Name
+	 * The `name` could be a NULL, so the `len` of the name could 0.
+	 * In some cases an empty Name header is used to specify a particular behavior;
+	 * see the GET and SETPATH Operations. An empty Name header is defined as a Name
+	 * header of length 3 (one byte opcode + two byte length).
+	 */
+	if (!buf || (len && !name)) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
@@ -2017,14 +2024,16 @@ int bt_obex_add_header_name(struct net_buf *buf, uint16_t len, const uint8_t *na
 		return -ENOMEM;
 	}
 
-	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_NAME, len, name)) {
+	if (len && !bt_obex_string_is_valid(BT_OBEX_HEADER_ID_NAME, len, name)) {
 		LOG_WRN("Invalid string");
 		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_NAME);
 	net_buf_add_be16(buf, (uint16_t)total);
-	net_buf_add_mem(buf, name, len);
+	if (len) {
+		net_buf_add_mem(buf, name, len);
+	}
 	return 0;
 }
 
@@ -2662,6 +2671,7 @@ int bt_obex_header_parse(struct net_buf *buf,
 
 struct bt_obex_find_header_data {
 	struct bt_obex_hdr hdr;
+	bool found;
 };
 
 static bool bt_obex_find_header_cb(struct bt_obex_hdr *hdr, void *user_data)
@@ -2691,6 +2701,7 @@ int bt_obex_get_header_count(struct net_buf *buf, uint32_t *count)
 	data.hdr.id = BT_OBEX_HEADER_ID_COUNT;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -2718,13 +2729,14 @@ int bt_obex_get_header_name(struct net_buf *buf, uint16_t *len, const uint8_t **
 	data.hdr.id = BT_OBEX_HEADER_ID_NAME;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
 		return err;
 	}
 
-	if ((data.hdr.len == 0) || !data.hdr.data) {
+	if (!data.found) {
 		return -ENODATA;
 	}
 
@@ -2746,6 +2758,7 @@ int bt_obex_get_header_type(struct net_buf *buf, uint16_t *len, const uint8_t **
 	data.hdr.id = BT_OBEX_HEADER_ID_TYPE;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -2774,6 +2787,7 @@ int bt_obex_get_header_len(struct net_buf *buf, uint32_t *len)
 	data.hdr.id = BT_OBEX_HEADER_ID_LEN;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -2801,6 +2815,7 @@ int bt_obex_get_header_time_iso_8601(struct net_buf *buf, uint16_t *len, const u
 	data.hdr.id = BT_OBEX_HEADER_ID_TIME_ISO_8601;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -2829,6 +2844,7 @@ int bt_obex_get_header_time(struct net_buf *buf, uint32_t *t)
 	data.hdr.id = BT_OBEX_HEADER_ID_TIME;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -2856,6 +2872,7 @@ int bt_obex_get_header_description(struct net_buf *buf, uint16_t *len, const uin
 	data.hdr.id = BT_OBEX_HEADER_ID_DES;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -2884,6 +2901,7 @@ int bt_obex_get_header_target(struct net_buf *buf, uint16_t *len, const uint8_t 
 	data.hdr.id = BT_OBEX_HEADER_ID_TARGET;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -2912,6 +2930,7 @@ int bt_obex_get_header_http(struct net_buf *buf, uint16_t *len, const uint8_t **
 	data.hdr.id = BT_OBEX_HEADER_ID_HTTP;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -2940,6 +2959,7 @@ int bt_obex_get_header_body(struct net_buf *buf, uint16_t *len, const uint8_t **
 	data.hdr.id = BT_OBEX_HEADER_ID_BODY;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -2968,6 +2988,7 @@ int bt_obex_get_header_end_body(struct net_buf *buf, uint16_t *len, const uint8_
 	data.hdr.id = BT_OBEX_HEADER_ID_END_BODY;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -2996,6 +3017,7 @@ int bt_obex_get_header_who(struct net_buf *buf, uint16_t *len, const uint8_t **w
 	data.hdr.id = BT_OBEX_HEADER_ID_WHO;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3024,6 +3046,7 @@ int bt_obex_get_header_conn_id(struct net_buf *buf, uint32_t *conn_id)
 	data.hdr.id = BT_OBEX_HEADER_ID_CONN_ID;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3079,6 +3102,7 @@ int bt_obex_get_header_app_param(struct net_buf *buf, uint16_t *len, const uint8
 	data.hdr.id = BT_OBEX_HEADER_ID_APP_PARAM;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3107,6 +3131,7 @@ int bt_obex_get_header_auth_challenge(struct net_buf *buf, uint16_t *len, const 
 	data.hdr.id = BT_OBEX_HEADER_ID_AUTH_CHALLENGE;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3135,6 +3160,7 @@ int bt_obex_get_header_auth_rsp(struct net_buf *buf, uint16_t *len, const uint8_
 	data.hdr.id = BT_OBEX_HEADER_ID_AUTH_RSP;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3163,6 +3189,7 @@ int bt_obex_get_header_creator_id(struct net_buf *buf, uint32_t *creator_id)
 	data.hdr.id = BT_OBEX_HEADER_ID_CREATE_ID;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3190,6 +3217,7 @@ int bt_obex_get_header_wan_uuid(struct net_buf *buf, uint16_t *len, const uint8_
 	data.hdr.id = BT_OBEX_HEADER_ID_WAN_UUID;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3218,6 +3246,7 @@ int bt_obex_get_header_obj_class(struct net_buf *buf, uint16_t *len, const uint8
 	data.hdr.id = BT_OBEX_HEADER_ID_OBJECT_CLASS;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3247,6 +3276,7 @@ int bt_obex_get_header_session_param(struct net_buf *buf, uint16_t *len,
 	data.hdr.id = BT_OBEX_HEADER_ID_SESSION_PARAM;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3275,6 +3305,7 @@ int bt_obex_get_header_session_seq_number(struct net_buf *buf, uint32_t *session
 	data.hdr.id = BT_OBEX_HEADER_ID_SESSION_SEQ_NUM;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3302,6 +3333,7 @@ int bt_obex_get_header_action_id(struct net_buf *buf, uint32_t *action_id)
 	data.hdr.id = BT_OBEX_HEADER_ID_ACTION_ID;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3329,6 +3361,7 @@ int bt_obex_get_header_dest_name(struct net_buf *buf, uint16_t *len, const uint8
 	data.hdr.id = BT_OBEX_HEADER_ID_DEST_NAME;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3357,6 +3390,7 @@ int bt_obex_get_header_perm(struct net_buf *buf, uint32_t *perm)
 	data.hdr.id = BT_OBEX_HEADER_ID_PERM;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3384,6 +3418,7 @@ int bt_obex_get_header_srm(struct net_buf *buf, uint8_t *srm)
 	data.hdr.id = BT_OBEX_HEADER_ID_SRM;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
@@ -3411,6 +3446,7 @@ int bt_obex_get_header_srm_param(struct net_buf *buf, uint8_t *srm_param)
 	data.hdr.id = BT_OBEX_HEADER_ID_SRM_PARAM;
 	data.hdr.len = 0;
 	data.hdr.data = NULL;
+	data.found = false;
 
 	err = bt_obex_header_parse(buf, bt_obex_find_header_cb, &data);
 	if (err) {
