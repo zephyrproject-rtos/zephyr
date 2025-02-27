@@ -27,7 +27,9 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - FILE_SUFFIX=cpuppr
-      - ipc_sessions_SNIPPET=nordic-ppr
+      # Note that currently only XIP variant of PPR properly resets itself
+      - ipc_sessions_SNIPPET=nordic-ppr-xip
+      - remote_CONFIG_XIP=y
   sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_no_unbound_cpuppr:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
