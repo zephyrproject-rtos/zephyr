@@ -43,7 +43,7 @@ struct avrcp_handler {
 	void (*func)(struct bt_avrcp *avrcp, struct net_buf *buf, bt_avctp_cr_t cr);
 };
 
-#define AVRCP_TIMEOUT       K_SECONDS(3) /* Shell be greater than TMTP (1000ms) */
+#define AVRCP_TIMEOUT       K_SECONDS(3) /* Shall be greater than TMTP (1000ms) */
 #define AVRCP_AVCTP(_avctp) CONTAINER_OF(_avctp, struct bt_avrcp, session)
 #define AVRCP_KWORK(_work)                                                                         \
 	CONTAINER_OF(CONTAINER_OF(_work, struct k_work_delayable, work), struct bt_avrcp,          \
@@ -277,7 +277,7 @@ static void process_get_cap_rsp(struct bt_avrcp *avrcp, struct net_buf *buf)
 
 	switch (rsp->cap_id) {
 	case BT_AVRCP_CAP_COMPANY_ID:
-		expected_len = rsp->cap_cnt * AVRCP_COMPANY_ID_SIZE;
+		expected_len = rsp->cap_cnt * BT_AVRCP_COMPANY_ID_SIZE;
 		break;
 	case BT_AVRCP_CAP_EVENTS_SUPPORTED:
 		expected_len = rsp->cap_cnt;
@@ -303,7 +303,7 @@ static void avrcp_vendor_dependent_handler(struct bt_avrcp *avrcp, struct net_bu
 	uint32_t company_id;
 	uint8_t pdu_id;
 
-	if (buf->len < (sizeof(*avrcp_hdr) + AVRCP_COMPANY_ID_SIZE + sizeof(pdu_id))) {
+	if (buf->len < (sizeof(*avrcp_hdr) + BT_AVRCP_COMPANY_ID_SIZE + sizeof(pdu_id))) {
 		LOG_ERR("Invalid vendor frame length: %d", buf->len);
 		return;
 	}
@@ -399,7 +399,7 @@ static void avrcp_pass_through_handler(struct bt_avrcp *avrcp, struct net_buf *b
 		/* ToDo */
 	} else { /* BT_AVCTP_RESPONSE */
 		if ((avrcp_cb != NULL) && (avrcp_cb->subunit_info_rsp != NULL)) {
-			if (buf->len < 2) {
+			if (buf->len < sizeof(*rsp)) {
 				LOG_ERR("Invalid passthrough length: %d", buf->len);
 				return;
 			}
@@ -689,10 +689,10 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
 	return 0;
 }
 
-int bt_avrcp_get_cap(struct bt_avrcp *avrcp, bt_avrcp_cap_t cap_id)
+int bt_avrcp_get_cap(struct bt_avrcp *avrcp, uint8_t cap_id)
 {
 	struct net_buf *buf;
-	struct bt_avrcp_avc_pdu pdu;
+	struct bt_avrcp_avc_pdu *pdu;
 
 	buf = avrcp_create_vendor_pdu(avrcp, BT_AVCTP_CMD, BT_AVRCP_CTYPE_STATUS);
 	if (!buf) {
@@ -700,10 +700,10 @@ int bt_avrcp_get_cap(struct bt_avrcp *avrcp, bt_avrcp_cap_t cap_id)
 	}
 
 	net_buf_add_be24(buf, BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG);
-	pdu.pdu_id = BT_AVRCP_PDU_ID_GET_CAPS;
-	BT_AVRCP_AVC_PDU_SET_PACKET_TYPE(&pdu, BT_AVRVP_PKT_TYPE_SINGLE);
-	pdu.param_len = sys_cpu_to_be16(sizeof(cap_id));
-	net_buf_add_mem(buf, &pdu, sizeof(pdu));
+	pdu = net_buf_add(buf, sizeof(*pdu));
+	pdu->pdu_id = BT_AVRCP_PDU_ID_GET_CAPS;
+	BT_AVRCP_AVC_PDU_SET_PACKET_TYPE(pdu, BT_AVRVP_PKT_TYPE_SINGLE);
+	pdu->param_len = sys_cpu_to_be16(sizeof(cap_id));
 	net_buf_add_u8(buf, cap_id);
 
 	return avrcp_send(avrcp, buf);
@@ -743,8 +743,8 @@ int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp)
 	return avrcp_send(avrcp, buf);
 }
 
-int bt_avrcp_passthrough(struct bt_avrcp *avrcp, bt_avrcp_opid_t opid,
-			 bt_avrcp_button_state_t state, const uint8_t *payload, uint8_t len)
+int bt_avrcp_passthrough(struct bt_avrcp *avrcp, uint8_t opid, uint8_t state,
+			 const uint8_t *payload, uint8_t len)
 {
 	struct net_buf *buf;
 
