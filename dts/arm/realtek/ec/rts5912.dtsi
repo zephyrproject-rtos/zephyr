@@ -87,6 +87,84 @@
 			status = "disabled";
 		};
 
+		timer0: timer@4000c300 {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c300 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <196 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR0_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		timer1: timer@4000c314 {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c314 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <197 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR1_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		timer2: timer@4000c328 {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c328 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <198 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR2_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		timer3: timer@4000c33c {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c33c 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <199 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR3_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		timer4: timer@4000c350 {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c350 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <200 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR4_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		timer5: timer@4000c364 {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c364 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <201 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR5_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
 		slwtmr0: slwtmr0@4000c200 {
 			compatible = "realtek,rts5912-slwtimer";
 			reg = <0x4000c200 0x10>;
