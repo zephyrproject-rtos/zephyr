@@ -39,11 +39,11 @@ endif()
 # Add check for GCC version >= 13.1
 execute_process(
     COMMAND ${CMAKE_C_COMPILER} -dumpfullversion
-    OUTPUT_VARIABLE temp_compiler_version
+    OUTPUT_VARIABLE GCC_COMPILER_VERSION
     )
 
-if("${temp_compiler_version}" VERSION_LESS 4.3.0 OR
-    "${temp_compiler_version}" VERSION_GREATER_EQUAL 13.1.0)
+if("${GCC_COMPILER_VERSION}" VERSION_LESS 4.3.0 OR
+    "${GCC_COMPILER_VERSION}" VERSION_GREATER_EQUAL 13.1.0)
     set(fix_header_file include/limits.h)
 else()
     set(fix_header_file include-fixed/limits.h)
