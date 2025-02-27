@@ -171,6 +171,17 @@ config SETTINGS_ZMS_MAX_COLLISIONS_BITS
 	  The maximum number of hash collisions needs to be well sized depending
 	  on the data that is going to be stored in ZMS and its hash values
 
+config SETTINGS_ZMS_NO_LL_DELETE
+	bool "Disable deletion of Linked list hashes"
+	help
+	  For some applications, the Settings delete operation is too long for
+	  ZMS because of the linked list update.
+	  As a tradeoff for performance the linked list is not updated. As a
+	  result, some nodes will be unused and will occupy some space in the
+	  storage.
+	  These nodes will be used again when the same Settings element that has
+	  been deleted is created again.
+
 config SETTINGS_SHELL
 	bool "Settings shell"
 	depends on SHELL
