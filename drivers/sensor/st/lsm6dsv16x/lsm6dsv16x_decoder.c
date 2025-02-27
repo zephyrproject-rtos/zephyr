@@ -152,6 +152,7 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 					      uint16_t *frame_count)
 {
 	struct lsm6dsv16x_fifo_data *data = (struct lsm6dsv16x_fifo_data *)buffer;
+	struct lsm6dsv16x_rtio_data *rdata = (struct lsm6dsv16x_rtio_data *)buffer;
 	const struct lsm6dsv16x_decoder_header *header = &data->header;
 
 	if (chan_spec.chan_idx != 0) {
@@ -164,13 +165,20 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 		case SENSOR_CHAN_ACCEL_Y:
 		case SENSOR_CHAN_ACCEL_Z:
 		case SENSOR_CHAN_ACCEL_XYZ:
+			*frame_count = rdata->has_accel ? 1 : 0;
+			return 0;
+
 		case SENSOR_CHAN_GYRO_X:
 		case SENSOR_CHAN_GYRO_Y:
 		case SENSOR_CHAN_GYRO_Z:
 		case SENSOR_CHAN_GYRO_XYZ:
-		case SENSOR_CHAN_DIE_TEMP:
-			*frame_count = 1;
+			*frame_count = rdata->has_gyro ? 1 : 0;
 			return 0;
+
+		case SENSOR_CHAN_DIE_TEMP:
+			*frame_count = rdata->has_temp ? 1 : 0;
+			return 0;
+
 		default:
 			*frame_count = 0;
 			return -ENOTSUP;
@@ -652,6 +660,8 @@ static int lsm6dsv16x_decoder_decode(const uint8_t *buffer, struct sensor_chan_s
 
 	if (header->is_fifo) {
 		return lsm6dsv16x_decode_fifo(buffer, chan_spec, fit, max_count, data_out);
+	} else {
+		return lsm6dsv16x_decode_sample(buffer, chan_spec, fit, max_count, data_out);
 	}
 #endif
 
