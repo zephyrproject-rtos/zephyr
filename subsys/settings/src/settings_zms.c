@@ -61,6 +61,7 @@ static int settings_zms_dst(struct settings_zms *cf)
 	return 0;
 }
 
+#ifndef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
 static int settings_zms_unlink_ll_node(struct settings_zms *cf, uint32_t name_hash)
 {
 	int rc = 0;
@@ -119,6 +120,7 @@ static int settings_zms_unlink_ll_node(struct settings_zms *cf, uint32_t name_ha
 
 	return rc;
 }
+#endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
 
 #if CONFIG_SETTINGS_ZMS_NAME_CACHE
 static void settings_zms_cache_add(struct settings_zms *cf, uint32_t name_hash, uint8_t flags)
@@ -169,6 +171,7 @@ static int settings_zms_delete(struct settings_zms *cf, uint32_t name_hash)
 	if (rc < 0) {
 		return rc;
 	}
+#ifndef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
 	rc = settings_zms_unlink_ll_node(cf, name_hash);
 	if (rc < 0) {
 		return rc;
@@ -179,7 +182,7 @@ static int settings_zms_delete(struct settings_zms *cf, uint32_t name_hash)
 	if (rc < 0) {
 		return rc;
 	}
-
+#endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
 #ifdef CONFIG_SETTINGS_ZMS_NAME_CACHE
 	/* Update the flag of the Settings entry in cache. */
 	uint8_t cache_flags = 0;
@@ -225,15 +228,27 @@ static int settings_zms_load(struct settings_store *cs, const struct settings_lo
 							       ZMS_DATA_ID_OFFSET);
 
 		if ((rc1 <= 0) || (rc2 <= 0)) {
-			/* Settings item is not stored correctly in the ZMS.
-			 * ZMS entry for its name or value is either missing
-			 * or deleted. Clean dirty entries to make space for
-			 * future settings item.
+			/* In case we are not updating the linked list, this is an empty mode
+			 * Just continue
+			 */
+#ifndef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
+			/* Otherwise, Settings item is not stored correctly in the ZMS.
+			 * ZMS entry for its name or value is either missing or deleted.
+			 * Clean dirty entries to make space for future settings item.
 			 */
 			ret = settings_zms_delete(cf, ZMS_NAME_ID_FROM_LL_NODE(ll_hash_id));
 			if (ret < 0) {
 				return ret;
 			}
+#endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
+
+			ret = zms_read(&cf->cf_zms, ll_hash_id, &settings_element,
+				       sizeof(struct settings_hash_linked_list));
+			if (ret < 0) {
+				return ret;
+			}
+			/* update next ll_hash_id */
+			ll_hash_id = settings_element.next_hash;
 			continue;
 		}
 
@@ -282,6 +297,9 @@ static int settings_zms_save(struct settings_store *cs, const char *name, const 
 	bool write_name;
 	int rc = 0;
 	int first_available_hash_index = -1;
+#ifdef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
+	bool ll_node_exist = false;
+#endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
 
 	if (!name) {
 		return -EINVAL;
@@ -304,11 +322,18 @@ static int settings_zms_save(struct settings_store *cs, const char *name, const 
 		} else {
 			write_name = false;
 		}
+#ifdef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
+		/* In this case the settings entry is deleted, which means that
+		 * its linked list node still exist in this case and do not need
+		 * to be updated.
+		 */
+		ll_node_exist = true;
+#endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
 		goto no_hash_collision;
 	}
 #endif
 
-	/* Let's find out if there is no hash collisions in the storage */
+	/* Let's find out if there are hash collisions in the storage */
 	write_name = true;
 
 	for (int i = 0; i <= cf->hash_collision_num; i++) {
@@ -382,6 +407,20 @@ no_hash_collision:
 		if (rc < 0) {
 			return rc;
 		}
+#ifdef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
+		if (ll_node_exist) {
+			goto no_ll_update;
+		}
+		/* verify that the ll_node doesn't exist otherwise do not update it */
+		rc = zms_read(&cf->cf_zms, name_hash | 1, &settings_element,
+			      sizeof(struct settings_hash_linked_list));
+		if (rc >= 0) {
+			goto no_ll_update;
+		} else if (rc != -ENOENT) {
+			return rc;
+		}
+		/* else the LL node doesn't exist let's update it */
+#endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
 		/* write linked list structure element */
 		settings_element.next_hash = 0;
 		/* Verify first that the linked list last element is not broken.
@@ -411,6 +450,9 @@ no_hash_collision:
 		cf->second_to_last_hash_id = cf->last_hash_id;
 		cf->last_hash_id = name_hash | 1;
 	}
+#ifdef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
+no_ll_update:
+#endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
 #ifdef CONFIG_SETTINGS_ZMS_NAME_CACHE
 	/* Add the flags of the written settings entry in cache */
 	cache_flags = 0;
