@@ -6,3 +6,4 @@
 
 . += CONFIG_ROM_START_OFFSET;
 KEEP(*(.init.*))
+KEEP(*(.flash_data))
