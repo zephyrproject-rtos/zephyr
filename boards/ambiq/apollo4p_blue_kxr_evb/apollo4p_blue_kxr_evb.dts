@@ -89,27 +89,33 @@
 	status = "okay";
 };
 
-&i2c0 {
-	pinctrl-0 = <&i2c0_default>;
-	pinctrl-names = "default";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	scl-gpios = <&gpio0_31 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
-	sda-gpios = <&gpio0_31 6 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
-	status = "okay";
+&iom0 {
+	i2c0: i2c {
+		pinctrl-0 = <&i2c0_default>;
+		pinctrl-names = "default";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		scl-gpios = <&gpio0_31 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		sda-gpios = <&gpio0_31 6 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		status = "okay";
+	};
 };
 
-&spi1 {
-	pinctrl-0 = <&spi1_default>;
-	pinctrl-names = "default";
-	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
-	clock-frequency = <DT_FREQ_M(1)>;
-	status = "okay";
+&iom1 {
+	spi1: spi {
+		pinctrl-0 = <&spi1_default>;
+		pinctrl-names = "default";
+		cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
+		clock-frequency = <DT_FREQ_M(1)>;
+		status = "okay";
+	};
 };
 
-&spi4 {
-	pinctrl-0 = <&spi4_default>;
-	pinctrl-names = "default";
-	status = "okay";
+&iom4 {
+	spi4: spi {
+		pinctrl-0 = <&spi4_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
 };
 
 &mspi0 {
