@@ -63,6 +63,135 @@ static void wg_peer_cb(struct wg_peer *peer, void *user_data)
 
 	(*count)++;
 }
+
+static void wg_peer_detail_cb(struct wg_peer *peer, void *user_data)
+{
+	struct net_shell_user_data *data = user_data;
+	const struct shell *sh = data->sh;
+	int *count = data->user_data;
+	/* +7 for []/len */
+	char addr[ADDR_LEN + 7], *paddr;
+	char addr_mask[sizeof(addr) + sizeof("/128 ")];
+	char public_key[WG_PUBLIC_KEY_LEN * 2];
+	uint32_t now, diff;
+	uint64_t gt_sec;
+	uint32_t gt_nsec;
+	size_t olen;
+
+	if (peer->id != *count) {
+		return;
+	}
+
+	(void)base64_encode(public_key, sizeof(public_key),
+			    &olen, peer->key.public_key,
+			    sizeof(peer->key.public_key));
+
+	now = sys_clock_tick_get_32();
+
+	PR("Peer id             : %d\n", peer->id);
+	PR("Peer interface      : %d\n", net_if_get_by_iface(peer->iface));
+	PR("Public key          : %s\n", public_key);
+	PR("Endpoint (cfg)      : %s:%d\n",
+	   net_addr_ntop(peer->cfg_endpoint.ss_family,
+			 &net_sin(net_sad(&peer->cfg_endpoint))->sin_addr,
+			 addr, sizeof(addr)),
+	   net_ntohs(net_sin(net_sad(&peer->cfg_endpoint))->sin_port));
+
+	paddr = net_addr_ntop(peer->endpoint.ss_family,
+			      &net_sin(net_sad(&peer->endpoint))->sin_addr,
+			      addr, sizeof(addr));
+	if (paddr == NULL) {
+		PR("Endpoint (real)     : %s\n", "<not connected>");
+	} else {
+		PR("Endpoint (real)     : %s:%d\n",
+		   paddr,
+		   net_ntohs(net_sin(net_sad(&peer->endpoint))->sin_port));
+	}
+
+	PR("Allowed IPs         : ");
+	ARRAY_FOR_EACH(peer->allowed_ip, i) {
+		if (!peer->allowed_ip[i].is_valid) {
+			continue;
+		}
+
+		net_addr_ntop(peer->allowed_ip[i].addr.family,
+			      &peer->allowed_ip[i].addr.in_addr,
+			      addr, sizeof(addr));
+		snprintk(addr_mask, sizeof(addr_mask), "%s/%d",
+			 addr, peer->allowed_ip[i].mask_len);
+		PR("%s ", addr_mask);
+	}
+
+	PR("\n");
+
+	gt_sec = sys_get_be64(peer->greatest_timestamp);
+	gt_nsec = sys_get_be32(peer->greatest_timestamp + 8);
+	PR("Greatest timestamp  : %llu.%u\n", gt_sec, gt_nsec);
+
+	diff = now - peer->last_initiation_rx;
+	PR("Last init RX        : %d sec\n", k_ticks_to_sec_floor32(diff));
+
+	diff = now - peer->last_initiation_tx;
+	PR("Last init TX        : %d sec\n", k_ticks_to_sec_floor32(diff));
+
+	diff = now - peer->last_rx;
+	PR("Last RX             : %d sec\n", k_ticks_to_sec_floor32(diff));
+
+	diff = now - peer->last_tx;
+	PR("Last TX             : %d sec\n", k_ticks_to_sec_floor32(diff));
+
+	PR("Keepalive interval  : %d sec\n", peer->keepalive_interval);
+	PR("Keepalive expires   : %d sec\n",
+	   k_ticks_to_sec_floor32(
+		   sys_timepoint_timeout(peer->keepalive_expires).ticks));
+
+	PR("Key pair (curr)     : %s\n",
+	   peer->session.keypair.current.is_valid ? "valid" : "invalid");
+	if (peer->session.keypair.current.is_valid) {
+		PR("         sending ok : %s\n",
+		   peer->session.keypair.current.is_sending_valid ? "yes" : "no");
+		PR("       receiving ok : %s\n",
+		   peer->session.keypair.current.is_receiving_valid ? "yes" : "no");
+		PR("          initiator : %s\n",
+		   peer->session.keypair.current.is_initiator ? "yes" : "no");
+		PR("            expires : %d sec\n",
+		   k_ticks_to_sec_floor32(
+			   sys_timepoint_timeout(
+				   peer->session.keypair.current.expires).ticks));
+		PR("           rejected : %d sec\n",
+		   k_ticks_to_sec_floor32(
+			   sys_timepoint_timeout(
+				   peer->session.keypair.current.rejected).ticks));
+		PR("    sending counter : %llu\n",
+		   peer->session.keypair.current.sending_counter);
+		PR("     replay counter : %llu\n",
+		   peer->session.keypair.current.replay_counter);
+		PR("        local index : 0x%08X\n",
+		   peer->session.keypair.current.local_index);
+		PR("       remote index : 0x%08X\n",
+		   peer->session.keypair.current.remote_index);
+
+		diff = now - peer->session.keypair.current.last_tx;
+		PR("       last TX time : %u sec\n", k_ticks_to_sec_floor32(diff));
+
+		diff = now - peer->session.keypair.current.last_rx;
+		PR("       last RX time : %u sec\n", k_ticks_to_sec_floor32(diff));
+	}
+
+	PR("Rekey expires       : %d sec\n",
+	   k_ticks_to_sec_floor32(sys_timepoint_timeout(peer->rekey_expires).ticks));
+	PR("Cookie expires      : %d sec\n",
+	   k_ticks_to_sec_floor32(sys_timepoint_timeout(
+					  peer->cookie_secret_expires).ticks));
+	PR("Handshake           : %s\n", peer->handshake.is_valid ? "valid" : "invalid");
+	PR("        initiator   : %s\n", peer->handshake.is_initiator ? "yes" : "no");
+	PR("      local index   : 0x%08X\n", peer->handshake.local_index);
+	PR("     remote index   : 0x%08X\n", peer->handshake.remote_index);
+	PR("Handshake MAC1      : %s\n",
+	   peer->handshake_mac1_valid ? "valid" : "invalid");
+	PR("Send handshake      : %s\n", peer->send_handshake ? "yes" : "no");
+	PR("\n");
+}
 #endif /* CONFIG_WIREGUARD_SHELL */
 
 static int cmd_net_wg(const struct shell *sh, size_t argc, char *argv[])
@@ -71,16 +200,29 @@ static int cmd_net_wg(const struct shell *sh, size_t argc, char *argv[])
 	struct net_shell_user_data user_data;
 	int count = 0;
 
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
+	if (argc < 2) {
+		user_data.sh = sh;
+		user_data.user_data = &count;
 
-	user_data.sh = sh;
-	user_data.user_data = &count;
+		wireguard_peer_foreach(wg_peer_cb, &user_data);
 
-	wireguard_peer_foreach(wg_peer_cb, &user_data);
+		if (count == 0) {
+			PR("No connections\n");
+		}
+	} else {
+		/* Show detailed information about a specific peer */
+		char *endptr;
 
-	if (count == 0) {
-		PR("No connections\n");
+		count = strtol(argv[1], &endptr, 10);
+		if (*endptr != '\0') {
+			PR_WARNING("Invalid id \"%s\"\n", argv[1]);
+			return -EINVAL;
+		}
+
+		user_data.sh = sh;
+		user_data.user_data = &count;
+
+		wireguard_peer_foreach(wg_peer_detail_cb, &user_data);
 	}
 #else
 	PR_INFO("Set %s to enable %s support.\n", "CONFIG_WIREGUARD",
@@ -469,7 +611,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_wg,
 		      "Send a keepalive message to peer.\n",
 		      cmd_wg_keepalive, 1, 1),
 	SHELL_CMD_ARG(show, NULL,
-		      "Show information about the Wireguard VPN connections.\n",
+		      "Show information about the Wireguard VPN connections.\n"
+		      "To get detailed information about a specific connection, "
+		      "use the 'show <id>' command.\n",
 		      cmd_net_wg, 1, 1),
 	SHELL_CMD_ARG(stats, NULL,
 		      "Show statistics information about the Wireguard VPN connections.\n"
