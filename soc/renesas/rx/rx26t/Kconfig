@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RX26T
+	select RX
+	select CPU_RXV3
+	select XIP
+	select CLOCK_CONTROL_RENESAS_RX_CGC if CLOCK_CONTROL
+	select HAS_RENESAS_RX_RDP
+	select CLOCK_CONTROL
+	select SOC_EARLY_INIT_HOOK
