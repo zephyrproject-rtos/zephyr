@@ -10,3 +10,12 @@ config OPT3001
 	select I2C
 	help
 	  Enable driver for OPT3001 light sensors.
+
+if OPT3001
+
+module = OPT3001
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif # OPT3001

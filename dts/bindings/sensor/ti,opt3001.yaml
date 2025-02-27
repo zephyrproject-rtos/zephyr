@@ -6,3 +6,9 @@ description: Texas Instruments OPT3001 ambient light sensor
 compatible: "ti,opt3001"
 
 include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt pin on the opt3001 where the default polarity is active low.
