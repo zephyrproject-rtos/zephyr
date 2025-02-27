@@ -172,6 +172,17 @@
 	};
 };
 
+&sci4 {
+	pinctrl-0 = <&sci4_default>;
+	pinctrl-names = "default";
+
+	i2c4: i2c {
+		sda-output-delay = <300>;
+		noise-filter-clock-select = <1>;
+		bit-rate-modulation;
+	};
+};
+
 &trng {
 	status = "okay";
 };

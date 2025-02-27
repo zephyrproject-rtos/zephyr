@@ -119,6 +119,17 @@
 	};
 };
 
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+
+	i2c9: i2c {
+		sda-output-delay = <300>;
+		noise-filter-clock-select = <1>;
+		bit-rate-modulation;
+	};
+};
+
 &trng {
 	status = "okay";
 };
