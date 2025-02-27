@@ -110,4 +110,6 @@ source "drivers/counter/Kconfig.renesas_rz"
 
 source "drivers/counter/Kconfig.rts5912_slwtmr"
 
+source "drivers/counter/Kconfig.rts5912"
+
 endif # COUNTER
