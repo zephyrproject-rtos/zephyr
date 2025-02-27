@@ -99,12 +99,30 @@
 		pinmux = <MSP_PINMUX(68, MSPM0_PIN_FUNCTION_9)>;
 	};
 
-	/omit-if-no-ref/ timg0c0_pb10: timg0c0_pb0 {
-		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_2)>;
+	/omit-if-no-ref/ timg0c0_pb0: timg0c0_pb0 {
+		pinmux = <MSP_PINMUX(12, MSPM0_PIN_FUNCTION_6)>;
 	};
 
-	/omit-if-no-ref/ timg0c1_pb11: timg0c1_pb11 {
-		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_2)>;
+	/omit-if-no-ref/ timg4c0_pb2: timg4c0_pb2 {
+		pinmux = <MSP_PINMUX(15, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		bias-pull-down;
+	};
+
+	/omit-if-no-ref/ timg4c0_pa5: timg4c0_pa5 {
+		pinmux = <MSP_PINMUX(10, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ timg4c1_pa6: timg4c1_pa6 {
+		pinmux = <MSP_PINMUX(11, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ timg4c0_pa21: timg4c0_pa21 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ timg4c0_pb10: timg4c1_pb10 {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_5)>;
 	};
 
 	/omit-if-no-ref/ timg8c0_pb6: timg8c0_pb6 {

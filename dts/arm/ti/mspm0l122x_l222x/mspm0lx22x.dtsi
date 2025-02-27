@@ -151,6 +151,14 @@
 			compatible = "ti,mspm0g1x0x_g3x0x-timer";
 			reg = <0x4008c000 0x2000>;
 			status = "disabled";
+
+			pwm4: pwm4 {
+				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
+				clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+				interrupts = <22 0>;
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		gpt5: timg@4008e000 {
@@ -321,7 +329,7 @@
 
 			pwma0: pwma0 {
 				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
-				clocks = <&clkmux MSPM0_CLOCK_BUS_MCLK>;
+				clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 				interrupts = <18 0>;
 				#pwm-cells = <2>;
 				ti,advanced;
