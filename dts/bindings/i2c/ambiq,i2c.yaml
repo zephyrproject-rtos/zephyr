@@ -5,18 +5,9 @@ description: Ambiq I2C
 
 compatible: "ambiq,i2c"
 
-include: [i2c-controller.yaml, pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
-  reg:
-    required: true
-
-  interrupts:
-    required: true
-
-  ambiq,pwrcfg:
-    required: true
-
   scl-gpios:
     type: phandle-array
     description: |

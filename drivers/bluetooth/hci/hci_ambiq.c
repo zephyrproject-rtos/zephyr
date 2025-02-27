@@ -55,7 +55,7 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 static uint8_t __noinit rxmsg[SPI_MAX_RX_MSG_LEN];
 
 static struct spi_dt_spec spi_bus =
-	SPI_DT_SPEC_INST_GET(0,
+	SPI_DT_SPEC_GET(DT_INST_PARENT(0),
 			     SPI_OP_MODE_MASTER | SPI_HALF_DUPLEX | SPI_TRANSFER_MSB |
 				     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8),
 			     0);

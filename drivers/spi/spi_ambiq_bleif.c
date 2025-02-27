@@ -199,9 +199,10 @@ static int spi_ambiq_init(const struct device *dev)
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static int pwr_on_ambiq_spi_##n(void)                                                      \
 	{                                                                                          \
-		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
-				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
-		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
+		uint32_t addr = DT_REG_ADDR(DT_PHANDLE(DT_INST_PARENT(n), ambiq_pwrcfg)) +         \
+				DT_PHA(DT_INST_PARENT(n), ambiq_pwrcfg, offset);                   \
+		sys_write32((sys_read32(addr) | DT_PHA(DT_INST_PARENT(n), ambiq_pwrcfg, mask)),    \
+			    addr);                                                                 \
 		k_busy_wait(PWRCTRL_MAX_WAIT_US);                                                  \
 		return 0;                                                                          \
 	}                                                                                          \
@@ -209,8 +210,8 @@ static int spi_ambiq_init(const struct device *dev)
 		SPI_CONTEXT_INIT_LOCK(spi_ambiq_data##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx)};                                    \
 	static const struct spi_ambiq_config spi_ambiq_config##n = {                               \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.size = DT_INST_REG_SIZE(n),                                                       \
+		.base = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
+		.size = DT_REG_SIZE(DT_INST_PARENT(n)),                                            \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.pwr_func = pwr_on_ambiq_spi_##n};                                                 \
 	SPI_DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, NULL, &spi_ambiq_data##n,                     \
