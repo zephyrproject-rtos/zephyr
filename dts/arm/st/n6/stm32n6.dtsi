@@ -731,6 +731,17 @@
 			clocks = <&rcc STM32_CLOCK(AHB5, 27)>;
 			#phy-cells = <0>;
 		};
+
+		ltdc: ltdc@58001000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x58001000 0x1000>;
+			interrupts = <193 0>, <194 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(APB5, 1)>,
+				 <&rcc STM32_SRC_PCLK5 LTDC_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB5, 1)>;
+			status = "disabled";
+		};
 	};
 };
 
