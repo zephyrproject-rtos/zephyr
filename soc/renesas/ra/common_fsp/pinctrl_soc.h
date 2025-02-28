@@ -28,8 +28,6 @@ struct ra_pinctrl_soc_pin {
 
 typedef struct ra_pinctrl_soc_pin pinctrl_soc_pin_t;
 
-int ra_pinctrl_query_config(uint32_t port, uint32_t pin, pinctrl_soc_pin_t *pincfg);
-
 /**
  * @brief Utility macro to initialize each pin.
  *

@@ -8,6 +8,9 @@
 #include "arduino_uno_r4_common.dtsi"
 #include "arduino_uno_r4_minima-pinctrl.dtsi"
 
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
+
 / {
 	model = "Arduino Uno R4 Minima";
 
@@ -18,8 +21,18 @@
 		};
 	};
 
+	pwm_leds {
+		compatible = "pwm-leds";
+		status = "disabled";
+		pwm_led: pwm_led {
+			pwms = <&pwm3 0 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED";
+		};
+	};
+
 	aliases {
 		led0 = &led;
+		pwm-led0 = &pwm_led;
 	};
 
 	arduino_header: connector {
@@ -51,3 +64,6 @@
 			   <21 0 &ioport1 0 0>;   /* D15 */
 	};
 };
+
+arduino_i2c: &iic1 {};
+arduino_spi: &spi1 {};
