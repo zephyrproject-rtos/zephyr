@@ -98,7 +98,7 @@ enable extended battery life, small coin-cell batteries, and energy harvesting.
     trimmed RC (±1%)
   - 2x PLL for system clock, USB, SAI, ADC
 
-More information about STM32WB55RG can be found here:
+More information about STM32WB5MMG can be found here:
 
 - `STM32WB5MM-DK on www.st.com`_
 - `STM32WB5MMG datasheet`_
@@ -132,8 +132,7 @@ These binaries are delivered in STM32WB Cube packages, under
 ``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``.
 
 For compatibility information with the various versions of these binaries,
-please check `modules/hal/stm32/lib/stm32wb/hci/README`_
-in the ``hal_stm32`` repo.
+please check :module_file:`hal_stm32:lib/stm32wb/README.rst`.
 
 Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not
 compatible anymore for a use in Zephyr and only "HCI Only" versions should be
@@ -244,9 +243,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WB5MMG datasheet:
    https://www.st.com/resource/en/datasheet/stm32wb5mmg.pdf
-
-.. _modules/hal/stm32/lib/stm32wb/hci/README:
-   https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README
 
 .. _Hello_World:
    https://docs.zephyrproject.org/latest/samples/hello_world/README.html
