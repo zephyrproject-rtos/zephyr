@@ -36,7 +36,7 @@ from typing import Any
 
 from anytree import ChildResolverError, Node, PreOrderIter, Resolver, search
 from docutils import nodes
-from docutils.parsers.rst import directives
+from docutils.parsers.rst import directives, roles
 from docutils.statemachine import StringList
 from sphinx import addnodes
 from sphinx.application import Sphinx
@@ -797,55 +797,33 @@ class BoardSupportedHardwareDirective(SphinxDirective):
             result_nodes.append(note)
             return result_nodes
 
-        # Add the note before any tables
-        note = nodes.admonition(classes=["legend"])
-        note += nodes.title(text="Table Legend", classes=["note"])
-
-        legend = nodes.definition_list(classes=["supported-hardware field-list"])
-
-        def add_legend_item(legend_list, term_text, term_classes, definition_text):
-            dl_item = nodes.definition_list_item()
-            dt = nodes.term()
-            dt += nodes.inline("", term_text, classes=term_classes)
-            dd = nodes.definition()
-            dd += nodes.Text(definition_text)
-            dl_item += dt
-            dl_item += dd
-            legend_list += dl_item
-
-        add_legend_item(
-            legend, "on-chip", ["location-chip", "onchip"], "Feature integrated in the SoC."
-        )
-        add_legend_item(
-            legend, "on-board", ["location-chip", "onboard"], "Feature present on the board."
-        )
-        add_legend_item(
-            legend,
-            "2",
-            ["count", "okay-count"],
-            "Number of instances of the feature that are present and enabled.",
-        )
-        add_legend_item(
-            legend,
-            "2",
-            ["count", "disabled-count"],
-            "Number of instances of the feature that are present but initially disabled.",
-        )
-
-        dl_item = nodes.definition_list_item()
-        dt = nodes.term()
-        dt += nodes.literal(text="vnd,foo")
-        dd = nodes.definition()
-        dd += nodes.Text(
-            "Compatible string for the Devicetree binding matching the feature. "
-            "Click on the link to checkout the binding documentation."
-        )
-        dl_item += dt
-        dl_item += dd
-        legend += dl_item
-
-        note += legend
-        result_nodes.append(note)
+        html_contents = """<div class="legend admonition">
+  <dl class="supported-hardware field-list">
+    <dt>
+      <span class="location-chip onchip">on-chip</span> /
+      <span class="location-chip onboard">on-board</span>
+    </dt>
+    <dd>
+      Feature integrated in the SoC / present on the board.
+    </dd>
+    <dt>
+      <span class="count okay-count">2</span> /
+      <span class="count disabled-count">2</span>
+    </dt>
+    <dd>
+      Number of instances that are enabled / disabled. <br/>
+      Click on the label to see the first instance of this feature in the board/SoC DTS files.
+    </dd>
+    <dt>
+      <code class="docutils literal notranslate"><span class="pre">vnd,foo</span></code>
+    </dt>
+    <dd>
+      Compatible string for the Devicetree binding matching the feature. <br/>
+      Click on the link to view the binding documentation.
+    </dd>
+  </dl>
+</div>"""
+        result_nodes.append(nodes.raw("", html_contents, format="html"))
 
         for target, features in sorted(supported_features.items()):
             if not features:
@@ -893,7 +871,7 @@ class BoardSupportedHardwareDirective(SphinxDirective):
 
                 for i, (key, value) in enumerate(items):
                     row = nodes.row()
-                    if value.get("disabled_count", 0) > 0 and value.get("okay_count", 0) == 0:
+                    if value.get("disabled_nodes", []) and not value.get("okay_nodes", []):
                         row["classes"].append("disabled")
 
                     # TYPE column
@@ -934,22 +912,39 @@ class BoardSupportedHardwareDirective(SphinxDirective):
                     desc_para += nodes.Text(value["description"])
 
                     # Add count indicators for okay and not-okay instances
-                    okay_count = value.get("okay_count", 0)
-                    disabled_count = value.get("disabled_count", 0)
+                    okay_nodes = value.get("okay_nodes", [])
+                    disabled_nodes = value.get("disabled_nodes", [])
 
-                    if okay_count > 0:
-                        okay_count_indicator = nodes.inline(
-                            classes=["count", "okay-count"],
-                            text=str(okay_count),
-                        )
-                        desc_para += okay_count_indicator
+                    role_fn, _ = roles.role(
+                        "zephyr_file", self.state_machine.language, self.lineno, self.state.reporter
+                    )
 
-                    if disabled_count > 0:
-                        disabled_count_indicator = nodes.inline(
-                            classes=["count", "disabled-count"],
-                            text=str(disabled_count),
+                    def create_count_indicator(nodes_list, class_type, role_function=role_fn):
+                        if not nodes_list:
+                            return None
+
+                        count = len(nodes_list)
+
+                        if role_function is None:
+                            return nodes.inline(
+                                classes=["count", f"{class_type}-count"], text=str(count)
+                            )
+
+                        # Create a reference to the first node in the list
+                        first_node = nodes_list[0]
+                        file_ref = f"{count} <{first_node['filename']}#L{first_node['lineno']}>"
+
+                        role_nodes, _ = role_function(
+                            "zephyr_file", file_ref, file_ref, self.lineno, self.state.inliner
                         )
-                        desc_para += disabled_count_indicator
+
+                        count_node = role_nodes[0]
+                        count_node["classes"] = ["count", f"{class_type}-count"]
+
+                        return count_node
+
+                    desc_para += create_count_indicator(okay_nodes, "okay")
+                    desc_para += create_count_indicator(disabled_nodes, "disabled")
 
                     desc_entry += desc_para
                     row += desc_entry
