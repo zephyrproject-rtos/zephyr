@@ -2321,11 +2321,9 @@ EC Host Commands:
 Xen Platform:
   status: maintained
   maintainers:
-    - povergoing
-  collaborators:
-    - SgrrZhf
-    - lorc
     - firscity
+  collaborators:
+    - lorc
     - luca-fancellu
   files:
     - include/zephyr/xen/
