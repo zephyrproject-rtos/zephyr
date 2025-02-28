@@ -99,37 +99,7 @@ More information about STM32L4S5VI can be found here:
 Supported Features
 ==================
 
-The Zephyr b_l4s5i_iot01a board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| BLE       | module     | bluetooth                           |
-+-----------+------------+-------------------------------------+
-| WIFI      | module     | es-wifi                             |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/st/b_l4s5i_iot01a/b_l4s5i_iot01a_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
