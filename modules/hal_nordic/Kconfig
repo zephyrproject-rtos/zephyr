@@ -36,6 +36,13 @@ menuconfig NRF_802154_RADIO_DRIVER
 
 if NRF_802154_RADIO_DRIVER
 
+config NRF_802154_CONSTLAT_CONTROL
+	def_bool y
+	depends on SOC_SERIES_NRF54LX && NRF_802154_SL_OPENSOURCE
+	select NRF_SYS_EVENT
+	help
+	  Allows the nRF 802.15.4 radio driver to manage the constant latency state.
+
 config NRF_802154_MULTIPROTOCOL_SUPPORT
 	bool
 	help
