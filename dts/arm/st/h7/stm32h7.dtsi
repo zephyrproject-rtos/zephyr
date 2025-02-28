@@ -1068,7 +1068,7 @@
 		quadspi: spi@52005000 {
 			compatible = "st,stm32-qspi";
 			#address-cells = <0x1>;
-			#size-cells = <0x0>;
+			#size-cells = <0x1>;
 			reg = <0x52005000 0x34>;
 			interrupts = <92 0>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 14U)>;
