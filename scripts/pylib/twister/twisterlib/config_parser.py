@@ -6,8 +6,8 @@
 import copy
 import warnings
 
-import scl
-from twisterlib.error import ConfigurationError
+import pylib.twister.scl as scl
+from pylib.twister.twisterlib.error import ConfigurationError
 
 
 def extract_fields_from_arg_list(target_fields: set, arg_list: str | list):

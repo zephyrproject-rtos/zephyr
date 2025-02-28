@@ -13,8 +13,8 @@ import os
 import sys
 import re
 
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
-from twisterlib.testplan import TestPlan
+from .conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+from pylib.twister.twisterlib.testplan import TestPlan
 
 
 @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
