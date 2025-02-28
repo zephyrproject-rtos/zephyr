@@ -69,6 +69,7 @@ const struct device *wdog_r;
 static unsigned int reload_cycles = CMSDK_APB_WDOG_RELOAD;
 static uint8_t assigned_channels;
 static uint8_t flags;
+static bool enabled;
 
 static void (*user_cb)(const struct device *dev, int channel_id);
 
@@ -88,9 +89,19 @@ static int wdog_cmsdk_apb_setup(const struct device *dev, uint8_t options)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(options);
 
+	/* Check if watchdog is already running */
+	if (enabled) {
+		return -EBUSY;
+	}
+
+	/* Reset pending interrupts before starting */
+	wdog->intclr = CMSDK_APB_WDOG_INTCLR;
+	wdog->load = reload_cycles;
+
 	/* Start the watchdog counter with INTEN bit */
 	wdog->ctrl = (CMSDK_APB_WDOG_CTRL_RESEN | CMSDK_APB_WDOG_CTRL_INTEN);
 
+	enabled = true;
 	return 0;
 }
 
@@ -103,6 +114,7 @@ static int wdog_cmsdk_apb_disable(const struct device *dev)
 	/* Stop the watchdog counter with INTEN bit */
 	wdog->ctrl = ~(CMSDK_APB_WDOG_CTRL_RESEN | CMSDK_APB_WDOG_CTRL_INTEN);
 
+	enabled = false;
 	assigned_channels = 0;
 
 	return 0;
@@ -118,6 +130,9 @@ static int wdog_cmsdk_apb_install_timeout(const struct device *dev,
 
 	if (config->window.max == 0) {
 		return -EINVAL;
+	}
+	if (enabled == true) {
+		return -EBUSY;
 	}
 	if (assigned_channels == 1) {
 		return -ENOMEM;
