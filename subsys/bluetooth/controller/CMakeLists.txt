@@ -195,13 +195,11 @@ zephyr_library_include_directories_ifdef(
 zephyr_library_include_directories_ifdef(
   CONFIG_BT_LLL_VENDOR_NORDIC
   ll_sw/nordic
-  ll_sw/nordic/hci
   )
 
 zephyr_library_include_directories_ifdef(
   CONFIG_BT_LLL_VENDOR_OPENISA
   ll_sw/openisa
-  ll_sw/openisa/hci
   )
 
 add_subdirectory_ifdef(
