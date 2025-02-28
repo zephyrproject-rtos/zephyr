@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited.
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,6 +112,11 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 		case DT_MEM_ARM_MPU_RAM:
 			region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_ATTR);
 			break;
+#ifdef CONFIG_ARM_MPU_PXN
+		case DT_MEM_ARM_MPU_RAM_PXN:
+			region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_ATTR_PXN);
+			break;
+#endif
 #ifdef REGION_RAM_NOCACHE_ATTR
 		case DT_MEM_ARM_MPU_RAM_NOCACHE:
 			region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_NOCACHE_ATTR);
