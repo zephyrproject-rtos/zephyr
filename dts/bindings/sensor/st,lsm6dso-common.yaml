@@ -94,6 +94,24 @@ properties:
 
     enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
+  accel-lp-filter:
+    type: int
+    default: 0
+    description: |
+      Specify the amount of low pass filtering applied to the accelerometer values.
+      Default is power-up configuration.
+
+      - 0  # ODR/2
+      - 1  # ODR/10
+      - 2  # ODR/20
+      - 3  # ODR/45
+      - 4  # ODR/100
+      - 5  # ODR/200
+      - 6  # ODR/400
+      - 7  # ODR/800
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+
   gyro-pm:
     type: int
     default: 0
