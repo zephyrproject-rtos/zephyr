@@ -230,12 +230,28 @@ static void check_sensor_is_off(const struct device *dev)
 
 int main(void)
 {
+	struct sensor_value gbias[3];
+
 	for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
 		if (!device_is_ready(sensors[i])) {
 			printk("sensor: device %s not ready.\n", sensors[i]->name);
 			return 0;
 		}
 		check_sensor_is_off(sensors[i]);
+
+		/*
+		 * Set GBIAS as 0.5 rad/s, -1 rad/s, 0.2 rad/s
+		 *
+		 * (here application should initialize gbias x/y/z with latest values
+		 * calculated from previous run and probably saved to non volatile memory)
+		 */
+		gbias[0].val1 = 0;
+		gbias[0].val2 = 500000;
+		gbias[1].val1 = -1;
+		gbias[1].val2 = 0;
+		gbias[2].val1 = 0;
+		gbias[2].val2 = 200000;
+		sensor_attr_set(sensors[i], SENSOR_CHAN_GBIAS_XYZ, SENSOR_ATTR_OFFSET, gbias);
 
 		k_thread_create(&thread_id[i], thread_stack[i], TASK_STACK_SIZE, print_stream,
 			(void *)sensors[i], (void *)iodevs[i], NULL, K_PRIO_COOP(5),
