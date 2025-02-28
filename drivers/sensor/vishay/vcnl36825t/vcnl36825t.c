@@ -152,15 +152,6 @@ static int vcnl36825t_sample_fetch(const struct device *dev, enum sensor_channel
 	struct vcnl36825t_data *data = dev->data;
 	int rc;
 
-#if CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif
-
 	switch (chan) {
 	case SENSOR_CHAN_ALL:
 	case SENSOR_CHAN_PROX:
