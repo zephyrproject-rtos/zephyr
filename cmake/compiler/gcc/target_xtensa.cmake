@@ -3,11 +3,16 @@
 # Flags not supported by llext linker
 # (regexps are supported and match whole word)
 set(LLEXT_REMOVE_FLAGS
-  -ffunction-sections
-  -fdata-sections
   -Os
   -mcpu=.*
 )
+
+if(NOT DEFINED(CONFIG_LLEXT_SYMBOL_GC))
+  list(APPEND LLEXT_REMOVE_FLAGS
+    -ffunction-sections
+    -fdata-sections
+  )
+endif()
 
 # Flags to be added to llext code compilation
 set(LLEXT_APPEND_FLAGS
