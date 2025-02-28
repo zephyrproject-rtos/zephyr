@@ -15,7 +15,7 @@
 #if defined(CONFIG_SOC_SERIES_RZG3S)
 #include <instances/rzg/r_intc_irq.h>
 #include <instances/rzg/r_intc_nmi.h>
-#elif defined(CONFIG_SOC_SERIES_RZN2L)
+#elif defined(CONFIG_SOC_SERIES_RZN2L) || defined(CONFIG_SOC_SERIES_RZT2L)
 #include <instances/rzn/r_icu.h>
 #endif /* CONFIG_SOC_SERIES_* */
 #include <zephyr/drivers/interrupt_controller/intc_rz_ext_irq.h>
@@ -39,7 +39,7 @@ struct intc_rz_ext_irq_data {
 #if defined(CONFIG_SOC_SERIES_RZG3S)
 void r_intc_irq_isr(void);
 void r_intc_nmi_isr(void);
-#elif defined(CONFIG_SOC_SERIES_RZN2L)
+#elif defined(CONFIG_SOC_SERIES_RZN2L) || defined(CONFIG_SOC_SERIES_RZT2L)
 void r_icu_isr(void);
 #endif /* CONFIG_SOC_SERIES_* */
 
@@ -234,6 +234,6 @@ static void intc_rz_ext_irq_callback(external_irq_callback_args_t *args)
 
 #if defined(CONFIG_SOC_SERIES_RZG3S)
 DT_INST_FOREACH_STATUS_OKAY(INTC_RZG_EXT_IRQ_INIT)
-#elif defined(CONFIG_SOC_SERIES_RZN2L)
+#elif defined(CONFIG_SOC_SERIES_RZN2L) || defined(CONFIG_SOC_SERIES_RZT2L)
 DT_INST_FOREACH_STATUS_OKAY(INTC_RZTN_EXT_IRQ_INIT)
 #endif
