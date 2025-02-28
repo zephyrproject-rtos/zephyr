@@ -8,4 +8,11 @@ config SOC_FAMILY_ROCKETCHIP_VIRT_RISCV
 config SOC_FAMILY
 	default "rocketchip_virt_riscv" if SOC_FAMILY_ROCKETCHIP_VIRT_RISCV
 
+config STARTUP_TACIT
+    bool "Enable startup tracing from bootup"
+    default n
+    help
+      Enable profiling and tracing at the earliest stage of bootup.
+
+
 rsource "*/Kconfig.soc"
