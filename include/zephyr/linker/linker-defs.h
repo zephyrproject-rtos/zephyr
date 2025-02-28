@@ -161,7 +161,7 @@ extern char __gcov_bss_size[];
 extern char _end[];
 
 #if (DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ccm)))
-extern char __ccm_data_rom_start[];
+extern char __ccm_data_load_start[];
 extern char __ccm_start[];
 extern char __ccm_data_start[];
 extern char __ccm_data_end[];
