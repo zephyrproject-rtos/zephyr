@@ -3,7 +3,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/htif.h>
+#ifdef CONFIG_MULTITHREADING
 #include <zephyr/sys/mutex.h>
+#endif
 #include <stdint.h>
 #include <zephyr/logging/log.h>
 
@@ -14,7 +16,9 @@ volatile uint64_t tohost __attribute__((section(".htif")));
 volatile uint64_t fromhost __attribute__((section(".htif")));
 
 // HTIF Mutex for thread safety
+#ifdef CONFIG_MULTITHREADING
 struct k_mutex htif_lock;
+#endif
 
 // HTIF Constants
 #define HTIF_DEV_CONSOLE        1
@@ -52,19 +56,25 @@ static inline void htif_wait_for_ready(void) {
 
 // Function to transmit a character using HTIF (with OpenSBI logic)
 static void uart_htif_poll_out(const struct device *dev, unsigned char out_char) {
+    #ifdef CONFIG_MULTITHREADING
     k_mutex_lock(&htif_lock, K_FOREVER);
+    #endif
 
     htif_wait_for_ready();
     tohost = TOHOST_CMD(HTIF_DEV_CONSOLE, HTIF_CONSOLE_CMD_PUTC, out_char);
 
+    #ifdef CONFIG_MULTITHREADING
     k_mutex_unlock(&htif_lock);
+    #endif
 }
 
 // Function to receive a character (blocking)
 static int uart_htif_poll_in(const struct device *dev, unsigned char *p_char) {
     int ch;
 
+    #ifdef CONFIG_MULTITHREADING
     k_mutex_lock(&htif_lock, K_FOREVER);
+    #endif
 
     // Check if there's already a character in fromhost
     if (fromhost != 0) {
@@ -72,7 +82,9 @@ static int uart_htif_poll_in(const struct device *dev, unsigned char *p_char) {
             FROMHOST_CMD(fromhost) == HTIF_CONSOLE_CMD_GETC) {
             *p_char = (char)(FROMHOST_DATA(fromhost) & 0xFF);
             fromhost = 0;  // Acknowledge receipt
+            #ifdef CONFIG_MULTITHREADING
             k_mutex_unlock(&htif_lock);
+            #endif
             return 0;
         }
     }
@@ -88,7 +100,9 @@ static int uart_htif_poll_in(const struct device *dev, unsigned char *p_char) {
     ch = FROMHOST_DATA(fromhost);
     fromhost = 0;  // Acknowledge receipt
 
+    #ifdef CONFIG_MULTITHREADING
     k_mutex_unlock(&htif_lock);
+    #endif
 
     if (ch == -1) {
         return -1;  // No character available
@@ -99,7 +113,9 @@ static int uart_htif_poll_in(const struct device *dev, unsigned char *p_char) {
 }
 
 static int uart_htif_init(const struct device *dev) {
+    #ifdef CONFIG_MULTITHREADING
     k_mutex_init(&htif_lock);
+    #endif
     return 0;
 }
 

@@ -32,10 +32,14 @@ void sys_arch_reboot(int type)
 	ARG_UNUSED(type);
 
 	#if defined(CONFIG_UART_HTIF)
+    #ifdef CONFIG_MULTITHREADING
     k_mutex_lock(&htif_lock, K_FOREVER);
+    #endif
     htif_wait_for_ready();
     tohost = (uint64_t)((success << 1) | 1); // HTIF Exit Command
+    #ifdef CONFIG_MULTITHREADING
     k_mutex_unlock(&htif_lock);
+    #endif
     while (1);  // Halt execution
 	#endif
 }
