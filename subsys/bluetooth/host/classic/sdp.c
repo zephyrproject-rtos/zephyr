@@ -2124,6 +2124,11 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
+	if (session->param == NULL) {
+		LOG_WRN("No request in progress");
+		return 0;
+	}
+
 	switch (hdr->op_code) {
 	case BT_SDP_SVC_SEARCH_RSP:
 		return sdp_client_receive_ss(session, buf);
