@@ -1794,7 +1794,6 @@ class ProjectBuilder(FilterBuilder):
             instance.metrics["used_rom"] = 0
             instance.metrics["available_rom"] = 0
             instance.metrics["available_ram"] = 0
-            instance.metrics["unrecognized"] = []
         return build_result
 
     @staticmethod
@@ -1810,13 +1809,11 @@ class ProjectBuilder(FilterBuilder):
                 instance.metrics["used_rom"] = size_calc.get_used_rom()
                 instance.metrics["available_rom"] = size_calc.get_available_rom()
                 instance.metrics["available_ram"] = size_calc.get_available_ram()
-                instance.metrics["unrecognized"] = size_calc.unrecognized_sections()
             else:
                 instance.metrics["used_ram"] = 0
                 instance.metrics["used_rom"] = 0
                 instance.metrics["available_rom"] = 0
                 instance.metrics["available_ram"] = 0
-                instance.metrics["unrecognized"] = []
             instance.metrics["handler_time"] = instance.execution_time
 
 class TwisterRunner:
@@ -1892,7 +1889,6 @@ class TwisterRunner:
                 else:
                     inst.metrics.update(self.instances[inst.name].metrics)
                     inst.metrics["handler_time"] = inst.execution_time
-                    inst.metrics["unrecognized"] = []
                     self.instances[inst.name] = inst
 
             print("")
