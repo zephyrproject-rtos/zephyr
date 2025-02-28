@@ -1865,90 +1865,7 @@ endfunction()
 # Kconfig is a configuration language developed for the Linux
 # kernel. The below functions integrate CMake with Kconfig.
 #
-
-# 2.1 Misc
-#
-# import_kconfig(<prefix> <kconfig_fragment> [<keys>] [TARGET <target>])
-#
-# Parse a KConfig fragment (typically with extension .config) and
-# introduce all the symbols that are prefixed with 'prefix' into the
-# CMake namespace. List all created variable names in the 'keys'
-# output variable if present.
-#
-# <prefix>          : symbol prefix of settings in the Kconfig fragment.
-# <kconfig_fragment>: absolute path to the config fragment file.
-# <keys>            : output variable which will be populated with variable
-#                     names loaded from the kconfig fragment.
-# TARGET <target>   : set all symbols on <target> instead of adding them to the
-#                     CMake namespace.
-function(import_kconfig prefix kconfig_fragment)
-  cmake_parse_arguments(IMPORT_KCONFIG "" "TARGET" "" ${ARGN})
-  file(
-    STRINGS
-    ${kconfig_fragment}
-    DOT_CONFIG_LIST
-    ENCODING "UTF-8"
-  )
-
-  foreach (LINE ${DOT_CONFIG_LIST})
-    if("${LINE}" MATCHES "^(${prefix}[^=]+)=([ymn]|.+$)")
-      # Matched a normal value assignment, like: CONFIG_NET_BUF=y
-      # Note: if the value starts with 'y', 'm', or 'n', then we assume it's a
-      # bool or tristate (we don't know the type from <kconfig_fragment> alone)
-      # and we only match the first character. This is to align with Kconfiglib.
-      set(CONF_VARIABLE_NAME "${CMAKE_MATCH_1}")
-      set(CONF_VARIABLE_VALUE "${CMAKE_MATCH_2}")
-    elseif("${LINE}" MATCHES "^# (${prefix}[^ ]+) is not set")
-      # Matched something like: # CONFIG_FOO is not set
-      # This is interpreted as: CONFIG_FOO=n
-      set(CONF_VARIABLE_NAME "${CMAKE_MATCH_1}")
-      set(CONF_VARIABLE_VALUE "n")
-    else()
-      # Ignore this line.
-      # Note: we also ignore assignments which don't have the desired <prefix>.
-      continue()
-    endif()
-
-    # If the provided value is n, then the corresponding CMake variable or
-    # target property will be unset.
-    if("${CONF_VARIABLE_VALUE}" STREQUAL "n")
-      if(DEFINED IMPORT_KCONFIG_TARGET)
-        set_property(TARGET ${IMPORT_KCONFIG_TARGET} PROPERTY "${CONF_VARIABLE_NAME}")
-      else()
-        unset("${CONF_VARIABLE_NAME}" PARENT_SCOPE)
-      endif()
-      list(REMOVE_ITEM keys "${CONF_VARIABLE_NAME}")
-      continue()
-    endif()
-
-    # Otherwise, the variable/property will be set to the provided value.
-    # For string values, we also remove the surrounding quotation marks.
-    if("${CONF_VARIABLE_VALUE}" MATCHES "^\"(.*)\"$")
-      set(CONF_VARIABLE_VALUE ${CMAKE_MATCH_1})
-    endif()
-
-    if(DEFINED IMPORT_KCONFIG_TARGET)
-      set_property(TARGET ${IMPORT_KCONFIG_TARGET} PROPERTY "${CONF_VARIABLE_NAME}" "${CONF_VARIABLE_VALUE}")
-    else()
-      set("${CONF_VARIABLE_NAME}" "${CONF_VARIABLE_VALUE}" PARENT_SCOPE)
-    endif()
-    list(APPEND keys "${CONF_VARIABLE_NAME}")
-  endforeach()
-
-  if(DEFINED IMPORT_KCONFIG_TARGET)
-    set_property(TARGET ${IMPORT_KCONFIG_TARGET} PROPERTY "kconfigs" "${keys}")
-  endif()
-
-  list(LENGTH IMPORT_KCONFIG_UNPARSED_ARGUMENTS unparsed_length)
-  if(unparsed_length GREATER 0)
-    if(unparsed_length GREATER 1)
-    # Two mandatory arguments and one optional, anything after that is an error.
-      list(GET IMPORT_KCONFIG_UNPARSED_ARGUMENTS 1 first_invalid)
-      message(FATAL_ERROR "Unexpected argument after '<keys>': import_kconfig(... ${first_invalid})")
-    endif()
-    set(${IMPORT_KCONFIG_UNPARSED_ARGUMENTS} "${keys}" PARENT_SCOPE)
-  endif()
-endfunction()
+include(kconfig_extensions)
 
 ########################################################
 # 3. CMake-generic extensions
@@ -4995,6 +4912,7 @@ endfunction()
 #                         [VMA <region|group>] [LMA <region|group>]
 #                         [ADDRESS <address>] [ALIGN <alignment>]
 #                         [SUBALIGN <alignment>] [FLAGS <flags>]
+#                         [MIN_SIZE <minimum size>] [MAX_SIZE <maximum size>]
 #                         [HIDDEN] [NOINPUT] [NOINIT]
 #                         [PASS [NOT] <name>]
 #   )
@@ -5048,23 +4966,23 @@ endfunction()
 #  Note: Regarding all alignment attributes. Not all linkers may handle alignment
 #        in identical way. For example the Scatter file will align both load and
 #        execution address (LMA and VMA) to be aligned when given the ALIGN attribute.
+# MIN_SIZE <size>     : Pad section so that it at least <size> bytes in size.
+# MAX_SIZE <size>     : Check that the sections is not larger than <size> bytes.
 # NOINPUT             : No default input sections will be defined, to setup input
 #                       sections for section <name>, the corresponding
 #                       `zephyr_linker_section_configure()` must be used.
-# PASS [NOT] <name>   : Linker pass iteration where this section should be active.
-#                       Default a section will be present during all linker passes
-#                       but in cases a section shall only be present at a specific
-#                       pass, this argument can be used. For example to only have
-#                       this section present on the `TEST` linker pass, use `PASS TEST`.
-#                       It is possible to negate <name>, such as `PASS NOT <name>`.
-#                       For example, `PASS NOT TEST` means the call is effective
-#                       on all but the `TEST` linker pass iteration.
-#
+# PASS [NOT] <name> ..: Linker pass where this section should be active.
+#                       By default a section will be present during all linker
+#                       passes.
+#                       PASS <p1> [<p2>...] makes the section present only in
+#                       the given passes.
+#                       PASS NOT <p1> [<p2>...] makes the section present in
+#                       all but the given passes.
 # Note: VMA and LMA are mutual exclusive with GROUP
 #
 function(zephyr_linker_section)
   set(options     "ALIGN_WITH_INPUT;HIDDEN;NOINIT;NOINPUT")
-  set(single_args "ADDRESS;ALIGN;ENDALIGN;GROUP;KVMA;LMA;NAME;SUBALIGN;TYPE;VMA")
+  set(single_args "ADDRESS;ALIGN;ENDALIGN;GROUP;KVMA;LMA;NAME;SUBALIGN;TYPE;VMA;MIN_SIZE;MAX_SIZE")
   set(multi_args  "PASS")
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
@@ -5097,14 +5015,7 @@ function(zephyr_linker_section)
   endif()
 
   if(DEFINED SECTION_PASS)
-    list(LENGTH SECTION_PASS pass_length)
-    if(${pass_length} GREATER 1)
-      list(GET SECTION_PASS 0 pass_elem_0)
-      if((NOT (${pass_elem_0} STREQUAL "NOT")) OR (${pass_length} GREATER 2))
-        message(FATAL_ERROR "zephyr_linker_section(PASS takes maximum "
-          "a single argument of the form: '<pass name>' or 'NOT <pass_name>'.")
-      endif()
-    endif()
+    zephyr_linker_check_pass_param("${SECTION_PASS}")
   endif()
 
   set(SECTION)
@@ -5279,7 +5190,8 @@ endfunction()
 # Usage:
 #   zephyr_linker_section_configure(SECTION <section> [ALIGN <alignment>]
 #                                   [PASS [NOT] <name>] [PRIO <no>] [SORT <sort>]
-#                                   [ANY] [FIRST] [KEEP]
+#                                   [MIN_SIZE <minimum size>] [MAX_SIZE <maximum size>]
+#                                   [ANY] [FIRST] [KEEP] [INPUT <input>] [SYMBOLS [<start>[<end>]]]
 #   )
 #
 # Configure an output section with additional input sections.
@@ -5295,6 +5207,8 @@ endfunction()
 #                       first section in output.
 # SORT <NAME>         : Sort the input sections according to <type>.
 #                       Currently only `NAME` is supported.
+# MIN_SIZE <size>     : Pad section so that it at least <size> bytes in size.
+# MAX_SIZE <size>     : Check that the sections is not larger than <size> bytes.
 # KEEP                : Do not eliminate input section during linking
 # PRIO                : The priority of the input section. Per default, input
 #                       sections order is not guaranteed by all linkers, but
@@ -5307,19 +5221,20 @@ endfunction()
 #                       you may use `PRIO 50`, `PRIO 20` and so on.
 #                       To ensure an input section is at the end, it is advised
 #                       to use `PRIO 200` and above.
-# PASS [NOT] <name>   : The call should only be considered for linker pass where
-#                       <name> is defined. It is possible to negate <name>, such
-#                       as `PASS NOT <name>.
-#                       For example, `PASS TEST` means the call is only effective
-#                       on the `TEST` linker pass iteration. `PASS NOT TEST` on
-#                       all iterations the are not `TEST`.
+# PASS [NOT] <name> ..: Control in which linker passes this piece is present
+#                       See zephyr_linker_section() for details.
 # FLAGS <flags>       : Special section flags such as "+RO", +XO, "+ZI".
 # ANY                 : ANY section flag in scatter file.
 #                       The FLAGS and ANY arguments only has effect for scatter files.
+# INPUT <input>       : Input section name or list of input section names.
+#                       <input> is either just a section name ".data*" or
+#                       <file-pattern>(<section-patterns>... )
+#                       <file-pattern> is [library.a:]file
+#                       e.g. foo.a:bar.o(.data*)
 #
 function(zephyr_linker_section_configure)
   set(options     "ANY;FIRST;KEEP")
-  set(single_args "ALIGN;OFFSET;PRIO;SECTION;SORT")
+  set(single_args "ALIGN;OFFSET;PRIO;SECTION;SORT;MIN_SIZE;MAX_SIZE")
   set(multi_args  "FLAGS;INPUT;PASS;SYMBOLS")
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
@@ -5336,14 +5251,7 @@ function(zephyr_linker_section_configure)
   endif()
 
   if(DEFINED SECTION_PASS)
-    list(LENGTH SECTION_PASS pass_length)
-    if(${pass_length} GREATER 1)
-      list(GET SECTION_PASS 0 pass_elem_0)
-      if((NOT (${pass_elem_0} STREQUAL "NOT")) OR (${pass_length} GREATER 2))
-        message(FATAL_ERROR "zephyr_linker_section_configure(PASS takes maximum "
-          "a single argument of the form: '<pass name>' or 'NOT <pass_name>'.")
-      endif()
-    endif()
+    zephyr_linker_check_pass_param("${SECTION_PASS}")
   endif()
 
   set(SECTION)
@@ -5393,6 +5301,88 @@ function(zephyr_linker_symbol)
   )
 endfunction()
 
+# Usage:
+#   zephyr_linker_include_generated(FILE <name> [PASS <pass>])
+#
+# Add file that is generated at build-time to be included when running the
+# linker script generator.
+#
+# FILE <name>      : File to be included. *.h are grepped for #defines for
+#                    @variables@ and *.cmake are passed to include()
+# PASS [NOT] <pass>: Rule for which PASSES to include file.
+#                    see zephyr_linker_section PASS
+# KCONFIG           : Include Kconfig via import_kconfig
+#
+function(zephyr_linker_include_generated)
+  set(options "KCONFIG")
+  set(single_args "FILE")
+  set(multi_args "PASS")
+  cmake_parse_arguments(INCLUDE "${options}" "${single_args}" "${multi_args}" ${ARGN})
+  if(DEFINED INCLUDE_PASS)
+    zephyr_linker_check_pass_param("${INCLUDE_PASS}")
+  endif()
+  set(INCLUDE)
+  zephyr_linker_arg_val_list(INCLUDE "${options}")
+  zephyr_linker_arg_val_list(INCLUDE "${single_args}")
+  zephyr_linker_arg_val_list(INCLUDE "${multi_args}")
+  string(REPLACE ";" "\;" INCLUDE "${INCLUDE}")
+  set_property(TARGET linker
+               APPEND PROPERTY INCLUDES "{${INCLUDE}}")
+endfunction()
+
+# Usage:
+#   zephyr_linker_include_var(VAR <name> [VALUE <value>])
+#
+# Save the value of <name> for when the generator is running at build-time.
+# If VALUE isn't set, the current value of the variable is used
+#
+# VAR <name>       : Variable to be set
+# VALUE <value>    : The value
+#
+function(zephyr_linker_include_var)
+  set(single_args "VAR;VALUE")
+  cmake_parse_arguments(VAR "" "${single_args}" "" ${ARGN})
+  if(NOT DEFINED VAR_VAR)
+    message(FATAL_ERROR "zephyr_linker_include_var(${ARGV0} ...) must have VAR <variable> ")
+  endif()
+  if(NOT DEFINED VAR_VALUE)
+    if(DEFINED ${VAR_VAR})
+      set(VAR_VALUE ${${VAR_VAR}})
+    else()
+      message(FATAL_ERROR "zephyr_linker_include_var(${ARGV0} ...) value not set ")
+    endif()
+  endif()
+  set(VAR)
+  zephyr_linker_arg_val_list(VAR "${single_args}")
+  string(REPLACE ";" "\;" VAR "${VAR}")
+  set_property(TARGET linker
+               APPEND PROPERTY VARIABLES "{${VAR}}")
+endfunction()
+
+# Usage:
+#   zephyr_linker_generate_linker_settings_file([FILE <name>])
+#
+# Generate a file for the settings to the linker file generator script.
+#
+# FILE <name>  : File to be created
+
+function(zephyr_linker_generate_linker_settings_file)
+  set(single_args "FILE")
+  cmake_parse_arguments(GEN "" "${single_args}" "" ${ARGN})
+
+  file(GENERATE OUTPUT ${GEN_FILE} CONTENT
+         "set(FORMAT \"$<TARGET_PROPERTY:linker,FORMAT>\" CACHE INTERNAL \"\")\n
+          set(ENTRY \"$<TARGET_PROPERTY:linker,ENTRY>\" CACHE INTERNAL \"\")\n
+          set(MEMORY_REGIONS \"$<TARGET_PROPERTY:linker,MEMORY_REGIONS>\" CACHE INTERNAL \"\")\n
+          set(GROUPS \"$<TARGET_PROPERTY:linker,GROUPS>\" CACHE INTERNAL \"\")\n
+          set(SECTIONS \"$<TARGET_PROPERTY:linker,SECTIONS>\" CACHE INTERNAL \"\")\n
+          set(SECTION_SETTINGS \"$<TARGET_PROPERTY:linker,SECTION_SETTINGS>\" CACHE INTERNAL \"\")\n
+          set(SYMBOLS \"$<TARGET_PROPERTY:linker,SYMBOLS>\" CACHE INTERNAL \"\")\n
+          set(INCLUDES \"$<TARGET_PROPERTY:linker,INCLUDES>\" CACHE INTERNAL \"\")\n
+          set(VARIABLES \"$<TARGET_PROPERTY:linker,VARIABLES>\" CACHE INTERNAL \"\")\n
+         ")
+endfunction()
+
 # Internal helper macro for zephyr_linker*() functions.
 # The macro will create a list of argument-value pairs for defined arguments
 # that can be passed on to linker script generators and processed as a CMake
@@ -5412,6 +5402,24 @@ macro(zephyr_linker_arg_val_list list arguments)
     endif()
   endforeach()
 endmacro()
+
+
+# Internal helper that checks if we have consistent PASS arguments.
+# Allow PASS [NOT] <pass> [<pass>...]
+function(zephyr_linker_check_pass_param SECTION_PASS)
+  list(GET SECTION_PASS 0 FIRST_ELEMENT)
+  if("${FIRST_ELEMENT}" STREQUAL "NOT")
+    # The first NOT is ok, drop it for the coming checks
+    list(SUBLIST SECTION_PASS 1 -1 SECTION_PASS)
+  endif()
+  if(NOT SECTION_PASS)
+    message(FATAL_ERROR "At least one pass name required")
+  endif()
+  list(FIND SECTION_PASS "NOT" NOT_AT)
+  if(NOT("${NOT_AT}" STREQUAL "-1"))
+    message(FATAL_ERROR "Only PASS [NOT] <pass>...")
+  endif()
+endfunction()
 
 ########################################################
 # 6. Function helper macros
