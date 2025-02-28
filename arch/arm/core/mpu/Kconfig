@@ -1,6 +1,7 @@
 # Memory Protection Unit (MPU) configuration options
 
 # Copyright (c) 2017 Linaro Limited
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if CPU_HAS_MPU
@@ -67,6 +68,15 @@ config CUSTOM_SECTION_MIN_ALIGN_SIZE
 	  it should consume less alignment memory. Although this alignment
 	  size is configured by users, it must also respect the power of
 	  two regulation if hardware requires.
+
+config ARM_MPU_PXN
+	bool
+	depends on ARMV8_1_M_MAINLINE
+	help
+	  Enable support for Armv8.1-m MPU's Privileged Execute Never (PXN) attr.
+	  An MPU region marked with PXN attribute can only be executed from an
+	  unprivileged mode and executing such region from privileged mode will
+	  result in a Memory Management fault.
 
 endif # ARM_MPU
 

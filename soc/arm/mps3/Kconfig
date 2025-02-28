@@ -1,5 +1,5 @@
 # Copyright (c) 2017-2021 Linaro Limited
-# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MPS3
@@ -15,6 +15,7 @@ config SOC_MPS3_CORSTONE300
 	select ARMV8_1_M_MVEI
 	select ARMV8_1_M_MVEF
 	select ARMV8_1_M_PMU
+	select ARM_MPU_PXN if ARM_MPU
 
 config SOC_MPS3_CORSTONE310
 	select CPU_CORTEX_M85
@@ -25,6 +26,7 @@ config SOC_MPS3_CORSTONE310
 	select ARMV8_1_M_MVEI
 	select ARMV8_1_M_MVEF
 	select ARMV8_1_M_PMU
+	select ARM_MPU_PXN if ARM_MPU
 
 config ARMV8_1_M_PMU_EVENTCNT
 	int
