@@ -1,22 +1,22 @@
-/**
- * @file drivers/stepper.h
- *
- * @brief Public API for Stepper Driver
- *
- */
-
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
  * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file drivers/stepper.h
+ * @brief Public API for Stepper Driver
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_
 
 /**
- * @brief Stepper Controller Interface
- * @defgroup stepper_interface Stepper Controller Interface
+ * @brief Stepper Driver Interface
+ * @defgroup stepper_interface Stepper Driver Interface
+ * @since 4.0
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */
