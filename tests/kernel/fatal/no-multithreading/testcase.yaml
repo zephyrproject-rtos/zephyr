@@ -14,8 +14,7 @@ common:
     - nsim/nsim_hs5x
     - nsim/nsim_hs6x
   integration_platforms:
-    - qemu_cortex_m3
-    - nsim/nsim_em
+    - qemu_riscv32
   tags:
     - kernel
     - scheduler
