@@ -169,6 +169,15 @@ typedef int (*flash_api_get_size)(const struct device *dev, uint64_t *size);
 
 typedef const struct flash_parameters* (*flash_api_get_parameters)(const struct device *dev);
 
+/**
+ * @brief Get device mapping to processor address space.
+ *
+ * When supported by driver this function will try to map device to MPU address
+ * space, either to default memory address or to requeste one.
+ */
+typedef int (*flash_api_mmap)(const struct device *dev, void **base, uint64_t *size,
+			      uint32_t flags);
+
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 /**
  * @brief Retrieve a flash device's layout.
@@ -208,6 +217,7 @@ __subsystem struct flash_driver_api {
 	flash_api_erase erase;
 	flash_api_get_parameters get_parameters;
 	flash_api_get_size get_size;
+	flash_api_mmap mmap;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	flash_api_pages_layout page_layout;
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
@@ -333,6 +343,56 @@ static inline int z_impl_flash_erase(const struct device *dev, off_t offset,
 
 	return rc;
 }
+
+/** Map at custom address */
+#define FLASH_MMAP_F_CUSTOM_ADDR	BIT(0)
+/** Map for read */
+#define FLASH_MMAP_F_READ		BIT(1)
+/** Map for write */
+#define FLASH_MMAP_F_WRITE		BIT(2)
+
+/**
+ * @brief Get device mapping to processor address space
+ *
+ * Function returns base address for memory mapping of device to address space
+ * and size of the device mapped. Internal SoC memory and some XIP memories
+ * may be addressable through the same address space as device RAM, which allows
+ * data transfers via memcpy or direct access to storage by casting address
+ * range to data structures.
+ * Not all processors may support the feature and its usage should be well
+ * tested in user code, because while, for example, flash_read would return
+ * -EINVAL error in case when attempting read out of device range, directly
+ * accessing memory beyond given range may invoke CPU fault.
+ *
+ * @param  dev device to get mapping for
+ * @param  base pointer to void pointer for memory address, in case when
+ *	   FLASH_MMAP_CUSTOM_ADDR flag is set this is also read as desired
+ *	   address to map device to.
+ * @param  size pointer to variable where device size will be reported.
+ * @param  flags flags describing desired access and mapping.
+ *
+ * @return 0 on success, -ENOTSUP when driver does not support mapping,
+ *	   -EINVAL in case,  when selected flags are not supported.
+ */
+
+__syscall int flash_mmap(const struct device *dev, void **base, uint64_t *size,
+			 uint32_t flags);
+
+static inline int z_impl_flash_mmap(const struct device *dev, void **base,
+				    uint64_t *size, uint32_t flags)
+{
+	int rc = -ENOSYS;
+
+	const struct flash_driver_api *api =
+		(const struct flash_driver_api *)dev->api;
+
+	if (api->mmap != NULL) {
+		rc = api->mmap(dev, base, size, flags);
+	}
+
+	return rc;
+}
+
 
 /**
  * @brief Get device size in bytes.
