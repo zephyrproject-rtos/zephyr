@@ -1,0 +1,31 @@
+# Copyright (c) 2023 Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics STM32 System Configuration Controller
+
+compatible: "st,stm32-syscfg"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+child-binding:
+  description: Interrupt Line
+  include: [interrupt-controller.yaml]
+  properties:
+    interrupts:
+      type: array
+      required: true
+      description: interrupts for device
+
+    "#interrupt-cells":
+      const: 2
+
+  interrupt-cells:
+    - irq
+    - priority
