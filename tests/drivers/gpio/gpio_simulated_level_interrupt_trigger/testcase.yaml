@@ -1,0 +1,10 @@
+tests:
+  drivers.gpio.gpio_simulated_level_interrupt_trigger:
+    tags:
+      - drivers
+      - gpio
+    depends_on: gpio
+    filter: dt_compat_enabled("test-gpio-simulated-level-interrupt-trigger")
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
