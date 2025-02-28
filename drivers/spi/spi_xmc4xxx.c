@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(spi_xmc4xxx);
 #define USIC_IRQ_MIN  84
 #define USIC_IRQ_MAX  101
 #define IRQS_PER_USIC 6
+#define CLOCK_POLARITY_CHANGE_DELAY 10
 
 #define SPI_XMC4XXX_DMA_ERROR_FLAG   BIT(0)
 #define SPI_XMC4XXX_DMA_RX_DONE_FLAG BIT(1)
@@ -189,6 +190,7 @@ static void spi_xmc4xxx_isr(const struct device *dev)
 static int spi_xmc4xxx_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	int ret;
+	bool clock_polarity_delay = false;
 	struct spi_xmc4xxx_data *data = dev->data;
 	const struct spi_xmc4xxx_config *config = dev->config;
 	struct spi_context *ctx = &data->ctx;
@@ -201,6 +203,11 @@ static int spi_xmc4xxx_configure(const struct device *dev, const struct spi_conf
 
 	if (spi_context_configured(ctx, spi_cfg)) {
 		return 0;
+	}
+
+	if (ctx->config == NULL ||
+	    ((SPI_MODE_GET(ctx->config->operation) & SPI_MODE_CPOL) != CPOL)) {
+		clock_polarity_delay = true;
 	}
 
 	ctx->config = spi_cfg;
@@ -252,6 +259,10 @@ static int spi_xmc4xxx_configure(const struct device *dev, const struct spi_conf
 	}
 
 	XMC_SPI_CH_SetWordLength(config->spi, 8);
+
+	if (clock_polarity_delay) {
+		k_busy_wait(CLOCK_POLARITY_CHANGE_DELAY);
+	}
 
 	return 0;
 }
