@@ -7,6 +7,7 @@ target_include_directories(VIRTIOFS INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 zephyr_library()
 zephyr_library_sources(
   virtiofs.c
+  virtiofs_zfs.c
   fuse.c
 )
 
