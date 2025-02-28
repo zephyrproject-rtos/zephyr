@@ -1,0 +1,36 @@
+# Common fields for uart-rs485 controllers
+
+include: uart-controller.yaml
+
+properties:
+  rs485-enabled:
+    type: boolean
+    description: Enable rs485 mode
+  rs485-de-gpios:
+    type: phandle-array
+    description: Output for contactor and relay 1
+  rs485-full-duplex-mode:
+    type: boolean
+    description: Enable rs485 in full duplex mode
+  rs485-de-active-low:
+    type: boolean
+    description: Driver enable active low polarity
+  rs485-re-active-high:
+    type: boolean
+    description: Receiver enable active high polarity
+  rs485-assertion-time-de-us:
+    type: int
+    default: 0
+    description: Driver enable assertion time in nanoseconds
+  rs485-deassertion-time-de-us:
+    type: int
+    default: 0
+    description: Driver enable deassertion time in nanoseconds
+  rs485-assertion-time-re-us:
+    type: int
+    default: 0
+    description: Receiver enable assertion time in nanoseconds
+  rs485-deassertion-time-re-us:
+    type: int
+    default: 0
+    description: Receiver enable deassertion time in nanoseconds
