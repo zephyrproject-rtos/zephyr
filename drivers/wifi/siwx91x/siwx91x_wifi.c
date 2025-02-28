@@ -216,7 +216,8 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 	sl_wifi_scan_configuration_t sl_scan_config = { };
 	struct siwx91x_dev *sidev = dev->data;
 	sl_wifi_ssid_t ssid = {};
-	int ret;
+	sl_status_t ret;
+	int non_2g4_chan_present = 0;
 
 	__ASSERT(z_scan_config, "z_scan_config cannot be NULL");
 
@@ -224,8 +225,15 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 		return -EBUSY;
 	}
 
+	if (z_scan_config->bands &
+		~((1 << WIFI_FREQ_BAND_UNKNOWN) || (1 << WIFI_FREQ_BAND_2_4_GHZ))) {
+		LOG_ERR("Invalid band entered");
+		return -EINVAL;
+	}
+
 	if (z_scan_config->scan_type == WIFI_SCAN_TYPE_ACTIVE) {
 		sl_scan_config.type = SL_WIFI_SCAN_TYPE_ACTIVE;
+
 		if (!z_scan_config->dwell_time_active) {
 			ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_ACTIVE_SCAN_TIMEOUT,
 							 SL_WIFI_DEFAULT_ACTIVE_CHANNEL_SCAN_TIME);
@@ -234,23 +242,37 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 							 z_scan_config->dwell_time_active);
 		}
 
-		if (ret) {
+		if (ret != SL_STATUS_OK) {
 			return -EINVAL;
 		}
 	} else {
 		sl_scan_config.type = SL_WIFI_SCAN_TYPE_PASSIVE;
 		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_PASSIVE_SCAN_TIMEOUT,
 						 z_scan_config->dwell_time_passive);
-		if (ret) {
+		if (ret != SL_STATUS_OK) {
 			return -EINVAL;
 		}
 	}
 
 	for (int i = 0; i < WIFI_MGMT_SCAN_CHAN_MAX_MANUAL; i++) {
-		sl_scan_config.channel_bitmap_2g4 |= BIT(z_scan_config->band_chan[i].channel - 1);
+		/* End of channel list */
+		if (z_scan_config->band_chan[i].channel == 0) {
+			break;
+		}
+
+		if (z_scan_config->band_chan[i].band == WIFI_FREQ_BAND_2_4_GHZ) {
+			sl_scan_config.channel_bitmap_2g4 |=
+				BIT(z_scan_config->band_chan[i].channel - 1);
+		} else {
+			non_2g4_chan_present = 1;
+		}
 	}
 
-	memset(sl_scan_config.channel_bitmap_5g, 0xFF, sizeof(sl_scan_config.channel_bitmap_5g));
+	if (non_2g4_chan_present && !sl_scan_config.channel_bitmap_2g4) {
+		LOG_ERR("Channels not supported");
+		return -EINVAL;
+	}
+
 	if (IS_ENABLED(CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX)) {
 		if (z_scan_config->ssids[0]) {
 			strncpy(ssid.value, z_scan_config->ssids[0], WIFI_SSID_MAX_LEN);
