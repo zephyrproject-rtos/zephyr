@@ -11,6 +11,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
@@ -28,6 +29,20 @@ static const struct gpio_dt_spec sw0 = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 static const struct device *comp_dev = DEVICE_DT_GET(DT_NODELABEL(comp));
 #endif
 
+void print_reset_cause(void)
+{
+	uint32_t reset_cause;
+
+	hwinfo_get_reset_cause(&reset_cause);
+	if (reset_cause & RESET_DEBUG) {
+		printf("Reset by debugger.\n");
+	} else if (reset_cause & RESET_CLOCK) {
+		printf("Wakeup from System OFF by GRTC.\n");
+	} else  {
+		printf("Other wake up cause 0x%08X.\n", reset_cause);
+	}
+}
+
 int main(void)
 {
 	int rc;
@@ -39,6 +54,7 @@ int main(void)
 	}
 
 	printf("\n%s system off demo\n", CONFIG_BOARD);
+	print_reset_cause();
 
 	if (IS_ENABLED(CONFIG_APP_USE_RETAINED_MEM)) {
 		bool retained_ok = retained_validate();
@@ -98,6 +114,7 @@ int main(void)
 		retained_update();
 	}
 
+	hwinfo_clear_reset_cause();
 	sys_poweroff();
 
 	return 0;
