@@ -702,7 +702,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      CAN, CAN native Linux, :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`, All
      Console backend, :ref:`POSIX arch console <nsim_back_console>`, :kconfig:option:`CONFIG_POSIX_ARCH_CONSOLE`, All
      Display, :ref:`Display SDL <nsim_per_disp_sdl>`, :kconfig:option:`CONFIG_SDL_DISPLAY`, All
-     Entropy, :ref:`Native posix entropy <nsim_per_entr>`, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX`, All
+     Entropy, :ref:`Native simulator entropy <nsim_per_entr>`, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_SIM`, All
      EEPROM, EEPROM simulator, :kconfig:option:`CONFIG_EEPROM_SIMULATOR`, All
      EEPROM, EEPROM emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, All
      Ethernet, :ref:`Eth native_tap <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_TAP`, All
