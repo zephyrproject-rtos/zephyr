@@ -1197,6 +1197,46 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 		;
 }
 
+static int eth_stm32_hal_get_config(const struct device *dev, enum ethernet_config_type type,
+				    struct ethernet_config *config)
+{
+	int ret = -ENOTSUP;
+	struct eth_stm32_hal_dev_data *dev_data;
+	ETH_HandleTypeDef *heth;
+
+	dev_data = dev->data;
+	heth = &dev_data->heth;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(config->mac_address.addr, dev_data->mac_addr, 6);
+		ret = 0;
+		break;
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+		if (heth->Instance->MACPFR & ETH_MACPFR_PR) {
+			config->promisc_mode = true;
+		} else {
+			config->promisc_mode = false;
+		}
+#else
+		if (heth->Instance->MACFFR & ETH_MACFFR_PM) {
+			config->promisc_mode = true;
+		} else {
+			config->promisc_mode = false;
+		}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+		ret = 0;
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}
+
 static int eth_stm32_hal_set_config(const struct device *dev,
 				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
@@ -1277,6 +1317,7 @@ static const struct ethernet_api eth_api = {
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.set_config = eth_stm32_hal_set_config,
+	.get_config = eth_stm32_hal_get_config,
 #if defined(CONFIG_NET_DSA)
 	.send = dsa_tx,
 #else
