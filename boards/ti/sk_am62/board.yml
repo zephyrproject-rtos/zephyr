@@ -1,6 +1,6 @@
 board:
   name: sk_am62
-  full_name: SK-AM62 M4F Core
+  full_name: SK-AM62 M4F and A53 Cores
   vendor: ti
   socs:
   - name: am6234
