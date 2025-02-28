@@ -4,6 +4,7 @@
 import logging
 import os
 import pickle
+import re
 import subprocess
 import sys
 from collections import namedtuple
@@ -36,28 +37,21 @@ class DeviceTreeUtils:
             The first sentence found in the text, or the entire text if no sentence
             boundary is found.
         """
-        # Split the text into lines
-        lines = text.splitlines()
-
-        # Trim leading and trailing whitespace from each line and ignore completely blank lines
-        lines = [line.strip() for line in lines]
-
-        if not lines:
+        if not text:
             return ""
 
-        # Case 1: Single line followed by blank line(s) or end of text
-        if len(lines) == 1 or (len(lines) > 1 and lines[1] == ""):
-            first_line = lines[0]
-            # Check for the first period
-            period_index = first_line.find(".")
-            # If there's a period, return up to the period; otherwise, return the full line
-            return first_line[: period_index + 1] if period_index != -1 else first_line
+        text = text.replace('\n', ' ')
+        # Split by double spaces to get paragraphs
+        paragraphs = text.split('  ')
+        first_paragraph = paragraphs[0].strip()
 
-        # Case 2: Multiple contiguous lines, treat as a block
-        block = " ".join(lines)
-        period_index = block.find(".")
-        # If there's a period, return up to the period; otherwise, return the full block
-        return block[: period_index + 1] if period_index != -1 else block
+        # Look for a period followed by a space in the first paragraph
+        period_match = re.search(r'(.*?)\.(?:\s|$)', first_paragraph)
+        if period_match:
+            return period_match.group(1).strip()
+
+        # If no period in the first paragraph, return the entire first paragraph
+        return first_paragraph
 
     @classmethod
     def get_cached_description(cls, node):
