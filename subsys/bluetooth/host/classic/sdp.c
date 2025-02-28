@@ -515,6 +515,8 @@ static uint16_t find_services(struct net_buf *buf,
 			return BT_SDP_INVALID_SYNTAX;
 		}
 
+		uuid_list_size -= data_elem.total_size;
+
 		if (data_elem.data_size == 2U) {
 			u.uuid.type = BT_UUID_TYPE_16;
 			u.u16.val = net_buf_pull_be16(buf);
@@ -530,9 +532,8 @@ static uint16_t find_services(struct net_buf *buf,
 			LOG_WRN("Invalid UUID len %u in service search pattern",
 				data_elem.data_size);
 			net_buf_pull(buf, data_elem.data_size);
+			continue;
 		}
-
-		uuid_list_size -= data_elem.total_size;
 
 		/* Go over the list of services, and look for a service which
 		 * doesn't have this UUID
