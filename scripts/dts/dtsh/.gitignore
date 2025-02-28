@@ -1,0 +1,8 @@
+# Python
+dtsh.egg-info/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+
+# Emacs
+.project
