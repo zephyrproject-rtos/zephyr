@@ -128,6 +128,11 @@ Removed APIs and options
 
 * Struct ``z_arch_esf_t`` has been removed. Use ``struct arch_esf`` instead.
 
+* The following networking options have been removed:
+
+    * ``CONFIG_NET_PKT_BUF_DATA_POOL_SIZE``
+    * ``CONFIG_NET_TCP_ACK_TIMEOUT``
+
 
 Deprecated APIs and options
 ===========================
@@ -265,6 +270,69 @@ New APIs and options
 
   * Signed hex files where an encryption key Kconfig is set now have the encrypted flag set in
     the image header.
+
+* Networking:
+
+  * CoAP
+
+    * :c:func:`coap_client_cancel_request`
+
+  * DHCP
+
+    * :kconfig:option:`CONFIG_NET_DHCPV4_SERVER_OPTION_ROUTER`
+    * :kconfig:option:`CONFIG_NET_DHCPV4_OPTION_DNS_ADDRESS`
+    * :kconfig:option:`CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS`
+
+  * DNS
+
+    * :kconfig:option:`CONFIG_MDNS_RESPONDER_PROBE`
+
+  * HTTP
+
+    * Extended :c:macro:`HTTP_SERVICE_DEFINE` to allow to specify a default
+      fallback resource handler.
+    * :kconfig:option:`CONFIG_HTTP_SERVER_REPORT_FAILURE_REASON`
+    * :kconfig:option:`CONFIG_HTTP_SERVER_TLS_USE_ALPN`
+
+  * IPv4
+
+    * :kconfig:option:`CONFIG_NET_IPV4_PMTU`
+
+  * IPv6
+
+    * :kconfig:option:`CONFIG_NET_IPV6_PMTU`
+
+  * LwM2M
+
+    * :c:func:`lwm2m_pull_context_set_sockopt_callback`
+
+  * MQTT-SN
+
+    * Added Gateway Advertisement and Discovery support:
+
+      * :c:func:`mqtt_sn_add_gw`
+      * :c:func:`mqtt_sn_search`
+
+  * OpenThread
+
+    * :kconfig:option:`CONFIG_OPENTHREAD_WAKEUP_COORDINATOR`
+    * :kconfig:option:`CONFIG_OPENTHREAD_WAKEUP_END_DEVICE`
+    * :kconfig:option:`CONFIG_OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT`
+    * :kconfig:option:`CONFIG_OPENTHREAD_TCAT_MULTIRADIO_CAPABILITIES`
+
+  * Sockets
+
+    * Added support for new socket options:
+
+      * :c:macro:`IP_LOCAL_PORT_RANGE`
+      * :c:macro:`IP_MULTICAST_IF`
+      * :c:macro:`IPV6_MULTICAST_IF`
+      * :c:macro:`IP_MTU`
+      * :c:macro:`IPV6_MTU`
+
+  * Other
+
+    * :kconfig:option:`CONFIG_NET_STATISTICS_VIA_PROMETHEUS`
 
 * Video
 
@@ -908,3 +976,5 @@ Other notable changes
 
 * The ``--no-detailed-test-id`` command line option can be used to shorten the test case name
   by excluding the test scenario name prefix which is the same as the parent test suite id.
+
+* Added support for HTTP PUT/PATCH/DELETE methods for HTTP server dynamic resources.
