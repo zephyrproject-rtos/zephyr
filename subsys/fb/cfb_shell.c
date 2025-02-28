@@ -282,7 +282,7 @@ static int cmd_set_font(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	shell_print(sh, "Font idx=%d height=%d widht=%d set", idx, height,
+	shell_print(sh, "Font idx=%d height=%d width=%d set", idx, height,
 		    width);
 
 	return err;
@@ -396,8 +396,8 @@ static int cmd_get_param_height(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_HEIGH],
-		    cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGH));
+	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_HEIGHT],
+		    cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGHT));
 
 	return 0;
 }
