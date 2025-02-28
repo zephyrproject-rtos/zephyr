@@ -29,6 +29,9 @@ Kernel
 Boards
 ******
 
+* The config option :kconfig:option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME` has been deprecated
+  in favor of :kconfig:option:`CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME`.
+
 Device Drivers and Devicetree
 *****************************
 
