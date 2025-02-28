@@ -157,22 +157,7 @@ More information about STM32WB55RG can be found here:
 Supported Features
 ==================
 
-The Zephyr STM32WB5MMG board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32wb5mmg/stm32wb5mmg_defconfig`
+.. zephyr:board-supported-hw::
 
 Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 ================================================================
@@ -181,9 +166,11 @@ To operate bluetooth on STM32WB5MMG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
 Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/
+
 For compatibility information with the various versions of these binaries,
 please check `modules/hal/stm32/lib/stm32wb/hci/README`_
 in the hal_stm32 repo.
+
 Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not compatible
 anymore for a use in Zephyr and only "HCI Only" versions should be used on the M0
 side.
