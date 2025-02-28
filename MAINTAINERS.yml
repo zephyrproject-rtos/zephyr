@@ -3627,6 +3627,7 @@ Silabs Platforms:
     - drivers/*/*gecko*
     - drivers/bluetooth/hci/hci_silabs_*
     - drivers/*/*silabs*
+    - drivers/**/*siwx91x*
     - tests/boards/silabs/
   labels:
     - "platform: Silabs"
