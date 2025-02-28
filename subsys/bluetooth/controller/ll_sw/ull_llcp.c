@@ -462,7 +462,6 @@ void ull_llcp_init(struct ll_conn *conn)
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
 	conn->llcp.tx_q_pause_data_mask = 0;
-	conn->lll.event_counter = 0;
 
 	conn->llcp.tx_node_release = NULL;
 	conn->llcp.rx_node_release = NULL;

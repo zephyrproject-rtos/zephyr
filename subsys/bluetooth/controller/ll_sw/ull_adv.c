@@ -1075,7 +1075,13 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->periph.forced = 0;
 		conn_lll->data_chan_sel = 0;
 		conn_lll->data_chan_use = 0;
-		conn_lll->event_counter = 0;
+
+		static uint8_t s_skip;
+
+		s_skip++;
+
+		/* Simulate RF noise by not completing the connection establishment */
+		conn_lll->event_counter = s_skip & 0x01;
 
 		conn_lll->latency_prepare = 0;
 		conn_lll->latency_event = 0;
