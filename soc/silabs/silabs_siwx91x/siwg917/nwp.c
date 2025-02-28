@@ -11,16 +11,40 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
-#include "sl_wifi.h"
+#include "nwp.h"
 #include "sl_wifi_callback_framework.h"
 #ifdef CONFIG_BT_SILABS_SIWX91X
 #include "rsi_ble_common_config.h"
 #endif
 
-static int siwg917_nwp_init(void)
+LOG_MODULE_REGISTER(siwx91x_nwp);
+
+int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *get_config)
 {
-	sl_wifi_device_configuration_t network_config = {
+	sl_wifi_device_configuration_t default_ap_configuration = {
+		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
+		.region_code = DEFAULT_REGION,
+		.boot_option = LOAD_NWP_FW,
+		.mac_address = NULL,
+		.boot_config = {
+			.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN,
+			.oper_mode = SL_SI91X_ACCESS_POINT_MODE,
+			.coex_mode = SL_SI91X_WLAN_ONLY_MODE,
+			.tcp_ip_feature_bit_map = (SL_SI91X_TCP_IP_FEAT_DHCPV4_SERVER |
+						   SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID),
+			.ext_custom_feature_bit_map = (SL_SI91X_EXT_FEAT_XTAL_CLK | MEMORY_CONFIG),
+			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID,
+			.ext_tcp_ip_feature_bit_map = 0,
+			.ble_ext_feature_bit_map = 0,
+			.config_feature_bit_map = 0,
+			.ble_feature_bit_map = 0,
+			.bt_feature_bit_map = 0,
+		}
+	};
+
+	sl_wifi_device_configuration_t default_nwp_config = {
 		.boot_option = LOAD_NWP_FW,
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
 		.region_code = DEFAULT_REGION,
@@ -31,12 +55,14 @@ static int siwg917_nwp_init(void)
 			.config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP,
 			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID,
 			.ext_custom_feature_bit_map =
-				MEMORY_CONFIG |
-				SL_SI91X_EXT_FEAT_XTAL_CLK |
+				MEMORY_CONFIG | SL_SI91X_EXT_FEAT_XTAL_CLK |
 				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0,
 		}
 	};
-	sl_si91x_boot_configuration_t *cfg = &network_config.boot_config;
+
+	__ASSERT(get_config, "get_config cannot be NULL");
+
+	sl_si91x_boot_configuration_t *cfg = &default_nwp_config.boot_config;
 
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X) && IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
 		cfg->coex_mode = SL_SI91X_WLAN_BLE_MODE;
@@ -53,7 +79,7 @@ static int siwg917_nwp_init(void)
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
 	cfg->feature_bit_map |= SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE,
-	cfg->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
+		cfg->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
 		cfg->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
 		cfg->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_TOTAL_SELECTS(10);
@@ -87,6 +113,66 @@ static int siwg917_nwp_init(void)
 					SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS);
 #endif
 
+	if (wifi_oper_mode == SL_SI91X_CLIENT_MODE) {
+		memcpy(get_config, &default_nwp_config, sizeof(default_nwp_config));
+		return 0;
+	} else if (wifi_oper_mode == SL_SI91X_ACCESS_POINT_MODE) {
+		memcpy(get_config, &default_ap_configuration, sizeof(default_ap_configuration));
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int siwx91x_nwp_mode_switch(uint8_t oper_mode)
+{
+	sl_wifi_device_configuration_t nwp_config;
+	sl_wifi_interface_t interface;
+	sl_status_t status;
+
+	interface = sl_wifi_get_default_interface();
+	switch (oper_mode) {
+	case SL_SI91X_CLIENT_MODE:
+		if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_CLIENT_INTERFACE) {
+			return 0;
+		}
+
+		siwg91x_get_nwp_config(SL_SI91X_CLIENT_MODE, &nwp_config);
+		break;
+	case SL_SI91X_ACCESS_POINT_MODE:
+		if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_AP_INTERFACE) {
+			return 0;
+		}
+
+		siwg91x_get_nwp_config(SL_SI91X_ACCESS_POINT_MODE, &nwp_config);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	/* FIXME: Calling sl_wifi_deinit() impact Bluetooth if coexistence is enabled. */
+	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+		LOG_WRN("Wi-Fi deinit impact Bluetooth due to shared resources");
+	}
+
+	status = sl_wifi_deinit();
+	if (status) {
+		return -ETIMEDOUT;
+	}
+
+	status = sl_wifi_init(&nwp_config, NULL, sl_wifi_default_event_handler);
+	if (status) {
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
+static int siwg917_nwp_init(void)
+{
+	sl_wifi_device_configuration_t network_config;
+
+	siwg91x_get_nwp_config(SL_SI91X_CLIENT_MODE, &network_config);
 	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call
 	 * sl_net_set_profile() here. Currently these are unused.
 	 */
