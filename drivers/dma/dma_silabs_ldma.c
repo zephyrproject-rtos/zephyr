@@ -491,7 +491,7 @@ bool dma_silabs_chan_filter(const struct device *dev, int channel, void *filter_
 void dma_silabs_chan_release(const struct device *dev, uint32_t channel)
 {
 	ARG_UNUSED(dev);
-	Ecode_t err = DMADRV_FreeChannel(channel);
+	Ecode_t __maybe_unused err = DMADRV_FreeChannel(channel);
 
 	__ASSERT_NO_MSG(err == ECODE_EMDRV_DMADRV_OK);
 }
