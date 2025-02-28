@@ -1,0 +1,8 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - virtio
+tests:
+  drivers.virtio_pci.build:
+    platform_allow: qemu_x86_64

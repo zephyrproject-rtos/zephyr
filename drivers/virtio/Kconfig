@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config VIRTIO
+	bool "support for VIRTIO"
+	help
+	  Enable options for VIRTIO
+
+config VIRTIO_PCI
+	bool "support for VIRTIO over PCI"
+	depends on VIRTIO
+	depends on PCIE
+	depends on MMU
+	help
+	  Enable options for VIRTIO over PCI
+
+module = VIRTIO
+module-str = VIRTIO
+source "subsys/logging/Kconfig.template.log_config"
