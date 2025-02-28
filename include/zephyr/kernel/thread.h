@@ -372,6 +372,11 @@ struct k_thread {
 	_wait_q_t  halt_queue;
 #endif /* CONFIG_SMP */
 
+#ifdef CONFIG_CBS
+	/** Constant Bandwidth Server (CBS) struct */
+	void *cbs;
+#endif
+
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;
 };
