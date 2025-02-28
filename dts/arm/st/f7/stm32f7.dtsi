@@ -713,6 +713,7 @@
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
+			phy-type = "PCD_PHY_EMBEDDED";
 			clocks = <&rcc STM32_CLOCK(AHB2, 7U)>,
 				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
@@ -729,6 +730,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 29U)>,
 				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			phys = <&otghs_fs_phy>;
+			phy-type = "USB_OTG_ULPI_PHY";
 			status = "disabled";
 		};
 

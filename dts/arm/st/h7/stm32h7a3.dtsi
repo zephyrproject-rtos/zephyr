@@ -43,6 +43,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 25U)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
+			phy-type = "USB_OTG_HS_EMBEDDED_PHY";
 			status = "disabled";
 		};
 

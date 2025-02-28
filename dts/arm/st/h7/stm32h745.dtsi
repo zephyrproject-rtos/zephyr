@@ -57,6 +57,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 25U)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
+			phy-type = "USB_OTG_ULPI_PHY";
 			status = "disabled";
 		};
 
@@ -71,6 +72,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 27U)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
+			phy-type = "PCD_PHY_EMBEDDED";
 			status = "disabled";
 		};
 

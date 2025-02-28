@@ -110,6 +110,7 @@
 			maximum-speed = "high-speed";
 			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
 			phys = <&otghs_phy>;
+			phy-type = "USB_OTG_HS_EMBEDDED_PHY";
 			status = "disabled";
 		};
 	};
