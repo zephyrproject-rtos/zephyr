@@ -66,6 +66,18 @@ tests:
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l20pdk/nrf54l20/cpuapp
 
+  drivers.spi.spis_fast:
+    # SPIS120 instance occupies P6 which is not available on nRF54H20 DK pin headers
+    # It is added only to check the compilation.
+    build_only: true
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast_spis.overlay"
+    platform_exclude:
+      - nrf52840dk/nrf52840
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf54l20pdk/nrf54l20/cpuapp
+
   drivers.spi.pm_runtime:
     extra_configs:
       - CONFIG_PM_DEVICE=y

@@ -1,0 +1,138 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	spis120_default_alt: spis120_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIS_SCK, 6, 0)>,
+				<NRF_PSEL(SPIS_MISO, 6, 3)>,
+				<NRF_PSEL(SPIS_MOSI, 6, 4)>,
+				<NRF_PSEL(SPIS_CSN, 6, 9)>;
+		};
+	};
+
+	spis120_sleep_alt: spis120_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIS_SCK, 6, 0)>,
+				<NRF_PSEL(SPIS_MISO, 6, 3)>,
+				<NRF_PSEL(SPIS_MOSI, 6, 4)>,
+				<NRF_PSEL(SPIS_CSN, 6, 9)>;
+			low-power-enable;
+		};
+	};
+
+	spi120_default_alt: spi120_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 7, 3)>,
+				<NRF_PSEL(SPIM_MISO, 7, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 7, 7)>;
+		};
+	};
+
+	spi120_sleep_alt: spi120_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 7, 3)>,
+				<NRF_PSEL(SPIM_MISO, 7, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 7, 7)>;
+			low-power-enable;
+		};
+	};
+
+	spi121_default_alt: spi121_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 7, 2)>,
+				<NRF_PSEL(SPIM_MISO, 7, 0)>,
+				<NRF_PSEL(SPIM_MOSI, 7, 1)>;
+		};
+	};
+
+	spi121_sleep_alt: spi121_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 7, 2)>,
+				<NRF_PSEL(SPIM_MISO, 7, 0)>,
+				<NRF_PSEL(SPIM_MOSI, 7, 1)>;
+			low-power-enable;
+		};
+	};
+
+	spis131_default_alt: spis131_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIS_SCK, 1, 0)>,
+				<NRF_PSEL(SPIS_MISO, 1, 9)>,
+				<NRF_PSEL(SPIS_MOSI, 1, 5)>,
+				<NRF_PSEL(SPIS_CSN, 0, 11)>;
+		};
+	};
+
+	spis131_sleep_alt: spis131_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIS_SCK, 1, 0)>,
+				<NRF_PSEL(SPIS_MISO, 1, 9)>,
+				<NRF_PSEL(SPIS_MOSI, 1, 5)>,
+				<NRF_PSEL(SPIS_CSN, 0, 11)>;
+			low-power-enable;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&dma_fast_region {
+	status = "okay";
+};
+
+&spis120 {
+	compatible = "nordic,nrf-spis";
+	status = "okay";
+	def-char = <0x00>;
+	pinctrl-0 = <&spis120_default_alt>;
+	pinctrl-1 = <&spis120_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&dma_fast_region>;
+};
+
+&spi120 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&spi120_default_alt>;
+	pinctrl-1 = <&spi120_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	overrun-character = <0x00>;
+	memory-regions = <&dma_fast_region>;
+	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+	zephyr,pm-device-runtime-auto;
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+};
+
+&spi121 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&spi121_default_alt>;
+	pinctrl-1 = <&spi121_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	overrun-character = <0x00>;
+	memory-regions = <&dma_fast_region>;
+	cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+	zephyr,pm-device-runtime-auto;
+};
+
+dut_spis: &spi131 {
+	compatible = "nordic,nrf-spis";
+	status = "okay";
+	def-char = <0x00>;
+	pinctrl-0 = <&spis131_default_alt>;
+	pinctrl-1 = <&spis131_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&cpuapp_dma_region>;
+	/delete-property/rx-delay-supported;
+	/delete-property/rx-delay;
+};
