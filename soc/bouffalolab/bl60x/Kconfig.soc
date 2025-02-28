@@ -1,0 +1,49 @@
+# Copyright (c) 2021-2025 ATL Electronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_BL60X
+	bool
+	select SOC_FAMILY_BOUFFALOLAB_BFLB
+	help
+	  Enable support for BouffaloLab BL6xx MCU series
+
+config SOC_SERIES
+	default "bl60x" if SOC_SERIES_BL60X
+
+config SOC_BL602C00Q2I
+	bool
+	select SOC_SERIES_BL60X
+
+config SOC_BL602C20Q2I
+	bool
+	select SOC_SERIES_BL60X
+
+config SOC_BL602C20Q2IS
+	bool
+	select SOC_SERIES_BL60X
+
+config SOC_BL602C40Q2IS
+	bool
+	select SOC_SERIES_BL60X
+
+config SOC_BL602l10Q2H
+	bool
+	select SOC_SERIES_BL60X
+
+config SOC_BL602l20Q2H
+	bool
+	select SOC_SERIES_BL60X
+
+config SOC_BL604E20Q2I
+	bool
+	select SOC_SERIES_BL60X
+
+config SOC
+	default "bl602c00q2i"  if SOC_BL602C00Q2I
+	default "bl602c20q2i"  if SOC_BL602C20Q2I
+	default "bl602c20q2is" if SOC_BL602C20Q2IS
+	default "bl602c40q2is" if SOC_BL602C40Q2IS
+	default "bl602l10q2h"  if SOC_BL602l10Q2H
+	default "bl602l20q2h"  if SOC_BL602l20Q2H
+	default "bl604e20q2i"  if SOC_BL604E20Q2I
