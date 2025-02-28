@@ -527,6 +527,19 @@ static bool device_is_regulator(const struct device *dev)
 	return DEVICE_API_IS(regulator, dev);
 }
 
+#define PRINT_REGULATOR_NODE_NAME(node_id, sh) \
+	if (device_is_regulator(device_get_binding(DT_NODE_FULL_NAME(node_id)))) { \
+		shell_print(sh, "%s", DT_NODE_FULL_NAME(node_id)); \
+	}
+
+static void cmd_print(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	DT_FOREACH_STATUS_OKAY_NODE_VARGS(PRINT_REGULATOR_NODE_NAME, sh);
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_filter(idx, device_is_regulator);
@@ -609,6 +622,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Enable regulator ship mode\n"
 		      "Usage: shipmode <device>",
 		      cmd_shipmode, 2, 0),
+	SHELL_CMD(print, &dsub_device_name,
+		  "Print the node names of available regulator device API class devices.\n"
+		  "Usage: print",
+		  cmd_print),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(regulator, &sub_regulator_cmds, "Regulator playground",
