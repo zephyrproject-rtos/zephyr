@@ -1,7 +1,7 @@
 # Copyright (c) 2020 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton, NPCX-I2C port pads node
+description: Nuvoton NPCX-I2C port pads
 
 compatible: "nuvoton,npcx-i2c-port"
 

@@ -1,7 +1,7 @@
 # Copyright (c) 2017 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-description: Kinetis I2C node
+description: Kinetis I2C
 
 compatible: "nxp,kinetis-i2c"
 
