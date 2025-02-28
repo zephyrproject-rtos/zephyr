@@ -160,6 +160,6 @@ if(CONFIG_FLASH_NXP_S32_QSPI_NOR OR CONFIG_FLASH_NXP_S32_QSPI_HYPERFLASH)
 endif()
 
 if(CONFIG_RA_FLASH_HP)
-  zephyr_library_sources(flash_hp_ra.c)
-  zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED flash_hp_ra_ex_op.c)
+  zephyr_library_sources(soc_flash_renesas_ra_hp.c)
+  zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED soc_flash_renesas_ra_hp_ex_op.c)
 endif()
