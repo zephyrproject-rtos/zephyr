@@ -480,6 +480,7 @@
 #define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
 
 void sys_trace_idle(void);
+void sys_trace_idle_exit(void);
 void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
 
