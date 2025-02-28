@@ -15,6 +15,8 @@ set_compiler_property(PROPERTY optimization_size)
 
 set_compiler_property(PROPERTY optimization_size_aggressive)
 
+set_compiler_property(PROPERTY optimization_fast)
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################
