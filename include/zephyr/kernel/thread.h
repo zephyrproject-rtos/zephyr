@@ -252,6 +252,10 @@ struct z_poller {
 	uint8_t mode;
 };
 
+enum {
+	Z_THREAD_NO_BLOCK = 0,
+};
+
 /**
  * @ingroup thread_apis
  * Thread Structure
@@ -268,6 +272,9 @@ struct k_thread {
 
 	/** threads waiting in k_thread_join() */
 	_wait_q_t join_queue;
+
+	/** flags */
+	atomic_t flags;
 
 #if defined(CONFIG_POLL)
 	struct z_poller poller;
