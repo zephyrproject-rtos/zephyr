@@ -7,6 +7,10 @@ tests:
     depends_on: usbd
     integration_platforms:
       - nrf52840dk/nrf52840
+      - frdm_k64f
+      - nucleo_f413zh
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+      - rpi_pico
     platform_exclude:
       - nrf54h20dk/nrf54h20/cpuapp
   drivers.usb.udc.build_only:
