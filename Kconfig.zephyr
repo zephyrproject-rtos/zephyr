@@ -621,6 +621,13 @@ config MISRA_SANE
 	  standard for safety reasons.  Specifically variable length
 	  arrays are not permitted (and gcc will enforce this).
 
+config TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS
+	bool
+	default y
+	help
+	  Hidden symbol to state if the toolchain can handle vla in
+	  statements.
+
 endmenu
 
 choice
