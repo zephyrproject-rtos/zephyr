@@ -1,0 +1,45 @@
+# Copyright (c) 2023, Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_RTS5912
+	bool "Realtek RTS5912 eSPI Driver"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_ESPI_ENABLED
+	select KERNEL_MEM_POOL
+	help
+	  Enable the Realtek RTS5912 eSPI driver.
+
+config MAF_BUFFER_SIZE
+	int "eSPI Flash Channel MAF Buffer Size"
+	default 512
+	depends on ESPI_FLASH_CHANNEL
+	help
+	  The buffer size used for MAF Tr of flash channel.
+
+if ESPI_RTS5912
+
+	config ESPI_OOB_CHANNEL
+		default y
+
+	config ESPI_FLASH_CHANNEL
+		default y
+
+	config ESPI_PERIPHERAL_8042_KBC
+		default y
+
+	config ESPI_PERIPHERAL_DEBUG_PORT_80
+		default y
+
+	config ESPI_PERIPHERAL_CUSTOM_OPCODE
+		default y
+
+	config ESPI_PERIPHERAL_ACPI_SHM_REGION
+		default y
+
+	config ESPI_PERIPHERAL_EC_HOST_CMD
+		default y
+
+endif # ESPI_RTS5912
+
+config ESPI_PERIPHERAL_HOST_IO
+	default y
