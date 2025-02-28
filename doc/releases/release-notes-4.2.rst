@@ -63,6 +63,11 @@ New APIs and options
   like you need to add more details, add them in the API documentation code
   instead.
 
+* Display
+
+  * Add function ``display_clear`` to the display subsystem to clear the target devices
+    screen display, resetting it to black. (:github:`12937`)
+
 New Boards
 **********
 
