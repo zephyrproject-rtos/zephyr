@@ -1,7 +1,22 @@
 # Copyright (c) 2017, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-description: STMicroelectronics VL53L0X Time of Flight sensor
+description: |
+  STMicroelectronics VL53L0X Time of Flight sensor
+  See: https://www.st.com/en/imaging-and-photonics-solutions/vl53l0x.html#documentation
+  Example API range profiles
+  1. High accuracy 1.2m (white target)  precise measurement
+    signal limit ratio: 250
+    sigma limit ratio: 18000
+    max time for ranging: 200000
+  2. Long range  2m (white target) long ranging, only for dark conditions
+    signal limit ratio: 100
+    sigma limit ratio: 60000
+    max time for ranging: 33000
+  3. High speed  1.2m (white target) high speed where accuracy is not priority
+    signal limit ratio: 250
+    sigma limit ratio: 32000
+    max time for ranging: 20000
 
 compatible: "st,vl53l0x"
 
@@ -12,3 +27,42 @@ properties:
     type: phandle-array
     description: |
       Xshutdown pin, Active LOW.
+
+  max-time-for-ranging:
+    type: int
+    default: 33000
+    description: |
+      Set max time for ranging in μs
+      default value 33000 is 33ms
+      The timing budget is the time allocated by the user to perform one range measurement.
+      The API takes care of splitting this timing budget into dedicated sub steps in the
+      ranging process.
+      The user only has to set the overall timing budget in micro seconds, and the
+      function allocates the timings internally. A check is performed to know which
+      part of the scheduler is enabled or disabled, in order to maximize Final Range
+      timing budget.
+      VL53L0X_SetMeasurementTimingBudgetMicroSeconds() and
+      VL53L0X_GetMeasurementTimingBudgetMicroSeconds()
+      The default timing budget value is 33ms, while the minimum is 20ms.
+
+  signal-limit-ratio:
+    type: int
+    default: 100
+    description: |
+      Specify a floating point value multiplied by 1000.
+      For example, a value of 1 represents 0.001 in real value.
+      default value 100 is set VL53L0X_SETUP_SIGNAL_LIMIT (0.1 * 65536)
+      This represents the amplitude of the signal reflected from the
+      target and detected by the device.
+
+  sigma-limit-ratio:
+    type: int
+    default: 60000
+    description: |
+      Specify a floating point value multiplied by 1000.
+      For example, a value of 1 represents 0.001 in real value.
+      default value 60000 is set VL53L0X_SETUP_SIGMA_LIMIT (60 * 65536)
+      Sigma is the time difference (shift) between the reference and
+      return SPAD arrays.
+      As Sigma represents time of flight and this translates to distance
+
