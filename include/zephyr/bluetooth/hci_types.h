@@ -200,12 +200,14 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_BIT_CHANNEL_CLASSIFICATION   39
 #define BT_LE_FEAT_BIT_ADV_CODING_SEL           40
 #define BT_LE_FEAT_BIT_ADV_CODING_SEL_HOST      41
-
+#define BT_LE_FEAT_BIT_DECISION_ADV_FILTER      42
 #define BT_LE_FEAT_BIT_PAWR_ADVERTISER          43
 #define BT_LE_FEAT_BIT_PAWR_SCANNER             44
-
+#define BT_LE_FEAT_BIT_UNSEG_FRAMED_MODE        45
 #define BT_LE_FEAT_BIT_CHANNEL_SOUNDING         46
 #define BT_LE_FEAT_BIT_CHANNEL_SOUNDING_HOST    47
+#define BT_LE_FEAT_BIT_CHANNEL_SOUNDING_TONE_QUAL_IND    48
+#define BT_LE_FEAT_BIT_LL_EXTENDED_FEAT_SET     63
 
 #define BT_LE_FEAT_TEST(feat, n)                (feat[(n) >> 3] & \
 						 BIT((n) & 7))
