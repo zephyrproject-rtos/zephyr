@@ -122,6 +122,8 @@ static int create_packet(struct net_if *iface,
 			 struct sockaddr *dst,
 			 uint8_t *packet,
 			 size_t packet_len,
+			 uint8_t dscp,
+			 uint8_t ecn,
 			 struct net_pkt **pkt);
 
 static enum net_verdict wg_input(struct net_conn *conn,
@@ -1208,7 +1210,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 	/* Create a new packet and send it to the control interface */
 	ret = create_packet(iface, net_sad(&src_addr), net_sad(&peer->endpoint),
 			    buf->data, sizeof(hdr) + padded_len + WG_AUTHTAG_LEN,
-			    &pkt_encrypted);
+			    0, 0, &pkt_encrypted);
 
 	/* We do not need the temp buffer any more */
 	net_buf_unref(buf);
@@ -1412,6 +1414,8 @@ static int create_ipv4_packet(struct net_if *iface,
 			      struct sockaddr *dst,
 			      uint8_t *packet,
 			      size_t packet_len,
+			      uint8_t dscp,
+			      uint8_t ecn,
 			      struct net_pkt **reply_pkt)
 {
 	struct net_pkt *pkt;
@@ -1424,6 +1428,9 @@ static int create_ipv4_packet(struct net_if *iface,
 	if (pkt == NULL) {
 		return -ENOMEM;
 	}
+
+	net_pkt_set_ip_dscp(pkt, dscp);
+	net_pkt_set_ip_ecn(pkt, ecn);
 
 	ret = net_ipv4_create(pkt, &net_sin(src)->sin_addr,
 			      &net_sin(dst)->sin_addr);
@@ -1477,6 +1484,8 @@ static int create_packet(struct net_if *iface,
 			 struct sockaddr *dst,
 			 uint8_t *packet,
 			 size_t packet_len,
+			 uint8_t dscp,
+			 uint8_t ecn,
 			 struct net_pkt **pkt)
 {
 	int ret;
@@ -1487,6 +1496,8 @@ static int create_packet(struct net_if *iface,
 					 dst,
 					 packet,
 					 packet_len,
+					 dscp,
+					 ecn,
 					 pkt);
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && dst->sa_family == AF_INET6) {
@@ -1568,7 +1579,7 @@ static int wg_send_handshake_init(struct wg_iface_context *ctx,
 	}
 
 	ret = create_packet(target_iface, addr, net_sad(&peer->endpoint), (uint8_t *)packet,
-			    sizeof(*packet), &pkt);
+			    sizeof(*packet), NET_IPV4_DSCP_AF41, 0, &pkt);
 	if (ret < 0) {
 		NET_DBG("Packet creation failed (%d)", ret);
 		return -ENOMEM;
@@ -1622,7 +1633,7 @@ static void wg_send_handshake_response(struct wg_iface_context *ctx,
 	}
 
 	ret = create_packet(iface, my_addr, net_sad(&peer->endpoint), (uint8_t *)&packet,
-			    sizeof(packet), &pkt);
+			    sizeof(packet), NET_IPV4_DSCP_AF41, 0, &pkt);
 	if (ret < 0) {
 		NET_DBG("Packet creation failed (%d)", ret);
 		return;
@@ -1668,7 +1679,8 @@ static void wg_send_handshake_cookie(struct wg_iface_context *ctx,
 			       (2U + sizeof(struct in6_addr)));
 
 	ret = create_packet(ctx->wg_ctx->iface, addr, net_sad(&ctx->peer->endpoint),
-			    (uint8_t *)&packet, sizeof(packet), &pkt);
+			    (uint8_t *)&packet, sizeof(packet), NET_IPV4_DSCP_AF41, 0,
+			    &pkt);
 	if (ret < 0) {
 		NET_DBG("Packet creation failed (%d)", ret);
 		return;
