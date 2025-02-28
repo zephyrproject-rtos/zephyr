@@ -140,6 +140,14 @@
 			#gpio-cells = <2>;
 			reg = <0x4002a320 0xa0>;
 		};
+
+		gpio4: gpio@4002a3c0 {
+			compatible = "silabs,si32-hd-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x4002a3c0 0xa0>;
+			status = "disabled";
+		};
 	};
 };
 
