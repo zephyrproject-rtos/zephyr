@@ -228,6 +228,11 @@ int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micr
 	struct step_dir_stepper_common_data *data = dev->data;
 	const struct step_dir_stepper_common_config *config = dev->config;
 
+	if (!data->enabled) {
+		LOG_ERR("Stepper motor is not enabled");
+		return -ECANCELED;
+	}
+
 	if (data->microstep_interval_ns == 0) {
 		LOG_ERR("Step interval not set or invalid step interval set");
 		return -EINVAL;
@@ -290,6 +295,11 @@ int step_dir_stepper_common_move_to(const struct device *dev, const int32_t valu
 	struct step_dir_stepper_common_data *data = dev->data;
 	const struct step_dir_stepper_common_config *config = dev->config;
 
+	if (!data->enabled) {
+		LOG_ERR("Failed to move to target position, device is not enabled");
+		return -ECANCELED;
+	}
+
 	if (data->microstep_interval_ns == 0) {
 		LOG_ERR("Step interval not set or invalid step interval set");
 		return -EINVAL;
@@ -318,6 +328,11 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 	const struct step_dir_stepper_common_config *config = dev->config;
+
+	if (!data->enabled) {
+		LOG_ERR("Failed to run stepper, device is not enabled");
+		return -ECANCELED;
+	}
 
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_VELOCITY;

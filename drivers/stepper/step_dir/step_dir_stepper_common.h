@@ -66,6 +66,7 @@ struct step_dir_stepper_common_config {
  */
 struct step_dir_stepper_common_data {
 	const struct device *dev;
+	bool enabled;
 	struct k_spinlock lock;
 	enum stepper_direction direction;
 	enum stepper_run_mode run_mode;
