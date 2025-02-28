@@ -341,6 +341,16 @@ void nrf_clock_control_hfxo_request(void);
  */
 void nrf_clock_control_hfxo_release(void);
 
+/** @brief Obtain the minimum (worst) LFCLK accuracy.
+ *
+ * LFCLK source can be changed at run-time to balance between accuracy and power
+ * consumption. The minimum or worst accuracy may be useful in e.g. radio stacks
+ * to synchronize clocks between wireless peers.
+ *
+ * @returns Minimum (worst) LFCLK accuracy in ppm.
+ */
+uint16_t nrf_clock_control_lfclk_min_accuracy(void);
+
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF2) */
 
 /** @brief Get clock frequency that is used for the given node.
