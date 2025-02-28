@@ -151,6 +151,8 @@ struct npcx_taf_head {
 
 int npcx_init_taf(const struct device *dev, sys_slist_t *callbacks);
 
+int espi_taf_npcx_block(const struct device *dev, bool en_block);
+
 #ifdef __cplusplus
 }
 #endif
