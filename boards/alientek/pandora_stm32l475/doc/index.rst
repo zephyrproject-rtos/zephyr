@@ -85,44 +85,7 @@ The STM32L475VE SoC provides the following hardware features:
 Supported Features
 ==================
 
-The Zephyr stm32l475ve_pandora board configuration supports the following hardware features:
-
-+-----------+------------+----------------------------------------------+
-| Interface | Controller | Driver/Component                             |
-+===========+============+==============================================+
-| NVIC      | on-chip    | nested vector interrupt controller           |
-+-----------+------------+----------------------------------------------+
-| UART      | on-chip    | serial port-polling;                         |
-|           |            | serial port-interrupt                        |
-+-----------+------------+----------------------------------------------+
-| PINMUX    | on-chip    | pinmux                                       |
-+-----------+------------+----------------------------------------------+
-| GPIO      | on-chip    | gpio                                         |
-+-----------+------------+----------------------------------------------+
-| I2C       | on-chip    | I2C-AHT10(Temperature and humidity sensor)   |
-|           |            | I2C-ICM2068(light environment sensor)        |
-+-----------+------------+----------------------------------------------+
-| I2S       | on-chip    | I2S-ES8388(Audio Decoder)                    |
-+-----------+------------+----------------------------------------------+
-| USB       | on-chip    | I2S-OTG                                      |
-+-----------+------------+----------------------------------------------+
-| SDIO      | on-chip    | SDIO-AP6181(WIFI)                            |
-+-----------+------------+----------------------------------------------+
-| SPI       | on-chip    | LCD-TFT                                      |
-+-----------+------------+----------------------------------------------+
-| QSPI NOR  | on-chip    | flash                                        |
-+-----------+------------+----------------------------------------------+
-| IR-RX/TX  | on-board   | Infrared Receiver(38Khz)/Transmitter         |
-+-----------+------------+----------------------------------------------+
-| STLINK-V2 | on-board   | STLINK-V2 Debugger                           |
-+-----------+------------+----------------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/alientek/pandora_stm32l475/pandora_stm32l475_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
