@@ -5,3 +5,10 @@ tests:
     integration_platforms:
       - native_sim
     tags: pm
+  pm.no_power_domain:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags: pm
+    extra_args: CONF_FILE=no_power_domain.conf
