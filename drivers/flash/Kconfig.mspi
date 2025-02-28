@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Ambiq Micro Inc. <www.ambiq.com>
+# Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menu "MSPI flash device driver"
@@ -26,8 +26,7 @@ config FLASH_MSPI_ATXP032
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_JESD216
-	select MSPI_AMBIQ_AP3 if SOC_SERIES_APOLLO3X
-	select MSPI_AMBIQ_AP4 if SOC_SERIES_APOLLO4X
+	select MSPI_AMBIQ_CONTROLLER if SOC_FAMILY_AMBIQ
 
 config FLASH_MSPI_IS25XX0XX
 	bool "MSPI IS25L/WX064/032 driver"
@@ -37,7 +36,7 @@ config FLASH_MSPI_IS25XX0XX
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_JESD216
-	select MSPI_AMBIQ_AP5 if SOC_SERIES_APOLLO5X
+	select MSPI_AMBIQ_CONTROLLER if SOC_FAMILY_AMBIQ
 
 endmenu
 

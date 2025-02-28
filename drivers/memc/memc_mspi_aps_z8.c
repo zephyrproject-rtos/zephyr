@@ -42,11 +42,11 @@ struct memc_mspi_aps_z8_config {
 	struct mspi_dev_id             dev_id;
 	struct mspi_dev_cfg            octal_cfg;
 	struct mspi_dev_cfg            tar_dev_cfg;
-	struct mspi_xip_cfg            tar_xip_cfg;
-	struct mspi_scramble_cfg       tar_scramble_cfg;
 
-	mspi_timing_cfg                tar_timing_cfg;
-	mspi_timing_param              timing_cfg_mask;
+	MSPI_XIP_CFG_STRUCT_DECLARE(tar_xip_cfg)
+	MSPI_SCRAMBLE_CFG_STRUCT_DECLARE(tar_scramble_cfg)
+	MSPI_TIMING_CFG_STRUCT_DECLARE(tar_timing_cfg)
+	MSPI_TIMING_PARAM_DECLARE(timing_cfg_mask)
 
 	bool                           sw_multi_periph;
 };
@@ -599,10 +599,14 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 		.dev_id             = MSPI_DEVICE_ID_DT_INST(n),                                  \
 		.octal_cfg          = MSPI_DEVICE_CONFIG_OCTAL(n),                                \
 		.tar_dev_cfg        = MSPI_DEVICE_CONFIG_DT_INST(n),                              \
-		.tar_xip_cfg        = MSPI_XIP_CONFIG_DT_INST(n),                                 \
-		.tar_scramble_cfg   = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                            \
-		.tar_timing_cfg     = MSPI_TIMING_CONFIG(n),                                      \
-		.timing_cfg_mask    = MSPI_TIMING_CONFIG_MASK(n),                                 \
+		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_XIP,                                    \
+					      tar_xip_cfg, MSPI_XIP_CONFIG_DT_INST(n))            \
+		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_SCRAMBLE,                               \
+					      tar_scramble_cfg, MSPI_SCRAMBLE_CONFIG_DT_INST(n))  \
+		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_TIMING,                                 \
+					      tar_timing_cfg, MSPI_TIMING_CONFIG(n))              \
+		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_TIMING,                                 \
+					      timing_cfg_mask, MSPI_TIMING_CONFIG_MASK(n))        \
 		.sw_multi_periph    = DT_PROP(DT_INST_BUS(n), software_multiperipheral)           \
 	};                                                                                        \
 	static struct memc_mspi_aps_z8_data                                                       \

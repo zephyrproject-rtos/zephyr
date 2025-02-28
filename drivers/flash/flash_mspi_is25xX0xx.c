@@ -61,17 +61,17 @@ struct flash_mspi_is25xX0xx_config {
 	uint32_t                            mem_size;
 	struct flash_parameters             flash_param;
 	struct flash_pages_layout           page_layout;
-	uint32_t                            xip_base_addr;
 
 	const struct device                 *bus;
 	struct mspi_dev_id                  dev_id;
 	struct mspi_dev_cfg                 serial_cfg;
 	struct mspi_dev_cfg                 tar_dev_cfg;
-	struct mspi_xip_cfg                 tar_xip_cfg;
-	struct mspi_scramble_cfg            tar_scramble_cfg;
 
-	mspi_timing_cfg                     tar_timing_cfg;
-	mspi_timing_param                   timing_cfg_mask;
+	MSPI_XIP_CFG_STRUCT_DECLARE(tar_xip_cfg)
+	MSPI_XIP_BASE_ADDR_DECLARE(xip_base_addr)
+	MSPI_SCRAMBLE_CFG_STRUCT_DECLARE(tar_scramble_cfg)
+	MSPI_TIMING_CFG_STRUCT_DECLARE(tar_timing_cfg)
+	MSPI_TIMING_PARAM_DECLARE(timing_cfg_mask)
 
 	bool                                sw_multi_periph;
 
@@ -464,11 +464,13 @@ static int flash_mspi_is25xX0xx_read(const struct device *flash, off_t offset, v
 
 	acquire(flash);
 
-	if (IS_ENABLED(CONFIG_FLASH_MSPI_XIP_READ) && cfg->tar_xip_cfg.enable) {
+#if CONFIG_FLASH_MSPI_XIP_READ
+	if (cfg->tar_xip_cfg.enable) {
 		uint32_t xip_addr = cfg->xip_base_addr + cfg->tar_xip_cfg.address_offset + offset;
 
 		memcpy(rdata, (void *)xip_addr, len);
 	} else {
+#endif /* CONFIG_FLASH_MSPI_XIP_READ */
 		data->packet.dir              = MSPI_RX;
 		data->packet.cmd              = data->dev_cfg.read_cmd;
 		data->packet.address          = offset;
@@ -504,8 +506,10 @@ static int flash_mspi_is25xX0xx_read(const struct device *flash, off_t offset, v
 				sys_cache_data_invd_range(rdata, len);
 			}
 		}
-#endif
+#endif /* CONFIG_FLASH_MSPI_HANDLE_CACHE */
+#if CONFIG_FLASH_MSPI_XIP_READ
 	}
+#endif /* CONFIG_FLASH_MSPI_XIP_READ */
 
 	release(flash);
 
@@ -587,10 +591,10 @@ static int flash_mspi_is25xX0xx_write(const struct device *flash, off_t offset, 
 		return ret;
 	}
 
-#if CONFIG_FLASH_MSPI_HANDLE_CACHE
+#if CONFIG_FLASH_MSPI_HANDLE_CACHE && CONFIG_FLASH_MSPI_XIP_READ
 	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
 
-	if (IS_ENABLED(CONFIG_FLASH_MSPI_XIP_READ) && cfg->tar_xip_cfg.enable) {
+	if (cfg->tar_xip_cfg.enable) {
 		uint32_t xip_addr = cfg->xip_base_addr + cfg->tar_xip_cfg.address_offset + addr;
 
 		if (!buf_in_nocache((uintptr_t)xip_addr, size)) {
@@ -987,14 +991,18 @@ static DEVICE_API(flash, flash_mspi_is25xX0xx_api) = {
 				.pages_size  = SPI_NOR_PAGE_SIZE,                                 \
 			},                                                                        \
 		.bus                = DEVICE_DT_GET(DT_INST_BUS(n)),                              \
-		.xip_base_addr      = DT_REG_ADDR_BY_IDX(DT_INST_BUS(n), 1),                      \
 		.dev_id             = MSPI_DEVICE_ID_DT_INST(n),                                  \
 		.serial_cfg         = MSPI_DEVICE_CONFIG_SERIAL(n),                               \
 		.tar_dev_cfg        = MSPI_DEVICE_CONFIG_DT_INST(n),                              \
-		.tar_xip_cfg        = MSPI_XIP_CONFIG_DT_INST(n),                                 \
-		.tar_scramble_cfg   = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                            \
-		.tar_timing_cfg     = MSPI_TIMING_CONFIG(n),                                      \
-		.timing_cfg_mask    = MSPI_TIMING_CONFIG_MASK(n),                                 \
+		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_XIP,                                    \
+					      tar_xip_cfg, MSPI_XIP_CONFIG_DT_INST(n))            \
+		MSPI_XIP_BASE_ADDR_INIT(xip_base_addr, DT_INST_BUS(n))                            \
+		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_SCRAMBLE,                               \
+					      tar_scramble_cfg, MSPI_SCRAMBLE_CONFIG_DT_INST(n))  \
+		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_TIMING,                                 \
+					      tar_timing_cfg, MSPI_TIMING_CONFIG(n))              \
+		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_TIMING,                                 \
+					      timing_cfg_mask, MSPI_TIMING_CONFIG_MASK(n))        \
 		.sw_multi_periph    = DT_PROP(DT_INST_BUS(n), software_multiperipheral),          \
 		.reset_gpio         = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),              \
 		.reset_pulse_us     = DT_INST_PROP_OR(n, t_reset_pulse, 0) / 1000,                \
