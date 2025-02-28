@@ -92,6 +92,10 @@ struct bt_sdp_client {
 	struct bt_sdp_pdu_cstate             cstate;
 	/* buffer for collecting record data */
 	struct net_buf                      *rec_buf;
+	/* The total length of response */
+	uint32_t                             total_len;
+	/* Received data length */
+	uint32_t                             recv_len;
 };
 
 static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BT_MAX_CONN];
@@ -1723,6 +1727,10 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 		session->param = NULL;
 		/* Reset continuation state in current context */
 		(void)memset(&session->cstate, 0, sizeof(session->cstate));
+		/* Clear total length */
+		session->total_len = 0;
+		/* Clear received length */
+		session->recv_len = 0;
 
 		/* Check if there's valid next UUID */
 		if (!sys_slist_is_empty(&session->reqs)) {
@@ -2065,6 +2073,12 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 		return 0;
 	}
 
+	if (session->cstate.length == 0U) {
+		session->total_len = total;
+	}
+
+	session->recv_len += frame_len;
+
 	if (frame_len > net_buf_tailroom(session->rec_buf)) {
 		LOG_WRN("Not enough room for getting records data");
 		goto iterate;
@@ -2082,6 +2096,12 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 
 		/* Request for next portion of attributes data */
 		return sdp_client_discover(session);
+	}
+
+	if (session->total_len && (session->recv_len != session->total_len)) {
+		LOG_WRN("The received len %d is mismatched with total len %d", session->recv_len,
+			session->total_len);
+		return -EINVAL;
 	}
 
 	net_buf_pull(buf, sizeof(cstate->length));
