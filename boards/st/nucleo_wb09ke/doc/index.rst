@@ -52,6 +52,8 @@ The Zephyr ``nucleo_wb09ke`` board target supports the following hardware featur
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | iwdg                                |
++-----------+------------+-------------------------------------+
 | TIMER     | on-chip    | counter, pwm                        |
 +-----------+------------+-------------------------------------+
 | RADIO     | on-chip    | Bluetooth Low Energy                |
