@@ -4,11 +4,12 @@ Overview
 ********
 
 The SK-AM62 board configuration is used by Zephyr applications that run on
-the TI AM62x platform. The board configuration provides support for the ARM
-Cortex-M4F MCU core and the following features:
+the TI AM62x platform. The board configuration provides support for:
 
-- Nested Vector Interrupt Controller (NVIC)
-- System Tick System Clock (SYSTICK)
+- ARM Cortex-M4F MCU core and the following features:
+   - Nested Vector Interrupt Controller (NVIC)
+   - System Tick System Clock (SYSTICK)
+
 
 The board configuration also enables support for the semihosting debugging console.
 
@@ -123,8 +124,7 @@ AM62x SK EVM TRM:
    https://www.ti.com/product/AM625
 
 .. _WIC:
-   https://dr-download.ti.com/software-development/software-development-kit-sdk/MD-PvdSyIiioq/08.06.00.42/tisdk-default-image-am62xx-evm.wic.xz
-
+   https://dr-download.ti.com/software-development/software-development-kit-sdk/MD-PvdSyIiioq/10.01.10.04/tisdk-default-image-am62xx-evm-10.01.10.04.rootfs.wic.xz
 .. _AM62x SK EVM TRM:
    https://www.ti.com/lit/ug/spruiv7/spruiv7.pdf
 
