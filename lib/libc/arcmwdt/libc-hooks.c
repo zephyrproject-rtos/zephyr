@@ -91,10 +91,12 @@ int _isatty(int file)
 	return 0;
 }
 
+#ifndef CONFIG_LIBC_ERRNO
 int *___errno(void)
 {
 	return z_errno();
 }
+#endif
 
 __weak void _exit(int status)
 {
