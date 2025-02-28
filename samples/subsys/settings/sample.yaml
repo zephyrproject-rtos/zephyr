@@ -5,19 +5,9 @@ tests:
   sample.subsys.settings:
     tags: settings
     timeout: 10
-    platform_allow:
-      - qemu_x86
-      - native_sim
-      - native_sim/native/64
-      - mr_canhubk3
-      - nrf54l15dk/nrf54l05/cpuapp
-      - nrf54l15dk/nrf54l10/cpuapp
-      - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54h20dk/nrf54h20/cpuapp
-      - s32z2xxdc2/s32z270/rtu0
-      - s32z2xxdc2/s32z270/rtu1
-      - s32z2xxdc2@D/s32z270/rtu0
-      - s32z2xxdc2@D/s32z270/rtu1
+    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+    platform_exclude:
+      - qemu_cortex_m0/nrf51822
     integration_platforms:
       - native_sim
     harness: console
