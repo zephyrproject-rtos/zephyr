@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(usbh_shell, CONFIG_USBH_LOG_LEVEL);
 #define FOOBAZ_VREQ_IN		0x5c
 
 USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
-static struct usb_device *udev;
 static uint8_t vreq_test_buf[1024];
 
 static void print_dev_desc(const struct shell *sh,
@@ -78,6 +77,7 @@ static int bulk_req_cb(struct usb_device *const dev, struct uhc_transfer *const 
 
 static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	struct uhc_transfer *xfer;
 	struct net_buf *buf;
 	uint8_t ep;
@@ -132,6 +132,7 @@ static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 static int cmd_vendor_in(const struct shell *sh,
 			 size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_HOST << 7) |
 				      (USB_REQTYPE_TYPE_VENDOR << 5);
 	const uint8_t bRequest = FOOBAZ_VREQ_IN;
@@ -160,6 +161,7 @@ static int cmd_vendor_in(const struct shell *sh,
 static int cmd_vendor_out(const struct shell *sh,
 			  size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_DEVICE << 7) |
 				      (USB_REQTYPE_TYPE_VENDOR << 5);
 	const uint8_t bRequest = FOOBAZ_VREQ_OUT;
@@ -185,6 +187,7 @@ static int cmd_vendor_out(const struct shell *sh,
 static int cmd_desc_device(const struct shell *sh,
 			   size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	struct usb_device_descriptor desc;
 	int err;
 
@@ -201,6 +204,7 @@ static int cmd_desc_device(const struct shell *sh,
 static int cmd_desc_config(const struct shell *sh,
 			   size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	struct usb_cfg_descriptor desc;
 	uint8_t cfg;
 	int err;
@@ -220,6 +224,7 @@ static int cmd_desc_config(const struct shell *sh,
 static int cmd_desc_string(const struct shell *sh,
 			   size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	const uint8_t type = USB_DESC_STRING;
 	struct net_buf *buf;
 	uint8_t id;
@@ -249,6 +254,7 @@ static int cmd_desc_string(const struct shell *sh,
 static int cmd_feature_set_halt(const struct shell *sh,
 				size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	uint8_t ep;
 	int err;
 
@@ -269,6 +275,7 @@ static int cmd_feature_set_halt(const struct shell *sh,
 static int cmd_feature_clear_rwup(const struct shell *sh,
 				  size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	int err;
 
 	err = usbh_req_clear_sfs_rwup(udev);
@@ -284,6 +291,7 @@ static int cmd_feature_clear_rwup(const struct shell *sh,
 static int cmd_feature_set_rwup(const struct shell *sh,
 				size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	int err;
 
 	err = usbh_req_set_sfs_rwup(udev);
@@ -299,6 +307,7 @@ static int cmd_feature_set_rwup(const struct shell *sh,
 static int cmd_feature_set_ppwr(const struct shell *sh,
 				size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	uint8_t port;
 	int err;
 
@@ -318,6 +327,7 @@ static int cmd_feature_set_ppwr(const struct shell *sh,
 static int cmd_feature_set_prst(const struct shell *sh,
 				size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	uint8_t port;
 	int err;
 
@@ -337,6 +347,7 @@ static int cmd_feature_set_prst(const struct shell *sh,
 static int cmd_config_set(const struct shell *sh,
 			  size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	uint8_t cfg;
 	int err;
 
@@ -356,6 +367,7 @@ static int cmd_config_set(const struct shell *sh,
 static int cmd_config_get(const struct shell *sh,
 			  size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	uint8_t cfg;
 	int err;
 
@@ -373,6 +385,7 @@ static int cmd_config_get(const struct shell *sh,
 static int cmd_device_interface(const struct shell *sh,
 				size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	uint8_t iface;
 	uint8_t alt;
 	int err;
@@ -394,6 +407,7 @@ static int cmd_device_interface(const struct shell *sh,
 static int cmd_device_address(const struct shell *sh,
 			      size_t argc, char **argv)
 {
+	struct usb_device *const udev = usbh_device_get_any(&uhs_ctx);
 	uint8_t addr;
 	int err;
 
@@ -468,8 +482,6 @@ static int cmd_usbh_init(const struct shell *sh,
 			 size_t argc, char **argv)
 {
 	int err;
-
-	udev = usbh_device_get_any(&uhs_ctx);
 
 	err = usbh_init(&uhs_ctx);
 	if (err == -EALREADY) {
