@@ -1,0 +1,68 @@
+#
+# Copyright (c) 2024 Immo Birnbaum
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Xilinx Zynq (XC7Zxxx/XC7ZxxxS) PS7 clock control
+
+compatible: "xlnx,ps7-clkc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ps-clk-frequency:
+    required: true
+    type: int
+    description: |
+      Clock frequency of the external crystal, typically 33.3 MHz.
+
+  fclk-enable:
+    type: int
+    description: |
+      FPGA clocks enable bit mask (FCLK3/2/1/0, 0 = LSB).
+
+  clock-output-names:
+    required: true
+    type: string-array
+    description: |
+      Names of all clocks managed by the clock control driver.
+      The 'clocks' property of any associated peripheral node
+      in the device tree references the corresponding index
+      within this array.
+
+  clocks:
+    description: |
+      Optional array of references to fixed-clock nodes via
+      which EMIO clocks for peripherals that support EMIO as
+      clock input source are specified. For each EMIO input
+      clock specified via this array, a matching entry must
+      exist in the clock-names array.
+
+  clock-names:
+    description: |
+      Optional array of name strings for the EMIO input clock
+      references contained in the 'clocks' array. For each
+      entry in the 'clocks' array, a matching name string must
+      be specified at the same array index herein. The EMIO input
+      clock data is associated with its respective peripheral
+      via the name string. The following name strings are supported:
+        * "gem0_emio_clk"
+        * "gem1_emio_clk"
+        * "dbg_trc_emio_clk"
+
+  syscon:
+    type: phandle
+    required: true
+    description: |
+      phandle to the syscon driver for the System Level Control
+      Registers (SLCR) register space, which contains the clock
+      control registers at offset 0x100.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - id
