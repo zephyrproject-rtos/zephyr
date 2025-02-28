@@ -105,6 +105,7 @@ static int echo_res_fn(struct net_buf *nb, void *user_data)
 
 	/* Init ZCOR decoder state */
 	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1, NULL, 0);
+	zsd->constant_state->enforce_canonical = false;
 
 	ok = zcbor_map_decode_bulk(zsd, echo_response, ARRAY_SIZE(echo_response), &decoded) == 0;
 

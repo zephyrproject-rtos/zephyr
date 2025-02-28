@@ -54,6 +54,7 @@ static void cbor_nb_reader_init(struct cbor_nb_reader *cnr, struct net_buf *nb)
 	cnr->nb = nb;
 	zcbor_new_decode_state(cnr->zs, ARRAY_SIZE(cnr->zs), nb->data,
 			       nb->len, 1, NULL, 0);
+	cnr->zs->constant_state->enforce_canonical = false;
 }
 
 static void cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
