@@ -17,7 +17,7 @@ from pykwalify.errors import SchemaError
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-from twisterlib.platform import Platform, Simulator, generate_platforms
+from twisterlib.twister_platform import Platform, Simulator, generate_platforms
 
 
 TESTDATA_1 = [

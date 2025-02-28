@@ -30,11 +30,11 @@ except ImportError:
 import scl
 from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.error import TwisterRuntimeError
-from twisterlib.platform import Platform, generate_platforms
 from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
+from twisterlib.twister_platform import Platform, generate_platforms
 from zephyr_module import parse_modules
 
 logger = logging.getLogger('twister')
