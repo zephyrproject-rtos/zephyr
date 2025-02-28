@@ -475,6 +475,11 @@ struct http_client_ctx {
 	IF_ENABLED(CONFIG_WEBSOCKET, (uint8_t ws_sec_key[HTTP_SERVER_WS_MAX_SEC_KEY_LEN]));
 /** @endcond */
 
+	/** @cond INTERNAL_HIDDEN */
+	/** Client supported compression. */
+	uint8_t supported_compression;
+	/** @endcond */
+
 	/** Flag indicating that HTTP2 preface was sent. */
 	bool preface_sent : 1;
 
@@ -492,6 +497,9 @@ struct http_client_ctx {
 
 	/** Flag indicating Websocket key is being processed. */
 	bool websocket_sec_key_next : 1;
+
+	/** Flag indicating accept encoding is being processed. */
+	bool accept_encoding_next: 1;
 
 	/** The next frame on the stream is expectd to be a continuation frame. */
 	bool expect_continuation : 1;

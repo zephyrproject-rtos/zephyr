@@ -19,6 +19,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
+#include <zephyr/net/http/compression.h>
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -468,13 +469,13 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
 				    struct http_client_ctx *client)
 {
-#define RESPONSE_TEMPLATE_STATIC_FS				\
-	"HTTP/1.1 200 OK\r\n"					\
-	"Content-Length: %zd\r\n"				\
-	"Content-Type: %s%s\r\n\r\n"
-#define CONTENT_ENCODING_GZIP "\r\nContent-Encoding: gzip"
+#define RESPONSE_TEMPLATE_STATIC_FS                                                                \
+	"HTTP/1.1 200 OK\r\n"                                                                      \
+	"Content-Length: %zd\r\n"                                                                  \
+	"Content-Type: %s%s%s\r\n\r\n"
+#define CONTENT_ENCODING_HEADER "\r\nContent-Encoding: "
 
-	bool gzipped = false;
+	enum http_compression chosen_compression = 0;
 	int len;
 	int remaining;
 	int ret;
@@ -486,8 +487,8 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 	 * for the content type and encoding
 	 */
 	char http_response[sizeof(RESPONSE_TEMPLATE_STATIC_FS) + HTTP_SERVER_MAX_CONTENT_TYPE_LEN +
-			   sizeof("Content-Length: 01234567890123456789\r\n") +
-			   sizeof(CONTENT_ENCODING_GZIP)];
+		sizeof("Content-Length: 01234567890123456789\r\n") +
+		sizeof(CONTENT_ENCODING_HEADER) + HTTP_COMPRESSION_MAX_STRING_LEN];
 
 	if (client->method != HTTP_GET) {
 		return send_http1_405(client);
@@ -506,7 +507,8 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 	}
 
 	/* open file, if it exists */
-	ret = http_server_find_file(fname, sizeof(fname), &file_size, &gzipped);
+	ret = http_server_find_file(fname, sizeof(fname), &file_size, client->supported_compression,
+				    &chosen_compression);
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
 		return send_http1_404(client);
@@ -523,8 +525,14 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 	LOG_DBG("found %s, file size: %zu", fname, file_size);
 
 	/* send HTTP header */
-	len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
-		       file_size, content_type, gzipped ? CONTENT_ENCODING_GZIP : "");
+	if (http_compression_text(chosen_compression)[0] != 0) {
+		len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
+			       file_size, content_type, CONTENT_ENCODING_HEADER,
+			       http_compression_text(chosen_compression));
+	} else {
+		len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
+			       file_size, content_type, "", "");
+	}
 	ret = http_server_sendall(client, http_response, len);
 	if (ret < 0) {
 		goto close;
@@ -697,6 +705,8 @@ static int on_header_field(struct http_parser *parser, const char *at,
 				ctx->has_upgrade_header = true;
 			} else if (strcasecmp(ctx->header_buffer, "Sec-WebSocket-Key") == 0) {
 				ctx->websocket_sec_key_next = true;
+			} else if (strcasecmp(ctx->header_buffer, "Accept-Encoding") == 0) {
+				ctx->accept_encoding_next = true;
 			}
 
 			ctx->header_buffer[0] = '\0';
@@ -782,6 +792,11 @@ static int on_header_value(struct http_parser *parser,
 					MIN(sizeof(ctx->ws_sec_key), offset));
 #endif
 				ctx->websocket_sec_key_next = false;
+			}
+			if (ctx->accept_encoding_next) {
+				http_compression_parse_accept_encoding(ctx->header_buffer, offset,
+								       &ctx->supported_compression);
+				ctx->accept_encoding_next = false;
 			}
 
 			ctx->header_buffer[0] = '\0';

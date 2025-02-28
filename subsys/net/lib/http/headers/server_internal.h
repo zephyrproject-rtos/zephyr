@@ -15,6 +15,7 @@
 #include <zephyr/net/http/status.h>
 #include <zephyr/net/http/hpack.h>
 #include <zephyr/net/http/frame.h>
+#include <zephyr/net/http/compression.h>
 
 /* HTTP1/HTTP2 state handling */
 int handle_http_frame_rst_stream(struct http_client_ctx *client);
@@ -42,7 +43,9 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t len);
 void http_server_get_content_type_from_extension(char *url, char *content_type,
 						 size_t content_type_size);
-int http_server_find_file(char *fname, size_t fname_size, size_t *file_size, bool *gzipped);
+int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
+			  uint8_t supported_compression,
+			  enum http_compression *chosen_compression);
 void http_client_timer_restart(struct http_client_ctx *client);
 bool http_response_is_final(struct http_response_ctx *rsp, enum http_data_status status);
 bool http_response_is_provided(struct http_response_ctx *rsp);
