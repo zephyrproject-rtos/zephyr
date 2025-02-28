@@ -39,8 +39,8 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 
 #define MAX_TICKS ((k_ticks_t)(RTMR_COUNTER_MAX / CYCLES_PER_TICK) - 1)
 
-#define RTMR_ADJUST_LIMIT  2
-#define RTMR_ADJUST_CYCLES 1
+#define RTMR_ADJUST_LIMIT  8
+#define RTMR_ADJUST_CYCLES 7
 
 static struct k_spinlock lock;
 static uint32_t accumulated_cycles;
