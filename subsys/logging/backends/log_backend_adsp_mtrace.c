@@ -214,7 +214,8 @@ const struct log_backend_api log_backend_adsp_mtrace_api = {
 	.init = init,
 };
 
-LOG_BACKEND_DEFINE(log_backend_adsp_mtrace, log_backend_adsp_mtrace_api, true);
+LOG_BACKEND_DEFINE(log_backend_adsp_mtrace, log_backend_adsp_mtrace_api,
+		   IS_ENABLED(CONFIG_LOG_BACKEND_ADSP_MTRACE_AUTOSTART));
 
 void adsp_mtrace_log_init(adsp_mtrace_log_hook_t hook)
 {
