@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Joel Guittet
+# Copyright (c) 2025 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32S3_MATRIX_ESP32S3_PROCPU
+
+config KERNEL_MEM_POOL
+	default y
+
+endif # BOARD_ESP32S3_MATRIX_ESP32S3_PROCPU
