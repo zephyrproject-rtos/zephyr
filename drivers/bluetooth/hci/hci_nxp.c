@@ -513,12 +513,6 @@ static int bt_nxp_close(const struct device *dev)
 		if (ret) {
 			LOG_ERR("Failed to reset BLE controller");
 		}
-		k_sleep(K_SECONDS(1));
-
-		ret = PLATFORM_TerminateBle();
-		if (ret < 0) {
-			LOG_ERR("Failed to shutdown BLE controller");
-		}
 	}
 	hci->recv = NULL;
 
