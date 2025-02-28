@@ -631,6 +631,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param d_name   String descriptor node identifier.
  */
 #define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name)					\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_HWINFO), "HWINFO not enabled");		\
 	static struct usbd_desc_node d_name = {					\
 		.str = {							\
 			.utype = USBD_DUT_STRING_SERIAL_NUMBER,			\

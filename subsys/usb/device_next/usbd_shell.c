@@ -43,7 +43,7 @@ static struct usbd_shell_speed {
 USBD_DESC_LANG_DEFINE(lang);
 USBD_DESC_MANUFACTURER_DEFINE(mfr, "ZEPHYR");
 USBD_DESC_PRODUCT_DEFINE(product, "Zephyr USBD foobaz");
-USBD_DESC_SERIAL_NUMBER_DEFINE(sn);
+IF_ENABLED(CONFIG_HWINFO, (USBD_DESC_SERIAL_NUMBER_DEFINE(sn)));
 
 /* Default device descriptors and context used in the shell. */
 USBD_DEVICE_DEFINE(sh_uds_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
@@ -117,7 +117,9 @@ static int cmd_usbd_default_strings(const struct shell *sh,
 	err = usbd_add_descriptor(my_uds_ctx, &lang);
 	err |= usbd_add_descriptor(my_uds_ctx, &mfr);
 	err |= usbd_add_descriptor(my_uds_ctx, &product);
-	err |= usbd_add_descriptor(my_uds_ctx, &sn);
+	IF_ENABLED(CONFIG_HWINFO, (
+		err |= usbd_add_descriptor(my_uds_ctx, &sn);
+	))
 
 	if (err) {
 		shell_error(sh, "dev: Failed to add default string descriptors, %d", err);
