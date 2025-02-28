@@ -31,29 +31,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr stm32f030_demo board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/others/stm32f030_demo/stm32f030_demo_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
