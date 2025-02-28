@@ -13,6 +13,7 @@ config WIREGUARD
 	select NET_L2_DUMMY
 	select NET_L2_VIRTUAL
 	select NET_L2_VIRTUAL_MGMT
+	select NET_IP_DSCP_ECN
 	select BASE64
 	select EXPERIMENTAL
 	help
