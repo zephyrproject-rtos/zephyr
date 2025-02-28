@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * This file is a part of mspi_dw.c extracted only for clarity.
+ * It is not supposed to be included by any file other than mspi_dw.c.
+ */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif)
+
+#include <nrf.h>
+
+static void vendor_specific_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	NRF_EXMIF->EVENTS_CORE = 0;
+	NRF_EXMIF->INTENSET = BIT(EXMIF_INTENSET_CORE_Pos);
+}
+
+static void vendor_specific_suspend(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	NRF_EXMIF->TASKS_STOP = 1;
+}
+
+static void vendor_specific_resume(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	NRF_EXMIF->TASKS_START = 1;
+}
+
+static void vendor_specific_irq_clear(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	NRF_EXMIF->EVENTS_CORE = 0;
+}
+
+#if defined(CONFIG_MSPI_XIP)
+static int vendor_specific_xip_enable(const struct device *dev,
+				      const struct mspi_dev_id *dev_id,
+				      const struct mspi_xip_cfg *cfg)
+{
+	ARG_UNUSED(dev);
+
+	if (dev_id->dev_idx == 0) {
+		NRF_EXMIF->EXTCONF1.OFFSET = cfg->address_offset;
+		NRF_EXMIF->EXTCONF1.SIZE = cfg->address_offset
+					 + cfg->size - 1;
+		NRF_EXMIF->EXTCONF1.ENABLE = 1;
+	} else if (dev_id->dev_idx == 1) {
+		NRF_EXMIF->EXTCONF2.OFFSET = cfg->address_offset;
+		NRF_EXMIF->EXTCONF2.SIZE = cfg->address_offset
+					 + cfg->size - 1;
+		NRF_EXMIF->EXTCONF2.ENABLE = 1;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int vendor_specific_xip_disable(const struct device *dev,
+				       const struct mspi_dev_id *dev_id,
+				       const struct mspi_xip_cfg *cfg)
+{
+	ARG_UNUSED(dev);
+
+	if (dev_id->dev_idx == 0) {
+		NRF_EXMIF->EXTCONF1.ENABLE = 0;
+	} else if (dev_id->dev_idx == 1) {
+		NRF_EXMIF->EXTCONF2.ENABLE = 0;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* defined(CONFIG_MSPI_XIP) */
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif) */
