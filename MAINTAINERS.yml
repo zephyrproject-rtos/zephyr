@@ -3624,7 +3624,7 @@ Silabs Platforms:
     - boards/silabs/
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
-    - drivers/*/*gecko*
+    - drivers/**/*gecko*
     - drivers/**/*silabs*
     - drivers/**/*siwx91x*
     - tests/boards/silabs/
