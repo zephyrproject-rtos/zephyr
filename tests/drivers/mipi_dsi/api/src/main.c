@@ -26,23 +26,22 @@ ZTEST(mipi_dsi_api, test_generic)
 	ssize_t ret;
 
 	param[0] = MIPI_DCS_SET_DISPLAY_ON;
-	ret = mipi_dsi_generic_write(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL, param, 1);
+	ret = mipi_dsi_generic_write(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL, param, 1, 0);
 	zassert(ret >= 0, "Failed to write", NULL);
 
 	param[0] = MIPI_DCS_SET_DISPLAY_BRIGHTNESS;
 	param[1] = 200;
-	ret = mipi_dsi_generic_write(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL, param, 2);
+	ret = mipi_dsi_generic_write(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL, param, 2, 0);
 	zassert(ret >= 0, "Failed to write", NULL);
 
 	memset(rx_buf, 0, sizeof(rx_buf));
 
 	param[0] = MIPI_DCS_GET_DISPLAY_BRIGHTNESS;
-	ret = mipi_dsi_generic_read(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL, param, 1, rx_buf, 2);
+	ret = mipi_dsi_generic_read(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL, param, 1, rx_buf, 2, 0);
 
 	if (ret != -ENOTSUP) {
 		zassert(ret >= 0, "Failed to do a generic read", NULL);
 	}
-
 }
 
 /**
@@ -54,20 +53,20 @@ ZTEST(mipi_dsi_api, test_dcs)
 	uint8_t param[2];
 	ssize_t ret;
 
-	ret = mipi_dsi_dcs_write(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL,
-				 MIPI_DCS_SET_DISPLAY_ON, NULL, 0);
+	ret = mipi_dsi_dcs_write(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL, MIPI_DCS_SET_DISPLAY_ON,
+				 NULL, 0, 0);
 	zassert(ret >= 0, "Failed to write", NULL);
 
 	param[0] = 200;
 	ret = mipi_dsi_dcs_write(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL,
-				 MIPI_DCS_SET_DISPLAY_BRIGHTNESS, param, 1);
+				 MIPI_DCS_SET_DISPLAY_BRIGHTNESS, param, 1, 0);
 	zassert(ret >= 0, "Failed to write", NULL);
 
 	memset(rx_buf, 0, sizeof(rx_buf));
 
 	param[0] = MIPI_DCS_GET_DISPLAY_BRIGHTNESS;
 	ret = mipi_dsi_dcs_read(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL,
-				MIPI_DCS_GET_DISPLAY_BRIGHTNESS, rx_buf, 2);
+				MIPI_DCS_GET_DISPLAY_BRIGHTNESS, rx_buf, 2, 0);
 
 	if (ret != -ENOTSUP) {
 		zassert(ret >= 0, "Failed to do a dcs read", NULL);
