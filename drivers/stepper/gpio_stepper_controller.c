@@ -78,12 +78,12 @@ static void decrement_coil_charge(const struct device *dev)
 	}
 }
 
-static int power_down_coils(const struct device *dev)
+static int energize_coils(const struct device *dev, const bool energize)
 {
 	const struct gpio_stepper_config *config = dev->config;
 
 	for (int i = 0; i < NUM_CONTROL_PINS; i++) {
-		const int err = gpio_pin_set_dt(&config->control_pins[i], 0u);
+		const int err = gpio_pin_set_dt(&config->control_pins[i], energize);
 
 		if (err != 0) {
 			LOG_ERR("Failed to power down coil %d", i);
@@ -328,15 +328,23 @@ static int gpio_stepper_enable(const struct device *dev, bool enable)
 {
 	struct gpio_stepper_data *data = dev->data;
 
+	if (data->is_enabled == enable) {
+		return 0;
+	}
+
 	K_SPINLOCK(&data->lock) {
 
 		data->is_enabled = enable;
 
 		if (enable) {
-			(void)k_work_reschedule(&data->stepper_dwork, K_NO_WAIT);
+			const int err = energize_coils(dev, true);
+
+			if (err != 0) {
+				return -EIO;
+			}
 		} else {
 			(void)k_work_cancel_delayable(&data->stepper_dwork);
-			const int err = power_down_coils(dev);
+			const int err = energize_coils(dev, false);
 
 			if (err != 0) {
 				return -EIO;
@@ -374,22 +382,23 @@ static DEVICE_API(stepper, gpio_stepper_api) = {
 	.set_event_callback = gpio_stepper_set_event_callback,
 };
 
-#define GPIO_STEPPER_DEFINE(inst)								\
-	static const struct gpio_dt_spec gpio_stepper_motor_control_pins_##inst[] = {		\
-		DT_INST_FOREACH_PROP_ELEM_SEP(inst, gpios, GPIO_DT_SPEC_GET_BY_IDX, (,)),	\
-	};											\
-	BUILD_ASSERT(ARRAY_SIZE(gpio_stepper_motor_control_pins_##inst) == 4,			\
-		"gpio_stepper_controller driver currently supports only 4 wire configuration");	\
-	static const struct gpio_stepper_config gpio_stepper_config_##inst = {			\
-		.invert_direction = DT_INST_PROP(inst, invert_direction),			\
-		.control_pins = gpio_stepper_motor_control_pins_##inst};			\
-	static struct gpio_stepper_data gpio_stepper_data_##inst = {				\
-		.step_gap = MAX_MICRO_STEP_RES >> (DT_INST_PROP(inst, micro_step_res) - 1),	\
-	};											\
-	BUILD_ASSERT(DT_INST_PROP(inst, micro_step_res) <= STEPPER_MICRO_STEP_2,		\
-		     "gpio_stepper_controller driver supports up to 2 micro steps");		\
-	DEVICE_DT_INST_DEFINE(inst, gpio_stepper_init, NULL, &gpio_stepper_data_##inst,		\
-			      &gpio_stepper_config_##inst, POST_KERNEL,				\
+#define GPIO_STEPPER_DEFINE(inst)                                                                  \
+	static const struct gpio_dt_spec gpio_stepper_motor_control_pins_##inst[] = {              \
+		DT_INST_FOREACH_PROP_ELEM_SEP(inst, gpios, GPIO_DT_SPEC_GET_BY_IDX, (,)),          \
+	};                                                                                         \
+	BUILD_ASSERT(                                                                              \
+		ARRAY_SIZE(gpio_stepper_motor_control_pins_##inst) == 4,                           \
+		"gpio_stepper_controller driver currently supports only 4 wire configuration");    \
+	static const struct gpio_stepper_config gpio_stepper_config_##inst = {                     \
+		.invert_direction = DT_INST_PROP(inst, invert_direction),                          \
+		.control_pins = gpio_stepper_motor_control_pins_##inst};                           \
+	static struct gpio_stepper_data gpio_stepper_data_##inst = {                               \
+		.step_gap = MAX_MICRO_STEP_RES >> (DT_INST_PROP(inst, micro_step_res) - 1),        \
+	};                                                                                         \
+	BUILD_ASSERT(DT_INST_PROP(inst, micro_step_res) <= STEPPER_MICRO_STEP_2,                   \
+		     "gpio_stepper_controller driver supports up to 2 micro steps");               \
+	DEVICE_DT_INST_DEFINE(inst, gpio_stepper_init, NULL, &gpio_stepper_data_##inst,            \
+			      &gpio_stepper_config_##inst, POST_KERNEL,                            \
 			      CONFIG_STEPPER_INIT_PRIORITY, &gpio_stepper_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_STEPPER_DEFINE)
