@@ -198,6 +198,7 @@ static void init_app(void)
 	init_tunnel();
 	init_ws();
 	init_usb();
+	init_vpn();
 }
 
 static int cmd_sample_quit(const struct shell *sh,

@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/coap_mgmt.h>
 #include <zephyr/net/ethernet_mgmt.h>
+#include <zephyr/net/wireguard.h>
 
 #include "net_shell_private.h"
 
@@ -481,6 +482,43 @@ static char *get_l4_desc(struct event_msg *msg,
 		*desc = "Capture";
 		*desc2 = "stopped";
 		break;
+	case NET_EVENT_VPN_PEER_ADD: {
+		struct net_event_vpn_peer *event =
+			(struct net_event_vpn_peer *)msg->data;
+		char ip_addr[NET_IPV6_ADDR_LEN];
+
+		*desc = "Wireguard peer";
+		*desc2 = "add";
+
+		/* Currently print only the IP address of the peer */
+		info = sockaddr_ntop(event->endpoint, ip_addr, sizeof(ip_addr));
+		snprintk(extra_info, extra_info_len, "id %d %s",
+			 event->id, ip_addr);
+		info = extra_info;
+
+		break;
+	}
+	case NET_EVENT_VPN_PEER_DEL: {
+		int peer_id;
+
+		memcpy(&peer_id, msg->data, sizeof(peer_id));
+
+		*desc = "Wireguard peer";
+		*desc2 = "del";
+
+		snprintk(extra_info, extra_info_len, "id %d", peer_id);
+		info = extra_info;
+
+		break;
+	}
+	case NET_EVENT_VPN_CONNECTED:
+		*desc = "Wireguard";
+		*desc2 = "connected";
+		break;
+	case NET_EVENT_VPN_DISCONNECTED:
+		*desc = "Wireguard";
+		*desc2 = "disconnected";
+		break;
 	}
 
 	return info;
@@ -491,7 +529,7 @@ static char *get_l4_desc(struct event_msg *msg,
  */
 static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 {
-	char extra_info[NET_IPV6_ADDR_LEN];
+	char extra_info[NET_IPV6_ADDR_LEN + sizeof("id 0123456789 ")];
 	struct event_msg msg;
 
 	ARG_UNUSED(p2);
@@ -535,15 +573,15 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 		if (layer == NET_MGMT_LAYER_L2) {
 			layer_str = "L2";
 			info = get_l2_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		} else if (layer == NET_MGMT_LAYER_L3) {
 			layer_str = "L3";
 			info = get_l3_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		} else if (layer == NET_MGMT_LAYER_L4) {
 			layer_str = "L4";
 			info = get_l4_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		}
 
 		if (desc == unknown_event_str) {
