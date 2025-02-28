@@ -82,7 +82,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, device, dev_id=None,
                  commander=DEFAULT_JLINK_EXE,
-                 dt_flash=True, erase=True, reset=False,
+                 erase=True, reset=False,
                  iface='swd', speed='auto', flash_script = None,
                  loader=None,
                  gdbserver='JLinkGDBServer',
@@ -101,7 +101,6 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.dev_id = dev_id
         self.commander = commander
         self.flash_script = flash_script
-        self.dt_flash = dt_flash
         self.erase = erase
         self.reset = reset
         self.gdbserver = gdbserver
@@ -125,7 +124,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
-                          dev_id=True, flash_addr=True, erase=True, reset=True,
+                          dev_id=True, erase=True, reset=True,
                           tool_opt=True, file=True, rtt=True)
 
     @classmethod
@@ -182,7 +181,6 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         return JLinkBinaryRunner(cfg, args.device,
                                  dev_id=args.dev_id,
                                  commander=args.commander,
-                                 dt_flash=args.dt_flash,
                                  erase=args.erase,
                                  reset=args.reset,
                                  iface=args.iface, speed=args.speed,
@@ -386,10 +384,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             if self.file_type == FileType.HEX:
                 flash_cmd = f'loadfile "{self.file}"'
             elif self.file_type == FileType.BIN:
-                if self.dt_flash:
-                    flash_addr = self.flash_address_from_build_conf(self.build_conf)
-                else:
-                    flash_addr = 0
+                flash_addr = self.flash_address_from_build_conf(self.build_conf)
                 flash_cmd = f'loadfile "{self.file}" 0x{flash_addr:x}'
             else:
                 err = 'Cannot flash; jlink runner only supports hex and bin files'
@@ -403,10 +398,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 flash_cmd = f'loadfile "{self.hex_name}"'
             # Preferring .bin over .elf
             elif self.bin_name is not None and os.path.isfile(self.bin_name):
-                if self.dt_flash:
-                    flash_addr = self.flash_address_from_build_conf(self.build_conf)
-                else:
-                    flash_addr = 0
+                flash_addr = self.flash_address_from_build_conf(self.build_conf)
                 flash_file = self.bin_name
                 flash_cmd = f'loadfile "{self.bin_name}" 0x{flash_addr:x}'
             elif self.elf_name is not None and os.path.isfile(self.elf_name):

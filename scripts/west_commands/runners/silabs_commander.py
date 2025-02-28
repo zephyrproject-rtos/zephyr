@@ -18,7 +18,7 @@ DEFAULT_APP = 'commander'
 
 
 class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
-    def __init__(self, cfg, device, dev_id, commander, dt_flash, erase, speed, tool_opt):
+    def __init__(self, cfg, device, dev_id, commander, erase, speed, tool_opt):
         super().__init__(cfg)
         self.file = cfg.file
         self.file_type = cfg.file_type
@@ -28,7 +28,6 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
         self.device = device
         self.dev_id = dev_id
         self.commander = commander
-        self.dt_flash = dt_flash
         self.erase = erase
         self.speed = speed
 
@@ -43,8 +42,7 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash'},
-                          dev_id=True, flash_addr=True, erase=True,
-                          tool_opt=True, file=True)
+                          dev_id=True, erase=True, tool_opt=True, file=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -73,7 +71,6 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
                 cfg, args.device,
                 dev_id=args.dev_id,
                 commander=args.commander,
-                dt_flash=args.dt_flash,
                 erase=args.erase,
                 speed=args.speed,
                 tool_opt=args.tool_opt)
@@ -91,10 +88,7 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
 
         # Get the build artifact to flash
 
-        if self.dt_flash:
-            flash_addr = self.flash_address_from_build_conf(self.build_conf)
-        else:
-            flash_addr = 0
+        flash_addr = self.flash_address_from_build_conf(self.build_conf)
 
         if self.file is not None:
             # use file provided by the user
