@@ -629,7 +629,7 @@ Bluetooth Host
   pairing, it should disable :kconfig:option:`CONFIG_BT_SMP_SC_PAIR_ONLY` manually.
 
 * The prompt for :kconfig:option:`CONFIG_BT_ECC` has been removed, since it only offers an internal
-  API, meaning internal users should explicitly select it in their respective Kconfig options.
+  API, meaning internal users should explicitly select it in their respecti
 
 Bluetooth Crypto
 ================
