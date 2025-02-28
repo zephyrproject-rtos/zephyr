@@ -1,0 +1,22 @@
+/ {
+	soc{
+		rpi_pico_pit_controller: rpi_pico_pit_controller {
+			status = "okay";
+			compatible = "raspberrypi,pico-pit";
+			clocks = <&clocks 0x5>;
+			interrupts = <0x4 0x3>;
+			interrupt-names = "PWM_IRQ_WRAP";
+			#pico-pit-controller-cells = <0>;
+
+			rpi_pico_pit_channel_0: rpi_pico_pit_channel_0 {
+				status = "okay";
+				compatible = "raspberrypi,pico-pit-channel";
+				pwm_slice = <0>;
+
+				#pico-pit-channel-cells = <0>;
+			};
+		};
+	};
+
+
+};
