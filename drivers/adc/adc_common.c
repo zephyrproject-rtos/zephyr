@@ -7,7 +7,7 @@
 #include <zephyr/drivers/adc.h>
 
 int adc_gain_invert(enum adc_gain gain,
-		    int32_t *value)
+		    int64_t *value)
 {
 	struct gain_desc {
 		uint8_t mul;
