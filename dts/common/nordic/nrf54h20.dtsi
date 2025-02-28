@@ -649,6 +649,20 @@
 				#pwm-cells = <3>;
 			};
 
+			spis120: spi@8e5000 {
+				compatible = "nordic,nrf-spis";
+				reg = <0x8e5000 0x1000>;
+				status = "disabled";
+				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
+				easydma-maxcnt-bits = <15>;
+				interrupts = <229 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hsfll120>;
+				max-frequency = <DT_FREQ_M(32)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_SPIS_SCK>;
+			};
+
 			spi120: spi@8e6000 {
 				compatible = "nordic,nrf-spim";
 				reg = <0x8e6000 0x1000>;
@@ -662,8 +676,7 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
-				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>,
-							 <NRF_FUN_SPIS_SCK>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>;
 			};
 
 			uart120: uart@8e6000 {
@@ -690,8 +703,7 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
-				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>,
-							 <NRF_FUN_SPIS_SCK>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>;
 			};
 
 			cpuppr_vpr: vpr@908000 {
