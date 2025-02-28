@@ -7,8 +7,11 @@
 /* The flash must be erased after this test suite is run for the write-once entry test to pass. */
 ZTEST_SUITE(secure_storage_psa_its, NULL, NULL, NULL, NULL, NULL);
 
-#ifdef CONFIG_SECURE_STORAGE
+#if defined(CONFIG_SECURE_STORAGE)
 #define MAX_DATA_SIZE CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE
+#elif defined(CONFIG_MBEDTLS_PSA_ITS_BACKEND_MBEDTLS_FILE)
+/* The backend supports arbitrarily large files, limit the value here for array sizes */
+#define MAX_DATA_SIZE 256
 #else
 #define MAX_DATA_SIZE CONFIG_TFM_ITS_MAX_ASSET_SIZE
 #endif
@@ -32,7 +35,7 @@ ZTEST(secure_storage_psa_its, test_all_sizes)
 
 	fill_data_buffer(written_data);
 
-	for (unsigned int i = 0; i <= sizeof(written_data); ++i) {
+	for (unsigned int i = 1; i <= sizeof(written_data); ++i) {
 
 		ret = psa_its_set(UID, i, written_data, PSA_STORAGE_FLAG_NONE);
 		zassert_equal(ret, PSA_SUCCESS);
@@ -41,9 +44,11 @@ ZTEST(secure_storage_psa_its, test_all_sizes)
 		zassert_equal(ret, PSA_SUCCESS);
 		zassert_equal(info.flags, PSA_STORAGE_FLAG_NONE);
 		zassert_equal(info.size, i);
+#ifndef CONFIG_MBEDTLS_PSA_ITS_BACKEND_MBEDTLS_FILE
 		zassert_equal(info.capacity, i);
+#endif
 
-		ret = psa_its_get(UID, 0, sizeof(read_data), read_data, &data_length);
+		ret = psa_its_get(UID, 0, i, read_data, &data_length);
 		zassert_equal(ret, PSA_SUCCESS);
 		zassert_equal(data_length, i);
 		zassert_mem_equal(read_data, written_data, data_length);
@@ -78,6 +83,14 @@ ZTEST(secure_storage_psa_its, test_all_offsets)
 
 ZTEST(secure_storage_psa_its, test_max_num_entries)
 {
+	if (IS_ENABLED(CONFIG_MBEDTLS_PSA_ITS_BACKEND_MBEDTLS_FILE)) {
+		/* The mbedtls file backend will happily fill your hard drive
+		 *  with as many entries as you have space. Skip this test.
+		 */
+		ztest_test_skip();
+		return;
+	}
+
 	psa_status_t ret = PSA_SUCCESS;
 	unsigned int i;
 	struct psa_storage_info_t info;
@@ -117,6 +130,12 @@ ZTEST(secure_storage_psa_its, test_write_once_flag)
 	const psa_storage_uid_t uid = 1 << 16;
 	const uint8_t data[MAX_DATA_SIZE] = {};
 	struct psa_storage_info_t info;
+
+	if (IS_ENABLED(CONFIG_MBEDTLS_PSA_ITS_BACKEND_MBEDTLS_FILE)) {
+		/* The mbedtls file backend does not support this option */
+		ztest_test_skip();
+		return;
+	}
 
 	ret = psa_its_set(uid, sizeof(data), data, PSA_STORAGE_FLAG_WRITE_ONCE);
 	zassert_equal(ret, PSA_SUCCESS, "%s%d", (ret == PSA_ERROR_NOT_PERMITTED) ?
