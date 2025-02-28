@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019-2020 Peter Bigot Consulting, LLC
  * Copyright (c) 2021 Laird Connectivity
+ * Copyright (c) 2025 Marcin Lyda <elektromarcin@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,6 +51,7 @@ struct mcp7940n_config {
 	struct counter_config_info generic;
 	struct i2c_dt_spec i2c;
 	const struct gpio_dt_spec int_gpios;
+	bool vbat_enable;
 };
 
 struct mcp7940n_data {
@@ -678,6 +680,10 @@ static int mcp7940n_init(const struct device *dev)
 		goto out;
 	}
 
+	/* Configure VBat enable */
+	data->registers.rtc_weekday.vbaten = cfg->vbat_enable;
+
+	/* Set day of week and update VBat enable config */
 	rc = set_day_of_week(dev, &unix_time);
 	if (rc < 0) {
 		goto out;
@@ -693,7 +699,6 @@ static int mcp7940n_init(const struct device *dev)
 
 	/* Configure alarm interrupt gpio */
 	if (cfg->int_gpios.port != NULL) {
-
 		if (!gpio_is_ready_dt(&cfg->int_gpios)) {
 			LOG_ERR("Port device %s is not ready",
 				cfg->int_gpios.port->name);
@@ -757,6 +762,7 @@ static DEVICE_API(counter, mcp7940n_api) = {
 		},									\
 		.i2c = I2C_DT_SPEC_INST_GET(index),					\
 		.int_gpios = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {0}),		\
+		.vbat_enable = DT_INST_PROP(index, vbat_enable)				\
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(index, mcp7940n_init, NULL,				\
