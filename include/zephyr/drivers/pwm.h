@@ -410,6 +410,20 @@ typedef int (*pwm_set_cycles_t)(const struct device *dev, uint32_t channel,
 typedef int (*pwm_get_cycles_per_sec_t)(const struct device *dev,
 					uint32_t channel, uint64_t *cycles);
 
+/**
+ * @brief PWM driver API call to tune the timer clock to achieve the desired
+	  period accurately.
+ *
+ * @note Utility macros such as PWM_MSEC() can be used to convert from other
+ * scales or units to nanoseconds, the units used by this function.
+ *
+ * @param[in] dev PWM device instance.
+ * @param channel PWM channel.
+ * @param period Period (in nanoseconds) to be targeted.
+ */
+typedef void (*pwm_tune_clock_t)(const struct device *dev, uint32_t channel,
+				 uint32_t period);
+
 #ifdef CONFIG_PWM_CAPTURE
 /**
  * @brief PWM driver API call to configure PWM capture.
@@ -438,6 +452,7 @@ typedef int (*pwm_disable_capture_t)(const struct device *dev,
 __subsystem struct pwm_driver_api {
 	pwm_set_cycles_t set_cycles;
 	pwm_get_cycles_per_sec_t get_cycles_per_sec;
+	pwm_tune_clock_t tune_clock;
 #ifdef CONFIG_PWM_CAPTURE
 	pwm_configure_capture_t configure_capture;
 	pwm_enable_capture_t enable_capture;
@@ -537,10 +552,16 @@ static inline int z_impl_pwm_get_cycles_per_sec(const struct device *dev,
 static inline int pwm_set(const struct device *dev, uint32_t channel,
 			  uint32_t period, uint32_t pulse, pwm_flags_t flags)
 {
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
 	int err;
 	uint64_t pulse_cycles;
 	uint64_t period_cycles;
 	uint64_t cycles_per_sec;
+
+	if(api->tune_clock) {
+		api->tune_clock(dev, channel, period);
+	}
 
 	err = pwm_get_cycles_per_sec(dev, channel, &cycles_per_sec);
 	if (err < 0) {
