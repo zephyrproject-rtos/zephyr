@@ -30,4 +30,6 @@ source "lib/acpi/Kconfig"
 source "lib/runtime/Kconfig"
 
 source "lib/utils/Kconfig"
+
+source "lib/uuid/Kconfig"
 endmenu
