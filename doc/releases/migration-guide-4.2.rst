@@ -251,6 +251,10 @@ Modem
 Flash
 =====
 
+* Renamed the file from ``flash_hp_ra.h`` to ``soc_flash_renesas_ra_hp.h``.
+* Renamed the file from ``flash_hp_ra.c`` to ``soc_flash_renesas_ra_hp.c``.
+* Renamed the file from ``flash_hp_ra_ex_op.c`` to ``soc_flash_renesas_ra_hp_ex_op.c``.
+
 * The Flash HP Renesas RA dual bank mode Kconfig symbol :kconfig:option:`CONFIG_DUAL_BANK_MODE`
   has been removed.
 
