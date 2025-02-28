@@ -8,6 +8,7 @@ compatible: "infineon,xmc4xxx-ethernet"
 include:
   - name: ethernet-controller.yaml
   - name: pinctrl-device.yaml
+  - name: nvmem-consumer.yaml
 
 properties:
   interrupts:
