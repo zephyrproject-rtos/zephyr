@@ -69,42 +69,11 @@ More information about STM32F407VG can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f4_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | CAN controller                      |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c controller                      |
-+-----------+------------+-------------------------------------+
-| I2S       | on-chip    | i2s controller                      |
-+-----------+------------+-------------------------------------+
-| AUDIO     | on-board   | audio codec on CS43L22 via I2S3     |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 .. note:: CAN feature requires CAN transceiver, such as `SK Pang CAN breakout board`_.
           Zephyr default configuration uses CAN_2 exclusively, as simultaneous use
           of CAN_1 and CAN_2 is not yet supported.
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f4_disco/stm32f4_disco_defconfig`
-
 
 Pin Mapping
 ===========

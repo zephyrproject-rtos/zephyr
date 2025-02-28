@@ -82,53 +82,7 @@ Nucleo H743ZI provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_h743zi board configuration supports the following hardware
-features:
-
-+-------------+------------+-------------------------------------+
-| Interface   | Controller | Driver/Component                    |
-+=============+============+=====================================+
-| NVIC        | on-chip    | nested vector interrupt controller  |
-+-------------+------------+-------------------------------------+
-| UART        | on-chip    | serial port                         |
-+-------------+------------+-------------------------------------+
-| PINMUX      | on-chip    | pinmux                              |
-+-------------+------------+-------------------------------------+
-| GPIO        | on-chip    | gpio                                |
-+-------------+------------+-------------------------------------+
-| RTC         | on-chip    | counter                             |
-+-------------+------------+-------------------------------------+
-| I2C         | on-chip    | i2c                                 |
-+-------------+------------+-------------------------------------+
-| PWM         | on-chip    | pwm                                 |
-+-------------+------------+-------------------------------------+
-| ADC         | on-chip    | adc                                 |
-+-------------+------------+-------------------------------------+
-| DAC         | on-chip    | DAC Controller                      |
-+-------------+------------+-------------------------------------+
-| RNG         | on-chip    | True Random number generator        |
-+-------------+------------+-------------------------------------+
-| ETHERNET    | on-chip    | ethernet                            |
-+-------------+------------+-------------------------------------+
-| SPI         | on-chip    | spi                                 |
-+-------------+------------+-------------------------------------+
-| Backup SRAM | on-chip    | Backup SRAM                         |
-+-------------+------------+-------------------------------------+
-| WATCHDOG    | on-chip    | independent watchdog                |
-+-------------+------------+-------------------------------------+
-| USB         | on-chip    | usb_device                          |
-+-------------+------------+-------------------------------------+
-| CAN/CANFD   | on-chip    | canbus                              |
-+-------------+------------+-------------------------------------+
-| die-temp    | on-chip    | die temperature sensor              |
-+-------------+------------+-------------------------------------+
-| RTC         | on-chip    | rtc                                 |
-+-------------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_h743zi/nucleo_h743zi_defconfig`
+.. zephyr:board-supported-hw::
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
