@@ -29,11 +29,12 @@
 #define CONFIG_PRINTK_BUFFER_SIZE 0
 #endif
 
+#ifdef CONFIG_PRINTK
+
 #if defined(CONFIG_PRINTK_SYNC)
 static struct k_spinlock lock;
 #endif
 
-#ifdef CONFIG_PRINTK
 /**
  * @brief Default character output routine that does nothing
  * @param c Character to swallow

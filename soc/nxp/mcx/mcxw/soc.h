@@ -6,9 +6,14 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
+#include "fsl_common.h"
+
+#if CONFIG_PINCTRL
 #include <fsl_port.h>
 
 #define PORT_MUX_GPIO kPORT_MuxAsGpio
+
+#endif
 
 #define nbu_handler RF_IMU0_IRQHandler
 
