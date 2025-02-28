@@ -5511,7 +5511,14 @@ static void notify_iface_up(struct net_if *iface)
 		rejoin_multicast_groups(iface);
 		iface_ipv6_start(iface);
 		iface_ipv4_start(iface);
+#if !defined(CONFIG_NET_DHCPV4_FALLBACK_AUTO)
+		/*
+		 * When using autoconf as a DHCP fallback, do not
+		 * start it when interface is brought up and let some
+		 * time for DHCP to settle.
+		 */
 		net_ipv4_autoconf_start(iface);
+#endif
 	}
 }
 
