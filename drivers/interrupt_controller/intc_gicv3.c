@@ -301,6 +301,21 @@ void arm_gic_eoi(unsigned int intid)
 	write_sysreg(intid, ICC_EOIR1_EL1);
 }
 
+#ifdef	CONFIG_ZVM
+void arm_gic_eoi_deactivate(unsigned int intid, bool no_deactivate)
+{
+	/*
+	 * For PTdevice's intid of VM, write dir to this intid
+	 * may be cause unpredictable action. And When ICC_CTLR_EL1.eoimode
+	 * is set to '1', host os's intid must use deactivate operation.
+	 */
+	if (!no_deactivate) {
+		write_sysreg(intid, ICC_DIR_EL1);
+	}
+	barrier_isync_fence_full();
+}
+#endif /* CONFIG_ZVM */
+
 void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 		   uint16_t target_list)
 {

@@ -17,3 +17,5 @@
 #include <zephyr/linker/common-rom/common-rom-interrupt-controllers.ld>
 
 #include <zephyr/linker/common-rom/common-rom-misc.ld>
+
+#include <zephyr/linker/common-rom/common-rom-hypervisor.ld>

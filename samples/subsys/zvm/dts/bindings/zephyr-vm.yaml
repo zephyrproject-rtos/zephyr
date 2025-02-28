@@ -1,0 +1,22 @@
+description: Zephyr Virtual Machine Space
+
+compatible: "zephyr-vm"
+
+properties:
+  dtb_address:
+    type: int
+    description: |
+      Base address of the VM device tree file.
+    required: true
+
+  dtb_size:
+    type: int
+    description: |
+      Size of the VM device tree file.
+    required: true
+
+  vcpu_num:
+    type: int
+    description: |
+      Number of virtual CPUs for each Zephyr VM (supports SMP).
+    required: true

@@ -1,0 +1,8 @@
+board:
+  name: qemu_max
+  full_name: QEMU Emulation for ARM MAX
+  vendor: arm
+  socs:
+  - name: qemu_max
+    variants:
+    - name: smp

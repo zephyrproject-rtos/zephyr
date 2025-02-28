@@ -72,6 +72,11 @@ extern "C" {
 /* Thread is present in the ready queue */
 #define _THREAD_QUEUED (BIT(7))
 
+#ifdef CONFIG_ZVM
+/* vCPU thread need switch context? */
+#define _THREAD_VCPU_NO_SWITCH	(BIT(8))
+#endif
+
 /* end - states */
 
 #ifdef CONFIG_STACK_SENTINEL
