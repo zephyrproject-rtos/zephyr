@@ -1,7 +1,7 @@
 # Copyright (c) 2017 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
 
-description: Atmel SAM Family I2C (TWIHS) node
+description: Atmel SAM Family I2C (TWIHS)
 
 compatible: "atmel,sam-i2c-twihs"
 
