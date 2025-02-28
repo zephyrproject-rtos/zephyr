@@ -1854,7 +1854,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127", 300));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_init_chat_script, quectel_bg95_init_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 10);
+			 abort_matches, modem_cellular_chat_callback_handler, 20);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
@@ -1875,6 +1875,13 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_periodic_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_periodic_chat_script,
 			 quectel_bg95_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_shutdown_chat_script_cmds,
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+QPOWD=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_shutdown_chat_script,
+			quectel_bg95_shutdown_chat_script_cmds, abort_matches,
+			modem_cellular_chat_callback_handler, 4);
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(quectel_eg25_g)
@@ -2426,7 +2433,8 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 				       NULL,                                                       \
 				       &quectel_bg95_init_chat_script,                             \
 				       &quectel_bg95_dial_chat_script,                             \
-				       &quectel_bg95_periodic_chat_script, NULL)
+				       &quectel_bg95_periodic_chat_script,			   \
+				       &quectel_bg95_shutdown_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_QUECTEL_EG25_G(inst)                                                 \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
