@@ -48,6 +48,19 @@ config ARM_SCMI_SHMEM_INIT_PRIORITY
 	help
 	  SCMI SHMEM driver device initialization priority.
 
+config ARM_SCMI_SHMEM_VENDOR_NXP
+	bool "Allow NXP specific SCMI features"
+	help
+	  When enabled, additional SCMI features specific to NXP will be available
+
+config ARM_SCMI_SHMEM_USE_CRC
+	bool "SCMI shared memory (SHMEM) uses CRC32"
+	default y
+	select CRC
+	depends on ARM_SCMI_SHMEM_VENDOR_NXP
+	help
+	  Enable CRC32 ieee validation on SCMI messages
+
 config ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
 	bool "Transport layer has static channels"
 	help
