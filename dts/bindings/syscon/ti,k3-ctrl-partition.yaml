@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The control module controls top-level device behavior in various states.
+  It contains registers for configuration, bootstrap signals, I/O pad multiplexing,
+  clock selection, and many others.
+  This binding defines a single partition in a control module.
+
+compatible: "ti,k3-ctrl-partition"
+
+include: syscon.yaml
+
+properties:
+  lock-offset:
+    type: int
+    default: 0x1008
+    description: Offset for the KICK0 register
+
