@@ -27,7 +27,7 @@ USBD_DEVICE_DEFINE(cdc_acm_serial,
 USBD_DESC_LANG_DEFINE(cdc_acm_serial_lang);
 USBD_DESC_MANUFACTURER_DEFINE(cdc_acm_serial_mfr, CONFIG_CDC_ACM_SERIAL_MANUFACTURER_STRING);
 USBD_DESC_PRODUCT_DEFINE(cdc_acm_serial_product, CONFIG_CDC_ACM_SERIAL_PRODUCT_STRING);
-USBD_DESC_SERIAL_NUMBER_DEFINE(cdc_acm_serial_sn);
+IF_ENABLED(CONFIG_HWINFO, (USBD_DESC_SERIAL_NUMBER_DEFINE(cdc_acm_serial_sn)));
 
 USBD_DESC_CONFIG_DEFINE(fs_cfg_desc, "FS Configuration");
 USBD_DESC_CONFIG_DEFINE(hs_cfg_desc, "HS Configuration");
@@ -95,7 +95,9 @@ static int cdc_acm_serial_init_device(void)
 		return err;
 	}
 
-	err = usbd_add_descriptor(&cdc_acm_serial, &cdc_acm_serial_sn);
+	IF_ENABLED(CONFIG_HWINFO, (
+		err = usbd_add_descriptor(&cdc_acm_serial, &cdc_acm_serial_sn);
+	))
 	if (err) {
 		LOG_ERR("Failed to initialize SN descriptor (%d)", err);
 		return err;
