@@ -212,7 +212,28 @@ static int ili9806e_write_reg(const struct device *dev, uint8_t reg, const uint8
 	int ret;
 	const struct ili9806e_config *cfg = dev->config;
 
-	ret = mipi_dsi_dcs_write(cfg->mipi_dsi, cfg->channel, reg, buf, len);
+	struct mipi_dsi_msg msg = {
+		.cmd = reg,
+		.tx_buf = buf,
+		.tx_len = len,
+		.flags = MIPI_DSI_MSG_USE_LPM,
+	};
+
+	switch (len) {
+	case 0U:
+		msg.type = MIPI_DSI_DCS_SHORT_WRITE;
+		break;
+
+	case 1U:
+		msg.type = MIPI_DSI_DCS_SHORT_WRITE_PARAM;
+		break;
+
+	default:
+		msg.type = MIPI_DSI_DCS_LONG_WRITE;
+		break;
+	}
+
+	ret = mipi_dsi_transfer(cfg->mipi_dsi, cfg->channel, &msg);
 	if (ret < 0) {
 		LOG_ERR("Failed writing reg: 0x%x result: (%d)", reg, ret);
 		return ret;
@@ -384,7 +405,7 @@ static int ili9806e_init(const struct device *dev)
 		mdev.pixfmt = MIPI_DSI_PIXFMT_RGB888;
 	}
 	mdev.data_lanes = cfg->data_lanes;
-	mdev.mode_flags = MIPI_DSI_MODE_VIDEO;
+	mdev.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_LPM;
 	mdev.timings.hactive = cfg->width;
 	mdev.timings.hbp = ILITEK_ILI9806E_HBP;
 	mdev.timings.hfp = ILITEK_ILI9806E_HFP;
