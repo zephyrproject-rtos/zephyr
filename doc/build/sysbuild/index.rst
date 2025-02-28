@@ -801,6 +801,27 @@ debug the application.
 .. _MCUboot with Zephyr: https://docs.mcuboot.com/readme-zephyr
 .. _ExternalProject: https://cmake.org/cmake/help/latest/module/ExternalProject.html
 
+.. _sysbuild_board_roots:
+
+Specifying custom board roots with sysbuild
+*******************************************
+
+Because sysbuild is a CMake project in it's own right, specifying ``BOARD_ROOT`` in an
+application ``CMakeLists.txt`` will not work, instead the board root must be set by using a
+:ref:`a module <modules_build_settings>` or by using a custom sysbuild project file, for example
+``<application>/sysbuild/CMakeLists.txt``:
+
+.. code-block:: cmake
+
+   list(APPEND BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../<extra-board-root>)
+
+   find_package(Sysbuild REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+   project(sysbuild LANGUAGES)
+
+This will pass the board root on to all images as part of a project, it does not need to be
+repeated in each image's ``CMakeLists.txt`` file.
+
 Extending sysbuild
 ******************
 
@@ -815,3 +836,9 @@ each image that is part of a project. Alternatively, there are
 which can be used to include CMake and Kconfig files for the overall sysbuild
 image itself, this is where e.g. a custom image for a particular board or SoC
 can be added.
+
+
+.. toctree::
+    :maxdepth: 1
+
+    images.rst
