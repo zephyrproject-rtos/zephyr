@@ -12,6 +12,9 @@
 
 /**
  * @brief Generic Attribute Profile (GATT)
+ * @details The GATT layer manages the service database by providing APIs for
+ *          service registration and attribute declaration. For more
+ *          information, see @ref bt_gatt_client and @ref bt_gatt_server.
  * @defgroup bt_gatt Generic Attribute Profile (GATT)
  * @ingroup bluetooth
  * @{
@@ -222,9 +225,9 @@ typedef ssize_t (*bt_gatt_attr_write_func_t)(struct bt_conn *conn,
  *  pass the pointer to GATT server APIs.
  */
 struct bt_gatt_attr {
-	/** @brief Attribute Type, aka. "UUID"
+	/** @brief Attribute Type
 	 *
-	 *  The Attribute Type determines the interface that can
+	 *  The Attribute Type is a UUID which determines the interface that can
 	 *  be expected from the read() and write() methods and
 	 *  the possible permission configurations.
 	 *
@@ -275,16 +278,13 @@ struct bt_gatt_attr {
 	 */
 	void *user_data;
 
-	/** @brief Attribute Handle or zero, maybe?
+	/** @brief Attribute Handle
 	 *
-	 *  The meaning of this field varies and is not specified here.
-	 *  Some APIs use this field as input/output. It does not always
-	 *  contain the Attribute Handle.
+	 *  The Attribute Handle is an index corresponding to a specific
+	 *  Attribute in the ATT database.
 	 *
 	 *  @note Use bt_gatt_attr_get_handle() for attributes in the
 	 *  local ATT database.
-	 *
-	 *  @sa bt_gatt_discover_func_t about this field.
 	 */
 	uint16_t handle;
 
@@ -294,8 +294,6 @@ struct bt_gatt_attr {
 	 *
 	 *  The permissions are security requirements that must be
 	 *  satisfied before calling read() or write().
-	 *
-	 *  @sa bt_gatt_discover_func_t about this field.
 	 */
 	uint16_t perm: 15;
 
@@ -311,7 +309,12 @@ struct bt_gatt_attr {
 	/** @endcond */
 };
 
-/** @brief GATT Service structure */
+/** @brief Static GATT Service structure
+ *
+ *  Allows the user the declare static GATT Services with the aim of reducing the
+ *  used RAM. The @ref BT_GATT_SERVICE_DEFINE macro can be used to statically
+ *  define and register a service.
+ */
 struct bt_gatt_service_static {
 	/** Service Attributes */
 	const struct bt_gatt_attr *attrs;
@@ -319,31 +322,48 @@ struct bt_gatt_service_static {
 	size_t attr_count;
 };
 
-/** @brief GATT Service structure */
+/** @brief GATT Service structure
+ *
+ *  This structure is used to define GATT services which can be registered and
+ *  unregistered at runtime. See @ref bt_gatt_service_register for when services
+ *  should be registered.
+ */
 struct bt_gatt_service {
 	/** Service Attributes */
 	struct bt_gatt_attr *attrs;
 	/** Service Attribute count */
 	size_t attr_count;
-
+	/** @cond INTERNAL_HIDDEN
+	 *  Field used for list handling.
+	 */
 	sys_snode_t node;
+	/** @endcond */
 };
 
-/** @brief Service Attribute Value. */
+/** @brief Service Attribute Value.
+ *
+ *  This is the data described by the Attribute Type and indexed by the
+ *  Attribute Handle in the database.
+ */
 struct bt_gatt_service_val {
 	/** Service UUID. */
 	const struct bt_uuid *uuid;
-	/** Service end handle. */
+	/** Handle of the last Attribute within the Service. */
 	uint16_t end_handle;
 };
 
-/** @brief Include Attribute Value. */
+/** @brief Include Attribute Value.
+ *
+ *  This structure represents an included service attribute in the GATT
+ *  server. An included service is a service that is referenced within another
+ *  service, allowing for the reuse of common service definitions.
+ */
 struct bt_gatt_include {
 	/** Service UUID. */
 	const struct bt_uuid *uuid;
-	/** Service start handle. */
+	/** Handle of the first attribute within the included service. */
 	uint16_t start_handle;
-	/** Service end handle. */
+	/** Handle of the last attribute within the included service. */
 	uint16_t end_handle;
 };
 
@@ -360,7 +380,11 @@ struct bt_gatt_cb {
 	 */
 	void (*att_mtu_updated)(struct bt_conn *conn, uint16_t tx, uint16_t rx);
 
+	/** @cond INTERNAL_HIDDEN
+	 *  Field used for list handling.
+	 */
 	sys_snode_t node;
+	/** @endcond */
 };
 
 /** @brief GATT authorization callback structure. */
@@ -448,13 +472,17 @@ struct bt_gatt_authorization_cb {
  */
 #define BT_GATT_CHRC_EXT_PROP			0x80
 
-/** @brief Characteristic Attribute Value. */
+/** @brief Attribute Value of a Characteristic Declaration.
+ *
+ *  This is the data associated with the characteristic, and can be read from or
+ *  written to by a GATT client depending on the characteristic properties.
+ */
 struct bt_gatt_chrc {
 	/** Characteristic UUID. */
 	const struct bt_uuid *uuid;
 	/** Characteristic Value handle. */
 	uint16_t value_handle;
-	/** Characteristic properties. */
+	/** Characteristic properties, a bitmap of ``BT_GATT_CHRC_*`` macros. */
 	uint8_t	properties;
 };
 
@@ -462,9 +490,15 @@ struct bt_gatt_chrc {
 #define BT_GATT_CEP_RELIABLE_WRITE		0x0001
 #define BT_GATT_CEP_WRITABLE_AUX		0x0002
 
-/** @brief Characteristic Extended Properties Attribute Value. */
+/** @brief Characteristic Extended Properties Attribute Value.
+ *
+ *  Used in the discovery of standard characteristic descriptor values. Shall
+ *  exist if the @ref BT_GATT_CHRC_EXT_PROP bit is set in the characteristic
+ *  properties. Can be used with the @ref BT_GATT_CEP macro to declare the CEP
+ *  descriptor.
+ */
 struct bt_gatt_cep {
-	/** Characteristic Extended properties */
+	/** Characteristic Extended properties, a bitmap of ``BT_GATT_CEP_*`` macros. */
 	uint16_t properties;
 };
 
@@ -483,9 +517,12 @@ struct bt_gatt_cep {
  */
 #define BT_GATT_CCC_INDICATE			0x0002
 
-/** Client Characteristic Configuration Attribute Value */
+/** @brief Client Characteristic Configuration Attribute Value
+ *
+ *  Used in the discovery of standard characteristic descriptor values.
+ */
 struct bt_gatt_ccc {
-	/** Client Characteristic Configuration flags */
+	/** Client Characteristic Configuration flags, a bitmap of ``BT_GATT_CCC_*`` macros. */
 	uint16_t flags;
 };
 
@@ -499,25 +536,52 @@ struct bt_gatt_ccc {
  */
 #define BT_GATT_SCC_BROADCAST                   0x0001
 
-/** Server Characteristic Configuration Attribute Value */
+/** @brief Server Characteristic Configuration Attribute Value
+ *
+ *  Used in the discovery of standard characteristic descriptor values.
+ */
 struct bt_gatt_scc {
-	/** Server Characteristic Configuration flags */
+	/** Server Characteristic Configuration flags, a bitmap of ``BT_GATT_SCC_*`` macros. */
 	uint16_t flags;
 };
 
-/** @brief GATT Characteristic Presentation Format Attribute Value. */
+/** @brief GATT Characteristic Presentation Format Attribute Value.
+ *
+ *  Used in the discovery of standard characteristic descriptor values. Can be
+ *  used with the @ref BT_GATT_CPF macro to declare the CPF descriptor.
+ */
 struct bt_gatt_cpf {
-	/** Format of the value of the characteristic */
+	/** @brief Format of the value of the characteristic.
+	 *
+	 *  The format types can be found in section 2.4.1 of the Bluetooth SIG
+	 *  Assigned Numbers document.
+	 */
 	uint8_t format;
-	/** Exponent field to determine how the value of this characteristic is
-	 * further formatted
+	/** @brief Exponent field for value formatting.
+	 *
+	 *  Only used on integer format types.
+	 *  actual value = Characteristic Value x 10^Exponent
 	 */
 	int8_t exponent;
-	/** Unit of the characteristic */
+	/** @brief UUID of the unit of the characteristic.
+	 *
+	 *  The units can be found in section 3.5 of the Bluetooth SIG Assigned
+	 *  Numbers document.
+	 */
 	uint16_t unit;
-	/** Name space of the description */
+	/** @brief Name space of the description.
+	 *
+	 *  Used to identify the organization that is responsible for defining
+	 *  the enumerations for the description field. See section 2.4.2 of the
+	 *  Bluetooth SIG Assigned Numbers document.
+	 */
 	uint8_t name_space;
-	/** Description of the characteristic as defined in a higher layer profile */
+	/** @brief Description of the characteristic as defined in a higher layer profile.
+	 *
+	 *  An enumerated value defined by the organization identified by the
+	 *  name_space field. See section 2.4.2.1 of the Bluetooth SIG Assigned
+	 *  Numbers document.
+	 */
 	uint16_t description;
 };
 
@@ -721,8 +785,8 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr);
  *
  * @param attr A Characteristic Attribute.
  *
- * @note The ``user_data`` of the attribute must of type @ref bt_gatt_chrc and the ``uuid`` shall be
- * BT_UUID_GATT_CHRC
+ * @note The ``user_data`` of the attribute must be of type @ref bt_gatt_chrc and the ``uuid`` shall
+ * be BT_UUID_GATT_CHRC.
  *
  * @return the handle of the corresponding Characteristic Value. The value will
  *         be zero (the invalid handle) if @p attr was not a characteristic
@@ -1722,6 +1786,7 @@ struct bt_gatt_discover_params {
 	/** Discover attribute callback */
 	bt_gatt_discover_func_t func;
 	union {
+		/** See @ref bt_gatt_include for more on included services. */
 		struct {
 			/** Include service attribute declaration handle */
 			uint16_t attr_handle;
@@ -1841,9 +1906,9 @@ struct bt_gatt_read_params {
 			bool variable;
 		} multiple;
 		struct {
-			/** First requested handle number. */
+			/** Attribute handle to start reading from. */
 			uint16_t start_handle;
-			/** Last requested handle number. */
+			/** Attribute handle to stop reading at. */
 			uint16_t end_handle;
 			/** 2 or 16 octet UUID. */
 			const struct bt_uuid *uuid;
@@ -2133,7 +2198,11 @@ struct bt_gatt_subscribe_params {
 	/** Subscription flags */
 	ATOMIC_DEFINE(flags, BT_GATT_SUBSCRIBE_NUM_FLAGS);
 
+	/** @cond INTERNAL_HIDDEN
+	 *  Field used for list handling.
+	 */
 	sys_snode_t node;
+	/** @endcond */
 #if defined(CONFIG_BT_EATT) || defined(__DOXYGEN__)
 	/** Att channel options. */
 	enum bt_att_chan_opt chan_opt;
