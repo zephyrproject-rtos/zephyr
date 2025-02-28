@@ -149,3 +149,9 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* Added support for Armv8.1-M MPU's PXN (Privileged Execute Never) attribute.
+  With this, the MPU attributes for ``__ramfunc`` and ``__ram_text_reloc`` were modified such that,
+  PXN attribute is set for these regions if compiled with ``CONFIG_ARM_MPU_PXN`` and ``CONFIG_USERSPACE``.
+  This results in a change in behaviour for code being executed from these regions because,
+  if these regions have pxn attribute set in them, they cannot be executed in privileged mode.
