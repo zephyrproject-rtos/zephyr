@@ -24,6 +24,7 @@
 #endif
 
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_expr.h>
 
 /**
  * @brief devicetree.h API

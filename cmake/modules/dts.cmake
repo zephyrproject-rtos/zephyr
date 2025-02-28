@@ -107,12 +107,16 @@ set(GEN_EDT_SCRIPT              ${DT_SCRIPTS}/gen_edt.py)
 # This generates DT information needed by the C macro APIs,
 # along with a few other things.
 set(GEN_DEFINES_SCRIPT          ${DT_SCRIPTS}/gen_defines.py)
+# This generates definitions for decimal numbers in the device tree to be used in expr macros.
+set(GEN_EXPR_DEC_DEFINES_SCRIPT ${DT_SCRIPTS}/gen_expr_dec_defines.py)
 # The edtlib.EDT object in pickle format.
 set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
 # The generated file containing the final DTS, for debugging.
 set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 # The generated C header needed by <zephyr/devicetree.h>
 set(DEVICETREE_GENERATED_H      ${BINARY_DIR_INCLUDE_GENERATED}/devicetree_generated.h)
+# The file used by <zephyr/sys/util_expr.h>
+set(EXPR_DEC_GENERATED_H        ${BINARY_DIR_INCLUDE_GENERATED}/expr_dec_generated.h)
 # Generated build system internals.
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/zephyr.dts.pre)
 set(DTS_DEPS                    ${PROJECT_BINARY_DIR}/zephyr.dts.d)
@@ -329,6 +333,23 @@ execute_process(
 zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
 file(REMOVE ${DEVICETREE_GENERATED_H}.new)
 message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")
+
+#
+# Run GEN_EXPR_DEC_DEFINES_SCRIPT.
+#
+
+set(CMD_GEN_EXPR_DEC_DEFINES ${PYTHON_EXECUTABLE} ${GEN_EXPR_DEC_DEFINES_SCRIPT}
+${DEVICETREE_GENERATED_H} --outfile ${EXPR_DEC_GENERATED_H}.new
+)
+
+execute_process(
+	COMMAND ${CMD_GEN_EXPR_DEC_DEFINES}
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  COMMAND_ERROR_IS_FATAL ANY
+)
+zephyr_file_copy(${EXPR_DEC_GENERATED_H}.new ${EXPR_DEC_GENERATED_H} ONLY_IF_DIFFERENT)
+file(REMOVE ${EXPR_DEC_GENERATED_H}.new)
+message(STATUS "Generated expr_dec_generated.h: ${EXPR_DEC_GENERATED_H}")
 
 #
 # Run GEN_DRIVER_KCONFIG_SCRIPT.
