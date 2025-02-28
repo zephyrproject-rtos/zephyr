@@ -1,26 +1,23 @@
 /**
  * Copyright (c) 2023-2024 Marcin Niestroj
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nsos_errno.h"
+#include "nsi_errno.h"
+#include "nsi_utils.h"
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
-#endif
-
-struct nsos_mid_errno_map {
-	/** Zephyr/host error code */
+struct nsi_errno_mid_map {
+	/** Embedded/host error code */
 	int err;
-	/** NSOS middleground error code */
+	/** NSI_errno middleground error code */
 	int mid_err;
 };
 
-#define ERR(_name)				\
-	{ _name, NSOS_MID_ ## _name }
+#define ERR(_name) {_name, NSI_ERRNO_MID_##_name}
 
-static const struct nsos_mid_errno_map map[] = {
+static const struct nsi_errno_mid_map map[] = {
 	ERR(EPERM),
 	ERR(ENOENT),
 	ERR(ESRCH),
@@ -102,9 +99,13 @@ static const struct nsos_mid_errno_map map[] = {
 	ERR(ECANCELED),
 };
 
-int errno_to_nsos_mid(int err)
+int nsi_errno_to_mid(int err)
 {
-	for (int i = 0; i < ARRAY_SIZE(map); i++) {
+	if (err == 0) {
+		return err;
+	}
+
+	for (int i = 0; i < NSI_ARRAY_SIZE(map); i++) {
 		if (map[i].err == err) {
 			return map[i].mid_err;
 		}
@@ -113,9 +114,13 @@ int errno_to_nsos_mid(int err)
 	return err;
 }
 
-int errno_from_nsos_mid(int err)
+int nsi_errno_from_mid(int err)
 {
-	for (int i = 0; i < ARRAY_SIZE(map); i++) {
+	if (err == 0) {
+		return err;
+	}
+
+	for (int i = 0; i < NSI_ARRAY_SIZE(map); i++) {
 		if (map[i].mid_err == err) {
 			return map[i].err;
 		}
