@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #endif
 
 #include <soc.h>
-#include "flash_hp_ra.h"
+#include "soc_flash_renesas_ra_hp.h"
 
 #define FLASH_HP_CONFIG_SET_ACCESS_WORD_CNT (8U)
 

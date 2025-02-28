@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_FLASH_RA_HP_H_
-#define ZEPHYR_DRIVERS_FLASH_RA_HP_H_
+#ifndef ZEPHYR_DRIVERS_FLASH_SOC_FLASH_RENESAS_RA_HP_H_
+#define ZEPHYR_DRIVERS_FLASH_SOC_FLASH_RENESAS_RA_HP_H_
 
 #include <zephyr/drivers/flash.h>
 #include <instances/r_flash_hp.h>
@@ -79,4 +79,4 @@ struct event_flash {
 int flash_ra_ex_op_write_protect(const struct device *dev, const uintptr_t in, void *out);
 #endif /*CONFIG_FLASH_RA_WRITE_PROTECT*/
 
-#endif /* ZEPHYR_DRIVERS_FLASH_RA_HP_H_ */
+#endif /* ZEPHYR_DRIVERS_FLASH_SOC_FLASH_RENESAS_RA_HP_H_ */

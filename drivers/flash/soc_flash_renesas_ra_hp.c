@@ -13,11 +13,11 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
-#include "flash_hp_ra.h"
+#include "soc_flash_renesas_ra_hp.h"
 
 #define DT_DRV_COMPAT renesas_ra_flash_hp_controller
 
-LOG_MODULE_REGISTER(flash_hp_ra, CONFIG_FLASH_LOG_LEVEL);
+LOG_MODULE_REGISTER(flash_renesas_ra_hp, CONFIG_FLASH_LOG_LEVEL);
 
 #define ERASE_BLOCK_SIZE_0 DT_PROP(DT_INST(0, renesas_ra_nv_flash), erase_block_size)
 #define ERASE_BLOCK_SIZE_1 DT_PROP(DT_INST(1, renesas_ra_nv_flash), erase_block_size)
