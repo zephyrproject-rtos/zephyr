@@ -1042,6 +1042,8 @@ static inline enum wifi_security_type nxp_wifi_key_mgmt_to_zephyr(int key_mgmt, 
 		return WIFI_SECURITY_TYPE_PSK;
 	case WLAN_KEY_MGMT_PSK_SHA256:
 		return WIFI_SECURITY_TYPE_PSK_SHA256;
+	case WLAN_KEY_MGMT_PSK | WLAN_KEY_MGMT_PSK_SHA256:
+		return WIFI_SECURITY_TYPE_PSK;
 	case WLAN_KEY_MGMT_SAE:
 		if (pwe == 1) {
 			return WIFI_SECURITY_TYPE_SAE_H2E;
