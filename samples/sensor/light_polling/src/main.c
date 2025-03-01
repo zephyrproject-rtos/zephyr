@@ -9,11 +9,11 @@
 #include <stdio.h>
 #include <zephyr/drivers/sensor.h>
 
-#define SLEEP_TIME	K_MSEC(1000)
+#define SLEEP_TIME K_MSEC(1000)
 
 int main(void)
 {
-	const struct device *const dev = DEVICE_DT_GET_ONE(seeed_grove_light);
+	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(light_sensor));
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");
