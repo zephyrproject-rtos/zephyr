@@ -15,6 +15,8 @@ tests:
       - thingy53/nrf5340/cpuapp/ns
       - raytac_mdbt53_db_40/nrf5340/cpuapp/ns
       - raytac_mdbt53_db_40/nrf5340/cpuapp
+    integration_platforms:
+      - usb_kw24d512
   sample.net.wpan_serial.frdm_cr20a:
     extra_args: SHIELD=frdm_cr20a
     platform_allow: frdm_k64f

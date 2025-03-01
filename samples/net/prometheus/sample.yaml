@@ -13,5 +13,7 @@ common:
     - prometheus
   # Exclude CONFIG_HAS_RENESAS_RA_FSP as Renesas RA HAL has build error with mbedtls Socket
   filter: not CONFIG_HAS_RENESAS_RA_FSP
+  integration_platforms:
+    - qemu_x86
 tests:
   sample.net.prometheus: {}

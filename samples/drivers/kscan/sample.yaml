@@ -14,3 +14,5 @@ tests:
       fixture: fixture_connect_keyboard
     depends_on: kscan
     filter: dt_chosen_enabled("zephyr,keyboard-scan")
+    integration_platforms:
+      - mec1501modular_assy6885
