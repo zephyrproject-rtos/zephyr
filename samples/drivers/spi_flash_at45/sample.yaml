@@ -1,44 +1,27 @@
 sample:
   name: SPI Flash AT45 Sample
+common:
+  depends_on: spi
+  filter: dt_compat_enabled("atmel,at45")
+  integration_platforms:
+    - sam4l_wm400_cape
+  tags:
+    - spi
+    - flash
 tests:
   sample.drivers.spi.flash.at45.build:
-    tags:
-      - spi
-      - flash
-    depends_on: spi
-    filter: dt_compat_enabled("atmel,at45")
     build_only: true
   sample.drivers.spi.flash.at45.build.page_layout:
     extra_args: EXTRA_CONF_FILE="overlay-page_layout.conf"
-    tags:
-      - spi
-      - flash
-    depends_on: spi
-    filter: dt_compat_enabled("atmel,at45")
     build_only: true
   sample.drivers.spi.flash.at45.build.pm:
     extra_args: EXTRA_CONF_FILE="overlay-pm.conf"
-    tags:
-      - spi
-      - flash
-    depends_on: spi
-    filter: dt_compat_enabled("atmel,at45")
     build_only: true
   sample.drivers.spi.flash.at45.build.page_layout_pm:
     extra_args: EXTRA_CONF_FILE="overlay-page_layout.conf;overlay-pm.conf"
-    tags:
-      - spi
-      - flash
-    depends_on: spi
-    filter: dt_compat_enabled("atmel,at45")
     build_only: true
   sample.drivers.spi.flash.at45:
     extra_args: EXTRA_CONF_FILE="overlay-page_layout.conf;overlay-pm.conf"
-    tags:
-      - spi
-      - flash
-    depends_on: spi
-    filter: dt_compat_enabled("atmel,at45")
     harness: console
     harness_config:
       type: multi_line
