@@ -28,11 +28,14 @@ STEP_DIR_STEPPER_STRUCT_CHECK(struct tmc22xx_config, struct tmc22xx_data);
 static int tmc22xx_stepper_enable(const struct device *dev, const bool enable)
 {
 	const struct tmc22xx_config *config = dev->config;
+	struct tmc22xx_data *data = dev->data;
 
 	LOG_DBG("Stepper motor controller %s %s", dev->name, enable ? "enabled" : "disabled");
 	if (enable) {
+		data->common.enabled = true;
 		return gpio_pin_set_dt(&config->enable_pin, 1);
 	} else {
+		data->common.enabled = false;
 		return gpio_pin_set_dt(&config->enable_pin, 0);
 	}
 }
