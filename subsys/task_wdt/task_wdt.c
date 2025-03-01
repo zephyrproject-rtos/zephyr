@@ -179,7 +179,11 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 			if (!hw_wdt_started && hw_wdt_dev) {
 				/* also start fallback hw wdt */
 				wdt_setup(hw_wdt_dev,
-					WDT_OPT_PAUSE_HALTED_BY_DBG);
+					WDT_OPT_PAUSE_HALTED_BY_DBG
+#ifdef CONFIG_TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
+					| WDT_OPT_PAUSE_IN_SLEEP
+#endif
+				);
 				hw_wdt_started = true;
 			}
 #endif
