@@ -16,7 +16,6 @@ properties:
 
   num-lines:
     type: int
-    required: true
     description: Number of lines supported by the interrupt controller.
 
   line-ranges:
