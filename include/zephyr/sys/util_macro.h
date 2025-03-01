@@ -49,7 +49,7 @@ extern "C" {
 #define BIT64(_n) (1ULL << (_n))
 
 /**
- * @brief Toggle a bit
+ * @brief Toggle a specific bit of the given variable.
  *
  * The argument @p var is a variable whose value is written to as a
  * side effect.
