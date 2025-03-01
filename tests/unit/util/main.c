@@ -407,6 +407,33 @@ ZTEST(util, test_IS_EQ) {
 	zassert_false(IS_EQ(7, 0), "Unexpected IS_EQ result");
 }
 
+ZTEST(util, test_UTIL_INC)
+{
+	zassert_equal(UTIL_INC(0), 1, "Unexpected value %d", UTIL_INC(0));
+	zassert_equal(UTIL_INC(1), 2, "Unexpected value %d", UTIL_INC(1));
+	zassert_equal(UTIL_INC(4095), 4096, "Unexpected value %d", UTIL_INC(4095));
+	zassert_equal(UTIL_INC(4096), 4097, "Unexpected value %d", UTIL_INC(4096));
+}
+
+ZTEST(util, test_UTIL_DEC)
+{
+	zassert_equal(UTIL_DEC(0), 0, "Unexpected value %d", UTIL_DEC(0));
+	zassert_equal(UTIL_DEC(1), 0, "Unexpected value %d", UTIL_DEC(1));
+	zassert_equal(UTIL_DEC(2), 1, "Unexpected value %d", UTIL_DEC(2));
+	zassert_equal(UTIL_DEC(3), 2, "Unexpected value %d", UTIL_DEC(3));
+	zassert_equal(UTIL_DEC(4095), 4094, "Unexpected value %d", UTIL_DEC(4095));
+	zassert_equal(UTIL_DEC(4096), 4095, "Unexpected value %d", UTIL_DEC(4096));
+}
+
+ZTEST(util, test_UTIL_X2)
+{
+	zassert_equal(UTIL_X2(0), 0, "Unexpected value %d", UTIL_X2(0));
+	zassert_equal(UTIL_X2(1), 2, "Unexpected value %d", UTIL_X2(1));
+	zassert_equal(UTIL_X2(2), 4, "Unexpected value %d", UTIL_X2(2));
+	zassert_equal(UTIL_X2(4094), 8188, "Unexpected value %d", UTIL_X2(4094));
+	zassert_equal(UTIL_X2(4095), 8190, "Unexpected value %d", UTIL_X2(4095));
+}
+
 ZTEST(util, test_LIST_DROP_EMPTY) {
 	/*
 	 * The real definition should be:
