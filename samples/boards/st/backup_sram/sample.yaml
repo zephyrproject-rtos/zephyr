@@ -6,3 +6,7 @@ tests:
     depends_on: backup_sram
     build_only: true
     filter: dt_compat_enabled("st,stm32-backup-sram")
+    vendor_allow:
+      - st
+    integration_platforms:
+      - nucleo_f207zg/stm32f207xx
