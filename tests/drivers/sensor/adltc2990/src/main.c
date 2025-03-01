@@ -1,4 +1,5 @@
 /*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
  * SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -153,10 +154,33 @@ static void adltc2990_1_3_before(void *f)
 {
 	struct adltc2990_1_3_fixture *fixture = f;
 
+	uint8_t ctrl_reg_value;
+
+	adltc2990_emul_get_reg(fixture->target, ADLTC2990_REG_CONTROL, &ctrl_reg_value);
+
 	adltc2990_emul_reset(fixture->target);
+
+	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_CONTROL, &ctrl_reg_value);
 }
 
 ZTEST_SUITE(adltc2990_1_3, NULL, adltc2990_1_3_setup, adltc2990_1_3_before, NULL, NULL);
+
+ZTEST_F(adltc2990_1_3, test_acq_format)
+{
+	uint8_t ctrl_register_value;
+
+	adltc2990_trigger_measurement(fixture->dev, ADLTC2990_SINGLE_SHOT_ACQUISITION);
+	adltc2990_emul_get_reg(fixture->target, ADLTC2990_REG_CONTROL, &ctrl_register_value);
+	zassert_equal(ADLTC2990_SINGLE_SHOT_ACQUISITION,
+		      ADLTC2990_ACQUISITION_BIT_VAL(ctrl_register_value),
+		      "Repeated Acquisition not set");
+
+	adltc2990_trigger_measurement(fixture->dev, ADLTC2990_REPEATED_ACQUISITION);
+	adltc2990_emul_get_reg(fixture->target, ADLTC2990_REG_CONTROL, &ctrl_register_value);
+	zassert_equal(ADLTC2990_REPEATED_ACQUISITION,
+		      ADLTC2990_ACQUISITION_BIT_VAL(ctrl_register_value),
+		      "Single Shot Acquisition not set");
+}
 
 ZTEST_F(adltc2990_1_3, test_die_temperature)
 {
