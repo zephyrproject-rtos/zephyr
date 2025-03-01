@@ -1,15 +1,16 @@
-common:
-  filter: CONFIG_FULL_LIBC_SUPPORTED
 sample:
-  name: Grove Light Sensor
+  name: Light Sensor Polling Sample
+common:
+  filter: dt_alias_exists("light-sensor")
 tests:
-  sample.sensor.grove_light:
+  sample.sensor.light_polling.grove:
     tags:
       - drivers
       - sensor
       - grove
       - light
-    platform_allow: nrf52dk/nrf52832
+    platform_allow:
+      - nrf52dk/nrf52832
     integration_platforms:
       - nrf52dk/nrf52832
     harness: grove
