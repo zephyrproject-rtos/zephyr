@@ -49,6 +49,17 @@ extern "C" {
 #define BIT64(_n) (1ULL << (_n))
 
 /**
+ * @brief Toggle a bit
+ *
+ * The argument @p var is a variable whose value is written to as a
+ * side effect.
+ *
+ * @param var Variable to be altered
+ * @param bit Bit number
+ */
+#define TOGGLE_BIT(var, bit) ((var) ^= BIT(bit))
+
+/**
  * @brief Set or clear a bit depending on a boolean value
  *
  * The argument @p var is a variable whose value is written to as a
