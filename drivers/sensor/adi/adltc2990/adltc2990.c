@@ -151,7 +151,8 @@ int adltc2990_trigger_measurement(const struct device *dev,
 		return -EIO;
 	}
 
-	ctrl_reg_setting |= format << 6;
+	WRITE_BIT(ctrl_reg_setting, ADLTC2990_ACQUISTION_BIT_POS, format);
+
 	if (i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, ctrl_reg_setting)) {
 		LOG_ERR("configuring for single bus failed.");
 		return -EIO;
@@ -234,7 +235,7 @@ static int adltc2990_fetch_property_value(const struct device *dev,
 
 	int16_t value = (msb_value << 8) + lsb_value;
 
-	int32_t voltage_value = (value << (31 - negative_bit_index)) >> (31 - negative_bit_index);
+	int32_t voltage_value = sign_extend(value, negative_bit_index);
 
 	*output = (voltage_value * conversion_factor) / sensor_val_divisor;
 
