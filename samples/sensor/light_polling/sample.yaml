@@ -15,3 +15,14 @@ tests:
       - nrf52dk/nrf52832
     harness: grove
     depends_on: adc
+  sample.sensor.light_polling.als_pt19:
+    tags:
+      - drivers
+      - sensor
+      - light
+    platform_allow:
+      - frdm_mcxw71/mcxw716c
+    integration_platforms:
+      - frdm_mcxw71/mcxw716c
+    depends_on:
+      - adc

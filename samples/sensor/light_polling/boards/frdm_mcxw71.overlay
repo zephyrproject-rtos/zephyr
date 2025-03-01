@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025 Dipak Shetty <shetty.dipak@gmx.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+
+/ {
+	aliases {
+		light-sensor = &als_pt19_315c;
+	};
+
+	als_pt19_315c: als-pt19-315c {
+		compatible = "everlight,als-pt19";
+		io-channels = <&adc0 2>;
+		load-resistor = <15000>;
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@2 {
+		reg = <0x2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH2B>;
+	};
+};
