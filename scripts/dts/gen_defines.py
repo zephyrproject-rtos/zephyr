@@ -615,6 +615,8 @@ def write_vanilla_props(node: edtlib.Node) -> None:
             macro2val.update(phandle_macros(prop, macro))
         elif "array" in prop.type:
             macro2val.update(array_macros(prop, macro))
+        elif "dict" in prop.type:
+            macro2val.update(dict_macros(prop, macro))
 
         plen = prop_len(prop)
         if plen is not None:
@@ -706,6 +708,36 @@ def array_macros(prop: edtlib.Property, macro: str):
 
     return ret
 
+def dict_macros(prop: edtlib.Property, macro: str):
+    # Returns a dict of macros for array property 'prop'.
+    # The 'macro' argument is the N_<node-id>_P_<prop-id> part.
+
+    ret = {}
+    for i, (key, subval) in enumerate(prop.val.items()):
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_KEY_EXISTS
+        ret[f"{macro}_IDX_{i}_KEY_EXISTS"] = 1
+
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_KEY
+        if isinstance(key, str):
+            ret[f"{macro}_IDX_{i}_KEY"] = quote_str(key)
+            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_KEY_STRING_...
+            ret.update(string_macros(f"{macro}_IDX_{i}_KEY", key))
+        else:
+            ret[f"{macro}_IDX_{i}_KEY"] = key
+
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_VAL_EXISTS
+        ret[f"{macro}_IDX_{i}_VAL_EXISTS"] = 1
+
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_VAL
+        if isinstance(subval, str):
+            ret[f"{macro}_IDX_{i}_VAL"] = quote_str(subval)
+            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_VAL_STRING_...
+            ret.update(string_macros(f"{macro}_IDX_{i}_VAL", subval))
+        else:
+            ret[f"{macro}_IDX_{i}_VAL"] = subval
+
+    return ret
+
 
 def write_dep_info(node: edtlib.Node) -> None:
     # Write dependency-related information about the node.
@@ -750,7 +782,7 @@ def prop2value(prop: edtlib.Property) -> edtlib.PropertyValType:
     if prop.type == "boolean":
         return 1 if prop.val else 0
 
-    if prop.type in ["array", "uint8-array"]:
+    if prop.type in ["array", "dict", "uint8-array"]:
         return list2init(f"{val} /* {hex(val)} */" for val in prop.val)
 
     if prop.type == "string-array":
@@ -787,10 +819,15 @@ def prop_len(prop: edtlib.Property) -> Optional[int]:
         # string is treated as a string-array of length 1.
         return 1
 
-    if (prop.type in ["array", "uint8-array", "string-array",
+    if (prop.type in ["array", "dict", "uint8-array", "string-array",
                       "phandles", "phandle-array"] and
                 prop.name not in ["ranges", "dma-ranges", "reg", "interrupts"]):
-        return len(prop.val)
+        ln = len(prop.val)
+        if prop.type == "dict":
+            assert ln % 2 == 0, \
+                f'{prop.type} property {prop.name} has odd number of elements'
+            ln //= 2
+        return ln
 
     return None
 

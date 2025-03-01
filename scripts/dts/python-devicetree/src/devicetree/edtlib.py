@@ -1368,6 +1368,8 @@ class Node:
                 pp["type"] = "int"
             elif prop.type == Type.NUMS:
                 pp["type"] = "array"
+            elif prop.type == Type.NUMS:
+                pp["type"] = "dict"
             elif prop.type == Type.STRING:
                 pp["type"] = "string"
             elif prop.type == Type.STRINGS:
@@ -1570,6 +1572,13 @@ class Node:
 
         if prop_type == "array":
             return prop.to_nums()
+
+        if prop_type == "dict":
+            lst = prop.to_nums()
+            assert len(lst) % 2 == 0, \
+                f'{prop_type} property {name} in {node.path} in {node.dt.filename} ' \
+                 'has odd number of elements'
+            return dict(zip(lst[0::2], lst[1::2]))
 
         if prop_type == "uint8-array":
             return prop.to_bytes()
@@ -2700,7 +2709,7 @@ def _check_prop_by_type(prop_name: str,
         _err(f"missing 'type:' for '{prop_name}' in 'properties' in "
              f"{binding_path}")
 
-    ok_types = {"boolean", "int", "array", "uint8-array", "string",
+    ok_types = {"boolean", "int", "array", "dict", "uint8-array", "string",
                 "string-array", "phandle", "phandles", "phandle-array",
                 "path", "compound"}
 
@@ -2721,7 +2730,7 @@ def _check_prop_by_type(prop_name: str,
 
     # If you change const_types, be sure to update the type annotation
     # for PropertySpec.const.
-    const_types = {"int", "array", "uint8-array", "string", "string-array"}
+    const_types = {"int", "array", "dict", "uint8-array", "string", "string-array"}
     if const and prop_type not in const_types:
         _err(f"const in {binding_path} for property '{prop_name}' "
              f"has type '{prop_type}', expected one of " +
@@ -2755,6 +2764,11 @@ def _check_prop_by_type(prop_name: str,
         if (prop_type == "array"
             and all(isinstance(val, int) for val in default)):
             return True
+
+        if (prop_type == "dict"
+            and all(isinstance(val, int) for val in default)):
+            # return True
+            assert False, f'Not implemented type {prop_type}'
 
         if (prop_type == "uint8-array"
             and all(isinstance(val, int)
