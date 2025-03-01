@@ -1,8 +1,8 @@
 /*
-* Copyright (c) 2021-2025 Espressif Systems (Shanghai) Co., Ltd.
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright (c) 2021-2025 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -48,9 +48,10 @@ LOG_MODULE_REGISTER(intc_esp32c3, CONFIG_LOG_DEFAULT_LEVEL);
  */
 #define rsvd_mask (BIT(0) | BIT(1) | BIT(3) | BIT(4) | BIT(7))
 #define ESP_INTC_AVAILABLE_IRQS 31
-#else /* CONFIG_SOC_SERIES_ESP32C2 && CONFIG_SOC_SERIES_ESP32C3*/
+#else /* CONFIG_SOC_SERIES_ESP32C2 && CONFIG_SOC_SERIES_ESP32C3 */
 /*
  * Interrupt reserved mask
+ * 0 is reserved
  * 1 is for Wi-Fi
  */
 #define rsvd_mask (BIT(0) | BIT(1))
@@ -58,9 +59,9 @@ LOG_MODULE_REGISTER(intc_esp32c3, CONFIG_LOG_DEFAULT_LEVEL);
 #endif
 
 /* Single array for IRQ allocation */
-static uint8_t esp_intr_irq_alloc[ETS_MAX_INTR_SOURCE];
+static uint8_t esp_intr_irq_alloc[ESP_INTC_AVAILABLE_IRQS * ESP32C3_INTC_SRCS_PER_IRQ];
 
-#define ESP_INTR_IDX(irq, slot) (((irq) % ESP_INTC_AVAILABLE_IRQS) * ESP32C3_INTC_SRCS_PER_IRQ + (slot))
+#define ESP_INTR_IDX(irq, slot) ((irq % ESP_INTC_AVAILABLE_IRQS) * ESP32C3_INTC_SRCS_PER_IRQ + slot)
 
 #define STATUS_MASK_NUM 3
 
@@ -134,6 +135,7 @@ void esp_intr_initialize(void)
 	for (int irq = 0; irq < ESP_INTC_AVAILABLE_IRQS; irq++) {
 		for (int j = 0; j < ESP32C3_INTC_SRCS_PER_IRQ; j++) {
 			int idx = ESP_INTR_IDX(irq, j);
+
 			if (rsvd_mask & (1U << irq)) {
 				esp_intr_irq_alloc[idx] = IRQ_NA;
 			} else {
@@ -204,6 +206,7 @@ int esp_intr_disable(int source)
 		}
 		for (int j = 0; j < ESP32C3_INTC_SRCS_PER_IRQ; j++) {
 			int idx = ESP_INTR_IDX(i, j);
+
 			if (esp_intr_irq_alloc[idx] == source) {
 				esp_intr_irq_alloc[idx] = IRQ_FREE;
 			}
