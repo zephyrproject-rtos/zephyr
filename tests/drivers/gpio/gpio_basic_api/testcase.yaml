@@ -77,6 +77,9 @@ tests:
       - nucleo_wb09ke
       - nucleo_wb05kz
       - nucleo_wba55cg
+      - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - stm32mp257f_ev1/stm32mp257fxx/m33
     integration_platforms:
       - mimxrt595_evk/mimxrt595s/cm33
   drivers.gpio.st_2pin_arduino:
