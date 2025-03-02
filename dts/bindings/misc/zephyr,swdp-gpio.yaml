@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  This is a representation of the Serial Wire Debug Port interface
-  implementation by GPIO bit-banging.
+  Serial Wire Debug Port interface implementation by GPIO bit-banging.
 
   Schematic using dual-supply bus transceiver and separate dout and dnoe pins
 
