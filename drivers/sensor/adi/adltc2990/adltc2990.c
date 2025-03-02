@@ -1,6 +1,6 @@
 /*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
  * SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
- * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -151,7 +151,7 @@ int adltc2990_trigger_measurement(const struct device *dev,
 		return -EIO;
 	}
 
-	WRITE_BIT(ctrl_reg_setting, ADLTC2990_ACQUISTION_BIT_POS, format);
+	WRITE_BIT(ctrl_reg_setting, ADLTC2990_ACQUISITION_BIT_POS, format);
 
 	if (i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, ctrl_reg_setting)) {
 		LOG_ERR("configuring for single bus failed.");
@@ -239,35 +239,6 @@ static int adltc2990_fetch_property_value(const struct device *dev,
 
 	*output = (voltage_value * conversion_factor) / sensor_val_divisor;
 
-	return 0;
-}
-
-static int adltc2990_init(const struct device *dev)
-{
-	const struct adltc2990_config *cfg = dev->config;
-	struct adltc2990_data *data = dev->data;
-	int err;
-
-	if (!i2c_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("I2C bus %s not ready", cfg->bus.bus->name);
-		return -ENODEV;
-	}
-
-	const uint8_t ctrl_reg_setting = cfg->temp_format << 7 | data->acq_format << 6 | 0 << 5 |
-					 cfg->measurement_mode[1] << 3 | cfg->measurement_mode[0];
-
-	LOG_DBG("Setting Control Register to: 0x%x", ctrl_reg_setting);
-	if (i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, ctrl_reg_setting)) {
-		LOG_ERR("configuring for single bus failed.");
-		return -EIO;
-	}
-
-	err = adltc2990_trigger_measurement(dev, data->acq_format);
-	if (err < 0) {
-		LOG_ERR("triggering measurement failed: %d", err);
-	}
-
-	LOG_INF("Initializing ADLTC2990 with name %s", dev->name);
 	return 0;
 }
 
@@ -615,6 +586,35 @@ static int adltc2990_channel_get(const struct device *dev, enum sensor_channel c
 
 	adltc2990_get_v1_v2_val(dev, val, num_values_v1_v2, &offset_index);
 	adltc2990_get_v3_v4_val(dev, val, num_values_v3_v4, &offset_index);
+	return 0;
+}
+
+static int adltc2990_init(const struct device *dev)
+{
+	const struct adltc2990_config *cfg = dev->config;
+	struct adltc2990_data *data = dev->data;
+	int err;
+
+	if (!i2c_is_ready_dt(&cfg->bus)) {
+		LOG_ERR("I2C bus %s not ready", cfg->bus.bus->name);
+		return -ENODEV;
+	}
+
+	const uint8_t ctrl_reg_setting = cfg->temp_format << 7 | data->acq_format << 6 | 0 << 5 |
+					 cfg->measurement_mode[1] << 3 | cfg->measurement_mode[0];
+
+	LOG_DBG("Setting Control Register to: 0x%x", ctrl_reg_setting);
+	if (i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, ctrl_reg_setting)) {
+		LOG_ERR("configuring for single bus failed.");
+		return -EIO;
+	}
+
+	err = adltc2990_trigger_measurement(dev, data->acq_format);
+	if (err < 0) {
+		LOG_ERR("triggering measurement failed: %d", err);
+	}
+
+	LOG_INF("Initializing ADLTC2990 with name %s", dev->name);
 	return 0;
 }
 
