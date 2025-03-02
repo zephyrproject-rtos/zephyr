@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  NXP S32 Enhanced Modular IO SubSystem (eMIOS) node for S32 SoCs.
+  Enhanced Modular IO SubSystem (eMIOS) for NXP S32 SoCs.
   eMIOS provides independent unified channels (UCs), some of channels
   have internal counter that either can be used independently or used
   as a reference timebase (master bus) for other channels.
