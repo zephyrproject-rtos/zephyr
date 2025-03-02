@@ -215,6 +215,7 @@ typedef int (*counter_api_get_value)(const struct device *dev,
 				     uint32_t *ticks);
 typedef int (*counter_api_get_value_64)(const struct device *dev,
 			uint64_t *ticks);
+typedef int (*counter_api_reset)(const struct device *dev);
 typedef int (*counter_api_set_alarm)(const struct device *dev,
 				     uint8_t chan_id,
 				     const struct counter_alarm_cfg *alarm_cfg);
@@ -236,6 +237,7 @@ __subsystem struct counter_driver_api {
 	counter_api_stop stop;
 	counter_api_get_value get_value;
 	counter_api_get_value_64 get_value_64;
+	counter_api_reset reset;
 	counter_api_set_alarm set_alarm;
 	counter_api_cancel_alarm cancel_alarm;
 	counter_api_set_top_value set_top_value;
@@ -429,6 +431,27 @@ static inline int z_impl_counter_get_value_64(const struct device *dev,
 	}
 
 	return api->get_value_64(dev, ticks);
+}
+
+/**
+ * @brief Reset the counter to the initial value.
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure resetting the counter value.
+ */
+__syscall int counter_reset(const struct device *dev);
+
+static inline int z_impl_counter_reset(const struct device *dev)
+{
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	if (!api->reset) {
+		return -ENOTSUP;
+	}
+
+	return api->reset(dev);
 }
 
 /**
