@@ -406,6 +406,10 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kLPOSC_to_OSTIMER);
 	CLOCK_SetClkDiv(kCLOCK_DivOstimerClk, 1U);
 #endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
+	CLOCK_AttachClk(kLPOSC_to_WWDT0);
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)
