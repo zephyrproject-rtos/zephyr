@@ -1,6 +1,7 @@
 # STM32 EXTI configuration
 
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_FAMILY_STM32
@@ -20,3 +21,16 @@ config GPIO_INTC_STM32WB0
 	  Enable GPIO interrupt controller driver for STM32WB0 series
 
 endif # SOC_FAMILY_STM32
+
+
+if EXTI_STM32
+
+config EXTI_STM32_HAS_64_LINES
+	bool
+
+config EXTI_STM32_HAS_96_LINES
+	bool
+	select EXTI_STM32_HAS_64_LINES
+	default y if SOC_SERIES_STM32H7X
+
+endif # EXTI_STM32
