@@ -124,6 +124,12 @@
 #define _CONCAT_5(arg, ...) UTIL_CAT(arg, _CONCAT_4(__VA_ARGS__))
 #define _CONCAT_6(arg, ...) UTIL_CAT(arg, _CONCAT_5(__VA_ARGS__))
 #define _CONCAT_7(arg, ...) UTIL_CAT(arg, _CONCAT_6(__VA_ARGS__))
+#define _CONCAT_8(arg, ...) UTIL_CAT(arg, _CONCAT_7(__VA_ARGS__))
+#define _CONCAT_9(arg, ...) UTIL_CAT(arg, _CONCAT_8(__VA_ARGS__))
+#define _CONCAT_10(arg, ...) UTIL_CAT(arg, _CONCAT_9(__VA_ARGS__))
+#define _CONCAT_11(arg, ...) UTIL_CAT(arg, _CONCAT_10(__VA_ARGS__))
+#define _CONCAT_12(arg, ...) UTIL_CAT(arg, _CONCAT_11(__VA_ARGS__))
+
 
 /* Implementation details for NUM_VA_ARGS_LESS_1 */
 #define NUM_VA_ARGS_LESS_1_IMPL(				\
@@ -197,5 +203,9 @@
 
 /* Used by UTIL_X2 */
 #include "util_internal_util_x2.h"
+
+#define Z_UTIL_INC(x) UTIL_PRIMITIVE_CAT(Z_UTIL_INC_, x)
+
+#define Z_UTIL_DEC(x) UTIL_PRIMITIVE_CAT(Z_UTIL_DEC_, x)
 
 #endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */

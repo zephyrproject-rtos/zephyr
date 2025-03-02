@@ -148,6 +148,26 @@ please include util_internal.h instead\"\n")
         file.write("\n")
         write_hidden_stop(file)
 
+def gen_util_expr_bits(limit:int):
+    with open("util_expr_bits.h", "w") as file:
+        write_hidden_start(file)
+        file.write("\n")
+        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_EXPR_NUM_H_\n")
+        file.write("#define ZEPHYR_INCLUDE_SYS_UTIL_EXPR_NUM_H_\n")
+        file.write("\n")
+
+        for i in range(0, limit + 2):
+            file.write(f"#define Z_EXPR_BITS_{i}U " + ", ".join(f"{i:032b}") + "\n")
+
+        file.write("\n")
+
+        for i in range(0, limit + 2):
+            file.write(f"#define Z_EXPR_BIN_TO_DEC_0B{i:032b} " + f"{i}" + "\n")
+
+        file.write("\n")
+        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_EXPR_NUM_H_ */\n")
+        file.write("\n")
+        write_hidden_stop(file)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -161,3 +181,4 @@ if __name__ == "__main__":
     gen_util_internal_util_inc(args.limit)
     gen_util_internal_util_dec(args.limit)
     gen_util_internal_util_x2(args.limit)
+    gen_util_expr_bits(args.limit)
