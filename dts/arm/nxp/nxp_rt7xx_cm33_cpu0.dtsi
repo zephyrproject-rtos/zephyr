@@ -1067,6 +1067,16 @@
 		status = "disabled";
 		clk-divider = <1>;
 	};
+
+	sc_timer: pwm@114000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x114000 0x1000>;
+		interrupts = <5 0>;
+		status = "disabled";
+		clocks = <&clkctl0 MCUX_SCTIMER_CLK>;
+		prescaler = <8>;
+		#pwm-cells = <3>;
+	};
 };
 
 &systick {
