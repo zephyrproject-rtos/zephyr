@@ -90,6 +90,8 @@ the hardware features below.
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| WWDT      | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
