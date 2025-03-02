@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2016-2017 Piotr Mienkowski
  * Copyright (c) 2020-2022 Gerson Fernando Budke
+ * Copyright (c) 2025 GP Orcullo
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,6 +14,21 @@
 #define ATMEL_SAM0_SOC_PORT_H_
 
 #include <soc.h>
+
+#define DIRCLR_OFFSET 0x04
+#define DIRSET_OFFSET 0x08
+#define OUTCLR_OFFSET 0x14
+#define OUTSET_OFFSET 0x18
+#define PMUX_OFFSET   0x30
+#define PINCFG_OFFSET 0x40
+
+#define PINCFG_PMUXEN_BIT 0
+#define PINCFG_INEN_BIT   1
+#define PINCFG_PULLEN_BIT 2
+#define PINCFG_DRVSTR_BIT 6
+
+#define PMUX_PMUXE_MASK GENMASK(3, 0)
+#define PMUX_PMUXO_MASK GENMASK(7, 4)
 
 /*
  * Pin flags/attributes
@@ -73,7 +90,7 @@
 #define SOC_PORT_FUNC_N                 (0xd << SOC_PORT_FUNC_POS)
 
 struct soc_port_pin {
-	PortGroup *regs;   /** pointer to registers of the I/O Pin Controller */
+	uintptr_t regs;    /** pointer to registers of the I/O Pin Controller */
 	uint32_t pinum;    /** pin number */
 	uint32_t flags;    /** pin flags/attributes */
 };
@@ -87,7 +104,7 @@ struct soc_port_pin {
  * @param pin  Pin number
  * @param func Pin Function
  */
-int soc_port_pinmux_set(PortGroup *pg, uint32_t pin, uint32_t func);
+int soc_port_pinmux_set(uintptr_t pg, uint32_t pin, uint32_t func);
 
 /**
  * @brief Configure PORT pin.
