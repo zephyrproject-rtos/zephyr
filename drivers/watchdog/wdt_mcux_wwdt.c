@@ -83,7 +83,8 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	}
 
 #if defined(CONFIG_SOC_MIMXRT685S_CM33) || defined(CONFIG_SOC_MIMXRT595S_CM33) \
-	|| defined(CONFIG_SOC_SERIES_MCXN)
+	|| defined(CONFIG_SOC_SERIES_MCXN) || defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0) \
+	|| defined(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
 	clock_freq = CLOCK_GetWdtClkFreq(0);
 #elif defined(CONFIG_SOC_SERIES_RW6XX)
 	clock_freq = CLOCK_GetWdtClkFreq();
