@@ -1,0 +1,48 @@
+# Copyright 2025 Palta Tech, S.A
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  BQ25713 I2C battery charge controller IC.
+
+  BQ25713 targets 1s to 4s Cell, USB Power Delivery/Adapter Charger with
+  Narrow VDC Power Path Management and Processor Hot Monitor
+
+  This charger is represented by device tree child node, e.g:
+
+  charger: bq25713@6b {
+      compatible = "ti,bq25713";
+      reg = <0x6b>;
+      status = "okay";
+
+      constant-charge-current-max-microamp = <1000000>;
+      constant-charge-voltage-max-microvolt = <3800000>;
+      system-voltage-min-threshold-microvolt = <3328000>;
+  };
+
+include: [battery.yaml, i2c-device.yaml]
+
+compatible: "ti,bq25713"
+
+properties:
+  constant-charge-current-max-microamp:
+    required: true
+    description: |
+      The charge current target for the constant current phase of the charge profile.
+      This value will be set at initialization time. Range: 0 mA to 8.128 A.
+      The value specified will be rounded down to the closest implemented value.
+
+  constant-charge-voltage-max-microvolt:
+    required: true
+    description: |
+      The voltage regulation target for the constant voltage phase of the battery charging profile.
+      This value will be set at initialization time. Range: 4.2 V 1S to 16.8 V 4S.
+      The value specified will be rounded down to the closest implemented value.
+
+  system-voltage-min-threshold-microvolt:
+    type: int
+    required: true
+    description: |
+      Minimum system voltage.
+      Voltage that will be set above when the system voltage drops this level.
+      This value will be set at initialization time. Range: 1.024 V to 16.128 V.
+      The value specified will be rounded down to the closest implemented value.
