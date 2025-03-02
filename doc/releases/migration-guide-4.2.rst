@@ -32,6 +32,17 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+DAI
+===
+
+* Renamed the devicetree property ``dai_id`` to ``dai-id``.
+* Renamed the devicetree property ``afe_name`` to ``afe-name``.
+* Renamed the devicetree property ``agent_disable`` to ``agent-disable``.
+* Renamed the devicetree property ``ch_num`` to ``ch-num``.
+* Renamed the devicetree property ``mono_invert`` to ``mono-invert``.
+* Renamed the devicetree property ``quad_ch`` to ``quad-ch``.
+* Renamed the devicetree property ``int_odd`` to ``int-odd``.
+
 Bluetooth
 *********
 

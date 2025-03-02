@@ -5,11 +5,11 @@ compatible: "mediatek,afe"
 include: base.yaml
 
 properties:
-  dai_id:
+  dai-id:
     type: int
     required: true
     description: Host-defined SOF DAI index.  Must match the Linux kernel driver.
-  afe_name:
+  afe-name:
     type: string
     required: true
   downlink:
@@ -34,7 +34,7 @@ properties:
   enable:
     type: array
     description: Channel enable flag
-  agent_disable:
+  agent-disable:
     type: array
     description: Channel disable flag
   fs:
@@ -43,19 +43,19 @@ properties:
   hd:
     type: array
     description: Sample format register
-  ch_num:
+  ch-num:
     type: array
     description: Channel count register
   mono:
     type: array
     description: Mono flag register
-  mono_invert:
+  mono-invert:
     type: boolean
     description: Sense/meaning of mono flag
-  quad_ch:
+  quad-ch:
     type: array
     description: Quad channel flag register
-  int_odd:
+  int-odd:
     type: array
   msb:
     type: array
