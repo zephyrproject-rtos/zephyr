@@ -14,7 +14,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
-#include <dt-bindings/pinctrl/atmel_sam_pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/atmel_sam_pinctrl.h>
 
 #ifdef __cplusplus
 extern "C" {
