@@ -402,6 +402,7 @@ SECTIONS
     *libzephyr.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_hpm_enable.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_ops.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:flash_qio_mode.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
@@ -642,6 +643,7 @@ SECTIONS
     *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_hpm_enable.*(.rodata .rodata.*)
     *libzephyr.a:flash_ops.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache.*(.rodata .rodata.*)
