@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Altera PIO node
+description: Altera PIO
 
 compatible: "altr,pio-1.0"
 
