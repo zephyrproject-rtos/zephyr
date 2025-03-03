@@ -34,6 +34,7 @@ from twisterlib.platform import Platform
 from twisterlib.size_calc import SizeCalculator
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuite import TestCase, TestSuite
+from twisterlib.constants import SUPPORTED_RUNNABLE_HARNESS
 
 logger = logging.getLogger('twister')
 
@@ -218,17 +219,7 @@ class TestInstance:
     def testsuite_runnable(testsuite, fixtures):
         can_run = False
         # console harness allows us to run the test and capture data.
-        if testsuite.harness in [
-            'console',
-            'ztest',
-            'pytest',
-            'power',
-            'test',
-            'gtest',
-            'robot',
-            'ctest',
-            'shell'
-            ]:
+        if testsuite.harness in SUPPORTED_RUNNABLE_HARNESS:
             can_run = True
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
