@@ -56,6 +56,25 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define PHY_ADDR	CONFIG_ETH_STM32_HAL_PHY_ADDRESS
 
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+#define PHY_SCSR               ((uint16_t)0x001FU) /*!< PHY Special Control/Status */
+#define PHY_SCSR_AUTONEGO_DONE ((uint16_t)0x1000U) /*!< Auto-Negotiation Done Status */
+#define PHY_HCDSPEEDMASK       ((uint16_t)0x001CU) /*!< High Capability Speed Mask */
+#define PHY_10BT_HD            ((uint16_t)0x0004U) /*!< 10Base-T half-duplex */
+#define PHY_10BT_FD            ((uint16_t)0x0014U) /*!< 10Base-T full-duplex */
+#define PHY_100BTX_HD          ((uint16_t)0x0008U) /*!< 100Base-TX half-duplex */
+#define PHY_100BTX_FD          ((uint16_t)0x0018U) /*!< 100Base-TX full-duplex */
+#define PHY_AUTONEGO_ENABLE    ((uint16_t)0x1000U) /*!< Auto-negotiation enable bit */
+#define PHY_TIMEOUT            (5000U)             /*!< PHY operation timeout in msec */
+
+#define PHY_STATUS_LINK_DOWN           ((int32_t)1) /*!< Link down status */
+#define PHY_STATUS_100MBITS_FULLDUPLEX ((int32_t)2) /*!< 100 Mbps full-duplex status */
+#define PHY_STATUS_100MBITS_HALFDUPLEX ((int32_t)3) /*!< 100 Mbps half-duplex status */
+#define PHY_STATUS_10MBITS_FULLDUPLEX  ((int32_t)4) /*!< 10 Mbps full-duplex status */
+#define PHY_STATUS_10MBITS_HALFDUPLEX  ((int32_t)5) /*!< 10 Mbps half-duplex status */
+#define PHY_STATUS_AUTONEGO_NOTDONE    ((int32_t)6) /*!< Auto-negotiation not done */
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
 
 #define DEVICE_PHY_BY_NAME(n) \
@@ -67,8 +86,9 @@ static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 
-#define PHY_BSR  ((uint16_t)0x0001U)  /*!< Transceiver Basic Status Register */
-#define PHY_LINKED_STATUS  ((uint16_t)0x0004U)  /*!< Valid link established */
+#define PHY_BCR           ((uint16_t)0x0000U) /*!< Transceiver Basic Control Register */
+#define PHY_BSR           ((uint16_t)0x0001U) /*!< Transceiver Basic Status Register */
+#define PHY_LINKED_STATUS ((uint16_t)0x0004U) /*!< Valid link established */
 
 #define IS_ETH_DMATXDESC_OWN(dma_tx_desc)	(dma_tx_desc->DESC3 & \
 							ETH_DMATXNDESCRF_OWN)
@@ -924,7 +944,6 @@ static int eth_initialize(const struct device *dev)
 	struct eth_stm32_hal_dev_data *dev_data;
 	const struct eth_stm32_hal_dev_cfg *cfg;
 	ETH_HandleTypeDef *heth;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
 	int ret = 0;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -972,11 +991,8 @@ static int eth_initialize(const struct device *dev)
 
 	heth->Init.MACAddr = dev_data->mac_addr;
 
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-	heth->Init.TxDesc = dma_tx_desc_tab;
-	heth->Init.RxDesc = dma_rx_desc_tab;
-	heth->Init.RxBuffLen = ETH_STM32_RX_BUF_SIZE;
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
+#if !defined(CONFIG_ETH_STM32_HAL_API_V2)
+	HAL_StatusTypeDef hal_ret = HAL_OK;
 
 	hal_ret = HAL_ETH_Init(heth);
 	if (hal_ret == HAL_TIMEOUT) {
@@ -989,75 +1005,22 @@ static int eth_initialize(const struct device *dev)
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	/* Enable timestamping of RX packets. We enable all packets to be
-	 * timestamped to cover both IEEE 1588 and gPTP.
-	 */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
-	heth->Instance->MACTSCR |= ETH_MACTSCR_TSENALL;
-#else
-	heth->Instance->PTPTSCR |= ETH_PTPTSCR_TSSARFE;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
-#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
-
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-	/* Tx config init: */
-	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
-	tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
-				ETH_TX_PACKETS_FEATURES_CRCPAD;
-	tx_config.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
-			ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC : ETH_CHECKSUM_DISABLE;
-	tx_config.CRCPadCtrl = ETH_CRC_PAD_INSERT;
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
-
 	dev_data->link_up = false;
 
 	/* Initialize semaphores */
 	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-	/* Adjust MDC clock range depending on HCLK frequency: */
-	HAL_ETH_SetMDIOClockRange(heth);
-
-	/* @TODO: read duplex mode and speed from PHY and set it to ETH */
-
-	ETH_MACConfigTypeDef mac_config;
-
-	HAL_ETH_GetMACConfig(heth, &mac_config);
-	mac_config.DuplexMode = IS_ENABLED(CONFIG_ETH_STM32_MODE_HALFDUPLEX) ?
-				      ETH_HALFDUPLEX_MODE : ETH_FULLDUPLEX_MODE;
-	mac_config.Speed = IS_ENABLED(CONFIG_ETH_STM32_SPEED_10M) ?
-				 ETH_SPEED_10M : ETH_SPEED_100M;
-	hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
-	}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
-
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-
-	/* prepare tx buffer header */
-	for (uint16_t i = 0; i < ETH_TXBUFNB; ++i) {
-		dma_tx_buffer_header[i].tx_buff.buffer = dma_tx_buffer[i];
-	}
-
-	hal_ret = HAL_ETH_Start_IT(heth);
-#else
 	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
 		&dma_tx_buffer[0][0], ETH_TXBUFNB);
 	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
 		&dma_rx_buffer[0][0], ETH_RXBUFNB);
 
 	hal_ret = HAL_ETH_Start(heth);
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
-
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_Start{_IT} failed");
 	}
+#endif /* !CONFIG_ETH_STM32_HAL_API_V2 */
 
 	setup_mac_filter(heth);
 
@@ -1120,6 +1083,190 @@ static void eth_stm32_mcast_filter(const struct device *dev, const struct ethern
 
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if defined(CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE)
+static uint32_t eth_phy_get_link_state(ETH_HandleTypeDef *heth)
+{
+	uint32_t readval = 0;
+	uint32_t tickstart = 0U;
+
+	tickstart = k_uptime_get_32();
+
+	/* Wait for linked status */
+	do {
+		HAL_ETH_ReadPHYRegister(heth, PHY_ADDR, PHY_BSR, &readval);
+
+		/* Check for the Timeout */
+		if ((k_uptime_get_32() - tickstart) > PHY_TIMEOUT) {
+			return HAL_TIMEOUT;
+		}
+	} while (((readval & PHY_LINKED_STATUS) != PHY_LINKED_STATUS));
+
+	if ((readval & PHY_LINKED_STATUS) == 0) {
+		LOG_ERR("Link Down");
+		return PHY_STATUS_LINK_DOWN;
+	}
+
+	/* Check Auto negotiation */
+	if (HAL_ETH_ReadPHYRegister(heth, PHY_ADDR, PHY_BCR, &readval) != HAL_OK) {
+		LOG_INF("Error reading BCR register\n");
+		return HAL_ERROR;
+	}
+
+	if ((readval & PHY_AUTONEGO_ENABLE) != PHY_AUTONEGO_ENABLE) {
+		/* Enable Auto-Negotiation */
+		if ((HAL_ETH_WritePHYRegister(heth, PHY_ADDR, PHY_BCR, PHY_AUTONEGO_ENABLE)) !=
+		    HAL_OK) {
+			return HAL_ERROR;
+		}
+	}
+
+	/* Auto Nego enabled */
+	LOG_DBG("Auto nego enabled");
+	if (HAL_ETH_ReadPHYRegister(heth, PHY_ADDR, PHY_SCSR, &readval) != HAL_OK) {
+		return HAL_ERROR;
+	}
+
+	/* Check if auto nego not done */
+	if ((readval & PHY_SCSR_AUTONEGO_DONE) == 0) {
+		return PHY_STATUS_AUTONEGO_NOTDONE;
+	}
+
+	if ((readval & PHY_HCDSPEEDMASK) == PHY_100BTX_FD) {
+		return PHY_STATUS_100MBITS_FULLDUPLEX;
+	} else if ((readval & PHY_HCDSPEEDMASK) == PHY_100BTX_HD) {
+		return PHY_STATUS_100MBITS_HALFDUPLEX;
+	} else if ((readval & PHY_HCDSPEEDMASK) == PHY_10BT_FD) {
+		return PHY_STATUS_10MBITS_FULLDUPLEX;
+	} else {
+		return PHY_STATUS_10MBITS_HALFDUPLEX;
+	}
+}
+
+static void get_auto_nego_speed_duplex(ETH_HandleTypeDef *heth, ETH_MACConfigTypeDef *mac_config)
+{
+	uint32_t phyLinkState;
+	uint32_t tickstart = k_uptime_get_32();
+
+	do {
+		phyLinkState = eth_phy_get_link_state(heth);
+	} while ((phyLinkState <= PHY_STATUS_LINK_DOWN) &&
+		 ((k_uptime_get_32() - tickstart) < PHY_TIMEOUT));
+
+	/* Get link state */
+	if (phyLinkState <= PHY_STATUS_LINK_DOWN) {
+		return;
+	}
+
+	switch (phyLinkState) {
+	case PHY_STATUS_100MBITS_FULLDUPLEX:
+		mac_config->DuplexMode = ETH_FULLDUPLEX_MODE;
+		mac_config->Speed = ETH_SPEED_100M;
+		break;
+	case PHY_STATUS_100MBITS_HALFDUPLEX:
+		mac_config->DuplexMode = ETH_HALFDUPLEX_MODE;
+		mac_config->Speed = ETH_SPEED_100M;
+		break;
+	case PHY_STATUS_10MBITS_FULLDUPLEX:
+		mac_config->DuplexMode = ETH_FULLDUPLEX_MODE;
+		mac_config->Speed = ETH_SPEED_10M;
+		break;
+	case PHY_STATUS_10MBITS_HALFDUPLEX:
+		mac_config->DuplexMode = ETH_HALFDUPLEX_MODE;
+		mac_config->Speed = ETH_SPEED_10M;
+		break;
+	default:
+		mac_config->DuplexMode = ETH_FULLDUPLEX_MODE;
+		mac_config->Speed = ETH_SPEED_100M;
+		break;
+	}
+}
+#endif /* CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE */
+
+static int eth_init_api_v2(const struct device *dev)
+{
+	HAL_StatusTypeDef hal_ret = HAL_OK;
+	struct eth_stm32_hal_dev_data *dev_data;
+	ETH_HandleTypeDef *heth;
+	ETH_MACConfigTypeDef mac_config;
+
+	dev_data = dev->data;
+	heth = &dev_data->heth;
+
+	heth->Init.TxDesc = dma_tx_desc_tab;
+	heth->Init.RxDesc = dma_rx_desc_tab;
+	heth->Init.RxBuffLen = ETH_STM32_RX_BUF_SIZE;
+
+	hal_ret = HAL_ETH_Init(heth);
+	if (hal_ret == HAL_TIMEOUT) {
+		/* HAL Init time out. This could be linked to */
+		/* a recoverable error. Log the issue and continue */
+		/* driver initialisation */
+		LOG_ERR("HAL_ETH_Init Timed out");
+	} else if (hal_ret != HAL_OK) {
+		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
+	/* Enable timestamping of RX packets. We enable all packets to be
+	 * timestamped to cover both IEEE 1588 and gPTP.
+	 */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+	heth->Instance->MACTSCR |= ETH_MACTSCR_TSENALL;
+#else
+	heth->Instance->PTPTSCR |= ETH_PTPTSCR_TSSARFE;
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
+
+	dev_data->link_up = false;
+
+	/* Initialize semaphores */
+	k_mutex_init(&dev_data->tx_mutex);
+	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
+	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
+
+	/* Tx config init: */
+	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
+	tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
+				ETH_TX_PACKETS_FEATURES_CRCPAD;
+	tx_config.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
+			ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC : ETH_CHECKSUM_DISABLE;
+	tx_config.CRCPadCtrl = ETH_CRC_PAD_INSERT;
+
+	HAL_ETH_SetMDIOClockRange(heth);
+
+	HAL_ETH_GetMACConfig(heth, &mac_config);
+
+#if defined(CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE)
+	/* Auto Nego enabled */
+	get_auto_nego_speed_duplex(heth, &mac_config);
+
+#else /* Auto Nego disabled */
+	mac_config.DuplexMode = IS_ENABLED(CONFIG_ETH_STM32_MODE_HALFDUPLEX) ? ETH_HALFDUPLEX_MODE
+									     : ETH_FULLDUPLEX_MODE;
+	mac_config.Speed = IS_ENABLED(CONFIG_ETH_STM32_SPEED_10M) ? ETH_SPEED_10M : ETH_SPEED_100M;
+#endif
+
+	hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
+	}
+
+	/* prepare tx buffer header */
+	for (uint16_t i = 0; i < ETH_TXBUFNB; ++i) {
+		dma_tx_buffer_header[i].tx_buff.buffer = dma_tx_buffer[i];
+	}
+
+	hal_ret = HAL_ETH_Start_IT(heth);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("HAL_ETH_Start{_IT} failed");
+	}
+
+	return 0;
+}
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
+
 static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev;
@@ -1149,6 +1296,14 @@ static void eth_iface_init(struct net_if *iface)
 #endif
 
 	ethernet_init(iface);
+
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+	/* This function requires the Ethernet interface to be
+	 * properly initialized. In auto-negotiation mode, it reads the speed
+	 * and duplex settings to configure the driver accordingly.
+	 */
+	eth_init_api_v2(dev);
+#endif
 
 	net_if_carrier_off(iface);
 
