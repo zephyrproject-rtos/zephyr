@@ -161,7 +161,8 @@ int main(void)
 		rc = zms_read(&fs, CNT_ID, &i_cnt, sizeof(i_cnt));
 		if (rc > 0) { /* item was found, show it */
 			printk("Id: %d, loop_cnt: %u\n", CNT_ID, i_cnt);
-			if (i_cnt != (i - 1)) {
+			if ((i > 0) && (i_cnt != (i - 1))) {
+				printk("Error loop_cnt %u must be %d\n", i_cnt, i - 1);
 				break;
 			}
 		}
