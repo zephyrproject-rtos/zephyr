@@ -35,6 +35,8 @@ from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
+from twisterlib.constants import SUPPORTED_HARNESS
+
 from zephyr_module import parse_modules
 
 logger = logging.getLogger('twister')
@@ -571,6 +573,9 @@ class TestPlan:
 
                             if suite.skip:
                                 logger.qa(f"skip set in {suite.name}")
+
+                            if suite.harness not in SUPPORTED_HARNESS:
+                                logger.qa(f"Unsupported harness {suite.harness} in {suite.name}")
 
                             if suite.filter and not suite.integration_platforms and not suite.platform_allow:
                                 logger.qa(f"filter with no integration platforms in {suite.name}")
