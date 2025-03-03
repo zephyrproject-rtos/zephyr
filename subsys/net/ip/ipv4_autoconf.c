@@ -40,6 +40,8 @@ static inline void ipv4_autoconf_addr_set(struct net_if_ipv4_autoconf *ipv4auto)
 		ipv4auto->requested_ip.s4_addr[2],
 		ipv4auto->requested_ip.s4_addr[3]);
 
+	ipv4auto->state = NET_IPV4_AUTOCONF_ALLOCATING;
+
 	/* Add IPv4 address to the interface, this will trigger conflict detection. */
 	if (!net_if_ipv4_addr_add(ipv4auto->iface, &ipv4auto->requested_ip,
 				  NET_ADDR_AUTOCONF, 0)) {
@@ -51,8 +53,6 @@ static inline void ipv4_autoconf_addr_set(struct net_if_ipv4_autoconf *ipv4auto)
 	net_if_ipv4_set_netmask_by_addr(ipv4auto->iface,
 					&ipv4auto->requested_ip,
 					&netmask);
-
-	ipv4auto->state = NET_IPV4_AUTOCONF_ASSIGNED;
 }
 
 static void acd_event_handler(struct net_mgmt_event_callback *cb,
