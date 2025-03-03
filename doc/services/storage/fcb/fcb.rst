@@ -9,7 +9,7 @@ beginning.
 
 .. note::
 
-   As of Zephyr release 2.1 the :ref:`NVS <nvs_api>` storage API is
+   As of Zephyr release 4.1 the :ref:`ZMS <zms_api>` storage API is
    recommended over FCB for use as a back-end for the :ref:`settings API
    <settings_api>`.
 
