@@ -463,8 +463,8 @@ __weak void clock_init(void)
 #endif
 
 #ifdef CONFIG_SPI_MCUX_LPSPI
-	/* Configure lpspi using Osc48MDiv2 */
-	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc48MDiv2;
+	/* Configure input clock to be able to reach the datasheet specified band rate. */
+	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc400M;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
 #endif
