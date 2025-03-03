@@ -40,6 +40,22 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_IRQ		DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq)
 #define UDC_STM32_IRQ_PRI	DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority)
 
+#define ANY_USB_PHY_TYPE_TYPE_IS(value) \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_STRING_PROP, \
+					   phy_type,\
+					   value) 0)
+
+#define IS_EQ_STRING_PROP(inst, prop, compare_value) \
+	IS_EQ(DT_INST_STRING_UPPER_TOKEN(inst, prop), compare_value) ||
+
+#if ANY_USB_PHY_TYPE_TYPE_IS(PCD_PHY_ULPI) || ANY_USB_PHY_TYPE_TYPE_IS(USB_OTG_ULPI_PHY)
+#define PHY_ITFACE	1U
+#elif ANY_USB_PHY_TYPE_TYPE_IS(PCD_PHY_EMBEDDED) || ANY_USB_PHY_TYPE_TYPE_IS(USB_OTG_PHY_EMBEDDED)
+#define PHY_ITFACE	2U
+#elif ANY_USB_PHY_TYPE_TYPE_IS(PCD_PHY_UTMI) || ANY_USB_PHY_TYPE_TYPE_IS(USB_OTG_HS_EMBEDDED_PHY)
+#define PHY_ITFACE	3U
+#endif
+
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
 	const struct device *dev;
@@ -1018,19 +1034,12 @@ static void priv_pcd_prepare(const struct device *dev)
 	priv->pcd.Init.ep0_mps = cfg->ep0_mps;
 	priv->pcd.Init.speed = PCD_SPEED_FULL;
 	priv->pcd.Instance = (PCD_TypeDef *)DT_INST_REG_ADDR(0);
+	priv->pcd.Init.phy_itface = PHY_ITFACE;
 	/* Per controller/Phy values */
 
 #if defined(USB_OTG_FS) || defined(USB_OTG_HS)
 	priv->pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
 #endif
-
-#if USB_OTG_HS_EMB_PHY
-	priv->pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
-#elif USB_OTG_HS_ULPI_PHY
-	priv->pcd.Init.phy_itface = USB_OTG_ULPI_PHY;
-#else
-	priv->pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif /* USB_OTG_HS_EMB_PHY */
 }
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
