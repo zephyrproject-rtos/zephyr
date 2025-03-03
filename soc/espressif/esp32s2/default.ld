@@ -378,6 +378,7 @@ SECTIONS
     *libzephyr.a:esp_psram_impl_octal.*(.literal .literal.* .text .text.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cache_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cache_utils.*(.literal .text .literal.* .text.*)
@@ -618,7 +619,7 @@ SECTIONS
     *libzephyr.a:esp_psram_impl_quad.*(.rodata .rodata.*)
 
     /* [mapping:hal] */
-    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:efuse_hal.*(.rodata .rodata.*)
     *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.*)
