@@ -108,6 +108,8 @@ struct net_if_addr {
 		struct {
 			/** Address conflict detection (ACD) timer. */
 			sys_snode_t acd_node;
+
+			/** ACD timeout value. */
 			k_timepoint_t acd_timeout;
 
 			/** ACD probe/announcement counter. */
