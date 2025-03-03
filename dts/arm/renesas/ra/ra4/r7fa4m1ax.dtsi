@@ -333,3 +333,7 @@
 &pwm3 {
 	clocks = <&pclkd MSTPD 6>;
 };
+
+&dac_global {
+	has-davrefcr;
+};
