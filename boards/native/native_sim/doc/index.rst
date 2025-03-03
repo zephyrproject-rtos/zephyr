@@ -717,6 +717,6 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      Serial, :ref:`UART native PTY <native_ptty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_PTY`, All
      Serial, :ref:`UART native TTY <native_tty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, All
      SPI, SPI emul, :kconfig:option:`CONFIG_SPI_EMUL`, All
-     System tick, Native_posix timer, :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER`, All
+     System tick, Native_sim timer, :kconfig:option:`CONFIG_NATIVE_SIM_TIMER`, All
      Tracing, :ref:`Posix tracing backend <nsim_back_trace>`, :kconfig:option:`CONFIG_TRACING_BACKEND_POSIX`, All
      USB, :ref:`USB native posix <nsim_per_usb>`, :kconfig:option:`CONFIG_USB_NATIVE_POSIX`, Host libC
