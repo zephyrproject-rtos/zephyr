@@ -11,12 +11,22 @@
 
 #define GPIO_RZ_INT_UNSUPPORTED 0xF
 
-#if defined(CONFIG_SOC_SERIES_RZG3S)
+#if defined(CONFIG_SOC_SERIES_RZG3S) || defined(CONFIG_SOC_SERIES_RZA3UL)
 #include <zephyr/dt-bindings/gpio/renesas-rz-gpio.h>
 
+#if defined(CONFIG_SOC_SERIES_RZG3S)
 #define GPIO_RZ_IOPORT_P_REG_BASE_GET   (&R_GPIO->P_20)
 #define GPIO_RZ_IOPORT_PM_REG_BASE_GET  (&R_GPIO->PM_20)
 #define GPIO_RZ_IOPORT_PFC_REG_BASE_GET (&R_GPIO->PFC_20)
+#define GPIO_RZ_TINT_IRQ_OFFSET         429
+#define R_INTC                          R_INTC_IM33
+#elif defined(CONFIG_SOC_SERIES_RZA3UL)
+#define GPIO_RZ_IOPORT_P_REG_BASE_GET   (&R_GPIO->P10)
+#define GPIO_RZ_IOPORT_PM_REG_BASE_GET  (&R_GPIO->PM10)
+#define GPIO_RZ_IOPORT_PFC_REG_BASE_GET (&R_GPIO->PFC10)
+#define GPIO_RZ_TINT_IRQ_OFFSET         476
+#define R_INTC                          R_INTC_IA55
+#endif
 
 #define GPIO_RZ_IOPORT_P_REG_GET(port, pin)   (&GPIO_RZ_IOPORT_P_REG_BASE_GET[port + (pin / 4)])
 #define GPIO_RZ_IOPORT_PM_REG_GET(port, pin)  (&GPIO_RZ_IOPORT_PM_REG_BASE_GET[port + (pin / 4)])
@@ -33,7 +43,6 @@
 #define GPIO_RZ_MAX_PORT_NUM 19
 #define GPIO_RZ_MAX_INT_NUM  32
 
-#define GPIO_RZ_TINT_IRQ_OFFSET        429
 #define GPIO_RZ_TINT_IRQ_GET(tint_num) (tint_num + GPIO_RZ_TINT_IRQ_OFFSET)
 
 #define GPIO_RZ_INT_EDGE_RISING  0x0
@@ -46,8 +55,8 @@
 #define GPIO_RZ_TSSR_OFFSET(irq)    ((irq % 4) * 8)
 #define GPIO_RZ_TITSR_OFFSET(irq)   ((irq % 16) * 2)
 
-#define GPIO_RZ_PIN_CONFIGURE_GET_FILTER(flag) (((flags >> RZG3S_GPIO_FILTER_SHIFT) & 0x1F) << 19U)
-#define GPIO_RZ_PIN_CONFIGURE_GET(flag)        (((flag >> RZG3S_GPIO_IOLH_SHIFT) & 0x3) << 10U)
+#define GPIO_RZ_PIN_CONFIGURE_GET_FILTER(flag) (((flags >> RZ_GPIO_FILTER_SHIFT) & 0x1F) << 19U)
+#define GPIO_RZ_PIN_CONFIGURE_GET(flag)        (((flag >> RZ_GPIO_IOLH_SHIFT) & 0x3) << 10U)
 
 #define GPIO_RZ_PIN_CONFIGURE_INT_ENABLE         IOPORT_CFG_TINT_ENABLE
 #define GPIO_RZ_PIN_CONFIGURE_INT_DISABLE        (~(IOPORT_CFG_TINT_ENABLE))
