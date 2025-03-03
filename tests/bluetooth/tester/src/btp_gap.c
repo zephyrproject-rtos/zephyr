@@ -321,6 +321,10 @@ static uint8_t controller_info(const void *cmd, uint16_t cmd_len,
 	supported_settings |= BIT(BTP_GAP_SETTINGS_LE);
 	supported_settings |= BIT(BTP_GAP_SETTINGS_ADVERTISING);
 	supported_settings |= BIT(BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
+#if defined(CONFIG_BT_CLASSIC)
+	supported_settings |= BIT(BTP_GAP_SETTINGS_BREDR);
+	supported_settings |= BIT(BTP_GAP_SETTINGS_SSP);
+#endif /* CONFIG_BT_CLASSIC */
 
 	rp->supported_settings = sys_cpu_to_le32(supported_settings);
 	rp->current_settings = sys_cpu_to_le32(current_settings);
