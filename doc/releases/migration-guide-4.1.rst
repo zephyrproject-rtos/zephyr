@@ -534,10 +534,10 @@ Video
 Watchdog
 ========
 
+* Renamed the ``compatible`` from ``nxp,kinetis-wdog32`` to :dtcompatible:`nxp,wdog32`.
+
 Wi-Fi
 =====
-
-* Renamed the ``compatible`` from ``nxp,kinetis-wdog32`` to :dtcompatible:`nxp,wdog32`.
 
 * The config options :kconfig:option:`CONFIG_NXP_WIFI_BUILD_ONLY_MODE` and
   :kconfig:option:`CONFIG_NRF_WIFI_BUILD_ONLY_MODE` are now unified under
