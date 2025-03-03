@@ -423,9 +423,6 @@ void bt_sco_cleanup(struct bt_conn *sco_conn);
 /* Look up an existing sco connection by BT address */
 struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer);
 
-/* Look up an existing connection by BT address */
-struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
-
 void bt_conn_disconnect_all(uint8_t id);
 
 /* Allocate new connection object */
