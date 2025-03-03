@@ -1,0 +1,22 @@
+# Copyright STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32F4 OTGHS controller
+
+compatible: "st,stm32f4-otghs"
+
+include: st,stm32-otghs.yaml
+
+properties:
+  physel:
+    type: string
+    required: true
+    enum:
+      - "USB_OTG_HS_PHY_ULPI"
+      - "USB_OTG_HS_EMBEDDED_PHY"
+    description: |
+      USB PHY interface to use.
+
+      The following interfaces are supported:
+        - "USB_OTG_HS_ULPI_PHY": UTMI+ Low Pin Interface for external high-speed PHY.
+        - "USB_OTG_HS_EMBEDDED_PHY": on-chip high-speed PHY.
