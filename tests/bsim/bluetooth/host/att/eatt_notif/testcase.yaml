@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.att.eatt_notif:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:

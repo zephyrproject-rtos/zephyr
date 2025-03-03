@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.mics.acl_tx_frag:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:

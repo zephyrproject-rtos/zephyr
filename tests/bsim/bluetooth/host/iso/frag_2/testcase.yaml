@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.iso.frag_2:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:

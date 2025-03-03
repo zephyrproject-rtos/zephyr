@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.misc.conn_stress.central:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:

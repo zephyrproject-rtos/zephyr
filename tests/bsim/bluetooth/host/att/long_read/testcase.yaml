@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.att.long_read:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:

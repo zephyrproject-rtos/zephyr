@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.l2cap.split.tester:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:

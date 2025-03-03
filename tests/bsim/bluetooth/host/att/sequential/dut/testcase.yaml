@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.att.sequential.dut:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:
