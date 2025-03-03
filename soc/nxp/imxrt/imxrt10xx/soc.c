@@ -209,8 +209,9 @@ __weak void clock_init(void)
 #endif
 
 #ifdef CONFIG_SPI_MCUX_LPSPI
-	CLOCK_SetMux(kCLOCK_LpspiMux, 1); /* Set SPI source to USB1 PFD0 720M */
-	CLOCK_SetDiv(kCLOCK_LpspiDiv, 7); /* Set SPI divider to 8 */
+	/* Configure input clock to be able to reach the datasheet specified band rate. */
+	CLOCK_SetMux(kCLOCK_LpspiMux, 1); /* Set SPI source to USB1 PFD0 */
+	CLOCK_SetDiv(kCLOCK_LpspiDiv, 0); /* Set SPI divider to 1 */
 #endif
 
 #ifdef CONFIG_DISPLAY_MCUX_ELCDIF
