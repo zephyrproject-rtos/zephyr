@@ -30,6 +30,14 @@
 		};
 	};
 
+	dac0_default: dac0_default {
+		group1 {
+			/* output */
+			psels = <RA_PSEL(RA_PSEL_DAC, 0, 14)>;
+			renesas,analog-enable;
+		};
+	};
+
 	pwm1_default: pwm1_default {
 		group1 {
 			/* GTIOC1A GTIOC1B */
