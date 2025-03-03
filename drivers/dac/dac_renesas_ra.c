@@ -14,6 +14,10 @@
 
 LOG_MODULE_REGISTER(dac_renesas_ra, CONFIG_DAC_LOG_LEVEL);
 
+#define HAS_CHARGEPUMP       DT_PROP(DT_PARENT(DT_DRV_INST(0)), has_chargepump)
+#define HAS_OUTPUT_AMPLIFIER DT_PROP(DT_PARENT(DT_DRV_INST(0)), has_output_amplifier)
+#define HAS_INTERNAL_OUTPUT  DT_PROP(DT_PARENT(DT_DRV_INST(0)), has_internal_output)
+
 struct dac_renesas_ra_config {
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -46,7 +50,9 @@ static int dac_renesas_ra_channel_setup(const struct device *dev,
 					const struct dac_channel_cfg *channel_cfg)
 {
 	struct dac_renesas_ra_data *data = dev->data;
+#if (HAS_OUTPUT_AMPLIFIER || HAS_CHARGEPUMP || HAS_INTERNAL_OUTPUT)
 	dac_extended_cfg_t *config_extend = (dac_extended_cfg_t *)data->f_config.p_extend;
+#endif
 	fsp_err_t fsp_err;
 
 	if (channel_cfg->channel_id != 0) {
@@ -66,9 +72,9 @@ static int dac_renesas_ra_channel_setup(const struct device *dev,
 		}
 	}
 
-#if DT_PROP(DT_PARENT(DT_DRV_INST(0)), has_output_amplifier)
+#if HAS_OUTPUT_AMPLIFIER
 	config_extend->output_amplifier_enabled = channel_cfg->buffered;
-#elif DT_PROP(DT_PARENT(DT_DRV_INST(0)), has_chargepump)
+#elif HAS_CHARGEPUMP
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(moco))
 	config_extend->enable_charge_pump = channel_cfg->buffered;
 #else
@@ -84,7 +90,7 @@ static int dac_renesas_ra_channel_setup(const struct device *dev,
 	}
 #endif
 
-#if DT_PROP(DT_PARENT(DT_DRV_INST(0)), has_internal_output)
+#if HAS_INTERNAL_OUTPUT
 	config_extend->internal_output_enabled = channel_cfg->internal;
 #else
 	if (channel_cfg->internal) {
