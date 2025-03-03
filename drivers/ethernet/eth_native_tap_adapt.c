@@ -7,8 +7,9 @@
 /**
  * @file
  *
- * Routines setting up the host system. Those are placed in separate file
- * because there is naming conflicts between host and zephyr network stacks.
+ * Routines setting up the host system. Those are placed in a separate file
+ * to avoid naming conflicts between host and zephyr network stacks.
+ * This file is built with the host libC in the native simulator runner context.
  */
 
 /* Host include files */
@@ -33,7 +34,7 @@
 #include <linux/if_tun.h>
 #endif
 
-#include "eth_native_posix_priv.h"
+#include "eth_native_tap_priv.h"
 
 /* Note that we cannot create the TUN/TAP device from the setup script
  * as we need to get a file descriptor to communicate with the interface.
