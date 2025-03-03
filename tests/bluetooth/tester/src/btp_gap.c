@@ -583,15 +583,64 @@ static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len,
 
 	switch (cp->discoverable) {
 	case BTP_GAP_NON_DISCOVERABLE:
+		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+			int err;
+
+			err = bt_br_set_discoverable(false, false);
+			if ((err < 0) && (err != -EALREADY)) {
+				return BTP_STATUS_FAILED;
+			}
+		}
+
 		ad_flags &= ~(BT_LE_AD_GENERAL | BT_LE_AD_LIMITED);
 		atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_DISCOVERABLE);
 		break;
 	case BTP_GAP_GENERAL_DISCOVERABLE:
+		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+			int err;
+
+			err = bt_br_set_connectable(true);
+			if (err == -EALREADY) {
+				err = bt_br_set_discoverable(false, false);
+				if ((err < 0) && (err != -EALREADY)) {
+					return BTP_STATUS_FAILED;
+				}
+			} else if (err < 0) {
+				return BTP_STATUS_FAILED;
+			}
+
+			err = bt_br_set_discoverable(true, false);
+			if (err < 0) {
+				return BTP_STATUS_FAILED;
+			}
+			ad_flags &= ~BT_LE_AD_NO_BREDR;
+		}
+
 		ad_flags &= ~BT_LE_AD_LIMITED;
 		ad_flags |= BT_LE_AD_GENERAL;
 		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_DISCOVERABLE);
 		break;
 	case BTP_GAP_LIMITED_DISCOVERABLE:
+		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+			int err;
+
+			err = bt_br_set_connectable(true);
+			if (err == -EALREADY) {
+				err = bt_br_set_discoverable(false, false);
+				if ((err < 0) && (err != -EALREADY)) {
+					return BTP_STATUS_FAILED;
+				}
+			} else if (err < 0) {
+				return BTP_STATUS_FAILED;
+			}
+
+			err = bt_br_set_discoverable(true, true);
+			if (err < 0) {
+				return BTP_STATUS_FAILED;
+			}
+			ad_flags &= ~BT_LE_AD_NO_BREDR;
+		}
+
 		ad_flags &= ~BT_LE_AD_GENERAL;
 		ad_flags |= BT_LE_AD_LIMITED;
 		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_DISCOVERABLE);
