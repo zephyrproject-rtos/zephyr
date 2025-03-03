@@ -31,7 +31,7 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_INST(0, st_stm32_rtc)
 #elif defined(CONFIG_COUNTER_SMARTBOND_TIMER)
 #define TIMER DT_NODELABEL(timer3)
-#elif defined(CONFIG_COUNTER_NATIVE_POSIX)
+#elif defined(CONFIG_COUNTER_NATIVE_SIM)
 #define TIMER DT_NODELABEL(counter0)
 #elif defined(CONFIG_COUNTER_XLNX_AXI_TIMER)
 #define TIMER DT_INST(0, xlnx_xps_timer_1_00_a)
