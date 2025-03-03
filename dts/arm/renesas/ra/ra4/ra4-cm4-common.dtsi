@@ -218,6 +218,21 @@
 			status = "disabled";
 		};
 
+		dac_global: dac_global@4005e000 {
+			compatible = "renesas,ra-dac-global";
+			reg = <0x4005e000 0x10c4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			dac0: dac@0 {
+				compatible = "renesas,ra-dac";
+				#io-channel-cells = <1>;
+				reg = <0>;
+				status = "disabled";
+			};
+		};
+
 		iic0: iic0@40053000 {
 			compatible = "renesas,ra-iic";
 			channel = <0>;
