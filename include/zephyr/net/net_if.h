@@ -96,6 +96,8 @@ struct net_if_addr {
 		struct {
 			/** Duplicate address detection (DAD) timer */
 			sys_snode_t dad_node;
+
+			/** DAD start time */
 			uint32_t dad_start;
 
 			/** How many times we have done DAD */
