@@ -1,9 +1,156 @@
 # Copyright (c) 2022, Felipe Neves
+# Copyright (c) 2025, Cameron Ewing
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
     AMS (Austria Mikro Systeme) AS5600 Angular position sensor
 
+    Datasheet: https://look.ams-osram.com/m/7059eac7531a86fd/original/AS5600-DS000365.pdf
+
 compatible: "ams,as5600"
 
 include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  start-position:
+    description: |
+      Start position (min. 0; max. 4095).
+      Difference between Start and End position must be at least 18 degrees (205 steps).
+
+      Ref: Datasheet page 21.
+    type: int
+
+  end-position:
+    description: |
+      End position (min. 0; max. 4095).
+      Difference between Start and End position must be at least 18 degrees (205 steps).
+      Mutually exclusive with angular-range.
+
+      Ref: Datasheet page 21,25.
+    type: int
+
+  angular-range:
+    description: |
+      Maximum angular range (min. 205; max. 4096).
+      Mutually exclusive with end-position.
+
+      Ref: Datasheet page 21,24,25.
+    type: int
+
+  power-mode:
+    description: |
+      Configure the power mode and polling time of AS5600.
+
+      Value | Power Mode | Polling Time | Max Supply Current
+      0:      NOM,         Always On,     6.5mA
+      1:      LPM1,        5ms,           3.4mA
+      2:      LPM2,        20ms,          1.8mA
+      3:      LPM3,        100ms,         1.5mA
+
+      Ref: Datasheet page 5.
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  hysteresis:
+    description: |
+      Configure the LSB hysteresis of the Scaled Angle output (min. 0; max. 3).
+
+      Ref: Datasheet page 31.
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  output-stage:
+    description: |
+      Configure output of angle reading over the OUT pin.
+      NOTE: AS5600L only supports digital PWM output and pulls OUT high for any other configured
+      output stage.
+
+      Value | Output Stage
+      0:      Analog output (Full range from 0% to 100% of GND -> VDD)
+      1:      Analog output (Reduced range from 10% to 90% of GND -> VDD)
+      2:      Digital PWM output
+
+      Ref: Datasheet page 24.
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+
+  pwm-frequency:
+    description: |
+      Configure the digital PWM signalling frequency in Hz.
+
+      Value | PWM Frequency
+      0:      115 Hz
+      1:      230 Hz
+      2:      460 Hz
+      3:      920 Hz
+
+      Ref: Datasheet page 19.
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  slow-filter:
+    description: |
+      Configure the slow step response filter.
+
+      Value | Step Response Delay | Output Noise
+      0:      2.2 ms,               0.015 degrees
+      1:      1.1 ms,               0.021 degrees
+      2:      0.55 ms,              0.030 degrees
+      3:      0.286 ms,             0.043 degrees
+
+      Ref: Datasheet page 28.
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  fast-filter-threshold:
+    description: |
+      Configure the fast step response filter threshold.
+
+      Value | Slow to Fast Transition | Fast to Slow Transition
+      0:      Slow Filter Only
+      1:      6 LSB,                    1 LSB
+      2:      7 LSB,                    1 LSB
+      3:      9 LSB,                    1 LSB
+      4:      18 LSB,                   2 LSB
+      5:      21 LSB,                   2 LSB
+      6:      24 LSB,                   2 LSB
+      7:      10 LSB,                   4 LSB
+
+      Ref: Datasheet page 29.
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+  watchdog:
+    description: |
+      Configure the low power watchdog.
+      Automatically enter LPM3 after 1 minute if the angle stays within 4 LSB of the last reading.
+
+      Ref: Datasheet page 31.
+    type: boolean
