@@ -158,6 +158,9 @@ struct net_if_mcast_addr {
 	/** IP address */
 	struct net_addr address;
 
+	/** Rejoining multicast groups list node */
+	sys_snode_t rejoin_node;
+
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	/** Sources to filter on */
 	struct net_addr sources[CONFIG_NET_IF_MCAST_IPV4_SOURCE_COUNT];
