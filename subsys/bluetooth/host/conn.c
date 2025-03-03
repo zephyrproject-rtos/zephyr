@@ -2391,6 +2391,11 @@ struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 {
 	int i;
 
+	if (peer == NULL) {
+		LOG_DBG("Invalid peer address");
+		return NULL;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
 		struct bt_conn *conn = bt_conn_ref(&acl_conns[i]);
 
