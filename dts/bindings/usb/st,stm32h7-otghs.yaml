@@ -1,0 +1,22 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32H7 OTGHS controller
+
+compatible: "st,stm32h7-otghs"
+
+include: st,stm32-otghs.yaml
+
+properties:
+  physel:
+    type: string
+    required: true
+    enum:
+      - "USB_OTG_HS_PHY_ULPI"
+      - "USB_OTG_FS_EMBEDDED_PHY"
+      - "USB_OTG_HS_EMBEDDED_PHY"
+    description: |
+      OTG_HS supports the following PHY interfaces:
+        - "USB_OTG_HS_ULPI_PHY": UTMI+ Low Pin Interface for external high-speed PHY.
+        - "USB_OTG_FS_EMBEDDED_PHY": on chip full speed PHY.
+        - "USB_OTG_HS_EMBEDDED_PHY": on chip high-speed PHY.
