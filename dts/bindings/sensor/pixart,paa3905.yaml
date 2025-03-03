@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: PA3905 optical flow sensor
+
+compatible: "pixart,paa3905"
+
+include: spi-device.yaml
+
+properties:
+  resolution:
+    type: int
+    default: 42
+    description: |
+      The resolution of the sensor, which affects the counts per inch detected
+      by the sensor.
+      Default is power-on reset value.
+
+  led-control:
+    type: boolean
+    default:
+    description: |
+      Enable or disable the LED control feature, which allows the optical flow
+      sensor to drive an external LED in order to provide illuminance when needed.
