@@ -27,7 +27,10 @@ SUPPORTED_RUNNABLE_HARNESS = [
     'shell',
 ]
 SUPPORTED_BUILDABLE_HARNESS = [
+    # This is a special harness that is used to build the test only and prepare it for bsim
     'bsim',
+    # This is a special harness that is used to build the test only
+    'build',
 ]
 
 SUPPORTED_HARNESS = SUPPORTED_RUNNABLE_HARNESS + SUPPORTED_BUILDABLE_HARNESS
