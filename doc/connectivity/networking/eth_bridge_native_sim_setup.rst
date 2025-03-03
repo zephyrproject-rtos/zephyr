@@ -61,7 +61,7 @@ Then create a sample and enable Ethernet bridging support. In this example we cr
       -DCONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD="\"gnome-terminal -- screen %s\"" \
       -DCONFIG_NET_ETHERNET_BRIDGE=y \
       -DCONFIG_NET_ETHERNET_BRIDGE_SHELL=y \
-      -DCONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT=2 \
+      -DCONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT=2 \
       -DCONFIG_NET_IF_MAX_IPV6_COUNT=2 \
       -DCONFIG_NET_IF_MAX_IPV4_COUNT=2
    ../build/echo-server/zephyr/zephyr.exe -attach_uart
