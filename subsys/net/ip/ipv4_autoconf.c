@@ -122,15 +122,23 @@ void net_ipv4_autoconf_start(struct net_if *iface)
 		net_ipv4_autoconf_reset(iface);
 	}
 
-	cfg->ipv4auto.iface = iface;
-
 	NET_DBG("Starting IPv4 autoconf for iface %p", iface);
 
-	if (cfg->ipv4auto.state == NET_IPV4_AUTOCONF_ASSIGNED) {
-		/* Try to reuse previously used address. */
+	cfg->ipv4auto.iface = iface;
+
+	switch (cfg->ipv4auto.state) {
+	case NET_IPV4_AUTOCONF_INIT:
+		break;
+	case NET_IPV4_AUTOCONF_RENEW:
+	case NET_IPV4_AUTOCONF_ALLOCATING:
+	case NET_IPV4_AUTOCONF_ASSIGNED:
+		/* Reuse address */
 		cfg->ipv4auto.state = NET_IPV4_AUTOCONF_RENEW;
-	} else {
+		break;
+	default:
+		/* Unknown state */
 		cfg->ipv4auto.state = NET_IPV4_AUTOCONF_INIT;
+		break;
 	}
 
 	ipv4_autoconf_addr_set(&cfg->ipv4auto);
@@ -145,7 +153,23 @@ void net_ipv4_autoconf_reset(struct net_if *iface)
 		return;
 	}
 
+	switch (cfg->ipv4auto.state) {
+	case NET_IPV4_AUTOCONF_INIT:
+		break;
+	case NET_IPV4_AUTOCONF_RENEW:
+	case NET_IPV4_AUTOCONF_ALLOCATING:
+	case NET_IPV4_AUTOCONF_ASSIGNED:
+		/* Reuse address on next start */
+		cfg->ipv4auto.state = NET_IPV4_AUTOCONF_RENEW;
+		break;
+	default:
+		/* Unknown state */
+		cfg->ipv4auto.state = NET_IPV4_AUTOCONF_INIT;
+		break;
+	}
+
 	net_if_ipv4_addr_rm(iface, &cfg->ipv4auto.requested_ip);
+	cfg->ipv4auto.iface = NULL;
 
 	NET_DBG("Autoconf reset for %p", iface);
 }
