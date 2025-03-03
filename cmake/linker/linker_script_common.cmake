@@ -1,5 +1,9 @@
 find_package(Zephyr REQUIRED COMPONENTS extensions HINTS ${CMAKE_CURRENT_LIST_DIR}/../../)
 
+set(CMAKE_VERBOSE_MAKEFILE 1)
+
+include(${CMAKE_CURRENT_LIST_DIR}/linker_script_variable_utils.cmake)
+
 #
 # Create functions - start
 #
@@ -717,40 +721,23 @@ foreach(file IN LISTS PREPROCESSOR_FILES )
   endif()
 endforeach()
 
-# To pickup information gathered by the scripts from the previous pass, we use
-# the syntax @FOO@ where FOO is a cmake variable name
-function(do_var_replace_in res_ptr src)
-  string(REGEX MATCHALL "@([^@]*)@" match_res "${src}")
-  foreach(match IN LISTS match_res)
-    string(REPLACE "@" "" expr ${match})
-    # the variable expression is as follows:
-    # @NAME[,undef:VALUE]@ Where the VALUE gets picked if we dont find NAME
-    string(REPLACE "," ";" expr ${expr})
-    list(GET expr 0 var)
-    if(DEFINED "AT_VAR_${var}")
-      set(value "${AT_VAR_${var}}")
-    elseif(DEFINED ${var}) # set by zephyr_linker_include_generated files
-      set(value "${${var}}")
-    elseif("${expr}" MATCHES ";undef:([^,]*)")
-      set(value "${CMAKE_MATCH_1}")
-    else()
-      set(value "${match}")
-      # can't warn here because we can't check for what is relevant in this pass
-      # message(WARNING "Missing definition for ${match}")
-    endif()
+# For each sting passed to expand_variables() this is called to allow the
+# target to special treatment. This will be used to implement evaluation of
+# section sizes used for MPU_ALIGN (or any other expressions that not
+# all linkers support)
+if(NOT COMMAND preview_var_replacement)
+  function(preview_var_replacement result_ptr src)
+    #default to doing nothing:
+    set(${result_ptr} "${src}" PARENT_SCOPE)
+  endfunction()
+endif()
 
-    if(CMAKE_VERBOSE_MAKEFILE)
-      message("Using variable ${match} with value ${value}")
-    endif()
-    string(REPLACE "${match}" "${value}" src "${src}")
-  endforeach()
-  set(${res_ptr} "${src}" PARENT_SCOPE)
-endfunction()
+# predefined @variables@
+set(AT_VAR_AT "@") # allows escaping of @
 
 foreach(input IN ITEMS "MEMORY_REGIONS" "GROUPS" "SECTIONS" "SECTION_SETTINGS")
-  do_var_replace_in(${input} "${${input}}")
+  expand_variables("${${input}}" ${input})
 endforeach()
-
 
 create_system(OBJECT new_system NAME ZEPHYR_LINKER_v1 FORMAT ${FORMAT} ENTRY ${ENTRY})
 
