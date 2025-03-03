@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -41,11 +41,11 @@ struct uart_rz_scif_data {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-void scif_uart_rxi_isr(void);
-void scif_uart_txi_isr(void);
-void scif_uart_tei_isr(void);
-void scif_uart_eri_isr(void);
-void scif_uart_bri_isr(void);
+void scif_uart_rxi_isr(void *irq);
+void scif_uart_txi_isr(void *irq);
+void scif_uart_tei_isr(void *irq);
+void scif_uart_eri_isr(void *irq);
+void scif_uart_bri_isr(void *irq);
 #endif
 
 static int uart_rz_scif_poll_in(const struct device *dev, unsigned char *c)
@@ -106,10 +106,10 @@ static int uart_rz_scif_apply_config(const struct device *dev)
 
 	struct uart_config *uart_config = &data->uart_config;
 	uart_cfg_t *fsp_cfg = data->fsp_cfg;
+	data->fsp_ctrl->p_cfg = data->fsp_cfg;
 
 	scif_baud_setting_t baud_setting;
-	scif_uart_extended_cfg_t config_extend;
-	const scif_uart_extended_cfg_t *fsp_config_extend = fsp_cfg->p_extend;
+	scif_uart_extended_cfg_t *fsp_config_extend = (scif_uart_extended_cfg_t *)fsp_cfg->p_extend;
 
 	fsp_err_t fsp_err;
 
@@ -157,24 +157,20 @@ static int uart_rz_scif_apply_config(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	memcpy(&config_extend, fsp_config_extend->p_baud_setting, sizeof(scif_baud_setting_t));
-
 	switch (uart_config->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
-		config_extend.flow_control = SCIF_UART_FLOW_CONTROL_NONE;
-		config_extend.uart_mode = SCIF_UART_MODE_RS232;
-		config_extend.rs485_setting.enable = SCI_UART_RS485_DISABLE;
+		fsp_config_extend->flow_control = SCIF_UART_FLOW_CONTROL_NONE;
+		fsp_config_extend->uart_mode = SCIF_UART_MODE_RS232;
+		fsp_config_extend->rs485_setting.enable = 0;
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
-		config_extend.flow_control = SCIF_UART_FLOW_CONTROL_AUTO;
-		config_extend.uart_mode = SCIF_UART_MODE_RS232;
-		config_extend.rs485_setting.enable = SCI_UART_RS485_DISABLE;
+		fsp_config_extend->flow_control = SCIF_UART_FLOW_CONTROL_AUTO;
+		fsp_config_extend->uart_mode = SCIF_UART_MODE_RS232;
+		fsp_config_extend->rs485_setting.enable = 0;
 		break;
 	default:
 		return -ENOTSUP;
 	}
-
-	memcpy(fsp_config_extend->p_baud_setting, &config_extend, sizeof(scif_baud_setting_t));
 
 	return 0;
 }
@@ -229,7 +225,7 @@ static int uart_rz_scif_fifo_fill(const struct device *dev, const uint8_t *tx_da
 	fsp_ctrl->tx_src_bytes = size;
 	fsp_ctrl->p_tx_src = tx_data;
 
-	scif_uart_txi_isr();
+	scif_uart_txi_isr((void *)fsp_ctrl->p_cfg->txi_irq);
 
 	return (size - fsp_ctrl->tx_src_bytes);
 }
@@ -246,9 +242,9 @@ static int uart_rz_scif_fifo_read(const struct device *dev, uint8_t *rx_data, co
 	/* Read all available data in the FIFO */
 	/* If there are more available data than required, they will be lost */
 	if (data->int_data.rxi_flag) {
-		scif_uart_rxi_isr();
+		scif_uart_rxi_isr((void *)fsp_ctrl->p_cfg->rxi_irq);
 	} else {
-		scif_uart_tei_isr();
+		scif_uart_tei_isr((void *)fsp_ctrl->p_cfg->tei_irq);
 	}
 
 	data->int_data.rx_fifo_busy = false;
@@ -353,9 +349,10 @@ static void uart_rz_scif_txi_isr(const struct device *dev)
 static void uart_rz_scif_tei_isr(const struct device *dev)
 {
 	struct uart_rz_scif_data *data = dev->data;
+	scif_uart_instance_ctrl_t *fsp_ctrl = data->fsp_ctrl;
 
 	if (data->int_data.tei_flag) {
-		scif_uart_tei_isr();
+		scif_uart_tei_isr((void *)fsp_ctrl->p_cfg->tei_irq);
 	} else {
 		data->int_data.rxi_flag = false;
 		data->int_data.rx_fifo_busy = true;
@@ -367,12 +364,19 @@ static void uart_rz_scif_tei_isr(const struct device *dev)
 
 static void uart_rz_scif_eri_isr(const struct device *dev)
 {
-	scif_uart_eri_isr();
+	struct uart_rz_scif_data *data = dev->data;
+	scif_uart_instance_ctrl_t *fsp_ctrl = data->fsp_ctrl;
+
+	scif_uart_eri_isr((void *)fsp_ctrl->p_cfg->eri_irq);
 }
 
 static void uart_rz_scif_bri_isr(const struct device *dev)
 {
-	scif_uart_bri_isr();
+	struct uart_rz_scif_data *data = dev->data;
+	uart_cfg_t *fsp_cfg = data->fsp_cfg;
+	scif_uart_extended_cfg_t *fsp_extend = (scif_uart_extended_cfg_t *)fsp_cfg->p_extend;
+
+	scif_uart_bri_isr((void *)fsp_extend->bri_irq);
 }
 
 static void uart_rz_scif_event_handler(uart_callback_args_t *p_args)
@@ -446,22 +450,28 @@ static int uart_rz_scif_init(const struct device *dev)
 	return 0;
 }
 
-#define UART_RZG_IRQ_CONNECT(n, irq_name, isr)                                                     \
+#ifdef CONFIG_CPU_CORTEX_M
+#define GET_IRQ_FLAGS(index) 0
+#else /* Cortex-A/R */
+#define GET_IRQ_FLAGS(index) DT_INST_IRQ_BY_IDX(index, 0, flags)
+#endif
+
+#define UART_RZ_IRQ_CONNECT(n, irq_name, isr)                                                      \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, irq_name, irq),                                 \
 			    DT_INST_IRQ_BY_NAME(n, irq_name, priority), isr,                       \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
+			    DEVICE_DT_INST_GET(n), GET_IRQ_FLAGS(n));                              \
 		irq_enable(DT_INST_IRQ_BY_NAME(n, irq_name, irq));                                 \
 	} while (0)
 
-#define UART_RZG_CONFIG_FUNC(n)                                                                    \
-	UART_RZG_IRQ_CONNECT(n, eri, uart_rz_scif_eri_isr);                                        \
-	UART_RZG_IRQ_CONNECT(n, rxi, uart_rz_scif_rxi_isr);                                        \
-	UART_RZG_IRQ_CONNECT(n, txi, uart_rz_scif_txi_isr);                                        \
-	UART_RZG_IRQ_CONNECT(n, tei, uart_rz_scif_tei_isr);                                        \
-	UART_RZG_IRQ_CONNECT(n, bri, uart_rz_scif_bri_isr);
+#define UART_RZ_CONFIG_FUNC(n)                                                                     \
+	UART_RZ_IRQ_CONNECT(n, eri, uart_rz_scif_eri_isr);                                         \
+	UART_RZ_IRQ_CONNECT(n, rxi, uart_rz_scif_rxi_isr);                                         \
+	UART_RZ_IRQ_CONNECT(n, txi, uart_rz_scif_txi_isr);                                         \
+	UART_RZ_IRQ_CONNECT(n, tei, uart_rz_scif_tei_isr);                                         \
+	UART_RZ_IRQ_CONNECT(n, bri, uart_rz_scif_bri_isr);
 
-#define UART_RZG_INIT(n)                                                                           \
+#define UART_RZ_INIT(n)                                                                            \
 	static scif_uart_instance_ctrl_t g_uart##n##_ctrl;                                         \
 	static scif_baud_setting_t g_uart##n##_baud_setting;                                       \
 	static scif_uart_extended_cfg_t g_uart##n##_cfg_extend = {                                 \
@@ -470,14 +480,14 @@ static int uart_rz_scif_init(const struct device *dev)
 		.clock = SCIF_UART_CLOCK_INT,                                                      \
 		.noise_cancel = SCIF_UART_NOISE_CANCELLATION_ENABLE,                               \
 		.p_baud_setting = &g_uart##n##_baud_setting,                                       \
-		.rx_fifo_trigger = SCIF_UART_RECEIVE_TRIGGER_MAX,                                  \
+		.rx_fifo_trigger = 3,                                                              \
 		.rts_fifo_trigger = SCIF_UART_RTS_TRIGGER_14,                                      \
 		.uart_mode = SCIF_UART_MODE_RS232,                                                 \
 		.flow_control = SCIF_UART_FLOW_CONTROL_NONE,                                       \
 		.rs485_setting =                                                                   \
 			{                                                                          \
-				.enable = (sci_uart_rs485_enable_t)NULL,                           \
-				.polarity = SCI_UART_RS485_DE_POLARITY_HIGH,                       \
+				.enable = 0,                                                       \
+				.polarity = 0,                                                     \
 				.de_control_pin =                                                  \
 					(bsp_io_port_pin_t)SCIF_UART_INVALID_16BIT_PARAM,          \
 			},                                                                         \
@@ -519,11 +529,11 @@ static int uart_rz_scif_init(const struct device *dev)
 	static int uart_rz_scif_init_##n(const struct device *dev)                                 \
 	{                                                                                          \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                    \
-			   (UART_RZG_CONFIG_FUNC(n);))                      \
+			    (UART_RZ_CONFIG_FUNC(n);))                      \
 		return uart_rz_scif_init(dev);                                                     \
 	}                                                                                          \
 	DEVICE_DT_INST_DEFINE(n, &uart_rz_scif_init_##n, NULL, &uart_rz_scif_data_##n,             \
 			      &uart_rz_scif_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &uart_rz_scif_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(UART_RZG_INIT)
+DT_INST_FOREACH_STATUS_OKAY(UART_RZ_INIT)
