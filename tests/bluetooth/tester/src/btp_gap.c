@@ -472,6 +472,15 @@ static uint8_t set_connectable(const void *cmd, uint16_t cmd_len,
 	const struct btp_gap_set_connectable_cmd *cp = cmd;
 	struct btp_gap_set_connectable_rp *rp = rsp;
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		int err;
+
+		err = bt_br_set_connectable(cp->connectable ? true : false);
+		if ((err < 0) && (err != -EALREADY)) {
+			return BTP_STATUS_FAILED;
+		}
+	}
+
 	if (cp->connectable) {
 		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE);
 	} else {
