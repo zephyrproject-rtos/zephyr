@@ -1541,6 +1541,8 @@ void net_if_start_rs(struct net_if *iface)
 		goto out;
 	}
 
+	net_if_unlock(iface);
+
 	NET_DBG("Starting ND/RS for iface %p", iface);
 
 	if (!net_ipv6_start_rs(iface)) {
@@ -1556,6 +1558,7 @@ void net_if_start_rs(struct net_if *iface)
 		}
 	}
 
+	return;
 out:
 	net_if_unlock(iface);
 }
