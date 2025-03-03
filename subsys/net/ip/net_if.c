@@ -1327,8 +1327,9 @@ void net_if_ipv6_start_dad(struct net_if *iface,
 
 void net_if_start_dad(struct net_if *iface)
 {
-	struct net_if_addr *ifaddr;
+	struct net_if_addr *ifaddr, *next;
 	struct net_if_ipv6 *ipv6;
+	sys_slist_t dad_needed;
 	struct in6_addr addr = { };
 	int ret;
 
@@ -1378,6 +1379,8 @@ void net_if_start_dad(struct net_if *iface)
 	/* Start DAD for all the addresses that were added earlier when
 	 * the interface was down.
 	 */
+	sys_slist_init(&dad_needed);
+
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!ipv6->unicast[i].is_used ||
 		    ipv6->unicast[i].address.family != AF_INET6 ||
@@ -1387,8 +1390,20 @@ void net_if_start_dad(struct net_if *iface)
 			continue;
 		}
 
-		net_if_ipv6_start_dad(iface, &ipv6->unicast[i]);
+		sys_slist_prepend(&dad_needed, &ipv6->unicast[i].dad_need_node);
 	}
+
+	net_if_unlock(iface);
+
+	/* Start DAD for all the addresses without holding the iface lock
+	 * to avoid any possible mutex deadlock issues.
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&dad_needed,
+					  ifaddr, next, dad_need_node) {
+		net_if_ipv6_start_dad(iface, ifaddr);
+	}
+
+	return;
 
 out:
 	net_if_unlock(iface);
@@ -1437,7 +1452,10 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 	net_if_ipv6_addr_rm(iface, addr);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6_PE) && iface->pe_enabled) {
+		net_if_unlock(iface);
+
 		net_ipv6_pe_start(iface, addr, timeout, preferred_lifetime);
+		return;
 	}
 
 out:
@@ -1966,6 +1984,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 {
 	struct net_if_addr *ifaddr = NULL;
 	struct net_if_ipv6 *ipv6;
+	bool do_dad = false;
 
 	net_if_lock(iface);
 
@@ -2017,8 +2036,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 			 */
 			join_mcast_nodes(iface,
 					 &ipv6->unicast[i].address.in6_addr);
-
-			net_if_ipv6_start_dad(iface, &ipv6->unicast[i]);
+			do_dad = true;
 		} else {
 			/* If DAD is not done for point-to-point links, then
 			 * the address is usable immediately.
@@ -2032,8 +2050,16 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 			sizeof(struct in6_addr));
 
 		ifaddr = &ipv6->unicast[i];
-		goto out;
+		break;
 	}
+
+	net_if_unlock(iface);
+
+	if (ifaddr != NULL && do_dad) {
+		net_if_ipv6_start_dad(iface, ifaddr);
+	}
+
+	return ifaddr;
 
 out:
 	net_if_unlock(iface);
