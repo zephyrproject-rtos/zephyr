@@ -21,8 +21,11 @@ LOG_MODULE_REGISTER(net_ipv4_autoconf, CONFIG_NET_IPV4_AUTO_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/random/random.h>
 
+static K_MUTEX_DEFINE(lock);
+
 static struct net_mgmt_event_callback mgmt4_acd_cb;
 
+/* Must be called with lock held */
 static inline void ipv4_autoconf_addr_set(struct net_if_ipv4_autoconf *ipv4auto)
 {
 	struct in_addr netmask = { { { 255, 255, 0, 0 } } };
@@ -61,15 +64,6 @@ static void acd_event_handler(struct net_mgmt_event_callback *cb,
 	struct net_if_config *cfg;
 	struct in_addr *addr;
 
-	cfg = net_if_get_config(iface);
-	if (!cfg) {
-		return;
-	}
-
-	if (cfg->ipv4auto.iface == NULL) {
-		return;
-	}
-
 	if (mgmt_event != NET_EVENT_IPV4_ACD_SUCCEED &&
 	    mgmt_event != NET_EVENT_IPV4_ACD_FAILED &&
 	    mgmt_event != NET_EVENT_IPV4_ACD_CONFLICT) {
@@ -82,8 +76,19 @@ static void acd_event_handler(struct net_mgmt_event_callback *cb,
 
 	addr = (struct in_addr *)cb->info;
 
-	if (!net_ipv4_addr_cmp(&cfg->ipv4auto.requested_ip, addr)) {
+	cfg = net_if_get_config(iface);
+	if (!cfg) {
 		return;
+	}
+
+	(void) k_mutex_lock(&lock, K_FOREVER);
+
+	if (cfg->ipv4auto.iface == NULL) {
+		goto out;
+	}
+
+	if (!net_ipv4_addr_cmp(&cfg->ipv4auto.requested_ip, addr)) {
+		goto out;
 	}
 
 	switch (mgmt_event) {
@@ -91,8 +96,6 @@ static void acd_event_handler(struct net_mgmt_event_callback *cb,
 		cfg->ipv4auto.state = NET_IPV4_AUTOCONF_ASSIGNED;
 		break;
 	case NET_EVENT_IPV4_ACD_CONFLICT:
-		net_ipv4_autoconf_reset(iface);
-		__fallthrough;
 	case NET_EVENT_IPV4_ACD_FAILED:
 		/* Try new address. */
 		cfg->ipv4auto.state = NET_IPV4_AUTOCONF_INIT;
@@ -101,6 +104,9 @@ static void acd_event_handler(struct net_mgmt_event_callback *cb,
 	default:
 		break;
 	}
+
+out:
+	k_mutex_unlock(&lock);
 }
 
 void net_ipv4_autoconf_start(struct net_if *iface)
@@ -117,9 +123,11 @@ void net_ipv4_autoconf_start(struct net_if *iface)
 		return;
 	}
 
+	(void) k_mutex_lock(&lock, K_FOREVER);
+
 	/* Remove the existing registration if found */
 	if (cfg->ipv4auto.iface == iface) {
-		net_ipv4_autoconf_reset(iface);
+		net_if_ipv4_addr_rm(iface, &cfg->ipv4auto.requested_ip);
 	}
 
 	NET_DBG("Starting IPv4 autoconf for iface %p", iface);
@@ -142,6 +150,8 @@ void net_ipv4_autoconf_start(struct net_if *iface)
 	}
 
 	ipv4_autoconf_addr_set(&cfg->ipv4auto);
+
+	k_mutex_unlock(&lock);
 }
 
 void net_ipv4_autoconf_reset(struct net_if *iface)
@@ -152,6 +162,8 @@ void net_ipv4_autoconf_reset(struct net_if *iface)
 	if (!cfg) {
 		return;
 	}
+
+	(void) k_mutex_lock(&lock, K_FOREVER);
 
 	switch (cfg->ipv4auto.state) {
 	case NET_IPV4_AUTOCONF_INIT:
@@ -172,6 +184,8 @@ void net_ipv4_autoconf_reset(struct net_if *iface)
 	cfg->ipv4auto.iface = NULL;
 
 	NET_DBG("Autoconf reset for %p", iface);
+
+	k_mutex_unlock(&lock);
 }
 
 void net_ipv4_autoconf_init(void)
