@@ -7,11 +7,15 @@
 /**
  * @file
  *
- * Ethernet driver for native posix board. This is meant for network
- * connectivity between host and Zephyr.
+ * TAP Ethernet driver for the native_sim board. This is meant for network
+ * connectivity between the host and Zephyr.
+ *
+ * Note this driver is divided in two files. This one, built in the embedded code context,
+ * with whichever libC is used in that context, and eth_native_tap_adapt.c built with the host
+ * libC.
  */
 
-#define LOG_MODULE_NAME eth_posix
+#define LOG_MODULE_NAME eth_tap
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
@@ -36,7 +40,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/gptp.h>
 #include <zephyr/net/lldp.h>
 
-#include "eth_native_posix_priv.h"
+#include "eth_native_tap_priv.h"
 #include "nsi_host_trampolines.h"
 #include "eth.h"
 
@@ -66,7 +70,7 @@ struct eth_context {
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
 #endif
-#if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
+#if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
 	const struct device *ptp_clock;
 #endif
 };
@@ -78,7 +82,7 @@ static const char *if_name_cmd_opt;
 			      CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);\
 	static struct k_thread rx_thread_data_##x
 
-LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_RX_THREAD, (;), _);
+LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_RX_THREAD, (;), _);
 
 #if defined(CONFIG_NET_GPTP)
 static bool need_timestamping(struct gptp_hdr *hdr)
@@ -265,7 +269,7 @@ static void eth_rx(void *p1, void *p2, void *p3)
 			}
 		}
 
-		k_sleep(K_MSEC(CONFIG_ETH_NATIVE_POSIX_RX_TIMEOUT));
+		k_sleep(K_MSEC(CONFIG_ETH_NATIVE_TAP_RX_TIMEOUT));
 	}
 }
 
@@ -287,7 +291,7 @@ static void create_rx_handler(struct eth_context *ctx)
 	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 		char name[THREAD_MAX_NAME_LEN];
 
-		snprintk(name, sizeof(name), "eth_native_posix_rx-%s",
+		snprintk(name, sizeof(name), "eth_native_tap_rx-%s",
 			 ctx->if_name);
 		k_thread_name_set(ctx->rx_thread, name);
 	}
@@ -310,7 +314,7 @@ static void eth_iface_init(struct net_if *iface)
 
 	ctx->init_done = true;
 
-#if defined(CONFIG_ETH_NATIVE_POSIX_RANDOM_MAC)
+#if defined(CONFIG_ETH_NATIVE_TAP_RANDOM_MAC)
 	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
 	gen_random_mac(ctx->mac_addr, 0x00, 0x00, 0x5E);
 
@@ -327,14 +331,14 @@ static void eth_iface_init(struct net_if *iface)
 	/* Difficult to configure MAC addresses any sane way if we have more
 	 * than one network interface.
 	 */
-	BUILD_ASSERT(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT == 1,
+	BUILD_ASSERT(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT == 1,
 		     "Cannot have static MAC if interface count > 1");
 
-	if (CONFIG_ETH_NATIVE_POSIX_MAC_ADDR[0] != 0) {
+	if (CONFIG_ETH_NATIVE_TAP_MAC_ADDR[0] != 0) {
 		if (net_bytes_from_str(ctx->mac_addr, sizeof(ctx->mac_addr),
-				       CONFIG_ETH_NATIVE_POSIX_MAC_ADDR) < 0) {
+				       CONFIG_ETH_NATIVE_TAP_MAC_ADDR) < 0) {
 			LOG_ERR("Invalid MAC address %s",
-				CONFIG_ETH_NATIVE_POSIX_MAC_ADDR);
+				CONFIG_ETH_NATIVE_TAP_MAC_ADDR);
 		}
 	}
 #endif
@@ -343,8 +347,8 @@ static void eth_iface_init(struct net_if *iface)
 	 * defined in the Kconfig directly. This way there is no need to
 	 * change the documentation etc. and break things.
 	 */
-	if (CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT == 1) {
-		ctx->if_name = CONFIG_ETH_NATIVE_POSIX_DRV_NAME;
+	if (CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT == 1) {
+		ctx->if_name = CONFIG_ETH_NATIVE_TAP_DRV_NAME;
 	}
 
 	if (if_name_cmd_opt != NULL) {
@@ -356,7 +360,7 @@ static void eth_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
 
-	ctx->dev_fd = eth_iface_create(CONFIG_ETH_NATIVE_POSIX_DEV_NAME, ctx->if_name, false);
+	ctx->dev_fd = eth_iface_create(CONFIG_ETH_NATIVE_TAP_DEV_NAME, ctx->if_name, false);
 	if (ctx->dev_fd < 0) {
 		LOG_ERR("Cannot create %s (%d/%s)", ctx->if_name, ctx->dev_fd,
 			strerror(-ctx->dev_fd));
@@ -366,8 +370,7 @@ static void eth_iface_init(struct net_if *iface)
 	}
 }
 
-static
-enum ethernet_hw_caps eth_posix_native_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_native_tap_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -375,10 +378,10 @@ enum ethernet_hw_caps eth_posix_native_get_capabilities(const struct device *dev
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
-#if defined(CONFIG_ETH_NATIVE_POSIX_VLAN_TAG_STRIP)
+#if defined(CONFIG_ETH_NATIVE_TAP_VLAN_TAG_STRIP)
 		| ETHERNET_HW_VLAN_TAG_STRIP
 #endif
-#if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
+#if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
 		| ETHERNET_PTP
 #endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
@@ -390,7 +393,7 @@ enum ethernet_hw_caps eth_posix_native_get_capabilities(const struct device *dev
 		;
 }
 
-#if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
+#if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
 static const struct device *eth_get_ptp_clock(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
@@ -461,7 +464,7 @@ static int vlan_setup(const struct device *dev, struct net_if *iface,
 static const struct ethernet_api eth_if_api = {
 	.iface_api.init = eth_iface_init,
 
-	.get_capabilities = eth_posix_native_get_capabilities,
+	.get_capabilities = eth_native_tap_get_capabilities,
 	.set_config = set_config,
 	.send = eth_send,
 
@@ -471,36 +474,36 @@ static const struct ethernet_api eth_if_api = {
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = get_stats,
 #endif
-#if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
+#if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
 	.get_ptp_clock = eth_get_ptp_clock,
 #endif
 };
 
 #define DEFINE_ETH_DEV_DATA(x, _)					     \
 	static struct eth_context eth_context_data_##x = {		     \
-		.if_name = CONFIG_ETH_NATIVE_POSIX_DRV_NAME #x,		     \
+		.if_name = CONFIG_ETH_NATIVE_TAP_DRV_NAME #x,		     \
 		.rx_thread = &rx_thread_data_##x,			     \
 		.rx_stack = rx_thread_stack_##x,			     \
 		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##x), \
 	}
 
-LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, (;), _);
+LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, (;), _);
 
 #define DEFINE_ETH_DEVICE(x, _)						\
-	ETH_NET_DEVICE_INIT(eth_native_posix_##x,			\
-			    CONFIG_ETH_NATIVE_POSIX_DRV_NAME #x,	\
+	ETH_NET_DEVICE_INIT(eth_native_tap_##x,				\
+			    CONFIG_ETH_NATIVE_TAP_DRV_NAME #x,		\
 			    NULL, NULL,	&eth_context_data_##x, NULL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &eth_if_api,				\
 			    NET_ETH_MTU)
 
-LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEVICE, (;), _);
+LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_ETH_DEVICE, (;), _);
 
-#if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
+#if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
 
 #if defined(CONFIG_NET_GPTP)
 BUILD_ASSERT(								\
-	CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT == CONFIG_NET_GPTP_NUM_PORTS, \
+	CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT == CONFIG_NET_GPTP_NUM_PORTS, \
 	"Number of network interfaces must match gPTP port count");
 #endif
 
@@ -511,10 +514,9 @@ struct ptp_context {
 #define DEFINE_PTP_DEV_DATA(x, _) \
 	static struct ptp_context ptp_context_##x
 
-LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_PTP_DEV_DATA, (;), _);
+LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_PTP_DEV_DATA, (;), _);
 
-static int ptp_clock_set_native_posix(const struct device *clk,
-				      struct net_ptp_time *tm)
+static int ptp_clock_set_native_tap(const struct device *clk, struct net_ptp_time *tm)
 {
 	ARG_UNUSED(clk);
 	ARG_UNUSED(tm);
@@ -526,16 +528,14 @@ static int ptp_clock_set_native_posix(const struct device *clk,
 	return 0;
 }
 
-static int ptp_clock_get_native_posix(const struct device *clk,
-				      struct net_ptp_time *tm)
+static int ptp_clock_get_native_tap(const struct device *clk, struct net_ptp_time *tm)
 {
 	ARG_UNUSED(clk);
 
 	return eth_clock_gettime(&tm->second, &tm->nanosecond);
 }
 
-static int ptp_clock_adjust_native_posix(const struct device *clk,
-					 int increment)
+static int ptp_clock_adjust_native_tap(const struct device *clk, int increment)
 {
 	ARG_UNUSED(clk);
 	ARG_UNUSED(increment);
@@ -547,8 +547,7 @@ static int ptp_clock_adjust_native_posix(const struct device *clk,
 	return 0;
 }
 
-static int ptp_clock_rate_adjust_native_posix(const struct device *clk,
-					      double ratio)
+static int ptp_clock_rate_adjust_native_tap(const struct device *clk, double ratio)
 {
 	ARG_UNUSED(clk);
 	ARG_UNUSED(ratio);
@@ -561,16 +560,16 @@ static int ptp_clock_rate_adjust_native_posix(const struct device *clk,
 }
 
 static DEVICE_API(ptp_clock, api) = {
-	.set = ptp_clock_set_native_posix,
-	.get = ptp_clock_get_native_posix,
-	.adjust = ptp_clock_adjust_native_posix,
-	.rate_adjust = ptp_clock_rate_adjust_native_posix,
+	.set = ptp_clock_set_native_tap,
+	.get = ptp_clock_get_native_tap,
+	.adjust = ptp_clock_adjust_native_tap,
+	.rate_adjust = ptp_clock_rate_adjust_native_tap,
 };
 
 #define PTP_INIT_FUNC(x, _)						\
 	static int ptp_init_##x(const struct device *port)			\
 	{								\
-		const struct device *const eth_dev = DEVICE_GET(eth_native_posix_##x); \
+		const struct device *const eth_dev = DEVICE_GET(eth_native_tap_##x); \
 		struct eth_context *context = eth_dev->data;	\
 		struct ptp_context *ptp_context = port->data;	\
 									\
@@ -580,10 +579,10 @@ static DEVICE_API(ptp_clock, api) = {
 		return 0;						\
 	}
 
-LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, PTP_INIT_FUNC, (), _)
+LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, PTP_INIT_FUNC, (), _)
 
 #define DEFINE_PTP_DEVICE(x, _)						\
-	DEVICE_DEFINE(eth_native_posix_ptp_clock_##x,			\
+	DEVICE_DEFINE(eth_native_tap_ptp_clock_##x,			\
 			    PTP_CLOCK_NAME "_" #x,			\
 			    ptp_init_##x,				\
 			    NULL,					\
@@ -593,13 +592,13 @@ LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, PTP_INIT_FUNC, (), _)
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &api)
 
-LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_PTP_DEVICE, (;), _);
+LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_PTP_DEVICE, (;), _);
 
-#endif /* CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK */
+#endif /* CONFIG_ETH_NATIVE_TAP_PTP_CLOCK */
 
-static void add_native_posix_options(void)
+static void add_native_tap_options(void)
 {
-	static struct args_struct_t eth_native_posix_options[] = {
+	static struct args_struct_t eth_native_tap_options[] = {
 		{
 			.is_mandatory = false,
 			.option = "eth-if",
@@ -611,7 +610,7 @@ static void add_native_posix_options(void)
 		ARG_TABLE_ENDMARKER,
 	};
 
-	native_add_command_line_opts(eth_native_posix_options);
+	native_add_command_line_opts(eth_native_tap_options);
 }
 
-NATIVE_TASK(add_native_posix_options, PRE_BOOT_1, 10);
+NATIVE_TASK(add_native_tap_options, PRE_BOOT_1, 10);
