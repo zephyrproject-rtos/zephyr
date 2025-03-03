@@ -9,5 +9,8 @@ if(CONFIG_TFM_FLASH_MERGED_BINARY)
 endif()
 
 board_runner_args(jlink "--device=nRF9151_xxCA" "--speed=4000")
+board_runner_args(nrfutil "--nrf-family=nrf91")
+
+include(${ZEPHYR_BASE}/boards/common/nrfutil.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/nrfjprog.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
