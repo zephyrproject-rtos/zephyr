@@ -149,7 +149,7 @@ Setting interface name from command line
 ****************************************
 
 By default the Ethernet interface name used by native_sim is determined by
-:kconfig:option:`CONFIG_ETH_NATIVE_POSIX_DRV_NAME`, but is also possible
+:kconfig:option:`CONFIG_ETH_NATIVE_TAP_DRV_NAME`, but is also possible
 to set it from the command line using ``--eth-if=<interface_name>``.
 This can be useful if the application has to be
 run in multiple instances and recompiling it for each instance would be

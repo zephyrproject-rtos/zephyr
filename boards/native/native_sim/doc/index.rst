@@ -705,7 +705,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      Entropy, :ref:`Native posix entropy <nsim_per_entr>`, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX`, All
      EEPROM, EEPROM simulator, :kconfig:option:`CONFIG_EEPROM_SIMULATOR`, All
      EEPROM, EEPROM emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, All
-     Ethernet, :ref:`Eth native_posix <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_POSIX`, All
+     Ethernet, :ref:`Eth native_tap <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_TAP`, All
      Flash, :ref:`Flash simulator <nsim_per_flash_simu>`, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, All
      Flash, :ref:`Host based flash access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, Host libC
      GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All
