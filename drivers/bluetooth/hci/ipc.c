@@ -281,6 +281,7 @@ static int bt_ipc_send(const struct device *dev, struct net_buf *buf)
 	err = ipc_service_send(&data->hci_ept, buf->data, buf->len);
 	if (err < 0) {
 		LOG_ERR("Failed to send (err %d)", err);
+		LOG_ERR("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 	}
 
 done:
