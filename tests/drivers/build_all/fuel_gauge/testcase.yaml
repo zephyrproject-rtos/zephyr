@@ -6,7 +6,7 @@ tests:
     tags:
       - drivers
       - fuel_gauge
-    build_only: true
+    harness: build
     platform_allow:
       - native_sim
 
@@ -14,7 +14,7 @@ tests:
     tags:
       - drivers
       - fuel_gauge
-    build_only: true
+    harness: build
     platform_allow:
       - native_sim
     extra_configs:

@@ -2,7 +2,7 @@ common:
   tags:
     - drivers
     - input
-  build_only: true
+  harness: build
   platform_allow:
     - native_posix
     - native_sim

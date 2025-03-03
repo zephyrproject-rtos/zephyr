@@ -3,7 +3,7 @@
 
 tests:
   drivers.w1.build:
-    build_only: true
+    harness: build
     tags:
       - drivers
       - w1

@@ -4,7 +4,7 @@ common:
     - sensors
   platform_allow:
     - native_sim
-  build_only: true
+  harness: build
 tests:
   drivers.fpga.build:
     tags: fpga

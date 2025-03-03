@@ -1,6 +1,6 @@
 tests:
   drivers.led.build:
-    build_only: true
+    harness: build
     min_ram: 32
     tags:
       - drivers

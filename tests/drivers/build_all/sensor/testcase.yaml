@@ -6,7 +6,7 @@ common:
     - native_sim
   integration_platforms:
     - native_sim
-  build_only: true
+  harness: build
 tests:
   sensors.build.sensorhub:
     extra_args: EXTRA_CONF_FILE=sensors_shub.conf;sensors_die_temp.conf
