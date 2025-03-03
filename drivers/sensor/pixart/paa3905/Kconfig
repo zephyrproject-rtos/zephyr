@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config PAA3905
+	bool "Optical Flow Sensor PAA3905"
+	default y
+	depends on DT_HAS_PIXART_PAA3905_ENABLED
+	select SPI
+	select SPI_RTIO
+	select SENSOR_ASYNC_API
+	help
+	  Enable driver for PAA3905 Optical Flow sensor.
