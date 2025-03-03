@@ -53,5 +53,70 @@
 			reg = <0x11030000 DT_SIZE_K(64)>;
 			reg-names = "pinctrl";
 		};
+
+		scif0: serial@1004b800 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <0>;
+			reg = <0x1004b800 0x400>;
+			interrupts = <GIC_SPI 380 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 381 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 382 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 383 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 384 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif1: serial@1004bc00 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <1>;
+			reg = <0x1004bc00 0x400>;
+			interrupts = <GIC_SPI 385 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 386 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 387 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 388 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 389 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif2: serial@1004c000 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <2>;
+			reg = <0x1004c000 0x400>;
+			interrupts = <GIC_SPI 390 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 391 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 392 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 393 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 394 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif3: serial@1004c400 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <3>;
+			reg = <0x1004c400 0x400>;
+			interrupts = <GIC_SPI 395 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 396 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 397 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 399 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 399 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif4: serial@1004c800 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <4>;
+			reg = <0x1004c800 0x400>;
+			interrupts = <GIC_SPI 400 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 401 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 402 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 403 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 404 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
 	};
 };
