@@ -28,10 +28,11 @@ static inline void ipv4_autoconf_addr_set(struct net_if_ipv4_autoconf *ipv4auto)
 	struct in_addr netmask = { { { 255, 255, 0, 0 } } };
 
 	if (ipv4auto->state == NET_IPV4_AUTOCONF_INIT) {
+		/* RFC3927 2.1 allowed address range: 169.254.1.0 - 169.254.254.255 */
 		ipv4auto->requested_ip.s4_addr[0] = 169U;
 		ipv4auto->requested_ip.s4_addr[1] = 254U;
-		ipv4auto->requested_ip.s4_addr[2] = sys_rand8_get() % 254;
-		ipv4auto->requested_ip.s4_addr[3] = sys_rand8_get() % 254;
+		ipv4auto->requested_ip.s4_addr[2] = 1 + (sys_rand8_get() % 254);
+		ipv4auto->requested_ip.s4_addr[3] = sys_rand8_get();
 	}
 
 	NET_DBG("%s: Starting probe for 169.254.%d.%d",
