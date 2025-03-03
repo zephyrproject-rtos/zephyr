@@ -47,5 +47,11 @@
 			#interrupt-cells = <4>;
 			status = "okay";
 		};
+
+		pinctrl: pin-controller@11030000 {
+			compatible = "renesas,rza-pinctrl";
+			reg = <0x11030000 DT_SIZE_K(64)>;
+			reg-names = "pinctrl";
+		};
 	};
 };
