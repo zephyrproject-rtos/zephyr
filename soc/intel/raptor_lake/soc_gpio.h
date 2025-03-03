@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Intel Corporation
+ * Copyright (c) 2023-2025, Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #ifndef __SOC_GPIO_H_
 #define __SOC_GPIO_H_
 
-#if defined(CONFIG_BOARD_INTEL_RPL_S_CRB)
+#if defined(CONFIG_BOARD_INTEL_RPL_S_CRB) || defined(CONFIG_BOARD_INTEL_BTL_S_CRB)
 #define GPIO_INTEL_NR_SUBDEVS		13
 #define REG_PAD_OWNER_BASE		0x00A0
 #define REG_GPI_INT_STS_BASE		0x0200
