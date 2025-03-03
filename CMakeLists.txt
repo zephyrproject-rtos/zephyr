@@ -1460,11 +1460,37 @@ macro(setup_linker_pass)
     "PASS_DEFINES;DEPENDENCIES;SOURCES;LIBRARIES_PRE_SCRIPT;LIBRARIES_POST_SCRIPT"
     ${ARGN}
   )
+
+  # To make the same expression syntax work for all linkers we need some
+  # extra machinery. We could have had a way of just translating the syntax,
+  # but it shows that not all linkers can express everything we need, and also
+  # that the may not allow e.g. alignment of a section depend on the
+  # section itself.
+  # So, lets use ld syntax for expressions, but evaluate them on the side,
+  # in a script (gen_linker_evaluation.py). So in linker pass we collect
+  # expressions that need external evaluation in a json file, and before the
+  # next pass evaluate the expressions and add the results as
+  # zephyr_linker_include_generated() input.
+  #
+  # The concept of "the previously built pass" is somewhat elusive:
+  # linker_pass_define          ${ZEPHYR_CURRENT_LINKER_PASS} ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+  # LINKER_APP_SMEM_UNALIGNED   0                             zephyr_pre0
+  # LINKER_ZEPHYR_PREBUILT      1                             zephyr_pre1
+  # LINKER_ZEPHYR_FINAL         1                             zephyr_pre1
+  # To avoid fixing this, keep track of the previous linker_pass_define and
+  # use that to pickup the previous pass name (if any).
+  get_property(sls_EVALUATE_INPUT GLOBAL PROPERTY LINKER_EVALUATE_PREVIOUS_FILE)
+  if(sls_EVALUATE_INPUT AND CONFIG_CMAKE_LINKER_GENERATOR)
+    # Add the output from expression evaluations from the previous pass
+    zephyr_linker_include_generated(CMAKE ${sls_EVALUATE_INPUT} PASS ${arg_sls_PASS_DEFINES})
+  endif()
+
   # Setup generation of the linker script
   configure_linker_script(
     ${arg_sls_CMD_FILE}
     "${arg_sls_PASS_DEFINES}"
     ${arg_sls_DEPENDENCIES}
+    ${sls_EVALUATE_INPUT}
     zephyr_generated_headers
   )
   add_custom_target(
@@ -1488,7 +1514,27 @@ macro(setup_linker_pass)
     LIBRARIES_POST_SCRIPT ${arg_sls_LIBRARIES_POST_SCRIPT}
     DEPENDENCIES          ${CODE_RELOCATION_DEP}
   )
-  set_property(TARGET   ${arg_sls_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/${arg_sls_CMD_FILE})
+  set_property(TARGET   ${arg_sls_EXECUTABLE} APPEND PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/${arg_sls_CMD_FILE} ${sls_EVALUATE_INPUT})
+
+  if(CONFIG_CMAKE_LINKER_GENERATOR)
+    # After linking the executable we can generate the linker evaluate file for
+    # the next pass.
+    set (sls_EVALUATE_FILE ${PROJECT_BINARY_DIR}/include/generated/z_linker_evaluated_${arg_sls_PASS_DEFINES}.cmake)
+    set_property(GLOBAL PROPERTY LINKER_EVALUATE_PREVIOUS_FILE ${sls_EVALUATE_FILE})
+    add_custom_command(
+      COMMENT "Generate ${sls_EVALUATE_FILE}"
+      OUTPUT ${sls_EVALUATE_FILE}
+      DEPENDS ${arg_sls_EXECUTABLE}
+      COMMAND
+      ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/build/gen_z_evaluated.py
+      --elf $<TARGET_FILE:${arg_sls_EXECUTABLE}>
+      --input ${PROJECT_BINARY_DIR}/z_linker_evaluate_${arg_sls_PASS_DEFINES}.json
+      --output ${sls_EVALUATE_FILE}
+      $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  endif()
 endmacro()
 
 if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)

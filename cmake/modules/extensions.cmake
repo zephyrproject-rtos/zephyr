@@ -5521,7 +5521,7 @@ function(zephyr_linker_include_generated)
   list(APPEND files ${INCLUDE_CMAKE} ${INCLUDE_KCONFIG} ${INCLUDE_HEADER})
   list(LENGTH files files_count)
   if(NOT ${files_count} EQUAL 1)
-    message(FATAL_ERROR "zephyr_linker_include_generated(${ARGV0} ...) must have one of CMAKE, KCONFIG or HEADER")
+    message(FATAL_ERROR "zephyr_linker_include_generated(${ARGN} ...) must have one of CMAKE, KCONFIG or HEADER")
   endif()
 
   zephyr_linker_check_pass_param("${INCLUDE_PASS}")

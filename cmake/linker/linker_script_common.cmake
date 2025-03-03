@@ -703,6 +703,13 @@ foreach(file ${INCLUDES})
   endif()
 endforeach()
 
+foreach(VAR ${VARIABLES})
+  if("${VAR}" MATCHES "^{(.*)}$")
+    cmake_parse_arguments(VAR "" "VAR;VALUE" "" ${CMAKE_MATCH_1})
+    set(${VAR_VAR} "${VAR_VALUE}" CACHE INTERNAL "")
+  endif()
+endforeach()
+
 # For now, lets start with @FOO@ and store each #define FOO value as a global
 # property AT_VAR_FOO (prefix to avoid name clashes).
 # We will do all the replacements in the input lists before giving them to the
@@ -713,7 +720,7 @@ foreach(file IN LISTS PREPROCESSOR_FILES )
     file(STRINGS ${file} defs REGEX ${VAR_DEF_REGEX})
     foreach(def ${defs})
       if(${def} MATCHES ${VAR_DEF_REGEX})
-        set("AT_VAR_${CMAKE_MATCH_1}" "${CMAKE_MATCH_2}")
+        set("AT_VAR_${CMAKE_MATCH_1}" "${CMAKE_MATCH_2}" CACHE INTERNAL "")
       endif()
     endforeach()
   else()
@@ -721,16 +728,69 @@ foreach(file IN LISTS PREPROCESSOR_FILES )
   endif()
 endforeach()
 
-# For each sting passed to expand_variables() this is called to allow the
-# target to special treatment. This will be used to implement evaluation of
-# section sizes used for MPU_ALIGN (or any other expressions that not
-# all linkers support)
-if(NOT COMMAND preview_var_replacement)
-  function(preview_var_replacement result_ptr src)
-    #default to doing nothing:
-    set(${result_ptr} "${src}" PARENT_SCOPE)
-  endfunction()
-endif()
+# For each variable expansion in expand_variables() this is called to allow
+# special treatment of certain expansions. We use this to implement evaluation
+# of linker expressions "between" linker passes and to bridge the gap between
+# different linkers and their expressive power in expression, e.g. for
+# MPU_ALIGN requiring alignment of a section to be dependent on its own size.
+function(preview_var_replacement result_ptr expr_parts result)
+  # The idea here is to catch @Z_EVALUATE:undef=VAL:expr=<expr>@ and do
+  # either of two things:
+  # * Collect expressions that the pass post processing needs to evaluate
+  # * Check if we have input from previous linker pass that we should use
+  # <expr> is an ld-script expression that we want to evaluate and pass on to
+  # the next linker pass.
+  # Input from the previous pass is passed to us as variables on the form
+  # @Z_EVALUATED_<sha(expr)>:undef=XXX@ via a
+  # zephyr_linker_include_generated(...) file.
+  # Collection of expressions will be done by putting relevant info (expr)
+  # into a json that zephyr_linker_evaluate.py will process after linking.
+  # Note that undef is REQUIRED
+  list(LENGTH expr_parts n_parts)
+  list(POP_FRONT expr_parts var_name)
+  if(var_name STREQUAL "Z_EVALUATE" AND n_parts GREATER_EQUAL 3)
+    # Ok, so we have something to handle:
+    list(POP_FRONT expr_parts undef)
+    # expr_parts is now a list of 1 or more var=<value> assignments. one of
+    # them must be expr=. Ensure that there is precisely one fully expanded
+    # expr=<value> and nothing else:
+    list(JOIN expr_parts ":" joined_exprs)
+    expand_variables("@(expr:${joined_exprs})@" expanded_expr)
+    string(SHA256 expr_sha "${joined_exprs}" )
+
+    set(var_name "Z_EVALUATED_${expr_sha}")
+    add_z_evaluate_expression("${var_name}" "${expanded_expr}" "${undef}")
+
+    # Check if there is a value from the previous pass, or else fall back to
+    # undef
+    # Here is the expression to load them if so:
+    set(z_evaluated_expression "@${var_name}:undef=${undef}@")
+
+    #do var expansion of the expression:
+    expand_variables("${z_evaluated_expression}" maybe_evaluated)
+    set(${result_ptr} "${maybe_evaluated}" PARENT_SCOPE)
+  else()
+    # not a Z_EVALUATE case:
+    set(${result_ptr} "${result}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+set_property(GLOBAL PROPERTY z_evaluate_elements "")
+
+function(add_z_evaluate_expression name expression undef)
+  get_property(json_array GLOBAL PROPERTY iar_evaluate_elements)
+  if(json_array)
+    string(APPEND json_array ",")
+  endif()
+  string(APPEND json_array "{\"name\":\"${name}\",\"expression\":\"${expression}\",\"undef\":\"${undef}\"}")
+  set_property(GLOBAL PROPERTY iar_evaluate_elements "${json_array}")
+endfunction()
+
+function(save_zephyr_evaluate_expressions file_name)
+  get_property(json_array GLOBAL PROPERTY iar_evaluate_elements)
+  file(WRITE ${file_name} "[${json_array}]")
+  set_property(GLOBAL PROPERTY iar_evaluate_elements "")
+endfunction()
 
 # predefined @variables@
 set(AT_VAR_AT "@") # allows escaping of @
@@ -796,3 +856,5 @@ to_string(OBJECT ${new_system} STRING OUT)
 if(OUT_FILE)
   file(WRITE ${OUT_FILE} "${OUT}")
 endif()
+
+save_zephyr_evaluate_expressions(${CMAKE_CURRENT_BINARY_DIR}/z_linker_evaluate_${PASS}.json)
