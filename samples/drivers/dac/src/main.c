@@ -28,7 +28,11 @@ static const struct device *const dac_dev = DEVICE_DT_GET(DAC_NODE);
 static const struct dac_channel_cfg dac_ch_cfg = {
 	.channel_id  = DAC_CHANNEL_ID,
 	.resolution  = DAC_RESOLUTION,
-	.buffered = true
+#if defined(CONFIG_DAC_BUFFER_NOT_SUPPORT)
+	.buffered = false,
+#else
+	.buffered = true,
+#endif /* CONFIG_DAC_BUFFER_NOT_SUPPORT */
 };
 
 int main(void)
