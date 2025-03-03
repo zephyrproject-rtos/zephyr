@@ -99,6 +99,15 @@ OpenThread Spinel HDLC RCP Host Interface Files
   * :zephyr_file:`modules/openthread/platform/radio_spinel.cpp`
   * :zephyr_file:`modules/openthread/platform/hdlc_interface.cpp`
 
+Python Devicetree library test files
+------------------------------------
+
+* *Licensing:* `BSD-3-clause`_
+* *Impact:* These are only used for testing and never linked with the firmware.
+* *Files*:
+
+  * Various yaml files under ``scripts/dts/python-devicetree/tests``
+
 .. _Apache 2.0 License:
    https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
 
