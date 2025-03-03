@@ -129,8 +129,9 @@ static int frdm_mcxn236_init(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm3))
+	/* SPI loopback test requires at lease 2*16M. */
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom3Clk, 1u);
-	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM3);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM3);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm4))

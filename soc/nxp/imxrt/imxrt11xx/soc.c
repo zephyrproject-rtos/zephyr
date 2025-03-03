@@ -463,9 +463,9 @@ __weak void clock_init(void)
 #endif
 
 #ifdef CONFIG_SPI_MCUX_LPSPI
-	/* Configure lpspi using Osc48MDiv2 */
-	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc48MDiv2;
-	rootCfg.div = 1;
+	/* Configure lpspi to 80M, lpspi loopback test requires at least 2*16M. */
+	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc400M;
+	rootCfg.div = 5;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
 #endif
 
