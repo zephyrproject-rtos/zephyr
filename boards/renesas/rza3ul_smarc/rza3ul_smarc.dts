@@ -7,6 +7,7 @@
 
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/renesas-rz-gpio.h>
 #include <freq.h>
 #include <arm64/renesas/rz/rza/r9a07g063.dtsi>
 #include "rza3ul_smarc-pinctrl.dtsi"
