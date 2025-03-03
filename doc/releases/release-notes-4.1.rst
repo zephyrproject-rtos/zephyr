@@ -287,6 +287,13 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_MDNS_RESPONDER_PROBE`
 
+  * Ethernet
+
+    * Allow user to specify protocol extensions when receiving data from Ethernet network.
+      This makes it possible to register a handler for Ethernet protocol type without changing
+      core Zephyr network code. :c:macro:`NET_L3_REGISTER`
+    * :kconfig:option:`CONFIG_NET_L2_ETHERNET_RESERVE_HEADER`
+
   * HTTP
 
     * Extended :c:macro:`HTTP_SERVICE_DEFINE` to allow to specify a default
