@@ -6,7 +6,7 @@
 / {
 	cpus {
 		cpu1: cpu@1 {
-			compatible = "zephyr,native-posix-cpu";
+			compatible = "zephyr,native-sim-cpu";
 			reg = <1>;
 			cpu-power-states = <&state2>;
 		};
