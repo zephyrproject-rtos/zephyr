@@ -268,10 +268,6 @@ class RunnerCaps:
       connected to a single computer, in order to select which one will be used
       with the command provided.
 
-    - flash_addr: whether the runner supports flashing to an
-      arbitrary address. Default is False. If true, the runner
-      must honor the --dt-flash option.
-
     - erase: whether the runner supports an --erase option, which
       does a mass-erase of the entire addressable flash on the target
       before flashing. On multi-core SoCs, this may only erase portions of
@@ -355,19 +351,6 @@ class RunnerConfig(NamedTuple):
     openocd: str | None = None   # path to a usable openocd
     openocd_search: list[str] = []  # add these paths to the openocd search path
     rtt_address: int | None = None # address of the rtt control block
-
-
-_YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']
-
-
-class _DTFlashAction(argparse.Action):
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        if values.lower().startswith('y'):
-            namespace.dt_flash = True
-        else:
-            namespace.dt_flash = False
-
 
 class _ToggleAction(argparse.Action):
 
@@ -527,10 +510,6 @@ class ZephyrBinaryRunner(abc.ABC):
         argparse module. For more details, refer to the documentation
         for argparse.ArgumentParser.add_subparsers().
 
-        The lone common optional argument is:
-
-        * --dt-flash (if the runner capabilities includes flash_addr)
-
         Runner-specific options are added through the do_add_parser()
         hook.'''
         # Unfortunately, the parser argument's type is not documented
@@ -548,15 +527,6 @@ class ZephyrBinaryRunner(abc.ABC):
                                 help=cls.dev_id_help())
         else:
             parser.add_argument('-i', '--dev-id', help=argparse.SUPPRESS)
-
-        if caps.flash_addr:
-            parser.add_argument('--dt-flash', default='n', choices=_YN_CHOICES,
-                                action=_DTFlashAction,
-                                help='''If 'yes', try to use flash address
-                                information from devicetree when flash
-                                addresses are unknown (e.g. when flashing a .bin)''')
-        else:
-            parser.add_argument('--dt-flash', help=argparse.SUPPRESS)
 
         if caps.file:
             parser.add_argument('-f', '--file',
@@ -650,8 +620,6 @@ class ZephyrBinaryRunner(abc.ABC):
         caps = cls.capabilities()
         if args.dev_id and not caps.dev_id:
             _missing_cap(cls, '--dev-id')
-        if args.dt_flash and not caps.flash_addr:
-            _missing_cap(cls, '--dt-flash')
         if args.erase and not caps.erase:
             _missing_cap(cls, '--erase')
         if args.reset and not caps.reset:
@@ -681,22 +649,6 @@ class ZephyrBinaryRunner(abc.ABC):
     def do_create(cls, cfg: RunnerConfig,
                   args: argparse.Namespace) -> 'ZephyrBinaryRunner':
         '''Hook for instance creation from command line arguments.'''
-
-    @staticmethod
-    def get_flash_address(args: argparse.Namespace,
-                          build_conf: BuildConfiguration,
-                          default: int = 0x0) -> int:
-        '''Helper method for extracting a flash address.
-
-        If args.dt_flash is true, returns the address obtained from
-        ZephyrBinaryRunner.flash_address_from_build_conf(build_conf).
-
-        Otherwise (when args.dt_flash is False), the default value is
-        returned.'''
-        if args.dt_flash:
-            return ZephyrBinaryRunner.flash_address_from_build_conf(build_conf)
-        else:
-            return default
 
     @staticmethod
     def flash_address_from_build_conf(build_conf: BuildConfiguration):

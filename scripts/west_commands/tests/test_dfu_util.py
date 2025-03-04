@@ -89,7 +89,7 @@ def test_dfu_util_init(cc, req, find_device, tc, runner_config):
     assert req.call_args_list == [call(exe)]
     assert cc.call_args_list == [call(EXPECTED_COMMAND[tc])]
 
-def get_flash_address_patch(args, bcfg):
+def flash_address_from_build_conf_patch(bcfg):
     return TEST_DFUSE_ADDR
 
 @pytest.mark.parametrize('tc', [
@@ -104,8 +104,8 @@ def get_flash_address_patch(args, bcfg):
 ], ids=id_fn)
 @patch('runners.dfu.DfuUtilBinaryRunner.find_device',
        side_effect=find_device_patch)
-@patch('runners.core.ZephyrBinaryRunner.get_flash_address',
-       side_effect=get_flash_address_patch)
+@patch('runners.core.ZephyrBinaryRunner.flash_address_from_build_conf',
+       side_effect=flash_address_from_build_conf_patch)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
 def test_dfu_util_create(cc, req, gfa, find_device, tc, runner_config, tmpdir):
