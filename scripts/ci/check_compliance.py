@@ -10,7 +10,7 @@ from itertools import takewhile
 import json
 import logging
 import os
-from pathlib import Path
+from pathlib import Path, PurePath
 import platform
 import re
 import subprocess
@@ -30,6 +30,11 @@ import magic
 
 from west.manifest import Manifest
 from west.manifest import ManifestProject
+
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from get_maintainer import Maintainers, MaintainersError
@@ -751,6 +756,23 @@ class KconfigCheck(ComplianceTest):
 
         return set(kconf_syms)
 
+    def module_disallowed_check(self, module_path, type, folder, meta, regex):
+        # Returns a list with lines from git grep which includes Kconfigs from defconfig files
+        entry = type + '_root'
+        git_folder = ":" + folder
+
+        if entry in meta['build']['settings']:
+            tmp_path = module_path.joinpath(meta['build']['settings'][entry])
+
+            if Path(tmp_path.joinpath(folder)).is_dir():
+                tmp_output = git("grep", "--line-number", "-I", "--null",
+                                 "--perl-regexp", regex, "--", git_folder,
+                                 cwd=tmp_path, ignore_non_zero=True)
+
+                if len(tmp_output) > 0:
+                    return tmp_output.splitlines()
+        return []
+
     def check_disallowed_defconfigs(self, kconf):
         """
         Checks that there are no disallowed Kconfigs used in board/SoC defconfig files
@@ -799,14 +821,41 @@ class KconfigCheck(ComplianceTest):
 
         grep_stdout_boards = git("grep", "--line-number", "-I", "--null",
                                  "--perl-regexp", regex_boards, "--", ":boards",
-                                 cwd=ZEPHYR_BASE)
+                                 cwd=ZEPHYR_BASE).splitlines()
         grep_stdout_socs = git("grep", "--line-number", "-I", "--null",
                                "--perl-regexp", regex_socs, "--", ":soc",
-                               cwd=ZEPHYR_BASE)
+                               cwd=ZEPHYR_BASE).splitlines()
+
+        manifest = Manifest.from_file()
+        for project in manifest.get_projects([]):
+            if not manifest.is_active(project):
+                continue
+
+            if not project.is_cloned():
+                continue
+
+            module_path = PurePath(project.abspath)
+            module_yml = module_path.joinpath('zephyr/module.yml')
+
+            if not Path(module_yml).is_file():
+                module_yml = module_path.joinpath('zephyr/module.yaml')
+
+            if Path(module_yml).is_file():
+                with Path(module_yml).open('r', encoding='utf-8') as f:
+                    meta = yaml.load(f.read(), Loader=SafeLoader)
+
+                    if 'build' in meta and 'settings' in meta['build']:
+                        grep_stdout_boards.extend(self.module_disallowed_check(module_path,
+                                                                               'board',
+                                                                               'boards', meta,
+                                                                               regex_boards))
+                        grep_stdout_socs.extend(self.module_disallowed_check(module_path, 'soc',
+                                                                             'soc', meta,
+                                                                             regex_socs))
 
         # Board processing
         # splitlines() supports various line terminators
-        for grep_line in grep_stdout_boards.splitlines():
+        for grep_line in grep_stdout_boards:
             path, lineno, line = grep_line.split("\0")
 
             # Extract symbol references (might be more than one) within the line
@@ -823,7 +872,7 @@ Found disallowed Kconfig symbol in board Kconfig files: CONFIG_{sym_name:35}
 
         # SoCs processing
         # splitlines() supports various line terminators
-        for grep_line in grep_stdout_socs.splitlines():
+        for grep_line in grep_stdout_socs:
             path, lineno, line = grep_line.split("\0")
 
             # Extract symbol references (might be more than one) within the line
