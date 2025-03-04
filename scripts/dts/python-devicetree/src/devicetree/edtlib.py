@@ -1878,6 +1878,29 @@ class Node:
         return dict(zip(cell_names, data_list, strict=False))
 
 
+@dataclass
+class GpioReservedRange:
+    """
+    Represents an individual element in a GpioController node's
+    gpio-reserved-ranges property.
+
+    These attributes are available on GpioReservedRange objects:
+
+    node:
+      The GpioController instance this range is from
+
+    start:
+      Index of the first GPIO that is reserved in the range
+
+    size:
+      Total number of reserved GPIOs in the range.
+    """
+
+    node: 'GpioController'
+    start: int
+    size: int
+
+
 class GpioController(Node):
     """Marker class that represents that this node is a GPIO controller,
     i.e., it has a boolean "gpio-controller" property set and follows
@@ -1891,6 +1914,15 @@ class GpioController(Node):
       Number of cells in a GPIO specifier using this GPIO controller.
       This should almost always be "2", following the expected and common
       case that the GPIO controller has "pin" and "flags" cells.
+
+    reserved_ranges:
+      A list of GpioReservedRange objects representing the indexes of the
+      unusable GPIOs in the GPIO controller, as specified in the node's
+      gpio-reserved-ranges property.
+
+    reserved_gpios:
+      A list of the actual unusable GPIO numbers implied by the value of
+      the gpio-reserved-ranges property.
     """
 
     def __init__(self, *args, **kwargs):
@@ -1904,6 +1936,33 @@ class GpioController(Node):
     def n_cells(self) -> int:
         "See the class docstring"
         return self._node.props["#gpio-cells"].to_num()
+
+    @property
+    def reserved_ranges(self) -> list[GpioReservedRange]:
+        "See the class docstring"
+        res: list[GpioReservedRange] = []
+
+        if "gpio-reserved-ranges" not in self._node.props:
+            return res
+
+        for item in _slice(self._node, "gpio-reserved-ranges", 8, "2 u32 cells per range"):
+            start = to_num(item[:4])
+            size = to_num(item[4:])
+            res.append(GpioReservedRange(node=self, start=start, size=size))
+
+        return res
+
+    @property
+    def reserved_gpios(self) -> list[int]:
+        "See the class docstring"
+        return list(self._reserved_gpios)
+
+    @property
+    def _reserved_gpios(self) -> Iterable[int]:
+        # Helper for reserved_gpios property.
+
+        for reserved_range in self.reserved_ranges:
+            yield from range(reserved_range.start, reserved_range.start + reserved_range.size)
 
     def _check(self) -> None:
         # Check various requirements for GPIO controller nodes.
