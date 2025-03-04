@@ -11,13 +11,45 @@ benefits:
   to set aside a few minutes to review smaller changes several times than it is
   to allocate large blocks of time to review a large PR.
 
-- Less wasted work if reviewers or maintainers reject the direction of the
-  change.
+- Contentious and long discussions have a more restricted "splash damage"
+  because they cannot drown unrelated topics that have successfully escaped
+  in separate Pull Requests.
 
 - Easier to rebase and merge. Smaller PRs are less likely to conflict with other
   changes in the tree.
 
+- Mixing different authors in the same pull request adds :ref:`extra
+  complications <modifying_contributions>`.
+
+- When independent of each other, smaller PRs can progress *concurrently*.
+  Disagreements, nitpicks and other delays in one place do not hold back
+  everything else.
+
+- Even when smaller PRs are dependent of each other, you can start reviews
+  and getting code merged before the whole work is complete. This faster
+  approach is known as "Stacked Diffs".
+
+- Less wasted work if reviewers or maintainers reject the direction of the
+  change.
+
 - Easier to revert if the PR breaks functionality.
+
+- Better test coverage before merge because CI does not test intermediate
+  commits in a PR; only PRs as a whole.
+
+- Better test coverage after merge. Pull Request testing is limited
+  because it must provide feedback in a reasonable time. Typically: under
+  one or two hours. After merge, Zephyr-based projects, companies and
+  organizations test the main branch(es) again but for longer and with a
+  much higher level of stress. (Post-merge testing is often called "daily"
+  even when run several times a day.) Merging large changes in smaller
+  chunks provides a tighter and faster feedback loop and makes regressions
+  much more obvious. This is what "Continuous" means in "Continuous
+  Integration".
+
+The :ref:`Contribution workflow` section shows how to use git to submit
+several, smaller pull requests. This does not require creating and
+managing multiple git branches.
 
 .. note::
   This page does not apply to draft PRs which can have any size, any number of
