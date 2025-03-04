@@ -229,6 +229,13 @@ config BT_COD
 	  consult the following link:
 	  https://www.bluetooth.com/specifications/assigned-numbers
 
+config BT_POWER_MODE_CONTROL
+	bool "Bluetooth Power Mode Control(Active/Sniff)"
+	help
+	  This option enables the power mode control feature. This feature
+	  allows the application to control the power mode of the Bluetooth
+	  controller.
+
 endif # BT_CLASSIC
 
 endmenu
