@@ -149,7 +149,14 @@ bool ll_data_path_sink_create(uint16_t handle, struct ll_iso_datapath *datapath,
 }
 #endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 
-#define BUF_ALLOC_TIMEOUT_MS (30) /* milliseconds */
+/* Have timeout unit sufficient to wait for all enqueued SDU to be transmitted.
+ * We retry allocation by yielding out of the system work queue to mitigate
+ * deadlock.
+ */
+#define BUF_ALLOC_TIMEOUT_MS       (10)   /* milliseconds */
+#define BUF_ALLOC_RETRY_TIMEOUT_US (1000) /* microseconds */
+#define BUF_ALLOC_RETRY_COUNT      (10U)
+
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
@@ -162,6 +169,7 @@ static void iso_send(struct k_work *work)
 {
 	static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU];
 	static bool data_initialized;
+	static uint8_t retry_yield_wq;
 	struct net_buf *buf;
 	size_t iso_data_len;
 	int ret;
@@ -176,9 +184,21 @@ static void iso_send(struct k_work *work)
 
 	buf = net_buf_alloc(&tx_pool, K_MSEC(BUF_ALLOC_TIMEOUT_MS));
 	if (!buf) {
-		FAIL("Data buffer allocate timeout on channel\n");
+		/* Blocking in system work qeueue causes deadlock, hence yield
+		 * and try getting the buffer again.
+		 */
+		if (retry_yield_wq) {
+			retry_yield_wq--;
+
+			k_work_schedule(&iso_send_work, K_USEC(BUF_ALLOC_RETRY_TIMEOUT_US));
+		} else {
+			FAIL("Data buffer allocate timeout on channel\n");
+		}
+
 		return;
 	}
+
+	retry_yield_wq = BUF_ALLOC_RETRY_COUNT;
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	sys_put_le16(seq_num, iso_data);
@@ -193,7 +213,17 @@ static void iso_send(struct k_work *work)
 		return;
 	}
 
-	k_work_schedule(&iso_send_work, K_USEC(9970));
+	/* Ideally we can wait 10 ms to enqueue next SDU, but to mitigate clock
+	 * drift between OS clock and Bluetooth Sleep Clock, lets send/enqueue
+	 * early towards the Controller so that the SDU is not considered stale
+	 * by the Controller.
+	 *
+	 * As we use `net_buf_alloc()` which will indirectly wait for Number of
+	 * Completed Packet event processing in the Host leading to availability
+	 * of next buffer, sending early will eventually get sync-ed with the
+	 * interval at which the Controller is sending the SDU on-air.
+	 */
+	k_work_schedule(&iso_send_work, K_USEC(9900));
 }
 #endif /* !CONFIG_TEST_LL_INTERFACE */
 
