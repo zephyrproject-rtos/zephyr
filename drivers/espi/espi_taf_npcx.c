@@ -666,6 +666,38 @@ static void espi_taf_event_handler(const struct device *dev, struct espi_callbac
 	k_work_submit(&npcx_espi_taf_data.work);
 }
 
+int espi_taf_npcx_block(const struct device *dev, bool en_block)
+{
+	struct espi_reg *const inst = HAL_INSTANCE(dev);
+
+	if (!IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_SAF_AUTO_READ)) {
+		return 0;
+	}
+
+	if (en_block) {
+		if (WAIT_FOR(!IS_BIT_SET(inst->ESPISTS, NPCX_ESPISTS_FLAUTORDREQ),
+			     CONFIG_ESPI_TAF_NPCX_STS_AWAIT_TIMEOUT, NULL) == false) {
+			LOG_ERR("Check Automatic Read Queue Empty Timeout");
+			return -ETIMEDOUT;
+		}
+
+		inst->FLASHCTL |= BIT(NPCX_FLASHCTL_AUTO_RD_DIS_CTL);
+
+		if (WAIT_FOR(IS_BIT_SET(inst->ESPISTS, NPCX_ESPISTS_AUTO_RD_DIS_STS),
+			     CONFIG_ESPI_TAF_NPCX_STS_AWAIT_TIMEOUT, NULL) == false) {
+			inst->FLASHCTL &= ~BIT(NPCX_FLASHCTL_AUTO_RD_DIS_CTL);
+			inst->ESPISTS |= BIT(NPCX_ESPISTS_AUTO_RD_DIS_STS);
+			LOG_ERR("Check Automatic Read Disable Timeout");
+			return -ETIMEDOUT;
+		}
+	} else {
+		inst->FLASHCTL &= ~BIT(NPCX_FLASHCTL_AUTO_RD_DIS_CTL);
+		inst->ESPISTS |= BIT(NPCX_ESPISTS_AUTO_RD_DIS_STS);
+	}
+
+	return 0;
+}
+
 int npcx_init_taf(const struct device *dev, sys_slist_t *callbacks)
 {
 	espi_init_callback(&espi_taf_cb, espi_taf_event_handler, ESPI_BUS_TAF_NOTIFICATION);
