@@ -449,6 +449,7 @@ out:
 	return ret;
 }
 
+#if defined(CONFIG_FILE_SYSTEM)
 static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
 					   struct http2_frame *frame,
 					   struct http_client_ctx *client)
@@ -547,6 +548,7 @@ out:
 
 	return ret;
 }
+#endif /* CONFIG_FILE_SYSTEM */
 
 static int http2_dynamic_response(struct http_client_ctx *client, struct http2_frame *frame,
 				  struct http_response_ctx *rsp, enum http_data_status data_status,
@@ -1094,12 +1096,14 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			if (ret < 0) {
 				goto error;
 			}
+#if defined(CONFIG_FILE_SYSTEM)
 		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
 			ret = handle_http2_static_fs_resource(
 				(struct http_resource_detail_static_fs *)detail, frame, client);
 			if (ret < 0) {
 				goto error;
 			}
+#endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,
@@ -1594,12 +1598,14 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 			if (ret < 0) {
 				goto error;
 			}
+#if defined(CONFIG_FILE_SYSTEM)
 		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
 			ret = handle_http2_static_fs_resource(
 				(struct http_resource_detail_static_fs *)detail, frame, client);
 			if (ret < 0) {
 				goto error;
 			}
+#endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,
