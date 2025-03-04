@@ -17,10 +17,12 @@ supported:
   - can
   - counter
   - dma
+  - display
   - flash
   - gpio
   - hwinfo
   - i2c
+  - mipi_dsi
   - netif:eth
   - pwm
   - spi
