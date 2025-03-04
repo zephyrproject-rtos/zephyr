@@ -13,8 +13,14 @@ config SOC_ANDES_AE350
 	help
 	  Andes AE350 SoC implementation"
 
+config SOC_ANDES_AE350_CLIC
+	bool
+	select SOC_SERIES_ANDES_AE350
+	help
+	  Andes AE350 CLIC SoC implementation"
+
 config SOC_SERIES
 	default "ae350" if SOC_SERIES_ANDES_AE350
 
 config SOC
-	default "ae350" if SOC_ANDES_AE350
+	default "ae350" if SOC_ANDES_AE350 || SOC_ANDES_AE350_CLIC
