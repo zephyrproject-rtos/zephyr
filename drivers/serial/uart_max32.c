@@ -293,6 +293,12 @@ static int uart_max32_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = Wrap_MXC_UART_SetClockSource(regs, cfg->perclk.clk_src);
+	if (ret != 0) {
+		LOG_ERR("Cannot set UART clock source");
+		return ret;
+	}
+
 	ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
