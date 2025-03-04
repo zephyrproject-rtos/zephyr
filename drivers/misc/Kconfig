@@ -15,5 +15,6 @@ source "drivers/misc/nordic_vpr_launcher/Kconfig"
 source "drivers/misc/mcux_flexio/Kconfig"
 source "drivers/misc/coresight/Kconfig"
 source "drivers/misc/renesas_ra_external_interrupt/Kconfig"
+source "drivers/misc/addr_translation/Kconfig"
 
 endmenu
