@@ -15,7 +15,8 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
-#include "timer_model.h"
+#include "nsi_hw_scheduler.h"
+#include "nsi_timer_model.h"
 #include "soc.h"
 #include <zephyr/arch/posix/posix_trace.h>
 
@@ -29,12 +30,12 @@ static uint64_t last_tick_time;
  */
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return hwm_get_time();
+	return nsi_hws_get_time();
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
-	return hwm_get_time();
+	return nsi_hws_get_time();
 }
 
 /**
@@ -45,7 +46,7 @@ static void np_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	uint64_t now = hwm_get_time();
+	uint64_t now = nsi_hws_get_time();
 	int32_t elapsed_ticks = (now - last_tick_time)/tick_period;
 
 	last_tick_time += elapsed_ticks*tick_period;
@@ -104,7 +105,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
  */
 uint32_t sys_clock_elapsed(void)
 {
-	return (hwm_get_time() - last_tick_time)/tick_period;
+	return (nsi_hws_get_time() - last_tick_time)/tick_period;
 }
 
 /**
@@ -128,7 +129,7 @@ static int sys_clock_driver_init(void)
 
 	tick_period = 1000000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
-	last_tick_time = hwm_get_time();
+	last_tick_time = nsi_hws_get_time();
 	hwtimer_enable(tick_period);
 
 	IRQ_CONNECT(TIMER_TICK_IRQ, 1, np_timer_isr, 0, 0);

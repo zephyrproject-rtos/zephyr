@@ -12,7 +12,8 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "timer_model.h"
+#include <nsi_hw_scheduler.h>
+#include <nsi_timer_model.h>
 #include "native_rtc.h"
 
 #include <stdio.h>
