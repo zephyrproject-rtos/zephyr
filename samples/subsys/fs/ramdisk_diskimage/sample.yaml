@@ -1,0 +1,22 @@
+sample:
+  name: RAM disk from Disk Image sample
+tests:
+  sample.filesystem.ramdisk_diskimage:
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_a9
+      - qemu_cortex_a53
+    extra_args:
+      - DTC_OVERLAY_FILE="ramdisk.overlay"
+    tags: filesystem
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "This is an existing test file."
+        - "This is a newly created test file."
+
+    # This test cannot be run in CI as it requires Python pyfatfs module
+    # which is not among the standard host-side dependencies for Zephyr
+    # build environment.
+    skip: true
