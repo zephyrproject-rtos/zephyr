@@ -93,6 +93,8 @@ enum stepper_event {
 	STEPPER_EVENT_LEFT_END_STOP_DETECTED = 2,
 	/** Right end switch status changes to pressed */
 	STEPPER_EVENT_RIGHT_END_STOP_DETECTED = 3,
+	/** Stepper has stopped */
+	STEPPER_EVENT_STOPPED = 4,
 };
 
 /**
@@ -180,6 +182,13 @@ typedef int (*stepper_move_to_t)(const struct device *dev, const int32_t micro_s
 typedef int (*stepper_run_t)(const struct device *dev, const enum stepper_direction direction);
 
 /**
+ * @brief Stop the stepper
+ *
+ * @see stepper_stop() for details.
+ */
+typedef int (*stepper_stop_t)(const struct device *dev);
+
+/**
  * @brief Is the target position fo the stepper reached
  *
  * @see stepper_is_moving() for details.
@@ -200,6 +209,7 @@ __subsystem struct stepper_driver_api {
 	stepper_move_by_t move_by;
 	stepper_move_to_t move_to;
 	stepper_run_t run;
+	stepper_stop_t stop;
 	stepper_is_moving_t is_moving;
 };
 
@@ -211,7 +221,7 @@ __subsystem struct stepper_driver_api {
  * @brief Enable or disable stepper driver
  *
  * @details Enabling the driver will energize the coils, however not set the stepper in motion.
- * Disabling the driver will de-energize the coils.
+ * Disabling the driver shall cancel all active movements and de-energize the coils.
  *
  * @param dev pointer to the stepper driver instance
  * @param enable Input enable or disable stepper driver
@@ -349,7 +359,7 @@ static inline int z_impl_stepper_set_event_callback(const struct device *dev,
 }
 
 /**
- * @brief Set the time interval between steps in nanoseconds
+ * @brief Set the time interval between steps in nanoseconds with immediate effect.
  *
  * @note Setting step interval does not set the stepper into motion, a combination of
  * set_microstep_interval and move is required to set the stepper into motion.
@@ -450,6 +460,28 @@ static inline int z_impl_stepper_run(const struct device *dev,
 		return -ENOSYS;
 	}
 	return api->run(dev, direction);
+}
+
+/**
+ * @brief Stop the stepper
+ * @details Cancel all active movements, however keep the coils energized.
+ *
+ * @param dev pointer to the stepper driver instance
+ *
+ * @retval -EIO General input / output error
+ * @retval -ENOSYS If not implemented by device driver
+ * @retval 0 Success
+ */
+__syscall int stepper_stop(const struct device *dev);
+
+static inline int z_impl_stepper_stop(const struct device *dev)
+{
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
+
+	if (api->stop == NULL) {
+		return -ENOSYS;
+	}
+	return api->stop(dev);
 }
 
 /**
