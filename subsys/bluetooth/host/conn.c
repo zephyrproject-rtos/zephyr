@@ -2497,6 +2497,20 @@ static int bt_hci_connect_br_cancel(struct bt_conn *conn)
 	return err;
 }
 
+const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn)
+{
+	if (conn == NULL) {
+		LOG_DBG("Invalid connect");
+		return NULL;
+	}
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return NULL;
+	}
+
+	return &conn->br.dst;
+}
 #endif /* CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_SMP)

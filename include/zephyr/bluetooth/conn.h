@@ -2631,6 +2631,14 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
  */
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
 
+/** @brief Get destination (peer) address of a connection.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return Destination address if @p conn is a valid @ref BT_CONN_TYPE_BR connection
+ */
+const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn);
+
 #ifdef __cplusplus
 }
 #endif
