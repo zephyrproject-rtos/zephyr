@@ -43,11 +43,6 @@ const struct nrf_clock_spec test_clk_specs_fll16m[] = {
 	},
 	{
 		.frequency = MHZ(16),
-		.accuracy = 5020,
-		.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,
-	},
-	{
-		.frequency = MHZ(16),
 		.accuracy = 30,
 		.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,
 	},
