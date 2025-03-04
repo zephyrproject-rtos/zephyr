@@ -135,7 +135,7 @@
 
 	uart0: uart {
 		status = "okay";
-		compatible = "zephyr,native-posix-uart";
+		compatible = "zephyr,native-pty-uart";
 		/* Dummy current-speed entry to comply with serial
 		 * DTS binding
 		 */
@@ -144,7 +144,7 @@
 
 	uart1: uart_1 {
 		status = "okay";
-		compatible = "zephyr,native-posix-uart";
+		compatible = "zephyr,native-pty-uart";
 		/* Dummy current-speed entry to comply with serial
 		 * DTS binding
 		 */

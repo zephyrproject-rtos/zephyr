@@ -112,11 +112,11 @@ int np_uart_slave_connected(int fd)
  * used. Otherwise, the default command,
  * CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD, will be used instead
  */
-static void attach_to_tty(const char *slave_tty, const char *auto_attach_cmd)
+static void attach_to_pty(const char *slave_pty, const char *auto_attach_cmd)
 {
-	char command[strlen(auto_attach_cmd) + strlen(slave_tty) + 1];
+	char command[strlen(auto_attach_cmd) + strlen(slave_pty) + 1];
 
-	sprintf(command, auto_attach_cmd, slave_tty);
+	sprintf(command, auto_attach_cmd, slave_pty);
 
 	int ret = system(command);
 
@@ -132,8 +132,8 @@ static void attach_to_tty(const char *slave_tty, const char *auto_attach_cmd)
  * If auto_attach was set, it will also attempt to connect a new terminal
  * emulator to its slave side.
  */
-int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
-		      bool do_auto_attach, bool wait_pts)
+int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
+		     bool do_auto_attach, bool wait_pts)
 {
 	int master_pty;
 	char *slave_pty_name;
@@ -144,7 +144,7 @@ int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
 
 	master_pty = posix_openpt(O_RDWR | O_NOCTTY);
 	if (master_pty == -1) {
-		ERROR("Could not open a new TTY for the UART\n");
+		ERROR("Could not open a new PTY for the UART\n");
 	}
 	ret = grantpt(master_pty);
 	if (ret == -1) {
@@ -212,7 +212,7 @@ int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
 
 	if (wait_pts) {
 		/*
-		 * This trick sets the HUP flag on the tty master, making it
+		 * This trick sets the HUP flag on the pty master, making it
 		 * possible to detect a client connection using poll.
 		 * The connection of the client would cause the HUP flag to be
 		 * cleared, and in turn set again at disconnect.
@@ -231,18 +231,18 @@ int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
 		}
 	}
 	if (do_auto_attach) {
-		attach_to_tty(slave_pty_name, auto_attach_cmd);
+		attach_to_pty(slave_pty_name, auto_attach_cmd);
 	}
 
 	return master_pty;
 }
 
-int np_uart_ptty_get_stdin_fileno(void)
+int np_uart_pty_get_stdin_fileno(void)
 {
 	return STDIN_FILENO;
 }
 
-int np_uart_ptty_get_stdout_fileno(void)
+int np_uart_pty_get_stdout_fileno(void)
 {
 	return STDOUT_FILENO;
 }
