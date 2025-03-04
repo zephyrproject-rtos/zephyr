@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Espressif's GDMA (General Direct Memory Access) Node
+  ESP32 GDMA (General Direct Memory Access)
 
   General Direct Memory Access (GDMA) is a feature that allows
   peripheral-to-memory, memory-to-peripheral, and memory-to-memory
