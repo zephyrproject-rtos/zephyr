@@ -2904,6 +2904,20 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	return &conn->le.dst;
 }
 
+const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_CLASSIC)
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return NULL;
+	}
+
+	return &conn->br.dst;
+#else
+	return NULL;
+#endif /* CONFIG_BT_CLASSIC */
+}
+
 static enum bt_conn_state conn_internal_to_public_state(bt_conn_state_t state)
 {
 	switch (state) {
