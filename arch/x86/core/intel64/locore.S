@@ -373,6 +373,46 @@ z_x86_switch:
 	movq $X86_KERNEL_CS, _thread_offset_to_cs(%rsi)
 	movq $X86_KERNEL_DS, _thread_offset_to_ss(%rsi)
 #endif
+
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+	cmpq $0, _thread_offset_to_shstk_addr(%rsi)
+	jz __sh_stk_out
+
+	/* Create the shadow stack restore token by hand, as using
+	 * saveprevssp is cumbersome when some threads don't use shadow
+	 * stack. Note that as we return using iretq, we also need to add
+	 * current CS and LIP (return pointer) to the shadow stack. It should
+	 * currently be pointing to return pointer.
+	 */
+	rdsspq %rcx
+	movq (%rcx), %r10 /* LIP */
+
+	/* Save CS, overwriting current top of stack */
+	movq $X86_KERNEL_CS, %r9
+	wrssq %r9, (%rcx)
+
+	/* Save LIP */
+	wrssq %r10, -8(%rcx)
+
+	/* Save SSP */
+	movq %rcx, %r11
+	addq $8, %r11 /* SSP has to point to before previous entry. */
+	wrssq %r11, -16(%rcx)
+
+	/* Create and "push" new token */
+	movq %rcx, %r11
+	subq $16, %r11
+	orq $1, %r11
+	wrssq %r11, -24(%rcx)
+
+	/* Finally, save SSP on thread struct */
+	subq $24, %rcx
+	movq %rcx, _thread_offset_to_shstk_addr(%rsi)
+	jmp __sh_stk_out
+
+__sh_stk_out:
+#endif
+
 	/* Store the handle (i.e. our thread struct address) into the
 	 * switch handle field, this is a synchronization signal that
 	 * must occur after the last data from the old context is
@@ -407,6 +447,29 @@ __resume:
 	shrq $32, %rdx
 	wrmsr
 #endif
+
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+	movq _thread_offset_to_shstk_addr(%rdi), %r10
+	testq %r10, %r10
+	jz __sh_stk_disable
+
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	orl $X86_S_CET_MSR_SHSTK_EN, %eax
+	wrmsr
+	rstorssp (%r10)
+	movq $1, %r10
+	incsspq %r10 /* Ignore previous ssp token */
+	jmp __sh_stk_done
+__sh_stk_disable:
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	andl $~X86_S_CET_MSR_SHSTK_EN, %eax
+	andl $~X86_S_CET_MSR_WR_SHSTK, %eax
+	wrmsr
+__sh_stk_done:
+#endif
+
 #if (!defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)) \
 		|| defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushq %rdi	/* Caller-saved, stash it */
@@ -448,7 +511,6 @@ __resume:
 	 */
 	movq $0xB9, _thread_offset_to_rip(%rdi)
 #endif
-
 
 	movq _thread_offset_to_rbx(%rdi), %rbx
 	movq _thread_offset_to_rbp(%rdi), %rbp
