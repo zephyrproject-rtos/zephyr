@@ -62,6 +62,11 @@
 	};
 };
 
+&dac {
+	dmas = <&edma_lpsr0 0 189>;
+	dma-names = "tx";
+};
+
 &sai1 {
 	dmas = <&edma_lpsr0 0 54>, <&edma_lpsr0 0 55>;
 	dma-names = "rx", "tx";
