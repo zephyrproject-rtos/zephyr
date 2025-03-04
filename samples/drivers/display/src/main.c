@@ -119,7 +119,7 @@ static uint16_t get_rgb565_color(enum corner corner, uint8_t grey)
 	return color;
 }
 
-static void fill_buffer_rgb565(enum corner corner, uint8_t grey, uint8_t *buf,
+static void fill_buffer_bgr565(enum corner corner, uint8_t grey, uint8_t *buf,
 			       size_t buf_size)
 {
 	uint16_t color = get_rgb565_color(corner, grey);
@@ -130,7 +130,7 @@ static void fill_buffer_rgb565(enum corner corner, uint8_t grey, uint8_t *buf,
 	}
 }
 
-static void fill_buffer_bgr565(enum corner corner, uint8_t grey, uint8_t *buf,
+static void fill_buffer_rgb565(enum corner corner, uint8_t grey, uint8_t *buf,
 			       size_t buf_size)
 {
 	uint16_t color = get_rgb565_color(corner, grey);
