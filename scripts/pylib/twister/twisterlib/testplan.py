@@ -788,7 +788,12 @@ class TestPlan:
                 else:
                     # if not in integration mode, still add integration platforms to the list
                     if not platform_filter:
-                        platform_scope = platforms + integration_platforms
+                        # if integration mode or when dealing with samples, only run on
+                        # integration platforms if integration_platforms is set.
+                        if ts.id.startswith("sample."):
+                            platform_scope = integration_platforms
+                        else:
+                            platform_scope = platforms + integration_platforms
                     else:
                         platform_scope = platforms
             else:
