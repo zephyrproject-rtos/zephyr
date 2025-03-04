@@ -118,7 +118,7 @@ end_loop:
 	addi a3, a3, 3
 #endif
 	s32i a3, a1, ___xtensa_irq_bsa_t_pc_OFFSET
-	ODD_REG_SAVE
+	ODD_REG_SAVE a0, a1
 
 	call0 xtensa_save_high_regs
 
