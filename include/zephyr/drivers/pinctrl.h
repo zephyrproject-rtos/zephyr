@@ -307,6 +307,37 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg);
 
 /**
+ * @brief Apply a state directly from the provided state configuration
+ * to a subset of the defined pins.
+ *
+ * @warning No range checking is performed on the input parameters.
+ *
+ * @param config Pin control configuration.
+ * @param state State.
+ * @param start Index of the first entry in the state to be applied.
+ * @param len Number of entries in the state to be applied.
+ *
+ * @retval 0 If succeeded
+ * @retval -errno Negative errno for other failures.
+ */
+static inline int pinctrl_apply_partial_state_direct(
+	const struct pinctrl_dev_config *config,
+	const struct pinctrl_state *state,
+	uint8_t start, uint8_t len)
+{
+	uintptr_t reg;
+
+#ifdef CONFIG_PINCTRL_STORE_REG
+	reg = config->reg;
+#else
+	ARG_UNUSED(config);
+	reg = PINCTRL_REG_NONE;
+#endif
+
+	return pinctrl_configure_pins(state->pins + start, len, reg);
+}
+
+/**
  * @brief Apply a state directly from the provided state configuration.
  *
  * @param config Pin control configuration.
@@ -319,16 +350,7 @@ static inline int pinctrl_apply_state_direct(
 	const struct pinctrl_dev_config *config,
 	const struct pinctrl_state *state)
 {
-	uintptr_t reg;
-
-#ifdef CONFIG_PINCTRL_STORE_REG
-	reg = config->reg;
-#else
-	ARG_UNUSED(config);
-	reg = PINCTRL_REG_NONE;
-#endif
-
-	return pinctrl_configure_pins(state->pins, state->pin_cnt, reg);
+	return pinctrl_apply_partial_state_direct(config, state, 0, state->pin_cnt);
 }
 
 /**
@@ -353,6 +375,43 @@ static inline int pinctrl_apply_state(const struct pinctrl_dev_config *config,
 	}
 
 	return pinctrl_apply_state_direct(config, state);
+}
+
+/**
+ * @brief Apply state only to a subset of pins from the given device
+ * configuration.
+ *
+ * This is useful for channel-based devices, such as timers or LED drivers,
+ * that operate multiple (groups of) independent pins.
+ *
+ * @param config Pin control configuration.
+ * @param id Id of the state to be applied (see @ref PINCTRL_STATES).
+ * @param start Index of the first entry in the state to be applied.
+ * @param len Number of entries in the state to be applied.
+ *
+ * @retval 0 If succeeded.
+ * @retval -ENOENT If given state id does not exist.
+ * @retval -EINVAL If @c start and @c len describe an invalid range for the
+ *                 given state.
+ * @retval -errno Negative errno for other failures.
+ */
+
+static inline int pinctrl_apply_partial_state(const struct pinctrl_dev_config *config,
+					      uint8_t id, uint8_t start, uint8_t len)
+{
+	int ret;
+	const struct pinctrl_state *state;
+
+	ret = pinctrl_lookup_state(config, id, &state);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (start >= state->pin_cnt || start + len > state->pin_cnt) {
+		return -EINVAL;
+	}
+
+	return pinctrl_apply_partial_state_direct(config, state, start, len);
 }
 
 #if defined(CONFIG_PINCTRL_DYNAMIC) || defined(__DOXYGEN__)
