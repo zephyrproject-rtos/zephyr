@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv8-m.dtsi>
+#include <dt-bindings/i2c/i2c.h>
 #include <mem.h>
 #include <freq.h>
 
@@ -430,6 +431,55 @@
 			reg = <0x4004e000 0x18>;
 			interrupts = <345 1>, <346 1>, <347 1>, <348 1>, <349 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		i2c0: i2c@40090000 {
+			compatible = "renesas,rz-riic";
+			channel = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40090000 0x15>;
+			interrupts = <257 1>, <258 1>, <259 1>, <260 1>,
+				     <261 1>, <262 1>, <263 1>, <264 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
+			status = "disabled";
+		};
+		i2c1: i2c@40090400 {
+			compatible = "renesas,rz-riic";
+			channel = <1>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40090400 0x15>;
+			interrupts = <265 1>, <266 1>, <267 1>, <268 1>,
+				     <269 1>, <270 1>, <271 1>, <272 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
+			status = "disabled";
+		};
+		i2c2: i2c@40090800 {
+			compatible = "renesas,rz-riic";
+			channel = <2>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40090800 0x15>;
+			interrupts = <273 1>, <274 1>, <275 1>, <276 1>,
+				     <277 1>, <278 1>, <279 1>, <280 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
+			status = "disabled";
+		};
+		i2c3: i2c@40090c00 {
+			compatible = "renesas,rz-riic";
+			channel = <3>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40090c00 0x15>;
+			interrupts = <281 1>, <282 1>, <283 1>, <284 1>,
+				     <285 1>, <286 1>, <287 1>, <288 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
 			status = "disabled";
 		};
 
