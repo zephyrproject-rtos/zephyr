@@ -8,6 +8,7 @@
  * Copyright (c) 2017 Intel Corporation
  * Copyright (c) 2020 Friedt Professional Engineering Services, Inc
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 SynchronicIT BV
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,6 +111,7 @@ static size_t external_records_count;
 
 #ifndef CONFIG_NET_TEST
 static int setup_dst_addr(int sock, sa_family_t family,
+			  struct sockaddr *src, socklen_t src_len,
 			  struct sockaddr *dst, socklen_t *dst_len);
 #endif /* CONFIG_NET_TEST */
 
@@ -194,25 +196,36 @@ static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
 }
 
 int setup_dst_addr(int sock, sa_family_t family,
+		   struct sockaddr *src, socklen_t src_len,
 		   struct sockaddr *dst, socklen_t *dst_len)
 {
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		create_ipv4_addr(net_sin(dst));
-		*dst_len = sizeof(struct sockaddr_in);
+		if ((src != NULL) && (net_sin(src)->sin_port != htons(MDNS_LISTEN_PORT))) {
+			memcpy(dst, src, src_len);
+			*dst_len = src_len;
+		} else {
+			create_ipv4_addr(net_sin(dst));
+			*dst_len = sizeof(struct sockaddr_in);
 
-		ret = set_ttl_hop_limit(sock, IPPROTO_IP, IP_MULTICAST_TTL, 255);
-		if (ret < 0) {
-			NET_DBG("Cannot set %s multicast %s (%d)", "IPv4", "TTL", ret);
+			ret = set_ttl_hop_limit(sock, IPPROTO_IP, IP_MULTICAST_TTL, 255);
+			if (ret < 0) {
+				NET_DBG("Cannot set %s multicast %s (%d)", "IPv4", "TTL", ret);
+			}
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-		create_ipv6_addr(net_sin6(dst));
-		*dst_len = sizeof(struct sockaddr_in6);
+		if ((src != NULL) && (net_sin6(src)->sin6_port != htons(MDNS_LISTEN_PORT))) {
+			memcpy(dst, src, src_len);
+			*dst_len = src_len;
+		} else {
+			create_ipv6_addr(net_sin6(dst));
+			*dst_len = sizeof(struct sockaddr_in6);
 
-		ret = set_ttl_hop_limit(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, 255);
-		if (ret < 0) {
-			NET_DBG("Cannot set %s multicast %s (%d)", "IPv6", "hoplimit", ret);
+			ret = set_ttl_hop_limit(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, 255);
+			if (ret < 0) {
+				NET_DBG("Cannot set %s multicast %s (%d)", "IPv6", "hoplimit", ret);
+			}
 		}
 	} else {
 		return -EPFNOSUPPORT;
@@ -346,7 +359,7 @@ static int send_response(int sock,
 	COND_CODE_1(IS_ENABLED(CONFIG_NET_IPV6),
 		    (struct sockaddr_in6), (struct sockaddr_in)) dst;
 
-	ret = setup_dst_addr(sock, family, (struct sockaddr *)&dst, &dst_len);
+	ret = setup_dst_addr(sock, family, src_addr, addrlen, (struct sockaddr *)&dst, &dst_len);
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return ret;
@@ -456,7 +469,7 @@ static void send_sd_response(int sock,
 	label[2] = proto_buf;
 	label[3] = domain_buf;
 
-	ret = setup_dst_addr(sock, family, (struct sockaddr *)&dst, &dst_len);
+	ret = setup_dst_addr(sock, family, src_addr, addrlen, (struct sockaddr *)&dst, &dst_len);
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return;
@@ -608,12 +621,15 @@ static int dns_read(int sock,
 
 	queries = ret;
 
-	NET_DBG("Received %d %s from %s", queries,
+	NET_DBG("Received %d %s from %s:%u", queries,
 		queries > 1 ? "queries" : "query",
 		net_sprint_addr(family,
 				family == AF_INET ?
 				(const void *)&net_sin(src_addr)->sin_addr :
-				(const void *)&net_sin6(src_addr)->sin6_addr));
+				(const void *)&net_sin6(src_addr)->sin6_addr),
+				ntohs(family == AF_INET ?
+				net_sin(src_addr)->sin_port :
+				net_sin6(src_addr)->sin6_port));
 
 	do {
 		enum dns_rr_type qtype;
@@ -1525,7 +1541,7 @@ static int send_unsolicited_response(struct net_if *iface,
 	COND_CODE_1(IS_ENABLED(CONFIG_NET_IPV6),
 		    (struct sockaddr_in6), (struct sockaddr_in)) dst;
 
-	ret = setup_dst_addr(sock, family, (struct sockaddr *)&dst, &dst_len);
+	ret = setup_dst_addr(sock, family, NULL, 0, (struct sockaddr *)&dst, &dst_len);
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return ret;
