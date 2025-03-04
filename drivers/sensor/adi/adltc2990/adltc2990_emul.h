@@ -15,4 +15,6 @@ void adltc2990_emul_get_reg(const struct emul *target, uint8_t reg_addr, uint8_t
 
 void adltc2990_emul_reset(const struct emul *target);
 
+void adltc2990_emul_mock_i2c_error(const struct emul *target, uint8_t mock_i2c_reg_error);
+
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADLTC2990_ADLTC2990_EMUL_H */
