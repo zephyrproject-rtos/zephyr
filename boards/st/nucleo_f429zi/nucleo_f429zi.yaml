@@ -8,20 +8,21 @@ toolchain:
 ram: 192
 flash: 2048
 supported:
+  - adc
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
-  - netif:eth
-  - i2c
-  - spi
-  - gpio
-  - pwm
   - counter
-  - usb_device
-  - watchdog
-  - adc
   - dac
   - dma
+  - gpio
+  - i2c
+  - minimal
+  - netif:eth
+  - pwm
   - rtc
+  - spi
+  - usb_device
   - usbd
+  - watchdog
 vendor: st

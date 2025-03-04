@@ -25,6 +25,7 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - minimal
   - netif:eth
   - pwm
   - sdhc

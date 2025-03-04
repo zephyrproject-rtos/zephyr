@@ -13,8 +13,9 @@ supported:
   - counter
   - dac
   - dma
-  - i2c
   - flash
+  - i2c
+  - minimal
   - pwm
   - spi
   - watchdog

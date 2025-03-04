@@ -17,6 +17,7 @@ supported:
   - flash
   - gpio
   - i2c
+  - minimal
   - nvs
   - pwm
   - spi

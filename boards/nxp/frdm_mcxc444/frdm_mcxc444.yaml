@@ -19,8 +19,9 @@ supported:
   - flash
   - gpio
   - i2c
-  - uart
+  - minimal
   - pwm
+  - uart
   - usb_device
   - usbd
 testing:
