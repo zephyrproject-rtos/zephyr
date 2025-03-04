@@ -106,24 +106,63 @@ static const unsigned int rx3_buf_sz = 1000;
 struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 static K_MUTEX_DEFINE(reg_lock);
 
+#ifdef CONFIG_NRF70_STA_AP_MODE
+static K_FIFO_DEFINE(vif_cmd_event_q);
+
+void nrf_wifi_enqueue_cmd_event(unsigned int event, unsigned int if_idx)
+{
+	struct nrf_wifi_vif_cmd_event *cmd = k_malloc(sizeof(struct nrf_wifi_vif_cmd_event));
+    if (cmd != NULL) {
+        cmd->vif_event = event;
+        cmd->vif_idx = if_idx;
+        k_fifo_put(&vif_cmd_event_q, cmd);
+    }
+}
+
+struct nrf_wifi_vif_cmd_event* nrf_wifi_dequeue_cmd_event(void)
+{
+	return k_fifo_get(&vif_cmd_event_q, K_NO_WAIT);
+}
+#endif
+
 const char *nrf_wifi_get_drv_version(void)
 {
 	return NRF70_DRIVER_VERSION;
 }
 
 /* If the interface is not Wi-Fi then errors are expected, so, fail silently */
-struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx(struct net_if *iface)
+struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx_by_idx(int index)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-	struct nrf_wifi_ctx_zep *rpu_ctx = &rpu_drv_priv_zep.rpu_ctx_zep;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = &rpu_drv_priv_zep.rpu_ctx_zep;
 
-	if (!iface || !rpu_ctx || !rpu_ctx->rpu_ctx) {
+	if (index < 0 || !rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
 		return NULL;
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(rpu_ctx->vif_ctx_zep); i++) {
-		if (rpu_ctx->vif_ctx_zep[i].zep_net_if_ctx == iface) {
-			vif_ctx_zep = &rpu_ctx->vif_ctx_zep[i];
+	for (int i = 0; i < rpu_ctx_zep->vif_ctx_cnt; i++) {
+		if (rpu_ctx_zep->vif_ctx_zep[i].vif_idx == index) {
+			vif_ctx_zep = &rpu_ctx_zep->vif_ctx_zep[i];
+			break;
+		}
+	}
+
+	return vif_ctx_zep;
+}
+
+/* If the interface is not Wi-Fi then errors are expected, so, fail silently */
+struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx(struct net_if *iface)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = &rpu_drv_priv_zep.rpu_ctx_zep;
+
+	if (!iface || !rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
+		return NULL;
+	}
+
+	for (int i = 0; i < rpu_ctx_zep->vif_ctx_cnt; i++) {
+		if (rpu_ctx_zep->vif_ctx_zep[i].zep_net_if_ctx == iface) {
+			vif_ctx_zep = &rpu_ctx_zep->vif_ctx_zep[i];
 			break;
 		}
 	}
@@ -423,7 +462,9 @@ void nrf_wifi_event_proc_cookie_rsp(void *vif_ctx,
 		cookie_rsp_event->mac_addr[4],
 		cookie_rsp_event->mac_addr[5]);
 
-	vif_ctx_zep->cookie_resp_received = true;
+	for(int i = 0; i < rpu_ctx_zep->vif_ctx_cnt; ++i) {
+		rpu_ctx_zep->vif_ctx_zep[i].cookie_resp_received = true;
+	}	
 	/* TODO: When supp_callbk_fns.mgmt_tx_status is implemented, add logic
 	 * here to use the cookie and host_cookie to map requests to responses.
 	 */
@@ -695,8 +736,20 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	struct nrf_wifi_data_config_params data_config = { 0 };
 	struct rx_buf_pool_params rx_buf_pools[MAX_NUM_OF_RX_QUEUES];
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = dev->data;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = &rpu_drv_priv_zep.rpu_ctx_zep;
 
-	vif_ctx_zep->rpu_ctx_zep = &rpu_drv_priv_zep.rpu_ctx_zep;
+	vif_ctx_zep->rpu_ctx_zep = rpu_ctx_zep;
+
+	if(rpu_ctx_zep->vif_ctx_cnt >= MAX_NUM_VIFS){
+		LOG_ERR("%s: Max number of VIFs reached", __func__);
+		return -ENOMEM;
+	}	
+
+	rpu_ctx_zep->vif_ctx_cnt++;
+	if (rpu_ctx_zep->vif_ctx_cnt > 1) {
+		// FMAC is already initialized for VIF-0
+		return 0;
+	}
 
 #ifdef CONFIG_NRF70_DATA_TX
 	data_config.aggregation = aggregation;
@@ -923,6 +976,21 @@ ETH_NET_DEVICE_DT_INST_DEFINE(0,
 		    CONFIG_WIFI_INIT_PRIORITY, /* prio */
 		    &wifi_offload_ops, /* api */
 		    CONFIG_NRF_WIFI_IFACE_MTU); /*mtu */
+#ifdef CONFIG_NRF70_STA_AP_MODE
+// Register second interface
+ETH_NET_DEVICE_DT_INST_DEFINE(1,
+				nrf_wifi_drv_main_zep, /* init_fn */
+				NULL, /* pm_action_cb */
+				&rpu_drv_priv_zep.rpu_ctx_zep.vif_ctx_zep[1], /* data */
+#ifdef CONFIG_NRF70_STA_MODE
+		    &wpa_supp_ops, /* cfg */
+#else /* CONFIG_NRF70_STA_MODE */
+		    NULL, /* cfg */
+#endif /* !CONFIG_NRF70_STA_MODE */
+		    CONFIG_WIFI_INIT_PRIORITY, /* prio */
+		    &wifi_offload_ops, /* api */
+		    CONFIG_NRF_WIFI_IFACE_MTU); /*mtu */
+#endif
 #else
 DEVICE_DT_INST_DEFINE(0,
 	      nrf_wifi_drv_main_zep, /* init_fn */

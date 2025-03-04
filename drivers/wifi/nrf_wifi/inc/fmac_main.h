@@ -93,6 +93,15 @@ struct nrf_wifi_vif_ctx_map {
 	const char *ifname;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx;
 };
+
+#ifdef CONFIG_NRF70_STA_AP_MODE
+struct nrf_wifi_vif_cmd_event {
+	void *fifo_reserved;
+    unsigned int vif_event;   	// Event to expect
+    unsigned int vif_idx;    	// VIF ID expecting the event
+};
+#endif
+
 #endif /* !CONFIG_NRF70_RADIO_TEST */
 
 struct nrf_wifi_ctx_zep {
@@ -103,6 +112,7 @@ struct nrf_wifi_ctx_zep {
 	bool rf_test_run;
 	unsigned char rf_test;
 #else /* CONFIG_NRF70_RADIO_TEST */
+	unsigned int vif_ctx_cnt;	// Variable to keep track for multiple interfaces
 	struct nrf_wifi_vif_ctx_zep vif_ctx_zep[MAX_NUM_VIFS];
 #ifdef CONFIG_NRF70_UTIL
 	struct rpu_conf_params conf_params;
@@ -138,6 +148,11 @@ const char *nrf_wifi_get_drv_version(void);
 enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
 enum nrf_wifi_status nrf_wifi_fmac_dev_rem_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
 struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx(struct net_if *iface);
+struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx_by_idx(int index);
+#ifdef CONFIG_NRF70_STA_AP_MODE
+void nrf_wifi_enqueue_cmd_event(unsigned int event, unsigned int if_idx);
+struct nrf_wifi_vif_cmd_event* nrf_wifi_dequeue_cmd_event(void);
+#endif
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
 void nrf_wifi_rpu_recovery_cb(void *vif_ctx,
 		void *event_data,

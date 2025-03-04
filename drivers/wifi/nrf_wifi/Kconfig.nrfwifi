@@ -88,6 +88,16 @@ config NRF70_AP_MODE
 	depends on WIFI_NM_WPA_SUPPLICANT_AP
 	default y if WIFI_NM_WPA_SUPPLICANT_AP
 
+config NRF70_STA_AP_MODE
+	bool "Simultaneous STA and AP mode"
+	depends on WIFI_NRF7002
+	select NRF70_AP_MODE
+	select NRF70_STA_MODE
+	default n
+	help
+	  Select this option to operate both STA an AP mode simultaneously 
+
+
 config NRF70_P2P_MODE
 	bool "P2P support in driver"
 
