@@ -13,10 +13,10 @@ tests:
     platform_allow:
       - nrf52_bsim/native
     extra_args:
-      - EXTRA_CONF_FILE=${ZEPHYR_BASE}/tests/bluetooth/tester/boards/nrf52_bsim.conf
+      - EXTRA_CONF_FILE=${ZEPHYR_BASE}/tests/bluetooth/tester/boards/nrf52_bsim.conf;${ZEPHYR_BASE}/tests/bluetooth/tester/overlay-le-audio.conf
   bluetooth.tester_nrf5340bsim:
     sysbuild: true
     platform_allow:
       - nrf5340bsim/nrf5340/cpuapp
     extra_args:
-      - EXTRA_CONF_FILE=${ZEPHYR_BASE}/tests/bluetooth/tester/boards/nrf5340bsim_nrf5340_cpuapp.conf
+      - EXTRA_CONF_FILE=${ZEPHYR_BASE}/tests/bluetooth/tester/boards/nrf5340bsim_nrf5340_cpuapp.conf;${ZEPHYR_BASE}/tests/bluetooth/tester/overlay-le-audio.conf
