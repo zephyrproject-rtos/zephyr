@@ -13,8 +13,6 @@ elseif(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
   board_runner_args(jlink "--device=MIMXRT798S_M33_1")
   board_runner_args(linkserver  "--device=MIMXRT798S:MIMXRT700-EVK")
   board_runner_args(linkserver  "--core=cm33_core1")
-else()
-  message(FATAL_ERROR "Requested core is not supported")
 endif()
 
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
