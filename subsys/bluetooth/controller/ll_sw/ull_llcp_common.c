@@ -235,7 +235,14 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		 * NOTE: As the supervision timeout is at most 32s the normal procedure response
 		 * timeout of 40s will never come into play for the ACL Termination procedure.
 		 */
-		const uint32_t conn_interval_us = conn->lll.interval * CONN_INT_UNIT_US;
+		uint32_t conn_interval_us;
+
+		if (conn->lll.interval >= BT_HCI_LE_INTERVAL_MIN) {
+			conn_interval_us = conn->lll.interval * CONN_INT_UNIT_US;
+		} else {
+			conn_interval_us = (conn->lll.interval + 1U) * CONN_LOW_LAT_INT_UNIT_US;
+		}
+
 		const uint16_t sto_reload = RADIO_CONN_EVENTS(
 			(conn->supervision_timeout * 10U * 1000U),
 			conn_interval_us);
