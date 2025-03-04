@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_SILABS_SIWX91X
+	bool "Silabs SiWx91x PWM driver"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_PWM_ENABLED
+	help
+	  Enable the PWM driver for the Silabs SiWx91x SoC series.
