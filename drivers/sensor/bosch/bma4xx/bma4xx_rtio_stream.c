@@ -22,7 +22,7 @@ void bma4xx_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *io
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	struct bma4xx_data *data = sensor->data;
-	struct bma4xx_config new_config = data->cfg;
+	struct bma4xx_runtime_config new_config = data->cfg;
 	const struct bma4xx_config *cfg_bma4xx = sensor->config;
 	int ret;
 

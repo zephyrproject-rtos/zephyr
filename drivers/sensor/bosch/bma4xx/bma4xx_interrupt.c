@@ -66,7 +66,7 @@ int bma4xx_init_interrupt(const struct device *dev)
 	return 0;
 }
 
-int bma4xx_enable_interrupt1(const struct device *dev, struct bma4xx_config *new_cfg)
+int bma4xx_enable_interrupt1(const struct device *dev, struct bma4xx_runtime_config *new_cfg)
 {
 	struct bma4xx_data *data = dev->data;
 	uint8_t value = 0;

@@ -47,7 +47,7 @@ int bma4xx_reset(const struct device *dev)
 
 #ifdef CONFIG_BMA4XX_STREAM
 
-static uint16_t bma4xx_compute_fifo_wm(const struct bma4xx_config *new_cfg)
+static uint16_t bma4xx_compute_fifo_wm(const struct bma4xx_runtime_config *new_cfg)
 {
 	int64_t nodr;
 	const bool accel_enabled = new_cfg->accel_pwr_mode != 0;
@@ -84,7 +84,7 @@ static uint16_t bma4xx_compute_fifo_wm(const struct bma4xx_config *new_cfg)
 
 #endif /* CONFIG_BMA4XX_STREAM */
 
-int bma4xx_configure(const struct device *dev, struct bma4xx_config *cfg)
+int bma4xx_configure(const struct device *dev, struct bma4xx_runtime_config *cfg)
 {
 	struct bma4xx_data *dev_data = dev->data;
 	int res;
@@ -207,13 +207,13 @@ int bma4xx_configure(const struct device *dev, struct bma4xx_config *cfg)
 	return res;
 }
 
-int bma4xx_safely_configure(const struct device *dev, struct bma4xx_config *cfg)
+int bma4xx_safely_configure(const struct device *dev, struct bma4xx_runtime_config *cfg)
 {
 	struct bma4xx_data *drv_data = dev->data;
 	int ret = bma4xx_configure(dev, cfg);
 
 	if (ret == 0) {
-		memcpy(&drv_data->cfg, cfg, sizeof(struct bma4xx_config));
+		memcpy(&drv_data->cfg, cfg, sizeof(struct bma4xx_runtime_config));
 	} else {
 		ret = bma4xx_configure(dev, &drv_data->cfg);
 	}

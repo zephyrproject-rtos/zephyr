@@ -10,8 +10,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 
-#ifdef CONFIG_BMA4XX_STREAM
-
 /**
  * @brief Initialize the bma4xx interrupt system
  *
@@ -27,8 +25,6 @@ int bma4xx_init_interrupt(const struct device *dev);
  * @param new_cfg New configuration to use for the device
  * @return int 0 on success, negative error code otherwise
  */
-int bma4xx_enable_interrupt1(const struct device *dev, struct bma4xx_config *new_cfg);
-
-#endif /* CONFIG_BMA4XX_STREAM */
+int bma4xx_enable_interrupt1(const struct device *dev, struct bma4xx_runtime_config *new_cfg);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMA4XX_INTERRUPT_H_ */

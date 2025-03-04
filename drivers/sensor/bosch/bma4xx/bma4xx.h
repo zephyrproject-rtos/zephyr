@@ -45,7 +45,20 @@ struct bma4xx_config {
 	uint8_t bus_type;
 
 	const struct gpio_dt_spec gpio_interrupt;
+};
 
+/** Used to implement bus-specific R/W operations. See bma4xx_i2c.c and
+ *  bma4xx_spi.c.
+ */
+struct bma4xx_hw_operations {
+	int (*read_data)(const struct device *dev, uint8_t reg_addr, uint8_t *value, uint8_t len);
+	int (*write_data)(const struct device *dev, uint8_t reg_addr, uint8_t *value, uint8_t len);
+	int (*read_reg)(const struct device *dev, uint8_t reg_addr, uint8_t *value);
+	int (*write_reg)(const struct device *dev, uint8_t reg_addr, uint8_t value);
+	int (*update_reg)(const struct device *dev, uint8_t reg_addr, uint8_t mask, uint8_t value);
+};
+
+struct bma4xx_runtime_config {
 	bool fifo_en;
 	int32_t batch_ticks;
 
@@ -63,19 +76,8 @@ struct bma4xx_config {
 	uint8_t accel_odr;
 };
 
-/** Used to implement bus-specific R/W operations. See bma4xx_i2c.c and
- *  bma4xx_spi.c.
- */
-struct bma4xx_hw_operations {
-	int (*read_data)(const struct device *dev, uint8_t reg_addr, uint8_t *value, uint8_t len);
-	int (*write_data)(const struct device *dev, uint8_t reg_addr, uint8_t *value, uint8_t len);
-	int (*read_reg)(const struct device *dev, uint8_t reg_addr, uint8_t *value);
-	int (*write_reg)(const struct device *dev, uint8_t reg_addr, uint8_t value);
-	int (*update_reg)(const struct device *dev, uint8_t reg_addr, uint8_t mask, uint8_t value);
-};
-
 struct bma4xx_data {
-	struct bma4xx_config cfg;
+	struct bma4xx_runtime_config cfg;
 	/** Pointer to bus-specific I/O API */
 	const struct bma4xx_hw_operations *hw_ops;
 #ifdef CONFIG_BMA4XX_STREAM
@@ -122,12 +124,12 @@ int bma4xx_i2c_init(const struct device *dev);
  * @brief (Re)Configure the sensor with the given configuration
  *
  * @param dev bma4xx device pointer
- * @param cfg bma4xx_config pointer
+ * @param cfg bma4xx_runtime_config pointer
  *
  * @retval 0 success
  * @retval -errno Error
  */
-int bma4xx_configure(const struct device *dev, struct bma4xx_config *cfg);
+int bma4xx_configure(const struct device *dev, struct bma4xx_runtime_config *cfg);
 
 /**
  * @brief Safely (re)Configure the sensor with the given configuration
@@ -135,12 +137,12 @@ int bma4xx_configure(const struct device *dev, struct bma4xx_config *cfg);
  * Will rollback to prior configuration if new configuration is invalid
  *
  * @param dev bma4xx device pointer
- * @param cfg bma4xx_config pointer
+ * @param cfg bma4xx_runtime_config pointer
  *
  * @retval 0 success
  * @retval -errno Error
  */
-int bma4xx_safely_configure(const struct device *dev, struct bma4xx_config *cfg);
+int bma4xx_safely_configure(const struct device *dev, struct bma4xx_runtime_config *cfg);
 
 /**
  * @brief Reset the sensor

@@ -115,7 +115,8 @@ static int bma4xx_odr_to_reg(uint32_t microhertz, uint8_t *reg_val)
 /**
  * Set the sensor's acceleration offset (per axis).
  */
-static int bma4xx_attr_set_odr(const struct sensor_value *val, struct bma4xx_config *new_config)
+static int bma4xx_attr_set_odr(const struct sensor_value *val,
+			       struct bma4xx_runtime_config *new_config)
 {
 	int status;
 	uint8_t reg_val;
@@ -161,7 +162,8 @@ static int bma4xx_fs_to_reg(int32_t range_ug, uint8_t *reg_val)
 /**
  * Set the sensor's full-scale range
  */
-static int bma4xx_attr_set_range(const struct sensor_value *val, struct bma4xx_config *new_config)
+static int bma4xx_attr_set_range(const struct sensor_value *val,
+				 struct bma4xx_runtime_config *new_config)
 {
 	int status;
 	uint8_t reg_val;
@@ -180,7 +182,8 @@ static int bma4xx_attr_set_range(const struct sensor_value *val, struct bma4xx_c
 /**
  * Set the sensor's bandwidth parameter (one of BMA4XX_BWP_*)
  */
-static int bma4xx_attr_set_bwp(const struct sensor_value *val, struct bma4xx_config *new_config)
+static int bma4xx_attr_set_bwp(const struct sensor_value *val,
+			       struct bma4xx_runtime_config *new_config)
 {
 	/* Require that `val2` is unused, and that `val1` is in range of a valid BWP */
 	if (val->val2 || val->val1 < BMA4XX_BWP_OSR4_AVG1 || val->val1 > BMA4XX_BWP_RES_AVG128) {
@@ -199,7 +202,7 @@ static int bma4xx_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct bma4xx_data *data = dev->data;
-	struct bma4xx_config new_config = data->cfg;
+	struct bma4xx_runtime_config new_config = data->cfg;
 	int res = 0;
 
 	__ASSERT_NO_MSG(val != NULL);
@@ -270,14 +273,13 @@ static int bma4xx_chip_init(const struct device *dev)
 		return status;
 	}
 
-#ifdef CONFIG_BMA4XX_STREAM
-
-	status = bma4xx_init_interrupt(dev);
-	if (status) {
-		LOG_ERR("Failed to initialize bma4xx interrupt");
-		return status;
+	if (IS_ENABLED(CONFIG_BMA4XX_STREAM)) {
+		status = bma4xx_init_interrupt(dev);
+		if (status != 0) {
+			LOG_ERR("Failed to initialize bms4xx interrupt");
+			return status;
+		}
 	}
-#endif
 
 	/* Default is: range = +/-4G, ODR = 100 Hz, BWP = "NORM_AVG4" */
 	bma4xx->cfg.accel_fs_range = BMA4XX_RANGE_4G;
