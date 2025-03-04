@@ -43,7 +43,7 @@ extern "C"
 {
 #endif
 
-#ifdef CONFIG_FS_LITTLEFS_DISK_VERSION
+#ifdef CONFIG_FS_LITTLEFS_MULTIVERSION
 #define LFS_MULTIVERSION
 #endif
 
