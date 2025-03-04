@@ -69,4 +69,5 @@ config NET_SAMPLE_WEBSOCKET_STATS_INTERVAL
 	  This interval controls how often the net stats data shown on the web page
 	  will be updated.
 
+source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"
