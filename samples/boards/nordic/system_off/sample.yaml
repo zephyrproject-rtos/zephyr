@@ -68,6 +68,7 @@ tests:
         - "Retained data not supported"
         - "Entering system off; wait 2 seconds to restart"
         - "system off demo"
+        - "Wakeup from System OFF by GRTC."
         - "Retained data not supported"
         - "Entering system off; wait 2 seconds to restart"
   sample.boards.nrf.system_off.retained_mem.grtc_wakeup:
@@ -97,6 +98,7 @@ tests:
         - "Off count: 1"
         - "Active Ticks:"
         - "Entering system off; wait 2 seconds to restart"
+        - "Wakeup from System OFF by GRTC."
   sample.boards.nrf.system_off.lpcomp_wakeup:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_comparator.overlay"
     platform_allow:
