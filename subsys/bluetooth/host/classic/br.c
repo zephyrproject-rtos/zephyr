@@ -1233,3 +1233,11 @@ int bt_br_set_discoverable(bool enable, bool limited)
 
 	return 0;
 }
+
+bool bt_br_bond_exists(const bt_addr_t *addr)
+{
+	struct bt_keys_link_key *key = bt_keys_find_link_key(addr);
+
+	/* if there are any keys stored then device is bonded */
+	return key != NULL;
+}
