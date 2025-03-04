@@ -261,7 +261,7 @@ int pbuf_read(struct pbuf *pb, char *buf, uint16_t len)
 
 	uint32_t occupied_space = idx_occupied(blen, wr_idx, rd_idx);
 
-	if (occupied_space < plen + PBUF_PACKET_LEN_SZ) {
+	if (unlikely(occupied_space < plen + PBUF_PACKET_LEN_SZ)) {
 		/* This should never happen. */
 		return -EAGAIN;
 	}
