@@ -5,6 +5,10 @@
  */
 
  / {
+	chosen {
+		zephyr,timeout-event-domain = &cpuapp_wakeup_event_domain;
+	};
+
 	aliases {
 		sample-request-button = &button0;
 		sample-response-led = &led0;

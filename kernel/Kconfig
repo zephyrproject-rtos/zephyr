@@ -825,6 +825,14 @@ config TIMEOUT_64BIT
 	  availability of absolute timeout values (which require the
 	  extra precision).
 
+DT_CHOSEN_TIMEOUT_EVENT_DOMAIN := zephyr,timeout-event-domain
+
+config TIMEOUT_EVENT_DOMAIN
+	bool "Manage sys clock timeout latency using timeout event domain"
+	default y
+	depends on PM_EVENT_DOMAIN
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_TIMEOUT_EVENT_DOMAIN))
+
 config SYS_CLOCK_MAX_TIMEOUT_DAYS
 	int "Max timeout (in days) used in conversions"
 	default 365
