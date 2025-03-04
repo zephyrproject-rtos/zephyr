@@ -132,6 +132,7 @@ config TEST_ENABLE_USERSPACE
 	bool
 	depends on TEST_USERSPACE
 	depends on ARCH_HAS_USERSPACE
+	depends on !CMAKE_LINKER_GENERATOR
 	select USERSPACE
 	imply DYNAMIC_OBJECTS
 	default y
