@@ -156,10 +156,13 @@ static void emul_rx_worker(struct k_work *work)
 
 		LOG_DBG("Inserting %u bytes into buffer %p", vbuf->bytesused, vbuf->buffer);
 
-		/* Simulate the MIPI/DVP hardware transferring image data from the imager to the
-		 * video buffer memory using DMA. The vbuf->size is checked in emul_rx_enqueue().
+		/* Simulate the MIPI/DVP hardware transferring image data line-by-line from the
+		 * imager to the video buffer memory using DMA copying the data line-by-line over
+		 * the whole frame. vbuf->size is already checked in emul_rx_enqueue().
 		 */
-		memcpy(vbuf->buffer, cfg->source_dev->data, vbuf->bytesused);
+		for (size_t i = 0; i + fmt->pitch <= vbuf->bytesused; i += fmt->pitch) {
+			memcpy(vbuf->buffer + i, cfg->source_dev->data, fmt->pitch);
+		}
 
 		/* Once the buffer is completed, submit it to the video buffer */
 		k_fifo_put(&data->fifo_out, vbuf);
