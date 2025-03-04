@@ -41,6 +41,10 @@ struct tcpci_reg_dump_map {
  */
 extern const struct tcpci_reg_dump_map tcpci_std_regs[TCPCI_STD_REGS_SIZE];
 
+/** Type-C Port Controller Interface Specification Revision */
+#define PD_INT_REV10 0x10 /* Revision 1.0 */
+#define PD_INT_REV20 0x20 /* Revision 2.0 */
+
 /**
  * @brief Function to read the 8-bit register of TCPCI device
  *
@@ -185,10 +189,11 @@ int tcpci_tcpm_set_cc(const struct i2c_dt_spec *bus, enum tc_cc_pull pull);
  * @brief Function to enable or disable TCPC auto dual role toggle.
  *
  * @param bus I2C bus
+ * @param pd_int_rev Value of the TCPC_REG_PD_INT_REV bits [15..8]
  * @param enable Boolean flag to enable (true) or disable (false) DRP toggle mode
  * @return int Status of I2C operation, 0 in case of success
  */
-int tcpci_tcpm_set_drp_toggle(const struct i2c_dt_spec *bus, bool enable);
+int tcpci_tcpm_set_drp_toggle(const struct i2c_dt_spec *bus, uint8_t pd_int_rev, bool enable);
 
 /**
  * @brief Function to set the power and data role of the PD message header.
