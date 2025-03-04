@@ -280,6 +280,106 @@ static int gpio_max14916_config_diag(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+static int gpio_max14916_manage_diag_callback(const struct device *port, struct gpio_callback *cb,
+					      bool set)
+{
+}
+
+static int gpio_max14916_port_diag_get(const struct device *dev, int chan, uint8_t *data)
+{
+	struct max14916_data *data = dev->data;
+	int ret = -ENXIO;
+
+	switch (chan) {
+	case GPIO_DIAG_ABOVE_VDD:
+		ret = data->glob.glob_err.VINT_UV | data->glob.glob_err.VA_UVLO |
+		      data->glob.glob_err.VDD_BAD | data->glob.glob_err.VDD_WARN |
+		      data->glob.glob_err.VDD_UVLO;
+		break;
+	case GPIO_DIAG_THRM_SHUTD:
+		ret = data->glob.glob_err.THRMSHUTD;
+		break;
+	case GPIO_DIAG_SYNC_ERR:
+		ret = data->glob.glob_err.SDYNC_ERR;
+		break;
+	case GPIO_DIAG_WDOG_ERR:
+		ret = data->glob.glob_err.WDOG_ERR;
+		break;
+
+	case GPIO_DIAG_OVER_LOAD:
+		ret = data->glob.interrupt.OVER_LD_FLT;
+		break;
+	case GPIO_DIAG_WIRE_BREAK:
+		ret = data->glob.interrupt.OW_OFF_FLT | data->glob.interrupt.OW_ON_FLT;
+		break;
+	case GPIO_DIAG_SHORT_VDD:
+		ret = data->glob.interrupt.SHT_VDD_FLT;
+		break;
+	case GPIO_DIAG_THRM_SHUTD:
+		ret = data->glob.interrupt.;
+		break;
+	case GPIO_DIAG_SUPPLY_ERR:
+		ret = data->glob.interrupt.SUPPLY_ERR;
+		break
+	case GPIO_DIAG_COM_ERR:
+		ret = data->glob.interrupt.COM_ERR;
+		break
+	}
+}
+
+static int gpio_max14916_diag_fetch(const struct device *dev)
+{
+	struct max14916_data *data = dev->data;
+
+	data->glob.interrupt.reg_raw =
+		max149x6_reg_transceive(dev, MAX14916_INT_REG, 0, NULL, MAX149x6_READ);
+
+	data->glob.glob_err.reg_raw =
+		max149x6_reg_transceive(dev, MAX14916_GLOB_ERR_REG, 0, NULL, MAX149x6_READ);
+
+	data->chan.ovr_ld =
+		max149x6_reg_transceive(dev, MAX14916_OVR_LD_REG, 0, NULL, MAX149x6_READ);
+
+	data->chan.curr_lim =
+		max149x6_reg_transceive(dev, MAX14916_CURR_LIM_REG, 0, NULL, MAX149x6_READ);
+
+	data->chan.ow_off =
+		max149x6_reg_transceive(dev, MAX14916_OW_OFF_FLT_REG, 0, NULL, MAX149x6_READ);
+
+	data->chan.ow_on =
+		max149x6_reg_transceive(dev, MAX14916_OW_ON_FLT_REG, 0, NULL, MAX149x6_READ);
+
+	data->chan.sht_vdd =
+		max149x6_reg_transceive(dev, MAX14916_SHT_VDD_FLT_REG, 0, NULL, MAX149x6_READ);
+}
+
+static int gpio_max14916_chan_diag_get(const struct device *dev, int chan, gpio_pin_t pin)
+{
+	struct max14916_data *data = dev->data;
+	int ret = -ENXIO;
+
+	/* TODO: Add enable bits*/
+	switch (chan) {
+	case GPIO_DIAG_OVER_LOAD:
+		ret = (data->chan.ovr_ld >> pin) & 0x1;
+		break;
+	case GPIO_DIAG_CURR_LIM:
+		ret = (data->chan.curr_lim >> pin) & 0x1;
+		break;
+	case GPIO_DIAG_WIRE_BREAK:
+		ret = ((data->chan.wb_on >> pin) & 0x1) | ((data->chan.wb_off >> pin) & 0x1);
+		break;
+	case GPIO_DIAG_SHORT_VDD:
+		ret = (data->chan.sht_vdd >> pin) & 0x1;
+		break;
+	}
+
+	return ret;
+}
+
+#endif
+
 static int gpio_max14916_init(const struct device *dev)
 {
 	const struct max14916_config *config = dev->config;
@@ -304,6 +404,20 @@ static int gpio_max14916_init(const struct device *dev)
 		return err;
 	}
 
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+	data->dev = dev;
+
+	err = gpio_pin_interrupt_configure_dt(&config->fault_gpio, GPIO_INT_EDGE_TO_INACTIVE);
+	if (err != 0) {
+		printk("Error %d: failed to configure interrupt on %s pin %d\n", err,
+		       config->fault_gpio.port->name, config->fault_gpio.pin);
+	} else {
+		/* Setup call back in case interrupt config success */
+		gpio_init_callback(&data->button_cb_data, max14916_fault_diag,
+				   BIT(config->fault_gpio.pin));
+		gpio_add_callback(config->fault_gpio.port, &data->button_cb_data);
+	}
+#else
 	/* setup FLT gpio - normal high */
 	if (!gpio_is_ready_dt(&config->fault_gpio)) {
 		LOG_ERR("FLT GPIO device not ready");
@@ -315,7 +429,7 @@ static int gpio_max14916_init(const struct device *dev)
 		LOG_ERR("Failed to configure DC GPIO");
 		return err;
 	}
-
+#endif
 	/* setup LATCH gpio - normal high */
 	if (!gpio_is_ready_dt(&config->sync_gpio)) {
 		LOG_ERR("SYNC GPIO device not ready");
@@ -365,6 +479,12 @@ static DEVICE_API(gpio, gpio_max14916_api) = {
 	.port_set_bits_raw = gpio_max14916_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_max14916_port_clear_bits_raw,
 	.port_toggle_bits = gpio_max14916_port_toggle_bits,
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+	.manage_diag_callback = gpio_max14916_manage_diag_callback,
+	.port_diag_get = gpio_max14916_port_diag_get,
+	.port_diag_fetch = gpio_max14916_diag_fetch,
+	.pin_diag_get = gpio_max14916_chan_diag_get,
+#endif
 };
 
 #define GPIO_MAX14906_DEVICE(id)                                                                   \
