@@ -169,7 +169,7 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 		net_sprint_ipv6_addr(src),
 		net_sprint_ipv6_addr(&ip_hdr->src));
 
-	if (net_send_data(reply) < 0) {
+	if (net_try_send_data(reply, K_NO_WAIT) < 0) {
 		goto drop;
 	}
 
@@ -319,7 +319,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 		net_sprint_ipv6_addr(src),
 		net_sprint_ipv6_addr(&ip_hdr->src));
 
-	if (net_send_data(pkt) >= 0) {
+	if (net_try_send_data(pkt, K_NO_WAIT) >= 0) {
 		net_stats_update_icmp_sent(net_pkt_iface(pkt));
 		return 0;
 	}
