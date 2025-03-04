@@ -16,6 +16,7 @@
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util_macro_expr.h>
 
 #ifdef __cplusplus
 extern "C" {
