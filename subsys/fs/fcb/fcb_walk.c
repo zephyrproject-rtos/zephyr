@@ -12,9 +12,7 @@
  * Call 'cb' for every element in flash circular buffer. If sector is specified,
  * only elements with that flash_sector are reported.
  */
-int
-fcb_walk(struct fcb *fcb, struct flash_sector *sector, fcb_walk_cb cb,
-	 void *cb_arg)
+int fcb_walk(struct fcb *fcb, const struct flash_sector *sector, fcb_walk_cb cb, void *cb_arg)
 {
 	struct fcb_entry_ctx entry_ctx;
 	int rc;
