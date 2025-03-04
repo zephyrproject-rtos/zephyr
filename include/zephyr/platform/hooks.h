@@ -78,4 +78,12 @@ void board_early_init_hook(void);
  */
 void board_late_init_hook(void);
 
+/**
+ * @brief Hook executed when idle is entered.
+ *
+ * This hook is implemented by the SoC and can be used to perform any
+ * SoC-specific idle enter logic.
+ */
+void idle_enter_hook(void);
+
 #endif

@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		event-device = &power;
+	};
+
+	gpio_fwd: nrf-gpio-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "okay";
+
+		buttons {
+			gpios = <&gpio0 0x18 0>;
+		};
+
+		leds {
+			gpios = <&gpio0 0x1d 0>;
+		};
+	};
+};
