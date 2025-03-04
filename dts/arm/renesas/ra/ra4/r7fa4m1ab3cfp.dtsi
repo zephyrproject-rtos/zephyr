@@ -70,7 +70,6 @@
 
 		adc@4005c000 {
 			interrupts = <20 1>;
-			channel-count = <25>;
 			channel-available-mask = <0x3ff7fff>;
 		};
 
