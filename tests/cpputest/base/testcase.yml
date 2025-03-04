@@ -1,0 +1,9 @@
+common:
+  tags:
+    - test_framework
+
+tests:
+  base.my_test_group:
+    platform_allow:
+      - native_sim/native/64
+    harness: "cpputest"
