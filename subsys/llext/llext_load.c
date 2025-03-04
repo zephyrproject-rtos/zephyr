@@ -163,13 +163,14 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
-			"addr 0x%zx, size %zd, link %d, info %d",
+			"addr 0x%zx, align 0x%zx, size %zd, link %d, info %d",
 			i,
 			(size_t)shdr->sh_offset,
 			shdr->sh_name,
 			shdr->sh_type,
 			(size_t)shdr->sh_flags,
 			(size_t)shdr->sh_addr,
+			(size_t)shdr->sh_addralign,
 			(size_t)shdr->sh_size,
 			shdr->sh_link,
 			shdr->sh_info);
@@ -208,6 +209,15 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 
 	return 0;
 }
+
+/* First (bottom) and last (top) entries of a region, inclusive, for a specific field. */
+#define REGION_BOT(reg, field) (size_t)(reg->field + reg->sh_info)
+#define REGION_TOP(reg, field) (size_t)(reg->field + reg->sh_size - 1)
+
+/* Check if two regions x and y have any overlap on a given field. Any shared value counts. */
+#define REGIONS_OVERLAP_ON(x, y, f) \
+	((REGION_BOT(x, f) <= REGION_BOT(y, f) && REGION_TOP(x, f) >= REGION_BOT(y, f)) || \
+	 (REGION_BOT(y, f) <= REGION_BOT(x, f) && REGION_TOP(y, f) >= REGION_BOT(x, f)))
 
 /*
  * Maps the ELF sections into regions according to their usage flags,
@@ -301,9 +311,13 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 
 		if (region->sh_type == SHT_NULL) {
 			/* First section of this type, copy all info to the
-			 * region descriptor.
+			 * region descriptor. Clear the 'sh_info' field, not
+			 * used by ELF spec on SHF_ALLOC sections, to store
+			 * the extra bytes added at the start of the region
+			 * for alignment corrections.
 			 */
 			memcpy(region, shdr, sizeof(*region));
+			region->sh_info = 0;
 		} else {
 			/* Make sure this section is compatible with the region */
 			if ((shdr->sh_flags & SHF_BASIC_TYPE_MASK) !=
@@ -359,6 +373,42 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			size_t top_ofs = MAX(region->sh_offset + region->sh_size,
 					     shdr->sh_offset + shdr->sh_size);
 
+			if (shdr->sh_addralign > region->sh_addralign) {
+				/* This section uses a larger alignment value
+				 * than what is currently used by the region.
+				 * Make sure its final position in memory is
+				 * correct by adjusting the start of the
+				 * region, if needed.
+				 *
+				 * For example, in such a situation:
+				 *
+				 * cur region: ofs  0x24, size 0xdc, align  0x4
+				 *   new shdr: ofs 0x100, size 0x20, align 0x10
+				 *
+				 * an aligned allocation would make the section
+				 * start at bot_ofs + 0xdc, which does not meet
+				 * its constraint. Moving the region start 4
+				 * bytes down will fix the issue, at the cost
+				 * of possibly making the region "overlap" with
+				 * others. This extra offset must be stored for
+				 * further adjustments.
+				 */
+				size_t prepad = bot_ofs - ROUND_DOWN(bot_ofs, shdr->sh_addralign);
+
+				if (prepad > address && ldr->hdr.e_type == ET_DYN) {
+					LOG_ERR("Bad section alignment for %s (region %d)",
+						name, mem_idx);
+					return -ENOEXEC;
+				}
+
+				if (ldr->hdr.e_type == ET_DYN) {
+					address -= prepad;
+				}
+				bot_ofs -= prepad;
+				region->sh_info = prepad;
+				region->sh_addralign = shdr->sh_addralign;
+			}
+
 			region->sh_addr = address;
 			region->sh_offset = bot_ofs;
 			region->sh_size = top_ofs - bot_ofs;
@@ -403,14 +453,11 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				/*
 				 * Test regions that have VMA ranges for overlaps
 				 */
-				if ((x->sh_addr <= y->sh_addr &&
-				     x->sh_addr + x->sh_size > y->sh_addr) ||
-				    (y->sh_addr <= x->sh_addr &&
-				     y->sh_addr + y->sh_size > x->sh_addr)) {
-					LOG_ERR("Region %d VMA range (0x%zx +%zd) "
-						"overlaps with %d (0x%zx +%zd)",
-						i, (size_t)x->sh_addr, (size_t)x->sh_size,
-						j, (size_t)y->sh_addr, (size_t)y->sh_size);
+				if (REGIONS_OVERLAP_ON(x, y, sh_addr)) {
+					LOG_ERR("Region %d VMA range (0x%zx-0x%zx) "
+						"overlaps with %d (0x%zx-0x%zx)",
+						i, REGION_BOT(x, sh_addr), REGION_TOP(x, sh_addr),
+						j, REGION_BOT(y, sh_addr), REGION_TOP(y, sh_addr));
 					return -ENOEXEC;
 				}
 			}
@@ -424,14 +471,11 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				continue;
 			}
 
-			if ((x->sh_offset <= y->sh_offset &&
-			     x->sh_offset + x->sh_size > y->sh_offset) ||
-			    (y->sh_offset <= x->sh_offset &&
-			     y->sh_offset + y->sh_size > x->sh_offset)) {
-				LOG_ERR("Region %d ELF file range (0x%zx +%zd) "
-					"overlaps with %d (0x%zx +%zd)",
-					i, (size_t)x->sh_offset, (size_t)x->sh_size,
-					j, (size_t)y->sh_offset, (size_t)y->sh_size);
+			if (REGIONS_OVERLAP_ON(x, y, sh_offset)) {
+				LOG_ERR("Region %d ELF file range (0x%zx-0x%zx) "
+					"overlaps with %d (0x%zx-0x%zx)",
+					i, REGION_BOT(x, sh_offset), REGION_TOP(x, sh_offset),
+					j, REGION_BOT(y, sh_offset), REGION_TOP(y, sh_offset));
 				return -ENOEXEC;
 			}
 		}
