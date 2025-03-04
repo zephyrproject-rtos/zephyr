@@ -480,6 +480,7 @@ Bluetooth Host:
     - tests/bsim/bluetooth/hci_uart/
     - tests/bsim/bluetooth/ll/
     - tests/bsim/bluetooth/mesh/
+    - tests/bsim/bluetooth/tester/src/audio/
   labels:
     - "area: Bluetooth Host"
     - "area: Bluetooth"
@@ -534,6 +535,7 @@ Bluetooth Audio:
     - tests/bluetooth/audio/
     - tests/bsim/bluetooth/audio/
     - tests/bsim/bluetooth/audio_samples/
+    - tests/bsim/bluetooth/tester/src/audio/
     - tests/bluetooth/shell/audio.conf
     - tests/bluetooth/tester/overlay-le-audio.conf
     - tests/bluetooth/tester/overlay-bt_ll_sw_split.conf
