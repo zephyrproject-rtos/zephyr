@@ -5,12 +5,14 @@
 
 #define DT_DRV_COMPAT nordic_nrf_vevif_task_tx
 
+#include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/mbox.h>
 
 #include <haly/nrfy_vpr.h>
 
 #define TASKS_IDX_MAX NRF_VPR_TASKS_TRIGGER_MAX
+#define VEVIF_RETRIGGER_DELAY	12
 
 struct mbox_vevif_task_tx_conf {
 	NRF_VPR_Type *vpr;
@@ -36,6 +38,10 @@ static int vevif_task_tx_send(const struct device *dev, uint32_t id, const struc
 	if (msg != NULL) {
 		return -EMSGSIZE;
 	}
+
+	nrfy_vpr_task_trigger(config->vpr, nrfy_vpr_trigger_task_get(id));
+
+	k_busy_wait(VEVIF_RETRIGGER_DELAY);
 
 	nrfy_vpr_task_trigger(config->vpr, nrfy_vpr_trigger_task_get(id));
 
