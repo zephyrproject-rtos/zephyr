@@ -1,0 +1,273 @@
+/*
+ * Copyright (c) 2025 BayLibre SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_r8.dtsi>
+#include "twatch_s3-pinctrl.dtsi"
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	model = "T-Watch S3 PROCPU";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		watchdog0 = &wdt0;
+		rtc = &pfc8563_rtc;
+		pwm-led0 = &backlight_pwm;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display = &st7789v;
+		zephyr,touch = &ft5336;
+		zephyr,ipc_shm = &shm0;
+		zephyr,ipc = &ipm0;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		dc-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		spi-dev = <&spi3>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7789v: st7789v@0 {
+			compatible = "sitronix,st7789v";
+			mipi-max-frequency = <20000000>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			reg = <0>;
+			width = <240>;
+			height = <240>;
+			x-offset = <0>;
+			y-offset = <80>;
+			mdac = <0xc8>;
+			ram-param = [00 e0];
+			colmod = <0x55>;
+			porch-param = [0c 0c 00 33 33];
+			gctrl = <0x35>;
+			vcom = <0x28>;
+			lcm = <0x0c>;
+			vrhs = <0x10>;
+			vdvs = <0x20>;
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [d0 00 02 07 0a 28 32 44 42 06 0e 12 14 17];
+			nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
+			/* Values below are not set by the eTFT_SPI driver from
+			 * LilyGO. Therefore let's keep ST7789V values.
+			 */
+			gamma = <0x01>;
+			cmd2en-param = [5a 69 02 00];
+			rgb-param = [40 02 14];
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		backlight_pwm: pwm_0 {
+			label = "LCD backlight PWM";
+			pwms = <&ledc0 0 PWM_HZ(100) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
+		swap-xy;
+	};
+};
+
+&ledc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	pfc8563_rtc: pfc8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		status = "okay";
+	};
+
+	bma423: bma423@19 {
+		compatible = "bosch,bma4xx";
+		reg = <0x19>;
+		status = "okay";
+		int1-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+	};
+
+	haptic: drv2605@5a {
+		compatible = "ti,drv2605";
+		reg = <0x5a>;
+		status = "okay";
+		actuator-mode = "ERM";
+	};
+
+	axp2101@34 {
+		compatible = "x-powers,axp2101";
+		reg = <0x34>;
+		regulators {
+			compatible = "x-powers,axp2101-regulator";
+
+			dcdc1 {
+				regulator-min-microvolt = <3300000>;
+				regulator-init-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			dcdc2 {
+				regulator-boot-off;
+			};
+
+			dcdc3 {
+				regulator-min-microvolt = <3300000>;
+				regulator-init-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			dcdc4 {
+				regulator-boot-off;
+			};
+
+			dcdc5 {
+				regulator-boot-off;
+			};
+
+			aldo1 {
+				regulator-min-microvolt = <3300000>;
+				regulator-init-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			aldo2 {
+				regulator-min-microvolt = <3300000>;
+				regulator-init-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			aldo3 {
+				regulator-min-microvolt = <3300000>;
+				regulator-init-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			aldo4 {
+				regulator-min-microvolt = <3300000>;
+				regulator-init-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			bldo1 {
+				regulator-boot-off;
+			};
+
+			bldo2 {
+				regulator-min-microvolt = <3300000>;
+				regulator-init-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			cplusldo {
+				regulator-boot-off;
+			};
+
+			dldo1 {
+				regulator-boot-off;
+			};
+
+			dldo2 {
+				regulator-boot-off;
+			};
+		};
+	};
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpio0 16 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		reset-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&ipm0 {
+	status = "okay";
+};
