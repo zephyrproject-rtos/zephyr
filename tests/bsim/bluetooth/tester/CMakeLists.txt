@@ -26,4 +26,6 @@ target_sources(app PRIVATE
   src/test_main.c
   src/host/gap_central.c
   src/host/gap_peripheral.c
+  src/audio/vcp_central.c
+  src/audio/vcp_peripheral.c
 )
