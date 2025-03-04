@@ -51,7 +51,7 @@ static const struct device *const devices[] = {
 #undef DT_DRV_COMPAT
 #undef STM32_COUNTER_DEV
 #endif
-#ifdef CONFIG_COUNTER_NATIVE_POSIX
+#ifdef CONFIG_COUNTER_NATIVE_SIM
 	DEVICE_DT_GET(DT_NODELABEL(counter0)),
 #endif
 #ifdef CONFIG_COUNTER_INFINEON_CAT1
@@ -1086,7 +1086,7 @@ static bool reliable_cancel_capable(const struct device *dev)
 		return true;
 	}
 #endif
-#ifdef CONFIG_COUNTER_NATIVE_POSIX
+#ifdef CONFIG_COUNTER_NATIVE_SIM
 	if (dev == DEVICE_DT_GET(DT_NODELABEL(counter0))) {
 		return true;
 	}

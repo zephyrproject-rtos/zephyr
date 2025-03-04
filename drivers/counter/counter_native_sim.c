@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/devicetree.h>
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_native_posix_counter)
 #define DT_DRV_COMPAT zephyr_native_posix_counter
+#warning "zephyr,native-posix-counter is deprecated in favor of zephyr,native-sim-counter"
+#else
+#define DT_DRV_COMPAT zephyr_native_sim_counter
+#endif
 
 #include <string.h>
 #include <zephyr/device.h>
@@ -15,11 +21,11 @@
 #include <limits.h>
 
 #define DRIVER_CONFIG_INFO_FLAGS (COUNTER_CONFIG_INFO_COUNT_UP)
-#define DRIVER_CONFIG_INFO_CHANNELS CONFIG_COUNTER_NATIVE_POSIX_NBR_CHANNELS
-#define COUNTER_NATIVE_POSIX_IRQ_FLAGS (0)
-#define COUNTER_NATIVE_POSIX_IRQ_PRIORITY (2)
+#define DRIVER_CONFIG_INFO_CHANNELS CONFIG_COUNTER_NATIVE_SIM_NBR_CHANNELS
+#define COUNTER_NATIVE_SIM_IRQ_FLAGS (0)
+#define COUNTER_NATIVE_SIM_IRQ_PRIORITY (2)
 
-#define COUNTER_PERIOD (USEC_PER_SEC / CONFIG_COUNTER_NATIVE_POSIX_FREQUENCY)
+#define COUNTER_PERIOD (USEC_PER_SEC / CONFIG_COUNTER_NATIVE_SIM_FREQUENCY)
 #define TOP_VALUE (UINT_MAX)
 
 static struct counter_alarm_cfg pending_alarm[DRIVER_CONFIG_INFO_CHANNELS];
@@ -83,8 +89,8 @@ static int ctr_init(const struct device *dev)
 	is_top_set = false;
 	top.ticks = TOP_VALUE;
 
-	IRQ_CONNECT(COUNTER_EVENT_IRQ, COUNTER_NATIVE_POSIX_IRQ_PRIORITY,
-		    counter_isr, NULL, COUNTER_NATIVE_POSIX_IRQ_FLAGS);
+	IRQ_CONNECT(COUNTER_EVENT_IRQ, COUNTER_NATIVE_SIM_IRQ_PRIORITY,
+		    counter_isr, NULL, COUNTER_NATIVE_SIM_IRQ_FLAGS);
 	irq_enable(COUNTER_EVENT_IRQ);
 	hw_counter_set_period(COUNTER_PERIOD);
 	hw_counter_set_wrap_value((uint64_t)top.ticks + 1);
@@ -240,7 +246,7 @@ static DEVICE_API(counter, ctr_api) = {
 
 static const struct counter_config_info ctr_config = {
 	.max_top_value = UINT_MAX,
-	.freq = CONFIG_COUNTER_NATIVE_POSIX_FREQUENCY,
+	.freq = CONFIG_COUNTER_NATIVE_SIM_FREQUENCY,
 	.channels = DRIVER_CONFIG_INFO_CHANNELS,
 	.flags = DRIVER_CONFIG_INFO_FLAGS
 };
