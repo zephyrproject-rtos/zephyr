@@ -57,6 +57,11 @@ Deprecated APIs and options
 New APIs and options
 ====================
 
+* I2C
+
+  * Add function ``i2c_configure_dt`` to simplify calls through spec by
+    eliminating unnecessary member references.
+
 ..
   Link to new APIs here, in a group if you think it's necessary, no need to get
   fancy just list the link, that should contain the documentation. If you feel
