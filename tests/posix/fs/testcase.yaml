@@ -13,6 +13,9 @@ common:
   platform_key:
     - arch
     - simulation
+  integration_platforms:
+    - qemu_x86
+    - qemu_riscv64
 tests:
   portability.posix.fs: {}
   portability.posix.fs.minimal:
