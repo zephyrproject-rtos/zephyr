@@ -212,7 +212,7 @@ static int ili9806e_write_reg(const struct device *dev, uint8_t reg, const uint8
 	int ret;
 	const struct ili9806e_config *cfg = dev->config;
 
-	ret = mipi_dsi_dcs_write(cfg->mipi_dsi, cfg->channel, reg, buf, len);
+	ret = mipi_dsi_dcs_write(cfg->mipi_dsi, cfg->channel, reg, buf, len, MIPI_DSI_MSG_USE_LPM);
 	if (ret < 0) {
 		LOG_ERR("Failed writing reg: 0x%x result: (%d)", reg, ret);
 		return ret;
