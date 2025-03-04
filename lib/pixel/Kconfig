@@ -1,0 +1,44 @@
+# Copyright (c) 2025 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PIXEL
+	bool "Pixel and Image Manipulation Library"
+	imply RING_BUFFER_LARGE
+
+if PIXEL
+
+choice PIXEL_PRINT
+	bool "Select the print function to use for sending characters out."
+	default PIXEL_PRINT_PRINTF
+	help
+	  The default is to use printf() as it most often leads to the output being printed out.
+
+config PIXEL_PRINT_PRINTF
+	bool "Image output to print is sent to printf()"
+	help
+	  The data is directly handled by the libc bypassing most configuration.
+
+config PIXEL_PRINT_PRINTK
+	bool "Image output to print is sent to printk()"
+	help
+	  The printk() function will sometimes drop characters to avoid slowing-down the rest of
+	  the firmware, and can be configured to use the logging subsystem.
+
+config PIXEL_PRINT_SHELL
+	bool "Image output to print is sent to shell_print()"
+	help
+	  The shell instance used is set by pixel_print_set_shell().
+
+config PIXEL_PRINT_NONE
+	bool "Image output is dropped and not sent anywhere"
+	help
+	  This is useful for environments where UTF-8 or escape characters can be a problem,
+	  or where a human is not watching, like CI, or quickly toggle on/off this feature.
+
+endchoice
+
+module = PIXEL
+module-str = pixel
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
