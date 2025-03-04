@@ -8,7 +8,6 @@ menuconfig ENTROPY_STM32_RNG
 	default y
 	depends on DT_HAS_ST_STM32_RNG_ENABLED || DT_HAS_ST_STM32_RNG_NOIRQ_ENABLED
 	select ENTROPY_HAS_DRIVER
-	select USE_STM32_LL_RNG
 	help
 	  This option enables the RNG processor, which is a entropy number
 	  generator, based on a continuous analog noise, that provides
