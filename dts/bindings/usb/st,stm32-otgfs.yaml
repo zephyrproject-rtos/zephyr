@@ -33,3 +33,9 @@ properties:
 
   clocks:
     required: true
+
+  num-host-channels:
+    type: int
+    required: true
+    description: |
+      Number of host channels supported by hardware
