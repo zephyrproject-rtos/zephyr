@@ -91,6 +91,24 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
 
+  # we test garbage collection with all currently available arches
+  llext.writable_relocatable_gc:
+    arch_allow:
+      - arm
+      - riscv
+      - arc
+    platform_exclude:
+      - qemu_arc/qemu_arc_hs5x     # See #80949
+      - nsim/nsim_hs5x             # See #80949
+      - nsim/nsim_hs5x/smp         # See #80949
+      - nsim/nsim_hs5x/smp/12cores # See #80949
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
+      - CONFIG_LLEXT_SYMBOL_GC=y
+
   # Test the Symbol Link Identifier (SLID) linking feature on writable
   # storage to cover both ARM and Xtensa architectures on the same test.
   llext.writable_slid_linking:

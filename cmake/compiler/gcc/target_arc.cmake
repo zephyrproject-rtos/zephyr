@@ -13,10 +13,16 @@ endif()
 set(LLEXT_REMOVE_FLAGS
   -fno-pic
   -fno-pie
-  -ffunction-sections
-  -fdata-sections
   -Os
 )
+
+if(NOT DEFINED(CONFIG_LLEXT_SYMBOL_GC))
+  list(APPEND LLEXT_REMOVE_FLAGS
+    -ffunction-sections
+    -fdata-sections
+  )
+endif()
+
 
 set(LLEXT_APPEND_FLAGS
   -mcpu=${GCC_ARC_TUNED_CPU} # Force compiler and linker match
