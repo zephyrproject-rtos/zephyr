@@ -289,9 +289,7 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
 	irq = PCIE_CONF_INTR_IRQ(data);
 
-	if ((irq == PCIE_CONF_INTR_IRQ_NONE) ||
-	    (irq >= CONFIG_MAX_IRQ_LINES) ||
-	    arch_irq_is_used(irq)) {
+	if ((irq == PCIE_CONF_INTR_IRQ_NONE) || arch_irq_is_used(irq)) {
 
 		/* In some platforms, PCI interrupts are hardwired to specific interrupt inputs
 		 * on the interrupt controller and are not configurable. Hence we need to retrieve
