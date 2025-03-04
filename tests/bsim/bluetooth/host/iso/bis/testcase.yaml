@@ -8,3 +8,5 @@ tests:
     harness: bsim
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_host_iso_bis_prj_conf
+    extra_args:
+      EXTRA_CONF_FILE=controller.conf
