@@ -20,4 +20,5 @@ supported:
   - uart
   - spi
   - adc
+  - usb_device
 vendor: nxp
