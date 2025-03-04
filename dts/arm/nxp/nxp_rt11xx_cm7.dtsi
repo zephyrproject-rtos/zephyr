@@ -94,6 +94,10 @@
 	};
 };
 
+&dac {
+	dmas = <&edma0 0 189>;
+	dma-names = "tx";
+};
 
 &sai1 {
 	dmas = <&edma0 0 54>, <&edma0 0 55>;
