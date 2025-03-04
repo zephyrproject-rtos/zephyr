@@ -11,6 +11,7 @@ ZEPHYR_USER := zephyr,user
 
 config DAC_SOURCE_TEST
 	bool
+	select DAC
 	default y if $(dt_node_has_prop,/$(ZEPHYR_USER),dac)
 
 config REFERENCE_VOLTAGE_TEST
