@@ -307,6 +307,25 @@ ZTEST(flash_driver, test_flash_erase)
 	zassert_not_equal(expected[0], erase_value, "These values shall be different");
 }
 
+ZTEST(flash_driver, test_mmap)
+{
+	int rc;
+	uint64_t size;
+	uint8_t *p;
+
+	rc = flash_mmap(flash_dev, (void **)&p, &size, FLASH_MMAP_F_READ);
+	if (rc == -ENOTSUP || rc == -ENOSYS) {
+		ztest_test_skip();
+	} else {
+		const static uint8_t out[] = "Hello World!!!\n";
+		struct flash_pages_info fp;
+
+		zassert_ok(flash_get_page_info_by_offs(flash_dev, size - 1, &fp));
+		zassert_ok(flash_erase(flash_dev, fp.start_offset, fp.size));
+		zassert_ok(flash_write(flash_dev, fp.start_offset, out, sizeof(out)));
+		zassert_ok(memcmp(p + fp.start_offset, out, sizeof(out)));
+	}
+}
 struct test_cb_data_type {
 	uint32_t page_counter; /* used to count how many pages was iterated */
 	uint32_t exit_page;    /* terminate iteration when this page is reached */
