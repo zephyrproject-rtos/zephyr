@@ -1,0 +1,181 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Sensoan Oy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "sgw2_nrf9160.h"
+#include "sgw2_common.dtsi"
+#include "sgw2_nrf9160_common-pinctrl.dtsi"
+
+/ {
+	model = "SGW2 nRF9160";
+	compatible = "sensoan,sgw2-nrf9160";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&edge_connector 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_red: led_0 {
+			gpios = <&edge_connector 7 GPIO_ACTIVE_LOW>;
+			label = "RGB red channel";
+		};
+		led_green: led_1 {
+			gpios = <&edge_connector 8 GPIO_ACTIVE_LOW>;
+			label = "RGB green channel";
+		};
+		led_blue: led_2 {
+			gpios = <&edge_connector 9 GPIO_ACTIVE_LOW>;
+			label = "RGB blue channel";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(8) (GPIO_ACTIVE_LOW | PWM_POLARITY_NORMAL)>;
+		};
+		pwm_led1: pwm_led_1 {
+			pwms = <&pwm0 1 PWM_MSEC(8) (GPIO_ACTIVE_LOW | PWM_POLARITY_NORMAL)>;
+		};
+		pwm_led2: pwm_led_2 {
+			pwms = <&pwm0 2 PWM_MSEC(8) (GPIO_ACTIVE_LOW | PWM_POLARITY_NORMAL)>;
+		};
+	};
+
+	nrf5340_reset: gpio-reset {
+		compatible = "sensoan,sgw2-nrf5340-reset";
+		status = "okay";
+		gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+	};
+
+	edge_connector: edge_connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <7 0 GPIO_AND_PIN(EDGE_CONN, 7) 0>,	/* LED_Red */
+				<8 0 GPIO_AND_PIN(EDGE_CONN, 8) 0>,	/* LED_Green */
+				<9 0 GPIO_AND_PIN(EDGE_CONN, 9) 0>,	/* LED_Blue */
+				<11 0 GPIO_AND_PIN(EDGE_CONN, 11) 0>,	/* BUTTON */
+				<17 0 GPIO_AND_PIN(EDGE_CONN, 17) 0>,	/* GPIO */
+				<18 0 GPIO_AND_PIN(EDGE_CONN, 18) 0>,	/* GPIO */
+				<19 0 GPIO_AND_PIN(EDGE_CONN, 19) 0>,	/* GPIO */
+				<20 0 GPIO_AND_PIN(EDGE_CONN, 20) 0>,	/* GPIO */
+				<21 0 GPIO_AND_PIN(EDGE_CONN, 21) 0>,	/* GPIO */
+				<22 0 GPIO_AND_PIN(EDGE_CONN, 22) 0>,	/* GPIO */
+				<23 0 GPIO_AND_PIN(EDGE_CONN, 23) 0>,	/* GPIO */
+				<31 0 GPIO_AND_PIN(EDGE_CONN, 31) 0>,	/* I2C_SDA */
+				<33 0 GPIO_AND_PIN(EDGE_CONN, 33) 0>,	/* I2C_SCL */
+				<38 0 GPIO_AND_PIN(EDGE_CONN, 38) 0>,	/* GPIO */
+				<39 0 GPIO_AND_PIN(EDGE_CONN, 39) 0>,	/* GPIO */
+				<40 0 GPIO_AND_PIN(EDGE_CONN, 40) 0>,	/* GPIO */
+				<41 0 GPIO_AND_PIN(EDGE_CONN, 41) 0>,	/* GPIO */
+				<42 0 GPIO_AND_PIN(EDGE_CONN, 42) 0>,	/* GPIO */
+				<48 0 GPIO_AND_PIN(EDGE_CONN, 48) 0>;	/* GPIO */
+	};
+
+	mcu_if: mcu_if {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 GPIO_AND_PIN(MCU_IF, 0) 0>,
+				<1 0 GPIO_AND_PIN(MCU_IF, 1) 0>,
+				<2 0 GPIO_AND_PIN(MCU_IF, 2) 0>,
+				<3 0 GPIO_AND_PIN(MCU_IF, 3) 0>,
+				<4 0 GPIO_AND_PIN(MCU_IF, 4) 0>,
+				<5 0 GPIO_AND_PIN(MCU_IF, 5) 0>,
+				<6 0 GPIO_AND_PIN(MCU_IF, 6) 0>;
+	};
+
+	aliases {
+		sw0 = &button0;
+		led0 = &led_red;
+		led1 = &led_green;
+		led2 = &led_blue;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+		pwm-led2 = &pwm_led2;
+		rgb-pwm = &pwm0;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led_blue;
+		spi-flash0 = &w25q80dv;
+		accel0 = &lis2dh;
+		watchdog0 = &wdt0;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+/* PWM0 is intended for RGB LED control */
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&sensorbus {
+	status= "okay";
+	lis2dh: lis2dh@18 {
+		status = "okay";
+		irq-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&flash_spi {
+	status = "okay";
+	cs-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+	w25q80dv: w25q80dv@0 {
+		status = "okay";
+	};
+};
+
+/* Include default memory partition configuration file */
+#include <common/nordic/nrf91xx_partition.dtsi>
