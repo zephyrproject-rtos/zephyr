@@ -45,6 +45,14 @@ static struct channel {
 #endif
 } channels[CHANNELS];
 
+#if defined(CONFIG_BT_CLASSIC)
+static struct br_channel {
+	uint8_t chan_id; /* Internal number that identifies L2CAP channel. */
+	struct bt_l2cap_br_chan br;
+	bool in_use;
+} br_channels[CHANNELS];
+#endif /* CONFIG_BT_CLASSIC */
+
 /* TODO Extend to support multiple servers */
 static struct bt_l2cap_server servers[SERVERS];
 
@@ -232,6 +240,101 @@ static struct channel *get_free_channel()
 
 	return NULL;
 }
+
+#if defined(CONFIG_BT_CLASSIC)
+static void br_connected_cb(struct bt_l2cap_chan *l2cap_chan)
+{
+	struct btp_l2cap_connected_ev ev;
+	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_br_chan, chan);
+	struct br_channel *chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
+	struct bt_conn_info info;
+
+	ev.chan_id = chan->chan_id;
+
+	/* TODO: ev.psm */
+	if (bt_conn_get_info(l2cap_chan->conn, &info) != 0) {
+		return;
+	}
+
+	switch (info.type) {
+	case BT_CONN_TYPE_BR:
+		ev.mtu_remote = sys_cpu_to_le16(chan->br.tx.mtu);
+		ev.mps_remote = sys_cpu_to_le16(chan->br.tx.mtu);
+		ev.mtu_local = sys_cpu_to_le16(chan->br.rx.mtu);
+		ev.mps_local = sys_cpu_to_le16(chan->br.rx.mtu);
+		ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&ev.address.a, info.br.dst);
+		break;
+	default:
+		/* Unsupported transport */
+		return;
+	}
+
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_CONNECTED, &ev, sizeof(ev));
+}
+
+static void br_disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
+{
+	struct btp_l2cap_disconnected_ev ev;
+	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_br_chan, chan);
+	struct br_channel *chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
+	struct bt_conn_info info;
+
+	(void)memset(&ev, 0, sizeof(struct btp_l2cap_disconnected_ev));
+
+	/* TODO: ev.result */
+	ev.chan_id = chan->chan_id;
+
+	chan->in_use = false;
+
+	/* TODO: ev.psm */
+	if (bt_conn_get_info(l2cap_chan->conn, &info) != 0) {
+		return;
+	}
+
+	switch (info.type) {
+	case BT_CONN_TYPE_BR:
+		ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&ev.address.a, info.br.dst);
+		break;
+	default:
+		/* Unsupported transport */
+		return;
+	}
+
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DISCONNECTED, &ev, sizeof(ev));
+}
+
+static const struct bt_l2cap_chan_ops br_l2cap_ops = {
+	.connected = br_connected_cb,
+	.disconnected = br_disconnected_cb,
+};
+
+static struct br_channel *get_free_br_channel(void)
+{
+	uint8_t i;
+	struct br_channel *chan;
+
+	for (i = 0U; i < CHANNELS; i++) {
+		if (br_channels[i].in_use) {
+			continue;
+		}
+
+		chan = &br_channels[i];
+
+		(void)memset(chan, 0, sizeof(*chan));
+		chan->chan_id = i;
+
+		br_channels[i].in_use = true;
+
+		return chan;
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_BT_CLASSIC */
 
 static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		       void *rsp, uint16_t *rsp_len)
@@ -513,14 +616,46 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 	return 0;
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+static int br_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+		     struct bt_l2cap_chan **l2cap_chan)
+{
+	struct br_channel *chan;
+
+	if (bt_conn_enc_key_size(conn) < req_keysize) {
+		return -EPERM;
+	}
+
+	if (authorize_flag) {
+		return -EACCES;
+	}
+
+	chan = get_free_br_channel();
+	if (chan == NULL) {
+		return -ENOMEM;
+	}
+
+	chan->br.chan.ops = &br_l2cap_ops;
+	chan->br.rx.mtu = DATA_MTU_INITIAL;
+
+	*l2cap_chan = &chan->br.chan;
+
+	return 0;
+}
+#else
+static int br_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+		     struct bt_l2cap_chan **l2cap_chan)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static uint8_t listen(const void *cmd, uint16_t cmd_len,
 		      void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_l2cap_listen_cmd *cp = cmd;
 	struct bt_l2cap_server *server;
 	uint16_t psm = sys_le16_to_cpu(cp->psm);
-
-	/* TODO: Handle cmd->transport flag */
 
 	if (psm == 0 || !is_free_psm(psm)) {
 		return BTP_STATUS_FAILED;
@@ -531,7 +666,6 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	server->accept = accept;
 	server->psm = psm;
 
 	switch (cp->response) {
@@ -554,8 +688,19 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	if (bt_l2cap_server_register(server) < 0) {
-		server->psm = 0U;
+	if (cp->transport == BTP_L2CAP_TRANSPORT_LE) {
+		server->accept = accept;
+		if (bt_l2cap_server_register(server) < 0) {
+			server->psm = 0U;
+			return BTP_STATUS_FAILED;
+		}
+	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && (cp->transport == BTP_L2CAP_TRANSPORT_BREDR)) {
+		server->accept = br_accept;
+		if (bt_l2cap_br_server_register(server) < 0) {
+			server->psm = 0U;
+			return BTP_STATUS_FAILED;
+		}
+	} else {
 		return BTP_STATUS_FAILED;
 	}
 
