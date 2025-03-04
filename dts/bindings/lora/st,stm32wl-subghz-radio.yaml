@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Fabio Baltieri
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32WL SUBGHZ Radio
+description: STM32WL Sub-GHz Radio
 
 compatible: "st,stm32wl-subghz-radio"
 
