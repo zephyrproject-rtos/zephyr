@@ -1,0 +1,6 @@
+board:
+  name: twatch_s3
+  full_name: T-Watch S3
+  vendor: lilygo
+  socs:
+  - name: esp32s3
