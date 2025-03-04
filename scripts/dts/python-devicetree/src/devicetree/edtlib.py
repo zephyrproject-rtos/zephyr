@@ -112,8 +112,21 @@ class Binding:
     path:
       The absolute path to the file defining the binding.
 
+    title:
+      The free-form title of the binding (optional).
+
+      When the content in the 'description:' is too long, the 'title:' can
+      be used as a heading for the extended description. Typically, it serves
+      as a description of the hardware model. For example:
+
+      title: Nordic GPIO
+
+      description: |
+        Descriptions and example nodes related to GPIO.
+        ...
+
     description:
-      The free-form description of the binding, or None.
+      The free-form description of the binding.
 
     compatible:
       The compatible string the binding matches.
@@ -171,7 +184,7 @@ class Binding:
 
     def __init__(self, path: Optional[str], fname2path: dict[str, str],
                  raw: Any = None, require_compatible: bool = True,
-                 require_description: bool = True):
+                 require_description: bool = True, require_title: bool = False):
         """
         Binding constructor.
 
@@ -199,6 +212,12 @@ class Binding:
           "description:" line. If False, a missing "description:" is
           not an error. Either way, "description:" must be a string
           if it is present in the binding.
+
+        require_title:
+          If True, it is an error if the binding does not contain a
+          "title:" line. If False, a missing "title:" is not an error.
+          Either way, "title:" must be a string if it is present in
+          the binding.
         """
         self.path: Optional[str] = path
         self._fname2path: dict[str, str] = fname2path
@@ -215,8 +234,8 @@ class Binding:
         self.raw: dict = self._merge_includes(raw, self.path)
 
         # Recursively initialize any child bindings. These don't
-        # require a 'compatible' or 'description' to be well defined,
-        # but they must be dicts.
+        # require a 'compatible', 'description' or 'title' to be well
+        # defined, but they must be dicts.
         if "child-binding" in raw:
             if not isinstance(raw["child-binding"], dict):
                 _err(f"malformed 'child-binding:' in {self.path}, "
@@ -230,7 +249,7 @@ class Binding:
             self.child_binding = None
 
         # Make sure this is a well defined object.
-        self._check(require_compatible, require_description)
+        self._check(require_compatible, require_description, require_title)
 
         # Initialize look up tables.
         self.prop2specs: dict[str, 'PropertySpec'] = {}
@@ -248,6 +267,11 @@ class Binding:
             compat = ""
         basename = os.path.basename(self.path or "")
         return f"<Binding {basename}" + compat + ">"
+
+    @property
+    def title(self) -> Optional[str]:
+        "See the class docstring"
+        return self.raw.get('title')
 
     @property
     def description(self) -> Optional[str]:
@@ -362,7 +386,8 @@ class Binding:
 
         return self._merge_includes(contents, path)
 
-    def _check(self, require_compatible: bool, require_description: bool):
+    def _check(self, require_compatible: bool, require_description: bool,
+               require_title: bool):
         # Does sanity checking on the binding.
 
         raw = self.raw
@@ -376,6 +401,13 @@ class Binding:
         elif require_compatible:
             _err(f"missing 'compatible' in {self.path}")
 
+        if "title" in raw:
+            title = raw["title"]
+            if not isinstance(title, str) or not title:
+                _err(f"malformed or empty 'title' in {self.path}")
+        elif require_title:
+            _err(f"missing 'title' in {self.path}")
+
         if "description" in raw:
             description = raw["description"]
             if not isinstance(description, str) or not description:
@@ -385,8 +417,8 @@ class Binding:
 
         # Allowed top-level keys. The 'include' key should have been
         # removed by _load_raw() already.
-        ok_top = {"description", "compatible", "bus", "on-bus",
-                  "properties", "child-binding"}
+        ok_top = {"title", "description", "compatible", "bus",
+                  "on-bus", "properties", "child-binding"}
 
         # Descriptive errors for legacy bindings.
         legacy_errors = {
@@ -396,7 +428,6 @@ class Binding:
             "parent": "use 'on-bus: <bus>' instead",
             "parent-bus": "use 'on-bus: <bus>' instead",
             "sub-node": "use 'child-binding' instead",
-            "title": "use 'description' instead",
         }
 
         for key in raw:
@@ -3326,7 +3357,8 @@ _DEFAULT_PROP_BINDING: Binding = Binding(
             for name in _DEFAULT_PROP_TYPES
         },
     },
-    require_compatible=False, require_description=False,
+    require_compatible=False,
+    require_description=False,
 )
 
 _DEFAULT_PROP_SPECS: dict[str, PropertySpec] = {
