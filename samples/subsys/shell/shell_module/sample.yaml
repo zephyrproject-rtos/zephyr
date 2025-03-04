@@ -11,7 +11,7 @@ tests:
     integration_platforms:
       - native_sim
     extra_configs:
-      - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
   sample.shell.shell_module.usb:
     depends_on: usb_device
     tags:
