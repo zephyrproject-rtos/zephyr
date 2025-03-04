@@ -63,6 +63,11 @@ New APIs and options
   like you need to add more details, add them in the API documentation code
   instead.
 
+* Counter
+
+  * Add function ``counter_reset`` to the counter subsystem to reset the counter
+    value to zero. (:github:`32157`)
+
 New Boards
 **********
 
