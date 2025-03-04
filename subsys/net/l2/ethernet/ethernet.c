@@ -194,6 +194,10 @@ enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 }
 #endif
 
+#ifdef __clang__
+#error "Building with clang"
+#endif
+
 #if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
 static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_addr *addr,
 				      bool is_joined)
