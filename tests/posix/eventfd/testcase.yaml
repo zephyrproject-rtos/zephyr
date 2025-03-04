@@ -7,6 +7,8 @@ common:
   platform_key:
     - arch
     - simulation
+  integration_platforms:
+    - qemu_riscv64
 tests:
   portability.posix.eventfd: {}
   portability.posix.eventfd.minimal:
