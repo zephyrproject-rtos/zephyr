@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import collections
 import copy
+import fnmatch
 import itertools
 import json
 import logging
@@ -507,6 +508,15 @@ class TestPlan:
                     continue
 
                 logger.debug("Found possible testsuite in " + dirpath)
+
+                skip_path = False
+                for test_exclude_path in self.env.test_exclude_paths:
+                    if fnmatch.fnmatch(dirpath, test_exclude_path):
+                        skip_path = True
+                        break
+                if skip_path:
+                    logger.debug(f"Skipping {dirpath} due to excludes")
+                    continue
 
                 suite_yaml_path = os.path.join(dirpath, filename)
                 suite_path = os.path.dirname(suite_yaml_path)

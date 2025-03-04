@@ -146,6 +146,15 @@ Artificially long but functional example:
              "'tests/' directories at the base of the Zephyr tree.")
 
     case_select.add_argument(
+        "--testsuite-exclude-path", action="append", default=[], type = norm_path,
+        help="Directory to exclude from searching for test cases. "
+             "This is a filter pattern for paths provided with the testsuite-root option. "
+             "Supports Unix shell-style wildcards, e.g. *samples/sub* (fnmatch). "
+             "The exclude pattern is matched against an absolute path for the test suite. "
+             "This option can be used multiple times, multiple invocations "
+             "are treated as a logical 'or' relationship.")
+
+    case_select.add_argument(
         "-f",
         "--only-failed",
         action="store_true",
@@ -1063,6 +1072,7 @@ class TwisterEnv:
         logger.info(f"Using {self.generator}..")
 
         self.test_roots = options.testsuite_root
+        self.test_exclude_paths = options.testsuite_exclude_path
 
         if not isinstance(options.board_root, list):
             self.board_roots = [options.board_root]

@@ -1,0 +1,17 @@
+# This file contains information on what files are associated with which
+# twister testsuite excludes patterns.
+#
+# File format is the same as for tags.yaml - please refer to its description.
+
+# zephyr-keep-sorted-start
+"*tests/kernel*":
+  files:
+    - kernel/
+    - arch/
+    - tests/kernel/
+
+"*tests/posix*":
+  files:
+    - lib/posix/
+    - tests/posix/
+# zephyr-keep-sorted-stop
