@@ -5,7 +5,7 @@ description: ARM PL022 SPI
 
 compatible: "arm,pl022"
 
-include: [spi-controller.yaml, pinctrl-device.yaml]
+include: [spi-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   reg:
