@@ -1,0 +1,48 @@
+# Copyright (c) 2023-2024 tinyVision.ai
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_DWC3
+	bool "Synopsys USB device controller driver"
+	default y
+	depends on DT_HAS_SNPS_DWC3_ENABLED
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select UDC_BUF_FORCE_NOCACHE
+	imply NOCACHE_MEMORY
+	help
+	  Synopsys DWC3 USB device controller driver.
+
+config UDC_DWC3_SHELL
+	bool "Enable debug shell commands for the DWC3 driver"
+	default y
+	depends on UDC_DWC3 && SHELL
+	help
+	  Debug commands that permit to dump the state of the transfer,
+	  events, and dump all registers.
+
+config UDC_DWC3_EVENTS_NUM
+	int "Number of events in the event ring buffer"
+	default 16
+	help
+	  It is typically not needed to increase the number of events, but
+	  if it were to happen due to some rare condition, increasing this
+	  number could be useful.
+
+config UDC_DWC3_EVENTS_POLL_MS
+	int "Sleep duration at which the USB driver checks for event"
+	default 10
+	help
+	  This is a temporary workaround until IRQs are enabled again on the
+	  driver. In practice, though, polling does not impact performance
+	  since as an event is processed, a new event is already available.
+	  As there is a very fast link (5 Gbit/s) and a slow MCU (80 MHz)
+	  in the system this driver was integrated.
+
+config UDC_DWC3_TRB_NUM
+	int "Number of buffers for each non-control endpoint"
+	default 4
+	range 3 32
+	help
+	  This is a general knob for the number of buffers present for each
+	  endpoint. This does not affect control endpoints. The default is
+	  enough for most conditions, but for performance and debug purposes,
+	  increasing could reveal useful.
