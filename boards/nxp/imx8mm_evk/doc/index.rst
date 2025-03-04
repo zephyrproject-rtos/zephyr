@@ -45,29 +45,7 @@ Supported Features
 The Zephyr imx8mm_evk board for Cortex-A53 configuration supports the following hardware
 features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| GIC-v3    | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| ARM TIMER | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RDC       | on-chip    | Resource Domain Controller          |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | timer                               |
-+-----------+------------+-------------------------------------+
-| ENET      | on-chip    | ethernet port                       |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | GPIO ports                          |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | I2C bus                             |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 The Zephyr imx8mm_evk board for Cortex-M4 supports the following hardware
 features:
