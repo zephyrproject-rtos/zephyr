@@ -1,12 +1,14 @@
 /* hci_core.h - Bluetooth HCI core access */
 
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/devicetree.h>
 
 /* LL connection parameters */
@@ -271,7 +273,7 @@ struct bt_le_per_adv_sync {
 
 struct bt_dev_le {
 	/* LE features */
-	uint8_t			features[8];
+	uint8_t features[BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE];
 	/* LE states */
 	uint64_t			states;
 
