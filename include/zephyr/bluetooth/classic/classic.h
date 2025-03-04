@@ -201,6 +201,14 @@ int bt_br_set_discoverable(bool enable, bool limited);
  */
 int bt_br_set_connectable(bool enable);
 
+/** @brief Check if a Bluetooth classic device address is bonded.
+ *
+ *  @param addr Bluetooth classic device address.
+ *
+ *  @return true if @p addr is bonded
+ */
+bool bt_br_bond_exists(const bt_addr_t *addr);
+
 /**
  * @}
  */
