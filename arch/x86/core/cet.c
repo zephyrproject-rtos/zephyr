@@ -12,6 +12,37 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/x86/msr.h>
+#include <zephyr/arch/x86/cet.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+int z_x86_thread_attach_shadow_stack(k_tid_t thread,
+				     z_x86_shadow_stack_t *stack,
+				     size_t stack_size)
+{
+	/* Can't attach to NULL */
+	if (stack == NULL) {
+		LOG_ERR("Can't set NULL shadow stack for thread %p\n", thread);
+		return -EINVAL;
+	}
+
+	/* Or if the thread already has a shadow stack. */
+	if (thread->arch.shstk_addr != NULL) {
+		LOG_ERR("Shadow stack already set up for thread %p\n", thread);
+		return -EINVAL;
+	}
+
+	thread->arch.shstk_addr = stack + (stack_size -
+					   5 * sizeof(*stack)) / sizeof(*stack);
+	thread->arch.shstk_size = stack_size;
+	thread->arch.shstk_base = stack;
+
+	return 0;
+}
+#endif
 
 void z_x86_cet_enable(void)
 {

@@ -13,6 +13,7 @@
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <cet.h>
 #ifdef CONFIG_ACPI
 #include <zephyr/arch/x86/cpuid.h>
 #include <zephyr/acpi/acpi.h>
@@ -121,6 +122,13 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 	/* Mask applied to RFLAGS when making a syscall */
 	z_x86_msr_write(X86_FMASK_MSR, EFLAGS_SYSCALL);
 #endif
+
+#ifdef CONFIG_X86_CET
+	z_x86_cet_enable();
+#ifdef CONFIG_X86_CET_IBT
+	z_x86_ibt_enable();
+#endif /* CONFIG_X86_CET_IBT */
+#endif /* CONFIG_X86_CET */
 
 	/* Enter kernel, never return */
 	cpuboot->ready++;
