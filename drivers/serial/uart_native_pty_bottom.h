@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * "Bottom" of native ptty uart driver
+ * "Bottom" of native PTY UART driver
  * When built with the native_simulator this will be built in the runner context,
  * that is, with the host C library, and with the host include paths.
  */
@@ -22,10 +22,10 @@ extern "C" {
 
 int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char);
 int np_uart_slave_connected(int fd);
-int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
-		      bool do_auto_attach, bool wait_pts);
-int np_uart_ptty_get_stdin_fileno(void);
-int np_uart_ptty_get_stdout_fileno(void);
+int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
+		     bool do_auto_attach, bool wait_pts);
+int np_uart_pty_get_stdin_fileno(void);
+int np_uart_pty_get_stdout_fileno(void);
 
 #ifdef __cplusplus
 }

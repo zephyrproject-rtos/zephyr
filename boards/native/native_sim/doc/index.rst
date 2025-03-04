@@ -310,10 +310,10 @@ The following peripherals are currently provided with this board:
 **UART/Serial**
    Two optional native UART drivers are available:
 
-   **PTTY driver (UART_NATIVE_POSIX)**
-      With this driver, one or two Zephyr UART devices can be created. These
+   **PTY driver (UART_NATIVE_PTY)**
+      With this driver, Zephyr UART devices can be created. These
       can be connected to the Linux process stdin/stdout or a newly created
-      pseudo-tty. For more information refer to the section `PTTY UART`_.
+      pseudo-tty. For more information refer to the section `PTY UART`_.
 
    **TTY driver (UART_NATIVE_TTY)**
       An UART driver for interacting with host-attached serial port devices
@@ -510,44 +510,46 @@ The following peripherals are currently provided with this board:
 
 .. _native_ptty_uart:
 
-PTTY UART
+PTY UART
 =========
 
-This driver can be configured with :kconfig:option:`CONFIG_UART_NATIVE_POSIX`
-to instantiate up to two UARTs. By default only one UART is enabled.
-With :kconfig:option:`CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE`
-you can enable the second one.
+This driver is automatically enabled when devicetree contains nodes with the
+``"zephyr,native-pty-uart"`` compatible property and ``okay`` status and
+:kconfig:option:`CONFIG_SERIAL` is set.
+By default one ready UART of this type is setup in DTS, but any number can be enabled as desired.
 
-For the first UART, it can link it to a new
-pseudoterminal (i.e. :file:`/dev/pts{<nbr>}`), or map the UART input and
-output to the executable's ``stdin`` and ``stdout``.
-This is chosen by selecting either
-:kconfig:option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
-:kconfig:option:`CONFIG_NATIVE_UART_0_ON_STDINOUT`
-For interactive use with the :ref:`shell_api`, choose the first (OWN_PTY) option.
-The second (STDINOUT) option can be used with the shell for automated
-testing, such as when piping other processes' output to control it.
-This is because the shell subsystem expects access to a raw terminal,
+Normally these UARTs are connected to new pseudoterminals PTYs, i.e. :file:`/dev/pts{<nbr>}`,
+but it is also possible to map one of them to the executable's ``stdin`` and ``stdout``.
+This can be done in two ways, either with the command line option ``--<uart_name>_stdinout``
+(where ``<uart_name>`` is the UART DTS node name), or, for the first PTY UART instance by chosing
+:kconfig:option:`CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT` instead of the default
+:kconfig:option:`CONFIG_UART_NATIVE_PTY_0_ON_OWN_PTY`.
+For interactive use with the :ref:`shell_api`, it is recommended to choose the PTY option.
+The ``STDINOUT`` option can be used for automated testing, such as when piping other processes'
+output to control it. This is because the shell subsystem expects access to a raw terminal,
 which (by default) a normal Linux terminal is not.
 
-When :kconfig:option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` is chosen, the name of the
-newly created UART pseudo-terminal will be displayed in the console.
-If you want to interact with it manually, you should attach a terminal emulator
-to it. This can be done, for example with the command:
+When a UART is connected to a new PTY, the name of the newly created UART pseudo-terminal will be
+displayed in the console.
+If you want to interact with it manually, you should attach a terminal emulator to it.
+This can be done, for example with the command:
 
 .. code-block:: console
 
-   $ xterm -e screen /dev/<ttyn> &
+   $ xterm -e screen /dev/<ptyn> &
+   # Or if you prefer gnome-terminal:
+   $ gnome-terminal -- screen /dev/<ptyn> &
 
-where :file:`/dev/tty{<n>}` should be replaced with the actual TTY device.
+where :file:`/dev/{<ptyn>}` should be replaced with the actual PTY device.
 
-You may also chose to automatically attach a terminal emulator to the first UART
-by passing the command line option ``-attach_uart`` to the executable.
-The command used for attaching to the new shell can be set with the command line
-option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
-:kconfig:option:`CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD`.
-Note that the default command assumes both ``xterm`` and ``screen`` are
-installed in the system.
+You may also chose to automatically attach a terminal emulator to any of these UARTs.
+To automatically attach one to all these UARTs, pass the command line option ``-attach_uart`` to the
+executable. To automatically attach one to a single UART use ``-<uart_name>_attach_uart``
+The command used for attaching to the new shell can be set for all UARTs with the command line
+option ``-attach_uart_cmd=<"cmd">``, or for each individual UART with
+``-<uart_name>_attach_uart_cmd``. Where the default command is given by
+:kconfig:option:`CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD`.
+Note that the default command assumes both ``xterm`` and ``screen`` are installed in the system.
 
 This driver only supports poll mode. Interrupt and async mode are not supported.
 Neither runtime configuration or line control are supported.
@@ -713,7 +715,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      Logger backend, :ref:`Native backend <nsim_back_logger>`, :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`, All
      Offloaded sockets, :ref:`nsim_per_offloaded_sockets`, :kconfig:option:`CONFIG_NET_NATIVE_OFFLOADED_SOCKETS`, All
      RTC, RTC emul, :kconfig:option:`CONFIG_RTC_EMUL`, All
-     Serial, :ref:`UART native posix/PTTY <native_ptty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_POSIX`, All
+     Serial, :ref:`UART native PTY <native_ptty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_PTY`, All
      Serial, :ref:`UART native TTY <native_tty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, All
      SPI, SPI emul, :kconfig:option:`CONFIG_SPI_EMUL`, All
      System tick, Native_posix timer, :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER`, All
