@@ -5,3 +5,12 @@ tests:
       - drivers
       - i2c
     filter: dt_alias_exists("gy271")
+  drivers.i2c.api.renesas_sci_b_i2c:
+    depends_on: i2c
+    tags:
+      - drivers
+      - i2c
+    filter: dt_alias_exists("gy271") and CONFIG_I2C_RENESAS_RA_SCI_B
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/${BOARD}_sci_b_i2c.overlay"
+      - CONF_FILE="./prj.conf ./boards/${BOARD}_sci_b_i2c.conf"
