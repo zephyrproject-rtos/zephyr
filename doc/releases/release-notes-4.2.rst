@@ -79,6 +79,10 @@ New Drivers
   Same as above for boards, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* Sensors
+
+   * :dtcompatible:`we,wsen-itds-2533020201601`
+
 New Samples
 ***********
 
