@@ -1,0 +1,83 @@
+description: Microchip MCP356xR
+
+compatible: "microchip,mcp356xr"
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+  address:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+    required: true
+    description: |
+      ADC address, must be between 0 and 4. In most cases address is "1".
+  analog-clock-prescaler:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    required: true
+    description: |
+      Prescaler to use to derive the analog (AMCKL) from the master clock (MCLK).
+      Valid values are:
+      - MCP356XR_ANALOG_CLOCK_NO_DIV
+      - MCP356XR_ANALOG_CLOCK_DIV_2
+      - MCP356XR_ANALOG_CLOCK_DIV_4
+      - MCP356XR_ANALOG_CLOCK_DIV_8
+  boost-current-bias:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    required: true
+    description: |
+      Delta-sigma modulator current biasing configuration.
+      Valid values are:
+      - MCP356XR_BOOST_CURRENT_BIAS_DIV_2
+      - MCP356XR_BOOST_CURRENT_BIAS_MUL_0_66
+      - MCP356XR_BOOST_CURRENT_BIAS_MUL_1
+      - MCP356XR_BOOST_CURRENT_BIAS_MUL_2
+  vref-settle-time-ms:
+    type: int
+    description: |
+      Time in milliseconds to wait for after the selected voltage reference has changed
+      in order to stabilize itself. This is necessary if a mix of channels with different
+      reference voltages is used.
+  irq-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the MCP356XR's IRQ pin
+  irq-pin-drive-open-drain:
+    type: boolean
+    description: |
+      Drives the MCP356XR's IRQ pin in an open drain fashion
+  enable-adc-offset-cancellation:
+    type: boolean
+    description: |
+      Enable ADC induced offset cancellation
+  enable-internal-vref-offset-cancellation:
+    type: boolean
+    description: |
+      Enable internal voltage reference induced offset cancellation
+  use-internal-clock:
+    type: boolean
+    description: |
+      Use the internal ADC clock instead of providing it via the MCLK pin
+  enable-analog-clock-output:
+    type: boolean
+    description: |
+      Output AMCLK on the MCLK pin only effective when use-internal-clock is set
+
+io-channel-cells:
+  - input
