@@ -13,7 +13,8 @@ export BOARD="nrf5340bsim/nrf5340/cpuapp"
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-app=tests/bsim/bluetooth/host/l2cap/stress sysbuild=1 compile
+app=tests/bsim/bluetooth/host/l2cap/stress sysbuild=1 \
+ cmake_extra_args=-DEXTRA_DTC_OVERLAY_FILE=bt_mon.overlay compile
 #app=tests/bsim/bluetooth/host/l2cap/stress conf_file=prj_nofrag.conf compile
 #app=tests/bsim/bluetooth/host/l2cap/stress conf_file=prj_syswq.conf compile
 

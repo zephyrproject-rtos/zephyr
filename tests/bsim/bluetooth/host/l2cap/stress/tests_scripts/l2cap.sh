@@ -2,6 +2,8 @@
 # Copyright (c) 2022 Nordic Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
+set -x
+
 BOARD="nrf5340bsim/nrf5340/cpuapp"
 #BOARD="nrf52_bsim"
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
@@ -15,9 +17,13 @@ bsim_exe=./bs_${BOARD_TS}_tests_bsim_bluetooth_host_l2cap_stress_prj_conf
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central -rs=43
+#ATTACH_CMD=("btmon" "--tty" "%s" "--tty-speed" "115200" "&")
+ATTACH_CMD="xterm -e btmon --tty %s --tty-speed 115200 &"
 
-Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral -rs=42
+Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central -rs=43 \
+    -uart0_pty_attach_cmd="${ATTACH_CMD}" -uart_pty_wait
+
+Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral -rs=42 #--uart0_pty --uart_pty_wait
 #Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=2 -testid=peripheral -rs=10
 #Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=3 -testid=peripheral -rs=23
 #Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=4 -testid=peripheral -rs=7884

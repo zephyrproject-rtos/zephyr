@@ -1,0 +1,18 @@
+// /dts-v1/;
+
+// /delete-node/ &uart0;
+
+/ {
+	chosen {
+		zephyr,bt-mon-uart = &uart0;
+	};
+
+/*
+	uart0: uart {
+		status = "okay";
+		compatible = "zephyr,native-tty-uart";
+		current-speed = <115200>;
+		serial-port = "/dev/ttyUSB20";
+	};
+	*/
+};
