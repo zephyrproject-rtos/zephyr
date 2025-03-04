@@ -168,12 +168,6 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
 
 	    Power off and on the board again.
 
-         Run a serial host program to connect to your board:
-
-         .. code-block:: console
-
-            $ minicom -D /dev/ttyACM0
-
       .. group-tab:: Serial Boot Loader (USB)
 
          Additionally, connect the STM32N6570_DK to your host computer using the USB port.

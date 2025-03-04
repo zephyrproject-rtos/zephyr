@@ -153,7 +153,7 @@ First, connect the NUCLEO-N657X0-Q to your host computer using the ST-Link USB p
             :board: nucleo_n657x0_q
             :goals: build flash
 
-.. note::
+         .. note::
             For flashing, before powering the board, set the boot pins in the following configuration:
 
             * BOOT0: 0
@@ -164,12 +164,6 @@ First, connect the NUCLEO-N657X0-Q to your host computer using the ST-Link USB p
             * BOOT1: 0
 
 	    Power off and on the board again.
-
-         Run a serial host program to connect to your board:
-
-.. code-block:: console
-
-   $ minicom -D /dev/ttyACM0
 
       .. group-tab:: Serial Boot Loader (USB)
 
@@ -186,10 +180,10 @@ First, connect the NUCLEO-N657X0-Q to your host computer using the ST-Link USB p
          Build and load an application using ``nucleo_n657x0_q/stm32n657xx/sb`` target (you
          can also use the shortened form: ``nucleo_n657x0_q//sb``)
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: nucleo_n657x0_q
-   :goals: build flash
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: nucleo_n657x0_q
+            :goals: build flash
 
 
 Run a serial host program to connect to your board:
