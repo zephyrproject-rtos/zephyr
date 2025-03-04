@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation
  * Copyright (c) 2018,2021 Nordic Semiconductor ASA
+ * Copyright (c) 2025, Muhammad Waleed Badar
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,6 +142,8 @@ extern "C" {
 #define HID_USAGE_GEN_LEDS		0x08
 /** HID Button Usage page */
 #define HID_USAGE_GEN_BUTTON		0x09
+/** HID Generic Consumer DEvices Usage page */
+#define HID_USAGE_GEN_CONSUMER		0x0C
 
 /** HID Generic Desktop Undefined Usage ID */
 #define HID_USAGE_GEN_DESKTOP_UNDEFINED	0x00
@@ -513,6 +516,23 @@ extern "C" {
 }
 
 /**
+ * @brief Simple HID consumer report descriptor.
+ */
+#define HID_CONSUMER_REPORT_DESC() {				\
+	HID_USAGE_PAGE(HID_USAGE_GEN_CONSUMER),                 \
+	HID_USAGE(0x01),              \
+	HID_COLLECTION(HID_COLLECTION_APPLICATION),         \
+		HID_LOGICAL_MIN8(0),                            \
+		HID_LOGICAL_MAX16(0x3c, 0x04),                  \
+		HID_USAGE_MIN8(0),                              \
+		HID_USAGE_MAX16(0x3c, 0x04),                    \
+		HID_REPORT_COUNT(1),                            \
+		HID_REPORT_SIZE(16),                            \
+		HID_INPUT(0x00),                                \
+	HID_END_COLLECTION,                                 \
+}
+
+/**
  * @brief HID keyboard button codes.
  */
 enum hid_kbd_code {
@@ -637,6 +657,37 @@ enum hid_kbd_led {
 	HID_KBD_LED_SCROLL_LOCK	= 0x04,
 	HID_KBD_LED_COMPOSE	= 0x08,
 	HID_KBD_LED_KANA	= 0x10,
+};
+
+/**
+ * @brief HID consumer control codes.
+ */
+enum hid_consumer_control {
+	/* Media Playback Controls */
+	HID_CONSUMER_PLAY             = 0xB0,
+	HID_CONSUMER_PAUSE            = 0xB1,
+	HID_CONSUMER_RECORD           = 0xB2,
+	HID_CONSUMER_FAST_FORWARD     = 0xB3,
+	HID_CONSUMER_REWIND           = 0xB4,
+	HID_CONSUMER_SCAN_NEXT_TRACK  = 0xB5,
+	HID_CONSUMER_SCAN_PREV_TRACK  = 0xB6,
+	HID_CONSUMER_STOP             = 0xB7,
+	HID_CONSUMER_EJECT            = 0xB8,
+	HID_CONSUMER_RANDOM_PLAY      = 0xB9,
+	HID_CONSUMER_PLAY_PAUSE       = 0xCD,
+
+	/* Audio Control */
+	HID_CONSUMER_VOLUME           = 0xE0,
+	HID_CONSUMER_BALANCE          = 0xE1,
+	HID_CONSUMER_MUTE             = 0xE2,
+	HID_CONSUMER_BASS             = 0xE3,
+	HID_CONSUMER_TREBLE           = 0xE4,
+	HID_CONSUMER_BASS_BOOST       = 0xE5,
+	HID_CONSUMER_SURROUND_MODE    = 0xE6,
+	HID_CONSUMER_LOUDNESS         = 0xE7,
+	HID_CONSUMER_MPX              = 0xE8,
+	HID_CONSUMER_VOL_UP           = 0xE9,
+	HID_CONSUMER_VOL_DOWN         = 0xEA,
 };
 
 /**
