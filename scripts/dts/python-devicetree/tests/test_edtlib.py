@@ -223,6 +223,34 @@ def test_pinctrl():
         edtlib.PinCtrl(node=node, name='two', conf_nodes=[state_1, state_2])
     ]
 
+def test_gpio():
+    '''Test GPIO controllers.'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    assert not isinstance(edt.get_node("/"), edtlib.GpioController)
+
+    gpio_1 = edt.get_node("/gpio-1")
+    assert isinstance(gpio_1, edtlib.GpioController)
+    assert gpio_1.n_cells == 2
+    assert gpio_1.reserved_ranges == []
+    assert gpio_1.reserved_gpios == []
+
+    gpio_2 = edt.get_node("/gpio-2")
+    assert isinstance(gpio_2, edtlib.GpioController)
+    assert gpio_2.n_cells == 3
+    assert gpio_2.reserved_ranges == [edtlib.GpioReservedRange(node=gpio_2, start=3, size=1)]
+    assert gpio_2.reserved_gpios == [3]
+
+    gpio_3 = edt.get_node("/gpio-3")
+    assert isinstance(gpio_3, edtlib.GpioController)
+    assert gpio_3.n_cells == 2
+    assert gpio_3.reserved_ranges == [
+        edtlib.GpioReservedRange(node=gpio_3, start=3, size=1),
+        edtlib.GpioReservedRange(node=gpio_3, start=10, size=2)
+    ]
+    assert gpio_3.reserved_gpios == [3, 10, 11]
+
 def test_hierarchy():
     '''Test Node.parent and Node.children'''
     with from_here():

@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: GPIO controller for bindings tests
+
+compatible: "gpio-controller"
+
+# The property definitions for gpio-controller and #gpio-cells are
+# intentionally omitted from here. The behavior of a GPIO controller
+# is defined in dt-schema and the #gpio-cells property is implicitly
+# defined in the DT Spec itself, so we want the devicetree package to
+# behave appropriately regardless of what may or may not be in the
+# Zephyr-specific bindings.
