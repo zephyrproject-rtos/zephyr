@@ -6,7 +6,7 @@
 
 SIMULATION_ID="cap_broadcast_reception"
 VERBOSITY_LEVEL=2
-NR_OF_DEVICES=3
+NR_OF_DEVICES=4
 EXECUTE_TIMEOUT=180
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
@@ -20,12 +20,16 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -RealEncryption=1 -rs=46 -D=${NR_OF_DEVICES}
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=broadcast_source \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=cap_initiator_broadcast \
   -RealEncryption=1 -rs=23 -D=${NR_OF_DEVICES}
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=cap_acceptor_broadcast_reception \
   -RealEncryption=1 -rs=69 -D=${NR_OF_DEVICES} -start_offset=7e3
+
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=cap_acceptor_broadcast_reception \
+  -RealEncryption=1 -rs=87 -D=${NR_OF_DEVICES} -start_offset=7e3
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
