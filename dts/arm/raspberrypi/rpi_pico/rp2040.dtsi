@@ -395,6 +395,8 @@
 
 		pio0: pio@50200000 {
 			compatible = "raspberrypi,pico-pio";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x50200000 DT_SIZE_K(4)>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO0>;
@@ -403,6 +405,8 @@
 
 		pio1: pio@50300000 {
 			compatible = "raspberrypi,pico-pio";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x50300000 DT_SIZE_K(4)>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO1>;
