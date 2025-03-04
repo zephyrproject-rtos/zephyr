@@ -23,8 +23,8 @@ For an example of the settings subsystem refer to :zephyr:code-sample:`settings`
 
 .. note::
 
-   As of Zephyr release 2.1 the recommended backend for non-filesystem
-   storage is :ref:`NVS <nvs_api>`.
+   As of Zephyr release 4.1 the recommended backend for non-filesystem
+   storage is :ref:`ZMS <zms_api>`.
 
 Handlers
 ********
