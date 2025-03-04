@@ -21,50 +21,74 @@ set_compiler_property(PROPERTY optimization_size_aggressive -Ohz)
 # This section covers flags related to warning levels #
 #######################################################
 
-# Property for standard warning base in Zephyr, this will always be set when
-# compiling.
-set_compiler_property(PROPERTY warning_base
-  --diag_error=Pe223     # function "xxx" declared implicitly
-  --diag_warning=Pe054   # too few arguments in invocation of macro
-  --diag_warning=Pe144   # a value of type "void *" cannot be used to initialize an entity of type [...] "void (*)(struct onoff_manager *, int)"
-  --diag_warning=Pe167   # argument of type "void *" is incompatible with [...] "void (*)(void *, void *, void *)"
-  --diag_suppress=Pe1675 # unrecognized GCC pragma
-  --diag_suppress=Pe111  # statement is unreachable
-  --diag_suppress=Pe1143 # arithmetic on pointer to void or function type
-  --diag_suppress=Pe068) # integer conversion resulted in a change of sign)
+# -DW=... settings
+#
+# W=1 - warnings that may be relevant and does not occur too often
+# W=2 - warnings that occur quite often but may still be relevant
+# W=3 - the more obscure warnings, can most likely be ignored
 
+set(IAR_SUPPRESSED_WARNINGS)
 
-set(IAR_WARNING_DW_1
-  --diag_suppress=Pe188  # enumerated type mixed with another type
-  --diag_suppress=Pe128  # loop is not reachable
-  --diag_suppress=Pe550  # variable "res" was set but never used
-  --diag_suppress=Pe546  # transfer of control bypasses initialization
-  --diag_suppress=Pe186) # pointless comparison of unsigned integer with zero
+# Set basic suppressed warning first
 
-set(IAR_WARNING_DW2
-  --diag_suppress=Pe1097 # unknown attribute
-  --diag_suppress=Pe381  # extra ";" ignored
-  --diag_suppress=Pa082  # undefined behavior: the order of volatile accesses is undefined
-  --diag_suppress=Pa084  # pointless integer comparison, the result is always false
-  --diag_suppress=Pe185  # dynamic initialization in unreachable code )
-  --diag_suppress=Pe167  # argument of type "onoff_notify_fn" is incompatible with...
-  --diag_suppress=Pe144  # a value of type "void *" cannot be used to initialize...
-  --diag_suppress=Pe177  # function "xxx" was declared but never referenced
-  --diag_suppress=Pe513) # a value of type "void *" cannot be assigned to an entity of type "int (*)(int)"
+# function "xxx" declared implicitly
+list(APPEND IAR_SUPPRESSED_WARNINGS --diag_error=Pe223)
+# too few arguments in invocation of macro
+list(APPEND IAR_SUPPRESSED_WARNINGS --diag_warning=Pe054)
+# a value of type "void *" cannot be used to initialize an entity of
+# type [...] "void (*)(struct onoff_manager *, int)"
+list(APPEND IAR_SUPPRESSED_WARNINGS --diag_warning=Pe144)
+# argument of type "void *" is incompatible with [...]
+# "void (*)(void *, void *, void *)"
+list(APPEND IAR_SUPPRESSED_WARNINGS --diag_warning=Pe167)
+# unrecognized GCC pragma
+list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe1675)
+# statement is unreachable
+list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe111)
+# arithmetic on pointer to void or function type
+list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe1143)
+# integer conversion resulted in a change of sign
+list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe068)
 
-set(IAR_WARNING_DW3)
+# Since IAR does not turn on warnings we do this backwards
+# by not suppressing warnings on higher levels.
+if(NOT W MATCHES "3")
+  # extra ";" ignored
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe381)
+endif()
+if(NOT W MATCHES "2" AND NOT W MATCHES "3")
+  # unknown attribute
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe1097)
+  # undefined behavior: the order of volatile accesses is undefined
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pa082)
+  # pointless integer comparison, the result is always false
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pa084)
+  # dynamic initialization in unreachable code
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe185)
+  # argument of type "onoff_notify_fn" is incompatible with...
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe167)
+  # a value of type "void *" cannot be used to initialize...
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe144)
+  # function "xxx" was declared but never referenced
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe177)
+  # a value of type "void *" cannot be assigned to an entity of
+  # type "int (*)(int)"
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe513)
+endif()
+if(NOT W MATCHES "1" AND NOT W MATCHES "2" AND NOT W MATCHES "3")
+  # enumerated type mixed with another type
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe188)
+  # loop is not reachable
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe128)
+  # variable "res" was set but never used
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe550)
+  # transfer of control bypasses initialization
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe546)
+  # pointless comparison of unsigned integer with zero
+  list(APPEND IAR_SUPPRESSED_WARNINGS --diag_suppress=Pe186)
+endif()
 
-set_compiler_property(PROPERTY warning_dw_1
-  ${IAR_WARNING_DW_3}
-  ${IAR_WARNING_DW_2}
-  ${IAR_WARNING_DW_1})
-
-set_compiler_property(PROPERTY warning_dw_2
-  ${IAR_WARNING_DW3}
-  ${IAR_WARNING_DW2})
-
-# no suppressions
-set_compiler_property(PROPERTY warning_dw_3  ${IAR_WARNING_DW3})
+set_compiler_property(PROPERTY warning_base ${IAR_SUPPRESSED_WARNINGS})
 
 # Extended warning set supported by the compiler
 set_compiler_property(PROPERTY warning_extended)
@@ -75,7 +99,7 @@ set_compiler_property(PROPERTY warning_error_implicit_int)
 # Compiler flags to use when compiling according to MISRA
 set_compiler_property(PROPERTY warning_error_misra_sane)
 
-set_property(TARGET compiler PROPERTY warnings_as_errors  --warnings_are_errors)
+set_property(TARGET compiler PROPERTY warnings_as_errors --warnings_are_errors)
 
 ###########################################################################
 # This section covers flags related to C or C++ standards / standard libs #
@@ -149,7 +173,6 @@ set_compiler_property(PROPERTY freestanding)
 # Flag to include debugging symbol in compilation
 set_property(TARGET compiler PROPERTY debug --debug)
 set_property(TARGET compiler-cpp PROPERTY debug --debug)
-set_property(TARGET asm PROPERTY debug -gdwarf-4)
 
 set_compiler_property(PROPERTY no_common)
 
