@@ -58,6 +58,13 @@
 	pinctrl-names = "default";
 };
 
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&pioa 28 GPIO_ACTIVE_LOW>;
+};
+
 &uart {
 	status = "okay";
 	current-speed = <115200>;
