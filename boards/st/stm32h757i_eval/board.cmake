@@ -3,11 +3,11 @@
 
 # keep first
 if(CONFIG_STM32_MEMMAP)
-board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-# not supported for STM32H757I-EVAL (?)
-#board_runner_args(stm32cubeprogrammer "--extload=MT25TL01G_STM32H757I-EVAL.stldr")
+  board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+  # not supported for STM32H757I-EVAL (?)
+  #board_runner_args(stm32cubeprogrammer "--extload=MT25TL01G_STM32H757I-EVAL.stldr")
 else()
-board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+  board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
 endif()
 
 if(CONFIG_BOARD_STM32H757I_EVAL_STM32H757XX_M7)

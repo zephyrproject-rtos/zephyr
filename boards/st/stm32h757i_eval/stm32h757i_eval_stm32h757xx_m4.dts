@@ -15,8 +15,8 @@
 
 	/* HW resources are split between CM7 and CM4 */
 	chosen {
-		/* zephyr,console = &usart1; */
-		/* zephyr,shell-uart = &usart1; */
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash1;
 	};
@@ -25,12 +25,15 @@
 		green_led_1:led_1 {
 			status = "okay";
 		};
+
 		orange_led_2:led_2 {
 			status = "okay";
 		};
+
 		red_led_3:led_3 {
 			status = "okay";
 		};
+
 		blue_led_4:led_4 {
 			status = "okay";
 		};

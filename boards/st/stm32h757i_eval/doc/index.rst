@@ -48,7 +48,7 @@ More information about STM32H757XIH6 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h757i_eval board configuration supports the following hardware features:
+The Zephyr  ``stm32h757i_eval`` board supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
