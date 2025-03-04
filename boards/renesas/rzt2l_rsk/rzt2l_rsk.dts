@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <arm/renesas/rz/rzt/r9a07g074.dtsi>
+#include <freq.h>
+#include "rzt2l_rsk-pinctrl.dtsi"
+
+/ {
+	model = "Renesas Starter Kit+ for RZ/T2L";
+	compatible = "renesas,rzt2l-rsk";
+
+	chosen {
+		zephyr,sram = &atcm;
+		zephyr,flash = &xspi1_cs0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		led0 = &led1;
+		sw0 = &sw2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&gpio17 6 0>;
+			label = "led1";
+		};
+
+		led3: led3 {
+			gpios = <&gpio18 1 0>;
+			label = "led3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		sw1: sw1 {
+			label = "sw1";
+			gpios = <&gpio14 2 0>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		sw2: sw2 {
+			label = "sw2";
+			gpios = <&gpio16 3 0>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&sci0 {
+	pinctrl-0 = <&sci0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&gpio14 {
+	status = "okay";
+};
+
+&gpio16 {
+	irqs = <3 7>;
+	status = "okay";
+};
+
+&gpio17 {
+	status = "okay";
+};
+
+&gpio18 {
+	status = "okay";
+};
+
+&irq7 {
+	trigger-type = "falling";
+	pinctrl-0 = <&irq7_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
