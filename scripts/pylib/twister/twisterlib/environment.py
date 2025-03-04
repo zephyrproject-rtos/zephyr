@@ -801,7 +801,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         "--log-level",
         type=str.upper,
         default='INFO',
-        choices=['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        choices=['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'STEP', 'QA'],
         help="Select the threshold event severity for which you'd like to receive logs in console."
              " Default is INFO.")
 
