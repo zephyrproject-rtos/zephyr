@@ -202,6 +202,71 @@ struct video_frmival_enum {
 	};
 };
 
+/** Channel statistics where CH1 is red, CH2 is green, CH3 is blue. */
+#define VIDEO_STATS_CHANNELS_RGB BIT(1)
+
+/** Channel statistics where CH0 is Y (luma), CH1 is U (Cb, blueness), CH2 is V (Cr, redness). */
+#define VIDEO_STATS_CHANNELS_YUV BIT(2)
+
+/** Channel statistics where CH0 is Y (luma). */
+#define VIDEO_STATS_CHANNELS_Y BIT(3)
+
+/** Statistics in the form of an histogram. R (red) channel only. */
+#define VIDEO_STATS_HISTOGRAM_R BIT(4)
+
+/** Statistics in the form of an histogram. G (green) channel only. */
+#define VIDEO_STATS_HISTOGRAM_G BIT(5)
+
+/** Statistics in the form of an histogram. B (blue) channel only. */
+#define VIDEO_STATS_HISTOGRAM_B BIT(6)
+
+/** Statistics in the form of an histogram. Y (luma) channel only. */
+#define VIDEO_STATS_HISTOGRAM_Y BIT(7)
+
+/** Bitmap to ask for any statistics filling a @struct video_channel_stats */
+#define VIDEO_STATS_ASK_CHANNELS                                                                   \
+	 (VIDEO_STATS_CHANNELS_RGB | VIDEO_STATS_CHANNELS_YUV | VIDEO_STATS_CHANNELS_Y)
+
+/** Bitmap to ask for any statistics filling a @struct video_histogram */
+#define VIDEO_STATS_ASK_HISTOGRAM                                                                  \
+	(VIDEO_STATS_HISTOGRAM_R | VIDEO_STATS_HISTOGRAM_G | VIDEO_STATS_HISTOGRAM_B |             \
+	 VIDEO_STATS_HISTOGRAM_Y)
+
+struct video_stats {
+	/** Bitmak that describes the type of the stats filled */
+	uint16_t type_flags;
+	/** Frame counter to know if a frame elapsed since the last call. Quickly overflowing. */
+	uint16_t frame_counter;
+};
+
+/**
+ * @brief Statistics about the video image color content.
+ *
+ * Used by software algorithms to control the color balance such as White Balance (AWB),
+ * Black Level Correction (BLC), or control sensors such as Exposure/Gain Control (AEC/AGC).
+ */
+struct video_channel_stats {
+	struct video_stats base;
+	uint32_t ch0;
+	uint32_t ch1;
+	uint32_t ch2;
+	uint32_t ch3;
+	uint32_t max;
+};
+
+/**
+ * @brief Statistics about the video image color content.
+ *
+ * Used by software algorithms to control the color balance such as White Balance (AWB),
+ * Black Level Correction (BLC), or control sensors such as Exposure/Gain Control (AEC/AGC).
+ */
+struct video_histogram {
+	struct video_stats base;
+	uint32_t *buckets;
+	size_t num_buckets;
+	uint32_t num_values;
+};
+
 /**
  * @brief video_endpoint_id enum
  *
@@ -348,6 +413,15 @@ typedef int (*video_api_get_caps_t)(const struct device *dev, enum video_endpoin
 typedef int (*video_api_set_signal_t)(const struct device *dev, enum video_endpoint_id ep,
 				      struct k_poll_signal *signal);
 
+/**
+ * @typedef video_api_set_signal_t
+ * @brief Register/Unregister poll signal for buffer events.
+ *
+ * See video_set_signal() for argument descriptions.
+ */
+typedef int (*video_api_get_stats_t)(const struct device *dev, enum video_endpoint_id ep,
+				     uint16_t type_flags, struct video_stats *stats);
+
 __subsystem struct video_driver_api {
 	/* mandatory callbacks */
 	video_api_set_format_t set_format;
@@ -364,6 +438,7 @@ __subsystem struct video_driver_api {
 	video_api_set_frmival_t set_frmival;
 	video_api_get_frmival_t get_frmival;
 	video_api_enum_frmival_t enum_frmival;
+	video_api_get_stats_t get_stats;
 };
 
 /**
@@ -498,6 +573,34 @@ static inline int video_enum_frmival(const struct device *dev, enum video_endpoi
 	}
 
 	return api->enum_frmival(dev, ep, fie);
+}
+
+/**
+ * @brief Get image statistics out of the video devices.
+ *
+ * This permits to implement algorithms reacting to statistics about the images
+ * collected by the hadware. For instance, in order to implement an image signal
+ * processor with auto-controls (AEC, AGC, AWB...).
+ *
+ * @param dev Pointer to the device structure that collects the statistics.
+ * @param ep Endpoint ID from which collect the statistics.
+ * @param stats Pointer to a video statistic structure filled by this device.
+ * @param timeout Timeout to wait for receiving the stsatistics of the next frame.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If API is not implemented.
+ * @return other error number otherwise.
+ */
+static inline int video_get_stats(const struct device *dev, enum video_endpoint_id ep,
+				  uint16_t type_flags, struct video_stats *stats)
+{
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+
+	if (api->get_stats == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_stats(dev, ep, type_flags, stats);
 }
 
 /**
