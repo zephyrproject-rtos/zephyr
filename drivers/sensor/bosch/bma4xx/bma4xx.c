@@ -593,8 +593,8 @@ static void bma4xx_convert_raw_temp_to_q31(int8_t raw_val, q31_t *out)
 }
 #endif /* CONFIG_BMA4XX_TEMPERATURE */
 
-static int bma4xx_one_shot_decode(const uint8_t *buffer, struct sensor_chan_spec ch,
-				  uint32_t *fit, uint16_t max_count, void *data_out)
+static int bma4xx_one_shot_decode(const uint8_t *buffer, struct sensor_chan_spec ch, uint32_t *fit,
+				  uint16_t max_count, void *data_out)
 {
 	const struct bma4xx_encoded_data *edata = (const struct bma4xx_encoded_data *)buffer;
 	const struct bma4xx_decoder_header *header = &edata->header;
@@ -660,9 +660,8 @@ static int bma4xx_one_shot_decode(const uint8_t *buffer, struct sensor_chan_spec
 	}
 }
 
-static int bma4xx_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec ch,
-				 uint32_t *fit, uint16_t max_count,
-				 void *data_out)
+static int bma4xx_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec ch, uint32_t *fit,
+				 uint16_t max_count, void *data_out)
 {
 	const struct bma4xx_decoder_header *header = (const struct bma4xx_decoder_header *)buffer;
 
@@ -708,13 +707,15 @@ static DEVICE_API(sensor, bma4xx_driver_api) = {
 
 #define BMA4XX_CONFIG_SPI(inst)                                                                    \
 	{                                                                                          \
-		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, 0, 0), .bus_init = &bma_spi_init,        \
+		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, 0, 0),                                   \
+		.bus_init = &bma_spi_init,                                                         \
 	}
 
 /* Initializes a struct bma4xx_config for an instance on an I2C bus. */
 #define BMA4XX_CONFIG_I2C(inst)                                                                    \
 	{                                                                                          \
-		.bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_init = &bma4xx_i2c_init,           \
+		.bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst),                                         \
+		.bus_init = &bma4xx_i2c_init,                                                      \
 	}
 
 /*
@@ -723,9 +724,9 @@ static DEVICE_API(sensor, bma4xx_driver_api) = {
  */
 #define BMA4XX_DEFINE(inst)                                                                        \
 	static struct bma4xx_data bma4xx_data_##inst;                                              \
-	static const struct bma4xx_config bma4xx_config_##inst = COND_CODE_1(                      \
-		DT_INST_ON_BUS(inst, spi), (BMA4XX_CONFIG_SPI(inst)), (BMA4XX_CONFIG_I2C(inst)));  \
-                                                                                                   \
+	static const struct bma4xx_config bma4xx_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi), \
+		(BMA4XX_CONFIG_SPI(inst)),			\
+		(BMA4XX_CONFIG_I2C(inst)));                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, bma4xx_chip_init, NULL, &bma4xx_data_##inst,            \
 				     &bma4xx_config_##inst, POST_KERNEL,                           \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bma4xx_driver_api);
