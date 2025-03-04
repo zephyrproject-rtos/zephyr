@@ -32,8 +32,10 @@ Configuration that needs to be sent to the python script.
 - If the memory type is appended with _DATA / _TEXT/ _RODATA/ _BSS only the
   selected memory is placed in the required memory region. Others are
   ignored.
-- COPY/NOCOPY defines whether the script should generate the relocation code in
-  code_relocation.c or not
+- COPY/NOCOPY defines whether the script should generate the relocation code for text segment
+  symbols in code_relocation.c or not
+- COPYDATA/NOCOPYDATA defines whether the script should generate the relocation code for data segment
+  symbols in code_relocation.c or not
 - NOKEEP will suppress the default behavior of marking every relocated symbol
   with KEEP() in the generated linker script.
 
@@ -389,9 +391,10 @@ def generate_linker_script(linker_file, sram_data_linker_file, sram_bss_linker_f
 
     for memory_type, full_list_of_sections in \
             sorted(complete_list_of_sections.items()):
-
-        is_copy = bool("|COPY" in memory_type)
-        memory_type = memory_type.split("|", 1)[0]
+        memory_type = memory_type.split("|")
+        is_copy = bool("COPY" in memory_type)
+        is_copy_data = bool("COPYDATA" in memory_type)
+        memory_type = memory_type[0]
 
         if region_is_default_ram(memory_type) and is_copy:
             gen_string += MPU_RO_REGION_START.format(memory_type.lower(), memory_type.upper())
@@ -404,10 +407,10 @@ def generate_linker_script(linker_file, sram_data_linker_file, sram_bss_linker_f
             gen_string += MPU_RO_REGION_END.format(memory_type.lower())
 
         if region_is_default_ram(memory_type):
-            gen_string_sram_data += string_create_helper(SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs)
+            gen_string_sram_data += string_create_helper(SectionKind.DATA, memory_type, full_list_of_sections, 1, is_copy_data, phdrs)
             gen_string_sram_bss += string_create_helper(SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs)
         else:
-            gen_string += string_create_helper(SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs)
+            gen_string += string_create_helper(SectionKind.DATA, memory_type, full_list_of_sections, 1, is_copy_data, phdrs)
             gen_string += string_create_helper(SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs)
 
     # finally writing to the linker file
@@ -623,10 +626,9 @@ def main():
 
     code_generation = {"copy_code": '', "zero_code": '', "extern": ''}
     for mem_type, list_of_sections in sorted(complete_list_of_sections.items()):
-
-        if "|COPY" in mem_type:
-            mem_type = mem_type.split("|", 1)[0]
-            code_generation = generate_memcpy_code(mem_type,
+        mem_type = mem_type.split("|")
+        if "COPY" in mem_type:
+            code_generation = generate_memcpy_code(mem_type[0],
                                                list_of_sections, code_generation)
 
     dump_header_file(args.output_code, code_generation)

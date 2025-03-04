@@ -1446,13 +1446,15 @@ endmacro()
 # zephyr_code_relocate(LIBRARY my_lib SRAM)
 #
 # The following optional arguments are supported:
-# - NOCOPY: this flag indicates that the file data does not need to be copied
+# - NOCOPY: this flag indicates that the file's text section does not need to be copied
 #   at boot time (For example, for flash XIP).
+# - NOCOPY_DATA: this flag indicates that the file's data section (read-write data)
+#   does not need to be copied at boot time (For example, if it is directly loaded into SRAM).
 # - NOKEEP: suppress the generation of KEEP() statements in the linker script,
 #   to allow any unused code in the given files/library to be discarded.
 # - PHDR [program_header]: add program header. Used on Xtensa platforms.
 function(zephyr_code_relocate)
-  set(options NOCOPY NOKEEP)
+  set(options NOCOPY NOCOPY_DATA NOKEEP)
   set(single_args LIBRARY LOCATION PHDR FILTER)
   set(multi_args FILES)
   cmake_parse_arguments(CODE_REL "${options}" "${single_args}"
@@ -1515,6 +1517,11 @@ function(zephyr_code_relocate)
     set(flag_list COPY)
   else()
     set(flag_list NOCOPY)
+  endif()
+  if(NOT CODE_REL_NOCOPY_DATA)
+    list(APPEND flag_list COPYDATA)
+  else()
+    list(APPEND flag_list NOCOPYDATA)
   endif()
   if(CODE_REL_NOKEEP)
     list(APPEND flag_list NOKEEP)
