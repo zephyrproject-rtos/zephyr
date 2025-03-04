@@ -89,6 +89,21 @@ static const struct gpio_dt_spec ulpi_reset =
 	GPIO_DT_SPEC_GET_OR(DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys), reset_gpios, {0});
 #endif
 
+#define ANY_USB_PHY_TYPE_TYPE_IS(value) \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_STRING_PROP, \
+					   phy_type,\
+					   value) 0)
+
+#define IS_EQ_STRING_PROP(inst, prop, compare_value) \
+	IS_EQ(DT_INST_STRING_UPPER_TOKEN(inst, prop), compare_value) ||
+
+#if ANY_USB_PHY_TYPE_TYPE_IS(PCD_PHY_ULPI) || ANY_USB_PHY_TYPE_TYPE_IS(USB_OTG_ULPI_PHY)
+#define PHY_ITFACE	1U
+#elif ANY_USB_PHY_TYPE_TYPE_IS(PCD_PHY_EMBEDDED) || ANY_USB_PHY_TYPE_TYPE_IS(USB_OTG_PHY_EMBEDDED)
+#define PHY_ITFACE	2U
+#elif ANY_USB_PHY_TYPE_TYPE_IS(PCD_PHY_UTMI) || ANY_USB_PHY_TYPE_TYPE_IS(USB_OTG_HS_EMBEDDED_PHY)
+#define PHY_ITFACE	3U
+#endif
 /*
  * USB, USB_OTG_FS and USB_DRD_FS are defined in STM32Cube HAL and allows to
  * distinguish between two kind of USB DC. STM32 F0, F3, L0 and G4 series
@@ -472,33 +487,15 @@ static int usb_dc_stm32_init(void)
 	HAL_StatusTypeDef status;
 	int ret;
 	unsigned int i;
-
+	usb_dc_stm32_state.pcd.Instance = (PCD_TypeDef *)DT_INST_REG_ADDR(0);
+	usb_dc_stm32_state.pcd.Init.phy_itface = PHY_ITFACE;
+	usb_dc_stm32_state.pcd.Init.dev_endpoints = DT_INST_PROP(0, num_bidir_endpoints);
 #if defined(USB) || defined(USB_DRD_FS)
-#ifdef USB
-	usb_dc_stm32_state.pcd.Instance = USB;
-#else
-	usb_dc_stm32_state.pcd.Instance = USB_DRD_FS;
-#endif
 	usb_dc_stm32_state.pcd.Init.speed = PCD_SPEED_FULL;
-	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
-	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS || USB_OTG_HS */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	usb_dc_stm32_state.pcd.Instance = USB_OTG_HS;
-#else
-	usb_dc_stm32_state.pcd.Instance = USB_OTG_FS;
-#endif
-	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
-#if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
-	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
-#elif USB_OTG_HS_ULPI_PHY
-	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_ULPI_PHY;
-#else
-	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
 	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = USB_VBUS_SENSING ? ENABLE : DISABLE;
 

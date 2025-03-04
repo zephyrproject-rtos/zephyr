@@ -19,6 +19,7 @@
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
+			phy-type = "PCD_PHY_EMBEDDED";
 			clocks = <&rcc STM32_CLOCK(AHB2, 12U)>,
 				 <&rcc STM32_SRC_MSI CLK48_SEL(3)>;
 			status = "disabled";
