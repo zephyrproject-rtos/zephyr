@@ -445,6 +445,11 @@
 				compatible = "renesas,rz-gtm-counter";
 				status = "disabled";
 			};
+
+			os_timer {
+				compatible = "renesas,rz-gtm-os-timer";
+				status = "disabled";
+			};
 		};
 		gtm1: gtm@42801400 {
 			compatible = "renesas,rz-gtm";
@@ -456,6 +461,11 @@
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+
+			os_timer {
+				compatible = "renesas,rz-gtm-os-timer";
 				status = "disabled";
 			};
 		};
@@ -471,6 +481,11 @@
 				compatible = "renesas,rz-gtm-counter";
 				status = "disabled";
 			};
+
+			os_timer {
+				compatible = "renesas,rz-gtm-os-timer";
+				status = "disabled";
+			};
 		};
 		gtm3: gtm@42801c00 {
 			compatible = "renesas,rz-gtm";
@@ -482,6 +497,11 @@
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+
+			os_timer {
+				compatible = "renesas,rz-gtm-os-timer";
 				status = "disabled";
 			};
 		};
@@ -497,6 +517,11 @@
 				compatible = "renesas,rz-gtm-counter";
 				status = "disabled";
 			};
+
+			os_timer {
+				compatible = "renesas,rz-gtm-os-timer";
+				status = "disabled";
+			};
 		};
 		gtm5: gtm@42802400 {
 			compatible = "renesas,rz-gtm";
@@ -508,6 +533,11 @@
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+
+			os_timer {
+				compatible = "renesas,rz-gtm-os-timer";
 				status = "disabled";
 			};
 		};
@@ -523,6 +553,11 @@
 				compatible = "renesas,rz-gtm-counter";
 				status = "disabled";
 			};
+
+			os_timer {
+				compatible = "renesas,rz-gtm-os-timer";
+				status = "disabled";
+			};
 		};
 		gtm7: gtm@42802c00 {
 			compatible = "renesas,rz-gtm";
@@ -534,6 +569,11 @@
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+
+			os_timer {
+				compatible = "renesas,rz-gtm-os-timer";
 				status = "disabled";
 			};
 		};
