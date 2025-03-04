@@ -279,7 +279,7 @@ static bool callback_process(struct icmsg_data_t *dev_data)
 			}
 		}
 
-		if (len_available == 0) {
+		if (unlikely(len_available == 0)) {
 			/* Unlikely, no data in buffer. */
 			return false;
 		}
