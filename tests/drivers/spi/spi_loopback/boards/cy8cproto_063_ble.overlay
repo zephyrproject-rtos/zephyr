@@ -1,3 +1,10 @@
+&dma0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	status = "okay";
+};
+
 &pinctrl {
 	/* Configure pin control bias mode for SPI pins (MASTER) */
 	p10_0_scb1_spi_m_mosi: p10_0_scb1_spi_m_mosi {
@@ -35,6 +42,9 @@ spi: &scb1 {
 		reg = <0>;
 		spi-max-frequency = <1500000>;
 	};
+
+	dmas = <&dma0 0>, <&dma0 1>;
+	dma-names = "tx", "rx";
 };
 
 &gpio_prt10 {
