@@ -57,7 +57,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "dhcpv4/dhcpv4_internal.h"
 #include "dhcpv6/dhcpv6_internal.h"
 
-#include "route.h"
+#include "route_ipv6.h"
 
 #include "packet_socket.h"
 #include "canbus_socket.h"
@@ -581,7 +581,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("prio %d iface %p pkt %p len %zu", net_pkt_priority(pkt),
 		iface, pkt, net_pkt_get_len(pkt));
 
-	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING)) {
 		net_pkt_set_orig_iface(pkt, iface);
 	}
 
@@ -624,7 +624,7 @@ static inline void l3_init(void)
 
 	net_tcp_init();
 
-	net_route_init();
+	net_route_ipv6_init();
 
 	NET_DBG("Network L3 init done");
 }

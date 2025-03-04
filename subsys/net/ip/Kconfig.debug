@@ -81,10 +81,4 @@ module-str = Log level for UDP/TCP connection handling
 module-help = Enables UDP/TCP connection debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
-module = NET_ROUTE
-module-dep = NET_LOG
-module-str = Log level for route management
-module-help = Enables routing engine debug messages.
-source "subsys/net/Kconfig.template.log_config.net"
-
 endif # NET_RAW_MODE

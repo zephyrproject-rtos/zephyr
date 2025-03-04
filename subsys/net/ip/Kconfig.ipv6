@@ -97,6 +97,67 @@ config NET_IPV6_MAX_NEIGHBORS
 	help
 	  The value depends on your network needs.
 
+# Normally the route support is enabled by RPL or similar technology
+# that needs to use the routing infrastructure.
+config NET_IPV6_ROUTE
+	bool
+	depends on NET_IPV6_NBR_CACHE
+	default y if NET_IPV6_NBR_CACHE
+
+config NET_IPV6_ROUTING
+	bool "IP routing between interfaces"
+	depends on NET_IPV6_ROUTE
+	help
+	  Allow IPv6 routing between different network interfaces and
+	  technologies. Currently this has limited use as some entity
+	  would need to populate the routing table. RPL used to do that
+	  earlier but currently there is no RPL support in Zephyr.
+
+config NET_IPV6_MAX_ROUTES
+	int "Max number of routing entries stored."
+	default NET_IPV6_MAX_NEIGHBORS
+	depends on NET_IPV6_ROUTE
+	help
+	  This determines how many entries can be stored in routing table.
+
+config NET_IPV6_MAX_NEXTHOPS
+	int "Max number of next hop entries stored."
+	default NET_IPV6_MAX_ROUTES
+	depends on NET_IPV6_ROUTE
+	help
+	  This determines how many entries can be stored in nexthop table.
+
+config NET_IPV6_ROUTE_MCAST
+	bool "Multicast Routing / Forwarding"
+	depends on NET_IPV6_ROUTE
+	help
+	  Activates multicast routing/forwarding
+
+config NET_IPV6_MAX_MCAST_ROUTES
+	int "Max number of multicast routing entries stored."
+	default 1
+	depends on NET_IPV6_ROUTE_MCAST
+	help
+	  This determines how many entries can be stored in multicast
+	  routing table.
+
+config NET_IPV6_MCAST_ROUTE_MAX_IFACES
+	int "Max number of network interfaces per multicast routing entry"
+	default 1
+	range 1 8
+	depends on NET_IPV6_ROUTE_MCAST
+	help
+	  Determines how many network interfaces can be assigned to a
+	  single multicast route entry.
+
+config NET_IPV6_MCAST_ROUTE_MLD_REPORTS
+	bool "Report multicast routes as a part of MLDv2 reports"
+	depends on NET_IPV6_ROUTE_MCAST
+	depends on NET_IPV6_MLD
+	help
+	  Determines whether a multicast route entry should be advertised
+	  in MLDv2 reports.
+
 config NET_IPV6_FRAGMENT
 	bool "Support IPv6 fragmentation"
 	help
@@ -368,6 +429,12 @@ module = NET_IPV6_NBR_CACHE
 module-dep = NET_LOG
 module-str = Log level for IPv6 neighbor cache
 module-help = Enables IPv6 Neighbor Cache code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_IPV6_ROUTE
+module-dep = NET_LOG
+module-str = Log level for IPv6 route management
+module-help = Enables IPv6 routing engine debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 endif # NET_NATIVE_IPV6

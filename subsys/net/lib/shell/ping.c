@@ -336,7 +336,7 @@ static struct net_if *ping_select_iface(int id, struct net_sockaddr *target)
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && target->sa_family == NET_AF_INET6) {
 		struct net_nbr *nbr;
-#if defined(CONFIG_NET_ROUTE)
+#if defined(CONFIG_NET_IPV6_ROUTE)
 		struct net_route_entry *route;
 #endif
 
@@ -351,8 +351,8 @@ static struct net_if *ping_select_iface(int id, struct net_sockaddr *target)
 			goto out;
 		}
 
-#if defined(CONFIG_NET_ROUTE)
-		route = net_route_lookup(NULL, &net_sin6(target)->sin6_addr);
+#if defined(CONFIG_NET_IPV6_ROUTE)
+		route = net_route_ipv6_lookup(NULL, &net_sin6(target)->sin6_addr);
 		if (route) {
 			iface = route->iface;
 			goto out;

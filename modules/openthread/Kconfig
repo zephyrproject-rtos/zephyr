@@ -426,7 +426,7 @@ menu "OpenThread Border Router"
 
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER
 	bool "Adds support for Border Router functionality"
-	select NET_ROUTING
+	select NET_IPV6_ROUTING
 	help
 	  Enable support for Border Router using Openthread's implementation.
 

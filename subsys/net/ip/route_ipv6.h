@@ -1,5 +1,5 @@
 /** @file
- * @brief Route handler
+ * @brief IPv6 route handler
  *
  * This is not to be included by the application.
  */
@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ROUTE_H
-#define __ROUTE_H
+#ifndef __ROUTE_IPV6_H
+#define __ROUTE_IPV6_H
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/slist.h>
@@ -39,7 +39,8 @@ struct net_route_nexthop {
 };
 
 /**
- * @brief Route entry to a specific neighbor.
+ * @brief Route entry to a specific neighbor. This supports both
+ * IPv6 and IPv4 addresses.
  */
 struct net_route_entry {
 	/** Node information. The routes are also in separate list in
@@ -58,10 +59,10 @@ struct net_route_entry {
 	/** Route lifetime timer. */
 	struct net_timeout lifetime;
 
-	/** IPv6 address/prefix of the route. */
-	struct net_in6_addr addr;
+	/** IPv6/IPv4 address/prefix of the route. */
+	struct net_addr addr;
 
-	/** IPv6 address/prefix length. */
+	/** IPv6 prefix or IPv4 netmask length. */
 	uint8_t prefix_len;
 
 	uint8_t preference : 2;
@@ -86,11 +87,11 @@ struct net_route_entry {
  * if not found.
  */
 #if defined(CONFIG_NET_NATIVE)
-struct net_route_entry *net_route_lookup(struct net_if *iface,
-					 struct net_in6_addr *dst);
+struct net_route_entry *net_route_ipv6_lookup(struct net_if *iface,
+					      struct net_in6_addr *dst);
 #else
-static inline struct net_route_entry *net_route_lookup(struct net_if *iface,
-						       struct net_in6_addr *dst)
+static inline struct net_route_entry *net_route_ipv6_lookup(struct net_if *iface,
+							    struct net_in6_addr *dst)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(dst);
@@ -111,12 +112,12 @@ static inline struct net_route_entry *net_route_lookup(struct net_if *iface,
  *
  * @return Return created route entry, NULL if could not be created.
  */
-struct net_route_entry *net_route_add(struct net_if *iface,
-				      struct net_in6_addr *addr,
-				      uint8_t prefix_len,
-				      struct net_in6_addr *nexthop,
-				      uint32_t lifetime,
-				      uint8_t preference);
+struct net_route_entry *net_route_ipv6_add(struct net_if *iface,
+					   struct net_in6_addr *addr,
+					   uint8_t prefix_len,
+					   struct net_in6_addr *nexthop,
+					   uint32_t lifetime,
+					   uint8_t preference);
 
 /**
  * @brief Delete a route from routing table.
@@ -125,7 +126,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
  *
  * @return 0 if ok, <0 if error
  */
-int net_route_del(struct net_route_entry *entry);
+int net_route_ipv6_del(struct net_route_entry *entry);
 
 /**
  * @brief Delete a route from routing table by nexthop.
@@ -135,8 +136,8 @@ int net_route_del(struct net_route_entry *entry);
  *
  * @return number of routes deleted, <0 if error
  */
-int net_route_del_by_nexthop(struct net_if *iface,
-			     struct net_in6_addr *nexthop);
+int net_route_ipv6_del_by_nexthop(struct net_if *iface,
+				  struct net_in6_addr *nexthop);
 
 /**
  * @brief Update the route lifetime.
@@ -146,7 +147,8 @@ int net_route_del_by_nexthop(struct net_if *iface,
  *
  * @return 0 if ok, <0 if error
  */
-void net_route_update_lifetime(struct net_route_entry *route, uint32_t lifetime);
+void net_route_ipv6_update_lifetime(struct net_route_entry *route,
+				    uint32_t lifetime);
 
 /**
  * @brief Get nexthop IPv6 address tied to this route.
@@ -158,7 +160,7 @@ void net_route_update_lifetime(struct net_route_entry *route, uint32_t lifetime)
  *
  * @return IPv6 address of the nexthop, NULL if not found.
  */
-struct net_in6_addr *net_route_get_nexthop(struct net_route_entry *entry);
+struct net_in6_addr *net_route_ipv6_get_nexthop(struct net_route_entry *entry);
 
 /**
  * @brief Get generic neighbor entry from route entry.
@@ -167,7 +169,7 @@ struct net_in6_addr *net_route_get_nexthop(struct net_route_entry *entry);
  *
  * @return Generic neighbor entry.
  */
-struct net_nbr *net_route_get_nbr(struct net_route_entry *route);
+struct net_nbr *net_route_ipv6_get_nbr(struct net_route_entry *route);
 
 typedef void (*net_route_cb_t)(struct net_route_entry *entry,
 			       void *user_data);
@@ -181,15 +183,15 @@ typedef void (*net_route_cb_t)(struct net_route_entry *entry,
  *
  * @return Total number of routing entries found.
  */
-int net_route_foreach(net_route_cb_t cb, void *user_data);
+int net_route_ipv6_foreach(net_route_cb_t cb, void *user_data);
 
-#if defined(CONFIG_NET_ROUTE_MCAST)
+#if defined(CONFIG_NET_IPV6_ROUTE_MCAST)
 /**
  * @brief Multicast route entry.
  */
-struct net_route_entry_mcast {
+struct net_route_ipv6_entry_mcast {
 	/** Network interfaces for the route. */
-	struct net_if *ifaces[CONFIG_NET_MCAST_ROUTE_MAX_IFACES];
+	struct net_if *ifaces[CONFIG_NET_IPV6_MCAST_ROUTE_MAX_IFACES];
 
 	/** Extra routing engine specific data */
 	void *data;
@@ -207,11 +209,11 @@ struct net_route_entry_mcast {
 	uint8_t prefix_len;
 };
 #else
-struct net_route_entry_mcast;
+struct net_route_ipv6_entry_mcast;
 #endif
 
-typedef void (*net_route_mcast_cb_t)(struct net_route_entry_mcast *entry,
-				     void *user_data);
+typedef void (*net_route_ipv6_mcast_cb_t)(struct net_route_ipv6_entry_mcast *entry,
+					  void *user_data);
 
 /**
  * @brief Forwards a multicast packet by checking the local multicast
@@ -223,8 +225,8 @@ typedef void (*net_route_mcast_cb_t)(struct net_route_entry_mcast *entry,
  * @return Number of interfaces which forwarded the packet, or a negative
  * value in case of an error.
  */
-int net_route_mcast_forward_packet(struct net_pkt *pkt,
-				   struct net_ipv6_hdr *hdr);
+int net_route_ipv6_mcast_forward_packet(struct net_pkt *pkt,
+					struct net_ipv6_hdr *hdr);
 
 /**
  * @brief Go through all the multicast routing entries and call callback
@@ -236,9 +238,9 @@ int net_route_mcast_forward_packet(struct net_pkt *pkt,
  *
  * @return Total number of multicast routing entries that are in use.
  */
-int net_route_mcast_foreach(net_route_mcast_cb_t cb,
-			    struct net_in6_addr *skip,
-			    void *user_data);
+int net_route_ipv6_mcast_foreach(net_route_ipv6_mcast_cb_t cb,
+				 struct net_in6_addr *skip,
+				 void *user_data);
 
 /**
  * @brief Add a multicast routing entry.
@@ -249,9 +251,9 @@ int net_route_mcast_foreach(net_route_mcast_cb_t cb,
  *
  * @return Multicast routing entry.
  */
-struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
-						  struct net_in6_addr *group,
-						  uint8_t prefix_len);
+struct net_route_ipv6_entry_mcast *net_route_ipv6_mcast_add(struct net_if *iface,
+						       struct net_in6_addr *group,
+						       uint8_t prefix_len);
 
 /**
  * @brief Delete a multicast routing entry.
@@ -260,7 +262,7 @@ struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
  *
  * @return True if entry was deleted, false otherwise.
  */
-bool net_route_mcast_del(struct net_route_entry_mcast *route);
+bool net_route_ipv6_mcast_del(struct net_route_ipv6_entry_mcast *route);
 
 /**
  * @brief Lookup a multicast routing entry.
@@ -269,8 +271,8 @@ bool net_route_mcast_del(struct net_route_entry_mcast *route);
  *
  * @return Routing entry corresponding this multicast group.
  */
-struct net_route_entry_mcast *
-net_route_mcast_lookup(struct net_in6_addr *group);
+struct net_route_ipv6_entry_mcast *
+net_route_ipv6_mcast_lookup(struct net_in6_addr *group);
 
 /**
  * @brief Lookup a multicast routing entry on a given interface.
@@ -280,8 +282,9 @@ net_route_mcast_lookup(struct net_in6_addr *group);
  *
  * @return Routing entry corresponding to this multicast group and interface.
  */
-struct net_route_entry_mcast *
-net_route_mcast_lookup_by_iface(struct net_in6_addr *group, struct net_if *iface);
+struct net_route_ipv6_entry_mcast *
+net_route_ipv6_mcast_lookup_by_iface(struct net_in6_addr *group,
+				      struct net_if *iface);
 
 /**
  * @brief Add an interface to multicast routing entry.
@@ -292,7 +295,8 @@ net_route_mcast_lookup_by_iface(struct net_in6_addr *group, struct net_if *iface
  * @return True if the interface was added or found on the
  *         list, false otherwise.
  */
-bool net_route_mcast_iface_add(struct net_route_entry_mcast *entry, struct net_if *iface);
+bool net_route_ipv6_mcast_iface_add(struct net_route_ipv6_entry_mcast *entry,
+				    struct net_if *iface);
 
 /**
  * @brief Delete an interface from multicast routing entry.
@@ -302,7 +306,8 @@ bool net_route_mcast_iface_add(struct net_route_entry_mcast *entry, struct net_i
  *
  * @return True if entry was deleted, false otherwise.
  */
-bool net_route_mcast_iface_del(struct net_route_entry_mcast *entry, struct net_if *iface);
+bool net_route_ipv6_mcast_iface_del(struct net_route_ipv6_entry_mcast *entry,
+				    struct net_if *iface);
 
 /**
  * @brief Return a route to destination via some intermediate host.
@@ -314,10 +319,10 @@ bool net_route_mcast_iface_del(struct net_route_entry_mcast *entry, struct net_i
  *
  * @return True if there is a route to the destination, False otherwise
  */
-bool net_route_get_info(struct net_if *iface,
-			struct net_in6_addr *dst,
-			struct net_route_entry **route,
-			struct net_in6_addr **nexthop);
+bool net_route_ipv6_get_info(struct net_if *iface,
+			     struct net_in6_addr *dst,
+			     struct net_route_entry **route,
+			     struct net_in6_addr **nexthop);
 
 /**
  * @brief Send the network packet to network via some intermediate host.
@@ -327,7 +332,7 @@ bool net_route_get_info(struct net_if *iface,
  *
  * @return 0 if there was no error, <0 if the packet could not be sent.
  */
-int net_route_packet(struct net_pkt *pkt, struct net_in6_addr *nexthop);
+int net_route_ipv6_packet(struct net_pkt *pkt, struct net_in6_addr *nexthop);
 
 /**
  * @brief Send the network packet to network via the given interface.
@@ -339,14 +344,14 @@ int net_route_packet(struct net_pkt *pkt, struct net_in6_addr *nexthop);
  */
 int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface);
 
-#if defined(CONFIG_NET_ROUTE) && defined(CONFIG_NET_NATIVE)
-void net_route_init(void);
+#if defined(CONFIG_NET_IPV6_ROUTE) && defined(CONFIG_NET_NATIVE)
+void net_route_ipv6_init(void);
 #else
-#define net_route_init(...)
-#endif /* CONFIG_NET_ROUTE */
+#define net_route_ipv6_init(...)
+#endif /* CONFIG_NET_IPV6_ROUTE */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __ROUTE_H */
+#endif /* __ROUTE_IPV6_H */

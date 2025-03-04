@@ -855,7 +855,8 @@ static void add_mcast_route_and_verify(struct net_if *iface, struct net_in6_addr
 {
 	k_sem_reset(&wait_data);
 
-	zassert_not_null(net_route_mcast_add(iface, addr, 128), "Failed to add multicast route");
+	zassert_not_null(net_route_ipv6_mcast_add(iface, addr, 128),
+			 "Failed to add multicast route");
 
 	k_msleep(THREAD_SLEEP);
 
@@ -871,14 +872,14 @@ static void add_mcast_route_and_verify(struct net_if *iface, struct net_in6_addr
 static void del_mcast_route_and_verify(struct net_if *iface, struct net_in6_addr *addr,
 				       struct mld_report_info *info)
 {
-	struct net_route_entry_mcast *entry;
+	struct net_route_ipv6_entry_mcast *entry;
 
 	k_sem_reset(&wait_data);
 
-	entry = net_route_mcast_lookup(addr);
+	entry = net_route_ipv6_mcast_lookup(addr);
 
 	zassert_not_null(entry, "Could not find the multicast route entry");
-	zassert_true(net_route_mcast_del(entry), "Failed to delete a route");
+	zassert_true(net_route_ipv6_mcast_del(entry), "Failed to delete a route");
 
 	k_msleep(THREAD_SLEEP);
 
@@ -924,7 +925,7 @@ static void verify_mcast_routes_in_mld(struct mld_report_info *info)
 
 	k_sem_reset(&wait_data);
 
-	zassert_not_null(net_route_mcast_add(null_iface, &site_local_mcast_addr_cafe, 128),
+	zassert_not_null(net_route_ipv6_mcast_add(null_iface, &site_local_mcast_addr_cafe, 128),
 			 "Failed to add multicast route");
 
 	k_msleep(THREAD_SLEEP);
@@ -957,7 +958,8 @@ static void verify_mcast_routes_in_mld(struct mld_report_info *info)
 	 */
 	k_sem_reset(&wait_data);
 
-	zassert_true(net_route_mcast_del(net_route_mcast_lookup(&site_local_mcast_addr_cafe)),
+	zassert_true(net_route_ipv6_mcast_del(
+			net_route_ipv6_mcast_lookup(&site_local_mcast_addr_cafe)),
 		     "Failed to cleanup route to ff05::cafe");
 
 	k_msleep(THREAD_SLEEP);
@@ -1001,8 +1003,10 @@ ZTEST(net_mld_test_suite, test_mcast_routes_in_mld)
 	zassert_equal(info.records_count, get_mcast_addr_count(iface),
 		      "Different number of reported addresses");
 
-	/* 2. If CONFIG_NET_MCAST_ROUTE_MLD_REPORTS is enabled check that funtionality works */
-	if (IS_ENABLED(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)) {
+	/* 2. If CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS is enabled check that
+	 * funtionality works
+	 */
+	if (IS_ENABLED(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)) {
 		verify_mcast_routes_in_mld(&info);
 	}
 

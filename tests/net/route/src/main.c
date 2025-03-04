@@ -7,7 +7,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(net_test, CONFIG_NET_ROUTE_LOG_LEVEL);
+LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_ROUTE_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
@@ -33,9 +33,9 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ROUTE_LOG_LEVEL);
 #include "icmpv6.h"
 #include "ipv6.h"
 #include "nbr.h"
-#include "route.h"
+#include "route_ipv6.h"
 
-#if defined(CONFIG_NET_ROUTE_LOG_LEVEL_DBG)
+#if defined(CONFIG_NET_IPV6_ROUTE_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)
@@ -77,7 +77,7 @@ static struct net_if *peer_iface;
 
 static struct net_route_entry *route_entry;
 
-#define MAX_ROUTES CONFIG_NET_MAX_ROUTES
+#define MAX_ROUTES CONFIG_NET_IPV6_MAX_ROUTES
 static const int max_routes = MAX_ROUTES;
 static struct net_route_entry *test_routes[MAX_ROUTES];
 static struct net_in6_addr dest_addresses[MAX_ROUTES];
@@ -289,7 +289,7 @@ static void test_init(void)
 	}
 }
 
-static void test_net_ctx_create(void)
+static void test_net_ctx_ipv6_create(void)
 {
 	int ret;
 
@@ -333,7 +333,7 @@ static bool net_test_nbr_lookup_ok(struct net_if *iface,
 	return true;
 }
 
-static void test_populate_nbr_cache(void)
+static void test_populate_ipv6_nbr_cache(void)
 {
 	struct net_nbr *nbr;
 
@@ -372,55 +372,55 @@ static void test_populate_nbr_cache(void)
 	zassert_true(net_test_nbr_lookup_ok(my_iface, &peer_addr));
 }
 
-static void test_route_add(void)
+static void test_route_ipv6_add(void)
 {
-	route_entry = net_route_add(my_iface,
-				    &dest_addr, 128,
-				    &peer_addr,
-				    NET_IPV6_ND_INFINITE_LIFETIME,
-				    NET_ROUTE_PREFERENCE_LOW);
+	route_entry = net_route_ipv6_add(my_iface,
+					 &dest_addr, 128,
+					 &peer_addr,
+					 NET_IPV6_ND_INFINITE_LIFETIME,
+					 NET_ROUTE_PREFERENCE_LOW);
 
 	zassert_not_null(route_entry, "Route add failed");
 }
 
-static void test_route_update(void)
+static void test_route_ipv6_update(void)
 {
 	struct net_route_entry *update_entry;
 
-	update_entry = net_route_add(my_iface,
-				     &dest_addr, 128,
-				     &peer_addr,
-				     NET_IPV6_ND_INFINITE_LIFETIME,
-				     NET_ROUTE_PREFERENCE_LOW);
+	update_entry = net_route_ipv6_add(my_iface,
+					  &dest_addr, 128,
+					  &peer_addr,
+					  NET_IPV6_ND_INFINITE_LIFETIME,
+					  NET_ROUTE_PREFERENCE_LOW);
 	zassert_equal_ptr(update_entry, route_entry,
 			  "Route add again failed");
 }
 
-static void test_route_del(void)
+static void test_route_ipv6_del(void)
 {
 	int ret;
 
-	ret = net_route_del(route_entry);
+	ret = net_route_ipv6_del(route_entry);
 	if (ret < 0) {
 		zassert_true(0, "Route del failed");
 	}
 }
 
-static void test_route_del_again(void)
+static void test_route_ipv6_del_again(void)
 {
 	int ret;
 
-	ret = net_route_del(route_entry);
+	ret = net_route_ipv6_del(route_entry);
 	if (ret >= 0) {
 		zassert_true(0, "Route del again failed");
 	}
 }
 
-static void test_route_get_nexthop(void)
+static void test_route_ipv6_get_nexthop(void)
 {
 	struct net_in6_addr *nexthop;
 
-	nexthop = net_route_get_nexthop(route_entry);
+	nexthop = net_route_ipv6_get_nexthop(route_entry);
 
 	zassert_not_null(nexthop, "Route get nexthop failed");
 
@@ -428,120 +428,120 @@ static void test_route_get_nexthop(void)
 		     "Route nexthop does not match");
 }
 
-static void test_route_lookup_ok(void)
+static void test_route_ipv6_lookup_ok(void)
 {
 	struct net_route_entry *entry;
 
-	entry = net_route_lookup(my_iface, &dest_addr);
+	entry = net_route_ipv6_lookup(my_iface, &dest_addr);
 	zassert_not_null(entry,
 			 "Route lookup failed");
 }
 
-static void test_route_lookup_fail(void)
+static void test_route_ipv6_lookup_fail(void)
 {
 	struct net_route_entry *entry;
 
-	entry = net_route_lookup(my_iface, &peer_addr);
+	entry = net_route_ipv6_lookup(my_iface, &peer_addr);
 	zassert_is_null(entry,
 			"Route lookup failed for peer address");
 }
 
-static void test_route_del_nexthop(void)
+static void test_route_ipv6_del_nexthop(void)
 {
 	struct net_in6_addr *nexthop = &peer_addr;
 	int ret;
 
-	ret = net_route_del_by_nexthop(my_iface, nexthop);
+	ret = net_route_ipv6_del_by_nexthop(my_iface, nexthop);
 	zassert_false((ret <= 0), "Route del nexthop failed");
 }
 
-static void test_route_del_nexthop_again(void)
+static void test_route_ipv6_del_nexthop_again(void)
 {
 	struct net_in6_addr *nexthop = &peer_addr;
 	int ret;
 
-	ret = net_route_del_by_nexthop(my_iface, nexthop);
+	ret = net_route_ipv6_del_by_nexthop(my_iface, nexthop);
 	zassert_false((ret >= 0), "Route del again nexthop failed");
 }
 
-static void test_route_add_many(void)
+static void test_route_ipv6_add_many(void)
 {
 	int i;
 
 	for (i = 0; i < max_routes; i++) {
 		DBG("Adding route %d addr %s\n", i + 1,
 		    net_sprint_ipv6_addr(&dest_addresses[i]));
-		test_routes[i] = net_route_add(my_iface,
-					  &dest_addresses[i], 128,
-					  &peer_addr,
-					  NET_IPV6_ND_INFINITE_LIFETIME,
-					  NET_ROUTE_PREFERENCE_LOW);
+		test_routes[i] = net_route_ipv6_add(my_iface,
+						    &dest_addresses[i], 128,
+						    &peer_addr,
+						    NET_IPV6_ND_INFINITE_LIFETIME,
+						    NET_ROUTE_PREFERENCE_LOW);
 		zassert_not_null(test_routes[i], "Route add failed");
 		}
 }
 
-static void test_route_del_many(void)
+static void test_route_ipv6_del_many(void)
 {
 	int i;
 
 	for (i = 0; i < max_routes; i++) {
 		DBG("Deleting route %d addr %s\n", i + 1,
 		    net_sprint_ipv6_addr(&dest_addresses[i]));
-		zassert_false(net_route_del(test_routes[i]),
+		zassert_false(net_route_ipv6_del(test_routes[i]),
 			      " Route del failed");
 	}
 }
 
-static void test_route_lifetime(void)
+static void test_route_ipv6_lifetime(void)
 {
-	route_entry = net_route_add(my_iface,
-				    &dest_addr, 128,
-				    &peer_addr,
-				    NET_IPV6_ND_INFINITE_LIFETIME,
-				    NET_ROUTE_PREFERENCE_LOW);
+	route_entry = net_route_ipv6_add(my_iface,
+					 &dest_addr, 128,
+					 &peer_addr,
+					 NET_IPV6_ND_INFINITE_LIFETIME,
+					 NET_ROUTE_PREFERENCE_LOW);
 
 	zassert_not_null(route_entry, "Route add failed");
 
-	route_entry = net_route_lookup(my_iface, &dest_addr);
+	route_entry = net_route_ipv6_lookup(my_iface, &dest_addr);
 	zassert_not_null(route_entry, "Route not found");
 
-	net_route_update_lifetime(route_entry, 1);
+	net_route_ipv6_update_lifetime(route_entry, 1);
 
 	k_sleep(K_MSEC(1200));
 
-	route_entry = net_route_lookup(my_iface, &dest_addr);
+	route_entry = net_route_ipv6_lookup(my_iface, &dest_addr);
 	zassert_is_null(route_entry, "Route did not expire");
 
 }
 
-static void test_route_preference(void)
+static void test_route_ipv6_preference(void)
 {
 	struct net_route_entry *update_entry;
 
-	route_entry = net_route_add(my_iface,
-				    &dest_addr, 128,
-				    &peer_addr,
-				    NET_IPV6_ND_INFINITE_LIFETIME,
-				    NET_ROUTE_PREFERENCE_LOW);
+	route_entry = net_route_ipv6_add(my_iface,
+					 &dest_addr, 128,
+					 &peer_addr,
+					 NET_IPV6_ND_INFINITE_LIFETIME,
+					 NET_ROUTE_PREFERENCE_LOW);
 	zassert_not_null(route_entry, "Route add failed");
 
-	update_entry = net_route_add(my_iface,
-				     &dest_addr, 128,
-				     &peer_addr_alt,
-				     NET_IPV6_ND_INFINITE_LIFETIME,
-				     NET_ROUTE_PREFERENCE_MEDIUM);
+	update_entry = net_route_ipv6_add(my_iface,
+					  &dest_addr, 128,
+					  &peer_addr_alt,
+					  NET_IPV6_ND_INFINITE_LIFETIME,
+					  NET_ROUTE_PREFERENCE_MEDIUM);
 	zassert_equal_ptr(update_entry, route_entry,
 			  "Route add again failed");
 
-	update_entry = net_route_add(my_iface,
-				     &dest_addr, 128,
-				     &peer_addr,
-				     NET_IPV6_ND_INFINITE_LIFETIME,
-				     NET_ROUTE_PREFERENCE_LOW);
+	update_entry = net_route_ipv6_add(my_iface,
+					  &dest_addr, 128,
+					  &peer_addr,
+					  NET_IPV6_ND_INFINITE_LIFETIME,
+					  NET_ROUTE_PREFERENCE_LOW);
 	zassert_is_null(update_entry,
 			"Low preference route overwritten medium one");
 
-	net_route_del(route_entry);
+	net_route_ipv6_del(route_entry);
 }
 
 
@@ -549,23 +549,23 @@ static void test_route_preference(void)
 ZTEST(route_test_suite, test_route)
 {
 	test_init();
-	test_net_ctx_create();
-	test_populate_nbr_cache();
-	test_route_add();
-	test_route_update();
-	test_route_get_nexthop();
-	test_route_lookup_ok();
-	test_route_lookup_fail();
-	test_route_del();
-	test_route_add();
-	test_route_del_nexthop();
-	test_route_del_again();
-	test_route_del_nexthop_again();
-	test_populate_nbr_cache();
-	test_route_add_many();
-	test_route_del_many();
-	test_route_lifetime();
-	test_route_preference();
+	test_net_ctx_ipv6_create();
+	test_populate_ipv6_nbr_cache();
+	test_route_ipv6_add();
+	test_route_ipv6_update();
+	test_route_ipv6_get_nexthop();
+	test_route_ipv6_lookup_ok();
+	test_route_ipv6_lookup_fail();
+	test_route_ipv6_del();
+	test_route_ipv6_add();
+	test_route_ipv6_del_nexthop();
+	test_route_ipv6_del_again();
+	test_route_ipv6_del_nexthop_again();
+	test_populate_ipv6_nbr_cache();
+	test_route_ipv6_add_many();
+	test_route_ipv6_del_many();
+	test_route_ipv6_lifetime();
+	test_route_ipv6_preference();
 }
 
 ZTEST_SUITE(route_test_suite, NULL, NULL, NULL, NULL, NULL);

@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "ipv6.h"
 #include "nbr.h"
 #include "6lo.h"
-#include "route.h"
+#include "route_ipv6.h"
 #include "net_stats.h"
 
 BUILD_ASSERT(sizeof(struct net_in6_addr) == NET_IPV6_ADDR_SIZE);
@@ -298,28 +298,28 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 	return exthdr_len;
 }
 
-#if defined(CONFIG_NET_ROUTE)
+#if defined(CONFIG_NET_IPV6_ROUTE)
 static struct net_route_entry *add_route(struct net_if *iface,
 					 struct net_in6_addr *addr,
 					 uint8_t prefix_len)
 {
 	struct net_route_entry *route;
 
-	route = net_route_lookup(iface, addr);
+	route = net_route_ipv6_lookup(iface, addr);
 	if (route) {
 		return route;
 	}
 
-	route = net_route_add(iface, addr, prefix_len, addr,
-			      NET_IPV6_ND_INFINITE_LIFETIME,
-			      NET_ROUTE_PREFERENCE_LOW);
+	route = net_route_ipv6_add(iface, addr, prefix_len, addr,
+				   NET_IPV6_ND_INFINITE_LIFETIME,
+				   NET_ROUTE_PREFERENCE_LOW);
 
 	NET_DBG("%s route to %s/%d iface %p", route ? "Add" : "Cannot add",
 		net_sprint_ipv6_addr(addr), prefix_len, iface);
 
 	return route;
 }
-#endif /* CONFIG_NET_ROUTE */
+#endif /* CONFIG_NET_IPV6_ROUTE */
 
 static void ipv6_no_route_info(struct net_pkt *pkt,
 			       const uint8_t *src,
@@ -330,7 +330,7 @@ static void ipv6_no_route_info(struct net_pkt *pkt,
 		net_sprint_ipv6_addr(dst));
 }
 
-#if defined(CONFIG_NET_ROUTE)
+#if defined(CONFIG_NET_IPV6_ROUTE)
 static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 					  struct net_ipv6_hdr *hdr)
 {
@@ -343,17 +343,17 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 	net_ipv6_addr_copy_raw(dst_ip.s6_addr, hdr->dst);
 
 	/* Check if the packet can be routed */
-	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
-		found = net_route_get_info(NULL, &dst_ip, &route, &nexthop);
+	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING)) {
+		found = net_route_ipv6_get_info(NULL, &dst_ip, &route, &nexthop);
 	} else {
-		found = net_route_get_info(net_pkt_iface(pkt), &dst_ip,
-					   &route, &nexthop);
+		found = net_route_ipv6_get_info(net_pkt_iface(pkt), &dst_ip,
+						&route, &nexthop);
 	}
 
 	if (found) {
 		int ret;
 
-		if (IS_ENABLED(CONFIG_NET_ROUTING) &&
+		if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING) &&
 		    (net_ipv6_is_ll_addr(&src_ip) ||
 		     net_ipv6_is_ll_addr(&dst_ip))) {
 			/* RFC 4291 ch 2.5.6 */
@@ -371,7 +371,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 			net_pkt_set_iface(pkt, route->iface);
 		}
 
-		if (IS_ENABLED(CONFIG_NET_ROUTING) &&
+		if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING) &&
 		    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt) &&
 		    !net_if_flag_is_set(net_pkt_orig_iface(pkt), NET_IF_IPV6_NO_ND)) {
 			/* If the route interface to destination is
@@ -385,7 +385,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 			add_route(net_pkt_orig_iface(pkt), &src_ip, 128);
 		}
 
-		ret = net_route_packet(pkt, nexthop);
+		ret = net_route_ipv6_packet(pkt, nexthop);
 		if (ret < 0) {
 			NET_DBG("Cannot re-route pkt %p via %s "
 				"at iface %p (%d)",
@@ -428,13 +428,13 @@ static inline enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 	return NET_DROP;
 }
 
-#endif /* CONFIG_NET_ROUTE */
+#endif /* CONFIG_NET_IPV6_ROUTE */
 
 
 static enum net_verdict ipv6_forward_mcast_packet(struct net_pkt *pkt,
 						 struct net_ipv6_hdr *hdr)
 {
-#if defined(CONFIG_NET_ROUTE_MCAST)
+#if defined(CONFIG_NET_IPV6_ROUTE_MCAST)
 	int routed;
 
 	/* Continue processing without forwarding if:
@@ -449,12 +449,12 @@ static enum net_verdict ipv6_forward_mcast_packet(struct net_pkt *pkt,
 		return NET_CONTINUE;
 	}
 
-	routed = net_route_mcast_forward_packet(pkt, hdr);
+	routed = net_route_ipv6_mcast_forward_packet(pkt, hdr);
 
 	if (routed < 0) {
 		return NET_DROP;
 	}
-#endif /*CONFIG_NET_ROUTE_MCAST*/
+#endif /*CONFIG_NET_IPV6_ROUTE_MCAST*/
 	return NET_CONTINUE;
 }
 
@@ -575,7 +575,8 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 		 * source means that duplicate address has been detected.
 		 * This check is done later on if routing features are enabled.
 		 */
-		if (!IS_ENABLED(CONFIG_NET_ROUTING) && !IS_ENABLED(CONFIG_NET_ROUTE_MCAST) &&
+		if (!IS_ENABLED(CONFIG_NET_IPV6_ROUTING) &&
+		    !IS_ENABLED(CONFIG_NET_IPV6_ROUTE_MCAST) &&
 		    is_src_non_tentative_itself(hdr->src)) {
 			NET_DBG("DROP: src addr is %s", "mine");
 			goto drop;
@@ -605,7 +606,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_ROUTE_MCAST) &&
+	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTE_MCAST) &&
 		net_ipv6_is_addr_mcast_raw(hdr->dst) && !net_pkt_forwarding(pkt)) {
 		/* If the packet is a multicast packet and multicast routing
 		 * is activated, we give the packet to the routing engine.
@@ -637,7 +638,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 		 * cross interface boundary, then drop the packet.
 		 * RFC 4291 ch 2.5.6
 		 */
-		if (IS_ENABLED(CONFIG_NET_ROUTING) &&
+		if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING) &&
 		    net_ipv6_is_ll_addr_raw(hdr->src) &&
 		    !net_if_ipv6_addr_lookup_by_iface_raw(pkt_iface, hdr->dst)) {
 			ipv6_no_route_info(pkt, hdr->src, hdr->dst);
@@ -646,7 +647,8 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 		}
 	}
 
-	if ((IS_ENABLED(CONFIG_NET_ROUTING) || IS_ENABLED(CONFIG_NET_ROUTE_MCAST)) &&
+	if ((IS_ENABLED(CONFIG_NET_IPV6_ROUTING) ||
+	     IS_ENABLED(CONFIG_NET_IPV6_ROUTE_MCAST)) &&
 	    !net_pkt_is_loopback(pkt) && is_src_non_tentative_itself(hdr->src)) {
 		NET_DBG("DROP: src addr is %s", "mine");
 		goto drop;

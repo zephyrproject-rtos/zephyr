@@ -19,6 +19,7 @@
 #include <openthread/platform/entropy.h>
 #include <platform-zephyr.h>
 #include <route.h>
+#include <route_ipv6.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
@@ -327,13 +328,13 @@ static void ot_bbr_multicast_listener_handler(void *context,
 	struct openthread_context *ot_context = (struct openthread_context *)context;
 	struct net_in6_addr recv_addr = {0};
 	struct net_if_mcast_addr *mcast_addr = NULL;
-	struct net_route_entry_mcast *entry = NULL;
+	struct net_route_ipv6_entry_mcast *entry = NULL;
 
 	memcpy(recv_addr.s6_addr, address->mFields.m32, sizeof(otIp6Address));
 
 	if (event == OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED) {
-		entry = net_route_mcast_add(ot_context->iface, &recv_addr,
-					    NUM_BITS(struct net_in6_addr));
+		entry = net_route_ipv6_mcast_add(ot_context->iface, &recv_addr,
+						 NUM_BITS(struct net_in6_addr));
 		if (entry != NULL) {
 			/*
 			 * No need to perform mcast_lookup explicitly as it's already done in
@@ -348,13 +349,13 @@ static void ot_bbr_multicast_listener_handler(void *context,
 			}
 		}
 	} else {
-		struct net_route_entry_mcast *route_to_del =
-			net_route_mcast_lookup_by_iface(&recv_addr, ot_context->iface);
+		struct net_route_ipv6_entry_mcast *route_to_del =
+			net_route_ipv6_mcast_lookup_by_iface(&recv_addr, ot_context->iface);
 		struct net_if_mcast_addr *addr_to_del;
 
 		addr_to_del = net_if_ipv6_maddr_lookup(&recv_addr, &(ot_context->iface));
 		if (route_to_del != NULL) {
-			net_route_mcast_del(route_to_del);
+			net_route_ipv6_mcast_del(route_to_del);
 		}
 
 		if (addr_to_del != NULL && net_if_ipv6_maddr_is_joined(addr_to_del)) {
@@ -640,13 +641,13 @@ static void openthread_border_router_add_or_rm_route_to_multicast_groups(bool ad
 	};
 	struct net_in6_addr addr = {0};
 	struct net_if_mcast_addr *mcast_addr = NULL;
-	struct net_route_entry_mcast *entry = NULL;
+	struct net_route_ipv6_entry_mcast *entry = NULL;
 
 	ARRAY_FOR_EACH(mcast_group_idx, i) {
 
 		net_ipv6_addr_create(&addr, (0xff << 8) | mcast_group_idx[i], 0, 0, 0, 0, 0, 0, 0);
 		if (add) {
-			entry = net_route_mcast_add(ail_iface_ptr, &addr, 16);
+			entry = net_route_ipv6_mcast_add(ail_iface_ptr, &addr, 16);
 			if (entry != NULL) {
 				mcast_addr = net_if_ipv6_maddr_add(ail_iface_ptr,
 								(const struct net_in6_addr *)&addr);
@@ -655,10 +656,10 @@ static void openthread_border_router_add_or_rm_route_to_multicast_groups(bool ad
 				}
 			}
 		} else {
-			entry = net_route_mcast_lookup(&addr);
+			entry = net_route_ipv6_mcast_lookup(&addr);
 			mcast_addr = net_if_ipv6_maddr_lookup(&addr, &(ail_iface_ptr));
 			if (entry != NULL) {
-				net_route_mcast_del(entry);
+				net_route_ipv6_mcast_del(entry);
 			}
 			/* There is no need to check if address is joined,
 			 * as `clear_joined_ipv6_mcast_groups` was previously

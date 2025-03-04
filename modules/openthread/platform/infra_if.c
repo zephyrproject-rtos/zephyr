@@ -7,10 +7,10 @@
 #include "openthread/platform/infra_if.h"
 #include "icmpv6.h"
 #include "ipv6.h"
+#include "route_ipv6.h"
 #include "openthread_border_router.h"
 #include <common/code_utils.hpp>
 #include <platform-zephyr.h>
-#include <route.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/icmp.h>
@@ -228,9 +228,11 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length)
 				       sizeof(br_omr_addr->mFields.m8));
 				net_ipv6_nbr_add(ot_iface, &nexthop, net_if_get_link_addr(ot_iface),
 						 false, NET_IPV6_NBR_STATE_STALE);
-				route_added = net_route_add(ot_iface, &rio_prefix, rio->prefix_len,
-							    &nexthop, rio->route_lifetime,
-							    rio->flags.prf);
+				route_added = net_route_ipv6_add(ot_iface, &rio_prefix,
+								 rio->prefix_len,
+								 &nexthop,
+								 rio->route_lifetime,
+								 rio->flags.prf);
 			}
 			break;
 		default:
