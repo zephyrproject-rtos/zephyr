@@ -895,7 +895,7 @@ config BT_CTLR_SYNC_TRANSFER_SENDER
 
 config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising" if !BT_LL_SW_SPLIT
-	depends on BT_BROADCASTER && BT_CTLR_ADV_ISO_SUPPORT
+	depends on BT_ISO_BROADCASTER && BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_ADV_PERIODIC
 	select BT_CTLR_SET_HOST_FEATURE
 	default y if BT_ISO_BROADCASTER
@@ -909,7 +909,7 @@ config BT_CTLR_ADV_ISO
 
 config BT_CTLR_SYNC_ISO
 	bool "LE Broadcast Isochronous Channel advertising sync" if !BT_LL_SW_SPLIT
-	depends on BT_OBSERVER && BT_CTLR_SYNC_ISO_SUPPORT
+	depends on BT_ISO_SYNC_RECEIVER && BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_CTLR_SYNC_PERIODIC
 	select BT_CTLR_SET_HOST_FEATURE
 	default y if BT_ISO_SYNC_RECEIVER
@@ -1010,7 +1010,7 @@ config BT_CTLR_SET_HOST_FEATURE
 
 config BT_CTLR_CENTRAL_ISO
 	bool "LE Connected Isochronous Stream Central" if !BT_LL_SW_SPLIT
-	depends on BT_CTLR_CENTRAL_ISO_SUPPORT && BT_CENTRAL
+	depends on BT_CTLR_CENTRAL_ISO_SUPPORT && BT_ISO_CENTRAL
 	default y if BT_ISO_CENTRAL
 	help
 	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
@@ -1023,7 +1023,7 @@ config BT_CTLR_CENTRAL_ISO
 
 config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral" if !BT_LL_SW_SPLIT
-	depends on BT_CTLR_PERIPHERAL_ISO_SUPPORT && BT_PERIPHERAL
+	depends on BT_CTLR_PERIPHERAL_ISO_SUPPORT && BT_ISO_PERIPHERAL
 	default y if BT_ISO_PERIPHERAL
 	help
 	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
