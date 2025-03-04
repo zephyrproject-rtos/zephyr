@@ -5404,7 +5404,9 @@ West:
     - "area: Audio"
 
 "West project: tflite-micro":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - XenuIsWatching
   collaborators:
     - laurenmurphyx64
   files:
