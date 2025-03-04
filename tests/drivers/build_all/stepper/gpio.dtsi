@@ -37,3 +37,16 @@ drv8424: drv8424 {
 	m1-gpios = <&test_gpio 0 0>;
 	counter = <&counter0>;
 };
+
+test_a4979: a4979_stepper {
+	status = "okay";
+	compatible = "allegro,a4979";	
+	micro-step-res = <1>;
+	reset-gpios = <&test_gpio 0 0>;
+	dir-gpios = <&test_gpio 0 0>;
+	step-gpios = <&test_gpio 0 0>;
+	en-gpios = <&test_gpio 0 0>;
+	m0-gpios = <&test_gpio 0 0>;
+	m1-gpios = <&test_gpio 0 0>;
+	counter = <&counter0>;
+}
