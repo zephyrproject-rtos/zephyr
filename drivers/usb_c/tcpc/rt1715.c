@@ -26,6 +26,8 @@ struct rt1715_data {
 	int init_retries;
 	/** Boolean value if chip was successfully initialized */
 	bool initialized;
+	/** TCPCI Specification Revision */
+	uint8_t pd_int_rev;
 
 	/** Callback for alert GPIO */
 	struct gpio_callback alert_cb;
@@ -414,8 +416,9 @@ static int rt1715_tcpc_mask_status_register(const struct device *dev, enum tcpc_
 static int rt1715_tcpc_set_drp_toggle(const struct device *dev, bool enable)
 {
 	const struct rt1715_cfg *cfg = dev->config;
+	const struct rt1715_data *data = dev->data;
 
-	return tcpci_tcpm_set_drp_toggle(&cfg->bus, enable);
+	return tcpci_tcpm_set_drp_toggle(&cfg->bus, data->pd_int_rev, enable);
 }
 
 static int rt1715_tcpc_get_chip_info(const struct device *dev, struct tcpc_chip_info *chip_info)
@@ -585,6 +588,7 @@ void rt1715_init_work_cb(struct k_work *work)
 	const struct rt1715_cfg *cfg = data->dev->config;
 	uint8_t power_reg, lp_reg = 0;
 	struct tcpc_chip_info chip_info;
+	uint16_t tcpci_rev;
 	int ret;
 
 	LOG_INF("Initializing RT1715 chip: %s", data->dev->name);
@@ -607,6 +611,11 @@ void rt1715_init_work_cb(struct k_work *work)
 	rt1715_tcpc_get_chip_info(data->dev, &chip_info);
 	LOG_INF("Initialized chip is: %04x:%04x:%04x", chip_info.vendor_id, chip_info.product_id,
 		chip_info.device_id);
+
+	/* get TCPCI Specification Revision */
+	tcpci_read_reg16(&cfg->bus, TCPC_REG_PD_INT_REV, &tcpci_rev);
+	data->pd_int_rev = TCPC_REG_PD_INT_REV_REV_MAJOR(tcpci_rev) << 4 |
+			   TCPC_REG_PD_INT_REV_REV_MINOR(tcpci_rev);
 
 	/* Exit shutdown mode & Enable ext messages */
 	lp_reg = RT1715_REG_LP_CTRL_SHUTDOWN_OFF | RT1715_REG_LP_CTRL_ENEXTMSG;
