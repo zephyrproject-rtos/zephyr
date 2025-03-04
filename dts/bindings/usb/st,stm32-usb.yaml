@@ -31,5 +31,18 @@ properties:
     type: phandle
     description: PHY provider specifier
 
+  phy-type:
+    type: string
+    required: true
+    enum:
+      - "PCD_PHY_ULPI"
+      - "PCD_PHY_EMBEDDED"
+      - "PCD_PHY_UTMI"
+    description: |
+      OTG_FS supports the following PHY interfaces:
+        - "PCD_PHY_ULPI": an UTMI+ Low Pin Interface for external high-speed PHY.
+        - "PCD_PHY_EMBEDDED": an on-chip full-speed PHY.
+        - "PCD_PHY_UTMI": an USB 2.0 Transceiver Macrocell interface for on-chip full-speed PHY.
+
   clocks:
     required: true
