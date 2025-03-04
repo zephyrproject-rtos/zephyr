@@ -265,11 +265,21 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 
 	tester_set_bit(rp->data, BTP_GAP_SET_MITM);
 	tester_set_bit(rp->data, BTP_GAP_SET_FILTER_LIST);
+
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		/* octet 4 */
 		tester_set_bit(rp->data, BTP_GAP_SET_EXTENDED_ADVERTISING);
+
+		/* octet 5 */
+		tester_set_bit(rp->data, BTP_GAP_EXT_ADV_CREATE);
+		tester_set_bit(rp->data, BTP_GAP_EXT_ADV_DELETE);
+		tester_set_bit(rp->data, BTP_GAP_EXT_ADV_SET_PARAMS);
+		tester_set_bit(rp->data, BTP_GAP_EXT_ADV_SET_DATA);
+		tester_set_bit(rp->data, BTP_GAP_EXT_ADV_START);
+		tester_set_bit(rp->data, BTP_GAP_EXT_ADV_STOP);
 	}
 
-	*rsp_len = sizeof(*rp) + 4;
+	*rsp_len = sizeof(*rp) + 6;
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -522,7 +532,7 @@ static struct bt_data ad[10] = {
 };
 static struct bt_data sd[10];
 
-static struct bt_le_ext_adv *ext_adv;
+static struct bt_le_ext_adv *ext_adv[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 
 struct bt_le_ext_adv *tester_gap_ext_adv_get(void)
 {
@@ -530,7 +540,7 @@ struct bt_le_ext_adv *tester_gap_ext_adv_get(void)
 		return NULL;
 	}
 
-	return ext_adv;
+	return ext_adv[0];
 }
 
 int tester_gap_start_ext_adv(void)
@@ -541,7 +551,7 @@ int tester_gap_start_ext_adv(void)
 
 	int err;
 
-	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	err = bt_le_ext_adv_start(ext_adv[0], BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
 		LOG_ERR("Failed to start advertising");
 
@@ -561,7 +571,7 @@ int tester_gap_stop_ext_adv(void)
 
 	int err;
 
-	err = bt_le_ext_adv_stop(ext_adv);
+	err = bt_le_ext_adv_stop(ext_adv[0]);
 	if (err != 0) {
 		LOG_ERR("Failed to stop advertising");
 
@@ -573,8 +583,361 @@ int tester_gap_stop_ext_adv(void)
 	return 0;
 }
 
-static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len,
-			       void *rsp, uint16_t *rsp_len)
+static void adv_sent(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_sent_info *info)
+{
+	int idx;
+
+	/* Validata adv param and search in the list of known advertisers */
+	if (!adv) {
+		return;
+	}
+
+	for (idx = 0; idx < CONFIG_BT_EXT_ADV_MAX_ADV_SET; idx++) {
+		if (ext_adv[idx] == adv) {
+			struct btp_gap_ev_ext_adv_set_terminated_ev ev = {.id = idx};
+
+			tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_EXT_ADV_SET_TERMINATED, &ev,
+				     sizeof(ev));
+			break;
+		}
+	}
+}
+
+static void connected(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_connected_info *info)
+{
+	/* No actions taken */
+}
+
+static uint8_t ext_adv_create(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	int err;
+	int idx;
+	struct btp_gap_ext_adv_create_set_rp *rp = rsp;
+	struct bt_le_ext_adv **adv = NULL;
+
+	for (idx = 0; idx < CONFIG_BT_EXT_ADV_MAX_ADV_SET; idx++) {
+		if (ext_adv[idx] == NULL) {
+			adv = &ext_adv[idx];
+			break;
+		}
+	}
+
+	if (!adv) {
+		return BTP_STATUS_FAILED;
+	}
+
+	static const struct bt_le_ext_adv_cb adv_cb = {
+		.sent = adv_sent,
+		.connected = connected,
+	};
+
+	struct bt_le_adv_param param = {
+		.id = BT_ID_DEFAULT,
+		.sid = 0,
+		.secondary_max_skip = 0U,
+		.options = 0U,
+		.interval_min = 160,
+		.interval_max = 320,
+		.peer = NULL,
+	};
+
+	err = bt_le_ext_adv_create(&param, &adv_cb, adv);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->id = idx;
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ext_adv_delete(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	int err;
+	const struct btp_gap_ext_adv_delete_cmd *cp = cmd;
+
+	uint8_t id = cp->id;
+
+	/* Invalid index or the set does not exist */
+	if ((id >= CONFIG_BT_EXT_ADV_MAX_ADV_SET) || (ext_adv[id] == NULL)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_le_ext_adv_delete(ext_adv[id]);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	ext_adv[id] = NULL;
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ext_adv_set_params(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	int err = 0;
+	const struct btp_gap_ext_adv_set_params_cmd *cp = cmd;
+	struct bt_le_adv_param param;
+
+	uint8_t id = cp->id;
+
+	/* Invalid index or the set does not exist */
+	if ((id >= CONFIG_BT_EXT_ADV_MAX_ADV_SET) || (ext_adv[id] == NULL)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	param.id = cp->id;
+	param.sid = cp->sid;
+	param.interval_min = cp->min_interval;
+	param.interval_max = cp->max_interval;
+	param.secondary_max_skip = 0U;
+	param.options = BT_LE_ADV_OPT_NONE;
+
+	switch (cp->address_type) {
+	case BT_LE_ADDR_IDENTITY:
+		param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
+		break;
+	case BT_LE_ADDR_RESOLVABLE_PRIVATE:
+	case BT_LE_ADDR_NON_RESOLVABLE_PRIVATE:
+		/* Automatically set by the stack when privacy is enabled */
+		break;
+	default:
+		return BTP_STATUS_FAILED;
+	}
+
+	switch (cp->ad_type) {
+	case BT_LE_ADVERTISER_TYPE_LEGACY:
+		break;
+	case BT_LE_ADVERTISER_TYPE_CONNECTABLE:
+		param.options |= BT_LE_ADV_OPT_CONN;
+		break;
+	case BT_LE_ADVERTISER_TYPE_SCANNABLE:
+		param.options |= BT_LE_ADV_OPT_SCANNABLE;
+		break;
+	case BT_LE_ADVERTISER_TYPE_LEGACY_CONNECTABLE_SCANNABLE:
+		param.options |= BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_SCANNABLE;
+		break;
+	case BT_LE_ADVERTISER_TYPE_EXT_NON_CONN:
+		param.options |= BT_LE_ADV_OPT_EXT_ADV;
+		break;
+	case BT_LE_ADVERTISER_TYPE_EXT_CONNECTABLE:
+		param.options |= BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_EXT_ADV;
+		break;
+	case BT_LE_ADVERTISER_TYPE_EXT_SCANNABLE:
+		param.options |= BT_LE_ADV_OPT_SCANNABLE | BT_LE_ADV_OPT_EXT_ADV;
+		break;
+	case BT_LE_ADVERTISER_TYPE_CODED_NON_CONN:
+		param.options |= BT_LE_ADV_OPT_CODED;
+		break;
+	case BT_LE_ADVERTISER_TYPE_CODED_CONNECTABLE:
+		param.options |= BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_CODED;
+		break;
+	case BT_LE_ADVERTISER_TYPE_CODED_SCANNABLE:
+		param.options |= BT_LE_ADV_OPT_SCANNABLE | BT_LE_ADV_OPT_CODED;
+		break;
+	default:
+		return BTP_STATUS_FAILED;
+	}
+
+	switch (cp->filter_accept_list) {
+	case BT_LE_FILTER_ACCEPT_LIST_DISABLED:
+		break;
+	case BT_LE_FILTER_ACCEPT_LIST_IN_USE_FOR_CONNECTIONS:
+		param.options |= BT_LE_ADV_OPT_FILTER_CONN;
+		break;
+	case BT_LE_FILTER_ACCEPT_LIST_IN_USE_FOR_SCAN_REQ:
+		param.options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
+		break;
+	case BT_LE_FILTER_ACCEPT_LIST_IN_USE_FOR_CONNECTIONS_AND_SCAN_REQ:
+		param.options |= BT_LE_ADV_OPT_FILTER_CONN | BT_LE_ADV_OPT_FILTER_SCAN_REQ;
+		break;
+	default:
+		return BTP_STATUS_FAILED;
+	}
+
+	switch (cp->directed_advertising) {
+	case BT_LE_DIRECTED_ADVERTISING_DISABLED:
+		param.peer = NULL;
+		break;
+	case BT_LE_DIRECTED_ADVERTISING_LOW_DUTY:
+		param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+		/* Intentional fallthrough */
+	case BT_LE_DIRECTED_ADVERTISING_HIGH_DUTY: {
+		bt_addr_le_t peer_address;
+
+		peer_address.type = cp->peer_address_type;
+		memcpy(peer_address.a.val, cp->peer_address, sizeof(peer_address.a.val));
+		param.peer = &peer_address;
+		break;
+	}
+	default:
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->options & BT_LE_EXT_ADV_OPTION_USE_DEVICE_NAME) {
+		param.options |= BT_LE_ADV_OPT_USE_NAME;
+	}
+
+	if (cp->options & BT_LE_EXT_ADV_OPTION_DISABLE_2M) {
+		param.options |= BT_LE_ADV_OPT_NO_2M;
+	}
+
+	if (cp->options & BT_LE_EXT_ADV_OPTION_ANONYMOUS_ADV) {
+		param.options |= BT_LE_ADV_OPT_ANONYMOUS;
+	}
+
+	if (cp->options & BT_LE_EXT_ADV_OPTION_INCLUDE_TX_POWER) {
+		param.options |= BT_LE_ADV_OPT_USE_TX_POWER;
+	}
+
+	err = bt_le_ext_adv_update_param(ext_adv[id], &param);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ext_adv_set_data(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	int err;
+	const struct btp_gap_ext_adv_set_data_cmd *cp = cmd;
+	struct bt_data ad[10];
+	struct bt_data sd[10];
+	uint8_t ad_idx;
+	uint8_t sd_idx;
+	size_t pos;
+
+	uint8_t id = cp->id;
+
+	if ((id >= CONFIG_BT_EXT_ADV_MAX_ADV_SET) || (ext_adv[id] == NULL)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	/* Size validation */
+	if ((cmd_len < sizeof(*cp)) ||
+	    (cmd_len != sizeof(*cp) + cp->data_len + cp->scan_response_length)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	/* Iterate through the input data and pick up LTV triplets */
+	for (pos = 0, ad_idx = 0; pos < cp->data_len; ad_idx++) {
+		if (ad_idx > ARRAY_SIZE(ad)) {
+			LOG_ERR("ad[] Out of memory");
+			return BTP_STATUS_FAILED;
+		}
+
+		uint8_t data_len = cp->data[pos++] - 1;
+
+		if (pos + data_len > cp->data_len) {
+			return BTP_STATUS_FAILED;
+		}
+
+		ad[ad_idx].type = cp->data[pos++];
+		ad[ad_idx].data_len = data_len;
+		ad[ad_idx].data = &cp->data[pos];
+		pos += data_len;
+	}
+
+	for (sd_idx = 0; pos < cp->data_len + cp->scan_response_length; sd_idx++) {
+		if (sd_idx >= ARRAY_SIZE(sd)) {
+			LOG_ERR("sd[] Out of memory");
+			return BTP_STATUS_FAILED;
+		}
+
+		uint8_t data_len = cp->data[pos++] - 1;
+
+		if (pos + data_len > cp->data_len + cp->scan_response_length) {
+			return BTP_STATUS_FAILED;
+		}
+
+		sd[sd_idx].type = cp->data[pos++];
+		sd[sd_idx].data_len = data_len;
+		sd[sd_idx].data = &cp->data[pos];
+		pos += data_len;
+	}
+
+	err = bt_le_ext_adv_set_data(ext_adv[id], (struct bt_data *)&ad, ad_idx,
+				     sd_idx ? (struct bt_data *)&sd : NULL, sd_idx);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ext_adv_start(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	int err;
+	const struct btp_gap_ext_adv_start_cmd *cp = cmd;
+
+	uint8_t id = cp->id;
+
+	/* Invalid index or the set does not exist */
+	if ((id >= CONFIG_BT_EXT_ADV_MAX_ADV_SET) || (ext_adv[id] == NULL)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_le_ext_adv_start(ext_adv[id], BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		LOG_ERR("Failed to start advertising");
+	}
+
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ext_adv_stop(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	int err;
+	const struct btp_gap_ext_adv_stop_cmd *cp = cmd;
+
+	uint8_t id = cp->id;
+
+	/* Invalid index or the set does not exist */
+	if ((id >= CONFIG_BT_EXT_ADV_MAX_ADV_SET) || (ext_adv[id] == NULL)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_le_ext_adv_stop(ext_adv[id]);
+	if (err) {
+		LOG_ERR("Failed to stop advertising");
+
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_gap_set_discoverable_cmd *cp = cmd;
 	struct btp_gap_set_discoverable_rp *rp = rsp;
@@ -679,33 +1042,32 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_ad
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && atomic_test_bit(&current_settings,
 	    BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
 		param->options |= BT_LE_ADV_OPT_EXT_ADV;
-		if (ext_adv != NULL) {
-			err = bt_le_ext_adv_stop(ext_adv);
+		if (ext_adv[0] != NULL) {
+			err = bt_le_ext_adv_stop(ext_adv[0]);
 			if (err != 0) {
 				return err;
 			}
 
-			err = bt_le_ext_adv_delete(ext_adv);
+			err = bt_le_ext_adv_delete(ext_adv[0]);
 			if (err != 0) {
 				return err;
 			}
 
-			ext_adv = NULL;
+			ext_adv[0] = NULL;
 		}
 
-		err = bt_le_ext_adv_create(param, NULL, &ext_adv);
+		err = bt_le_ext_adv_create(param, NULL, &ext_adv[0]);
 		if (err != 0) {
 			return BTP_STATUS_FAILED;
 		}
 
-		err = bt_le_ext_adv_set_data(ext_adv, ad, ad_len, sd_len ? sd : NULL, sd_len);
+		err = bt_le_ext_adv_set_data(ext_adv[0], ad, ad_len, sd_len ? sd : NULL, sd_len);
 	}
 
 	return err;
 }
 
-static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
-				 void *rsp, uint16_t *rsp_len)
+static uint8_t start_advertising(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_gap_start_advertising_cmd *cp = cmd;
 	struct btp_gap_start_advertising_rp *rp = rsp;
@@ -764,7 +1126,7 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
-		err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+		err = bt_le_ext_adv_start(ext_adv[0], BT_LE_EXT_ADV_START_DEFAULT);
 	} else {
 		err = bt_le_adv_start(&param, ad, adv_len, sd_len ? sd : NULL, sd_len);
 	}
@@ -1468,7 +1830,7 @@ int tester_gap_padv_configure(const struct bt_le_per_adv_param *param)
 	struct bt_le_adv_param ext_adv_param =
 		BT_LE_ADV_PARAM_INIT(0, param->interval_min, param->interval_max, NULL);
 
-	if (ext_adv == NULL) {
+	if (ext_adv[0] == NULL) {
 		current_settings = BIT(BTP_GAP_SETTINGS_DISCOVERABLE) |
 				   BIT(BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
 		err = tester_gap_create_adv_instance(&ext_adv_param, BTP_GAP_ADDR_TYPE_IDENTITY, ad,
@@ -1481,7 +1843,7 @@ int tester_gap_padv_configure(const struct bt_le_per_adv_param *param)
 	/* Set periodic advertising parameters and the required
 	 * bit in AD Flags of extended advertising.
 	 */
-	err = bt_le_per_adv_set_param(ext_adv, param);
+	err = bt_le_per_adv_set_param(ext_adv[0], param);
 	if (err != 0) {
 		LOG_DBG("Failed to set periodic advertising parameters (err %d)\n", err);
 	}
@@ -1519,7 +1881,7 @@ int tester_gap_padv_start(void)
 {
 	int err;
 
-	if (ext_adv == NULL) {
+	if (ext_adv[0] == NULL) {
 		return -EINVAL;
 	}
 
@@ -1531,7 +1893,7 @@ int tester_gap_padv_start(void)
 	}
 
 	/* Enable Periodic Advertising */
-	err = bt_le_per_adv_start(ext_adv);
+	err = bt_le_per_adv_start(ext_adv[0]);
 	if (err != 0) {
 		LOG_DBG("Failed to start periodic advertising data: %d", err);
 	}
@@ -1562,13 +1924,13 @@ int tester_gap_padv_stop(void)
 {
 	int err;
 
-	if (ext_adv == NULL) {
+	if (ext_adv[0] == NULL) {
 		/* Ext adv not yet created */
 		return -ESRCH;
 	}
 
 	/* Enable Periodic Advertising */
-	err = bt_le_per_adv_stop(ext_adv);
+	err = bt_le_per_adv_stop(ext_adv[0]);
 	if (err != 0) {
 		LOG_DBG("Failed to stop periodic advertising data: %d", err);
 	}
@@ -1576,8 +1938,7 @@ int tester_gap_padv_stop(void)
 	return err;
 }
 
-static uint8_t padv_stop(const void *cmd, uint16_t cmd_len,
-			 void *rsp, uint16_t *rsp_len)
+static uint8_t padv_stop(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	int err;
 	struct btp_gap_padv_stop_rp *rp = rsp;
@@ -1599,12 +1960,12 @@ int tester_gap_padv_set_data(struct bt_data *per_ad, uint8_t ad_len)
 {
 	int err;
 
-	if (ext_adv == NULL) {
+	if (ext_adv[0] == NULL) {
 		return -EINVAL;
 	}
 
 	/* Set Periodic Advertising data */
-	err = bt_le_per_adv_set_data(ext_adv, per_ad, ad_len);
+	err = bt_le_per_adv_set_data(ext_adv[0], per_ad, ad_len);
 	if (err != 0) {
 		LOG_DBG("Failed to set periodic advertising data: %d", err);
 	}
@@ -1612,8 +1973,7 @@ int tester_gap_padv_set_data(struct bt_data *per_ad, uint8_t ad_len)
 	return err;
 }
 
-static uint8_t padv_set_data(const void *cmd, uint16_t cmd_len,
-			     void *rsp, uint16_t *rsp_len)
+static uint8_t padv_set_data(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	int err;
 	uint8_t padv_len = 0U;
@@ -1841,6 +2201,36 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GAP_SET_EXTENDED_ADVERTISING,
 		.expect_len = sizeof(struct btp_gap_set_extended_advertising_cmd),
 		.func = set_extended_advertising,
+	},
+	{
+		.opcode = BTP_GAP_EXT_ADV_CREATE,
+		.expect_len = 0,
+		.func = ext_adv_create,
+	},
+	{
+		.opcode = BTP_GAP_EXT_ADV_DELETE,
+		.expect_len = sizeof(struct btp_gap_ext_adv_delete_cmd),
+		.func = ext_adv_delete,
+	},
+	{
+		.opcode = BTP_GAP_EXT_ADV_SET_PARAMS,
+		.expect_len = sizeof(struct btp_gap_ext_adv_set_params_cmd),
+		.func = ext_adv_set_params,
+	},
+	{
+		.opcode = BTP_GAP_EXT_ADV_SET_DATA,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = ext_adv_set_data,
+	},
+	{
+		.opcode = BTP_GAP_EXT_ADV_START,
+		.expect_len = sizeof(struct btp_gap_ext_adv_start_cmd),
+		.func = ext_adv_start
+	},
+	{
+		.opcode = BTP_GAP_EXT_ADV_STOP,
+		.expect_len = sizeof(struct btp_gap_ext_adv_stop_cmd),
+		.func = ext_adv_stop,
 	},
 #if defined(CONFIG_BT_PER_ADV)
 	{
