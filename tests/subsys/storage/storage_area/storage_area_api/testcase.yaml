@@ -1,0 +1,23 @@
+common:
+  tags: storage_area_api
+tests:
+  storage.storage_area.api.flash:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_CONF_FILE=cfg_flash.conf
+  storage.storage_area.api.eeprom:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_CONF_FILE=cfg_eeprom.conf
+  storage.storage_area.api.ram:
+    platform_allow:
+      - qemu_cortex_m3
+    extra_args:
+      - EXTRA_CONF_FILE=cfg_ram.conf
+  storage.storage_area.api.disk:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_CONF_FILE=cfg_disk.conf
