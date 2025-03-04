@@ -40,6 +40,7 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg, uint32_t 
 	const struct device *spi_dev = arg;
 	struct spi_mcux_data *data = (struct spi_mcux_data *)spi_dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(spi_dev, reg_base);
 	char debug_char;
 
 	if (status < 0) {
@@ -50,6 +51,8 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg, uint32_t 
 	if (channel == dma_data->dma_tx.channel) {
 		/* this part of the transfer ends */
 		dma_data->status_flags |= LPSPI_DMA_TX_DONE_FLAG;
+		/* Disable continuous mode when TX done. */
+		base->TCR &= ~LPSPI_TCR_CONT_MASK;
 		debug_char = 'T';
 	} else if (channel == dma_data->dma_rx.channel) {
 		/* this part of the transfer ends */
@@ -64,7 +67,7 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg, uint32_t 
 #if CONFIG_SPI_ASYNC
 	if (data->ctx.asynchronous && (dma_data->status_flags & LPSPI_DMA_DONE_FLAG)) {
 		/* Load dma blocks of equal length */
-		size_t dma_size = spi_context_max_continuous_chunk(data->ctx);
+		size_t dma_size = spi_context_max_continuous_chunk(&data->ctx);
 
 		if (dma_size != 0) {
 			return;
@@ -213,6 +216,7 @@ static inline int spi_mcux_dma_rxtx_load(const struct device *dev, size_t *dma_s
 #ifdef CONFIG_SPI_ASYNC
 static int transceive_dma_async(const struct device *dev, spi_callback_t cb, void *userdata)
 {
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct spi_mcux_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	size_t dma_size;
@@ -226,6 +230,9 @@ static int transceive_dma_async(const struct device *dev, spi_callback_t cb, voi
 	if (ret) {
 		return ret;
 	}
+
+	/* Enable continuous transfer for each transfer. */
+	base->TCR |= LPSPI_TCR_CONT_MASK;
 
 	/* Enable DMA Requests */
 	LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
@@ -253,13 +260,8 @@ static int transceive_dma_sync(const struct device *dev)
 		if (ret) {
 			return ret;
 		}
-
-#ifdef CONFIG_SOC_SERIES_MCXN
-		while (!(LPSPI_GetStatusFlags(base) & kLPSPI_TxDataRequestFlag)) {
-			/* wait until previous tx finished */
-		}
-#endif
-
+		/* Enable continuous transfer for each transfer. */
+		base->TCR |= LPSPI_TCR_CONT_MASK;
 		/* Enable DMA Requests */
 		LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
 
@@ -268,13 +270,6 @@ static int transceive_dma_sync(const struct device *dev)
 		if (ret) {
 			return ret;
 		}
-
-#ifndef CONFIG_SOC_SERIES_MCXN
-		while ((LPSPI_GetStatusFlags(base) & kLPSPI_ModuleBusyFlag)) {
-			/* wait until module is idle */
-		}
-#endif
-
 		/* Disable DMA */
 		LPSPI_DisableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
 
@@ -284,9 +279,6 @@ static int transceive_dma_sync(const struct device *dev)
 	}
 
 	spi_context_cs_control(ctx, false);
-
-	base->TCR &= ~LPSPI_TCR_CONT_MASK;
-
 	return 0;
 }
 
@@ -296,6 +288,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 {
 	struct spi_mcux_data *data = dev->data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	const struct spi_mcux_config *config = dev->config;
 	int ret;
 
 	if (!asynchronous) {
@@ -309,13 +302,10 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 		return ret;
 	}
 
-#ifdef CONFIG_SOC_SERIES_MCXN
-	base->TCR |= LPSPI_TCR_CONT_MASK;
-#endif
-
-	/* DMA is fast enough watermarks are not required */
-	LPSPI_SetFifoWatermarks(base, 0U, 0U);
-
+	/* Set a reasonable watermark level to avoid transfer pause because of
+	 * TX FIFO empty. Half of FIFO size is always good for DMA mode.
+	 */
+	LPSPI_SetFifoWatermarks(base, config->tx_fifo_size/2, 0U);
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 	if (asynchronous) {

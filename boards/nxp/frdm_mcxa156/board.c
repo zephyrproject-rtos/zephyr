@@ -199,8 +199,9 @@ static int frdm_mcxa156_init(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi0))
+	/* SPI loopback test requires at least 2*16M. */
 	CLOCK_SetClockDiv(kCLOCK_DivLPSPI0, 1u);
-	CLOCK_AttachClk(kFRO12M_to_LPSPI0);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_LPSPI0);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi1))

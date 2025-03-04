@@ -148,8 +148,9 @@ static int frdm_mcxn947_init(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm1))
+	/* Set flexcomm1 frequency to 48M. spi loopback test requires at least 2*16M. */
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom1Clk, 1u);
-	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM1);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM1);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm2))
