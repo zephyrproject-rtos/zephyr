@@ -42,6 +42,16 @@ struct tcpci_reg_dump_map {
 extern const struct tcpci_reg_dump_map tcpci_std_regs[TCPCI_STD_REGS_SIZE];
 
 /**
+ * @brief USB-Port Controller Interface Specification Revision
+ */
+enum pd_int_rev_type {
+	/** Revision 1.0 */
+	PD_INT_REV10 = 0x10,
+	/** Revision 2.0 */
+	PD_INT_REV20 = 0x20,
+};
+
+/**
  * @brief Function to read the 8-bit register of TCPCI device
  *
  * @param bus I2C bus
@@ -185,10 +195,12 @@ int tcpci_tcpm_set_cc(const struct i2c_dt_spec *bus, enum tc_cc_pull pull);
  * @brief Function to enable or disable TCPC auto dual role toggle.
  *
  * @param bus I2C bus
+ * @param pd_int_rev Enum representing the USB−PD Inter-Block Specification Revision
  * @param enable Boolean flag to enable (true) or disable (false) DRP toggle mode
  * @return int Status of I2C operation, 0 in case of success
  */
-int tcpci_tcpm_set_drp_toggle(const struct i2c_dt_spec *bus, bool enable);
+int tcpci_tcpm_set_drp_toggle(const struct i2c_dt_spec *bus, enum pd_int_rev_type pd_int_rev,
+			      bool enable);
 
 /**
  * @brief Function to set the power and data role of the PD message header.
