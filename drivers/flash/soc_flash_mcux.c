@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(flash_mcux);
 
 #if defined(SOC_HAS_IAP) && !defined(CONFIG_SOC_LPC55S36)
 #include "fsl_iap.h"
-#elif defined(CONFIG_SOC_MCXA156)
+#elif defined(CONFIG_SOC_SERIES_MCXA)
 #include "fsl_romapi.h"
 #define FLASH_Erase   FLASH_EraseSector
 #define FLASH_Program FLASH_ProgramPhrase
