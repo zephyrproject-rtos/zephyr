@@ -495,6 +495,21 @@ Other examples of board-specific customization is pointing properties in
 ``aliases`` and ``chosen`` to the right nodes (see :ref:`dt-alias-chosen`), and
 making GPIO/pinmux assignments.
 
+Working with SiPs
+=================
+
+SiPs :ref:`_sip_porting_guide` add an additional layer between the board and the
+SoC. The SiP is included similarly to the SoC:
+
+.. code-block:: devicetree
+
+   /dts-v1/;
+   #include <your_sip_vendor/your_soc/your_cpucluster.dtsi>
+
+This is similarly reflected in the file name's qualifiers
+:file:`boards/<vendor>/plank/plank_<qualifiers>.dts` which now include the SiP
+as the first qualifier.
+
 .. _board_kconfig_files:
 
 Write Kconfig files

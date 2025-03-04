@@ -12,3 +12,4 @@ These pages document how to port Zephyr to new hardware.
    soc_porting.rst
    board_porting.rst
    shields.rst
+   sip_porting.rst
