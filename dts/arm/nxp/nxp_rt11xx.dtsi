@@ -88,6 +88,15 @@
 	};
 
 	soc {
+		dac: dac@40064000 {
+			compatible = "nxp,dac12";
+			reg = <0x40064000 0x4000>;
+			interrupts = <63 0>;
+			voltage-reference = <2>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		flexspi: spi@400cc000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x400cc000 0x4000>;
