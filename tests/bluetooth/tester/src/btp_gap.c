@@ -1224,6 +1224,28 @@ static uint8_t stop_discovery(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+static uint8_t br_connect(const struct btp_gap_connect_cmd *cp)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_create_br(&cp->address.a, BT_BR_CONN_PARAM_DEFAULT);
+	if (conn == NULL) {
+		LOG_ERR("Failed to create connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	bt_conn_unref(conn);
+
+	return BTP_STATUS_SUCCESS;
+}
+#else
+static uint8_t br_connect(const struct btp_gap_connect_cmd *cp)
+{
+	return BTP_STATUS_FAILED;
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		       void *rsp, uint16_t *rsp_len)
 {
@@ -1237,6 +1259,10 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 
 	const struct btp_gap_connect_cmd *cp = cmd;
 	int err;
+
+	if (cp->address.type == BTP_BR_ADDRESS_TYPE) {
+		return br_connect(cp);
+	}
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
 		struct bt_conn *conn = NULL;
@@ -1266,8 +1292,17 @@ static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	uint8_t status;
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
-	if (!conn) {
+	if (cp->address.type == BTP_BR_ADDRESS_TYPE) {
+		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+			conn = bt_conn_lookup_addr_br(&cp->address.a);
+		} else {
+			return BTP_STATUS_FAILED;
+		}
+	} else {
+		conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	}
+
+	if (conn == NULL) {
 		LOG_ERR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
