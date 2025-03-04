@@ -42,6 +42,16 @@ struct tcpci_reg_dump_map {
 extern const struct tcpci_reg_dump_map tcpci_std_regs[TCPCI_STD_REGS_SIZE];
 
 /**
+ * @brief USB-Port Controller Interface Specification Revision
+ */
+enum pd_int_rev_type {
+	/** Revision 1.0 */
+	PD_INT_REV10 = 0x10,
+	/** Revision 2.0 */
+	PD_INT_REV20 = 0x20,
+};
+
+/**
  * @brief Function to read the 8-bit register of TCPCI device
  *
  * @param bus I2C bus
@@ -185,10 +195,12 @@ int tcpci_tcpm_set_cc(const struct i2c_dt_spec *bus, enum tc_cc_pull pull);
  * @brief Function to enable or disable TCPC auto dual role toggle.
  *
  * @param bus I2C bus
+ * @param pd_int_rev Enum representing the USB−PD Inter-Block Specification Revision
  * @param enable Boolean flag to enable (true) or disable (false) DRP toggle mode
  * @return int Status of I2C operation, 0 in case of success
  */
-int tcpci_tcpm_set_drp_toggle(const struct i2c_dt_spec *bus, bool enable);
+int tcpci_tcpm_set_drp_toggle(const struct i2c_dt_spec *bus, enum pd_int_rev_type pd_int_rev,
+			      bool enable);
 
 /**
  * @brief Function to set the power and data role of the PD message header.
@@ -261,5 +273,63 @@ int tcpci_tcpm_clear_status_register(const struct i2c_dt_spec *bus, enum tcpc_st
  */
 int tcpci_tcpm_mask_status_register(const struct i2c_dt_spec *bus, enum tcpc_status_reg reg,
 				    uint16_t mask);
+
+/**
+ * @brief Queries the current sinking state of the TCPCI.
+ *
+ * This function checks if the device is sinking VBUS to the system load.
+ *
+ * @param bus I2C bus
+ * @param sinking Pointer to variable where sinking state will be stored
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_get_snk_ctrl(const struct i2c_dt_spec *bus, bool *sinking);
+
+/**
+ * @brief Queries the current sourcing state of the TCPCI.
+ *
+ * This function checks if the device is sourcing VBUS.
+ *
+ * @param bus I2C bus
+ * @param sourcing Pointer to variable where sourcing state will be stored
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_get_src_ctrl(const struct i2c_dt_spec *bus, bool *sourcing);
+
+/**
+ * @brief Function to enable or disable sinking power over VBUS.
+ *
+ * @param bus I2C bus
+ * @param enable Boolean flag to enable (true) or disable (false) sinking power
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_set_snk_ctrl(const struct i2c_dt_spec *bus, bool enable);
+
+/**
+ * @brief Function to enable or disable sourcing power over VBUS.
+ *
+ * @param bus I2C bus
+ * @param enable Boolean flag to enable (true) or disable (false) sourcing power
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_set_src_ctrl(const struct i2c_dt_spec *bus, bool enable);
+
+/**
+ * @brief Function to enable or disable the debug accessory mode.
+ *
+ * @param bus I2C bus
+ * @param enable Boolean flag to enable (true) or disable (false) debug accessory mode
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_set_debug_accessory(const struct i2c_dt_spec *bus, bool enable);
+
+/**
+ * @brief Function to enable or disable the low power mode.
+ *
+ * @param bus I2C bus
+ * @param enable Boolean flag to enable (true) or disable (false) low power mode
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_set_low_power_mode(const struct i2c_dt_spec *bus, bool enable);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_USBC_TCPCI_PRIV_H_ */
