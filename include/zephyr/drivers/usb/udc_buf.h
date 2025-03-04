@@ -70,7 +70,7 @@
  */
 #define UDC_STATIC_BUF_DEFINE(name, size)					\
 	static uint8_t Z_UDC_BUF_SECTION __aligned(UDC_BUF_ALIGN)		\
-	name[ROUND_UP(size, UDC_BUF_GRANULARITY)];
+	name[ROUND_UP(size, UDC_BUF_GRANULARITY)]
 
 /**
  * @brief Verify that the buffer is aligned as required by the UDC driver
