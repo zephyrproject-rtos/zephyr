@@ -223,8 +223,8 @@ static uint8_t aics_client_read_type_cb(struct bt_conn *conn, uint8_t err,
 					const void *data, uint16_t length)
 {
 	int cb_err = err;
-	uint8_t *type = (uint8_t *)data;
 	struct bt_aics *inst = lookup_aics_by_handle(conn, params->single.handle);
+	uint8_t type = 0;
 
 	memset(params, 0, sizeof(*params));
 
@@ -245,10 +245,11 @@ static uint8_t aics_client_read_type_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (data) {
-		if (length == sizeof(*type)) {
-			LOG_DBG("Type %u", *type);
+		if (length == sizeof(type)) {
+			type = ((uint8_t *)data)[0];
+			LOG_DBG("Type %u", type);
 		} else {
-			LOG_DBG("Invalid length %u (expected %zu)", length, sizeof(*type));
+			LOG_DBG("Invalid length %u (expected %zu)", length, sizeof(type));
 			cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	} else {
@@ -257,7 +258,7 @@ static uint8_t aics_client_read_type_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (inst->cli.cb && inst->cli.cb->type) {
-		inst->cli.cb->type(inst, cb_err, *type);
+		inst->cli.cb->type(inst, cb_err, (enum bt_aics_input_type)type);
 	}
 
 	return BT_GATT_ITER_STOP;
