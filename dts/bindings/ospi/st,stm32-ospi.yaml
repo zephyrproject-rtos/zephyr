@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    STM32 OSPI device representation. Enabling a stm32 octospi node in a board
-    description would typically requires this:
+    STM32 OSPI Controller.
+
+    Enabling a stm32 octospi node in a board description would typically requires this:
 
         &octospi {
             pinctrl-0 = <&octospi_clk_pe9 &octospi_ncs_pe10 &octospi_dqs_pe11

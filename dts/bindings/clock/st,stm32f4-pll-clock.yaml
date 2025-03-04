@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32F4 Main PLL node binding:
+  STM32F4 Main PLL.
 
   Takes one of clk_hse or clk_hsi as input clock, with an
   input frequency from 1 to 2 MHz. PLLM factor is used to set the input clock
