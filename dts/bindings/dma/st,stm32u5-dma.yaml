@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32 DMA controller for the stm32U5 soc family
+  STM32U5 DMA controller.
 
   It is present on stm32U5 devices as a GP DMA
   This controller includes several channels with different requests.

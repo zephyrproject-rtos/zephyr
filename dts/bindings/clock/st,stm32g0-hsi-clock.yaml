@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32 HSI Clock node description for STM32G0 devices
+  STM32G0 HSI Clock.
+
   On STM32G0, HSI is a 16MHz fixed clock.
 
   It also produces a HSISYS secondary clk which can be used as system clock
