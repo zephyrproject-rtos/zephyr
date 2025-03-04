@@ -117,7 +117,7 @@ In terminal #3, type:
    :zephyr-app: samples/net/capture
    :host-os: unix
    :board: native_sim
-   :gen-args: -DCONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD=\""gnome-terminal -- screen %s"\"
+   :gen-args: -DCONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD=\""gnome-terminal -- screen %s"\"
    :goals: build
    :compact:
 
