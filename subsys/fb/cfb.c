@@ -477,7 +477,7 @@ int cfb_framebuffer_finalize(const struct device *dev)
 		.pitch = fb->x_res,
 	};
 
-	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) != !(fb->inverted)) {
+	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) == !(fb->inverted)) {
 		cfb_invert(fb);
 		err = api->write(dev, 0, 0, &desc, fb->buf);
 		cfb_invert(fb);
@@ -493,7 +493,7 @@ int cfb_get_display_parameter(const struct device *dev,
 	const struct char_framebuffer *fb = &char_fb;
 
 	switch (param) {
-	case CFB_DISPLAY_HEIGH:
+	case CFB_DISPLAY_HEIGHT:
 		return fb->y_res;
 	case CFB_DISPLAY_WIDTH:
 		return fb->x_res;
