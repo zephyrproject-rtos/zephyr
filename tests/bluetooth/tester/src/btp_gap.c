@@ -1349,6 +1349,24 @@ static struct bt_conn_auth_info_cb auth_info_cb = {
 	.pairing_complete = auth_pairing_complete,
 };
 
+#if defined(CONFIG_BT_CLASSIC)
+static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
+{
+	const char *pin = "0000";
+	const char *pin16 = "0000000000000000";
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		return;
+	}
+
+	if (highsec) {
+		bt_conn_auth_pincode_entry(conn, pin16);
+	} else {
+		bt_conn_auth_pincode_entry(conn, pin);
+	}
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static uint8_t set_io_cap(const void *cmd, uint16_t cmd_len,
 			  void *rsp, uint16_t *rsp_len)
 {
@@ -1389,6 +1407,10 @@ static uint8_t set_io_cap(const void *cmd, uint16_t cmd_len,
 	}
 
 	cb.pairing_accept = auth_pairing_accept;
+
+#if defined(CONFIG_BT_CLASSIC)
+	cb.pincode_entry = auth_pincode_entry;
+#endif /* CONFIG_BT_CLASSIC */
 
 	if (bt_conn_auth_cb_register(&cb)) {
 		return BTP_STATUS_FAILED;
