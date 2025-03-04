@@ -1,7 +1,7 @@
 # Copyright (c) 2024 ITE Corporation. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ITE IT8801 I2C-based GPIO device driver
+description: ITE IT8801 I2C-based GPIO
 
 compatible: "ite,it8801-gpio"
 

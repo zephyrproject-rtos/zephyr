@@ -1,7 +1,7 @@
 # Copyright (c) 2024, Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Microchip MEC5 GPIO node
+description: Microchip MEC5 GPIO
 
 compatible: "microchip,mec5-gpio"
 
