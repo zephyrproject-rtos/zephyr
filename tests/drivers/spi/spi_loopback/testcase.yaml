@@ -248,3 +248,17 @@ tests:
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_RUNTIME=y
     filter: CONFIG_SOC_FAMILY_NORDIC_NRF
+  drivers.spi.silabs_s2.loopback.no_async:
+    filter: CONFIG_SOC_FAMILY_SILABS_S2
+    platform_allow:
+      - xg24_rb4187c
+    extra_configs:
+      - CONFIG_SPI_SILABS_EUSART_DMA=n
+      - CONFIG_SPI_ASYNC=n
+  drivers.spi.silabs_s2.loopback.dma.no_async:
+    filter: CONFIG_SOC_FAMILY_SILABS_S2
+    platform_allow:
+      - xg24_rb4187c
+    extra_configs:
+      - CONFIG_SPI_SILABS_EUSART_DMA=y
+      - CONFIG_SPI_ASYNC=n
