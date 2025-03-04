@@ -615,10 +615,8 @@ static int uart_console_init(void)
 }
 
 /* UART console initializes after the UART device itself */
-SYS_INIT(uart_console_init,
 #if defined(CONFIG_EARLY_CONSOLE)
-	 PRE_KERNEL_1,
+SYS_INIT(uart_console_init, PRE_KERNEL_1, CONFIG_CONSOLE_INIT_PRIORITY);
 #else
-	 POST_KERNEL,
-#endif
-	 CONFIG_CONSOLE_INIT_PRIORITY);
+SYS_INIT(uart_console_init, POST_KERNEL, CONFIG_CONSOLE_INIT_PRIORITY);
+#endif /* CONFIG_EARLY_CONSOLE */
