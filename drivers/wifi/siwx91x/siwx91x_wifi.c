@@ -389,11 +389,75 @@ static int siwx91x_dev_init(const struct device *dev)
 	return 0;
 }
 
+static int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *params)
+{
+	sl_wifi_performance_profile_t ps_profile;
+	sl_status_t status;
+
+	__ASSERT(params, "params cannot be a NULL");
+
+	get_wifi_current_performance_profile(&ps_profile);
+	ps_profile.profile = HIGH_PERFORMANCE;
+
+	switch (params->type) {
+	case WIFI_PS_PARAM_STATE:
+		if (params->enabled) {
+			ps_profile.profile = ASSOCIATED_POWER_SAVE;
+		}
+		break;
+	case WIFI_PS_PARAM_LISTEN_INTERVAL:
+		ps_profile.listen_interval = params->listen_interval;
+		break;
+	case WIFI_PS_PARAM_WAKEUP_MODE:
+		if (params->wakeup_mode == WIFI_PS_WAKEUP_MODE_DTIM) {
+			ps_profile.dtim_aligned_type = 1;
+		} else if (params->wakeup_mode == WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL) {
+			ps_profile.dtim_aligned_type = 0;
+		}
+		break;
+	default:
+		break;
+	}
+
+	status = sl_wifi_set_performance_profile(&ps_profile);
+	if (status) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_config *config)
+{
+	sl_wifi_performance_profile_t ps_profile;
+
+	__ASSERT(config, "config cannot be NULL");
+
+	sl_wifi_get_performance_profile(&ps_profile);
+
+	if (ps_profile.profile == HIGH_PERFORMANCE) {
+		config->ps_params.enabled = WIFI_PS_DISABLED;
+	} else {
+		config->ps_params.enabled = WIFI_PS_ENABLED;
+	}
+
+	config->ps_params.listen_interval = ps_profile.listen_interval;
+	if (ps_profile.dtim_aligned_type) {
+		config->ps_params.wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM;
+	} else {
+		config->ps_params.wakeup_mode = WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL;
+	}
+
+	return 0;
+}
+
 static const struct wifi_mgmt_ops siwx91x_mgmt = {
 	.scan         = siwx91x_scan,
 	.connect      = siwx91x_connect,
 	.disconnect   = siwx91x_disconnect,
 	.iface_status = siwx91x_status,
+	.set_power_save = siwx91x_set_power_save,
+	.get_power_save_config = siwx91x_get_power_save_config,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_api = {
