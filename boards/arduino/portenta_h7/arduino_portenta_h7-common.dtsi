@@ -222,6 +222,7 @@
 		      &eth_txd1_pg12
 		      &eth_txd0_pg13 >;
 	pinctrl-names = "default";
+	phy-connection-type = "rmii";
 	status = "okay";
 };
 
