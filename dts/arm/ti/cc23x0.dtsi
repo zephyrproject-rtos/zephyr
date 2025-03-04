@@ -79,6 +79,13 @@
 			clocks = <&sysclk>;
 			status = "disabled";
 		};
+
+		rtc0: rtc@40002000 {
+			compatible = "ti,cc23x0-rtc";
+			reg = <0x40002000 0x64>;
+			interrupts = <3 0>;
+			status = "disabled";
+		};
 	};
 };
 
