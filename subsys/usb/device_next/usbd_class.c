@@ -215,7 +215,7 @@ usbd_class_node_get(const char *name, const enum usbd_speed speed)
 				return c_nd;
 			}
 		}
-	} else if (speed == USBD_SPEED_HS) {
+	} else if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs,
 						 usbd_class_node, c_nd) {
 			if (strcmp(name, c_nd->c_data->name) == 0) {
@@ -358,7 +358,7 @@ int usbd_register_all_classes(struct usbd_context *const uds_ctx,
 {
 	int ret;
 
-	if (speed == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
 			if (blocklist != NULL && is_blocklisted(c_nd, blocklist)) {
 				continue;
@@ -430,8 +430,8 @@ int usbd_unregister_class(struct usbd_context *const uds_ctx,
 	/* TODO: The use of atomic here does not make this code thread safe.
 	 * The atomic should be changed to something else.
 	 */
-	if (speed == USBD_SPEED_HS) {
-		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs,
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs,
 						 usbd_class_node, i) {
 			if ((i->c_data == c_nd->c_data) &&
 			    atomic_test_bit(&i->state, USBD_CCTX_REGISTERED)) {
@@ -440,7 +440,7 @@ int usbd_unregister_class(struct usbd_context *const uds_ctx,
 			}
 		}
 	} else {
-		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs,
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs,
 						 usbd_class_node, i) {
 			if ((i->c_data == c_nd->c_data) &&
 			    atomic_test_bit(&i->state, USBD_CCTX_REGISTERED)) {
@@ -470,7 +470,7 @@ int usbd_unregister_all_classes(struct usbd_context *const uds_ctx,
 {
 	int ret;
 
-	if (speed == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
 			ret = usbd_unregister_class(uds_ctx, c_nd->c_data->name,
 						    speed, cfg);
