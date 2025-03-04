@@ -61,7 +61,6 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/hardware_clocks/clocks.c
     ${rp2_common_dir}/hardware_pll/pll.c
     ${rp2_common_dir}/hardware_xosc/xosc.c
-    ${rp2_common_dir}/hardware_watchdog/watchdog.c
     ${rp2_common_dir}/hardware_sync_spin_lock/sync_spin_lock.c
     ${rp2_common_dir}/hardware_ticks/ticks.c
     ${rp2_common_dir}/pico_bootrom/bootrom.c
