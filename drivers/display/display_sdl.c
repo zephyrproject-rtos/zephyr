@@ -470,7 +470,8 @@ static void sdl_display_get_capabilities(
 		PIXEL_FORMAT_RGB_565 |
 		PIXEL_FORMAT_BGR_565;
 	capabilities->current_pixel_format = disp_data->current_pixel_format;
-	capabilities->screen_info = SCREEN_INFO_MONO_VTILED |
+	capabilities->screen_info =
+		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED) ? SCREEN_INFO_MONO_VTILED : 0) |
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_MSB_FIRST) ? SCREEN_INFO_MONO_MSB_FIRST : 0);
 }
 
