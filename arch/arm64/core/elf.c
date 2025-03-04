@@ -6,6 +6,7 @@
 
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/llext_internal.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
@@ -430,12 +431,32 @@ static int imm_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t loc
  * @retval -ENOTSUP Unsupported relocation
  * @retval -ENOEXEC Invalid relocation
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc, uintptr_t sym_base_addr, const char *sym_name,
-		      uintptr_t load_bias)
+int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr)
 {
 	int ret = 0;
 	bool overflow_check = true;
 	elf_word reloc_type = ELF_R_TYPE(rel->r_info);
+	const uintptr_t loc = llext_get_reloc_instruction_location(ldr, ext, shdr->sh_info, rel);
+	elf_sym_t sym;
+	uintptr_t sym_base_addr;
+	const char *sym_name;
+
+	ret = llext_read_symbol(ldr, ext, rel, &sym);
+
+	if (ret != 0) {
+		LOG_ERR("Could not read symbol from binary!");
+		return ret;
+	}
+
+	sym_name = llext_symbol_name(ldr, ext, &sym);
+
+	ret = llext_lookup_symbol(ldr, ext, &sym_base_addr, rel, &sym, sym_name, shdr);
+
+	if (ret != 0) {
+		LOG_ERR("Could not find symbol %s!", sym_name);
+		return ret;
+	}
 
 	switch (reloc_type) {
 	case R_ARM_NONE:
