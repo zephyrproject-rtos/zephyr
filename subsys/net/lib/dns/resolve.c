@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/igmp.h>
+#include <zephyr/net/mld.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_service.h>
 #include "../../ip/net_private.h"
@@ -148,6 +150,34 @@ static bool server_is_llmnr(sa_family_t family, struct sockaddr *addr)
 	return false;
 }
 
+static void join_ipv4_mcast_group(struct net_if *iface, void *user_data)
+{
+	struct sockaddr *addr = user_data;
+	int ret;
+
+	ret = net_ipv4_igmp_join(iface, &net_sin(addr)->sin_addr, NULL);
+	if (ret < 0 && ret != -EALREADY) {
+		NET_DBG("Cannot join %s mDNS group (%d)", "IPv4", ret);
+	} else {
+		NET_DBG("Joined %s mDNS group %s", "IPv4",
+			net_sprint_ipv4_addr(&net_sin(addr)->sin_addr));
+	}
+}
+
+static void join_ipv6_mcast_group(struct net_if *iface, void *user_data)
+{
+	struct sockaddr *addr = user_data;
+	int ret;
+
+	ret = net_ipv6_mld_join(iface, &net_sin6(addr)->sin6_addr);
+	if (ret < 0 && ret != -EALREADY) {
+		NET_DBG("Cannot join %s mDNS group (%d)", "IPv6", ret);
+	} else {
+		NET_DBG("Joined %s mDNS group %s", "IPv6",
+			net_sprint_ipv6_addr(&net_sin6(addr)->sin6_addr));
+	}
+}
+
 static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 {
 	struct sockaddr *addr = &ctx->servers[idx].dns_server;
@@ -180,6 +210,26 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 				net_sin(addr)->sin_port = htons(53);
 			}
 		}
+
+		/* Join the mDNS multicast group if responder is not enabled,
+		 * because it will join the group itself.
+		 */
+		if (!IS_ENABLED(CONFIG_MDNS_RESPONDER) && ctx->servers[idx].is_mdns) {
+			struct in_addr mcast_addr = { { { 224, 0, 0, 251 } } };
+
+			if (net_sin(addr)->sin_addr.s_addr == mcast_addr.s_addr) {
+				struct net_if *iface;
+
+				iface = net_if_get_by_index(ctx->servers[idx].if_index);
+				if (iface == NULL) {
+					/* Join all interfaces */
+					net_if_foreach(join_ipv4_mcast_group, addr);
+				} else {
+					/* Join specific interface */
+					join_ipv4_mcast_group(iface, addr);
+				}
+			}
+		}
 	} else {
 		ctx->servers[idx].is_mdns = server_is_mdns(AF_INET6, addr);
 		if (!ctx->servers[idx].is_mdns) {
@@ -196,6 +246,25 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 				net_sin6(addr)->sin6_port = htons(5355);
 			} else {
 				net_sin6(addr)->sin6_port = htons(53);
+			}
+		}
+
+		if (!IS_ENABLED(CONFIG_MDNS_RESPONDER) && ctx->servers[idx].is_mdns) {
+			struct in6_addr mcast_addr = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0xfb } } };
+
+			if (memcmp(&net_sin6(addr)->sin6_addr, &mcast_addr,
+				   sizeof(struct in6_addr)) == 0) {
+				struct net_if *iface;
+
+				iface = net_if_get_by_index(ctx->servers[idx].if_index);
+				if (iface == NULL) {
+					/* Join all interfaces */
+					net_if_foreach(join_ipv6_mcast_group, addr);
+				} else {
+					/* Join specific interface */
+					join_ipv6_mcast_group(iface, addr);
+				}
 			}
 		}
 	}
