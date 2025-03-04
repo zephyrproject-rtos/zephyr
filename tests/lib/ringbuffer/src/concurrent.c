@@ -262,7 +262,7 @@ static void test_ztress(ztress_handler high_handler,
 		uint32_t buf32[32];
 	} buf;
 	k_timeout_t timeout;
-	int32_t offset;
+	uint32_t offset;
 
 	if (item_mode) {
 		ring_buf_item_init(&ringbuf, ARRAY_SIZE(buf.buf32), buf.buf32);
@@ -270,8 +270,8 @@ static void test_ztress(ztress_handler high_handler,
 		ring_buf_init(&ringbuf, ARRAY_SIZE(buf.buf8), buf.buf8);
 	}
 
-	/* force internal 32-bit index roll-over */
-	offset = INT32_MAX - ring_buf_capacity_get(&ringbuf)/2;
+	/* force internal index roll-over */
+	offset = (ring_buf_idx_t)-1 - ring_buf_capacity_get(&ringbuf)/2;
 	ring_buf_internal_reset(&ringbuf, offset);
 
 	/* Timeout after 5 seconds. */
