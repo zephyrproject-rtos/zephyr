@@ -265,6 +265,14 @@ static void dump_regs(const struct arch_esf *esf)
 		esf->rsp, esf->rflags, esf->cs & 0xFFFFU, get_cr3(esf));
 
 	LOG_ERR("RIP: 0x%016lx", esf->rip);
+#ifdef CONFIG_HW_SHADOW_STACK
+	{
+	uintptr_t ssp;
+
+		__asm__ volatile("rdsspq %0" : "=r"(ssp));
+		LOG_ERR("SSP: 0x%016lx", ssp);
+	}
+#endif /* CONFIG_HW_SHADOW_STACK */
 }
 #else /* 32-bit */
 __pinned_func

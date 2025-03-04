@@ -507,6 +507,20 @@ config X86_CET_IBT
 	help
 	  This option enables Indirect Branch Tracking (IBT) support.
 
+config X86_CET_SHADOW_STACK
+	bool "Shadow Stack"
+	depends on X86_CET
+	depends on SRAM_REGION_PERMISSIONS
+	help
+	  This option enables Shadow Stack support.
+
+config X86_CET_SHADOW_STACK_ALIGNMENT
+	int "Shadow Stack alignment"
+	default 4096
+	depends on X86_CET_SHADOW_STACK
+	help
+	  This option sets the alignment of the Shadow Stack.
+
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.intel64"
 
