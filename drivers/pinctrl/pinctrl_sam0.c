@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
-#include <soc_port.h>
+#include <zephyr/drivers/pinctrl/pinctrl_sam0_port.h>
 
 /** Utility macro that expands to the PORT port address if it exists */
 #define SAM_PORT_ADDR_OR_NONE(nodelabel)					\

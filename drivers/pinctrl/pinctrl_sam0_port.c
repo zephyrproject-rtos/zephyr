@@ -11,7 +11,7 @@
 
 #include <stdbool.h>
 
-#include "soc_port.h"
+#include <zephyr/drivers/pinctrl/pinctrl_sam0_port.h>
 
 int soc_port_pinmux_set(PortGroup *pg, uint32_t pin, uint32_t func)
 {
