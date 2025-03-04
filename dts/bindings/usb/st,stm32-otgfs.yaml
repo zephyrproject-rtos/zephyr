@@ -31,5 +31,14 @@ properties:
     type: phandle
     description: PHY provider specifier
 
+  physel:
+    type: string
+    default: "USB_FS_EMBEDDED_PHY"
+    description: |
+      USB PHY interface to use.
+
+      The following interfaces are supported:
+        - "USB_FS_EMBEDDED_PHY": on-chip full-speed PHY.
+
   clocks:
     required: true
