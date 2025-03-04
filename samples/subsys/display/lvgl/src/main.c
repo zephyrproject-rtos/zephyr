@@ -144,10 +144,12 @@ int main(void)
 	lv_timer_handler();
 	display_blanking_off(display_dev);
 
+	printf("lvgl sample\n");
 	while (1) {
 		if ((count % 100) == 0U) {
 			sprintf(count_str, "%d", count/100U);
 			lv_label_set_text(count_label, count_str);
+			printf("run %u\n", count/100U);
 		}
 		lv_timer_handler();
 		++count;
