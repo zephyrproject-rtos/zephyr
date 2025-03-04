@@ -941,6 +941,12 @@ def substring(kconf, _, string, start, stop=None):
     else:
         return string[int(start):]
 
+def equal(kconf, _, val1, val2):
+    """
+    Return "y" if the two values are equal, otherwise "n"
+    """
+    return "y" if val1 == val2 else "n"
+
 def arith(kconf, name, *args):
     """
     The arithmetic operations on integers.
@@ -1068,6 +1074,7 @@ functions = {
         "normalize_upper": (normalize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
         "substring": (substring, 2, 3),
+        "equal": (equal, 2, 2),
         "add": (arith, 1, 255),
         "sub": (arith, 1, 255),
         "mul": (arith, 1, 255),
