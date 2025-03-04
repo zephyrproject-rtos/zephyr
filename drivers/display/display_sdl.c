@@ -428,6 +428,43 @@ static int sdl_display_read(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
+static int sdl_display_clear(const struct device *dev)
+{
+	size_t size = 0;
+	uint8_t bgcolor = 0x00u;
+	const struct sdl_display_config *config = dev->config;
+	struct sdl_display_data *disp_data = dev->data;
+
+	LOG_DBG("Clearing display screen to black");
+
+	switch (disp_data->current_pixel_format) {
+	case PIXEL_FORMAT_ARGB_8888:
+		size = config->width * config->height * 4U;
+		bgcolor = 0xFFu;
+		break;
+	case PIXEL_FORMAT_RGB_888:
+		size = config->width * config->height * 3U;
+		break;
+	case PIXEL_FORMAT_MONO10:
+		size = config->height * DIV_ROUND_UP(config->width,
+						NUM_BITS(uint8_t));
+		break;
+	case PIXEL_FORMAT_MONO01:
+		size = config->height * DIV_ROUND_UP(config->width,
+						NUM_BITS(uint8_t));
+		bgcolor = 0xFFu;
+		break;
+	case PIXEL_FORMAT_RGB_565:
+	case PIXEL_FORMAT_BGR_565:
+		size = config->width * config->height * 2U;
+		break;
+	}
+	LOG_DBG("size: %zu, bgcolor: %hhu", size, bgcolor);
+	memset(disp_data->buf, bgcolor, size);
+
+	return 0;
+}
+
 static int sdl_display_blanking_off(const struct device *dev)
 {
 	struct sdl_display_data *disp_data = dev->data;
@@ -506,6 +543,7 @@ static DEVICE_API(display, sdl_display_api) = {
 	.blanking_off = sdl_display_blanking_off,
 	.write = sdl_display_write,
 	.read = sdl_display_read,
+	.clear = sdl_display_clear,
 	.get_capabilities = sdl_display_get_capabilities,
 	.set_pixel_format = sdl_display_set_pixel_format,
 };
