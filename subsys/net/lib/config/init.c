@@ -163,15 +163,16 @@ static void setup_ipv4(struct net_if *iface)
 		return;
 	}
 
-#if defined(CONFIG_NET_DHCPV4)
-	/* In case DHCP is enabled, make the static address tentative,
-	 * to allow DHCP address to override it. This covers a usecase
-	 * of "there should be a static IP address for DHCP-less setups",
-	 * but DHCP should override it (to use it, NET_IF_MAX_IPV4_ADDR
-	 * should be set to 1). There is another usecase: "there should
-	 * always be static IP address, and optionally, DHCP address".
-	 * For that to work, NET_IF_MAX_IPV4_ADDR should be 2 (or more).
-	 * (In this case, an app will need to bind to the needed addr
+#if defined(CONFIG_NET_DHCPV4) && !defined(CONFIG_NET_DHCPV4_FALLBACK_AUTO)
+	/* In case DHCP is enabled without a link-local fallback, make
+	 * the static address tentative, to allow DHCP address to
+	 * override it. This covers a usecase of "there should be a
+	 * static IP address for DHCP-less setups", but DHCP should
+	 * override it (to use it, NET_IF_MAX_IPV4_ADDR should be set
+	 * to 1). There is another usecase: "there should always be
+	 * static IP address, and optionally, DHCP address". For that
+	 * to work, NET_IF_MAX_IPV4_ADDR should be 2 (or more). (In
+	 * this case, an app will need to bind to the needed addr
 	 * explicitly.)
 	 */
 	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_OVERRIDABLE, 0);
