@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Jorge Ramirez-Ortiz <jorge.ramirez@oss.qualcomm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO latency monitor
+
+compatible: "latency-monitor"
+
+child-binding:
+  properties:
+    gpios:
+      type: phandle-array
+      required: true
+
+    pinctrl-0:
+      type: phandle
+      required: false
+
+    pinctrl-names:
+      type: string
+      required: false
