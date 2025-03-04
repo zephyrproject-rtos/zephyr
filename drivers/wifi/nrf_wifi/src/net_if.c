@@ -459,7 +459,7 @@ static void ip_maddr_event_handler(struct net_if *iface,
 		goto unlock;
 	}
 
-	mcast_info = k_calloc(sizeof(*mcast_info), sizeof(char));
+	mcast_info = nrf_wifi_osal_mem_zalloc(sizeof(*mcast_info));
 
 	if (!mcast_info) {
 		LOG_ERR("%s: Unable to allocate memory of size %d "
@@ -501,7 +501,7 @@ static void ip_maddr_event_handler(struct net_if *iface,
 					       sizeof(mac_string_buf)));
 	}
 unlock:
-	k_free(mcast_info);
+	nrf_wifi_osal_mem_free(mcast_info);
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 }
 #endif /* CONFIG_NRF70_STA_MODE */
