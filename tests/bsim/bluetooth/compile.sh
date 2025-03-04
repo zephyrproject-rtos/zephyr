@@ -17,7 +17,6 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # the rest to save a couple of seconds.
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio_samples/compile.sh
-${ZEPHYR_BASE}/tests/bsim/bluetooth/host/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/ll/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/mesh/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
