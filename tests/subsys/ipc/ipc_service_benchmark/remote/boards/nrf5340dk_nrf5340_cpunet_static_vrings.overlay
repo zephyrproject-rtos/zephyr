@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf5340dk_nrf5340_cpunet_common.dtsi"
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sram_ipc0: memory@20070000 {
+			reg = <0x20070000 DT_SIZE_K(8)>;
+		};
+	};
+
+	ipc0: ipc0 {
+		compatible = "zephyr,ipc-openamp-static-vrings";
+		memory-region = <&sram_ipc0>;
+		mboxes = <&mbox 0>, <&mbox 1>;
+		mbox-names = "rx", "tx";
+		role = "remote";
+		zephyr,buffer-size = <128>;
+		status = "okay";
+	};
+};

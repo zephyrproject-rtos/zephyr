@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf5340dk_nrf5340_cpuapp_common.dtsi"
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram_tx: memory@20070000 {
+			reg = <0x20070000 DT_SIZE_K(32)>;
+		};
+
+		sram_rx: memory@20078000 {
+			reg = <0x20078000 DT_SIZE_K(32)>;
+		};
+	};
+
+	ipc0: ipc0 {
+		compatible = "zephyr,ipc-icbmsg";
+		dcache-alignment = <8>;
+		tx-region = <&sram_tx>;
+		rx-region = <&sram_rx>;
+		tx-blocks = <20>;
+		rx-blocks = <20>;
+		mboxes = <&mbox 0>, <&mbox 1>;
+		mbox-names = "tx", "rx";
+		status = "okay";
+	};
+};
