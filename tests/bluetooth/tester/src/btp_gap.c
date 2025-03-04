@@ -100,7 +100,16 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_conn_info info;
 
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	memset(addr_str, 0, sizeof(addr_str));
+
+	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	} else if (bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+#if defined(CONFIG_BT_CLASSIC)
+		(void)bt_addr_to_str(bt_conn_get_dst_br(conn), addr_str, sizeof(addr_str));
+#endif /* CONFIG_BT_CLASSIC */
+	}
+
 	LOG_DBG("%s: 0x%02x", addr_str, err);
 
 	if (err) {
@@ -109,10 +118,21 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 
 	bt_conn_get_info(conn, &info);
 
-	bt_addr_le_copy(&ev.address, info.le.dst);
-	ev.interval = sys_cpu_to_le16(info.le.interval);
-	ev.latency = sys_cpu_to_le16(info.le.latency);
-	ev.timeout = sys_cpu_to_le16(info.le.timeout);
+	memset(&ev, 0, sizeof(ev));
+
+	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_ISO)) {
+		bt_addr_le_copy(&ev.address, info.le.dst);
+		if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+			ev.interval = sys_cpu_to_le16(info.le.interval);
+			ev.latency = sys_cpu_to_le16(info.le.latency);
+			ev.timeout = sys_cpu_to_le16(info.le.timeout);
+		}
+	} else {
+#if defined(CONFIG_BT_CLASSIC)
+		ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&ev.address.a, info.br.dst);
+#endif /* CONFIG_BT_CLASSIC */
+	}
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_CONNECTED, &ev, sizeof(ev));
 
@@ -128,13 +148,25 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct btp_gap_device_disconnected_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr;
 	char addr_str[BT_ADDR_LE_STR_LEN];
 
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-	LOG_DBG("%s: 0x%02x", addr_str, reason);
+	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		addr = bt_conn_get_dst(conn);
+		(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+		bt_addr_le_copy(&ev.address, addr);
+	} else if (bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+#if defined(CONFIG_BT_CLASSIC)
+		const bt_addr_t *br_addr;
 
-	bt_addr_le_copy(&ev.address, addr);
+		br_addr = bt_conn_get_dst_br(conn);
+		(void)bt_addr_to_str(br_addr, addr_str, sizeof(addr_str));
+		ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&ev.address.a, br_addr);
+#endif /* CONFIG_BT_CLASSIC */
+	}
+
+	LOG_DBG("%s: 0x%02x", addr_str, reason);
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_DISCONNECTED, &ev, sizeof(ev));
 }
@@ -155,6 +187,10 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 {
 	struct btp_gap_conn_param_update_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
 
 	bt_addr_le_copy(&ev.address, addr);
 	ev.interval = sys_cpu_to_le16(interval);
@@ -180,14 +216,29 @@ static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 				enum bt_security_err err)
 {
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr;
 	struct btp_gap_sec_level_changed_ev sec_ev;
 	struct btp_gap_bond_lost_ev bond_ev;
 	struct bt_conn_info info;
 
+	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		addr = bt_conn_get_dst(conn);
+		bt_addr_le_copy(&sec_ev.address, addr);
+		bt_addr_le_copy(&bond_ev.address, addr);
+	} else if (bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+#if defined(CONFIG_BT_CLASSIC)
+		const bt_addr_t *br_addr;
+
+		br_addr = bt_conn_get_dst_br(conn);
+		sec_ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&sec_ev.address.a, br_addr);
+		bond_ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&bond_ev.address.a, br_addr);
+#endif /* CONFIG_BT_CLASSIC */
+	}
+
 	switch (err) {
 	case BT_SECURITY_ERR_SUCCESS:
-		bt_addr_le_copy(&sec_ev.address, addr);
 		/* enum matches BTP values */
 		sec_ev.sec_level = level;
 
@@ -203,8 +254,6 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 		if (bt_conn_get_info(conn, &info) == 0 &&
 		    info.role == BT_CONN_ROLE_CENTRAL) {
 			LOG_DBG("Bond lost");
-
-			bt_addr_le_copy(&bond_ev.address, addr);
 
 			tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BOND_LOST,
 				     &bond_ev, sizeof(bond_ev));
@@ -1120,9 +1169,21 @@ static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	struct btp_gap_passkey_display_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr;
 
-	bt_addr_le_copy(&ev.address, addr);
+	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		addr = bt_conn_get_dst(conn);
+		bt_addr_le_copy(&ev.address, addr);
+	} else if (bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+#if defined(CONFIG_BT_CLASSIC)
+		const bt_addr_t *br_addr;
+
+		br_addr = bt_conn_get_dst_br(conn);
+		ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&ev.address.a, br_addr);
+#endif /* CONFIG_BT_CLASSIC */
+	}
+
 	ev.passkey = sys_cpu_to_le32(passkey);
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PASSKEY_DISPLAY, &ev, sizeof(ev));
@@ -1131,9 +1192,20 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 static void auth_passkey_entry(struct bt_conn *conn)
 {
 	struct btp_gap_passkey_entry_req_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr;
 
-	bt_addr_le_copy(&ev.address, addr);
+	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		addr = bt_conn_get_dst(conn);
+		bt_addr_le_copy(&ev.address, addr);
+	} else if (bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+#if defined(CONFIG_BT_CLASSIC)
+		const bt_addr_t *br_addr;
+
+		br_addr = bt_conn_get_dst_br(conn);
+		ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&ev.address.a, br_addr);
+#endif /* CONFIG_BT_CLASSIC */
+	}
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PASSKEY_ENTRY_REQ, &ev, sizeof(ev));
 }
@@ -1141,9 +1213,21 @@ static void auth_passkey_entry(struct bt_conn *conn)
 static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 {
 	struct btp_gap_passkey_confirm_req_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr;
 
-	bt_addr_le_copy(&ev.address, addr);
+	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		addr = bt_conn_get_dst(conn);
+		bt_addr_le_copy(&ev.address, addr);
+	} else if (bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+#if defined(CONFIG_BT_CLASSIC)
+		const bt_addr_t *br_addr;
+
+		br_addr = bt_conn_get_dst_br(conn);
+		ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&ev.address.a, br_addr);
+#endif /* CONFIG_BT_CLASSIC */
+	}
+
 	ev.passkey = sys_cpu_to_le32(passkey);
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PASSKEY_CONFIRM_REQ, &ev, sizeof(ev));
@@ -1158,18 +1242,33 @@ enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
 					 const struct bt_conn_pairing_feat *const feat)
 {
 	struct btp_gap_bond_lost_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr;
 
-	if (!bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
-		return BT_SECURITY_ERR_SUCCESS;
+	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		addr = bt_conn_get_dst(conn);
+		if (!bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
+			return BT_SECURITY_ERR_SUCCESS;
+		}
+
+		bt_addr_le_copy(&ev.address, addr);
+	} else if (bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+#if defined(CONFIG_BT_CLASSIC)
+		const bt_addr_t *br_addr;
+
+		br_addr = bt_conn_get_dst_br(conn);
+		if (!bt_addr_br_is_bonded(br_addr)) {
+			return BT_SECURITY_ERR_SUCCESS;
+		}
+
+		ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&ev.address.a, br_addr);
+#endif /* CONFIG_BT_CLASSIC */
 	}
 
 	/* If a peer is already bonded and tries to pair again then it means that
 	 * the it has lost its bond information.
 	 */
 	LOG_DBG("Bond lost");
-
-	bt_addr_le_copy(&ev.address, addr);
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BOND_LOST, &ev, sizeof(ev));
 
@@ -1179,9 +1278,21 @@ enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
 void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 {
 	struct btp_gap_bond_pairing_failed_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr;
 
-	bt_addr_le_copy(&ev.address, addr);
+	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		addr = bt_conn_get_dst(conn);
+		bt_addr_le_copy(&ev.address, addr);
+	} else if (bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+#if defined(CONFIG_BT_CLASSIC)
+		const bt_addr_t *br_addr;
+
+		br_addr = bt_conn_get_dst_br(conn);
+		ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&ev.address.a, br_addr);
+#endif /* CONFIG_BT_CLASSIC */
+	}
+
 	ev.reason = reason;
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PAIRING_FAILED, &ev, sizeof(ev));
