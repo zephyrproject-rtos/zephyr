@@ -14,4 +14,8 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 CONFIG_USE_DT_CODE_PARTITION=y
 
 # Default networking configuration
-CONFIG_CYW43439=y
+# Do not use infineon wifi host driver
+CONFIG_WIFI_AIROC=n
+CONFIG_CYW43439=n
+# It use third-party CYW43439 wifi driver
+CONFIG_WIFI_ZEPHYR_CYW43=y

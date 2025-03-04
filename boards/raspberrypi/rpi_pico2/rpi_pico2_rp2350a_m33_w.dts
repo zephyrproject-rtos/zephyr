@@ -21,6 +21,20 @@
  */
 #include "rpi_pico2.dtsi"
 
+/ {
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&cyw43_gpio 0 GPIO_ACTIVE_HIGH>;
+			label = "LED";
+		};
+	};
+};
+
 &pinctrl {
 	pio0_spi0_default: pio0_spi0_default {
 		/* gpio 25 is used for chip select, not assigned to the PIO */
@@ -61,6 +75,7 @@
 		pinctrl-0 = <&pio0_spi0_default>;
 		pinctrl-names = "default";
 		status = "okay";
+		/*
 		airoc-wifi@0 {
 			compatible = "infineon,airoc-wifi";
 			reg = < 0 >;
@@ -74,6 +89,35 @@
 			pinctrl-1 = <&airoc_wifi_host_wake>;
 			pinctrl-names = "default", "host_wake";
 			status = "okay";
+		};
+		*/
+		infineon_cyw43_module: infineon_cyw43_module@0 {
+                	compatible = "infineon,cyw43";
+			reg = < 0x0 >;
+		        clocks = < &clocks RPI_PICO_CLKID_CLK_SYS >;
+                      
+                        spi-max-frequency = < 1000000 >;
+
+			wl-on-gpios = < &gpio0 23 GPIO_ACTIVE_HIGH >;
+                        bus-select-gpios = < &gpio0 24 GPIO_ACTIVE_HIGH >;
+			host-wake-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+	
+                        pinctrl-0 = <&airoc_wifi_default>;
+			pinctrl-1 = <&airoc_wifi_host_wake>;
+			pinctrl-names = "default", "host_wake";
+                        
+		        status = "okay";
+
+                        cyw43_led: cyw43_led {	/* Pico W LED is on CYW43439 GPIO 0 */
+				compatible = "infineon,cyw43-led";
+			};
+			cyw43_gpio: cyw43_gpio {
+				compatible = "infineon,cyw43-gpio";
+                                gpio-controller;
+                                #gpio-cells = <2>;
+                                ngpios = <3>;
+		                status = "okay";
+			};
 		};
 	};
 };
