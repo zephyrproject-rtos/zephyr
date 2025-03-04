@@ -37,6 +37,10 @@
 #define PSCI_0_2_FN64_MIGRATE             PSCI_0_2_FN64(5)
 #define PSCI_0_2_FN64_MIGRATE_INFO_UP_CPU PSCI_0_2_FN64(7)
 #define PSCI_0_2_FN64_SYSTEM_RESET        PSCI_0_2_FN(9)
+/* PSCI v0.2 multicore support in Trusted OS returned by MIGRATE_INFO_TYPE */
+#define PSCI_0_2_TOS_UP_MIGRATE				0
+#define PSCI_0_2_TOS_UP_NO_MIGRATE			1
+#define PSCI_0_2_TOS_MP						2
 
 /* PSCI v1.0 interface */
 #define PSCI_1_0_FN_BASE                  (0x84000000U)

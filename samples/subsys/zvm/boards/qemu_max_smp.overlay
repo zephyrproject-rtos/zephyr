@@ -1,0 +1,89 @@
+/*
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
+ * Copyright 2024-2025 openEuler SIG-Zephyr
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	aliases {
+		zephyrcpy = "/soc/zephyr_cpy@e0000000";
+		linuxcpy = "/soc/linux_cpy@e4000000";
+		linuxdtb = "/soc/linux_dtb@ec000000";
+		linuxrfs = "/soc/linux_rootfs@f0000000";
+	};
+
+	chosen {
+		vm,console = &uart0;
+	};
+
+	psci {
+		method = "smc";
+	};
+
+	soc {
+		zephyr_cpy@e0000000 {
+			reg = <0x0 0xe0000000 0x0 DT_SIZE_M(4)>;
+		};
+
+		linux_cpy@e4000000 {
+			reg = <0x0 0xe4000000 0x0 DT_SIZE_M(64)>;
+		};
+
+		linux_dtb@ec000000 {
+			reg = <0x0 0xec000000 0x0 DT_SIZE_M(1)>;
+		};
+
+		linux_rootfs@f0000000 {
+			reg = <0x0 0xf0000000 0x0 DT_SIZE_M(200)>;
+		};
+
+		pass_through_device {
+
+			#address-cells = <2>;
+			#size-cells = <2>;
+			ranges;
+			/* using pt device for vm */
+		};
+
+	};
+
+	vm_zephyr_space {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "zephyr-vm";
+		dtb_address = <0x00000000>;
+		dtb_size = <DT_SIZE_M(2)>;
+		vcpu_num = <0x01>;
+
+		zephyr_ddr: memory@80000000 {
+			compatible = "vm-dram";
+			memmap_type = "direct";
+			address_type = "normal_memory";
+			vm_reg_base = <0x40000000>;
+			vm_reg_size = <DT_SIZE_M(128)>;
+			reg = <0x0 0x80000000 0x0 DT_SIZE_M(4)>;
+			label = "VM0_MEM";
+		};
+	};
+
+	vm_linux_space {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "linux-vm";
+		dtb_address = <0xc0000000>;
+		dtb_size = <DT_SIZE_M(2)>;
+		vcpu_num = <0x01>;
+		rootfs_address = <0x99000000>;
+
+		linux_ddr: memory@90000000 {
+			compatible = "vm-dram";
+			memmap_type = "direct";
+			address_type = "normal_memory";
+			vm_reg_base = <0x40000000>;
+			vm_reg_size = <DT_SIZE_M(1024)>;
+			reg = <0x0 0x90000000 0x0 DT_SIZE_M(64)>;
+			label = "VM1_MEM";
+		};
+	};
+};
