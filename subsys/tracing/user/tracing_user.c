@@ -7,6 +7,7 @@
 
 #include <tracing_user.h>
 #include <zephyr/kernel.h>
+#include <zephyr/debug/cpu_load.h>
 #include <zephyr/init.h>
 
 void __weak sys_trace_thread_create_user(struct k_thread *thread) {}
@@ -143,6 +144,17 @@ void sys_trace_isr_exit(void)
 void sys_trace_idle(void)
 {
 	sys_trace_idle_user();
+
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_enter_idle();
+	}
+}
+
+void sys_trace_idle_exit(void)
+{
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_exit_idle();
+	}
 }
 
 void sys_trace_sys_init_enter(const struct init_entry *entry, int level)
