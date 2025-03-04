@@ -48,32 +48,7 @@ configuration supports the hardware features below.  Another similar superset
 board is the :zephyr:board:`lpcxpresso55s69`, and that board may have additional features
 already supported, which can also be re-used on this lpcxpresso55s36 board:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| IAP       | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| USB FS    | on-chip    | USB Full Speed device               |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | dac                                 |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Other hardware features are not currently enabled.
 

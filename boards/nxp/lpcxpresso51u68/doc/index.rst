@@ -33,26 +33,7 @@ Supported Features
 
 The lpcxpresso51u68 support the following features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c master/slave controller         |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port interrupt               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | SPI master                          |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Other hardware is not yet supported on Zephyr.
 
