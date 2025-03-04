@@ -171,6 +171,74 @@ static struct bt_gatt_notify_params *notify_params_deep_copy(struct bt_gatt_noti
 	return copy;
 }
 
+uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
+{
+	uint16_t handle = 1;
+
+	if (!attr) {
+		return 0;
+	}
+
+	if (attr->handle) {
+		return attr->handle;
+	}
+
+	STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
+		/* Skip ahead if start is not within service attributes array */
+		if ((attr < &static_svc->attrs[0]) ||
+		    (attr > &static_svc->attrs[static_svc->attr_count - 1])) {
+			handle += static_svc->attr_count;
+			continue;
+		}
+
+		for (size_t i = 0; i < static_svc->attr_count; i++, handle++) {
+			if (attr == &static_svc->attrs[i]) {
+				return handle;
+			}
+		}
+	}
+
+	return 0;
+}
+
+uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr)
+{
+	uint16_t handle = 0;
+
+	if (attr != NULL && bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC) == 0) {
+		struct bt_gatt_chrc *chrc = attr->user_data;
+
+		handle = chrc->value_handle;
+		if (handle == 0) {
+			/* Fall back to Zephyr value handle policy */
+			handle = bt_gatt_attr_get_handle(attr) + 1U;
+		}
+	}
+
+	return handle;
+}
+
+static uint8_t find_next(const struct bt_gatt_attr *attr, uint16_t handle, void *user_data)
+{
+	struct bt_gatt_attr **next = user_data;
+
+	*next = (struct bt_gatt_attr *)attr;
+
+	return BT_GATT_ITER_STOP;
+}
+
+struct bt_gatt_attr *bt_gatt_find_by_uuid(const struct bt_gatt_attr *attr, uint16_t attr_count,
+					  const struct bt_uuid *uuid)
+{
+	struct bt_gatt_attr *found = NULL;
+	uint16_t start_handle = bt_gatt_attr_value_handle(attr);
+	uint16_t end_handle = start_handle && attr_count ? start_handle + attr_count : 0xffff;
+
+	bt_gatt_foreach_attr_type(start_handle, end_handle, uuid, NULL, 1, find_next, &found);
+
+	return found;
+}
+
 int bt_gatt_notify_cb(struct bt_conn *conn, struct bt_gatt_notify_params *params)
 {
 	struct bt_gatt_notify_params *copy;
