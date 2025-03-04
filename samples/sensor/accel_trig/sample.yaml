@@ -49,6 +49,9 @@ tests:
       - CONFIG_SAMPLE_TAP_DETECTION=y
     depends_on:
       - arduino_i2c
+      - arduino_gpio
+    platform_allow:
+      - nrf52dk/nrf52832
     integration_platforms:
       - nrf52dk/nrf52832
   sample.sensor.accel_trig.generic-tap:
