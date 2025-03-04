@@ -156,34 +156,35 @@
  * ODD_REG_SAVE
  *
  * Stashes the oddball shift/loop context registers in the base save
- * area pointed to by the current stack pointer.  On exit, A0 will
- * have been modified but A2/A3 have not, and the shift/loop
- * instructions can be used freely (though note loops don't work in
- * exceptions for other reasons!).
+ * area pointed to by the register specified by parameter BSA_PTR.
+ * On exit, the scratch register specified by parameter SCRATCH_REG
+ * will have been modified, and the shift/loop instructions can be
+ * used freely (though note loops don't work in exceptions for other
+ * reasons!).
  *
  * Does not populate or modify the PS/PC save locations.
  */
-.macro ODD_REG_SAVE
-	rsr.sar a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_sar_OFFSET
+.macro ODD_REG_SAVE SCRATCH_REG, BSA_PTR
+	rsr.sar \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_sar_OFFSET
 #if XCHAL_HAVE_LOOPS
-	rsr.lbeg a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_lbeg_OFFSET
-	rsr.lend a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_lend_OFFSET
-	rsr.lcount a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_lcount_OFFSET
+	rsr.lbeg \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lbeg_OFFSET
+	rsr.lend \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lend_OFFSET
+	rsr.lcount \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lcount_OFFSET
 #endif
-	rsr.exccause a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_exccause_OFFSET
+	rsr.exccause \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_exccause_OFFSET
 #if XCHAL_HAVE_S32C1I
-	rsr.scompare1 a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_scompare1_OFFSET
+	rsr.scompare1 \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_scompare1_OFFSET
 #endif
 #if XCHAL_HAVE_THREADPTR && \
 	(defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_LOCAL_STORAGE))
-	rur.THREADPTR a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
+	rur.THREADPTR \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_threadptr_OFFSET
 #endif
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
 	FPU_REG_SAVE
@@ -315,7 +316,7 @@ _xstack_returned_\@:
 	 */
 	s32i a2, a1, ___xtensa_irq_bsa_t_scratch_OFFSET
 
-	ODD_REG_SAVE
+	ODD_REG_SAVE a0, a1
 
 #if defined(CONFIG_XTENSA_HIFI_SHARING)
 	call0 _xtensa_hifi_save    /* Save HiFi registers */
