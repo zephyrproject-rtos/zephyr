@@ -189,6 +189,22 @@ SECTIONS
 #include <zephyr/linker/cplusplus-ram.ld>
 #include <zephyr/arch/x86/pagetables.ld>
 
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+SECTION_PROLOGUE(.x86shadowstack,,)
+{
+    MMU_PAGE_ALIGN
+
+    __x86shadowstack_start = .;
+
+    *(.x86shadowstack)
+
+    MMU_PAGE_ALIGN
+
+    __x86shadowstack_end = .;
+
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */

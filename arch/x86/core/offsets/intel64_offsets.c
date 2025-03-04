@@ -34,6 +34,11 @@ GEN_OFFSET_SYM(_thread_arch_t, psp);
 GEN_OFFSET_SYM(_thread_arch_t, ptables);
 #endif
 #endif /* CONFIG_USERSPACE */
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+GEN_OFFSET_SYM(_thread_arch_t, shstk_addr);
+GEN_OFFSET_SYM(_thread_arch_t, shstk_base);
+GEN_OFFSET_SYM(_thread_arch_t, shstk_size);
+#endif
 
 GEN_OFFSET_SYM(x86_tss64_t, ist1);
 GEN_OFFSET_SYM(x86_tss64_t, ist2);

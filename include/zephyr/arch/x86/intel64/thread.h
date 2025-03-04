@@ -135,6 +135,12 @@ struct _thread_arch {
 	uint64_t cs;
 #endif
 
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+	uintptr_t *shstk_addr;
+	uintptr_t *shstk_base;
+	size_t shstk_size;
+#endif
+
 	uint64_t rax;
 	uint64_t rcx;
 	uint64_t rdx;
