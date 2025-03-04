@@ -221,7 +221,7 @@ zephyr_udc0: &usb {
 		read-command = <0xCC>;
 		write-command = <0x8E>;
 		command-length = "INSTR_1_BYTE";
-		address-length = "ADDR_4_BYTE";
+		address-length = "ADDR_4_BYTE"; /* Avoid use of 3 byte address if Ambiq MSPI */
 		rx-dummy = <16>;
 		tx-dummy = <0>;
 		xip-config = <1 0 DT_SIZE_M(8) 0>;

@@ -17,10 +17,7 @@
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/cache.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
-
-#ifdef CONFIG_DCACHE
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif /* CONFIG_DCACHE */
 
 #if CONFIG_SOC_FAMILY_AMBIQ
 
@@ -124,9 +121,9 @@ static int is25xX0xx_get_dummy_clk(uint8_t rxdummy, uint8_t *dummy_clk)
 
 static int flash_mspi_is25xX0xx_enter_command_mode(const struct device *flash)
 {
-	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	struct flash_mspi_is25xX0xx_data *data = flash->data;
-	int ret;
+	const struct flash_mspi_is25xX0xx_config *cfg  = flash->config;
+	struct flash_mspi_is25xX0xx_data         *data = flash->data;
+	int                                       ret;
 
 	if (cfg->serial_cfg.io_mode == data->dev_cfg.io_mode) {
 		return 0;
@@ -143,9 +140,9 @@ static int flash_mspi_is25xX0xx_enter_command_mode(const struct device *flash)
 
 static int flash_mspi_is25xX0xx_exit_command_mode(const struct device *flash)
 {
-	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	struct flash_mspi_is25xX0xx_data *data = flash->data;
-	int ret;
+	const struct flash_mspi_is25xX0xx_config *cfg  = flash->config;
+	struct flash_mspi_is25xX0xx_data         *data = flash->data;
+	int                                       ret;
 
 	if (cfg->serial_cfg.io_mode == data->dev_cfg.io_mode) {
 		return 0;
@@ -164,9 +161,9 @@ static int flash_mspi_is25xX0xx_command_write(const struct device *flash, uint8_
 					      uint32_t addr, uint16_t addr_len, uint32_t tx_dummy,
 					      uint8_t *wdata, uint32_t length)
 {
-	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	struct flash_mspi_is25xX0xx_data *data = flash->data;
-	int ret;
+	const struct flash_mspi_is25xX0xx_config *cfg  = flash->config;
+	struct flash_mspi_is25xX0xx_data         *data = flash->data;
+	int                                       ret;
 
 	data->packet.dir              = MSPI_TX;
 	data->packet.cmd              = cmd;
@@ -197,9 +194,9 @@ static int flash_mspi_is25xX0xx_command_read(const struct device *flash, uint8_t
 					     uint32_t addr, uint16_t addr_len, uint32_t rx_dummy,
 					     uint8_t *rdata, uint32_t length)
 {
-	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	struct flash_mspi_is25xX0xx_data *data = flash->data;
-	int ret;
+	const struct flash_mspi_is25xX0xx_config *cfg  = flash->config;
+	struct flash_mspi_is25xX0xx_data         *data = flash->data;
+	int                                       ret;
 
 	data->packet.dir              = MSPI_RX;
 	data->packet.cmd              = cmd;
@@ -228,8 +225,8 @@ static int flash_mspi_is25xX0xx_command_read(const struct device *flash, uint8_t
 
 static void acquire(const struct device *flash)
 {
-	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	struct flash_mspi_is25xX0xx_data *data = flash->data;
+	const struct flash_mspi_is25xX0xx_config *cfg  = flash->config;
+	struct flash_mspi_is25xX0xx_data         *data = flash->data;
 
 	k_sem_take(&data->lock, K_FOREVER);
 
@@ -248,8 +245,8 @@ static void acquire(const struct device *flash)
 
 static void release(const struct device *flash)
 {
-	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	struct flash_mspi_is25xX0xx_data *data = flash->data;
+	const struct flash_mspi_is25xX0xx_config *cfg  = flash->config;
+	struct flash_mspi_is25xX0xx_data         *data = flash->data;
 
 	while (mspi_get_channel_status(cfg->bus, cfg->port)) {
 		;
@@ -281,7 +278,7 @@ static int flash_mspi_is25xX0xx_write_disable(const struct device *flash)
 static int flash_mspi_is25xX0xx_reset(const struct device *flash)
 {
 	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	int ret;
+	int                                       ret;
 
 	if (cfg->reset_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
@@ -322,7 +319,7 @@ static int flash_mspi_is25xX0xx_reset(const struct device *flash)
 	if (ret) {
 		return ret;
 	}
-        ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_RESET_MEM, 0, 0, 0, NULL, 0);
+	ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_RESET_MEM, 0, 0, 0, NULL, 0);
 	if (ret) {
 		return ret;
 	}
@@ -338,8 +335,8 @@ static int flash_mspi_is25xX0xx_reset(const struct device *flash)
 static int flash_mspi_is25xX0xx_get_vendor_id(const struct device *flash, uint8_t *vendor_id)
 {
 	struct flash_mspi_is25xX0xx_data *data = flash->data;
-	uint8_t buffer[20];
-	int ret;
+	uint8_t                           buffer[20];
+	int                               ret;
 
 	if (vendor_id == NULL) {
 		return -EINVAL;
@@ -357,33 +354,39 @@ static int flash_mspi_is25xX0xx_get_vendor_id(const struct device *flash, uint8_
 
 static int flash_mspi_is25xX0xx_erase_sector(const struct device *flash, off_t addr)
 {
-	int ret;
+	struct flash_mspi_is25xX0xx_data *data = flash->data;
+	int                               ret;
 
 	LOG_DBG("Erasing sector at 0x%08zx", (ssize_t)addr);
 
-	ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_SE, addr, 4, 0, NULL, 0);
+	ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_SE, addr,
+						 data->dev_cfg.addr_length, 0, NULL, 0);
 
 	return ret;
 }
 
 static int flash_mspi_is25xX0xx_erase_32k_sector(const struct device *flash, off_t addr)
 {
-	int ret;
+	struct flash_mspi_is25xX0xx_data *data = flash->data;
+	int                               ret;
 
 	LOG_DBG("Erasing sector at 0x%08zx", (ssize_t)addr);
 
-	ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_BE_32K, addr, 4, 0, NULL, 0);
+	ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_BE_32K, addr,
+						 data->dev_cfg.addr_length, 0, NULL, 0);
 
 	return ret;
 }
 
 static int flash_mspi_is25xX0xx_erase_block(const struct device *flash, off_t addr)
 {
-	int ret;
+	struct flash_mspi_is25xX0xx_data *data = flash->data;
+	int                               ret;
 
 	LOG_DBG("Erasing block at 0x%08zx", (ssize_t)addr);
 
-	ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_BE, addr, 4, 0, NULL, 0);
+	ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_BE, addr,
+						 data->dev_cfg.addr_length, 0, NULL, 0);
 
 	return ret;
 }
@@ -402,9 +405,9 @@ static int flash_mspi_is25xX0xx_erase_chip(const struct device *flash)
 static int flash_mspi_is25xX0xx_page_program(const struct device *flash, off_t offset,
 					     void *wdata, size_t len)
 {
-	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	struct flash_mspi_is25xX0xx_data *data = flash->data;
-	int ret;
+	const struct flash_mspi_is25xX0xx_config *cfg  = flash->config;
+	struct flash_mspi_is25xX0xx_data         *data = flash->data;
+	int                                       ret;
 
 	data->packet.dir              = MSPI_TX;
 	data->packet.cmd              = data->dev_cfg.write_cmd;
@@ -434,11 +437,12 @@ static int flash_mspi_is25xX0xx_page_program(const struct device *flash, off_t o
 	return ret;
 }
 
-static int flash_mspi_is25xX0xx_busy_wait(const struct device *flash)
+static int flash_mspi_is25xX0xx_busy_wait(const struct device *flash, unsigned int timeout)
 {
-	uint32_t status = 0;
-	uint32_t rx_dummy = 0;
-	int ret;
+	uint32_t status    = 0;
+	uint32_t flag_stat = 0;
+	uint32_t rx_dummy  = 0;
+	int      ret;
 
 	do {
 		LOG_DBG("Reading status register");
@@ -448,8 +452,33 @@ static int flash_mspi_is25xX0xx_busy_wait(const struct device *flash)
 			LOG_ERR("Could not read status");
 			return ret;
 		}
-		LOG_DBG("status: 0x%x", status);
-	} while (status & SPI_NOR_WIP_BIT);
+		ret = flash_mspi_is25xX0xx_command_read(flash, 0x70, 0, 0, rx_dummy,
+							(uint8_t *)&flag_stat, 1);
+		if (ret) {
+			LOG_ERR("Could not read flag status");
+			return ret;
+		}
+		LOG_DBG("status: 0x%x, flag status: 0x%x", status, flag_stat);
+
+		if (flag_stat & BIT(1)) {
+			LOG_ERR("Access denied");
+			return -EACCES;
+		} else if (flag_stat & BIT(4)) {
+			LOG_ERR("Program operation failed");
+			return -EIO;
+		} else if (flag_stat & BIT(5)) {
+			LOG_ERR("Erase operation failed");
+			return -EIO;
+		}
+
+		k_sleep(K_MSEC(1));
+		timeout--;
+	} while ((status & SPI_NOR_WIP_BIT) && timeout);
+
+	if (timeout == 0) {
+		LOG_ERR("Operation timed out");
+		return -ETIMEDOUT;
+	}
 
 	return ret;
 }
@@ -457,10 +486,9 @@ static int flash_mspi_is25xX0xx_busy_wait(const struct device *flash)
 static int flash_mspi_is25xX0xx_read(const struct device *flash, off_t offset, void *rdata,
 				     size_t len)
 {
-	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	struct flash_mspi_is25xX0xx_data *data = flash->data;
-
-	int ret;
+	const struct flash_mspi_is25xX0xx_config *cfg  = flash->config;
+	struct flash_mspi_is25xX0xx_data         *data = flash->data;
+	int                                       ret;
 
 	acquire(flash);
 
@@ -471,6 +499,17 @@ static int flash_mspi_is25xX0xx_read(const struct device *flash, off_t offset, v
 		memcpy(rdata, (void *)xip_addr, len);
 	} else {
 #endif /* CONFIG_FLASH_MSPI_XIP_READ */
+
+#if CONFIG_FLASH_MSPI_HANDLE_CACHE
+		if (!buf_in_nocache((uintptr_t)rdata, len)) {
+			if (len > CONFIG_FLASH_MSPI_RANGE_HANDLE_CACHE_SIZE) {
+				sys_cache_data_flush_all();
+			} else {
+				sys_cache_data_flush_range(rdata, len);
+			}
+		}
+#endif /* CONFIG_FLASH_MSPI_HANDLE_CACHE */
+
 		data->packet.dir              = MSPI_RX;
 		data->packet.cmd              = data->dev_cfg.read_cmd;
 		data->packet.address          = offset;
@@ -519,11 +558,11 @@ static int flash_mspi_is25xX0xx_read(const struct device *flash, off_t offset, v
 static int flash_mspi_is25xX0xx_write(const struct device *flash, off_t offset, const void *wdata,
 				      size_t len)
 {
-	int ret;
+	int      ret;
 	uint8_t *src = (uint8_t *)wdata;
-	int i;
+	int      i;
 #if CONFIG_FLASH_MSPI_XIP_READ
-	off_t addr = offset;
+	off_t  addr = offset;
 	size_t size = len;
 #endif
 
@@ -571,7 +610,7 @@ static int flash_mspi_is25xX0xx_write(const struct device *flash, off_t offset, 
 			return ret;
 		}
 
-		ret = flash_mspi_is25xX0xx_busy_wait(flash);
+		ret = flash_mspi_is25xX0xx_busy_wait(flash, 3);
 		if (ret) {
 			return ret;
 		}
@@ -581,9 +620,9 @@ static int flash_mspi_is25xX0xx_write(const struct device *flash, off_t offset, 
 			return ret;
 		}
 
-		src += i;
+		src    += i;
 		offset += i;
-		len -= i;
+		len    -= i;
 	}
 
 	ret = flash_mspi_is25xX0xx_write_disable(flash);
@@ -615,12 +654,11 @@ static int flash_mspi_is25xX0xx_write(const struct device *flash, off_t offset, 
 static int flash_mspi_is25xX0xx_erase(const struct device *flash, off_t offset, size_t size)
 {
 	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	int ret = 0;
-	const size_t num_sectors = size / SPI_NOR_SECTOR_SIZE;
+	int          ret             = 0;
+	const size_t num_sectors     = size / SPI_NOR_SECTOR_SIZE;
 	const size_t num_32k_sectors = size / IS25XX0XX_32KSECTOR_SIZE;
-	const size_t num_blocks = size / IS25XX0XX_BLOCK_SIZE;
-
-	int i;
+	const size_t num_blocks      = size / IS25XX0XX_BLOCK_SIZE;
+	int          i;
 
 	acquire(flash);
 
@@ -650,43 +688,13 @@ static int flash_mspi_is25xX0xx_erase(const struct device *flash, off_t offset, 
 			return ret;
 		}
 
-		ret = flash_mspi_is25xX0xx_busy_wait(flash);
+		ret = flash_mspi_is25xX0xx_busy_wait(flash, 45000);
 		if (ret) {
 			return ret;
-		}
-	} else if ((0 == (offset % IS25XX0XX_32KSECTOR_SIZE)) &&
-		   (0 == (size % IS25XX0XX_32KSECTOR_SIZE))) {
-		for (i = 0; i < num_32k_sectors; i++) {
-			ret = flash_mspi_is25xX0xx_write_enable(flash);
-			if (ret) {
-				return ret;
-			}
-
-			ret = flash_mspi_is25xX0xx_write_enable(flash);
-			if (ret) {
-				return ret;
-			}
-
-			ret = flash_mspi_is25xX0xx_erase_32k_sector(flash, offset);
-			if (ret) {
-				return ret;
-			}
-
-			ret = flash_mspi_is25xX0xx_busy_wait(flash);
-			if (ret) {
-				return ret;
-			}
-
-			offset += IS25XX0XX_32KSECTOR_SIZE;
 		}
 	} else if ((0 == (offset % IS25XX0XX_BLOCK_SIZE)) &&
 		   (0 == (size % IS25XX0XX_BLOCK_SIZE))) {
 		for (i = 0; i < num_blocks; i++) {
-			ret = flash_mspi_is25xX0xx_write_enable(flash);
-			if (ret) {
-				return ret;
-			}
-
 			ret = flash_mspi_is25xX0xx_write_enable(flash);
 			if (ret) {
 				return ret;
@@ -697,20 +705,35 @@ static int flash_mspi_is25xX0xx_erase(const struct device *flash, off_t offset, 
 				return ret;
 			}
 
-			ret = flash_mspi_is25xX0xx_busy_wait(flash);
+			ret = flash_mspi_is25xX0xx_busy_wait(flash, 1000);
 			if (ret) {
 				return ret;
 			}
 
 			offset += IS25XX0XX_BLOCK_SIZE;
 		}
-	} else {
-		for (i = 0; i < num_sectors; i++) {
+	} else if ((0 == (offset % IS25XX0XX_32KSECTOR_SIZE)) &&
+		   (0 == (size % IS25XX0XX_32KSECTOR_SIZE))) {
+		for (i = 0; i < num_32k_sectors; i++) {
 			ret = flash_mspi_is25xX0xx_write_enable(flash);
 			if (ret) {
 				return ret;
 			}
 
+			ret = flash_mspi_is25xX0xx_erase_32k_sector(flash, offset);
+			if (ret) {
+				return ret;
+			}
+
+			ret = flash_mspi_is25xX0xx_busy_wait(flash, 1000);
+			if (ret) {
+				return ret;
+			}
+
+			offset += IS25XX0XX_32KSECTOR_SIZE;
+		}
+	} else {
+		for (i = 0; i < num_sectors; i++) {
 			ret = flash_mspi_is25xX0xx_write_enable(flash);
 			if (ret) {
 				return ret;
@@ -721,7 +744,7 @@ static int flash_mspi_is25xX0xx_erase(const struct device *flash, off_t offset, 
 				return ret;
 			}
 
-			ret = flash_mspi_is25xX0xx_busy_wait(flash);
+			ret = flash_mspi_is25xX0xx_busy_wait(flash, 400);
 			if (ret) {
 				return ret;
 			}
@@ -749,24 +772,24 @@ flash_mspi_is25xX0xx_get_parameters(const struct device *flash)
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static void flash_mspi_is25xX0xx_pages_layout(const struct device *flash,
+static void flash_mspi_is25xX0xx_pages_layout(const struct device              *flash,
 					      const struct flash_pages_layout **layout,
-					      size_t *layout_size)
+					      size_t                           *layout_size)
 {
 	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
 
-	*layout = &cfg->page_layout;
+	*layout      = &cfg->page_layout;
 	*layout_size = 1;
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 static int flash_mspi_is25xX0xx_init(const struct device *flash)
 {
-	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	struct flash_mspi_is25xX0xx_data *data = flash->data;
-	uint8_t vendor_id;
-	uint8_t reg_dummy;
-	uint8_t reg_io_mode;
+	const struct flash_mspi_is25xX0xx_config *cfg  = flash->config;
+	struct flash_mspi_is25xX0xx_data         *data = flash->data;
+	uint8_t                                   vendor_id;
+	uint8_t                                   reg_dummy;
+	uint8_t                                   reg_io_mode;
 
 	if (!device_is_ready(cfg->bus)) {
 		LOG_ERR("Controller device is not ready.");
@@ -801,8 +824,8 @@ static int flash_mspi_is25xX0xx_init(const struct device *flash)
 	}
 	LOG_DBG("Vendor id: 0x%0x", vendor_id);
 	if (vendor_id != IS25XX0XX_VENDOR_ID) {
-		LOG_WRN("Vendor ID does not match expected value of 0x%0x/%u", IS25XX0XX_VENDOR_ID,
-			__LINE__);
+		LOG_WRN("Vendor ID does not match expected value of 0x%0x/%u",
+			IS25XX0XX_VENDOR_ID, __LINE__);
 	}
 
 	if (is25xX0xx_get_dummy_clk(cfg->tar_dev_cfg.rx_dummy, &reg_dummy)) {
@@ -849,7 +872,7 @@ static int flash_mspi_is25xX0xx_init(const struct device *flash)
 
 #if CONFIG_MSPI_TIMING
 	if (mspi_timing_config(cfg->bus, &cfg->dev_id, cfg->timing_cfg_mask,
-			       (void *)&cfg->tar_timing_cfg)) {
+				(void *)&cfg->tar_timing_cfg)) {
 		LOG_ERR("Failed to config mspi timing/%u", __LINE__);
 		return -EIO;
 	}
@@ -881,14 +904,13 @@ static int flash_mspi_is25xX0xx_init(const struct device *flash)
 	return 0;
 }
 
-
 #if defined(CONFIG_FLASH_JESD216_API)
 static int flash_mspi_is25xX0xx_read_sfdp(const struct device *flash, off_t addr, void *rdata,
 					  size_t size)
 {
-	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
-	struct flash_mspi_is25xX0xx_data *data = flash->data;
-	int ret;
+	const struct flash_mspi_is25xX0xx_config *cfg  = flash->config;
+	struct flash_mspi_is25xX0xx_data         *data = flash->data;
+	int                                       ret;
 
 	acquire(flash);
 
@@ -966,15 +988,15 @@ static DEVICE_API(flash, flash_mspi_is25xX0xx_api) = {
 
 #define MSPI_TIMING_CONFIG(n)                                                                     \
 	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
-		(MSPI_AMBIQ_TIMING_CONFIG(n)), ({}))                                              \
+		(MSPI_AMBIQ_TIMING_CONFIG(n)), ({}))
 
 #define MSPI_TIMING_CONFIG_MASK(n)                                                                \
 	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
-		(MSPI_AMBIQ_TIMING_CONFIG_MASK(n)), (MSPI_TIMING_PARAM_DUMMY))                    \
+		(MSPI_AMBIQ_TIMING_CONFIG_MASK(n)), (MSPI_TIMING_PARAM_DUMMY))
 
 #define MSPI_PORT(n)                                                                              \
 	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
-		(MSPI_AMBIQ_PORT(n)), (0))                                                        \
+		(MSPI_AMBIQ_PORT(n)), (0))
 
 #define FLASH_MSPI_IS25XX0XX(n)                                                                   \
 	static const struct flash_mspi_is25xX0xx_config flash_mspi_is25xX0xx_config_##n = {       \
