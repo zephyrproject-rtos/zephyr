@@ -1,0 +1,43 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence I2C controller version 1.4.
+
+  Example I2C device tree node:
+    i2c@e0004000 {
+        compatible = "cdns,i2c-r1p14";
+        clocks = <&clkc 38>;
+        interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL_HIGH>;
+        reg = <0xe0004000 0x1000>;
+        clock-frequency = <400000>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        fifo-depth = <8>;
+    };
+
+compatible: "cdns,i2c-r1p14"
+
+include: [i2c-controller.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: Reference Input clock for I2C core.
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    description: Desired I2C bus clock frequency in Hz.
+    enum: [100000, 400000]
+
+  fifo-depth:
+    type: int
+    description: Size of the data FIFO in bytes.
+    default: 16
+    enum: [2, 4, 8, 16, 32, 64, 128, 256]
