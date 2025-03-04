@@ -7,6 +7,8 @@ common:
   platform_key:
     - arch
     - simulation
+  integration_platforms:
+    - qemu_riscv64
   min_flash: 64
   min_ram: 32
 tests:
