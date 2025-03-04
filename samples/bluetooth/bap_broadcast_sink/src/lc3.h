@@ -35,18 +35,11 @@
 
 #include "stream_rx.h"
 
-#define LC3_MAX_SAMPLE_RATE_HZ     48000U
+#define LC3_MAX_SAMPLE_RATE_HZ     48000U /* Limit to 16KHz for now */
 #define LC3_MAX_FRAME_DURATION_US  10000U
 #define LC3_MAX_NUM_SAMPLES_MONO                                                                   \
 	((LC3_MAX_FRAME_DURATION_US * LC3_MAX_SAMPLE_RATE_HZ) / USEC_PER_SEC)
 #define LC3_MAX_NUM_SAMPLES_STEREO (LC3_MAX_NUM_SAMPLES_MONO * 2U)
-
-/**
- * @brief Returns the number of active streams using an LC3 codec
- *
- * @return the number of active streams using an LC3 codec
- */
-size_t lc3_get_rx_streaming_cnt(void);
 
 /**
  * @brief Enables LC3 for a stream
