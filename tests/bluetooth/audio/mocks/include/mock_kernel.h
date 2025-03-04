@@ -21,5 +21,7 @@ DECLARE_FAKE_VALUE_FUNC(bool, k_work_cancel_delayable_sync, struct k_work_delaya
 			struct k_work_sync *);
 DECLARE_FAKE_VALUE_FUNC(int, k_sem_take, struct k_sem *, k_timeout_t);
 DECLARE_FAKE_VOID_FUNC(k_sem_give, struct k_sem *);
+DECLARE_FAKE_VALUE_FUNC(int, k_mutex_lock, struct k_mutex *, k_timeout_t);
+DECLARE_FAKE_VALUE_FUNC(int, k_mutex_unlock, struct k_mutex *);
 
 #endif /* MOCKS_KERNEL_H_ */
