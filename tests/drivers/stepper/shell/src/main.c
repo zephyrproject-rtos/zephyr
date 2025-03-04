@@ -145,6 +145,15 @@ ZTEST(stepper_shell, test_stepper_run_invalid_direction)
 	zassert_not_equal(err, 0, " executed run with invalid direction value");
 }
 
+ZTEST(stepper_shell, test_stepper_stop)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	int err = shell_execute_cmd(sh, "stepper stop " FAKE_STEPPER_NAME);
+
+	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_stop_fake, err);
+	zassert_equal(err, 0, "stepper stop could not be executed");
+}
+
 ZTEST(stepper_shell, test_stepper_info)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
