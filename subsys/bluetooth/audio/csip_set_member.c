@@ -38,7 +38,6 @@
 #include <zephyr/sys/check.h>
 
 #include "../host/conn_internal.h"
-#include "../host/hci_core.h"
 #include "../host/keys.h"
 
 #include "common/bt_str.h"

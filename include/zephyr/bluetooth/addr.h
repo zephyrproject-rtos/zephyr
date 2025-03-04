@@ -194,6 +194,18 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 	return BT_ADDR_IS_STATIC(&addr->a);
 }
 
+/** @brief Check if a device identified by a Bluetooth LE address is bonded.
+ *
+ *  Valid Bluetooth LE identity addresses are either public address or
+ *  random static address.
+ *
+ *  @param id   Local identity (typically @ref BT_ID_DEFAULT).
+ *  @param addr Bluetooth LE device address.
+ *
+ *  @return true if @p addr is bonded with local @p id
+ */
+bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr);
+
 /**
  *  @brief Recommended length of user string buffer for Bluetooth address
  *

@@ -37,7 +37,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "host/hci_core.h"
 #include "common/bt_str.h"
 
 #include "audio_internal.h"
