@@ -290,7 +290,9 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 	irq = PCIE_CONF_INTR_IRQ(data);
 
 	if ((irq == PCIE_CONF_INTR_IRQ_NONE) ||
+#ifdef CONFIG_ARCH_X86
 	    (irq >= CONFIG_MAX_IRQ_LINES) ||
+#endif
 	    arch_irq_is_used(irq)) {
 
 		/* In some platforms, PCI interrupts are hardwired to specific interrupt inputs
