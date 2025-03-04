@@ -8,6 +8,7 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/rts5912_clock.h>
 #include <zephyr/dt-bindings/gpio/realtek-gpio.h>
+#include <mem.h>
 
 / {
 	cpus {
@@ -266,6 +267,20 @@
 			interrupts = <210 0>;
 			interrupt-parent = <&nvic>;
 			status = "disabled";
+		};
+
+		flash_controller: flash-controller@40010200 {
+			compatible = "realtek,rts5912-flash-controller";
+			reg = <0x40010200 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eflash: eflash@60000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x60000000 DT_SIZE_K(960)>;
+				erase-block-size = <DT_SIZE_K(4)>;
+				write-block-size = <4>;
+			};
 		};
 	};
 
