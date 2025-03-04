@@ -1,0 +1,13 @@
+# Copyright (c) 2025 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PIXEL
+	bool "Pixel and Image Manipulation Library"
+
+if PIXEL
+
+module = PIXEL
+module-str = pixel
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
