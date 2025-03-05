@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -377,14 +378,6 @@ static int bt_ipc_close(const struct device *dev)
 {
 	struct ipc_data *ipc = dev->data;
 	int err;
-
-	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
-		if (err) {
-			LOG_ERR("Sending reset command failed with: %d", err);
-			return err;
-		}
-	}
 
 	err = ipc_service_deregister_endpoint(&ipc->hci_ept);
 	if (err) {
