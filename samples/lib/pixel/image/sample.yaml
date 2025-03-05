@@ -1,0 +1,19 @@
+sample:
+  description: Pixel image sample, image manipulation library
+  name: pixel image
+common:
+  min_ram: 32
+  tags: pixel
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "input image, 32x8, 768 bytes:"
+      - "output image, 120x40, 14400 bytes:"
+tests:
+  sample.pixel.image:
+    tags: pixel
+    extra_configs:
+      - CONFIG_PIXEL_PRINT_NONE=y
