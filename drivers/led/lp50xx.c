@@ -51,6 +51,7 @@ LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 #define LP50XX_DEVICE_CONFIG1		0x01
 #define LP50XX_LED_CONFIG0		0x02
 
+/* Intentional INTs division aligning on bank base of specific chip reg mapping */
 #define LP50XX_BANK_BASE(nmodules)		\
 	(0x03 + (((nmodules) - 1) / 8))
 
@@ -79,7 +80,7 @@ struct lp50xx_config {
 	struct i2c_dt_spec bus;
 	const struct gpio_dt_spec gpio_enable;
 	uint8_t num_modules;
-	uint8_t max_leds;
+	uint8_t max_chans;
 	uint8_t num_leds;
 	bool log_scale_en;
 	bool max_curr_opt;
@@ -132,7 +133,15 @@ static int lp50xx_set_brightness(const struct device *dev,
 		return -EINVAL;
 	}
 
-	buf[0] = LP50XX_LED0_BRIGHTNESS(config->num_modules) + led_info->index;
+	if (led_info->num_colors == 3 || led_info->num_colors == 2) {
+		buf[0] = LP50XX_LED0_BRIGHTNESS(config->num_modules);
+		buf[0] += led_info->index / 3;
+	} else if (led_info->num_colors == 1) {
+		buf[0] = LP50XX_OUT0_COLOR(config->num_modules);
+		buf[0] += led_info->index;
+	} else {
+		return -ENOTSUP;
+	}
 	buf[1] = (value * 0xff) / 100;
 
 	return i2c_write_dt(&config->bus, buf, sizeof(buf));
@@ -169,7 +178,7 @@ static int lp50xx_set_color(const struct device *dev, uint32_t led,
 	}
 
 	buf[0] = LP50XX_OUT0_COLOR(config->num_modules);
-	buf[0] += LP50XX_COLORS_PER_LED * led_info->index;
+	buf[0] += led_info->index;
 
 	for (i = 0; i < led_info->num_colors; i++) {
 		buf[1 + i] = color[i];
@@ -268,6 +277,7 @@ static int lp50xx_init(const struct device *dev)
 {
 	const struct lp50xx_config *config = dev->config;
 	uint8_t led;
+	uint8_t used_chans = 0;
 	int err;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
@@ -276,20 +286,28 @@ static int lp50xx_init(const struct device *dev)
 	}
 
 	/* Check LED configuration found in DT */
-	if (config->num_leds > config->max_leds) {
-		LOG_ERR("%s: invalid number of LEDs %d (max %d)",
-			dev->name,
-			config->num_leds,
-			config->max_leds);
-		return -EINVAL;
-	}
 	for (led = 0; led < config->num_leds; led++) {
-		const struct led_info *led_info =
-			lp50xx_led_to_info(config, led);
+		const struct led_info *led_info = lp50xx_led_to_info(config, led);
+
+		used_chans += led_info->num_colors;
+
+		/* RGB LEDs should be placed on an index which is a multiple of 3 */
+		if (led_info->num_colors == LP50XX_COLORS_PER_LED && (led_info->index % 3 != 0)) {
+			LOG_ERR("%s: LED %d: invalid index (%d) for RGB module. Multiple of 3 "
+				"expected",
+				dev->name, led, led_info->index);
+			return -ENOTSUP;
+		}
+
+		if (used_chans > config->max_chans) {
+			LOG_ERR("%s: invalid number of used channels %d (max %d)", dev->name,
+				used_chans, config->max_chans);
+			return -EINVAL;
+		}
 
 		if (led_info->num_colors > LP50XX_COLORS_PER_LED) {
-			LOG_ERR("%s: LED %d: invalid number of colors (max %d)",
-				dev->name, led, LP50XX_COLORS_PER_LED);
+			LOG_ERR("%s: LED %d: invalid number of colors (max %d)", dev->name, led,
+				LP50XX_COLORS_PER_LED);
 			return -EINVAL;
 		}
 	}
@@ -385,7 +403,7 @@ static DEVICE_API(led, lp50xx_led_api) = {
 		.gpio_enable		=					\
 			GPIO_DT_SPEC_INST_GET_OR(n, enable_gpios, {0}),		\
 		.num_modules		= nmodules,				\
-		.max_leds		= LP##id##_MAX_LEDS,			\
+		.max_chans		= LP##id##_MAX_CHANS,			\
 		.num_leds		= ARRAY_SIZE(lp##id##_leds_##n),	\
 		.log_scale_en		= DT_INST_PROP(n, log_scale_en),	\
 		.max_curr_opt		= DT_INST_PROP(n, max_curr_opt),	\

@@ -23,7 +23,7 @@
 		};
 		led_1 {
 			label = "LED LP5030 1";
-			index = <1>;
+			index = <3>;
 			color-mapping =
 				<LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_GREEN>,
@@ -31,7 +31,7 @@
 		};
 		led_2 {
 			label = "LED LP5030 2";
-			index = <2>;
+			index = <6>;
 			color-mapping =
 				<LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_GREEN>,
@@ -39,7 +39,7 @@
 		};
 		led_3 {
 			label = "LED LP5030 3";
-			index = <3>;
+			index = <9>;
 			color-mapping =
 				<LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_GREEN>,
@@ -47,7 +47,7 @@
 		};
 		led_4 {
 			label = "LED LP5030 4";
-			index = <4>;
+			index = <12>;
 			color-mapping =
 				<LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_GREEN>,
@@ -55,7 +55,7 @@
 		};
 		led_5 {
 			label = "LED LP5030 5";
-			index = <5>;
+			index = <15>;
 			color-mapping =
 				<LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_GREEN>,
@@ -63,7 +63,7 @@
 		};
 		led_6 {
 			label = "LED LP5030 6";
-			index = <6>;
+			index = <18>;
 			color-mapping =
 				<LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_GREEN>,
@@ -71,7 +71,7 @@
 		};
 		led_7 {
 			label = "LED LP5030 7";
-			index = <7>;
+			index = <21>;
 			color-mapping =
 				<LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_GREEN>,
@@ -79,7 +79,7 @@
 		};
 		led_8 {
 			label = "LED LP5030 8";
-			index = <8>;
+			index = <24>;
 			color-mapping =
 				<LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_GREEN>,
@@ -87,7 +87,7 @@
 		};
 		led_9 {
 			label = "LED LP5030 9";
-			index = <9>;
+			index = <27>;
 			color-mapping =
 				<LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_GREEN>,

@@ -342,7 +342,7 @@ int main(void)
 
 		if (device_is_ready(lp50xx_dev)) {
 			run_test(lp50xx_dev,
-				 LP5009_MAX_LEDS,
+				 LP5009_MAX_CHANS / LP50XX_COLORS_PER_LED,
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5012_LED_COL_CHAN_BASE);
 		} else {
@@ -358,7 +358,7 @@ int main(void)
 
 		if (device_is_ready(lp50xx_dev)) {
 			run_test(lp50xx_dev,
-				 LP5012_MAX_LEDS,
+				 LP5012_MAX_CHANS / LP50XX_COLORS_PER_LED,
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5012_LED_COL_CHAN_BASE);
 		} else {
@@ -374,7 +374,7 @@ int main(void)
 
 		if (device_is_ready(lp50xx_dev)) {
 			run_test(lp50xx_dev,
-				 LP5018_MAX_LEDS,
+				 LP5018_MAX_CHANS / LP50XX_COLORS_PER_LED,
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5024_LED_COL_CHAN_BASE);
 		} else {
@@ -390,7 +390,7 @@ int main(void)
 
 		if (device_is_ready(lp50xx_dev)) {
 			run_test(lp50xx_dev,
-				 LP5024_MAX_LEDS,
+				 LP5024_MAX_CHANS / LP50XX_COLORS_PER_LED,
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5024_LED_COL_CHAN_BASE);
 		} else {
@@ -406,7 +406,7 @@ int main(void)
 
 		if (device_is_ready(lp50xx_dev)) {
 			run_test(lp50xx_dev,
-				 LP5030_MAX_LEDS,
+				 LP5030_MAX_CHANS / LP50XX_COLORS_PER_LED,
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5036_LED_COL_CHAN_BASE);
 		} else {
@@ -422,7 +422,7 @@ int main(void)
 
 		if (device_is_ready(lp50xx_dev)) {
 			run_test(lp50xx_dev,
-				 LP5036_MAX_LEDS,
+				 LP5036_MAX_CHANS / LP50XX_COLORS_PER_LED,
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5036_LED_COL_CHAN_BASE);
 		} else {
