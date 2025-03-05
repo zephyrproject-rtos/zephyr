@@ -61,10 +61,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		LOG_DBG("exited PM state suspend to idle");
 		break;
 	case PM_STATE_STANDBY:
-		/* For this state wait a little until RTC register being ready
-		 * otherwise seems previous RTC value being read
-		 */
-		k_busy_wait(100);
 		LOG_DBG("exited PM state standby");
 		break;
 	default:
