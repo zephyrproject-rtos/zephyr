@@ -1,0 +1,35 @@
+/ {
+	aliases {
+		eeprom-0 = &eeprom0;
+	};
+
+	eeprom0: eeprom0 {
+		status = "okay";
+		compatible = "zephyr,emu-eeprom";
+		size = <256>;
+		pagesize = <DT_SIZE_K(2)>;
+		partition = <&eepromemu_partition>;
+		rambuf;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(56)>;
+		};
+		eepromemu_partition: partition@E000 {
+			label = "eeprom-emu";
+			reg = <0x0000E000 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+&ftfa {
+	status = "okay";
+};
