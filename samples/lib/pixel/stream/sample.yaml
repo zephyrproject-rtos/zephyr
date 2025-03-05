@@ -1,0 +1,16 @@
+sample:
+  description: Pixel Stream sample, convert a stream of lines from a frame
+  name: pixel stream
+common:
+  min_ram: 32
+  tags: pixel
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Output image preview:"
+tests:
+  sample.lib.pixel.stream:
+    tags: pixel
