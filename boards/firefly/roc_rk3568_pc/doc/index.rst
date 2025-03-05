@@ -42,18 +42,7 @@ has frequency up to 2.0GHz. Zephyr OS is ported to run on it.
 Supported Features
 ==================
 
-The Zephyr roc_rk3568_pc board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| GIC-v3    | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| ARM TIMER | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Devices
 ========
