@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2018, xhsc
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_FAMILY_XHSC_HC32
+
+rsource "*/Kconfig.defconfig.series"
+
+endif # SOC_FAMILY_XHSC_HC32

@@ -1,0 +1,25 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: XHSC HC32 family Interrupt Controller
+
+compatible: "xhsc,hc32-extint"
+
+include: [base.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  extint-nums:
+    type: int
+    required: true
+    description: Number of extint supported by the interrupt controller.
+
+  extint-chs:
+    type: array
+    required: true
+    description: Description of the external channel for each interrupt vector.

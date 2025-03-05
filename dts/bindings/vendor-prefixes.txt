@@ -753,6 +753,7 @@ wurth	Wurth Elektronik
 x-powers	X-Powers
 xen	Xen Hypervisor
 xes	Extreme Engineering Solutions (X-ES)
+xhsc	Xiaohua Semiconductor Co., Ltd.
 xiaomi	Xiaomi Technology Co., Ltd.
 xillybus	Xillybus Ltd.
 xingbangda	Shenzhen Xingbangda Display Technology Co., Ltd
