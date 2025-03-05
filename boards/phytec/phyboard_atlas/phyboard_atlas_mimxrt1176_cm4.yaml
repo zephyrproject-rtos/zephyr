@@ -1,0 +1,22 @@
+# Copyright (c) 2025 PHYTEC America LLC
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: phyboard_atlas/mimxrt1176/cm4
+name: PHYTEC phyBOARD-Atlas i.MX RT1170 CM4
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 128
+supported:
+  - dac
+  - dma
+  - gpio
+  - i2c
+  - sai
+  - spi
+  - uart
+vendor: phytec
