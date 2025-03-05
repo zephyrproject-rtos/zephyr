@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,9 @@
 #include <zephyr/audio/codec.h>
 #include <string.h>
 
+#ifndef CONFIG_USE_DMIC
+#include "sine.h"
+#endif
 
 #define I2S_CODEC_TX  DT_ALIAS(i2s_codec_tx)
 
@@ -171,19 +174,14 @@ int main(void)
 
 			for (i = 0; i < 2; i++) {
 #if CONFIG_USE_DMIC
-				ret = dmic_read(dmic_dev, 0,
-								&mem_block, &block_size, TIMEOUT);
+				ret = dmic_read(dmic_dev, 0, &mem_block, &block_size, TIMEOUT);
 				if (ret < 0) {
 					printk("read failed: %d", ret);
 					break;
 				}
 #else
-				ret = k_mem_slab_alloc(&mem_slab,
-							&mem_block, Z_TIMEOUT_TICKS(TIMEOUT));
-				if (ret < 0) {
-					printk("Failed to allocate TX block\n");
-					return 0;
-				}
+				/* If not using DMIC, play a sine wave 440Hz */
+				mem_block = (void *)&__16kHz16bit_stereo_sine_pcm;
 #endif
 				ret = i2s_write(i2s_dev_codec, mem_block, block_size);
 				if (ret < 0) {
