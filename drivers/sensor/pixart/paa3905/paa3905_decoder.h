@@ -17,6 +17,8 @@ int paa3905_encode(const struct device *dev,
 		   size_t num_channels,
 		   uint8_t *buf);
 
+uint8_t paa3905_encode_channel(enum sensor_channel chan);
+
 int paa3905_get_decoder(const struct device *dev,
 			const struct sensor_decoder_api **decoder);
 
