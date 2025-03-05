@@ -35,29 +35,7 @@ For more information about the GD32F350 SoC and GD32F350R-EVAL board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v7m-nvic`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-   * - PINMUX
-     - :kconfig:option:`CONFIG_PINCTRL`
-     - :dtcompatible:`gd,gd32-pinctrl-af`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`gd,gd32-adc`
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
