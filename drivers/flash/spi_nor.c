@@ -1279,8 +1279,8 @@ static int spi_nor_process_sfdp(const struct device *dev)
 	while (php != phpe) {
 		uint16_t id = jesd216_param_id(php);
 
-		LOG_INF("PH%" PRIdPTR ": %04x rev %u.%u: %u DW @ %x",
-			(php - hp->phdr), id, php->rev_major, php->rev_minor,
+		LOG_INF("PH%u: %04x rev %u.%u: %u DW @ %x",
+			(int)(php - hp->phdr), id, php->rev_major, php->rev_minor,
 			php->len_dw, jesd216_param_addr(php));
 
 		if (id == JESD216_SFDP_PARAM_ID_BFP) {
