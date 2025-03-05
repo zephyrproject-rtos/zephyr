@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Qualification xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" DN="Q332723" DesignName="Zephyr Host" PathType="NewDesignNoDns" TCRL="85" xmlns="http://qualification.bluetooth.com">
   <References />
-  <Products>
+  <Products> TEST
     <Product Name="Zephyr Host" Description="host" Model="main" Website="" PublishDate="2024-11-26T00:00:00" />
   </Products>
   <Layers>
