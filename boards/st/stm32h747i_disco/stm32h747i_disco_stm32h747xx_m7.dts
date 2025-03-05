@@ -224,6 +224,7 @@ zephyr_udc0: &usbotg_hs {
 	clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x06000000>,
 		 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 	phys = <&otghs_ulpi_phy>;
+	physel = "USB_OTG_HS_PHY_ULPI";
 	status = "okay";
 };
 
