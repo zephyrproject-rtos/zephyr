@@ -45,6 +45,13 @@ config NET_MGMT_EVENT_STACK_SIZE
 config NET_MGMT_EVENT_QUEUE_SIZE
 	default 10
 
+config WIFI_SILABS_SIWX91X_MFP
+    bool "Enable or disable MFP (Management Frame Protection)"
+    default y
+    help
+        Enable this option to turn on Management Frame Protection (MFP) for the
+        Silabs SiWx91x SoC series WiFi driver. Disable it to turn off MFP.
+
 # Override the WIFI_MGMT_SCAN_SSID_FILT_MAX parameter for the Wi-Fi subsystem.
 # This device supports filtering scan results for only one SSID.
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
