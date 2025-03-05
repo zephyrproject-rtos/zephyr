@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025 PHYTEC America LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <phytec/phycore_rt1170_mimxrt1176_cm4.dtsi>
+#include "phyboard_atlas.dtsi"
+
+/ {
+	model = "PHYTEC phyBOARD-Atlas i.MX RT1170 CM4";
+	compatible = "phytec,phyboard_atlas";
+
+	chosen {
+		zephyr,console = &lpuart6;
+		zephyr,shell-uart = &lpuart6;
+	};
+};
+
+&user_button {
+	status = "okay";
+};
+
+&board_green_led {
+	status = "okay";
+};
+
+&board_red_led {
+	status = "okay";
+};
+
+&lpi2c1 {
+	status = "okay";
+};
+
+&lpuart6 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&sai1 {
+	status = "okay";
+};
