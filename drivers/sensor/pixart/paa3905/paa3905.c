@@ -13,6 +13,7 @@
 
 #include "paa3905.h"
 #include "paa3905_bus.h"
+#include "paa3905_stream.h"
 #include "paa3905_decoder.h"
 
 #include <zephyr/logging/log.h>
@@ -119,6 +120,8 @@ static void paa3905_submit(const struct device *dev, struct rtio_iodev_sqe *iode
 
 	if (!cfg->is_streaming) {
 		paa3905_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_PAA3905_STREAM)) {
+		paa3905_stream_submit(dev, iodev_sqe);
 	} else {
 		LOG_ERR("Streaming not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
@@ -213,6 +216,31 @@ static int paa3905_configure(const struct device *dev)
 	return 0;
 }
 
+int paa3905_recover(const struct device *dev)
+{
+	int err;
+	uint8_t val;
+
+	/* Write 0x5A to Power up reset reg */
+	val = POWER_UP_RESET_VAL;
+	err = paa3905_bus_write(dev, REG_POWER_UP_RESET, &val, 1);
+	if (err) {
+		LOG_ERR("Failed to write Power up reset reg");
+		return err;
+	}
+	/* As per datasheet, writing power-up reset requires 1-ms afterwards. */
+	k_sleep(K_MSEC(1));
+
+	/* Configure registers for Standard detection mode */
+	err = paa3905_configure(dev);
+	if (err) {
+		LOG_ERR("Failed to configure");
+		return err;
+	}
+
+	return err;
+}
+
 static int paa3905_init(const struct device *dev)
 {
 	int err;
@@ -249,6 +277,14 @@ static int paa3905_init(const struct device *dev)
 		return err;
 	}
 
+	if (IS_ENABLED(CONFIG_PAA3905_STREAM)) {
+		err = paa3905_stream_init(dev);
+		if (err) {
+			LOG_ERR("Failed to initialize streaming");
+			return err;
+		}
+	}
+
 	err = paa3905_configure(dev);
 	if (err) {
 		LOG_ERR("Failed to configure");
@@ -271,6 +307,8 @@ static int paa3905_init(const struct device *dev)
 			    0U);								   \
 												   \
 	static const struct paa3905_config paa3905_cfg_##inst = {				   \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \
+		.backup_timer_period = DT_PROP(DT_DRV_INST(inst), backup_timer_ms),		   \
 		.resolution = DT_PROP(DT_DRV_INST(inst), resolution),				   \
 		.led_control = DT_PROP_OR(DT_DRV_INST(inst), led_control, false),		   \
 	};											   \

@@ -11,3 +11,14 @@ config PAA3905
 	select SENSOR_ASYNC_API
 	help
 	  Enable driver for PAA3905 Optical Flow sensor.
+
+if PAA3905
+
+config PAA3905_STREAM
+	bool "Streaming mode"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_PIXART_PAA3905),int-gpios)
+	select RTIO_WORKQ
+	help
+	  Enable streaming mode for the PAA3905 sensor.
+
+endif # PAA3905
