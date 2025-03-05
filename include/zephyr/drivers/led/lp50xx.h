@@ -18,6 +18,13 @@
 #define LP5030_MAX_LEDS		10
 #define LP5036_MAX_LEDS		12
 
+#define LP5009_MAX_CHANS	9
+#define LP5012_MAX_CHANS	12
+#define LP5018_MAX_CHANS	18
+#define LP5024_MAX_CHANS	24
+#define LP5030_MAX_CHANS	30
+#define LP5036_MAX_CHANS	36
+
 /*
  * LED channels mapping.
  */
