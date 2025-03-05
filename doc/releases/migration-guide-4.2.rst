@@ -200,6 +200,14 @@ I2S
 * configure the MCLK signal as an output.  Older driver versions used the macro
 * ``I2S_OPT_BIT_CLK_SLAVE`` to configure the MCLK signal direction. (:github:`88554`)
 
+LED
+===
+
+* The :dtcompatible:`ti,lp50xx` devicetree property has been renamed from ``max_curr_opt`` to ``max-curr-opt``.
+  The devicetree index property now refers to the controller output channel number (OUTx). For RGB LEDs
+  set the index property to the location of the red LED. For a single LED simply set the index property to
+  the connected OUTx where x should match the devicetree index property.
+
 Sensors
 =======
 
