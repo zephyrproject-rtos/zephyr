@@ -7,8 +7,9 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
-#include <nwp.h>
+#include <zephyr/version.h>
 
+#include <nwp.h>
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_socket.h"
 
@@ -20,7 +21,7 @@
 #include "sl_wifi.h"
 #include "sl_net.h"
 
-#define SIWX91X_INTERFACE_MASK (0x03)
+#define SIWX91X_DRIVER_VERSION KERNEL_VERSION_STRING
 
 LOG_MODULE_REGISTER(siwx91x_wifi);
 
@@ -722,6 +723,36 @@ static int siwx91x_stats(const struct device *dev, struct net_stats_wifi *stats)
 }
 #endif
 
+static int siwx91x_get_version(const struct device *dev, struct wifi_version *params)
+{
+	sl_wifi_firmware_version_t fw_version = { };
+	struct siwx91x_dev *sidev = dev->data;
+	static char fw_version_str[32];
+	sl_status_t status;
+
+	__ASSERT(params, "params cannot be NULL");
+
+	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
+		return -EIO;
+	}
+
+	status = sl_wifi_get_firmware_version(&fw_version);
+	if (status != SL_STATUS_OK) {
+		return -EINVAL;
+	}
+
+	snprintf(fw_version_str, sizeof(fw_version_str), "%02x%02x.%d.%d.%d.%d.%d.%d",
+		 fw_version.chip_id,     fw_version.rom_id,
+		 fw_version.major,       fw_version.minor,
+		 fw_version.security_version, fw_version.patch_num,
+		 fw_version.customer_id, fw_version.build_num);
+
+	params->fw_version = fw_version_str;
+	params->drv_version = SIWX91X_DRIVER_VERSION;
+
+	return 0;
+}
+
 static void siwx91x_iface_init(struct net_if *iface)
 {
 	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
@@ -768,6 +799,7 @@ static const struct wifi_mgmt_ops siwx91x_mgmt = {
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats		= siwx91x_stats,
 #endif
+	.get_version		= siwx91x_get_version,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_api = {
