@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2017-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2390,16 +2391,9 @@ static void le_ltk_request(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_SMP */
 
-static void hci_reset_complete(struct net_buf *buf)
+static void hci_reset_complete(void)
 {
-	uint8_t status = buf->data[0];
 	atomic_t flags;
-
-	LOG_DBG("status 0x%02x %s", status, bt_hci_err_to_str(status));
-
-	if (status) {
-		return;
-	}
 
 	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
 		bt_scan_reset();
@@ -3256,12 +3250,12 @@ static int common_init(void)
 
 	if (!drv_quirk_no_reset()) {
 		/* Send HCI_RESET */
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, &rsp);
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
 		if (err) {
 			return err;
 		}
-		hci_reset_complete(rsp);
-		net_buf_unref(rsp);
+
+		hci_reset_complete();
 	}
 
 	/* Read Local Supported Features */
@@ -4384,6 +4378,18 @@ int bt_disable(void)
 	bt_conn_cleanup_all();
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
+
+	/* Reset the Controller */
+	if (!drv_quirk_no_reset()) {
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
+		if (err) {
+			LOG_ERR("Failed to reset BLE controller");
+			return err;
+		}
+
+		hci_reset_complete();
+	}
 
 	err = bt_hci_close(bt_dev.hci);
 	if (err == -ENOSYS) {
