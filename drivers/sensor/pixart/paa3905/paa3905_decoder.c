@@ -196,7 +196,16 @@ static int paa3905_decoder_decode(const uint8_t *buffer,
 
 static bool paa3905_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
 {
-	return false;
+	struct paa3905_encoded_data *edata = (struct paa3905_encoded_data *)buffer;
+
+	switch (trigger) {
+	case SENSOR_TRIG_DATA_READY:
+		return edata->header.events.drdy;
+	case SENSOR_TRIG_MOTION:
+		return edata->header.events.motion;
+	default:
+		return false;
+	}
 }
 
 SENSOR_DECODER_API_DT_DEFINE() = {
@@ -225,6 +234,8 @@ int paa3905_encode(const struct device *dev,
 	int err;
 
 	edata->header.channels = 0;
+	edata->header.events.drdy = false;
+	edata->header.events.motion = false;
 
 	for (size_t i = 0 ; i < num_channels; i++) {
 		edata->header.channels |= paa3905_encode_channel(channels[i].chan_type);
