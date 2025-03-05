@@ -143,14 +143,14 @@ static int gpio_adp5585_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 			data->output |= BIT(pin);
 		}
 		if (bank == 0) {
-			/* reg_value for ADP5585_GPO_OUT_MODE */
+			/* reg_value for ADP5585_GPO_DATA_OUT */
 			reg_value = (uint8_t)data->output;
 		} else {
-			/* reg_value for ADP5585_GPO_OUT_MODE */
+			/* reg_value for ADP5585_GPO_DATA_OUT */
 			reg_value = (uint8_t)(data->output >> 8);
 		}
 		ret = i2c_reg_write_byte_dt(&parent_cfg->i2c_bus,
-					ADP5585_GPO_OUT_MODE_A + bank,
+					ADP5585_GPO_DATA_OUT_A + bank,
 					reg_value);
 		if (ret != 0) {
 			goto out;
