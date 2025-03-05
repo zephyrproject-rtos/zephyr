@@ -1204,6 +1204,8 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 	int ret = -ENOTSUP;
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
+	ETH_MACConfigTypeDef mac_config;
+	HAL_StatusTypeDef hal_ret = HAL_OK;
 
 	dev_data = dev->data;
 	heth = &dev_data->heth;
@@ -1245,6 +1247,24 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 		eth_stm32_mcast_filter(dev, &config->filter);
 		break;
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+	case ETHERNET_CONFIG_TYPE_LINK:
+		HAL_ETH_GetMACConfig(heth, &mac_config);
+		HAL_ETH_Stop(heth);
+		mac_config.Speed = config->l.link_10bt ? ETH_SPEED_10M : ETH_SPEED_100M;
+		hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
+		if (hal_ret != HAL_OK) {
+			LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
+			ret = -EIO;
+		} else {
+			ret = 0;
+		}
+		hal_ret = HAL_ETH_Start_IT(heth);
+		if (hal_ret != HAL_OK) {
+			LOG_ERR("HAL_ETH_Start{_IT} failed: %d", hal_ret);
+		}
+		break;
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 	default:
 		break;
 	}
