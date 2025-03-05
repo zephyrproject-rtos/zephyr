@@ -26,8 +26,8 @@
 
 .. _zephyr_4.1:
 
-Zephyr 4.1.0 (Working Draft)
-############################
+Zephyr 4.1.0
+############
 
 We are pleased to announce the release of Zephyr version 4.1.0.
 Major enhancements with this release include:
