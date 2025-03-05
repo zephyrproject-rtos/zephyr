@@ -187,6 +187,11 @@ if(${CONFIG_KERNEL_MEM_POOL})
   endif()
 
   zephyr_compile_definitions(K_HEAP_MEM_POOL_SIZE=${final_heap_size})
+
+  # IAR tools need to pass this info to the linker as well
+  if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "iar")
+    zephyr_link_libraries("--config_def K_HEAP_MEM_POOL_SIZE=${final_heap_size}")
+  endif()
 endif()
 
 # The last 2 files inside the target_sources_ifdef should be
