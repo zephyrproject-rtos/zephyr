@@ -1577,6 +1577,50 @@ static uint8_t pair(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t pair_v2(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_pair_v2_cmd *cp = cmd;
+	struct bt_conn *conn;
+	bt_security_t level;
+	int err;
+
+	/* TODO: Only supports mode 4 */
+	if ((cp->mode != BTP_GAP_PAIR_V2_MODE_4) && (cp->mode != BTP_GAP_PAIR_V2_MODE_ANY)) {
+		LOG_WRN("Unsupport mode %d", cp->mode);
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->address.type == BTP_BR_ADDRESS_TYPE) {
+		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+			conn = bt_conn_lookup_addr_br(&cp->address.a);
+		} else {
+			return BTP_STATUS_FAILED;
+		}
+	} else {
+		conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	}
+
+	if (conn == NULL) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	level = (bt_security_t)cp->level;
+	if (cp->flags & BTP_GAP_PAIR_V2_FLAG_FORCE_PAIR) {
+		level = (bt_security_t)((uint8_t)level | BT_SECURITY_FORCE_PAIR);
+	}
+
+	err = bt_conn_set_security(conn, level);
+	if (err < 0) {
+		LOG_ERR("Failed to set security: %d", err);
+		bt_conn_unref(conn);
+		return BTP_STATUS_FAILED;
+	}
+
+	bt_conn_unref(conn);
+	return BTP_STATUS_SUCCESS;
+}
+
 static uint8_t unpair(const void *cmd, uint16_t cmd_len,
 		      void *rsp, uint16_t *rsp_len)
 {
@@ -2207,6 +2251,11 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GAP_PAIR,
 		.expect_len = sizeof(struct btp_gap_pair_cmd),
 		.func = pair,
+	},
+	{
+		.opcode = BTP_GAP_PAIR_V2,
+		.expect_len = sizeof(struct btp_gap_pair_v2_cmd),
+		.func = pair_v2,
 	},
 	{
 		.opcode = BTP_GAP_UNPAIR,
