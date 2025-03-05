@@ -319,6 +319,27 @@ struct btp_gap_padv_sync_transfer_recv_cmd {
 	uint8_t flags;
 } __packed;
 
+#define BTP_GAP_PAIR_V2_MODE_1			0x01
+#define BTP_GAP_PAIR_V2_MODE_2			0x02
+#define BTP_GAP_PAIR_V2_MODE_3			0x03
+#define BTP_GAP_PAIR_V2_MODE_4			0x04
+
+#define BTP_GAP_PAIR_V2_LEVEL_0			0x00
+#define BTP_GAP_PAIR_V2_LEVEL_1			0x01
+#define BTP_GAP_PAIR_V2_LEVEL_2			0x02
+#define BTP_GAP_PAIR_V2_LEVEL_3			0x03
+#define BTP_GAP_PAIR_V2_LEVEL_4			0x04
+
+#define BTP_GAP_PAIR_V2_FLAG_FORCE_PAIR		BIT(0)
+
+#define BTP_GAP_PAIR_V2				0x2A
+struct btp_gap_pair_v2_cmd {
+	bt_addr_le_t address;
+	uint8_t mode;
+	uint8_t level;
+	uint8_t flags;
+} __packed;
+
 /* events */
 #define BTP_GAP_EV_NEW_SETTINGS			0x80
 struct btp_gap_new_settings_ev {
