@@ -2,5 +2,8 @@
 # Copyright (c) 2025 CogniPilot Foundation
 # SPDX-License-Identifier: Apache-2.0
 
-add_subdirectory_ifdef(CONFIG_PAA3905 paa3905)
-add_subdirectory_ifdef(CONFIG_PAT9136 pat9136)
+zephyr_library()
+zephyr_library_sources(
+	pat9136.c
+	pat9136_decoder.c
+)
