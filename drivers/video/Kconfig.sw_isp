@@ -1,0 +1,37 @@
+# Copyright (c) 2025 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_SW_ISP
+	bool "Video Software Image Signal Processor (ISP)"
+	imply PIXEL
+	help
+	  Enable a software-based image processing pipeline, providing the essential components
+	  of an Image Signal Processsor (ISP) exposing the essential features of the "pixel"
+	  library as a native Video API.
+
+config VIDEO_SW_ISP_STACK_SIZE
+	int "Stack size for the thread executing the pipelne"
+	default 1024
+	help
+	  Stack size for the thread executing the pipeline. All of the processing elements are not
+	  allocated on the stack but use global variables instead. The default value is therefore
+	  planning only for the temporary variables.
+
+config VIDEO_SW_ISP_THREAD_PRIORITY
+	int "Stack size for the thread executing the pipelne"
+	default 5
+	help
+	  Priority for the thread executing the pipeline. The default value is an intermediate
+	  starting point to be tuned arbitrarily to fit the application.
+
+config VIDEO_SW_ISP_INPUT_WIDTH
+	int "Width of the input of the pipeline in pixels, used for buffer allocation purposees."
+	default 640
+	help
+	  The default value is VGA width, a widespread default resolution supported broadly.
+
+config VIDEO_SW_ISP_INPUT_HEIGHT
+	int "Height of the input of the pipeline in pixels, used for buffer allocation purposees."
+	default 480
+	help
+	  The default value is VGA height, a widespread default resolution supported broadly.
