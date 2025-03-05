@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: PAT9136 optical flow sensor
+
+compatible: "pixart,pat9136"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  resolution:
+    type: int
+    default: 19
+    description: |
+      The resolution of the sensor which indirectly results in counts per inch
+      (CPI), following the formula CPI = (1 + resolution) * 100.
+      Valid range is 0 to 199.
+      Default is value set during Performance Optimization Settings.
