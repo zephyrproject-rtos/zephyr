@@ -724,6 +724,25 @@ static inline int z_impl_i2c_configure(const struct device *dev,
 }
 
 /**
+ * @brief Configure operation of a host controller.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_configure(spec->bus, dev_config);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param dev_config Bit-packed 32-bit value to the device runtime configuration
+ * for the I2C controller.
+ *
+ * @return a value from i2c_configure()
+ */
+static inline int i2c_configure_dt(const struct i2c_dt_spec *spec,
+						uint32_t dev_config)
+{
+	return i2c_configure(spec->bus, dev_config);
+}
+
+/**
  * @brief Get configuration of a host controller.
  *
  * This routine provides a way to get current configuration. It is allowed to
