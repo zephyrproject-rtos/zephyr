@@ -23,47 +23,7 @@ Hardware
 Supported Features
 ==================
 
-The samd20_xpro board configuration supports the following hardware
-features:
-
-.. list-table::
-    :header-rows: 1
-
-    * - Interface
-      - Controller
-      - Driver / Component
-    * - NVIC
-      - on-chip
-      - nested vector interrupt controller
-    * - Flash
-      - on-chip
-      - Can be used with LittleFS to store files
-    * - SYSTICK
-      - on-chip
-      - systick
-    * - WDT
-      - on-chip
-      - Watchdog
-    * - ADC
-      - on-chip
-      - Analog to Digital Converter
-    * - GPIO
-      - on-chip
-      - I/O ports
-    * - USART
-      - on-chip
-      - Serial ports
-    * - I2C
-      - on-chip
-      - I2C ports
-    * - SPI
-      - on-chip
-      - Serial Peripheral Interface ports
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam0/samd20_xpro/samd20_xpro_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
