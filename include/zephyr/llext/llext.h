@@ -65,7 +65,10 @@ enum llext_mem {
 struct llext_loader;
 /** @endcond */
 
-/* Maximim number of dependency LLEXTs */
+/** Maximum length of an extension name */
+#define LLEXT_MAX_NAME_LEN 15
+
+/** Maximum number of dependency LLEXTs */
 #define LLEXT_MAX_DEPENDENCIES 8
 
 /**
@@ -86,7 +89,7 @@ struct llext {
 	/** @endcond */
 
 	/** Name of the llext */
-	char name[16];
+	char name[LLEXT_MAX_NAME_LEN + 1];
 
 	/** Lookup table of memory regions */
 	void *mem[LLEXT_MEM_COUNT];
