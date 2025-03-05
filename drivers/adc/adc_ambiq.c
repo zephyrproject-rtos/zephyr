@@ -104,8 +104,6 @@ static void adc_ambiq_isr(const struct device *dev)
 
 	/* Read the interrupt status. */
 	am_hal_adc_interrupt_status(data->adcHandle, &ui32IntMask, true);
-	/* Clear the ADC interrupt.*/
-	am_hal_adc_interrupt_clear(data->adcHandle, ui32IntMask);
 
 	/*
 	 * If we got a conversion completion interrupt (which should be our only
@@ -124,6 +122,8 @@ static void adc_ambiq_isr(const struct device *dev)
 #endif
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
+	/* Clear the ADC interrupt.*/
+	am_hal_adc_interrupt_clear(data->adcHandle, ui32IntMask);
 }
 
 static int adc_ambiq_check_buffer_size(const struct adc_sequence *sequence, uint8_t active_channels)
