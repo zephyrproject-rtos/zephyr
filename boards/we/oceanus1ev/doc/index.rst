@@ -33,34 +33,7 @@ The board has below hardware features:
 Supported Features
 ==================
 
-The ``we_oceanus1ev`` board supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | LoRa                 |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
