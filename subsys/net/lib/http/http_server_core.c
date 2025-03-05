@@ -762,7 +762,7 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 
 			ret = fnmatch(resource->resource, path, (FNM_PATHNAME | FNM_LEADING_DIR));
 			if (ret == 0) {
-				*path_len = strlen(resource->resource);
+				*path_len = path_len_without_query(path);
 				return resource->detail;
 			}
 		}
