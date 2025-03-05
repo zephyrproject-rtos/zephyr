@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: eigen-remote
+      url-base: https://gitlab.com/libeigen/
 
   group-filter: [-babblesim, -optional]
 
@@ -105,6 +107,11 @@ manifest:
       path: modules/crypto/tinycrypt
       groups:
         - crypto
+    - name: eigen_headers
+      remote: eigen-remote
+      repo-path: eigen
+      path: modules/lib/eigen
+      revision: 68f4e58cfacc686583d16cff90361f0b43bc2c1b
   # zephyr-keep-sorted-stop
 
   self:

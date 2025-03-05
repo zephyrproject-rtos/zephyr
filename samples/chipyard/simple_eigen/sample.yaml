@@ -1,0 +1,10 @@
+sample:
+  description: A simple example demonstrating Eigen linear algebra library
+  name: simple eigen 
+common:
+  tags: introduction
+  integration_platforms:
+    - qemu_riscv32
+  harness: console
+  harness_config:
+    type: one_line
