@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -256,8 +257,10 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		do {
 			uart_irq_rx_enable(cfg->uart);
 
-			LOG_DBG("Calling bt_recv(%p)", buf);
-			h4->recv(dev, buf);
+			if (h4->recv != NULL) {
+				LOG_DBG("Calling bt_recv(%p)", buf);
+				h4->recv(dev, buf);
+			}
 
 			/* Give other threads a chance to run if the ISR
 			 * is receiving data so fast that rx.fifo never
