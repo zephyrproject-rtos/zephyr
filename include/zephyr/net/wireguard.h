@@ -207,6 +207,22 @@ int wireguard_peer_remove(int peer_id);
  */
 int wireguard_peer_keepalive(int peer_id);
 
+/**
+ * @brief Get current time in seconds and nanoseconds from Unix epoch
+ *
+ * @details This function is used to get the current time in seconds
+ *          and nanoseconds. The time is used to calculate the timestamp
+ *          in the Wireguard handshake. User can override this function
+ *          to provide the current time. The default implementation uses
+ *          k_uptime_get() to get the current time.
+ *
+ * @param seconds Pointer to store the current time in seconds.
+ * @param nanoseconds Pointer to store the current time in nanoseconds.
+ *
+ * @return 0 on success, a negative errno otherwise.
+ */
+int wireguard_get_current_time(uint64_t *seconds, uint32_t *nanoseconds);
+
 #ifdef __cplusplus
 }
 #endif
