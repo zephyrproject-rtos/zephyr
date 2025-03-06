@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(explorir_m_sensor, CONFIG_SENSOR_LOG_LEVEL);
 
 #define EXPLORIR_M_BUFFER_LENGTH 16
 
-#define EXPLORIR_M_MAX_RESPONSE_DELAY 200 /* Add margin to the specified 100 in datasheet */
+#define EXPLORIR_M_MAX_RESPONSE_DELAY 300 /* Add margin to the specified 100 in datasheet */
 #define EXPLORIR_M_CO2_VALID_DELAY    1200
 
 struct explorir_m_data {
