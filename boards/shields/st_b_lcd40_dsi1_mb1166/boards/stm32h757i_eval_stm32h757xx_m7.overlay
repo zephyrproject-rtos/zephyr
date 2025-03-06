@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2023 bytes at work AG
+ * Copyright (c) 2025 Foss Analytical A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sdram2 {
+	/* Frame buffer memory when cached causes screen flickering. */
+	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+};
+
+&zephyr_lcd_controller {
+	status = "okay";
+	ext-sdram = <&sdram2>;
+	def-back-color-red = <0>;
+	def-back-color-green = <0>;
+	def-back-color-blue = <0>;
+};
+
+/* ltdc uses pll3_r as pixel clock */
+&pll3 {
+	status = "okay";
+	clocks = <&clk_hse>;
+	div-m = <5>;
+	mul-n = <132>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <24>; /* 27.5 MHz */
+};
+
+&zephyr_mipi_dsi {
+	status = "okay";
+
+	/* DSI HOST dedicated PLL
+	 * F_VCO = CLK_IN / pll-idf * 2 * pll-ndiv
+	 * PHI = F_VCO / 2 / (1 << pll-odf) = lane_byte_clk
+	 *     = 25 MHz / 5 * 2 * 100 / 2 / (1<<0) / 8 = 62.5 MHz
+	 */
+	pll-ndiv = <100>;
+	pll-idf = <5>;
+	pll-odf = <0>;
+
+	vs-active-high;
+	hs-active-high;
+	de-active-high;
+};
