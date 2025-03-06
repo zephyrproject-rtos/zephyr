@@ -8,12 +8,18 @@ Tests for config_parser.py
 """
 
 import os
-import pytest
-import mock
-import scl
-
-from twisterlib.config_parser import TwisterConfigParser, extract_fields_from_arg_list, ConfigurationError
 from contextlib import nullcontext
+from unittest import mock
+
+import pykwalify
+import pytest
+import scl
+from twisterlib.config_parser import (
+    ConfigurationError,
+    TwisterConfigParser,
+    extract_fields_from_arg_list,
+)
+
 
 def test_extract_single_field_from_string_argument():
     target_fields = {"FIELD1"}
@@ -72,7 +78,8 @@ def test_load_yaml_with_extra_args_and_retrieve_scenario_data(zephyr_base):
     scenario_common = parser.common
 
     assert scenario_data['tags'] == {'tag1', 'tag2'}
-    assert scenario_data['extra_args'] == ['--CONF_FILE=file1.conf', '--OVERLAY_CONFIG=config1.conf']
+    assert scenario_data['extra_args'] == [
+        '--CONF_FILE=file1.conf', '--OVERLAY_CONFIG=config1.conf']
     assert scenario_common == {'filter': 'filter2'}
 
 
@@ -141,7 +148,7 @@ def test_default_values(zephyr_base):
         ('key: val', 'map', 'key: val', None),   # do-nothing cast
         ('test', 'int', ValueError, None),
         ('test', 'unknown', ConfigurationError, None),
-        ([ '1', '2', '3' ], 'set', { '1', '2', '2','3' }, None),
+        ([ '1', '2', '3' ], 'set', { '1', '2', '3' }, None),
     ],
     ids=['str to str', 'str to float', 'str to int', 'str to bool', 'str to map',
          'invalid', 'to unknown', "list to set"]
@@ -153,8 +160,9 @@ def test_cast_value(zephyr_base, value, typestr, expected, expected_warning):
     )
 
     parser = TwisterConfigParser("config.yaml", loaded_schema)
-    with mock.patch('warnings.warn') as warn_mock:
-        with pytest.raises(expected) if isinstance(expected, type) and issubclass(expected, Exception) else nullcontext():
+    with mock.patch('warnings.warn') as warn_mock:  # noqa: SIM117
+        with pytest.raises(expected) if isinstance(expected, type) \
+            and issubclass(expected, Exception) else nullcontext():
             result = parser._cast_value(value, typestr)
             assert result == expected
             if expected_warning:
@@ -175,7 +183,7 @@ def test_load_invalid_test_config_yaml(zephyr_base):
 
     with mock.patch('builtins.open', mock.mock_open(read_data=yaml_data)):
         parser = TwisterConfigParser(filename, loaded_schema)
-        with pytest.raises(Exception):
+        with pytest.raises(pykwalify.errors.SchemaError):
             parser.load()
 
 

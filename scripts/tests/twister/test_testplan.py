@@ -1127,10 +1127,10 @@ def test_testplan_add_configurations(
         assert [tmp_path] == arch_roots
 
         platforms = [
-            mock.Mock(aliases=['p1e1/unit_testing', 'p1e1'], twister=False, default=False),
-            mock.Mock(aliases=['p1e2/unit_testing', 'p1e2'], twister=True, default=False),
-            mock.Mock(aliases=['p2/unit_testing', 'p2'], twister=True, default=True),
-            mock.Mock(aliases=['p3/unit_testing', 'p3'], twister=True, default=True),
+            mock.Mock(aliases=['p1e1/unit_testing', 'p1e1'], twister=False, default=False, supported=[]),
+            mock.Mock(aliases=['p1e2/unit_testing', 'p1e2'], twister=True, default=False, supported=[]),
+            mock.Mock(aliases=['p2/unit_testing', 'p2'], twister=True, default=True, supported=[]),
+            mock.Mock(aliases=['p3/unit_testing', 'p3'], twister=True, default=True, supported=[]),
         ]
         for platform in platforms:
             type(platform).name = mock.PropertyMock(return_value=platform.aliases[0])
@@ -1310,6 +1310,7 @@ tests:
     )
 
     testplan = TestPlan(env=env)
+    testplan.supported_features = []
 
     res = testplan.add_testsuites(testsuite_filter)
 

@@ -16,6 +16,7 @@ import random
 from enum import Enum
 
 from twisterlib.constants import (
+    SUPPORTED_RUNNABLE_HARNESS,
     SUPPORTED_SIMS,
     SUPPORTED_SIMS_IN_PYTEST,
     SUPPORTED_SIMS_WITH_EXEC,
@@ -34,7 +35,6 @@ from twisterlib.platform import Platform
 from twisterlib.size_calc import SizeCalculator
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuite import TestCase, TestSuite
-from twisterlib.constants import SUPPORTED_RUNNABLE_HARNESS
 
 logger = logging.getLogger('twister')
 

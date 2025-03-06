@@ -302,6 +302,10 @@ Artificially long but functional example:
         configuration and is mutual exclusive with --enable-valgrind.
         """)
 
+    parser.add_argument(
+        "--check", action="store_true",
+        help="Run the code through the check target.")
+
     # Start of individual args place them in alpha-beta order
 
     board_root_list = [f"{ZEPHYR_BASE}/boards", f"{ZEPHYR_BASE}/subsys/testsuite/boards"]
