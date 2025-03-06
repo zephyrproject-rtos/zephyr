@@ -46,14 +46,21 @@ void wg_tai64n_now(uint8_t *output)
 	 * 64 bit seconds from 1970 = 8 bytes
 	 * 32 bit nano seconds from current second
 	 */
-	uint64_t millis = k_ticks_to_ms_floor64(sys_clock_tick_get());
+	uint64_t seconds;
+	uint32_t nanoseconds;
+	int ret;
 
-	/* Split into seconds offset + nanos */
-	uint64_t seconds = 0x400000000000000aULL + (millis / 1000);
-	uint32_t nanos = (millis % 1000) * 1000;
+	ret = wireguard_get_current_time(&seconds, &nanoseconds);
+	if (ret < 0) {
+		NET_DBG("Failed to get current time");
+		return;
+	}
+
+	/* Seconds in TAI64N format */
+	seconds += 0x400000000000000aULL;
 
 	sys_put_be64(seconds, output);
-	sys_put_be32(nanos, output + 8U);
+	sys_put_be32(nanoseconds, output + 8U);
 }
 
 static void wg_mac(uint8_t *dst, const void *message, size_t len,
