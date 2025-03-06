@@ -402,4 +402,80 @@ static inline void bsim_btp_wait_for_aics_state(bt_addr_le_t *address, int8_t *g
 
 	net_buf_unref(buf);
 }
+
+static inline void bsim_btp_micp_discover(const bt_addr_le_t *address)
+{
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	struct btp_hdr *cmd_hdr;
+	struct btp_micp_discover_cmd *cmd;
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_MICP;
+	cmd_hdr->opcode = BTP_MICP_CTLR_DISCOVER;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_wait_for_micp_discovered(bt_addr_le_t *address)
+{
+	struct btp_micp_discovered_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_MICP, BTP_MICP_DISCOVERED_EV, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	TEST_ASSERT(ev->att_status == BT_ATT_ERR_SUCCESS);
+
+	if (address != NULL) {
+		bt_addr_le_copy(address, &ev->address);
+	}
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_micp_ctlr_mute(const bt_addr_le_t *address)
+{
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	struct btp_hdr *cmd_hdr;
+	struct btp_micp_mute_cmd *cmd;
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_MICP;
+	cmd_hdr->opcode = BTP_MICP_CTLR_MUTE;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_wait_for_micp_state(bt_addr_le_t *address, uint8_t *mute)
+{
+	struct btp_micp_mute_state_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_MICP, BTP_MICP_MUTE_STATE_EV, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	TEST_ASSERT(ev->att_status == BT_ATT_ERR_SUCCESS);
+
+	if (address != NULL) {
+		bt_addr_le_copy(address, &ev->address);
+	}
+
+	if (mute != NULL) {
+		*mute = ev->mute;
+	}
+
+	net_buf_unref(buf);
+}
 #endif /* BSIM_BTP_H_ */
