@@ -163,13 +163,14 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 		LOG_DBG("section %d at %#zx: name %d, type %d, flags %#zx, "
-			"addr %#zx, size %zd, link %d, info %d",
+			"addr %#zx, align %#zx, size %zd, link %d, info %d",
 			i,
 			(size_t)shdr->sh_offset,
 			shdr->sh_name,
 			shdr->sh_type,
 			(size_t)shdr->sh_flags,
 			(size_t)shdr->sh_addr,
+			(size_t)shdr->sh_addralign,
 			(size_t)shdr->sh_size,
 			shdr->sh_link,
 			shdr->sh_info);
@@ -210,7 +211,7 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 }
 
 /* First (bottom) and last (top) entries of a region, inclusive, for a specific field. */
-#define REGION_BOT(reg, field) (size_t)(reg->field)
+#define REGION_BOT(reg, field) (size_t)(reg->field + reg->sh_info)
 #define REGION_TOP(reg, field) (size_t)(reg->field + reg->sh_size - 1)
 
 /* Check if two regions x and y have any overlap on a given field. Any shared value counts. */
@@ -219,8 +220,12 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 	 (REGION_BOT(y, f) <= REGION_BOT(x, f) && REGION_TOP(y, f) >= REGION_BOT(x, f)))
 
 /*
- * Maps the ELF sections into regions according to their usage flags,
- * calculating ldr->sects and ldr->sect_map.
+ * Loops through all defined ELF sections and collapses those with similar
+ * usage flags into LLEXT "regions", taking alignment constraints into account.
+ * Checks the generated regions for overlaps and calculates the offset of each
+ * section within its region.
+ *
+ * This information is stored in the ldr->sects and ldr->sect_map arrays.
  */
 static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			      const struct llext_load_param *ldr_parm)
@@ -371,10 +376,53 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		size_t bot_ofs = MIN(region->sh_offset, shdr->sh_offset);
 		size_t top_ofs = MAX(region->sh_offset + region->sh_size,
 				     shdr->sh_offset + shdr->sh_size);
+		size_t addralign = MAX(region->sh_addralign, shdr->sh_addralign);
 
 		region->sh_addr = address;
 		region->sh_offset = bot_ofs;
 		region->sh_size = top_ofs - bot_ofs;
+		region->sh_addralign = addralign;
+	}
+
+	/*
+	 * Make sure each of the mapped sections satisfies its alignment
+	 * requirement when placed in the region.
+	 *
+	 * The ELF standard already guarantees that each section's offset in
+	 * the file satisfies its own alignment, and since only powers of 2 can
+	 * be specified, a solution satisfying the largest alignment will also
+	 * work for any smaller one. Aligning the ELF region to the largest
+	 * requirement among the contained sections will then guarantee that
+	 * all are properly aligned.
+	 *
+	 * However, adjusting the region's start address will make the region
+	 * appear larger than it actually is, and might even make it overlap
+	 * with others. To allow for further precise adjustments, the length of
+	 * the calculated pre-padding area is stored in the 'sh_info' field of
+	 * the region descriptor, which is not used on any SHF_ALLOC section.
+	 */
+	for (i = 0; i < LLEXT_MEM_COUNT; i++) {
+		elf_shdr_t *region = ldr->sects + i;
+
+		if (region->sh_type == SHT_NULL || region->sh_size == 0) {
+			/* Skip empty regions */
+			continue;
+		}
+
+		size_t prepad = region->sh_offset & (region->sh_addralign - 1);
+
+		if (ldr->hdr.e_type == ET_DYN) {
+			/* Only shared files populate sh_addr fields */
+			if (prepad > region->sh_addr) {
+				LOG_ERR("Bad section alignment in region %d", i);
+				return -ENOEXEC;
+			}
+
+			region->sh_addr -= prepad;
+		}
+		region->sh_offset -= prepad;
+		region->sh_size += prepad;
+		region->sh_info = prepad;
 	}
 
 	/*
