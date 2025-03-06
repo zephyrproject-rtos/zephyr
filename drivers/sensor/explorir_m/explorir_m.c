@@ -198,18 +198,6 @@ static void explorir_m_uart_terminate(const struct device *uart_dev)
 	uart_poll_out(uart_dev, EXPLORIR_M_END_CHAR);
 }
 
-static int explorir_m_await_receive(struct explorir_m_data *data)
-{
-	int rc = k_sem_take(&data->uart_rx_sem, K_MSEC(EXPLORIR_M_MAX_RESPONSE_DELAY));
-
-	/* Reset semaphore if sensor did not respond within maximum specified response time */
-	if (rc == -EAGAIN) {
-		k_sem_reset(&data->uart_rx_sem);
-	}
-
-	return rc;
-}
-
 static int explorir_m_uart_transceive(const struct device *dev, char type, struct sensor_value *val,
 				      enum explorir_m_uart_set_usage set)
 {
@@ -224,8 +212,6 @@ static int explorir_m_uart_transceive(const struct device *dev, char type, struc
 	}
 
 	k_mutex_lock(&data->uart_mutex, K_FOREVER);
-
-	explorir_m_buffer_reset(data);
 
 	uart_poll_out(cfg->uart_dev, type);
 
@@ -246,9 +232,12 @@ static int explorir_m_uart_transceive(const struct device *dev, char type, struc
 		uart_poll_out(cfg->uart_dev, buf[i]);
 	}
 
+	explorir_m_buffer_reset(data);
+	k_sem_reset(&data->uart_rx_sem);
+
 	explorir_m_uart_terminate(cfg->uart_dev);
 
-	rc = explorir_m_await_receive(data);
+	rc = k_sem_take(&data->uart_rx_sem, K_MSEC(EXPLORIR_M_MAX_RESPONSE_DELAY));
 	if (rc != 0) {
 		LOG_WRN("%c did not receive a response: %d", type, rc);
 	}
