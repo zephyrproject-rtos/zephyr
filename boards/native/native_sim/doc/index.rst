@@ -559,9 +559,8 @@ Neither runtime configuration or line control are supported.
 TTY UART
 ========
 
-With this driver an application can use the polling UART API (``uart_poll_out``,
-``uart_poll_in``) to write and read characters to and from a connected serial
-port device.
+With this driver an application can use the polling and interrupt based UART APIs to write and read
+characters to and from a connected serial port device.
 
 This driver is automatically enabled when a devicetree contains a node
 with ``"zephyr,native-tty-uart"`` compatible property and ``okay`` status, such
@@ -614,7 +613,7 @@ development by integrating more seamlessly with the host operating system:
   redirect any :c:func:`printk` write to the native host application's
   ``stdout``.
 
-  This driver is selected by default if the `PTTY UART`_ is not compiled in.
+  This driver is selected by default if no UART driver is compiled in.
   Otherwise :kconfig:option:`CONFIG_UART_CONSOLE` will be set to select the UART as
   console backend.
 
