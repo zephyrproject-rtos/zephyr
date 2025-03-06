@@ -279,24 +279,42 @@ static void sdl_display_write_mono(uint8_t *disp_buf,
 		one_color = 0x00FFFFFF;
 	}
 
-	for (tile_idx = 0U; tile_idx < desc->height/8U; ++tile_idx) {
-		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			byte_ptr = (const uint8_t *)buf +
-				((tile_idx * desc->pitch) + w_idx);
-			disp_buf_start = disp_buf;
-			for (h_idx = 0U; h_idx < 8; ++h_idx) {
-				if ((*byte_ptr & mono_pixel_order(h_idx)) != 0U)  {
-					pixel = one_color;
-				} else {
-					pixel = ~one_color;
+	if (IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED)) {
+		for (tile_idx = 0U; tile_idx < desc->height / 8U; ++tile_idx) {
+			for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
+				byte_ptr =
+					(const uint8_t *)buf + ((tile_idx * desc->pitch) + w_idx);
+				disp_buf_start = disp_buf;
+				for (h_idx = 0U; h_idx < 8; ++h_idx) {
+					if ((*byte_ptr & mono_pixel_order(h_idx)) != 0U) {
+						pixel = one_color;
+					} else {
+						pixel = ~one_color;
+					}
+					*((uint32_t *)disp_buf) = pixel | 0xFF000000;
+					disp_buf += (desc->width * 4U);
 				}
-				*((uint32_t *)disp_buf) = pixel | 0xFF000000;
-				disp_buf += (desc->width * 4U);
+				disp_buf = disp_buf_start;
+				disp_buf += 4;
 			}
-			disp_buf = disp_buf_start;
-			disp_buf += 4;
+			disp_buf += 7 * (desc->width * 4U);
 		}
-		disp_buf += 7 * (desc->width * 4U);
+	} else {
+		for (h_idx = 0; h_idx < desc->height; h_idx++) {
+			for (tile_idx = 0; tile_idx < desc->width / 8; tile_idx++) {
+				byte_ptr = (const uint8_t *)buf +
+					   ((h_idx * desc->width / 8) + tile_idx);
+				for (w_idx = 0; w_idx < 8; w_idx++) {
+					if ((*byte_ptr & mono_pixel_order(w_idx)) != 0U) {
+						pixel = one_color;
+					} else {
+						pixel = ~one_color;
+					}
+					*((uint32_t *)disp_buf + w_idx) = pixel | 0xFF000000;
+				}
+				disp_buf += 8 * sizeof(uint32_t);
+			}
+		}
 	}
 }
 
@@ -669,7 +687,8 @@ static void sdl_display_get_capabilities(
 		PIXEL_FORMAT_BGR_565 |
 		PIXEL_FORMAT_L_8;
 	capabilities->current_pixel_format = disp_data->current_pixel_format;
-	capabilities->screen_info = SCREEN_INFO_MONO_VTILED |
+	capabilities->screen_info =
+		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED) ? SCREEN_INFO_MONO_VTILED : 0) |
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_MSB_FIRST) ? SCREEN_INFO_MONO_MSB_FIRST : 0);
 }
 
