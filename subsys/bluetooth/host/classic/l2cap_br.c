@@ -1574,6 +1574,8 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 		return NULL;
 	}
 
+	__ASSERT_NO_MSG(conn->state == BT_CONN_CONNECTED);
+
 	struct bt_l2cap_br_chan *br_chan;
 
 	br_chan = CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
