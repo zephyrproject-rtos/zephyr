@@ -110,9 +110,13 @@
 #endif
 
 static const struct dac_channel_cfg dac_ch_cfg = {
-	.channel_id  = DAC_CHANNEL_ID,
-	.resolution  = DAC_RESOLUTION,
-	.buffered = true
+	.channel_id = DAC_CHANNEL_ID,
+	.resolution = DAC_RESOLUTION,
+#if defined(CONFIG_DAC_BUFFER_NOT_SUPPORT)
+	.buffered = false,
+#else
+	.buffered = true,
+#endif /* CONFIG_DAC_BUFFER_NOT_SUPPORT */
 };
 
 const struct device *get_dac_device(void)
