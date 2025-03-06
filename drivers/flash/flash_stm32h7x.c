@@ -309,31 +309,6 @@ int flash_stm32_option_bytes_disable(const struct device *dev)
 }
 #endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
 
-int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
-{
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-
-	if (enable) {
-		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
-	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
-#ifdef CONFIG_SOC_SERIES_STM32H7RSX
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-#else
-		regs->OPTKEYR = FLASH_OPT_KEY1;
-		regs->OPTKEYR = FLASH_OPT_KEY2;
-#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-	}
-
-	if (enable) {
-		LOG_DBG("Option bytes locked");
-	} else {
-		LOG_DBG("Option bytes unlocked");
-	}
-
-	return 0;
-}
-
 bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
 #if defined(DUAL_BANK)

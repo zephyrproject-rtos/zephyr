@@ -55,6 +55,8 @@ struct flash_stm32_priv {
 #define FLASH_CR_SNB FLASH_CR_SSN
 #define FLASH_CR_SNB_Pos FLASH_CR_SSN_Pos
 #define KEYR1 KEYR
+#define FLASH_OPT_KEY1 FLASH_OPTKEY1
+#define FLASH_OPT_KEY2 FLASH_OPTKEY2
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 /* Differentiate between arm trust-zone non-secure/secure, and others. */
@@ -71,10 +73,8 @@ struct flash_stm32_priv {
 #define FLASH_STM32_SR		SR
 #endif
 
-
 #define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->data))
 #define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
-
 
 /* Redefinitions of flags and masks to harmonize stm32 series: */
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
@@ -329,12 +329,12 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 
 int flash_stm32_wait_flash_idle(const struct device *dev);
 
-int flash_stm32_option_bytes_lock(const struct device *dev, bool enable);
-
 uint32_t flash_stm32_option_bytes_read(const struct device *dev);
 
 int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask,
 				   uint32_t value);
+
+int flash_stm32_cr_lock(const struct device *dev, bool enable);
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 int flash_stm32_check_status(const struct device *dev);
