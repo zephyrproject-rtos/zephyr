@@ -1,0 +1,19 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dut: &usart1 {
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_default>;
+	pinctrl-names = "default";
+	/delete-property/ interrupts;
+	/delete-property/ interrupt-names;
+};
