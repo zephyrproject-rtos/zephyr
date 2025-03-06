@@ -143,6 +143,25 @@ As mentioned above, you can run sysbuild via ``west build`` or ``cmake``.
       an extra CMake argument. ``APP_DIR`` is the path to the main Zephyr
       application managed by sysbuild.
 
+      .. tip::
+
+         The environment variables, ``CMAKE_BUILD_PARALLEL_LEVEL`` and ``VERBOSE``, can be used to
+         control the build process when using sysbuild with CMake and ninja.
+
+         To set number of jobs for ninja for all sysbuild images, set the CMAKE_BUILD_PARALLEL_LEVEL
+         environment variable and invoke the build with ``cmake --build``, for example:
+
+         .. code-block:: shell
+
+            CMAKE_BUILD_PARALLEL_LEVEL=<n> cmake --build .
+
+         For verbose output of all images, use:
+
+         .. code-block:: shell
+
+            VERBOSE=1 cmake --build .
+
+
 Configuration namespacing
 *************************
 
