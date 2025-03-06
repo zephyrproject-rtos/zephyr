@@ -32,8 +32,10 @@ from devicetree import edtlib
 def main():
     global header_file
     global flash_area_num
+    global no_inline_comments
 
     args = parse_args()
+    no_inline_comments = args.no_inline_comments
 
     edtlib_logger.setup_edtlib_logging()
 
@@ -136,6 +138,8 @@ def parse_args() -> argparse.Namespace:
                         help="path to write header to")
     parser.add_argument("--edt-pickle",
                         help="path to read pickled edtlib.EDT object from")
+    parser.add_argument("--no-inline-comments", action="store_true",
+                        help="remove comments from #define lines")
 
     return parser.parse_args()
 
@@ -1015,6 +1019,9 @@ def out_define(
     # unless told not to.
 
     warn = fr' __WARN("{deprecation_msg}")' if deprecation_msg else ""
+
+    if no_inline_comments:
+        val = re.sub("\\s*/\\*.*?\\*/\\s*", "", str(val))
 
     if width:
         s = f"#define {macro.ljust(width)}{warn} {val}"
