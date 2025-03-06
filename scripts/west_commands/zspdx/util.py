@@ -16,9 +16,9 @@ def getHashes(filePath):
     Returns: tuple of (SHA1, SHA256, MD5) hashes for filePath, or
              None if file is not found.
     """
-    hSHA1 = hashlib.sha1()
+    hSHA1 = hashlib.sha1(usedforsecurity=False)
     hSHA256 = hashlib.sha256()
-    hMD5 = hashlib.md5()
+    hMD5 = hashlib.md5(usedforsecurity=False)
 
     log.dbg(f"  - getting hashes for {filePath}")
 
