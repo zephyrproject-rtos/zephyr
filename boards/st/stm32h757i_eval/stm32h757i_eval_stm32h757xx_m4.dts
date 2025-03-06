@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ * Copyright (c) 2025 Foss Analytical A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h757Xi_m4.dtsi>
+#include <st/h7/stm32h757xihx-pinctrl.dtsi>
+#include "stm32h757i_eval.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32H757I EVAL board";
+	compatible = "st,stm32h757i-eval";
+
+	/* HW resources are split between CM7 and CM4 */
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+	};
+
+	leds {
+		green_led_1: led_1 {
+			status = "okay";
+		};
+
+		orange_led_2: led_2 {
+			status = "okay";
+		};
+
+		red_led_3: led_3 {
+			status = "okay";
+		};
+
+		blue_led_4: led_4 {
+			status = "okay";
+		};
+	};
+
+	gpio_keys {
+		joy_center: joystick_center {
+			status = "okay";
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		led1 = &orange_led_2;
+		led2 = &red_led_3;
+		led3 = &blue_led_4;
+		sw0 = &joy_center;
+	};
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(200)>;
+};
+
+&usart1 {
+	status = "okay";
+};
