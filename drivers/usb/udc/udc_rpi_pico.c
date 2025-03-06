@@ -633,6 +633,7 @@ static void rpi_pico_isr_handler(const struct device *dev)
 		sie_status_clr(dev, USB_SIE_STATUS_RESUME_BITS);
 
 		priv->rwu_pending = false;
+		udc_set_suspended(dev, false);
 		udc_submit_event(dev, UDC_EVT_RESUME, 0);
 	}
 
@@ -640,6 +641,7 @@ static void rpi_pico_isr_handler(const struct device *dev)
 		handled |= USB_INTS_DEV_SUSPEND_BITS;
 		sie_status_clr(dev, USB_SIE_STATUS_SUSPENDED_BITS);
 
+		udc_set_suspended(dev, true);
 		udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
 	}
 
