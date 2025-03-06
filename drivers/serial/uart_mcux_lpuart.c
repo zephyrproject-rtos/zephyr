@@ -1,5 +1,5 @@
 /*
- * Copyright 2017,2021,2023-2025 NXP
+ * Copyright 2017,2021,2023-2024 NXP
  * Copyright (c) 2020 Softube
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -1179,44 +1179,6 @@ static int mcux_lpuart_configure(const struct device *dev,
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
-#ifdef CONFIG_UART_LINE_CTRL
-static int mcux_lpuart_line_ctrl_set(const struct device *dev,
-		uint32_t ctrl, uint32_t val)
-{
-	const struct mcux_lpuart_config *config = dev->config;
-	int ret = 0;
-
-	switch (ctrl) {
-	case UART_LINE_CTRL_RTS:
-#if defined(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT) && FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT
-		/* Disable Transmitter and Receiver */
-	    config->base->CTRL &= ~(LPUART_CTRL_TE_MASK | LPUART_CTRL_RE_MASK);
-
-	    if (val >= 1U)
-		{
-            /* Reset TXRTS to set RXRTSE bit, this provides high-level on RTS line */
-			config->base->MODIR &= ~(LPUART_MODIR_TXRTSPOL_MASK | LPUART_MODIR_TXRTSE_MASK);
-			config->base->MODIR |= LPUART_MODIR_RXRTSE_MASK;
-		}
-		else
-		{
-            /* Set TXRTSE to reset RXRTSE bit,this provide low-level on RTS line*/
-			config->base->MODIR &= ~(LPUART_MODIR_RXRTSE_MASK);
-			config->base->MODIR |= (LPUART_MODIR_TXRTSPOL_MASK | LPUART_MODIR_TXRTSE_MASK);
-		}
-#else
-	    ret = -ENODEV;
-#endif
-		break;
-
-	default:
-		ret = -ENODEV;
-	}
-
-	return ret;
-}
-#endif /* CONFIG_UART_LINE_CTRL */
-
 static int mcux_lpuart_init(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config;
@@ -1295,9 +1257,6 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 	.rx_buf_rsp = mcux_lpuart_rx_buf_rsp,
 	.rx_disable = mcux_lpuart_rx_disable,
 #endif /* CONFIG_UART_ASYNC_API */
-#ifdef CONFIG_UART_LINE_CTRL
-	.line_ctrl_set = mcux_lpuart_line_ctrl_set,
-#endif  /* CONFIG_UART_LINE_CTRL */
 };
 
 
