@@ -604,7 +604,7 @@ class TestPlan:
                             if suite.harness not in SUPPORTED_HARNESS:
                                 checker.add(checker.HARNESS, f"Unsupported harness {suite.harness} in {suite.name}")
 
-                            if suite.filter and not suite.integration_platforms and not suite.platform_allow:
+                            if suite.filter and not suite.integration_platforms and not suite.platform_allow and not suite.platform_key:
                                 checker.add(checker.FILTER_NO_INTEGRATION, f"filter with no integration platforms in {suite.name}")
 
                             if suite.platform_allow and suite.integration_platforms:
