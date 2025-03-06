@@ -263,6 +263,10 @@ def get_catalog(generate_hw_features=False):
                     if node.matching_compat is None:
                         continue
 
+                    # skip "zephyr,xxx" compatibles
+                    if node.matching_compat.startswith("zephyr,"):
+                        continue
+
                     description = DeviceTreeUtils.get_cached_description(node)
                     filename = node.filename
                     lineno = node.lineno
