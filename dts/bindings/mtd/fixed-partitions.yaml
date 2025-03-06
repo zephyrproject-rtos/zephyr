@@ -1,6 +1,5 @@
 description: |
-  This binding is used to describe fixed partitions of a flash (or
-  other nonvolatile storage) memory.
+  Fixed partitions of a flash (or other non-volatile storage) memory.
 
   Here is an example:
 
