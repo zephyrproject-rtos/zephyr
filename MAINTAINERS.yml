@@ -2321,11 +2321,9 @@ EC Host Commands:
 Xen Platform:
   status: maintained
   maintainers:
-    - povergoing
-  collaborators:
-    - SgrrZhf
-    - lorc
     - firscity
+  collaborators:
+    - lorc
     - luca-fancellu
   files:
     - include/zephyr/xen/
@@ -3624,9 +3622,9 @@ Silabs Platforms:
     - boards/silabs/
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
-    - drivers/*/*gecko*
-    - drivers/bluetooth/hci/hci_silabs_*
-    - drivers/*/*silabs*
+    - drivers/**/*gecko*
+    - drivers/**/*silabs*
+    - drivers/**/*siwx91x*
     - tests/boards/silabs/
   labels:
     - "platform: Silabs"
@@ -5406,7 +5404,9 @@ West:
     - "area: Audio"
 
 "West project: tflite-micro":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - XenuIsWatching
   collaborators:
     - laurenmurphyx64
   files:

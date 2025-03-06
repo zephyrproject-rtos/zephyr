@@ -4,8 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: |
-  This is a representation of AndesTech MBOX PLIC-SW node
+description: AndesTech MBOX PLIC-SW
 
 compatible: "andestech,mbox-plic-sw"
 

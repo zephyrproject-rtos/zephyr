@@ -1,7 +1,4 @@
-.. _opentitan_earlgrey:
-
-OpenTitan Earl Grey
-###################
+.. zephyr:board:: opentitan_earlgrey
 
 Overview
 ********

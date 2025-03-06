@@ -1892,7 +1892,6 @@ static int usb_init(void)
 	IRQ_CONNECT(USBREGULATOR_IRQn,
 		    DT_IRQ(DT_INST(0, nordic_nrf_clock), priority),
 		    nrfx_isr, nrfx_usbreg_irq_handler, 0);
-	irq_enable(USBREGULATOR_IRQn);
 #endif
 
 	static const nrfx_power_config_t power_config = {

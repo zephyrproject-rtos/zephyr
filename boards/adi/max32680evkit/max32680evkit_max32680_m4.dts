@@ -163,7 +163,7 @@
 	status = "okay";
 	pinctrl-0 = <&spi0a_mosi_p0_5 &spi0a_miso_p0_6 &spi0a_sck_p0_7>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | MAX32_VSEL_VDDIOH)>;
+	cs-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 };
 
 &w1 {

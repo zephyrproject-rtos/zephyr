@@ -46,36 +46,7 @@ The board is powered through the +5V USB micro-A connector or from the MECC conn
 Supported Features
 ==================
 
-The mec172xmodular_assy6930 (Rev. B) board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| PS/2      | on-chip    | ps2                                 |
-+-----------+------------+-------------------------------------+
-| KSCAN     | on-chip    | kscan                               |
-+-----------+------------+-------------------------------------+
-| TACH      | on-chip    | tachometer                          |
-+-----------+------------+-------------------------------------+
-| RPMFAN    | on-chip    | Fan speed controller                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr (at the moment)
-
-The default configuration can be found in the
-:zephyr_file:`boards/microchip/mec172xmodular_assy6930/mec172xmodular_assy6930_defconfig` Kconfig file.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

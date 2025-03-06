@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-        STM32 controller
+        STM32G0 External Interrupt Controller
+
         This compatible stands for all interrupt-controller blocks with two
         dedicated Rising and Falling interrupt pending registers.
 

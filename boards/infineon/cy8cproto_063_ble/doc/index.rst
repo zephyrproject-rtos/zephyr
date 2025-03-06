@@ -22,38 +22,7 @@ For more information about the PSOC 63 BLE MCU SoC and CY8CPROTO-063-BLE board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | GPIO                  |
-+-----------+------------+-----------------------+
-| PINCTRL   | on-chip    | pin control           |
-+-----------+------------+-----------------------+
-| SPI       | on-chip    | SPI                   |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port-polling;  |
-|           |            | serial port-interrupt |
-+-----------+------------+-----------------------+
-| I2C       | on-chip    | I2C                   |
-+-----------+------------+-----------------------+
-| PWM       | on-chip    | PWM                   |
-+-----------+------------+-----------------------+
-| Counter   | on-chip    | Counter               |
-+-----------+------------+-----------------------+
-| Bluetooth | on-chip    | Bluetooth             |
-+-----------+------------+-----------------------+
-
-
-The default configuration can be found in the Kconfig
-
-:zephyr_file:`boards/infineon/cy8cproto_063_ble/cy8cproto_063_ble_defconfig`
+.. zephyr:board-supported-hw::
 
 System Clock
 ============

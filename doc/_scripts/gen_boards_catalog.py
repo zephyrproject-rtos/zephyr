@@ -4,6 +4,7 @@
 import logging
 import os
 import pickle
+import re
 import subprocess
 import sys
 from collections import namedtuple
@@ -36,28 +37,21 @@ class DeviceTreeUtils:
             The first sentence found in the text, or the entire text if no sentence
             boundary is found.
         """
-        # Split the text into lines
-        lines = text.splitlines()
-
-        # Trim leading and trailing whitespace from each line and ignore completely blank lines
-        lines = [line.strip() for line in lines]
-
-        if not lines:
+        if not text:
             return ""
 
-        # Case 1: Single line followed by blank line(s) or end of text
-        if len(lines) == 1 or (len(lines) > 1 and lines[1] == ""):
-            first_line = lines[0]
-            # Check for the first period
-            period_index = first_line.find(".")
-            # If there's a period, return up to the period; otherwise, return the full line
-            return first_line[: period_index + 1] if period_index != -1 else first_line
+        text = text.replace('\n', ' ')
+        # Split by double spaces to get paragraphs
+        paragraphs = text.split('  ')
+        first_paragraph = paragraphs[0].strip()
 
-        # Case 2: Multiple contiguous lines, treat as a block
-        block = " ".join(lines)
-        period_index = block.find(".")
-        # If there's a period, return up to the period; otherwise, return the full block
-        return block[: period_index + 1] if period_index != -1 else block
+        # Look for a period followed by a space in the first paragraph
+        period_match = re.search(r'(.*?)\.(?:\s|$)', first_paragraph)
+        if period_match:
+            return period_match.group(1).strip()
+
+        # If no period in the first paragraph, return the entire first paragraph
+        return first_paragraph
 
     @classmethod
     def get_cached_description(cls, node):
@@ -254,7 +248,7 @@ def get_catalog(generate_hw_features=False):
         # Use pre-gathered build info and DTS files
         if board.name in board_devicetrees:
             for board_target, edt in board_devicetrees[board.name].items():
-                target_features = {}
+                features = {}
                 for node in edt.nodes:
                     if node.binding_path is None:
                         continue
@@ -271,6 +265,7 @@ def get_catalog(generate_hw_features=False):
 
                     description = DeviceTreeUtils.get_cached_description(node)
                     filename = node.filename
+                    lineno = node.lineno
                     locations = set()
                     if Path(filename).is_relative_to(ZEPHYR_BASE):
                         filename = Path(filename).relative_to(ZEPHYR_BASE)
@@ -279,23 +274,30 @@ def get_catalog(generate_hw_features=False):
                         else:
                             locations.add("soc")
 
-                    existing_feature = target_features.get(binding_type, {}).get(
+                    existing_feature = features.get(binding_type, {}).get(
                         node.matching_compat
                     )
+
+                    node_info = {"filename": str(filename), "lineno": lineno}
+                    node_list_key = "okay_nodes" if node.status == "okay" else "disabled_nodes"
+
                     if existing_feature:
                         locations.update(existing_feature["locations"])
-                        key = "okay_count" if node.status == "okay" else "disabled_count"
-                        existing_feature[key] = existing_feature.get(key, 0) + 1
-                    else:
-                        key = "okay_count" if node.status == "okay" else "disabled_count"
-                        target_features.setdefault(binding_type, {})[node.matching_compat] = {
-                            "description": description,
-                            "locations": locations,
-                            key: 1
-                        }
+                        existing_feature.setdefault(node_list_key, []).append(node_info)
+                        continue
+
+                    feature_data = {
+                        "description": description,
+                        "locations": locations,
+                        "okay_nodes": [],
+                        "disabled_nodes": [],
+                    }
+                    feature_data[node_list_key].append(node_info)
+
+                    features.setdefault(binding_type, {})[node.matching_compat] = feature_data
 
                 # Store features for this specific target
-                supported_features[board_target] = target_features
+                supported_features[board_target] = features
 
         # Grab all the twister files for this board and use them to figure out all the archs it
         # supports.

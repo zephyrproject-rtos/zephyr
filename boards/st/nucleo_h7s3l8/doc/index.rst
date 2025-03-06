@@ -148,39 +148,7 @@ More information about STM32H7S3 can be found here:
 Supported Features
 ==================
 
-The Zephyr ``nucleo_h7s3l8`` board target supports the following hardware
-features:
-
-+-------------+------------+-------------------------------------+
-| Interface   | Controller | Driver/Component                    |
-+=============+============+=====================================+
-| NVIC        | on-chip    | nested vector interrupt controller  |
-+-------------+------------+-------------------------------------+
-| UART        | on-chip    | serial port                         |
-+-------------+------------+-------------------------------------+
-| PINMUX      | on-chip    | pinmux                              |
-+-------------+------------+-------------------------------------+
-| GPIO        | on-chip    | gpio                                |
-+-------------+------------+-------------------------------------+
-| RTC         | on-chip    | counter                             |
-+-------------+------------+-------------------------------------+
-| I2C         | on-chip    | i2c                                 |
-+-------------+------------+-------------------------------------+
-| SPI         | on-chip    | spi                                 |
-+-------------+------------+-------------------------------------+
-| PWM         | on-chip    | pwm                                 |
-+-------------+------------+-------------------------------------+
-| RNG         | on-chip    | True Random number generator        |
-+-------------+------------+-------------------------------------+
-| Backup SRAM | on-chip    | Backup SRAM                         |
-+-------------+------------+-------------------------------------+
-| RTC         | on-chip    | rtc                                 |
-+-------------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig files:
-:zephyr_file:`boards/st/nucleo_h7s3l8/nucleo_h7s3l8_defconfig`
+.. zephyr:board-supported-hw::
 
 For more details please refer to `STM32H7R/S Nucleo-144 board User Manual`_.
 

@@ -40,6 +40,9 @@
 				 ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6| \
 				 ESP_INTR_FLAG_NMI)
 
+#define IRQ_NA   0xFF  /* IRQ not available */
+#define IRQ_FREE 0xFE  /* IRQ available for use */
+
 /*
  * Get the interrupt flags from the supplied priority.
  */

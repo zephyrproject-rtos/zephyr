@@ -1,4 +1,4 @@
-description: STM32 F7 flash controller
+description: STM32F7 flash controller
 
 compatible: "st,stm32f7-flash-controller"
 

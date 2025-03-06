@@ -1381,9 +1381,10 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 					rl_idx, &dir_report))) ||
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND) &&
-		   lll->phy && lll_scan_ext_tgta_check(lll, true, false,
-						       pdu_adv_rx, rl_idx,
-						       &dir_report)) ||
+		   lll->phy &&
+		   !lll->state &&
+		   lll_scan_ext_tgta_check(lll, true, false, pdu_adv_rx, rl_idx,
+					   &dir_report)) ||
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
 		   (pdu_adv_rx->len >= offsetof(struct pdu_adv_scan_rsp, data)) &&

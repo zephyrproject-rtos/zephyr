@@ -9,6 +9,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/drivers/bluetooth.h>
 
 #include <zephyr/device.h>
@@ -74,7 +75,7 @@ static struct net_buf *bt_ipc_evt_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data for event header");
+		LOG_ERR("Not enough data (%u) for event header (%zu)", remaining, sizeof(hdr));
 		return NULL;
 	}
 
@@ -85,7 +86,7 @@ static struct net_buf *bt_ipc_evt_recv(const uint8_t *data, size_t remaining)
 	remaining -= sizeof(hdr);
 
 	if (remaining != hdr.len) {
-		LOG_ERR("Event payload length is not correct");
+		LOG_ERR("Event payload length is not correct (%u != %u)", remaining, hdr.len);
 		return NULL;
 	}
 	LOG_DBG("len %u", hdr.len);
@@ -122,7 +123,7 @@ static struct net_buf *bt_ipc_acl_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data for ACL header");
+		LOG_ERR("Not enough data (%u) for ACL header (%zu)", remaining, sizeof(hdr));
 		return NULL;
 	}
 
@@ -139,7 +140,8 @@ static struct net_buf *bt_ipc_acl_recv(const uint8_t *data, size_t remaining)
 	}
 
 	if (remaining != sys_le16_to_cpu(hdr.len)) {
-		LOG_ERR("ACL payload length is not correct");
+		LOG_ERR("ACL payload length is not correct (%u != %u)", remaining,
+			sys_le16_to_cpu(hdr.len));
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -165,7 +167,7 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data for ISO header");
+		LOG_ERR("Not enough data (%u) for ISO header (%zu)", remaining, sizeof(hdr));
 		return NULL;
 	}
 
@@ -189,7 +191,8 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 	}
 
 	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
-		LOG_ERR("ISO payload length is not correct");
+		LOG_ERR("ISO payload length is not correct (%u != %lu)", remaining,
+			bt_iso_hdr_len(sys_le16_to_cpu(hdr.len)));
 		net_buf_unref(buf);
 		return NULL;
 	}

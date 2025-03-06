@@ -149,7 +149,7 @@ cut 2.2.
    and Bluetooth|reg| Low Energy
  - 48-bit EUI
 
-More information about STM32WB55RG can be found here:
+More information about STM32WB5MMG can be found here:
 
 - `STM32WB5MMG on www.st.com`_
 - `STM32WB5MMG datasheet`_
@@ -157,22 +157,7 @@ More information about STM32WB55RG can be found here:
 Supported Features
 ==================
 
-The Zephyr STM32WB5MMG board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32wb5mmg/stm32wb5mmg_defconfig`
+.. zephyr:board-supported-hw::
 
 Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 ================================================================
@@ -180,10 +165,11 @@ Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 To operate bluetooth on STM32WB5MMG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
-Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/
+``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``
+
 For compatibility information with the various versions of these binaries,
-please check `modules/hal/stm32/lib/stm32wb/hci/README`_
-in the hal_stm32 repo.
+please check :module_file:`hal_stm32:lib/stm32wb/README.rst`.
+
 Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not compatible
 anymore for a use in Zephyr and only "HCI Only" versions should be used on the M0
 side.
@@ -302,9 +288,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WB5MMG datasheet:
    https://www.st.com/resource/en/datasheet/stm32wb5mmg.pdf
-
-.. _modules/hal/stm32/lib/stm32wb/hci/README:
-  https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html

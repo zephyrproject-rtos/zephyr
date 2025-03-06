@@ -170,18 +170,18 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
 	/* No need to configure anything for the pre-programmed channel. */
 }
 
-#else
+#else /* !(EVENT_TIMER_ID == 0) */
 
 static inline void hal_radio_end_time_capture_ppi_config(void)
 {
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_RADIO_END_TIME_CAPTURE_PPI,
-		(uint32_t)&(NRF_RADIO->HAL_RADIO_TRX_EVENTS_END),
+		(uint32_t)&(NRF_RADIO->HAL_RADIO_EVENTS_END),
 		(uint32_t)&(EVENT_TIMER->TASKS_CAPTURE[HAL_EVENT_TIMER_TRX_END_CC_OFFSET]));
 }
 
-#endif /* (EVENT_TIMER_ID == 0) */
+#endif /* !(EVENT_TIMER_ID == 0) */
 
 /*******************************************************************************
  * Start event timer on RTC tick:
@@ -307,7 +307,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 		(uint32_t)&(SW_SWITCH_TIMER->TASKS_CLEAR));
 }
 
-#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#else /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 /* Clear event timer (sw-switch timer) on Radio end:
  * wire the RADIO EVENTS_END event to the
@@ -325,7 +325,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 		(uint32_t)&(SW_SWITCH_TIMER->TASKS_CLEAR));
 }
 
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 /* The 2 adjacent PPI groups used for implementing SW_SWITCH_TIMER-based
  * auto-switch for TIFS. 'index' must be 0 or 1.
@@ -453,11 +453,15 @@ static inline void hal_radio_sw_switch_disable(void)
 {
 	/* Disable the following PPI channels that implement SW Switch:
 	 * - Clearing SW SWITCH TIMER on RADIO END event
+	 *   - Do not clear for single timer use as it uses the same PPI as
+	 *     end time capture
 	 * - Enabling SW SWITCH PPI Group on RADIO END event
 	 */
 	nrf_ppi_channels_disable(
 		NRF_PPI,
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 		BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 		BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 
 	/* Invalidation of subscription of S2 timer Compare used when

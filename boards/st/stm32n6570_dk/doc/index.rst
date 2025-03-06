@@ -64,37 +64,7 @@ For more details, please refer to:
 Supported Features
 ==================
 
-The Zephyr ``stm32n6570_dk`` board supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| CAN/CANFD | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access Controller     |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32n6570_dk/stm32n6570_dk_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -197,12 +167,6 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
             * BOOT1: 0
 
 	    Power off and on the board again.
-
-         Run a serial host program to connect to your board:
-
-         .. code-block:: console
-
-            $ minicom -D /dev/ttyACM0
 
       .. group-tab:: Serial Boot Loader (USB)
 

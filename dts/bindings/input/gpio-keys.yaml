@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Zephyr Input GPIO KEYS parent node
+  Group of GPIO-bound input keys.
 
   This defines a group of buttons that can generate input events. Each button
   is defined in a child node of the gpio-keys node and defines a specific key

@@ -25,41 +25,7 @@ More information about STM32L4R9 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32l4r9i_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling                 |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | on-chip flash memory;               |
-|           |            | external OctoSPI memory             |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | Real Time Clock                     |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | sd/mmc                              |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/st/stm32l4r9i_disco/stm32l4r9i_disco_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========

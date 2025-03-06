@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  NXP S32 Trigger Multiplexing Control node for S32 SoCs.
+  Trigger Multiplexing Control for NXP S32 SoCs.
   The device supports the triggering scheme between peripherals.
   The supported trigger sources and destination can be found in
   the device Ref Manual

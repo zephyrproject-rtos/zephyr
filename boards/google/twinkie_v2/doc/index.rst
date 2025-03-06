@@ -14,22 +14,7 @@ Hardware
 Supported Features
 ==================
 
-The following features are supported:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/google/twinkie_v2/google_twinkie_v2_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========

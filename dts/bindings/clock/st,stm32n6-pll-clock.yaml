@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  PLL node binding for STM32N6 devices
+  STM32N6 main PLL.
 
   It can be used to describe 4 different PLLs: PLL1, PLL2, PLL3 and PLL4.
 

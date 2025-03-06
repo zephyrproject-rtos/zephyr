@@ -7,7 +7,7 @@
 compatible: "st,stm32f1-clock-mco"
 
 description: |
-        STM32 F1 series Microcontroller Clock Output (MCO)
+        STM32F1 Microcontroller Clock Output (MCO)
 
         The STM32F1 MCO is similar to other series but has no configurable
         prescaler before the output. However, note that certain inputs of

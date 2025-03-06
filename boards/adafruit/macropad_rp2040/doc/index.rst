@@ -30,59 +30,7 @@ Hardware
 Supported Features
 ******************
 
-The ``adafruit_macropad_rp2040`` board target supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v6m-nvic`
-   * - UART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`raspberrypi,pico-gpio`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`raspberrypi,pico-adc`
-   * - I2C
-     - :kconfig:option:`CONFIG_I2C`
-     - :dtcompatible:`snps,designware-i2c`
-   * - SPI
-     - :kconfig:option:`CONFIG_SPI`
-     - :dtcompatible:`raspberrypi,pico-spi`
-   * - USB Device
-     - :kconfig:option:`CONFIG_USB_DEVICE_STACK`
-     - :dtcompatible:`raspberrypi,pico-usbd`
-   * - HWINFO
-     - :kconfig:option:`CONFIG_HWINFO`
-     - N/A
-   * - Watchdog Timer (WDT)
-     - :kconfig:option:`CONFIG_WATCHDOG`
-     - :dtcompatible:`raspberrypi,pico-watchdog`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`raspberrypi,pico-pwm`
-   * - Flash
-     - :kconfig:option:`CONFIG_FLASH`
-     - :dtcompatible:`raspberrypi,pico-flash-controller`
-   * - UART (PIO)
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart-pio`
-   * - Display
-     - :kconfig:option:`CONFIG_DISPLAY`
-     - :dtcompatible:`sinowealth,sh1106`
-   * - LED Strip (12 pixels)
-     - :kconfig:option:`CONFIG_LED_STRIP`
-     - :dtcompatible:`worldsemi,ws2812-rpi_pico-pio`
-   * - Rotary Encoder
-     - :kconfig:option:`CONFIG_INPUT`
-     - :dtcompatible:`gpio-qdec`
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************

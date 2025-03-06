@@ -56,31 +56,7 @@ More information about STM32G031K8 can be found in the
 Supported Features
 ==================
 
-The Zephyr nucleo_g031k8 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c controller                      |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi controller                      |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_g031k8/nucleo_g031k8_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

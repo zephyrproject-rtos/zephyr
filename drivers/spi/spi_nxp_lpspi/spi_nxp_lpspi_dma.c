@@ -285,7 +285,7 @@ static int transceive_dma_sync(const struct device *dev)
 
 	spi_context_cs_control(ctx, false);
 
-	base->TCR = 0;
+	base->TCR &= ~LPSPI_TCR_CONT_MASK;
 
 	return 0;
 }

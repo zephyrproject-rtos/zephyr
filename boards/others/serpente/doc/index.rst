@@ -21,35 +21,7 @@ Hardware
 Supported Features
 ==================
 
-The Serpente board configuration supports the
-following hardware features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| NVIC      | on-chip    | nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| Flash     | on-chip    | Can be used with LittleFS to store files |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | systick                                  |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| PWM       | on-chip    | Pulse Width Modulation                   |
-+-----------+------------+------------------------------------------+
-| USART     | on-chip    | Serial ports                             |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface ports        |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/others/serpente/serpente_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

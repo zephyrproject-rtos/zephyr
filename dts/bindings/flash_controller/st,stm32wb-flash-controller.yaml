@@ -1,4 +1,4 @@
-description: STM32 WB flash controller
+description: STM32WB flash controller
 
 compatible: "st,stm32wb-flash-controller"
 

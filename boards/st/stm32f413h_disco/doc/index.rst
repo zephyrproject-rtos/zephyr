@@ -75,30 +75,7 @@ More information about STM32F413ZH can be found here:
 Supported Features
 ==================
 
-The Zephyr STM32F413H-DISCO board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported by Zephyr.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f413h_disco/stm32f413h_disco_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========

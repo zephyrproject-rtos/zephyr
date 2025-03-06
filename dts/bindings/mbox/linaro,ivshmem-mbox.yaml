@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Felipe Neves
 # SPDX-License-Identifier: Apache-2.0
 
-description: Inter VM shared memory based mailbox binding
+description: Inter VM shared memory based mailbox
 
 compatible: "linaro,ivshmem-mbox"
 

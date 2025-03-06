@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32N6 Divider IC multiplexer
-  This node select a clock input and a divider.
+  STM32N6 Divider IC multiplexer.
+
+  This node selects a clock input and a divider.
+
   For instance:
     &ic6 {
       pll-src = <2>;

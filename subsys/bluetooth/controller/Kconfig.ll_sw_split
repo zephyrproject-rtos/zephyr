@@ -890,8 +890,6 @@ config BT_CTLR_LOW_LAT
 config BT_CTLR_LOW_LAT_ULL
 	prompt "Low latency ULL"
 	bool
-	depends on BT_CTLR_LOW_LAT
-	default y
 	help
 	  Low latency ULL implementation that uses tailchaining instead of while
 	  loop to demux rx messages from LLL.
@@ -1088,7 +1086,7 @@ config BT_CTLR_THROUGHPUT
 
 config BT_CTLR_FORCE_MD_COUNT
 	int "Forced MD bit count" if !BT_CTLR_FORCE_MD_AUTO
-	depends on !BT_CTLR_LOW_LAT_ULL
+	depends on !BT_CTLR_LOW_LAT
 	range 0 $(UINT8_MAX)
 	default 1 if BT_CTLR_FORCE_MD_AUTO
 	default 0
@@ -1102,7 +1100,7 @@ config BT_CTLR_FORCE_MD_COUNT
 
 config BT_CTLR_FORCE_MD_AUTO
 	bool "Forced MD bit automatic calculation"
-	depends on !BT_CTLR_LOW_LAT_ULL
+	depends on !BT_CTLR_LOW_LAT
 	select BT_CTLR_THROUGHPUT
 	default y if BT_HCI_RAW
 	help

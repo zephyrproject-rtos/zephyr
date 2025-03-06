@@ -43,44 +43,7 @@ For more information about the GD32F450 SoC and GD32F450I-EVAL board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - EXTI
-     - :kconfig:option:`CONFIG_GD32_EXTI`
-     - :dtcompatible:`gd,gd32-exti`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`gd,gd32-gpio`
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v7m-nvic`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`gd,gd32-pwm`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-   * - DAC
-     - :kconfig:option:`CONFIG_DAC`
-     - :dtcompatible:`gd,gd32-dac`
-   * - I2C
-     - :kconfig:option:`CONFIG_I2C`
-     - :dtcompatible:`gd,gd32-i2c`
-   * - EEPROM
-     - :kconfig:option:`CONFIG_EEPROM`
-     - :dtcompatible:`atmel,at24`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`gd,gd32-adc`
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========

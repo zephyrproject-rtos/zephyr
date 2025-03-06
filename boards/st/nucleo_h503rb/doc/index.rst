@@ -115,37 +115,7 @@ More information about STM32H533RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_h503rb board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c bus                             |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| BKP SRAM  | on-chip    | Backup SRAM                         |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig and dts files:
-
-  - :zephyr_file:`boards/st/nucleo_h503rb/nucleo_h503rb_defconfig`
-  - :zephyr_file:`boards/st/nucleo_h503rb/nucleo_h503rb.dts`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

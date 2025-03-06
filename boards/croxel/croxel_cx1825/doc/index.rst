@@ -46,12 +46,7 @@ Hardware
 Supported Features
 ==================
 
-- Discrete LEDs (red and green)
-- Buttons (User and Reset)
-- Sensors (Accelerometer, Light, Temperature and Humidity, Pressure and Hall-Effect sensors)
-- Beeper
-- Radio (Bluetooth, IEEE 802.15.4)
-- SOC peripherals (ADC, Clock, Flash, GPIO, I2C, MPU, NVIC, PWM, Radio, RTC, SPI, USB, WDT)
+.. zephyr:board-supported-hw::
 
 Future Feature Support
 ======================

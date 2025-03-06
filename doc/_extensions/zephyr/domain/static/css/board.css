@@ -83,7 +83,6 @@
 
 .legend {
     font-size: 0.9em;
-    max-width: 600px;
     border-radius: 6px;
     margin: auto;
 
@@ -166,6 +165,7 @@
             width:190px;
             white-space: nowrap;
             text-overflow: ellipsis;
+            overflow: hidden;
         }
     }
 }
@@ -179,6 +179,7 @@
     font-size: 0.7em;
     font-weight: 600;
     margin-left: 4px;
+    padding-right: 6px !important;
 
     &::before {
         content: "×";

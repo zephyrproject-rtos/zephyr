@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    STM32 family TEMP node for production calibrated sensors with a single calibration temperature.
+  STM32 TEMP for production calibrated sensors with a single calibration temperature.
 
 compatible: "st,stm32c0-temp-cal"
 

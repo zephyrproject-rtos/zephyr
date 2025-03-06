@@ -31,6 +31,8 @@ on a smartphone/PC to implement applications such as:
 (see `Motion and environmental sensors`_ section for the complete lists of available
 sensors on board)
 
+.. zephyr:board-supported-hw::
+
 Hardware
 ********
 

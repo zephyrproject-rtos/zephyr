@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32F1 and STM32F37x Reset and Clock controller node.
+  STM32F1/F3/7x RCC (Reset and Clock controller).
+
   Adds the ADC prescaler to the standard generic STM32 RCC.
   For more description confere st,stm32-rcc.yaml
 

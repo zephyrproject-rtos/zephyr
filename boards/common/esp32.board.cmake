@@ -13,4 +13,4 @@ board_runner_args(openocd  --gdb-init "thb main")
 set(ESP_IDF_PATH ${ZEPHYR_HAL_ESPRESSIF_MODULE_DIR})
 assert(ESP_IDF_PATH "ESP_IDF_PATH is not set")
 
-board_finalize_runner_args(esp32 "--esp-idf-path=${ESP_IDF_PATH}")
+board_runner_args(esp32 "--esp-idf-path=${ESP_IDF_PATH}")

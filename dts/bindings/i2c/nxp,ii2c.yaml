@@ -1,7 +1,7 @@
 # Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP II2C node
+description: NXP II2C
 
 compatible: "nxp,ii2c"
 

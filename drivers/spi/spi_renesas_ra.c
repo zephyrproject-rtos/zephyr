@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -462,9 +462,9 @@ static int ra_spi_release(const struct device *dev, const struct spi_config *con
 
 static DEVICE_API(spi, ra_spi_driver_api) = {.transceive = ra_spi_transceive,
 #ifdef CONFIG_SPI_ASYNC
-							.transceive_async = ra_spi_transceive_async,
+					     .transceive_async = ra_spi_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
-							.release = ra_spi_release};
+					     .release = ra_spi_release};
 
 static int spi_ra_init(const struct device *dev)
 {
@@ -664,15 +664,10 @@ static void ra_spi_eri_isr(const struct device *dev)
 }
 #endif
 
-#define _ELC_EVENT_SPI_RXI(channel) ELC_EVENT_SPI##channel##_RXI
-#define _ELC_EVENT_SPI_TXI(channel) ELC_EVENT_SPI##channel##_TXI
-#define _ELC_EVENT_SPI_TEI(channel) ELC_EVENT_SPI##channel##_TEI
-#define _ELC_EVENT_SPI_ERI(channel) ELC_EVENT_SPI##channel##_ERI
-
-#define ELC_EVENT_SPI_RXI(channel) _ELC_EVENT_SPI_RXI(channel)
-#define ELC_EVENT_SPI_TXI(channel) _ELC_EVENT_SPI_TXI(channel)
-#define ELC_EVENT_SPI_TEI(channel) _ELC_EVENT_SPI_TEI(channel)
-#define ELC_EVENT_SPI_ERI(channel) _ELC_EVENT_SPI_ERI(channel)
+#define EVENT_SPI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _RXI))
+#define EVENT_SPI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _TXI))
+#define EVENT_SPI_TEI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _TEI))
+#define EVENT_SPI_ERI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SPI, channel, _ERI))
 
 #if defined(CONFIG_SPI_INTERRUPT)
 
@@ -681,13 +676,13 @@ static void ra_spi_eri_isr(const struct device *dev)
 		ARG_UNUSED(dev);                                                                   \
                                                                                                    \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, rxi, irq)] =                               \
-			ELC_EVENT_SPI_RXI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_RXI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, txi, irq)] =                               \
-			ELC_EVENT_SPI_TXI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_TXI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, tei, irq)] =                               \
-			ELC_EVENT_SPI_TEI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_TEI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, eri, irq)] =                               \
-			ELC_EVENT_SPI_ERI(DT_INST_PROP(index, channel));                           \
+			EVENT_SPI_ERI(DT_INST_PROP(index, channel));                               \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                                  \
 			    DT_INST_IRQ_BY_NAME(index, rxi, priority), ra_spi_rxi_isr,             \

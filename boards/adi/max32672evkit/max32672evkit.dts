@@ -154,7 +154,7 @@
 	status = "okay";
 	pinctrl-0 = <&spi0a_mosi_p0_3 &spi0a_miso_p0_2 &spi0a_sck_p0_4>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | MAX32_VSEL_VDDIOH)>;
+	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 };
 
 &rtc_counter {

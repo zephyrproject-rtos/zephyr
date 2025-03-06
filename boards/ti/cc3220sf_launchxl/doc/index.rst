@@ -44,20 +44,7 @@ Complete details of the CC3220SF SoC can be found in the `CC3220 TRM`_.
 Supported Features
 ==================
 
-Zephyr has been ported to the Applications MCU, with basic peripheral
-driver support.
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| UART      | on-chip    | serial port-interrupt |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | gpio                  |
-+-----------+------------+-----------------------+
-| I2C       | on-chip    | i2c                   |
-+-----------+------------+-----------------------+
-| SPI_0     | on-chip    | Wi-Fi host driver     |
-+-----------+------------+-----------------------+
+.. zephyr:board-supported-hw::
 
 .. note::
 
