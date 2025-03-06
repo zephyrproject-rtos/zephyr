@@ -211,7 +211,7 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 }
 
 /* First (bottom) and last (top) entries of a region, inclusive, for a specific field. */
-#define REGION_BOT(reg, field) (size_t)(reg->field)
+#define REGION_BOT(reg, field) (size_t)(reg->field + reg->sh_info)
 #define REGION_TOP(reg, field) (size_t)(reg->field + reg->sh_size - 1)
 
 /* Check if two regions x and y have any overlap on a given field. Any shared value counts. */
@@ -311,9 +311,13 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 
 		if (region->sh_type == SHT_NULL) {
 			/* First section of this type, copy all info to the
-			 * region descriptor.
+			 * region descriptor. Clear the 'sh_info' field, not
+			 * used by ELF spec on SHF_ALLOC sections, to store
+			 * the extra bytes added at the start of the region
+			 * for alignment corrections.
 			 */
 			memcpy(region, shdr, sizeof(*region));
+			region->sh_info = 0;
 			continue;
 		}
 
@@ -385,7 +389,10 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			 * an aligned allocation would result in the section
 			 * starting at bot_ofs + 0xdc, which would not satisfy
 			 * the original constraint. Rounding the region start
-			 * address 4 bytes down will fix the issue.
+			 * address 4 bytes down will fix the issue, at the cost
+			 * of possibly making the region "overlap" with others.
+			 * This extra offset is stored in the spare sh_info
+			 * field to be available for further adjustments.
 			 */
 			size_t prepad = bot_ofs - ROUND_DOWN(bot_ofs, shdr->sh_addralign);
 
@@ -400,6 +407,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				address -= prepad;
 			}
 			bot_ofs -= prepad;
+			region->sh_info = prepad; /* see above comments on sh_info */
 			region->sh_addralign = shdr->sh_addralign;
 		}
 
