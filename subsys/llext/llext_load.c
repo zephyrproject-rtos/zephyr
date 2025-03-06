@@ -163,13 +163,14 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
-			"addr 0x%zx, size %zd, link %d, info %d",
+			"addr 0x%zx, align 0x%zx, size %zd, link %d, info %d",
 			i,
 			(size_t)shdr->sh_offset,
 			shdr->sh_name,
 			shdr->sh_type,
 			(size_t)shdr->sh_flags,
 			(size_t)shdr->sh_addr,
+			(size_t)shdr->sh_addralign,
 			(size_t)shdr->sh_size,
 			shdr->sh_link,
 			shdr->sh_info);
@@ -369,6 +370,38 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		size_t bot_ofs = MIN(region->sh_offset, shdr->sh_offset);
 		size_t top_ofs = MAX(region->sh_offset + region->sh_size,
 				     shdr->sh_offset + shdr->sh_size);
+
+		if (shdr->sh_addralign > region->sh_addralign) {
+			/* This section uses a larger alignment value than what
+			 * is currently used by the region. Make sure its final
+			 * position in memory is correct by adjusting the start
+			 * of the region, if needed.
+			 *
+			 * For example, in such a situation:
+			 *
+			 * current region: ofs  0x24, size 0xdc, align  0x4
+			 *    new section: ofs 0x100, size 0x20, align 0x10
+			 *
+			 * an aligned allocation would result in the section
+			 * starting at bot_ofs + 0xdc, which would not satisfy
+			 * the original constraint. Rounding the region start
+			 * address 4 bytes down will fix the issue.
+			 */
+			size_t prepad = bot_ofs - ROUND_DOWN(bot_ofs, shdr->sh_addralign);
+
+			if (ldr->hdr.e_type == ET_DYN) {
+				/* Only shared files populate sh_addr fields */
+				if (prepad > address) {
+					LOG_ERR("Bad section alignment for %s (region %d)",
+						name, mem_idx);
+					return -ENOEXEC;
+				}
+
+				address -= prepad;
+			}
+			bot_ofs -= prepad;
+			region->sh_addralign = shdr->sh_addralign;
+		}
 
 		region->sh_addr = address;
 		region->sh_offset = bot_ofs;
