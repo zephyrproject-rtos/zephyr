@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DAC Loopback test"
+
+source "Kconfig.zephyr"
+
+config DAC_BUFFER_NOT_SUPPORT
+	bool "DAC on board/SoC does not support output buffer mode"
+	help
+	  If this config is turned on, the test will run with no output buffer enabled
