@@ -23,12 +23,13 @@ LOG_MODULE_REGISTER(explorir_m_sensor, CONFIG_SENSOR_LOG_LEVEL);
 
 #define EXPLORIR_M_BEGIN_CHAR ' '
 
-#define EXPLORIR_M_SET_FILTER_CHAR     'A'
-#define EXPLORIR_M_GET_FILTER_CHAR     'a'
-#define EXPLORIR_M_MODE_CHAR           'K'
-#define EXPLORIR_M_CO2_FILTERED_CHAR   'Z'
-#define EXPLORIR_M_SCALING_CHAR        '.'
-#define EXPLORIR_M_NOT_RECOGNISED_CHAR '?'
+#define EXPLORIR_M_SET_FILTER_CHAR       'A'
+#define EXPLORIR_M_GET_FILTER_CHAR       'a'
+#define EXPLORIR_M_MODE_CHAR             'K'
+#define EXPLORIR_M_ZERO_POINT_KNOWN_CHAR 'X'
+#define EXPLORIR_M_CO2_FILTERED_CHAR     'Z'
+#define EXPLORIR_M_SCALING_CHAR          '.'
+#define EXPLORIR_M_NOT_RECOGNISED_CHAR   '?'
 
 #define EXPLORIR_M_SEPARATOR_CHAR ' '
 #define EXPLORIR_M_PRE_END_CHAR   '\r'
@@ -130,6 +131,7 @@ static int explorir_m_buffer_process(struct explorir_m_data *data, char type,
 	switch (type) {
 	case EXPLORIR_M_SET_FILTER_CHAR:
 	case EXPLORIR_M_MODE_CHAR:
+	case EXPLORIR_M_ZERO_POINT_KNOWN_CHAR:
 		break;
 
 	case EXPLORIR_M_CO2_FILTERED_CHAR:
@@ -251,6 +253,52 @@ static int explorir_m_uart_transceive(const struct device *dev, char type, struc
 	return rc;
 }
 
+/*
+ * This calibrate function uses a known gas concentration [ppm] via val->val1 to calibrate.
+ * Calibration should be done when temperature is stabile and gas is fully diffused into the sensor.
+ */
+static int explorir_m_calibrate(const struct device *dev, struct sensor_value *val)
+{
+	struct explorir_m_data *data = dev->data;
+	struct sensor_value original;
+	struct sensor_value tmp;
+	int restore_rc;
+	int rc;
+
+	/* Prevent sensor interaction while using calibration filter value */
+	k_mutex_lock(&data->uart_mutex, K_FOREVER);
+
+	rc = explorir_m_uart_transceive(dev, EXPLORIR_M_GET_FILTER_CHAR, &original,
+					EXPLORIR_M_SET_NONE);
+	if (rc != 0) {
+		goto unlock;
+	}
+
+	/*
+	 * From datasheet section "Zero point setting":
+	 * To improve zeroing accuracy, the recommended digital filter setting is 32.
+	 */
+	tmp.val1 = 32;
+	rc = explorir_m_uart_transceive(dev, EXPLORIR_M_SET_FILTER_CHAR, &tmp,
+					EXPLORIR_M_SET_VAL_ONE);
+	if (rc == 0) {
+		tmp.val1 = val->val1 / data->filtered;
+		rc = explorir_m_uart_transceive(dev, EXPLORIR_M_ZERO_POINT_KNOWN_CHAR, &tmp,
+						EXPLORIR_M_SET_VAL_ONE);
+	}
+
+	restore_rc = explorir_m_uart_transceive(dev, EXPLORIR_M_SET_FILTER_CHAR, &original,
+						EXPLORIR_M_SET_VAL_ONE);
+	if (restore_rc != 0) {
+		LOG_ERR("Could not restore filter value");
+	}
+
+unlock:
+	k_mutex_unlock(&data->uart_mutex);
+
+	return rc != 0 ? rc : restore_rc;
+}
+
 static int explorir_m_attr_get(const struct device *dev, enum sensor_channel chan,
 			       enum sensor_attribute attr, struct sensor_value *val)
 {
@@ -275,6 +323,8 @@ static int explorir_m_attr_set(const struct device *dev, enum sensor_channel cha
 	}
 
 	switch (attr) {
+	case SENSOR_ATTR_CALIBRATION:
+		return explorir_m_calibrate(dev, (struct sensor_value *)val);
 	case SENSOR_ATTR_EXPLORIR_M_FILTER:
 		if (val->val1 < 0 || val->val1 > 255) {
 			return -ERANGE;
