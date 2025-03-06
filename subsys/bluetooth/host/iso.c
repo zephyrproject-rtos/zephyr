@@ -454,9 +454,17 @@ void bt_iso_connected(struct bt_conn *iso)
 static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	const uint8_t conn_type = chan->iso->iso.info.type;
+	struct net_buf *buf;
+
 	LOG_DBG("%p, reason 0x%02x", chan, reason);
 
 	__ASSERT(chan->iso != NULL, "NULL conn for iso chan %p", chan);
+
+	/* release buffers from tx_queue */
+	while ((buf = k_fifo_get(&chan->iso->iso.txq, K_NO_WAIT))) {
+		__ASSERT_NO_MSG(!bt_buf_has_view(buf));
+		net_buf_unref(buf);
+	}
 
 	bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTED);
 	bt_conn_set_state(chan->iso, BT_CONN_DISCONNECT_COMPLETE);
@@ -775,7 +783,8 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 static bool iso_has_data(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_ISO_TX)
-	return !k_fifo_is_empty(&conn->iso.txq);
+	return ((conn->iso.chan->state == BT_ISO_STATE_CONNECTED) &&
+		!k_fifo_is_empty(&conn->iso.txq));
 #else  /* !CONFIG_BT_ISO_TX */
 	return false;
 #endif /* CONFIG_BT_ISO_TX */
@@ -789,9 +798,9 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount, size_t
 	/* Leave the PDU buffer in the queue until we have sent all its
 	 * fragments.
 	 */
-	struct net_buf *frag = k_fifo_peek_head(&conn->iso.txq);
+	struct net_buf *q_frag = k_fifo_peek_head(&conn->iso.txq);
 
-	if (!frag) {
+	if (!q_frag) {
 		BT_ISO_DATA_DBG("signaled ready but no frag available");
 		/* Service other connections */
 		bt_tx_irq_raise();
@@ -799,13 +808,10 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount, size_t
 		return NULL;
 	}
 
+	__ASSERT_NO_MSG(conn->state == BT_CONN_CONNECTED);
+
 	if (conn->iso.chan->state != BT_ISO_STATE_CONNECTED) {
-		__maybe_unused struct net_buf *b = k_fifo_get(&conn->iso.txq, K_NO_WAIT);
-
 		LOG_DBG("channel has been disconnected");
-		__ASSERT_NO_MSG(b == frag);
-
-		net_buf_unref(b);
 
 		/* Service other connections */
 		bt_tx_irq_raise();
@@ -813,7 +819,7 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount, size_t
 		return NULL;
 	}
 
-	if (bt_buf_has_view(frag)) {
+	if (bt_buf_has_view(q_frag)) {
 		/* This should not happen. conn.c should wait until the view is
 		 * destroyed before requesting more data.
 		 */
@@ -821,13 +827,16 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount, size_t
 		return NULL;
 	}
 
+	struct net_buf *frag = net_buf_ref(q_frag);
 	bool last_frag = amount >= frag->len;
 
 	if (last_frag) {
-		__maybe_unused struct net_buf *b = k_fifo_get(&conn->iso.txq, K_NO_WAIT);
+		q_frag = k_fifo_get(&conn->iso.txq, K_NO_WAIT);
 
 		BT_ISO_DATA_DBG("last frag, pop buf");
-		__ASSERT_NO_MSG(b == frag);
+		__ASSERT_NO_MSG(q_frag == frag);
+
+		net_buf_unref(q_frag);
 	}
 
 	*length = frag->len;
