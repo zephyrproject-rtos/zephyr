@@ -3687,6 +3687,7 @@ static int le_init(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV_CODING_SELECTION) &&
+	    IS_ENABLED(CONFIG_BT_OBSERVER) &&
 	    BT_FEAT_LE_ADV_CODING_SEL(bt_dev.le.features)) {
 		err = le_set_host_feature(BT_LE_FEAT_BIT_ADV_CODING_SEL_HOST, 1);
 		if (err) {
