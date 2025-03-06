@@ -38,6 +38,8 @@ from twisterlib.testsuite import TestSuite, scan_testsuite_path
 from twisterlib.constants import SUPPORTED_HARNESS
 
 from zephyr_module import parse_modules
+from colorama import Fore, Style
+from tabulate import tabulate
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -82,17 +84,17 @@ class TestLevel:
     scenarios = []
 
 class Checker:
-    ALLOW = 'allow_platform'
-    INTEGRATION = 'integration_platform'
-    EXCLUDE = 'exclude_platform'
-    ALLOW_NO_INTEGRATION = 'allow_no_integration'
-    BUILD_ONLY = 'build_only'
-    SKIP = 'skip'
-    FILTER_NO_INTEGRATION = 'filter_no_integration'
-    NO_DEFAULT_INTEGRATION = 'no_default_integration'
-    UNSUPPORTED_DEPENDS_ON = 'unsupported_depends_on'
-    SCENARIO_COUNT = 'scenario_count'
-    HARNESS = 'harness'
+    ALLOW = ('allow_platform', 'warning', 'Too many entries in allow_platform')
+    INTEGRATION = ('integration_platform', 'warning', 'Too many integration platforms')
+    EXCLUDE = ('exclude_platform', 'warning', 'Too many excluded platforms')
+    ALLOW_NO_INTEGRATION = ('allow_no_integration', 'error', 'allow_platform without integration_platforms')
+    BUILD_ONLY = ('build_only', 'warning', 'build_only set')
+    SKIP = ('skip', 'warning', 'skip set')
+    FILTER_NO_INTEGRATION = ('filter_no_integration', 'error', 'filter with no integration platforms')
+    NO_DEFAULT_INTEGRATION = ('no_default_integration', 'error', 'No default platforms in integration_platform')
+    UNSUPPORTED_DEPENDS_ON = ('unsupported_depends_on', 'error', 'Unsupported depends_on')
+    SCENARIO_COUNT = ('scenario_count', 'warning', 'Too many scenarios')
+    HARNESS = ('harness', 'warning', 'Unsupported harness')
 
     def __init__(self):
         self.checks = []
@@ -105,7 +107,23 @@ class Checker:
     def report(self):
         sorted_checks = sorted(self.checks, key=lambda x: x[0])
         for check, msg in sorted_checks:
-            logger.error(f"{check}: {msg}")
+            short = check[0]
+            if check[1] == 'error':
+                logger.error(f"{Fore.RED}{short}{Style.RESET_ALL}: {msg}")
+            else:
+                logger.warning(f"{Fore.YELLOW}{short}{Style.RESET_ALL}: {msg}")
+
+        summary = collections.Counter(check for check, _ in self.checks)
+        logger.info("Summary of checks:")
+        table_data = [
+            ["Check", "Severity", "Occurrences", "Description"]
+        ]
+        for check, count in sorted(summary.items(), key=lambda item: item[1], reverse=True):
+            short, severity, description = check
+            table_data.append([short, severity, count, description])
+
+        table = tabulate(table_data, headers="firstrow", tablefmt="grid")
+        logger.info("\n" + table)
         return self.errors
 
 class TestPlan:
