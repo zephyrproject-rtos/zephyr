@@ -581,7 +581,8 @@ void log_frontend_panic(void)
 
 void log_frontend_init(void)
 {
-#if defined(CONFIG_LOG_FRONTEND_STPESP_TURBO_SOURCE_PORT_ID) && !defined(CONFIG_NRF_ETR)
+#if	defined(CONFIG_LOG_FRONTEND_STPESP_TURBO_SOURCE_PORT_ID) && !defined(CONFIG_NRF_ETR) && \
+	!defined(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC)
 	/* Send location of section with constant source data. It is used by the
 	 * application core to retrieve source names of log messages coming from
 	 * coprocessors (FLPR and PPR).
