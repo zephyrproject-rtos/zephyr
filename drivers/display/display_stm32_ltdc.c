@@ -64,11 +64,13 @@ struct display_stm32_ltdc_data {
 	LTDC_HandleTypeDef hltdc;
 	enum display_pixel_format current_pixel_format;
 	uint8_t current_pixel_size;
+	enum display_orientation current_orientation;
 	uint8_t *frame_buffer;
 	uint32_t frame_buffer_len;
 	const uint8_t *pend_buf;
 	const uint8_t *front_buf;
 	struct k_sem sem;
+	uint8_t intermediate_buffer[CONFIG_STM32_LTDC_INTERMEDIATE_BUF_SIZE];
 };
 
 struct display_stm32_ltdc_config {
@@ -133,15 +135,18 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 }
 
 static int stm32_ltdc_set_orientation(const struct device *dev,
-				const enum display_orientation orientation)
+				      const enum display_orientation orientation)
 {
-	ARG_UNUSED(dev);
+	struct display_stm32_ltdc_data *data = dev->data;
 
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+	switch (orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		data->current_orientation = orientation;
 		return 0;
+	default:
+		return -ENOTSUP;
 	}
-
-	return -ENOTSUP;
 }
 
 static void stm32_ltdc_get_capabilities(const struct device *dev,
@@ -161,7 +166,7 @@ static void stm32_ltdc_get_capabilities(const struct device *dev,
 	capabilities->screen_info = 0;
 
 	capabilities->current_pixel_format = data->current_pixel_format;
-	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->current_orientation = data->current_orientation;
 }
 
 static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
@@ -172,7 +177,8 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 	const struct display_stm32_ltdc_config *config = dev->config;
 	struct display_stm32_ltdc_data *data = dev->data;
 	uint8_t *dst = NULL;
-	const uint8_t *pend_buf = NULL;
+	uint8_t *old = NULL;
+	uint8_t *pend_buf = NULL;
 	const uint8_t *src = buf;
 	uint16_t row;
 
@@ -180,50 +186,152 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 	    (desc->width == config->width) &&
 	    (desc->height ==  config->height) &&
 	    (desc->pitch == desc->width)) {
-		/* Use buf as ltdc frame buffer directly if it length same as ltdc frame buffer. */
-		pend_buf = buf;
-	} else {
-		if (CONFIG_STM32_LTDC_FB_NUM == 0)  {
-			LOG_ERR("Partial write requires internal frame buffer");
+		if (data->current_orientation != DISPLAY_ORIENTATION_NORMAL) {
+			LOG_ERR("Rotated display requires internal frame buffer");
 			return -ENOTSUP;
 		}
+		/* Use buf as ltdc frame buffer directly if it is identical to it. */
+		data->pend_buf = buf;
+		goto swap;
+	}
 
-		dst = data->frame_buffer;
+	if (CONFIG_STM32_LTDC_FB_NUM == 0) {
+		LOG_ERR("Partial write requires internal frame buffer");
+		return -ENOTSUP;
+	}
 
-		if (CONFIG_STM32_LTDC_FB_NUM == 2) {
-			if (data->front_buf == data->frame_buffer) {
-				dst = data->frame_buffer + data->frame_buffer_len;
-			}
-
-			memcpy(dst, data->front_buf, data->frame_buffer_len);
+	if (CONFIG_STM32_LTDC_FB_NUM == 2) {
+		if (data->front_buf == data->frame_buffer) {
+			dst = data->frame_buffer + data->frame_buffer_len;
+			old = data->frame_buffer;
+		} else {
+			dst = data->frame_buffer;
+			old = data->frame_buffer + data->frame_buffer_len;
 		}
+	} else { /* One frame buffer */
+		dst = data->frame_buffer;
+	}
 
-		pend_buf = dst;
 
-		/* dst = pointer to upper left pixel of the rectangle
-		 *       to be updated in frame buffer.
-		 */
+	pend_buf = dst;
+
+	/* dst = pointer to upper left pixel of the rectangle
+	 *       to be updated in frame buffer.
+	 */
+	if (data->current_orientation == DISPLAY_ORIENTATION_NORMAL) {
 		dst += (x * data->current_pixel_size);
 		dst += (y * config->width * data->current_pixel_size);
-
 		for (row = 0; row < desc->height; row++) {
 			(void) memcpy(dst, src, desc->width * data->current_pixel_size);
-			sys_cache_data_flush_range(dst, desc->width * data->current_pixel_size);
 			dst += (config->width * data->current_pixel_size);
 			src += (desc->pitch * data->current_pixel_size);
 		}
-
+		goto flush_swap;
 	}
 
+	if (data->current_orientation != DISPLAY_ORIENTATION_ROTATED_90) {
+		LOG_ERR("Only 90° rotation supported");
+		return -ENOTSUP;
+	}
+
+	/* Perform rotation operations for 90°. Note that the physical display is rotated 90°,
+	 * meaning we are to perform a frame buffer rotation of 270° to make the display look
+	 * right.
+	 */
+
+	dst += (y * data->current_pixel_size);
+	dst += ((config->height - x - desc->width) * config->width * data->current_pixel_size);
+	/* _x, _y = coordinates in src */
+	for (int _x = desc->width - 1; _x >= 0; _x--) {
+		/* y_dst = destination for the desc->height amount of vertical
+		 *         pixels in src's _x column to be copied to row y in dst
+		 */
+		uint8_t *y_dst = &dst[(desc->width - _x - 1) * config->width *
+				      data->current_pixel_size];
+		const uint8_t *y_src = &src[_x*data->current_pixel_size];
+
+		for (int _y = 0; _y < desc->height; _y++) {
+			/* For performance reasons, don't call memcpy on such small values.
+			 * E.g. STM32H743 w/ 16-bit SDRAM bus & 1024x600 & 90° rotation:
+			 *   - memcpy: 11fps
+			 *   - this: 15fps
+			 */
+			switch (data->current_pixel_size) {
+			case 1:
+				y_dst[0] = y_src[0];
+				break;
+			case 2:
+				y_dst[0] = y_src[0];
+				y_dst[1] = y_src[1];
+				break;
+			case 4:
+				y_dst[0] = y_src[0];
+				y_dst[1] = y_src[1];
+				y_dst[2] = y_src[2];
+				y_dst[3] = y_src[3];
+				break;
+			}
+			y_dst += data->current_pixel_size;
+			y_src += desc->width * data->current_pixel_size;
+		}
+	}
+
+flush_swap:
+
+	/* More to come? */
+	if (desc->frame_incomplete) {
+		return 0;
+	}
+
+	sys_cache_data_flush_range(pend_buf, data->frame_buffer_len);
+
+	/* One frame buffer? */
 	if (data->front_buf == pend_buf) {
 		return 0;
 	}
 
-	k_sem_reset(&data->sem);
+swap:
 
-	data->pend_buf = pend_buf;
+	/* If device is suspended, don't swap the buffers as the ISR is not running */
+	enum pm_device_state pm_state = PM_DEVICE_STATE_SUSPENDED;
 
-	k_sem_take(&data->sem, K_FOREVER);
+	if (pm_device_state_get(dev, &pm_state) == 0 && pm_state == PM_DEVICE_STATE_ACTIVE) {
+		k_sem_reset(&data->sem);
+		if (pend_buf != NULL) {
+			data->pend_buf = pend_buf;
+		}
+		k_sem_take(&data->sem, K_FOREVER);
+	}
+
+	/* Nothing to copy? */
+	if (old == NULL) {
+		return 0;
+	}
+
+	/* Safe to copy the new frame to the old one */
+
+#if DT_INST_NODE_HAS_PROP(0, ext_sdram) && CONFIG_STM32_LTDC_INTERMEDIATE_BUF_SIZE > 0
+	/* Copy into an intermediate buffer to speed up copying,
+	 * as linear access is faster in SDRAM memories, as compared to byte-wise copying
+	 *
+	 * E.g. STM32H743 w/ 16-bit SDRAM bus & 1024x600 & 90° rotation:
+	 *   - memcpy: 7fps
+	 *   - this: 11fps
+	 */
+	size_t copied = 0;
+
+	do {
+		size_t tocopy = MIN(sizeof(data->intermediate_buffer),
+				    data->frame_buffer_len - copied);
+
+		memcpy(data->intermediate_buffer, &pend_buf[copied], tocopy);
+		memcpy(&old[copied], data->intermediate_buffer, tocopy);
+		copied += tocopy;
+	} while (copied < data->frame_buffer_len);
+
+#else
+	memcpy(old, pend_buf, data->frame_buffer_len);
+#endif
 
 	return 0;
 }
@@ -419,8 +527,12 @@ static int stm32_ltdc_init(const struct device *dev)
 	/* reset LTDC peripheral */
 	(void)reset_line_toggle_dt(&config->reset);
 
-	data->current_pixel_format = DISPLAY_INIT_PIXEL_FORMAT;
-	data->current_pixel_size = STM32_LTDC_INIT_PIXEL_SIZE;
+	if (data->current_pixel_format == 0) {
+		data->current_pixel_format = DISPLAY_INIT_PIXEL_FORMAT;
+	}
+	if (data->current_pixel_size == 0) {
+		data->current_pixel_size = STM32_LTDC_INIT_PIXEL_SIZE;
+	}
 
 	k_sem_init(&data->sem, 0, 1);
 
@@ -608,6 +720,7 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 		.frame_buffer_len = STM32_LTDC_FRAME_BUFFER_LEN(inst),				\
 		.front_buf = STM32_LTDC_FRAME_BUFFER_ADDR(inst),				\
 		.pend_buf = STM32_LTDC_FRAME_BUFFER_ADDR(inst),					\
+		.current_orientation = DISPLAY_ORIENTATION_NORMAL,				\
 		.hltdc = {									\
 			.Instance = (LTDC_TypeDef *) DT_INST_REG_ADDR(inst),			\
 			.Init = {								\
