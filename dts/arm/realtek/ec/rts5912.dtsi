@@ -372,6 +372,45 @@
 			     &jtag_clk_gpio90 &jtag_tms_gpio91>;
 		pinctrl-names = "default";
 	};
+
+	ulpm: ulpm {
+		compatible = "realtek,rts5912-ulpm";
+		wkup-pins-max = <6>; /* 6 system wake-up pins */
+		status = "disabled";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		wkup-pin@0 {
+			reg = <0x0>;
+			wkup-pin-mode = "gpio";
+		};
+
+		wkup-pin@1 {
+			reg = <0x1>;
+			wkup-pin-mode = "gpio";
+		};
+
+		wkup-pin@2 {
+			reg = <0x2>;
+			wkup-pin-mode = "gpio";
+		};
+
+		wkup-pin@3 {
+			reg = <0x3>;
+			wkup-pin-mode = "gpio";
+		};
+
+		wkup-pin@4 {
+			reg = <0x4>;
+			wkup-pin-mode = "gpio";
+		};
+
+		wkup-pin@5 {
+			reg = <0x5>;
+			wkup-pin-mode = "gpio";
+		};
+	};
 };
 
 &nvic {
