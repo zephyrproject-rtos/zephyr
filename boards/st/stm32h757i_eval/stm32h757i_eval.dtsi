@@ -1,0 +1,124 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ * Copyright (c) 2025 Foss Analytical A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		green_led_1: led_1 {
+			gpios = <&gpiok 3 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+			status = "disabled";
+		};
+
+		orange_led_2: led_2 {
+			gpios = <&gpiok 4 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+			status = "disabled";
+		};
+
+		red_led_3: led_3 {
+			gpios = <&gpiok 5 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+			status = "disabled";
+		};
+
+		blue_led_4: led_4 {
+			gpios = <&gpiok 6 GPIO_ACTIVE_LOW>;
+			label = "User LD4";
+			status = "disabled";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		wake_up: button_1 {
+			label = "Wakeup";
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+
+		tamper: button_2 {
+			label = "Tamper";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		joy_center: joystick_center {
+			label = "joystick center";
+			gpios = <&gpiob 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			status = "disabled";
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		joy_down: joystick_down {
+			label = "joystick down";
+			gpios = <&gpiob 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			status = "disabled";
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		joy_up: joystick_up {
+			label = "joystick up";
+			gpios = <&gpiob 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			status = "disabled";
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		joy_left: joystick_left {
+			label = "joystick left";
+			gpios = <&gpiob 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			status = "disabled";
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		joy_right: joystick_right {
+			label = "joystick right";
+			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			status = "disabled";
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+	};
+
+	dsi_lcd_qsh_030: connector_dsi_lcd {
+		compatible = "st,dsi-lcd-qsh-030";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <4 0 &gpiob 14 0>,	/* TOUCH_INT */
+			   <35 0 &gpioe 5 0>,	/* SCLK/MCLK */
+			   <37 0 &gpioe 4 0>,	/* LRCLK */
+			   <39 0 &gpioe 6 0>,	/* I2S */
+			   <40 0 &gpiob 7 0>,	/* I2C4_SDA (=>I2C1_SDA) */
+			   <44 0 &gpiod 12 0>,	/* I2C4_SCL (=>I2C1_SCL) */
+			   <45 0 &gpioa 8 0>,	/* CEC_CLK */
+			   <47 0 &gpioa 15 0>,	/* CEC */
+			   <49 0 &gpioj 2 0>,	/* DSI_TE */
+			   <53 0 &gpioa 6 0>,	/* LCD_BL_CTRL */
+			   <57 0 &gpiof 10 0>;	/* DSI_RESET */
+	};
+};
+
+&rcc {
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb14 &usart1_rx_pb15>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};

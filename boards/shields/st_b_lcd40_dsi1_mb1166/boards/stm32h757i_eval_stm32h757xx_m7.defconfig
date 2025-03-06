@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Linumiz
+# Copyright (c) 2025 Foss Analytical A/S
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32H757I_EVAL_STM32H757XX_M7
+
+if LVGL
+
+# Double frame buffer maintained by lvgl.
+config STM32_LTDC_FB_NUM
+	default 0
+
+config LV_Z_DOUBLE_VDB
+	default y
+
+config LV_Z_VDB_CUSTOM_SECTION
+	default y
+
+config LV_Z_FULL_REFRESH
+	default y
+
+endif # LVGL
+
+endif # BOARD_STM32H757I_EVAL_STM32H757XX_M7
