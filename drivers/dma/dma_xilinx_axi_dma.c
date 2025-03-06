@@ -165,11 +165,6 @@ struct __attribute__((__packed__)) dma_xilinx_axi_dma_sg_descriptor {
 	uint32_t app4;
 } __aligned(64);
 
-__aligned(64) static struct dma_xilinx_axi_dma_sg_descriptor
-	descriptors_tx[CONFIG_DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_TX] = {0};
-__aligned(64) static struct dma_xilinx_axi_dma_sg_descriptor
-	descriptors_rx[CONFIG_DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_RX] = {0};
-
 enum AxiDmaDirectionRegister {
 	/* DMA control register */
 	/* bitfield, masks defined above */
@@ -234,6 +229,11 @@ struct dma_xilinx_axi_dma_channel {
 struct dma_xilinx_axi_dma_data {
 	struct dma_context ctx;
 	struct dma_xilinx_axi_dma_channel *channels;
+
+	__aligned(64) struct dma_xilinx_axi_dma_sg_descriptor
+		descriptors_tx[CONFIG_DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_TX];
+	__aligned(64) struct dma_xilinx_axi_dma_sg_descriptor
+		descriptors_rx[CONFIG_DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_RX];
 };
 
 static inline int dma_xilinx_axi_dma_lock_irq(const struct device *dev, const uint32_t channel_num)
@@ -916,14 +916,16 @@ static int dma_xilinx_axi_dma_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	data->channels[XILINX_AXI_DMA_TX_CHANNEL_NUM].descriptors = descriptors_tx;
-	data->channels[XILINX_AXI_DMA_TX_CHANNEL_NUM].num_descriptors = ARRAY_SIZE(descriptors_tx);
+	data->channels[XILINX_AXI_DMA_TX_CHANNEL_NUM].descriptors = data->descriptors_tx;
+	data->channels[XILINX_AXI_DMA_TX_CHANNEL_NUM].num_descriptors =
+		ARRAY_SIZE(data->descriptors_tx);
 	data->channels[XILINX_AXI_DMA_TX_CHANNEL_NUM].channel_regs =
 		cfg->reg + XILINX_AXI_DMA_MM2S_REG_OFFSET;
 	data->channels[XILINX_AXI_DMA_TX_CHANNEL_NUM].direction = MEMORY_TO_PERIPHERAL;
 
-	data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM].descriptors = descriptors_rx;
-	data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM].num_descriptors = ARRAY_SIZE(descriptors_rx);
+	data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM].descriptors = data->descriptors_rx;
+	data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM].num_descriptors =
+		ARRAY_SIZE(data->descriptors_rx);
 	data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM].channel_regs =
 		cfg->reg + XILINX_AXI_DMA_S2MM_REG_OFFSET;
 	data->channels[XILINX_AXI_DMA_TX_CHANNEL_NUM].direction = PERIPHERAL_TO_MEMORY;
