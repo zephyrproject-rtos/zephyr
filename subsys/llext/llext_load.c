@@ -291,9 +291,11 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		elf_shdr_t *region = ldr->sects + mem_idx;
 
 		/*
-		 * ELF objects can have sections for memory regions, detached from
-		 * other sections of the same type. E.g. executable sections that will be
-		 * placed in slower memory. Don't merge such sections into main regions
+		 * Some applications may require specific ELF sections to not
+		 * be included in their default memory regions; e.g. the ELF
+		 * file may contain executable sections that are designed to be
+		 * placed in slower memory. Don't merge such sections into main
+		 * regions.
 		 */
 		if (ldr_parm->section_detached && ldr_parm->section_detached(shdr)) {
 			continue;
@@ -304,65 +306,66 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			 * region descriptor.
 			 */
 			memcpy(region, shdr, sizeof(*region));
-		} else {
-			/* Make sure this section is compatible with the region */
-			if ((shdr->sh_flags & SHF_BASIC_TYPE_MASK) !=
-			    (region->sh_flags & SHF_BASIC_TYPE_MASK)) {
-				LOG_ERR("Unsupported section flags %#x / %#x for %s (region %d)",
-					(uint32_t)shdr->sh_flags, (uint32_t)region->sh_flags,
+			continue;
+		}
+
+		/* Make sure this section is compatible with the existing region */
+		if ((shdr->sh_flags & SHF_BASIC_TYPE_MASK) !=
+		    (region->sh_flags & SHF_BASIC_TYPE_MASK)) {
+			LOG_ERR("Unsupported section flags %#x / %#x for %s (region %d)",
+				(uint32_t)shdr->sh_flags, (uint32_t)region->sh_flags,
+				name, mem_idx);
+			return -ENOEXEC;
+		}
+
+		/* Check if this region type is extendable */
+		switch (mem_idx) {
+		case LLEXT_MEM_BSS:
+			/* SHT_NOBITS sections cannot be merged properly:
+			 * as they use no space in the file, the logic
+			 * below does not work; they must be treated as
+			 * independent entities.
+			 */
+			LOG_ERR("Multiple SHT_NOBITS sections are not supported");
+			return -ENOTSUP;
+		case LLEXT_MEM_PREINIT:
+		case LLEXT_MEM_INIT:
+		case LLEXT_MEM_FINI:
+			/* These regions are not extendable and must be
+			 * referenced at most once in the ELF file.
+			 */
+			LOG_ERR("Region %d redefined", mem_idx);
+			return -ENOEXEC;
+		default:
+			break;
+		}
+
+		if (ldr->hdr.e_type == ET_DYN) {
+			/* In shared objects, sh_addr is the VMA.
+			 * Before merging this section in the region,
+			 * make sure the delta in VMAs matches that of
+			 * file offsets.
+			 */
+			if (shdr->sh_addr - region->sh_addr !=
+			    shdr->sh_offset - region->sh_offset) {
+				LOG_ERR("Incompatible section addresses for %s (region %d)",
 					name, mem_idx);
 				return -ENOEXEC;
 			}
-
-			/* Check if this region type is extendable */
-			switch (mem_idx) {
-			case LLEXT_MEM_BSS:
-				/* SHT_NOBITS sections cannot be merged properly:
-				 * as they use no space in the file, the logic
-				 * below does not work; they must be treated as
-				 * independent entities.
-				 */
-				LOG_ERR("Multiple SHT_NOBITS sections are not supported");
-				return -ENOTSUP;
-			case LLEXT_MEM_PREINIT:
-			case LLEXT_MEM_INIT:
-			case LLEXT_MEM_FINI:
-				/* These regions are not extendable and must be
-				 * referenced at most once in the ELF file.
-				 */
-				LOG_ERR("Region %d redefined", mem_idx);
-				return -ENOEXEC;
-			default:
-				break;
-			}
-
-			if (ldr->hdr.e_type == ET_DYN) {
-				/* In shared objects, sh_addr is the VMA.
-				 * Before merging this section in the region,
-				 * make sure the delta in VMAs matches that of
-				 * file offsets.
-				 */
-				if (shdr->sh_addr - region->sh_addr !=
-				    shdr->sh_offset - region->sh_offset) {
-					LOG_ERR("Incompatible section addresses "
-						"for %s (region %d)", name, mem_idx);
-					return -ENOEXEC;
-				}
-			}
-
-			/*
-			 * Extend the current region to include the new section
-			 * (overlaps are detected later)
-			 */
-			size_t address = MIN(region->sh_addr, shdr->sh_addr);
-			size_t bot_ofs = MIN(region->sh_offset, shdr->sh_offset);
-			size_t top_ofs = MAX(region->sh_offset + region->sh_size,
-					     shdr->sh_offset + shdr->sh_size);
-
-			region->sh_addr = address;
-			region->sh_offset = bot_ofs;
-			region->sh_size = top_ofs - bot_ofs;
 		}
+
+		/*
+		 * Extend the current region to include the new section
+		 * (overlaps are detected later)
+		 */
+		size_t address = MIN(region->sh_addr, shdr->sh_addr);
+		size_t bot_ofs = MIN(region->sh_offset, shdr->sh_offset);
+		size_t top_ofs = MAX(region->sh_offset + region->sh_size,
+				     shdr->sh_offset + shdr->sh_size);
+
+		region->sh_addr = address;
+		region->sh_offset = bot_ofs;
+		region->sh_size = top_ofs - bot_ofs;
 	}
 
 	/*
