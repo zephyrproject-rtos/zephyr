@@ -10,6 +10,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <soc.h>
 #include <nrfx_spis.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -175,6 +177,8 @@ static int transceive(const struct device *dev,
 	const struct spi_buf *rx_buf = rx_bufs ? rx_bufs->buffers : NULL;
 	int error;
 
+	pm_device_runtime_get(dev);
+
 	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	error = configure(dev, spi_cfg);
@@ -282,7 +286,49 @@ static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
 	if (p_event->evt_type == NRFX_SPIS_XFER_DONE) {
 		spi_context_complete(&dev_data->ctx, dev_data->dev,
 				     p_event->rx_amount);
+
+		pm_device_runtime_put(dev_data->dev);
 	}
+}
+
+static void spi_nrfx_suspend(const struct device *dev)
+{
+	const struct spi_nrfx_config *dev_config = dev->config;
+
+	if (dev_config->wake_gpio.port == NULL) {
+		nrf_spis_disable(dev_config->spis.p_reg);
+	}
+
+	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
+}
+
+static void spi_nrfx_resume(const struct device *dev)
+{
+	const struct spi_nrfx_config *dev_config = dev->config;
+
+	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+
+	if (dev_config->wake_gpio.port == NULL) {
+		nrf_spis_enable(dev_config->spis.p_reg);
+	}
+}
+
+static int spi_nrfx_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		spi_nrfx_suspend(dev);
+		return 0;
+
+	case PM_DEVICE_ACTION_RESUME:
+		spi_nrfx_resume(dev);
+		return 0;
+
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
 }
 
 static int spi_nrfx_init(const struct device *dev)
@@ -308,6 +354,16 @@ static int spi_nrfx_init(const struct device *dev)
 		return -EBUSY;
 	}
 
+	/* When the WAKE line is used, the SPIS peripheral is enabled
+	 * only after the master signals that it wants to perform a
+	 * transfer and it is disabled right after the transfer is done.
+	 * Waiting for the WAKE line to go high, what can be done using
+	 * the GPIO PORT event, instead of just waiting for the transfer
+	 * with the SPIS peripheral enabled, significantly reduces idle
+	 * power consumption.
+	 */
+	nrf_spis_disable(dev_config->spis.p_reg);
+
 	if (dev_config->wake_gpio.port) {
 		if (!gpio_is_ready_dt(&dev_config->wake_gpio)) {
 			return -ENODEV;
@@ -332,21 +388,11 @@ static int spi_nrfx_init(const struct device *dev)
 		if (err < 0) {
 			return err;
 		}
-
-		/* When the WAKE line is used, the SPIS peripheral is enabled
-		 * only after the master signals that it wants to perform a
-		 * transfer and it is disabled right after the transfer is done.
-		 * Waiting for the WAKE line to go high, what can be done using
-		 * the GPIO PORT event, instead of just waiting for the transfer
-		 * with the SPIS peripheral enabled, significantly reduces idle
-		 * power consumption.
-		 */
-		nrf_spis_disable(dev_config->spis.p_reg);
 	}
 
 	spi_context_unlock_unconditionally(&dev_data->ctx);
 
-	return 0;
+	return pm_device_driver_init(dev, spi_nrfx_pm_action);
 }
 
 /*
@@ -394,9 +440,10 @@ static int spi_nrfx_init(const struct device *dev)
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \
 		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
 		     "WAKE line must be configured as active high");	       \
+	PM_DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_pm_action, 1);		       \
 	SPI_DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_nrfx_init,				       \
-			    NULL,					       \
+			    PM_DEVICE_DT_GET(SPIS(idx)),		       \
 			    &spi_##idx##_data,				       \
 			    &spi_##idx##z_config,			       \
 			    POST_KERNEL,				       \
