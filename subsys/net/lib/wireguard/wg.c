@@ -2204,4 +2204,17 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_VPN, wg_stats_get);
 
 #endif /* CONFIG_NET_STATISTICS_USER_API && CONFIG_NET_STATISTICS_VPN */
 
+static int get_current_time(uint64_t *seconds, uint32_t *nanoseconds)
+{
+	uint64_t millis = k_uptime_get();
+
+	*seconds = millis / MSEC_PER_SEC;
+	*nanoseconds = (millis % MSEC_PER_SEC) * NSEC_PER_MSEC;
+
+	return 0;
+}
+
+/* Declare a default function but allow the user to override it */
+__weak FUNC_ALIAS(get_current_time, wireguard_get_current_time, int);
+
 SYS_INIT(wireguard_init, APPLICATION, CONFIG_NET_INIT_PRIO);
