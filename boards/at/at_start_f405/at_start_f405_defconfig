@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+
+#Config Default System clock
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=216000000
+ 
+# Enable MPU
+CONFIG_ARM_MPU=n
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=n
+
+# Enable GPIO
+CONFIG_GPIO=y
+CONFIG_PINCTRL=y

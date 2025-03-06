@@ -1,0 +1,51 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  AT32 Main PLL node binding:
+
+  Takes one of clk_hext or clk_hick as input clock.
+
+
+compatible: "at,at32-pll"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    required: true
+
+  div-ms:
+    type: int
+    required: true
+    description: |
+        Division factor for the PLL input clock
+        Valid range: 2 - 63
+
+  mul-ns:
+    type: int
+    required: true
+    description: |
+        Main PLL multiplication factor for VCO
+        Valid range: 50 - 432
+
+  div-fp:
+    type: int
+    required: true
+    description: |
+        Main PLL division factor for PLLSAI2CLK
+    enum:
+      - 2
+      - 4
+      - 6
+      - 8
+
+  div-fu:
+    type: int
+    description: |
+        Main PLL (PLL) division factor for USB OTG FS, SDMMC and random number
+        generator clocks.
+        Valid range: 2 - 15

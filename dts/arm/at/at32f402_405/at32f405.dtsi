@@ -1,0 +1,580 @@
+/*
+ * Copyright (c) 2025 Maxjta
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/at32f402_405_clocks.h>
+#include <zephyr/dt-bindings/reset/at32f402_405_reset.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+	
+  clocks {
+		clk_hext: clk-hext {
+			#clock-cells = <0>;
+			compatible = "at,at32-hext";
+			status = "disabled";
+		};
+
+		clk_hick: clk-hick {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		clk_lext: clk-lext {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		clk_lick: clk-lick {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <40000>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			#clock-cells = <0>;
+			compatible = "at,at32-pll";
+			status = "disabled";
+		};
+	};
+	
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		crm: reset-clock-controller@40023800 {
+			compatible = "at,at32-crm";
+			reg = <0x40023800 0x400>;
+            #clock-cells = <2>;
+			status = "okay";
+			
+			cctl: clock-controller {
+				compatible = "at,at32-cctl";
+				#clock-cells = <1>;
+				status = "okay";
+			};
+			rctl: reset-controller {
+				compatible = "at,at32-rctl";
+				#reset-cells = <1>;
+				status = "okay";
+			};
+		};
+
+		syscfg: syscfg@40013800 {
+			compatible = "at,at32-syscfg";
+			reg = <0x40013800 0x400>;
+			clocks = <&cctl AT32_CLOCK_SYSCFG>;
+		};
+
+		flash: flash-controller@40023c00 {
+			compatible = "at,at32-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x40023c00 0x400>;
+			peripheral-id = <6>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+			};
+		};
+
+		exint: interrupt-controller@40013c00 {
+			compatible = "at,at32-exint";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			reg = <0x40013c00 0x400>;
+			num-lines = <23>;
+			interrupts = <6 0>, <7 0>, <8 0>, <9 0>, <10 0>, <23 0>,
+				     <40 0>;
+			interrupt-names = "line0",
+			                  "line1",
+			                  "line2",
+			                  "line3",
+			                  "line4",
+			                  "line5-9",
+			                  "line10-15";
+            line-ranges = <0 1>, <1 1>, <2 1>, <3 1>,
+				          <4 1>, <5 5>, <10 6>;
+			status = "okay";
+		};
+
+		pinctrl: pin-controller@40020000 {
+			compatible = "at,at32-pinctrl-mux";
+			reg = <0x40020000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			gpioa: gpio@40020000 {
+				compatible = "at,at32-gpio";
+				gpio-controller;
+				reg = <0x40020000 0x400>;
+				clocks = <&cctl AT32_CLOCK_GPIOA>;
+				resets = <&rctl AT32_RESET_GPIOA>;
+				#gpio-cells = <2>;
+			};
+
+			gpiob: gpio@40020400 {
+				compatible = "at,at32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40020400 0x400>;
+				clocks = <&cctl AT32_CLOCK_GPIOB>;
+				resets = <&rctl AT32_RESET_GPIOB>;
+				status = "disabled";
+			};
+
+			gpioc: gpio@40020800 {
+				compatible = "at,at32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40020800 0x400>;
+				clocks = <&cctl AT32_CLOCK_GPIOC>;
+				resets = <&rctl AT32_RESET_GPIOC>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@40020C00 {
+				compatible = "at,at32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40020C00 0x400>;
+				clocks = <&cctl AT32_CLOCK_GPIOD>;
+				resets = <&rctl AT32_RESET_GPIOD>;
+				status = "disabled";
+			};
+
+			gpiof: gpio@40021400 {
+				compatible = "at,at32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40021400 0x400>;
+				clocks = <&cctl AT32_CLOCK_GPIOF>;
+				resets = <&rctl AT32_RESET_GPIOF>;
+				status = "disabled";
+			};
+		};
+
+		usart1: usart@40011000 {
+			compatible = "at,at32-usart";
+			reg = <0x40011000 0x400>;
+			interrupts = <37 0>;
+			clocks = <&cctl AT32_CLOCK_USART1>;
+            resets = <&rctl AT32_RESET_USART1>;
+			status = "disabled";
+		};
+
+		usart2: usart@40004400 {
+			compatible = "at,at32-usart";
+			reg = <0x40004400 0x400>;
+			interrupts = <38 0>;
+			clocks = <&cctl AT32_CLOCK_USART2>;
+            resets = <&rctl AT32_RESET_USART2>;
+			status = "disabled";
+		};
+
+		usart3: usart@40004800 {
+			compatible = "at,at32-usart";
+			reg = <0x40004800 0x400>;
+			interrupts = <39 0>;
+			clocks = <&cctl AT32_CLOCK_USART3>;
+            resets = <&rctl AT32_RESET_USART3>;
+			status = "disabled";
+		};
+
+		usart4: usart@40004c00 {
+			compatible = "at,at32-usart";
+			reg = <0x40004C00 0x400>;
+			interrupts = <52 0>;
+			clocks = <&cctl AT32_CLOCK_USART4>;
+            resets = <&rctl AT32_RESET_USART4>;
+			status = "disabled";
+		};
+
+		usart5: usart@40005000 {
+			compatible = "at,at32-usart";
+			reg = <0x40005000 0x400>;
+			interrupts = <53 0>;
+			clocks = <&cctl AT32_CLOCK_USART5>;
+            resets = <&rctl AT32_RESET_USART5>;
+			status = "disabled";
+		};
+
+		usart6: usart@40011400 {
+			compatible = "at,at32-usart";
+			reg = <0x40011400 0x400>;
+			interrupts = <71 0>;
+			clocks = <&cctl AT32_CLOCK_USART6>;
+            resets = <&rctl AT32_RESET_USART6>;
+			status = "disabled";
+		};
+
+		uart7: usart@40007800 {
+			compatible = "at,at32-usart";
+			reg = <0x40007800 0x400>;
+			interrupts = <82 0>;
+			clocks = <&cctl AT32_CLOCK_UART7>;
+            resets = <&rctl AT32_RESET_UART7>;
+			status = "disabled";
+		};
+
+		uart8: usart@40007c00 {
+			compatible = "at,at32-usart";
+			reg = <0x40007C00 0x400>;
+			interrupts = <83 0>;
+			clocks = <&cctl AT32_CLOCK_UART8>;
+            resets = <&rctl AT32_RESET_UART8>;
+			status = "disabled";
+		};
+    
+        usbotg_hs: usb@40040000 {
+			compatible = "at,at32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <77 0>;
+            num-in-eps = <8>;
+            num-out-eps = <8>;
+            ram-size = <4096>;
+            ghwcfg1 = <0>;
+            ghwcfg2 = <0>;
+            ghwcfg4 = <0>;
+            clocks = <&cctl AT32_CLOCK_USBHS>;
+			status = "disabled";
+		};
+    
+        usbotg_fs: usb@50000000 {
+			compatible = "at,at32-otgfs";
+			reg = <0x50000000 0x40000>;
+			interrupts = <67 0>;
+            num-in-eps = <8>;
+            num-out-eps = <8>;
+            ram-size = <1280>;
+            ghwcfg1 = <0>;
+            ghwcfg2 = <0>;
+            ghwcfg4 = <0>;
+            clocks = <&cctl AT32_CLOCK_USBFS>;
+			status = "disabled";
+		};
+    
+        spi1: spi@40013000 {
+			compatible = "at,at32-spi";
+			reg = <0x40013000 0x400>;
+			interrupts = <35 0>;
+			clocks = <&cctl AT32_CLOCK_SPI1>;
+			resets = <&rctl AT32_RESET_SPI1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+    
+        spi2: spi@40003800 {
+			compatible = "at,at32-spi";
+			reg = <0x40003800 0x400>;
+			interrupts = <36 0>;
+			clocks = <&cctl AT32_CLOCK_SPI2>;
+			resets = <&rctl AT32_RESET_SPI2>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+    
+        spi3: spi@40003c00 {
+			compatible = "at,at32-spi";
+			reg = <0x40003c00 0x400>;
+			interrupts = <51 0>;
+			clocks = <&cctl AT32_CLOCK_SPI3>;
+			resets = <&rctl AT32_RESET_SPI3>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+    
+        dma1: dma@40026000 {
+			compatible = "at,at32-dma";
+			reg = <0x40026000 0x400>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>,
+				     <15 0>, <16 0>, <17 0>;
+			clocks = <&cctl AT32_CLOCK_DMA1>;
+			resets = <&rctl AT32_RESET_DMA1>;
+			dma-channels = <7>;
+			at,mem2mem;
+			#dma-cells = <4>;
+			status = "disabled";
+		};
+    
+        dma2: dma@40026400 {
+			compatible = "at,at32-dma";
+			reg = <0x40026400 0x400>;
+			interrupts = <56 0>, <57 0>, <58 0>, <59 0>,
+				     <60 0>, <68 0>, <69 0>;
+			clocks = <&cctl AT32_CLOCK_DMA2>;
+			resets = <&rctl AT32_RESET_DMA2>;
+			dma-channels = <7>;
+			at,mem2mem;
+			#dma-cells = <4>;
+			status = "disabled";
+		};
+		
+	    i2c1: i2c@40005400 {
+			compatible = "at,at32-i2c";
+			reg = <0x40005400 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <31 0>, <32 0>;
+			interrupt-names = "event", "error";
+			clocks = <&cctl AT32_CLOCK_I2C1>;
+			resets = <&rctl AT32_RESET_I2C1>;
+			status = "disabled";
+		};
+    
+        i2c2: i2c@40005800 {
+			compatible = "at,at32-i2c";
+			reg = <0x40005800 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
+			clocks = <&cctl AT32_CLOCK_I2C2>;
+			resets = <&rctl AT32_RESET_I2C2>;
+			status = "disabled";
+		};
+    
+        i2c3: i2c@40005c00 {
+			compatible = "at,at32-i2c";
+			reg = <0x40005c00 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <72 0>, <73 0>;
+			interrupt-names = "event", "error";
+			clocks = <&cctl AT32_CLOCK_I2C3>;
+			resets = <&rctl AT32_RESET_I2C3>;
+			status = "disabled";
+		};
+    
+		timer1: timer@40010000 {
+			compatible = "at,at32-timer";
+			reg = <0x40010000 0x400>;
+			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
+			interrupt-names = "brk", "up", "trgcom", "cc";
+			clocks = <&cctl AT32_CLOCK_TIMER1>;
+			resets = <&rctl AT32_RESET_TIMER1>;
+			channels = <4>;
+            is-advanced;
+			status = "disabled";
+
+			pwm {
+				compatible = "at,at32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer2: timer@40000000 {
+			compatible = "at,at32-timer";
+			reg = <0x40000000 0x400>;
+			interrupts = <28 0>;
+			interrupt-names = "global";
+			clocks = <&cctl AT32_CLOCK_TIMER2>;
+			resets = <&rctl AT32_RESET_TIMER2>;
+			channels = <4>;
+            at,prescaler = <0>;
+            is-32bit;
+			status = "disabled";
+
+			pwm {
+				compatible = "at,at32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer3: timer@40000400 {
+			compatible = "at,at32-timer";
+			reg = <0x40000400 0x400>;
+			interrupts = <29 0>;
+			interrupt-names = "global";
+			clocks = <&cctl AT32_CLOCK_TIMER3>;
+			resets = <&rctl AT32_RESET_TIMER3>;
+			channels = <4>;
+			status = "disabled";
+
+			pwm {
+				compatible = "at,at32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer4: timer@40000800 {
+			compatible = "at,at32-timer";
+			reg = <0x40000800 0x400>;
+			interrupts = <30 0>;
+			interrupt-names = "global";
+			clocks = <&cctl AT32_CLOCK_TIMER4>;
+			resets = <&rctl AT32_RESET_TIMER4>;
+			channels = <4>;
+			status = "disabled";
+
+			pwm {
+				compatible = "at,at32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer5: timer@40000c00 {
+			compatible = "at,at32-timer";
+			reg = <0x40000C00 0x400>;
+			interrupts = <50 0>;
+			interrupt-names = "global";
+			clocks = <&cctl AT32_CLOCK_TIMER5>;
+			resets = <&rctl AT32_RESET_TIMER5>;
+			channels = <4>;
+			status = "disabled";
+
+			pwm {
+				compatible = "at,at32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer6: timer@40001000 {
+			compatible = "at,at32-timer";
+			reg = <0x40001000 0x400>;
+			interrupts = <54 0>;
+			interrupt-names = "global";
+			clocks = <&cctl AT32_CLOCK_TIMER6>;
+			resets = <&rctl AT32_RESET_TIMER6>;
+			channels = <0>;
+			status = "disabled";
+		};
+
+		timer7: timer@40001400 {
+			compatible = "at,at32-timer";
+			reg = <0x40001400 0x400>;
+			interrupts = <55 0>;
+			interrupt-names = "global";
+			clocks = <&cctl AT32_CLOCK_TIMER7>;
+			resets = <&rctl AT32_RESET_TIMER7>;
+			channels = <0>;
+			status = "disabled";
+		};
+
+		timer9: timer@40014000 {
+			compatible = "at,at32-timer";
+			reg = <0x40014000 0x400>;
+			interrupts = <24 0>;
+			interrupt-names = "global";
+			clocks = <&cctl AT32_CLOCK_TIMER9>;
+			resets = <&rctl AT32_RESET_TIMER9>;
+			channels = <2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "at,at32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer10: timer@40014400 {
+			compatible = "at,at32-timer";
+			reg = <0x40014400 0x400>;
+			interrupts = <25 0>;
+			interrupt-names = "global";
+			clocks = <&cctl AT32_CLOCK_TIMER10>;
+			resets = <&rctl AT32_RESET_TIMER10>;
+			channels = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "at,at32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer11: timer@40014800 {
+			compatible = "at,at32-timer";
+			reg = <0x40014800 0x400>;
+			interrupts = <46 0>;
+			interrupt-names = "global";
+			clocks = <&cctl AT32_CLOCK_TIMER11>;
+			resets = <&rctl AT32_RESET_TIMER11>;
+			channels = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "at,at32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer13: timer@40001c00 {
+			compatible = "at,at32-timer";
+			reg = <0x40001C00 0x400>;
+			interrupts = <44 0>;
+			interrupt-names = "global";
+			clocks = <&cctl AT32_CLOCK_TIMER13>;
+			resets = <&rctl AT32_RESET_TIMER13>;
+			channels = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "at,at32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer14: timer@40002000 {
+			compatible = "at,at32-timer";
+			reg = <0x40002000 0x400>;
+			interrupts = <45 0>;
+			interrupt-names = "global";
+			clocks = <&cctl AT32_CLOCK_TIMER14>;
+			resets = <&rctl AT32_RESET_TIMER14>;
+			channels = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "at,at32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

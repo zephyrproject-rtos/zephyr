@@ -1,0 +1,10 @@
+# Copyright (c) 2021, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_AT32F405
+
+config NUM_IRQS
+	default 104
+
+endif # SOC_AT32F405
+

@@ -70,6 +70,8 @@ source "drivers/interrupt_controller/Kconfig.it8xxx2"
 
 source "drivers/interrupt_controller/Kconfig.stm32"
 
+source "drivers/interrupt_controller/Kconfig.at32"
+
 source "drivers/interrupt_controller/Kconfig.cavs"
 
 source "drivers/interrupt_controller/Kconfig.rv32m1"
