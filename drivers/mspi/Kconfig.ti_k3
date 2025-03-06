@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_TI_K3
+	bool "TI K3 MSPI driver"
+	default y
+	depends on DT_HAS_TI_K3_MSPI_CONTROLLER_ENABLED
+	# GPIO is required for ce_gpios despite the field being ignored
+	select GPIO
+	select PINCTRL
+	select MSPI_TIMING
+	help
+	  Enable driver for Ti Keystone 3 devices
