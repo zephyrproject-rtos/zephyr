@@ -1057,7 +1057,20 @@ void bt_conn_tx_processor(void)
 		 */
 		buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
 		while (buf) {
-			destroy_and_callback(conn, buf, cb, ud);
+			/* Just like send_buf(), only call destroy if
+			 * the buffer has been removed from the
+			 * tx_queue, otherwise we'll get the buffer
+			 * again on the next call of tx_data_pull.
+			 */
+			if (buf->len <= buf_len) {
+				LOG_DBG("calling destroy_and_callback() buf %p, buf->len %u, buf_len %u",
+					(void *)buf, buf->len, buf_len);
+				destroy_and_callback(conn, buf, cb, ud);
+			} else {
+				LOG_DBG("buf %p still on queue (buf->len %u, buf_len %u), consuming it",
+					(void *)buf, buf->len, buf_len);
+				(void)net_buf_pull(buf, buf_len);
+			}
 			buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
 		}
 
