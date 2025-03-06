@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
+
+
+/*
+ * This devicetree overlay file will be automatically picked by the Zephyr
+ * build system when building the sample for the sensortile_box_pro board.
+ */
+
+/ {
+	aliases {
+		stream0 = &lsm6dsv16x_0;
+	};
+};
+
+&spi2 {
+	lsm6dsv16x_0: lsm6dsv16x@0 {
+		compatible = "st,lsm6dsv16x";
+
+		accel-odr = <LSM6DSV16X_DT_ODR_AT_480Hz>;
+		accel-range = <LSM6DSV16X_DT_FS_16G>;
+		gyro-odr = <LSM6DSV16X_DT_ODR_AT_480Hz>;
+		gyro-range = <LSM6DSV16X_DT_FS_500DPS>;
+		fifo-watermark = <64>;
+		accel-fifo-batch-rate = <LSM6DSV16X_DT_XL_BATCHED_AT_15Hz>;
+		gyro-fifo-batch-rate = <LSM6DSV16X_DT_GY_BATCHED_AT_15Hz>;
+		temp-fifo-batch-rate = <LSM6DSV16X_DT_TEMP_BATCHED_AT_15Hz>;
+
+		sflp-odr = <LSM6DSV16X_DT_SFLP_ODR_AT_15Hz>;
+		sflp-fifo-enable = <LSM6DSV16X_DT_SFLP_FIFO_GAME_ROTATION_GRAVITY_GBIAS>;
+	};
+};
