@@ -242,6 +242,15 @@ struct mqtt_binstr {
 	uint32_t len;              /**< Length of binary stream. */
 };
 
+/** @brief Abstracts aliased topic. */
+struct mqtt_topic_alias {
+	/** UTF-8 encoded topic name. */
+	uint8_t topic_buf[CONFIG_MQTT_TOPIC_ALIAS_STRING_MAX];
+
+	/** Topic name size. */
+	uint16_t topic_size;
+};
+
 /** @brief Abstracts MQTT UTF-8 encoded topic that can be subscribed
  *         to or published.
  */
@@ -860,6 +869,11 @@ struct mqtt_internal {
 
 	/** Internal. Remaining payload length to read. */
 	uint32_t remaining_payload;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** Internal. MQTT 5.0 topic alias mapping. */
+	struct mqtt_topic_alias topic_aliases[CONFIG_MQTT_TOPIC_ALIAS_MAX];
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /**
