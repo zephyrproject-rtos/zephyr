@@ -313,6 +313,71 @@
 			rx-fifo-size = <16>;
 		};
 
+		flexcan1: can@443a0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x443a0000 DT_SIZE_K(64)>;
+			interrupts = <8 0>, <9 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX95_CLK_CAN1>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			status = "disabled";
+		};
+
+		flexcan2: can@425b0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x425b0000 DT_SIZE_K(64)>;
+			interrupts = <38 0>, <39 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX95_CLK_CAN2>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			status = "disabled";
+		};
+
+		flexcan3: can@42600000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x42600000 DT_SIZE_K(64)>;
+			interrupts = <40 0>, <41 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX95_CLK_CAN3>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			status = "disabled";
+		};
+
+		flexcan4: can@427c0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x427c0000 DT_SIZE_K(64)>;
+			interrupts = <42 0>, <43 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX95_CLK_CAN4>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			status = "disabled";
+		};
+
+		flexcan5: can@427d0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x427d0000 DT_SIZE_K(64)>;
+			interrupts = <44 0>, <45 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX95_CLK_CAN5>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			status = "disabled";
+		};
+
 		lpuart3: serial@42570000 {
 			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42570000 DT_SIZE_K(64)>;
