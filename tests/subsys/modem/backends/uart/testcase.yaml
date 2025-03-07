@@ -5,15 +5,26 @@ common:
   harness: ztest
   harness_config:
     fixture: gpio_loopback
-  platform_allow:
-    - b_u585i_iot02a
-    - nrf5340dk/nrf5340/cpuapp
 
 tests:
   modem.backends.uart.async:
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
+    platform_allow:
+      - b_u585i_iot02a
+      - nrf5340dk/nrf5340/cpuapp
+
+  modem.backends.uart.async.hwfc:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC=y
+      - CONFIG_TEST_HW_FLOW_CONTROL=y
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
 
   modem.backends.uart.isr:
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
+    platform_allow:
+      - b_u585i_iot02a
+      - nrf5340dk/nrf5340/cpuapp
