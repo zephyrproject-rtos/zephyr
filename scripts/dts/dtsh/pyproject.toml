@@ -1,0 +1,69 @@
+# Copyright (c) 2024 Christophe Dufaza <chris@openmarl.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dtsh"
+version = "4.0.99"
+authors = [
+  { name="Christophe Dufaza", email="chris@openmarl.org" },
+  { name="Zephyr Project", email="devel@lists.zephyrproject.org" }
+]
+description = "Shell-like interface with Zephyr Devicetree"
+readme = "README.rst"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: Apache Software License",
+    "Intended Audience :: Developers",
+]
+dependencies = [
+    "PyYAML>=6.0",
+    "rich",
+    "gnureadline; sys_platform == 'darwin'",
+]
+keywords = [
+    "Zephyr",
+    "Devicetree",
+    "DTS",
+]
+
+[project.urls]
+Homepage =      "https://github.com/zephyrproject-rtos/zephyr/tree/main/scripts/dts/dtsh"
+Documentation = "https://docs.zephyrproject.org/latest/develop/west/dtsh/index.html"
+Issues =        "https://github.com/zephyrproject-rtos/zephyr/issues"
+
+[tool.hatch.envs.hatch-test]
+installer = "pip"
+
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.11", "3.10"]
+
+[tool.hatch.envs.dev]
+dependencies = [
+  "pycodestyle",
+  "flake8",
+  "pylint",
+  "ruff",
+  "mypy",
+  "types-PyYAML",
+  "pytest",
+  "setuptools-scm",
+]
+
+[tool.mypy]
+# References:
+# - https://mypy.readthedocs.io/en/stable/config_file.html
+python_version = "3.10"
+mypy_path = ["src", "tests"]
+exclude = ["tests/res"]
+strict = true

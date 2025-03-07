@@ -94,3 +94,8 @@ west-commands:
       - name: patch
         class: Patch
         help: manage patches for Zephyr modules
+  - file: scripts/west_commands/dtshell.py
+    commands:
+      - name: dtsh
+        class: DTShell
+        help: devicetree shell

@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+
+include: inc1.yaml
+
+properties:
+  inc1_depth0_p2:
+    required: true
+
+child-binding:
+  include:
+    - inc2.yaml
+
+  properties:
+    inc2_depth0_p2:
+      required: true
+
+  child-binding:
+    include:
+      - name: inc3.yaml
+
+    properties:
+      inc3_depth0_p2:
+        required: true
