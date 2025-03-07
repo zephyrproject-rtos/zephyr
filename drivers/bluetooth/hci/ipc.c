@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 
 #define DT_DRV_COMPAT zephyr_bt_hci_ipc
 
-#define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
+#define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(CONFIG_BT_HCI_IPC_ENDPOINT_BOUND_TIMEOUT_MS)
 
 struct ipc_data {
 	bt_hci_recv_t recv;
