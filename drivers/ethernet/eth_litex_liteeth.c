@@ -108,7 +108,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 error:
 	irq_unlock(key);
 	LOG_ERR("TX fifo failed");
-	return -1;
+	return -EIO;
 }
 
 static void eth_rx(const struct device *port)
