@@ -387,7 +387,7 @@ int connect_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 
 /**@brief Decode MQTT Publish packet.
  *
- * @param[in] MQTT client for which packet is decoded.
+ * @param[inout] MQTT client for which packet is decoded.
  * @param[in] flags Byte containing message type and flags.
  * @param[in] var_length Length of the variable part of the message.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
@@ -396,7 +396,7 @@ int connect_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_decode(const struct mqtt_client *client, uint8_t flags,
+int publish_decode(struct mqtt_client *client, uint8_t flags,
 		   uint32_t var_length, struct buf_ctx *buf,
 		   struct mqtt_publish_param *param);
 
