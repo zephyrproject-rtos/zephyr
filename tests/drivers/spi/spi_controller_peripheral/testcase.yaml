@@ -18,6 +18,7 @@ common:
     - nrf54lm20dk/nrf54lm20b/cpuapp
     - nrf7120dk/nrf7120/cpuapp
     - ophelia4ev/nrf54l15/cpuapp
+    - sam_e54_xpro
 
 tests:
   drivers.spi.spi_mode0:
@@ -93,6 +94,7 @@ tests:
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - sam_e54_xpro
 
   drivers.spi.spis_fast:
     # SPIS120 instance occupies P6 which is not available on nRF54H20 DK pin headers
@@ -110,12 +112,15 @@ tests:
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - sam_e54_xpro
 
   drivers.spi.pm_runtime:
     extra_configs:
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_RUNTIME=y
     filter: CONFIG_SOC_FAMILY_NORDIC_NRF
+    platform_exclude:
+      - sam_e54_xpro
 
   drivers.spi.spi_cross_domain:
     harness_config:
@@ -134,14 +139,19 @@ tests:
       - nrf54h20dk/nrf54h20/cpuppr
       - ophelia4ev/nrf54l15/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - sam_e54_xpro
 
   drivers.spi.direct_xfer:
     extra_configs:
       - CONFIG_SPI_NRFX_RAM_BUFFER_SIZE=0
     filter: CONFIG_SOC_FAMILY_NORDIC_NRF
+    platform_exclude:
+      - sam_e54_xpro
 
   drivers.spi.direct_xfer.no_prealloc:
     extra_configs:
       - CONFIG_SPI_NRFX_RAM_BUFFER_SIZE=0
       - CONFIG_PREALLOC_BUFFERS=n
     filter: CONFIG_SOC_FAMILY_NORDIC_NRF
+    platform_exclude:
+      - sam_e54_xpro

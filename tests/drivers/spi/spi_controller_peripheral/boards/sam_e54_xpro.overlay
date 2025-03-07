@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect the SERCOM4 MISO (PB29) to SERCOM6 MISO (PC7) */
+/* Connect the SERCOM4 MOSI (PB27) to SERCOM6 MOSI (PC4)  */
+/* Connect the SERCOM4 SCK (PB26) to SERCOM6 SCK (PC5)  */
+/* Connect the SERCOM4 CS (PB28)  to SERCOM6 CS (PC6)  */
+
+&sercom4 {
+	compatible = "microchip,sercom-g1-spi";
+	dipo = <3>;
+	dopo = <0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&sercom4_spi_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+	};
+};
+
+dut_spis: &sercom6 {
+	dipo = <0>;
+	dopo = <2>;
+};
+
+&pinctrl {
+	sercom4_spi_default: sercom4_spi_default {
+		group1 {
+			pinmux = <PB27D_SERCOM4_PAD0>,
+				 <PB29D_SERCOM4_PAD3>,
+				 <PB26D_SERCOM4_PAD1>,
+				 <PB28D_SERCOM4_PAD2>;
+		};
+	};
+};
