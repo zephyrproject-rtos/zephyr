@@ -5,6 +5,8 @@ common:
     - i2c
 tests:
   drivers.i2c.build:
-    # will cover drivers without in-tree boards
-    platform_allow: qemu_cortex_m3
+    platform_allow:
+      # will cover drivers without in-tree boards
+      - qemu_cortex_m3
+      - rpi_pico
     extra_args: "CONFIG_I2C=y"
