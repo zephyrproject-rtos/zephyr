@@ -293,7 +293,16 @@ static int pat9136_decoder_decode(const uint8_t *buffer,
 
 static bool pat9136_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
 {
-	return false;
+	struct pat9136_encoded_data *edata = (struct pat9136_encoded_data *)buffer;
+
+	switch (trigger) {
+	case SENSOR_TRIG_DATA_READY:
+		return edata->header.events.drdy;
+	case SENSOR_TRIG_MOTION:
+		return edata->header.events.motion;
+	default:
+		return false;
+	}
 }
 
 SENSOR_DECODER_API_DT_DEFINE() = {
