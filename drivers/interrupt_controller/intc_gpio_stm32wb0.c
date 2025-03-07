@@ -205,7 +205,7 @@ DEVICE_DT_DEFINE(INTC_NODE, &stm32wb0_gpio_intc_init,
  * @brief STM32 GPIO interrupt controller API implementation
  */
 
-void stm32_exti_enable_irq(uint32_t line)
+int stm32_exti_enable_irq(uint32_t line)
 {
 	/* Enable line interrupt at INTC level */
 	LL_EXTI_EnableIT(line);
@@ -214,12 +214,15 @@ void stm32_exti_enable_irq(uint32_t line)
 	 * Nothing else to do; INTC interrupt line
 	 * is enabled at NVIC level during init.
 	 */
+	return 0;
 }
 
-void stm32_exti_disable_irq(uint32_t line)
+int stm32_exti_disable_irq(uint32_t line)
 {
 	/* Disable line interrupt at INTC level */
 	LL_EXTI_DisableIT(line);
+
+	return 0;
 }
 
 void stm32_exti_set_trigger_type(uint32_t line, uint32_t trg)
