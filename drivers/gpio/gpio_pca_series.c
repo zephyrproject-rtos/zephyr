@@ -2140,22 +2140,22 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6524 = {
 
 static const uint8_t gpio_pca_series_reg_pcal6534[] = {
 	PCA_REG_INVALID, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
-	0x04, /** output_port */
-/*	0x08,     polarity_inversion  (unused, omitted) */
-	0x0c, /** configuration */
-	0x40, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
-	0x48, /** input_latch if PCA_HAS_LATCH*/
-	0x4c, /** pull_enable if PCA_HAS_PULL */
-	0x50, /** pull_select if PCA_HAS_PULL */
-	0x6c, /** input_status if PCA_HAS_OUT_CONFIG, non-cacheable */
-	0x70, /** output_config if PCA_HAS_OUT_CONFIG */
+	0x05, /** output_port */
+/*	0x0a,     polarity_inversion  (unused, omitted) */
+	0x0f, /** configuration */
+	0x30, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
+	0x3a, /** input_latch if PCA_HAS_LATCH*/
+	0x3f, /** pull_enable if PCA_HAS_PULL */
+	0x44, /** pull_select if PCA_HAS_PULL */
+	0x63, /** input_status if PCA_HAS_OUT_CONFIG, non-cacheable */
+	0x68, /** output_config if PCA_HAS_OUT_CONFIG */
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
-	0x54, /** interrupt_mask if PCA_HAS_INT_MASK,
+	0x49, /** interrupt_mask if PCA_HAS_INT_MASK,
 		* non-cacheable if not PCA_HAS_INT_EXTEND
 		*/
-	0x58, /** int_status if PCA_HAS_INT_MASK */
-	0x60, /** 2b_interrupt_edge if PCA_HAS_INT_EXTEND */
-	0x68, /** interrupt_clear if PCA_HAS_INT_EXTEND, non-cacheable */
+	0x4e, /** int_status if PCA_HAS_INT_MASK */
+	0x54, /** 2b_interrupt_edge if PCA_HAS_INT_EXTEND */
+	0x5e, /** interrupt_clear if PCA_HAS_INT_EXTEND, non-cacheable */
 # ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	PCA_REG_INVALID, /** 1b_input_history if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
 	PCA_REG_INVALID, /** 1b_interrupt_rise if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
