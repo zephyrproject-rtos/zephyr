@@ -9,7 +9,7 @@
 
 /* Timeouts */
 #define TLX_TX_WAIT_TIME_MS                 (10)
-#define TLX_ACK_WAIT_TIME_MS                (10)
+#define TLX_ACK_WAIT_TIME_MS                (5)
 
 /* Received data parsing */
 #ifndef IEEE802154_FRAME_LENGTH_PANID
@@ -93,8 +93,13 @@ struct tlx_mac_keys {
 /* data structure */
 struct tlx_data {
 	uint8_t mac_addr[IEEE802154_FRAME_LENGTH_ADDR_EXT];
+#if CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION
+	uint8_t *rx_buffer;
+	uint8_t *tx_buffer;
+#else
 	uint8_t rx_buffer[TLX_TRX_LENGTH] __aligned(4);
 	uint8_t tx_buffer[TLX_TRX_LENGTH] __aligned(4);
+#endif /* CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION */
 	struct net_if *iface;
 	struct k_sem tx_wait;
 	struct k_sem ack_wait;
@@ -103,6 +108,7 @@ struct tlx_data {
 	uint8_t filter_ieee_addr[IEEE802154_FRAME_LENGTH_ADDR_EXT];
 	volatile bool is_started;
 	volatile bool ack_handler_en;
+	volatile bool rf_mode_154;
 	volatile uint8_t ack_sn;
 	uint16_t current_channel;
 	int16_t current_dbm;

@@ -6,11 +6,12 @@
 
 #define DT_DRV_COMPAT telink_tlx_zb
 
-#if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
 #include "rf_common.h"
-#endif
 #include "stimer.h"
 #include "tl_rf_power.h"
+#include "gpio.h"
+#include "plic.h"
+#include "clock.h"
 
 #define LOG_MODULE_NAME ieee802154_tlx
 #if defined(CONFIG_IEEE802154_DRIVER_LOG_LEVEL)
@@ -59,9 +60,12 @@ static struct tlx_enh_ack_table enh_ack_table;
 /* mac keys data */
 static struct tlx_mac_keys mac_keys;
 #endif
-
+#if CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION
+__attribute__((section(".bss"))) uint8_t rxpkt_buffer[TLX_TRX_LENGTH] = {0};
+__attribute__((section(".bss"))) uint8_t txpkt_buffer[TLX_TRX_LENGTH] = {0};
+#endif /* CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION */
 /* TLX data structure */
-static struct  tlx_data data = {
+static struct tlx_data data = {
 #ifdef CONFIG_OPENTHREAD_FTD
 	.src_match_table = &src_match_table,
 #endif /* CONFIG_OPENTHREAD_FTD */
@@ -69,9 +73,14 @@ static struct  tlx_data data = {
 	.enh_ack_table = &enh_ack_table,
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 #if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
-/* mac keys data */
+	/* mac keys data */
 	.mac_keys = &mac_keys,
 #endif
+
+#if CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION
+	.rx_buffer = rxpkt_buffer,
+	.tx_buffer = txpkt_buffer,
+#endif /* CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION */
 };
 
 #ifdef CONFIG_OPENTHREAD_FTD
@@ -627,14 +636,14 @@ static void ALWAYS_INLINE tlx_rf_rx_isr(const struct device *dev)
 	struct tlx_data *tlx = dev->data;
 	int status = -EINVAL;
 	struct net_pkt *pkt = NULL;
+	struct ieee802154_frame frame = {};
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_PKT_TXTIME)
 	uint64_t rx_time = k_ticks_to_us_near64(k_uptime_ticks());
 #if CONFIG_SOC_RISCV_TELINK_TL321X
 	uint32_t delta_time = (stimer_get_tick() - ZB_RADIO_TIMESTAMP_GET(tlx->rx_buffer)) /
 		SYSTEM_TIMER_TICK_1US;
-#endif
-#if CONFIG_SOC_RISCV_TELINK_TL721X
+#elif CONFIG_SOC_RISCV_TELINK_TL721X
 	uint32_t delta_time = (rf_bb_timer_get_tick() - ZB_RADIO_TIMESTAMP_GET(tlx->rx_buffer)) /
 		BB_TIMER_TICK_1US;
 #endif
@@ -669,7 +678,6 @@ static void ALWAYS_INLINE tlx_rf_rx_isr(const struct device *dev)
 			break;
 		}
 		uint8_t *payload = (tlx->rx_buffer + TLX_PAYLOAD_OFFSET);
-		struct ieee802154_frame frame;
 
 		if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) ||
 			IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
@@ -813,6 +821,7 @@ static ALWAYS_INLINE void tlx_rf_tx_isr(const struct device *dev)
 {
 	struct tlx_data *tlx = dev->data;
 
+	plic_interrupt_disable(IRQ_SYSTIMER);
 	/* clear irq status */
 	rf_clr_irq_status(FLD_RF_IRQ_TX);
 
@@ -858,6 +867,7 @@ static int tlx_init(const struct device *dev)
 	tlx->is_started = false;
 	tlx->ack_handler_en = false;
 	tlx->ack_sending = false;
+	tlx->rf_mode_154 = false;
 	tlx->current_channel = TLX_TX_CH_NOT_SET;
 	tlx->current_dbm = TLX_TX_PWR_NOT_SET;
 #ifdef CONFIG_OPENTHREAD_FTD
@@ -934,8 +944,6 @@ static int tlx_set_channel(const struct device *dev, uint16_t channel)
 		tlx->current_channel = channel;
 		if (tlx->is_started) {
 			rf_set_chn(TLX_LOGIC_CHANNEL_TO_PHYSICAL(channel));
-			rf_set_txmode();
-			rf_set_rxmode();
 		}
 	}
 
@@ -987,6 +995,17 @@ static int tlx_set_txpower(const struct device *dev, int16_t dbm)
 }
 
 volatile bool tlx_rf_zigbee_250K_mode;
+#if defined CONFIG_IEEE802154_TLX_OPTIMIZATION && CONFIG_IEEE802154_TLX_OPTIMIZATION
+extern bool isThreadCommissioned;
+
+_attribute_ram_code_sec_ void stimer_rf_handler(const void *param)
+{
+	(void)param;
+	if (stimer_get_irq_status(FLD_SYSTEM_IRQ)) {
+		stimer_clr_irq_status(FLD_SYSTEM_IRQ);
+	}
+}
+#endif
 
 /* API implementation: start */
 static int tlx_start(const struct device *dev)
@@ -1007,6 +1026,11 @@ static int tlx_start(const struct device *dev)
 			ske_dig_en();
 #endif
 #endif
+			if (tlx->rf_mode_154 == false) {
+				rf_baseband_reset();
+				rf_reset_dma();
+				tlx->rf_mode_154 = true;
+			}
 			rf_mode_init();
 			rf_set_zigbee_250K_mode();
 			tlx_rf_zigbee_250K_mode = true;
@@ -1021,8 +1045,6 @@ static int tlx_start(const struct device *dev)
 		}
 		rf_set_irq_mask(FLD_RF_IRQ_RX | FLD_RF_IRQ_TX);
 		riscv_plic_irq_enable(DT_INST_IRQN(0));
-		rf_set_txmode();
-		rf_set_rxmode();
 		tlx->is_started = true;
 	}
 
@@ -1044,11 +1066,11 @@ static int tlx_stop(const struct device *dev)
 		riscv_plic_irq_disable(DT_INST_IRQN(0));
 		rf_set_tx_rx_off();
 #ifdef CONFIG_PM_DEVICE
-#if CONFIG_SOC_RISCV_TELINK_TL321X
-		rf_baseband_reset();
-		rf_reset_dma();
-#elif CONFIG_SOC_RISCV_TELINK_TL721X
+		/* Reset Radio */
 		rf_radio_reset();
+#if CONFIG_SOC_RISCV_TELINK_TL321X || CONFIG_SOC_RISCV_TELINK_TL721X
+		rf_reset_dma();
+		rf_baseband_reset();
 #endif
 		tlx_rf_zigbee_250K_mode = false;
 #endif /* CONFIG_PM_DEVICE */
@@ -1276,8 +1298,19 @@ static int tlx_tx(const struct device *dev,
 	if (tlx->event_handler) {
 		tlx->event_handler(dev, IEEE802154_EVENT_TX_STARTED, (void *)frag);
 	}
-
-	/* wait for tx done */
+#if defined CONFIG_IEEE802154_TLX_OPTIMIZATION && CONFIG_IEEE802154_TLX_OPTIMIZATION
+	if (isThreadCommissioned == true) {
+		irq_connect_dynamic(IRQ_SYSTIMER + CONFIG_2ND_LVL_ISR_TBL_OFFSET, 2,
+				    stimer_rf_handler, 0, 0);
+		plic_interrupt_disable(IRQ_SYSTIMER);
+		stimer_set_irq_capture(stimer_get_tick() +
+				       TLX_ACK_WAIT_TIME_MS * SYSTEM_TIMER_TICK_1MS);
+		stimer_clr_irq_status(FLD_SYSTEM_IRQ);
+		stimer_set_irq_mask(FLD_SYSTEM_IRQ_MASK);
+		plic_interrupt_enable(IRQ_SYSTIMER);
+		core_entry_wfi_mode();
+	}
+#endif /* CONFIG_IEEE802154_TLX_OPTIMIZATION */
 	if (k_sem_take(&tlx->tx_wait, K_MSEC(TLX_TX_WAIT_TIME_MS)) != 0) {
 		rf_set_rxmode();
 		status = -EIO;
@@ -1288,8 +1321,23 @@ static int tlx_tx(const struct device *dev,
 		IEEE802154_FRAME_FCF_ACK_REQ_ON) {
 		tlx->ack_sn = frag->data[IEEE802154_FRAME_LENGTH_FCF];
 		tlx->ack_handler_en = true;
-		if (k_sem_take(&tlx->ack_wait, K_MSEC(TLX_ACK_WAIT_TIME_MS)) != 0) {
-			status = -ENOMSG;
+#if defined CONFIG_IEEE802154_TLX_OPTIMIZATION && CONFIG_IEEE802154_TLX_OPTIMIZATION
+		if (isThreadCommissioned == true) {
+			plic_interrupt_disable(IRQ_SYSTIMER);
+			stimer_clr_irq_status(FLD_SYSTEM_IRQ);
+			stimer_set_irq_capture(stimer_get_tick() +
+					       TLX_ACK_WAIT_TIME_MS * SYSTEM_TIMER_TICK_1MS);
+			plic_interrupt_enable(IRQ_SYSTIMER);
+			core_entry_wfi_mode();
+			if (k_sem_take(&tlx->ack_wait, K_MSEC(0)) != 0) {
+				status = -ENOMSG;
+			}
+		} else
+#endif /* CONFIG_IEEE802154_TLX_OPTIMIZATION */
+		{
+			if (k_sem_take(&tlx->ack_wait, K_MSEC(TLX_ACK_WAIT_TIME_MS)) != 0) {
+				status = -ENOMSG;
+			}
 		}
 		tlx->ack_handler_en = false;
 	}
