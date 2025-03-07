@@ -285,12 +285,12 @@ static ssize_t read_sirk(struct bt_conn *conn, const struct bt_gatt_attr *attr, 
 				 sirk, sizeof(*sirk));
 }
 
-#if defined(CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE)
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE)
 static void sirk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("value 0x%04x", value);
 }
-#endif /* CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE */
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE */
 
 static ssize_t read_set_size(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
@@ -614,7 +614,7 @@ static struct bt_conn_auth_info_cb auth_callbacks = {
 	.bond_deleted = csip_bond_deleted
 };
 
-#if defined(CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE)
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE)
 #define BT_CSIS_CHR_SIRK(_csip)                                                                    \
 	BT_AUDIO_CHRC(BT_UUID_CSIS_SIRK, BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,                  \
 		      BT_GATT_PERM_READ_ENCRYPT, read_sirk, NULL, &_csip),                         \
@@ -623,7 +623,7 @@ static struct bt_conn_auth_info_cb auth_callbacks = {
 #define BT_CSIS_CHR_SIRK(_csip)                                                                    \
 	BT_AUDIO_CHRC(BT_UUID_CSIS_SIRK, BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, read_sirk,  \
 		      NULL, &_csip)
-#endif /* CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE */
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE */
 
 #define BT_CSIP_SERVICE_DEFINITION(_csip) {\
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CSIS), \
@@ -769,7 +769,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 			       sizeof(svc_inst->set_lock));
 		}
 
-		if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE) &&
+		if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE) &&
 		    atomic_test_and_clear_bit(client->flags, FLAG_NOTIFY_SIRK)) {
 			notify(svc_inst, conn, BT_UUID_CSIS_SIRK, &svc_inst->sirk,
 			       sizeof(svc_inst->sirk));
