@@ -46,7 +46,8 @@ static __aligned(32) struct {
 	__aligned(32) uint32_t buf[CONFIG_PDM_DMA_TCB_BUFFER_SIZE]; // CONFIG_PDM_DMA_TCB_BUFFER_SIZE
 								    // should be 2 x block_size
 } pdm_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)]
-	__attribute__((__section__(".dtcm_data")));
+//    __nocache;
+	__attribute__((__section__(".dtcm_data")));     // To using deep sleep, this should be changed to SSRAM.
 
 static void dmic_ambiq_pdm_isr(const struct device *dev)
 {
@@ -164,7 +165,7 @@ static int dmic_ambiq_pdm_configure(const struct device *dev, struct dmic_cfg *d
 	data->pdm_transfer.ui32TotalCount = data->sample_num * sizeof(uint32_t);
 	data->pdm_transfer.ui32TargetAddr = (uint32_t)(pdm_dma_tcb_buf[data->inst_idx].buf);
 	data->pdm_transfer.ui32TargetAddrReverse =
-		data->pdm_transfer.ui32TargetAddr + data->pdm_transfer.ui32TotalCount;
+	data->pdm_transfer.ui32TargetAddr + data->pdm_transfer.ui32TotalCount;
 
 	return 0;
 }
