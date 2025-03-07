@@ -289,11 +289,11 @@ int decode_uint32_property(struct property_decoder *prop,
 	uint32_t *value = prop->data;
 
 	if (*remaining_len < sizeof(uint32_t)) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	if (unpack_uint32(buf, value) < 0) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	*remaining_len -= sizeof(uint32_t);
@@ -309,11 +309,11 @@ int decode_uint16_property(struct property_decoder *prop,
 	uint16_t *value = prop->data;
 
 	if (*remaining_len < sizeof(uint16_t)) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	if (unpack_uint16(buf, value) < 0) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	*remaining_len -= sizeof(uint16_t);
@@ -329,11 +329,11 @@ int decode_uint8_property(struct property_decoder *prop,
 	uint8_t *value = prop->data;
 
 	if (*remaining_len < sizeof(uint8_t)) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	if (unpack_uint8(buf, value) < 0) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	*remaining_len -= sizeof(uint8_t);
@@ -349,11 +349,11 @@ int decode_string_property(struct property_decoder *prop,
 	struct mqtt_utf8 *str = prop->data;
 
 	if (unpack_utf8_str(buf, str) < 0) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	if (*remaining_len < sizeof(uint16_t) + str->size) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	*remaining_len -= sizeof(uint16_t) + str->size;
@@ -369,11 +369,11 @@ int decode_binary_property(struct property_decoder *prop,
 	struct mqtt_binstr *bin = prop->data;
 
 	if (unpack_binary_data(buf, bin) < 0) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	if (*remaining_len < sizeof(uint16_t) + bin->len) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	*remaining_len -= sizeof(uint16_t) + bin->len;
@@ -392,16 +392,16 @@ int decode_user_property(struct property_decoder *prop,
 	size_t prop_len;
 
 	if (unpack_utf8_str(buf, &temp.name) < 0) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	if (unpack_utf8_str(buf, &temp.value) < 0) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	prop_len = (2 * sizeof(uint16_t)) + temp.name.size + temp.value.size;
 	if (*remaining_len < prop_len) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	*remaining_len -= prop_len;
@@ -469,7 +469,7 @@ static int properties_decode(struct property_decoder *prop, uint8_t cnt,
 
 	bytes = unpack_variable_int(buf, &properties_len);
 	if (bytes < 0) {
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
 	bytes += (int)properties_len;
@@ -481,7 +481,7 @@ static int properties_decode(struct property_decoder *prop, uint8_t cnt,
 		/* Decode property type */
 		err = unpack_uint8(buf, &type);
 		if (err < 0) {
-			return -EBADMSG;
+			return -EINVAL;
 		}
 
 		properties_len--;
@@ -552,7 +552,7 @@ static int properties_decode(struct property_decoder *prop, uint8_t cnt,
 		}
 
 		if (err < 0) {
-			return -EBADMSG;
+			return err;
 		}
 	}
 
@@ -759,6 +759,7 @@ static int publish_topic_alias_check(struct mqtt_client *client,
 
 	/* Topic alias must not exceed configured CONFIG_MQTT_TOPIC_ALIAS_MAX */
 	if (alias > CONFIG_MQTT_TOPIC_ALIAS_MAX) {
+		set_disconnect_reason(client, MQTT_DISCONNECT_TOPIC_ALIAS_INVALID);
 		return -EBADMSG;
 	}
 
@@ -790,7 +791,8 @@ static int publish_topic_alias_check(struct mqtt_client *client,
 			NET_ERR("Topic too long (%d bytes) to store, increase "
 				"CONFIG_MQTT_TOPIC_ALIAS_STRING_MAX",
 				topic_str->size);
-			return -EBADMSG;
+			set_disconnect_reason(client, MQTT_DISCONNECT_IMPL_SPECIFIC_ERROR);
+			return -ENOMEM;
 		}
 
 		memcpy(topic_alias->topic_buf, topic_str->utf8, topic_str->size);

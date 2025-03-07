@@ -496,6 +496,28 @@ int disconnect_decode(const struct mqtt_client *client, struct buf_ctx *buf,
  */
 int auth_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 		struct mqtt_auth_param *param);
+
+/**@brief Set MQTT 5.0 disconnect reason.
+ *
+ * Packet parser can use this function to set a custom disconnect reason code,
+ * if not set, the client will use the default mapping between errno values and
+ * reason codes.
+ *
+ * @param[inout] MQTT client.
+ * @param[in] reason MQTT 5.0 disconnect reason code.
+ */
+static inline void set_disconnect_reason(struct mqtt_client *client,
+					 enum mqtt_disconnect_reason reason)
+{
+	client->internal.disconnect_reason = reason;
+}
+#else
+static inline void set_disconnect_reason(struct mqtt_client *client,
+					 enum mqtt_disconnect_reason reason)
+{
+	ARG_UNUSED(client);
+	ARG_UNUSED(reason);
+}
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 
 /**
@@ -511,6 +533,10 @@ int auth_decode(const struct mqtt_client *client, struct buf_ctx *buf,
  * @retval -EAGAIN if the buffer would be exceeded during the read.
  */
 int unpack_variable_int(struct buf_ctx *buf, uint32_t *val);
+
+
+
+
 
 #ifdef __cplusplus
 }
