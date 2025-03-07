@@ -1,0 +1,15 @@
+common:
+  tags:
+    - drivers
+    - spi
+    - dma
+  depends_on: spi
+  harness: ztest
+  harness_config:
+    fixture: spi_loopback
+  filter: dt_nodelabel_enabled("dut")
+tests:
+  drivers.spi.spi_transceive: {}
+  drivers.spi.spi_transceive_int:
+    extra_configs:
+      - CONFIG_DMA=n
