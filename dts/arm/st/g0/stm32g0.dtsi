@@ -448,6 +448,237 @@
 			dma-requests= <49>;
 			status = "disabled";
 		};
+
+		syscfg: syscfg@40010000 {
+			compatible = "st,stm32-syscfg";
+			reg = <0x40010000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x1>;
+
+			itline0_mux: itline0_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <0 0>;
+				status = "disabled";
+			};
+
+			itline1_mux: itline1_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <1 0>;
+				status = "disabled";
+			};
+
+			itline2_mux: itline2_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <2 0>;
+				status = "disabled";
+			};
+
+			itline3_mux: itline3_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <3 0>;
+				status = "disabled";
+			};
+
+			itline4_mux: itline4_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <4 0>;
+				status = "disabled";
+			};
+
+			itline5_mux: itline5_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <5 0>;
+				status = "disabled";
+			};
+
+			itline6_mux: itline6_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <6 0>;
+				status = "disabled";
+			};
+
+			itline7_mux: itline7_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <7 0>;
+				status = "disabled";
+			};
+
+			itline8_mux: itline8_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <8 0>;
+				status = "disabled";
+			};
+
+			itline9_mux: itline9_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <9 0>;
+				status = "disabled";
+			};
+
+			itline10_mux: itline10_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <10 0>;
+				status = "disabled";
+			};
+
+			itline11_mux: itline11_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <11 0>;
+				status = "disabled";
+			};
+
+			itline12_mux: itline12_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <12 0>;
+				status = "disabled";
+			};
+
+			itline13_mux: itline13_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <13 0>;
+				status = "disabled";
+			};
+
+			itline14_mux: itline14_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <14 0>;
+				status = "disabled";
+			};
+
+			itline15_mux: itline15_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <15 0>;
+				status = "disabled";
+			};
+
+			itline16_mux: itline16_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <16 0>;
+				status = "disabled";
+			};
+
+			itline17_mux: itline17_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <17 0>;
+				status = "disabled";
+			};
+
+			itline18_mux: itline18_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <18 0>;
+				status = "disabled";
+			};
+
+			itline19_mux: itline19_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <19 0>;
+				status = "disabled";
+			};
+
+			itline20_mux: itline20_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <20 0>;
+				status = "disabled";
+			};
+
+			itline21_mux: itline21_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <21 0>;
+				status = "disabled";
+			};
+
+			itline22_mux: itline22_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <22 0>;
+				status = "disabled";
+			};
+
+			itline23_mux: itline23_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <23 0>;
+				status = "disabled";
+			};
+
+			itline24_mux: itline24_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <24 0>;
+				status = "disabled";
+			};
+
+			itline25_mux: itline25_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <25 0>;
+				status = "disabled";
+			};
+
+			itline26_mux: itline26_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <26 0>;
+				status = "disabled";
+			};
+
+			itline27_mux: itline27_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <27 0>;
+				status = "disabled";
+			};
+
+			itline28_mux: itline28_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <28 0>;
+				status = "disabled";
+			};
+
+			itline29_mux: itline29_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <29 0>;
+				status = "disabled";
+			};
+
+			itline30_mux: itline30_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <30 0>;
+				status = "disabled";
+			};
+
+			itline31_mux: itline31_mux {
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupts = <31 0>;
+				status = "disabled";
+			};
+
+		};
 	};
 
 	die_temp: dietemp {
