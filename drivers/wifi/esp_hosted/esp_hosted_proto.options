@@ -1,0 +1,8 @@
+*.ssid max_size:32 max_length:31
+*.bssid max_size:17
+*.mac max_size:17
+*.pwd max_size:64 max_length:63
+*.entries type:FT_POINTER
+*.stations type:FT_POINTER
+*.init_data max_size:0
+esp_hosted_proto.pb max_size:256 max_count:64 anonymous_oneof:true type:FT_STATIC
