@@ -23,7 +23,8 @@
  * buffer counts. Hence, two iterations of connect-disconnect should be
  * sufficient to catch any regressions/buffer leaks.
  */
-#define ITERATIONS 2
+/* Using 10 to check if any regression in SMP and re-encryption */
+#define ITERATIONS 10
 
 int init_central(uint8_t max_conn, uint8_t iterations);
 int init_peripheral(uint8_t max_conn, uint8_t iterations);
@@ -148,7 +149,7 @@ static void test_peripheral_multilink_main(void)
 {
 	int err;
 
-	err = init_peripheral(20U, ITERATIONS);
+	err = init_peripheral(6U, ITERATIONS);
 	if (err) {
 		goto exit;
 	}

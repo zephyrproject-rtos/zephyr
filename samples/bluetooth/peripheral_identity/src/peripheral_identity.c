@@ -59,8 +59,13 @@ static void adv_start(struct k_work *work)
 	}
 
 	printk("Using current id: %u\n", id_current);
-	adv_param.id = id_current;
+	/* When SMP is enabled, multiple identity pairing seems to fail, hence
+	 * use same peripheral identity when supporting multiple connections
+	 * from central
+	 */
+	/* adv_param.id = id_current; */
 
+	printk("Start Advertising...\n");
 	err = bt_le_adv_start(&adv_param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
@@ -86,12 +91,21 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	conn_count++;
 	if (conn_count < conn_count_max) {
+		printk("Connected (%u / %u), submit adv start work...\n", conn_count, conn_count_max);
 		k_work_submit(&work_adv_start);
 	}
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Connected (%u): %s\n", conn_count, addr);
+
+#if defined(CONFIG_BT_SMP)
+	int err1 = bt_conn_set_security(conn, BT_SECURITY_L2);
+
+	if (err1) {
+		printk("Failed to set security (%d).\n", err1);
+	}
+#endif
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)

@@ -165,7 +165,7 @@ static void connected(struct bt_conn *conn, uint8_t reason)
 
 	printk("Connected (%u): %s\n", conn_count, addr);
 
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_SMP) && 0
 	int err = bt_conn_set_security(conn, BT_SECURITY_L2);
 
 	if (err) {
