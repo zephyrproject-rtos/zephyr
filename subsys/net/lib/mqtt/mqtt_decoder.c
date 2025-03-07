@@ -749,6 +749,56 @@ static int publish_properties_decode(struct buf_ctx *buf,
 
 	return properties_decode(prop, ARRAY_SIZE(prop), buf);
 }
+
+static int publish_topic_alias_check(struct mqtt_client *client,
+				     struct mqtt_publish_param *param)
+{
+	uint16_t alias = param->prop.topic_alias;
+	struct mqtt_utf8 *topic_str = &param->message.topic.topic;
+	struct mqtt_topic_alias *topic_alias;
+
+	/* Topic alias must not exceed configured CONFIG_MQTT_TOPIC_ALIAS_MAX */
+	if (alias > CONFIG_MQTT_TOPIC_ALIAS_MAX) {
+		return -EBADMSG;
+	}
+
+	if (topic_str->size == 0) {
+		/* In case there's no topic, topic alias must be set */
+		if (alias == 0) {
+			return -EBADMSG;
+		}
+
+		/* Topic alias number corresponds to the aliases array index. */
+		topic_alias = &client->internal.topic_aliases[alias - 1];
+
+		/* In case topic alias has not been configured yet, report an error. */
+		if (topic_alias->topic_size == 0) {
+			return -EBADMSG;
+		}
+
+		topic_str->utf8 = topic_alias->topic_buf;
+		topic_str->size = topic_alias->topic_size;
+
+		return 0;
+	}
+
+	/* If topic is present and topic alias is set, configure the alias locally. */
+	if (alias > 0) {
+		topic_alias = &client->internal.topic_aliases[alias - 1];
+
+		if (topic_str->size > ARRAY_SIZE(topic_alias->topic_buf)) {
+			NET_ERR("Topic too long (%d bytes) to store, increase "
+				"CONFIG_MQTT_TOPIC_ALIAS_STRING_MAX",
+				topic_str->size);
+			return -EBADMSG;
+		}
+
+		memcpy(topic_alias->topic_buf, topic_str->utf8, topic_str->size);
+		topic_alias->topic_size = topic_str->size;
+	}
+
+	return 0;
+}
 #else
 static int publish_properties_decode(struct buf_ctx *buf,
 				     struct mqtt_publish_param *param)
@@ -758,9 +808,18 @@ static int publish_properties_decode(struct buf_ctx *buf,
 
 	return -ENOTSUP;
 }
+
+static int publish_topic_alias_check(struct mqtt_client *client,
+				     struct mqtt_publish_param *param)
+{
+	ARG_UNUSED(client);
+	ARG_UNUSED(param);
+
+	return -ENOTSUP;
+}
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 
-int publish_decode(const struct mqtt_client *client, uint8_t flags,
+int publish_decode(struct mqtt_client *client, uint8_t flags,
 		   uint32_t var_length, struct buf_ctx *buf,
 		   struct mqtt_publish_param *param)
 {
@@ -795,6 +854,11 @@ int publish_decode(const struct mqtt_client *client, uint8_t flags,
 
 		/* Add parsed properties length */
 		var_header_length += err_code;
+
+		err_code = publish_topic_alias_check(client, param);
+		if (err_code < 0) {
+			return err_code;
+		}
 	}
 
 	if (var_length < var_header_length) {
