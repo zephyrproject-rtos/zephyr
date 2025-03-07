@@ -84,6 +84,8 @@ source "drivers/pwm/Kconfig.mcux_pwt"
 
 source "drivers/pwm/Kconfig.gecko"
 
+source "drivers/pwm/Kconfig.siwx91x"
+
 source "drivers/pwm/Kconfig.gd32"
 
 source "drivers/pwm/Kconfig.rcar"
