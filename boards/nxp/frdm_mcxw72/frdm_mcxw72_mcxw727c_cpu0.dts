@@ -27,6 +27,7 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,canbus = &flexcan0;
+		zephyr,bt-c2h-uart = &lpuart0;
 	};
 
 	user_led {

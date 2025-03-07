@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -30,6 +30,7 @@
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,canbus = &flexcan0;
 		zephyr,uart-mcumgr = &lpuart0;
+		zephyr,bt-c2h-uart = &lpuart0;
 	};
 
 	user_led {
