@@ -59,56 +59,7 @@ configuration supports the hardware features below.  Another very similar
 board is the :zephyr:board:`mimxrt685_evk`, and that board may have additional features
 already supported, which can also be re-used on this mimxrt595_evk board:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| OS_TIMER  | on-chip    | os timer                            |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| CTIMER    | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | OctalSPI Flash                      |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| PM        | on-chip    | power management; uses SoC sleep,   |
-|           |            | deep sleep and deep-powerdown modes |
-+-----------+------------+-------------------------------------+
-| SDHC      | on-chip    | disk access (works with eMMC & SD)  |
-+-----------+------------+-------------------------------------+
-| I2S       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | LCDIF; MIPI-DSI. Tested with        |
-|           |            | :ref:`rk055hdmipi4m`,               |
-|           |            | :ref:`rk055hdmipi4ma0`, and         |
-|           |            | :ref:`g1120b0mipi` display shields  |
-+-----------+------------+-------------------------------------+
-| DMIC      | on-chip    | dmic                                |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 The default configuration can be found in the defconfig file:
 
