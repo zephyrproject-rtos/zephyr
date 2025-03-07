@@ -41,7 +41,7 @@ static void xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 
 	switch (type) {
 	case R_XTENSA_RELATIVE:
-		if (ldr_parm && ldr_parm->pre_located) {
+		if (ldr_parm->pre_located) {
 			/* Relative relocations are already correct in the pre-located case */
 			break;
 		}
