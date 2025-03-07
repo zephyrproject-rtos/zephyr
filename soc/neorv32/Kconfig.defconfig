@@ -4,7 +4,7 @@
 if SOC_NEORV32
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if RISCV_MACHINE_TIMER
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if !SOC_NEORV32_READ_FREQUENCY_AT_RUNTIME
 
 config NUM_IRQS
 	default 32
