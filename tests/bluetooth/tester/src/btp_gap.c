@@ -1567,7 +1567,11 @@ static uint8_t pair(const void *cmd, uint16_t cmd_len,
 	}
 
 	err = bt_conn_set_security(conn, BT_SECURITY_L2);
-	if (err < 0) {
+	/*
+	 * If the error code is `-EBUSY`, it means the pairing/enryption is ongoing.
+	 * Just ignore the error.
+	 */
+	if ((err < 0) && (err != -EBUSY)) {
 		LOG_ERR("Failed to set security: %d", err);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
