@@ -11,7 +11,7 @@
  * @brief Driver for External interrupt/event controller in STM32 MCUs
  */
 
- #include <zephyr/device.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_system.h>
@@ -29,6 +29,10 @@
 #include "intc_exti_stm32_priv.h"
 
 #define DT_DRV_COMPAT st_stm32_exti
+
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(exti_stm32, CONFIG_INTC_LOG_LEVEL);
 
 #define EXTI_NODE DT_INST(0, st_stm32_exti)
 
@@ -68,12 +72,12 @@ struct stm32_exti_line_range {
 
 static IRQn_Type stm32_exti_linenum2irqnum(uint32_t linenum);
 static uint8_t stm32_exti_linenum2exti_line_ranges_idx(uint32_t linenum);
-static void stm32_exti_clear_pending(uint32_t linenum);
+static int stm32_exti_clear_pending(uint32_t linenum);
 static inline uint32_t linenum_to_ll_exti_line(uint32_t linenum);
 static void stm32_exti_remove_irq_callback(uint32_t linenum);
 static int stm32_exti_set_irq_callback(uint32_t linenum, stm32_exti_irq_cb_t cb,
 				       void *user);
-static void stm32_exti_set_trigger_type(uint32_t linenum,
+static int stm32_exti_set_trigger_type(uint32_t linenum,
 					stm32_exti_trigger_type trigger);
 
 /**
@@ -96,11 +100,14 @@ static inline uint32_t stm32_exti_linenum_to_src_cfg_line(uint32_t linenum)
 }
 
 /**
- * @brief Checks interrupt pending bit for specified EXTI line
+ * @brief Checks pending bit for specified EXTI line
  *
- * @param line EXTI line number
+ * @param linenum EXTI line number
+ * @returns true if pending, false otherwise
+ *
+ * @note This function will assert if @p linenum is invalid
  */
-static inline uint32_t stm32_exti_is_pending(uint32_t linenum)
+static inline bool stm32_exti_is_pending(uint32_t linenum)
 {
 	const uint32_t ll_exti_line = linenum_to_ll_exti_line(linenum);
 
@@ -115,18 +122,19 @@ static inline uint32_t stm32_exti_is_pending(uint32_t linenum)
 		return EXTI_IS_ACTIVE_FLAG_64_95(ll_exti_line);
 #endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
 	} else {
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Invalid line number: %d", linenum);
 	}
 
-	return 0;
+	return false;
 }
 
 /**
- * @brief Clears interrupt pending bit for specified EXTI line number
+ * @brief Clears pending bit for specified EXTI line number
  *
- * @param linenum	EXTI line number
+ * @param linenum EXTI line number
+ * @returns 0 on success, -EINVAL if @p linenum is invalid
  */
-static inline void stm32_exti_clear_pending(uint32_t linenum)
+static inline int stm32_exti_clear_pending(uint32_t linenum)
 {
 	const uint32_t ll_exti_line = linenum_to_ll_exti_line(linenum);
 
@@ -141,8 +149,11 @@ static inline void stm32_exti_clear_pending(uint32_t linenum)
 		EXTI_CLEAR_FLAG_64_95(ll_exti_line);
 #endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
 	} else {
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Invalid line number: %d", linenum);
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
 /**
@@ -178,7 +189,7 @@ static void stm32_exti_isr(const void *exti_range)
 	for (uint8_t linenum = range->start;
 		linenum < range->start + range->len; linenum++) {
 		/* check if interrupt is pending */
-		if (stm32_exti_is_pending(linenum) != 0) {
+		if (stm32_exti_is_pending(linenum)) {
 			/* clear pending interrupt */
 			stm32_exti_clear_pending(linenum);
 
@@ -214,7 +225,8 @@ int stm32_exti_enable_event(uint32_t linenum)
 		EXTI_ENABLE_EVENT_64_95(ll_exti_line);
 #endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
 	} else {
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Invalid line number: %d", linenum);
+		return -EINVAL;
 	}
 
 	return 0;
@@ -242,13 +254,21 @@ int stm32_exti_disable_event(uint32_t linenum)
 		EXTI_DISABLE_EVENT_64_95(ll_exti_line);
 #endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
 	} else {
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Invalid line number: %d", linenum);
+		return -EINVAL;
 	}
 
 	return 0;
 }
 
-static void stm32_exti_enable_rising_trig(const uint32_t linenum,
+/**
+ * @brief Enables rising trigger for specified EXTI line
+ *
+ * @param linenum EXTI line number
+ * @param ll_exti_line LL EXTI line
+ * @returns 0 on success, -EINVAL if @p linenum is invalid
+ */
+static int stm32_exti_enable_rising_trig(const uint32_t linenum,
 					  const uint32_t ll_exti_line)
 {
 	if (linenum < 32U) {
@@ -262,11 +282,21 @@ static void stm32_exti_enable_rising_trig(const uint32_t linenum,
 		EXTI_ENABLE_RISING_TRIG_64_95(ll_exti_line);
 #endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
 	} else {
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Invalid line number: %d", linenum);
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
-static void stm32_exti_disable_rising_trig(const uint32_t linenum,
+/**
+ * @brief Disables rising trigger for specified EXTI line
+ *
+ * @param linenum EXTI line number
+ * @param ll_exti_line LL EXTI line
+ * @returns 0 on success, -EINVAL if @p linenum is invalid
+ */
+static int stm32_exti_disable_rising_trig(const uint32_t linenum,
 					   const uint32_t ll_exti_line)
 {
 	if (linenum < 32U) {
@@ -280,11 +310,21 @@ static void stm32_exti_disable_rising_trig(const uint32_t linenum,
 		EXTI_DISABLE_RISING_TRIG_64_95(ll_exti_line);
 #endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
 	} else {
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Invalid line number: %d", linenum);
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
-static void stm32_exti_enable_falling_trig(const uint32_t linenum,
+/**
+ * @brief Enables falling trigger for specified EXTI line
+ *
+ * @param linenum EXTI line number
+ * @param ll_exti_line LL EXTI line
+ * @returns 0 on success, -EINVAL if @p linenum is invalid
+ */
+static int stm32_exti_enable_falling_trig(const uint32_t linenum,
 					   const uint32_t ll_exti_line)
 {
 	if (linenum < 32U) {
@@ -298,11 +338,21 @@ static void stm32_exti_enable_falling_trig(const uint32_t linenum,
 		EXTI_ENABLE_FALLING_TRIG_64_95(ll_exti_line);
 #endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
 	} else {
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Invalid line number: %d", linenum);
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
-static void stm32_exti_disable_falling_trig(const uint32_t linenum,
+/**
+ * @brief Disables falling trigger for specified EXTI line
+ *
+ * @param linenum EXTI line number
+ * @param ll_exti_line LL EXTI line
+ * @returns 0 on success, -EINVAL if @p linenum is invalid
+ */
+static int stm32_exti_disable_falling_trig(const uint32_t linenum,
 					    const uint32_t ll_exti_line)
 {
 	if (linenum < 32U) {
@@ -316,8 +366,11 @@ static void stm32_exti_disable_falling_trig(const uint32_t linenum,
 		EXTI_DISABLE_FALLING_TRIG_64_95(ll_exti_line);
 #endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
 	} else {
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Invalid line number: %d", linenum);
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
 /**
@@ -325,30 +378,62 @@ static void stm32_exti_disable_falling_trig(const uint32_t linenum,
  *
  * @param linenum EXTI line number
  * @param mode EXTI mode
+ * @returns 0 on success
+ * @returns -EINVAL if @p linenum is invalid
+ * @returns -ENOSYS if @p mode is not implemented
  */
-static void stm32_exti_set_mode(uint32_t linenum, stm32_exti_mode mode)
+static int stm32_exti_set_mode(uint32_t linenum, stm32_exti_mode mode)
 {
+	int ret = 0;
+
 	switch (mode) {
 	case STM32_EXTI_MODE_NONE:
-		stm32_exti_disable_event(linenum);
-		stm32_exti_disable_irq(linenum);
+		ret = stm32_exti_disable_event(linenum);
+		if (ret != 0) {
+			return ret;
+		}
+		ret = stm32_exti_disable_irq(linenum);
+		if (ret != 0) {
+			return ret;
+		}
 		break;
 	case STM32_EXTI_MODE_IT:
-		stm32_exti_disable_event(linenum);
-		stm32_exti_enable_irq(linenum);
+		ret = stm32_exti_disable_event(linenum);
+		if (ret != 0) {
+			return ret;
+		}
+		ret = stm32_exti_enable_irq(linenum);
+		if (ret != 0) {
+			return ret;
+		}
 		break;
 	case STM32_EXTI_MODE_EVENT:
-		stm32_exti_disable_irq(linenum);
-		stm32_exti_enable_event(linenum);
+		ret = stm32_exti_disable_irq(linenum);
+		if (ret != 0) {
+			return ret;
+		}
+		ret = stm32_exti_enable_event(linenum);
+		if (ret != 0) {
+			return ret;
+		}
 		break;
 	case STM32_EXTI_MODE_BOTH:
-		stm32_exti_enable_irq(linenum);
-		stm32_exti_enable_event(linenum);
+		ret = stm32_exti_enable_irq(linenum);
+		if (ret != 0) {
+			return ret;
+		}
+		ret = stm32_exti_enable_event(linenum);
+		if (ret != 0) {
+			return ret;
+		}
 		break;
 	default:
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Not supported EXTI mode: %d", mode);
+		ret = -ENOSYS;
 		break;
 	}
+
+	return ret;
 }
 
 int stm32_exti_enable(uint32_t linenum, stm32_exti_trigger_type trigger,
@@ -528,14 +613,17 @@ DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
 		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		 NULL);
 
-void stm32_exti_enable_irq(uint32_t linenum)
+int stm32_exti_enable_irq(uint32_t linenum)
 {
 	const uint32_t ll_exti_line = linenum_to_ll_exti_line(linenum);
 
 	/* Get matching exti irq provided line number thanks to irq_table */
 	const IRQn_Type irqnum = stm32_exti_linenum2irqnum(linenum);
 
-	__ASSERT_NO_MSG(irqnum != 0xff);
+	if (irqnum == 0xff) {
+		LOG_ERR("Invalid IRQ number: %d", irqnum);
+		return -EINVAL;
+	}
 
 	if (linenum < 32U) {
 		EXTI_ENABLE_IT_0_31(ll_exti_line);
@@ -548,20 +636,26 @@ void stm32_exti_enable_irq(uint32_t linenum)
 		EXTI_ENABLE_IT_64_95(ll_exti_line);
 #endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
 	} else {
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Invalid line number: %d", linenum);
+		return -EINVAL;
 	}
 
 	/* Enable exti irq interrupt */
 	irq_enable(irqnum);
+
+	return 0;
 }
 
-void stm32_exti_disable_irq(uint32_t linenum)
+int stm32_exti_disable_irq(uint32_t linenum)
 {
 	const uint32_t ll_exti_line = linenum_to_ll_exti_line(linenum);
 	/* Get matching exti irq provided line number thanks to irq_table */
 	const IRQn_Type irqnum = stm32_exti_linenum2irqnum(linenum);
 
-	__ASSERT_NO_MSG(irqnum != 0xff);
+	if (irqnum == 0xff) {
+		LOG_ERR("Invalid IRQ number: %d", irqnum);
+		return -EINVAL;
+	}
 
 	/* Disable exti irq interrupt */
 	irq_disable(irqnum);
@@ -578,8 +672,11 @@ void stm32_exti_disable_irq(uint32_t linenum)
 		EXTI_DISABLE_IT_64_95(ll_exti_line);
 #endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
 	} else {
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Invalid line number: %d", linenum);
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
 /**
@@ -587,33 +684,64 @@ void stm32_exti_disable_irq(uint32_t linenum)
  *
  * @param linenum EXTI line number
  * @param mode EXTI trigger type
+ * @returns 0 on success
+ * @returns -EINVAL if @p linenum is invalid
+ * @returns -ENOSYS if @p mode is not implemented
  */
-static void stm32_exti_set_trigger_type(uint32_t linenum,
+static int stm32_exti_set_trigger_type(uint32_t linenum,
 					stm32_exti_trigger_type trigger)
 {
 	const uint32_t ll_exti_line = linenum_to_ll_exti_line(linenum);
+	int ret = 0;
 
 	switch (trigger) {
 	case STM32_EXTI_TRIG_NONE:
-		stm32_exti_disable_rising_trig(linenum, ll_exti_line);
-		stm32_exti_disable_falling_trig(linenum, ll_exti_line);
+		ret = stm32_exti_disable_rising_trig(linenum, ll_exti_line);
+		if (ret != 0) {
+			return ret;
+		}
+		ret = stm32_exti_disable_falling_trig(linenum, ll_exti_line);
+		if (ret != 0) {
+			return ret;
+		}
 		break;
 	case STM32_EXTI_TRIG_RISING:
-		stm32_exti_enable_rising_trig(linenum, ll_exti_line);
-		stm32_exti_disable_falling_trig(linenum, ll_exti_line);
+		ret = stm32_exti_enable_rising_trig(linenum, ll_exti_line);
+		if (ret != 0) {
+			return ret;
+		}
+		ret = stm32_exti_disable_falling_trig(linenum, ll_exti_line);
+		if (ret != 0) {
+			return ret;
+		}
 		break;
 	case STM32_EXTI_TRIG_FALLING:
-		stm32_exti_enable_falling_trig(linenum, ll_exti_line);
-		stm32_exti_disable_rising_trig(linenum, ll_exti_line);
+		ret = stm32_exti_enable_falling_trig(linenum, ll_exti_line);
+		if (ret != 0) {
+			return ret;
+		}
+		ret = stm32_exti_disable_rising_trig(linenum, ll_exti_line);
+		if (ret != 0) {
+			return ret;
+		}
 		break;
 	case STM32_EXTI_TRIG_BOTH:
-		stm32_exti_enable_rising_trig(linenum, ll_exti_line);
-		stm32_exti_enable_falling_trig(linenum, ll_exti_line);
+		ret = stm32_exti_enable_rising_trig(linenum, ll_exti_line);
+		if (ret != 0) {
+			return ret;
+		}
+		ret = stm32_exti_enable_falling_trig(linenum, ll_exti_line);
+		if (ret != 0) {
+			return ret;
+		}
 		break;
 	default:
-		__ASSERT_NO_MSG(0);
+		LOG_ERR("Not supported EXTI trigger type: %d", trigger);
+		ret = -ENOSYS;
 		break;
 	}
+
+	return ret;
 }
 
 /**

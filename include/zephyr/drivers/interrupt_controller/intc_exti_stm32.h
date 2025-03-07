@@ -76,7 +76,7 @@ typedef void (*stm32_exti_irq_cb_t)(uint32_t linenum, void *user);
  *                        -EINVAL if @p linenum is invalid
  */
 int stm32_exti_enable(uint32_t linenum, stm32_exti_trigger_type trigger,
-					 stm32_exti_mode mode, stm32_exti_irq_cb_t cb, void *user);
+		      stm32_exti_mode mode, stm32_exti_irq_cb_t cb, void *user);
 
 /**
  * @brief Disable EXTI line given by line number.
@@ -116,8 +116,9 @@ int stm32_exti_get_line_src_port(uint32_t linenum, uint32_t *port);
  * @note This function will assert with no message if the line number is invalid
  *
  * @param linenum	EXTI line number
+ * @returns 0 on success, -EINVAL if @p linenum is invalid
  */
-void stm32_exti_enable_irq(uint32_t linenum);
+int stm32_exti_enable_irq(uint32_t linenum);
 
 /**
  * @brief Disable EXTI interrupts for specified line number
@@ -125,8 +126,9 @@ void stm32_exti_enable_irq(uint32_t linenum);
  * @note This function will assert with no message if the line number is invalid
  *
  * @param linenum	EXTI line number
+ * @returns 0 on success, -EINVAL if @p linenum is invalid
  */
-void stm32_exti_disable_irq(uint32_t linenum);
+int stm32_exti_disable_irq(uint32_t linenum);
 
 /**
  * @brief Enable EXTI event for specified line number
