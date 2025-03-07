@@ -873,6 +873,9 @@ struct mqtt_internal {
 #if defined(CONFIG_MQTT_VERSION_5_0)
 	/** Internal. MQTT 5.0 topic alias mapping. */
 	struct mqtt_topic_alias topic_aliases[CONFIG_MQTT_TOPIC_ALIAS_MAX];
+
+	/** Internal. MQTT 5.0 disconnect reason set in case of processing errors. */
+	enum mqtt_disconnect_reason_code disconnect_reason;
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
