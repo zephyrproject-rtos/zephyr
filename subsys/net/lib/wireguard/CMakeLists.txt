@@ -18,3 +18,5 @@ zephyr_library_sources(
   crypto/refc/hchacha20.c
   crypto/refc/blake2s.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_BOARD_NATIVE_SIM ns_rtc.c)
