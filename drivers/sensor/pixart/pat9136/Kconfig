@@ -12,3 +12,13 @@ config PAT9136
 	select SENSOR_ASYNC_API
 	help
 	  Enable driver for PAT9136 Optical Flow sensor.
+
+if PAT9136
+
+config PAT9136_STREAM
+	bool "Streaming mode"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_PIXART_PAT9136),int-gpios)
+	help
+	  Enable streaming mode for the PAT9136 sensor.
+
+endif # PAT9136
