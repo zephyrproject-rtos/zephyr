@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: |
-  Silabs Si32 pinctrl node
+description: Silabs Si32 Pin Controller
 
 compatible: "silabs,si32-pinctrl"
 
