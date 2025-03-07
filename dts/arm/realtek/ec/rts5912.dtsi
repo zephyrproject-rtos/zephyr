@@ -92,6 +92,16 @@
 			status = "okay";
 		};
 
+		adc0: adc@4000fe00 {
+			compatible = "realtek,rts5912-adc";
+			reg = <0x4000fe00 0x38>;
+			clocks = <&sccon RTS5912_SCCON_ADC ADC0_CLKPWR>;
+			clock-names = "adc";
+			interrupts = <221 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		uart0: uart@40010100 {
 			compatible = "ns16550";
 			reg = <0x40010100 0x100>;

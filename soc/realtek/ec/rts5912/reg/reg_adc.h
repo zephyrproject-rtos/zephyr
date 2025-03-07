@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2025 Realtek, SIBG-SD7
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_SOC_REALTEK_RTS5912_REG_ADC_H
+#define ZEPHYR_SOC_REALTEK_RTS5912_REG_ADC_H
+
+typedef struct {
+	volatile uint32_t CTRL;
+	volatile uint32_t CHCTRL;
+	volatile uint32_t STS;
+	volatile uint32_t CHDATA[12];
+	volatile uint32_t COEFFA;
+	volatile uint32_t COEFFB;
+} ADC_Type;
+
+/* CTRL */
+#define ADC_CTRL_EN_Pos         (0U)
+#define ADC_CTRL_EN_Msk         BIT(ADC_CTRL_EN_Pos)
+#define ADC_CTRL_START_Pos      (1U)
+#define ADC_CTRL_START_Msk      BIT(ADC_CTRL_START_Pos)
+#define ADC_CTRL_RST_Pos        (2U)
+#define ADC_CTRL_RST_Msk        BIT(ADC_CTRL_RST_Pos)
+#define ADC_CTRL_MDSEL_Pos      (3U)
+#define ADC_CTRL_MDSEL_Msk      BIT(ADC_CTRL_MDSEL_Pos)
+#define ADC_CTRL_SGLDNINTEN_Pos (4U)
+#define ADC_CTRL_SGLDNINTEN_Msk BIT(ADC_CTRL_SGLDNINTEN_Pos)
+#define ADC_CTRL_RPTDNINTEN_Pos (5U)
+#define ADC_CTRL_RPTDNINTEN_Msk BIT(ADC_CTRL_RPTDNINTEN_Pos)
+
+/* CHCTRL */
+#define ADC_CHCTRL_CH0EN_Pos  (0U)
+#define ADC_CHCTRL_CH0EN_Msk  BIT(ADC_CHCTRL_CH0EN_Pos)
+#define ADC_CHCTRL_CH1EN_Pos  (1U)
+#define ADC_CHCTRL_CH1EN_Msk  BIT(ADC_CHCTRL_CH1EN_Pos)
+#define ADC_CHCTRL_CH2EN_Pos  (2U)
+#define ADC_CHCTRL_CH2EN_Msk  BIT(ADC_CHCTRL_CH2EN_Pos)
+#define ADC_CHCTRL_CH3EN_Pos  (3U)
+#define ADC_CHCTRL_CH3EN_Msk  BIT(ADC_CHCTRL_CH3EN_Pos)
+#define ADC_CHCTRL_CH4EN_Pos  (4U)
+#define ADC_CHCTRL_CH4EN_Msk  BIT(ADC_CHCTRL_CH4EN_Pos)
+#define ADC_CHCTRL_CH5EN_Pos  (5U)
+#define ADC_CHCTRL_CH5EN_Msk  BIT(ADC_CHCTRL_CH5EN_Pos)
+#define ADC_CHCTRL_CH6EN_Pos  (6U)
+#define ADC_CHCTRL_CH6EN_Msk  BIT(ADC_CHCTRL_CH6EN_Pos)
+#define ADC_CHCTRL_CH7EN_Pos  (7U)
+#define ADC_CHCTRL_CH7EN_Msk  BIT(ADC_CHCTRL_CH7EN_Pos)
+#define ADC_CHCTRL_CH8EN_Pos  (8U)
+#define ADC_CHCTRL_CH8EN_Msk  BIT(ADC_CHCTRL_CH8EN_Pos)
+#define ADC_CHCTRL_CH9EN_Pos  (9U)
+#define ADC_CHCTRL_CH9EN_Msk  BIT(ADC_CHCTRL_CH9EN_Pos)
+#define ADC_CHCTRL_CH10EN_Pos (10U)
+#define ADC_CHCTRL_CH10EN_Msk BIT(ADC_CHCTRL_CH10EN_Pos)
+#define ADC_CHCTRL_CH11EN_Pos (11U)
+#define ADC_CHCTRL_CH11EN_Msk BIT(ADC_CHCTRL_CH11EN_Pos)
+#define ADC_CHCTRL_LPFBP_Pos  (12U)
+#define ADC_CHCTRL_LPFBP_Msk  BIT(ADC_CHCTRL_LPFBP_Pos)
+#define ADC_CHCTRL_CALBP_Pos  (24U)
+#define ADC_CHCTRL_CALBP_Msk  BIT(ADC_CHCTRL_CALBP_Pos)
+
+/* STS */
+#define ADC_STS_CH0DN_Pos  (0U)
+#define ADC_STS_CH0DN_Msk  BIT(ADC_STS_CH0DN_Pos)
+#define ADC_STS_CH1DN_Pos  (1U)
+#define ADC_STS_CH1DN_Msk  BIT(ADC_STS_CH1DN_Pos)
+#define ADC_STS_CH2DN_Pos  (2U)
+#define ADC_STS_CH2DN_Msk  BIT(ADC_STS_CH2DN_Pos)
+#define ADC_STS_CH3DN_Pos  (3U)
+#define ADC_STS_CH3DN_Msk  BIT(ADC_STS_CH3DN_Pos)
+#define ADC_STS_CH4DN_Pos  (4U)
+#define ADC_STS_CH4DN_Msk  BIT(ADC_STS_CH4DN_Pos)
+#define ADC_STS_CH5DN_Pos  (5U)
+#define ADC_STS_CH5DN_Msk  BIT(ADC_STS_CH5DN_Pos)
+#define ADC_STS_CH6DN_Pos  (6U)
+#define ADC_STS_CH6DN_Msk  BIT(ADC_STS_CH6DN_Pos)
+#define ADC_STS_CH7DN_Pos  (7U)
+#define ADC_STS_CH7DN_Msk  BIT(ADC_STS_CH7DN_Pos)
+#define ADC_STS_CH8DN_Pos  (8U)
+#define ADC_STS_CH8DN_Msk  BIT(ADC_STS_CH8DN_Pos)
+#define ADC_STS_CH9DN_Pos  (9U)
+#define ADC_STS_CH9DN_Msk  BIT(ADC_STS_CH9DN_Pos)
+#define ADC_STS_CH10DN_Pos (10U)
+#define ADC_STS_CH10DN_Msk BIT(ADC_STS_CH10DN_Pos)
+#define ADC_STS_CH11DN_Pos (11U)
+#define ADC_STS_CH11DN_Msk BIT(ADC_STS_CH11DN_Pos)
+#define ADC_STS_SGLDN_Pos  (12U)
+#define ADC_STS_SGLDN_Msk  BIT(ADC_STS_SGLDN_Pos)
+#define ADC_STS_RPTDN_Pos  (13U)
+#define ADC_STS_RPTDN_Msk  BIT(ADC_STS_RPTDN_Pos)
+#define ADC_STS_RDY_Pos    (16U)
+#define ADC_STS_RDY_Msk    BIT(ADC_STS_RDY_Pos)
+#define ADC_STS_LPFSTB_Pos (17U)
+#define ADC_STS_LPFSTB_Msk BIT(ADC_STS_LPFSTB_Pos)
+
+/* CHDATA */
+#define ADC_CHDATA_RESULT_Pos (0U)
+#define ADC_CHDATA_RESULT_Msk GENMASK(11, 0)
+
+#endif /* ZEPHYR_SOC_REALTEK_RTS5912_REG_ADC_H */
