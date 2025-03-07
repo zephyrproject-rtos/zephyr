@@ -15,7 +15,7 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/dsp/print_format.h>
 
-#define DHT_ALIAS(i) DT_ALIAS(_CONCAT(dht, i))
+#define DHT_ALIAS(i) DT_ALIAS(_CONCAT(accel, i))
 #define DHT_DEVICE(i, _)                                                      \
 	IF_ENABLED(DT_NODE_EXISTS(DHT_ALIAS(i)), (DEVICE_DT_GET(DHT_ALIAS(i)),))
 
@@ -25,7 +25,7 @@ static const struct device *const sensors[] = {LISTIFY(10, DHT_DEVICE, ())};
 #define DHT_IODEV(i, _)                                                      \
 	IF_ENABLED(DT_NODE_EXISTS(DHT_ALIAS(i)),                                 \
 		(SENSOR_DT_READ_IODEV(_CONCAT(dht_iodev, i), DHT_ALIAS(i),           \
-		{SENSOR_CHAN_AMBIENT_TEMP, 0},                                       \
+		{SENSOR_CHAN_ACCEL_XYZ, 0},                                       \
 		{SENSOR_CHAN_HUMIDITY, 0})))
 
 LISTIFY(10, DHT_IODEV, (;));
@@ -70,13 +70,17 @@ int main(void)
 				return rc;
 			}
 
-			uint32_t temp_fit = 0;
-			struct sensor_q31_data temp_data = {0};
+			uint32_t accel_fit = 0;
+			struct sensor_three_axis_data accel_data = { 0 };
 
 			decoder->decode(buf,
-					(struct sensor_chan_spec) {SENSOR_CHAN_AMBIENT_TEMP, 0},
-					&temp_fit, 1, &temp_data);
+					(struct sensor_chan_spec) {SENSOR_CHAN_ACCEL_XYZ, 0},
+					&accel_fit, 1, &accel_data);
 
+			printk("XL data for %s %lluns (%" PRIq(6) ", %" PRIq(6)
+			       ", %" PRIq(6) ")\n", dev->name,
+			       PRIsensor_three_axis_data_arg(accel_data, 0));
+			#if 0
 			uint32_t hum_fit = 0;
 			struct sensor_q31_data hum_data = {0};
 
@@ -87,6 +91,7 @@ int main(void)
 			printk("%16s: temp is %s%d.%d °C humidity is %s%d.%d %%RH\n", dev->name,
 				PRIq_arg(temp_data.readings[0].temperature, 2, temp_data.shift),
 				PRIq_arg(hum_data.readings[0].humidity, 2, hum_data.shift));
+			#endif
 		}
 		k_msleep(1000);
 	}
