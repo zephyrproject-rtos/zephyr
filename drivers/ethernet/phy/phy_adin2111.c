@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(phy_adin, CONFIG_PHY_LOG_LEVEL);
 #include <zephyr/net/mii.h>
 #include <zephyr/net/mdio.h>
 #include <zephyr/drivers/mdio.h>
+#include "phy_adin2111_priv.h"
 
 /* PHYs out of reset check retry delay */
 #define ADIN2111_PHY_AWAIT_DELAY_POLL_US			15U
