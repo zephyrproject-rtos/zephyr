@@ -36,8 +36,17 @@ The C++ standard requires the ``main()`` function to have the return type of
 has to be selected. Zephyr ignores the return value from main, so applications
 should not return status information and should, instead, return zero.
 
+If you need to access data from the device tree in C++ files, add the following
+argument to the ``west build`` command to prevent compile-time macro expansion
+issues:
+
+.. code-block:: console
+
+   EXTRA_GEN_DEFINES_ARGS=--no-inline-comments
+
 .. note::
-    Do not use C++ for kernel, driver, or system initialization code.
+
+   Do not use C++ for kernel, driver, or system initialization code.
 
 Language Features
 *****************

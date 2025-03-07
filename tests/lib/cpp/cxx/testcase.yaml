@@ -4,6 +4,8 @@ common:
   integration_platforms:
     - mps2/an385
     - qemu_cortex_a53
+  extra_args:
+    - EXTRA_GEN_DEFINES_ARGS=--no-inline-comments
 
 tests:
   cpp.main.minimal:
