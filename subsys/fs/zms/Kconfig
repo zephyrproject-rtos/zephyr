@@ -50,6 +50,15 @@ config ZMS_CUSTOM_BLOCK_SIZE
 	help
 	  Changes the internal buffer size of ZMS
 
+config ZMS_LOOKUP_CACHE_FOR_SETTINGS
+	bool "ZMS Storage lookup cache optimized for settings"
+	depends on ZMS_LOOKUP_CACHE && SETTINGS_ZMS
+	help
+	  Use the lookup cache hash function that results in the least number of
+	  collissions and, in turn, the best ZMS performance provided that the ZMS
+	  is used as the settings backend only. This option should NOT be enabled
+	  if the ZMS is also written to directly, outside the settings layer.
+
 config ZMS_NO_DOUBLE_WRITE
 	bool "Avoid writing the same data again in the storage"
 	help
