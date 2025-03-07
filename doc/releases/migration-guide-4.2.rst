@@ -117,6 +117,12 @@ Timer
 Bluetooth
 *********
 
+Bluetooth Audio
+===============
+
+* ``CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE`` has been renamed to
+  :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE``. (:github:`86763``)
+
 Bluetooth Host
 ==============
 
