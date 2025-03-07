@@ -50,7 +50,7 @@
  * Floating point registers are handled using a lazy save/restore mechanism
  * since it's expected relatively few threads will be created with the
  * K_FP_REGS or K_SSE_REGS option bits.  The kernel data structure maintains a
- * 'current_fp' field to keep track of the thread that "owns" the floating
+ * 'fpu_owner' field to keep track of the thread that "owns" the floating
  * point registers.  Floating point registers consist of ST0->ST7 (x87 FPU and
  * MMX registers) and XMM0 -> XMM7.
  *
@@ -176,7 +176,7 @@ SECTION_FUNC(PINNED_TEXT, arch_swap)
 	 * If so, there there is no need to restore the floating point context.
 	 */
 
-	movl	_kernel_offset_to_current_fp(%edi), %ebx
+	movl	_kernel_offset_to_fpu_owner(%edi), %ebx
 	cmpl	%ebx, %eax
 	je	restoreContext_NoFloatSwap
 
@@ -265,7 +265,7 @@ restoreContext_NoFloatRestore:
 
 	/* record that the incoming thread "owns" the floating point registers */
 
-	movl	%eax, _kernel_offset_to_current_fp(%edi)
+	movl	%eax, _kernel_offset_to_fpu_owner(%edi)
 
 
 	/*

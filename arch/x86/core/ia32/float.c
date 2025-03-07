@@ -194,7 +194,7 @@ void z_float_enable(struct k_thread *thread, unsigned int options)
 	 * must be preserved).
 	 */
 
-	fp_owner = _kernel.current_fp;
+	fp_owner = _kernel.cpus[0].arch.fpu_owner;
 	if (fp_owner != NULL) {
 		if ((fp_owner->arch.flags & X86_THREAD_FLAG_ALL) != 0) {
 			FpCtxSave(fp_owner);
@@ -215,7 +215,7 @@ void z_float_enable(struct k_thread *thread, unsigned int options)
 		 * (The FP context is "live" in hardware, not saved in TCS.)
 		 */
 
-		_kernel.current_fp = thread;
+		_kernel.cpus[0].arch.fpu_owner = thread;
 	} else {
 		/*
 		 * When enabling FP support for someone else, assign ownership
@@ -230,7 +230,7 @@ void z_float_enable(struct k_thread *thread, unsigned int options)
 			 * to its original state.
 			 */
 
-			_kernel.current_fp = thread;
+			_kernel.cpus[0].arch.fpu_owner = thread;
 			z_FpAccessDisable();
 		} else {
 			/*
@@ -280,10 +280,10 @@ int z_float_disable(struct k_thread *thread)
 
 	if (thread == _current) {
 		z_FpAccessDisable();
-		_kernel.current_fp = (struct k_thread *)0;
+		_kernel.cpus[0].arch.fpu_owner = (struct k_thread *)0;
 	} else {
-		if (_kernel.current_fp == thread) {
-			_kernel.current_fp = (struct k_thread *)0;
+		if (_kernel.cpus[0].arch.fpu_owner == thread) {
+			_kernel.cpus[0].arch.fpu_owner = (struct k_thread *)0;
 		}
 	}
 

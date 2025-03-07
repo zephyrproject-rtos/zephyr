@@ -217,20 +217,6 @@ struct z_kernel {
 	struct _ready_q ready_q;
 #endif
 
-#ifdef CONFIG_FPU_SHARING
-	/*
-	 * A 'current_sse' field does not exist in addition to the 'current_fp'
-	 * field since it's not possible to divide the IA-32 non-integer
-	 * registers into 2 distinct blocks owned by differing threads.  In
-	 * other words, given that the 'fxnsave/fxrstor' instructions
-	 * save/restore both the X87 FPU and XMM registers, it's not possible
-	 * for a thread to only "own" the XMM registers.
-	 */
-
-	/* thread that owns the FP regs */
-	struct k_thread *current_fp;
-#endif
-
 #if defined(CONFIG_THREAD_MONITOR)
 	struct k_thread *threads; /* singly linked list of ALL threads */
 #endif
