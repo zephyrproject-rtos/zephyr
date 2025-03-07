@@ -766,7 +766,9 @@ enum l2cap_br_conn_security_result {
  * - channel connection process is on hold since there were valid security
  *   conditions triggering authentication indirectly in subcall.
  * Returns L2CAP_CONN_SECURITY_REJECT if:
- * - bt_conn_set_security API returns < 0.
+ * - bt_conn_set_security API returns < 0,
+ * - Or, the connection has been encrypted, and the security level is less than the required
+ *   security level.
  */
 
 static enum l2cap_br_conn_security_result
@@ -805,6 +807,16 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 			br_chan->required_sec_level = BT_SECURITY_L2;
 		}
 		break;
+	}
+
+	if ((chan->conn->encrypt) && (chan->conn->sec_level < br_chan->required_sec_level) &&
+	    (chan->conn->required_sec_level < br_chan->required_sec_level)) {
+		/*
+		 * If the ACL link has been encrypted, it means the pairing procedure has been
+		 * done. In this case, if both of `conn->sec_level` and `conn->required_sec_level`
+		 * are less than the required security level, reject the request.
+		 */
+		return L2CAP_CONN_SECURITY_REJECT;
 	}
 
 	check = bt_conn_set_security(chan->conn, br_chan->required_sec_level);
