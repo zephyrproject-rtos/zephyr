@@ -56,7 +56,7 @@
 		compatible = "gpio-keys";
 		user_button_0: button_0 {
 			label = "User SW2";
-			gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
 			status = "okay";
 		};
