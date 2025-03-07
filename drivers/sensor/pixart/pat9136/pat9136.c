@@ -17,6 +17,7 @@
 #include "pat9136_reg.h"
 #include "pat9136_bus.h"
 #include "pat9136_decoder.h"
+#include "pat9136_stream.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(PAT9136, CONFIG_SENSOR_LOG_LEVEL);
@@ -198,6 +199,8 @@ static void pat9136_submit(const struct device *dev, struct rtio_iodev_sqe *iode
 
 	if (!cfg->is_streaming) {
 		pat9136_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_PAT9136_STREAM)) {
+		pat9136_stream_submit(dev, iodev_sqe);
 	} else {
 		LOG_ERR("Streaming not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
@@ -409,6 +412,14 @@ static int pat9136_init(const struct device *dev)
 		return -EIO;
 	}
 
+	if (IS_ENABLED(CONFIG_PAT9136_STREAM)) {
+		err = pat9136_stream_init(dev);
+		if (err) {
+			LOG_ERR("Failed to initialize streaming");
+			return err;
+		}
+	}
+
 	err = pat9136_configure(dev);
 	if (err) {
 		LOG_ERR("Failed to configure");
@@ -431,6 +442,8 @@ static int pat9136_init(const struct device *dev)
 			    0U);								   \
 												   \
 	static const struct pat9136_config pat9136_cfg_##inst = {				   \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \
+		.backup_timer_period = DT_PROP(DT_DRV_INST(inst), backup_timer_ms),		   \
 		.resolution = DT_INST_PROP(inst, resolution),					   \
 	};											   \
 												   \
