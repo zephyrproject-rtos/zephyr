@@ -120,15 +120,12 @@ static void eth_rx(const struct device *port)
 	const struct eth_litex_config *config = port->config;
 
 	int r;
-	unsigned int key;
 	uint16_t len = 0;
 	uint8_t rxslot = 0;
 
 	if (!net_if_flag_is_set(context->iface, NET_IF_UP)) {
 		return;
 	}
-
-	key = irq_lock();
 
 	/* get frame's length */
 	len = litex_read16(config->rx_length_addr);
@@ -141,14 +138,14 @@ static void eth_rx(const struct device *port)
 					   K_NO_WAIT);
 	if (pkt == NULL) {
 		LOG_ERR("Failed to obtain RX buffer");
-		goto out;
+		return;
 	}
 
 	/* copy data to buffer */
 	if (net_pkt_write(pkt, (void *)config->rx_buf[rxslot], len) != 0) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
-		goto out;
+		return;
 	}
 
 	/* receive data */
@@ -157,9 +154,6 @@ static void eth_rx(const struct device *port)
 		LOG_ERR("Failed to enqueue frame into RX queue: %d", r);
 		net_pkt_unref(pkt);
 	}
-
-out:
-	irq_unlock(key);
 }
 
 static void eth_irq_handler(const struct device *port)
