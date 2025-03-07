@@ -48,10 +48,6 @@ GEN_OFFSET_SYM(_kernel_t, ready_q);
 GEN_OFFSET_SYM(_ready_q_t, cache);
 #endif /* CONFIG_SMP */
 
-#ifdef CONFIG_FPU_SHARING
-GEN_OFFSET_SYM(_kernel_t, current_fp);
-#endif /* CONFIG_FPU_SHARING */
-
 GEN_OFFSET_SYM(_thread_base_t, user_options);
 
 GEN_OFFSET_SYM(_thread_t, base);
