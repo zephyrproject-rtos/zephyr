@@ -33,6 +33,7 @@ struct eth_litex_dev_data {
 	struct net_if *iface;
 	uint8_t mac_addr[6];
 	uint8_t txslot;
+	struct k_mutex tx_mutex;
 };
 
 struct eth_litex_config {
@@ -58,6 +59,8 @@ static int eth_initialize(const struct device *dev)
 	const struct eth_litex_config *config = dev->config;
 	struct eth_litex_dev_data *context = dev->data;
 
+	k_mutex_init(&context->tx_mutex);
+
 	config->config_func(dev);
 
 	/* TX event is disabled because it isn't used by this driver */
@@ -73,13 +76,12 @@ static int eth_initialize(const struct device *dev)
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
-	unsigned int key;
 	uint16_t len;
 	struct eth_litex_dev_data *context = dev->data;
 	const struct eth_litex_config *config = dev->config;
-
-	key = irq_lock();
 	int attempts = 0;
+
+	k_mutex_lock(&context->tx_mutex, K_FOREVER);
 
 	/* get data from packet and send it */
 	len = net_pkt_get_len(pkt);
@@ -100,13 +102,13 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	litex_write8(1, config->tx_start_addr);
 
 	/* change slot */
-	context->txslot = (context->txslot + 1) % 2;
+	context->txslot = (context->txslot + 1) % config->tx_buf_n;
 
-	irq_unlock(key);
+	k_mutex_unlock(&context->tx_mutex);
 
 	return 0;
 error:
-	irq_unlock(key);
+	k_mutex_unlock(&context->tx_mutex);
 	LOG_ERR("TX fifo failed");
 	return -EIO;
 }
