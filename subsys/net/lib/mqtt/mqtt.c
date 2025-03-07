@@ -108,6 +108,58 @@ error:
 	return err_code;
 }
 
+static int client_write(struct mqtt_client *client, const uint8_t *data,
+			uint32_t datalen);
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static void disconnect_5_0_notify(struct mqtt_client *client, int err)
+{
+	struct mqtt_disconnect_param param = { };
+	struct buf_ctx packet;
+
+	/* Parser might've set custom failure reason, in such case skip generic
+	 * mapping from errno to reason code.
+	 */
+	if (client->internal.disconnect_reason != MQTT_DISCONNECT_NORMAL) {
+		param.reason_code = client->internal.disconnect_reason;
+	} else {
+		switch (err) {
+		case ECONNREFUSED:
+		case ENOTCONN:
+			/* Connection rejected/closed, skip disconnect. */
+			return;
+		case EINVAL:
+			param.reason_code = MQTT_DISCONNECT_MALFORMED_PACKET;
+			break;
+		case EBADMSG:
+			param.reason_code = MQTT_DISCONNECT_PROTOCOL_ERROR;
+			break;
+		case ENOMEM:
+			param.reason_code = MQTT_DISCONNECT_PACKET_TOO_LARGE;
+			break;
+		default:
+			param.reason_code = MQTT_DISCONNECT_UNSPECIFIED_ERROR;
+			break;
+		}
+	}
+
+	tx_buf_init(client, &packet);
+
+	if (disconnect_encode(client, &param, &packet) < 0) {
+		return;
+	}
+
+	(void)client_write(client, packet.cur, packet.end - packet.cur);
+}
+#else
+static void disconnect_5_0_notify(struct mqtt_client *client, int err)
+{
+	ARG_UNUSED(client);
+	ARG_UNUSED(err);
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
+
 static int client_read(struct mqtt_client *client)
 {
 	int err_code;
@@ -118,6 +170,11 @@ static int client_read(struct mqtt_client *client)
 
 	err_code = mqtt_handle_rx(client);
 	if (err_code < 0) {
+		if (mqtt_is_version_5_0(client)) {
+			/* Best effort send, if it fails just shut the connection. */
+			disconnect_5_0_notify(client, -err_code);
+		}
+
 		mqtt_client_disconnect(client, err_code, true);
 	}
 
