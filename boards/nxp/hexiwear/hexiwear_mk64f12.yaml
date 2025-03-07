@@ -11,6 +11,7 @@ supported:
   - flash
   - gpio
   - i2c
+  - minimal
   - pwm
   - watchdog
 vendor: nxp
