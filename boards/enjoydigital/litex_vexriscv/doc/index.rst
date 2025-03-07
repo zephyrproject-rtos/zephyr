@@ -42,6 +42,11 @@ using the
 `Zephyr on LiteX VexRiscv <https://github.com/litex-hub/zephyr-on-litex-vexriscv>`_
 reference platform. You can also use the official LiteX SoC Builder.
 
+Supported Features
+******************
+
+.. zephyr:board-supported-hw::
+
 Bitstream generation
 ********************
 
