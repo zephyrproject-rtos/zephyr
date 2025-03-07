@@ -29,6 +29,15 @@ Kernel
 Boards
 ******
 
+* All boards based on Nordic ICs that used the ``nrfjprog`` Nordic command-line
+  tool for flashing by default have been modified to instead default to the new
+  nRF Util (``nrfutil``) tool. This means that you may need to `install nRF Util
+  <https://www.nordicsemi.com/Products/Development-tools/nrf-util>`_ or, if you
+  prefer to continue using ``nrfjprog``, you can do so by invoking west while
+  specfying the runner: ``west flash -r nrfjprog``. The full documentation for
+  nRF Util can be found
+  `here <https://docs.nordicsemi.com/bundle/nrfutil/page/README.html>`_.
+
 Device Drivers and Devicetree
 *****************************
 
