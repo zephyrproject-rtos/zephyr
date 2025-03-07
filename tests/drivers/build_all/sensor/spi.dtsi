@@ -406,3 +406,10 @@ test_spi_icm45686:icm45686@31 {
 	spi-max-frequency = <0>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+paa3905: paa3905@32 {
+	compatible = "pixart,paa3905";
+	spi-max-frequency = <0>;
+	reg = <0x32>;
+	int-gpios = <&test_gpio 0 0>;
+};
