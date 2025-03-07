@@ -40,6 +40,14 @@ config BT_HCI_IPC
 	  Bluetooth HCI driver for communication with another CPU
 	  using the IPC subsystem.
 
+config BT_HCI_IPC_ENDPOINT_BOUND_TIMEOUT_MS
+	int "HCI IPC binding timeout value in milliseconds"
+	depends on BT_HCI_IPC
+	default 2000
+	help
+	  Timeout value that HCI will wait for an IPC endpoint to be bound,
+	  in milliseconds.
+
 config BT_SPI
 	bool
 	select SPI
