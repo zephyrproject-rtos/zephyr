@@ -1,7 +1,7 @@
 #
 # Copyright (c) 2024 Nordic Semiconductor ASA
 #
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 #
 
 # Check if ZEPHYR_BASE is set
