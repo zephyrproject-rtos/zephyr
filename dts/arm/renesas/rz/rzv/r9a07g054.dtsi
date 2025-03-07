@@ -37,6 +37,51 @@
 			reg = <0x41030000 DT_SIZE_K(64)>;
 			reg-names = "pinctrl";
 		};
+
+		scif0: serial@4004b800 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <0>;
+			reg = <0x4004b800 0x18>;
+			interrupts = <380 1>, <381 1>, <382 1>, <383 1>, <384 1>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif1: serial@4004bc00 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <1>;
+			reg = <0x4004bc00 0x18>;
+			interrupts = <385 1>, <386 1>, <387 1>, <388 1>, <389 1>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif2: serial@4004c000 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <2>;
+			reg = <0x4004c000 0x18>;
+			interrupts = <390 1>, <391 1>, <392 1>, <393 1>, <394 1>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif3: serial@4004c400 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <3>;
+			reg = <0x4004c400 0x18>;
+			interrupts = <395 1>, <396 1>, <397 1>, <398 1>, <399 1>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif4: serial@4004c800 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <4>;
+			reg = <0x4004c800 0x18>;
+			interrupts = <400 1>, <401 1>, <402 1>, <403 1>, <404 1>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
 	};
 };
 
