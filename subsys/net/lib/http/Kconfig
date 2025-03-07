@@ -29,7 +29,7 @@ config HTTP_CLIENT
 	help
 	  HTTP client API
 
-config HTTP_SERVER
+menuconfig HTTP_SERVER
 	bool "HTTP Server [EXPERIMENTAL]"
 	select HTTP_PARSER
 	select HTTP_PARSER_URL
@@ -202,6 +202,21 @@ config WEBSOCKET_CONSOLE
 	help
 	  Hidden option that is enabled only when all the necessary options
 	  needed by websocket console are set.
+
+config HTTP_SERVER_COMPRESSION
+	bool "Compression support in HTTP fileserver"
+	help
+	  If enabled, the fileserver will parse the accept-encoding header
+	  from the client and extract the supported compression methods.
+	  Afterwards it will try to serve the first compressed file available
+	  by using the file ending as compression indicator in this order:
+	    1. brotli   -> .br
+	    2. gzip     -> .gz
+	    3. zstd     -> .zst
+	    4. compress -> .lzw
+	    5. deflate  -> .zz
+	    6. File without compression
+
 endif
 
 # Hidden option to avoid having multiple individual options that are ORed together
