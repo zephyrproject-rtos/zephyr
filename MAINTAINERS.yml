@@ -3913,7 +3913,7 @@ NXP Platforms (Robotics Products):
     - boards/nxp/rddrone_fmuk66/
     - boards/nxp/mr_canhubk3/
   labels:
-    - "platform: NXP"
+    - "platform: NXP Robotics"
   description: NXP Robotics Module Platform Products
 
 Microchip MEC Platforms:

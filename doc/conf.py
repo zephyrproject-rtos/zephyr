@@ -196,6 +196,7 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("4.1.0", "/4.1.0/"),
         ("4.0.0", "/4.0.0/"),
         ("3.7.0 (LTS)", "/3.7.0/"),
     ),
