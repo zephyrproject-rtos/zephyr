@@ -17,3 +17,19 @@ properties:
       (CPI), following the formula CPI = (1 + resolution) * 100.
       Valid range is 0 to 199.
       Default is value set during Performance Optimization Settings.
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal default configuration is active-low. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+
+  backup-timer-ms:
+    type: int
+    default: 50
+    description: |
+      The back-up timer in milliseconds used to ensure sensor interaction
+      even if no motion is present, when Data-Ready streaming trigger is
+      configured.
+      Default is 1000X the fastest frame rate (20,000 fps).
