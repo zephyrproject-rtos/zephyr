@@ -1433,8 +1433,6 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 {
 	int rc;
 	size_t data_size;
-	uint64_t wlk_addr;
-	uint64_t rd_addr;
 	uint32_t gc_count;
 	uint32_t required_space = 0U; /* no space, appropriate for delete ate */
 
@@ -1455,19 +1453,19 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_ZMS_NO_DOUBLE_WRITE
 	/* find latest entry with same id */
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
-	wlk_addr = fs->lookup_cache[zms_lookup_cache_pos(id)];
+	uint64_t wlk_addr = fs->lookup_cache[zms_lookup_cache_pos(id)];
 
 	if (wlk_addr == ZMS_LOOKUP_CACHE_NO_ADDR) {
 		goto no_cached_entry;
 	}
 #else
 	wlk_addr = fs->ate_wra;
-#endif
-	rd_addr = wlk_addr;
+#endif /* CONFIG_ZMS_LOOKUP_CACHE */
+	uint64_t rd_addr = wlk_addr;
 
-#ifdef CONFIG_ZMS_NO_DOUBLE_WRITE
 	/* Search for a previous valid ATE with the same ID */
 	struct zms_ate wlk_ate;
 	int prev_found = zms_find_ate_with_id(fs, id, wlk_addr, fs->ate_wra, &wlk_ate, &rd_addr);
@@ -1511,11 +1509,11 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 			return 0;
 		}
 	}
-#endif
-
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
 no_cached_entry:
-#endif
+#endif /* CONFIG_ZMS_LOOKUP_CACHE */
+#endif /* CONFIG_ZMS_NO_DOUBLE_WRITE */
+
 	/* calculate required space if the entry contains data */
 	if (data_size) {
 		/* Leave space for delete ate */
