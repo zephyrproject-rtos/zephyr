@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Intel Digital PDM Microphone (DMIC) node
+description: Intel Digital PDM Microphone (DMIC)
 
 compatible: "intel,dai-dmic"
 
