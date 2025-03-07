@@ -1,0 +1,44 @@
+# ESP Hosted WiFi driver options
+
+# Copyright (c) 2025 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_ESP_HOSTED
+	bool "ESP_HOSTED driver support"
+	depends on DT_HAS_ESPRESSIF_ESP_HOSTED_ENABLED
+	default y
+	select GPIO
+	select SPI
+	select WIFI_OFFLOAD
+	select WIFI_NM
+	select NANOPB
+	select NET_L2_ETHERNET
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+
+if WIFI_ESP_HOSTED
+
+config WIFI_ESP_HOSTED_DEBUG
+	bool "Extra debugging messages"
+
+config WIFI_ESP_HOSTED_EVENT_TASK_PRIORITY
+	int "Event task priority"
+	default 4
+
+config WIFI_ESP_HOSTED_EVENT_TASK_STACK_SIZE
+	int "Event task stack size"
+	default 16384
+
+config WIFI_ESP_HOSTED_EVENT_TASK_POLL_MS
+	int "Event task poll rate in ms"
+	default 20
+
+config WIFI_ESP_HOSTED_AP_CLIENTS_MAX
+	int "Max number of AP clients"
+	default 5
+
+config WIFI_ESP_HOSTED_AP_CHANNEL_DEF
+	int "Default AP channel"
+	default 9
+
+endif
