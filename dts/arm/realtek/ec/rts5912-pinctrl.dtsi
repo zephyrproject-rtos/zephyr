@@ -266,105 +266,145 @@
 			pinmux = <REALTEK_RTS5912_PINMUX(41, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso1_gpio042: kso1_gpio042 {
 			pinmux = <REALTEK_RTS5912_PINMUX(42, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso2_gpio043: kso2_gpio043 {
 			pinmux = <REALTEK_RTS5912_PINMUX(43, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso3_gpio044: kso3_gpio044 {
 			pinmux = <REALTEK_RTS5912_PINMUX(44, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 
 	/omit-if-no-ref/ kso4_gpio045: kso4_gpio045 {
 			pinmux = <REALTEK_RTS5912_PINMUX(45, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso5_gpio046: kso5_gpio046 {
 			pinmux = <REALTEK_RTS5912_PINMUX(46, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso6_gpio047: kso6_gpio047 {
 			pinmux = <REALTEK_RTS5912_PINMUX(47, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso7_gpio048: kso7_gpio048 {
 			pinmux = <REALTEK_RTS5912_PINMUX(48, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 
 	/omit-if-no-ref/ kso8_gpio049: kso8_gpio049 {
 			pinmux = <REALTEK_RTS5912_PINMUX(49, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso9_gpio050: kso9_gpio050 {
 			pinmux = <REALTEK_RTS5912_PINMUX(50, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso10_gpio051: kso10_gpio051 {
 			pinmux = <REALTEK_RTS5912_PINMUX(51, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso11_gpio055: kso11_gpio055 {
 			pinmux = <REALTEK_RTS5912_PINMUX(55, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 
 	/omit-if-no-ref/ kso12_gpio056: kso12_gpio056 {
 			pinmux = <REALTEK_RTS5912_PINMUX(56, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso13_gpio057: kso13_gpio057 {
 			pinmux = <REALTEK_RTS5912_PINMUX(57, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso14_gpio058: kso14_gpio058 {
 			pinmux = <REALTEK_RTS5912_PINMUX(58, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso15_gpio059: kso15_gpio059 {
 			pinmux = <REALTEK_RTS5912_PINMUX(59, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 
 	/omit-if-no-ref/ kso16_gpio060: kso16_gpio060 {
 			pinmux = <REALTEK_RTS5912_PINMUX(60, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso17_gpio061: kso17_gpio061 {
 			pinmux = <REALTEK_RTS5912_PINMUX(61, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso18_gpio092: kso18_gpio092 {
 			pinmux = <REALTEK_RTS5912_PINMUX(92, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ kso19_gpio093: kso19_gpio093 {
 			pinmux = <REALTEK_RTS5912_PINMUX(93, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/* KSO PINCTRL SETTING END */
 	/* KSI PINCTRL SETTING START */
@@ -372,53 +412,73 @@
 			pinmux = <REALTEK_RTS5912_PINMUX(64, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ ksi1_gpio065: ksi1_gpio065 {
 			pinmux = <REALTEK_RTS5912_PINMUX(65, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ ksi2_gpio066: ksi2_gpio066 {
 			pinmux = <REALTEK_RTS5912_PINMUX(66, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ ksi3_gpio067: ksi3_gpio067 {
 			pinmux = <REALTEK_RTS5912_PINMUX(67, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 
 	/omit-if-no-ref/ ksi4_gpio068: ksi4_gpio068 {
 			pinmux = <REALTEK_RTS5912_PINMUX(68, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ ksi5_gpio069: ksi5_gpio069 {
 			pinmux = <REALTEK_RTS5912_PINMUX(69, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ ksi6_gpio070: ksi6_gpio070 {
 			pinmux = <REALTEK_RTS5912_PINMUX(70, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ ksi7_gpio071: ksi7_gpio071 {
 			pinmux = <REALTEK_RTS5912_PINMUX(71, FUNC1)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 
 	/omit-if-no-ref/ ksi8_gpio054: ksi8_gpio054 {
 			pinmux = <REALTEK_RTS5912_PINMUX(54, FUNC3)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/omit-if-no-ref/ ksi9_gpio098: ksi9_gpio098 {
 			pinmux = <REALTEK_RTS5912_PINMUX(98, FUNC2)>;
 			input-enable;
 			input-schmitt-enable;
+			bias-pull-up;
+			drive-open-drain;
 	};
 	/* KSO PINCTRL SETTING END */
 	/* KSM PINCTRL SETTING END */
