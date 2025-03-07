@@ -40,7 +40,7 @@ Setting a new SIRK
 
 This command can modify the currently used SIRK. To get the new RSI to advertise on air,
 :code:`bt adv-data` or :code:`bt advertise` must be called again to set the new advertising data.
-If :code:`CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE` is enabled, this will also notify connected
+If :code:`CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE` is enabled, this will also notify connected
 clients.
 
 .. code-block:: console
