@@ -75,6 +75,9 @@ enum {
 
 	/* fixed channels flags */
 	L2CAP_FLAG_FIXED_CONNECTED,		/* fixed connected */
+
+	/* Auth failed, disconnect ACL */
+	L2CAP_FLAG_DISCONNECT_ACL,	/* Disconnect ACL */
 };
 
 static sys_slist_t br_servers;
@@ -859,6 +862,22 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	return L2CAP_CONN_SECURITY_REJECT;
 }
 
+static void l2cap_br_conn_rsp_sent_cb(struct bt_conn *conn, void *user_data, int err)
+{
+	uint16_t scid = POINTER_TO_UINT(user_data);
+	struct bt_l2cap_chan *chan;
+
+	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
+	if (!chan) {
+		return;
+	}
+
+	/* Check whether the ACL connection needs to be disconnected. */
+	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_DISCONNECT_ACL)) {
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+	}
+}
+
 static void l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 				  uint16_t dcid, uint8_t ident, uint16_t result)
 {
@@ -884,7 +903,10 @@ static void l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_NO_INFO);
 	}
 
-	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+	if (bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, l2cap_br_conn_rsp_sent_cb,
+				UINT_TO_POINTER(scid))) {
+		net_buf_unref(buf);
+	}
 }
 
 static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
@@ -1084,6 +1106,8 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	case L2CAP_CONN_SECURITY_REJECT:
 	default:
 		result = BT_L2CAP_BR_ERR_SEC_BLOCK;
+		/* Set disconnect ACL flag. */
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_DISCONNECT_ACL);
 		break;
 	}
 	/* Reply on connection request as acceptor */
@@ -1092,7 +1116,12 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	if (result != BT_L2CAP_BR_SUCCESS) {
 		/* Disconnect link when security rules were violated */
 		if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
-			bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+			/*
+			 * Disconnect the ACL after the packet of response has been sent.
+			 * The `L2CAP_FLAG_DISCONNECT_ACL` is used to flag whether ACL disconnect
+			 * request needs to be sent when the L2CAP conn rsp sent out callback is
+			 * triggered.
+			 */
 		} else if (result == BT_L2CAP_BR_PENDING) {
 			/* Recover the ident when conn is pending */
 			br_chan->ident = ident;
