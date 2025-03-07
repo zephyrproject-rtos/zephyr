@@ -42,7 +42,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, dev_id=True, flash_addr=True)
+        return RunnerCaps(commands={'flash'}, dev_id=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -82,9 +82,8 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
             args.img = cfg.bin_file
 
         if args.dfuse:
-            args.dt_flash = True  # --dfuse implies --dt-flash.
             build_conf = BuildConfiguration(cfg.build_dir)
-            dcfg = DfuSeConfig(address=cls.get_flash_address(args, build_conf),
+            dcfg = DfuSeConfig(address=cls.flash_address_from_build_conf(build_conf),
                                options=args.dfuse_modifiers)
         else:
             dcfg = None
