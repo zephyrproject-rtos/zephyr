@@ -22,4 +22,5 @@ supported:
   - spi
   - uart
   - usb_device
+  - usbd
 vendor: atmel
