@@ -1,0 +1,48 @@
+bt init
+bt id-create C1:AA:DE:AD:BE:EF
+bt id-select 1
+bt advertise on identity
+bt connect 11:22:33:43:43:43 (random)
+bt connect CA:FE:BE:EF:BE:EF (random)
+
+bt conn-update 100 200 0 800
+
+# 41 and 81: need to switch to 1M
+bt phy-update 1 1
+
+# 361: need asym PHYs
+bt phy-update 2 1
+
+# interval=10 000 packing-sequential unframed latency=130 sdu=130
+iso cig_create txrx 10000 10000 0 0 130 130
+iso connect
+iso disconnect
+
+# frame-space-min frame-space-max phy-mask which-frame-spacing?:(1-CP 2-PC 8-CIS 16-MSS)
+bt tifs-update 140 150 7 8
+bt tifs-update 140 150 7 16
+bt tifs-update 140 150 7 24
+
+# 41:
+bt tifs-update 140 150 129 32769
+bt tifs-update 140 150 129 32770
+bt tifs-update 150 150 129 32771
+
+# For 162 (central/tester should disconnect, periph/iut sends tifs-update)
+bt tifs-update 140 150 1 8
+bt tifs-update 140 150 1 16
+bt tifs-update 150 150 1 24
+
+# accept ISO CIS connections (as peripheral)
+iso listen txrx
+
+# coded phy
+bt phy-update 4 4
+
+# 1M phy
+bt phy-update 1 1
+
+# Check about test 172: frame space change invalid parameters central (listed as mandatory?)
+# -> we need HCI support as the test requires a rejection over HCI. Provide hex to ellisys.
+
+# 41 set some RFU bits
