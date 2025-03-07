@@ -7,7 +7,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(DT_DRV_COMPAT, CONFIG_PHY_LOG_LEVEL);
+LOG_MODULE_REGISTER(phy_adin, CONFIG_PHY_LOG_LEVEL);
 
 #include <errno.h>
 #include <stdint.h>
