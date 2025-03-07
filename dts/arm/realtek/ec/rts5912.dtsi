@@ -258,6 +258,15 @@
 			clk-divider = <33>;
 			status = "disabled";
 		};
+
+		kbd: kbd@40010000 {
+			compatible = "realtek,rts5912-kbd";
+			reg = <0x40010000 0x10>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_KBM_CLKPWR>;
+			interrupts = <210 0>;
+			interrupt-parent = <&nvic>;
+			status = "disabled";
+		};
 	};
 
 	swj_port: swj-port {
