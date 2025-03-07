@@ -58,6 +58,14 @@ config BT_HCI_IPC_SEND_RETRY_DELAY_US
 	  When a single tick (CONFIG_SYS_CLOCK_TICKS_PER_SEC) is bigger then
 	  the retry delay the k_busy_wait function is used. Set with care.
 
+config BT_HCI_IPC_ENDPOINT_BOUND_TIMEOUT_MS
+	int "HCI IPC binding timeout value in milliseconds"
+	depends on BT_HCI_IPC
+	default 2000
+	help
+	  Timeout value that HCI will wait for an IPC endpoint to be bound,
+	  in milliseconds.
+
 config BT_SPI
 	bool
 	select SPI
