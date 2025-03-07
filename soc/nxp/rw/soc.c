@@ -82,7 +82,6 @@ const clock_avpll_config_t avpll_config = {
  */
 __weak __ramfunc void clock_init(void)
 {
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	POWER_DisableGDetVSensors();
 
 	if ((PMU->CAU_SLP_CTRL & PMU_CAU_SLP_CTRL_SOC_SLP_RDY_MASK) == 0U) {
@@ -271,7 +270,6 @@ __weak __ramfunc void clock_init(void)
 	RESET_PeripheralReset(kENET_IPG_S_RST_SHIFT_RSTn);
 #endif
 
-#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
 }
 
 extern void nxp_rw6xx_power_init(void);
@@ -285,7 +283,6 @@ extern void nxp_rw6xx_power_init(void);
 
 void soc_early_init_hook(void)
 {
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt), nxp_lpc_wwdt, okay))
 	POWER_EnableResetSource(kPOWER_ResetSourceWdt);
 #endif
@@ -311,7 +308,6 @@ void soc_early_init_hook(void)
 #if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU)
 	POWER_PowerOnGau();
 #endif
-
 #if CONFIG_PM
 	nxp_rw6xx_power_init();
 #endif
@@ -319,13 +315,10 @@ void soc_early_init_hook(void)
 #if defined(CONFIG_BT) || defined(CONFIG_IEEE802154)
 	nxp_nbu_init();
 #endif
-#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
 }
 
 void soc_reset_hook(void)
 {
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* This is provided by the SDK */
 	SystemInit();
-#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
 }
