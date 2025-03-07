@@ -1,0 +1,11 @@
+identifier: rzv2l_smarc/r9a07g054l23gbg/cm33
+name: Cortex-M33 for Renesas RZ/V2L SMARC
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+vendor: renesas
