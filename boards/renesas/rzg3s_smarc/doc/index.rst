@@ -75,6 +75,8 @@ and the following hardware features:
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock control                       |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 
