@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  NXP S32 pinctrl node for S32Z/E SoCs.
+  NXP S32 Pin Controller for S32Z/E SoCs
 
   The NXP S32 pin controller is a singleton node responsible for controlling
   the pin function selection and pin properties. This node, labeled 'pinctrl' in
