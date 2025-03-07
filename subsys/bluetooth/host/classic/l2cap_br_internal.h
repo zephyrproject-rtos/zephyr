@@ -217,3 +217,5 @@ struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
 
 #define bt_l2cap_create_pdu(_pool, _reserve) \
 	bt_l2cap_create_pdu_timeout(_pool, _reserve, K_FOREVER)
+
+bt_security_t bt_l2cap_br_get_max_sec_level(void);
