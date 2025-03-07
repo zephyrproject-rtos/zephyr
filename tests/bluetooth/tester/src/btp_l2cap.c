@@ -770,6 +770,9 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENCRYPTION:
 		server->sec_level = BT_SECURITY_L2;
 		break;
+	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_SEC_AUTHEN:
+		server->sec_level = BT_SECURITY_L4;
+		break;
 	default:
 		return BTP_STATUS_FAILED;
 	}
