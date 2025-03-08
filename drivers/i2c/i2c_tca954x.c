@@ -18,6 +18,7 @@ struct tca954x_root_config {
 	struct i2c_dt_spec i2c;
 	uint8_t nchans;
 	const struct gpio_dt_spec reset_gpios;
+	bool idle_disconnect;
 };
 
 struct tca954x_root_data {
@@ -95,6 +96,11 @@ static int tca954x_transfer(const struct device *dev,
 	}
 
 	res = i2c_transfer(config->i2c.bus, msgs, num_msgs, addr);
+
+	if(config->idle_disconnect) {
+		/* Deselect active channel */
+		res = tca954x_set_channel(down_cfg->root, 0);
+	}
 
 end_trans:
 	k_mutex_unlock(&data->lock);
@@ -186,6 +192,7 @@ BUILD_ASSERT(CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO > CONFIG_I2C_TCA954X_ROOT_INIT
 		.nchans = ch,							  \
 		.reset_gpios = GPIO_DT_SPEC_GET_OR(			          \
 				DT_INST(inst, ti_tca##n##a), reset_gpios, {0}),	  \
+		.idle_disconnect = DT_INST_PROP_OR(inst, i2c-mux-idle-disconnect, 0),	\
 	};								          \
 	static struct tca954x_root_data tca##n##a_data_##inst = {		  \
 		.lock = Z_MUTEX_INITIALIZER(tca##n##a_data_##inst.lock),	  \
