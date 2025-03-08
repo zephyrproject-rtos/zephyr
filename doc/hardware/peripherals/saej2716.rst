@@ -1,0 +1,22 @@
+.. _saej2716_api:
+
+SAEJ2716 Single Edge Nibble Transmission (SENT)
+###############################################
+
+Overview
+********
+
+The SAEJ2716 API provides functionality to communicate with SAEJ2716 Single Edge Nibble
+Transmission (SENT) devices.
+
+Configuration Options
+*********************
+
+Related configuration options:
+
+* :kconfig:option:`CONFIG_SAEJ2716`
+
+API Reference
+*************
+
+.. doxygengroup:: saej2716_interface
