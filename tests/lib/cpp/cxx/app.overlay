@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Application overlay for creating a fake device instance we can use to
- * test. Subset of tests/kernel/device/app.overlay and other app.overlay
- * files.
+ * test. Nested devices have been used to avoid cross-platform issues by
+ * forcing a specific 'reg' property size on child nodes.
  */
 
 / {
@@ -19,5 +19,19 @@
 		status = "okay";
 
 		zephyr,deferred-init;
+	};
+
+	test_ctrl: ctrl {
+		compatible = "fake-cpp-driver";
+		status = "okay";
+
+		#address-cells = < 1 >;
+		#size-cells = < 0 >;
+
+		test_dev2_reg_addr: dev2@2 {
+			reg = < 2 >;
+			compatible = "fake-cpp-driver";
+			status = "okay";
+		};
 	};
 };
