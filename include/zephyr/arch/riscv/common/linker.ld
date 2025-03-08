@@ -347,9 +347,13 @@ SECTIONS
 #include <snippets-data-sections.ld>
 
     __data_region_end = .;
-    .htif ALIGN(0x100) : {
+    
+	SECTION_DATA_PROLOGUE(_HTIF_SECTION_NAME,,)
+	{
+		. = ALIGN(0x100);
         KEEP(*(.htif))
-    }
+	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
