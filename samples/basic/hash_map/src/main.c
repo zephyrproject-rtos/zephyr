@@ -36,7 +36,7 @@ int main(void)
 	do {
 		for (i = 0; i < CONFIG_TEST_LIB_HASH_MAP_MAX_ENTRIES; ++i) {
 
-			ires = sys_hashmap_insert(&map, i, i, NULL);
+			ires = sys_hashmap_insert(&map, i, i, NULL, NULL);
 			if (ires < 0) {
 				break;
 			}
@@ -54,7 +54,7 @@ int main(void)
 
 		for (i = 0; i < stats.max_size; ++i) {
 
-			ires = sys_hashmap_insert(&map, i, stats.max_size - i, NULL);
+			ires = sys_hashmap_insert(&map, i, stats.max_size - i, NULL, NULL);
 			__ASSERT(ires == 0, "Failed to replace %zu", i);
 			++stats.n_replace;
 
@@ -66,7 +66,7 @@ int main(void)
 		}
 
 		for (i = stats.max_size; i > 0; --i) {
-			bres = sys_hashmap_remove(&map, i - 1, NULL);
+			bres = sys_hashmap_remove(&map, i - 1, NULL, NULL);
 			__ASSERT(bres, "Failed to remove %zu", i - 1);
 			++stats.n_remove;
 

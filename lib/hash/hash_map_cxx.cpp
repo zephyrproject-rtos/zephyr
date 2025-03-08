@@ -67,7 +67,7 @@ static void sys_hashmap_cxx_clear(struct sys_hashmap *map, sys_hashmap_callback_
 }
 
 static int sys_hashmap_cxx_insert(struct sys_hashmap *map, uint64_t key, uint64_t value,
-				  uint64_t *old_value)
+				  uint64_t *old_value, uint64_t *old_key)
 {
 	cxx_map *umap = static_cast<cxx_map *>(map->data->buckets);
 
@@ -78,15 +78,20 @@ static int sys_hashmap_cxx_insert(struct sys_hashmap *map, uint64_t key, uint64_
 	}
 
 	auto it = umap->find(key);
-	if (it != umap->end() && old_value != nullptr) {
-		*old_value = it->second;
+	if (it != umap->end()) {
+		if (old_value != nullptr) {
+			*old_value = it->second;
+		}
+		if (old_key != nullptr) {
+			*old_key = it->first;
+		}
 		it->second = value;
 		return 0;
 	}
 
 	try {
 		(*umap)[key] = value;
-	} catch(...) {
+	} catch (...) {
 		return -ENOMEM;
 	}
 
@@ -96,7 +101,8 @@ static int sys_hashmap_cxx_insert(struct sys_hashmap *map, uint64_t key, uint64_
 	return 1;
 }
 
-static bool sys_hashmap_cxx_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value)
+static bool sys_hashmap_cxx_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value,
+				   uint64_t *old_key)
 {
 	cxx_map *umap = static_cast<cxx_map *>(map->data->buckets);
 
@@ -111,6 +117,9 @@ static bool sys_hashmap_cxx_remove(struct sys_hashmap *map, uint64_t key, uint64
 
 	if (value != nullptr) {
 		*value = it->second;
+	}
+	if (old_key != nullptr) {
+		*old_key = it->first;
 	}
 
 	umap->erase(key);

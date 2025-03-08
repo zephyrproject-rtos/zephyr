@@ -62,6 +62,7 @@ struct sys_hashmap_iterator {
  * @brief Check if a Hashmap iterator has a next entry
  *
  * @param it Hashmap iterator
+ *
  * @return true if there is a next entry
  * @return false if there is no next entry
  */
@@ -69,6 +70,21 @@ static inline bool sys_hashmap_iterator_has_next(const struct sys_hashmap_iterat
 {
 	return it->pos < it->size;
 }
+
+/**
+ * @brief Equality function defined for elements of @ref sys_hashmap
+ *
+ * The Hashmap equality function allows storing arbitrary data in the uint64_t keys of the map.
+ * Similarly to what happens in other hashmap implementation by defining a custom hash and equality
+ * function you can store and retrieve elements of virtually every type.
+ *
+ * @param left Left element of the comparison.
+ * @param right Right element of the comparison.
+ *
+ * @retval true if left and right are equal
+ * @retval false if left and right are not equal
+ */
+typedef bool (*sys_hashmap_equal_t)(uint64_t left, uint64_t right);
 
 /**
  * @brief Allocator interface for @ref sys_hashmap
@@ -126,27 +142,36 @@ typedef void (*sys_hashmap_clear_t)(struct sys_hashmap *map, sys_hashmap_callbac
  * @param key Key to associate with @p value
  * @param value Value to associate with @p key
  * @param old_value Location to store the value previously associated with @p key or `NULL`
+ * @param old_key Location to store a potential key that has the same hash
+ * and is equal to the key passed when checked using @ref sys_hashmap `eq_func`
+ *
  * @retval 0 if @p value was inserted for an existing key, in which case @p old_value will contain
  * the previous value
  * @retval 1 if a new entry was inserted for the @p key - @p value pair
  * @retval -ENOMEM if memory allocation failed
  */
 typedef int (*sys_hashmap_insert_t)(struct sys_hashmap *map, uint64_t key, uint64_t value,
-				    uint64_t *old_value);
+				    uint64_t *old_value, uint64_t *old_key);
 
 /**
  * @brief Remove an entry from a @ref sys_hashmap
  *
- * Erase the entry associated with key @p key, if one exists.
+ * Erase the entry associated with key @p key, if one exists. Returns references to the
+ * old value and the old key. The addition of the `eq_func` in @ref sys_hashmap
+ * could mean that the key used to access an entry is different from the key stored.
+ * The @p stored_key will hold a reference to the old key if present.
  *
  * @param map Hashmap to remove from
  * @param key Key to remove from @p map
  * @param value Location to store a potential value associated with @p key or `NULL`
+ * @param old_key Location to store a potential key that has the same hash
+ * and is equal to the key passed when checked using @ref sys_hashmap `eq_func`
  *
  * @retval true if @p map was modified as a result of this operation.
  * @retval false if @p map does not contain a value associated with @p key.
  */
-typedef bool (*sys_hashmap_remove_t)(struct sys_hashmap *map, uint64_t key, uint64_t *value);
+typedef bool (*sys_hashmap_remove_t)(struct sys_hashmap *map, uint64_t key, uint64_t *value,
+				     uint64_t *old_key);
 
 /**
  * @brief Get a value from a @ref sys_hashmap
@@ -213,8 +238,9 @@ struct sys_hashmap_config {
  */
 #define SYS_HASHMAP_CONFIG(_max_size, _load_factor)                                                \
 	{                                                                                          \
-		.max_size = (size_t)_max_size, .load_factor = (uint8_t)_load_factor,               \
-		.initial_n_buckets = NHPOT(DIV_ROUND_UP(100, _load_factor)),                   \
+		.max_size = (size_t)_max_size,                                                     \
+		.load_factor = (uint8_t)_load_factor,                                              \
+		.initial_n_buckets = NHPOT(DIV_ROUND_UP(100, _load_factor)),                       \
 	}
 
 /**
