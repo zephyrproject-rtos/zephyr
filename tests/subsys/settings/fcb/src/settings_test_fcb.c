@@ -165,26 +165,13 @@ void config_wipe_srcs(void)
 	settings_save_dst = NULL;
 }
 
-struct flash_sector fcb_sectors[SETTINGS_TEST_FCB_FLASH_CNT] = {
-	[0] = {
-		.fs_off = 0x00000000,
-		.fs_size = 16 * 1024
-	},
-	[1] = {
-		.fs_off = 0x00004000,
-		.fs_size = 16 * 1024
-	},
-	[2] = {
-		.fs_off = 0x00008000,
-		.fs_size = 16 * 1024
-	},
-	[3] = {
-		.fs_off = 0x0000c000,
-		.fs_size = 16 * 1024
-	}
-};
+const struct flash_sector fcb_sectors[SETTINGS_TEST_FCB_FLASH_CNT] = {
+	[0] = {.fs_off = 0x00000000, .fs_size = 16 * 1024},
+	[1] = {.fs_off = 0x00004000, .fs_size = 16 * 1024},
+	[2] = {.fs_off = 0x00008000, .fs_size = 16 * 1024},
+	[3] = {.fs_off = 0x0000c000, .fs_size = 16 * 1024}};
 
-void config_wipe_fcb(struct flash_sector *fs, int cnt)
+void config_wipe_fcb(struct flash_sector const *fs, int cnt)
 {
 	const struct flash_area *fap;
 	int rc;
