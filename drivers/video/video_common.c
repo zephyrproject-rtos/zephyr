@@ -105,24 +105,71 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 				    const struct video_frmival *desired,
 				    struct video_frmival *match)
 {
-	uint64_t min = stepwise->min.numerator;
-	uint64_t max = stepwise->max.numerator;
-	uint64_t step = stepwise->step.numerator;
-	uint64_t goal = desired->numerator;
+	uint64_t numerator_min = stepwise->min.numerator;
+	uint64_t numerator_step = stepwise->step.numerator;
+	uint64_t numerator_goal = desired->numerator;
+	uint64_t denominator;
+	uint64_t numerator;
 
-	/* Set a common denominator to all values */
-	min *= stepwise->max.denominator * stepwise->step.denominator * desired->denominator;
-	max *= stepwise->min.denominator * stepwise->step.denominator * desired->denominator;
-	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
-	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
+	/* Compare the values with the min, under same denominator */
+	if (desired->numerator * stepwise->min.denominator <
+	    stepwise->min.numerator * desired->denominator) {
+		match->numerator = stepwise->min.numerator;
+		match->denominator = stepwise->min.denominator;
+		return;
+	}
 
-	/* Saturate the desired value to the min/max supported */
-	goal = CLAMP(goal, min, max);
+	/* Compare the values with the max, under same denominator */
+	if (desired->numerator * stepwise->max.denominator >
+	    stepwise->max.numerator * desired->denominator) {
+		match->numerator = stepwise->max.numerator;
+		match->denominator = stepwise->max.denominator;
+		return;
+	}
 
-	/* Compute a numerator and denominator */
-	match->numerator = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
-	match->denominator = stepwise->min.denominator * stepwise->max.denominator *
-			     stepwise->step.denominator * desired->denominator;
+	/* Set a common denominator to these 2 values */
+	numerator_min *= stepwise->step.denominator;
+	numerator_step *= stepwise->min.denominator;
+	denominator = stepwise->min.denominator * stepwise->step.denominator;
+
+	/* Loose precision until landing within 32-bit range */
+	while (numerator_min > UINT32_MAX || numerator_step > UINT32_MAX ||
+	       denominator > UINT32_MAX) {
+		numerator_min /= 2;
+		numerator_step /= 2;
+		denominator /= 2;
+	}
+
+	/* Set a common denominator to these 3 values */
+	numerator_min *= desired->denominator;
+	numerator_step *= desired->denominator;
+	numerator_goal *= denominator;
+	denominator *= desired->denominator;
+
+	/* Loose precision until landing within 32-bit range */
+	while (numerator_min > UINT32_MAX || numerator_step > UINT32_MAX ||
+	       numerator_goal > UINT32_MAX || denominator > UINT32_MAX) {
+		numerator_min /= 2;
+		numerator_step /= 2;
+		numerator_goal /= 2;
+		denominator /= 2;
+	}
+
+	/* Now that everything is under same denominator, apply: y = b + (x - b) / a * a
+	 * So if min is 31 and step is 10, candidate values are 31, 41, 51, 61, 71...
+	 */
+	numerator_goal -= numerator_min;
+	numerator =
+		numerator_min + DIV_ROUND_CLOSEST(numerator_goal, numerator_step) * numerator_step;
+
+	/* Loose precision until landing within 32-bit range */
+	while (numerator > UINT32_MAX || denominator > UINT32_MAX) {
+		numerator /= 2;
+		denominator /= 2;
+	}
+
+	match->numerator = numerator;
+	match->denominator = denominator;
 }
 
 void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
