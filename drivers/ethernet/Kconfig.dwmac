@@ -7,7 +7,14 @@ menuconfig ETH_DWMAC
 	bool "Synopsys DesignWare MAC driver"
 	default y
 	depends on NET_BUF_FIXED_DATA_SIZE
-	depends on (SOC_SERIES_STM32H7X && !ETH_STM32_HAL) || MMU
+	# NOTE: The DWMAC driver has two parts, one that is independent of the platform
+	# enclosing the DWMAC peripheral (eth_dwmac.c) and another one that is dependent
+	# on it. Currently, there are two examples of the platform-dependent part that
+	# are in-tree: eth_dwmac_stm32h7x.c (compiled-in if `SOC_SERIES_STM32H7X && !ETH_STM32_HAL`)
+	# and eth_dwmac_mmu.c (compiled-in if `MMU` is set). In order to support
+	# other enclosing platforms that are out-of-tree, ETH_DWMAC_OTHER needs to be
+	# selected for the corresponding platform.
+	depends on (SOC_SERIES_STM32H7X && !ETH_STM32_HAL) || MMU || ETH_DWMAC_OTHER
 	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
 	help
 	  This is a driver for the Synopsys DesignWare MAC, also referred to
@@ -66,3 +73,6 @@ config DWMAC_NB_RX_DESCS
 	  dropped packets.
 
 endif # ETH_DWMAC
+
+config ETH_DWMAC_OTHER
+	bool
