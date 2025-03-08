@@ -32,6 +32,8 @@ Boards
 * The config option :kconfig:option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME` has been deprecated
   in favor of :kconfig:option:`CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME`.
 
+* Zephyr now supports version 1.11.1 of the :zephyr:board:`neorv32`.
+
 Device Drivers and Devicetree
 *****************************
 
