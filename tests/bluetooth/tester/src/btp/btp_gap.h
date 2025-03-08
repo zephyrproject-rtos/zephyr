@@ -319,6 +319,51 @@ struct btp_gap_padv_sync_transfer_recv_cmd {
 	uint8_t flags;
 } __packed;
 
+#define BTP_GAP_EXT_ADV_CREATE 0x2a
+struct btp_gap_ext_adv_create_set_rp {
+	uint8_t id;
+} __packed;
+
+#define BTP_GAP_EXT_ADV_DELETE 0x2b
+struct btp_gap_ext_adv_delete_cmd {
+	uint8_t id;
+} __packed;
+
+#define BTP_GAP_EXT_ADV_SET_PARAMS 0x2c
+struct btp_gap_ext_adv_set_params_cmd {
+	uint8_t id;
+	uint8_t sid;
+	uint8_t address_type;
+	uint8_t ad_type;
+	uint8_t filter_accept_list;
+	uint8_t directed_advertising;
+	uint16_t options;
+	uint32_t min_interval;
+	uint32_t max_interval;
+	uint8_t peer_address_type;
+	uint8_t peer_address[6];
+} __packed;
+
+#define BTP_GAP_EXT_ADV_SET_DATA 0x2d
+struct btp_gap_ext_adv_set_data_cmd {
+	uint8_t id;
+	uint16_t data_len;
+	uint16_t scan_response_length;
+	uint8_t data[];
+} __packed;
+
+#define BTP_GAP_EXT_ADV_START 0x2e
+struct btp_gap_ext_adv_start_cmd {
+	uint8_t id;
+	uint16_t timeout;
+	uint8_t num_of_events;
+} __packed;
+
+#define BTP_GAP_EXT_ADV_STOP 0x2f
+struct btp_gap_ext_adv_stop_cmd {
+	uint8_t id;
+} __packed;
+
 /* events */
 #define BTP_GAP_EV_NEW_SETTINGS			0x80
 struct btp_gap_new_settings_ev {
@@ -443,7 +488,13 @@ struct btp_gap_ev_periodic_transfer_received_ev {
 	uint8_t data[];
 } __packed;
 
+#define BTP_GAP_EV_EXT_ADV_SET_TERMINATED 0x91
+struct btp_gap_ev_ext_adv_set_terminated_ev {
+	uint8_t id;
+} __packed;
+
 #if defined(CONFIG_BT_EXT_ADV)
+
 struct bt_le_per_adv_param;
 struct bt_le_per_adv_sync_param;
 struct bt_le_adv_param;
@@ -461,4 +512,97 @@ int tester_gap_padv_start(void);
 int tester_gap_padv_stop(void);
 int tester_gap_padv_create_sync(struct bt_le_per_adv_sync_param *create_params);
 int tester_gap_padv_stop_sync(void);
+
 #endif /* defined(CONFIG_BT_EXT_ADV) */
+
+/** Extended Advertiser Parameteres */
+
+/** Maximum Advertisir Set ID */
+#define BL_LE_ADVERTISER_SET_ID_MAX = 15
+
+/** Address Type */
+enum {
+	/** Identity Address */
+	BT_LE_ADDR_IDENTITY = 0,
+	/** Private Address, resolvable if connectable; otherwise non-resolvable */
+	BT_LE_ADDR_RESOLVABLE_PRIVATE = 1,
+	/** Private non-resolvable */
+	BT_LE_ADDR_NON_RESOLVABLE_PRIVATE = 2
+};
+
+/** Advertiser Type */
+enum {
+	/** Legacy Non-Connectable, Non-Scannable */
+	BT_LE_ADVERTISER_TYPE_LEGACY = 0,
+	/** Legacy Connectable */
+	BT_LE_ADVERTISER_TYPE_CONNECTABLE = BIT(1),
+	/** Legacy Scannable */
+	BT_LE_ADVERTISER_TYPE_SCANNABLE = BIT(2),
+	/** Legacy Connectable Not Scannable */
+	BT_LE_ADVERTISER_TYPE_LEGACY_CONNECTABLE_SCANNABLE = BIT(1) | BIT(2),
+	/** Extended Non-Connectable Non-Scannable */
+	BT_LE_ADVERTISER_TYPE_EXT_NON_CONN = BIT(3),
+	/** Extended Connectable */
+	BT_LE_ADVERTISER_TYPE_EXT_CONNECTABLE = BIT(3) | BIT(1),
+	/** Extended Scannable */
+	BT_LE_ADVERTISER_TYPE_EXT_SCANNABLE = BIT(3) | BIT(2),
+	/** Coded Non-Connectable Non-Scannable */
+	BT_LE_ADVERTISER_TYPE_CODED_NON_CONN = BIT(4),
+	/** Coded Connectable */
+	BT_LE_ADVERTISER_TYPE_CODED_CONNECTABLE = BIT(4) | BIT(1),
+	/** Coded Scannable */
+	BT_LE_ADVERTISER_TYPE_CODED_SCANNABLE = BIT(4) | BIT(2)
+};
+
+/** Filter Accept List options */
+enum {
+	/** Do not use the filter accept list */
+	BT_LE_FILTER_ACCEPT_LIST_DISABLED = 0,
+	/** Use the filter accept list for connections */
+	BT_LE_FILTER_ACCEPT_LIST_IN_USE_FOR_CONNECTIONS = 1,
+	/** Use the filter accept list for scan requests */
+	BT_LE_FILTER_ACCEPT_LIST_IN_USE_FOR_SCAN_REQ = 2,
+	/** Use the filter accept list for connections and scan requests */
+	BT_LE_FILTER_ACCEPT_LIST_IN_USE_FOR_CONNECTIONS_AND_SCAN_REQ = 3,
+};
+
+/** Directed Advertising options */
+enum {
+	/** Do not user directed advertising */
+	BT_LE_DIRECTED_ADVERTISING_DISABLED = 0,
+	/** Use high duty directed advertising */
+	BT_LE_DIRECTED_ADVERTISING_HIGH_DUTY = 1,
+	/** Use low duty directed advertising */
+	BT_LE_DIRECTED_ADVERTISING_LOW_DUTY = 2
+};
+
+/** Exteded Advertiser options */
+enum {
+	/** The Options bitfield is a bit-wise OR of the following bits */
+
+	/** Advertise with device name */
+	BT_LE_EXT_ADV_OPTION_USE_DEVICE_NAME = BIT(0),
+	/** Disable 2M PHY for extended advertising */
+	BT_LE_EXT_ADV_OPTION_DISABLE_2M = BIT(1),
+	/** Anonymous advertising for extended advertising */
+	BT_LE_EXT_ADV_OPTION_ANONYMOUS_ADV = BIT(2),
+	/** Include TX Power in extended advertising */
+	BT_LE_EXT_ADV_OPTION_INCLUDE_TX_POWER = BIT(3)
+};
+
+/**
+ * Peer Address Type
+ *
+ * The Peer Address and Peer Address Type fields will be ignored if
+ * directed advertising is not used.
+ */
+enum {
+	/** Public */
+	BT_LE_EXT_PEER_ADDR_TYPE_PUBLIC = 0,
+	/** Random */
+	BT_LE_EXT_PEER_ADDR_TYPE_RANDOM = 1,
+	/** Resolvable */
+	BT_LE_EXT_PEER_ADDR_TYPE_RESOLVABLE = 2
+};
+
+
