@@ -319,17 +319,12 @@ static bool supports_pread_pwrite(uint32_t mode)
 	}
 }
 
-static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t *from_offset)
+static ssize_t zvfs_rw_unlocked(int fd, void *buf, size_t sz, bool is_write,
+				const size_t *from_offset)
 {
 	bool prw;
 	ssize_t res;
 	const size_t *off;
-
-	if (_check_fd(fd) < 0) {
-		return -1;
-	}
-
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
 
 	prw = supports_pread_pwrite(fdtable[fd].mode);
 	if (from_offset != NULL && !prw) {
@@ -338,8 +333,7 @@ static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t
 		 * Otherwise, it's a bug.
 		 */
 		errno = ENOTSUP;
-		res = -1;
-		goto unlock;
+		return -1;
 	}
 
 	/* If there is no specified from_offset, then use the current offset of the fd */
@@ -347,15 +341,15 @@ static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t
 
 	if (is_write) {
 		if (fdtable[fd].vtable->write_offs == NULL) {
-			res = -1;
 			errno = EIO;
+			return -1;
 		} else {
 			res = fdtable[fd].vtable->write_offs(fdtable[fd].obj, buf, sz, *off);
 		}
 	} else {
 		if (fdtable[fd].vtable->read_offs == NULL) {
-			res = -1;
 			errno = EIO;
+			return -1;
 		} else {
 			res = fdtable[fd].vtable->read_offs(fdtable[fd].obj, buf, sz, *off);
 		}
@@ -368,7 +362,21 @@ static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t
 		fdtable[fd].offset += res;
 	}
 
-unlock:
+	return res;
+}
+
+static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t *from_offset)
+{
+	ssize_t res;
+
+	if (_check_fd(fd) < 0) {
+		return -1;
+	}
+
+	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
+
+	res = zvfs_rw_unlocked(fd, buf, sz, is_write, from_offset);
+
 	k_mutex_unlock(&fdtable[fd].lock);
 
 	return res;
@@ -535,6 +543,81 @@ int zvfs_ioctl(int fd, unsigned long request, va_list args)
 	return fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
 }
 
+int zvfs_lock_file(FILE *file, k_timeout_t timeout)
+{
+	int fd;
+	int prev_errno;
+	struct fd_entry *entry;
+
+	fd = z_libc_file_get_fd(file);
+	prev_errno = errno;
+	if (_check_fd(fd) < 0) {
+		if (errno != prev_errno) {
+			errno = prev_errno;
+		}
+		return -1;
+	}
+
+	entry = &fdtable[fd];
+	return k_mutex_lock(&entry->lock, timeout);
+}
+
+int zvfs_unlock_file(FILE *file)
+{
+	int fd;
+	int prev_errno;
+	struct fd_entry *entry;
+
+	fd = z_libc_file_get_fd(file);
+	prev_errno = errno;
+	if (_check_fd(fd) < 0) {
+		if (errno != prev_errno) {
+			errno = prev_errno;
+		}
+		return -1;
+	}
+
+	entry = &fdtable[fd];
+	return k_mutex_unlock(&entry->lock);
+}
+
+int zvfs_getc_unlocked(FILE *stream)
+{
+	int fd;
+	int res;
+	char buf;
+
+	fd = z_libc_file_get_fd(stream);
+	if (_check_fd(fd) < 0) {
+		return EOF;
+	}
+
+	res = zvfs_rw_unlocked(fd, &buf, 1, false, NULL);
+	if (res <= 0) {
+		return EOF;
+	}
+
+	return (int)buf;
+}
+
+int zvfs_putc_unlocked(int c, FILE *stream)
+{
+	int fd;
+	int res;
+	char buf = (char)c;
+
+	fd = z_libc_file_get_fd(stream);
+	if (_check_fd(fd) < 0) {
+		return EOF;
+	}
+
+	res = zvfs_rw_unlocked(fd, &buf, 1, true, NULL);
+	if (res <= 0) {
+		return EOF;
+	}
+
+	return c;
+}
 
 #if defined(CONFIG_POSIX_DEVICE_IO)
 /*
