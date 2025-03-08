@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT adi_max22190_gpio
-
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
@@ -18,10 +16,6 @@
 LOG_MODULE_REGISTER(gpio_max22190);
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
-
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
-#warning "GPIO MAX22190 driver enabled without any devices"
-#endif
 
 #define MAX22190_ENABLE  1
 #define MAX22190_DISABLE 0
@@ -71,6 +65,11 @@ LOG_MODULE_REGISTER(gpio_max22190);
 #define MAX22190_CLEAN_POR(dev)                                                                    \
 	max22190_reg_update(dev, MAX22190_FAULT1_REG, MAX22190_POR_MASK,                           \
 			    FIELD_PREP(MAX22190_POR_MASK, 0))
+
+enum max22190_variants {
+	MAX22190,
+	MAX22199,
+};
 
 enum max22190_ch_state {
 	MAX22190_CH_OFF,
@@ -184,6 +183,7 @@ struct max22190_config {
 	bool crc_en;
 	enum max22190_mode mode;
 	uint8_t pkt_size;
+	uint8_t variant;
 };
 
 struct max22190_data {
@@ -375,6 +375,7 @@ static int max22190_reg_update(const struct device *dev, uint8_t addr, uint8_t m
 static void max22190_fault_check(const struct device *dev)
 {
 	struct max22190_data *data = dev->data;
+	const struct max22190_config *config = dev->config;
 
 	/* FAULT1 */
 	data->fault1.reg_raw = max22190_reg_read(dev, MAX22190_FAULT1_REG);
@@ -389,23 +390,24 @@ static void max22190_fault_check(const struct device *dev)
 			      data->fault1_en.reg_bits.max22190_PORE);
 		PRINT_ERR_BIT(data->fault1.reg_bits.max22190_FAULT2,
 			      data->fault1_en.reg_bits.max22190_FAULT2E);
-		PRINT_ERR_BIT(data->fault1.reg_bits.max22190_ALRMT2,
-			      data->fault1_en.reg_bits.max22190_ALRMT2E);
-		PRINT_ERR_BIT(data->fault1.reg_bits.max22190_ALRMT1,
-			      data->fault1_en.reg_bits.max22190_ALRMT1E);
 		PRINT_ERR_BIT(data->fault1.reg_bits.max22190_24VL,
 			      data->fault1_en.reg_bits.max22190_24VLE);
 		PRINT_ERR_BIT(data->fault1.reg_bits.max22190_24VM,
 			      data->fault1_en.reg_bits.max22190_24VME);
-		PRINT_ERR_BIT(data->fault1.reg_bits.max22190_WBG,
-			      data->fault1_en.reg_bits.max22190_WBGE);
+		if (config->variant == MAX22190) {
+			PRINT_ERR_BIT(data->fault1.reg_bits.max22190_ALRMT2,
+				      data->fault1_en.reg_bits.max22190_ALRMT2E);
+			PRINT_ERR_BIT(data->fault1.reg_bits.max22190_ALRMT1,
+				      data->fault1_en.reg_bits.max22190_ALRMT1E);
+			PRINT_ERR_BIT(data->fault1.reg_bits.max22190_WBG,
+				      data->fault1_en.reg_bits.max22190_WBGE);
+			if (data->fault1.reg_bits.max22190_WBG &
+			    data->fault1_en.reg_bits.max22190_WBGE) {
+				uint8_t wb_val = max22190_reg_read(dev, MAX22190_WB_REG);
 
-		if (data->fault1.reg_bits.max22190_WBG & data->fault1_en.reg_bits.max22190_WBGE) {
-			uint8_t wb_val = max22190_reg_read(dev, MAX22190_WB_REG);
-
-			max22190_update_wb_stat(dev, (uint8_t)wb_val);
+				max22190_update_wb_stat(dev, (uint8_t)wb_val);
+			}
 		}
-
 		if (data->fault1.reg_bits.max22190_FAULT2) {
 			/* FAULT2 */
 			data->fault2.reg_raw = max22190_reg_read(dev, MAX22190_FAULT2_REG);
@@ -413,18 +415,20 @@ static void max22190_fault_check(const struct device *dev)
 			/* FAULT2_EN */
 			data->fault2_en.reg_raw = max22190_reg_read(dev, MAX22190_FAULT2_EN_REG);
 
-			PRINT_ERR_BIT(data->fault2.reg_bits.max22190_RFWBS,
-				      data->fault2_en.reg_bits.max22190_RFWBSE);
-			PRINT_ERR_BIT(data->fault2.reg_bits.max22190_RFWBO,
-				      data->fault2_en.reg_bits.max22190_RFWBOE);
-			PRINT_ERR_BIT(data->fault2.reg_bits.max22190_RFDIS,
-				      data->fault2_en.reg_bits.max22190_RFDISE);
-			PRINT_ERR_BIT(data->fault2.reg_bits.max22190_RFDIO,
-				      data->fault2_en.reg_bits.max22190_RFDIOE);
 			PRINT_ERR_BIT(data->fault2.reg_bits.max22190_OTSHDN,
 				      data->fault2_en.reg_bits.max22190_OTSHDNE);
 			PRINT_ERR_BIT(data->fault2.reg_bits.max22190_FAULT8CK,
 				      data->fault2_en.reg_bits.max22190_FAULT8CKE);
+			if (config->variant == MAX22190) {
+				PRINT_ERR_BIT(data->fault2.reg_bits.max22190_RFWBS,
+					      data->fault2_en.reg_bits.max22190_RFWBSE);
+				PRINT_ERR_BIT(data->fault2.reg_bits.max22190_RFWBO,
+					      data->fault2_en.reg_bits.max22190_RFWBOE);
+				PRINT_ERR_BIT(data->fault2.reg_bits.max22190_RFDIS,
+					      data->fault2_en.reg_bits.max22190_RFDISE);
+				PRINT_ERR_BIT(data->fault2.reg_bits.max22190_RFDIO,
+					      data->fault2_en.reg_bits.max22190_RFDIOE);
+			}
 		}
 	}
 }
@@ -515,6 +519,7 @@ static int max22190_fault_set(const struct device *dev)
 
 exit_fault_set:
 	LOG_ERR("Err spi_transcieve_dt  [%d]\n", ret);
+
 	return ret;
 }
 
@@ -583,17 +588,25 @@ static int gpio_max22190_init(const struct device *dev)
 	}
 
 	for (int i = 0; i < 8; i++) {
-		LOG_DBG("IN%d WBE [%d] FBP[%d] DELAY[%d]\n", i,
-			config->filter[i].reg_bits.max22190_WBE,
-			config->filter[i].reg_bits.max22190_FBP,
-			config->filter[i].reg_bits.max22190_DELAY);
+		if (config->variant == MAX22190) {
+			LOG_DBG("IN%d WBE [%d] FBP[%d] DELAY[%d]\n", i,
+				config->filter[i].reg_bits.max22190_WBE,
+				config->filter[i].reg_bits.max22190_FBP,
+				config->filter[i].reg_bits.max22190_DELAY);
+		} else {
+			LOG_DBG("IN%d FBP[%d] DELAY[%d]\n", i,
+				config->filter[i].reg_bits.max22190_FBP,
+				config->filter[i].reg_bits.max22190_DELAY);
+		}
 	}
 
 	LOG_DBG(" > MAX22190 MODE: %x", config->mode);
 	LOG_DBG(" > MAX22190 PKT SIZE: %dbits (%dbytes)", config->pkt_size * 8, config->pkt_size);
 	LOG_DBG(" > MAX22190 CRC: %s", config->crc_en ? "enable" : "disable");
 
-	data->fault1_en.reg_bits.max22190_WBGE = 1;
+	if (config->variant == MAX22190) {
+		data->fault1_en.reg_bits.max22190_WBGE = 1;
+	}
 	data->fault1_en.reg_bits.max22190_PORE = 1;
 
 	/* Set all FAULT and FAULT_EN regs */
@@ -626,17 +639,24 @@ static DEVICE_API(gpio, gpio_max22190_api) = {
 	: delay == 50    ? MAX22190_DELAY_50US                                                     \
 			 : MAX22190_DELAY_20000US
 
+/* Assigning proper variant for differentiating register map */
+#define MAX22190_CONFIG_SET_VARIANT(model)                                                         \
+	model == 22190   ? MAX22190 /* MAX22190 */                                                 \
+	: model == 22199 ? MAX22199 /* MAX22199 */                                                 \
+			 : MAX22190 /* Default fallback */
+
 /* Set FILTERx reg */
-#define MAX22190_FILTER_BY_IDX(id, idx)                                                            \
+#define MAX22190_FILTER_BY_IDX(id, model, idx)                                                     \
 	{                                                                                          \
 		.reg_bits.max22190_DELAY =                                                         \
 			MAX22190_FILTER_SET_DELAY(DT_INST_PROP_BY_IDX(id, filter_delays, idx)),    \
 		.reg_bits.max22190_FBP = DT_INST_PROP_BY_IDX(id, filter_fbps, idx),                \
-		.reg_bits.max22190_WBE = DT_INST_PROP_BY_IDX(id, filter_wbes, idx),                \
+		.reg_bits.max22190_WBE =                                                           \
+			(model == 22190) ? DT_INST_PROP_BY_IDX(id, filter_wbes, idx) : 0,          \
 	}
 
-#define GPIO_MAX22190_DEVICE(id)                                                                   \
-	static const struct max22190_config max22190_##id##_cfg = {                                \
+#define GPIO_MAX22190_DEVICE(id, model)                                                            \
+	static const struct max22190_config max##model##_##id##_cfg = {                            \
 		.spi = SPI_DT_SPEC_INST_GET(id, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U),        \
 		.ready_gpio = GPIO_DT_SPEC_INST_GET(id, drdy_gpios),                               \
 		.fault_gpio = GPIO_DT_SPEC_INST_GET(id, fault_gpios),                              \
@@ -644,23 +664,34 @@ static DEVICE_API(gpio, gpio_max22190_api) = {
 		.mode = DT_INST_PROP(id, max22190_mode),                                           \
 		.crc_en = !(DT_INST_PROP(id, max22190_mode) & 0x1),                                \
 		.pkt_size = !(DT_INST_PROP(id, max22190_mode) & 0x1) ? 3 : 2,                      \
+		.variant = MAX22190_CONFIG_SET_VARIANT(model),                                     \
 		.filter =                                                                          \
 			{                                                                          \
-				MAX22190_FILTER_BY_IDX(id, 0),                                     \
-				MAX22190_FILTER_BY_IDX(id, 1),                                     \
-				MAX22190_FILTER_BY_IDX(id, 2),                                     \
-				MAX22190_FILTER_BY_IDX(id, 3),                                     \
-				MAX22190_FILTER_BY_IDX(id, 4),                                     \
-				MAX22190_FILTER_BY_IDX(id, 5),                                     \
-				MAX22190_FILTER_BY_IDX(id, 6),                                     \
-				MAX22190_FILTER_BY_IDX(id, 7),                                     \
+				MAX22190_FILTER_BY_IDX(id, model, 0),                              \
+				MAX22190_FILTER_BY_IDX(id, model, 1),                              \
+				MAX22190_FILTER_BY_IDX(id, model, 2),                              \
+				MAX22190_FILTER_BY_IDX(id, model, 3),                              \
+				MAX22190_FILTER_BY_IDX(id, model, 4),                              \
+				MAX22190_FILTER_BY_IDX(id, model, 5),                              \
+				MAX22190_FILTER_BY_IDX(id, model, 6),                              \
+				MAX22190_FILTER_BY_IDX(id, model, 7),                              \
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	static struct max22190_data max22190_##id##_data;                                          \
+	static struct max22190_data max##model##_##id##_data;                                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(id, &gpio_max22190_init, NULL, &max22190_##id##_data,                \
-			      &max22190_##id##_cfg, POST_KERNEL,                                   \
+	DEVICE_DT_INST_DEFINE(id, &gpio_max22190_init, NULL, &max##model##_##id##_data,            \
+			      &max##model##_##id##_cfg, POST_KERNEL,                               \
 			      CONFIG_GPIO_MAX22190_INIT_PRIORITY, &gpio_max22190_api);
 
-DT_INST_FOREACH_STATUS_OKAY(GPIO_MAX22190_DEVICE)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_max22190_gpio
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MAX22190_DEVICE, 22190)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_max22199_gpio
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MAX22190_DEVICE, 22199)
+
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "GPIO MAX22190 driver enabled without any devices"
+#endif
