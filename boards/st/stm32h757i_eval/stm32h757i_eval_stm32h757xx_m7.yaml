@@ -1,0 +1,18 @@
+identifier: stm32h757i_eval/stm32h757xx/m7
+name: ST STM32H757I Eval (M7)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 2048
+flash: 1024
+supported:
+  - gpio
+  - spi
+  - netif:eth
+  - qspi
+  - memc
+  - usb_device
+vendor: st
