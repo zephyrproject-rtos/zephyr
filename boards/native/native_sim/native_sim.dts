@@ -171,6 +171,7 @@
 	counter0: counter {
 		status = "okay";
 		compatible = "zephyr,native-posix-counter";
+		#counter-cells = <1>;
 	};
 
 	gpio0: gpio_emul {
