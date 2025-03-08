@@ -176,7 +176,6 @@
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
 			open-loop-accuracy-ppm = <20000>;
-			closed-loop-base-accuracy-ppm = <5000>;
 			clocks = <&hfxo>, <&lfxo>;
 			clock-names = "hfxo", "lfxo";
 		};
