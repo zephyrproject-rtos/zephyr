@@ -240,12 +240,12 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
-zephyr_camera_i2c: &i2c1 {
+st_cam_i2c: &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
 };
 
-zephyr_camera_dvp: &dcmi {
+st_cam_dvp: &dcmi {
 	pinctrl-0 = <&dcmi_hsync_pa4 &dcmi_pixclk_pa6 &dcmi_vsync_pb7
 		     &dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pe0 &dcmi_d3_pe1
 		     &dcmi_d4_pe4 &dcmi_d5_pd3 &dcmi_d6_pe5 &dcmi_d7_pe6>;
