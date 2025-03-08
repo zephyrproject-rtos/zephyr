@@ -10,6 +10,8 @@ elseif(CONFIG_BOARD_NRF5340_AUDIO_DK_NRF5340_CPUNET)
   board_runner_args(jlink "--device=nrf5340_xxaa_net" "--speed=4000")
 endif()
 
-include(${ZEPHYR_BASE}/boards/common/nrfjprog.board.cmake)
+board_runner_args(nrfutil "--nrf-family=nrf53")
+
 include(${ZEPHYR_BASE}/boards/common/nrfutil.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/nrfjprog.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
