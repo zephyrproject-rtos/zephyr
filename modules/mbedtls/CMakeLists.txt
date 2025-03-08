@@ -119,6 +119,10 @@ zephyr_interface_library_named(mbedTLS)
       zephyr_entropy.c
     )
 
+    if(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
+      list(APPEND mbedtls_base_src psa_init.c)
+    endif()
+
     zephyr_library_sources(${mbedtls_base_src})
 
     zephyr_library_sources_ifdef(CONFIG_MBEDTLS_DEBUG debug.c)
