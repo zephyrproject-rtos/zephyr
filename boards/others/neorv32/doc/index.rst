@@ -27,9 +27,10 @@ using :ref:`devicetree overlays <use-dt-overlays>`.
 System Clock
 ============
 
-The default board configuration assumes a system clock of 18 MHz. The clock
-frequency can be overridden by changing the ``clock-frequency`` property of the
-``cpu0`` devicetree node.
+The default board configuration reads the system clock frequency from the NEORV32 SYSINFO module,
+which results in a small run-time overhead. If the clock frequency is known at build time, this
+behavior can be overridden by setting the ``clock-frequency`` property of the ``cpu0`` devicetree
+node.
 
 CPU
 ===

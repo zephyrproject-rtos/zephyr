@@ -7,7 +7,6 @@
 /dts-v1/;
 
 #include <neorv32.dtsi>
-#include <freq.h>
 #include <mem.h>
 
 / {
@@ -56,7 +55,6 @@
 
 &cpu0 {
 	riscv,isa = "rv32im_zicsr_zifencei";
-	clock-frequency = <DT_FREQ_M(18)>;
 };
 
 &bootrom {
