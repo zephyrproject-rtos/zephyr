@@ -272,6 +272,11 @@ int k_thread_runtime_stats_disable(k_tid_t  thread)
 
 	return 0;
 }
+
+bool k_thread_runtime_stats_is_enabled(k_tid_t thread)
+{
+	return thread->base.usage.track_usage;
+}
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
