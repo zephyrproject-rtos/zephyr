@@ -7,6 +7,8 @@ common:
   platform_key:
     - arch
     - simulation
+  integration_platforms:
+    - qemu_cortex_a53
   min_flash: 64
   min_ram: 32
 tests:
