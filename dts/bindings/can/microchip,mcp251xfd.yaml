@@ -65,6 +65,10 @@ properties:
       is not set, then an internal clock (typically 40MHz or 20MHz) will be
       output on CLKO pin instead.
 
+  xstby-enable:
+    type: boolean
+    description: Enables standby pin control on GPIO0.
+
   clko-div:
     type: int
     description: The factor to divide the system clock for CLKO pin.
