@@ -44,6 +44,7 @@ struct ssd1306_config {
 	struct gpio_dt_spec data_cmd;
 	struct gpio_dt_spec reset;
 	struct gpio_dt_spec supply;
+	struct gpio_dt_spec panel_supply;
 	ssd1306_bus_ready_fn bus_ready;
 	ssd1306_write_bus_fn write_bus;
 	ssd1306_bus_name_fn bus_name;
@@ -232,9 +233,9 @@ static int ssd1306_resume(const struct device *dev)
 		SSD1306_DISPLAY_ON,
 	};
 
-	/* Turn on supply if pin connected */
-	if (config->supply.port) {
-		gpio_pin_set_dt(&config->supply, 1);
+	/* Turn on panel supply if pin connected */
+	if (config->panel_supply.port) {
+		gpio_pin_set_dt(&config->panel_supply, 1);
 		k_sleep(K_MSEC(SSD1306_SUPPLY_DELAY));
 	}
 
@@ -249,8 +250,8 @@ static int ssd1306_suspend(const struct device *dev)
 	};
 
 	/* Turn off supply if pin connected */
-	if (config->supply.port) {
-		gpio_pin_set_dt(&config->supply, 0);
+	if (config->panel_supply.port) {
+		gpio_pin_set_dt(&config->panel_supply, 0);
 		k_sleep(K_MSEC(SSD1306_SUPPLY_DELAY));
 	}
 
@@ -423,9 +424,9 @@ static int ssd1306_init_device(const struct device *dev)
 	};
 
 	data->pf = config->color_inversion ? PIXEL_FORMAT_MONO10 : PIXEL_FORMAT_MONO01;
-	/* Turn on supply if pin connected */
-	if (config->supply.port) {
-		gpio_pin_set_dt(&config->supply, 1);
+	/* Turn on panel supply if pin connected */
+	if (config->panel_supply.port) {
+		gpio_pin_set_dt(&config->panel_supply, 1);
 		k_sleep(K_MSEC(SSD1306_SUPPLY_DELAY));
 	}
 
@@ -489,13 +490,13 @@ static int ssd1306_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (config->supply.port) {
-		ret = gpio_pin_configure_dt(&config->supply,
+	if (config->panel_supply.port) {
+		ret = gpio_pin_configure_dt(&config->panel_supply,
 					    GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
 			return ret;
 		}
-		if (!gpio_is_ready_dt(&config->supply)) {
+		if (!gpio_is_ready_dt(&config->panel_supply)) {
 			LOG_ERR("Supply GPIO device not ready");
 			return -ENODEV;
 		}
@@ -550,6 +551,7 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 	static const struct ssd1306_config config##node_id = {                                     \
 		.reset = GPIO_DT_SPEC_GET_OR(node_id, reset_gpios, {0}),                           \
 		.supply = GPIO_DT_SPEC_GET_OR(node_id, supply_gpios, {0}),                         \
+		.panel_supply = GPIO_DT_SPEC_GET_OR(node_id, panel_supply_gpios, {0}),             \
 		.height = DT_PROP(node_id, height),                                                \
 		.width = DT_PROP(node_id, width),                                                  \
 		.segment_offset = DT_PROP(node_id, segment_offset),                                \
