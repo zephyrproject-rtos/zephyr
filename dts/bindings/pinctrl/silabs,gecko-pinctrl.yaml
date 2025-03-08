@@ -69,6 +69,12 @@ child-binding:
   child-binding:
     description: |
       Silabs pin controller pin configuration group.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - low-power-enable
+
     properties:
       psels:
         required: true
