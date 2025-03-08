@@ -1711,7 +1711,7 @@ static int cmd_i3c_ccc_getmxds(const struct shell *sh, size_t argc, char **argv)
 	if (argc > 3) {
 		fmt = GETMXDS_FORMAT_3;
 		defbyte = strtol(argv[3], NULL, 16);
-		if (defbyte != GETMXDS_FORMAT_3_CRHDLY || defbyte != GETMXDS_FORMAT_3_WRRDTURN) {
+		if (defbyte != GETMXDS_FORMAT_3_CRHDLY && defbyte != GETMXDS_FORMAT_3_WRRDTURN) {
 			shell_error(sh, "Invalid defining byte.");
 			return -EINVAL;
 		}
