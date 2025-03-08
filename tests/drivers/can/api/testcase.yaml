@@ -21,3 +21,7 @@ tests:
     extra_configs:
       - CONFIG_CAN_NXP_S32_RX_FIFO=n
     filter: dt_compat_enabled("nxp,s32-canxl")
+  drivers.can.api.flexcan:
+    extra_args: DTC_OVERLAY_FILE=flexcan1.overlay
+    platform_allow:
+      - imx8mp_evk/mimx8ml8/a53
