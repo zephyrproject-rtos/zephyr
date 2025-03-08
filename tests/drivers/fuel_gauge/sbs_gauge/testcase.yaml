@@ -15,6 +15,8 @@ tests:
       - hifive_unmatched/fu740/u74
       - qemu_cortex_a53
       - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_max
+      - qemu_max/qemu_max/smp
       - qemu_kvm_arm64
       - xenvm
       - xenvm/xenvm/gicv3
@@ -34,6 +36,8 @@ tests:
       - hifive_unmatched/fu740/s7
       - qemu_cortex_a53
       - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_max
+      - qemu_max/qemu_max/smp
       - qemu_kvm_arm64
       - xenvm
       - xenvm/xenvm/gicv3
