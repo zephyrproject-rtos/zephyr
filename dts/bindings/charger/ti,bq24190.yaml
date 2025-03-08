@@ -1,7 +1,23 @@
 # Copyright 2023 Cirrus Logic, Inc.
+# Copyright 2025 Palta Tech, S.A
 # SPDX-License-Identifier: Apache-2.0
 
-description: Texas Instruments family of BQ24190 of charging ICs
+description: |
+  BQ2419x family of charging ICs.
+
+  BQ2419x I2C controlled, 1-Cell, 4.5-A, USB/Adapter Charger with Narrow VDC Power Path Management
+  and USB OTG
+
+  This charger is represented by device tree child node, e.g:
+
+  charger: bq24190@6b {
+      compatible = "ti,bq24190";
+      reg = <0x6b>;
+      status = "okay";
+
+      constant-charge-current-max-microamp = <1000000>;
+      constant-charge-voltage-max-microvolt = <3800000>;
+  };
 
 include: [battery.yaml, i2c-device.yaml]
 
@@ -10,9 +26,17 @@ compatible: "ti,bq24190"
 properties:
   constant-charge-current-max-microamp:
     required: true
+    description: |
+      The charge current target for the constant current phase of the charge profile.
+      This value will be set at initialization time. Range: 512 mA to 4.544 A.
+      The value specified will be rounded down to the closest implemented value.
 
   constant-charge-voltage-max-microvolt:
     required: true
+    description: |
+      The voltage regulation target for the constant voltage phase of the battery charging profile.
+      This value will be set at initialization time. Range: 3.504 V to 4.400 V.
+      The value specified will be rounded down to the closest implemented value.
 
   ce-gpios:
     type: phandle-array
