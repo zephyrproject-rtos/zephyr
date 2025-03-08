@@ -85,7 +85,7 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 	zassert_ok(pthread_mutex_destroy(&mutex), "Destroying mutex is failed");
 }
 
-ZTEST(mutex, test_mutex_prioceiling_stubs)
+ZTEST(posix_threads_base, test_mutex_prioceiling_stubs)
 {
 #ifdef CONFIG_POSIX_THREAD_PRIO_PROTECT
 	zassert_equal(pthread_mutex_getprioceiling(NULL, NULL), ENOSYS);
@@ -104,7 +104,7 @@ ZTEST(mutex, test_mutex_prioceiling_stubs)
  *	    and pthread_mutex_lock are tested with mutex type being
  *	    normal.
  */
-ZTEST(mutex, test_mutex_normal)
+ZTEST(posix_threads_base, test_mutex_normal)
 {
 	test_mutex_common(PTHREAD_MUTEX_NORMAL, normal_mutex_entry);
 }
@@ -116,7 +116,7 @@ ZTEST(mutex, test_mutex_normal)
  *	    twice and unlocked for the same number of time.
  *
  */
-ZTEST(mutex, test_mutex_recursive)
+ZTEST(posix_threads_base, test_mutex_recursive)
 {
 	test_mutex_common(PTHREAD_MUTEX_RECURSIVE, recursive_mutex_entry);
 }
@@ -126,7 +126,7 @@ ZTEST(mutex, test_mutex_recursive)
  *
  * @details Exactly CONFIG_MAX_PTHREAD_MUTEX_COUNT can be in use at once.
  */
-ZTEST(mutex, test_mutex_resource_exhausted)
+ZTEST(posix_threads_base, test_mutex_resource_exhausted)
 {
 	size_t i;
 	pthread_mutex_t m[CONFIG_MAX_PTHREAD_MUTEX_COUNT + 1];
@@ -150,7 +150,7 @@ ZTEST(mutex, test_mutex_resource_exhausted)
  *
  * @details Demonstrate that mutexes may be used over and over again.
  */
-ZTEST(mutex, test_mutex_resource_leak)
+ZTEST(posix_threads_base, test_mutex_resource_leak)
 {
 	pthread_mutex_t m;
 
@@ -189,7 +189,7 @@ static void *test_mutex_timedlock_fn(void *arg)
 }
 
 /** @brief Test to verify @ref pthread_mutex_timedlock returns ETIMEDOUT */
-ZTEST(mutex, test_mutex_timedlock)
+ZTEST(posix_threads_base, test_mutex_timedlock)
 {
 	void *ret;
 	pthread_t th;
@@ -215,15 +215,3 @@ ZTEST(mutex, test_mutex_timedlock)
 
 	zassert_ok(pthread_mutex_destroy(&mutex));
 }
-
-static void before(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		/* skip redundant testing if there is no thread pool / heap allocation */
-		ztest_test_skip();
-	}
-}
-
-ZTEST_SUITE(mutex, NULL, NULL, before, NULL, NULL);
