@@ -399,3 +399,12 @@ test_spi_ilps22qs: ilps22qs@30 {
 	spi-max-frequency = <0>;
 	status = "okay";
 };
+
+test_spi_icp201xx: icp201xx@31 {
+	compatible = "invensense,icp201xx";
+	reg = <0x31>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	op-mode = "mode0";
+	drive-strength = "current_12mA_1_8V";
+};
