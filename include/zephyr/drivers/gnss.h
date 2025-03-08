@@ -146,6 +146,8 @@ struct gnss_info {
 	enum gnss_fix_status fix_status;
 	/** The fix quality */
 	enum gnss_fix_quality fix_quality;
+	/** Accuracy radius in millimeters */
+	uint32_t fix_accuracy;
 };
 
 /** GNSS time data structure */

@@ -361,6 +361,7 @@ static void gnss_emul_set_fix(const struct device *dev)
 	data->data.info.hdop = 100;
 	data->data.info.fix_status = GNSS_FIX_STATUS_GNSS_FIX;
 	data->data.info.fix_quality = GNSS_FIX_QUALITY_GNSS_SPS;
+	data->data.info.fix_accuracy = 1000;
 }
 
 static void gnss_emul_set_utc(const struct device *dev)
