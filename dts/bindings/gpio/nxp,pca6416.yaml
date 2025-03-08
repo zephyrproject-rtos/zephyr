@@ -1,7 +1,7 @@
 # Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: Base binding for PCA6416 I2C-based GPIO expander
+description: PCA6416 I2C-based GPIO expander
 
 compatible: "nxp,pca6416"
 
