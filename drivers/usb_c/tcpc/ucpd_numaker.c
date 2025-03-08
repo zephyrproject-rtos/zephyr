@@ -16,6 +16,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util_macro_expr.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tcpc_numaker, CONFIG_USBC_LOG_LEVEL);
