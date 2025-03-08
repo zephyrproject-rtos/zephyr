@@ -65,6 +65,26 @@ def make_string_literal(chunk):
     print(''.join("\\x" + str(x) for x in hexlist), end='')
 
 
+def process_content(content, length):
+    if args.format == "literal":
+        print('"', end='')
+        process_chunk_func = make_string_literal
+    else:
+        process_chunk_func = make_hex
+
+    if length < 0:
+        for chunk in iter(lambda: content.read(1024), b''):
+            process_chunk_func(chunk)
+    else:
+        remainder = length
+        for chunk in iter(lambda: content.read(min(1024, remainder)), b''):
+            process_chunk_func(chunk)
+            remainder = remainder - len(chunk)
+
+    if args.format == "literal":
+        print('"', end='')
+
+
 def main():
     parse_args()
 
@@ -78,41 +98,11 @@ def main():
                     gz_obj.write(fg.read(args.length))
 
             content.seek(0)
-            if args.format == "literal":
-                print('"', end='')
-                for chunk in iter(lambda: content.read(1024), b''):
-                    make_string_literal(chunk)
-                print('"', end='')
-            else:
-                for chunk in iter(lambda: content.read(1024), b''):
-                    make_hex(chunk)
+            process_content(content, -1)
     else:
         with open(args.file, "rb") as fp:
             fp.seek(args.offset)
-
-            if args.format == "literal":
-                if args.length < 0:
-                    print('"', end='')
-                    for chunk in iter(lambda: fp.read(1024), b''):
-                        make_string_literal(chunk)
-                    print('"', end='')
-                else:
-                    print('"', end='')
-                    remainder = args.length
-                    for chunk in iter(lambda: fp.read(min(1024, remainder)), b''):
-                        make_string_literal(chunk)
-                        remainder = remainder - len(chunk)
-                    print('"', end='')
-
-            else:
-                if args.length < 0:
-                    for chunk in iter(lambda: fp.read(1024), b''):
-                        make_hex(chunk)
-                else:
-                    remainder = args.length
-                    for chunk in iter(lambda: fp.read(min(1024, remainder)), b''):
-                        make_hex(chunk)
-                        remainder = remainder - len(chunk)
+            process_content(fp, args.length)
 
 
 if __name__ == "__main__":
