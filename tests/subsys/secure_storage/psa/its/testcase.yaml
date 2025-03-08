@@ -52,3 +52,9 @@ tests:
     integration_platforms:
       - nrf9151dk/nrf9151/ns
     extra_args: EXTRA_CONF_FILE=overlay-tfm.conf
+
+  secure_storage.psa.its.mbedtls_file:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_MBEDTLS_PSA_ITS_BACKEND_MBEDTLS_FILE=y
