@@ -60,6 +60,8 @@ source "drivers/video/Kconfig.sw_generator"
 
 source "drivers/video/Kconfig.sw_isp"
 
+source "drivers/video/Kconfig.sw_stats"
+
 source "drivers/video/Kconfig.mt9m114"
 
 source "drivers/video/Kconfig.ov7725"

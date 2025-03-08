@@ -210,7 +210,7 @@ struct video_frmival_enum {
 /** Channel statistics for the R, G, B channels. */
 #define VIDEO_STATS_CHANNELS_RGB BIT(2)
 
-/** Bitmap to ask for any statistics compatible with a @struct video_stats_channels */
+/** Bitmap to ask for all statistics compatible with @struct video_stats_channels */
 #define VIDEO_STATS_CHANNELS (VIDEO_STATS_CHANNELS_RGB | VIDEO_STATS_CHANNELS_Y)
 
 /** Statistics in the form of an histogram with the Y (luma) channel present. */
@@ -219,7 +219,7 @@ struct video_frmival_enum {
 /** Statistics in the form of an histogram with the R, G, B channels present. */
 #define VIDEO_STATS_HISTOGRAM_RGB BIT(4)
 
-/** Bitmap to ask for any statistics compatible with a @struct video_stats_histogram */
+/** Bitmap to ask for one of the statistics compatible with @struct video_stats_histogram */
 #define VIDEO_STATS_HISTOGRAM (VIDEO_STATS_HISTOGRAM_RGB | VIDEO_STATS_HISTOGRAM_Y)
 
 /**
@@ -258,16 +258,12 @@ struct video_stats_channels {
 struct video_stats_histogram {
 	/** Base structure with fields common to all types of statistics. */
 	struct video_stats base;
-	/** Storage for the histogram buckets for Y, R, G, B channels in this order.
-	 * The presence of a channel is determined by the bits of @c base.flags.
-	 */
-	uint16_t *data;
-	/** Total number of buckets effectively used, to be divided by the number of channels to
-	 * get the per-channel size.
-	 */
-	size_t size;
+	/** The histogram content for the Y or the R, G, B channels as defined by @c base.flags. */
+	uint16_t *buckets;
+	/** Total number of values in @c buckets. */
+	size_t num_buckets;
 	/** Total number of values added to the historam. */
-	uint32_t nval;
+	uint32_t num_values;
 };
 
 /**
