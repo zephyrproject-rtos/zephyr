@@ -23,6 +23,14 @@ config IPC_SERVICE_BACKEND_ICBMSG_NUM_EP
 	  backend. The number of endpoints are applied to all the instances,
 	  so this value should be maximum number among all the instances.
 
+config IPC_SERVICE_BACKEND_ICBMSG_UNBOUND_ENABLED
+	bool "Instance is allowed to set unbound to enabled or detect"
+	default y
+	help
+	  Most of the work in unbounding is done by ICMSG control channel.
+	  This option only enables the code in the ICBMSG backend to support
+	  unbounding information tha comes from the control channel.
+
 module = IPC_SERVICE_BACKEND_ICBMSG
 module-str = ICMSG backend with separate buffers
 module-help = Sets log level for ICMsg backend with buffers
