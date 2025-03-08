@@ -447,6 +447,7 @@
 			dppic120: dppic@8e1000 {
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x8e1000 0x1000>;
+				channels = <32>;
 				status = "disabled";
 			};
 
