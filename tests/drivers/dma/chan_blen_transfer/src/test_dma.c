@@ -132,3 +132,24 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 #endif
 
 FOR_EACH(TEST_TASK, (), DMA_LIST);
+
+static void test_deviso_api(const struct device *dma, uint32_t chan_id, uint32_t blen)
+{
+	uint32_t sid = 0;
+	uintptr_t base = 0x80000000;
+	size_t size = 0x1000;
+
+	zassert_true((deviso_ctx_alloc(dma, sid) == 0));
+	zassert_true((deviso_map(dma, sid, base, size) == 0));
+
+	// Perform DMA operations...
+
+	zassert_true((deviso_unmap(dma, sid, base, size) == 0));
+	zassert_true((deviso_ctx_free(dma, sid) == 0));
+}
+
+ZTEST(dma_m2m, test_deviso_api)
+{
+	const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
+	test_deviso_api(dma, CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8);
+}
