@@ -1,3 +1,5 @@
+.. _toolchain_iar_arm:
+
 IAR Arm Toolchain
 #################
 

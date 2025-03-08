@@ -79,7 +79,7 @@ typedef struct {
  */
 #define K_TIMEOUT_EQ(a, b) ((a).ticks == (b).ticks)
 
-/** number of nanoseconds per micorsecond */
+/** number of nanoseconds per microsecond */
 #define NSEC_PER_USEC 1000U
 
 /** number of nanoseconds per millisecond */

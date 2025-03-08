@@ -17,23 +17,8 @@ Hardware
 
 Supported Features
 ==================
-The BLE Nano v2 board configuration supports the following hardware features:
 
-+-----------+------------+--------------------------------------+
-| Interface | Controller |      Driver/Component                |
-+===========+============+======================================+
-| NVIC      | on-chip    | nested vectored interrupt controller |
-+-----------+------------+--------------------------------------+
-| UART      | on-chip    | serial port                          |
-+-----------+------------+--------------------------------------+
-| GPIO      | on-chip    | gpio                                 |
-+-----------+------------+--------------------------------------+
-| FLASH     | on-chip    | flash                                |
-+-----------+------------+--------------------------------------+
-| RADIO     | on-chip    | Bluetooth                            |
-+-----------+------------+--------------------------------------+
-| I2C       | on-chip    | i2c                                  |
-+-----------+------------+--------------------------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ====================

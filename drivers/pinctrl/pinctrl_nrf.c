@@ -383,6 +383,24 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_can) */
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif)
+		/* Pin routing is controlled by secure domain, via UICR */
+		case NRF_FUN_EXMIF_CK:
+		case NRF_FUN_EXMIF_DQ0:
+		case NRF_FUN_EXMIF_DQ1:
+		case NRF_FUN_EXMIF_DQ2:
+		case NRF_FUN_EXMIF_DQ3:
+		case NRF_FUN_EXMIF_DQ4:
+		case NRF_FUN_EXMIF_DQ5:
+		case NRF_FUN_EXMIF_DQ6:
+		case NRF_FUN_EXMIF_DQ7:
+		case NRF_FUN_EXMIF_CS0:
+		case NRF_FUN_EXMIF_CS1:
+		case NRF_FUN_EXMIF_RWDS:
+			dir = NRF_GPIO_PIN_DIR_INPUT;
+			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+			break;
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif) */
 #if defined(NRF_PSEL_TWIS)
 		case NRF_FUN_TWIS_SCL:
 			NRF_PSEL_TWIS(reg, SCL) = psel;

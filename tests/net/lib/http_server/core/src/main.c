@@ -2548,6 +2548,19 @@ static int test_mount(void)
 	return TC_PASS;
 }
 
+static int test_unmount(void)
+{
+	int ret;
+
+	ret = fs_unmount(&littlefs_mnt);
+	if (ret < 0 && ret != -EINVAL) {
+		TC_PRINT("Error unmounting fs [%d]\n", ret);
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
 #ifndef PATH_MAX
 #define PATH_MAX 64
 #endif
@@ -2647,13 +2660,17 @@ int test_mkdir(const char *dir_path, const char *file)
 	return res;
 }
 
-static int setup_fs(void)
+static int setup_fs(const char *file_ending)
 {
+	char filename_buf[sizeof(TEST_FILE)+5] = TEST_FILE;
+
+	strcat(filename_buf, file_ending);
 	test_clear_flash();
 
+	zassert_equal(test_unmount(), TC_PASS, "Failed to unmount fs");
 	zassert_equal(test_mount(), TC_PASS, "Failed to mount fs");
 
-	return test_mkdir(TEST_DIR_PATH, TEST_FILE);
+	return test_mkdir(TEST_DIR_PATH, filename_buf);
 }
 
 ZTEST(server_function_tests, test_http1_static_fs)
@@ -2673,7 +2690,7 @@ ZTEST(server_function_tests, test_http1_static_fs)
 	size_t offset = 0;
 	int ret;
 
-	ret = setup_fs();
+	ret = setup_fs("");
 	zassert_equal(ret, TC_PASS, "Failed to mount fs");
 
 	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
@@ -2683,6 +2700,81 @@ ZTEST(server_function_tests, test_http1_static_fs)
 
 	test_read_data(&offset, sizeof(expected_response) - 1);
 	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+}
+
+ZTEST(server_function_tests, test_http1_static_fs_compression)
+{
+#define HTTP1_COMPRESSION_REQUEST                                                                  \
+	"GET /static_file.html HTTP/1.1\r\n"                                                       \
+	"Host: 127.0.0.1:8080\r\n"                                                                 \
+	"User-Agent: curl/7.68.0\r\n"                                                              \
+	"Accept: */*\r\n"                                                                          \
+	"Accept-Encoding: %s\r\n"                                                                  \
+	"\r\n"
+#define HTTP1_COMPRESSION_RESPONSE                                                                 \
+	"HTTP/1.1 200 OK\r\n"                                                                      \
+	"Content-Length: 30\r\n"                                                                   \
+	"Content-Type: text/html\r\n"                                                              \
+	"Content-Encoding: %s\r\n"                                                                 \
+	"\r\n" TEST_STATIC_FS_PAYLOAD
+
+	static const char mixed_compression_str[] = "gzip, deflate, br";
+	static char http1_request[sizeof(HTTP1_COMPRESSION_REQUEST) +
+				  ARRAY_SIZE(mixed_compression_str)] = {0};
+	static char expected_response[sizeof(HTTP1_COMPRESSION_RESPONSE) +
+				      HTTP_COMPRESSION_MAX_STRING_LEN] = {0};
+	static const char *const file_ending_map[] = {[HTTP_GZIP] = ".gz",
+						      [HTTP_COMPRESS] = ".lzw",
+						      [HTTP_DEFLATE] = ".zz",
+						      [HTTP_BR] = ".br",
+						      [HTTP_ZSTD] = ".zst"};
+	size_t offset;
+	int ret;
+	int expected_response_size;
+
+	for (enum http_compression i = 0; compression_value_is_valid(i); ++i) {
+		offset = 0;
+
+		if (i == HTTP_NONE) {
+			continue;
+		}
+		TC_PRINT("Testing %s compression...\n", http_compression_text(i));
+		zassert(i < ARRAY_SIZE(file_ending_map) && &file_ending_map[i] != NULL,
+			"No file ending defined for compression");
+
+		sprintf(http1_request, HTTP1_COMPRESSION_REQUEST, http_compression_text(i));
+		expected_response_size = sprintf(expected_response, HTTP1_COMPRESSION_RESPONSE,
+						 http_compression_text(i));
+
+		ret = setup_fs(file_ending_map[i]);
+		zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+		ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+		zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+		memset(buf, 0, sizeof(buf));
+
+		test_read_data(&offset, expected_response_size);
+		zassert_mem_equal(buf, expected_response, expected_response_size,
+				  "Received data doesn't match expected response");
+	}
+
+	offset = 0;
+	TC_PRINT("Testing mixed compression...\n");
+	sprintf(http1_request, HTTP1_COMPRESSION_REQUEST, mixed_compression_str);
+	expected_response_size = sprintf(expected_response, HTTP1_COMPRESSION_RESPONSE,
+					 http_compression_text(HTTP_BR));
+	ret = setup_fs(file_ending_map[HTTP_BR]);
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, expected_response_size);
+	zassert_mem_equal(buf, expected_response, expected_response_size,
 			  "Received data doesn't match expected response");
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(zephyr_ram_disk) */

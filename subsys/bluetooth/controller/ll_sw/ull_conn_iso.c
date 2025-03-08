@@ -1113,7 +1113,7 @@ static void mfy_cis_lazy_fill(void *param)
 	struct ll_conn_iso_group *cig;
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
-	uint32_t remainder;
+	uint32_t remainder = 0U;
 	uint16_t lazy = 0U;
 	uint8_t ticker_id;
 	uint8_t retry;

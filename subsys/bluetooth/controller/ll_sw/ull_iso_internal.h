@@ -4,21 +4,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 /* Calculate ISO PDU buffers required considering SDU fragmentation */
-/* FIXME: Calculation considering both Connected and Broadcast ISO PDU
- *        fragmentation.
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+/* Internal ISO Tx SDU maximum length.
+ * A length that is minimum of the resultant combination of the HCI ISO data fragments provided and
+ * the user configured maximum transmit SDU length (CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX).
  */
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
-#define BT_CTLR_ISO_TX_BUFFERS (((CONFIG_BT_CTLR_CONN_ISO_SDU_LEN_MAX + \
-				  CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX - 1U) / \
-				 CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX) * \
-				CONFIG_BT_CTLR_ISO_TX_BUFFERS)
-#else /* !CONFIG_BT_CTLR_CONN_ISO */
-#define BT_CTLR_ISO_TX_BUFFERS CONFIG_BT_CTLR_ISO_TX_BUFFERS
-#endif /* !CONFIG_BT_CTLR_CONN_ISO */
+#define BT_CTLR_ISO_TX_SDU_LEN_MAX MIN(((CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE * \
+					 CONFIG_BT_CTLR_ISO_TX_BUFFERS) - \
+					BT_HCI_ISO_SDU_HDR_SIZE), \
+				       CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX)
+
+BUILD_ASSERT(BT_CTLR_ISO_TX_SDU_LEN_MAX == CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX,
+	     "Insufficient ISO Buffer Size and Count for the required ISO SDU Length");
+
+/* Internal ISO Tx buffers to be allocated.
+ * Based on the internal ISO Tx SDU maximum length, calculate the required ISO Tx buffers (PDUs)
+ * required to fragment the SDU into PDU sizes scheduled for transmission.
+ */
+/* Defines the minimum required PDU length to help calculate the number of PDU buffers required
+ * At least one of CONFIG_BT_CTLR_ADV_ISO or CONFIG_BT_CTLR_CONN_ISO will always be enabled,
+ * so if either of them is not defined, it can default to the other
+ */
+#define BT_CTLR_ISO_TX_MIN_PDU_LEN \
+	MIN(COND_CODE_1(IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO), \
+			(CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX), \
+			(CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX)), \
+	    COND_CODE_1(IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO), \
+			(CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX), \
+			(CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX)))
+#define BT_CTLR_ISO_TX_PDU_BUFFERS \
+	(DIV_ROUND_UP(BT_CTLR_ISO_TX_SDU_LEN_MAX, \
+		      MIN((CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE - BT_HCI_ISO_SDU_TS_HDR_SIZE), \
+			  BT_CTLR_ISO_TX_MIN_PDU_LEN)) * \
+	 CONFIG_BT_CTLR_ISO_TX_BUFFERS)
 #else /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_CONN_ISO */
-#define BT_CTLR_ISO_TX_BUFFERS 0
+#define BT_CTLR_ISO_TX_PDU_BUFFERS 0
 #endif /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_CONN_ISO */
 
 int ull_iso_init(void);

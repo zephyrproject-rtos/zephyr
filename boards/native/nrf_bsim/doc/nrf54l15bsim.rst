@@ -90,6 +90,4 @@ ARM's TrustZone is not modeled in this board. This means that:
   can be labeled as restricted for secure or non secure access.
 * TF-M cannot be used.
 
-Note that the CRACEN peripheral is not modeled.
 As crypto library, Mbed TLS can be used with its SW crypto backend.
-As entropy driver, the :dtcompatible:`zephyr,native-posix-rng` is enabled by default.

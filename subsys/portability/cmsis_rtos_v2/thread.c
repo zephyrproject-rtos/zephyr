@@ -57,13 +57,8 @@ static inline uint32_t cmsis_to_zephyr_priority(uint32_t c_prio)
 
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
-	struct cmsis_rtos_thread_cb *tid = arg2;
-	void *(*fun_ptr)(void *) = arg3;
-
+	osThreadFunc_t fun_ptr = arg3;
 	fun_ptr(arg1);
-
-	tid->has_joined = TRUE;
-	k_sem_give(&tid->join_guard);
 }
 
 void *is_cmsis_rtos_v2_thread(void *thread_id)
@@ -200,13 +195,10 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 
 	sys_dlist_append(&thread_list, &tid->node);
 
-	k_sem_init(&tid->join_guard, 0, 1);
-	tid->has_joined = FALSE;
-
 	prio = cmsis_to_zephyr_priority(cv2_prio);
 
 	(void)k_thread_create(&tid->z_thread, stack, stack_size, zephyr_thread_wrapper, (void *)arg,
-			      tid, threadfunc, prio, 0, K_NO_WAIT);
+			      NULL, threadfunc, prio, 0, K_NO_WAIT);
 
 	if (attr->name == NULL) {
 		strncpy(tid->name, init_thread_attrs.name, sizeof(tid->name) - 1);
@@ -454,8 +446,6 @@ osStatus_t osThreadDetach(osThreadId_t thread_id)
 
 	tid->attr_bits = osThreadDetached;
 
-	k_sem_give(&tid->join_guard);
-
 	return osOK;
 }
 
@@ -465,7 +455,7 @@ osStatus_t osThreadDetach(osThreadId_t thread_id)
 osStatus_t osThreadJoin(osThreadId_t thread_id)
 {
 	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
-	osStatus_t status = osError;
+	int ret = 0;
 
 	if ((tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL)) {
 		return osErrorParameter;
@@ -483,21 +473,8 @@ osStatus_t osThreadJoin(osThreadId_t thread_id)
 		return osErrorResource;
 	}
 
-	if (!tid->has_joined) {
-		if (k_sem_take(&tid->join_guard, K_FOREVER) != 0) {
-			__ASSERT(0, "Failed to take from join guard.");
-		}
-
-		k_sem_give(&tid->join_guard);
-	}
-
-	if (tid->has_joined && (tid->attr_bits == osThreadJoinable)) {
-		status = osOK;
-	} else {
-		status = osErrorResource;
-	}
-
-	return status;
+	ret = k_thread_join(&tid->z_thread, K_FOREVER);
+	return (ret == 0) ? osOK : osErrorResource;
 }
 
 /**
@@ -509,8 +486,6 @@ __NO_RETURN void osThreadExit(void)
 
 	__ASSERT(!k_is_in_isr(), "");
 	tid = osThreadGetId();
-
-	k_sem_give(&tid->join_guard);
 
 	k_thread_abort((k_tid_t)&tid->z_thread);
 
@@ -535,8 +510,6 @@ osStatus_t osThreadTerminate(osThreadId_t thread_id)
 	if (_is_thread_cmsis_inactive(&tid->z_thread)) {
 		return osErrorResource;
 	}
-
-	k_sem_give(&tid->join_guard);
 
 	k_thread_abort((k_tid_t)&tid->z_thread);
 	return osOK;

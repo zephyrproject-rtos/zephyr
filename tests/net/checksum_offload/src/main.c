@@ -74,9 +74,9 @@ static struct in_addr in4addr_dst2 = { { { 192, 0, 42, 2 } } };
 
 /* Keep track of all ethernet interfaces. For native_sim board, we need
  * to increase the count as it has one extra network interface defined in
- * eth_native_posix driver.
+ * eth_native_tap driver.
  */
-static struct net_if *eth_interfaces[2 + IS_ENABLED(CONFIG_ETH_NATIVE_POSIX)];
+static struct net_if *eth_interfaces[2 + IS_ENABLED(CONFIG_ETH_NATIVE_TAP)];
 
 static bool test_failed;
 static bool test_started;

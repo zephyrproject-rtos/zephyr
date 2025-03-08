@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 #
-description: STM32F4 SoC series OTG_FS DWC2 compatible controller
+description: STM32F4 OTG_FS DWC2 compatible controller.
 
 compatible: "st,stm32f4-fsotg"
 

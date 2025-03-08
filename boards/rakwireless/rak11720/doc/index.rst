@@ -37,32 +37,7 @@ For more information about the RAK11720 stamp module:
 Supported Features
 ==================
 
-The RAK11720 module configuration supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| SYSTICK   | on-chip    | systick              |
-+-----------+------------+----------------------+
-| STIMER    | on-chip    | stimer               |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | bluetooth            |
-+-----------+------------+----------------------+
-| RADIO     | on-board   | LoRa (SX1262)        |
-+-----------+------------+----------------------+
-
-The default configuration can be found in the defconfig file:
-``boards/rak/rak11720/rak11720_defconfig``.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 =========================

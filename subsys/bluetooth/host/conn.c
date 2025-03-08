@@ -3003,8 +3003,7 @@ bool bt_conn_is_type(const struct bt_conn *conn, enum bt_conn_type type)
 	return (conn->type & type) != 0;
 }
 
-int bt_conn_get_remote_info(struct bt_conn *conn,
-			    struct bt_conn_remote_info *remote_info)
+int bt_conn_get_remote_info(const struct bt_conn *conn, struct bt_conn_remote_info *remote_info)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
 		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);

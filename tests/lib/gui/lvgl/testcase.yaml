@@ -87,7 +87,6 @@ tests:
       - CONFIG_DYNAMIC_THREAD_POOL_SIZE=4
       - CONFIG_DYNAMIC_THREAD_ALLOC=y
     platform_allow:
-      - native_posix/native/64
       - native_sim/native/64
       - native_sim
     integration_platforms:

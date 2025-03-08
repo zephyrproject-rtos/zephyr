@@ -351,7 +351,7 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 		return;
 	}
 
-	if (udc_ep_buf_has_zlp(buf) && ep != USB_CONTROL_EP_IN) {
+	if (udc_ep_buf_has_zlp(buf)) {
 		udc_ep_buf_clear_zlp(buf);
 		HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, 0);
 

@@ -933,6 +933,8 @@ class TestPlan:
                         "Environment ({}) not satisfied".format(", ".join(plat.env)),
                         Filters.ENVIRONMENT
                     )
+                if plat.type == 'native' and sys.platform != 'linux':
+                    instance.add_filter("Native platform requires Linux", Filters.ENVIRONMENT)
 
                 if not force_toolchain \
                         and toolchain and (toolchain not in plat.supported_toolchains):

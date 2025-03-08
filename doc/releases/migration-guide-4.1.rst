@@ -7,8 +7,8 @@
 
 .. _migration_4.1:
 
-Migration guide to Zephyr v4.1.0 (Working Draft)
-################################################
+Migration guide to Zephyr v4.1.0
+################################
 
 This document describes the changes required when migrating your application from Zephyr v4.0.0 to
 Zephyr v4.1.0.
@@ -40,6 +40,45 @@ perform a full erase, pass the ``--erase`` option when executing ``west flash``.
 
 Kernel
 ******
+
+
+k_pipe API
+==========
+
+The k_pipe API has been reworked and the API used in ``CONFIG_PIPES`` is now deprecated.
+The k_pipe API is enabled by default when ``CONFIG_MULTITHREADING`` is set.
+Function renames and modifications:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Old API
+     - New API
+     - Changes
+   * - ``k_pipe_put(..)``
+     - ``k_pipe_write(..)``
+     - Removed ``min_xfer`` parameter (partial transfers based on thresholds are no longer supported)
+       ``bytes_written`` is now the return value
+   * - ``k_pipe_get(..)``
+     - ``k_pipe_read(..)``
+     - Removed ``min_xfer`` parameter (partial transfers based on thresholds are no longer supported)
+       ``bytes_read`` is now the return value
+   * - ``k_pipe_flush(..)`` & ``k_pipe_buffer_flush(..)``
+     - ``k_pipe_reset(..)``
+     - Reset the pipe, discarding all data in the pipe, non blocking.
+   * - ``k_pipe_alloc_init(..)``, ``k_pipe_cleanup(..)``
+     - **Removed**
+     - Dynamic allocation of pipes is no longer supported
+   * - ``k_pipe_read_avail(..)``, ``k_pipe_write_avail(..)``
+     - **Removed**
+     - Querying the number of bytes in the pipe is no longer supported
+   * - None
+     - ``k_pipe_close(..)``
+     - Close a pipe, waking up all pending readers and writers with an error code. No further
+       reading or writing is allowed on the pipe. The pipe can be re-opened by calling
+       ``k_pipe_init(..)`` again. **Note**, all data in the pipe is available to readers until the
+       pipe is emptied.
+
 
 Security
 ********
@@ -216,6 +255,7 @@ Entropy
 Ethernet
 ========
 
+* Deprecated eth_mcux driver was removed.
 * Silabs gecko ethernet changes:
 
   * Renamed the devicetree property ``location-phy_mdc`` to ``location-phy-mdc``.
@@ -494,10 +534,10 @@ Video
 Watchdog
 ========
 
+* Renamed the ``compatible`` from ``nxp,kinetis-wdog32`` to :dtcompatible:`nxp,wdog32`.
+
 Wi-Fi
 =====
-
-* Renamed the ``compatible`` from ``nxp,kinetis-wdog32`` to :dtcompatible:`nxp,wdog32`.
 
 * The config options :kconfig:option:`CONFIG_NXP_WIFI_BUILD_ONLY_MODE` and
   :kconfig:option:`CONFIG_NRF_WIFI_BUILD_ONLY_MODE` are now unified under
@@ -667,6 +707,8 @@ MCUmgr
   deprecated and replaced with :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE`,
   applications should be updated to select this new symbol if they were selecting the old symbol.
 
+* The deprecated macro ``MGMT_CB_ERROR_RET`` has been removed.
+
 Modem
 =====
 
@@ -676,6 +718,15 @@ LoRa
 * The function :c:func:`lora_recv_async` and callback ``lora_recv_cb`` now include an
   additional ``user_data`` parameter, which is a void pointer. This parameter can be used to reference
   any user-defined data structure. To maintain the current behavior, set this parameter to ``NULL``.
+
+Secure Storage
+==============
+
+* Store backends no longer automatically enable their dependencies through ``select`` or ``imply``.
+  Users must ensure that the depencies are enabled in their applications.
+  :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS` previously enabled NVS
+  and settings, which means the NVS settings backend would get used by default if ZMS wasn't
+  enabled. (:github:`86181`)
 
 Stream Flash
 ============

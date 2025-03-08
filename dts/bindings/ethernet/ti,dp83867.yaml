@@ -1,0 +1,16 @@
+# Copyright 2024, PHYTEC America, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI DP83867 Ethernet PHY device
+
+compatible: "ti,dp83867"
+
+include: ethernet-phy.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: GPIO connected to PHY reset signal pin. Reset is active low.
+  int-gpios:
+    type: phandle-array
+    description: GPIO for interrupt signal indicating PHY state change.

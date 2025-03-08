@@ -70,6 +70,8 @@ on a smartphone/PC to implement applications such as:
 - Compass and inclinometer
 - Sensor data logger
 
+.. zephyr:board-supported-hw::
+
 Connections and IOs
 ===================
 

@@ -257,33 +257,6 @@ static void dai_dmic_stop_fifo_packers(struct dai_intel_dmic *dmic,
 			     OUTCONTROL_FINIT);
 }
 
-/* On DMIC IRQ event trace the status register that contains the status and
- * error bit fields.
- */
-static void dai_dmic_irq_handler(const void *data)
-{
-	struct dai_intel_dmic *dmic = ((struct device *)data)->data;
-	uint32_t val0;
-	uint32_t val1;
-
-	/* Trace OUTSTAT0 register */
-	val0 = dai_dmic_read(dmic, OUTSTAT);
-	val1 = dai_dmic_read(dmic, OUTSTAT + PDM_CHANNEL_REGS_SIZE);
-	LOG_DBG("dmic_irq_handler(), OUTSTAT0 = 0x%x, OUTSTAT1 = 0x%x", val0, val1);
-
-	if (val0 & OUTSTAT_ROR) {
-		LOG_ERR("dmic_irq_handler(): full fifo A or PDM overrun");
-		dai_dmic_write(dmic, OUTSTAT, val0);
-		dai_dmic_stop_fifo_packers(dmic, 0);
-	}
-
-	if (val1 & OUTSTAT_ROR) {
-		LOG_ERR("dmic_irq_handler(): full fifo B or PDM overrun");
-		dai_dmic_write(dmic, OUTSTAT + PDM_CHANNEL_REGS_SIZE, val1);
-		dai_dmic_stop_fifo_packers(dmic, 1);
-	}
-}
-
 static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 {
 	/* Disable DMIC clock gating */
@@ -366,8 +339,6 @@ static int dai_dmic_probe(struct dai_intel_dmic *dmic)
 	/* DMIC Owner Select to DSP */
 	dai_dmic_claim_ownership(dmic);
 
-	irq_enable(dmic->irq);
-
 	return 0;
 }
 
@@ -375,10 +346,6 @@ static int dai_dmic_remove(struct dai_intel_dmic *dmic)
 {
 	uint32_t active_fifos_mask = dai_dmic_global.active_fifos_mask;
 	uint32_t pause_mask = dai_dmic_global.pause_mask;
-
-	LOG_INF("dmic_remove()");
-
-	irq_disable(dmic->irq);
 
 	LOG_INF("dmic_remove(), dmic_active_fifos_mask = 0x%x, dmic_pause_mask = 0x%x",
 		active_fifos_mask, pause_mask);
@@ -889,13 +856,6 @@ DEVICE_API(dai, dai_dmic_ops) = {
 
 static int dai_dmic_initialize_device(const struct device *dev)
 {
-	IRQ_CONNECT(
-		DT_INST_IRQN(0),
-		IRQ_DEFAULT_PRIORITY,
-		dai_dmic_irq_handler,
-		DEVICE_DT_INST_GET(0),
-		0);
-
 	return pm_device_driver_init(dev, dmic_pm_action);
 };
 

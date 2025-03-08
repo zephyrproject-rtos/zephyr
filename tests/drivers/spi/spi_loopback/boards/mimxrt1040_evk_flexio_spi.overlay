@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2024, STRIM, ALC
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect J16-7 to J16-8
+ * Connect J17-9 to J17-10
+ */
+&pinctrl {
+	pinmux_flexio3spi0: pinmux_flexio3spi0 {
+		group0 {
+			pinmux =
+				<&iomuxc_gpio_ad_b0_15_gpio1_io15>, /* cs */
+				<&iomuxc_gpio_ad_b1_04_flexio3_flexio04>, /* sck */
+				<&iomuxc_gpio_ad_b1_01_flexio3_flexio01>, /* sdo */
+				<&iomuxc_gpio_ad_b1_00_flexio3_flexio00>; /* sdi */
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "150-mhz";
+		};
+	};
+	pinmux_flexio3spi1: pinmux_flexio3spi1 {
+		group0 {
+			pinmux =
+				<&iomuxc_gpio_ad_b0_14_gpio1_io14>, /* cs */
+				<&iomuxc_gpio_ad_b1_05_flexio3_flexio05>, /* sck */
+				<&iomuxc_gpio_ad_b1_03_flexio3_flexio03>, /* sdo */
+				<&iomuxc_gpio_ad_b1_02_flexio3_flexio02>; /* sdi */
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "150-mhz";
+		};
+	};
+};
+
+&flexio3 {
+	status = "okay";
+	flexio3_spi0: flexio3_spi0 {
+		compatible = "nxp,flexio-spi";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cs-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+		sdo-pin = <1>;
+		sdi-pin = <0>;
+		sck-pin = <4>;
+		pinctrl-0 = <&pinmux_flexio3spi0>;
+		pinctrl-names = "default";
+		slow@0 {
+			status = "okay";
+			compatible = "test-spi-loopback-slow";
+			reg = <0>;
+			spi-max-frequency = <500000>;
+		};
+	};
+	flexio3_spi1: flexio3_spi1 {
+		compatible = "nxp,flexio-spi";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+		sdo-pin = <3>;
+		sdi-pin = <2>;
+		sck-pin = <5>;
+		pinctrl-0 = <&pinmux_flexio3spi1>;
+		pinctrl-names = "default";
+		fast@0 {
+			status = "okay";
+			compatible = "test-spi-loopback-fast";
+			reg = <0>;
+			spi-max-frequency = <4000000>;
+		};
+	};
+};
+
+/* pinmux_lpspi3 overlaps pinmux_flexio3spi1 */
+&lpspi3 {
+	status = "disabled";
+};

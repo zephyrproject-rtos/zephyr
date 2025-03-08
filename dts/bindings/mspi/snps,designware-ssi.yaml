@@ -1,0 +1,45 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys DesignWare Synchronous Serial Interface (SSI) node
+
+compatible: "snps,designware-ssi"
+
+include: [mspi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  aux-reg-enable:
+    type: boolean
+    description: |
+      Activates auxiliary register access that is needed on some platforms.
+
+  fifo-depth:
+    required: true
+    type: int
+    description: |
+      Number of items that can be stored in the TX FIFO. Range: 8-256.
+      If the RX FIFO depth is not specified separately in the rx-fifo-depth
+      property, this value specifies depth of both TX and RX FIFOs.
+
+  rx-fifo-depth:
+    type: int
+    description: |
+      Number of items that can be stored in the RX FIFO. Range: 8-256.
+
+  tx-fifo-threshold:
+    type: int
+    description: |
+      Number of entries in the TX FIFO above which the TX transfer is started.
+      Maximum value is the TX FIFO depth - 1.
+
+  rx-fifo-threshold:
+    type: int
+    description: |
+      Number of entries in the RX FIFO above which the controller gets an RX
+      interrupt. Maximum value is the RX FIFO depth - 1.

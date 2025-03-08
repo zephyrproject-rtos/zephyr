@@ -28,4 +28,27 @@ config FLASH_MSPI_ATXP032
 	select FLASH_JESD216
 	select MSPI_AMBIQ_AP3 if SOC_SERIES_APOLLO3X
 
+menuconfig FLASH_MSPI_NOR
+	bool "Generic MSPI NOR Flash"
+	default y
+	depends on DT_HAS_JEDEC_MSPI_NOR_ENABLED
+	select FLASH_MSPI
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_JESD216
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),reset-gpios)
+
+if FLASH_MSPI_NOR
+
+config FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE
+	int "Page size to use for FLASH_LAYOUT feature"
+	depends on FLASH_PAGE_LAYOUT
+	default 65536
+	help
+	  When CONFIG_FLASH_PAGE_LAYOUT is used, this driver will support that
+	  API. By default the page size corresponds to the block size (65536).
+	  Other options include the 32K-byte erase size (32768), the sector
+	  size (4096), or any non-zero multiple of the sector size.
+
+endif # FLASH_MSPI_NOR
+
 endmenu

@@ -80,10 +80,14 @@ list(APPEND kernel_files
   system_work_q.c
   work.c
   condvar.c
-  priority_queues.c
   thread.c
   sched.c
   )
+
+if (CONFIG_SCHED_SCALABLE OR CONFIG_WAITQ_SCALABLE)
+list(APPEND kernel_files priority_queues.c)
+endif()
+
 # FIXME: Once the prior pipe implementation is removed, this should be included in the above list
 if(NOT CONFIG_PIPES)
 list(APPEND kernel_files pipe.c)

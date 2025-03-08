@@ -434,7 +434,9 @@ static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_
 		halt_thread(thread, terminate ? _THREAD_DEAD : _THREAD_SUSPENDED);
 		if ((thread == _current) && !arch_is_in_isr()) {
 			if (z_is_thread_essential(thread)) {
+				k_spin_unlock(&_sched_spinlock, key);
 				k_panic();
+				key = k_spin_lock(&_sched_spinlock);
 			}
 			z_swap(&_sched_spinlock, key);
 			__ASSERT(!terminate, "aborted _current back from dead");
@@ -1121,12 +1123,12 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	ticks = z_tick_sleep(ticks);
 
-	int32_t ret = K_TIMEOUT_EQ(timeout, K_FOREVER) ? K_TICKS_FOREVER :
-		      k_ticks_to_ms_ceil64(ticks);
+	/* k_sleep() still returns 32 bit milliseconds for compatibility */
+	int64_t ms = K_TIMEOUT_EQ(timeout, K_FOREVER) ? K_TICKS_FOREVER :
+		CLAMP(k_ticks_to_ms_ceil64(ticks), 0, INT_MAX);
 
-	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, ret);
-
-	return ret;
+	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, ms);
+	return (int32_t) ms;
 }
 
 #ifdef CONFIG_USERSPACE

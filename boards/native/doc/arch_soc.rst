@@ -306,7 +306,7 @@ Architecture and design
 
 .. note::
 
-   This section does not describe anymore the old :ref:`native_posix<native_posix>` or
+   This section does not describe anymore the old
    :kconfig:option:`CONFIG_NATIVE_APPLICATION` based architecture.
    It only describes the new native simulator based architecture used by targets built with the
    :kconfig:option:`CONFIG_NATIVE_LIBRARY` option.

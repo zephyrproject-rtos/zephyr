@@ -243,6 +243,10 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 			atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 		}
 
+		if (bi->ep == cdc_acm_get_int_in(c_data)) {
+			k_sem_reset(&data->notif_sem);
+		}
+
 		goto ep_request_error;
 	}
 
@@ -554,7 +558,9 @@ static inline int cdc_acm_send_notification(const struct device *dev,
 		return ret;
 	}
 
-	k_sem_take(&data->notif_sem, K_FOREVER);
+	if (k_sem_take(&data->notif_sem, K_FOREVER) == -EAGAIN) {
+		return -ECANCELED;
+	}
 
 	return ret;
 }

@@ -1033,6 +1033,25 @@ static int nxp_wifi_disconnect(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
+static int nxp_wifi_uap_disconnect_sta(const struct device *dev, const uint8_t *mac)
+{
+	int ret;
+
+	if (!is_uap_started()) {
+		LOG_ERR("Please start uap first!");
+		return -EAGAIN;
+	}
+
+	ret = wlan_uap_disconnect_sta((uint8_t *)mac);
+	if (ret != WM_SUCCESS) {
+		LOG_ERR("Failed to disconnect STA");
+	}
+
+	return ret;
+}
+#endif
+
 static inline enum wifi_security_type nxp_wifi_key_mgmt_to_zephyr(int key_mgmt, int pwe)
 {
 	switch (key_mgmt) {
@@ -1042,6 +1061,8 @@ static inline enum wifi_security_type nxp_wifi_key_mgmt_to_zephyr(int key_mgmt, 
 		return WIFI_SECURITY_TYPE_PSK;
 	case WLAN_KEY_MGMT_PSK_SHA256:
 		return WIFI_SECURITY_TYPE_PSK_SHA256;
+	case WLAN_KEY_MGMT_PSK | WLAN_KEY_MGMT_PSK_SHA256:
+		return WIFI_SECURITY_TYPE_PSK;
 	case WLAN_KEY_MGMT_SAE:
 		if (pwe == 1) {
 			return WIFI_SECURITY_TYPE_SAE_H2E;
@@ -2188,6 +2209,7 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 #ifdef CONFIG_NXP_WIFI_11AX_TWT
 	.set_btwt = nxp_wifi_set_btwt,
 #endif
+	.ap_sta_disconnect = nxp_wifi_uap_disconnect_sta,
 	.set_rts_threshold = nxp_wifi_ap_set_rts_threshold,
 };
 

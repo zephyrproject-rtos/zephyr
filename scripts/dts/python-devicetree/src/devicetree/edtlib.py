@@ -1055,6 +1055,16 @@ class Node:
         return self._node.name
 
     @property
+    def filename(self) -> str:
+        "See the class docstring"
+        return self._node.filename
+
+    @property
+    def lineno(self) -> int:
+        "See the class docstring"
+        return self._node.lineno
+
+    @property
     def unit_addr(self) -> Optional[int]:
         "See the class docstring"
 

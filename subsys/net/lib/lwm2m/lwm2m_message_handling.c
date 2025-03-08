@@ -1403,9 +1403,9 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 		read_info = &msg->cache_info->read_info[msg->cache_info->entry_size];
 		/* Store original timeseries ring buffer get states for failure handling */
 		read_info->cache_data = cached_data;
-		read_info->original_get_base = cached_data->rb.get_base;
-		read_info->original_get_head = cached_data->rb.get_head;
-		read_info->original_get_tail = cached_data->rb.get_tail;
+		read_info->original_get_base = cached_data->rb.get.base;
+		read_info->original_get_head = cached_data->rb.get.head;
+		read_info->original_get_tail = cached_data->rb.get.tail;
 		msg->cache_info->entry_size++;
 		if (msg->cache_info->entry_limit) {
 			length = MIN(length, msg->cache_info->entry_limit);
@@ -3079,11 +3079,11 @@ static bool lwm2m_timeseries_data_rebuild(struct lwm2m_message *msg, int error_c
 
 	/* Put Ring buffer back to original */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
-		cache_temp->read_info[i].cache_data->rb.get_head =
+		cache_temp->read_info[i].cache_data->rb.get.head =
 			cache_temp->read_info[i].original_get_head;
-		cache_temp->read_info[i].cache_data->rb.get_tail =
+		cache_temp->read_info[i].cache_data->rb.get.tail =
 			cache_temp->read_info[i].original_get_tail;
-		cache_temp->read_info[i].cache_data->rb.get_base =
+		cache_temp->read_info[i].cache_data->rb.get.base =
 			cache_temp->read_info[i].original_get_base;
 	}
 

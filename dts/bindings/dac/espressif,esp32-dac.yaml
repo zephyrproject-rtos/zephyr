@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Espressif Digital to Analog converter (DAC) control node
-    is part of the RTC low-power domain and belongs to the SENSE
+    ESP32 Digital to Analog converter (DAC)
+
+    Part of the RTC low-power domain and belongs to the SENSE
     peripherals set. RTC peripherals has GPIOs controlled by the
     RTCIO mux, which is separated from the main IO mux.
 

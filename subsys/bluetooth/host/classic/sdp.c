@@ -515,6 +515,8 @@ static uint16_t find_services(struct net_buf *buf,
 			return BT_SDP_INVALID_SYNTAX;
 		}
 
+		uuid_list_size -= data_elem.total_size;
+
 		if (data_elem.data_size == 2U) {
 			u.uuid.type = BT_UUID_TYPE_16;
 			u.u16.val = net_buf_pull_be16(buf);
@@ -530,9 +532,8 @@ static uint16_t find_services(struct net_buf *buf,
 			LOG_WRN("Invalid UUID len %u in service search pattern",
 				data_elem.data_size);
 			net_buf_pull(buf, data_elem.data_size);
+			continue;
 		}
-
-		uuid_list_size -= data_elem.total_size;
 
 		/* Go over the list of services, and look for a service which
 		 * doesn't have this UUID
@@ -2053,7 +2054,13 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 
 	/* Get total value of all attributes to be collected */
 	frame_len -= sdp_client_get_total(session, buf, &total);
-	if (frame_len != total) {
+	/*
+	 * If total is not 0, there are two valid cases,
+	 * Case 1, the continuation state length is 0, the frame_len should equal total,
+	 * Case 2, the continuation state length is not 0, it means there are more data will be
+	 * received. So the frame_len is less than total.
+	 */
+	if (total && (frame_len > total)) {
 		LOG_ERR("Invalid attribute lists");
 		return 0;
 	}
@@ -2114,6 +2121,11 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (tid != session->tid) {
 		LOG_ERR("Mismatch transaction ID value in SDP PDU");
+		return 0;
+	}
+
+	if (session->param == NULL) {
+		LOG_WRN("No request in progress");
 		return 0;
 	}
 

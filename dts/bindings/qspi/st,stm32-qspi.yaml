@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    STM32 QSPI device representation. A stm32 quadspi node would typically
-    looks to this:
+    STM32 QSPI Controller.
+
+    An stm32 quadspi node would typically look like this:
 
         &quadspi {
             pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11
