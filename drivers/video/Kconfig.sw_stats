@@ -1,0 +1,20 @@
+# Copyright (c) 2025 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_SW_STATS
+	bool "Video Software Statistics"
+	select PIXEL
+	help
+	  Enable a software-based frame statistics video device, providing information that can be
+	  by an Image Processing Algorithm (IPA) via the video stats API. This allows applications
+	  to tune the image colors through the video control API.
+
+config VIDEO_SW_STATS_NUM_SAMPLES
+	int "Number of pixels to sample on every frame"
+	default 400
+	range 0 65535
+	help
+	  The more pixels are sample, the most accurate the statistics may be, but the slowest they
+	  would be collected. The default value is estimated good enough not to slow-down most
+	  systems. Note that the performance of statistics collection does not depend on the frame
+	  size and only the number of samples, but accuracy does.
