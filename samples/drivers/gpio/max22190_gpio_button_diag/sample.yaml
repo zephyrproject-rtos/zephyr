@@ -1,0 +1,13 @@
+sample:
+  name: GPIO diagnostic sample
+tests:
+  sample.drivers.gpio.max22190_gpio_button_diag:
+    tags:
+      - button
+      - gpio
+      - gpio_diagnostics
+    filter: dt_enabled_alias_with_parent_compat("sw0", "gpio-keys")
+    integration_platforms:
+      - adi_sdp_k1
+    depends_on: gpio
+    harness: button
