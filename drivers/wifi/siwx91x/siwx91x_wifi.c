@@ -18,6 +18,8 @@
 #include "sl_wifi.h"
 #include "sl_net.h"
 
+#define SIWX91X_INTERFACE_MASK (0x03)
+
 LOG_MODULE_REGISTER(siwx91x_wifi);
 
 NET_BUF_POOL_FIXED_DEFINE(siwx91x_tx_pool, 1, _NET_ETH_MAX_FRAME_SIZE, 0, NULL);
@@ -128,7 +130,7 @@ static int siwx91x_disconnect(const struct device *dev)
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
 		net_if_dormant_on(sidev->iface);
 	}
-	sidev->state = WIFI_STATE_INACTIVE;
+	sidev->state = WIFI_STATE_DISCONNECTED;
 	return 0;
 }
 
@@ -205,7 +207,7 @@ static unsigned int siwx91x_on_scan(sl_wifi_event_t event, sl_wifi_scan_result_t
 	}
 
 	sidev->scan_res_cb(sidev->iface, 0, NULL);
-	sidev->state = WIFI_STATE_INACTIVE;
+	sidev->state = sidev->scan_prev_state;
 
 	return 0;
 }
@@ -215,17 +217,32 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 {
 	sl_wifi_scan_configuration_t sl_scan_config = { };
 	struct siwx91x_dev *sidev = dev->data;
+	sl_wifi_interface_t interface;
 	sl_wifi_ssid_t ssid = {};
 	int ret;
 
 	__ASSERT(z_scan_config, "z_scan_config cannot be NULL");
 
-	if (sidev->state != WIFI_STATE_INACTIVE) {
+	interface = sl_wifi_get_default_interface();
+	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
+		LOG_ERR("Interface not in STA mode");
+		return -EINVAL;
+	}
+
+	if (sidev->state != WIFI_STATE_DISCONNECTED && sidev->state != WIFI_STATE_INACTIVE &&
+	    sidev->state != WIFI_STATE_COMPLETED) {
+		LOG_ERR("Command given in invalid state");
 		return -EBUSY;
+	}
+
+	if (z_scan_config->bands & ~(BIT(WIFI_FREQ_BAND_UNKNOWN) | BIT(WIFI_FREQ_BAND_2_4_GHZ))) {
+		LOG_ERR("Invalid band entered");
+		return -EINVAL;
 	}
 
 	if (z_scan_config->scan_type == WIFI_SCAN_TYPE_ACTIVE) {
 		sl_scan_config.type = SL_WIFI_SCAN_TYPE_ACTIVE;
+
 		if (!z_scan_config->dwell_time_active) {
 			ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_ACTIVE_SCAN_TIMEOUT,
 							 SL_WIFI_DEFAULT_ACTIVE_CHANNEL_SCAN_TIME);
@@ -234,23 +251,35 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 							 z_scan_config->dwell_time_active);
 		}
 
-		if (ret) {
+		if (ret != SL_STATUS_OK) {
 			return -EINVAL;
 		}
 	} else {
 		sl_scan_config.type = SL_WIFI_SCAN_TYPE_PASSIVE;
 		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_PASSIVE_SCAN_TIMEOUT,
 						 z_scan_config->dwell_time_passive);
-		if (ret) {
+		if (ret != SL_STATUS_OK) {
 			return -EINVAL;
 		}
 	}
 
-	for (int i = 0; i < WIFI_MGMT_SCAN_CHAN_MAX_MANUAL; i++) {
-		sl_scan_config.channel_bitmap_2g4 |= BIT(z_scan_config->band_chan[i].channel - 1);
+	for (int i = 0; i < ARRAY_SIZE(z_scan_config->band_chan); i++) {
+		/* End of channel list */
+		if (z_scan_config->band_chan[i].channel == 0) {
+			break;
+		}
+
+		if (z_scan_config->band_chan[i].band == WIFI_FREQ_BAND_2_4_GHZ) {
+			sl_scan_config.channel_bitmap_2g4 |=
+				BIT(z_scan_config->band_chan[i].channel - 1);
+		}
 	}
 
-	memset(sl_scan_config.channel_bitmap_5g, 0xFF, sizeof(sl_scan_config.channel_bitmap_5g));
+	if (z_scan_config->band_chan[0].channel && !sl_scan_config.channel_bitmap_2g4) {
+		LOG_ERR("No supported channels in the request");
+		return -EINVAL;
+	}
+
 	if (IS_ENABLED(CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX)) {
 		if (z_scan_config->ssids[0]) {
 			strncpy(ssid.value, z_scan_config->ssids[0], WIFI_SSID_MAX_LEN);
@@ -265,6 +294,7 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 	if (ret != SL_STATUS_IN_PROGRESS) {
 		return -EIO;
 	}
+	sidev->scan_prev_state = sidev->state;
 	sidev->state = WIFI_STATE_SCANNING;
 
 	return 0;
