@@ -5,10 +5,8 @@
  */
 
 /**
- * Driver for the timer model of the POSIX native_sim/posix board
- * It provides the interfaces required by the kernel and the sanity testcases
- * It also provides a custom k_busy_wait() which can be used with the
- * POSIX arch and InfClock SOC
+ * Driver for the native_sim board timer
+ * It provides the same API required by the kernel as any other timer driver
  */
 #include <zephyr/types.h>
 #include <zephyr/irq.h>
@@ -18,7 +16,6 @@
 #include "nsi_hw_scheduler.h"
 #include "nsi_timer_model.h"
 #include "soc.h"
-#include <zephyr/arch/posix/posix_trace.h>
 
 static uint64_t tick_period; /* System tick period in microseconds */
 /* Time (microseconds since boot) of the last timer tick interrupt */
