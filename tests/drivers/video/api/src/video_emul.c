@@ -11,7 +11,7 @@
 const struct device *rx_dev = DEVICE_DT_GET(DT_NODELABEL(test_video_emul_rx));
 const struct device *imager_dev = DEVICE_DT_GET(DT_NODELABEL(test_video_emul_imager));
 
-ZTEST(video_common, test_video_device)
+ZTEST(video_emul, test_video_device)
 {
 	zexpect_true(device_is_ready(rx_dev));
 	zexpect_true(device_is_ready(imager_dev));
@@ -23,7 +23,7 @@ ZTEST(video_common, test_video_device)
 	zexpect_ok(video_stream_stop(rx_dev));
 }
 
-ZTEST(video_common, test_video_format)
+ZTEST(video_emul, test_video_format)
 {
 	struct video_caps caps = {0};
 	struct video_format fmt = {0};
@@ -73,7 +73,7 @@ ZTEST(video_common, test_video_format)
 	zexpect_not_equal(fmt.pixelformat, 0x00000000, "should not store wrong formats");
 }
 
-ZTEST(video_common, test_video_frmival)
+ZTEST(video_emul, test_video_frmival)
 {
 	struct video_format fmt;
 	struct video_frmival_enum fie = {.format = &fmt};
@@ -125,7 +125,7 @@ ZTEST(video_common, test_video_frmival)
 	} while (video_enum_frmival(imager_dev, VIDEO_EP_OUT, &fie) == 0);
 }
 
-ZTEST(video_common, test_video_ctrl)
+ZTEST(video_emul, test_video_ctrl)
 {
 	struct video_control ctrl = {.id = VIDEO_CID_PRIVATE_BASE + 0x01, .val = 30};
 
@@ -136,7 +136,7 @@ ZTEST(video_common, test_video_ctrl)
 	zexpect_equal(ctrl.val, 30);
 }
 
-ZTEST(video_common, test_video_vbuf)
+ZTEST(video_emul, test_video_vbuf)
 {
 	struct video_caps caps;
 	struct video_format fmt;
