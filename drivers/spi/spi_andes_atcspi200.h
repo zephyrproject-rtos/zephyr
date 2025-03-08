@@ -10,7 +10,6 @@ LOG_MODULE_REGISTER(spi_atcspi200);
 #include "spi_context.h"
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
 
 #ifdef CONFIG_ANDES_SPI_DMA_MODE
 #include <zephyr/drivers/dma.h>
