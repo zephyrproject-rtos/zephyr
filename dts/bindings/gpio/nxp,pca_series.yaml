@@ -1,7 +1,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: Base binding for PCA series I2C-based GPIO expander
+description: PCA series I2C-based GPIO expander
 
 include: [gpio-controller.yaml, i2c-device.yaml]
 
