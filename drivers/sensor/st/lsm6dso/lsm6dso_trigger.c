@@ -306,6 +306,21 @@ int lsm6dso_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
+	/* Configure interrupt drive and active level. */
+	lsm6dso_ctrl3_c_t ctrl3_c = {
+		.h_lactive = cfg->int_active_low,
+		.pp_od = cfg->int_open_drain,
+
+		/* This is the default value after reset. */
+		.if_inc = 1
+	};
+
+	ret = lsm6dso_write_reg(ctx, LSM6DSO_CTRL3_C, (uint8_t *)&ctrl3_c, 1);
+	if (ret < 0) {
+		LOG_ERR("Failed to write CTRL3_C");
+		return ret;
+	}
+
 	return gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
 					       GPIO_INT_EDGE_TO_ACTIVE);
 }

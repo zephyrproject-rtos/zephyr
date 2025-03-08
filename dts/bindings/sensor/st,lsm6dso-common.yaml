@@ -46,6 +46,16 @@ properties:
       mandatory and if not present it defaults to 1 which is the
       configuration at power-up.
 
+  int-open-drain:
+    type: boolean
+    description: |
+      Configure the interrupt pin as open-drain instead of push-pull.
+
+  int-active-low:
+    type: boolean
+    description: |
+      Configure the interrupt pin as active low instead of active high.
+
   accel-pm:
     type: int
     default: 0
