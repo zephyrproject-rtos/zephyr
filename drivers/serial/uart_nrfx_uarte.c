@@ -101,7 +101,16 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define UARTE_ANY_CACHE 1
 #endif
 
-#define IS_LOW_POWER(unused, prefix, i, _) IS_ENABLED(CONFIG_UART_##prefix##i##_NRF_ASYNC_LOW_POWER)
+/* Determine if instance uses low power mode (alternative to PM). It can be used
+ * if asynchronous API is used or when RX is not used in polling or interrupt driven mode.
+ */
+#define IS_LOW_POWER_INST(idx)							\
+	COND_CODE_1(CONFIG_PM_DEVICE, (0),					\
+		(COND_CODE_1(CONFIG_UART_##idx##_ASYNC,				\
+			(IS_ENABLED(CONFIG_UART_##idx##_NRF_ASYNC_LOW_POWER)),	\
+			(UARTE_PROP(idx, disable_rx)))))
+
+#define IS_LOW_POWER(unused, prefix, i, _) IS_LOW_POWER_INST(prefix##i)
 
 #if UARTE_FOR_EACH_INSTANCE(IS_LOW_POWER, (||), (0))
 #define UARTE_ANY_LOW_POWER 1
@@ -303,9 +312,7 @@ struct uarte_nrfx_data {
 	(baudrate) == 1000000 ? NRF_UARTE_BAUDRATE_1000000 : 0)
 
 #define LOW_POWER_ENABLED(_config) \
-	(IS_ENABLED(UARTE_ANY_LOW_POWER) && \
-	 !IS_ENABLED(CONFIG_PM_DEVICE) && \
-	 (_config->flags & UARTE_CFG_FLAG_LOW_POWER))
+	(IS_ENABLED(UARTE_ANY_LOW_POWER) && (_config->flags & UARTE_CFG_FLAG_LOW_POWER))
 
 /** @brief Check if device has PM that works in ISR safe mode.
  *
@@ -2436,16 +2443,6 @@ static int uarte_instance_init(const struct device *dev,
 		irq_enable(DT_IRQN(UARTE(idx)));			       \
 	} while (false)
 
-/* Low power mode is used when disable_rx is not defined or in async mode if
- * kconfig option is enabled.
- */
-#define USE_LOW_POWER(idx)						       \
-	COND_CODE_1(CONFIG_PM_DEVICE, (0),				       \
-		(((!UARTE_PROP(idx, disable_rx) &&			       \
-		COND_CODE_1(CONFIG_UART_##idx##_ASYNC,			       \
-			(!IS_ENABLED(CONFIG_UART_##idx##_NRF_ASYNC_LOW_POWER)),\
-			(1))) ? 0 : UARTE_CFG_FLAG_LOW_POWER)))
-
 #define UARTE_DISABLE_RX_INIT(node_id) \
 	.disable_rx = DT_PROP(node_id, disable_rx)
 
@@ -2549,7 +2546,7 @@ static int uarte_instance_init(const struct device *dev,
 			(!IS_ENABLED(CONFIG_HAS_NORDIC_DMM) ? 0 :	       \
 			  (UARTE_IS_CACHEABLE(idx) ?			       \
 				UARTE_CFG_FLAG_CACHEABLE : 0)) |	       \
-			USE_LOW_POWER(idx),				       \
+			(IS_LOW_POWER_INST(idx) ? UARTE_CFG_FLAG_LOW_POWER : 0),\
 		UARTE_DISABLE_RX_INIT(UARTE(idx)),			       \
 		.poll_out_byte = &uarte##idx##_poll_out_byte,		       \
 		.poll_in_byte = &uarte##idx##_poll_in_byte,		       \
