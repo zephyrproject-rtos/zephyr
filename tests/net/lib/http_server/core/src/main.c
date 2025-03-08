@@ -1416,11 +1416,14 @@ ZTEST(server_function_tests, test_http2_rst_stream)
 	zassert_equal(ret, 0, "Connection should've been closed");
 }
 
+/* Disable erroneous warning: https://github.com/llvm/llvm-project/issues/25458. */
+TOOLCHAIN_DISABLE_CLANG_WARNING("-Wunneeded-internal-declaration")
 static const char http1_header_capture_common_response[] = "HTTP/1.1 200\r\n"
 							   "Transfer-Encoding: chunked\r\n"
 							   "Content-Type: text/plain\r\n"
 							   "\r\n"
 							   "0\r\n\r\n";
+TOOLCHAIN_ENABLE_CLANG_WARNING("-Wunneeded-internal-declaration")
 
 static void test_http1_header_capture_common(const char *request)
 {
