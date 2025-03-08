@@ -4,6 +4,7 @@
 menuconfig SECURE_STORAGE
 	bool "Secure storage subsystem"
 	depends on !BUILD_WITH_TFM
+	select MBEDTLS_PSA_CRYPTO_STORAGE_C if MBEDTLS_PSA_CRYPTO_C
 	select EXPERIMENTAL
 	help
 	  The secure storage subsystem provides an implementation of the PSA Secure Storage API
