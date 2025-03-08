@@ -3501,7 +3501,6 @@ static void do_send_timeout_cb(struct lwm2m_message *msg)
 	LOG_WRN("Send Timeout");
 	lwm2m_rd_client_timeout(msg->ctx);
 }
-#endif
 
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cache_temp,
@@ -3535,7 +3534,8 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 	cache_temp->entry_limit = 0;
 	return true;
 }
-#endif
+#endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
+#endif /* CONFIG_LWM2M_VERSION_1_1 */
 
 int lwm2m_send_cb(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
 			 uint8_t path_list_size, lwm2m_send_cb_t reply_cb)
