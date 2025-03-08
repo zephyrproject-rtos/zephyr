@@ -3,3 +3,6 @@
 
 config IPM_CONSOLE_STACK_SIZE
 	default 2048 if IPM_CONSOLE_RECEIVER
+
+config MAIN_STACK_SIZE
+	default 2048
