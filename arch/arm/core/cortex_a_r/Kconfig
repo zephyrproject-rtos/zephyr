@@ -82,6 +82,8 @@ config CPU_CORTEX_R5
 	select CPU_AARCH32_CORTEX_R
 	select ARMV7_R
 	select ARMV7_R_FP if CPU_HAS_FPU
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
 	help
 	  This option signifies the use of a Cortex-R5 CPU
 
