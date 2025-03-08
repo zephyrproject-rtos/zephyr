@@ -142,7 +142,7 @@ config TRACING_BACKEND_UART
 
 config TRACING_BACKEND_USB
 	bool "USB backend"
-	depends on USB_DEVICE_STACK
+	depends on USB_DEVICE_STACK_NEXT
 	depends on TRACING_ASYNC
 	help
 	  Use USB to output tracing data.
@@ -177,13 +177,6 @@ config RAM_TRACING_BUFFER_SIZE
 	help
 	  Size of the RAM trace buffer. Trace will be discarded if the
 	  length is exceeded.
-
-config TRACING_USB_MPS
-	int "USB backend max packet size"
-	default 64
-	depends on TRACING_BACKEND_USB
-	help
-	  USB tracing backend max packet size(endpoint MPS).
 
 config TRACING_HANDLE_HOST_CMD
 	bool "Host command handle"
