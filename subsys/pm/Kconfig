@@ -46,6 +46,13 @@ config PM_S2RAM_CUSTOM_MARKING
 	  By default a magic word in RAM is used to mark entering suspend-to-RAM. Enabling
 	  this option allows custom implementation of functions which handle the marking.
 
+config PM_S2RAM_CUSTOM_BOOTSTACK
+	bool "Use custom boot-stack after wakeup"
+	depends on PM_S2RAM
+	help
+	  By default the main-stack is used to boot after reset. In some SoCs a specific
+	  boot-stack needs to be used to ensure the main-stack is not corrupted upon wakeup.
+
 config PM_NEED_ALL_DEVICES_IDLE
 	bool "System Low Power Mode Needs All Devices Idle"
 	depends on PM_DEVICE && !SMP
