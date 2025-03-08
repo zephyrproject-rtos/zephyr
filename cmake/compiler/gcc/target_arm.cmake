@@ -52,10 +52,15 @@ list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT ${ARM_C_FLAGS})
 set(LLEXT_REMOVE_FLAGS
   -fno-pic
   -fno-pie
-  -ffunction-sections
-  -fdata-sections
   -Os
 )
+
+if(NOT DEFINED(CONFIG_LLEXT_SYMBOL_GC))
+  list(APPEND LLEXT_REMOVE_FLAGS
+    -ffunction-sections
+    -fdata-sections
+  )
+endif()
 
 # Flags to be added to llext code compilation
 set(LLEXT_APPEND_FLAGS
