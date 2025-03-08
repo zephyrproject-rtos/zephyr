@@ -1,0 +1,114 @@
+/*
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/arm-mps2-pinctrl.h>
+
+&pinctrl {
+	/omit-if-no-ref/  uart3_default: uart3_default {
+		group1 {
+			pinmux = <UART3_TXD_EXP>;
+		};
+
+		group2 {
+			pinmux = <UART3_RXD_EXP>;
+			input-enable;
+		};
+	};
+
+	 /omit-if-no-ref/ uart4_default: uart4_default {
+		 group1 {
+			 pinmux = <UART4_TXD_EXP>;
+		};
+
+		group2 {
+			pinmux = <UART4_RXD_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ gpio0_default: gpio0_default {
+		group1 {
+			pinmux = <GPIO0_P0_EXP>, <GPIO0_P1_EXP>,
+				 <GPIO0_P2_EXP>, <GPIO0_P3_EXP>,
+				 <GPIO0_P4_EXP>, <GPIO0_P5_EXP>,
+				 <GPIO0_P6_EXP>, <GPIO0_P7_EXP>,
+				 <GPIO0_P8_EXP>, <GPIO0_P9_EXP>,
+				 <GPIO0_P10_EXP>, <GPIO0_P11_EXP>,
+				 <GPIO0_P12_EXP>, <GPIO0_P13_EXP>,
+				 <GPIO0_P14_EXP>, <GPIO0_P15_EXP>;
+
+		 };
+	 };
+
+	 /omit-if-no-ref/ gpio1_default: gpio1_default{
+		group1 {
+			pinmux = <GPIO1_P16_EXP>, <GPIO1_P17_EXP>,
+				 <GPIO1_P18_EXP>, <GPIO1_P19_EXP>,
+				 <GPIO1_P20_EXP>, <GPIO1_P21_EXP>,
+				 <GPIO1_P22_EXP>, <GPIO1_P23_EXP>,
+				 <GPIO1_P24_EXP>, <GPIO1_P25_EXP>,
+				 <GPIO1_P26_EXP>, <GPIO1_P27_EXP>,
+				 <GPIO1_P28_EXP>, <GPIO1_P29_EXP>,
+				 <GPIO1_P30_EXP>, <GPIO1_P31_EXP>;
+		};
+	};
+
+	/omit-if-no-ref/ gpio2_default: gpio2_default {
+		group1 {
+			pinmux = <GPIO2_P32_EXP>, <GPIO2_P33_EXP>,
+				 <GPIO2_P34_EXP>, <GPIO2_P35_EXP>,
+				 <GPIO2_P36_EXP>, <GPIO2_P37_EXP>,
+				 <GPIO2_P38_EXP>, <GPIO2_P39_EXP>,
+				 <GPIO2_P40_EXP>, <GPIO2_P41_EXP>,
+				 <GPIO2_P42_EXP>, <GPIO2_P43_EXP>,
+				 <GPIO2_P44_EXP>, <GPIO2_P45_EXP>,
+				 <GPIO2_P46_EXP>, <GPIO2_P47_EXP>;
+		 };
+	 };
+
+	/omit-if-no-ref/ gpio3_default: gpio3_default {
+		group1{
+			pinmux = <GPIO3_P48_EXP>, <GPIO3_P49_EXP>,
+				 <GPIO3_P50_EXP>, <GPIO3_P51_EXP>;
+		};
+	};
+
+	/omit-if-no-ref/ spi0_default: spi0_default {
+		group1 {
+			pinmux = <SPI3_SCK_EXP>, <SPI3_SS_EXP>,
+				  <SPI3_MOSI_EXP>;
+		};
+		group2 {
+			pinmux = <SPI3_MISO_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ spi1_default: spi1_default {
+		group1 {
+			pinmux = <SPI4_SCK_EXP>, <SPI4_SS_EXP>,
+				 <SPI4_MOSI_EXP>;
+		};
+		group2 {
+			pinmux = <SPI4_MISO_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ sbcon0_default: sbcon0_default {
+		group1 {
+			pinmux = <SBCON2_SCL_EXP>, <SBCON2_SDA_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ sbcon1_default: sbcon1_default {
+		group1 {
+			pinmux = <SBCON3_SCL_EXP>, <SBCON3_SDA_EXP>;
+			input-enable;
+		};
+	};
+};
