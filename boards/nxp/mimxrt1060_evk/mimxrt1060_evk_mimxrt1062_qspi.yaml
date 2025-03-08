@@ -26,6 +26,7 @@ supported:
   - flash
   - gpio
   - i2c
+  - lcd_if
   - netif:eth
   - pwm
   - sdhc
