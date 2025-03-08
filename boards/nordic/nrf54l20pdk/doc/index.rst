@@ -65,6 +65,12 @@ built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
 
+Applications for the ``nrf54l20pdk/nrf54l20/cpuflpr`` board target need
+to be built using sysbuild to include the ``vpr_launcher`` image for the application core.
+
+Enter the following command to compile ``hello_world`` for the FLPR core::
+ west build -p -b nrf54l20pdk/nrf54l20/cpuflpr --sysbuild
+
 Flashing
 ========
 
