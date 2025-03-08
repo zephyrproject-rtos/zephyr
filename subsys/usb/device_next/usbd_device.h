@@ -45,7 +45,7 @@ static inline uint8_t usbd_get_num_configs(const struct usbd_context *const uds_
 
 	if (speed == USBD_SPEED_FS) {
 		desc = uds_ctx->fs_desc;
-	} else if (speed == USBD_SPEED_HS) {
+	} else if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		desc = uds_ctx->hs_desc;
 	} else {
 		return 0;
@@ -70,7 +70,7 @@ static inline void usbd_set_num_configs(struct usbd_context *const uds_ctx,
 
 	if (speed == USBD_SPEED_FS) {
 		desc = uds_ctx->fs_desc;
-	} else if (speed == USBD_SPEED_HS) {
+	} else if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		desc = uds_ctx->hs_desc;
 	} else {
 		return;
