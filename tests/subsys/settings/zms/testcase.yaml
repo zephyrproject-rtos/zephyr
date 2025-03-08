@@ -1,6 +1,6 @@
 tests:
   settings.zms:
-    depends_on: zms
+    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     min_ram: 32
     tags:
       - settings

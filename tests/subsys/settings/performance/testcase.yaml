@@ -7,6 +7,9 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
+      - mps2/an385
+    integration_platforms:
+      - mps2/an385
     min_ram: 32
     tags:
       - settings
@@ -23,6 +26,9 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
+      - mps2/an385
+    integration_platforms:
+      - mps2/an385
     min_ram: 32
     tags:
       - settings
@@ -36,10 +42,8 @@ tests:
       - CONFIG_SETTINGS_ZMS=y
       - CONFIG_ZMS_LOOKUP_CACHE=y
       - CONFIG_ZMS_LOOKUP_CACHE_SIZE=512
-    platform_allow: nrf52840dk/nrf52840
-    platform_exclude:
-      - native_sim
-      - qemu_x86
+    platform_allow:
+      - nrf52840dk/nrf52840
     min_ram: 32
     tags:
       - settings
@@ -56,10 +60,8 @@ tests:
       - CONFIG_NVS_LOOKUP_CACHE_SIZE=512
       - CONFIG_SETTINGS_NVS_NAME_CACHE=y
       - CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE=512
-    platform_allow: nrf52840dk/nrf52840
-    platform_exclude:
-      - native_sim
-      - qemu_x86
+    platform_allow:
+      - nrf52840dk/nrf52840
     min_ram: 32
     tags:
       - settings
