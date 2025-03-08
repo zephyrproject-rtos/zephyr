@@ -37,6 +37,12 @@ typedef enum __packed {
 	BT_AVRCP_RSP_INTERIM = 0xf,
 } bt_avrcp_rsp_t;
 
+/** @brief AV/C subunit type, also used for unit type */
+typedef enum __packed {
+	BT_AVRCP_SUBUNIT_TYPE_PANEL = 0x9,
+	BT_AVRCP_SUBUNIT_TYPE_UNIT = 0x1F,
+} bt_avrcp_subunit_type_t;
+
 /** @brief AV/C operation ids used in AVRCP passthrough commands */
 typedef enum __packed {
 	BT_AVRCP_OPID_SELECT = 0x00,
@@ -113,12 +119,12 @@ typedef enum __packed {
 struct bt_avrcp;
 
 struct bt_avrcp_unit_info_rsp {
-	uint8_t unit_type;
+	bt_avrcp_subunit_type_t unit_type;
 	uint32_t company_id;
 };
 
 struct bt_avrcp_subunit_info_rsp {
-	uint8_t subunit_type;
+	bt_avrcp_subunit_type_t subunit_type;
 	uint8_t max_subunit_id;
 	const uint8_t *extended_subunit_type; /**< contains max_subunit_id items */
 	const uint8_t *extended_subunit_id;   /**< contains max_subunit_id items */
@@ -177,6 +183,14 @@ struct bt_avrcp_cb {
 	 *  @param rsp The response for PASS THROUGH command.
 	 */
 	void (*passthrough_rsp)(struct bt_avrcp *avrcp, struct bt_avrcp_passthrough_rsp *rsp);
+
+	/** @brief Unit info request callback.
+	 *
+	 *  This callback is called whenever an AVRCP unit info is requested.
+	 *
+	 *  @param avrcp AVRCP connection object.
+	 */
+	void (*unit_info_req)(struct bt_avrcp *avrcp);
 };
 
 /** @brief Connect AVRCP.
@@ -249,6 +263,16 @@ int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp);
 int bt_avrcp_passthrough(struct bt_avrcp *avrcp, bt_avrcp_opid_t operation_id,
 			 bt_avrcp_button_state_t state, const uint8_t *payload, uint8_t len);
 
+/** @brief Send the unit info response.
+ *
+ *  This function is called by the application to send the unit info response.
+ *
+ *  @param avrcp The AVRCP instance.
+ *  @param rsp The response for UNIT INFO command.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_send_unit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_unit_info_rsp *rsp);
 #ifdef __cplusplus
 }
 #endif
