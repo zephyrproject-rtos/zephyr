@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: picolibc
+      url-base: https://github.com/picolibc
 
   group-filter: [-babblesim, -optional]
 
@@ -335,8 +337,9 @@ manifest:
       groups:
         - debug
     - name: picolibc
+      remote: picolibc
       path: modules/lib/picolibc
-      revision: 82d62ed1ac55b4e34a12d0390aced2dc9af13fc9
+      revision: 4380f9ae363db5ea4b88c9f339d3faaf1a6b4030
     - name: segger
       revision: cf56b1d9c80f81a26e2ac5727c9cf177116a4692
       path: modules/debug/segger

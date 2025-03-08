@@ -1,0 +1,57 @@
+/*
+ * 2025 NVIDIA Corporation <jholdsworth@nvidia.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "skeleton.dtsi"
+
+/ {
+	model = "Qemu OpenRISC 1000";
+	compatible = "opencores,or1ksim";
+	interrupt-parent = <&pic>;
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "opencores,or1200-rtlsvn481";
+			reg = <0>;
+			clock-frequency = <20000000>;
+
+			pic: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "opencores,or1k-pic-level";
+				interrupt-controller;
+			};
+		};
+	};
+
+
+	sram0: memory@0 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x00000000 0x08000000>;
+	};
+
+	uart3: serial@90000300 {
+		compatible = "ns16550";
+		reg = <0x90000300 0x100>;
+		reg-shift = <0>;
+		interrupts = <2>;
+		/* no matter for emulated port */
+		clock-frequency = <20000000>;
+		current-speed = <115200>;
+		status = "okay";
+	};
+};

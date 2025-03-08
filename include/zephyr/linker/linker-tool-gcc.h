@@ -59,6 +59,8 @@
 	/* Not needed */
 #elif defined(CONFIG_SPARC)
 	OUTPUT_FORMAT("elf32-sparc")
+#elif defined(CONFIG_OPENRISC)
+	OUTPUT_FORMAT("elf32-or1k")
 #else
 	#error Arch not supported.
 #endif
