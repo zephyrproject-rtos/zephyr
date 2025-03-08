@@ -103,7 +103,9 @@ enum mspi_cpp_mode {
  * @brief MSPI Endian
  */
 enum mspi_endian {
+	/** MSB appears first on SIO data lines */
 	MSPI_XFER_LITTLE_ENDIAN     = 0,
+	/** MSB appears last on SIO data lines */
 	MSPI_XFER_BIG_ENDIAN        = 1,
 };
 
@@ -176,7 +178,13 @@ enum mspi_dev_cfg_mask {
 	MSPI_DEVICE_CONFIG_ADDR_LEN     = BIT(13),
 	MSPI_DEVICE_CONFIG_MEM_BOUND    = BIT(14),
 	MSPI_DEVICE_CONFIG_BREAK_TIME   = BIT(15),
-	MSPI_DEVICE_CONFIG_ALL          = BIT_MASK(16),
+	MSPI_DEVICE_CONFIG_ADDR_SHIFT   = BIT(16),
+	MSPI_DEVICE_CONFIG_CADDR_LEN    = BIT(17),
+	MSPI_DEVICE_CONFIG_RD_MODE_LEN  = BIT(18),
+	MSPI_DEVICE_CONFIG_RD_MODE_BITS = BIT(19),
+	MSPI_DEVICE_CONFIG_WR_MODE_LEN  = BIT(20),
+	MSPI_DEVICE_CONFIG_WR_MODE_BITS = BIT(21),
+	MSPI_DEVICE_CONFIG_ALL          = BIT_MASK(22),
 };
 
 /**
@@ -204,10 +212,16 @@ enum mspi_timing_param {
  * @brief Stub for struct timing_cfg
  */
 struct mspi_timing_cfg {
-#ifdef __cplusplus
-	/* For C++ compatibility. */
-	uint8_t dummy;
-#endif
+	/* @brief minimum interval between CE assertions, in nanoseconds */
+	uint8_t ce_interval;
+	/* @brief CE setup time from rising clock edge, in nanoseconds */
+	uint8_t ce_setup;
+	/* @brief CE hold time from rising clock edge, in nanoseconds */
+	uint8_t ce_hold;
+	/* @brief delay from falling clock edge until output data is valid,
+	 * in nanoseconds
+	 */
+	uint8_t data_valid_time;
 };
 
 /**
@@ -294,6 +308,18 @@ struct mspi_dev_cfg {
 	uint8_t                 cmd_length;
 	/** @brief Configure address length     */
 	uint8_t                 addr_length;
+	/** @brief Set mode bits for write command */
+	uint32_t                write_mode_bits;
+	/** @brief Configure count of mode bits for write command */
+	uint8_t                 write_mode_length;
+	/** @brief Set mode bits for read command */
+	uint32_t                read_mode_bits;
+	/** @brief Configure count of mode bits for read command */
+	uint8_t                 read_mode_length;
+	/** @brief Configure size of column address, for PSRAM devices */
+	uint8_t                 column_addr_length;
+	/** @brief Left shift to apply to address before sending to device */
+	uint8_t                 addr_shift;
 	/** @brief Configure memory boundary    */
 	uint32_t                mem_boundary;
 	/** @brief Configure the time to break up a transfer into 2 */
@@ -397,6 +423,16 @@ struct mspi_xfer {
 	uint8_t                     cmd_length;
 	/** @brief  Configure address length     */
 	uint8_t                     addr_length;
+	/** @brief Configure size of column address, for PSRAM devices */
+	uint8_t                 column_addr_length;
+	/** @brief Set mode bits for write command */
+	uint32_t                write_mode_bits;
+	/** @brief Configure count of mode bits for write command */
+	uint8_t                 write_mode_length;
+	/** @brief Set mode bits for read command */
+	uint32_t                read_mode_bits;
+	/** @brief Configure count of mode bits for read command */
+	uint8_t                 read_mode_length;
 	/** @brief  Hold CE active after xfer    */
 	bool                        hold_ce;
 	/** @brief  Software CE control          */
