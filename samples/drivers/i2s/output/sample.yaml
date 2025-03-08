@@ -5,7 +5,8 @@ common:
   tags:
     - drivers
     - i2s
-  depends_on: i2s
 tests:
   sample.drivers.i2s.output:
     filter: dt_alias_exists("i2s-tx")
+    integration_platforms:
+      - mimxrt1060_evk@B/mimxrt1062/qspi
