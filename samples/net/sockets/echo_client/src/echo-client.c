@@ -387,6 +387,7 @@ static void init_app(void)
 
 	init_vlan();
 	init_udp();
+	init_vpn();
 }
 
 static void start_client(void *p1, void *p2, void *p3)

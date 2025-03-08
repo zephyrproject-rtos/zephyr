@@ -313,7 +313,7 @@ manifest:
         - debug
       revision: 33e5c23cbedda5ba12dbe50c4baefb362a791001
     - name: net-tools
-      revision: 93acc8bac4661e74e695eb1aea94c7c5262db2e2
+      revision: c57418f89ce27dd7a36555bd1c1b3bbafafacdab
       path: tools/net-tools
       groups:
         - tools
