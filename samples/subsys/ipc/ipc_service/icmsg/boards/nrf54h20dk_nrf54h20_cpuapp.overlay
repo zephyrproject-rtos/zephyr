@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2024 Golioth, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/delete-property/ zephyr,bt-hci;
+	};
+};
+
+/delete-node/ &ipc0;
+
+ipc0: &cpuapp_cpuppr_ipc {
+	status = "okay";
+};
+
+&cpuapp_bellboard {
+	status = "okay";
+};
+
+&cpuppr_vevif {
+	status = "okay";
+};
