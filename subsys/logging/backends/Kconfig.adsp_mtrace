@@ -11,6 +11,13 @@ config LOG_BACKEND_ADSP_MTRACE
 
 if LOG_BACKEND_ADSP_MTRACE
 
+config LOG_BACKEND_ADSP_MTRACE_AUTOSTART
+	bool "Automatically start mtrace backend"
+	default n
+	help
+	  When enabled, automatically start the mtrace backend on
+	  application start.
+
 backend = ADSP_MTRACE
 backend-str = adsp_mtrace
 source "subsys/logging/Kconfig.template.log_format_config"
