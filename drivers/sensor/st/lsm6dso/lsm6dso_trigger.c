@@ -50,8 +50,9 @@ static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 
 /**
  * lsm6dso_enable_xl_int - XL enable selected int pin to generate interrupt
+ * when data is ready.
  */
-static int lsm6dso_enable_xl_int(const struct device *dev, int enable)
+static int lsm6dso_enable_xl_drdy_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -82,6 +83,89 @@ static int lsm6dso_enable_xl_int(const struct device *dev, int enable)
 		return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL,
 					 (uint8_t *)&int2_ctrl, 1);
 	}
+}
+
+/**
+ * lsm6dso_enable_xl_motion_int - XL enable selected int pin to generate
+ * interrupt when any motion is detected.
+ */
+static int lsm6dso_enable_xl_delta_int(const struct device *dev, int enable)
+{
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+
+	int rc;
+
+	/* Only configure the tap registers when we're enabling, as we'll
+	 * otherwise get a spurious interrupt when this returns!
+	 */
+	if (enable) {
+		lsm6dso_tap_cfg0_t tap_cfg0;
+		lsm6dso_tap_cfg2_t tap_cfg2;
+
+		rc = lsm6dso_read_reg(ctx, LSM6DSO_TAP_CFG0, (uint8_t *)&tap_cfg0, 1);
+		if (rc < 0) {
+			return rc;
+		}
+
+		/* Output state changes, and use the slope filter. */
+		tap_cfg0.sleep_status_on_int = 0;
+		tap_cfg0.slope_fds = 0;
+
+		rc = lsm6dso_write_reg(ctx, LSM6DSO_TAP_CFG0, (uint8_t *)&tap_cfg0, 1);
+		if (rc < 0) {
+			return rc;
+		}
+
+		/* Enable motion/stationary detection interrupts, and don't change the
+		 * ODR when stationary (i.e. not using active/inactive mode).
+		 */
+		rc = lsm6dso_read_reg(ctx, LSM6DSO_TAP_CFG2, (uint8_t *)&tap_cfg2, 1);
+		if (rc < 0) {
+			return rc;
+		}
+
+		tap_cfg2.interrupts_enable = enable;
+		tap_cfg2.inact_en = 0;
+
+		rc = lsm6dso_write_reg(ctx, LSM6DSO_TAP_CFG2, (uint8_t *)&tap_cfg2, 1);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	/* Route the motion/stationary detection interrupt to the correct pin. */
+	if (cfg->int_pin == 1) {
+		lsm6dso_md1_cfg_t md1_cfg;
+
+		rc = lsm6dso_read_reg(ctx, LSM6DSO_MD1_CFG, (uint8_t *)&md1_cfg, 1);
+		if (rc < 0) {
+			return rc;
+		}
+
+		md1_cfg.int1_sleep_change = enable;
+
+		rc = lsm6dso_write_reg(ctx, LSM6DSO_MD1_CFG, (uint8_t *)&md1_cfg, 1);
+		if (rc < 0) {
+			return rc;
+		}
+	} else {
+		lsm6dso_md2_cfg_t md2_cfg;
+
+		rc = lsm6dso_read_reg(ctx, LSM6DSO_MD2_CFG, (uint8_t *)&md2_cfg, 1);
+		if (rc < 0) {
+			return rc;
+		}
+
+		md2_cfg.int2_sleep_change = enable;
+
+		rc = lsm6dso_write_reg(ctx, LSM6DSO_MD2_CFG, (uint8_t *)&md2_cfg, 1);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	return 0;
 }
 
 /**
@@ -135,12 +219,16 @@ int lsm6dso_trigger_set(const struct device *dev,
 	}
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
-		lsm6dso->handler_drdy_acc = handler;
-		lsm6dso->trig_drdy_acc = trig;
-		if (handler) {
-			return lsm6dso_enable_xl_int(dev, LSM6DSO_EN_BIT);
-		} else {
-			return lsm6dso_enable_xl_int(dev, LSM6DSO_DIS_BIT);
+		int enable = handler ? LSM6DSO_EN_BIT : LSM6DSO_DIS_BIT;
+
+		if (trig->type == SENSOR_TRIG_DATA_READY) {
+			lsm6dso->handler_drdy_acc = handler;
+			lsm6dso->trig_drdy_acc = trig;
+			return lsm6dso_enable_xl_drdy_int(dev, enable);
+		} else if (trig->type == SENSOR_TRIG_DELTA) {
+			lsm6dso->handler_delta_acc = handler;
+			lsm6dso->trig_delta_acc = trig;
+			return lsm6dso_enable_xl_delta_int(dev, enable);
 		}
 	} else if (trig->chan == SENSOR_CHAN_GYRO_XYZ) {
 		lsm6dso->handler_drdy_gyr = handler;
@@ -175,35 +263,41 @@ static void lsm6dso_handle_interrupt(const struct device *dev)
 	struct lsm6dso_data *lsm6dso = dev->data;
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lsm6dso_status_reg_t status;
+	lsm6dso_all_sources_t all_sources;
 
 	while (1) {
-		if (lsm6dso_status_reg_get(ctx, &status) < 0) {
-			LOG_DBG("failed reading status reg");
+		if (lsm6dso_all_sources_get(ctx, &all_sources) < 0) {
+			LOG_ERR("failed reading all int sources");
 			return;
 		}
 
-		if ((status.xlda == 0) && (status.gda == 0)
+		if ((all_sources.drdy_xl == 0) && (all_sources.drdy_g == 0)
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
-					&& (status.tda == 0)
+					&& (all_sources.drdy_temp == 0)
 #endif
+					&& (all_sources.sleep_change == 0)
 					) {
 			break;
 		}
 
-		if ((status.xlda) && (lsm6dso->handler_drdy_acc != NULL)) {
+		if ((all_sources.drdy_xl) && (lsm6dso->handler_drdy_acc != NULL)) {
 			lsm6dso->handler_drdy_acc(dev, lsm6dso->trig_drdy_acc);
 		}
 
-		if ((status.gda) && (lsm6dso->handler_drdy_gyr != NULL)) {
+		if ((all_sources.drdy_g) && (lsm6dso->handler_drdy_gyr != NULL)) {
 			lsm6dso->handler_drdy_gyr(dev, lsm6dso->trig_drdy_gyr);
 		}
 
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
-		if ((status.tda) && (lsm6dso->handler_drdy_temp != NULL)) {
+		if ((all_sources.drdy_temp) && (lsm6dso->handler_drdy_temp != NULL)) {
 			lsm6dso->handler_drdy_temp(dev, lsm6dso->trig_drdy_temp);
 		}
 #endif
+
+		if ((all_sources.sleep_change) &&
+					(lsm6dso->handler_delta_acc != NULL)) {
+			lsm6dso->handler_delta_acc(dev, lsm6dso->trig_delta_acc);
+		}
 	}
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
