@@ -1,0 +1,28 @@
+sample:
+  name: Light Sensor Polling Sample
+common:
+  filter: dt_alias_exists("light-sensor")
+tests:
+  sample.sensor.light_polling.grove:
+    tags:
+      - drivers
+      - sensor
+      - grove
+      - light
+    platform_allow:
+      - nrf52dk/nrf52832
+    integration_platforms:
+      - nrf52dk/nrf52832
+    harness: grove
+    depends_on: adc
+  sample.sensor.light_polling.als_pt19:
+    tags:
+      - drivers
+      - sensor
+      - light
+    platform_allow:
+      - frdm_mcxw71/mcxw716c
+    integration_platforms:
+      - frdm_mcxw71/mcxw716c
+    depends_on:
+      - adc
