@@ -31,5 +31,12 @@ properties:
     type: phandle
     description: PHY provider specifier
 
+  physel:
+    type: string
+    default: "USB_OTG_FS_PHY_EMBEDDED"
+    description: |
+      OTG_FS supports the following PHY interfaces:
+        - "USB_OTG_FS_PHY_EMBEDDED": on chip full speed PHY.
+
   clocks:
     required: true

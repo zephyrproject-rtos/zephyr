@@ -47,7 +47,7 @@
 		};
 
 		usbotg_hs: usb@40040000 {
-			compatible = "st,stm32-otghs";
+			compatible = "st,stm32h7-otghs","st,stm32-otghs";
 			reg = <0x40040000 0x40000>;
 			interrupts = <74 0>, <75 0>, <76 0>, <77 0>;
 			interrupt-names = "ep1_out", "ep1_in", "wkup", "otghs";
@@ -71,6 +71,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 27U)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
+			physel = "USB_OTG_FS_PHY_EMBEDDED";
 			status = "disabled";
 		};
 
