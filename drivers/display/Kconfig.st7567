@@ -1,0 +1,22 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ST7567
+	bool "ST7567 display controller"
+	default y
+	depends on DT_HAS_SITRONIX_ST7567_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SITRONIX_ST7567),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SITRONIX_ST7567),spi)
+	help
+	  Enable driver for ST7567 display controller.
+
+if ST7567
+
+config ST7567_DEFAULT_CONTRAST
+	int "ST7567 default contrast"
+	default 8
+	range 0 15
+	help
+	  ST7567 default contrast.
+
+endif # ST7567
