@@ -45,4 +45,12 @@ ZTEST(test_kconfig_functions, test_min_max)
 	zassert_equal(CONFIG_KCONFIG_MAX_10_3_2, MAX(MAX(10, 3), 2));
 }
 
+ZTEST(test_kconfig_functions, test_equal)
+{
+	zassert_false(IS_ENABLED(CONFIG_KCONFIG_EQ_1_2));
+	zassert_true(IS_ENABLED(CONFIG_KCONFIG_EQ_2_2));
+	zassert_false(IS_ENABLED(CONFIG_KCONFIG_EQ_AB_CD));
+	zassert_true(IS_ENABLED(CONFIG_KCONFIG_EQ_EF_EF));
+}
+
 ZTEST_SUITE(test_kconfig_functions, NULL, NULL, NULL, NULL, NULL);
