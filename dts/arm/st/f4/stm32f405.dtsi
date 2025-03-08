@@ -197,6 +197,7 @@
 			interrupts = <77 0>, <74 0>, <75 0>;
 			interrupt-names = "otghs", "ep1_out", "ep1_in";
 			num-bidir-endpoints = <6>;
+			num-host-channels = <12>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
 			phys = <&otghs_fs_phy>;
