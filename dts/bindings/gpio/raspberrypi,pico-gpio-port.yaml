@@ -1,0 +1,19 @@
+# Copyright (c) 2021, Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico GPIO Port
+
+compatible: "raspberrypi,pico-gpio-port"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
