@@ -32,6 +32,18 @@ Boards
 * The config option :kconfig:option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME` has been deprecated
   in favor of :kconfig:option:`CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME`.
 
+* ``arduino_uno_r4_minima``, ``arduino_uno_r4_wifi``, and ``mikroe_clicker_ra4m1`` have migrated to
+  new FSP-based configurations.
+  While there are no major functional changes, the device tree structure has been significantly revised.
+  The following device tree bindings are now deprecated:
+  ``renesas,ra-gpio``, ``renesas,ra-uart-sci``, ``renesas,ra-pinctrl``,
+  ``renesas,ra-clock-generation-circuit``, and ``renesas,ra-interrupt-controller-unit``.
+  Instead, use the following replacements:
+  - :dtcompatible:`renesas,ra-gpio-ioport`
+  - :dtcompatible:`renesas,ra-sci-uart`
+  - :dtcompatible:`renesas,ra-pinctrl-pfs`
+  - :dtcompatible:`renesas,ra-cgc-pclk-block`
+
 Device Drivers and Devicetree
 *****************************
 
