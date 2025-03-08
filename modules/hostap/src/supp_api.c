@@ -86,7 +86,7 @@ static K_WORK_DELAYABLE_DEFINE(wpa_supp_status_work,
 #define wpa_cli_cmd_v(cmd, ...)	({					\
 	bool status;							\
 									\
-	if (zephyr_wpa_cli_cmd_v(cmd, ##__VA_ARGS__) < 0) {		\
+	if (zephyr_wpa_cli_cmd_v(wpa_s->ctrl_conn, cmd, ##__VA_ARGS__) < 0) {		\
 		wpa_printf(MSG_ERROR,					\
 			   "Failed to execute wpa_cli command: %s",	\
 			   cmd);					\
@@ -937,7 +937,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		goto out;
 	}
 
-	ret = z_wpa_ctrl_add_network(&resp);
+	ret = z_wpa_ctrl_add_network(wpa_s->ctrl_conn, &resp);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "Failed to add network");
 		goto out;
@@ -1626,7 +1626,7 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		status->channel = channel;
 
 		if (ssid_len == 0) {
-			int _res = z_wpa_ctrl_status(&cli_status);
+			int _res = z_wpa_ctrl_status(wpa_s->ctrl_conn, &cli_status);
 
 			if (_res < 0) {
 				ssid_len = 0;
@@ -1655,7 +1655,7 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 
 		status->rssi = -WPA_INVALID_NOISE;
 		if (status->iface_mode == WIFI_MODE_INFRA) {
-			ret = z_wpa_ctrl_signal_poll(&signal_poll);
+			ret = z_wpa_ctrl_signal_poll(wpa_s->ctrl_conn, &signal_poll);
 			if (!ret) {
 				status->rssi = signal_poll.rssi;
 				status->current_phy_tx_rate = signal_poll.current_txrate;
@@ -1805,6 +1805,7 @@ int supplicant_11k_cfg(const struct device *dev, struct wifi_11k_params *params)
 int supplicant_11k_neighbor_request(const struct device *dev, struct wifi_11k_params *params)
 {
 	int ssid_len = strlen(params->ssid);
+	struct wpa_supplicant *wpa_s = get_wpa_s_handle(dev);
 
 	if (params != NULL && ssid_len > 0) {
 		if (ssid_len > WIFI_SSID_MAX_LEN) {
@@ -2071,7 +2072,8 @@ int supplicant_bss_ext_capab(const struct device *dev, int capab)
 int supplicant_legacy_roam(const struct device *dev)
 {
 	int ret = -1;
-
+	struct wpa_supplicant *wpa_s = get_wpa_s_handle(dev);
+	
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 	if (!wpa_cli_cmd_v("scan")) {
 		goto out;
@@ -2179,7 +2181,7 @@ static int supplicant_wps_pin(const struct device *dev, struct wifi_wps_config_p
 	}
 
 	if (params->oper == WIFI_WPS_PIN_GET) {
-		if (zephyr_wpa_cli_cmd_resp(get_pin_cmd, params->pin)) {
+		if (zephyr_wpa_cli_cmd_resp(wpa_s->ctrl_conn, get_pin_cmd, params->pin)) {
 			goto out;
 		}
 	} else if (params->oper == WIFI_WPS_PIN_SET) {

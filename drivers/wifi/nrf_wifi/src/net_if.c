@@ -41,6 +41,9 @@ void nrf_wifi_set_iface_event_handler(void *os_vif_ctx,
 						unsigned int event_len)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+#ifdef CONFIG_NRF70_STA_AP_MODE
+	struct nrf_wifi_vif_cmd_event* vif_evt = NULL;
+#endif
 
 	if (!os_vif_ctx) {
 		LOG_ERR("%s: Invalid parameters",
@@ -57,6 +60,17 @@ void nrf_wifi_set_iface_event_handler(void *os_vif_ctx,
 	(void)event_len;
 
 	vif_ctx_zep = os_vif_ctx;
+
+#ifdef CONFIG_NRF70_STA_AP_MODE
+	while ((vif_evt = nrf_wifi_dequeue_cmd_event()) != NULL) {
+		if(vif_evt->vif_event == NRF_WIFI_UMAC_EVENT_SET_INTERFACE) {
+			vif_ctx_zep = nrf_wifi_get_vif_ctx_by_idx(vif_evt->vif_idx);
+			k_free(vif_evt);
+			break;
+		}
+		k_free(vif_evt);
+	}
+#endif
 
 	vif_ctx_zep->set_if_event_received = true;
 	vif_ctx_zep->set_if_status = event->return_value;
@@ -760,7 +774,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	}
 
 	k_mutex_init(&vif_ctx_zep->vif_lock);
-	rpu_ctx_zep->vif_ctx_zep[vif_ctx_zep->vif_idx].if_type =
+	vif_ctx_zep->if_type =
 		add_vif_info.iftype;
 
 	/* Check if user has provided a valid MAC address, if not
