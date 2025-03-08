@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+osource "$(KCONFIG_BINARY_DIR)/sip/Kconfig"
+osource "$(KCONFIG_BINARY_DIR)/sip/Kconfig.sip"
