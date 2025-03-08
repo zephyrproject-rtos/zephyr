@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: GPIO controller for Davinci and Keystone devices
+description: GPIO Controller for Davinci and Keystone devices
 
 compatible: "ti,davinci-gpio-nexus"
 

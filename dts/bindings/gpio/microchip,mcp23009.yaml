@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: This is a representation of the Microchip MCP23009 I2C GPIO Expander.
+description: Microchip MCP23009 I2C GPIO Expander.
 
 compatible: "microchip,mcp23009"
 

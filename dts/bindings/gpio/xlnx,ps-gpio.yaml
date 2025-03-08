@@ -4,7 +4,7 @@
 #
 
 description: |
-  Xilinx Zynq-7000/ZynqMP MIO/EMIO GPIO controller node.
+  Xilinx Zynq-7000/ZynqMP MIO/EMIO GPIO Controller.
 
   This GPIO controller is contained in both the Xilinx Zynq-7000 and
   ZynqMP (UltraScale) SoCs. It interfaces both I/O pins of the SoC,

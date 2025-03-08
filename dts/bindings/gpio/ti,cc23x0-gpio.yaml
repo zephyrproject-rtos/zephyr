@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI SimpleLink CC23X0 GPIO node
+description: TI SimpleLink CC23X0 GPIO
 
 compatible: "ti,cc23x0-gpio"
 

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-description: TI CC32XX GPIO node
+description: TI CC32XX GPIO
 
 compatible: "ti,cc32xx-gpio"
 
