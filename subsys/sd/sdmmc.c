@@ -133,7 +133,7 @@ static int sdmmc_send_ocr(struct sd_card *card, int ocr)
 				break;
 			}
 		} else {
-			if ((cmd.response[0U] & SD_OCR_PWR_BUSY_FLAG)) {
+			if (!(cmd.response[0U] & SD_OCR_PWR_BUSY_FLAG)) {
 				break;
 			}
 		}
