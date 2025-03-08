@@ -52,6 +52,13 @@ properties:
     description: |
       GPIO connected to the controller RESET pin. This pin is active-low.
 
+  i2c-mux-idle-disconnect:
+    type: boolean
+    description: |
+      Forces mux to disconnect all children in idle state. This is
+      necessary for example, if there are several multiplexers on the bus and
+      the devices behind them use same I2C addresses.
+
 child-binding:
   description: TCA954x I2C switch channel node
   include: [i2c-controller.yaml]
