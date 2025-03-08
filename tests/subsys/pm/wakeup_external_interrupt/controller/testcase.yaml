@@ -1,0 +1,10 @@
+tests:
+  pm.wakeup_external_interrupt.controller:
+    platform_allow:
+      - stm32l562e_dk
+    tags:
+      - shell
+      - gpio
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
