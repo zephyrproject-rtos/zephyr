@@ -19,6 +19,24 @@ properties:
       selector.  The Linux enable-active-high and gpio-open-drain
       properties are not valid for Zephyr devicetree files.
 
+  raw-follower-gpios:
+    type: phandle-array
+    description: |
+      Extra list of GPIOs that 'follow' the state of the power domain.
+      These GPIOs are set to physical level '0' when the domain transitions
+      to SUSPENDED, and set to physical level '1' when the domain transitions
+      to ACTIVE. The logical levels (ACTIVE_HIGH/ACTIVE_LOW) are not modified
+      by this action (through gpio_pin_configure).
+
+      This behaviour is intended to be used when an SPI device is on a power
+      domain and the CS pin is explicitly driven high and low by the SoC,
+      instead of having an external pull-up to the voltage rail. The idle
+      state of the CS pin needs to be high, but when the power domain goes down
+      the CS pin needs to go low to avoid back-powering the device.
+
+      This property is NOT needed when the CS pins have an external pullup
+      to the voltage rail that is being switched.
+
   startup-delay-us:
     type: int
     default: 0
