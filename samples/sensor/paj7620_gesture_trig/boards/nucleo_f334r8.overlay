@@ -1,0 +1,13 @@
+&gpioa {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+
+	paj7620: paj7620@73 {
+		compatible = "pixart,paj7620";
+		reg = <0x73>;
+		int-gpios = <&gpioa 9 (GPIO_PULL_UP)>;
+	};
+};
