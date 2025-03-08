@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.security.security_changed_callback:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:

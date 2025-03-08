@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.att.retry_on_sec_err.client:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:

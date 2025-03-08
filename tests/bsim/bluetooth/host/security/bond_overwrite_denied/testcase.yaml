@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.security.bond_overwrite_denied:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:

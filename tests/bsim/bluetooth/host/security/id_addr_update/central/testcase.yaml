@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.security.id_addr_update.central:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:

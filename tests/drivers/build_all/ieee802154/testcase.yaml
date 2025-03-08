@@ -2,7 +2,7 @@ common:
   tags:
     - drivers
     - ieee802154
-  build_only: true
+  harness: build
 tests:
   drivers.ieee802154.build.external:
     platform_allow:
