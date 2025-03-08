@@ -676,8 +676,8 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 
 		err = bt_auth->pairing_accept(conn, NULL);
 		if (err != BT_SECURITY_ERR_SUCCESS) {
-			io_capa_neg_reply(&evt->bdaddr,
-					  BT_HCI_ERR_PAIRING_NOT_ALLOWED);
+			io_capa_neg_reply(&evt->bdaddr, BT_HCI_ERR_PAIRING_NOT_ALLOWED);
+			bt_conn_unref(conn);
 			return;
 		}
 	}
