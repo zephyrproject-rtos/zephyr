@@ -93,6 +93,8 @@ New APIs and options
     * :c:macro:`BT_BAP_ADV_PARAM_BROADCAST_SLOW`
     * :c:macro:`BT_BAP_PER_ADV_PARAM_BROADCAST_FAST`
     * :c:macro:`BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW`
+    * :c:func:`bt_csip_set_member_set_size_and_rank`
+    * :c:func:`bt_csip_set_member_get_info`
 
   * Host
 

@@ -53,6 +53,11 @@ config BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE
 	help
 	  This option enables support for clients to be notified on SIRK changes.
 
+config BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE
+	bool "Set Size notifiable support"
+	help
+	  This option enables support for clients to be notified on Set Size changes.
+
 endif # BT_CSIP_SET_MEMBER
 
 #################### Coordinated Set Identification Client ####################
