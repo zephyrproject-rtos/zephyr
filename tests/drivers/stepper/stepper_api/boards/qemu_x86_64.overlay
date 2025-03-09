@@ -4,6 +4,12 @@
  */
 
 / {
+	aliases {
+		stepper =  &motor_1;
+	};
+};
+
+/ {
 	test {
 		#address-cells = <1>;
 		#size-cells = <1>;
