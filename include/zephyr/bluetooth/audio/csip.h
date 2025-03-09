@@ -32,6 +32,7 @@
 #include <stdint.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
@@ -238,6 +239,70 @@ int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
 				uint8_t sirk[BT_CSIP_SIRK_SIZE]);
 
 /**
+ * @brief Set a new size and rank for a service instance
+ *
+ * This function can be used to dynamically change the size and rank of a service instance.
+ * It is important to note that a set cannot have multiple devices with the same rank in a set,
+ * and it is up to the caller of this function to ensure that.
+ * Similarly, it is important that the size is updated on all devices in the set at the same time.
+ *
+ * If @kconfig{CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE} is enabled, this will also send a
+ * notification to all connected or bonded clients.
+ *
+ * @param svc_inst The service instance.
+ * @param size The new set size.
+ * @param rank The new rank. Ignored if the @p svc_inst is not lockable.
+ *
+ * @retval -EINVAL @p svc_inst is NULL, @p size is less than 1, @p rank is less than 1 or higher
+ *                 than @p size for a lockable @p svc_inst.
+ * @retval -EALREADY @p size and @p rank are already the provided values.
+ * @retval 0 Success.
+ */
+int bt_csip_set_member_set_size_and_rank(struct bt_csip_set_member_svc_inst *svc_inst, uint8_t size,
+					 uint8_t rank);
+
+/** Struct to hold information about a service instance */
+struct bt_csip_set_member_set_info {
+	/** The 16-octet SIRK */
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
+
+	/** The set size */
+	uint8_t set_size;
+
+	/**
+	 * @brief The rank
+	 *
+	 * May be 0 if the set is not lockable
+	 */
+	uint8_t rank;
+
+	/** Whether the set is lockable  */
+	bool lockable: 1;
+
+	/** Whether the set is currently locked */
+	bool locked: 1;
+
+	/**
+	 * @brief The address of the client that currently holds the lock
+	 *
+	 * Will be @ref BT_ADDR_LE_NONE if the server holds the lock
+	 */
+	bt_addr_le_t lock_client_addr;
+};
+
+/**
+ * @brief Get information about a service instances
+ *
+ * @param svc_inst The service instance.
+ * @param info Pointer to a struct to store the information in.
+ *
+ * @retval -EINVAL @p svc_inst or @p info is NULL.
+ * @retval 0 Success.
+ */
+int bt_csip_set_member_get_info(const struct bt_csip_set_member_svc_inst *svc_inst,
+				struct bt_csip_set_member_set_info *info);
+
+/**
  * @brief Generate the Resolvable Set Identifier (RSI) value.
  *
  * This will generate RSI for given @p svc_inst instance.
@@ -383,6 +448,24 @@ typedef void (*bt_csip_set_coordinator_sirk_changed_cb)(
 	struct bt_csip_set_coordinator_csis_inst *inst);
 
 /**
+ * @typedef bt_csip_set_coordinator_size_changed_cb
+ * @brief Callback when the size of a set of a connected device changes.
+ *
+ * Since all devices in a set shall have the same set size value.
+ * Each connected device may send the same new size set in a notification,
+ * assuming that the remote device supports notifications of the set size.
+ *
+ * The rank of each device in the set may also change as part of this, so it is advisable to call
+ * bt_csip_set_coordinator_discover() to rediscover and read the characteristic values of the sets
+ * on each device.
+ *
+ * @param inst    The Coordinated Set Identification Service instance that was changed.
+ *                The new size is stored in the @p inst->info.size.
+ */
+typedef void (*bt_csip_set_coordinator_size_changed_cb)(
+	struct bt_conn *conn, const struct bt_csip_set_coordinator_csis_inst *inst);
+
+/**
  * @typedef bt_csip_set_coordinator_ordered_access_cb_t
  * @brief Callback for bt_csip_set_coordinator_ordered_access()
  *
@@ -417,6 +500,8 @@ struct bt_csip_set_coordinator_cb {
 	bt_csip_set_coordinator_lock_changed_cb lock_changed;
 	/** Callback when a set's SIRK has changed */
 	bt_csip_set_coordinator_sirk_changed_cb sirk_changed;
+	/** Callback when a set's size has changed */
+	bt_csip_set_coordinator_size_changed_cb size_changed;
 	/** Callback for the ordered access procedure */
 	bt_csip_set_coordinator_ordered_access_cb_t ordered_access;
 

@@ -199,8 +199,65 @@ static int cmd_csip_set_member_sirk(const struct shell *sh, size_t argc, char *a
 	return 0;
 }
 
-static int cmd_csip_set_member_get_sirk(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_csip_set_member_set_size_and_rank(const struct shell *sh, size_t argc, char *argv[])
 {
+	struct bt_csip_set_member_set_info info;
+	unsigned long set_size;
+	unsigned long rank;
+	int err = 0;
+
+	if (svc_inst == NULL) {
+		shell_error(sh, "CSIP set member not registered yet");
+
+		return -ENOEXEC;
+	}
+
+	set_size = shell_strtoul(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse set size from %s: %d", argv[1], err);
+
+		return -ENOEXEC;
+	}
+
+	rank = shell_strtoul(argv[2], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse rank from %s: %d", argv[2], err);
+
+		return -ENOEXEC;
+	}
+
+	err = bt_csip_set_member_get_info(svc_inst, &info);
+	if (err != 0) {
+		shell_error(sh, "Failed to get SIRK: %d", err);
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(set_size, 1, UINT8_MAX)) {
+		shell_error(sh, "Invalid set size: %lu", set_size);
+
+		return -ENOEXEC;
+	}
+
+	if (info.lockable && !IN_RANGE(rank, 1, rank)) {
+		shell_error(sh, "Invalid rank: %lu", rank);
+
+		return -ENOEXEC;
+	}
+
+	err = bt_csip_set_member_set_size_and_rank(svc_inst, (uint8_t)set_size, (uint8_t)rank);
+	if (err != 0) {
+		shell_error(sh, "Failed to set set size and rank: %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Set size and rank updated to %lu and %lu", set_size, rank);
+
+	return 0;
+}
+
+static int cmd_csip_set_member_get_info(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_csip_set_member_set_info info;
 	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 	int err;
 
@@ -210,14 +267,25 @@ static int cmd_csip_set_member_get_sirk(const struct shell *sh, size_t argc, cha
 		return -ENOEXEC;
 	}
 
-	err = bt_csip_set_member_get_sirk(svc_inst, sirk);
+	err = bt_csip_set_member_get_info(svc_inst, &info);
 	if (err != 0) {
 		shell_error(sh, "Failed to get SIRK: %d", err);
 		return -ENOEXEC;
 	}
 
-	shell_print(sh, "SIRK");
+	shell_print(sh, "Info for %p", svc_inst);
+	shell_print(sh, "\tSIRK");
 	shell_hexdump(sh, sirk, sizeof(sirk));
+	shell_print(sh, "\tSet size: %u", info.set_size);
+	shell_print(sh, "\tRank: %u", info.rank);
+	shell_print(sh, "\tLockable: %s", info.lockable ? "true" : "false");
+	shell_print(sh, "\tLocked: %s", info.locked ? "true" : "false");
+	if (info.locked) {
+		char addr_str[BT_ADDR_LE_STR_LEN];
+
+		bt_addr_le_to_str(&info.lock_client_addr, addr_str, sizeof(addr_str));
+		shell_print(sh, "\tLock owner: %s", addr_str);
+	}
 
 	return 0;
 }
@@ -299,14 +367,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(release, NULL, "Release the set [force]", cmd_csip_set_member_release, 1, 1),
 	SHELL_CMD_ARG(sirk, NULL, "Set the currently used SIRK <sirk>", cmd_csip_set_member_sirk, 2,
 		      0),
-	SHELL_CMD_ARG(get_sirk, NULL, "Get the currently used SIRK", cmd_csip_set_member_get_sirk,
-		      1, 0),
+	SHELL_CMD_ARG(set_size_and_rank, NULL, "Set the currently used size and rank <size> <rank>",
+		      cmd_csip_set_member_set_size_and_rank, 3, 0),
+	SHELL_CMD_ARG(get_info, NULL, "Get service info", cmd_csip_set_member_get_info, 1, 0),
 	SHELL_CMD_ARG(sirk_rsp, NULL,
 		      "Set the response used in SIRK requests "
 		      "<accept, accept_enc, reject, oob>",
 		      cmd_csip_set_member_sirk_rsp, 2, 0),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(csip_set_member, &csip_set_member_cmds,
 		       "Bluetooth CSIP set member shell commands",
