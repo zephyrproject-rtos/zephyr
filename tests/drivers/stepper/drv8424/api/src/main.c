@@ -79,15 +79,6 @@ ZTEST_F(drv8424_api, test_micro_step_res_set)
 		      res);
 }
 
-ZTEST_F(drv8424_api, test_micro_step_res_set_incorrect_value_detection)
-{
-	int ret = 0;
-
-	ret = stepper_set_micro_step_res(fixture->dev, 3);
-	zassert_equal(ret, -EINVAL, "Command should fail with error %d but returned %d", -EINVAL,
-		      ret);
-}
-
 ZTEST_F(drv8424_api, test_actual_position_set)
 {
 	int32_t pos = 100u;

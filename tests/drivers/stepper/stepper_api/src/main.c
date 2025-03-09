@@ -55,7 +55,7 @@ static void stepper_print_event_callback(const struct device *dev, enum stepper_
 	}
 
 	LOG_DBG("Event %d, %s called for %s, expected for %s\n", event, __func__,
-	dev_callback->name, dev->name);
+		dev_callback->name, dev->name);
 }
 
 static void *stepper_setup(void)
@@ -86,7 +86,14 @@ static void stepper_before(void *f)
 
 ZTEST_SUITE(stepper, NULL, stepper_setup, stepper_before, NULL, NULL);
 
-ZTEST_F(stepper, test_micro_step_res)
+ZTEST_F(stepper, test_set_micro_step_res_incorrect)
+{
+	int ret = stepper_set_micro_step_res(fixture->dev, 127);
+
+	zassert_equal(ret, -ENOTSUP, "Incorrect micro step resolution should return -ENOTSUP");
+}
+
+ZTEST_F(stepper, test_get_micro_step_res)
 {
 	enum stepper_micro_step_resolution res;
 	(void)stepper_get_micro_step_res(fixture->dev, &res);
@@ -122,7 +129,7 @@ ZTEST_F(stepper, test_target_position)
 	(void)stepper_move_to(fixture->dev, pos);
 
 	POLL_AND_CHECK_SIGNAL(stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
-			      K_SECONDS(pos*1.2));
+			      K_SECONDS(pos * 1.2));
 
 	(void)stepper_get_actual_position(fixture->dev, &pos);
 	zassert_equal(pos, 10u, "Target position should be %d but is %d", 10u, pos);
