@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/drivers/led.h>
-#include <zephyr/drivers/kscan.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
