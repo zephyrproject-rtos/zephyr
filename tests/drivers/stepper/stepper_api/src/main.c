@@ -71,7 +71,14 @@ static void stepper_before(void *f)
 
 ZTEST_SUITE(stepper, NULL, stepper_setup, stepper_before, NULL, NULL);
 
-ZTEST_F(stepper, test_micro_step_res)
+ZTEST_F(stepper, test_set_micro_step_res)
+{
+	int ret = stepper_set_micro_step_res(fixture->dev, 127);
+
+	zassert_equal(ret, -ENOTSUP, "Micro step resolution not set correctly");
+}
+
+ZTEST_F(stepper, test_get_micro_step_res)
 {
 	enum stepper_micro_step_resolution res;
 	(void)stepper_get_micro_step_res(fixture->dev, &res);
