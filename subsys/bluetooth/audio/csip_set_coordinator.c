@@ -312,6 +312,17 @@ static void sirk_changed(struct bt_csip_set_coordinator_csis_inst *inst)
 	}
 }
 
+static void size_changed(struct bt_conn *conn, struct bt_csip_set_coordinator_csis_inst *inst)
+{
+	struct bt_csip_set_coordinator_cb *listener;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&csip_set_coordinator_cbs, listener, _node) {
+		if (listener->size_changed != NULL) {
+			listener->size_changed(conn, inst);
+		}
+	}
+}
+
 static void release_set_complete(int err)
 {
 	struct bt_csip_set_coordinator_cb *listener;
@@ -468,17 +479,19 @@ static uint8_t size_notify_func(struct bt_conn *conn,
 
 	if (svc_inst != NULL) {
 		if (length == sizeof(set_size)) {
-			struct bt_csip_set_coordinator_inst *client;
 			struct bt_csip_set_coordinator_set_info *set_info;
+			struct bt_csip_set_coordinator_csis_inst *inst;
+			struct bt_csip_set_coordinator_inst *client;
 
 			client = &client_insts[bt_conn_index(conn)];
-			set_info = &client->set_member.insts[svc_inst->idx].info;
+			inst = &client->set_member.insts[svc_inst->idx];
+			set_info = &inst->info;
 
 			(void)memcpy(&set_size, data, length);
 			LOG_DBG("Set size updated from %u to %u", set_info->set_size, set_size);
 
 			set_info->set_size = set_size;
-			/* TODO: Notify app */
+			size_changed(conn, inst);
 		} else {
 			LOG_DBG("Invalid length %u", length);
 		}
