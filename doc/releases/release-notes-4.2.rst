@@ -69,6 +69,10 @@ New APIs and options
 
     * :c:func:`bt_le_get_local_features`
 
+* Other
+
+  * :c:func:`count_bits`
+
 New Boards
 **********
 
