@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(video_emul_imager, CONFIG_VIDEO_LOG_LEVEL);
 #define EMUL_IMAGER_REG_EXPOSURE  0x0007
 #define EMUL_IMAGER_REG_GAIN      0x0008
 #define EMUL_IMAGER_REG_PATTERN   0x0009
+#define EMUL_IMAGER_REG_FORMAT    0x000a
 #define EMUL_IMAGER_PATTERN_OFF   0x00
 #define EMUL_IMAGER_PATTERN_BARS1 0x01
 #define EMUL_IMAGER_PATTERN_BARS2 0x02
@@ -53,7 +54,7 @@ struct emul_imager_mode {
 	 * This permits to deduplicate the list of registers in case some lare sections
 	 * are repeated across modes, such as the resolution for different FPS.
 	 */
-	const struct emul_imager_reg *regs[2];
+	const struct emul_imager_reg *regs[3];
 	/* More fields can be added according to the needs of the sensor driver */
 };
 
@@ -70,65 +71,58 @@ struct emul_imager_data {
 	struct video_format fmt;
 };
 
-/* Initial parameters of the sensors common to all modes. */
+/* All the I2C registers sent on various scenario */
 static const struct emul_imager_reg emul_imager_init_regs[] = {
 	{EMUL_IMAGER_REG_CTRL, 0x00},
-	/* Example comment about REG_INIT1 */
 	{EMUL_IMAGER_REG_INIT1, 0x10},
 	{EMUL_IMAGER_REG_INIT2, 0x00},
+	/* Undocumented registers from the vendor */
+	{0x1200, 0x01},
+	{0x1204, 0x01},
+	{0x1205, 0x20},
+	{0x1209, 0x7f},
 	{0},
 };
-
-/* List of registers aggregated together in "modes" that can be applied
- * to set the timing parameters and other mode-dependent configuration.
- */
-
-static const struct emul_imager_reg emul_imager_rgb565_320x240[] = {
+static const struct emul_imager_reg emul_imager_rgb565[] = {
+	{EMUL_IMAGER_REG_FORMAT, 0x01},
+	{0},
+};
+static const struct emul_imager_reg emul_imager_yuyv[] = {
+	{EMUL_IMAGER_REG_FORMAT, 0x02},
+	{0},
+};
+static const struct emul_imager_reg emul_imager_320x240[] = {
 	{EMUL_IMAGER_REG_TIMING1, 0x32},
 	{EMUL_IMAGER_REG_TIMING2, 0x24},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_rgb565_320x240_15fps[] = {
+static const struct emul_imager_reg emul_imager_15fps[] = {
 	{EMUL_IMAGER_REG_TIMING3, 15},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_rgb565_320x240_30fps[] = {
+static const struct emul_imager_reg emul_imager_30fps[] = {
 	{EMUL_IMAGER_REG_TIMING3, 30},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_rgb565_320x240_60fps[] = {
+static const struct emul_imager_reg emul_imager_60fps[] = {
 	{EMUL_IMAGER_REG_TIMING3, 60},
 	{0},
 };
-struct emul_imager_mode emul_imager_rgb565_320x240_modes[] = {
-	{.fps = 15, .regs = {emul_imager_rgb565_320x240, emul_imager_rgb565_320x240_15fps}},
-	{.fps = 30, .regs = {emul_imager_rgb565_320x240, emul_imager_rgb565_320x240_30fps}},
-	{.fps = 60, .regs = {emul_imager_rgb565_320x240, emul_imager_rgb565_320x240_60fps}},
-	{0},
-};
 
-static const struct emul_imager_reg emul_imager_yuyv_320x240[] = {
-	{EMUL_IMAGER_REG_TIMING1, 0x32},
-	{EMUL_IMAGER_REG_TIMING2, 0x24},
-	{0},
-};
-static const struct emul_imager_reg emul_imager_yuyv_320x240_15fps[] = {
-	{EMUL_IMAGER_REG_TIMING3, 15},
-	{0},
-};
-static const struct emul_imager_reg emul_imager_yuyv_320x240_30fps[] = {
-	{EMUL_IMAGER_REG_TIMING3, 30},
+/* Description of "modes", that pick lists of registesr that will be all sentto the imager */
+struct emul_imager_mode emul_imager_rgb565_320x240_modes[] = {
+	{.fps = 15, .regs = {emul_imager_320x240, emul_imager_rgb565, emul_imager_15fps}},
+	{.fps = 30, .regs = {emul_imager_320x240, emul_imager_rgb565, emul_imager_30fps}},
+	{.fps = 60, .regs = {emul_imager_320x240, emul_imager_rgb565, emul_imager_60fps}},
 	{0},
 };
 struct emul_imager_mode emul_imager_yuyv_320x240_modes[] = {
-	{.fps = 15, .regs = {emul_imager_yuyv_320x240, emul_imager_yuyv_320x240_15fps}},
-	{.fps = 30, .regs = {emul_imager_yuyv_320x240, emul_imager_yuyv_320x240_30fps}},
+	{.fps = 15, .regs = {emul_imager_320x240, emul_imager_yuyv, emul_imager_15fps}},
+	{.fps = 30, .regs = {emul_imager_320x240, emul_imager_yuyv, emul_imager_30fps}},
 	{0},
 };
 
-/* Summary of all the modes of all the frame formats, with the format ID as
- * index, matching fmts[].
- */
+/* Summary of all the modes of all the frame formats, with indexes matching those of fmts[]. */
 static const struct emul_imager_mode *emul_imager_modes[] = {
 	[RGB565_320x240] = emul_imager_rgb565_320x240_modes,
 	[YUYV_320x240] = emul_imager_yuyv_320x240_modes,
