@@ -117,6 +117,25 @@ static int emul_rx_get_caps(const struct device *dev, enum video_endpoint_id ep,
 	return video_get_caps(cfg->source_dev, VIDEO_EP_OUT, caps);
 }
 
+static int emul_rx_get_stats(const struct device *dev, enum video_endpoint_id ep,
+			     struct video_stats *stats)
+{
+	struct video_stats_channels *chan = (void *)stats;
+
+	if ((stats->flags & VIDEO_STATS_CHANNELS_Y) == 0) {
+		return -ENOTSUP;
+	}
+
+	/* Fake data for the sake of demonstrating and testing the APIs */
+	chan->y = 0x7f;
+	stats->frame_counter = k_cycle_get_32() / 1024;
+
+	/* Let the caller know what type of statistics is collected */
+	stats->flags = VIDEO_STATS_CHANNELS_Y;
+
+	return 0;
+}
+
 static int emul_rx_set_stream(const struct device *dev, bool enable)
 {
 	const struct emul_rx_config *cfg = dev->config;
@@ -238,6 +257,7 @@ static DEVICE_API(video, emul_rx_driver_api) = {
 	.set_format = emul_rx_set_fmt,
 	.get_format = emul_rx_get_fmt,
 	.get_caps = emul_rx_get_caps,
+	.get_stats = emul_rx_get_stats,
 	.set_stream = emul_rx_set_stream,
 	.enqueue = emul_rx_enqueue,
 	.dequeue = emul_rx_dequeue,
