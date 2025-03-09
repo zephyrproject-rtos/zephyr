@@ -21,6 +21,5 @@ supported:
   - i2c
   - pwm
   - watchdog
-  - kscan
   - tach
 vendor: microchip
