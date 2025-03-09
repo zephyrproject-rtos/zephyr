@@ -389,6 +389,35 @@ ZTEST(socket_packet, test_packet_sockets_dgram)
 	zassert_mem_equal(data_to_send, data_to_receive, sizeof(data_to_send),
 			  "Data mismatch");
 
+	/* Send specially crafted payload to mimic IPv4 and IPv6 length field,
+	 * to ckeck correct length returned. */
+	uint8_t payload_ip_length[64], receive_ip_length[64];
+
+	/* Craft ipv4 length & ipv6 length */
+	memset(payload_ip_length, 0, sizeof(payload_ip_length));
+	payload_ip_length[3] = 0x1;
+	payload_ip_length[5] = 0x1;
+
+	ret = zsock_sendto(sock2, payload_ip_length, sizeof(payload_ip_length), 0,
+			   (const struct sockaddr *)&dst, sizeof(struct sockaddr_ll));
+	zassert_equal(ret, sizeof(payload_ip_length), "Cannot send all data (%d)", -errno);
+
+	k_msleep(10);
+
+	memset(&src, 0, sizeof(src));
+	errno = 0;
+	iter = 0;
+	do {
+		ret = zsock_recvfrom(sock2, receive_ip_length, sizeof(receive_ip_length), 0,
+				     (struct sockaddr *)&src, &addrlen);
+		k_msleep(10);
+		iter++;
+	} while (ret < 0 && errno == EAGAIN && iter < max_iter);
+
+	zassert_equal(ret, ARRAY_SIZE(payload_ip_length), "Cannot receive all data (%d)", -errno);
+	zassert_mem_equal(payload_ip_length, receive_ip_length, sizeof(payload_ip_length),
+			  "Data mismatch");
+
 	zsock_close(sock1);
 	zsock_close(sock2);
 }
