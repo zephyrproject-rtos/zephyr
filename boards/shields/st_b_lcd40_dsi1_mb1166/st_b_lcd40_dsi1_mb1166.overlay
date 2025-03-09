@@ -59,7 +59,7 @@
 	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		int-gpios = <&dsi_lcd_qsh_030 4 0>;
+		int-gpios = <&dsi_lcd_qsh_030 4 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
 };
