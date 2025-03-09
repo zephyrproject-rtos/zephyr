@@ -14,19 +14,19 @@
 
 static void pixel_print_truecolor(const uint8_t rgb24row0[3], const uint8_t rgb24row1[3])
 {
-	printf("\e[48;2;%u;%u;%um\e[38;2;%u;%u;%um▄", rgb24row0[0], rgb24row0[1], rgb24row0[2],
+	printf("\e[48;2;%u;%u;%um\e[38;2;%u;%u;%umm", rgb24row0[0], rgb24row0[1], rgb24row0[2],
 	       rgb24row1[0], rgb24row1[1], rgb24row1[2]);
 }
 
 static void pixel_print_256color(const uint8_t rgb24row0[3], const uint8_t rgb24row1[3])
 {
-	printf("\e[48;5;%um\e[38;5;%um▄", pixel_rgb24_to_256color(rgb24row0),
+	printf("\e[48;5;%um\e[38;5;%umm", pixel_rgb24_to_256color(rgb24row0),
 	       pixel_rgb24_to_256color(rgb24row1));
 }
 
 static void pixel_print_256gray(uint8_t gray8row0, uint8_t gray8row1)
 {
-	printf("\e[48;5;%um\e[38;5;%um▄", pixel_gray8_to_256color(gray8row0),
+	printf("\e[48;5;%um\e[38;5;%umm", pixel_gray8_to_256color(gray8row0),
 	       pixel_gray8_to_256color(gray8row1));
 }
 
@@ -45,7 +45,7 @@ static inline void pixel_print_rgb24(const uint8_t *rgb24, size_t size, uint16_t
 			}
 			fn(&rgb24[i], &rgb24[i + pitch]);
 		}
-		printf("\e[m│\n");
+		printf("\e[m|\n");
 
 		/* Skip the second h being printed at the same time */
 		i += pitch;
@@ -88,7 +88,7 @@ static inline void pixel_print_rgb565(const uint8_t *rgb565, size_t size, uint16
 
 			fn(rgb24[0], rgb24[1]);
 		}
-		printf("\e[m│\n");
+		printf("\e[m|\n");
 
 		/* Skip the second h being printed at the same time */
 		i += pitch;
@@ -149,7 +149,7 @@ static inline void pixel_print_yuyv(const uint8_t *yuyv, size_t size, uint16_t w
 			fn(&rgb24x2[0][0], &rgb24x2[1][0]);
 			fn(&rgb24x2[0][3], &rgb24x2[1][3]);
 		}
-		printf("\e[m│\n");
+		printf("\e[m|\n");
 
 		/* Skip the second h being printed at the same time */
 		i += pitch;
@@ -327,7 +327,7 @@ void pixel_print_rgb24hist(const uint16_t *rgb24hist, size_t size, uint16_t heig
 
 			pixel_print_256color(rgb24row0, rgb24row1);
 		}
-		printf("\e[m│ - %u\n", h * max / height);
+		printf("\e[m| - %u\n", h * max / height);
 	}
 
 	pixel_print_hist_scale(size / 3);
@@ -348,7 +348,7 @@ void pixel_print_y8hist(const uint16_t *y8hist, size_t size, uint16_t height)
 
 			pixel_print_256gray(gray8row0, gray8row1);
 		}
-		printf("\e[m│ - %u\n", h * max / height);
+		printf("\e[m| - %u\n", h * max / height);
 	}
 
 	pixel_print_hist_scale(size);
