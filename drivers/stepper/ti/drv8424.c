@@ -212,7 +212,7 @@ static int drv8424_set_micro_step_res(const struct device *dev,
 		m1_value = 2;
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	};
 
 	ret = drv8424_set_microstep_pin(dev, &config->m0_pin, m0_value);
