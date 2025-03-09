@@ -383,8 +383,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			printk("Connecting to Broadcast Sink: %s\n", sr_info.bt_name);
 
 			err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN,
-						BT_LE_CONN_PARAM_DEFAULT,
-						&broadcast_sink_conn);
+						BT_BAP_CONN_PARAM_RELAXED, &broadcast_sink_conn);
 			if (err != 0) {
 				printk("Failed creating connection (err=%u)\n", err);
 				scan_for_broadcast_sink();

@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/gap.h>
@@ -29,8 +30,7 @@ static void test_main(void)
 	struct bt_le_ext_adv *adv;
 	struct bt_data ad[2] = {
 		BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
-		BT_DATA_BYTES(BT_DATA_SVC_DATA16,
-			      BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
+		BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
 			      BT_BYTES_LIST_LE24(broadcast_id)),
 	};
 
@@ -42,19 +42,7 @@ static void test_main(void)
 
 	printk("Bluetooth initialized\n");
 
-	/* Create a non-connectable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, &adv);
-	if (err) {
-		FAIL("Failed to create advertising set (err %d)\n", err);
-		return;
-	}
-
-	/* Set periodic advertising parameters */
-	err = bt_le_per_adv_set_param(adv, BT_LE_PER_ADV_DEFAULT);
-	if (err) {
-		FAIL("Failed to set periodic advertising parameters (err %d)\n", err);
-		return;
-	}
+	setup_broadcast_adv(&adv);
 
 	/* Set adv data */
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
