@@ -1133,12 +1133,48 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 
 static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 {
-	if (smp->chan.chan.conn->encrypt == 0x02) {
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+	struct bt_keys_link_key *key;
+	bool le_bonded = false;
+
+	if (!smp->chan.chan.conn) {
+		return false;
+	}
+
+	conn = smp->chan.chan.conn;
+
+	addr.type = BT_ADDR_LE_PUBLIC;
+	bt_addr_copy(&addr.a, &conn->br.dst);
+
+	for (uint8_t id = 0; id < CONFIG_BT_ID_MAX; id++) {
+		le_bonded = bt_addr_le_is_bonded(id, &addr);
+		if (le_bonded) {
+			break;
+		}
+	}
+
+	key = bt_keys_find_link_key(&conn->br.dst);
+	if (!key) {
+		return false;
+	}
+
+	/**
+	 * Core v6.0, Vol 3, Part C, 14.1 Cross-transport key derivation
+	 *
+	 * If an LE LTK already exists and the BR/EDR link key is weaker in either strength
+	 * or MITM protection, then neither device shall generate an LE LTK using cross-transport
+	 * key derivation from a BR/EDR link key.
+	 */
+	if (le_bonded && !(key->flags & BT_LINK_KEY_AUTHENTICATED)) {
+		return false;
+	}
+
+	if (conn->encrypt == 0x02) {
 		return true;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) &&
-	    smp->chan.chan.conn->encrypt == 0x01) {
+	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) && conn->encrypt == 0x01) {
 		LOG_WRN("Allowing BR/EDR SMP with P-192 key");
 		return true;
 	}
