@@ -502,6 +502,18 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 			continue;
 		}
 
+#if defined(CONFIG_BT_CONN)
+		/* Consider Peripheral role ticks_slot as available */
+		if (IN_RANGE(ticker_id, TICKER_ID_CONN_BASE, TICKER_ID_CONN_LAST)) {
+			const struct ll_conn *conn;
+
+			conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
+			if (conn && (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
+				continue;
+			}
+		}
+#endif /* CONFIG_BT_CONN */
+
 		ticks_to_expire_normal = ticks_to_expire;
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
@@ -680,8 +692,9 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 		struct ll_conn *conn;
 
 		conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
-		if (conn && !conn->lll.role) {
-			if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_RESERVE_MAX)) {
+		if (conn) {
+			if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_RESERVE_MAX) &&
+			    (conn->lll.role == BT_HCI_ROLE_CENTRAL)) {
 				uint32_t ready_delay_us;
 				uint16_t max_tx_time;
 				uint16_t max_rx_time;
@@ -718,7 +731,9 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 				*ticks_slot = conn->ull.ticks_slot;
 			}
 
-			if (*ticks_slot < HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING)) {
+			if ((conn->lll.role == BT_HCI_ROLE_CENTRAL) &&
+			    (*ticks_slot <
+			     HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING))) {
 				*ticks_slot =
 					HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING);
 			}
