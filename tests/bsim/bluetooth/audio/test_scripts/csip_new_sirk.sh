@@ -21,15 +21,15 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -RealEncryption=1 -rs=10 -D=4
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csip_set_member_new_sirk \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csip_set_member_new_size \
   -RealEncryption=1 -rs=20 -D=4 -argstest rank 1
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csip_set_member_new_sirk \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csip_set_member_new_size \
   -RealEncryption=1 -rs=30 -D=4 -argstest rank 2
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csip_set_member_new_sirk \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csip_set_member_new_size \
   -RealEncryption=1 -rs=40 -D=4 -argstest rank 3
 
 # Simulation time should be larger than the WAIT_TIME in common.h
