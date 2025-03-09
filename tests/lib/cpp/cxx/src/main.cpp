@@ -50,7 +50,6 @@
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/i3c.h>
 #include <zephyr/drivers/ipm.h>
-#include <zephyr/drivers/kscan.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/led_strip.h>
 #include <zephyr/drivers/lora.h>

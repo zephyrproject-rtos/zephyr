@@ -3,9 +3,6 @@
 
 if BOARD_MEC15XXEVB_ASSY6853
 
-config INPUT
-	default y if KSCAN
-
 config ESPI_XEC
 	default y
 	depends on ESPI

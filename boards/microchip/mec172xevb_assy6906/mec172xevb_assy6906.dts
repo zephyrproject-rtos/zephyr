@@ -233,10 +233,6 @@
 	pinctrl-names = "default", "sleep";
 	row-size = <8>;
 	col-size = <16>;
-
-	kscan_input: kscan-input {
-		compatible = "zephyr,kscan-input";
-	};
 };
 
 &ksi0_gpio017 {

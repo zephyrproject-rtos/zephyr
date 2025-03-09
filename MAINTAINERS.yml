@@ -1777,24 +1777,6 @@ Release Notes:
   tests:
     - drivers.ipm
 
-"Drivers: kscan":
-  status: maintained
-  maintainers:
-    - albertofloyd
-  collaborators:
-    - VenkatKotakonda
-  files:
-    - drivers/kscan/
-    - include/zephyr/drivers/kscan.h
-    - samples/drivers/kscan/
-    - tests/drivers/kscan/
-    - dts/bindings/kscan/
-    - doc/hardware/peripherals/kscan.rst
-  labels:
-    - "area: Kscan"
-  tests:
-    - drivers.kscan
-
 "Drivers: LED":
   status: maintained
   maintainers:
