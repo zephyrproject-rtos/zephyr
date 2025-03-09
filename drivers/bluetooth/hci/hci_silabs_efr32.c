@@ -58,7 +58,7 @@ RAIL_Handle_t BTLE_LL_GetRadioHandle(void);
 
 void rail_isr_installer(void)
 {
-#ifdef CONFIG_SOC_SERIES_EFR32MG24
+#if defined(CONFIG_SOC_SERIES_EFR32MG24) || defined(CONFIG_SOC_SERIES_BGM24)
 	IRQ_CONNECT(SYNTH_IRQn, 0, SYNTH_IRQHandler, NULL, 0);
 #else
 	IRQ_CONNECT(RDMAILBOX_IRQn, 0, RDMAILBOX_IRQHandler, NULL, 0);
