@@ -310,45 +310,6 @@ static int emul_imager_enum_frmival(const struct device *dev, enum video_endpoin
 	return mode->fps == 0;
 }
 
-/* White, Yellow, Cyan, Green, Magenta, Red, Blue, Black */
-static const uint16_t pattern_8bars_yuv[8][3] = {
-	{0xFF, 0x7F, 0x7F}, {0xFF, 0x00, 0xFF}, {0xFF, 0xFF, 0x00}, {0x7F, 0x00, 0x00},
-	{0x00, 0xFF, 0xFF}, {0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00}, {0x00, 0x7F, 0x7F}};
-static const uint16_t pattern_8bars_rgb[8][3] = {
-	{0xFF, 0xFF, 0xFF}, {0xFF, 0xFF, 0x00}, {0x00, 0xFF, 0xFF}, {0x00, 0xFF, 0x00},
-	{0xFF, 0x00, 0xFF}, {0xFF, 0x00, 0x00}, {0x00, 0x00, 0xFF}, {0x00, 0x00, 0x00}};
-static void emul_imager_fill_framebuffer(const struct device *const dev, struct video_format *fmt)
-{
-	struct emul_imager_data *data = dev->data;
-	uint16_t *fb16 = (uint16_t *)data->framebuffer;
-	uint16_t r, g, b, y, uv;
-
-	/* Fill the first row of the emulated framebuffer */
-	switch (fmt->pixelformat) {
-	case VIDEO_PIX_FMT_YUYV:
-		for (size_t i = 0; i < fmt->width; i++) {
-			y = pattern_8bars_yuv[i * 8 / fmt->width][0];
-			uv = pattern_8bars_yuv[i * 8 / fmt->width][1 + i % 2];
-			fb16[i] = sys_cpu_to_be16(y << 8 | uv << 0);
-		}
-		break;
-	case VIDEO_PIX_FMT_RGB565:
-		for (size_t i = 0; i < fmt->width; i++) {
-			r = pattern_8bars_rgb[i * 8 / fmt->width][0] >> (8 - 5);
-			g = pattern_8bars_rgb[i * 8 / fmt->width][1] >> (8 - 6);
-			b = pattern_8bars_rgb[i * 8 / fmt->width][2] >> (8 - 5);
-			fb16[i] = sys_cpu_to_le16((r << 11) | (g << 6) | (b << 0));
-		}
-		break;
-	default:
-		LOG_WRN("Unsupported pixel format %x, supported: %x, %x", fmt->pixelformat,
-			VIDEO_PIX_FMT_YUYV, VIDEO_PIX_FMT_RGB565);
-		memset(fb16, 0, fmt->pitch);
-	}
-
-	/* Note: The framebuffer only contains a single row of data */
-}
-
 static int emul_imager_set_fmt(const struct device *const dev, enum video_endpoint_id ep,
 			       struct video_format *fmt)
 {
@@ -375,8 +336,16 @@ static int emul_imager_set_fmt(const struct device *const dev, enum video_endpoi
 		return ret;
 	}
 
-	/* Change the image pattern on the framebuffer */
-	emul_imager_fill_framebuffer(dev, fmt);
+	/* For the purpose of simulation, fill the image line buffer with 50% gray, this data
+	 * will be collected by the video_emul_rx driver.
+	 */
+	if (fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
+		for (int i = 0; i < fmt->width; i++) {
+			((uint16_t *)data->framebuffer)[i] = sys_cpu_to_le16(0x7bef);
+		}
+	} else {
+		memset(data->framebuffer, 0x7f, fmt->pitch);
+	}
 
 	data->fmt_id = fmt_id;
 	data->fmt = *fmt;
