@@ -388,7 +388,7 @@ int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target)
 
 	return status;
 }
-
+#ifdef CONFIG_I3C_TARGET
 int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8_t static_addr,
 			   uint8_t bcr, uint8_t dcr)
 {
@@ -544,7 +544,8 @@ void i3c_sec_handoffed(struct k_work *work)
 	/* Set false, so the next handoff doesn't retrigger regathering info */
 	data->deftgts_refreshed = false;
 }
-#endif
+#endif /* CONFIG_I3C_USE_IBI */
+#endif /* CONFIG_I3C_TARGET */
 
 int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 				 const struct i3c_dev_list *dev_list, uint64_t pid, bool must_match,
@@ -622,7 +623,7 @@ out:
 err:
 	return ret;
 }
-
+#ifdef CONFIG_I3C_TARGET
 uint8_t i3c_odd_parity(uint8_t p)
 {
 	p ^= p >> 4;
@@ -740,7 +741,7 @@ int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool req
 
 	return ret;
 }
-
+#endif /* CONFIG_I3C_TARGET */
 int i3c_device_basic_info_get(struct i3c_device_desc *target)
 {
 	int ret;
@@ -935,7 +936,7 @@ bool i3c_bus_has_sec_controller(const struct device *dev)
 
 	return false;
 }
-
+#ifdef CONFIG_I3C_TARGET
 int i3c_bus_deftgts(const struct device *dev)
 {
 	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
@@ -1008,7 +1009,7 @@ int i3c_bus_deftgts(const struct device *dev)
 
 	return ret;
 }
-
+#endif /* CONFIG_I3C_TARGET */
 int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 {
 	int i, ret = 0;
@@ -1135,14 +1136,14 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 				desc->data_length.mwl, desc->data_length.max_ibi);
 		}
 	}
-
+#ifdef CONFIG_I3C_TARGET
 	if (i3c_bus_has_sec_controller(dev)) {
 		ret = i3c_bus_deftgts(dev);
 		if (ret != 0) {
 			LOG_ERR("Error sending DEFTGTS");
 		}
 	}
-
+#endif /* CONFIG_I3C_TARGET */
 	/*
 	 * Only re-enable Hot-Join from targets.
 	 * Target interrupts will be enabled when IBI is enabled.
