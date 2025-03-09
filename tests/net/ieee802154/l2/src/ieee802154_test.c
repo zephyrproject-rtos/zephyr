@@ -397,7 +397,7 @@ static int set_up_recv_socket(enum net_sock_type socket_type)
 	struct sockaddr_ll socket_sll = {
 		.sll_ifindex = net_if_get_by_iface(net_iface),
 		.sll_family = AF_PACKET,
-		.sll_protocol = ETH_P_IEEE802154,
+		.sll_protocol = htons(ETH_P_IEEE802154),
 	};
 	struct timeval timeo_optval = {
 		.tv_sec = 1,
@@ -682,7 +682,7 @@ static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint
 	struct ieee802154_context *ctx = net_if_l2_data(net_iface);
 	struct sockaddr_ll socket_sll = {.sll_ifindex = net_if_get_by_iface(net_iface),
 					 .sll_family = AF_PACKET,
-					 .sll_protocol = ETH_P_IEEE802154};
+					 .sll_protocol = htons(ETH_P_IEEE802154)};
 	struct sockaddr_ll pkt_dst_sll = {
 		.sll_halen = dst_sll_halen,
 		.sll_protocol = htons(ETH_P_IEEE802154),
@@ -892,7 +892,8 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 	}
 
 	if (recv_src_sll_len != sizeof(struct sockaddr_ll) ||
-	    recv_src_sll.sll_family != AF_PACKET || recv_src_sll.sll_protocol != ETH_P_IEEE802154 ||
+	    recv_src_sll.sll_family != AF_PACKET ||
+	    recv_src_sll.sll_protocol != htons(ETH_P_IEEE802154) ||
 	    recv_src_sll.sll_ifindex != net_if_get_by_iface(net_iface) ||
 	    recv_src_sll.sll_halen != src_ll_addr_len ||
 	    memcmp(recv_src_sll.sll_addr, src_ll_addr, src_ll_addr_len)) {
@@ -932,7 +933,7 @@ static bool test_raw_packet_sending(void)
 
 	socket_sll.sll_ifindex = net_if_get_by_iface(net_iface);
 	socket_sll.sll_family = AF_PACKET;
-	socket_sll.sll_protocol = ETH_P_IEEE802154;
+	socket_sll.sll_protocol = htons(ETH_P_IEEE802154);
 
 	if (zsock_bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
 		NET_ERR("*** Failed to bind packet socket : %d", errno);
@@ -1091,7 +1092,7 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 	struct sockaddr_ll socket_sll = {
 		.sll_ifindex = net_if_get_by_iface(net_iface),
 		.sll_family = AF_PACKET,
-		.sll_protocol = ETH_P_IEEE802154,
+		.sll_protocol = htons(ETH_P_IEEE802154),
 	};
 	uint8_t received_payload[80] = {0};
 	struct timeval timeo_optval = {
@@ -1149,7 +1150,8 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 	sys_memcpy_swap(mac_be, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	if (recv_src_sll_len != sizeof(struct sockaddr_ll) ||
 	    recv_src_sll.sll_ifindex != net_if_get_by_iface(net_iface) ||
-	    recv_src_sll.sll_family != AF_PACKET || recv_src_sll.sll_protocol != ETH_P_IEEE802154 ||
+	    recv_src_sll.sll_family != AF_PACKET ||
+	    recv_src_sll.sll_protocol != htons(ETH_P_IEEE802154) ||
 	    recv_src_sll.sll_halen != IEEE802154_EXT_ADDR_LENGTH ||
 	    memcmp(recv_src_sll.sll_addr, mac_be, IEEE802154_EXT_ADDR_LENGTH)) {
 		NET_ERR("*** Received socket address does not compare (%d)", -errno);
