@@ -223,12 +223,14 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 	const bt_addr_le_t *addr;
 	struct btp_gap_sec_level_changed_ev sec_ev;
 	struct btp_gap_bond_lost_ev bond_ev;
+	struct btp_gap_encryption_change_ev enc_ev;
 	struct bt_conn_info info;
 
 	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
 		addr = bt_conn_get_dst(conn);
 		bt_addr_le_copy(&sec_ev.address, addr);
 		bt_addr_le_copy(&bond_ev.address, addr);
+		bt_addr_le_copy(&enc_ev.address, addr);
 	} else if (bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
 #if defined(CONFIG_BT_CLASSIC)
 		const bt_addr_t *br_addr;
@@ -238,8 +240,13 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 		bt_addr_copy(&sec_ev.address.a, br_addr);
 		bond_ev.address.type = BTP_BR_ADDRESS_TYPE;
 		bt_addr_copy(&bond_ev.address.a, br_addr);
+		enc_ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&enc_ev.address.a, br_addr);
 #endif /* CONFIG_BT_CLASSIC */
 	}
+
+	enc_ev.enabled = (err == BT_SECURITY_ERR_SUCCESS) ? true : false;
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_ENCRYPTION_CHANGE, &enc_ev, sizeof(enc_ev));
 
 	switch (err) {
 	case BT_SECURITY_ERR_SUCCESS:
