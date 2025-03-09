@@ -108,7 +108,7 @@ Deprecated in this release
 * Deprecated the ``net_buf_put()`` and ``net_buf_get()`` API functions in favor of
   :c:func:`k_fifo_put` and :c:func:`k_fifo_get`.
 
-* The :ref:`kscan_api` subsystem has been marked as deprecated.
+* The ``kscan_api`` subsystem has been marked as deprecated.
 
 * Deprecated the TinyCrypt shim driver ``CONFIG_CRYPTO_TINYCRYPT_SHIM``.
 
