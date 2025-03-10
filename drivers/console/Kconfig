@@ -284,6 +284,7 @@ config WINSTREAM_CONSOLE
 
 	  See the WINSTREAM Kconfig help for more information.
 
+if WINSTREAM_CONSOLE
 config WINSTREAM_CONSOLE_STATIC
 	bool "Use static/linkable memory for the winstream console"
 	default y if !SOC_FAMILY_INTEL_ADSP
@@ -300,4 +301,5 @@ config WINSTREAM_CONSOLE_STATIC_SIZE
 	help
 	  Size of winstream console buffer, in bytes
 
+endif
 endif # CONSOLE
