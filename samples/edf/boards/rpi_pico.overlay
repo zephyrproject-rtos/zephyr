@@ -1,0 +1,15 @@
+/*** insert the following in your app.overlay file if using ******/
+/*** the Raspberry Pi Pico and targeting USB as the log output ***/
+
+&zephyr_udc0 {
+	usb_cdc: usb_cdc_0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+/ {
+	chosen {
+		zephyr,console = &usb_cdc;
+		zephyr,shell-uart = &usb_cdc;
+	};
+};
