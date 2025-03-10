@@ -47,6 +47,7 @@
 	aliases {
 		led0 = &led1;
 		sdhc0 = &sdhc0;
+		watchdog0 = &wdt;
 	};
 };
 
@@ -219,4 +220,8 @@
 	zephyr_udc0: udc {
 		status = "okay";
 	};
+};
+
+&wdt {
+	status = "okay";
 };
