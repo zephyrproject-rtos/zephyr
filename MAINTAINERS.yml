@@ -5677,6 +5677,22 @@ Peregrine Platforms:
   labels:
     - "platform: Peregrine"
 
+WCH Platforms:
+  status: maintained
+  maintainers:
+    - nzmichaelh
+    - kholia
+  collaborators:
+    - VynDragon
+  files:
+    - boards/wch/
+    - dts/riscv/wch/
+    - soc/wch/
+    - drivers/*/*wch*
+    - dts/bindings/*/wch,*
+  labels:
+    - "platform: WinChipHead"
+
 # This area is to be converted to a subarea
 Testing with Renode:
   status: odd fixes
