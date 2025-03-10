@@ -299,6 +299,7 @@ BeagleBoard Platforms:
     - ayush1325
     - con-pax
     - vaishnavachath
+    - glneo
   files:
     - boards/beagle/
   labels:
