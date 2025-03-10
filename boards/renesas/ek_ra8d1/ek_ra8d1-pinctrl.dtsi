@@ -73,7 +73,8 @@
 
 	usbhs_default: usbhs_default {
 		group1 {
-			psels = <RA_PSEL(RA_PSEL_USBHS, 11, 1)>; /* USBHS-VBUS */
+			psels = <RA_PSEL(RA_PSEL_USBHS, 11, 1)>, /* VBUS */
+				<RA_PSEL(RA_PSEL_USBHS, 11, 0)>; /* VBUSEN */
 			drive-strength = "high";
 		};
 	};
