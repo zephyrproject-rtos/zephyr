@@ -59,6 +59,9 @@
 /** Buffer granularity required by the UDC driver */
 #define UDC_BUF_GRANULARITY	Z_UDC_BUF_GRANULARITY
 
+/** Round up to the granularity required by the UDC driver */
+#define UDC_ROUND_UP(size)	ROUND_UP(size, Z_UDC_BUF_GRANULARITY)
+
 /**
  * @brief Define a UDC driver-compliant static buffer
  *
@@ -70,7 +73,7 @@
  */
 #define UDC_STATIC_BUF_DEFINE(name, size)					\
 	static uint8_t Z_UDC_BUF_SECTION __aligned(UDC_BUF_ALIGN)		\
-	name[ROUND_UP(size, UDC_BUF_GRANULARITY)];
+	name[UDC_ROUND_UP(size)];
 
 /**
  * @brief Verify that the buffer is aligned as required by the UDC driver
@@ -148,14 +151,14 @@ extern const struct net_buf_data_cb net_buf_dma_cb;
 	BUILD_ASSERT((UDC_BUF_GRANULARITY) % (UDC_BUF_ALIGN) == 0,		\
 		     "Code assumes granurality is multiple of alignment");	\
 	static uint8_t Z_UDC_BUF_SECTION __aligned(UDC_BUF_ALIGN)		\
-		net_buf_data_##pname[count][ROUND_UP(size, UDC_BUF_GRANULARITY)];\
+		net_buf_data_##pname[count][UDC_ROUND_UP(size)];		\
 	static const struct net_buf_pool_fixed net_buf_fixed_##pname = {	\
 		.data_pool = (uint8_t *)net_buf_data_##pname,			\
 	};									\
 	static const struct net_buf_data_alloc net_buf_fixed_alloc_##pname = {	\
 		.cb = &net_buf_fixed_cb,					\
 		.alloc_data = (void *)&net_buf_fixed_##pname,			\
-		.max_alloc_size = ROUND_UP(size, UDC_BUF_GRANULARITY),		\
+		.max_alloc_size = UDC_ROUND_UP(size),				\
 	};									\
 	static STRUCT_SECTION_ITERABLE(net_buf_pool, pname) =			\
 		NET_BUF_POOL_INITIALIZER(pname, &net_buf_fixed_alloc_##pname,	\
