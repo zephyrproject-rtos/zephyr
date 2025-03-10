@@ -53,8 +53,8 @@ This port is designed and tested to run in Linux.
 
 .. note::
 
-   You must have the 32-bit C library installed in your system
-   (in Ubuntu 16.04 install the gcc-multilib package)
+   To build for the 32bit targets you must have the 32-bit C library installed in your system
+   (in Debian/Ubuntu this is provided by the ``gcc-multilib`` package).
 
 .. note::
 
