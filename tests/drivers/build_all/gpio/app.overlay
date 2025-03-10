@@ -626,6 +626,23 @@
 				sync-gpios = <&test_gpio 0 0>;
 				en-gpios = <&test_gpio 0 0>;
 			};
+
+			test_spi_max14917: max14917@d {
+				compatible = "adi,max14917-gpio";
+				status = "okay";
+				reg = <0x0d>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				vddok-gpios = <&test_gpio 0 0>;
+				ready-gpios = <&test_gpio 0 0>;
+				comerr-gpios = <&test_gpio 0 0>;
+				fault-gpios = <&test_gpio 0 0>;
+				en-gpios = <&test_gpio 0 0>;
+				sync-gpios = <&test_gpio 0 0>;
+				crcen-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
