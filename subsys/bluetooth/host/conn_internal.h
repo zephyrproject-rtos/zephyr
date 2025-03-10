@@ -142,6 +142,11 @@ struct bt_conn_br {
 	uint8_t			features[LMP_MAX_PAGES][8];
 
 	struct bt_keys_link_key	*link_key;
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	/* For power mode */
+	uint8_t mode;
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 };
 
 struct bt_conn_sco {
@@ -531,6 +536,10 @@ void bt_conn_identity_resolved(struct bt_conn *conn);
 void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 			      enum bt_security_err err);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+void bt_conn_notify_mode_changed(struct bt_conn *conn, uint8_t mode, uint16_t interval);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 /* Prepare a PDU to be sent over a connection */
 #if defined(CONFIG_NET_BUF_LOG)
