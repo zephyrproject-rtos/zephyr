@@ -86,6 +86,8 @@ and the following hardware features:
 +-----------+------------+-------------------------------------+
 | MHU       | on-chip    | mbox                                |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 
