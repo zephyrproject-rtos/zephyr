@@ -1,0 +1,60 @@
+# Copyright (c) 2024 Syslinbit SCOP SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_MCP356XR
+	bool "MCP3561R/2R/4R driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP356XR_ENABLED
+	select SPI
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable MCP3561R/2R/4R ADC driver.
+
+if ADC_MCP356XR
+
+config ADC_MCP356XR_THREAD_STACK_SIZE
+	int "Stack size for the ADC thread"
+	default 512
+	help
+	  Size of the stack used for the internal ADC thread.
+
+config ADC_MCP356XR_THREAD_PRIORITY
+	int "Priority for the ADC thread"
+	default 0
+	help
+	  Priority level for the internal ADC thread.
+
+config ADC_MCP356XR_ADC_CHANNEL_COUNT
+	int "Number of ADC channels"
+	range 1 32
+	default 1
+	help
+	  Number of ADC channels the driver must support. Each channel
+	  requires 3 bytes of RAM to store the ADC settings to be used
+	  for this channel.
+
+config ADC_MCP356XR_USE_READ_CRC
+	bool "Use CRC to check data received from the ADC"
+	default y
+	help
+	  Enables the use of CRC on read communications to check integrity
+	  of received data from the ADC.
+
+config ADC_MCP356XR_POLL
+	bool "Poll the ADC instead of using the IRQ pin"
+	help
+	  Regularly poll the ADC to retrieve status flags instead of
+	  waiting for the ADC triggered IRQ. Useful in case the IRQ
+	  pin of the ADC is not wired.
+
+if ADC_MCP356XR_POLL
+config ADC_MCP356XR_POLLING_PERIOD_MS
+	int "Time to wait between two ADC polling in milliseconds"
+	default 1
+	help
+	  Time the driver's internal acquisition thread will wait
+	  between two ADC polling (in milliseconds).
+
+endif #ADC_MCP356XR_POLL
+
+endif # ADC_MCP356XR
