@@ -166,3 +166,23 @@ tests:
         - "host: Sent"
         - "host: Received"
         - "host: IPC-service HOST demo ended"
+
+  sample.ipc.icmsg.nrf54h20:
+    platform_allow: nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    tags: ipc
+    extra_args:
+      icmsg_SNIPPET=nordic-ppr
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "host: IPC-service HOST demo started"
+        - "host: Ep bounded"
+        - "host: Perform sends for"
+        - "host: Sent"
+        - "host: Received"
+        - "host: IPC-service HOST demo ended"
