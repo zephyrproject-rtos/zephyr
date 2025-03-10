@@ -181,21 +181,31 @@ schema;scenario-schema:
               sequence:
                 - type: str
         "bsim_exe_name":
-          type: seq
+          type: str
           required: false
-          sequence:
-            - type: str
-        "bsim_test_ids":
-          type: seq
-          required: false
-          sequence:
-            - type: str
         "bsim_verbosity":
           type: int
           required: false
         "bsim_sim_length":
           type: float
           required: false
+        "bsim_devices":
+          type: seq
+          required: false
+          sequence:
+            - type: map
+              mapping:
+                "test_id":
+                  type: str
+                  required: true
+                "exe":
+                  type: str
+                  required: false
+                "options":
+                  type: seq
+                  required: false
+                  sequence:
+                    - type: str
         "bsim_options":
           type: seq
           required: false

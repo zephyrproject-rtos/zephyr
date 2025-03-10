@@ -7,7 +7,6 @@ import json
 import logging
 import os
 import platform
-import random
 import re
 import shlex
 import shutil
@@ -981,15 +980,15 @@ class Bsim(Harness):
         self._bsim_out_path = os.getenv('BSIM_OUT_PATH', '')
         if self._bsim_out_path:
             self._bsim_out_path = os.path.join(self._bsim_out_path, 'bin')
-        self._exe_paths = []
+        self._exe_paths = {}
         self._tc_output = []
         self._start_time = 0
 
     def _set_start_time(self):
         self._start_time = time.time()
 
-    def _get_exe_path(self, index):
-        return self._exe_paths[index if index < len(self._exe_paths) else 0]
+    def _get_exe_path(self, name=None):
+        return self._exe_paths[name]
 
     def configure(self, instance):
         def replacer(exe_name):
@@ -1000,22 +999,27 @@ class Bsim(Harness):
         if not self._bsim_out_path:
             raise Exception('Cannot copy bsim exe - BSIM_OUT_PATH not provided.')
 
-        exe_names = []
-        for exe_name in self.instance.testsuite.harness_config.get('bsim_exe_name', []):
-            new_exe_name = f'bs_{self.instance.platform.name}_{exe_name}'
-            exe_names.append(replacer(new_exe_name))
+        exe_names = {}
+        cfg = self.instance.testsuite.harness_config
+
+        build_exe_name = cfg.get('bsim_exe_name', None)
+        if build_exe_name:
+            exe_names[None] = replacer(f'bs_{self.instance.platform.name}_{build_exe_name}')
+        else:
+            for exe_name in [dev['exe'] for dev in cfg.get('bsim_devices', [])]:
+                exe_names[exe_name] = replacer(f'bs_{self.instance.platform.name}_{exe_name}')
 
         if not exe_names:
-            exe_names = [f'bs_{replacer(self.instance.name)}']
+            exe_names[None] = [f'bs_{replacer(self.instance.name)}']
 
         self._exe_paths = \
-            [os.path.join(self._bsim_out_path, exe_name) for exe_name in exe_names]
+            {name_id: os.path.join(self._bsim_out_path, exe) for name_id, exe in exe_names.items()}
 
     def clean_exes(self):
         self._set_start_time()
 
         try:
-            for exe_path in [self._get_exe_path(i) for i in range(len(self._exe_paths))]:
+            for exe_path in self._exe_paths.values():
                 if os.path.exists(exe_path):
                     os.remove(exe_path)
         except Exception as e:
@@ -1024,7 +1028,7 @@ class Bsim(Harness):
     def wait_bsim_ready(self):
         start_time = time.time()
         while time.time() - start_time < Bsim.BSIM_READY_TIMEOUT_S:
-            if all([os.path.exists(self._get_exe_path(i)) for i in range(len(self._exe_paths))]):
+            if all([os.path.exists(f_path) for f_path in self._exe_paths.values()]):
                 return True
             time.sleep(0.1)
 
@@ -1044,7 +1048,7 @@ class Bsim(Harness):
             return
 
         try:
-            new_exe_path = self._get_exe_path(0)
+            new_exe_path = self._get_exe_path()
             logger.debug(f'Copying executable from {original_exe_path} to {new_exe_path}')
             shutil.copy(original_exe_path, new_exe_path)
             self.status = TwisterStatus.PASS
@@ -1088,17 +1092,6 @@ class Bsim(Harness):
         proc.communicate()
 
     def _generate_commands(self):
-        def rs():
-            return  f'-rs={random.randint(0, 2**10 - 1)}'
-
-        def expand_args(dev_id):
-            try:
-                args = [str(eval(v)[dev_id]) if v.startswith('[') else v for v in extra_args]
-                return [arg for arg in args if args if arg]
-            except Exception as e:
-                logger.warning(f'Unable to expand extra arguments set {extra_args}: {e}')
-                return extra_args
-
         bsim_phy_path = os.path.join(self._bsim_out_path, 'bs_2G4_phy_v1')
         suite_id = f'-s={self.instance.name.split(os.path.sep)[-1].replace(".", "_")}'
 
@@ -1107,15 +1100,19 @@ class Bsim(Harness):
         sim_length = f'-sim_length={cfg.get("bsim_sim_length", self.DEFAULT_SIM_LENGTH)}'
         extra_args = cfg.get('bsim_options', [])
         phy_extra_args = cfg.get('bsim_phy_options', [])
-        test_ids = cfg.get('bsim_test_ids', [])
-        if not test_ids:
-            logger.error('No test ids specified for bsim test')
+        devices = cfg.get('bsim_devices', [])
+        if not devices:
+            logger.error(f'No devices specified for bsim test {self.instance.name}')
             self.status = TwisterStatus.ERROR
             return []
 
-        cmds = [[self._get_exe_path(i), verbosity, suite_id, f'-d={i}', f'-testid={t_id}', rs()]
-                 + expand_args(i) for i, t_id in enumerate(test_ids)]
-        cmds.append([bsim_phy_path, verbosity, suite_id, f'-D={len(test_ids)}', sim_length]
+        cmds = []
+        for i, dev in enumerate(devices):
+            exe = self._get_exe_path(dev.get('exe', None))
+            cmds.append([exe, verbosity, suite_id, f'-d={i}', f'-testid={dev["test_id"]}']
+                         + extra_args + dev.get('options', []))
+
+        cmds.append([bsim_phy_path, verbosity, suite_id, f'-D={len(devices)}', sim_length]
                      + phy_extra_args)
 
         return cmds
@@ -1123,12 +1120,12 @@ class Bsim(Harness):
     def _clean_up_files(self):
         # Clean-up any log files that the test may have generated
         files = glob.glob(os.path.join(self._bsim_out_path, '*.log'))
-        # files += glob.glob(os.path.join(self._bsim_out_path, '*.bin'))
-        try:
-            for file in [f for f in files if os.path.getctime(f) > self._start_time]:
+        recent_files = [f for f in files if os.path.getctime(f) > self._start_time]
+        for file in recent_files:
+            try:
                 os.remove(file)
-        except Exception as e:
-            logger.warning(f'Failed to clean up bsim log files: {e}')
+            except Exception as e:
+                logger.warning(f'Failed to clean up bsim log file {file}: {e}')
 
     def bsim_run(self, timeout):
         try:
