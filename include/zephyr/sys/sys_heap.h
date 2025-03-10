@@ -138,6 +138,18 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes);
  */
 void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes);
 
+/** @brief Allocate memory from a sys_heap
+ *
+ * This is a wrapper for sys_heap_alloc() whose purpose is to provide the same
+ * function signature as sys_heap_aligned_alloc().
+ *
+ * @param heap Heap from which to allocate
+ * @param align Ignored placeholder
+ * @param bytes Number of bytes requested
+ * @return Pointer to memory the caller can now use
+ */
+void *sys_heap_noalign_alloc(struct sys_heap *heap, size_t align, size_t bytes);
+
 /** @brief Free memory into a sys_heap
  *
  * De-allocates a pointer to memory previously returned from
