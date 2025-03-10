@@ -1,0 +1,34 @@
+# nRF54L15 DK board configuration
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF54L15DK_NRF54L15_CPUAPP_NS
+
+config NRF_MPC_REGION_SIZE
+	hex
+	default 0x1000
+	help
+	  Region size for the Memory Protection Controller (MPC) in bytes.
+
+config NRF_TRUSTZONE_FLASH_REGION_SIZE
+	hex
+	default NRF_MPC_REGION_SIZE
+	help
+	  This defines the flash region size from the TRUSTZONE perspective.
+	  It is used when configuring the TRUSTZONE and when setting alignments
+	  requirements for the partitions.
+	  This abstraction allows us to configure TRUSTZONE without depending
+	  on peripheral specific symbols.
+
+config NRF_TRUSTZONE_RAM_REGION_SIZE
+	hex
+	default NRF_MPC_REGION_SIZE
+	help
+	  This defines the RAM region size from the TRUSTZONE perspective.
+	  It is used when configuring the TRUSTZONE and when setting alignments
+	  requirements for the partitions.
+	  This abstraction allows us to configure TRUSTZONE without depending
+	  on peripheral specific symbols.
+
+endif #BOARD_NRF54L15DK_NRF54L15_CPUAPP_NS
