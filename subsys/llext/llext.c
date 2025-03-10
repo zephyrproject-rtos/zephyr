@@ -96,7 +96,7 @@ struct llext *llext_by_name(const char *name)
 	     node = sys_slist_peek_next(node)) {
 		struct llext *ext = CONTAINER_OF(node, struct llext, _llext_list);
 
-		if (strncmp(ext->name, name, sizeof(ext->name)) == 0) {
+		if (strncmp(ext->name, name, sizeof(ext->name) - 1) == 0) {
 			k_mutex_unlock(&llext_lock);
 			return ext;
 		}
@@ -194,7 +194,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		goto out;
 	}
 
-	strncpy((*ext)->name, name, sizeof((*ext)->name));
+	strncpy((*ext)->name, name, sizeof((*ext)->name) - 1);
 	(*ext)->name[sizeof((*ext)->name) - 1] = '\0';
 	(*ext)->use_count++;
 
