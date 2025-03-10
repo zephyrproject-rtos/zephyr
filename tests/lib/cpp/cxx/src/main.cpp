@@ -153,3 +153,22 @@ PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), fake_pm_action);
 
 DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), NULL,
 		 PM_DEVICE_DT_GET(DT_NODELABEL(test_dev0_boot)), NULL, NULL, POST_KERNEL, 34, NULL);
+
+/*
+ * Test preprocessor comment removal. The reg value is defined as 2 in the
+ * device tree, but gen_defines.py by default outputs an entry that includes a
+ * trailing comment, such as:
+ *
+ *     #define DT_N_S_ctrl_S_dev2_2_REG_IDX_0_VAL_ADDRESS 2 / * 0x2 * /
+ *
+ * That comment, when present, confuses the C++ preprocessor and results in
+ * issues like the following:
+ *
+ *     error: pasting "/ * 0x2 * /" and "U" does not give a valid preprocessing token
+ *
+ * or, in this synthetic test case:
+ *
+ *     error: unable to find numeric literal operator 'operator""UU'
+ */
+#define VALUE_FROM_DT DT_REG_ADDR(DT_NODELABEL(test_dev2_reg_addr))
+BUILD_ASSERT(UINT32_C(VALUE_FROM_DT) == 2U);
