@@ -272,6 +272,7 @@ ssize_t zms_active_sector_free_space(struct zms_fs *fs);
  */
 int zms_sector_use_next(struct zms_fs *fs);
 
+uint32_t zms_get_num_cycles(struct zms_fs *fs);
 /**
  * @}
  */
