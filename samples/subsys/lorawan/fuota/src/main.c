@@ -24,7 +24,8 @@ LOG_MODULE_REGISTER(lorawan_fuota, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
 
 char data[] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
 
-static void downlink_info(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr, uint8_t len,
+static void downlink_info(struct lorawan_downlink_cb *cb,
+			  uint8_t port, uint8_t flags, int16_t rssi, int8_t snr, uint8_t len,
 			  const uint8_t *data)
 {
 	LOG_INF("Received from port %d, flags %d, RSSI %ddB, SNR %ddBm", port, flags, rssi, snr);

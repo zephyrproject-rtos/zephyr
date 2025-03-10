@@ -170,6 +170,24 @@ struct lorawan_join_config {
 /** Flag to indicate receiving on any port */
 #define LW_RECV_PORT_ANY UINT16_MAX
 
+struct lorawan_downlink_cb;
+
+/**
+ * @brief Defines the downlink callback handler function signature.
+ *
+ * @param cb Pointer to registered callback
+ * @param port Port message was sent on
+ * @param flags Downlink data flags (see @ref lorawan_dl_flags)
+ * @param rssi Received signal strength in dBm
+ * @param snr Signal to Noise ratio in dBm
+ * @param len Length of data received, will be 0 for ACKs
+ * @param data Data received, will be NULL for ACKs
+ */
+typedef void (*lorawan_downlink_cb_t)(struct lorawan_downlink_cb *cb,
+				      uint8_t port, uint8_t flags,
+				      int16_t rssi, int8_t snr,
+				      uint8_t len, const uint8_t *data);
+
 /**
  * @brief LoRaWAN downlink callback parameters
  */
@@ -187,16 +205,8 @@ struct lorawan_downlink_cb {
 	 *
 	 * @note Callbacks are run on the system workqueue,
 	 *       and should therefore be as short as possible.
-	 *
-	 * @param port Port message was sent on
-	 * @param flags Downlink data flags (see @ref lorawan_dl_flags)
-	 * @param rssi Received signal strength in dBm
-	 * @param snr Signal to Noise ratio in dBm
-	 * @param len Length of data received, will be 0 for ACKs
-	 * @param data Data received, will be NULL for ACKs
 	 */
-	void (*cb)(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr, uint8_t len,
-		   const uint8_t *data);
+	lorawan_downlink_cb_t cb;
 	/** Node for callback list */
 	sys_snode_t node;
 };

@@ -104,7 +104,8 @@ static void (*finished_cb)(void);
 /* Callback to handle descriptor field */
 static transport_descriptor_cb descriptor_cb;
 
-static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
+static void frag_transport_package_callback(struct lorawan_downlink_cb *cb,
+					    uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
 					    uint8_t len, const uint8_t *rx_buf)
 {
 	uint8_t tx_buf[FRAG_TRANSPORT_MAX_CMDS_PER_PACKAGE * FRAG_TRANSPORT_MAX_ANS_LEN];
