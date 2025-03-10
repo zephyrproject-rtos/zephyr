@@ -107,7 +107,7 @@ static inline uint32_t lpspi_next_tx_word(const struct device *dev, int offset)
 	uint32_t next_word = 0;
 
 	for (uint8_t i = 0; i < num_bytes; i++) {
-		next_word |= *byte << (BITS_PER_BYTE * i);
+		next_word |= byte[i] << (BITS_PER_BYTE * i);
 	}
 
 	return next_word;
