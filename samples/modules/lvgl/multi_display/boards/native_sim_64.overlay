@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025, Abderrahmane JARMOUNI
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	lvgl_displays: my-displays {
+		compatible = "zephyr,displays";
+		displays = <&sdl_dc &sdl_dc2>;
+		status = "okay";
+	};
+
+	sdl_dc2: sdl-dc2 {
+		compatible = "zephyr,sdl-dc";
+		width = <800>;
+		height = <600>;
+	};
+};
+
+&sdl_dc {
+	compatible = "zephyr,sdl-dc";
+	width = <800>;
+	height = <600>;
+};
