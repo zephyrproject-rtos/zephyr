@@ -2136,6 +2136,7 @@ Release Notes:
     - doc/hardware/peripherals/stepper.rst
     - samples/drivers/stepper/
     - tests/drivers/build_all/stepper/
+    - tests/drivers/stepper/
   labels:
     - "area: Stepper"
   tests:
