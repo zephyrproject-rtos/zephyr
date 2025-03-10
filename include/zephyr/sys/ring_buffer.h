@@ -209,7 +209,7 @@ static inline void ring_buf_item_init(struct ring_buf *buf,
  *
  * @return true if the ring buffer is empty, or false if not.
  */
-static inline bool ring_buf_is_empty(struct ring_buf *buf)
+static inline bool ring_buf_is_empty(const struct ring_buf *buf)
 {
 	return buf->get.head == buf->put.tail;
 }
@@ -231,7 +231,7 @@ static inline void ring_buf_reset(struct ring_buf *buf)
  *
  * @return Ring buffer free space (in bytes).
  */
-static inline uint32_t ring_buf_space_get(struct ring_buf *buf)
+static inline uint32_t ring_buf_space_get(const struct ring_buf *buf)
 {
 	ring_buf_idx_t allocated = buf->put.head - buf->get.tail;
 
@@ -245,7 +245,7 @@ static inline uint32_t ring_buf_space_get(struct ring_buf *buf)
  *
  * @return Ring buffer free space (in 32-bit words).
  */
-static inline uint32_t ring_buf_item_space_get(struct ring_buf *buf)
+static inline uint32_t ring_buf_item_space_get(const struct ring_buf *buf)
 {
 	return ring_buf_space_get(buf) / 4;
 }
@@ -257,7 +257,7 @@ static inline uint32_t ring_buf_item_space_get(struct ring_buf *buf)
  *
  * @return Ring buffer capacity (in bytes).
  */
-static inline uint32_t ring_buf_capacity_get(struct ring_buf *buf)
+static inline uint32_t ring_buf_capacity_get(const struct ring_buf *buf)
 {
 	return buf->size;
 }
@@ -269,7 +269,7 @@ static inline uint32_t ring_buf_capacity_get(struct ring_buf *buf)
  *
  * @return Ring buffer data size (in bytes).
  */
-static inline uint32_t ring_buf_size_get(struct ring_buf *buf)
+static inline uint32_t ring_buf_size_get(const struct ring_buf *buf)
 {
 	ring_buf_idx_t available = buf->put.tail - buf->get.head;
 
