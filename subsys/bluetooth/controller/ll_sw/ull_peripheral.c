@@ -157,10 +157,15 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 			       sizeof(lll->data_chan_map));
 	lll->data_chan_hop = pdu_adv->connect_ind.hop;
 	lll->interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
+
+	/* Check for minimum required channels, hop count and disallow invalid
+	 * connection interval value.
+	 */
 	if ((lll->data_chan_count < CHM_USED_COUNT_MIN) ||
 	    (lll->data_chan_hop < CHM_HOP_COUNT_MIN) ||
 	    (lll->data_chan_hop > CHM_HOP_COUNT_MAX) ||
-	    !lll->interval) {
+	    (!IS_ENABLED(CONFIG_BT_CTLR_CONN_INTERVAL_LOW_LATENCY) &&
+	     !IN_RANGE(lll->interval, BT_HCI_LE_INTERVAL_MIN, BT_HCI_LE_INTERVAL_MAX)) {
 		invalid_release(&adv->ull, lll, link, rx);
 
 		return;
