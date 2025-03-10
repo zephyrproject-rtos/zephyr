@@ -236,6 +236,25 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+		i2c1: i2c@e000d800 {
+			compatible = "litex,litei2c";
+			reg = <0xe000d800 0x4>,
+				<0xe000d804 0x4>,
+				<0xe000d808 0x4>,
+				<0xe000d80c 0x4>,
+				<0xe000d810 0x4>,
+				<0xe000d814 0x4>;
+			reg-names = "phy_speed_mode",
+				"master_active",
+				"master_settings",
+				"master_addr",
+				"master_rxtx",
+				"master_status";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 		gpio_out: gpio@e0005800 {
 			compatible = "litex,gpio";
 			reg = <0xe0005800 0x4>;
