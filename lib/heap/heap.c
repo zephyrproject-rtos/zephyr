@@ -298,6 +298,13 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	return mem;
 }
 
+void *sys_heap_noalign_alloc(struct sys_heap *heap, size_t align, size_t bytes)
+{
+	ARG_UNUSED(align);
+
+	return sys_heap_alloc(heap, bytes);
+}
+
 void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
