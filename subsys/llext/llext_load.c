@@ -162,8 +162,8 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 	for (i = 0, table_cnt = 0; i < ext->sect_cnt && table_cnt < 3; ++i) {
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
-		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
-			"addr 0x%zx, size %zd, link %d, info %d",
+		LOG_DBG("section %d at %#zx: name %d, type %d, flags %#zx, "
+			"addr %#zx, size %zd, link %d, info %d",
 			i,
 			(size_t)shdr->sh_offset,
 			shdr->sh_name,
@@ -410,8 +410,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				     x->sh_addr + x->sh_size > y->sh_addr) ||
 				    (y->sh_addr <= x->sh_addr &&
 				     y->sh_addr + y->sh_size > x->sh_addr)) {
-					LOG_ERR("Region %d VMA range (0x%zx +%zd) "
-						"overlaps with %d (0x%zx +%zd)",
+					LOG_ERR("Region %d VMA range (%#zx +%zd) "
+						"overlaps with %d (%#zx +%zd)",
 						i, (size_t)x->sh_addr, (size_t)x->sh_size,
 						j, (size_t)y->sh_addr, (size_t)y->sh_size);
 					return -ENOEXEC;
@@ -431,8 +431,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			     x->sh_offset + x->sh_size > y->sh_offset) ||
 			    (y->sh_offset <= x->sh_offset &&
 			     y->sh_offset + y->sh_size > x->sh_offset)) {
-				LOG_ERR("Region %d ELF file range (0x%zx +%zd) "
-					"overlaps with %d (0x%zx +%zd)",
+				LOG_ERR("Region %d ELF file range (%#zx +%zd) "
+					"overlaps with %d (%#zx +%zd)",
 					i, (size_t)x->sh_offset, (size_t)x->sh_size,
 					j, (size_t)y->sh_offset, (size_t)y->sh_size);
 				return -ENOEXEC;
