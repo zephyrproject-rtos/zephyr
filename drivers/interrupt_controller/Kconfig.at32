@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config AT32_EXINT
+	bool "AT32 Extended Interrupts and Events (EXINT) Controller"
+	default y
+	depends on DT_HAS_AT_AT32_EXINT_ENABLED
+	select USE_AT32_EXINT
+	select USE_AT32_SYSCFG
+	help
+	  Enable the AT32 Extended Interrupts and Events (EXINT)
+	  controller driver.

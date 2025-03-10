@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2025 Maxjta
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <at/at32f402_405/at32f405rct7.dtsi>
+#include "at_start_f405-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "AT AT-START-F405 board";
+	compatible = "at,at_start_f405";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+		red_led: led2 {
+			gpios = <&gpiof 4 GPIO_ACTIVE_HIGH>;
+			label = "User LED2";
+		};
+		yellow_led: led3 {
+			gpios = <&gpiof 5 GPIO_ACTIVE_HIGH>;
+			label = "User LED3";
+		};
+		green_led: led4 {
+			gpios = <&gpiof 6 GPIO_ACTIVE_HIGH>;
+			label = "User LED4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &yellow_led;
+		led2 = &green_led;
+		sw0 = &user_button;
+	};
+};
+
+&gpioa {
+    status = "okay";
+};
+
+&gpiob {
+    status = "okay";
+};
+
+&gpioc {
+    status = "okay";
+};
+
+&gpiod {
+    status = "okay";
+};
+
+&gpiof {
+    status = "okay";
+};
+
+&clk_lick {
+	status = "okay";
+};
+
+&clk_hext {
+	clock-frequency = <12000000>;
+	status = "okay";
+};
+
+&pll {
+	div-ms = <1>;
+	mul-ns = <72>;
+	div-fp = <2>;
+	div-fu = <5>;
+	clocks = <&clk_hext>;
+	status = "okay";
+};
+
+&crm {
+	clocks = <&pll>;
+	ahb-prescaler = <1>;
+	clock-frequency = <216000000>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+	status = "okay";
+};

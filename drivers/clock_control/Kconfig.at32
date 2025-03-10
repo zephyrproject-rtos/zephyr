@@ -1,0 +1,7 @@
+# Copyright (c) 2022 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+config CLOCK_CONTROL_AT32
+	bool "AT32 clock control"
+	default y
+	help
+	  Enable driver for AT32 Reset Clock Unit (CRM).
