@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 static struct btp_bap_unicast_group *u_group;
 
+static K_SEM_DEFINE(source_stopped_sem, 0U, CONFIG_BT_BAP_BROADCAST_SRC_COUNT);
+
 extern struct bt_csip_set_coordinator_set_member *btp_csip_set_members[CONFIG_BT_MAX_CONN];
 
 static struct bt_bap_stream *stream_unicast_to_bap(struct btp_bap_unicast_stream *stream)
@@ -139,11 +141,19 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 					       BTP_CAP_UNICAST_START_STATUS_SUCCESS);
 }
 
+static void broadcast_stopped_cb(struct bt_cap_broadcast_source *source, uint8_t reason)
+{
+	LOG_DBG("");
+
+	k_sem_give(&source_stopped_sem);
+}
+
 static struct bt_cap_initiator_cb cap_cb = {
 	.unicast_discovery_complete = cap_discovery_complete_cb,
 	.unicast_start_complete = unicast_start_complete_cb,
 	.unicast_update_complete = unicast_update_complete_cb,
 	.unicast_stop_complete = unicast_stop_complete_cb,
+	.broadcast_stopped = broadcast_stopped_cb,
 };
 
 static uint8_t btp_cap_supported_commands(const void *cmd, uint16_t cmd_len,
@@ -800,6 +810,14 @@ static uint8_t btp_cap_broadcast_source_stop(const void *cmd, uint16_t cmd_len,
 	err = bt_cap_initiator_broadcast_audio_stop(source->cap_broadcast);
 	if (err != 0) {
 		LOG_ERR("Failed to stop audio source: %d", err);
+
+		return BTP_STATUS_FAILED;
+	}
+
+	/* Make sure source is stopped before proceeding */
+	err = k_sem_take(&source_stopped_sem, K_SECONDS(1));
+	if (err) {
+		LOG_ERR("Semaphore timed out: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}

@@ -19,6 +19,8 @@ endfunction()
 function(zephyr_mcuboot_tasks)
   set(keyfile "${CONFIG_MCUBOOT_SIGNATURE_KEY_FILE}")
   set(keyfile_enc "${CONFIG_MCUBOOT_ENCRYPTION_KEY_FILE}")
+  string(CONFIGURE "${keyfile}" keyfile)
+  string(CONFIGURE "${keyfile_enc}" keyfile_enc)
 
   if(NOT "${CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE}")
     # Check for misconfiguration.

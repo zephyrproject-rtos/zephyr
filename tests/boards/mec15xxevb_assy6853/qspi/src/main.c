@@ -670,7 +670,7 @@ void *spi_single_setup(void)
 	spi_single_init();
 
 	/* The writing test goes
-	 * first berfore testing
+	 * first before testing
 	 * the reading.
 	 */
 	test_spi_single_write();
@@ -683,7 +683,7 @@ void *spi_quad_setup(void)
 	spi_dual_init();
 
 	/* The writing test goes
-	 * first berfore testing
+	 * first before testing
 	 * the reading.
 	 */
 	test_spi_quad_write();

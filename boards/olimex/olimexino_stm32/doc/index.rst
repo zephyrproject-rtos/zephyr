@@ -14,33 +14,7 @@ information and the datasheet.
 Supported Features
 ==================
 
-The olimexino_stm32 board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------+
-| Interface | Controller | Driver/Component        |
-+===========+============+=========================+
-| NVIC      | on-chip    | nested vectored         |
-|           |            | interrupt controller    |
-+-----------+------------+-------------------------+
-| SYSTICK   | on-chip    | system clock            |
-+-----------+------------+-------------------------+
-| UART      | on-chip    | serial port             |
-+-----------+------------+-------------------------+
-| GPIO      | on-chip    | gpio                    |
-+-----------+------------+-------------------------+
-| I2C       | on-chip    | i2c                     |
-+-----------+------------+-------------------------+
-| SPI       | on-chip    | spi                     |
-+-----------+------------+-------------------------+
-| USB       | on-chip    | USB device              |
-+-----------+------------+-------------------------+
-| WATCHDOG  | on-chip    | independent watchdog    |
-+-----------+------------+-------------------------+
-| CAN       | on-chip    | Controller Area Network |
-+-----------+------------+-------------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========

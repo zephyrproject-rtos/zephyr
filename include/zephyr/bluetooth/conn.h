@@ -1069,8 +1069,7 @@ bool bt_conn_is_type(const struct bt_conn *conn, enum bt_conn_type type);
  *  @return -EBUSY The remote information is not yet available.
  *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection.
  */
-int bt_conn_get_remote_info(struct bt_conn *conn,
-			    struct bt_conn_remote_info *remote_info);
+int bt_conn_get_remote_info(const struct bt_conn *conn, struct bt_conn_remote_info *remote_info);
 
 /** @brief Get connection transmit power level.
  *

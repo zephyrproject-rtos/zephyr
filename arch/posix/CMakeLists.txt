@@ -199,4 +199,5 @@ if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
   target_compile_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
 endif()
 
+include(natsim_optional.cmake)
 add_subdirectory(core)

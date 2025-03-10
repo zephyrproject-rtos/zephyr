@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32WL Reset and Clock controller node.
+  STM32WL RCC (Reset and Clock controller).
+
   For more description confere st,stm32-rcc.yaml
 
 compatible: "st,stm32wl-rcc"

@@ -1,6 +1,6 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: This is a representation of the nRF70 Wi-Fi chip.
+description: nRF70 Wi-Fi chip with SPI interface.
 
 include: ["nordic,nrf70.yaml", "spi-device.yaml"]

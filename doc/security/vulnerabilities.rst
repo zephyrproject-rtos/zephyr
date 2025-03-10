@@ -1837,3 +1837,70 @@ This has been fixed in main for v4.0.0
 
 - `PR 81370 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/81370>`_
+
+:cve:`2025-1673`
+----------------
+
+Out of bounds read when calling crc16_ansi and strlen in dns_validate_msg
+
+A malicious or malformed DNS packet without a payload can cause an out-of-bounds
+read, resulting in a crash (denial of service) or an incorrect computation.
+
+- `Zephyr project bug tracker GHSA-jjhx-rrh4-j8mx
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-jjhx-rrh4-j8mx>`_
+
+This has been fixed in main for v4.1.0
+
+- `PR 82072 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82072>`_
+
+- `PR 82289 fix for 4.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82289>`_
+
+- `PR 82288 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82288>`_
+
+:cve:`2025-1674`
+----------------
+
+Out of bounds read when unpacking DNS answers
+
+A lack of input validation allows for out of bounds reads caused by malicious or
+malformed packets.
+
+- `Zephyr project bug tracker GHSA-x975-8pgf-qh66
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-x975-8pgf-qh66>`_
+
+This has been fixed in main for v4.1.0
+
+- `PR 82072 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82072>`_
+
+- `PR 82289 fix for 4.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82289>`_
+
+- `PR 82288 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82288>`_
+
+:cve:`2025-1675`
+----------------
+
+Out of bounds read in dns_copy_qname
+
+The function dns_copy_qname in dns_pack.c performs performs a memcpy operation
+with an untrusted field and does not check if the source buffer is large enough
+to contain the copied data.
+
+- `Zephyr project bug tracker GHSA-2m84-5hfw-m8v4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2m84-5hfw-m8v4>`_
+
+This has been fixed in main for v4.1.0
+
+- `PR 82072 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82072>`_
+
+- `PR 82289 fix for 4.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82289>`_
+
+- `PR 82288 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/82288>`_

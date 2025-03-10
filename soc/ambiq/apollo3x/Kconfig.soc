@@ -11,12 +11,14 @@ config SOC_SERIES_APOLLO3X
 config SOC_APOLLO3P_BLUE
 	bool
 	select SOC_SERIES_APOLLO3X
+	select SOC_AMBIQ_BT_SUPPORTED
 	help
 	  Apollo3P Blue
 
 config SOC_APOLLO3_BLUE
 	bool
 	select SOC_SERIES_APOLLO3X
+	select SOC_AMBIQ_BT_SUPPORTED
 	help
 	  Apollo3 Blue
 

@@ -87,37 +87,7 @@ More information about STM32F769NIH6 can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f769i_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | Ethernet                            |
-+-----------+------------+-------------------------------------+
-| QSPI NOR  | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| TOUCH     | off-chip   | ft5336(FT6202)                      |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f769i_disco/stm32f769i_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========

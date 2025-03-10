@@ -28,63 +28,7 @@ Hardware
 Supported Features
 ==================
 
-The samr34_xpro board configuration supports the following hardware
-features:
-
-.. list-table::
-    :header-rows: 1
-
-    * - Interface
-      - Controller
-      - Driver / Component
-    * - NVIC
-      - on-chip
-      - nested vector interrupt controller
-    * - Flash
-      - on-chip
-      - Can be used with LittleFS to store files
-    * - SYSTICK
-      - on-chip
-      - systick
-    * - WDT
-      - on-chip
-      - Watchdog
-    * - GPIO
-      - on-chip
-      - I/O ports
-    * - PWM
-      - on-chip
-      - Pulse Width Modulation
-    * - USART
-      - on-chip
-      - Serial ports
-    * - I2C
-      - on-chip
-      - I2C ports
-    * - SPI
-      - on-chip
-      - Serial Peripheral Interface ports
-    * - TRNG
-      - on-chip
-      - True Random Number Generator
-
-The following hardware features are supported by Zephyr, but not yet fully
-supported by the SOC:
-
-.. list-table::
-    :header-rows: 1
-
-    * - Interface
-      - Controller
-      - Driver / Component
-    * - LoRa Radio
-      - on-chip
-      - Internal SX1276 LoRa Radio
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam0/samr34_xpro/samr34_xpro_defconfig`.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========

@@ -15,8 +15,8 @@ extern "C" {
 #endif
 
 /*
- * To support native_posix drivers or tests which register their own arguments
- * we provide a header with the same name as in native_posix
+ * API provided by native_sim for drivers or tests which want to register their own command line
+ * arguments
  */
 void native_get_cmd_line_args(int *argc, char ***argv);
 void native_get_test_cmd_line_args(int *argc, char ***argv);

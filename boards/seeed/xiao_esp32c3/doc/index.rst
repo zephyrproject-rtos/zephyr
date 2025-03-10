@@ -19,29 +19,7 @@ pinout.
 Supported Features
 ==================
 
-The XIAO ESP32C3 board configuration supports the following hardware features:
-
-+-----------+------------+------------------+
-| Interface | Controller | Driver/Component |
-+===========+============+==================+
-| PMP       | on-chip    | arch/riscv       |
-+-----------+------------+------------------+
-| INTMTRX   | on-chip    | intc_esp32c3     |
-+-----------+------------+------------------+
-| PINMUX    | on-chip    | pinctrl_esp32    |
-+-----------+------------+------------------+
-| USB UART  | on-chip    | serial_esp32_usb |
-+-----------+------------+------------------+
-| GPIO      | on-chip    | gpio_esp32       |
-+-----------+------------+------------------+
-| UART      | on-chip    | uart_esp32       |
-+-----------+------------+------------------+
-| I2C       | on-chip    | i2c_esp32        |
-+-----------+------------+------------------+
-| SPI       | on-chip    | spi_esp32_spim   |
-+-----------+------------+------------------+
-| TWAI      | on-chip    | can_esp32_twai   |
-+-----------+------------+------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

@@ -1,0 +1,228 @@
+/**
+ * Copyright (c) 2024-2025, The Linux Foundation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Board overview "card" on board documentation pages */
+.sidebar.board-overview {
+    border-radius: 12px;
+    padding: 0px;
+    background: var(--admonition-note-background-color);
+    color: var(--admonition-note-title-color);
+    border-color: var(--admonition-note-title-background-color);
+}
+
+@media screen and (max-width: 480px) {
+    .sidebar.board-overview {
+        float: none;
+        margin-left: 0;
+    }
+}
+
+.sidebar.board-overview {
+    color: var(--admonition-note-color);
+}
+
+.sidebar.board-overview .sidebar-title {
+    font-family: var(--header-font-family);
+    background: var(--admonition-note-title-background-color);
+    color: var(--admonition-note-title-color);
+    border-radius: 12px 12px 0px 0px;
+    margin: 0px;
+    text-align: center;
+}
+
+.sidebar.board-overview figure {
+    padding: 1rem;
+    margin-bottom: -1rem;
+}
+
+.sidebar.board-overview figure img {
+    height: auto !important;
+}
+
+.sidebar.board-overview figure figcaption p {
+    margin-bottom: 0px;
+}
+
+.sidebar.board-overview dl.field-list {
+    align-items: center;
+    margin-top: 12px !important;
+    margin-bottom: 12px !important;
+    grid-template-columns: auto 1fr !important;
+    padding-right: 1em;
+}
+
+.sidebar.board-overview dl.field-list>dt {
+    background: transparent !important;
+}
+
+.sidebar.board-overview dl.field-list>dd {
+    margin-left: 1em;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.sidebar.board-overview dl.field-list>dd code {
+    font-size: 0.9em;
+}
+
+.sidebar.board-overview #board-github-link {
+    text-align: center;
+    margin-bottom: 1em;
+    font-size: 0.9em;
+}
+
+.sidebar.board-overview #board-github-link a {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80%;
+}
+
+.legend {
+    font-size: 0.9em;
+    border-radius: 6px;
+    margin: auto;
+
+    .supported-hardware {
+        margin-bottom: 0px !important;
+        grid-template-columns: auto auto !important;
+
+        dt {
+            display: table-cell !important;
+            padding-left: 0em;
+            padding-bottom: 0.5em;
+            text-align: center;
+            background: none !important;
+        }
+
+        dd {
+            margin-top:4px;
+            line-height: 1.1em;
+        }
+    }
+}
+
+
+.hardware-features {
+    th {
+        background: var(--navbar-background-color);
+        color: var(--navbar-level-1-color);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8em;
+        letter-spacing: 0.5px;
+    }
+
+    td,
+    th {
+        padding: 8px 12px;
+        border-left: none !important;
+        text-align: left;
+    }
+
+    td {
+        font-size: 0.85em;
+        background: transparent !important;
+        vertical-align: middle;
+
+        p {
+            white-space: normal;
+        }
+    }
+
+    /* Disabled feature styling */
+    tr.disabled {
+        opacity: 0.3;
+    }
+
+    /* Column widths and specific styling */
+    .type {
+        font-weight: 600;
+    }
+
+    .location {
+        font-size: 0.9em;
+    }
+
+    .description {
+    }
+
+    .compatible {
+        font-family: var(--monospace-font-family);
+
+        code {
+            background: transparent;
+            border: none;
+            padding: 0;
+            font-size: 0.9em;
+        }
+
+        code.literal {
+            display: inline-block;
+            width:190px;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+    }
+}
+
+.count {
+    line-height: 1rem;
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 0.7em;
+    font-weight: 600;
+    margin-left: 4px;
+    padding-right: 6px !important;
+
+    &::before {
+        content: "×";
+        margin-right: 2px;
+    }
+
+    &.okay-count {
+        background: rgba(46, 204, 113, 1);
+        color: white;
+    }
+
+    &.disabled-count {
+        background: rgba(241, 196, 15, 1);
+        color: black;
+    }
+}
+
+.location-chip {
+    line-height: 1em;
+    display: inline-block;
+    width: 7em;
+    padding: 0.6em;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: lowercase;
+    text-align: center;
+    white-space: nowrap;
+
+    &.onboard {
+        background: var(--admonition-note-title-background-color);
+        color: var(--admonition-note-title-color);
+    }
+
+    &.onchip {
+        background: var(--admonition-tip-title-background-color);
+        color: var(--admonition-tip-title-color);
+    }
+}
+
+/* Status indicators */
+.status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}

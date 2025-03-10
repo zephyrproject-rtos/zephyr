@@ -1199,7 +1199,7 @@ int net_context_send(struct net_context *context,
  * @param dst_addr Destination address.
  * @param addrlen Length of the address.
  * @param cb Caller-supplied callback function.
- * @param timeout Currently this value is not used.
+ * @param timeout Timeout for the send attempt.
  * @param user_data Caller-supplied user data.
  *
  * @return numbers of bytes sent on success, a negative errno otherwise

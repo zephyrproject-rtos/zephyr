@@ -209,7 +209,7 @@ static int udc_skeleton_enable(const struct device *dev)
 
 static int udc_skeleton_disable(const struct device *dev)
 {
-	LOG_DBG("Enable device %p", dev);
+	LOG_DBG("Disable device %p", dev);
 
 	return 0;
 }

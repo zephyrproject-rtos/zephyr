@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -319,11 +319,12 @@ static int adc_ra_init(const struct device *dev)
 	return 0;
 }
 
+#define EVENT_ADC_SCAN_END(idx) BSP_PRV_IELS_ENUM(CONCAT(EVENT_ADC, idx, _SCAN_END))
+
 #define IRQ_CONFIGURE_FUNC(idx)                                                                    \
 	static void adc_ra_configure_func_##idx(void)                                              \
 	{                                                                                          \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(idx, scanend, irq)] =                             \
-			ELC_EVENT_ADC##idx##_SCAN_END;                                             \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(idx, scanend, irq)] = EVENT_ADC_SCAN_END(idx);    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, scanend, irq),                                \
 			    DT_INST_IRQ_BY_NAME(idx, scanend, priority), adc_ra_isr,               \
 			    DEVICE_DT_INST_GET(idx), 0);                                           \

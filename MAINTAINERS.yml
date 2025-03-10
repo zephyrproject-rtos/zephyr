@@ -1417,12 +1417,13 @@ Release Notes:
     - drivers.espi
 
 "Drivers: Ethernet":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - maass-hamburg
   collaborators:
     - decsny
     - lmajewski
     - pdgendt
-    - maass-hamburg
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -2320,11 +2321,9 @@ EC Host Commands:
 Xen Platform:
   status: maintained
   maintainers:
-    - povergoing
-  collaborators:
-    - SgrrZhf
-    - lorc
     - firscity
+  collaborators:
+    - lorc
     - luca-fancellu
   files:
     - include/zephyr/xen/
@@ -2821,7 +2820,7 @@ hawkBit:
   tests:
     - sample.net.updatehub
 
-Native POSIX/Sim and POSIX arch:
+Native_sim and POSIX arch:
   status: maintained
   maintainers:
     - aescolar
@@ -2844,7 +2843,7 @@ Native POSIX/Sim and POSIX arch:
   labels:
     - "area: native port"
   description: >-
-    POSIX architecture and SOC, native_posix & native_sim boards, and related drivers
+    POSIX architecture and SOC, native_sim boards, and related drivers
   tests:
     - boards.native_sim
 
@@ -3623,9 +3622,10 @@ Silabs Platforms:
     - boards/silabs/
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
-    - drivers/*/*gecko*
-    - drivers/bluetooth/hci/hci_silabs_*
-    - drivers/*/*silabs*
+    - drivers/**/*gecko*
+    - drivers/**/*silabs*
+    - drivers/**/*siwx91x*
+    - tests/boards/silabs/
   labels:
     - "platform: Silabs"
 
@@ -3913,7 +3913,7 @@ NXP Platforms (Robotics Products):
     - boards/nxp/rddrone_fmuk66/
     - boards/nxp/mr_canhubk3/
   labels:
-    - "platform: NXP"
+    - "platform: NXP Robotics"
   description: NXP Robotics Module Platform Products
 
 Microchip MEC Platforms:
@@ -5404,7 +5404,9 @@ West:
     - "area: Audio"
 
 "West project: tflite-micro":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - XenuIsWatching
   collaborators:
     - laurenmurphyx64
   files:

@@ -123,12 +123,11 @@ static void rx_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct ec_host_cmd_uart_ctx *hc_uart =
 		CONTAINER_OF(dwork, struct ec_host_cmd_uart_ctx, timeout_work);
-	int res;
 
 	LOG_ERR("Request error in state: %s", state_name[hc_uart->state]);
 
-	res = uart_rx_disable(hc_uart->uart_dev);
-	res = uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size, 0);
+	uart_rx_disable(hc_uart->uart_dev);
+	uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size, 0);
 
 	hc_uart->state = UART_HOST_CMD_READY_TO_RX;
 }

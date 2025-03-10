@@ -41,8 +41,10 @@ struct bt_pacs_cap {
 	/** Codec capability reference */
 	const struct bt_audio_codec_cap *codec_cap;
 
-	/** @internal Internally used list node */
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used field for list handling */
 	sys_snode_t _node;
+	/** @endcond */
 };
 
 /** Structure for registering PACS */

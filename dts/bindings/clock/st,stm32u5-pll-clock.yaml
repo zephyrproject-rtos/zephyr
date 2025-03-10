@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  PLL node binding for STM32U5 devices
+  STM32U5 PLL.
 
   It can be used to describe 3 different PLLs: PLL1, PLL2 and PLL3.
 

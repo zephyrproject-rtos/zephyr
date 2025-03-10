@@ -33,7 +33,7 @@ Kernel
 Boards
 ******
 
-* :ref:`native_posix<native_posix>` has been deprecated in favour of
+* ``native_posix`` has been deprecated in favour of
   :ref:`native_sim<native_sim>` (:github:`76898`).
 * Nordic nRF53 and nRF91 based boards can use the common devicetree overlays in ``dts/common/nordic``
   to define default flash and ram partitioning based on TF-M.

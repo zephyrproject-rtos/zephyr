@@ -40,6 +40,24 @@ config BT_HCI_IPC
 	  Bluetooth HCI driver for communication with another CPU
 	  using the IPC subsystem.
 
+config BT_HCI_IPC_SEND_RETRY_COUNT
+	int "HCI IPC send retry count"
+	depends on BT_HCI_IPC
+	default 3
+	help
+	  Number of times to retry sending a message via IPC.
+	  The retries occur in case of a failure to send a message
+	  through IPC (-ENOMEM returned by ipc_service_send).
+
+config BT_HCI_IPC_SEND_RETRY_DELAY_US
+	int "HCI IPC send retry delay (us)"
+	depends on BT_HCI_IPC
+	default 75
+	help
+	  Delay in microseconds between retries when sending a message via IPC.
+	  When a single tick (CONFIG_SYS_CLOCK_TICKS_PER_SEC) is bigger then
+	  the retry delay the k_busy_wait function is used. Set with care.
+
 config BT_SPI
 	bool
 	select SPI
@@ -148,6 +166,10 @@ config BT_SILABS_SIWX91X
 	help
 	  Use Silicon Labs Wiseconnect 3.x Bluetooth library to connect to the controller.
 
+	# SiWx917 BLE controller currently does not support HCI Command: Host Number of Completed Packets
+	configdefault BT_HCI_ACL_FLOW_CONTROL
+		default n if BT_SILABS_SIWX91X
+
 config BT_USERCHAN
 	bool
 	depends on (BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM)
@@ -166,6 +188,7 @@ config BT_ESP32
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
 	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
 	select HAS_BT_CTLR
+	select BT_CTLR_ADV_EXT_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
 	help
 	  Espressif HCI bluetooth interface
 
@@ -220,6 +243,7 @@ config BT_AMBIQ_HCI
 	select GPIO if SOC_SERIES_APOLLO4X
 	select CLOCK_CONTROL if SOC_SERIES_APOLLO4X
 	select BT_HCI_SETUP
+	select AMBIQ_COMPONENT_USE_BT
 	help
 	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers.
