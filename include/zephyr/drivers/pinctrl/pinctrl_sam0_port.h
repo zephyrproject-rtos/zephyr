@@ -8,8 +8,8 @@
  * @brief Atmel SAM0 MCU family I/O Pin Controller (PORT)
  */
 
-#ifndef ATMEL_SAM0_SOC_PORT_H_
-#define ATMEL_SAM0_SOC_PORT_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_SAM0_PORT_H_
+#define ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_SAM0_PORT_H_
 
 #include <soc.h>
 
@@ -124,4 +124,4 @@ void soc_port_configure(const struct soc_port_pin *pin);
 void soc_port_list_configure(const struct soc_port_pin pins[],
 			     unsigned int size);
 
-#endif /* ATMEL_SAM0_SOC_PORT_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_SAM0_PORT_H_ */

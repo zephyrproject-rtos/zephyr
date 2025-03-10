@@ -1,0 +1,149 @@
+/*
+ * Copyright (c) 2025 GP Orcullo
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv6-m.dtsi>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &nvmctrl;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			device_type = "cpu";
+		};
+	};
+
+	soc {
+		nvic: interrupt-controller@e000e100  {
+			arm,num-irq-priority-bits = <2>;
+		};
+
+		mclk: mclk@40000800 {
+			compatible = "atmel,sam0-mclk";
+			reg = <0x40000800 0x20>;
+			#clock-cells = <2>;
+		};
+
+		oscctrl: oscctrl@40001000 {
+			compatible = "syscon";
+			reg = <0x40001000 0x3c>;
+		};
+
+		osc32kctrl: osc32kctrl@40001400 {
+			compatible = "atmel,sam0-osc32kctrl";
+			reg = <0x40001400 0x20>;
+			#clock-cells = <0>;
+			#atmel,assigned-clock-cells = <1>;
+		};
+
+		gclk: gclk@40001c00 {
+			compatible = "atmel,sam0-gclk";
+			reg = <0x40001c00 0x154>;
+			#clock-cells = <1>;
+			#atmel,assigned-clock-cells = <1>;
+		};
+
+		eic: eic@40002800 {
+			compatible = "atmel,sam0-eic";
+			reg = <0x40002800 0x24>;
+			interrupts = <3 0>;
+		};
+
+		pinctrl: pinctrl@41000000 {
+			compatible = "atmel,sam0-pinctrl";
+			ranges = <0x41000000 0x41000000 0x180>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			porta: gpio@41000000 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41000000 0x80>;
+				#atmel,pin-cells = <2>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				status = "disabled";
+			};
+
+			portb: gpio@41000080 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41000080 0x80>;
+				#atmel,pin-cells = <2>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				status = "disabled";
+			};
+		};
+
+		nvmctrl: nvmctrl@41004000  {
+			compatible = "atmel,sam0-nvmctrl";
+			reg = <0x41004000 0x30>;
+			interrupts = <6 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			lock-regions = <16>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				write-block-size = <4>;
+			};
+		};
+
+		sercom0: sercom@42000400 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42000400 0x31>;
+			interrupts = <9 0>;
+			clocks = <&gclk 19>, <&mclk 28 1>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+		};
+
+		sercom1: sercom@42000800 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42000800 0x31>;
+			interrupts = <10 0>;
+			clocks = <&gclk 20>, <&mclk 28 2>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+		};
+
+		sercom2: sercom@42000c00 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42000c00 0x31>;
+			interrupts = <11 0>;
+			clocks = <&gclk 21>, <&mclk 28 3>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+		};
+
+		sercom3: sercom@42001000 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42001000 0x31>;
+			interrupts = <12 0>;
+			clocks = <&gclk 22>, <&mclk 28 4>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+};
