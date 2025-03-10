@@ -1,0 +1,166 @@
+# Original license from ina23x driver:
+# 	Copyright 2021 The Chromium OS Authors
+# 	Copyright 2021 Grinn
+#
+# Copyright 2024, Remie Lowik
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI INA700 Current and Power Monitor.
+  The <zephyr/dt-bindings/sensor/ina700.h> file should be included in the
+  DeviceTree and it provides macro that can be used for initializing the
+  configuration register.
+
+compatible: "ti,ina700"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  conversion-delay:
+    type: int
+    default: 0
+    description: |
+      Initial ADC conversion delay in steps of 2 ms, 0 = 0 ms, 1 = 2 ms, 255 = 510 ms
+
+  adc-mode:
+    type: string
+    description: |
+      ADC channel conversion configuration.
+    default: "Continuous temperature, current, and bus voltage"
+    enum:
+      - "Shutdown"
+      - "Triggered bus voltage, single shot"
+      - "Reserved"
+      - "Reserved"
+      - "Triggered temperature, single shot"
+      - "Triggered temperature and bus voltage, single shot"
+      - "Triggered temperature and current, single shot"
+      - "Triggered temperature, current and bus voltage, single shot"
+      - "Shutdown"
+      - "Continuous bus voltage only"
+      - "Reserved"
+      - "Reserved"
+      - "Continuous temperature only"
+      - "Continuous bus voltage and temperature"
+      - "Continuous temperature and current"
+      - "Continuous temperature, current, and bus voltage"
+
+  vbus-conversion-time-us:
+    type: int
+    description: |
+      Vbus conversion time in microseconds.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  vshunt-conversion-time-us:
+    type: int
+    description: |
+      Vshunt conversion time in microseconds.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  temperature-conversion-time-us:
+    type: int
+    description: |
+      Temperature conversion time in microseconds.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  avg-count:
+    type: int
+    description: |
+      Number of samples to average (applies to all inputs).
+    default: 1
+    enum: [1, 4, 16, 64, 128, 256, 512, 1024]
+
+  alatch:
+    type: string
+    default: "Transparant"
+    description: |
+      When the Alert Latch Enable bit is set to Transparent mode,
+        the Alert pin and Flag bit reset to the idle state when the fault has been cleared.
+      When the Alert Latch Enable bit is set to Latch mode,
+        the Alert pin and Alert Flag bit remain active follow
+    enum:
+      - "Transparant"
+      - "Latched"
+
+  conversion-ready:
+    type: string
+    default: "Disable conversion ready flag on ALERT pin"
+    description: |
+      Setting this bit high configures the Alert pin to be asserted when the Conversion Ready Flag (bit 1)
+        is asserted, indicating that a conversion cycle is complete
+    enum:
+      - "Disable conversion ready flag on ALERT pin"
+      - "Enables conversion ready flag on ALERT pin"
+
+  slow-alert:
+    type: string
+    default: "ALERT comparison on non-averaged (ADC) value"
+    description: |
+      When enabled, ALERT function is asserted on the completed averaged value.
+      This gives the flexibility to delay the ALERT until after the averaged value.
+    enum:
+      - "ALERT comparison on non-averaged (ADC) value"
+      - "ALERT comparison on averaged value"
+
+  alert-polarity:
+    type: string
+    default: "Normal (active-low, open-drain)"
+    description: |
+      Alert Polarity bit sets the Alert pin polarity.
+    enum:
+      - "Normal (active-low, open-drain)"
+      - "Inverted (active-high, open-drain)"
+
+  current-over-limit-threshold:
+    type: int
+    default: 0x7FFF
+    description: Sets the threshold for comparison of the value to detect overcurrent
+      condition (overcurrent protection). 2's-complement value
+
+  current-under-limit-threshold:
+    type: int
+    default: 0x8000
+    description: Sets the threshold for comparison of the value to detect undercurrent
+      condition. 2's-complement value
+
+  bus-overvoltage-threshold:
+    type: int
+    default: 0x7FFF
+    description: Sets the threshold for comparison of the value to detect Bus
+      Overvoltage (overvoltage protection). Unsigned representation,
+      positive value only. Conversion factor = 3.125 mV/LSB
+
+  bus-undervoltage-threshold:
+    type: int
+    default: 0
+    description: Sets the threshold for comparison of the value to detect Bus
+      Undervoltage (undervoltage protection). Unsigned representation,
+      positive value only. Conversion factor = 3.125 mV/LSB.
+
+  temperature-over-limit-threshold:
+    type: int
+    default: 0x7FFF
+    description: |
+      Sets the threshold for comparison of the value to detect
+      overtemperature measurements. 2's-complement value.
+      The value entered in this field compares directly against the value
+      from the DIETEMP register to determine if an overtemperature
+      condition exists. Conversion factor = 7.8125 m°C/LSB.
+
+  power-over-limit-threshold:
+    type: int
+    default: 0xFFFF
+    description: |
+      Sets the threshold for comparison of the value to detect power overlimit measurements.
+      Unsigned representation, positive value only.
+      The value entered in this field compares directly against the value
+      from the POWER register to determine if an over power condition
+      exists. Conversion factor = 24.576 mW/LSB.
+
+  alert-gpios:
+    type: phandle-array
+    description: Alert pin
