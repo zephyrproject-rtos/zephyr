@@ -9,22 +9,22 @@
 
 #if defined(CONFIG_SOC_CH32V003)
 #define CH32V003 1
-#include <ch32v003fun.h>
+#include <ch32fun.h>
 #endif
 
 #if defined(CONFIG_SOC_SERIES_CH32V00X)
 #define CH32V003 1
-#include <ch32v003fun.h>
+#include <ch32fun.h>
 #endif
 
 #if defined(CONFIG_SOC_SERIES_QINGKE_V4B)
 #define CH32V20x 1
-#include <ch32v003fun.h>
+#include <ch32fun.h>
 #endif
 
 #if defined(CONFIG_SOC_SERIES_QINGKE_V4C)
 #define CH32V20x 1
-#include <ch32v003fun.h>
+#include <ch32fun.h>
 #endif
 
 #endif

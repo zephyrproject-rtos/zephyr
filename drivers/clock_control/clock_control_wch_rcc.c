@@ -14,7 +14,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util_macro.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 #define WCH_RCC_CLOCK_ID_OFFSET(id) (((id) >> 5) & 0xFF)
 #define WCH_RCC_CLOCK_ID_BIT(id)    ((id) & 0x1F)

@@ -12,7 +12,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 struct usart_wch_config {
 	USART_TypeDef *regs;
