@@ -51,19 +51,13 @@ static int zpacket_socket(int family, int type, int proto)
 		return -1;
 	}
 
-	if (proto == 0) {
-		if (type == SOCK_RAW) {
-			proto = IPPROTO_RAW;
-		}
-	} else {
-		/* For example in Linux, the protocol parameter can be given
-		 * as htons(ETH_P_ALL) to receive all the network packets.
-		 * So convert the proto field back to host byte order so that
-		 * we do not need to change the protocol field handling in
-		 * other part of the network stack.
-		 */
-		proto = ntohs(proto);
-	}
+	/* For example in Linux, the protocol parameter can be given
+	 * as htons(ETH_P_ALL) to receive all the network packets.
+	 * So convert the proto field back to host byte order so that
+	 * we do not need to change the protocol field handling in
+	 * other part of the network stack.
+	 */
+	proto = ntohs(proto);
 
 	ret = net_context_get(family, type, proto, &ctx);
 	if (ret < 0) {
@@ -487,16 +481,17 @@ static const struct socket_op_vtable packet_sock_fd_op_vtable = {
 
 static bool packet_is_supported(int family, int type, int proto)
 {
+	int proto_host = ntohs(proto);
+
+	if (proto_host < 0 || proto_host > UINT16_MAX || proto_host == IPPROTO_RAW) {
+		return false;
+	}
+
 	switch (type) {
 	case SOCK_RAW:
-		proto = ntohs(proto);
-		return proto == ETH_P_ALL
-		  || proto == ETH_P_ECAT
-		  || proto == ETH_P_IEEE802154
-		  || proto == IPPROTO_RAW;
-
+		__fallthrough;
 	case SOCK_DGRAM:
-		return proto > 0;
+		return true;
 
 	default:
 		return false;

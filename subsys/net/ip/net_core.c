@@ -126,9 +126,10 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 
 	if (IS_ENABLED(CONFIG_NET_IP) && (family == AF_INET || family == AF_INET6 ||
 					  family == AF_UNSPEC || family == AF_PACKET)) {
-		/* L2 processed, now we can pass IPPROTO_RAW to packet socket:
+		/* L2 processed, now we can pass either IPPROTO_RAW or
+		 * protocol 0 (any protocol for AF_PACKET) to packet socket:
 		 */
-		ret = net_packet_socket_input(pkt, IPPROTO_RAW);
+		ret = net_packet_socket_input(pkt, (family == AF_PACKET) ? 0 : IPPROTO_RAW);
 		if (ret != NET_CONTINUE) {
 			return ret;
 		}

@@ -664,7 +664,12 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			return NET_DROP;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
-		if (proto != ETH_P_ALL && proto != IPPROTO_RAW) {
+		/* AF_PACKET socket does not support IPPROTO_RAW type which is only
+		 * used for raw sockets in AF_INET or AF_INET6 family.
+		 * This check is here just to enforce this because earlier we
+		 * had proto set to IPPROTO_RAW for AF_PACKET sockets.
+		 */
+		if (proto == IPPROTO_RAW) {
 			return NET_DROP;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && pkt_family == AF_CAN) {
@@ -748,12 +753,11 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		/* Is the candidate connection matching the packet's protocol within the family? */
 		if (conn->proto != proto) {
 			/* For packet socket data, the proto is set to ETH_P_ALL
-			 * or IPPROTO_RAW but the listener might have a specific
-			 * protocol set. This is ok and let the packet pass this
-			 * check in this case.
+			 * or 0 but the listener might have a specific protocol set.
+			 * This is ok and let the packet pass this check in this case.
 			 */
 			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
-				if (proto != ETH_P_ALL && proto != IPPROTO_RAW) {
+				if (proto != ETH_P_ALL && proto != 0) {
 					continue; /* wrong protocol */
 				}
 			} else {
@@ -774,12 +778,12 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			 * also matches.
 			 */
 			if (proto == ETH_P_ALL) {
-				/* We shall continue with ETH_P_ALL to IPPROTO_RAW: */
+				/* We shall continue with ETH_P_ALL */
 				raw_pkt_continue = true;
 			}
 
-			/* With IPPROTO_RAW deliver only if protocol match: */
-			if ((proto == ETH_P_ALL && conn->proto != IPPROTO_RAW) ||
+			/* With proto set to 0, deliver only if protocol match: */
+			if ((proto == ETH_P_ALL && conn->proto != 0) ||
 			    conn->proto == proto) {
 				enum net_verdict ret = conn_raw_socket(pkt, conn, proto);
 

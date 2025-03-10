@@ -2564,7 +2564,7 @@ skip_alloc:
 
 		net_pkt_cursor_init(pkt);
 
-		if (net_context_get_proto(context) == IPPROTO_RAW) {
+		if (net_context_get_proto(context) == 0) {
 			char type = (NET_IPV6_HDR(pkt)->vtc & 0xf0);
 			struct sockaddr_ll *ll_addr;
 
