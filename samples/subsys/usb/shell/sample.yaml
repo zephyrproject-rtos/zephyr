@@ -16,6 +16,17 @@ tests:
   sample.usbh.shell:
     tags:
       - usb
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - ek_ra6m5
+      - ek_ra6m3
+    extra_args:
+      - CONF_FILE="device_and_host_prj.conf"
+    build_only: true
+  sample.usbh.shell.shield:
+    tags:
+      - usb
       - shield
     extra_args:
       - CONF_FILE="device_and_host_prj.conf"

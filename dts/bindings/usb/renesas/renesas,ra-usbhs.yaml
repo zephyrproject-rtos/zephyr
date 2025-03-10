@@ -13,6 +13,10 @@ properties:
     description: |
       USBHS physical clocks. Should be provided in case internal clock source is set in phys node.
 
+  bus-wait-cycles:
+    type: int
+    description: Specifies CPU bus access wait cycles
+
   interrupts:
     required: true
     description: |
