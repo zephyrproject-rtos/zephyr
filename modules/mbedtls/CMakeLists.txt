@@ -253,4 +253,8 @@ else()
   # included the required directories for mbedtls in their projects.
 endif()
 
+  if(CONFIG_MBEDTLS_PSA_ITS_BACKEND_MBEDTLS_FILE)
+    zephyr_include_directories(psa/include)
+  endif()
+
 endif()
