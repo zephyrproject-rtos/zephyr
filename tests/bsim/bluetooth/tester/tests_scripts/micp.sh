@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Copyright 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Smoketest for MICP BTP commands with the BT tester
+
+simulation_id="tester_micp"
+verbosity_level=2
+EXECUTE_TIMEOUT=20
+
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
+cd ${BSIM_OUT_PATH}/bin
+
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_tester_prj_conf \
+  -v=${verbosity_level} -s=${simulation_id} -d=0 -RealEncryption=1 -testid=micp_central
+
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_tester_prj_conf \
+  -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=1 -testid=micp_peripheral
+
+Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
+  -D=2 -sim_length=20e6 $@ -argschannel -at=40
+
+wait_for_background_jobs #Wait for all programs in background and return != 0 if any fails
