@@ -7,7 +7,7 @@ tests:
       - net
       - mqtt
       - sensors
-    filter: dt_alias_exists("ambient-temp0")
+    filter: dt_alias_exists("ambient-temp0") and CONFIG_NET_DRIVERS
     integration_platforms:
       - adi_eval_adin1110ebz
   sample.net.secure_mqtt_sensor_actuator.staticip:
@@ -17,7 +17,7 @@ tests:
       - net
       - mqtt
       - sensors
-    filter: dt_alias_exists("ambient-temp0")
+    filter: dt_alias_exists("ambient-temp0") and CONFIG_NET_DRIVERS
     integration_platforms:
       - native_sim
   sample.net.secure_mqtt_sensor_actuator.staticip_insecure:
@@ -27,7 +27,7 @@ tests:
       - net
       - mqtt
       - sensors
-    filter: dt_alias_exists("ambient-temp0")
+    filter: dt_alias_exists("ambient-temp0") and CONFIG_NET_DRIVERS
     integration_platforms:
       - adi_eval_adin1110ebz
       - native_sim
