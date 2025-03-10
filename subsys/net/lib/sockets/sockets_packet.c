@@ -53,7 +53,7 @@ static int zpacket_socket(int family, int type, int proto)
 
 	if (proto == 0) {
 		if (type == SOCK_RAW) {
-			proto = IPPROTO_RAW;
+			proto = ETH_P_ALL;
 		}
 	} else {
 		/* For example in Linux, the protocol parameter can be given
@@ -492,8 +492,7 @@ static bool packet_is_supported(int family, int type, int proto)
 		proto = ntohs(proto);
 		return proto == ETH_P_ALL
 		  || proto == ETH_P_ECAT
-		  || proto == ETH_P_IEEE802154
-		  || proto == IPPROTO_RAW;
+		  || proto == ETH_P_IEEE802154;
 
 	case SOCK_DGRAM:
 		return proto > 0;

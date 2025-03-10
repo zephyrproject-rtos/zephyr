@@ -664,7 +664,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			return NET_DROP;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
-		if (proto != ETH_P_ALL && proto != IPPROTO_RAW) {
+		if (proto != ETH_P_ALL && proto != ETH_P_ECAT && proto != ETH_P_IEEE802154) {
 			return NET_DROP;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && pkt_family == AF_CAN) {
@@ -753,7 +753,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			 * check in this case.
 			 */
 			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
-				if (proto != ETH_P_ALL && proto != IPPROTO_RAW) {
+				if (proto != ETH_P_ALL && proto != ETH_P_ECAT && proto != ETH_P_IEEE802154) {
 					continue; /* wrong protocol */
 				}
 			} else {
