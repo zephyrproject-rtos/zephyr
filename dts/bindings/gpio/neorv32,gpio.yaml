@@ -1,6 +1,6 @@
 description: NEORV32 GPIO
 
-compatible: "neorv32-gpio"
+compatible: "neorv32,gpio"
 
 include: [gpio-controller.yaml, base.yaml]
 

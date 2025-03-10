@@ -1112,7 +1112,7 @@ Devicetree
     * :dtcompatible:`microchip,xec-espi`
     * :dtcompatible:`microchip,xec-i2c`
     * :dtcompatible:`microchip,xec-qmspi`
-    * :dtcompatible:`neorv32-machine-timer`
+    * :dtcompatible:`neorv32,machine-timer`
     * :dtcompatible:`nordic,nrf-ieee802154`
     * :dtcompatible:`nuclei,systimer`
     * :dtcompatible:`nuvoton,npcx-leakage-io`
