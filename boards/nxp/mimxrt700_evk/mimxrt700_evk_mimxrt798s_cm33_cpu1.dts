@@ -9,6 +9,7 @@
 #include <nxp/nxp_rt7xx_cm33_cpu1.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "mimxrt700_evk-pinctrl.dtsi"
+#include <freq.h>
 
 / {
 	model = "NXP MIMXRT700-EVK board";
@@ -17,6 +18,7 @@
 	aliases {
 		led0 = &red_led;
 		sw0 = &user_button_1;
+		ambient-temp0 = &p3t1755;
 	};
 
 	chosen {
@@ -79,4 +81,19 @@
 
 &gpio8 {
 	status = "okay";
+};
+
+&i3c3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_i3c3>;
+	pinctrl-names = "default";
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+
+	p3t1755: p3t1755@4800000236152a0090 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48 0x0236 0x152a0090>;
+		status = "okay";
+	};
 };
