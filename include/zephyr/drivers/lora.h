@@ -87,6 +87,12 @@ struct lora_modem_config {
 	/** Set to true for transmission, false for receiving */
 	bool tx;
 
+	/** Channel activity detection enable */
+	bool cad;
+
+	/** Maximum random delay in milliseconds before channel activity detection */
+	uint32_t cad_delay_max;
+
 	/**
 	 * Invert the In-Phase and Quadrature (IQ) signals. Normally this
 	 * should be set to false. In advanced use-cases where a
