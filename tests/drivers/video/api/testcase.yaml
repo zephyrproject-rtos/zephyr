@@ -1,8 +1,9 @@
-# Copyright (c) 2024 tinyVision.ai Inc.
+# Copyright (c) 2024-2025 tinyVision.ai Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 tests:
   drivers.video.api:
+    min_ram: 32
     tags:
       - drivers
       - video
