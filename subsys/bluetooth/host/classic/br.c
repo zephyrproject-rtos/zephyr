@@ -155,7 +155,7 @@ bool bt_br_update_sec_level(struct bt_conn *conn)
 
 	if (conn->br.link_key) {
 		if (conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED) {
-			if (conn->encrypt == 0x02) {
+			if (conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
 				conn->sec_level = BT_SECURITY_L4;
 			} else {
 				conn->sec_level = BT_SECURITY_L3;
