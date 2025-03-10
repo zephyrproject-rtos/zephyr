@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2024 Navimatix GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		pico-pit-controllers = <&rpi_pico_pit_controller 0>;
+	};
+};
+
+/ {
+	soc{
+		rpi_pico_pit_controller: rpi_pico_pit_controller {
+			status = "okay";
+			compatible = "raspberrypi,pico-pit";
+			clocks = <&clocks 0x5>;
+			interrupts = <0x4 0x3>;
+			interrupt-names = "PWM_IRQ_WRAP";
+			#pico-pit-controller-cells = <0>;
+
+			rpi_pico_pit_channel: rpi_pico_pit_channel {
+				status = "okay";
+				compatible = "raspberrypi,pico-pit-channel";
+				pwm_slice = <3>;
+
+				#pico-pit-channel-cells = <0>;
+			};
+			rpi_pico_pit_channel_2: rpi_pico_pit_channel_2 {
+				status = "okay";
+				compatible = "raspberrypi,pico-pit-channel";
+				pwm_slice = <4>;
+
+				#pico-pit-channel-cells = <0>;
+			};
+		};
+	};
+
+
+};
