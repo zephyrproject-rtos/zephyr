@@ -1,10 +1,11 @@
 # Copyright (c) 2017-2019 Linaro Limited
-# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MPS2
 	select ARM
 	select GPIO_MMIO32 if GPIO
+	select PINCTRL
 
 config SOC_MPS2_AN521
 	select CPU_CORTEX_M33
