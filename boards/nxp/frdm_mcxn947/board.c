@@ -84,7 +84,7 @@ __ramfunc static void enable_cache64(void)
 }
 #endif
 
-static int frdm_mcxn947_init(void)
+void board_early_init_hook(void)
 {
 	power_mode_od();
 
@@ -394,8 +394,4 @@ static int frdm_mcxn947_init(void)
 
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
-
-	return 0;
 }
-
-SYS_INIT(frdm_mcxn947_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);
