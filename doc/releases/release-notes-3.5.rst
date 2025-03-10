@@ -1022,7 +1022,7 @@ Bindings
     * The ``riscv,isa`` property used by RISC-V CPU bindings no longer has an
       ``enum`` value.
 
-    * :dtcompatible:`neorv32-cpu`:
+    * :dtcompatible:`neorv32,cpu`:
 
           * new property: ``mmu-type``
           * new property: ``riscv,isa``

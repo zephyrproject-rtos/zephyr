@@ -3,6 +3,6 @@
 
 description: NEORV32 RISC-V CPU
 
-compatible: "neorv32-cpu"
+compatible: "neorv32,cpu"
 
 include: riscv,cpus.yaml

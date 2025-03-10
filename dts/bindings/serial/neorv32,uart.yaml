@@ -1,6 +1,6 @@
 description: NEORV32 UART
 
-compatible: "neorv32-uart"
+compatible: "neorv32,uart"
 
 include: uart-controller.yaml
 
