@@ -6,7 +6,7 @@ tests:
     tags:
       - drivers
       - disk
-    build_only: true
+    harness: build
     platform_allow:
       - native_sim
       - native_sim/native/64

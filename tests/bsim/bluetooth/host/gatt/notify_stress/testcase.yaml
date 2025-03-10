@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.gatt.notify_stress:
-    build_only: true
     sysbuild: true
     tags:
       - bluetooth

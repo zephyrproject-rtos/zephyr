@@ -6,6 +6,6 @@ tests:
     tags:
       - drivers
       - regulator
-    build_only: true
+    harness: build
     platform_allow:
       - native_sim

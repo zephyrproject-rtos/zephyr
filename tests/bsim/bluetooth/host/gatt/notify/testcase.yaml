@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.gatt.notify:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:
