@@ -30,29 +30,7 @@ For more information about the STM32G03x SoC and the STM32G0316-DISCO board, see
 Supported Features
 ==================
 
-The Zephyr stm32g0316_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by the port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32g0316_disco/stm32g0316_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

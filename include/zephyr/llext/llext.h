@@ -354,18 +354,19 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
  * symbolic data such as a section, function, or object. These relocations
  * are architecture specific and each architecture supporting LLEXT must
  * implement this.
+ * Arguments sym_base_addr, sym_name can be computed from the sym parameter,
+ * but these parameters are provided redundantly to increase efficiency.
  *
+ * @param[in] ldr Extension loader
+ * @param[in] ext Extension being relocated refers to
  * @param[in] rel Relocation data provided by ELF
- * @param[in] loc Address of opcode to rewrite
- * @param[in] sym_base_addr Address of symbol referenced by relocation
- * @param[in] sym_name Name of symbol referenced by relocation
- * @param[in] load_bias `.text` load address
+ * @param[in] shdr Header of the ELF section currently being located
  * @retval 0 Success
  * @retval -ENOTSUP Unsupported relocation
  * @retval -ENOEXEC Invalid relocation
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
-			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias);
+int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr);
 
 /**
  * @brief Locates an ELF section in the file.

@@ -60,43 +60,7 @@ More information about STM32H747XIH6 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h745i_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| QSPI NOR  | on-chip    | off-chip flash                      |
-+-----------+------------+-------------------------------------+
-| FDCAN     | on-chip    | fdcan                               |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration per core can be found in the defconfig files:
-:zephyr_file:`boards/st/stm32h745i_disco/stm32h745i_disco_stm32h745xx_m7_defconfig` and
-:zephyr_file:`boards/st/stm32h745i_disco/stm32h745i_disco_stm32h745xx_m4_defconfig`
+.. zephyr:board-supported-hw::
 
 For more details please refer to `STM32H745-Disco UM`_.
 

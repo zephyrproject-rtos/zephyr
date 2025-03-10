@@ -815,7 +815,6 @@ static int udc_nrf_init(const struct device *dev)
 	IRQ_CONNECT(USBREGULATOR_IRQn,
 		    DT_IRQ(DT_INST(0, nordic_nrf_clock), priority),
 		    nrfx_isr, nrfx_usbreg_irq_handler, 0);
-	irq_enable(USBREGULATOR_IRQn);
 #endif
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
@@ -836,9 +835,6 @@ static int udc_nrf_shutdown(const struct device *dev)
 
 	nrfx_power_usbevt_disable();
 	nrfx_power_usbevt_uninit();
-#ifdef CONFIG_HAS_HW_NRF_USBREG
-	irq_disable(USBREGULATOR_IRQn);
-#endif
 
 	return 0;
 }

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32WB0 series Analog-to-Digital Converter
+description: STM32WB0 Analog-to-Digital Converter
 
 compatible: "st,stm32wb0-adc"
 

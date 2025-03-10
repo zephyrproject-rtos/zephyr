@@ -53,7 +53,7 @@ int arch_irq_is_enabled(unsigned int irq)
 uint32_t soc_intr_get_next_source(void)
 {
 	uint32_t status;
-	uint32_t source;
+	uint32_t source = IRQ_NA;
 
 	/* Status register for interrupt sources 0 ~ 31 */
 	status = REG_READ(INTMTX_CORE0_INT_STATUS_REG_0_REG) &
@@ -77,7 +77,9 @@ uint32_t soc_intr_get_next_source(void)
 	status = REG_READ(INTMTX_CORE0_INT_STATUS_REG_2_REG) &
 		esp_intr_get_enabled_intmask(2);
 
-	source = (__builtin_ffs(status) - 1 + ESP32C6_INTSTATUS_REG2_THRESHOLD);
+	if (status) {
+		source = (__builtin_ffs(status) - 1 + ESP32C6_INTSTATUS_REG2_THRESHOLD);
+	}
 
 ret:
 	return source;

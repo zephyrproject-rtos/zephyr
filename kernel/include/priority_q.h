@@ -10,8 +10,6 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/dlist.h>
 
-bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
-
 /* Dumb Scheduling */
 #if defined(CONFIG_SCHED_DUMB)
 #define _priq_run_init		z_priq_dumb_init
@@ -185,8 +183,11 @@ static ALWAYS_INLINE struct k_thread *z_priq_dumb_mask_best(sys_dlist_t *pq)
 }
 #endif /* CONFIG_SCHED_CPU_MASK */
 
+#if defined(CONFIG_SCHED_SCALABLE) || defined(CONFIG_WAITQ_SCALABLE)
 static ALWAYS_INLINE void z_priq_rb_init(struct _priq_rb *pq)
 {
+	bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
+
 	*pq = (struct _priq_rb) {
 		.tree = {
 			.lessthan_fn = z_priq_rb_lessthan,
@@ -244,6 +245,7 @@ static ALWAYS_INLINE struct k_thread *z_priq_rb_best(struct _priq_rb *pq)
 	}
 	return thread;
 }
+#endif
 
 struct prio_info {
 	uint8_t offset_prio;

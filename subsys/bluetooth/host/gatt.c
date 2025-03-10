@@ -720,7 +720,7 @@ static int db_hash_setup(struct gen_hash_state *state, uint8_t *key)
 		LOG_ERR("Unable to import the key for AES CMAC %d", ret);
 		return -EIO;
 	}
-	state->operation = psa_mac_operation_init();
+	memset(&state->operation, 0, sizeof(state->operation));
 
 	ret = psa_mac_sign_setup(&(state->operation), state->key, PSA_ALG_CMAC);
 	if (ret != PSA_SUCCESS) {
@@ -5261,10 +5261,18 @@ static int gatt_prepare_write(struct bt_conn *conn,
 			      struct bt_gatt_write_params *params)
 {
 	uint16_t len, req_len;
+	uint16_t mtu = bt_att_get_mtu(conn);
 
 	req_len = sizeof(struct bt_att_prepare_write_req);
 
-	len = bt_att_get_mtu(conn) - req_len - 1;
+	/** MTU size is bigger than the ATT_PREPARE_WRITE_REQ header (5 bytes),
+	 * unless there's no connection.
+	 */
+	if (mtu == 0) {
+		return -ENOTCONN;
+	}
+
+	len = mtu - req_len - 1;
 	len = MIN(params->length, len);
 	len += req_len;
 

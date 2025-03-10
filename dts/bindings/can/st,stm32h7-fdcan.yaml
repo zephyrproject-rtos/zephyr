@@ -1,4 +1,4 @@
-description: ST STM32H7 series FDCAN CAN FD controller
+description: STM32H7 series FDCAN CAN FD controller
 
 compatible: "st,stm32h7-fdcan"
 

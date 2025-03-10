@@ -75,41 +75,7 @@ Detailed hardware features for the EK-RA4M3 MCU can be found at `EK-RA4M3 - User
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr for EK-RA4M3 board:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock control        |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| COUNTER   | on-chip    | counter              |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| ENTROPY   | on-chip    | entropy              |
-+-----------+------------+----------------------+
-| DAC       | on-chip    | dac                  |
-+-----------+------------+----------------------+
-| USBFS     | on-chip    | udc                  |
-+-----------+------------+----------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************

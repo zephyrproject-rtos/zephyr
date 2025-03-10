@@ -423,5 +423,9 @@ valid_syscall_id:
 
 GTEXT(z_arm_cortex_r_svc)
 SECTION_FUNC(TEXT, z_arm_cortex_r_svc)
+    .cfi_sections .debug_frame
+    .cfi_startproc simple
+    .cfi_def_cfa 13, 0x0
     svc #_SVC_CALL_CONTEXT_SWITCH
     bx lr
+    .cfi_endproc

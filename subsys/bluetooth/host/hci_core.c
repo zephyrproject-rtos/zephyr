@@ -1,11 +1,13 @@
 /* hci_core.c - HCI core Bluetooth handling */
 
 /*
- * Copyright (c) 2017-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <zephyr/autoconf.h>
 
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
@@ -33,10 +35,11 @@
 #include <zephyr/bluetooth/testing.h>
 #include <zephyr/drivers/bluetooth.h>
 
+#include "common/hci_common_internal.h"
 #include "common/bt_str.h"
+#include "common/rpa.h"
 #include "common/assert.h"
 
-#include "common/rpa.h"
 #include "keys.h"
 #include "monitor.h"
 #include "hci_core.h"
@@ -126,7 +129,7 @@ struct cmd_data {
 	struct k_sem *sync;
 };
 
-static struct cmd_data cmd_data[CONFIG_BT_BUF_CMD_TX_COUNT];
+static struct cmd_data cmd_data[BT_BUF_CMD_TX_COUNT];
 
 #define cmd(buf) (&cmd_data[net_buf_id(buf)])
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
@@ -156,7 +159,7 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
  * command complete or command status.
  */
 #define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
-NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT,
 			  CMD_BUF_SIZE, sizeof(struct bt_buf_data), NULL);
 
 struct event_handler {
@@ -2001,7 +2004,7 @@ static int set_flow_control(void)
 	hbs = net_buf_add(buf, sizeof(*hbs));
 	(void)memset(hbs, 0, sizeof(*hbs));
 	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_RX_SIZE);
-	hbs->acl_pkts = sys_cpu_to_le16(BT_BUF_ACL_RX_COUNT);
+	hbs->acl_pkts = sys_cpu_to_le16(BT_BUF_HCI_ACL_RX_COUNT);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);
 	if (err) {
@@ -4507,6 +4510,29 @@ int bt_set_appearance(uint16_t appearance)
 	return 0;
 }
 #endif
+
+int bt_le_get_local_features(struct bt_le_local_features *remote_info)
+{
+	if (remote_info == NULL) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	memcpy(remote_info->features, bt_dev.le.features, sizeof(remote_info->features));
+	remote_info->states = bt_dev.le.states;
+	remote_info->acl_mtu = COND_CODE_1(CONFIG_BT_CONN, (bt_dev.le.acl_mtu), (0));
+	remote_info->acl_pkts = COND_CODE_1(CONFIG_BT_CONN, (bt_dev.le.acl_pkts.limit), (0));
+	remote_info->iso_mtu = COND_CODE_1(CONFIG_BT_ISO, (bt_dev.le.iso_mtu), (0));
+	remote_info->iso_pkts = COND_CODE_1(CONFIG_BT_ISO, (bt_dev.le.iso_limit), (0));
+	remote_info->rl_size = COND_CODE_1(CONFIG_BT_SMP, (bt_dev.le.rl_size), (0));
+	remote_info->max_adv_data_len =
+		COND_CODE_1(CONFIG_BT_BROADCASTER, (bt_dev.le.max_adv_data_len), (0));
+
+	return 0;
+}
 
 bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr)
 {

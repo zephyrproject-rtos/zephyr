@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    STM32 XSPI device representation. Enabling a stm32 xspi node in a board
+    STM32 XSPI Controller.
 
 compatible: "st,stm32-xspi"
 

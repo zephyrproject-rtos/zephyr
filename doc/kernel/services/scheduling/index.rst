@@ -13,8 +13,10 @@ The scheduler determines which thread is allowed to execute
 at any point in time; this thread is known as the **current thread**.
 
 There are various points in time when the scheduler is given an
-opportunity to change the identity of the current thread.  These points
-are called **reschedule points**. Some potential reschedule points are:
+opportunity to change the identity of the current thread, meaning
+when the scheduler switches the CPU's execution from one thread
+to another. These points are called **reschedule points**.
+Some potential reschedule points are:
 
 - transition of a thread from running state to a suspended or waiting
   state, for example by :c:func:`k_sem_take` or :c:func:`k_sleep`.

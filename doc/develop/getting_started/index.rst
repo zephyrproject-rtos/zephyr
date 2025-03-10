@@ -160,9 +160,9 @@ The current minimum required version for the main dependencies are:
 
          Therefore, we don't recommend using WSL when getting started.
 
-      These instructions must be run in a ``cmd.exe`` command prompt terminal window.
       In modern version of Windows (10 and later) it is recommended to install the Windows Terminal
-      application from the Microsoft Store. The required commands differ on PowerShell.
+      application from the Microsoft Store. Instructions are provided for a ``cmd.exe`` or
+      PowerShell command prompts.
 
       These instructions rely on `Chocolatey`_. If Chocolatey isn't an option,
       you can install dependencies from their respective websites and ensure
@@ -175,8 +175,9 @@ The current minimum required version for the main dependencies are:
 
       #. `Install chocolatey`_.
 
-      #. Open a ``cmd.exe`` terminal window as **Administrator**. To do so, press the Windows key,
-         type ``cmd.exe``, right-click the :guilabel:`Command Prompt` search result, and choose
+      #. Open a ``cmd.exe`` or PowerShell terminal window as **Administrator**.
+         To do so, press the Windows key, type ``cmd.exe`` or PowerShell, right-click the
+         :guilabel:`Command Prompt` or :guilabel:`PowerShell` search result, and choose
          :guilabel:`Run as Administrator`.
 
       #. Disable global confirmation to avoid having to confirm the
@@ -191,7 +192,7 @@ The current minimum required version for the main dependencies are:
          .. code-block:: bat
 
             choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-            choco install ninja gperf python311 git dtc-msys2 wget 7zip
+            choco install ninja gperf python311 git dtc-msys2 wget 7zip strawberryperl
 
          .. warning::
 
@@ -333,20 +334,33 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
    .. group-tab:: Windows
 
-      #. Open a ``cmd.exe`` terminal window **as a regular user**
+      #. Open a ``cmd.exe`` or PowerShell terminal window **as a regular user**
 
       #. Create a new virtual environment:
 
-         .. code-block:: bat
+         .. tabs::
 
-            cd %HOMEPATH%
-            python -m venv zephyrproject\.venv
+            .. code-tab:: bat
+
+               cd %HOMEPATH%
+               python -m venv zephyrproject\.venv
+
+            .. code-tab:: powershell
+
+               cd $Env:HOMEPATH
+               python -m venv zephyrproject\.venv
 
       #. Activate the virtual environment:
 
-         .. code-block:: bat
+         .. tabs::
 
-            zephyrproject\.venv\Scripts\activate.bat
+            .. code-tab:: bat
+
+               zephyrproject\.venv\Scripts\activate.bat
+
+            .. code-tab:: powershell
+
+               zephyrproject\.venv\Scripts\Activate.ps1
 
          Once activated your shell will be prefixed with ``(.venv)``. The
          virtual environment can be deactivated at any time by running
@@ -434,10 +448,17 @@ that are used to emulate, flash and debug Zephyr applications.
 
       Install the Zephyr SDK using the ``west sdk install``.
 
-         .. code-block:: bat
+         .. tabs::
 
-            cd %HOMEPATH%\zephyrproject\zephyr
-            west sdk install
+            .. code-tab:: bat
+
+               cd %HOMEPATH%\zephyrproject\zephyr
+               west sdk install
+
+            .. code-tab:: powershell
+
+               cd $Env:HOMEPATH\zephyrproject\zephyr
+               west sdk install
 
       .. tip::
 
@@ -485,10 +506,17 @@ Build the :zephyr:code-sample:`blinky` with :ref:`west build <west-building>`, c
 
    .. group-tab:: Windows
 
-      .. code-block:: bat
+      .. tabs::
 
-         cd %HOMEPATH%\zephyrproject\zephyr
-         west build -p always -b <your-board-name> samples\basic\blinky
+         .. code-tab:: bat
+
+            cd %HOMEPATH%\zephyrproject\zephyr
+            west build -p always -b <your-board-name> samples\basic\blinky
+
+         .. code-tab:: powershell
+
+            cd $Env:HOMEPATH\zephyrproject\zephyr
+            west build -p always -b <your-board-name> samples\basic\blinky
 
 The ``-p always`` option forces a pristine build, and is recommended for new
 users. Users may also use the ``-p auto`` option, which will use

@@ -20,8 +20,6 @@ LOG_MODULE_REGISTER(gpio_max14916);
 #include "gpio_max14916.h"
 #include "gpio_max149x6.h"
 
-#define DT_DRV_COMPAT adi_max14916_gpio
-
 static int gpio_max14916_diag_chan_get(const struct device *dev);
 
 static int max14916_pars_spi_diag(const struct device *dev, uint8_t *rx_diag_buff, uint8_t rw)
@@ -367,8 +365,8 @@ static DEVICE_API(gpio, gpio_max14916_api) = {
 	.port_toggle_bits = gpio_max14916_port_toggle_bits,
 };
 
-#define GPIO_MAX14906_DEVICE(id)                                                                   \
-	static const struct max14916_config max14916_##id##_cfg = {                                \
+#define GPIO_MAX14906_DEVICE(id, model)                                                            \
+	static const struct max14916_config max##model##_##id##_cfg = {                            \
 		.spi = SPI_DT_SPEC_INST_GET(id, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U),        \
 		.ready_gpio = GPIO_DT_SPEC_INST_GET(id, drdy_gpios),                               \
 		.fault_gpio = GPIO_DT_SPEC_INST_GET(id, fault_gpios),                              \
@@ -391,10 +389,16 @@ static DEVICE_API(gpio, gpio_max14916_api) = {
 		.spi_addr = DT_INST_PROP(id, spi_addr),                                            \
 	};                                                                                         \
                                                                                                    \
-	static struct max14916_data max14916_##id##_data;                                          \
+	static struct max14916_data max##model##_##id##_data;                                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(id, &gpio_max14916_init, NULL, &max14916_##id##_data,                \
-			      &max14916_##id##_cfg, POST_KERNEL,                                   \
+	DEVICE_DT_INST_DEFINE(id, &gpio_max14916_init, NULL, &max##model##_##id##_data,            \
+			      &max##model##_##id##_cfg, POST_KERNEL,                               \
 			      CONFIG_GPIO_MAX14916_INIT_PRIORITY, &gpio_max14916_api);
 
-DT_INST_FOREACH_STATUS_OKAY(GPIO_MAX14906_DEVICE)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_max14915_gpio
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MAX14906_DEVICE, 14915)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_max14916_gpio
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MAX14906_DEVICE, 14916)

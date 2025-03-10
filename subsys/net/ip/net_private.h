@@ -203,7 +203,8 @@ static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt,
 static inline void net_tc_tx_init(void) { }
 static inline void net_tc_rx_init(void) { }
 #endif
-extern enum net_verdict net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt);
+enum net_verdict net_tc_try_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt,
+					       k_timeout_t timeout);
 extern enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt);
 extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
 

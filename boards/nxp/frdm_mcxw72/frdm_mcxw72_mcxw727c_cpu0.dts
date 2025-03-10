@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -54,6 +54,9 @@
 	status = "okay";
 };
 
+&gpiob {
+	status = "okay";
+};
 
 &gpioc {
 	status = "okay";
@@ -80,11 +83,11 @@
 		#size-cells = <1>;
 
 		code_partition: partition@0 {
-			reg = <0x0 DT_SIZE_K(67)>;
+			reg = <0x0 DT_SIZE_K(2032)>;
 		};
 
-		storage_partition: partition@10c00 {
-			reg = <0x10c00 DT_SIZE_K(1981)>;
+		storage_partition: partition@1FC000 {
+			reg = <0x1FC000 DT_SIZE_K(16)>;
 		};
 	};
 };
@@ -133,4 +136,10 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+
+	accelerometer: accelerometer@19 {
+		status = "okay";
+		compatible = "nxp,fxls8974";
+		reg = <0x19>;
+	};
 };

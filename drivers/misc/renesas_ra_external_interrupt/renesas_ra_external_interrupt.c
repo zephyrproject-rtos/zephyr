@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -152,7 +152,7 @@ static int gpio_ra_interrupt_init(const struct device *dev)
 	static int gpio_ra_irq_init##index(const struct device *dev)                               \
 	{                                                                                          \
 		R_ICU->IELSR[DT_INST_IRQ(index, irq)] =                                            \
-			UTIL_CAT(ELC_EVENT_ICU_IRQ, DT_INST_PROP(index, channel));                 \
+			BSP_PRV_IELS_ENUM(UTIL_CAT(EVENT_ICU_IRQ, DT_INST_PROP(index, channel)));  \
 		IRQ_CONNECT(DT_INST_IRQ(index, irq), DT_INST_IRQ(index, priority), gpio_ra_isr,    \
 			    DEVICE_DT_INST_GET(index), 0);                                         \
 		return gpio_ra_interrupt_init(dev);                                                \

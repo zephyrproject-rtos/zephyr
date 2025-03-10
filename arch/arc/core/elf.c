@@ -6,6 +6,7 @@
 
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/llext_internal.h>
 #include <zephyr/llext/loader.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
@@ -31,12 +32,32 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
  * https://github.com/foss-for-synopsys-dwc-arc-processors/arc-ABI-manual/blob/master/ARCv2_ABI.pdf
  * https://github.com/zephyrproject-rtos/binutils-gdb
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc, uintptr_t sym_base_addr, const char *sym_name,
-		      uintptr_t load_bias)
+int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr)
 {
 	int ret = 0;
-	uint32_t insn = UNALIGNED_GET((uint32_t *)loc);
 	uint32_t value;
+	const uintptr_t loc = llext_get_reloc_instruction_location(ldr, ext, shdr->sh_info, rel);
+	uint32_t insn = UNALIGNED_GET((uint32_t *)loc);
+	elf_sym_t sym;
+	uintptr_t sym_base_addr;
+	const char *sym_name;
+
+	ret = llext_read_symbol(ldr, ext, rel, &sym);
+
+	if (ret != 0) {
+		LOG_ERR("Could not read symbol from binary!");
+		return ret;
+	}
+
+	sym_name = llext_symbol_name(ldr, ext, &sym);
+
+	ret = llext_lookup_symbol(ldr, ext, &sym_base_addr, rel, &sym, sym_name, shdr);
+
+	if (ret != 0) {
+		LOG_ERR("Could not find symbol %s!", sym_name);
+		return ret;
+	}
 
 	sym_base_addr += rel->r_addend;
 

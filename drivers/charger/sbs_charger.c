@@ -17,7 +17,7 @@ struct sbs_charger_config {
 	struct i2c_dt_spec i2c;
 };
 
-LOG_MODULE_REGISTER(sbs_charger);
+LOG_MODULE_REGISTER(sbs_charger, CONFIG_CHARGER_LOG_LEVEL);
 
 static int sbs_cmd_reg_read(const struct device *dev, uint8_t reg_addr, uint16_t *val)
 {

@@ -76,6 +76,30 @@ axp192@4 {
 	};
 };
 
+axp2101@7 {
+	compatible = "x-powers,axp2101";
+	reg = <0x7>;
+
+	regulators {
+		compatible = "x-powers,axp2101-regulator";
+
+		DCDC1 {};
+		DCDC2 {};
+		DCDC3 {};
+		DCDC4 {};
+		DCDC5 {};
+		ALDO1 {};
+		ALDO2 {};
+		ALDO3 {};
+		ALDO4 {};
+		BLDO1 {};
+		BLDO2 {};
+		CPUSLDO {};
+		DLDO1 {};
+		DLDO2 {};
+	};
+};
+
 max20335@5 {
 	compatible = "maxim,max20335";
 	reg = <0x5>;

@@ -5,12 +5,10 @@ tests:
   sample.display.sdl:
     build_only: true
     platform_allow:
-      - native_posix/native/64
       - native_sim/native/64
     tags: display
   sample.display.dummy:
     platform_allow:
-      - native_posix
       - native_sim
     extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
     extra_configs:
