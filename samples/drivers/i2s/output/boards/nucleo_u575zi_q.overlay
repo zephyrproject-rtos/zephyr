@@ -1,0 +1,106 @@
+/ {
+	aliases {
+		sai1a = &sai1_a;
+		sai1b = &sai1_b;
+	};
+
+	soc {
+		pinctrl: pin-controller@42020000 {
+			/* SAI1_A */
+			/omit-if-no-ref/ sai1_mclk_a_pe2: sai1_mclk_a_pe2 {
+				pinmux = <STM32_PINMUX('E', 2, AF13)>;
+				slew-rate = "very-high-speed";
+			};
+			/omit-if-no-ref/ sai1_sd_a_pe6: sai1_sd_a_pe6 {
+				pinmux = <STM32_PINMUX('E', 6, AF13)>;
+				slew-rate = "very-high-speed";
+			};
+			/omit-if-no-ref/ sai1_fs_a_pe4: sai1_fs_a_pe4 {
+				pinmux = <STM32_PINMUX('E', 4, AF13)>;
+				slew-rate = "very-high-speed";
+			};
+			/omit-if-no-ref/ sai1_sck_a_pe5: sai1_sck_a_pe5 {
+				pinmux = <STM32_PINMUX('E', 5, AF13)>;
+				slew-rate = "very-high-speed";
+			};
+
+			/* SAI1_B */
+			/omit-if-no-ref/ sai1_sd_b_pe3: sai1_sd_b_pe3 {
+				pinmux = <STM32_PINMUX('E', 3, AF13)>;
+				slew-rate = "very-high-speed";
+			};
+			/omit-if-no-ref/ sai1_sck_b_pf8: sai1_sck_b_pf8 {
+				pinmux = <STM32_PINMUX('F', 8, AF13)>;
+				slew-rate = "very-high-speed";
+			};
+			/omit-if-no-ref/ sai1_fs_b_pf9: sai1_fs_b_pf9 {
+				pinmux = <STM32_PINMUX('F', 9, AF13)>;
+				slew-rate = "very-high-speed";
+			};
+			/omit-if-no-ref/ sai1_mclk_b_pf7: sai1_mclk_b_pf7 {
+				pinmux = <STM32_PINMUX('F', 7, AF13)>;
+				slew-rate = "very-high-speed";
+			};
+
+		};
+
+		sai1_a: sai1_a@40015404 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015404 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 21U)>,
+			         <&rcc STM32_SRC_PLL1_P SAI1_SEL(2)>;
+			//interrupts = <90 0>;
+			status = "disabled";
+		};
+
+		/* SAI1_B - Not Tested */
+		sai1_b: sai1_b@40015424 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015424 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 21U)>,
+			         <&rcc STM32_SRC_PLL1_P SAI1_SEL(2)>;
+			//interrupts = <91 0>;
+			status = "disabled";
+		};
+
+	};
+
+};
+
+&sai1_a {
+	pinctrl-0 = <&sai1_mclk_a_pe2 &sai1_sd_a_pe6
+				&sai1_fs_a_pe4 &sai1_sck_a_pe5>;
+	pinctrl-names = "default";
+	status = "okay";
+	dmas = <&gpdma1 1 36 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH | STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS)>;
+	dma-names = "tx";
+	mck-enabled;
+	no-divider;
+};
+
+&sai1_b {
+	pinctrl-0 = <&sai1_sd_b_pe3 &sai1_sck_b_pf8 &sai1_fs_b_pf9 &sai1_mclk_b_pf7>;
+	pinctrl-names = "default";
+	status = "okay";
+	dmas = <&gpdma1 0 37 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH | STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS)>;
+	dma-names = "tx";
+	mck-enabled;
+	no-divider;
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&pll1 {
+	div-p = <7>;
+	mul-n = <79>;
+};
+
+&dac1 {
+	status = "disabled";
+};
