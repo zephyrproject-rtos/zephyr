@@ -655,6 +655,18 @@ ZTEST(util, test_IS_SHIFTED_BIT_MASK)
 	zassert_true(IS_SHIFTED_BIT_MASK(0x8000000000000000ULL, 63));
 }
 
+ZTEST(util, test_TOGGLE_BIT)
+{
+	uint32_t var_toggle_bit_14 = 0x11004000UL;
+	uint32_t var_toggle_bit_31 = 0x80000111UL;
+
+	zassert_equal(TOGGLE_BIT(var_toggle_bit_14, 14), 0x11000000UL);
+	zassert_equal(TOGGLE_BIT(var_toggle_bit_14, 14), 0x11004000UL);
+
+	zassert_equal(TOGGLE_BIT(var_toggle_bit_31, 31), 0x00000111UL);
+	zassert_equal(TOGGLE_BIT(var_toggle_bit_31, 31), 0x80000111UL);
+}
+
 ZTEST(util, test_DIV_ROUND_UP)
 {
 	zassert_equal(DIV_ROUND_UP(0, 1), 0);
