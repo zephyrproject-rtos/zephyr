@@ -163,13 +163,14 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
-			"addr 0x%zx, size %zd, link %d, info %d",
+			"addr 0x%zx, align 0x%zx, size %zd, link %d, info %d",
 			i,
 			(size_t)shdr->sh_offset,
 			shdr->sh_name,
 			shdr->sh_type,
 			(size_t)shdr->sh_flags,
 			(size_t)shdr->sh_addr,
+			(size_t)shdr->sh_addralign,
 			(size_t)shdr->sh_size,
 			shdr->sh_link,
 			shdr->sh_info);
@@ -208,6 +209,15 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 
 	return 0;
 }
+
+/* First (bottom) and last (top) entries of a region, inclusive, for a specific field. */
+#define REGION_BOT(reg, field) (size_t)(reg->field + reg->sh_info)
+#define REGION_TOP(reg, field) (size_t)(reg->field + reg->sh_size - 1)
+
+/* Check if two regions x and y have any overlap on a given field. Any shared value counts. */
+#define REGIONS_OVERLAP_ON(x, y, f) \
+	((REGION_BOT(x, f) <= REGION_BOT(y, f) && REGION_TOP(x, f) >= REGION_BOT(y, f)) || \
+	 (REGION_BOT(y, f) <= REGION_BOT(x, f) && REGION_TOP(y, f) >= REGION_BOT(x, f)))
 
 /*
  * Maps the ELF sections into regions according to their usage flags,
@@ -301,68 +311,109 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 
 		if (region->sh_type == SHT_NULL) {
 			/* First section of this type, copy all info to the
-			 * region descriptor.
+			 * region descriptor. Clear the 'sh_info' field, not
+			 * used by ELF spec on SHF_ALLOC sections, to store
+			 * the extra bytes added at the start of the region
+			 * for alignment corrections.
 			 */
 			memcpy(region, shdr, sizeof(*region));
-		} else {
-			/* Make sure this section is compatible with the region */
-			if ((shdr->sh_flags & SHF_BASIC_TYPE_MASK) !=
-			    (region->sh_flags & SHF_BASIC_TYPE_MASK)) {
-				LOG_ERR("Unsupported section flags %#x / %#x for %s (region %d)",
-					(uint32_t)shdr->sh_flags, (uint32_t)region->sh_flags,
+			region->sh_info = 0;
+			continue;
+		}
+
+		/* Make sure this section is compatible with the existing region */
+		if ((shdr->sh_flags & SHF_BASIC_TYPE_MASK) !=
+		    (region->sh_flags & SHF_BASIC_TYPE_MASK)) {
+			LOG_ERR("Unsupported section flags %#x / %#x for %s (region %d)",
+				(uint32_t)shdr->sh_flags, (uint32_t)region->sh_flags,
+				name, mem_idx);
+			return -ENOEXEC;
+		}
+
+		/* Check if this region type is extendable */
+		switch (mem_idx) {
+		case LLEXT_MEM_BSS:
+			/* SHT_NOBITS sections cannot be merged properly:
+			 * as they use no space in the file, the logic
+			 * below does not work; they must be treated as
+			 * independent entities.
+			 */
+			LOG_ERR("Multiple SHT_NOBITS sections are not supported");
+			return -ENOTSUP;
+		case LLEXT_MEM_PREINIT:
+		case LLEXT_MEM_INIT:
+		case LLEXT_MEM_FINI:
+			/* These regions are not extendable and must be
+			 * referenced at most once in the ELF file.
+			 */
+			LOG_ERR("Region %d redefined", mem_idx);
+			return -ENOEXEC;
+		default:
+			break;
+		}
+
+		if (ldr->hdr.e_type == ET_DYN) {
+			/* In shared objects, sh_addr is the VMA.
+			 * Before merging this section in the region,
+			 * make sure the delta in VMAs matches that of
+			 * file offsets.
+			 */
+			if (shdr->sh_addr - region->sh_addr !=
+			    shdr->sh_offset - region->sh_offset) {
+				LOG_ERR("Incompatible section addresses for %s (region %d)",
 					name, mem_idx);
 				return -ENOEXEC;
 			}
+		}
 
-			/* Check if this region type is extendable */
-			switch (mem_idx) {
-			case LLEXT_MEM_BSS:
-				/* SHT_NOBITS sections cannot be merged properly:
-				 * as they use no space in the file, the logic
-				 * below does not work; they must be treated as
-				 * independent entities.
-				 */
-				LOG_ERR("Multiple SHT_NOBITS sections are not supported");
-				return -ENOTSUP;
-			case LLEXT_MEM_PREINIT:
-			case LLEXT_MEM_INIT:
-			case LLEXT_MEM_FINI:
-				/* These regions are not extendable and must be
-				 * referenced at most once in the ELF file.
-				 */
-				LOG_ERR("Region %d redefined", mem_idx);
-				return -ENOEXEC;
-			default:
-				break;
-			}
+		/*
+		 * Extend the current region to include the new section
+		 * (overlaps are detected later)
+		 */
+		size_t address = MIN(region->sh_addr, shdr->sh_addr);
+		size_t bot_ofs = MIN(region->sh_offset, shdr->sh_offset);
+		size_t top_ofs = MAX(region->sh_offset + region->sh_size,
+				     shdr->sh_offset + shdr->sh_size);
+
+		if (shdr->sh_addralign > region->sh_addralign) {
+			/* This section uses a larger alignment value than what
+			 * is currently used by the region. Make sure its final
+			 * position in memory is correct by adjusting the start
+			 * of the region, if needed.
+			 *
+			 * For example, in such a situation:
+			 *
+			 * current region: ofs  0x24, size 0xdc, align  0x4
+			 *    new section: ofs 0x100, size 0x20, align 0x10
+			 *
+			 * an aligned allocation would result in the section
+			 * starting at bot_ofs + 0xdc, which would not satisfy
+			 * the original constraint. Rounding the region start
+			 * address 4 bytes down will fix the issue, at the cost
+			 * of possibly making the region "overlap" with others.
+			 * This extra offset is stored in the spare sh_info
+			 * field to be available for further adjustments.
+			 */
+			size_t prepad = bot_ofs - ROUND_DOWN(bot_ofs, shdr->sh_addralign);
 
 			if (ldr->hdr.e_type == ET_DYN) {
-				/* In shared objects, sh_addr is the VMA.
-				 * Before merging this section in the region,
-				 * make sure the delta in VMAs matches that of
-				 * file offsets.
-				 */
-				if (shdr->sh_addr - region->sh_addr !=
-				    shdr->sh_offset - region->sh_offset) {
-					LOG_ERR("Incompatible section addresses "
-						"for %s (region %d)", name, mem_idx);
+				/* Only shared files populate sh_addr fields */
+				if (prepad > address) {
+					LOG_ERR("Bad section alignment for %s (region %d)",
+						name, mem_idx);
 					return -ENOEXEC;
 				}
+
+				address -= prepad;
 			}
-
-			/*
-			 * Extend the current region to include the new section
-			 * (overlaps are detected later)
-			 */
-			size_t address = MIN(region->sh_addr, shdr->sh_addr);
-			size_t bot_ofs = MIN(region->sh_offset, shdr->sh_offset);
-			size_t top_ofs = MAX(region->sh_offset + region->sh_size,
-					     shdr->sh_offset + shdr->sh_size);
-
-			region->sh_addr = address;
-			region->sh_offset = bot_ofs;
-			region->sh_size = top_ofs - bot_ofs;
+			bot_ofs -= prepad;
+			region->sh_info = prepad; /* see above comments on sh_info */
+			region->sh_addralign = shdr->sh_addralign;
 		}
+
+		region->sh_addr = address;
+		region->sh_offset = bot_ofs;
+		region->sh_size = top_ofs - bot_ofs;
 	}
 
 	/*
@@ -403,14 +454,11 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				/*
 				 * Test regions that have VMA ranges for overlaps
 				 */
-				if ((x->sh_addr <= y->sh_addr &&
-				     x->sh_addr + x->sh_size > y->sh_addr) ||
-				    (y->sh_addr <= x->sh_addr &&
-				     y->sh_addr + y->sh_size > x->sh_addr)) {
-					LOG_ERR("Region %d VMA range (0x%zx +%zd) "
-						"overlaps with %d (0x%zx +%zd)",
-						i, (size_t)x->sh_addr, (size_t)x->sh_size,
-						j, (size_t)y->sh_addr, (size_t)y->sh_size);
+				if (REGIONS_OVERLAP_ON(x, y, sh_addr)) {
+					LOG_ERR("Region %d VMA range (0x%zx-0x%zx) "
+						"overlaps with %d (0x%zx-0x%zx)",
+						i, REGION_BOT(x, sh_addr), REGION_TOP(x, sh_addr),
+						j, REGION_BOT(y, sh_addr), REGION_TOP(y, sh_addr));
 					return -ENOEXEC;
 				}
 			}
@@ -424,14 +472,11 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				continue;
 			}
 
-			if ((x->sh_offset <= y->sh_offset &&
-			     x->sh_offset + x->sh_size > y->sh_offset) ||
-			    (y->sh_offset <= x->sh_offset &&
-			     y->sh_offset + y->sh_size > x->sh_offset)) {
-				LOG_ERR("Region %d ELF file range (0x%zx +%zd) "
-					"overlaps with %d (0x%zx +%zd)",
-					i, (size_t)x->sh_offset, (size_t)x->sh_size,
-					j, (size_t)y->sh_offset, (size_t)y->sh_size);
+			if (REGIONS_OVERLAP_ON(x, y, sh_offset)) {
+				LOG_ERR("Region %d ELF file range (0x%zx-0x%zx) "
+					"overlaps with %d (0x%zx-0x%zx)",
+					i, REGION_BOT(x, sh_offset), REGION_TOP(x, sh_offset),
+					j, REGION_BOT(y, sh_offset), REGION_TOP(y, sh_offset));
 				return -ENOEXEC;
 			}
 		}
@@ -554,7 +599,7 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext,
 		 */
 		const char *name = NULL;
 
-		if (ldr_parm && ldr_parm->pre_located) {
+		if (ldr_parm->pre_located) {
 			ssize_t name_offset = llext_file_offset(ldr, (uintptr_t)sym->name);
 
 			if (name_offset > 0) {
@@ -700,7 +745,7 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	LOG_DBG("Allocate and copy strings...");
-	ret = llext_copy_strings(ldr, ext);
+	ret = llext_copy_strings(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to copy ELF string sections, ret %d", ret);
 		goto out;
@@ -764,7 +809,7 @@ out:
 	 * Note that this exploits the fact that freeing a NULL pointer has no effect.
 	 */
 
-	if (ret != 0 || !ldr_parm || !ldr_parm->keep_section_info) {
+	if (ret != 0 || !ldr_parm->keep_section_info) {
 		llext_free_inspection_data(ldr, ext);
 	}
 
