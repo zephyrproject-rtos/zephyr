@@ -38,7 +38,6 @@
 #include <zephyr/sys/check.h>
 
 #include "../host/conn_internal.h"
-#include "../host/hci_core.h"
 #include "../host/keys.h"
 
 #include "common/bt_str.h"
@@ -464,7 +463,7 @@ static void csip_security_changed(struct bt_conn *conn, bt_security_t level,
 		return;
 	}
 
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (!bt_le_bond_exists(conn->id, &conn->le.dst)) {
 		return;
 	}
 
@@ -521,7 +520,7 @@ static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	LOG_DBG("Disconnected: %s (reason %u)", bt_addr_le_str(bt_conn_get_dst(conn)), reason);
 
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (!bt_le_bond_exists(conn->id, &conn->le.dst)) {
 		for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 			handle_csip_disconnect(&svc_insts[i], conn);
 		}
