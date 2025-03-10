@@ -1429,6 +1429,7 @@ static int mod_sub_va_add(const struct bt_mesh_model *model,
 		/* Tried to add existing subscription */
 		status = STATUS_SUCCESS;
 		(void)bt_mesh_va_del(va->uuid);
+		sub_addr = va->addr;
 		goto send_status;
 	}
 
