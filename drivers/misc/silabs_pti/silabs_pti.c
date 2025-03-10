@@ -6,7 +6,7 @@
 
 #include <zephyr/drivers/pinctrl.h>
 
-#include "rail.h"
+#include <rail.h>
 
 #define DT_DRV_COMPAT silabs_pti
 
