@@ -388,27 +388,6 @@ struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
 	return buf;
 }
 
-#if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *net_buf_get_debug(struct k_fifo *fifo, k_timeout_t timeout,
-				  const char *func, int line)
-#else
-struct net_buf *net_buf_get(struct k_fifo *fifo, k_timeout_t timeout)
-#endif
-{
-	struct net_buf *buf;
-
-	NET_BUF_DBG("%s():%d: fifo %p", func, line, fifo);
-
-	buf = k_fifo_get(fifo, timeout);
-	if (!buf) {
-		return NULL;
-	}
-
-	NET_BUF_DBG("%s():%d: buf %p fifo %p", func, line, buf, fifo);
-
-	return buf;
-}
-
 static struct k_spinlock net_buf_slist_lock;
 
 void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf)
@@ -437,14 +416,6 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list)
 	k_spin_unlock(&net_buf_slist_lock, key);
 
 	return buf;
-}
-
-void net_buf_put(struct k_fifo *fifo, struct net_buf *buf)
-{
-	__ASSERT_NO_MSG(fifo);
-	__ASSERT_NO_MSG(buf);
-
-	k_fifo_put(fifo, buf);
 }
 
 #if defined(CONFIG_NET_BUF_LOG)
