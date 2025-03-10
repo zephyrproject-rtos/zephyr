@@ -122,6 +122,14 @@ static inline void ethernet_update_length(struct net_if *iface,
 					  struct net_pkt *pkt)
 {
 	uint16_t len;
+#ifdef CONFIG_NET_VLAN
+	const uint16_t min_len =
+		NET_ETH_MINIMAL_FRAME_SIZE - (net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC
+						      ? sizeof(struct net_eth_vlan_hdr)
+						      : sizeof(struct net_eth_hdr));
+#else
+	const uint16_t min_len = NET_ETH_MINIMAL_FRAME_SIZE - sizeof(struct net_eth_hdr);
+#endif
 
 	/* Let's check IP payload's length. If it's smaller than 46 bytes,
 	 * i.e. smaller than minimal Ethernet frame size minus ethernet
@@ -131,11 +139,13 @@ static inline void ethernet_update_length(struct net_if *iface,
 
 	if (net_pkt_family(pkt) == AF_INET) {
 		len = ntohs(NET_IPV4_HDR(pkt)->len);
-	} else {
+	} else if (net_pkt_family(pkt) == AF_INET6) {
 		len = ntohs(NET_IPV6_HDR(pkt)->len) + NET_IPV6H_LEN;
+	} else {
+		return;
 	}
 
-	if (len < NET_ETH_MINIMAL_FRAME_SIZE - sizeof(struct net_eth_hdr)) {
+	if (len < min_len) {
 		struct net_buf *frag;
 
 		for (frag = pkt->frags; frag; frag = frag->frags) {
