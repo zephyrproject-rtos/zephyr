@@ -46,6 +46,8 @@ enum display_pixel_format {
 	PIXEL_FORMAT_ARGB_8888		= BIT(3), /**< 32-bit ARGB */
 	PIXEL_FORMAT_RGB_565		= BIT(4), /**< 16-bit RGB */
 	PIXEL_FORMAT_BGR_565		= BIT(5), /**< 16-bit BGR */
+	PIXEL_FORMAT_L_8		= BIT(6), /**< 8-bit Grayscale/Luminance, equivalent to */
+						  /**< GRAY, GREY, GRAY8, Y8, R8, etc...        */
 };
 
 /**
@@ -61,7 +63,8 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_MONO10) >> 2) * 1U) +				\
 	(((fmt & PIXEL_FORMAT_ARGB_8888) >> 3) * 32U) +				\
 	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
-	(((fmt & PIXEL_FORMAT_BGR_565) >> 5) * 16U))
+	(((fmt & PIXEL_FORMAT_BGR_565) >> 5) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_L_8) >> 6) * 8U))
 
 /**
  * @brief Display screen information
