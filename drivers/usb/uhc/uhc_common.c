@@ -14,10 +14,9 @@ LOG_MODULE_REGISTER(uhc, CONFIG_UHC_DRIVER_LOG_LEVEL);
 K_MEM_SLAB_DEFINE_STATIC(uhc_xfer_pool, sizeof(struct uhc_transfer),
 			 CONFIG_UHC_XFER_COUNT, sizeof(void *));
 
-NET_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
+USB_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
 			CONFIG_UHC_BUF_COUNT, CONFIG_UHC_BUF_POOL_SIZE,
 			0, NULL);
-
 
 int uhc_submit_event(const struct device *dev,
 		     const enum uhc_event_type type,
