@@ -207,8 +207,13 @@
  *
  * @param symbol Symbol to keep.
  */
-#define LINKER_KEEP(symbol) \
-	static const void * const symbol##_ptr  __used \
-	__attribute__((__section__(".symbol_to_keep"))) = (void *)&symbol
+#ifdef __IAR_SYSTEMS_ICC__
+#define LINKER_KEEP(symbol)                                                                        \
+	static const __root void *const symbol##_ptr = (void *)&symbol
+#else
+#define LINKER_KEEP(symbol)                                                                        \
+	static const void *const symbol##_ptr __used                                               \
+		__attribute__((__section__(".symbol_to_keep"))) = (void *)&symbol
+#endif
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_ */
