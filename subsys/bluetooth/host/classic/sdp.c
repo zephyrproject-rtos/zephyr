@@ -1818,7 +1818,7 @@ static void sdp_client_notify_result(struct bt_sdp_client *session,
 	uint16_t rec_len;
 	uint8_t user_ret;
 
-	if (state == UUID_NOT_RESOLVED) {
+	if ((state == UUID_NOT_RESOLVED) || (session->rec_buf->len == 0U)) {
 		result.resp_buf = NULL;
 		result.next_record_hint = false;
 		session->param->func(conn, &result, session->param);
