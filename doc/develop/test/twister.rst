@@ -434,6 +434,20 @@ build_only: <True|False> (default False)
     enabled in Zephyr and that the code builds, for example sensor drivers. Such
     test shall not be used to verify the functionality of the driver.
 
+no_build: <True|False> (default False)
+    If true, twister will not run any compilation or build steps. If the test requires
+    a specific executable file, this file should be built by a different test, or
+    being prov by any other means.
+
+    A typical use-case for this option is a BabbleSim test suite which builds one or
+    several executable binary file(s) which can be used by different test cases. This
+    option allows to avoid unnecessary abd time consuming recompilation, by using it
+    in conjunction with ``build_only`` option, where one or more tests build required
+    binaries, and all other tests are using their output.
+
+    Note: this option has only been tested with BabbleSim harness, which ensures that
+    ``build_only`` tests are executed first.
+
 build_on_all: <True|False> (default False)
     If true, attempt to build test scenario on all available platforms. This is mostly
     used in CI for increased coverage. Do not use this flag in new tests.
@@ -970,20 +984,67 @@ robot_option: <robot option> (default empty)
 Bsim
 ====
 
-Harness ``bsim`` is implemented in limited way - it helps only to copy the
-final executable (``zephyr.exe``) from build directory to BabbleSim's
-``bin`` directory (``${BSIM_OUT_PATH}/bin``).
+Harness ``bsim`` is allows to build and run BabbleSim test. If used with ``build_only``
+option, it will only copy the final executable (``zephyr.exe``) from build directory
+to BabbleSim's ``bin`` directory (``${BSIM_OUT_PATH}/bin``), which is useful to allow
+BabbleSim's tests to directly run after.
 
-This action is useful to allow BabbleSim's tests to directly run after.
-By default, the executable file name is (with dots and slashes
-replaced by underscores): ``bs_<platform_name>_<test_path>_<test_scenario_name>``.
-This name can be overridden with the ``bsim_exe_name`` option in
-``harness_config`` section.
+By default, the executable file name is (with dots and slashes replaced by underscores):
+``bs_<platform_name>_<test_path>_<test_scenario_name>``. This name can be overridden
+with the ``bsim_exe_name`` option in ``harness_config`` section.
 
-bsim_exe_name: <string>
+bsim_exe_name: <string> (optional)
     If provided, the executable filename when copying to BabbleSim's bin
     directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
     default based on the test path and scenario name.
+
+bsim_verbosity: <int> (optional)
+    If provided, sets the verbosity log level for BabbleSim's simulated devices
+    and Phy layer. Default setting is 2.
+
+bsim_sim_length: <float> (optional)
+    Simulated time in microseconds that BabbleSim's simulation is allowed to run.
+    Default value is 60e6 (60 seconds). Note: simulated time isn't equal real-time.
+
+bsim_devices: <list of simulated device configurations> (optional)
+    Specifies a number of simulated BabbleSim devices, with test_id value (mandatory),
+    executable binary file name and list of options that are passed to simulation. If
+    executable file name is not specified, value of ``bsim_exe_name`` is used.
+
+    Example with two simulated devices using common executable and options:
+
+    .. code-block:: yaml
+
+        harness_config:
+          bsim_exe_name: test_exe
+          bsim_devices:
+            - test_id: dut
+            - test_id: tester
+          bsim_options:
+            - -RealEncryption=0
+
+    Example with two simulated device using different binary files and options:
+
+    .. code-block:: yaml
+
+        harness_config:
+          sim_devices:
+            - test_id: dut
+              exe: dut_exe
+              options:
+                - -RealEncryption=0
+            - test_id: tester
+              exe: tester_exe
+              options:
+                - -RealEncryption=1
+
+bsim_options: <list of options> (optional)
+    List of common command-line options passed to all simulated BabbleSim devices
+    in the ``bsim_devices`` field. Full list of options could be a combination of
+    ``bsim_options`` and invidiual options for each device from ``bsim_devices``.
+
+bsim_phy_options: <list of options> (optional)
+    List of command-line options passed for to BabbleSim's simulat Phy.
 
 Shell
 =====
