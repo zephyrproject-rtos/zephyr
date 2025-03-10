@@ -8,6 +8,7 @@
 #include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/gpio.h>
+#include <dmm.h>
 #include <soc.h>
 #include <nrfx_spis.h>
 
@@ -31,6 +32,7 @@ struct spi_nrfx_config {
 	uint16_t max_buf_len;
 	const struct pinctrl_dev_config *pcfg;
 	struct gpio_dt_spec wake_gpio;
+	void *mem_reg;
 };
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
@@ -117,6 +119,7 @@ static int prepare_for_transfer(const struct device *dev,
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
 	nrfx_err_t result;
+	int err;
 
 	if (tx_buf_len > dev_config->max_buf_len ||
 	    rx_buf_len > dev_config->max_buf_len) {
@@ -125,14 +128,34 @@ static int prepare_for_transfer(const struct device *dev,
 		return -EINVAL;
 	}
 
+	err = dmm_buffer_out_prepare(dev_config->mem_reg, tx_buf, tx_buf_len, (void **)&tx_buf);
+	if (err != 0) {
+		LOG_INF("tx alloc err=%d", err);
+		goto out_alloc_failed;
+	}
+
+	err = dmm_buffer_in_prepare(dev_config->mem_reg, rx_buf, rx_buf_len, (void **)&rx_buf);
+	if (err != 0) {
+		LOG_INF("tx alloc err=%d", err);
+		goto in_alloc_failed;
+	}
+
 	result = nrfx_spis_buffers_set(&dev_config->spis,
 				       tx_buf, tx_buf_len,
 				       rx_buf, rx_buf_len);
 	if (result != NRFX_SUCCESS) {
-		return -EIO;
+		err = -EIO;
+		goto buffers_set_failed;
 	}
 
 	return 0;
+
+buffers_set_failed:
+	dmm_buffer_in_release(dev_config->mem_reg, rx_buf, rx_buf_len, rx_buf);
+in_alloc_failed:
+	dmm_buffer_out_release(dev_config->mem_reg, (void *)tx_buf);
+out_alloc_failed:
+	return err;
 }
 
 static void wake_callback(const struct device *dev, struct gpio_callback *cb,
@@ -194,6 +217,7 @@ static int transceive(const struct device *dev,
 			nrf_spis_enable(dev_config->spis.p_reg);
 		}
 
+		spi_context_buffers_setup(&dev_data->ctx, tx_bufs, rx_bufs, 1);
 		error = prepare_for_transfer(dev,
 					     tx_buf ? tx_buf->buf : NULL,
 					     tx_buf ? tx_buf->len : 0,
@@ -277,9 +301,14 @@ static DEVICE_API(spi, spi_nrfx_driver_api) = {
 
 static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
 {
-	struct spi_nrfx_data *dev_data = p_context;
+	const struct device *dev = p_context;
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 
 	if (p_event->evt_type == NRFX_SPIS_XFER_DONE) {
+		dmm_buffer_out_release(dev_config->mem_reg, p_event->p_tx_buf);
+		dmm_buffer_in_release(dev_config->mem_reg, dev_data->ctx.rx_buf,
+				      p_event->rx_amount, p_event->p_rx_buf);
 		spi_context_complete(&dev_data->ctx, dev_data->dev,
 				     p_event->rx_amount);
 	}
@@ -301,7 +330,7 @@ static int spi_nrfx_init(const struct device *dev)
 	 * actually used are set in configure() when a transfer is prepared.
 	 */
 	result = nrfx_spis_init(&dev_config->spis, &dev_config->config,
-				event_handler, dev_data);
+				event_handler, (void *)dev);
 
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s", dev->name);
@@ -356,7 +385,13 @@ static int spi_nrfx_init(const struct device *dev)
  * - Name-based HAL IRQ handlers, e.g. nrfx_spis_0_irq_handler
  */
 
-#define SPIS(idx) DT_NODELABEL(spi##idx)
+#define SPIS_NODE(idx) \
+	COND_CODE_1(CONFIG_SOC_NRF54H20, \
+		(COND_CODE_1(IS_EQ(idx, 120), (spis##idx), (spi##idx))), \
+		(spi##idx))
+
+#define SPIS(idx) DT_NODELABEL(SPIS_NODE(idx))
+
 #define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
 
 #define SPI_NRFX_SPIS_DEFINE(idx)					       \
@@ -390,6 +425,7 @@ static int spi_nrfx_init(const struct device *dev)
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),		       \
 		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),  \
 		.wake_gpio = GPIO_DT_SPEC_GET_OR(SPIS(idx), wake_gpios, {0}),  \
+		.mem_reg = DMM_DEV_TO_REG(SPIS(idx)),			       \
 	};								       \
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \
 		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
