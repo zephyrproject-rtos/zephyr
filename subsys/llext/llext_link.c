@@ -195,7 +195,7 @@ int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *
 			return -ENODATA;
 		}
 
-		LOG_INF("found symbol %s at 0x%lx", name, *link_addr);
+		LOG_INF("found symbol %s at %#lx", name, *link_addr);
 	} else if (sym->st_shndx == SHN_ABS) {
 		/* Absolute symbol */
 		*link_addr = sym->st_value;
@@ -220,7 +220,7 @@ int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *
 			(uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx) + sym->st_value;
 	} else {
 		LOG_ERR("cannot apply relocation: "
-			"target symbol has unexpected section index %d (0x%X)",
+			"target symbol has unexpected section index %d (%#x)",
 			sym->st_shndx, sym->st_shndx);
 		return -ENOEXEC;
 	}
@@ -492,18 +492,15 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 					return ret;
 				}
 
-				LOG_DBG("relocation %d:%d info 0x%zx (type %zd, sym %zd) offset %zd"
+				LOG_DBG("relocation %d:%d info %#zx (type %zd, sym %zd) offset %zd"
 					" sym_name %s sym_type %d sym_bind %d sym_ndx %d",
 					i, j, (size_t)rel.r_info, (size_t)ELF_R_TYPE(rel.r_info),
 					(size_t)ELF_R_SYM(rel.r_info), (size_t)rel.r_offset,
 					name, ELF_ST_TYPE(sym.st_info),
 					ELF_ST_BIND(sym.st_info), sym.st_shndx);
 
-				LOG_INF("writing relocation symbol %s type %zd sym %zd at addr "
-					"0x%lx addr 0x%lx",
-					name, (size_t)ELF_R_TYPE(rel.r_info),
-					(size_t)ELF_R_SYM(rel.r_info),
-					op_loc, link_addr);
+				LOG_INF("writing relocation type %d at %#lx with symbol %s (%#lx)",
+					(int)ELF_R_TYPE(rel.r_info), op_loc, name, link_addr);
 			}
 #endif /* CONFIG_LLEXT_LOG_LEVEL */
 
