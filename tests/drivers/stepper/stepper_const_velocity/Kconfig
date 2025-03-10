@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config ZTEST_SHUFFLE
+	select ENTROPY_GENERATOR
+	bool "Shuffle the order of tests and suites"
+
+config SPEED_STEPS
+	int "Test speed in microsteps/s"
+	default 50
+	help
+	  Besides being the test speed, this value is also used in several tests as the number of
+	  steps to take.
+
+source "Kconfig.zephyr"
