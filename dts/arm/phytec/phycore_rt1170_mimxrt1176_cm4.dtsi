@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2025 PHYTEC America LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt11xx_cm4.dtsi>
+#include <phytec/phycore_rt1170_common.dtsi>
+
+/ {
+	chosen {
+		/*
+		 * Note: when using DMA, the SRAM region must be set to
+		 * a memory region that is not cached by the chip. If the chosen
+		 * sram region is changed and DMA is in use, you will
+		 * encounter issues!
+		 */
+		zephyr,sram = &sram1;
+		zephyr,flash-controller = &mx25u12832f;
+		zephyr,flash = &ocram;
+		nxp,m4-partition = &slot1_partition;
+		zephyr,ipc = &mailbox_b;
+	};
+
+	zephyr,user {
+		dac = <&dac>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+&dac {
+	status = "okay";
+};
+
+&lpuart6 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&som_green_led {
+	status = "okay";
+};
+
+&som_red_led {
+	status = "okay";
+};
+
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
+ */
+&gpt_hw_timer {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
+
+&edma_lpsr0 {
+	status = "okay";
+};
+
+&mailbox_b {
+	status = "okay";
+};
