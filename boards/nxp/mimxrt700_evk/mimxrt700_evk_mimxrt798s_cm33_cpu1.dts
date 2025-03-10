@@ -80,3 +80,8 @@
 &gpio8 {
 	status = "okay";
 };
+
+&i3c3 {
+	pinctrl-0 = <&pinmux_i3c3>;
+	pinctrl-names = "default";
+};
