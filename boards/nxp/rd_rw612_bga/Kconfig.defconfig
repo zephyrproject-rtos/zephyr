@@ -37,4 +37,7 @@ config NET_L2_ETHERNET
 
 endif # DT_HAS_NXP_ENET_MAC_ENABLED && NETWORKING
 
+config ZTEST_NO_YIELD
+	default y if (ZTEST && PM)
+
 endif # BOARD_RD_RW612_BGA
