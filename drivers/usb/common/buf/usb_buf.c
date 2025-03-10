@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/drivers/usb/udc_buf.h>
+#include <zephyr/drivers/usb/usb_buf.h>
 
 static inline uint8_t *usb_pool_data_alloc(struct net_buf *const buf,
 					   size_t *const size, k_timeout_t timeout)
@@ -15,8 +15,8 @@ static inline uint8_t *usb_pool_data_alloc(struct net_buf *const buf,
 	struct k_heap *const pool = buf_pool->alloc->alloc_data;
 	void *b;
 
-	*size = UDC_ROUND_UP(*size);
-	b = k_heap_aligned_alloc(pool, UDC_BUF_ALIGN, *size, timeout);
+	*size = USB_BUF_ROUND_UP(*size);
+	b = k_heap_aligned_alloc(pool, USB_BUF_ALIGN, *size, timeout);
 	if (b == NULL) {
 		*size = 0;
 		return NULL;
