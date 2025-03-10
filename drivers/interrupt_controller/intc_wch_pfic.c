@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT wch_pfic
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/init.h>
