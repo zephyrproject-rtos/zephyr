@@ -139,7 +139,7 @@ arduino_serial: &usart6 {};
 	ft6202: ft6202@2a {
 		compatible = "focaltech,ft5336";
 		reg = <0x2a>;
-		int-gpios = <&gpioi 13 0>;
+		int-gpios = <&gpioi 13 GPIO_ACTIVE_LOW>;
 	};
 };
 
