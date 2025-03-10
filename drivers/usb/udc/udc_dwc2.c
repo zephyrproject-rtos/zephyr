@@ -1661,15 +1661,6 @@ static int udc_dwc2_ep_deactivate(const struct device *dev,
 	sys_write32(dxepctl, dxepctl_reg);
 	dwc2_set_epint(dev, cfg, false);
 
-	if (cfg->addr == USB_CONTROL_EP_OUT) {
-		struct net_buf *buf = udc_buf_get_all(dev, cfg->addr);
-
-		/* Release the buffer allocated in dwc2_ctrl_feed_dout() */
-		if (buf) {
-			net_buf_unref(buf);
-		}
-	}
-
 	return 0;
 }
 
@@ -1875,10 +1866,16 @@ static int dwc2_core_soft_reset(const struct device *dev)
 		}
 
 		k_busy_wait(1);
+
+		if (dwc2_quirk_is_phy_clk_off(dev)) {
+			/* Software reset won't finish without PHY clock */
+			return -EIO;
+		}
 	} while (sys_read32(grstctl_reg) & USB_DWC2_GRSTCTL_CSFTRST &&
 		 !(sys_read32(grstctl_reg) & USB_DWC2_GRSTCTL_CSFTRSTDONE));
 
-	sys_clear_bits(grstctl_reg, USB_DWC2_GRSTCTL_CSFTRST | USB_DWC2_GRSTCTL_CSFTRSTDONE);
+	/* CSFTRSTDONE is W1C so the write must have the bit set to clear it */
+	sys_clear_bits(grstctl_reg, USB_DWC2_GRSTCTL_CSFTRST);
 
 	return 0;
 }
@@ -2177,10 +2174,9 @@ static int udc_dwc2_disable(const struct device *dev)
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
+	struct net_buf *buf;
 	int err;
 
-	/* Enable soft disconnect */
-	sys_set_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
 	LOG_DBG("Disable device %p", dev);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
@@ -2202,6 +2198,22 @@ static int udc_dwc2_disable(const struct device *dev)
 	}
 
 	sys_clear_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
+
+	/* Enable soft disconnect */
+	sys_set_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
+
+	/* OUT endpoint 0 cannot be disabled by software. The buffer allocated
+	 * in dwc2_ctrl_feed_dout() can only be freed after core reset if the
+	 * core was in Buffer DMA mode.
+	 *
+	 * Soft Reset does timeout if PHY clock is not running. However, just
+	 * triggering Soft Reset seems to be enough on shutdown clean up.
+	 */
+	dwc2_core_soft_reset(dev);
+	buf = udc_buf_get_all(dev, USB_CONTROL_EP_OUT);
+	if (buf) {
+		net_buf_unref(buf);
+	}
 
 	err = dwc2_quirk_disable(dev);
 	if (err) {
