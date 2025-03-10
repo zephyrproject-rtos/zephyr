@@ -55,7 +55,7 @@ static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 	}
 #endif
 
-	LOG_DBG("region %d: start 0x%zx, size %zd", mem_idx, (size_t)start, len);
+	LOG_DBG("region %d: start %#zx, size %zd", mem_idx, (size_t)start, len);
 }
 
 static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
@@ -181,7 +181,7 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 
 			/* only show sections mapped to program memory */
 			if (mem_idx < LLEXT_MEM_EXPORT) {
-				LOG_DBG("-s %s 0x%zx", name,
+				LOG_DBG("-s %s %#zx", name,
 					(size_t)ext->mem[mem_idx] + ldr->sect_map[i].offset);
 			}
 		}
