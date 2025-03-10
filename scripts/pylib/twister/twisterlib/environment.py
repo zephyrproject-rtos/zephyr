@@ -219,6 +219,16 @@ Artificially long but functional example:
                         when flash operation also executes test case on the platform.
                         """)
 
+    parser.add_argument(
+        "--pm-probe",
+        help="Used to provide the name of power device, using while power masurements."
+    )
+
+    parser.add_argument(
+        "--pm-probe-port",
+        help="Port to power probe device."
+    )
+
     parser.add_argument("--flash-before", action="store_true", default=False,
                         help="""Flash device before attaching to serial port.
                         This is useful for devices that share the same port for programming

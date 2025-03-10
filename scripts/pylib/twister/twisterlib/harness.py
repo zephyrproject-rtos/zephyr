@@ -658,6 +658,28 @@ class Shell(Pytest):
             return test_shell_file
         return None
 
+class Power(Pytest):
+    def generate_command(self):
+        config = self.instance.testsuite.harness_config
+        pytest_root = [os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'power-twister-harness')]
+        config['pytest_root'] = pytest_root
+
+        handler: Handler = self.instance.handler
+        print(handler.options.pm_probe)
+        print(handler.options.pm_probe_port)
+
+        command = super().generate_command()
+        probe = handler.options.pm_probe
+        if probe:
+            command.append(f'--pm_probe={probe}')
+        pm_probe_port = handler.options.pm_probe_port
+        if pm_probe_port:
+            command.append(f'--pm_probe_port={pm_probe_port}')
+
+        if self.instance.testsuite.harness == 'power':
+            measurements = config.get('measurements')
+            command.append(f'--testdata={measurements}')
+        return command
 
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
