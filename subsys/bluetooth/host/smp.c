@@ -958,7 +958,8 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) && conn->encrypt != 0x02) {
+	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) &&
+	    conn->encrypt != BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
 		LOG_WRN("Using P192 Link Key for P256 LTK derivation");
 	}
 
@@ -1164,11 +1165,11 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 		return false;
 	}
 
-	if (conn->encrypt == 0x02) {
+	if (conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
 		return true;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) && conn->encrypt == 0x01) {
+	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) && conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_E0) {
 		LOG_WRN("Allowing BR/EDR SMP with P-192 key");
 		return true;
 	}
