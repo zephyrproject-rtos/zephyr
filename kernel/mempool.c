@@ -15,6 +15,10 @@ static void *z_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t size
 	struct k_heap **heap_ref;
 	size_t __align;
 
+	/* A power of 2 as well as 0 is OK */
+	__ASSERT((align & (align - 1)) == 0,
+		"align must be a power of 2");
+
 	/*
 	 * Adjust the size to make room for our heap reference.
 	 * Merge a rewind bit with align value (see sys_heap_aligned_alloc()).
@@ -64,13 +68,6 @@ K_HEAP_DEFINE(_system_heap, K_HEAP_MEM_POOL_SIZE);
 
 void *k_aligned_alloc(size_t align, size_t size)
 {
-	__ASSERT(align / sizeof(void *) >= 1
-		&& (align % sizeof(void *)) == 0,
-		"align must be a multiple of sizeof(void *)");
-
-	__ASSERT((align & (align - 1)) == 0,
-		"align must be a power of 2");
-
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_aligned_alloc, _SYSTEM_HEAP);
 
 	void *ret = z_heap_aligned_alloc(_SYSTEM_HEAP, align, size);
