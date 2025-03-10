@@ -56,6 +56,19 @@ config ETH_STM32_HAL_RX_THREAD_PRIO
 	  Preemptive scheduling can lead to more responsive handling of network traffic,
 	  especially under high load.
 
+config ETH_STM32_HAL_ETH_POST_INIT_PRIO
+	int "Second part of the ethernet initialization"
+	default 89
+	help
+	  In order to allow transactions with external PHY connected over MDIO bus, like
+	  PHY initialization, the ethernet initialization sequence must be split. The
+	  reason is that the ethernet initialization process can't start MDIO
+	  communication until MDIO bus will be ready. First part initialized the ethernet
+	  clocks. Second part is starting the MDIO communications. MDIO initialization
+	  is realized between these two parts. It is important to note, that this option is
+	  corelated with the ETH_INIT_PRIORITY, which must be always lower than
+	  ETH_STM32_HAL_ETH_POST_INIT_PRIO
+
 config ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER
 	bool "Use DTCM for DMA buffers"
 	default y
