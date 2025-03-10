@@ -34,6 +34,7 @@ static inline uint8_t bytes_per_pixel(enum display_pixel_format pixel_format)
 	case PIXEL_FORMAT_RGB_565:
 	case PIXEL_FORMAT_BGR_565:
 		return 2;
+	case PIXEL_FORMAT_L_8:
 	case PIXEL_FORMAT_MONO01:
 	case PIXEL_FORMAT_MONO10:
 	default:
