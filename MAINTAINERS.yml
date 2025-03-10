@@ -4249,6 +4249,7 @@ TI K3 Platforms:
   collaborators:
     - gramsay0
     - dnltz
+    - glneo
   files:
     - boards/ti/*am62*/
     - drivers/*/*davinci*
