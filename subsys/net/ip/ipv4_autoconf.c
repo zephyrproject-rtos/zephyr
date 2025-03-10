@@ -40,8 +40,13 @@ static inline void ipv4_autoconf_addr_set(struct net_if_ipv4_autoconf *ipv4auto)
 		ipv4auto->requested_ip.s4_addr[3]);
 
 	/* Add IPv4 address to the interface, this will trigger conflict detection. */
+#if defined(CONFIG_NET_DHCPV4_FALLBACK_AUTO)
+	if (!net_if_ipv4_addr_add(ipv4auto->iface, &ipv4auto->requested_ip,
+				  NET_ADDR_OVERRIDABLE, 0)) {
+#else
 	if (!net_if_ipv4_addr_add(ipv4auto->iface, &ipv4auto->requested_ip,
 				  NET_ADDR_AUTOCONF, 0)) {
+#endif
 		NET_DBG("Failed to add IPv4 addr to iface %p",
 			ipv4auto->iface);
 		return;
@@ -125,13 +130,6 @@ void net_ipv4_autoconf_start(struct net_if *iface)
 
 	NET_DBG("Starting IPv4 autoconf for iface %p", iface);
 
-	if (cfg->ipv4auto.state == NET_IPV4_AUTOCONF_ASSIGNED) {
-		/* Try to reuse previously used address. */
-		cfg->ipv4auto.state = NET_IPV4_AUTOCONF_RENEW;
-	} else {
-		cfg->ipv4auto.state = NET_IPV4_AUTOCONF_INIT;
-	}
-
 	ipv4_autoconf_addr_set(&cfg->ipv4auto);
 }
 
@@ -142,6 +140,16 @@ void net_ipv4_autoconf_reset(struct net_if *iface)
 	cfg = net_if_get_config(iface);
 	if (!cfg) {
 		return;
+	}
+
+	switch (cfg->ipv4auto.state) {
+	case NET_IPV4_AUTOCONF_ASSIGNED:
+	case NET_IPV4_AUTOCONF_RENEW:
+		/* Try to reuse previously used address. */
+		cfg->ipv4auto.state = NET_IPV4_AUTOCONF_RENEW;
+		break;
+	default:
+		cfg->ipv4auto.state = NET_IPV4_AUTOCONF_INIT;
 	}
 
 	net_if_ipv4_addr_rm(iface, &cfg->ipv4auto.requested_ip);
