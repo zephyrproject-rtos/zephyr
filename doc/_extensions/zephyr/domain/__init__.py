@@ -871,8 +871,6 @@ class BoardSupportedHardwareDirective(SphinxDirective):
 
                 for i, (key, value) in enumerate(items):
                     row = nodes.row()
-                    if value.get("disabled_nodes", []) and not value.get("okay_nodes", []):
-                        row["classes"].append("disabled")
 
                     # TYPE column
                     if i == 0:
