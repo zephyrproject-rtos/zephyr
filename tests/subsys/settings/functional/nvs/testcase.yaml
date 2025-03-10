@@ -2,24 +2,30 @@ tests:
   settings.functional.nvs:
     platform_allow:
       - qemu_x86
+      - mps2/an385
       - native_sim
       - native_sim/native/64
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+    integration_platforms:
+      - mps2/an385
     tags:
       - settings
       - nvs
   settings.functional.nvs.chosen:
     extra_args: DTC_OVERLAY_FILE=./chosen.overlay
     platform_allow:
+      - mps2/an385
       - native_sim
       - native_sim/native/64
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+    integration_platforms:
+      - mps2/an385
     tags:
       - settings
       - nvs
@@ -32,8 +38,9 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - mps2/an385
     integration_platforms:
-      - nrf52840dk/nrf52840
+      - mps2/an385
     tags:
       - settings
       - nvs
