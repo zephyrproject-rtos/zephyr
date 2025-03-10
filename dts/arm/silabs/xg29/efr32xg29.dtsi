@@ -25,6 +25,13 @@
 				compatible = "silabs,bt-hci-efr32";
 				status = "disabled";
 			};
+
+			pti: pti {
+				compatible = "silabs,pti";
+				clock-frequency = <DT_FREQ_K(1600)>;
+				mode = "uart";
+				status = "disabled";
+			};
 		};
 	};
 };
