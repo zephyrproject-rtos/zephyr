@@ -431,3 +431,27 @@ config CS_TRACE_DEFMT
 	help
 	  Module is decoding data which is formatted using Coresight
 	  Trace Formatter, e.g. when data is put into ETR (Embedded Trace Router).
+
+config CPU_LOAD
+	select TRACING
+	# Currently hooks are added only to Cortex M architecture.
+	depends on CPU_CORTEX_M
+	bool "CPU load measurement"
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CPU_LOAD_COUNTER := zephyr,cpu-load-counter
+
+config CPU_LOAD_USE_COUNTER
+	bool "Use counter"
+	depends on $(dt_chosen_enabled,DT_CHOSEN_Z_CPU_LOAD_COUNTER)
+	default y
+	select COUNTER
+	help
+	  Use counter for tracking CPU idle time.
+
+config CPU_LOAD_LOG_PERIODICALLY
+	int "Report period (in milliseconds)"
+	depends on LOG
+	default 0
+	help
+	  Specifies how often CPU load shall be logged. 0 means that there is no logging.
