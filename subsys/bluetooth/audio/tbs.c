@@ -42,6 +42,10 @@ LOG_MODULE_REGISTER(bt_tbs, CONFIG_BT_TBS_LOG_LEVEL);
 /* A service instance can either be a GTBS or a TBS instance */
 struct tbs_inst {
 	/* Attribute values */
+	/* TODO: The provider name should be removed from the tbs_inst and instead by stored by the
+	 * user of TBS. This will be done once the CCP API is complete as the CCP Server will own
+	 * all the data instead of the TBS
+	 */
 	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
 	char uci[BT_TBS_MAX_UCI_SIZE];
 	uint8_t technology;
