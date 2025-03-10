@@ -29,10 +29,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define MAX_TX_FAILURE 100
 
+#define ETH_LITEX_SLOT_SIZE 0x0800
+
 struct eth_litex_dev_data {
 	struct net_if *iface;
 	uint8_t mac_addr[6];
 	uint8_t txslot;
+	struct k_mutex tx_mutex;
 };
 
 struct eth_litex_config {
@@ -49,14 +52,18 @@ struct eth_litex_config {
 	uint32_t tx_length_addr;
 	uint32_t tx_ev_pending_addr;
 	uint32_t tx_ev_enable_addr;
-	uint8_t *tx_buf[2];
-	uint8_t *rx_buf[2];
+	uint32_t tx_buf_addr;
+	uint32_t rx_buf_addr;
+	uint8_t tx_buf_n;
+	uint8_t rx_buf_n;
 };
 
 static int eth_initialize(const struct device *dev)
 {
 	const struct eth_litex_config *config = dev->config;
 	struct eth_litex_dev_data *context = dev->data;
+
+	k_mutex_init(&context->tx_mutex);
 
 	config->config_func(dev);
 
@@ -73,17 +80,18 @@ static int eth_initialize(const struct device *dev)
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
-	unsigned int key;
 	uint16_t len;
 	struct eth_litex_dev_data *context = dev->data;
 	const struct eth_litex_config *config = dev->config;
-
-	key = irq_lock();
 	int attempts = 0;
+
+	k_mutex_lock(&context->tx_mutex, K_FOREVER);
 
 	/* get data from packet and send it */
 	len = net_pkt_get_len(pkt);
-	net_pkt_read(pkt, config->tx_buf[context->txslot], len);
+	net_pkt_read(pkt,
+		     UINT_TO_POINTER(config->tx_buf_addr + (context->txslot * ETH_LITEX_SLOT_SIZE)),
+		     len);
 
 	litex_write8(context->txslot, config->tx_slot_addr);
 	litex_write16(len, config->tx_length_addr);
@@ -100,15 +108,15 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	litex_write8(1, config->tx_start_addr);
 
 	/* change slot */
-	context->txslot = (context->txslot + 1) % 2;
+	context->txslot = (context->txslot + 1) % config->tx_buf_n;
 
-	irq_unlock(key);
+	k_mutex_unlock(&context->tx_mutex);
 
 	return 0;
 error:
-	irq_unlock(key);
+	k_mutex_unlock(&context->tx_mutex);
 	LOG_ERR("TX fifo failed");
-	return -1;
+	return -EIO;
 }
 
 static void eth_rx(const struct device *port)
@@ -118,15 +126,12 @@ static void eth_rx(const struct device *port)
 	const struct eth_litex_config *config = port->config;
 
 	int r;
-	unsigned int key;
 	uint16_t len = 0;
 	uint8_t rxslot = 0;
 
 	if (!net_if_flag_is_set(context->iface, NET_IF_UP)) {
 		return;
 	}
-
-	key = irq_lock();
 
 	/* get frame's length */
 	len = litex_read16(config->rx_length_addr);
@@ -139,14 +144,16 @@ static void eth_rx(const struct device *port)
 					   K_NO_WAIT);
 	if (pkt == NULL) {
 		LOG_ERR("Failed to obtain RX buffer");
-		goto out;
+		return;
 	}
 
 	/* copy data to buffer */
-	if (net_pkt_write(pkt, (void *)config->rx_buf[rxslot], len) != 0) {
+	if (net_pkt_write(pkt,
+			  UINT_TO_POINTER(config->rx_buf_addr + (rxslot * ETH_LITEX_SLOT_SIZE)),
+			  len) != 0) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
-		goto out;
+		return;
 	}
 
 	/* receive data */
@@ -155,9 +162,6 @@ static void eth_rx(const struct device *port)
 		LOG_ERR("Failed to enqueue frame into RX queue: %d", r);
 		net_pkt_unref(pkt);
 	}
-
-out:
-	irq_unlock(key);
 }
 
 static void eth_irq_handler(const struct device *port)
@@ -299,16 +303,18 @@ static const struct ethernet_api eth_api = {
 	.send = eth_tx
 };
 
-#define ETH_LITEX_SLOT_SIZE 0x0800
-
-#define ETH_LITEX_SLOT_RX0_ADDR(n)                                                                 \
+#define ETH_LITEX_SLOT_RX_ADDR(n)                                                                  \
 	DT_INST_REG_ADDR_BY_NAME_OR(n, rx_buffers, (DT_INST_REG_ADDR_BY_NAME(n, buffers)))
-#define ETH_LITEX_SLOT_RX1_ADDR(n) (ETH_LITEX_SLOT_RX0_ADDR(n) + ETH_LITEX_SLOT_SIZE)
-#define ETH_LITEX_SLOT_TX0_ADDR(n)                                                                 \
+#define ETH_LITEX_SLOT_TX_ADDR(n)                                                                  \
 	DT_INST_REG_ADDR_BY_NAME_OR(n, tx_buffers,                                                 \
 				    (DT_INST_REG_ADDR_BY_NAME(n, buffers) +                        \
 				     (DT_INST_REG_SIZE_BY_NAME(n, buffers) / 2)))
-#define ETH_LITEX_SLOT_TX1_ADDR(n) (ETH_LITEX_SLOT_TX0_ADDR(n) + ETH_LITEX_SLOT_SIZE)
+#define ETH_LITEX_SLOT_RX_N(n)                                                                     \
+	(DT_INST_REG_SIZE_BY_NAME_OR(n, rx_buffers, (DT_INST_REG_SIZE_BY_NAME(n, buffers) / 2)) /  \
+	 ETH_LITEX_SLOT_SIZE)
+#define ETH_LITEX_SLOT_TX_N(n)                                                                     \
+	(DT_INST_REG_SIZE_BY_NAME_OR(n, tx_buffers, (DT_INST_REG_SIZE_BY_NAME(n, buffers) / 2)) /  \
+	 ETH_LITEX_SLOT_SIZE)
 
 #define ETH_LITEX_INIT(n)                                                                          \
                                                                                                    \
@@ -337,15 +343,10 @@ static const struct ethernet_api eth_api = {
 		.tx_length_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_length),                          \
 		.tx_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_pending),                  \
 		.tx_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_enable),                    \
-		.rx_buf = {                                                                        \
-			(uint8_t *)ETH_LITEX_SLOT_RX0_ADDR(n),                                     \
-			(uint8_t *)ETH_LITEX_SLOT_RX1_ADDR(n),                                     \
-												   \
-		},                                                                                 \
-		.tx_buf = {                                                                        \
-			(uint8_t *)ETH_LITEX_SLOT_TX0_ADDR(n),                                     \
-			(uint8_t *)ETH_LITEX_SLOT_TX1_ADDR(n),                                     \
-		},                                                                                 \
+		.rx_buf_addr = ETH_LITEX_SLOT_RX_ADDR(n),                                          \
+		.tx_buf_addr = ETH_LITEX_SLOT_TX_ADDR(n),                                          \
+		.rx_buf_n = ETH_LITEX_SLOT_RX_N(n),                                                \
+		.tx_buf_n = ETH_LITEX_SLOT_TX_N(n),                                                \
                                                                                                    \
 	};                                                                                         \
                                                                                                    \
