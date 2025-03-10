@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  RT600/RT500 pin control node. This node defines pin configurations in pin
+  RT600/RT500 Pin Controller
+
+  This node defines pin configurations in pin
   groups, and has the 'pinctrl' node identifier in the SOC's devicetree. Each
   group within the pin configuration defines a peripheral's pin configuration.
   Each numbered subgroup represents pins with shared configuration for that
