@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/drivers/led.h>
-#include <zephyr/drivers/kscan.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -14,13 +13,6 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define LED_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(holtek_ht16k33)
 #define KEY_NODE DT_CHILD(LED_NODE, kscan_input)
-
-static void keyscan_callback(const struct device *dev, uint32_t row,
-			     uint32_t column, bool pressed)
-{
-	LOG_INF("Row %d, column %d %s", row, column,
-		pressed ? "pressed" : "released");
-}
 
 int main(void)
 {
@@ -37,11 +29,6 @@ int main(void)
 	if (!device_is_ready(key)) {
 		LOG_ERR("Keyscan device not ready");
 		return 0;
-	}
-
-	err = kscan_config(key, keyscan_callback);
-	if (err) {
-		LOG_ERR("Failed to add keyscan callback (err %d)", err);
 	}
 
 	while (1) {
