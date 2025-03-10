@@ -185,8 +185,8 @@ As a quick reference, see these three board documentation pages:
 
   - :zephyr:board:`sam4e_xpro` (ROM bootloader)
   - :zephyr:board:`adafruit_feather_m0_basic_proto` (Adafruit UF2 bootloader)
-  - :ref:`arduino_nano_33_iot` (Arduino bootloader)
-  - :ref:`arduino_nano_33_ble` (Arduino legacy bootloader)
+  - :zephyr:board:`arduino_nano_33_iot` (Arduino bootloader)
+  - :zephyr:board:`arduino_nano_33_ble` (Arduino legacy bootloader)
 
 Enabling BOSSAC on Windows Native [Experimental]
 ------------------------------------------------
