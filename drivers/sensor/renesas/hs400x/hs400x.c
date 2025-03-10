@@ -80,9 +80,9 @@ static int hs400x_sample_fetch(const struct device *dev, enum sensor_channel cha
 
 	/*
 	 * According to datasheet maximum time to make temperature and humidity
-	 * measurements is 33ms, add a little safety margin...
+	 * measurements is 1.7 ms, add a little safety margin...
 	 */
-	k_msleep(50);
+	k_msleep(3);
 
 	rc = hs400x_read_sample(dev, &data->t_sample, &data->rh_sample);
 	if (rc < 0) {
