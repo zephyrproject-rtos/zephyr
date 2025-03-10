@@ -10,7 +10,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/usb/usb_ch9.h>
-#include <zephyr/drivers/usb/udc_buf.h>
+#include <zephyr/drivers/usb/usb_buf.h>
 #include "udc_common.h"
 
 #include <zephyr/logging/log.h>
