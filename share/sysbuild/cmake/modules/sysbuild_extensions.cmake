@@ -518,6 +518,8 @@ function(ExternalZephyrProject_Cmake)
   endif()
   load_cache(IMAGE ${ZCMAKE_APPLICATION} BINARY_DIR ${BINARY_DIR})
   import_kconfig(CONFIG_ ${BINARY_DIR}/zephyr/.config TARGET ${ZCMAKE_APPLICATION})
+  set(DEVICETREE_TARGET ${ZCMAKE_APPLICATION}_devicetree_target)
+  include(${BINARY_DIR}/zephyr/dts.cmake)
 
   # This custom target informs CMake how the BYPRODUCTS are generated if a target
   # depends directly on the BYPRODUCT instead of depending on the image target.
@@ -769,3 +771,86 @@ function(sysbuild_images_order variable dependency_type)
   topological_sort(TARGETS ${SIS_IMAGES} PROPERTY_NAME ${property_name} RESULT sorted)
   set(${variable} ${sorted} PARENT_SCOPE)
 endfunction()
+
+# Internal macro for defining the sysbuild_dt_* CMake extensions, used to
+# retrieve devicetree information from a Zephyr based build system.
+#
+# It takes a dt_* function <name> and adds common wrapper code, which
+# adds an `IMAGE` argument to select the devicetree of a given <image>,
+# and forwards all other arguments to the original function, including
+# the sole return variable <var> - a common trait of the dt_* API.
+#
+# For additional documentation of each dt_* CMake extension,
+# see section 4.1. of cmake/modules/extensions.cmake.
+#
+macro(sysbuild_dt_function name)
+  function(sysbuild_${name} var)
+    cmake_parse_arguments(PARSE_ARGV 1 SBDT "" "IMAGE" "")
+    zephyr_check_arguments_required_all("sysbuild_${name}" SBDT IMAGE)
+
+    set(DEVICETREE_TARGET ${SBDT_IMAGE}_devicetree_target)
+    if(NOT TARGET ${SBDT_IMAGE} OR NOT TARGET ${DEVICETREE_TARGET})
+      message(FATAL_ERROR "sysbuild_${name}(...) image '${SBDT_IMAGE}' "
+                          "does not exist or its devicetree is not loaded yet"
+      )
+    endif()
+
+    cmake_language(CALL ${name} ${var} ${SBDT_UNPARSED_ARGUMENTS})
+    set(${var} "${${var}}" PARENT_SCOPE)
+  endfunction()
+endmacro()
+
+# Usage:
+#   sysbuild_dt_nodelabel(<var> IMAGE <image> NODELABEL <label>)
+#
+sysbuild_dt_function(dt_nodelabel)
+
+# Usage:
+#   sysbuild_dt_alias(<var> IMAGE <image> PROPERTY <prop>)
+#
+sysbuild_dt_function(dt_alias)
+
+# Usage:
+#   sysbuild_dt_node_exists(<var> IMAGE <image> PATH <path>)
+#
+sysbuild_dt_function(dt_node_exists)
+
+# Usage:
+#   sysbuild_dt_node_has_status(<var> IMAGE <image> PATH <path> STATUS <status>)
+#
+sysbuild_dt_function(dt_node_has_status)
+
+# Usage:
+#   sysbuild_dt_prop(<var> IMAGE <image> PATH <path> PROPERTY <prop> [INDEX <idx>])
+#
+sysbuild_dt_function(dt_prop)
+
+# Usage:
+#   sysbuild_dt_comp_path(<var> IMAGE <image> COMPATIBLE <compatible> [INDEX <idx>])
+#
+sysbuild_dt_function(dt_comp_path)
+
+# Usage:
+#   sysbuild_dt_num_regs(<var> IMAGE <image> PATH <path>)
+#
+sysbuild_dt_function(dt_num_regs)
+
+# Usage:
+#   sysbuild_dt_reg_addr(<var> IMAGE <image> PATH <path> [INDEX <idx>] [NAME <name>])
+#
+sysbuild_dt_function(dt_reg_addr)
+
+# Usage:
+#   sysbuild_dt_reg_size(<var> IMAGE <image> PATH <path> [INDEX <idx>] [NAME <name>])
+#
+sysbuild_dt_function(dt_reg_size)
+
+# Usage:
+#   sysbuild_dt_has_chosen(<var> IMAGE <image> PROPERTY <prop>)
+#
+sysbuild_dt_function(dt_has_chosen)
+
+# Usage:
+#   sysbuild_dt_chosen(<var> IMAGE <image> PROPERTY <prop>)
+#
+sysbuild_dt_function(dt_chosen)
