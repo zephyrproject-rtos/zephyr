@@ -717,6 +717,7 @@ static const struct video_format_cap fmts[] = {
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_QVGA_W, RESOLUTION_QVGA_H, VIDEO_PIX_FMT_YUYV),
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_VGA_W, RESOLUTION_VGA_H, VIDEO_PIX_FMT_YUYV),
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_UXGA_W, RESOLUTION_UXGA_H, VIDEO_PIX_FMT_YUYV),
+	{0},
 };
 
 static int gc2145_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint8_t value)
@@ -1042,7 +1043,7 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	}
 
 	/* Check if camera is capable of handling given format */
-	for (int i = 0; i < ARRAY_SIZE(fmts); i++) {
+	for (int i = 0; i < ARRAY_SIZE(fmts) - 1; i++) {
 		if (fmts[i].width_min == fmt->width && fmts[i].height_min == fmt->height &&
 		    fmts[i].pixelformat == fmt->pixelformat) {
 			res = i;
