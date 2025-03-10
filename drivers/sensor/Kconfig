@@ -27,6 +27,7 @@ config SENSOR_ASYNC_API
 	select RTIO_SYS_MEM_BLOCKS
 	select RTIO_CONSUME_SEM
 	select RTIO_WORKQ
+	default y
 	help
 	  Enables the asynchronous sensor API by leveraging the RTIO subsystem.
 
