@@ -4366,13 +4366,7 @@ out:
 	net_if_unlock(iface);
 }
 #else
-void net_if_ipv4_start_acd(struct net_if *iface, struct net_if_addr *ifaddr)
-{
-	ARG_UNUSED(iface);
-
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
-}
-
+#define net_if_ipv4_start_acd(...)
 #define net_if_start_acd(...)
 #endif /* CONFIG_NET_IPV4_ACD */
 
@@ -4453,7 +4447,8 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 			net_sprint_ipv4_addr(addr),
 			net_addr_type2str(addr_type));
 
-		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
+		if (IS_ENABLED(CONFIG_NET_IPV4_ACD) &&
+		    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
 		    !net_ipv4_is_addr_loopback(addr)) {
 			/* ACD is started after the lock is released. */
 			;
