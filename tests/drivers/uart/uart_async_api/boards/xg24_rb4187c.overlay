@@ -9,9 +9,9 @@
  */
 / {
 	chosen {
-		zephyr,console = &eusart1;
-		zephyr,shell-uart = &eusart1;
-		zephyr,uart-pipe = &eusart1;
+		zephyr,console = &eusart0;
+		zephyr,shell-uart = &eusart0;
+		zephyr,uart-pipe = &eusart0;
 	};
 };
 
@@ -28,14 +28,14 @@
 			silabs,input-filter;
 		};
 	};
-	eusart1_default: eusart1_default {
+	eusart0_default: eusart0_default {
 		group0 {
-			pins = <EUSART1_TX_PA8>;
+			pins = <EUSART0_TX_PA8>;
 			drive-push-pull;
 			output-high;
 		};
 		group1 {
-			pins = <EUSART1_RX_PA9>;
+			pins = <EUSART0_RX_PA9>;
 			input-enable;
 			silabs,input-filter;
 		};
@@ -50,10 +50,10 @@ dut: &usart0 {
 	pinctrl-names = "default";
 };
 
-&eusart1 {
+&eusart0 {
 	compatible = "silabs,eusart-uart";
 	current-speed = <115200>;
-	pinctrl-0 = <&eusart1_default>;
+	pinctrl-0 = <&eusart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
