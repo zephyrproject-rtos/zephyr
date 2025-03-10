@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../pigweed"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"compare": "cpp",
+			"cstdint": "cpp"
+		}
+	}
+}
