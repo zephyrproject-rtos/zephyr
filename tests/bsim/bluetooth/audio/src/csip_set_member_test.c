@@ -108,6 +108,28 @@ static void test_sirk(void)
 	printk("New SIRK correctly set and retrieved\n");
 }
 
+static void update_set_size_and_rank(void)
+{
+	struct bt_csip_set_member_set_info info;
+	int err;
+
+	printk("Setting new SIRK\n");
+	err = bt_csip_set_member_set_size_and_rank(svc_inst, new_sirk);
+	if (err != 0) {
+		FAIL("Failed to set SIRK: %d\n", err);
+		return;
+	}
+
+	printk("Getting new SIRK\n");
+	err = bt_csip_set_member_get_info(svc_inst, &info);
+	if (err != 0) {
+		FAIL("Failed to get SIRK: %d\n", err);
+		return;
+	}
+
+	printk("New SIRK correctly set and retrieved\n");
+}
+
 static void test_main(void)
 {
 	int err;
@@ -210,6 +232,36 @@ static void test_new_sirk(void)
 	PASS("CSIP Set member passed: Client successfully disconnected\n");
 }
 
+static void test_new_size(void)
+{
+	int err;
+
+	err = bt_enable(bt_ready);
+
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	backchannel_sync_send_all();
+	backchannel_sync_wait_all();
+
+	test_sirk();
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	err = bt_csip_set_member_unregister(svc_inst);
+	if (err != 0) {
+		FAIL("Could not unregister CSIP (err %d)\n", err);
+		return;
+	}
+	svc_inst = NULL;
+
+	PASS("CSIP Set member passed: Client successfully disconnected\n");
+}
+
 static void test_args(int argc, char *argv[])
 {
 	for (size_t argn = 0; argn < argc; argn++) {
@@ -265,6 +317,13 @@ static const struct bst_test_instance test_connect[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_new_sirk,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_member_new_size",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_new_size,
 		.test_args_f = test_args,
 	},
 	BSTEST_END_MARKER,

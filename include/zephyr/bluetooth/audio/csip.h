@@ -32,6 +32,7 @@
 #include <stdint.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
@@ -236,6 +237,72 @@ int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
  */
 int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
 				uint8_t sirk[BT_CSIP_SIRK_SIZE]);
+
+/**
+ * @brief Set a new size and rank for a service instance
+ *
+ * This function can be used to dynamically change the size and rank of a service instance.
+ * It is important to note that a set cannot have multiple devices with the same rank in a set,
+ * and it is up to the caller of this function to ensure that.
+ * Similarly, it is important that the size is updated on all devices in the set at the same time.
+ *
+ * If @kconfig{CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE} is enabled, this will also send a
+ * notification to all connected or bonded clients.
+ *
+ * @param svc_inst The service instance
+ * @param size The new set size
+ * @param rank The new rank
+ *
+ * @retval -EINVAL @p svc_inst is NULL
+ * @retval -EINVAL @p size is less than 1
+ * @retval -EINVAL @p rank is 0 for a @p svc_inst that is not lockable
+ * @retval -EINVAL @p rank is less than 1 or higher than @p size
+ * @retval -EALREADY @p size and @p rank are already the provided values
+ * @retval 0 Success
+ */
+int bt_csip_set_member_set_size_and_rank(struct bt_csip_set_member_svc_inst *svc_inst, uint8_t size,
+					 uint8_t rank);
+
+/** Struct to hold information about a service instance */
+struct bt_csip_set_member_set_info {
+	/** The 16-octet SIRK */
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
+
+	/** The set size */
+	uint8_t set_size;
+
+	/**
+	 * @brief The rank
+	 *
+	 * May be 0 if the set is not lockable
+	 */
+	uint8_t rank;
+
+	/** Whether the set is lockable  */
+	bool lockable: 1;
+
+	/** Whether the set is currently locked */
+	bool locked: 1;
+
+	/**
+	 * @brief The address of the client that currently holds the lock
+	 *
+	 * Will be @ref BT_ADDR_LE_NONE if the server holds the lock
+	 */
+	bt_addr_le_t lock_client_addr;
+};
+
+/**
+ * @brief Get information about a service instances
+ *
+ * @param svc_inst The service instance
+ * @param info Pointer to a struct to store the information in
+ *
+ * @retval -EINVAL @p svc_inst or @p info is NULL
+ * @retval 0 Success
+ */
+int bt_csip_set_member_get_info(const struct bt_csip_set_member_svc_inst *svc_inst,
+				struct bt_csip_set_member_set_info *info);
 
 /**
  * @brief Generate the Resolvable Set Identifier (RSI) value.
