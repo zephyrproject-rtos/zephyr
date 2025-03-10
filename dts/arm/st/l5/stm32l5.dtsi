@@ -697,6 +697,7 @@
 			clocks = <&rcc STM32_CLOCK(APB1_2, 21U)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			phys = <&usb_fs_phy>;
+			physel = "USB_OTG_FS_PHY_EMBEDDED";
 		};
 
 		ucpd1: ucpd@4000dc00 {
