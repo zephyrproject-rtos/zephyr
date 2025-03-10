@@ -669,7 +669,32 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 
 	/* Clear NAK and set endpoint enable */
 	doepctl = sys_read32(doepctl_reg);
-	doepctl |= USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_CNAK;
+	doepctl |= USB_DWC2_DEPCTL_EPENA;
+	if (cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_data *data = dev->data;
+
+		/* During OUT Data Stage every packet has to have CNAK set.
+		 * In Buffer DMA mode the OUT endpoint is armed during IN Data
+		 * Stage to accept either Status stage or new SETUP token. The
+		 * Status stage (premature or not) can only be received if CNAK
+		 * was set. In Completer mode the OUT endpoint armed during OUT
+		 * Status stage needs CNAK.
+		 *
+		 * Setting CNAK in other cases opens up possibility for Buffer
+		 * DMA controller to lock up completely if the endpoint is
+		 * enabled (to receive SETUP data) when the host is transmitting
+		 * subsequent control transfer OUT Data Stage packet (SETUP DATA
+		 * is unconditionally ACKed regardless of software state).
+		 */
+		if (data->stage == CTRL_PIPE_STAGE_DATA_OUT ||
+		    data->stage == CTRL_PIPE_STAGE_DATA_IN ||
+		    data->stage == CTRL_PIPE_STAGE_STATUS_OUT) {
+			doepctl |= USB_DWC2_DEPCTL_CNAK;
+		}
+	} else {
+		/* Non-control endpoint, set CNAK for all transfers */
+		doepctl |= USB_DWC2_DEPCTL_CNAK;
+	}
 
 	if (dwc2_ep_is_iso(cfg)) {
 		xfersize = USB_MPS_TO_TPL(cfg->mps);
