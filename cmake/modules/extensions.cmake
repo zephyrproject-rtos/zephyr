@@ -718,6 +718,222 @@ function(generate_inc_file_for_target
   generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
 endfunction()
 
+# 1.3.1 generate_binary_embed_inc_*
+
+# These functions enable including raw data from one or more binary files,
+# along with desired symbol names for corresponding data being embedded.
+# Controlling aspects such as address alignment, linker section, inclusion
+# as read-only (default) or as writable, data compression and including only
+# a subset of data from the specified binary files, is supported through
+# named optional parameters.
+#
+# These functions provide a higher-level embedding mechanism compared to
+# generate_inc_* functions, enabling advanced use cases like:
+#
+#   - Embedding of data from more than one files, where the list and number
+#     of files being included is determined at build time, e.g. driven by
+#     some device-tree fields or config options. generate_inc_* functions
+#     cannot handle such use-cases without a fair amount of additional custom
+#     support code added to corresponding CMake build files.
+#
+#   - generate_inc_* functions embed binary data by first converting it
+#     into C-source compilable form; which is fine for small binary files
+#     but for larger files this can increase build time and resources usage
+#     significantly. Whereas these new functions can transparently make use
+#     of GNU-style "incbin" directive, when available (and usable), for much
+#     faster inclusion of binary files, automatically falling back to using
+#     generate_inc_* functions internally, for other cases.
+#
+# Required named parameters:
+#
+#   OUTPUT        - The generated file.
+#   BINARY_FILES  - List of binary files to be converted into embeddable form.
+#   SYMBOL_NAMES  - List of symbol names corresponding to binary files being embedded.
+#
+# Optional named parameters:
+#
+#   OFFSET        - Offset, in bytes, from which data inclusion from the
+#                   specified files should be started.
+#   LENGTH        - Length, in bytes, of the data subset to be included from
+#                   the specified files.
+#   READONLY      - yes (default) or no.
+#   ALIGN         - Alignment for data being embedded in bytes. Default is 4.
+#   SECTION       - Name of the desired linker section. Data from all specified
+#                   binary files will be placed in the given section name.
+#   COMPRESS      - Compress the data with specified compression method: gzip or no (default).
+#   GZIP_MTIME    - mtime seconds in the gzip header.
+#                   Defaults to zero to keep builds deterministic. For
+#                   current date and time, set this option to "now".
+#
+# Examples:
+#
+#   generate_binary_embed_inc_file_for_target(app
+#     OUTPUT        ${gen_dir}/test_data_embed_combined.inc
+#     BINARY_FILES  test1.bin test2.bin
+#     SYMBOL_NAMES  symbol_names test1_data test2_data
+#     ALIGN         16
+#   )
+#
+#   generate_binary_embed_inc_file(
+#     OUTPUT        ${gen_dir}/test_data_embed.inc
+#     BINARY_FILES  test_data.bin
+#     SYMBOL_NAMES  test_data
+#     OFFSET        5
+#     LENGTH        52
+#     SECTION       tdata
+#     READONLY      no
+#     ALIGN         32
+#   )
+#
+#   generate_binary_embed_inc_file(
+#     OUTPUT        ${gen_dir}/raw_data.inc
+#     BINARY_FILES  ${EXTERNAL_SDK_PATH}/testx_file.bin
+#     SYMBOL_NAMES  test_data
+#   )
+#
+function(generate_binary_embed_inc_file_for_target target)
+  set(single_args "OUTPUT")
+  set(opt_single_args "SECTION;ALIGN;READONLY;OFFSET;LENGTH;COMPRESS;GZIP_MTIME")
+  set(multi_args "BINARY_FILES;SYMBOL_NAMES")
+  cmake_parse_arguments(PARSE_ARGV 1 BINARY_EMBED "${options}"
+    "${single_args};${opt_single_args}" "${multi_args}")
+
+  if(BINARY_EMBED_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "generate_binary_embed_inc_file_for_target(${ARGV0} ...) given unknown "
+                        "arguments: ${BINARY_EMBED_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+
+  foreach(arg ${single_args};${multi_args})
+    if(NOT DEFINED BINARY_EMBED_${arg})
+      message(FATAL_ERROR "generate_binary_embed_inc_file_for_target(${ARGV0} ...) "
+                          "missing required argument: ${arg}"
+      )
+    endif()
+  endforeach()
+
+  list(LENGTH BINARY_EMBED_BINARY_FILES bin_files_count)
+  list(LENGTH BINARY_EMBED_SYMBOL_NAMES symbol_names_count)
+  if(NOT symbol_names_count EQUAL bin_files_count)
+      message(FATAL_ERROR "Number of specified binary files (${bin_files_count}) is not the same "
+              "as number of the corresponding symbols names (${symbol_names_count})")
+  endif()
+
+  set(generated_file ${BINARY_EMBED_OUTPUT})
+  set(binary_files ${BINARY_EMBED_BINARY_FILES})
+  set(symbol_names ${BINARY_EMBED_SYMBOL_NAMES})
+  set(section ${BINARY_EMBED_SECTION})
+
+  if(NOT DEFINED BINARY_EMBED_READONLY)
+    set(readonly yes)
+  else()
+    set(readonly ${BINARY_EMBED_READONLY})
+  endif()
+
+  if(NOT DEFINED BINARY_EMBED_ALIGN)
+    set(align 4)
+  else()
+    set(align ${BINARY_EMBED_ALIGN})
+  endif()
+
+  if(NOT DEFINED BINARY_EMBED_OFFSET)
+    set(offset 0)
+  else()
+    set(offset ${BINARY_EMBED_OFFSET})
+  endif()
+
+  if(NOT DEFINED BINARY_EMBED_LENGTH)
+    set(length -1)
+  else()
+    set(length ${BINARY_EMBED_LENGTH})
+  endif()
+
+  if(NOT DEFINED BINARY_EMBED_COMPRESS)
+    set(compress no)
+  else()
+    set(compress ${BINARY_EMBED_COMPRESS})
+    if (compress STREQUAL gzip)
+      set(compress_param -g)
+    else()
+      message(WARNING "Unusupported compression method.")
+    endif()
+  endif()
+
+  if(DEFINED BINARY_EMBED_GZIP_MTIME)
+    if(NOT compress STREQUAL gzip)
+      if(DEFINED gzip_mtime_param)
+        message(WARNING "GZIP_MTIME specified without enabling gzip compression - ignored.")
+      endif()
+    else()
+      if (BINARY_EMBED_GZIP_MTIME STREQUAL "now")
+        set(gzip_mtime_param --gzip-mtime)
+      else()
+        set(gzip_mtime_param --gzip-mtime=${BINARY_EMBED_GZIP_MTIME})
+      endif()
+    endif()
+  endif()
+
+  # Enable use of GNU-style incbin directive, if toolchain being used supports
+  # GNU extensions and compression or partial inclusion is not requested.
+  if(CONFIG_TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS AND
+    (offset EQUAL 0) AND (length EQUAL -1) AND (zip STREQUAL no))
+    set(use_incbin yes)
+  else()
+    set(use_incbin no)
+  endif()
+
+  set(generated_files ${generated_file})
+  if(use_incbin)
+    list(APPEND generated_files ${generated_file}.S)
+    zephyr_library_sources(${generated_file}.S)
+  endif()
+
+  generate_unique_target_name_from_filename(${generated_file} generated_bin_arrays_inc_target)
+
+  add_custom_command(
+    OUTPUT ${generated_files}
+    COMMAND ${CMAKE_COMMAND}
+      -DWORKING_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR}
+      -DGENERATED_FILE=${generated_file}
+      "-DBINARY_FILES=${binary_files}"
+      "-DSYMBOL_NAMES=${symbol_names}"
+      -DOFFSET=${offset}
+      -DLENGTH=${length}
+      -DREADONLY=${readonly}
+      -DALIGNMENT=${align}
+      -DSECTION=${section}
+      -DCOMPRESS=${compress}
+      -DUSE_INCBIN=${use_incbin}
+      -P ${ZEPHYR_BASE}/cmake/gen_binary_embed_inc.cmake
+    DEPENDS ${binary_files}
+    VERBATIM
+    )
+
+  add_custom_target(${generated_bin_arrays_inc_target} DEPENDS ${generated_files})
+
+  if(NOT use_incbin)
+    cmake_path(GET generated_file PARENT_PATH gen_dir)
+    foreach(binary_file sym_name IN ZIP_LISTS binary_files symbol_names)
+      generate_inc_file_for_target(
+        ${generated_bin_arrays_inc_target}
+        ${binary_file}
+        ${gen_dir}/${sym_name}.inc
+        -mliteral
+        -o${offset}
+        -l${length}
+        ${compress_param}
+        ${gzip_mtime_param}
+        )
+		endforeach()
+  endif()
+
+  add_dependencies(${target} ${generated_bin_arrays_inc_target})
+endfunction()
+
+function(generate_binary_embed_inc_file)
+  generate_binary_embed_inc_file_for_target(${ZEPHYR_CURRENT_LIBRARY} ${ARGN})
+endfunction()
+
 # 1.4. board_*
 #
 # This section is for extensions related to Zephyr board handling.
