@@ -25,6 +25,26 @@
 #define NET_IPV4_DSCP_OFFSET 2
 #define NET_IPV4_ECN_MASK 0x03
 
+/* IPv4 DiffServ code points (DSCP) for Assured Forwarding (AF) group.
+ * See https://tools.ietf.org/html/rfc2597
+ *     https://en.wikipedia.org/wiki/Differentiated_services
+ */
+/* Drop probability low */
+#define NET_IPV4_DSCP_AF11 10 /* 001010 */ /* Class 1 */
+#define NET_IPV4_DSCP_AF21 18 /* 010010 */ /* Class 2 */
+#define NET_IPV4_DSCP_AF31 26 /* 011010 */ /* Class 3 */
+#define NET_IPV4_DSCP_AF41 34 /* 100010 */ /* Class 4 */
+/* Drop probability medium */
+#define NET_IPV4_DSCP_AF12 12 /* 001100 */ /* Class 1 */
+#define NET_IPV4_DSCP_AF22 20 /* 010100 */ /* Class 2 */
+#define NET_IPV4_DSCP_AF32 28 /* 011100 */ /* Class 3 */
+#define NET_IPV4_DSCP_AF42 36 /* 100100 */ /* Class 4 */
+/* Drop probability high */
+#define NET_IPV4_DSCP_AF13 14 /* 001110 */ /* Class 1 */
+#define NET_IPV4_DSCP_AF23 22 /* 010110 */ /* Class 2 */
+#define NET_IPV4_DSCP_AF33 30 /* 011110 */ /* Class 3 */
+#define NET_IPV4_DSCP_AF43 38 /* 100110 */ /* Class 4 */
+
 /* IPv4 Options */
 #define NET_IPV4_OPTS_EO   0   /* End of Options */
 #define NET_IPV4_OPTS_NOP  1   /* No operation */

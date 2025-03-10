@@ -108,6 +108,38 @@ Python Devicetree library test files
 
   * Various yaml files under ``scripts/dts/python-devicetree/tests``
 
+WireGuard VPN Files
+-------------------
+
+* *Origin:* wireguard-lwip
+* *Licensing:* `BSD-3-clause`_ and `MIT License`_
+* *Impact:* These files are only linked into the firmware if :kconfig:option:`CONFIG_WIREGUARD`
+  is enabled. Note that the
+  :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/poly1305-donna.c`,
+  :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/poly1305-donna.h` and
+  :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/poly1305-donna-32.h` files
+  are dual licensed to MIT or Public Domain, and we are using the MIT license for those
+  files.
+* *Files with BSD-3-clause license*:
+
+  * :zephyr_file:`subsys/net/lib/wireguard/wg_crypto.c`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/crypto.h`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/crypto.c`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/chacha20.c`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/blake2s.h`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/chacha20.h`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/blake2s.c`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/chacha20poly1305.c`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/chacha20poly1305.h`
+
+* *Files with MIT license*:
+
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/poly1305-donna.c`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/poly1305-donna.h`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/poly1305-donna-32.h`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/x25519.h`
+  * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/x25519.c`
+
 .. _Apache 2.0 License:
    https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
 

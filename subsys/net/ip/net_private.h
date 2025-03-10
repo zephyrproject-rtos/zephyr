@@ -89,6 +89,12 @@ extern void socket_service_init(void);
 static inline void socket_service_init(void) { }
 #endif
 
+#if defined(CONFIG_WIREGUARD)
+extern int wireguard_init(void);
+#else
+static inline int wireguard_init(void) { return -ENOTSUP; }
+#endif
+
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);
 extern const char *net_context_state(struct net_context *context);
