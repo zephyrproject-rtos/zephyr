@@ -140,4 +140,6 @@ source "drivers/adc/Kconfig.ad4114"
 
 source "drivers/adc/Kconfig.ad7124"
 
+source "drivers/adc/Kconfig.ad405x"
+
 endif # ADC
