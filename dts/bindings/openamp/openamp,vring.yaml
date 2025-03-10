@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenAMP vring
+
+compatible: "openamp,vring"
+
+include: base.yaml
+
+
+properties:
+  notify-id:
+    type: int
+    required: true
+
+  device-address:
+    type: int
+    default: -1
+
+
+  memory-region:
+    type: phandle
+    required: true
+    description: phandle to the shared memory region
+
+  num-buffers:
+    type: int
+    required: true

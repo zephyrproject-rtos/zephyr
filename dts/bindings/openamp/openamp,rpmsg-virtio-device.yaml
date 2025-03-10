@@ -1,0 +1,34 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenAMP RPMSG VirtIO device
+
+compatible: "openamp,rpmsg-virtio-device"
+
+include: openamp,virtio-device.yaml
+
+bus: rpmsg
+
+properties:
+  device-id:
+    default: 7
+
+  memory-region:
+    description: phandle to the shared memory for rpmsg buffers
+    required: true
+    type: phandle
+
+  zephyr,priority:
+    type: array
+    description: |
+      WQ priority for the instance. This property is an array composed by the
+      priority level and the type of priority (PRIO_COOP for cooperative or
+      PRIO_PREEMPT for preemptive).
+
+      For example for a thread priority K_PRIO_COOP(1) in DT we have
+        priority = <1 PRIO_COOP>;
+      or for K_PRIO_PREEMPT(2)
+        priority = <2 PRIO_PREEMPT>;
+
+      When this property is missing a default priority of <0 PRIO_PREEMPT> is
+      assumed.
