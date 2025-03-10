@@ -70,6 +70,9 @@
 #define XEC_PCR_REG_BASE						\
 	((struct pcr_regs *)(DT_REG_ADDR(DT_NODELABEL(pcr))))
 
+#define MCHP_P80_MAX_BYTE_COUNT  4
+#define MCHP_P80_FIFO_READ_COUNT 8
+
 struct xec_espi_host_sram_config {
 	uint32_t host_sram1_base;
 	uint32_t host_sram2_base;
@@ -817,6 +820,7 @@ static const struct xec_p80bd_config xec_p80bd0_cfg = {
  * We must decode the byte lane information and produce one or more
  * notification packets.
  */
+#ifndef CONFIG_ESPI_XEC_P80_MULTIBYTE
 static void p80bd0_isr(const struct device *dev)
 {
 	struct espi_xec_data *const data =
@@ -825,7 +829,7 @@ static void p80bd0_isr(const struct device *dev)
 		(struct p80bd_regs *)xec_p80bd0_cfg.regbase;
 	struct espi_event evt = { ESPI_BUS_PERIPHERAL_NOTIFICATION, 0,
 				  ESPI_PERIPHERAL_NODATA };
-	int count = 8; /* limit ISR to 8 bytes */
+	int count = MCHP_P80_FIFO_READ_COUNT; /* limit ISR to 8 bytes */
 	uint32_t dattr = p80regs->EC_DA;
 
 	/* b[7:0]=8-bit value written, b[15:8]=attributes */
@@ -861,6 +865,47 @@ static void p80bd0_isr(const struct device *dev)
 	/* clear GIRQ status */
 	mchp_xec_ecia_info_girq_src_clr(xec_p80bd0_cfg.ecia_info);
 }
+#else
+static void p80bd0_isr(const struct device *dev)
+{
+	struct espi_xec_data *const data =
+		(struct espi_xec_data *const)dev->data;
+	struct p80bd_regs *p80regs =
+		(struct p80bd_regs *)xec_p80bd0_cfg.regbase;
+	struct espi_event evt = { ESPI_BUS_PERIPHERAL_NOTIFICATION, 0,
+				  ESPI_PERIPHERAL_NODATA };
+	int count = MCHP_P80_FIFO_READ_COUNT; /* limit ISR to 8 bytes */
+	uint32_t dattr = p80regs->EC_DA;
+	uint8_t byte_count;
+	uint8_t shift;
+
+	/* b[7:0]=8-bit value written, b[15:8]=attributes */
+	while ((dattr & MCHP_P80BD_ECDA_NE) && (count--)) { /* Not empty? */
+		byte_count = 0;
+		evt.evt_data = 0;
+
+		byte_count = BIT((dattr & MCHP_P80BD_ECDA_LEN_MSK) >> MCHP_P80BD_ECDA_LEN_POS);
+		if (byte_count <= MCHP_P80_MAX_BYTE_COUNT) {
+			shift = 0;
+			while (byte_count) {
+				evt.evt_data |= (dattr & 0xffu) << (shift * 8);
+				byte_count--;
+				shift++;
+				if (byte_count) {
+					dattr = p80regs->EC_DA;
+				}
+			}
+
+			evt.evt_details = ESPI_PERIPHERAL_DEBUG_PORT80;
+			espi_send_callbacks(&data->callbacks, dev, evt);
+		}
+		dattr = p80regs->EC_DA;
+	}
+
+	/* clear GIRQ status */
+	mchp_xec_ecia_info_girq_src_clr(xec_p80bd0_cfg.ecia_info);
+}
+#endif
 
 static int connect_irq_p80bd0(const struct device *dev)
 {
