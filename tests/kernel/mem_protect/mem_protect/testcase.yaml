@@ -26,6 +26,7 @@ tests:
       - slwrb4180a
       - mps3/corstone300/an547
       - nrf9160dk/nrf9160
+      - xg29_rb4412a
     integration_platforms:
       - mps3/corstone300/an547
     extra_args: CONFIG_MPU_GAP_FILLING=y
