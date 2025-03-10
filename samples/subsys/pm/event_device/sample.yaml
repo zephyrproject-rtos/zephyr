@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: PM event device sample
+tests:
+  sample.subsys.pm.event_device:
+    tags:
+      - pm_event_device
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpunet
+      - nrf52840dk/nrf52840
