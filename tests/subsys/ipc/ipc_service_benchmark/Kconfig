@@ -1,0 +1,10 @@
+
+source "Kconfig.zephyr"
+
+config TEST_MULTI_ENDPOINT
+	bool
+	default y if IPC_SERVICE_BACKEND_ICBMSG
+
+config TEST_NO_COPY
+	bool "Test no-copy API"
+	depends on IPC_SERVICE_BACKEND_ICBMSG
