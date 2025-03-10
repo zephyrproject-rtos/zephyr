@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/irq.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 #define DT_DRV_COMPAT wch_gpio
 
