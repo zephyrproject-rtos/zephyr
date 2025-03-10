@@ -3,6 +3,9 @@ sample:
   name: stm32_h7_dual_core
 tests:
   sample.boards.stm32.h7_dual_core:
-    depends_on: mailbox
     build_only: true
+    vendor_allow:
+      - st
     filter: dt_compat_enabled("st,stm32-hsem-mailbox")
+    integration_platforms:
+      - stm32h747i_disco/stm32h747xx/m4

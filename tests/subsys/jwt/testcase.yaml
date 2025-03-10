@@ -5,7 +5,7 @@ common:
   timeout: 120
   tags: jwt
   integration_platforms:
-    - frdm_k64f
+    - qemu_x86
   extra_configs:
     - CONFIG_TEST_RANDOM_GENERATOR=y
 tests:

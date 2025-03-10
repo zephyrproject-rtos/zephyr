@@ -11,3 +11,5 @@ tests:
     tags: bindesc
     filter: dt_chosen_enabled("zephyr,flash-controller") and CONFIG_FLASH_HAS_DRIVER_ENABLED
       and CONFIG_ARCH_SUPPORTS_ROM_START
+    integration_platforms:
+      - mps2/an385

@@ -6,3 +6,5 @@ tests:
     filter: dt_compat_enabled("issi,is31fl3733")
     tags: LED
     depends_on: i2c
+    integration_platforms:
+      - frdm_k22f
