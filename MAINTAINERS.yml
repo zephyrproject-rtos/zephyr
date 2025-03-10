@@ -3597,9 +3597,15 @@ Raspberry Pi Pico Platforms:
     - threeeights
     - ajf58
   files:
-    - boards/raspberrypi/
+    - boards/raspberrypi/rpi_pico*/
     - boards/adafruit/kb2040/
+    - boards/adafruit/macropad_rp2040/
+    - boards/adafruit/qt_py_rp2040/
+    - boards/pimoroni/pico_plus2/
+    - boards/seeed/xiao_rp2040/
     - boards/sparkfun/pro_micro_rp2040/
+    - boards/waveshare/rp2040_zero/
+    - boards/wiznet/w5500_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
     - drivers/*/*rpi_pico
