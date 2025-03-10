@@ -9,6 +9,7 @@
 #include <zephyr/drivers/lora.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/random/random.h>
 #include <zephyr/kernel.h>
 
 /* LoRaMac-node specific includes */
@@ -29,6 +30,11 @@ struct sx12xx_rx_params {
 	int8_t *snr;
 };
 
+struct sx12xx_tx_params {
+	uint8_t *buf;
+	uint32_t size;
+};
+
 static struct sx12xx_data {
 	const struct device *dev;
 	struct k_poll_signal *operation_done;
@@ -38,6 +44,7 @@ static struct sx12xx_data {
 	struct lora_modem_config tx_cfg;
 	atomic_t modem_usage;
 	struct sx12xx_rx_params rx_params;
+	struct sx12xx_tx_params tx_params;
 } dev_data;
 
 int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags)
@@ -94,6 +101,14 @@ static bool modem_release(struct sx12xx_data *data)
 	/* Completely release modem */
 	data->operation_done = NULL;
 	atomic_clear(&data->modem_usage);
+
+	/* Free RX buffer */
+	if (data->tx_params.buf) {
+		k_free(data->tx_params.buf);
+		data->tx_params.buf = NULL;
+		data->tx_params.size = 0;
+	}
+
 	return true;
 }
 
@@ -151,6 +166,24 @@ static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 	atomic_clear(&dev_data.modem_usage);
 	/* Notify caller RX is complete */
 	k_poll_signal_raise(sig, 0);
+}
+
+static void sx12xx_ev_cad_done(bool detected)
+{
+
+	if(detected) {
+		struct k_poll_signal *sig = dev_data.operation_done;
+		if (modem_release(&dev_data)) {
+			/* Raise signal if provided */
+			if (sig) {
+				k_poll_signal_raise(sig, -EBUSY);
+			}
+		}
+	} else {
+		Radio.SetMaxPayloadLength(MODEM_LORA, dev_data.tx_params.size);
+		Radio.Send(dev_data.tx_params.buf, dev_data.tx_params.size);
+	}
+
 }
 
 static void sx12xx_ev_tx_done(void)
@@ -228,6 +261,12 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 	 * modem and driver.
 	 */
 	ret = k_poll(&evt, 1, K_MSEC(2 * air_time));
+	if (done.result < 0) {
+		if (done.result == -EBUSY) {
+			LOG_WRN("Transmission channel busy");
+			return -EBUSY;
+		}
+	}
 	if (ret < 0) {
 		LOG_ERR("Packet transmission failed!");
 		if (!modem_release(&dev_data)) {
@@ -249,9 +288,27 @@ int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
 	/* Store signal */
 	dev_data.operation_done = async;
 
-	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
+	if (dev_data.tx_cfg.cad) {
+		uint8_t *buffer = k_malloc(data_len);
+		if (!buffer) {
+		    modem_release(&dev_data);
+		    return -ENOMEM;
+		}
+		memcpy(buffer, data, data_len);
+		dev_data.tx_params.size = data_len;
+		dev_data.tx_params.buf = buffer;
 
-	Radio.Send(data, data_len);
+		Radio.Standby();
+
+		if (dev_data.tx_cfg.cad_delay_max > 0) {
+			k_sleep(K_MSEC(sys_rand32_get() % dev_data.tx_cfg.cad_delay_max));
+		}
+
+		Radio.StartCad();
+	} else {
+		Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
+		Radio.Send(data, data_len);
+	}
 
 	return 0;
 }
@@ -389,6 +446,7 @@ int sx12xx_init(const struct device *dev)
 	dev_data.events.RxError = sx12xx_ev_rx_error;
 	/* TX timeout event raises at the end of the test CW transmission */
 	dev_data.events.TxTimeout = sx12xx_ev_tx_timed_out;
+	dev_data.events.CadDone = sx12xx_ev_cad_done;
 	Radio.Init(&dev_data.events);
 
 	/*
