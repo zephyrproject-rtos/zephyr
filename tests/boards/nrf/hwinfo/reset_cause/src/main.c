@@ -11,6 +11,7 @@
 #include <errno.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 LOG_MODULE_REGISTER(resetreason, LOG_LEVEL_INF);
 
 static const struct device *const my_wdt_device = DEVICE_DT_GET(DT_ALIAS(watchdog0));
@@ -22,13 +23,15 @@ volatile uint32_t machine_state __attribute__((section(NOINIT_SECTION)));
 volatile uint32_t supported __attribute__((section(NOINIT_SECTION)));
 volatile uint32_t wdt_status __attribute__((section(NOINIT_SECTION)));
 volatile uint32_t reboot_status __attribute__((section(NOINIT_SECTION)));
+volatile uint32_t cpu_lockup_status __attribute__((section(NOINIT_SECTION)));
 
 /* Value used to indicate that the watchdog has fired. */
 #define WDT_HAS_FIRED (0x12345678U)
 #define REBOOT_WAS_DONE (0x87654321U)
+#define CPU_LOCKUP_WAS_DONE (0x19283746U)
 
 /* Highest value in the switch statement in the main() */
-#define LAST_STATE (2)
+#define LAST_STATE (3)
 
 static void wdt_int_cb(const struct device *wdt_dev, int channel_id)
 {
@@ -236,7 +239,7 @@ void test_reset_software(uint32_t cause)
 		if (reboot_status != REBOOT_WAS_DONE) {
 			/* If software reset hasn't happen yet, do it. */
 			reboot_status = REBOOT_WAS_DONE;
-			LOG_INF("Test RESET_SOFTWARE - Rebooting");
+			LOG_INF("Test RESET_SOFTWARE");
 
 			/* Flush cache as reboot may invalidate all lines. */
 			sys_cache_data_flush_range((void *) &machine_state, sizeof(machine_state));
@@ -316,6 +319,49 @@ void test_reset_watchdog(uint32_t cause)
 	}
 }
 
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+{
+	LOG_INF("%s(%d)", __func__, reason);
+	LOG_PANIC();
+
+	/* Assert inside Assert handler - shall result in reset due to cpu lockup. */
+	__ASSERT(0, "Intentionally failed assert inside kernel panic");
+}
+
+void test_reset_cpu_lockup(uint32_t cause)
+{
+	/* Check that reset cause from cpu lockup is detected. */
+	if (supported & RESET_CPU_LOCKUP) {
+		if (cpu_lockup_status != CPU_LOCKUP_WAS_DONE) {
+			/* If reset due to cpu lockup hasn't happen yet, do it. */
+			cpu_lockup_status = CPU_LOCKUP_WAS_DONE;
+			LOG_INF("Test RESET_CPU_LOCKUP");
+
+			/* Flush cache as reboot may invalidate all lines. */
+			sys_cache_data_flush_range((void *) &machine_state, sizeof(machine_state));
+			sys_cache_data_flush_range((void *) &cpu_lockup_status,
+				sizeof(cpu_lockup_status));
+			__ASSERT(0, "Intentionally failed assertion");
+		} else {
+			/* Reset due to CPU Lockup was done */
+			LOG_INF("TEST that RESET_CPU_LOCKUP was detected");
+			if (cause & RESET_CPU_LOCKUP) {
+				LOG_INF("PASS: RESET_CPU_LOCKUP detected");
+				print_bar();
+				/* Check RESET_SOFTWARE can be cleared */
+				test_clear_reset_cause();
+			} else {
+				LOG_ERR("FAIL: RESET_CPU_LOCKUP not set");
+				print_bar();
+			}
+			/* Cleanup */
+			cpu_lockup_status = 0;
+			sys_cache_data_flush_range((void *) &cpu_lockup_status,
+				sizeof(cpu_lockup_status));
+		}
+	}
+}
+
 int main(void)
 {
 	uint32_t cause;
@@ -326,6 +372,9 @@ int main(void)
 	}
 	if (reboot_status == REBOOT_WAS_DONE) {
 		LOG_INF("This boot is due to expected software reset");
+	}
+	if (cpu_lockup_status == CPU_LOCKUP_WAS_DONE) {
+		LOG_INF("This boot is due to expected cpu lockup reset");
 	}
 	print_bar();
 
@@ -340,12 +389,14 @@ int main(void)
 		machine_state = 0;
 		reboot_status = 0;
 		wdt_status = 0;
+		cpu_lockup_status = 0;
 	}
 
 	while (machine_state <= LAST_STATE) {
 		LOG_DBG("machine_state = %u", machine_state);
 		LOG_DBG("reboot_status = %u", reboot_status);
 		LOG_DBG("wdt_status = %u", wdt_status);
+		LOG_DBG("cpu_lockup_status = %u", cpu_lockup_status);
 
 		switch (machine_state) {
 		case 0: /* Print (an store) which reset causes are supported. */
@@ -357,6 +408,9 @@ int main(void)
 			machine_state++;
 		case 2: /* Test RESET_WATCHDOG. */
 			test_reset_watchdog(cause);
+			machine_state++;
+		case 3: /* Test CPU_LOCKUP. */
+			test_reset_cpu_lockup(cause);
 			machine_state++;
 		}
 	}
