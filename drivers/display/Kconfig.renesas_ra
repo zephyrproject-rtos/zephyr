@@ -1,6 +1,6 @@
 # Renesas RA Family
 
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config RENESAS_RA_GLCDC
@@ -22,6 +22,14 @@ config RENESAS_RA_GLCDC_FB_NUM
 	    - 0 frame buffer maintained by application, must write with full screen pixels.
 	    - 1 single frame buffer in RENESAS RA GLCDC driver.
 	    - 2 double frame buffer in RENESAS RA GLCDC driver.
+
+config RENESAS_RA_GLCDC_FRAME_BUFFER_SECTION
+	string "RAM memory section to place frame buffer"
+	depends on RENESAS_RA_GLCDC_FB_NUM > 0
+	help
+	  RAM memory section name to place frame buffer.
+	  Example: to place display frame buffer in external SDRAM (.sdram section)
+	    CONFIG_RENESAS_RA_GLCDC_FRAME_BUFFER_SECTION=".sdram"
 
 if LVGL
 
