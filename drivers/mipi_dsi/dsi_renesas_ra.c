@@ -54,8 +54,8 @@ struct mipi_dsi_renesas_ra_data {
 	volatile bool fatal_error;
 };
 
-void mipi_dsi_seq0(void);
-void mipi_dsi_ferr(void);
+void mipi_dsi_seq0_isr(void);
+void mipi_dsi_ferr_isr(void);
 void mipi_dsi_callback(mipi_dsi_callback_args_t *p_args);
 
 typedef struct {
@@ -214,13 +214,13 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(id, sq0, irq)] =                                  \
 			BSP_PRV_IELS_ENUM(EVENT_MIPIDSI_SEQ0);                                     \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(id, sq0, irq),                                     \
-			    DT_INST_IRQ_BY_NAME(id, sq0, priority), mipi_dsi_seq0,                 \
+			    DT_INST_IRQ_BY_NAME(id, sq0, priority), mipi_dsi_seq0_isr,             \
 			    DEVICE_DT_INST_GET(id), 0);                                            \
 		irq_enable(DT_INST_IRQ_BY_NAME(id, sq0, irq));                                     \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(id, ferr, irq)] =                                 \
 			BSP_PRV_IELS_ENUM(EVENT_MIPIDSI_FERR);                                     \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(id, ferr, irq),                                    \
-			    DT_INST_IRQ_BY_NAME(id, ferr, priority), mipi_dsi_ferr,                \
+			    DT_INST_IRQ_BY_NAME(id, ferr, priority), mipi_dsi_ferr_isr,            \
 			    DEVICE_DT_INST_GET(id), 0);                                            \
 		irq_enable(DT_INST_IRQ_BY_NAME(id, ferr, irq));                                    \
 	}
