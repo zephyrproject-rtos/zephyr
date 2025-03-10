@@ -34,7 +34,7 @@
 
 /*
  * Normally main() is the main entry point of a C executable.
- * When compiling for native_posix, the Zephyr "application" is not the actual
+ * When compiling using CONFIG_NATIVE_APPLICATION, the Zephyr "application" is not the actual
  * entry point of the executable but something the Zephyr OS calls during
  * boot.
  * Therefore we need to rename this application main something else, so
@@ -58,7 +58,7 @@ extern "C" int _posix_zephyr_main(void);
 /*
  * The defines below in this header exist only to enable the Zephyr POSIX API
  * (include/posix/), and applications using it, to be compiled on top of
- * native_posix.
+ * the deprecated CONFIG_NATIVE_APPLICATION targets.
  *
  * Without this header, both the Zephyr POSIX API functions and the equivalent
  * host OS functions would have the same name. This would result in the linker
@@ -72,8 +72,8 @@ extern "C" int _posix_zephyr_main(void);
  * into something which is unlikely to collide with other real functions
  * (Any unlikely string would have done)
  *
- * If you want to link an external library together with Zephyr code for the
- * native_posix target, where that external library calls into the Zephyr
+ * If you want to link an external library together with Zephyr code for a
+ * CONFIG_NATIVE_APPLICATION based target, where that external library calls into the Zephyr
  * POSIX API, you may want to include this header when compiling that library,
  * or rename the calls to match the ones in the defines below.
  */
