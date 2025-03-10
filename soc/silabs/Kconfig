@@ -316,4 +316,7 @@ config SOC_GECKO_CUSTOM_RADIO_PHY
 	  management, sending and receiving packets on radio phy. User has
 	  to provide the radio_config.c and radio_config.h files for the phy.
 
+config SOC_SILABS_RADIO_MODULE
+	bool "SOC is a pre-certified radio module"
+
 endif # SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
