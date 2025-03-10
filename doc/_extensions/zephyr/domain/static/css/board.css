@@ -133,11 +133,6 @@
         }
     }
 
-    /* Disabled feature styling */
-    tr.disabled {
-        opacity: 0.3;
-    }
-
     /* Column widths and specific styling */
     .type {
         font-weight: 600;
