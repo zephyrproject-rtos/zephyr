@@ -218,7 +218,7 @@ static void spin_for_threads_exit(void)
 	unsigned int num_threads = arch_num_cpus();
 
 	for (int i = 0; i < num_threads - 1; i++) {
-		volatile uint8_t *p = &tinfo[i].tid->base.thread_state;
+		volatile uint16_t *p = &tinfo[i].tid->base.thread_state;
 
 		while (!(*p & _THREAD_DEAD)) {
 		}
