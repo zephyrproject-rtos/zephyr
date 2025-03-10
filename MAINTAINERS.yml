@@ -2875,7 +2875,6 @@ Networking:
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/ptp.h
     - include/zephyr/net/wifi*.h
-    - include/zephyr/net/buf.h
     - include/zephyr/net/dhcpv4*.h
     - include/zephyr/net/http/
     - samples/net/gptp/
@@ -2928,7 +2927,6 @@ Networking:
     - jukkar
   files:
     - doc/services/net_buf/
-    - include/zephyr/net/buf.h
     - include/zephyr/net_buf.h
     - lib/net_buf/
     - tests/lib/net_buf/
