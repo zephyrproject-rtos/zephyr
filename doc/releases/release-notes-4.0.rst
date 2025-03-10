@@ -279,7 +279,7 @@ Boards & SoC Support
    * :zephyr:board:`ADI MAX32666FTHR <max32666fthr>` (``max32666fthr``)
    * :zephyr:board:`ADI MAX32675EVKIT <max32675evkit>` (``max32675evkit``)
    * :zephyr:board:`ADI MAX32690FTHR <max32690fthr>` (``max32690fthr``)
-   * :ref:`Arduino Nicla Vision <arduino_nicla_vision_board>` (``arduino_nicla_vision``)
+   * :zephyr:board:`arduino_nicla_vision` (``arduino_nicla_vision``)
    * :zephyr:board:`BeagleBone AI-64 <beaglebone_ai64>` (``beaglebone_ai64``)
    * :zephyr:board:`BeaglePlay (CC1352) <beagleplay>` (``beagleplay``)
    * :zephyr:board:`DPTechnics Walter <walter>` (``walter``)
