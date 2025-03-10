@@ -16,4 +16,8 @@ bst_test_install_t test_installers[] = {
 	NULL,
 };
 
-/* bst_main will be called by the BT tester's `main` function */
+int main(void)
+{
+	bst_main();
+	return 0;
+}

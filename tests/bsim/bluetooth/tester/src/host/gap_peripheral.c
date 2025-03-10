@@ -18,7 +18,7 @@
 #include "btp/btp.h"
 #include "bsim_btp.h"
 
-LOG_MODULE_REGISTER(bsim_gap_peripheral, CONFIG_BTTESTER_LOG_LEVEL);
+LOG_MODULE_REGISTER(bsim_gap_peripheral, CONFIG_LOG_DEFAULT_LEVEL);
 
 static void test_gap_peripheral(void)
 {

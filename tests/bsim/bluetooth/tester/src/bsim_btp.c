@@ -7,81 +7,31 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <zephyr/drivers/uart_pipe.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys_clock.h>
+#include <sys/types.h>
 
 #include "babblekit/testcase.h"
 
 #include "btp/btp.h"
 
-LOG_MODULE_REGISTER(bsim_btp, CONFIG_BTTESTER_LOG_LEVEL);
-
-static uint8_t *btp_buffer;
-static size_t btp_buffer_len;
-static uart_pipe_recv_cb btp_cb;
+LOG_MODULE_REGISTER(bsim_btp, CONFIG_LOG_DEFAULT_LEVEL);
 
 K_FIFO_DEFINE(btp_rsp_fifo);
 NET_BUF_POOL_FIXED_DEFINE(btp_rsp_pool, 1, BTP_MTU, 0, NULL);
 K_FIFO_DEFINE(btp_evt_fifo);
 NET_BUF_POOL_FIXED_DEFINE(btp_evt_pool, 100, BTP_MTU, 0, NULL);
 
-static void wait_for_response(const struct btp_hdr *cmd_hdr)
-{
-	const struct btp_hdr *rsp_hdr;
-	struct net_buf *buf;
-
-	buf = k_fifo_get(&btp_rsp_fifo, K_SECONDS(1));
-	TEST_ASSERT(buf != NULL);
-
-	rsp_hdr = (struct btp_hdr *)buf->data;
-	TEST_ASSERT(rsp_hdr->len <= BTP_MTU, "len %u > %d", rsp_hdr->len, BTP_MTU);
-
-	LOG_DBG("rsp service 0x%02X and opcode 0x%02X len %u", cmd_hdr->service, cmd_hdr->opcode,
-		rsp_hdr->len);
-
-	TEST_ASSERT(rsp_hdr->service == cmd_hdr->service && rsp_hdr->opcode == cmd_hdr->opcode);
-
-	net_buf_unref(buf);
-}
-
-/* BTP communication is inspired from `uart_pipe_rx` to achieve a similar API */
-void bsim_btp_send_to_tester(const uint8_t *data, size_t len)
-{
-	const struct btp_hdr *cmd_hdr;
-	size_t offset = len;
-
-	TEST_ASSERT(data != NULL);
-	TEST_ASSERT(btp_buffer != NULL);
-	TEST_ASSERT(len <= btp_buffer_len, "len %zu > %zu", len, btp_buffer_len);
-	TEST_ASSERT(len >= sizeof(*cmd_hdr), "len %zu <= %zu", len, sizeof(*cmd_hdr));
-
-	memcpy(btp_buffer, data, len);
-
-	cmd_hdr = (const struct btp_hdr *)data;
-	LOG_DBG("cmd service 0x%02X and opcode 0x%02X", cmd_hdr->service, cmd_hdr->opcode);
-	btp_buffer = btp_cb(btp_buffer, &offset);
-	TEST_ASSERT(offset == 0U);
-
-	wait_for_response(cmd_hdr);
-}
-
-void bsim_btp_register_tester(uint8_t *buffer, size_t len, uart_pipe_recv_cb cb)
-{
-	TEST_ASSERT(cb != NULL);
-	TEST_ASSERT(buffer != NULL);
-	TEST_ASSERT(len > sizeof(struct btp_hdr), "len %zu", len);
-	TEST_ASSERT(len <= BTP_MTU, "len %zu > %d", len, BTP_MTU);
-
-	btp_buffer = buffer;
-	btp_buffer_len = len;
-	btp_cb = cb;
-
-	LOG_INF("btp registered with %p %zu %p", buffer, len, cb);
-}
+static const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 static bool is_valid_core_packet_len(const struct btp_hdr *hdr, struct net_buf_simple *buf_simple)
 {
@@ -1764,16 +1714,16 @@ static bool is_valid_pbp_packet_len(const struct btp_hdr *hdr, struct net_buf_si
  *
  * It verifies responses and events, but not commands
  */
-static bool is_valid_packet_len(struct net_buf *buf)
+static bool is_valid_packet_len(uint8_t buf[], size_t len)
 {
 	struct net_buf_simple buf_simple;
 	const struct btp_hdr *hdr;
 
 	TEST_ASSERT(buf != NULL);
-	LOG_HEXDUMP_DBG(buf->data, buf->len, "evt");
+	LOG_HEXDUMP_DBG(buf, len, "evt");
 
 	/* Make a simple copy of the data so we can pull the data without affecting the original */
-	net_buf_simple_init_with_data(&buf_simple, buf->data, buf->len);
+	net_buf_simple_init_with_data(&buf_simple, buf, len);
 	TEST_ASSERT(buf_simple.len >= sizeof(*hdr));
 
 	hdr = net_buf_simple_pull_mem(&buf_simple, sizeof(*hdr));
@@ -1850,76 +1800,8 @@ static bool is_valid_packet_len(struct net_buf *buf)
 		return is_valid_pbp_packet_len(hdr, &buf_simple);
 	}
 
-	LOG_ERR("Unhandled service", hdr->service);
+	LOG_ERR("Unhandled service 0x%02x", hdr->service);
 	return false;
-}
-
-void bsim_btp_send_to_bsim(const uint8_t *data, size_t len)
-{
-	static struct net_buf *buf;
-	bool full_evt;
-
-	TEST_ASSERT(len >= 0);
-	TEST_ASSERT(data != NULL);
-	TEST_ASSERT(len <= BTP_MTU - sizeof(struct btp_hdr), "len %zu < %d", len, BTP_MTU);
-	TEST_ASSERT(buf != NULL || (buf == NULL && len == sizeof(struct btp_hdr)), "len %zu buf %p",
-		    len, buf);
-
-	/* tester_send_with_index always sends the header first, and then any additional
-	 * information afterwards. We thus need to reassemble the full event.
-	 */
-	if (buf == NULL) {
-		const struct btp_hdr *hdr = (const struct btp_hdr *)data;
-
-		LOG_DBG("hdr service 0x%02X and opcode 0x%02X", hdr->service, hdr->opcode);
-		TEST_ASSERT(hdr->opcode != BTP_STATUS);
-
-		if (hdr->opcode < BTP_EVENT_OPCODE) {
-			buf = net_buf_alloc(&btp_rsp_pool, K_NO_WAIT);
-			TEST_ASSERT(buf != NULL);
-		} else {
-			buf = net_buf_alloc(&btp_evt_pool, K_NO_WAIT);
-			if (buf == NULL) {
-				/* Discard the oldest event */
-				buf = k_fifo_get(&btp_evt_fifo, K_NO_WAIT);
-				TEST_ASSERT(buf != NULL);
-				net_buf_unref(buf);
-
-				buf = net_buf_alloc(&btp_evt_pool, K_NO_WAIT);
-				TEST_ASSERT(buf != NULL);
-			}
-		}
-
-		full_evt = hdr->len == 0; /* we are not awaiting additional data if hdr->len == 0*/
-	} else {
-		/* If buf != NULL then we have received the hdr and this is the additional
-		 * data for the event/response. We always assume that we receive the rest
-		 * here
-		 */
-		const struct btp_hdr *hdr = (const struct btp_hdr *)buf->data;
-
-		TEST_ASSERT(buf != NULL && len == hdr->len, "len %zu hdr len %u", len, hdr->len);
-		full_evt = true;
-	}
-
-	net_buf_add_mem(buf, data, len);
-
-	if (full_evt) {
-		const struct btp_hdr *hdr = (const struct btp_hdr *)buf->data;
-
-		TEST_ASSERT(is_valid_packet_len(buf),
-			    "Header len %u does not match expected packet length for "
-			    "service 0x%02X and opcode 0x%02X",
-			    hdr->len, hdr->service, hdr->opcode);
-
-		if (hdr->opcode < BTP_EVENT_OPCODE) {
-			k_fifo_put(&btp_rsp_fifo, buf);
-		} else {
-			k_fifo_put(&btp_evt_fifo, buf);
-		}
-
-		buf = NULL;
-	}
 }
 
 void bsim_btp_wait_for_evt(uint8_t service, uint8_t opcode, struct net_buf **out_buf)
@@ -1953,4 +1835,116 @@ void bsim_btp_wait_for_evt(uint8_t service, uint8_t opcode, struct net_buf **out
 
 		net_buf_unref(buf);
 	}
+}
+
+static bool recv_cb(uint8_t buf[], size_t buf_len)
+{
+	struct btp_hdr *hdr = (void *)buf;
+	uint16_t len;
+
+	if (buf_len < sizeof(*hdr)) {
+		return false;
+	}
+
+	len = sys_le16_to_cpu(hdr->len);
+	TEST_ASSERT(len <= BTP_MTU - sizeof(*hdr), "Invalid packet length %zu", len);
+
+	if (buf_len < sizeof(*hdr) + len) {
+		return false;
+	}
+
+	TEST_ASSERT(is_valid_packet_len(buf, buf_len),
+		    "Header len %u does not match expected packet length for "
+		    "service 0x%02X and opcode 0x%02X",
+		    hdr->len, hdr->service, hdr->opcode);
+
+	if (hdr->opcode < BTP_EVENT_OPCODE) {
+		struct net_buf *net_buf = net_buf_alloc(&btp_rsp_pool, K_NO_WAIT);
+
+		TEST_ASSERT(buf != NULL);
+
+		net_buf_add_mem(net_buf, buf, buf_len);
+		k_fifo_put(&btp_rsp_fifo, net_buf);
+	} else {
+		struct net_buf *net_buf = net_buf_alloc(&btp_evt_pool, K_NO_WAIT);
+
+		if (net_buf == NULL) {
+			/* Discard the oldest event */
+			net_buf = k_fifo_get(&btp_evt_fifo, K_NO_WAIT);
+			TEST_ASSERT(net_buf != NULL);
+			net_buf_unref(net_buf);
+
+			net_buf = net_buf_alloc(&btp_evt_pool, K_NO_WAIT);
+			TEST_ASSERT(net_buf != NULL);
+		}
+
+		net_buf_add_mem(net_buf, buf, buf_len);
+		k_fifo_put(&btp_evt_fifo, net_buf);
+	}
+
+	buf = NULL;
+
+	return true;
+}
+
+static void timer_expiry_cb(struct k_timer *timer)
+{
+	static uint8_t uart_recv_buf[BTP_MTU];
+	static size_t len;
+
+	while (uart_poll_in(dev, &uart_recv_buf[len]) == 0) {
+		TEST_ASSERT(len < ARRAY_SIZE(uart_recv_buf));
+		len++;
+		if (recv_cb(uart_recv_buf, len)) {
+			len = 0;
+		}
+	}
+}
+
+K_TIMER_DEFINE(timer, timer_expiry_cb, NULL);
+
+/* Uart Poll */
+void bsim_btp_uart_init(void)
+{
+	TEST_ASSERT(device_is_ready(dev));
+
+	k_timer_start(&timer, K_MSEC(10), K_MSEC(10));
+}
+
+static void wait_for_response(const struct btp_hdr *cmd_hdr)
+{
+	const struct btp_hdr *rsp_hdr;
+	struct net_buf *buf;
+
+	buf = k_fifo_get(&btp_rsp_fifo, K_SECONDS(1));
+	TEST_ASSERT(buf != NULL);
+
+	rsp_hdr = (struct btp_hdr *)buf->data;
+	TEST_ASSERT(rsp_hdr->len <= BTP_MTU, "len %u > %d", rsp_hdr->len, BTP_MTU);
+
+	LOG_DBG("rsp service 0x%02X and opcode 0x%02X len %u", cmd_hdr->service, cmd_hdr->opcode,
+		rsp_hdr->len);
+
+	TEST_ASSERT(rsp_hdr->service == cmd_hdr->service && rsp_hdr->opcode == cmd_hdr->opcode);
+
+	net_buf_unref(buf);
+}
+
+/* BTP communication is inspired from `uart_pipe_rx` to achieve a similar API */
+void bsim_btp_send_to_tester(const uint8_t *data, size_t len)
+{
+	const struct btp_hdr *cmd_hdr;
+
+	TEST_ASSERT(data != NULL);
+	TEST_ASSERT(len <= BTP_MTU, "len %zu > %d", len, BTP_MTU);
+	TEST_ASSERT(len >= sizeof(*cmd_hdr), "len %zu <= %zu", len, sizeof(*cmd_hdr));
+
+	cmd_hdr = (const struct btp_hdr *)data;
+	LOG_DBG("cmd service 0x%02X and opcode 0x%02X", cmd_hdr->service, cmd_hdr->opcode);
+
+	for (size_t i = 0U; i < len; i++) {
+		uart_poll_out(dev, data[i]);
+	}
+
+	wait_for_response(cmd_hdr);
 }

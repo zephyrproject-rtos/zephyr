@@ -18,13 +18,15 @@
 #include "btp/btp.h"
 #include "bsim_btp.h"
 
-LOG_MODULE_REGISTER(bsim_gap_central, CONFIG_BTTESTER_LOG_LEVEL);
+LOG_MODULE_REGISTER(bsim_gap_central, CONFIG_LOG_DEFAULT_LEVEL);
 
 static void test_gap_central(void)
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t remote_addr;
 	bt_addr_le_t ev_addr;
+
+	bsim_btp_uart_init();
 
 	bsim_btp_wait_for_evt(BTP_SERVICE_ID_CORE, BTP_CORE_EV_IUT_READY, NULL);
 

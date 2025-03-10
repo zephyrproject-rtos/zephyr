@@ -12,6 +12,7 @@
 
 #include "btp/btp.h"
 
+void bsim_btp_uart_init(void);
 void bsim_btp_send_to_tester(const uint8_t *data, size_t len);
 void bsim_btp_wait_for_evt(uint8_t service, uint8_t opcode, struct net_buf **out_buf);
 
