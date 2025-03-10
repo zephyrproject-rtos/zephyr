@@ -20,10 +20,12 @@ supported:
   - counter
   - dma
   - dmic
+  - display
   - flash
   - gpio
   - i2c
   - i2s
+  - mipi_dsi
   - pwm
   - sdhc
   - spi

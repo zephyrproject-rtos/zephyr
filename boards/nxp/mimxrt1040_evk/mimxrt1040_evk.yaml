@@ -17,9 +17,11 @@ supported:
   - adc
   - arduino_gpio
   - counter
+  - display
   - flash
   - gpio
   - i2c
+  - lcd_if
   - pwm
   - spi
 vendor: nxp
