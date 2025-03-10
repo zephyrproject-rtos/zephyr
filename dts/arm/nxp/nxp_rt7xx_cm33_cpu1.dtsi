@@ -227,6 +227,32 @@
 		status = "okay";
 	};
 
+	i3c2: i3c@56000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x56000 0x1000>;
+		interrupts = <33 0>;
+		clocks = <&clkctl1 MCUX_I3C_CLK>;
+		clk-divider = <2>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
+
+	i3c3: i3c@57000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x57000 0x1000>;
+		interrupts = <40 0>;
+		clocks = <&clkctl1 MCUX_I3C_CLK>;
+		clk-divider = <2>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
+
 	gpio8: gpio@320000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
