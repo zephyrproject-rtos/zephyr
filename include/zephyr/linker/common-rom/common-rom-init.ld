@@ -11,12 +11,11 @@
 		 * last element is NULL.
 		 *
 		 * The __CTOR_LIST__ and __CTOR_END__ symbols are always defined
-		 * to result in an empty list. This is necessary to fix an issue
-		 * where the glibc process initialization code on native_posix
-		 * platforms calls constructors before Zephyr loads (issue #39347).
-		 *
-		 * Zephyr's start-up code uses the __ZEPHYR_CTOR_LIST__ and
-		 * __ZEHPYR_CTOR_END__ symbols, so these need to be correctly set.
+		 * to result in an empty list.
+		 * Instead, Zephyr's start-up code uses the __ZEPHYR_CTOR_LIST__ and
+		 * __ZEHPYR_CTOR_END__ symbols.
+		 * In this way, in native_simulator based targets, the host glibc process
+		 * initialization code will not call the constructors before Zephyr loads.
 		 */
 #ifdef CONFIG_64BIT
 		. = ALIGN(8);
@@ -50,7 +49,7 @@
 		* startup code from calling any global constructors before Zephyr loads.
 		*
 		* Zephyr's start-up code uses the __zephyr_init_array_start and
-		* __zephyr_init_array_end sybmols, so these need to be set correctly.
+		* __zephyr_init_array_end symbols, so these need to be set correctly.
 		*/
 		. = ALIGN(4);
 		__init_array_start = .;

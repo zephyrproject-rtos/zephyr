@@ -16,8 +16,8 @@
  * If you do see a link error telling you that zap_something is undefined, it is
  * likely that you forgot to select the corresponding Zephyr POSIX API.
  *
- * This header is included automatically when targeting some POSIX ARCH boards
- * (for ex. native_posix).
+ * This header is included automatically when targeting old POSIX ARCH boards
+ * based on the CONFIG_NATIVE_APPLICATION architecture.
  * It will be included in _all_ Zephyr and application source files
  * (it is passed with the option "-include" to the compiler call)
  *
