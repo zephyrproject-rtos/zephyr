@@ -20,6 +20,13 @@
 			pa-ramp-time-us = <10>;
 			pa-voltage-mv = <3300>;
 			pa-subghz = "highest";
+
+			pti: pti {
+				compatible = "silabs,pti";
+				clock-frequency = <DT_FREQ_K(1600)>;
+				mode = "uart";
+				status = "disabled";
+			};
 		};
 	};
 };
