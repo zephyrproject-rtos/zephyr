@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 Semtech Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "semtech_sx126xmb1xxs_common.dtsi"
+
+lora_semtech_sx1261mb1xxs: &lora_semtech_sx126xmb1xxs {
+	compatible = "semtech,sx1261-new";
+
+	reg-mode = <SX126X_REG_MODE_DCDC>;
+
+	dio3-as-tcxo-control;
+	tcxo-wakeup-time = <8>;
+};
