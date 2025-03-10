@@ -85,6 +85,7 @@ static int opt3001_channel_get(const struct device *dev,
 			       struct sensor_value *val)
 {
 	struct opt3001_data *drv_data = dev->data;
+	uint16_t sample = drv_data->sample;
 	int32_t uval;
 
 	if (chan != SENSOR_CHAN_LIGHT) {
@@ -99,18 +100,70 @@ static int opt3001_channel_get(const struct device *dev,
 	 * lux is the integer obtained using the following formula:
 	 * (2^(exponent value)) * 0.01 * mantissa value
 	 */
-	uval = (1 << (drv_data->sample >> OPT3001_SAMPLE_EXPONENT_SHIFT))
-		* (drv_data->sample & OPT3001_MANTISSA_MASK);
+	uval = (1 << (sample >> OPT3001_SAMPLE_EXPONENT_SHIFT)) * (sample & OPT3001_MANTISSA_MASK);
 	val->val1 = uval / 100;
 	val->val2 = (uval % 100) * 10000;
 
 	return 0;
 }
 
+static int opt3001_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			       sensor_trigger_handler_t handler)
+{
+	struct opt3001_data *dat = dev->data;
+
+	if (trig->chan != SENSOR_CHAN_LIGHT) {
+		return -EINVAL;
+	}
+
+	if (trig->type != SENSOR_TRIG_DATA_READY) {
+		return -EINVAL;
+	}
+
+	dat->trig.trigger = trig;
+	dat->trig.handler = handler;
+
+	return 0;
+}
+
 static DEVICE_API(sensor, opt3001_driver_api) = {
+	.trigger_set = opt3001_trigger_set,
 	.sample_fetch = opt3001_sample_fetch,
 	.channel_get = opt3001_channel_get,
 };
+
+static void opt3001_int_work(struct k_work *work)
+{
+	struct opt3001_data *dat = CONTAINER_OF(work, struct opt3001_data, work_int);
+	uint16_t reg_cfg;
+	int ret;
+
+	/* read result then clear interrupt by reading REG_CONFIG */
+	ret = opt3001_reg_read(dat->dev, OPT3001_REG_RESULT, &dat->sample);
+	if (ret) {
+		LOG_ERR("Failed to read result, ret: %d", ret);
+		return;
+	}
+
+	ret = opt3001_reg_read(dat->dev, OPT3001_REG_CONFIG, &reg_cfg);
+	if (ret) {
+		LOG_ERR("Failed to read config, ret: %d", ret);
+		return;
+	}
+
+	if (dat->trig.handler) {
+		dat->trig.handler(dat->dev, dat->trig.trigger);
+	}
+}
+
+static void opt3001_isr(const struct device *dev, struct gpio_callback *gpio_cb, uint32_t pins)
+{
+	struct opt3001_data *dat = CONTAINER_OF(gpio_cb, struct opt3001_data, gpio_cb_int);
+
+	ARG_UNUSED(pins);
+
+	k_work_submit(&dat->work_int);
+}
 
 static int opt3001_chip_init(const struct device *dev)
 {
@@ -152,18 +205,65 @@ static int opt3001_chip_init(const struct device *dev)
 
 int opt3001_init(const struct device *dev)
 {
+	const struct opt3001_config *cfg = dev->config;
+	struct opt3001_data *dat = dev->data;
+	int ret;
+
+	dat->dev = dev;
+
 	if (opt3001_chip_init(dev) < 0) {
 		return -EINVAL;
+	}
+
+	if (!cfg->gpio_int.port) {
+		return 0;
+	}
+
+	/* setup interrupt if provided */
+	if (!gpio_is_ready_dt(&cfg->gpio_int)) {
+		LOG_ERR("Interrupt gpio not ready");
+		return -ENODEV;
+	}
+
+	k_work_init(&dat->work_int, opt3001_int_work);
+
+	ret = gpio_pin_configure_dt(&cfg->gpio_int, GPIO_INPUT);
+	if (ret) {
+		LOG_ERR("Failed to configure int-gpios, ret: %d", ret);
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret) {
+		LOG_ERR("Failed to enable interrupt on int-gpios, ret: %d", ret);
+		return ret;
+	}
+
+	gpio_init_callback(&dat->gpio_cb_int, opt3001_isr, BIT(cfg->gpio_int.pin));
+
+	ret = gpio_add_callback(cfg->gpio_int.port, &dat->gpio_cb_int);
+	if (ret) {
+		LOG_ERR("Failed to add callback to int-gpios, ret: %d", ret);
+		return ret;
+	}
+
+	/* configure the opt3001 to interrupt on every conversion */
+	ret = opt3001_reg_update(dev, OPT3001_REG_LOW_LIMIT, OPT3001_LIMIT_EXPONENT_MASK,
+				 OPT3001_LIMIT_EXPONENT_MASK);
+	if (ret) {
+		LOG_ERR("Failed to enable interrupt on conversions, ret: %d", ret);
+		return ret;
 	}
 
 	return 0;
 }
 
 #define OPT3001_DEFINE(inst)									\
-	static struct opt3001_data opt3001_data_##inst;						\
+	static struct opt3001_data opt3001_data_##inst = {0};					\
 												\
 	static const struct opt3001_config opt3001_config_##inst = {				\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			\
 	};											\
 												\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, opt3001_init, NULL,					\
