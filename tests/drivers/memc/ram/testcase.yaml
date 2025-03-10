@@ -34,3 +34,9 @@ tests:
     depends_on: memc
     filter: dt_compat_enabled("renesas,ra-sdram")
     platform_allow: ek_ra8d1
+  drivers.memc.max32_hpb:
+    tags:
+      - drivers
+      - memc
+    filter: dt_compat_enabled("adi,max32-hpb")
+    platform_allow: max32690evkit/max32690/m4
