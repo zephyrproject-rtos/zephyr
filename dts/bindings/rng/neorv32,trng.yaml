@@ -1,6 +1,6 @@
 description: NEORV32 True Random Number Generator (TRNG)
 
-compatible: "neorv32-trng"
+compatible: "neorv32,trng"
 
 include: base.yaml
 

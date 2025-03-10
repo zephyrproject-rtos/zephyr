@@ -19,7 +19,7 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			compatible = "neorv32-cpu", "riscv";
+			compatible = "neorv32,cpu", "riscv";
 			reg = <0>;
 			device_type = "cpu";
 
@@ -74,13 +74,13 @@
 		};
 
 		bootrom: rom@ffe00000 {
-			compatible = "neorv32-bootrom", "mmio-sram";
+			compatible = "neorv32,bootrom", "mmio-sram";
 			status = "disabled";
 			reg = <0xffe00000 0x10000>;
 		};
 
 		clint: clint@fff40000 {
-			compatible = "neorv32-clint", "sifive,clint0";
+			compatible = "neorv32,clint", "sifive,clint0";
 			status = "disabled";
 			reg = <0xfff40000 0x10000>;
 			interrupts-extended = <&intc 3>;
@@ -95,7 +95,7 @@
 		};
 
 		uart0: serial@fff50000 {
-			compatible = "neorv32-uart";
+			compatible = "neorv32,uart";
 			status = "disabled";
 			reg = <0xfff50000 0x10000>;
 			interrupts = <2>, <3>;
@@ -104,7 +104,7 @@
 		};
 
 		uart1: serial@fff60000 {
-			compatible = "neorv32-uart";
+			compatible = "neorv32,uart";
 			status = "disabled";
 			reg = <0xfff60000 0x10000>;
 			interrupts = <4>, <5>;
@@ -113,14 +113,14 @@
 		};
 
 		trng: rng@fffa0000 {
-			compatible = "neorv32-trng";
+			compatible = "neorv32,trng";
 			status = "disabled";
 			reg = <0xfffa0000 0x10000>;
 			syscon = <&sysinfo>;
 		};
 
 		gpio: gpio@fffc0000 {
-			compatible = "neorv32-gpio";
+			compatible = "neorv32,gpio";
 			status = "disabled";
 			reg = <0xfffc0000 0x10000>;
 			syscon = <&sysinfo>;
