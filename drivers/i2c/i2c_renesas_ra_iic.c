@@ -19,8 +19,9 @@
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(renesas_ra_iic);
+LOG_MODULE_REGISTER(renesas_ra_iic, CONFIG_I2C_LOG_LEVEL);
 
+#define I2C_MAX_MSG_LEN (1 << (sizeof(uint8_t) * 8))
 typedef void (*init_func_t)(const struct device *dev);
 static const double RA_IIC_MASTER_DIV_TIME_NS = 1000000000;
 
@@ -119,6 +120,30 @@ static int i2c_ra_iic_transfer(const struct device *dev, struct i2c_msg *msgs, u
 
 	if (!num_msgs) {
 		return 0;
+	}
+
+	/* Handle i2c burst write, restructure message to be compatible with HAL*/
+	if (num_msgs == 2) {
+		if (msgs[0].len == 1U && !(msgs[0].flags & I2C_MSG_READ) &&
+		    !(msgs[1].flags & I2C_MSG_READ)) {
+			uint16_t tmp_len = msgs[0].len + msgs[1].len;
+
+			if (tmp_len <= I2C_MAX_MSG_LEN) {
+				static uint8_t merge_buf[I2C_MAX_MSG_LEN];
+				struct i2c_msg tmp_msg;
+
+				memcpy(&merge_buf[0], msgs[0].buf, msgs[0].len);
+				memcpy(&merge_buf[msgs[0].len], msgs[1].buf, msgs[1].len);
+				tmp_msg.buf = &merge_buf[0];
+				tmp_msg.flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+				tmp_msg.len = (uint8_t)tmp_len;
+				/* Merge 2 msgs into 1 msg */
+				msgs[0] = tmp_msg;
+				num_msgs = 1;
+			} else {
+				LOG_DBG("messages are too large to merge");
+			}
+		}
 	}
 
 	/* Check for validity of all messages before transfer */
