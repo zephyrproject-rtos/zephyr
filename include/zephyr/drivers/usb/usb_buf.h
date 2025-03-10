@@ -9,13 +9,13 @@
  * @brief Buffers for USB device support
  */
 
-#ifndef ZEPHYR_INCLUDE_UDC_BUF_H
-#define ZEPHYR_INCLUDE_UDC_BUF_H
+#ifndef ZEPHYR_INCLUDE_USB_BUF_H
+#define ZEPHYR_INCLUDE_USB_BUF_H
 
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 
-#if defined(CONFIG_DCACHE) && !defined(CONFIG_UDC_BUF_FORCE_NOCACHE)
+#if defined(CONFIG_DCACHE) && !defined(CONFIG_USB_BUF_FORCE_NOCACHE)
 /*
  * Here we try to get DMA-safe buffers, but we lack a consistent source of
  * information about data cache properties, such as line cache size, and a
@@ -23,44 +23,44 @@
  * For now, we simply assume that all available memory is DMA'able and use
  * Kconfig option DCACHE_LINE_SIZE for alignment and granularity.
  */
-#define Z_UDC_BUF_ALIGN		CONFIG_DCACHE_LINE_SIZE
-#define Z_UDC_BUF_GRANULARITY	CONFIG_DCACHE_LINE_SIZE
+#define USB_PRIV_BUFALIGN		CONFIG_DCACHE_LINE_SIZE
+#define USB_PRIV_BUFGRANULARITY		CONFIG_DCACHE_LINE_SIZE
 #else
 /*
  * Default alignment and granularity to pointer size if the platform does not
  * have a data cache or buffers are placed in nocache memory region.
  */
-#define Z_UDC_BUF_ALIGN		sizeof(void *)
-#define Z_UDC_BUF_GRANULARITY	sizeof(void *)
+#define USB_PRIV_BUFALIGN		sizeof(void *)
+#define USB_PRIV_BUFGRANULARITY		sizeof(void *)
 #endif
 
 
-#if defined(CONFIG_UDC_BUF_FORCE_NOCACHE)
+#if defined(CONFIG_USB_BUF_FORCE_NOCACHE)
 /*
  * The usb transfer buffer needs to be in __nocache section
  */
-#define Z_UDC_BUF_SECTION	__nocache
+#define USB_PRIV_BUFSECTION	__nocache
 #else
-#define Z_UDC_BUF_SECTION
+#define USB_PRIV_BUFSECTION
 #endif
 
 /**
- * @brief Buffer macros and definitions used in USB device support
- * @defgroup udc_buf Buffer macros and definitions used in USB device support
+ * @brief USB buffer macros and definitions
+ * @defgroup usb_buf USB buffer macros and definitions
  * @ingroup usb
  * @since 4.0
- * @version 0.1.0
+ * @version 0.1.1
  * @{
  */
 
 /** Buffer alignment required by the UDC driver */
-#define UDC_BUF_ALIGN		Z_UDC_BUF_ALIGN
+#define USB_BUF_ALIGN		USB_PRIV_BUFALIGN
 
 /** Buffer granularity required by the UDC driver */
-#define UDC_BUF_GRANULARITY	Z_UDC_BUF_GRANULARITY
+#define USB_BUF_GRANULARITY	USB_PRIV_BUFGRANULARITY
 
 /** Round up to the granularity required by the UDC driver */
-#define UDC_ROUND_UP(size)	ROUND_UP(size, Z_UDC_BUF_GRANULARITY)
+#define USB_BUF_ROUND_UP(size)	ROUND_UP(size, USB_PRIV_BUFGRANULARITY)
 
 /**
  * @brief Define a UDC driver-compliant static buffer
@@ -71,9 +71,9 @@
  * @param name Buffer name
  * @param size Buffer size
  */
-#define UDC_STATIC_BUF_DEFINE(name, size)					\
-	static uint8_t Z_UDC_BUF_SECTION __aligned(UDC_BUF_ALIGN)		\
-	name[UDC_ROUND_UP(size)];
+#define USB_STATIC_BUF_DEFINE(name, size)					\
+	static uint8_t USB_PRIV_BUFSECTION __aligned(USB_BUF_ALIGN)		\
+	name[USB_BUF_ROUND_UP(size)];
 
 /**
  * @brief Verify that the buffer is aligned as required by the UDC driver
@@ -82,13 +82,13 @@
  *
  * @param buf Buffer pointer
  */
-#define IS_UDC_ALIGNED(buf) IS_ALIGNED(buf, UDC_BUF_ALIGN)
+#define IS_USB_BUF_ALIGNED(buf) IS_ALIGNED(buf, USB_BUF_ALIGN)
 
 /**
  * @cond INTERNAL_HIDDEN
  */
-#define UDC_HEAP_DEFINE(name, bytes, in_section)				\
-	uint8_t in_section __aligned(UDC_BUF_ALIGN)				\
+#define USB_BUF_HEAP_DEFINE(name, bytes, in_section)				\
+	uint8_t in_section __aligned(USB_BUF_ALIGN)				\
 		kheap_##name[MAX(bytes, Z_HEAP_MIN_SIZE)];			\
 	STRUCT_SECTION_ITERABLE(k_heap, name) = {				\
 		.heap = {							\
@@ -97,10 +97,10 @@
 		 },								\
 	}
 
-#define UDC_K_HEAP_DEFINE(name, size)						\
-	COND_CODE_1(CONFIG_UDC_BUF_FORCE_NOCACHE,				\
-		    (UDC_HEAP_DEFINE(name, size, __nocache)),			\
-		    (UDC_HEAP_DEFINE(name, size, __noinit)))
+#define USB_BUF_K_HEAP_DEFINE(name, size)					\
+	COND_CODE_1(CONFIG_USB_BUF_FORCE_NOCACHE,				\
+		    (USB_BUF_HEAP_DEFINE(name, size, __nocache)),		\
+		    (USB_BUF_HEAP_DEFINE(name, size, __noinit)))
 
 extern const struct net_buf_data_cb net_buf_dma_cb;
 /** @endcond */
@@ -119,9 +119,9 @@ extern const struct net_buf_data_cb net_buf_dma_cb;
  * @param ud_size    User data space to reserve per buffer.
  * @param fdestroy   Optional destroy callback when buffer is freed.
  */
-#define UDC_BUF_POOL_VAR_DEFINE(pname, count, size, ud_size, fdestroy)		\
+#define USB_BUF_POOL_VAR_DEFINE(pname, count, size, ud_size, fdestroy)		\
 	_NET_BUF_ARRAY_DEFINE(pname, count, ud_size);				\
-	UDC_K_HEAP_DEFINE(net_buf_mem_pool_##pname, size);			\
+	USB_BUF_K_HEAP_DEFINE(net_buf_mem_pool_##pname, size);			\
 	static const struct net_buf_data_alloc net_buf_data_alloc_##pname = {	\
 		.cb = &net_buf_dma_cb,						\
 		.alloc_data = &net_buf_mem_pool_##pname,			\
@@ -146,25 +146,68 @@ extern const struct net_buf_data_cb net_buf_dma_cb;
  * @param ud_size    User data space to reserve per buffer.
  * @param fdestroy   Optional destroy callback when buffer is freed.
  */
-#define UDC_BUF_POOL_DEFINE(pname, count, size, ud_size, fdestroy)		\
+#define USB_BUF_POOL_DEFINE(pname, count, size, ud_size, fdestroy)		\
 	_NET_BUF_ARRAY_DEFINE(pname, count, ud_size);				\
-	BUILD_ASSERT((UDC_BUF_GRANULARITY) % (UDC_BUF_ALIGN) == 0,		\
+	BUILD_ASSERT((USB_BUF_GRANULARITY) % (USB_BUF_ALIGN) == 0,		\
 		     "Code assumes granurality is multiple of alignment");	\
-	static uint8_t Z_UDC_BUF_SECTION __aligned(UDC_BUF_ALIGN)		\
-		net_buf_data_##pname[count][UDC_ROUND_UP(size)];		\
+	static uint8_t USB_PRIV_BUFSECTION __aligned(USB_BUF_ALIGN)		\
+		net_buf_data_##pname[count][USB_BUF_ROUND_UP(size)];		\
 	static const struct net_buf_pool_fixed net_buf_fixed_##pname = {	\
 		.data_pool = (uint8_t *)net_buf_data_##pname,			\
 	};									\
 	static const struct net_buf_data_alloc net_buf_fixed_alloc_##pname = {	\
 		.cb = &net_buf_fixed_cb,					\
 		.alloc_data = (void *)&net_buf_fixed_##pname,			\
-		.max_alloc_size = UDC_ROUND_UP(size),				\
+		.max_alloc_size = USB_BUF_ROUND_UP(size),			\
 	};									\
 	static STRUCT_SECTION_ITERABLE(net_buf_pool, pname) =			\
 		NET_BUF_POOL_INITIALIZER(pname, &net_buf_fixed_alloc_##pname,	\
 					 _net_buf_##pname, count, ud_size,	\
 					 fdestroy)
 
+/**
+ * @brief Buffer alignment required by the UDC driver
+ * @see USB_BUF_ALIGN
+ */
+#define UDC_BUF_ALIGN		USB_BUF_ALIGN
+
+/**
+ * @brief Buffer granularity required by the UDC driver
+ * @see USB_BUF_GRANULARITY
+ */
+#define UDC_BUF_GRANULARITY	USB_BUF_GRANULARITY
+
+/**
+ * @brief Round up to the granularity required by the UDC driver
+ * @see USB_BUF_ROUND_UP
+ */
+#define UDC_ROUND_UP(size)	USB_BUF_ROUND_UP(size)
+
+/**
+ * @brief Define a UDC driver-compliant static buffer
+ * @see USB_STATIC_BUF_DEFINE
+ */
+#define UDC_STATIC_BUF_DEFINE(name, size) USB_STATIC_BUF_DEFINE(name, size)
+
+/**
+ * @brief Verify that the buffer is aligned as required by the UDC driver
+ * @see IS_UDC_ALIGNED
+ */
+#define IS_UDC_ALIGNED(buf)	IS_USB_BUF_ALIGNED(buf)
+
+/**
+ * @brief Define a new pool for UDC buffers based on fixed-size data
+ * @see USB_BUF_POOL_VAR_DEFINE
+ */
+#define UDC_BUF_POOL_VAR_DEFINE(pname, count, size, ud_size, fdestroy)		\
+	USB_BUF_POOL_VAR_DEFINE(pname, count, size, ud_size, fdestroy)
+
+/**
+ * @brief Define a new pool for UDC buffers based on fixed-size data
+ * @see USB_BUF_POOL_DEFINE
+ */
+#define UDC_BUF_POOL_DEFINE(pname, count, size, ud_size, fdestroy)		\
+	USB_BUF_POOL_DEFINE(pname, count, size, ud_size, fdestroy)
 /**
  * @}
  */

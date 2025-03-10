@@ -19,7 +19,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/usb/udc_buf.h>
+#include <zephyr/drivers/usb/usb_buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
