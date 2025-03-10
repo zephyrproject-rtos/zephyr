@@ -1,0 +1,19 @@
+tests:
+  bluetooth.host.att.read_fill_buf.test_read_fil_buf:
+    no_build: true
+    tags:
+      - bluetooth
+    platform_allow:
+      - nrf52_bsim/native
+    timeout: 30
+    harness: bsim
+    harness_config:
+      bsim_verbosity: 2
+      bsim_sim_length: 60e6
+      bsim_options:
+        - -RealEncryption=1
+      bsim_devices:
+        - test_id: cli
+          exe: tests_bsim_bluetooth_host_att_read_fill_buf_client_prj_conf
+        - test_id: srv
+          exe: tests_bsim_bluetooth_host_att_read_fill_buf_server_prj_conf
