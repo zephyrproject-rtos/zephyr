@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "zephyr/rtio/rtio.h"
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/internal/syscall_handler.h>
 
@@ -79,4 +80,11 @@ static inline int z_vrfy_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
 	return z_impl_sensor_reconfigure_read_iodev(iodev, sensor, channels, num_channels);
 }
 #include <zephyr/syscalls/sensor_reconfigure_read_iodev_mrsh.c>
+
+static inline int z_vrfy_sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
+{
+	K_OOPS(K_SYSCALL_MEMORY_READ(iodev_sqe, sizeof(struct rtio_iodev_sqe)));
+	return z_impl_sensor_submit_fallback_sync(iodev_sqe);
+}
+#include <zephyr/syscall/sensor_submit_fallback_sync.c>
 #endif
