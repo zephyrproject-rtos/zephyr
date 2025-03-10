@@ -21,6 +21,7 @@
 #include "host/buf_view.h"
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
+#include "host/keys.h"
 #include "l2cap_br_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
@@ -79,9 +80,44 @@ enum {
 static sys_slist_t br_servers;
 
 
+#define BT_L2CAP_BR_META_FLAG_REFUSED_SEC BIT(0)
+
+struct bt_l2cap_br_meta {
+	struct bt_conn *conn;
+	uint8_t flags;
+	struct k_work work;
+} bt_l2cap_br_meta[CONFIG_BT_MAX_CONN];
+
+static void bt_l2cap_br_meta_work_handler(struct k_work *work)
+{
+	struct bt_l2cap_br_meta *meta = CONTAINER_OF(work, struct bt_l2cap_br_meta, work);
+
+	if (meta->conn) {
+		bt_conn_disconnect(meta->conn, BT_HCI_ERR_AUTH_FAIL);
+		meta->conn = NULL;
+	}
+}
+
+static void buf_destroy(struct net_buf *buf)
+{
+	struct bt_l2cap_br_meta *meta;
+
+	LOG_DBG("");
+
+	meta = &bt_l2cap_br_meta[net_buf_id(buf)];
+
+	if ((meta->flags & BT_L2CAP_BR_META_FLAG_REFUSED_SEC) && meta->conn) {
+		meta->flags &= ~BT_L2CAP_BR_META_FLAG_REFUSED_SEC;
+		k_work_init(&meta->work, bt_l2cap_br_meta_work_handler);
+		k_work_submit(&meta->work);
+	}
+
+	net_buf_destroy(buf);
+}
+
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
 NET_BUF_POOL_FIXED_DEFINE(br_sig_pool, CONFIG_BT_MAX_CONN,
-			  BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), 8, NULL);
+			  BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), 8, buf_destroy);
 
 /* BR/EDR L2CAP signalling channel specific context */
 struct bt_l2cap_br {
@@ -766,7 +802,9 @@ enum l2cap_br_conn_security_result {
  * - channel connection process is on hold since there were valid security
  *   conditions triggering authentication indirectly in subcall.
  * Returns L2CAP_CONN_SECURITY_REJECT if:
- * - bt_conn_set_security API returns < 0.
+ * - bt_conn_set_security API returns < 0,
+ * - Or, the ACL connection has been encrypted, the security level of link key cannot be upgraded,
+ *   and the security level is less than the required security level.
  */
 
 static enum l2cap_br_conn_security_result
@@ -805,6 +843,18 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 			br_chan->required_sec_level = BT_SECURITY_L2;
 		}
 		break;
+	}
+
+	if (chan->conn->sec_level < br_chan->required_sec_level &&
+	    chan->conn->encrypt && chan->conn->br.link_key &&
+	    (chan->conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED)) {
+		/*
+		 * If the ACL link has been encrypted and it has a authenticated link key, it means
+		 * the pairing procedure has been done. And the security level of the link key can
+		 * not be upgraded. In this case, if `conn->sec_level` is less than the required
+		 * security level of the L2CAP channel, reject the L2CAP conn request.
+		 */
+		return L2CAP_CONN_SECURITY_REJECT;
 	}
 
 	check = bt_conn_set_security(chan->conn, br_chan->required_sec_level);
@@ -850,6 +900,7 @@ static void l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 	struct net_buf *buf;
 	struct bt_l2cap_conn_rsp *rsp;
 	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_chan *chan;
 
 	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
 
@@ -867,6 +918,17 @@ static void l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_AUTHEN_PEND);
 	} else {
 		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_NO_INFO);
+	}
+
+	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
+	if (chan && atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
+		if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
+			struct bt_l2cap_br_meta *meta;
+
+			meta = &bt_l2cap_br_meta[net_buf_id(buf)];
+			meta->conn = conn;
+			meta->flags |= BT_L2CAP_BR_META_FLAG_REFUSED_SEC;
+		}
 	}
 
 	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
@@ -1077,7 +1139,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	if (result != BT_L2CAP_BR_SUCCESS) {
 		/* Disconnect link when security rules were violated */
 		if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
-			bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+			/* Disconnect the ACL after the packet of response has been sent. */
 		} else if (result == BT_L2CAP_BR_PENDING) {
 			/* Recover the ident when conn is pending */
 			br_chan->ident = ident;
@@ -1190,6 +1252,20 @@ static int bt_l2cap_br_allocate_psm(uint16_t *psm)
 failed:
 	LOG_WRN("No free dynamic PSMs available");
 	return -EADDRNOTAVAIL;
+}
+
+bt_security_t bt_l2cap_br_get_max_sec_level(void)
+{
+	struct bt_l2cap_server *server;
+	bt_security_t sec_level = BT_SECURITY_L0;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&br_servers, server, node) {
+		if (sec_level < server->sec_level) {
+			sec_level = server->sec_level;
+		}
+	}
+
+	return sec_level;
 }
 
 int bt_l2cap_br_server_register(struct bt_l2cap_server *server)

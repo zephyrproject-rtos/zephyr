@@ -4546,6 +4546,18 @@ bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr)
 	}
 }
 
+bool bt_addr_br_is_bonded(const bt_addr_t *addr)
+{
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		struct bt_keys_link_key *key = bt_keys_find_link_key(addr);
+
+		/* if there are any keys stored then device is bonded */
+		return key != NULL;
+	} else {
+		return false;
+	}
+}
+
 #if defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 int bt_le_filter_accept_list_add(const bt_addr_le_t *addr)
 {

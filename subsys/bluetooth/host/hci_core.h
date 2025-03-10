@@ -481,6 +481,8 @@ int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_
 			     uint8_t subevent);
 
 bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr);
+bool bt_addr_br_is_bonded(const bt_addr_t *addr);
+
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr);
 
 int bt_send(struct net_buf *buf);
