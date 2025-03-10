@@ -3688,6 +3688,7 @@ Silabs Platforms:
     - drivers/*/*/*silabs*
     - drivers/*/*/*siwx91x*
     - tests/boards/silabs/
+    - snippets/*silabs*/
   labels:
     - "platform: Silabs"
 
