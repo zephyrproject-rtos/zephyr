@@ -9,11 +9,11 @@ common:
 tests:
   bluetooth.host.att.pipeline.build_dut:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf
+
   bluetooth.host.att.pipeline.build_dut_rx_tx_prio:
     harness_config:
       bsim_exe_name:
-        - tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf_rx_tx_prio_invert_extra_conf
+        tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf_rx_tx_prio_invert_extra_conf
     extra_args:
       EXTRA_CONF_FILE=rx_tx_prio_invert.extra.conf

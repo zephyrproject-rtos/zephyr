@@ -1010,7 +1010,7 @@ class Bsim(Harness):
                 exe_names[exe_name] = replacer(f'bs_{self.instance.platform.name}_{exe_name}')
 
         if not exe_names:
-            exe_names[None] = [f'bs_{replacer(self.instance.name)}']
+            exe_names[None] = f'bs_{replacer(self.instance.name)}'
 
         self._exe_paths = \
             {name_id: os.path.join(self._bsim_out_path, exe) for name_id, exe in exe_names.items()}

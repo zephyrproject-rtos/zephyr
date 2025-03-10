@@ -15,69 +15,80 @@ tests:
   bluetooth.host.privacy.build_peripheral:
     build_only: true
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_privacy_peripheral_prj_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_privacy_peripheral_prj_conf
+
   bluetooth.host.privacy.build_peripheral_rpa_sharing:
     build_only: true
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_sharing_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_sharing_conf
     extra_args:
       EXTRA_CONF_FILE=prj_rpa_sharing.conf
+
   bluetooth.host.privacy.peripheral_1:
     no_build: true
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_privacy_peripheral_prj_conf
-      bsim_test_ids:
-        - central
-        - peripheral
-      bsim_options:
-        - "['-flash=privacy_peripheral.central.log.bin',
-            '-flash=privacy_peripheral.peripheral.log.bin']"
-        - -flash_erase
+      bsim_exe_name: tests_bsim_bluetooth_host_privacy_peripheral_prj_conf
+      bsim_devices:
+        - test_id: central
+          options:
+            - -flash=privacy_peripheral.central.log.bin
+            - -flash_erase
+        - test_id: peripheral
+          options:
+            - -flash=privacy_peripheral.peripheral.log.bin
+            - -flash_erase
+
   bluetooth.host.privacy.peripheral_2:
     no_build: true
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_privacy_peripheral_prj_conf
-      bsim_test_ids:
-        - central
-        - peripheral
-      bsim_options:
-        - "['-flash=privacy_peripheral.central.log.bin',
-            '-flash=privacy_peripheral.peripheral.log.bin']"
-        - -flash_rm
+      bsim_exe_name: tests_bsim_bluetooth_host_privacy_peripheral_prj_conf
+      bsim_devices:
+        - test_id: central
+          options:
+            - -flash=privacy_peripheral.central.log.bin
+            - -flash_rm
+        - test_id: peripheral
+          options:
+            - -flash=privacy_peripheral.peripheral.log.bin
+            - -flash_rm
+
   bluetooth.host.privacy.peripheral_rpa_expired:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_expired_conf
-      bsim_test_ids:
-        - central_rpa_check
-        - peripheral_rpa_expired
-      bsim_options:
-        - "['-flash=rpa_expired.central.log.bin', '-flash=rpa_expired.peripheral.log.bin']"
-        - -flash_erase
+      bsim_exe_name: tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_expired_conf
+      bsim_devices:
+        - test_id: central_rpa_check
+          options:
+            - -flash=rpa_expired.central.log.bin
+            - -flash_erase
+        - test_id: peripheral_rpa_expired
+          options:
+            - -flash=rpa_expired.peripheral.log.bin
+            - -flash_erase
     extra_args:
       EXTRA_CONF_FILE=prj_rpa_expired.conf
+
   bluetooth.host.privacy.peripheral_rpa_sharing_1:
     no_build: true
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_sharing_conf
-      bsim_test_ids:
-        - central
-        - peripheral
-      bsim_options:
-        - "['-flash=rpa_sharing.central.log.bin', '-flash=rpa_sharing.peripheral.log.bin']"
+      bsim_exe_name: tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_sharing_conf
+      bsim_devices:
+        - test_id: central
+          options:
+            - -flash=rpa_sharing.central.log.bin
+        - test_id: peripheral
+          options:
+            - -flash=rpa_sharing.peripheral.log.bin
+
   bluetooth.host.privacy.peripheral_rpa_sharing_2:
     no_build: true
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_sharing_conf
-      bsim_test_ids:
-        - central
-        - peripheral
-      bsim_options:
-        - "['-flash=rpa_sharing.central.log.bin', '-flash=rpa_sharing.peripheral.log.bin']"
-        - -flash_rm
+      bsim_exe_name: tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_sharing_conf
+      bsim_devices:
+        - test_id: central
+          options:
+            - -flash=rpa_sharing.central.log.bin
+            - -flash_rm
+        - test_id: peripheral
+          options:
+            - -flash=rpa_sharing.peripheral.log.bin
+            - -flash_rm

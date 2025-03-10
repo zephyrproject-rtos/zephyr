@@ -7,10 +7,9 @@ tests:
     timeout: 240
     harness: bsim
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_misc_hfc_prj_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_misc_hfc_prj_conf
       bsim_verbosity: 2
       bsim_sim_length: 60e6
-      bsim_test_ids:
-        - dut
-        - peer
+      bsim_devices:
+        - test_id: dut
+        - test_id: peer

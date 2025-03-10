@@ -7,12 +7,11 @@ tests:
     harness: bsim
     timeout: 30
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_adv_encrypted_ead_sample_prj_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_adv_encrypted_ead_sample_prj_conf
       bsim_verbosity: 2
       bsim_sim_length: 60e6
-      bsim_test_ids:
-        - central
-        - peripheral
       bsim_options:
         - -RealEncryption=0
+      bsim_devices:
+        - test_id: central
+        - test_id: peripheral

@@ -9,18 +9,20 @@ common:
   harness_config:
     bsim_verbosity: 2
     bsim_sim_length: 30e6
-    bsim_test_ids:
-      - central
-      - peripheral
 
 tests:
   bluetooth.host.l2cap.send_on_connect:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_l2cap_send_on_connect_prj_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_send_on_connect_prj_conf
+      bsim_devices:
+        - test_id: central
+        - test_id: peripheral
+
   bluetooth.host.l2cap.send_on_connect_ecred:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_l2cap_send_on_connect_prj_conf_overlay-ecred_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_send_on_connect_prj_conf_overlay-ecred_conf
+      bsim_devices:
+        - test_id: central
+        - test_id: peripheral
     extra_args:
       EXTRA_CONF_FILE=overlay-ecred.conf

@@ -15,19 +15,18 @@ common:
 tests:
   bluetooth.host.att.pipeline.shall_not_pipeline:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf_rx_tx_prio_invert_extra_conf
-        - tests_bsim_bluetooth_host_att_pipeline_tester_prj_conf
-      bsim_test_ids:
-        - dut_1
-        - tester_1
+      bsim_devices:
+        - test_id: dut_1
+          exe: tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf_rx_tx_prio_invert_extra_conf
+        - test_id: tester_1
+          exe: tests_bsim_bluetooth_host_att_pipeline_tester_prj_conf
+
   bluetooth.host.att.pipeline.tolerate_pipeline:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf
-        - tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf
-        - tests_bsim_bluetooth_host_att_pipeline_tester_prj_conf
-      bsim_test_ids:
-        - dut
-        - dut
-        - tester
+      bsim_devices:
+        - test_id: dut
+          exe: tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf
+        - test_id: dut
+          exe: tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf
+        - test_id: tester
+          exe: tests_bsim_bluetooth_host_att_pipeline_tester_prj_conf

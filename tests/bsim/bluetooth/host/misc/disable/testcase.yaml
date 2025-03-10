@@ -7,29 +7,31 @@ common:
   timeout: 120
   harness: bsim
   harness_config:
-    bsim_exe_name:
-      - tests_bsim_bluetooth_host_misc_disable_prj_conf
+    bsim_exe_name: tests_bsim_bluetooth_host_misc_disable_prj_conf
     bsim_verbosity: 2
 
 tests:
   bluetooth.host.mics.build_disable:
     build_only: true
+
   bluetooth.host.mics.disable:
     no_build: true
     harness_config:
       bsim_sim_length: 60e6
-      bsim_test_ids:
-        - disable
+      bsim_devices:
+        - test_id: disable
+
   bluetooth.host.mics.disable_with_gatt:
     no_build: true
     harness_config:
       bsim_sim_length: 600e6
-      bsim_test_ids:
-        - gatt_client
-        - gatt_server
+      bsim_devices:
+        - test_id: gatt_client
+        - test_id: gatt_server
+
   bluetooth.host.mics.disable_set_default_id:
     no_build: true
     harness_config:
       bsim_sim_length: 10e6
-      bsim_test_ids:
-        - disable_set_default_id
+      bsim_devices:
+        - test_id: disable_set_default_id

@@ -8,15 +8,14 @@ tests:
     timeout: 30
     harness: bsim
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_misc_hfc_multilink_dut_prj_conf
-        - tests_bsim_bluetooth_host_misc_hfc_multilink_tester_prj_conf
-        - tests_bsim_bluetooth_host_misc_hfc_multilink_tester_prj_conf
-        - tests_bsim_bluetooth_host_misc_hfc_multilink_tester_prj_conf
       bsim_verbosity: 2
       bsim_sim_length: 10e6
-      bsim_test_ids:
-        - dut
-        - tester
-        - tester
-        - tester
+      bsim_devices:
+        - test_id: dut
+          exe: tests_bsim_bluetooth_host_misc_hfc_multilink_dut_prj_conf
+        - test_id: tester
+          exe: tests_bsim_bluetooth_host_misc_hfc_multilink_tester_prj_conf
+        - test_id: tester
+          exe: tests_bsim_bluetooth_host_misc_hfc_multilink_tester_prj_conf
+        - test_id: tester
+          exe: tests_bsim_bluetooth_host_misc_hfc_multilink_tester_prj_conf

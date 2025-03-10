@@ -7,11 +7,10 @@ tests:
     harness: bsim
     timeout: 30
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_security_security_changed_callback_prj_conf
-      bsim_test_ids:
-        - central
-        - peripheral_disconnect_in_sec_cb
+      bsim_exe_name: tests_bsim_bluetooth_host_security_security_changed_callback_prj_conf
+      bsim_devices:
+        - test_id: central
+        - test_id: peripheral_disconnect_in_sec_cb
       bsim_verbosity: 2
       bsim_sim_length: 60e6
       bsim_options:

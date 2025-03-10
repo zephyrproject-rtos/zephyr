@@ -10,6 +10,7 @@ common:
   harness_config:
     bsim_verbosity: 2
     bsim_sim_length: 60e6
+    bsim_exe_name: tests_bsim_bluetooth_host_gatt_caching_prj_conf
     bsim_options:
       - -RealEncryption=1
 
@@ -17,58 +18,49 @@ tests:
   bluetooth.host.gatt.build_caching:
     build_only: true
     no_build: false
-    harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_gatt_caching_prj_conf
+
   bluetooth.host.gatt.caching_db_hash_read_eatt:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_gatt_caching_prj_conf
-      bsim_test_ids:
-        - gatt_client_db_hash_read_eatt
-        - gatt_server_eatt
+      bsim_devices:
+        - test_id: gatt_client_db_hash_read_eatt
+        - test_id: gatt_server_eatt
+
   bluetooth.host.gatt.caching_db_hash_read_no_eatt:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_gatt_caching_prj_conf
-      bsim_test_ids:
-        - gatt_client_db_hash_read_no_eatt
-        - gatt_server_no_eatt
+      bsim_devices:
+        - test_id: gatt_client_db_hash_read_no_eatt
+        - test_id: gatt_server_no_eatt
+
   bluetooth.host.gatt.caching_out_of_sync_eatt:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_gatt_caching_prj_conf
-      bsim_test_ids:
-        - gatt_client_out_of_sync_eatt
-        - gatt_server_eatt
+      bsim_devices:
+        - test_id: gatt_client_out_of_sync_eatt
+        - test_id: gatt_server_eatt
+
   bluetooth.host.gatt.caching_out_of_sync_no_eatt:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_gatt_caching_prj_conf
-      bsim_test_ids:
-        - gatt_client_out_of_sync_no_eatt
-        - gatt_server_no_eatt
+      bsim_devices:
+        - test_id: gatt_client_out_of_sync_no_eatt
+        - test_id: gatt_server_no_eatt
+
   bluetooth.host.gatt.caching_psa_db_hash_read_eatt_psa:
     no_build: false
     extra_args:
       EXTRA_CONF_FILE=psa_overlay.conf
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_gatt_caching_prj_conf_psa_overlay_conf
-      bsim_test_ids:
-        - gatt_client_db_hash_read_eatt
-        - gatt_server_eatt
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_caching_prj_conf_psa_overlay_conf
+      bsim_devices:
+        - test_id: gatt_client_db_hash_read_eatt
+        - test_id: gatt_server_eatt
+
   bluetooth.host.gatt.caching_retry_reads_eatt:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_gatt_caching_prj_conf
-      bsim_test_ids:
-        - gatt_client_retry_reads_eatt
-        - gatt_server_eatt
+      bsim_devices:
+        - test_id: gatt_client_retry_reads_eatt
+        - test_id: gatt_server_eatt
+
   bluetooth.host.gatt.caching_retry_reads_no_eatt:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_gatt_caching_prj_conf
-      bsim_test_ids:
-        - gatt_client_retry_reads_no_eatt
-        - gatt_server_no_eatt
+      bsim_devices:
+        - test_id: gatt_client_retry_reads_no_eatt
+        - test_id: gatt_server_no_eatt

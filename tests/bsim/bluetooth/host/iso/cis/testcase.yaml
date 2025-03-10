@@ -6,23 +6,24 @@ common:
   harness: bsim
   timeout: 120
   harness_config:
-    bsim_exe_name:
-      - tests_bsim_bluetooth_host_iso_cis_prj_conf
+    bsim_exe_name: tests_bsim_bluetooth_host_iso_cis_prj_conf
     bsim_verbosity: 2
     bsim_sim_length: 30e6
 
 tests:
   bluetooth.host.iso.build_cis:
     build_only: true
+
   bluetooth.host.iso.cis:
     no_build: true
     harness_config:
-      bsim_test_ids:
-        - central
-        - peripheral
+      bsim_devices:
+        - test_id: central
+        - test_id: peripheral
+
   bluetooth.host.iso.cis_disable:
     no_build: true
     harness_config:
-      bsim_test_ids:
-        - central_disable
-        - peripheral
+      bsim_devices:
+        - test_id: central_disable
+        - test_id: peripheral

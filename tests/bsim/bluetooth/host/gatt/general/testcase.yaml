@@ -8,12 +8,11 @@ tests:
     harness: bsim
     timeout: 120
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_gatt_general_prj_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_general_prj_conf
       bsim_verbosity: 2
       bsim_sim_length: 30e6
-      bsim_test_ids:
-        - gatt_client
-        - gatt_server
       bsim_options:
         - -RealEncryption=1
+      bsim_devices:
+        - test_id: gatt_client
+        - test_id: gatt_server

@@ -6,8 +6,7 @@ common:
   harness: bsim
   timeout: 30
   harness_config:
-    bsim_exe_name:
-      - tests_bsim_bluetooth_host_id_settings_prj_conf
+    bsim_exe_name: tests_bsim_bluetooth_host_id_settings_prj_conf
     bsim_verbosity: 2
     bsim_sim_length: 60e6
     bsim_options:
@@ -16,15 +15,17 @@ common:
 tests:
   bluetooth.host.id.build_settings:
     build_only: true
+
   bluetooth.host.id.settings_dut2:
     no_build: true
     harness_config:
-      bsim_test_ids:
-        - dut2
-      bsim_options:
-        - -flash_rm
+      bsim_devices:
+        - test_id: dut2
+          options:
+            - -flash_rm
+
   bluetooth.host.id.settings_dut1:
     no_build: true
     harness_config:
-      bsim_test_ids:
-        - dut1
+      bsim_devices:
+        - test_id: dut1

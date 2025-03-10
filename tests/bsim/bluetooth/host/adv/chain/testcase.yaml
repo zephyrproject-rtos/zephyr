@@ -8,10 +8,9 @@ tests:
     harness: bsim
     timeout: 30
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_adv_chain_prj_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_adv_chain_prj_conf
       bsim_verbosity: 2
       bsim_sim_length: 10e6
-      bsim_test_ids:
-        - adv
-        - scan
+      bsim_devices:
+        - test_id: adv
+        - test_id: scan

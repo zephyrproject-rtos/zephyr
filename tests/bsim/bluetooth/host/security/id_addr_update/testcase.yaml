@@ -8,12 +8,11 @@ tests:
     harness: bsim
     timeout: 30
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_security_id_addr_update_central_prj_conf
-        - tests_bsim_bluetooth_host_security_id_addr_update_peripheral_prj_conf
-      bsim_test_ids:
-        - central
-        - peripheral
+      bsim_devices:
+        - test_id: central
+          exe: tests_bsim_bluetooth_host_security_id_addr_update_central_prj_conf
+        - test_id: peripheral
+          exe: tests_bsim_bluetooth_host_security_id_addr_update_peripheral_prj_conf
       bsim_verbosity: 2
       bsim_sim_length: 60e6
       bsim_options:

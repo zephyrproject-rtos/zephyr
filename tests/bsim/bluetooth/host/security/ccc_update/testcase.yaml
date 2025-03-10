@@ -6,10 +6,6 @@ common:
   harness: bsim
   timeout: 30
   harness_config:
-    bsim_test_ids:
-      - central
-      - bad_central
-      - peripheral
     bsim_verbosity: 2
     bsim_sim_length: 60e6
     bsim_options:
@@ -19,28 +15,46 @@ common:
 tests:
   bluetooth.host.security.ccc_update:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_security_ccc_update_prj_conf
-      bsim_options:
-        - "['-flash=ccc_update_client.log.bin', '-flash=ccc_update_bad_client.log.bin',
-            '-flash=ccc_update_server.log.bin']"
+      bsim_exe_name: tests_bsim_bluetooth_host_security_ccc_update_prj_conf
+      bsim_devices:
+        - test_id: central
+          options:
+            - -flash=ccc_update_client.log.bin
+        - test_id: bad_central
+          options:
+            - -flash=ccc_update_bad_client.log.bin
+        - test_id: peripheral
+          options:
+            - -flash=ccc_update_server.log.bin
+
   bluetooth.host.security.ccc_update_no_lazy_load:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_security_ccc_update_overlay-no_lazy_load_conf
-      bsim_options:
-        - "['-flash=ccc_update_no_lazy_load_client.log.bin',
-            '-flash=ccc_update_no_lazy_load_bad_client.log.bin',
-            '-flash=ccc_update_no_lazy_load_server.log.bin']"
+      bsim_exe_name: tests_bsim_bluetooth_host_security_ccc_update_overlay-no_lazy_load_conf
+      bsim_devices:
+        - test_id: central
+          options:
+            - -flash=ccc_update_no_lazy_load_client.log.bin
+        - test_id: bad_central
+          options:
+            - -flash=ccc_update_no_lazy_load_bad_client.log.bin
+        - test_id: peripheral
+          options:
+            - -flash=ccc_update_no_lazy_load_server.log.bin
     extra_args:
       EXTRA_CONF_FILE=overlay-no_lazy_load.conf
+
   bluetooth.host.security.ccc_update_no_long_wq:
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_security_ccc_update_overlay-no_long_wq_conf
-      bsim_options:
-        - "['-flash=ccc_update_no_long_wq_client.log.bin',
-            '-flash=ccc_update_no_long_wq_bad_client.log.bin',
-            '-flash=ccc_update_no_long_wq_server.log.bin']"
+      bsim_exe_name: tests_bsim_bluetooth_host_security_ccc_update_overlay-no_long_wq_conf
+      bsim_devices:
+        - test_id: central
+          options:
+            - -flash=ccc_update_no_long_wq_client.log.bin
+        - test_id: bad_central
+          options:
+            - -flash=ccc_update_no_long_wq_bad_client.log.bin
+        - test_id: peripheral
+          options:
+            - -flash=ccc_update_no_long_wq_server.log.bin
     extra_args:
       EXTRA_CONF_FILE=overlay-no_long_wq.conf

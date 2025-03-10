@@ -7,13 +7,12 @@ tests:
     harness: bsim
     timeout: 30
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_att_long_read_prj_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_att_long_read_prj_conf
       bsim_verbosity: 2
       bsim_sim_length: 60e6
-      bsim_test_ids:
-        - the_test
-        - the_test
       bsim_options:
         - -RealEncryption=1
         - -D=2
+      bsim_devices:
+        - test_id: the_test
+        - test_id: the_test

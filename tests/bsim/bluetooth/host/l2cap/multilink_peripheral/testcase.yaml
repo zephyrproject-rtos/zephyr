@@ -7,15 +7,18 @@ tests:
     timeout: 30
     harness: bsim
     harness_config:
-      bsim_exe_name:
-        - tests_bsim_bluetooth_host_l2cap_multilink_peripheral_prj_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_multilink_peripheral_prj_conf
       bsim_verbosity: 2
       bsim_sim_length: 40e6
-      bsim_test_ids:
-        - dut
-        - central
-        - central
+      bsim_devices:
+        - test_id: dut
+        - test_id: central
+          options:
+            - -delay_init
+            - -start_offset=1e3
+        - test_id: cenrtal
+          options:
+            - -delay_init
+            - -start_offset=10e3
       bsim_options:
         - -RealEncryption=1
-        - "['', '-delay_init', '-delay_init']"
-        - "['', '-start_offset=1e3', '-start_offset=10e3']"
