@@ -898,6 +898,7 @@ config BT_CTLR_ADV_ISO
 	depends on BT_ISO_BROADCASTER && BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_ADV_PERIODIC
 	select BT_CTLR_SET_HOST_FEATURE
+	select BT_CTLR_ADV_ISO_SEQUENTIAL if !BT_CTLR_ADV_ISO_INTERLEAVED
 	default y if BT_ISO_BROADCASTER
 	help
 	  Enable support for Bluetooth 5.2 LE Isochronous Advertising in the
@@ -907,11 +908,20 @@ config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising (Split Link Layer) [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
+config BT_CTLR_ADV_ISO_SEQUENTIAL
+	bool "LE Broadcast Isochronous Channel advertising sequential packing"
+	depends on BT_CTLR_ADV_ISO
+
+config BT_CTLR_ADV_ISO_INTERLEAVED
+	bool "LE Broadcast Isochronous Channel advertising interleaved packing"
+	depends on BT_CTLR_ADV_ISO
+
 config BT_CTLR_SYNC_ISO
 	bool "LE Broadcast Isochronous Channel advertising sync" if !BT_LL_SW_SPLIT
 	depends on BT_ISO_SYNC_RECEIVER && BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_CTLR_SYNC_PERIODIC
 	select BT_CTLR_SET_HOST_FEATURE
+	select BT_CTLR_SYNC_ISO_SEQUENTIAL if !BT_CTLR_SYNC_ISO_INTERLEAVED
 	default y if BT_ISO_SYNC_RECEIVER
 	help
 	  Enable support for Bluetooth 5.2 LE Isochronous Advertising sync in
@@ -920,6 +930,16 @@ config BT_CTLR_SYNC_ISO
 config BT_CTLR_SYNC_ISO
 	bool "LE Broadcast Isochronous Channel advertising sync (Split Link Layer) [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 	select EXPERIMENTAL if BT_LL_SW_SPLIT
+
+config BT_CTLR_SYNC_ISO_SEQUENTIAL
+	bool "LE Broadcast Isochronous Channel advertising sync sequential packing"
+	depends on BT_CTLR_SYNC_ISO
+	default y
+
+config BT_CTLR_SYNC_ISO_INTERLEAVED
+	bool "LE Broadcast Isochronous Channel advertising sync interleaved packing"
+	depends on BT_CTLR_SYNC_ISO
+	default y
 
 config BT_CTLR_BROADCAST_ISO
 	bool

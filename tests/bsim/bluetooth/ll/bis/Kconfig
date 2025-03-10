@@ -1,10 +1,17 @@
-# Copyright 2024 Nordic Semiconductor ASA
+# Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 config TEST_LL_INTERFACE
 	bool "Test Broadcast ISO using internal LL interface"
 	help
 	  Test Broadcast ISO using internal LL interface.
+
+config BT_ISO_TEST_INTERLEAVED
+	bool "Test ISO interleaved packing"
+	help
+	  Test ISO interleaved packing. Note, this tests with single BIS to
+	  ensure that using sequential or interleaved packing to create the BIS
+	  still is valid when creating single BIS in a BIG.
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"
