@@ -21,6 +21,7 @@
 #include "host/buf_view.h"
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
+#include "host/keys.h"
 #include "l2cap_br_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
@@ -766,7 +767,9 @@ enum l2cap_br_conn_security_result {
  * - channel connection process is on hold since there were valid security
  *   conditions triggering authentication indirectly in subcall.
  * Returns L2CAP_CONN_SECURITY_REJECT if:
- * - bt_conn_set_security API returns < 0.
+ * - bt_conn_set_security API returns < 0,
+ * - Or, the ACL connection has been encrypted, the security level of link key cannot be upgraded,
+ *   and the security level is less than the required security level.
  */
 
 static enum l2cap_br_conn_security_result
@@ -805,6 +808,18 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 			br_chan->required_sec_level = BT_SECURITY_L2;
 		}
 		break;
+	}
+
+	if (chan->conn->sec_level < br_chan->required_sec_level &&
+	    chan->conn->encrypt && chan->conn->br.link_key &&
+	    (chan->conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED)) {
+		/*
+		 * If the ACL link has been encrypted and it has a authenticated link key, it means
+		 * the pairing procedure has been done. And the security level of the link key can
+		 * not be upgraded. In this case, if `conn->sec_level` is less than the required
+		 * security level of the L2CAP channel, reject the L2CAP conn request.
+		 */
+		return L2CAP_CONN_SECURITY_REJECT;
 	}
 
 	check = bt_conn_set_security(chan->conn, br_chan->required_sec_level);
