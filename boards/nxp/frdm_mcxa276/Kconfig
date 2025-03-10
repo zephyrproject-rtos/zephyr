@@ -1,0 +1,8 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EARLY_INIT_HOOK
+	bool "Run early board hook"
+	default y
+	help
+	  Run an early board initialization hook.
