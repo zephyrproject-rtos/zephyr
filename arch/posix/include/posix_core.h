@@ -31,10 +31,9 @@ typedef struct {
 	 * Note: If more elements are added to this structure, remember to
 	 * update ARCH_POSIX_RECOMMENDED_STACK_SIZE in the configuration.
 	 *
-	 * Currently there are 4 pointers + 2 ints, on a 32-bit native posix
-	 * implementation this will result in 24 bytes ( 4*4 + 2*4).
-	 * For a 64-bit implementation the recommended stack size will be
-	 * 40 bytes ( 4*8 + 2*4 ).
+	 * Currently there are 4 pointers + 2 ints, on a 32-bit build this will result in 24 bytes
+	 * (4*4 + 2*4).
+	 * For a 64-bit build the recommended stack size will be 40 bytes ( 4*8 + 2*4 ).
 	 */
 } posix_thread_status_t;
 
