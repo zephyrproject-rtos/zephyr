@@ -286,8 +286,9 @@ static void gpio_emul_pend_interrupt(const struct device *port, gpio_port_pins_t
 		key = k_spin_lock(&drv_data->lock);
 		/* Clear handled interrupts */
 		drv_data->interrupts &= ~interrupts;
-		gpio_emul_gen_interrupt_bits(port, mask, prev_values, values,
-			&interrupts, false);
+		values = drv_data->input_vals;
+		gpio_emul_gen_interrupt_bits(port, mask, prev_values, values, &interrupts, false);
+		prev_values = values;
 	}
 
 	k_spin_unlock(&drv_data->lock, key);
@@ -753,12 +754,77 @@ unlock:
 	return ret;
 }
 
-static int gpio_emul_manage_callback(const struct device *port,
-				    struct gpio_callback *cb, bool set)
+#if CONFIG_GPIO_INTERNAL_CALLBACK
+static void level_triggered_isr(const struct device *port, struct gpio_callback *cb,
+				gpio_port_pins_t pins)
 {
-	struct gpio_emul_data *drv_data =
-		(struct gpio_emul_data *)port->data;
+	struct gpio_emul_data *drv_data = (struct gpio_emul_data *)port->data;
+	uint32_t val;
+	uint32_t mask = pins;
+	uint32_t lvl_low_mask = 0;
+	uint32_t lvl_high_mask = 0;
 
+	for (int i = 0; mask && i < sizeof(cb->pin_mask) * 8; i++) {
+		if ((mask & BIT(i))) {
+			if (drv_data->flags[i] & GPIO_INT_HIGH_1) {
+				lvl_high_mask |= BIT(i);
+			} else if (drv_data->flags[i] & GPIO_INT_LOW_0) {
+				lvl_low_mask |= BIT(i);
+			}
+		}
+		mask &= ~BIT(i);
+	}
+
+	val = drv_data->input_vals;
+	/* edge interrupt triggered. spin if the pin level is not changed */
+	while ((val & lvl_high_mask) || (~val & lvl_low_mask)) {
+
+		if (val & lvl_high_mask) {
+			gpio_fire_callbacks_force_external(&drv_data->callbacks, port,
+							   val & lvl_high_mask);
+		}
+
+		if (~val & lvl_low_mask) {
+			gpio_fire_callbacks_force_external(&drv_data->callbacks, port,
+							   ~val & lvl_low_mask);
+		}
+
+		val = drv_data->input_vals;
+	}
+}
+#endif
+
+static int gpio_emul_manage_callback(const struct device *port, struct gpio_callback *cb, bool set)
+{
+	struct gpio_emul_data *drv_data = (struct gpio_emul_data *)port->data;
+#if CONFIG_GPIO_INTERNAL_CALLBACK
+	static struct gpio_callback internal_cb = {
+		.handler = level_triggered_isr,
+		.pin_mask = 0,
+		.is_internal = true,
+	};
+
+	uint32_t mask = cb->pin_mask;
+	uint32_t lvl_mask = 0;
+
+	for (int i = 0; mask && i < sizeof(cb->pin_mask) * 8; i++) {
+		if ((mask & BIT(i)) && (drv_data->flags[i] & (GPIO_INT_HIGH_1 | GPIO_INT_LOW_0))) {
+			lvl_mask |= BIT(i);
+		}
+		mask &= ~BIT(i);
+	}
+
+	if (lvl_mask) {
+		if (set) {
+			internal_cb.pin_mask |= cb->pin_mask;
+		} else {
+			internal_cb.pin_mask &= ~cb->pin_mask;
+		}
+		gpio_manage_callback(&drv_data->callbacks, &internal_cb, true);
+	}
+
+	cb->is_internal = false;
+#endif
 	return gpio_manage_callback(&drv_data->callbacks, cb, set);
 }
 
