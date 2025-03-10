@@ -25,7 +25,7 @@ bool ull_conn_peer_connected(uint8_t const own_id_addr_type,
 			     uint8_t const peer_id_addr_type,
 			     uint8_t const *const peer_id_addr);
 void ull_conn_setup(memq_link_t *rx_link, struct node_rx_pdu *rx);
-void ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx);
+int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx);
 int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire,
 		  uint32_t remainder, uint16_t lazy);
 void ull_conn_done(struct node_rx_event_done *done);
@@ -80,6 +80,7 @@ static inline void cpr_active_reset(void)
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
 void ull_conn_past_sender_offset_request(struct ll_conn *conn);
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
@@ -133,6 +134,8 @@ void ull_conn_pause_rx_data(struct ll_conn *conn);
  * @brief Resume the data path of a rx queue.
  */
 void ull_conn_resume_rx_data(struct ll_conn *conn);
+
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 /**
  * @brief Check if the lower link layer transmit queue is empty
