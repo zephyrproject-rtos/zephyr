@@ -37,6 +37,14 @@
 		};
 	};
 
+	pti_default: pti_default {
+		group0 {
+			pins = <PTI_DOUT_PC4>, <PTI_DFRAME_PC5>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
 	usart1_default: usart1_default {
 		group0 {
 			pins = <USART1_TX_PA5>;
