@@ -30,8 +30,7 @@ fcb_getnext_in_sector(struct fcb *fcb, struct fcb_entry *loc)
 	return rc;
 }
 
-struct flash_sector *
-fcb_getnext_sector(struct fcb *fcb, struct flash_sector *sector)
+const struct flash_sector *fcb_getnext_sector(struct fcb *fcb, const struct flash_sector *sector)
 {
 	sector++;
 	if (sector >= &fcb->f_sectors[fcb->f_sector_cnt]) {
