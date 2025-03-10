@@ -356,8 +356,7 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 			LOG_ERR("%s: Failed to set regulatory domain", __func__);
 			goto out;
 		}
-
-		goto out;
+		goto success;
 	}
 #endif
 	if (reg_domain->oper != WIFI_MGMT_GET) {
@@ -388,7 +387,7 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 		chan_info->passive_only = !!reg_domain_chan_info->passive_channel;
 		chan_info->supported = !!reg_domain_chan_info->supported;
 	}
-
+success:
 	ret = 0;
 out:
 	k_mutex_unlock(&reg_lock);
