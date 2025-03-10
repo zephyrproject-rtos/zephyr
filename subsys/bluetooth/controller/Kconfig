@@ -1039,6 +1039,8 @@ config BT_CTLR_CENTRAL_ISO
 
 config BT_CTLR_CENTRAL_ISO
 	bool "LE Connected Isochronous Stream Central (Split Link Layer) [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	depends on BT_CTLR_CENTRAL_ISO_SUPPORT && BT_ISO_CENTRAL
+	default y if BT_ISO_CENTRAL
 	select BT_CTLR_SET_HOST_FEATURE
 	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
@@ -1052,6 +1054,8 @@ config BT_CTLR_PERIPHERAL_ISO
 
 config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral (Split Link Layer) [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	depends on BT_CTLR_PERIPHERAL_ISO_SUPPORT && BT_ISO_PERIPHERAL
+	default y if BT_ISO_PERIPHERAL
 	select BT_CTLR_SET_HOST_FEATURE
 	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
