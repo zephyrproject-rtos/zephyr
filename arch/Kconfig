@@ -515,6 +515,12 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	  to be aligned to architecture specific size.  The default
 	  size is 0 for no alignment.
 
+config ARCH_DEVICE_STATE_ALIGN
+	int "Alignment size of device state"
+	default 4
+	help
+	  This option controls alignment size of device state.
+
 choice IRQ_VECTOR_TABLE_TYPE
 	prompt "IRQ vector table type"
 	depends on GEN_IRQ_VECTOR_TABLE
