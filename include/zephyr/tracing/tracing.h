@@ -1753,7 +1753,7 @@
  * @param h Heap object
  * @param timeout Timeout period
  */
-#define sys_port_trace_k_heap_aligned_alloc_blocking(h, timeout)
+#define sys_port_trace_k_heap_alloc_helper_blocking(h, timeout)
 
 /**
  * @brief Trace Heap align alloc attempt outcome
