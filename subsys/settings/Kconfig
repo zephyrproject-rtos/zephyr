@@ -182,6 +182,15 @@ config SETTINGS_ZMS_NO_LL_DELETE
 	  These nodes will be used again when the same Settings element that has
 	  been deleted is created again.
 
+config SETTINGS_ZMS_LOAD_SUBTREE_PATH
+	bool "Load only subtree path if provided"
+	help
+	  Loads first the key defined by the subtree path.
+	  If the callback handler returns a zero value it will
+	  continue to look for all the keys under that subtree path.
+	  If the callback handler returns a non negative value, it
+	  returns immeditaley.
+
 config SETTINGS_SHELL
 	bool "Settings shell"
 	depends on SHELL
