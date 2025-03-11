@@ -231,7 +231,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 	for (i = 0; i < ext->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
-		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
+		name = llext_section_name(ldr, ext, shdr);
 
 		if (ldr->sect_map[i].mem_idx != LLEXT_MEM_COUNT) {
 			LOG_DBG("section %d name %s already mapped to region %d",
@@ -494,7 +494,7 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
 		uint32_t sect = sym.st_shndx;
 
-		name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
+		name = llext_symbol_name(ldr, ext, &sym);
 
 		if ((stt == STT_FUNC || stt == STT_OBJECT) && stb == STB_GLOBAL) {
 			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d",
@@ -614,7 +614,7 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 
 		if ((stt == STT_FUNC || stt == STT_OBJECT) &&
 		    stb == STB_GLOBAL && shndx != SHN_UNDEF) {
-			const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
+			const char *name = llext_symbol_name(ldr, ext, &sym);
 
 			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
 
