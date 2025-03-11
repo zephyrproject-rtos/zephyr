@@ -242,6 +242,13 @@
 			};
 		};
 
+		crc: crc@40074000{
+			compatible = "renesas,ra-crc";
+			reg = <0x40074000 0x1000>;
+			clocks = <&pclka MSTPC 1>;
+			status = "disabled";
+		};
+
 		iic0: iic0@40053000 {
 			compatible = "renesas,ra-iic";
 			channel = <0>;

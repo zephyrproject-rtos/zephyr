@@ -285,6 +285,13 @@
 			};
 		};
 
+		crc: crc@40074000{
+			compatible = "renesas,ra-crc";
+			reg = <0x40074000 0x1000>;
+			clocks = <&pclkb MSTPC 1>;
+			status = "disabled";
+		};
+
 		port_irq0: external-interrupt@40006000 {
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x40006000 0x1>;
