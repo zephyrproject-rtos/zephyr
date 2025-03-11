@@ -14,7 +14,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/at32_clock_control.h>
 
-#include <at32_regs.h>
+//#include <at32_regs.h>
 
 /** offset (from id cell) */
 #define AT32_CLOCK_ID_OFFSET(id) (((id) >> 6U) & 0xFFU)
@@ -138,8 +138,7 @@ int at32_clock_control_init(const struct device *dev)
     crm_sysclk_switch(CRM_SCLK_HICK);
 	
     /* wait till pll is used as system clock source */
-    while(crm_sysclk_switch_status_get() != CRM_SCLK_HICK)
-    {
+    while(crm_sysclk_switch_status_get() != CRM_SCLK_HICK){
     }
 	
 	/* disable pll */

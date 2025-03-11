@@ -111,7 +111,7 @@ void at32_exint_set_line_src_port(gpio_pin_t line, uint32_t port);
 /**
  * @brief Get port which is triggering events on specified EXINT line.
  *
- * @param line	EXINT line number (= pin number)
+ * @param pin	pin line number (= pin number)
  * @returns GPIO port number
  */
 uint32_t at32_exint_get_line_src_port(gpio_pin_t pin);
