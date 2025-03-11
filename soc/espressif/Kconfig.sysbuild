@@ -3,8 +3,139 @@
 
 choice BOOTLOADER
 	default BOOTLOADER_MCUBOOT
+
+# Extension for the BOOTLOADER Kconfig choice to allow
+# MCUboot Espressif Port to be built
+config BOOTLOADER_MCUBOOT_ESPRESSIF
+	bool "MCUboot Espressif Port"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+	help
+	  Use MCUboot Espressif Port as the bootloader
+
 endchoice
 
 choice MCUBOOT_MODE
 	default MCUBOOT_MODE_OVERWRITE_ONLY if SOC_FAMILY_ESPRESSIF_ESP32
 endchoice
+
+if BOOTLOADER_MCUBOOT_ESPRESSIF
+
+config ESP_MCUBOOT_IMGTOOL_OVERWRITE_ONLY
+	bool
+	help
+	  If enabled, --overwrite-only option is passed to imgtool to avoid
+	  adding the swap status area size when calculating overflow.
+
+choice ESP_MCUBOOT_MODE
+	prompt "Mode of operation"
+	default ESP_MCUBOOT_MODE_SWAP_SCRATCH
+	help
+	  The operating mode of MCUboot (which will also be propagated to the application).
+
+config ESP_MCUBOOT_MODE_SINGLE_APP
+	bool "Single slot"
+	select ESP_MCUBOOT_IMGTOOL_OVERWRITE_ONLY
+	help
+	  MCUboot will only boot slot0_partition placed application and does not care about other
+	  slots. In this mode application is not able to DFU its own update to secondary slot and
+	  all updates need to be performed using MCUboot serial recovery.
+
+config ESP_MCUBOOT_MODE_SWAP_USING_OFFSET
+	bool "Swap using offset"
+	select EXPERIMENTAL
+	select ESP_MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	help
+	  MCUboot expects slot0_partition and slot1_partition to be present in DT and application
+	  will boot from slot0_partition. MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
+	  in main application if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
+config ESP_MCUBOOT_MODE_SWAP_USING_MOVE
+	bool "Swap using move"
+	select ESP_MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	help
+	  MCUboot expects slot0_partition and slot1_partition to be present in DT and application
+	  will boot from slot0_partition. MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
+	  in main application if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
+config ESP_MCUBOOT_MODE_SWAP_SCRATCH
+	bool "Swap using scratch"
+	select ESP_MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	help
+	  MCUboot expects slot0_partition, slot1_partition and scratch_partition to be present in
+	  DT, and application will boot from slot0_partition. In this mode scratch_partition is
+	  used as temporary storage when MCUboot swaps application from the secondary slot to the
+	  primary slot.
+	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected in main application if MCUboot
+	  has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
+config ESP_MCUBOOT_MODE_OVERWRITE_ONLY
+	bool "Overwrite"
+	select ESP_MCUBOOT_IMGTOOL_OVERWRITE_ONLY
+	select ESP_MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	help
+	  MCUboot will take the content of secondary slot of an image and will overwrite primary
+	  slot with it. In this mode it is not possible to revert back to previous version as it
+	  is not stored in the secondary slot.
+	  This mode supports MCUBOOT_BOOTLOADER_NO_DOWNGRADE which means that the overwrite will
+	  not happen unless the version of secondary slot is higher than the version in primary
+	  slot.
+
+endchoice # ESP_MCUBOOT_MODE
+
+config ESP_MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	bool
+	help
+	  Selected mode supports downgrade prevention, where you cannot switch to
+	  an application with lower version than the currently running application.
+
+if ESP_MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+
+config ESP_MCUBOOT_BOOTLOADER_NO_DOWNGRADE
+	bool "MCUboot downgrade prevention"
+	help
+	  Selected MCUboot mode has downgrade prevention, where it's not
+	  possible to revert back to image with lower version number.
+	  This options should be selected when MCUboot has been built with
+	  MCUBOOT_DOWNGRADE_PREVENTION option enabled.
+
+endif # ESP_MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+
+choice ESP_BOOT_SIGNATURE_TYPE
+	prompt "Signature type"
+	default ESP_BOOT_SIGNATURE_TYPE_NONE
+
+config ESP_BOOT_SIGNATURE_TYPE_NONE
+	bool "No signature; use only hash check"
+
+config ESP_BOOT_SIGNATURE_TYPE_RSA
+	bool "RSA signatures"
+
+if ESP_BOOT_SIGNATURE_TYPE_RSA
+
+config ESP_BOOT_SIGNATURE_RSA_LEN
+	int "RSA signature length"
+	range 2048 3072
+	default 2048
+
+endif
+
+config ESP_BOOT_SIGNATURE_TYPE_ECDSA_P256
+	bool "Elliptic curve digital signatures with curve P-256"
+
+config ESP_BOOT_SIGNATURE_TYPE_ED25519
+	bool "Edwards curve digital signatures using ed25519"
+
+endchoice # ESP_BOOT_SIGNATURE_TYPE
+
+config ESP_BOOT_SIGNATURE_KEY_FILE
+	string "Signing PEM key file"
+	depends on !ESP_BOOT_SIGNATURE_TYPE_NONE
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ec-p256.pem" if ESP_BOOT_SIGNATURE_TYPE_ECDSA_P256
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ed25519.pem" if ESP_BOOT_SIGNATURE_TYPE_ED25519
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-rsa-2048.pem" if ESP_BOOT_SIGNATURE_TYPE_RSA && ESP_BOOT_SIGNATURE_RSA_LEN=2048
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-rsa-3072.pem" if ESP_BOOT_SIGNATURE_TYPE_RSA && ESP_BOOT_SIGNATURE_RSA_LEN=3072
+	default ""
+	help
+	  Absolute path to signing key file to use with MCUBoot.
+
+endif # BOOTLOADER_MCUBOOT_ESPRESSIF

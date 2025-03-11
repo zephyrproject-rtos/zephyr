@@ -16,6 +16,8 @@
  */
 #ifdef CONFIG_ESP_SIMPLE_BOOT
 user_iram_end = (DRAM_BUFFERS_START + IRAM_DRAM_OFFSET);
+#elif defined(CONFIG_MCUBOOT_ESPRESSIF)
+user_iram_end = (BOOTLOADER_DRAM_SEG_START + IRAM_DRAM_OFFSET);
 #else
 user_iram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
 #endif
