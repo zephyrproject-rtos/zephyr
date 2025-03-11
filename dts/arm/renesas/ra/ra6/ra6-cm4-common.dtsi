@@ -307,6 +307,13 @@
 			status = "disabled";
 		};
 
+		crc: crc@40074000{
+			compatible = "renesas,ra-crc";
+			reg = <0x40074000 0x1000>;
+			clocks = <&pclka MSTPC 1>;
+			status = "disabled";
+		};
+
 		dac_global: dac_global@4005e000 {
 			compatible = "renesas,ra-dac-global";
 			reg = <0x4005e000 0x10c4>;
