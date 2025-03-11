@@ -150,6 +150,56 @@ static int settings_zms_delete(struct settings_zms *cf, uint32_t name_hash)
 	return rc;
 }
 
+#ifdef CONFIG_SETTINGS_ZMS_LOAD_SUBTREE_PATH
+/* Loads first the key which is defined by the name found in "subtree" root.
+ * If the key is not found or further keys under the same subtree are needed
+ * by the caller, returns 0.
+ */
+static int settings_zms_load_subtree(struct settings_store *cs, const struct settings_load_arg *arg)
+{
+	struct settings_zms *cf = CONTAINER_OF(cs, struct settings_zms, cf_store);
+	struct settings_zms_read_fn_arg read_fn_arg;
+	char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+	ssize_t rc1;
+	ssize_t rc2;
+	uint32_t name_hash;
+
+	name_hash = sys_hash32(arg->subtree, strlen(arg->subtree)) & ZMS_HASH_MASK;
+	for (int i = 0; i <= cf->hash_collision_num; i++) {
+		name_hash = ZMS_UPDATE_COLLISION_NUM(name_hash, i);
+		/* Get the name entry from ZMS */
+		rc1 = zms_read(&cf->cf_zms, ZMS_NAME_ID_FROM_HASH(name_hash), &name,
+			       sizeof(name) - 1);
+		/* get the length of data and verify that it exists */
+		rc2 = zms_get_data_length(&cf->cf_zms,
+					  ZMS_NAME_ID_FROM_HASH(name_hash) + ZMS_DATA_ID_OFFSET);
+		if ((rc1 <= 0) || (rc2 <= 0)) {
+			/* Name or data doesn't exist */
+			continue;
+		}
+		/* Found a name, this might not include a trailing \0 */
+		name[rc1] = '\0';
+		if (strcmp(arg->subtree, name)) {
+			/* Names are not equal let's continue to the next collision hash
+			 * if it exists.
+			 */
+			continue;
+		}
+		/* At this steps the names are equal, let's set the handler */
+		read_fn_arg.fs = &cf->cf_zms;
+		read_fn_arg.id = ZMS_NAME_ID_FROM_HASH(name_hash) + ZMS_DATA_ID_OFFSET;
+
+		/* We should return here as there is no need to look for the next
+		 * hash collision
+		 */
+		return settings_call_set_handler(arg->subtree, rc2, settings_zms_read_fn, &read_fn_arg,
+						 (void *)arg);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_SETTINGS_ZMS_LOAD_SUBTREE_PATH */
+
 static int settings_zms_load(struct settings_store *cs, const struct settings_load_arg *arg)
 {
 	int ret = 0;
@@ -160,6 +210,15 @@ static int settings_zms_load(struct settings_store *cs, const struct settings_lo
 	ssize_t rc1;
 	ssize_t rc2;
 	uint32_t ll_hash_id;
+#ifdef CONFIG_SETTINGS_ZMS_LOAD_SUBTREE_PATH
+	/* If arg->subtree is not null we must first load settings in that subtree */
+	if (arg->subtree != NULL) {
+		ret = settings_zms_load_subtree(cs, arg);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif /* CONFIG_SETTINGS_ZMS_LOAD_SUBTREE_PATH */
 
 	ret = zms_read(&cf->cf_zms, ZMS_LL_HEAD_HASH_ID, &settings_element,
 		       sizeof(struct settings_hash_linked_list));
@@ -168,6 +227,7 @@ static int settings_zms_load(struct settings_store *cs, const struct settings_lo
 	}
 	ll_hash_id = settings_element.next_hash;
 
+	/* If subtree is NULL then we must load all found Settings */
 	while (ll_hash_id) {
 
 		/* In the ZMS backend, each setting item is stored in two ZMS
