@@ -65,7 +65,8 @@ extern "C" {
 #define ZMS_NAME_ID_FROM_LL_NODE(x) (x & ~BIT(0))
 #define ZMS_UPDATE_COLLISION_NUM(x, y)                                                             \
 	((x & ~ZMS_COLLISIONS_MASK) | ((y << 1) & ZMS_COLLISIONS_MASK))
-#define ZMS_COLLISION_NUM(x) ((x & ZMS_COLLISIONS_MASK) >> 1)
+#define ZMS_COLLISION_NUM(x)     ((x & ZMS_COLLISIONS_MASK) >> 1)
+#define ZMS_NAME_ID_FROM_HASH(x) ((x & ZMS_HASH_TOTAL_MASK) | BIT(31))
 
 struct settings_zms {
 	struct settings_store cf_store;
