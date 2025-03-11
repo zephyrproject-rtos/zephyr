@@ -1,0 +1,13 @@
+# Microchip PIC32CXSG MCU series
+
+# Copyright (c) 2024 Microchip
+
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PIC32CXSG41
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select SOC_RESET_HOOK

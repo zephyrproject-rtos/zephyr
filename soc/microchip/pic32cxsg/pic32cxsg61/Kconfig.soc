@@ -1,0 +1,26 @@
+# Microchip PIC32CXSG61 MCU series
+
+# Copyright (c) 2024 Microchip
+
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PIC32CXSG61
+	bool
+	select SOC_FAMILY_MICROCHIP_PIC32CXSG
+	help
+	  Enable support for Microchip PIC32CXSG Cortex-M4F microcontrollers.
+
+config SOC_SERIES
+	default "pic32cxsg61" if SOC_SERIES_PIC32CXSG61
+
+config SOC_PIC32CX1025SG61100
+	bool
+	select SOC_SERIES_PIC32CXSG61
+
+config SOC_PIC32CX1025SG61128
+	bool
+	select SOC_SERIES_PIC32CXSG61
+
+config SOC
+	default "pic32cx1025sg61100" if SOC_PIC32CX1025SG61100
+	default "pic32cx1025sg61128" if SOC_PIC32CX1025SG61128
