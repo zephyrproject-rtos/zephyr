@@ -38,7 +38,6 @@ from twisterlib.testsuite import TestSuite, scan_testsuite_path
 from zephyr_module import parse_modules
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:

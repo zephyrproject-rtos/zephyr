@@ -36,7 +36,7 @@ from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuite import TestCase, TestSuite
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
+
 
 class TestInstance:
     """Class representing the execution of a particular TestSuite on a platform
