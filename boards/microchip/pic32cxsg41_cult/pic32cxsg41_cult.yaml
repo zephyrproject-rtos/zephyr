@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+identifier: pic32cxsg41_cult
+name: PIC32CX SG41 Curiosity Ultra
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+flash: 1024
+ram: 256
+supported:
+  - uart
+testing:
+  ignore_tags:
+    - posix
+    - bluetooth
+    - net
+    - usb
+    - led
+vendor: microchip
