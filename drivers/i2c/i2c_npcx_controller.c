@@ -168,9 +168,12 @@ struct i2c_ctrl_data {
 	enum npcx_i2c_oper_state oper_state; /* controller operation state */
 	int trans_err;  /* error code during transaction */
 	struct i2c_msg *msg; /* cache msg for transaction state machine */
+	struct i2c_msg *msg_head;
 	int is_write; /* direction of current msg */
 	uint8_t *ptr_msg; /* current msg pointer for FIFO read/write */
 	uint16_t addr; /* slave address of transaction */
+	uint8_t msg_max_num;
+	uint8_t msg_curr_idx;
 	uint8_t port; /* current port used the controller */
 	bool is_configured; /* is port configured? */
 	const struct npcx_i2c_timing_cfg *ptr_speed_confs;
@@ -639,6 +642,24 @@ static void i2c_ctrl_handle_write_int_event(const struct device *dev)
 			/* Wait for STOP completed */
 			data->oper_state = NPCX_I2C_WAIT_STOP;
 		} else {
+			uint8_t next_msg_idx = data->msg_curr_idx + 1;
+
+			if (next_msg_idx < data->msg_max_num) {
+				struct i2c_msg *msg;
+
+				data->msg_curr_idx = next_msg_idx;
+				msg = data->msg_head + next_msg_idx;
+				data->msg = msg;
+				data->ptr_msg = msg->buf;
+				if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+					data->oper_state = NPCX_I2C_WRITE_FIFO;
+				} else {
+					data->is_write = 0;
+					data->oper_state = NPCX_I2C_WAIT_RESTART;
+					i2c_ctrl_start(dev);
+				}
+				return;
+			}
 			/* Disable interrupt and handle next message */
 			i2c_ctrl_irq_enable(dev, 0);
 		}
@@ -702,6 +723,27 @@ static void i2c_ctrl_handle_read_int_event(const struct device *dev)
 			/* Release bus */
 			i2c_ctrl_hold_bus(dev, 0);
 			return;
+		} else if ((data->msg->flags & I2C_MSG_STOP) == 0) {
+			uint8_t next_msg_idx = data->msg_curr_idx + 1;
+
+			if (next_msg_idx < data->msg_max_num) {
+				struct i2c_msg *msg;
+
+				msg = data->msg_head + next_msg_idx;
+				if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+
+					data->msg_curr_idx = next_msg_idx;
+					data->msg = msg;
+					data->ptr_msg = msg->buf;
+
+					/* Setup threshold of RX FIFO first */
+					i2c_ctrl_fifo_rx_setup_threshold_nack(
+						dev, msg->len, (msg->flags & I2C_MSG_STOP) != 0);
+					/* Release bus */
+					i2c_ctrl_hold_bus(dev, 0);
+					return;
+				}
+			}
 		}
 	}
 
@@ -1258,7 +1300,7 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 {
 	struct i2c_ctrl_data *const data = i2c_dev->data;
 	int ret = 0;
-	uint8_t i;
+	struct i2c_msg *msg = msgs;
 
 #ifdef CONFIG_I2C_TARGET
 	/* I2c module has been configured to target mode */
@@ -1297,6 +1339,10 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 	data->trans_err = 0;
 	data->addr = addr;
 
+	data->msg_head = msgs;
+	data->msg_max_num = num_msgs;
+	data->msg_curr_idx = 0;
+
 	/*
 	 * Reset i2c event-completed semaphore before starting transactions.
 	 * Some interrupt events such as BUS_ERROR might change its counter
@@ -1304,18 +1350,10 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 	 */
 	k_sem_reset(&data->sync_sem);
 
-	for (i = 0U; i < num_msgs; i++) {
-		struct i2c_msg *msg = msgs + i;
-
-		/* Handle write transaction */
-		if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			ret = i2c_ctrl_proc_write_msg(i2c_dev, msg);
-		} else {/* Handle read transaction */
-			ret = i2c_ctrl_proc_read_msg(i2c_dev, msg);
-		}
-		if (ret < 0) {
-			break;
-		}
+	if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+		ret = i2c_ctrl_proc_write_msg(i2c_dev, msg);
+	} else { /* Handle read transaction */
+		ret = i2c_ctrl_proc_read_msg(i2c_dev, msg);
 	}
 
 	/* Check STOP completed? */
