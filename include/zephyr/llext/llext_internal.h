@@ -43,11 +43,24 @@ static inline uintptr_t llext_get_reloc_instruction_location(struct llext_loader
 	return (uintptr_t) llext_loaded_sect_ptr(ldr, ext, shndx) + rela->r_offset;
 }
 
-static inline const char *llext_symbol_name(struct llext_loader *ldr, struct llext *ext,
+static inline const char *llext_section_name(const struct llext_loader *ldr,
+					     const struct llext *ext,
+					     const elf_shdr_t *shdr)
+{
+	return llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
+}
+
+static inline const char *llext_symbol_name(const struct llext_loader *ldr,
+					    const struct llext *ext,
 					    const elf_sym_t *sym)
 {
-	return llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym->st_name);
+	if (ELF_ST_TYPE(sym->st_info) == STT_SECTION) {
+		return llext_section_name(ldr, ext, ext->sect_hdrs + sym->st_shndx);
+	} else {
+		return llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym->st_name);
+	}
 }
+
 /*
  * Determine address of a symbol.
  */
