@@ -12,10 +12,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_mtp, CONFIG_USBD_MTP_LOG_LEVEL);
 
-#define MTP_RESPONSE_OK          0x2001
-#define MTP_RESPONSE_DEVICE_BUSY 0x2019
-
-
 /* Endpoint addresses */
 #define MTP_IN_EP_ADDR   0x81 /* Bulk IN */
 #define MTP_OUT_EP_ADDR  0x01 /* Bulk OUT */
@@ -290,26 +286,31 @@ static int usbd_mtp_init(struct usbd_class_data *c_data)
 	LOG_INF("Init class instance %p", c_data);
 
 	char *manufacturer, *model, *device_version, *serial_number;
-	struct usb_device_descriptor *hs_desc =
-		(struct usb_device_descriptor *)c_data->uds_ctx->hs_desc;
+	struct usb_device_descriptor *usbd_desc;
 	struct usbd_desc_node *d_nd;
 
-	d_nd = usbd_get_descriptor(c_data->uds_ctx, USB_DESC_STRING, hs_desc->iManufacturer);
+	if (usbd_bus_speed(c_data->uds_ctx) == USBD_SPEED_HS) {
+		usbd_desc = (struct usb_device_descriptor *)c_data->uds_ctx->hs_desc;
+	} else {
+		usbd_desc = (struct usb_device_descriptor *)c_data->uds_ctx->fs_desc;
+	}
+
+	d_nd = usbd_get_descriptor(c_data->uds_ctx, USB_DESC_STRING, usbd_desc->iManufacturer);
 	manufacturer = (char *)d_nd->ptr;
 
-	d_nd = usbd_get_descriptor(c_data->uds_ctx, USB_DESC_STRING, hs_desc->iProduct);
+	d_nd = usbd_get_descriptor(c_data->uds_ctx, USB_DESC_STRING, usbd_desc->iProduct);
 	model = (char *)d_nd->ptr;
 
-	d_nd = usbd_get_descriptor(c_data->uds_ctx, USB_DESC_STRING, hs_desc->iSerialNumber);
+	d_nd = usbd_get_descriptor(c_data->uds_ctx, USB_DESC_STRING, usbd_desc->iSerialNumber);
 	serial_number = (char *)d_nd->ptr;
 
 	device_version = "1.0";
 
-	LOG_DBG("Manufacturer: %s", manufacturer);
-	LOG_DBG("Product: %s", model);
-	if (d_nd->bLength > 0) {
-		LOG_DBG("Serial Number: %s", serial_number);
-	}
+	LOG_DBG("Desc data: Manufacturer: %s, Product: %s, SN: %s",
+			manufacturer,
+			model,
+			d_nd->bLength > 0 ? serial_number : "NULL");
+
 	mtp_init(manufacturer, model, device_version, serial_number);
 
 	return 0;

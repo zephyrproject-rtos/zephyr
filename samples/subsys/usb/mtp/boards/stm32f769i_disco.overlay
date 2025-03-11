@@ -1,25 +1,27 @@
+/*
+ * Copyright (c) 2025 Mohamed ElShahawi (extremegtx@hotmail.com)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /delete-node/ &storage_partition;
 
+&mx25l51245g {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	&mx25l51245g {
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			storage_partition: partition@1a0000 {
-				label = "storage";
-				reg = <0x001a0000 DT_SIZE_M(40)>;
-			};
-			storage_partition2: partition@2ba0000 {
-				label = "storage2";
-				reg = <0x2ba0000 DT_SIZE_M(20)>;
-			};
+		storage_partition: partition@1a0000 {
+			label = "storage";
+			reg = <0x001a0000 DT_SIZE_M(40)>;
+		};
+		storage_partition2: partition@2ba0000 {
+			label = "storage2";
+			reg = <0x2ba0000 DT_SIZE_M(20)>;
 		};
 	};
-
-
+};
 
 / {
 	fstab {
@@ -48,12 +50,5 @@
 			automount;
 			mtp-enabled;
 		};
-// Not Working
-//		sd0: sd0 {
-//			compatible = "zephyr,fstab-common";
-//			partition = <&sdmmc2>;
-//			mount-point = "/SD:";
-//			automount;
-//		};
 	};
 };

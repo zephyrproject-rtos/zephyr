@@ -910,7 +910,7 @@ static int continue_get_object(struct net_buf *buf)
 			set_pending_packet(continue_get_object);
 		}
 	} else {
-		LOG_ERR("shouldn't happen !!!!!!!!!");
+		LOG_ERR("shouldn't happen !");
 	}
 	return 0;
 }
@@ -1296,7 +1296,15 @@ int mtp_commands_handler(struct net_buf *buf_in, struct net_buf *buf)
 		MTP_CMD(MTP_OP_GET_OBJECT_REFERENCES);
 		break;
 	default:
-		LOG_ERR("Unknown cmd 0x%x!", mtp_command->hdr.code);
+		LOG_ERR("Not supported cmd 0x%x!", mtp_command->hdr.code);
+
+		struct mtp_header mtp_response = {
+			.length = sizeof(struct mtp_header),
+			.type = MTP_CONTAINER_RESPONSE,
+			.code = MTP_RESP_OPERATION_NOT_SUPPORTED,
+			.transaction_id = mtp_command->hdr.transaction_id };
+
+		net_buf_add_mem(buf, &mtp_response, sizeof(struct mtp_header));
 		break;
 	}
 
@@ -1389,15 +1397,12 @@ int mtp_init(const char *manufacturer, const char *model, const char *device_ver
 	/* Zephyr set Serial Number descriptor after MTP init, so for now use this one */
 	dev_info.serial_number = "0123456789ABCDEF";
 
-	for (int i = 1; i < ARRAY_SIZE(storage); i++) {
-		memset(storage[i].filelist, 0x00, sizeof(storage[i].filelist));
-		storage[i].files_count = 0;
-	}
-	mtp_ctx.session_opened = false;
+	mtp_reset();
 
 	return 0;
 }
 
+#if CONFIG_SHELL
 static int cmd_mtp_list(const struct shell *sh, size_t argc, char **argv)
 {
 	for (int storageIdx = 1; storageIdx < ARRAY_SIZE(storage); storageIdx++) {
@@ -1422,3 +1427,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_mtp,
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(mtp, &sub_mtp, "USB MTP commands", NULL);
+#endif
