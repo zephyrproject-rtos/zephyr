@@ -14,6 +14,17 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     tags: bluetooth
     sysbuild: true
+  sample.bluetooth.bap_broadcast_source.nrf5340_audio_dk_cpuapp.fem:
+    harness: bluetooth
+    platform_allow:
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/nrf5340_audio_dk_nrf5340_cpuapp_nrf21540_ek.overlay
+      - hci_ipc_DTC_OVERLAY_FILE=boards/nrf5340_audio_dk_nrf5340_cpunet_nrf21540_ek.overlay
+    tags: bluetooth
+    sysbuild: true
   sample.bluetooth.bap_broadcast_source.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:
