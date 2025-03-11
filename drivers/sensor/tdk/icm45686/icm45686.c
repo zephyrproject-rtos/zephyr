@@ -67,46 +67,46 @@ static int icm45686_channel_get(const struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.x,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.x,
 				  &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.y,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.y,
 				  &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.z,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.z,
 				  &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_GYRO_X:
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.x,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.x,
 				   &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_GYRO_Y:
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.y,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.y,
 				   &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_GYRO_Z:
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.z,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.z,
 				   &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		icm45686_temp_c(data->edata.payload.temp, &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.x,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.x,
 				  &val[0].val1, &val[0].val2);
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.y,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.y,
 				  &val[1].val1, &val[1].val2);
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.z,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.z,
 				  &val[2].val1, &val[2].val2);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.x,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.x,
 				   &val->val1, &val->val2);
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.y,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.y,
 				   &val[1].val1, &val[1].val2);
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.z,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.z,
 				   &val[2].val1, &val[2].val2);
 		break;
 	default:

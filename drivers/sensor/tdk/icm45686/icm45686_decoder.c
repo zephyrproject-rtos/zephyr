@@ -106,13 +106,13 @@ int icm45686_convert_raw_to_q31(struct icm45686_encoded_data *edata,
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-		icm45686_accel_ms(edata, reading, &whole, &fraction);
+		icm45686_accel_ms(edata->header.accel_fs, reading, &whole, &fraction);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-		icm45686_gyro_rads(edata, reading, &whole, &fraction);
+		icm45686_gyro_rads(edata->header.gyro_fs, reading, &whole, &fraction);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		icm45686_temp_c(reading, &whole, &fraction);
