@@ -313,7 +313,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	/*
 	 * Split align and rewind values (if any).
 	 * We allow for one bit of rewind in addition to the alignment
-	 * value to efficiently accommodate z_heap_aligned_alloc().
+	 * value to efficiently accommodate z_alloc_helper().
 	 * So if e.g. align = 0x28 (32 | 8) this means we align to a 32-byte
 	 * boundary and then rewind 8 bytes.
 	 */
