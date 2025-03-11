@@ -670,7 +670,7 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
 		.reg = (UDMA0_Type *)DT_INST_REG_ADDR(inst),                                       \
 		.irq_number = DT_INST_PROP_BY_IDX(inst, interrupts, 0),                            \
-		.sram_desc_addr = (RSI_UDMA_DESC_T *)DT_INST_PROP(inst, silabs_sram_desc_addr),    \
+		.sram_desc_addr = DT_REG_ADDR(DT_INST_PHANDLE(inst, silabs_sram_region)),          \
 		.irq_configure = siwx91x_dma_irq_configure_##inst,                                 \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &siwx91x_dma_init, NULL, &dma_data_##inst, &dma_cfg_##inst,    \
