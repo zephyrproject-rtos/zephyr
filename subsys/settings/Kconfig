@@ -201,6 +201,16 @@ config SETTINGS_ZMS_NO_LL_DELETE
 	  These nodes will be used again when the same Settings element that has
 	  been deleted is created again.
 
+config SETTINGS_ZMS_LOAD_SUBTREE_PATH
+	bool "Load only subtree path if provided"
+	help
+	  Some applications use the settings_load_subtree to load only one
+	  settings entry instead of a all entries under that path.
+	  Enabling this config will allow the ZMS backend to try to load that
+	  path first.
+	  If the callback handler returns a zero value it will
+	  continue to look for all the keys under that subtree path.
+
 config SETTINGS_SHELL
 	bool "Settings shell"
 	depends on SHELL
