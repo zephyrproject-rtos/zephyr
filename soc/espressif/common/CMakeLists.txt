@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(include)
-
-if(NOT CONFIG_MCUBOOT AND NOT CONFIG_SOC_ESP32_APPCPU AND NOT CONFIG_SOC_ESP32S3_APPCPU)
+if(NOT CONFIG_MCUBOOT AND NOT CONFIG_MCUBOOT_ESPRESSIF AND
+    NOT CONFIG_SOC_ESP32_APPCPU AND NOT CONFIG_SOC_ESP32S3_APPCPU)
   zephyr_sources_ifdef(CONFIG_ESP_SPIRAM esp_psram.c)
 endif()
 
@@ -18,13 +18,13 @@ endif()
 
 message("-- Espressif HAL path: ${ESP_IDF_PATH}")
 
-if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT CONFIG_SOC_ESP32C6_LPCORE)
+if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT OR CONFIG_MCUBOOT_ESPRESSIF) AND NOT CONFIG_SOC_ESP32C6_LPCORE)
   if(CONFIG_BUILD_OUTPUT_BIN)
     set(ESPTOOL_PY ${ESP_IDF_PATH}/tools/esptool_py/esptool.py)
     message("-- Use the esptool.py: ${ESPTOOL_PY}")
 
     set(ELF2IMAGE_ARG "")
-    if(NOT CONFIG_MCUBOOT)
+    if(NOT CONFIG_MCUBOOT AND NOT CONFIG_MCUBOOT_ESPRESSIF)
       set(ELF2IMAGE_ARG "--ram-only-header")
     endif()
 
@@ -41,25 +41,35 @@ endif()
 
 set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
 
-# Select the image origin depending on the boot configuration
 if(CONFIG_SOC_ESP32_APPCPU OR CONFIG_SOC_ESP32S3_APPCPU)
   dt_nodelabel(dts_partition_path NODELABEL "slot0_appcpu_partition")
 elseif(CONFIG_SOC_ESP32C6_LPCORE)
   dt_nodelabel(dts_partition_path NODELABEL "slot0_lpcore_partition")
-elseif(CONFIG_MCUBOOT OR CONFIG_ESP_SIMPLE_BOOT)
-  dt_nodelabel(dts_partition_path NODELABEL "boot_partition")
 else()
   dt_nodelabel(dts_partition_path NODELABEL "slot0_partition")
 endif()
-
 dt_reg_addr(image_off PATH ${dts_partition_path})
-board_runner_args(esp32 "--esp-app-address=${image_off}")
+
+# Get boot partition address
+dt_nodelabel(dts_boot_partition_path NODELABEL "boot_partition")
+dt_reg_addr(boot_off PATH ${dts_boot_partition_path})
+
+# Select the image origin depending on the boot configuration
+if(CONFIG_BOOTLOADER_MCUBOOT)
+  board_runner_args(esp32 "--esp-app-address=${image_off}")
+  message("-- Target partition ${dts_partition_path}")
+else()
+  # In this case, it means that the current build is either
+  # the bootloader (MCUboot, MCUboot Espressif Port) or regular
+  # app that boots using Simple boot
+  board_runner_args(esp32 "--esp-app-address=${boot_off}")
+  message("-- Target partition ${dts_boot_partition_path}")
+endif()
+
 board_runner_args(esp32 "--esp-flash-size=${esptoolpy_flashsize}MB")
 board_runner_args(esp32 "--esp-flash-freq=${CONFIG_ESPTOOLPY_FLASHFREQ}")
 board_runner_args(esp32 "--esp-flash-mode=${CONFIG_ESPTOOLPY_FLASHMODE}")
 board_finalize_runner_args(esp32 "--esp-monitor-baud=${monitor_baud}")
-
-message("-- Image partition ${dts_partition_path}")
 
 # Look for cross references between bootloader sections
 if(CONFIG_MCUBOOT)
@@ -78,6 +88,10 @@ endif()
 
 if(CONFIG_MCUBOOT)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/mcuboot.ld CACHE INTERNAL "")
+elseif(CONFIG_MCUBOOT_ESPRESSIF)
+  # building bootloader MCUboot Espressif Port uses its linker script existing
+  # in MCUboot repo
+  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/empty.ld CACHE INTERNAL "")
 elseif(CONFIG_SOC_ESP32_APPCPU OR CONFIG_SOC_ESP32S3_APPCPU)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default_appcpu.ld CACHE INTERNAL "")
 elseif(CONFIG_SOC_ESP32C6_LPCORE)
