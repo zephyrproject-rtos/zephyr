@@ -13,7 +13,6 @@ import subprocess
 import sys
 
 from elftools.elf.elffile import ELFFile
-
 from west import manifest
 from west.commands import Verbosity
 from west.util import quote_sh_list
@@ -79,6 +78,20 @@ You can also pass additional arguments to rimage thanks to [sign] and
 [rimage] sections in your west config file(s); this is especially useful
 when invoking west sign _indirectly_ through CMake/ninja. See how at
 https://docs.zephyrproject.org/latest/develop/west/sign.html
+
+silabs_commander
+-----
+
+To create a signed binary with the silabs_commander tool, run this from your build directory:
+
+   west sign -t silabs_commander
+
+For this to work, Silabs Commander tool must be installed in your PATH.
+
+The input binary (zephyr.bin.rps) is signed using the specified OTA key and private key,
+producing zephyr.bin.rps by default. If CONFIG_SIWX91X_OTA_KEY and CONFIG_SIWX91X_PRIVATE_KEY are set
+in your build configuration, they will be used unless overridden by command-line arguments.
+Additional arguments after '--' are passed to silabs_commander directly.
 '''
 
 class ToggleAction(argparse.Action):
@@ -112,7 +125,7 @@ class Sign(Forceable):
 
         # general options
         group = parser.add_argument_group('tool control options')
-        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
+        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage', 'silabs_commander'],
                            help='''image signing tool name; imgtool and rimage
                            are currently supported (imgtool is deprecated)''')
         group.add_argument('-p', '--tool-path', default=None,
@@ -195,6 +208,8 @@ schema (rimage "target") is not defined in board.cmake.''')
             signer = ImgtoolSigner()
         elif args.tool == 'rimage':
             signer = RimageSigner()
+        elif args.tool == 'silabs_commander':
+            signer = SilabsRPSSigner()
         # (Add support for other signers here in elif blocks)
         else:
             if args.tool is None:
@@ -633,3 +648,82 @@ class RimageSigner(Signer):
 
         os.remove(out_bin)
         os.rename(out_tmp, out_bin)
+
+class SilabsRPSSigner(Signer):
+    # Signer class for Silicon Labs Commander tool via west sign -t silabs_commander.
+    def find_commandertool(self, cmd, args):
+        if args.tool_path:
+            commandertool = args.tool_path
+            if not os.path.isfile(commandertool):
+                cmd.die(f'--tool-path {commandertool}: no such file')
+        else:
+            commandertool = shutil.which('commander')
+            if not commandertool:
+                cmd.die('commander not found')
+        return commandertool
+
+    def get_security_configs(self, build_conf, args, command):
+        # Retrieve configurations, prioritizing command-line args, then build_conf
+        siwx91x_ota_key = getattr(args, 'siwx91x-ota-key', build_conf.get('CONFIG_SIWX91X_OTA_KEY'))
+        siwx91x_private_key = getattr(args, 'siwx91x-private-key', build_conf.get('CONFIG_SIWX91X_PRIVATE_KEY'))
+
+        # Use west sign's --tool-path to find the commander tool
+        commander_path = self.find_commandertool(command, args)
+        # Validate required settings
+        if not siwx91x_ota_key:
+            command.die("SIWX91X_OTA_KEY not provided. Use --siwx91x-ota-key=your_key or add CONFIG_SIWX91X_OTA_KEY in prj.conf.")
+        if not siwx91x_private_key:
+            command.die("SIWX91X_PRIVATE_KEY not provided. Use --siwx91x-private-key=/path/to/key or add CONFIG_SIWX91X_PRIVATE_KEY in prj.conf.")
+
+        # Validate private key path
+        if not os.path.isfile(siwx91x_private_key):
+            command.die(f"Private key not found at {siwx91x_private_key}. Please ensure the path is correct.")
+
+        return siwx91x_ota_key, commander_path, siwx91x_private_key
+
+    def sign(self, command, build_dir, build_conf, formats):
+        """Sign the Zephyr binary using Silicon Labs Commander.
+
+        :param command: The Sign instance (provides args and utility methods)
+        :param build_dir: The build directory path
+        :param build_conf: BuildConfiguration object for the build directory
+        :param formats: List of formats to generate (e.g., ['bin', 'rps'])
+        """
+        self.command = command
+        args = command.args
+        b = pathlib.Path(build_dir)
+
+        # Check if signing is needed
+        if not formats:
+            if not args.quiet:
+                command.inf("No output formats specified, skipping signing.")
+            return
+
+        # Setting the input and output file directories
+        input_rps = b / 'zephyr' / "zephyr.bin.rps"
+        output_rps = args.sbin or (b / 'zephyr' / "zephyr_signed.bin.rps")
+
+        # Check if input binary exists
+        if not input_rps.is_file():
+            command.die(f"No .rps found at {input_rps}. Ensure the build generated zephyr.bin.rps in {b / 'zephyr'}")
+
+        # Load configuration
+        siwx91x_ota_key, commander_path, siwx91x_private_key = self.get_security_configs(build_conf, args, command)
+
+        # Build the Silicon Labs Commander signing command
+        sign_base = [
+            commander_path,
+            "rps",
+            "convert",
+            str(output_rps),
+            "--app", str(input_rps),
+            "--mic", siwx91x_ota_key,
+            "--encrypt", siwx91x_ota_key,
+            "--sign", siwx91x_private_key,
+            *args.tool_args
+        ]
+
+        try:
+            subprocess.check_call(sign_base, stdout=subprocess.PIPE if args.quiet else None, stderr=subprocess.PIPE if args.quiet else None)
+        except subprocess.CalledProcessError as e:
+            command.die(f"Silicon Labs Commander signing failed with exit code {e.returncode}")

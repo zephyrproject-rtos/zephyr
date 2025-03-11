@@ -28,3 +28,23 @@ config SIWX91X_NWP_INIT_PRIORITY
 	  Wi-Fi and crypto.
 
 endif # SOC_FAMILY_SILABS_SIWX91X
+
+if SOC_FAMILY_SILABS_SIWX91X
+config SIWX91X_SILABS_COMMANDER_SIGN
+	bool "Silicon Labs Commander Signing Support"
+	depends on BUILD_OUTPUT_BIN
+	help
+	  Activates signing of Zephyr binary with Silicon Labs Commander during build process.
+
+config SIWX91X_OTA_KEY
+	string "OTA Key for Encryption."
+	help
+	  Specifies OTA key (hex) for signing/encryption with Silicon Labs Commander,
+	  from prj.conf.
+
+config SIWX91X_PRIVATE_KEY
+	string "Private Key Path for Signing."
+	help
+	  Path to private key file for signing with Silicon Labs Commander,
+	  from prj.conf, relative to board directory.
+endif
