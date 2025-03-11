@@ -95,14 +95,14 @@ struct icm45686_config {
 	struct gpio_dt_spec int_gpio;
 };
 
-static inline void icm45686_accel_ms(struct icm45686_encoded_data *edata,
+static inline void icm45686_accel_ms(uint8_t fs,
 				     int32_t in,
 				     int32_t *out_ms,
 				     int32_t *out_ums)
 {
 	int64_t sensitivity;
 
-	switch (edata->header.accel_fs) {
+	switch (fs) {
 	case ICM45686_DT_ACCEL_FS_32:
 		sensitivity = 32768 / 32;
 		break;
@@ -132,14 +132,14 @@ static inline void icm45686_accel_ms(struct icm45686_encoded_data *edata,
 	*out_ums = (in_ms - (*out_ms * sensitivity * 1000000LL)) / sensitivity;
 }
 
-static inline void icm45686_gyro_rads(struct icm45686_encoded_data *edata,
+static inline void icm45686_gyro_rads(uint8_t fs,
 				      int32_t in,
 				      int32_t *out_rads,
 				      int32_t *out_urads)
 {
 	int64_t sensitivity_x10;
 
-	switch (edata->header.gyro_fs) {
+	switch (fs) {
 	case ICM45686_DT_GYRO_FS_4000:
 		sensitivity_x10 = 32768 * 10 / 4000;
 		break;
