@@ -239,7 +239,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 	uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
 
 	LOG_DBG("Found %p in PLT %u size %zu cnt %u text %p",
-		(void *)llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name),
+		(void *)llext_section_name(ldr, ext, shdr),
 		shdr->sh_type, (size_t)shdr->sh_entsize, sh_cnt, (void *)text);
 
 	const elf_shdr_t *sym_shdr = ldr->sects + LLEXT_MEM_SYMTAB;
@@ -289,7 +289,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			continue;
 		}
 
-		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
+		const char *name = llext_symbol_name(ldr, ext, &sym);
 
 		/*
 		 * Both r_offset and sh_addr are addresses for which the extension
@@ -411,7 +411,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 		rel_cnt = shdr->sh_size / shdr->sh_entsize;
 
-		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
+		name = llext_section_name(ldr, ext, shdr);
 
 		/*
 		 * FIXME: The Xtensa port is currently using a different way of

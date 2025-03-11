@@ -175,7 +175,7 @@ static int llext_riscv_find_sym_pcrel(struct llext_loader *ldr, struct llext *ex
 		return ret;
 	}
 
-	symbol_name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, candidate_sym.st_name);
+	symbol_name = llext_symbol_name(ldr, ext, &candidate_sym);
 
 	ret = llext_lookup_symbol(ldr, ext, &link_addr, &candidate, &candidate_sym,
 				  symbol_name, shdr);

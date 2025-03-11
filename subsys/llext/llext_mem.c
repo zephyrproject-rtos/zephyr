@@ -176,8 +176,7 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 		for (int i = 0; i < ext->sect_cnt; ++i) {
 			elf_shdr_t *shdr = ext->sect_hdrs + i;
 			enum llext_mem mem_idx = ldr->sect_map[i].mem_idx;
-			const char *name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB,
-							shdr->sh_name);
+			const char *name = llext_section_name(ldr, ext, shdr);
 
 			/* only show sections mapped to program memory */
 			if (mem_idx < LLEXT_MEM_EXPORT) {
