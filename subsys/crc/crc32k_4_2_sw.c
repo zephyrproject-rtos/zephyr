@@ -6,7 +6,7 @@
 
 #include <zephyr/sys/crc.h>
 
-uint32_t crc32_k_4_2_update(uint32_t crc, const uint8_t *const data, const size_t len)
+uint32_t __weak crc32_k_4_2_update(uint32_t crc, const uint8_t *const data, const size_t len)
 {
 
 #if defined(CONFIG_CRC32_K_4_2_TABLE_256)
