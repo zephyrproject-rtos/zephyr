@@ -104,9 +104,14 @@ this contributing and review process for imported components.
 Copyrights Notices
 *******************
 
-Please follow this `Community Best Practice`_ for Copyright Notices from the
-Linux Foundation.
+The Zephyr Project follows the `Community Best Practice`_ for Copyright Notices from the Linux
+Foundation.
 
+We recommend using the following copyright notice:
+
+.. code-block:: C
+
+    Copyright The Zephyr Project Contributors
 
 .. _Community Best Practice:
    https://www.linuxfoundation.org/blog/copyright-notices-in-open-source-software-projects/
