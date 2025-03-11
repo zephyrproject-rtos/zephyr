@@ -1087,7 +1087,6 @@ static int register_ept(const struct device *instance, void **token,
 	struct ept_data *ept = NULL;
 	bool matching_state;
 	int ept_index;
-	int r = 0;
 
 	/* Try to find endpoint to rebound */
 	for (ept_index = 0; ept_index < NUM_EPT; ept_index++) {
@@ -1134,7 +1133,7 @@ static int register_ept(const struct device *instance, void **token,
 	ept_bound_process(dev_data);
 #endif
 
-	return r;
+	return 0;
 }
 
 /**
@@ -1237,8 +1236,13 @@ static int hold_rx_buffer(const struct device *instance, void *token, void *data
 static int release_rx_buffer(const struct device *instance, void *token, void *data)
 {
 	struct backend_data *dev_data = instance->data;
+	int r;
 
-	return send_release(dev_data, (uint8_t *)data, MSG_RELEASE_DATA, 0);
+	r = send_release(dev_data, (uint8_t *)data, MSG_RELEASE_DATA, 0);
+	if (r < 0) {
+		return r;
+	}
+	return 0;
 }
 
 /**
