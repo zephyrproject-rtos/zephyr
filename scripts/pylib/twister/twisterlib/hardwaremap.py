@@ -30,7 +30,6 @@ except ImportError:
     print("Install tabulate python module with pip to use --device-testing option.")
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 
 class DUT:

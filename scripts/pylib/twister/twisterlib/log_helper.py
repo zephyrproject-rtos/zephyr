@@ -14,7 +14,6 @@ _WINDOWS = platform.system() == 'Windows'
 
 
 logger = logging.getLogger("twister")
-logger.setLevel(logging.DEBUG)
 
 def log_command(logger, msg, args):
     '''Platform-independent helper for logging subprocess invocations.

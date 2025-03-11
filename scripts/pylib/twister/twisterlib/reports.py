@@ -17,7 +17,6 @@ from colorama import Fore
 from twisterlib.statuses import TwisterStatus
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 
 class ReportStatus(str, Enum):
