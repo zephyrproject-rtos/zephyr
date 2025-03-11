@@ -187,7 +187,7 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 		memcpy(addr.sll_addr, pkt->lladdr_src.addr,
 		       MIN(sizeof(addr.sll_addr), pkt->lladdr_src.len));
 
-		addr.sll_protocol = net_pkt_ll_proto_type(pkt);
+		addr.sll_protocol = htons(net_pkt_ll_proto_type(pkt));
 
 		if (net_if_get_link_addr(iface)->type == NET_LINK_ETHERNET) {
 			addr.sll_hatype = ARPHRD_ETHER;
@@ -216,7 +216,7 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 		memcpy(addr.sll_addr, hdr->src.addr,
 		       sizeof(struct net_eth_addr));
 
-		addr.sll_protocol = ntohs(hdr->type);
+		addr.sll_protocol = hdr->type;
 		addr.sll_hatype = ARPHRD_ETHER;
 
 		dst_addr.addr = hdr->dst.addr;

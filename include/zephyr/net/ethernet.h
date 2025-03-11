@@ -1171,7 +1171,8 @@ static inline bool net_eth_is_vlan_interface(struct net_if *iface)
 				       init_fn, pm, data, config, prio,	\
 				       api, mtu)			\
 	Z_DEVICE_STATE_DEFINE(dev_id);					\
-	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, NULL,		\
+			Z_DEVICE_DT_FLAGS(node_id), pm, data,		\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));
 

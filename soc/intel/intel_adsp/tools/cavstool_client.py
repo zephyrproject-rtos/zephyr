@@ -62,7 +62,8 @@ class cavstool_client():
         fname = os.path.basename(filename)
         fsize = os.path.getsize(filename)
 
-        md5_tx = hashlib.md5(open(filename,'rb').read()).hexdigest()
+        md5_tx = hashlib.md5(open(filename,'rb').read(),
+                             usedforsecurity=False).hexdigest()
 
         # Pack the header and the expecting packed size is 78 bytes.
         # The header by convention includes:
