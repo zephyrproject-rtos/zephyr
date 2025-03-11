@@ -23,7 +23,6 @@ uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len)
 		}
 	}
 
-
 	return crc;
 }
 
@@ -44,10 +43,8 @@ uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t 
 		}
 	}
 
-
 	return crc;
 }
-
 
 uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len)
 {
