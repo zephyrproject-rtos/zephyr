@@ -6,14 +6,14 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/sys/crc.h>
-#include "../../../lib/crc/crc8_sw.c"
-#include "../../../lib/crc/crc16_sw.c"
-#include "../../../lib/crc/crc32_sw.c"
-#include "../../../lib/crc/crc32c_sw.c"
-#include "../../../lib/crc/crc7_sw.c"
-#include "../../../lib/crc/crc24_sw.c"
-#include "../../../lib/crc/crc4_sw.c"
-#include "../../../lib/crc/crc32k_4_2_sw.c"
+#include "../../../subsys/crc/crc8_sw.c"
+#include "../../../subsys/crc/crc16_sw.c"
+#include "../../../subsys/crc/crc32_sw.c"
+#include "../../../subsys/crc/crc32c_sw.c"
+#include "../../../subsys/crc/crc7_sw.c"
+#include "../../../subsys/crc/crc24_sw.c"
+#include "../../../subsys/crc/crc4_sw.c"
+#include "../../../subsys/crc/crc32k_4_2_sw.c"
 
 ZTEST(crc, test_crc32_k_4_2)
 {

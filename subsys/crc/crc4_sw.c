@@ -6,8 +6,8 @@
 
 #include <zephyr/sys/crc.h>
 
-uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
-	  bool reversed)
+uint8_t __weak crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
+	     bool reversed)
 {
 	uint8_t crc = initial_value;
 	size_t i, j, k;
@@ -37,14 +37,14 @@ uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 	return crc & 0xF;
 }
 
-uint8_t crc4_ti(uint8_t seed, const uint8_t *src, size_t len)
+uint8_t __weak crc4_ti(uint8_t seed, const uint8_t *src, size_t len)
 {
-	static const uint8_t lookup[8] = { 0x03, 0x65, 0xcf, 0xa9, 0xb8, 0xde, 0x74, 0x12 };
+	static const uint8_t lookup[8] = {0x03, 0x65, 0xcf, 0xa9, 0xb8, 0xde, 0x74, 0x12};
 	uint8_t index;
 
 	for (size_t i = 0; i < len; i++) {
 		for (size_t j = 0U; j < 2U; j++) {
-			index = seed ^ ((src[i] >> (4*(1-j))) & 0xf);
+			index = seed ^ ((src[i] >> (4 * (1 - j))) & 0xf);
 			seed = (lookup[index >> 1] >> (1 - (index & 1)) * 4) & 0xf;
 		}
 	}
