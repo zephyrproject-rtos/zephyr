@@ -67,10 +67,6 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 
-#if DT_INST_NODE_HAS_PROP(0, maximum_speed)
-#define USB_MAXIMUM_SPEED	DT_INST_PROP(0, maximum_speed)
-#endif
-
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *usb_pcfg =
 					PINCTRL_DT_INST_DEV_CONFIG_GET(0);
@@ -89,6 +85,18 @@ static const struct gpio_dt_spec ulpi_reset =
 	GPIO_DT_SPEC_GET_OR(DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys), reset_gpios, {0});
 #endif
 
+/**
+ * The following defines are used to map the value of the "maxiumum-speed"
+ * DT property to the corresponding definition used by the STM32 HAL.
+ */
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHYC) || \
+	defined(USB_OTG_HS_EMB_PHY)
+#define HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
+#else
+#define HIGH_SPEED             USB_OTG_SPEED_HIGH
+#endif
+
+#define FULL_SPEED             USB_OTG_SPEED_FULL
 /*
  * USB, USB_OTG_FS and USB_DRD_FS are defined in STM32Cube HAL and allows to
  * distinguish between two kind of USB DC. STM32 F0, F3, L0 and G4 series
@@ -432,54 +440,19 @@ static int usb_dc_stm32_clock_disable(void)
 	return 0;
 }
 
-#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
-static uint32_t usb_dc_stm32_get_maximum_speed(void)
-{
-	/*
-	 * If max-speed is not passed via DT, set it to USB controller's
-	 * maximum hardware capability.
-	 */
-#if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY || USB_OTG_HS_ULPI_PHY
-	uint32_t speed = USB_OTG_SPEED_HIGH;
-#else
-	uint32_t speed = USB_OTG_SPEED_FULL;
-#endif
-
-#ifdef USB_MAXIMUM_SPEED
-
-	if (!strncmp(USB_MAXIMUM_SPEED, "high-speed", 10)) {
-		speed = USB_OTG_SPEED_HIGH;
-	} else if (!strncmp(USB_MAXIMUM_SPEED, "full-speed", 10)) {
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHYC) || \
-	defined(USB_OTG_HS_EMB_PHY)
-		speed = USB_OTG_SPEED_HIGH_IN_FULL;
-#else
-		speed = USB_OTG_SPEED_FULL;
-#endif
-	} else {
-		LOG_DBG("Unsupported maximum speed defined in device tree. "
-			"USB controller will default to its maximum HW "
-			"capability");
-	}
-#endif
-
-	return speed;
-}
-#endif /* USB_OTG_FS || USB_OTG_HS */
-
 static int usb_dc_stm32_init(void)
 {
 	HAL_StatusTypeDef status;
 	int ret;
 	unsigned int i;
 
+	usb_dc_stm32_state.pcd.Init.speed = DT_INST_STRING_UPPER_TOKEN(0, maximum_speed);
 #if defined(USB) || defined(USB_DRD_FS)
 #ifdef USB
 	usb_dc_stm32_state.pcd.Instance = USB;
 #else
 	usb_dc_stm32_state.pcd.Instance = USB_DRD_FS;
 #endif
-	usb_dc_stm32_state.pcd.Init.speed = PCD_SPEED_FULL;
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
@@ -491,7 +464,6 @@ static int usb_dc_stm32_init(void)
 	usb_dc_stm32_state.pcd.Instance = USB_OTG_FS;
 #endif
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
-	usb_dc_stm32_state.pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
 #if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
 	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
 #elif USB_OTG_HS_ULPI_PHY
