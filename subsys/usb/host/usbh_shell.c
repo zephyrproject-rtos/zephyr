@@ -300,6 +300,34 @@ static int cmd_desc_string(const struct shell *sh,
 	return err;
 }
 
+static int cmd_feature_clear_halt(const struct shell *sh,
+				  size_t argc, char **argv)
+{
+	static struct usb_device *udev;
+	uint8_t addr;
+	uint8_t ep;
+	int err;
+
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	ep = strtol(argv[2], NULL, 16);
+
+	err = usbh_req_clear_sfs_halt(udev, ep);
+	if (err) {
+		shell_error(sh, "host: Failed to clear halt feature");
+	} else {
+		shell_print(sh, "host: Device 0x%02x, ep 0x%02x halt feature cleared",
+			    udev->addr, ep);
+	}
+
+	return err;
+}
+
 static int cmd_feature_set_halt(const struct shell *sh,
 				size_t argc, char **argv)
 {
@@ -317,8 +345,7 @@ static int cmd_feature_set_halt(const struct shell *sh,
 
 	ep = strtol(argv[2], NULL, 16);
 
-	/* TODO: add usbh_req_set_sfs_halt(&uhs_ctx, NULL, 0); */
-	err = usbh_req_set_sfs_rwup(udev);
+	err = usbh_req_set_sfs_halt(udev, ep);
 	if (err) {
 		shell_error(sh, "host: Failed to set halt feature");
 	} else {
@@ -684,7 +711,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(feature_clear_cmds,
 	SHELL_CMD_ARG(rwup, NULL, "<addr>",
 		      cmd_feature_clear_rwup, 2, 0),
 	SHELL_CMD_ARG(halt, NULL, "<addr> <endpoint>",
-		      cmd_feature_set_halt, 3, 0),
+		      cmd_feature_clear_halt, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
