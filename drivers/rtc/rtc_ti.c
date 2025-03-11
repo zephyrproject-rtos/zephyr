@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(rtc_ti, CONFIG_RTC_LOG_LEVEL);
 
 struct rtc_ti_config {
 	RTC_Regs *base;
+	bool rtc_x;
 };
 
 #ifdef CONFIG_RTC_ALARM
@@ -431,9 +432,11 @@ static int rtc_ti_init(const struct device *dev)
 {
 	const struct rtc_ti_config *cfg = dev->config;
 
-	/* Enable power to RTC module */
-	if (!DL_RTC_Common_isPowerEnabled(cfg->base)) {
-		DL_RTC_Common_enablePower(cfg->base);
+	if (!cfg->rtc_x) {
+		/* Enable power to RTC module */
+		if (!DL_RTC_Common_isPowerEnabled(cfg->base)) {
+			DL_RTC_Common_enablePower(cfg->base);
+		}
 	}
 
 	DL_RTC_Common_enableClockControl(cfg->base);
@@ -461,6 +464,7 @@ static const struct rtc_driver_api rtc_ti_driver_api = {
 static struct rtc_ti_data rtc_data;
 static struct rtc_ti_config rtc_config = {
 	.base = (RTC_Regs *)DT_INST_REG_ADDR(0),
+	.rtc_x = DT_INST_NODE_HAS_PROP(0, ti_rtc_x),
 };
 
 DEVICE_DT_INST_DEFINE(0, &rtc_ti_init, NULL, &rtc_data, &rtc_config, PRE_KERNEL_1,
