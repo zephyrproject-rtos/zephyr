@@ -45,7 +45,15 @@
 
 /* Safety margin between MCUboot segments and ROM stack */
 #define BOOTLOADER_STACK_OVERHEAD      0x2000
+
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+/* Match MCUboot Espressif Port esp32s2 defaults */
+#define BOOTLOADER_DRAM_SEG_LEN        0x9A00
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x6000
+#define BOOTLOADER_IRAM_SEG_LEN        0x9000
+#else
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x3000
+#endif
 
 /* Upper boundary of user-usable SRAM */
 #define DRAM_USER_END      DRAM_SHARED_BUFFERS_END
@@ -56,6 +64,12 @@
 #define BOOTLOADER_IRAM_LOADER_SEG_START \
 	(BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN + IRAM_DRAM_OFFSET)
 
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+#define BOOTLOADER_DRAM_SEG_START \
+	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_DRAM_SEG_LEN - IRAM_DRAM_OFFSET)
+#define BOOTLOADER_IRAM_SEG_START \
+	(BOOTLOADER_DRAM_SEG_START - BOOTLOADER_IRAM_SEG_LEN + IRAM_DRAM_OFFSET)
+#else
 /* MCUboot iram/dram segments: stacked in upper SRAM, below iram_loader_seg.
  * On Xtensa split-bus SoCs, iram_seg and dram_seg MUST occupy separate physical
  * SRAM regions (IRAM and DRAM buses map to the same physical memory).
@@ -74,6 +88,7 @@
 #define BOOTLOADER_DRAM_SEG_LEN   BOOTLOADER_IRAM_SEG_LEN
 #define BOOTLOADER_DRAM_SEG_START \
 	(BOOTLOADER_IRAM_SEG_START - IRAM_DRAM_OFFSET - BOOTLOADER_DRAM_SEG_LEN)
+#endif
 
 /* Cached memories */
 #define ICACHE0_START DT_REG_ADDR(DT_NODELABEL(icache0))

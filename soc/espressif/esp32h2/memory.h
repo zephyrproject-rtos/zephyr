@@ -41,7 +41,15 @@
 
 /* Safety margin between MCUboot segments and ROM stack */
 #define BOOTLOADER_STACK_OVERHEAD      0x2000
+
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+/* Match MCUboot Espressif Port esp32h2 defaults */
+#define BOOTLOADER_DRAM_SEG_LEN        0xA000
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x7000
+#define BOOTLOADER_IRAM_SEG_LEN        0x8800
+#else
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x3000
+#endif
 
 /* Upper limit of SRAM available for MCUboot bootloader segments */
 #define BOOTLOADER_USER_DRAM_END (DRAM_SHARED_BUFFERS_END - BOOTLOADER_STACK_OVERHEAD)
@@ -52,6 +60,12 @@
  * On unified-address SoCs (C6, H2) these are the same physical memory.
  * The lower half is reserved for the application image.
  */
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+#define BOOTLOADER_DRAM_SEG_START \
+	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
+#define BOOTLOADER_IRAM_SEG_START \
+	(BOOTLOADER_DRAM_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
+#else
 #define BOOTLOADER_IRAM_SEG_TARGET_LEN \
 	((BOOTLOADER_IRAM_LOADER_SEG_START - (HPSRAM_START + ICACHE_SIZE)) / 4)
 #define BOOTLOADER_IRAM_SEG_START \
@@ -61,6 +75,7 @@
 #define BOOTLOADER_DRAM_SEG_LEN   BOOTLOADER_IRAM_SEG_LEN
 #define BOOTLOADER_DRAM_SEG_START \
 	(BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
+#endif
 
 /* Flash */
 #ifdef CONFIG_FLASH_SIZE

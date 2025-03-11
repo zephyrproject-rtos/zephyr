@@ -69,6 +69,12 @@
 #define BOOTLOADER_IRAM_LOADER_SEG_START 0x40078000
 #define BOOTLOADER_IRAM_SEG_START        ALIGN_UP(SRAM1_IRAM_START, 0x400)
 
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+/* Match MCUboot Espressif Port esp32 defaults */
+#define BOOTLOADER_DRAM_SEG_LEN        0xB900
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x6500
+#define BOOTLOADER_IRAM_SEG_LEN        0x9000
+#else
 /* Bootloader segment sizes (computed from bank boundaries) */
 #define BOOTLOADER_DRAM_SEG_LEN \
 	(SRAM1_DRAM_END - BOOTLOADER_DRAM_SEG_START)
@@ -77,6 +83,7 @@
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN \
 	((SRAM0_IRAM_START + SRAM0_CACHE_SIZE) - BOOTLOADER_IRAM_LOADER_SEG_START)
 #define BOOTLOADER_IRAM_SEG_LEN         SRAM1_SIZE
+#endif
 
 /* The `USER_IRAM_END` represents the end of staticaly allocated memory.
  * This address is where 2nd stage bootloader starts allocating memory.

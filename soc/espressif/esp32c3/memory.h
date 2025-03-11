@@ -47,15 +47,28 @@
 /* Safety margin between MCUboot segments and ROM stack */
 #define BOOTLOADER_STACK_OVERHEAD      0x2000
 
-#define BOOTLOADER_USER_DRAM_END (DRAM_SHARED_BUFFERS_END - BOOTLOADER_STACK_OVERHEAD)
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+/* Match MCUboot Espressif Port esp32c3 defaults */
+#define BOOTLOADER_DRAM_SEG_LEN        0xA000
+#define BOOTLOADER_IRAM_SEG_LEN        0x9000
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x5400
+#else
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1400
+#endif
 
-#define BOOTLOADER_IRAM_LOADER_SEG_END \
-		(BOOTLOADER_USER_DRAM_END + IRAM_DRAM_OFFSET)
+#define BOOTLOADER_USER_DRAM_END (DRAM_SHARED_BUFFERS_END - BOOTLOADER_STACK_OVERHEAD)
+
 #define BOOTLOADER_IRAM_LOADER_SEG_START \
-		(BOOTLOADER_IRAM_LOADER_SEG_END - BOOTLOADER_IRAM_LOADER_SEG_LEN)
+	(BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN + IRAM_DRAM_OFFSET)
 
-/* MCUboot iram/dram segments: stacked in upper SRAM, below iram_loader_seg.
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+#define BOOTLOADER_DRAM_SEG_START \
+	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_DRAM_SEG_LEN - IRAM_DRAM_OFFSET)
+#define BOOTLOADER_IRAM_SEG_START \
+	(BOOTLOADER_DRAM_SEG_START - BOOTLOADER_IRAM_SEG_LEN + IRAM_DRAM_OFFSET)
+#else
+/* MCUboot Zephyr Port iram/dram segments: stacked in upper SRAM, below
+ * iram_loader_seg.
  * On split-bus SoCs, iram_seg and dram_seg MUST occupy separate physical
  * SRAM regions (IRAM and DRAM buses map to the same physical memory).
  * Layout (in physical/DRAM space, top-down):
@@ -73,6 +86,7 @@
 #define BOOTLOADER_DRAM_SEG_LEN   BOOTLOADER_IRAM_SEG_LEN
 #define BOOTLOADER_DRAM_SEG_START \
 	(BOOTLOADER_IRAM_SEG_START - IRAM_DRAM_OFFSET - BOOTLOADER_DRAM_SEG_LEN)
+#endif
 
 /* Flash */
 #ifdef CONFIG_FLASH_SIZE
