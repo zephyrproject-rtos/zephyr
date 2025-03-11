@@ -673,33 +673,6 @@ static int get_i3c_addr_pos(const struct device *dev, uint8_t addr, bool sa)
 }
 
 /**
- * @brief Get the position of an I2C device with the specified address.
- *
- * This function retrieves the position (ID) of an I2C device with the specified
- * address on the I3C bus associated with the provided I3C device structure. This
- * utilizes the controller private data for where the id reg is stored.
- *
- * @param dev Pointer to the I3C device structure.
- * @param addr I2C address of the device whose position is to be retrieved.
- *
- * @return The position (ID) of the device on success, or a negative error code
- *         if the device with the given address is not found.
- */
-static int get_i2c_addr_pos(const struct device *dev, uint16_t addr)
-{
-	struct dw_i3c_i2c_dev_data *dw_i3c_device_data;
-	struct i3c_i2c_device_desc *desc = i3c_dev_list_i2c_addr_find(dev, addr);
-
-	if (desc == NULL) {
-		return -ENODEV;
-	}
-
-	dw_i3c_device_data = desc->controller_priv;
-
-	return dw_i3c_device_data->id;
-}
-
-/**
  * @brief Transfer messages in I3C mode.
  *
  * @param dev Pointer to device driver instance.
@@ -891,6 +864,41 @@ error:
 	return ret;
 }
 
+static int dw_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
+{
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+	uint8_t pos;
+
+	pos = get_free_pos(data->free_pos);
+	if (pos < 0) {
+		return -ENOSPC;
+	}
+
+	data->dw_i3c_i2c_priv_data[pos].id = pos;
+	desc->controller_priv = &(data->dw_i3c_i2c_priv_data[pos]);
+	data->free_pos &= ~BIT(pos);
+
+	sys_write32(DEV_ADDR_TABLE_LEGACY_I2C_DEV | DEV_ADDR_TABLE_STATIC_ADDR(desc->addr),
+		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+
+	return 0;
+}
+
+static void dw_i3c_i2c_detach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
+{
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+	struct dw_i3c_i2c_dev_data *dw_i2c_device_data = desc->controller_priv;
+
+	__ASSERT_NO_MSG(dw_i2c_device_data != NULL);
+
+	sys_write32(0,
+		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i2c_device_data->id));
+	data->free_pos |= BIT(dw_i2c_device_data->id);
+	desc->controller_priv = NULL;
+}
+
 /**
  * @brief Transfer messages in I2C mode.
  *
@@ -921,12 +929,6 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 		return -ENOTSUP;
 	}
 
-	pos = get_i2c_addr_pos(dev, target->addr);
-	if (pos < 0) {
-		LOG_ERR("%s: Invalid slave device", dev->name);
-		return -EINVAL;
-	}
-
 	for (i = 0; i < num_msgs; i++) {
 		if (msgs[i].flags & I2C_MSG_READ) {
 			nrxwords += DIV_ROUND_UP(msgs[i].len, 4);
@@ -946,6 +948,17 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 	}
 
 	pm_device_busy_set(dev);
+
+	/* In order limit the number of retaining registers occupied by connected devices,
+	 * I2C devices are only configured during transfers. This allows the number of devices
+	 * to be larger than the number of retaining registers on mixed buses.
+	 */
+	ret = dw_i3c_i2c_attach_device(dev, target);
+	if (ret != 0) {
+		LOG_ERR("%s: Failed to attach I2C device (%d)", dev->name, ret);
+		goto error_attach;
+	}
+	pos = ((struct dw_i3c_i2c_dev_data *)target->controller_priv)->id;
 
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
@@ -1002,6 +1015,8 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 	ret = xfer->ret;
 
 error:
+	dw_i3c_i2c_detach_device(dev, target);
+error_attach:
 	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
 
@@ -1032,9 +1047,9 @@ static struct i3c_i2c_device_desc *dw_i3c_i2c_device_find(const struct device *d
  * @see i2c_transfer
  *
  * @param dev Pointer to device driver instance.
- * @param target Pointer to target device descriptor.
  * @param msgs Pointer to I2C messages.
  * @param num_msgs Number of messages to transfers.
+ * @param addr Address of the I2C target device.
  *
  * @return @see i2c_transfer
  */
@@ -1042,15 +1057,12 @@ static int dw_i3c_i2c_api_transfer(const struct device *dev, struct i2c_msg *msg
 				   uint16_t addr)
 {
 	struct i3c_i2c_device_desc *i2c_dev = dw_i3c_i2c_device_find(dev, addr);
-	int ret;
 
 	if (i2c_dev == NULL) {
-		ret = -ENODEV;
-	} else {
-		ret = dw_i3c_i2c_transfer(dev, i2c_dev, msgs, num_msgs);
+		return -ENODEV;
 	}
 
-	return ret;
+	return dw_i3c_i2c_transfer(dev, i2c_dev, msgs, num_msgs);
 }
 
 #ifdef CONFIG_I3C_USE_IBI
@@ -1567,50 +1579,6 @@ static int dw_i3c_detach_device(const struct device *dev, struct i3c_device_desc
 		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i3c_device_data->id));
 	data->free_pos |= BIT(dw_i3c_device_data->id);
 	desc->controller_priv = NULL;
-
-	return 0;
-}
-
-static int dw_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
-{
-	const struct dw_i3c_config *config = dev->config;
-	struct dw_i3c_data *data = dev->data;
-	uint8_t pos;
-
-	pos = get_free_pos(data->free_pos);
-	if (pos < 0) {
-		return -ENOSPC;
-	}
-
-	data->dw_i3c_i2c_priv_data[pos].id = pos;
-	desc->controller_priv = &(data->dw_i3c_i2c_priv_data[pos]);
-	data->free_pos &= ~BIT(pos);
-
-	sys_write32(DEV_ADDR_TABLE_LEGACY_I2C_DEV | DEV_ADDR_TABLE_STATIC_ADDR(desc->addr),
-		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
-
-	return 0;
-}
-
-static int dw_i3c_i2c_detach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
-{
-	const struct dw_i3c_config *config = dev->config;
-	struct dw_i3c_data *data = dev->data;
-	struct dw_i3c_i2c_dev_data *dw_i2c_device_data = desc->controller_priv;
-
-	if (dw_i2c_device_data == NULL) {
-		LOG_ERR("%s: device not attached", dev->name);
-		return -EINVAL;
-	}
-
-	k_mutex_lock(&data->mt, K_FOREVER);
-
-	sys_write32(0,
-		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i2c_device_data->id));
-	data->free_pos |= BIT(dw_i2c_device_data->id);
-	desc->controller_priv = NULL;
-
-	k_mutex_unlock(&data->mt);
 
 	return 0;
 }
@@ -2389,8 +2357,6 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 	.attach_i3c_device = dw_i3c_attach_device,
 	.reattach_i3c_device = dw_i3c_reattach_device,
 	.detach_i3c_device = dw_i3c_detach_device,
-	.attach_i2c_device = dw_i3c_i2c_attach_device,
-	.detach_i2c_device = dw_i3c_i2c_detach_device,
 
 	.do_daa = dw_i3c_do_daa,
 	.do_ccc = dw_i3c_do_ccc,
