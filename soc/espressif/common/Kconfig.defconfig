@@ -4,16 +4,16 @@
 if SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
 
 config GEN_ISR_TABLES
-	default y if !SOC_ESP32C6_LPCORE
+	default y if !SOC_ESP32C6_LPCORE && !MCUBOOT_ESPRESSIF
 
 config GEN_SW_ISR_TABLE
-	default y
+	default y if !MCUBOOT_ESPRESSIF
 
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
 config DYNAMIC_INTERRUPTS
-	default y if !SOC_ESP32C6_LPCORE
+	default y if !SOC_ESP32C6_LPCORE && !MCUBOOT_ESPRESSIF
 
 config ISR_STACK_SIZE
 	default 2048
@@ -66,13 +66,13 @@ config XTENSA_USE_CORE_CRT1
 	default n
 
 config GEN_ISR_TABLES
-	default y
+	default y if !MCUBOOT_ESPRESSIF
 
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
 config CLOCK_CONTROL
-	default y
+	default y if !MCUBOOT_ESPRESSIF
 
 config SOC_FLASH_ESP32
 	default y

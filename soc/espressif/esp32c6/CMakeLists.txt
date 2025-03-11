@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if(CONFIG_MCUBOOT_ESPRESSIF)
+  return()
+endif()
+
 zephyr_sources_ifdef(CONFIG_SOC_ESP32C6_HPCORE
   vectors.S
   soc_irq.S

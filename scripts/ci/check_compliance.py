@@ -1059,7 +1059,18 @@ flagged.
         "DEEP_SLEEP",  # #defined by RV32M1 in ext/
         "DESCRIPTION",
         "ERR",
+        "ESP_BOOT_SWAP_USING_MOVE", # Used on MCUboot Espressif Port
+        "ESP_BOOT_SWAP_USING_OFFSET", # Used on MCUboot Espressif Port
+        "ESP_BOOT_SWAP_USING_SCRATCH", # Used on MCUboot Espressif Port
+        "ESP_BOOT_UPGRADE_ONLY", # Used on MCUboot Espressif Port
         "ESP_DIF_LIBRARY",  # Referenced in CMake comment
+        "ESP_DOWNGRADE_PREVENTION", # Used on MCUboot Espressif Port
+        "ESP_SIGN_EC256", # Used on MCUboot Espressif Port
+        "ESP_SIGN_ED25519", # Used on MCUboot Espressif Port
+        "ESP_SIGN_KEY_FILE", # Used on MCUboot Espressif Port
+        "ESP_SIGN_NONE", # Used on MCUboot Espressif Port
+        "ESP_SIGN_RSA", # Used on MCUboot Espressif Port
+        "ESP_SINGLE_APPLICATION_SLOT", # Used on MCUboot Espressif Port
         "EXPERIMENTAL",
         "EXTRA_FIRMWARE_DIR", # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "FFT",  # Used as an example in cmake/extensions.cmake

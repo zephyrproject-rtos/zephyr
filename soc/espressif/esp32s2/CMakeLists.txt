@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if(CONFIG_MCUBOOT_ESPRESSIF)
+  return()
+endif()
+
 zephyr_sources(
   soc.c
   soc_cache.c
