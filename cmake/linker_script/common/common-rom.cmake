@@ -17,6 +17,12 @@ if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_DYNAMIC_INTERRUPTS)
     SECTION sw_isr_table
     INPUT ".gnu.linkonce.sw_isr_table*"
   )
+  if(CONFIG_SHARED_INTERRUPTS)
+    zephyr_linker_section_configure(
+      SECTION sw_isr_table
+      INPUT ".gnu.linkonce.shared_sw_isr_table*"
+    )
+  endif()
 endif()
 
 zephyr_linker_section(NAME initlevel_error KVMA RAM_REGION GROUP RODATA_REGION NOINPUT)
