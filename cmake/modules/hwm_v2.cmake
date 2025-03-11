@@ -35,18 +35,20 @@ function(kconfig_gen bin_dir file dirs comment)
   endforeach()
 endfunction()
 
-# 'SOC_ROOT' and 'ARCH_ROOT' are prioritized lists of directories where their
-# implementations may be found. It always includes ${ZEPHYR_BASE}/[arch|soc]
-# at the lowest priority.
+# 'SOC_ROOT', 'ARCH_ROOT' and 'SIP_ROOT' are prioritized lists of directories
+# where their implementations may be found. It always includes
+# ${ZEPHYR_BASE}/[arch|soc] at the lowest priority.
 list(APPEND SOC_ROOT ${ZEPHYR_BASE})
 list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
+list(APPEND SIP_ROOT ${ZEPHYR_BASE})
 
 list(TRANSFORM ARCH_ROOT PREPEND "--arch-root=" OUTPUT_VARIABLE arch_root_args)
 list(TRANSFORM SOC_ROOT PREPEND "--soc-root=" OUTPUT_VARIABLE soc_root_args)
+list(TRANSFORM SIP_ROOT PREPEND "--sip-root=" OUTPUT_VARIABLE sip_root_args)
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_hardware.py
-                ${arch_root_args} ${soc_root_args}
-                --archs --socs
+                ${arch_root_args} ${soc_root_args} ${sip_root_args}
+                --archs --socs --sips
                 --cmakeformat={TYPE}\;{NAME}\;{DIR}\;{HWM}
                 OUTPUT_VARIABLE ret_hw
                 ERROR_VARIABLE err_hw
@@ -57,6 +59,7 @@ if(ret_val)
 endif()
 
 set(kconfig_soc_source_dir)
+set(kconfig_sip_source_dir)
 
 while(TRUE)
   string(FIND "${ret_hw}" "\n" idx REVERSE)
@@ -92,6 +95,17 @@ while(TRUE)
     endif()
   endif()
 
+  if(HWM_TYPE STREQUAL "sip")
+    cmake_parse_arguments(SIP "" "NAME;DIR" "" ${line})
+
+    string(TOUPPER "${SIP_NAME}" SIP_NAME_UPPER)
+
+    set(SIP_${SIP_NAME}_DIRECTORIES ${SIP_DIR})
+    set(SIP_${SIP_NAME_UPPER}_DIRECTORIES ${SIP_DIR})
+
+    list(APPEND kconfig_sip_source_dir "${SIP_DIR}")
+  endif()
+
   if(idx EQUAL -1)
     break()
   endif()
@@ -108,6 +122,10 @@ kconfig_gen("boards" "Kconfig.defconfig" "${BOARD_DIRECTORIES}"       "Zephyr bo
 kconfig_gen("boards" "Kconfig.${BOARD}"  "${BOARD_DIRECTORIES}"       "board Kconfig")
 kconfig_gen("boards" "Kconfig"           "${BOARD_DIRECTORIES}"       "Zephyr board Kconfig")
 kconfig_gen("boards" "Kconfig.sysbuild"  "${BOARD_DIRECTORIES}"       "Sysbuild board Kconfig")
+kconfig_gen("sip"    "Kconfig.defconfig" "${kconfig_sip_source_dir}"  "Zephyr SiP defconfig")
+kconfig_gen("sip"    "Kconfig"           "${kconfig_sip_source_dir}"  "SiP Kconfig")
+kconfig_gen("sip"    "Kconfig.sip"       "${kconfig_sip_source_dir}"  "Zephyr SiP Kconfig")
+kconfig_gen("sip"    "Kconfig.sysbuild"  "${kconfig_sip_source_dir}"  "Sysbuild SiP Kconfig")
 
 # Clear variables created by cmake_parse_arguments
 unset(SOC_V2_NAME)
@@ -115,3 +133,5 @@ unset(SOC_V2_DIR)
 unset(SOC_V2_HWM)
 unset(ARCH_V2_NAME)
 unset(ARCH_V2_DIR)
+unset(SIP_NAME)
+unset(SIP_DIR)
