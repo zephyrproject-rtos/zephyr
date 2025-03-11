@@ -187,12 +187,20 @@ static void ot_state_changed_handler(uint32_t flags, void *context)
 {
 	struct openthread_state_changed_cb *entry, *next;
 	struct openthread_context *ot_context = context;
+	bool is_up = otIp6IsEnabled(ot_context->instance);
 
-	NET_INFO("State changed! Flags: 0x%08" PRIx32 " Current role: %s",
+	NET_INFO("State changed! Flags: 0x%08" PRIx32 " Current role: %s Ip6: %s",
 		flags,
-		otThreadDeviceRoleToString(otThreadGetDeviceRole(ot_context->instance))
-		);
+		otThreadDeviceRoleToString(otThreadGetDeviceRole(ot_context->instance)),
+		(is_up ? "up" : "down"));
 
+#if defined(CONFIG_OPENTHREAD_INTERFACE_EARLY_UP)
+	if (is_up) {
+		net_if_dormant_off(ot_context->iface);
+	} else {
+		net_if_dormant_on(ot_context->iface);
+	}
+#else
 	if (flags & OT_CHANGED_THREAD_ROLE) {
 		switch (otThreadGetDeviceRole(ot_context->instance)) {
 		case OT_DEVICE_ROLE_CHILD:
@@ -208,6 +216,7 @@ static void ot_state_changed_handler(uint32_t flags, void *context)
 			break;
 		}
 	}
+#endif
 
 	if (flags & OT_CHANGED_IP6_ADDRESS_REMOVED) {
 		NET_DBG("Ipv6 address removed");
