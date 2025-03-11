@@ -24,6 +24,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -288,5 +289,9 @@ arduino_i2c: &iic1 {};
 arduino_spi: &spi0 {};
 
 &wdt {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
