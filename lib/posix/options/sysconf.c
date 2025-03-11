@@ -267,6 +267,8 @@ long sysconf(int x)
 		return z_sysconf(_SC_TTY_NAME_MAX);
 	case _SC_TZNAME_MAX:
 		return z_sysconf(_SC_TZNAME_MAX);
+	case _SC_NPROCESSORS_ONLN:
+		return z_sysconf(_SC_NPROCESSORS_ONLN);
 	default:
 		errno = EINVAL;
 		return -1;

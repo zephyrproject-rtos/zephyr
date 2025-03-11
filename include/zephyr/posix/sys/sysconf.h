@@ -139,6 +139,8 @@ enum {
 	_SC_TIMER_MAX,
 	_SC_TTY_NAME_MAX,
 	_SC_TZNAME_MAX,
+#define _SC_NPROCESSORS_ONLN _SC_NPROCESSORS_ONLN // Make it a macro to pass the exist test in pthreadpool
+	_SC_NPROCESSORS_ONLN,
 };
 
 #define __z_posix_sysconf_SC_ADVISORY_INFO (-1L)
@@ -292,6 +294,7 @@ enum {
 #define __z_posix_sysconf_SC_TIMER_MAX                    TIMER_MAX
 #define __z_posix_sysconf_SC_TTY_NAME_MAX                 TTY_NAME_MAX
 #define __z_posix_sysconf_SC_TZNAME_MAX                   TZNAME_MAX
+#define __z_posix_sysconf_SC_NPROCESSORS_ONLN             CONFIG_MP_MAX_NUM_CPUS
 
 #ifdef CONFIG_POSIX_SYSCONF_IMPL_MACRO
 #define sysconf(x) (long)CONCAT(__z_posix_sysconf, x)

@@ -194,6 +194,7 @@ ZTEST(posix_headers, test_unistd_h)
 	zassert_not_equal(INT_MIN, _SC_XOPEN_UNIX);
 	zassert_not_equal(INT_MIN, _SC_XOPEN_UUCP);
 	zassert_not_equal(INT_MIN, _SC_XOPEN_VERSION);
+	zassert_not_equal(INT_MIN, _SC_NPROCESSORS_ONLN);
 
 	/* zassert_equal(STDERR_FILENO, 2); */ /* not implemented */
 	/* zassert_equal(STDIN_FILENO, 0); */ /* not implemented */
