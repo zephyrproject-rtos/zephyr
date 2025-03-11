@@ -753,6 +753,8 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 		return ret;
 	}
 
+	pm_device_busy_set(dev);
+
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
 	xfer->ncmds = num_msgs;
@@ -883,6 +885,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 	ret = xfer->ret;
 
 error:
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
 
 	return ret;
@@ -942,6 +945,8 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 		return ret;
 	}
 
+	pm_device_busy_set(dev);
+
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
 	xfer->ncmds = num_msgs;
@@ -997,6 +1002,7 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 	ret = xfer->ret;
 
 error:
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
 
 	return ret;
@@ -1694,6 +1700,8 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 		return ret;
 	}
 
+	pm_device_busy_set(dev);
+
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 	xfer->ret = -1;
 
@@ -1787,6 +1795,7 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 
 	ret = xfer->ret;
 error:
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
 
 	return ret;
@@ -1903,6 +1912,9 @@ static int dw_i3c_do_daa(const struct device *dev)
 		LOG_ERR("%s: Mutex err (%d)", dev->name, ret);
 		return ret;
 	}
+
+	pm_device_busy_set(dev);
+
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
 	xfer->ncmds = 1;
@@ -1916,13 +1928,14 @@ static int dw_i3c_do_daa(const struct device *dev)
 
 	start_xfer(dev);
 	ret = k_sem_take(&data->sem_xfer, K_MSEC(1000));
+
+	pm_device_busy_clear(dev);
+	k_mutex_unlock(&data->mt);
+
 	if (ret) {
 		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
-		k_mutex_unlock(&data->mt);
 		return ret;
 	}
-
-	k_mutex_unlock(&data->mt);
 
 	if (data->maxdevs == cmd->rx_len) {
 		newdevs = 0;
