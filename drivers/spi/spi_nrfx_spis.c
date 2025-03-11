@@ -19,6 +19,10 @@ LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
+#ifdef CONFIG_SOC_NRF54H20_GPD
+#include <nrf/gpd.h>
+#endif
+
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
@@ -31,6 +35,9 @@ struct spi_nrfx_config {
 	nrfx_spis_config_t config;
 	void (*irq_connect)(void);
 	uint16_t max_buf_len;
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	bool gpd_ctrl;
+#endif
 	const struct pinctrl_dev_config *pcfg;
 	struct gpio_dt_spec wake_gpio;
 };
@@ -299,6 +306,12 @@ static void spi_nrfx_suspend(const struct device *dev)
 		nrf_spis_disable(dev_config->spis.p_reg);
 	}
 
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	if (dev_config->gpd_ctrl) {
+		nrf_gpd_retain_pins_set(dev_config->pcfg, true);
+	}
+#endif
+
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 }
 
@@ -307,6 +320,12 @@ static void spi_nrfx_resume(const struct device *dev)
 	const struct spi_nrfx_config *dev_config = dev->config;
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	if (dev_config->gpd_ctrl) {
+		nrf_gpd_retain_pins_set(dev_config->pcfg, false);
+	}
+#endif
 
 	if (dev_config->wake_gpio.port == NULL) {
 		nrf_spis_enable(dev_config->spis.p_reg);
@@ -337,11 +356,6 @@ static int spi_nrfx_init(const struct device *dev)
 	struct spi_nrfx_data *dev_data = dev->data;
 	nrfx_err_t result;
 	int err;
-
-	err = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		return err;
-	}
 
 	/* This sets only default values of mode and bit order. The ones to be
 	 * actually used are set in configure() when a transfer is prepared.
@@ -435,6 +449,9 @@ static int spi_nrfx_init(const struct device *dev)
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),		       \
 		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),  \
+		IF_ENABLED(CONFIG_SOC_NRF54H20_GPD,			       \
+			(.gpd_ctrl = NRF_PERIPH_GET_FREQUENCY(SPIS(idx)) >     \
+				NRFX_MHZ_TO_HZ(16UL),))			       \
 		.wake_gpio = GPIO_DT_SPEC_GET_OR(SPIS(idx), wake_gpios, {0}),  \
 	};								       \
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \
