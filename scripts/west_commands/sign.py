@@ -13,7 +13,6 @@ import subprocess
 import sys
 
 from elftools.elf.elffile import ELFFile
-
 from west import manifest
 from west.commands import Verbosity
 from west.util import quote_sh_list
@@ -79,6 +78,20 @@ You can also pass additional arguments to rimage thanks to [sign] and
 [rimage] sections in your west config file(s); this is especially useful
 when invoking west sign _indirectly_ through CMake/ninja. See how at
 https://docs.zephyrproject.org/latest/develop/west/sign.html
+
+silabs_rps
+-----
+
+To create a signed binary with the silabs_rps tool, run this from your build directory:
+
+   west sign -t silabs_rps -- --mic YOUR_OTA_KEY --encrypt YOUR_OTA_KEY --sign YOUR_PRIVATE_KEY.pem
+
+For this to work, either silabs_rps commander must be installed in your PATH.
+
+The input binary (zephyr.bin.rps) is signed using the specified OTA key and private key,
+producing zephyr.bin.rps by default. If CONFIG_M4_OTA_KEY and CONFIG_M4_PRIVATE_KEY are set
+in your build configuration, they will be used unless overridden by command-line arguments.
+Additional arguments after '--' are passed to silabs_rps directly.
 '''
 
 class ToggleAction(argparse.Action):
@@ -112,7 +125,7 @@ class Sign(Forceable):
 
         # general options
         group = parser.add_argument_group('tool control options')
-        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
+        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage', 'silabs_rps'],
                            help='''image signing tool name; imgtool and rimage
                            are currently supported (imgtool is deprecated)''')
         group.add_argument('-p', '--tool-path', default=None,
@@ -195,6 +208,8 @@ schema (rimage "target") is not defined in board.cmake.''')
             signer = ImgtoolSigner()
         elif args.tool == 'rimage':
             signer = RimageSigner()
+        elif args.tool == 'silabs_rps':
+            signer = SilabsRPSSigner()
         # (Add support for other signers here in elif blocks)
         else:
             if args.tool is None:
@@ -633,3 +648,147 @@ class RimageSigner(Signer):
 
         os.remove(out_bin)
         os.rename(out_tmp, out_bin)
+
+class SilabsRPSSigner(Signer):
+    """Signer class for Silicon Labs Commander tool via west sign -t silabs_rps."""
+    def get_security_configs(self, soc_kconfig, args, command):
+        m4_ota_key = None
+        m4_private_key = None
+        commander_path = None
+
+        if soc_kconfig.is_file():
+            if not args.quiet:
+                command.inf(f"Parsing Kconfig.defconfig at {soc_kconfig}")
+            with open(soc_kconfig) as f:
+                current_config = None
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('config '):
+                        current_config = line.split('config ')[1].split()[0]  # Extract config name
+                    elif line.startswith('default ') and current_config:
+                        value = line.split('default ')[1].strip().strip('"')
+                        if current_config == 'M4_OTA_KEY':
+                            m4_ota_key = value
+                        elif current_config == 'M4_PRIVATE_KEY':
+                            m4_private_key = value
+                        elif current_config == 'COMMANDER_PATH':
+                            commander_path = value
+        else:
+            if not args.quiet:
+                command.inf(f"No Kconfig.defconfig found at {soc_kconfig}. Using default values.")
+
+        # Apply default values only if not set from Kconfig.defconfig
+        m4_ota_key = m4_ota_key or "OTA_KEY_IN_HEX"  # Default OTA key
+        m4_private_key = m4_private_key or "M4_PRIVATE_KEY_PATH"  # Updated default private key path
+        commander_path = commander_path or "COMMANDER_PATH_HERE"  # Updated default Commander path
+        return m4_ota_key, m4_private_key, commander_path
+
+    def sign(self, command, build_dir, build_conf, formats):
+        """Sign the Zephyr binary using Silicon Labs Commander.
+
+        :param command: The Sign instance (provides args and utility methods)
+        :param build_dir: The build directory path
+        :param build_conf: BuildConfiguration object for the build directory
+        :param formats: List of formats to generate (e.g., ['bin', 'rps'])
+        """
+        self.command = command
+        args = command.args
+        b = pathlib.Path(build_dir)  # BUILD_DIR from -d option
+
+        # Check if signing is needed
+        if not formats:
+            if not args.quiet:
+                command.inf("No output formats specified, skipping signing.")
+            return
+
+        # Determine workspace base based on context (automation vs. manual)
+        zephyr_workspace_root = os.environ.get('ZEPHYR_WORKSPACE_ROOT')
+        if zephyr_workspace_root:
+            # Automation context: Use ZEPHYR_WORKSPACE_ROOT as the workspace root
+            workspace_base = pathlib.Path(zephyr_workspace_root)
+            if not workspace_base.is_dir():
+                command.die(f"Invalid ZEPHYR_WORKSPACE_ROOT directory: {workspace_base}. Please check the environment variable.")
+            soc_dir = 'GIVE PATH FOR KCONFIG.defconfig AFTER WORKSPACE'  # Relative path from workspace root
+        else:
+            # Manual context: Assume current directory is workspace root
+            workspace_base = pathlib.Path(os.getcwd())
+            if not args.quiet:
+                command.inf(f"ZEPHYR_WORKSPACE_ROOT not set, using current directory: {workspace_base}")
+            soc_dir = 'GIVE PATH FOR KCONFIG.defconfig AFTER WORKSPACE'  # Same relative path
+
+        soc_kconfig_base = workspace_base / soc_dir
+
+        # Get kernel binary name (default to 'zephyr')
+        kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
+
+        # Input and output files (using BUILD_DIR)
+        in_bin = b / 'zephyr' / f"{kernel_name}.bin.rps"  # Raw binary input (corrected)
+        out_rps = args.sbin or (b / 'zephyr' / f"{kernel_name}.bin.rps")  # Signed output
+
+        # Check if input binary exists
+        if not in_bin.is_file():
+            command.die(f"No unsigned .bin found at {in_bin}")
+
+        # Load configuration from Kconfig.defconfig
+        soc_kconfig = soc_kconfig_base / 'Kconfig.defconfig'
+        m4_ota_key, m4_private_key, commander_path = self.get_security_configs(soc_kconfig, args, command)
+
+        # Override with command-line arguments if provided
+        m4_ota_key = getattr(args, 'm4-ota-key', m4_ota_key)
+        m4_private_key = getattr(args, 'm4-private-key', m4_private_key)
+        commander_path = getattr(args, 'commander-path', commander_path)
+
+        # Validate required settings
+        if not m4_ota_key:
+            command.die("M4_OTA_KEY not set in Kconfig.defconfig and no --m4-ota-key provided.")
+        if not m4_private_key:
+            command.die("M4_PRIVATE_KEY not set in Kconfig.defconfig and no --m4-private-key provided.")
+        if not commander_path:
+            command.die("COMMANDER_PATH not set in Kconfig.defconfig and no --commander-path provided.")
+
+        # Resolve paths
+        tool_path = pathlib.Path(commander_path)
+        if not tool_path.is_file():
+            command.die(f"Commander not found at {tool_path}. Please ensure the path is correct.")
+
+        private_key_path = pathlib.Path(m4_private_key)
+        if not private_key_path.is_file():
+            command.die(f"Private key not found at {private_key_path}. Please ensure the path is correct.")
+
+        # Build the commander signing command
+        sign_base = [
+            str(tool_path),
+            "rps",
+            "convert",
+            str(out_rps),
+            "--app", str(in_bin),
+            "--mic", m4_ota_key,
+            "--encrypt", m4_ota_key,
+            "--sign", str(private_key_path)
+        ]
+
+        sign_base.extend(args.tool_args)
+
+        if not args.quiet:
+            command.inf(f"Signing with tool {tool_path}")
+            command.inf(f"Unsigned binary: {in_bin}")
+            command.inf(f"Signed output: {out_rps}")
+
+        try:
+            subprocess.check_call(sign_base, stdout=subprocess.PIPE if args.quiet else None, stderr=subprocess.PIPE if args.quiet else None)
+        except subprocess.CalledProcessError as e:
+            command.die(f"Commander signing failed with exit code {e.returncode}")
+
+        if not args.quiet:
+            command.inf(f"Successfully generated signed file: {out_rps}")
+
+# Register the signer and add command-line arguments
+west_signers = {'silabs_rps': SilabsRPSSigner}
+
+def add_parser(subparsers):
+    """Add custom arguments for the silabs_rps signer."""
+    parser = subparsers.add_parser('silabs_rps', help='Sign with Silicon Labs Commander')
+    parser.add_argument('--m4-ota-key', help='OTA key for signing (overrides Kconfig.defconfig default)')
+    parser.add_argument('--m4-private-key', help='Absolute path to private key file (overrides Kconfig.defconfig default)')
+    parser.add_argument('--commander-path', help='Absolute path to Commander executable (overrides Kconfig.defconfig default)')
+    return parser
