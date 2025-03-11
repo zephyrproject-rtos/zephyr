@@ -47,6 +47,12 @@
 #include "direction_internal.h"
 #include "classic/sco_internal.h"
 
+#if defined(CONFIG_GROUPCHAT_COMMON)
+#define PRINTMT(fmt, ...)  printk(fmt, ##__VA_ARGS__)  /* HACK-MJT*/
+#else
+#define PRINTMT(fmt, ...)
+#endif
+
 #define LOG_LEVEL CONFIG_BT_CONN_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_conn);
@@ -1176,12 +1182,15 @@ struct bt_conn *conn_lookup_handle(struct bt_conn *conns, size_t size,
 
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
+	PRINTMT("CALL bt_conn_set_state()\n");
 	bt_conn_state_t old_state;
 
 	LOG_DBG("%s -> %s", state2str(conn->state), state2str(state));
+	PRINTMT("bt_conn_set_state() - from %s to %s\n", state2str(conn->state), state2str(state));
 
 	if (conn->state == state) {
 		LOG_WRN("no transition %s", state2str(state));
+		PRINTMT("EXIT bt_conn_set_state()");
 		return;
 	}
 
@@ -1380,6 +1389,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		break;
 	}
+	PRINTMT("EXIT bt_conn_set_state()\n");
 }
 
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle, enum bt_conn_type type)

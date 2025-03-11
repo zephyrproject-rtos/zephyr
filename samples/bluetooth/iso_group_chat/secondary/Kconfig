@@ -1,0 +1,54 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+mainmenu "Bluetooth: GroupChat Secondary"
+
+config ISO_PRINT_INTERVAL
+	int "Interval between each packet report"
+	range 1 360000
+	default 1
+	help
+	  Only print the packet report once in a given interval of ISO packets.
+
+config ISO_ALIGN_PRINT_INTERVALS
+	bool "Align report interval with incoming packets"
+	help
+	  Align interval-counter with packet number from incoming ISO packets.
+	  This may be needed if report printouts are to be synchronized between
+	  the iso_broadcast sample and the iso_receive sample.
+
+config ISO_BLINK_LED0
+	bool "Blink led0"
+	depends on $(dt_alias_enabled,led0)
+	select GPIO
+	default y
+
+config GROUPCHAT_COMMON
+    bool "Enable common code specific to the groupchat feature devices"
+    default n
+	help
+	  When enabled, additional features and modifications shared by all
+	  groupchat devices will be compiled into the project. This option can
+	  blocks guarded by `#ifdef CONFIG_GROUPCHAT_COMMON` in shared .c
+	  and .h files.
+
+config GROUPCHAT_SECONDARY
+    bool "Enable code specific to the groupchat secondary device"
+    default n
+	help
+	  When enabled, additional features and modifications will be compiled
+	  into the project. This option can be used to include or exclude code
+	  blocks guarded by `#ifdef CONFIG_GROUPCHAT_SECONDARY` in shared .c
+	  and .h files.
+
+
+config FUNCTION_DEBUG
+	bool "Enable function debug"
+    default n
+	help
+	  When enabled, functions which are conditionally marked with 
+	  __attribute__((optimize("O0"))) around this config will not be
+	  optimied by the compiler to enable debugging.
+

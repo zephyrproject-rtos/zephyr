@@ -58,6 +58,12 @@
 
 #include "hal/debug.h"
 
+#if defined(CONFIG_GROUPCHAT_COMMON)
+#define PRINTMT(fmt, ...)  printk(fmt, ##__VA_ARGS__)  /* HACK-MJT*/
+#else
+#define PRINTMT(fmt, ...)
+#endif
+
 static int init_reset(void);
 static struct ll_sync_iso_set *sync_iso_get(uint8_t handle);
 static struct ll_sync_iso_set *sync_iso_alloc(uint8_t handle);
@@ -99,6 +105,9 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	struct ll_sync_set *sync;
 	struct lll_sync_iso *lll;
 	int8_t last_index;
+
+	PRINTMT("ll_big_sync_create( big_handle=%d, sync_handle=%d, num_bis=%d ...)\n",
+		big_handle, sync_handle, num_bis);
 
 	sync = ull_sync_is_enabled_get(sync_handle);
 	if (!sync) {
@@ -225,7 +234,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 		memset(stream->test_mode, 0, sizeof(struct ll_iso_rx_test_mode));
 		lll->stream_handle[i] = sync_iso_stream_handle_get(stream);
 	}
-
+	
 	/* Initialize ULL and LLL headers */
 	ull_hdr_init(&sync_iso->ull);
 	lll_hdr_init(lll, sync_iso);

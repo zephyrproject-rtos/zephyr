@@ -6,7 +6,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -39,6 +38,12 @@
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
 #include "iso_internal.h"
+
+#if defined(CONFIG_GROUPCHAT_COMMON)
+#define PRINTMT(fmt, ...)  printk(fmt, ##__VA_ARGS__)  /* HACK-MJT*/
+#else
+#define PRINTMT(fmt, ...)
+#endif
 
 LOG_MODULE_REGISTER(bt_iso, CONFIG_BT_ISO_LOG_LEVEL);
 
@@ -249,6 +254,9 @@ static void bt_iso_chan_add(struct bt_conn *iso, struct bt_iso_chan *chan)
 	LOG_DBG("iso %p chan %p", iso, chan);
 }
 
+#if 0 // defined(CONFIG_FUNCTION_DEBUG)
+__attribute__((optimize("O0")))
+#endif
 static int bt_iso_setup_data_path(struct bt_iso_chan *chan)
 {
 	int err;
@@ -266,6 +274,12 @@ static int bt_iso_setup_data_path(struct bt_iso_chan *chan)
 
 	tx_qos = chan->qos->tx;
 	rx_qos = chan->qos->rx;
+
+#if defined(CONFIG_GROUPCHAT_COMMON) //HACK-MJT
+	PRINTMT("bt_iso_setup_data_path() - bis_idx=%u send=%u type=%u\n", chan->bis_idx, iso->iso.info.can_send, iso->iso.info.type);
+#else	
+	PRINTMT("bt_iso_setup_data_path() - send=%u type=%u\n", iso->iso.info.can_send, iso->iso.info.type);
+#endif
 
 	/* The following code sets the in and out paths for ISO data.
 	 * If the application provides a path for a direction (tx/rx) we use
@@ -301,18 +315,32 @@ static int bt_iso_setup_data_path(struct bt_iso_chan *chan)
 		err = hci_le_setup_iso_data_path(iso, dir, in_path);
 		if (err != 0) {
 			LOG_DBG("Failed to set broadcaster data path: %d", err);
+			PRINTMT("Failed to set broadcaster data path: %d\n", err); //HACK-MJT
 		}
 
 		return err;
 	} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER) &&
-		   iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER && out_path) {
+		       iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER && out_path) {
 		dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
 		err = hci_le_setup_iso_data_path(iso, dir, out_path);
 		if (err != 0) {
 			LOG_DBG("Failed to set sync receiver data path: %d", err);
+			PRINTMT("Failed to set sync receiver data path: %d\n", err); //HACK-MJT
 		}
 
 		return err;
+#if defined(CONFIG_GROUPCHAT_SECONDARY)
+	} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER) &&
+	iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_TRANSMIT && in_path) {
+		dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+		err = hci_le_setup_iso_data_path(iso, dir, in_path);
+		if (err != 0) {
+			LOG_DBG("Failed to set sync transmit data path: %d", err);
+			PRINTMT("Failed to set sync transmit data path: %d\n", err); //HACK-MJT
+		}
+
+		return err;
+#endif		
 	} else if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
 		   iso->iso.info.type == BT_ISO_CHAN_TYPE_CONNECTED) {
 		if (in_path != NULL) {
@@ -344,11 +372,14 @@ static int bt_iso_setup_data_path(struct bt_iso_chan *chan)
 
 void bt_iso_connected(struct bt_conn *iso)
 {
+	printk("CALL bt_iso_connected()\n");
+
 	struct bt_iso_chan *chan;
 	int err;
 
 	if (iso == NULL || iso->type != BT_CONN_TYPE_ISO) {
 		LOG_DBG("Invalid parameters: iso %p iso->type %u", iso, iso ? iso->type : 0);
+		printk("EXIT - ERR bt_iso_connected()\n");
 		return;
 	}
 
@@ -357,21 +388,35 @@ void bt_iso_connected(struct bt_conn *iso)
 	chan = iso_chan(iso);
 	if (chan == NULL) {
 		LOG_ERR("Could not lookup chan from connected ISO");
+		printk("EXIT - ERR bt_iso_connected()\n");
 		return;
 	}
+#if defined(CONFIG_GROUPCHAT_COMMON)
+	PRINTMT("bt_iso_connected(bis_idx=%u)\n", chan->bis_idx); //HACK-MJT
+#else	
+	PRINTMT("bt_iso_connected(chan=%p)\n", chan); //HACK-MJT
+#endif
 
+	printk("CALL bt_iso_setup_data_path()\n");
 	err = bt_iso_setup_data_path(chan);
+	printk("EXIT bt_iso_setup_data_path()\n");
 	if (err != 0) {
+		PRINTMT("bt_iso_setup_data_path() returned err=%d)\n", err); //HACK-MJT
 		if (false) {
 
 #if defined(CONFIG_BT_ISO_BROADCAST)
 		} else if (iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER ||
+#if defined(CONFIG_GROUPCHAT_SECONDARY)
+               iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_TRANSMIT ||
+#endif
 			   iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
 			struct bt_iso_big *big;
 
 			big = lookup_big_by_handle(iso->iso.big_handle);
 
+			printk("CALL bt_iso_big_terminate()\n");
 			err = bt_iso_big_terminate(big);
+			printk("EXIT bt_iso_big_terminate()\n");
 			if (err != 0) {
 				LOG_ERR("Could not terminate BIG: %d", err);
 			}
@@ -386,11 +431,16 @@ void bt_iso_connected(struct bt_conn *iso)
 		return;
 	}
 
+	printk("CALL bt_iso_chan_set_state()\n");
 	bt_iso_chan_set_state(chan, BT_ISO_STATE_CONNECTED);
+	printk("EXIT bt_iso_chan_set_state()\n");
 
 	if (chan->ops->connected) {
+		printk("CALL chan->ops->connected()\n");
 		chan->ops->connected(chan);
+		printk("EXIT chan->ops->connected()\n");
 	}
+	printk("EXIT bt_iso_connected()\n");
 }
 
 static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
@@ -2758,8 +2808,15 @@ static int big_init_bis(struct bt_iso_big *big, struct bt_iso_chan **bis_channel
 		iso_conn = &bis->iso->iso;
 
 		iso_conn->big_handle = big->handle;
+#if 0 //defined(CONFIG_GROUPCHAT_SECONDARY)
+		/* In a groupchat secondary device it shall always listen on BIS1
+		   and may only transmit in the rest of the BIS channles */
+		iso_conn->info.type =
+			(i>0) ? BT_ISO_CHAN_TYPE_SYNC_TRANSMIT : BT_ISO_CHAN_TYPE_SYNC_RECEIVER;
+#else		
 		iso_conn->info.type =
 			broadcaster ? BT_ISO_CHAN_TYPE_BROADCASTER : BT_ISO_CHAN_TYPE_SYNC_RECEIVER;
+#endif			
 		iso_conn->bis_id = bt_conn_index(bis->iso);
 
 		bt_iso_chan_add(bis->iso, bis);
@@ -3287,7 +3344,11 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER) &&
-		   bis->iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
+		   (bis->iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER
+#if defined(CONFIG_GROUPCHAT_SECONDARY)
+            || bis->iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_TRANSMIT
+#endif
+		   )) {
 		err = hci_le_big_sync_term(big);
 
 		if (!err) {
@@ -3306,8 +3367,14 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 }
 
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
-static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_established *evt,
-					 struct bt_iso_info *info)
+#if defined(CONFIG_GROUPCHAT_COMMON)
+static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_established *evt, 
+	                                    struct bt_iso_info *info,
+										bool transmit_bis)                                       
+#else
+static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_established *evt, 
+	                                    struct bt_iso_info *info)
+#endif										
 {
 	struct bt_iso_sync_receiver_info *receiver_info = &info->sync_receiver;
 
@@ -3321,25 +3388,34 @@ static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_est
 	receiver_info->pto = info->iso_interval * evt->pto;
 	receiver_info->max_pdu = sys_le16_to_cpu(evt->max_pdu);
 
+#if defined(CONFIG_GROUPCHAT_COMMON)
+    info->can_send = transmit_bis;
+    info->can_recv = !transmit_bis;
+#else
 	info->can_send = false;
 	info->can_recv = true;
+#endif
 }
 
+/* This function is called when the HCI Event BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED
+   is received by the host stack*/
 void hci_le_big_sync_established(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_sync_established *evt = (void *)buf->data;
 	struct bt_iso_chan *bis;
 	struct bt_iso_big *big;
-	int i;
+
+	PRINTMT("CALL - hci_le_big_sync_established()\n");
 
 	if (evt->big_handle >= ARRAY_SIZE(bigs)) {
 		LOG_WRN("Invalid BIG handle");
+		PRINTMT("Invalid BIG handle\n");
 		big = big_lookup_flag(BT_BIG_SYNCING);
 		if (big) {
 			big_disconnect(big, evt->status ? evt->status : BT_HCI_ERR_UNSPECIFIED);
 			cleanup_big(big);
 		}
-
+		PRINTMT("EXIT - ERR - hci_le_big_sync_established()\n");
 		return;
 	}
 
@@ -3351,33 +3427,49 @@ void hci_le_big_sync_established(struct net_buf *buf)
 
 	if (evt->status || evt->num_bis != big->num_bis) {
 		if (evt->status == BT_HCI_ERR_SUCCESS && evt->num_bis != big->num_bis) {
-			LOG_ERR("Invalid number of BIS synced, was %u expected %u", evt->num_bis,
-				big->num_bis);
+			LOG_ERR("Invalid number of BIS synced, was %u expected %u", evt->num_bis,big->num_bis);
+			PRINTMT("Invalid number of BIS synced, was %u expected %u\n", evt->num_bis,big->num_bis);
 		}
+		PRINTMT("calling big_disconnect()\n");
 		big_disconnect(big, evt->status ? evt->status : BT_HCI_ERR_UNSPECIFIED);
+		PRINTMT("calling cleanup_big()\n");
 		cleanup_big(big);
+		PRINTMT("EXIT - hci_le_big_sync_established()\n");
 		return;
 	}
 
-	i = 0;
+	PRINTMT("Sync established for BIG[%u] %p\n", big->handle, big);
+	int i = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 		const uint16_t handle = evt->handle[i++];
 		struct bt_conn *iso_conn = bis->iso;
+		PRINTMT("Store BIS[%u] handle %u\n", i, handle);
 
 		iso_conn->handle = sys_le16_to_cpu(handle);
+#if defined(CONFIG_GROUPCHAT_COMMON) 
+#if 0//defined(CONFIG_GROUPCHAT_SECONDARY) 
+		store_bis_sync_receiver_info(evt, &iso_conn->iso.info, ((i>1) ? true : false));
+#else
+		store_bis_sync_receiver_info(evt, &iso_conn->iso.info, false);
+#endif		
+#else
 		store_bis_sync_receiver_info(evt, &iso_conn->iso.info);
+#endif
 		bt_conn_set_state(iso_conn, BT_CONN_CONNECTED);
 	}
 
+	PRINTMT("Inform all listeners that BIG[%u] %p has been established\n", big->handle, big);
 	if (!sys_slist_is_empty(&iso_big_cbs)) {
 		struct bt_iso_big_cb *listener;
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&iso_big_cbs, listener, _node) {
 			if (listener->started != NULL) {
+				PRINTMT("Calling listener->started() for BIG[%u] %p\n", big->handle, big);
 				listener->started(big);
 			}
 		}
 	}
+	PRINTMT("EXIT - hci_le_big_sync_established()\n");
 }
 
 void hci_le_big_sync_lost(struct net_buf *buf)
@@ -3447,6 +3539,9 @@ static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, struct 
 	return err;
 }
 
+//#if defined(CONFIG_FUNCTION_DEBUG)
+//__attribute__((optimize("O0")))
+//#endif
 int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_param *param,
 		    struct bt_iso_big **out_big)
 {

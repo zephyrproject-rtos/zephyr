@@ -93,6 +93,12 @@
 #include "common/bt_str.h"
 #include "hal/debug.h"
 
+#if defined(CONFIG_GROUPCHAT_COMMON)
+#define PRINTMT(fmt, ...)  printk(fmt, ##__VA_ARGS__)  /* HACK-MJT*/
+#else
+#define PRINTMT(fmt, ...)
+#endif
+
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_ctlr_hci);
@@ -1874,9 +1880,11 @@ static void le_big_create_sync(struct net_buf *buf, struct net_buf **evt)
 	sync_handle = sys_le16_to_cpu(cmd->sync_handle);
 	sync_timeout = sys_le16_to_cpu(cmd->sync_timeout);
 
+	PRINTMT("CALL ll_big_sync_create() [HCI CMD]\n");
 	status = ll_big_sync_create(cmd->big_handle, sync_handle,
 				    cmd->encryption, cmd->bcode, cmd->mse,
 				    sync_timeout, cmd->num_bis, cmd->bis);
+	PRINTMT("EXIT ll_big_sync_create()\n");
 
 	*evt = cmd_status(status);
 }
@@ -1891,7 +1899,9 @@ static void le_big_terminate_sync(struct net_buf *buf, struct net_buf **evt,
 	uint8_t status;
 
 	big_handle = cmd->big_handle;
+	PRINTMT("CALL ll_big_sync_terminate() [HCI CMD]\n");
 	status = ll_big_sync_terminate(big_handle, node_rx);
+	PRINTMT("EXIT ll_big_sync_terminate()\n");
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
@@ -2394,10 +2404,12 @@ static void le_setup_iso_path(struct net_buf *buf, struct net_buf **evt)
 	controller_delay = sys_get_le24(cmd->controller_delay);
 	codec_config = &cmd->codec_config[0];
 
+	PRINTMT("CALL ll_setup_iso_path() [HCI CMD]\n");
 	status = ll_setup_iso_path(handle, cmd->path_dir, cmd->path_id,
 				   coding_format, company_id, vs_codec_id,
 				   controller_delay, cmd->codec_config_len,
 				   codec_config);
+	PRINTMT("EXIT ll_setup_iso_path()\n");
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
