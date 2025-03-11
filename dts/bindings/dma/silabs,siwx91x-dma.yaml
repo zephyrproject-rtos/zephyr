@@ -8,15 +8,12 @@ properties:
   reg:
     required: true
 
-  silabs,sram-desc-addr:
-    type: int
+  silabs,sram-region:
+    type: phandle
     required: true
     description: |
-        SRAM Address for UDMA Descriptor Storage. This address must correspond to the location
-        of the udma_addr0 section in the linker script for the dma0 node, and the udma_addr1
-        section for the ulpdma node. Ensure that the value specified for the SRAM address matches
-        the respective section defined in the linker file for each UDMA node, as this alignment
-        is critical for proper descriptor management and data transfer.
+        SRAM Address for UDMA Descriptor Storage. This address must match to the
+        location used by the hardware.
 
   "#dma-cells":
     const: 1
