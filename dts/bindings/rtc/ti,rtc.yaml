@@ -12,3 +12,10 @@ include:
 properties:
   reg:
     required: true
+
+  ti,rtc_x:
+    type: boolean
+    description: |
+      Indicate as Real-Time-Clock_x(RTC_x) instances.
+      RTC, RTC_x shares same features but RTC_x has additional features
+      which fall under Low-Frequency Subsystem(LFSS) peripherals.
