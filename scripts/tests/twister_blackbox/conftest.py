@@ -12,6 +12,8 @@ import os
 import pytest
 import sys
 
+logging.getLogger("twister").setLevel("DEBUG")  # requires for testing twister
+
 ZEPHYR_BASE = os.getenv('ZEPHYR_BASE')
 TEST_DATA = os.path.join(ZEPHYR_BASE, 'scripts', 'tests',
                         'twister_blackbox', 'test_data')

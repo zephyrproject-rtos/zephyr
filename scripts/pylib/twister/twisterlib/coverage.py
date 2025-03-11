@@ -15,7 +15,6 @@ import sys
 import tempfile
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 supported_coverage_formats = {
     "gcovr": ["html", "xml", "csv", "txt", "coveralls", "sonarqube"],

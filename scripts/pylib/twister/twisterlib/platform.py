@@ -18,7 +18,6 @@ from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.environment import ZEPHYR_BASE
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 
 class Simulator:
