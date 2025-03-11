@@ -4,7 +4,3 @@
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
 	default 4096
-
-config BOARD_LATE_INIT_HOOK=y
-	bool
-	default y
