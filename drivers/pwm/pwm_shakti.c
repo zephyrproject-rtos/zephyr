@@ -92,6 +92,9 @@
 #define PINMUX_START 0x40300 			/*Pinmux start address*/
 #define PINMUX_CONFIGURE_REG 0x40300	/*Pinmux configuration register*/
 
+#define PWM_BASE                   0x00030000UL
+#define PWM_OFFSET                 0x00000100UL
+
 /*Interrupt enum*/
 typedef enum
 {
@@ -113,7 +116,7 @@ typedef struct
   uint32_t duty;        	/*pwm duty cycle register 32 bits*/
   uint16_t deadband_delay;	/*pwm deadband delay register 16 bits */
   uint16_t reserved2;		/*reserved for future use and currently has no defined purpose 16 bits*/
-}pwm_struct;
+}PWM_Type;
 
 /*Data structure*/
 struct pwm_shakti_data {};
@@ -126,7 +129,8 @@ struct pwm_shakti_cfg {
 	const struct pinctrl_dev_config *pcfg;
 };
 
-volatile pwm_struct *pwm_instance[PWM_MAX_COUNT];
+#define PWM_REG(x)      ((PWM_Type*)(PWM_BASE + (x)*PWM_OFFSET))
+
 volatile unsigned int* pinmux_config_reg = (volatile unsigned int* ) PINMUX_CONFIGURE_REG;
 
 /* Functions */
@@ -143,7 +147,6 @@ static int pwm_shakti_init(const struct device *dev)
 	char *pwm_no;
 	pwm_no = dev->name;
 	int channel = pwm_no[6] - '0';
-	pwm_instance[channel] = (pwm_struct *) (PWM_BASE_ADDRESS + (channel * PWM_MODULE_OFFSET) );
 	printk("\nInit of PWM %d",channel);
 }
 
@@ -156,7 +159,7 @@ static int pwm_shakti_init(const struct device *dev)
  */
 int pwm_set_control(int channel, uint32_t value)
 {
-	pwm_instance[channel]->control |= value;
+	PWM_REG(channel)->control |= value;
 	return 1;
 }
 
@@ -169,14 +172,11 @@ int pwm_set_control(int channel, uint32_t value)
  */
 void pwm_set_prescalar_value(int channel, uint16_t prescalar_value)
 {
-	printf("\nchannel %d",channel);
-	printf("\n1");
 	if( 32768 < prescalar_value )
 	{
 		return;
 	}
-	pwm_instance[channel]->clock = (prescalar_value << 1);
-	printf("\n2");
+	PWM_REG(channel)->clock = (prescalar_value << 1);
 }
 
 /** @fn  configure_control_mode
@@ -232,14 +232,13 @@ inline int configure_control(bool update, pwm_interrupt_modes interrupt_mode, bo
  */
 void pwm_configure(int channel, uint32_t period, uint32_t duty, pwm_interrupt_modes interrupt_mode, uint32_t deadband_delay, bool change_output_polarity)
 {
-	printf("\n3");
-	pwm_instance[channel]->duty=duty;                    
-	pwm_instance[channel]->period=period;
-	pwm_instance[channel]->deadband_delay = deadband_delay;
+	PWM_REG(channel)->duty=duty;                    
+	PWM_REG(channel)->period=period;
+	PWM_REG(channel)->deadband_delay = deadband_delay;
 
 	int control = configure_control( false, interrupt_mode, change_output_polarity);
 
-	pwm_instance[channel]->control=control;
+	PWM_REG(channel)->control=control;
 }
 
 /** @fn pwm_start
@@ -250,13 +249,12 @@ void pwm_configure(int channel, uint32_t period, uint32_t duty, pwm_interrupt_mo
  */
 void pwm_start(int channel)
 {
-	printf("\n4");
 	int value= 0x0;
-	value = pwm_instance[channel]->control ;
+	value = PWM_REG(channel)->control ;
 
 	value |= (PWM_UPDATE_ENABLE | PWM_ENABLE | PWM_START);
 
-	pwm_instance[channel]->control = value;
+	PWM_REG(channel)->control = value;
 }
 
 /** @fn pinmux_enable_pwm
@@ -283,10 +281,10 @@ void pinmux_enable_pwm(int num)
  */
 void pwm_clear(const struct device *dev, int channel)
 {
-	pwm_instance[channel]->control=0;
-	pwm_instance[channel]->duty=0;
-	pwm_instance[channel]->period=0;
-	pwm_instance[channel]->deadband_delay=0;
+	PWM_REG(channel)->control=0;
+	PWM_REG(channel)->duty=0;
+	PWM_REG(channel)->period=0;
+	PWM_REG(channel)->deadband_delay=0;
 }
 
 /** @fn pwm_shakti_set_cycles
@@ -361,9 +359,9 @@ static int pwm_shakti_set_cycles(const struct device *dev, uint32_t channel,uint
 		break;
 	}
 
-	printf("\ndeadband_delay %u",deadband_delay);
-	printf("\ncontrol_reg %u",control_reg);
-	printf("\nprescale value %u",prescale);
+	// printf("\nDeadband_delay %u",deadband_delay);
+	// printf("\nControl_reg %u",control_reg);
+	// printf("\nPrescale value %u",prescale);
 
 	pinmux_enable_pwm(channel);
 	pwm_set_prescalar_value(channel, prescale);

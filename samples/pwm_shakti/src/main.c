@@ -22,7 +22,6 @@ void main() {
 
     const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(pwm0));
 
-    // static int pwm_shakti_set_cycles(const struct device *dev, uint32_t channel,uint32_t period_cycles, uint32_t pulse_cycles, pwm_flags_t flags)
     pwm_set_cycles(dev,PWM_0, 1000, 750, PWM_POLARITY_NORMAL);
     pwm_set_cycles(dev,PWM_1, 1000, 500, PWM_POLARITY_NORMAL);
     pwm_set_cycles(dev,PWM_2, 1000, 250, PWM_POLARITY_NORMAL);
