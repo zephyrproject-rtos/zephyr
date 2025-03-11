@@ -197,3 +197,7 @@
 	ti,pulse-cycle = <3>;
 	ti,period = <10>;
 };
+
+&rtc0 {
+	status = "okay";
+};
