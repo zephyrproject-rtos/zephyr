@@ -7,8 +7,6 @@ source "lib/libc/Kconfig"
 
 source "lib/cpp/Kconfig"
 
-source "lib/crc/Kconfig"
-
 menu "Additional libraries"
 
 source "lib/hash/Kconfig"
