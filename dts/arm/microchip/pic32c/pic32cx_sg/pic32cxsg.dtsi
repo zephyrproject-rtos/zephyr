@@ -182,6 +182,7 @@
 		};
 
 		pinctrl: pinctrl@41008000 {
+			compatible = "atmel,sam0-pinctrl";
 			ranges = <0x41008000 0x41008000 0x200>;
 			#address-cells = <1>;
 			#size-cells = <1>;
