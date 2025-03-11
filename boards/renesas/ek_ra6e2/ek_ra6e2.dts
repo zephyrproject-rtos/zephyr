@@ -24,6 +24,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,canbus = &canfd0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -202,4 +203,8 @@
 		write-block-size = <1>;
 		erase-block-size = <4096>;
 	};
+};
+
+&crc {
+	status = "okay";
 };
