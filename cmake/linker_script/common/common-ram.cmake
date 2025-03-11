@@ -10,6 +10,12 @@ if(CONFIG_GEN_SW_ISR_TABLE AND CONFIG_DYNAMIC_INTERRUPTS)
     SECTION sw_isr_table
     INPUT ".gnu.linkonce.sw_isr_table*"
   )
+  if(CONFIG_SHARED_INTERRUPTS)
+    zephyr_linker_section_configure(
+      SECTION sw_isr_table
+      INPUT ".gnu.linkonce.shared_sw_isr_table*"
+    )
+  endif()
 endif()
 
 zephyr_linker_section(NAME device_states GROUP DATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
