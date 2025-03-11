@@ -24,6 +24,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -322,4 +323,8 @@ arduino_spi: &spi0 {};
 		write-block-size = <1>;
 		erase-block-size = <4096>;
 	};
+};
+
+&crc {
+	status = "okay";
 };

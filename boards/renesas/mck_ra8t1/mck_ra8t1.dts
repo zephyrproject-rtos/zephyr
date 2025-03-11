@@ -22,6 +22,7 @@
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &flash1;
 		zephyr,canbus = &canfd1;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -267,4 +268,8 @@
 	timer {
 		status = "okay";
 	};
+};
+
+&crc {
+	status = "okay";
 };
