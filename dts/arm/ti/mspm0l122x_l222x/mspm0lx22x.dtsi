@@ -181,12 +181,13 @@
 			};
 		};
 
-		rtc0: rtc@40095100 {
+		rtc0: rtc@40094000 {
 			compatible = "ti,rtc";
-			reg = <0x40095100 0xfd>;
+			reg = <0x40094000 0x2000>;
 			interrupts = <30 0>;
 			prescaler = <1>;
 			clock-frequency = <32768>;
+			ti,rtc_x;
 			status = "disabled";
 		};
 
