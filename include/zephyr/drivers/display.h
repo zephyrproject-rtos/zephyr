@@ -169,6 +169,13 @@ typedef int (*display_read_api)(const struct device *dev, const uint16_t x,
 				void *buf);
 
 /**
+ * @typedef display_clear
+ * @brief Callback API for clearing the screen of the display
+ * See display_clear() for argument description
+ */
+typedef int (*display_clear_api)(const struct device *dev);
+
+/**
  * @typedef display_get_framebuffer_api
  * @brief Callback API to get framebuffer pointer
  * See display_get_framebuffer() for argument description
@@ -227,6 +234,7 @@ __subsystem struct display_driver_api {
 	display_blanking_off_api blanking_off;
 	display_write_api write;
 	display_read_api read;
+	display_clear_api clear;
 	display_get_framebuffer_api get_framebuffer;
 	display_set_brightness_api set_brightness;
 	display_set_contrast_api set_contrast;
@@ -282,6 +290,26 @@ static inline int display_read(const struct device *dev, const uint16_t x,
 	}
 
 	return api->read(dev, x, y, desc, buf);
+}
+
+/**
+ * @brief Clear the screen of the display device
+ *
+ * @param dev Pointer to device structure
+ *
+ * @retval 0 on success else negative errno code.
+ * @retval -ENOSYS if not implemented.
+ */
+static inline int display_clear(const struct device *dev)
+{
+	struct display_driver_api *api =
+		(struct display_driver_api *)dev->api;
+
+	if (api->clear == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->clear(dev);
 }
 
 /**
