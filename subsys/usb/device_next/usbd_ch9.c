@@ -1132,6 +1132,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 		buf, bi->ep, buf->len, bi->setup, bi->data, bi->status);
 
 	if (bi->setup && bi->ep == USB_CONTROL_EP_OUT) {
+		struct udc_data *data = uds_ctx->dev->data;
 		struct net_buf *next_buf;
 
 		if (ctrl_xfer_get_setup(uds_ctx, buf)) {
@@ -1142,6 +1143,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 
 		/* Remove setup packet buffer from the chain */
 		next_buf = net_buf_frag_del(NULL, buf);
+		data->setup = NULL;
 		if (next_buf == NULL) {
 			LOG_ERR("Buffer for data|status is missing");
 			goto ctrl_xfer_stall;
