@@ -13,7 +13,8 @@ import subprocess
 import sys
 
 from elftools.elf.elffile import ELFFile
-
+# custom tool signer
+from west.configuration import config
 from west import manifest
 from west.commands import Verbosity
 from west.util import quote_sh_list
@@ -112,10 +113,10 @@ class Sign(Forceable):
 
         # general options
         group = parser.add_argument_group('tool control options')
-        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
+        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage', 'customtool'],
                            help='''image signing tool name; imgtool and rimage
                            are currently supported (imgtool is deprecated)''')
-        group.add_argument('-p', '--tool-path', default=None,
+        group.add_argument('-p', '--tool-path', default='/zephyr/scripts/west_commands/sign_rps.py',
                            help='''path to the tool itself, if needed''')
         group.add_argument('-D', '--tool-data', default=None,
                            help='''path to a tool-specific data/configuration directory, if needed''')
@@ -195,6 +196,8 @@ schema (rimage "target") is not defined in board.cmake.''')
             signer = ImgtoolSigner()
         elif args.tool == 'rimage':
             signer = RimageSigner()
+        elif args.tool == 'customtool':
+            signer = CustomToolSigner()
         # (Add support for other signers here in elif blocks)
         else:
             if args.tool is None:
@@ -633,3 +636,48 @@ class RimageSigner(Signer):
 
         os.remove(out_bin)
         os.rename(out_tmp, out_bin)
+class CustomToolSigner(Signer):
+    def sign(self, command, build_dir, build_conf, formats):
+        if not formats:
+            return
+        args = command.args
+        b = pathlib.Path(build_dir)
+        kernel_name = 'zephyr'  # Default if build_conf is None
+        if build_conf:
+            kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
+        in_bin = b / 'zephyr' / f'{kernel_name}.bin.rps'
+        out_bin = args.sbin or str(b / 'zephyr' / 'zephyr.bin.rps')
+        if not in_bin.is_file():
+            command.die(f"no unsigned .bin found at {in_bin}")
+        # Retrieve values from .west/config [sign.customtool]
+        m4_ota_key = config.get('sign.customtool', 'm4-ota-key', fallback=None)
+        m4_private_key = config.get('sign.customtool', 'm4-private-key', fallback=None)
+        tool_path_rel = config.get('sign.customtool', 'tool-path', fallback=None)
+        # Validate required values
+        if not m4_ota_key:
+            command.die("Missing 'm4-ota-key' in .west/config [sign.customtool] section")
+        if not m4_private_key:
+            command.die("Missing 'm4-private-key' in .west/config [sign.customtool] section")
+        if not tool_path_rel:
+            command.die("Missing 'tool-path' in .west/config [sign.customtool] section")
+        # Resolve tool-path relative to workspace root (directory containing .west/)
+        tool_path = os.path.abspath(os.path.join(os.environ['PWD'], tool_path_rel))
+        # Debug output to verify path
+        if not args.quiet:
+            command.inf(f"Resolved tool_path: {tool_path}")
+        # Ensure tool_path is executable
+        if not os.path.isfile(tool_path) or not os.access(tool_path, os.X_OK):
+            command.die(f"Tool path {tool_path} is not a valid executable file")
+        load_rps_command = [
+            sys.executable, tool_path,
+            '--input', str(in_bin),
+            '--output', out_bin,
+            '--m4_ota_key', m4_ota_key,
+            '--m4_private_key', m4_private_key,
+        ] + args.tool_args
+        if not args.quiet:
+            command.inf(f"Running signing command: {' '.join(load_rps_command)}")
+        try:
+            subprocess.check_call(load_rps_command, stdout=subprocess.PIPE if args.quiet else None)
+        except subprocess.CalledProcessError as e:
+            command.die(f"Signing failed with exit code {e.returncode}")
