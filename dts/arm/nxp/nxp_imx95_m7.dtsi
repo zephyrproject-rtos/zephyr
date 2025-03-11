@@ -520,6 +520,32 @@
 			status = "disabled";
 		};
 
+		i3c1: i3c@44330000 {
+			compatible = "nxp,mcux-i3c";
+			reg = <0x44330000 0x1000>;
+			interrupts = <12 0>;
+			clocks = <&scmi_clk IMX95_CLK_I3C1>;
+			clk-divider = <6>;
+			clk-divider-slow = <1>;
+			clk-divider-tc = <1>;
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
+		i3c2: i3c@42520000 {
+			compatible = "nxp,mcux-i3c";
+			reg = <0x42520000 0x1000>;
+			interrupts = <57 0>;
+			clocks = <&scmi_clk IMX95_CLK_I3C2>;
+			clk-divider = <6>;
+			clk-divider-slow = <1>;
+			clk-divider-tc = <1>;
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
 		mu5: mailbox@44610000 {
 			compatible = "nxp,mbox-imx-mu";
 			reg = <0x44610000 DT_SIZE_K(4)>;
