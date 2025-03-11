@@ -43,8 +43,7 @@
 			standby: standby {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				/* The value not mentioned in UG/DS, set it as 40us */
-				min-residency-us = <40>;
+				min-residency-us = <1000>;
 				/* Typical value is 14.7us as per of Datasheet */
 				exit-latency-us = <30>;
 			};
