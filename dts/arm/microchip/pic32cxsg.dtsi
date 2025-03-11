@@ -104,6 +104,7 @@
 		gclk: gclk@40001c00 {
 			compatible = "atmel,sam0-gclk";
 			reg = <0x40001c00 0x400>;
+
 			#clock-cells = <1>;
 			#atmel,assigned-clock-cells = <1>;
 		};
@@ -141,6 +142,7 @@
 				     <16 0>, <17 0>, <18 0>, <19 0>,
 				     <20 0>, <21 0>, <22 0>, <23 0>,
 				     <24 0>, <25 0>, <26 0>, <27 0>;
+			status = "disabled";
 		};
 
 		pinmux_a: pinmux@41008000 {
@@ -167,6 +169,7 @@
 			compatible = "atmel,sam0-watchdog";
 			reg = <0x40002000 13>;
 			interrupts = <10 0>;
+			status = "disabled";
 		};
 
 		sercom0: sercom@40003000 {
@@ -318,6 +321,7 @@
 			compatible = "atmel,sam-trng";
 			reg = <0x42002800 0x1e>;
 			interrupts = <131 0>;
+			status = "disabled";
 		};
 
 		rtc: rtc@40002400 {
@@ -510,6 +514,7 @@
 			compatible = "atmel,sam-mdio";
 			reg = <0x42000800 0x400>;
 			status = "disabled";
+
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
