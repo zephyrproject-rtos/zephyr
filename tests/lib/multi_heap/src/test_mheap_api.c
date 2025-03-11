@@ -11,7 +11,8 @@
 #include "test_mheap.h"
 
 #define MALLOC_IN_THREAD_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
-#define INCREMENTAL_FILL_STACK_SIZE (512 + (BLK_NUM_MAX * sizeof(void *) * 2))
+#define INCREMENTAL_FILL_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE + \
+				     (BLK_NUM_MAX * sizeof(void *) * 2))
 #define OVERFLOW_SIZE    SIZE_MAX
 
 #define NMEMB   8
