@@ -1,0 +1,93 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip PIC32CXSG SERCOM UART driver
+
+compatible: "microchip,pic32cxsg-uart"
+
+include:
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+  - name: atmel,assigned-clocks.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  atmel,assigned-clocks:
+    required: true
+
+  atmel,assigned-clock-names:
+    required: true
+
+  rxpo:
+    type: int
+    required: true
+    description: |
+      Receive Data Pinout. An enumeration with the following values:
+
+      +-------+---------------+
+      | Value | RX Pin        |
+      +-------+---------------+
+      |     0 | SERCOM_PAD[0] |
+      +-------+---------------+
+      |     1 | SERCOM_PAD[1] |
+      +-------+---------------+
+      |     2 | SERCOM_PAD[2] |
+      +-------+---------------+
+      |     3 | SERCOM_PAD[3] |
+      +-------+---------------+
+
+
+  txpo:
+    type: int
+    required: true
+    description: |
+      Transmit Data Pinout. An enumeration with values that depend on the
+      hardware being used. This controls both the transmit pins and if
+      hardware flow control is used.
+
+      PIC32CXSG:
+
+      +-------+---------------+---------------+---------------+
+      | Value | TX Pin        | RTS           | CTS           |
+      +-------+---------------+---------------+---------------+
+      |     0 | SERCOM_PAD[0] |           N/A |           N/A |
+      +-------+---------------+---------------+---------------+
+      |     1 | Reserved                                      |
+      +-------+---------------+---------------+---------------+
+      |     2 | SERCOM_PAD[0] | SERCOM_PAD[2] | SERCOM_PAD[3] |
+      +-------+---------------+---------------+---------------+
+      |     3 | SERCOM_PAD[0] | SERCOM_PAD[2] |           N/A |
+      +-------+---------------+---------------+---------------+
+
+
+  collision-detection:
+    type: boolean
+    description: Enable collision detection for half-duplex mode.
+
+  dmas:
+    description: |
+      Optional TX & RX dma specifiers.  Each specifier will have a phandle
+      reference to the dmac controller, the channel number, and peripheral
+      trigger source.
+
+      For example dmas for TX, RX on SERCOM3
+         dmas = <&dmac 0 0xb>, <&dmac 0 0xa>;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists.  This should be "tx" and "rx"
+      to match the dmas property.
+
+      For example
+         dma-names = "tx", "rx";
