@@ -160,7 +160,7 @@ manifest:
         - hal
     - name: hal_at32
       remote: Maxjta
-      revision: 7fcb8c19738351ee255fe95c69cf094fae61be2f
+      revision: 59c38aac38116a8edcd8ef98bbacdf0068f5ab5a
       path: modules/hal/at32
       groups:
         - hal
