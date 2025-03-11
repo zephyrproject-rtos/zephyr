@@ -1,0 +1,15 @@
+# Microchip PIC32CXSG MCU series configuration options
+
+# Copyright (c) 2024 Microchip
+
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_PIC32CXSG61
+
+config NUM_IRQS
+	default 137
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
+endif # SOC_SERIES_PIC32CXSG61

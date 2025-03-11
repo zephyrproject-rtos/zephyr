@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Microchip
+
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_MICROCHIP_PIC32CXSG
+
+config SOC_MICROCHIP_PIC32CXSG_XOSC32K
+	bool "The external 32 kHz crystal oscillator"
+	default y if DT_HAS_ATMEL_SAM0_OSC32KCTRL_ENABLED
+	help
+	  Enable gclk device tree node to use 32K crystal
+	  as clock source. If not enabled the soc will be
+	  configured for internal oscillator.
+
+endif
