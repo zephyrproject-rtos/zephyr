@@ -676,6 +676,13 @@
 			};
 		};
 
+		crc: crc@40310000 {
+			compatible = "renesas,ra-crc";
+			reg = <0x40310000 0x100>;
+			clocks = <&pclka MSTPC 1>;
+			status = "disabled";
+		};
+
 		eth: ethernet@40354100 {
 			compatible = "renesas,ra-ethernet";
 			reg = <0x40354100 0xfc>;

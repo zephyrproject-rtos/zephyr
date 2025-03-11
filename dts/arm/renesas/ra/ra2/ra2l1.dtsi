@@ -75,6 +75,13 @@
 			};
 		};
 
+		crc: crc@40074000{
+			compatible = "renesas,ra-crc";
+			reg = <0x40074000 0x1000>;
+			clocks = <&pclkb MSTPC 1>;
+			status = "disabled";
+		};
+
 		ioport0: gpio@40040000 {
 			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40040000 0x20>;
