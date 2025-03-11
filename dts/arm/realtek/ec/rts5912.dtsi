@@ -267,6 +267,15 @@
 			interrupt-parent = <&nvic>;
 			status = "disabled";
 		};
+
+		tach0: tach@4000fd00 {
+			compatible = "realtek,rts5912-tach";
+			reg = <0x4000fd00 0x40>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH0_CLKPWR>;
+			clock-names = "tacho";
+			interrupts = <192 0>;
+			status = "disabled";
+		};
 	};
 
 	swj_port: swj-port {

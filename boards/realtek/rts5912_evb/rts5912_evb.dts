@@ -53,3 +53,10 @@
 &swj_port {
 	status = "okay";
 };
+
+&tach0 {
+	status = "okay";
+	pinctrl-0 = <&tacho0_gpio052>;
+	pinctrl-names = "default";
+	pulses-per-round = <2>;
+};
