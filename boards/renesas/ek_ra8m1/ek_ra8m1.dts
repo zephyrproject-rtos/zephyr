@@ -23,6 +23,7 @@
 		zephyr,shell-uart = &uart9;
 		zephyr,entropy = &trng;
 		zephyr,canbus = &canfd0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -372,5 +373,9 @@ pmod_sd_shield: &sdhc0 {};
 };
 
 &wdt {
+	status = "okay";
+};
+
+&crc{
 	status = "okay";
 };
