@@ -38,7 +38,7 @@ void soc_port_configure(const struct soc_port_pin *pin)
 	PortGroup *pg = pin->regs;
 	uint32_t flags = pin->flags;
 	uint32_t func = (pin->flags & SOC_PORT_FUNC_MASK) >> SOC_PORT_FUNC_POS;
-	PORT_PINCFG_Type pincfg = { .reg = 0 };
+	PORT_PINCFG_Type pincfg = {.reg = 0};
 
 	/* Reset or analog I/O: all digital disabled */
 	pg->PINCFG[pin->pinum] = pincfg;
@@ -73,8 +73,7 @@ void soc_port_configure(const struct soc_port_pin *pin)
 	pg->PINCFG[pin->pinum] = pincfg;
 }
 
-void soc_port_list_configure(const struct soc_port_pin pins[],
-			     unsigned int size)
+void soc_port_list_configure(const struct soc_port_pin pins[], unsigned int size)
 {
 	for (int i = 0; i < size; i++) {
 		soc_port_configure(&pins[i]);

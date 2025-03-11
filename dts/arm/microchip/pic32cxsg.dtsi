@@ -101,6 +101,7 @@
 		gclk: gclk@40001c00 {
 			compatible = "atmel,sam0-gclk";
 			reg = <0x40001c00 0x400>;
+
 			#clock-cells = <1>;
 			#atmel,assigned-clock-cells = <1>;
 		};
@@ -485,6 +486,7 @@
 			compatible = "atmel,sam-mdio";
 			reg = <0x42000800 0x400>;
 			status = "disabled";
+
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
