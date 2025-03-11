@@ -339,6 +339,36 @@ static int video_esp32_get_ctrl(const struct device *dev, unsigned int cid, void
 	return video_get_ctrl(cfg->source_dev, cid, value);
 }
 
+static int video_esp32_flush(const struct device *dev, enum video_endpoint_id ep, bool cancel)
+{
+	struct video_esp32_data *data = dev->data;
+	struct video_buffer *vbuf = NULL;
+
+	if (cancel) {
+		if (data->is_streaming) {
+			video_esp32_set_stream(dev, false);
+		}
+		if (data->active_vbuf) {
+			k_fifo_put(&data->fifo_out, data->active_vbuf);
+			data->active_vbuf = NULL;
+		}
+		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
+			k_fifo_put(&data->fifo_out, vbuf);
+#ifdef CONFIG_POLL
+			if (data->signal_out) {
+				k_poll_signal_raise(data->signal_out, VIDEO_BUF_ABORTED);
+			}
+#endif
+		}
+	} else {
+		while (!k_fifo_is_empty(&data->fifo_in)) {
+			k_sleep(K_MSEC(1));
+		}
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_POLL
 int video_esp32_set_signal(const struct device *dev, enum video_endpoint_id ep,
 			   struct k_poll_signal *sig)
@@ -401,7 +431,7 @@ static DEVICE_API(video, esp32_driver_api) = {
 	/* optional callbacks */
 	.enqueue = video_esp32_enqueue,
 	.dequeue = video_esp32_dequeue,
-	.flush = NULL,
+	.flush = video_esp32_flush,
 	.set_ctrl = video_esp32_set_ctrl,
 	.get_ctrl = video_esp32_get_ctrl,
 #ifdef CONFIG_POLL
