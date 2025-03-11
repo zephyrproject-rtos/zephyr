@@ -8,8 +8,13 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i3c.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 #include <assert.h>
+
+#if defined(CONFIG_PINCTRL)
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 #define NANO_SEC        1000000000ULL
 #define BYTES_PER_DWORD 4
@@ -365,6 +370,10 @@ struct dw_i3c_config {
 	uint32_t od_tlow_min_ns;
 
 	void (*irq_config_func)();
+
+#if defined(CONFIG_PINCTRL)
+	const struct pinctrl_dev_config *pcfg;
+#endif
 };
 
 struct dw_i3c_data {
@@ -2204,6 +2213,27 @@ static int dw_i3c_target_unregister(const struct device *dev, struct i3c_target_
 	return 0;
 }
 
+static int dw_i3c_pinctrl_enable(const struct device *dev, bool enable)
+{
+#ifdef CONFIG_PINCTRL
+	const struct dw_i3c_config *config = dev->config;
+	uint8_t state = enable ? PINCTRL_STATE_DEFAULT : PINCTRL_STATE_SLEEP;
+	int ret;
+
+	ret = pinctrl_apply_state(config->pcfg, state);
+	if (ret == -ENOENT) {
+		/* State not defined; ignore and return success. */
+		ret = 0;
+	}
+
+	return ret;
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enable);
+	return 0;
+#endif
+}
+
 static int dw_i3c_init(const struct device *dev)
 {
 	const struct dw_i3c_config *config = dev->config;
@@ -2228,6 +2258,8 @@ static int dw_i3c_init(const struct device *dev)
 #endif
 	k_sem_init(&data->sem_xfer, 0, 1);
 	k_mutex_init(&data->mt);
+
+	dw_i3c_pinctrl_enable(dev, true);
 
 	data->mode = i3c_bus_mode(&config->common.dev_list);
 
@@ -2309,6 +2341,32 @@ static int dw_i3c_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_PM_DEVICE)
+static int dw_i3c_pm_ctrl(const struct device *dev, enum pm_device_action action)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	LOG_DBG("PM action: %d", (int)action);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		dw_i3c_enable_controller(config, false);
+		dw_i3c_pinctrl_enable(dev, false);
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		dw_i3c_pinctrl_enable(dev, true);
+		dw_i3c_enable_controller(config, true);
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 static DEVICE_API(i3c, dw_i3c_api) = {
 	.i2c_api.transfer = dw_i3c_i2c_api_transfer,
 
@@ -2348,8 +2406,17 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
+#if defined(CONFIG_PINCTRL)
+#define I3C_DW_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n)
+#define I3C_DW_PINCTRL_INIT(n)   .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define I3C_DW_PINCTRL_DEFINE(n)
+#define I3C_DW_PINCTRL_INIT(n)
+#endif
+
 #define DEFINE_DEVICE_FN(n)                                                                        \
 	I3C_DW_IRQ_HANDLER(n)                                                                      \
+	I3C_DW_PINCTRL_DEFINE(n);                                                                  \
 	static struct i3c_device_desc dw_i3c_device_array_##n[] = I3C_DEVICE_ARRAY_DT_INST(n);     \
 	static struct i3c_i2c_device_desc dw_i3c_i2c_device_array_##n[] =                          \
 		I3C_I2C_DEVICE_ARRAY_DT_INST(n);                                                   \
@@ -2368,9 +2435,11 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 		.common.dev_list.num_i3c = ARRAY_SIZE(dw_i3c_device_array_##n),                    \
 		.common.dev_list.i2c = dw_i3c_i2c_device_array_##n,                                \
 		.common.dev_list.num_i2c = ARRAY_SIZE(dw_i3c_i2c_device_array_##n),                \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, dw_i3c_init, NULL, &dw_i3c_data_##n, &dw_i3c_cfg_##n,             \
-			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY, &dw_i3c_api);
+		I3C_DW_PINCTRL_INIT(n)};                                                           \
+	PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_action);                                             \
+	DEVICE_DT_INST_DEFINE(n, dw_i3c_init, PM_DEVICE_DT_INST_GET(n), &dw_i3c_data_##n,          \
+			      &dw_i3c_cfg_##n, POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,   \
+			      &dw_i3c_api);
 
 #define DT_DRV_COMPAT snps_designware_i3c
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_DEVICE_FN);
