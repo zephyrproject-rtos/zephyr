@@ -63,19 +63,27 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 {
 	int ret;
 	elf_shdr_t *region = ldr->sects + mem_idx;
+	uintptr_t region_alloc = region->sh_size;
+	uintptr_t region_align = LLEXT_PAGE_SIZE;
 
-	if (!region->sh_size) {
+	if (!region_alloc) {
 		return 0;
 	}
-	ext->mem_size[mem_idx] = region->sh_size;
+	ext->mem_size[mem_idx] = region_alloc;
 
 	if (IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
+		/*
+		 * Try to reuse data areas from the ELF buffer, if possible.
+		 * If any of the following tests fail, a normal allocation
+		 * will be attempted.
+		 */
 		if (region->sh_type != SHT_NOBITS) {
-			/* Directly use data from the ELF buffer if peek() is supported */
+			/* Region has data in the file, check if peek() is supported */
 			ext->mem[mem_idx] = llext_peek(ldr, region->sh_offset);
 			if (ext->mem[mem_idx]) {
+				/* Map this region directly to the ELF buffer */
 				llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
-						    region->sh_size);
+						    region_alloc);
 				ext->mem_on_heap[mem_idx] = false;
 				return 0;
 			}
@@ -94,21 +102,22 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 		return -EFAULT;
 	}
 
-	/* On ARM with an MPU a pow(2, N)*32 sized and aligned region is needed,
-	 * otherwise its typically an mmu page (sized and aligned memory region)
-	 * we are after that we can assign memory permission bits on.
+	/*
+	 * Calculate the desired region size and alignment for a new allocation.
 	 */
-#ifndef CONFIG_ARM_MPU
-	const uintptr_t region_alloc = ROUND_UP(region->sh_size, LLEXT_PAGE_SIZE);
-	const uintptr_t region_align = LLEXT_PAGE_SIZE;
-#else
-	uintptr_t region_alloc = LLEXT_PAGE_SIZE;
+	if (IS_ENABLED(CONFIG_ARM_MPU)) {
+		/* On ARM with an MPU, regions must be sized and aligned to the same
+		 * power of two (larger than 32).
+		 */
+		uintptr_t block_size = MAX(region_alloc, LLEXT_PAGE_SIZE);
 
-	while (region_alloc < region->sh_size) {
-		region_alloc *= 2;
+		block_size = 1 << LOG2CEIL(block_size); /* align to next power of two */
+		region_alloc = block_size;
+		region_align = block_size;
+	} else {
+		/* Otherwise, round the region to multiples of LLEXT_PAGE_SIZE. */
+		region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
 	}
-	uintptr_t region_align = region_alloc;
-#endif
 
 	ext->mem[mem_idx] = llext_aligned_alloc(region_align, region_alloc);
 	if (!ext->mem[mem_idx]) {
