@@ -220,6 +220,8 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 		sys_cache_data_flush_range(addr, size);
 		k_mem_update_flags(addr, size, flags);
 	}
+
+	ext->mmu_permissions_set = true;
 #endif
 }
 
@@ -227,7 +229,7 @@ void llext_free_regions(struct llext *ext)
 {
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
 #ifdef CONFIG_MMU
-		if (ext->mem_size[i] != 0) {
+		if (ext->mmu_permissions_set && ext->mem_size[i] != 0) {
 			/* restore default RAM permissions */
 			k_mem_update_flags(ext->mem[i],
 					   ROUND_UP(ext->mem_size[i], LLEXT_PAGE_SIZE),

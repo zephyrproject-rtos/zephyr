@@ -125,6 +125,7 @@ struct llext {
 	unsigned int sect_cnt;
 	elf_shdr_t *sect_hdrs;
 	bool sect_hdrs_on_heap;
+	bool mmu_permissions_set;
 	/** @endcond */
 };
 
@@ -152,7 +153,8 @@ struct llext_load_param {
 	 * the memory buffer, when calculating relocation targets. It also
 	 * means, that the application will take care to place the extension at
 	 * those pre-defined addresses, so the LLEXT core doesn't have to do any
-	 * allocation and copying internally.
+	 * allocation and copying internally. Any MMU permission adjustment will
+	 * be done by the application too.
 	 */
 	bool pre_located;
 
