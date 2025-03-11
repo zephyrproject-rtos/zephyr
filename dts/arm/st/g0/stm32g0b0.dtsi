@@ -99,6 +99,7 @@
 			interrupt-names = "usb";
 			num-bidir-endpoints = <8>;
 			ram-size = <2048>;
+			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
 			clocks = <&rcc STM32_CLOCK(APB1, 13U)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(0)>;
