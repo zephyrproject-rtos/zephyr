@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+
+CONFIG_ARM_MPU=y
+CONFIG_HW_STACK_PROTECTION=y
+CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+CONFIG_ARM_TRUSTZONE_M=y
+
+# This Board implies building Non-Secure firmware
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+
+# Don't enable the cache in the non-secure image as it is a
+# secure-only peripheral on 54l
+CONFIG_CACHE_MANAGEMENT=n
+CONFIG_EXTERNAL_CACHE=n
+
+CONFIG_UART_CONSOLE=y
+CONFIG_CONSOLE=y
+CONFIG_SERIAL=y
+CONFIG_GPIO=y
+
+# Start SYSCOUNTER on driver init
+CONFIG_NRF_GRTC_START_SYSCOUNTER=y
+
+# Disable TFM BL2 since it is not supported
+CONFIG_TFM_BL2=n
+
+# Support for silence logging is not supported at the moment
+# Tracked by: NCSDK-31930
+CONFIG_TFM_LOG_LEVEL_SILENCE=n
+
+# The oscillators are configured as secure and cannot be configured
+# from the non secure application directly. This needs to be set
+# otherwise nrfx will try to configure them, resulting in a bus
+# fault.
+CONFIG_SOC_NRF54LX_SKIP_CLOCK_CONFIG=y
