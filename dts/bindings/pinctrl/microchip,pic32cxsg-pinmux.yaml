@@ -1,0 +1,13 @@
+description: Microchip PIC32CXSG PINMUX
+
+compatible: "microchip,pic32cxsg-pinmux"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+pinmux-cells:
+  - pin
+  - function
