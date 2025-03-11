@@ -27,7 +27,6 @@ from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
