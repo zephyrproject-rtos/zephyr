@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Microchip
+
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MICROCHIP_PIC32CXSG
+	bool
+
+config SOC_FAMILY
+	default "microchip_pic32cxsg" if SOC_FAMILY_MICROCHIP_PIC32CXSG
+
+config SOC_SERIES_REVISION_N
+	bool
+	depends on SOC_FAMILY_MICROCHIP_PIC32CXSG
+
+config SOC_SERIES_REVISION
+	string
+	default "n" if SOC_SERIES_REVISION_N
+	default ""
+	depends on SOC_FAMILY_MICROCHIP_PIC32CXSG
+
+rsource "*/Kconfig.soc"

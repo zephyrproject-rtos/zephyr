@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_PIC32CXSG41 || SOC_SERIES_PIC32CXSG60 || SOC_SERIES_PIC32CXSG61
+
+config SOC_MICROCHIP_PIC32CXSG_XOSC32K
+	bool "The external 32 kHz crystal oscillator"
+	help
+	  Say y to enable the external 32 kHZ crystal oscillator at
+	  startup.  This can then be selected as the main clock source
+	  for the SOC.
+
+choice
+	prompt "Main clock source"
+	default SOC_MICROCHIP_PIC32CXSG_DEFAULT_AS_MAIN
+	help
+	  Selects the clock that the main clocks, such as the CPU
+	  clock and AHB clock, will be derived from.
+
+config SOC_MICROCHIP_PIC32CXSG_DEFAULT_AS_MAIN
+	bool "DEFAULT"
+	help
+	  This choice will leave all clocks to their current state.
+	  This can be the default reset state or a state set by a bootloader.
+
+config SOC_MICROCHIP_PIC32CXSG_XOSC32K_AS_MAIN
+	depends on SOC_MICROCHIP_PIC32CXSG_XOSC32K
+	bool "XOSC32K"
+
+config SOC_MICROCHIP_PIC32CXSG_OSCULP32K_AS_MAIN
+	bool "OSCULP32K"
+
+endchoice
+
+endif
