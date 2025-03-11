@@ -1,0 +1,173 @@
+/*
+ * Copyright (c) 2024 Microchip
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/pic32cx1025sg.dtsi>
+#include "pic32cxsg41_cult-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "PIC32CX SG41 Curiosity Ultra";
+	compatible = "pic32cxsg41,cult", "microchip,pic32cx1025sg41128", "microchip,pic32cxsg";
+
+	chosen {
+		zephyr,console = &sercom4;
+		zephyr,shell-uart = &sercom4;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		userled1 = &led1;
+		userled2 = &led2; 
+		pwm-led1 = &pwm_led1;
+		sw1 = &button1;
+		sw2 = &button2;
+		i2c-0 = &sercom7;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&portc 21 GPIO_ACTIVE_LOW>;
+			label = "Yellow LED 1";
+		};
+		led2: led_2 {
+			gpios = <&porta 16 GPIO_ACTIVE_LOW>;
+			label = "Yellow LED 2";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led1: pwm_led_1 {
+			pwms = <&tcc0 2 PWM_MSEC(20)>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button1: button_1 {
+			gpios = <&portd 00 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		button2: button_2 {
+			gpios = <&portd 01 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&tcc0 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	/* Gives a maximum period of 1.1s for 120MHz main clock */
+	prescaler = <8>;
+	#pwm-cells = <2>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
+};
+
+&sercom4 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom4_uart_default>;
+	pinctrl-names = "default";
+};
+
+&sercom0 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	dipo = <3>;
+	dopo = <0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom0_spi_default>;
+	pinctrl-names = "default";
+};
+
+&sercom7 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom7_i2c_default>;
+	pinctrl-names = "default";
+
+	eeprom: eeprom@5e {
+		compatible = "atmel,24mac402";
+		reg = <0x5e>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
+};
+
+&gmac {
+	status = "okay";
+
+	pinctrl-0 = <&gmac_rmii>;
+	pinctrl-names = "default";
+
+	mac-eeprom = <&eeprom>;
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		status = "okay";
+		reg = <0>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The final 16 KiB is reserved for the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 0x00004000>;
+		};
+	};
+};

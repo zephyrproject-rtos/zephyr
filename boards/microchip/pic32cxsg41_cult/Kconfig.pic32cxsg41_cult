@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PIC32CXSG41_CULT
+	select SOC_PIC32CX1025SG41128
