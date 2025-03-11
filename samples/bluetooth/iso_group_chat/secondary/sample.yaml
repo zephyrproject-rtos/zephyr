@@ -1,24 +1,15 @@
 sample:
-  name: Bluetooth ISO Broadcaster Secondary
+  name: Bluetooth Group Chat - Secondary
+  description: LE Broadcast Sink, BIG with 2 BIS, Rx on BIS1, Tx on BIS2
 tests:
-  sample.bluetooth.iso_bcast_secondary:
-    harness: bluetooth
+  sample.bluetooth.iso_group_chat.mixer.secondary:
+    build_only: true  # Ensures only the build process is executed, no functional tests
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
       - nrf52_bsim
-      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
     integration_platforms:
-      - qemu_cortex_m3
-    tags: bluetooth
-  sample.bluetooth.iso_bcast_secondary.bt_ll_sw_split:
-    harness: bluetooth
-    platform_allow:
-      - qemu_cortex_m3
-      - qemu_x86
-      - nrf52_bsim
-      - nrf52dk/nrf52832
-    integration_platforms:
-      - nrf52dk/nrf52832
-    extra_args: EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
-    tags: bluetooth
+      - nrf52840dk/nrf52840
+    tags:
+      - bluetooth 
