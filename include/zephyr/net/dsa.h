@@ -41,6 +41,87 @@ extern "C" {
 #endif
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * These are for internal use only, so skip these in
+ * public documentation.
+ */
+
+/** DSA context data */
+struct dsa_context {
+	/** Pointers to all DSA slave network interfaces */
+	struct net_if *iface_slave[NET_DSA_PORT_MAX_COUNT];
+
+	/** Pointer to DSA master network interface */
+	struct net_if *iface_master;
+
+	/** DSA specific API callbacks - filled in the switch IC driver */
+	struct dsa_api *dapi;
+
+#if defined(CONFIG_NET_DSA_LEGACY)
+	/** DSA related work (e.g. monitor if network interface is up) */
+	struct k_work_delayable dsa_work;
+
+	/** Status of each port */
+	bool link_up[NET_DSA_PORT_MAX_COUNT];
+#endif
+	/** Number of slave ports in the DSA switch */
+	uint8_t num_slave_ports;
+
+	/** Instance specific data */
+	void *prv_data;
+};
+
+/**
+ * @brief Structure to provide DSA switch api callbacks - it is an augmented
+ * struct ethernet_api.
+ */
+struct dsa_api {
+	/*
+	 * Callbacks required for DSA switch initialization and configuration.
+	 *
+	 * Each switch instance (e.g. two KSZ8794 ICs) would have its own struct
+	 * dsa_context.
+	 */
+	/** Read value from DSA register */
+	int (*switch_read)(const struct device *dev, uint16_t reg_addr, uint8_t *value);
+	/** Write value to DSA register */
+	int (*switch_write)(const struct device *dev, uint16_t reg_addr, uint8_t value);
+
+	/** Program (set) mac table entry in the DSA switch */
+	int (*switch_set_mac_table_entry)(const struct device *dev, const uint8_t *mac,
+					  uint8_t fw_port, uint16_t tbl_entry_idx, uint16_t flags);
+
+	/** Read mac table entry from the DSA switch */
+	int (*switch_get_mac_table_entry)(const struct device *dev, uint8_t *buf,
+					  uint16_t tbl_entry_idx);
+
+	/*
+	 * DSA helper callbacks
+	 */
+#if defined(CONFIG_NET_DSA_LEGACY)
+	/** Function to get proper LAN{123} interface */
+	struct net_if *(*dsa_get_iface)(struct net_if *iface, struct net_pkt *pkt);
+
+	struct net_pkt *(*dsa_xmit_pkt)(struct net_if *iface, struct net_pkt *pkt);
+#endif
+};
+
+/**
+ * @endcond
+ */
+
+#if defined(CONFIG_NET_DSA_LEGACY)
+/**
+ * @brief Structure to provide mac address for each LAN interface
+ */
+
+struct dsa_slave_config {
+	/** MAC address for each LAN{123.,} ports */
+	uint8_t mac_addr[6];
+};
+
+/**
  * @brief DSA generic transmit function
  *
  * This is a generic function for passing packets from slave DSA interface to
@@ -53,6 +134,33 @@ extern "C" {
  *  - 0 if ok (packet sent via master iface), < 0 if error
  */
 int dsa_tx(const struct device *dev, struct net_pkt *pkt);
+
+/**
+ * @brief Set DSA interface to packet
+ *
+ * @param iface Network interface (master)
+ * @param pkt Network packet
+ *
+ * @return Return the slave network interface
+ */
+struct net_if *dsa_net_recv(struct net_if *iface, struct net_pkt **pkt);
+
+/**
+ * @brief Pointer to master interface send function
+ */
+typedef int (*dsa_send_t)(const struct device *dev, struct net_pkt *pkt);
+
+/**
+ * @brief DSA helper function to register transmit function for master
+ *
+ * @param iface Network interface (master)
+ * @param fn Pointer to master interface send method
+ *
+ * Returns:
+ *  - 0 if ok, < 0 if error
+ */
+int dsa_register_master_tx(struct net_if *iface, dsa_send_t fn);
+#endif
 
 /**
  * @brief DSA (MGMT) Receive packet callback
@@ -80,32 +188,6 @@ typedef enum net_verdict (*dsa_net_recv_cb_t)(struct net_if *iface, struct net_p
 int dsa_register_recv_callback(struct net_if *iface, dsa_net_recv_cb_t cb);
 
 /**
- * @brief Set DSA interface to packet
- *
- * @param iface Network interface (master)
- * @param pkt Network packet
- *
- * @return Return the slave network interface
- */
-struct net_if *dsa_net_recv(struct net_if *iface, struct net_pkt **pkt);
-
-/**
- * @brief Pointer to master interface send function
- */
-typedef int (*dsa_send_t)(const struct device *dev, struct net_pkt *pkt);
-
-/**
- * @brief DSA helper function to register transmit function for master
- *
- * @param iface Network interface (master)
- * @param fn Pointer to master interface send method
- *
- * Returns:
- *  - 0 if ok, < 0 if error
- */
-int dsa_register_master_tx(struct net_if *iface, dsa_send_t fn);
-
-/**
  * @brief DSA helper function to check if port is master
  *
  * @param iface Network interface (master)
@@ -114,73 +196,6 @@ int dsa_register_master_tx(struct net_if *iface, dsa_send_t fn);
  *  - true if ok, false otherwise
  */
 bool dsa_port_is_master(struct net_if *iface);
-
-/**
- * @cond INTERNAL_HIDDEN
- *
- * These are for internal use only, so skip these in
- * public documentation.
- */
-
-/** DSA context data */
-struct dsa_context {
-	/** Pointers to all DSA slave network interfaces */
-	struct net_if *iface_slave[NET_DSA_PORT_MAX_COUNT];
-
-	/** Pointer to DSA master network interface */
-	struct net_if *iface_master;
-
-	/** DSA specific API callbacks - filled in the switch IC driver */
-	struct dsa_api *dapi;
-
-	/** DSA related work (e.g. monitor if network interface is up) */
-	struct k_work_delayable dsa_work;
-
-	/** Number of slave ports in the DSA switch */
-	uint8_t num_slave_ports;
-
-	/** Status of each port */
-	bool link_up[NET_DSA_PORT_MAX_COUNT];
-
-	/** Instance specific data */
-	void *prv_data;
-};
-
-/**
- * @brief Structure to provide DSA switch api callbacks - it is an augmented
- * struct ethernet_api.
- */
-struct dsa_api {
-	/** Function to get proper LAN{123} interface */
-	struct net_if *(*dsa_get_iface)(struct net_if *iface, struct net_pkt *pkt);
-	/*
-	 * Callbacks required for DSA switch initialization and configuration.
-	 *
-	 * Each switch instance (e.g. two KSZ8794 ICs) would have its own struct
-	 * dsa_context.
-	 */
-	/** Read value from DSA register */
-	int (*switch_read)(const struct device *dev, uint16_t reg_addr, uint8_t *value);
-	/** Write value to DSA register */
-	int (*switch_write)(const struct device *dev, uint16_t reg_addr, uint8_t value);
-
-	/** Program (set) mac table entry in the DSA switch */
-	int (*switch_set_mac_table_entry)(const struct device *dev, const uint8_t *mac,
-					  uint8_t fw_port, uint16_t tbl_entry_idx, uint16_t flags);
-
-	/** Read mac table entry from the DSA switch */
-	int (*switch_get_mac_table_entry)(const struct device *dev, uint8_t *buf,
-					  uint16_t tbl_entry_idx);
-
-	/*
-	 * DSA helper callbacks
-	 */
-	struct net_pkt *(*dsa_xmit_pkt)(struct net_if *iface, struct net_pkt *pkt);
-};
-
-/**
- * @endcond
- */
 
 /**
  * @brief      Get network interface of a slave port
@@ -239,15 +254,6 @@ int dsa_switch_set_mac_table_entry(struct net_if *iface, const uint8_t *mac, uin
  * @return     0 if successful, negative if error
  */
 int dsa_switch_get_mac_table_entry(struct net_if *iface, uint8_t *buf, uint16_t tbl_entry_idx);
-
-/**
- * @brief Structure to provide mac address for each LAN interface
- */
-
-struct dsa_slave_config {
-	/** MAC address for each LAN{123.,} ports */
-	uint8_t mac_addr[6];
-};
 
 #ifdef __cplusplus
 }

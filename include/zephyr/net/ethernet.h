@@ -714,8 +714,10 @@ struct ethernet_context {
 	/** DSA context pointer */
 	struct dsa_context *dsa_ctx;
 
+#if defined(CONFIG_NET_DSA_LEGACY)
 	/** Send a network packet via DSA master port */
 	dsa_send_t dsa_send;
+#endif
 #endif
 
 	/** Is network carrier up */
