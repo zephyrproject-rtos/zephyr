@@ -1,6 +1,0 @@
-board:
-  name: rzt2m_starter_kit
-  full_name: Starter Kit+ for RZ/T2M
-  vendor: renesas
-  socs:
-  - name: renesas_rzt2m
