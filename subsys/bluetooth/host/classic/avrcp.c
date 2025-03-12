@@ -33,8 +33,6 @@ LOG_MODULE_REGISTER(bt_avrcp);
 
 struct bt_avrcp {
 	struct bt_avctp session;
-	struct bt_avrcp_req req;
-	struct k_work_delayable timeout_work;
 	uint8_t local_tid;
 };
 
@@ -214,13 +212,6 @@ static struct bt_avrcp *get_new_connection(struct bt_conn *conn)
 	return avrcp;
 }
 
-static void avrcp_timeout(struct k_work *work)
-{
-	struct bt_avrcp *avrcp = AVRCP_KWORK(work);
-
-	LOG_WRN("Timeout: tid 0x%X, opc 0x%02X", avrcp->req.tid, avrcp->req.opcode);
-}
-
 /* The AVCTP L2CAP channel established */
 static void avrcp_connected(struct bt_avctp *session)
 {
@@ -229,8 +220,6 @@ static void avrcp_connected(struct bt_avctp *session)
 	if ((avrcp_cb != NULL) && (avrcp_cb->connected != NULL)) {
 		avrcp_cb->connected(avrcp);
 	}
-
-	k_work_init_delayable(&avrcp->timeout_work, avrcp_timeout);
 }
 
 /* The AVCTP L2CAP channel released */
@@ -450,21 +439,6 @@ static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
 
 	LOG_DBG("AVRCP msg received, cr:0x%X, tid:0x%X, rsp: 0x%X, opc:0x%02X,", cr, tid, rsp,
 		avrcp_hdr->opcode);
-	if (cr == BT_AVCTP_RESPONSE) {
-		if (avrcp_hdr->opcode == BT_AVRCP_OPC_VENDOR_DEPENDENT &&
-		    rsp == BT_AVRCP_RSP_CHANGED) {
-			/* Status changed notifiation, do not reset timer */
-		} else if (avrcp_hdr->opcode == BT_AVRCP_OPC_PASS_THROUGH) {
-			/* No max response time for pass through commands  */
-		} else if (tid != avrcp->req.tid || subunit_type != avrcp->req.subunit ||
-			   avrcp_hdr->opcode != avrcp->req.opcode) {
-			LOG_DBG("unexpected AVRCP response, expected tid:0x%X, subunit:0x%X, "
-				"opc:0x%02X",
-				avrcp->req.tid, avrcp->req.subunit, avrcp->req.opcode);
-		} else {
-			k_work_cancel_delayable(&avrcp->timeout_work);
-		}
-	}
 
 	for (i = 0U; i < ARRAY_SIZE(handler); i++) {
 		if (avrcp_hdr->opcode == handler[i].opcode) {
@@ -667,7 +641,6 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
 	uint8_t tid = BT_AVCTP_HDR_GET_TRANSACTION_LABLE(avctp_hdr);
 	bt_avctp_cr_t cr = BT_AVCTP_HDR_GET_CR(avctp_hdr);
 	bt_avrcp_ctype_t ctype = BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr);
-	bt_avrcp_subunit_type_t subunit_type = BT_AVRCP_HDR_GET_SUBUNIT_TYPE(avrcp_hdr);
 
 	LOG_DBG("AVRCP send cr:0x%X, tid:0x%X, ctype: 0x%X, opc:0x%02X\n", cr, tid, ctype,
 		avrcp_hdr->opcode);
@@ -676,14 +649,6 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
 		net_buf_unref(buf);
 		LOG_ERR("AVCTP send fail, err = %d", err);
 		return err;
-	}
-
-	if (cr == BT_AVCTP_CMD && avrcp_hdr->opcode != BT_AVRCP_OPC_PASS_THROUGH) {
-		avrcp->req.tid = tid;
-		avrcp->req.subunit = subunit_type;
-		avrcp->req.opcode = avrcp_hdr->opcode;
-
-		k_work_reschedule(&avrcp->timeout_work, AVRCP_TIMEOUT);
 	}
 
 	return 0;
