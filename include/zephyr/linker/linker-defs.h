@@ -48,7 +48,8 @@
 #define CREATE_OBJ_LEVEL(object, level)				\
 		__##object##_##level##_start = .;		\
 		KEEP(*(SORT(.z_##object##_##level##_?_*)));	\
-		KEEP(*(SORT(.z_##object##_##level##_??_*)));
+		KEEP(*(SORT(.z_##object##_##level##_??_*)));	\
+		KEEP(*(SORT(.z_##object##_##level##_???_*)));
 /* clang-format on */
 
 /*
