@@ -18,7 +18,7 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
      "update your flash configuration or device configuration data blocks")
   endif()
   set(RT1040_BOARD_DIR
-    "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk/boards/evkmimxrt1040")
+    "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/boards/evkmimxrt1040")
   if(CONFIG_BOOT_FLEXSPI_NOR)
     # Include flash configuration block for RT1040 EVK from NXP's HAL.
     # This configuration block may need modification if another flash chip is

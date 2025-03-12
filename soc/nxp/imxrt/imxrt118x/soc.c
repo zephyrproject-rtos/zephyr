@@ -340,7 +340,7 @@ __weak void clock_init(void)
 
 #endif /* CONFIG_COUNTER_MCUX_GPT */
 
-#ifdef CONFIG_MCUX_ACMP
+#if defined(CONFIG_COMPARATOR_MCUX_ACMP) || defined(CONFIG_SENSOR_MCUX_ACMP)
 
 #if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp1))  \
 	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp2)) \
@@ -352,7 +352,7 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Acmp, &rootCfg);
 #endif
 
-#endif /* CONFIG_MCUX_ACMP */
+#endif /* CONFIG_COMPARATOR_MCUX_ACMP || CONFIG_SENSOR_MCUX_ACMP */
 
 #if defined(CONFIG_ETH_NXP_IMX_NETC) && (DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0)
 	/* Configure ENET using SYS_PLL1_DIV2_CLK */
