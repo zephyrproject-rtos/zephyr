@@ -1,0 +1,73 @@
+common:
+  timeout: 30
+tests:
+  tests.ipc.ipc_service.benchmark:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+    tags: ipc
+    sysbuild: true
+  tests.ipc.ipc_service.benchmark.icmsg.flpr:
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+    tags: ipc
+    sysbuild: true
+    extra_args:
+      - ipc_service_benchmark_SNIPPET=nordic-flpr
+      - remote_CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
+      - remote_CONFIG_MBOX=y
+    extra_configs:
+      - CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
+      - CONFIG_MBOX=y
+  tests.ipc.ipc_service.benchmark.icbmsg.flpr:
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+    tags: ipc
+    sysbuild: true
+    extra_args:
+      - ipc_service_benchmark_DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_icbmsg.overlay"
+      - ipc_service_benchmark_SNIPPET=nordic-flpr
+      - remote_DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuflpr_icbmsg.overlay"
+      - remote_CONFIG_MBOX=y
+    extra_configs:
+      - CONFIG_MBOX=y
+  tests.ipc.ipc_service.benchmark.icbmsg.nrf54h.cpurad:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    tags: ipc
+    sysbuild: true
+    extra_configs:
+      - CONFIG_TEST_NO_COPY=y
+  tests.ipc.ipc_service.benchmark.icbmsg.nrf54h.cpurad.stm:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    tags: ipc
+    sysbuild: true
+    required_snippets: nordic-log-stm
+    extra_configs:
+      - CONFIG_TEST_NO_COPY=y
+    extra_args:
+      - remote_SNIPPET=nordic-log-stm
+  tests.ipc.ipc_service.benchmark.icmsg.nrf54h.cpurad:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    tags: ipc
+    sysbuild: true
+    extra_args:
+      - ipc_service_benchmark_DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_icmsg.overlay"
+      - remote_DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpurad_icmsg.overlay"

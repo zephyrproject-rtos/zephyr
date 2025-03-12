@@ -8,6 +8,7 @@ zephyr_sources(
   rb.c
   timeutil.c
   bitarray.c
+  bitpool.c
   )
 
 zephyr_sources_ifdef(CONFIG_ONOFF onoff.c)

@@ -1,0 +1,7 @@
+
+source "Kconfig.zephyr"
+
+config TEST_MULTI_ENDPOINT
+	bool
+	default y if $(dt_nodelabel_has_compat,ipc0,$(DT_COMPAT_ZEPHYR_IPC_ICBMSG))
+	default n
