@@ -13,6 +13,12 @@
 
 /**
  * @brief Bluetooth APIs
+ * @details The Bluetooth Subsystem Core APIs provide essential functionalities
+ *          to use and manage Bluetooth based communication. These APIs include
+ *          APIs for Bluetooth stack initialization, device discovery,
+ *          connection management, data transmission, profiles and services.
+ *          These APIs support both classic Bluetooth and Bluetooth Low Energy
+ *          (LE) operations.
  * @defgroup bluetooth Bluetooth APIs
  * @ingroup connectivity
  * @{
@@ -35,6 +41,13 @@ extern "C" {
 
 /**
  * @brief Generic Access Profile (GAP)
+ * @details The Generic Access Profile (GAP) defines fundamental Bluetooth
+ *          operations, including device discovery, pairing, and connection
+ *          management. Zephyr's GAP implementation supports both classic
+ *          Bluetooth and Bluetooth Low Energy (LE) functionalities, enabling
+ *          roles such as Broadcaster, Observer, Peripheral, and Central. These
+ *          roles define the device's behavior in advertising, scanning, and
+ *          establishing connections within Bluetooth networks.
  * @defgroup bt_gap Generic Access Profile (GAP)
  * @since 1.0
  * @version 1.0.0
