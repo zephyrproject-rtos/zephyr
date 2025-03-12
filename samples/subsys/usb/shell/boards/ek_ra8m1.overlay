@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &zephyr_udc0;
+
+&usbhs {
+	status = "okay";
+
+	zephyr_uhc0: uhc {
+		status = "okay";
+	};
+};
+
+&usbfs {
+	status = "okay";
+
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
