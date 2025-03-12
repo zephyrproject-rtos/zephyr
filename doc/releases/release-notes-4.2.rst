@@ -81,6 +81,11 @@ New APIs and options
 
     * :c:func:`bt_le_get_local_features`
 
+* Devicetree
+
+  * :c:macro:`DT_PHANDLE_TOKEN_BY_IDX`
+  * :c:macro:`DT_PHANDLE_TOKEN`
+
 New Boards
 **********
 

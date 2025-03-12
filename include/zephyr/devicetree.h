@@ -1799,6 +1799,57 @@
 #define DT_PHANDLE(node_id, prop) DT_PHANDLE_BY_IDX(node_id, prop, 0)
 
 /**
+ * @brief Get a symbolic name for a phandle in a property
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n1: node-1 {
+ *             foo = <&n2 &n3>;
+ *     };
+ *
+ *     n2: node-2 { ... };
+ *     n3: node-3 { ... };
+ * @endcode
+ *
+ * Above, `foo` has type phandles and has two elements:
+ *
+ * - index 0 has phandle `&n2`, which is `node-2`'s phandle
+ * - index 1 has phandle `&n3`, which is `node-3`'s phandle
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define N1 DT_NODELABEL(n1)
+ *
+ *     DT_PHANDLE_TOKEN_BY_IDX(N1, foo, 0) // n2
+ *     DT_PHANDLE_TOKEN_BY_IDX(N1, foo, 1) // n3
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name in @p node_id
+ *             with type `phandle`, `phandles` or `phandle-array`
+ * @param idx index into @p prop
+ * @return symbolic name of the phandle at that index
+ */
+#define DT_PHANDLE_TOKEN_BY_IDX(node_id, prop, idx) \
+	DT_CAT6(node_id, _P_, prop, _IDX_, idx, _PH_TOKEN)
+
+/**
+ * @brief Get the symbolic name for a phandle
+ *
+ * This is equivalent to DT_PHANDLE_TOKEN_BY_IDX(node_id, prop, 0). Its primary
+ * benefit is readability when @p prop has type `phandle`.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property of @p node_id
+ *             with type `phandle`
+ * @return symbolic name of the phandle
+ */
+#define DT_PHANDLE_TOKEN(node_id, prop) \
+	DT_PHANDLE_TOKEN_BY_IDX(node_id, prop, 0)
+
+/**
  * @}
  */
 

@@ -1036,6 +1036,13 @@ ZTEST(devicetree_api, test_phandles)
 	/* DT_PHANDLE */
 	zassert_true(DT_SAME_NODE(DT_PHANDLE(TEST_PH, gpios), TEST_GPIO_1), "");
 
+	/* DT_PHANDLE_TOKEN */
+	zassert_true(STRINGIFY(DT_PHANDLE_TOKEN(TEST_PH, gpios)), "test_gpio_1");
+
+	/* DT_PHANDLE_TOKEN_BY_IDX */
+	zassert_true(STRINGIFY(DT_PHANDLE_TOKEN_BY_IDX(TEST_PH, phs, 0)), "test_i2c");
+	zassert_true(STRINGIFY(DT_PHANDLE_TOKEN_BY_IDX(TEST_PH, phs, 1)), "test_spi");
+
 	/* DT_PHA */
 	zassert_equal(DT_PHA(TEST_PH, gpios, pin), 10, "");
 	zassert_equal(DT_PHA(TEST_PH, gpios, flags), 20, "");
