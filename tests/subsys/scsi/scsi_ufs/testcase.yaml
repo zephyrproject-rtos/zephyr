@@ -1,0 +1,14 @@
+common:
+  depends_on:
+    - scsi
+  tags:
+    - scsi
+    - ufs
+  filter: dt_alias_exists("ufs0")
+tests:
+  scsi.ufs.scsi_basic:
+    depends_on: ufshc
+  scsi.ufs.scsi_rw:
+    depends_on: ufshc
+    extra_configs:
+      - CONFIG_TEST_SCSI_UFS_RW=y
