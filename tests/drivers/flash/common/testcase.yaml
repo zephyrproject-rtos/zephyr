@@ -145,3 +145,10 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="./boards/${BOARD}_ospi_b_nor.overlay"
       - CONF_FILE="./prj.conf ./boards/${BOARD}_ospi_b_nor.conf"
+  drivers.flash.common.ra_qspi_nor:
+    filter: CONFIG_FLASH_RENESAS_RA_QSPI and dt_compat_enabled("renesas,ra-qspi-nor")
+    vendor_allow:
+      - renesas
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/${BOARD}_qspi_nor.overlay"
+      - CONF_FILE="./prj.conf ./boards/${BOARD}_qspi_nor.conf"
