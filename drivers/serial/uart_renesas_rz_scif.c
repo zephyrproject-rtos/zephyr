@@ -163,12 +163,12 @@ static int uart_rz_scif_apply_config(const struct device *dev)
 	case UART_CFG_FLOW_CTRL_NONE:
 		config_extend.flow_control = SCIF_UART_FLOW_CONTROL_NONE;
 		config_extend.uart_mode = SCIF_UART_MODE_RS232;
-		config_extend.rs485_setting.enable = SCI_UART_RS485_DISABLE;
+		config_extend.rs485_setting.enable = 0;
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
 		config_extend.flow_control = SCIF_UART_FLOW_CONTROL_AUTO;
 		config_extend.uart_mode = SCIF_UART_MODE_RS232;
-		config_extend.rs485_setting.enable = SCI_UART_RS485_DISABLE;
+		config_extend.rs485_setting.enable = 0;
 		break;
 	default:
 		return -ENOTSUP;
@@ -470,14 +470,14 @@ static int uart_rz_scif_init(const struct device *dev)
 		.clock = SCIF_UART_CLOCK_INT,                                                      \
 		.noise_cancel = SCIF_UART_NOISE_CANCELLATION_ENABLE,                               \
 		.p_baud_setting = &g_uart##n##_baud_setting,                                       \
-		.rx_fifo_trigger = SCIF_UART_RECEIVE_TRIGGER_MAX,                                  \
+		.rx_fifo_trigger = 3,                                                              \
 		.rts_fifo_trigger = SCIF_UART_RTS_TRIGGER_14,                                      \
 		.uart_mode = SCIF_UART_MODE_RS232,                                                 \
 		.flow_control = SCIF_UART_FLOW_CONTROL_NONE,                                       \
 		.rs485_setting =                                                                   \
 			{                                                                          \
-				.enable = (sci_uart_rs485_enable_t)NULL,                           \
-				.polarity = SCI_UART_RS485_DE_POLARITY_HIGH,                       \
+				.enable = 0,                                                       \
+				.polarity = 0,                                                     \
 				.de_control_pin =                                                  \
 					(bsp_io_port_pin_t)SCIF_UART_INVALID_16BIT_PARAM,          \
 			},                                                                         \
