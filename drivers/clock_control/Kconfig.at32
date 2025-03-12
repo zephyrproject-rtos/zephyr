@@ -3,5 +3,6 @@
 config CLOCK_CONTROL_AT32
 	bool "AT32 clock control"
 	default y
+	depends on DT_HAS_AT_AT32_CCTL_ENABLED
 	help
 	  Enable driver for AT32 Reset Clock Unit (CRM).
