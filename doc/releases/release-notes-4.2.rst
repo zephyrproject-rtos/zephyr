@@ -81,6 +81,11 @@ New APIs and options
 
     * :c:func:`bt_le_get_local_features`
 
+Kernel
+******
+
+* :c:func:`k_thread_runtime_stats_is_enabled`.
+
 New Boards
 **********
 
