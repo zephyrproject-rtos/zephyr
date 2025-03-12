@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -17,4 +17,8 @@
 			reg = <0x1F0000 DT_SIZE_K(64)>;
 		};
 	};
+};
+
+&mx25l25645g {
+	status = "disabled";
 };
