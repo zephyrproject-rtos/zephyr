@@ -230,15 +230,6 @@ int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
 			    const uint8_t sirk[BT_CSIP_SIRK_SIZE]);
 
 /**
- * @brief Get the SIRK of a service instance
- *
- * @param[in]  svc_inst  Pointer to the registered Coordinated Set Identification Service.
- * @param[out] sirk      Array to store the SIRK in.
- */
-int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
-				uint8_t sirk[BT_CSIP_SIRK_SIZE]);
-
-/**
  * @brief Set a new size and rank for a service instance
  *
  * This function can be used to dynamically change the size and rank of a service instance.
