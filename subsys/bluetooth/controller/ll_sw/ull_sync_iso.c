@@ -58,7 +58,7 @@
 
 #include "hal/debug.h"
 
-#if defined(CONFIG_GROUPCHAT_COMMON)
+#if defined(CONFIG_GROUPCHAT_PRINTMT_ENABLE)
 #define PRINTMT(fmt, ...)  printk(fmt, ##__VA_ARGS__)  /* HACK-MJT*/
 #else
 #define PRINTMT(fmt, ...)

@@ -5,27 +5,13 @@ source "Kconfig.zephyr"
 
 mainmenu "Bluetooth: GroupChat Primary"
 
-config ISO_PRINT_INTERVAL
-	int "Interval between each packet report"
-	range 1 360000
-	default 1
-	help
-	  Only print the packet report once in a given interval of ISO packets.
+source "samples/bluetooth/iso_group_chat/common/Kconfig"
 
-config GROUPCHAT_COMMON
-    bool "Enable common code specific to the groupchat feature devices"
-    default n
-	help
-	  When enabled, additional features and modifications shared by all
-	  groupchat devices will be compiled into the project. This option can
-	  blocks guarded by `#ifdef CONFIG_GROUPCHAT_COMMON` in shared .c
-	  and .h files.
-
-config GROUPCHAT_PRIMARY
+config BT_ISO_GROUPCHAT_PRIMARY
     bool "Enable code specific to the groupchat primary device"
     default n
 	help
 	  When enabled, additional features and modifications will be compiled
 	  into the project. This option can be used to include or exclude code
-	  blocks guarded by `#ifdef CONFIG_GROUPCHAT_PRIMARY` in shared .c
+	  blocks guarded by `#ifdef CONFIG_BT_ISO_GROUPCHAT_PRIMARY` in shared .c
 	  and .h files.

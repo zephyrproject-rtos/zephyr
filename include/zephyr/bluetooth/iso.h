@@ -181,8 +181,8 @@ enum bt_iso_chan_type {
 	BT_ISO_CHAN_TYPE_CONNECTED,	/**< Connected */
 	BT_ISO_CHAN_TYPE_BROADCASTER,	/**< Isochronous broadcaster */
 	BT_ISO_CHAN_TYPE_SYNC_RECEIVER,	/**< Isochronous broadcast Sync receiver */
-#if defined(CONFIG_GROUPCHAT_SECONDARY)
-	BT_ISO_CHAN_TYPE_SYNC_TRANSMIT	/**< Isochronous broadcast Sync transmit */
+#if defined(CONFIG_BT_ISO_GROUPCHAT_SECONDARY)
+	BT_ISO_CHAN_TYPE_SYNC_BROADCASTER	/**< Isochronous broadcast Synchronized subevent broadcast */
 #endif	
 };
 
@@ -212,7 +212,7 @@ struct bt_iso_chan {
 	/** @internal Node used internally by the stack */
 	sys_snode_t node;
 
-#ifdef CONFIG_GROUPCHAT_COMMON
+#ifdef CONFIG_BT_ISO_GROUPCHAT_COMMON
 	/** @internal bis index */
 	uint8_t bis_idx;    /* 1..30 */
 #endif	
@@ -1077,7 +1077,7 @@ struct bt_iso_info {
 	 * This is always true when @p type is @ref BT_ISO_CHAN_TYPE_BROADCASTER,
 	 * and never true when @p type is @ref BT_ISO_CHAN_TYPE_SYNC_RECEIVER.
 	 * 
-	 * If CONFIG_GROUPCHAT_SECONDARY is defined then this can be true for BT_ISO_CHAN_TYPE_SYNC_TRANSMIT
+	 * If CONFIG_BT_ISO_GROUPCHAT_SECONDARY is defined then this can be true for BT_ISO_CHAN_TYPE_SYNC_BROADCASTER
 	 */
 	bool can_send;
 
@@ -1087,7 +1087,7 @@ struct bt_iso_info {
 	 * This is always true when @p type is @ref BT_ISO_CHAN_TYPE_SYNC_RECEIVER,
 	 * and never true when @p type is @ref BT_ISO_CHAN_TYPE_BROADCASTER.
 	 * 
-	 * If CONFIG_GROUPCHAT_SECONDARY is defined then this will be true for first BIS only when configed
+	 * If CONFIG_BT_ISO_GROUPCHAT_SECONDARY is defined then this will be true for first BIS only when configed
 	 * for broadcast syn.
 	 */
 	bool can_recv;

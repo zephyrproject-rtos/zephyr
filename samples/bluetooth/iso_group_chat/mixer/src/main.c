@@ -35,11 +35,11 @@
 #include "../../common/common.h"
 
 
-#ifndef CONFIG_GROUPCHAT_COMMON
-#error "CONFIG_GROUPCHAT_COMMON=y has not been defined in proj.conf"
+#ifndef CONFIG_BT_ISO_GROUPCHAT_COMMON
+#error "CONFIG_BT_ISO_GROUPCHAT_COMMON=y has not been defined in proj.conf"
 #endif
-#ifndef CONFIG_GROUPCHAT_MIXER
-#error "CONFIG_GROUPCHAT_MIXER=y has not been defined in proj.conf"
+#ifndef CONFIG_BT_ISO_GROUPCHAT_MIXER
+#error "CONFIG_BT_ISO_GROUPCHAT_MIXER=y has not been defined in proj.conf"
 #endif
 
 #define TIMEOUT_SYNC_CREATE K_SECONDS(10)

@@ -35,11 +35,11 @@
 #include "../../common/common.h"
 
 
-#ifndef CONFIG_GROUPCHAT_COMMON
-#error "CONFIG_GROUPCHAT_COMMON=y has not been defined in proj.conf"
+#ifndef CONFIG_BT_ISO_GROUPCHAT_COMMON
+#error "CONFIG_BT_ISO_GROUPCHAT_COMMON=y has not been defined in proj.conf"
 #endif
-#ifndef CONFIG_GROUPCHAT_PRIMARY
-#error "CONFIG_GROUPCHAT_PRIMARY=y has not been defined in proj.conf"
+#ifndef CONFIG_BT_ISO_GROUPCHAT_PRIMARY
+#error "CONFIG_BT_ISO_GROUPCHAT_PRIMARY=y has not been defined in proj.conf"
 #endif
 
 /* For normal operation, given the BIG creates 2 BISes, set the

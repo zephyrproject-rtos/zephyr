@@ -41,18 +41,18 @@
 #include "../../common/common.h"
 
 
-#if !defined(CONFIG_GROUPCHAT_COMMON)
-#error "CONFIG_GROUPCHAT_COMMON=y has not been defined in proj.conf"
+#if !defined(CONFIG_BT_ISO_GROUPCHAT_COMMON)
+#error "CONFIG_BT_ISO_GROUPCHAT_COMMON=y has not been defined in proj.conf"
 #endif
-#if !defined(CONFIG_GROUPCHAT_SECONDARY)
-#error "CONFIG_GROUPCHAT_SECONDARY=y has not been defined in proj.conf"
+#if !defined(CONFIG_BT_ISO_GROUPCHAT_SECONDARY)
+#error "CONFIG_BT_ISO_GROUPCHAT_SECONDARY=y has not been defined in proj.conf"
 #endif
 
 /* --------------------------------------------------------------------------------------
 To ensure a function is not optimised in anyway, use the following before it and ensure
-that CONFIG_FUNCTION_DEBUG=y is defined in prj.conf
+that CONFIG_GROUPCHAT_FUNCTION_DEBUG=y is defined in prj.conf
 
-#if defined(CONFIG_FUNCTION_DEBUG)
+#if defined(CONFIG_GROUPCHAT_FUNCTION_DEBUG)
 __attribute__((optimize("O0")))
 #endif
 
