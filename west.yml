@@ -148,6 +148,11 @@ manifest:
       path: modules/hal/adi
       groups:
         - hal
+    - name: hal_afbr
+      revision: 4e1eea7ea283db9d9ce529b0e9f89c0b5c2660e3
+      path: modules/hal/afbr
+      groups:
+        - hal
     - name: hal_ambiq
       revision: f46941f3427bbc05d893a601660e6e3cffe9e29d
       path: modules/hal/ambiq
