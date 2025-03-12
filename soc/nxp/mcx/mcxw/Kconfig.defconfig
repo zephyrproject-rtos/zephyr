@@ -3,6 +3,9 @@
 
 if SOC_SERIES_MCXW
 
+config CORTEX_M_SYSTICK
+	default n if MCUX_LPTMR_TIMER
+
 config NUM_IRQS
 	default 77 if SOC_MCXW727C
 	default 75

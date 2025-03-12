@@ -3,6 +3,9 @@
 
 if SOC_SERIES_MCXC
 
+config CORTEX_M_SYSTICK
+	default n if MCUX_LPTMR_TIMER
+
 config NUM_IRQS
 	default 32
 
