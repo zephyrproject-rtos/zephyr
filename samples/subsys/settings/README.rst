@@ -18,6 +18,7 @@ Requirements
 
 * A board with settings support, for instance: nrf52840dk/nrf52840
 * Or qemu_x86 target
+* A nvs_sector_size <= 0xFFFF
 
 Building and Running
 ********************
