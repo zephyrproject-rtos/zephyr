@@ -17,6 +17,8 @@
 #define COREDUMP_BACKEND_STR "flash partition"
 #elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_INTEL_ADSP_MEM_WINDOW)
 #define COREDUMP_BACKEND_STR "ADSP memory window"
+#elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY)
+#define COREDUMP_BACKEND_STR "In memory - volatile -"
 #elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_OTHER)
 #define COREDUMP_BACKEND_STR "other"
 #else
