@@ -22,6 +22,7 @@ if(CONFIG_NRFS)
     zephyr_library_sources(${HELPERS_DIR}/dvfs_oppoint.c)
 
     if(CONFIG_NRFS_LOCAL_DOMAIN)
+        zephyr_library_sources_ifdef(CONFIG_NRFS_AUDIOPLL_SERVICE_ENABLED ${SRC_DIR}/services/nrfs_audiopll.c)
         zephyr_library_sources_ifdef(CONFIG_NRFS_CLOCK_SERVICE_ENABLED ${SRC_DIR}/services/nrfs_clock.c)
         zephyr_library_sources_ifdef(CONFIG_NRFS_DIAG_SERVICE_ENABLED ${SRC_DIR}/services/nrfs_diag.c)
         zephyr_library_sources_ifdef(CONFIG_NRFS_DVFS_SERVICE_ENABLED ${SRC_DIR}/services/nrfs_dvfs.c)
