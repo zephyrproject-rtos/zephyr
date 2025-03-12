@@ -4,14 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/timer/nrf_grtc_timer.h>
 #include <zephyr/drivers/hwinfo.h>
+#include <zephyr/drivers/retained_mem.h>
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/sys/poweroff.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/cache.h>
 #include <errno.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(resetreason, LOG_LEVEL_INF);
+
+#if defined(CONFIG_NRF_GRTC_START_SYSCOUNTER)
+const static struct device *retained_mem_device = DEVICE_DT_GET(DT_ALIAS(retainedmemdevice));
+uint8_t grtc_wakeup;
+#endif
 
 static const struct device *const my_wdt_device = DEVICE_DT_GET(DT_ALIAS(watchdog0));
 static struct wdt_timeout_cfg m_cfg_wdt0;
@@ -28,7 +36,11 @@ volatile uint32_t reboot_status __attribute__((section(NOINIT_SECTION)));
 #define REBOOT_WAS_DONE (0x87654321U)
 
 /* Highest value in the switch statement in the main() */
+#if defined(CONFIG_NRF_GRTC_START_SYSCOUNTER)
+#define LAST_STATE (3)
+#else
 #define LAST_STATE (2)
+#endif
 
 static void wdt_int_cb(const struct device *wdt_dev, int channel_id)
 {
@@ -261,6 +273,40 @@ void test_reset_software(uint32_t cause)
 	}
 }
 
+#if defined(CONFIG_NRF_GRTC_START_SYSCOUNTER)
+void set_reset_grtc(uint32_t cause)
+{
+	LOG_INF("Test RESET_CLOCK - Rebooting");
+	retained_mem_write(retained_mem_device, 0, (uint8_t *){1}, sizeof(uint8_t));
+	int32_t ret;
+
+	ret = z_nrf_grtc_wakeup_prepare(2 * USEC_PER_SEC);
+	if (ret == 0) {
+		LOG_INF("Entering SystemOff, wakeup in 2000 ms");
+	} else {
+		LOG_ERR("Unable to set GRTC as wakeup source.");
+	}
+	print_bar();
+	sys_poweroff();
+}
+
+void check_reset_grtc(uint32_t cause)
+{
+	retained_mem_write(retained_mem_device, 0, (uint8_t *){0}, sizeof(uint8_t));
+	/* Reset from GRTC was done */
+	LOG_INF("TEST that RESET_CLOCK was detected");
+	if (cause & RESET_CLOCK) {
+		LOG_INF("PASS: RESET_CLOCK detected");
+		print_bar();
+		/* Check RESET_CLOCK can be cleared */
+		test_clear_reset_cause();
+	} else {
+		LOG_ERR("FAIL: RESET_CLOCK not set");
+		print_bar();
+	}
+}
+#endif
+
 void test_reset_watchdog(uint32_t cause)
 {
 	int32_t ret;
@@ -358,9 +404,19 @@ int main(void)
 		case 2: /* Test RESET_WATCHDOG. */
 			test_reset_watchdog(cause);
 			machine_state++;
+#if defined(CONFIG_NRF_GRTC_START_SYSCOUNTER)
+		case 3:/* Test RESET_CLOCK */
+			set_reset_grtc(cause);
 		}
 	}
-
+	retained_mem_read(retained_mem_device, 0, (uint8_t *)&grtc_wakeup, sizeof(grtc_wakeup));
+	if (grtc_wakeup != 0) {
+		check_reset_grtc(cause);
+	}
+#else
+		}
+	}
+#endif
 	LOG_INF("All tests done");
 	return 0;
 }
