@@ -5,7 +5,7 @@
 
 config MCUX_LPTMR_TIMER
 	bool "MCUX LPTMR timer"
-	default y
+	default n
 	depends on DT_HAS_NXP_KINETIS_LPTMR_ENABLED || \
 		   MCUX_KINETIS_LPTMR
 	depends on !COUNTER_MCUX_LPTMR
