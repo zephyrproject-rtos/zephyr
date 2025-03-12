@@ -16,14 +16,13 @@ Requirements
 ************
 
 This shield can only be used with FRDM-X evaluation kits with a parallel LCD
-connector or a PMOD connector. Currently only the parallel LCD connector is
-enabled.
+connector or a PMOD connector.
 
 Programming
 ***********
 
-Set ``--shield lcd_par_s035_8080`` when you invoke ``west build``. For
-example:
+Set ``--shield lcd_par_s035_8080`` or ``--shield lcd_par_s035_spi`` when you
+invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
