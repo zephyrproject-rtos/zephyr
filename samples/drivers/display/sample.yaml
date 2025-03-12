@@ -107,4 +107,5 @@ tests:
       - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
       - platform:frdm_mcxn236/mcxn236:SHIELD=lcd_par_s035_8080
       - platform:frdm_mcxa156/mcxa156:SHIELD=lcd_par_s035_8080
+      - platform:frdm_rw612:SHIELD=lcd_par_s035_spi
       - platform:ek_ra8d1:SHIELD=rtkmipilcdb00000be
