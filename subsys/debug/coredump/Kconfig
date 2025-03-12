@@ -118,4 +118,8 @@ config DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK
 	  Say n to conserve space on coredump backend or if you will never
 	  need to look into the privilege stacks.
 
+module = DEBUG_COREDUMP
+module-str = coredump
+source "subsys/logging/Kconfig.template.log_config"
+
 endif # DEBUG_COREDUMP
