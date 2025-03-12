@@ -18,4 +18,6 @@ zephyr_sources_ifdef(CONFIG_LOG_RUNTIME_FILTERING log-level.c)
 
 zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
 
+zephyr_sources_ifdef(CONFIG_KERNEL_SHELL_PANIC_CMD panic.c)
+
 add_subdirectory_ifdef(CONFIG_KERNEL_THREAD_SHELL thread)
