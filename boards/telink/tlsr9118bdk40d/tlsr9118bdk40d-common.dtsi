@@ -66,6 +66,7 @@
 		zephyr,entropy = &trng0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt_hci;
+		zephyr,ieee802154 = &ieee802154;
 	};
 };
 
@@ -118,6 +119,10 @@
 	status = "okay";
 };
 
+&ieee802154 {
+	status = "okay";
+};
+
 &trng0 {
 	status = "okay";
 };
@@ -147,7 +152,8 @@
 &uart2 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&uart2_tx_p16_default &uart2_rx_p15_default>;
+	pinctrl-0 = <&uart2_tx_p16_default &uart2_rx_p15_default
+				&uart2_rts_p18_default &uart2_cts_p17_default>;
 	pinctrl-names = "default";
 };
 

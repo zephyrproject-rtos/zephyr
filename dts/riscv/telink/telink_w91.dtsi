@@ -123,6 +123,12 @@
 			status = "disabled";
 		};
 
+		ieee802154: ieee802154 {
+			compatible = "telink,w91-zb";
+			serial = <&uart2>;
+			status = "disabled";
+		};
+
 		trng0: trng0 {
 			compatible = "telink,w91-trng";
 			status = "disabled";

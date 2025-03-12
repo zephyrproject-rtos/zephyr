@@ -26,7 +26,7 @@
 	};
 	uart0_cts_pb6_default: uart0_cts_pb6_default {
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_6,
-				(B92_FUNC_UART0_CTS_I | B92_PULL_UP))>;
+				(B92_FUNC_UART0_CTS_I | B92_PULL_DOWN))>;
 	};
 
 	/* UART1: TX(PC6), RX(PC7), RTS(PC5), CTS(PC4) */
@@ -43,7 +43,7 @@
 	};
 	uart1_cts_pc4_default: uart1_cts_pc4_default {
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_4,
-				(B92_FUNC_UART1_CTS_I | B92_PULL_UP))>;
+				(B92_FUNC_UART1_CTS_I | B92_PULL_DOWN))>;
 	};
 
 	/* PWM Channel 0 (PD0) */

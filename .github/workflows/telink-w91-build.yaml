@@ -131,6 +131,11 @@ jobs:
         cd ..
         west build -b tlsr9118bdk40d             -d build_adc_api                       zephyr/tests/drivers/adc/adc_api             -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
+    - name: Build W91 net/openthread/cli
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_ot_cli                         zephyr/samples/net/openthread/cli           -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
@@ -152,6 +157,7 @@ jobs:
         cp ../build_shell/zephyr/zephyr.bin                         telink_build_artifacts/w91_shell.bin
         cp ../build_crypto_mbedtls/zephyr/zephyr.bin                telink_build_artifacts/w91_mbedtls.bin
         cp ../build_adc_api/zephyr/zephyr.bin                       telink_build_artifacts/w91_adc_api.bin
+        cp ../build_ot_cli/zephyr/zephyr.bin                        telink_build_artifacts/w91_ot_cli.bin
         cp ../build_blinky_w91/zephyr/n22.bin                       telink_build_artifacts/n22.bin
 
     - name: Publish artifacts

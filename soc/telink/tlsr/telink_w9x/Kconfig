@@ -82,6 +82,7 @@ source "soc/telink/tlsr/telink_w9x/blocking_core/Kconfig.blocking"
 source "soc/telink/tlsr/telink_w9x/core_heartbeat/Kconfig.heartbeat"
 source "soc/telink/tlsr/telink_w9x/bluetooth/Kconfig.bt"
 source "soc/telink/tlsr/telink_w9x/crypto/Kconfig.crypto"
+source "soc/telink/tlsr/telink_w9x/ot_rcp/Kconfig.ot_rcp"
 source "soc/telink/tlsr/telink_w9x/Kconfig.n22"
 
 endif # SOC_RISCV_TELINK_W9X

@@ -1,0 +1,57 @@
+# Copyright (c) 2025 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if IEEE802154
+
+config TELINK_W91_OT_RCP
+	bool "Telink W91 Openthread spinel interface"
+	default y
+	select RING_BUFFER
+	select CRC
+	help
+		This option enables Telink W91 Openthread RCP interface.
+
+if TELINK_W91_OT_RCP
+
+config OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE
+	default 2048
+
+config TELINK_W91_OT_RCP_BUFFER_SIZE
+	int "Telink W91 Openthread RCP UART TX/RX buffer size"
+	default 256
+	help
+		This option sets Telink W91 Openthread RCP UART TX/RX buffer size.
+
+config TELINK_W91_OT_RCP_THREAD_PRIORITY
+	int "Telink W91 Openthread spinel interface reception thread priority"
+	default 0
+	help
+		This option sets Telink W91 Openthread RCP reception thread priority.
+
+config TELINK_W91_OT_RCP_THREAD_STACK_SIZE
+	int "Telink W91 Openthread spinel interface reception thread stack size"
+	default 2048
+	help
+		This option sets Telink W91 Openthread RCP reception thread stack size.
+
+config TELINK_W91_OT_SPINEL_RX_BUFFER_SIZE
+	int "Telink W91 Openthread spinel reception buffer size"
+	default 256
+	help
+		This option sets Telink W91 Openthread spinel reception buffer size.
+
+config TELINK_W91_OT_SPINEL_RX_BUFFER_COUNT
+	int "Telink W91 Openthread spinel reception buffers count"
+	default 4
+	help
+		This option sets Telink W91 Openthread spinel reception buffers count.
+
+config TELINK_W91_OT_SPINEL_RESPONSE_TIMEOUT_MS
+	int "Telink W91 Openthread spinel response timeout, mS"
+	default 100
+	help
+		This option sets Telink W91 Openthread spinel response timeout, mS.
+
+endif # TELINK_W91_OT_RCP
+
+endif # IEEE802154

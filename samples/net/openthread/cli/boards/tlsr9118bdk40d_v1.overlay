@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ieee802154 {
+	status = "okay";
+	serial = <&uart2>;
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_tx_p16_default &uart2_rx_p15_default
+				&uart2_rts_p18_default &uart2_cts_p17_default>;
+	pinctrl-names = "default";
+	hw-flow-control;
+};

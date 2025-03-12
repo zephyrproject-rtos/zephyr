@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Telink W91 RF configuration options
+
+config IEEE802154_TELINK_W91
+	bool "Telink W91 RF driver"
+	default y
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
+	depends on DT_HAS_TELINK_W91_ZB_ENABLED
+
+if IEEE802154_TELINK_W91
+
+endif # IEEE802154_TELINK_W91

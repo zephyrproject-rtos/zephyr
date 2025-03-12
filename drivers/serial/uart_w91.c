@@ -23,19 +23,19 @@ enum {
 };
 
 /* Parity type */
-#define UART_PARITY_NONE   ((uint8_t)0u)
-#define UART_PARITY_ODD    ((uint8_t)1u)
-#define UART_PARITY_EVEN   ((uint8_t)2u)
+#define UART_PARITY_NONE ((uint8_t)0u)
+#define UART_PARITY_ODD  ((uint8_t)1u)
+#define UART_PARITY_EVEN ((uint8_t)2u)
 
 /* Stop bits */
-#define UART_STOP_BIT_1    ((uint8_t)0u)
-#define UART_STOP_BIT_2    ((uint8_t)1u)
+#define UART_STOP_BIT_1 ((uint8_t)0u)
+#define UART_STOP_BIT_2 ((uint8_t)1u)
 
 /* Stop bits */
-#define UART_DATA_BITS_5    ((uint8_t)0u)
-#define UART_DATA_BITS_6    ((uint8_t)1u)
-#define UART_DATA_BITS_7    ((uint8_t)2u)
-#define UART_DATA_BITS_8    ((uint8_t)3u)
+#define UART_DATA_BITS_5 ((uint8_t)0u)
+#define UART_DATA_BITS_6 ((uint8_t)1u)
+#define UART_DATA_BITS_7 ((uint8_t)2u)
+#define UART_DATA_BITS_8 ((uint8_t)3u)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 enum uart_irq_type {
@@ -57,11 +57,11 @@ enum uart_irq_type {
 };
 
 struct uart_irq_status {
-	bool rx_enable   : 1;
-	bool tx_enable   : 1;
-	bool rx_ready    : 1;
-	bool tx_ready    : 1;
-	bool tx_complete : 1;
+	bool rx_enable: 1;
+	bool tx_enable: 1;
+	bool rx_ready: 1;
+	bool tx_ready: 1;
+	bool tx_complete: 1;
 };
 
 struct uart_irq_state_change_req {
@@ -88,7 +88,7 @@ struct uart_w91_data {
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
-	struct ipc_based_driver ipc;    /* ipc driver part */
+	struct ipc_based_driver ipc; /* ipc driver part */
 };
 
 /* W91 UART config structure */
@@ -124,10 +124,9 @@ static size_t pack_uart_w91_configure(uint8_t inst, void *unpack_data, uint8_t *
 {
 	struct uart_w91_config_req *p_config_req = unpack_data;
 
-	size_t pack_data_len = sizeof(uint32_t) +
-			sizeof(p_config_req->baudrate) + sizeof(p_config_req->parity) +
-			sizeof(p_config_req->stop_bits) + sizeof(p_config_req->data_bits) +
-			sizeof(p_config_req->flow_ctrl);
+	size_t pack_data_len = sizeof(uint32_t) + sizeof(p_config_req->baudrate) +
+			       sizeof(p_config_req->parity) + sizeof(p_config_req->stop_bits) +
+			       sizeof(p_config_req->data_bits) + sizeof(p_config_req->flow_ctrl);
 
 	if (pack_data != NULL) {
 		uint32_t id = IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_UART_CONFIG, inst);
@@ -200,9 +199,8 @@ static int uart_w91_configure(const struct device *dev, const struct uart_config
 	struct ipc_based_driver *ipc_data = &((struct uart_w91_data *)dev->data)->ipc;
 	uint8_t inst = ((struct uart_w91_config *)dev->config)->instance_id;
 
-	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
-		uart_w91_configure, &config_req, &err,
-		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
+	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst, uart_w91_configure, &config_req, &err,
+				      CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }
@@ -238,8 +236,8 @@ static int uart_w91_send(const struct device *dev, const uint8_t *tx_data, int s
 	struct ipc_based_driver *ipc_data = &((struct uart_w91_data *)dev->data)->ipc;
 	uint8_t inst = ((struct uart_w91_config *)dev->config)->instance_id;
 
-	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst, uart_w91_send, &tx_req,
-			 &err, CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
+	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst, uart_w91_send, &tx_req, &err,
+				      CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }
@@ -270,8 +268,7 @@ static void unpack_uart_w91_read(void *unpack_data, const uint8_t *pack_data, si
 	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_rx_resp->len);
 
 	size_t expect_len =
-		sizeof(uint32_t) + sizeof(p_rx_resp->err) +
-		sizeof(p_rx_resp->len) + p_rx_resp->len;
+		sizeof(uint32_t) + sizeof(p_rx_resp->err) + sizeof(p_rx_resp->len) + p_rx_resp->len;
 
 	if (expect_len != pack_data_len) {
 		LOG_ERR("Invalid RX length (exp %d/ got %d)", expect_len, pack_data_len);
@@ -291,8 +288,8 @@ static int uart_w91_read(const struct device *dev, uint8_t *rx_data, const int s
 	struct ipc_based_driver *ipc_data = &((struct uart_w91_data *)dev->data)->ipc;
 	uint8_t inst = ((struct uart_w91_config *)dev->config)->instance_id;
 
-	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst, uart_w91_read, (uint16_t *)&size,
-			&rx_resp, CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
+	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst, uart_w91_read, (uint16_t *)&size, &rx_resp,
+				      CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	if (rx_resp.err < 0) {
 		return rx_resp.err;
@@ -395,8 +392,8 @@ static size_t pack_uart_w91_irq_state_change(uint8_t inst, void *unpack_data, ui
 {
 	struct uart_irq_state_change_req *p_irq_state_change_req = unpack_data;
 
-	size_t pack_data_len = sizeof(uint32_t) +
-		sizeof(p_irq_state_change_req->irq) + sizeof(p_irq_state_change_req->state);
+	size_t pack_data_len = sizeof(uint32_t) + sizeof(p_irq_state_change_req->irq) +
+			       sizeof(p_irq_state_change_req->state);
 
 	if (pack_data != NULL) {
 		uint32_t id = IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_UART_IRQ_STATE_CHANGE, inst);
@@ -411,8 +408,8 @@ static size_t pack_uart_w91_irq_state_change(uint8_t inst, void *unpack_data, ui
 
 IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(uart_w91_irq_state_change);
 
-static int uart_w91_irq_state_change(const struct device *dev,
-		enum uart_irq_type irq, bool isIrqEnable)
+static int uart_w91_irq_state_change(const struct device *dev, enum uart_irq_type irq,
+				     bool isIrqEnable)
 {
 	int err = -ETIMEDOUT;
 	struct uart_irq_state_change_req irq_state_change_req = {
@@ -423,9 +420,9 @@ static int uart_w91_irq_state_change(const struct device *dev,
 	struct ipc_based_driver *ipc_data = &((struct uart_w91_data *)dev->data)->ipc;
 	uint8_t inst = ((struct uart_w91_config *)dev->config)->instance_id;
 
-	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
-		uart_w91_irq_state_change, &irq_state_change_req, &err,
-		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
+	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst, uart_w91_irq_state_change,
+				      &irq_state_change_req, &err,
+				      CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }
@@ -544,8 +541,7 @@ static int uart_w91_irq_update(const struct device *dev)
 }
 
 /* API implementation: irq_callback_set */
-static void uart_w91_irq_callback_set(const struct device *dev,
-				      uart_irq_callback_user_data_t cb,
+static void uart_w91_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				      void *cb_data)
 {
 	struct uart_w91_data *data = dev->data;
@@ -645,10 +641,10 @@ static int uart_w91_driver_init(const struct device *dev)
 	uint8_t inst = ((struct uart_w91_config *)dev->config)->instance_id;
 
 	if (!uart_irq_thread_initialized) {
-		k_tid_t thread_id = k_thread_create(&uart_irq_thread_data,
-			uart_irq_thread_stack, K_THREAD_STACK_SIZEOF(uart_irq_thread_stack),
-			uart_w91_irq_thread, NULL, NULL, NULL,
-			CONFIG_TELINK_W91_UART_IRQ_THREAD_PRIORITY, 0, K_NO_WAIT);
+		k_tid_t thread_id = k_thread_create(
+			&uart_irq_thread_data, uart_irq_thread_stack,
+			K_THREAD_STACK_SIZEOF(uart_irq_thread_stack), uart_w91_irq_thread, NULL,
+			NULL, NULL, CONFIG_TELINK_W91_UART_IRQ_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 		if (k_thread_name_set(thread_id, "uart_irq_cb") != 0) {
 			LOG_ERR("failed to set name to %d\n", (int)thread_id);
@@ -659,7 +655,7 @@ static int uart_w91_driver_init(const struct device *dev)
 	data->irq_status.tx_ready = true;
 
 	ipc_dispatcher_add(IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_UART_IRQ_EVENT, inst),
-			uart_w91_irq_cb, (void *)dev);
+			   uart_w91_irq_cb, (void *)dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 	/* configure pins */
@@ -703,27 +699,22 @@ static const struct uart_driver_api uart_w91_driver_api = {
 #endif
 };
 
-
-#define UART_W91_INIT(n)                                        \
-	                                                            \
-	PINCTRL_DT_INST_DEFINE(n);                                  \
-	                                                            \
-	static const struct uart_w91_config uart_w91_cfg_##n =      \
-	{                                                           \
-		.baud_rate = DT_INST_PROP(n, current_speed),            \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),              \
-		.hw_flow_control = DT_INST_PROP(n, hw_flow_control),    \
-		.instance_id = DT_INST_PROP(n, instance_id),            \
-	};                                                          \
-	                                                            \
-	static struct uart_w91_data uart_w91_data_##n;              \
-	                                                            \
-	DEVICE_DT_INST_DEFINE(n, uart_w91_driver_init,              \
-			      PM_DEVICE_DT_INST_GET(n),                     \
-			      &uart_w91_data_##n,                           \
-			      &uart_w91_cfg_##n,                            \
-			      POST_KERNEL,                                  \
-			      CONFIG_TELINK_W91_IPC_DRIVERS_INIT_PRIORITY,  \
+#define UART_W91_INIT(n)                                                                           \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static const struct uart_w91_config uart_w91_cfg_##n = {                                   \
+		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.hw_flow_control = DT_INST_PROP(n, hw_flow_control),                               \
+		.instance_id = DT_INST_PROP(n, instance_id),                                       \
+	};                                                                                         \
+                                                                                                   \
+	static struct uart_w91_data uart_w91_data_##n;                                             \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, uart_w91_driver_init, PM_DEVICE_DT_INST_GET(n),                   \
+			      &uart_w91_data_##n, &uart_w91_cfg_##n, POST_KERNEL,                  \
+			      CONFIG_TELINK_W91_IPC_DRIVERS_INIT_PRIORITY,                         \
 			      (void *)&uart_w91_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_W91_INIT)
