@@ -52,6 +52,18 @@ Ethernet
 * Removed Kconfig option ``ETH_STM32_HAL_MII`` (:github:`86074`).
   PHY interface type is now selected via the ``phy-connection-type`` property in the device tree.
 
+Enhanced Serial Peripheral Interface (eSPI)
+===========================================
+
+* Renamed the devicetree property ``io_girq`` to ``io-girq``.
+* Renamed the devicetree property ``vw_girqs`` to ``vw-girqs``.
+* Renamed the devicetree property ``pc_girq`` to ``pc-girq``.
+* Renamed the devicetree property ``poll_timeout`` to ``poll-timeout``.
+* Renamed the devicetree property ``poll_interval`` to ``poll-interval``.
+* Renamed the devicetree property ``consec_rd_timeout`` to ``consec-rd-timeout``.
+* Renamed the devicetree property ``sus_chk_delay`` to ``sus-chk-delay``.
+* Renamed the devicetree property ``sus_rsm_interval`` to ``sus-rsm-interval``.
+
 GPIO
 ====
 
