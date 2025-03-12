@@ -2312,8 +2312,10 @@ static int dw_i3c_init(const struct device *dev)
 		if (ret) {
 			return ret;
 		}
-		/* Perform bus initialization */
-		ret = i3c_bus_init(dev, &config->common.dev_list);
+		/* Perform bus initialization - skip if no I3C devices are known. */
+		if (config->common.dev_list.num_i3c > 0) {
+			ret = i3c_bus_init(dev, &config->common.dev_list);
+		}
 		/* Bus Initialization Complete, allow HJ ACKs */
 		sys_write32(sys_read32(config->regs + DEVICE_CTRL) & ~(DEV_CTRL_HOT_JOIN_NACK),
 			    config->regs + DEVICE_CTRL);
