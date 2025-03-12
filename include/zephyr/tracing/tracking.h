@@ -52,6 +52,81 @@ extern struct k_event *_track_list_k_event;
  */
 #define SYS_PORT_TRACK_NEXT(list)((list)->_obj_track_next)
 
+/**
+ * @brief Gets node's next element in a object tracking list.
+ *
+ * Example:
+ *   SYS_PORT_TRACK_FOREACH(k_mutex, m) {
+ *       ...
+ *   }
+ *
+ * @param object Type of tracking object to iterate over.
+ * @param var Temporary variable used during iteration.
+ */
+#define SYS_PORT_TRACK_FOREACH(object, var)		\
+	for (struct object *var = _track_list_##object	\
+		; var != NULL; var++)
+
+/**
+ * @brief Gets node's next element in a k_timer tracking list.
+ */
+#define SYS_PORT_TRACK_K_TIMER_NEXT() \
+	SYS_PORT_TRACK_NEXT(_track_list_k_timer)
+
+/**
+ * @brief Gets node's next element in a k_mem_slab tracking list.
+ */
+#define SYS_PORT_TRACK_K_MEM_SLAB_NEXT() \
+	SYS_PORT_TRACK_NEXT(_track_list_k_mem_slab)
+
+/**
+ * @brief Gets node's next element in a k_sem tracking list.
+ */
+#define SYS_PORT_TRACK_K_SEM_NEXT() \
+	SYS_PORT_TRACK_NEXT(_track_list_k_sem)
+
+/**
+ * @brief Gets node's next element in a k_mutex tracking list.
+ */
+#define SYS_PORT_TRACK_K_MUTEX_NEXT() \
+	SYS_PORT_TRACK_NEXT(_track_list_k_mutex)
+
+/**
+ * @brief Gets node's next element in a k_stack tracking list.
+ */
+#define SYS_PORT_TRACK_K_STACK_NEXT() \
+	SYS_PORT_TRACK_NEXT(_track_list_k_stack)
+
+/**
+ * @brief Gets node's next element in a k_msgq tracking list.
+ */
+#define SYS_PORT_TRACK_K_MSGQ_NEXT() \
+	SYS_PORT_TRACK_NEXT(_track_list_k_msgq)
+
+/**
+ * @brief Gets node's next element in a k_mbox tracking list.
+ */
+#define SYS_PORT_TRACK_K_MBOX_NEXT() \
+	SYS_PORT_TRACK_NEXT(_track_list_k_mbox)
+
+/**
+ * @brief Gets node's next element in a k_pipe tracking list.
+ */
+#define SYS_PORT_TRACK_K_PIPE_NEXT() \
+	SYS_PORT_TRACK_NEXT(_track_list_k_pipe)
+
+/**
+ * @brief Gets node's next element in a k_queue tracking list.
+ */
+#define SYS_PORT_TRACK_K_QUEUE_NEXT() \
+	SYS_PORT_TRACK_NEXT(_track_list_k_queue)
+
+/**
+ * @brief Gets node's next element in a k_event tracking list.
+ */
+#define SYS_PORT_TRACK_K_EVENT_NEXT() \
+	SYS_PORT_TRACK_NEXT(_track_list_k_event)
+
 /** @cond INTERNAL_HIDDEN */
 
 #define sys_port_track_k_thread_start(thread)
