@@ -7,7 +7,7 @@
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   zephyr_library()
   set(RT1170_BOARD_DIR
-    "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk/boards/evkmimxrt1170")
+    "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/boards/evkmimxrt1170")
   if(CONFIG_BOOT_FLEXSPI_NOR)
     # Include flash configuration block for RT1170 EVK from NXP's HAL.
     # This configuration block may need modification if another flash chip is
