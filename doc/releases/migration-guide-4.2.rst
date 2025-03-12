@@ -275,6 +275,9 @@ Bluetooth Audio
 * ``CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE`` has been renamed to
   :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE``. (:github:`86763``)
 
+* ``bt_csip_set_member_get_sirk`` has been removed. Use :c:func:`bt_csip_set_member_get_info` to get
+  the SIRK (and other information). (:github:`86996`)
+
 Bluetooth HCI
 =============
 

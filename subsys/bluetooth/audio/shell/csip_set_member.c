@@ -258,7 +258,6 @@ static int cmd_csip_set_member_set_size_and_rank(const struct shell *sh, size_t 
 static int cmd_csip_set_member_get_info(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_csip_set_member_set_info info;
-	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 	int err;
 
 	if (svc_inst == NULL) {
@@ -275,7 +274,7 @@ static int cmd_csip_set_member_get_info(const struct shell *sh, size_t argc, cha
 
 	shell_print(sh, "Info for %p", svc_inst);
 	shell_print(sh, "\tSIRK");
-	shell_hexdump(sh, sirk, sizeof(sirk));
+	shell_hexdump(sh, info.sirk, sizeof(info.sirk));
 	shell_print(sh, "\tSet size: %u", info.set_size);
 	shell_print(sh, "\tRank: %u", info.rank);
 	shell_print(sh, "\tLockable: %s", info.lockable ? "true" : "false");
