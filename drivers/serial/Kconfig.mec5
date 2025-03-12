@@ -7,6 +7,7 @@ config UART_MCHP_MEC5
 	bool "Microchip MEC5 family ns16550 compatible UART driver"
 	default y
 	depends on DT_HAS_MICROCHIP_MEC5_UART_ENABLED
+	select PINCTRL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
