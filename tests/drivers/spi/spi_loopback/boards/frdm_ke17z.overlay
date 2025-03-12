@@ -9,14 +9,14 @@
  */
 
 &lpspi0 {
-	slow@0 {
+	slow@1 {
 		compatible = "test-spi-loopback-slow";
-		reg = <0>;
+		reg = <1>;
 		spi-max-frequency = <500000>;
 	};
-	fast@0 {
+	fast@1 {
 		compatible = "test-spi-loopback-fast";
-		reg = <0>;
+		reg = <1>;
 		spi-max-frequency = <16000000>;
 	};
 };
