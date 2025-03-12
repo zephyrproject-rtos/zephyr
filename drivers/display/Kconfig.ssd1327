@@ -20,4 +20,9 @@ config SSD1327_DEFAULT_CONTRAST
 	help
 	  SSD1327 default contrast.
 
+config SSD1327_CONV_BUFFER_LINES
+	int "How many lines can the conversion buffer hold"
+	default 16
+	range 2 128
+
 endif # SSD1327
