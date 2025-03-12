@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	lvgl_pointer {
