@@ -44,8 +44,7 @@ config BT_PER_ADV
 	  to periodically get the data.
 
 config BT_PER_ADV_RSP
-	bool "Periodic Advertising with Responses support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Periodic Advertising with Responses support"
 	depends on BT_PER_ADV
 	help
 	  Select this to enable Periodic Advertising with Responses
@@ -61,8 +60,7 @@ config BT_PER_ADV_SYNC
 	  manner.
 
 config BT_PER_ADV_SYNC_RSP
-	bool "Periodic Advertising with Responses sync support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Periodic Advertising with Responses sync support"
 	depends on BT_OBSERVER
 	help
 	  Select this to enable Periodic Advertising with Responses Sync
