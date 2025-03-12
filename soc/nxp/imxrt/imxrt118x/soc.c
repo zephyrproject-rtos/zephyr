@@ -571,6 +571,13 @@ __weak void clock_init(void)
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb2)) && CONFIG_UDC_NXP_EHCI
+	CLOCK_EnableUsbhs1PhyPllClock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
+	CLOCK_EnableUsbhs1Clock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
+#endif
+
 #ifdef CONFIG_IMX_USDHC
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay)
