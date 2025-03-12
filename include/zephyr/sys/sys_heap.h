@@ -179,15 +179,28 @@ void sys_heap_free(struct sys_heap *heap, void *mem);
  *
  * @param heap Heap from which to allocate
  * @param ptr Original pointer returned from a previous allocation
+ * @param bytes Number of bytes requested for the new block
+ * @return Pointer to memory the caller can now use, or NULL
+ */
+void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes);
+
+/** @brief Expand the size of an existing allocation
+ *
+ * Behaves in all ways like sys_heap_realloc(), except that the returned
+ * memory (if available) will have a starting address in memory which
+ * is a multiple of the specified power-of-two alignment value in
+ * bytes. In-place expansion will be attempted only if the provided memory
+ * pointer conforms to the specified alignment value otherwise the data will be
+ * moved to a new memory block.
+ *
+ * @param heap Heap from which to allocate
+ * @param ptr Original pointer returned from a previous allocation
  * @param align Alignment in bytes, must be a power of two
  * @param bytes Number of bytes requested for the new block
  * @return Pointer to memory the caller can now use, or NULL
  */
 void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 			       size_t align, size_t bytes);
-
-#define sys_heap_realloc(heap, ptr, bytes) \
-	sys_heap_aligned_realloc(heap, ptr, 0, bytes)
 
 /** @brief Return allocated memory size
  *
