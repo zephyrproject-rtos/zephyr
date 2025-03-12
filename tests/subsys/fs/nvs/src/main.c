@@ -4,18 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * This test is designed to be run using flash-simulator which provide
- * functionality for flash property customization and emulating errors in
- * flash operation in parallel to regular flash API.
- * Test should be run on qemu_x86, mps2_an385 or native_sim target.
- */
-
-#if !defined(CONFIG_BOARD_QEMU_X86) && !defined(CONFIG_ARCH_POSIX) &&                              \
-	!defined(CONFIG_BOARD_MPS2_AN385)
-#error "Run only on qemu_x86, mps2_an385, or a posix architecture based target (for ex. native_sim)"
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/ztest.h>
@@ -39,8 +27,10 @@ static const struct device *const flash_dev = TEST_NVS_FLASH_AREA_DEV;
 
 struct nvs_fixture {
 	struct nvs_fs fs;
+#ifdef CONFIG_TEST_NVS_SIMULATOR
 	struct stats_hdr *sim_stats;
 	struct stats_hdr *sim_thresholds;
+#endif /* CONFIG_TEST_NVS_SIMULATOR */
 };
 
 static void *setup(void)
@@ -69,22 +59,26 @@ static void *setup(void)
 
 static void before(void *data)
 {
+#ifdef CONFIG_TEST_NVS_SIMULATOR
 	struct nvs_fixture *fixture = (struct nvs_fixture *)data;
 
 	fixture->sim_stats = stats_group_find("flash_sim_stats");
 	fixture->sim_thresholds = stats_group_find("flash_sim_thresholds");
+#endif /* CONFIG_TEST_NVS_SIMULATOR */
 }
 
 static void after(void *data)
 {
 	struct nvs_fixture *fixture = (struct nvs_fixture *)data;
 
+#ifdef CONFIG_TEST_NVS_SIMULATOR
 	if (fixture->sim_stats) {
 		stats_reset(fixture->sim_stats);
 	}
 	if (fixture->sim_thresholds) {
 		stats_reset(fixture->sim_thresholds);
 	}
+#endif /* CONFIG_TEST_NVS_SIMULATOR */
 
 	/* Clear NVS */
 	if (fixture->fs.ready) {
@@ -142,6 +136,7 @@ ZTEST_F(nvs, test_nvs_write)
 	execute_long_pattern_write(TEST_DATA_ID, &fixture->fs);
 }
 
+#ifdef CONFIG_TEST_NVS_SIMULATOR
 static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg,
 				      const char *name, uint16_t off)
 {
@@ -525,6 +520,7 @@ ZTEST_F(nvs, test_nvs_corrupted_sector_close_operation)
 	/* Ensure that the NVS is able to store new content. */
 	execute_long_pattern_write(max_id, &fixture->fs);
 }
+#endif /* CONFIG_TEST_NVS_SIMULATOR */
 
 /**
  * @brief Test case when storage become full, so only deletion is possible.
@@ -639,6 +635,7 @@ ZTEST_F(nvs, test_delete)
 		     " any footprint in the storage");
 }
 
+#ifdef CONFIG_TEST_NVS_SIMULATOR
 /*
  * Test that garbage-collection can recover all ate's even when the last ate,
  * ie close_ate, is corrupt. In this test the close_ate is set to point to the
@@ -758,6 +755,7 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_ate)
 	err = nvs_mount(&fixture->fs);
 	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 }
+#endif /* CONFIG_TEST_NVS_SIMULATOR */
 
 #ifdef CONFIG_NVS_LOOKUP_CACHE
 static size_t num_matching_cache_entries(uint32_t addr, bool compare_sector_only, struct nvs_fs *fs)
@@ -964,6 +962,7 @@ ZTEST_F(nvs, test_nvs_cache_hash_quality)
 #endif
 }
 
+#ifdef CONFIG_TEST_NVS_SIMULATOR
 /*
  * Test NVS bad region initialization recovery.
  */
@@ -1000,3 +999,4 @@ ZTEST_F(nvs, test_nvs_init_bad_memory_region)
 	zassert_true(err == -EDEADLK, "nvs_mount call ok, expect fail: %d", err);
 #endif
 }
+#endif /* CONFIG_TEST_NVS_SIMULATOR */
