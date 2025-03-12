@@ -977,10 +977,20 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 			cis->lll.event_count_prepare += lost_cig_events;
 
-			lost_payloads = (lost_cig_events - (cis->lll.rx.ft - 1)) * cis->lll.rx.bn;
+			if (lost_cig_events > (cis->lll.rx.ft - 1)) {
+				lost_payloads = (lost_cig_events - (cis->lll.rx.ft - 1)) *
+						cis->lll.rx.bn;
+			} else {
+				lost_payloads = 0U;
+			}
 			cis->lll.rx.payload_count += lost_payloads;
 
-			lost_payloads = (lost_cig_events - (cis->lll.tx.ft - 1)) * cis->lll.tx.bn;
+			if (lost_cig_events > (cis->lll.tx.ft - 1)) {
+				lost_payloads = (lost_cig_events - (cis->lll.tx.ft - 1)) *
+						cis->lll.tx.bn;
+			} else {
+				lost_payloads = 0U;
+			}
 			cis->lll.tx.payload_count += lost_payloads;
 
 			/* Adjust for extra window widening */
