@@ -118,7 +118,7 @@ traversed in full.  The kernel does not keep a per-CPU run queue.
 That means that the performance benefits from the
 :kconfig:option:`CONFIG_SCHED_SCALABLE` and :kconfig:option:`CONFIG_SCHED_MULTIQ`
 scheduler backends cannot be realized.  CPU mask processing is
-available only when :kconfig:option:`CONFIG_SCHED_DUMB` is the selected
+available only when :kconfig:option:`CONFIG_SCHED_SIMPLE` is the selected
 backend.  This requirement is enforced in the configuration layer.
 
 SMP Boot Process

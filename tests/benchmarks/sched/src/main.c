@@ -169,7 +169,7 @@ int main(void)
 		}
 
 		/* For reference, an unmodified HEAD on qemu_x86 with
-		 * !USERSPACE and SCHED_DUMB and using -icount
+		 * !USERSPACE and SCHED_SIMPLE and using -icount
 		 * shift=0,sleep=off,align=off, I get results of:
 		 *
 		 * unpend 132 ready 257 switch 278 pend 321 tot 988 (avg 900)

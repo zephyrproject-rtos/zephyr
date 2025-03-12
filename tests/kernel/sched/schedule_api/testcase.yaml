@@ -29,11 +29,11 @@ tests:
     extra_args: CONF_FILE=prj_multiq.conf
     extra_configs:
       - CONFIG_TIMESLICING=n
-  kernel.scheduler.dumb_timeslicing:
-    extra_args: CONF_FILE=prj_dumb.conf
+  kernel.scheduler.simple_timeslicing:
+    extra_args: CONF_FILE=prj_simple.conf
     extra_configs:
       - CONFIG_TIMESLICING=y
-  kernel.scheduler.dumb_no_timeslicing:
-    extra_args: CONF_FILE=prj_dumb.conf
+  kernel.scheduler.simple_no_timeslicing:
+    extra_args: CONF_FILE=prj_simple.conf
     extra_configs:
       - CONFIG_TIMESLICING=n
