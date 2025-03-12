@@ -1,5 +1,11 @@
 /* Enable the PLLI2s and set it as clock source for the MCO2 (with prescaler 5) */
 
+#define MCO_PRE_DIV_2 4
+
+&clk_hsi {
+	status = "okay";
+};
+
 &plli2s {
 	div-m = <8>;
 	mul-n = <100>;
