@@ -313,3 +313,17 @@ pmod_sd_shield: &sdhc1 {};
 	pinctrl-names = "default";
 	maximum-speed = "full-speed";
 };
+
+&ulpt0 {
+	status = "okay";
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+	timer {
+		status = "okay";
+	};
+};
