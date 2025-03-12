@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&qspi0 {
+	ra-qspi-nor@60000000 {
+		status = "okay";
+	};
+};
