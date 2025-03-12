@@ -87,6 +87,9 @@ struct lora_modem_config {
 	/** Set to true for transmission, false for receiving */
 	bool tx;
 
+	/** Channel activity detection enable */
+	bool cad;
+
 	/**
 	 * Invert the In-Phase and Quadrature (IQ) signals. Normally this
 	 * should be set to false. In advanced use-cases where a
@@ -238,7 +241,9 @@ static inline int lora_send(const struct device *dev,
  * @param data_len  Length of the data to be sent
  * @param async A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
- *        notify the end of the transmission).
+ *        notify the end of the transmission, when CAD is enabled,
+ *        a non-NULL parameter must be passed to receive a signal
+ *        when the channel is busy).
  * @return 0 on success, negative on error
  */
 static inline int lora_send_async(const struct device *dev,
