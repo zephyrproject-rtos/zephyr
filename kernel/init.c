@@ -399,7 +399,7 @@ extern void boot_banner(void);
 
 #ifdef CONFIG_BOOTARGS
 extern const char *get_bootargs(void);
-static char **prepare_main_args(int *argc)
+__weak char **prepare_main_args(int *argc)
 {
 #ifdef CONFIG_DYNAMIC_BOOTARGS
 	const char *bootargs = get_bootargs();
