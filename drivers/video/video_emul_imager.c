@@ -15,6 +15,7 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/logging/log.h>
 
 #include "video_ctrls.h"
@@ -22,25 +23,22 @@
 
 LOG_MODULE_REGISTER(video_emul_imager, CONFIG_VIDEO_LOG_LEVEL);
 
-#define EMUL_IMAGER_REG_SENSOR_ID 0x0000
+#define EMUL_IMAGER_REG_SENSOR_ID 0x00
 #define EMUL_IMAGER_SENSOR_ID     0x99
-#define EMUL_IMAGER_REG_CTRL      0x0001
-#define EMUL_IMAGER_REG_INIT1     0x0002
-#define EMUL_IMAGER_REG_INIT2     0x0003
-#define EMUL_IMAGER_REG_TIMING1   0x0004
-#define EMUL_IMAGER_REG_TIMING2   0x0005
-#define EMUL_IMAGER_REG_TIMING3   0x0006
-#define EMUL_IMAGER_REG_CUSTOM    0x0007
-#define EMUL_IMAGER_REG_FORMAT    0x000a
+#define EMUL_IMAGER_REG_CTRL      0x01
+#define EMUL_IMAGER_REG_INIT1     0x02
+#define EMUL_IMAGER_REG_INIT2     0x03
+#define EMUL_IMAGER_REG_TIMING1   0x04
+#define EMUL_IMAGER_REG_TIMING2   0x05
+#define EMUL_IMAGER_REG_TIMING3   0x06
+#define EMUL_IMAGER_REG_CUSTOM    0x07
+#define EMUL_IMAGER_REG_FORMAT    0x0a
 #define EMUL_IMAGER_PATTERN_OFF   0x00
 #define EMUL_IMAGER_PATTERN_BARS1 0x01
 #define EMUL_IMAGER_PATTERN_BARS2 0x02
 
 /* Custom control that is just an I2C write for example and test purpose */
 #define EMUL_IMAGER_CID_CUSTOM (VIDEO_CID_PRIVATE_BASE + 0x01)
-
-/* Emulated register bank */
-uint8_t emul_imager_fake_regs[10];
 
 enum emul_imager_fmt_id {
 	RGB565_320x240,
@@ -86,10 +84,10 @@ static const struct emul_imager_reg emul_imager_init_regs[] = {
 	{EMUL_IMAGER_REG_INIT1, 0x10},
 	{EMUL_IMAGER_REG_INIT2, 0x00},
 	/* Undocumented registers from the vendor */
-	{0x1200, 0x01},
-	{0x1204, 0x01},
-	{0x1205, 0x20},
-	{0x1209, 0x7f},
+	{0x80, 0x01},
+	{0x84, 0x01},
+	{0x85, 0x20},
+	{0x89, 0x7f},
 	{0},
 };
 static const struct emul_imager_reg emul_imager_rgb565[] = {
@@ -160,23 +158,18 @@ static const struct video_format_cap fmts[] = {
 /* Emulated I2C register interface, to replace with actual I2C calls for real hardware */
 static int emul_imager_read_reg(const struct device *const dev, uint8_t reg_addr, uint8_t *value)
 {
-	LOG_DBG("Placeholder for I2C read from 0x%02x", reg_addr);
-	switch (reg_addr) {
-	case EMUL_IMAGER_REG_SENSOR_ID:
-		*value = EMUL_IMAGER_SENSOR_ID;
-		break;
-	default:
-		*value = emul_imager_fake_regs[reg_addr];
-	}
-	return 0;
+	const struct emul_imager_config *cfg = dev->config;
+
+	return i2c_write_read_dt(&cfg->i2c, &reg_addr, 1, value, 1);
 }
 
 /* Some sensors will need reg8 or reg16 variants. */
 static int emul_imager_write_reg(const struct device *const dev, uint8_t reg_addr, uint8_t value)
 {
-	LOG_DBG("Placeholder for I2C write 0x%08x to 0x%02x", value, reg_addr);
-	emul_imager_fake_regs[reg_addr] = value;
-	return 0;
+	const struct emul_imager_config *cfg = dev->config;
+	uint8_t buf_w[] = {reg_addr, value};
+
+	return i2c_write_dt(&cfg->i2c, buf_w, 2);
 }
 
 static int emul_imager_write_multi(const struct device *const dev,
@@ -344,12 +337,13 @@ static int emul_imager_init_controls(const struct device *dev)
 
 int emul_imager_init(const struct device *dev)
 {
+	const struct emul_imager_config *cfg = dev->config;
 	struct video_format fmt;
 	uint8_t sensor_id;
 	int ret;
 
-	if (/* !i2c_is_ready_dt(&cfg->i2c) */ false) {
-		/* LOG_ERR("Bus %s is not ready", cfg->i2c.bus->name); */
+	if (!i2c_is_ready_dt(&cfg->i2c)) {
+		LOG_ERR("Bus %s is not ready", cfg->i2c.bus->name);
 		return -ENODEV;
 	}
 
@@ -384,7 +378,7 @@ int emul_imager_init(const struct device *dev)
 	static struct emul_imager_data emul_imager_data_##inst;                                    \
                                                                                                    \
 	static const struct emul_imager_config emul_imager_cfg_##inst = {                          \
-		.i2c = /* I2C_DT_SPEC_INST_GET(inst) */ {0},                                       \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &emul_imager_init, NULL, &emul_imager_data_##inst,             \
@@ -394,3 +388,50 @@ int emul_imager_init(const struct device *dev)
 	VIDEO_DEVICE_DEFINE(emul_imager_##inst, DEVICE_DT_INST_GET(inst), NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_IMAGER_DEFINE)
+
+/* Simulated I2C bus */
+
+static int emul_imager_transfer_i2c(const struct emul *target, struct i2c_msg msgs[], int num_msgs,
+				    int addr)
+{
+	static uint8_t fake_regs[UINT8_MAX] = {
+		[EMUL_IMAGER_REG_SENSOR_ID] = EMUL_IMAGER_SENSOR_ID,
+	};
+
+	if (num_msgs == 0) {
+		CODE_UNREACHABLE;
+	} else if (num_msgs == 1 &&
+		   msgs[0].len == 2 && (msgs[0].flags & I2C_MSG_READ) == 0) {
+		/* Register write */
+		fake_regs[msgs[0].buf[0]] =  msgs[0].buf[1];
+	} else if (num_msgs == 2 &&
+		   msgs[0].len == 1 && (msgs[0].flags & I2C_MSG_READ) == 0 &&
+		   msgs[1].len == 1 && (msgs[1].flags & I2C_MSG_READ) == 0) {
+		/* Register write */
+		fake_regs[msgs[0].buf[0]] =  msgs[1].buf[0];
+	} else if (num_msgs == 2 &&
+		   msgs[0].len == 1 && (msgs[0].flags & I2C_MSG_READ) == 0 &&
+		   msgs[1].len == 1 && (msgs[1].flags & I2C_MSG_READ) != 0) {
+		/* Register read */
+		msgs[1].buf[0] = fake_regs[msgs[0].buf[0]];
+	} else {
+		LOG_ERR("Unsupported I2C operation of %u messages", num_msgs);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static const struct i2c_emul_api emul_imager_i2c_api = {
+	.transfer = emul_imager_transfer_i2c,
+};
+
+static int emul_imager_init_i2c(const struct emul *target, const struct device *dev)
+{
+	return 0;
+}
+
+#define EMUL_I2C_DEFINE(inst)                                                                      \
+	EMUL_DT_INST_DEFINE(inst, &emul_imager_init_i2c, NULL, NULL, &emul_imager_i2c_api, NULL);
+
+DT_INST_FOREACH_STATUS_OKAY(EMUL_I2C_DEFINE)
