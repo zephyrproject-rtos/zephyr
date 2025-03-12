@@ -74,6 +74,22 @@ int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags)
 }
 
 /**
+ * @brief Calculate the time it takes to perform a CAD operation
+ *
+ * @param cad_symbol_num Number of symbols to perform CAD
+ * @param bw LoRa signal bandwidth
+ * @param sf LoRa data-rate
+ *
+ * @return Time in milliseconds to perform CAD operation
+ */
+static uint32_t calculate_cad_time(uint8_t cad_symbol_num, enum lora_signal_bandwidth bw,
+				   enum lora_datarate sf)
+{
+	uint32_t t_sym_us = (1 << sf) * 1000000 / ((bw + 1) * 125000);
+	return t_sym_us * (cad_symbol_num + 1) / 1000;
+}
+
+/**
  * @brief Attempt to acquire the modem for operations
  *
  * @param data common sx12xx data struct
@@ -230,6 +246,7 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		K_POLL_TYPE_SIGNAL,
 		K_POLL_MODE_NOTIFY_ONLY,
 		&done);
+	uint32_t cad_time;
 	uint32_t air_time;
 	unsigned int signaled;
 	int flag;
@@ -254,16 +271,24 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 				   0, data_len, true);
 	LOG_DBG("Expected air time of %d bytes = %dms", data_len, air_time);
 
+	/* Calculate CAD time */
+	if (dev_data.tx_cfg.cad) {
+		cad_time =
+			calculate_cad_time(8, dev_data.tx_cfg.bandwidth, dev_data.tx_cfg.datarate);
+		LOG_DBG("Expected CAD time = %dms", cad_time);
+	} else {
+		cad_time = 0;
+	}
+
 	/* Wait for the packet to finish transmitting.
 	 * Use twice the tx duration to ensure that we are actually detecting
 	 * a failed transmission, and not some minor timing variation between
 	 * modem and driver.
 	 */
-	ret = k_poll(&evt, 1, K_MSEC(2 * air_time));
+	ret = k_poll(&evt, 1, K_MSEC(2 * air_time + 2 * cad_time));
 
 	k_poll_signal_check(&done, &signaled, &flag);
 	if (signaled && flag == -EBUSY) {
-		LOG_WRN("Transmission channel busy");
 		return -EBUSY;
 	}
 
