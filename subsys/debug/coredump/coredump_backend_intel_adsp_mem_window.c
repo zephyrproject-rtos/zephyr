@@ -14,7 +14,8 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <adsp_memory.h>
 #include <adsp_debug_window.h>
-LOG_MODULE_REGISTER(coredump_error, CONFIG_KERNEL_LOG_LEVEL);
+
+LOG_MODULE_REGISTER(coredump, CONFIG_DEBUG_COREDUMP_LOG_LEVEL);
 
 static int error;
 static uint32_t mem_wptr;
