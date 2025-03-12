@@ -708,7 +708,7 @@ static DEVICE_API(sensor, bma4xx_driver_api) = {
 #define BMA4XX_CONFIG_SPI(inst)                                                                    \
 	{                                                                                          \
 		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, 0, 0),                                   \
-		.bus_init = &bma_spi_init,                                                         \
+		.bus_init = &bma4xx_spi_init,                                                      \
 	}
 
 /* Initializes a struct bma4xx_config for an instance on an I2C bus. */
