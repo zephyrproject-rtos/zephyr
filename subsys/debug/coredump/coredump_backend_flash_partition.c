@@ -16,7 +16,7 @@
 #include "coredump_internal.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
+LOG_MODULE_REGISTER(coredump, CONFIG_DEBUG_COREDUMP_LOG_LEVEL);
 
 /**
  * @file

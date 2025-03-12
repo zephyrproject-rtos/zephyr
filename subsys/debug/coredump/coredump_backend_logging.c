@@ -12,7 +12,8 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
-LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
+
+LOG_MODULE_REGISTER(coredump, CONFIG_DEBUG_COREDUMP_LOG_LEVEL);
 
 /* Length of buffer of printable size */
 #define LOG_BUF_SZ		64
