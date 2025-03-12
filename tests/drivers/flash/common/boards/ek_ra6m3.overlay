@@ -18,3 +18,7 @@
 		};
 	};
 };
+
+&mx25l25645g {
+	status = "disabled";
+};
