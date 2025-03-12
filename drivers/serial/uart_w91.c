@@ -144,8 +144,7 @@ static size_t pack_uart_w91_configure(uint8_t inst, void *unpack_data, uint8_t *
 
 IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(uart_w91_configure);
 
-static int uart_w91_configure(const struct device *dev,
-			      const struct uart_config *cfg)
+static int uart_w91_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	int err = -ETIMEDOUT;
 	struct uart_w91_config_req config_req = {};
@@ -187,8 +186,10 @@ static int uart_w91_configure(const struct device *dev,
 	}
 
 	/* check flow control */
-	if (cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE &&
-		cfg->flow_ctrl != UART_CFG_FLOW_CTRL_RTS_CTS) {
+	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_NONE ||
+	    cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
+		config_req.flow_ctrl = cfg->flow_ctrl;
+	} else {
 		return -ENOTSUP;
 	}
 
@@ -296,8 +297,7 @@ static int uart_w91_read(const struct device *dev, uint8_t *rx_data, const int s
 }
 
 /* API implementation: config_get */
-static int uart_w91_config_get(const struct device *dev,
-			       struct uart_config *cfg)
+static int uart_w91_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct uart_w91_data *data = dev->data;
 
@@ -625,13 +625,14 @@ static int uart_w91_driver_init(const struct device *dev)
 	int err;
 	const struct uart_w91_config *cfg = dev->config;
 	struct uart_w91_data *data = dev->data;
-	struct uart_config *config = &data->cfg;
-	uint8_t inst = ((struct uart_w91_config *)dev->config)->instance_id;
+	struct uart_config config;
 
 	ipc_based_driver_init(&data->ipc);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* once for all UART instances */
+	uint8_t inst = ((struct uart_w91_config *)dev->config)->instance_id;
+
 	if (!uart_irq_thread_initialized) {
 		k_tid_t thread_id = k_thread_create(&uart_irq_thread_data,
 			uart_irq_thread_stack, K_THREAD_STACK_SIZEOF(uart_irq_thread_stack),
@@ -656,12 +657,13 @@ static int uart_w91_driver_init(const struct device *dev)
 		return err;
 	}
 
-	data->cfg.baudrate = cfg->baud_rate;
-	data->cfg.data_bits = UART_CFG_DATA_BITS_8;
-	data->cfg.parity = UART_CFG_PARITY_NONE;
-	data->cfg.stop_bits = UART_CFG_STOP_BITS_1;
+	config.baudrate = cfg->baud_rate;
+	config.parity = UART_CFG_PARITY_NONE;
+	config.stop_bits = UART_CFG_STOP_BITS_1;
+	config.data_bits = UART_CFG_DATA_BITS_8;
+	config.flow_ctrl = cfg->hw_flow_control;
 
-	err = uart_w91_configure(dev, config);
+	err = uart_w91_configure(dev, &config);
 
 	return err;
 }
