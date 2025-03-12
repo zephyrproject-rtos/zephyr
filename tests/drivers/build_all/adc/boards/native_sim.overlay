@@ -379,6 +379,13 @@
 				#io-channel-cells = <1>;
 				active-device = <1>;
 			};
+
+			test_spi_ad4130: ad41304@19 {
+				compatible = "adi,ad4130-adc";
+				reg = <0x19>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
 		};
 	};
 };
