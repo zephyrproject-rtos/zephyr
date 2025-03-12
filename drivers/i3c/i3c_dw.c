@@ -841,7 +841,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(1000));
+	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
 		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
@@ -1000,7 +1000,7 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(1000));
+	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
 		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
@@ -1239,7 +1239,7 @@ static int dw_i3c_target_ibi_raise_hj(const struct device *dev)
 	sys_write32(sys_read32(config->regs + SLV_EVENT_STATUS) | SLV_EVENT_STATUS_HJ_EN,
 		    config->regs + SLV_EVENT_STATUS);
 
-	ret = k_sem_take(&data->sem_hj, K_MSEC(1000));
+	ret = k_sem_take(&data->sem_hj, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
 		return ret;
 	}
@@ -1741,7 +1741,7 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(1000));
+	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
 		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
@@ -1895,7 +1895,7 @@ static int dw_i3c_do_daa(const struct device *dev)
 		      COMMAND_PORT_CMD(I3C_CCC_ENTDAA) | COMMAND_PORT_ADDR_ASSGN_CMD;
 
 	start_xfer(dev);
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(1000));
+	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 
 	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
