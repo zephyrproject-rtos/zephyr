@@ -18,7 +18,7 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     set(RT1170_BOARD_NAME "evkbmimxrt1170")
   endif()
   set(RT1170_BOARD_DIR
-    "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk/boards/${RT1170_BOARD_NAME}")
+    "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/boards/${RT1170_BOARD_NAME}")
   if(CONFIG_BOOT_FLEXSPI_NOR)
     # Include flash configuration block for RT1170 EVK from NXP's HAL.
     # This configuration block may need modification if another flash chip is

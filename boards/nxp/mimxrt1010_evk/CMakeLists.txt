@@ -20,7 +20,7 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     zephyr_compile_definitions(XIP_BOOT_HEADER_ENABLE=1)
     zephyr_compile_definitions(BOARD_FLASH_SIZE=CONFIG_FLASH_SIZE*1024)
     set(RT1010_BOARD_DIR
-      "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk/boards/evkmimxrt1010")
+      "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/boards/evkmimxrt1010")
     zephyr_library_sources(${RT1010_BOARD_DIR}/xip/evkmimxrt1010_flexspi_nor_config.c)
     zephyr_library_include_directories(${RT1010_BOARD_DIR}/xip)
   endif()
