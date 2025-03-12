@@ -81,6 +81,10 @@ New APIs and options
 
     * :c:func:`bt_le_get_local_features`
 
+* Display
+
+  * :c:func:`display_clear`
+
 New Boards
 **********
 
