@@ -15,6 +15,7 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(video_emul_imager, CONFIG_VIDEO_LOG_LEVEL);
@@ -313,7 +314,6 @@ static int emul_imager_enum_frmival(const struct device *dev, enum video_endpoin
 
 	return mode->fps == 0;
 }
-
 /* White, Yellow, Cyan, Green, Magenta, Red, Blue, Black */
 static const uint16_t pattern_8bars_yuv[8][3] = {
 	{0xFF, 0x7F, 0x7F}, {0xFF, 0x00, 0xFF}, {0xFF, 0xFF, 0x00}, {0x7F, 0x00, 0x00},
@@ -441,12 +441,13 @@ static DEVICE_API(video, emul_imager_driver_api) = {
 
 int emul_imager_init(const struct device *dev)
 {
+	const struct emul_imager_config *cfg = dev->config;
 	struct video_format fmt;
 	uint8_t sensor_id;
 	int ret;
 
-	if (/* !i2c_is_ready_dt(&cfg->i2c) */ false) {
-		/* LOG_ERR("Bus %s is not ready", cfg->i2c.bus->name); */
+	if (!i2c_is_ready_dt(&cfg->i2c)) {
+		LOG_ERR("Bus %s is not ready", cfg->i2c.bus->name);
 		return -ENODEV;
 	}
 
@@ -476,15 +477,35 @@ int emul_imager_init(const struct device *dev)
 	return 0;
 }
 
+/* Simulated I2C bus: do nothing out of the data */
+
+static int emul_imager_transfer_i2c(const struct emul *target, struct i2c_msg msgs[], int num_msgs,
+				    int addr)
+{
+	return 0;
+}
+
+static const struct i2c_emul_api emul_imager_api_i2c = {
+	.transfer = emul_imager_transfer_i2c,
+};
+
+static int emul_imager_init_i2c(const struct emul *target, const struct device *dev)
+{
+	return 0;
+}
+
 #define EMUL_IMAGER_DEFINE(inst)                                                                   \
 	static struct emul_imager_data emul_imager_data_##inst;                                    \
                                                                                                    \
 	static const struct emul_imager_config emul_imager_cfg_##inst = {                          \
-		.i2c = /* I2C_DT_SPEC_INST_GET(inst) */ {0},                                       \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &emul_imager_init, NULL, &emul_imager_data_##inst,             \
 			      &emul_imager_cfg_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,    \
-			      &emul_imager_driver_api);
+			      &emul_imager_driver_api);                                            \
+                                                                                                   \
+	EMUL_DT_INST_DEFINE(inst, emul_imager_init_i2c, NULL, &emul_imager_cfg_##inst, NULL,       \
+			    &emul_imager_api_i2c);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_IMAGER_DEFINE)
