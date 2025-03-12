@@ -45,6 +45,15 @@
 			status = "okay";
 		};
 	};
+
+	nxp_lcd_pmod_connector: lcd-pmod-connector {
+		compatible = "nxp,lcd-pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xfffffff0>;
+		gpio-map-pass-thru = <0 0xf>;
+		gpio-map = <10  0 &hsgpio1 12 0>,  /* Pin 10, LCD and touch reset */
+			   <12  0 &hsgpio0 18 0>;  /* Pin 11, LCD touch INT */
+	};
 };
 
 &flexcomm3 {
@@ -239,4 +248,14 @@ arduino_i2c: &flexcomm2 {
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
+};
+
+zephyr_mipi_dbi_spi: &lcdic {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lcdic>;
+	pinctrl-names = "default";
+};
+
+nxp_pmod_touch_panel_i2c: &arduino_i2c {
+	status = "okay";
 };

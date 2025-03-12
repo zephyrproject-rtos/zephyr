@@ -69,6 +69,9 @@ Supported Features
 +-----------+------------+-----------------------------------+
 | Wi-Fi     | on-chip    | Wi-Fi                             |
 +-----------+------------+-----------------------------------+
+| LCDIC     | on-chip    | mipi-dbi. Tested with             |
+|           |            | :ref:`lcd_par_s035`               |
++-----------+------------+-----------------------------------+
 
 The default configuration can be found in the defconfig file:
 
