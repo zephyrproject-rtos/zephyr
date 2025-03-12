@@ -18,3 +18,9 @@
 		};
 	};
 };
+
+&qspi0 {
+	ra-qspi-nor@60000000 {
+		status = "disabled";
+	};
+};
