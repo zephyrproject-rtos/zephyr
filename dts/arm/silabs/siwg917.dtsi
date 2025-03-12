@@ -36,14 +36,14 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x0002fc00 DT_SIZE_K(1)>;
 		zephyr,memory-region = "dma0";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
 	sram_dma1: memory-dma@24061c00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x24061c00 DT_SIZE_K(1)>;
 		zephyr,memory-region = "dma1";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
 	bt_hci0: bt_hci {
