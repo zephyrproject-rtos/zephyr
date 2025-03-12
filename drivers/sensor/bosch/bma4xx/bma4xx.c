@@ -722,13 +722,15 @@ static DEVICE_API(sensor, bma4xx_driver_api) = {
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
  */
-#define BMA4XX_DEFINE(inst)                                                                        \
-	static struct bma4xx_data bma4xx_data_##inst;                                              \
-	static const struct bma4xx_config bma4xx_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi), \
+#define BMA4XX_DEFINE(inst)                                     \
+	static struct bma4xx_data bma4xx_data_##inst;               \
+	static const struct bma4xx_config bma4xx_config_##inst = \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi), \
 		(BMA4XX_CONFIG_SPI(inst)),			\
-		(BMA4XX_CONFIG_I2C(inst)));                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bma4xx_chip_init, NULL, &bma4xx_data_##inst,            \
-				     &bma4xx_config_##inst, POST_KERNEL,                           \
-				     CONFIG_SENSOR_INIT_PRIORITY, &bma4xx_driver_api);
+		(BMA4XX_CONFIG_I2C(inst)));          \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bma4xx_chip_init, NULL, &bma4xx_data_##inst,    \
+		&bma4xx_config_##inst,                                        \
+		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+		&bma4xx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMA4XX_DEFINE)
