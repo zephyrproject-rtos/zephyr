@@ -104,6 +104,13 @@ New Samples
   Same as above for boards and drivers, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
 
+Libraries / Subsystems
+**********************
+
+* POSIX API
+
+  * :c:func:`clock_gettime` now supports ``CLOCK_THREAD_CPUTIME_ID``.
+
 Other notable changes
 *********************
 
