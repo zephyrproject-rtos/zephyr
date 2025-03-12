@@ -4950,6 +4950,18 @@ West:
   labels:
     - "platform: ADI"
 
+"West project: hal_afbr":
+  status: maintained
+  maintainers:
+    - ubieda
+    - bperseghetti
+  collaborators:
+    - PetervdPerk-NXP
+    - jgoppert
+  files: []
+  labels:
+    - "platform: Broadcom"
+
 "West project: hal_ambiq":
   status: odd fixes
   collaborators:
