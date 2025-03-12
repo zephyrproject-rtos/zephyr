@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SCSI UFS test"
+
+config TEST_SCSI_UFS_RW
+	bool "SCSI UFS RW Tests (DANGEROUS)"
+	help
+	  To perform Writing to UFS device as part of SCSI RW Tests.
+	  This will overwrite existing data on UFS device.
+
+source "Kconfig.zephyr"
