@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Telink Semiconductor
+ * Copyright (c) 2023-2025 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,40 +11,27 @@
 
 /* Telink W91 specific registers. */
 #if defined(CONFIG_TELINK_W91_PFT_ARCH) && defined(__riscv_dsp)
-	#define SOC_ESF_MEMBERS	\
-	uint32_t mxstatus;	\
-	uint32_t ucode		\
 
-	#define SOC_ESF_INIT \
-	0xdeadbaad,	     \
-	0xdeadbaad
+#define SOC_ESF_MEMBERS                                                                            \
+	uint32_t mxstatus;                                                                         \
+	uint32_t ucode
 
-	#define SOC_ESF_THREAD_INIT(soc_context) \
-	(soc_context)->mxstatus = 0;		 \
-	(soc_context)->ucode = 0
+#define SOC_ESF_INIT 0, 0
 
 #elif defined(CONFIG_TELINK_W91_PFT_ARCH)
-	#define SOC_ESF_MEMBERS	\
-	uint32_t mxstatus
 
-	#define SOC_ESF_INIT \
-	0xdeadbaad
+#define SOC_ESF_MEMBERS uint32_t mxstatus
 
-	#define SOC_ESF_THREAD_INIT(soc_context) \
-	(soc_context)->mxstatus = 0
+#define SOC_ESF_INIT 0
 
 #elif defined(__riscv_dsp)
 
-	#define SOC_ESF_MEMBERS	\
-	uint32_t ucode
+#define SOC_ESF_MEMBERS uint32_t ucode
 
-	#define SOC_ESF_INIT \
-	0xdeadbaad
+#define SOC_ESF_INIT 0
 
-	#define SOC_ESF_THREAD_INIT(soc_context) \
-	(soc_context)->ucode = 0
 #endif
 
-#endif  /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
+#endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
-#endif  /* SOC_RISCV_TELINK_W91_SOC_CONTEXT_H */
+#endif /* SOC_RISCV_TELINK_W91_SOC_CONTEXT_H */
