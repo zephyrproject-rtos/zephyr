@@ -228,7 +228,7 @@ int main(void)
 	freq = timing_freq_get_mhz();
 
 	printk("Time Measurements for %s wait queues\n",
-	       IS_ENABLED(CONFIG_WAITQ_DUMB) ? "dumb" : "scalable");
+	       IS_ENABLED(CONFIG_WAITQ_SIMPLE) ? "simple" : "scalable");
 	printk("Timing results: Clock frequency: %u MHz\n", freq);
 
 	z_waitq_init(&wait_q);

@@ -2,7 +2,7 @@ Scheduling Queue Measurements
 #############################
 
 A Zephyr application developer may choose between three different scheduling
-algorithms: dumb, scalable and multiq. These different algorithms have
+algorithms: simple, scalable and multiq. These different algorithms have
 different performance characteristics that vary as the
 number of ready threads increases. This benchmark can be used to help
 determine which scheduling algorithm may best suit the developer's application.

@@ -239,7 +239,7 @@ int main(void)
 	freq = timing_freq_get_mhz();
 
 	printk("Time Measurements for %s sched queues\n",
-	       IS_ENABLED(CONFIG_SCHED_DUMB) ? "dumb" :
+	       IS_ENABLED(CONFIG_SCHED_SIMPLE) ? "simple" :
 	       IS_ENABLED(CONFIG_SCHED_SCALABLE) ? "scalable" : "multiq");
 	printk("Timing results: Clock frequency: %u MHz\n", freq);
 

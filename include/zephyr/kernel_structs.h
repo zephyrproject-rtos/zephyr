@@ -133,7 +133,7 @@ struct _ready_q {
 	struct k_thread *cache;
 #endif
 
-#if defined(CONFIG_SCHED_DUMB)
+#if defined(CONFIG_SCHED_SIMPLE)
 	sys_dlist_t runq;
 #elif defined(CONFIG_SCHED_SCALABLE)
 	struct _priq_rb runq;
