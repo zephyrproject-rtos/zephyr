@@ -1064,24 +1064,6 @@ int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
 	return 0;
 }
 
-int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
-				uint8_t sirk[BT_CSIP_SIRK_SIZE])
-{
-	CHECKIF(svc_inst == NULL) {
-		LOG_DBG("NULL svc_inst");
-		return -EINVAL;
-	}
-
-	CHECKIF(sirk == NULL) {
-		LOG_DBG("NULL SIRK");
-		return -EINVAL;
-	}
-
-	memcpy(sirk, svc_inst->sirk.value, BT_CSIP_SIRK_SIZE);
-
-	return 0;
-}
-
 int bt_csip_set_member_set_size_and_rank(struct bt_csip_set_member_svc_inst *svc_inst, uint8_t size,
 					 uint8_t rank)
 {
