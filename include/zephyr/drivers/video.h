@@ -21,15 +21,16 @@
  * @{
  */
 
-#include <zephyr/device.h>
-#include <stddef.h>
-#include <zephyr/kernel.h>
-
-#include <zephyr/types.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stddef.h>
+
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/types.h>
+#include <zephyr/drivers/i2c.h>
 
 /*
  * Flag used by @ref video_caps structure to indicate endpoint operates on
@@ -1006,6 +1007,94 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 		return 0;
 	}
 }
+
+/**
+ * @}
+ */
+
+/**
+ * Type used by register tables that have either the address or value 16-bit wide.
+ */
+struct video_cci_reg {
+	/** Address of the register to write to as well as  */
+	uint32_t addr;
+	/** Value to write in this address */
+	uint32_t data;
+};
+
+/**
+ * @defgroup video_cci Video Camera Control Interface (CCI)
+ *
+ * The Camera Control Interface (CCI) is an I2C communication scheme part of MIPI-CSI.
+ * It allows register addresses 8-bit or 16-bit wide, and register data 8-bit wide only.
+ * Larger registers data size can be split across multiple write operations.
+ *
+ * Together, macros to define metadata in register addresses, and functions that can use this
+ * information are provided to facilitate drivers development.
+ *
+ * @{
+ */
+
+/**
+ * @brief Encode the size of the register into the unused bits of the address.
+ *
+ * Encode the register address and data size information as extra flags, used by
+ * @ref video_cci_read_reg(), @ref video_cci_write_reg() and @ref video_cci_write_multi().
+ *
+ * Example usage for a 32-bit address field:
+ *
+ * @code{.c}
+ * #define IMX219_BINNING_MODE_H VIDEO_CCI(0x0174, 2, 32)
+ * @endcode
+ *
+ * @param addr The address to which add the size information.
+ * @param addr_size Number of address bytes. Possible values: 1, 2.
+ * @param data_size Number of data bytes following the address. Possible values: 1, 2, 3, 4
+ */
+#define VIDEO_CCI_REG(addr, addr_size, data_size)                                                  \
+	(FIELD_PREP(VIDEO_CCI_ADDR_SIZE_MASK, (addr_size)) |                                       \
+	 FIELD_PREP(VIDEO_CCI_DATA_SIZE_MASK, (data_size)) | (addr))
+
+#define VIDEO_CCI_ADDR_SIZE_MASK GENMASK(21, 20)
+#define VIDEO_CCI_DATA_SIZE_MASK GENMASK(19, 16)
+#define VIDEO_CCI_ADDR_MASK      GENMASK(15, 0)
+
+/**
+ * @brief Write a register value to the specified register address and size.
+ *
+ * The size of the address and value are both encoded in the unused bits of the address by macros
+ * such as @ref VIDEO_CCI_REG().
+ *
+ * @brief i2c Reference to the video device on an I2C bus.
+ * @brief reg_addr Address of the register to fill with @reg_value along with size information.
+ * @brief reg_value Value to write at this address, the size to write is encoded in the address.
+ */
+int video_cci_write_reg(struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_t reg_value);
+
+/**
+ * @brief Read a register value from the specified register address and size.
+ *
+ * The size of the address and value are both encoded in the unused bits of the address by macros
+ * such as @ref VIDEO_ADDR16_REG8().
+ *
+ * @brief i2c Reference to the video device on an I2C bus.
+ * @brief reg_addr Address of the register to fill with @reg_value along with size information.
+ * @brief reg_value Value to write at this address, the size to write is encoded in the address.
+ *                  This is a 32-bit integer pointer even when reading 8-bit or 16 bits value.
+ */
+int video_cci_read_reg(struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_t *reg_value);
+
+/**
+ * @brief Write a complete table of registers to a device one by one.
+ *
+ * The address present in the registers need to be encoding the size information using the macros
+ * such as @ref VIDEO_ADDR16_REG8(). The last element must be empty (@c {0}) to mark the end of the
+ * table.
+ *
+ * @brief i2c Reference to the video device on an I2C bus.
+ * @brief regs Array of address/value pairs to write to the device sequentially.
+ */
+int video_cci_write_multi(struct i2c_dt_spec *i2c, const struct video_cci_reg *regs);
 
 /**
  * @}

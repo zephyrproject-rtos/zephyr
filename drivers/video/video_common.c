@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro Limited
- * Copyright (c) 2024, tinyVision.ai Inc.
+ * Copyright (c) 2024-2025, tinyVision.ai Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,12 @@
 #include <string.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 
 #if defined(CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP)
 #include <zephyr/multi_heap/shared_multi_heap.h>
@@ -163,4 +168,76 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 			match->index = fie.index - 1;
 		}
 	}
+}
+
+int video_cci_read_reg(struct i2c_dt_spec *i2c, uint32_t addr, uint32_t *data)
+{
+	size_t addr_size = FIELD_GET(VIDEO_CCI_ADDR_SIZE_MASK, addr);
+	size_t data_size = FIELD_GET(VIDEO_CCI_DATA_SIZE_MASK, addr);
+	uint8_t *data_ptr = (uint8_t *)data + sizeof(uint32_t) - data_size;
+	uint8_t buf_w[sizeof(uint16_t)] = {0};
+	int ret;
+
+	*data = 0;
+
+	for (int i = 0; i < data_size; i++, addr += 1) {
+		if (addr_size == 1) {
+			buf_w[0] = addr;
+		} else {
+			sys_put_be16(addr, &buf_w[0]);
+		}
+
+		ret = i2c_write_read_dt(i2c, buf_w, addr_size, &data_ptr[i], 1);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	*data = sys_be32_to_cpu(*data);
+
+	return 0;
+}
+
+int video_cci_write_reg(struct i2c_dt_spec *i2c, uint32_t addr, uint32_t data)
+{
+	size_t addr_size = FIELD_GET(VIDEO_CCI_ADDR_SIZE_MASK, addr);
+	size_t data_size = FIELD_GET(VIDEO_CCI_DATA_SIZE_MASK, addr);
+	uint8_t *data_ptr = (uint8_t *)&data + sizeof(uint32_t) - data_size;
+	uint8_t buf_w[sizeof(uint16_t) + sizeof(uint32_t)] = {0};
+	int ret;
+
+	data = sys_cpu_to_be32(data);
+
+	for (int i = 0; i < data_size; i++, addr += 1) {
+		if (addr_size == 1) {
+			buf_w[0] = addr;
+		} else {
+			sys_put_be16(addr, &buf_w[0]);
+		}
+
+		buf_w[addr_size] = data_ptr[i];
+
+		ret = i2c_write_dt(i2c, buf_w, addr_size + 1);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int video_cci_write_multi(struct i2c_dt_spec *i2c, const struct video_cci_reg *regs)
+{
+	int ret;
+
+	for (int i = 0; regs[i].addr != 0; i++) {
+		ret = video_cci_write_reg(i2c, regs[i].addr, regs[i].data);
+		if (ret != 0) {
+			LOG_ERR("Failed to write 0x%04x to register 0x%02x",
+				regs[i].data, regs[i].addr);
+			return ret;
+		}
+	}
+
+	return 0;
 }
