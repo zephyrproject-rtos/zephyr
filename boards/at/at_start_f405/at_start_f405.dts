@@ -73,7 +73,7 @@
     status = "okay";
 };
 
-&clk_lick {
+&clk_hick {
 	status = "okay";
 };
 

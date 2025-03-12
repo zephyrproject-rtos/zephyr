@@ -19,12 +19,7 @@ properties:
     description: |
       HEXT clock security system enabled.
 
-      If a failure is detected on the HSE clock, the HSE oscillator is automatically disabled,
+      If a failure is detected on the HEXT clock, the HEXT oscillator is automatically disabled,
       a clock failure event is sent to timers, and a non-maskable interrupt is generated to
       inform the software about the failure, allowing the MCU to perform rescue operations.
       See the MCU reference manual for details.
-
-      The interaction of CSS and low-power modes is unclear from the documentation.
-      For at least some devices Zephyr will reconfigure the clocks on resuming from low-power
-      modes; this will include re-enabling CSS. However it is important that you verify
-      this for your own hardware.
