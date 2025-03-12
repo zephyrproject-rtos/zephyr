@@ -976,7 +976,7 @@ struct net_pkt *dsa_ksz8xxx_xmit_pkt(struct net_if *iface, struct net_pkt *pkt)
 	 * implementation (when the switch port is disabled, but shall handle
 	 * LLDP packets).
 	 */
-	if (dsa_is_port_master(iface)) {
+	if (dsa_port_is_master(iface)) {
 		port_idx = DSA_KSZ8795_TAIL_TAG_LOOKUP;
 	} else {
 		port_idx = (1 << (ctx->dsa_port_idx));

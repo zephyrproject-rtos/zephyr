@@ -31,26 +31,6 @@ int dsa_register_master_tx(struct net_if *iface, dsa_send_t fn)
 	return 0;
 }
 
-#ifdef CONFIG_NET_L2_ETHERNET
-bool dsa_is_port_master(struct net_if *iface)
-{
-	/* First check if iface points to ETH interface */
-	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		/* Check its capabilities */
-		if (net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_MASTER_PORT) {
-			return true;
-		}
-	}
-
-	return false;
-}
-#else
-bool dsa_is_port_master(struct net_if *iface)
-{
-	return false;
-}
-#endif
-
 /*
  * RECEIVE HANDLING CODE - ingress (ETH -> DSA slave ports)
  */
@@ -145,7 +125,7 @@ int dsa_tx(const struct device *dev, struct net_pkt *pkt)
 	struct dsa_context *context;
 
 	iface = net_if_lookup_by_dev(dev);
-	if (dsa_is_port_master(iface)) {
+	if (dsa_port_is_master(iface)) {
 		/*
 		 * The master interface's ethernet_context structure holds
 		 * pointer to its original eth_tx().

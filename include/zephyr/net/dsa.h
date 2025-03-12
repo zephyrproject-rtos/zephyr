@@ -113,7 +113,7 @@ int dsa_register_master_tx(struct net_if *iface, dsa_send_t fn);
  * Returns:
  *  - true if ok, false otherwise
  */
-bool dsa_is_port_master(struct net_if *iface);
+bool dsa_port_is_master(struct net_if *iface);
 
 /**
  * @cond INTERNAL_HIDDEN
