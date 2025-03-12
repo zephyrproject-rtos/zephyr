@@ -83,10 +83,10 @@ ZTEST(video_common, test_video_frmival)
 
 	/* Do a first enumeration of frame intervals, expected to work */
 	zexpect_ok(video_enum_frmival(imager_dev, VIDEO_EP_OUT, &fie));
-	zexpect_equal(fie.index, 1, "fie's index should increment by one at every iteration");
+	zexpect_equal(fie.index, 0, "fie's index should stay the same and not increment");
 
 	/* Test that every value of the frame interval enumerator can be applied */
-	do {
+	for (fie.index = 0; video_enum_frmival(imager_dev, VIDEO_EP_OUT, &fie) == 0; fie.index++) {
 		struct video_frmival q, a;
 		uint32_t min, max, step;
 
@@ -122,7 +122,7 @@ ZTEST(video_common, test_video_frmival)
 			zexpect_equal(video_frmival_nsec(&fie.discrete), video_frmival_nsec(&a));
 			break;
 		}
-	} while (video_enum_frmival(imager_dev, VIDEO_EP_OUT, &fie) == 0);
+	}
 }
 
 ZTEST(video_common, test_video_ctrl)
