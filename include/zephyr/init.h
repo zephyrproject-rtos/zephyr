@@ -41,7 +41,7 @@ extern "C" {
  * - `SMP`: Only available if @kconfig{CONFIG_SMP} is enabled, specific for
  *   SMP.
  *
- * Initialization priority can take a value in the range of 0 to 99.
+ * Initialization priority can take a value in the range of 0 to 999.
  *
  * @note The same infrastructure is used by devices.
  * @{
