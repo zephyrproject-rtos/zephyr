@@ -81,6 +81,10 @@ New APIs and options
 
     * :c:func:`bt_le_get_local_features`
 
+* Counter
+
+  * :c:func:`counter_reset`
+
 New Boards
 **********
 
