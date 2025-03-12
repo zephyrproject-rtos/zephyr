@@ -34,3 +34,15 @@ config OPENAMP_RSC_TABLE_IPM_TX_ID
 	help
 	   This option specifies the IPM TX channel ID used in a VRING
 	   for interprocessor communication
+
+config OPENAMP_COPY_RSC_TABLE
+	bool "Copy resource table section"
+	help
+	  The .resource_table section must be placed in a specific location
+	  known by both this core and the remote core. If this is not taken
+	  care of by the remote then this firmware has the ability to copy
+	  the table to a specific location. This memory region can be declared
+	  in the device tree by the "zephyr,ipc_rsc_table" node.
+
+	  This is not needed if the remote loads this firmware and has control
+	  over the placement of the .resource_table section such as remoteproc.
