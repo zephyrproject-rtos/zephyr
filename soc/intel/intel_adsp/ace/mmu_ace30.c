@@ -19,6 +19,10 @@ extern char __common_rom_region_start[];
 extern char __common_rom_region_end[];
 extern char __common_ram_region_start[];
 extern char __common_ram_region_end[];
+extern char __cold_start[];
+extern char __cold_end[];
+extern char __coldrodata_start[];
+
 
 const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	{
@@ -105,6 +109,17 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 		.end   = (uint32_t)(IMR_LAYOUT_ADDRESS + sizeof(struct imr_layout)),
 		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
 		.name = "imr layout",
+	},
+	{
+		.start = (uint32_t)__cold_start,
+		.end   = (uint32_t)__cold_end,
+		.attrs = XTENSA_MMU_PERM_X,
+		.name = "imr cold",
+	},
+	{
+		.start = (uint32_t)__coldrodata_start,
+		.end   = (uint32_t)_imr_end,
+		.name = "imr coldrodata",
 	},
 	{
 		.start = (uint32_t)IMR_L3_HEAP_BASE,
