@@ -191,7 +191,7 @@ struct dsa_api {
  * @return     network interface of the slave if successful
  * @return     NULL if slave port does not exist
  */
-struct net_if *dsa_get_slave_port(struct net_if *iface, int slave_num);
+struct net_if *dsa_slave_get_iface(struct net_if *iface, int slave_num);
 
 /**
  * @brief      Read from DSA switch register

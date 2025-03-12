@@ -159,23 +159,3 @@ int dsa_tx(const struct device *dev, struct net_pkt *pkt)
 	return ctx->dsa_send(net_if_get_device(iface_master),
 			     context->dapi->dsa_xmit_pkt(iface, pkt));
 }
-
-struct net_if *dsa_get_slave_port(struct net_if *iface, int slave_num)
-{
-	struct ethernet_context *eth_ctx;
-	struct dsa_context *dsa_ctx;
-
-	eth_ctx = net_if_l2_data(iface);
-	if (eth_ctx == NULL) {
-		LOG_ERR("Iface %p context not available!", iface);
-		return NULL;
-	}
-
-	dsa_ctx = eth_ctx->dsa_ctx;
-
-	if (slave_num < 0 || slave_num >= dsa_ctx->num_slave_ports) {
-		return NULL;
-	}
-
-	return dsa_ctx->iface_slave[slave_num];
-}

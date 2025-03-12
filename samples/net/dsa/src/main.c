@@ -30,7 +30,7 @@ static void dsa_iface_find_cb(struct net_if *iface, void *user_data)
 
 			/* Get slave interfaces */
 			for (int i = 0; i < ARRAY_SIZE(ifaces->lan); i++) {
-				struct net_if *slave = dsa_get_slave_port(iface, i);
+				struct net_if *slave = dsa_slave_get_iface(iface, i);
 
 				if (slave == NULL) {
 					continue;
