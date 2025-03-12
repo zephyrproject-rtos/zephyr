@@ -1,6 +1,6 @@
 #
 # Copyright (c) 2021 Linaro, Limited
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -28,8 +28,6 @@ if(CONFIG_HAS_MCUX OR CONFIG_HAS_IMX_HAL OR CONFIG_HAS_NXP_S32_HAL)
   endif()
 
   zephyr_compile_definitions_ifdef(CONFIG_ETH_NXP_IMX_NETC FSL_ETH_ENABLE_CACHE_CONTROL=1)
-
-  add_subdirectory_ifdef(CONFIG_BT_H4_NXP_CTLR bt_controller)
 
   if(CONFIG_I2S_MCUX_SAI)
     zephyr_compile_definitions(MCUX_SDK_SAI_ALLOW_NULL_FIFO_WATERMARK=1)
