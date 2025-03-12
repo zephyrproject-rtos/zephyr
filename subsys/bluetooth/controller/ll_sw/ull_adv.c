@@ -2500,7 +2500,7 @@ static void ticker_update_op_cb(uint32_t status, void *param)
 	/* Reset update requested */
 	ticker_update_ack = ticker_update_req;
 
-#if defined(CONFIG_BT_PERIPHERAL) && (defined(CONFIG_BT_ASSERT) || defined(CONFIG_ASSERT))
+#if defined(CONFIG_BT_PERIPHERAL)
 	struct ll_adv_set *adv = param;
 	struct pdu_adv *pdu = lll_adv_data_peek(&adv->lll);
 	bool connectable = (pdu->type == PDU_ADV_TYPE_ADV_IND) ||
@@ -2510,7 +2510,7 @@ static void ticker_update_op_cb(uint32_t status, void *param)
 			    (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN)) ||
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 			   0;
-#endif /* CONFIG_BT_PERIPHERAL && (CONFIG_BT_ASSERT || CONFIG_ASSERT) */
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
 		  param == ull_disable_mark_get() ||
