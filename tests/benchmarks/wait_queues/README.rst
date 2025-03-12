@@ -2,7 +2,7 @@ Wait Queue Measurements
 #######################
 
 A Zehpyr application developer may choose between two different wait queue
-implementations: dumb and scalable. These two queue implementations perform
+implementations: simple and scalable. These two queue implementations perform
 differently under different loads. This benchmark can be used to showcase how
 the performance of these two implementations vary under varying conditions.
 
