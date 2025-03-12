@@ -41,9 +41,6 @@ Boards
 * The config option :kconfig:option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME` has been deprecated
   in favor of :kconfig:option:`CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME`.
 
-* The DT binding :dtcompatible:`zephyr,native-posix-cpu` has been deprecated in favor of
-  :dtcompatible:`zephyr,native-sim-cpu`.
-
 * Zephyr now supports version 1.11.1 of the :zephyr:board:`neorv32`.
 
 * ``arduino_uno_r4_minima``, ``arduino_uno_r4_wifi``, and ``mikroe_clicker_ra4m1`` have migrated to
@@ -60,6 +57,17 @@ Boards
 
 Device Drivers and Devicetree
 *****************************
+
+DAI
+===
+
+* Renamed the devicetree property ``dai_id`` to ``dai-id``.
+* Renamed the devicetree property ``afe_name`` to ``afe-name``.
+* Renamed the devicetree property ``agent_disable`` to ``agent-disable``.
+* Renamed the devicetree property ``ch_num`` to ``ch-num``.
+* Renamed the devicetree property ``mono_invert`` to ``mono-invert``.
+* Renamed the devicetree property ``quad_ch`` to ``quad-ch``.
+* Renamed the devicetree property ``int_odd`` to ``int-odd``.
 
 Counter
 =======
@@ -85,11 +93,6 @@ Ethernet
 * Removed Kconfig option ``ETH_STM32_HAL_MII`` (:github:`86074`).
   PHY interface type is now selected via the ``phy-connection-type`` property in the device tree.
 
-* ``ethernet_native_posix`` has been renamed ``ethernet_native_tap``, and with it its
-  kconfig options: :kconfig:option:`CONFIG_ETH_NATIVE_POSIX` and its related options have been
-  deprecated in favor of :kconfig:option:`CONFIG_ETH_NATIVE_TAP` (:github:`86578`).
-
-
 GPIO
 ====
 
@@ -99,41 +102,8 @@ GPIO
   now left as a placeholder and mapper.
   The labels have also been changed along, so no changes are necessary for regular use.
 
-Serial
-=======
-
-* ``uart_native_posix`` has been renamed ``uart_native_pty``, and with it its
-  kconfig options and DT binding. :dtcompatible:`zephyr,native-posix-uart`  has been deprecated
-  in favor of :dtcompatible:`zephyr,native-pty-uart`.
-  :kconfig:option:`CONFIG_UART_NATIVE_POSIX` and its related options with
-  :kconfig:option:`CONFIG_UART_NATIVE_PTY`.
-  The choice :kconfig:option:`CONFIG_NATIVE_UART_0` has been replaced with
-  :kconfig:option:`CONFIG_UART_NATIVE_PTY_0`, but now, it is also possible to select if a UART is
-  connected to the process stdin/out instead of a PTY at runtime with the command line option
-  ``--<uart_name>_stdinout``.
-  :kconfig:option:`CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD` has been replaced with
-  :kconfig:option:`CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD`.
-  :kconfig:option:`CONFIG_UART_NATIVE_WAIT_PTS_READY_ENABLE` has been deprecated. The functionality
-  it enabled is now always enabled as there is no drawbacks from it.
-  :kconfig:option:`CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE` has been deprecated. This option does
-  nothing now. Instead users should instantiate as many :dtcompatible:`zephyr,native-pty-uart` nodes
-  as native PTY UART instances they want. (:github:`86739`)
-
-Timer
-=====
-
-* ``native_posix_timer`` has been renamed ``native_sim_timer``, and so its kconfig option
-  :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER` has been deprecated in favor of
-  :kconfig:option:`CONFIG_NATIVE_SIM_TIMER`, (:github:`86612`).
-
 Bluetooth
 *********
-
-Bluetooth Audio
-===============
-
-* ``CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE`` has been renamed to
-  :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE``. (:github:`86763``)
 
 Bluetooth Host
 ==============
