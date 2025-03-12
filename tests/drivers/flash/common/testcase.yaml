@@ -138,3 +138,10 @@ tests:
     filter: dt_compat_enabled("soc-nv-flash") and dt_compat_enabled("jedec,spi-nor")
     extra_args:
       - CONFIG_SPI_NOR=n
+  drivers.flash.common.ra_qspi_nor:
+    filter: CONFIG_FLASH_RENESAS_RA_QSPI and dt_compat_enabled("renesas,ra-qspi-nor")
+    vendor_allow:
+      - renesas
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/${BOARD}_qspi_nor.overlay"
+      - CONF_FILE="./prj.conf ./boards/${BOARD}_qspi_nor.conf"
