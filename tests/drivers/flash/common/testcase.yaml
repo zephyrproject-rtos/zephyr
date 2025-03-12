@@ -172,3 +172,13 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_single_io.overlay
+  drivers.flash.common.ra_qspi_nor:
+    filter: CONFIG_FLASH_RENESAS_RA_QSPI and dt_compat_enabled("renesas,ra-qspi-nor")
+    platform_allow:
+      - ek_ra6m5
+      - ek_ra6m4
+      - ek_ra6m3
+      - ek_ra6e2
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/${BOARD}_qspi_nor.overlay"
+      - CONF_FILE="./prj.conf ./boards/${BOARD}_qspi_nor.conf"
