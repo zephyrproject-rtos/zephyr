@@ -19,39 +19,7 @@ Hardware
 Supported Features
 ==================
 
-The ``xg29_rb4412a`` board target supports the following hardware features:
-
-+-----------+------------+------------------------+
-| Interface | Controller | Driver/Component       |
-+===========+============+========================+
-| CMU       | on-chip    | clock control          |
-+-----------+------------+------------------------+
-| MSC       | on-chip    | flash                  |
-+-----------+------------+------------------------+
-| GPIO      | on-chip    | gpio, pin control      |
-+-----------+------------+------------------------+
-| RTCC      | on-chip    | system clock, counter  |
-+-----------+------------+------------------------+
-| MPU       | on-chip    | memory protection unit |
-+-----------+------------+------------------------+
-| NVIC      | on-chip    | interrupt controller   |
-+-----------+------------+------------------------+
-| USART     | on-chip    | serial, spi            |
-+-----------+------------+------------------------+
-| EUSART    | on-chip    | serial, spi            |
-+-----------+------------+------------------------+
-| I2C       | on-chip    | i2c                    |
-+-----------+------------+------------------------+
-| LDMA      | on-chip    | dma                    |
-+-----------+------------+------------------------+
-| WDOG      | on-chip    | watchdog               |
-+-----------+------------+------------------------+
-| SE        | on-chip    | entropy                |
-+-----------+------------+------------------------+
-| RADIO     | on-chip    | bluetooth              |
-+-----------+------------+------------------------+
-| ACMP      | on-chip    | comparator             |
-+-----------+------------+------------------------+
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
