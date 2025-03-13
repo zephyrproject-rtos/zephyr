@@ -454,6 +454,16 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1170_evk
 
+ENET1G Driver
+=============
+
+Current default of ethernet driver is to use 100M Ethernet instance ENET.
+To use the 1G Ethernet instance ENET1G, include the overlay to west build with
+the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
+
 .. _MIMXRT1170-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1170-evaluation-kit:MIMXRT1170-EVK
 
@@ -480,10 +490,3 @@ should see the following message in the terminal:
 
 .. _NXP MCUXpresso for Visual Studio Code:
 	https://www.nxp.com/design/software/development-software/mcuxpresso-software-and-tools-/mcuxpresso-for-visual-studio-code:MCUXPRESSO-VSC
-
-ENET1G Driver
-=============
-
-Current default of ethernet driver is to use 100M Ethernet instance ENET.
-To use the 1G Ethernet instance ENET1G, include the overlay to west build with
-the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.

@@ -60,6 +60,9 @@ Set ``--shield frdm_stbc_agm01`` when you invoke ``west build``. For example:
    :shield: frdm_stbc_agm01
    :goals: build
 
+.. include:: ../../../nxp/common/board-footer.rst
+   :start-after: nxp-board-footer
+
 .. _FRDM-STBC-AGM01 Website:
    https://www.nxp.com/design/development-boards/freedom-development-boards/sensors/sensor-toolbox-development-boards-for-a-9-axis-solution-using-fxas21002c-and-fxos8700cq:FRDM-STBC-AGM01
 

@@ -323,8 +323,8 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v2.7.99-1310-g2801bf644a91  ***
    Hello World! imx8mp_evk
 
-References
-==========
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _NXP website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/evaluation-kit-for-the-i-mx-8m-plus-applications-processor:8MPLUSLPD4-EVK
