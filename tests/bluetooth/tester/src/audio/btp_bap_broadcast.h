@@ -8,6 +8,8 @@
 
 #include <zephyr/bluetooth/audio/cap.h>
 
+#include "btp_bap_audio_stream.h"
+
 struct btp_bap_broadcast_stream {
 	struct btp_bap_audio_stream audio_stream;
 	struct bt_audio_codec_cfg codec_cfg;
