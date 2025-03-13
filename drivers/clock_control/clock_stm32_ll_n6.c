@@ -156,6 +156,15 @@ static uint32_t get_sysclk_frequency(void)
 static int enabled_clock(uint32_t src_clk)
 {
 	if ((src_clk == STM32_SRC_SYSCLK) ||
+	    (src_clk == STM32_SRC_HCLK1) ||
+	    (src_clk == STM32_SRC_HCLK2) ||
+	    (src_clk == STM32_SRC_HCLK3) ||
+	    (src_clk == STM32_SRC_HCLK4) ||
+	    (src_clk == STM32_SRC_HCLK5) ||
+	    (src_clk == STM32_SRC_PCLK1) ||
+	    (src_clk == STM32_SRC_PCLK2) ||
+	    (src_clk == STM32_SRC_PCLK4) ||
+	    (src_clk == STM32_SRC_PCLK5) ||
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSI) && IS_ENABLED(STM32_LSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
@@ -286,7 +295,6 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = ahb_clock;
 		break;
 	case STM32_CLOCK_BUS_APB1:
-	case STM32_CLOCK_BUS_APB1_2:
 		*rate = get_bus_clock(ahb_clock, STM32_APB1_PRESCALER);
 		break;
 	case STM32_CLOCK_BUS_APB2:
