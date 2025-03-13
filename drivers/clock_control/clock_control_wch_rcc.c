@@ -13,6 +13,10 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/dt-bindings/clock/ch32v20x_30x-clocks.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(wch_rcc, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #include <hal_ch32fun.h>
 
@@ -44,6 +48,25 @@ static int clock_control_wch_rcc_on(const struct device *dev, clock_control_subs
 	const struct clock_control_wch_rcc_config *config = dev->config;
 	RCC_TypeDef *regs = config->regs;
 	uint8_t id = (uintptr_t)sys;
+	uint32_t sysclk;
+
+	if (id == CH32V20X_V30X_CLOCK_OTG_FS || id == CH32V20X_V30X_CLOCK_USBHS ||
+	    id == CH32V20X_V30X_CLOCK_USBD) {
+
+		regs->CFGR0 &= ~(3 << 22); /* USBPRE */
+		sysclk = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+
+		if (sysclk == 144000000) {
+			regs->CFGR0 |= 2 << 22;
+		} else if (sysclk == 96000000) {
+			regs->CFGR0 |= 1 << 22;
+		} else if (sysclk != 48000000) {
+			/* In the case of 48 MHz, we leave the value at 0 */
+			LOG_ERR("When using USB, CPU frequency must be 48MHz, 96MHz or 144MHz");
+			return -EINVAL;
+		}
+	}
+
 	uint32_t reg = (uint32_t)(&regs->AHBPCENR + WCH_RCC_CLOCK_ID_OFFSET(id));
 	uint32_t val = sys_read32(reg);
 
