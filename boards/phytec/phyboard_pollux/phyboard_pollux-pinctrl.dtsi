@@ -36,4 +36,52 @@
 			drive-strength = "x1";
 		};
 	};
+
+	i2c1_default: i2c1_default {
+		group0 {
+			pinmux = <&iomuxc_i2c1_scl_i2c_scl_i2c1_scl>,
+				<&iomuxc_i2c1_sda_i2c_sda_i2c1_sda>;
+			bias-pull-up;
+			input-schmitt-enable;
+			slew-rate = "slow";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
+
+	i2c2_default: i2c2_default {
+		group0 {
+			pinmux = <&iomuxc_i2c2_scl_i2c_scl_i2c2_scl>,
+				<&iomuxc_i2c2_sda_i2c_sda_i2c2_sda>;
+			bias-pull-up;
+			input-schmitt-enable;
+			slew-rate = "slow";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
+
+	i2c3_default: i2c3_default {
+		group0 {
+			pinmux = <&iomuxc_i2c3_scl_i2c_scl_i2c3_scl>,
+				<&iomuxc_i2c3_sda_i2c_sda_i2c3_sda>;
+			bias-pull-up;
+			input-schmitt-enable;
+			slew-rate = "slow";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
+
+	i2c4_default: i2c4_default {
+		group0 {
+			pinmux = <&iomuxc_i2c4_scl_i2c_scl_i2c4_scl>,
+				<&iomuxc_i2c4_sda_i2c_sda_i2c4_sda>;
+			bias-pull-up;
+			input-schmitt-enable;
+			slew-rate = "slow";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
 };
