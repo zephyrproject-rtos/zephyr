@@ -317,7 +317,7 @@ static int emul_imager_get_caps(const struct device *dev, struct video_caps *cap
 	return 0;
 }
 
-static int emul_imager_set_stream(const struct device *dev, bool enable)
+static int emul_imager_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CTRL, enable ? 1 : 0);
 }

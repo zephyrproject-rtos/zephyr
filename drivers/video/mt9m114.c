@@ -458,7 +458,7 @@ static int mt9m114_get_fmt(const struct device *dev, struct video_format *fmt)
 	return 0;
 }
 
-static int mt9m114_set_stream(const struct device *dev, bool enable)
+static int mt9m114_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return enable ? mt9m114_set_state(dev, MT9M114_SYS_STATE_START_STREAMING)
 		      : mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_SUSPEND);
