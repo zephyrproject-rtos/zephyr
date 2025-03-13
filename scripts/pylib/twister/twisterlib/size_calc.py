@@ -13,7 +13,7 @@ import sys
 from twisterlib.error import TwisterRuntimeError
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
+
 
 class SizeCalculator:
     alloc_sections = [

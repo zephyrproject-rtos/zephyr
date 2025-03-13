@@ -23,7 +23,6 @@ from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
 logger = logging.getLogger("twister")
-logger.setLevel(logging.DEBUG)
 
 def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
