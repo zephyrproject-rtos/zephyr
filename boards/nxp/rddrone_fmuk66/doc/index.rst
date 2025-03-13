@@ -170,6 +170,9 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v2.7.0 *****
    Hello World! rddrone-fmuk66
 
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
+
 .. _RDDRONE-FMUK66 Website:
 
 https://www.nxp.com/design/designs/px4-robotic-drone-vehicle-flight-management-unit-vmu-fmu-rddrone-fmuk66:RDDRONE-FMUK66
