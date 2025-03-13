@@ -28,7 +28,7 @@ extern "C" {
  */
 struct net_nbr_lladdr {
 	/** Link layer address */
-	struct net_linkaddr_storage lladdr;
+	struct net_linkaddr lladdr;
 
 	/** Reference count. */
 	uint8_t ref;
@@ -177,9 +177,9 @@ int net_nbr_unlink(struct net_nbr *nbr, struct net_linkaddr *lladdr);
  * @return Pointer to link layer address storage, NULL if not found
  */
 #if defined(CONFIG_NET_NATIVE)
-struct net_linkaddr_storage *net_nbr_get_lladdr(uint8_t idx);
+struct net_linkaddr *net_nbr_get_lladdr(uint8_t idx);
 #else
-static inline struct net_linkaddr_storage *net_nbr_get_lladdr(uint8_t idx)
+static inline struct net_linkaddr *net_nbr_get_lladdr(uint8_t idx)
 {
 	ARG_UNUSED(idx);
 

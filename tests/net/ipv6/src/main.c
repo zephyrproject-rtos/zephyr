@@ -449,18 +449,16 @@ NET_DEVICE_INIT(eth_ipv6_net_dummy, "eth_ipv6_net_dummy",
 static void add_neighbor(void)
 {
 	struct net_nbr *nbr;
-	struct net_linkaddr_storage llstorage;
 	struct net_linkaddr lladdr;
 
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x06;
+	lladdr.addr[0] = 0x01;
+	lladdr.addr[1] = 0x02;
+	lladdr.addr[2] = 0x33;
+	lladdr.addr[3] = 0x44;
+	lladdr.addr[4] = 0x05;
+	lladdr.addr[5] = 0x06;
 
 	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 
 	nbr = net_ipv6_nbr_add(TEST_NET_IF, &peer_addr, &lladdr,
@@ -471,18 +469,16 @@ static void add_neighbor(void)
 
 static void rm_neighbor(void)
 {
-	struct net_linkaddr_storage llstorage;
 	struct net_linkaddr lladdr;
 
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x06;
+	lladdr.addr[0] = 0x01;
+	lladdr.addr[1] = 0x02;
+	lladdr.addr[2] = 0x33;
+	lladdr.addr[3] = 0x44;
+	lladdr.addr[4] = 0x05;
+	lladdr.addr[5] = 0x06;
 
 	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 
 	net_ipv6_nbr_rm(TEST_NET_IF, &peer_addr);
@@ -496,23 +492,21 @@ static void add_max_neighbors(void)
 	struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x3 } } };
 	struct net_nbr *nbr;
-	struct net_linkaddr_storage llstorage;
 	struct net_linkaddr lladdr;
 	uint8_t i;
 
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x07;
+	lladdr.addr[0] = 0x01;
+	lladdr.addr[1] = 0x02;
+	lladdr.addr[2] = 0x33;
+	lladdr.addr[3] = 0x44;
+	lladdr.addr[4] = 0x05;
+	lladdr.addr[5] = 0x07;
 
 	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 
 	for (i = 0U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS + 1; i++) {
-		llstorage.addr[5] += i;
+		lladdr.addr[5] += i;
 		dst_addr.s6_addr[15] += i;
 		nbr = net_ipv6_nbr_add(TEST_NET_IF, &dst_addr,
 				       &lladdr, false,
@@ -526,23 +520,21 @@ static void rm_max_neighbors(void)
 {
 	struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x3 } } };
-	struct net_linkaddr_storage llstorage;
 	struct net_linkaddr lladdr;
 	uint8_t i;
 
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x07;
+	lladdr.addr[0] = 0x01;
+	lladdr.addr[1] = 0x02;
+	lladdr.addr[2] = 0x33;
+	lladdr.addr[3] = 0x44;
+	lladdr.addr[4] = 0x05;
+	lladdr.addr[5] = 0x07;
 
 	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 
 	for (i = 0U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS + 1; i++) {
-		llstorage.addr[5] += i;
+		lladdr.addr[5] += i;
 		dst_addr.s6_addr[15] += i;
 		net_ipv6_nbr_rm(TEST_NET_IF, &dst_addr);
 	}
@@ -1400,7 +1392,7 @@ ZTEST(net_ipv6, test_address_lifetime)
 ZTEST(net_ipv6, test_change_ll_addr)
 {
 	static uint8_t new_mac[] = { 00, 01, 02, 03, 04, 05 };
-	struct net_linkaddr_storage *ll;
+	struct net_linkaddr *ll;
 	struct net_linkaddr *ll_iface;
 	struct net_if *iface;
 	struct net_nbr *nbr;
@@ -1429,7 +1421,7 @@ ZTEST(net_ipv6, test_change_ll_addr)
 	/* As the net_ipv6_send_na() uses interface link address to
 	 * greate tllao, change the interface ll address here.
 	 */
-	ll_iface->addr = new_mac;
+	memcpy(ll_iface->addr, new_mac, sizeof(new_mac));
 
 	ret = net_ipv6_send_na(iface, &peer_addr, &all_nodes_mcast,
 			       &peer_addr, flags);
@@ -1443,7 +1435,8 @@ ZTEST(net_ipv6, test_change_ll_addr)
 	zassert_true(memcmp(ll->addr, ll_iface->addr, ll->len) != 0,
 		     "Wrong link address 2");
 
-	ll_iface->addr = net_test_data.mac_addr;
+	memcpy(ll_iface->addr, net_test_data.mac_addr,
+	       sizeof(net_test_data.mac_addr));
 }
 
 ZTEST(net_ipv6, test_dad_timeout)

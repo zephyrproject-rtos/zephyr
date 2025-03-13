@@ -157,7 +157,7 @@ static uint8_t *net_route_mcast_get_mac(const struct device *dev)
 		cfg->mac_addr[5] = sys_rand8_get();
 	}
 
-	cfg->ll_addr.addr = cfg->mac_addr;
+	memcpy(cfg->ll_addr.addr, cfg->mac_addr, 6);
 	cfg->ll_addr.len = 6U;
 
 	return cfg->mac_addr;

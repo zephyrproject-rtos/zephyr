@@ -45,9 +45,8 @@ static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
-static uint8_t mac2_addr[] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x02 };
 static struct net_linkaddr ll_addr2 = {
-	.addr = mac2_addr,
+	.addr = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x02 },
 	.len = 6,
 };
 
@@ -941,7 +940,7 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 		data->mac_addr[5] = sys_rand8_get();
 	}
 
-	data->ll_addr.addr = data->mac_addr;
+	memcpy(data->ll_addr.addr, data->mac_addr, sizeof(data->mac_addr));
 	data->ll_addr.len = 6U;
 
 	return data->mac_addr;

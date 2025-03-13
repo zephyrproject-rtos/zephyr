@@ -116,8 +116,8 @@ static uint8_t *net_route_get_mac(const struct device *dev)
 		route->mac_addr[5] = sys_rand8_get();
 	}
 
-	route->ll_addr.addr = route->mac_addr;
-	route->ll_addr.len = 6U;
+	memcpy(route->ll_addr.addr, route->mac_addr, sizeof(route->mac_addr));
+	route->ll_addr.len = sizeof(route->mac_addr);
 
 	return route->mac_addr;
 }

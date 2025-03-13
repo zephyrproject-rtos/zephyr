@@ -64,22 +64,6 @@ enum net_link_type {
 /**
  *  @brief Hardware link address structure
  *
- *  Used to hold the link address information
- */
-struct net_linkaddr {
-	/** The array of byte representing the address */
-	uint8_t *addr; /* in big endian */
-
-	/** Length of that address array */
-	uint8_t len;
-
-	/** What kind of address is this for */
-	uint8_t type;
-};
-
-/**
- *  @brief Hardware link address structure
- *
  *  Used to hold the link address information. This variant is needed
  *  when we have to store the link layer address.
  *
@@ -87,7 +71,7 @@ struct net_linkaddr {
  *  handled differently than uint8_t addr[] and the fields are purposely
  *  in different order.
  */
-struct net_linkaddr_storage {
+struct net_linkaddr {
 	/** What kind of address is this for */
 	uint8_t type;
 
@@ -124,15 +108,17 @@ static inline bool net_linkaddr_cmp(struct net_linkaddr *lladdr1,
  *
  * @brief Set the member data of a link layer address storage structure.
  *
- * @param lladdr_store The link address storage structure to change.
+ * @param lladdr The link address storage structure to change.
  * @param new_addr Array of bytes containing the link address.
  * @param new_len Length of the link address array.
  * This value should always be <= NET_LINK_ADDR_MAX_LENGTH.
+ * @return 0 if ok, <0 if error
  */
-static inline int net_linkaddr_set(struct net_linkaddr_storage *lladdr_store,
-				   uint8_t *new_addr, uint8_t new_len)
+static inline int net_linkaddr_set(struct net_linkaddr *lladdr,
+				   const uint8_t *new_addr,
+				   uint8_t new_len)
 {
-	if (!lladdr_store || !new_addr) {
+	if (lladdr == NULL || new_addr == NULL) {
 		return -EINVAL;
 	}
 
@@ -140,10 +126,80 @@ static inline int net_linkaddr_set(struct net_linkaddr_storage *lladdr_store,
 		return -EMSGSIZE;
 	}
 
-	lladdr_store->len = new_len;
-	memcpy(lladdr_store->addr, new_addr, new_len);
+	lladdr->len = new_len;
+	memcpy(lladdr->addr, new_addr, new_len);
 
 	return 0;
+}
+
+/**
+ * @brief Copy link address from one variable to another.
+ *
+ * @param dst The link address structure destination.
+ * @param src The link address structure to source.
+ * @return 0 if ok, <0 if error
+ */
+static inline int net_linkaddr_copy(struct net_linkaddr *dst,
+				    const struct net_linkaddr *src)
+{
+	if (dst == NULL || src == NULL) {
+		return -EINVAL;
+	}
+
+	if (src->len > NET_LINK_ADDR_MAX_LENGTH) {
+		return -EMSGSIZE;
+	}
+
+	dst->type = src->type;
+	dst->len = src->len;
+	memcpy(dst->addr, src->addr, src->len);
+
+	return 0;
+}
+
+/**
+ * @brief Create a link address structure.
+ *
+ * @param lladdr The link address structure to change.
+ * @param addr Array of bytes containing the link address. If set to NULL,
+ * the address will be cleared.
+ * @param len Length of the link address array.
+ * @param type Type of the link address.
+ * @return 0 if ok, <0 if error
+ */
+static inline int net_linkaddr_create(struct net_linkaddr *lladdr,
+				      const uint8_t *addr, uint8_t len,
+				      enum net_link_type type)
+{
+	if (lladdr == NULL) {
+		return -EINVAL;
+	}
+
+	if (len > NET_LINK_ADDR_MAX_LENGTH) {
+		return -EMSGSIZE;
+	}
+
+	if (addr == NULL) {
+		memset(lladdr->addr, 0, NET_LINK_ADDR_MAX_LENGTH);
+	} else {
+		memcpy(lladdr->addr, addr, len);
+	}
+
+	lladdr->type = type;
+	lladdr->len = len;
+
+	return 0;
+}
+
+/**
+ * @brief Clear link address.
+ *
+ * @param lladdr The link address structure.
+ * @return 0 if ok, <0 if error
+ */
+static inline int net_linkaddr_clear(struct net_linkaddr *lladdr)
+{
+	return net_linkaddr_create(lladdr, NULL, 0, NET_LINK_UNKNOWN);
 }
 
 /**

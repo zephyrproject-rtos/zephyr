@@ -251,24 +251,27 @@ static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool has_
 					    enum ieee802154_addressing_mode mode,
 					    struct ieee802154_address_field *ll)
 {
-	addr->type = NET_LINK_IEEE802154;
-
 	switch (mode) {
 	case IEEE802154_ADDR_MODE_EXTENDED:
-		addr->len = IEEE802154_EXT_ADDR_LENGTH;
-		addr->addr = has_pan_id ? ll->plain.addr.ext_addr : ll->comp.addr.ext_addr;
+		(void)net_linkaddr_create(
+			addr,
+			has_pan_id ? ll->plain.addr.ext_addr : ll->comp.addr.ext_addr,
+			IEEE802154_EXT_ADDR_LENGTH,
+			NET_LINK_IEEE802154);
 		break;
 
 	case IEEE802154_ADDR_MODE_SHORT:
-		addr->len = IEEE802154_SHORT_ADDR_LENGTH;
-		addr->addr = (uint8_t *)(has_pan_id ? &ll->plain.addr.short_addr
-						    : &ll->comp.addr.short_addr);
+		(void)net_linkaddr_create(
+			addr,
+			(const uint8_t *)(has_pan_id ?
+					  &ll->plain.addr.short_addr : &ll->comp.addr.short_addr),
+			IEEE802154_SHORT_ADDR_LENGTH,
+			NET_LINK_IEEE802154);
 		break;
 
 	case IEEE802154_ADDR_MODE_NONE:
 	default:
-		addr->len = 0U;
-		addr->addr = NULL;
+		(void)net_linkaddr_clear(addr);
 	}
 
 	/* The net stack expects big endian link layer addresses for POSIX compliance
@@ -504,10 +507,13 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 			struct sockaddr_ll_ptr *src_addr =
 				(struct sockaddr_ll_ptr *)&context->local;
 
-			net_pkt_lladdr_dst(pkt)->addr = dst_addr->sll_addr;
-			net_pkt_lladdr_dst(pkt)->len = dst_addr->sll_halen;
-			net_pkt_lladdr_src(pkt)->addr = src_addr->sll_addr;
-			net_pkt_lladdr_src(pkt)->len = src_addr->sll_halen;
+			(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+					       dst_addr->sll_addr,
+					       dst_addr->sll_halen);
+
+			(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+					       src_addr->sll_addr,
+					       src_addr->sll_halen);
 		} else {
 			return -EINVAL;
 		}

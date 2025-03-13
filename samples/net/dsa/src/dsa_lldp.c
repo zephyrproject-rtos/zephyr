@@ -36,11 +36,12 @@ static const uint8_t eth_filter_l2_addr_base[][6] = {
 enum net_verdict dsa_ll_addr_switch_cb(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-	struct net_linkaddr lladst;
+	struct net_linkaddr lladst = { 0 };
 
 	net_pkt_cursor_init(pkt);
-	lladst.len = sizeof(hdr->dst.addr);
-	lladst.addr = &hdr->dst.addr[0];
+
+	(void)net_linkaddr_set(&lladst, (const uint8_t *)hdr->dst.addr,
+			       sizeof(hdr->dst.addr));
 
 	/*
 	 * Pass packet to lan1..3 when matching one from

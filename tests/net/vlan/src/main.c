@@ -334,7 +334,7 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 	data->mac_addr[4] = 0x53;
 	data->mac_addr[5] = sys_rand8_get();
 
-	data->ll_addr.addr = data->mac_addr;
+	memcpy(data->ll_addr.addr, data->mac_addr, 6);
 	data->ll_addr.len = 6U;
 
 	return data->mac_addr;
@@ -1079,11 +1079,12 @@ static bool add_peer_neighbor(struct net_if *iface, struct in6_addr *addr,
 			      uint8_t *lladdr)
 {
 	struct net_linkaddr ll_addr = {
-		.addr = lladdr,
 		.len = 6,
 		.type = NET_LINK_ETHERNET
 	};
 	struct net_nbr *nbr;
+
+	memcpy(ll_addr.addr, lladdr, 6);
 
 	nbr = net_ipv6_nbr_add(iface, addr, &ll_addr, false,
 			       NET_IPV6_NBR_STATE_REACHABLE);

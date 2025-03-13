@@ -12,6 +12,7 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_l2.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/ppp.h>
 #include <zephyr/sys/crc.h>
 #include <string.h>
@@ -77,8 +78,6 @@ static uint8_t wrapped_buffer[4096];
 /*************************************************************************************************/
 /*                                  Mock network interface                                       */
 /*************************************************************************************************/
-static uint8_t test_net_link_addr[] = {0x00, 0x00, 0x5E, 0x00, 0x53, 0x01};
-
 static enum net_verdict test_net_l2_recv(struct net_if *iface, struct net_pkt *pkt)
 {
 	/* Validate buffer not overflowing */
@@ -99,8 +98,8 @@ static struct net_l2 test_net_l2 = {
 /* This emulates the network interface device which will receive unwrapped network packets */
 static struct net_if_dev test_net_if_dev = {
 	.l2 = &test_net_l2,
-	.link_addr.addr = test_net_link_addr,
-	.link_addr.len = sizeof(test_net_link_addr),
+	.link_addr.addr = {0x00, 0x00, 0x5E, 0x00, 0x53, 0x01},
+	.link_addr.len = NET_ETH_ADDR_LEN,
 	.link_addr.type = NET_LINK_DUMMY,
 	.mtu = 1500,
 	.oper_state = NET_IF_OPER_UP,

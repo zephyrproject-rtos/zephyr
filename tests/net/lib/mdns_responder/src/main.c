@@ -124,7 +124,7 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 		data->mac_addr[5] = 0x01;
 	}
 
-	data->ll_addr.addr = data->mac_addr;
+	memcpy(data->ll_addr.addr, data->mac_addr, sizeof(data->mac_addr));
 	data->ll_addr.len = 6U;
 
 	return data->mac_addr;

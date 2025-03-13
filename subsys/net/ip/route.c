@@ -328,7 +328,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 				      uint32_t lifetime,
 				      uint8_t preference)
 {
-	struct net_linkaddr_storage *nexthop_lladdr;
+	struct net_linkaddr *nexthop_lladdr;
 	struct net_nbr *nbr, *nbr_nexthop, *tmp;
 	struct net_route_nexthop *nexthop_route;
 	struct net_route_entry *route = NULL;
@@ -403,7 +403,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 
 		if (CONFIG_NET_ROUTE_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			struct in6_addr *in6_addr_tmp;
-			struct net_linkaddr_storage *llstorage;
+			struct net_linkaddr *llstorage;
 
 			in6_addr_tmp = net_route_get_nexthop(route);
 			nbr = net_ipv6_nbr_lookup(iface, in6_addr_tmp);
@@ -1031,7 +1031,7 @@ static bool is_ll_addr_supported(struct net_if *iface)
 
 int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 {
-	struct net_linkaddr_storage *lladdr = NULL;
+	struct net_linkaddr *lladdr = NULL;
 	struct net_nbr *nbr;
 	int err;
 
@@ -1055,7 +1055,7 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 			goto error;
 		}
 
-		if (!net_pkt_lladdr_src(pkt)->addr) {
+		if (net_pkt_lladdr_src(pkt)->len == 0) {
 			NET_DBG("Link layer source address not set");
 			err = -EINVAL;
 			goto error;
@@ -1079,15 +1079,12 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	 * destination address to be the nexthop recipient.
 	 */
 	if (is_ll_addr_supported(net_pkt_iface(pkt))) {
-		net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
-		net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
-		net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
+		(void)net_linkaddr_copy(net_pkt_lladdr_src(pkt),
+					net_pkt_lladdr_if(pkt));
 	}
 
 	if (lladdr) {
-		net_pkt_lladdr_dst(pkt)->addr = lladdr->addr;
-		net_pkt_lladdr_dst(pkt)->type = lladdr->type;
-		net_pkt_lladdr_dst(pkt)->len = lladdr->len;
+		(void)net_linkaddr_copy(net_pkt_lladdr_dst(pkt), lladdr);
 	}
 
 	net_pkt_set_iface(pkt, nbr->iface);
@@ -1113,7 +1110,9 @@ int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
 
 	/* Set source LL address if only if relevant */
 	if (is_ll_addr_supported(iface)) {
-		net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
+		memcpy(net_pkt_lladdr_src(pkt)->addr,
+		       net_pkt_lladdr_if(pkt)->addr,
+		       net_pkt_lladdr_if(pkt)->len);
 		net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
 		net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
 	}

@@ -742,8 +742,8 @@ static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint
 		goto release_frag;
 	}
 
-	net_pkt_lladdr_src(current_pkt)->addr = net_if_get_link_addr(net_iface)->addr;
-	net_pkt_lladdr_src(current_pkt)->len = net_if_get_link_addr(net_iface)->len;
+	(void)net_linkaddr_copy(net_pkt_lladdr_src(current_pkt),
+				net_if_get_link_addr(net_iface));
 
 	if (!ieee802154_decipher_data_frame(net_iface, current_pkt, &mpdu)) {
 		NET_ERR("*** Cannot decipher/authenticate packet");
@@ -810,17 +810,23 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 	}
 
 	pkt->lladdr_dst.type = NET_LINK_IEEE802154;
-	pkt->lladdr_dst.addr = is_broadcast ? NULL : our_ext_addr;
-	pkt->lladdr_dst.len = is_broadcast ? 0 : sizeof(ctx->ext_addr);
+	if (is_broadcast) {
+		memset(pkt->lladdr_dst.addr, 0, sizeof(pkt->lladdr_dst.addr));
+		pkt->lladdr_dst.len = 0;
+	} else {
+		memcpy(pkt->lladdr_dst.addr, our_ext_addr, sizeof(our_ext_addr));
+		pkt->lladdr_dst.len = sizeof(ctx->ext_addr);
+	}
 
 	if (src_ll_addr_len == IEEE802154_SHORT_ADDR_LENGTH ||
 	    src_ll_addr_len == IEEE802154_EXT_ADDR_LENGTH) {
-		pkt->lladdr_src.addr = src_ll_addr;
+		memcpy(pkt->lladdr_src.addr, src_ll_addr, src_ll_addr_len);
 	} else {
 		NET_ERR("*** Illegal L2 source address length.");
 		goto release_pkt;
 	}
 	pkt->lladdr_src.len = src_ll_addr_len;
+	pkt->lladdr_src.type = NET_LINK_IEEE802154;
 
 	frame_buf = net_pkt_get_frag(pkt, IEEE802154_MTU, K_FOREVER);
 	if (!frame_buf) {
@@ -854,7 +860,8 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 	if (src_ll_addr_len == IEEE802154_SHORT_ADDR_LENGTH) {
 		ctx->short_addr = our_short_addr;
 	} else {
-		sys_memcpy_swap(ctx->ext_addr, our_ext_addr, sizeof(ctx->ext_addr));
+		sys_memcpy_swap(ctx->ext_addr, pkt->lladdr_dst.addr,
+				sizeof(ctx->ext_addr));
 	}
 
 	if (!frame_result) {
