@@ -18,5 +18,13 @@ properties:
       GPIO for data ready, becomes active when a conversion result is ready.
       By default, it is active low signal.
 
+  clock-frequency:
+    type: int
+    description:
+      Input clock frequency to adc in Hz.
+
+  clocks:
+    type: phandle-array
+
 io-channel-cells:
   - input
