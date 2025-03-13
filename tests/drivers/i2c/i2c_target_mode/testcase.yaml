@@ -1,0 +1,19 @@
+common:
+  depends_on: i2c
+  tags:
+    - drivers
+    - i2c
+  harness: ztest
+  harness_config:
+    fixture: i2c_connection
+tests:
+  drivers.i2c.i2c_target_mode_int:
+    platform_allow:
+      - sam_e54_xpro
+    extra_configs:
+      - CONFIG_I2C_MCHP_INTERRUPT_DRIVEN=y
+  drivers.i2c.i2c_target_mode_poll:
+    platform_allow:
+      - sam_e54_xpro
+    extra_configs:
+      - CONFIG_I2C_MCHP_INTERRUPT_DRIVEN=n

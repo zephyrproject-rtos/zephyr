@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*connect the PD8(EXT2 pin 11) to PA22(EXT1 pin 11) and PD9(EXT2 pin 12) to PA23(EXT1 pin 12)*/
+
+dut: &sercom3 {
+	compatible = "microchip,sercom-g1-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom3_i2c_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+dut_aux: &sercom7 {
+	status = "okay";
+};
+
+&pinctrl {
+	sercom3_i2c_default: sercom3_i2c_default {
+		group1 {
+			pinmux = <PA22C_SERCOM3_PAD0>,
+				 <PA23C_SERCOM3_PAD1>;
+		};
+	};
+};
