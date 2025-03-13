@@ -34,14 +34,13 @@
 
 LOG_MODULE_REGISTER(exti_stm32, CONFIG_INTC_LOG_LEVEL);
 
-#define EXTI_NODE DT_INST(0, st_stm32_exti)
+#define EXTI_NODE_IDX	0
 
 /* Takes elements with even indexes 0,2,4,.. with weight 0 and the others as-is */
-#define SEL2ND(node_id, prop, idx) \
-	(DT_PROP_BY_IDX(node_id, prop, idx) * (idx % 2))
+#define SEL2ND(n, prop, idx)	(DT_PROP_BY_IDX(n, prop, idx) * (idx % 2))
 
 #define NUM_EXTI_LINES \
-	DT_FOREACH_PROP_ELEM_SEP(EXTI_NODE, line_ranges, SEL2ND, (+))
+	DT_INST_FOREACH_PROP_ELEM_SEP(EXTI_NODE_IDX, line_ranges, SEL2ND, (+))
 
 #define EXTI_LINE_RANGES_INVALID_IDX 0xff
 
@@ -181,7 +180,7 @@ static inline uint32_t ll_exti_line_to_linenum(uint32_t ll_exti_line)
  */
 static void stm32_exti_isr(const void *exti_range)
 {
-	const struct device *dev = DEVICE_DT_GET(EXTI_NODE);
+	const struct device *dev = DEVICE_DT_INST_GET(EXTI_NODE_IDX);
 	struct stm32_exti_data *data = dev->data;
 	const struct stm32_exti_line_range *range = exti_range;
 
@@ -520,28 +519,28 @@ static int stm32_exti_enable_registers(void)
 /* TODO: https://docs.zephyrproject.org/latest/build/dts/howtos.html */
 static struct stm32_exti_data exti_data;
 
-#define STM32_EXTI_INIT_LINE_RANGE(node_id, interrupts, idx)		\
+#define STM32_EXTI_INIT_LINE_RANGE(n, interrupts, idx)		\
 	{								\
-		.start = DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),	\
-		.len = DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx))),	\
-		.irqnum = DT_IRQ_BY_IDX(node_id, idx, irq),				\
+		.start = DT_PROP_BY_IDX(n, line_ranges, UTIL_X2(idx)),	\
+		.len = DT_PROP_BY_IDX(n, line_ranges, UTIL_INC(UTIL_X2(idx))),	\
+		.irqnum = DT_IRQ_BY_IDX(n, idx, irq),				\
 		.cb = NULL,	\
 	},								\
 
 static struct stm32_exti_line_range exti_lines_range[] = {
-	DT_FOREACH_PROP_ELEM(EXTI_NODE, interrupt_names, STM32_EXTI_INIT_LINE_RANGE)
+	DT_INST_FOREACH_PROP_ELEM(EXTI_NODE_IDX, interrupt_names, STM32_EXTI_INIT_LINE_RANGE)
 };
 
 BUILD_ASSERT(ARRAY_SIZE(exti_lines_range) <= EXTI_LINE_RANGES_INVALID_IDX,
 	"Expected exti_lines_range length to be less than 0xff");
-BUILD_ASSERT(2*ARRAY_SIZE(exti_lines_range) == DT_PROP_LEN(EXTI_NODE, line_ranges),
+BUILD_ASSERT(2*ARRAY_SIZE(exti_lines_range) == DT_INST_PROP_LEN(EXTI_NODE_IDX, line_ranges),
 	"The number of EXTI line ranges shall match the number of interrupt names");
-BUILD_ASSERT(ARRAY_SIZE(exti_lines_range) == DT_NUM_IRQS(EXTI_NODE),
+BUILD_ASSERT(ARRAY_SIZE(exti_lines_range) == DT_INST_NUM_IRQS(EXTI_NODE_IDX),
 	"The number of EXTI line ranges shall match the number of IRQs");
 
-#define STM32_EXTI_INIT_IRQ_CONNECT(node_id, interrupts, idx)		\
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),				\
-		DT_IRQ_BY_IDX(node_id, idx, priority),				\
+#define STM32_EXTI_INIT_IRQ_CONNECT(n, interrupts, idx)		\
+	IRQ_CONNECT(DT_IRQ_BY_IDX(n, idx, irq),				\
+		DT_IRQ_BY_IDX(n, idx, priority),				\
 		stm32_exti_isr, &exti_lines_range[idx], 0);
 
 /**
@@ -590,9 +589,9 @@ static int stm32_exti_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	DT_FOREACH_PROP_ELEM(EXTI_NODE,
-			     interrupt_names,
-			     STM32_EXTI_INIT_IRQ_CONNECT);
+	DT_INST_FOREACH_PROP_ELEM(EXTI_NODE_IDX,
+				  interrupt_names,
+				  STM32_EXTI_INIT_IRQ_CONNECT);
 
 	/* Map exti_lines_range to exti_data */
 	for (size_t i = 0; i < ARRAY_SIZE(exti_lines_range); i++) {
@@ -607,11 +606,11 @@ static int stm32_exti_init(const struct device *dev)
 	return stm32_exti_enable_registers();
 }
 
-DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
-		 NULL,
-		 &exti_data, &exti_lines_range,
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		 NULL);
+DEVICE_DT_INST_DEFINE(EXTI_NODE_IDX, &stm32_exti_init,
+		      NULL,
+		      &exti_data, &exti_lines_range,
+		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
+		      NULL);
 
 int stm32_exti_enable_irq(uint32_t linenum)
 {
@@ -755,7 +754,7 @@ static int stm32_exti_set_trigger_type(uint32_t linenum,
 static int stm32_exti_set_irq_callback(uint32_t linenum, stm32_exti_irq_cb_t cb,
 				       void *user)
 {
-	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
+	const struct device *const dev = DEVICE_DT_INST_GET(EXTI_NODE_IDX);
 	struct stm32_exti_data *data = dev->data;
 
 	if ((data->cb[linenum].cb == cb) && (data->cb[linenum].data == user)) {
@@ -780,7 +779,7 @@ static int stm32_exti_set_irq_callback(uint32_t linenum, stm32_exti_irq_cb_t cb,
  */
 static void stm32_exti_remove_irq_callback(uint32_t linenum)
 {
-	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
+	const struct device *const dev = DEVICE_DT_INST_GET(EXTI_NODE_IDX);
 	struct stm32_exti_data *data = dev->data;
 
 	data->cb[linenum].cb = NULL;
