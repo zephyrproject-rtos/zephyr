@@ -1,0 +1,126 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	pinctrl: pinctrl@f4000 {
+		compatible = "ti,k3-pinctrl";
+		reg = <0xf4000 0x2ac>;
+		status = "okay";
+	};
+
+	uart0: uart@2800000 {
+		compatible = "ns16550";
+		reg = <0x02800000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart1: uart@2810000 {
+		compatible = "ns16550";
+		reg = <0x02810000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart2: uart@2820000 {
+		compatible = "ns16550";
+		reg = <0x02820000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart3: uart@2830000 {
+		compatible = "ns16550";
+		reg = <0x02830000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart4: uart@2840000 {
+		compatible = "ns16550";
+		reg = <0x02840000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart5: uart@2850000 {
+		compatible = "ns16550";
+		reg = <0x02850000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart6: uart@2860000 {
+		compatible = "ns16550";
+		reg = <0x02860000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	i2c0: i2c0@20000000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20000000 0x100>;
+		clock-frequency = <DT_FREQ_K(100)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i2c1: i2c0@20010000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20010000 0x100>;
+		clock-frequency = <DT_FREQ_K(100)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i2c2: i2c0@20020000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20020000 0x100>;
+		clock-frequency = <DT_FREQ_K(100)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i2c3: i2c0@20030000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20030000 0x100>;
+		clock-frequency = <DT_FREQ_K(100)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	gpio0: gpio@600010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x600010 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio1: gpio@601010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x601010 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+};
