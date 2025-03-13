@@ -18,14 +18,14 @@ from enum import Enum
 
 import junitparser.junitparser as junit
 import yaml
+from pylib.twister.twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
+from pylib.twister.twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
+from pylib.twister.twisterlib.error import ConfigurationError, StatusAttributeError
+from pylib.twister.twisterlib.handlers import Handler, terminate_process
+from pylib.twister.twisterlib.reports import ReportStatus
+from pylib.twister.twisterlib.statuses import TwisterStatus
+from pylib.twister.twisterlib.testinstance import TestInstance
 from pytest import ExitCode
-from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
-from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
-from twisterlib.error import ConfigurationError, StatusAttributeError
-from twisterlib.handlers import Handler, terminate_process
-from twisterlib.reports import ReportStatus
-from twisterlib.statuses import TwisterStatus
-from twisterlib.testinstance import TestInstance
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)

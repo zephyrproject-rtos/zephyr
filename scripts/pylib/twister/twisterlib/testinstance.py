@@ -15,14 +15,14 @@ import os
 import random
 from enum import Enum
 
-from twisterlib.constants import (
+from pylib.twister.twisterlib.constants import (
     SUPPORTED_SIMS,
     SUPPORTED_SIMS_IN_PYTEST,
     SUPPORTED_SIMS_WITH_EXEC,
 )
-from twisterlib.environment import TwisterEnv
-from twisterlib.error import BuildError, StatusAttributeError
-from twisterlib.handlers import (
+from pylib.twister.twisterlib.environment import TwisterEnv
+from pylib.twister.twisterlib.error import BuildError, StatusAttributeError
+from pylib.twister.twisterlib.handlers import (
     BinaryHandler,
     DeviceHandler,
     Handler,
@@ -30,10 +30,10 @@ from twisterlib.handlers import (
     QEMUWinHandler,
     SimulationHandler,
 )
-from twisterlib.platform import Platform
-from twisterlib.size_calc import SizeCalculator
-from twisterlib.statuses import TwisterStatus
-from twisterlib.testsuite import TestCase, TestSuite
+from pylib.twister.twisterlib.platform import Platform
+from pylib.twister.twisterlib.size_calc import SizeCalculator
+from pylib.twister.twisterlib.statuses import TwisterStatus
+from pylib.twister.twisterlib.testsuite import TestCase, TestSuite
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)

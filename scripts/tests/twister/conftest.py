@@ -14,9 +14,9 @@ pytest_plugins = ["pytester"]
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
-from twisterlib.testplan import TestPlan
-from twisterlib.testinstance import TestInstance
-from twisterlib.environment import TwisterEnv, add_parse_arguments, parse_arguments
+from pylib.twister.twisterlib.testplan import TestPlan
+from pylib.twister.twisterlib.testinstance import TestInstance
+from pylib.twister.twisterlib.environment import TwisterEnv, add_parse_arguments, parse_arguments
 
 def new_get_toolchain(*args, **kwargs):
     return 'zephyr'

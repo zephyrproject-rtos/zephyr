@@ -16,8 +16,8 @@ import shutil
 import subprocess
 import sys
 
-from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, testsuite_filename_mock
-from twisterlib.testplan import TestPlan
+from .conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, testsuite_filename_mock
+from pylib.twister.twisterlib.testplan import TestPlan
 
 
 class TestAddon:
@@ -211,9 +211,9 @@ class TestAddon:
     @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', sample_filename_mock)
     def test_allow_installed_plugin(self, caplog, out_path, allow_flags, do_install,
                                     expected_exit_value, expected_logs):
-        environment_twister_module = importlib.import_module('twisterlib.environment')
-        harness_twister_module = importlib.import_module('twisterlib.harness')
-        runner_twister_module = importlib.import_module('twisterlib.runner')
+        environment_twister_module = importlib.import_module('pylib.twister.twisterlib.environment')
+        harness_twister_module = importlib.import_module('pylib.twister.twisterlib.harness')
+        runner_twister_module = importlib.import_module('pylib.twister.twisterlib.runner')
 
         pth_path = os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'pytest-twister-harness')
         check_installed_command = [sys.executable, '-m', 'pip', 'list']

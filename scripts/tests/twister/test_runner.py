@@ -22,13 +22,11 @@ from elftools.elf.sections import SymbolTableSection
 from typing import List
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-from twisterlib.statuses import TwisterStatus
-from twisterlib.error import BuildError
-from twisterlib.harness import Pytest
-
-from twisterlib.runner import (
+from pylib.twister.twisterlib.statuses import TwisterStatus
+from pylib.twister.twisterlib.error import BuildError
+from pylib.twister.twisterlib.harness import Pytest
+from pylib.twister.twisterlib.runner import (
     CMake,
     ExecutionCounter,
     FilterBuilder,
@@ -332,7 +330,7 @@ def test_cmake_run_build(
 
     with mock.patch('sys.platform', sys_platform), \
          mock.patch('shutil.which', return_value=cmake_path), \
-         mock.patch('twisterlib.runner.change_skip_to_error_if_integration',
+         mock.patch('pylib.twister.twisterlib.runner.change_skip_to_error_if_integration',
                     change_mock), \
          mock.patch('builtins.open', mock.mock_open()), \
          mock.patch('subprocess.Popen', popen_mock):
@@ -478,9 +476,9 @@ def test_cmake_run_cmake(
 
     with mock.patch('sys.platform', sys_platform), \
          mock.patch('shutil.which', return_value=cmake_path), \
-         mock.patch('twisterlib.runner.change_skip_to_error_if_integration',
+         mock.patch('pylib.twister.twisterlib.runner.change_skip_to_error_if_integration',
                     change_mock), \
-         mock.patch('twisterlib.runner.canonical_zephyr_base',
+         mock.patch('pylib.twister.twisterlib.runner.canonical_zephyr_base',
                     'zephyr_base'), \
          mock.patch('builtins.open', mock.mock_open()), \
          mock.patch('subprocess.Popen', popen_mock):
@@ -735,12 +733,12 @@ def test_filterbuilder_parse_generated(
 
     environ_mock = {'env_dummy': True}
 
-    with mock.patch('twisterlib.runner.Domains.from_file',
+    with mock.patch('pylib.twister.twisterlib.runner.Domains.from_file',
                     mock_domains_from_file), \
-         mock.patch('twisterlib.runner.CMakeCache.from_file',
+         mock.patch('pylib.twister.twisterlib.runner.CMakeCache.from_file',
                     mock_cmakecache_from_file), \
+         mock.patch('pylib.twister.expr_parser.parse', mock_parser), \
          mock.patch('builtins.open', mock_open), \
-         mock.patch('expr_parser.parse', mock_parser), \
          mock.patch('pickle.load', mock_pickle), \
          mock.patch('os.path.exists', return_value=edt_exists), \
          mock.patch('os.environ', environ_mock), \
@@ -866,7 +864,7 @@ def test_projectbuilder_log_info_file(
 
     with mock.patch('os.path.exists', mock_exists), \
          mock.patch('os.path.getsize', mock_getsize), \
-         mock.patch('twisterlib.runner.ProjectBuilder.log_info', log_info_mock):
+         mock.patch('pylib.twister.twisterlib.runner.ProjectBuilder.log_info', log_info_mock):
         pb.log_info_file(None)
 
     log_info_mock.assert_called_with(expected_log, mock.ANY)
@@ -1671,7 +1669,7 @@ def test_projectbuilder_determine_testcases(
 
     pb = ProjectBuilder(instance_mock, mocked_env, mocked_jobserver)
 
-    with mock.patch('twisterlib.runner.ELFFile', elf_mock), \
+    with mock.patch('pylib.twister.twisterlib.runner.ELFFile', elf_mock), \
          mock.patch('builtins.open', mock.mock_open()):
         pb.determine_testcases(results_mock)
 
@@ -1997,7 +1995,7 @@ def test_projectbuilder_sanitize_zephyr_base_from_files(
 
     with mock.patch('os.path.exists', mock_exists), \
          mock.patch('builtins.open', mock_open), \
-         mock.patch('twisterlib.runner.canonical_zephyr_base',
+         mock.patch('pylib.twister.twisterlib.runner.canonical_zephyr_base',
                     'canonical/zephyr/base'):
         pb._sanitize_zephyr_base_from_files()
 
@@ -2348,7 +2346,7 @@ def test_projectbuilder_run(
     pb.defconfig = defconfig
     pb.parse_generated = mock.Mock()
 
-    with mock.patch('twisterlib.runner.HarnessImporter.get_harness',
+    with mock.patch('pylib.twister.twisterlib.runner.HarnessImporter.get_harness',
                     mock_harness):
         pb.run()
 
@@ -2554,13 +2552,13 @@ def test_twisterrunner_run(
         results_mock().iteration += value * (-1 if decrement else 1)
     results_mock().iteration_increment = iteration_increment
 
-    with mock.patch('twisterlib.runner.ExecutionCounter', results_mock), \
-         mock.patch('twisterlib.runner.BaseManager', manager_mock), \
-         mock.patch('twisterlib.runner.GNUMakeJobClient.from_environ',
+    with mock.patch('pylib.twister.twisterlib.runner.ExecutionCounter', results_mock), \
+         mock.patch('pylib.twister.twisterlib.runner.BaseManager', manager_mock), \
+         mock.patch('pylib.twister.twisterlib.runner.GNUMakeJobClient.from_environ',
                     mock_client_from_environ), \
-         mock.patch('twisterlib.runner.GNUMakeJobServer',
+         mock.patch('pylib.twister.twisterlib.runner.GNUMakeJobServer',
                     gnumakejobserver_mock), \
-         mock.patch('twisterlib.runner.JobClient', jobclient_mock), \
+         mock.patch('pylib.twister.twisterlib.runner.JobClient', jobclient_mock), \
          mock.patch('multiprocessing.cpu_count', return_value=8), \
          mock.patch('sys.platform', platform), \
          mock.patch('time.sleep', mock.Mock()), \
@@ -2803,7 +2801,7 @@ def test_twisterrunner_pipeline_mgr(mocked_jobserver, platform):
     results_mock = mock.Mock()
 
     with mock.patch('sys.platform', platform), \
-         mock.patch('twisterlib.runner.ProjectBuilder',\
+         mock.patch('pylib.twister.twisterlib.runner.ProjectBuilder',\
                     return_value=mock.Mock()) as pb:
         tr.pipeline_mgr(pipeline_mock, done_queue_mock, lock_mock, results_mock)
 
@@ -2835,7 +2833,7 @@ def test_twisterrunner_execute(caplog):
     pipeline_mock = mock.Mock()
     done_mock = mock.Mock()
 
-    with mock.patch('twisterlib.runner.Process', process_mock):
+    with mock.patch('pylib.twister.twisterlib.runner.Process', process_mock):
         tr.execute(pipeline_mock, done_mock)
 
     assert 'Execution interrupted' in caplog.text

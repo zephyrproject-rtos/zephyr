@@ -19,7 +19,12 @@ from selectors import EVENT_READ
 # Job server only works on Linux for now.
 pytestmark = pytest.mark.skipif(sys.platform != 'linux', reason='JobServer only works on Linux.')
 if sys.platform == 'linux':
-    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient, JobHandle
+    from pylib.twister.twisterlib.jobserver import (
+        GNUMakeJobClient,
+        GNUMakeJobServer,
+        JobClient,
+        JobHandle
+    )
     from fcntl import F_GETFL
 
 
@@ -254,7 +259,7 @@ def test_gnumakejobclient_from_environ(
 
     with mock.patch('fcntl.fcntl', mock_fcntl), \
          mock.patch('os.close', mock.Mock()), \
-         mock.patch('twisterlib.jobserver.GNUMakeJobClient.__init__',
+         mock.patch('pylib.twister.twisterlib.jobserver.GNUMakeJobClient.__init__',
                     gmjc_init_mock), \
          pytest.raises(SystemExit) if exit_code is not None else \
          nullcontext() as se:
@@ -407,7 +412,7 @@ def test_gnumakejobclient_pass_fds(jobs, use_inheritable_pipe, expected_fds):
         nonlocal fds
         fds = gmjc.pass_fds()
 
-    with mock.patch('twisterlib.jobserver.GNUMakeJobClient.__del__',
+    with mock.patch('pylib.twister.twisterlib.jobserver.GNUMakeJobClient.__del__',
                     mock.Mock()), \
          mock.patch('selectors.DefaultSelector', selector_mock):
         deleter()

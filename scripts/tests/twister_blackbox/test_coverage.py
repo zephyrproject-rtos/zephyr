@@ -13,9 +13,9 @@ import pytest
 import sys
 import json
 
-# pylint: disable=duplicate-code, disable=no-name-in-module
-from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
-from twisterlib.testplan import TestPlan
+# pylint: disable=duplicate-code
+from .conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
+from pylib.twister.twisterlib.testplan import TestPlan
 
 
 @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
