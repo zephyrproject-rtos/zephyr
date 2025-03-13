@@ -1,6 +1,6 @@
 /*
  * Copyright 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
- * Copyright 2020, 2024 NXP
+ * Copyright 2020, 2024-2025 NXP
  *
  * Heavily based on pwm_mcux_ftm.c, which is:
  * Copyright (c) 2017, NXP
@@ -19,6 +19,10 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
+
+#if defined(CONFIG_SOC_MIMX9596)
+#include <zephyr/dt-bindings/clock/imx95_clock.h>
+#endif
 
 LOG_MODULE_REGISTER(pwm_mcux_tpm, CONFIG_PWM_LOG_LEVEL);
 
@@ -151,10 +155,18 @@ static int mcux_tpm_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(config->clock_dev, config->clock_subsys)) {
-		LOG_ERR("Could not turn on clock");
-		return -EINVAL;
+#if defined(CONFIG_SOC_MIMX9596)
+	/* IMX9596 AON and WAKEUP clocks aren't controllable */
+	if (config->clock_subsys != (clock_control_subsys_t)IMX95_CLK_BUSWAKEUP &&
+	    config->clock_subsys != (clock_control_subsys_t)IMX95_CLK_BUSAON) {
+#endif
+		if (clock_control_on(config->clock_dev, config->clock_subsys)) {
+			LOG_ERR("Could not turn on clock");
+			return -EINVAL;
+		}
+#if defined(CONFIG_SOC_MIMX9596)
 	}
+#endif
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &data->clock_freq)) {
