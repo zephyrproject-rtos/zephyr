@@ -49,6 +49,15 @@ required to maintain ...)
 Why is this the right component to solve it (e.g., SQLite is small,
 easy to use, and has a very liberal license.)
 
+## Security
+
+Does this component include any cryptographic functionality?
+If so, please describe the cryptographic algorithms and protocols used.
+
+How does this component handle security vulnerabilities and updates?
+Are there any known vulnerabilities in this component? If so, please
+provide details and references to any CVEs or security advisories.
+
 ## Dependencies
 
 What other components does this package depend on?
