@@ -850,7 +850,7 @@ static void adsp_mm_save_context(void *storage_buffer)
 
 #ifdef CONFIG_MMU
 			arch_mem_map(UINT_TO_POINTER(phys_addr), phys_addr, CONFIG_MM_DRV_PAGE_SIZE,
-				     K_MEM_CACHE_WB);
+				     K_MEM_CACHE_WB | K_MEM_PERM_RW);
 #endif
 
 			/* Invalidate cache to avoid stalled data
