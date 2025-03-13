@@ -1143,11 +1143,7 @@ static int priv_clock_enable(void)
 #endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
 #if USB_OTG_HS_ULPI_PHY
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
-#else
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-#endif
+	clock_control_on(clk, (clock_control_subsys_t)&phy_pclken[0]);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) /* USB_OTG_HS_ULPI_PHY */
 	/* Disable ULPI interface (for external high-speed PHY) clock in sleep/low-power mode.
 	 * It is disabled by default in run power mode, no need to disable it.
@@ -1155,7 +1151,7 @@ static int priv_clock_enable(void)
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
+	clock_control_on(clk, (clock_control_subsys_t)&phy_pclken[0]);
 	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
 	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
 						LL_AHB2_GRP1_PERIPH_USBPHY);
@@ -1164,7 +1160,7 @@ static int priv_clock_enable(void)
 #endif /* defined(CONFIG_SOC_SERIES_STM32H7X) */
 
 #if USB_OTG_HS_EMB_PHY
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+	clock_control_on(clk, (clock_control_subsys_t)&phy_pclken[0]);
 #endif
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
 	/* The USB2 controller only works in FS mode, but the ULPI clock needs
