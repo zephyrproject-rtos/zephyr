@@ -215,10 +215,7 @@ static void update_txtime_stats_detail(struct net_pkt *pkt,
 
 static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct net_linkaddr ll_dst = {
-		.addr = NULL
-	};
-	struct net_linkaddr_storage ll_dst_storage;
+	struct net_linkaddr ll_dst = { 0 };
 	struct net_context *context;
 	uint32_t create_time;
 	int status;
@@ -239,12 +236,10 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	 * case packet is freed before callback is called.
 	 */
 	if (!sys_slist_is_empty(&link_callbacks)) {
-		if (net_linkaddr_set(&ll_dst_storage,
+		if (net_linkaddr_set(&ll_dst,
 				     net_pkt_lladdr_dst(pkt)->addr,
-				     net_pkt_lladdr_dst(pkt)->len) == 0) {
-			ll_dst.addr = ll_dst_storage.addr;
-			ll_dst.len = ll_dst_storage.len;
-			ll_dst.type = net_pkt_lladdr_dst(pkt)->type;
+				     net_pkt_lladdr_dst(pkt)->len) < 0) {
+			return false;
 		}
 	}
 
@@ -320,7 +315,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		net_context_send_cb(context, status);
 	}
 
-	if (ll_dst.addr) {
+	if (ll_dst.len > 0) {
 		net_if_call_link_cb(iface, &ll_dst, status);
 	}
 
@@ -495,9 +490,10 @@ enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/3111
 	 */
 	if (!net_if_flag_is_set(iface, NET_IF_POINTOPOINT) &&
-	    !net_pkt_lladdr_src(pkt)->addr) {
-		net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
-		net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
+	    net_pkt_lladdr_src(pkt)->len == 0) {
+		(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+				       net_pkt_lladdr_if(pkt)->addr,
+				       net_pkt_lladdr_if(pkt)->len);
 	}
 
 #if defined(CONFIG_NET_LOOPBACK)
@@ -546,7 +542,7 @@ done:
 			net_context_send_cb(context, status);
 		}
 
-		if (dst->addr) {
+		if (dst->len > 0) {
 			net_if_call_link_cb(iface, dst, status);
 		}
 	} else if (verdict == NET_OK) {
