@@ -102,7 +102,6 @@ struct netc_eth_data {
 	uint8_t mac_addr[6];
 	/* TX */
 	struct k_mutex tx_mutex;
-	netc_tx_frame_info_t tx_info;
 	uint8_t *tx_buff;
 	volatile bool tx_done;
 	/* RX */
