@@ -4,10 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-#include "arduino_uno_r4_common.dtsi"
-#include "arduino_uno_r4_wifi-pinctrl.dtsi"
-
 / {
 	model = "Arduino Uno R4 WiFi";
 

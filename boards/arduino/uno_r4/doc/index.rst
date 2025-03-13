@@ -60,12 +60,12 @@ Here is an example for building and flashing the :zephyr:code-sample:`blinky` ap
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_uno_r4_minima
+   :board: arduino_uno_r4@minima
    :goals: build flash
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_uno_r4_wifi
+   :board: arduino_uno_r4@wifi
    :goals: build flash
 
 Debugging
@@ -77,13 +77,13 @@ Also, see the instructions specific to the debug server that you use.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_uno_r4_minima
+   :board: arduino_uno_r4@minima
    :maybe-skip-config:
    :goals: debug
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_uno_r4_wifi
+   :board: arduino_uno_r4@wifi
    :maybe-skip-config:
    :goals: debug
 
