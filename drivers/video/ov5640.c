@@ -922,7 +922,7 @@ static int ov5640_get_caps(const struct device *dev, struct video_caps *caps)
 	return 0;
 }
 
-static int ov5640_set_stream(const struct device *dev, bool enable)
+static int ov5640_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct ov5640_config *cfg = dev->config;
 

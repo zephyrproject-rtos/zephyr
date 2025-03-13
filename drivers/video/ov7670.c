@@ -573,7 +573,7 @@ static int ov7670_init(const struct device *dev)
 	return ov7670_init_controls(dev);
 }
 
-static int ov7670_set_stream(const struct device *dev, bool enable)
+static int ov7670_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return 0;
 }
