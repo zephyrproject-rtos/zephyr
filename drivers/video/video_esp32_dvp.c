@@ -334,9 +334,6 @@ static int video_esp32_flush(const struct device *dev, enum video_endpoint_id ep
 	struct video_buffer *vbuf = NULL;
 
 	if (cancel) {
-		if (data->is_streaming) {
-			video_esp32_set_stream(dev, false);
-		}
 		if (data->active_vbuf) {
 			k_fifo_put(&data->fifo_out, data->active_vbuf);
 			data->active_vbuf = NULL;
