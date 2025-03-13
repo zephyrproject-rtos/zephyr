@@ -160,6 +160,8 @@
 #define STM32_CPUCLK_SRC_IC1	1
 #endif
 #endif /* cpusw clk source is rcc */
+
+#define STM32_TIMG_PRESCALER	DT_PROP(DT_NODELABEL(rcc), timg_prescaler)
 #endif /* rcc node compatible st_stm32n6_rcc and okay */
 
 /** PLL node related symbols */
