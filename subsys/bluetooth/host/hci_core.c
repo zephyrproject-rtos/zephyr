@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2017-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2271,6 +2272,17 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 			bt_conn_unref(conn);
 			return;
 		}
+
+		if (IS_ENABLED(CONFIG_BT_SMP)) {
+			/*
+			 * Start SMP over BR/EDR if we are pairing and are
+			 * central on the link
+			 */
+			if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRED) &&
+			    conn->role == BT_CONN_ROLE_CENTRAL) {
+				bt_smp_br_send_pairing_req(conn);
+			}
+		}
 	}
 #endif /* CONFIG_BT_CLASSIC */
 
@@ -2390,16 +2402,9 @@ static void le_ltk_request(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_SMP */
 
-static void hci_reset_complete(struct net_buf *buf)
+static void hci_reset_complete(void)
 {
-	uint8_t status = buf->data[0];
 	atomic_t flags;
-
-	LOG_DBG("status 0x%02x %s", status, bt_hci_err_to_str(status));
-
-	if (status) {
-		return;
-	}
 
 	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
 		bt_scan_reset();
@@ -3256,12 +3261,12 @@ static int common_init(void)
 
 	if (!drv_quirk_no_reset()) {
 		/* Send HCI_RESET */
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, &rsp);
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
 		if (err) {
 			return err;
 		}
-		hci_reset_complete(rsp);
-		net_buf_unref(rsp);
+
+		hci_reset_complete();
 	}
 
 	/* Read Local Supported Features */
@@ -4385,6 +4390,18 @@ int bt_disable(void)
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
 
+	/* Reset the Controller */
+	if (!drv_quirk_no_reset()) {
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
+		if (err) {
+			LOG_ERR("Failed to reset BLE controller");
+			return err;
+		}
+
+		hci_reset_complete();
+	}
+
 	err = bt_hci_close(bt_dev.hci);
 	if (err == -ENOSYS) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
@@ -4535,7 +4552,7 @@ int bt_le_get_local_features(struct bt_le_local_features *remote_info)
 	return 0;
 }
 
-bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr)
+bool bt_le_bond_exists(uint8_t id, const bt_addr_le_t *addr)
 {
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		struct bt_keys *keys = bt_keys_find_addr(id, addr);

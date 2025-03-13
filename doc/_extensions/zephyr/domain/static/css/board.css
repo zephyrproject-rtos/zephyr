@@ -110,6 +110,7 @@
     th {
         background: var(--navbar-background-color);
         color: var(--navbar-level-1-color);
+        border: none !important;
         font-weight: 600;
         text-transform: uppercase;
         font-size: 0.8em;
@@ -131,11 +132,6 @@
         p {
             white-space: normal;
         }
-    }
-
-    /* Disabled feature styling */
-    tr.disabled {
-        opacity: 0.3;
     }
 
     /* Column widths and specific styling */

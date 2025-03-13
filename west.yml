@@ -142,7 +142,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: 633fcecf3717aaa22079cf6121627a879f24df51
+      revision: 67b88309c327d207e87bb7af6e37c704cd9d5b9d
       path: modules/hal/adi
       groups:
         - hal
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 466c3eed9c98453fb23953bf0e0427fea01924be
+      revision: 40f7b809b28d9d391bee8b58188293277fabc51a
       path: modules/hal/nuvoton
       groups:
         - hal
@@ -219,7 +219,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 3204903bdc5eda6869a40363560a69369c8d0e22
+      revision: cc1323049d15647eb93b60cffe042a5b772ed0de
       groups:
         - hal
     - name: hal_rpi_pico
@@ -321,7 +321,7 @@ manifest:
       revision: b84bd7314a239f818e78f6927f5673247816df53
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 396059ca7a6162d07276c5797adbb1311b81cd78
+      revision: 0cd3bb2291a7dd22f4cdb1a4cd935a213c2bbfab
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 52bb1783521c62c019451cee9b05b8eda9d7425f

@@ -51,6 +51,10 @@ API Changes
 Removed APIs and options
 ========================
 
+* Removed the deprecated the ``net_buf_put()`` and ``net_buf_get()`` API functions.
+
+* Removed the deprecated ``include/zephyr/net/buf.h`` header file.
+
 Deprecated APIs and options
 ===========================
 
@@ -80,6 +84,7 @@ New APIs and options
   * Host
 
     * :c:func:`bt_le_get_local_features`
+    * :c:func:`bt_le_bond_exists`
 
 New Boards
 **********

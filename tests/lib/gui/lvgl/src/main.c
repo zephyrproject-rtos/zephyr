@@ -104,8 +104,9 @@ void *setup_lvgl(void)
 
 #if CONFIG_LV_COLOR_DEPTH_1 == 1
 	display_set_pixel_format(display_dev, PIXEL_FORMAT_MONO10);
-#elif CONFIG_LV_COLOR_DEPTH_8 == 1 || CONFIG_LV_COLOR_DEPTH_24 == 1
-	/* No 8bit display pixel format not supported */
+#elif CONFIG_LV_COLOR_DEPTH_8 == 1
+	display_set_pixel_format(display_dev, PIXEL_FORMAT_L_8);
+#elif CONFIG_LV_COLOR_DEPTH_24 == 1
 	display_set_pixel_format(display_dev, PIXEL_FORMAT_RGB_888);
 #elif CONFIG_LV_COLOR_DEPTH_16 == 1
 	display_set_pixel_format(display_dev, PIXEL_FORMAT_RGB_565);

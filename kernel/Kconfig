@@ -1061,7 +1061,7 @@ config BOOTARGS
 
 config DYNAMIC_BOOTARGS
 	bool "Support dynamic bootargs"
-	depends on BOOTARGS && (MULTIBOOT_INFO || BUILD_OUTPUT_EFI)
+	depends on BOOTARGS
 	help
 	  Enables dynamic bootargs support.
 

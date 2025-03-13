@@ -52,7 +52,6 @@
 #include "common/bt_str.h"
 #include "host/conn_internal.h"
 #include "host/keys.h"
-#include "host/hci_core.h"
 
 LOG_MODULE_REGISTER(bt_csip_set_coordinator, CONFIG_BT_CSIP_SET_COORDINATOR_LOG_LEVEL);
 
@@ -1674,7 +1673,7 @@ static bool all_members_bonded(const struct bt_csip_set_coordinator_set_member *
 		int err;
 
 		err = bt_conn_get_info(client->conn, &info);
-		if (err != 0 || !bt_addr_le_is_bonded(info.id, info.le.dst)) {
+		if (err != 0 || !bt_le_bond_exists(info.id, info.le.dst)) {
 			LOG_DBG("Member[%zu] is not bonded", i);
 
 			return false;
