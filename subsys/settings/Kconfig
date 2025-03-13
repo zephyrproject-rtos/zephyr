@@ -47,6 +47,25 @@ config SETTINGS_ZMS
 	help
 	  Use ZMS as settings storage backend.
 
+if SETTINGS_ZMS
+
+config SETTINGS_ZMS_LL_CACHE
+	bool "ZMS linked list lookup cache"
+	help
+	  Enable ZMS lookup cache for linked list, used to reduce the
+	  Settings load time by having most linked list elements already
+	  in cache.
+
+config SETTINGS_ZMS_LL_CACHE_SIZE
+	int "ZMS linked list lookup cache size"
+	default 128
+	range 1 $(UINT32_MAX)
+	depends on SETTINGS_ZMS_LL_CACHE
+	help
+	  Number of entries in Settings ZMS linked list cache.
+
+endif # SETTINGS_ZMS
+
 config SETTINGS_FCB
 	bool "FCB"
 	depends on FCB
