@@ -200,4 +200,8 @@
 	/omit-if-no-ref/ timg7c0_pb15: timg7c0_pb15{
 		pinmux = <MSP_PINMUX(32,MSPM0_PIN_FUNCTION_6)>;
 	};
+
+	/omit-if-no-ref/ clk_out_pa22: clk_out_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_6)>;
+	};
 };

@@ -125,6 +125,11 @@
 			#clock-cells = <0>;
 			status = "okay";
 		};
+
+		clk_out: clk_out {
+			compatible = "ti,mspm0-clk-out";
+			#clock-cells = <1>;
+		};
 	};
 
 	soc {
