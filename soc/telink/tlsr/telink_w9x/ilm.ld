@@ -11,6 +11,8 @@ SECTION_DATA_PROLOGUE(ram_code,,)
 	. = ALIGN(4);
 	*(.ram_code)
 	*(".ram_code.*")
+	*(.ram_code_data)
+	*(".ram_code_data.*")
 
 	PROVIDE (_RAM_CODE_VMA_END = .);
 	PROVIDE (_RAM_CODE_VMA_START = ADDR(ram_code));

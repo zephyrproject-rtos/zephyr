@@ -14,9 +14,9 @@
 MEMORY
 {
 	RAM_ILM      (rwx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(ram_ilm)),              LENGTH = DT_REG_SIZE(DT_NODELABEL(ram_ilm))
-
-#	Note: use RAM_DLM for ".ram_dlm" when a shared SRAM will be used for "zephyr,sram"
-#	RAM_DLM      (rwx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(ram_dlm)),              LENGTH = DT_REG_SIZE(DT_NODELABEL(ram_dlm))
+#if DT_HAS_CHOSEN(zephyr_aux_ram)
+	RAM_AUX      (rwx) : ORIGIN = DT_REG_ADDR(DT_CHOSEN(zephyr_aux_ram)),          LENGTH = DT_REG_SIZE(DT_CHOSEN(zephyr_aux_ram))
+#endif /* DT_HAS_CHOSEN(zephyr_aux_ram) */
 }
 
 #include <zephyr/arch/riscv/common/linker.ld>

@@ -28,7 +28,7 @@ enum {
 	BLOCKING_CORE_ACTIVE_REQ_STATE,
 };
 
-static atomic_t __GENERIC_SECTION(.ram_dlm) blocking_state = BLOCKING_INVALID_STATE;
+static atomic_t __GENERIC_SECTION(.ram_code_data) blocking_state = BLOCKING_INVALID_STATE;
 static struct ipc_based_driver ipc_data;    /* ipc driver data part */
 
 /* API implementation: get Machine Timer value */

@@ -99,17 +99,31 @@ _start_n22:
 	li     t0, (1 << 6)
 	csrs   NDS_MMISC_CTL, t0                #/ Enable Misaligned access
 
-_RAM_DLM_INIT:
-	la     t1, _RAM_DLM_LMA_START
-	la     t2, _RAM_DLM_VMA_START
-	la     t3, _RAM_DLM_VMA_END
-_RAM_DLM_INIT_BEGIN:
-	bleu   t3, t2, _RAM_CODE_INIT
+#if DT_HAS_CHOSEN(zephyr_aux_ram)
+
+_DATA_AUX_INIT:
+	la     t1, _DATA_AUX_LMA_START
+	la     t2, _DATA_AUX_VMA_START
+	la     t3, _DATA_AUX_VMA_END
+_DATA_AUX_INIT_BEGIN:
+	bleu   t3, t2, _BSS_AUX_INIT
 	lw     t0, 0(t1)
 	sw     t0, 0(t2)
 	addi   t1, t1, 4
 	addi   t2, t2, 4
-	j      _RAM_DLM_INIT_BEGIN
+	j      _DATA_AUX_INIT_BEGIN
+
+_BSS_AUX_INIT:
+	lui    t0, 0
+	la     t2, _BSS_AUX_VMA_START
+	la     t3, _BSS_AUX_VMA_END
+_BSS_AUX_INIT_BEGIN:
+	bleu   t3, t2, _RAM_CODE_INIT
+	sw     t0, 0(t2)
+	addi   t2, t2, 4
+	j      _BSS_AUX_INIT_BEGIN
+
+#endif /* DT_HAS_CHOSEN(zephyr_aux_ram) */
 
 _RAM_CODE_INIT:
 	la     t1, _RAM_CODE_LMA_START
