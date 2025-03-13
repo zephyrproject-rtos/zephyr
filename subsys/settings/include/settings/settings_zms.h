@@ -68,18 +68,23 @@ extern "C" {
 #define ZMS_COLLISION_NUM(x)     ((x & ZMS_COLLISIONS_MASK) >> 1)
 #define ZMS_NAME_ID_FROM_HASH(x) ((x & ZMS_HASH_TOTAL_MASK) | BIT(31))
 
+struct settings_hash_linked_list {
+	uint32_t previous_hash;
+	uint32_t next_hash;
+};
+
 struct settings_zms {
 	struct settings_store cf_store;
 	struct zms_fs cf_zms;
 	const struct device *flash_dev;
+#if CONFIG_SETTINGS_ZMS_LL_CACHE
+	struct settings_hash_linked_list ll_cache[CONFIG_SETTINGS_ZMS_LL_CACHE_SIZE];
+	uint32_t ll_cache_next;
+	bool ll_has_changed;
+#endif /* CONFIG_SETTINGS_ZMS_LL_CACHE */
 	uint32_t last_hash_id;
 	uint32_t second_to_last_hash_id;
 	uint8_t hash_collision_num;
-};
-
-struct settings_hash_linked_list {
-	uint32_t previous_hash;
-	uint32_t next_hash;
 };
 
 #ifdef __cplusplus
