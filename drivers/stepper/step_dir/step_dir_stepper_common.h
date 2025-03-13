@@ -196,6 +196,14 @@ int step_dir_stepper_common_is_moving(const struct device *dev, bool *is_moving)
 int step_dir_stepper_common_run(const struct device *dev, const enum stepper_direction direction);
 
 /**
+ * @brief Stop the stepper motor.
+ *
+ * @param dev Pointer to the device structure.
+ * @return 0 on success, or a negative error code on failure.
+ */
+int step_dir_stepper_common_stop(const struct device *dev);
+
+/**
  * @brief Set a callback function for stepper motor events.
  *
  * This function sets a user-defined callback that will be invoked when a stepper motor event
