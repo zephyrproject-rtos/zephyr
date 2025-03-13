@@ -1488,13 +1488,16 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  * This macro generates a timeout delay that represents an expiration
  * at the absolute uptime value specified, in system ticks.  That is, the
  * timeout will expire immediately after the system uptime reaches the
- * specified tick count.
+ * specified tick count. INT64_MAX is not a valid argument and will
+ * be changed to (INT64MAX-1), because we use negative values in
+ * k_ticks_t to represent absolute timeouts but -1 is reserved for
+ * K_TIMEOUT_FOREVER.
  *
  * @param t Tick uptime value
  * @return Timeout delay value
  */
 #define K_TIMEOUT_ABS_TICKS(t) \
-	Z_TIMEOUT_TICKS(Z_TICK_ABS((k_ticks_t)MAX(t, 0)))
+	Z_TIMEOUT_TICKS(Z_TICK_ABS((k_ticks_t)MIN(MAX(t, 0), (INT64_MAX-1))))
 
 /**
  * @brief Generates an absolute/uptime timeout value from seconds
