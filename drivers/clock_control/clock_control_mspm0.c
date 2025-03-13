@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <ti/driverlib/driverlib.h>
 
@@ -16,6 +17,21 @@
 static const DL_SYSCTL_SYSPLLConfig clock_mspm0_cfg_syspll;
 #endif
 
+#define MSPM0_CLOCK_BUS_ULPCLK_FREQ		40000000 /*40 MHz */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_out), okay)
+#define MSPM0_CLK_OUT_ENABLED 1
+
+struct mspm0_clk_out_cfg {
+	const struct pinctrl_dev_config *pinctrl;
+	uint32_t source_clk;
+};
+
+	PINCTRL_DT_DEFINE(DT_NODELABEL(clk_out));
+	struct mspm0_clk_out_cfg clk_out_cfg = {
+	.pinctrl = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(clk_out)),
+	.source_clk = MSPM0_CLOCK_BUS_ULPCLK,
+	};
+#endif
 
 static int clock_mspm0_on(const struct device *dev, clock_control_subsys_t sys)
 {
@@ -69,8 +85,35 @@ static int clock_mspm0_get_rate(const struct device *dev, clock_control_subsys_t
 static int clock_mspm0_set_rate(const struct device *dev, clock_control_subsys_t sys,
 				clock_control_subsys_rate_t rate)
 {
-	return -ENOTSUP;
+	struct mspm0_clockSys *clockSys = (struct mspm0_clockSys *)sys;
+
+	if (!rate) {
+		return -EINVAL;
+	}
+
+	switch (clockSys->bus) {
+#if MSPM0_CLK_OUT_ENABLED
+	case MSPM0_CLOCK_BUS_CLK_OUT:
+		uint32_t clk_reg_value = 0;
+		uint8_t divider;
+		int *clk_rate = (int *)rate;
+
+		divider = MSPM0_CLOCK_BUS_ULPCLK_FREQ / (*clk_rate);
+		divider = (divider / 2) - 1;
+		if (divider > 7)
+			divider = 7;
+
+		clk_reg_value = divider << 4 |SYSCTL_GENCLKCFG_EXCLKDIVEN_ENABLE;
+		DL_SYSCTL_enableExternalClock(DL_SYSCTL_CLK_OUT_SOURCE_ULPCLK, clk_reg_value);
+	break;
+#endif
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
+
 
 static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_t sys, void *data)
 {
@@ -87,6 +130,16 @@ static int clock_mspm0_init(const struct device *dev)
 
 	DL_SYSCTL_setULPCLKDivider(ULPCLK_DIV);
 	DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK, DL_SYSCTL_HSCLK_SOURCE_SYSPLL);
+#endif
+
+#if MSPM0_CLK_OUT_ENABLED
+	int ret;
+
+	ret = pinctrl_apply_state(clk_out_cfg.pinctrl, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
 #endif
 
 	return 0;
