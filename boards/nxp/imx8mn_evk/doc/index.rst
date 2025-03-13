@@ -138,8 +138,8 @@ Use Jailhouse hypervisor, after root cell linux is up:
     #jailhouse cell load 1 zephyr.bin -a 0x93c00000
     #jailhouse cell start 1
 
-References
-==========
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _NXP website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/evaluation-kit-for-the-i-mx-8m-nano-applications-processor:8MNANOD4-EVK

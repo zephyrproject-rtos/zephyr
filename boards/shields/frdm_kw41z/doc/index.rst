@@ -64,6 +64,9 @@ host controller interface (HCI):
       :shield: frdm_kw41z
       :goals: build
 
+.. include:: ../../../nxp/common/board-footer.rst
+   :start-after: nxp-board-footer
+
 References
 **********
 
