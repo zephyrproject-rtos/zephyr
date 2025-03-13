@@ -329,6 +329,21 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 	return 0;
 }
 
+int step_dir_stepper_common_stop(const struct device *dev)
+{
+	const struct step_dir_stepper_common_config *config = dev->config;
+	int ret;
+
+	ret = config->timing_source->stop(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to stop timing source: %d", ret);
+		return ret;
+	}
+
+	stepper_trigger_callback(dev, STEPPER_EVENT_STOPPED);
+	return 0;
+}
+
 int step_dir_stepper_common_set_event_callback(const struct device *dev,
 					       stepper_event_callback_t callback, void *user_data)
 {
