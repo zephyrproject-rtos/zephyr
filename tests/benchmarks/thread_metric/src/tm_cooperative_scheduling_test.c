@@ -80,13 +80,14 @@ int main(void)
 
 void tm_cooperative_scheduling_initialize(void)
 {
+	int prio = CONFIG_MAIN_THREAD_PRIORITY;
 
-	/* Create all 5 threads at priority 3.  */
-	tm_thread_create(0, 3, tm_cooperative_thread_0_entry);
-	tm_thread_create(1, 3, tm_cooperative_thread_1_entry);
-	tm_thread_create(2, 3, tm_cooperative_thread_2_entry);
-	tm_thread_create(3, 3, tm_cooperative_thread_3_entry);
-	tm_thread_create(4, 3, tm_cooperative_thread_4_entry);
+	/* Create all 5 threads at the same priority as the main thread.  */
+	tm_thread_create(0, prio, tm_cooperative_thread_0_entry);
+	tm_thread_create(1, prio, tm_cooperative_thread_1_entry);
+	tm_thread_create(2, prio, tm_cooperative_thread_2_entry);
+	tm_thread_create(3, prio, tm_cooperative_thread_3_entry);
+	tm_thread_create(4, prio, tm_cooperative_thread_4_entry);
 
 	/* Resume all 5 threads.  */
 	tm_thread_resume(0);
