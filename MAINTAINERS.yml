@@ -2111,6 +2111,7 @@ Release Notes:
     - dipakgmx
     - fabiobaltieri
     - faxe1008
+    - jbehrensnx
   files:
     - drivers/stepper/
     - include/zephyr/drivers/stepper.h
