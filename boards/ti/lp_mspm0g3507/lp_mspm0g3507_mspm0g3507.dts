@@ -7,6 +7,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/mspm0_adc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
 
 / {
 	model = "TI LP_MSPM0G3507/MSPM0G3507";
@@ -153,6 +154,12 @@
 	status = "okay";
 };
 
+&clk_out {
+	pinctrl-0 = <&clk_out_pa22>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &spi1 {
 	pinctrl-0 = <&spi1_sclk_pb9 &spi1_pico_pb8 &spi1_poci_pb7 &spi1_cs0_pb6>;
 	pinctrl-names = "default";
@@ -163,6 +170,8 @@
 	ads1310: ads1310@0 {
 		compatible = "ti,ads131m02";
 		reg = <0>;
+		clocks = <&clkmux MSPM0_CLOCK_BUS_CLK_OUT>;
+		clock-frequency = <2000000>;
 		#io-channel-cells = <1>;
 		drdy-gpios = <&gpiob 18 (GPIO_ACTIVE_LOW)>;
 		spi-max-frequency = <8000000>;
