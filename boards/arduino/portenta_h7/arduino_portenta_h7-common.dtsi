@@ -253,6 +253,7 @@ zephyr_udc0: &usbotg_hs {
 		      &usb_otg_hs_ulpi_dir_pi11 >;
 	pinctrl-names = "default";
 	phys = < &otghs_ulpi_phy >;
+	physel = "USB_OTG_HS_PHY_ULPI";
 	maximum-speed = "high-speed";
 	/* Include the USB1ULPIEN | USB1OTGHSULPIEN clock enable bit */
 	clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x6000000>,
