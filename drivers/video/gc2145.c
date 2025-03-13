@@ -1093,7 +1093,7 @@ static int gc2145_get_fmt(const struct device *dev, struct video_format *fmt)
 	return 0;
 }
 
-static int gc2145_set_stream(const struct device *dev, bool enable)
+static int gc2145_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct gc2145_config *cfg = dev->config;
 

@@ -136,7 +136,7 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 	video_esp32_reload_dma(data);
 }
 
-static int video_esp32_set_stream(const struct device *dev, bool enable)
+static int video_esp32_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct video_esp32_config *cfg = dev->config;
 	struct video_esp32_data *data = dev->data;
@@ -149,7 +149,7 @@ static int video_esp32_set_stream(const struct device *dev, bool enable)
 	if (!enable) {
 		LOG_DBG("Stop streaming");
 
-		if (video_stream_stop(cfg->source_dev)) {
+		if (video_stream_stop(cfg->source_dev, type)) {
 			return -EIO;
 		}
 
@@ -233,7 +233,7 @@ static int video_esp32_set_stream(const struct device *dev, bool enable)
 
 	cam_hal_start_streaming(&data->hal);
 
-	if (video_stream_start(cfg->source_dev)) {
+	if (video_stream_start(cfg->source_dev, type)) {
 		return -EIO;
 	}
 	data->is_streaming = true;

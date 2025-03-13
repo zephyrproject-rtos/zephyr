@@ -141,7 +141,7 @@ static int mipi_csi2rx_get_fmt(const struct device *dev, struct video_format *fm
 	return 0;
 }
 
-static int mipi_csi2rx_set_stream(const struct device *dev, bool enable)
+static int mipi_csi2rx_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct mipi_csi2rx_config *config = dev->config;
 
@@ -149,11 +149,11 @@ static int mipi_csi2rx_set_stream(const struct device *dev, bool enable)
 		struct mipi_csi2rx_data *drv_data = dev->data;
 
 		CSI2RX_Init((MIPI_CSI2RX_Type *)config->base, &drv_data->csi2rxConfig);
-		if (video_stream_start(config->sensor_dev)) {
+		if (video_stream_start(config->sensor_dev, type)) {
 			return -EIO;
 		}
 	} else {
-		if (video_stream_stop(config->sensor_dev)) {
+		if (video_stream_stop(config->sensor_dev, type)) {
 			return -EIO;
 		}
 		CSI2RX_Deinit((MIPI_CSI2RX_Type *)config->base);

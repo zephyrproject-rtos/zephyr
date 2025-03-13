@@ -86,12 +86,13 @@ static int emul_rx_get_caps(const struct device *dev, struct video_caps *caps)
 	return video_get_caps(cfg->source_dev, caps);
 }
 
-static int emul_rx_set_stream(const struct device *dev, bool enable)
+static int emul_rx_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
 	/* A real hardware driver would first start / stop its own peripheral */
-	return enable ? video_stream_start(cfg->source_dev) : video_stream_stop(cfg->source_dev);
+	return enable ? video_stream_start(cfg->source_dev, type)
+		      : video_stream_stop(cfg->source_dev, type);
 }
 
 static void emul_rx_worker(struct k_work *work)

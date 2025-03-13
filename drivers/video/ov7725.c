@@ -515,7 +515,7 @@ static int ov7725_get_fmt(const struct device *dev, struct video_format *fmt)
 	return 0;
 }
 
-static int ov7725_set_stream(const struct device *dev, bool enable)
+static int ov7725_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return 0;
 }

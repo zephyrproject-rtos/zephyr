@@ -16,11 +16,11 @@ ZTEST(video_common, test_video_device)
 	zexpect_true(device_is_ready(rx_dev));
 	zexpect_true(device_is_ready(imager_dev));
 
-	zexpect_ok(video_stream_start(imager_dev));
-	zexpect_ok(video_stream_stop(imager_dev));
+	zexpect_ok(video_stream_start(imager_dev, VIDEO_BUF_TYPE_OUTPUT));
+	zexpect_ok(video_stream_stop(imager_dev, VIDEO_BUF_TYPE_OUTPUT));
 
-	zexpect_ok(video_stream_start(rx_dev));
-	zexpect_ok(video_stream_stop(rx_dev));
+	zexpect_ok(video_stream_start(rx_dev, VIDEO_BUF_TYPE_OUTPUT));
+	zexpect_ok(video_stream_stop(rx_dev, VIDEO_BUF_TYPE_OUTPUT));
 }
 
 ZTEST(video_common, test_video_format)
@@ -148,8 +148,10 @@ ZTEST(video_common, test_video_vbuf)
 	struct video_caps caps;
 	struct video_format fmt;
 	struct video_buffer *vbuf = NULL;
+	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
 
 	/* Get a list of supported format */
+	caps.type = type;
 	zexpect_ok(video_get_caps(rx_dev, &caps));
 
 	/* Pick set first format, just to use something supported */
@@ -157,6 +159,7 @@ ZTEST(video_common, test_video_vbuf)
 	fmt.width = caps.format_caps[0].width_max;
 	fmt.height = caps.format_caps[0].height_max;
 	fmt.pitch = fmt.width * 2;
+	fmt.type = type;
 	zexpect_ok(video_set_format(rx_dev, &fmt));
 
 	/* Allocate a buffer, assuming prj.conf gives enough memory for it */
@@ -164,7 +167,9 @@ ZTEST(video_common, test_video_vbuf)
 	zexpect_not_null(vbuf);
 
 	/* Start the virtual hardware */
-	zexpect_ok(video_stream_start(rx_dev));
+	zexpect_ok(video_stream_start(rx_dev, type));
+
+	vbuf->type = type;
 
 	/* Enqueue a first buffer */
 	zexpect_ok(video_enqueue(rx_dev, vbuf));
@@ -186,7 +191,7 @@ ZTEST(video_common, test_video_vbuf)
 	zexpect_equal(vbuf->bytesused, vbuf->size);
 
 	/* Nothing left in the queue, possible to stop */
-	zexpect_ok(video_stream_stop(rx_dev));
+	zexpect_ok(video_stream_stop(rx_dev, type));
 
 	/* Nothing tested, but this should not crash */
 	video_buffer_release(vbuf);

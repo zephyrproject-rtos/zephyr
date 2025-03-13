@@ -250,14 +250,15 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev, struct video_forma
 	(capture_rate) == 4 ? DCMI_CR_ALTERNATE_4_FRAME :				\
 	DCMI_CR_ALL_FRAME)
 
-static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
+static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
+				       enum video_buf_type type)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
 	int err;
 
 	if (!enable) {
-		err = video_stream_stop(config->sensor_dev);
+		err = video_stream_stop(config->sensor_dev, type);
 		if (err < 0) {
 			return err;
 		}
@@ -292,7 +293,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
 		return -EIO;
 	}
 
-	return video_stream_start(config->sensor_dev);
+	return video_stream_start(config->sensor_dev, type);
 }
 
 static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffer *vbuf)

@@ -95,7 +95,8 @@ static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
 	data->buf_reload_flag = !data->buf_reload_flag;
 }
 
-static int nxp_video_sdma_set_stream(const struct device *dev, bool enable)
+static int nxp_video_sdma_set_stream(const struct device *dev, bool enable,
+				     enum video_buf_type type)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
 	struct nxp_video_sdma_data *data = dev->data;
@@ -162,7 +163,7 @@ static int nxp_video_sdma_enqueue(const struct device *dev, struct video_buffer 
 	k_fifo_put(&data->fifo_in, vbuf);
 	if (data->stream_starved) {
 		/* Kick SmartDMA off */
-		nxp_video_sdma_set_stream(dev, true);
+		nxp_video_sdma_set_stream(dev, true, vbuf->type);
 	}
 	return 0;
 }
