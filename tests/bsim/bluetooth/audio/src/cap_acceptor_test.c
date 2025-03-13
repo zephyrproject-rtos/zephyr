@@ -1064,11 +1064,13 @@ static void test_cap_acceptor_broadcast_update(void)
 
 	create_and_sync_sink(bap_streams, &stream_count);
 
-	sink_wait_for_data();
+	wait_for_data();
 
 	printk("Waiting for metadata update");
 	WAIT_FOR_FLAG(flag_base_metadata_updated);
 	backchannel_sync_send_all(); /* let other devices know we have received metadata */
+	/* let other devices know we have received what we wanted */
+	backchannel_sync_send_all();
 
 	wait_for_streams_stop(stream_count);
 

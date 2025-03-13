@@ -665,7 +665,7 @@ static void test_main_cap_initiator_broadcast_inval(void)
 
 	init();
 
-	setup_extended_adv(&adv);
+	setup_broadcast_adv(&adv);
 
 	test_broadcast_audio_create_inval();
 	test_broadcast_audio_create(&broadcast_source);
@@ -713,7 +713,7 @@ static void test_main_cap_initiator_broadcast_update(void)
 
 	init();
 
-	setup_extended_adv(&adv);
+	setup_broadcast_adv(&adv);
 
 	test_broadcast_audio_create(&broadcast_source);
 
