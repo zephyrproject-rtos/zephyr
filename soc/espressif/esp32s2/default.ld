@@ -440,6 +440,7 @@ SECTIONS
     *libzephyr.a:mspi_timing_config.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_tuning.*(.literal .literal.* .text .text.*)
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
 
     /* [mapping:soc_pm] */
