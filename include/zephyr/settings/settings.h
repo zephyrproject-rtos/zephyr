@@ -208,10 +208,11 @@ struct settings_handler_static {
  *
  */
 
+ #if defined(CONFIG_SETTINGS)
 #define SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(_hname, _tree, _get, _set, \
 						  _commit, _export, _cprio)  \
 	const STRUCT_SECTION_ITERABLE(settings_handler_static,		     \
-				      settings_handler_ ## _hname) = {       \
+				      settings_handler_ ## _hname) = {	     \
 		.name = _tree,						     \
 		.cprio = _cprio,					     \
 		.h_get = _get,						     \
@@ -219,6 +220,19 @@ struct settings_handler_static {
 		.h_commit = _commit,					     \
 		.h_export = _export,					     \
 	}
+#else
+#define SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(_hname, _tree, _get, _set, \
+						  _commit, _export, _cprio)  \
+	const Z_DECL_ALIGN(struct settings_handler_static)		     \
+				settings_handler_##_hname = {		     \
+	.name = _tree,							     \
+	.cprio = _cprio,						     \
+	.h_get = _get,							     \
+	.h_set = _set,							     \
+	.h_commit = _commit,						     \
+	.h_export = _export,						     \
+	}
+#endif
 
 /* Handlers without commit priority are set to priority O */
 #define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit,   \
