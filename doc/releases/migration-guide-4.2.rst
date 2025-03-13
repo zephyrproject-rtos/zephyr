@@ -508,6 +508,8 @@ Video
   :c:func:`video_set_frmival`.
   See (:github:`89627`).
 
+* video_endpoint_id enum has been dropped. It is no longer a parameter in any video API.
+
 Other subsystems
 ****************
 
