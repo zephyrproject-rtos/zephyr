@@ -47,6 +47,10 @@ static struct fw_resource_table __resource resource_table = {
 #if defined(CONFIG_RAM_CONSOLE)
 		offsetof(struct fw_resource_table, cm_trace),
 #endif
+
+#if (CONFIG_OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH > 0)
+		offsetof(struct fw_resource_table, vendor_hdr),
+#endif
 	},
 
 #if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
@@ -70,6 +74,26 @@ static struct fw_resource_table __resource resource_table = {
 		RSC_TRACE,
 		(uint32_t)ram_console_buf, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,
 		"Zephyr_log",
+	},
+#endif
+
+#if (CONFIG_OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH > 0)
+	/* Initialize vendor-specific resource entry */
+	.vendor_hdr = {
+		RSC_VENDOR_START,
+		CONFIG_OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH * sizeof(uint32_t),
+	},
+	/* Populate vendor-specific feature list based on configuration */
+	.vendor_data = {CONFIG_OPENAMP_RSC_TABLE_VENDOR_DATA_FEATURES_0,
+#if (CONFIG_OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH > 1)
+			, CONFIG_OPENAMP_RSC_TABLE_VENDOR_DATA_FEATURES_1,
+#endif
+#if (CONFIG_OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH > 2)
+			, CONFIG_OPENAMP_RSC_TABLE_VENDOR_DATA_FEATURES_2,
+#endif
+#if (CONFIG_OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH > 3)
+			, CONFIG_OPENAMP_RSC_TABLE_VENDOR_DATA_FEATURES_3,
+#endif
 	},
 #endif
 };
