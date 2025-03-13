@@ -148,15 +148,9 @@ static int nxp_video_sdma_set_stream(const struct device *dev, bool enable)
 	return 0;
 }
 
-static int nxp_video_sdma_enqueue(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_buffer *vbuf)
+static int nxp_video_sdma_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct nxp_video_sdma_data *data = dev->data;
-
-	if (ep != VIDEO_EP_OUT) {
-		return -EINVAL;
-	}
 
 	/* SmartDMA will read 30 lines of RGB565 video data into framebuffer */
 	vbuf->bytesused = SDMA_VBUF_WIDTH * SDMA_LINE_COUNT * sizeof(uint16_t);
@@ -173,16 +167,10 @@ static int nxp_video_sdma_enqueue(const struct device *dev,
 	return 0;
 }
 
-static int nxp_video_sdma_dequeue(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_buffer **vbuf,
+static int nxp_video_sdma_dequeue(const struct device *dev, struct video_buffer **vbuf,
 				  k_timeout_t timeout)
 {
 	struct nxp_video_sdma_data *data = dev->data;
-
-	if (ep != VIDEO_EP_OUT) {
-		return -EINVAL;
-	}
 
 	*vbuf = k_fifo_get(&data->fifo_out, timeout);
 	if (*vbuf == NULL) {
@@ -192,9 +180,7 @@ static int nxp_video_sdma_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int nxp_video_sdma_flush(const struct device *dev,
-				enum video_endpoint_id ep,
-				bool cancel)
+static int nxp_video_sdma_flush(const struct device *dev, bool cancel)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
 	struct nxp_video_sdma_data *data = dev->data;
@@ -228,13 +214,11 @@ static const struct video_format_cap fmts[] = {
 	{ 0 },
 };
 
-static int nxp_video_sdma_set_format(const struct device *dev,
-				     enum video_endpoint_id ep,
-				     struct video_format *fmt)
+static int nxp_video_sdma_set_format(const struct device *dev, struct video_format *fmt)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
 
-	if (fmt == NULL || ep != VIDEO_EP_OUT)  {
+	if (fmt == NULL) {
 		return -EINVAL;
 	}
 
@@ -252,17 +236,15 @@ static int nxp_video_sdma_set_format(const struct device *dev,
 	}
 
 	/* Forward format to sensor device */
-	return video_set_format(config->sensor_dev, ep, fmt);
+	return video_set_format(config->sensor_dev, fmt);
 }
 
-static int nxp_video_sdma_get_format(const struct device *dev,
-				     enum video_endpoint_id ep,
-				     struct video_format *fmt)
+static int nxp_video_sdma_get_format(const struct device *dev, struct video_format *fmt)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
 	int ret;
 
-	if (fmt == NULL || ep != VIDEO_EP_OUT)  {
+	if (fmt == NULL) {
 		return -EINVAL;
 	}
 
@@ -276,7 +258,7 @@ static int nxp_video_sdma_get_format(const struct device *dev,
 	 * reconfigure the sensor,
 	 * as this is the only format supported.
 	 */
-	ret = video_get_format(config->sensor_dev, VIDEO_EP_OUT, fmt);
+	ret = video_get_format(config->sensor_dev, fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -291,7 +273,7 @@ static int nxp_video_sdma_get_format(const struct device *dev,
 		fmt->width = fmts[0].width_min;
 		fmt->height = fmts[0].height_min;
 		fmt->pitch = fmts[0].width_min * 2;
-		ret = video_set_format(config->sensor_dev, VIDEO_EP_OUT, fmt);
+		ret = video_set_format(config->sensor_dev, fmt);
 		if (ret < 0) {
 			LOG_ERR("Sensor device does not support RGB565");
 			return ret;
@@ -301,14 +283,8 @@ static int nxp_video_sdma_get_format(const struct device *dev,
 	return 0;
 }
 
-static int nxp_video_sdma_get_caps(const struct device *dev,
-				   enum video_endpoint_id ep,
-				   struct video_caps *caps)
+static int nxp_video_sdma_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	if (ep != VIDEO_EP_OUT) {
-		return -EINVAL;
-	}
-
 	/* SmartDMA needs at least two buffers allocated before starting */
 	caps->min_vbuf_count = 2;
 	/* Firmware reads 30 lines per queued vbuf */
