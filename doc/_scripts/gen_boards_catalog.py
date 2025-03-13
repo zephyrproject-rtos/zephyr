@@ -254,11 +254,13 @@ def get_catalog(generate_hw_features=False):
                         continue
 
                     binding_path = Path(node.binding_path)
-                    binding_type = (
-                        binding_path.relative_to(ZEPHYR_BINDINGS).parts[0]
-                        if binding_path.is_relative_to(ZEPHYR_BINDINGS)
-                        else "misc"
-                    )
+                    is_custom_binding = False
+                    if binding_path.is_relative_to(ZEPHYR_BINDINGS):
+                        binding_type = binding_path.relative_to(ZEPHYR_BINDINGS).parts[0]
+                    else:
+                        binding_type = "misc"
+                        is_custom_binding = True
+
 
                     if node.matching_compat is None:
                         continue
@@ -292,6 +294,7 @@ def get_catalog(generate_hw_features=False):
 
                     feature_data = {
                         "description": description,
+                        "custom_binding": is_custom_binding,
                         "locations": locations,
                         "okay_nodes": [],
                         "disabled_nodes": [],
