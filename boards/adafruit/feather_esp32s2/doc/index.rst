@@ -90,7 +90,6 @@ to retrieve those files.
    west update
    west blobs fetch hal_espressif
 
-
 Building & Flashing
 *******************
 
@@ -353,8 +352,8 @@ the :zephyr:code-sample:`hello_world` application.
 Testing the On-Board-LED
 ************************
 
-There is a sample that allows to test the LED on the board are working
-properly with Zephyr:
+There is a sample available to verify that the LEDs on the board are
+functioning correctly with Zephyr:
 
 .. tabs::
 
@@ -389,8 +388,8 @@ properly with Zephyr:
 Testing the NeoPixel
 ********************
 
-There is a sample that allows to test the NeoPixel on the board are working
-properly with Zephyr:
+There is a sample available to verify that the NeoPixel on the board are
+functioning correctly with Zephyr:
 
 .. tabs::
 
@@ -425,8 +424,8 @@ properly with Zephyr:
 Testing the TFT
 ***************
 
-There is a sample that allows to test the TFT on the board are working
-properly with Zephyr:
+There is a sample available to verify that the TFT on the board are
+functioning correctly with Zephyr:
 
 .. note::
    To activated the backlight of the display ``GPIO45`` (``backlight``) needs to be set to HIGH.
@@ -451,8 +450,8 @@ properly with Zephyr:
 Testing the Fuel Gauge (MAX17048)
 *********************************
 
-There is a sample that allows to test the MAX17048 fuel gauge
-on the board are working properly with Zephyr:
+There is a sample available to verify that the MAX17048 fuel gauge on the board are
+functioning correctly with Zephyr:
 
 .. note::
    As of May 31, 2023 Adafruit changed the battery monitor chip from the now-discontinued LC709203
@@ -484,7 +483,8 @@ on the board are working properly with Zephyr:
 Testing Wi-Fi
 *************
 
-There is a sample that allows to test the Wi-Fi on the board are working.
+There is a sample available to verify that the Wi-Fi on the board are
+functioning correctly with Zephyr:
 
 .. note::
    The Prerequisites must be met before testing Wi-Fi.
