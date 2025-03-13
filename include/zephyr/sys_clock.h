@@ -151,7 +151,14 @@ typedef struct {
 
 /* Test for relative timeout */
 #if CONFIG_TIMEOUT_64BIT
-#define Z_IS_TIMEOUT_RELATIVE(timeout)  (Z_TICK_ABS((timeout).ticks) < 0)
+/* Positive values are relative/delta timeouts and negative values are absolute
+ * timeouts, except -1 which is reserved for K_TIMEOUT_FOREVER. 0 is K_NO_WAIT,
+ * which is historically considered a relative timeout.
+ * K_TIMEOUT_FOREVER is not considered a relative timeout and neither is it
+ * considerd an absolute timeouts (so !Z_IS_TIMEOUT_RELATIVE() does not
+ * necessarily mean it is an absolute timeout if ticks == -1);
+ */
+#define Z_IS_TIMEOUT_RELATIVE(timeout)  (((timeout).ticks) >= 0)
 #else
 #define Z_IS_TIMEOUT_RELATIVE(timeout)  true
 #endif
