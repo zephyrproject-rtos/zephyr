@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2025 Texas Instruments Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,9 +8,9 @@
 #include <mem.h>
 #include <freq.h>
 #include <arm/armv7-m.dtsi>
-#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
-#include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/i2c/i2c.h>
+
+#include "am64x_main.dtsi"
+#include "am64x_mcu.dtsi"
 
 / {
 
@@ -29,81 +30,15 @@
 		reg = <0x0 DT_SIZE_K(192)>;		/* 192 KB of SRAM (I-Code) */
 	};
 
-	sram1: memory1@40000 {
+	sram1: memory1@30000 {
 		compatible = "mmio-sram";
-		reg = <0x40000 DT_SIZE_K(64)>;		/* 64 KB of SRAM (D-Code) */
+		reg = <0x30000 DT_SIZE_K(64)>;		/* 64 KB of SRAM (D-Code) */
 	};
 
 	sysclk: system-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <DT_FREQ_M(400)>;
 		#clock-cells = <0>;
-	};
-
-	mbox6: mailbox@29060000 {
-		compatible = "ti,omap-mailbox";
-		reg = <0x29060000 0x200>;
-		interrupts = <56 4>;
-		interrupt-parent = <&nvic>;
-		usr-id = <3>;
-		#mbox-cells = <1>;
-	};
-
-	pinctrl: pinctrl@4084000 {
-		compatible = "ti,k3-pinctrl";
-		reg = <0x04084000 0x88>;
-		status = "okay";
-	};
-
-	uart0: serial@4a00000 {
-		compatible = "ns16550";
-		reg = <0x04a00000 0x200>;
-		interrupts = <24 4>;
-		interrupt-parent = <&nvic>;
-		clock-frequency = <DT_FREQ_M(96)>;
-		current-speed = <115200>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
-	uart1: serial@4a10000 {
-		compatible = "ns16550";
-		reg = <0x04a10000 0x200>;
-		interrupts = <25 4>;
-		interrupt-parent = <&nvic>;
-		clock-frequency = <DT_FREQ_M(96)>;
-		current-speed = <115200>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
-	i2c0: i2c@4900000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x04900000 0x100>;
-		interrupts = <17 4>;
-		interrupt-parent = <&nvic>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-	};
-
-	i2c1: i2c@4910000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x04910000 0x100>;
-		interrupts = <18 4>;
-		interrupt-parent = <&nvic>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-	};
-
-	gpio0: gpio@4201000 {
-		compatible = "ti,davinci-gpio";
-		reg = <0x4201000 0x100>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		ngpios = <24>;
-		status = "disabled";
 	};
 };
 
@@ -113,4 +48,34 @@
 
 &systick {
 	status = "okay";
+};
+
+&mcu_uart0 {
+	interrupts = <24 4>;
+	interrupt-parent = <&nvic>;
+};
+
+&mcu_uart1 {
+	interrupts = <25 4>;
+	interrupt-parent = <&nvic>;
+};
+
+&mcu_i2c0 {
+	interrupts = <17 4>;
+	interrupt-parent = <&nvic>;
+};
+
+&mcu_i2c1 {
+	interrupts = <18 4>;
+	interrupt-parent = <&nvic>;
+};
+
+&mbox6 {
+	interrupts = <56 4>;
+	interrupt-parent = <&nvic>;
+};
+
+&mbox7 {
+	interrupts = <57 4>;
+	interrupt-parent = <&nvic>;
 };

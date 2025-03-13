@@ -1,0 +1,239 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv7-r.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
+#include "am64x_main.dtsi"
+#include "am64x_mcu.dtsi"
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r5";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(800)>;
+		};
+	};
+
+	atcm: memory@0 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x0 DT_SIZE_K(32)>;
+		zephyr,memory-region = "ATCM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	btcm: memory@41010000 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x41010000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "BTCM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	sram: memory@70080000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x70080000 DT_SIZE_K(256)>;
+		zephyr,memory-region = "SRAM";
+	};
+
+	vim: interrupt-controller@2fff0000 {
+		#address-cells = <1>;
+		compatible = "ti,vim";
+		reg = <0x2fff0000 0x4000>;
+		interrupt-controller;
+		#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
+	};
+};
+
+&timer0 {
+	interrupts = <0 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&timer1 {
+	interrupts = <0 153 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&timer2 {
+	interrupts = <0 154 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&timer3 {
+	interrupts = <0 155 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&timer4 {
+	interrupts = <0 156 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&timer5 {
+	interrupts = <0 157 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&timer6 {
+	interrupts = <0 158 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&timer7 {
+	interrupts = <0 159 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&timer8 {
+	interrupts = <0 160 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&timer9 {
+	interrupts = <0 161 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&timer10 {
+	interrupts = <0 162 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&timer11 {
+	interrupts = <0 163 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart0 {
+	interrupts = <0 210 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart1 {
+	interrupts = <0 211 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart2 {
+	interrupts = <0 212 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart3 {
+	interrupts = <0 213 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart4 {
+	interrupts = <0 214 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart5 {
+	interrupts = <0 215 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart6 {
+	interrupts = <0 216 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&i2c0 {
+	interrupts = <0 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&i2c1 {
+	interrupts = <0 194 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&i2c2 {
+	interrupts = <0 195 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&i2c3 {
+	interrupts = <0 196 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mcu_uart0 {
+	interrupts = <0 217 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mcu_uart1 {
+	interrupts = <0 218 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mcu_i2c0 {
+	interrupts = <0 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mcu_i2c1 {
+	interrupts = <0 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&adc0 {
+	interrupts = <0 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mbox0 {
+	interrupts = <0 96 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mbox1 {
+	interrupts = <0 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mbox2 {
+	interrupts = <0 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mbox3 {
+	interrupts = <0 99 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mbox4 {
+	interrupts = <0 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mbox5 {
+	interrupts = <0 99 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mbox6 {
+	interrupts = <0 100 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mbox7 {
+	interrupts = <0 100 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
