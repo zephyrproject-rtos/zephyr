@@ -199,6 +199,11 @@ static inline int usbhs_enable_core(const struct device *dev)
 	}
 
 	wrapper->ENABLE = USBHS_ENABLE_PHY_Msk | USBHS_ENABLE_CORE_Msk;
+
+	/* Wait for PHY clock to start */
+	k_busy_wait(45);
+
+	/* Release DWC2 reset */
 	wrapper->TASKS_START = 1UL;
 
 	/* Wait for clock to start to avoid hang on too early register read */
@@ -218,7 +223,6 @@ static inline int usbhs_disable_core(const struct device *dev)
 	wrapper->INTENCLR = 1UL;
 
 	wrapper->ENABLE = 0UL;
-	wrapper->TASKS_START = 1UL;
 
 	return 0;
 }
