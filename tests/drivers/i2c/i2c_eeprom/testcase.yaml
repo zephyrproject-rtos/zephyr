@@ -1,0 +1,14 @@
+common:
+  tags:
+    - drivers
+    - i2c
+  depends_on: i2c
+  harness: ztest
+  harness_config:
+    fixture: i2c_eeprom
+  filter: dt_compat_enabled("zephyr,i2c-target-eeprom")
+tests:
+  drivers.i2c.i2c_eeprom: {}
+  drivers.i2c.i2c_eeprom_int:
+    extra_configs:
+      - CONFIG_DMA=n

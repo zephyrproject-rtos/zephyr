@@ -1,0 +1,14 @@
+common:
+  depends_on: i2c
+  tags:
+    - drivers
+    - i2c
+  harness: ztest
+  harness_config:
+    fixture: i2c_loopback
+  filter: dt_nodelabel_enabled("dut") and dt_nodelabel_enabled("dut_aux")
+tests:
+  drivers.i2c.i2c_loopback: {}
+  drivers.i2c.i2c_loopback_int:
+    extra_configs:
+      - CONFIG_DMA=n
