@@ -257,6 +257,10 @@ Flash
 
 * The Flash HP Renesas RA dual bank mode Kconfig symbol :kconfig:option:`CONFIG_DUAL_BANK_MODE`
   has been removed.
+* The Flash HP Renesas RA Kconfig symbol :kconfig:option:`CONFIG_RA_FLASH_HP`
+  has been renamed to :kconfig:option:`CONFIG_SOC_FLASH_RENESAS_RA_HP`.
+* The Flash HP Renesas RA write protect Kconfig symbol :kconfig:option:`CONFIG_FLASH_RA_WRITE_PROTECT`
+  has been renamed to :kconfig:option:`CONFIG_FLASH_RENESAS_RA_HP_WRITE_PROTECT`.
 
 
 Stepper

@@ -285,11 +285,11 @@ static int flash_ra_ex_op(const struct device *dev, uint16_t code, const uintptr
 	int err = -ENOTSUP;
 
 	switch (code) {
-#if defined(CONFIG_FLASH_RA_WRITE_PROTECT)
+#if defined(CONFIG_FLASH_RENESAS_RA_HP_WRITE_PROTECT)
 	case FLASH_RA_EX_OP_WRITE_PROTECT:
 		err = flash_ra_ex_op_write_protect(dev, in, out);
 		break;
-#endif /* CONFIG_FLASH_RA_WRITE_PROTECT */
+#endif /* CONFIG_FLASH_RENESAS_RA_HP_WRITE_PROTECT */
 
 	default:
 		break;
