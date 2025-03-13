@@ -2227,8 +2227,8 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	uint16_t conn_interval_unit_old;
 	uint16_t conn_interval_unit_new;
 	uint32_t ticks_win_offset = 0U;
-	uint16_t conn_interval_old_us;
-	uint16_t conn_interval_new_us;
+	uint32_t conn_interval_old_us;
+	uint32_t conn_interval_new_us;
 	uint32_t ticks_slot_overhead;
 	uint16_t conn_interval_old;
 	uint16_t conn_interval_new;
