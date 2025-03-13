@@ -31,4 +31,8 @@
 			interrupts = <125 0>;
 		};
 	};
+
+	otghs_ulpi_phy: otghs_ulpis_phy {
+		clocks = <&rcc STM32_CLOCK(AHB1, 26)>;
+	};
 };

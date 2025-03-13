@@ -15,4 +15,11 @@
 			};
 		};
 	};
+
+	otghs_ulpi_phy: otghs_ulpis_phy {
+		compatible = "usb-ulpi-phy";
+		#phy-cells = <0>;
+		clocks = <&rcc STM32_CLOCK(AHB1, 30)>;
+	};
+
 };
