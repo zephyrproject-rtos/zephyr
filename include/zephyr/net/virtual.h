@@ -160,7 +160,7 @@ struct virtual_interface_context {
 	bool is_init;
 
 	/** Link address for this network interface */
-	struct net_linkaddr_storage lladdr;
+	struct net_linkaddr lladdr;
 
 	/** User friendly name of this L2 layer. */
 	char name[VIRTUAL_MAX_NAME_LEN];
