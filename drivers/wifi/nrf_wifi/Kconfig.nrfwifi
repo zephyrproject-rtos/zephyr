@@ -150,6 +150,7 @@ config NRF70_REG_DOMAIN
 # stack requirements.
 config NET_MGMT_EVENT_STACK_SIZE
 	default 2048 if !WIFI_NM_WPA_SUPPLICANT
+	default 4600
 
 config NRF70_LOG_VERBOSE
 	bool "Maintains the verbosity of information in logs"
