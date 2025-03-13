@@ -11,8 +11,12 @@
 #ifndef ZEPHYR_INCLUDE_NET_DSA_H_
 #define ZEPHYR_INCLUDE_NET_DSA_H_
 
+#include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/phy.h>
+#include <zephyr/drivers/pinctrl.h>
 
 /**
  * @brief DSA definitions and helpers
@@ -34,18 +38,40 @@
 #define DSA_TAG_SIZE 0
 #endif
 
-/** @endcond */
+#define DSA_PORT_INIT_INSTANCE(port, dsa)                                                          \
+	COND_CODE_1(DT_NUM_PINCTRL_STATES(port),                                                   \
+				(PINCTRL_DT_DEFINE(port);), (EMPTY))                               \
+	const struct dsa_port_config dsa_##dsa##_port_##port##_config = {                          \
+		.mac_addr = DT_PROP_OR(port, local_mac_address, {0}),                              \
+		.port_idx = DT_REG_ADDR(port),                                                     \
+		.phy_dev = (COND_CODE_1(DT_NODE_HAS_PROP(port, phy_handle),                        \
+					DEVICE_DT_GET(DT_PHANDLE(port, phy_handle)),               \
+					NULL)),                                                    \
+		.phy_mode = DT_PROP_OR(port, phy_connection_type, ""),                             \
+		.ethernet_connection = (COND_CODE_1(DT_NODE_HAS_PROP(port, ethernet),              \
+					(DEVICE_DT_GET(DT_PHANDLE(port, ethernet))), NULL)),       \
+		.pincfg = COND_CODE_1(DT_NUM_PINCTRL_STATES(port),                                 \
+				(PINCTRL_DT_DEV_CONFIG_GET(port)), NULL),                          \
+	};                                                                                         \
+	NET_DEVICE_INIT_INSTANCE(                                                                  \
+		CONCAT(dsa_, dsa, _port_, port),                                                   \
+		"swp" STRINGIFY(DT_REG_ADDR(port)), DT_REG_ADDR(port), dsa_port_initialize, NULL,  \
+				&dsa_context_##dsa, &dsa_##dsa##_port_##port##_config,             \
+				CONFIG_ETH_INIT_PRIORITY, &dsa_eth_api, ETHERNET_L2,               \
+				NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+
+#define DSA_INIT_INSTANCE(n, _dapi, data)                                                          \
+	struct dsa_context dsa_context_##n = {                                                     \
+		.dapi = _dapi,                                                                     \
+		.prv_data = (void *)data,                                                          \
+		.init_ports = 0,                                                                   \
+		.num_ports = DT_INST_CHILD_NUM_STATUS_OKAY(n),                                     \
+	};                                                                                         \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, DSA_PORT_INIT_INSTANCE, n);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @cond INTERNAL_HIDDEN
- *
- * These are for internal use only, so skip these in
- * public documentation.
- */
 
 /** DSA context data */
 struct dsa_context {
@@ -64,9 +90,15 @@ struct dsa_context {
 
 	/** Status of each port */
 	bool link_up[NET_DSA_PORT_MAX_COUNT];
-#endif
+
 	/** Number of slave ports in the DSA switch */
 	uint8_t num_slave_ports;
+#endif
+	/** Number of ports in the DSA switch */
+	uint8_t num_ports;
+
+	/** Number of initialized ports in the DSA switch */
+	uint8_t init_ports;
 
 	/** Instance specific data */
 	void *prv_data;
@@ -105,7 +137,76 @@ struct dsa_api {
 
 	struct net_pkt *(*dsa_xmit_pkt)(struct net_if *iface, struct net_pkt *pkt);
 #endif
+	/** Handle receive packet for untagging and redirection */
+	struct net_if *(*recv)(struct net_if *iface, struct net_pkt **pkt);
+
+	/** transmit packet with tagging */
+	struct net_pkt *(*xmit)(struct net_if *iface, struct net_pkt *pkt);
+
+	/** port init */
+	int (*port_init)(const struct device *dev);
+
+	/** port link change */
+	void (*port_phylink_change)(const struct device *dev, struct phy_link_state *state,
+				    void *user_data);
+
+	/** switch setup */
+	int (*switch_setup)(const struct dsa_context *dsa_ctx);
 };
+
+enum dsa_port_type {
+	NON_DSA_PORT,
+	DSA_MASTER_PORT,
+	DSA_SLAVE_PORT,
+	DSA_CPU_PORT,
+	DSA_PORT,
+};
+
+struct dsa_port_config {
+	uint8_t mac_addr[6];
+	const int port_idx;
+	const struct device *phy_dev;
+	const char *phy_mode;
+	const struct device *ethernet_connection;
+	const struct pinctrl_dev_config *pincfg;
+};
+
+/**
+ * @brief DSA port init
+ *
+ * @param dev Device
+ *
+ * Returns:
+ *  - 0 if ok, < 0 if error
+ */
+int dsa_port_initialize(const struct device *dev);
+
+/**
+ * @brief DSA transmit function
+ *
+ * @param dev Device
+ * @param pkt Network packet
+ *
+ * Returns:
+ *  - 0 if ok, < 0 if error
+ */
+int dsa_xmit(const struct device *dev, struct net_pkt *pkt);
+
+/**
+ * @brief DSA receive function
+ *
+ * @param iface Interface
+ * @param pkt Network packet
+ *
+ * Returns:
+ *  - Interface to redirect
+ */
+struct net_if *dsa_recv(struct net_if *iface, struct net_pkt **pkt);
+
+/**
+ * @brief Ethernet APIs definition for switch ports
+ */
+extern const struct ethernet_api dsa_eth_api;
 
 /**
  * @endcond

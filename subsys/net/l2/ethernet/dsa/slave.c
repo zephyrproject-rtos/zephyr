@@ -24,7 +24,11 @@ struct net_if *dsa_slave_get_iface(struct net_if *iface, int slave_num)
 
 	dsa_ctx = eth_ctx->dsa_ctx;
 
+#if defined(CONFIG_NET_DSA_LEGACY)
 	if (slave_num < 0 || slave_num >= dsa_ctx->num_slave_ports) {
+#else
+	if (slave_num < 0 || slave_num >= dsa_ctx->num_ports) {
+#endif
 		return NULL;
 	}
 
