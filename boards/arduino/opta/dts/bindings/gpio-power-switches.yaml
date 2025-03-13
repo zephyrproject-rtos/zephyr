@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  This allows to define a group of relays (like in the original Opta)
-  or other kinds of power switches controlled by a GPIO. Each power
-  switch is defined in a child node of the gpio-power-switches node.
+  Group of relays (like in the original Opta) or other kinds of power switches controlled by a GPIO.
+
+  Each power switch is defined in a child node of the gpio-power-switches node.
 
 compatible: "gpio-power-switches"
 
