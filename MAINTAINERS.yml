@@ -4066,8 +4066,8 @@ Renesas RZ Platforms:
   status: maintained
   maintainers:
     - tgorochowik
-  collaborators:
     - binhnguyen2434
+  collaborators:
     - nhutnguyenkc
   files:
     - boards/renesas/rz*/
