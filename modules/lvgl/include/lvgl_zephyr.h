@@ -9,9 +9,24 @@
 
 #include <zephyr/kernel.h>
 
+#if DT_ZEPHYR_DISPLAYS_COUNT == 0
+#error Could not find "zephyr,display" chosen property, or node with compatible "zephyr,displays"
+#endif /* DT_ZEPHYR_DISPLAYS_COUNT == 0 */
+
+#define LV_DISPLAY_IDX_MACRO(i, _) _##i
+
+#define LV_DISPLAYS_TO_INITIALIZE LISTIFY(DT_ZEPHYR_DISPLAYS_COUNT, LV_DISPLAY_IDX_MACRO, (,))
+
+#define LVGL_DISPLAY_OBJ(n) lvgl_display_##n
+
+#define LV_DISPLAY_EXTERN_OBJECTS(n) extern lv_display_t *LVGL_DISPLAY_OBJ(n);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+FOR_EACH(LV_DISPLAY_EXTERN_OBJECTS, (), LV_DISPLAYS_TO_INITIALIZE)
+	;
 
 /**
  * @brief Initialize the LittlevGL library
