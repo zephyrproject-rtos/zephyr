@@ -9,6 +9,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
@@ -119,6 +120,9 @@ enum ads131m02_data_rate {
 struct ads131m02_config {
 	const struct spi_dt_spec spi;
 	const struct gpio_dt_spec gpio_drdy;
+	const struct device *clk_dev;
+	uint8_t bus_clk;
+	uint32_t clock_frequency;
 };
 
 struct ads131m02_data {
@@ -670,6 +674,15 @@ static int ads131m02_init(const struct device *dev)
 	k_sem_init(&data->acq_sem, 0, 1);
 	k_sem_init(&data->drdy_sem, 0, 1);
 
+	if (cfg->clock_frequency) {
+		ret = clock_control_set_rate(DEVICE_DT_GET(DT_NODELABEL(clkmux)),
+					     (clock_control_subsys_t)&cfg->bus_clk,
+					     (clock_control_subsys_rate_t)&cfg->clock_frequency);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	ret = ads131m02_configure_gpio(dev);
 	if (ret != 0) {
 		LOG_ERR("GPIO config failed %d", ret);
@@ -723,6 +736,8 @@ static int ads131m02_init(const struct device *dev)
 			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA |			\
 			SPI_WORD_SET(8), 0),					\
 		.gpio_drdy = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),		\
+		.clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 0),	\
+		.bus_clk = DT_INST_CLOCKS_CELL(n, bus),				\
 	};									\
 	static struct ads131m02_data data_##n;					\
 	DEVICE_DT_INST_DEFINE(n, ads131m02_init,				\
