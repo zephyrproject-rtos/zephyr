@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_RTS5912
+	bool "Realtek RTS5912 I2C support"
+	default y
+	select PINCTRL
+	depends on CLOCK_CONTROL
+	depends on DT_HAS_REALTEK_RTS5912_I2C_ENABLED
+	help
+	  Enable the Realtek RTS5912 I2C driver
+
+config I2C_RTS5912_CLOCK_SPEED
+	int "Set the clock speed for I2C"
+	depends on I2C_RTS5912
+	default 104
