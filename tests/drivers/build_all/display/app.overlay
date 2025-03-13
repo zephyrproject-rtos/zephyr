@@ -140,15 +140,16 @@
 				compatible = "solomon,ssd1327fb";
 				reg = <7>;
 				mipi-max-frequency = <100000000>;
-
-				width = <240>;
-				height = <240>;
+				width = <128>;
+				height = <128>;
 				oscillator-freq = <0>;
 				display-offset = <0>;
 				start-line = <0>;
 				multiplex-ratio = <0>;
 				prechargep = <0>;
 				remap-value = <0>;
+				phase-length = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
 
 			test_mipi_dbi_ssd1322: ssd1322@9 {
@@ -477,6 +478,7 @@
 				com-invdir;
 				prechargep = <0x22>;
 			};
+
 			test_st7567: st7567@2 {
 				compatible = "sitronix,st7567";
 				reg = <0x2>;
@@ -516,6 +518,20 @@
 				precharge-voltage = <0>;
 				phase-length = <0>;
 				vcomh-voltage = <0>;
+			};
+
+			test_ssd1327fb: ssd1327fb@5 {
+				compatible = "solomon,ssd1327fb";
+				reg = <5>;
+				width = <128>;
+				height = <128>;
+				oscillator-freq = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				multiplex-ratio = <0>;
+				prechargep = <0>;
+				remap-value = <0>;
+				phase-length = <0>;
 			};
 		};
 	};
