@@ -133,6 +133,17 @@ Bluetooth Host
 Networking
 **********
 
+* The struct :c:struct:`net_linkaddr_storage` has been renamed to struct
+  :c:struct:`net_linkaddr` and the old ``struct net_linkaddr`` has been removed.
+  The struct :c:struct:`net_linkaddr` now contains space to store the link
+  address instead of having pointer that point to the link address. This avoids
+  possible dangling pointers when cloning struct :c:struct:`net_pkt`. This will
+  increase the size of struct :c:struct:`net_linkaddr` by 4 octets for IEEE 802.15.4,
+  but there is no size increase for other network technologies like Ethernet.
+  Note that the code that has ``if (lladdr->addr == NULL)`` no longer works
+  as expected and must be changed to ``if (lladdr->len == 0)`` if you want to
+  verify whether the link address is set or not.
+
 Other subsystems
 ****************
 
