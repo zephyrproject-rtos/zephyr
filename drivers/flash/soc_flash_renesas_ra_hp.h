@@ -75,8 +75,8 @@ struct event_flash {
 	volatile bool write_complete;
 };
 
-#if defined(CONFIG_FLASH_RA_WRITE_PROTECT)
+#if defined(CONFIG_FLASH_RENESAS_RA_HP_WRITE_PROTECT)
 int flash_ra_ex_op_write_protect(const struct device *dev, const uintptr_t in, void *out);
-#endif /*CONFIG_FLASH_RA_WRITE_PROTECT*/
+#endif /* CONFIG_FLASH_RENESAS_RA_HP_WRITE_PROTECT */
 
 #endif /* ZEPHYR_DRIVERS_FLASH_SOC_FLASH_RENESAS_RA_HP_H_ */
