@@ -1,0 +1,26 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lpspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+&pinctrl {
+	/* J2 pins 12, 10, 8, 6 -> CLK, MISO, MOSI, PCS */
+	pinmux_lpspi1: pinmux_lpspi1 {
+		group0 {
+			pinmux = <LPSPI1_SDO_P2_13>,
+				 <LPSPI1_SCK_P2_12>,
+				 <LPSPI1_SDI_P2_16>,
+				 <LPSPI1_PCS1_P2_6>;
+			slew-rate = "fast";
+			drive-strength = "high";
+			input-enable;
+		};
+	};
+};
