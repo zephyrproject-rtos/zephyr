@@ -242,14 +242,15 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev, struct video_forma
 	return 0;
 }
 
-static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
+static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
+				       enum video_buf_type type)
 {
 	int err;
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
 
 	if (!enable) {
-		if (video_stream_stop(config->sensor_dev)) {
+		if (video_stream_stop(config->sensor_dev, type)) {
 			return -EIO;
 		}
 
@@ -279,7 +280,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
 		return -EIO;
 	}
 
-	if (video_stream_start(config->sensor_dev)) {
+	if (video_stream_start(config->sensor_dev, type)) {
 		return -EIO;
 	}
 

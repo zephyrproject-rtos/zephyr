@@ -129,7 +129,7 @@ int main(void)
 		}
 
 		/* Start video capture */
-		if (video_stream_start(video)) {
+		if (video_stream_start(video, VIDEO_BUF_TYPE_OUTPUT)) {
 			LOG_ERR("Unable to start video");
 			return 0;
 		}
@@ -159,7 +159,7 @@ int main(void)
 		} while (!ret);
 
 		/* stop capture */
-		if (video_stream_stop(video)) {
+		if (video_stream_stop(video, VIDEO_BUF_TYPE_OUTPUT)) {
 			LOG_ERR("Unable to stop video");
 			return 0;
 		}

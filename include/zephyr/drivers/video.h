@@ -38,12 +38,29 @@ extern "C" {
 #define LINE_COUNT_HEIGHT (-1)
 
 /**
+ * @brief video_buf_type enum
+ *
+ * Supported video buffer types of a video device.
+ * The direction (input or output) is defined from the device's point of view.
+ * Devices like cameras support only output type, encoders support only input
+ * types while m2m devices like ISP, PxP support both input and output types.
+ */
+enum video_buf_type {
+	/** input buffer type */
+	VIDEO_BUF_TYPE_INPUT,
+	/** output buffer type */
+	VIDEO_BUF_TYPE_OUTPUT,
+};
+
+/**
  * @struct video_format
  * @brief Video format structure
  *
  * Used to configure frame format.
  */
 struct video_format {
+	/** type of the buffer */
+	enum video_buf_type type;
 	/** FourCC pixel format value (\ref video_pixel_formats) */
 	uint32_t pixelformat;
 	/** frame width in pixels. */
@@ -90,6 +107,8 @@ struct video_format_cap {
  * Used to describe video endpoint capabilities.
  */
 struct video_caps {
+	/** type of the buffer */
+	enum video_buf_type type;
 	/** list of video format capabilities (zero terminated). */
 	const struct video_format_cap *format_caps;
 	/** minimal count of video buffers to enqueue before being able to start
@@ -121,6 +140,8 @@ struct video_caps {
  * Represent a video frame.
  */
 struct video_buffer {
+	/** type of the buffer */
+	enum video_buf_type type;
 	/** pointer to driver specific data. */
 	void *driver_data;
 	/** pointer to the start of the buffer. */
@@ -286,11 +307,13 @@ typedef int (*video_api_flush_t)(const struct device *dev, bool cancel);
  * Start (enable == true) or stop (enable == false) streaming on the video device.
  *
  * @param dev Pointer to the device structure.
+ * @param type The type of the buffers stream to start or stop.
  * @param enable If true, start streaming, otherwise stop streaming.
  *
  * @retval 0 on success, otherwise a negative errno code.
  */
-typedef int (*video_api_set_stream_t)(const struct device *dev, bool enable);
+typedef int (*video_api_set_stream_t)(const struct device *dev, bool enable,
+				      enum video_buf_type type);
 
 /**
  * @typedef video_api_set_ctrl_t
@@ -549,10 +572,12 @@ static inline int video_flush(const struct device *dev, bool cancel)
  * able to start streaming, then driver set the min_vbuf_count to the related
  * endpoint capabilities.
  *
+ * @param type The type of the buffers stream to start.
+ *
  * @retval 0 Is successful.
  * @retval -EIO General input / output error.
  */
-static inline int video_stream_start(const struct device *dev)
+static inline int video_stream_start(const struct device *dev, enum video_buf_type type)
 {
 	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
@@ -560,7 +585,7 @@ static inline int video_stream_start(const struct device *dev)
 		return -ENOSYS;
 	}
 
-	return api->set_stream(dev, true);
+	return api->set_stream(dev, true, type);
 }
 
 /**
@@ -569,10 +594,12 @@ static inline int video_stream_start(const struct device *dev)
  * On video_stream_stop, driver must stop any transactions or wait until they
  * finish.
  *
+ * @param type The type of the buffers stream to stop.
+ *
  * @retval 0 Is successful.
  * @retval -EIO General input / output error.
  */
-static inline int video_stream_stop(const struct device *dev)
+static inline int video_stream_stop(const struct device *dev, enum video_buf_type type)
 {
 	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 	int ret;
@@ -581,7 +608,7 @@ static inline int video_stream_stop(const struct device *dev)
 		return -ENOSYS;
 	}
 
-	ret = api->set_stream(dev, false);
+	ret = api->set_stream(dev, false, type);
 	video_flush(dev, true);
 
 	return ret;

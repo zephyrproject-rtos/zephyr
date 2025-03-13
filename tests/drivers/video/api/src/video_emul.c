@@ -16,11 +16,11 @@ ZTEST(video_common, test_video_device)
 	zexpect_true(device_is_ready(rx_dev));
 	zexpect_true(device_is_ready(imager_dev));
 
-	zexpect_ok(video_stream_start(imager_dev));
-	zexpect_ok(video_stream_stop(imager_dev));
+	zexpect_ok(video_stream_start(imager_dev, VIDEO_BUF_TYPE_OUTPUT));
+	zexpect_ok(video_stream_stop(imager_dev, VIDEO_BUF_TYPE_OUTPUT));
 
-	zexpect_ok(video_stream_start(rx_dev));
-	zexpect_ok(video_stream_stop(rx_dev));
+	zexpect_ok(video_stream_start(rx_dev, VIDEO_BUF_TYPE_OUTPUT));
+	zexpect_ok(video_stream_stop(rx_dev, VIDEO_BUF_TYPE_OUTPUT));
 }
 
 ZTEST(video_common, test_video_format)
@@ -161,7 +161,7 @@ ZTEST(video_common, test_video_vbuf)
 	zexpect_not_null(vbuf);
 
 	/* Start the virtual hardware */
-	zexpect_ok(video_stream_start(rx_dev));
+	zexpect_ok(video_stream_start(rx_dev, VIDEO_BUF_TYPE_OUTPUT));
 
 	/* Enqueue a first buffer */
 	zexpect_ok(video_enqueue(rx_dev, vbuf));

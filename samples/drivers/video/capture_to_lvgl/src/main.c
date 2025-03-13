@@ -123,7 +123,7 @@ int main(void)
 #endif
 
 	/* Start video capture */
-	if (video_stream_start(video_dev)) {
+	if (video_stream_start(video_dev, VIDEO_BUF_TYPE_OUTPUT)) {
 		LOG_ERR("Unable to start capture (interface)");
 		return 0;
 	}
