@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx8ml_m7.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include "phyboard_pollux-pinctrl.dtsi"
 
 / {
@@ -60,6 +61,16 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Has PCA9533 I2C expander connected to it.
+ * Currently there is no driver for it in Zephyr.
+ */
+&i2c2 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
 };
 
