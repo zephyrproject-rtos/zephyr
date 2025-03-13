@@ -110,11 +110,12 @@ struct udc_dwc2_data {
 	struct k_event xfer_finished;
 	struct dwc2_reg_backup backup;
 	uint32_t ghwcfg1;
-	uint32_t txf_set;
 	uint32_t max_xfersize;
 	uint32_t max_pktcnt;
 	uint32_t tx_len[16];
 	uint32_t rx_siz[16];
+	uint16_t txf_set;
+	uint16_t pending_tx_flush;
 	uint16_t dfifodepth;
 	uint16_t rxfifo_depth;
 	uint16_t max_txfifo_depth[16];
@@ -1484,6 +1485,7 @@ static int dwc2_unset_dedicated_fifo(const struct device *dev,
 static void udc_dwc2_ep_disable(const struct device *dev,
 				struct udc_ep_config *const cfg, bool stall)
 {
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 	mem_addr_t dxepctl_reg;
@@ -1492,6 +1494,40 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 
 	dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
 	dxepctl = sys_read32(dxepctl_reg);
+
+	if (priv->hibernated) {
+		/* Currently USB stack calls this function while hibernated,
+		 * for example if usbd_disable() is called. We cannot access the
+		 * real registers when hibernated, so just modify backup values
+		 * that will be restored on hibernation exit.
+		 */
+		if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+			dxepctl = priv->backup.doepctl[ep_idx];
+
+			dxepctl &= ~USB_DWC2_DEPCTL_EPENA;
+			if (stall) {
+				dxepctl |= USB_DWC2_DEPCTL_STALL;
+			} else {
+				dxepctl |= USB_DWC2_DEPCTL_SNAK;
+			}
+
+			priv->backup.doepctl[ep_idx] = dxepctl;
+		} else {
+			dxepctl = priv->backup.diepctl[ep_idx];
+
+			dxepctl &= ~USB_DWC2_DEPCTL_EPENA;
+			dxepctl |= USB_DWC2_DEPCTL_SNAK;
+			if (stall) {
+				dxepctl |= USB_DWC2_DEPCTL_STALL;
+			}
+
+			priv->backup.diepctl[ep_idx] = dxepctl;
+
+			priv->pending_tx_flush |= BIT(usb_dwc2_get_depctl_txfnum(dxepctl));
+		}
+
+		return;
+	}
 
 	if (!is_iso && (dxepctl & USB_DWC2_DEPCTL_NAKSTS)) {
 		/* Endpoint already sends forced NAKs. STALL if necessary. */
@@ -2162,6 +2198,7 @@ static int udc_dwc2_disable(const struct device *dev)
 	if (priv->hibernated) {
 		dwc2_exit_hibernation(dev, false, true);
 		priv->hibernated = 0;
+		priv->pending_tx_flush = 0;
 	}
 
 	sys_clear_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
@@ -2925,6 +2962,13 @@ static void dwc2_handle_hibernation_exit(const struct device *dev,
 		if (k_event_test(&priv->xfer_finished, UINT32_MAX)) {
 			k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 		}
+	}
+
+	while (priv->pending_tx_flush) {
+		unsigned int fifo = find_lsb_set(priv->pending_tx_flush) - 1;
+
+		priv->pending_tx_flush &= ~BIT(fifo);
+		dwc2_flush_tx_fifo(dev, fifo);
 	}
 }
 
