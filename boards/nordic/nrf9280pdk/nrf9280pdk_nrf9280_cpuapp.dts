@@ -27,7 +27,6 @@
 		zephyr,ieee802154 = &cpuapp_ieee802154;
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
-		zephyr,canbus = &can120;
 	};
 
 	aliases {
@@ -243,15 +242,15 @@ ipc0: &cpuapp_cpurad_ipc {
 };
 
 &exmif {
-	cs-gpios = <&gpio6 3 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&exmif_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&exmif_sleep>;
+	pinctrl-names = "default", "sleep";
 	status = "okay";
+
 	mx25uw63: mx25uw6345g@0 {
-		compatible = "jedec,spi-nor";
+		compatible = "jedec,mspi-nor";
 		status = "disabled";
 		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(48)>;
 		jedec-id = [c2 84 37];
 		sfdp-bfp = [
 			e5 20 8a ff  ff ff ff 03  00 ff 00 ff  00 ff 00 ff
@@ -264,6 +263,17 @@ ipc0: &cpuapp_cpurad_ipc {
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <30000>;
+		reset-gpios = <&gpio6 12 GPIO_ACTIVE_LOW>;
+		t-reset-pulse = <10000>;
+		t-reset-recovery = <35000>;
+
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <1>;
+		mspi-cpp-mode = "MSPI_CPP_MODE_0";
+		mspi-endian = "MSPI_BIG_ENDIAN";
+		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
 	};
 };
 
@@ -273,16 +283,6 @@ ipc0: &cpuapp_cpurad_ipc {
 
 zephyr_udc0: &usbhs {
 	status = "okay";
-};
-
-&canpll {
-	status = "okay";
-};
-
-&can120 {
-	status = "okay";
-	pinctrl-0 = <&can120_default>;
-	pinctrl-names = "default";
 };
 
 &pwm130 {

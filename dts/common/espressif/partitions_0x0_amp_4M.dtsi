@@ -1,10 +1,9 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /* 4MB flash partition table */
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -13,7 +12,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x0 DT_SIZE_K(64)>;
+			reg = <0x0 DT_SIZE_K(128)>;
 		};
 
 		slot0_partition: partition@20000 {
@@ -21,34 +20,48 @@
 			reg = <0x20000 DT_SIZE_K(1344)>;
 		};
 
-		slot0_appcpu_partition: partition@170000 {
-			label = "image-0-appcpu";
-			reg = <0x170000 DT_SIZE_K(512)>;
-		};
-
-		slot1_partition: partition@1F0000 {
+		slot1_partition: partition@170000 {
 			label = "image-1";
-			reg = <0x1F0000 DT_SIZE_K(1344)>;
+			reg = <0x170000 DT_SIZE_K(1344)>;
 		};
 
-		slot1_appcpu_partition: partition@340000 {
+		slot0_appcpu_partition: partition@2c0000 {
+			label = "image-0-appcpu";
+			reg = <0x2C0000 DT_SIZE_K(448)>;
+		};
+
+		slot1_appcpu_partition: partition@330000 {
 			label = "image-1-appcpu";
-			reg = <0x340000 DT_SIZE_K(512)>;
+			reg = <0x330000 DT_SIZE_K(448)>;
 		};
 
-		storage_partition: partition@3C0000 {
+		slot0_lpcore_partition: partition@3a0000 {
+			label = "image-0-lpcore";
+			reg = <0x3A0000 DT_SIZE_K(32)>;
+		};
+
+		slot1_lpcore_partition: partition@3a8000 {
+			label = "image-1-lpcore";
+			reg = <0x3A8000 DT_SIZE_K(32)>;
+		};
+
+		storage_partition: partition@3b0000 {
 			label = "storage";
-			reg = <0x3C0000 DT_SIZE_K(128)>;
+			reg = <0x3B0000 DT_SIZE_K(192)>;
 		};
 
-		scratch_partition: partition@3E0000 {
-			   label = "image-scratch";
-			   reg = <0x3E0000 DT_SIZE_K(64)>;
+		scratch_partition: partition@3e0000 {
+			label = "image-scratch";
+			reg = <0x3E0000 DT_SIZE_K(124)>;
 		};
 
-		coredump_partition: partition@3F0000 {
-			label = "coredump-partition";
-			reg = <0x3F0000 DT_SIZE_K(4)>;
+		coredump_partition: partition@3ff000 {
+			label = "coredump";
+			reg = <0x3FF000 DT_SIZE_K(4)>;
 		};
 	};
 };
+
+/* Remaining flash size is 0kB
+ * Last used address is 0x3FFFFF
+ */

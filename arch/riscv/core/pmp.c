@@ -752,8 +752,8 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	int ret = -1;
 
 	/* Check if this is on the stack */
-	if (IS_WITHIN(start, size, arch_current_thread()->stack_info.start,
-		      arch_current_thread()->stack_info.size)) {
+	if (IS_WITHIN(start, size,
+		      _current->stack_info.start, _current->stack_info.size)) {
 		return 0;
 	}
 
@@ -768,7 +768,7 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	}
 
 	/* Look for a matching partition in our memory domain */
-	struct k_mem_domain *domain = arch_current_thread()->mem_domain_info.mem_domain;
+	struct k_mem_domain *domain = _current->mem_domain_info.mem_domain;
 	int p_idx, remaining_partitions;
 	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
 

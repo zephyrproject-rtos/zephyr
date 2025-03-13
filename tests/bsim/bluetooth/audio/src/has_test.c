@@ -41,15 +41,9 @@ static const struct bt_has_preset_ops preset_ops = {
 
 static void start_adv(void)
 {
-	int err;
+	struct bt_le_ext_adv *ext_adv;
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, AD_SIZE, NULL, 0);
-	if (err) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
-	LOG_DBG("Advertising successfully started");
+	setup_connectable_adv(&ext_adv);
 }
 
 static void test_common(void)

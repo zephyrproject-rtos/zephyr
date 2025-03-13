@@ -266,7 +266,7 @@ static void tmag5170_convert_temp_reading_to_celsius(struct sensor_value *output
 	output->val2 = (result % 100000) * 10;
 }
 
-static void tmag5170_covert_angle_reading_to_degrees(struct sensor_value *output,
+static void tmag5170_convert_angle_reading_to_degrees(struct sensor_value *output,
 						     uint16_t chan_reading)
 {
 	/* 12 MSBs store the integer part of the result,
@@ -427,7 +427,7 @@ static int tmag5170_channel_get(const struct device *dev,
 							     drv_data->chip_revision);
 		break;
 	case SENSOR_CHAN_ROTATION:
-		tmag5170_covert_angle_reading_to_degrees(val, drv_data->angle);
+		tmag5170_convert_angle_reading_to_degrees(val, drv_data->angle);
 		break;
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		tmag5170_convert_temp_reading_to_celsius(val, drv_data->temperature);
@@ -482,7 +482,7 @@ static int tmag5170_init_registers(const struct device *dev)
 				TMAG5170_OPERATING_MODE_SET(cfg->operating_mode) |
 				TMAG5170_CONV_AVG_SET(cfg->oversampling) |
 				TMAG5170_MAG_TEMPCO_SET(cfg->magnet_type) |
-				TMAG5170_T_CH_EN_SET(cfg->tempeature_measurement) |
+				TMAG5170_T_CH_EN_SET(cfg->temperature_measurement) |
 				TMAG5170_T_RATE_SET(cfg->disable_temperature_oversampling));
 	}
 
@@ -563,7 +563,7 @@ static int tmag5170_init(const struct device *dev)
 		.z_range = DT_INST_ENUM_IDX(_num, z_range),				   \
 		.operating_mode = DT_INST_PROP(_num, operating_mode),			   \
 		.oversampling = DT_INST_ENUM_IDX(_num, oversampling),			   \
-		.tempeature_measurement = DT_INST_PROP(_num, enable_temperature_channel),  \
+		.temperature_measurement = DT_INST_PROP(_num, enable_temperature_channel), \
 		.magnet_type = DT_INST_ENUM_IDX(_num, magnet_type),			   \
 		.angle_measurement = DT_INST_ENUM_IDX(_num, angle_measurement),		   \
 		.disable_temperature_oversampling = DT_INST_PROP(_num,			   \

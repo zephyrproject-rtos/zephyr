@@ -7,7 +7,6 @@ flash: 704
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - gpio
   - uart

@@ -38,7 +38,7 @@ config RISCV_CURRENT_VIA_GP
 	select ARCH_HAS_CUSTOM_CURRENT_IMPL
 	help
 	  Store the current thread's pointer into the global pointer (GP) register.
-	  When is enabled, calls to `arch_current_thread()` & `k_sched_current_thread_query()` will
+	  When is enabled, calls to `_current` & `k_sched_current_thread_query()` will
 	  be reduced to a single register read.
 
 endchoice # RISCV_GP_PURPOSE
@@ -123,6 +123,11 @@ config RISCV_SOC_HAS_ISR_STACKING
 	    the hardware stacked registers in the proper order as they are
 	    saved on the stack by the hardware, and the registers saved by the
 	    software macros. The structure must be called 'struct arch_esf'.
+
+	  - SOC_ISR_STACKING_ESR_INIT: macro guarded by !_ASMLANGUAGE.
+	    Some hardware stacked registers should be initialized on init
+	    stack with proper values. This prevents from incorrect behavior
+	    on entry context switch when initial stack is restored.
 
 config RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	bool
@@ -215,8 +220,19 @@ config RISCV_HAS_PLIC
 config RISCV_HAS_CLIC
 	bool
 	depends on RISCV_PRIVILEGED
+	select RISCV_ALWAYS_SWITCH_THROUGH_ECALL if MULTITHREADING
+	select CLIC_SUPPORT_INTERRUPT_LEVEL if !NRFX_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
+
+config CLIC_SUPPORT_INTERRUPT_LEVEL
+	bool
+	depends on RISCV_HAS_CLIC
+	help
+	  For CLIC implementations with extended interrupt level, where
+	  higher-numbered interrupt levels can preempt lower-numbered interrupt
+	  levels. This option handles interrupt level in ISR to ensure proper
+	  nested ISR exits.
 
 config RISCV_SOC_EXCEPTION_FROM_IRQ
 	bool

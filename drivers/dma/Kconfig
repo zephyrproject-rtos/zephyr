@@ -58,6 +58,8 @@ source "drivers/dma/Kconfig.xmc4xxx"
 
 source "drivers/dma/Kconfig.rpi_pico"
 
+source "drivers/dma/Kconfig.ifx_cat1"
+
 source "drivers/dma/Kconfig.intel_lpss"
 
 source "drivers/dma/Kconfig.mcux_pxp"
@@ -74,6 +76,8 @@ source "drivers/dma/Kconfig.si32"
 
 source "drivers/dma/Kconfig.silabs"
 
+source "drivers/dma/Kconfig.siwx91x"
+
 source "drivers/dma/Kconfig.smartbond"
 
 source "drivers/dma/Kconfig.nxp_sof_host_dma"
@@ -84,5 +88,9 @@ source "drivers/dma/Kconfig.nxp_edma"
 
 source "drivers/dma/Kconfig.dw_axi_dmac"
 source "drivers/dma/Kconfig.xilinx_axi_dma"
+
+source "drivers/dma/Kconfig.nxp_sdma"
+
+source "drivers/dma/Kconfig.wch"
 
 endif # DMA

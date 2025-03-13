@@ -19,9 +19,11 @@ config COMPARATOR_INIT_PRIORITY
 	  Comparator device driver initialization priority.
 
 rsource "Kconfig.fake_comp"
+rsource "Kconfig.silabs_acmp"
 rsource "Kconfig.mcux_acmp"
 rsource "Kconfig.nrf_comp"
 rsource "Kconfig.nrf_lpcomp"
 rsource "Kconfig.shell"
+rsource "Kconfig.renesas_ra"
 
 endif # COMPARATOR

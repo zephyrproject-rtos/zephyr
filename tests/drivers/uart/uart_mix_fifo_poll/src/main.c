@@ -15,6 +15,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/random/random.h>
+#include <zephyr/pm/device_runtime.h>
 /* RX and TX pins have to be connected together*/
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dut))
@@ -38,6 +39,24 @@
 struct rx_source {
 	int cnt;
 	uint8_t prev;
+};
+
+struct dut_data {
+	const struct device *dev;
+	const char *name;
+};
+
+static struct dut_data duts[] = {
+	{
+		.dev = DEVICE_DT_GET(UART_NODE),
+		.name = DT_NODE_FULL_NAME(UART_NODE),
+	},
+#if DT_NODE_EXISTS(DT_NODELABEL(dut2)) && DT_NODE_HAS_STATUS(DT_NODELABEL(dut2), okay)
+	{
+		.dev = DEVICE_DT_GET(DT_NODELABEL(dut2)),
+		.name = DT_NODE_FULL_NAME(DT_NODELABEL(dut2)),
+	},
+#endif
 };
 
 #define BUF_SIZE 16
@@ -66,8 +85,7 @@ static struct test_data int_async_data;
 
 static const struct device *const counter_dev =
 	DEVICE_DT_GET(COUNTER_NODE);
-static const struct device *const uart_dev =
-	DEVICE_DT_GET(UART_NODE);
+static const struct device *uart_dev;
 
 static bool async;
 static bool int_driven;
@@ -128,14 +146,12 @@ static void counter_top_handler(const struct device *dev, void *user_data)
 	}
 }
 
-static void init_test(void)
+static void init_test(int idx)
 {
-	int err;
-	struct counter_top_cfg top_cfg = {
-		.callback = counter_top_handler,
-		.user_data = NULL,
-		.flags = 0
-	};
+	memset(source, 0, sizeof(source));
+	async_rx_enabled = false;
+	uart_dev = duts[idx].dev;
+	TC_PRINT("UART instance:%s\n", duts[idx].name);
 
 	zassert_true(device_is_ready(uart_dev), "uart device is not ready");
 
@@ -148,19 +164,6 @@ static void init_test(void)
 			uart_irq_callback_set(uart_dev, int_driven_callback);
 		}
 	}
-
-	/* Setup counter which will periodically enable/disable UART RX,
-	 * Disabling RX should lead to flow control being activated.
-	 */
-	zassert_true(device_is_ready(counter_dev));
-
-	top_cfg.ticks = counter_us_to_ticks(counter_dev, 1000);
-
-	err = counter_set_top_value(counter_dev, &top_cfg);
-	zassert_true(err >= 0);
-
-	err = counter_start(counter_dev);
-	zassert_true(err >= 0);
 }
 
 static void rx_isr(void)
@@ -321,6 +324,40 @@ ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 	int repeat = CONFIG_STRESS_TEST_REPS;
 	int err;
 	int num_of_contexts = ARRAY_SIZE(test_data);
+	struct counter_top_cfg top_cfg = {
+		.callback = counter_top_handler,
+		.user_data = NULL,
+		.flags = 0
+	};
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		if (async) {
+#if DT_NODE_EXISTS(DT_NODELABEL(uart120)) && DT_NODE_HAS_STATUS(DT_NODELABEL(uart120), okay)
+			if (uart_dev == DEVICE_DT_GET(DT_NODELABEL(uart120))) {
+				ztest_test_skip();
+			}
+#endif
+		} else {
+			/* If only polling API is available then UART device is initially
+			 * suspended which means that RX is disabled and poll_in won't work.
+			 * Device must be explicitly enabled.
+			 */
+			pm_device_runtime_get(uart_dev);
+		}
+	}
+
+	/* Setup counter which will periodically enable/disable UART RX,
+	 * Disabling RX should lead to flow control being activated.
+	 */
+	zassert_true(device_is_ready(counter_dev));
+
+	top_cfg.ticks = counter_us_to_ticks(counter_dev, 1000);
+
+	err = counter_set_top_value(counter_dev, &top_cfg);
+	zassert_true(err >= 0);
+
+	err = counter_start(counter_dev);
+	zassert_true(err >= 0);
 
 	for (int i = 0; i < ARRAY_SIZE(test_data); i++) {
 		init_buf(txbuf[i], sizeof(txbuf[i]), i);
@@ -365,14 +402,32 @@ ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 				"%d: Unexpected rx bytes count (%d/%d)",
 				i, source[i].cnt, repeat);
 	}
+
+	err = counter_stop(counter_dev);
+	zassert_true(err >= 0);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) && !async) {
+		pm_device_runtime_put(uart_dev);
+	}
 }
 
 void *uart_mix_setup(void)
 {
-	init_test();
+	static int idx;
+
+	init_test(idx++);
 
 	return NULL;
 }
 
 ZTEST_SUITE(uart_mix_fifo_poll, NULL, uart_mix_setup,
 		NULL, NULL, NULL);
+
+void test_main(void)
+{
+	/* Run all suites for each dut UART. Setup function for each suite is picking
+	 * next UART from the array.
+	 */
+	ztest_run_all(NULL, false, ARRAY_SIZE(duts), 1);
+	ztest_verify_all_test_suites_ran();
+}

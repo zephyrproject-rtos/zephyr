@@ -86,6 +86,7 @@ int dns_cache_remove(struct dns_cache *cache, char const *query);
  *
  * @param cache Cache where the entry should be searched.
  * @param query Query which should be searched for.
+ * @param type Query type which will control the types of addresses that will be found.
  * @param addrinfo dns_addrinfo array which will be written if the query was found.
  * @param addrinfo_array_len Array size of the dns_addrinfo array
  * @retval on success the amount of dns_addrinfo written into the addrinfo array will be returned.
@@ -94,7 +95,7 @@ int dns_cache_remove(struct dns_cache *cache, char const *query);
  * -ENOSR means there was not enough space in the addrinfo array to accommodate all cache hits the
  * array will however be filled with valid data.
  */
-int dns_cache_find(struct dns_cache const *cache, const char *query, struct dns_addrinfo *addrinfo,
-		   size_t addrinfo_array_len);
+int dns_cache_find(struct dns_cache const *cache, const char *query, enum dns_query_type type,
+		   struct dns_addrinfo *addrinfo, size_t addrinfo_array_len);
 
 #endif /* ZEPHYR_INCLUDE_NET_DNS_CACHE_H_ */

@@ -11,7 +11,7 @@ tests:
       pytest_dut_scope: session
       fixture: can
     extra_configs:
-      - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
     integration_platforms:
       - native_sim
       - native_sim/native/64

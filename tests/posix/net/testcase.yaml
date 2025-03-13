@@ -5,11 +5,11 @@ common:
     - iface
     - net
     - posix
-  # 1 tier0 platform per supported architecture (dependent on netif support)
+  # dependent on netif support
   integration_platforms:
     - mps2/an385
     - qemu_x86
-  # native_posix and native_sim link to if_*() from the host libc which causes the test to crash
+  # Building with the host libC links to if_*() from the host libc which causes the test to crash
   # immediately.
   filter: not CONFIG_NATIVE_LIBC
 tests:

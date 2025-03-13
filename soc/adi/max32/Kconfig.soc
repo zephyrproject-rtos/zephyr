@@ -1,72 +1,94 @@
 # Analog Devices MAX32xxx MCU family
 
-# Copyright (c) 2023-2024 Analog Devices, Inc.
+# Copyright (c) 2023-2025 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MAX32
 	bool
 
+config SOC_FAMILY_MAX32_M4
+	bool
+	select SOC_FAMILY_MAX32
+
 config SOC_FAMILY
 	default "max32" if SOC_FAMILY_MAX32
 
+config SOC_MAX32650
+	bool
+	select SOC_FAMILY_MAX32_M4
+
 config SOC_MAX32655
 	bool
-	select SOC_FAMILY_MAX32
 
 config SOC_MAX32655_M4
 	bool
 	select SOC_MAX32655
+	select SOC_FAMILY_MAX32_M4
+
+config SOC_MAX32660
+	bool
+	select SOC_FAMILY_MAX32_M4
 
 config SOC_MAX32662
 	bool
-	select SOC_FAMILY_MAX32
+	select SOC_FAMILY_MAX32_M4
 
 config SOC_MAX32666
 	bool
-	select SOC_FAMILY_MAX32
 
 config SOC_MAX32666_CPU0
 	bool
 	select SOC_MAX32666
+	select SOC_FAMILY_MAX32_M4
 
 config SOC_MAX32670
 	bool
-	select SOC_FAMILY_MAX32
+	select SOC_FAMILY_MAX32_M4
 
 config SOC_MAX32672
 	bool
-	select SOC_FAMILY_MAX32
+	select SOC_FAMILY_MAX32_M4
 
 config SOC_MAX32675
 	bool
-	select SOC_FAMILY_MAX32
+	select SOC_FAMILY_MAX32_M4
 
 config SOC_MAX32680
 	bool
-	select SOC_FAMILY_MAX32
 
 config SOC_MAX32680_M4
 	bool
 	select SOC_MAX32680
+	select SOC_FAMILY_MAX32_M4
 
 config SOC_MAX32690
 	bool
-	select SOC_FAMILY_MAX32
 
 config SOC_MAX32690_M4
 	bool
 	select SOC_MAX32690
+	select SOC_FAMILY_MAX32_M4
+
+config SOC_MAX78000
+	bool
+
+config SOC_MAX78000_M4
+	bool
+	select SOC_MAX78000
+	select SOC_FAMILY_MAX32_M4
 
 config SOC_MAX78002
 	bool
-	select SOC_FAMILY_MAX32
 
 config SOC_MAX78002_M4
 	bool
 	select SOC_MAX78002
+	select SOC_FAMILY_MAX32_M4
 
 config SOC
+	default "max32650" if SOC_MAX32650
 	default "max32655" if SOC_MAX32655
+	default "max32660" if SOC_MAX32660
 	default "max32662" if SOC_MAX32662
 	default "max32666" if SOC_MAX32666
 	default "max32670" if SOC_MAX32670
@@ -74,4 +96,5 @@ config SOC
 	default "max32675" if SOC_MAX32675
 	default "max32680" if SOC_MAX32680
 	default "max32690" if SOC_MAX32690
+	default "max78000" if SOC_MAX78000
 	default "max78002" if SOC_MAX78002

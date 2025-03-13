@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32660.dtsi>
+#include <adi/max32/max32660-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices MAX32660EVSYS";
+	compatible = "adi,max32660evsys";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram2;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+	};
+
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_tx_p0_10 &uart1_rx_p0_11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};

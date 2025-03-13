@@ -15,7 +15,7 @@
 #include <soc.h>
 #endif
 
-/* Helper funciton for getting numer of bytes being written to the bufer. */
+/* Helper function for getting number of bytes being written to the buffer. */
 static uint32_t idx_occupied(uint32_t len, uint32_t wr_idx, uint32_t rd_idx)
 {
 	/* It is implicitly assumed wr_idx and rd_idx cannot differ by more then len. */
@@ -38,6 +38,7 @@ static int validate_cfg(const struct pbuf_cfg *cfg)
 	/* Validate pointer alignment. */
 	if (!IS_PTR_ALIGNED_BYTES(cfg->rd_idx_loc, MAX(cfg->dcache_alignment, _PBUF_IDX_SIZE)) ||
 	    !IS_PTR_ALIGNED_BYTES(cfg->wr_idx_loc, MAX(cfg->dcache_alignment, _PBUF_IDX_SIZE)) ||
+	    !IS_PTR_ALIGNED_BYTES(cfg->handshake_loc, _PBUF_IDX_SIZE) ||
 	    !IS_PTR_ALIGNED_BYTES(cfg->data_loc, _PBUF_IDX_SIZE)) {
 		return -EINVAL;
 	}
@@ -49,6 +50,8 @@ static int validate_cfg(const struct pbuf_cfg *cfg)
 
 	/* Validate pointer values. */
 	if (!(cfg->rd_idx_loc < cfg->wr_idx_loc) ||
+	    (cfg->handshake_loc && !(cfg->rd_idx_loc < cfg->handshake_loc)) ||
+	    !(cfg->handshake_loc < cfg->wr_idx_loc) ||
 	    !((uint8_t *)cfg->wr_idx_loc < cfg->data_loc) ||
 	    !(((uint8_t *)cfg->rd_idx_loc + MAX(_PBUF_IDX_SIZE, cfg->dcache_alignment)) ==
 	    (uint8_t *)cfg->wr_idx_loc)) {
@@ -176,6 +179,44 @@ int pbuf_write(struct pbuf *pb, const char *data, uint16_t len)
 	return len;
 }
 
+int pbuf_get_initial_buf(struct pbuf *pb, volatile char **buf, uint16_t *len)
+{
+	uint32_t wr_idx;
+	uint16_t plen;
+
+	if (pb == NULL || pb->data.rd_idx != 0) {
+		/* Incorrect call. */
+		return -EINVAL;
+	}
+
+	sys_cache_data_invd_range((void *)(pb->cfg->wr_idx_loc), sizeof(*(pb->cfg->wr_idx_loc)));
+	__sync_synchronize();
+
+	wr_idx = *(pb->cfg->wr_idx_loc);
+	if (wr_idx >= pb->cfg->len || wr_idx > 0xFFFF || wr_idx == 0) {
+		/* Wrong index - probably pbuf was not initialized or message was not send yet. */
+		return -EINVAL;
+	}
+
+	sys_cache_data_invd_range((void *)(pb->cfg->data_loc), PBUF_PACKET_LEN_SZ);
+	__sync_synchronize();
+
+	plen = sys_get_be16(&pb->cfg->data_loc[0]);
+
+	if (plen + 4 > wr_idx) {
+		/* Wrong length - probably pbuf was not initialized or message was not send yet. */
+		return -EINVAL;
+	}
+
+	*buf = &pb->cfg->data_loc[PBUF_PACKET_LEN_SZ];
+	*len = plen;
+
+	sys_cache_data_invd_range((void *)*buf, plen);
+	__sync_synchronize();
+
+	return 0;
+}
+
 int pbuf_read(struct pbuf *pb, char *buf, uint16_t len)
 {
 	if (pb == NULL) {
@@ -252,4 +293,24 @@ int pbuf_read(struct pbuf *pb, char *buf, uint16_t len)
 	sys_cache_data_flush_range((void *)pb->cfg->rd_idx_loc, sizeof(*(pb->cfg->rd_idx_loc)));
 
 	return len;
+}
+
+uint32_t pbuf_handshake_read(struct pbuf *pb)
+{
+	volatile uint32_t *ptr = pb->cfg->handshake_loc;
+
+	__ASSERT_NO_MSG(ptr);
+	sys_cache_data_invd_range((void *)ptr, sizeof(*ptr));
+	__sync_synchronize();
+	return *ptr;
+}
+
+void pbuf_handshake_write(struct pbuf *pb, uint32_t value)
+{
+	volatile uint32_t *ptr = pb->cfg->handshake_loc;
+
+	__ASSERT_NO_MSG(ptr);
+	*ptr = value;
+	__sync_synchronize();
+	sys_cache_data_flush_range((void *)ptr, sizeof(*ptr));
 }

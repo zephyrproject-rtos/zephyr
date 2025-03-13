@@ -480,6 +480,7 @@ test_i2c_tmp116: tmp116@47 {
 	compatible = "ti,tmp116";
 	reg = <0x47>;
 	odr = <TMP116_DT_ODR_125_MS>;
+	oversampling = <TMP116_DT_OVERSAMPLING_32>;
 };
 
 test_i2c_bq274xx: bq27xx@48 {
@@ -628,11 +629,10 @@ test_i2c_max31875: max31875@5b {
 	reg = <0x5b>;
 };
 
-test_i2c_icp10125: icp10125@5c {
-	compatible = "invensense,icp10125";
+test_i2c_icp101xx: icp101xx@5c {
+	compatible = "invensense,icp101xx";
 	reg = <0x5c>;
-	temperature-measurement-mode = "normal";
-	pressure-measurement-mode = "normal";
+	mode = "normal";
 };
 
 test_i2c_as5600: as5600@5d {
@@ -648,6 +648,13 @@ test_i2c_bh1750: bh1750@5e {
 test_i2c_akm09918c: akm09918c@5f {
 	compatible = "asahi-kasei,akm09918c";
 	reg = <0x5f>;
+};
+
+test_i2c_wsen_tids_2521020222501: wsen_tids_2521020222501@60 {
+	compatible = "we,wsen-tids-2521020222501";
+	reg = <0x60>;
+	interrupt-gpios = <&test_gpio 0 0>;
+	odr = <25>;
 };
 
 test_i2c_vl53l1x: vl53l1x@61 {
@@ -671,10 +678,23 @@ test_i2c_tmd2620: tmd2620@62 {
 	wait-time-factor = <0>;
 };
 
+test_i2c_wsen_pads_2511020213301: wsen_pads_2511020213301@63 {
+	compatible = "we,wsen-pads-2511020213301";
+	reg = <0x63>;
+	interrupt-gpios = <&test_gpio 0 0>;
+	odr = <10>;
+};
+
 test_i2c_s11059: s11059@64 {
 	compatible = "hamamatsu,s11059";
 	reg = <0x64>;
 	integration-time = <546000>;
+};
+
+test_i2c_wsen_pdus_25131308XXXXX: wsen_pdus_25131308XXXXX@65 {
+	compatible = "we,wsen-pdus-25131308XXXXX";
+	reg = <0x65>;
+	sensor-type = < 4 >;
 };
 
 test_i2c_veml7700: veml7700@66 {
@@ -1041,8 +1061,8 @@ test_i2c_lsm9ds1: lsm9ds1@92 {
 	reg = <0x92>;
 };
 
-test_i2c_icm42670: icm42670@93 {
-	compatible = "invensense,icm42670";
+test_i2c_icm42670p: icm42670p@93 {
+	compatible = "invensense,icm42670p";
 	reg = <0x93>;
 	int-gpios = <&test_gpio 0 0>;
 	accel-hz = <800>;
@@ -1149,6 +1169,12 @@ test_i2c_npm2100: npm2100@9f {
 	};
 };
 
+test_i2c_mlx90394: mlx90394@a0 {
+	compatible = "melexis,mlx90394";
+	status = "okay";
+	reg = <0xa0>;
+};
+
 test_i2c_scd40: scd40@a1 {
 	compatible = "sensirion,scd40";
 	reg = <0xa1>;
@@ -1184,4 +1210,44 @@ test_i2c_lsm6dso32: lsm6dso32@a5 {
 	gyro-pm = <LSM6DSO_DT_GY_NORMAL_MODE>;
 	gyro-range = <LSM6DSO_DT_FS_2000DPS>;
 	gyro-odr = <LSM6DSO_DT_ODR_6667Hz>;
+};
+
+test_i2c_hs400x: hs400x@a6 {
+	compatible = "renesas,hs400x";
+	reg = <0xa6>;
+};
+
+test_i2c_lis2duxs12: lis2duxs12@a7 {
+	compatible = "st,lis2duxs12";
+	reg = <0xa7>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	range = <LIS2DUX12_DT_FS_16G>;
+	odr = <LIS2DUX12_DT_ODR_100Hz>;
+	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
+	status = "okay";
+};
+
+test_i2c_tmag3001: tmag3001@a8 {
+	compatible = "ti,tmag3001";
+	status = "okay";
+	reg = <0xa8>;
+	int-gpios = <&test_gpio 15 1>;
+	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
+	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
+};
+
+test_i2c_tmp435: tmp435@a9 {
+	compatible = "ti,tmp435";
+	reg = <0xa9>;
+	external-channel;
+	resistance-correction;
+	beta-compensation = <0x0f>;
+};
+
+test_i2c_xbr818: xbr818@aa {
+	compatible = "phosense,xbr818";
+	reg = <0xaa>;
+	int-gpios = <&test_gpio 0 0>;
+	i2c-en-gpios = <&test_gpio 0 0>;
 };

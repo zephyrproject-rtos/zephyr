@@ -40,28 +40,28 @@ RunTestFlash dfu_dist_recover_phase \
   -- -argstest recover=1 expected-phase=8
 
 # The same test but with PSA crypto
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash dfu_dist_recover_phase_psa \
   dfu_cli_stop -flash_erase dfu_target_dfu_stop -flash_erase \
   -- -argstest recover=0 expected-phase=2
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash dfu_dist_recover_phase_psa \
   dfu_cli_stop dfu_target_dfu_stop \
   -- -argstest recover=1 expected-phase=3
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash dfu_dist_recover_phase_psa \
   dfu_cli_stop dfu_target_dfu_stop \
   -- -argstest recover=1 expected-phase=4
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash dfu_dist_recover_phase_psa \
   dfu_cli_stop dfu_target_dfu_stop \
   -- -argstest recover=1 expected-phase=6
 
 # Use phase `BT_MESH_DFU_PHASE_APPLY_SUCCESS` as marker to bring whole procedure to an end
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash dfu_dist_recover_phase_psa \
   dfu_cli_stop -flash_rm dfu_target_dfu_stop -flash_rm \
   -- -argstest recover=1 expected-phase=8

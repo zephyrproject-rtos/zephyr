@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&owm_io_p0_8 {
+	power-source=<MAX32_VSEL_VDDIOH>;
+};
+
+&owm_pe_p0_7 {
+	power-source=<MAX32_VSEL_VDDIOH>;
+};
+
+&w1 {
+	status = "okay";
+	internal-pullup = <1>;
+	external-pullup = <0>;
+};

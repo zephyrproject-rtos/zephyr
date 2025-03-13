@@ -48,6 +48,13 @@ The Renesas RZ/G3S MPU documentation can be found at `RZ/G3S Group Website`_
 
 	RZ/G3S block diagram (Credit: Renesas Electronics Corporation)
 
+Multi-OS processing
+*******************
+
+The RZ/G3S-EVKIT allows different applications to be executed in RZ/G3S SoC. With its multi-core architecture,
+each core can operate independently to perform customized tasks or exchange data using the OpenAMP framework.
+Please see :zephyr:code-sample:`rz-openamp-linux-zephyr` sample for reference.
+
 Supported Features
 ==================
 
@@ -63,9 +70,23 @@ and the following hardware features:
 +-----------+------------+-------------------------------------+
 | PINCTRL   | on-chip    | pinctrl                             |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
++-----------+------------+-------------------------------------+
+| GTM       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
+| GPT       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| INTC      | on-chip    | external interrupt controller       |
++-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock control                       |
++-----------+------------+-------------------------------------+
+| MHU       | on-chip    | mbox                                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
@@ -218,6 +239,30 @@ version.
    :board: rzg3s_smarc/r9a08g045s33gbg/cm33
    :goals: build flash
    :compact:
+
+Troubleshooting
+===============
+
+Linux and Zephyr application should not share SoC HW resources otherwise it will cause HW corruption and unpredictable behavior.
+Therefore, HW resources assigned to Zephyr application must be disabled in Linux.
+
+The below patch shows how to prevent Linux from configuring SCIF1 which is used by Zephyr.
+
+.. code-block:: diff
+
+    diff --git a/arch/arm64/boot/dts/renesas/rzg3s-smarc.dtsi b/arch/arm64/boot/dts/renesas/rzg3s-smarc.dtsi
+    index f01801b18e8a..d9f9a0a2bb08 100644
+    --- a/arch/arm64/boot/dts/renesas/rzg3s-smarc.dtsi
+    +++ b/arch/arm64/boot/dts/renesas/rzg3s-smarc.dtsi
+    @@ -347,7 +347,7 @@ &scif1 {
+            pinctrl-0 = <&scif1_pins>;
+            pinctrl-names = "default";
+            uart-has-rtscts;
+    -       status = "okay";
+    +       status = "disabled";
+    };
+    #elif SPDIF_SEL == SW_ON
+    &spdif {
 
 References
 **********

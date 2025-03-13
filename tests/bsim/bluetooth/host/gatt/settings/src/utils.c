@@ -8,18 +8,18 @@
 #include "gatt_utils.h"
 #include <zephyr/sys/__assert.h>
 #include <zephyr/bluetooth/hci.h>
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
 
 static struct bt_conn *default_conn;
 
-DEFINE_FLAG(flag_is_connected);
-DEFINE_FLAG(flag_test_end);
+DEFINE_FLAG_STATIC(flag_is_connected);
 
 void wait_connected(void)
 {
 	UNSET_FLAG(flag_is_connected);
 	WAIT_FOR_FLAG(flag_is_connected);
 	printk("connected\n");
-
 }
 
 void wait_disconnected(void)
@@ -87,7 +87,7 @@ static void scan_connect_to_first_result_device_found(const bt_addr_le_t *addr, 
 
 	/* We're only interested in connectable events */
 	if (type != BT_HCI_ADV_IND && type != BT_HCI_ADV_DIRECT_IND) {
-		FAIL("Unexpected advertisement type.");
+		TEST_FAIL("Unexpected advertisement type.");
 	}
 
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
@@ -147,7 +147,7 @@ DEFINE_FLAG(flag_pairing_complete);
 
 static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 {
-	FAIL("Pairing failed (unexpected): reason %u", reason);
+	TEST_FAIL("Pairing failed (unexpected): reason %u", reason);
 }
 
 static void pairing_complete(struct bt_conn *conn, bool bonded)

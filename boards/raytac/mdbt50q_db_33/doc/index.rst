@@ -30,7 +30,7 @@ Hardware
 ********
 - Module Demo Board build by MDBT50Q-512K
 - Nordic nRF52833 SoC Solution
-- A recommnded 3rd-party module by Nordic Semiconductor.
+- A recommended 3rd-party module by Nordic Semiconductor.
 - BT5.2&BT5.1&BT5 Bluetooth Specification Cerified
 - Supports BT5 Long Range Features
 - Cerifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
@@ -44,52 +44,15 @@ Hardware
 - 3 User LEDs
 - 4 User buttons
 - 1 Mini USB connector for power supply and USB communication
-- SWD connector for FW programing
-- J-Link interface for FW programing
+- SWD connector for FW programming
+- J-Link interface for FW programming
 - UART interface for UART communication
 
 Supported Features
 ==================
 
-The raytac_mdbt50q_db_33/nrf52833 board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `MDBT50Q-DB-33 website`_ and `MDBT50Q-DB-33 Specification`_
 for a complete list of Raytac MDBT50Q-DB-33 board hardware features.
 

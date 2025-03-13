@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <dt-bindings/clock/silabs/xg21-clock.h>
+#include <dt-bindings/dma/silabs/xg21-dma.h>
 #include <freq.h>
 
 / {
@@ -191,7 +192,7 @@
 		};
 
 		msc: flash-controller@50030000 {
-			compatible = "silabs,gecko-flash-controller";
+			compatible = "silabs,series2-flash-controller";
 			reg = <0x50030000 0x31a4>;
 			interrupts = <51 0>;
 
@@ -206,31 +207,28 @@
 		};
 
 		usart0: usart@50058000 { /* USART0 */
-			compatible = "silabs,gecko-usart";
+			compatible = "silabs,usart-uart";
 			reg = <0x50058000 0x400>;
 			interrupts = <11 0>, <12 0>;
 			interrupt-names = "rx", "tx";
-			peripheral-id = <0>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
 
 		usart1: usart@5005c000 { /* USART1 */
-			compatible = "silabs,gecko-usart";
+			compatible = "silabs,usart-uart";
 			reg = <0x5005c000 0x400>;
 			interrupts = <13 0>, <14 0>;
 			interrupt-names = "rx", "tx";
-			peripheral-id = <1>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
 
 		usart2: usart@50060000 { /* USART2 */
-			compatible = "silabs,gecko-usart";
+			compatible = "silabs,usart-uart";
 			reg = <0x50060000 0x400>;
 			interrupts = <15 0>, <16 0>;
 			interrupt-names = "rx", "tx";
-			peripheral-id = <2>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
@@ -318,7 +316,8 @@
 
 		pinctrl: pin-controller@5003c440 {
 			compatible = "silabs,dbus-pinctrl";
-			reg = <0x5003c440 0xbc0>;
+			reg = <0x5003c440 0xbc0>, <0x5003c320 0x40>;
+			reg-names = "dbus", "abus";
 		};
 
 		se: semailbox@5c000000 {
@@ -333,7 +332,7 @@
 			compatible = "silabs,ldma";
 			reg = <0x40040000 0x4000>;
 			interrupts = <21 0>;
-			#dma-cells = <3>;
+			#dma-cells = <1>;
 			dma_channels = <8>;
 			status = "disabled";
 		};
@@ -354,6 +353,27 @@
 			interrupts = <44 0>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_WDOG1CLK>;
 			status = "disabled";
+		};
+
+		acmp0: acmp@5a008000 {
+			compatible = "silabs,acmp";
+			reg = <0x5a008000 0x4000>;
+			interrupts = <41 0>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
+			status = "disabled";
+		};
+
+		radio: radio@b0000000 {
+			compatible = "silabs,series2-radio";
+			reg = <0xb0000000 0x1000000>;
+			interrupts = <31 0>, <32 0>, <33 0>, <34 0>, <35 0>, <36 0>,
+				     <37 0>, <38 0>, <39 0>, <40 0>;
+			interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "protimer",
+					  "rac_rsm", "rac_seq", "prortc", "synth";
+			pa-initial-power-dbm = <10>;
+			pa-ramp-time-us = <10>;
+			pa-voltage-mv = <3300>;
+			pa-2p4ghz = "highest";
 		};
 	};
 };

@@ -5,7 +5,7 @@ Overview
 
 This is a SoM that is used as a radio module by the GARDENA smart gateway (manual_, `FOSS parts`_).
 
-.. _manual: https://www.gardena.com/tdrdownload//pub000070911/doc000120830
+.. _manual: https://content.tdr.dss.husqvarnagroup.net/pub000094159/doc000240276
 .. _FOSS parts: https://github.com/husqvarnagroup/smart-garden-gateway-public
 
 Hardware
@@ -24,24 +24,7 @@ Hardware
 Supported Features
 ==================
 
-The ``sgrm`` board target supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

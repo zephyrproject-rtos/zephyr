@@ -757,7 +757,7 @@ static void isr_aux_setup(void *param)
 	hcto += window_size_us;
 	hcto += radio_rx_chain_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_aux);
-	radio_tmr_hcto_configure(hcto);
+	radio_tmr_hcto_configure_abs(hcto);
 
 	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
 	 * channel chaining, create connection or to create periodic sync.
@@ -814,11 +814,6 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 		 * again a node_rx for periodic report incomplete.
 		 */
 		if (node_type != NODE_RX_TYPE_EXT_AUX_REPORT) {
-			/* Reset Sync context association with any Aux context
-			 * as a new chain is being setup for reception here.
-			 */
-			lll->lll_aux = NULL;
-
 			node_rx = ull_pdu_rx_alloc_peek(4);
 		} else {
 			node_rx = ull_pdu_rx_alloc_peek(3);
@@ -834,6 +829,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 
 			ftr = &(node_rx->rx_ftr);
 			ftr->param = lll;
+			ftr->lll_aux = lll->lll_aux;
 			ftr->aux_failed = 0U;
 			ftr->rssi = (rssi_ready) ? radio_rssi_get() :
 						   BT_HCI_LE_RSSI_NOT_AVAILABLE;
@@ -1148,6 +1144,7 @@ isr_rx_aux_chain_done:
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
 		node_rx->rx_ftr.param = lll;
+		node_rx->rx_ftr.lll_aux = lll->lll_aux;
 		node_rx->rx_ftr.aux_failed = 1U;
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
@@ -1183,6 +1180,13 @@ isr_rx_aux_chain_done:
 static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_term)
 {
 	struct event_done_extra *e;
+
+	/* Reset Sync context association with any Aux context as the chain reception is done.
+	 * By code inspection there should not be a race that ULL execution context assigns lll_aux
+	 * that would be reset here, because either we are here not receiving a chain PDU or the
+	 * lll_aux has been set in the node rx type NODE_RX_TYPE_EXT_AUX_RELEASE before we are here.
+	 */
+	lll->lll_aux = NULL;
 
 	/* Calculate and place the drift information in done event */
 	e = ull_event_done_extra_get();
@@ -1243,6 +1247,7 @@ static void isr_done(void *param)
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
 		node_rx->rx_ftr.param = lll;
+		node_rx->rx_ftr.lll_aux = lll->lll_aux;
 		node_rx->rx_ftr.aux_failed = 1U;
 
 		ull_rx_put_sched(node_rx->hdr.link, node_rx);

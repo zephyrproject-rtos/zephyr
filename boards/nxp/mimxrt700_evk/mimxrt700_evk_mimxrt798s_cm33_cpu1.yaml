@@ -1,0 +1,21 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt700_evk/mimxrt798s/cm33_cpu1
+name: NXP MIMXRT700-EVK (CM33_CPU1)
+type: mcu
+arch: arm
+ram: 256
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - counter
+  - gpio
+  - uart
+  - adc
+vendor: nxp

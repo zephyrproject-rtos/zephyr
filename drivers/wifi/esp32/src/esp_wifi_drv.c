@@ -95,6 +95,10 @@ static int esp32_wifi_send(const struct device *dev, struct net_pkt *pkt)
 	const int pkt_len = net_pkt_get_len(pkt);
 	esp_interface_t ifx = data->state == ESP32_AP_CONNECTED ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
 
+	if (esp32_data.state != ESP32_STA_CONNECTED && esp32_data.state != ESP32_AP_CONNECTED) {
+		return -EIO;
+	}
+
 	/* Read the packet payload */
 	if (net_pkt_read(pkt, data->frame_buf, pkt_len) < 0) {
 		goto out;
@@ -568,6 +572,11 @@ static int esp32_wifi_connect(const struct device *dev,
 		return -EIO;
 	}
 
+#if defined(CONFIG_ESP32_WIFI_STA_SCAN_ALL)
+	wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+	wifi_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+#endif
+
 	if (params->channel == WIFI_CHANNEL_ANY) {
 		wifi_config.sta.channel = 0U;
 		data->status.channel = 0U;
@@ -768,6 +777,13 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 	status->mfp = WIFI_MFP_DISABLE;
 
 	if (esp_wifi_get_mode(&mode) == ESP_OK) {
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+		if (mode == ESP32_WIFI_MODE_APSTA && data == &esp32_data) {
+			mode = ESP32_WIFI_MODE_STA;
+		} else if (mode == ESP32_WIFI_MODE_APSTA && data == &esp32_ap_sta_data) {
+			mode = ESP32_WIFI_MODE_AP;
+		}
+#endif
 		if (mode == ESP32_WIFI_MODE_STA) {
 			wifi_phy_mode_t phy_mode;
 			esp_err_t err;
@@ -837,21 +853,14 @@ static void esp32_wifi_init(struct net_if *iface)
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 	struct wifi_nm_instance *nm = wifi_nm_get_instance("esp32_wifi_nm");
 
-	if (!esp32_wifi_iface_ap) {
-		esp32_wifi_iface_ap = iface;
-		dev_data->state = ESP32_AP_STOPPED;
+	esp32_wifi_iface = iface;
+	dev_data->state = ESP32_STA_STOPPED;
 
-		esp_read_mac(dev_data->mac_addr, ESP_MAC_WIFI_SOFTAP);
-		wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_SAP, esp32_wifi_iface_ap);
-	} else {
-		esp32_wifi_iface = iface;
-		dev_data->state = ESP32_STA_STOPPED;
+	/* Start interface when we are actually connected with Wi-Fi network */
+	esp_read_mac(dev_data->mac_addr, ESP_MAC_WIFI_STA);
+	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
+	wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_STA, esp32_wifi_iface);
 
-		/* Start interface when we are actually connected with Wi-Fi network */
-		esp_read_mac(dev_data->mac_addr, ESP_MAC_WIFI_STA);
-		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
-		wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_STA, esp32_wifi_iface);
-	}
 #else
 
 	esp32_wifi_iface = iface;
@@ -869,6 +878,31 @@ static void esp32_wifi_init(struct net_if *iface)
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
 }
+
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+static void esp32_wifi_init_ap(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct esp32_wifi_runtime *dev_data = dev->data;
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+
+	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+
+	struct wifi_nm_instance *nm = wifi_nm_get_instance("esp32_wifi_nm");
+
+	esp32_wifi_iface_ap = iface;
+	dev_data->state = ESP32_AP_STOPPED;
+
+	esp_read_mac(dev_data->mac_addr, ESP_MAC_WIFI_SOFTAP);
+	wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_SAP, esp32_wifi_iface_ap);
+
+	/* Assign link local address. */
+	net_if_set_link_addr(iface, dev_data->mac_addr, 6, NET_LINK_ETHERNET);
+
+	ethernet_init(iface);
+	net_if_carrier_off(iface);
+}
+#endif
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 static int esp32_wifi_stats(const struct device *dev, struct net_stats_wifi *stats)
@@ -900,6 +934,7 @@ static int esp32_wifi_dev_init(const struct device *dev)
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 	esp_err_t ret = esp_wifi_init(&config);
+	esp_wifi_set_mode(ESP32_WIFI_MODE_NULL);
 
 	if (ret == ESP_ERR_NO_MEM) {
 		LOG_ERR("Not enough memory to initialize Wi-Fi.");
@@ -934,6 +969,13 @@ static const struct net_wifi_mgmt_offload esp32_api = {
 	.wifi_iface.send = esp32_wifi_send,
 	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+static const struct net_wifi_mgmt_offload esp32_api_ap = {
+	.wifi_iface.iface_api.init = esp32_wifi_init_ap,
+	.wifi_iface.send = esp32_wifi_send,
+	.wifi_mgmt_api = &esp32_wifi_mgmt,
+};
+#endif
 
 NET_DEVICE_DT_INST_DEFINE(0,
 		esp32_wifi_dev_init, NULL,
@@ -945,7 +987,7 @@ NET_DEVICE_DT_INST_DEFINE(0,
 NET_DEVICE_DT_INST_DEFINE(1,
 		NULL, NULL,
 		&esp32_ap_sta_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
-		&esp32_api, ETHERNET_L2,
+		&esp32_api_ap, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 DEFINE_WIFI_NM_INSTANCE(esp32_wifi_nm, &esp32_wifi_mgmt);

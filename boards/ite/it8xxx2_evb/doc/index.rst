@@ -1,7 +1,4 @@
-.. _it8xxx2_evb:
-
-ITE IT8XXX2 series
-######################
+.. zephyr:board:: it8xxx2_evb
 
 Overview
 ********
@@ -37,42 +34,8 @@ Listing the IT81302 hardware features as following:
 
 Supported Features
 ==================
-currently supports the following hardware features:
 
-.. list-table:: Supported Features
-   :header-rows: 1
-   :widths: auto
-
-   * - Interface
-     - Controller
-     - Driver/Component
-   * - NVIC
-     - on-chip
-     - interrupt controller
-   * - TIMER
-     - on-chip
-     - timer
-   * - UART
-     - on-chip
-     - serial
-   * - GPIO
-     - on-chip
-     - gpio
-   * - ADC
-     - on-chip
-     - adc
-   * - I2C
-     - on-chip
-     - i2c
-   * - KSCAN
-     - on-chip
-     - kscan
-
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the
-:zephyr_file:`boards/ite/it8xxx2_evb/it8xxx2_evb_defconfig` Kconfig file.
+.. zephyr:board-supported-hw::
 
 Hardware reworks
 ****************

@@ -59,9 +59,10 @@ def terminate_process(proc):
     so we need to use try_kill_process_by_pid.
     """
 
-    for child in psutil.Process(proc.pid).children(recursive=True):
-        with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
-            os.kill(child.pid, signal.SIGTERM)
+    with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
+        for child in psutil.Process(proc.pid).children(recursive=True):
+            with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
+                os.kill(child.pid, signal.SIGTERM)
     proc.terminate()
     # sleep for a while before attempting to kill
     time.sleep(0.5)
@@ -317,7 +318,7 @@ class BinaryHandler(Handler):
 
         return env
 
-    def _update_instance_info(self, harness_status, handler_time):
+    def _update_instance_info(self, harness, handler_time):
         self.instance.execution_time = handler_time
         if not self.terminated and self.returncode != 0:
             self.instance.status = TwisterStatus.FAIL
@@ -326,11 +327,13 @@ class BinaryHandler(Handler):
             else:
                 # When a process is killed, the default handler returns 128 + SIGTERM
                 # so in that case the return code itself is not meaningful
-                self.instance.reason = "Failed"
-        elif harness_status != TwisterStatus.NONE:
-            self.instance.status = harness_status
-            if harness_status == TwisterStatus.FAIL:
-                self.instance.reason = "Failed"
+                self.instance.reason = f"Failed (rc={self.returncode})"
+            self.instance.add_missing_case_status(TwisterStatus.BLOCK)
+        elif harness.status != TwisterStatus.NONE:
+            self.instance.status = harness.status
+            if harness.status == TwisterStatus.FAIL:
+                self.instance.reason = f"Failed harness:'{harness.reason}'"
+            self.instance.add_missing_case_status(TwisterStatus.BLOCK)
         else:
             self.instance.status = TwisterStatus.FAIL
             self.instance.reason = "Timeout"
@@ -378,7 +381,7 @@ class BinaryHandler(Handler):
         if sys.stdout.isatty():
             subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
-        self._update_instance_info(harness.status, handler_time)
+        self._update_instance_info(harness, handler_time)
 
         self._final_handle_actions(harness, handler_time)
 
@@ -563,14 +566,13 @@ class DeviceHandler(Handler):
 
                 board_id = hardware.probe_id or hardware.id
                 product = hardware.product
-                serial_port = hardware.serial
                 if board_id is not None:
                     if runner in ("pyocd", "nrfjprog", "nrfutil"):
                         command_extra_args.append("--dev-id")
                         command_extra_args.append(board_id)
                     elif runner == "esp32":
                         command_extra_args.append("--esp-device")
-                        command_extra_args.append(serial_port)
+                        command_extra_args.append(board_id)
                     elif (
                         runner == "openocd"
                         and product == "STM32 STLink"
@@ -593,7 +595,7 @@ class DeviceHandler(Handler):
                         # --probe=#<number> select by probe index
                         # --probe=<serial number> select by probe serial number
                         command.append(f"--probe={board_id}")
-                    elif runner == "stm32cubeprogrammer":
+                    elif runner == "stm32cubeprogrammer" and product != "BOOT-SERIAL":
                         command.append(f"--tool-opt=sn={board_id}")
 
                     # Receive parameters from runner_params field.
@@ -609,13 +611,13 @@ class DeviceHandler(Handler):
 
         return command
 
-    def _update_instance_info(self, harness_status, handler_time, flash_error):
+    def _update_instance_info(self, harness, handler_time, flash_error):
         self.instance.execution_time = handler_time
-        if harness_status != TwisterStatus.NONE:
-            self.instance.status = harness_status
-            if harness_status == TwisterStatus.FAIL:
-                self.instance.reason = "Failed"
-            self.instance.add_missing_case_status(TwisterStatus.BLOCK, harness_status)
+        if harness.status != TwisterStatus.NONE:
+            self.instance.status = harness.status
+            if harness.status == TwisterStatus.FAIL:
+                self.instance.reason = f"Failed harness:'{harness.reason}'"
+            self.instance.add_missing_case_status(TwisterStatus.BLOCK, harness.status)
         elif not flash_error:
             self.instance.status = TwisterStatus.FAIL
             self.instance.reason = "Timeout"
@@ -834,7 +836,7 @@ class DeviceHandler(Handler):
 
         handler_time = time.time() - start_time
 
-        self._update_instance_info(harness.status, handler_time, flash_error)
+        self._update_instance_info(harness, handler_time, flash_error)
 
         self._final_handle_actions(harness, handler_time)
 
@@ -1061,9 +1063,9 @@ class QEMUHandler(Handler):
 
         return command
 
-    def _update_instance_info(self, harness_status, is_timeout):
+    def _update_instance_info(self, harness, is_timeout):
         if (self.returncode != 0 and not self.ignore_qemu_crash) or \
-            harness_status == TwisterStatus.NONE:
+            harness.status == TwisterStatus.NONE:
             self.instance.status = TwisterStatus.FAIL
             if is_timeout:
                 self.instance.reason = "Timeout"
@@ -1141,7 +1143,7 @@ class QEMUHandler(Handler):
 
         logger.debug(f"return code from QEMU ({qemu_pid}): {self.returncode}")
 
-        self._update_instance_info(harness.status, is_timeout)
+        self._update_instance_info(harness, is_timeout)
 
         self._final_handle_actions(harness, 0)
 
@@ -1242,9 +1244,9 @@ class QEMUWinHandler(Handler):
 
         return command
 
-    def _update_instance_info(self, harness_status, is_timeout):
+    def _update_instance_info(self, harness, is_timeout):
         if (self.returncode != 0 and not self.ignore_qemu_crash) or \
-            harness_status == TwisterStatus.NONE:
+            harness.status == TwisterStatus.NONE:
             self.instance.status = TwisterStatus.FAIL
             if is_timeout:
                 self.instance.reason = "Timeout"
@@ -1426,7 +1428,7 @@ class QEMUWinHandler(Handler):
         os.close(self.pipe_handle)
         self.pipe_handle = None
 
-        self._update_instance_info(harness.status, is_timeout)
+        self._update_instance_info(harness, is_timeout)
 
         self._final_handle_actions(harness, 0)
 

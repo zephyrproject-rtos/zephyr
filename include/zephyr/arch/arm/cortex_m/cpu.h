@@ -12,9 +12,9 @@
 #define _SCS_BASE_ADDR _PPB_INT_SCS
 
 /* ICSR defines */
-#define _SCS_ICSR (_SCS_BASE_ADDR + 0xd04)
-#define _SCS_ICSR_PENDSV (1 << 28)
-#define _SCS_ICSR_UNPENDSV (1 << 27)
+#define _SCS_ICSR           (_SCS_BASE_ADDR + 0xd04)
+#define _SCS_ICSR_PENDSV    (1 << 28)
+#define _SCS_ICSR_UNPENDSV  (1 << 27)
 #define _SCS_ICSR_RETTOBASE (1 << 11)
 
 #define _SCS_MPU_CTRL (_SCS_BASE_ADDR + 0xd94)
@@ -34,20 +34,20 @@ extern "C" {
 #endif
 
 /* CP10 Access Bits */
-#define CPACR_CP10_Pos          20U
-#define CPACR_CP10_Msk          (3UL << CPACR_CP10_Pos)
-#define CPACR_CP10_NO_ACCESS    (0UL << CPACR_CP10_Pos)
-#define CPACR_CP10_PRIV_ACCESS  (1UL << CPACR_CP10_Pos)
-#define CPACR_CP10_RESERVED     (2UL << CPACR_CP10_Pos)
-#define CPACR_CP10_FULL_ACCESS  (3UL << CPACR_CP10_Pos)
+#define CPACR_CP10_Pos         20U
+#define CPACR_CP10_Msk         (3UL << CPACR_CP10_Pos)
+#define CPACR_CP10_NO_ACCESS   (0UL << CPACR_CP10_Pos)
+#define CPACR_CP10_PRIV_ACCESS (1UL << CPACR_CP10_Pos)
+#define CPACR_CP10_RESERVED    (2UL << CPACR_CP10_Pos)
+#define CPACR_CP10_FULL_ACCESS (3UL << CPACR_CP10_Pos)
 
 /* CP11 Access Bits */
-#define CPACR_CP11_Pos          22U
-#define CPACR_CP11_Msk          (3UL << CPACR_CP11_Pos)
-#define CPACR_CP11_NO_ACCESS    (0UL << CPACR_CP11_Pos)
-#define CPACR_CP11_PRIV_ACCESS  (1UL << CPACR_CP11_Pos)
-#define CPACR_CP11_RESERVED     (2UL << CPACR_CP11_Pos)
-#define CPACR_CP11_FULL_ACCESS  (3UL << CPACR_CP11_Pos)
+#define CPACR_CP11_Pos         22U
+#define CPACR_CP11_Msk         (3UL << CPACR_CP11_Pos)
+#define CPACR_CP11_NO_ACCESS   (0UL << CPACR_CP11_Pos)
+#define CPACR_CP11_PRIV_ACCESS (1UL << CPACR_CP11_Pos)
+#define CPACR_CP11_RESERVED    (2UL << CPACR_CP11_Pos)
+#define CPACR_CP11_FULL_ACCESS (3UL << CPACR_CP11_Pos)
 
 #ifdef CONFIG_PM_S2RAM
 

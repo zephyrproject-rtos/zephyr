@@ -12,6 +12,9 @@
  */
 
 #include <errno.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/types.h>
 #include <ctype.h>
 #include <stddef.h>
@@ -35,7 +38,7 @@
 #include <zephyr/bluetooth/ead.h>
 
 #include <zephyr/shell/shell.h>
-#include "bt_shell_private.h"
+#include "common/bt_shell_private.h"
 
 #include "audio/shell/audio.h"
 #include "controller/ll_sw/shell/ll.h"
@@ -45,7 +48,6 @@
 static bool no_settings_load;
 
 uint8_t selected_id = BT_ID_DEFAULT;
-const struct shell *ctx_shell;
 
 #if defined(CONFIG_BT_CONN)
 struct bt_conn *default_conn;
@@ -1310,8 +1312,6 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 	bool sync = false;
 
-	ctx_shell = sh;
-
 	for (size_t argn = 1; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
@@ -1944,15 +1944,9 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO) && IS_ENABLED(CONFIG_BT_EXT_ADV) && adv_ext) {
 		const bool connectable = atomic_test_bit(adv_options, SHELL_ADV_OPT_CONNECTABLE);
-		ssize_t audio_ad_len;
 
-		audio_ad_len = audio_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
-						 discoverable, connectable);
-		if (audio_ad_len < 0) {
-			return audio_ad_len;
-		}
-
-		ad_len += audio_ad_len;
+		ad_len += audio_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
+					    discoverable, connectable);
 	}
 
 	return ad_len;
@@ -3247,10 +3241,17 @@ static int cmd_subrate_request(const struct shell *sh, size_t argc, char *argv[]
 #if defined(CONFIG_BT_CENTRAL)
 static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
 {
+	struct bt_le_conn_param conn_param;
 	int err;
 	bt_addr_le_t addr;
 	struct bt_conn *conn = NULL;
 	uint32_t options = 0;
+
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST) || IS_ENABLED(CONFIG_BT_BAP_BROADCAST_ASSISTANT)) {
+		conn_param = *BT_BAP_CONN_PARAM_RELAXED;
+	} else {
+		conn_param = *BT_LE_CONN_PARAM_DEFAULT;
+	}
 
 	*ercd = 0;
 
@@ -3288,7 +3289,7 @@ static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
 					BT_GAP_SCAN_FAST_INTERVAL,
 					BT_GAP_SCAN_FAST_INTERVAL);
 
-	err = bt_conn_le_create(&addr, create_params, BT_LE_CONN_PARAM_DEFAULT, &conn);
+	err = bt_conn_le_create(&addr, create_params, &conn_param, &conn);
 	if (err) {
 		*ercd = err;
 		return -ENOEXEC;
@@ -4115,8 +4116,23 @@ static void auth_pairing_oob_data_request(struct bt_conn *conn,
 static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
+	struct bt_conn_info info;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	if (bt_conn_get_info(conn, &info) < 0) {
+		return;
+	}
+
+	switch (info.type) {
+	case BT_CONN_TYPE_LE:
+		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
+		break;
+	case BT_CONN_TYPE_BR:
+		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
+		break;
+	default:
+		bt_shell_print("Unrecognized conn type: %d", info.type);
+		return;
+	}
 
 	bt_shell_print("%s with %s", bonded ? "Bonded" : "Paired", addr);
 }
@@ -4124,8 +4140,23 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 static void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
+	struct bt_conn_info info;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	if (bt_conn_get_info(conn, &info) < 0) {
+		return;
+	}
+
+	switch (info.type) {
+	case BT_CONN_TYPE_LE:
+		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
+		break;
+	case BT_CONN_TYPE_BR:
+		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
+		break;
+	default:
+		bt_shell_print("Unrecognized conn type: %d", info.type);
+		return;
+	}
 
 	bt_shell_print("Pairing failed with %s reason: %s (%d)", addr, security_err_str(err), err);
 }

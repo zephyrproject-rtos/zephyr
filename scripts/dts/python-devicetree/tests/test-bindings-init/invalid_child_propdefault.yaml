@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# This binding should not try to override the "default:" value
+# in a property specification inherited from an included file.
+
+include: base.yaml
+
+child-binding:
+  properties:
+    child-prop-default:
+      default: 999

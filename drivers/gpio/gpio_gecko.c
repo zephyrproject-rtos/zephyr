@@ -26,10 +26,7 @@
 #if DT_NODE_HAS_PROP(id, peripheral_id)
 #define GET_GECKO_GPIO_INDEX(id) DT_INST_PROP(id, peripheral_id)
 #else
-#if defined(CONFIG_SOC_SERIES_EFR32BG22) || \
-	defined(CONFIG_SOC_SERIES_EFR32BG27) || \
-	defined(CONFIG_SOC_SERIES_EFR32MG21) || \
-	defined(CONFIG_SOC_SERIES_EFR32MG24)
+#if defined(CONFIG_SOC_FAMILY_SILABS_S2)
 #define GECKO_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_PORT_TypeDef)
 #else
 #define GECKO_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_P_TypeDef)
@@ -295,10 +292,10 @@ static int gpio_gecko_pin_interrupt_configure(const struct device *dev,
 	} else {
 		/* Interrupt line is already in use */
 		if ((GPIO->IEN & BIT(pin)) != 0) {
-			/* TODO: Return an error only if request is done for
-			 * a pin from a different port.
-			 */
-			return -EBUSY;
+			/* Check if the interrupt is already configured for this port */
+			if (!(data->int_enabled_mask & BIT(pin))) {
+				return -EBUSY;
+			}
 		}
 
 		bool rising_edge = true;

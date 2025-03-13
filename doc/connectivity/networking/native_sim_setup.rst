@@ -145,18 +145,29 @@ For TCP test, type:
 
    ./echo-client -t 127.0.0.1
 
-Setting interface name from command line
-****************************************
+Setting interface name and IPv4 parameters from command line
+************************************************************
 
 By default the Ethernet interface name used by native_sim is determined by
-:kconfig:option:`CONFIG_ETH_NATIVE_POSIX_DRV_NAME`, but is also possible
+:kconfig:option:`CONFIG_ETH_NATIVE_TAP_DRV_NAME`, but is also possible
 to set it from the command line using ``--eth-if=<interface_name>``.
+
+The same applies to the IPv4 address, gateway and netmask. They can be set
+from the command line using ``--ipv4-addr=<ip_address>``,
+``--ipv4-gw=<gateway>`` and ``--ipv4-nm=<netmask>``.
+
+Note that the configuration :kconfig:option:`CONFIG_NET_CONFIG_MY_IPV4_ADDR`
+and the command line arguments work in parallel. This means that if both are
+set, the interface might end up with two IP addresses. In most cases, it does
+make sense to only use one of both at the same time.
+
 This can be useful if the application has to be
 run in multiple instances and recompiling it for each instance would be
 troublesome.
 
 .. code-block:: console
 
-   ./zephyr.exe --eth-if=zeth2
+   ./zephyr.exe --eth-if=zeth2 --ipv4-addr=192.0.2.2 --ipv4-gw=192.0.0.1
+   --ipv4-nm=255.255.0.0
 
 .. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools

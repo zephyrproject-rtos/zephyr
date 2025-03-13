@@ -437,7 +437,7 @@ static void *z_object_alloc(enum k_objects otype, size_t size)
 	/* The allocating thread implicitly gets permission on kernel objects
 	 * that it allocates
 	 */
-	k_thread_perms_set(zo, arch_current_thread());
+	k_thread_perms_set(zo, _current);
 
 	/* Activates reference counting logic for automatic disposal when
 	 * all permissions have been revoked
@@ -654,7 +654,7 @@ static int thread_perms_test(struct k_object *ko)
 		return 1;
 	}
 
-	index = thread_index_get(arch_current_thread());
+	index = thread_index_get(_current);
 	if (index != -1) {
 		return sys_bitfield_test_bit((mem_addr_t)&ko->perms, index);
 	}
@@ -663,9 +663,9 @@ static int thread_perms_test(struct k_object *ko)
 
 static void dump_permission_error(struct k_object *ko)
 {
-	int index = thread_index_get(arch_current_thread());
+	int index = thread_index_get(_current);
 	LOG_ERR("thread %p (%d) does not have permission on %s %p",
-		arch_current_thread(), index,
+		_current, index,
 		otype_to_str(ko->type), ko->name);
 	LOG_HEXDUMP_ERR(ko->perms, sizeof(ko->perms), "permission bitmap");
 }
@@ -718,7 +718,7 @@ void k_object_access_revoke(const void *object, struct k_thread *thread)
 
 void z_impl_k_object_release(const void *object)
 {
-	k_object_access_revoke(object, arch_current_thread());
+	k_object_access_revoke(object, _current);
 }
 
 void k_object_access_all_grant(const void *object)
@@ -794,7 +794,7 @@ void k_object_recycle(const void *obj)
 
 	if (ko != NULL) {
 		(void)memset(ko->perms, 0, sizeof(ko->perms));
-		k_thread_perms_set(ko, arch_current_thread());
+		k_thread_perms_set(ko, _current);
 		ko->flags |= K_OBJ_FLAG_INITIALIZED;
 	}
 }

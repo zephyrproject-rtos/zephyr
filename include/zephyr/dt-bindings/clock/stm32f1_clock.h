@@ -28,34 +28,6 @@
 #define STM32_SRC_EXT_HSE       (STM32_SRC_HSE + 1)
 #define STM32_SRC_PLLCLK        (STM32_SRC_EXT_HSE + 1)
 
-#define STM32_CLOCK_REG_MASK    0xFFU
-#define STM32_CLOCK_REG_SHIFT   0U
-#define STM32_CLOCK_SHIFT_MASK  0x1FU
-#define STM32_CLOCK_SHIFT_SHIFT 8U
-#define STM32_CLOCK_MASK_MASK   0x7U
-#define STM32_CLOCK_MASK_SHIFT  13U
-#define STM32_CLOCK_VAL_MASK    0x7U
-#define STM32_CLOCK_VAL_SHIFT   16U
-
-/**
- * @brief STM32 clock configuration bit field.
- *
- * - reg   (1/2/3)         [ 0 : 7 ]
- * - shift (0..31)         [ 8 : 12 ]
- * - mask  (0x1, 0x3, 0x7) [ 13 : 15 ]
- * - val   (0..7)          [ 16 : 18 ]
- *
- * @param reg RCC_CFGRx register offset
- * @param shift Position within RCC_CFGRx.
- * @param mask Mask for the RCC_CFGRx field.
- * @param val Clock value (0, 1, ... 7).
- */
-#define STM32_DOMAIN_CLOCK(val, mask, shift, reg)					\
-	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |		\
-	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
-	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |		\
-	 (((val) & STM32_CLOCK_VAL_MASK) << STM32_CLOCK_VAL_SHIFT))
-
 /** @brief RCC_CFGRx register offset */
 #define CFGR1_REG               0x04
 #define CFGR2_REG		0x2C
@@ -65,13 +37,13 @@
 
 /** @brief Device domain clocks selection helpers */
 /** CFGR2 devices */
-#define I2S2_SEL(val)		STM32_DOMAIN_CLOCK(val, 1, 17, CFGR2_REG)
-#define I2S3_SEL(val)		STM32_DOMAIN_CLOCK(val, 1, 18, CFGR2_REG)
+#define I2S2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 17, CFGR2_REG)
+#define I2S3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 18, CFGR2_REG)
 /** BDCR devices */
-#define RTC_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 8, BDCR_REG)
+#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, BDCR_REG)
 
 /** CFGR1 devices */
-#define MCO1_SEL(val)           STM32_MCO_CFGR(val, 0x7, 24, CFGR1_REG)
+#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 24, CFGR1_REG)
 /* No MCO prescaler support on STM32F1 series. */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F1_CLOCK_H_ */

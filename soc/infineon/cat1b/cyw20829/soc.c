@@ -85,22 +85,16 @@ void disable_mpu_rasr_xn(void)
 }
 #endif /* CONFIG_ARM_MPU */
 
-static int init_cycfg_platform_wrapper(void)
+void soc_early_init_hook(void)
 {
 #ifdef CONFIG_ARM_MPU
 	disable_mpu_rasr_xn();
-#endif	/* CONFIG_ARM_MPU */
+#endif /* CONFIG_ARM_MPU */
 
 	/* Initializes the system */
 	SystemInit();
-	return 0;
-}
-
-SYS_INIT(init_cycfg_platform_wrapper, PRE_KERNEL_1, 0);
 
 #ifdef CONFIG_PM
-void soc_early_init_hook(void)
-{
 	ifx_pm_init();
-}
 #endif
+}

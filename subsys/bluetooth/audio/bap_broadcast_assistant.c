@@ -48,9 +48,8 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTAN
 
 #include "common/bt_str.h"
 
+#include "audio_internal.h"
 #include "bap_internal.h"
-#include "../host/conn_internal.h"
-#include "../host/hci_core.h"
 
 #define MINIMUM_RECV_STATE_LEN          15
 
@@ -209,12 +208,30 @@ static bool past_available(const struct bt_conn *conn,
 			   uint8_t sid)
 {
 	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)) {
-		LOG_DBG("%p remote %s PAST, local %s PAST", (void *)conn,
-			BT_FEAT_LE_PAST_RECV(conn->le.features) ? "supports" : "does not support",
-			BT_FEAT_LE_PAST_SEND(bt_dev.le.features) ? "supports" : "does not support");
+		struct bt_le_local_features local_features;
+		struct bt_conn_remote_info remote_info;
+		int err;
 
-		return BT_FEAT_LE_PAST_RECV(conn->le.features) &&
-		       BT_FEAT_LE_PAST_SEND(bt_dev.le.features) &&
+		err = bt_le_get_local_features(&local_features);
+		if (err != 0) {
+			LOG_DBG("Failed to get local features: %d", err);
+			return false;
+		}
+
+		err = bt_conn_get_remote_info(conn, &remote_info);
+		if (err != 0) {
+			LOG_DBG("Failed to get remote info: %d", err);
+			return false;
+		}
+
+		LOG_DBG("%p remote %s PAST, local %s PAST", (void *)conn,
+			BT_FEAT_LE_PAST_RECV(remote_info.le.features) ? "supports"
+								      : "does not support",
+			BT_FEAT_LE_PAST_SEND(local_features.features) ? "supports"
+								      : "does not support");
+
+		return BT_FEAT_LE_PAST_RECV(remote_info.le.features) &&
+		       BT_FEAT_LE_PAST_SEND(local_features.features) &&
 		       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
 	} else {
 		return false;
@@ -378,7 +395,7 @@ static uint8_t broadcast_assistant_bap_ntf_read_func(struct bt_conn *conn, uint8
 		return BT_GATT_ITER_STOP;
 	}
 
-	LOG_DBG("conn %p err 0x%02x len %u", conn, err, length);
+	LOG_DBG("conn %p err 0x%02x len %u", (void *)conn, err, length);
 
 	if (err) {
 		LOG_DBG("Failed to read: %u", err);
@@ -427,7 +444,7 @@ static void long_bap_read(struct bt_conn *conn, uint16_t handle)
 	}
 
 	if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
-		LOG_DBG("conn %p", conn);
+		LOG_DBG("conn %p", (void *)conn);
 
 		/* If the client is busy reading reschedule the long read */
 		struct bt_conn_info conn_info;
@@ -514,8 +531,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 	}
 
 	if (length != 0) {
-		const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
-		const uint16_t max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
+		const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(conn);
 
 		/* Cancel any pending long reads containing now obsolete information */
 		(void)k_work_cancel_delayable(&inst->bap_read_work);
@@ -1172,7 +1188,6 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 
 	cp->opcode = BT_BAP_BASS_OP_SCAN_START;
 
-	atomic_clear_bit(inst->flags, BAP_BA_FLAG_SCANNING);
 	err = bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
 	if (err != 0 && start_scan) {
 		/* bt_bap_broadcast_assistant_common_cp clears the busy flag on error */
@@ -1238,6 +1253,112 @@ int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn)
 	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
 }
 
+static bool bis_syncs_unique_or_no_pref(uint32_t requested_bis_syncs, uint32_t aggregated_bis_syncs)
+{
+	if (requested_bis_syncs == 0U || aggregated_bis_syncs == 0U) {
+		return true;
+	}
+
+	if (requested_bis_syncs == BT_BAP_BIS_SYNC_NO_PREF &&
+	    aggregated_bis_syncs == BT_BAP_BIS_SYNC_NO_PREF) {
+		return true;
+	}
+
+	return (requested_bis_syncs & aggregated_bis_syncs) != 0U;
+}
+
+static bool valid_subgroup_params(uint8_t pa_sync, const struct bt_bap_bass_subgroup subgroups[],
+				  uint8_t num_subgroups)
+{
+	uint32_t aggregated_bis_syncs = 0U;
+
+	for (uint8_t i = 0U; i < num_subgroups; i++) {
+		/* BIS sync values of 0 and BT_BAP_BIS_SYNC_NO_PREF are allowed at any time, but any
+		 * other values are only allowed if PA sync state is also set
+		 */
+		CHECKIF(pa_sync == 0 && (subgroups[i].bis_sync != 0U &&
+					 subgroups[i].bis_sync != BT_BAP_BIS_SYNC_NO_PREF)) {
+			LOG_DBG("[%u]: Only syncing to BIS is not allowed", i);
+
+			return false;
+		}
+
+		/* Verify that the request BIS sync indexes are unique or no preference */
+		if (!bis_syncs_unique_or_no_pref(subgroups[i].bis_sync, aggregated_bis_syncs)) {
+			LOG_DBG("[%u]: Duplicate BIS index 0x%08x (aggregated 0x%08x)", i,
+				subgroups[i].bis_sync, aggregated_bis_syncs);
+
+			return false;
+		}
+
+		/* Keep track of BIS sync values to ensure that we do not have duplicates */
+		if (subgroups[i].bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
+			aggregated_bis_syncs |= subgroups[i].bis_sync;
+		}
+
+#if defined(CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE)
+		if (subgroups[i].metadata_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) {
+			LOG_DBG("[%u]: Invalid metadata_len: %u", i, subgroups[i].metadata_len);
+
+			return false;
+		}
+	}
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE */
+
+	return true;
+}
+
+static bool valid_add_src_param(const struct bt_bap_broadcast_assistant_add_src_param *param)
+{
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	CHECKIF(param->addr.type > BT_ADDR_LE_RANDOM) {
+		LOG_DBG("Invalid address type %u", param->addr.type);
+		return false;
+	}
+
+	CHECKIF(param->adv_sid > BT_GAP_SID_MAX) {
+		LOG_DBG("Invalid adv_sid %u", param->adv_sid);
+		return false;
+	}
+
+	CHECKIF(!(param->pa_interval != BT_BAP_PA_INTERVAL_UNKNOWN) &&
+		!IN_RANGE(param->pa_interval, BT_GAP_PER_ADV_MIN_INTERVAL,
+			  BT_GAP_PER_ADV_MAX_INTERVAL)) {
+		LOG_DBG("Invalid pa_interval 0x%04X", param->pa_interval);
+		return false;
+	}
+
+	CHECKIF(param->broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
+		LOG_DBG("Invalid broadcast_id 0x%08X", param->broadcast_id);
+		return false;
+	}
+
+	CHECKIF(param->num_subgroups != 0 && param->subgroups == NULL) {
+		LOG_DBG("Subgroups are NULL when num_subgroups = %u", param->num_subgroups);
+		return false;
+	}
+
+	CHECKIF(param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+		LOG_DBG("Too many subgroups %u/%u", param->num_subgroups,
+			CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
+
+		return false;
+	}
+
+	CHECKIF(param->subgroups != NULL) {
+		if (!valid_subgroup_params(param->pa_sync, param->subgroups,
+					   param->num_subgroups)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 				       const struct bt_bap_broadcast_assistant_add_src_param *param)
 {
@@ -1261,6 +1382,10 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 				       param->addr.type)) {
 		LOG_DBG("Broadcast source already exists");
 
+		return -EINVAL;
+	}
+
+	if (!valid_add_src_param(param)) {
 		return -EINVAL;
 	}
 
@@ -1315,26 +1440,56 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 
 		subgroup->bis_sync = param->subgroups[i].bis_sync;
 
-		CHECKIF(param->pa_sync == 0 && subgroup->bis_sync != 0) {
-			LOG_DBG("Only syncing to BIS is not allowed");
-
-			atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
-
-			return -EINVAL;
-		}
-
+#if defined(CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE)
 		if (param->subgroups[i].metadata_len != 0) {
-			(void)memcpy(subgroup->metadata,
-				     param->subgroups[i].metadata,
+			(void)memcpy(subgroup->metadata, param->subgroups[i].metadata,
 				     param->subgroups[i].metadata_len);
 			subgroup->metadata_len = param->subgroups[i].metadata_len;
 		} else {
-			subgroup->metadata_len = 0;
+			subgroup->metadata_len = 0U;
 		}
-
+#else
+		subgroup->metadata_len = 0U;
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE */
 	}
 
 	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
+}
+
+static bool valid_add_mod_param(const struct bt_bap_broadcast_assistant_mod_src_param *param)
+{
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	CHECKIF(!(param->pa_interval != BT_BAP_PA_INTERVAL_UNKNOWN) &&
+		!IN_RANGE(param->pa_interval, BT_GAP_PER_ADV_MIN_INTERVAL,
+			  BT_GAP_PER_ADV_MAX_INTERVAL)) {
+		LOG_DBG("Invalid pa_interval 0x%04X", param->pa_interval);
+		return false;
+	}
+
+	CHECKIF(param->num_subgroups != 0 && param->subgroups == NULL) {
+		LOG_DBG("Subgroups are NULL when num_subgroups = %u", param->num_subgroups);
+		return false;
+	}
+
+	CHECKIF(param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+		LOG_DBG("Too many subgroups %u/%u", param->num_subgroups,
+			CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
+
+		return false;
+	}
+
+	CHECKIF(param->subgroups != NULL) {
+		if (!valid_subgroup_params(param->pa_sync, param->subgroups,
+					   param->num_subgroups)) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
@@ -1348,6 +1503,10 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
 
+		return -EINVAL;
+	}
+
+	if (!valid_add_mod_param(param)) {
 		return -EINVAL;
 	}
 
@@ -1423,22 +1582,18 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 
 		subgroup->bis_sync = param->subgroups[i].bis_sync;
 
-		CHECKIF(param->pa_sync == 0 && subgroup->bis_sync != 0) {
-			LOG_DBG("Only syncing to BIS is not allowed");
-
-			atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
-
-			return -EINVAL;
-		}
-
+#if defined(CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE)
 		if (param->subgroups[i].metadata_len != 0) {
 			(void)memcpy(subgroup->metadata,
 				     param->subgroups[i].metadata,
 				     param->subgroups[i].metadata_len);
 			subgroup->metadata_len = param->subgroups[i].metadata_len;
 		} else {
-			subgroup->metadata_len = 0;
+			subgroup->metadata_len = 0U;
 		}
+#else
+		subgroup->metadata_len = 0U;
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE */
 	}
 
 	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);

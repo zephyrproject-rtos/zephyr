@@ -14,7 +14,8 @@ common:
   harness_config:
     type: one_line
     record:
-      regex: "(?P<api>.*), ALL, (?P<time>.*), (?P<threads>.*), (?P<cores>.*), (?P<rate>.*)"
+      regex:
+        - "(?P<api>.*), ALL, (?P<time>.*), (?P<threads>.*), (?P<cores>.*), (?P<rate>.*)"
     regex:
       - "PROJECT EXECUTION SUCCESSFUL"
 tests:

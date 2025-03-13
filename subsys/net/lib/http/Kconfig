@@ -29,7 +29,7 @@ config HTTP_CLIENT
 	help
 	  HTTP client API
 
-config HTTP_SERVER
+menuconfig HTTP_SERVER
 	bool "HTTP Server [EXPERIMENTAL]"
 	select HTTP_PARSER
 	select HTTP_PARSER_URL
@@ -163,7 +163,8 @@ config HTTP_SERVER_WEBSOCKET
 
 config HTTP_SERVER_RESOURCE_WILDCARD
 	bool "Allow wildcard matching of resources"
-	select FNMATCH
+	# The POSIX_C_LIB_EXT will get fnmatch() support
+	select POSIX_C_LIB_EXT
 	help
 	  Allow user to specify wildcards when setting up resource strings.
 	  This means that instead of specifying multiple resources with exact
@@ -188,12 +189,34 @@ config HTTP_SERVER_TLS_USE_ALPN
 	  protocol for TLS connections. Web browsers use this mechanism to determine
 	  whether HTTP2 is supported.
 
+config HTTP_SERVER_REPORT_FAILURE_REASON
+	bool "Report failure reason in HTTP 500 Internal Server Error reply"
+	help
+	  If enabled, the server will include the failure reason within
+	  HTTP 500 Internal Server Error response. Otherwise, no information
+	  is provided within the message.
+
 config WEBSOCKET_CONSOLE
 	bool
 	default y if HTTP_SERVER_WEBSOCKET && SHELL_BACKEND_WEBSOCKET
 	help
 	  Hidden option that is enabled only when all the necessary options
 	  needed by websocket console are set.
+
+config HTTP_SERVER_COMPRESSION
+	bool "Compression support in HTTP fileserver"
+	help
+	  If enabled, the fileserver will parse the accept-encoding header
+	  from the client and extract the supported compression methods.
+	  Afterwards it will try to serve the first compressed file available
+	  by using the file ending as compression indicator in this order:
+	    1. brotli   -> .br
+	    2. gzip     -> .gz
+	    3. zstd     -> .zst
+	    4. compress -> .lzw
+	    5. deflate  -> .zz
+	    6. File without compression
+
 endif
 
 # Hidden option to avoid having multiple individual options that are ORed together

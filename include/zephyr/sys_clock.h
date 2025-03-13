@@ -79,7 +79,7 @@ typedef struct {
  */
 #define K_TIMEOUT_EQ(a, b) ((a).ticks == (b).ticks)
 
-/** number of nanoseconds per micorsecond */
+/** number of nanoseconds per microsecond */
 #define NSEC_PER_USEC 1000U
 
 /** number of nanoseconds per millisecond */
@@ -115,12 +115,14 @@ typedef struct {
 /** @} */
 
 /** @cond INTERNAL_HIDDEN */
-#define Z_TIMEOUT_NO_WAIT ((k_timeout_t) {0})
+#define Z_TIMEOUT_NO_WAIT_INIT {0}
+#define Z_TIMEOUT_NO_WAIT ((k_timeout_t) Z_TIMEOUT_NO_WAIT_INIT)
 #if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
-#define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { (t) })
+#define Z_TIMEOUT_TICKS_INIT(t) { (t) }
 #else
-#define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { .ticks = (t) })
+#define Z_TIMEOUT_TICKS_INIT(t) { .ticks = (t) }
 #endif
+#define Z_TIMEOUT_TICKS(t) ((k_timeout_t) Z_TIMEOUT_TICKS_INIT(t))
 #define Z_FOREVER Z_TIMEOUT_TICKS(K_TICKS_FOREVER)
 
 #ifdef CONFIG_TIMEOUT_64BIT
@@ -152,11 +154,12 @@ typedef struct {
 
 /** @endcond */
 
+#ifndef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
 #error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
 #endif
-
+#endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
 /* kernel clocks */
 

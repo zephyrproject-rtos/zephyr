@@ -87,11 +87,11 @@ enum bt_avdtp_media_type {
  */
 struct bt_avdtp_sep_info {
 	/** End Point usage status */
-	uint8_t inuse:1;
+	uint8_t inuse: 1;
 	/** Stream End Point ID that is the identifier of the stream endpoint */
-	uint8_t id:6;
+	uint8_t id: 6;
 	/** Reserved */
-	uint8_t reserved:1;
+	uint8_t reserved: 1;
 	/** Stream End-point Type that indicates if the stream end-point is SNK or SRC */
 	enum bt_avdtp_sep_type tsep;
 	/** Media-type of the End Point
@@ -127,8 +127,9 @@ struct bt_avdtp_sep {
 	/** Media Transport Channel*/
 	struct bt_l2cap_br_chan chan;
 	/** the endpoint media data */
-	void (*media_data_cb)(struct bt_avdtp_sep *sep,
-				struct net_buf *buf);
+	void (*media_data_cb)(struct bt_avdtp_sep *sep, struct net_buf *buf);
+	/* semaphore for lock/unlock */
+	struct k_sem sem_lock;
 	/** avdtp session */
 	struct bt_avdtp *session;
 	/** SEP state */

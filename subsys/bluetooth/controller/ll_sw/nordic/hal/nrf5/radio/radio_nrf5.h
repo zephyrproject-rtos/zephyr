@@ -20,11 +20,7 @@
 #define HAL_RADIO_NS2US_ROUND(ns) ((ns + 500)/1000)
 
 /* SoC specific defines */
-#if defined(CONFIG_BOARD_NRF52_BSIM)
-#include "radio_sim_nrf52.h"
-#elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET)
-#include "radio_sim_nrf5340.h"
-#elif defined(CONFIG_SOC_SERIES_NRF51X)
+#if defined(CONFIG_SOC_SERIES_NRF51X)
 #include "radio_nrf51.h"
 #elif defined(CONFIG_SOC_NRF52805)
 #include "radio_nrf52805.h"
@@ -43,9 +39,16 @@
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 #include <hal/nrf_vreqctrl.h>
 #include "radio_nrf5340.h"
-#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#elif defined(CONFIG_SOC_SERIES_NRF54LX)
 #include "radio_nrf54lx.h"
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#elif defined(CONFIG_BOARD_NRF52_BSIM)
+#include "radio_sim_nrf52.h"
+#elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET)
+#include <hal/nrf_vreqctrl.h>
+#include "radio_sim_nrf5340.h"
+#elif defined(CONFIG_BOARD_NRF54L15BSIM_NRF54L15_CPUAPP)
+#include "radio_sim_nrf54l.h"
+#else
 #error "Unsupported SoC."
 #endif
 
@@ -74,16 +77,14 @@
 /* Include RTC/GRTC Compare Index used to Trigger Radio TXEN/RXEN */
 #include "hal/cntr.h"
 
-#if defined(PPI_PRESENT)
+#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 #include <hal/nrf_ppi.h>
 #include "radio_nrf5_ppi_resources.h"
 #include "radio_nrf5_ppi.h"
-#elif defined(DPPI_PRESENT)
+#else
 #include <hal/nrf_dppi.h>
 #include "radio_nrf5_dppi_resources.h"
 #include "radio_nrf5_dppi.h"
-#else
-#error "PPI or DPPI abstractions missing."
 #endif
 
 #include "radio_nrf5_txp.h"

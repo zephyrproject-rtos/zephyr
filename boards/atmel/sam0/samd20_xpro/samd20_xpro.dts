@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Sean Nyekjaer
+ # Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +50,12 @@
 
 &cpu0 {
 	clock-frequency = <DT_FREQ_M(48)>;
+};
+
+&rtc {
+	status = "okay";
+	counter-mode = "clock";
+	prescaler = <1024>;
 };
 
 &sercom0 {

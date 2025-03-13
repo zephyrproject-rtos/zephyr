@@ -21,6 +21,7 @@ endif()
 set_compiler_property(PROPERTY optimization_speed -O2)
 set_compiler_property(PROPERTY optimization_size  -Os)
 set_compiler_property(PROPERTY optimization_size_aggressive -Oz)
+set_compiler_property(PROPERTY optimization_fast -Ofast)
 
 if(CMAKE_C_COMPILER_VERSION GREATER_EQUAL "4.5.0")
   set_compiler_property(PROPERTY optimization_lto -flto=auto)
@@ -121,7 +122,7 @@ if (NOT CONFIG_NEWLIB_LIBC AND
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
 
-set_compiler_property(PROPERTY no_printf_return_value -fno-printf-return-value)
+check_set_compiler_property(PROPERTY no_printf_return_value -fno-printf-return-value)
 
 set_property(TARGET compiler-cpp PROPERTY nostdincxx "-nostdinc++")
 
@@ -167,13 +168,22 @@ set_property(TARGET compiler-cpp PROPERTY no_rtti "-fno-rtti")
 set_compiler_property(PROPERTY coverage -fprofile-arcs -ftest-coverage -fno-inline)
 
 # Security canaries.
-set_compiler_property(PROPERTY security_canaries -fstack-protector-all)
+set_compiler_property(PROPERTY security_canaries -fstack-protector)
+set_compiler_property(PROPERTY security_canaries_strong -fstack-protector-strong)
+set_compiler_property(PROPERTY security_canaries_all -fstack-protector-all)
+set_compiler_property(PROPERTY security_canaries_explicit -fstack-protector-explicit)
 
 # Only a valid option with GCC 7.x and above, so let's do check and set.
 if(CONFIG_STACK_CANARIES_TLS)
   check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=tls)
+  check_set_compiler_property(APPEND PROPERTY security_canaries_strong -mstack-protector-guard=tls)
+  check_set_compiler_property(APPEND PROPERTY security_canaries_all -mstack-protector-guard=tls)
+  check_set_compiler_property(APPEND PROPERTY security_canaries_explicit -mstack-protector-guard=tls)
 else()
   check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=global)
+  check_set_compiler_property(APPEND PROPERTY security_canaries_global -mstack-protector-guard=global)
+  check_set_compiler_property(APPEND PROPERTY security_canaries_all -mstack-protector-guard=global)
+  check_set_compiler_property(APPEND PROPERTY security_canaries_explicit -mstack-protector-guard=global)
 endif()
 
 
@@ -222,10 +232,11 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe
 # Required ASM flags when using gcc
 set_property(TARGET asm PROPERTY required "-xassembler-with-cpp")
 
+# GCC compiler flags for imacros. The specific header must be appended by user.
+set_property(TARGET asm PROPERTY imacros "-imacros")
+
 # gcc flag for colourful diagnostic messages
-if (NOT COMPILER STREQUAL "xcc")
-set_compiler_property(PROPERTY diagnostic -fdiagnostics-color=always)
-endif()
+check_set_compiler_property(PROPERTY diagnostic -fdiagnostics-color=always)
 
 # Compiler flag for disabling pointer arithmetic warnings
 set_compiler_property(PROPERTY warning_no_pointer_arithmetic "-Wno-pointer-arith")
@@ -239,6 +250,7 @@ set_compiler_property(PROPERTY no_position_independent
 set_compiler_property(PROPERTY no_global_merge "")
 
 set_compiler_property(PROPERTY warning_shadow_variables -Wshadow)
+set_compiler_property(PROPERTY warning_no_array_bounds -Wno-array-bounds)
 
 set_compiler_property(PROPERTY no_builtin -fno-builtin)
 set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
@@ -246,3 +258,7 @@ set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
 set_compiler_property(PROPERTY specs -specs=)
 
 set_compiler_property(PROPERTY include_file -include)
+
+set_compiler_property(PROPERTY cmse -mcmse)
+
+set_property(TARGET asm PROPERTY cmse -mcmse)

@@ -116,16 +116,19 @@ static const uint32_t ch2ll[TIMER_MAX_CH] = {
 #endif
 };
 
-/** Some stm32 mcus have complementary channels : 3 or 4 */
+/** STM32 MCUs have between 1 and 4 complementary channels */
 static const uint32_t ch2ll_n[] = {
 #if defined(LL_TIM_CHANNEL_CH1N)
 	LL_TIM_CHANNEL_CH1N,
+#if defined(LL_TIM_CHANNEL_CH2N)
 	LL_TIM_CHANNEL_CH2N,
+#if defined(LL_TIM_CHANNEL_CH3N)
 	LL_TIM_CHANNEL_CH3N,
 #if defined(LL_TIM_CHANNEL_CH4N)
-/** stm32g4x and stm32u5x have 4 complementary channels */
 	LL_TIM_CHANNEL_CH4N,
 #endif /* LL_TIM_CHANNEL_CH4N */
+#endif /* LL_TIM_CHANNEL_CH3N */
+#endif /* LL_TIM_CHANNEL_CH2N */
 #endif /* LL_TIM_CHANNEL_CH1N */
 };
 /** Maximum number of complemented timer channels is ARRAY_SIZE(ch2ll_n)*/
@@ -231,7 +234,10 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 		return r;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/* Timers are clocked by SYSCLK on STM32WB0 */
+	apb_psc = 1;
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
 		apb_psc = STM32_D2PPRE1;
 	} else {

@@ -18,7 +18,7 @@
 
 LOG_MODULE_REGISTER(dut, CONFIG_APP_LOG_LEVEL);
 
-static DEFINE_FLAG(ADVERTISING);
+DEFINE_FLAG_STATIC(ADVERTISING);
 
 static void sdu_destroy(struct net_buf *buf)
 {

@@ -158,8 +158,8 @@ isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 	struct net_buf *buf  = bt_buf_get_rx(BT_BUF_ISO_IN, K_FOREVER);
 
 	if (buf) {
-		/* Reserve space for headers */
-		net_buf_reserve(buf, SDU_HCI_HDR_SIZE);
+		/* Increase reserved space for headers */
+		net_buf_reserve(buf, SDU_HCI_HDR_SIZE + net_buf_headroom(buf));
 
 		sdu_buffer->dbuf = buf;
 		sdu_buffer->size = net_buf_tailroom(buf);
@@ -287,7 +287,7 @@ void hci_recv_fifo_reset(void)
 	 * reinitialize the queue so it is empty, we use the cancel wait and
 	 * initialize the queue. As the Tx thread and Rx thread are co-operative
 	 * we should be relatively safe doing the below.
-	 * Added k_sched_lock and k_sched_unlock, as native_posix seems to
+	 * Added k_sched_lock and k_sched_unlock, as native_sim seems to
 	 * swap to waiting thread on call to k_fifo_cancel_wait!.
 	 */
 	k_sched_lock();

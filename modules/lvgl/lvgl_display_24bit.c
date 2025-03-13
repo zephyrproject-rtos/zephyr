@@ -9,42 +9,28 @@
 #include <lvgl.h>
 #include "lvgl_display.h"
 
-void lvgl_flush_cb_24bit(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p)
+void lvgl_flush_cb_24bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
 {
 	uint16_t w = area->x2 - area->x1 + 1;
 	uint16_t h = area->y2 - area->y1 + 1;
 	struct lvgl_display_flush flush;
 
-	flush.disp_drv = disp_drv;
+	flush.display = display;
 	flush.x = area->x1;
 	flush.y = area->y1;
 	flush.desc.buf_size = w * 3U * h;
 	flush.desc.width = w;
 	flush.desc.pitch = w;
 	flush.desc.height = h;
-	flush.buf = (void *)color_p;
-	lvgl_flush_display(&flush);
-}
+	flush.buf = (void *)px_map;
 
-void lvgl_set_px_cb_24bit(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x,
-			  lv_coord_t y, lv_color_t color, lv_opa_t opa)
-{
-	uint8_t *buf_xy = buf + x * 3U + y * 3U * buf_w;
-	lv_color32_t converted_color;
+	/* LVGL assumes BGR byte ordering, convert to RGB */
+	for (size_t i = 0; i < flush.desc.buf_size; i += 3) {
+		uint8_t tmp = px_map[i];
 
-#ifdef CONFIG_LV_COLOR_DEPTH_32
-	if (opa != LV_OPA_COVER) {
-		lv_color_t mix_color;
-
-		mix_color.ch.red = *buf_xy;
-		mix_color.ch.green = *(buf_xy + 1);
-		mix_color.ch.blue = *(buf_xy + 2);
-		color = lv_color_mix(color, mix_color, opa);
+		px_map[i] = px_map[i + 2];
+		px_map[i + 2] = tmp;
 	}
-#endif
 
-	converted_color.full = lv_color_to32(color);
-	*buf_xy = converted_color.ch.red;
-	*(buf_xy + 1) = converted_color.ch.green;
-	*(buf_xy + 2) = converted_color.ch.blue;
+	lvgl_flush_display(&flush);
 }

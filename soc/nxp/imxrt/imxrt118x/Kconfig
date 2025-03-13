@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_IMXRT118X
-	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS if SOC_MIMXRT1189_CM7
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_RESET_HOOK
 	select INIT_ARCH_HW_AT_BOOT if SOC_MIMXRT1189_CM33
@@ -13,12 +12,12 @@ config SOC_SERIES_IMXRT118X
 	select CPU_HAS_ARM_SAU if SOC_MIMXRT1189_CM33
 	select HAS_MCUX
 	select CPU_HAS_ARM_MPU
-	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS if SOC_MIMXRT1189_CM33
-	select ARM_MPU if SOC_MIMXRT1189_CM33
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	select ARM_MPU
 	select INIT_ARM_PLL
 	select ARM_TRUSTZONE_M if SOC_MIMXRT1189_CM33
-	select CPU_HAS_ICACHE if SOC_MIMXRT1189_CM7
-	select CPU_HAS_DCACHE if SOC_MIMXRT1189_CM7
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
 	select CPU_HAS_FPU
 	select CPU_HAS_FPU_DOUBLE_PRECISION if SOC_MIMXRT1189_CM7
 	select HAS_MCUX_IOMUXC
@@ -28,6 +27,8 @@ config SOC_SERIES_IMXRT118X
 
 config SOC_MIMXRT1189_CM33
 	select CPU_CORTEX_M33
+	select HAS_MCUX_XCACHE
+	select CACHE_MANAGEMENT
 
 config SOC_MIMXRT1189_CM7
 	select CPU_CORTEX_M7
@@ -65,13 +66,5 @@ config TRDC_MCUX_TRDC
 config S3MU_MCUX_S3MU
 	default y
 	bool "Use S3MU MCUX Driver"
-
-config IMXRT118X_CM33_XCACHE_PS
-	bool "Use CM33 XCACHE_PS"
-	default y if SOC_MIMXRT1189_CM33
-	help
-	  Use CM33 XCACHE_PS at boot. Please note XCACHE_PC have been
-	  enabled in SystemInit function. If this Kconfig is cleared,
-	  the XCACHE controller won't be enabled during SOC init
 
 endif # SOC_SERIES_IMXRT118X

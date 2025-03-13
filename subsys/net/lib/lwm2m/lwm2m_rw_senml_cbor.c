@@ -541,7 +541,7 @@ static int get_opaque(struct lwm2m_input_context *in,
 	uint8_t *dest = NULL;
 
 	/* Get the CBOR header only on first read. */
-	if (opaque->remaining == 0) {
+	if (opaque->offset == 0) {
 
 		fd = engine_get_in_user_data(in);
 		if (!fd || !fd->current) {

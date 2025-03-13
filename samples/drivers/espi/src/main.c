@@ -45,7 +45,7 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 /* The devicetree node identifier for the board power rails pins. */
 #define BRD_PWR_NODE DT_NODELABEL(board_power)
 
-#if DT_NODE_HAS_STATUS_OKAY(BRD_PWR_NODE)
+#ifdef CONFIG_ESPI_USE_BOARD_POWER
 static const struct gpio_dt_spec pwrgd_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, pwrg_gpios);
 static const struct gpio_dt_spec rsm_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, rsm_gpios);
 #endif
@@ -911,7 +911,7 @@ int espi_init(void)
 	return ret;
 }
 
-#if DT_NODE_HAS_STATUS_OKAY(BRD_PWR_NODE)
+#ifdef CONFIG_ESPI_USE_BOARD_POWER
 static int wait_for_pin(const struct gpio_dt_spec *gpio, uint16_t timeout, int exp_level)
 {
 	uint16_t loop_cnt = timeout;
@@ -1172,7 +1172,7 @@ int espi_test(void)
 	 */
 	k_sleep(K_SECONDS(1));
 
-#if DT_NODE_HAS_STATUS_OKAY(BRD_PWR_NODE)
+#ifdef CONFIG_ESPI_USE_BOARD_POWER
 	if (!gpio_is_ready_dt(&pwrgd_gpio)) {
 		LOG_ERR("%s: device not ready.", pwrgd_gpio.port->name);
 		return -ENODEV;
@@ -1201,7 +1201,7 @@ int espi_test(void)
 
 	LOG_INF("Hello eSPI test %s", CONFIG_BOARD);
 
-#if DT_NODE_HAS_STATUS_OKAY(BRD_PWR_NODE)
+#ifdef CONFIG_ESPI_USE_BOARD_POWER
 	ret = gpio_pin_configure_dt(&pwrgd_gpio, GPIO_INPUT);
 	if (ret) {
 		LOG_ERR("Unable to configure %d:%d", pwrgd_gpio.pin, ret);
@@ -1252,7 +1252,7 @@ int espi_test(void)
 	}
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(BRD_PWR_NODE)
+#ifdef CONFIG_ESPI_USE_BOARD_POWER
 	ret = wait_for_pin(&pwrgd_gpio, PWR_SEQ_TIMEOUT, 1);
 	if (ret) {
 		LOG_ERR("RSMRST_PWRGD timeout");

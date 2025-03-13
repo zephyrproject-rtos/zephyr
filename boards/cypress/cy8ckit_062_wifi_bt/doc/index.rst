@@ -1,7 +1,4 @@
-.. _cy8ckit_062_wifi_bt:
-
-INFINEON PSOC 6 WiFi-BT Pioneer Kit
-###################################
+.. zephyr:board:: cy8ckit_062_wifi_bt
 
 Overview
 ********
@@ -22,10 +19,6 @@ The PSOC 6 WiFi-BT Pioneer board offers compatibility with Arduino shields.
 
 The Cortex-M0+ is a primary core on the board's SoC. It starts first and
 enables the CM4 core.
-
-.. image:: img/cy8ckit_062_wifi_bt_m0.jpg
-     :align: center
-     :alt: CY8CKIT_062_WIFI_BT
 
 1. USB PD output voltage availability indicator (LED7)
 2. Battery charging indicator (LED6)

@@ -7,7 +7,7 @@
 
 Overview
 ********
-This sample sets the date rate of LSM6DSO accelerometer and gyroscope to
+This sample sets the data rate of the LSM6DSO accelerometer and gyroscope to
 12.5Hz and enables a trigger on data ready. It displays on the console
 the values for accelerometer and gyroscope.
 

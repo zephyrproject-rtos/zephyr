@@ -57,6 +57,7 @@ ams	AMS AG
 amstaos	AMS-Taos Inc.
 analogix	Analogix Semiconductor, Inc.
 andestech	Andes Technology Corporation
+antmicro	Antmicro
 anvo	Anvo-Systems Dresden GmbH
 aosong	Guangzhou Aosong Electronic Co., Ltd.
 ap	Angst+Pfister
@@ -451,6 +452,7 @@ myir	MYIR Tech Limited
 national	National Semiconductor
 nec	NEC LCD Technologies, Ltd.
 neonode	Neonode Inc.
+neorv32	NEORV32 RISC-V Processor
 netgear	NETGEAR
 netlogic	Broadcom Corporation (formerly NetLogic Microsystems)
 netron-dy	Netron DY
@@ -505,11 +507,14 @@ parade	Parade Technologies Inc.
 parallax	Parallax Inc.
 particle	Particle.io
 pda	Precision Design Associates, Inc.
+peregrine	Peregrine Consultoria e Servicos
 pericom	Pericom Technology Inc.
 pervasive	Pervasive Displays, Inc.
 phicomm	PHICOMM Co., Ltd.
+phosense	Beijing Phosense Electronic Technology Co., Ltd.
 phytec	PHYTEC
 picochip	Picochip Ltd
+pimoroni	Pimoroni Ltd.
 pine64	Pine64
 pineriver	Shenzhen PineRiver Designs Co., Ltd.
 pixart	PixArt Imaging Inc.

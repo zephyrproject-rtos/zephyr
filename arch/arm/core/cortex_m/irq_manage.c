@@ -28,23 +28,42 @@
 
 extern void z_arm_reserved(void);
 
-#define NUM_IRQS_PER_REG 32
+#define NUM_IRQS_PER_REG  32
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
 
+/*
+ * For Cortex-M core, the default interrupt controller is the ARM
+ * NVIC and therefore the architecture interrupt control functions
+ * are mapped to the NVIC driver interface.
+ *
+ * When NVIC is used together with other interrupt controller for
+ * multi-level interrupts support (i.e. CONFIG_MULTI_LEVEL_INTERRUPTS
+ * is enabled), the architecture interrupt control functions are mapped
+ * to the SoC layer in `include/arch/arm/irq.h`.
+ * The exported arm interrupt control functions which are wrappers of
+ * NVIC control could be used for SoC to do level 1 irq control to implement SoC
+ * layer interrupt control functions.
+ *
+ * When a custom interrupt controller is used (i.e.
+ * CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER is enabled), the architecture
+ * interrupt control functions are mapped to the SoC layer in
+ * `include/arch/arm/irq.h`.
+ */
+
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 
-void arch_irq_enable(unsigned int irq)
+void arm_irq_enable(unsigned int irq)
 {
 	NVIC_EnableIRQ((IRQn_Type)irq);
 }
 
-void arch_irq_disable(unsigned int irq)
+void arm_irq_disable(unsigned int irq)
 {
 	NVIC_DisableIRQ((IRQn_Type)irq);
 }
 
-int arch_irq_is_enabled(unsigned int irq)
+int arm_irq_is_enabled(unsigned int irq)
 {
 	return NVIC->ISER[REG_FROM_IRQ(irq)] & BIT(BIT_FROM_IRQ(irq));
 }
@@ -58,7 +77,7 @@ int arch_irq_is_enabled(unsigned int irq)
  * of priority levels is a little complex, as there are some hardware
  * priority levels which are reserved.
  */
-void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	/* The kernel may reserve some of the highest priority levels.
 	 * So we offset the requested priority level with the number
@@ -87,8 +106,7 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	 */
 	__ASSERT(prio <= (BIT(NUM_IRQ_PRIO_BITS) - 1),
 		 "invalid priority %d for %d irq! values must be less than %lu\n",
-		 prio - _IRQ_PRIO_OFFSET, irq,
-		 BIT(NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
+		 prio - _IRQ_PRIO_OFFSET, irq, BIT(NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 
@@ -141,7 +159,6 @@ void _arch_isr_direct_pm(void)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-
 }
 #endif
 
@@ -165,8 +182,7 @@ void _arch_isr_direct_pm(void)
  *
  * @return The resulting target state of the given IRQ
  */
-irq_target_state_t irq_target_state_set(unsigned int irq,
-	irq_target_state_t irq_target_state)
+irq_target_state_t irq_target_state_set(unsigned int irq, irq_target_state_t irq_target_state)
 {
 	uint32_t result;
 
@@ -217,7 +233,7 @@ int irq_target_state_is_secure(unsigned int irq)
  * - Bits corresponding to un-implemented interrupts are RES0, so writes
  *   will be ignored.
  *
-*/
+ */
 void irq_target_state_set_all_non_secure(void)
 {
 	int i;
@@ -241,8 +257,8 @@ void irq_target_state_set_all_non_secure(void)
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 #ifdef CONFIG_GEN_ISR_TABLES
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(const void *parameter),
-			     const void *parameter, uint32_t flags)
+			     void (*routine)(const void *parameter), const void *parameter,
+			     uint32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
 	z_arm_irq_priority_set(irq, priority, flags);

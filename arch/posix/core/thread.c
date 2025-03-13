@@ -131,7 +131,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 	key = irq_lock();
 
-	if (arch_current_thread() == thread) {
+	if (_current == thread) {
 		if (tstatus->aborted == 0) { /* LCOV_EXCL_BR_LINE */
 			tstatus->aborted = 1;
 		} else {

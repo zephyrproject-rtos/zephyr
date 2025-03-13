@@ -271,12 +271,6 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 
 	k_spin_unlock(&pool->lock, key);
 
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-	    k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
-		LOG_WRN("Timeout discarded. No blocking in syswq");
-		timeout = K_NO_WAIT;
-	}
-
 #if defined(CONFIG_NET_BUF_LOG) && (CONFIG_NET_BUF_LOG_LEVEL >= LOG_LEVEL_WRN)
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		uint32_t ref = k_uptime_get_32();
@@ -344,6 +338,8 @@ success:
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 	atomic_dec(&pool->avail_count);
 	__ASSERT_NO_MSG(atomic_get(&pool->avail_count) >= 0);
+	pool->max_used = MAX(pool->max_used,
+			     pool->buf_count - atomic_get(&pool->avail_count));
 #endif
 	return buf;
 }
@@ -392,27 +388,6 @@ struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
 	return buf;
 }
 
-#if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *net_buf_get_debug(struct k_fifo *fifo, k_timeout_t timeout,
-				  const char *func, int line)
-#else
-struct net_buf *net_buf_get(struct k_fifo *fifo, k_timeout_t timeout)
-#endif
-{
-	struct net_buf *buf;
-
-	NET_BUF_DBG("%s():%d: fifo %p", func, line, fifo);
-
-	buf = k_fifo_get(fifo, timeout);
-	if (!buf) {
-		return NULL;
-	}
-
-	NET_BUF_DBG("%s():%d: buf %p fifo %p", func, line, buf, fifo);
-
-	return buf;
-}
-
 static struct k_spinlock net_buf_slist_lock;
 
 void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf)
@@ -441,14 +416,6 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list)
 	k_spin_unlock(&net_buf_slist_lock, key);
 
 	return buf;
-}
-
-void net_buf_put(struct k_fifo *fifo, struct net_buf *buf)
-{
-	__ASSERT_NO_MSG(fifo);
-	__ASSERT_NO_MSG(buf);
-
-	k_fifo_put(fifo, buf);
 }
 
 #if defined(CONFIG_NET_BUF_LOG)

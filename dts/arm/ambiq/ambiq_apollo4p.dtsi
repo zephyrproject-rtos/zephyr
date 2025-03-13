@@ -154,6 +154,7 @@
 		};
 
 		iom0_spi: spi@40050000 {
+			compatible = "ambiq,spi";
 			reg = <0x40050000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -163,6 +164,7 @@
 		};
 
 		iom0_i2c: i2c@40050000 {
+			compatible = "ambiq,i2c";
 			reg = <0x40050000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -172,6 +174,7 @@
 		};
 
 		iom1_spi: spi@40051000 {
+			compatible = "ambiq,spi";
 			reg = <0x40051000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -181,6 +184,7 @@
 		};
 
 		iom1_i2c: i2c@40051000 {
+			compatible = "ambiq,i2c";
 			reg = <0x40051000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -190,6 +194,7 @@
 		};
 
 		iom2_spi: spi@40052000 {
+			compatible = "ambiq,spi";
 			reg = <0x40052000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -199,6 +204,7 @@
 		};
 
 		iom2_i2c: i2c@40052000 {
+			compatible = "ambiq,i2c";
 			reg = <0x40052000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -208,6 +214,7 @@
 		};
 
 		iom3_spi: spi@40053000 {
+			compatible = "ambiq,spi";
 			reg = <0x40053000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -217,6 +224,7 @@
 		};
 
 		iom3_i2c: i2c@40053000 {
+			compatible = "ambiq,i2c";
 			reg = <0x40053000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -226,6 +234,7 @@
 		};
 
 		iom4_spi: spi@40054000 {
+			compatible = "ambiq,spi";
 			reg = <0x40054000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -235,6 +244,7 @@
 		};
 
 		iom4_i2c: i2c@40054000 {
+			compatible = "ambiq,i2c";
 			reg = <0x40054000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -244,6 +254,7 @@
 		};
 
 		iom5_spi: spi@40055000 {
+			compatible = "ambiq,spi";
 			reg = <0x40055000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -253,6 +264,7 @@
 		};
 
 		iom5_i2c: i2c@40055000 {
+			compatible = "ambiq,i2c";
 			reg = <0x40055000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -262,6 +274,7 @@
 		};
 
 		iom6_spi: spi@40056000 {
+			compatible = "ambiq,spi";
 			reg = <0x40056000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -271,6 +284,7 @@
 		};
 
 		iom6_i2c: i2c@40056000 {
+			compatible = "ambiq,i2c";
 			reg = <0x40056000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -280,6 +294,7 @@
 		};
 
 		iom7_spi: spi@40057000 {
+			compatible = "ambiq,spi";
 			reg = <0x40057000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -289,6 +304,7 @@
 		};
 
 		iom7_i2c: i2c@40057000 {
+			compatible = "ambiq,i2c";
 			reg = <0x40057000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -298,6 +314,7 @@
 		};
 
 		adc0: adc@40038000 {
+			compatible = "ambiq,adc";
 			reg = <0x40038000 0x400>;
 			interrupts = <19 0>;
 			interrupt-names = "ADC";

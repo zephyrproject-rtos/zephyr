@@ -416,6 +416,8 @@
 			interrupts = <38 3>;
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI1_CLK 0x6c 0>;
+			rx-fifo-size = <16>;
+			tx-fifo-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -426,6 +428,8 @@
 			interrupts = <39 3>;
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI2_CLK 0x6c 2>;
+			rx-fifo-size = <16>;
+			tx-fifo-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -436,6 +440,8 @@
 			interrupts = <40 3>;
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI3_CLK 0x6c 4>;
+			rx-fifo-size = <16>;
+			tx-fifo-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -446,6 +452,8 @@
 			interrupts = <41 3>;
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI4_CLK 0x6c 6>;
+			rx-fifo-size = <16>;
+			tx-fifo-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -456,6 +464,8 @@
 			interrupts = <42 3>;
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI5_CLK 0x6c 6>;
+			rx-fifo-size = <16>;
+			tx-fifo-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -466,6 +476,8 @@
 			interrupts = <43 3>;
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI6_CLK 0x6c 6>;
+			rx-fifo-size = <16>;
+			tx-fifo-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};

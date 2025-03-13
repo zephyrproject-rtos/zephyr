@@ -365,7 +365,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	hcto += window_size_us;
 	hcto += radio_rx_chain_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_aux);
-	radio_tmr_hcto_configure(hcto);
+	radio_tmr_hcto_configure_abs(hcto);
 
 	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
 	 * channel chaining, create connection or to create periodic sync.
@@ -710,6 +710,7 @@ static void isr_done(void *param)
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
 		node_rx->rx_ftr.param = lll;
+		node_rx->rx_ftr.lll_aux = lll->lll_aux;
 		node_rx->rx_ftr.aux_failed = 1U;
 
 		ull_rx_put_sched(node_rx->hdr.link, node_rx);
@@ -897,6 +898,7 @@ isr_rx_do_close:
 			 * free it.
 			 */
 			node_rx2->rx_ftr.param = lll;
+			node_rx2->rx_ftr.lll_aux = lll->lll_aux;
 
 			ull_rx_put_sched(node_rx2->hdr.link, node_rx2);
 		}
@@ -1620,7 +1622,8 @@ isr_rx_connect_rsp_do_close:
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
-		node_rx->rx_ftr.param = lll->lll_aux;
+		node_rx->rx_ftr.param = lll;
+		node_rx->rx_ftr.lll_aux = lll->lll_aux;
 
 		ull_rx_put_sched(node_rx->hdr.link, node_rx);
 

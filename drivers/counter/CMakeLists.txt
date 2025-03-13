@@ -32,7 +32,7 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_TPM            counter_mcux_tpm
 zephyr_library_sources_ifdef(CONFIG_COUNTER_XEC                 counter_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_LPTMR          counter_mcux_lptmr.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MAXIM_DS3231        maxim_ds3231.c)
-zephyr_library_sources_ifdef(CONFIG_COUNTER_NATIVE_POSIX        counter_native_posix.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_NATIVE_SIM          counter_native_sim.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE                   counter_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NXP_PIT             counter_nxp_pit.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_XLNX_AXI_TIMER      counter_xlnx_axi_timer.c)
@@ -53,3 +53,4 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_TIMER_MAX32         counter_max32_ti
 zephyr_library_sources_ifdef(CONFIG_COUNTER_RTC_MAX32           counter_max32_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NXP_MRT             counter_nxp_mrt.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_RA_AGT              counter_renesas_ra_agt.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_RENESAS_RZ_GTM      counter_renesas_rz_gtm.c)

@@ -446,3 +446,241 @@ int tcpci_tcpm_get_cc(const struct i2c_dt_spec *bus, enum tc_cc_voltage_state *c
 
 	return 0;
 }
+
+int tcpci_tcpm_get_chip_info(const struct i2c_dt_spec *bus, struct tcpc_chip_info *chip_info)
+{
+	int ret;
+
+	if (chip_info == NULL) {
+		return -EIO;
+	}
+
+	ret = tcpci_read_reg16(bus, TCPC_REG_VENDOR_ID, &chip_info->vendor_id);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = tcpci_read_reg16(bus, TCPC_REG_PRODUCT_ID, &chip_info->product_id);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return tcpci_read_reg16(bus, TCPC_REG_BCD_DEV, &chip_info->device_id);
+}
+
+int tcpci_tcpm_dump_std_reg(const struct i2c_dt_spec *bus)
+{
+	uint16_t value;
+
+	for (unsigned int a = 0; a < ARRAY_SIZE(tcpci_std_regs); a++) {
+		switch (tcpci_std_regs[a].size) {
+		case 1:
+			tcpci_read_reg8(bus, tcpci_std_regs[a].addr, (uint8_t *)&value);
+			LOG_INF("- %-30s(0x%02x) =   0x%02x", tcpci_std_regs[a].name,
+				tcpci_std_regs[a].addr, (uint8_t)value);
+			break;
+		case 2:
+			tcpci_read_reg16(bus, tcpci_std_regs[a].addr, &value);
+			LOG_INF("- %-30s(0x%02x) = 0x%04x", tcpci_std_regs[a].name,
+				tcpci_std_regs[a].addr, value);
+			break;
+		}
+	}
+
+	return 0;
+}
+
+int tcpci_tcpm_set_bist_test_mode(const struct i2c_dt_spec *bus, bool enable)
+{
+	return tcpci_update_reg8(bus, TCPC_REG_TCPC_CTRL, TCPC_REG_TCPC_CTRL_BIST_TEST_MODE,
+				 enable ? TCPC_REG_TCPC_CTRL_BIST_TEST_MODE : 0);
+}
+
+int tcpci_tcpm_transmit_data(const struct i2c_dt_spec *bus, struct pd_msg *msg,
+			     const uint8_t retries)
+{
+	int reg = TCPC_REG_TX_BUFFER;
+	int rv;
+	int cnt = 4 * msg->header.number_of_data_objects;
+
+	/* If not SOP* transmission, just write to the transmit register */
+	if (msg->header.message_type >= NUM_SOP_STAR_TYPES) {
+		/*
+		 * Per TCPCI spec, do not specify retry (although the TCPC
+		 * should ignore retry field for these 3 types).
+		 */
+		return tcpci_write_reg8(
+			bus, TCPC_REG_TRANSMIT,
+			TCPC_REG_TRANSMIT_SET_WITHOUT_RETRY(msg->header.message_type));
+	}
+
+	if (cnt > 0) {
+		reg = TCPC_REG_TX_BUFFER;
+		/* TX_BYTE_CNT includes extra bytes for message header */
+		cnt += sizeof(msg->header.raw_value);
+
+		struct i2c_msg buf[3];
+
+		uint8_t tmp[2] = {TCPC_REG_TX_BUFFER, cnt};
+
+		buf[0].buf = tmp;
+		buf[0].len = 2;
+		buf[0].flags = I2C_MSG_WRITE;
+
+		buf[1].buf = (uint8_t *)&msg->header.raw_value;
+		buf[1].len = sizeof(msg->header.raw_value);
+		buf[1].flags = I2C_MSG_WRITE;
+
+		buf[2].buf = (uint8_t *)msg->data;
+		buf[2].len = msg->len;
+		buf[2].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+		if (cnt > sizeof(msg->header.raw_value)) {
+			rv = i2c_transfer(bus->bus, buf, 3, bus->addr);
+		} else {
+			buf[1].flags |= I2C_MSG_STOP;
+			rv = i2c_transfer(bus->bus, buf, 2, bus->addr);
+		}
+
+		/* If tcpc write fails, return error */
+		if (rv) {
+			return rv;
+		}
+	}
+
+	/*
+	 * We always retry in TCPC hardware since the TCPM is too slow to
+	 * respond within tRetry (~195 usec).
+	 *
+	 * The retry count used is dependent on the maximum PD revision
+	 * supported at build time.
+	 */
+	rv = tcpci_write_reg8(bus, TCPC_REG_TRANSMIT,
+			      TCPC_REG_TRANSMIT_SET_WITH_RETRY(retries, msg->type));
+
+	return rv;
+}
+
+int tcpci_tcpm_select_rp_value(const struct i2c_dt_spec *bus, enum tc_rp_value rp)
+{
+	return tcpci_update_reg8(bus, TCPC_REG_ROLE_CTRL, TCPC_REG_ROLE_CTRL_RP_MASK,
+				 TCPC_REG_ROLE_CTRL_SET(0, rp, 0, 0));
+}
+
+int tcpci_tcpm_get_rp_value(const struct i2c_dt_spec *bus, enum tc_rp_value *rp)
+{
+	uint8_t reg_value = 0;
+	int ret;
+
+	ret = tcpci_read_reg8(bus, TCPC_REG_ROLE_CTRL, &reg_value);
+	*rp = TCPC_REG_ROLE_CTRL_RP(reg_value);
+
+	return ret;
+}
+
+int tcpci_tcpm_set_cc(const struct i2c_dt_spec *bus, enum tc_cc_pull pull)
+{
+	return tcpci_update_reg8(bus, TCPC_REG_ROLE_CTRL,
+				 TCPC_REG_ROLE_CTRL_CC1_MASK | TCPC_REG_ROLE_CTRL_CC2_MASK,
+				 TCPC_REG_ROLE_CTRL_SET(0, 0, pull, pull));
+}
+
+int tcpci_tcpm_set_vconn(const struct i2c_dt_spec *bus, bool enable)
+{
+	return tcpci_update_reg8(bus, TCPC_REG_POWER_CTRL, TCPC_REG_POWER_CTRL_VCONN_EN,
+				 enable ? TCPC_REG_POWER_CTRL_VCONN_EN : 0);
+}
+
+int tcpci_tcpm_set_roles(const struct i2c_dt_spec *bus, enum pd_rev_type pd_rev,
+			 enum tc_power_role power_role, enum tc_data_role data_role)
+{
+	return tcpci_update_reg8(bus, TCPC_REG_MSG_HDR_INFO, TCPC_REG_MSG_HDR_INFO_ROLES_MASK,
+				 TCPC_REG_MSG_HDR_INFO_SET(pd_rev, data_role, power_role));
+}
+
+int tcpci_tcpm_set_drp_toggle(const struct i2c_dt_spec *bus, bool enable)
+{
+	return tcpci_update_reg8(bus, TCPC_REG_ROLE_CTRL, TCPC_REG_ROLE_CTRL_DRP_MASK,
+				 TCPC_REG_ROLE_CTRL_SET(enable, 0, 0, 0));
+}
+
+int tcpci_tcpm_set_rx_type(const struct i2c_dt_spec *bus, uint8_t rx_type)
+{
+	return tcpci_write_reg8(bus, TCPC_REG_RX_DETECT, rx_type);
+}
+
+int tcpci_tcpm_set_cc_polarity(const struct i2c_dt_spec *bus, enum tc_cc_polarity polarity)
+{
+	return tcpci_update_reg8(
+		bus, TCPC_REG_TCPC_CTRL, TCPC_REG_TCPC_CTRL_PLUG_ORIENTATION,
+		(polarity == TC_POLARITY_CC1) ? 0 : TCPC_REG_TCPC_CTRL_PLUG_ORIENTATION);
+}
+
+int tcpci_tcpm_get_status_register(const struct i2c_dt_spec *bus, enum tcpc_status_reg reg,
+				   uint16_t *status)
+{
+	switch (reg) {
+	case TCPC_ALERT_STATUS:
+		return tcpci_read_reg16(bus, TCPC_REG_ALERT, status);
+	case TCPC_CC_STATUS:
+		return tcpci_read_reg8(bus, TCPC_REG_CC_STATUS, (uint8_t *)status);
+	case TCPC_POWER_STATUS:
+		return tcpci_read_reg8(bus, TCPC_REG_POWER_STATUS, (uint8_t *)status);
+	case TCPC_FAULT_STATUS:
+		return tcpci_read_reg8(bus, TCPC_REG_FAULT_STATUS, (uint8_t *)status);
+	case TCPC_EXTENDED_STATUS:
+		return tcpci_read_reg8(bus, TCPC_REG_EXT_STATUS, (uint8_t *)status);
+	case TCPC_EXTENDED_ALERT_STATUS:
+		return tcpci_read_reg8(bus, TCPC_REG_ALERT_EXT, (uint8_t *)status);
+	default:
+		LOG_ERR("Not a TCPCI-specified reg address");
+		return -EINVAL;
+	}
+}
+
+int tcpci_tcpm_clear_status_register(const struct i2c_dt_spec *bus, enum tcpc_status_reg reg,
+				     uint16_t mask)
+{
+	switch (reg) {
+	case TCPC_ALERT_STATUS:
+		return tcpci_write_reg16(bus, TCPC_REG_ALERT, mask);
+	case TCPC_CC_STATUS:
+		LOG_ERR("CC_STATUS is cleared by the TCPC");
+		return -EINVAL;
+	case TCPC_POWER_STATUS:
+		LOG_ERR("POWER_STATUS is cleared by the TCPC");
+		return -EINVAL;
+	case TCPC_FAULT_STATUS:
+		return tcpci_write_reg8(bus, TCPC_REG_FAULT_STATUS, (uint8_t)mask);
+	case TCPC_EXTENDED_STATUS:
+		return tcpci_write_reg8(bus, TCPC_REG_EXT_STATUS, (uint8_t)mask);
+	case TCPC_EXTENDED_ALERT_STATUS:
+		return tcpci_write_reg8(bus, TCPC_REG_ALERT_EXT, (uint8_t)mask);
+	default:
+		LOG_ERR("Not a TCPCI-specified reg address");
+		return -EINVAL;
+	}
+}
+
+int tcpci_tcpm_mask_status_register(const struct i2c_dt_spec *bus, enum tcpc_status_reg reg,
+				    uint16_t mask)
+{
+	switch (reg) {
+	case TCPC_ALERT_STATUS:
+		return tcpci_write_reg16(bus, TCPC_REG_ALERT_MASK, mask);
+	case TCPC_CC_STATUS:
+		LOG_ERR("CC_STATUS does not have a corresponding mask register");
+		return -EINVAL;
+	case TCPC_POWER_STATUS:
+		return tcpci_write_reg8(bus, TCPC_REG_POWER_STATUS_MASK, (uint8_t)mask);
+	case TCPC_FAULT_STATUS:
+		return tcpci_write_reg8(bus, TCPC_REG_FAULT_STATUS_MASK, (uint8_t)mask);
+	case TCPC_EXTENDED_STATUS:
+		return tcpci_write_reg8(bus, TCPC_REG_EXT_STATUS_MASK, (uint8_t)mask);
+	case TCPC_EXTENDED_ALERT_STATUS:
+		return tcpci_write_reg8(bus, TCPC_REG_ALERT_EXT_MASK, (uint8_t)mask);
+	default:
+		LOG_ERR("Not a TCPCI-specified reg address");
+		return -EINVAL;
+	}
+}

@@ -52,11 +52,11 @@
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK(APB3, 3U)>;
-			resets = <&rctl STM32_RESET(APB3, 4U)>;
+			resets = <&rctl STM32_RESET(APB3, 3U)>;
 			status = "disabled";
 		};
 
-		octospi1: octospi@52005000 {
+		octospi1: spi@52005000 {
 			compatible = "st,stm32-ospi";
 			reg = <0x52005000 0x1000>;
 			interrupts = <92 0>;
@@ -68,7 +68,7 @@
 			status = "disabled";
 		};
 
-		octospi2: octospi@5200a000 {
+		octospi2: spi@5200a000 {
 			compatible = "st,stm32-ospi";
 			reg = <0x5200a000 0x1000>;
 			interrupts = <150 0>;
@@ -87,7 +87,8 @@
 			reg = <0x58001400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB4, 5U)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI6_SEL(0)>;
-			dmas = <&dmamux2 0 12 0x20440 &dmamux2 1 11 0x20480>;
+			dmas = <&dmamux2 0 12 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
+				&dmamux2 1 11 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			interrupts = <86 0>;
 			status = "disabled";

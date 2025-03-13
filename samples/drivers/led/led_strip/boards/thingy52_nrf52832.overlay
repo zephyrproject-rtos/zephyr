@@ -22,10 +22,10 @@ i2s_led: &i2s0 {
 	pinctrl-0 = <&i2s0_default_alt>;
 	pinctrl-names = "default";
 
-	led_strip: ws2812 {
+	led_strip: ws2812@0 {
 		compatible = "worldsemi,ws2812-i2s";
 
-		i2s-dev = < &i2s_led >;
+		reg = <0>;
 		chain-length = <10>; /* arbitrary; change at will */
 		color-mapping = <LED_COLOR_ID_GREEN
 					LED_COLOR_ID_RED

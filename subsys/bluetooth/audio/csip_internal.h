@@ -21,6 +21,7 @@
 
 struct bt_csip_sirk {
 	uint8_t type;
+	/* SIRK stored in little endian byte order. */
 	uint8_t value[BT_CSIP_SIRK_SIZE];
 } __packed;
 

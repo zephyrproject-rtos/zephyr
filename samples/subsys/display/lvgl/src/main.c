@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(app);
 
 static uint32_t count;
 
-#ifdef CONFIG_GPIO
+#ifdef CONFIG_RESET_COUNTER_SW0
 static struct gpio_dt_spec button_gpio = GPIO_DT_SPEC_GET_OR(
 		DT_ALIAS(sw0), gpios, {0});
 static struct gpio_callback button_callback;
@@ -35,7 +35,7 @@ static void button_isr_callback(const struct device *port,
 
 	count = 0;
 }
-#endif /* CONFIG_GPIO */
+#endif /* CONFIG_RESET_COUNTER_SW0 */
 
 #ifdef CONFIG_LV_Z_ENCODER_INPUT
 static const struct device *lvgl_encoder =
@@ -67,7 +67,7 @@ int main(void)
 		return 0;
 	}
 
-#ifdef CONFIG_GPIO
+#ifdef CONFIG_RESET_COUNTER_SW0
 	if (gpio_is_ready_dt(&button_gpio)) {
 		int err;
 
@@ -93,13 +93,13 @@ int main(void)
 			return 0;
 		}
 	}
-#endif /* CONFIG_GPIO */
+#endif /* CONFIG_RESET_COUNTER_SW0 */
 
 #ifdef CONFIG_LV_Z_ENCODER_INPUT
 	lv_obj_t *arc;
 	lv_group_t *arc_group;
 
-	arc = lv_arc_create(lv_scr_act());
+	arc = lv_arc_create(lv_screen_active());
 	lv_obj_align(arc, LV_ALIGN_CENTER, 0, -15);
 	lv_obj_set_size(arc, 150, 150);
 
@@ -113,9 +113,9 @@ int main(void)
 	lv_group_t *btn_matrix_group;
 	static const char *const btnm_map[] = {"1", "2", "3", "4", ""};
 
-	btn_matrix = lv_btnmatrix_create(lv_scr_act());
+	btn_matrix = lv_buttonmatrix_create(lv_screen_active());
 	lv_obj_align(btn_matrix, LV_ALIGN_CENTER, 0, 70);
-	lv_btnmatrix_set_map(btn_matrix, (const char **)btnm_map);
+	lv_buttonmatrix_set_map(btn_matrix, (const char **)btnm_map);
 	lv_obj_set_size(btn_matrix, 100, 50);
 
 	btn_matrix_group = lv_group_create();
@@ -126,22 +126,22 @@ int main(void)
 	if (IS_ENABLED(CONFIG_LV_Z_POINTER_INPUT)) {
 		lv_obj_t *hello_world_button;
 
-		hello_world_button = lv_btn_create(lv_scr_act());
+		hello_world_button = lv_button_create(lv_screen_active());
 		lv_obj_align(hello_world_button, LV_ALIGN_CENTER, 0, -15);
 		lv_obj_add_event_cb(hello_world_button, lv_btn_click_callback, LV_EVENT_CLICKED,
 				    NULL);
 		hello_world_label = lv_label_create(hello_world_button);
 	} else {
-		hello_world_label = lv_label_create(lv_scr_act());
+		hello_world_label = lv_label_create(lv_screen_active());
 	}
 
 	lv_label_set_text(hello_world_label, "Hello world!");
 	lv_obj_align(hello_world_label, LV_ALIGN_CENTER, 0, 0);
 
-	count_label = lv_label_create(lv_scr_act());
+	count_label = lv_label_create(lv_screen_active());
 	lv_obj_align(count_label, LV_ALIGN_BOTTOM_MID, 0, 0);
 
-	lv_task_handler();
+	lv_timer_handler();
 	display_blanking_off(display_dev);
 
 	while (1) {
@@ -149,7 +149,7 @@ int main(void)
 			sprintf(count_str, "%d", count/100U);
 			lv_label_set_text(count_label, count_str);
 		}
-		lv_task_handler();
+		lv_timer_handler();
 		++count;
 		k_sleep(K_MSEC(10));
 	}

@@ -11,16 +11,20 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 256
 flash: 256
 supported:
   - adc
   - can
   - counter
+  - dma
   - flash
   - gpio
   - i2c
+  - i3c
+  - mbox
   - pwm
+  - sdhc
+  - spi
   - uart
 vendor: nxp

@@ -31,9 +31,7 @@ static int file_ctr, newest, oldest;
 static int allocate_new_file(struct fs_file_t *file);
 static int del_oldest_log(void);
 static int get_log_file_id(struct fs_dirent *ent);
-#ifndef CONFIG_LOG_BACKEND_FS_TESTSUITE
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_FS_OUTPUT_DEFAULT;
-#endif
 
 static int check_log_volume_available(void)
 {
@@ -107,42 +105,34 @@ static int create_log_dir(const char *path)
 
 }
 
+static int get_log_path(char *buf, size_t buf_len, int num)
+{
+	if (num > MAX_FILE_NUMERAL) {
+		return -EINVAL;
+	}
+	return snprintf(buf, buf_len, "%s/%s%04d", CONFIG_LOG_BACKEND_FS_DIR,
+			CONFIG_LOG_BACKEND_FS_FILE_PREFIX, num);
+}
+
 static int check_log_file_exist(int num)
 {
-	struct fs_dir_t dir;
 	struct fs_dirent ent;
+	char fname[MAX_PATH_LEN];
 	int rc;
 
-	fs_dir_t_init(&dir);
+	rc = get_log_path(fname, sizeof(fname), num);
 
-	rc = fs_opendir(&dir, CONFIG_LOG_BACKEND_FS_DIR);
-	if (rc) {
-		return -EIO;
+	if (rc < 0) {
+		return rc;
 	}
 
-	while (true) {
-		rc = fs_readdir(&dir, &ent);
-		if (rc < 0) {
-			rc = -EIO;
-			goto close_dir;
-		}
-		if (ent.name[0] == 0) {
-			break;
-		}
+	rc = fs_stat(fname, &ent);
 
-		rc = get_log_file_id(&ent);
-
-		if (rc == num) {
-			rc = 1;
-			goto close_dir;
-		}
+	if (rc == 0) {
+		return 1;
+	} else if (rc == -ENOENT) {
+		return 0;
 	}
-
-	rc = 0;
-
-close_dir:
-	(void) fs_closedir(&dir);
-
 	return rc;
 }
 
@@ -209,12 +199,6 @@ int write_log_to_file(uint8_t *data, size_t length, void *ctx)
 				goto on_error;
 			}
 			length = 0;
-		}
-
-		rc = fs_sync(f);
-		if (rc < 0) {
-			/* Something is wrong */
-			goto on_error;
 		}
 	}
 
@@ -341,8 +325,7 @@ static int allocate_new_file(struct fs_file_t *file)
 		curr_file_num = newest;
 
 		/* Is there space left in the newest file? */
-		snprintf(fname, sizeof(fname), "%s/%s%04d", CONFIG_LOG_BACKEND_FS_DIR,
-			 CONFIG_LOG_BACKEND_FS_FILE_PREFIX, curr_file_num);
+		get_log_path(fname, sizeof(fname), curr_file_num);
 		rc = fs_open(file, fname, FS_O_CREATE | FS_O_WRITE | FS_O_APPEND);
 		if (rc < 0) {
 			goto out;
@@ -403,9 +386,7 @@ static int allocate_new_file(struct fs_file_t *file)
 		}
 	}
 
-	snprintf(fname, sizeof(fname), "%s/%s%04d",
-		CONFIG_LOG_BACKEND_FS_DIR,
-		CONFIG_LOG_BACKEND_FS_FILE_PREFIX, curr_file_num);
+	get_log_path(fname, sizeof(fname), curr_file_num);
 
 	rc = fs_open(file, fname, FS_O_CREATE | FS_O_WRITE);
 	if (rc < 0) {
@@ -424,9 +405,7 @@ static int del_oldest_log(void)
 	static char dellname[MAX_PATH_LEN];
 
 	while (true) {
-		snprintf(dellname, sizeof(dellname), "%s/%s%04d",
-			 CONFIG_LOG_BACKEND_FS_DIR,
-			 CONFIG_LOG_BACKEND_FS_FILE_PREFIX, oldest);
+		get_log_path(dellname, sizeof(dellname), oldest);
 		rc = fs_unlink(dellname);
 
 		if ((rc == 0) || (rc == -ENOENT)) {
@@ -449,8 +428,6 @@ static int del_oldest_log(void)
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE),
 	     "Immediate logging is not supported by LOG FS backend.");
-
-#ifndef CONFIG_LOG_BACKEND_FS_TESTSUITE
 
 static uint8_t __aligned(4) buf[MAX_FLASH_WRITE_SIZE];
 LOG_OUTPUT_DEFINE(log_output, write_log_to_file, buf, MAX_FLASH_WRITE_SIZE);
@@ -494,14 +471,28 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 	return 0;
 }
 
+static void notify(const struct log_backend *const backend, enum log_backend_evt event,
+		   union log_backend_evt_arg *arg)
+{
+	if (event == LOG_BACKEND_EVT_PROCESS_THREAD_DONE) {
+		if (backend_state == BACKEND_FS_OK) {
+			int rc = fs_sync(&fs_file);
+
+			if (rc != 0) {
+				backend_state = BACKEND_FS_CORRUPTED;
+			}
+		}
+	}
+}
+
 static const struct log_backend_api log_backend_fs_api = {
 	.process = process,
 	.panic = panic,
 	.init = log_backend_fs_init,
 	.dropped = dropped,
 	.format_set = format_set,
+	.notify = notify,
 };
 
 LOG_BACKEND_DEFINE(log_backend_fs, log_backend_fs_api,
 		   IS_ENABLED(CONFIG_LOG_BACKEND_FS_AUTOSTART));
-#endif

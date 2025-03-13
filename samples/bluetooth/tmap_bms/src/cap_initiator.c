@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/tmap.h>
 #include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -136,7 +137,7 @@ static int setup_extended_adv(struct bt_le_ext_adv **adv)
 	int err;
 
 	/* Create a non-connectable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, adv);
+	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_BROADCAST_FAST, NULL, adv);
 	if (err != 0) {
 		printk("Unable to create extended advertising set: %d\n", err);
 		return err;
@@ -150,7 +151,7 @@ static int setup_extended_adv(struct bt_le_ext_adv **adv)
 	}
 
 	/* Set periodic advertising parameters */
-	err = bt_le_per_adv_set_param(*adv, BT_LE_PER_ADV_DEFAULT);
+	err = bt_le_per_adv_set_param(*adv, BT_BAP_PER_ADV_PARAM_BROADCAST_FAST);
 	if (err) {
 		printk("Failed to set periodic advertising parameters: %d\n",
 		       err);

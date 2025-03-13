@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_http_client, CONFIG_NET_HTTP_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/http/client.h>
+#include <zephyr/net/http/status.h>
 
 #include "net_private.h"
 
@@ -217,12 +218,17 @@ static int on_header_field(struct http_parser *parser, const char *at,
 	struct http_request *req = CONTAINER_OF(parser,
 						struct http_request,
 						internal.parser);
-	const char *content_len = "Content-Length";
-	uint16_t len;
+	static const char content_len[] = "Content-Length";
+	static const char content_range[] = "Content-Range";
 
-	len = strlen(content_len);
-	if (length >= len && strncasecmp(at, content_len, len) == 0) {
+	uint16_t content_len_len = sizeof(content_len) - 1;
+	uint16_t content_range_len = sizeof(content_range) - 1;
+
+	if (length >= content_len_len && strncasecmp(at, content_len, content_len_len) == 0) {
 		req->internal.response.cl_present = true;
+	} else if (length >= content_range_len &&
+		   strncasecmp(at, content_range, content_range_len) == 0) {
+		req->internal.response.cr_present = true;
 	}
 
 	print_header_field(length, at);
@@ -262,6 +268,13 @@ static int on_header_value(struct http_parser *parser, const char *at,
 		}
 
 		req->internal.response.cl_present = false;
+	}
+
+	if (req->internal.response.cr_present) {
+		req->internal.response.content_range.start = parser->content_range.start;
+		req->internal.response.content_range.end = parser->content_range.end;
+		req->internal.response.content_range.total = parser->content_range.total;
+		req->internal.response.cr_present = false;
 	}
 
 	if (req->internal.response.http_cb &&
@@ -313,6 +326,11 @@ static int on_headers_complete(struct http_parser *parser)
 	if (req->internal.response.http_cb &&
 	    req->internal.response.http_cb->on_headers_complete) {
 		req->internal.response.http_cb->on_headers_complete(parser);
+	}
+
+	if (parser->status_code == HTTP_101_SWITCHING_PROTOCOLS) {
+		NET_DBG("Switching protocols, skipping body");
+		return 1;
 	}
 
 	if (parser->status_code >= 500 && parser->status_code < 600) {
@@ -484,8 +502,16 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 			ret = -errno;
 			goto error;
 		}
-		if (fds[0].revents & (ZSOCK_POLLERR | ZSOCK_POLLNVAL)) {
-			ret = -errno;
+
+		if (fds[0].revents & ZSOCK_POLLERR) {
+			int sock_err;
+			socklen_t optlen = sizeof(sock_err);
+
+			(void)zsock_getsockopt(sock, SOL_SOCKET, SO_ERROR, &sock_err, &optlen);
+			ret = -sock_err;
+			goto error;
+		} else if (fds[0].revents & ZSOCK_POLLNVAL) {
+			ret = -EBADF;
 			goto error;
 		} else if (fds[0].revents & ZSOCK_POLLHUP) {
 			/* Connection closed */

@@ -398,6 +398,11 @@ static int tmp116_init(const struct device *dev)
 	drv_data->id = id;
 
 	rc = tmp116_write_config(dev, TMP116_CFGR_CONV, cfg->odr);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = tmp116_write_config(dev, TMP116_CFGR_AVG, cfg->oversampling);
 
 	return rc;
 }
@@ -407,6 +412,7 @@ static int tmp116_init(const struct device *dev)
 	static const struct tmp116_dev_config tmp116_config_##_num = { \
 		.bus = I2C_DT_SPEC_INST_GET(_num), \
 		.odr = DT_INST_PROP(_num, odr), \
+		.oversampling = DT_INST_PROP(_num, oversampling), \
 	}; \
 	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp116_init, NULL, \
 		&tmp116_data_##_num, &tmp116_config_##_num, POST_KERNEL, \

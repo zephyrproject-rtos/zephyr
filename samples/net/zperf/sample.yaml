@@ -2,10 +2,7 @@ common:
   tags:
     - net
     - zperf
-  # TODO: Does not work properly with native_posix, need more TLC
   platform_exclude:
-    - native_posix
-    - native_posix/native/64
     - sam_e70_xplained/same70q21
   min_ram: 64
 sample:
@@ -123,3 +120,8 @@ tests:
   sample.net.zperf.802154.subg:
     extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
     platform_allow: beagleconnect_freedom
+  sample.net.zperf.nrf7002dk:
+    extra_args: SNIPPET=wifi-ipv4
+    extra_configs:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow: nrf7002dk/nrf5340/cpuapp

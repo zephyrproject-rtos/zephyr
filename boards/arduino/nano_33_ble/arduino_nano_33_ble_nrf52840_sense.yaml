@@ -1,11 +1,10 @@
-identifier: arduino_nano_33_ble//sense
+identifier: arduino_nano_33_ble/nrf52840/sense
 name: Arduino Nano 33 BLE Sense
 type: mcu
 arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - ble

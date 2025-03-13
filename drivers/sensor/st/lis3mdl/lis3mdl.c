@@ -11,6 +11,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
 
@@ -66,7 +67,7 @@ int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	const struct lis3mdl_config *config = dev->config;
 	int16_t buf[4];
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_MAGN_XYZ);
 
 	/* fetch magnetometer sample */
 	if (i2c_burst_read_dt(&config->i2c, LIS3MDL_REG_SAMPLE_START,
@@ -162,6 +163,41 @@ int lis3mdl_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int lis3mdl_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct lis3mdl_config *config = dev->config;
+	uint8_t ctrl_reg3;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ctrl_reg3 = LIS3MDL_MD_CONTINUOUS;
+
+		if (i2c_reg_write_byte_dt(&config->i2c, LIS3MDL_REG_CTRL3, ctrl_reg3) < 0) {
+			LOG_DBG("Failed to configure chip.");
+			return -EIO;
+		}
+
+		LOG_DBG("State changed to active");
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ctrl_reg3 = LIS3MDL_MD_POWER_DOWN;
+
+		if (i2c_reg_write_byte_dt(&config->i2c, LIS3MDL_REG_CTRL3, ctrl_reg3) < 0) {
+			LOG_DBG("Failed to configure chip.");
+			return -EIO;
+		}
+
+		LOG_DBG("State changed to inactive");
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 #define LIS3MDL_DEFINE(inst)									\
 	static struct lis3mdl_data lis3mdl_data_##inst;						\
 												\
@@ -171,7 +207,10 @@ int lis3mdl_init(const struct device *dev)
 			   (.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, { 0 }),))	\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis3mdl_init, NULL,					\
+	PM_DEVICE_DT_INST_DEFINE(inst, lis3mdl_pm_action);					\
+												\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis3mdl_init,					\
+				PM_DEVICE_DT_INST_GET(inst),					\
 			      &lis3mdl_data_##inst, &lis3mdl_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &lis3mdl_driver_api);		\
 

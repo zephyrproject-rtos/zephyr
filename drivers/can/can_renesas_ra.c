@@ -88,7 +88,7 @@ LOG_MODULE_REGISTER(can_renesas_ra, CONFIG_CAN_LOG_LEVEL);
 #define CANFD_CFG_GLOBAL                                                                           \
 	((0U << R_CANFD_CFDGCFG_TPRI_Pos) | /* Transmission Priority: ID priority */               \
 	 (0U << R_CANFD_CFDGCFG_DCE_Pos) |  /* DLC check disabled */                               \
-	 (1U << R_CANFD_CFDGCFG_DCS_Pos))   /* DLL Clock Select: CANFDCLK */
+	 (0U << R_CANFD_CFDGCFG_DCS_Pos))   /* DLL Clock Select: CANFDCLK */
 
 /*
  * TX Message Buffer Interrupt Enable Configuration: refer to '34.2.43 CFDTMIEC : TX Message Buffer
@@ -142,6 +142,8 @@ struct can_renesas_ra_global_cfg {
 	const struct device *ram_clk;
 	const struct clock_control_ra_subsys_cfg op_subsys;
 	const struct clock_control_ra_subsys_cfg ram_subsys;
+	const unsigned int dll_min_freq;
+	const unsigned int dll_max_freq;
 };
 
 struct can_renesas_ra_filter {
@@ -902,19 +904,33 @@ static inline int can_renesas_module_clock_init(const struct device *dev)
 		return ret;
 	}
 
+	if (dll_rate < global_cfg->dll_min_freq || dll_rate > global_cfg->dll_max_freq) {
+		LOG_ERR("%s frequency is out of supported range: %d < %s freq < %d",
+			cfg->dll_clk->name, global_cfg->dll_min_freq, cfg->dll_clk->name,
+			global_cfg->dll_max_freq);
+		return -ENOTSUP;
+	}
+
 	/* Clock constraint: refer to '34.1.2 Clock restriction' - RA8M1 MCU group HWM */
 	/*
 	 * Operation clock rate must be at least 40Mhz in case CANFD mode.
 	 * Otherwise, it must be at least 32MHz.
 	 */
-	if (IS_ENABLED(CONFIG_CAN_FD_MODE) ? op_rate < 40000000 : op_rate < 32000000) {
+	if (IS_ENABLED(CONFIG_CAN_FD_MODE) ? op_rate < MHZ(40) : op_rate < MHZ(32)) {
+		LOG_ERR("%s frequency should be at least %d", global_cfg->op_clk->name,
+			IS_ENABLED(CONFIG_CAN_FD_MODE) ? MHZ(40) : MHZ(32));
 		return -ENOTSUP;
 	}
+
 	/*
 	 * (RAM clock rate / 2) >= DLL rate
 	 * (CANFD operation clock rate) >= DLL rate
 	 */
 	if ((ram_rate / 2) < dll_rate || op_rate < dll_rate) {
+		LOG_ERR("%s frequency should be less than half of %s and %s frequency should "
+			"be less than %s",
+			global_cfg->ram_clk->name, cfg->dll_clk->name, global_cfg->op_clk->name,
+			cfg->dll_clk->name);
 		return -ENOTSUP;
 	}
 
@@ -995,15 +1011,13 @@ static DEVICE_API(can, can_renesas_ra_driver_api) = {
 };
 
 #define CAN_RENESAS_RA_GLOBAL_IRQ_INIT()                                                           \
-	R_ICU->IELSR_b[VECTOR_NUMBER_CAN_GLERR].IELS = ELC_EVENT_CAN_GLERR;                        \
-	R_ICU->IELSR_b[VECTOR_NUMBER_CAN_RXF].IELS = ELC_EVENT_CAN_RXF;                            \
+	R_ICU->IELSR_b[VECTOR_NUMBER_CAN_GLERR].IELS = BSP_PRV_IELS_ENUM(EVENT_CAN_GLERR);         \
+	R_ICU->IELSR_b[VECTOR_NUMBER_CAN_RXF].IELS = BSP_PRV_IELS_ENUM(EVENT_CAN_RXF);             \
 	IRQ_CONNECT(VECTOR_NUMBER_CAN_GLERR,                                                       \
-		    DT_IRQ_BY_NAME(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), glerr,  \
-				   priority),                                                      \
+		    DT_IRQ_BY_NAME(DT_INST(0, renesas_ra_canfd_global), glerr, priority),          \
 		    canfd_error_isr, NULL, 0);                                                     \
 	IRQ_CONNECT(VECTOR_NUMBER_CAN_RXF,                                                         \
-		    DT_IRQ_BY_NAME(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), rxf,    \
-				   priority),                                                      \
+		    DT_IRQ_BY_NAME(DT_INST(0, renesas_ra_canfd_global), rxf, priority),            \
 		    canfd_rx_fifo_isr, NULL, 0);                                                   \
 	irq_enable(VECTOR_NUMBER_CAN_RXF);                                                         \
 	irq_enable(VECTOR_NUMBER_CAN_GLERR);
@@ -1012,30 +1026,26 @@ static canfd_global_cfg_t g_canfd_global_cfg = {
 	.global_interrupts = CANFD_CFG_GLERR_IRQ,
 	.global_config = CANFD_CFG_GLOBAL,
 	.rx_mb_config = CANFD_CFG_RXMB,
-	.global_err_ipl = DT_IRQ_BY_NAME(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global),
-					 glerr, priority),
-	.rx_fifo_ipl = DT_IRQ_BY_NAME(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), rxf,
-				      priority),
+	.global_err_ipl = DT_IRQ_BY_NAME(DT_INST(0, renesas_ra_canfd_global), glerr, priority),
+	.rx_fifo_ipl = DT_IRQ_BY_NAME(DT_INST(0, renesas_ra_canfd_global), rxf, priority),
 	.rx_fifo_config = CANFD_CFG_RXFIFO,
 	.common_fifo_config = CANFD_CFG_COMMONFIFO,
 };
 
 static const struct can_renesas_ra_global_cfg g_can_renesas_ra_global_cfg = {
-	.op_clk = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(
-		DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), opclk)),
-	.ram_clk = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(
-		DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), ramclk)),
-	.op_subsys = {.mstp = DT_CLOCKS_CELL_BY_NAME(
-			      DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), opclk, mstp),
-		      .stop_bit = DT_CLOCKS_CELL_BY_NAME(
-			      DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), opclk,
-			      stop_bit)},
-	.ram_subsys = {.mstp = DT_CLOCKS_CELL_BY_NAME(
-			       DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), ramclk,
-			       mstp),
-		       .stop_bit = DT_CLOCKS_CELL_BY_NAME(
-			       DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), ramclk,
-			       stop_bit)},
+	.op_clk = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(DT_INST(0, renesas_ra_canfd_global), opclk)),
+	.ram_clk =
+		DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(DT_INST(0, renesas_ra_canfd_global), ramclk)),
+	.op_subsys = {.mstp = DT_CLOCKS_CELL_BY_NAME(DT_INST(0, renesas_ra_canfd_global), opclk,
+						     mstp),
+		      .stop_bit = DT_CLOCKS_CELL_BY_NAME(DT_INST(0, renesas_ra_canfd_global), opclk,
+							 stop_bit)},
+	.ram_subsys = {.mstp = DT_CLOCKS_CELL_BY_NAME(DT_INST(0, renesas_ra_canfd_global), ramclk,
+						      mstp),
+		       .stop_bit = DT_CLOCKS_CELL_BY_NAME(DT_INST(0, renesas_ra_canfd_global),
+							  ramclk, stop_bit)},
+	.dll_min_freq = DT_PROP_OR(DT_INST(0, renesas_ra_canfd_global), dll_min_freq, 0),
+	.dll_max_freq = DT_PROP_OR(DT_INST(0, renesas_ra_canfd_global), dll_max_freq, UINT_MAX),
 };
 
 static int can_renesas_ra_global_init(const struct device *dev)
@@ -1064,22 +1074,18 @@ DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), can_ren
 		 NULL, NULL, &g_can_renesas_ra_global_cfg, PRE_KERNEL_2, CONFIG_CAN_INIT_PRIORITY,
 		 NULL)
 
-#define _ELC_EVENT_CAN_COMFRX(channel) ELC_EVENT_CAN##channel##_COMFRX
-#define _ELC_EVENT_CAN_TX(channel)     ELC_EVENT_CAN##channel##_TX
-#define _ELC_EVENT_CAN_CHERR(channel)  ELC_EVENT_CAN##channel##_CHERR
-
-#define ELC_EVENT_CAN_COMFRX(channel) _ELC_EVENT_CAN_COMFRX(channel)
-#define ELC_EVENT_CAN_TX(channel)     _ELC_EVENT_CAN_TX(channel)
-#define ELC_EVENT_CAN_CHERR(channel)  _ELC_EVENT_CAN_CHERR(channel)
+#define EVENT_CAN_COMFRX(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_CAN, channel, _COMFRX))
+#define EVENT_CAN_TX(channel)     BSP_PRV_IELS_ENUM(CONCAT(EVENT_CAN, channel, _TX))
+#define EVENT_CAN_CHERR(channel)  BSP_PRV_IELS_ENUM(CONCAT(EVENT_CAN, channel, _CHERR))
 
 #define CAN_RENESAS_RA_CHANNEL_IRQ_INIT(index)                                                     \
 	{                                                                                          \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(index, rx, irq)].IELS =                         \
-			ELC_EVENT_CAN_COMFRX(DT_INST_PROP(index, channel));                        \
+			EVENT_CAN_COMFRX(DT_INST_PROP(index, channel));                            \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(index, tx, irq)].IELS =                         \
-			ELC_EVENT_CAN_TX(DT_INST_PROP(index, channel));                            \
+			EVENT_CAN_TX(DT_INST_PROP(index, channel));                                \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(index, err, irq)].IELS =                        \
-			ELC_EVENT_CAN_CHERR(DT_INST_PROP(index, channel));                         \
+			EVENT_CAN_CHERR(DT_INST_PROP(index, channel));                             \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rx, irq),                                   \
 			    DT_INST_IRQ_BY_NAME(index, rx, priority), canfd_common_fifo_rx_isr,    \

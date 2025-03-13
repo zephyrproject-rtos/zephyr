@@ -57,7 +57,7 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value,
 {
 	uint16_t in_len;
 
-	if (opaque->remaining == 0) {
+	if (opaque->offset == 0) {
 		coap_packet_get_payload(in->in_cpkt, &in_len);
 
 		if (in_len == 0) {
@@ -79,14 +79,10 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value,
 				 * payload size. This will reset on next packet
 				 * received.
 				 */
-				opaque->remaining = in_len;
-			} else {
-				opaque->remaining = opaque->len;
+				opaque->len = in_len;
 			}
-
 		} else {
 			opaque->len = in_len;
-			opaque->remaining = in_len;
 		}
 	}
 

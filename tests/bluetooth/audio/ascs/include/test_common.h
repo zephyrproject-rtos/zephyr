@@ -3,10 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
 
 #define test_ase_snk_get(_num_ase, ...) test_ase_get(BT_UUID_ASCS_ASE_SNK, _num_ase, __VA_ARGS__)
 #define test_ase_src_get(_num_ase, ...) test_ase_get(BT_UUID_ASCS_ASE_SRC, _num_ase, __VA_ARGS__)

@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/cpu.h"
+#include "hal/ecb.h"
 #include "hal/ccm.h"
 #include "hal/cntr.h"
 #include "hal/ticker.h"
@@ -219,6 +220,9 @@
 				   USER_TICKER_NODES + \
 				   FLASH_TICKER_NODES + \
 				   COEX_TICKER_NODES)
+
+/* Ticker implementation supports up to 255 ticker node count value */
+BUILD_ASSERT(TICKER_NODES <= UINT8_MAX);
 
 /* When both central and peripheral are supported, one each Rx node will be
  * needed by connectable advertising and the initiator to generate connection
@@ -540,7 +544,7 @@ static void *mark_update;
 #endif /* CONFIG_BT_CONN */
 
 static MFIFO_DEFINE(tx_ack, sizeof(struct lll_tx),
-		    BT_CTLR_TX_BUFFERS + BT_CTLR_ISO_TX_BUFFERS);
+		    BT_CTLR_TX_BUFFERS + BT_CTLR_ISO_TX_PDU_BUFFERS);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 
 static void *mark_disable;
@@ -760,7 +764,19 @@ int ll_init(struct k_sem *sem_rx)
 	}
 
 #if defined(CONFIG_BT_CTLR_TEST)
+	err = mem_ut();
+	if (err) {
+		return err;
+	}
+
+	err = ecb_ut();
+	if (err) {
+		return err;
+	}
+
+#if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
 	lll_chan_sel_2_ut();
+#endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
 #endif /* CONFIG_BT_CTLR_TEST */
 
 	return  0;

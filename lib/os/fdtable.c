@@ -18,7 +18,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/speculation.h>
@@ -249,6 +248,7 @@ int zvfs_reserve_fd(void)
 		(void)z_fd_ref(fd);
 		fdtable[fd].obj = NULL;
 		fdtable[fd].vtable = NULL;
+		fdtable[fd].offset = 0;
 		k_mutex_init(&fdtable[fd].lock);
 		k_condvar_init(&fdtable[fd].cond);
 	}
@@ -280,8 +280,14 @@ void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable
 	 * variables to avoid keeping the lock for a long period of time.
 	 */
 	if (vtable && vtable->ioctl) {
+		int prev_errno = errno;
+
 		(void)zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_SET_LOCK,
 					   &fdtable[fd].lock);
+		if ((prev_errno != EOPNOTSUPP) && (errno == EOPNOTSUPP)) {
+			/* restore backed-up errno value if the backend does not support locking */
+			errno = prev_errno;
+		}
 	}
 }
 
@@ -544,9 +550,7 @@ static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 
 static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 {
-#if defined(CONFIG_BOARD_NATIVE_POSIX)
-	return zvfs_write(1, buffer, count, NULL);
-#elif defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
+#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
 	return z_impl_zephyr_write_stdout(buffer, count);
 #else
 	return 0;

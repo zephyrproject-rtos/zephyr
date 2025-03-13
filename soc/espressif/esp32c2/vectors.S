@@ -22,12 +22,12 @@ GTEXT(_isr_wrapper)
 	 * only uses the 24 MSBs of the MTVEC, i.e. (MTVEC & 0xffffff00).
 	 */
 
-	.global  _esp32c2_vector_table
+	.global  _esp_vector_table
 	.section .exception_vectors.text
 	.balign   0x100
-	.type     _esp32c2_vector_table, @function
+	.type     _esp_vector_table, @function
 
-_esp32c2_vector_table:
+_esp_vector_table:
 	.option push
 	.option norvc
 	.rept (32)

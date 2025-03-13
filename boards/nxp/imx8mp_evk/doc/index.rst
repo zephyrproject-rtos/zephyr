@@ -62,6 +62,10 @@ features:
 +-----------+------------+-------------------------------------+
 | ENET      | on-chip    | ethernet port                       |
 +-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | GPIO ports                          |
++-----------+------------+-------------------------------------+
+| I2C       | on-chip    | I2C bus                             |
++-----------+------------+-------------------------------------+
 
 The Zephyr mimx8mp_evk_m7 board configuration supports the following hardware
 features:

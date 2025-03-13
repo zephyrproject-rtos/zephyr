@@ -123,55 +123,7 @@ More information about STM32L552ZE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l552ze_q board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access                |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| TrustZone | on-chip    | Trusted Firmware-M                  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig and dts files:
-
-- Common:
-
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q-common.dtsi`
-
-- Secure target:
-
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_defconfig`
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q.dts`
-
-- Non-Secure target:
-
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_stm32l552xx_ns_defconfig`
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_stm32l552xx_ns.dts`
+.. zephyr:board-supported-hw::
 
 Zephyr board options
 ====================

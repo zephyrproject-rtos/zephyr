@@ -5,7 +5,7 @@
 
 config FAT_FILESYSTEM_ELM
 	bool "ELM FAT file system support"
-	depends on FILE_SYSTEM
+	depends on FILE_SYSTEM_LIB_LINK
 	select DISK_ACCESS
 	help
 	  Use the ELM FAT File system implementation.
@@ -276,6 +276,28 @@ config FS_FATFS_MULTI_PARTITION
 	  When disabled (default), each logical drive number is bound to the same
 	  physical drive number and only an FAT volume found on the physical drive
 	  will be mounted.
+
+config FS_FATFS_CUSTOM_MOUNT_POINT_COUNT
+	int "Count of custom mount points"
+	default 0
+	range 0 10
+	help
+	  This option has to be used in combination with FS_FATFS_CUSTOM_MOUNT_POINTS.
+	  It specifies how many custom mount points are defined in the custom mount
+	  point string.
+
+config FS_FATFS_CUSTOM_MOUNT_POINTS
+	string "Support for custom mountpoints when using fatfs"
+	help
+	   This option allows to specify custom mount points where fatfs filesystems
+	   can be mounted. The option has to be defined as a comma separated list
+	   with no whitespaces and no trailing commas.
+	   Example: "RAM,SD,SD2,NAND".
+	   It is also necessary to define the count of mount points specified in the
+	   list with the option FS_FATFS_CUSTOM_MOUNT_POINT_COUNT.
+	   If this option is active no mount points not defined within the list can
+	   be used for mounting fatfs filesystems anymore.
+	depends on FS_FATFS_CUSTOM_MOUNT_POINT_COUNT > 0
 
 endmenu
 

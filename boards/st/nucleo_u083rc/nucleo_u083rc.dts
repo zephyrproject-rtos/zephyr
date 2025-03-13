@@ -44,6 +44,7 @@
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -61,7 +62,23 @@
 	status = "okay";
 };
 
+&iwdg {
+	status = "okay";
+};
+
 &clk_hsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_lsi {
 	status = "okay";
 };
 
@@ -95,17 +112,10 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
-&i2c2 {
-	pinctrl-0 = <&i2c2_scl_pa7 &i2c2_sda_pa6>;
-	pinctrl-names = "default";
-	status = "okay";
-	clock-frequency = <I2C_BITRATE_FAST>;
-};
-
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pc0 &adc1_in1_pc1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00100000>,
 		 <&rcc STM32_SRC_HSI ADC_SEL(2)>;
 	st,adc-prescaler = <4>;
@@ -133,4 +143,49 @@
 		pinctrl-names = "default";
 		status = "okay";
 	};
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 31U)>,
+		<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
+};
+
+&spi1{
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	cs-gpios = <&gpiob 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&rng {
+	clocks = <&rcc STM32_CLOCK(AHB1, 18U)>,
+		<&rcc STM32_SRC_HSI48 CLK48_SEL(1)>;
+	status = "okay";
+};
+
+&aes {
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	clocks = <&rcc STM32_CLOCK(APB1, 13U)>,
+		 <&rcc STM32_SRC_HSI48 CLK48_SEL(1)>;
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 10U)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
 };

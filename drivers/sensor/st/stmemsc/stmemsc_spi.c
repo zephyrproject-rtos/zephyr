@@ -63,13 +63,19 @@ int stmemsc_spi_write(const struct spi_dt_spec *stmemsc,
 int stmemsc_spi_read_incr(const struct spi_dt_spec *stmemsc,
 			  uint8_t reg_addr, uint8_t *value, uint8_t len)
 {
-	reg_addr |= STMEMSC_SPI_ADDR_AUTO_INCR;
+	if (len > 1) {
+		reg_addr |= STMEMSC_SPI_ADDR_AUTO_INCR;
+	}
+
 	return stmemsc_spi_read(stmemsc, reg_addr, value, len);
 }
 
 int stmemsc_spi_write_incr(const struct spi_dt_spec *stmemsc,
 			   uint8_t reg_addr, uint8_t *value, uint8_t len)
 {
-	reg_addr |= STMEMSC_SPI_ADDR_AUTO_INCR;
+	if (len > 1) {
+		reg_addr |= STMEMSC_SPI_ADDR_AUTO_INCR;
+	}
+
 	return stmemsc_spi_write(stmemsc, reg_addr, value, len);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util_internal.h>
 #include <instances/r_adc.h>
 
 #include <zephyr/irq.h>
@@ -21,6 +22,11 @@ LOG_MODULE_REGISTER(adc_ra, CONFIG_ADC_LOG_LEVEL);
 #include "adc_context.h"
 
 #define ADC_RA_MAX_RESOLUTION 12
+#define ADC_AVERAGE_1         ADC_ADD_OFF
+#define ADC_AVERAGE_2         ADC_ADD_AVERAGE_TWO
+#define ADC_AVERAGE_4         ADC_ADD_AVERAGE_FOUR
+#define ADC_AVERAGE_8         ADC_ADD_AVERAGE_EIGHT
+#define ADC_AVERAGE_16        ADC_ADD_AVERAGE_SIXTEEN
 
 void adc_scan_end_isr(void);
 
@@ -30,8 +36,8 @@ void adc_scan_end_isr(void);
  * This structure contains constant data for given instance of RA ADC.
  */
 struct adc_ra_config {
-	/** Number of supported channels */
-	uint8_t num_channels;
+	/** Mask for channels existed in each board */
+	uint32_t channel_available_mask;
 	/** pinctrl configs */
 	const struct pinctrl_dev_config *pcfg;
 	/** function pointer to irq setup */
@@ -76,10 +82,9 @@ static int adc_ra_channel_setup(const struct device *dev, const struct adc_chann
 {
 	fsp_err_t fsp_err = FSP_SUCCESS;
 	struct adc_ra_data *data = dev->data;
+	const struct adc_ra_config *config = dev->config;
 
-	if (!((channel_cfg->channel_id >= 0 && channel_cfg->channel_id <= 2) ||
-	      (channel_cfg->channel_id >= 4 && channel_cfg->channel_id <= 8) ||
-	      (channel_cfg->channel_id >= 16 && channel_cfg->channel_id <= 19))) {
+	if (!((config->channel_available_mask & (1 << channel_cfg->channel_id)) != 0)) {
 		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
@@ -148,16 +153,10 @@ static void adc_ra_isr(const struct device *dev)
  */
 static int adc_ra_check_buffer_size(const struct device *dev, const struct adc_sequence *sequence)
 {
-	const struct adc_ra_config *config = dev->config;
 	uint8_t channels = 0;
 	size_t needed;
-	uint32_t mask;
 
-	for (mask = BIT(config->num_channels - 1); mask != 0; mask >>= 1) {
-		if (mask & sequence->channels) {
-			channels++;
-		}
-	}
+	channels = POPCOUNT(sequence->channels);
 
 	needed = channels * sizeof(uint16_t);
 	if (sequence->options) {
@@ -195,7 +194,7 @@ static int adc_ra_start_read(const struct device *dev, const struct adc_sequence
 		return -ENOTSUP;
 	}
 
-	if (find_msb_set(sequence->channels) > config->num_channels) {
+	if ((sequence->channels & ~config->channel_available_mask) != 0) {
 		LOG_ERR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
@@ -312,25 +311,12 @@ static int adc_ra_init(const struct device *dev)
 	return 0;
 }
 
-const adc_extended_cfg_t g_adc_cfg_extend = {
-	.add_average_count = ADC_ADD_OFF,
-	.clearing = ADC_CLEAR_AFTER_READ_ON,
-	.trigger_group_b = ADC_START_SOURCE_DISABLED,
-	.double_trigger_mode = ADC_DOUBLE_TRIGGER_DISABLED,
-	.adc_vref_control = ADC_VREF_CONTROL_VREFH,
-	.enable_adbuf = 0,
-	.window_a_irq = FSP_INVALID_VECTOR,
-	.window_a_ipl = (1),
-	.window_b_irq = FSP_INVALID_VECTOR,
-	.window_b_ipl = (BSP_IRQ_DISABLED),
-	.trigger = ADC_START_SOURCE_DISABLED, /* Use Software trigger */
-};
+#define EVENT_ADC_SCAN_END(idx) BSP_PRV_IELS_ENUM(CONCAT(EVENT_ADC, idx, _SCAN_END))
 
 #define IRQ_CONFIGURE_FUNC(idx)                                                                    \
 	static void adc_ra_configure_func_##idx(void)                                              \
 	{                                                                                          \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(idx, scanend, irq)] =                             \
-			ELC_EVENT_ADC##idx##_SCAN_END;                                             \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(idx, scanend, irq)] = EVENT_ADC_SCAN_END(idx);    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, scanend, irq),                                \
 			    DT_INST_IRQ_BY_NAME(idx, scanend, priority), adc_ra_isr,               \
 			    DEVICE_DT_INST_GET(idx), 0);                                           \
@@ -342,13 +328,26 @@ const adc_extended_cfg_t g_adc_cfg_extend = {
 #define ADC_RA_INIT(idx)                                                                           \
 	IRQ_CONFIGURE_FUNC(idx)                                                                    \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	static const adc_extended_cfg_t g_adc_cfg_extend_##idx = {                                 \
+		.add_average_count = UTIL_CAT(ADC_AVERAGE_, DT_INST_PROP(idx, average_count)),     \
+		.clearing = ADC_CLEAR_AFTER_READ_ON,                                               \
+		.trigger_group_b = ADC_START_SOURCE_DISABLED,                                      \
+		.double_trigger_mode = ADC_DOUBLE_TRIGGER_DISABLED,                                \
+		.adc_vref_control = ADC_VREF_CONTROL_VREFH,                                        \
+		.enable_adbuf = 0,                                                                 \
+		.window_a_irq = FSP_INVALID_VECTOR,                                                \
+		.window_a_ipl = (1),                                                               \
+		.window_b_irq = FSP_INVALID_VECTOR,                                                \
+		.window_b_ipl = (BSP_IRQ_DISABLED),                                                \
+		.trigger = ADC_START_SOURCE_DISABLED,                                              \
+	};                                                                                         \
 	static DEVICE_API(adc, adc_ra_api_##idx) = {                                               \
 		.channel_setup = adc_ra_channel_setup,                                             \
 		.read = adc_ra_read,                                                               \
 		.ref_internal = DT_INST_PROP(idx, vref_mv),                                        \
 		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_ra_read_async))};                  \
 	static const struct adc_ra_config adc_ra_config_##idx = {                                  \
-		.num_channels = DT_INST_PROP(idx, channel_count),                                  \
+		.channel_available_mask = DT_INST_PROP(idx, channel_available_mask),               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		IRQ_CONFIGURE_DEFINE(idx),                                                         \
 	};                                                                                         \
@@ -366,7 +365,7 @@ const adc_extended_cfg_t g_adc_cfg_extend = {
 				.trigger = 0,                                                      \
 				.p_callback = NULL,                                                \
 				.p_context = NULL,                                                 \
-				.p_extend = &g_adc_cfg_extend,                                     \
+				.p_extend = &g_adc_cfg_extend_##idx,                               \
 				.scan_end_irq = DT_INST_IRQ_BY_NAME(idx, scanend, irq),            \
 				.scan_end_ipl = DT_INST_IRQ_BY_NAME(idx, scanend, priority),       \
 				.scan_end_b_irq = FSP_INVALID_VECTOR,                              \
@@ -377,7 +376,7 @@ const adc_extended_cfg_t g_adc_cfg_extend = {
 				.scan_mask = 0,                                                    \
 				.scan_mask_group_b = 0,                                            \
 				.priority_group_a = ADC_GROUP_A_PRIORITY_OFF,                      \
-				.add_mask = 0,                                                     \
+				.add_mask = UINT16_MAX,                                            \
 				.sample_hold_mask = 0,                                             \
 				.sample_hold_states = 24,                                          \
 				.p_window_cfg = NULL,                                              \

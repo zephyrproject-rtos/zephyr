@@ -3,6 +3,8 @@
  *
  * Copyright (c) 2023 Arunmani Alagarsamy
  * Author: Arunmani Alagarsamy  <arunmani27100@gmail.com>
+ *
+ * Copyright (c) 2025 Marcin Lyda <elektromarcin@gmail.com>
  */
 
 #include <zephyr/drivers/i2c.h>
@@ -25,6 +27,7 @@ LOG_MODULE_REGISTER(ds1307, CONFIG_RTC_LOG_LEVEL);
 #define DS1307_REG_YEAR    0x06
 #define DS1307_REG_CTRL    0x07
 
+/* DS1307 bitmasks */
 #define SECONDS_BITS  GENMASK(6, 0)
 #define MINUTES_BITS  GENMASK(7, 0)
 #define HOURS_BITS    GENMASK(5, 0)
@@ -34,8 +37,24 @@ LOG_MODULE_REGISTER(ds1307, CONFIG_RTC_LOG_LEVEL);
 #define YEAR_BITS     GENMASK(7, 0)
 #define VALIDATE_24HR BIT(6)
 
+#define CTRL_RS_BITS  GENMASK(1, 0)
+#define CTRL_SQWE_BIT BIT(4)
+
+#define SQW_FREQ_1Hz     FIELD_PREP(CTRL_RS_BITS, 0x00)
+#define SQW_FREQ_4096Hz  FIELD_PREP(CTRL_RS_BITS, 0x01)
+#define SQW_FREQ_8192Hz  FIELD_PREP(CTRL_RS_BITS, 0x02)
+#define SQW_FREQ_32768Hz FIELD_PREP(CTRL_RS_BITS, 0x03)
+
+/* SQW frequency property enum values */
+#define SQW_PROP_ENUM_1HZ      0
+#define SQW_PROP_ENUM_4096HZ   1
+#define SQW_PROP_ENUM_8192HZ   2
+#define SQW_PROP_ENUM_32768HZ  3
+#define SQW_PROP_ENUM_DISABLED 4
+
 struct ds1307_config {
 	struct i2c_dt_spec i2c_bus;
+	uint8_t sqw_freq;
 };
 
 struct ds1307_data {
@@ -126,6 +145,7 @@ static DEVICE_API(rtc, ds1307_driver_api) = {
 static int ds1307_init(const struct device *dev)
 {
 	int err;
+	uint8_t reg_val;
 	const struct ds1307_config *config = dev->config;
 
 	if (!i2c_is_ready_dt(&config->i2c_bus)) {
@@ -133,25 +153,42 @@ static int ds1307_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Disable squarewave output */
-	err = i2c_reg_write_byte_dt(&config->i2c_bus, DS1307_REG_CTRL, 0x00);
+	/* Configure SQW output frequency */
+	reg_val = CTRL_SQWE_BIT;
+	switch (config->sqw_freq) {
+	case SQW_PROP_ENUM_1HZ:
+		reg_val |= SQW_FREQ_1Hz;
+		break;
+	case SQW_PROP_ENUM_4096HZ:
+		reg_val |= SQW_FREQ_4096Hz;
+		break;
+	case SQW_PROP_ENUM_8192HZ:
+		reg_val |= SQW_FREQ_8192Hz;
+		break;
+	case SQW_PROP_ENUM_32768HZ:
+		reg_val |= SQW_FREQ_32768Hz;
+		break;
+	case SQW_PROP_ENUM_DISABLED:
+	default:
+		reg_val &= ~CTRL_SQWE_BIT;
+		break;
+	}
+	err = i2c_reg_write_byte_dt(&config->i2c_bus, DS1307_REG_CTRL, reg_val);
 	if (err < 0) {
-		LOG_ERR("Error: SQW: %d\n", err);
+		LOG_ERR("Error: Configure SQW: %d", err);
 	}
 
 	/* Ensure Clock Halt = 0 */
-	uint8_t reg = 0;
-
-	err = i2c_reg_read_byte_dt(&config->i2c_bus, DS1307_REG_SECONDS, &reg);
+	err = i2c_reg_read_byte_dt(&config->i2c_bus, DS1307_REG_SECONDS, &reg_val);
 	if (err < 0) {
-		LOG_ERR("Error: Read SECONDS/Clock Halt register: %d\n", err);
+		LOG_ERR("Error: Read SECONDS/Clock Halt register: %d", err);
 	}
-	if (reg & ~SECONDS_BITS) {
+	if (reg_val & ~SECONDS_BITS) {
 		/* Clock Halt bit is set */
 		err = i2c_reg_write_byte_dt(&config->i2c_bus, DS1307_REG_SECONDS,
-					    reg & SECONDS_BITS);
+					    reg_val & SECONDS_BITS);
 		if (err < 0) {
-			LOG_ERR("Error: Clear Clock Halt bit: %d\n", err);
+			LOG_ERR("Error: Clear Clock Halt bit: %d", err);
 		}
 	}
 
@@ -162,7 +199,8 @@ static int ds1307_init(const struct device *dev)
 	static struct ds1307_data ds1307_data_##inst;                                              \
 	static const struct ds1307_config ds1307_config_##inst = {                                 \
 		.i2c_bus = I2C_DT_SPEC_INST_GET(inst),                                             \
-	};                                                                                         \
+		.sqw_freq = DT_INST_ENUM_IDX_OR(inst, sqw_frequency, SQW_PROP_ENUM_DISABLED)	   \
+	};											   \
 	DEVICE_DT_INST_DEFINE(inst, &ds1307_init, NULL, &ds1307_data_##inst,                       \
 			      &ds1307_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,        \
 			      &ds1307_driver_api);

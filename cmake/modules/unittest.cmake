@@ -12,8 +12,8 @@ include(hwm_v2)
 include(configuration_files)
 
 include(kconfig)
-include(arch_v2)
-include(soc_v2)
+include(arch)
+include(soc)
 
 find_package(TargetTools)
 
@@ -161,6 +161,13 @@ if(VALGRIND_PROGRAM)
     --log-file=valgrind.log
     )
 endif()
+
+add_custom_target(run
+  COMMAND
+  $<TARGET_FILE:testbinary>
+  DEPENDS testbinary
+  WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+  )
 
 add_custom_target(run-test
   COMMAND

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,6 +20,25 @@ LOG_MODULE_REGISTER(nxp_mbox_imx_mu);
 
 #define MU_MAX_CHANNELS 4
 #define MU_MBOX_SIZE    sizeof(uint32_t)
+
+/*
+ * Arrays to translate the channel number to Generic Interrupt Mask for mu driver.
+ * The kMU_GenInt[0..3]Flag comes from MU driver header mu.h.
+ * There are more MU drivers implementations. For the `mu` driver
+ * the kMU_GenInt0Flag goes from 3 to 0 relative bit for the
+ * `mu1` driver kMU_GenInt0Flag goes from 0 to 3.
+ * Same for kMU_GenInt0InterruptTrigger and kMU_Rx0FullFlag.
+ * Therefore use this mapping table to select correct mask based on channel index.
+ */
+const static uint32_t g_gen_int_pend_mask[MU_MAX_CHANNELS] = {kMU_GenInt0Flag, kMU_GenInt1Flag,
+							      kMU_GenInt2Flag, kMU_GenInt3Flag};
+
+const static uint32_t g_gen_int_trig_mask[MU_MAX_CHANNELS] = {
+	kMU_GenInt0InterruptTrigger, kMU_GenInt1InterruptTrigger, kMU_GenInt2InterruptTrigger,
+	kMU_GenInt3InterruptTrigger};
+
+const static uint32_t g_rx_flag_mask[MU_MAX_CHANNELS] = {kMU_Rx0FullFlag, kMU_Rx1FullFlag,
+							 kMU_Rx2FullFlag, kMU_Rx3FullFlag};
 
 struct nxp_imx_mu_data {
 	mbox_callback_t cb[MU_MAX_CHANNELS];
@@ -42,11 +61,11 @@ static int nxp_imx_mu_send(const struct device *dev, uint32_t channel, const str
 
 	/* Signalling mode. */
 	if (msg == NULL) {
-		return MU_TriggerInterrupts(cfg->base, kMU_GenInt0InterruptTrigger >> channel);
+		return MU_TriggerInterrupts(cfg->base, g_gen_int_trig_mask[channel]);
 	}
 
 	/* Data transfer mode. */
-	if (msg->size != MU_MBOX_SIZE) {
+	if (msg->size > MU_MBOX_SIZE) {
 		/* We can only send this many bytes at a time. */
 		return -EMSGSIZE;
 	}
@@ -159,10 +178,13 @@ static void handle_irq(const struct device *dev)
 {
 	struct nxp_imx_mu_data *data = dev->data;
 	const struct nxp_imx_mu_config *config = dev->config;
-	const uint32_t flag = MU_GetStatusFlags(config->base);
+	const uint32_t flags = MU_GetStatusFlags(config->base);
 
 	for (int i_channel = 0; i_channel < MU_MAX_CHANNELS; i_channel++) {
-		if ((flag & (kMU_Rx0FullFlag >> i_channel)) == (kMU_Rx0FullFlag >> i_channel)) {
+		const uint32_t rx_int_mask = g_rx_flag_mask[i_channel];
+		const uint32_t gen_int_mask = g_gen_int_pend_mask[i_channel];
+
+		if ((flags & rx_int_mask) == rx_int_mask) {
 			data->received_data = MU_ReceiveMsgNonBlocking(config->base, i_channel);
 			struct mbox_msg msg = {(const void *)&data->received_data, MU_MBOX_SIZE};
 
@@ -170,9 +192,8 @@ static void handle_irq(const struct device *dev)
 				data->cb[i_channel](dev, i_channel, data->user_data[i_channel],
 						    &msg);
 			}
-		} else if ((flag & (kMU_GenInt0Flag >> i_channel)) ==
-			   (kMU_GenInt0Flag >> i_channel)) {
-			MU_ClearStatusFlags(config->base, (kMU_GenInt0Flag >> i_channel));
+		} else if ((flags & gen_int_mask) == gen_int_mask) {
+			MU_ClearStatusFlags(config->base, gen_int_mask);
 			if (data->cb[i_channel]) {
 				data->cb[i_channel](dev, i_channel, data->user_data[i_channel],
 						    NULL);

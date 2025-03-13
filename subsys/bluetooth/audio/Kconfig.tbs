@@ -13,6 +13,7 @@ if BT_AUDIO
 config BT_TBS
 	bool "Telephone Bearer Service Support"
 	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_SMP
 	depends on UTF8
 	help
 	  This option enables support for Telephone Bearer Service. By default this only
@@ -51,6 +52,14 @@ config BT_TBS_MAX_SCHEME_LIST_LENGTH
 	help
 	  Sets the maximum length of the URI scheme list.
 
+config BT_TBS_LOCK_TIMEOUT
+	int "Milliseconds of timeout when handling concurrent operations"
+	range 0 1000
+	default 10
+	help
+	  The number of milliseconds that the TBS implementation will maximum wait before rejecting
+	  an write request if another is already in progress in another thread.
+
 endif # BT_TBS
 
 
@@ -58,20 +67,24 @@ endif # BT_TBS
 
 config BT_TBS_CLIENT_GTBS
 	bool "Generic Telephone Bearer Service client support"
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_SMP
 	depends on UTF8
 	help
 	  This option enables support for the GTBS-oriented Call Control client.
 
 config BT_TBS_CLIENT_TBS
 	bool "Telephone Bearer Service client support"
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_SMP
 	depends on UTF8
 	help
 	  This option enables support for the TBS-oriented Call Control client.
 
 config BT_TBS_CLIENT
 	def_bool BT_TBS_CLIENT_GTBS || BT_TBS_CLIENT_TBS
-	depends on BT_GATT_CLIENT
-	depends on BT_GATT_AUTO_DISCOVER_CCC
 
 if BT_TBS_CLIENT
 

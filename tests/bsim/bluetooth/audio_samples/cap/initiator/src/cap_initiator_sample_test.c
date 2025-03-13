@@ -4,13 +4,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <inttypes.h>
+#include <stdint.h>
 
 #include <zephyr/sys/util_macro.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
 #include "bs_utils.h"
-#include "time_machine.h"
 #include "bstests.h"
 
 #define WAIT_TIME 10 /* Seconds */

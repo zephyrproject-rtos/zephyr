@@ -10,7 +10,6 @@ config BT_CTLR_ENTROPY_SUPPORT
 	bool
 
 config BT_CTLR_CRYPTO_SUPPORT
-	depends on BT_CTLR_ENTROPY_SUPPORT
 	bool
 
 config BT_CTLR_LE_ENC_SUPPORT
@@ -46,6 +45,10 @@ config BT_CTLR_PHY_CODED_SUPPORT
 config BT_CTLR_ADV_EXT_SUPPORT
 	bool
 
+config BT_CTLR_ADV_EXT_CODING_SELECTION_SUPPORT
+	depends on BT_CTLR_PHY_CODED_SUPPORT
+	bool
+
 config BT_CTLR_ADV_PERIODIC_SUPPORT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	bool
@@ -76,6 +79,10 @@ config BT_CTLR_ADV_ISO_SUPPORT
 
 config BT_CTLR_SYNC_ISO_SUPPORT
 	depends on BT_CTLR_SYNC_PERIODIC_SUPPORT
+	bool
+
+config BT_CTLR_BROADCAST_ISO_ENC_SUPPORT
+	depends on BT_CTLR_ADV_ISO_SUPPORT || BT_CTLR_SYNC_ISO_SUPPORT
 	bool
 
 config BT_CTLR_CENTRAL_ISO_SUPPORT
@@ -136,12 +143,12 @@ config BT_CTLR
 	  the HAS_BT_CTLR option.
 
 config BT_LL_SW_SPLIT
-	bool "Software-based BLE Link Layer"
+	bool "Software-based Bluetooth LE Link Layer"
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_LL_SW_SPLIT_ENABLED
 	select HAS_BT_CTLR
 	help
-	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
+	  Use Zephyr software Bluetooth LE Link Layer ULL LLL split implementation.
 
 config BT_CTLR_HCI
 	bool "Host Controller Interface (HCI)"
@@ -152,9 +159,19 @@ config BT_CTLR_HCI
 	  This should almost always be enabled, except in a few special
 	  cases, like for unit testing.
 
+config BT_CTLR_HCI_NUM_CMD_PKT_MAX
+	# Hidden Controller implementation supported Num_HCI_Command_Packets value.
+	# This value will be used to calculate the total number of HCI command buffers to be
+	# allocated, BT_BUF_CMD_TX_COUNT, dependent on HCI Controller to Host data flow control
+	# being enabled.
+	int
+	depends on BT_CTLR_HCI
+	default 1 if BT_LL_SW_SPLIT
+	default 1
+
 if HAS_BT_CTLR
 
-comment "BLE Controller configuration"
+comment "Bluetooth Controller configuration"
 
 config BT_CTLR_ENTROPY
 	bool "Random number generation in Controller"
@@ -209,7 +226,7 @@ config BT_CTLR_DUP_FILTER_LEN
 	depends on BT_LL_SW_SPLIT
 	default 16
 	help
-	  Set the number of unique BLE addresses that can be filtered as
+	  Set the number of unique Bluetooth LE addresses that can be filtered as
 	  duplicates while scanning.
 
 config BT_CTLR_DUP_FILTER_ADV_SET_MAX
@@ -315,10 +332,26 @@ choice BT_CTLR_TX_PWR
 	default BT_CTLR_TX_PWR_0
 	depends on BT_CTLR_TX_PWR_ANTENNA = 0 || BT_LL_SW_SPLIT
 	help
-	  Select a supported BLE Radio transmit power level in dBm.
+	  Select a supported Bluetooth LE Radio transmit power level in dBm.
 	  Only values supported natively by the SoC are available.
 	  The value set here represents the actual default power level fed
 	  to the antenna.
+
+config BT_CTLR_TX_PWR_PLUS_21
+	bool "+21 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
+config BT_CTLR_TX_PWR_PLUS_18
+	bool "+18 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
+config BT_CTLR_TX_PWR_PLUS_15
+	bool "+15 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
+config BT_CTLR_TX_PWR_PLUS_12
+	bool "+12 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_PLUS_10
 	bool "+10 dBm"
@@ -326,7 +359,7 @@ config BT_CTLR_TX_PWR_PLUS_10
 
 config BT_CTLR_TX_PWR_PLUS_9
 	bool "+9 dBm"
-	depends on SOC_SERIES_NRF54HX
+	depends on SOC_SERIES_NRF54HX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_PLUS_8
 	bool "+8 dBm"
@@ -338,7 +371,7 @@ config BT_CTLR_TX_PWR_PLUS_7
 
 config BT_CTLR_TX_PWR_PLUS_6
 	bool "+6 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_PLUS_5
 	bool "+5 dBm"
@@ -350,7 +383,7 @@ config BT_CTLR_TX_PWR_PLUS_4
 
 config BT_CTLR_TX_PWR_PLUS_3
 	bool "+3 dBm"
-	depends on SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
+	depends on SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_PLUS_2
 	bool "+2 dBm"
@@ -373,7 +406,7 @@ config BT_CTLR_TX_PWR_MINUS_2
 
 config BT_CTLR_TX_PWR_MINUS_3
 	bool "-3 dBm"
-	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX
+	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_MINUS_4
 	bool "-4 dBm"
@@ -384,7 +417,7 @@ config BT_CTLR_TX_PWR_MINUS_5
 
 config BT_CTLR_TX_PWR_MINUS_6
 	bool "-6 dBm"
-	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX
+	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_MINUS_7
 	bool "-7 dBm"
@@ -395,7 +428,7 @@ config BT_CTLR_TX_PWR_MINUS_8
 
 config BT_CTLR_TX_PWR_MINUS_9
 	bool "-9 dBm"
-	depends on SOC_COMPATIBLE_NRF54LX
+	depends on SOC_COMPATIBLE_NRF54LX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_MINUS_10
 	bool "-10 dBm"
@@ -408,11 +441,27 @@ config BT_CTLR_TX_PWR_MINUS_14
 	bool "-14 dBm"
 	depends on SOC_COMPATIBLE_NRF54LX
 
+config BT_CTLR_TX_PWR_MINUS_15
+	bool "-15 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
 config BT_CTLR_TX_PWR_MINUS_16
 	bool "-16 dBm"
 
+config BT_CTLR_TX_PWR_MINUS_18
+	bool "-18 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
 config BT_CTLR_TX_PWR_MINUS_20
 	bool "-20 dBm"
+
+config BT_CTLR_TX_PWR_MINUS_21
+	bool "-21 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
+config BT_CTLR_TX_PWR_MINUS_24
+	bool "-24 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_MINUS_26
 	bool "-26 dBm"
@@ -438,6 +487,10 @@ endchoice
 
 config BT_CTLR_TX_PWR_DBM
 	int
+	default 21 if BT_CTLR_TX_PWR_PLUS_21
+	default 18 if BT_CTLR_TX_PWR_PLUS_18
+	default 15 if BT_CTLR_TX_PWR_PLUS_15
+	default 12 if BT_CTLR_TX_PWR_PLUS_12
 	default 10 if BT_CTLR_TX_PWR_PLUS_10
 	default 9 if BT_CTLR_TX_PWR_PLUS_9
 	default 8 if BT_CTLR_TX_PWR_PLUS_8
@@ -461,8 +514,12 @@ config BT_CTLR_TX_PWR_DBM
 	default -10 if BT_CTLR_TX_PWR_MINUS_10
 	default -12 if BT_CTLR_TX_PWR_MINUS_12
 	default -14 if BT_CTLR_TX_PWR_MINUS_14
+	default -15 if BT_CTLR_TX_PWR_MINUS_15
 	default -16 if BT_CTLR_TX_PWR_MINUS_16
+	default -18 if BT_CTLR_TX_PWR_MINUS_18
 	default -20 if BT_CTLR_TX_PWR_MINUS_20
+	default -21 if BT_CTLR_TX_PWR_MINUS_21
+	default -24 if BT_CTLR_TX_PWR_MINUS_24
 	default -26 if BT_CTLR_TX_PWR_MINUS_26
 	default -30 if BT_CTLR_TX_PWR_MINUS_30
 	default -40 if BT_CTLR_TX_PWR_MINUS_40
@@ -492,7 +549,7 @@ config BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 	  Provides HCI VS commands to set and get the current Tx
 	  power on an individual role/connection basis.
 
-comment "BLE Controller features"
+comment "Bluetooth Controller features"
 
 if BT_CONN
 
@@ -507,7 +564,7 @@ config BT_CTLR_LE_ENC
 config BT_CTLR_ECDH
 	bool "Elliptic Curve Diffie-Hellman (ECDH)"
 	depends on BT_CTLR_ECDH_SUPPORT
-	default y
+	default y if BT_HCI_RAW
 	help
 	  Enable support for Bluetooth v4.2 Elliptic Curve Diffie-Hellman
 	  feature in the controller.
@@ -737,6 +794,15 @@ config BT_CTLR_ADV_PERIODIC_RSP
 	  Enable support for Bluetooth 5.4 LE Periodic Advertising with
 	  Responses in the Controller.
 
+config BT_CTLR_ADV_EXT_CODING_SELECTION
+	bool "Advertising Coding Selection support"
+	depends on BT_CTLR_PHY_CODED && BT_CTLR_ADV_EXT_CODING_SELECTION_SUPPORT
+	select BT_CTLR_SET_HOST_FEATURE if BT_OBSERVER
+	default y if BT_EXT_ADV_CODING_SELECTION
+	help
+	  Enable support for Bluetooth 6.0 Advertising Coding Selection
+	  in the Controller.
+
 if BT_CTLR_ADV_PERIODIC
 
 config BT_CTLR_ADV_PERIODIC_ADI_SUPPORT
@@ -829,7 +895,7 @@ config BT_CTLR_SYNC_TRANSFER_SENDER
 
 config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising" if !BT_LL_SW_SPLIT
-	depends on BT_BROADCASTER && BT_CTLR_ADV_ISO_SUPPORT
+	depends on BT_ISO_BROADCASTER && BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_ADV_PERIODIC
 	select BT_CTLR_SET_HOST_FEATURE
 	default y if BT_ISO_BROADCASTER
@@ -843,7 +909,7 @@ config BT_CTLR_ADV_ISO
 
 config BT_CTLR_SYNC_ISO
 	bool "LE Broadcast Isochronous Channel advertising sync" if !BT_LL_SW_SPLIT
-	depends on BT_OBSERVER && BT_CTLR_SYNC_ISO_SUPPORT
+	depends on BT_ISO_SYNC_RECEIVER && BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_CTLR_SYNC_PERIODIC
 	select BT_CTLR_SET_HOST_FEATURE
 	default y if BT_ISO_SYNC_RECEIVER
@@ -861,7 +927,7 @@ config BT_CTLR_BROADCAST_ISO
 
 config BT_CTLR_BROADCAST_ISO_ENC
 	bool
-	depends on BT_CTLR_CRYPTO_SUPPORT && BT_CTLR_BROADCAST_ISO
+	depends on BT_CTLR_BROADCAST_ISO_ENC_SUPPORT && BT_CTLR_BROADCAST_ISO
 	select BT_CRYPTO if BT_LL_SW_SPLIT
 	default y
 
@@ -944,7 +1010,7 @@ config BT_CTLR_SET_HOST_FEATURE
 
 config BT_CTLR_CENTRAL_ISO
 	bool "LE Connected Isochronous Stream Central" if !BT_LL_SW_SPLIT
-	depends on BT_CTLR_CENTRAL_ISO_SUPPORT && BT_CENTRAL
+	depends on BT_CTLR_CENTRAL_ISO_SUPPORT && BT_ISO_CENTRAL
 	default y if BT_ISO_CENTRAL
 	help
 	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
@@ -957,7 +1023,7 @@ config BT_CTLR_CENTRAL_ISO
 
 config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral" if !BT_LL_SW_SPLIT
-	depends on BT_CTLR_PERIPHERAL_ISO_SUPPORT && BT_PERIPHERAL
+	depends on BT_CTLR_PERIPHERAL_ISO_SUPPORT && BT_ISO_PERIPHERAL
 	default y if BT_ISO_PERIPHERAL
 	help
 	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
@@ -1005,13 +1071,13 @@ config BT_CTLR_CONN_ISO_PDU_LEN_MAX
 	help
 	  Maximum Connected Isochronous Channel PDU Length.
 
-config BT_CTLR_CONN_ISO_SDU_LEN_MAX
-	int "Maximum Connected Isochronous Channel SDU Length"
-	depends on BT_CTLR_CONN_ISO
+config BT_CTLR_ISO_TX_SDU_LEN_MAX
+	int "Maximum Isochronous Channel Transmit SDU Length"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	range 1 4095
-	default 251
+	default 1
 	help
-	  Maximum Connected Isochronous Channel SDU Length.
+	  Maximum Isochronous Channel Transmit SDU Length.
 
 config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
 	int "LE Connected Isochronous Streams max number of subevents"
@@ -1109,6 +1175,6 @@ config BT_CTLR_DEBUG_PINS_CPUAPP
 	bool "Bluetooth Controller Debug Pins"
 	depends on BOARD_NRF5340DK_NRF5340_CPUAPP
 	help
-	  Route debug GPIO toggling for the BLE Controller. Enable this when
+	  Route debug GPIO toggling for the Bluetooth Controller. Enable this when
 	  using Bluetooth Controller Debug Pins in co-processor and the main
 	  processor needs to setup and/or route the signals.

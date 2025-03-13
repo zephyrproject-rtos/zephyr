@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@
 #include "soc.h"
 #include "flexspi_clock_setup.h"
 #include "fsl_ocotp.h"
+
+extern void nxp_nbu_init(void);
 #ifdef CONFIG_NXP_RW6XX_BOOT_HEADER
 extern char z_main_stack[];
 extern char _flash_used[];
@@ -78,7 +80,7 @@ const clock_avpll_config_t avpll_config = {
  * clock needs to be re-initialized on exit from Standby mode. Hence
  * this function is relocated to RAM.
  */
-__ramfunc void clock_init(void)
+__weak __ramfunc void clock_init(void)
 {
 	POWER_DisableGDetVSensors();
 
@@ -131,6 +133,8 @@ __ramfunc void clock_init(void)
 	/* Set SYSTICKFCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivSystickClk, 1U);
 	CLOCK_AttachClk(kSYSTICK_DIV_to_SYSTICK_CLK);
+
+	SystemCoreClockUpdate();
 
 	/* Set PLL FRG clock to 20MHz. */
 	CLOCK_SetClkDiv(kCLOCK_DivPllFrgClk, 13U);
@@ -301,11 +305,15 @@ void soc_early_init_hook(void)
 	/* Initialize clock */
 	clock_init();
 
-#if defined(CONFIG_ADC_MCUX_GAU) ||  defined(CONFIG_DAC_MCUX_GAU)
+#if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU)
 	POWER_PowerOnGau();
 #endif
 #if CONFIG_PM
 	nxp_rw6xx_power_init();
+#endif
+
+#if defined(CONFIG_BT) || defined(CONFIG_IEEE802154)
+	nxp_nbu_init();
 #endif
 }
 

@@ -1,19 +1,17 @@
 sample:
   name: Shell Sample
 common:
-  filter: not CONFIG_NATIVE_LIBC
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
+  filter: not CONFIG_NATIVE_LIBC and not CONFIG_SOC_SERIES_BSIM_NRFXX
 tests:
   sample.shell.shell_module:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
-    harness: keyboard
+    harness: shell
     min_ram: 40
     integration_platforms:
       - native_sim
-      - intel_socfpga_agilex5_socdk
+    extra_configs:
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
   sample.shell.shell_module.usb:
     depends_on: usb_device
     tags:

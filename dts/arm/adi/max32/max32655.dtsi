@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <adi/max32/max32xxx.dtsi>
+#include <zephyr/dt-bindings/dma/max32655_dma.h>
 
 &pinctrl {
 	reg = <0x40008000 0x2400>;

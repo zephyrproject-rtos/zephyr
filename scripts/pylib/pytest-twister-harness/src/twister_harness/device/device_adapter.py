@@ -240,7 +240,7 @@ class DeviceAdapter(abc.ABC):
         with open(self.handler_log_path, 'a+') as log_file:
             while self.is_device_running():
                 if self.is_device_connected():
-                    output = self._read_device_output().decode(errors='replace').strip()
+                    output = self._read_device_output().decode(errors='replace').rstrip("\r\n")
                     if output:
                         self._device_read_queue.put(output)
                         log_file.write(f'{output}\n')

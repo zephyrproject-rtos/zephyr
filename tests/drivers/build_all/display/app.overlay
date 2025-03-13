@@ -168,7 +168,7 @@
 			spi-dev = <&test_spi>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			xfr-min-bits = <MIPI_DBI_SPI_XFR_16BIT>;
+			xfr-min-bits = "MIPI_DBI_SPI_XFR_16BIT";
 			write-only;
 
 			test_mipi_dbi_xfr_16bit_ili9342c: ili9342c@0 {
@@ -360,6 +360,15 @@
 				segment-remap;
 				com-invdir;
 				prechargep = <0x22>;
+			};
+			test_st7567: st7567@2 {
+				compatible = "sitronix,st7567";
+				reg = <0x2>;
+				width = <128>;
+				height = <64>;
+				column-offset = <0>;
+				line-offset = <0>;
+				regulation-ratio = <7>;
 			};
 		};
 	};

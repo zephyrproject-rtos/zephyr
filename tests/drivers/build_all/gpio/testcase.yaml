@@ -26,7 +26,7 @@ tests:
     depends_on: gpio
     extra_args: DTC_OVERLAY_FILE="altera.overlay"
 
-  drivers.gpio.build.adc_ads1145s0x_gpio:
+  drivers.gpio.build.adc_ads1x4s0x_gpio:
     min_ram: 32
     platform_allow:
       - m5stack_core2/esp32/procpu
@@ -40,11 +40,11 @@ tests:
       - adc
       - spi
     extra_args:
-      - DTC_OVERLAY_FILE="adc_ads1145s0x_gpio.overlay"
+      - DTC_OVERLAY_FILE="adc_ads1x4s0x_gpio.overlay"
     extra_configs:
       - CONFIG_ADC=y
       - CONFIG_ADC_INIT_PRIORITY=80
-      - CONFIG_ADC_ADS114S0X_GPIO=y
+      - CONFIG_ADC_ADS1X4S0X_GPIO=y
 
   drivers.gpio.build.adc_lmp90xxx_gpio:
     min_ram: 32

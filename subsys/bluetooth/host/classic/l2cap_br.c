@@ -21,6 +21,7 @@
 #include "host/buf_view.h"
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
+#include "host/keys.h"
 #include "l2cap_br_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
@@ -37,6 +38,8 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 
 #define L2CAP_BR_PSM_START	0x0001
 #define L2CAP_BR_PSM_END	0xffff
+#define L2CAP_BR_PSM_DYN_START	0x1000
+#define L2CAP_BR_PSM_DYN_END	L2CAP_BR_PSM_END
 
 #define L2CAP_BR_CID_DYN_START	0x0040
 #define L2CAP_BR_CID_DYN_END	0xffff
@@ -72,6 +75,9 @@ enum {
 
 	/* fixed channels flags */
 	L2CAP_FLAG_FIXED_CONNECTED,		/* fixed connected */
+
+	/* Auth failed, disconnect ACL */
+	L2CAP_FLAG_DISCONNECT_ACL,	/* Disconnect ACL */
 };
 
 static sys_slist_t br_servers;
@@ -764,7 +770,9 @@ enum l2cap_br_conn_security_result {
  * - channel connection process is on hold since there were valid security
  *   conditions triggering authentication indirectly in subcall.
  * Returns L2CAP_CONN_SECURITY_REJECT if:
- * - bt_conn_set_security API returns < 0.
+ * - bt_conn_set_security API returns < 0,
+ * - Or, the ACL connection has been encrypted, the security level of link key cannot be upgraded,
+ *   and the security level is less than the required security level.
  */
 
 static enum l2cap_br_conn_security_result
@@ -805,6 +813,18 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 		break;
 	}
 
+	if (chan->conn->sec_level < br_chan->required_sec_level &&
+	    chan->conn->encrypt && chan->conn->br.link_key &&
+	    (chan->conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED)) {
+		/*
+		 * If the ACL link has been encrypted and it has a authenticated link key, it means
+		 * the pairing procedure has been done. And the security level of the link key can
+		 * not be upgraded. In this case, if `conn->sec_level` is less than the required
+		 * security level of the L2CAP channel, reject the L2CAP conn request.
+		 */
+		return L2CAP_CONN_SECURITY_REJECT;
+	}
+
 	check = bt_conn_set_security(chan->conn, br_chan->required_sec_level);
 
 	/*
@@ -842,6 +862,22 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	return L2CAP_CONN_SECURITY_REJECT;
 }
 
+static void l2cap_br_conn_rsp_sent_cb(struct bt_conn *conn, void *user_data, int err)
+{
+	uint16_t scid = POINTER_TO_UINT(user_data);
+	struct bt_l2cap_chan *chan;
+
+	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
+	if (!chan) {
+		return;
+	}
+
+	/* Check whether the ACL connection needs to be disconnected. */
+	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_DISCONNECT_ACL)) {
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+	}
+}
+
 static void l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 				  uint16_t dcid, uint8_t ident, uint16_t result)
 {
@@ -867,7 +903,10 @@ static void l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_NO_INFO);
 	}
 
-	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+	if (bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, l2cap_br_conn_rsp_sent_cb,
+				UINT_TO_POINTER(scid))) {
+		net_buf_unref(buf);
+	}
 }
 
 static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
@@ -1067,6 +1106,8 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	case L2CAP_CONN_SECURITY_REJECT:
 	default:
 		result = BT_L2CAP_BR_ERR_SEC_BLOCK;
+		/* Set disconnect ACL flag. */
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_DISCONNECT_ACL);
 		break;
 	}
 	/* Reply on connection request as acceptor */
@@ -1075,7 +1116,12 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	if (result != BT_L2CAP_BR_SUCCESS) {
 		/* Disconnect link when security rules were violated */
 		if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
-			bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+			/*
+			 * Disconnect the ACL after the packet of response has been sent.
+			 * The `L2CAP_FLAG_DISCONNECT_ACL` is used to flag whether ACL disconnect
+			 * request needs to be sent when the L2CAP conn rsp sent out callback is
+			 * triggered.
+			 */
 		} else if (result == BT_L2CAP_BR_PENDING) {
 			/* Recover the ident when conn is pending */
 			br_chan->ident = ident;
@@ -1151,14 +1197,64 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 }
 
-int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
+static int bt_l2cap_br_allocate_psm(uint16_t *psm)
 {
-	if (server->psm < L2CAP_BR_PSM_START || !server->accept) {
-		return -EINVAL;
+	/* DYN_END is UINT16_MAX, so to be able to do a psm <= DYN_END comparison
+	 * we need to use uint32_t as the type.
+	 */
+	static uint32_t allocated_psm = L2CAP_BR_PSM_DYN_START;
+
+	if (allocated_psm < L2CAP_BR_PSM_DYN_END) {
+		allocated_psm = allocated_psm + 1;
+	} else {
+		goto failed;
 	}
 
-	/* PSM must be odd and lsb of upper byte must be 0 */
-	if ((server->psm & 0x0101) != 0x0001) {
+	for (; allocated_psm <= L2CAP_BR_PSM_DYN_END; allocated_psm++) {
+		/* Bluetooth Core Specification Version 6.0 | Vol 3, Part A, section 4.2
+		 *
+		 * The PSM field is at least two octets in length. All PSM values shall have
+		 * the least significant bit of the most significant octet equal to 0 and the
+		 * least significant bit of all other octets equal to 1.
+		 */
+		if ((allocated_psm & 0x0101) != 0x0001) {
+			continue;
+		}
+
+		if (l2cap_br_server_lookup_psm((uint16_t)allocated_psm)) {
+			LOG_DBG("PSM 0x%04x has been used", allocated_psm);
+			continue;
+		}
+
+		LOG_DBG("Allocated PSM 0x%04x for new server", allocated_psm);
+		*psm = (uint16_t)allocated_psm;
+		return 0;
+	}
+
+failed:
+	LOG_WRN("No free dynamic PSMs available");
+	return -EADDRNOTAVAIL;
+}
+
+bt_security_t bt_l2cap_br_get_max_sec_level(void)
+{
+	struct bt_l2cap_server *server;
+	bt_security_t sec_level = BT_SECURITY_L0;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&br_servers, server, node) {
+		if (sec_level < server->sec_level) {
+			sec_level = server->sec_level;
+		}
+	}
+
+	return sec_level;
+}
+
+int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
+{
+	int err;
+
+	if (!server->accept) {
 		return -EINVAL;
 	}
 
@@ -1169,10 +1265,23 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 		server->sec_level = BT_SECURITY_L1;
 	}
 
-	/* Check if given PSM is already in use */
-	if (l2cap_br_server_lookup_psm(server->psm)) {
-		LOG_DBG("PSM already registered");
-		return -EADDRINUSE;
+	if (!server->psm) {
+		err = bt_l2cap_br_allocate_psm(&server->psm);
+		if (err) {
+			return err;
+		}
+	} else {
+		/* PSM must be odd and lsb of upper byte must be 0 */
+		if ((server->psm & 0x0101) != 0x0001) {
+			LOG_WRN("PSM must be odd and lsb of upper byte must be 0");
+			return -EINVAL;
+		}
+
+		/* Check if given PSM is already in use */
+		if (l2cap_br_server_lookup_psm(server->psm)) {
+			LOG_WRN("PSM already registered");
+			return -EADDRINUSE;
+		}
 	}
 
 	LOG_DBG("PSM 0x%04x", server->psm);

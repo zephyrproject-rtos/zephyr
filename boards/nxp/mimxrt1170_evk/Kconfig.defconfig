@@ -39,9 +39,6 @@ if NETWORKING
 config NET_L2_ETHERNET
 	default y if CPU_CORTEX_M7 # No cache memory support is required for driver
 
-config ETH_MCUX_PHY_RESET
-	default y
-
 endif # NETWORKING
 
 endif

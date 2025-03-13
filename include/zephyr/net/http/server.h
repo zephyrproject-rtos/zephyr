@@ -138,6 +138,16 @@ struct http_resource_detail_static_fs {
 	const char *fs_path;
 };
 
+/** @brief HTTP compressions */
+enum http_compression {
+	HTTP_NONE = 0,     /**< NONE */
+	HTTP_GZIP = 1,     /**< GZIP */
+	HTTP_COMPRESS = 2, /**< COMPRESS */
+	HTTP_DEFLATE = 3,  /**< DEFLATE */
+	HTTP_BR = 4,       /**< BR */
+	HTTP_ZSTD = 5      /**< ZSTD */
+};
+
 /** @cond INTERNAL_HIDDEN */
 /* Make sure that the common is the first in the struct. */
 BUILD_ASSERT(offsetof(struct http_resource_detail_static_fs, common) == 0);
@@ -254,6 +264,7 @@ BUILD_ASSERT(offsetof(struct http_resource_detail_dynamic, common) == 0);
  *        reading and writing websocket data, and closing the connection.
  *
  * @param ws_socket A socket for the Websocket data.
+ * @param request_ctx Request context structure associated with HTTP upgrade request
  * @param user_data User specified data.
  *
  * @return  0 Accepting the connection, HTTP server library will no longer
@@ -261,7 +272,7 @@ BUILD_ASSERT(offsetof(struct http_resource_detail_dynamic, common) == 0);
  *            to send and receive data to/from the supplied socket.
  *         <0 error, close the connection.
  */
-typedef int (*http_resource_websocket_cb_t)(int ws_socket,
+typedef int (*http_resource_websocket_cb_t)(int ws_socket, struct http_request_ctx *request_ctx,
 					    void *user_data);
 
 /** @brief Representation of a websocket server resource */
@@ -399,6 +410,9 @@ struct http_client_ctx {
 	/** Socket descriptor associated with the server. */
 	int fd;
 
+	/** HTTP service on which the client is connected */
+	const struct http_service_desc *service;
+
 	/** Client data buffer.  */
 	unsigned char buffer[HTTP_SERVER_CLIENT_BUFFER_SIZE];
 
@@ -471,6 +485,11 @@ struct http_client_ctx {
 	IF_ENABLED(CONFIG_WEBSOCKET, (uint8_t ws_sec_key[HTTP_SERVER_WS_MAX_SEC_KEY_LEN]));
 /** @endcond */
 
+/** @cond INTERNAL_HIDDEN */
+	/** Client supported compression. */
+	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (uint8_t supported_compression));
+/** @endcond */
+
 	/** Flag indicating that HTTP2 preface was sent. */
 	bool preface_sent : 1;
 
@@ -488,6 +507,9 @@ struct http_client_ctx {
 
 	/** Flag indicating Websocket key is being processed. */
 	bool websocket_sec_key_next : 1;
+
+	/** Flag indicating accept encoding is being processed. */
+	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (bool accept_encoding_next: 1));
 
 	/** The next frame on the stream is expectd to be a continuation frame. */
 	bool expect_continuation : 1;

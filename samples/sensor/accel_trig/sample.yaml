@@ -1,15 +1,18 @@
 sample:
   name: Accelerometer trigger sample
+common:
+  tags: sensors
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
+        \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
 tests:
   sample.sensor.accel_trig:
-    harness: console
-    tags: sensors
     filter: dt_alias_exists("accel0")
     harness_config:
-      type: one_line
-      regex:
-        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
-          \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
+      fixture: fixture_sensor_accel_int
     integration_platforms:
       - frdm_k64f                       # fxos8700
     platform_exclude:
@@ -21,16 +24,28 @@ tests:
       - stm32l562e_dk
       - stm32wb5mm_dk
   sample.sensor.accel_trig.adxl362-trigger:
-    harness: console
-    tags: sensors
-    harness_config:
-      type: one_line
-      regex:
-        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
-          \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
     extra_args:
       - SHIELD=eval_adxl362_ardz
       - EXTRA_CONF_FILE=adxl362-trigger.conf
       - SNIPPET=rtt-tracing;rtt-console
     platform_allow:
       - apard32690/max32690/m4
+  sample.sensor.accel_trig.shield-tap:
+    extra_args:
+      - SHIELD=x_nucleo_iks01a3
+      - EXTRA_DTC_OVERLAY_FILE=x_nucleo_iks01a3.overlay
+      - CONFIG_SAMPLE_TAP_DETECTION=y
+    depends_on:
+      - arduino_i2c
+      - arduino_gpio
+    platform_allow:
+      - nrf52dk/nrf52832
+    integration_platforms:
+      - nrf52dk/nrf52832
+  sample.sensor.accel_trig.generic-tap:
+    filter: dt_compat_enabled("nxp,fxos8700") or dt_compat_enabled("invensense,icm42605") or
+            dt_compat_enabled("st,iis2dlpc") or dt_compat_enabled("st,lis2dw12")
+    extra_args:
+      - CONFIG_SAMPLE_TAP_DETECTION=y
+    integration_platforms:
+      - stm32f3_disco

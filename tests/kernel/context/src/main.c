@@ -57,7 +57,7 @@
 #elif defined(CONFIG_SPARC)
 #elif defined(CONFIG_MIPS)
 #elif defined(CONFIG_ARCH_POSIX)
-#if defined(CONFIG_BOARD_NATIVE_POSIX) || defined(CONFIG_BOARD_NATIVE_SIM)
+#if defined(CONFIG_BOARD_NATIVE_SIM)
 #define TICK_IRQ TIMER_TICK_IRQ
 #else
 /*
@@ -135,7 +135,7 @@ static void isr_handler(const void *data)
 			break;
 		}
 
-		if (arch_current_thread()->base.prio < 0) {
+		if (_current->base.prio < 0) {
 			isr_info.value = K_COOP_THREAD;
 			break;
 		}
@@ -643,9 +643,9 @@ ZTEST(context, test_ctx_thread)
 	TC_PRINT("Testing k_is_in_isr() from a preemptible thread\n");
 	zassert_false(k_is_in_isr(), "Should not be in ISR context");
 
-	zassert_false(arch_current_thread()->base.prio < 0,
+	zassert_false(_current->base.prio < 0,
 		      "Current thread should have preemptible priority: %d",
-		      arch_current_thread()->base.prio);
+		      _current->base.prio);
 
 }
 
@@ -683,7 +683,7 @@ static void _test_kernel_thread(k_tid_t _thread_id)
 
 	zassert_false(k_is_in_isr(), "k_is_in_isr() when called from a thread is true");
 
-	zassert_false((arch_current_thread()->base.prio >= 0),
+	zassert_false((_current->base.prio >= 0),
 		      "thread is not a cooperative thread");
 }
 

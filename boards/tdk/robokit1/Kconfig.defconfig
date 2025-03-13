@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ROBOKIT1
+
+config ADC_ADS7052_INIT_PRIORITY
+	default 60
+	depends on ADC_ADS7052
+
+config SENSOR_INIT_PRIORITY
+	default 60
+	depends on SENSOR
+
+config EEPROM_INIT_PRIORITY
+	default 60
+	depends on EEPROM
+
+endif # BOARD_ROBOKIT1

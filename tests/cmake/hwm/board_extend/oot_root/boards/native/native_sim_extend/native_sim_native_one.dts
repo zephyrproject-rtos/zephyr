@@ -52,7 +52,7 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			compatible = "zephyr,native-posix-cpu";
+			compatible = "zephyr,native-sim-cpu";
 			reg = <0>;
 		};
 	};
@@ -135,7 +135,7 @@
 
 	uart0: uart {
 		status = "okay";
-		compatible = "zephyr,native-posix-uart";
+		compatible = "zephyr,native-pty-uart";
 		/* Dummy current-speed entry to comply with serial
 		 * DTS binding
 		 */
@@ -144,7 +144,7 @@
 
 	uart1: uart_1 {
 		status = "okay";
-		compatible = "zephyr,native-posix-uart";
+		compatible = "zephyr,native-pty-uart";
 		/* Dummy current-speed entry to comply with serial
 		 * DTS binding
 		 */
@@ -153,12 +153,12 @@
 
 	rng: rng {
 		status = "okay";
-		compatible = "zephyr,native-posix-rng";
+		compatible = "zephyr,native-sim-rng";
 	};
 
 	counter0: counter {
 		status = "okay";
-		compatible = "zephyr,native-posix-counter";
+		compatible = "zephyr,native-sim-counter";
 	};
 
 	gpio0: gpio@800 {

@@ -28,17 +28,19 @@ Configuration options
 =====================
 
 - ``doxyrunner_doxygen``: Path to the Doxygen binary.
-- ``doxyrunner_doxyfile``: Path to Doxyfile.
-- ``doxyrunner_outdir``: Doxygen build output directory (inserted to
-  ``OUTPUT_DIRECTORY``)
-- ``doxyrunner_outdir_var``: Variable representing the Doxygen build output
-  directory, as used by ``OUTPUT_DIRECTORY``. This can be useful if other
-  Doxygen variables reference to the output directory.
-- ``doxyrunner_fmt``: Flag to indicate if Doxyfile should be formatted.
-- ``doxyrunner_fmt_vars``: Format variables dictionary (name: value).
-- ``doxyrunner_fmt_pattern``: Format pattern.
 - ``doxyrunner_silent``: If Doxygen output should be logged or not. Note that
   this option may not have any effect if ``QUIET`` is set to ``YES``.
+- ``doxyrunner_projects``: Dictionary specifying projects, keys being project
+  name and values a dictionary with the following keys:
+
+  - ``doxyfile``: Path to Doxyfile.
+  - ``outdir``: Doxygen build output directory (inserted to ``OUTPUT_DIRECTORY``)
+  - ``outdir_var``: Variable representing the Doxygen build output directory,
+    as used by ``OUTPUT_DIRECTORY``. This can be useful if other Doxygen
+    variables reference to the output directory.
+  - ``fmt``: Flag to indicate if Doxyfile should be formatted.
+  - ``fmt_vars``: Format variables dictionary (name: value).
+  - ``fmt_pattern``: Format pattern.
 """
 
 import filecmp
@@ -193,7 +195,7 @@ def process_doxyfile(
     return content
 
 
-def doxygen_input_has_changed(env: BuildEnvironment, doxyfile: str) -> bool:
+def doxygen_input_has_changed(env: BuildEnvironment, name, doxyfile: str) -> bool:
     """Check if Doxygen input files have changed.
 
     Args:
@@ -224,12 +226,15 @@ def doxygen_input_has_changed(env: BuildEnvironment, doxyfile: str) -> bool:
                 for p_file in path.glob("**/" + pattern):
                     cache.add(hash_file(p_file))
 
+    if not hasattr(env, "doxyrunner_cache"):
+        env.doxyrunner_cache = dict()
+
     # check if any file has changed
-    if hasattr(env, "doxyrunner_cache") and env.doxyrunner_cache == cache:
+    if env.doxyrunner_cache.get(name) == cache:
         return False
 
     # store current state
-    env.doxyrunner_cache = cache
+    env.doxyrunner_cache[name] = cache
 
     return True
 
@@ -341,53 +346,52 @@ def doxygen_build(app: Sphinx) -> None:
         app: Sphinx application instance.
     """
 
-    if app.config.doxyrunner_outdir:
-        outdir = Path(app.config.doxyrunner_outdir)
-    else:
-        outdir = Path(app.outdir) / "_doxygen"
+    for name, config in app.config.doxyrunner_projects.items():
+        if config.get("outdir"):
+            outdir = Path(config["outdir"])
+        else:
+            outdir = Path(app.outdir) / "_doxygen" / name
 
-    outdir.mkdir(exist_ok=True)
-    tmp_outdir = outdir / "tmp"
+        outdir.mkdir(exist_ok=True)
+        tmp_outdir = outdir / "tmp"
 
-    logger.info("Preparing Doxyfile...")
-    doxyfile = process_doxyfile(
-        app.config.doxyrunner_doxyfile,
-        tmp_outdir,
-        app.config.doxyrunner_silent,
-        app.config.doxyrunner_fmt,
-        app.config.doxyrunner_fmt_pattern,
-        app.config.doxyrunner_fmt_vars,
-        app.config.doxyrunner_outdir_var,
-    )
+        logger.info("Preparing Doxyfile...")
+        doxyfile = process_doxyfile(
+            config["doxyfile"],
+            tmp_outdir,
+            app.config.doxyrunner_silent,
+            config.get("fmt", False),
+            config.get("fmt_pattern", "@{}@"),
+            config.get("fmt_vars", {}),
+            config.get("outdir_var"),
+        )
 
-    logger.info("Checking if Doxygen needs to be run...")
-    app.env.doxygen_input_changed = doxygen_input_has_changed(app.env, doxyfile)
-    if not app.env.doxygen_input_changed:
-        logger.info("Doxygen build will be skipped (no changes)!")
-        return
+        logger.info(f"Checking if Doxygen needs to be run for {name}...")
+        if not hasattr(app.env, "doxygen_input_changed"):
+            app.env.doxygen_input_changed = dict()
 
-    logger.info("Running Doxygen...")
-    run_doxygen(
-        app.config.doxyrunner_doxygen,
-        doxyfile,
-        app.config.doxyrunner_silent,
-    )
+        app.env.doxygen_input_changed[name] = doxygen_input_has_changed(app.env, name, doxyfile)
+        if not app.env.doxygen_input_changed[name]:
+            logger.info(f"Doxygen build for {name} will be skipped (no changes)!")
+            return
 
-    logger.info("Syncing Doxygen output...")
-    sync_doxygen(doxyfile, tmp_outdir, outdir)
+        logger.info(f"Running Doxygen for {name}...")
+        run_doxygen(
+            app.config.doxyrunner_doxygen,
+            doxyfile,
+            app.config.doxyrunner_silent,
+        )
 
-    shutil.rmtree(tmp_outdir)
+        logger.info(f"Syncing Doxygen output for {name}...")
+        sync_doxygen(doxyfile, tmp_outdir, outdir)
+
+        shutil.rmtree(tmp_outdir)
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("doxyrunner_doxygen", "doxygen", "env")
-    app.add_config_value("doxyrunner_doxyfile", None, "env")
-    app.add_config_value("doxyrunner_outdir", None, "env")
-    app.add_config_value("doxyrunner_outdir_var", None, "env")
-    app.add_config_value("doxyrunner_fmt", False, "env")
-    app.add_config_value("doxyrunner_fmt_vars", {}, "env")
-    app.add_config_value("doxyrunner_fmt_pattern", "@{}@", "env")
     app.add_config_value("doxyrunner_silent", True, "")
+    app.add_config_value("doxyrunner_projects", {}, "")
 
     app.connect("builder-inited", doxygen_build)
 

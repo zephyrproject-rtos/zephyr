@@ -82,6 +82,8 @@ config SENSOR_SHELL_MAX_TRIGGER_DEVICES
 config SENSOR_INFO
 	bool "Sensor Info iterable section"
 
+source "drivers/sensor/Kconfig.sensor_clock"
+
 comment "Device Drivers"
 
 # zephyr-keep-sorted-start
@@ -97,11 +99,13 @@ source "drivers/sensor/ite/Kconfig"
 source "drivers/sensor/jedec/Kconfig"
 source "drivers/sensor/maxim/Kconfig"
 source "drivers/sensor/meas/Kconfig"
+source "drivers/sensor/melexis/Kconfig"
 source "drivers/sensor/memsic/Kconfig"
 source "drivers/sensor/microchip/Kconfig"
 source "drivers/sensor/nordic/Kconfig"
 source "drivers/sensor/nuvoton/Kconfig"
 source "drivers/sensor/nxp/Kconfig"
+source "drivers/sensor/pixart/Kconfig"
 source "drivers/sensor/renesas/Kconfig"
 source "drivers/sensor/rohm/Kconfig"
 source "drivers/sensor/seeed/Kconfig"
@@ -146,6 +150,7 @@ source "drivers/sensor/th02/Kconfig"
 source "drivers/sensor/tsic_xx6/Kconfig"
 source "drivers/sensor/veaa_x_3/Kconfig"
 source "drivers/sensor/voltage_divider/Kconfig"
+source "drivers/sensor/xbr818/Kconfig"
 source "drivers/sensor/ene_tach_kb1200/Kconfig"
 
 endif # SENSOR

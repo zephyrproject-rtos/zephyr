@@ -1,33 +1,30 @@
 /*
- * Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT espressif_esp32_timer
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <soc/rtc_cntl_reg.h>
-#include <soc/timer_group_reg.h>
-#include <periph_ctrl.h>
+#include <esp_clk_tree.h>
 #include <driver/timer_types_legacy.h>
-#include <soc/periph_defs.h>
 #include <hal/timer_hal.h>
 #include <hal/timer_ll.h>
-#include <string.h>
+
 #include <zephyr/drivers/counter.h>
-#include <zephyr/spinlock.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/kernel.h>
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_RISCV)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_RISCV)
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t
@@ -47,6 +44,8 @@ struct timer_isr_func_t {
 struct counter_esp32_config {
 	struct counter_config_info counter_info;
 	timer_config_t config;
+	const struct device *clock_dev;
+	const clock_control_subsys_t clock_subsys;
 	timer_group_t group;
 	timer_idx_t index;
 	int irq_source;
@@ -57,31 +56,24 @@ struct counter_esp32_config {
 struct counter_esp32_data {
 	struct counter_alarm_cfg alarm_cfg;
 	uint32_t ticks;
+	uint32_t clock_src_hz;
 	timer_hal_context_t hal_ctx;
 	struct timer_isr_func_t timer_isr_fun;
 };
-
-static struct k_spinlock lock;
 
 static int counter_esp32_init(const struct device *dev)
 {
 	const struct counter_esp32_config *cfg = dev->config;
 	struct counter_esp32_data *data = dev->data;
 
-	switch (cfg->group) {
-	case TIMER_GROUP_0:
-		periph_module_enable(PERIPH_TIMG0_MODULE);
-		break;
-#if !defined(CONFIG_SOC_SERIES_ESP32C2)
-	case TIMER_GROUP_1:
-		periph_module_enable(PERIPH_TIMG1_MODULE);
-		break;
-#endif
-	default:
-		return -ENOTSUP;
+	if (!device_is_ready(cfg->clock_dev)) {
+		return -ENODEV;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	/* Return value is not checked below, as clock might have been already enabled
+	 * by another timer of the same group.
+	 */
+	clock_control_on(cfg->clock_dev, cfg->clock_subsys);
 
 	timer_hal_init(&data->hal_ctx, cfg->group, cfg->index);
 	data->alarm_cfg.callback = NULL;
@@ -90,6 +82,8 @@ static int counter_esp32_init(const struct device *dev)
 	timer_ll_clear_intr_status(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id));
 	timer_ll_enable_auto_reload(data->hal_ctx.dev, data->hal_ctx.timer_id,
 				    cfg->config.auto_reload);
+	timer_ll_set_clock_source(data->hal_ctx.dev, data->hal_ctx.timer_id,
+				  GPTIMER_CLK_SRC_DEFAULT);
 	timer_ll_set_clock_prescale(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->config.divider);
 	timer_ll_set_count_direction(data->hal_ctx.dev, data->hal_ctx.timer_id,
 				     cfg->config.counter_dir);
@@ -97,7 +91,8 @@ static int counter_esp32_init(const struct device *dev)
 	timer_ll_set_reload_value(data->hal_ctx.dev, data->hal_ctx.timer_id, 0);
 	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->config.counter_en);
 
-	k_spin_unlock(&lock, key);
+	esp_clk_tree_src_get_freq_hz(GPTIMER_CLK_SRC_DEFAULT,
+				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &data->clock_src_hz);
 
 	int ret = esp_intr_alloc(cfg->irq_source,
 				 ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
@@ -114,10 +109,8 @@ static int counter_esp32_init(const struct device *dev)
 static int counter_esp32_start(const struct device *dev)
 {
 	struct counter_esp32_data *data = dev->data;
-	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_START);
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -125,10 +118,8 @@ static int counter_esp32_start(const struct device *dev)
 static int counter_esp32_stop(const struct device *dev)
 {
 	struct counter_esp32_data *data = dev->data;
-	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_PAUSE);
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -136,12 +127,9 @@ static int counter_esp32_stop(const struct device *dev)
 static int counter_esp32_get_value(const struct device *dev, uint32_t *ticks)
 {
 	struct counter_esp32_data *data = dev->data;
-	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	timer_ll_trigger_soft_capture(data->hal_ctx.dev, data->hal_ctx.timer_id);
 	*ticks = (uint32_t)timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
-
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -149,12 +137,9 @@ static int counter_esp32_get_value(const struct device *dev, uint32_t *ticks)
 static int counter_esp32_get_value_64(const struct device *dev, uint64_t *ticks)
 {
 	struct counter_esp32_data *data = dev->data;
-	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	timer_ll_trigger_soft_capture(data->hal_ctx.dev, data->hal_ctx.timer_id);
 	*ticks = timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
-
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -168,8 +153,6 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	counter_esp32_get_value(dev, &now);
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
 		timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id,
 					 (now + alarm_cfg->ticks));
@@ -182,7 +165,6 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 	timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_ALARM_EN);
 	data->alarm_cfg.callback = alarm_cfg->callback;
 	data->alarm_cfg.user_data = alarm_cfg->user_data;
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -192,12 +174,9 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	ARG_UNUSED(chan_id);
 	struct counter_esp32_data *data = dev->data;
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
 	timer_ll_enable_intr(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id),
 			     false);
 	timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_ALARM_DIS);
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -227,6 +206,14 @@ static uint32_t counter_esp32_get_top_value(const struct device *dev)
 	return config->counter_info.max_top_value;
 }
 
+uint32_t counter_esp32_get_freq(const struct device *dev)
+{
+	const struct counter_esp32_config *config = dev->config;
+	struct counter_esp32_data *data = dev->data;
+
+	return data->clock_src_hz / config->config.divider;
+}
+
 static DEVICE_API(counter, counter_api) = {
 	.start = counter_esp32_start,
 	.stop = counter_esp32_stop,
@@ -237,6 +224,7 @@ static DEVICE_API(counter, counter_api) = {
 	.set_top_value = counter_esp32_set_top_value,
 	.get_pending_int = counter_esp32_get_pending_int,
 	.get_top_value = counter_esp32_get_top_value,
+	.get_freq = counter_esp32_get_freq,
 };
 
 static void counter_esp32_isr(void *arg)
@@ -255,13 +243,6 @@ static void counter_esp32_isr(void *arg)
 	timer_ll_clear_intr_status(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id));
 }
 
-#if defined(CONFIG_SOC_SERIES_ESP32C2)
-#define CLK_LL_PLL_40M_FREQ MHZ(40)
-#define CLOCK_SOURCE_FREQ   CLK_LL_PLL_40M_FREQ
-#else
-#define CLOCK_SOURCE_FREQ APB_CLK_FREQ
-#endif
-
 #define ESP32_COUNTER_GET_CLK_DIV(idx)                                                             \
 	(((DT_INST_PROP(idx, prescaler) & UINT16_MAX) < 2)                                         \
 		 ? 2                                                                               \
@@ -273,7 +254,6 @@ static void counter_esp32_isr(void *arg)
                                                                                                    \
 	static const struct counter_esp32_config counter_config_##idx = {                          \
 		.counter_info = {.max_top_value = UINT32_MAX,                                      \
-				 .freq = (CLOCK_SOURCE_FREQ / ESP32_COUNTER_GET_CLK_DIV(idx)),     \
 				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
 				 .channels = 1},                                                   \
 		.config =                                                                          \
@@ -285,6 +265,8 @@ static void counter_esp32_isr(void *arg)
 				.auto_reload = TIMER_AUTORELOAD_DIS,                               \
 				.divider = ESP32_COUNTER_GET_CLK_DIV(idx),                         \
 			},                                                                         \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
 		.group = DT_INST_PROP(idx, group),                                                 \
 		.index = DT_INST_PROP(idx, index),                                                 \
 		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),                                     \

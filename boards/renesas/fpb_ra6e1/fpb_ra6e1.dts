@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,6 +7,8 @@
 
 #include <renesas/ra/ra6/r7fa6e10f2cfp.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 #include "fpb_ra6e1-pinctrl.dtsi"
 
@@ -16,9 +18,11 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash1;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -33,8 +37,18 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+		button0: s1 {
+			gpios = <&ioport2 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
 	};
 };
 
@@ -65,6 +79,10 @@
 	status = "okay";
 };
 
+&ioport2 {
+	status = "okay";
+};
+
 &ioport4 {
 	status = "okay";
 };
@@ -80,20 +98,44 @@
 	status = "okay";
 };
 
-&flash0 {
+&flash1 {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		boot_partition: partition@0 {
-			label = "application";
-			reg = <0x00000000 DT_SIZE_K(512)>;
-		};
-
-		storage_partition: partition@80000 {
+		storage_partition: partition@0 {
 			label = "storage";
-			reg = <0x80000 DT_SIZE_K(512)>;
+			reg = <0X0 DT_SIZE_K(8)>;
 		};
 	};
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&port_irq1 {
+	interrupts = <41 12>;
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	interrupts = <63 1>, <64 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
 };

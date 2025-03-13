@@ -921,32 +921,6 @@ int z_ztest_run_test_suite(const char *name, bool shuffle,
 K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #endif
 
-static void __ztest_init_unit_test_result_for_suite(struct ztest_suite_node *suite)
-{
-	struct ztest_unit_test *test = NULL;
-
-	while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
-		test->stats->run_count = 0;
-		test->stats->skip_count = 0;
-		test->stats->fail_count = 0;
-		test->stats->pass_count = 0;
-		test->stats->duration_worst_ms = 0;
-	}
-}
-
-static void flush_log(void)
-{
-	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
-		while (log_data_pending()) {
-			k_sleep(K_MSEC(10));
-		}
-		k_sleep(K_MSEC(10));
-	} else {
-		while (LOG_PROCESS()) {
-		}
-	}
-}
-
 /* Show one line summary for a test suite.
  */
 static void __ztest_show_suite_summary_oneline(struct ztest_suite_node *suite)
@@ -994,7 +968,7 @@ static void __ztest_show_suite_summary_oneline(struct ztest_suite_node *suite)
 			 TC_RESULT_TO_STR(suite_result), passrate_major, passrate_minor,
 			 suite->name, distinct_pass, distinct_fail, distinct_skip, distinct_total,
 			 suite_duration_worst_ms / 1000, suite_duration_worst_ms % 1000);
-	flush_log();
+	log_flush();
 }
 
 static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
@@ -1035,12 +1009,12 @@ static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
 
 		if (flush_frequency % 3 == 0) {
 			/** Reduce the flush frequency a bit to speed up the output */
-			flush_log();
+			log_flush();
 		}
 		flush_frequency++;
 	}
 	TC_SUMMARY_PRINT("\n");
-	flush_log();
+	log_flush();
 }
 
 static void __ztest_show_suite_summary(void)
@@ -1051,9 +1025,9 @@ static void __ztest_show_suite_summary(void)
 	/* Flush the log a lot to ensure that no summary content
 	 * is dropped if it goes through the logging subsystem.
 	 */
-	flush_log();
+	log_flush();
 	TC_SUMMARY_PRINT("\n------ TESTSUITE SUMMARY START ------\n\n");
-	flush_log();
+	log_flush();
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
 	     ptr < _ztest_suite_node_list_end; ++ptr) {
 
@@ -1061,7 +1035,7 @@ static void __ztest_show_suite_summary(void)
 		__ztest_show_suite_summary_verbose(ptr);
 	}
 	TC_SUMMARY_PRINT("------ TESTSUITE SUMMARY END ------\n\n");
-	flush_log();
+	log_flush();
 }
 
 static int __ztest_run_test_suite(struct ztest_suite_node *ptr, const void *state, bool shuffle,
@@ -1105,9 +1079,6 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 	z_ztest_shuffle(shuffle, (void **)suites_to_run, (intptr_t)_ztest_suite_node_list_start,
 			ZTEST_SUITE_COUNT, sizeof(struct ztest_suite_node));
 	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
-		__ztest_init_unit_test_result_for_suite(suites_to_run[i]);
-	}
-	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
 		count += __ztest_run_test_suite(suites_to_run[i], state, shuffle, suite_iter,
 						case_iter, param);
 		/* Stop running tests if we have a critical error or if we have a failure and
@@ -1121,7 +1092,6 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 #else
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
 	     ptr < _ztest_suite_node_list_end; ++ptr) {
-		__ztest_init_unit_test_result_for_suite(ptr);
 		count += __ztest_run_test_suite(ptr, state, shuffle, suite_iter, case_iter, param);
 		/* Stop running tests if we have a critical error or if we have a failure and
 		 * FAIL_FAST was set
@@ -1378,7 +1348,6 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
 	     ptr < _ztest_suite_node_list_end; ++ptr) {
-		__ztest_init_unit_test_result_for_suite(ptr);
 		if (strcmp(shell_command, "run-testcase") == 0) {
 			count += __ztest_run_test_suite(ptr, NULL, shuffle, 1, repeat_iter, param);
 		} else if (strcmp(shell_command, "run-testsuite") == 0) {
@@ -1474,7 +1443,7 @@ int main(void)
 #ifndef CONFIG_ZTEST_SHELL
 	test_main();
 	end_report();
-	flush_log();
+	log_flush();
 	LOG_PANIC();
 	if (IS_ENABLED(CONFIG_ZTEST_RETEST_IF_PASSED)) {
 		static __noinit struct {

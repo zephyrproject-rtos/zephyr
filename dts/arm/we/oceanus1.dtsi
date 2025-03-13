@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2024 Würth Elektronik eiSos GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/wl/stm32wle5Xc.dtsi>
+#include <st/wl/stm32wle5ccux-pinctrl.dtsi>
+
+&clk_lse {
+	clock-frequency = <32768>;
+	driving-capability = <1>;
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(32)>;
+	hse-tcxo;
+	status = "okay";
+};
+
+&subghzspi {
+	status = "okay";
+	lora: radio@0 {
+		status = "okay";
+		antenna-enable-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>; /* RF_SW_VCC */
+		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>; /* RF_SW_CTRL1 */
+		rx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>; /* RF_SW_CTRL1 */
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <1>;
+		power-amplifier-output = "rfo-lp";
+		rfo-lp-max-power = <14>;
+	};
+};

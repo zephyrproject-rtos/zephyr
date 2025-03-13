@@ -15,7 +15,8 @@
 	!defined(CONFIG_EAP_PSK) && !defined(CONFIG_EAP_PAX) && \
 	!defined(CONFIG_EAP_SAKE) && !defined(CONFIG_EAP_GPSK) && \
 	!defined(CONFIG_EAP_PWD) && !defined(CONFIG_EAP_EKE) && \
-	!defined(CONFIG_EAP_IKEV2) && !defined(CONFIG_EAP_GTC)
+	!defined(CONFIG_EAP_IKEV2) && !defined(CONFIG_EAP_GTC) && \
+	!defined(CONFIG_EAP_LEAP)
 #error "At least one of the following EAP methods need to be defined    \
 	CONFIG_EAP_TLS    \
 	CONFIG_EAP_TTLS   \

@@ -149,13 +149,6 @@ used.
 
    3. From the CMake variable cache
 
-   Furthermore if ``CONF_FILE`` is set as single configuration file of the
-   form :file:`prj_<build>.conf` and if file
-   :file:`boards/<BOARD>_<build>.conf` exists in same folder as file
-   :file:`prj_<build>.conf`, the result of merging :file:`prj_<build>.conf` and
-   :file:`boards/<BOARD>_<build>.conf` is used - note that this feature is
-   deprecated, :ref:`application-file-suffixes` should be used instead.
-
 #. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
    configuration directory, the result of merging it with :file:`prj.conf` is
    used.

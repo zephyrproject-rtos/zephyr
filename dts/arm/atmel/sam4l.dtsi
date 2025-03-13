@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2020-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,10 @@
 #include <zephyr/dt-bindings/clock/atmel_sam_pmc.h>
 
 / {
+	aliases {
+		watchdog0 = &wdt;
+	};
+
 	chosen {
 		zephyr,flash-controller = &flashcalw;
 		zephyr,entropy = &trng;
@@ -235,6 +239,14 @@
 		uid: device_uid@80020c {
 			compatible = "atmel,sam4l-uid";
 			reg = <0x80020c 0xf>;
+			status = "okay";
+		};
+
+		wdt: watchdog@400f0c00 {
+			compatible = "atmel,sam4l-watchdog";
+			reg = <0x400f0c00 0x400>;
+			interrupts = <44 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 99>;
 			status = "okay";
 		};
 	};

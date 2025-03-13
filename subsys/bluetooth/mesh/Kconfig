@@ -126,10 +126,12 @@ config BT_MESH_WORKQ_SYS
 	  refer to BT_MESH_ADV_STACK_SIZE for the recommended minimum.
 
 	  When this option is enabled and the mesh tries to send a message,
-	  and the host ran out the HCI command buffers controlled by
-	  CONFIG_BT_BUF_CMD_TX_COUNT, the host returns -ENOBUFS immediately
-	  and the mesh drops the message transmission. To mitigate this
-	  issue, make sure to have sufficient number of HCI command buffers.
+	  and the host ran out of the HCI command buffers controlled by
+	  CONFIG_BT_BUF_CMD_TX_COUNT, the system work queue will be blocked
+	  until an HCI command buffer has been freed. This may cause a deadlock
+	  where the host cannot use the system workqueue to free the buffer
+	  that the mesh is waiting for. To mitigate this issue, make sure to
+	  have a sufficient number of HCI command buffers.
 	  When this option is enabled, the latency of sending mesh messages
 	  will be affected by other users on the system work queue, resulting in
 	  reduced reliability for sending mesh messages.
@@ -1040,6 +1042,30 @@ config BT_MESH_BLOB_IO_FLASH
 	  Enable the BLOB flash stream for reading and writing BLOBs directly to
 	  and from flash.
 
+if BT_MESH_BLOB_IO_FLASH
+
+config BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE
+	bool "BLOB flash support for devices without erase"
+	default y if FLASH_HAS_NO_EXPLICIT_ERASE
+	depends on FLASH_HAS_NO_EXPLICIT_ERASE
+	help
+	  Enable path supporting devices without erase. This option appears only
+	  if there are devices without explicit erase requirements in the system
+	  and may be disabled to reduce code size in case when no operations
+	  are intended on such type of devices.
+
+config BT_MESH_BLOB_IO_FLASH_WITH_ERASE
+	bool "BLOB flash support for devices with erase"
+	default y if FLASH_HAS_EXPLICIT_ERASE
+	depends on FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable path supporting devices with erase. This option appears only
+	  if there are devices requiring erase,  before write, in the system
+	  and may be disabled to reduce code size in case when no operations
+	  are intended on such type of devices.
+
+endif # BT_MESH_BLOB_IO_FLASH
+
 config BT_MESH_DFU_SRV
 	bool "Support for Firmware Update Server model"
 	depends on BT_MESH_MODEL_EXTENSIONS
@@ -1452,6 +1478,10 @@ config BT_MESH_SOL_ADV_XMIT
 
 endmenu # Proxy
 
+config BT_MESH_SECURE_STORAGE
+	bool
+	depends on SECURE_STORAGE
+
 choice BT_MESH_CRYPTO_LIB
 	prompt "Crypto library:"
 	default BT_MESH_USES_TFM_PSA if BUILD_WITH_TFM
@@ -1473,8 +1503,7 @@ config BT_MESH_USES_TINYCRYPT
 	  Use TinyCrypt library to perform crypto operations.
 
 config BT_MESH_USES_MBEDTLS_PSA
-	bool "mbed TLS PSA [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "mbed TLS PSA"
 	select MBEDTLS
 	select MBEDTLS_PSA_CRYPTO_C
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
@@ -1484,44 +1513,25 @@ config BT_MESH_USES_MBEDTLS_PSA
 	select PSA_WANT_ALG_CMAC
 	select PSA_WANT_ALG_ECB_NO_PADDING
 	select PSA_WANT_KEY_TYPE_AES
-	select MBEDTLS_AES_ROM_TABLES
 	select PSA_WANT_ALG_CCM
 	select PSA_WANT_KEY_TYPE_HMAC
 	select PSA_WANT_ALG_HMAC
 	select PSA_WANT_ALG_SHA_256
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_ECC_SECP_R1_256
+	select BT_MESH_SECURE_STORAGE if BT_SETTINGS
+	imply MBEDTLS_AES_ROM_TABLES
 	help
-	  Use Mbed TLS as PSA Crypto API provider. This is useful on platforms
-	  that do not support TF-M.
-	  This feature is experimental and only BabbleSim tests were run.
+	  Use Mbed TLS as PSA Crypto API provider.
 
 config BT_MESH_USES_TFM_PSA
-	bool "Use TF-M PSA [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "TF-M PSA"
 	depends on BUILD_WITH_TFM
 	help
 	  Use TF-M as PSA Crypto API provider. This is only possible on platforms
 	  that support TF-M.
-	  This feature is experimental.
 
 endchoice
-
-if BT_MESH_USES_MBEDTLS_PSA || BT_MESH_USES_TFM_PSA
-
-config BT_MESH_PSA_KEY_ID_USER_MIN_OFFSET
-	int "Offset of BLE Mesh key id range regarding PSA_KEY_ID_USER_MIN"
-	default 0
-	help
-	  The PSA specification mandates to set key identifiers for keys
-	  with persistent lifetime. The users of the PSA API is responsible
-	  (BLE Mesh is user of PSA API) to provide correct and unique identifiers.
-	  The BLE Mesh identifier range should be between PSA_KEY_ID_USER_MIN and
-	  PSA_KEY_ID_USER_MAX. BLE Mesh requires two ids for each subnetwork, two ids
-	  for each application key, and two ids for the device key and device key candidate.
-	  It should consider the Mesh Configuration Database instances if database enabled.
-
-endif # BT_MESH_USES_MBEDTLS_PSA || BT_MESH_USES_TFM_PSA
 
 menu "Beacons"
 

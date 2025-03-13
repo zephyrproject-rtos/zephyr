@@ -15,8 +15,9 @@ supported:
   - entropy
   - pwm
   - dma
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
+  - xiao_adc
+  - xiao_gpio
+  - xiao_i2c
+  - xiao_serial
+  - xiao_spi
 vendor: seeed

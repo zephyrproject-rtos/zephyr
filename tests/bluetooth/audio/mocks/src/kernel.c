@@ -1,11 +1,16 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  * Copyright (c) 2023 Codecoup
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/fff.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/slist.h>
 
@@ -126,6 +131,40 @@ int32_t k_sleep(k_timeout_t timeout)
 		(void)sys_slist_remove(&work_pending, NULL, &work->node);
 		work->handler(work);
 	}
+
+	return 0;
+}
+static bool mutex_locked;
+
+int k_mutex_init(struct k_mutex *mutex)
+{
+	mutex_locked = false;
+
+	return 0;
+}
+
+int k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
+{
+	if (mutex_locked) {
+		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			return -EBUSY;
+		} else {
+			return -EAGAIN;
+		}
+	}
+
+	mutex_locked = true;
+
+	return 0;
+}
+
+int k_mutex_unlock(struct k_mutex *mutex)
+{
+	if (!mutex_locked) {
+		return -EINVAL;
+	}
+
+	mutex_locked = false;
 
 	return 0;
 }

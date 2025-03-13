@@ -6,7 +6,8 @@ tests:
   sample.boards.mimxrt1060_evk.system_off:
     build_only: true
     platform_allow:
-      - mimxrt1060_evk
-      - mimxrt1060_evkb
+      - mimxrt1060_evk@A/mimxrt1062/qspi
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+      - mimxrt1060_evk@C/mimxrt1062/qspi
     integration_platforms:
-      - mimxrt1060_evk
+      - mimxrt1060_evk/mimxrt1062/qspi

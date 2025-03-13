@@ -1,0 +1,28 @@
+identifier: myra_sip_baseboard
+name: Myra SiP Baseboard
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 512
+supported:
+  - nvs
+  - pwm
+  - i2c
+  - gpio
+  - usb device
+  - spi
+  - watchdog
+  - dma
+  - can
+  - rtc
+  - sensors
+  - eeprom
+testing:
+  timeout_multiplier: 3
+  renode:
+    uart: sysbus.lpuart1
+    resc: boards/antmicro/myra_sip_baseboard/support/myra_sip_baseboard.resc
+vendor: antmicro

@@ -67,39 +67,7 @@ More information about STM32F446ZE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f446ze board configuration supports the following hardware features:
-
-+-------------+------------+-------------------------------------+
-| Interface   | Controller | Driver/Component                    |
-+=============+============+=====================================+
-| NVIC        | on-chip    | nested vector interrupt controller  |
-+-------------+------------+-------------------------------------+
-| UART        | on-chip    | serial port                         |
-+-------------+------------+-------------------------------------+
-| PINMUX      | on-chip    | pinmux                              |
-+-------------+------------+-------------------------------------+
-| GPIO        | on-chip    | gpio                                |
-+-------------+------------+-------------------------------------+
-| PWM         | on-chip    | pwm                                 |
-+-------------+------------+-------------------------------------+
-| I2C         | on-chip    | i2c                                 |
-+-------------+------------+-------------------------------------+
-| USB         | on-chip    | usb                                 |
-+-------------+------------+-------------------------------------+
-| Backup SRAM | on-chip    | Backup SRAM                         |
-+-------------+------------+-------------------------------------+
-| CAN 1/2     | on-chip    | Controller Area Network             |
-+-------------+------------+-------------------------------------+
-| ADC         | on-chip    | Analog Input                        |
-+-------------+------------+-------------------------------------+
-| DAC         | on-chip    | Analog Output                       |
-+-------------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f446ze/nucleo_f446ze_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

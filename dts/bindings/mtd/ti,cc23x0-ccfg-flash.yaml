@@ -1,0 +1,161 @@
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This binding describes the TI CC23X0 flash CCFG (custom configuration)
+  area content.
+
+  Notes:
+    The flash CCFG sector node (e.g. flash1) should have both
+    "ti,cc23x0-ccfg-flash" and the "soc-nv-flash" compatibles.
+    The latter is used from mcuboot and other modules to identify
+    the flash area.
+
+compatible: "ti,cc23x0-ccfg-flash"
+
+include: soc-nv-flash.yaml
+
+properties:
+  ti,bldr-vtor-flash:
+    type: int
+    description: |
+      Bootloader entry point when a boot from flash is selected.
+      Valid range: 0 - 0x0effffff
+      Default is 0, which is the standard initial configuration.
+    default: 0
+
+  ti,serial-io-cfg-index:
+    type: int
+    description: |
+      Index of which I/O mapping to use for UART/SPI.
+      Valid range: 0 - 2
+      Default is 0, which is the standard initial configuration. Other values can be
+      used depending on I/O availability.
+    default: 0
+
+  ti,pin-trigger:
+    type: boolean
+    description: |
+      If not present, then bootloader unconditionally triggers.
+      Else normal pin trigger check is performed.
+
+  ti,pin-trigger-dio:
+    type: int
+    description: |
+      Index of DIO pin to use for pin trigger check.
+      Valid range: 0 - 25
+      Default is 0, which is the standard initial configuration. Other values can be
+      used depending on DIO availability.
+    default: 0
+
+  ti,pin-trigger-level-hi:
+    type: boolean
+    description: |
+      If not present, then the level on trigger pin that triggers bootloader is low.
+      Else level that triggers bootloader is high.
+
+  ti,debug-port:
+    type: boolean
+    description: |
+      If not present, then the SWD port is disabled altogether at a certain point in boot
+      before invoking either bootloader or application.
+
+  ti,energy-trace:
+    type: boolean
+    description: |
+      Allows using EnergyTrace power analyzer tool.
+      EnergyTrace software is an energy-based code analysis tool that measures
+      and displays the energy profile of an application and helps optimize it for
+      ultra-low-power consumption.
+
+  ti,flash-verify:
+    type: boolean
+    description: |
+      Determines whether flash verifying SACI commands are allowed. These commands only check
+      integrity against a provided CRC32 value, never return any flash contents. Flash verify
+      commands are always allowed after a chip erase and until the first reset after the CCFG
+      sector has been programmed.
+
+  ti,flash-program:
+    type: boolean
+    description: |
+      Determines whether flash programming SACI commands are allowed.
+      Reset to allowed after a chip erase.
+
+  ti,chip-erase:
+    type: boolean
+    description: |
+      Determines whether chip erasing SACI commands are allowed.
+
+  ti,ret-to-factory:
+    type: boolean
+    description: |
+      Allows return-to-factory procedure by SACI.
+      To do full failure analysis including flash, a return to factory procedure is supported.
+
+  ti,wr-er-prot-sect0-31:
+    type: int
+    description: |
+      Bitmask for write/erase protection of individual sectors in sector range [0, 31].
+      Controls whether flash programming is allowed through SACI. The same mechanism
+      controls whether the application is allowed to program these sectors.
+      0 = protected.
+      Valid range: 0 - 0xffffffff
+      Default is 0xffffffff to allow programming these sectors.
+    default: 0xffffffff
+
+  ti,wr-er-prot-sect32-255:
+    type: int
+    description: |
+      Bitmask for write/erase protection of groups of 8 sectors, in sector range [32, 255].
+      Bit i protects sectors [32 + 8i, 39 + 8i].
+      0 = protected.
+      Valid range: 0 - 0xffffffff
+      Default is 0xffffffff to allow programming these sectors.
+    default: 0xffffffff
+
+  ti,wr-er-prot-ccfg-sect:
+    type: int
+    description: |
+      Bitmask for write/erase protection of CCFG sectors.
+      Valid range: 0 - 0xffffffff
+      Default is 0 to prevent from mistakenly programming these sectors.
+    default: 0
+
+  ti,wr-er-prot-fcfg-sect:
+    type: int
+    description: |
+      Bitmask for write/erase protection of FCFG sectors.
+      Valid range: 0 - 0xffffffff
+      Default is 0 to prevent from mistakenly programming these sectors.
+    default: 0
+
+  ti,wr-er-prot-engr-sect:
+    type: int
+    description: |
+      Bitmask for write/erase protection of ENGR sectors.
+      Valid range: 0 - 0xffffffff
+      Default is 0 to prevent from mistakenly programming these sectors.
+    default: 0
+
+  ti,chip-er-retain-sect0-31:
+    type: int
+    description: |
+      Bitmask for chip erase protection of individual sectors in sector range [0, 31].
+      Controls whether a chip erase affects a sector or not. The mechanism is intended
+      to allow flash sectors devoted to logging or runtime state/configuration to survive
+      the chip erase during a FW update.
+      0 = protected.
+      Valid range: 0 - 0xffffffff
+      Default is 0 to prevent from mistakenly programming these sectors.
+    default: 0
+
+  ti,chip-er-retain-sect32-255:
+    type: int
+    description: |
+      Bitmask for chip erase protection of groups of 8 sectors, in sector range [32, 255].
+      Bit i protects sectors [32 + 8i, 39 + 8i].
+      0 = protected.
+      Valid range: 0 - 0xffffffff
+      Default is 0 to prevent from mistakenly programming these sectors.
+    default: 0

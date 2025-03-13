@@ -10,6 +10,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <zephyr/kernel.h>
@@ -23,7 +24,7 @@
 #include <zephyr/bluetooth/iso.h>
 
 #include "host/shell/bt.h"
-#include "host/shell/bt_shell_private.h"
+#include "common/bt_shell_private.h"
 
 #if defined(CONFIG_BT_ISO_TX)
 #define DEFAULT_IO_QOS                                                                             \
@@ -557,6 +558,12 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 
 			return -ENOEXEC;
 		}
+
+		if (count < 1) {
+			shell_error(sh, "Cannot send 0 times");
+
+			return -ENOEXEC;
+		}
 	}
 
 	if (!iso_chan.iso) {
@@ -670,6 +677,12 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		count = shell_strtoul(argv[1], 0, &ret);
 		if (ret != 0) {
 			shell_error(sh, "Could not parse count: %d", ret);
+
+			return -ENOEXEC;
+		}
+
+		if (count < 1) {
+			shell_error(sh, "Cannot send 0 times");
 
 			return -ENOEXEC;
 		}

@@ -30,27 +30,31 @@ void z_arm_cpu_idle_init(void)
 #if defined(CONFIG_ARM_ON_EXIT_CPU_IDLE)
 #define ON_EXIT_IDLE_HOOK SOC_ON_EXIT_CPU_IDLE
 #else
-#define ON_EXIT_IDLE_HOOK do {} while (false)
+#define ON_EXIT_IDLE_HOOK                                                                          \
+	do {                                                                                       \
+	} while (false)
 #endif
 
 #if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK)
-#define SLEEP_IF_ALLOWED(wait_instr) do { \
-	/* Skip the wait instr if on_enter_cpu_idle returns false */ \
-	if (z_arm_on_enter_cpu_idle()) { \
-		/* Wait for all memory transaction to complete */ \
-		/* before entering low power state. */ \
-		__DSB(); \
-		wait_instr(); \
-		/* Inline the macro provided by SoC-specific code */ \
-		ON_EXIT_IDLE_HOOK; \
-	} \
-} while (false)
+#define SLEEP_IF_ALLOWED(wait_instr)                                                               \
+	do {                                                                                       \
+		/* Skip the wait instr if on_enter_cpu_idle returns false */                       \
+		if (z_arm_on_enter_cpu_idle()) {                                                   \
+			/* Wait for all memory transaction to complete */                          \
+			/* before entering low power state. */                                     \
+			__DSB();                                                                   \
+			wait_instr();                                                              \
+			/* Inline the macro provided by SoC-specific code */                       \
+			ON_EXIT_IDLE_HOOK;                                                         \
+		}                                                                                  \
+	} while (false)
 #else
-#define SLEEP_IF_ALLOWED(wait_instr) do { \
-	__DSB(); \
-	wait_instr(); \
-	ON_EXIT_IDLE_HOOK; \
-} while (false)
+#define SLEEP_IF_ALLOWED(wait_instr)                                                               \
+	do {                                                                                       \
+		__DSB();                                                                           \
+		wait_instr();                                                                      \
+		ON_EXIT_IDLE_HOOK;                                                                 \
+	} while (false)
 #endif
 
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
@@ -94,6 +98,9 @@ void arch_cpu_idle(void)
 
 	SLEEP_IF_ALLOWED(__WFI);
 
+#if defined(CONFIG_TRACING)
+	sys_trace_idle_exit();
+#endif
 	__enable_irq();
 	__ISB();
 }
@@ -132,6 +139,10 @@ void arch_cpu_atomic_idle(unsigned int key)
 #endif
 
 	SLEEP_IF_ALLOWED(__WFE);
+
+#if defined(CONFIG_TRACING)
+	sys_trace_idle_exit();
+#endif
 
 	arch_irq_unlock(key);
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)

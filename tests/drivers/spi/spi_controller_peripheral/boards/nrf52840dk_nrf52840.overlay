@@ -65,4 +65,5 @@ dut_spis: &spi1 {
 	pinctrl-0 = <&spi1_default_alt>;
 	pinctrl-1 = <&spi1_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+	zephyr,pm-device-runtime-auto;
 };

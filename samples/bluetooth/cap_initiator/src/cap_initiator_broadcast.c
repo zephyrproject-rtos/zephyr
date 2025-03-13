@@ -12,6 +12,7 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -72,16 +73,14 @@ static int setup_extended_adv(struct bt_le_ext_adv **adv)
 	int err;
 
 	/* Create a non-connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, adv);
+	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_BROADCAST_FAST, NULL, adv);
 	if (err != 0) {
 		LOG_ERR("Unable to create extended advertising set: %d", err);
 		return err;
 	}
 
 	/* Set periodic advertising parameters */
-	err = bt_le_per_adv_set_param(*adv, BT_LE_PER_ADV_PARAM(BT_GAP_PER_ADV_FAST_INT_MIN_2,
-								BT_GAP_PER_ADV_FAST_INT_MAX_2,
-								BT_LE_PER_ADV_OPT_NONE));
+	err = bt_le_per_adv_set_param(*adv, BT_BAP_PER_ADV_PARAM_BROADCAST_FAST);
 	if (err != 0) {
 		LOG_ERR("Failed to set periodic advertising parameters: %d", err);
 		return err;
@@ -138,7 +137,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 #else
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	if (err) {
-		printk("Unable to generate broadcast ID: %d\n", err);
+		LOG_ERR("Unable to generate broadcast ID: %d\n", err);
 		return err;
 	}
 #endif /* CONFIG_STATIC_BROADCAST_ID */

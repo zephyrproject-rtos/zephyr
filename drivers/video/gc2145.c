@@ -20,7 +20,9 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define GC2145_AMODE1_WINDOW_MASK       0xFC
 #define GC2145_REG_AMODE1_DEF           0x14
 #define GC2145_REG_OUTPUT_FMT           0x84
+#define GC2145_REG_OUTPUT_FMT_MASK      0x1F
 #define GC2145_REG_OUTPUT_FMT_RGB565    0x06
+#define GC2145_REG_OUTPUT_FMT_YCBYCR    0x02
 #define GC2145_REG_SYNC_MODE            0x86
 #define GC2145_REG_SYNC_MODE_DEF        0x23
 #define GC2145_REG_SYNC_MODE_COL_SWITCH 0x10
@@ -79,8 +81,8 @@ static const struct gc2145_reg default_regs[] = {
 	{0x9a, 0x0E}, /* Subsample mode */
 
 	{0x12, 0x2e},
-	{GC2145_REG_OUTPUT_FMT, 0x14}, /* Analog Mode 1 (vflip/mirror[1:0]) */
-	{0x18, 0x22},                  /* Analog Mode 2 */
+	{0x17, 0x14}, /* Analog Mode 1 (vflip/mirror[1:0]) */
+	{0x18, 0x22}, /* Analog Mode 2 */
 	{0x19, 0x0e},
 	{0x1a, 0x01},
 	{0x1b, 0x4b},
@@ -681,6 +683,9 @@ static const struct gc2145_reg default_regs[] = {
 
 struct gc2145_config {
 	struct i2c_dt_spec i2c;
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	struct gpio_dt_spec pwdn_gpio;
+#endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	struct gpio_dt_spec reset_gpio;
 #endif
@@ -696,18 +701,23 @@ struct gc2145_data {
 		.height_min = height, .height_max = height, .width_step = 0, .height_step = 0,     \
 	}
 
-enum resolutions {
-	QVGA_RESOLUTION = 0,
-	VGA_RESOLUTION,
-	UXGA_RESOLUTION,
-	RESOLUTIONS_MAX,
-};
+#define RESOLUTION_QVGA_W	320
+#define RESOLUTION_QVGA_H	240
+
+#define RESOLUTION_VGA_W	640
+#define RESOLUTION_VGA_H	480
+
+#define RESOLUTION_UXGA_W	1600
+#define RESOLUTION_UXGA_H	1200
 
 static const struct video_format_cap fmts[] = {
-	[QVGA_RESOLUTION] = GC2145_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),   /* QVGA */
-	[VGA_RESOLUTION] = GC2145_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),    /* VGA  */
-	[UXGA_RESOLUTION] = GC2145_VIDEO_FORMAT_CAP(1600, 1200, VIDEO_PIX_FMT_RGB565), /* UXGA */
-	[RESOLUTIONS_MAX] = {0},
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_QVGA_W, RESOLUTION_QVGA_H, VIDEO_PIX_FMT_RGB565),
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_VGA_W, RESOLUTION_VGA_H, VIDEO_PIX_FMT_RGB565),
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_UXGA_W, RESOLUTION_UXGA_H, VIDEO_PIX_FMT_RGB565),
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_QVGA_W, RESOLUTION_QVGA_H, VIDEO_PIX_FMT_YUYV),
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_VGA_W, RESOLUTION_VGA_H, VIDEO_PIX_FMT_YUYV),
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_UXGA_W, RESOLUTION_UXGA_H, VIDEO_PIX_FMT_YUYV),
+	{0},
 };
 
 static int gc2145_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint8_t value)
@@ -728,8 +738,7 @@ static int gc2145_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, ui
 		}
 		/* If writing failed wait 5ms before next attempt */
 		k_msleep(5);
-
-	} while (tries--);
+	} while (tries-- > 0);
 
 	LOG_ERR("failed to write 0x%x to 0x%x,", value, reg_addr);
 	return ret;
@@ -753,8 +762,7 @@ static int gc2145_read_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, uin
 		}
 		/* If writing failed wait 5ms before next attempt */
 		k_msleep(5);
-
-	} while (tries--);
+	} while (tries-- > 0);
 
 	LOG_ERR("failed to read 0x%x register", reg_addr);
 	return ret;
@@ -883,6 +891,7 @@ static int gc2145_set_window(const struct device *dev, uint16_t reg, uint16_t x,
 static int gc2145_set_output_format(const struct device *dev, int output_format)
 {
 	int ret;
+	uint8_t old_value;
 	const struct gc2145_config *cfg = dev->config;
 
 	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_SET_P0_REGS);
@@ -890,13 +899,23 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 		return ret;
 	}
 
-	if (output_format != VIDEO_PIX_FMT_RGB565) {
+	/* Map format to sensor format */
+	if (output_format == VIDEO_PIX_FMT_RGB565) {
+		output_format = GC2145_REG_OUTPUT_FMT_RGB565;
+	} else if (output_format == VIDEO_PIX_FMT_YUYV) {
+		output_format = GC2145_REG_OUTPUT_FMT_YCBYCR;
+	} else {
 		LOG_ERR("Image format not supported");
 		return -ENOTSUP;
 	}
 
-	/* Disable JPEG compression and set output to RGB565 */
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_OUTPUT_FMT, GC2145_REG_OUTPUT_FMT_RGB565);
+	ret = gc2145_read_reg(&cfg->i2c, GC2145_REG_OUTPUT_FMT, &old_value);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_OUTPUT_FMT,
+			(old_value & ~GC2145_REG_OUTPUT_FMT_MASK) | output_format);
 	if (ret < 0) {
 		return ret;
 	}
@@ -906,13 +925,11 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 	return 0;
 }
 
-static int gc2145_set_resolution(const struct device *dev, enum resolutions res)
+static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t h)
 {
 	int ret;
 	const struct gc2145_config *cfg = dev->config;
 
-	uint16_t w;
-	uint16_t h;
 	uint16_t win_w;
 	uint16_t win_h;
 	uint16_t c_ratio;
@@ -922,29 +939,22 @@ static int gc2145_set_resolution(const struct device *dev, enum resolutions res)
 	uint16_t win_x;
 	uint16_t win_y;
 
-	if (res >= RESOLUTIONS_MAX) {
-		return -EIO;
-	}
-
-	w = fmts[res].width_min;
-	h = fmts[res].height_min;
-
 	/* Add the subsampling factor depending on resolution */
-	switch (res) {
-	case QVGA_RESOLUTION:
+	switch (w) {
+	case RESOLUTION_QVGA_W:
 		c_ratio = 3;
 		r_ratio = 3;
 		break;
-	case VGA_RESOLUTION:
+	case RESOLUTION_VGA_W:
 		c_ratio = 2;
 		r_ratio = 2;
 		break;
-	case UXGA_RESOLUTION:
+	case RESOLUTION_UXGA_W:
 		c_ratio = 1;
 		r_ratio = 1;
 		break;
 	default:
-		LOG_ERR("Unsupported resolution %d", res);
+		LOG_ERR("Unsupported resolution %d %d", w, h);
 		return -EIO;
 	};
 
@@ -1024,14 +1034,8 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 			  struct video_format *fmt)
 {
 	struct gc2145_data *drv_data = dev->data;
-	enum resolutions res = RESOLUTIONS_MAX;
+	size_t res = ARRAY_SIZE(fmts);
 	int ret;
-
-	/* We only support RGB565 formats */
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565) {
-		LOG_ERR("gc2145 camera supports only RGB565");
-		return -ENOTSUP;
-	}
 
 	if (memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt)) == 0) {
 		/* nothing to do */
@@ -1039,14 +1043,14 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	}
 
 	/* Check if camera is capable of handling given format */
-	for (int i = 0; i < RESOLUTIONS_MAX; i++) {
+	for (int i = 0; i < ARRAY_SIZE(fmts) - 1; i++) {
 		if (fmts[i].width_min == fmt->width && fmts[i].height_min == fmt->height &&
 		    fmts[i].pixelformat == fmt->pixelformat) {
-			res = (enum resolutions)i;
+			res = i;
 			break;
 		}
 	}
-	if (res == RESOLUTIONS_MAX) {
+	if (res == ARRAY_SIZE(fmts)) {
 		LOG_ERR("Image format not supported");
 		return -ENOTSUP;
 	}
@@ -1061,7 +1065,8 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	}
 
 	/* Set window size */
-	ret = gc2145_set_resolution(dev, res);
+	ret = gc2145_set_resolution(dev, fmt->width, fmt->height);
+
 	if (ret < 0) {
 		LOG_ERR("Failed to set the resolution");
 		return ret;
@@ -1080,18 +1085,12 @@ static int gc2145_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int gc2145_stream_start(const struct device *dev)
+static int gc2145_set_stream(const struct device *dev, bool enable)
 {
 	const struct gc2145_config *cfg = dev->config;
 
-	return gc2145_write_reg(&cfg->i2c, 0xf2, 0x0f);
-}
-
-static int gc2145_stream_stop(const struct device *dev)
-{
-	const struct gc2145_config *cfg = dev->config;
-
-	return gc2145_write_reg(&cfg->i2c, 0xf2, 0x00);
+	return enable ? gc2145_write_reg(&cfg->i2c, 0xf2, 0x0f)
+		      : gc2145_write_reg(&cfg->i2c, 0xf2, 0x00);
 }
 
 static int gc2145_get_caps(const struct device *dev, enum video_endpoint_id ep,
@@ -1117,8 +1116,7 @@ static DEVICE_API(video, gc2145_driver_api) = {
 	.set_format = gc2145_set_fmt,
 	.get_format = gc2145_get_fmt,
 	.get_caps = gc2145_get_caps,
-	.stream_start = gc2145_stream_start,
-	.stream_stop = gc2145_stream_stop,
+	.set_stream = gc2145_set_stream,
 	.set_ctrl = gc2145_set_ctrl,
 };
 
@@ -1126,10 +1124,18 @@ static int gc2145_init(const struct device *dev)
 {
 	struct video_format fmt;
 	int ret;
-
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	const struct gc2145_config *cfg = dev->config;
+	(void) cfg;
 
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_INACTIVE);
+	if (ret) {
+		return ret;
+	}
+
+	k_sleep(K_MSEC(10));
+#endif
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret) {
 		return ret;
@@ -1150,9 +1156,9 @@ static int gc2145_init(const struct device *dev)
 
 	/* set default/init format QVGA RGB565 */
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = fmts[QVGA_RESOLUTION].width_min;
-	fmt.height = fmts[QVGA_RESOLUTION].height_min;
-	fmt.pitch = fmts[QVGA_RESOLUTION].width_min * 2;
+	fmt.width = RESOLUTION_QVGA_W;
+	fmt.height = RESOLUTION_QVGA_H;
+	fmt.pitch = RESOLUTION_QVGA_W * 2;
 
 	ret = gc2145_set_fmt(dev, VIDEO_EP_OUT, &fmt);
 	if (ret) {
@@ -1166,6 +1172,9 @@ static int gc2145_init(const struct device *dev)
 /* Unique Instance */
 static const struct gc2145_config gc2145_cfg_0 = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	.pwdn_gpio = GPIO_DT_SPEC_INST_GET(0, pwdn_gpios),
+#endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 #endif
@@ -1181,6 +1190,12 @@ static int gc2145_init_0(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
+		LOG_ERR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
+		return -ENODEV;
+	}
+#endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);

@@ -324,8 +324,7 @@ static const struct ethernet_api eth_api = {
 		.mac_addr = DT_INST_PROP(n, local_mac_address)};                                   \
                                                                                                    \
 	static const struct eth_litex_config eth_config##n = {                                     \
-		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, phy_handle),                                   \
-			   (.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),))            \
+		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phy_handle)),                  \
 		.config_func = eth_irq_config##n,                                                  \
 		.random_mac_address = DT_INST_PROP(n, zephyr_random_mac_address),                  \
 		.rx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_slot),                              \

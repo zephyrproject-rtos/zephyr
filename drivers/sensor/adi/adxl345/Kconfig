@@ -13,6 +13,8 @@ config ADXL345
 	help
 	  Enable driver for ADXL345 Three-Axis Digital Accelerometer.
 
+if ADXL345
+
 choice ADXL345_TRIGGER_MODE
 	prompt "Trigger mode"
 	default ADXL345_TRIGGER_NONE
@@ -37,8 +39,7 @@ endchoice
 config ADXL345_STREAM
 	bool "Use FIFO to stream data"
 	select ADXL345_TRIGGER
-	default y
-	depends on SPI_RTIO
+	depends on (SPI_RTIO || I2C_RTIO)
 	depends on SENSOR_ASYNC_API
 	help
 	  Use this configuration option to enable streaming sensor data via RTIO.
@@ -59,3 +60,5 @@ config ADXL345_THREAD_STACK_SIZE
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
+
+endif # ADXL345

@@ -58,10 +58,13 @@
 
 /* LPSPI */
 #define IMX_CCM_LPSPI_CLK              0x500UL
+#define IMX_CCM_LPSPI0102_CLK          0x500UL
 #define IMX_CCM_LPSPI1_CLK             0x500UL
 #define IMX_CCM_LPSPI2_CLK             0x501UL
+#define IMX_CCM_LPSPI0304_CLK          0x501UL
 #define IMX_CCM_LPSPI3_CLK             0x502UL
 #define IMX_CCM_LPSPI4_CLK             0x503UL
+#define IMX_CCM_LPSPI0506_CLK          0x502UL
 #define IMX_CCM_LPSPI5_CLK             0x504UL
 #define IMX_CCM_LPSPI6_CLK             0x505UL
 #define IMX_CCM_LPSPI7_CLK             0x506UL
@@ -74,6 +77,8 @@
 /* DMA  */
 #define IMX_CCM_EDMA_CLK               0x700UL
 #define IMX_CCM_EDMA_LPSR_CLK          0x701UL
+#define IMX_CCM_EDMA3_CLK              0x700UL
+#define IMX_CCM_EDMA4_CLK              0x701UL
 
 /* PWM */
 #define IMX_CCM_PWM_CLK                0x800UL
@@ -138,6 +143,11 @@
 #define IMX_CCM_MIPI_CSI2RX_ROOT_CLK 0x1900UL
 #define IMX_CCM_MIPI_CSI2RX_UI_CLK   0x2000UL
 #define IMX_CCM_MIPI_CSI2RX_ESC_CLK  0x2100UL
+
+/* I3C */
+#define IMX_CCM_I3C_CLK                0x2200UL
+#define IMX_CCM_I3C1_CLK               0x2200UL
+#define IMX_CCM_I3C2_CLK               0x2201UL
 
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL

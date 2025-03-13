@@ -33,7 +33,7 @@ static inline void nsem_list_lock(void)
 
 static inline void nsem_list_unlock(void)
 {
-	k_mutex_unlock(&nsem_mutex);
+	(void)k_mutex_unlock(&nsem_mutex);
 }
 
 static struct nsem_obj *nsem_find(const char *name)
@@ -60,7 +60,7 @@ static void nsem_cleanup(struct nsem_obj *nsem)
 	}
 }
 
-/* Remove a named semaphore if it isn't unsed */
+/* Remove a named semaphore if it isn't used */
 static void nsem_unref(struct nsem_obj *nsem)
 {
 	nsem->ref_count -= 1;
@@ -265,7 +265,7 @@ sem_t *sem_open(const char *name, int oflags, ...)
 		goto unlock;
 	}
 
-	/* Named sempahore doesn't exist, try to create new one */
+	/* Named semaphore doesn't exist, try to create new one */
 
 	if ((oflags & O_CREAT) == 0) {
 		errno = ENOENT;

@@ -21,42 +21,7 @@ Hardware
 Supported Features
 ==================
 
-The following features are supported:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc controller                      |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c port/controller                 |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| PM        | on-chip    | power management                    |
-+-----------+------------+-------------------------------------+
-| PSL       | on-chip    | power switch logic                  |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pulse width modulator               |
-+-----------+------------+-------------------------------------+
-| TACH      | on-chip    | tachometer sensor                   |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr (at the moment)
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nuvoton/npcx9m6f_evb/npcx9m6f_evb_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

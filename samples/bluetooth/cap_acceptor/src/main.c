@@ -12,6 +12,7 @@
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/audio/pacs.h>
@@ -104,7 +105,7 @@ static int advertise(void)
 {
 	int err;
 
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &adv);
+	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, NULL, &adv);
 	if (err) {
 		LOG_ERR("Failed to create advertising set: %d", err);
 
@@ -256,6 +257,12 @@ static int init_cap_acceptor(void)
 	static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 		SUPPORTED_FREQ, SUPPORTED_DURATION, MAX_CHAN_PER_STREAM, MIN_SDU, MAX_SDU,
 		FRAMES_PER_SDU, (SINK_CONTEXT | SOURCE_CONTEXT));
+	const struct bt_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+		.src_pac = true,
+		.src_loc = true,
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -266,6 +273,12 @@ static int init_cap_acceptor(void)
 	}
 
 	LOG_INF("Bluetooth initialized");
+
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		LOG_ERR("Could not register PACS (err %d)", err);
+		return 0;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
 		static struct bt_pacs_cap sink_cap = {

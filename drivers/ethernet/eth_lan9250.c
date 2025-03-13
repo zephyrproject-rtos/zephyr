@@ -504,7 +504,7 @@ static int lan9250_rx(const struct device *dev)
 
 		lan9250_read_buf(dev, data_ptr, data_len);
 		net_buf_add(pkt_buf, data_len);
-
+		pkt_buf = pkt_buf->frags;
 	} while (pkt_len > 0);
 
 	lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
@@ -631,9 +631,25 @@ static void lan9250_iface_init(struct net_if *iface)
 	net_if_carrier_off(iface);
 }
 
+static int lan9250_set_config(const struct device *dev, enum ethernet_config_type type,
+			      const struct ethernet_config *config)
+{
+	struct lan9250_runtime *ctx = dev->data;
+
+	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
+		memcpy(ctx->mac_address, config->mac_address.addr, sizeof(ctx->mac_address));
+		lan9250_set_macaddr(dev);
+		return net_if_set_link_addr(ctx->iface, ctx->mac_address, sizeof(ctx->mac_address),
+					    NET_LINK_ETHERNET);
+	}
+
+	return -ENOTSUP;
+}
+
 static const struct ethernet_api api_funcs = {
 	.iface_api.init = lan9250_iface_init,
 	.get_capabilities = lan9250_get_capabilities,
+	.set_config = lan9250_set_config,
 	.send = lan9250_tx,
 };
 

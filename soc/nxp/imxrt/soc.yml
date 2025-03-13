@@ -38,6 +38,14 @@ family:
     - name: mimxrt685s
       cpuclusters:
       - name: cm33
+  - name: imxrt7xx
+    socs:
+    - name: mimxrt798s
+      cpuclusters:
+      - name: cm33_cpu0
+      - name: cm33_cpu1
+      - name: hifi4
+      - name: hifi1
 runners:
   run_once:
     '--erase':
@@ -53,6 +61,9 @@ runners:
       - qualifiers:
         - mimxrt1176/cm7
         - mimxrt1176/cm4
+      - qualifiers:
+        - mimxrt1189/cm33
+        - mimxrt1189/cm7
       - qualifiers:
         - mimxrt595s/cm33
         - mimxrt595s/f1
@@ -71,6 +82,9 @@ runners:
       - qualifiers:
         - mimxrt1176/cm7
         - mimxrt1176/cm4
+      - qualifiers:
+        - mimxrt1189/cm33
+        - mimxrt1189/cm7
       - qualifiers:
         - mimxrt595s/cm33
         - mimxrt595s/f1

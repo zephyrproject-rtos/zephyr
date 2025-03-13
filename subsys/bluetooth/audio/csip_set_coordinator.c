@@ -52,7 +52,6 @@
 #include "common/bt_str.h"
 #include "host/conn_internal.h"
 #include "host/keys.h"
-#include "host/hci_core.h"
 
 LOG_MODULE_REGISTER(bt_csip_set_coordinator, CONFIG_BT_CSIP_SET_COORDINATOR_LOG_LEVEL);
 
@@ -266,23 +265,19 @@ static int sirk_decrypt(struct bt_conn *conn,
 			uint8_t *out_sirk)
 {
 	int err;
-	uint8_t *k;
+	const uint8_t *k;
 
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_COORDINATOR_TEST_SAMPLE_DATA)) {
 		/* test_k is from the sample data from A.2 in the CSIS spec */
-		static uint8_t test_k[] = {0x67, 0x6e, 0x1b, 0x9b,
-					   0xd4, 0x48, 0x69, 0x6f,
-					   0x06, 0x1e, 0xc6, 0x22,
-					   0x3c, 0xe5, 0xce, 0xd9};
-		static bool swapped;
+		static const uint8_t test_k[] = {
+			/* Sample data is in big-endian, we need it in little-endian. */
+			REVERSE_ARGS(0x67, 0x6e, 0x1b, 0x9b,
+				     0xd4, 0x48, 0x69, 0x6f,
+				     0x06, 0x1e, 0xc6, 0x22,
+				     0x3c, 0xe5, 0xce, 0xd9) };
 
 		LOG_DBG("Decrypting with sample data K");
 
-		if (!swapped && IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
-			/* Swap test_k to little endian */
-			sys_mem_swap(test_k, 16);
-			swapped = true;
-		}
 		k = test_k;
 	} else {
 		k = conn->le.keys->ltk.val;
@@ -1678,7 +1673,7 @@ static bool all_members_bonded(const struct bt_csip_set_coordinator_set_member *
 		int err;
 
 		err = bt_conn_get_info(client->conn, &info);
-		if (err != 0 || !bt_addr_le_is_bonded(info.id, info.le.dst)) {
+		if (err != 0 || !bt_le_bond_exists(info.id, info.le.dst)) {
 			LOG_DBG("Member[%zu] is not bonded", i);
 
 			return false;

@@ -25,7 +25,7 @@
 #include <errno.h>
 
 #include "host/shell/bt.h"
-#include "host/shell/bt_shell_private.h"
+#include "common/bt_shell_private.h"
 
 static int check_cs_sync_antenna_selection_input(uint16_t input)
 {
@@ -220,7 +220,7 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	params.t_fcs_time = 120;
 	params.t_pm_time = 20;
 	params.t_sw_time = 0;
-	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_ONE;
+	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B1;
 	params.initiator_snr_control = BT_LE_CS_SNR_CONTROL_NOT_USED;
 	params.reflector_snr_control = BT_LE_CS_SNR_CONTROL_NOT_USED;
 	params.drbg_nonce = 0x1234;
@@ -638,7 +638,7 @@ static int cmd_set_procedure_parameters(const struct shell *sh, size_t argc, cha
 	params.max_procedure_count = 1;
 	params.min_subevent_len = 5000;
 	params.max_subevent_len = 4000000;
-	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_ONE;
+	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B1;
 	params.phy = 0x01;
 	params.tx_power_delta = 0x80;
 	params.preferred_peer_antenna = 1;

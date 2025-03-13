@@ -22,5 +22,15 @@ properties:
       - 9600
       - 115200
 
+  stop-bits:
+    description: |
+      Sets the number of stop bits. Defaults to standard of 1 if not specified.
+    default: "1"
+
+  data-bits:
+    description: |
+      Sets the number of data bits. Defaults to standard of 8 if not specified.
+    default: 8
+
   interrupts:
     required: true

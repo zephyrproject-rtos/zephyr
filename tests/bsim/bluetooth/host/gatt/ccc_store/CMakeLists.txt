@@ -12,9 +12,11 @@ endif()
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(bsim_test_ccc_store)
 
+add_subdirectory(${ZEPHYR_BASE}/tests/bsim/babblekit babblekit)
+target_link_libraries(app PRIVATE babblekit)
+
 target_sources(app PRIVATE
   src/main.c
-  src/common.c
 
   src/central.c
   src/peripheral.c

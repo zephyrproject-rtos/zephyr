@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __DT_FREQ_H
-#define __DT_FREQ_H
+#ifndef ZEPHYR_DTS_COMMON_FREQ_H_
+#define ZEPHYR_DTS_COMMON_FREQ_H_
 
 #define DT_FREQ_K(x) ((x) * 1000)
-#define DT_FREQ_M(x) ((x) * 1000 * 1000)
+#define DT_FREQ_M(x) (DT_FREQ_K(x) * 1000)
 
-#endif /* __DT_FREQ_H */
+#endif /* ZEPHYR_DTS_COMMON_FREQ_H_ */

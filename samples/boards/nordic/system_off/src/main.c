@@ -11,6 +11,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/comparator.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/poweroff.h>
@@ -19,8 +20,12 @@
 #if defined(CONFIG_GRTC_WAKEUP_ENABLE)
 #include <zephyr/drivers/timer/nrf_grtc_timer.h>
 #define DEEP_SLEEP_TIME_S 2
-#else
+#endif
+#if defined(CONFIG_GPIO_WAKEUP_ENABLE)
 static const struct gpio_dt_spec sw0 = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
+#endif
+#if defined(CONFIG_LPCOMP_WAKEUP_ENABLE)
+static const struct device *comp_dev = DEVICE_DT_GET(DT_NODELABEL(comp));
 #endif
 
 int main(void)
@@ -35,7 +40,7 @@ int main(void)
 
 	printf("\n%s system off demo\n", CONFIG_BOARD);
 
-	if (IS_ENABLED(CONFIG_APP_USE_NRF_RETENTION) || IS_ENABLED(CONFIG_APP_USE_RETAINED_MEM)) {
+	if (IS_ENABLED(CONFIG_APP_USE_RETAINED_MEM)) {
 		bool retained_ok = retained_validate();
 
 		/* Increment for this boot attempt and update. */
@@ -58,7 +63,8 @@ int main(void)
 	} else {
 		printk("Entering system off; wait %u seconds to restart\n", DEEP_SLEEP_TIME_S);
 	}
-#else
+#endif
+#if defined(CONFIG_GPIO_WAKEUP_ENABLE)
 	/* configure sw0 as input, interrupt as level active to allow wake-up */
 	rc = gpio_pin_configure_dt(&sw0, GPIO_INPUT);
 	if (rc < 0) {
@@ -74,6 +80,11 @@ int main(void)
 
 	printf("Entering system off; press sw0 to restart\n");
 #endif
+#if defined(CONFIG_LPCOMP_WAKEUP_ENABLE)
+	comparator_set_trigger(comp_dev, COMPARATOR_TRIGGER_BOTH_EDGES);
+	comparator_trigger_is_pending(comp_dev);
+	printf("Entering system off; change signal level at comparator input to restart\n");
+#endif
 
 	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
 	if (rc < 0) {
@@ -81,7 +92,7 @@ int main(void)
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_APP_USE_NRF_RETENTION) || IS_ENABLED(CONFIG_APP_USE_RETAINED_MEM)) {
+	if (IS_ENABLED(CONFIG_APP_USE_RETAINED_MEM)) {
 		/* Update the retained state */
 		retained.off_count += 1;
 		retained_update();

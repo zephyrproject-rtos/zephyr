@@ -3,6 +3,7 @@
 
 config INTC_MTK_ADSP
 	bool "MediaTek Audio DSP Interrupt Controller"
+	depends on SOC_FAMILY_MTK
 	help
 	  Very simple cascaded interrupt controller consisting of two
 	  bitfield registers (status and enable) and one mask value

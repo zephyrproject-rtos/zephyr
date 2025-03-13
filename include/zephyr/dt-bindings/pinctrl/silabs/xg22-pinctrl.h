@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Silicon Laboratories Inc.
+ * Copyright (c) 2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Pin Control for Silicon Labs XG22 devices
@@ -1788,5 +1788,18 @@
 #define USART1_CTS_PB2 SILABS_DBUS_USART1_CTS(0x1, 0x2)
 #define USART1_CTS_PB3 SILABS_DBUS_USART1_CTS(0x1, 0x3)
 #define USART1_CTS_PB4 SILABS_DBUS_USART1_CTS(0x1, 0x4)
+
+#define ABUS_AEVEN0_IADC0  SILABS_ABUS(0x0, 0x0, 0x1)
+#define ABUS_AEVEN1_IADC0  SILABS_ABUS(0x0, 0x1, 0x1)
+#define ABUS_AODD0_IADC0   SILABS_ABUS(0x0, 0x2, 0x1)
+#define ABUS_AODD1_IADC0   SILABS_ABUS(0x0, 0x3, 0x1)
+#define ABUS_BEVEN0_IADC0  SILABS_ABUS(0x1, 0x0, 0x1)
+#define ABUS_BEVEN1_IADC0  SILABS_ABUS(0x1, 0x1, 0x1)
+#define ABUS_BODD0_IADC0   SILABS_ABUS(0x1, 0x2, 0x1)
+#define ABUS_BODD1_IADC0   SILABS_ABUS(0x1, 0x3, 0x1)
+#define ABUS_CDEVEN0_IADC0 SILABS_ABUS(0x2, 0x0, 0x1)
+#define ABUS_CDEVEN1_IADC0 SILABS_ABUS(0x2, 0x1, 0x1)
+#define ABUS_CDODD0_IADC0  SILABS_ABUS(0x2, 0x2, 0x1)
+#define ABUS_CDODD1_IADC0  SILABS_ABUS(0x2, 0x3, 0x1)
 
 #endif /* ZEPHYR_DT_BINDINGS_PINCTRL_SILABS_XG22_PINCTRL_H_ */

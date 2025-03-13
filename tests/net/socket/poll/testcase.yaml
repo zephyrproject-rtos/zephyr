@@ -5,8 +5,6 @@ common:
   #        is fixed (GitHub issue zephyrproject-rtos/zephyr#48608).
   platform_exclude:
     - mps2/an385
-    - native_posix/native/64
-    - native_posix
 tests:
   net.socket.poll:
     min_ram: 21

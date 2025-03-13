@@ -49,6 +49,8 @@ They operate at a frequency of up to 56 MHz.
   - 4 µA wake-up from Stop mode
   - 52 µA/MHz Run mode
   - Brownout reset
+  - SPI (3)
+  - DMA Controller (2)
 
 - Core:
 
@@ -98,6 +100,7 @@ They operate at a frequency of up to 56 MHz.
   - Candidate for Arm |reg| PSA level 1 and SESIP level 3 certifications
   - 5 passive anti-tamper pins
   - 96-bit unique ID
+  - True Random Number Generator (RNG) NIST SP800-90B compliant
 
 - Up to 10 timers, 2 watchdogs and RTC:
 
@@ -105,6 +108,8 @@ They operate at a frequency of up to 56 MHz.
     2x 16-bit basic, 3x low-power 16-bit timers (available in Stop mode),
     2x watchdogs, SysTick timer
   - RTC with hardware calendar, alarms and calibration
+
+- 3 low-power 16-bit timers (available in Stop mode).
 
 - Up to 20 communication peripherals:
 
@@ -131,34 +136,7 @@ More information about STM32U083RC can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_u083rc board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_u083rc/nucleo_u083rc_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

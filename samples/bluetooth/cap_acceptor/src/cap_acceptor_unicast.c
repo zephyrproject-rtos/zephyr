@@ -456,5 +456,8 @@ int init_cap_acceptor_unicast(struct peer_config *peer)
 		}
 	}
 
+	k_sem_init(&peer->source_stream_sem, 0, 1);
+	k_sem_init(&peer->sink_stream_sem, 0, 1);
+
 	return 0;
 }

@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(cdc_ncm, CONFIG_USBD_CDC_NCM_LOG_LEVEL);
 
 enum {
 	CDC_NCM_IFACE_UP,
-	CDC_NCM_CLASS_ENABLED,
+	CDC_NCM_DATA_IFACE_ENABLED,
 	CDC_NCM_CLASS_SUSPENDED,
 	CDC_NCM_OUT_ENGAGED,
 };
@@ -165,7 +165,6 @@ union send_ntb {
 union recv_ntb {
 	struct {
 		struct nth16 nth;
-		struct ndp16 ndp;
 	};
 
 	uint8_t data[CDC_NCM_RECV_NTB_MAX_SIZE];
@@ -209,7 +208,9 @@ struct usbd_cdc_ncm_desc {
 
 enum iface_state {
 	IF_STATE_INIT,
+	IF_STATE_CONNECTION_STATUS_SUBMITTED,
 	IF_STATE_CONNECTION_STATUS_SENT,
+	IF_STATE_SPEED_CHANGE_SUBMITTED,
 	IF_STATE_SPEED_CHANGE_SENT,
 	IF_STATE_DONE,
 };
@@ -233,8 +234,6 @@ struct cdc_ncm_eth_data {
 
 	struct k_work_delayable notif_work;
 };
-
-static int ncm_send_notification(const struct device *dev);
 
 static uint8_t cdc_ncm_get_ctrl_if(struct cdc_ncm_eth_data *const data)
 {
@@ -307,7 +306,6 @@ static struct net_buf *cdc_ncm_buf_alloc(const uint8_t ep)
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	return buf;
@@ -320,10 +318,6 @@ static int cdc_ncm_out_start(struct usbd_class_data *const c_data)
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
-
-	if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
-		return -EACCES;
-	}
 
 	if (atomic_test_and_set_bit(&data->state, CDC_NCM_OUT_ENGAGED)) {
 		return -EBUSY;
@@ -346,7 +340,8 @@ static int cdc_ncm_out_start(struct usbd_class_data *const c_data)
 	return  ret;
 }
 
-static int verify_nth16(const union recv_ntb *ntb, uint16_t len, uint16_t seq)
+static int verify_nth16(struct cdc_ncm_eth_data *const data,
+			const union recv_ntb *const ntb, const uint16_t len)
 {
 	const struct nth16 *nthdr16 = &ntb->nth;
 	const struct ndp16 *ndphdr16;
@@ -368,13 +363,21 @@ static int verify_nth16(const union recv_ntb *ntb, uint16_t len, uint16_t seq)
 		return -EINVAL;
 	}
 
+	if (sys_le16_to_cpu(nthdr16->wSequence) != data->rx_seq) {
+		LOG_WRN("OUT NTH wSequence %u mismatch expected %u",
+			sys_le16_to_cpu(nthdr16->wSequence), data->rx_seq);
+		data->rx_seq = sys_le16_to_cpu(nthdr16->wSequence);
+	}
+
+	data->rx_seq++;
+
 	if (len < (sizeof(struct nth16) + sizeof(struct ndp16) +
 		   2U * sizeof(struct ndp16_datagram))) {
 		LOG_DBG("DROP: %s len %d", "min", len);
 		return -EINVAL;
 	}
 
-	if (sys_le16_to_cpu(nthdr16->wBlockLength) > len) {
+	if (sys_le16_to_cpu(nthdr16->wBlockLength) != len) {
 		LOG_DBG("DROP: %s len %d", "block",
 			sys_le16_to_cpu(nthdr16->wBlockLength));
 		return -EINVAL;
@@ -391,13 +394,6 @@ static int verify_nth16(const union recv_ntb *ntb, uint16_t len, uint16_t seq)
 	     (len - (sizeof(struct ndp16) + 2U * sizeof(struct ndp16_datagram))))) {
 		LOG_DBG("DROP: ndp pos %d (%d)",
 			sys_le16_to_cpu(nthdr16->wNdpIndex), len);
-		return -EINVAL;
-	}
-
-	if (sys_le16_to_cpu(nthdr16->wSequence) != 0 &&
-	    sys_le16_to_cpu(nthdr16->wSequence) != (seq + 1)) {
-		LOG_DBG("DROP: seq %d %d",
-			seq, sys_le16_to_cpu(nthdr16->wSequence));
 		return -EINVAL;
 	}
 
@@ -439,8 +435,9 @@ static int check_frame(struct cdc_ncm_eth_data *data, struct net_buf *const buf)
 	int ret;
 
 	/* TODO: support nth32 */
-	ret = verify_nth16(ntb, len, data->rx_seq);
+	ret = verify_nth16(data, ntb, len);
 	if (ret < 0) {
+		LOG_ERR("Failed to verify NTH16");
 		return ret;
 	}
 
@@ -493,8 +490,6 @@ static int check_frame(struct cdc_ncm_eth_data *data, struct net_buf *const buf)
 		ndx++;
 	}
 
-	data->rx_seq = sys_le16_to_cpu(nthdr16->wSequence);
-
 	if (DUMP_PKT) {
 		LOG_HEXDUMP_DBG(ntb->data, len, "NTB");
 	}
@@ -511,47 +506,66 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 	const union recv_ntb *ntb = (union recv_ntb *)buf->data;
 	struct cdc_ncm_eth_data *data = dev->data;
 	const struct ndp16_datagram *ndp_datagram;
+	const struct nth16 *nthdr16;
+	const struct ndp16 *ndp;
 	struct net_pkt *pkt, *src;
 	uint16_t start, len;
 	uint16_t count;
 	int ret;
 
 	if (err || buf->len == 0) {
-		net_buf_unref(buf);
-		atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
-		return 0;
+		if (err != -ECONNABORTED) {
+			LOG_ERR("Bulk OUT transfer error (%d) or zero length", err);
+		}
+
+		goto restart_out_transfer;
 	}
 
 	ret = check_frame(data, buf);
 	if (ret < 0) {
-		LOG_DBG("check frame failed (%d)", ret);
+		LOG_ERR("check frame failed (%d)", ret);
 		goto restart_out_transfer;
 	}
-
-	ntb = (union recv_ntb *)buf->data;
-	ndp_datagram = (struct ndp16_datagram *)
-		(ntb->data + sys_le16_to_cpu(ntb->nth.wNdpIndex) + sizeof(struct ndp16));
 
 	/* Temporary source pkt we use to copy one Ethernet frame from
 	 * the list of USB net_buf's.
 	 */
 	src = net_pkt_alloc(K_MSEC(NET_PKT_ALLOC_TIMEOUT));
 	if (src == NULL) {
-		LOG_DBG("src packet alloc fail");
+		LOG_ERR("src packet alloc fail");
 		goto restart_out_transfer;
 	}
 
 	net_pkt_append_buffer(src, buf);
 	net_pkt_set_overwrite(src, true);
 
-	count = (sys_le16_to_cpu(ntb->ndp.wLength) - 12U) / 4U;
-	LOG_DBG("%u Ethernet frame%s received", count, count == 1 ? "" : "s");
+	nthdr16 = &ntb->nth;
+	LOG_DBG("NTH16: wSequence %u wBlockLength %u wNdpIndex %u",
+		nthdr16->wSequence, nthdr16->wBlockLength, nthdr16->wNdpIndex);
+
+	/* NDP may be anywhere in the transfer buffer. Offsets, like wNdpIndex
+	 * or wDatagramIndex are always of from byte zero of the NTB.
+	 */
+	ndp = (const struct ndp16 *)(ntb->data + sys_le16_to_cpu(nthdr16->wNdpIndex));
+	LOG_DBG("NDP16: wLength %u", sys_le16_to_cpu(ndp->wLength));
+
+	ndp_datagram = (struct ndp16_datagram *)&ndp->datagram[0];
+
+	/* There is one (terminating zero) or more datagram pointer
+	 * entries starting after 8 bytes of header information.
+	 */
+	count = (sys_le16_to_cpu(ndp->wLength) - 8U) / 4U;
+	LOG_DBG("%u datagram%s received", count, count == 1 ? "" : "s");
 
 	for (int i = 0; i < count; i++) {
 		start = sys_le16_to_cpu(ndp_datagram[i].wDatagramIndex);
 		len = sys_le16_to_cpu(ndp_datagram[i].wDatagramLength);
 
 		LOG_DBG("[%d] start %u len %u", i, start, len);
+		if (start == 0 || len == 0) {
+			LOG_DBG("Terminating zero datagram %u", i);
+			break;
+		}
 
 		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0, K_FOREVER);
 		if (!pkt) {
@@ -591,8 +605,33 @@ restart_out_transfer:
 	net_buf_unref(buf);
 
 	atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
+	if (atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED)) {
+		return cdc_ncm_out_start(c_data);
+	}
 
-	return cdc_ncm_out_start(c_data);
+	return 0;
+}
+
+static void ncm_handle_notifications(const struct device *dev, const int err)
+{
+	struct cdc_ncm_eth_data *data = dev->data;
+
+	if (err != 0) {
+		LOG_WRN("Notification request %s",
+			err == -ECONNABORTED ? "cancelled" : "failed");
+		data->if_state = IF_STATE_INIT;
+	}
+
+	if (data->if_state == IF_STATE_SPEED_CHANGE_SUBMITTED) {
+		data->if_state = IF_STATE_SPEED_CHANGE_SENT;
+		LOG_INF("Speed change sent");
+		(void)k_work_reschedule(&data->notif_work, K_MSEC(1));
+	}
+
+	if (data->if_state == IF_STATE_CONNECTION_STATUS_SUBMITTED) {
+		data->if_state = IF_STATE_CONNECTION_STATUS_SENT;
+		LOG_INF("Connection status sent");
+	}
 }
 
 static int usbd_cdc_ncm_request(struct usbd_class_data *const c_data,
@@ -616,6 +655,7 @@ static int usbd_cdc_ncm_request(struct usbd_class_data *const c_data,
 	}
 
 	if (bi->ep == cdc_ncm_get_int_in(c_data)) {
+		ncm_handle_notifications(dev, err);
 		net_buf_unref(buf);
 		return 0;
 	}
@@ -632,7 +672,7 @@ static int cdc_ncm_send_notification(const struct device *dev,
 	uint8_t ep;
 	int ret;
 
-	if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
+	if (!atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED)) {
 		LOG_INF("USB configuration is not enabled");
 		return -EBUSY;
 	}
@@ -722,7 +762,7 @@ static int cdc_ncm_send_speed_change(const struct device *dev)
 }
 
 
-static int ncm_send_notification(const struct device *dev)
+static int ncm_send_notification_sequence(const struct device *dev)
 {
 	struct cdc_ncm_eth_data *data = dev->data;
 	int ret;
@@ -731,28 +771,29 @@ static int ncm_send_notification(const struct device *dev)
 	if (data->if_state == IF_STATE_INIT) {
 		ret = cdc_ncm_send_speed_change(dev);
 		if (ret < 0) {
-			LOG_DBG("Cannot send %s (%d)", "speed change", ret);
+			LOG_INF("Cannot send %s (%d)", "speed change", ret);
 			return ret;
 		}
 
-		LOG_DBG("Speed change sent");
-		data->if_state = IF_STATE_SPEED_CHANGE_SENT;
+		LOG_INF("Speed change submitted");
+		data->if_state = IF_STATE_SPEED_CHANGE_SUBMITTED;
 		return -EAGAIN;
 	}
 
 	if (data->if_state == IF_STATE_SPEED_CHANGE_SENT) {
 		ret = cdc_ncm_send_connected(dev, true);
 		if (ret < 0) {
-			LOG_DBG("Cannot send %s (%d)", "connected status", ret);
+			LOG_INF("Cannot send %s (%d)", "connected status", ret);
 			return ret;
 		}
 
-		LOG_DBG("Connected status sent");
-		data->if_state = IF_STATE_CONNECTION_STATUS_SENT;
+		LOG_INF("Connected status submitted");
+		data->if_state = IF_STATE_CONNECTION_STATUS_SUBMITTED;
 		return -EAGAIN;
 	}
 
 	if (data->if_state == IF_STATE_CONNECTION_STATUS_SENT) {
+		LOG_INF("Connected status done");
 		data->if_state = IF_STATE_DONE;
 	}
 
@@ -770,8 +811,9 @@ static void send_notification_work(struct k_work *work)
 	dev = usbd_class_get_private(data->c_data);
 
 	if (atomic_test_bit(&data->state, CDC_NCM_IFACE_UP)) {
-		ret = ncm_send_notification(dev);
+		ret = ncm_send_notification_sequence(dev);
 	} else {
+		data->if_state = IF_STATE_INIT;
 		ret = cdc_ncm_send_connected(dev, false);
 	}
 
@@ -793,12 +835,15 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
 		iface, alternate);
 
 	if (data_iface == iface && alternate == 0) {
-		LOG_DBG("Skip iface %u alternate %u", iface, alternate);
-
+		atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
 		data->tx_seq = 0;
+		data->rx_seq = 0;
 	}
 
 	if (data_iface == iface && alternate == 1) {
+		atomic_set_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
+		data->if_state = IF_STATE_INIT;
+		(void)k_work_reschedule(&data->notif_work, K_MSEC(100));
 		ret = cdc_ncm_out_start(c_data);
 		if (ret < 0) {
 			LOG_ERR("Failed to start OUT transfer (%d)", ret);
@@ -808,12 +853,7 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
 
 static void usbd_cdc_ncm_enable(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_ncm_eth_data *data = dev->data;
-
-	atomic_set_bit(&data->state, CDC_NCM_CLASS_ENABLED);
-
-	LOG_DBG("Configuration enabled");
+	LOG_INF("Enabled %s", c_data->name);
 }
 
 static void usbd_cdc_ncm_disable(struct usbd_class_data *const c_data)
@@ -821,13 +861,9 @@ static void usbd_cdc_ncm_disable(struct usbd_class_data *const c_data)
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *data = dev->data;
 
-	if (atomic_test_and_clear_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
-		net_if_carrier_off(data->iface);
-	}
-
 	atomic_clear_bit(&data->state, CDC_NCM_CLASS_SUSPENDED);
 
-	LOG_DBG("Configuration disabled");
+	LOG_INF("Disabled %s", c_data->name);
 }
 
 static void usbd_cdc_ncm_suspended(struct usbd_class_data *const c_data)
@@ -913,8 +949,8 @@ static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
 
 	case GET_NTB_INPUT_SIZE: {
 		struct ntb_input_size input_size = {
-			.dwNtbInMaxSize = sys_cpu_to_le32(CDC_NCM_RECV_NTB_MAX_SIZE),
-			.wNtbInMaxDatagrams = sys_cpu_to_le16(CDC_NCM_RECV_MAX_DATAGRAMS_PER_NTB),
+			.dwNtbInMaxSize = sys_cpu_to_le32(CDC_NCM_SEND_NTB_MAX_SIZE),
+			.wNtbInMaxDatagrams = sys_cpu_to_le16(CDC_NCM_SEND_MAX_DATAGRAMS_PER_NTB),
 			.wReserved = sys_cpu_to_le16(0),
 		};
 
@@ -953,8 +989,6 @@ static int usbd_cdc_ncm_init(struct usbd_class_data *const c_data)
 	} else {
 		desc->if0_ecm.iMACAddress = usbd_str_desc_get_idx(data->mac_desc_data);
 	}
-
-	data->if_state = IF_STATE_INIT;
 
 	return 0;
 }
@@ -995,10 +1029,10 @@ static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
 		return -ENOMEM;
 	}
 
-	if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED) ||
+	if (!atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED) ||
 	    !atomic_test_bit(&data->state, CDC_NCM_IFACE_UP)) {
 		LOG_DBG("Configuration is not enabled or interface not ready (%d / %d)",
-			atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED),
+			atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED),
 			atomic_test_bit(&data->state, CDC_NCM_IFACE_UP));
 		return -EACCES;
 	}
@@ -1084,7 +1118,9 @@ static int cdc_ncm_iface_start(const struct device *dev)
 	atomic_set_bit(&data->state, CDC_NCM_IFACE_UP);
 	net_if_carrier_on(data->iface);
 
-	(void)k_work_reschedule(&data->notif_work, K_MSEC(1));
+	if (atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED)) {
+		(void)k_work_reschedule(&data->notif_work, K_MSEC(1));
+	}
 
 	return 0;
 }
@@ -1096,7 +1132,10 @@ static int cdc_ncm_iface_stop(const struct device *dev)
 	LOG_DBG("Stop interface %d", net_if_get_by_iface(data->iface));
 
 	atomic_clear_bit(&data->state, CDC_NCM_IFACE_UP);
-	(void)k_work_reschedule(&data->notif_work, K_MSEC(1));
+
+	if (atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED)) {
+		(void)k_work_reschedule(&data->notif_work, K_MSEC(1));
+	}
 
 	return 0;
 }

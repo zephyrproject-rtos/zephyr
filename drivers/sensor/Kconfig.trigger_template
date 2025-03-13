@@ -4,6 +4,7 @@
 
 choice "$(module)_TRIGGER_MODE"
 	prompt "Trigger mode"
+	default $(module)_TRIGGER_NONE
 	help
 	  Specify the type of triggering to be used by the sensor module.
 

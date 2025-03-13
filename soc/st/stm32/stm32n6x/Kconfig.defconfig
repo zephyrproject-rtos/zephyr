@@ -1,0 +1,17 @@
+# ST Microelectronics STM32N6 MCU series
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32N6X
+
+rsource "Kconfig.defconfig.stm32n6*"
+
+DT_STM32_CPU_CLOCK_PATH := $(dt_nodelabel_path,cpusw)
+DT_STM32_CPU_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_CPU_CLOCK_PATH),clock-frequency)
+
+# For STM32N6, override the value defined in STM32 Kconfig to use CPU clock frequency
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default "$(DT_STM32_CPU_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,cpusw)"
+
+endif # SOC_SERIES_STM32N6X

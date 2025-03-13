@@ -39,10 +39,11 @@ tests:
       or dt_label_with_parent_compat_enabled("storage_partition", "nordic,owned-partitions")))
     integration_platforms:
       - qemu_x86
-      - mimxrt1060_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
   drivers.flash.common.no_explicit_erase:
     platform_allow:
       - nrf54l15dk/nrf54l05/cpuapp
+      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
@@ -55,7 +56,7 @@ tests:
   drivers.flash.common.mx25r_high_perf:
     platform_allow: nrf52840dk/nrf52840
     extra_configs:
-      - CONFIG_TEST_DRIVER_FLASH_SIZE=216142092
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=8388608
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25r_high_perf.overlay
@@ -64,7 +65,7 @@ tests:
   drivers.flash.common.mr_canhubk3_sfdp_runtime:
     platform_allow: mr_canhubk3
     extra_configs:
-      - CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME=y
+      - CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME=y
   drivers.flash.common.spi_nor:
     platform_allow: nrf52840dk/nrf52840
     extra_configs:
@@ -93,3 +94,21 @@ tests:
       - gd32vf103v_eval
       - gd32a503v_eval
       - gd32f470i_eval
+  drivers.flash.common.silabs.dma:
+    platform_allow:
+      - xg24_rb4187c
+    extra_configs:
+      - CONFIG_DMA=y
+  drivers.flash.common.silabs.dma.lpwrite:
+    platform_allow:
+      - xg24_rb4187c
+    extra_configs:
+      - CONFIG_DMA=y
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/xg24_rb4187c_lpwrite.overlay
+  drivers.flash.common.silabs.dma_read:
+    platform_allow:
+      - xg24_rb4187c
+    extra_configs:
+      - CONFIG_DMA=y
+      - CONFIG_SOC_FLASH_SILABS_S2_DMA_READ=y

@@ -60,6 +60,14 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | DSPI      | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| eMIOS     | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| QSPI      | on-chip    | flash                               |
++-----------+------------+-------------------------------------+
+| STM       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
+| PIT       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
@@ -170,6 +178,12 @@ EDMA
 The EDMA modules feature four EDMA3 instances: Instance 0 with 32 channels,
 and instances 1, 4, and 5, each with 16 channels.
 
+External Flash
+==============
+
+The on-board S26HS512T 512M-bit HyperFlash memory is connected to the QSPI controller
+port A1. This board configuration selects it as the default flash controller.
+
 Programming and Debugging
 *************************
 
@@ -232,13 +246,11 @@ the terminal:
 
    Hello World! s32z2xxdc2
 
-To debug with Lauterbach TRACE32 softare run instead:
+To debug with Lauterbach TRACE32 software run instead:
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: s32z2xxdc2/s32z270/rtu0
-   :goals: build debug -r trace32
-   :compact:
+.. code-block:: console
+
+   west debug -r trace32
 
 Flashing
 ========
@@ -251,7 +263,8 @@ SRAM and run.
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: s32z2xxdc2/s32z270/rtu0
-   :goals: build flash -r trace32
+   :goals: build flash
+   :flash-args: -r trace32
    :compact:
 
 .. note::
@@ -263,11 +276,9 @@ SRAM and run.
 To imitate a similar behavior using NXP S32 Debug Probe runner, you can run the
 ``debug`` command with GDB in batch mode:
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: s32z2xxdc2/s32z270/rtu0
-   :goals: build debug --tool-opt='--batch'
-   :compact:
+.. code-block:: console
+
+   west debug --tool-opt='--batch'
 
 RTU and Core Configuration
 ==========================
@@ -324,7 +335,7 @@ line:
 
 .. code-block:: console
 
-   west debug --startup-args elfFile=<elf_path> rtu=<rtu_id> core=<core_id> lockstep=<yes/no>
+   west debug -r trace32 --startup-args elfFile=<elf_path> rtu=<rtu_id> core=<core_id> lockstep=<yes/no>
 
 Where ``<elf_path>`` is the path to the Zephyr application ELF in the output
 directory.

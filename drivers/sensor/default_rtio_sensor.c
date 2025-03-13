@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor_clock.h>
 #include <zephyr/dsp/types.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/rtio/work.h>
@@ -119,11 +120,21 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 	const struct sensor_chan_spec *const channels = cfg->channels;
 	const int num_output_samples = compute_num_samples(channels, cfg->count);
 	uint32_t min_buf_len = compute_min_buf_len(num_output_samples);
-	uint64_t timestamp_ns = k_ticks_to_ns_floor64(k_uptime_ticks());
-	int rc = sensor_sample_fetch(dev);
+	uint64_t cycles;
+	int rc;
+
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		return;
+	}
+
+	uint64_t timestamp_ns = sensor_clock_cycles_to_ns(cycles);
 	uint8_t *buf;
 	uint32_t buf_len;
 
+	rc = sensor_sample_fetch(dev);
 	/* Check that the fetch succeeded */
 	if (rc != 0) {
 		LOG_WRN("Failed to fetch samples");
@@ -318,25 +329,44 @@ static int get_frame_count(const uint8_t *buffer, struct sensor_chan_spec channe
 
 	switch (channel.chan_type) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		channel.chan_type = SENSOR_CHAN_ACCEL_X;
-		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		channel.chan_type = SENSOR_CHAN_GYRO_X;
-		break;
 	case SENSOR_CHAN_MAGN_XYZ:
-		channel.chan_type = SENSOR_CHAN_MAGN_X;
-		break;
 	case SENSOR_CHAN_POS_DXYZ:
-		channel.chan_type = SENSOR_CHAN_POS_DX;
+		for (size_t i = 0 ; i < header->num_channels; ++i) {
+			/* For 3-axis channels, we need to verify we have each individual axis */
+			struct sensor_chan_spec channel_x = {
+				.chan_type = channel.chan_type - 3,
+				.chan_idx = channel.chan_idx,
+			};
+			struct sensor_chan_spec channel_y = {
+				.chan_type = channel.chan_type - 2,
+				.chan_idx = channel.chan_idx,
+			};
+			struct sensor_chan_spec channel_z = {
+				.chan_type = channel.chan_type - 1,
+				.chan_idx = channel.chan_idx,
+			};
+
+			/** The three axes don't need to be at the beginning of the header, but
+			 * they should be consecutive.
+			 */
+			if (((header->num_channels - i) >= 3) &&
+			    sensor_chan_spec_eq(header->channels[i], channel_x) &&
+			    sensor_chan_spec_eq(header->channels[i + 1], channel_y) &&
+			    sensor_chan_spec_eq(header->channels[i + 2], channel_z)) {
+				*frame_count = 1;
+				return 0;
+			}
+		}
 		break;
 	default:
-		break;
-	}
-	for (size_t i = 0; i < header->num_channels; ++i) {
-		if (sensor_chan_spec_eq(header->channels[i], channel)) {
-			*frame_count = 1;
-			return 0;
+		for (size_t i = 0; i < header->num_channels; ++i) {
+			if (sensor_chan_spec_eq(header->channels[i], channel)) {
+				*frame_count = 1;
+				return 0;
+			}
 		}
+		break;
 	}
 
 	return -ENOTSUP;
@@ -353,21 +383,9 @@ int sensor_natively_supported_channel_size_info(struct sensor_chan_spec channel,
 	}
 
 	switch (channel.chan_type) {
-	case SENSOR_CHAN_ACCEL_X:
-	case SENSOR_CHAN_ACCEL_Y:
-	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
-	case SENSOR_CHAN_GYRO_X:
-	case SENSOR_CHAN_GYRO_Y:
-	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ:
-	case SENSOR_CHAN_MAGN_X:
-	case SENSOR_CHAN_MAGN_Y:
-	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
-	case SENSOR_CHAN_POS_DX:
-	case SENSOR_CHAN_POS_DY:
-	case SENSOR_CHAN_POS_DZ:
 	case SENSOR_CHAN_POS_DXYZ:
 		*base_size = sizeof(struct sensor_three_axis_data);
 		*frame_size = sizeof(struct sensor_three_axis_sample_data);
@@ -480,33 +498,21 @@ static int decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 
 	/* Check for 3d channel mappings */
 	switch (chan_spec.chan_type) {
-	case SENSOR_CHAN_ACCEL_X:
-	case SENSOR_CHAN_ACCEL_Y:
-	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
 		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_ACCEL_X,
 					  SENSOR_CHAN_ACCEL_Y, SENSOR_CHAN_ACCEL_Z,
 					  chan_spec.chan_idx);
 		break;
-	case SENSOR_CHAN_GYRO_X:
-	case SENSOR_CHAN_GYRO_Y:
-	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ:
 		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_GYRO_X,
 					  SENSOR_CHAN_GYRO_Y, SENSOR_CHAN_GYRO_Z,
 					  chan_spec.chan_idx);
 		break;
-	case SENSOR_CHAN_MAGN_X:
-	case SENSOR_CHAN_MAGN_Y:
-	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
 		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_MAGN_X,
 					  SENSOR_CHAN_MAGN_Y, SENSOR_CHAN_MAGN_Z,
 					  chan_spec.chan_idx);
 		break;
-	case SENSOR_CHAN_POS_DX:
-	case SENSOR_CHAN_POS_DY:
-	case SENSOR_CHAN_POS_DZ:
 	case SENSOR_CHAN_POS_DXYZ:
 		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_POS_DX,
 					  SENSOR_CHAN_POS_DY, SENSOR_CHAN_POS_DZ,

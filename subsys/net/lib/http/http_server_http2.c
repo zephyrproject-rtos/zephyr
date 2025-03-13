@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
+#include <zephyr/net/http/server.h>
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -208,6 +209,8 @@ static int send_headers_frame(struct http_client_ctx *client, enum http_status s
 		return ret;
 	}
 
+	client->current_stream->headers_sent = true;
+
 	return 0;
 }
 
@@ -337,6 +340,22 @@ static int send_http2_404(struct http_client_ctx *client,
 	return ret;
 }
 
+static int send_http2_405(struct http_client_ctx *client,
+			  struct http2_frame *frame)
+{
+	int ret;
+
+	ret = send_headers_frame(client, HTTP_405_METHOD_NOT_ALLOWED,
+				 frame->stream_identifier, NULL,
+				 HTTP2_FLAG_END_STREAM, NULL, 0);
+	if (ret < 0) {
+		LOG_DBG("Cannot write to socket (%d)", ret);
+		return ret;
+	}
+
+	return ret;
+}
+
 static int send_http2_409(struct http_client_ctx *client,
 			  struct http2_frame *frame)
 {
@@ -351,6 +370,46 @@ static int send_http2_409(struct http_client_ctx *client,
 	return ret;
 }
 
+static void send_http2_500(struct http_client_ctx *client,
+			   struct http2_frame *frame, int error_code)
+{
+#define HTTP_500_RESPONSE_TEMPLATE "Internal Server Error%s%s"
+#define MAX_ERROR_DESC_LEN 32
+
+	char error_str[] = "xxx";
+	char http_response[sizeof(HTTP_500_RESPONSE_TEMPLATE) +
+			   MAX_ERROR_DESC_LEN + 1]; /* For the error description */
+	const char *error_desc;
+	const char *desc_separator;
+
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_REPORT_FAILURE_REASON)) {
+		/* Try to fetch error description, fallback to error number if
+		 * not available
+		 */
+		error_desc = strerror(error_code);
+		if (strlen(error_desc) == 0) {
+			/* Cast error value to uint8_t to avoid truncation warnings. */
+			(void)snprintk(error_str, sizeof(error_str), "%u",
+				       (uint8_t)error_code);
+			error_desc = error_str;
+		}
+		desc_separator = ": ";
+	} else {
+		error_desc = "";
+		desc_separator = "";
+	}
+
+	if (send_headers_frame(client, HTTP_500_INTERNAL_SERVER_ERROR,
+			       frame->stream_identifier, NULL, 0, NULL, 0) < 0) {
+		return;
+	}
+
+	(void)snprintk(http_response, sizeof(http_response),
+		       HTTP_500_RESPONSE_TEMPLATE, desc_separator, error_desc);
+	(void)send_data_frame(client, http_response, strlen(http_response),
+			      frame->stream_identifier, HTTP2_FLAG_END_STREAM);
+}
+
 static int handle_http2_static_resource(
 	struct http_resource_detail_static *static_detail,
 	struct http2_frame *frame, struct http_client_ctx *client)
@@ -359,8 +418,8 @@ static int handle_http2_static_resource(
 	size_t content_len;
 	int ret;
 
-	if (!(static_detail->common.bitmask_of_supported_http_methods & BIT(HTTP_GET))) {
-		return -ENOTSUP;
+	if (client->method != HTTP_GET) {
+		return send_http2_405(client, frame);
 	}
 
 	if (client->current_stream == NULL) {
@@ -377,8 +436,6 @@ static int handle_http2_static_resource(
 		goto out;
 	}
 
-	client->current_stream->headers_sent = true;
-
 	ret = send_data_frame(client, content_200, content_len,
 			      frame->stream_identifier,
 			      HTTP2_FLAG_END_STREAM);
@@ -393,6 +450,7 @@ out:
 	return ret;
 }
 
+#if defined(CONFIG_FILE_SYSTEM)
 static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
 					   struct http2_frame *frame,
 					   struct http_client_ctx *client)
@@ -408,13 +466,13 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 		.path_len = static_fs_detail->common.path_len,
 		.type = static_fs_detail->common.type,
 	};
-	bool gzipped;
+	enum http_compression chosen_compression = 0;
 	int len;
 	int remaining;
 	char tmp[64];
 
-	if (!(static_fs_detail->common.bitmask_of_supported_http_methods & BIT(HTTP_GET))) {
-		return -ENOTSUP;
+	if (client->method != HTTP_GET) {
+		return send_http2_405(client, frame);
 	}
 
 	if (client->current_stream == NULL) {
@@ -434,7 +492,12 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	}
 
 	/* open file, if it exists */
-	ret = http_server_find_file(fname, sizeof(fname), &client->data_len, &gzipped);
+#ifdef CONFIG_HTTP_SERVER_COMPRESSION
+	ret = http_server_find_file(fname, sizeof(fname), &client->data_len,
+					client->supported_compression, &chosen_compression);
+#else
+	ret = http_server_find_file(fname, sizeof(fname), &client->data_len, 0, NULL);
+#endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
 
@@ -455,8 +518,8 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	}
 
 	/* send headers */
-	if (gzipped) {
-		res_detail.content_encoding = "gzip";
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
+		res_detail.content_encoding = http_compression_text(chosen_compression);
 	}
 	ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier, &res_detail, 0,
 				 NULL, 0);
@@ -464,8 +527,6 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		goto out;
 	}
-
-	client->current_stream->headers_sent = true;
 
 	/* read and send file */
 	remaining = client->data_len;
@@ -493,6 +554,7 @@ out:
 
 	return ret;
 }
+#endif /* CONFIG_FILE_SYSTEM */
 
 static int http2_dynamic_response(struct http_client_ctx *client, struct http2_frame *frame,
 				  struct http_response_ctx *rsp, enum http_data_status data_status,
@@ -535,8 +597,6 @@ static int http2_dynamic_response(struct http_client_ctx *client, struct http2_f
 		if (ret < 0) {
 			return ret;
 		}
-
-		client->current_stream->headers_sent = true;
 	}
 
 	/* Send body data if provided */
@@ -556,8 +616,8 @@ static int http2_dynamic_response(struct http_client_ctx *client, struct http2_f
 	return 0;
 }
 
-static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
-			      struct http_client_ctx *client)
+static int dynamic_get_del_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
+				  struct http_client_ctx *client)
 {
 	int ret, len;
 	char *ptr;
@@ -608,8 +668,8 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 	return ret;
 }
 
-static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
-			       struct http_client_ctx *client, bool headers_only)
+static int dynamic_post_put_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
+				   struct http_client_ctx *client, bool headers_only)
 {
 	int ret = 0;
 	char *ptr = client->cursor;
@@ -719,7 +779,7 @@ static int handle_http2_dynamic_resource(
 	user_method = dynamic_detail->common.bitmask_of_supported_http_methods;
 
 	if (!(BIT(client->method) & user_method)) {
-		return -ENOPROTOOPT;
+		return send_http2_405(client, frame);
 	}
 
 	if (dynamic_detail->holder != NULL && dynamic_detail->holder != client) {
@@ -735,17 +795,20 @@ static int handle_http2_dynamic_resource(
 
 	switch (client->method) {
 	case HTTP_GET:
-		if (user_method & BIT(HTTP_GET)) {
-			return dynamic_get_req_v2(dynamic_detail, client);
+	case HTTP_DELETE:
+		if (user_method & BIT(client->method)) {
+			return dynamic_get_del_req_v2(dynamic_detail, client);
 		}
 
 		goto not_supported;
 
 	case HTTP_POST:
+	case HTTP_PUT:
+	case HTTP_PATCH:
 		/* The data will come in DATA frames. Remember the detail ptr
 		 * which needs to be known when passing data to application.
 		 */
-		if (user_method & BIT(HTTP_POST)) {
+		if (user_method & BIT(client->method)) {
 			client->current_stream->current_detail =
 				(struct http_resource_detail *)dynamic_detail;
 
@@ -754,7 +817,7 @@ static int handle_http2_dynamic_resource(
 			 * re-use for any other concurrent streams
 			 */
 			if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
-				ret = dynamic_post_req_v2(dynamic_detail, client, true);
+				ret = dynamic_post_put_req_v2(dynamic_detail, client, true);
 				if (ret < 0) {
 					return ret;
 				}
@@ -1012,8 +1075,10 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 		ret = http_server_sendall(client, switching_protocols,
 					  sizeof(switching_protocols) - 1);
 		if (ret < 0) {
-			goto error;
+			return ret;
 		}
+
+		client->http1_headers_sent = true;
 
 		/* The first HTTP/2 frame sent by the server MUST be a server connection
 		 * preface.
@@ -1026,7 +1091,7 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 		client->preface_sent = true;
 	}
 
-	detail = get_resource_detail(client->url_buffer, &path_len, false);
+	detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
 	if (detail != NULL) {
 		detail->path_len = path_len;
 
@@ -1037,12 +1102,14 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			if (ret < 0) {
 				goto error;
 			}
+#if defined(CONFIG_FILE_SYSTEM)
 		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
 			ret = handle_http2_static_fs_resource(
 				(struct http_resource_detail_static_fs *)detail, frame, client);
 			if (ret < 0) {
 				goto error;
 			}
+#endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,
@@ -1051,8 +1118,10 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 				goto error;
 			}
 
-			if (client->method == HTTP_POST) {
-				ret = dynamic_post_req_v2(
+			if (client->method == HTTP_POST ||
+			    client->method == HTTP_PUT ||
+			    client->method == HTTP_PATCH) {
+				ret = dynamic_post_put_req_v2(
 					(struct http_resource_detail_dynamic *)detail, client,
 					false);
 				if (ret < 0) {
@@ -1082,6 +1151,11 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 	return 0;
 
 error:
+	if (ret != -EAGAIN && client->current_stream &&
+	    !client->current_stream->headers_sent) {
+		send_http2_500(client, frame, -ret);
+	}
+
 	return ret;
 }
 
@@ -1150,17 +1224,18 @@ int handle_http_frame_data(struct http_client_ctx *client)
 		/* There is no handler */
 		LOG_DBG("No dynamic handler found.");
 		(void)send_http2_404(client, frame);
-		return -ENOENT;
+		ret = -ENOENT;
+		goto error;
 	}
 
 	if (is_header_flag_set(frame->flags, HTTP2_FLAG_PADDED)) {
 		ret = parse_http_frame_padded_field(client);
 		if (ret < 0) {
-			return ret;
+			goto error;
 		}
 	}
 
-	ret = dynamic_post_req_v2(
+	ret = dynamic_post_put_req_v2(
 		(struct http_resource_detail_dynamic *)client->current_stream->current_detail,
 		client, false);
 	if (ret < 0 && ret == -ENOENT) {
@@ -1168,7 +1243,7 @@ int handle_http_frame_data(struct http_client_ctx *client)
 	}
 
 	if (ret < 0) {
-		return ret;
+		goto error;
 	}
 
 	if (frame->length == 0) {
@@ -1178,17 +1253,18 @@ int handle_http_frame_data(struct http_client_ctx *client)
 		if (stream == NULL) {
 			LOG_DBG("No stream context found for ID %d",
 				frame->stream_identifier);
-			return -EBADMSG;
+			ret = -EBADMSG;
+			goto error;
 		}
 
 		ret = send_window_update_frame(client, stream);
 		if (ret < 0) {
-			return ret;
+			goto error;
 		}
 
 		ret = send_window_update_frame(client, NULL);
 		if (ret < 0) {
-			return ret;
+			goto error;
 		}
 
 		if (is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
@@ -1205,6 +1281,14 @@ int handle_http_frame_data(struct http_client_ctx *client)
 	}
 
 	return 0;
+
+error:
+	if (ret != -EAGAIN && client->current_stream &&
+	    !client->current_stream->headers_sent) {
+		send_http2_500(client, frame, -ret);
+	}
+
+	return ret;
 }
 
 static void check_user_request_headers_http2(struct http_header_capture_ctx *ctx,
@@ -1263,17 +1347,23 @@ static int process_header(struct http_client_ctx *client,
 
 	if (header->name_len == (sizeof(":method") - 1) &&
 	    memcmp(header->name, ":method", header->name_len) == 0) {
-		/* TODO Improve string to method conversion */
-		if (header->value_len == (sizeof("GET") - 1) &&
-			memcmp(header->value, "GET", header->value_len) == 0) {
-			client->method = HTTP_GET;
-		} else if (header->value_len == (sizeof("POST") - 1) &&
-				memcmp(header->value, "POST", header->value_len) == 0) {
-			client->method = HTTP_POST;
-		} else {
-			/* Unknown method */
-			return -EBADMSG;
+		const enum http_method supported_methods[] = {
+			HTTP_GET, HTTP_DELETE, HTTP_POST, HTTP_PUT, HTTP_PATCH
+		};
+
+		for (int i = 0; i < ARRAY_SIZE(supported_methods); i++) {
+			if ((header->value_len ==
+			     strlen(http_method_str(supported_methods[i]))) &&
+			    (memcmp(header->value,
+				    http_method_str(supported_methods[i]),
+				    header->value_len) == 0)) {
+				client->method = supported_methods[i];
+				goto out;
+			}
 		}
+
+		/* Unknown method */
+		return -EBADMSG;
 	} else if (header->name_len == (sizeof(":path") - 1) &&
 		   memcmp(header->name, ":path", header->name_len) == 0) {
 		if (header->value_len > sizeof(client->url_buffer) - 1) {
@@ -1307,11 +1397,20 @@ static int process_header(struct http_client_ctx *client,
 		}
 
 		client->content_len = (size_t)len;
-	} else {
+	}
+#ifdef CONFIG_HTTP_SERVER_COMPRESSION
+	else if (header->name_len == (sizeof("accept-encoding") - 1) &&
+		 memcmp(header->name, "accept-encoding", header->name_len) == 0) {
+		http_compression_parse_accept_encoding(header->value, header->value_len,
+						       &client->supported_compression);
+	}
+#endif /* CONFIG_HTTP_SERVER_COMPRESSION */
+	else {
 		/* Just ignore for now. */
 		LOG_DBG("Ignoring field %.*s", (int)header->name_len, header->name);
 	}
 
+out:
 	return 0;
 }
 
@@ -1447,14 +1546,14 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 	if (is_header_flag_set(frame->flags, HTTP2_FLAG_PADDED)) {
 		ret = parse_http_frame_padded_field(client);
 		if (ret < 0) {
-			return ret;
+			goto error;
 		}
 	}
 
 	if (is_header_flag_set(frame->flags, HTTP2_FLAG_PRIORITY)) {
 		ret = parse_http_frame_priority_field(client);
 		if (ret < 0) {
-			return ret;
+			goto error;
 		}
 	}
 
@@ -1470,12 +1569,17 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 				ret = -EBADMSG;
 			}
 
-			return ret;
+			if (ret < 0) {
+				goto error;
+			}
+
+			return 0;
 		}
 
 		if (ret > frame->length) {
 			LOG_ERR("Protocol error, frame length exceeded");
-			return -EBADMSG;
+			ret = -EBADMSG;
+			goto error;
 		}
 
 		frame->length -= ret;
@@ -1487,7 +1591,7 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 
 		ret = process_header(client, header);
 		if (ret < 0) {
-			return ret;
+			goto error;
 		}
 	}
 
@@ -1497,7 +1601,7 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		return 0;
 	}
 
-	detail = get_resource_detail(client->url_buffer, &path_len, false);
+	detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
 	if (detail != NULL) {
 		detail->path_len = path_len;
 
@@ -1506,34 +1610,36 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 				(struct http_resource_detail_static *)detail,
 				frame, client);
 			if (ret < 0) {
-				return ret;
+				goto error;
 			}
+#if defined(CONFIG_FILE_SYSTEM)
 		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
 			ret = handle_http2_static_fs_resource(
 				(struct http_resource_detail_static_fs *)detail, frame, client);
 			if (ret < 0) {
-				return ret;
+				goto error;
 			}
+#endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,
 				frame, client);
 			if (ret < 0) {
-				return ret;
+				goto error;
 			}
 		}
 
 	} else {
 		ret = send_http2_404(client, frame);
 		if (ret < 0) {
-			return ret;
+			goto error;
 		}
 	}
 
 	if (is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 		ret = handle_http_frame_headers_end_stream(client);
 		if (ret < 0) {
-			return ret;
+			goto error;
 		}
 	}
 
@@ -1544,6 +1650,14 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 	}
 
 	return 0;
+
+error:
+	if (ret != -EAGAIN && client->current_stream &&
+	    !client->current_stream->headers_sent) {
+		send_http2_500(client, frame, -ret);
+	}
+
+	return ret;
 }
 
 int handle_http_frame_priority(struct http_client_ctx *client)

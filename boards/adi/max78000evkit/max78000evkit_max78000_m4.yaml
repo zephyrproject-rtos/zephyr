@@ -1,0 +1,23 @@
+identifier: max78000evkit/max78000/m4
+name: max78000evkit m4
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - counter
+  - dma
+  - flash
+  - gpio
+  - i2c
+  - pwm
+  - serial
+  - spi
+  - trng
+  - w1
+  - watchdog
+ram: 128
+flash: 512

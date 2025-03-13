@@ -517,29 +517,6 @@ ZTEST(pthread, test_pthread_equal)
 	zassert_false(pthread_equal(pthread_self(), (pthread_t)4242));
 }
 
-ZTEST(pthread, test_pthread_set_get_concurrency)
-{
-	/* EINVAL if the value specified by new_level is negative */
-	zassert_equal(EINVAL, pthread_setconcurrency(-42));
-
-	/*
-	 * Note: the special value 0 indicates the implementation will
-	 * maintain the concurrency level at its own discretion.
-	 *
-	 * pthread_getconcurrency() should return a value of 0 on init.
-	 */
-	zassert_equal(0, pthread_getconcurrency());
-
-	for (int i = 0; i <= CONFIG_MP_MAX_NUM_CPUS; ++i) {
-		zassert_ok(pthread_setconcurrency(i));
-		/* verify parameter is saved */
-		zassert_equal(i, pthread_getconcurrency());
-	}
-
-	/* EAGAIN if the a system resource to be exceeded */
-	zassert_equal(EAGAIN, pthread_setconcurrency(CONFIG_MP_MAX_NUM_CPUS + 1));
-}
-
 static void cleanup_handler(void *arg)
 {
 	bool *boolp = (bool *)arg;

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/sam3XXh-pinctrl.h>
+#include <dt-bindings/pinctrl/sam3XXe-pinctrl.h>
 
 &pinctrl {
 	twi0_default: twi0_default {
@@ -50,6 +50,14 @@
 		group1 {
 			pinmux = <PD5B_USART3_RXD>,
 				 <PD4B_USART3_TXD>;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <PA25A_SPI0_MISO>,
+				 <PA26A_SPI0_MOSI>,
+				 <PA27A_SPI0_SPCK>;
 		};
 	};
 

@@ -17,9 +17,11 @@
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/kernel.h>
+#include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/poweroff.h>
 #include <kernel_arch_func.h>
+#include <kernel_arch_interface.h>
 
 #include "paging.h"
 
@@ -201,6 +203,33 @@ static void esf_dump(const struct arch_esf *esf)
 #ifdef CONFIG_ARCH_STACKWALK
 typedef bool (*arm64_stacktrace_cb)(void *cookie, unsigned long addr, void *fp);
 
+static bool is_address_mapped(uint64_t *addr)
+{
+	uintptr_t *phys = NULL;
+
+	if (*addr == 0U)
+		return false;
+
+	/* Check alignment. */
+	if ((*addr & (sizeof(uint32_t) - 1U)) != 0U)
+		return false;
+
+	return !arch_page_phys_get((void *) addr, phys);
+}
+
+static bool is_valid_jump_address(uint64_t *addr)
+{
+	if (*addr == 0U)
+		return false;
+
+	/* Check alignment. */
+	if ((*addr & (sizeof(uint32_t) - 1U)) != 0U)
+		return false;
+
+	return ((*addr >= (uint64_t)__text_region_start) &&
+		(*addr <= (uint64_t)(__text_region_end)));
+}
+
 static void walk_stackframe(arm64_stacktrace_cb cb, void *cookie, const struct arch_esf *esf,
 			    int max_frames)
 {
@@ -234,7 +263,11 @@ static void walk_stackframe(arm64_stacktrace_cb cb, void *cookie, const struct a
 	}
 
 	for (int i = 0; (fp != NULL) && (i < max_frames); i++) {
+		if (!is_address_mapped(fp))
+			break;
 		lr = fp[1];
+		if (!is_valid_jump_address(&lr))
+			break;
 		if (!cb(cookie, lr, fp)) {
 			break;
 		}
@@ -306,9 +339,8 @@ static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, u
 		}
 	}
 #ifdef CONFIG_USERSPACE
-	else if ((arch_current_thread()->base.user_options & K_USER) != 0 &&
-		 GET_ESR_EC(esr) == 0x24) {
-		sp_limit = (uint64_t)arch_current_thread()->stack_info.start;
+	else if ((_current->base.user_options & K_USER) != 0 && GET_ESR_EC(esr) == 0x24) {
+		sp_limit = (uint64_t)_current->stack_info.start;
 		guard_start = sp_limit - Z_ARM64_STACK_GUARD_SIZE;
 		sp = esf->sp;
 		if (sp <= sp_limit || (guard_start <= far && far <= sp_limit)) {
@@ -415,8 +447,6 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 	z_fatal_error(reason, esf);
-
-	CODE_UNREACHABLE;
 }
 
 /**
@@ -435,7 +465,7 @@ void z_arm64_do_kernel_oops(struct arch_esf *esf)
 	 * User mode is only allowed to induce oopses and stack check
 	 * failures via software-triggered system fatal exceptions.
 	 */
-	if (((arch_current_thread()->base.user_options & K_USER) != 0) &&
+	if (((_current->base.user_options & K_USER) != 0) &&
 		reason != K_ERR_STACK_CHK_FAIL) {
 		reason = K_ERR_KERNEL_OOPS;
 	}

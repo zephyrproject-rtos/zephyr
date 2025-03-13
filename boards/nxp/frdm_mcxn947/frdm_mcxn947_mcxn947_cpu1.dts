@@ -1,0 +1,72 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxn94x.dtsi>
+#include "frdm_mcxn947.dtsi"
+
+/ {
+	model = "NXP FRDM_N94 board";
+	compatible = "nxp,mcxn947", "nxp,mcx";
+
+	cpus {
+		/delete-node/ cpu@0;
+	};
+
+	chosen {
+		zephyr,sram = &sramg;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot1_partition;
+		zephyr,console = &flexcomm2_lpuart2;
+		zephyr,shell-uart = &flexcomm2_lpuart2;
+	};
+};
+
+&flexcomm2 {
+	status = "okay";
+};
+
+&flexcomm2_lpuart2 {
+	status = "okay";
+};
+
+&mbox {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
+
+&user_button_2 {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};

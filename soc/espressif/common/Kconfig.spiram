@@ -3,6 +3,8 @@
 
 if SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 
+ESP32_PSRAM0_NODE_PATH := $(dt_nodelabel_path,psram0)
+
 config ESP_SPIRAM
 	bool "Support for external, SPI-connected RAM"
 	default n if MCUBOOT
@@ -14,14 +16,6 @@ config ESP_SPIRAM
 
 menu "SPI RAM config"
 	depends on ESP_SPIRAM
-
-config ESP_HEAP_SEARCH_ALL_REGIONS
-	bool "Search for all available heap regions"
-	default y
-	help
-	  This configuration enables searching all available heap
-	  regions. If the region of desired capability is exhausted,
-	  memory will be allocated from other available region.
 
 config ESP_SPIRAM_HEAP_SIZE
 	int "Size of SPIRAM heap"
@@ -56,26 +50,26 @@ choice SPIRAM_TYPE
 
 config SPIRAM_TYPE_ESPPSRAM16
 	bool "ESP-PSRAM16 or APS1604"
-	depends on SPIRAM_MODE_QUAD
+	depends on SPIRAM_MODE_QUAD && (ESP_SPIRAM_SIZE = 2097152)
 
 config SPIRAM_TYPE_ESPPSRAM32
 	bool "ESP-PSRAM32 or IS25WP032"
-	depends on SPIRAM_MODE_QUAD
+	depends on SPIRAM_MODE_QUAD && (ESP_SPIRAM_SIZE = 4194304)
 
 config SPIRAM_TYPE_ESPPSRAM64
 	bool "ESP-PSRAM64, LY68L6400 or APS6408"
+	depends on (ESP_SPIRAM_SIZE = 8388608)
 
 endchoice # SPIRAM_TYPE
 
 config ESP_SPIRAM_SIZE
 	int "Size of SPIRAM part"
-	default 2097152 if SPIRAM_TYPE_ESPPSRAM16
-	default 4194304 if SPIRAM_TYPE_ESPPSRAM32
-	default 8388608 if SPIRAM_TYPE_ESPPSRAM64
+	default $(dt_node_int_prop_int,$(ESP32_PSRAM0_NODE_PATH),size) if $(dt_nodelabel_enabled,psram0)
+	default 0
 	help
 	  Specify size of SPIRAM part.
-	  NOTE: If SPIRAM size is greater than 4MB, only
-	  lower 4MB can be allocated using k_malloc().
+	  NOTE: In ESP32, if SPIRAM size is greater than 4MB,
+	  only lower 4MB can be allocated using k_malloc().
 
 choice SPIRAM_SPEED
 	prompt "Set RAM clock speed"

@@ -441,6 +441,10 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 {
 	const struct flash_area *fa;
 	int rc;
+	const struct device *dev;
+	struct flash_pages_info page;
+	off_t page_offset;
+	size_t erase_size;
 
 	if (off != 0) {
 		rc = IMG_MGMT_ERR_INVALID_OFFSET;
@@ -454,16 +458,15 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 		goto end;
 	}
 
-	/* align requested erase size to the erase-block-size */
-	const struct device *dev = flash_area_get_device(fa);
+	/* Align requested erase size to the erase-block-size */
+	dev = flash_area_get_device(fa);
 
 	if (dev == NULL) {
 		rc = IMG_MGMT_ERR_FLASH_AREA_DEVICE_NULL;
 		goto end_fa;
 	}
-	struct flash_pages_info page;
-	off_t page_offset = fa->fa_off + num_bytes - 1;
 
+	page_offset = fa->fa_off + num_bytes - 1;
 	rc = flash_get_page_info_by_offs(dev, page_offset, &page);
 	if (rc != 0) {
 		LOG_ERR("bad offset (0x%lx)", (long)page_offset);
@@ -471,9 +474,9 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 		goto end_fa;
 	}
 
-	size_t erase_size = page.start_offset + page.size - fa->fa_off;
-
-	rc = flash_area_flatten(fa, 0, erase_size);
+	erase_size = page.start_offset + page.size - fa->fa_off;
+	rc = flash_area_flatten(fa, boot_get_image_start_offset(g_img_mgmt_state.area_id),
+				erase_size);
 
 	if (rc != 0) {
 		LOG_ERR("image slot erase of 0x%zx bytes failed (err %d)", erase_size,
@@ -560,6 +563,7 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 	if (req->off == SIZE_MAX) {
 		/* Request did not include an `off` field. */
 		IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
+		LOG_DBG("Request did not include an `off` field");
 		return IMG_MGMT_ERR_INVALID_OFFSET;
 	}
 
@@ -568,6 +572,8 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 		const struct flash_area *fa;
 #if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD) &&			\
 	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||	\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET) ||		\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) ||			\
@@ -583,12 +589,15 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 		if (req->img_data.len < sizeof(struct image_header)) {
 			/*  Image header is the first thing in the image */
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
+			LOG_DBG("Image data too short: %u < %u", req->img_data.len,
+				sizeof(struct image_header));
 			return IMG_MGMT_ERR_INVALID_IMAGE_HEADER;
 		}
 
 		if (req->size == SIZE_MAX) {
 			/* Request did not include a `len` field. */
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
+			LOG_DBG("Request did not include a `len` field");
 			return IMG_MGMT_ERR_INVALID_LENGTH;
 		}
 
@@ -597,10 +606,12 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 		hdr = (struct image_header *)req->img_data.value;
 		if (hdr->ih_magic != IMAGE_MAGIC) {
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_magic_mismatch);
+			LOG_DBG("Magic mismatch: %08X != %08X", hdr->ih_magic, IMAGE_MAGIC);
 			return IMG_MGMT_ERR_INVALID_IMAGE_HEADER_MAGIC;
 		}
 
 		if (req->data_sha.len > IMG_MGMT_DATA_SHA_LEN) {
+			LOG_DBG("Invalid hash length: %u", req->data_sha.len);
 			return IMG_MGMT_ERR_INVALID_HASH;
 		}
 
@@ -620,8 +631,9 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 
 		action->area_id = img_mgmt_get_unused_slot_area_id(req->image);
 		if (action->area_id < 0) {
-			/* No slot where to upload! */
+			/* No slot available to upload to */
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_no_slot);
+			LOG_DBG("No slot available to upload to");
 			return IMG_MGMT_ERR_NO_FREE_SLOT;
 		}
 
@@ -638,12 +650,15 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 				img_mgmt_err_str_image_too_large);
 			flash_area_close(fa);
-			LOG_ERR("Upload too large for slot: %u > %u", req->size, fa->fa_size);
+			LOG_DBG("Upload too large for slot: %u > %u", req->size,
+				fa->fa_size);
 			return IMG_MGMT_ERR_INVALID_IMAGE_TOO_LARGE;
 		}
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD) &&			\
 	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||	\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET) ||		\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) ||			\
@@ -688,7 +703,7 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 				img_mgmt_err_str_image_too_large);
 			flash_area_close(fa);
-			LOG_ERR("Upload too large for slot (with end offset): %u > %u", req->size,
+			LOG_DBG("Upload too large for slot (with end offset): %u > %u", req->size,
 				(fa->fa_size - CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE));
 			return IMG_MGMT_ERR_INVALID_IMAGE_TOO_LARGE;
 		}
@@ -703,7 +718,7 @@ skip_size_check:
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 				img_mgmt_err_str_image_too_large);
 			flash_area_close(fa);
-			LOG_ERR("Upload too large for slot (with max image size): %u > %u",
+			LOG_DBG("Upload too large for slot (with max image size): %u > %u",
 				req->size, max_image_size);
 			return IMG_MGMT_ERR_INVALID_IMAGE_TOO_LARGE;
 		}
@@ -715,6 +730,8 @@ skip_size_check:
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 					img_mgmt_err_str_image_bad_flash_addr);
 				flash_area_close(fa);
+				LOG_DBG("Invalid flash address: %08X, expected: %08X",
+					hdr->ih_load_addr, (int)fa->fa_off);
 				return IMG_MGMT_ERR_INVALID_FLASH_ADDRESS;
 			}
 		}
@@ -728,12 +745,18 @@ skip_size_check:
 			 */
 			rc = img_mgmt_my_version(&cur_ver);
 			if (rc != 0) {
+				LOG_DBG("Version get failed: %d", rc);
 				return IMG_MGMT_ERR_VERSION_GET_FAILED;
 			}
 
 			if (img_mgmt_vercmp(&cur_ver, &hdr->ih_ver) >= 0) {
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 					img_mgmt_err_str_downgrade);
+				LOG_DBG("Downgrade: %d.%d.%d.%d, expected: %d.%d.%d.%d",
+					cur_ver.iv_major, cur_ver.iv_minor, cur_ver.iv_revision,
+					cur_ver.iv_build_num, hdr->ih_ver.iv_major,
+					hdr->ih_ver.iv_minor, hdr->ih_ver.iv_revision,
+					hdr->ih_ver.iv_build_num);
 				return IMG_MGMT_ERR_CURRENT_VERSION_IS_NEWER;
 			}
 		}
@@ -741,6 +764,7 @@ skip_size_check:
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
 		rc = img_mgmt_flash_check_empty(action->area_id);
 		if (rc < 0) {
+			LOG_DBG("Flash check empty failed: %d", rc);
 			return rc;
 		}
 
@@ -756,6 +780,8 @@ skip_size_check:
 			 * Invalid offset. Drop the data, and respond with the offset we're
 			 * expecting data for.
 			 */
+			LOG_DBG("Invalid offset: %08x, expected: %08x", req->off,
+				g_img_mgmt_state.off);
 			return IMG_MGMT_ERR_OK;
 		}
 
@@ -764,6 +790,8 @@ skip_size_check:
 			 * of the image that the client originally sent
 			 */
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_data_overrun);
+			LOG_DBG("Data overrun: %u + %u > %llu", req->off, req->img_data.len,
+				action->size);
 			return IMG_MGMT_ERR_INVALID_IMAGE_DATA_OVERRUN;
 		}
 	}
@@ -782,6 +810,7 @@ int img_mgmt_erased_val(int slot, uint8_t *erased_val)
 	int area_id = img_mgmt_flash_area_id(slot);
 
 	if (area_id < 0) {
+		LOG_DBG("Invalid slot: %d", area_id);
 		return IMG_MGMT_ERR_INVALID_SLOT;
 	}
 

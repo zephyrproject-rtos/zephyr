@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config FLASH_NXP_S32_QSPI_NOR
@@ -14,10 +14,23 @@ config FLASH_NXP_S32_QSPI_NOR
 	  Enable the Flash driver for a NOR Serial Flash Memory device connected
 	  to an NXP S32 QSPI bus.
 
-if FLASH_NXP_S32_QSPI_NOR
+config FLASH_NXP_S32_QSPI_HYPERFLASH
+	bool "NXP S32 QSPI HYPERFLASH driver"
+	default y
+	depends on DT_HAS_NXP_S32_QSPI_HYPERFLASH_ENABLED
+	select MEMC
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable the Flash driver for a HyperFlash Memory device connected
+	  to an NXP S32 QSPI bus.
 
-config FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME
+if FLASH_NXP_S32_QSPI_NOR || FLASH_NXP_S32_QSPI_HYPERFLASH
+
+config FLASH_NXP_S32_QSPI_SFDP_RUNTIME
 	bool "Read flash parameters at runtime"
+	depends on FLASH_NXP_S32_QSPI_NOR
 	help
 	  Read flash device characteristics from the device at runtime.
 	  This option should provide functionality for all supported
@@ -52,4 +65,4 @@ config FLASH_NXP_S32_QSPI_LAYOUT_PAGE_SIZE
 	  flash memory. Other options may include the 32K-byte erase size (32768),
 	  the block size (65536), or any non-zero multiple of the sector size.
 
-endif # FLASH_NXP_S32_QSPI_NOR
+endif # FLASH_NXP_S32_QSPI_NOR || FLASH_NXP_S32_QSPI_HYPERFLASH

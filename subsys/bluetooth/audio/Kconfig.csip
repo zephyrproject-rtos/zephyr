@@ -10,6 +10,8 @@
 
 config BT_CSIP_SET_MEMBER
 	bool "Coordinated Set Identification Profile Set Member support"
+	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_SMP
 	imply BT_EXT_ADV if BT_PRIVACY
 	help
 	  This option enables support for Coordinated Set Identification
@@ -35,7 +37,7 @@ config BT_CSIP_SET_MEMBER_ENC_SIRK_SUPPORT
 	  Enables support encrypting the SIRK.
 
 config BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
-	int "Coordinated Set Identification Profle max service instance count"
+	int "Coordinated Set Identification Profile max service instance count"
 	default 1
 	range 1 $(UINT8_MAX)
 	help
@@ -46,7 +48,7 @@ config BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
 	  Enabling BT_CAP_ACCEPTOR_SET_MEMBER will take one of the allocated
 	  instances.
 
-config BT_CSIP_SET_MEMBER_NOTIFIABLE
+config BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE
 	bool "SIRK notifiable Support"
 	help
 	  This option enables support for clients to be notified on SIRK changes.
@@ -59,6 +61,7 @@ config BT_CSIP_SET_COORDINATOR
 	bool "Coordinated Set Identification Profile Set Coordinator Support"
 	depends on BT_GATT_CLIENT
 	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_SMP
 	help
 	  This option enables support for Coordinated Set Identification
 	  Profile Set Coordinator.

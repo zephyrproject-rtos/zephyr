@@ -1,0 +1,28 @@
+# Silabs EUSART SPI configuration option
+
+# Copyright (c) 2024 Daikin Comfort Technologies North America, Inc.
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SILABS_EUSART
+	bool "Silabs EUSART SPI controller driver"
+	default y
+	depends on DT_HAS_SILABS_EUSART_SPI_ENABLED
+	depends on GPIO
+	select SOC_GECKO_EUSART
+	select PINCTRL if SOC_FAMILY_SILABS_S2
+	help
+	  Enable the EUSART SPI driver
+
+config SPI_SILABS_EUSART_DMA
+	bool "Silabs EUSART SPI controller driver DMA enabled transfer"
+	depends on SPI_SILABS_EUSART
+	select DMA
+	default y if SPI_ASYNC
+
+config SPI_SILABS_EUSART_DMA_MAX_BLOCKS
+	int "Silabs EUSART SPI controller driver maximum DMA transfer block per channel for a transaction."
+	depends on SPI_SILABS_EUSART_DMA
+	default 8
+	help
+	  One block is needed for every chunk found in the SPI transaction and every 2048 bytes

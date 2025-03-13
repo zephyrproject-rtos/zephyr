@@ -1053,7 +1053,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 			break;
 		}
-#if defined(CONFIG_DNS_RESOLVER)
+#if defined(CONFIG_NET_DHCPV4_OPTION_DNS_ADDRESS)
 #define MAX_DNS_SERVERS CONFIG_DNS_RESOLVER_MAX_SERVERS
 		case DHCPV4_OPTIONS_DNS_SERVER: {
 			struct dns_resolve_context *ctx;
@@ -1555,6 +1555,11 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 {
 	sys_snode_t *node = NULL;
 
+	if (mgmt_event != NET_EVENT_IF_UP &&
+	    mgmt_event != NET_EVENT_IF_DOWN) {
+		return;
+	}
+
 	k_mutex_lock(&lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_NODE(&dhcpv4_ifaces, node) {
@@ -1602,6 +1607,16 @@ static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
 	sys_snode_t *node = NULL;
 	struct in_addr *addr;
 
+	if (mgmt_event != NET_EVENT_IPV4_ACD_FAILED &&
+	    mgmt_event != NET_EVENT_IPV4_ACD_CONFLICT) {
+		return;
+	}
+
+	if (cb->info_length != sizeof(struct in_addr)) {
+		return;
+	}
+
+	addr = (struct in_addr *)cb->info;
 
 	k_mutex_lock(&lock, K_FOREVER);
 
@@ -1614,17 +1629,6 @@ static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
 	if (node == NULL) {
 		goto out;
 	}
-
-	if (mgmt_event != NET_EVENT_IPV4_ACD_FAILED &&
-	    mgmt_event != NET_EVENT_IPV4_ACD_CONFLICT) {
-		goto out;
-	}
-
-	if (cb->info_length != sizeof(struct in_addr)) {
-		goto out;
-	}
-
-	addr = (struct in_addr *)cb->info;
 
 	if (!net_ipv4_addr_cmp(&iface->config.dhcpv4.requested_ip, addr)) {
 		goto out;
@@ -1885,8 +1889,7 @@ int net_dhcpv4_init(void)
 	 * all dhcpv4 related incoming packets.
 	 */
 	ret = net_udp_register(AF_INET, NULL, &local_addr,
-			       DHCPV4_SERVER_PORT,
-			       DHCPV4_CLIENT_PORT,
+			       0, DHCPV4_CLIENT_PORT,
 			       NULL, net_dhcpv4_input, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("UDP callback registration failed");

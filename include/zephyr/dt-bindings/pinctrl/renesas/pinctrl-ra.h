@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,9 @@
 #define RA_PIN_NUM_MASK 0xf
 
 #define RA_PSEL_HIZ_JTAG_SWD 0x0
+#define RA_PSEL_ADC          0x0
+#define RA_PSEL_DAC          0x0
+#define RA_PSEL_ACMPHS       0x0
 #define RA_PSEL_AGT          0x1
 #define RA_PSEL_GPT0         0x2
 #define RA_PSEL_GPT1         0x3
@@ -30,7 +33,9 @@
 #define RA_PSEL_SPI          0x6
 #define RA_PSEL_I2C          0x7
 #define RA_PSEL_CLKOUT_RTC   0x9
+#define RA_PSEL_ACMPHS_VCOUT 0x9
 #define RA_PSEL_CAC_ADC      0xa
+#define RA_PSEL_CAC_DAC      0xa
 #define RA_PSEL_BUS          0xb
 #define RA_PSEL_CANFD        0x10
 #define RA_PSEL_QSPI         0x11
@@ -42,7 +47,6 @@
 #define RA_PSEL_ETH_RMII     0x17
 #define RA_PSEL_GLCDC        0x19
 #define RA_PSEL_OSPI         0x1c
-#define RA_PSEL_ADC          0x00
 
 #define RA_PSEL_POS  8
 #define RA_PSEL_MASK 0x1f

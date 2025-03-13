@@ -1,0 +1,8 @@
+board:
+  name: stm32n6570_dk
+  full_name: STM32N6570-DK
+  vendor: st
+  socs:
+    - name: stm32n657xx
+      variants:
+        - name: sb

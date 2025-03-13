@@ -2,8 +2,11 @@ sample:
   description: I2S Output Sample
   name: i2s_output
 common:
-  tags: drivers
-  depends_on: i2s
+  tags:
+    - drivers
+    - i2s
 tests:
   sample.drivers.i2s.output:
     filter: dt_alias_exists("i2s-tx")
+    integration_platforms:
+      - mimxrt1060_evk@B/mimxrt1062/qspi

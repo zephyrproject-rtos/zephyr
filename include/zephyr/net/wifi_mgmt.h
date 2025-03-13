@@ -75,6 +75,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_ENABLE,
 	/** Disable AP mode */
 	NET_REQUEST_WIFI_CMD_AP_DISABLE,
+	/** Set AP RTS threshold */
+	NET_REQUEST_WIFI_CMD_AP_RTS_THRESHOLD,
 	/** Get interface status */
 	NET_REQUEST_WIFI_CMD_IFACE_STATUS,
 	/** Set or get 11k status */
@@ -109,10 +111,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM,
 	/** DPP actions */
 	NET_REQUEST_WIFI_CMD_DPP,
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 	/** BSS transition management query */
 	NET_REQUEST_WIFI_CMD_BTM_QUERY,
-#endif
 	/** Flush PMKSA cache entries */
 	NET_REQUEST_WIFI_CMD_PMKSA_FLUSH,
 	/** Set enterprise mode credential */
@@ -167,6 +167,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_ENABLE);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_DISABLE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE);
+
+/** Request a Wi-Fi RTS threshold */
+#define NET_REQUEST_WIFI_AP_RTS_THRESHOLD				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_RTS_THRESHOLD)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_RTS_THRESHOLD);
 
 /** Request a Wi-Fi network interface status */
 #define NET_REQUEST_WIFI_IFACE_STATUS				\
@@ -269,12 +275,10 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 /** Request a Wi-Fi BTM query */
 #define NET_REQUEST_WIFI_BTM_QUERY (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTM_QUERY)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
-#endif
 
 /** Request a Wi-Fi PMKSA cache entries flush */
 #define NET_REQUEST_WIFI_PMKSA_FLUSH                           \
@@ -497,6 +501,8 @@ struct wifi_scan_result {
 	uint8_t channel;
 	/** Security type */
 	enum wifi_security_type security;
+	/** WPA3 enterprise type */
+	enum wifi_wpa3_enterprise_type wpa3_ent_type;
 	/** MFP options */
 	enum wifi_mfp_options mfp;
 	/** RSSI */
@@ -545,8 +551,8 @@ struct wifi_connect_req_params {
 	const uint8_t *key2_passwd;
 	/** key2 passwd length, max 128 */
 	uint8_t key2_passwd_length;
-	/** suiteb or suiteb-192 */
-	uint8_t suiteb_type;
+	/** wpa3 enterprise mode */
+	enum wifi_wpa3_enterprise_type wpa3_ent_mode;
 	/** TLS cipher */
 	uint8_t TLS_cipher;
 	/** eap version */
@@ -559,6 +565,8 @@ struct wifi_connect_req_params {
 	const uint8_t *eap_password;
 	/** eap passwd length, max 128 */
 	uint8_t eap_passwd_length;
+	/** Whether verify peer with CA or not: false-not verify, true-verify. */
+	bool verify_peer_cert;
 	/** Fast BSS Transition used */
 	bool ft_used;
 	/** Number of EAP users */
@@ -676,6 +684,8 @@ struct wifi_iface_status {
 	enum wifi_iface_mode iface_mode;
 	/** Link mode, see enum wifi_link_mode */
 	enum wifi_link_mode link_mode;
+	/** WPA3 enterprise type */
+	enum wifi_wpa3_enterprise_type wpa3_ent_type;
 	/** Security type, see enum wifi_security_type */
 	enum wifi_security_type security;
 	/** MFP options, see enum wifi_mfp_options */
@@ -688,7 +698,7 @@ struct wifi_iface_status {
 	unsigned short beacon_interval;
 	/** is TWT capable? */
 	bool twt_capable;
-	/** The current 802.11 PHY TX data rate (in Kbps) */
+	/** The current 802.11 PHY TX data rate (in Mbps) */
 	int current_phy_tx_rate;
 };
 
@@ -1261,6 +1271,15 @@ enum wifi_sap_iface_state {
 	WIFI_SAP_IFACE_ENABLED
 };
 
+/* Extended Capabilities */
+enum wifi_ext_capab {
+	WIFI_EXT_CAPAB_20_40_COEX = 0,
+	WIFI_EXT_CAPAB_GLK = 1,
+	WIFI_EXT_CAPAB_EXT_CHAN_SWITCH = 2,
+	WIFI_EXT_CAPAB_TIM_BROADCAST = 18,
+	WIFI_EXT_CAPAB_BSS_TRANSITION = 19,
+};
+
 #include <zephyr/net/net_if.h>
 
 /** Scan result callback
@@ -1444,7 +1463,7 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*channel)(const struct device *dev, struct wifi_channel_info *channel);
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+
 	/** Send BTM query
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -1453,7 +1472,23 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*btm_query)(const struct device *dev, uint8_t reason);
-#endif
+	/** Judge ap whether support the capability
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param capab is the capability to judge
+	 *
+	 * @return 1 if support, 0 if not support
+	 */
+	int (*bss_ext_capab)(const struct device *dev, int capab);
+
+	/** Send legacy scan
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*legacy_roam)(const struct device *dev);
+
 	/** Get Version of WiFi driver and Firmware
 	 *
 	 * The driver that implements the get_version function must not use stack to allocate the

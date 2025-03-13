@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -27,22 +28,22 @@
 #include "common.h"
 #include "bap_common.h"
 #include "bstests.h"
+#include "syscalls/kernel.h"
 
 #ifdef CONFIG_BT_BAP_BROADCAST_ASSISTANT
 
 extern enum bst_result_t bst_result;
 
 /* BASS variables */
-static volatile uint8_t g_src_id;
 static volatile uint32_t g_broadcast_id;
 static volatile uint8_t g_recv_state_count;
+static struct bt_bap_scan_delegator_recv_state recv_state;
 CREATE_FLAG(flag_discovery_complete);
 CREATE_FLAG(flag_write_complete);
 CREATE_FLAG(flag_cb_called);
 CREATE_FLAG(flag_broadcaster_found);
 CREATE_FLAG(flag_pa_synced);
 CREATE_FLAG(flag_pa_terminated);
-CREATE_FLAG(flag_state_synced);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_recv_state_read);
 CREATE_FLAG(flag_recv_state_updated);
@@ -135,7 +136,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 	printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state %u%s%s\n",
 	       state->src_id, le_addr, state->adv_sid, state->pa_sync_state, state->encrypt_state,
 	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? ", bad code: " : "",
-	       bad_code);
+	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? bad_code : "");
 
 	if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ) {
 		SET_FLAG(flag_broadcast_code_requested);
@@ -143,7 +144,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 		SET_FLAG(flag_incorrect_broadcast_code);
 		if (memcmp(state->bad_code, INCORRECT_BROADCAST_CODE, BT_ISO_BROADCAST_CODE_SIZE) !=
 		    0) {
-			FAIL("Bad code is not what we sent");
+			FAIL("Bad code is not what we sent\n");
 			return;
 		}
 
@@ -151,7 +152,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 
 			if (subgroup->bis_sync != BT_BAP_BIS_SYNC_FAILED) {
-				FAIL("Invalid BIS sync value 0x%08X for failed sync",
+				FAIL("Invalid BIS sync value 0x%08X for failed sync\n",
 				     subgroup->bis_sync);
 				return;
 			}
@@ -185,13 +186,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 	}
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 
-	if (state->pa_sync_state == BT_BAP_PA_STATE_SYNCED) {
-		SET_FLAG(flag_state_synced);
-	}
-
-	g_src_id = state->src_id;
+	memcpy(&recv_state, state, sizeof(recv_state));
 	SET_FLAG(flag_cb_called);
-
 	SET_FLAG(flag_recv_state_updated);
 }
 
@@ -451,27 +447,72 @@ static void test_bass_add_source(void)
 		return;
 	}
 
+	WAIT_FOR_FLAG(flag_recv_state_updated);
+
+	if (!bt_addr_le_eq(&recv_state.addr, &add_src_param.addr)) {
+		char addr[BT_ADDR_LE_STR_LEN];
+		char expected_addr[BT_ADDR_LE_STR_LEN];
+
+		bt_addr_le_to_str(&recv_state.addr, addr, sizeof(addr));
+		bt_addr_le_to_str(&add_src_param.addr, expected_addr, sizeof(expected_addr));
+
+		FAIL("Unexpected addr %s != %s\n", addr, expected_addr);
+		return;
+	}
+
+	if (recv_state.adv_sid != add_src_param.adv_sid) {
+		FAIL("Unexpected SID: %u\n", recv_state.adv_sid);
+		return;
+	}
+
+	if (recv_state.pa_sync_state != BT_BAP_PA_STATE_NOT_SYNCED) {
+		FAIL("Unexpected PA sync state: %d\n", recv_state.pa_sync_state);
+		return;
+	}
+
+	if (recv_state.encrypt_state != BT_BAP_BIG_ENC_STATE_NO_ENC) {
+		FAIL("Unexpected BIG encryption state: %d\n", recv_state.pa_sync_state);
+		return;
+	}
+
+	if (recv_state.broadcast_id != add_src_param.broadcast_id) {
+		FAIL("Unexpected broadcast ID: 0x%06X != 0x%06X\n", recv_state.broadcast_id,
+		     add_src_param.broadcast_id);
+		return;
+	}
+
+	if (recv_state.num_subgroups != add_src_param.num_subgroups) {
+		FAIL("Unexpected number of subgroups: %u\n", recv_state.num_subgroups);
+		return;
+	}
+
 	WAIT_FOR_FLAG(flag_cb_called);
 	WAIT_FOR_FLAG(flag_write_complete);
+
 	printk("Source added\n");
 }
 
-static void test_bass_mod_source(void)
+static void test_bass_mod_source(uint32_t bis_sync)
 {
 	int err;
 	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = { 0 };
-	struct bt_bap_bass_subgroup subgroup = { 0 };
+	struct bt_bap_bass_subgroup subgroup = {0};
+	uint32_t remote_bis_sync;
 
 	printk("Modify source\n");
 	UNSET_FLAG(flag_cb_called);
 	UNSET_FLAG(flag_write_complete);
-	mod_src_param.src_id = g_src_id;
+	UNSET_FLAG(flag_recv_state_updated);
+	mod_src_param.src_id = recv_state.src_id;
 	mod_src_param.num_subgroups = 1;
 	mod_src_param.pa_sync = true;
 	mod_src_param.subgroups = &subgroup;
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
-	subgroup.bis_sync = BT_ISO_BIS_INDEX_BIT(1) | BT_ISO_BIS_INDEX_BIT(2); /* Indexes 1 and 2 */
-	subgroup.metadata_len = 0;
+	subgroup.bis_sync = bis_sync;
+
+	/* Leave metadata as is */
+	subgroup.metadata_len = recv_state.subgroups[0].metadata_len;
+	memcpy(subgroup.metadata, recv_state.subgroups[0].metadata, sizeof(metadata));
 
 	err = bt_bap_broadcast_assistant_mod_src(default_conn, &mod_src_param);
 	if (err != 0) {
@@ -479,11 +520,83 @@ static void test_bass_mod_source(void)
 		return;
 	}
 
+	if (recv_state.pa_sync_state == BT_BAP_PA_STATE_NOT_SYNCED) {
+		printk("Source modified, waiting for server to PA sync\n");
+
+		WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
+	}
+
+	if (recv_state.pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
+		/* Wait for PAST to finish and then a new receive state */
+		printk("Waiting for PAST sync\n");
+		WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
+	}
+
+	if (recv_state.pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
+		FAIL("Unexpected PA sync state: %d\n", recv_state.pa_sync_state);
+		return;
+	}
+
+	if (recv_state.encrypt_state != BT_BAP_BIG_ENC_STATE_NO_ENC) {
+		FAIL("Unexpected BIG encryption state: %d\n", recv_state.pa_sync_state);
+		return;
+	}
+
+	if (recv_state.num_subgroups != mod_src_param.num_subgroups) {
+		FAIL("Unexpected number of subgroups: %u\n", recv_state.num_subgroups);
+		return;
+	}
+
+	/* Wait for another notification that updates the metadata of the subgroups */
+	if (recv_state.subgroups[0].metadata_len == 0U) {
+		printk("Waiting for another receive state update with metadata\n");
+		WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
+	}
+
+	remote_bis_sync = recv_state.subgroups[0].bis_sync;
+	if (subgroup.bis_sync == 0) {
+		if (remote_bis_sync != 0U) {
+			FAIL("Unexpected BIS sync value: %u\n", remote_bis_sync);
+			return;
+		}
+	} else {
+		printk("Waiting for BIS sync\n");
+
+		if (remote_bis_sync == 0U &&
+		    recv_state.encrypt_state == BT_BAP_BIG_ENC_STATE_NO_ENC) {
+			/* Wait for another notification, which will either request a broadcast code
+			 * for encrypted broadcasts, or have the BIS sync values set
+			 */
+			printk("Waiting for another receive state update with BIS sync\n");
+			WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
+			remote_bis_sync = recv_state.subgroups[0].bis_sync;
+		}
+
+		if (recv_state.encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ) {
+			printk("Remote is requesting broadcast code\n");
+			if (remote_bis_sync != 0U) {
+				FAIL("Unexpected BIS sync value: %u", remote_bis_sync);
+				return;
+			}
+		} else if (recv_state.encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+			printk("Remote responded with bad code\n");
+			if (remote_bis_sync != 0U) {
+				FAIL("Unexpected BIS sync value: %u", remote_bis_sync);
+				return;
+			}
+		} else {
+			WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
+			if (remote_bis_sync != subgroup.bis_sync) {
+				FAIL("Unexpected BIS sync value: %u != %u\n", remote_bis_sync,
+				     subgroup.bis_sync);
+				return;
+			}
+		}
+	}
+
 	WAIT_FOR_FLAG(flag_cb_called);
 	WAIT_FOR_FLAG(flag_write_complete);
-	printk("Source added, waiting for server to PA sync\n");
-	WAIT_FOR_FLAG(flag_state_synced)
-	printk("Server PA synced\n");
+	printk("Source modified\n");
 }
 
 static void test_bass_mod_source_long_meta(void)
@@ -491,16 +604,18 @@ static void test_bass_mod_source_long_meta(void)
 	int err;
 	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = { 0 };
 	struct bt_bap_bass_subgroup subgroup = { 0 };
+	uint32_t remote_bis_sync;
 
 	printk("Long write\n");
 	UNSET_FLAG(flag_cb_called);
 	UNSET_FLAG(flag_write_complete);
-	mod_src_param.src_id = g_src_id;
+	UNSET_FLAG(flag_recv_state_updated);
+	mod_src_param.src_id = recv_state.src_id;
 	mod_src_param.num_subgroups = 1;
 	mod_src_param.pa_sync = true;
 	mod_src_param.subgroups = &subgroup;
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
-	subgroup.bis_sync = BT_ISO_BIS_INDEX_BIT(1) | BT_ISO_BIS_INDEX_BIT(2);
+	subgroup.bis_sync = recv_state.subgroups[0].bis_sync;
 
 	subgroup.metadata_len = sizeof(metadata);
 	memcpy(subgroup.metadata, metadata, sizeof(metadata));
@@ -509,12 +624,41 @@ static void test_bass_mod_source_long_meta(void)
 		FAIL("Could not modify source (err %d)\n", err);
 		return;
 	}
+	printk("Source modified, waiting for receive state\n");
+
+	WAIT_FOR_FLAG(flag_recv_state_updated);
+
+	remote_bis_sync = recv_state.subgroups[0].bis_sync;
+	if (recv_state.pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
+		FAIL("Unexpected PA sync state: %d\n", recv_state.pa_sync_state);
+		return;
+	}
+
+	if (recv_state.encrypt_state != BT_BAP_BIG_ENC_STATE_NO_ENC) {
+		FAIL("Unexpected BIG encryption state: %d\n", recv_state.pa_sync_state);
+		return;
+	}
+
+	if (recv_state.num_subgroups != mod_src_param.num_subgroups) {
+		FAIL("Unexpected number of subgroups: %u\n", recv_state.num_subgroups);
+		return;
+	}
+
+	if (remote_bis_sync != 0U && remote_bis_sync != subgroup.bis_sync) {
+		FAIL("Unexpected BIS sync value: %u\n", remote_bis_sync);
+		return;
+	}
+
+	if (memcmp(recv_state.subgroups[0].metadata, subgroup.metadata, subgroup.metadata_len) !=
+	    0) {
+		FAIL("Unexpected metadata (len %u / %u)\n", recv_state.subgroups[0].metadata_len,
+		     subgroup.metadata_len);
+		return;
+	}
 
 	WAIT_FOR_FLAG(flag_cb_called);
 	WAIT_FOR_FLAG(flag_write_complete);
-	printk("Source added, waiting for server to PA sync\n");
-	WAIT_FOR_FLAG(flag_state_synced)
-	printk("Server PA synced\n");
+	printk("Source modified with long meta\n");
 }
 
 static void test_bass_broadcast_code(const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
@@ -523,11 +667,17 @@ static void test_bass_broadcast_code(const uint8_t broadcast_code[BT_ISO_BROADCA
 
 	printk("Adding broadcast code\n");
 	UNSET_FLAG(flag_write_complete);
-	err = bt_bap_broadcast_assistant_set_broadcast_code(default_conn, g_src_id, broadcast_code);
-	if (err != 0) {
-		FAIL("Could not add broadcast code (err %d)\n", err);
-		return;
-	}
+
+	do {
+		err = bt_bap_broadcast_assistant_set_broadcast_code(default_conn, recv_state.src_id,
+								    broadcast_code);
+		if (err == -EBUSY) {
+			k_sleep(BAP_RETRY_WAIT);
+		} else if (err != 0) {
+			FAIL("Could not add broadcast code (err %d)\n", err);
+			return;
+		}
+	} while (err == -EBUSY);
 
 	WAIT_FOR_FLAG(flag_write_complete);
 	printk("Broadcast code added\n");
@@ -540,7 +690,7 @@ static void test_bass_remove_source(void)
 	printk("Removing source\n");
 	UNSET_FLAG(flag_cb_called);
 	UNSET_FLAG(flag_write_complete);
-	err = bt_bap_broadcast_assistant_rem_src(default_conn, g_src_id);
+	err = bt_bap_broadcast_assistant_rem_src(default_conn, recv_state.src_id);
 	if (err != 0) {
 		FAIL("Could not remove source (err %d)\n", err);
 		return;
@@ -599,8 +749,9 @@ static void test_main_client_sync(void)
 	test_bass_scan_stop();
 	test_bass_create_pa_sync();
 	test_bass_add_source();
-	test_bass_mod_source();
+	test_bass_mod_source(0);
 	test_bass_mod_source_long_meta();
+	test_bass_mod_source(BT_ISO_BIS_INDEX_BIT(1) | BT_ISO_BIS_INDEX_BIT(2));
 	test_bass_broadcast_code(BROADCAST_CODE);
 
 	printk("Waiting for receive state with BIS sync\n");
@@ -625,7 +776,7 @@ static void test_main_client_sync_incorrect_code(void)
 	test_bass_scan_stop();
 	test_bass_create_pa_sync();
 	test_bass_add_source();
-	test_bass_mod_source();
+	test_bass_mod_source(BT_ISO_BIS_INDEX_BIT(1));
 	WAIT_FOR_FLAG(flag_broadcast_code_requested);
 	test_bass_broadcast_code(INCORRECT_BROADCAST_CODE);
 	WAIT_FOR_FLAG(flag_incorrect_broadcast_code);

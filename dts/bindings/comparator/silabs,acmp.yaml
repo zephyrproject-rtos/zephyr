@@ -1,0 +1,124 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+description: |
+  Silabs ACMP (Analog Comparator)
+
+  The minimal default configuration for the silabs acmp node is as follows:
+
+    #include <zephyr/dt-bindings/comparator/silabs-acmp.h>
+
+    &acmp0 {
+           status = "okay";
+
+           input-positive = <ACMP_INPUT_VSENSE01DIV4>;
+           input-negative = <ACMP_INPUT_VREFDIVAVDD>;
+    };
+
+  Note that there are bindings to retrieve the values for `input-positive` and
+  `input-negative` properties. See the included bindings in the example above.
+
+  When using the minimal default configuration in the snippet above, some
+  properties will be implicitly configured with default values. An equivalent
+  device tree node is therefore as follows:
+
+    #include <zephyr/dt-bindings/comparator/silabs-acmp.h>
+
+    &acmp0 {
+            status = "okay";
+
+            bias = <0>;
+            hysteresis-mode = "disabled";
+            accuracy-mode = "low";
+            input-range = "full";
+            input-positive = <ACMP_INPUT_VSENSE01DIV4>;
+            input-negative = <ACMP_INPUT_VREFDIVAVDD>;
+            vref-divider = <63>;
+    };
+
+  It is also possible to select a GPIO pin for either/both of the
+  `input-positive` or `input-negative` properties. In those cases, the
+  `pinctrl` driver must be configured to allocate an analog bus corresponding
+  to the port and pin of each GPIO input selected. The following is an example
+  of how that can be configured:
+
+    #include <zephyr/dt-bindings/comparator/silabs-acmp.h>
+    #include <zephyr/dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
+
+    &pinctrl {
+            acmp0_default: acmp0_default {
+                    group0 {
+                            silabs,analog-bus = <ABUS_CDODD0_ACMP0>;
+                    };
+            };
+    };
+
+    &acmp0 {
+            pinctrl-0 = <&acmp0_default>;
+            pinctrl-names = "default";
+            status = "okay";
+
+            bias = <0>;
+            hysteresis-mode = "disabled";
+            accuracy-mode = "low";
+            input-range = "full";
+            input-positive = <ACMP_INPUT_PC3>;
+            input-negative = <ACMP_INPUT_VREFDIV1V25>;
+            vref-divider = <63>;
+    };
+
+  In the above example, note that the device specific bindings for pinctrl
+  were included. This header defines the set of analog bus allocations possible
+  for xg24 parts, and similar headers exist for other parts.
+
+
+compatible: "silabs,acmp"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  bias:
+    type: int
+    default: 0
+
+  hysteresis-mode:
+    type: string
+    enum:
+      - "disabled"
+      - "sym10mv"
+      - "sym20mv"
+      - "sym30mv"
+      - "pos10mv"
+      - "pos20mv"
+      - "pos30mv"
+      - "neg10mv"
+      - "neg20mv"
+      - "neg30mv"
+    default: "disabled"
+
+  accuracy-mode:
+    type: string
+    enum:
+      - "low"
+      - "high"
+    default: "low"
+
+  input-range:
+    type: string
+    enum:
+      - "full"
+      - "reduced"
+    default: "full"
+
+  input-positive:
+    type: int
+    required: true
+
+  input-negative:
+    type: int
+    required: true
+
+  vref-divider:
+    type: int
+    default: 63

@@ -12,7 +12,7 @@
 GTEXT(_exception)
 
 /* import */
-GTEXT(_Fault)
+GTEXT(z_nios2_fault)
 GTEXT(arch_swap)
 #ifdef CONFIG_IRQ_OFFLOAD
 GTEXT(z_irq_do_offload)
@@ -171,12 +171,12 @@ not_interrupt:
 
 _exception_enter_fault:
 	/* If we get here, the exception wasn't in interrupt or an
-	 * invocation of irq_oflload(). Let _Fault() handle it in
+	 * invocation of irq_offload(). Let z_nios2_fault() handle it in
 	 * C domain
 	 */
 
 	mov  r4, sp
-	call _Fault
+	call z_nios2_fault
 	jmpi _exception_exit
 
 no_reschedule:

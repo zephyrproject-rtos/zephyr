@@ -10,17 +10,11 @@ config DEVICE_CONFIGURATION_DATA
 
 config NXP_IMX_EXTERNAL_SDRAM
 	default y
+
 if NETWORKING
 
 config NET_L2_ETHERNET
 	default y
-
-if ETH_MCUX
-
-config ETH_MCUX_PHY_RESET
-	default y
-
-endif # ETH_MCUX
 
 endif # NETWORKING
 

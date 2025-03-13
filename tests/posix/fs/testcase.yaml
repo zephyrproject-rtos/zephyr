@@ -2,9 +2,6 @@ common:
   filter: not CONFIG_NATIVE_LIBC
   arch_exclude:
     - nios2
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
   tags:
     - posix
     - filesystem
@@ -16,6 +13,9 @@ common:
   platform_key:
     - arch
     - simulation
+  integration_platforms:
+    - qemu_x86
+    - qemu_riscv64
 tests:
   portability.posix.fs: {}
   portability.posix.fs.minimal:

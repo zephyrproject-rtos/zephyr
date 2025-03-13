@@ -5,7 +5,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 384
 flash: 2048
 supported:
@@ -17,5 +16,4 @@ supported:
   - arduino_gpio
   - netif:eth
   - memc
-  - kscan:touch
 vendor: st

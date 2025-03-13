@@ -8,7 +8,7 @@
  * @brief File containing internal structures for the offloaded raw TX feature in the driver.
  */
 
-#include "fmac_structs_common.h"
+#include "offload_raw_tx/fmac_structs.h"
 #include "osal_api.h"
 
 struct nrf_wifi_ctx_zep {

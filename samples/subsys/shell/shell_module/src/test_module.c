@@ -42,5 +42,5 @@ static int sub_cmd1_handler(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_SUBCMD_COND_ADD(1, (section_cmd, cmd1), sub_cmd1, NULL, "help for cmd2",
+SHELL_SUBCMD_COND_ADD(1, (section_cmd, cmd1), sub_cmd1, NULL, "help for sub_cmd1",
 			sub_cmd1_handler, 1, 0);

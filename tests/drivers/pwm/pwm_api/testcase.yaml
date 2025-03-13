@@ -21,7 +21,23 @@ tests:
       or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
       CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
+  drivers.pwm.mimxrt700_evk_mimxrt798s_cm33_cpu0_flexio_pwm:
+    tags:
+      - drivers
+      - pwm
+      - userspace
+    extra_args: DTC_OVERLAY_FILE="boards/mimxrt700_evk_mimxrt798s_cm33_cpu0_flexio_pwm.overlay"
+    platform_allow:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    filter: (dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
+      or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
+      CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
+    depends_on: pwm
   drivers.pwm.pwm_fast:
+    tags:
+      - drivers
+      - pwm
+      - userspace
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp

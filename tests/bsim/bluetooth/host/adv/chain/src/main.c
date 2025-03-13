@@ -14,22 +14,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bstests.h"
-
-#define FAIL(...)					\
-	do {						\
-		bst_result = Failed;			\
-		bs_trace_error_time_line(__VA_ARGS__);	\
-	} while (0)
-
-#define PASS(...)					\
-	do {						\
-		bst_result = Passed;			\
-		bs_trace_info_time(1, __VA_ARGS__);	\
-	} while (0)
+#include "babblekit/testcase.h"
 
 #define NAME_LEN 30
 #define BT_AD_DATA_NAME_SIZE     (sizeof(CONFIG_BT_DEVICE_NAME) - 1U + 2U)
@@ -44,8 +29,6 @@
 
 static K_SEM_DEFINE(sem_recv, 0, 1);
 
-extern enum bst_result_t bst_result;
-
 static void test_adv_main(void)
 {
 	extern int broadcaster_multiple(void);
@@ -53,7 +36,7 @@ static void test_adv_main(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Bluetooth init failed\n");
+		TEST_FAIL("Bluetooth init failed");
 
 		bs_trace_silent_exit(err);
 		return;
@@ -61,13 +44,13 @@ static void test_adv_main(void)
 
 	err = broadcaster_multiple();
 	if (err) {
-		FAIL("Adv tests failed\n");
+		TEST_FAIL("Adv tests failed");
 		bs_trace_silent_exit(err);
 		return;
 	}
 
 	/* Successfully started advertising multiple sets */
-	PASS("Adv tests passed\n");
+	TEST_PASS("Adv tests passed");
 
 	/* Let the scanner receive the reports */
 	k_sleep(K_SECONDS(10));
@@ -146,7 +129,7 @@ static void test_scan_main(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Bluetooth init failed\n");
+		TEST_FAIL("Bluetooth init failed");
 
 		bs_trace_silent_exit(err);
 		return;
@@ -156,7 +139,7 @@ static void test_scan_main(void)
 
 	err = observer_start();
 	if (err) {
-		FAIL("Observer start failed\n");
+		TEST_FAIL("Observer start failed");
 
 		bs_trace_silent_exit(err);
 		return;
@@ -167,42 +150,26 @@ static void test_scan_main(void)
 
 	err = k_sem_take(&sem_recv, K_NO_WAIT);
 	if (err) {
-		FAIL("Scan receive failed\n");
+		TEST_FAIL("Scan receive failed");
 
 		bs_trace_silent_exit(err);
 		return;
 	}
 
-	PASS("Scan tests passed\n");
+	TEST_PASS("Scan tests passed");
 
 	bs_trace_silent_exit(0);
-}
-
-static void test_adv_chain_init(void)
-{
-	bst_ticker_set_next_tick_absolute(60e6);
-	bst_result = In_progress;
-}
-
-static void test_adv_chain_tick(bs_time_t HW_device_time)
-{
-	bst_result = Failed;
-	bs_trace_error_line("Test GATT Write finished.\n");
 }
 
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "adv",
 		.test_descr = "Central GATT Write",
-		.test_pre_init_f = test_adv_chain_init,
-		.test_tick_f = test_adv_chain_tick,
 		.test_main_f = test_adv_main
 	},
 	{
 		.test_id = "scan",
 		.test_descr = "Peripheral GATT Write",
-		.test_pre_init_f = test_adv_chain_init,
-		.test_tick_f = test_adv_chain_tick,
 		.test_main_f = test_scan_main
 	},
 	BSTEST_END_MARKER

@@ -8,6 +8,10 @@ compatible: "renesas,ra-cgc-pclk"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
+  clock-frequency:
+    type: int
+    description: clock frequency (Hz)
+
   div:
     type: int
     required: true

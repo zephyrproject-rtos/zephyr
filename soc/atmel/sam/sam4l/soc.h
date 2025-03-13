@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2020-2025 Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -65,6 +65,9 @@
 
 /** Master Clock (MCK) Frequency */
 #define SOC_ATMEL_SAM_MCK_FREQ_HZ       SOC_ATMEL_SAM_HCLK_FREQ_HZ
+
+#define SOC_ATMEL_SAM_RCSYS_NOMINAL_HZ	115000
+#define SOC_ATMEL_SAM_RC32K_NOMINAL_HZ	32768
 
 /** Oscillator identifiers
  *    External Oscillator 0
@@ -205,18 +208,64 @@
  *   10- ADCIFE
  *   11- Master generic clock. Can be used as source for other generic clocks.
  */
-#define GEN_CLK_DFLL_REF	0
-#define GEN_CLK_DFLL_DITHER	1
-#define GEN_CLK_AST		2
-#define GEN_CLK_CATB		3
-#define GEN_CLK_AESA		4
-#define GEN_CLK_GLOC		5
-#define GEN_CLK_ABDACB		6
-#define GEN_CLK_USBC		7
-#define GEN_CLK_TC1_PEVC0	8
-#define GEN_CLK_PLL0_PEVC1	9
-#define GEN_CLK_ADCIFE		10
-#define GEN_CLK_MASTER_GEN	11
+#define GEN_CLK_DFLL_REF        0
+#define GEN_CLK_DFLL_DITHER     1
+#define GEN_CLK_AST             2
+#define GEN_CLK_CATB            3
+#define GEN_CLK_AESA            4
+#define GEN_CLK_TC0_GLOC_RC32   5
+#define GEN_CLK_ABDACB          6
+#define GEN_CLK_USBC            7
+#define GEN_CLK_TC1_PEVC0       8
+#define GEN_CLK_PLL0_PEVC1      9
+#define GEN_CLK_ADCIFE          10
+#define GEN_CLK_MASTER_GEN      11
+
+/**
+ *    0-  System RC oscillator
+ *    1-  32 kHz oscillator
+ *    2-  DFLL
+ *    3-  Oscillator 0
+ *    4-  80 MHz RC oscillator
+ *    5-  4-8-12 MHz RC oscillator
+ *    6-  1 MHz RC oscillator
+ *    7-  CPU clock
+ *    8-  High Speed Bus clock
+ *    9-  Peripheral Bus A clock
+ *    10- Peripheral Bus B clock
+ *    11- Peripheral Bus C clock
+ *    12- Peripheral Bus D clock
+ *    13- 32 kHz RC oscillator
+ *    15- 1 kHz output from OSC32K
+ *    16- PLL0
+ *    17- High resolution prescaler
+ *    18- Fractional prescaler
+ *    19- GCLKIN0
+ *    20- GCLKIN1
+ *    21- GCLK11
+ */
+
+#define GEN_CLK_SRC_RCSYS	0
+#define GEN_CLK_SRC_OSC32K	1
+#define GEN_CLK_SRC_DFLL	2
+#define GEN_CLK_SRC_OSC0	3
+#define GEN_CLK_SRC_RC80M	4
+#define GEN_CLK_SRC_RCFAST	5
+#define GEN_CLK_SRC_RC1M	6
+#define GEN_CLK_SRC_CLK_CPU	7
+#define GEN_CLK_SRC_CLK_HSB	8
+#define GEN_CLK_SRC_CLK_PBA	9
+#define GEN_CLK_SRC_CLK_PBB	10
+#define GEN_CLK_SRC_CLK_PBC	11
+#define GEN_CLK_SRC_CLK_PBD	12
+#define GEN_CLK_SRC_RC32K	13
+#define GEN_CLK_SRC_CLK_1K	15
+#define GEN_CLK_SRC_PLL0	16
+#define GEN_CLK_SRC_HRPCLK	17
+#define GEN_CLK_SRC_FPCLK	18
+#define GEN_CLK_SRC_GCLKIN0	19
+#define GEN_CLK_SRC_GCLKIN1	20
+#define GEN_CLK_SRC_GCLK11	21
 
 #endif /* !_ASMLANGUAGE */
 

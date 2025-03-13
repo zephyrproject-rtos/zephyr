@@ -48,7 +48,10 @@ endif
 
 if BT_NXP
 
-config BT_DIS_MANUF
+config BT_DIS_MANUF_NAME
+	default y
+
+config BT_DIS_MANUF_NAME_STR
 	default "NXP"
 
 config BT_HCI_ACL_FLOW_CONTROL
@@ -68,8 +71,14 @@ endif # BT_NXP
 
 if BT_H4_NXP_CTLR
 
+choice BT_NXP_MODULE
+	# All NXP Bluetooth modules controlled by BT_H4_NXP_CTLR should be added to this section
+	# similar with BT_NXP_NW612.
+	prompt "NXP Bluetooth Module"
+	default BT_NXP_NW612
+
 config BT_NXP_NW612
-	bool "NXP IW612 Chipset"
+	bool "NW612 firmware for NXP IW612 Chipset"
 	help
 	  NXP IW612 Chipset supports Wi-Fi? 802.11a/b/g/n/ac/ax + Bluetooth? 5.3
 	  BR/EDR/LE + IEEE802.1.5.4 up to 601 Mbps data rate on Wi-Fi? and 2Mbps
@@ -79,5 +88,7 @@ config BT_NXP_NW612
 	  wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-5-ghz-
 	  dual-band-1x1-wi-fi-6-802-11ax-plus-bluetooth-5-4-plus-802-15-4-tri-
 	  radio-solution:IW612.
+
+endchoice # BT_NXP_MODULE
 
 endif # BT_H4_NXP_CTLR

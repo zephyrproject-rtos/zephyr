@@ -510,8 +510,8 @@ def test_binaryhandler_create_env(
 
 TESTDATA_6 = [
     (TwisterStatus.NONE, False, 2, True, TwisterStatus.FAIL, 'Valgrind error', False),
-    (TwisterStatus.NONE, False, 1, False, TwisterStatus.FAIL, 'Failed', False),
-    (TwisterStatus.FAIL, False, 0, False, TwisterStatus.FAIL, 'Failed', False),
+    (TwisterStatus.NONE, False, 1, False, TwisterStatus.FAIL, 'Failed (rc=1)', False),
+    (TwisterStatus.FAIL, False, 0, False, TwisterStatus.FAIL, "Failed harness:'foobar'", False),
     ('success', False, 0, False, 'success', 'Unknown', False),
     (TwisterStatus.NONE, True, 1, True, TwisterStatus.FAIL, 'Timeout', True),
 ]
@@ -540,8 +540,9 @@ def test_binaryhandler_update_instance_info(
     handler.returncode = returncode
     missing_mock = mock.Mock()
     handler.instance.add_missing_case_status = missing_mock
+    mocked_harness = mock.Mock(status=harness_status, reason="foobar")
 
-    handler._update_instance_info(harness_status, handler_time)
+    handler._update_instance_info(mocked_harness, handler_time)
 
     assert handler.instance.execution_time == handler_time
 
@@ -1189,7 +1190,7 @@ def test_devicehandler_create_command(
 
 TESTDATA_14 = [
     ('success', False, 'success', 'Unknown', False),
-    (TwisterStatus.FAIL, False, TwisterStatus.FAIL, 'Failed', True),
+    (TwisterStatus.FAIL, False, TwisterStatus.FAIL, "Failed harness:'foobar'", True),
     (TwisterStatus.ERROR, False, TwisterStatus.ERROR, 'Unknown', True),
     (TwisterStatus.NONE, True, TwisterStatus.NONE, 'Unknown', False),
     (TwisterStatus.NONE, False, TwisterStatus.FAIL, 'Timeout', True),
@@ -1213,8 +1214,9 @@ def test_devicehandler_update_instance_info(
     handler_time = 59
     missing_mock = mock.Mock()
     handler.instance.add_missing_case_status = missing_mock
+    mocked_harness = mock.Mock(status=harness_status, reason="foobar")
 
-    handler._update_instance_info(harness_status, handler_time, flash_error)
+    handler._update_instance_info(mocked_harness, handler_time, flash_error)
 
     assert handler.instance.execution_time == handler_time
 
@@ -1716,12 +1718,13 @@ def test_qemuhandler_update_instance_info(
 ):
     mocked_instance.add_missing_case_status = mock.Mock()
     mocked_instance.reason = self_instance_reason
+    mocked_harness = mock.Mock(status=harness_status, reason="foobar")
 
     handler = QEMUHandler(mocked_instance, 'build', mock.Mock())
     handler.returncode = self_returncode
     handler.ignore_qemu_crash = self_ignore_qemu_crash
 
-    handler._update_instance_info(harness_status, is_timeout)
+    handler._update_instance_info(mocked_harness, is_timeout)
 
     assert handler.instance.status == expected_status
     assert handler.instance.reason == expected_reason

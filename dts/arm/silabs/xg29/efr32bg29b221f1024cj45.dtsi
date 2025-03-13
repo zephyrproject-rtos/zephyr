@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/xg29/xg29.dtsi>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+
+/ {
+	soc {
+		compatible = "silabs,efr32bg29b221f1024cj45", "silabs,efr32bg29", "silabs,xg29",
+			     "silabs,efr32", "simple-bus";
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(192)>;
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(1024)>;
+};
+
+&dcdc {
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BOOST>;
+	regulator-init-microvolt = <1800000>;
+	status = "okay";
+};

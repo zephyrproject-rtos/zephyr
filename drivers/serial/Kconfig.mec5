@@ -1,0 +1,27 @@
+# Microchip MEC5 UART
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_MCHP_MEC5
+	bool "Microchip MEC5 family ns16550 compatible UART driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UART driver for Microchip MEC5
+	  family processors.
+
+if UART_MCHP_MEC5
+
+config UART_MCHP_MEC5_LINE_CTRL
+	bool "Serial Line Control for Apps"
+	depends on UART_LINE_CTRL
+	help
+	  This enables the API for apps to control the serial line,
+	  such as CTS and RTS.
+
+	  Says n if not sure.
+
+endif # UART_MCHP_MEC5

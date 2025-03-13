@@ -8,7 +8,6 @@ ram: 1048576
 flash: 524288
 toolchain:
   - zephyr
-  - xtools
 supported:
   - netif
 testing:

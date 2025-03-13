@@ -993,7 +993,7 @@ end:
 }
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
-int32_t stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
+int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;

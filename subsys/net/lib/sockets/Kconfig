@@ -324,7 +324,6 @@ config NET_SOCKETS_CAN_RECEIVERS
 
 config NET_SOCKETPAIR
 	bool "Support for socketpair"
-	select PIPES
 	help
 	  Communicate over a pair of connected, unnamed UNIX domain sockets.
 
@@ -332,7 +331,7 @@ if NET_SOCKETPAIR
 
 config NET_SOCKETPAIR_BUFFER_SIZE
 	int "Size of the intermediate buffer, in bytes"
-	default 4096 if WIFI_NM_WPA_SUPPLICANT
+	default 1024 if WIFI_NM_WPA_SUPPLICANT
 	default 64
 	range 1 4096
 	help
@@ -363,7 +362,8 @@ if NET_SOCKETPAIR_HEAP
 
 config HEAP_MEM_POOL_ADD_SIZE_SOCKETPAIR
 	int
-	default 32000 if WIFI_NM_WPA_SUPPLICANT
+	default 13696 if WIFI_NM_HOSTAPD_AP
+	default 9120 if WIFI_NM_WPA_SUPPLICANT
 	default 256
 
 endif # NET_SOCKETPAIR_HEAP

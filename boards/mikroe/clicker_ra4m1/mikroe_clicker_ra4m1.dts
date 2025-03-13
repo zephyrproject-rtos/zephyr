@@ -42,6 +42,29 @@
 		};
 	};
 
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &ioport0 0 0>,	/* AN  */
+				<1 0 &ioport4 7 0>,		/* RST */
+				<2 0 &ioport1 3 0>,		/* CS   */
+				<3 0 &ioport1 2 0>,		/* SCK  */
+				<4 0 &ioport1 0 0>,		/* MISO */
+				<5 0 &ioport1 1 0>,		/* MOSI */
+							/* +3.3V */
+							/* GND */
+				<6 0 &ioport1 7 0>,		/* PWM  */
+				<7 0 &ioport3 2 0>,		/* INT  */
+				<8 0 &ioport4 10 0>,	/* RX   */
+				<9 0 &ioport4 11 0>,	/* TX   */
+				<10 0 &ioport2 5 0>,	/* SCL  */
+				<11 0 &ioport2 6 0>;	/* SDA  */
+							/* +5V */
+							/* GND */
+	};
+
 	aliases {
 		led0 = &ld1;
 		led1 = &ld2;
@@ -70,6 +93,18 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
 };
 
 &ioport3 {

@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(flash_npcx_fiu_nor, CONFIG_FLASH_LOG_LEVEL);
 #define BLOCK_64K_SIZE KB(64)
 #define BLOCK_4K_SIZE  KB(4)
 
+#define POLLING_BUSY_SLEEP_TIME_US 100
+
 /* Device config */
 struct flash_npcx_nor_config {
 	/* QSPI bus device for mutex control and bus configuration */
@@ -153,6 +155,7 @@ static int flash_npcx_nor_wait_until_ready(const struct device *dev)
 			return 0;
 		}
 
+		k_usleep(POLLING_BUSY_SLEEP_TIME_US);
 	} while ((k_uptime_get() - st) < config->max_timeout);
 
 	return -EBUSY;
@@ -587,8 +590,22 @@ static int flash_npcx_nor_init(const struct device *dev)
 		}
 	}
 
+	if (config->qspi_cfg.is_logical_low_dev && IS_ENABLED(CONFIG_FLASH_NPCX_FIU_DRA_V2)) {
+		qspi_npcx_fiu_set_spi_size(config->qspi_bus, &config->qspi_cfg);
+	}
+
 	return 0;
 }
+
+#define NPCX_FLASH_IS_LOGICAL_LOW_DEV(n)					\
+	(DT_PROP(DT_PARENT(DT_DRV_INST(n)), en_direct_access_2dev) &&		\
+	 (DT_PROP(DT_PARENT(DT_DRV_INST(n)), flash_dev_inv) ==			\
+	  ((DT_INST_PROP(n, qspi_flags) & NPCX_QSPI_SEC_FLASH_SL) ==		\
+	   NPCX_QSPI_SEC_FLASH_SL)))
+
+#define NPCX_FLASH_SPI_ALLOCATE_SIZE(n)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, spi_dev_size),			\
+		    (DT_INST_STRING_TOKEN(n, spi_dev_size)), (0xFF))
 
 #define NPCX_FLASH_NOR_INIT(n)							\
 BUILD_ASSERT(DT_INST_QUAD_EN_PROP_OR(n) == JESD216_DW15_QER_NONE ||		\
@@ -606,6 +623,8 @@ static const struct flash_npcx_nor_config flash_npcx_nor_config_##n = {		\
 		.enter_4ba = DT_INST_PROP_OR(n, enter_4byte_addr, 0),		\
 		.qer_type = DT_INST_QUAD_EN_PROP_OR(n),				\
 		.rd_mode = DT_INST_STRING_TOKEN(n, rd_mode),			\
+		.is_logical_low_dev = NPCX_FLASH_IS_LOGICAL_LOW_DEV(n),		\
+		.spi_dev_sz = NPCX_FLASH_SPI_ALLOCATE_SIZE(n),			\
 	},									\
 	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT, (					\
 		.layout = {							\

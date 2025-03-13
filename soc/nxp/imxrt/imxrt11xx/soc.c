@@ -160,7 +160,7 @@ const __imx_boot_ivt_section ivt image_vector_table = {
 /**
  * @brief Initialize the system clock
  */
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 	clock_root_config_t rootCfg = {0};
 
@@ -408,13 +408,13 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c6, &rootCfg);
 #endif
 
-#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
+#if CONFIG_ETH_NXP_ENET
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	/* 50 MHz ENET clock */
 	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
-#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+#if CONFIG_ETH_NXP_ENET_RMII_EXT_CLK
 	/* Set ENET_REF_CLK as an input driven by PHY */
 	IOMUXC_GPR->GPR4 &= ~IOMUXC_GPR_GPR4_ENET_REF_CLK_DIR(0x01U);
 	IOMUXC_GPR->GPR4 |= IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL(0x1U);
@@ -442,7 +442,7 @@ static ALWAYS_INLINE void clock_init(void)
 	 */
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet2, &rootCfg);
-#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+#if CONFIG_ETH_NXP_ENET_RMII_EXT_CLK
 	/* Set ENET1G_REF_CLK as an input driven by PHY */
 	IOMUXC_GPR->GPR5 &= ~IOMUXC_GPR_GPR5_ENET1G_REF_CLK_DIR(0x01U);
 	IOMUXC_GPR->GPR5 |= IOMUXC_GPR_GPR5_ENET1G_TX_CLK_SEL(0x1U);
@@ -455,7 +455,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 #endif
 
-#if defined(CONFIG_PTP_CLOCK_MCUX) || defined(CONFIG_PTP_CLOCK_NXP_ENET)
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	/* 24MHz PTP clock */
 	rootCfg.mux = kCLOCK_ENET_TIMER1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
@@ -565,6 +565,14 @@ static ALWAYS_INLINE void clock_init(void)
 	rootCfg.mux = kCLOCK_FLEXSPI1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
+#endif
+
+#if !(DT_NODE_HAS_COMPAT(DT_PARENT(DT_CHOSEN(zephyr_flash)), nxp_imx_flexspi)) &&  \
+	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi2))
+	/* Configure FLEXSPI2 using OSC_RC_48M_DIV2 */
+	rootCfg.mux = kCLOCK_FLEXSPI2_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexspi2, &rootCfg);
 #endif
 
 	/* Keep core clock ungated during WFI */

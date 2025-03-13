@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_RENESAS_RZ_GPT
+	bool "Renesas RZ General PWM Timer (GPT) PWM driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_GPT_PWM_ENABLED
+	select USE_RZ_FSP_GPT
+	help
+	  Enable the PWM driver for the Renesas RZ General PWM Timer (GPT).

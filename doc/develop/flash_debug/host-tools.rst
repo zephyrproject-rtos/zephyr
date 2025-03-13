@@ -28,7 +28,14 @@ The typical command to flash the board is:
 
 .. code-block:: console
 
-	west flash [ -r bossac ] [ -p /dev/ttyX ]
+	west flash [ -r bossac ] [ -p /dev/ttyX ] [ --erase ]
+
+.. note::
+
+    By default, flashing with bossac will only erase the flash pages containing
+    the flashed application, leaving other pages untouched. Should you wish to
+    erase the entire flash of the target when flashing, pass the ``--erase``
+    parameter when flashing.
 
 Flash configuration for devices:
 

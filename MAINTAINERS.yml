@@ -126,6 +126,20 @@ ACPI:
   tests:
     - acpi
 
+Antmicro platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  collaborators:
+    - kgugala
+  files:
+    - boards/antmicro/
+    - soc/antmicro/
+    - dts/arm/antmicro/
+  labels:
+    - "platform: Antmicro"
+
 ARC arch:
   status: maintained
   maintainers:
@@ -148,10 +162,19 @@ ARC arch:
   tests:
     - arch.arc
 
+Arduino Platforms:
+  status: maintained
+  maintainers:
+    - pillo79
+  collaborators:
+    - facchinm
+  files:
+    - boards/arduino/
+
 ARM arch:
   status: maintained
   maintainers:
-    - ithinuel
+    - wearyzen
   collaborators:
     - microbuilder
     - carlocaione
@@ -159,7 +182,7 @@ ARM arch:
     - MaureenHelm
     - stephanosio
     - bbolen
-    - wearyzen
+    - ithinuel
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -180,6 +203,9 @@ ARM64 arch:
     - npitre
     - povergoing
     - sgrrzhf
+    - wearyzen
+    - ithinuel
+    - JiafeiPan
   files:
     - arch/arm64/
     - include/zephyr/arch/arm64/
@@ -195,9 +221,9 @@ ARM64 arch:
 ARM Platforms:
   status: maintained
   maintainers:
-    - ithinuel
-  collaborators:
     - wearyzen
+  collaborators:
+    - ithinuel
   files:
     - boards/arm/mps*/
     - boards/arm/v2m_*/
@@ -337,7 +363,6 @@ Bluetooth Controller:
   collaborators:
     - carlescufi
     - thoh-ot
-    - kruithofa
     - ppryga
     - mtpr-ot
     - wopu-ot
@@ -402,13 +427,13 @@ Bluetooth Host:
     - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
+    - samples/bluetooth/ccp*/
     - samples/bluetooth/hap*/
     - samples/bluetooth/hci_*/
     - samples/bluetooth/pbp*/
     - samples/bluetooth/tmap*/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
-    - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -467,7 +492,6 @@ Bluetooth Audio:
     - sjanc
     - asbjornsabo
     - fredrikdanebjer
-    - kruithofa
     - larsgk
     - pin-zephyr
     - niym-ot
@@ -486,6 +510,7 @@ Bluetooth Audio:
     - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
+    - samples/bluetooth/ccp*/
     - samples/bluetooth/hap*/
     - samples/bluetooth/pbp*/
     - samples/bluetooth/tmap*/
@@ -501,6 +526,9 @@ Bluetooth Classic:
     - lylezhu2012
   collaborators:
     - jhedberg
+    - MarkWangChinese
+    - gzh-terry
+    - makeshi
   files:
     - doc/connectivity/bluetooth/shell/classic/a2dp.rst
     - subsys/bluetooth/common/
@@ -518,14 +546,12 @@ Bluetooth ISO:
     - Thalley
   collaborators:
     - jhedberg
-    - kruithofa
     - rugeGerritsen
     - cvinayak
   files:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/shell/host/iso.rst
     - samples/bluetooth/iso_*/
-    - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -890,7 +916,9 @@ DFU:
     - dfu
 
 Devicetree:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - mbolivar
   collaborators:
     - decsny
     - galak
@@ -1233,6 +1261,8 @@ Release Notes:
   status: maintained
   maintainers:
     - ceolin
+  collaborators:
+    - valeriosetti
   files:
     - drivers/crypto/
     - dts/bindings/crypto/
@@ -1387,12 +1417,13 @@ Release Notes:
     - drivers.espi
 
 "Drivers: Ethernet":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - maass-hamburg
   collaborators:
     - decsny
     - lmajewski
     - pdgendt
-    - maass-hamburg
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -1494,6 +1525,7 @@ Release Notes:
   files:
     - doc/hardware/peripherals/gnss.rst
     - drivers/gnss/
+    - include/zephyr/data/navigation.h
     - include/zephyr/drivers/gnss.h
     - include/zephyr/drivers/gnss/
     - dts/bindings/gnss/
@@ -1620,6 +1652,9 @@ Release Notes:
   status: maintained
   maintainers:
     - carlocaione
+  collaborators:
+    - wearyzen
+    - ithinuel
   files:
     - include/zephyr/drivers/mbox.h
     - drivers/mbox/
@@ -1742,31 +1777,11 @@ Release Notes:
   tests:
     - drivers.ipm
 
-"Drivers: kscan":
-  status: maintained
-  maintainers:
-    - albertofloyd
-  collaborators:
-    - VenkatKotakonda
-  files:
-    - drivers/kscan/
-    - include/zephyr/drivers/kscan.h
-    - samples/drivers/kscan/
-    - tests/drivers/kscan/
-    - dts/bindings/kscan/
-    - doc/hardware/peripherals/kscan.rst
-  labels:
-    - "area: Kscan"
-  tests:
-    - drivers.kscan
-
 "Drivers: LED":
   status: maintained
   maintainers:
     - Mani-Sadhasivam
     - simonguinot
-  collaborators:
-    - bbilas
   files:
     - drivers/led/
     - include/zephyr/drivers/led/
@@ -1787,7 +1802,6 @@ Release Notes:
   maintainers:
     - simonguinot
   collaborators:
-    - mbolivar-ampere
     - soburi
     - thedjnK
   files:
@@ -2102,7 +2116,9 @@ Release Notes:
     - include/zephyr/drivers/stepper.h
     - dts/bindings/stepper/
     - doc/hardware/peripherals/stepper.rst
+    - samples/drivers/stepper/
     - tests/drivers/build_all/stepper/
+    - tests/drivers/stepper/
   labels:
     - "area: Stepper"
   tests:
@@ -2229,16 +2245,6 @@ Release Notes:
   labels:
     - "area: Wi-Fi"
 
-"Drivers: Wi-Fi NXP":
-  status: maintained
-  maintainers:
-    - dleach02
-    - MaochenWang1
-  files:
-    - drivers/wifi/nxp/
-  labels:
-    - "platform: NXP Drivers"
-
 "Drivers: Memory Management":
   status: maintained
   maintainers:
@@ -2298,11 +2304,9 @@ EC Host Commands:
 Xen Platform:
   status: maintained
   maintainers:
-    - povergoing
-  collaborators:
-    - SgrrZhf
-    - lorc
     - firscity
+  collaborators:
+    - lorc
     - luca-fancellu
   files:
     - include/zephyr/xen/
@@ -2435,7 +2439,8 @@ JSON Web Token:
     - sir-branch
   files:
     - subsys/jwt/
-    - include/zephyr/data/
+    - include/zephyr/data/json.h
+    - include/zephyr/data/jwt.h
     - lib/utils/json.c
     - tests/subsys/jwt/
     - tests/lib/json/
@@ -2741,6 +2746,18 @@ Modem:
   tests:
     - modem
 
+NEORV32 platform:
+  status: maintained
+  maintainers:
+    - henrikbrixandersen
+  files:
+    - boards/others/neorv32/
+    - drivers/*/*neorv32*
+    - dts/bindings/*/*neorv32*
+    - soc/neorv32/
+  labels:
+    - "platform: NEORV32"
+
 OSDP:
   status: maintained
   maintainers:
@@ -2786,7 +2803,7 @@ hawkBit:
   tests:
     - sample.net.updatehub
 
-Native POSIX/Sim and POSIX arch:
+Native_sim and POSIX arch:
   status: maintained
   maintainers:
     - aescolar
@@ -2809,7 +2826,7 @@ Native POSIX/Sim and POSIX arch:
   labels:
     - "area: native port"
   description: >-
-    POSIX architecture and SOC, native_posix & native_sim boards, and related drivers
+    POSIX architecture and SOC, native_sim boards, and related drivers
   tests:
     - boards.native_sim
 
@@ -2841,7 +2858,6 @@ Networking:
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/ptp.h
     - include/zephyr/net/wifi*.h
-    - include/zephyr/net/buf.h
     - include/zephyr/net/dhcpv4*.h
     - include/zephyr/net/http/
     - samples/net/gptp/
@@ -2894,7 +2910,6 @@ Networking:
     - jukkar
   files:
     - doc/services/net_buf/
-    - include/zephyr/net/buf.h
     - include/zephyr/net_buf.h
     - lib/net_buf/
     - tests/lib/net_buf/
@@ -3051,7 +3066,7 @@ Networking:
   collaborators:
     - pdgendt
     - canisLupus1313
-    - mariuszpos
+    - kkasperczyk-no
     - edmont
     - maciejbaczmanski
   files:
@@ -3144,6 +3159,9 @@ Open AMP:
   status: maintained
   maintainers:
     - carlocaione
+  collaborators:
+    - uLipe
+    - iuliana-prodan
   files:
     - lib/open-amp/
     - samples/subsys/ipc/openamp/
@@ -3339,7 +3357,7 @@ Settings:
     - subsys/settings/
     - tests/subsys/settings/
     - samples/subsys/settings/
-    - doc/services/settings/
+    - doc/services/storage/settings/
   labels:
     - "area: Settings"
   tests:
@@ -3427,6 +3445,7 @@ ADI Platforms:
   collaborators:
     - ozersa
     - ttmut
+    - yasinustunerg
     - galak
     - microbuilder
   files:
@@ -3556,10 +3575,18 @@ Raspberry Pi Pico Platforms:
     - soburi
   collaborators:
     - yonsch
+    - threeeights
+    - ajf58
   files:
-    - boards/raspberrypi/
+    - boards/raspberrypi/rpi_pico*/
     - boards/adafruit/kb2040/
+    - boards/adafruit/macropad_rp2040/
+    - boards/adafruit/qt_py_rp2040/
+    - boards/pimoroni/pico_plus2/
+    - boards/seeed/xiao_rp2040/
     - boards/sparkfun/pro_micro_rp2040/
+    - boards/waveshare/rp2040_zero/
+    - boards/wiznet/w5500_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
     - drivers/*/*rpi_pico
@@ -3573,17 +3600,19 @@ Silabs Platforms:
   status: maintained
   maintainers:
     - jhedberg
+    - asmellby
   collaborators:
     - jerome-pouiller
-    - asmellby
+    - Martinhoff-maker
   files:
     - soc/silabs/
     - boards/silabs/
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
-    - drivers/*/*gecko*
-    - drivers/bluetooth/hci/hci_silabs_*
-    - drivers/*/*silabs*
+    - drivers/**/*gecko*
+    - drivers/**/*silabs*
+    - drivers/**/*siwx91x*
+    - tests/boards/silabs/
   labels:
     - "platform: Silabs"
 
@@ -3713,6 +3742,7 @@ NXP Drivers:
     - decsny
     - manuargue
     - dbaluta
+    - Raymond0225
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
@@ -3730,17 +3760,33 @@ NXP Drivers:
     - include/zephyr/dt-bindings/inputmux/
     - include/zephyr/dt-bindings/rdc/
     - include/zephyr/drivers/*/*nxp*
+    - include/zephyr/drivers/*/*nxp*/
     - include/zephyr/drivers/*/*mcux*
     - arch/arm/core/mpu/nxp_mpu.c
     - dts/bindings/*/nxp*
   files-exclude:
-    - drivers/wifi/nxp/
-    - drivers/usb/*/*mcux*
+    - drivers/wifi/
+    - drivers/bluetooth/
+    - drivers/usb/
   files-regex-exclude:
     - .*s32.*
   labels:
     - "platform: NXP Drivers"
   description: NXP Drivers
+
+NXP Wireless:
+  status: maintained
+  maintainers:
+    - dleach02
+  collaborators:
+    - MaochenWang1
+    - axelnxp
+  files:
+    - drivers/wifi/nxp/
+    - drivers/bluetooth/hci/*nxp*
+    - drivers/ieee802154/ieee802154_kw41z.c
+  labels:
+    - "platform: NXP Drivers"
 
 NXP MCUX USB:
   status: maintained
@@ -3749,6 +3795,7 @@ NXP MCUX USB:
     - MarkWangChinese
   files:
     - drivers/usb/*/*mcux*
+    - boards/nxp/usb_kw24d512/
   labels:
     - "platform: NXP Drivers"
   description: NXP MCUX USB shim drivers
@@ -3760,7 +3807,6 @@ NXP Platforms (MCU):
     - mmahadevan108
   collaborators:
     - DerekSnell
-    - yvanderv
     - EmilioCBen
     - decsny
     - butok
@@ -3769,8 +3815,11 @@ NXP Platforms (MCU):
     - boards/nxp/frdm*/
     - boards/nxp/lpcxpress*/
     - boards/nxp/twr_*/
-    - boards/nxp/vmu*/
     - boards/nxp/*rw*/
+    - boards/nxp/hexiwear/
+    - boards/nxp/common/
+    - boards/nxp/*
+    - soc/nxp/common/
     - soc/nxp/imxrt/
     - soc/nxp/kinetis/
     - soc/nxp/lpc/
@@ -3791,13 +3840,9 @@ NXP Platforms (S32):
   maintainers:
     - manuargue
   collaborators:
-    - PetervdPerk-NXP
-    - bperseghetti
     - Dat-NguyenDuy
   files:
-    - boards/nxp/s32*/
-    - boards/nxp/mr_canhubk3/
-    - boards/nxp/ucans32k1sic/
+    - boards/nxp/*s32*/
     - boards/common/*nxp_s32*
     - soc/nxp/s32/
     - drivers/*/*nxp_s32*
@@ -3820,12 +3865,12 @@ NXP Platforms (MPU):
     - dleach02
     - dbaluta
     - iuliana-prodan
-    - yvanderv
   files:
     - dts/arm64/nxp/
     - dts/arm/nxp/nxp_imx*
     - soc/nxp/imx/
     - soc/nxp/layerscape/
+    - boards/nxp/ls1046ardb/
   files-regex:
     - boards/nxp/m?imx[^(rt)].*/
   labels:
@@ -3844,6 +3889,19 @@ NXP Platforms (Xtensa):
   labels:
     - "platform: NXP Xtensa"
   description: NXP Xtensa platforms
+
+NXP Platforms (Robotics Products):
+  status: maintained
+  maintainers:
+    - bperseghetti
+    - PetervdPerk-NXP
+  files:
+    - boards/nxp/vmu*/
+    - boards/nxp/rddrone_fmuk66/
+    - boards/nxp/mr_canhubk3/
+  labels:
+    - "platform: NXP Robotics"
+  description: NXP Robotics Module Platform Products
 
 Microchip MEC Platforms:
   status: maintained
@@ -3919,6 +3977,19 @@ nRF Platforms:
   labels:
     - "platform: nRF"
 
+Octavo Systems Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  collaborators:
+    - kgugala
+  files:
+    - boards/oct/
+    - soc/oct/
+  labels:
+    - "platform: Octavo Systems"
+
 OpenTitan Platforms:
   status: maintained
   maintainers:
@@ -3933,6 +4004,19 @@ OpenTitan Platforms:
     - "platform: OpenTitan"
   description: >-
     OpenTitan boards, SOCs, dts files and related drivers.
+
+Realtek EC Platforms:
+  status: maintained
+  maintainers:
+    - JasonLin-RealTek
+  files:
+    - boards/realtek/
+    - drivers/*/*rts5912*
+    - dts/bindings/*/*rts5912*
+    - dts/arm/realtek/ec/
+    - soc/realtek/ec/
+  labels:
+    - "platform: Realtek EC"
 
 Renesas SmartBond Platforms:
   status: maintained
@@ -3971,6 +4055,7 @@ Renesas RA Platforms:
     - dts/arm/renesas/ra/
     - dts/bindings/*/*renesas,ra*
     - soc/renesas/ra/
+    - samples/boards/renesas/
   labels:
     - "platform: Renesas RA"
   description: >-
@@ -3981,13 +4066,19 @@ Renesas RZ Platforms:
   status: maintained
   maintainers:
     - tgorochowik
+  collaborators:
+    - binhnguyen2434
+    - nhutnguyenkc
   files:
-    - boards/renesas/rzt2m_*/
+    - boards/renesas/rz*/
     - drivers/*/*rzt2m*
+    - drivers/*/*renesas_rz*
     - drivers/pinctrl/renesas/rz/
     - dts/arm/renesas/rz/
     - dts/bindings/*/*rzt2m*
+    - dts/bindings/*/*renesas,rz*
     - soc/renesas/rzt2m/
+    - soc/renesas/rz/
   labels:
     - "platforms: Renesas RZ"
   description: >-
@@ -4027,6 +4118,7 @@ STM32 Platforms:
     - GeorgeCGV
     - marwaiehm-st
     - mathieuchopstm
+    - djiatsaf-st
   files:
     - boards/st/
     - drivers/*/*stm32*.c
@@ -4068,6 +4160,17 @@ STM32 Wireless Platforms:
   description: >-
     STM32WB SOCs, dts files and related drivers. STM32WB development boards
     and ST bluetooth shields.
+
+Enclustra Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+  collaborators:
+    - tgorochowik
+  files:
+    - boards/enclustra/
+  labels:
+    - "platform: Enclustra"
 
 Espressif Platforms:
   status: maintained
@@ -4144,6 +4247,8 @@ TI K3 Platforms:
     - dnltz
   files:
     - boards/ti/*am62*/
+    - drivers/*/*davinci*
+    - drivers/*/*omap*
     - drivers/*/*ti_k3*
     - dts/bindings/*/ti,k3*
     - soc/ti/k3/
@@ -4253,13 +4358,25 @@ Secure storage:
     - tomi-font
   files:
     - subsys/secure_storage/
+    - include/zephyr/psa/
     - samples/psa/
-    - doc/services/secure_storage.rst
+    - doc/services/storage/secure_storage/index.rst
     - tests/subsys/secure_storage/
   labels:
     - "area: Secure storage"
   tests:
     - psa.secure_storage
+
+Sensry Platforms:
+  status: maintained
+  maintainers:
+    - tswaehn
+  files:
+    - boards/sensry/
+  files-regex:
+    - .*sy1xx.*
+  labels:
+    - "platform: sensry"
 
 Storage:
   status: odd fixes
@@ -4392,6 +4509,18 @@ TDK Sensors:
   labels:
     - "area: Toolchains"
 
+"Toolchain IAR":
+  status: maintained
+  maintainers:
+    - RobinKastberg
+  files:
+    - cmake/*/iar/
+    - include/zephyr/toolchain/iar.h
+    - include/zephyr/toolchain/iar/*
+    - lib/libc/iar/*
+  labels:
+    - "area: Toolchains"
+
 "Toolchain oneApi":
   status: maintained
   maintainers:
@@ -4518,7 +4647,7 @@ West:
   maintainers:
     - pdgendt
   collaborators:
-    - mbolivar-ampere
+    - mbolivar
     - carlescufi
     - swinslow
   files:
@@ -4690,10 +4819,10 @@ West:
 "West project: cmsis_6":
   status: maintained
   maintainers:
-    - ithinuel
+    - wearyzen
   collaborators:
     - tomi-font
-    - wearyzen
+    - ithinuel
   files: []
   labels:
     - "area: CMSIS_6"
@@ -4725,6 +4854,7 @@ West:
   collaborators:
     - ozersa
     - ttmut
+    - yasinustunerg
   files: []
   labels:
     - "platform: ADI"
@@ -4788,6 +4918,9 @@ West:
   status: maintained
   maintainers:
     - kristofer-jonsson-arm
+    - wearyzen
+  collaborators:
+    - ithinuel
   files:
     - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
@@ -4911,6 +5044,8 @@ West:
     - soburi
   collaborators:
     - yonsch
+    - threeeights
+    - ajf58
   files:
     - modules/hal_rpi_pico/
   labels:
@@ -4920,13 +5055,14 @@ West:
   status: maintained
   maintainers:
     - jhedberg
+    - asmellby
   collaborators:
     - jerome-pouiller
-    - asmellby
     - sateeshkotapati
     - yonsch
     - mnkp
     - rettichschnidi
+    - Martinhoff-maker
   files:
     - modules/hal_silabs/
   labels:
@@ -4956,6 +5092,17 @@ West:
     - modules/Kconfig.stm32
   labels:
     - "platform: STM32"
+
+"West project: hal_tdk":
+  status: maintained
+  maintainers:
+    - afontaine-invn
+  collaborators:
+    - rbuisson-invn
+    - gjabouley-invn
+    - sriccardi-invn
+  files:
+    - modules/hal_tdk/Kconfig
 
 "West project: hal_telink":
   status: maintained
@@ -5020,6 +5167,18 @@ West:
   files: []
   labels:
     - "area: Rust"
+
+"West project: libmctp":
+  status: maintained
+  maintainers:
+    - teburd
+  collaborators:
+    - nashif
+    - inteljiangwe1
+  files:
+    - samples/modules/mctp/
+  labels:
+    - "area: MCTP"
 
 "West project: libmetal":
   status: odd fixes
@@ -5091,10 +5250,10 @@ West:
     - d3zd3z
     - ceolin
   collaborators:
-    - ithinuel
     - wearyzen
     - valeriosetti
     - tomi-font
+    - ithinuel
   files:
     - modules/mbedtls/
     - tests/crypto/mbedtls/
@@ -5178,6 +5337,8 @@ West:
   status: odd fixes
   collaborators:
     - carlocaione
+    - uLipe
+    - iuliana-prodan
   files:
     - modules/Kconfig.open-amp
   labels:
@@ -5244,7 +5405,9 @@ West:
     - "area: Audio"
 
 "West project: tflite-micro":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - XenuIsWatching
   collaborators:
     - laurenmurphyx64
   files:
@@ -5280,10 +5443,10 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
     - valeriosetti
     - tomi-font
+    - ithinuel
   files:
     - modules/trusted-firmware-m/
     - samples/tfm_integration/
@@ -5300,8 +5463,8 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
+    - ithinuel
   files: []
   labels:
     - "area: TF-M"
@@ -5313,8 +5476,8 @@ West:
     - sgrrzhf
   collaborators:
     - carlocaione
-    - ithinuel
     - wearyzen
+    - ithinuel
   files:
     - modules/trusted-firmware-a/
   labels:
@@ -5326,8 +5489,8 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
+    - ithinuel
   files: []
   labels:
     - "area: TF-M"
@@ -5490,6 +5653,15 @@ Random:
   labels:
     - "area: Random"
 
+Peregrine Platforms:
+  status: maintained
+  maintainers:
+    - nandojve
+  files:
+    - boards/peregrine/
+  labels:
+    - "platform: Peregrine"
+
 # This area is to be converted to a subarea
 Testing with Renode:
   status: odd fixes
@@ -5531,6 +5703,7 @@ zbus:
     - cmake/llext-edk.cmake
     - samples/subsys/llext/
     - include/zephyr/llext/
+    - tests/misc/llext-edk/
     - tests/subsys/llext/
     - subsys/llext/
     - doc/services/llext/

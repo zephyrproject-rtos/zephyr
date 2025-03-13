@@ -60,13 +60,9 @@ function(pre_dt_module_run)
   # Finalize DTS_ROOT.
   list(REMOVE_DUPLICATES DTS_ROOT)
 
-  if(HWMv1)
-    set(arch_include dts/${ARCH})
-  else()
-    foreach(arch ${ARCH_V2_NAME_LIST})
-      list(APPEND arch_include dts/${arch})
-    endforeach()
-  endif()
+  foreach(arch ${ARCH_V2_NAME_LIST})
+    list(APPEND arch_include dts/${arch})
+  endforeach()
 
   # Finalize DTS_ROOT_SYSTEM_INCLUDE_DIRS.
   set(DTS_ROOT_SYSTEM_INCLUDE_DIRS)

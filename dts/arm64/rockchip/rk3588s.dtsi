@@ -1,0 +1,103 @@
+/*
+ * Copyright 2024 Université Gustave Eiffel
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x100>;
+		};
+
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x200>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x300>;
+		};
+
+		cpu@4 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			reg = <0x400>;
+		};
+
+		cpu@5 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			reg = <0x500>;
+		};
+
+		cpu@6 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			reg = <0x600>;
+		};
+
+		cpu@7 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			reg = <0x700>;
+		};
+	};
+
+	gic: interrupt-controller@fe600000  {
+		#address-cells = <1>;
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0xfe600000 0x10000>, /* GICD */
+		      <0xfe680000 0x100000>; /* GICR */
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
+	};
+
+	sram0: memory@10000000 {
+		reg = <0x10000000 DT_SIZE_M(128)>;
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+	};
+
+	uart2: serial@feb50000  {
+		compatible = "rockchip,rk3588s-uart", "ns16550";
+		reg = <0xfeb50000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 333 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+		reg-shift = <2>;
+		clock-frequency = <350000000>;
+	};
+};

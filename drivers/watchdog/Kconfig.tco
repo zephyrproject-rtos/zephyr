@@ -8,5 +8,6 @@ config WDT_TCO
 	default y
 	depends on DT_HAS_INTEL_TCO_WDT_ENABLED
 	select HAS_WDT_DISABLE_AT_BOOT
+	select HAS_WDT_NO_CALLBACKS
 	help
 	  Enable support for Intel TCO WDT driver.

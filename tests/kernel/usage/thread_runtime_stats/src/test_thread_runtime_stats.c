@@ -72,7 +72,7 @@ ZTEST(usage_api, test_all_stats_usage)
 	k_thread_runtime_stats_t  stats4;
 	k_thread_runtime_stats_t  stats5;
 
-	priority = k_thread_priority_get(arch_current_thread());
+	priority = k_thread_priority_get(_current);
 	tid = k_thread_create(&helper_thread, helper_stack,
 			      K_THREAD_STACK_SIZEOF(helper_stack),
 			      helper1, NULL, NULL, NULL,
@@ -100,16 +100,16 @@ ZTEST(usage_api, test_all_stats_usage)
 
 	/*
 	 * Verify that before the system idles for 2 ticks that
-	 * [execution_cycles] is increasing, [total_cycles] matches
+	 * [execution_cycles] is increasing, [total_cycles + idle_cycles] matches
 	 * [execution_cycles] and [idle_cycles] is not changing (as the
-	 * system has been idle yet.
+	 * system is not going to idle during that test).
 	 */
 
 	zassert_true(stats2.execution_cycles > stats1.execution_cycles);
 	zassert_true(stats3.execution_cycles > stats2.execution_cycles);
-	zassert_true(stats1.execution_cycles == stats1.total_cycles);
-	zassert_true(stats2.execution_cycles == stats2.total_cycles);
-	zassert_true(stats3.execution_cycles == stats3.total_cycles);
+	zassert_true(stats1.execution_cycles == (stats1.total_cycles + stats1.idle_cycles));
+	zassert_true(stats2.execution_cycles == (stats2.total_cycles + stats2.idle_cycles));
+	zassert_true(stats3.execution_cycles == (stats3.total_cycles + stats3.idle_cycles));
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 	zassert_true(stats1.idle_cycles == stats2.idle_cycles);
 	zassert_true(stats1.idle_cycles == stats3.idle_cycles);
@@ -122,8 +122,8 @@ ZTEST(usage_api, test_all_stats_usage)
 	 * going idle.
 	 * 1. [current_cycles] increases.
 	 * 2. [peak_cycles] matches [current_cycles].
-	 * 3. [average_cycles] is 0 (because system has not gone idle yet)
-	 * 4. [current_cycles] matches [execution_cycles].
+	 * 3. [average_cycles] is 0 if system has not gone idle yet
+	 * 4. [current_cycles] matches [execution_cycles] if system has not gone idle yet
 	 */
 
 	zassert_true(stats2.current_cycles > stats1.current_cycles);
@@ -133,13 +133,19 @@ ZTEST(usage_api, test_all_stats_usage)
 	zassert_true(stats2.peak_cycles == stats2.current_cycles);
 	zassert_true(stats3.peak_cycles == stats3.current_cycles);
 
-	zassert_true(stats1.average_cycles == 0);
-	zassert_true(stats2.average_cycles == 0);
-	zassert_true(stats3.average_cycles == 0);
+	if (stats1.idle_cycles == 0) {
+		zassert_true(stats1.average_cycles == 0);
+		zassert_true(stats2.average_cycles == 0);
+		zassert_true(stats3.average_cycles == 0);
 
-	zassert_true(stats1.current_cycles == stats1.execution_cycles);
-	zassert_true(stats2.current_cycles == stats2.execution_cycles);
-	zassert_true(stats3.current_cycles == stats3.execution_cycles);
+		zassert_true(stats1.current_cycles == stats1.execution_cycles);
+		zassert_true(stats2.current_cycles == stats2.execution_cycles);
+		zassert_true(stats3.current_cycles == stats3.execution_cycles);
+	} else {
+		zassert_true(stats1.current_cycles < stats1.execution_cycles);
+		zassert_true(stats2.current_cycles < stats2.execution_cycles);
+		zassert_true(stats3.current_cycles < stats3.execution_cycles);
+	}
 #endif
 
 	/*
@@ -172,7 +178,7 @@ ZTEST(usage_api, test_all_stats_usage)
 					   stats3.peak_cycles, IDLE_EVENT_STATS_PRECISION), NULL);
 	zassert_true(stats4.peak_cycles == stats5.peak_cycles);
 
-	zassert_true(stats4.average_cycles > stats3.average_cycles);
+	zassert_true(stats4.average_cycles > 0);
 	zassert_true(stats5.average_cycles > stats4.average_cycles);
 #endif
 
@@ -196,7 +202,7 @@ ZTEST(usage_api, test_thread_stats_enable_disable)
 	k_thread_runtime_stats_t  helper_stats3;
 	int  priority;
 
-	priority = k_thread_priority_get(arch_current_thread());
+	priority = k_thread_priority_get(_current);
 	tid = k_thread_create(&helper_thread, helper_stack,
 			      K_THREAD_STACK_SIZEOF(helper_stack),
 			      helper1, NULL, NULL, NULL,
@@ -209,7 +215,7 @@ ZTEST(usage_api, test_thread_stats_enable_disable)
 
 	k_sleep(K_TICKS(5));
 
-	k_thread_runtime_stats_get(arch_current_thread(), &stats1);
+	k_thread_runtime_stats_get(_current, &stats1);
 	k_thread_runtime_stats_get(tid, &helper_stats1);
 	k_thread_runtime_stats_disable(tid);
 
@@ -225,7 +231,7 @@ ZTEST(usage_api, test_thread_stats_enable_disable)
 	k_sleep(K_TICKS(2));
 
 	k_thread_runtime_stats_enable(tid);
-	k_thread_runtime_stats_get(arch_current_thread(), &stats2);
+	k_thread_runtime_stats_get(_current, &stats2);
 	k_thread_runtime_stats_get(tid, &helper_stats2);
 
 	/* Sleep for two ticks to let the helper thread execute again. */
@@ -280,12 +286,12 @@ ZTEST(usage_api, test_sys_stats_enable_disable)
 
 	k_sys_runtime_stats_disable();
 
-	k_thread_runtime_stats_get(arch_current_thread(), &thread_stats1);
+	k_thread_runtime_stats_get(_current, &thread_stats1);
 	k_thread_runtime_stats_all_get(&sys_stats1);
 
 	busy_loop(2);
 
-	k_thread_runtime_stats_get(arch_current_thread(), &thread_stats2);
+	k_thread_runtime_stats_get(_current, &thread_stats2);
 	k_thread_runtime_stats_all_get(&sys_stats2);
 
 	/*
@@ -297,7 +303,7 @@ ZTEST(usage_api, test_sys_stats_enable_disable)
 
 	busy_loop(2);
 
-	k_thread_runtime_stats_get(arch_current_thread(), &thread_stats3);
+	k_thread_runtime_stats_get(_current, &thread_stats3);
 	k_thread_runtime_stats_all_get(&sys_stats3);
 
 	/*
@@ -398,7 +404,7 @@ ZTEST(usage_api, test_thread_stats_usage)
 	k_thread_runtime_stats_t  stats2;
 	k_thread_runtime_stats_t  stats3;
 
-	priority = k_thread_priority_get(arch_current_thread());
+	priority = k_thread_priority_get(_current);
 
 	/*
 	 * Verify that k_thread_runtime_stats_get() returns the expected
@@ -408,7 +414,7 @@ ZTEST(usage_api, test_thread_stats_usage)
 	status = k_thread_runtime_stats_get(NULL, &stats1);
 	zassert_true(status == -EINVAL);
 
-	status = k_thread_runtime_stats_get(arch_current_thread(), NULL);
+	status = k_thread_runtime_stats_get(_current, NULL);
 	zassert_true(status == -EINVAL);
 
 	/* Align to the next tick */
@@ -422,7 +428,7 @@ ZTEST(usage_api, test_thread_stats_usage)
 			      helper1, NULL, NULL, NULL,
 			      priority + 2, 0, K_TICKS(1));
 
-	main_thread = arch_current_thread();
+	main_thread = _current;
 	k_timer_init(&timer, resume_main, NULL);
 	k_timer_start(&timer, K_TICKS(1), K_TICKS(10));
 
@@ -440,7 +446,7 @@ ZTEST(usage_api, test_thread_stats_usage)
 	 * the helper threads runtime stats.
 	 */
 
-	k_thread_suspend(arch_current_thread());
+	k_thread_suspend(_current);
 
 	/*
 	 * T = 1.
@@ -449,14 +455,14 @@ ZTEST(usage_api, test_thread_stats_usage)
 	 */
 
 	k_thread_runtime_stats_get(tid, &stats1);
-	k_thread_suspend(arch_current_thread());
+	k_thread_suspend(_current);
 
 	/*
 	 * T = 11.
 	 * Timer woke the main thread. Suspend main thread again.
 	 */
 
-	k_thread_suspend(arch_current_thread());
+	k_thread_suspend(_current);
 
 	/*
 	 * T = 21.
@@ -465,7 +471,7 @@ ZTEST(usage_api, test_thread_stats_usage)
 	 */
 
 	k_thread_runtime_stats_get(tid, &stats2);
-	k_thread_suspend(arch_current_thread());
+	k_thread_suspend(_current);
 
 	/*
 	 * T = 31.

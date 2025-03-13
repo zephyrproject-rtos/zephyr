@@ -39,7 +39,6 @@
 	(((x) & (1ULL << (b))) >> (b))
 #define DAI_INTEL_SSP_GET_BITS(b_hi, b_lo, x) \
 	(((x) & MASK(b_hi, b_lo)) >> (b_lo))
-#define DAI_INTEL_SSP_IS_BIT_SET(reg, bit)	(((reg >> bit) & (0x1)) != 0)
 
 /* ssp_freq array constants */
 #define DAI_INTEL_SSP_NUM_FREQ			3
@@ -137,6 +136,7 @@ struct dai_intel_ssp_plat_data {
 #if SSP_IP_VER > SSP_IP_VER_1_5
 	uint32_t hdamlssp_base;
 	uint32_t i2svss_base;
+	uint32_t link_clock;
 #endif
 	int irq;
 	const char *irq_name;

@@ -107,67 +107,68 @@ this board with new support for Zephyr features. Note that this table
 covers two boards: the RT1170 EVK (``mimxrt1170_evk//cm7/cm4``), and
 RT1170 EVKB (``mimxrt1170_evk@B//cm7/cm4``)
 
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| Interface | Controller | Driver/Component                    | RT1170 EVK      | RT1170 EVKB     |
-+===========+============+=====================================+=================+=================+
-| NVIC      | on-chip    | nested vector interrupt controller  | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| SYSTICK   | on-chip    | systick                             | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| GPIO      | on-chip    | gpio                                | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| COUNTER   | on-chip    | gpt                                 | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| TIMER     | on-chip    | gpt                                 | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| CAN       | on-chip    | flexcan                             | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| SPI       | on-chip    | spi                                 | Supported (M7)  | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| I2C       | on-chip    | i2c                                 | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| PWM       | on-chip    | pwm                                 | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| ADC       | on-chip    | adc                                 | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| UART      | on-chip    | serial port-polling;                | Supported       | Supported       |
-|           |            | serial port-interrupt;              |                 |                 |
-|           |            | serial port-async                   |                 |                 |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| DMA       | on-chip    | dma                                 | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| WATCHDOG  | on-chip    | watchdog                            | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| ENET      | on-chip    | ethernet - 10/100M                  | Supported (M7)  | No support      |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| ENET1G    | on-chip    | ethernet - 10/100/1000M             | Supported (M7)  | No support      |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| SAI       | on-chip    | i2s                                 | Supported       | No support      |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| USB       | on-chip    | USB Device                          | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| HWINFO    | on-chip    | Unique device serial number         | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| DISPLAY   | on-chip    | eLCDIF; MIPI-DSI. Tested with       | Supported (M7)  | Supported (M7)  |
-|           |            | :ref:`rk055hdmipi4m`,               |                 |                 |
-|           |            | :ref:`rk055hdmipi4ma0`,             |                 |                 |
-|           |            | and :ref:`g1120b0mipi` shields      |                 |                 |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| ACMP      | on-chip    | sensor                              | Supported       | No support      |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| CAAM RNG  | on-chip    | entropy                             | Supported (M7)  | No support      |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| FLEXSPI   | on-chip    | flash programming                   | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| SDHC      | on-chip    | SD host controller                  | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| PIT       | on-chip    | pit                                 | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| VIDEO     | on-chip    | CSI; MIPI CSI-2 Rx. Tested with     | Supported (M7)  | Supported (M7)  |
-|           |            | :ref:`nxp_btb44_ov5640` shield      |                 |                 |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| UART      | NXP NW61x  | M.2 WIFI/BT module                  | Unsupported     | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| Interface | Controller | Driver/Component                               | RT1170 EVK      | RT1170 EVKB     |
++===========+============+================================================+=================+=================+
+| NVIC      | on-chip    | nested vector interrupt controller             | Supported       | Supported       |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| SYSTICK   | on-chip    | systick                                        | Supported       | Supported       |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| GPIO      | on-chip    | gpio                                           | Supported       | Supported       |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| COUNTER   | on-chip    | gpt                                            | Supported       | Supported       |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| TIMER     | on-chip    | gpt                                            | Supported       | Supported       |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| CAN       | on-chip    | flexcan                                        | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| SPI       | on-chip    | spi                                            | Supported (M7)  | Supported       |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| I2C       | on-chip    | i2c                                            | Supported       | Supported       |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| PWM       | on-chip    | pwm                                            | Supported       | Supported       |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| ADC       | on-chip    | adc                                            | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| UART      | on-chip    | serial port-polling;                           | Supported       | Supported       |
+|           |            | serial port-interrupt;                         |                 |                 |
+|           |            | serial port-async                              |                 |                 |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| DMA       | on-chip    | dma                                            | Supported       | Supported       |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| WATCHDOG  | on-chip    | watchdog                                       | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| ENET      | on-chip    | ethernet - 10/100M                             | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| ENET1G    | on-chip    | ethernet - 10/100/1000M                        | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| SAI       | on-chip    | i2s                                            | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| USB       | on-chip    | USB Device                                     | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| HWINFO    | on-chip    | Unique device serial number                    | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| DISPLAY   | on-chip    | eLCDIF; MIPI-DSI. Tested with                  | Supported (M7)  | Supported (M7)  |
+|           |            | :ref:`rk055hdmipi4m`,                          |                 |                 |
+|           |            | :ref:`rk055hdmipi4ma0`,                        |                 |                 |
+|           |            | and :ref:`g1120b0mipi` shields                 |                 |                 |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| ACMP      | on-chip    | sensor                                         | Supported       | Supported       |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| CAAM RNG  | on-chip    | entropy                                        | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| FLEXSPI   | on-chip    | flash programming                              | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| SDHC      | on-chip    | SD host controller                             | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| PIT       | on-chip    | pit                                            | Supported (M7)  | Supported (M7)  |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| VIDEO     | on-chip    | CSI; MIPI CSI-2 Rx. Tested with                | Supported (M7)  | Supported (M7)  |
+|           |            | :ref:`nxp_btb44_ov5640` shield                 |                 |                 |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
+| UART      | NXP IW61x  | M.2 WIFI/BT module                             | Unsupported     | Supported (M7)  |
+|           |            | (select :kconfig:option:`CONFIG_BT_NXP_NW612`) |                 |                 |
++-----------+------------+------------------------------------------------+-----------------+-----------------+
 
 The default configuration can be found in the defconfig files:
 :zephyr_file:`boards/nxp/mimxrt1170_evk/mimxrt1170_evk_mimxrt1176_cm7_defconfig`
@@ -330,6 +331,25 @@ The secondary core can be debugged normally in single core builds
 (where the target is ``mimxrt1170_evk/mimxrt1176/cm4``). For dual core builds, the
 secondary core should be placed into a loop, then a debugger can be attached
 (see `AN13264`_, section 4.2.3 for more information)
+
+Launching Images Targeting M4 Core
+==================================
+If building targeting the M4 core, the M7 core must first run code to launch
+the M4 image, by copying it into the ``ocram`` region then kicking off the M4
+core. When building using sysbuild targeting the M4 core, a minimal "launcher"
+image will be built and flashed to the M7 core, which loads and kicks off
+the M4 core. Therefore when developing an application intended to run
+standalone on the M4 core, it is recommended to build with sysbuild, like
+so:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mimxrt1170_evk/mimxrt1176/cm4
+   :west-args: --sysbuild
+   :goals: flash
+
+If desired, this behavior can be disabled by building with
+``-DSB_CONFIG_SECOND_CORE_MCUX_LAUNCHER=n``
 
 Configuring a Debug Probe
 =========================

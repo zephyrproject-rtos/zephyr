@@ -13,6 +13,8 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 
+#include "babblekit/testcase.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(central, LOG_LEVEL_INF);
 
@@ -60,14 +62,12 @@ void central(void)
 	wait_disconnected();
 	clear_conn(conn_b);
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
 }
 
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "central",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = central,
 	},
 	BSTEST_END_MARKER,

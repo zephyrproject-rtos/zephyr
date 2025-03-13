@@ -42,7 +42,7 @@ static const struct flash_parameters flash_stm32_parameters = {
 #endif
 };
 
-static int flash_stm32_write_protection(const struct device *dev, bool enable);
+static int flash_stm32_cr_lock(const struct device *dev, bool enable);
 
 bool __weak flash_stm32_valid_range(const struct device *dev, off_t offset,
 				    uint32_t len, bool write)
@@ -175,14 +175,14 @@ static int flash_stm32_erase(const struct device *dev, off_t offset,
 
 	LOG_DBG("Erase offset: %ld, len: %zu", (long int) offset, len);
 
-	rc = flash_stm32_write_protection(dev, false);
+	rc = flash_stm32_cr_lock(dev, false);
 	if (rc == 0) {
 		rc = flash_stm32_block_erase_loop(dev, offset, len);
 	}
 
 	flash_stm32_flush_caches(dev, offset, len);
 
-	int rc2 = flash_stm32_write_protection(dev, true);
+	int rc2 = flash_stm32_cr_lock(dev, true);
 
 	if (!rc) {
 		rc = rc2;
@@ -212,12 +212,12 @@ static int flash_stm32_write(const struct device *dev, off_t offset,
 
 	LOG_DBG("Write offset: %ld, len: %zu", (long int) offset, len);
 
-	rc = flash_stm32_write_protection(dev, false);
+	rc = flash_stm32_cr_lock(dev, false);
 	if (rc == 0) {
 		rc = flash_stm32_write_range(dev, offset, data, len);
 	}
 
-	int rc2 = flash_stm32_write_protection(dev, true);
+	int rc2 = flash_stm32_cr_lock(dev, true);
 
 	if (!rc) {
 		rc = rc2;
@@ -228,7 +228,7 @@ static int flash_stm32_write(const struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_stm32_write_protection(const struct device *dev, bool enable)
+static int flash_stm32_cr_lock(const struct device *dev, bool enable)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
@@ -304,7 +304,7 @@ int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 
 	/* Unlock CR/PECR/NSCR register if needed. */
 	if (!enable) {
-		rc = flash_stm32_write_protection(dev, false);
+		rc = flash_stm32_cr_lock(dev, false);
 		if (rc) {
 			return rc;
 		}
@@ -347,7 +347,7 @@ int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 #endif
 	/* Lock CR/PECR/NSCR register if needed. */
 	if (enable) {
-		rc = flash_stm32_write_protection(dev, true);
+		rc = flash_stm32_cr_lock(dev, true);
 		if (rc) {
 			return rc;
 		}

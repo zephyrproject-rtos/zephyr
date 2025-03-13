@@ -26,6 +26,7 @@
 #define FXLS8974_REG_CTRLREG4				0x18
 #define FXLS8974_REG_CTRLREG5				0x19
 
+#define WHOAMI_ID_FXLS8964				0x84
 #define WHOAMI_ID_FXLS8974				0x86
 
 #define FXLS8974_CTRLREG1_ACTIVE_MASK			0x01
@@ -155,8 +156,8 @@ struct fxls8974_data {
 #endif
 };
 
-int fxls8974_get_active(const struct device *dev, enum fxls8974_active *active);
-int fxls8974_set_active(const struct device *dev, enum fxls8974_active active);
+int fxls8974_get_active(const struct device *dev, uint8_t *active);
+int fxls8974_set_active(const struct device *dev, uint8_t active);
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 int fxls8974_byte_write_spi(const struct device *dev,

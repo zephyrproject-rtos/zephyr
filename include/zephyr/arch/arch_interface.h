@@ -47,8 +47,6 @@ typedef struct z_thread_stack_element k_thread_stack_t;
 
 typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 
-__deprecated typedef struct arch_esf z_arch_esf_t;
-
 /**
  * @defgroup arch-timing Architecture timing APIs
  * @ingroup arch-interface
@@ -1289,7 +1287,7 @@ typedef bool (*stack_trace_callback_fn)(void *cookie, unsigned long addr);
  * ============ ======= ============================================
  * thread	esf
  * ============ ======= ============================================
- * thread	NULL	Stack trace from thread (can be arch_current_thread())
+ * thread	NULL	Stack trace from thread (can be _current)
  * thread	esf	Stack trace starting on esf
  * ============ ======= ============================================
  */

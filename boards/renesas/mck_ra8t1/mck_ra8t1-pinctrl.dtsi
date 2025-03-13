@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -68,6 +68,96 @@
 					<RA_PSEL(RA_PSEL_ETH_RMII, 7, 4)>, /* RMII0_RX_ER_B */
 					<RA_PSEL(RA_PSEL_ETH_RMII, 7, 5)>; /* RMII0_CRS_DV_B */
 			drive-strength = "high";
+		};
+	};
+
+	adc0_default: adc0_default {
+		group1 {
+			/* input */
+			psels = <RA_PSEL(RA_PSEL_ADC, 0, 4)>;
+			renesas,analog-enable;
+		};
+	};
+
+	dac0_default: dac0_default {
+		group1 {
+			/* output */
+			psels = <RA_PSEL(RA_PSEL_DAC, 0, 14)>;
+			renesas,analog-enable;
+		};
+	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 6)>, /* SDCD */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 7)>, /* SDCMD */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 4)>, /* SDDATA0 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 3)>, /* SDDATA1 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 2)>, /* SDDATA2 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 1)>, /* SDDATA3 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 5)>; /* SDWP */
+			drive-strength = "high";
+		};
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 8)>; /* SDCLK */
+			drive-strength = "highspeed-high";
+		};
+	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			/* USBP USBN */
+			psels = <RA_PSEL(RA_PSEL_USBFS, 8, 15)>,
+				<RA_PSEL(RA_PSEL_USBFS, 8, 14)>,
+				<RA_PSEL(RA_PSEL_USBFS, 4, 7)>;
+			drive-strength = "high";
+		};
+	};
+
+	/omit-if-no-ref/ acmphs_ivref0: acmphs_ivref0 {
+		group1 {
+			/* IVREF0 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 0, 1)>;
+			renesas,analog-enable;
+		};
+	};
+
+	/omit-if-no-ref/ acmphs_ivref1: acmphs_ivref1 {
+		group1 {
+			/* IVREF1 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 0, 3)>;
+			renesas,analog-enable;
+		};
+	};
+
+	/omit-if-no-ref/ acmphs0_ivcmp0: acmphs0_ivcmp0 {
+		group1 {
+			/* CH0 IVCMP0 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 0, 10)>;
+			renesas,analog-enable;
+		};
+	};
+
+	/omit-if-no-ref/ acmphs0_ivcmp2: acmphs0_ivcmp2 {
+		group1 {
+			/* CH0 IVCMP2 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 0, 4)>;
+			renesas,analog-enable;
+		};
+	};
+
+	/omit-if-no-ref/ acmphs0_ivcmp3: acmphs0_ivcmp3 {
+		group1 {
+			/* CH0 IVCMP3 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 0, 6)>;
+			renesas,analog-enable;
+		};
+	};
+
+	/omit-if-no-ref/ acmphs_vcout: acmphs_vcout {
+		group1 {
+			/* VCOUT */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS_VCOUT, 2, 8)>;
 		};
 	};
 };

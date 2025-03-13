@@ -12,7 +12,7 @@ config MCUBOOT
 
 config BOOTLOADER_MCUBOOT
 	bool "MCUboot bootloader support"
-	select USE_DT_CODE_PARTITION
+	select USE_DT_CODE_PARTITION if !MCUBOOT_BOOTLOADER_MODE_RAM_LOAD
 	imply INIT_ARCH_HW_AT_BOOT if ARCH_SUPPORTS_ARCH_HW_INIT
 	depends on !MCUBOOT
 	help
@@ -134,7 +134,7 @@ menu "On board MCUboot operation mode"
 
 choice MCUBOOT_BOOTLOADER_MODE
 	prompt "Application assumed MCUboot mode of operation"
-	default MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH # MCUBOOT_BOOTLOADER_MODE
+	default MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE
 	help
 	  Informs application build on assumed MCUboot mode of operation.
 	  This is important for validataing application against DT configuration,
@@ -149,14 +149,30 @@ config MCUBOOT_BOOTLOADER_MODE_SINGLE_APP
 	  to DFU its own update to secondary slot and all updates need to
 	  be performed using MCUboot serial recovery.
 
-config MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH
-	bool "MCUboot has been configured for swap without scratch operation"
+config MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET
+	bool "MCUboot has been configured for swap using offset operation"
 	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
 	help
 	  MCUboot expects slot0_partition and slot1_partition to be present
 	  in DT and application will boot from slot0_partition.
 	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
 	  if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
+config MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE
+	bool "MCUboot has been configured for swap using move operation"
+	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	help
+	  MCUboot expects slot0_partition and slot1_partition to be present
+	  in DT and application will boot from slot0_partition.
+	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
+	  if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
+config MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH
+	bool "MCUboot has been configured for swap without scratch operation [DEPRECATED]"
+	select DEPRECATED
+	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	help
+	  This Kconfig is deprecated, use MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE instead.
 
 config MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH
 	bool "MCUboot has been configured for swap using scratch operation"

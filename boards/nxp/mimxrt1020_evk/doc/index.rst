@@ -64,7 +64,7 @@ This platform has the following external memories:
 |                |            | data block, which sets up SEMC at   |
 |                |            | boot time                           |
 +----------------+------------+-------------------------------------+
-| IS25LP064A     | FLEXSPI    | Enabled via flash configurationn    |
+| IS25LP064A     | FLEXSPI    | Enabled via flash configuration     |
 |                |            | block, which sets up FLEXSPI at     |
 |                |            | boot time                           |
 +----------------+------------+-------------------------------------+

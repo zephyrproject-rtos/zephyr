@@ -7,7 +7,6 @@ flash: 64
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - gpio
   - nvs

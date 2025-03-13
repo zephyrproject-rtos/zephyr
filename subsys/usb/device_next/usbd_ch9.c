@@ -426,6 +426,8 @@ static int sreq_get_status(struct usbd_context *const uds_ctx,
 
 		response = uds_ctx->status.rwup ?
 			   USB_GET_STATUS_REMOTE_WAKEUP : 0;
+		response |= uds_ctx->status.self_powered ?
+			    USB_GET_STATUS_SELF_POWERED : 0;
 		break;
 	case USB_REQTYPE_RECIPIENT_ENDPOINT:
 		response = usbd_ep_is_halted(uds_ctx, ep) ? BIT(0) : 0;
@@ -937,13 +939,13 @@ static int vendor_device_request(struct usbd_context *const uds_ctx,
 	}
 
 	if (reqtype_is_to_device(setup) && vreq_nd->to_dev != NULL) {
-		LOG_ERR("Vendor request 0x%02x to device", setup->bRequest);
+		LOG_DBG("Vendor request 0x%02x to device", setup->bRequest);
 		errno = vreq_nd->to_dev(uds_ctx, setup, buf);
 		return 0;
 	}
 
 	if (reqtype_is_to_host(setup) && vreq_nd->to_host != NULL) {
-		LOG_ERR("Vendor request 0x%02x to host", setup->bRequest);
+		LOG_DBG("Vendor request 0x%02x to host", setup->bRequest);
 		errno = vreq_nd->to_host(uds_ctx, setup, buf);
 		return 0;
 	}

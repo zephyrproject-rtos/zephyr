@@ -561,7 +561,7 @@ static int tls_cred_cmd_del(const struct shell *sh, size_t argc, char *argv[])
 		goto cleanup;
 	}
 
-	ref_slot = find_ref_slot(cred->buf);
+	ref_slot = cred->buf != NULL ? find_ref_slot(cred->buf) : -1;
 	if (ref_slot >= 0) {
 		/* This was a credential we copied to heap. Clear and free it. */
 		memset((void *)cred_buf, 0, cred->len);

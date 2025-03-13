@@ -54,6 +54,8 @@ static struct ipc_channel_config ipc_cpusys_channel_config = {
 	.enabled	 = true
 };
 
+static sys_slist_t nrfs_backend_info_cb_slist = SYS_SLIST_STATIC_INIT(&nrfs_backend_info_cb_slist);
+
 /**
  * @brief nrfs backend error handler
  *
@@ -80,6 +82,10 @@ __weak void nrfs_backend_error_handler(enum nrfs_backend_error error_id, int err
 		LOG_ERR("IPC register endpoint failure with error: %d", error);
 		break;
 
+	case NRFS_ERROR_SEND_DATA_FROM_QUEUE:
+		LOG_ERR("IPC backend sent data failed.");
+		break;
+
 	default:
 		LOG_ERR("Undefined error id: %d, error cause: %d", error_id, error);
 		break;
@@ -98,6 +104,12 @@ static void ipc_sysctrl_ept_bound(void *priv)
 
 	if (k_msgq_num_used_get(&ipc_transmit_msgq) > 0) {
 		k_work_submit(&backend_send_work);
+	}
+
+	struct nrfs_backend_bound_info_subs *subs;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&nrfs_backend_info_cb_slist, subs, node) {
+		subs->cb();
 	}
 }
 
@@ -120,14 +132,45 @@ static void ipc_sysctrl_ept_recv(const void *data, size_t size, void *priv)
 	}
 }
 
+/**
+ * @brief This function will try to send data directly using ipc service
+ *        In case of errors it will retry if configured.
+ *
+ * @param message Pointer to the buffer to send.
+ * @param size Number of bytes to send.
+ * @retval NRFS_SUCCESS Message sent successfully.
+ * @retval NRFS_ERR_IPC Backend returned error during message sending.
+ */
+static nrfs_err_t nrfs_backend_try_send_directly_over_ipc_service(void *message, size_t size)
+{
+	size_t retry_count = CONFIG_NRFS_SEND_RETRY_MAX_COUNT + 1;
+	int ret = 0;
+
+	do {
+		ret = ipc_service_send(&ipc_cpusys_channel_config.ipc_ept, message, size);
+		if (ret < (int)size) {
+			k_usleep(CONFIG_NRFS_SEND_RETRY_DELAY);
+		} else {
+			return NRFS_SUCCESS;
+		}
+	} while (--retry_count);
+
+	return NRFS_ERR_IPC;
+}
+
 static void nrfs_backend_send_work(struct k_work *item)
 {
 	struct ipc_data_packet data_to_send;
 
 	LOG_DBG("Sending data from workqueue");
 	while (k_msgq_get(&ipc_transmit_msgq, &data_to_send, K_NO_WAIT) == 0) {
-		ipc_service_send(&ipc_cpusys_channel_config.ipc_ept, &data_to_send.data,
-				 data_to_send.size);
+
+		nrfs_err_t ret = nrfs_backend_try_send_directly_over_ipc_service(&data_to_send.data,
+										 data_to_send.size);
+
+		if (ret != NRFS_SUCCESS) {
+			nrfs_backend_error_handler(NRFS_ERROR_SEND_DATA_FROM_QUEUE, 0, true);
+		}
 	}
 }
 
@@ -177,8 +220,8 @@ nrfs_err_t nrfs_backend_send(void *message, size_t size)
 nrfs_err_t nrfs_backend_send_ex(void *message, size_t size, k_timeout_t timeout, bool high_prio)
 {
 	if (!k_is_in_isr() && nrfs_backend_connected()) {
-		return ipc_service_send(&ipc_cpusys_channel_config.ipc_ept, message, size) ?
-			NRFS_SUCCESS : NRFS_ERR_IPC;
+		return nrfs_backend_try_send_directly_over_ipc_service(message, size);
+
 	} else if (size <= MAX_PACKET_DATA_SIZE) {
 		int err;
 		struct ipc_data_packet tx_data;
@@ -220,6 +263,15 @@ int nrfs_backend_wait_for_connection(k_timeout_t timeout)
 	events = k_event_wait(&ipc_connected_event, IPC_INIT_DONE_EVENT, false, timeout);
 
 	return (events == IPC_INIT_DONE_EVENT ? 0 : (-EAGAIN));
+}
+
+void nrfs_backend_register_bound_subscribe(struct nrfs_backend_bound_info_subs *subs,
+					   nrfs_backend_bound_info_cb_t cb)
+{
+	if (cb) {
+		subs->cb = cb;
+		sys_slist_append(&nrfs_backend_info_cb_slist, &subs->node);
+	}
 }
 
 __weak void nrfs_backend_fatal_error_handler(enum nrfs_backend_error error_id)

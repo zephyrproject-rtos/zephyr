@@ -59,59 +59,7 @@ Additional features:
 Supported Features
 ==================
 
-Zephyr's RI5CY configuration, ``rv32m1_vega/openisa_rv32m1/ri5cy``, currently supports
-the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| EVENT     | on-chip    | event unit interrupt controller     |
-+-----------+------------+-------------------------------------+
-| INTMUX    | on-chip    | level 2 interrupt controller        |
-+-----------+------------+-------------------------------------+
-| LPTMR     | on-chip    | lptmr-based system timer            |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| I2C(M)    | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| TPM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SENSOR    | off-chip   | fxos8700 polling;                   |
-|           |            | fxos8700 trigger;                   |
-+-----------+------------+-------------------------------------+
-
-Zephyr's ZERO-RISCY configuration, ``rv32m1_vega/openisa_rv32m1/zero_riscy``, currently
-supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| EVENT     | on-chip    | event unit interrupt controller     |
-+-----------+------------+-------------------------------------+
-| INTMUX    | on-chip    | level 2 interrupt controller        |
-+-----------+------------+-------------------------------------+
-| LPTMR     | on-chip    | lptmr-based system timer            |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| I2C(M)    | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| TPM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SENSOR    | off-chip   | fxos8700 polling;                   |
-|           |            | fxos8700 trigger;                   |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 BLE Software Link Layer experimental support
 ==================================================

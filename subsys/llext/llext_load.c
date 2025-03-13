@@ -112,6 +112,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 		LOG_ERR("Failed to allocate section map, size %zu", sect_map_sz);
 		return -ENOMEM;
 	}
+	ext->alloc_size += sect_map_sz;
 	for (int i = 0; i < ext->sect_cnt; i++) {
 		ldr->sect_map[i].mem_idx = LLEXT_MEM_COUNT;
 		ldr->sect_map[i].offset = 0;
@@ -152,6 +153,8 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 {
 	int table_cnt, i;
+	int shstrtab_ndx = ldr->hdr.e_shstrndx;
+	int strtab_ndx = -1;
 
 	memset(ldr->sects, 0, sizeof(ldr->sects));
 
@@ -171,28 +174,28 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 			shdr->sh_link,
 			shdr->sh_info);
 
-		switch (shdr->sh_type) {
-		case SHT_SYMTAB:
-		case SHT_DYNSYM:
+		if (shdr->sh_type == SHT_SYMTAB && ldr->hdr.e_type == ET_REL) {
 			LOG_DBG("symtab at %d", i);
 			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
+			strtab_ndx = shdr->sh_link;
 			table_cnt++;
-			break;
-		case SHT_STRTAB:
-			if (ldr->hdr.e_shstrndx == i) {
-				LOG_DBG("shstrtab at %d", i);
-				ldr->sects[LLEXT_MEM_SHSTRTAB] = *shdr;
-				ldr->sect_map[i].mem_idx = LLEXT_MEM_SHSTRTAB;
-			} else {
-				LOG_DBG("strtab at %d", i);
-				ldr->sects[LLEXT_MEM_STRTAB] = *shdr;
-				ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
-			}
+		} else if (shdr->sh_type == SHT_DYNSYM && ldr->hdr.e_type == ET_DYN) {
+			LOG_DBG("dynsym at %d", i);
+			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
+			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
+			strtab_ndx = shdr->sh_link;
 			table_cnt++;
-			break;
-		default:
-			break;
+		} else if (shdr->sh_type == SHT_STRTAB && i == shstrtab_ndx) {
+			LOG_DBG("shstrtab at %d", i);
+			ldr->sects[LLEXT_MEM_SHSTRTAB] = *shdr;
+			ldr->sect_map[i].mem_idx = LLEXT_MEM_SHSTRTAB;
+			table_cnt++;
+		} else if (shdr->sh_type == SHT_STRTAB && i == strtab_ndx) {
+			LOG_DBG("strtab at %d", i);
+			ldr->sects[LLEXT_MEM_STRTAB] = *shdr;
+			ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
+			table_cnt++;
 		}
 	}
 
@@ -395,9 +398,10 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				continue;
 			}
 
-			if (ldr->hdr.e_type == ET_DYN) {
+			if ((ldr->hdr.e_type == ET_DYN) &&
+			    (x->sh_flags & SHF_ALLOC) && (y->sh_flags & SHF_ALLOC)) {
 				/*
-				 * Test all merged VMA ranges for overlaps
+				 * Test regions that have VMA ranges for overlaps
 				 */
 				if ((x->sh_addr <= y->sh_addr &&
 				     x->sh_addr + x->sh_size > y->sh_addr) ||
@@ -514,31 +518,56 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
-static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
+static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext,
+				const struct llext_load_param *ldr_parm)
 {
-	elf_shdr_t *shdr = ldr->sects + LLEXT_MEM_EXPORT;
+	struct llext_symtable *exp_tab = &ext->exp_tab;
 	struct llext_symbol *sym;
 	unsigned int i;
 
-	if (shdr->sh_size < sizeof(struct llext_symbol)) {
-		/* Not found, no symbols exported */
+	if (IS_ENABLED(CONFIG_LLEXT_IMPORT_ALL_GLOBALS)) {
+		/* Use already discovered global symbols */
+		exp_tab->sym_cnt = ext->sym_tab.sym_cnt;
+		sym = ext->sym_tab.syms;
+	} else {
+		/* Only use symbols in the .exported_sym section */
+		exp_tab->sym_cnt = ldr->sects[LLEXT_MEM_EXPORT].sh_size
+				   / sizeof(struct llext_symbol);
+		sym = ext->mem[LLEXT_MEM_EXPORT];
+	}
+
+	if (!exp_tab->sym_cnt) {
+		/* No symbols exported */
 		return 0;
 	}
 
-	struct llext_symtable *exp_tab = &ext->exp_tab;
-
-	exp_tab->sym_cnt = shdr->sh_size / sizeof(struct llext_symbol);
 	exp_tab->syms = llext_alloc(exp_tab->sym_cnt * sizeof(struct llext_symbol));
 	if (!exp_tab->syms) {
 		return -ENOMEM;
 	}
 
-	for (i = 0, sym = ext->mem[LLEXT_MEM_EXPORT];
-	     i < exp_tab->sym_cnt;
-	     i++, sym++) {
-		exp_tab->syms[i].name = sym->name;
+	for (i = 0; i < exp_tab->sym_cnt; i++, sym++) {
+		/*
+		 * Offsets in objects, built for pre-defined addresses have to
+		 * be translated to memory locations for symbol name access
+		 * during dependency resolution.
+		 */
+		const char *name = NULL;
+
+		if (ldr_parm && ldr_parm->pre_located) {
+			ssize_t name_offset = llext_file_offset(ldr, (uintptr_t)sym->name);
+
+			if (name_offset > 0) {
+				name = llext_peek(ldr, name_offset);
+			}
+		}
+		if (!name) {
+			name = sym->name;
+		}
+
+		exp_tab->syms[i].name = name;
 		exp_tab->syms[i].addr = sym->addr;
-		LOG_DBG("sym %p name %s in %p", sym->addr, sym->name, exp_tab->syms + i);
+		LOG_DBG("sym %p name %s", sym->addr, sym->name);
 	}
 
 	return 0;
@@ -721,22 +750,25 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		}
 	}
 
-	ret = llext_export_symbols(ldr, ext);
+	ret = llext_export_symbols(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to export, ret %d", ret);
 		goto out;
 	}
 
-	llext_adjust_mmu_permissions(ext);
+	if (!ldr_parm->pre_located) {
+		llext_adjust_mmu_permissions(ext);
+	}
 
 out:
 	/*
-	 * Free resources only used during loading. Note that this exploits
-	 * the fact that freeing a NULL pointer has no effect.
+	 * Free resources only used during loading, unless explicitly requested.
+	 * Note that this exploits the fact that freeing a NULL pointer has no effect.
 	 */
 
-	llext_free(ldr->sect_map);
-	ldr->sect_map = NULL;
+	if (ret != 0 || !ldr_parm || !ldr_parm->keep_section_info) {
+		llext_free_inspection_data(ldr, ext);
+	}
 
 	/* Until proper inter-llext linking is implemented, the symbol table is
 	 * not useful outside of the loading process; keep it only if debugging
@@ -767,4 +799,15 @@ out:
 	llext_finalize(ldr);
 
 	return ret;
+}
+
+int llext_free_inspection_data(struct llext_loader *ldr, struct llext *ext)
+{
+	if (ldr->sect_map) {
+		ext->alloc_size -= ext->sect_cnt * sizeof(ldr->sect_map[0]);
+		llext_free(ldr->sect_map);
+		ldr->sect_map = NULL;
+	}
+
+	return 0;
 }

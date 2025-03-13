@@ -1,5 +1,5 @@
 # Copyright (c) 2019 Benjamin Valentin
-# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 identifier: same54_xpro
 name: SAM E54 Xplained Pro
@@ -8,16 +8,17 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 flash: 1024
 ram: 256
 supported:
   - adc
+  - dma
   - flash
   - gpio
   - i2c
   - netif:eth
   - pwm
+  - rtc
   - spi
   - uart
   - usb_device

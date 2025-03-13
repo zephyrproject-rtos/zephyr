@@ -38,7 +38,7 @@ static int cmd_cycles(const struct shell *sh, size_t argc, char **argv)
 	uint32_t channel;
 	int err;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "PWM device not found");
 		return -EINVAL;
@@ -71,7 +71,7 @@ static int cmd_usec(const struct shell *sh, size_t argc, char **argv)
 	uint32_t channel;
 	int err;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "PWM device not found");
 		return -EINVAL;
@@ -103,7 +103,7 @@ static int cmd_nsec(const struct shell *sh, size_t argc, char **argv)
 	uint32_t channel;
 	int err;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "PWM device not found");
 		return -EINVAL;
@@ -126,14 +126,14 @@ static int cmd_nsec(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static bool device_is_pwm_and_ready(const struct device *dev)
+static bool device_is_pwm(const struct device *dev)
 {
-	return device_is_ready(dev) && DEVICE_API_IS(pwm, dev);
+	return DEVICE_API_IS(pwm, dev);
 }
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_filter(idx, device_is_pwm_and_ready);
+	const struct device *dev = shell_device_filter(idx, device_is_pwm);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

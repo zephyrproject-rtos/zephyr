@@ -19,6 +19,13 @@
 #  - foo2
 #  - foo3
 #
+# Support for list of maps, like:
+# foo:
+#  - bar: val1
+#    baz: val1
+#  - bar: val2
+#    baz: val2
+#
 # All of above can be combined, for example like:
 # foo:
 #   bar: baz
@@ -28,14 +35,6 @@
 #      - beta
 #      - gamma
 # fred: thud
-#
-# Support for list of objects are currently experimental and not guranteed to work.
-# For example:
-# foo:
-#  - bar: val1
-#    baz: val1
-#  - bar: val2
-#    baz: val2
 
 include_guard(GLOBAL)
 
@@ -72,6 +71,98 @@ function(internal_yaml_context_free)
   endif()
 endfunction()
 
+# Internal helper function to provide the correct initializer for a list in the
+# JSON content.
+function(internal_yaml_list_initializer var genex)
+  if(genex)
+    set(${var} "\"@YAML-LIST@\"" PARENT_SCOPE)
+  else()
+    set(${var} "[]" PARENT_SCOPE)
+  endif()
+endfunction()
+
+# Internal helper function to append items to a list in the JSON content.
+# Unassigned arguments are the values to be appended.
+function(internal_yaml_list_append var genex key)
+  set(json_content "${${var}}")
+  string(JSON subjson GET "${json_content}" ${key})
+  if(genex)
+    # new lists are stored in CMake string format, but those imported via
+    # yaml_load() are proper JSON arrays. When an append is requested, those
+    # must be converted back to a CMake list.
+    string(JSON type TYPE "${json_content}" ${key})
+    if(type STREQUAL ARRAY)
+      string(JSON arraylength LENGTH "${subjson}")
+      internal_yaml_list_initializer(subjson TRUE)
+      if(${arraylength} GREATER 0)
+        math(EXPR arraystop "${arraylength} - 1")
+        list(GET ARG_YAML_LIST 0 entry_0)
+        if(entry_0 STREQUAL MAP)
+          message(FATAL_ERROR "${function}(GENEX ${argument} ) is not valid at this position.\n"
+                    "Syntax is 'LIST MAP \"key1: value1.1, ...\" MAP \"key1: value1.2, ...\""
+            )
+        endif()
+
+        foreach(i RANGE 0 ${arraystop})
+          string(JSON item GET "${json_content}" ${key} ${i})
+          list(APPEND subjson ${item})
+        endforeach()
+      endif()
+    endif()
+    list(APPEND subjson ${ARGN})
+    string(JSON json_content SET "${json_content}" ${key} "\"${subjson}\"")
+  else()
+    # lists are stored as JSON arrays
+    string(JSON index LENGTH "${subjson}")
+    list(LENGTH ARGN length)
+    if(NOT length EQUAL 0)
+      list(GET ARG_YAML_LIST 0 entry_0)
+      if(entry_0 STREQUAL MAP)
+        math(EXPR length "${length} / 2")
+        math(EXPR stop "${index} + ${length} - 1")
+        foreach(i RANGE ${index} ${stop})
+          list(POP_FRONT ARG_YAML_LIST argument)
+          if(NOT argument STREQUAL MAP)
+            message(FATAL_ERROR "yaml_set(${argument} ) is not valid at this position.\n"
+                    "Syntax is 'LIST MAP \"key1: value1.1, ...\" MAP \"key1: value1.2, ...\""
+            )
+          endif()
+          list(POP_FRONT ARG_YAML_LIST map_value)
+          string(REGEX REPLACE "([^\\])," "\\1;" pair_list "${map_value}")
+          set(qouted_map_value)
+          foreach(pair ${pair_list})
+            if(NOT pair MATCHES "[^ ]*:[^ ]*")
+              message(FATAL_ERROR "yaml_set(MAP ${map_value} ) is malformed.\n"
+                    "Syntax is 'LIST MAP \"key1: value1.1, ...\" MAP \"key1: value1.2, ...\"\n"
+                    "If value contains comma ',' then ensure the value field is properly qouted "
+                    "and escaped"
+              )
+            endif()
+            string(REGEX MATCH "^[^:]*" map_key "${pair}")
+            string(REGEX REPLACE "^${map_key}:[ ]*" "" value "${pair}")
+            string(STRIP "${map_key}" map_key)
+            if(value MATCHES "," AND NOT (value MATCHES "\\\\," AND value MATCHES "'.*'"))
+              message(FATAL_ERROR "value: ${value} is not properly quoted")
+            endif()
+            string(REGEX REPLACE "\\\\," "," value "${value}")
+            list(APPEND qouted_map_value "\"${map_key}\": \"${value}\"")
+          endforeach()
+          list(JOIN qouted_map_value "," qouted_map_value)
+          string(JSON json_content SET "${json_content}" ${key} ${i} "{${qouted_map_value}}")
+        endforeach()
+      else()
+        math(EXPR stop "${index} + ${length} - 1")
+        list(GET ARG_YAML_LIST 0 entry_0)
+          foreach(i RANGE ${index} ${stop})
+            list(POP_FRONT ARGN value)
+            string(JSON json_content SET "${json_content}" ${key} ${i} "\"${value}\"")
+          endforeach()
+      endif()
+    endif()
+  endif()
+  set(${var} "${json_content}" PARENT_SCOPE)
+endfunction()
+
 # Usage
 #   yaml_context(EXISTS NAME <name> <result>)
 #
@@ -93,7 +184,8 @@ function(yaml_context)
     )
   endif()
 
-  if(TARGET ${ARG_YAML_NAME}_scope)
+  zephyr_scope_exists(scope_defined ${ARG_YAML_NAME})
+  if(scope_defined)
     list(POP_FRONT ARG_YAML_UNPARSED_ARGUMENTS out-var)
     set(${out-var} TRUE PARENT_SCOPE)
   else()
@@ -124,6 +216,7 @@ function(yaml_create)
   if(DEFINED ARG_YAML_FILE)
     zephyr_set(FILE ${ARG_YAML_FILE} SCOPE ${ARG_YAML_NAME})
   endif()
+  zephyr_set(GENEX FALSE SCOPE ${ARG_YAML_NAME})
   zephyr_set(JSON "{}" SCOPE ${ARG_YAML_NAME})
 endfunction()
 
@@ -148,7 +241,7 @@ function(yaml_load)
   zephyr_set(FILE ${ARG_YAML_FILE} SCOPE ${ARG_YAML_NAME})
 
   execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-    "import json; import yaml; print(json.dumps(yaml.safe_load(open('${ARG_YAML_FILE}'))))"
+    "import json; import yaml; print(json.dumps(yaml.safe_load(open('${ARG_YAML_FILE}')) or {}))"
     OUTPUT_VARIABLE json_load_out
     ERROR_VARIABLE json_load_error
     RESULT_VARIABLE json_load_result
@@ -160,6 +253,7 @@ function(yaml_load)
     )
   endif()
 
+  zephyr_set(GENEX FALSE SCOPE ${ARG_YAML_NAME})
   zephyr_set(JSON "${json_load_out}" SCOPE ${ARG_YAML_NAME})
 endfunction()
 
@@ -183,7 +277,7 @@ function(yaml_get out_var)
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} ARG_YAML NAME KEY)
   internal_yaml_context_required(NAME ${ARG_YAML_NAME})
 
-  get_property(json_content TARGET ${ARG_YAML_NAME}_scope PROPERTY JSON)
+  zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
 
   # We specify error variable to avoid a fatal error.
   # If key is not found, then type becomes '-NOTFOUND' and value handling is done below.
@@ -224,7 +318,7 @@ function(yaml_length out_var)
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} ARG_YAML NAME KEY)
   internal_yaml_context_required(NAME ${ARG_YAML_NAME})
 
-  get_property(json_content TARGET ${ARG_YAML_NAME}_scope PROPERTY JSON)
+  zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
 
   string(JSON type ERROR_VARIABLE error TYPE "${json_content}" ${ARG_YAML_KEY})
   if(type STREQUAL ARRAY)
@@ -240,8 +334,9 @@ function(yaml_length out_var)
 endfunction()
 
 # Usage:
-#   yaml_set(NAME <name> KEY <key>... VALUE <value>)
-#   yaml_set(NAME <name> KEY <key>... [APPEND] LIST <value>...)
+#   yaml_set(NAME <name> KEY <key>... [GENEX] VALUE <value>)
+#   yaml_set(NAME <name> KEY <key>... [APPEND] [GENEX] LIST <value>...)
+#   yaml_set(NAME <name> KEY <key>... [APPEND] LIST MAP <map1> MAP <map2> MAP ...)
 #
 # Set a value or a list of values to given key.
 #
@@ -251,18 +346,46 @@ endfunction()
 # NAME <name>  : Name of the YAML context.
 # KEY <key>... : Name of key.
 # VALUE <value>: New value for the key.
-# List <values>: New list of values for the key.
+# LIST <values>: New list of values for the key.
 # APPEND       : Append the list of values to the list of values for the key.
+# GENEX        : The value(s) contain generator expressions. When using this
+#                option, also see the notes in the yaml_save() function.
+# MAP <map>    : Map, with key-value pairs where key-value is separated by ':',
+#                and pairs separated by ','.
+#                Format example: "<key1>: <value1>, <key2>: <value2>, ..."
+#                MAP can be given multiple times to separate maps when adding them to a list.
+#                LIST MAP cannot be used with GENEX.
+#
+#                Note: if a map value contains commas, ',', then the value string must be quoted in
+#                      single quotes and commas must be double escaped, like this: 'A \\,string'
 #
 function(yaml_set)
-  cmake_parse_arguments(ARG_YAML "APPEND" "NAME;VALUE" "KEY;LIST" ${ARGN})
+  cmake_parse_arguments(ARG_YAML "APPEND;GENEX" "NAME;VALUE" "KEY;LIST" ${ARGN})
 
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} ARG_YAML NAME KEY)
   zephyr_check_arguments_required_allow_empty(${CMAKE_CURRENT_FUNCTION} ARG_YAML VALUE LIST)
   zephyr_check_arguments_exclusive(${CMAKE_CURRENT_FUNCTION} ARG_YAML VALUE LIST)
   internal_yaml_context_required(NAME ${ARG_YAML_NAME})
 
-  get_property(json_content TARGET ${ARG_YAML_NAME}_scope PROPERTY JSON)
+  if(ARG_YAML_GENEX)
+    zephyr_set(GENEX TRUE SCOPE ${ARG_YAML_NAME})
+  endif()
+
+  if(DEFINED ARG_YAML_LIST
+     OR LIST IN_LIST ARG_YAML_KEYWORDS_MISSING_VALUES)
+    set(key_is_list TRUE)
+  endif()
+
+  if(ARG_YAML_APPEND AND NOT key_is_list)
+    message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(APPEND ...) can only be used with argument: LIST")
+  endif()
+
+  if(ARG_YAML_GENEX AND MAP IN_LIST ARG_YAML_LIST)
+    message(FATAL_ERROR "${function}(GENEX ...) cannot be used with argument: LIST MAP")
+  endif()
+
+  zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
+  zephyr_get_scoped(genex ${ARG_YAML_NAME} GENEX)
 
   set(yaml_key_undefined ${ARG_YAML_KEY})
   foreach(k ${yaml_key_undefined})
@@ -280,8 +403,8 @@ function(yaml_set)
 
   list(REVERSE yaml_key_undefined)
   if(NOT "${yaml_key_undefined}" STREQUAL "")
-    if(ARG_YAML_APPEND)
-      set(json_string "[]")
+    if(key_is_list)
+      internal_yaml_list_initializer(json_string ${genex})
     else()
       set(json_string "\"\"")
     endif()
@@ -294,23 +417,16 @@ function(yaml_set)
     )
   endif()
 
-  if(DEFINED ARG_YAML_LIST OR LIST IN_LIST ARG_YAML_KEYWORDS_MISSING_VALUES)
+  if(key_is_list)
     if(NOT ARG_YAML_APPEND)
-      string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} "[]")
+      internal_yaml_list_initializer(json_string ${genex})
+      string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} "${json_string}")
     endif()
-
-    string(JSON subjson GET "${json_content}" ${ARG_YAML_KEY})
-    string(JSON index LENGTH "${subjson}")
-    list(LENGTH ARG_YAML_LIST length)
-    math(EXPR stop "${index} + ${length} - 1")
-    if(NOT length EQUAL 0)
-      foreach(i RANGE ${index} ${stop})
-        list(POP_FRONT ARG_YAML_LIST value)
-        string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} ${i} "\"${value}\"")
-      endforeach()
-    endif()
+    zephyr_string(ESCAPE escape_list "${ARG_YAML_LIST}")
+    internal_yaml_list_append(json_content ${genex} "${ARG_YAML_KEY}" ${escape_list})
   else()
-    string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} "\"${ARG_YAML_VALUE}\"")
+    zephyr_string(ESCAPE escape_value "${ARG_YAML_VALUE}")
+    string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} "\"${escape_value}\"")
   endif()
 
   zephyr_set(JSON "${json_content}" SCOPE ${ARG_YAML_NAME})
@@ -335,7 +451,7 @@ function(yaml_remove)
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} ARG_YAML NAME KEY)
   internal_yaml_context_required(NAME ${ARG_YAML_NAME})
 
-  get_property(json_content TARGET ${ARG_YAML_NAME}_scope PROPERTY JSON)
+  zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
   string(JSON json_content REMOVE "${json_content}" ${ARG_YAML_KEY})
 
   zephyr_set(JSON "${json_content}" SCOPE ${ARG_YAML_NAME})
@@ -344,8 +460,12 @@ endfunction()
 # Usage:
 #   yaml_save(NAME <name> [FILE <file>])
 #
-# Write the YAML context <name> to the file which were given with the earlier
-# 'yaml_load()' or 'yaml_create()' call.
+# Write the YAML context <name> to <file>, or the one given with the earlier
+# 'yaml_load()' or 'yaml_create()' call. This will be performed immediately if
+# the context does not use generator expressions; otherwise, keys that include
+# a generator expression will initially be written as comments, and the full
+# contents will be available at build time. Build steps that depend on the file
+# being complete must depend on the '<name>_yaml_saved' target.
 #
 # NAME <name>: Name of the YAML context
 # FILE <file>: Path to file to write the context.
@@ -359,26 +479,70 @@ function(yaml_save)
   zephyr_check_arguments_required(${CMAKE_CURRENT_FUNCTION} ARG_YAML NAME)
   internal_yaml_context_required(NAME ${ARG_YAML_NAME})
 
-  get_target_property(yaml_file ${ARG_YAML_NAME}_scope FILE)
+  zephyr_get_scoped(yaml_file ${ARG_YAML_NAME} FILE)
   if(NOT yaml_file)
     zephyr_check_arguments_required(${CMAKE_CURRENT_FUNCTION} ARG_YAML FILE)
   endif()
-
-  get_property(json_content TARGET ${ARG_YAML_NAME}_scope PROPERTY JSON)
-  to_yaml("${json_content}" 0 yaml_out)
-
   if(DEFINED ARG_YAML_FILE)
     set(yaml_file ${ARG_YAML_FILE})
   else()
-    get_property(yaml_file TARGET ${ARG_YAML_NAME}_scope PROPERTY FILE)
+    zephyr_get_scoped(yaml_file ${ARG_YAML_NAME} FILE)
   endif()
+
+  zephyr_get_scoped(genex ${ARG_YAML_NAME} GENEX)
+  zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
+  to_yaml("${json_content}" 0 yaml_out ${genex})
+
   if(EXISTS ${yaml_file})
     FILE(RENAME ${yaml_file} ${yaml_file}.bak)
   endif()
   FILE(WRITE ${yaml_file} "${yaml_out}")
+
+  set(save_target ${ARG_YAML_NAME}_yaml_saved)
+  if (NOT TARGET ${save_target})
+    # Create a target for the completion of the YAML save operation.
+    # This will be a dummy unless genexes are used.
+    add_custom_target(${save_target} ALL DEPENDS ${yaml_file})
+    set_target_properties(${save_target} PROPERTIES
+      genex_save_count 0
+      temp_files ""
+    )
+  endif()
+
+  if (genex)
+    get_property(genex_save_count TARGET ${save_target} PROPERTY genex_save_count)
+    if (${genex_save_count} EQUAL 0)
+      # First yaml_save() for this context with genexes enabled
+      add_custom_command(
+        OUTPUT ${yaml_file}
+        DEPENDS $<TARGET_PROPERTY:${save_target},json_file>
+        COMMAND ${CMAKE_COMMAND}
+                -DJSON_FILE="$<TARGET_PROPERTY:${save_target},json_file>"
+                -DYAML_FILE="${yaml_file}"
+                -DTEMP_FILES="$<TARGET_PROPERTY:${save_target},temp_files>"
+                -P ${ZEPHYR_BASE}/cmake/yaml-filter.cmake
+      )
+    endif()
+
+    math(EXPR genex_save_count "${genex_save_count} + 1")
+    set_property(TARGET ${save_target} PROPERTY genex_save_count ${genex_save_count})
+
+    cmake_path(SET yaml_path "${yaml_file}")
+    cmake_path(GET yaml_path STEM yaml_file_no_ext)
+    set(json_file ${yaml_file_no_ext}_${genex_save_count}.json)
+    set_property(TARGET ${save_target} PROPERTY json_file ${json_file})
+
+    # comment this to keep the temporary JSON files
+    set_property(TARGET ${save_target} APPEND PROPERTY temp_files ${json_file})
+
+    FILE(GENERATE OUTPUT ${json_file}
+      CONTENT "${json_content}"
+    )
+  endif()
 endfunction()
 
-function(to_yaml json level yaml)
+function(to_yaml in_json level yaml genex)
+  zephyr_string(ESCAPE json "${in_json}")
   if(level GREATER 0)
     math(EXPR level_dec "${level} - 1")
     set(indent_${level} "${indent_${level_dec}}  ")
@@ -397,10 +561,12 @@ function(to_yaml json level yaml)
     string(JSON type TYPE "${json}" ${member})
     string(JSON subjson GET "${json}" ${member})
     if(type STREQUAL OBJECT)
+      # JSON object -> YAML dictionary
       set(${yaml} "${${yaml}}${indent_${level}}${member}:\n")
       math(EXPR sublevel "${level} + 1")
-      to_yaml("${subjson}" ${sublevel} ${yaml})
+      to_yaml("${subjson}" ${sublevel} ${yaml} ${genex})
     elseif(type STREQUAL ARRAY)
+      # JSON array -> YAML list
       set(${yaml} "${${yaml}}${indent_${level}}${member}:")
       string(JSON arraylength LENGTH "${subjson}")
       if(${arraylength} LESS 1)
@@ -410,10 +576,47 @@ function(to_yaml json level yaml)
         math(EXPR arraystop "${arraylength} - 1")
         foreach(i RANGE 0 ${arraystop})
           string(JSON item GET "${json}" ${member} ${i})
-          set(${yaml} "${${yaml}}${indent_${level}} - ${item}\n")
+          # Check the length of item. Only OBJECT and ARRAY may have length, so a length at this
+          # level means `to_yaml()` should be called recursively.
+          string(JSON length ERROR_VARIABLE ignore LENGTH "${item}")
+          if(length)
+            set(non_indent_yaml)
+            to_yaml("${item}" 0 non_indent_yaml FALSE)
+            string(REGEX REPLACE "\n$" "" non_indent_yaml "${non_indent_yaml}")
+            string(REPLACE "\n" "\n${indent_${level}}   " indent_yaml "${non_indent_yaml}")
+            set(${yaml} "${${yaml}}${indent_${level}} - ${indent_yaml}\n")
+          else()
+            set(${yaml} "${${yaml}}${indent_${level}} - ${item}\n")
+          endif()
         endforeach()
       endif()
+    elseif(type STREQUAL STRING)
+      # JSON string maps to multiple YAML types:
+      # - with unexpanded generator expressions: save as YAML comment
+      # - if it matches the special prefix: convert to YAML list
+      # - otherwise: save as YAML scalar
+      if (subjson MATCHES "\\$<.*>" AND ${genex})
+        # Yet unexpanded generator expression: save as comment
+        string(SUBSTRING ${indent_${level}} 1 -1 short_indent)
+        set(${yaml} "${${yaml}}#${short_indent}${member}: ${subjson}\n")
+      elseif(subjson MATCHES "^@YAML-LIST@")
+        # List-as-string: convert to list
+        set(${yaml} "${${yaml}}${indent_${level}}${member}:")
+        list(POP_FRONT subjson)
+        if(subjson STREQUAL "")
+          set(${yaml} "${${yaml}} []\n")
+        else()
+          set(${yaml} "${${yaml}}\n")
+          foreach(item ${subjson})
+            set(${yaml} "${${yaml}}${indent_${level}} - ${item}\n")
+          endforeach()
+        endif()
+      else()
+        # Raw strings: save as is
+        set(${yaml} "${${yaml}}${indent_${level}}${member}: ${subjson}\n")
+      endif()
     else()
+      # Other JSON data type -> YAML scalar, as-is
       set(${yaml} "${${yaml}}${indent_${level}}${member}: ${subjson}\n")
     endif()
   endforeach()

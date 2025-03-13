@@ -1,5 +1,6 @@
 /*
  * Copyright 2020 Broadcom
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,13 +25,6 @@
 #define GIC_BASER_SHARE_NO		0x0UL /* Non-shareable */
 #define GIC_BASER_SHARE_INNER		0x1UL /* Inner Shareable */
 #define GIC_BASER_SHARE_OUTER		0x2UL /* Outer Shareable */
-
-/*
- * GIC Register Interface Base Addresses
- */
-
-#define GIC_RDIST_BASE	DT_REG_ADDR_BY_IDX(DT_INST(0, arm_gic), 1)
-#define GIC_RDIST_SIZE	DT_REG_SIZE_BY_IDX(DT_INST(0, arm_gic), 1)
 
 /* SGI base is at 64K offset from Redistributor */
 #define GICR_SGI_BASE_OFF		0x10000

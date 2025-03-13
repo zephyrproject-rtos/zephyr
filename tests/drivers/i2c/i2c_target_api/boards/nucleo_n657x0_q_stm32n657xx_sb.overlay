@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* I2C bus pins are exposed on the ST Arduino header.
+ *
+ *  Bus        SDA                    SCL
+ *          Pin   Hdr              Pin   Hdr
+ *  i2c1    PC1   CN15:5           PH9   CN15:3
+ *  i2c4    PE14  CN15:26          PE13  CN15:28
+ *
+ * Short Pin PC1 to PE14, and PH9 to PE13, for the test to pass.
+ */
+
+&i2c1 {
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&i2c4 {
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

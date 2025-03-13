@@ -30,6 +30,7 @@
 #include <zephyr/shell/shell.h>
 
 #include "host/shell/bt.h"
+#include "common/bt_shell_private.h"
 
 #if defined(CONFIG_BT_CONN)
 /* Connection context for BR/EDR legacy pairing in sec mode 3 */
@@ -146,7 +147,7 @@ static void br_device_found(const bt_addr_t *addr, int8_t rssi,
 
 	bt_addr_to_str(addr, br_addr, sizeof(br_addr));
 
-	shell_print(ctx_shell, "[DEVICE]: %s, RSSI %i %s", br_addr, rssi, name);
+	bt_shell_print("[DEVICE]: %s, RSSI %i %s", br_addr, rssi, name);
 }
 
 static struct bt_br_discovery_result br_discovery_results[5];
@@ -156,7 +157,7 @@ static void br_discovery_complete(const struct bt_br_discovery_result *results,
 {
 	size_t i;
 
-	shell_print(ctx_shell, "BR/EDR discovery complete");
+	bt_shell_print("BR/EDR discovery complete");
 
 	for (i = 0; i < count; i++) {
 		br_device_found(&results[i].addr, results[i].rssi,
@@ -218,25 +219,24 @@ static int cmd_discovery(const struct shell *sh, size_t argc, char *argv[])
 
 static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	shell_print(ctx_shell, "Incoming data channel %p len %u", chan,
-		    buf->len);
+	bt_shell_print("Incoming data channel %p len %u", chan, buf->len);
 
 	return 0;
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
 {
-	shell_print(ctx_shell, "Channel %p connected", chan);
+	bt_shell_print("Channel %p connected", chan);
 }
 
 static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
-	shell_print(ctx_shell, "Channel %p disconnected", chan);
+	bt_shell_print("Channel %p disconnected", chan);
 }
 
 static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
-	shell_print(ctx_shell, "Channel %p requires buffer", chan);
+	bt_shell_print("Channel %p requires buffer", chan);
 
 	return net_buf_alloc(&data_pool, K_FOREVER);
 }
@@ -257,10 +257,10 @@ static struct bt_l2cap_br_chan l2cap_chan = {
 static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 			struct bt_l2cap_chan **chan)
 {
-	shell_print(ctx_shell, "Incoming BR/EDR conn %p", conn);
+	bt_shell_print("Incoming BR/EDR conn %p", conn);
 
 	if (l2cap_chan.chan.conn) {
-		shell_error(ctx_shell, "No channels available");
+		bt_shell_error("No channels available");
 		return -ENOMEM;
 	}
 
@@ -297,20 +297,21 @@ static int cmd_l2cap_register(const struct shell *sh,
 static int cmd_discoverable(const struct shell *sh,
 			    size_t argc, char *argv[])
 {
-	int err;
-	const char *action;
+	int err = 0;
+	bool enable;
+	bool limited = false;
 
-	action = argv[1];
-
-	if (!strcmp(action, "on")) {
-		err = bt_br_set_discoverable(true);
-	} else if (!strcmp(action, "off")) {
-		err = bt_br_set_discoverable(false);
-	} else {
+	enable = shell_strtobool(argv[1], 10, &err);
+	if (err) {
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
+	if (argc > 2 && !strcmp(argv[2], "limited")) {
+		limited = true;
+	}
+
+	err = bt_br_set_discoverable(enable, limited);
 	if (err) {
 		shell_print(sh, "BR/EDR set/reset discoverable failed "
 			    "(err %d)", err);
@@ -381,10 +382,10 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 	conn_addr_str(conn, addr, sizeof(addr));
 
 	if (result && result->resp_buf) {
-		shell_print(ctx_shell, "SDP HFPAG data@%p (len %u) hint %u from"
-			    " remote %s", result->resp_buf,
-			    result->resp_buf->len, result->next_record_hint,
-			    addr);
+		bt_shell_print("SDP HFPAG data@%p (len %u) hint %u from"
+			       " remote %s", result->resp_buf,
+			       result->resp_buf->len, result->next_record_hint,
+			       addr);
 
 		/*
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
@@ -393,21 +394,19 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 		err = bt_sdp_get_proto_param(result->resp_buf,
 					     BT_SDP_PROTO_RFCOMM, &param);
 		if (err < 0) {
-			shell_error(ctx_shell, "Error getting Server CN, "
-				    "err %d", err);
+			bt_shell_error("Error getting Server CN, err %d", err);
 			goto done;
 		}
-		shell_print(ctx_shell, "HFPAG Server CN param 0x%04x", param);
+		bt_shell_print("HFPAG Server CN param 0x%04x", param);
 
 		err = bt_sdp_get_profile_version(result->resp_buf,
 						 BT_SDP_HANDSFREE_SVCLASS,
 						 &version);
 		if (err < 0) {
-			shell_error(ctx_shell, "Error getting profile version, "
-				    "err %d", err);
+			bt_shell_error("Error getting profile version, err %d", err);
 			goto done;
 		}
-		shell_print(ctx_shell, "HFP version param 0x%04x", version);
+		bt_shell_print("HFP version param 0x%04x", version);
 
 		/*
 		 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
@@ -415,15 +414,12 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 		 */
 		err = bt_sdp_get_features(result->resp_buf, &features);
 		if (err < 0) {
-			shell_error(ctx_shell, "Error getting HFPAG Features, "
-				    "err %d", err);
+			bt_shell_error("Error getting HFPAG Features, err %d", err);
 			goto done;
 		}
-		shell_print(ctx_shell, "HFPAG Supported Features param 0x%04x",
-		      features);
+		bt_shell_print("HFPAG Supported Features param 0x%04x", features);
 	} else {
-		shell_print(ctx_shell, "No SDP HFPAG data from remote %s",
-			    addr);
+		bt_shell_print("No SDP HFPAG data from remote %s", addr);
 	}
 done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
@@ -441,10 +437,10 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 	conn_addr_str(conn, addr, sizeof(addr));
 
 	if (result && result->resp_buf) {
-		shell_print(ctx_shell, "SDP A2SRC data@%p (len %u) hint %u from"
-			    " remote %s", result->resp_buf,
-			    result->resp_buf->len, result->next_record_hint,
-			    addr);
+		bt_shell_print("SDP A2SRC data@%p (len %u) hint %u from"
+			       " remote %s", result->resp_buf,
+			       result->resp_buf->len, result->next_record_hint,
+			       addr);
 
 		/*
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
@@ -453,13 +449,11 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 		err = bt_sdp_get_proto_param(result->resp_buf,
 					     BT_SDP_PROTO_L2CAP, &param);
 		if (err < 0) {
-			shell_error(ctx_shell, "A2SRC PSM Number not found, "
-				    "err %d", err);
+			bt_shell_error("A2SRC PSM Number not found, err %d", err);
 			goto done;
 		}
 
-		shell_print(ctx_shell, "A2SRC Server PSM Number param 0x%04x",
-			    param);
+		bt_shell_print("A2SRC Server PSM Number param 0x%04x", param);
 
 		/*
 		 * Focus to get BT_SDP_ATTR_PROFILE_DESC_LIST attribute item to
@@ -469,11 +463,10 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 						 BT_SDP_ADVANCED_AUDIO_SVCLASS,
 						 &version);
 		if (err < 0) {
-			shell_error(ctx_shell, "A2SRC version not found, "
-				    "err %d", err);
+			bt_shell_error("A2SRC version not found, err %d", err);
 			goto done;
 		}
-		shell_print(ctx_shell, "A2SRC version param 0x%04x", version);
+		bt_shell_print("A2SRC version param 0x%04x", version);
 
 		/*
 		 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
@@ -481,15 +474,12 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 		 */
 		err = bt_sdp_get_features(result->resp_buf, &features);
 		if (err < 0) {
-			shell_error(ctx_shell, "A2SRC Features not found, "
-				    "err %d", err);
+			bt_shell_error("A2SRC Features not found, err %d", err);
 			goto done;
 		}
-		shell_print(ctx_shell, "A2SRC Supported Features param 0x%04x",
-		      features);
+		bt_shell_print("A2SRC Supported Features param 0x%04x", features);
 	} else {
-		shell_print(ctx_shell, "No SDP A2SRC data from remote %s",
-			    addr);
+		bt_shell_print("No SDP A2SRC data from remote %s", addr);
 	}
 done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
@@ -555,7 +545,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(discovery, NULL,
 		      "<value: on, off> [length: 1-48] [mode: limited]",
 		      cmd_discovery, 2, 2),
-	SHELL_CMD_ARG(iscan, NULL, "<value: on, off>", cmd_discoverable, 2, 0),
+	SHELL_CMD_ARG(iscan, NULL, "<value: on, off> [mode: limited]",
+		      cmd_discoverable, 2, 1),
 	SHELL_CMD_ARG(l2cap-register, NULL, "<psm>", cmd_l2cap_register, 2, 0),
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),

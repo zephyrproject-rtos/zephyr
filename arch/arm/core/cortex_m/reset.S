@@ -21,6 +21,7 @@ _ASM_FILE_PROLOGUE
 GTEXT(z_arm_reset)
 GTEXT(z_early_memset)
 GDATA(z_interrupt_stacks)
+GDATA(z_main_stack)
 #if defined(CONFIG_DEBUG_THREAD_INFO)
 GDATA(z_sys_post_kernel)
 #endif
@@ -29,7 +30,6 @@ GTEXT(soc_reset_hook)
 #endif
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
 GTEXT(z_arm_init_arch_hw_at_boot)
-GDATA(z_main_stack)
 #endif
 #if defined(CONFIG_PM_S2RAM)
 GTEXT(arch_pm_s2ram_resume)
@@ -68,13 +68,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,z_arm_reset)
  */
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
-#if defined(CONFIG_DEBUG_THREAD_INFO)
-    /* Clear z_sys_post_kernel flag for RTOS aware debuggers */
-    movs.n r0, #0
-    ldr r1, =z_sys_post_kernel
-    strb r0, [r1]
-#endif /* CONFIG_DEBUG_THREAD_INFO */
-
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
     /* Reset CONTROL register */
     movs.n r0, #0
@@ -90,8 +83,55 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
 #if defined(CONFIG_PM_S2RAM)
+    /*
+     * Temporarily set MSP to interrupt stack so that arch_pm_s2ram_resume can
+     * use stack for calling pm_s2ram_mark_check_and_clear.
+     * This is safe because suspend never being called from an ISR ensures that
+     * interrupt stack was not live during suspend.
+     * Note:
+     * if resuming from suspend, MSP is restored from cpu context
+     * if not resuming, MSP will be set back to z_main_stack for proper init
+     * And, apart from arch_pm_s2ram_resume being able to use the stack for
+     * a short while, there is no change in behavior in either of the paths.
+     */
+    ldr r0, =z_interrupt_stacks + CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
+    msr msp, r0
+
     bl arch_pm_s2ram_resume
 #endif /* CONFIG_PM_S2RAM */
+
+    /*
+     * MSP needs to be set to main stack for following scenarios:
+     * - If CONFIG_PM_S2RAM is enabled, MSP is set to z_interrupt_stacks
+     *   for resume functions to make use of a stack. However,
+     *   if the device was not suspended and if resume functions return,
+     *   MSP needs to be set back to z_main_stack to ensure proper
+     *   initialization.
+     * - If CONFIG_PM_S2RAM is not enabled but CONFIG_INIT_ARCH_HW_AT_BOOT is,
+     *   MSP needs to be set to z_main_stack for proper initialization in case
+     *   device was loaded through chain loading or a debugger, as the initial
+     *   value of MSP would be anything that the previous image loaded.
+     * - If CONFIG_INIT_STACKS is enabled, we need to ensure MSP is not set
+     *   to z_interrupt_stacks, so we set it to z_main_stack.
+     *
+     * Since these scenarios cover most of the cases, we set MSP to
+     * z_main_stack here.
+     *
+     */
+    ldr r0, =z_main_stack + CONFIG_MAIN_STACK_SIZE
+    msr msp, r0
+
+    /* Note: Make sure that variables like z_sys_post_kernel
+     *       are set after the call to arch_pm_s2ram_resume
+     *       to avoid any issues with suspend/resume path.
+     *       Refer issue #83660 for more details.
+     */
+#if defined(CONFIG_DEBUG_THREAD_INFO)
+    /* Clear z_sys_post_kernel flag for RTOS aware debuggers */
+    movs.n r0, #0
+    ldr r1, =z_sys_post_kernel
+    strb r0, [r1]
+#endif /* CONFIG_DEBUG_THREAD_INFO */
 
 #if defined(CONFIG_SOC_RESET_HOOK)
     bl soc_reset_hook
@@ -105,8 +145,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     str r0, [r1]
     dsb
 #endif /* CONFIG_CPU_HAS_ARM_MPU */
-    ldr r0, =z_main_stack + CONFIG_MAIN_STACK_SIZE
-    msr msp, r0
 
     /* Initialize core architecture registers and system blocks */
     bl z_arm_init_arch_hw_at_boot

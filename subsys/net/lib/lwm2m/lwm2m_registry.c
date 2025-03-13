@@ -1089,7 +1089,7 @@ int lwm2m_get_resource(const struct lwm2m_obj_path *path, struct lwm2m_engine_re
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in, uint8_t *buf, size_t buflen,
 				    struct lwm2m_opaque_context *opaque, bool *last_block)
 {
-	uint32_t in_len = opaque->remaining;
+	uint32_t in_len = opaque->len - opaque->offset;
 	uint16_t remaining = in->in_cpkt->max_len - in->offset;
 
 	if (in_len > buflen) {
@@ -1100,9 +1100,8 @@ size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in, uint8_t *buf
 		in_len = remaining;
 	}
 
-	opaque->remaining -= in_len;
 	remaining -= in_len;
-	if (opaque->remaining == 0U || remaining == 0) {
+	if (opaque->offset + in_len >= opaque->len) {
 		*last_block = true;
 	}
 
@@ -1724,13 +1723,11 @@ size_t lwm2m_cache_size(const struct lwm2m_time_series_resource *cache_entry)
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	uint32_t bytes_available;
 
-	/* ring_buf_is_empty() takes non-const pointer but still does not modify */
-	if (ring_buf_is_empty((struct ring_buf *) &cache_entry->rb)) {
+	if (ring_buf_is_empty(&cache_entry->rb)) {
 		return 0;
 	}
 
-	/* ring_buf_size_get() takes non-const pointer but still does not modify */
-	bytes_available = ring_buf_size_get((struct ring_buf *) &cache_entry->rb);
+	bytes_available = ring_buf_size_get(&cache_entry->rb);
 
 	return (bytes_available / sizeof(struct lwm2m_time_series_elem));
 #else

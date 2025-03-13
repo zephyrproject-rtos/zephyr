@@ -105,6 +105,35 @@ void npcx_pinctrl_i2c_port_sel(int controller, int port)
 	}
 }
 
+void npcx_i2c_target_start_wk_enable(int controller, bool enable)
+{
+	struct glue_reg *const inst_glue = HAL_GLUE_INST();
+
+	if (enable) {
+		/* Clear Start condition detection status */
+		inst_glue->SMB_SBD |= BIT(controller);
+		/* Enable wake up event assertion */
+		inst_glue->SMB_EEN |= BIT(controller);
+	} else {
+		/* Disable wake up event assertion */
+		inst_glue->SMB_EEN &= ~BIT(controller);
+	}
+}
+
+void npcx_i2c_target_clear_detection_event(void)
+{
+	struct glue_reg *const inst_glue = HAL_GLUE_INST();
+	uint8_t een = inst_glue->SMB_EEN;
+	uint8_t sbd = inst_glue->SMB_SBD;
+
+	/* Clear Start condition detection status */
+	for (uint8_t i = 0; i < 8; i++) {
+		if ((een & BIT(i)) != 0 && (sbd & BIT(i)) != 0) {
+			inst_glue->SMB_SBD |= BIT(i);
+		}
+	}
+}
+
 int npcx_pinctrl_flash_write_protect_set(void)
 {
 	struct scfg_reg *inst_scfg = HAL_SFCG_INST();

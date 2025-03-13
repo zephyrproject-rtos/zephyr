@@ -73,8 +73,8 @@ static int mipi_csi2rx_update_settings(const struct device *dev, enum video_endp
 		return -ENOTSUP;
 	}
 
-	bpp = video_pix_fmt_bpp(fmt.pixelformat) * 8;
-	sensor_byte_clk = sensor_pixel_rate * bpp / drv_data->csi2rxConfig.laneNum / 8;
+	bpp = video_bits_per_pixel(fmt.pixelformat);
+	sensor_byte_clk = sensor_pixel_rate * bpp / drv_data->csi2rxConfig.laneNum / BITS_PER_BYTE;
 
 	ret = clock_control_get_rate(drv_data->clock_dev, drv_data->clock_root, &root_clk_rate);
 	if (ret) {
@@ -146,29 +146,23 @@ static int mipi_csi2rx_get_fmt(const struct device *dev, enum video_endpoint_id 
 	return 0;
 }
 
-static int mipi_csi2rx_stream_start(const struct device *dev)
-{
-	const struct mipi_csi2rx_config *config = dev->config;
-	struct mipi_csi2rx_data *drv_data = dev->data;
-
-	CSI2RX_Init((MIPI_CSI2RX_Type *)config->base, &drv_data->csi2rxConfig);
-
-	if (video_stream_start(config->sensor_dev)) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int mipi_csi2rx_stream_stop(const struct device *dev)
+static int mipi_csi2rx_set_stream(const struct device *dev, bool enable)
 {
 	const struct mipi_csi2rx_config *config = dev->config;
 
-	if (video_stream_stop(config->sensor_dev)) {
-		return -EIO;
-	}
+	if (enable) {
+		struct mipi_csi2rx_data *drv_data = dev->data;
 
-	CSI2RX_Deinit((MIPI_CSI2RX_Type *)config->base);
+		CSI2RX_Init((MIPI_CSI2RX_Type *)config->base, &drv_data->csi2rxConfig);
+		if (video_stream_start(config->sensor_dev)) {
+			return -EIO;
+		}
+	} else {
+		if (video_stream_stop(config->sensor_dev)) {
+			return -EIO;
+		}
+		CSI2RX_Deinit((MIPI_CSI2RX_Type *)config->base);
+	}
 
 	return 0;
 }
@@ -224,7 +218,7 @@ static int mipi_csi2rx_get_frmival(const struct device *dev, enum video_endpoint
 
 static uint64_t mipi_csi2rx_cal_frame_size(const struct video_format *fmt)
 {
-	return fmt->height * fmt->width * video_pix_fmt_bpp(fmt->pixelformat) * 8;
+	return fmt->height * fmt->width * video_bits_per_pixel(fmt->pixelformat);
 }
 
 static uint64_t mipi_csi2rx_estimate_pixel_rate(const struct video_frmival *cur_fmival,
@@ -310,8 +304,7 @@ static DEVICE_API(video, mipi_csi2rx_driver_api) = {
 	.get_caps = mipi_csi2rx_get_caps,
 	.get_format = mipi_csi2rx_get_fmt,
 	.set_format = mipi_csi2rx_set_fmt,
-	.stream_start = mipi_csi2rx_stream_start,
-	.stream_stop = mipi_csi2rx_stream_stop,
+	.set_stream = mipi_csi2rx_set_stream,
 	.set_ctrl = mipi_csi2rx_set_ctrl,
 	.set_frmival = mipi_csi2rx_set_frmival,
 	.get_frmival = mipi_csi2rx_get_frmival,

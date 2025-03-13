@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio1 0 0>;
+		in-gpios = <&gpio1 1 0>;
+	};
+};

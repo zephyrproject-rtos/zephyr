@@ -3,7 +3,7 @@
 
 
 description: |
-    This is a representation of the nRF21540 Radio Front-End module.
+    nRF21540 Radio Front-End module.
 
     See the "nordic,nrf21540-fem-spi" binding to configure the SPI
     interface. The SPI interface should be configured as a child node

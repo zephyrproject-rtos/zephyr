@@ -78,4 +78,14 @@ config CMSIS_NN_LSTM
 	help
 	  This option enables the NN libraries for Long Short-Term Memory.
 
+config CMSIS_NN_PAD
+	bool "Pad"
+	help
+	  This option enables the NN libraries for the pad layers.
+
+config CMSIS_NN_TRANSPOSE
+	bool "Transpose"
+	help
+	  This option enables the NN libraries for the transpose layers.
+
 endif #CMSIS_NN

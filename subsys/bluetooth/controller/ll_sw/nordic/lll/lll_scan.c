@@ -287,7 +287,7 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 		*conn_space_us = conn_offset_us;
 		pdu_tx->connect_ind.win_offset = sys_cpu_to_le16(0);
 	} else {
-		uint32_t win_offset_us =
+		uint32_t win_offset_us = radio_tmr_start_latency_get() +
 			lll->conn_win_offset_us +
 			radio_rx_ready_delay_get(phy, PHY_FLAGS_S8);
 
@@ -1089,6 +1089,9 @@ static void isr_done_cleanup(void *param)
 		lll->is_stop = 1U;
 	}
 
+	/* LLL scheduled auxiliary PDU reception is_abort on duration expire or
+	 * aborted in the unreserved time space.
+	 */
 	if (lll->is_aux_sched) {
 		struct node_rx_pdu *node_rx2;
 
@@ -1100,6 +1103,7 @@ static void isr_done_cleanup(void *param)
 		node_rx2->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
 		node_rx2->rx_ftr.param = lll;
+		node_rx2->rx_ftr.lll_aux = lll->lll_aux;
 
 		ull_rx_put_sched(node_rx2->hdr.link, node_rx2);
 	}
@@ -1377,9 +1381,10 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 					rl_idx, &dir_report))) ||
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND) &&
-		   lll->phy && lll_scan_ext_tgta_check(lll, true, false,
-						       pdu_adv_rx, rl_idx,
-						       &dir_report)) ||
+		   lll->phy &&
+		   !lll->state &&
+		   lll_scan_ext_tgta_check(lll, true, false, pdu_adv_rx, rl_idx,
+					   &dir_report)) ||
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
 		   (pdu_adv_rx->len >= offsetof(struct pdu_adv_scan_rsp, data)) &&

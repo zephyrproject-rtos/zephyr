@@ -34,7 +34,6 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
-#include "../bluetooth/host/hci_core.h"
 #include "../bluetooth/host/settings.h"
 
 #include "audio_internal.h"
@@ -270,7 +269,7 @@ static void client_free(struct has_client *client)
 	err = bt_conn_get_info(client->conn, &info);
 	__ASSERT_NO_MSG(err == 0);
 
-	if (client->context != NULL && !bt_addr_le_is_bonded(info.id, info.le.dst)) {
+	if (client->context != NULL && !bt_le_bond_exists(info.id, info.le.dst)) {
 		/* Free stored context of non-bonded client */
 		context_free(client->context);
 		client->context = NULL;
@@ -383,7 +382,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 		return;
 	}
 
-	if (!bt_addr_le_is_bonded(info.id, info.le.dst)) {
+	if (!bt_le_bond_exists(info.id, info.le.dst)) {
 		return;
 	}
 
@@ -750,13 +749,11 @@ static void control_point_ind_complete(struct bt_conn *conn,
 
 static int control_point_send(struct has_client *client, struct net_buf_simple *buf)
 {
-	const uint16_t mtu_size = bt_gatt_get_mtu(client->conn);
-	/* PDU structure is [Opcode (1)] [Handle (2)] [...] */
-	const uint16_t pdu_size = 3 + buf->len;
+	const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(client->conn);
 
-	if (mtu_size < pdu_size) {
-		LOG_WRN("Sending truncated control point PDU %d < %d", mtu_size, pdu_size);
-		buf->len -= (pdu_size - mtu_size);
+	if (max_ntf_size < buf->len) {
+		LOG_WRN("Sending truncated control point PDU %u < %u", max_ntf_size, buf->len);
+		buf->len = max_ntf_size;
 	}
 
 #if defined(CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE)
@@ -778,6 +775,7 @@ static int control_point_send(struct has_client *client, struct net_buf_simple *
 		client->params.ind.func = control_point_ind_complete;
 		client->params.ind.destroy = NULL;
 		client->params.ind.data = buf->data;
+		/* indications have same size as notifications */
 		client->params.ind.len = buf->len;
 
 		return bt_gatt_indicate(client->conn, &client->params.ind);

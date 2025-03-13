@@ -4,14 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bs_bt_utils.h"
-
 #include <stdint.h>
 #include <string.h>
 
+#include <errno.h>
+
+#include <zephyr/sys/__assert.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/types.h>
+
+#include "babblekit/testcase.h"
+#include "babblekit/sync.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dut, 4);
@@ -34,11 +43,11 @@ static void set_public_addr(void)
 
 	err = bt_id_create(&dut_addr, irk);
 	if (err) {
-		FAIL("Failed to override addr %d\n", err);
+		TEST_FAIL("Failed to override addr %d", err);
 	}
 }
 
-void start_advertising(uint32_t options)
+static void start_advertising(uint32_t options)
 {
 	int err;
 
@@ -48,11 +57,11 @@ void start_advertising(uint32_t options)
 
 	err = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
-		FAIL("Failed to start advertising (err %d)\n", err);
+		TEST_FAIL("Failed to start advertising (err %d)", err);
 	}
 }
 
-void generate_new_rpa(void)
+static void generate_new_rpa(void)
 {
 	/* This will generate a new RPA and mark it valid */
 	struct bt_le_oob oob_local = { 0 };
@@ -65,7 +74,7 @@ void dut_procedure(void)
 	int err;
 
 	/* open a backchannel to the peer */
-	backchannel_init(CENTRAL_SIM_ID);
+	TEST_ASSERT(bk_sync_init() == 0);
 
 	/* override public address so the scanner can test if we're using it or not */
 	set_public_addr();
@@ -73,7 +82,7 @@ void dut_procedure(void)
 	LOG_DBG("enable bt");
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Failed to enable bluetooth (err %d\n)", err);
+		TEST_FAIL("Failed to enable bluetooth (err %d)", err);
 	}
 
 	LOG_DBG("generate new RPA");
@@ -84,16 +93,16 @@ void dut_procedure(void)
 
 	/* wait for the tester to validate we're using our identity address */
 	LOG_DBG("wait for validation by tester");
-	backchannel_sync_wait();
+	bk_sync_wait();
 	LOG_DBG("wait for validation by tester");
 	err = bt_le_adv_stop();
 	if (err) {
-		FAIL("Failed to stop advertising (err %d\n)", err);
+		TEST_FAIL("Failed to stop advertising (err %d)", err);
 	}
 
 	LOG_DBG("start adv with RPA");
 	start_advertising(BT_LE_ADV_OPT_CONN);
 
 	/* Test pass verdict is decided by the tester */
-	PASS("DUT done\n");
+	TEST_PASS("DUT done");
 }

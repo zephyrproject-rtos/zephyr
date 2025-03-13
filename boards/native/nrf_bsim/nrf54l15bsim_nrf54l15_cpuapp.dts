@@ -15,6 +15,7 @@
 	compatible = "bsim,nrf54l15-bsim-nrf54l15-cpuapp", "bsim,nrf54";
 
 	chosen {
+		zephyr,console = &uart20;
 		zephyr,entropy = &rng;
 		zephyr,bt-c2h-uart = &uart20;
 		zephyr,flash-controller = &rram_controller;
@@ -22,14 +23,12 @@
 	};
 
 	/delete-node/ cpus;
-	/delete-node/ clocks;
 	/delete-node/ sw-pwm;
 
 	soc {
 		/delete-node/ memory@20000000;
 		/delete-node/ memory@2002f000;
 		peripheral@50000000 {
-			/delete-node/ spi@4a000;
 			/delete-node/ vpr@4c000;
 			/delete-node/ mailbox@0;
 			/delete-node/ interrupt-controller@f0000000;
@@ -56,7 +55,7 @@
 
 	rng: rng {
 		status = "okay";
-		compatible = "zephyr,native-posix-rng";
+		compatible = "nordic,nrf-cracen-ctrdrbg";
 	};
 
 	psa_rng: psa-rng {
@@ -83,8 +82,8 @@
 	};
 };
 
-&uart00 {
-	/delete-property/ clocks;
+&spi00 {
+	status = "disabled";
 };
 
 &uart20 {

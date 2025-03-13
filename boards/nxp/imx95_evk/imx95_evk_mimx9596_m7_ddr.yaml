@@ -12,7 +12,6 @@ ram: 256
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - uart
 vendor: nxp

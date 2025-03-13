@@ -4,15 +4,34 @@
 choice SECURE_STORAGE_ITS_STORE_IMPLEMENTATION
 	prompt "ITS store module implementation"
 
+DT_ITS_PARTITION := $(dt_chosen_path,secure_storage_its_partition)
+DT_CHOSEN_Z_SETTINGS_PARTITION := zephyr,settings-partition
+DT_SETTINGS_PARTITIION := $(dt_chosen_path,$(DT_CHOSEN_Z_SETTINGS_PARTITION))
+DT_STORAGE_PARTITION := $(dt_nodelabel_path,storage_partition)
+
+config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
+	bool "ITS store module implementation using ZMS for storage"
+	depends on FLASH_HAS_DRIVER_ENABLED \
+	 && $(dt_path_enabled,$(DT_ITS_PARTITION)) \
+	 && $(dt_node_has_compat,$(dt_node_parent,$(DT_ITS_PARTITION)),fixed-partitions)
+	depends on ZMS
+	help
+	  This implementation of the ITS store module makes direct use of ZMS for storage.
+	  It needs a `secure_storage_its_partition` devicetree chosen property that points
+	  to a fixed storage partition that will be dedicated to the ITS. It has lower
+	  overhead compared to the settings-based implementation, both in terms of runtime
+	  execution and storage space, and also ROM footprint if the settings subsystem is disabled.
+	  As this implementations directly maps the PSA storage UIDs to ZMS entry IDs, it limits
+	  their values to the first 30 bits.
+
 config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
 	bool "ITS store module implementation using the settings subsystem for storage"
-	DT_STORAGE_PARTITION := $(dt_nodelabel_path,storage_partition)
 	depends on FLASH_HAS_DRIVER_ENABLED \
-		&& $(dt_path_enabled,$(DT_STORAGE_PARTITION)) \
-		&& $(dt_node_has_compat,$(dt_node_parent,$(DT_STORAGE_PARTITION)),fixed-partitions)
-	imply FLASH_MAP
-	imply NVS
-	select SETTINGS
+	 && (($(dt_path_enabled,$(DT_SETTINGS_PARTITIION)) \
+	     && $(dt_node_has_compat,$(dt_node_parent,$(DT_SETTINGS_PARTITIION)),fixed-partitions))\
+	  || ($(dt_path_enabled,$(DT_STORAGE_PARTITION)) \
+	      && $(dt_node_has_compat,$(dt_node_parent,$(DT_STORAGE_PARTITION)),fixed-partitions)))
+	depends on SETTINGS
 
 config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
 	bool "No ITS store module implementation"
@@ -24,6 +43,20 @@ config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM
 	  The header is made available when this Kconfig option is enabled.
 
 endchoice # SECURE_STORAGE_ITS_STORE_IMPLEMENTATION
+
+if SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
+
+config SECURE_STORAGE_ITS_STORE_ZMS_SECTOR_SIZE
+	int "Sector size of the ZMS partition"
+	default 4096
+	help
+	  The sector size impacts the runtime behavior of ZMS and restricts the maximum
+	  ITS entry data size (which is the sector size minus ZMS and ITS overhead).
+	  Changing it will result in loss of existing data stored on a partition.
+	  It must be a multiple of the flash page size on devices that require an erase.
+	  See the ZMS documentation for more information.
+
+endif # SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
 
 if SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
 

@@ -12,6 +12,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config MULTITHREADING
 	bool "Multi-threading" if ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y
+	select RING_BUFFER
 	help
 	  If disabled, only the main thread is available, so a main() function
 	  must be provided. Interrupts are available. Kernel objects will most
@@ -52,7 +53,7 @@ config NUM_PREEMPT_PRIORITIES
 	int "Number of preemptible priorities" if MULTITHREADING
 	default 0 if !MULTITHREADING
 	default 15
-	range 0 128
+	range 0 127
 	help
 	  Number of preemptible priorities available in the system. Gives access
 	  to priorities 0 to CONFIG_NUM_PREEMPT_PRIORITIES - 1.
@@ -211,7 +212,7 @@ config THREAD_ABORT_NEED_CLEANUP
 	bool
 	help
 	  This option enables the bits to clean up the current thread if
-	  k_thread_abort(arch_current_thread()) is called, as the cleanup cannot be
+	  k_thread_abort(_current) is called, as the cleanup cannot be
 	  running in the current thread stack.
 
 config THREAD_CUSTOM_DATA
@@ -713,6 +714,7 @@ config EVENTS
 
 config PIPES
 	bool "Pipe objects"
+	select DEPRECATED
 	help
 	  This option enables kernel pipes. A pipe is a kernel object that
 	  allows a thread to send a byte stream to another thread. Pipes can
@@ -720,6 +722,9 @@ config PIPES
 
 	  Note that setting this option slightly increases the size of the
 	  thread structure.
+	  This Kconfig is deprecated and will be removed, by disabling this
+	  kconfig another implementation of k_pipe will be available when
+	  CONFIG_MULTITHREADING is enabled.
 
 config KERNEL_MEM_POOL
 	bool "Use Kernel Memory Pool"
@@ -808,6 +813,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
+	default 0 if TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	help
 	  This option specifies the frequency of the hardware timer used for the
 	  system clock (in Hz). This option is set by the SOC's or board's Kconfig file
@@ -869,25 +875,67 @@ config XIP
 
 menu "Security Options"
 
-config STACK_CANARIES
-	bool "Compiler stack canaries"
-	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
-	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+config REQUIRES_STACK_CANARIES
+	bool
 	help
-	  This option enables compiler stack canaries.
+	  Hidden option to signal that software stack protection is required.
 
+choice
+	prompt "Stack canaries protection options"
+	optional
+	help
 	  If stack canaries are supported by the compiler, it will emit
 	  extra code that inserts a canary value into the stack frame when
 	  a function is entered and validates this value upon exit.
 	  Stack corruption (such as that caused by buffer overflow) results
 	  in a fatal error condition for the running entity.
-	  Enabling this option can result in a significant increase
-	  in footprint and an associated decrease in performance.
+	  Enabling this option, depending on the level chosen, can result in a
+	  significant increase in footprint and a corresponding decrease in performance.
 
 	  If stack canaries are not supported by the compiler an error
 	  will occur at build time.
 
-if STACK_CANARIES
+config STACK_CANARIES
+	bool "Default protection"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries in functions that have
+	  vulnerable objects. Generally this means function that call alloca or
+	  have buffers larger than 8 bytes.
+
+config STACK_CANARIES_STRONG
+	bool "Strong protection"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries in functions that call alloca,
+	  functions that have local array definitiion or have references to local
+	  frame addresses.
+
+config STACK_CANARIES_ALL
+	bool "Maximum protection available"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries for all functions.
+
+config STACK_CANARIES_EXPLICIT
+	bool "Explicit protection"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "zephyr"
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries only in functions which have the
+	  stack_protect attribute.
+
+endchoice
+
+if REQUIRES_STACK_CANARIES
 
 config STACK_CANARIES_TLS
 	bool "Stack canaries using thread local storage"
@@ -1013,7 +1061,7 @@ config BOOTARGS
 
 config DYNAMIC_BOOTARGS
 	bool "Support dynamic bootargs"
-	depends on BOOTARGS && (MULTIBOOT_INFO || BUILD_OUTPUT_EFI)
+	depends on BOOTARGS
 	help
 	  Enables dynamic bootargs support.
 

@@ -8,6 +8,11 @@ common:
     - drivers
     - comparator
 tests:
+  drivers.comparator.gpio_loopback.silabs_acmp:
+    platform_allow:
+      - xg24_dk2601b
+      - xg24_rb4187c
+      - xg29_rb4412a
   drivers.comparator.gpio_loopback.mcux_acmp:
     platform_allow:
       - frdm_ke15z

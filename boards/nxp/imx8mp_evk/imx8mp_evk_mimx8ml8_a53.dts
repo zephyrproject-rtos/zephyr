@@ -1,11 +1,13 @@
 /*
- * Copyright 2021-2024 NXP
+ * Copyright 2021-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <nxp/nxp_mimx8mp_a53.dtsi>
 #include "imx8mp_evk-pinctrl.dtsi"
 
@@ -68,4 +70,24 @@
 	clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
+};
+
+&i2c3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_i2c3>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	gpio_exp1: pca6416@20 {
+		compatible = "nxp,pca6416";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-gpios = <&gpio1 12 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+		status = "okay";
+	};
+};
+
+&gpio1 {
+	status = "okay";
 };

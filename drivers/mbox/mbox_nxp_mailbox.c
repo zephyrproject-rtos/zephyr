@@ -21,8 +21,11 @@ LOG_MODULE_REGISTER(nxp_mbox_mailbox);
 #define MAILBOX_MAX_CHANNELS 4
 #define MAILBOX_MBOX_SIZE    3
 
-#if (defined(LPC55S69_cm33_core0_SERIES) || defined(LPC55S69_cm33_core1_SERIES))
-#ifdef LPC55S69_cm33_core0_SERIES
+#if (defined(LPC55S69_cm33_core0_SERIES) || defined(LPC55S69_cm33_core1_SERIES) ||                 \
+defined(CONFIG_SOC_SERIES_MCXN))
+#if (defined(LPC55S69_cm33_core0_SERIES) || defined(MCXN947_cm33_core0_SERIES) ||                  \
+defined(MCXN946_cm33_core0_SERIES) || defined(MCXN547_cm33_core0_SERIES) ||                   \
+defined(MCXN546_cm33_core0_SERIES))
 #define MAILBOX_ID_THIS_CPU  kMAILBOX_CM33_Core0
 #define MAILBOX_ID_OTHER_CPU kMAILBOX_CM33_Core1
 #else

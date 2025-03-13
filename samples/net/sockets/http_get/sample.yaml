@@ -9,9 +9,6 @@ common:
   tags:
     - net
     - socket
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
 tests:
   sample.net.sockets.http_get:
     filter: not CONFIG_NET_SOCKETS_OFFLOAD and not CONFIG_NATIVE_LIBC
@@ -58,6 +55,6 @@ tests:
   sample.net.sockets.http_get.wifi.nrf70dk:
     extra_args:
       - SNIPPET=wifi-ipv4
-      - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
     platform_allow:
       - nrf7002dk/nrf5340/cpuapp

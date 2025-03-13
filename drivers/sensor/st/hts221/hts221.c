@@ -72,7 +72,8 @@ static int hts221_sample_fetch(const struct device *dev,
 	uint8_t buf[4];
 	int status;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_HUMIDITY || chan == SENSOR_CHAN_AMBIENT_TEMP ||
+			chan == SENSOR_CHAN_ALL);
 
 	status = hts221_read_reg(ctx, HTS221_HUMIDITY_OUT_L |
 				 HTS221_AUTOINCREMENT_ADDR, buf, 4);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,6 @@
 #include <adi/max32/max32655-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/dma/max32655_dma.h>
 
 / {
 	model = "Analog Devices MAX32655FTHR";
@@ -161,4 +160,36 @@
 
 &rtc_counter {
 	status = "okay";
+};
+
+&spi0_mosi_p0_5 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_miso_p0_6 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_sck_p0_7 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>,
+		   <&gpio0 11 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+
+	spi0_cs1_flash: w25q128jv@1 {
+		compatible = "jedec,spi-nor";
+		/* 134217728 bits = 16 Mbytes */
+		size = <0x8000000>;
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+		jedec-id = [ef 70 18];
+		hold-gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+		wp-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "okay";
+	};
 };

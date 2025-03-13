@@ -170,6 +170,22 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_LLEXT_LOG_LEVEL_DBG)) {
+		LOG_DBG("gdb add-symbol-file flags:");
+		for (int i = 0; i < ext->sect_cnt; ++i) {
+			elf_shdr_t *shdr = ext->sect_hdrs + i;
+			enum llext_mem mem_idx = ldr->sect_map[i].mem_idx;
+			const char *name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB,
+							shdr->sh_name);
+
+			/* only show sections mapped to program memory */
+			if (mem_idx < LLEXT_MEM_EXPORT) {
+				LOG_DBG("-s %s 0x%zx", name,
+					(size_t)ext->mem[mem_idx] + ldr->sect_map[i].offset);
+			}
+		}
+	}
+
 	return 0;
 }
 
@@ -204,6 +220,8 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 		sys_cache_data_flush_range(addr, size);
 		k_mem_update_flags(addr, size, flags);
 	}
+
+	ext->mmu_permissions_set = true;
 #endif
 }
 
@@ -211,7 +229,7 @@ void llext_free_regions(struct llext *ext)
 {
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
 #ifdef CONFIG_MMU
-		if (ext->mem_size[i] != 0) {
+		if (ext->mmu_permissions_set && ext->mem_size[i] != 0) {
 			/* restore default RAM permissions */
 			k_mem_update_flags(ext->mem[i],
 					   ROUND_UP(ext->mem_size[i], LLEXT_PAGE_SIZE),

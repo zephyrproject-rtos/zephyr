@@ -193,7 +193,6 @@ REDIRECTS = [
     ('reference/peripherals/i2c', 'hardware/peripherals/i2c'),
     ('reference/peripherals/index', 'hardware/peripherals/index'),
     ('reference/peripherals/ipm', 'hardware/peripherals/ipm'),
-    ('reference/peripherals/kscan', 'hardware/peripherals/kscan'),
     ('reference/peripherals/led', 'hardware/peripherals/led'),
     ('reference/peripherals/mbox', 'hardware/peripherals/mbox'),
     ('reference/peripherals/mdio', 'hardware/peripherals/mdio'),
@@ -210,7 +209,7 @@ REDIRECTS = [
     ('reference/peripherals/uart', 'hardware/peripherals/uart'),
     ('reference/peripherals/video', 'hardware/peripherals/video'),
     ('reference/pm/index', 'services/pm/api/index'),
-    ('reference/settings/index', 'services/settings/index'),
+    ('reference/settings/index', 'services/storage/settings/index'),
     ('reference/shell/index', 'services/shell/index'),
     ('reference/storage/fcb/fcb', 'services/storage/fcb/fcb'),
     ('reference/storage/index', 'services/storage/index'),
@@ -284,7 +283,6 @@ REDIRECTS = [
     ('samples/boards/stm32/sensortile_box_pro/sensors-on-board/README', 'samples/boards/st/sensortile_box_pro/sensors-on-board/README'),
     ('samples/boards/stm32/steval_stwinbx1/sensors/README', 'samples/boards/st/steval_stwinbx1/sensors/README'),
     ('samples/drivers/adc/README', 'samples/drivers/adc/adc_dt/README'),
-    ('samples/drivers/kscan_touch', 'samples/subsys/input/input'),
     ('samples/drivers/led_apa102/README', 'samples/drivers/led_strip/README'),
     ('samples/drivers/led_is31fl3194/README', 'samples/drivers/led/is31fl3194/README'),
     ('samples/drivers/led_is31fl3216a/README', 'samples/drivers/led/is31fl3216a/README'),
@@ -308,5 +306,7 @@ REDIRECTS = [
     ('samples/subsys/video/video', 'samples/drivers/video/video'),
     ('services/crypto/tinycrypt', 'services/crypto/psa_crypto'),
     ('services/portability/posix', 'services/portability/posix/index'),
+    ('services/secure_storage', 'services/storage/secure_storage/index'),
+    ('services/settings/index', 'services/storage/settings/index'),
     # zephyr-keep-sorted-stop
 ]

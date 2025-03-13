@@ -40,18 +40,18 @@ documentation for a specific version of Zephyr.
 	   <p>Set up Zephyr, build &amp; run a sample application</p>
        </li>
        <li class="grid-item">
-	   <a href="contribute/index.html">
-               <span class="grid-icon fa fa-github"></span>
-	       <h2>Contribution Guidelines</h2>
-	   </a>
-	   <p>How to submit patches and contribute to Zephyr</p>
-       </li>
-       <li class="grid-item">
 	   <a href="samples/index.html">
                <span class="grid-icon fa fa-cogs"></span>
 	       <h2>Samples and Demos</h2>
 	   </a>
 	   <p>Explore samples and demos for various boards</p>
+       </li>
+       <li class="grid-item">
+	   <a href="boards/index.html">
+               <span class="grid-icon fa fa-object-group"></span>
+	       <h2>Supported Boards</h2>
+	   </a>
+	   <p>List of supported boards and platforms</p>
        </li>
        <li class="grid-item">
 	   <a href="hardware/index.html">
@@ -68,18 +68,18 @@ documentation for a specific version of Zephyr.
 	   <p>Security processes and guidelines</p>
        </li>
        <li class="grid-item">
-	   <a href="boards/index.html">
-               <span class="grid-icon fa fa-object-group"></span>
-	       <h2>Supported Boards</h2>
-	   </a>
-	   <p>List of supported boards and platforms</p>
-       </li>
-       <li class="grid-item">
 	   <a href="services/index.html">
                <span class="grid-icon fa fa-puzzle-piece"></span>
 	       <h2>OS Services</h2>
 	   </a>
 	   <p>OS Services and usage guides</p>
+       </li>
+       <li class="grid-item">
+	   <a href="contribute/index.html">
+               <span class="grid-icon fa fa-github"></span>
+	       <h2>Contribution Guidelines</h2>
+	   </a>
+	   <p>How to submit patches and contribute to Zephyr</p>
        </li>
    </ul>
 

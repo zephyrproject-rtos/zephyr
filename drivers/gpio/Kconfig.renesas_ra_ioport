@@ -7,3 +7,8 @@ config GPIO_RA_IOPORT
 	depends on DT_HAS_RENESAS_RA_GPIO_IOPORT_ENABLED
 	help
 	  Enable the Renesas RA GPIO IO port driver.
+
+config GPIO_RA_HAS_VBTICTLR
+	bool "Support VBATT input control"
+	help
+	  Enable for Renesas RA which support VBATT input control.

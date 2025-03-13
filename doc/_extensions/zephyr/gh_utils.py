@@ -211,6 +211,8 @@ def git_info_filter(app: Sphinx, pagename) -> tuple[str, str] | None:
             .decode("utf-8")
             .strip()
         )
+        if not date_and_sha1: # added but not committed
+            return None
         date, sha1 = date_and_sha1.split(" ", 1)
         date_object = datetime.fromtimestamp(int(date))
         last_update_fmt = app.config.html_last_updated_fmt

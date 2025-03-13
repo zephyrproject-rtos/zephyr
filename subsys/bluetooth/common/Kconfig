@@ -78,15 +78,23 @@ config BT_BUF_ACL_RX_SIZE
 	  that the Controller will send to the Host.
 
 config BT_BUF_ACL_RX_COUNT_EXTRA
-	int "Number of extra incoming ACL data buffers"
+	# As Host implementation unconditionally references this Kconfig, we
+	# hide it for !BT_CONN and default to 0.
+	int "Number of extra incoming ACL data buffers" if BT_CONN
+	range 1 65535 if BT_CONN
+	default BT_MAX_CONN if BT_CONN
+	range 0 0
 	default 0
-	range 0 65535
 	help
 	  Number of incoming extra ACL data buffers sent from the Controller to
 	  the Host.
 
-	  By default, the number of incoming ACL data buffers is equal to
-	  CONFIG_BT_MAX_CONN + 1.
+	  By default, the total number of incoming ACL data buffers is equal to
+	  CONFIG_BT_MAX_CONN + 1, to support L2CAP recombination.
+
+	  The L2CAP recombination in the Host keeps the first Rx buffer for each
+	  connection and uses one Rx buffer across all connections to receive a
+	  fragment from the Controller.
 
 config BT_BUF_ACL_RX_COUNT
 	int "[DEPRECATED] Number of incoming ACL data buffers"
@@ -183,11 +191,47 @@ config BT_BUF_CMD_TX_SIZE
 	  to the maximum of 255.
 
 config BT_BUF_CMD_TX_COUNT
-	int "Number of HCI command buffers"
-	default 2
-	range 2 64
+	# This option is only visible for a user when Host and Controller are build together, or for
+	# Host-only builds.
+	int "Number of HCI command buffers" if !BT_HCI_RAW || !HAS_BT_CTLR
+	# This option is present when Host and Controller are build together, or
+	# for Host only builds, or when Controller-to-Host ACL data flow control
+	# is disabled.
+	depends on !BT_HCI_RAW || !HAS_BT_CTLR || !BT_HCI_ACL_FLOW_CONTROL
+	# The Mesh stack usage in applications and tests can start both advertising and scanning in
+	# parallel. Also, when BT_MESH_WORKQ_SYS is enabled, the Mesh stack is starting Extended
+	# Advertising in the receive callback run in the system work queue and as the Host also uses
+	# the system work queue for HCI command Tx towards the Controller, one additional HCI
+	# command buffer is needed.
+	range 2 64 if BT_MESH
+	range 1 64
+	default 2 if BT_MESH
+	default 1
 	help
 	  Number of buffers available for outgoing HCI commands from the Host.
+
+	  HCI Controllers may not support Num_HCI_Command_Packets > 1, hence they default to 1 when
+	  not enabling Controller to Host data flow control (BT_HCI_ACL_FLOW_CONTROL), Read Remote
+	  Version Information (BT_REMOTE_VERSION), Auto-Initiate PHY update (BT_AUTO_PHY_UPDATE), or
+	  Auto-Initiate Data Length Update (BT_AUTO_DATA_LEN_UPDATE).
+
+	  Normal HCI commands follow the HCI command flow control using Num_HCI_Command_Packets
+	  return in HCI command complete and status.
+
+	  The Host Number of Completed Packets command does not follow normal flow control of HCI
+	  commands and the Controller side HCI drivers that allocates HCI command buffers with
+	  K_NO_WAIT can end up running out of command buffers.
+
+	  When Controller to Host data flow control is enabled in the Host-only or combined
+	  Host plus Controller build, the internal BT_BUF_CMD_TX_COUNT is adjusted accordingly
+	  taking into considerations the enabled auto-initiated procedures, and to follow the normal
+	  HCI command flow control to be able to send Ncmd normal HCI commands and
+	  BT_BUF_ACL_RX_COUNT of Host Number of Completed Packets command down to the Controller.
+
+	  When Controller to Host data flow control is supported in the Controller-only build,
+	  the internal BT_BUF_CMD_TX_COUNT is adjusted to be equal to (BT_BUF_RX_COUNT + Ncmd).
+
+	  Where Ncmd is supported maximum Num_HCI_Command_Packets in the Controller implementation.
 
 endmenu
 
@@ -220,7 +264,7 @@ config BT_HCI_VS_FATAL_ERROR
 config BT_HCI_VS_EXT_DETECT
 	bool "Use heuristics to guess HCI vendor extensions support in advance"
 	depends on BT_HCI_VS && !HAS_BT_CTLR
-	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3 || BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM
+	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3 || BOARD_NATIVE_SIM
 	help
 	  Use some heuristics to try to guess in advance whether the controller
 	  supports the HCI vendor extensions in advance, in order to prevent
@@ -243,6 +287,10 @@ config BT_WAIT_NOP
 config BT_RPA
 	bool
 	depends on BT_HOST_CRYPTO || BT_CTLR_CRYPTO
+
+config BT_PRIVATE_SHELL
+	bool
+	default n
 
 config BT_ASSERT
 	bool "Custom Bluetooth assert implementation"

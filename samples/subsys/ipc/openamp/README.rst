@@ -57,6 +57,15 @@ Building the application for mimxrt1170_evk_cm7
    :goals: debug
    :west-args: --sysbuild
 
+Building the application for frdm_mcxn947/mcxn947/cpu0
+******************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/openamp
+   :board: frdm_mcxn947/mcxn947/cpu0
+   :goals: debug
+   :west-args: --sysbuild
+
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:
 

@@ -139,7 +139,7 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT((desc->pitch * data->bytes_per_pixel * desc->height) <=
 			 desc->buf_size,
-		 "Input buffer to small");
+		 "Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
 		x, y);
@@ -207,7 +207,7 @@ static int ili9xxx_read(const struct device *dev, const uint16_t x,
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT((desc->pitch * data->bytes_per_pixel * desc->height) <=
 			 desc->buf_size,
-		 "Output buffer to small");
+		 "Output buffer too small");
 
 	LOG_DBG("Reading %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
 		x, y);

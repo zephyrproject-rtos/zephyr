@@ -4,9 +4,6 @@ common:
     - ipv6
     - ipv6_pe
   depends_on: netif
-  platform_exclude:
-    - native_posix/native/64
-    - native_posix
 tests:
   net.ipv6:
     extra_configs:
@@ -18,6 +15,7 @@ tests:
       - CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE=4096
       - CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE=4096
       - CONFIG_NET_IPV6_PE=n
+      - CONFIG_TEST_EXTRA_STACK_SIZE=1024
   net.ipv6.privacy_extension.prefer_public:
     extra_configs:
       - CONFIG_NET_IPV6_PE=y

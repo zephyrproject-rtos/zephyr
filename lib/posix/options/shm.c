@@ -159,7 +159,7 @@ static off_t shm_lseek(struct shm_obj *shm, off_t offset, int whence, size_t cur
 		return -1;
 	}
 
-	if ((INTPTR_MAX - addend) < offset) {
+	if ((addend > INTPTR_MAX) || ((INTPTR_MAX - addend) < offset)) {
 		errno = EOVERFLOW;
 		return -1;
 	}
@@ -305,7 +305,7 @@ int shm_open(const char *name, int oflag, mode_t mode)
 	bool rw = (oflag & O_RDWR) != 0;
 	bool creat = (oflag & O_CREAT) != 0;
 	bool excl = (oflag & O_EXCL) != 0;
-	bool trunc = false; /* (oflag & O_TRUNC) != 0 */
+	bool trunc = (oflag & O_TRUNC) != 0;
 	size_t name_len = (name == NULL) ? 0 : strnlen(name, PATH_MAX);
 
 	/* revisit when file-based permissions are available */

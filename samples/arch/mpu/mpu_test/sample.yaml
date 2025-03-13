@@ -4,5 +4,8 @@ tests:
   sample.mpu.mpu_test:
     arch_allow: arm
     filter: CONFIG_CPU_HAS_MPU and not CONFIG_ARM64
-    tags: mpu
-    harness: keyboard
+    tags:
+      - mpu
+    harness: shell
+    integration_platforms:
+      - mps2/an385

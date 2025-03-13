@@ -2,16 +2,16 @@
 
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
-config OPENTHREAD_SECURITY_INTERNAL
-	bool
-	help
-	  OpenThread setting to signal that OpenThread security settings, such
-	  as the OPENTHREAD_MBEDTLS setting will be controlled through other
-	  Kconfig dependencies and should not be user configurable.
-
 menuconfig NET_L2_OPENTHREAD
 	bool "OpenThread L2"
 	depends on NETWORKING
+
+choice NET_L2_OPENTHREAD_IMPLEMENTATION
+	prompt "OpenThread L2 implementation"
+	depends on NET_L2_OPENTHREAD
+
+config NET_L2_OPENTHREAD_IMPLEMENTATION_ZEPHYR
+	bool "Zephyr's OpenThread L2 implementation"
 	select NET_L2_PHY_IEEE802154
 	select OPENTHREAD
 
@@ -28,13 +28,17 @@ menuconfig NET_L2_OPENTHREAD
 	imply NET_UDP
 	imply NET_IPV6
 	imply NET_CONFIG_NEED_IPV6
+	help
+	  Use Zephyr's implementation of the OpenThread L2.
 
-if NET_L2_OPENTHREAD
+endchoice # NET_L2_OPENTHREAD_IMPLEMENTATION
+
+if NET_L2_OPENTHREAD_IMPLEMENTATION_ZEPHYR
 
 choice OPENTHREAD_IMPLEMENTATION
 	prompt "OpenThread origin selection"
 	help
-	  Select OpenThread to use for build. Custom OpenThread implementations
+	  Select OpenThread stack to use for build. Custom OpenThread implementations
 	  can be added to the application Kconfig.
 
 config OPENTHREAD_SOURCES
@@ -63,7 +67,7 @@ menuconfig OPENTHREAD_DEBUG
 	help
 	  This option enables logging support for OpenThread.
 
-choice
+choice OPENTHREAD_LOG_LEVEL_CHOICE
 	prompt "OpenThread stack log level"
 	depends on OPENTHREAD_DEBUG
 	help
@@ -79,7 +83,7 @@ config OPENTHREAD_LOG_LEVEL_INFO
 	bool "Informational"
 config OPENTHREAD_LOG_LEVEL_DEBG
 	bool "Debug"
-endchoice
+endchoice # OPENTHREAD_LOG_LEVEL_CHOICE
 
 config OPENTHREAD_LOG_LEVEL
 	int
@@ -89,6 +93,18 @@ config OPENTHREAD_LOG_LEVEL
 	default 4 if OPENTHREAD_LOG_LEVEL_INFO
 	default 5 if OPENTHREAD_LOG_LEVEL_DEBG
 	default 0
+	help
+	  Log level for OpenThread stack.
+
+config OPENTHREAD_PLATFORM_LOG_LEVEL
+	int
+	default 1 if OPENTHREAD_LOG_LEVEL_CRIT
+	default 2 if OPENTHREAD_LOG_LEVEL_WARN
+	default 3 if OPENTHREAD_LOG_LEVEL_NOTE || OPENTHREAD_LOG_LEVEL_INFO
+	default 4 if OPENTHREAD_LOG_LEVEL_DEBG
+	default 0
+	help
+	  Log level for OpenThread Zephyr platform.
 
 menuconfig OPENTHREAD_L2_DEBUG
 	bool "OpenThread L2 log support"
@@ -157,7 +173,6 @@ config MBEDTLS_PROMPTLESS
 choice OPENTHREAD_SECURITY
 	prompt "OpenThread security"
 	default OPENTHREAD_MBEDTLS_CHOICE
-	depends on !OPENTHREAD_SECURITY_INTERNAL
 
 config CUSTOM_OPENTHREAD_SECURITY
 	bool "Custom"
@@ -220,7 +235,7 @@ config OPENTHREAD_COPROCESSOR
 
 if OPENTHREAD_COPROCESSOR
 
-choice
+choice OPENTHREAD_COPROCESSOR_CHOICE
 	prompt "OpenThread Co-Processor type"
 	help
 	  This option selects Thread network co-processor type
@@ -229,7 +244,7 @@ config OPENTHREAD_COPROCESSOR_NCP
 	bool "NCP - Network Co-Processor"
 config OPENTHREAD_COPROCESSOR_RCP
 	bool "RCP - Radio Co-Processor"
-endchoice
+endchoice # OPENTHREAD_COPROCESSOR_CHOICE
 
 config OPENTHREAD_COPROCESSOR_UART_RING_BUFFER_SIZE
 	int "Set Co-Processor UART ring buffer size"
@@ -338,4 +353,4 @@ config OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
 	help
 	  Enable the creation of exportable MAC keys in the OpenThread Key Manager.
 
-endif # NET_L2_OPENTHREAD
+endif # NET_L2_OPENTHREAD_IMPLEMENTATION_ZEPHYR

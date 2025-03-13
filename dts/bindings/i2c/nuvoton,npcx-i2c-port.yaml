@@ -1,7 +1,7 @@
 # Copyright (c) 2020 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton, NPCX-I2C port pads node
+description: Nuvoton NPCX-I2C port pads
 
 compatible: "nuvoton,npcx-i2c-port"
 
@@ -11,7 +11,13 @@ properties:
   port:
     type: int
     required: true
-    description: index of i2c port
+    description: |
+      Index of i2c port
+      This property is used to differentiate between multiple I2C ports controlled by the same
+      or different I2C controllers.
+      Bit[7:4] module id (controller).
+      Bit[3:0] port id.
+      Use the macro NPCX_I2C_CTRL_PORT(ctrl, port) to set this property.
 
   controller:
     type: phandle

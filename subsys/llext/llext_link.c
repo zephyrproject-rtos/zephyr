@@ -26,20 +26,20 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 #define SYM_NAME_OR_SLID(name, slid) name
 #endif
 
-__weak int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
-			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias)
+__weak int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *rel,
+			     const elf_shdr_t *shdr)
 {
 	return -ENOTSUP;
 }
 
 __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
-				    const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset,
+				    const elf_rela_t *rel, const elf_sym_t *sym, uint8_t *rel_addr,
 				    const struct llext_load_param *ldr_parm)
 {
 }
 
 __weak void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext,
-				     const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset,
+				     const elf_rela_t *rel, const elf_sym_t *sym, uint8_t *rel_addr,
 				     const void *link_addr)
 {
 }
@@ -48,7 +48,7 @@ __weak void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext
  * Find the memory region containing the supplied offset and return the
  * corresponding file offset
  */
-static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
+ssize_t llext_file_offset(struct llext_loader *ldr, uintptr_t offset)
 {
 	unsigned int i;
 
@@ -59,7 +59,7 @@ static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
 		}
 	}
 
-	return offset;
+	return -ENOEXEC;
 }
 
 /*
@@ -142,6 +142,92 @@ static const void *llext_find_extension_sym(const char *sym_name, struct llext *
 	return se.addr;
 }
 
+/*
+ * Read the symbol entry corresponding to a relocation from the binary.
+ */
+int llext_read_symbol(struct llext_loader *ldr, struct llext *ext, const elf_rela_t *rel,
+		      elf_sym_t *sym)
+{
+	int ret;
+
+	ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset
+		+ ELF_R_SYM(rel->r_info) * sizeof(elf_sym_t));
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = llext_read(ldr, sym, sizeof(elf_sym_t));
+
+	return ret;
+}
+
+/*
+ * Determine address of a symbol.
+ */
+int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *link_addr,
+			const elf_rela_t *rel, const elf_sym_t *sym, const char *name,
+			const elf_shdr_t *shdr)
+{
+	if (ELF_R_SYM(rel->r_info) == 0) {
+		/*
+		 * no symbol
+		 * example:  R_ARM_V4BX relocation, R_ARM_RELATIVE
+		 */
+		*link_addr = 0;
+	} else if (sym->st_shndx == SHN_UNDEF) {
+		/* If symbol is undefined, then we need to look it up */
+		*link_addr = (uintptr_t)llext_find_sym(NULL, SYM_NAME_OR_SLID(name, sym->st_value));
+
+		if (*link_addr == 0) {
+			/* Try loaded tables */
+			struct llext *dep;
+
+			*link_addr = (uintptr_t)llext_find_extension_sym(name, &dep);
+			if (*link_addr) {
+				llext_dependency_add(ext, dep);
+			}
+		}
+
+		if (*link_addr == 0) {
+			LOG_ERR("Undefined symbol with no entry in "
+				"symbol table %s, offset %zd, link section %d",
+				name, (size_t)rel->r_offset, shdr->sh_link);
+			return -ENODATA;
+		}
+
+		LOG_INF("found symbol %s at 0x%lx", name, *link_addr);
+	} else if (sym->st_shndx == SHN_ABS) {
+		/* Absolute symbol */
+		*link_addr = sym->st_value;
+	} else if ((sym->st_shndx < ldr->hdr.e_shnum) &&
+		   !IN_RANGE(sym->st_shndx, SHN_LORESERVE, SHN_HIRESERVE)) {
+		/* This check rejects all relocations whose target symbol has a section index higher
+		 * than the maximum possible in this ELF file, or belongs in the reserved range:
+		 * they will be caught by the `else` below and cause an error to be returned. This
+		 * aborts the LLEXT's loading and prevents execution of improperly relocated code,
+		 * which is dangerous.
+		 *
+		 * Note that the unsupported SHN_COMMON section is rejected as part of this check.
+		 * Also note that SHN_ABS would be rejected as well, but we want to handle it
+		 * properly: for this reason, this check must come AFTER handling the case where the
+		 * symbol's section index is SHN_ABS!
+		 *
+		 *
+		 * For regular symbols, the link address is obtained by adding st_value to the start
+		 * address of the section in which the target symbol resides.
+		 */
+		*link_addr =
+			(uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx) + sym->st_value;
+	} else {
+		LOG_ERR("cannot apply relocation: "
+			"target symbol has unexpected section index %d (0x%X)",
+			sym->st_shndx, sym->st_shndx);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_t *shdr,
 			   const struct llext_load_param *ldr_parm, elf_shdr_t *tgt)
 {
@@ -188,7 +274,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			ret = llext_read(ldr, &sym, sizeof(sym));
 		}
 
-		if (ret < 0) {
+		if (ret != 0) {
 			LOG_ERR("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
 				j, i);
 			continue;
@@ -216,14 +302,23 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 		 * This is valid only when CONFIG_LLEXT_STORAGE_WRITABLE=y
 		 * and peek() is usable on the source ELF file.
 		 */
-		size_t got_offset;
+		uint8_t *rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
+			ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 
 		if (tgt) {
-			got_offset = rela.r_offset + tgt->sh_offset -
-				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+			/* Relocatable / partially linked ELF. */
+			rel_addr += rela.r_offset + tgt->sh_offset;
 		} else {
-			got_offset = llext_file_offset(ldr, rela.r_offset) -
-				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+			/* Shared / dynamically linked ELF */
+			ssize_t offset = llext_file_offset(ldr, rela.r_offset);
+
+			if (offset < 0) {
+				LOG_ERR("Offset %#zx not found in ELF, trying to continue",
+					(size_t)rela.r_offset);
+				continue;
+			}
+
+			rel_addr += offset;
 		}
 
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
@@ -256,14 +351,14 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			}
 
 			/* Resolve the symbol */
-			arch_elf_relocate_global(ldr, ext, &rela, &sym, got_offset, link_addr);
+			arch_elf_relocate_global(ldr, ext, &rela, &sym, rel_addr, link_addr);
 			break;
 		case STB_LOCAL:
-			arch_elf_relocate_local(ldr, ext, &rela, &sym, got_offset, ldr_parm);
+			arch_elf_relocate_local(ldr, ext, &rela, &sym, rel_addr, ldr_parm);
 		}
 
-		LOG_DBG("symbol %s offset %#zx r-offset %#zx .text offset %#zx stb %u",
-			name, got_offset,
+		LOG_DBG("symbol %s relocation @%p r-offset %#zx .text offset %#zx stb %u",
+			name, (void *)rel_addr,
 			(size_t)rela.r_offset, (size_t)ldr->sects[LLEXT_MEM_TEXT].sh_offset, stb);
 	}
 }
@@ -272,7 +367,6 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 {
 	uintptr_t sect_base = 0;
 	elf_rela_t rel;
-	elf_sym_t sym;
 	elf_word rel_cnt = 0;
 	const char *name;
 	int i, ret;
@@ -344,6 +438,11 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			continue;
 		}
 
+		if (!(ext->sect_hdrs[shdr->sh_info].sh_flags & SHF_ALLOC)) {
+			/* ignore relocations acting on volatile (debug) sections */
+			continue;
+		}
+
 		LOG_DBG("relocation section %s (%d) acting on section %d has %zd relocations",
 			name, i, shdr->sh_info, (size_t)rel_cnt);
 
@@ -354,7 +453,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			return -ENOEXEC;
 		}
 
-		sect_base = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
+		sect_base = (uintptr_t) llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
 
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
@@ -368,99 +467,49 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 				return ret;
 			}
 
-			/* get corresponding symbol */
-			ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset
-				    + ELF_R_SYM(rel.r_info) * sizeof(elf_sym_t));
-			if (ret != 0) {
-				return ret;
-			}
+#ifdef CONFIG_LLEXT_LOG_LEVEL
+			if (CONFIG_LLEXT_LOG_LEVEL >= LOG_LEVEL_INF) {
+				uintptr_t link_addr;
+				uintptr_t op_loc =
+					llext_get_reloc_instruction_location(ldr, ext,
+									     shdr->sh_info,
+									     &rel);
+				elf_sym_t sym;
 
-			ret = llext_read(ldr, &sym, sizeof(elf_sym_t));
-			if (ret != 0) {
-				return ret;
-			}
+				ret = llext_read_symbol(ldr, ext, &rel, &sym);
 
-			name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
-
-			LOG_DBG("relocation %d:%d info 0x%zx (type %zd, sym %zd) offset %zd "
-				"sym_name %s sym_type %d sym_bind %d sym_ndx %d",
-				i, j, (size_t)rel.r_info, (size_t)ELF_R_TYPE(rel.r_info),
-				(size_t)ELF_R_SYM(rel.r_info), (size_t)rel.r_offset,
-				name, ELF_ST_TYPE(sym.st_info),
-				ELF_ST_BIND(sym.st_info), sym.st_shndx);
-
-			uintptr_t link_addr, op_loc;
-
-			op_loc = sect_base + rel.r_offset;
-
-			if (ELF_R_SYM(rel.r_info) == 0) {
-				/* no symbol ex: R_ARM_V4BX relocation, R_ARM_RELATIVE  */
-				link_addr = 0;
-			} else if (sym.st_shndx == SHN_UNDEF) {
-				/* If symbol is undefined, then we need to look it up */
-				link_addr = (uintptr_t)llext_find_sym(NULL,
-					SYM_NAME_OR_SLID(name, sym.st_value));
-
-				if (link_addr == 0) {
-					/* Try loaded tables */
-					struct llext *dep;
-
-					link_addr = (uintptr_t)llext_find_extension_sym(name, &dep);
-					if (link_addr) {
-						llext_dependency_add(ext, dep);
-					}
+				if (ret != 0) {
+					return ret;
 				}
 
-				if (link_addr == 0) {
-					LOG_ERR("Undefined symbol with no entry in "
-						"symbol table %s, offset %zd, link section %d",
-						name, (size_t)rel.r_offset, shdr->sh_link);
-					return -ENODATA;
+				name = llext_symbol_name(ldr, ext, &sym);
+
+				ret = llext_lookup_symbol(ldr, ext, &link_addr, &rel, &sym, name,
+							  shdr);
+
+				if (ret != 0) {
+					LOG_ERR("Could not find symbol %s!", name);
+					return ret;
 				}
 
-				LOG_INF("found symbol %s at 0x%lx", name, link_addr);
-			} else if (sym.st_shndx == SHN_ABS) {
-				/* Absolute symbol */
-				link_addr = sym.st_value;
-			} else if ((sym.st_shndx < ldr->hdr.e_shnum) &&
-				!IN_RANGE(sym.st_shndx, SHN_LORESERVE, SHN_HIRESERVE)) {
-				/* This check rejects all relocations whose target symbol
-				 * has a section index higher than the maximum possible
-				 * in this ELF file, or belongs in the reserved range:
-				 * they will be caught by the `else` below and cause an
-				 * error to be returned. This aborts the LLEXT's loading
-				 * and prevents execution of improperly relocated code,
-				 * which is dangerous.
-				 *
-				 * Note that the unsupported SHN_COMMON section is rejected
-				 * as part of this check. Also note that SHN_ABS would be
-				 * rejected as well, but we want to handle it properly:
-				 * for this reason, this check must come AFTER handling
-				 * the case where the symbol's section index is SHN_ABS!
-				 *
-				 *
-				 * For regular symbols, the link address is obtained by
-				 * adding st_value to the start address of the section
-				 * in which the target symbol resides.
-				 */
-				link_addr = (uintptr_t)llext_loaded_sect_ptr(ldr, ext,
-									     sym.st_shndx)
-					    + sym.st_value;
-			} else {
-				LOG_ERR("rela section %d, entry %d: cannot apply relocation: "
-					"target symbol has unexpected section index %d (0x%X)",
-					i, j, sym.st_shndx, sym.st_shndx);
-				return -ENOEXEC;
-			}
+				LOG_DBG("relocation %d:%d info 0x%zx (type %zd, sym %zd) offset %zd"
+					" sym_name %s sym_type %d sym_bind %d sym_ndx %d",
+					i, j, (size_t)rel.r_info, (size_t)ELF_R_TYPE(rel.r_info),
+					(size_t)ELF_R_SYM(rel.r_info), (size_t)rel.r_offset,
+					name, ELF_ST_TYPE(sym.st_info),
+					ELF_ST_BIND(sym.st_info), sym.st_shndx);
 
-			LOG_INF("writing relocation symbol %s type %zd sym %zd at addr 0x%lx "
-				"addr 0x%lx",
-				name, (size_t)ELF_R_TYPE(rel.r_info), (size_t)ELF_R_SYM(rel.r_info),
-				op_loc, link_addr);
+				LOG_INF("writing relocation symbol %s type %zd sym %zd at addr "
+					"0x%lx addr 0x%lx",
+					name, (size_t)ELF_R_TYPE(rel.r_info),
+					(size_t)ELF_R_SYM(rel.r_info),
+					op_loc, link_addr);
+			}
+#endif /* CONFIG_LLEXT_LOG_LEVEL */
+
 
 			/* relocation */
-			ret = arch_elf_relocate(&rel, op_loc, link_addr, name,
-					     (uintptr_t)ext->mem[LLEXT_MEM_TEXT]);
+			ret = arch_elf_relocate(ldr, ext, &rel, shdr);
 			if (ret != 0) {
 				return ret;
 			}

@@ -77,7 +77,7 @@ config OBJ_CORE_SEM
 
 config OBJ_CORE_PIPE
 	bool "Integrate pipe into object core framework"
-	default y if PIPES
+	default y
 	help
 	  When enabled, this option integrates pipes into the object core
 	  framework.

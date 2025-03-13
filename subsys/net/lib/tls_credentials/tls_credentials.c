@@ -11,6 +11,11 @@
 #include "tls_internal.h"
 #include "tls_credentials_digest_raw.h"
 
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_DECLARE(tls_credentials,
+		   CONFIG_TLS_CREDENTIALS_LOG_LEVEL);
+
 /* Global pool of credentials shared among TLS contexts. */
 static struct tls_credential credentials[CONFIG_TLS_MAX_CREDENTIALS_NUMBER];
 
@@ -158,11 +163,18 @@ int tls_credential_get(sec_tag_t tag, enum tls_credential_type type,
 	credential = credential_get(tag, type);
 	if (credential == NULL) {
 		ret = -ENOENT;
+		*credlen = 0;
 		goto exit;
 	}
 
 	if (credential->len > *credlen) {
 		ret = -EFBIG;
+		LOG_DBG("Not enough room in the credential buffer to "
+			"retrieve credential with sectag %d and type %d. "
+			"Increase TLS_CREDENTIALS_SHELL_MAX_CRED_LEN "
+			">= %d.\n",
+			tag, (int)type, (int)credential->len);
+		*credlen = credential->len;
 		goto exit;
 	}
 

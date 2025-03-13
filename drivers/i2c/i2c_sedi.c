@@ -237,8 +237,8 @@ static void i2c_sedi_isr(const struct device *dev)
 		.cb_sedi = &i2c_sedi_callback_##n,                                                 \
 		.irq_config = &i2c_sedi_irq_config_##n,                                            \
 	};                                                                                         \
-	PM_DEVICE_DT_DEFINE(DT_NODELABEL(i2c##n), i2c_sedi_pm_action);                             \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sedi_init, PM_DEVICE_DT_GET(DT_NODELABEL(i2c##n)),        \
+	PM_DEVICE_DT_INST_DEFINE(n, i2c_sedi_pm_action);                                           \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sedi_init, PM_DEVICE_DT_INST_GET(n),                      \
 				  &i2c_sedi_data_##n, &i2c_sedi_config_##n, PRE_KERNEL_2,          \
 				  CONFIG_I2C_INIT_PRIORITY, &i2c_sedi_apis);
 

@@ -11,11 +11,9 @@ common:
     type: multi_line
     regex:
       - "mcuboot_status: 0"
-      - "mcuboot_status: 1"
       - "mcuboot_status: 2"
       - "Waiting..."
       - "mcuboot_status: 0"
-      - "mcuboot_status: 1"
       - "mcuboot_status: 8"
       - "Starting bootloader"
       - "Secondary image: magic"

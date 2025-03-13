@@ -268,6 +268,9 @@ class RunnerCaps:
       connected to a single computer, in order to select which one will be used
       with the command provided.
 
+    - mult_dev_ids: whether the runner supports multiple device identifiers
+      for a single operation, allowing for bulk flashing of devices.
+
     - flash_addr: whether the runner supports flashing to an
       arbitrary address. Default is False. If true, the runner
       must honor the --dt-flash option.
@@ -305,6 +308,7 @@ class RunnerCaps:
 
     commands: set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
     dev_id: bool = False
+    mult_dev_ids: bool = False
     flash_addr: bool = False
     erase: bool = False
     reset: bool = False
@@ -316,6 +320,8 @@ class RunnerCaps:
                        # to allow other commands to use the rtt address
 
     def __post_init__(self):
+        if self.mult_dev_ids and not self.dev_id:
+            raise RuntimeError('dev_id must be set along mult_dev_ids')
         if not self.commands.issubset(_RUNNERCAPS_COMMANDS):
             raise ValueError(f'{self.commands=} contains invalid command')
 
@@ -543,7 +549,9 @@ class ZephyrBinaryRunner(abc.ABC):
         caps = cls.capabilities()
 
         if caps.dev_id:
+            action = 'append' if caps.mult_dev_ids else 'store'
             parser.add_argument('-i', '--dev-id',
+                                action=action,
                                 dest='dev_id',
                                 help=cls.dev_id_help())
         else:
@@ -749,10 +757,13 @@ class ZephyrBinaryRunner(abc.ABC):
     @classmethod
     def dev_id_help(cls) -> str:
         ''' Get the ArgParse help text for the --dev-id option.'''
-        return '''Device identifier. Use it to select
+        help = '''Device identifier. Use it to select
                   which debugger, device, node or instance to
                   target when multiple ones are available or
                   connected.'''
+        addendum = '''\nThis option can be present multiple times.''' if \
+                   cls.capabilities().mult_dev_ids else ''
+        return help + addendum
 
     @classmethod
     def extload_help(cls) -> str:
@@ -920,22 +931,27 @@ class ZephyrBinaryRunner(abc.ABC):
         # RuntimeError avoids a stack trace saved in run_common.
         raise RuntimeError(err)
 
-    def run_telnet_client(self, host: str, port: int) -> None:
+    def run_telnet_client(self, host: str, port: int, active_sock=None) -> None:
         '''
         Run a telnet client for user interaction.
         '''
-        # If a `nc` command is available, run it, as it will provide the best support for
-        # CONFIG_SHELL_VT100_COMMANDS etc.
-        if shutil.which('nc') is not None:
+        # If the caller passed in an active socket, use that
+        if active_sock is not None:
+            sock = active_sock
+        elif shutil.which('nc') is not None:
+            # If a `nc` command is available, run it, as it will provide the
+            # best support for CONFIG_SHELL_VT100_COMMANDS etc.
             client_cmd = ['nc', host, str(port)]
             # Note: netcat (nc) does not handle sigint, so cannot use run_client()
             self.check_call(client_cmd)
             return
+        else:
+            # Start a new socket connection
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((host, port))
 
         # Otherwise, use a pure python implementation. This will work well for logging,
         # but input is line based only.
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((host, port))
         sel = selectors.DefaultSelector()
         sel.register(sys.stdin, selectors.EVENT_READ)
         sel.register(sock, selectors.EVENT_READ)

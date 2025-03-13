@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,8 +19,7 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			compatible = "neorv32-cpu", "riscv";
-			riscv,isa = "rv32imc_zicsr";
+			compatible = "neorv32,cpu", "riscv";
 			reg = <0>;
 			device_type = "cpu";
 
@@ -64,77 +63,76 @@
 		#size-cells = <1>;
 		ranges;
 
-		mtimer: timer@ffffff90 {
-			compatible = "neorv32-machine-timer";
-			reg = <0xffffff90 0x10>;
-			interrupts = <7>;
+		imem: memory@0 {
+			compatible = "soc-nv-flash", "mmio-sram";
+			status = "disabled";
 		};
 
-		uart0: serial@ffffffa0 {
-			compatible = "neorv32-uart";
+		dmem: memory@80000000 {
+			compatible = "mmio-sram";
 			status = "disabled";
-			reg = <0xffffffa0 8>;
+		};
+
+		bootrom: rom@ffe00000 {
+			compatible = "neorv32,bootrom", "mmio-sram";
+			status = "disabled";
+			reg = <0xffe00000 0x10000>;
+		};
+
+		clint: clint@fff40000 {
+			compatible = "neorv32,clint", "sifive,clint0";
+			status = "disabled";
+			reg = <0xfff40000 0x10000>;
+			interrupts-extended = <&intc 3>;
+		};
+
+		mtimer: timer@fff4bff8 {
+			compatible = "riscv,machine-timer";
+			status = "disabled";
+			reg = <0xfff4bff8 0x8 0xfff44000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&intc 7>;
+		};
+
+		uart0: serial@fff50000 {
+			compatible = "neorv32,uart";
+			status = "disabled";
+			reg = <0xfff50000 0x10000>;
 			interrupts = <2>, <3>;
 			interrupt-names = "RX", "TX";
 			syscon = <&sysinfo>;
 		};
 
-		trng: rng@ffffffb8 {
-			compatible = "neorv32-trng";
+		uart1: serial@fff60000 {
+			compatible = "neorv32,uart";
 			status = "disabled";
-			reg = <0xffffffb8 4>;
-			syscon = <&sysinfo>;
-		};
-
-		gpio: gpio {
-			compatible = "simple-bus";
-			gpio-map-mask = <0xffffffe0 0xffffffc0>;
-			gpio-map-pass-thru = <0x1f 0x3f>;
-			gpio-map = <
-				0x00 0x0 &gpio_lo 0x0 0x0
-				0x20 0x0 &gpio_hi 0x0 0x0
-			>;
-			#gpio-cells = <2>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges;
-
-			gpio_lo: gpio@ffffffc0 {
-				compatible = "neorv32-gpio";
-				status = "disabled";
-				reg = <0xffffffc0 4 0xffffffc8 4>;
-				reg-names = "input", "output";
-				gpio-controller;
-				ngpios = <32>;
-				syscon = <&sysinfo>;
-				#gpio-cells = <2>;
-			};
-
-			gpio_hi: gpio@ffffffc4 {
-				compatible = "neorv32-gpio";
-				status = "disabled";
-				reg = <0xffffffc4 4 0xffffffcc 4>;
-				reg-names = "input", "output";
-				gpio-controller;
-				ngpios = <32>;
-				syscon = <&sysinfo>;
-				#gpio-cells = <2>;
-			};
-		};
-
-		uart1: serial@ffffffd0 {
-			compatible = "neorv32-uart";
-			status = "disabled";
-			reg = <0xffffffd0 8>;
+			reg = <0xfff60000 0x10000>;
 			interrupts = <4>, <5>;
 			interrupt-names = "RX", "TX";
 			syscon = <&sysinfo>;
 		};
 
-		sysinfo: syscon@ffffffe0 {
+		trng: rng@fffa0000 {
+			compatible = "neorv32,trng";
+			status = "disabled";
+			reg = <0xfffa0000 0x10000>;
+			syscon = <&sysinfo>;
+		};
+
+		gpio: gpio@fffc0000 {
+			compatible = "neorv32,gpio";
+			status = "disabled";
+			reg = <0xfffc0000 0x10000>;
+			syscon = <&sysinfo>;
+			gpio-controller;
+			ngpios = <32>;
+			#gpio-cells = <2>;
+		};
+
+		sysinfo: syscon@fffe0000 {
 			compatible = "neorv-sysinfo", "syscon";
 			status = "okay";
-			reg = <0xffffffe0 32>;
+			reg = <0xfffe0000 0x10000>;
 		};
 	};
 };

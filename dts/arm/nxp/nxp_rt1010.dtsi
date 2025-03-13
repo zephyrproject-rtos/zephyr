@@ -8,11 +8,6 @@
 
 &flexram {
 	flexram,num-ram-banks = <4>;
-	/* default fuse */
-	flexram,bank-spec = <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_ITCM>;
 };
 
 &sysclk {
@@ -164,6 +159,8 @@
 			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		lpspi2: spi@40198000 {
@@ -174,6 +171,8 @@
 			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		/* Remove LPUART5-8, they don't exist on RT1010 */

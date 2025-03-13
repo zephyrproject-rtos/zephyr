@@ -55,7 +55,7 @@ struct node_val {
 
 /* NetKey storage information */
 struct net_key_val {
-	uint8_t kr_flag:1,
+	uint8_t unused:1,
 		kr_phase:7;
 	struct bt_mesh_key val[2];
 } __packed;
@@ -491,7 +491,7 @@ static void store_cdb_subnet(const struct bt_mesh_cdb_subnet *sub)
 
 	memcpy(&key.val[0], &sub->keys[0].net_key, sizeof(struct bt_mesh_key));
 	memcpy(&key.val[1], &sub->keys[1].net_key, sizeof(struct bt_mesh_key));
-	key.kr_flag = 0U; /* Deprecated */
+	key.unused = 0U;
 	key.kr_phase = sub->kr_phase;
 
 	snprintk(path, sizeof(path), "bt/mesh/cdb/Subnet/%x", sub->net_idx);

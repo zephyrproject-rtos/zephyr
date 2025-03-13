@@ -1,0 +1,9 @@
+board:
+  name: panb511evb
+  full_name: PAN B511 Evaluation Board
+  vendor: panasonic
+  socs:
+  - name: nrf54l15
+    variants:
+    - name: xip
+      cpucluster: cpuflpr

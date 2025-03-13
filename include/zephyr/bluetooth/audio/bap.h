@@ -32,6 +32,7 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/slist.h>
@@ -41,19 +42,114 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_BT_BAP_BASS_MAX_SUBGROUPS)
-#define BT_BAP_BASS_MAX_SUBGROUPS CONFIG_BT_BAP_BASS_MAX_SUBGROUPS
-#else
-#define BT_BAP_BASS_MAX_SUBGROUPS 0
-#endif /* CONFIG_BT_BAP_BASS_MAX_SUBGROUPS*/
+/** Maximum number of subgroups supported in the BAP Scan Delegator API */
+#define BT_BAP_BASS_MAX_SUBGROUPS                                                                  \
+	COND_CODE_1(CONFIG_BT_AUDIO, (CONFIG_BT_BAP_BASS_MAX_SUBGROUPS), (0))
+
+/** Maximum size of BASE excluding service data header */
+#define BT_BASE_MAX_SIZE (UINT8_MAX - 1 /* type */ - BT_UUID_SIZE_16)
 
 /** An invalid Broadcast ID */
 #define BT_BAP_INVALID_BROADCAST_ID 0xFFFFFFFFU
 
 /**
+ * @brief Recommended connectable advertising parameters
+ *
+ * If connection has not been established after 30 seconds, the device should switch to
+ * @ref BT_BAP_ADV_PARAM_CONN_REDUCED
+ *
+ * Defined by Table 8.1 in BAP 1.0.2
+ */
+#define BT_BAP_ADV_PARAM_CONN_QUICK                                                                \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(20), \
+			BT_GAP_MS_TO_ADV_INTERVAL(30), NULL)
+
+/**
+ * @brief Reduced connectable advertising parameters
+ *
+ * Defined by Table 8.1 in BAP 1.0.2
+ */
+#define BT_BAP_ADV_PARAM_CONN_REDUCED                                                              \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_EXT_ADV,                                \
+			BT_GAP_MS_TO_ADV_INTERVAL(150), BT_GAP_MS_TO_ADV_INTERVAL(150), NULL)
+
+/**
+ * @brief Recommended connection parameters for initial connection request for 7.5 ms SDU interval
+ *
+ * Once service discovery has completed and a stream is setup, it is recommended to switch to
+ * @ref BT_BAP_CONN_PARAM_RELAXED
+ *
+ * Defined by Table 8.3 in BAP 1.0.2
+ */
+#define BT_BAP_CONN_PARAM_SHORT_7_5                                                                \
+	BT_LE_CONN_PARAM(BT_GAP_US_TO_CONN_INTERVAL(7500), BT_GAP_MS_TO_CONN_INTERVAL(30), 0,      \
+			 BT_GAP_MS_TO_CONN_TIMEOUT(4000))
+
+/**
+ * @brief Recommended connection parameters for initial connection request for 10 ms SDU interval
+ *
+ * Once service discovery has completed and a stream is setup, it is recommended to switch to
+ * @ref BT_BAP_CONN_PARAM_RELAXED
+ *
+ * Defined by Table 8.3 in BAP 1.0.2
+ */
+#define BT_BAP_CONN_PARAM_SHORT_10                                                                 \
+	BT_LE_CONN_PARAM(BT_GAP_MS_TO_CONN_INTERVAL(10), BT_GAP_MS_TO_CONN_INTERVAL(30), 0,        \
+			 BT_GAP_MS_TO_CONN_TIMEOUT(4000))
+
+/**
+ * @brief Recommended connection parameters for coexistence of ACL and ISO
+ *
+ * Defined by Table 8.3 in BAP 1.0.2
+ */
+#define BT_BAP_CONN_PARAM_RELAXED                                                                  \
+	BT_LE_CONN_PARAM(BT_GAP_MS_TO_CONN_INTERVAL(50), BT_GAP_MS_TO_CONN_INTERVAL(70), 0,        \
+			 BT_GAP_MS_TO_CONN_TIMEOUT(4000))
+
+/**
+ * @brief Fast advertising parameters for broadcast audio
+ *
+ * This is suitable for both 7.5 ms and 10 ms SDU intervals, but prioritizes lower time to
+ * synchronize over coexistence with ISO and power consumption.
+ */
+#define BT_BAP_ADV_PARAM_BROADCAST_FAST                                                            \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(60),                      \
+			BT_GAP_MS_TO_ADV_INTERVAL(60), NULL)
+
+/**
+ * @brief Slow advertising parameters for broadcast audio
+ *
+ * This is suitable for both 7.5 ms and 10 ms SDU intervals, but prioritizes coexistence with ISO
+ * and power consumption over lower time to synchronize.
+ */
+#define BT_BAP_ADV_PARAM_BROADCAST_SLOW                                                            \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(150),                     \
+			BT_GAP_MS_TO_ADV_INTERVAL(150), NULL)
+
+/**
+ * @brief Fast advertising parameters for broadcast audio
+ *
+ * This is suitable for both 7.5 ms and 10 ms SDU intervals, but prioritizes lower time to
+ * synchronize over coexistence with ISO and power consumption.
+ */
+#define BT_BAP_PER_ADV_PARAM_BROADCAST_FAST                                                        \
+	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(60), BT_GAP_MS_TO_PER_ADV_INTERVAL(60),  \
+			    BT_LE_PER_ADV_OPT_NONE)
+
+/**
+ * @brief Slow advertising parameters for broadcast audio
+ *
+ * This is suitable for both 7.5 ms and 10 ms SDU intervals, but prioritizes coexistence with ISO
+ * and power consumption over lower time to synchronize.
+ */
+#define BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW                                                        \
+	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(150),                                    \
+			    BT_GAP_MS_TO_PER_ADV_INTERVAL(150), BT_LE_PER_ADV_OPT_NONE)
+
+/**
  * @brief Check if a BAP BASS BIS_Sync bitfield is valid
  *
- * Valid options are eiter a bitmask of valid BIS indices, including none (0x00000000)
+ * Valid options are either a bitmask of valid BIS indices, including none (0x00000000)
  * or @ref BT_BAP_BIS_SYNC_NO_PREF (0xFFFFFFFF).
  *
  * @param _bis_bitfield BIS_Sync bitfield (uint32)
@@ -759,28 +855,30 @@ struct bt_bap_stream {
 	/** Audio stream operations */
 	struct bt_bap_stream_ops *ops;
 
+	/** Stream user data */
+	void *user_data;
+
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(__DOXYGEN__)
+	/** @cond INTERNAL_HIDDEN */
 	/**
-	 * @internal Audio ISO reference
+	 * @brief Audio ISO reference
 	 *
 	 * This is only used for Unicast Client streams, and is handled internally.
 	 */
 	struct bt_bap_iso *bap_iso;
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
-	/** @internal Unicast or Broadcast group - Used internally */
+	/** Unicast or Broadcast group - Used internally */
 	void *group;
 
-	/** Stream user data */
-	void *user_data;
-
 #if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM) || defined(__DOXYGEN__)
-	/** @internal Previously sent sequence number */
+	/** Previously sent sequence number */
 	uint16_t _prev_seq_num;
 #endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
 
-	/** @internal Internally used list node */
+	/** Internally used list node */
 	sys_snode_t _node;
+	/** @endcond */
 };
 
 /** @brief Stream operation. */
@@ -2022,8 +2120,10 @@ struct bt_bap_broadcast_source_cb {
 	 */
 	void (*stopped)(struct bt_bap_broadcast_source *source, uint8_t reason);
 
-	/** @internal Internally used field for list handling */
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used field for list handling */
 	sys_snode_t _node;
+	/** @endcond */
 };
 
 /**
@@ -2308,8 +2408,10 @@ struct bt_bap_broadcast_sink_cb {
 	 */
 	void (*stopped)(struct bt_bap_broadcast_sink *sink, uint8_t reason);
 
-	/** @internal Internally used list node */
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used list node */
 	sys_snode_t _node;
+	/** @endcond */
 };
 
 /**
@@ -2681,8 +2783,10 @@ struct bt_bap_broadcast_assistant_cb {
 	 */
 	void (*rem_src)(struct bt_conn *conn, int err);
 
-	/** @internal Internally used list node */
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used list node */
 	sys_snode_t _node;
+	/** @endcond */
 };
 
 /**

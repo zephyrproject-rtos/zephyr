@@ -21,6 +21,8 @@
 #define NSI_MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #define NSI_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
+#define NSI_ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+
 #ifndef NSI_ARG_UNUSED
 #define NSI_ARG_UNUSED(x) (void)(x)
 #endif

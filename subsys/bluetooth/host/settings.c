@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/settings/settings.h>
+#include <common/bt_settings_commit.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -281,7 +282,8 @@ static int commit_settings(void)
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt, "bt", NULL, set_setting, commit_settings, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(bt, "bt", NULL, set_setting, commit_settings, NULL,
+					  BT_SETTINGS_CPRIO_0);
 
 int bt_settings_init(void)
 {
@@ -296,6 +298,18 @@ int bt_settings_init(void)
 	}
 
 	return 0;
+}
+
+__weak void bt_testing_settings_store_hook(const char *key, const void *value, size_t val_len)
+{
+	ARG_UNUSED(key);
+	ARG_UNUSED(value);
+	ARG_UNUSED(val_len);
+}
+
+__weak void bt_testing_settings_delete_hook(const char *key)
+{
+	ARG_UNUSED(key);
 }
 
 int bt_settings_store(const char *key, uint8_t id, const bt_addr_le_t *addr, const void *value,
@@ -318,6 +332,10 @@ int bt_settings_store(const char *key, uint8_t id, const bt_addr_le_t *addr, con
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_TESTING)) {
+		bt_testing_settings_store_hook(key_str, value, val_len);
+	}
+
 	return settings_save_one(key_str, value, val_len);
 }
 
@@ -338,6 +356,10 @@ int bt_settings_delete(const char *key, uint8_t id, const bt_addr_le_t *addr)
 		if (err < 0) {
 			return -EINVAL;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_TESTING)) {
+		bt_testing_settings_delete_hook(key_str);
 	}
 
 	return settings_delete(key_str);

@@ -23,7 +23,7 @@ compatible API implementation for Zephyr:
   names like ``close()``, which may be part of libc or other POSIX
   compatibility libraries.
   If enabled by :kconfig:option:`CONFIG_POSIX_API`, it will also
-  expose native POSIX names.
+  expose POSIX compatible APIs.
 
 BSD Sockets compatible API is enabled using :kconfig:option:`CONFIG_NET_SOCKETS`
 config option and implements the following operations: ``socket()``, ``close()``,

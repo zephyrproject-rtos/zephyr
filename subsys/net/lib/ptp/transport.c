@@ -325,13 +325,17 @@ int ptp_transport_protocol_addr(struct ptp_port *port, uint8_t *addr)
 	if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
 		struct in_addr *ip = net_if_ipv4_get_global_addr(port->iface, NET_ADDR_PREFERRED);
 
-		length = NET_IPV4_ADDR_SIZE;
-		*addr = ip->s_addr;
+		if (ip) {
+			length = NET_IPV4_ADDR_SIZE;
+			*addr = ip->s_addr;
+		}
 	} else if (IS_ENABLED(CONFIG_PTP_UDP_IPv6_PROTOCOL)) {
 		struct in6_addr *ip = net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &port->iface);
 
-		length = NET_IPV6_ADDR_SIZE;
-		memcpy(addr, ip, length);
+		if (ip) {
+			length = NET_IPV6_ADDR_SIZE;
+			memcpy(addr, ip, length);
+		}
 	}
 
 	return length;

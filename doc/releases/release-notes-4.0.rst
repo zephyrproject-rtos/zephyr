@@ -105,21 +105,19 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
-* Deprecated the :c:func:`net_buf_put` and :c:func:`net_buf_get` API functions in favor of
+* Deprecated the ``net_buf_put()`` and ``net_buf_get()`` API functions in favor of
   :c:func:`k_fifo_put` and :c:func:`k_fifo_get`.
 
-* The :ref:`kscan_api` subsystem has been marked as deprecated.
+* The ``kscan_api`` subsystem has been marked as deprecated.
 
 * Deprecated the TinyCrypt shim driver ``CONFIG_CRYPTO_TINYCRYPT_SHIM``.
 
-* :ref:`native_posix<native_posix>` has been deprecated in favour of
+* ``native_posix`` has been deprecated in favour of
   :ref:`native_sim<native_sim>`.
 
 * ``include/zephyr/net/buf.h`` is deprecated in favor of
   ``include/zephyr/net_buf.h>``. The old header will be removed in future releases
   and its usage should be avoided.
-
-* Deprecated the :c:func:`net_buf_put` and :c:func:`net_buf_get` API functions.
 
 Architectures
 *************
@@ -303,21 +301,21 @@ Boards & SoC Support
    * :zephyr:board:`NXP i.MX95 EVK <imx95_evk>` (``imx95_evk``)
    * :zephyr:board:`NXP MIMXRT1180-EVK <mimxrt1180_evk>` (``mimxrt1180_evk``)
    * :ref:`PHYTEC phyBOARD-Nash i.MX93 <phyboard_nash>` (``phyboard_nash``)
-   * :ref:`Renesas RA2A1 Evaluation Kit <ek_ra2a1>` (``ek_ra2a1``)
-   * :ref:`Renesas RA4E2 Evaluation Kit <ek_ra4e2>` (``ek_ra4e2``)
-   * :ref:`Renesas RA4M2 Evaluation Kit <ek_ra4m2>` (``ek_ra4m2``)
-   * :ref:`Renesas RA4M3 Evaluation Kit <ek_ra4m3>` (``ek_ra4m3``)
-   * :ref:`Renesas RA4W1 Evaluation Kit <ek_ra4w1>` (``ek_ra4w1``)
-   * :ref:`Renesas RA6E2 Evaluation Kit <ek_ra6e2>` (``ek_ra6e2``)
-   * :ref:`Renesas RA6M1 Evaluation Kit <ek_ra6m1>` (``ek_ra6m1``)
-   * :ref:`Renesas RA6M2 Evaluation Kit <ek_ra6m2>` (``ek_ra6m2``)
-   * :ref:`Renesas RA6M3 Evaluation Kit <ek_ra6m3>` (``ek_ra6m3``)
-   * :ref:`Renesas RA6M4 Evaluation Kit <ek_ra6m4>` (``ek_ra6m4``)
-   * :ref:`Renesas RA6M5 Evaluation Kit <ek_ra6m5>` (``ek_ra6m5``)
-   * :ref:`Renesas RA8D1 Evaluation Kit <ek_ra8d1>` (``ek_ra8d1``)
-   * :ref:`Renesas RA6E1 Fast Prototyping Board <fpb_ra6e1>` (``fpb_ra6e1``)
-   * :ref:`Renesas RA6E2 Fast Prototyping Board <fpb_ra6e2>` (``fpb_ra6e2``)
-   * :ref:`Renesas RA8T1 Evaluation Kit <mcb_ra8t1>` (``mck_ra8t1``)
+   * :zephyr:board:`Renesas RA2A1 Evaluation Kit <ek_ra2a1>` (``ek_ra2a1``)
+   * :zephyr:board:`Renesas RA4E2 Evaluation Kit <ek_ra4e2>` (``ek_ra4e2``)
+   * :zephyr:board:`Renesas RA4M2 Evaluation Kit <ek_ra4m2>` (``ek_ra4m2``)
+   * :zephyr:board:`Renesas RA4M3 Evaluation Kit <ek_ra4m3>` (``ek_ra4m3``)
+   * :zephyr:board:`Renesas RA4W1 Evaluation Kit <ek_ra4w1>` (``ek_ra4w1``)
+   * :zephyr:board:`Renesas RA6E2 Evaluation Kit <ek_ra6e2>` (``ek_ra6e2``)
+   * :zephyr:board:`Renesas RA6M1 Evaluation Kit <ek_ra6m1>` (``ek_ra6m1``)
+   * :zephyr:board:`Renesas RA6M2 Evaluation Kit <ek_ra6m2>` (``ek_ra6m2``)
+   * :zephyr:board:`Renesas RA6M3 Evaluation Kit <ek_ra6m3>` (``ek_ra6m3``)
+   * :zephyr:board:`Renesas RA6M4 Evaluation Kit <ek_ra6m4>` (``ek_ra6m4``)
+   * :zephyr:board:`Renesas RA6M5 Evaluation Kit <ek_ra6m5>` (``ek_ra6m5``)
+   * :zephyr:board:`Renesas RA8D1 Evaluation Kit <ek_ra8d1>` (``ek_ra8d1``)
+   * :zephyr:board:`Renesas RA6E1 Fast Prototyping Board <fpb_ra6e1>` (``fpb_ra6e1``)
+   * :zephyr:board:`Renesas RA6E2 Fast Prototyping Board <fpb_ra6e2>` (``fpb_ra6e2``)
+   * :zephyr:board:`Renesas RA8T1 Motor Control Kit <mck_ra8t1>` (``mck_ra8t1``)
    * :zephyr:board:`Renode Cortex-R8 Virtual <cortex_r8_virtual>` (``cortex_r8_virtual``)
    * :zephyr:board:`Seeed XIAO ESP32-S3 Sense Variant <xiao_esp32s3>`: ``xiao_esp32s3``.
    * :ref:`sensry.io Ganymed Break-Out-Board (BOB) <ganymed_bob>` (``ganymed_bob``)
@@ -1543,7 +1541,7 @@ zcbor
 Tests and Samples
 *****************
 
-* Together with the deprecation of :ref:`native_posix<native_posix>`, many tests which were
+* Together with the deprecation of ``native_posix``, many tests which were
   explicitly run in native_posix now run in :ref:`native_sim<native_sim>` instead.
   native_posix as a platform remains tested though.
 * Extended the tests of counter_basic_api with a testcase for counters without alarms

@@ -13,12 +13,19 @@
 
 /**
  * @brief Bluetooth APIs
+ * @details The Bluetooth Subsystem Core APIs provide essential functionalities
+ *          to use and manage Bluetooth based communication. These APIs include
+ *          APIs for Bluetooth stack initialization, device discovery,
+ *          connection management, data transmission, profiles and services.
+ *          These APIs support both classic Bluetooth and Bluetooth Low Energy
+ *          (LE) operations.
  * @defgroup bluetooth Bluetooth APIs
  * @ingroup connectivity
  * @{
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <zephyr/sys/util.h>
@@ -34,6 +41,13 @@ extern "C" {
 
 /**
  * @brief Generic Access Profile (GAP)
+ * @details The Generic Access Profile (GAP) defines fundamental Bluetooth
+ *          operations, including device discovery, pairing, and connection
+ *          management. Zephyr's GAP implementation supports both classic
+ *          Bluetooth and Bluetooth Low Energy (LE) functionalities, enabling
+ *          roles such as Broadcaster, Observer, Peripheral, and Central. These
+ *          roles define the device's behavior in advertising, scanning, and
+ *          establishing connections within Bluetooth networks.
  * @defgroup bt_gap Generic Access Profile (GAP)
  * @since 1.0
  * @version 1.0.0
@@ -47,6 +61,13 @@ extern "C" {
  * supported.
  */
 #define BT_ID_DEFAULT 0
+
+/**
+ * @brief Number of octets for local supported
+ *
+ * The value of 8 correspond to page 0 in the LE Controller supported features
+ */
+#define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE 8
 
 /** Opaque type representing an advertiser. */
 struct bt_le_ext_adv;
@@ -268,7 +289,7 @@ bool bt_is_ready(void);
  *
  * @sa @kconfig{CONFIG_BT_DEVICE_NAME_MAX}.
  *
- * @param name New name
+ * @param name New name, must be null terminated
  *
  * @return Zero on success or (negative) error code otherwise.
  */
@@ -516,6 +537,78 @@ size_t bt_data_get_len(const struct bt_data data[], size_t data_count);
  * @return Number of bytes written in @p output.
  */
 size_t bt_data_serialize(const struct bt_data *input, uint8_t *output);
+
+struct bt_le_local_features {
+	/**
+	 * @brief Local LE controller supported features.
+	 *
+	 * Refer to BT_LE_FEAT_BIT_* for values.
+	 * Refer to the BT_FEAT_LE_* macros for value comparionson.
+	 * See Bluetooth Core Specification, Vol 6, Part B, Section 4.6.
+	 */
+	uint8_t features[BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE];
+
+	/**
+	 * @brief Local LE controller supported states
+	 *
+	 * Refer to BT_LE_STATES_* for values.
+	 * See Bluetooth Core Specification 6.0, Vol 4, Part E, Section 7.8.27
+	 */
+	uint64_t states;
+
+	/**
+	 * @brief ACL data packet length
+	 *
+	 * This represents the maximum ACL HCI Data packet which can be sent from the Host to the
+	 * Controller.
+	 * The Host may support L2CAP and ATT MTUs larger than this value.
+	 * See Bluetooth Core Specification, Vol 6, Part E, Section 7.8.2.
+	 */
+	uint16_t acl_mtu;
+	/** Total number of ACL data packets */
+	uint8_t acl_pkts;
+
+	/**
+	 * @brief ISO data packet length
+	 *
+	 * This represents the maximum ISO HCI Data packet which can be sent from the Host to the
+	 * Controller.
+	 * ISO SDUs above this size can be fragmented assuming that the number of
+	 * @ref bt_le_local_features.iso_pkts support the maximum size.
+	 */
+	uint16_t iso_mtu;
+	/** Total number of ISO data packets */
+	uint8_t iso_pkts;
+
+	/**
+	 * @brief Maximum size of the controller resolving list.
+	 *
+	 * See Bluetooth Core Specification, Vol 6, Part E, Section 7.8.41.
+	 */
+	uint8_t rl_size;
+
+	/**
+	 * @brief Maximum advertising data length
+	 *
+	 * @note The maximum advertising data length also depends on advertising type.
+	 *
+	 * See Bluetooth Core Specification, Vol 6, Part E, Section 7.8.57.
+	 */
+	uint16_t max_adv_data_len;
+};
+
+/**
+ * @brief Get local Bluetooth LE controller features
+ *
+ * Can only be called after bt_enable()
+ *
+ * @param local_features Local features struct to be populated with information.
+ *
+ * @retval 0 Success
+ * @retval -EAGAIN The information is not yet available.
+ * @retval -EINVAL @p local_features is NULL.
+ */
+int bt_le_get_local_features(struct bt_le_local_features *local_features);
 
 /** Advertising options */
 enum {
@@ -784,6 +877,40 @@ enum {
 	 * @note Mutually exclusive with BT_LE_ADV_OPT_USE_IDENTITY.
 	 */
 	BT_LE_ADV_OPT_USE_NRPA = BIT(19),
+
+	/**
+	 * @brief Configures the advertiser to use the S=2 coding scheme for
+	 * LE Coded PHY.
+	 *
+	 * Sets the advertiser's required coding scheme to S=2, which is one
+	 * of the coding options available for LE Coded PHY. The S=2 coding
+	 * scheme offers higher data rates compared to S=8, with a trade-off
+	 * of reduced range. The coding scheme will only be set if both the
+	 * primary and secondary advertising channels indicate LE Coded Phy.
+	 * Additionally, the Controller must support the LE Feature Advertising
+	 * Coding Selection. If these conditions are not met, it will default to
+	 * no required coding scheme.
+	 *
+	 * @note Requires @kconfig{BT_EXT_ADV_CODING_SELECTION}
+	 */
+	BT_LE_ADV_OPT_REQUIRE_S2_CODING = BIT(20),
+
+	/**
+	 * @brief Configures the advertiser to use the S=8 coding scheme for
+	 * LE Coded PHY.
+	 *
+	 * Sets the advertiser's required coding scheme to S=8, which is one
+	 * of the coding options available for LE Coded PHY. The S=8 coding
+	 * scheme offers increased range compared to S=2, with a trade-off
+	 * of lower data rates. The coding scheme will only be set if both the
+	 * primary and secondary advertising channels indicate LE Coded Phy.
+	 * Additionally, the Controller must support the LE Feature Advertising
+	 * Coding Selection. If these conditions are not met, it will default to
+	 * no required coding scheme.
+	 *
+	 * @note Requires @kconfig{BT_EXT_ADV_CODING_SELECTION}
+	 */
+	BT_LE_ADV_OPT_REQUIRE_S8_CODING = BIT(21),
 };
 
 /** LE Advertising Parameters. */
@@ -2135,8 +2262,6 @@ enum {
 	BT_LE_SCAN_OPT_NO_1M = BIT(3),
 };
 
-#define BT_LE_SCAN_OPT_FILTER_WHITELIST __DEPRECATED_MACRO BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST
-
 enum {
 	/** Scan without requesting additional information from advertisers. */
 	BT_LE_SCAN_TYPE_PASSIVE = 0x00,
@@ -2730,6 +2855,18 @@ struct bt_le_per_adv_response_params {
 int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
 				    const struct bt_le_per_adv_response_params *params,
 				    const struct net_buf_simple *data);
+
+/** @brief Check if a device identified by a Bluetooth LE address is bonded.
+ *
+ *  Valid Bluetooth LE identity addresses are either public address or
+ *  random static address.
+ *
+ *  @param id   Local identity (typically @ref BT_ID_DEFAULT).
+ *  @param addr Bluetooth LE device address.
+ *
+ *  @return true if @p addr is bonded with local @p id
+ */
+bool bt_le_bond_exists(uint8_t id, const bt_addr_le_t *addr);
 
 /**
  * @}

@@ -56,6 +56,8 @@ source "drivers/clock_control/Kconfig.npcx"
 
 source "drivers/clock_control/Kconfig.rv32m1"
 
+source "drivers/clock_control/Kconfig.rts5912"
+
 source "drivers/clock_control/Kconfig.esp32"
 
 source "drivers/clock_control/Kconfig.litex"
@@ -86,6 +88,8 @@ source "drivers/clock_control/Kconfig.agilex5"
 
 source "drivers/clock_control/Kconfig.renesas_ra_cgc"
 
+source "drivers/clock_control/Kconfig.renesas_rz_cpg"
+
 source "drivers/clock_control/Kconfig.max32"
 
 source "drivers/clock_control/Kconfig.ambiq"
@@ -99,6 +103,8 @@ source "drivers/clock_control/Kconfig.nrf_auxpll"
 source "drivers/clock_control/Kconfig.arm_scmi"
 
 source "drivers/clock_control/Kconfig.silabs"
+
+source "drivers/clock_control/Kconfig.siwx91x"
 
 source "drivers/clock_control/Kconfig.wch_rcc"
 
