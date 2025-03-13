@@ -976,8 +976,7 @@ static int ppp_driver_init(const struct device *dev)
 
 static inline struct net_linkaddr *ppp_get_mac(struct ppp_driver_context *ppp)
 {
-	ppp->ll_addr.addr = ppp->mac_addr;
-	ppp->ll_addr.len = sizeof(ppp->mac_addr);
+	(void)net_linkaddr_set(&ppp->ll_addr, ppp->mac_addr, sizeof(ppp->mac_addr));
 
 	return &ppp->ll_addr;
 }

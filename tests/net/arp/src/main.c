@@ -354,8 +354,9 @@ ZTEST(arp_fn_tests, test_arp)
 		len, AF_INET, 0, K_SECONDS(1));
 	zassert_not_null(pkt, "out of mem");
 
-	net_pkt_lladdr_src(pkt)->addr = (uint8_t *)net_if_get_link_addr(iface);
-	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+			       net_if_get_link_addr(iface)->addr,
+			       sizeof(struct net_eth_addr));
 
 	ipv4 = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer,
 						  sizeof(struct net_ipv4_hdr));

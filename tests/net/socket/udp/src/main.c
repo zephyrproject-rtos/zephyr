@@ -950,11 +950,9 @@ static struct in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 static struct in6_addr my_mcast_addr1 = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct in_addr my_mcast_addr2 = { { { 224, 0, 0, 2 } } };
-static uint8_t server_lladdr[] = { 0x01, 0x02, 0x03, 0xff, 0xfe,
-				0x04, 0x05, 0x06 };
 static struct net_linkaddr server_link_addr = {
-	.addr = server_lladdr,
-	.len = sizeof(server_lladdr),
+	.addr = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 },
+	.len = NET_ETH_ADDR_LEN,
 };
 #define MY_IPV6_ADDR_ETH   "2001:db8:100::1"
 #define PEER_IPV6_ADDR_ETH "2001:db8:100::2"

@@ -446,10 +446,10 @@ void net_capture_data(struct net_capture_cooked *ctx,
 	 */
 	net_pkt_set_ll_proto_type(pkt, ptype);
 
-	net_pkt_lladdr_src(pkt)->addr = NULL;
+	memset(net_pkt_lladdr_src(pkt)->addr, 0, sizeof(net_pkt_lladdr_src(pkt)->addr));
 	net_pkt_lladdr_src(pkt)->len = 0U;
 	net_pkt_lladdr_src(pkt)->type = NET_LINK_DUMMY;
-	net_pkt_lladdr_dst(pkt)->addr = NULL;
+	memset(net_pkt_lladdr_dst(pkt)->addr, 0, sizeof(net_pkt_lladdr_dst(pkt)->addr));
 	net_pkt_lladdr_dst(pkt)->len = 0U;
 	net_pkt_lladdr_dst(pkt)->type = NET_LINK_DUMMY;
 
