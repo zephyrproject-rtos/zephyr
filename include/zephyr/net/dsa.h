@@ -26,7 +26,7 @@
 /** @cond INTERNAL_HIDDEN */
 
 #define NET_DSA_PORT_MAX_COUNT 8
-#define DSA_STATUS_PERIOD_MS K_MSEC(1000)
+#define DSA_STATUS_PERIOD_MS   K_MSEC(1000)
 
 #ifdef CONFIG_DSA_TAG_SIZE
 #define DSA_TAG_SIZE CONFIG_DSA_TAG_SIZE
@@ -67,8 +67,7 @@ int dsa_tx(const struct device *dev, struct net_pkt *pkt);
  *  - NET_OK, if the packet was accepted, in this case the ownership of the
  *    net_pkt goes to callback and core network stack will forget it.
  */
-typedef enum net_verdict (*dsa_net_recv_cb_t)(struct net_if *iface,
-					      struct net_pkt *pkt);
+typedef enum net_verdict (*dsa_net_recv_cb_t)(struct net_if *iface, struct net_pkt *pkt);
 
 /**
  * @brief Register DSA Rx callback functions
@@ -153,8 +152,7 @@ struct dsa_context {
  */
 struct dsa_api {
 	/** Function to get proper LAN{123} interface */
-	struct net_if *(*dsa_get_iface)(struct net_if *iface,
-					struct net_pkt *pkt);
+	struct net_if *(*dsa_get_iface)(struct net_if *iface, struct net_pkt *pkt);
 	/*
 	 * Callbacks required for DSA switch initialization and configuration.
 	 *
@@ -162,29 +160,22 @@ struct dsa_api {
 	 * dsa_context.
 	 */
 	/** Read value from DSA register */
-	int (*switch_read)(const struct device *dev, uint16_t reg_addr,
-				uint8_t *value);
+	int (*switch_read)(const struct device *dev, uint16_t reg_addr, uint8_t *value);
 	/** Write value to DSA register */
-	int (*switch_write)(const struct device *dev, uint16_t reg_addr,
-				uint8_t value);
+	int (*switch_write)(const struct device *dev, uint16_t reg_addr, uint8_t value);
 
 	/** Program (set) mac table entry in the DSA switch */
-	int (*switch_set_mac_table_entry)(const struct device *dev,
-						const uint8_t *mac,
-						uint8_t fw_port,
-						uint16_t tbl_entry_idx,
-						uint16_t flags);
+	int (*switch_set_mac_table_entry)(const struct device *dev, const uint8_t *mac,
+					  uint8_t fw_port, uint16_t tbl_entry_idx, uint16_t flags);
 
 	/** Read mac table entry from the DSA switch */
-	int (*switch_get_mac_table_entry)(const struct device *dev,
-						uint8_t *buf,
-						uint16_t tbl_entry_idx);
+	int (*switch_get_mac_table_entry)(const struct device *dev, uint8_t *buf,
+					  uint16_t tbl_entry_idx);
 
 	/*
 	 * DSA helper callbacks
 	 */
-	struct net_pkt *(*dsa_xmit_pkt)(struct net_if *iface,
-					struct net_pkt *pkt);
+	struct net_pkt *(*dsa_xmit_pkt)(struct net_if *iface, struct net_pkt *pkt);
 };
 
 /**
@@ -235,11 +226,8 @@ int dsa_switch_write(struct net_if *iface, uint16_t reg_addr, uint8_t value);
  *
  * @return     0 if successful, negative if error
  */
-int dsa_switch_set_mac_table_entry(struct net_if *iface,
-					const uint8_t *mac,
-					uint8_t fw_port,
-					uint16_t tbl_entry_idx,
-					uint16_t flags);
+int dsa_switch_set_mac_table_entry(struct net_if *iface, const uint8_t *mac, uint8_t fw_port,
+				   uint16_t tbl_entry_idx, uint16_t flags);
 
 /**
  * @brief      Read static MAC table entry
@@ -250,9 +238,7 @@ int dsa_switch_set_mac_table_entry(struct net_if *iface,
  *
  * @return     0 if successful, negative if error
  */
-int dsa_switch_get_mac_table_entry(struct net_if *iface,
-					uint8_t *buf,
-					uint16_t tbl_entry_idx);
+int dsa_switch_get_mac_table_entry(struct net_if *iface, uint8_t *buf, uint16_t tbl_entry_idx);
 
 /**
  * @brief Structure to provide mac address for each LAN interface
