@@ -925,14 +925,33 @@ static inline enum net_if_oper_state net_if_oper_state(struct net_if *iface)
 }
 
 /**
- * @brief Send a packet through a net iface
+ * @brief Try sending a packet through a net iface
  *
  * @param iface Pointer to a network interface structure
  * @param pkt Pointer to a net packet to send
+ * @param timeout timeout for attempting to send
  *
- * return verdict about the packet
+ * @return verdict about the packet
  */
-enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
+enum net_verdict net_if_try_send_data(struct net_if *iface,
+				      struct net_pkt *pkt, k_timeout_t timeout);
+
+/**
+ * @brief Send a packet through a net iface
+ *
+ * This is equivalent to net_if_try_queue_tx with an infinite timeout
+ * @param iface Pointer to a network interface structure
+ * @param pkt Pointer to a net packet to send
+ *
+ * @return verdict about the packet
+ */
+static inline enum net_verdict net_if_send_data(struct net_if *iface,
+						struct net_pkt *pkt)
+{
+	k_timeout_t timeout = k_is_in_isr() ? K_NO_WAIT : K_FOREVER;
+
+	return net_if_try_send_data(iface, pkt, timeout);
+}
 
 /**
  * @brief Get a pointer to the interface L2
@@ -993,12 +1012,27 @@ static inline const struct device *net_if_get_device(struct net_if *iface)
 }
 
 /**
- * @brief Queue a packet to the net interface TX queue
+ * @brief Try enqueuing a packet to the net interface TX queue
  *
  * @param iface Pointer to a network interface structure
  * @param pkt Pointer to a net packet to queue
+ * @param timeout Timeout for the enqueuing attempt
  */
-void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
+void net_if_try_queue_tx(struct net_if *iface, struct net_pkt *pkt, k_timeout_t timeout);
+
+/**
+ * @brief Queue a packet to the net interface TX queue
+ *
+ * This is equivalent to net_if_try_queue_tx with an infinite timeout
+ * @param iface Pointer to a network interface structure
+ * @param pkt Pointer to a net packet to queue
+ */
+static inline void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
+{
+	k_timeout_t timeout = k_is_in_isr() ? K_NO_WAIT : K_FOREVER;
+
+	net_if_try_queue_tx(iface, pkt, timeout);
+}
 
 /**
  * @brief Return the IP offload status

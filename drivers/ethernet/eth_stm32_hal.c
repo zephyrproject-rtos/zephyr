@@ -729,6 +729,11 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 				net_eth_carrier_on(get_iface(dev_data));
 			}
 			while ((pkt = eth_rx(dev)) != NULL) {
+				if (ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PNIO) {
+					/* NET_PRIORITY_NC = 7 is Network control (highest priority) */
+					net_pkt_set_priority(pkt, NET_PRIORITY_NC);
+				}
+
 				iface = net_pkt_iface(pkt);
 #if defined(CONFIG_NET_DSA)
 				iface = dsa_net_recv(iface, &pkt);
