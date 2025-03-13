@@ -178,12 +178,14 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 	/*
 	 * Handle alternate function.
 	 */
-	if (reg_func3_gcr != NULL) {
-		*reg_func3_gcr &= ~gpio->func3_en_mask[pin];
-	}
-	/* Ensure that func3-ext setting is in default state. */
-	if (reg_func3_ext != NULL) {
-		*reg_func3_ext &= ~gpio->func3_ext_mask[pin];
+	if (pins->alt_func == IT8XXX2_ALT_FUNC_3) {
+		if (reg_func3_gcr != NULL) {
+			*reg_func3_gcr &= ~gpio->func3_en_mask[pin];
+		}
+		/* Ensure that func3-ext setting is in default state. */
+		if (reg_func3_ext != NULL) {
+			*reg_func3_ext &= ~gpio->func3_ext_mask[pin];
+		}
 	}
 
 	switch (pins->alt_func) {
@@ -291,7 +293,7 @@ static int pinctrl_kscan_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
+#if defined(CONFIG_SOC_IT8XXX2_REG_SET_V1) || defined(CONFIG_SOC_SERIES_IT51XXX)
 	uint8_t pin_mask = BIT(pins->pin);
 	volatile uint8_t *reg_gctrl = ksi_kso->reg_gctrl;
 

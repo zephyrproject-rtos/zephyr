@@ -1,0 +1,5 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_IT515XX_EVB
+	select SOC_IT51526AW

@@ -1,0 +1,17 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_IT51XXX
+	bool "ITE IT51XXX clock controller driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_ECPM_ENABLED
+	help
+	  This option enables the clock controller driver for IT51XXX.
+
+if CLOCK_CONTROL_IT51XXX
+
+config IT51XXX_PLL_SEQUENCE_PRIORITY
+	int
+	default 1
+
+endif # CLOCK_CONTROL_IT51XXX

@@ -1,0 +1,48 @@
+# ITE Voltage Comparator driver configuration options
+
+# Copyright (c) 2025 ITE Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config VCMP_IT51XXX
+	bool "ITE it51xxx Voltage Comparator"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_VCMP_ENABLED
+	depends on SOC_IT51XXX && ADC_ITE_IT51XXX
+	help
+	  This option enables the ITE it51xxx voltage comparator,
+	  it51xxx supports three 10-bit resolution voltage comparator
+	  channels, and the input of each comparator comes from ADC pin.
+
+if VCMP_IT51XXX
+
+config VCMP_IT51XXX_INIT_PRIORITY
+	int "ITE it51xxx voltage comparator device instance init priority"
+	default SENSOR_INIT_PRIORITY
+	help
+	  This option sets ITE voltage comparator device instance init priority.
+
+config VCMP_IT51xxx_WORKQUEUE
+	bool "ITE it51xxx voltage comparator threshold detection uses internal work queue"
+	help
+	  Threshold detection ISR utilizes system work queue for calling
+	  trigger handlers; set this option to use dedicated work queue instead.
+
+if VCMP_IT51XXX_WORKQUEUE
+
+config VCMP_IT51XXX_WORKQUEUE_PRIORITY
+	int "ITE it51xxx voltage comparator threshold detection work queue priority"
+	default SYSTEM_WORKQUEUE_PRIORITY
+	help
+	  This option sets internal ITE voltage comparator threshold detection
+	  workqueue priority.
+
+config VCMP_IT51XXX_WORKQUEUE_STACK_SIZE
+	int "ITE it51xxx voltage comparator threshold detection work queue stack size"
+	default 768
+	help
+	  This option sets internal ITE voltage comparator threshold detection
+	  workqueue stack size.
+
+endif # VCMP_IT51XXX_WORKQUEUE
+
+endif # VCMP_IT51XXX

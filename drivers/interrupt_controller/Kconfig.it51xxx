@@ -1,0 +1,26 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_ITE_INTC
+	bool
+	help
+	  This option is selected when ITE_IT51XXX_INTC is enabled.
+
+config ITE_IT51XXX_INTC
+	def_bool DT_HAS_ITE_IT51XXX_INTC_ENABLED
+	depends on DT_HAS_ITE_IT51XXX_INTC_ENABLED
+	select HAS_ITE_INTC
+	help
+	  This option mainly collects several interrupts from modules.
+	  Configurable level-triggered and dege-triggered mode.
+	  Configurable interrupt polarity of triggered mode.
+	  Each interrupt source able to enabled/masked individually.
+
+config ITE_IT51XXX_WUC
+	bool "ITE it51xxx Wakeup controller (WUC) interface"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_WUC_ENABLED
+	help
+	  This option enables the wakeup controller interface for IT51XXX
+	  family.
+	  This is required for KSCAN, UART, eSPI, GPIO etc., interrupt support.
