@@ -89,7 +89,7 @@ static int btp_bap_broadcast_local_source_free(struct btp_bap_broadcast_local_so
 		return -EINVAL;
 	}
 
-	memset(&source, 0, sizeof(*source));
+	memset(source, 0, sizeof(*source));
 
 	return 0;
 }
