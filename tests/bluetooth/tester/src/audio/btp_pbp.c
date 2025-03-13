@@ -10,10 +10,13 @@
 
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pbp.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #define LOG_MODULE_NAME bttester_pbp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+
+#include "btp_bap_broadcast.h"
 
 #define PBP_EXT_ADV_METADATA_LEN_MAX 128
 
@@ -143,7 +146,6 @@ static int pbp_broadcast_source_adv_setup(void)
 
 	int err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	struct bt_data ext_ad[3];
-	struct bt_le_ext_adv *ext_adv = NULL;
 
 	if (err) {
 		LOG_ERR("Unable to generate broadcast ID: %d\n", err);
@@ -166,12 +168,29 @@ static int pbp_broadcast_source_adv_setup(void)
 	ext_ad[2].data_len = pba_buf.len;
 	ext_ad[2].data = pba_buf.data;
 
-	err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY, ext_ad,
-					     ARRAY_SIZE(ext_ad), NULL, 0, &gap_settings, &ext_adv);
-	if (err) {
-		LOG_ERR("Could not set up extended advertisement: %d", err);
-		return -EINVAL;
+	struct btp_bap_broadcast_local_source *source;
+
+	source = btp_bap_broadcast_local_source_from_src_id_get(0);
+
+	if (source->ext_adv == NULL) {
+		err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY, ext_ad,
+						     ARRAY_SIZE(ext_ad), NULL, 0, &gap_settings,
+						     &source->ext_adv);
+		if (err != 0) {
+			LOG_ERR("Could not set up extended advertisement: %d", err);
+			return -EINVAL;
+		}
+	} else {
+		err = bt_le_ext_adv_set_data(source->ext_adv, ext_ad, ARRAY_SIZE(ext_ad), NULL, 0);
+
+		if (err != 0) {
+			LOG_ERR("Could not set extended advertisement data: %d", err);
+			return -EINVAL;
+		}
 	}
+
+	source->broadcast_id = broadcast_id;
+	source->allocated = true;
 
 	return 0;
 }
