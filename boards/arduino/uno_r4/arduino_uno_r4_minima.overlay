@@ -4,10 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-#include "arduino_uno_r4_common.dtsi"
-#include "arduino_uno_r4_minima-pinctrl.dtsi"
-
 / {
 	model = "Arduino Uno R4 Minima";
 
