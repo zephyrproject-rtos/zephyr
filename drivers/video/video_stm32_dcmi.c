@@ -197,24 +197,18 @@ static inline int video_stm32_dcmi_is_fmt_valid(uint32_t pixelformat, uint32_t p
 	return 0;
 }
 
-static int video_stm32_dcmi_set_fmt(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_format *fmt)
+static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
 	int ret;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	ret = video_stm32_dcmi_is_fmt_valid(fmt->pixelformat, fmt->pitch, fmt->height);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = video_set_format(config->sensor_dev, ep, fmt);
+	ret = video_set_format(config->sensor_dev, fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -224,20 +218,18 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_get_fmt(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_format *fmt)
+static int video_stm32_dcmi_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
 	int ret;
 
-	if (fmt == NULL || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
+	if (fmt == NULL) {
 		return -EINVAL;
 	}
 
 	/* Align DCMI format with the one provided by the sensor */
-	ret = video_get_format(config->sensor_dev, ep, fmt);
+	ret = video_get_format(config->sensor_dev, fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -303,16 +295,10 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
 	return video_stream_start(config->sensor_dev);
 }
 
-static int video_stm32_dcmi_enqueue(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_buffer *vbuf)
+static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const uint32_t buffer_size = data->fmt.pitch * data->fmt.height;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	if (buffer_size > vbuf->size) {
 		return -EINVAL;
@@ -326,16 +312,10 @@ static int video_stm32_dcmi_enqueue(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_dequeue(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_buffer **vbuf,
-				  k_timeout_t timeout)
+static int video_stm32_dcmi_dequeue(const struct device *dev, struct video_buffer **vbuf,
+				    k_timeout_t timeout)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	*vbuf = k_fifo_get(&data->fifo_out, timeout);
 	if (*vbuf == NULL) {
@@ -345,32 +325,21 @@ static int video_stm32_dcmi_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_get_caps(const struct device *dev,
-				   enum video_endpoint_id ep,
-				   struct video_caps *caps)
+static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	/* DCMI produces full frames */
 	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	/* Forward the message to the sensor device */
-	return video_get_caps(config->sensor_dev, ep, caps);
+	return video_get_caps(config->sensor_dev, caps);
 }
 
-static int video_stm32_dcmi_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
-					 struct video_frmival_enum *fie)
+static int video_stm32_dcmi_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	int ret;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	ret = video_stm32_dcmi_is_fmt_valid(fie->format->pixelformat, fie->format->pitch,
 					    fie->format->height);
@@ -378,7 +347,7 @@ static int video_stm32_dcmi_enum_frmival(const struct device *dev, enum video_en
 		return ret;
 	}
 
-	ret = video_enum_frmival(config->sensor_dev, ep, fie);
+	ret = video_enum_frmival(config->sensor_dev, fie);
 	if (ret < 0) {
 		return ret;
 	}
@@ -402,8 +371,7 @@ static int video_stm32_dcmi_enum_frmival(const struct device *dev, enum video_en
 }
 
 #define STM32_DCMI_MAX_FRAME_DROP	4
-static int video_stm32_dcmi_set_frmival(const struct device *dev, enum video_endpoint_id ep,
-					struct video_frmival *frmival)
+static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
@@ -414,10 +382,6 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, enum video_end
 	uint64_t best_diff_nsec = INT32_MAX;
 	uint64_t diff_nsec = 0, a, b;
 	int best_capture_rate = 1;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	/*
 	 * Try to figure out a frameinterval setting allow to reach as close as
@@ -433,7 +397,7 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, enum video_end
 		fie.discrete.denominator = frmival->denominator * capture_rate;
 
 		a = video_frmival_nsec(&fie.discrete);
-		video_closest_frmival(config->sensor_dev, ep, &fie);
+		video_closest_frmival(config->sensor_dev, &fie);
 		b = video_frmival_nsec(&fie.discrete);
 		diff_nsec = a > b ? a - b : b - a;
 		if (diff_nsec < best_diff_nsec) {
@@ -455,17 +419,16 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, enum video_end
 
 	data->capture_rate = best_capture_rate;
 
-	return video_set_frmival(config->sensor_dev, ep, &best_sensor_frmival);
+	return video_set_frmival(config->sensor_dev, &best_sensor_frmival);
 }
 
-static int video_stm32_dcmi_get_frmival(const struct device *dev, enum video_endpoint_id ep,
-					struct video_frmival *frmival)
+static int video_stm32_dcmi_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
 	int ret;
 
-	ret = video_get_frmival(config->sensor_dev, ep, frmival);
+	ret = video_get_frmival(config->sensor_dev, frmival);
 	if (ret < 0) {
 		return ret;
 	}

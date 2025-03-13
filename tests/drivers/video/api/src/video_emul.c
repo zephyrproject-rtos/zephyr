@@ -28,7 +28,7 @@ ZTEST(video_common, test_video_format)
 	struct video_caps caps = {0};
 	struct video_format fmt = {0};
 
-	zexpect_ok(video_get_caps(imager_dev, VIDEO_EP_OUT, &caps));
+	zexpect_ok(video_get_caps(imager_dev, &caps));
 
 	/* Test all the formats listed in the caps, the min and max values */
 	for (size_t i = 0; caps.format_caps[i].pixelformat != 0; i++) {
@@ -36,40 +36,40 @@ ZTEST(video_common, test_video_format)
 
 		fmt.height = caps.format_caps[i].height_min;
 		fmt.width = caps.format_caps[i].width_min;
-		zexpect_ok(video_set_format(imager_dev, VIDEO_EP_OUT, &fmt));
-		zexpect_ok(video_get_format(imager_dev, VIDEO_EP_OUT, &fmt));
+		zexpect_ok(video_set_format(imager_dev, &fmt));
+		zexpect_ok(video_get_format(imager_dev, &fmt));
 		zexpect_equal(fmt.pixelformat, caps.format_caps[i].pixelformat);
 		zexpect_equal(fmt.width, caps.format_caps[i].width_min);
 		zexpect_equal(fmt.height, caps.format_caps[i].height_min);
 
 		fmt.height = caps.format_caps[i].height_max;
 		fmt.width = caps.format_caps[i].width_min;
-		zexpect_ok(video_set_format(imager_dev, VIDEO_EP_OUT, &fmt));
-		zexpect_ok(video_get_format(imager_dev, VIDEO_EP_OUT, &fmt));
+		zexpect_ok(video_set_format(imager_dev, &fmt));
+		zexpect_ok(video_get_format(imager_dev, &fmt));
 		zexpect_equal(fmt.pixelformat, caps.format_caps[i].pixelformat);
 		zexpect_equal(fmt.width, caps.format_caps[i].width_max);
 		zexpect_equal(fmt.height, caps.format_caps[i].height_min);
 
 		fmt.height = caps.format_caps[i].height_min;
 		fmt.width = caps.format_caps[i].width_max;
-		zexpect_ok(video_set_format(imager_dev, VIDEO_EP_OUT, &fmt));
-		zexpect_ok(video_get_format(imager_dev, VIDEO_EP_OUT, &fmt));
+		zexpect_ok(video_set_format(imager_dev, &fmt));
+		zexpect_ok(video_get_format(imager_dev, &fmt));
 		zexpect_equal(fmt.pixelformat, caps.format_caps[i].pixelformat);
 		zexpect_equal(fmt.width, caps.format_caps[i].width_min);
 		zexpect_equal(fmt.height, caps.format_caps[i].height_max);
 
 		fmt.height = caps.format_caps[i].height_max;
 		fmt.width = caps.format_caps[i].width_max;
-		zexpect_ok(video_set_format(imager_dev, VIDEO_EP_OUT, &fmt));
-		zexpect_ok(video_get_format(imager_dev, VIDEO_EP_OUT, &fmt));
+		zexpect_ok(video_set_format(imager_dev, &fmt));
+		zexpect_ok(video_get_format(imager_dev, &fmt));
 		zexpect_equal(fmt.pixelformat, caps.format_caps[i].pixelformat);
 		zexpect_equal(fmt.width, caps.format_caps[i].width_max);
 		zexpect_equal(fmt.height, caps.format_caps[i].height_max);
 	}
 
 	fmt.pixelformat = 0x00000000;
-	zexpect_not_ok(video_set_format(imager_dev, VIDEO_EP_OUT, &fmt));
-	zexpect_ok(video_get_format(imager_dev, VIDEO_EP_OUT, &fmt));
+	zexpect_not_ok(video_set_format(imager_dev, &fmt));
+	zexpect_ok(video_get_format(imager_dev, &fmt));
 	zexpect_not_equal(fmt.pixelformat, 0x00000000, "should not store wrong formats");
 }
 
@@ -79,14 +79,14 @@ ZTEST(video_common, test_video_frmival)
 	struct video_frmival_enum fie = {.format = &fmt};
 
 	/* Pick the current format for testing the frame interval enumeration */
-	zexpect_ok(video_get_format(imager_dev, VIDEO_EP_OUT, &fmt));
+	zexpect_ok(video_get_format(imager_dev, &fmt));
 
 	/* Do a first enumeration of frame intervals, expected to work */
-	zexpect_ok(video_enum_frmival(imager_dev, VIDEO_EP_OUT, &fie));
+	zexpect_ok(video_enum_frmival(imager_dev, &fie));
 	zexpect_equal(fie.index, 0, "fie's index should not increment on its own");
 
 	/* Test that every value of the frame interval enumerator can be applied */
-	for (fie.index = 0; video_enum_frmival(imager_dev, VIDEO_EP_OUT, &fie) == 0; fie.index++) {
+	for (fie.index = 0; video_enum_frmival(imager_dev, &fie) == 0; fie.index++) {
 		struct video_frmival q, a;
 		uint32_t min, max, step;
 
@@ -109,8 +109,8 @@ ZTEST(video_common, test_video_frmival)
 
 			/* Test every supported frame interval */
 			for (q.numerator = min; q.numerator <= max; q.numerator += step) {
-				zexpect_ok(video_set_frmival(imager_dev, VIDEO_EP_OUT, &q));
-				zexpect_ok(video_get_frmival(imager_dev, VIDEO_EP_OUT, &a));
+				zexpect_ok(video_set_frmival(imager_dev, &q));
+				zexpect_ok(video_get_frmival(imager_dev, &a));
 				zexpect_equal(video_frmival_nsec(&q), video_frmival_nsec(&a),
 					      "query %u/%u (%u nsec) answer %u/%u (%u nsec, sw)",
 					      q.numerator, q.denominator, video_frmival_nsec(&q),
@@ -120,8 +120,8 @@ ZTEST(video_common, test_video_frmival)
 		case VIDEO_FRMIVAL_TYPE_DISCRETE:
 			/* There is just one frame interval to test */
 			memcpy(&q, &fie.discrete, sizeof(q));
-			zexpect_ok(video_set_frmival(imager_dev, VIDEO_EP_OUT, &q));
-			zexpect_ok(video_get_frmival(imager_dev, VIDEO_EP_OUT, &a));
+			zexpect_ok(video_set_frmival(imager_dev, &q));
+			zexpect_ok(video_get_frmival(imager_dev, &a));
 
 			zexpect_equal(video_frmival_nsec(&fie.discrete), video_frmival_nsec(&a),
 				      "query %u/%u (%u nsec) answer %u/%u (%u nsec, discrete)",
@@ -150,14 +150,14 @@ ZTEST(video_common, test_video_vbuf)
 	struct video_buffer *vbuf = NULL;
 
 	/* Get a list of supported format */
-	zexpect_ok(video_get_caps(rx_dev, VIDEO_EP_OUT, &caps));
+	zexpect_ok(video_get_caps(rx_dev, &caps));
 
 	/* Pick set first format, just to use something supported */
 	fmt.pixelformat = caps.format_caps[0].pixelformat;
 	fmt.width = caps.format_caps[0].width_max;
 	fmt.height = caps.format_caps[0].height_max;
 	fmt.pitch = fmt.width * 2;
-	zexpect_ok(video_set_format(rx_dev, VIDEO_EP_OUT, &fmt));
+	zexpect_ok(video_set_format(rx_dev, &fmt));
 
 	/* Allocate a buffer, assuming prj.conf gives enough memory for it */
 	vbuf = video_buffer_alloc(fmt.pitch * fmt.height, K_NO_WAIT);
@@ -167,21 +167,21 @@ ZTEST(video_common, test_video_vbuf)
 	zexpect_ok(video_stream_start(rx_dev));
 
 	/* Enqueue a first buffer */
-	zexpect_ok(video_enqueue(rx_dev, VIDEO_EP_OUT, vbuf));
+	zexpect_ok(video_enqueue(rx_dev, vbuf));
 
 	/* Receive the completed buffer */
-	zexpect_ok(video_dequeue(rx_dev, VIDEO_EP_OUT, &vbuf, K_FOREVER));
+	zexpect_ok(video_dequeue(rx_dev, &vbuf, K_FOREVER));
 	zexpect_not_null(vbuf);
 	zexpect_equal(vbuf->bytesused, vbuf->size);
 
 	/* Enqueue back the same buffer */
-	zexpect_ok(video_enqueue(rx_dev, VIDEO_EP_OUT, vbuf));
+	zexpect_ok(video_enqueue(rx_dev, vbuf));
 
 	/* Process the remaining buffers */
-	zexpect_ok(video_flush(rx_dev, VIDEO_EP_OUT, false));
+	zexpect_ok(video_flush(rx_dev, false));
 
 	/* Expect the buffer to immediately be available */
-	zexpect_ok(video_dequeue(rx_dev, VIDEO_EP_OUT, &vbuf, K_FOREVER));
+	zexpect_ok(video_dequeue(rx_dev, &vbuf, K_FOREVER));
 	zexpect_not_null(vbuf);
 	zexpect_equal(vbuf->bytesused, vbuf->size);
 

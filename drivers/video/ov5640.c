@@ -767,8 +767,7 @@ static int ov5640_set_fmt_dvp(const struct ov5640_config *cfg)
 	return 0;
 }
 
-static int ov5640_set_frmival(const struct device *dev, enum video_endpoint_id ep,
-			      struct video_frmival *frmival)
+static int ov5640_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct ov5640_config *cfg = dev->config;
 	struct ov5640_data *drv_data = dev->data;
@@ -823,8 +822,7 @@ static int ov5640_set_frmival(const struct device *dev, enum video_endpoint_id e
 	return 0;
 }
 
-static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
-			  struct video_format *fmt)
+static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct ov5640_data *drv_data = dev->data;
 	const struct ov5640_config *cfg = dev->config;
@@ -906,11 +904,10 @@ static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	def_frmival.denominator = drv_data->cur_mode->def_frmrate;
 	def_frmival.numerator = 1;
 
-	return ov5640_set_frmival(dev, ep, &def_frmival);
+	return ov5640_set_frmival(dev, &def_frmival);
 }
 
-static int ov5640_get_fmt(const struct device *dev, enum video_endpoint_id ep,
-			  struct video_format *fmt)
+static int ov5640_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct ov5640_data *drv_data = dev->data;
 
@@ -919,8 +916,7 @@ static int ov5640_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int ov5640_get_caps(const struct device *dev, enum video_endpoint_id ep,
-			   struct video_caps *caps)
+static int ov5640_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = ov5640_is_dvp(dev) ? dvp_fmts : csi2_fmts;
 	return 0;
@@ -1177,8 +1173,7 @@ static int ov5640_get_volatile_ctrl(const struct device *dev, uint32_t id)
 	return 0;
 }
 
-static int ov5640_get_frmival(const struct device *dev, enum video_endpoint_id ep,
-			      struct video_frmival *frmival)
+static int ov5640_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	struct ov5640_data *drv_data = dev->data;
 
@@ -1192,8 +1187,7 @@ static int ov5640_get_frmival(const struct device *dev, enum video_endpoint_id e
 	return 0;
 }
 
-static int ov5640_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
-			       struct video_frmival_enum *fie)
+static int ov5640_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	uint8_t i = 0;
 
@@ -1430,7 +1424,7 @@ static int ov5640_init(const struct device *dev)
 		fmt.height = 720;
 	}
 	fmt.pitch = fmt.width * 2;
-	ret = ov5640_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = ov5640_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;
