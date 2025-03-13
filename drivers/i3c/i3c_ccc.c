@@ -255,6 +255,7 @@ int i3c_ccc_do_entas(const struct i3c_device_desc *target, uint8_t as)
 
 	ccc_tgt_payload.addr = target->dynamic_addr;
 	ccc_tgt_payload.rnw = 0;
+	ccc_tgt_payload.data_len = 0;
 
 	ccc_payload.ccc.id = I3C_CCC_ENTAS(as, false);
 	ccc_payload.targets.payloads = &ccc_tgt_payload;
