@@ -152,6 +152,51 @@ extern "C" {
  * recursive expansion does not work.
  */
 
+ /**
+ * @brief Check multiple macro definitions to see if any is set in
+ *        compiler-visible expressions
+ *
+ * This utilizes the same methodology as @ref IS_ENABLED but on an variable number
+ * of argument. It will resolve as true (1) if any of the arguments in the input
+ * are defined and set to 1.
+ *
+ * Example usage:
+ *
+ *     if (IS_ENABLED_ANY(CONFIG_FOO, CONFIG_BAR)) {
+ *             do_something_if_any_of_these
+ *     }
+ *
+ * This is cleaner since the compiler can generate errors and warnings
+ * for @p do_something_if_any_of_these even when @p CONFIG_FOO and/or
+ * @p CONFIG_BAR is undefined.
+ *
+ * @param ... Arguments to check if at least one is defined and set to 1
+ * @return 1 if at least one param in @p ... is defined and set to 1, otherwise 0
+ */
+#define IS_ENABLED_ANY(...) IS_ENABLED_ANY_(__VA_ARGS__)
+
+ /**
+ * @brief Check multiple macro definitions to see if all are set in
+ *        compiler-visible expressions
+ *
+ * This utilizes the same methodology as @ref IS_ENABLED but on an variable number
+ * of argument. It will resolve as true (1) if all of the arguments in the input
+ * are defined and set to 1.
+ *
+ * Example usage:
+ *
+ *     if (IS_ENABLED_ALL(CONFIG_FOO, CONFIG_BAR)) {
+ *             do_something_if_all_of_these
+ *     }
+ *
+ * This is cleaner since the compiler can generate errors and warnings
+ * for @p do_something_if_all_of_these even when @p CONFIG_FOO and/or
+ * @p CONFIG_BAR is undefined.
+ *
+ * @param ... Arguments to check if all are defined and set to 1
+ * @return 1 if all params in @p ... are defined and set to 1, otherwise 0
+ */
+ #define IS_ENABLED_ALL(...) IS_ENABLED_ALL_(__VA_ARGS__)
 /**
  * @brief Insert code depending on whether @p _flag expands to 1 or not.
  *

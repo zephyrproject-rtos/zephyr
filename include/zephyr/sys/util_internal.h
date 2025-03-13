@@ -49,6 +49,47 @@
  */
 #define Z_IS_ENABLED3(ignore_this, val, ...) val
 
+/* Helper macro for IS_ENABLED_ANY */
+#define IS_ENABLED_ANY_(...) 												\
+	IS_ENABLED_ANY_N_(NUM_VA_ARGS(__VA_ARGS__), __VA_ARGS__)
+#define IS_ENABLED_ANY_N_(N, ...) UTIL_CAT(IS_ENABLED_ANY_, N)(__VA_ARGS__)
+#define IS_ENABLED_ANY_0(...)
+#define IS_ENABLED_ANY_1(a, ...)  COND_CODE_1(a, (1), (0))
+#define IS_ENABLED_ANY_2(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_1(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_3(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_2(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_4(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_3(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_5(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_4(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_6(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_5(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_7(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_6(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_8(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_7(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_9(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_8(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_10(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_9(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_11(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_10(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_12(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_11(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_13(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_12(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_14(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_13(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_15(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_14(__VA_ARGS__,)))
+
+/* Helper macro for IS_ENABLED_ALL */
+#define IS_ENABLED_ALL_(...) 												\
+	IS_ENABLED_ALL_N_(NUM_VA_ARGS(__VA_ARGS__), __VA_ARGS__)
+#define IS_ENABLED_ALL_N_(N, ...) UTIL_CAT(IS_ENABLED_ALL_, N)(__VA_ARGS__)
+#define IS_ENABLED_ALL_0(...)
+#define IS_ENABLED_ALL_1(a, ...)  COND_CODE_1(a, (1), (0))
+#define IS_ENABLED_ALL_2(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_1(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_3(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_2(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_4(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_3(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_5(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_4(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_6(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_5(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_7(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_6(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_8(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_7(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_9(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_8(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_10(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_9(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_11(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_10(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_12(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_11(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_13(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_12(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_14(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_13(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_15(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_14(__VA_ARGS__,)), (0))
 /* Implementation of IS_EQ(). Returns 1 if _0 and _1 are the same integer from
  * 0 to 4096, 0 otherwise.
  */
