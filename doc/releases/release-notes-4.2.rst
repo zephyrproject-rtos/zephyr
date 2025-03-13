@@ -95,6 +95,8 @@ New APIs and options
 
   * :c:func:`display_clear`
 
+    * LE Connection Subrating is no longer experimental.
+
 New Boards
 **********
 
