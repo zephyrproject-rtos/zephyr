@@ -1,20 +1,20 @@
 /*
- * Copyright (c) 2024 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ * Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 #include "arduino_uno_r4_common.dtsi"
-#include "arduino_uno_r4_wifi-pinctrl.dtsi"
+#include "arduino_uno_r4-pinctrl.dtsi"
 
 / {
-	model = "Arduino Uno R4 WiFi";
+	model = "Arduino Uno R4 Minima";
 
 	leds {
 		compatible = "gpio-leds";
 		led: led {
-			gpios = <&ioport1 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&ioport1 11 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -35,18 +35,18 @@
 			   <5 0 &ioport1 0 0>,    /* A5 */
 			   <6 0 &ioport3 1 0>,    /* D0 */
 			   <7 0 &ioport3 2 0>,    /* D1 */
-			   <8 0 &ioport1 4 0>,    /* D2 */
-			   <9 0 &ioport1 5 0>,    /* D3 */
-			   <10 0 &ioport1 6 0>,   /* D4 */
-			   <11 0 &ioport1 7 0>,   /* D5 */
-			   <12 0 &ioport1 11 0>,  /* D6 */
-			   <13 0 &ioport1 12 0>,  /* D7 */
+			   <8 0 &ioport1 5 0>,    /* D2 */
+			   <9 0 &ioport1 4 0>,    /* D3 */
+			   <10 0 &ioport1 3 0>,   /* D4 */
+			   <11 0 &ioport1 2 0>,   /* D5 */
+			   <12 0 &ioport1 6 0>,   /* D6 */
+			   <13 0 &ioport1 7 0>,   /* D7 */
 			   <14 0 &ioport3 4 0>,   /* D8 */
 			   <15 0 &ioport3 3 0>,   /* D9 */
-			   <16 0 &ioport1 3 0>,   /* D10 */
-			   <17 0 &ioport4 11 0>,  /* D11 */
-			   <18 0 &ioport4 10 0>,  /* D12 */
-			   <19 0 &ioport1 2 0>,   /* D13 */
+			   <16 0 &ioport1 12 0>,  /* D10 */
+			   <17 0 &ioport1 9 0>,   /* D11 */
+			   <18 0 &ioport1 10 0>,  /* D12 */
+			   <19 0 &ioport1 11 0>,  /* D13 */
 			   <20 0 &ioport1 1 0>,   /* D14 */
 			   <21 0 &ioport1 0 0>;   /* D15 */
 	};
