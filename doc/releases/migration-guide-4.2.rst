@@ -510,6 +510,12 @@ Video
 
 * video_endpoint_id enum has been dropped. It is no longer a parameter in any video API.
 
+* video_buf_type enum has been added. It is a required parameter in the following video APIs:
+
+  ``set_stream``
+  ``video_stream_start``
+  ``video_stream_stop``
+
 Other subsystems
 ****************
 

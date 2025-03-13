@@ -23,6 +23,7 @@ int main(void)
 	const struct device *display_dev;
 	struct video_format fmt;
 	struct video_caps caps;
+	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
 	const struct device *video_dev;
 	size_t bsize;
 	int i = 0;
@@ -50,6 +51,7 @@ int main(void)
 	LOG_INF("- Device name: %s", video_dev->name);
 
 	/* Get capabilities */
+	caps.type = type;
 	if (video_get_caps(video_dev, &caps)) {
 		LOG_ERR("Unable to retrieve video capabilities");
 		return 0;
@@ -68,6 +70,7 @@ int main(void)
 	}
 
 	/* Get default/native format */
+	fmt.type = type;
 	if (video_get_format(video_dev, &fmt)) {
 		LOG_ERR("Unable to retrieve video format");
 		return 0;
@@ -102,7 +105,7 @@ int main(void)
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
 		}
-
+		buffers[i]->type = type;
 		video_enqueue(video_dev, buffers[i]);
 	}
 
@@ -119,7 +122,7 @@ int main(void)
 	}
 
 	/* Start video capture */
-	if (video_stream_start(video_dev)) {
+	if (video_stream_start(video_dev, type)) {
 		LOG_ERR("Unable to start capture (interface)");
 		return 0;
 	}
@@ -139,6 +142,7 @@ int main(void)
 	LOG_INF("- Capture started");
 
 	/* Grab video frames */
+	vbuf->type = type;
 	while (1) {
 		int err;
 

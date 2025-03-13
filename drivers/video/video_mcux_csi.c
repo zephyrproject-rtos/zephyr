@@ -194,7 +194,8 @@ static int video_mcux_csi_get_fmt(const struct device *dev, struct video_format 
 	return -EIO;
 }
 
-static int video_mcux_csi_set_stream(const struct device *dev, bool enable)
+static int video_mcux_csi_set_stream(const struct device *dev, bool enable,
+				     enum video_buf_type type)
 {
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
@@ -206,11 +207,11 @@ static int video_mcux_csi_set_stream(const struct device *dev, bool enable)
 			return -EIO;
 		}
 
-		if (config->source_dev && video_stream_start(config->source_dev)) {
+		if (config->source_dev && video_stream_start(config->source_dev, type)) {
 			return -EIO;
 		}
 	} else {
-		if (config->source_dev && video_stream_stop(config->source_dev)) {
+		if (config->source_dev && video_stream_stop(config->source_dev, type)) {
 			return -EIO;
 		}
 

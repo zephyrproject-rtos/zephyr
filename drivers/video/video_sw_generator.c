@@ -95,7 +95,8 @@ static int video_sw_generator_get_fmt(const struct device *dev, struct video_for
 	return 0;
 }
 
-static int video_sw_generator_set_stream(const struct device *dev, bool enable)
+static int video_sw_generator_set_stream(const struct device *dev, bool enable,
+					 enum video_buf_type type)
 {
 	struct video_sw_generator_data *data = dev->data;
 
