@@ -955,7 +955,7 @@ class BoardSupportedHardwareDirective(SphinxDirective):
                         reftype="dtcompatible",
                         reftarget=key,
                         refexplicit=False,
-                        refwarn=True,
+                        refwarn=(not value.get("custom_binding", False)),
                     )
                     xref += nodes.literal(text=key)
                     compatible_entry += nodes.paragraph("", "", xref)
