@@ -84,3 +84,12 @@ tests:
       - CONFIG_BT_EXT_ADV=n
     tags: bluetooth
     harness: bluetooth
+  bluetooth.general.tester_br_edr:
+    build_only: true
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args:
+      - EXTRA_CONF_FILE="prj_br.conf"
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    tags: bluetooth
+    harness: bluetooth
