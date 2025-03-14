@@ -1,4 +1,4 @@
-identifier: adafruit_feather_esp32s2_tft/esp32s2
+identifier: adafruit_feather_esp32s2_tft
 name: Adafruit ESP32-S2 TFT Feather
 type: mcu
 arch: xtensa
