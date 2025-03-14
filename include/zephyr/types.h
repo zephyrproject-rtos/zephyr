@@ -49,14 +49,6 @@ typedef union {
 
 #ifdef __cplusplus
 }
-
-/*
- * Zephyr requires an int main(void) signature with C linkage for the
- * application main if present. However, main cannot exist inside
- * extern "C" linkage declarations, as that is forbidden by the C++
- * standard. See Section 6.9.3.1 of ISO/IEC 14882:2024.
- */
-extern int main(void);
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ZEPHYR_TYPES_H_ */
