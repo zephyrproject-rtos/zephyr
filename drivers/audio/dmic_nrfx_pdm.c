@@ -23,6 +23,11 @@ LOG_MODULE_REGISTER(dmic_nrfx_pdm, CONFIG_AUDIO_DMIC_LOG_LEVEL);
 #define DMIC_NRFX_CLOCK_FACTOR 4096
 #endif
 
+#define DMIC_NRFX_AUDIO_CLOCK_FREQ \
+	COND_CODE_1(CONFIG_SOC_NRF54L20, \
+		(DT_PROP_OR(DT_NODELABEL(aclk), clock_frequency, 0)), \
+		(DT_PROP_OR(DT_NODELABEL(clock), hfclkaudio_frequency, 0)))
+
 struct dmic_nrfx_pdm_drv_data {
 	const nrfx_pdm_t *pdm;
 	struct onoff_manager *clk_mgr;
@@ -191,9 +196,11 @@ static bool check_pdm_frequencies(const struct dmic_nrfx_pdm_drv_cfg *drv_cfg,
 {
 	uint32_t req_rate = pdm_cfg->streams[0].pcm_rate;
 	bool better_found = false;
-
+	const uint32_t src_freq =
+		(NRF_PDM_HAS_SELECTABLE_CLOCK && drv_cfg->clk_src == ACLK)
+		? DMIC_NRFX_AUDIO_CLOCK_FREQ
+		: DMIC_NRFX_CLOCK_FREQ;
 #if NRF_PDM_HAS_PRESCALER
-	uint32_t src_freq = 32 * 1000 * 1000UL;
 	uint32_t req_freq = req_rate * ratio;
 	uint32_t prescaler = src_freq / req_freq;
 	uint32_t act_freq = src_freq / prescaler;
@@ -224,24 +231,6 @@ static bool check_pdm_frequencies(const struct dmic_nrfx_pdm_drv_cfg *drv_cfg,
 	}
 #else
 	if (IS_ENABLED(CONFIG_SOC_SERIES_NRF53X) || IS_ENABLED(CONFIG_SOC_SERIES_NRF54HX)) {
-		const uint32_t src_freq =
-			(NRF_PDM_HAS_MCLKCONFIG && drv_cfg->clk_src == ACLK)
-			/* The DMIC_NRFX_PDM_DEVICE() macro contains build
-			 * assertions that make sure that the ACLK clock
-			 * source is only used when it is available and only
-			 * with the "hfclkaudio-frequency" property defined,
-			 * but the default value of 0 here needs to be used
-			 * to prevent compilation errors when the property is
-			 * not defined (this expression will be eventually
-			 * optimized away then).
-			 */
-			/* TODO : PS does not provide correct formula for nRF54H20 PDM_CLK.
-			 * Assume that master clock source frequency is 8 MHz. Remove once
-			 * correct formula is found.
-			 */
-			? DT_PROP_OR(DT_NODELABEL(clock), hfclkaudio_frequency,
-				     0)
-			: DMIC_NRFX_CLOCK_FREQ;
 		uint32_t req_freq = req_rate * ratio;
 		/* As specified in the nRF5340 PS:
 		 *
@@ -461,7 +450,7 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 		nrfx_cfg.edge = NRF_PDM_EDGE_LEFTRISING;
 		channel->act_chan_map_lo = alt_map;
 	}
-#if NRF_PDM_HAS_MCLKCONFIG
+#if NRF_PDM_HAS_SELECTABLE_CLOCK
 	nrfx_cfg.mclksrc = drv_cfg->clk_src == ACLK
 			 ? NRF_PDM_MCLKSRC_ACLK
 			 : NRF_PDM_MCLKSRC_PCLK32M;
@@ -695,13 +684,17 @@ static const struct _dmic_ops dmic_ops = {
 		.clk_src = PDM_CLK_SRC(idx),				     \
 		.mem_reg = DMM_DEV_TO_REG(PDM(idx)),			     \
 	};								     \
-	BUILD_ASSERT(PDM_CLK_SRC(idx) != ACLK || NRF_PDM_HAS_MCLKCONFIG,     \
+	BUILD_ASSERT(PDM_CLK_SRC(idx) != ACLK ||			     \
+		     NRF_PDM_HAS_SELECTABLE_CLOCK,			     \
 		"Clock source ACLK is not available.");			     \
 	BUILD_ASSERT(PDM_CLK_SRC(idx) != ACLK ||			     \
 		     DT_NODE_HAS_PROP(DT_NODELABEL(clock),		     \
-				      hfclkaudio_frequency),		     \
+				      hfclkaudio_frequency) ||		     \
+		     DT_NODE_HAS_PROP(DT_NODELABEL(aclk),		     \
+				      clock_frequency),			     \
 		"Clock source ACLK requires the hfclkaudio-frequency "	     \
-		"property to be defined in the nordic,nrf-clock node.");     \
+		"property to be defined in the nordic,nrf-clock node "	     \
+		"or clock-frequency property to be defined in aclk node");   \
 	DEVICE_DT_DEFINE(PDM(idx), pdm_nrfx_init##idx, NULL,		     \
 			 &dmic_nrfx_pdm_data##idx, &dmic_nrfx_pdm_cfg##idx,  \
 			 POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY,	     \
