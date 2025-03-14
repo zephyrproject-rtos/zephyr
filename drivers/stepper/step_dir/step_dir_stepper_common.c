@@ -329,6 +329,15 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 	return 0;
 }
 
+int step_dir_stepper_common_stop(const struct device *dev)
+{
+	const struct step_dir_stepper_common_config *config = dev->config;
+
+	config->timing_source->stop(dev);
+	stepper_trigger_callback(dev, STEPPER_EVENT_STOPPED);
+	return gpio_pin_set_dt(&config->step_pin, 1);
+}
+
 int step_dir_stepper_common_set_event_callback(const struct device *dev,
 					       stepper_event_callback_t callback, void *user_data)
 {
