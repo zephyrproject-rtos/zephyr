@@ -16,4 +16,5 @@ supported:
   - dma
 vendor: adafruit
 testing:
-  default: true
+  ignore_tags:
+    - bluetooth

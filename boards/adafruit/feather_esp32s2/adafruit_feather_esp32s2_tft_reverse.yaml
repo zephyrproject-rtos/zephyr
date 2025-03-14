@@ -18,4 +18,5 @@ supported:
   - fuel_gauge
 vendor: adafruit
 testing:
-  default: true
+  ignore_tags:
+    - bluetooth

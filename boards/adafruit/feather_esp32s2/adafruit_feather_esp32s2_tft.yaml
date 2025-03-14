@@ -17,4 +17,5 @@ supported:
   - display
 vendor: adafruit
 testing:
-  default: true
+  ignore_tags:
+    - bluetooth
