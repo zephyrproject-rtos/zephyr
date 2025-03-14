@@ -241,13 +241,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(settings_cmds,
 		"Delete a specific setting\n"
 		"Usage: settings delete <name>",
 		cmd_delete, 2, 0),
-	SHELL_SUBCMD_SET_END);
+	SHELL_SUBCMD_SET_END /* Array terminated. */
+);
 
-static int cmd_settings(const struct shell *shell_ptr, size_t argc, char **argv)
-{
-	shell_error(shell_ptr, "%s unknown parameter: %s", argv[0], argv[1]);
-	return -EINVAL;
-}
-
-SHELL_CMD_ARG_REGISTER(settings, &settings_cmds, "Settings shell commands",
-		       cmd_settings, 2, 0);
+SHELL_CMD_REGISTER(settings, &settings_cmds, "Settings commands", NULL);
