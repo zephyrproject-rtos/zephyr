@@ -71,7 +71,7 @@ static int tmc22xx_stepper_set_micro_step_res(const struct device *dev,
 	}
 
 	LOG_ERR("Unsupported microstep resolution: %d", micro_step_res);
-	return -EINVAL;
+	return -ENOTSUP;
 }
 
 static int tmc22xx_stepper_get_micro_step_res(const struct device *dev,

@@ -4,6 +4,7 @@ common:
     - drivers
     - wifi
     - net
+    - nrf_wifi
   platform_allow:
     - nrf7002dk/nrf5340/cpuapp
 tests:

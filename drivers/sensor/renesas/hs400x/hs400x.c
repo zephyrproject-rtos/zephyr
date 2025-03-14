@@ -80,9 +80,9 @@ static int hs400x_sample_fetch(const struct device *dev, enum sensor_channel cha
 
 	/*
 	 * According to datasheet maximum time to make temperature and humidity
-	 * measurements is 33ms, add a little safety margin...
+	 * measurements is 1.7 ms, add a little safety margin...
 	 */
-	k_msleep(50);
+	k_msleep(3);
 
 	rc = hs400x_read_sample(dev, &data->t_sample, &data->rh_sample);
 	if (rc < 0) {
@@ -137,14 +137,44 @@ static int hs400x_channel_get(const struct device *dev, enum sensor_channel chan
 	return 0;
 }
 
+static void hs400x_all_measurements_stop(const struct device *dev)
+{
+	const struct hs400x_config *cfg = dev->config;
+	const uint8_t periodic_measurement_stop = 0x30;
+	uint8_t dummy[2];
+
+	/*
+	 * Stop previous periodic measurement.
+	 * If a periodic measurement is not running, HS400x device replies with NACK.
+	 */
+	i2c_write_dt(&cfg->bus, &periodic_measurement_stop, 1);
+
+	/*
+	 * Clear previous no-hold measurement.
+	 * If a measurement is not complete, HS400x device replies with NACK.
+	 */
+	i2c_read_dt(&cfg->bus, dummy, 2);
+}
+
 static int hs400x_init(const struct device *dev)
 {
 	const struct hs400x_config *cfg = dev->config;
+	const uint8_t reset_command = 0xFE;
+	int rc;
 
 	if (!i2c_is_ready_dt(&cfg->bus)) {
 		LOG_ERR("I2C dev %s not ready", cfg->bus.bus->name);
 		return -ENODEV;
 	}
+
+	hs400x_all_measurements_stop(dev);
+
+	rc = i2c_write_dt(&cfg->bus, &reset_command, 1);
+	if (rc < 0) {
+		LOG_ERR("Failed to send reset command.");
+		return rc;
+	}
+	k_msleep(500);
 
 	return 0;
 }

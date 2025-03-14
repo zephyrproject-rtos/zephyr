@@ -287,7 +287,7 @@ void hci_recv_fifo_reset(void)
 	 * reinitialize the queue so it is empty, we use the cancel wait and
 	 * initialize the queue. As the Tx thread and Rx thread are co-operative
 	 * we should be relatively safe doing the below.
-	 * Added k_sched_lock and k_sched_unlock, as native_posix seems to
+	 * Added k_sched_lock and k_sched_unlock, as native_sim seems to
 	 * swap to waiting thread on call to k_fifo_cancel_wait!.
 	 */
 	k_sched_lock();

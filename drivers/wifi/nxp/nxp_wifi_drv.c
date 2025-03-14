@@ -716,7 +716,7 @@ static int nxp_wifi_process_results(unsigned int count)
 		res.security = WIFI_SECURITY_TYPE_NONE;
 
 		if (scan_result.wpa2_entp) {
-			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+			res.security = WIFI_SECURITY_TYPE_EAP;
 		}
 		if (scan_result.wpa2) {
 			res.security = WIFI_SECURITY_TYPE_PSK;
@@ -730,13 +730,13 @@ static int nxp_wifi_process_results(unsigned int count)
 
 		if (scan_result.wpa3_entp) {
 			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_ONLY;
-			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+			res.security = WIFI_SECURITY_TYPE_EAP;
 		} else if (scan_result.wpa3_1x_sha256) {
 			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_SUITEB;
-			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+			res.security = WIFI_SECURITY_TYPE_EAP;
 		} else if (scan_result.wpa3_1x_sha384) {
 			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_SUITEB_192;
-			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+			res.security = WIFI_SECURITY_TYPE_EAP;
 		}
 
 		if (scan_result.ap_mfpr) {

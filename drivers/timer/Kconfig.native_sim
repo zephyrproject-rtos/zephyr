@@ -1,0 +1,22 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config NATIVE_SIM_TIMER
+	bool "(POSIX) native_sim timer driver"
+	default y
+	depends on BOARD_NATIVE_SIM
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	help
+	  This module implements a kernel device driver for the native_sim HW timer model
+
+config NATIVE_POSIX_TIMER
+	bool "(POSIX) native_sim/posix timer driver (deprecated)"
+	select NATIVE_SIM_TIMER
+	select DEPRECATED
+	depends on BOARD_NATIVE_SIM
+	help
+	  Deprecated option. Replaced by NATIVE_SIM_TIMER

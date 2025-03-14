@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -328,8 +329,8 @@ static void connect_set(void)
 	}
 
 	bt_addr_le_to_str(&addr_found[0], addr, sizeof(addr));
-	err = bt_conn_le_create(&addr_found[0], BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM_DEFAULT, &conns[0]);
+	err = bt_conn_le_create(&addr_found[0], BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
+				&conns[0]);
 	if (err != 0) {
 		FAIL("Failed to connect to %s: %d\n", err);
 

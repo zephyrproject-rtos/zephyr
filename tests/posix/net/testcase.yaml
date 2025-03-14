@@ -5,7 +5,7 @@ common:
     - iface
     - net
     - posix
-  # 1 tier0 platform per supported architecture (dependent on netif support)
+  # dependent on netif support
   integration_platforms:
     - mps2/an385
     - qemu_x86

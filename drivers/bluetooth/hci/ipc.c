@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +25,7 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CO
 
 #define DT_DRV_COMPAT zephyr_bt_hci_ipc
 
-#define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
+#define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(CONFIG_BT_HCI_IPC_ENDPOINT_BOUND_TIMEOUT_MS)
 
 /* The retry of ipc_service_send function requires a small (tens of us) delay.
  * In order to ensure proper delay k_usleep is used when the system clock is
@@ -377,14 +378,6 @@ static int bt_ipc_close(const struct device *dev)
 {
 	struct ipc_data *ipc = dev->data;
 	int err;
-
-	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
-		if (err) {
-			LOG_ERR("Sending reset command failed with: %d", err);
-			return err;
-		}
-	}
 
 	err = ipc_service_deregister_endpoint(&ipc->hci_ept);
 	if (err) {

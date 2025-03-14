@@ -105,10 +105,10 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
-* Deprecated the :c:func:`net_buf_put` and :c:func:`net_buf_get` API functions in favor of
+* Deprecated the ``net_buf_put()`` and ``net_buf_get()`` API functions in favor of
   :c:func:`k_fifo_put` and :c:func:`k_fifo_get`.
 
-* The :ref:`kscan_api` subsystem has been marked as deprecated.
+* The ``kscan_api`` subsystem has been marked as deprecated.
 
 * Deprecated the TinyCrypt shim driver ``CONFIG_CRYPTO_TINYCRYPT_SHIM``.
 
@@ -118,8 +118,6 @@ Deprecated in this release
 * ``include/zephyr/net/buf.h`` is deprecated in favor of
   ``include/zephyr/net_buf.h>``. The old header will be removed in future releases
   and its usage should be avoided.
-
-* Deprecated the :c:func:`net_buf_put` and :c:func:`net_buf_get` API functions.
 
 Architectures
 *************

@@ -1,0 +1,12 @@
+tests:
+  sdp.c:
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
+      - sdp
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      fixture: usb_hci
+    timeout: 180

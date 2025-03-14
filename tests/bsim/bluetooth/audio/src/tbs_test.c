@@ -194,7 +194,7 @@ static int test_answer_terminate(void)
 	printk("Answering call\n");
 	err = bt_tbs_remote_answer(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
-		FAIL("Could not accept call: %d\n", err);
+		FAIL("Could not remote answer: %d\n", err);
 		return err;
 	}
 
@@ -223,7 +223,7 @@ static int test_hold_retrieve(void)
 
 	err = bt_tbs_remote_answer(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
-		FAIL("Could not accept call: %d\n", err);
+		FAIL("Could not remote answer: %d\n", err);
 		return err;
 	}
 

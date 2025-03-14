@@ -76,6 +76,12 @@ struct eth_context {
 };
 
 static const char *if_name_cmd_opt;
+#ifdef CONFIG_NET_IPV4
+static const char *ipv4_addr_cmd_opt;
+static const char *ipv4_nm_cmd_opt;
+static const char *ipv4_gw_cmd_opt;
+#endif
+
 
 #define DEFINE_RX_THREAD(x, _)						\
 	K_KERNEL_STACK_DEFINE(rx_thread_stack_##x,			\
@@ -301,6 +307,9 @@ static void eth_iface_init(struct net_if *iface)
 {
 	struct eth_context *ctx = net_if_get_device(iface)->data;
 	struct net_linkaddr *ll_addr = eth_get_mac(ctx);
+#ifdef CONFIG_NET_IPV4
+	struct in_addr addr, netmask;
+#endif
 
 	ctx->iface = iface;
 
@@ -360,7 +369,33 @@ static void eth_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
 
-	ctx->dev_fd = eth_iface_create(CONFIG_ETH_NATIVE_TAP_DEV_NAME, ctx->if_name, false);
+#ifdef CONFIG_NET_IPV4
+	if (ipv4_addr_cmd_opt != NULL) {
+		if (net_addr_pton(AF_INET, ipv4_addr_cmd_opt, &addr) == 0) {
+			net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
+
+			if (ipv4_nm_cmd_opt != NULL) {
+				if (net_addr_pton(AF_INET, ipv4_nm_cmd_opt, &netmask) == 0) {
+					net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
+				} else {
+					NET_ERR("Invalid netmask: %s", ipv4_nm_cmd_opt);
+				}
+			}
+		} else {
+			NET_ERR("Invalid address: %s", ipv4_addr_cmd_opt);
+		}
+	}
+
+	if (ipv4_gw_cmd_opt != NULL) {
+		if (net_addr_pton(AF_INET, ipv4_gw_cmd_opt, &addr) == 0) {
+			net_if_ipv4_set_gw(iface, &addr);
+		} else {
+			NET_ERR("Invalid gateway: %s", ipv4_gw_cmd_opt);
+		}
+	}
+#endif
+
+	ctx->dev_fd = eth_iface_create(CONFIG_ETH_NATIVE_POSIX_DEV_NAME, ctx->if_name, false);
 	if (ctx->dev_fd < 0) {
 		LOG_ERR("Cannot create %s (%d/%s)", ctx->if_name, ctx->dev_fd,
 			strerror(-ctx->dev_fd));
@@ -607,6 +642,32 @@ static void add_native_tap_options(void)
 			.dest = (void *)&if_name_cmd_opt,
 			.descript = "Name of the eth interface to use",
 		},
+#ifdef CONFIG_NET_IPV4
+		{
+			.is_mandatory = false,
+			.option = "ipv4-addr",
+			.name = "ipv4",
+			.type = 's',
+			.dest = (void *)&ipv4_addr_cmd_opt,
+			.descript = "IPv4 address",
+		},
+		{
+			.is_mandatory = false,
+			.option = "ipv4-gw",
+			.name = "ipv4",
+			.type = 's',
+			.dest = (void *)&ipv4_gw_cmd_opt,
+			.descript = "IPv4 gateway",
+		},
+		{
+			.is_mandatory = false,
+			.option = "ipv4-nm",
+			.name = "ipv4",
+			.type = 's',
+			.dest = (void *)&ipv4_nm_cmd_opt,
+			.descript = "IPv4 netmask",
+		},
+#endif
 		ARG_TABLE_ENDMARKER,
 	};
 

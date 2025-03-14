@@ -357,6 +357,7 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 			goto out;
 		}
 
+		ret = 0;
 		goto out;
 	}
 #endif

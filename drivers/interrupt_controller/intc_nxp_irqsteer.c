@@ -265,6 +265,18 @@ LOG_MODULE_REGISTER(nxp_irqstr);
 #define DISPATCHER_REGMAP(disp) \
 	(((const struct irqsteer_config *)disp->dev->config)->regmap_phys)
 
+#if defined(CONFIG_XTENSA)
+#define irqsteer_level1_irq_enable(irq)     xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq))
+#define irqsteer_level1_irq_disable(irq)    xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq))
+#define irqsteer_level1_irq_is_enabled(irq) xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq))
+#elif defined(CONFIG_ARM)
+#define irqsteer_level1_irq_enable(irq)     arm_irq_enable(irq)
+#define irqsteer_level1_irq_disable(irq)    arm_irq_disable(irq)
+#define irqsteer_level1_irq_is_enabled(irq) arm_irq_is_enabled(irq)
+#else
+#error ARCH not supported
+#endif
+
 struct irqsteer_config {
 	uint32_t regmap_phys;
 	uint32_t regmap_size;
@@ -295,7 +307,7 @@ static int to_zephyr_irq(uint32_t regmap, uint32_t irq,
 {
 	int i, idx;
 
-	idx = irq;
+	idx = irq - FSL_FEATURE_IRQSTEER_IRQ_START_INDEX;
 
 	for (i = dispatcher->master_index - 1; i >= 0; i--) {
 		idx -= IRQSTEER_GetMasterIrqCount(UINT_TO_IRQSTEER(regmap), i);
@@ -313,10 +325,10 @@ static int to_system_irq(uint32_t regmap, int irq, int master_index)
 		irq += IRQSTEER_GetMasterIrqCount(UINT_TO_IRQSTEER(regmap), i);
 	}
 
-	return irq;
+	return irq + FSL_FEATURE_IRQSTEER_IRQ_START_INDEX;
 }
 
-/* used to convert zephyr INTID to system INTID */
+/* used to convert zephyr INTID (level 2) to system INTID */
 static int from_zephyr_irq(uint32_t regmap, uint32_t irq, uint32_t master_index)
 {
 	int i, idx;
@@ -327,7 +339,7 @@ static int from_zephyr_irq(uint32_t regmap, uint32_t irq, uint32_t master_index)
 		idx += IRQSTEER_GetMasterIrqCount(UINT_TO_IRQSTEER(regmap), i);
 	}
 
-	return idx;
+	return idx + FSL_FEATURE_IRQSTEER_IRQ_START_INDEX;
 }
 
 static void _irqstr_disp_enable_disable(struct irqsteer_dispatcher *disp,
@@ -336,13 +348,11 @@ static void _irqstr_disp_enable_disable(struct irqsteer_dispatcher *disp,
 	uint32_t regmap = DISPATCHER_REGMAP(disp);
 
 	if (enable) {
-		xtensa_irq_enable(XTENSA_IRQ_NUMBER(disp->irq));
-
+		irqsteer_level1_irq_enable(disp->irq);
 		IRQSTEER_EnableMasterInterrupt(UINT_TO_IRQSTEER(regmap), disp->irq);
 	} else {
 		IRQSTEER_DisableMasterInterrupt(UINT_TO_IRQSTEER(regmap), disp->irq);
-
-		xtensa_irq_disable(XTENSA_IRQ_NUMBER(disp->irq));
+		irqsteer_level1_irq_disable(disp->irq);
 	}
 }
 
@@ -467,9 +477,9 @@ void z_soc_irq_enable_disable(uint32_t irq, bool enable)
 	if (irq_get_level(irq) == 1) {
 		/* LEVEL 1 interrupts are DSP direct */
 		if (enable) {
-			xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
+			irqsteer_level1_irq_enable(irq);
 		} else {
-			xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+			irqsteer_level1_irq_disable(irq);
 		}
 		return;
 	}
@@ -513,8 +523,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	bool enabled;
 
 	if (irq_get_level(irq) == 1) {
-		/* LEVEL 1 interrupts are DSP direct */
-		return xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
+		return irqsteer_level1_irq_is_enabled(irq);
 	}
 
 	parent_irq = irq_parent_level_2(irq);
@@ -538,6 +547,18 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	return false;
 }
 
+#if defined(CONFIG_ARM)
+void z_soc_irq_priority_set(unsigned int irq, unsigned int prio, unsigned int flags)
+{
+	uint32_t level1_irq = irq;
+
+	if (irq_get_level(irq) != 1) {
+		level1_irq = irq_parent_level_2(irq);
+	}
+
+	arm_irq_priority_set(level1_irq, prio, flags);
+}
+#endif
 
 static void irqsteer_isr_dispatcher(const void *data)
 {

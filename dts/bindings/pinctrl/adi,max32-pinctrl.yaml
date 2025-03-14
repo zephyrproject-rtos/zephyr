@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  MAX32 Pin controller Node
-  Based on pincfg-node.yaml binding.
+  MAX32 Pin Controller
 
+  Based on pincfg-node.yaml binding.
   Note: `bias-disable`  are default pin configurations.
 
 compatible: "adi,max32-pinctrl"

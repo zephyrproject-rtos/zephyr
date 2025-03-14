@@ -1,0 +1,12 @@
+# Renesas RZ Family
+
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_RENESAS_RZ
+	bool "Renesas RZ ADC Driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_ADC_ENABLED
+	select USE_RZ_FSP_ADC
+	help
+	  Enable the RZ ADC driver.

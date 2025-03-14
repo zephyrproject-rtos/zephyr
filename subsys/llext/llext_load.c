@@ -756,7 +756,9 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
-	llext_adjust_mmu_permissions(ext);
+	if (!ldr_parm->pre_located) {
+		llext_adjust_mmu_permissions(ext);
+	}
 
 out:
 	/*

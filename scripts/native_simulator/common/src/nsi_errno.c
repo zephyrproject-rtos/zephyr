@@ -128,3 +128,15 @@ int nsi_errno_from_mid(int err)
 
 	return err;
 }
+
+#if defined(NSI_RUNNER_BUILD)
+int nsi_get_errno_in_mid(void)
+{
+	return nsi_errno_to_mid(errno);
+}
+#endif
+
+int nsi_host_get_errno(void)
+{
+	return nsi_errno_from_mid(nsi_get_errno_in_mid());
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017,2021,2023-2024 NXP
+ * Copyright 2017,2021,2023-2025 NXP
  * Copyright (c) 2020 Softube
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -29,6 +29,12 @@
 LOG_MODULE_REGISTER(uart_mcux_lpuart, LOG_LEVEL_ERR);
 
 #define PINCTRL_STATE_FLOWCONTROL PINCTRL_STATE_PRIV_START
+
+#if defined(CONFIG_UART_LINE_CTRL) &&  \
+	defined(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT) && \
+	(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT)
+#define UART_LINE_CTRL_ENABLE
+#endif
 
 #if defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
 /* there are already going to be build errors, but at least this message will
@@ -1179,6 +1185,44 @@ static int mcux_lpuart_configure(const struct device *dev,
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
+#ifdef UART_LINE_CTRL_ENABLE
+static void mcux_lpuart_line_ctrl_set_rts(const struct mcux_lpuart_config *config,
+		uint32_t val)
+{
+	if (val >= 1U) {
+		/* Reset TXRTS to set RXRTSE bit, this provides high-level on RTS line */
+		config->base->MODIR &= ~(LPUART_MODIR_TXRTSPOL_MASK | LPUART_MODIR_TXRTSE_MASK);
+		config->base->MODIR |= LPUART_MODIR_RXRTSE_MASK;
+	} else {
+		/* Set TXRTSE to reset RXRTSE bit,this provide low-level on RTS line*/
+		config->base->MODIR &= ~(LPUART_MODIR_RXRTSE_MASK);
+		config->base->MODIR |= (LPUART_MODIR_TXRTSPOL_MASK | LPUART_MODIR_TXRTSE_MASK);
+	}
+}
+
+static int mcux_lpuart_line_ctrl_set(const struct device *dev,
+		uint32_t ctrl, uint32_t val)
+{
+	const struct mcux_lpuart_config *config = dev->config;
+	int ret = 0;
+
+	switch (ctrl) {
+	case UART_LINE_CTRL_RTS:
+		/* Disable Transmitter and Receiver */
+		config->base->CTRL &= ~(LPUART_CTRL_TE_MASK | LPUART_CTRL_RE_MASK);
+
+		mcux_lpuart_line_ctrl_set_rts(config, val);
+
+		break;
+
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif /* UART_LINE_CTRL_ENABLE */
+
 static int mcux_lpuart_init(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config;
@@ -1257,6 +1301,9 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 	.rx_buf_rsp = mcux_lpuart_rx_buf_rsp,
 	.rx_disable = mcux_lpuart_rx_disable,
 #endif /* CONFIG_UART_ASYNC_API */
+#ifdef UART_LINE_CTRL_ENABLE
+	.line_ctrl_set = mcux_lpuart_line_ctrl_set,
+#endif  /* UART_LINE_CTRL_ENABLE */
 };
 
 

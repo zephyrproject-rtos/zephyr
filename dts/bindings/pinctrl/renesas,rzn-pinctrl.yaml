@@ -1,0 +1,95 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: |
+    The Renesas RZ/N2L pin controller is a node responsible for controlling
+    pin function selection and pin properties, such as routing the TX and RX of UART0
+    to pin 5 and pin 6 of port 16.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+
+      /* include pre-defined combinations for the SoC variant used by the board */
+      #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzn-common.h>
+
+      &pinctrl {
+        uart0_pins: uart0 {
+          group1 {
+            pinmux = <RZN_PINMUX(PORT_16, 5, 1)>; /* TXD */
+          };
+          group2 {
+            pinmux = <RZN_PINMUX(PORT_16, 6, 2)>; /* RXD */
+            input-enable;
+          };
+        };
+      };
+
+    The 'uart0_pins' child node encodes the pin configurations for a
+    particular state of a device; in this case, the default (that is, active)
+    state.
+
+    As shown, pin configurations are organized in groups within each child node.
+    Each group can specify a list of pin function selections in the 'pinmux'
+    property.
+
+    A group can also specify shared pin properties common to all the specified
+    pins, such as the 'input-enable' property in group 2.
+
+compatible: "renesas,rzn-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Definitions for a pinctrl state.
+  child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-enable
+          - output-enable
+          - output-high
+          - bias-pull-up
+          - bias-pull-down
+          - input-schmitt-enable
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. Each
+          element of the array is an integer constructed from the
+          pin number and the alternative function of the pin.
+      drive-strength:
+        type: string
+        enum:
+          - "low"
+          - "middle"
+          - "high"
+          - "ultrahigh"
+        default: "low"
+        description: |
+          The drive strength of a pin, relative to full-driver strength.
+          The default value is "low", which is the reset value.
+      slew-rate:
+        type: string
+        enum:
+          - "slow"
+          - "fast"
+        default: "slow"
+        description: |
+          Select slew rate for a pin. The default is slow, which is the reset value.
