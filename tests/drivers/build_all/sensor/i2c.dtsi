@@ -1251,3 +1251,11 @@ test_i2c_xbr818: xbr818@aa {
 	int-gpios = <&test_gpio 0 0>;
 	i2c-en-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_icp201xx: icp201xx@ab {
+	compatible = "invensense,icp201xx";
+	reg = <0xab>;
+	int-gpios = <&test_gpio 0 0>;
+	op-mode = "mode0";
+	drive-strength = "current_12mA_1_8V";
+};
