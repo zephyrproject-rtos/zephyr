@@ -1,0 +1,7 @@
+tests:
+  subsys.crc:
+    depends_on: crc
+    tags:
+      - subsys
+      - crc
+    harness: ztest
