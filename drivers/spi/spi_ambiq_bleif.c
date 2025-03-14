@@ -23,15 +23,10 @@ LOG_MODULE_REGISTER(spi_ambiq_bleif);
 #include "spi_context.h"
 #include <am_mcu_apollo.h>
 
-#define PWRCTRL_MAX_WAIT_US 5
-
-typedef int (*ambiq_spi_pwr_func_t)(void);
-
 struct spi_ambiq_config {
 	uint32_t base;
 	int size;
 	const struct pinctrl_dev_config *pcfg;
-	ambiq_spi_pwr_func_t pwr_func;
 };
 
 struct spi_ambiq_data {
@@ -190,29 +185,18 @@ static int spi_ambiq_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = cfg->pwr_func();
-
 	return ret;
 }
 
 #define AMBIQ_SPI_BLEIF_INIT(n)                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static int pwr_on_ambiq_spi_##n(void)                                                      \
-	{                                                                                          \
-		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
-				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
-		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
-		k_busy_wait(PWRCTRL_MAX_WAIT_US);                                                  \
-		return 0;                                                                          \
-	}                                                                                          \
 	static struct spi_ambiq_data spi_ambiq_data##n = {                                         \
 		SPI_CONTEXT_INIT_LOCK(spi_ambiq_data##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx)};                                    \
 	static const struct spi_ambiq_config spi_ambiq_config##n = {                               \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.size = DT_INST_REG_SIZE(n),                                                       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.pwr_func = pwr_on_ambiq_spi_##n};                                                 \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                        \
 	SPI_DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, NULL, &spi_ambiq_data##n,                     \
 				  &spi_ambiq_config##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
 				  &spi_ambiq_driver_api);

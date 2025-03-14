@@ -8,11 +8,8 @@ description: |
 
 compatible: "ambiq,spi-bleif"
 
-include: [spi-controller.yaml, pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
-    required: true
-
-  ambiq,pwrcfg:
     required: true

@@ -5,7 +5,7 @@ description: Ambiq ADC node
 
 compatible: "ambiq,adc"
 
-include: [adc-controller.yaml, pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+include: [adc-controller.yaml, pinctrl-device.yaml]
 properties:
   reg:
     required: true

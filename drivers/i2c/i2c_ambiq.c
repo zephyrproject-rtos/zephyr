@@ -43,9 +43,6 @@
 
 LOG_MODULE_REGISTER(ambiq_i2c, CONFIG_I2C_LOG_LEVEL);
 
-typedef int (*ambiq_i2c_pwr_func_t)(void);
-
-#define PWRCTRL_MAX_WAIT_US       5
 #define I2C_TRANSFER_TIMEOUT_MSEC 500 /* Transfer timeout period */
 
 #include "i2c-priv.h"
@@ -59,7 +56,6 @@ struct i2c_ambiq_config {
 	int size;
 	uint32_t bitrate;
 	const struct pinctrl_dev_config *pcfg;
-	ambiq_i2c_pwr_func_t pwr_func;
 	void (*irq_config_func)(void);
 };
 
@@ -420,7 +416,7 @@ static int i2c_ambiq_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-	ret = config->pwr_func();
+	ret = am_hal_iom_power_ctrl(data->iom_handler, AM_HAL_SYSCTRL_WAKE, false);
 
 	ret |= i2c_ambiq_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
@@ -492,14 +488,6 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 
 #define AMBIQ_I2C_DEFINE(n)                                                                        \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static int pwr_on_ambiq_i2c_##n(void)                                                      \
-	{                                                                                          \
-		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
-				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
-		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
-		k_busy_wait(PWRCTRL_MAX_WAIT_US);                                                  \
-		return 0;                                                                          \
-	}                                                                                          \
 	static void i2c_irq_config_func_##n(void)                                                  \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_ambiq_isr,              \
@@ -517,7 +505,6 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = i2c_irq_config_func_##n,                                        \
-		.pwr_func = pwr_on_ambiq_i2c_##n,                                                  \
 		IF_ENABLED(CONFIG_I2C_AMBIQ_BUS_RECOVERY,			\
 		(.scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),\
 		 .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),)) };       \
