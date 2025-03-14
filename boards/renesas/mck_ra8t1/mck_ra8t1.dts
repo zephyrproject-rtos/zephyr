@@ -112,6 +112,8 @@
 &sci3 {
 	pinctrl-0 = <&sci3_default>;
 	pinctrl-names = "default";
+	interrupts = <0 12>, <1 12>, <2 12>, <3 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 	uart3: uart {
 		current-speed = <115200>;
@@ -137,6 +139,14 @@
 &spi0 {
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	interrupts = <4 12>, <5 12>, <6 12>, <7 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&flash {
+	interrupts = <8 1>, <9 1>;
+	interrupt-names = "frdyi", "fiferr";
 	status = "okay";
 };
 
@@ -155,17 +165,21 @@
 
 &pwm2 {
 	pinctrl-0 = <&pwm2_default>;
-	interrupts = <40 1>, <41 1>;
+	interrupts = <10 12>, <11 12>;
 	interrupt-names = "gtioca", "overflow";
 	pinctrl-names = "default";
 	status = "okay";
 };
 
 &canfd_global {
+	interrupts = <12 12>, <13 12>;
+	interrupt-names = "rxf", "glerr";
 	status = "okay";
 	canfd1 {
 		pinctrl-0 = <&canfd1_default>;
 		pinctrl-names = "default";
+		interrupts = <14 12>, <15 12>, <16 12>;
+		interrupt-names = "err", "tx", "rx";
 		rx-max-filters = <16>;
 		status = "okay";
 	};
@@ -177,9 +191,12 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+	interrupts = <17 12>, <18 12>, <19 12>, <20 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 };
 
 &eth {
+	interrupts = <21 0>;
 	local-mac-address = [74 90 50 6D 81 75];
 	status = "okay";
 	phy-handle = <&phy>;
@@ -201,6 +218,8 @@
 	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	interrupts = <22 12>;
+	interrupt-names = "scanend";
 	average-count = <4>;
 };
 
@@ -213,6 +232,8 @@
 &sdhc0 {
 	compatible = "renesas,ra-sdhc";
 	pinctrl-0 = <&sdhc0_default>;
+	interrupt-names = "accs", "card", "dma-req";
+	interrupts = <23 12>, <24 12>, <25 12>;
 	enable-gpios = <&ioport3 11 GPIO_ACTIVE_HIGH>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -226,6 +247,8 @@
 &usbfs {
 	pinctrl-0 = <&usbfs_default>;
 	pinctrl-names = "default";
+	interrupts = <26 12>, <27 12>;
+	interrupt-names = "usbfs-i", "usbfs-r";
 	maximum-speed = "full-speed";
 	status = "okay";
 	zephyr_udc0: udc {
@@ -238,6 +261,8 @@
 };
 
 &ulpt0 {
+	interrupt-names = "ulpti";
+	interrupts = <28 1>;
 	status = "okay";
 
 	timer {

@@ -232,6 +232,8 @@
 &sci0 {
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
+	interrupts = <0 12>, <1 12>, <2 12>, <3 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 	uart0: uart {
 		current-speed = <115200>;
@@ -253,6 +255,8 @@
 &sci2 {
 	pinctrl-0 = <&sci2_default>;
 	pinctrl-names = "default";
+	interrupts = <4 12>, <5 12>, <6 12>, <7 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 	uart2: uart {
 		current-speed = <115200>;
@@ -263,6 +267,8 @@
 &sci3 {
 	pinctrl-0 = <&sci3_default>;
 	pinctrl-names = "default";
+	interrupts = <8 12>, <9 12>, <10 12>, <11 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 	uart3: uart {
 		current-speed = <115200>;
@@ -273,6 +279,8 @@
 &sci9 {
 	pinctrl-0 = <&sci9_default>;
 	pinctrl-names = "default";
+	interrupts = <12 12>, <13 12>, <14 12>, <15 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 	uart9: uart {
 		current-speed = <115200>;
@@ -288,12 +296,16 @@ mikrobus_serial: &uart3 {};
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+	interrupts = <16 12>, <17 12>, <18 1>, <19 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 };
 
 &adc0 {
 	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	interrupts = <20 12>;
+	interrupt-names = "scanend";
 	average-count = <4>;
 };
 
@@ -310,14 +322,22 @@ mikrobus_serial: &uart3 {};
 &spi1 {
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+	interrupts = <21 12>, <22 12>, <23 12>, <24 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 };
 
 &pwm7 {
 	pinctrl-0 = <&pwm7_default>;
-	interrupts = <40 1>, <41 1>;
+	interrupts = <25 12>, <26 12>;
 	interrupt-names = "gtioca", "overflow";
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flash {
+	interrupts = <27 1>, <28 1>;
+	interrupt-names = "frdyi", "fiferr";
 	status = "okay";
 };
 
@@ -335,10 +355,14 @@ mikrobus_serial: &uart3 {};
 };
 
 &canfd_global {
+	interrupts = <29 1>, <30 1>;
+	interrupt-names = "rxf", "glerr";
 	status = "okay";
 	canfd0 {
 		pinctrl-0 = <&canfd0_default>;
 		pinctrl-names = "default";
+		interrupts = <31 12>, <32 12>, <33 12>;
+		interrupt-names = "err", "tx", "rx";
 		phys = <&transceiver0>;
 		rx-max-filters = <16>;
 		status = "okay";
@@ -352,6 +376,7 @@ pmod_serial: &pmod1_serial {};
 pmod_header: &pmod1_header {};
 
 &eth {
+	interrupts = <34 0>;
 	local-mac-address = [74 90 50 B0 6D 5A];
 	status = "okay";
 	phy-handle = <&phy>;
@@ -372,6 +397,8 @@ pmod_header: &pmod1_header {};
 &usbhs {
 	pinctrl-0 = <&usbhs_default>;
 	pinctrl-names = "default";
+	interrupts = <35 12>;
+	interrupt-names = "usbhs-ir";
 	maximum-speed = "high-speed";
 	status = "okay";
 	zephyr_udc0: udc {
@@ -384,12 +411,12 @@ pmod_header: &pmod1_header {};
 };
 
 &port_irq12 {
-	interrupts = <88 12>;
+	interrupts = <36 12>;
 	status = "okay";
 };
 
 &port_irq13 {
-	interrupts = <89 12>;
+	interrupts = <37 12>;
 	status = "okay";
 };
 
@@ -406,6 +433,8 @@ pmod_sd_shield: &sdhc0 {};
 };
 
 &ulpt0 {
+	interrupt-names = "ulpti";
+	interrupts = <38 1>;
 	status = "okay";
 
 	timer {
