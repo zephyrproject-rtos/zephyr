@@ -29,10 +29,34 @@ config MODEM_CMUX
 
 if MODEM_CMUX
 
+config MODEM_CMUX_DEFAULT_MTU_127
+	bool
+	default y if (DT_HAS_QUECTEL_BG95_ENABLED || DT_HAS_QUECTEL_EG25_G_ENABLED || \
+		      DT_HAS_SIMCOM_SIM7080_ENABLED || DT_HAS_U_BLOX_SARA_R4_ENABLED || \
+		      DT_HAS_U_BLOX_SARA_R5_ENABLED || DT_HAS_SWIR_HL7800_ENABLED || \
+		      DT_HAS_TELIT_ME910G1_ENABLED || DT_HAS_TELIT_ME310G1_ENABLED || \
+		      DT_HAS_SQN_GM02S_ENABLED)
+	help
+	  Use the default MTU size of 127 bytes for the CMUX module on certain modems.
+	  This must match the AT+CMUX commands in the modem_cellular driver.
+
+config MODEM_CMUX_MTU
+	int "CMUX MTU size in bytes"
+	range 16 1500
+	default 127 if MODEM_CMUX_DEFAULT_MTU_127
+	default 31
+	help
+	  Maximum Transmission Unit (MTU) size for the CMUX module.
+	  Linux ldattach defaults to 127 bytes, 3GPP TS 27.010 to 31.
+
 config MODEM_CMUX_WORK_BUFFER_SIZE
 	int "CMUX module work buffer size in bytes"
-	range 16 1500
-	default 64
+	range 23 1507
+	default 134 if MODEM_CMUX_DEFAULT_MTU_127
+	default 38
+	help
+	  Size of the work buffer used by the CMUX module.
+	  Recommended size is MODEM_CMUX_MTU + 7 (CMUX header size).
 
 module = MODEM_CMUX
 module-str = modem_cmux
