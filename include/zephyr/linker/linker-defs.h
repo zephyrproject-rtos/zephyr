@@ -44,10 +44,12 @@
  * (sorted by priority). Ensure the objects aren't discarded if there is
  * no direct reference to them
  */
+/* clang-format off */
 #define CREATE_OBJ_LEVEL(object, level)				\
 		__##object##_##level##_start = .;		\
 		KEEP(*(SORT(.z_##object##_##level?_*)));	\
 		KEEP(*(SORT(.z_##object##_##level??_*)));
+/* clang-format on */
 
 /*
  * link in shell initialization objects for all modules that use shell and
