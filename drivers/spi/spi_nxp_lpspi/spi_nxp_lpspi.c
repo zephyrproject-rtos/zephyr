@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 struct lpspi_driver_data {
 	size_t fill_len;
 	uint8_t word_size_bytes;
+	uint8_t lpspi_op_mode;
 };
 
 static inline uint8_t rx_fifo_cur_len(LPSPI_Type *base)
@@ -222,6 +223,25 @@ static inline void lpspi_handle_tx_irq(const struct device *dev)
 	lpspi_next_tx_fill(data->dev);
 }
 
+static inline void lpspi_handle_err051588(LPSPI_Type *base, uint32_t status_flags, uint8_t op_mode)
+{
+	if (op_mode != SPI_OP_MODE_SLAVE) {
+		/* this errata is only for slave mode */
+		return;
+	}
+
+	if (!(status_flags & LPSPI_SR_TEF_MASK)) {
+		/* the errata happens when transmit error (underrun) occurs */
+		return;
+	}
+
+	/* clear the w1c error flag as usual */
+	base->SR = LPSPI_SR_TEF_MASK;
+
+	/* workaround is to reset the transmit fifo before writing any new data */
+	base->CR |= LPSPI_CR_RTF_MASK;
+}
+
 static void lpspi_isr(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
@@ -230,12 +250,14 @@ static void lpspi_isr(const struct device *dev)
 	struct spi_mcux_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
+	uint8_t op_mode = lpspi_data->lpspi_op_mode;
 
 	if (status_flags & kLPSPI_RxDataReadyFlag) {
 		lpspi_handle_rx_irq(dev);
 	}
 
 	if (status_flags & kLPSPI_TxDataRequestFlag) {
+		lpspi_handle_err051588(base, status_flags, op_mode);
 		lpspi_handle_tx_irq(dev);
 	}
 
@@ -243,7 +265,7 @@ static void lpspi_isr(const struct device *dev)
 		return;
 	}
 
-	if (spi_context_rx_len_left(ctx) == 1) {
+	if (op_mode == SPI_OP_MODE_MASTER && spi_context_rx_len_left(ctx) == 1) {
 		base->TCR &= ~LPSPI_TCR_CONT_MASK;
 	} else if (spi_context_rx_on(ctx)) {
 		size_t rx_fifo_len = rx_fifo_cur_len(base);
@@ -269,9 +291,11 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
+	uint8_t op_mode = SPI_OP_MODE_GET(spi_cfg->operation);
 	int ret = 0;
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
@@ -284,26 +308,34 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	}
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, lpspi_data->word_size_bytes);
+	lpspi_data->lpspi_op_mode = op_mode;
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
 		goto error;
 	}
 
-	LPSPI_FlushFifo(base, true, true);
+	LPSPI_FlushFifo(base, false, true);
 	LPSPI_ClearStatusFlags(base, (uint32_t)kLPSPI_AllStatusFlag);
 	LPSPI_DisableInterrupts(base, (uint32_t)kLPSPI_AllInterruptEnable);
 
 	LOG_DBG("Starting LPSPI transfer");
 	spi_context_cs_control(ctx, true);
 
-	LPSPI_SetFifoWatermarks(base, 0, 0);
+	if (op_mode == SPI_OP_MODE_MASTER) {
+		LPSPI_SetFifoWatermarks(base, 0, 0);
+	} else {
+		LPSPI_SetFifoWatermarks(base, config->tx_fifo_size - 2, 0);
+	}
+
 	LPSPI_Enable(base, true);
 
-	/* keep the chip select asserted until the end of the zephyr xfer */
-	base->TCR |= LPSPI_TCR_CONT_MASK;
-	/* tcr is written to tx fifo */
-	lpspi_wait_tx_fifo_empty(dev);
+	if (op_mode == SPI_OP_MODE_MASTER) {
+		/* keep the chip select active until the end of the zephyr xfer */
+		base->TCR |= LPSPI_TCR_CONT_MASK;
+		/* tcr is written to tx fifo */
+		lpspi_wait_tx_fifo_empty(dev);
+	}
 
 	/* start the transfer sequence which are handled by irqs */
 	lpspi_next_tx_fill(dev);
@@ -312,7 +344,6 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 				     (uint32_t)kLPSPI_RxInterruptEnable);
 
 	return spi_context_wait_for_completion(ctx);
-
 error:
 	spi_context_release(ctx, ret);
 	return ret;
