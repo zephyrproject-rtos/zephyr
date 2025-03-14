@@ -1,4 +1,4 @@
-.. zephyr:board:: adafruit_feather
+.. zephyr:board:: adafruit_feather_esp32s2
 
 Overview
 ********
@@ -241,7 +241,7 @@ Build and flash applications as usual:
          :board: adafruit_feather_esp32s2_tft_reverse
          :goals: build
 
-The usual ``flash`` target will work with the ``adafruit_feather/esp32s2/...`` board
+The usual ``flash`` target will work with the ``adafruit_feather_esp32s2`` boards
 configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
@@ -302,7 +302,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! adafruit_feather/esp32s2/...
+   Hello World! adafruit_feather_esp32s2
 
 Debugging
 *********
