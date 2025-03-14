@@ -120,4 +120,12 @@ config NRF52_ANOMALY_109_WORKAROUND_EGU_INSTANCE
 	help
 	  EGU instance used by the nRF52 Anomaly 109 workaround for PWM.
 
+config NRF52_ANOMALY_219_WORKAROUND
+	bool "Anomaly 219 workaround"
+	depends on NRFX_TWIM
+	help
+	  Due to Anomaly 219 the low period of SCL clock is too short to meet
+	  the I2C specification at 400 kHz. This workaround configures the I2C
+	  frequency to 390 kHz instead of 400 kHz.
+
 endif # SOC_SERIES_NRF52X
