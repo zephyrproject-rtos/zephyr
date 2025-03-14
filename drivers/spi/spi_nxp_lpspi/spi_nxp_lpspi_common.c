@@ -10,6 +10,27 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi_common, CONFIG_SPI_LOG_LEVEL);
 #include "spi_nxp_lpspi_priv.h"
 
 static LPSPI_Type *const lpspi_bases[] = LPSPI_BASE_PTRS;
+
+#ifdef LPSPI_RSTS
+static const reset_ip_name_t lpspi_resets[] = LPSPI_RSTS;
+
+static inline reset_ip_name_t lpspi_get_reset(LPSPI_Type *const base)
+{
+	reset_ip_name_t rst = -1; /* invalid initial value */
+
+	ARRAY_FOR_EACH(lpspi_bases, idx) {
+		if (lpspi_bases[idx] == base) {
+			rst = lpspi_resets[idx];
+			break;
+		}
+	}
+
+	__ASSERT_NO_MSG(rst != -1);
+	return rst;
+
+}
+#endif
+
 static const clock_ip_name_t lpspi_clocks[] = LPSPI_CLOCKS;
 
 static inline clock_ip_name_t lpspi_get_clock(LPSPI_Type *const base)
@@ -155,6 +176,10 @@ int spi_nxp_init_common(const struct device *dev)
 	}
 
 	CLOCK_EnableClock(lpspi_get_clock(base));
+
+#ifdef LPSPI_RSTS
+	RESET_ReleasePeripheralReset(lpspi_get_reset(base));
+#endif
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
