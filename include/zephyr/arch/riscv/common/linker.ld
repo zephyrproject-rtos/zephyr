@@ -348,7 +348,7 @@ SECTIONS
 
     __data_region_end = .;
     
-	SECTION_DATA_PROLOGUE(_HTIF_SECTION_NAME,,)
+	SECTION_DATA_PROLOGUE(.htif,,)
 	{
 		. = ALIGN(0x100);
         KEEP(*(.htif))
