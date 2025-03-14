@@ -1641,7 +1641,7 @@ uint16_t bt_gatt_get_uatt_mtu(struct bt_conn *conn);
 
 /** @brief GATT Exchange MTU parameters
  *
- *  Used with @ref bt_gatt_exchange_mtu() to initiate an MTU exchange. The
+ *  Used with @ref bt_gatt_exchange_mtu function to initiate an MTU exchange. The
  *  response is handled in the callback @p func, which is called upon
  *  completion from the 'config BT_RECV_CONTEXT' context.
  *
@@ -1696,7 +1696,7 @@ struct bt_gatt_discover_params;
  *  The attribute object as well as its UUID and value objects are temporary and
  *  must be copied to in order to cache its information.
  *
- *  @note @ref bt_gatt_attr is given as an argument to bt_gatt_discover(), but
+ *  @note @ref bt_gatt_attr is given as an argument to @ref bt_gatt_discover function, but
  *  it's not a proper object of this type. @ref bt_gatt_attr.perm, and methods
  *  bt_gatt_attr.read() and bt_gatt_attr.write() are not available, and it's
  *  unsound to pass the pointer to GATT server APIs.
