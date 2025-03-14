@@ -31,8 +31,19 @@ if MODEM_CMUX
 
 config MODEM_CMUX_WORK_BUFFER_SIZE
 	int "CMUX module work buffer size in bytes"
+	range 23 1507
+	default 38
+	help
+	  Size of the work buffer used by the CMUX module.
+	  Recommended size is MODEM_CMUX_MTU + 7 (CMUX header size).
+
+config MODEM_CMUX_MTU
+	int "CMUX MTU size in bytes"
 	range 16 1500
-	default 64
+	default 31
+	help
+	  Maximum Transmission Unit (MTU) size for the CMUX module.
+	  Linux ldattach default to 127 bytes, 3GPP TS 27.010 defaults to 31.
 
 module = MODEM_CMUX
 module-str = modem_cmux

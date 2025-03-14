@@ -58,6 +58,9 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* Deprecated :kconfig:option:`CONFIG_MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE` in favor of
+  :kconfig:option:`CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE` and :kconfig:option:`CONFIG_MODEM_CMUX_MTU`.
+
 New APIs and options
 ====================
 
