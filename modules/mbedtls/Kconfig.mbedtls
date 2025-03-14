@@ -378,6 +378,28 @@ config MBEDTLS_GENPRIME_ENABLED
 config MBEDTLS_ASN1_PARSE_C
 	bool "Support for ASN1 parser functions"
 
+config MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
+	bool "Remove usage of standard libc functions"
+	help
+	  This prevents Mbed TLS from linking against the following standard functions
+	  from libc: `snprintf`, `vsnprintf`, `printf`, `fprintf`, `calloc`, `free`, `setbuf`, `exit`
+	  and `time`. By default Mbed TLS will use stub functions for all these functions.
+	  These stubs are just meant to return successfully, but they don't implement
+	  the required functionality.
+	  Users can individually override each of these stubs by calling
+	  `mbedtls_platform_set_xxx()` to set the their implementation of `xxx()` function
+	  at runtime.
+
+if MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
+
+config MBEDTLS_PLATFORM_SNPRINTF_ALT
+	bool "Allow setting custom snprintf at run-time"
+	help
+	  Allow setting a custom `snprintf()` function with `mbedtls_platform_set_snprintf()`.
+	  Include `mbedtls/platform.h` for the prototype of this function.
+
+endif # MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
+
 config MBEDTLS_PEM_CERTIFICATE_FORMAT
 	bool "Support for PEM certificate format"
 	help
