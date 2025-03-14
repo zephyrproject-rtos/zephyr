@@ -5,14 +5,11 @@ description: Ambiq SPI/I2C controller common properties
 
 compatible: "ambiq,iom"
 
-include: [base.yaml, ambiq-pwrcfg.yaml]
+include: [base.yaml]
 
 properties:
   reg:
     required: true
 
   interrupts:
-    required: true
-
-  ambiq,pwrcfg:
     required: true

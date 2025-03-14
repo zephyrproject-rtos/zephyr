@@ -41,17 +41,12 @@ LOG_MODULE_REGISTER(spi_ambiq);
 #define SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED 0
 #endif /* defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
 
-#define PWRCTRL_MAX_WAIT_US 5
-
-typedef int (*ambiq_spi_pwr_func_t)(void);
-
 struct spi_ambiq_config {
 	uint32_t base;
 	int size;
 	int inst_idx;
 	uint32_t clock_freq;
 	const struct pinctrl_dev_config *pcfg;
-	ambiq_spi_pwr_func_t pwr_func;
 	void (*irq_config_func)(void);
 };
 
@@ -516,7 +511,7 @@ static int spi_ambiq_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-	ret = cfg->pwr_func();
+	ret = am_hal_iom_power_ctrl(data->iom_handler, AM_HAL_SYSCTRL_WAKE, false);
 
 	ret |= pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	ret |= spi_context_cs_configure_all(&data->ctx);
@@ -570,15 +565,6 @@ static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 
 #define AMBIQ_SPI_INIT(n)                                                                          \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static int pwr_on_ambiq_spi_##n(void)                                                      \
-	{                                                                                          \
-		uint32_t addr = DT_REG_ADDR(DT_PHANDLE(DT_INST_PARENT(n), ambiq_pwrcfg)) +         \
-				DT_PHA(DT_INST_PARENT(n), ambiq_pwrcfg, offset);                   \
-		sys_write32((sys_read32(addr) | DT_PHA(DT_INST_PARENT(n), ambiq_pwrcfg, mask)),    \
-			    addr);                                                                 \
-		k_busy_wait(PWRCTRL_MAX_WAIT_US);                                                  \
-		return 0;                                                                          \
-	}                                                                                          \
 	static void spi_irq_config_func_##n(void)                                                  \
 	{                                                                                          \
 		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(n)), DT_IRQ(DT_INST_PARENT(n), priority),       \
@@ -596,8 +582,7 @@ static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 			(DT_REG_ADDR(DT_INST_PARENT(n)) - IOM0_BASE) / (IOM1_BASE - IOM0_BASE),    \
 		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.irq_config_func = spi_irq_config_func_##n,                                        \
-		.pwr_func = pwr_on_ambiq_spi_##n};                                                 \
+		.irq_config_func = spi_irq_config_func_##n};                                       \
 	PM_DEVICE_DT_INST_DEFINE(n, spi_ambiq_pm_action);                                          \
 	SPI_DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, PM_DEVICE_DT_INST_GET(n), &spi_ambiq_data##n, \
 				  &spi_ambiq_config##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \

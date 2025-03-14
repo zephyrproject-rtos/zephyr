@@ -269,7 +269,6 @@
 			#size-cells = <0>;
 			interrupts = <4 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -277,7 +276,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x50004000 0x1000>;
 			interrupts = <6 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x2>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -299,7 +297,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x50005000 0x1000>;
 			interrupts = <7 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x4>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -321,7 +318,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x50006000 0x1000>;
 			interrupts = <8 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x8>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -343,7 +339,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x50007000 0x1000>;
 			interrupts = <9 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x10>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -365,7 +360,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x50008000 0x1000>;
 			interrupts = <10 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x20>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -387,7 +381,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x50009000 0x1000>;
 			interrupts = <11 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -414,7 +407,6 @@
 			internal-vref-mv = <1500>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x200>;
 		};
 
 		mspi0: spi@40020000 {
@@ -424,7 +416,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x800>;
 		};
 
 		rtc0: rtc@40004240 {
@@ -442,7 +433,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x8000>;
 
 			bt_hci_apollo: bt-hci@0 {
 				compatible = "ambiq,bt-hci-spi";

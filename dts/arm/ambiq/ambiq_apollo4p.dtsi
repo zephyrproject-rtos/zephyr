@@ -440,7 +440,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x40050000 0x1000>;
 			interrupts = <6 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -462,7 +461,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x40051000 0x1000>;
 			interrupts = <7 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -484,7 +482,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x40052000 0x1000>;
 			interrupts = <8 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -506,7 +503,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x40053000 0x1000>;
 			interrupts = <9 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -528,7 +524,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x40054000 0x1000>;
 			interrupts = <10 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -550,7 +545,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x40055000 0x1000>;
 			interrupts = <11 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -572,7 +566,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x40056000 0x1000>;
 			interrupts = <12 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -594,7 +587,6 @@
 			compatible = "ambiq,iom";
 			reg = <0x40057000 0x1000>;
 			interrupts = <13 0>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
 
 			spi {
 				compatible = "ambiq,spi";
@@ -621,7 +613,6 @@
 			internal-vref-mv = <1190>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x2000>;
 		};
 
 		mspi0: mspi@40060000 {
@@ -632,7 +623,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x4000>;
 		};
 
 		mspi1: mspi@40061000 {
@@ -643,7 +633,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x8000>;
 		};
 
 		mspi2: mspi@40062000 {
@@ -654,7 +643,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x10000>;
 		};
 
 		rtc0: rtc@40004800 {
@@ -672,7 +660,6 @@
 			num-bidir-endpoints = <6>;
 			maximum-speed = "full-speed";
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x400000>;
 		};
 
 		pinctrl: pin-controller@40010000 {

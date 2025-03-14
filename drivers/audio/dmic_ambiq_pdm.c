@@ -19,9 +19,6 @@
 
 LOG_MODULE_REGISTER(ambiq_pdm, CONFIG_AUDIO_DMIC_LOG_LEVEL);
 
-typedef int (*ambiq_pdm_pwr_func_t)(void);
-#define PWRCTRL_MAX_WAIT_US 5
-
 struct dmic_ambiq_pdm_data {
 	void *pdm_handler;
 	struct k_mem_slab *mem_slab;
@@ -39,7 +36,6 @@ struct dmic_ambiq_pdm_data {
 struct dmic_ambiq_pdm_cfg {
 	void (*irq_config_func)(void);
 	const struct pinctrl_dev_config *pcfg;
-	ambiq_pdm_pwr_func_t pwr_func;
 };
 
 static __aligned(32) struct {
@@ -68,8 +64,6 @@ static int dmic_ambiq_pdm_init(const struct device *dev)
 	const struct dmic_ambiq_pdm_cfg *config = dev->config;
 
 	int ret = 0;
-
-	ret = config->pwr_func();
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -266,14 +260,6 @@ static const struct _dmic_ops dmic_ambiq_ops = {
 
 #define AMBIQ_PDM_DEFINE(n)                                                                        \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static int pwr_on_ambiq_pdm_##n(void)                                                      \
-	{                                                                                          \
-		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
-				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
-		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
-		k_busy_wait(PWRCTRL_MAX_WAIT_US);                                                  \
-		return 0;                                                                          \
-	}                                                                                          \
 	static void pdm_irq_config_func_##n(void)                                                  \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), dmic_ambiq_pdm_isr,         \
@@ -290,7 +276,6 @@ static const struct _dmic_ops dmic_ambiq_ops = {
 	static const struct dmic_ambiq_pdm_cfg dmic_ambiq_pdm_cfg##n = {                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = pdm_irq_config_func_##n,                                        \
-		.pwr_func = pwr_on_ambiq_pdm_##n,                                                  \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, dmic_ambiq_pdm_init, NULL, &dmic_ambiq_pdm_data##n,               \
 			      &dmic_ambiq_pdm_cfg##n, POST_KERNEL,                                 \
