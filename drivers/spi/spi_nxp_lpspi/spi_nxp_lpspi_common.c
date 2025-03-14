@@ -9,6 +9,34 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi_common, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
 
+#include <fsl_lpspi.h>
+
+static LPSPI_Type *const lpspi_bases[] = LPSPI_BASE_PTRS;
+static const clock_ip_name_t lpspi_clocks[] = LPSPI_CLOCKS;
+
+static inline clock_ip_name_t lpspi_get_clock(LPSPI_Type *const base)
+{
+	clock_ip_name_t clk = -1; /* invalid initial value */
+
+	ARRAY_FOR_EACH(lpspi_bases, idx) {
+		if (lpspi_bases[idx] == base) {
+			clk = lpspi_clocks[idx];
+			break;
+		}
+	}
+
+	__ASSERT_NO_MSG(clk != -1);
+	return clk;
+}
+
+void lpspi_wait_tx_fifo_empty(const struct device *dev)
+{
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+
+	while (LPSPI_GetTxFifoCount(base) != 0) {
+	}
+}
+
 int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct spi_mcux_data *data = dev->data;
@@ -18,29 +46,14 @@ int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 	return 0;
 }
 
-int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg)
+static inline int lpspi_validate_xfer_args(const struct spi_config *spi_cfg)
 {
-	const struct spi_mcux_config *config = dev->config;
-	struct spi_mcux_data *data = dev->data;
-	struct spi_context *ctx = &data->ctx;
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
-	bool configured = ctx->config != NULL;
-	lpspi_master_config_t master_config;
-	uint32_t clock_freq;
-	int ret;
-
-	/* fast path to avoid reconfigure */
-	/* TODO: S32K3 errata ERR050456 requiring module reset before every transfer,
-	 * investigate alternative workaround so we don't have this latency for S32.
-	 */
-	if (spi_context_configured(ctx, spi_cfg) && !IS_ENABLED(CONFIG_SOC_FAMILY_NXP_S32)) {
-		return 0;
-	}
+	uint32_t pcs = spi_cfg->slave;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
 		/* the IP DOES support half duplex, need to implement driver support */
-		LOG_ERR("Half-duplex not supported");
+		LOG_WRN("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
@@ -52,14 +65,41 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 		 * Minimum hardware word size is 2. Since this driver is intended to work
 		 * for 32 bit platforms, and 64 bits is max size, then only 33 and 1 are invalid.
 		 */
-		LOG_ERR("Word size %d not allowed", word_size);
+		LOG_WRN("Word size %d not allowed", word_size);
 		return -EINVAL;
 	}
 
-	if (spi_cfg->slave > (LPSPI_CHIP_SELECT_COUNT - 1)) {
-		LOG_ERR("Peripheral %d select exceeds max %d", spi_cfg->slave,
-			LPSPI_CHIP_SELECT_COUNT - 1);
+	if (pcs > LPSPI_CHIP_SELECT_COUNT - 1) {
+		LOG_WRN("Peripheral %d select exceeds max %d", pcs, LPSPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg)
+{
+	const struct spi_mcux_config *config = dev->config;
+	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	bool already_configured = spi_context_configured(ctx, spi_cfg);
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
+	lpspi_master_config_t master_config;
+	uint32_t clock_freq;
+	int ret;
+
+	/* fast path to avoid reconfigure */
+	/* TODO: S32K3 errata ERR050456 requiring module reset before every transfer,
+	 * investigate alternative workaround so we don't have this latency for S32.
+	 */
+	if (already_configured && !IS_ENABLED(CONFIG_SOC_FAMILY_NXP_S32)) {
+		return 0;
+	}
+
+	ret = lpspi_validate_xfer_args(spi_cfg);
+	if (ret) {
+		return ret;
 	}
 
 	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq);
@@ -67,7 +107,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 		return ret;
 	}
 
-	if (configured) {
+	if (already_configured) {
 		/* Setting the baud rate in LPSPI_MasterInit requires module to be disabled. Only
 		 * disable if already configured, otherwise the clock is not enabled and the
 		 * CR register cannot be written.
@@ -107,8 +147,8 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	master_config.pcsActiveHighOrLow = (spi_cfg->operation & SPI_CS_ACTIVE_HIGH)
 				    ? kLPSPI_PcsActiveHigh : kLPSPI_PcsActiveLow;
 	master_config.pinCfg = config->data_pin_config;
-	master_config.dataOutConfig = config->output_config ? kLpspiDataOutTristate :
-							      kLpspiDataOutRetained;
+	master_config.dataOutConfig = config->tristate_output ? kLpspiDataOutTristate :
+								kLpspiDataOutRetained;
 
 	LPSPI_MasterInit(base, &master_config, clock_freq);
 	LPSPI_SetDummyData(base, 0);
@@ -122,6 +162,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 
 int spi_nxp_init_common(const struct device *dev)
 {
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	int err = 0;
@@ -134,6 +175,8 @@ int spi_nxp_init_common(const struct device *dev)
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
+
+	CLOCK_EnableClock(lpspi_get_clock(base));
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
