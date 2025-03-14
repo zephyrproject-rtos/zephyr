@@ -4,6 +4,7 @@ sample:
 tests:
   sample.ipc.openamp:
     filter: dt_chosen_enabled("zephyr,ipc") and dt_chosen_enabled("zephyr,ipc_shm")
+      and not (CONFIG_SOC_ESP32_APPCPU or CONFIG_SOC_ESP32S3_APPCPU)
     integration_platforms:
       - mps2/an521/cpu0
     tags:
