@@ -45,12 +45,12 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		RSI_PS_UlpssPeriPowerUp(ULPSS_PWRGATE_ULP_UDMA);
 		RSI_ULPSS_PeripheralEnable(ULPCLK, ULP_UDMA_CLK, ENABLE_STATIC_CLK);
 		break;
-	case SIWX91X_CLK_UART1:
+	case SIWX91X_CLK_UART0:
 		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
 		/* RSI_CLK_UsartClkConfig() calls RSI_CLK_PeripheralClkEnable(); */
 		RSI_CLK_UsartClkConfig(M4CLK, ENABLE_STATIC_CLK, 0, USART1, 0, 1);
 		break;
-	case SIWX91X_CLK_UART2:
+	case SIWX91X_CLK_UART1:
 		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
 		/* RSI_CLK_UsartClkConfig() calls RSI_CLK_PeripheralClkEnable(); */
 		RSI_CLK_UsartClkConfig(M4CLK, ENABLE_STATIC_CLK, 0, USART2, 0, 1);
@@ -97,10 +97,10 @@ static int siwx91x_clock_off(const struct device *dev, clock_control_subsys_t sy
 	case SIWX91X_CLK_ULP_DMA:
 		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_UDMA_CLK);
 		break;
-	case SIWX91X_CLK_UART1:
+	case SIWX91X_CLK_UART0:
 		RSI_CLK_PeripheralClkDisable(M4CLK, USART1_CLK);
 		break;
-	case SIWX91X_CLK_UART2:
+	case SIWX91X_CLK_UART1:
 		RSI_CLK_PeripheralClkDisable(M4CLK, USART2_CLK);
 		break;
 	case SIWX91X_CLK_DMA0:
@@ -128,10 +128,10 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 	case SIWX91X_CLK_ULP_UART:
 		*rate = RSI_CLK_GetBaseClock(ULPSS_UART);
 		return 0;
-	case SIWX91X_CLK_UART1:
+	case SIWX91X_CLK_UART0:
 		*rate = RSI_CLK_GetBaseClock(M4_USART0);
 		return 0;
-	case SIWX91X_CLK_UART2:
+	case SIWX91X_CLK_UART1:
 		*rate = RSI_CLK_GetBaseClock(M4_UART1);
 		return 0;
 	case SIWX91X_CLK_PWM:
