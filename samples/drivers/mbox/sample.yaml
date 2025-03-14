@@ -71,9 +71,11 @@ tests:
         - "Ping \\(on channel 18\\)"
         - "Pong \\(on channel 12\\)"
 
-  sample.drivers.mbox.nrf54l15:
+  sample.drivers.mbox.nrf54l:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l09pdk/nrf54l09/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args: mbox_SNIPPET=nordic-flpr
@@ -86,9 +88,11 @@ tests:
         - "Ping \\(on channel 21\\)"
         - "Pong \\(on channel 20\\)"
 
-  sample.drivers.mbox.nrf54l15_no_multithreading:
+  sample.drivers.mbox.nrf54l_no_multithreading:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l09pdk/nrf54l09/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
@@ -104,9 +108,11 @@ tests:
         - "Ping \\(on channel 21\\)"
         - "Pong \\(on channel 20\\)"
 
-  sample.drivers.mbox.nrf54l15_remote_no_multithreading:
+  sample.drivers.mbox.nrf54l_remote_no_multithreading:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l09pdk/nrf54l09/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
