@@ -621,7 +621,7 @@ static int uart_ns16550_configure(const struct device *dev,
 		}
 
 		ret = clock_control_on(dev_cfg->clock_dev, dev_cfg->clock_subsys);
-		if (ret != 0 && ret != -EALREADY) {
+		if (ret != 0 && ret != -EALREADY && ret != -ENOSYS) {
 			goto out;
 		}
 
