@@ -7,6 +7,14 @@ tests:
     platform_allow:
       - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpuapp
+    timeout: 150
     harness: bsim
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_notify_stress_prj_conf
+      bsim_verbosity: 2
+      bsim_sim_length: 70e6
+      bsim_devices:
+        - test_id: gatt_server_enhanced_notif_stress
+        - test_id: gatt_client_enhanced_notif_stress
+      bsim_options:
+        - -RealEncryption=1
