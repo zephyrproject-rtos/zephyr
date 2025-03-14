@@ -1198,10 +1198,25 @@ static uint8_t start_discovery(const void *cmd, uint16_t cmd_len,
 		return br_start_discovery(cp);
 	}
 
-	/* Start LE scanning */
-	if (bt_le_scan_start(cp->flags & BTP_GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN ?
-			     BT_LE_SCAN_ACTIVE : BT_LE_SCAN_PASSIVE,
-			     device_found) < 0) {
+	struct bt_le_scan_param scan_param = {
+		.type     = BT_LE_SCAN_TYPE_PASSIVE,
+		.options  = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+		.interval = BT_GAP_SCAN_FAST_INTERVAL,
+		.window   = BT_GAP_SCAN_FAST_WINDOW,
+		.timeout = 0,
+		.interval_coded = 0,
+		.window_coded = 0,
+	};
+
+	if (cp->flags & BTP_GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN) {
+		scan_param.type = BT_LE_SCAN_TYPE_ACTIVE;
+	}
+
+	if (cp->flags & BTP_GAP_DISCOVERY_FLAG_USE_FILTER_LIST) {
+		scan_param.options |= BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST;
+	}
+
+	if (bt_le_scan_start(&scan_param, device_found) < 0) {
 		LOG_ERR("Failed to start scanning");
 		return BTP_STATUS_FAILED;
 	}

@@ -134,6 +134,7 @@ struct btp_gap_stop_advertising_rp {
 #define BTP_GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN	0x08
 #define BTP_GAP_DISCOVERY_FLAG_LE_OBSERVE	0x10
 #define BTP_GAP_DISCOVERY_FLAG_OWN_ID_ADDR	0x20
+#define BTP_GAP_DISCOVERY_FLAG_USE_FILTER_LIST	0x40
 
 #define BTP_GAP_START_DISCOVERY			0x0c
 struct btp_gap_start_discovery_cmd {
