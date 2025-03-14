@@ -1,0 +1,12 @@
+sample:
+  name: dmic i2s sample
+tests:
+  sample.drivers.i2s.dmic_i2s:
+    tags: i2s
+    platform_allow:
+      - apollo510_evb/apollo510/cm55
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "PDM to I2S streaming"
