@@ -101,6 +101,12 @@ static const struct gpio_dt_spec ulpi_reset =
 #else
 #define USB_DC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL
 #endif
+
+#if DT_NODE_HAS_PROP(DT_PHANDLE(DT_INST(0, DT_DRV_COMPAT), phys), clocks)
+#define HAS_PHY_CLK 1
+static const struct stm32_pclken phy_pclken[] = STM32_DT_CLOCKS(DT_INST_PHANDLE(0, phys));
+#endif
+
 /*
  * USB, USB_OTG_FS and USB_DRD_FS are defined in STM32Cube HAL and allows to
  * distinguish between two kind of USB DC. STM32 F0, F3, L0 and G4 series
@@ -224,8 +230,6 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)
-
-static const struct stm32_pclken phy_pclken[] = STM32_DT_CLOCKS(DT_INST_PHANDLE(0, phys));
 
 static int usb_dc_stm32u5_phy_clock_select(const struct device *const clk)
 {
@@ -400,31 +404,27 @@ static int usb_dc_stm32_clock_enable(void)
 
 #endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
-#if USB_OTG_HS_ULPI_PHY
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
-#else
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+#ifdef HAS_PHY_CLK
+	if (clock_control_on(clk, (clock_control_subsys_t *)&phy_pclken[0]) != 0) {
+		LOG_ERR("Unable to enable USB_PHY clock");
+		return -EIO;
+	}
 #endif
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) /* USB_OTG_HS_ULPI_PHY */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 	/* Disable ULPI interface (for external high-speed PHY) clock in sleep/low-power mode.
 	 * It is disabled by default in run power mode, no need to disable it.
 	 */
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
 	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
 	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
 						LL_AHB2_GRP1_PERIPH_USBPHY);
 #else
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif
-
-#if USB_OTG_HS_EMB_PHYC
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
 #endif
-#endif /* USB_OTG_HS_ULPI_PHY */
 
 	return 0;
 }
