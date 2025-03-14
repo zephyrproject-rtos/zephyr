@@ -408,6 +408,9 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && CONFIG_UDC_NXP_EHCI
+	/* Power on COM VDDN domain for USB */
+	POWER_DisablePD(kPDRUNCFG_DSR_VDDN_COM);
+
 	/* Power on usb ram array as need, powered USB0RAM array*/
 	POWER_DisablePD(kPDRUNCFG_APD_USB0_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_USB0_SRAM);
@@ -425,8 +428,10 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_UsbphyRef);
 	RESET_PeripheralReset(kUSB0_RST_SHIFT_RSTn);
 	RESET_PeripheralReset(kUSBPHY0_RST_SHIFT_RSTn);
-	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usbphy480M, usbClockFreq);
-	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M, usbClockFreq);
+	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usbphy480M,
+				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb0), clocks, clock_frequency));
+	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
+				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb0), clocks, clock_frequency));
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
