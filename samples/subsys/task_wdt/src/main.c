@@ -67,9 +67,11 @@ int main(void)
 
 	if (!device_is_ready(hw_wdt_dev)) {
 		printk("Hardware watchdog not ready; ignoring it.\n");
+		ret = task_wdt_init(NULL);
+	} else {
+		ret = task_wdt_init(hw_wdt_dev);
 	}
 
-	ret = task_wdt_init(hw_wdt_dev);
 	if (ret != 0) {
 		printk("task wdt init failure: %d\n", ret);
 		return 0;
