@@ -28,7 +28,8 @@
 static struct spi_dt_spec spim = SPI_DT_SPEC_GET(DT_NODELABEL(dut_spi_dt), SPIM_OP, 0);
 static const struct device *spis_dev = DEVICE_DT_GET(DT_NODELABEL(dut_spis));
 static const struct spi_config spis_config = {
-	.operation = SPIS_OP
+	.operation = SPIS_OP,
+	.slave = DT_PROP_OR(DT_PATH(zephyr_user), peripheral_cs, 0),
 };
 
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
