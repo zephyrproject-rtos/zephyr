@@ -56,6 +56,7 @@ int sema_test(void);
 int lifo_test(void);
 int fifo_test(void);
 int stack_test(void);
+int malloc_test(void);
 int mem_slab_test(void);
 void begin_test(void);
 
