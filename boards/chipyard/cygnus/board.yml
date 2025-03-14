@@ -1,0 +1,8 @@
+board:
+  name: chipyard_cygnus
+  full_name: Chipyard RISCV64 SoCs
+  vendor: chipyard 
+  socs:
+    - name: rocketchip_virt_riscv64
+      variants:
+        - name: smp
