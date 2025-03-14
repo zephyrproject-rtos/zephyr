@@ -401,12 +401,12 @@ static inline char z_log_minimal_level_to_char(int level)
 #define LOG_FILTER_SLOT_GET(_filters, _id) \
 	((*(_filters) >> LOG_FILTER_SLOT_SHIFT(_id)) & LOG_FILTER_SLOT_MASK)
 
-#define LOG_FILTER_SLOT_SET(_filters, _id, _filter)		     \
-	do {							     \
-		*(_filters) &= ~(LOG_FILTER_SLOT_MASK <<	     \
-				 LOG_FILTER_SLOT_SHIFT(_id));	     \
-		*(_filters) |= ((_filter) & LOG_FILTER_SLOT_MASK) << \
-			       LOG_FILTER_SLOT_SHIFT(_id);	     \
+#define LOG_FILTER_SLOT_SET(_filters, _id, _filter)			      \
+	do {								      \
+		uint32_t others = *(_filters) & ~(LOG_FILTER_SLOT_MASK <<     \
+				 LOG_FILTER_SLOT_SHIFT(_id));		      \
+		*(_filters) = others | (((_filter) & LOG_FILTER_SLOT_MASK) << \
+			       LOG_FILTER_SLOT_SHIFT(_id));		      \
 	} while (false)
 
 #define LOG_FILTER_AGGR_SLOT_IDX 0
