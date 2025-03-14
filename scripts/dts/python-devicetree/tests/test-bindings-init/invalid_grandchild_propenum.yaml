@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 #
 # This binding should not try to change the "enum:" values
 # in a property specification inherited from an included file.
