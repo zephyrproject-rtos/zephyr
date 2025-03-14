@@ -411,11 +411,17 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
 
             i = i - 1
 
+    # Arguments in this order to allow specific to override general:
+    #
+    # - runner-specific runners.yaml arguments
+    # - user-provided command line arguments
+    final_argv = runners_yaml['args'][runner_name] + runner_args
+
     # If flashing multiple images, the runner supports reset after flashing and
     # the board has enabled this functionality, check if the board should be
     # reset or not. If this is not specified in the board/soc file, leave it up to
     # the runner's default configuration to decide if a reset should occur.
-    if runner_cls.capabilities().reset:
+    if runner_cls.capabilities().reset and '--no-reset' not in final_argv:
         if board_image_count is not None:
             reset = True
 
@@ -449,15 +455,9 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
                                         break
 
             if reset:
-                runner_args.append('--reset')
+                final_argv.append('--reset')
             else:
-                runner_args.append('--no-reset')
-
-    # Arguments in this order to allow specific to override general:
-    #
-    # - runner-specific runners.yaml arguments
-    # - user-provided command line arguments
-    final_argv = runners_yaml['args'][runner_name] + runner_args
+                final_argv.append('--no-reset')
 
     # 'user_args' contains parsed arguments which are:
     #
