@@ -1,4 +1,4 @@
-.. zephyr:board:: fk743m5-xih6
+.. zephyr:board:: fk743m5_xih6
 
 Overview
 ********
