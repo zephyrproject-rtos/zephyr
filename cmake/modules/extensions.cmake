@@ -5240,8 +5240,8 @@ endfunction()
 # This is useful content such as struct devices.
 #
 # For example: zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL_1)
-# will create an input section matching `.z_init_PRE_KERNEL_1?_` and
-# `.z_init_PRE_KERNEL_1??_`.
+# will create an input section matching `.z_init_PRE_KERNEL_1_?_` and
+# `.z_init_PRE_KERNEL_1_??_`.
 #
 # SECTION <section>: Section in which the objects shall be placed
 # LEVEL <level>    : Priority level, all input sections matching the level
@@ -5265,13 +5265,13 @@ function(zephyr_linker_section_obj_level)
 
   zephyr_linker_section_configure(
     SECTION ${OBJ_SECTION}
-    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}?_*"
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}_?_*"
     SYMBOLS __${OBJ_SECTION}_${OBJ_LEVEL}_start
     KEEP SORT NAME
   )
   zephyr_linker_section_configure(
     SECTION ${OBJ_SECTION}
-    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}??_*"
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}_??_*"
     KEEP SORT NAME
   )
 endfunction()
