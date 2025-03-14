@@ -35,8 +35,8 @@ Sample Criteria
     buildability and, in some cases, if a sample is performing as expected, i.e. you
     are testing the sample, not the subsystem it builds on top.
 
-2. Twister should be able to build every sample.
-++++++++++++++++++++++++++++++++++++++++++++++++
+2. Twister should be able to build and run every sample.
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   * Every sample must have a YAML file. Reference: :ref:`twister_script`.
 
     **For example:**
@@ -56,10 +56,11 @@ Sample Criteria
             regex:
               - ".*Waited and joined with 3 threads"
 
-  * Do not mark the test as build only. A sample should be able to build *and*
-    run on the documented platforms. Use the ``harness`` option to skip the
-    execution. Twister only attempts to flash and execute the build binary if
-    the harness is set to ``ztest`` or ``console``.
+  * Do not mark the tests as build only. A sample should be able to build *and*
+    run on the documented platforms. Use the ``harness`` and ``fixture`` option to
+    skip the execution. Twister only attempts to flash and execute the build binary,
+    if the harness is set to ``Supported harnesses``.
+    Refer to ``doc/develop/test/twister.rst#harnesses``.
   * The default configuration for the sample must be in the :file:`prj.conf`
     file and should be operational on all supported platforms. Do not rely on the
     ``extra_args`` or ``extra_configs`` options in the YAML file to build the
@@ -73,9 +74,14 @@ Sample Criteria
     ``extra_configs`` options in the YAML file. The :file:`prj.conf` file should have the
     base configuration options.
   * Sample output can be validated by leveraging the ``harness_config`` regex option,
-    wherever applicable.
-  * Use ``platform_allow`` to limit test to the platforms the sample was actually
-    verified on. Those platforms should be listed in the sample's README file.
+    wherever applicable. Each sample should provide a test(s) validating its correct operation.
+    A basic, human-readable output for a sample can be used as a mean to verify
+    the sample runs correctly by Twister.
+    At a minimum, the application start should be verified, with the goal of validating full operation.
+    Full function validation is not must by CI.
+  * Use ``platform_allow`` to limit run to the platforms the sample was actually
+    verified on only when Kconfig/dts filters are not applicable.
+    Those platforms should be listed in the sample's README file.
   * Make use of ``integration_platforms`` to limit the scope when there are timing or
     resource constraints. Ideally, one platform should be enough to verify the
     sample when changes are submitted to the Zephyr tree via a pull-request.
