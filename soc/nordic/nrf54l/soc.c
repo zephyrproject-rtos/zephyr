@@ -61,7 +61,7 @@ static inline void power_and_clock_configuration(void)
 	int32_t slope_k = (int32_t)(slope_field_k ^ slope_sign_k) - (int32_t)slope_sign_k;
 
 	/* As specified in the nRF54L15 PS:
-	 * CAPVALUE = round( (CAPACITANCE - 4) * (FICR->XOSC32KTRIM.SLOPE + 0.765625 * 2^9)/(2^9)
+	 * CAPVALUE = round( (2*CAPACITANCE - 12) * (FICR->XOSC32KTRIM.SLOPE + 0.765625 * 2^9)/(2^9)
 	 *            + FICR->XOSC32KTRIM.OFFSET/(2^6) );
 	 * where CAPACITANCE is the desired capacitor value in pF, holding any
 	 * value between 4 pF and 18 pF in 0.5 pF steps.
@@ -82,7 +82,7 @@ static inline void power_and_clock_configuration(void)
 	 * offset_k should be divided by 2^6, but to add it to value shifted by 2^9 we have to
 	 * multiply it be 2^3.
 	 */
-	uint32_t mid_val = (cap_val_encoded - 4UL) * (uint32_t)(slope_k + 392UL)
+	uint32_t mid_val = (2UL * cap_val_encoded - 12UL) * (uint32_t)(slope_k + 392UL)
 			   + (offset_k << 3UL);
 
 	/* Get integer part of the INTCAP code */
