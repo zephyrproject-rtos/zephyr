@@ -287,7 +287,6 @@
 		gpio: gpio@5003c000 {
 			compatible = "silabs,gecko-gpio";
 			reg = <0x5003C000 0x440>;
-			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
