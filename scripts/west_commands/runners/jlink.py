@@ -26,37 +26,8 @@ try:
 except ImportError:
     MISSING_REQUIREMENTS = True
 
-if sys.platform == 'win32':
-    # JLink.exe can collide with the JDK executable of the same name
-    # Look in the usual locations before falling back to $PATH
-    for root in [os.environ["ProgramFiles"], os.environ["ProgramFiles(x86)"], str(Path.home())]: # noqa SIM112
-        # SEGGER folder can contain a single "JLink" folder
-        _direct = Path(root) / "SEGGER" / "JLink" / "JLink.exe"
-        if _direct.exists():
-            DEFAULT_JLINK_EXE = str(_direct)
-            del _direct
-        else:
-            # SEGGER folder can contain multiple versions such as:
-            #   JLink_V796b
-            #   JLink_V796t
-            #   JLink_V798c
-            # Find the latest version
-            _versions = glob.glob(str(Path(root) / "SEGGER" / "JLink_V*"))
-            if len(_versions) == 0:
-                continue
-            _expected_jlink = Path(_versions[-1]) / "JLink.exe"
-            if not _expected_jlink.exists():
-                continue
-            DEFAULT_JLINK_EXE = str(_expected_jlink)
-            # Cleanup variables
-            del _versions
-            del _expected_jlink
-        break
-    else:
-        # Not found in the normal locations, hope that $PATH is correct
-        DEFAULT_JLINK_EXE = "JLink.exe"
-else:
-    DEFAULT_JLINK_EXE = "JLinkExe"
+# Populated in do_add_parser()
+DEFAULT_JLINK_EXE = None
 DEFAULT_JLINK_GDB_PORT = 2331
 DEFAULT_JLINK_RTT_PORT = 19021
 
@@ -138,8 +109,43 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     def tool_opt_help(cls) -> str:
         return "Additional options for JLink Commander, e.g. '-autoconnect 1'"
 
+    @staticmethod
+    def find_jlink():
+        global DEFAULT_JLINK_EXE
+
+        if sys.platform == 'win32':
+            # JLink.exe can collide with the JDK executable of the same name
+            # Look in the usual locations before falling back to $PATH
+            for root in [os.environ["ProgramFiles"], os.environ["ProgramFiles(x86)"], str(Path.home())]: # noqa SIM112
+                # SEGGER folder can contain a single "JLink" folder
+                _direct = Path(root) / "SEGGER" / "JLink" / "JLink.exe"
+                if _direct.exists():
+                    DEFAULT_JLINK_EXE = str(_direct)
+                else:
+                    # SEGGER folder can contain multiple versions such as:
+                    #   JLink_V796b
+                    #   JLink_V796t
+                    #   JLink_V798c
+                    # Find the latest version
+                    _versions = glob.glob(str(Path(root) / "SEGGER" / "JLink_V*"))
+                    if len(_versions) == 0:
+                        continue
+                    _expected_jlink = Path(_versions[-1]) / "JLink.exe"
+                    if not _expected_jlink.exists():
+                        continue
+                    DEFAULT_JLINK_EXE = str(_expected_jlink)
+                break
+            else:
+                # Not found in the normal locations, hope that $PATH is correct
+                DEFAULT_JLINK_EXE = "JLink.exe"
+        else:
+            DEFAULT_JLINK_EXE = "JLinkExe"
+
     @classmethod
     def do_add_parser(cls, parser):
+
+        cls.find_jlink()
+
         # Required:
         parser.add_argument('--device', required=True, help='device name')
 
