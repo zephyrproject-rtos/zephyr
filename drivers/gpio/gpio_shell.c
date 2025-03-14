@@ -222,7 +222,7 @@ static int get_sh_gpio(const struct shell *sh, char **argv, struct sh_gpio *gpio
 	return 0;
 }
 
-static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv, void *data)
+static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv)
 {
 	gpio_flags_t flags = 0;
 	gpio_flags_t vendor_specific;
