@@ -215,6 +215,7 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 	return 0;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int neorv32_uart_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct neorv32_uart_data *data = dev->data;
@@ -225,6 +226,7 @@ static int neorv32_uart_config_get(const struct device *dev, struct uart_config 
 
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int neorv32_uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
