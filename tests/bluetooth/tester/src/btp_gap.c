@@ -271,7 +271,11 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 		tester_set_bit(rp->data, BTP_GAP_SET_EXTENDED_ADVERTISING);
 	}
 
-	*rsp_len = sizeof(*rp) + 4;
+	if (IS_ENABLED(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)) {
+		tester_set_bit(rp->data, BTP_GAP_SET_RPA_TIMEOUT);
+	}
+
+	*rsp_len = sizeof(*rp) + 7;
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -1769,6 +1773,23 @@ static uint8_t padv_create_sync(const void *cmd, uint16_t cmd_len,
 }
 #endif /* defined(CONFIG_BT_PER_ADV) */
 
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+static uint8_t set_rpa_timeout(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_set_rpa_timeout_cmd *cp = cmd;
+	int err;
+
+	err = bt_le_set_rpa_timeout(sys_le16_to_cpu(cp->rpa_timeout));
+
+	if (err != 0) {
+		LOG_DBG("Failed to set RPA timeout: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -1933,6 +1954,13 @@ static const struct btp_handler handlers[] = {
 	},
 #endif /* defined(CONFIG_BT_PER_ADV) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+	{
+		.opcode = BTP_GAP_SET_RPA_TIMEOUT,
+		.expect_len = sizeof(struct btp_gap_set_rpa_timeout_cmd),
+		.func = set_rpa_timeout,
+	},
+#endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
 };
 
 uint8_t tester_init_gap(void)
