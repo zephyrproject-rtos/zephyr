@@ -45,6 +45,14 @@ config ETH_STM32_HAL_RX_THREAD_STACK_SIZE
 	help
 	  RX thread stack size
 
+config ETH_STM32_HAL_RX_THREAD_PREEMPTIVE
+	bool "STM32 Ethernet RX Thread pre-emptive [EXPERIMENTAL]"
+	default y if NET_TC_THREAD_PREEMPTIVE
+	depends on PREEMPT_ENABLED
+	select EXPERIMENTAL
+	help
+	  With pre-emptive threads, the thread can be pre-empted.
+
 config ETH_STM32_HAL_RX_THREAD_PRIO
 	int "STM32 Ethernet RX Thread Priority"
 	default 2
