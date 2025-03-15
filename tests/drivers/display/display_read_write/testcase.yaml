@@ -69,10 +69,10 @@ tests:
     # presence of the arduino_spi DT nodelabel
     platform_allow:
       - mimxrt685_evk/mimxrt685s/cm33
-  drivers.display.read_write.rtkmipilcdb00000be:
+  drivers.display.read_write.renesas_ra_glcdc:
     tags:
       - shield
+    filter: dt_compat_enabled("renesas,ra-glcdc")
     extra_args:
-      - SHIELD=rtkmipilcdb00000be
-    platform_allow:
-      - ek_ra8d1
+      - platform:ek_ra8d1/r7fa8d1bhecbd:SHIELD=rtkmipilcdb00000be
+      - platform:ek_ra8d1/r7fa8d1bhecbd:SHIELD=rtk7eka6m3b00001bu
