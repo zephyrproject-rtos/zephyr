@@ -125,6 +125,15 @@ void *k_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t bytes,
 	void *ret = z_heap_alloc_helper(heap, align, bytes, timeout,
 					sys_heap_aligned_alloc);
 
+	/*
+	 * modules/debug/percepio/TraceRecorder/kernelports/Zephyr/include/tracing_tracerecorder.h
+	 * contains a concealed non-parameterized direct reference to a local
+	 * variable through the SYS_PORT_TRACING_OBJ_FUNC_EXIT macro below
+	 * that is no longer in scope. Provide a dummy stub for compilation
+	 * to still succeed until that module's layering violation is fixed.
+	 */
+	bool blocked_alloc = false; ARG_UNUSED(blocked_alloc);
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, aligned_alloc, heap, timeout, ret);
 
 	return ret;
