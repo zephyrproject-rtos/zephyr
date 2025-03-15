@@ -297,6 +297,10 @@ typedef uint16_t spi_operation_t;
 
 /**
  * @brief SPI controller configuration structure
+ *
+ * @warning Most drivers use pointer comparison to determine whether a passed
+ * configuration is different from one used in a previous transaction.
+ * Changes to fields in the structure may not be detected.
  */
 struct spi_config {
 	/** @brief Bus frequency in Hertz. */
