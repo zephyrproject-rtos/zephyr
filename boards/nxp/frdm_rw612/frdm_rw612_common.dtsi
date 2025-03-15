@@ -5,6 +5,7 @@
  */
 
 #include "frdm_rw612-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "nxp,frdm_rw612";
@@ -15,6 +16,7 @@
 		usart-0 = &flexcomm3;
 		i2c-0 = &flexcomm2;
 		pwm-0 = &sctimer;
+		sw0 = &user_button_0;
 	};
 
 	chosen {
@@ -31,6 +33,16 @@
 		compatible = "gpio-leds";
 		green_led: led_1 {
 			gpios = <&hsgpio0 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: button_0 {
+			label = "User SW2";
+			gpios = <&hsgpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
 		};
 	};
 };
