@@ -77,6 +77,17 @@ GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a6, a6_a7);
 
 #endif /* CONFIG_HAS_ARM_SMCCC */
 
+#ifdef CONFIG_ZVM
+GEN_OFFSET_SYM(zvm_vcpu_context_t, regs);
+GEN_OFFSET_SYM(vcpu_t, arch);
+GEN_OFFSET_SYM(vcpu_arch_t, ctxt);
+GEN_OFFSET_SYM(arch_commom_regs_t, callee_saved_regs);
+GEN_OFFSET_SYM(arch_commom_regs_t, esf_handle_regs);
+GEN_OFFSET_SYM(arch_commom_regs_t, pc);
+GEN_OFFSET_SYM(arch_commom_regs_t, pstate);
+GEN_OFFSET_SYM(arch_commom_regs_t, lr);
+#endif /* CONFIG_ZVM */
+
 GEN_ABS_SYM_END
 
 #endif /* _ARM_OFFSETS_INC_ */

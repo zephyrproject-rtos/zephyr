@@ -54,7 +54,10 @@
 #define SCTLR_I_BIT		BIT(12)
 #define SCTLR_BR_BIT		BIT(17)
 
+#define CPACR_EL1_ZEN			(0x3 << 16)
 #define CPACR_EL1_FPEN_NOTRAP	(0x3 << 20)
+#define CPACR_EL1_TTA			BIT(28)
+#define CPTR_EL2_TAM			BIT(30)
 
 #define SCR_NS_BIT		BIT(0)
 #define SCR_IRQ_BIT		BIT(1)
@@ -100,13 +103,23 @@
 #define ESR_ISS_MASK		BIT_MASK(25)
 #define ESR_IL_SHIFT		(25)
 #define ESR_IL_MASK		BIT_MASK(1)
+#define ESR_ISS_CV_SHIFT	(24)
+#define ESR_ISS_CV_MASK		BIT_MASK(1)
+#define ESR_ISS_COND_SHIFT	(15)
+#define ESR_ISS_COND_MASK	BIT_MASK(4)
 
 #define GET_ESR_EC(esr)		(((esr) >> ESR_EC_SHIFT) & ESR_EC_MASK)
 #define GET_ESR_IL(esr)		(((esr) >> ESR_IL_SHIFT) & ESR_IL_MASK)
 #define GET_ESR_ISS(esr)	(((esr) >> ESR_ISS_SHIFT) & ESR_ISS_MASK)
+#define GET_ESR_ISS_COND(esr)	(((esr) >> ESR_ISS_COND_SHIFT) & ESR_ISS_COND_MASK)
 
 #define CNTV_CTL_ENABLE_BIT	BIT(0)
 #define CNTV_CTL_IMASK_BIT	BIT(1)
+#define CNTV_CTL_ISTAT_BIT  BIT(2)
+
+#define CNTP_CTL_ENABLE_BIT	BIT(0)
+#define CNTP_CTL_IMASK_BIT	BIT(1)
+#define CNTP_CTL_ISTAT_BIT  BIT(2)
 
 #define ID_AA64PFR0_EL0_SHIFT	(0)
 #define ID_AA64PFR0_EL1_SHIFT	(4)
@@ -134,11 +147,52 @@
 
 #define CPTR_EL2_RES1		BIT(13) | BIT(12) | BIT(9) | (0xff)
 
+#define HCR_VM_BIT		BIT(0)
+#define HCR_SWIO_BIT	BIT(1)
+#define HCR_PTW_BIT		BIT(2)
 #define HCR_FMO_BIT		BIT(3)
 #define HCR_IMO_BIT		BIT(4)
 #define HCR_AMO_BIT		BIT(5)
+#define HCR_VF_BIT		BIT(6)
+#define HCR_VI_BIT		BIT(7)
+#define HCR_VSE_BIT		BIT(8)
+#define HCR_FB_BIT		BIT(9)
+#define HCR_BSU_IS_BIT	BIT(10)
+#define HCR_BSU_BIT		(3 << 10)
+#define HCR_DC_BIT		BIT(12)
+#define HCR_TWI_BIT		BIT(13)
+#define HCR_TWE_BIT		BIT(14)
+#define HCR_TID0_BIT	BIT(15)
+#define HCR_TID1_BIT	BIT(16)
+#define HCR_TID2_BIT	BIT(17)
+#define HCR_TID3_BIT	BIT(18)
+#define HCR_TSC_BIT		BIT(19)
+#define HCR_TIDCP_BIT	BIT(20)
+#define HCR_TAC_BIT	    BIT(21)
+#define HCR_TSW_BIT		BIT(22)
+#define HCR_TPC_BIT		BIT(23)
+#define HCR_TPU_BIT		BIT(24)
+#define HCR_TTLB_BIT	BIT(25)
+#define HCR_TVM_BIT		BIT(26)
 #define HCR_TGE_BIT		BIT(27)
+#define HCR_TDZ_BIT		BIT(28)
+#define HCR_HCDV_BIT	BIT(29)
+#define HCR_TRVM_BIT	BIT(30)
 #define HCR_RW_BIT		BIT(31)
+#define HCR_CD_BIT		BIT(32)
+#define HCR_ID_BIT		BIT(33)
+#define HCR_E2H_BIT		BIT(34)
+#define HCR_TLOR_BIT	BIT(35)
+#define HCR_TERR_BIT	BIT(36)
+#define HCR_TEA_BIT		BIT(37)
+#define HCR_APK_BIT		BIT(40)
+#define HCR_API_BIT		BIT(41)
+#define HCR_FWB_BIT		BIT(46)
+#define HCR_FIEN_BIT	BIT(47)
+#define HCR_AMVOFFEN_BIT	BIT(51)
+#define HCR_ATA_BIT		BIT(56)
+#define HCR_DCT_BIT		BIT(57)
+#define HCR_TID5_BIT	BIT(58)
 
 /* System register interface to GICv3 */
 #define ICC_IGRPEN1_EL1		S3_0_C12_C12_7
@@ -159,6 +213,7 @@
 #define ICC_EOIR0_EL1		S3_0_C12_C8_1
 #define ICC_EOIR1_EL1		S3_0_C12_C12_1
 #define ICC_SGI0R_EL1		S3_0_C12_C11_7
+#define ICC_DIR_EL1			S3_0_C12_C11_1
 
 /* register constants */
 #define ICC_SRE_ELx_SRE_BIT	BIT(0)
