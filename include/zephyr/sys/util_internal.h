@@ -195,6 +195,12 @@
 /* Used by UTIL_DEC */
 #include "util_internal_util_dec.h"
 
+/* Used by UTIL_ADD */
+#include "util_internal_util_add.h"
+
+/* Used by UTIL_SUB */
+#include "util_internal_util_sub.h"
+
 /* Used by UTIL_X2 */
 #include "util_internal_util_x2.h"
 
