@@ -138,3 +138,19 @@ list(APPEND CMAKE_REQUIRED_FLAGS
   -Wl,--entry=0 # Set an entry point to avoid a warning
   )
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
+
+
+# otherwise, unexported symbols would be kept
+set(LLEXT_SYMBOL_GC_COMPILE_FLAGS
+  -fvisibility=hidden
+)
+
+# remove code/data sections that only contain unreferenced symbols
+# use sections with explicitly exported symbols (default visibility) as root
+# the linker script merges the function/data sections, as zephyr cannot currently handle
+# multiple sections
+set(LLEXT_SYMBOL_GC_LINK_FLAGS
+  -Wl,--gc-sections
+  -Wl,--gc-keep-exported
+  -T ${ZEPHYR_BASE}/subsys/llext/llext.ld
+)
