@@ -44,6 +44,7 @@ static int api_start(const struct device *dev)
 	const struct max32_tmr_config *cfg = dev->config;
 
 	Wrap_MXC_TMR_EnableInt(cfg->regs);
+	MXC_TMR_SetCount(cfg->regs, 0);
 	MXC_TMR_Start(cfg->regs);
 
 	return 0;
@@ -118,19 +119,21 @@ static int set_cc(const struct device *dev, uint8_t id, uint32_t val, uint32_t f
 	bool irq_on_late = 0;
 
 	now = MXC_TMR_GetCount(regs);
+	MXC_TMR_SetCompare(regs, now);
 	MXC_TMR_ClearFlags(regs);
 
 	if (absolute) {
 		max_rel_val = top - data->guard_period;
 		irq_on_late = flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
 	} else {
+		irq_on_late = val < (top / 2);
+		max_rel_val = irq_on_late ? top / 2 : top;
 		val = now + val;
 	}
 
 	MXC_TMR_SetCompare(regs, val);
-	now = MXC_TMR_GetCount(regs);
 
-	diff = (val - now);
+	diff = (val - MXC_TMR_GetCount(regs));
 	if (diff > max_rel_val) {
 		if (absolute) {
 			err = -ETIME;
@@ -145,7 +148,8 @@ static int set_cc(const struct device *dev, uint8_t id, uint32_t val, uint32_t f
 			config->ch_data[id].callback = NULL;
 		}
 	} else {
-		api_start(dev);
+		Wrap_MXC_TMR_EnableInt(regs);
+		MXC_TMR_Start(regs);
 	}
 
 	return err;
