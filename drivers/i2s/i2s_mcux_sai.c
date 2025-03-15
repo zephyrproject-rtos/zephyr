@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2023-2024 NXP Semiconductor INC.
+ * Copyright 2021,2023-2025 NXP Semiconductor INC.
  * All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -1124,6 +1124,9 @@ static int i2s_mcux_initialize(const struct device *dev)
 
 	/*clock configuration*/
 	audio_clock_settings(dev);
+
+	/* enable SAI mclk */
+	enable_mclk_direction(dev, true);
 
 	SAI_Init(base);
 
