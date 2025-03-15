@@ -95,6 +95,10 @@ New APIs and options
 
   * :c:func:`display_clear`
 
+* Other
+
+  * :c:func:`count_bits`
+
 New Boards
 **********
 
