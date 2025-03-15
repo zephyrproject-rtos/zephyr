@@ -11,7 +11,8 @@
  * organized as follows:
  *
  * - 31..24: Pin function.
- * - 23..16: Reserved.
+ * - 23..15: Reserved.
+ * - 16:     Low power.
  * - 15..8:  Port for UART_RX/UART_TX functions.
  * - 7..0:   Pin number for UART_RX/UART_TX functions.
  * - 15..8:  Reserved for UART_LOC function.
@@ -42,6 +43,16 @@
 #define GECKO_LOC_POS 0U
 /** Mask for the pin field. */
 #define GECKO_LOC_MSK 0xFFU
+
+/** Position of low power field. */
+#define GECKO_LP_POS 16U
+/** Mask for the low power field. */
+#define GECKO_LP_MSK 0x1U
+
+/** Input. */
+#define	GECKO_LP_DISABLE 0U
+/** Output. */
+#define GECKO_LP_ENABLE 1U
 
 /** @} */
 
