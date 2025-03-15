@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited.
  * Copyright (c) 2018 Nordic Semiconductor ASA.
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -158,6 +159,7 @@ static void mpu_set_region(uint32_t rnr, uint32_t rbar, uint32_t rlar)
 static void region_init(const uint32_t index,
 	const struct arm_mpu_region *region_conf)
 {
+	/* clang-format off */
 	mpu_set_region(
 		/* RNR */
 		index,
@@ -170,7 +172,11 @@ static void region_init(const uint32_t index,
 		| ((region_conf->attr.mair_idx << MPU_RLAR_AttrIndx_Pos)
 			& MPU_RLAR_AttrIndx_Msk)
 		| MPU_RLAR_EN_Msk
+#ifdef CONFIG_ARM_MPU_PXN
+		| ((region_conf->attr.pxn << MPU_RLAR_PXN_Pos) & MPU_RLAR_PXN_Msk)
+#endif
 	);
+	/* clang-format on */
 
 	LOG_DBG("[%d] 0x%08x 0x%08x 0x%08x 0x%08x",
 			index, region_conf->base, region_conf->attr.rbar,
@@ -279,6 +285,9 @@ static inline void mpu_region_get_access_attr(const uint32_t index,
 		(MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk | MPU_RBAR_SH_Msk);
 	attr->mair_idx = (mpu_get_rlar() & MPU_RLAR_AttrIndx_Msk) >>
 		MPU_RLAR_AttrIndx_Pos;
+#ifdef CONFIG_ARM_MPU_PXN
+	attr->pxn = (mpu_get_rlar() & MPU_RLAR_PXN_Msk) >> MPU_RLAR_PXN_Pos;
+#endif
 }
 
 static inline void mpu_region_get_conf(const uint32_t index,
@@ -313,6 +322,9 @@ static inline void get_region_attr_from_mpu_partition_info(
 		(MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk | MPU_RBAR_SH_Msk);
 	p_attr->mair_idx = attr->mair_idx;
 	p_attr->r_limit = REGION_LIMIT_ADDR(base, size);
+#ifdef CONFIG_ARM_MPU_PXN
+	p_attr->pxn = attr->pxn;
+#endif
 }
 
 #if defined(CONFIG_USERSPACE)
