@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
+#include <math.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <stdbool.h>
@@ -201,7 +202,7 @@ static void *lexer_number(struct json_lexer *lex)
 	while (true) {
 		int chr = next(lex);
 
-		if (isdigit(chr) != 0 || chr == '.') {
+		if (isdigit(chr) != 0 || chr == '.' || chr == 'e' || chr == '+' || chr == '-') {
 			continue;
 		}
 
@@ -311,6 +312,8 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_INT64:
 	case JSON_TOK_UINT64:
 	case JSON_TOK_FLOAT:
+	case JSON_TOK_FLOAT_FP:
+	case JSON_TOK_DOUBLE_FP:
 	case JSON_TOK_OPAQUE:
 	case JSON_TOK_OBJ_ARRAY:
 	case JSON_TOK_TRUE:
@@ -494,6 +497,66 @@ static int decode_uint64(const struct json_token *token, uint64_t *num)
 	return 0;
 }
 
+static int decode_float(const struct json_token *token, float *num)
+{
+#ifdef CONFIG_JSON_LIBRARY_FP_SUPPORT
+	char *endptr;
+	char prev_end;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	errno = 0;
+	*num = strtof(token->start, &endptr);
+
+	*token->end = prev_end;
+
+	if (errno != 0) {
+		return -errno;
+	}
+
+	if (endptr != token->end) {
+		return -EINVAL;
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(token);
+	ARG_UNUSED(num);
+	return -EINVAL;
+#endif
+}
+
+static int decode_double(const struct json_token *token, double *num)
+{
+#ifdef CONFIG_JSON_LIBRARY_FP_SUPPORT
+	char *endptr;
+	char prev_end;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	errno = 0;
+	*num = strtod(token->start, &endptr);
+
+	*token->end = prev_end;
+
+	if (errno != 0) {
+		return -errno;
+	}
+
+	if (endptr != token->end) {
+		return -EINVAL;
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(token);
+	ARG_UNUSED(num);
+	return -EINVAL;
+#endif
+}
+
 static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 {
 	if (type1 == JSON_TOK_TRUE || type1 == JSON_TOK_FALSE) {
@@ -501,6 +564,14 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 	}
 
 	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_FLOAT) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_FLOAT_FP) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_DOUBLE_FP) {
 		return true;
 	}
 
@@ -579,6 +650,16 @@ static int64_t decode_value(struct json_obj *obj,
 
 		return decode_uint64(value, num);
 	}
+	case JSON_TOK_FLOAT_FP: {
+		float *num = field;
+
+		return decode_float(value, num);
+	}
+	case JSON_TOK_DOUBLE_FP: {
+		double *num = field;
+
+		return decode_double(value, num);
+	}
 	case JSON_TOK_OPAQUE:
 	case JSON_TOK_FLOAT: {
 		struct json_obj_token *obj_token = field;
@@ -609,6 +690,10 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 		return sizeof(int64_t);
 	case JSON_TOK_UINT64:
 		return sizeof(uint64_t);
+	case JSON_TOK_FLOAT_FP:
+		return sizeof(float);
+	case JSON_TOK_DOUBLE_FP:
+		return sizeof(double);
 	case JSON_TOK_OPAQUE:
 	case JSON_TOK_FLOAT:
 	case JSON_TOK_OBJ_ARRAY:
@@ -1088,6 +1173,62 @@ static int uint64_encode(const uint64_t *num, json_append_bytes_t append_bytes,
 	return append_bytes(buf, (size_t)ret, data);
 }
 
+static int float_encode(const float *num, json_append_bytes_t append_bytes,
+		      void *data)
+{
+#ifdef CONFIG_JSON_LIBRARY_FP_SUPPORT
+	char buf[sizeof("-3.40282347e+38")];
+	int ret;
+
+	if (isnan(*num) || isinf(*num)) {
+		return -EINVAL;
+	}
+
+	ret = snprintk(buf, sizeof(buf), "%.9g", (double)*num);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int)sizeof(buf)) {
+		return -ENOMEM;
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+#else
+	ARG_UNUSED(num);
+	ARG_UNUSED(append_bytes);
+	ARG_UNUSED(data);
+	return -EINVAL;
+#endif
+}
+
+static int double_encode(const double *num, json_append_bytes_t append_bytes,
+		      void *data)
+{
+#ifdef CONFIG_JSON_LIBRARY_FP_SUPPORT
+	char buf[sizeof("-1.797693134862316e+308")];
+	int ret;
+
+	if (isnan(*num) || isinf(*num)) {
+		return -EINVAL;
+	}
+
+	ret = snprintk(buf, sizeof(buf), "%.16g", *num);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int)sizeof(buf)) {
+		return -ENOMEM;
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+#else
+	ARG_UNUSED(num);
+	ARG_UNUSED(append_bytes);
+	ARG_UNUSED(data);
+	return -EINVAL;
+#endif
+}
+
 static int float_ascii_encode(struct json_obj_token *num, json_append_bytes_t append_bytes,
 		      void *data)
 {
@@ -1154,6 +1295,10 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 		return int64_encode(ptr, append_bytes, data);
 	case JSON_TOK_UINT64:
 		return uint64_encode(ptr, append_bytes, data);
+	case JSON_TOK_FLOAT_FP:
+		return float_encode(ptr, append_bytes, data);
+	case JSON_TOK_DOUBLE_FP:
+		return double_encode(ptr, append_bytes, data);
 	case JSON_TOK_FLOAT:
 		return float_ascii_encode(ptr, append_bytes, data);
 	case JSON_TOK_OPAQUE:
