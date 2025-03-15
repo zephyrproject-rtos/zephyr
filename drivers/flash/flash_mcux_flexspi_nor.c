@@ -943,37 +943,72 @@ static int flash_flexspi_nor_sfdp_read(const struct device *dev,
 
 #endif
 
-/* Helper to configure IS25 flash, by clearing read param bits */
-static int flash_flexspi_nor_is25_clear_read_param(struct flash_flexspi_nor_data *data,
-			uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ],
-			uint32_t *read_params)
+/* Helper to configure IS25 flash */
+static int
+flash_flexspi_nor_is25_clear_dummy_cycles(struct flash_flexspi_nor_data *data,
+					  uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ])
 {
 	int ret;
-	/* Install Set Read Parameters (Volatile) command */
-	flexspi_transfer_t transfer = {
-		.deviceAddress = 0,
-		.port = data->port,
-		.seqIndex = SCRATCH_CMD,
-		.SeqNumber = 1,
-		.data = read_params,
-		.dataSize = 1,
-		.cmdType = kFLEXSPI_Write,
-	};
-	flexspi_device_config_t config = {
+
+	const flexspi_device_config_t config = {
 		.flexspiRootClk = MHZ(50),
 		.flashSize = FLEXSPI_FLSHCR0_FLSHSZ_MASK, /* Max flash size */
 		.ARDSeqNumber = 1,
 		.ARDSeqIndex = READ,
 	};
 
-	flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-			kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xC0,
-			kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
-	ret = memc_flexspi_set_device_config(&data->controller,
-				&config,
-				(uint32_t *)flexspi_lut,
-				FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-				data->port);
+	flexspi_transfer_t transfer = {
+		.deviceAddress = 0,
+		.port = data->port,
+		.seqIndex = SCRATCH_CMD,
+		.SeqNumber = 1,
+		.dataSize = 1,
+	};
+
+	/*
+	 * Get Extended Read Parameters (Non-Volatile) command (RDERP, 81h)
+	 *
+	 * This is done to distinguish between an IS25LPXXX and IS25LPXXXD since
+	 * the former uses the read parameters (SRPV) to set drive strength and
+	 * dummy cycles, while IS25LPXXXD uses extended read parameters (SERPV)
+	 * for drive strength and read parameters (SRPV) for dummy cycles.
+	 */
+	uint32_t resp_data;
+
+	transfer.data = &resp_data;
+	transfer.cmdType = kFLEXSPI_Read;
+
+	flexspi_lut[SCRATCH_CMD][0] =
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x81,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
+	ret = memc_flexspi_set_device_config(&data->controller, &config, (uint32_t *)flexspi_lut,
+					     FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					     data->port);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+
+	/*
+	 * Check that EB[7:4] is not all zero and that EB[0] (WIP)
+	 * is not 1, which should catch a chip responding to an
+	 * unsupported 81h command with either 0x00 or 0xFF
+	 */
+	const int has_extended_read_reg = resp_data & 0xF0 && !(resp_data & 0x01);
+	uint32_t read_params = has_extended_read_reg ? 0 : 0xE0U;
+
+	/* Switch over to writing read_params (SRPV, C0h) */
+	transfer.cmdType = kFLEXSPI_Write;
+	transfer.data = &read_params;
+
+	flexspi_lut[SCRATCH_CMD][0] =
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xC0,
+				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
+	ret = memc_flexspi_set_device_config(&data->controller, &config, (uint32_t *)flexspi_lut,
+					     FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					     data->port);
 	if (ret < 0) {
 		return ret;
 	}
@@ -986,7 +1021,6 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 {
 	int ret;
 	uint32_t vendor_id;
-	uint32_t read_params;
 
 	ret = flash_flexspi_nor_read_id_helper(data, (uint8_t *)&vendor_id);
 	if (ret < 0) {
@@ -995,31 +1029,17 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 
 	/* Switch on manufacturer and vendor ID */
 	switch (vendor_id & 0xFFFFFF) {
-	case 0x16609d: /* IS25LP032 flash, needs P[4:3] cleared with same method as IS25WP */
+	case 0x16609d: /* IS25LP032 */
 	case 0x17609d: /* IS25LP064 */
 	case 0x18609d: /* IS25LP128 */
-		read_params = 0xE0U;
-		ret = flash_flexspi_nor_is25_clear_read_param(data, flexspi_lut, &read_params);
-		if (ret < 0) {
-			while (1) {
-				/*
-				 * Spin here, this flash won't configure correctly.
-				 * We can't print a warning, as we are unlikely to
-				 * be able to XIP at this point.
-				 */
-			}
-		}
-		/* Still return an error- we want the JEDEC configuration to run */
-		return -ENOTSUP;
 	case 0x16709d: /* IS25WP032 */
 	case 0x17709d: /* IS25WP064 */
 	case 0x18709d: /* IS25WP128 */
 		/*
-		 * IS25WP flash. We can support this flash with the JEDEC probe,
-		 * but we need to insure P[6:3] are at the default value
+		 * We can support this flash with the JEDEC probe, but we need to
+		 * ensure Dummy Cycles are at the default value
 		 */
-		read_params = 0;
-		ret = flash_flexspi_nor_is25_clear_read_param(data, flexspi_lut, &read_params);
+		ret = flash_flexspi_nor_is25_clear_dummy_cycles(data, flexspi_lut);
 		if (ret < 0) {
 			while (1) {
 				/*
