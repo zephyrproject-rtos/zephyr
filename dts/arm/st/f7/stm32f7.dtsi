@@ -713,13 +713,14 @@
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
+			physel = "USB_OTG_FS_EMBEDDED_PHY";
 			clocks = <&rcc STM32_CLOCK(AHB2, 7U)>,
 				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
 		};
 
 		usbotg_hs: usb@40040000 {
-			compatible = "st,stm32-otghs";
+			compatible = "st,stm32f7-otghs", "st,stm32-otghs";
 			reg = <0x40040000 0x40000>;
 			interrupts = <77 0>, <74 0>, <75 0>;
 			interrupt-names = "otghs", "ep1_out", "ep1_in";

@@ -143,6 +143,7 @@
 
 &usbotg_hs {
 	status = "okay";
+	physel = "USB_OTG_HS_PHY_ULPI";
 };
 
 &flash0 {
