@@ -208,6 +208,8 @@ see the following message in the terminal:
 
     Hello World! mimxrt1010_evk
 
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _MIMXRT1010-EVK Website:
    https://www.nxp.com/MIMXRT1010-EVK

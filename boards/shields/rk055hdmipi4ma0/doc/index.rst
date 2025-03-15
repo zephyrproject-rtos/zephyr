@@ -59,6 +59,9 @@ example:
    :shield: rk055hdmipi4ma0
    :goals: build
 
+.. include:: ../../../nxp/common/board-footer.rst
+   :start-after: nxp-board-footer
+
 References
 **********
 

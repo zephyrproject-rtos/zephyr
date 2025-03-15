@@ -383,3 +383,6 @@ This board has been designed for SOF so it's only intended to be used with SOF.
 
 TODO: document the SOF build process for this board. For now, the support for
 i.MX93 is still in review and has yet to merged on SOF side.
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
