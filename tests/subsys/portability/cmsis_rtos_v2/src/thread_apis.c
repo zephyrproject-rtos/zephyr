@@ -130,7 +130,7 @@ static void thread_apis_common(int *yield_check, const char *thread1_name,
 
 ZTEST(cmsis_thread_apis, test_thread_apis_dynamic)
 {
-	thread_apis_common(&thread_yield_check_dynamic, "ZephyrThread", NULL, NULL);
+	thread_apis_common(&thread_yield_check_dynamic, NULL, NULL, NULL);
 }
 
 ZTEST(cmsis_thread_apis, test_thread_apis)
