@@ -51,8 +51,41 @@
 };
 
 &gpio {
-	interrupts = <10 2 18 2>;
+	interrupts = <25 2>, <26 2>;
+	interrupt-names = "gpio_odd", "gpio_even";
 	clocks = <&cmu CLOCK_GPIO CLOCK_BRANCH_PCLK>;
+
+	gpioa: gpio@5003c000 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C000 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpiob: gpio@5003c030 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C030 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpioc: gpio@5003c060 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C060 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpiod: gpio@5003c090 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C090 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
 };
 
 &dma0 {
