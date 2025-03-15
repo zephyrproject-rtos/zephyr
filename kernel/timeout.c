@@ -11,10 +11,20 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/pm/event_domain.h>
 
 static uint64_t curr_tick;
 
 static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
+
+#define TIMEOUT_EVENT_DOMAIN_NODE DT_CHOSEN(zephyr_timeout_event_domain)
+#define TIMEOUT_EVENT_DOMAIN      PM_EVENT_DOMAIN_DT_GET(TIMEOUT_EVENT_DOMAIN_NODE)
+
+#if CONFIG_TIMEOUT_EVENT_DOMAIN
+static const struct pm_event_domain *timeout_event_domain = TIMEOUT_EVENT_DOMAIN;
+PM_EVENT_DOMAIN_EVENT_DT_DEFINE(timeout_event_domain_event, TIMEOUT_EVENT_DOMAIN_NODE);
+static bool timeout_event_domain_event_requested;
+#endif
 
 /*
  * The timeout code shall take no locks other than its own (timeout_lock), nor
@@ -100,6 +110,40 @@ static int32_t next_timeout(void)
 	return ret;
 }
 
+#if defined(CONFIG_TIMEOUT_EVENT_DOMAIN)
+static int32_t limit_latency(int32_t ticks)
+{
+	uint32_t max_latency_us;
+
+	max_latency_us = pm_event_domain_floor_event_latency_us(timeout_event_domain,
+								k_ticks_to_us_ceil32(ticks));
+
+	if (timeout_event_domain_event_requested) {
+		(void)pm_event_domain_rerequest_event(&timeout_event_domain_event,
+						      max_latency_us);
+	} else {
+		timeout_event_domain_event_requested = true;
+		(void)pm_event_domain_request_event(&timeout_event_domain_event,
+						    max_latency_us);
+	}
+
+	ticks -= k_us_to_ticks_ceil32(max_latency_us);
+
+	return MAX(1, ticks);
+}
+#endif
+
+static void set_next_timeout(void)
+{
+	int32_t ticks = next_timeout();
+
+#if defined(CONFIG_TIMEOUT_EVENT_DOMAIN)
+	ticks = limit_latency(ticks);
+#endif
+
+	sys_clock_set_timeout(ticks, false);
+}
+
 void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 		   k_timeout_t timeout)
 {
@@ -140,7 +184,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 		}
 
 		if (to == first() && announce_remaining == 0) {
-			sys_clock_set_timeout(next_timeout(), false);
+			set_next_timeout();
 		}
 	}
 }
@@ -156,7 +200,7 @@ int z_abort_timeout(struct _timeout *to)
 			remove_timeout(to);
 			ret = 0;
 			if (is_first) {
-				sys_clock_set_timeout(next_timeout(), false);
+				set_next_timeout();
 			}
 		}
 	}
@@ -258,7 +302,7 @@ void sys_clock_announce(int32_t ticks)
 	curr_tick += announce_remaining;
 	announce_remaining = 0;
 
-	sys_clock_set_timeout(next_timeout(), false);
+	set_next_timeout();
 
 	k_spin_unlock(&timeout_lock, key);
 
