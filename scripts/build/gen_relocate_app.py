@@ -44,7 +44,6 @@ this will place data and bss inside SRAM2.
 
 import sys
 import argparse
-import os
 import glob
 import re
 import warnings
@@ -491,19 +490,18 @@ def parse_args():
                         help="Verbose Output")
     args = parser.parse_args()
 
+def gen_all_obj_files(searchpath):
+    return list(Path(searchpath).rglob('*.o')) + list(Path(searchpath).rglob('*.obj'))
 
 # return the absolute path for the object file.
-def get_obj_filename(searchpath, filename):
+def get_obj_filename(all_obj_files, filename):
     # get the object file name which is almost always pended with .obj
     obj_filename = filename.split("/")[-1] + ".obj"
 
-    for dirpath, _, files in os.walk(searchpath):
-        for filename1 in files:
-            if filename1 == obj_filename:
-                if filename.split("/")[-2] in dirpath.split("/")[-1]:
-                    fullname = os.path.join(dirpath, filename1)
-                    return fullname
-
+    for obj_file in all_obj_files:
+        if obj_file.name == obj_filename:
+            if filename.split("/")[-2] in obj_file.parent.name:
+                return str(obj_file)
 
 # Extracts all possible components for the input string:
 # <mem_region>[\ :program_header]:<flag_1>[;<flag_2>...]:<file_1>[;<file_2>...][,filter]
@@ -587,6 +585,7 @@ def main():
     mpu_align = {}
     parse_args()
     searchpath = args.directory
+    all_obj_files = gen_all_obj_files(searchpath)
     linker_file = args.output
     sram_data_linker_file = args.output_sram_data
     sram_bss_linker_file = args.output_sram_bss
@@ -602,7 +601,7 @@ def main():
         full_list_of_sections: 'dict[SectionKind, list[OutputSection]]' = defaultdict(list)
 
         for filename, symbol_filter in files:
-            obj_filename = get_obj_filename(searchpath, filename)
+            obj_filename = get_obj_filename(all_obj_files, filename)
             # the obj file wasn't found. Probably not compiled.
             if not obj_filename:
                 continue
