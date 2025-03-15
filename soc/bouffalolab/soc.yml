@@ -1,0 +1,13 @@
+family:
+- name: bouffalolab_bflb
+  series:
+  - name: bl60x
+    socs:
+    - name: bl602c00q2i
+    - name: bl602c20q2i
+    - name: bl602c20q2is
+    - name: bl602c40q2is
+    - name: bl602l10q2h
+    - name: bl602l20q2h
+    - name: bl604e20q2i
+vendor: bflb
