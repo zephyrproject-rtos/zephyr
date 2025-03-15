@@ -159,6 +159,11 @@ config USE_RA_FSP_ACMPHS
 	help
 	  Enable RA FSP ACMPHS driver
 
+config USE_RA_FSP_WDT
+	bool
+	help
+	  Enable RA FSP WDT driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
