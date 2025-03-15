@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2024 Cienet
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	new_pinctrl_default: new_pinctrl_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 26)>,
+				<NRF_PSEL(TWIM_SCL, 0, 27)>;
+			bias-pull-up;
+		};
+	};
+
+	new_pinctrl_sleep: new_pinctrl_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 26)>,
+				<NRF_PSEL(TWIM_SCL, 0, 27)>;
+			low-power-enable;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&new_pinctrl_default>;
+	pinctrl-1 = <&new_pinctrl_sleep>;
+	pinctrl-names = "default", "sleep";
+	bma4xx: bma4xx@19 {
+		compatible = "bosch,bma4xx";
+		reg = <0x19>;
+		int1-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+	};
+};
