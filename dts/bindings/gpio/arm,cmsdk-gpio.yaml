@@ -2,7 +2,7 @@ description: ARM CMSDK GPIO
 
 compatible: "arm,cmsdk-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

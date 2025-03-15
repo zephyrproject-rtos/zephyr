@@ -1,4 +1,4 @@
-/* Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com> */
+/* Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com> */
 /* SPDX-License-Identifier: Apache-2.0 */
 
 / {
@@ -145,6 +145,8 @@
 			interrupt-names = "tx", "rx";
 			clocks = <&sysclk>;
 			current-speed = <115200>;
+			pinctrl-0 = <&uart3_default>;
+			pinctrl-names = "default";
 		};
 
 		wdog0: wdog@40008000 {
@@ -160,6 +162,8 @@
 			interrupt-names = "tx", "rx";
 			clocks = <&sysclk>;
 			current-speed = <115200>;
+			pinctrl-0 = <&uart4_default>;
+			pinctrl-names = "default";
 		};
 
 		gpio0: gpio@40010000 {
@@ -168,6 +172,8 @@
 			interrupts = <6 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			pinctrl-0 = <&gpio0_default>;
+			pinctrl-names = "default";
 		};
 
 		gpio1: gpio@40011000 {
@@ -176,6 +182,8 @@
 			interrupts = <7 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			pinctrl-0 = <&gpio1_default>;
+			pinctrl-names = "default";
 		};
 
 		gpio2: gpio@40012000 {
@@ -184,6 +192,8 @@
 			interrupts = <16 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			pinctrl-0 = <&gpio2_default>;
+			pinctrl-names = "default";
 		};
 
 		gpio3: gpio@40013000 {
@@ -192,6 +202,8 @@
 			interrupts = <17 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			pinctrl-0 = <&gpio3_default>;
+			pinctrl-names = "default";
 		};
 
 		eth0: eth@40200000 {
@@ -225,6 +237,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40029000 0x1000>;
+			pinctrl-0 = <&sbcon0_default>;
+			pinctrl-names = "default";
 		};
 
 		i2c_shield1: i2c@4002a000 {
@@ -233,6 +247,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x4002a000 0x1000>;
+			pinctrl-0 = <&sbcon1_default>;
+			pinctrl-names = "default";
 		};
 
 		gpio_led0: mps2_fpgaio@40028000 {
@@ -259,9 +275,16 @@
 			#gpio-cells = <1>;
 			ngpios = <10>;
 		};
+
+		pinctrl: pinctrl {
+			compatible = "arm,mps2-pinctrl";
+			status = "okay";
+		};
 	};
 };
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+#include "mps2-pinctrl.dtsi"
