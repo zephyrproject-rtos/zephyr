@@ -24,11 +24,6 @@ static void adxl345_thread_cb(const struct device *dev)
 	uint8_t status1;
 	int ret;
 
-	/* Clear the status */
-	if (adxl345_get_status(dev, &status1, NULL) < 0) {
-		return;
-	}
-
 	if ((drv_data->drdy_handler != NULL) &&
 		ADXL345_STATUS_DATA_RDY(status1)) {
 		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
@@ -37,6 +32,11 @@ static void adxl345_thread_cb(const struct device *dev)
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	__ASSERT(ret == 0, "Interrupt configuration failed");
+
+	/* Clear the status */
+	if (adxl345_get_status(dev, &status1, NULL) < 0) {
+		return;
+	}
 }
 #endif
 
@@ -100,6 +100,11 @@ int adxl345_trigger_set(const struct device *dev,
 	}
 
 	switch (trig->type) {
+	case SENSOR_TRIG_MOTION:
+		drv_data->drdy_handler = handler;
+		drv_data->drdy_trigger = trig;
+		int_mask = ADXL345_INT_MAP_ACT_MSK;
+		break;
 	case SENSOR_TRIG_DATA_READY:
 		drv_data->drdy_handler = handler;
 		drv_data->drdy_trigger = trig;
@@ -116,10 +121,12 @@ int adxl345_trigger_set(const struct device *dev,
 		int_en = 0U;
 	}
 
+	/* map interrupts to pins */
 	ret = adxl345_reg_write_mask(dev, ADXL345_INT_MAP, int_mask, int_en);
 	if (ret < 0) {
 		return ret;
 	}
+
 	/* Clear status */
 	ret = adxl345_get_status(dev, &status1, NULL);
 	if (ret < 0) {
@@ -128,6 +135,12 @@ int adxl345_trigger_set(const struct device *dev,
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
 					      GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* interrupts don't fire when using int_mask, why? */
+	ret = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE, 0xFF, int_en);
 	if (ret < 0) {
 		return ret;
 	}
