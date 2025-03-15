@@ -23,6 +23,7 @@ config SOC_NEORV32_READ_FREQUENCY_AT_RUNTIME
 	bool "Read the NEORV32 clock frequency at runtime"
 	default y
 	depends on !$(dt_node_has_prop,/cpus/cpu@0,clock-frequency)
+	depends on SYS_CLOCK_EXISTS
 	select SOC_EARLY_INIT_HOOK
 	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	help
