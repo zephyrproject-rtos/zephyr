@@ -24,27 +24,12 @@ struct fake_dev_context {
 	struct net_if *iface;
 };
 
-static const char testing_data[] = "Tappara";
-
 static int fake_dev_send(const struct device *dev, struct net_pkt *pkt)
 {
-	struct net_pkt *recv_pkt;
-	int ret;
-
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pkt);
 
-	/* Loopback the data back to stack: */
-	NET_DBG("Dummy device: Loopbacking data (%zd bytes) to iface %d\n", net_pkt_get_len(pkt),
-	    net_if_get_by_iface(net_pkt_iface(pkt)));
-
-	recv_pkt = net_pkt_clone(pkt, K_NO_WAIT);
-
-	k_sleep(K_MSEC(10)); /* Let the receiver run */
-
-	ret = net_recv_data(net_pkt_iface(recv_pkt), recv_pkt);
-	zassert_equal(ret, 0, "Cannot receive data (%d)", ret);
-	return 0;
+	return -ENETDOWN;
 }
 
 static uint8_t *fake_dev_get_mac(struct fake_dev_context *ctx)
@@ -111,36 +96,14 @@ static void *test_setup(void)
 	return NULL;
 }
 
-ZTEST(net_sckt_packet_raw_ip, test_sckt_raw_packet_raw_ip)
+ZTEST(net_sock_packet_raw_ip, test_sock_raw_packet_raw_ip)
 {
-	/* A test case for testing socket combo: AF_PACKET & SOCK_RAW & IPPROTO_RAW: */
-	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
-	int recv_data_len, ret;
-	struct sockaddr_ll dst = { 0 };
-	char receive_buffer[128];
 	int sock;
 
 	sock = zsock_socket(AF_PACKET, SOCK_RAW, htons(IPPROTO_RAW));
-	zassert_true(sock >= 0, "Could not create a socket");
-
-	dst.sll_ifindex = net_if_get_by_iface(iface);
-	dst.sll_family = AF_PACKET;
-
-	ret = zsock_bind(sock, (const struct sockaddr *)&dst, sizeof(struct sockaddr_ll));
-	zassert_true(ret >= 0, "Could not bind the socket");
-
-	/* Let's send some data: */
-	ret = zsock_sendto(sock, testing_data, ARRAY_SIZE(testing_data), 0,
-			   (const struct sockaddr *)&dst, sizeof(struct sockaddr_ll));
-	zassert_true(ret > 0, "Could not send data");
-
-	/* Receive the same data back: */
-	recv_data_len = zsock_recv(sock, receive_buffer, sizeof(receive_buffer), 0);
-	zassert_true(recv_data_len == ARRAY_SIZE(testing_data), "Expected data not received");
-
-	NET_DBG("Received successfully data %s", receive_buffer);
+	zassert_true(sock < 0, "Could create a socket");
 
 	zsock_close(sock);
 }
 
-ZTEST_SUITE(net_sckt_packet_raw_ip, NULL, test_setup, NULL, NULL, NULL);
+ZTEST_SUITE(net_sock_packet_raw_ip, NULL, test_setup, NULL, NULL, NULL);
