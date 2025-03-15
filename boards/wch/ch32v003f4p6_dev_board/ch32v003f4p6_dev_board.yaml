@@ -1,0 +1,12 @@
+identifier: ch32v003f4p6_dev_board
+name: WCH CH32V003F4P6 Development Board
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 2
+flash: 16
+supported:
+  - gpio
+  - uart
