@@ -422,6 +422,10 @@ device.
      - A node whose ``reg`` is used by the OpenAMP subsystem to determine the
        base address and size of the shared memory (SHM) usable for
        interprocess-communication (IPC)
+   * - zephyr,ipc_shm_translation
+     - A node whose ``reg`` is used by the addr_translation driver to convert,
+       in OpenAMP subsystem, the base address of the shared memory (SHM) from
+       driver to device address, since for some SoCs these are different
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,log-uart
