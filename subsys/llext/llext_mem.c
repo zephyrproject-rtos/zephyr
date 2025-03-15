@@ -55,33 +55,50 @@ static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 	}
 #endif
 
-	LOG_DBG("region %d: start 0x%zx, size %zd", mem_idx, (size_t)start, len);
+	LOG_DBG("region %d: start %#zx, size %zd", mem_idx, (size_t)start, len);
 }
 
-static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
+static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 			      enum llext_mem mem_idx, const struct llext_load_param *ldr_parm)
 {
 	int ret;
+	elf_shdr_t *region = ldr->sects + mem_idx;
+	uintptr_t region_alloc = region->sh_size;
+	uintptr_t region_align = region->sh_addralign;
 
-	if (!ldr->sects[mem_idx].sh_size) {
+	if (!region_alloc) {
 		return 0;
 	}
-	ext->mem_size[mem_idx] = ldr->sects[mem_idx].sh_size;
+	ext->mem_size[mem_idx] = region_alloc;
 
 	if (IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
-		if (ldr->sects[mem_idx].sh_type != SHT_NOBITS) {
-			/* Directly use data from the ELF buffer if peek() is supported */
-			ext->mem[mem_idx] = llext_peek(ldr, ldr->sects[mem_idx].sh_offset);
+		/*
+		 * Try to reuse data areas from the ELF buffer, if possible.
+		 * If any of the following tests fail, a normal allocation
+		 * will be attempted.
+		 */
+		if (region->sh_type != SHT_NOBITS) {
+			/* Region has data in the file, check if peek() is supported */
+			ext->mem[mem_idx] = llext_peek(ldr, region->sh_offset);
 			if (ext->mem[mem_idx]) {
-				llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
-						    ldr->sects[mem_idx].sh_size);
-				ext->mem_on_heap[mem_idx] = false;
-				return 0;
+				if (IS_ALIGNED(ext->mem[mem_idx], region_align) ||
+				    ldr_parm->pre_located) {
+					/* Map this region directly to the ELF buffer */
+					llext_init_mem_part(ext, mem_idx,
+							    (uintptr_t)ext->mem[mem_idx],
+							    region_alloc);
+					ext->mem_on_heap[mem_idx] = false;
+					return 0;
+				}
+
+				LOG_WRN("Cannot peek region %d: %p not aligned to %#zx",
+					mem_idx, ext->mem[mem_idx], (size_t)region_align);
 			}
-		} else if (ldr_parm && ldr_parm->pre_located) {
+		} else if (ldr_parm->pre_located) {
 			/*
-			 * ldr_parm cannot be NULL here with the current flow, but
-			 * we add a check to make it future-proof
+			 * In pre-located files all regions, including BSS,
+			 * are placed by the user with a linker script. No
+			 * additional memory allocation is needed here.
 			 */
 			ext->mem[mem_idx] = NULL;
 			ext->mem_on_heap[mem_idx] = false;
@@ -89,45 +106,68 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 		}
 	}
 
-	if (ldr_parm && ldr_parm->pre_located) {
+	if (ldr_parm->pre_located) {
+		/*
+		 * The ELF file is supposed to be pre-located, but some
+		 * regions are not accessible or not in the correct place.
+		 */
 		return -EFAULT;
 	}
 
-	/* On ARM with an MPU a pow(2, N)*32 sized and aligned region is needed,
-	 * otherwise its typically an mmu page (sized and aligned memory region)
-	 * we are after that we can assign memory permission bits on.
+	/*
+	 * Calculate the desired region size and alignment for a new allocation.
 	 */
-#ifndef CONFIG_ARM_MPU
-	const uintptr_t sect_alloc = ROUND_UP(ldr->sects[mem_idx].sh_size, LLEXT_PAGE_SIZE);
-	const uintptr_t sect_align = LLEXT_PAGE_SIZE;
-#else
-	uintptr_t sect_alloc = LLEXT_PAGE_SIZE;
+	if (IS_ENABLED(CONFIG_ARM_MPU)) {
+		/* On ARM with an MPU, regions must be sized and aligned to the same
+		 * power of two (larger than 32).
+		 */
+		uintptr_t block_size = MAX(MAX(region_alloc, region_align), LLEXT_PAGE_SIZE);
 
-	while (sect_alloc < ldr->sects[mem_idx].sh_size) {
-		sect_alloc *= 2;
+		block_size = 1 << LOG2CEIL(block_size); /* align to next power of two */
+		region_alloc = block_size;
+		region_align = block_size;
+	} else {
+		/* Otherwise, round the region to multiples of LLEXT_PAGE_SIZE. */
+		region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
+		region_align = MAX(region_align, LLEXT_PAGE_SIZE);
 	}
-	uintptr_t sect_align = sect_alloc;
-#endif
 
-	ext->mem[mem_idx] = llext_aligned_alloc(sect_align, sect_alloc);
+	ext->mem[mem_idx] = llext_aligned_alloc(region_align, region_alloc);
 	if (!ext->mem[mem_idx]) {
+		LOG_ERR("Failed allocating %zd bytes %zd-aligned for region %d",
+			(size_t)region_alloc, (size_t)region_align, mem_idx);
 		return -ENOMEM;
 	}
 
-	ext->alloc_size += sect_alloc;
+	ext->alloc_size += region_alloc;
 
 	llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
-		sect_alloc);
+		region_alloc);
 
-	if (ldr->sects[mem_idx].sh_type == SHT_NOBITS) {
-		memset(ext->mem[mem_idx], 0, ldr->sects[mem_idx].sh_size);
+	if (region->sh_type == SHT_NOBITS) {
+		memset(ext->mem[mem_idx], 0, region->sh_size);
 	} else {
-		ret = llext_seek(ldr, ldr->sects[mem_idx].sh_offset);
+		uintptr_t base = (uintptr_t)ext->mem[mem_idx];
+		size_t offset = region->sh_offset;
+		size_t length = region->sh_size;
+
+		if (region->sh_flags & SHF_ALLOC) {
+			/* zero out any prepad bytes, not part of the data area */
+			size_t prepad = region->sh_info;
+
+			memset((void *)base, 0, prepad);
+			base += prepad;
+			offset += prepad;
+			length -= prepad;
+		}
+
+		/* actual data area without prepad bytes */
+		ret = llext_seek(ldr, offset);
 		if (ret != 0) {
 			goto err;
 		}
 
-		ret = llext_read(ldr, ext->mem[mem_idx], ldr->sects[mem_idx].sh_size);
+		ret = llext_read(ldr, (void *)base, length);
 		if (ret != 0) {
 			goto err;
 		}
@@ -143,12 +183,13 @@ err:
 	return ret;
 }
 
-int llext_copy_strings(struct llext_loader *ldr, struct llext *ext)
+int llext_copy_strings(struct llext_loader *ldr, struct llext *ext,
+		       const struct llext_load_param *ldr_parm)
 {
-	int ret = llext_copy_section(ldr, ext, LLEXT_MEM_SHSTRTAB, NULL);
+	int ret = llext_copy_region(ldr, ext, LLEXT_MEM_SHSTRTAB, ldr_parm);
 
 	if (!ret) {
-		ret = llext_copy_section(ldr, ext, LLEXT_MEM_STRTAB, NULL);
+		ret = llext_copy_region(ldr, ext, LLEXT_MEM_STRTAB, ldr_parm);
 	}
 
 	return ret;
@@ -163,7 +204,7 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 			continue;
 		}
 
-		int ret = llext_copy_section(ldr, ext, mem_idx, ldr_parm);
+		int ret = llext_copy_region(ldr, ext, mem_idx, ldr_parm);
 
 		if (ret < 0) {
 			return ret;
@@ -175,12 +216,11 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 		for (int i = 0; i < ext->sect_cnt; ++i) {
 			elf_shdr_t *shdr = ext->sect_hdrs + i;
 			enum llext_mem mem_idx = ldr->sect_map[i].mem_idx;
-			const char *name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB,
-							shdr->sh_name);
+			const char *name = llext_section_name(ldr, ext, shdr);
 
 			/* only show sections mapped to program memory */
 			if (mem_idx < LLEXT_MEM_EXPORT) {
-				LOG_DBG("-s %s 0x%zx", name,
+				LOG_DBG("-s %s %#zx", name,
 					(size_t)ext->mem[mem_idx] + ldr->sect_map[i].offset);
 			}
 		}

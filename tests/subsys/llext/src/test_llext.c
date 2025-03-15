@@ -317,6 +317,11 @@ LLEXT_LOAD_UNLOAD(threads_kernel_objects,
 	.test_setup = threads_objects_test_setup,
 )
 
+static LLEXT_CONST uint8_t align_ext[] ELF_ALIGN = {
+	#include "align.inc"
+};
+LLEXT_LOAD_UNLOAD(align)
+
 static LLEXT_CONST uint8_t inspect_ext[] ELF_ALIGN = {
 	#include "inspect.inc"
 };

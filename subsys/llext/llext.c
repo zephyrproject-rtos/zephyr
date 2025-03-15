@@ -29,8 +29,7 @@ int llext_section_shndx(const struct llext_loader *ldr, const struct llext *ext,
 	unsigned int i;
 
 	for (i = 1; i < ext->sect_cnt; i++) {
-		const char *name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB,
-						ext->sect_hdrs[i].sh_name);
+		const char *name = llext_section_name(ldr, ext, ext->sect_hdrs + i);
 
 		if (!strcmp(name, sect_name)) {
 			return i;
