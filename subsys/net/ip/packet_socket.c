@@ -30,7 +30,7 @@ enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
 	 * For DSA the master port is not supporting raw packets. Only the
 	 * lan1..3 are working with them.
 	 */
-	if (dsa_is_port_master(net_pkt_iface(pkt))) {
+	if (dsa_port_is_master(net_pkt_iface(pkt))) {
 		return NET_CONTINUE;
 	}
 #endif
