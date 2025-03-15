@@ -5,8 +5,7 @@
 menu "POSIX signals"
 
 config POSIX_REALTIME_SIGNALS
-	bool "POSIX realtime signals [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "POSIX realtime signals"
 	help
 	  Enable support for POSIX realtime signals.
 
@@ -22,8 +21,7 @@ config POSIX_RTSIG_MAX
 endif # POSIX_REALTIME_SIGNALS
 
 config POSIX_SIGNALS
-	bool "POSIX signals [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "POSIX signals"
 	select POSIX_MULTI_PROCESS
 	help
 	  Enable support for POSIX signals.

@@ -11,6 +11,8 @@
 #ifndef BT_ASCS_INTERNAL_H
 #define BT_ASCS_INTERNAL_H
 
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/conn.h>

@@ -1,7 +1,7 @@
 # Copyright (c) 2022 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 family VBAT node
+description: STM32 VBAT
 
 include: sensor-device.yaml
 

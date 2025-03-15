@@ -2,7 +2,7 @@
 # Copyright (c) 2018, Song Qiang <songqiang1304521@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: ST STM32 family ADC
+description: STM32 ADC
 
 compatible: "st,stm32-adc"
 
@@ -22,15 +22,15 @@ properties:
     const: 1
 
   st,adc-clock-source:
-    type: int
+    type: string
     required: true
     enum:
-      - 1 # SYNC for synchronous ADC clock source
-      - 2 # ASYNC for asynchronous ADC clock source
+      - "SYNC"
+      - "ASYNC"
     description: |
       Type of ADC clock source :
-      - <SYNC>: derived from the bus clock.
-      - <ASYNC> : independent and asynchronous with the bus clock
+      - "SYNC": derived from the bus clock.
+      - "ASYNC" : independent and asynchronous with the bus clock
       One of the two values may not apply to some series. Refer to the RefMan.
       If an asynchronous clock is selected, a domain clock in the clock property
       has to be defined explicitly.
@@ -94,15 +94,28 @@ properties:
       Number of sampling time common channels for this ADC instance, if any.
 
   st,adc-sequencer:
-    type: int
+    type: string
     required: true
     enum:
-      - 0 # NOT_FULLY_CONFIGURABLE
-      - 1 # FULLY_CONFIGURABLE
+      - "NOT_FULLY_CONFIGURABLE"
+      - "FULLY_CONFIGURABLE"
     description: |
       Type of ADC sequencer:
-      - <NOT_FULLY_CONFIGURABLE>: Not fully configurable sequencer
-      - <FULLY_CONFIGURABLE>: Fully configurable sequencer
+      - "NOT_FULLY_CONFIGURABLE": Not fully configurable sequencer
+      - "FULLY_CONFIGURABLE": Fully configurable sequencer
+
+  st,adc-oversampler:
+    type: string
+    required: true
+    enum:
+      - "OVERSAMPLER_NONE"
+      - "OVERSAMPLER_MINIMAL"
+      - "OVERSAMPLER_EXTENDED"
+    description: |
+      Type of ADC oversampler:
+      - "OVERSAMPLER_NONE": No oversampler
+      - "OVERSAMPLER_MINIMAL": Oversampler with 8 possible oversampling values (2, 4, 8, ..., 256)
+      - "OVERSAMPLER_EXTENDED": Oversampler with 1024 possible oversampling values (1..1024)
 
 io-channel-cells:
   - input

@@ -16,7 +16,7 @@
 #include <zephyr/shell/shell_websocket.h>
 #include <zephyr/logging/log_backend_ws.h>
 
-LOG_MODULE_REGISTER(shell_websocket, CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL);
+LOG_MODULE_REGISTER(shell_websocket, CONFIG_SHELL_WEBSOCKET_LOG_LEVEL);
 
 #define WEBSOCKET_LINE_SIZE CONFIG_SHELL_WEBSOCKET_LINE_BUF_SIZE
 #define WEBSOCKET_TIMEOUT   CONFIG_SHELL_WEBSOCKET_SEND_TIMEOUT
@@ -35,7 +35,9 @@ static void ws_end_client_connection(struct shell_websocket *ws)
 
 	LOG_DBG("Closing connection to #%d", ws->fds[0].fd);
 
-	(void)log_backend_ws_unregister(ws->fds[0].fd);
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_WS)) {
+		(void)log_backend_ws_unregister(ws->fds[0].fd);
+	}
 
 	(void)websocket_unregister(ws->fds[0].fd);
 
@@ -138,12 +140,6 @@ static void ws_recv(struct shell_websocket *ws, struct zsock_pollfd *pollfd)
 	}
 
 	len = ret;
-
-	if (len == 0) {
-		k_mutex_unlock(&ws->rx_lock);
-		return;
-	}
-
 	ws->rx_len += len;
 
 	k_mutex_unlock(&ws->rx_lock);
@@ -212,8 +208,9 @@ static int shell_ws_init(struct shell_websocket *ctx, int ws_socket)
 		LOG_ERR("Failed to register socket service, %d", ret);
 		goto error;
 	}
-
-	log_backend_ws_register(ws_socket);
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_WS)) {
+		log_backend_ws_register(ws_socket);
+	}
 
 	return 0;
 
@@ -377,7 +374,7 @@ const struct shell_transport_api shell_websocket_transport_api = {
 	.read = sh_read
 };
 
-int shell_websocket_setup(int ws_socket, void *user_data)
+int shell_websocket_setup(int ws_socket, struct http_request_ctx *request_ctx, void *user_data)
 {
 	struct shell_websocket *ws = user_data;
 
@@ -386,7 +383,8 @@ int shell_websocket_setup(int ws_socket, void *user_data)
 
 int shell_websocket_enable(const struct shell *sh)
 {
-	bool log_backend = CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL > 0;
+	bool log_backend = CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL > 0 &&
+			   !IS_ENABLED(CONFIG_LOG_BACKEND_WS);
 	uint32_t level = (CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL;
 	static const struct shell_backend_config_flags cfg_flags =

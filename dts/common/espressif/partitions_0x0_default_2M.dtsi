@@ -1,10 +1,9 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /* 2MB flash partition table */
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -13,32 +12,46 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x0 DT_SIZE_K(64)>;
+			reg = <0x0 DT_SIZE_K(128)>;
 		};
 
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x20000 DT_SIZE_K(832)>;
+			reg = <0x20000 DT_SIZE_K(768)>;
 		};
 
-		slot1_partition: partition@F0000 {
+		slot1_partition: partition@e0000 {
 			label = "image-1";
-			reg = <0xF0000 DT_SIZE_K(832)>;
+			reg = <0xE0000 DT_SIZE_K(768)>;
 		};
 
-		storage_partition: partition@1C0000 {
+		slot0_lpcore_partition: partition@1a0000 {
+			label = "image-0-lpcore";
+			reg = <0x1A0000 DT_SIZE_K(32)>;
+		};
+
+		slot1_lpcore_partition: partition@1a8000 {
+			label = "image-1-lpcore";
+			reg = <0x1A8000 DT_SIZE_K(32)>;
+		};
+
+		storage_partition: partition@1b0000 {
 			label = "storage";
-			reg = <0x1C0000 DT_SIZE_K(128)>;
+			reg = <0x1B0000 DT_SIZE_K(192)>;
 		};
 
-		scratch_partition: partition@1E0000 {
-			   label = "image-scratch";
-			   reg = <0x1E0000 DT_SIZE_K(64)>;
+		scratch_partition: partition@1e0000 {
+			label = "image-scratch";
+			reg = <0x1E0000 DT_SIZE_K(124)>;
 		};
 
-		coredump_partition: partition@1F0000 {
-			label = "coredump-partition";
-			reg = <0x1F0000 DT_SIZE_K(4)>;
+		coredump_partition: partition@1ff000 {
+			label = "coredump";
+			reg = <0x1FF000 DT_SIZE_K(4)>;
 		};
 	};
 };
+
+/* Remaining flash size is 0kB
+ * Last used address is 0x1FFFFF
+ */

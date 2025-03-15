@@ -69,6 +69,11 @@ int tm_thread_create(int thread_id, int priority, void (*entry_function)(void *,
 			      TM_TEST_STACK_SIZE, entry_function,
 			      NULL, NULL, NULL, priority, 0, K_FOREVER);
 
+	/* Thread started in sleeping state. Switch to suspended state */
+
+	k_thread_suspend(&test_thread[thread_id]);
+	k_wakeup(&test_thread[thread_id]);
+
 	return (tid == &test_thread[thread_id]) ? TM_SUCCESS : TM_ERROR;
 }
 

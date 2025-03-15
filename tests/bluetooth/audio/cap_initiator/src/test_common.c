@@ -11,6 +11,8 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/fff.h>
+#include <zephyr/sys/printk.h>
 
 #include "bap_endpoint.h"
 #include "cap_initiator.h"

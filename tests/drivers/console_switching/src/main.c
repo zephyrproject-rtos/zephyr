@@ -13,9 +13,8 @@
 #define BUF_SIZE 32
 
 /* array of const struct device* */
-#define PHANDLE_TO_DEVICE(node_id, prop, idx) DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))
 static const struct device *devs[] = {
-	DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(devmux0), devices, PHANDLE_TO_DEVICE, (,))};
+	DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(devmux0), devices, DEVICE_DT_GET_BY_IDX, (,))};
 
 /* array of names, e.g. "euart0" */
 #define PHANDLE_TO_NAME(node_id, prop, idx) DT_NODE_FULL_NAME(DT_PHANDLE_BY_IDX(node_id, prop, idx))

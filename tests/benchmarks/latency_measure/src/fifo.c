@@ -323,7 +323,7 @@ int fifo_blocking_ops(uint32_t num_iterations, uint32_t start_options,
 		 alt_options & K_USER ? "u" : "k",
 		 start_options & K_USER ? "u" : "k");
 	snprintf(description, sizeof(description),
-		 "%-40s - Free when getting data from FIFO (w/ ctx siwtch)", tag);
+		 "%-40s - Free when getting data from FIFO (w/ ctx switch)", tag);
 
 	cycles = timestamp.cycles;
 	PRINT_STATS_AVG(description, (uint32_t)cycles,

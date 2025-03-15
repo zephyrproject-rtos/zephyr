@@ -805,7 +805,7 @@ event shall be generated.
 Zephyr Write Tx Power Level (per Role/Connection) Command
 =========================================================
 
-This command dynamically modifies BLE Tx power level given a handle and a
+This command dynamically modifies Bluetooth Tx power level given a handle and a
 handle type (advertiser, scanner, connection).
 
 +--------------------------+-------+--------------------+--------------------+
@@ -818,8 +818,8 @@ handle type (advertiser, scanner, connection).
 |                          |       |                    | Selected_Tx_Power  |
 +--------------------------+-------+--------------------+--------------------+
 
-The Tx power of the BLE radio interface is modified for any low-level link by
-the controller with a high degree of flexibility. The BLE link whose power is
+The Tx power of the Bluetooth radio interface is modified for any low-level link by
+the controller with a high degree of flexibility. The Bluetooth link whose power is
 set is identified based on a handle type (advertiser, scanner, connection) and
 handle pair.
 
@@ -927,10 +927,10 @@ event shall be generated.
 Zephyr Read Tx Power Level (per Role/Connection) Command
 ========================================================
 
-This command reads the BLE Tx power level. In contrast to the standardized HCI
+This command reads the Bluetooth Tx power level. In contrast to the standardized HCI
 command, i.e. Read_Transmit_Power_Level, which returns the transmitted power
 level only for a specified connection handle, this command operates for both
-connected and unconnected states. It gets the BLE Tx power level for any given
+connected and unconnected states. It gets the Bluetooth Tx power level for any given
 handle type (advertiser, scanner, connection) and handle.
 
 +--------------------------+-------+--------------------+--------------------+
@@ -943,7 +943,7 @@ handle type (advertiser, scanner, connection) and handle.
 |                          |       |                    | Tx_Power_Level     |
 +--------------------------+-------+--------------------+--------------------+
 
-The Tx power of the BLE radio interface used for a low-level link identified
+The Tx power of the Bluetooth radio interface used for a low-level link identified
 by a pair of Handle_Type and Handle is retrieved from the controller.
 
 The role/state defining input parameter is the Handle_Type, whereas its

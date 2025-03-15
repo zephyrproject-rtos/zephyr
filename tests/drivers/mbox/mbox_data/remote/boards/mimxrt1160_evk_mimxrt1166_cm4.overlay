@@ -10,7 +10,7 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 
-		/* Delete ipc chosen property where old IPM mailbox driver bellow is
+		/* Delete ipc chosen property where old IPM mailbox driver below is
 		 * configured.
 		 */
 		/delete-property/ zephyr,ipc;

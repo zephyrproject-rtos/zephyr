@@ -1,7 +1,10 @@
 # Search paths(s) for tests which will be run in the nrf5340 split stack configuration
 # This file is used in CI to select which tests are run
 tests/bsim/bluetooth/ll/conn/tests_scripts/basic_conn_encrypted_split_privacy.sh
+tests/bsim/bluetooth/ll/throughput/
+tests/bsim/bluetooth/ll/multiple_id/
 tests/bsim/bluetooth/ll/bis/tests_scripts/broadcast_iso.sh
 tests/bsim/bluetooth/samples/central_hr_peripheral_hr/
 tests/bsim/bluetooth/audio_samples/
 tests/bsim/bluetooth/audio/
+tests/bsim/bluetooth/host/gatt/notify_stress/

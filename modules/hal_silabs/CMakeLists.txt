@@ -1,4 +1,5 @@
 add_subdirectory_ifdef(CONFIG_SOC_FAMILY_SILABS_S0 gecko)
 add_subdirectory_ifdef(CONFIG_SOC_FAMILY_SILABS_S1 gecko)
 add_subdirectory_ifdef(CONFIG_SOC_FAMILY_SILABS_S2 simplicity_sdk)
+add_subdirectory_ifdef(CONFIG_SOC_FAMILY_SILABS_SIWX91X wiseconnect)
 add_subdirectory_ifdef(CONFIG_HAS_SILABS_SI32 si32)

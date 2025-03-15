@@ -134,4 +134,12 @@ config ESPI_NPCX_CAF_GLOBAL_RESET_WORKAROUND
 	help
 	  Workaround the issue "Global Reset" in the npcx4 SoC errata.
 
+config ESPI_NPCX_RESET_SLP_SX_VW_ON_ESPI_RST
+	bool "Reset SLP_Sx virtual wires when eSPI_RST is asserted"
+	help
+	    The SLP_S3/SLP_S4/SLP_S5/ virtual wires are automatically reset when
+	    eSPI_Reset is asserted on the global reset.
+	    Don't enable this config if the platform implements the Deep-Sx
+	    entry as EC needs to maintain these pins' states per request.
+
 endif #ESPI_NPCX

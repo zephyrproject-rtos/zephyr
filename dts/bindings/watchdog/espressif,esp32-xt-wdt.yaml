@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
+    ESP32 XT Watchdog Timer.
+
     This watchdog timer can detect oscillation failure of the RTC_SLOW_CLK_SRC_XTAL32K.
     When such a failure is detected the hardware automatically switch to
     ESP32_RTC_SLOW_CLK_SRC_RC_SLOW.

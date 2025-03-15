@@ -281,7 +281,7 @@ The mandatory files are:
 #. :file:`plank_<qualifiers>.dts`: a hardware description
    in :ref:`devicetree <dt-guide>` format. This declares your SoC, connectors,
    and any other hardware components such as LEDs, buttons, sensors, or
-   communication peripherals (USB, BLE controller, etc).
+   communication peripherals (USB, Bluetooth controller, etc).
 
 #. :file:`Kconfig.plank`: the base software configuration for selecting SoC and
    other board and SoC related settings. Kconfig settings outside of the board
@@ -649,6 +649,15 @@ while porting.
 
 - If available, configure and enable a serial output for the console
   using the ``zephyr,console`` chosen node in the devicetree.
+  Development boards with a built-in debug adapter or USB-to-UART adapter should
+  by default configure and use the UART controller connected to that adapter.
+  For boards like :ref:`nRF52840 Dongle <nrf52840dongle_nrf52840>`, that do not
+  have a debug adapter, but a USB device controller, there is a common
+  :zephyr_file:`Kconfig file <boards/common/usb/Kconfig.cdc_acm_serial.defconfig>`
+  that must be included in the board's Kconfig.defconfig file and
+  :zephyr_file:`devicetree file <boards/common/usb/cdc_acm_serial.dtsi>`
+  that must be included if the board's devicetree, if the board want to use the
+  CDC ACM UART as the default backend for logging and shell.
 
 - If your board supports networking, configure a default interface.
 

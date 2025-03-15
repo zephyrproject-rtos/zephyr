@@ -9,6 +9,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(video_ov7670, CONFIG_VIDEO_LOG_LEVEL);
@@ -181,6 +182,8 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
 
 /* OV7670 definitions */
 #define OV7670_PROD_ID 0x76
+#define OV7670_MVFP_HFLIP 0x20
+#define OV7670_MVFP_VFLIP 0x10
 
 #define OV7670_VIDEO_FORMAT_CAP(width, height, format)                                             \
 	{                                                                                          \
@@ -204,11 +207,11 @@ static const struct video_format_cap fmts[] = {
  * Note that this table assumes the camera is fed a 6MHz XCLK signal
  */
 static const struct ov7670_reg ov7670_init_regtbl[] = {
-	{OV7670_MVFP, 0x20}, /* MVFP: Mirror/VFlip,Normal image */
+	{OV7670_MVFP, 0x00}, /* MVFP: Mirror/VFlip,Normal image */
 
 	/* configure the output timing */
-	/* PCLK does not toggle during horizontal blank, one PCLK, one pixel */
-	{OV7670_COM10, 0x20}, /* COM10 */
+	/* Free running PCLK, default VSYNC, HSYNC and PCLK */
+	{OV7670_COM10, 0x00}, /* COM10 */
 	{OV7670_COM12, 0x00}, /* COM12,No HREF when VSYNC is low */
 	/* Brightness Control, with signal -128 to +128, 0x00 is middle value */
 	{OV7670_BRIGHT, 0x2f},
@@ -253,7 +256,7 @@ static const struct ov7670_reg ov7670_init_regtbl[] = {
 
 	/* display , need retain */
 	{OV7670_COM15, 0xD0}, /* Common Control 15 */
-	{OV7670_TSLB, 0x0C},  /* Line Buffer Test Option */
+	{OV7670_TSLB, 0x04},  /* Reserved */
 	{OV7670_COM13, 0x80}, /* Common Control 13 */
 	{OV7670_MANU, 0x11},  /* Manual U Value */
 	{OV7670_MANV, 0xFF},  /* Manual V Value */
@@ -547,10 +550,33 @@ static int ov7670_init(const struct device *dev)
 	return 0;
 }
 
+static int ov7670_set_stream(const struct device *dev, bool enable)
+{
+	return 0;
+}
+
+static int ov7670_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+{
+	const struct ov7670_config *config = dev->config;
+
+	switch (cid) {
+	case VIDEO_CID_HFLIP:
+		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP,
+			OV7670_MVFP_HFLIP, ((int)value) ? OV7670_MVFP_HFLIP : 0);
+	case VIDEO_CID_VFLIP:
+		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP,
+			OV7670_MVFP_VFLIP, ((int)value) ? OV7670_MVFP_VFLIP : 0);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static DEVICE_API(video, ov7670_api) = {
 	.set_format = ov7670_set_fmt,
 	.get_format = ov7670_get_fmt,
 	.get_caps = ov7670_get_caps,
+	.set_stream = ov7670_set_stream,
+	.set_ctrl = ov7670_set_ctrl,
 };
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)

@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-description: This is a representation of ARM Cortex-R82 CPU.
+description: ARM Cortex-R82 CPU
 
 compatible: "arm,cortex-r82"
 

@@ -4,7 +4,7 @@
 
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
-# Test Private Net ID advertisment with multiple networks
+# Test Private Net ID advertisement with multiple networks
 #
 # Test procedure:
 # 0. TX device disables GATT proxy, adds a second network to the device

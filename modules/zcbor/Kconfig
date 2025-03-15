@@ -16,7 +16,12 @@ config ZCBOR_CANONICAL
 	bool "Produce canonical CBOR"
 	help
 	  Enabling this will prevent zcbor from creating lists and maps with
-	  indefinite-length arrays (it will still decode them properly).
+	  indefinite-length arrays.
+	  Enabling this also enables the state->constant_state->enforce_canonical
+	  flag in all zcbor states. This flag controls validation of canonical
+	  data when decoding. If you only want canonical encoding, please set
+	  the enforce_canonical flag to false in all new state structs after
+	  initialization.
 
 config ZCBOR_STOP_ON_ERROR
 	bool "Stop on error when processing (Must also be enabled in state var)"
@@ -28,7 +33,7 @@ config ZCBOR_STOP_ON_ERROR
 	  has already happened.
 
 config ZCBOR_VERBOSE
-	bool "Make zcbor code print messages"
+	bool "Make zcbor code print messages via printf"
 
 config ZCBOR_ASSERT
 	def_bool ASSERT

@@ -54,7 +54,7 @@ static int parse_helper(const struct shell *sh, size_t *argc,
 
 	if (*endptr != '\0') {
 		/* flash controller from user input */
-		*flash_dev = device_get_binding((*argv)[1]);
+		*flash_dev = shell_device_get_binding((*argv)[1]);
 		if (!*flash_dev) {
 			shell_error(sh, "Given flash device was not found");
 			return -ENODEV;
@@ -193,8 +193,8 @@ static int cmd_copy(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	src_dev = device_get_binding(argv[1]);
-	dst_dev = device_get_binding(argv[2]);
+	src_dev = shell_device_get_binding(argv[1]);
+	dst_dev = shell_device_get_binding(argv[2]);
 	src_offset = strtoul(argv[3], NULL, 0);
 	dst_offset = strtoul(argv[4], NULL, 0);
 	/* size will be padded to write_size bytes */
@@ -736,9 +736,14 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry);
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
+static bool device_is_flash(const struct device *dev)
+{
+	return DEVICE_API_IS(flash, dev);
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_flash);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Måns Ansgariusson <mansgariusson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: RX8130CE RTC
+
+compatible: "epson,rx8130ce-rtc"
+include: [i2c-device.yaml, rtc-device.yaml]
+
+properties:
+  irq-gpios:
+    type: phandle-array
+
+  clockout-frequency:
+    type: int
+    description: |
+      Specify the ociillator frequency in Hz, if not specified the clockout will be disabled.
+      - 1 # 1 Hz oscillator
+      - 1024 # 1 kHz oscillator
+      - 32768 # 32 kHz oscillator
+    enum: [1, 1024, 32768]
+
+  battery-switchover:
+    type: int
+    description: |
+      Enable the battery backup feature and specify the switchover mode.
+      If not specified the battery backup feature will be disabled.
+
+      - 1 # Non-rechargeable battery backup i2c & FOUT are disabled when VDD is below Vdet1
+      - 2 # Non-rechargeable battery backup i2c & FOUT are always on
+      - 3 # Rechargeable battery backup i2c & FOUT are disabled when VDD is below Vdet1
+      - 4 # Rechargeable battery backup i2c & FOUT are always on
+    enum: [1, 2, 3, 4]

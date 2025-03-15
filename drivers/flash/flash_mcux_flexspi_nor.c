@@ -143,6 +143,14 @@ static const uint32_t flash_flexspi_nor_base_lut[][MEMC_FLEXSPI_CMD_PER_SEQ] = {
 	},
 };
 
+static ALWAYS_INLINE bool area_is_subregion(const struct device *dev, off_t offset, size_t size)
+{
+	struct flash_flexspi_nor_data *data = dev->data;
+
+	return ((offset >= 0) && (offset < data->size) &&
+		((data->size - offset) >= size));
+}
+
 /* Helper so we can read flash ID without flash access for XIP */
 static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 		uint8_t *vendor_id)
@@ -316,6 +324,15 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
 		void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
+
+	if (!buffer) {
+		return -EINVAL;
+	}
+
+	if (!area_is_subregion(dev, offset, len)) {
+		return -EINVAL;
+	}
+
 	uint8_t *src = memc_flexspi_get_ahb_address(&data->controller,
 						    data->port,
 						    offset);
@@ -329,6 +346,15 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		const void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
+
+	if (!buffer) {
+		return -EINVAL;
+	}
+
+	if (!area_is_subregion(dev, offset, len)) {
+		return -EINVAL;
+	}
+
 	size_t size = len;
 	uint8_t *src = (uint8_t *) buffer;
 	int i;
@@ -345,6 +371,7 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		 * code and data accessed must reside in ram.
 		 */
 		key = irq_lock();
+		memc_flexspi_wait_bus_idle(&data->controller);
 	}
 
 	while (len) {
@@ -355,6 +382,13 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		i = MIN(SPI_NOR_PAGE_SIZE - (offset % SPI_NOR_PAGE_SIZE), len);
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 		memcpy(nor_write_buf, src, i);
+
+		/* As memcpy could cause an XIP access,
+		 * we need to wait for XIP prefetch to be finished again
+		 */
+		if (memc_flexspi_is_running_xip(&data->controller)) {
+			memc_flexspi_wait_bus_idle(&data->controller);
+		}
 #endif
 		flash_flexspi_nor_write_enable(data);
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
@@ -385,6 +419,11 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		size_t size)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
+
+	if (!area_is_subregion(dev, offset, size)) {
+		return -EINVAL;
+	}
+
 	const size_t num_sectors = size / SPI_NOR_SECTOR_SIZE;
 	const size_t num_blocks = size / SPI_NOR_BLOCK_SIZE;
 
@@ -412,6 +451,7 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		 * code and data accessed must reside in ram.
 		 */
 		key = irq_lock();
+		memc_flexspi_wait_bus_idle(&data->controller);
 	}
 
 	if ((offset == 0) && (size == data->config.flashSize * KB(1))) {

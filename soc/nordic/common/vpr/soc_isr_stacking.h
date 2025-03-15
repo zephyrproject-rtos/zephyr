@@ -20,7 +20,6 @@
 	struct arch_esf {                                                                          \
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
-		unsigned long tp;                                                                  \
 		struct soc_esf soc_context;                                                        \
                                                                                                    \
 		unsigned long t2;                                                                  \
@@ -43,7 +42,6 @@
 	struct arch_esf {                                                                          \
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
-		unsigned long tp;                                                                  \
 		struct soc_esf soc_context;                                                        \
                                                                                                    \
 		unsigned long ra;                                                                  \
@@ -62,6 +60,13 @@
 
 #endif /* DT_PROP(VPR_CPU, nordic_bus_width) == 64 */
 
+/*
+ * VPR stacked mcause needs to have proper value on initial stack.
+ * Initial mret will restore this value.
+ */
+#define SOC_ISR_STACKING_ESR_INIT                                                                  \
+	stack_init->_mcause = 0;
+
 #else /* _ASMLANGUAGE */
 
 /*
@@ -79,7 +84,7 @@
  * Size of the SW managed part of the ESF in case of interrupt
  *   sizeof(__padding) + ... + sizeof(soc_context)
  */
-#define ESF_SW_IRQ_SIZEOF (0x20)
+#define ESF_SW_IRQ_SIZEOF (0x10)
 
 /*
  * VPR needs aligned(8) SP when doing HW stacking, if this condition is not fulfilled it will move

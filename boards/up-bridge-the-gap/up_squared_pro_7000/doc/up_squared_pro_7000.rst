@@ -1,9 +1,4 @@
-:orphan:
-
-.. _up_squared_pro_7000_board:
-
-UP Squared Pro 7000
-###################
+.. zephyr:board:: up_squared_pro_7000
 
 Overview
 ********

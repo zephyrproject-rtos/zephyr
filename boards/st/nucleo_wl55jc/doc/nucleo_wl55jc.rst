@@ -33,8 +33,6 @@ power consumption, and features.
   mass storage, Virtual COM port, and debug port
 - Comprehensive free software libraries and examples available with the
   STM32CubeWL MCU Package
-- Support of a wide choice of Integrated Development Environments (IDEs)
-  including IAR Embedded Workbench®, MDK-ARM, and STM32CubeIDE
 - Suitable for rapid prototyping of end nodes based on LoRaWAN, Sigfox, wM-Bus,
   and many other proprietary protocols
 - Fully open hardware platform
@@ -164,53 +162,7 @@ More information about STM32WL55JC can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_wl55jc board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| AES       | on-chip    | crypto                              |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock_control             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| MPU       | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | LoRa                                |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in:
-
-- :zephyr_file:`boards/st/nucleo_wl55jc/nucleo_wl55jc_defconfig`
-- :zephyr_file:`boards/st/nucleo_wl55jc/nucleo_wl55jc.dts`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

@@ -5,6 +5,7 @@ arch: riscv
 toolchain:
   - zephyr
 supported:
+  - adc
   - gpio
   - watchdog
   - uart
@@ -12,8 +13,4 @@ supported:
   - entropy
   - pwm
   - spi
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: espressif

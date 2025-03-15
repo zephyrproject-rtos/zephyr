@@ -14,8 +14,12 @@ LOG_MODULE_DECLARE(display_api, CONFIG_DISPLAY_LOG_LEVEL);
 static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 static const uint32_t display_width = DT_PROP(DT_CHOSEN(zephyr_display), width);
 static const uint32_t display_height = DT_PROP(DT_CHOSEN(zephyr_display), height);
+#ifdef CONFIG_DISPLAY_BUFFER_USE_GENERIC_SECTION
+Z_GENERIC_SECTION(CONFIG_DISPLAY_BUFFER_SECTION)
+#endif
 static uint8_t disp_buffer[DT_PROP(DT_CHOSEN(zephyr_display), width) *
-			   DT_PROP(DT_CHOSEN(zephyr_display), height) * 4];
+			   DT_PROP(DT_CHOSEN(zephyr_display), height) * 4]
+	__aligned(CONFIG_DISPLAY_BUFFER_ALIGNMENT);
 static struct display_capabilities cfg;
 static uint8_t bpp;
 static bool is_tiled;

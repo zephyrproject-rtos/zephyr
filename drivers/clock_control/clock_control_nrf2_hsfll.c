@@ -3,12 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_nrf_hsfll
+#define DT_DRV_COMPAT nordic_nrf_hsfll_local
 
 #include "clock_control_nrf2_common.h"
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
-#include <hal/nrf_hsfll.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
@@ -183,18 +182,6 @@ static int api_cancel_or_release_hsfll(const struct device *dev,
 #endif
 }
 
-static int api_get_rate_hsfll(const struct device *dev,
-			      clock_control_subsys_t sys,
-			      uint32_t *rate)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(sys);
-
-	*rate = nrf_hsfll_clkctrl_mult_get(NRF_HSFLL) * MHZ(16);
-
-	return 0;
-}
-
 static int hsfll_init(const struct device *dev)
 {
 #ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
@@ -221,7 +208,6 @@ static DEVICE_API(nrf_clock_control, hsfll_drv_api) = {
 	.std_api = {
 		.on = api_nosys_on_off,
 		.off = api_nosys_on_off,
-		.get_rate = api_get_rate_hsfll,
 	},
 	.request = api_request_hsfll,
 	.release = api_release_hsfll,
@@ -230,6 +216,21 @@ static DEVICE_API(nrf_clock_control, hsfll_drv_api) = {
 
 #ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
 static struct hsfll_dev_data hsfll_data;
+#endif
+
+#ifdef CONFIG_CLOCK_CONTROL_NRF2_HSFLL_REQ_LOW_FREQ
+static int dvfs_low_init(void)
+{
+	static const k_timeout_t timeout = K_MSEC(CONFIG_CLOCK_CONTROL_NRF2_NRFS_DVFS_TIMEOUT_MS);
+	static const struct device *hsfll_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(cpu)));
+	static const struct nrf_clock_spec clk_spec = {
+		.frequency = HSFLL_FREQ_LOW
+	};
+
+	return nrf_clock_control_request_sync(hsfll_dev, &clk_spec, timeout);
+}
+
+SYS_INIT(dvfs_low_init, APPLICATION, 0);
 #endif
 
 DEVICE_DT_INST_DEFINE(0, hsfll_init, NULL,

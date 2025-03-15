@@ -10,8 +10,4 @@ supported:
   - spi
   - uart
   - watchdog
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: m5stack

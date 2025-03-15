@@ -630,7 +630,7 @@ ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, si
 		memcpy((uint8_t *)buf + read, inode_current_block_mem(inode) + block_off, to_read);
 
 		read += to_read;
-		nbytes_to_read -= read;
+		nbytes_to_read -= to_read;
 		offset += to_read;
 	}
 
@@ -954,7 +954,7 @@ static int ext2_add_direntry(struct ext2_inode *dir, struct ext2_direntry *entry
 	}
 
 	uint32_t offset = 0;
-	uint16_t reclen;
+	uint16_t reclen = 0;
 
 	struct ext2_disk_direntry *de = 0;
 

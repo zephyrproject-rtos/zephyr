@@ -1,0 +1,26 @@
+# Copyright (c) 2021, Sateesh Kotapati
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_XG24_EK2703A
+
+config CMU_HFXO_FREQ
+	default 39000000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+if SOC_GECKO_USE_RAIL
+
+config FPU
+	default y
+
+endif # SOC_GECKO_USE_RAIL
+
+if BT
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 8192
+
+endif # BT
+
+endif # BOARD_XG24_EK2703A

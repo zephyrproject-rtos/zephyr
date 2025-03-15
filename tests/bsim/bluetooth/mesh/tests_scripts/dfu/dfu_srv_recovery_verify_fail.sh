@@ -21,12 +21,12 @@ RunTestFlash dfu_dist_recover_verify_fail \
   -- -argstest recover=1 expected-phase=6
 
 # The same test but with PSA crypto
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash dfu_dist_recover_verify_fail_psa \
   dfu_cli_stop -flash_erase dfu_target_dfu_stop -flash_erase \
   -- -argstest recover=0 expected-phase=5
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash dfu_dist_recover_verify_fail_psa \
   dfu_cli_stop -flash_rm dfu_target_dfu_stop -flash_rm \
   -- -argstest recover=1 expected-phase=6

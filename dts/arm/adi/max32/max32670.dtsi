@@ -20,6 +20,12 @@
 	clock-frequency = <DT_FREQ_K(80)>;
 };
 
+&i2c2 {
+	clocks = <&gcr ADI_MAX32_CLOCK_BUS1 21>;
+};
+
+/delete-node/ &rtc_counter;
+
 /* MAX32670 extra peripherals. */
 / {
 	soc {
@@ -142,6 +148,13 @@
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
+		};
+
+		rtc_counter: rtc_counter@40106000 {
+			compatible = "adi,max32-rtc-counter";
+			reg = <0x40106000 0x400>;
+			interrupts = <3 0>;
+			status = "disabled";
 		};
 	};
 };

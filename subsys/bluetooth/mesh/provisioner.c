@@ -589,18 +589,16 @@ static void prov_node_add(void)
 	struct bt_mesh_cdb_node *node = provisionee.node;
 	int err;
 
-	if (atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION)) {
-		bt_mesh_cdb_node_update(node, bt_mesh_prov_link.addr,
-					provisionee.elem_count);
-	}
-
 	err = bt_mesh_cdb_node_key_import(node, provisionee.new_dev_key);
 	if (err) {
 		LOG_ERR("Failed to import node device key");
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+	if (atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION)) {
+		bt_mesh_cdb_node_update(node, bt_mesh_prov_link.addr,
+					provisionee.elem_count);
+	} else if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_cdb_node_store(node);
 	}
 

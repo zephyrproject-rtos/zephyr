@@ -39,15 +39,38 @@ config DSA_KSZ8863
 	help
 	  Add support for KSZ8863 DSA device driver.
 
+config DSA_KSZ8463
+	bool "Support for KSZ8463"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ8463_ENABLED
+	select DSA_KSZ8XXX
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_MICROCHIP_KSZ8463),spi)
+	help
+	  Add support for KSZ8463 DSA device driver.
+
 config DSA_KSZ_TAIL_TAGGING
 	bool "Support for tail tagging"
-	depends on DSA_KSZ8794 || DSA_KSZ8863
+	depends on DSA_KSZ8794 || DSA_KSZ8863 || DSA_KSZ8463
 	help
 	  Add support for tail tagging on DSA device.
 
+config DSA_TAG_SIZE
+	int "DSA tag size in bytes"
+	default 1 if DSA_KSZ8794 || DSA_KSZ8863 || DSA_KSZ8463
+	default 0
+	depends on DSA_KSZ_TAIL_TAGGING
+	help
+	  Set the DSA tag length in bytes.
+
+config DSA_KSZ_PORT_ISOLATING
+	bool "Support for ports isolating"
+	depends on DSA_KSZ8794 || DSA_KSZ8863 || DSA_KSZ8463
+	help
+	  Add support for traffic isolation on DSA slave ports
+
 config DSA_SPI
 	bool "Support for PHY SPI interface"
-	depends on SPI && (DSA_KSZ8794 || DSA_KSZ8863)
+	depends on SPI && (DSA_KSZ8794 || DSA_KSZ8863 || DSA_KSZ8463)
 	help
 	  Use SPI bus to communicate with PHY
 

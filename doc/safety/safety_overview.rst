@@ -147,6 +147,46 @@ system.
 Also the **IEC 61508 standard** sets a pre-condition and recommendation towards the use of coding
 standards / guidelines to reduce likelihood of errors.
 
+The project TSC and the Safety Committee of the project agreed to implement
+a staged and incremental approach for complying with a set of coding rules (AKA
+Coding Guidelines) to improve quality and consistency of the code base. Below
+are the agreed upon stages:
+
+Stage I (COMPLETED)
+  Coding guideline rules are available to be followed and referenced,
+  but not enforced. Rules are not yet enforced in CI and pull-requests cannot be
+  blocked by reviewers/approvers due to violations.
+
+Stage II
+  Reviewers/approvers can block pull-requests due to violations of the coding guidelines
+  in pull-requests across the codebase.
+
+  Begin enforcement on a limited scope of the code base. Initially, this would be
+  the safety certification scope. For rules easily applied across codebase, we
+  should not limit compliance to initial scope. This step requires tooling,
+  CI setup and an enforcement strategy.
+
+Stage III
+  Revisit the coding guideline rules and based on experience from previous
+  stages, refine/iterate on selected rules.
+
+Stage IV
+   Expand enforcement to the wider codebase. Exceptions may be granted on some
+   areas of the codebase with a proper justification. Exception would require
+   TSC approval.
+
+.. note::
+
+    Coding guideline rules may be removed/changed at any time by filing a
+    GH issue/RFC.
+
+.. important::
+
+    **Current stage:**
+    The prerequisites to complete **Stage II** are currently being looked at:
+    The tooling is in evaluation, CI setup and `enforcement strategy
+    <https://github.com/zephyrproject-rtos/zephyr/issues/58903>`__ is being worked on.
+
 Requirements and requirements tracing
 -------------------------------------
 

@@ -30,7 +30,11 @@ int main(void)
 {
 	int err;
 	uint32_t count = 0;
+#ifdef CONFIG_SEQUENCE_32BITS_REGISTERS
+	uint32_t channel_reading[CONFIG_SEQUENCE_SAMPLES][CHANNEL_COUNT];
+#else
 	uint16_t channel_reading[CONFIG_SEQUENCE_SAMPLES][CHANNEL_COUNT];
+#endif
 
 	/* Options for the sequence sampling. */
 	const struct adc_sequence_options options = {

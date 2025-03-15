@@ -19,4 +19,7 @@ config CORTEX_M_SYSTICK
 config IDLE_STACK_SIZE
 	default 512 if SOC_GECKO_PM_BACKEND_PMGR
 
+configdefault NUM_METAIRQ_PRIORITIES
+	default 1 if BT_SILABS_EFR32
+
 endif

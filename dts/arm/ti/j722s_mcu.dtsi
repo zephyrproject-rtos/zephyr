@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ *	Andrew Davis <afd@ti.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	mcu_gpio0: gpio@4201010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x4201010 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+		status = "disabled";
+	};
+
+	mcu_uart0: uart@4a00000 {
+		compatible = "ns16550";
+		reg = <0x04a00000 0x100>;
+		clock-frequency = <48000000>;
+		interrupts = <0 217 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+};

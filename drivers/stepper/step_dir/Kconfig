@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config STEP_DIR_STEPPER
+	bool
+	help
+	  Enable library used for step direction stepper drivers.
+
+if STEP_DIR_STEPPER
+
+config STEP_DIR_STEPPER_COUNTER_TIMING
+	bool "Counter use for stepping"
+	select COUNTER
+	default y
+	help
+	  Enable usage of a counter device for accurate stepping.
+
+module = STEP_DIR
+module-str = step_dir
+rsource "../Kconfig.stepper_event_template"
+
+endif # STEP_DIR_STEPPER

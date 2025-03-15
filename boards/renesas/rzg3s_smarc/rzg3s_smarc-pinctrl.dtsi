@@ -35,4 +35,24 @@
 				 <RZG_PINMUX(PORT_15, 2, 6)>; /* TXD */
 		};
 	};
+
+	/omit-if-no-ref/ gpt0_pins: gpt0 {
+		gpt0-pinmux {
+			pinmux = <RZG_PINMUX(PORT_13, 0, 2)>, /* GTIOCA */
+				 <RZG_PINMUX(PORT_13, 1, 2)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ gpt3_pins: gpt3 {
+		gpt3-pinmux {
+			pinmux = <RZG_PINMUX(PORT_18, 0, 7)>, /* GTIOCA */
+				 <RZG_PINMUX(PORT_18, 1, 7)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ gpt6_pins: gpt6 {
+		gpt6-pinmux {
+			pinmux = <RZG_PINMUX(PORT_13, 4, 7)>; /* GTIOCA */
+		};
+	};
 };

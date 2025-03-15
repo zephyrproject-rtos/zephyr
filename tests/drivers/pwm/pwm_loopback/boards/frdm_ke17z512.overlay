@@ -37,7 +37,7 @@
 
 &ftm0 {
 	status = "okay";
-	compatible = "nxp,kinetis-ftm-pwm";
+	compatible = "nxp,ftm-pwm";
 	clocks = <&scg KINETIS_SCG_SIRC_CLK>;
 	prescaler = <128>;
 	#pwm-cells = <3>;

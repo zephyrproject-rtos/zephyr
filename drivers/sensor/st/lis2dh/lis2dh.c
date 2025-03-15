@@ -271,6 +271,21 @@ static int lis2dh_acc_range_set(const struct device *dev, int32_t range)
 }
 #endif
 
+#ifdef CONFIG_LIS2DH_ACCEL_HP_FILTERS
+static int lis2dh_acc_hp_filter_set(const struct device *dev, int32_t val)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	int status;
+
+	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL2, val);
+	if (status < 0) {
+		LOG_ERR("Failed to set high pass filters");
+	}
+
+	return status;
+}
+#endif
+
 static int lis2dh_acc_config(const struct device *dev,
 			     enum sensor_channel chan,
 			     enum sensor_attribute attr,

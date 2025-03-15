@@ -31,4 +31,14 @@
 			output-low;
 		};
 	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO22>,
+				 <I2C0_SCL_GPIO23>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
 };

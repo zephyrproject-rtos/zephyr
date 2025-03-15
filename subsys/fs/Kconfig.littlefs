@@ -5,7 +5,7 @@
 
 config FILE_SYSTEM_LITTLEFS
 	bool "LittleFS support"
-	depends on FILE_SYSTEM
+	depends on FILE_SYSTEM_LIB_LINK
 	depends on ZEPHYR_LITTLEFS_MODULE
 	help
 	  Enables LittleFS file system support.
@@ -56,8 +56,7 @@ config FS_LITTLEFS_LOOKAHEAD_SIZE
 	help
 	  A larger lookahead buffer increases the number of blocks found
 	  during an allocation pass. The lookahead buffer is stored as a
-	  compact bitmap, so each byte of RAM can track 8 blocks. Must
-	  be a multiple of 8.
+	  compact bitmap, so each byte of RAM can track 8 blocks.
 
 config FS_LITTLEFS_BLOCK_CYCLES
 	int "Number of erase cycles before moving data to another block"
@@ -117,5 +116,13 @@ config FS_LITTLEFS_BLK_DEV
 	help
 	  Enable this option to provide support for littlefs on the block
 	  devices (like for example SD card).
+
+config FS_LITTLEFS_DISK_VERSION
+	bool "Support for selecting littlefs disk version"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_ZEPHYR_FSTAB_LITTLEFS),disk-version)
+	help
+	  Enable this option to provide support for selecting littlefs disk version
+	  to maintain backward compatibility with existing littlefs
+	  with the same major disk version.
 
 endif # FILE_SYSTEM_LITTLEFS

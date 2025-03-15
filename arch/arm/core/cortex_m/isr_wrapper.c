@@ -68,7 +68,7 @@ void _isr_wrapper(void)
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	int32_t irq_number = z_soc_irq_get_active();
 #else
-	/* _sw_isr_table does not map the expections, only the interrupts. */
+	/* _sw_isr_table does not map the exceptions, only the interrupts. */
 	int32_t irq_number = __get_IPSR();
 #endif
 	irq_number -= 16;

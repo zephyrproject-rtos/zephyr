@@ -6,4 +6,4 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-vendor: xlnx
+vendor: enclustra

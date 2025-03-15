@@ -41,9 +41,9 @@
 		ranges;
 
 		systimer: timer@d1000000 {
-			compatible = "nuclei,systimer";
-			reg = <0xd1000000 0x10000>;
-			interrupts = <3 0>, <7 0>;
+			compatible = "nuclei,systimer", "riscv,machine-timer";
+			reg = <0xd1000000 0x8 0xd1000008 0x8>;
+			interrupts-extended = <&eclic 7 0>;
 			clk-divider = <NUCLEI_SYSTIMER_DIVIDER_4>;
 		};
 

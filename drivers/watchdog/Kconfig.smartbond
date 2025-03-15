@@ -8,6 +8,7 @@ config WDT_SMARTBOND
 	default y
 	depends on DT_HAS_RENESAS_SMARTBOND_WATCHDOG_ENABLED
 	select HAS_WDT_DISABLE_AT_BOOT
+	select HAS_WDT_NO_CALLBACKS if !WDT_SMARTBOND_NMI
 	help
 	  Enable watchdog driver for Smartbond line of MCUs
 

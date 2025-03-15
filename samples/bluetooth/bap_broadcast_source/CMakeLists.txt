@@ -8,4 +8,6 @@ target_sources(app PRIVATE
   src/main.c
 )
 
-zephyr_library_include_directories(${ZEPHYR_BASE}/samples/bluetooth)
+if (CONFIG_USE_USB_AUDIO_INPUT)
+  include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
+endif()

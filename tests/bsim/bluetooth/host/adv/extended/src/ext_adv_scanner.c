@@ -5,12 +5,8 @@
  */
 #include <zephyr/kernel.h>
 
-#include "common.h"
-
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bstests.h"
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
 
 #include <zephyr/types.h>
 #include <zephyr/sys/printk.h>
@@ -22,9 +18,9 @@ extern enum bst_result_t bst_result;
 
 static struct bt_conn *g_conn;
 
-CREATE_FLAG(flag_ext_adv_seen);
-CREATE_FLAG(flag_connected);
-CREATE_FLAG(flag_conn_recycled);
+DEFINE_FLAG_STATIC(flag_ext_adv_seen);
+DEFINE_FLAG_STATIC(flag_connected);
+DEFINE_FLAG_STATIC(flag_conn_recycled);
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -33,7 +29,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != BT_HCI_ERR_SUCCESS) {
-		FAIL("Failed to connect to %s: %u\n", addr, err);
+		TEST_FAIL("Failed to connect to %s: %u", addr, err);
 		bt_conn_unref(g_conn);
 		g_conn = NULL;
 		return;
@@ -93,21 +89,20 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		SET_FLAG(flag_ext_adv_seen);
 	}
 
-	if (!TEST_FLAG(flag_connected) &&
-	    info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
+	if (!IS_FLAG_SET(flag_connected) && info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
 		int err;
 
 		printk("Stopping scan\n");
 		err = bt_le_scan_stop();
 		if (err) {
-			FAIL("Failed to stop scan: %d", err);
+			TEST_FAIL("Failed to stop scan: %d", err);
 			return;
 		}
 
 		err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN,
 					BT_LE_CONN_PARAM_DEFAULT, &g_conn);
 		if (err) {
-			FAIL("Could not connect to peer: %d", err);
+			TEST_FAIL("Could not connect to peer: %d", err);
 			return;
 		}
 	}
@@ -124,7 +119,7 @@ static void common_init(void)
 	err = bt_enable(NULL);
 
 	if (err) {
-		FAIL("Bluetooth init failed: %d\n", err);
+		TEST_FAIL("Bluetooth init failed: %d", err);
 		return;
 	}
 
@@ -141,7 +136,7 @@ static void start_scan(void)
 	printk("Start scanning...");
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err) {
-		FAIL("Failed to start scan: %d\n", err);
+		TEST_FAIL("Failed to start scan: %d", err);
 		return;
 	}
 	printk("done.\n");
@@ -156,7 +151,7 @@ static void main_ext_adv_scanner(void)
 
 	WAIT_FOR_FLAG(flag_ext_adv_seen);
 
-	PASS("Extended adv scanner passed\n");
+	TEST_PASS("Extended adv scanner passed");
 }
 
 static void scan_connect_and_disconnect_cycle(void)
@@ -191,7 +186,7 @@ static void main_ext_adv_conn_scanner(void)
 	printk("Waiting to extended advertisements (again)...\n");
 	WAIT_FOR_FLAG(flag_ext_adv_seen);
 
-	PASS("Extended adv scanner passed\n");
+	TEST_PASS("Extended adv scanner passed");
 }
 
 static void main_ext_adv_conn_scanner_x5(void)
@@ -207,7 +202,7 @@ static void main_ext_adv_conn_scanner_x5(void)
 	printk("Waiting to extended advertisements (again)...\n");
 	WAIT_FOR_FLAG(flag_ext_adv_seen);
 
-	PASS("Extended adv scanner x5 passed\n");
+	TEST_PASS("Extended adv scanner x5 passed");
 }
 
 static const struct bst_test_instance ext_adv_scanner[] = {
@@ -215,8 +210,6 @@ static const struct bst_test_instance ext_adv_scanner[] = {
 		.test_id = "ext_adv_scanner",
 		.test_descr = "Basic extended advertising scanning test. "
 			      "Will just scan an extended advertiser.",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = main_ext_adv_scanner
 	},
 	{
@@ -224,8 +217,6 @@ static const struct bst_test_instance ext_adv_scanner[] = {
 		.test_descr = "Basic extended advertising scanning test. "
 			      "Will scan an extended advertiser, connect "
 			      "and verify it's detected after disconnection",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = main_ext_adv_conn_scanner
 	},
 	{
@@ -234,8 +225,6 @@ static const struct bst_test_instance ext_adv_scanner[] = {
 			      "Will scan an extended advertiser, connect "
 			      "and verify it's detected after disconnection,"
 			      "repeated over 5 times",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = main_ext_adv_conn_scanner_x5
 	},
 	BSTEST_END_MARKER

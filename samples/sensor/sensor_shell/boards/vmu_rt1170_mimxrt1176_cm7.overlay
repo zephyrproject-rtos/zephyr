@@ -1,0 +1,26 @@
+/* Copyright 2025 CogniPilot Foundation */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&lpspi1 {
+	/delete-node/ icm42688p0@0;
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
+};
+
+&lpspi2 {
+	status = "okay";
+	cs-gpios =<&gpio3 24 GPIO_ACTIVE_LOW>;
+
+	icm42688_1: icm42688p1@0 {
+		compatible = "invensense,icm42688";
+		reg = <0>;
+		int-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <24000000>;
+		accel-pwr-mode = <ICM42688_DT_ACCEL_LN>;
+		accel-odr = <ICM42688_DT_ACCEL_ODR_1000>;
+		accel-fs = <ICM42688_DT_ACCEL_FS_16>;
+		gyro-pwr-mode = <ICM42688_DT_GYRO_LN>;
+		gyro-odr = <ICM42688_DT_GYRO_ODR_1000>;
+		gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
+	};
+};

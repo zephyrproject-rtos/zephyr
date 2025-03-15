@@ -100,45 +100,57 @@ static int tmp108_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	struct tmp108_data *drv_data = dev->data;
+	uint16_t config, converting_mask;
 	int result;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
 
-	/* If one shot mode is set, query chip for reading
-	 * should be finished 30 ms later
-	 */
-	if (drv_data->one_shot_mode == true) {
-
-		result = tmp108_write_config(dev,
-					     TI_TMP108_MODE_MASK(dev),
-					     TI_TMP108_MODE_ONE_SHOT(dev));
-
-		if (result < 0) {
-			return result;
-		}
-
-		/* Schedule read to start in 30 ms if mode change was successful
-		 * the typical wakeup time given in the data sheet is 27
-		 */
-		result = k_work_schedule(&drv_data->scheduled_work,
-					 K_MSEC(TMP108_WAKEUP_TIME_IN_MS(dev)));
-
-		if (result < 0) {
-			return result;
-		}
-
-		return 0;
+	if (!drv_data->one_shot_mode) {
+		/* Read the latest temperature result */
+		return ti_tmp108_read_temp(dev);
 	}
 
-	result =  ti_tmp108_read_temp(dev);
-
+	/* Trigger the conversion */
+	result = tmp108_write_config(dev,
+					TI_TMP108_MODE_MASK(dev),
+					TI_TMP108_MODE_ONE_SHOT(dev));
 	if (result < 0) {
 		return result;
 	}
 
-	return 0;
+	/* Typical conversion time:
+	 *   TMP108: 27ms
+	 *   AS6212: 36ms
+	 * Maximum conversion time:
+	 *   TMP108: 35ms
+	 *   AS6212: 51ms
+	 */
+	const uint32_t conv_time_min = 25;
+	const uint32_t conv_time_max = 100;
+	const uint32_t poll_period = 5;
+
+	k_sleep(K_MSEC(conv_time_min));
+	converting_mask = TI_TMP108_CONF_M1(dev) | TI_TMP108_CONF_M0(dev);
+
+	for (int i = conv_time_min; i < conv_time_max; i += poll_period) {
+		/* Read the config register */
+		result = tmp108_reg_read(dev, TI_TMP108_REG_CONF, &config);
+		if (result < 0) {
+			return result;
+		}
+		if ((config & converting_mask) == 0) {
+			/* Conversion has finished */
+			LOG_DBG("Conversion complete after %d ms", i);
+			return ti_tmp108_read_temp(dev);
+		}
+		/* Wait before reading again */
+		k_sleep(K_MSEC(poll_period));
+	}
+
+	/* Conversion timed out */
+	return -EAGAIN;
 }
 
 static int tmp108_channel_get(const struct device *dev,
@@ -153,10 +165,7 @@ static int tmp108_channel_get(const struct device *dev,
 	}
 
 	uval = ((int32_t)drv_data->sample * TMP108_TEMP_MULTIPLIER(dev)) / TMP108_TEMP_DIVISOR(dev);
-	val->val1 = uval / 1000000;
-	val->val2 = uval % 1000000;
-
-	return 0;
+	return sensor_value_from_micro(val, uval);
 }
 
 static int tmp108_attr_get(const struct device *dev,
@@ -192,16 +201,17 @@ static int tmp108_attr_set(const struct device *dev,
 			   const struct sensor_value *val)
 {
 	struct tmp108_data *drv_data = dev->data;
-	uint16_t mode = 0;
-	uint16_t reg_value = 0;
+	__maybe_unused uint16_t reg_value;
+	__maybe_unused int32_t uval;
+	uint16_t mode;
 	int result = 0;
-	int32_t uval;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP && chan != SENSOR_CHAN_ALL) {
 		return -ENOTSUP;
 	}
 
 	switch ((int) attr) {
+#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
 	case SENSOR_ATTR_HYSTERESIS:
 		if (TI_TMP108_HYSTER_0_C(dev) == TI_TMP108_CONF_NA) {
 			LOG_WRN("AS621x Series lacks Hysterisis setttings");
@@ -236,7 +246,7 @@ static int tmp108_attr_set(const struct device *dev,
 		break;
 
 	case SENSOR_ATTR_LOWER_THRESH:
-		uval = val->val1 * 1000000 + val->val2;
+		uval = sensor_value_to_micro(val);
 		reg_value = (uval * TMP108_TEMP_DIVISOR(dev)) / TMP108_TEMP_MULTIPLIER(dev);
 		result = tmp108_reg_write(dev,
 					  TI_TMP108_REG_LOW_LIMIT,
@@ -244,12 +254,24 @@ static int tmp108_attr_set(const struct device *dev,
 		break;
 
 	case SENSOR_ATTR_UPPER_THRESH:
-		uval = val->val1 * 1000000 + val->val2;
+		uval = sensor_value_to_micro(val);
 		reg_value = (uval * TMP108_TEMP_DIVISOR(dev)) / TMP108_TEMP_MULTIPLIER(dev);
 		result = tmp108_reg_write(dev,
 					  TI_TMP108_REG_HIGH_LIMIT,
 					  reg_value);
 		break;
+
+	case SENSOR_ATTR_TMP108_ALERT_POLARITY:
+		if (val->val1 == 1) {
+			mode = TI_TMP108_CONF_POL_HIGH(dev);
+		} else {
+			mode = TI_TMP108_CONF_POL_LOW(dev);
+		}
+		result = tmp108_write_config(dev,
+					     TI_TMP108_CONF_POL_MASK(dev),
+					     mode);
+		break;
+#endif /* CONFIG_TMP108_ALERT_INTERRUPTS */
 
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		if (val->val1 < 1) {
@@ -287,17 +309,6 @@ static int tmp108_attr_set(const struct device *dev,
 		drv_data->one_shot_mode = true;
 		break;
 
-	case SENSOR_ATTR_TMP108_ALERT_POLARITY:
-		if (val->val1 == 1) {
-			mode = TI_TMP108_CONF_POL_HIGH(dev);
-		} else {
-			mode = TI_TMP108_CONF_POL_LOW(dev);
-		}
-		result = tmp108_write_config(dev,
-					     TI_TMP108_CONF_POL_MASK(dev),
-					     mode);
-		break;
-
 	default:
 		return -ENOTSUP;
 	}
@@ -314,7 +325,9 @@ static DEVICE_API(sensor, tmp108_driver_api) = {
 	.attr_get = tmp108_attr_get,
 	.sample_fetch = tmp108_sample_fetch,
 	.channel_get = tmp108_channel_get,
+#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
 	.trigger_set = tmp_108_trigger_set,
+#endif
 };
 
 #ifdef CONFIG_TMP108_ALERT_INTERRUPTS
@@ -362,7 +375,6 @@ static int setup_interrupts(const struct device *dev)
 static int tmp108_init(const struct device *dev)
 {
 	const struct tmp108_config *cfg = dev->config;
-	struct tmp108_data *drv_data = dev->data;
 	int result = 0;
 
 	if (!device_is_ready(cfg->i2c_spec.bus)) {
@@ -370,12 +382,12 @@ static int tmp108_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	drv_data->scheduled_work.work.handler = tmp108_trigger_handle_one_shot;
+#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+	struct tmp108_data *drv_data = dev->data;
 
 	/* save this driver instance for passing to other functions */
 	drv_data->tmp108_dev = dev;
 
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
 	result = setup_interrupts(dev);
 
 	if (result < 0) {
@@ -389,22 +401,16 @@ static int tmp108_init(const struct device *dev)
 	return result;
 }
 
-#define TMP108_DEFINE(inst, t)						   \
-	static struct tmp108_data tmp108_prv_data_##inst##t;		   \
-	static const struct tmp108_config tmp108_config_##inst##t = {	   \
-		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),			   \
-		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst,		   \
-						       alert_gpios, { 0 }),\
-		.reg_def = t##_CONF					   \
-	};								   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				   \
-			      &tmp108_init,				   \
-			      NULL,					   \
-			      &tmp108_prv_data_##inst##t,		   \
-			      &tmp108_config_##inst##t,			   \
-			      POST_KERNEL,				   \
-			      CONFIG_SENSOR_INIT_PRIORITY,		   \
-			      &tmp108_driver_api);
+#define TMP108_DEFINE(inst, t)                                                                     \
+	static struct tmp108_data tmp108_prv_data_##inst##t;                                       \
+	static const struct tmp108_config tmp108_config_##inst##t = {                              \
+		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),                                            \
+		IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS,                                         \
+			   (.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios),))              \
+		.reg_def = t##_CONF};                                                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &tmp108_init, NULL, &tmp108_prv_data_##inst##t,         \
+				     &tmp108_config_##inst##t, POST_KERNEL,                        \
+				     CONFIG_SENSOR_INIT_PRIORITY, &tmp108_driver_api);
 
 #define TMP108_INIT(n) TMP108_DEFINE(n, TI_TMP108)
 #undef DT_DRV_COMPAT

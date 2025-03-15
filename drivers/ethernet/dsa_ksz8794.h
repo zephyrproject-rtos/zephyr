@@ -234,6 +234,8 @@
 #define KSZ8794_GLOBAL_CTRL10_TAIL_TAG_EN            BIT(1)
 #define KSZ8794_GLOBAL_CTRL2_LEG_MAX_PKT_SIZ_CHK_DIS BIT(1)
 
+#define KSZ8794_CTRL1_PORTn(n)                       (0x11 + ((n) * 0x10))
+#define KSZ8794_CTRL1_VLAN_PORTS_MASK		     0xE0
 #define KSZ8794_CTRL2_PORTn(n)                       (0x12 + ((n) * 0x10))
 #define KSZ8794_CTRL2_TRANSMIT_EN                    BIT(2)
 #define KSZ8794_CTRL2_RECEIVE_EN                     BIT(1)
@@ -321,6 +323,8 @@ enum {
 #define KSZ8XXX_RESET_SET                       KSZ8794_PWR_MGNT_MODE_SOFT_DOWN
 #define KSZ8XXX_RESET_CLEAR                     0
 #define KSZ8XXX_STAT2_PORTn                     KSZ8794_STAT2_PORTn
+#define KSZ8XXX_CTRL1_PORTn			KSZ8794_CTRL1_PORTn
+#define KSZ8XXX_CTRL1_VLAN_PORTS_MASK		KSZ8794_CTRL1_VLAN_PORTS_MASK
 #define KSZ8XXX_SPI_CMD_RD                      KSZ8794_SPI_CMD_RD
 #define KSZ8XXX_SPI_CMD_WR                      KSZ8794_SPI_CMD_WR
 #define KSZ8XXX_SOFT_RESET_DURATION                     1000

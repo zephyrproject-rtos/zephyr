@@ -9,7 +9,6 @@
 #include <stdlib.h>
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/dt-bindings/gpio/nordic-npm6001-gpio.h>

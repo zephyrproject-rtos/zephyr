@@ -53,6 +53,18 @@ if(CONFIG_RISCV_ISA_EXT_ZIFENCEI)
     string(CONCAT riscv_march ${riscv_march} "_zifencei")
 endif()
 
+# Check whether we already imply Zaamo/Zlrsc by selecting the A extension; if not - check them
+# individually and enable them as needed
+if(NOT CONFIG_RISCV_ISA_EXT_A)
+  if(CONFIG_RISCV_ISA_EXT_ZAAMO)
+    string(CONCAT riscv_march ${riscv_march} "_zaamo")
+  endif()
+
+  if(CONFIG_RISCV_ISA_EXT_ZLRSC)
+    string(CONCAT riscv_march ${riscv_march} "_zlrsc")
+  endif()
+endif()
+
 if(CONFIG_RISCV_ISA_EXT_ZBA)
     string(CONCAT riscv_march ${riscv_march} "_zba")
 endif()
@@ -86,8 +98,12 @@ set(LLEXT_REMOVE_FLAGS
 # Flags to be added to llext code compilation
 # mno-relax is needed to stop gcc from generating R_RISCV_ALIGN relocations,
 # which are currently not supported
+# -msmall-data-limit=0 disables the "small data" sections such as .sbss and .sdata
+# only one NOBITS sections is supported at a time, so having .sbss can cause
+# llext's not to be loadable
 set(LLEXT_APPEND_FLAGS
   -mabi=${riscv_mabi}
   -march=${riscv_march}
   -mno-relax
+  -msmall-data-limit=0
 )

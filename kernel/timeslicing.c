@@ -15,7 +15,7 @@ static bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
 
 #ifdef CONFIG_SWAP_NONATOMIC
 /* If z_swap() isn't atomic, then it's possible for a timer interrupt
- * to try to timeslice away arch_current_thread() after it has already pended
+ * to try to timeslice away _current after it has already pended
  * itself but before the corresponding context switch.  Treat that as
  * a noop condition in z_time_slice().
  */
@@ -82,7 +82,7 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 	K_SPINLOCK(&_sched_spinlock) {
 		slice_ticks = k_ms_to_ticks_ceil32(slice);
 		slice_max_prio = prio;
-		z_reset_time_slice(arch_current_thread());
+		z_reset_time_slice(_current);
 	}
 }
 
@@ -103,7 +103,7 @@ void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks
 void z_time_slice(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
-	struct k_thread *curr = arch_current_thread();
+	struct k_thread *curr = _current;
 
 #ifdef CONFIG_SWAP_NONATOMIC
 	if (pending_current == curr) {

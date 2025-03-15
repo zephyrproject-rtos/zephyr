@@ -7,7 +7,15 @@ common:
   min_ram: 32
   timeout: 120
 tests:
-  kernel.common: {}
+  kernel.common:
+    platform_exclude:
+      - native_sim
+  kernel.common.toolchain:
+    platform_allow:
+      - native_sim
+    integration_toolchains:
+      - host
+      - llvm
   kernel.common.tls:
     # ARCMWDT can't handle THREAD_LOCAL_STORAGE with USERSPACE, see #52570 for details
     filter: >

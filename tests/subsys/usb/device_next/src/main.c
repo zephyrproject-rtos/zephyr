@@ -45,7 +45,13 @@ ZTEST(device_next, test_get_configuration)
 	int err;
 
 	udev = usbh_device_get_any(&uhs_ctx);
+	zassert_not_null(udev, "No USB device available");
+
+	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
+	zassert_equal(err, 0, "Failed to lock device");
+
 	err = usbh_req_get_cfg(udev, &cfg);
+	k_mutex_unlock(&udev->mutex);
 
 	switch (udev->state) {
 	case USB_STATE_DEFAULT:
@@ -74,8 +80,14 @@ ZTEST(device_next, test_set_interface)
 	int err;
 
 	udev = usbh_device_get_any(&uhs_ctx);
+	zassert_not_null(udev, "No USB device available");
+
+	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
+	zassert_equal(err, 0, "Failed to lock device");
+
 	err = usbh_req_set_alt(udev, TEST_DEFAULT_INTERFACE,
 			       TEST_DEFAULT_ALTERNATE);
+	k_mutex_unlock(&udev->mutex);
 
 	switch (udev->state) {
 	case USB_STATE_DEFAULT:
@@ -93,7 +105,6 @@ ZTEST(device_next, test_set_interface)
 
 static void *usb_test_enable(void)
 {
-	struct usb_device *udev;
 	int err;
 
 	err = usbh_init(&uhs_ctx);
@@ -134,7 +145,7 @@ static void *usb_test_enable(void)
 	zassert_equal(err, 0, "Failed to add configuration (%d)");
 
 	if (usbd_caps_speed(&test_usbd) == USBD_SPEED_HS) {
-		err = usbd_register_all_classes(&test_usbd, USBD_SPEED_HS, 1);
+		err = usbd_register_all_classes(&test_usbd, USBD_SPEED_HS, 1, NULL);
 		zassert_equal(err, 0, "Failed to unregister all instances(%d)");
 
 		err = usbd_unregister_all_classes(&test_usbd, USBD_SPEED_HS, 1);
@@ -144,7 +155,7 @@ static void *usb_test_enable(void)
 		zassert_equal(err, 0, "Failed to register loopback_0 class (%d)");
 	}
 
-	err = usbd_register_all_classes(&test_usbd, USBD_SPEED_FS, 1);
+	err = usbd_register_all_classes(&test_usbd, USBD_SPEED_FS, 1, NULL);
 	zassert_equal(err, 0, "Failed to unregister all instances(%d)");
 
 	err = usbd_unregister_all_classes(&test_usbd, USBD_SPEED_FS, 1);
@@ -160,8 +171,9 @@ static void *usb_test_enable(void)
 	zassert_equal(err, 0, "Failed to enable device support");
 
 	LOG_INF("Device support enabled");
-	udev = usbh_device_get_any(&uhs_ctx);
-	udev->state = USB_STATE_DEFAULT;
+
+	/* Allow the host time to reset the device. */
+	k_msleep(200);
 
 	return NULL;
 }

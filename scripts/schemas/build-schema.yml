@@ -56,6 +56,17 @@ mapping:
             type: seq
             sequence:
               - type: str
+      images:
+        type: seq
+        sequence:
+          - type: map
+            mapping:
+              name:
+                type: str
+              source-dir:
+                type: str
+              type:
+                type: str
       kconfig:
         type: map
         mapping:
@@ -68,6 +79,19 @@ mapping:
             sequence:
               - type: str
           extra-user-files:
+            type: seq
+            sequence:
+              - type: str
+      llext-edk:
+        type: map
+        mapping:
+          cflags:
+            type: seq
+            sequence:
+              - type: str
+          file:
+            type: str
+          include-dirs:
             type: seq
             sequence:
               - type: str

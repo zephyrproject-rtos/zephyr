@@ -11,14 +11,23 @@
 #define RTIO_WORKQ_PRIO_HIGH		RTIO_WORKQ_PRIO_MED - 1
 #define RTIO_WORKQ_PRIO_LOW		RTIO_WORKQ_PRIO_MED + 1
 
-K_P4WQ_DEFINE(rtio_workq,
-	      CONFIG_RTIO_WORKQ_THREADS_POOL,
-	      CONFIG_RTIO_WORKQ_STACK_SIZE);
-
 K_MEM_SLAB_DEFINE_STATIC(rtio_work_items_slab,
 			 sizeof(struct rtio_work_req),
 			 CONFIG_RTIO_WORKQ_POOL_ITEMS,
 			 4);
+
+static void rtio_work_req_done_handler(struct k_p4wq_work *work)
+{
+	struct rtio_work_req *req = CONTAINER_OF(work,
+						 struct rtio_work_req,
+						 work);
+	k_mem_slab_free(&rtio_work_items_slab, req);
+}
+
+K_P4WQ_DEFINE_WITH_DONE_HANDLER(rtio_workq,
+	      CONFIG_RTIO_WORKQ_THREADS_POOL,
+	      CONFIG_RTIO_WORKQ_STACK_SIZE,
+		  rtio_work_req_done_handler);
 
 static void rtio_work_handler(struct k_p4wq_work *work)
 {
@@ -28,8 +37,6 @@ static void rtio_work_handler(struct k_p4wq_work *work)
 	struct rtio_iodev_sqe *iodev_sqe = req->iodev_sqe;
 
 	req->handler(iodev_sqe);
-
-	k_mem_slab_free(&rtio_work_items_slab, req);
 }
 
 struct rtio_work_req *rtio_work_req_alloc(void)

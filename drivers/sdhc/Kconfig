@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SDHC
-	bool "Secure Digital High Capacity (SDHC) drivers"
+	bool "Secure Digital (SD card) host controller drivers"
 	help
-	  Include drivers for SD host controller
+	  Include drivers for interacting with SD cards
 
 if SDHC
 
@@ -17,6 +17,8 @@ source "drivers/sdhc/Kconfig.sam_hsmci"
 source "drivers/sdhc/Kconfig.intel"
 source "drivers/sdhc/Kconfig.sdhc_cdns"
 source "drivers/sdhc/Kconfig.esp32"
+source "drivers/sdhc/Kconfig.renesas_ra"
+source "drivers/sdhc/Kconfig.max32"
 
 config SDHC_INIT_PRIORITY
 	int "SDHC driver init priority"

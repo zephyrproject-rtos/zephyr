@@ -9,7 +9,7 @@ int ull_sync_reset(void);
 uint16_t ull_sync_handle_get(struct ll_sync_set *sync);
 struct ll_sync_set *ull_sync_is_enabled_get(uint16_t handle);
 void ull_sync_release(struct ll_sync_set *sync);
-void ull_sync_setup_addr_check(struct ll_sync_set *sync, struct ll_scan_set *scan,
+bool ull_sync_setup_addr_check(struct ll_sync_set *sync, uint8_t filter_policy,
 			       uint8_t addr_type, uint8_t *addr, uint8_t rl_idx);
 bool ull_sync_setup_sid_match(struct ll_sync_set *sync, struct ll_scan_set *scan, uint8_t sid);
 void ull_sync_create_from_sync_transfer(uint16_t conn_handle,  uint16_t service_data,

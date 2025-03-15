@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Yishai Jaffe
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XG23_RB4210A
+	select SOC_PART_NUMBER_EFR32ZG23B020F512IM48

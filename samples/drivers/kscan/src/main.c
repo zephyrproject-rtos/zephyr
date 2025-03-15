@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 #include <zephyr/drivers/kscan.h>
 

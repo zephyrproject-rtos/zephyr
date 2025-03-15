@@ -8,3 +8,10 @@ CONFIG_HW_STACK_PROTECTION=y
 
 # Enable GPIO
 CONFIG_GPIO=y
+
+# Enable UART controller
+CONFIG_SERIAL=y
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y

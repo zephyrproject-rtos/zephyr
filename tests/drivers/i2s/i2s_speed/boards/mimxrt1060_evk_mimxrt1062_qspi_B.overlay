@@ -1,0 +1,21 @@
+/ {
+	aliases {
+		i2s-node0 = &sai1;
+	};
+};
+
+&pinctrl {
+	pinmux_sai1: pinmux_sai1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_12_sai1_rx_data0>,
+				<&iomuxc_gpio_ad_b1_11_sai1_rx_bclk>,
+				<&iomuxc_gpio_ad_b1_10_sai1_rx_sync>,
+				<&iomuxc_gpio_ad_b1_15_sai1_tx_sync>,
+				<&iomuxc_gpio_ad_b1_14_sai1_tx_bclk>,
+				<&iomuxc_gpio_ad_b1_13_sai1_tx_data0>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+};

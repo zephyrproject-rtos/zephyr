@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2025 Ezurio
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config NET_SAMPLE_COMMON_WAIT_DNS_SERVER_ADDITION
+	bool "Wait DNS server addition before considering connection to be up"
+	depends on MODEM_HL7800 && !DNS_SERVER_IP_ADDRESSES
+	help
+	  Make sure we get DNS server addresses from the network
+	  before considering the connection to be up.

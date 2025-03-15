@@ -66,7 +66,7 @@ static inline struct sensing_sensor *get_sensor_by_dev(const struct device *dev)
 		}
 	}
 
-	__ASSERT(true, "device %s is not a sensing sensor", dev->name);
+	__ASSERT(false, "device %s is not a sensing sensor", dev->name);
 
 	return NULL;
 }

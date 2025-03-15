@@ -16,6 +16,7 @@
 #include <zephyr/lorawan/lorawan.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>
+#include <zephyr/sys/__assert.h>
 
 LOG_MODULE_REGISTER(lorawan_clock_sync, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
 
@@ -69,13 +70,11 @@ static struct clock_sync_context ctx;
  *
  * @returns number of bytes written or -ENOSPC in case of error
  */
-static int clock_sync_serialize_device_time(uint8_t *buf, size_t size)
+static uint8_t clock_sync_serialize_device_time(uint8_t *buf, size_t size)
 {
 	uint32_t device_time = k_uptime_seconds() + ctx.time_offset;
 
-	if (size < sizeof(uint32_t)) {
-		return -ENOSPC;
-	}
+	__ASSERT_NO_MSG(size >= sizeof(uint32_t));
 
 	buf[0] = (device_time >> 0) & 0xFF;
 	buf[1] = (device_time >> 8) & 0xFF;

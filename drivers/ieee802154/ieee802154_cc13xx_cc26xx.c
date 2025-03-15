@@ -413,10 +413,7 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 			corr = drv_data->rx_data[i][len--] & 0x3F;
 			rssi = drv_data->rx_data[i][len--];
 
-			/* remove fcs as it is not expected by L2
-			 * But keep it for RAW mode
-			 */
-			if (IS_ENABLED(CONFIG_NET_L2_IEEE802154)) {
+			if (!IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 				len -= 2;
 			}
 

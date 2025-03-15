@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig POSIX_MULTI_PROCESS
-	bool "POSIX multi-process support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "POSIX multi-process support"
 	help
 	  Support for multi-processing.
 

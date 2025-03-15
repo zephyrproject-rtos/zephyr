@@ -13,13 +13,13 @@ TEST_CASES = [
         "config": None,
         "bitstream": None,
         "fsbl": None,
-        "expected_cmd": ["xsdb", "default_cfg_path"],
+        "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF],
     },
     {
         "config": "custom_cfg_path",
         "bitstream": None,
         "fsbl": None,
-        "expected_cmd": ["xsdb", "custom_cfg_path"],
+        "expected_cmd": ["xsdb", "custom_cfg_path", RC_KERNEL_ELF],
     },
     {
         "config": None,

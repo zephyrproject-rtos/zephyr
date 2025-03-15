@@ -274,6 +274,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	   net_if_get_device(iface) ? net_if_get_device(iface)->name : "<?>",
 	   net_if_get_device(iface));
 
+	PR("Status    : oper=%s, admin=%s, carrier=%s\n",
+	   net_if_oper_state2str(net_if_oper_state(iface)),
+	   net_if_is_admin_up(iface) ? "UP" : "DOWN",
+	   net_if_is_carrier_ok(iface) ? "ON" : "OFF");
+
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		count = 0;

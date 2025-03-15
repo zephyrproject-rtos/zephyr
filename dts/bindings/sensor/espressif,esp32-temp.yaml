@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ESP32 family temperature sensor node
+description: ESP32 temperature sensor
 
 compatible: "espressif,esp32-temp"
 

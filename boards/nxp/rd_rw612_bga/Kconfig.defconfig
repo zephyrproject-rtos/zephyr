@@ -30,10 +30,6 @@ config LV_Z_FLUSH_THREAD
 
 endif # LVGL
 
-# Enable interrupt support when using FT5336 driver
-config INPUT_FT5336_INTERRUPT
-	default y if INPUT
-
 if DT_HAS_NXP_ENET_MAC_ENABLED && NETWORKING
 
 config NET_L2_ETHERNET

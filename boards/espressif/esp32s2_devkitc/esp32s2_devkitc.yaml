@@ -19,8 +19,4 @@ supported:
   - input
   - can
   - dma
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: espressif

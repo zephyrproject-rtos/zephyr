@@ -29,6 +29,7 @@ properties:
       Absolute address is the address of the concrete register in MAC PHY0
       which is responsible for Ethernet Port0 in Davicom DM8806
   reg-switch:
+    type: int
     required: true
     description: |
       5-bit PHY address for Switch Per-Port Registers group of Davicom DM8806
@@ -48,9 +49,11 @@ properties:
       which is responsible for Ethernet Port0 in Davicom DM8806
   reset-gpios:
     type: phandle-array
+    required: true
     description: GPIO connected to MAC PHY reset signal pin. Reset is active low.
   int-gpios:
     type: phandle-array
+    required: true
     description: GPIO for   upt signal indicating MAC PHY state change.
   davicom,interface-type:
     type: string

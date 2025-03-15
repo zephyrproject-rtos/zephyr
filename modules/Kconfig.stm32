@@ -30,6 +30,16 @@ config USE_STM32_HAL_ADC_EX
 	  Enable STM32Cube Extended Analog-to-Digital Converter (ADC) HAL
 	  module driver
 
+config USE_STM32_HAL_BSEC
+	bool
+	help
+	  Enable STM32Cube Boot and Security Control (BSEC) HAL module driver
+
+config USE_STM32_HAL_CACHEAXI
+	bool
+	help
+	  Enable STM32Cube AXI Cache (CACHEAXI) HAL module driver
+
 config USE_STM32_HAL_CAN
 	bool
 	help
@@ -213,6 +223,11 @@ config USE_STM32_HAL_GFXMMU
 	help
 	  Enable STM32Cube Chrom-GRCTM (GFXMMU) HAL module driver
 
+config USE_STM32_HAL_GFXTIM
+	bool
+	help
+	  Enable STM32Cube Graphic Timer (GFXTIM) HAL module driver
+
 config USE_STM32_HAL_GPIO
 	bool
 	help
@@ -334,6 +349,11 @@ config USE_STM32_HAL_LTDC_EX
 	bool
 	help
 	  Enable STM32Cube Extended LCD-TFT controller (LTDC) HAL module driver
+
+config USE_STM32_HAL_MCE
+	bool
+	help
+	  Enable STM32Cube Memory Cipher Engine (MCE) HAL module driver
 
 config USE_STM32_HAL_MDF
 	bool
@@ -463,10 +483,20 @@ config USE_STM32_HAL_RAMECC
 	help
 	  Enable STM32Cube RAM ECC monitoring (RAMECC) HAL module driver
 
+config USE_STM32_HAL_RIF
+	bool
+	help
+	  Enable STM32Cube Resource Isolation Framework (RIF) HAL module driver
+
 config USE_STM32_HAL_RNG
 	bool
 	help
 	  Enable STM32Cube True random number generator (RNG) HAL module driver
+
+config USE_STM32_HAL_RNG_EX
+	bool
+	help
+	  Enable STM32Cube Extended True random number generator (RNG) HAL module driver
 
 config USE_STM32_HAL_RTC
 	bool
@@ -532,6 +562,11 @@ config USE_STM32_HAL_SMBUS
 	bool
 	help
 	  Enable STM32Cube System Management Bus (SMBus) HAL module driver
+
+config USE_STM32_HAL_SMBUS_EX
+	bool
+	help
+	  Enable STM32Cube Extended System Management Bus (SMBus) HAL module driver
 
 config USE_STM32_HAL_SPDIFRX
 	bool
@@ -656,7 +691,7 @@ config USE_STM32_LL_DELAYBLOCK
 config USE_STM32_LL_DLYB
 	bool
 	help
-	  Enable STM32Cube DelayBlock (DELAYBLOCK) LL module driver (stm32U5)
+	  Enable STM32Cube DelayBlock (DELAYBLOCK) LL module driver (stm32U5 or STM32N6)
 
 config USE_STM32_LL_DMA
 	bool
@@ -822,5 +857,15 @@ config USE_STM32_LL_UTILS
 	bool
 	help
 	  Enable STM32Cube Utility functions (UTILS) LL module driver
+
+config USE_STM32_LL_VENC
+	bool
+	help
+	  Enable STM32Cube Video Encoder (VENC) LL module driver
+
+config USE_STM32_UTIL_I3C
+	bool
+	help
+	  Enable STM32Cube I3C Timing Utility functions (UTILS) module driver
 
 endif # HAS_STM32CUBE

@@ -65,6 +65,15 @@ SECTIONS {
     *(.gnu.linkonce.h.*)
   } > dram
 
+  /* SOF extended manifest */
+  . = ALIGN(16);
+  _fw_metadata_start = .;
+  .fw_metadata : {
+    KEEP (*(.fw_metadata))
+    . = ALIGN(16);
+  } > dram
+  _fw_metadata_end = .;
+
 #include <zephyr/linker/common-rom.ld>
 #include <snippets-rom-sections.ld>
 
@@ -100,6 +109,11 @@ SECTIONS {
   . = ALIGN(4096);
   _end = .;
   _mtk_adsp_dram_end = .;
+
+  .nocache (NOLOAD) : {
+    . = ALIGN(4096);
+    *(.nocache .nocache.*)
+  } > dram
 
   /* Non-runtime-loaded sections below */
 

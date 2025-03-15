@@ -15,24 +15,6 @@ properties:
   rx-cut-through-mode:
     type: boolean
     description: Enable RX cut through mode
-  plca-enable:
-    type: boolean
-    description: Enable or disable PLCA support
-  plca-node-id:
-    type: int
-    description: Specify the PLCA node ID number
-  plca-node-count:
-    type: int
-    description: Specify the PLCA node count
-  plca-burst-count:
-    type: int
-    description: Specify the PLCA burst count
-  plca-burst-timer:
-    type: int
-    description: Specify the PLCA burst timer value
-  plca-to-timer:
-    type: int
-    description: Specify the PLCA to timer value
   int-gpios:
     type: phandle-array
     required: true

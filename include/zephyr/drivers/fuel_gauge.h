@@ -288,15 +288,15 @@ static inline int z_impl_fuel_gauge_get_prop(const struct device *dev, fuel_gaug
  * @return 0 if successful, negative errno code of first failing property
  */
 
-__syscall int fuel_gauge_get_props(const struct device *dev, fuel_gauge_prop_t *props,
+__syscall int fuel_gauge_get_props(const struct device *dev, const fuel_gauge_prop_t *props,
 				   union fuel_gauge_prop_val *vals, size_t len);
 static inline int z_impl_fuel_gauge_get_props(const struct device *dev,
-					      fuel_gauge_prop_t *props,
+					      const fuel_gauge_prop_t *props,
 					      union fuel_gauge_prop_val *vals, size_t len)
 {
-	const struct fuel_gauge_driver_api *api = dev->api;
+	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
-	for (int i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		int ret = api->get_property(dev, props[i], vals + i);
 
 		if (ret) {
@@ -322,7 +322,7 @@ __syscall int fuel_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t pr
 static inline int z_impl_fuel_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 					     union fuel_gauge_prop_val val)
 {
-	const struct fuel_gauge_driver_api *api = dev->api;
+	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
 	if (api->set_property == NULL) {
 		return -ENOSYS;
@@ -342,14 +342,14 @@ static inline int z_impl_fuel_gauge_set_prop(const struct device *dev, fuel_gaug
  *
  * @return return=0 if successful. Otherwise, return array index of failing property.
  */
-__syscall int fuel_gauge_set_props(const struct device *dev, fuel_gauge_prop_t *props,
-				   union fuel_gauge_prop_val *vals, size_t len);
+__syscall int fuel_gauge_set_props(const struct device *dev, const fuel_gauge_prop_t *props,
+				   const union fuel_gauge_prop_val *vals, size_t len);
 
 static inline int z_impl_fuel_gauge_set_props(const struct device *dev,
-					      fuel_gauge_prop_t *props,
-					      union fuel_gauge_prop_val *vals, size_t len)
+					      const fuel_gauge_prop_t *props,
+					      const union fuel_gauge_prop_val *vals, size_t len)
 {
-	for (int i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		int ret = fuel_gauge_set_prop(dev, props[i], vals[i]);
 
 		if (ret) {

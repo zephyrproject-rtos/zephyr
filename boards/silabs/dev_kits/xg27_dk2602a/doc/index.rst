@@ -49,6 +49,8 @@ The xg27_dk2602a board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | ldma                                |
 +-----------+------------+-------------------------------------+
+| ACMP      | on-chip    | comparator                          |
++-----------+------------+-------------------------------------+
 
 Flashing
 ========

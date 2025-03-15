@@ -353,13 +353,14 @@ static inline char z_log_minimal_level_to_char(int level)
 			z_log_minimal_hexdump_print((_level), (const char *)(_data), (_len));      \
 			break;                                                                     \
 		}                                                                                  \
-		int mode;                                                                          \
-		Z_LOG_MSG_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), mode,                     \
+		int _mode;                                                                         \
+		Z_LOG_MSG_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode,                    \
 				 Z_LOG_LOCAL_DOMAIN_ID, _source, _level, _data, _len,              \
 				 COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
 				(), \
 			  (COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
 				  ("%s", __VA_ARGS__), (__VA_ARGS__)))));   \
+		(void)_mode;                                                                       \
 	} while (false)
 
 #define Z_LOG_HEXDUMP(_level, _data, _length, ...)                                                 \

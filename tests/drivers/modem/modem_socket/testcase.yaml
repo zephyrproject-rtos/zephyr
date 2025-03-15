@@ -1,0 +1,10 @@
+tests:
+  drivers.modem.modem_sockets:
+    tags:
+      - drivers
+      - modem
+    platform_allow:
+      - native_posix
+      - native_sim
+    integration_platforms:
+      - native_sim

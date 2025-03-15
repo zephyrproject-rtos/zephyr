@@ -30,7 +30,7 @@
  *   privileged portion of the user stack without touching SP_EL0. This portion
  *   is marked as not user accessible in the MMU/MPU.
  *
- * - a stack guard region will be added bellow the kernel stack when
+ * - a stack guard region will be added below the kernel stack when
  *   ARM64_STACK_PROTECTION is enabled. In this case, SP_EL0 will always point
  *   to the safe exception stack in the kernel space. For the kernel thread,
  *   SP_EL0 will not change always pointing to safe exception stack. For the
@@ -159,15 +159,15 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	uint64_t tmpreg;
 
 	/* Map the thread stack */
-	z_arm64_thread_mem_domains_init(arch_current_thread());
+	z_arm64_thread_mem_domains_init(_current);
 
 	/* Top of the user stack area */
-	stack_el0 = Z_STACK_PTR_ALIGN(arch_current_thread()->stack_info.start +
-				      arch_current_thread()->stack_info.size -
-				      arch_current_thread()->stack_info.delta);
+	stack_el0 = Z_STACK_PTR_ALIGN(_current->stack_info.start +
+				      _current->stack_info.size -
+				      _current->stack_info.delta);
 
 	/* Top of the privileged non-user-accessible part of the stack */
-	stack_el1 = (uintptr_t)(arch_current_thread()->stack_obj + ARCH_THREAD_STACK_RESERVED);
+	stack_el1 = (uintptr_t)(_current->stack_obj + ARCH_THREAD_STACK_RESERVED);
 
 	register void *x0 __asm__("x0") = user_entry;
 	register void *x1 __asm__("x1") = p1;

@@ -7,11 +7,11 @@ BabbleSim and Zephyr
 ********************
 
 In the Zephyr project we use the `Babblesim`_ simulator to test some of the Zephyr radio protocols,
-including the BLE stack, 802.15.4, and some of the networking stack.
+including the Bluetooth LE stack, 802.15.4, and some of the networking stack.
 
 BabbleSim_ is a physical layer simulator, which in combination with the Zephyr
 :ref:`bsim boards<bsim boards>`
-can be used to simulate a network of BLE and 15.4 devices.
+can be used to simulate a network of Bluetooth LE and 15.4 devices.
 When we build Zephyr targeting a :ref:`bsim board<bsim boards>` we produce a Linux
 executable, which includes the application, Zephyr OS, and models of the HW.
 

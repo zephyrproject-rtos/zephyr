@@ -340,13 +340,30 @@ register_class_error:
 	return ret;
 }
 
+static bool is_blocklisted(const struct usbd_class_node *const c_nd,
+			   const char *const list[])
+{
+	for (int i = 0; list[i] != NULL; i++) {
+		if (strcmp(c_nd->c_data->name, list[i]) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int usbd_register_all_classes(struct usbd_context *const uds_ctx,
-			      const enum usbd_speed speed, const uint8_t cfg)
+			      const enum usbd_speed speed, const uint8_t cfg,
+			      const char *const blocklist[])
 {
 	int ret;
 
 	if (speed == USBD_SPEED_HS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
+			if (blocklist != NULL && is_blocklisted(c_nd, blocklist)) {
+				continue;
+			}
+
 			ret = usbd_register_class(uds_ctx, c_nd->c_data->name,
 						  speed, cfg);
 			if (ret) {
@@ -361,6 +378,10 @@ int usbd_register_all_classes(struct usbd_context *const uds_ctx,
 
 	if (speed == USBD_SPEED_FS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, c_nd) {
+			if (blocklist != NULL && is_blocklisted(c_nd, blocklist)) {
+				continue;
+			}
+
 			ret = usbd_register_class(uds_ctx, c_nd->c_data->name,
 						  speed, cfg);
 			if (ret) {

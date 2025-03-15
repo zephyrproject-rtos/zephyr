@@ -312,7 +312,7 @@ static DEVICE_API(i2c, i2c_emul_api) = {
 
 #define EMUL_FORWARD_ITEM(node_id, prop, idx)                                                      \
 	{                                                                                          \
-		.bus = DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),                       \
+		.bus = DEVICE_DT_GET_BY_IDX(node_id, prop, idx),                                   \
 		.addr = DT_PHA_BY_IDX(node_id, prop, idx, addr),                                   \
 	},
 

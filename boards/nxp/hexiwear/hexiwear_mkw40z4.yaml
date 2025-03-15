@@ -7,7 +7,6 @@ flash: 512
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 testing:
   ignore_tags:
     - net

@@ -52,7 +52,8 @@
 				       STM32H72X_ADC3_RES(8, 0x02)
 				       STM32H72X_ADC3_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		dmamux1: dmamux@40020800 {
@@ -88,11 +89,11 @@
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK(APB3, 3U)>;
-			resets = <&rctl STM32_RESET(APB3, 4U)>;
+			resets = <&rctl STM32_RESET(APB3, 3U)>;
 			status = "disabled";
 		};
 
-		octospi1: octospi@52005000 {
+		octospi1: spi@52005000 {
 			compatible = "st,stm32-ospi";
 			reg = <0x52005000 0x1000>;
 			interrupts = <92 0>;
@@ -104,7 +105,7 @@
 			status = "disabled";
 		};
 
-		octospi2: octospi@5200a000 {
+		octospi2: spi@5200a000 {
 			compatible = "st,stm32-ospi";
 			reg = <0x5200a000 0x1000>;
 			interrupts = <150 0>;

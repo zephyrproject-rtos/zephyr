@@ -659,6 +659,7 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 	close_ate.id = 0xffff;
 	close_ate.offset = fixture->fs.sector_size - sizeof(struct nvs_ate) * 5;
 	close_ate.len = 0;
+	close_ate.part = 0xff;
 	close_ate.crc8 = 0xff; /* Incorrect crc8 */
 
 	ate.id = 0x1;
@@ -667,6 +668,7 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 #ifdef CONFIG_NVS_DATA_CRC
 	ate.len += sizeof(data_crc);
 #endif
+	ate.part = 0xff;
 	ate.crc8 = crc8_ccitt(0xff, &ate,
 			      offsetof(struct nvs_ate, crc8));
 
@@ -722,12 +724,14 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_ate)
 	close_ate.id = 0xffff;
 	close_ate.offset = fixture->fs.sector_size / 2;
 	close_ate.len = 0;
+	close_ate.part = 0xff;
 	close_ate.crc8 = crc8_ccitt(0xff, &close_ate,
 				    offsetof(struct nvs_ate, crc8));
 
 	corrupt_ate.id = 0xdead;
 	corrupt_ate.offset = 0;
 	corrupt_ate.len = 20;
+	corrupt_ate.part = 0xff;
 	corrupt_ate.crc8 = 0xff; /* Incorrect crc8 */
 
 	/* Mark sector 0 as closed */
@@ -957,5 +961,42 @@ ZTEST_F(nvs, test_nvs_cache_hash_quality)
 	zassert_between_inclusive(num, MIN_CACHE_OCCUPANCY, CONFIG_NVS_LOOKUP_CACHE_SIZE,
 				  "too low cache occupancy - poor hash quality");
 
+#endif
+}
+
+/*
+ * Test NVS bad region initialization recovery.
+ */
+ZTEST_F(nvs, test_nvs_init_bad_memory_region)
+{
+	int err;
+	uint32_t data;
+
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	/* Write bad ATE to each sector */
+	for (uint16_t i = 0; i < TEST_SECTOR_COUNT; i++) {
+		data = 0xdeadbeef;
+		err = flash_write(fixture->fs.flash_device,
+				  fixture->fs.offset + (fixture->fs.sector_size * (i + 1)) -
+					  sizeof(struct nvs_ate),
+				  &data, sizeof(data));
+		zassert_true(err == 0, "flash_write failed: %d", err);
+	}
+
+	/* Reinitialize the NVS. */
+	memset(&fixture->fs, 0, sizeof(fixture->fs));
+	(void)setup();
+
+#ifdef CONFIG_NVS_INIT_BAD_MEMORY_REGION
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	/* Ensure that the NVS is able to store new content. */
+	execute_long_pattern_write(TEST_DATA_ID, &fixture->fs);
+#else
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == -EDEADLK, "nvs_mount call ok, expect fail: %d", err);
 #endif
 }

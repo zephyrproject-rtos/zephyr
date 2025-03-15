@@ -39,47 +39,7 @@ For more information about the GD32A503 SoC and GD32A503V-EVAL board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - EXTI
-     - :kconfig:option:`CONFIG_GD32_EXTI`
-     - :dtcompatible:`gd,gd32-exti`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`gd,gd32-gpio`
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v8m-nvic`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`gd,gd32-pwm`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-   * - PINMUX
-     - :kconfig:option:`CONFIG_PINCTRL`
-     - :dtcompatible:`gd,gd32-pinctrl-af`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`gd,gd32-adc`
-   * - DAC
-     - :kconfig:option:`CONFIG_DAC`
-     - :dtcompatible:`gd,gd32-dac`
-   * - FMC
-     - N/A
-     - :dtcompatible:`gd,gd32-flash-controller`
-   * - SPI
-     - :kconfig:option:`CONFIG_SPI`
-     - :dtcompatible:`gd,gd32-spi`
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========

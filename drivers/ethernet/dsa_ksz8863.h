@@ -94,6 +94,8 @@
 #define KSZ8863_GLOBAL_CTRL1_TAIL_TAG_EN             BIT(6)
 #define KSZ8863_GLOBAL_CTRL2_LEG_MAX_PKT_SIZ_CHK_ENA BIT(1)
 
+#define KSZ8863_CTRL1_PORTn(n)                       (0x11 + ((n) * 0x10))
+#define KSZ8863_CTRL1_VLAN_PORTS_MASK                0xF8
 #define KSZ8863_CTRL2_PORTn(n)                       (0x12 + ((n) * 0x10))
 #define KSZ8863_CTRL2_TRANSMIT_EN                    BIT(2)
 #define KSZ8863_CTRL2_RECEIVE_EN                     BIT(1)
@@ -157,6 +159,8 @@ enum {
 #define KSZ8XXX_RESET_SET                       KSZ8863_SOFTWARE_RESET_SET
 #define KSZ8XXX_RESET_CLEAR                     KSZ8863_SOFTWARE_RESET_CLEAR
 #define KSZ8XXX_STAT2_PORTn                     KSZ8863_STAT2_PORTn
+#define KSZ8XXX_CTRL1_PORTn			KSZ8863_CTRL1_PORTn
+#define KSZ8XXX_CTRL1_VLAN_PORTS_MASK		KSZ8863_CTRL1_VLAN_PORTS_MASK
 #define KSZ8XXX_SPI_CMD_RD                      KSZ8863_SPI_CMD_RD
 #define KSZ8XXX_SPI_CMD_WR                      KSZ8863_SPI_CMD_WR
 #define KSZ8XXX_SOFT_RESET_DURATION             1000

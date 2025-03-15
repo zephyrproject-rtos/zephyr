@@ -54,6 +54,8 @@ static struct ipc_channel_config ipc_cpusys_channel_config = {
 	.enabled	 = true
 };
 
+static sys_slist_t nrfs_backend_info_cb_slist = SYS_SLIST_STATIC_INIT(&nrfs_backend_info_cb_slist);
+
 /**
  * @brief nrfs backend error handler
  *
@@ -98,6 +100,12 @@ static void ipc_sysctrl_ept_bound(void *priv)
 
 	if (k_msgq_num_used_get(&ipc_transmit_msgq) > 0) {
 		k_work_submit(&backend_send_work);
+	}
+
+	struct nrfs_backend_bound_info_subs *subs;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&nrfs_backend_info_cb_slist, subs, node) {
+		subs->cb();
 	}
 }
 
@@ -220,6 +228,15 @@ int nrfs_backend_wait_for_connection(k_timeout_t timeout)
 	events = k_event_wait(&ipc_connected_event, IPC_INIT_DONE_EVENT, false, timeout);
 
 	return (events == IPC_INIT_DONE_EVENT ? 0 : (-EAGAIN));
+}
+
+void nrfs_backend_register_bound_subscribe(struct nrfs_backend_bound_info_subs *subs,
+					   nrfs_backend_bound_info_cb_t cb)
+{
+	if (cb) {
+		subs->cb = cb;
+		sys_slist_append(&nrfs_backend_info_cb_slist, &subs->node);
+	}
 }
 
 __weak void nrfs_backend_fatal_error_handler(enum nrfs_backend_error error_id)

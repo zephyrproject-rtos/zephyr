@@ -20,7 +20,7 @@ Overview
  A loop is executed where we mount the storage system, and then write all set
  of data.
 
- Each DELETE_ITERATION period, we delete all set of data and verify that it has been deleted.
+ Each CONFIG_DELETE_ITERATION period, we delete all set of data and verify that it has been deleted.
  We generate as well incremented ID/value pairs, we store them until storage is full, then we
  delete them and verify that storage is empty.
 

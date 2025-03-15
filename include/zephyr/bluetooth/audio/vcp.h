@@ -405,8 +405,10 @@ struct bt_vcp_vol_ctlr_cb {
 	/** Audio Input Control Service callbacks */
 	struct bt_aics_cb             aics_cb;
 
-	/** @internal Internally used field for list handling */
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used field for list handling */
 	sys_snode_t _node;
+	/** @endcond */
 };
 
 /**

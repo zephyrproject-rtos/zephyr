@@ -70,6 +70,8 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 		goto error;
 	}
 
+	client->http1_headers_sent = true;
+
 	ret = http_server_sendall(client, tmp, strlen(tmp));
 	if (ret < 0) {
 		NET_DBG("Cannot write to socket (%d)", ret);
@@ -93,7 +95,10 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 	 */
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
 		struct http_resource_detail_websocket *ws_detail;
+		struct http_request_ctx request_ctx;
 		int ws_sock;
+		char *params;
+		size_t params_len;
 
 		ws_detail = (struct http_resource_detail_websocket *)client->current_detail;
 
@@ -105,9 +110,14 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 			goto error;
 		}
 
+		memset(&request_ctx, 0, sizeof(request_ctx));
+		params = &client->url_buffer[client->current_detail->path_len];
+		params_len = strlen(params);
+		populate_request_ctx(&request_ctx, params, params_len, &client->header_capture_ctx);
+
+		ret = ws_detail->cb(ws_sock, &request_ctx, ws_detail->user_data);
 		http_server_release_client(client);
 
-		ret = ws_detail->cb(ws_sock, ws_detail->user_data);
 		if (ret < 0) {
 			NET_DBG("WS connection failed (%d)", ret);
 			websocket_unregister(ws_sock);

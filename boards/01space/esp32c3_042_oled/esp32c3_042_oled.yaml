@@ -11,8 +11,4 @@ supported:
   - spi
   - uart
   - watchdog
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: 01space

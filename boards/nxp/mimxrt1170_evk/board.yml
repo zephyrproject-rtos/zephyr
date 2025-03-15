@@ -6,7 +6,7 @@ board:
     - name: mimxrt1176
   revision:
     format: "letter"
-    default: "A"
+    default: "B"
     revisions:
       - name: "A"
       - name: "B"

@@ -15,9 +15,81 @@ properties:
     type: int
     required: true
 
-  vbatts_pins:
+  vbatts-pins:
     type: array
     description: Array of vbatt pin on port
+
+  port-irqs:
+    type: phandle-array
+    description: Port irq which this port can be use
+
+  port-irq-names:
+    type: string-array
+    description: The name of port irq
+
+  port-irq0-pins:
+    type: array
+    description: Pins allow to assign port-irq0
+
+  port-irq1-pins:
+    type: array
+    description: Pins allow to assign port-irq1
+
+  port-irq2-pins:
+    type: array
+    description: Pins allow to assign port-irq2
+
+  port-irq3-pins:
+    type: array
+    description: Pins allow to assign port-irq3
+
+  port-irq4-pins:
+    type: array
+    description: Pins allow to assign port-irq4
+
+  port-irq5-pins:
+    type: array
+    description: Pins allow to assign port-irq5
+
+  port-irq6-pins:
+    type: array
+    description: Pins allow to assign port-irq6
+
+  port-irq7-pins:
+    type: array
+    description: Pins allow to assign port-irq7
+
+  port-irq8-pins:
+    type: array
+    description: Pins allow to assign port-irq8
+
+  port-irq9-pins:
+    type: array
+    description: Pins allow to assign port-irq9
+
+  port-irq10-pins:
+    type: array
+    description: Pins allow to assign port-irq10
+
+  port-irq11-pins:
+    type: array
+    description: Pins allow to assign port-irq11
+
+  port-irq12-pins:
+    type: array
+    description: Pins allow to assign port-irq12
+
+  port-irq13-pins:
+    type: array
+    description: Pins allow to assign port-irq13
+
+  port-irq14-pins:
+    type: array
+    description: Pins allow to assign port-irq14
+
+  port-irq15-pins:
+    type: array
+    description: Pins allow to assign port-irq15
 
   "#gpio-cells":
     const: 2

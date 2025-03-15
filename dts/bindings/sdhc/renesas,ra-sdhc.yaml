@@ -1,0 +1,54 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA SDHC
+
+compatible: "renesas,ra-sdhc"
+
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+
+  bus-width:
+    type: int
+    enum:
+      - 1
+      - 4
+    default: 4
+
+  sd-support:
+    type: boolean
+
+  mmc-support:
+    type: boolean
+
+  card-detect:
+    type: boolean
+
+  write-protect:
+    type: boolean
+
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO to use to enable/disable the SDHI. This GPIO is driven active when
+      the SDHI is enabled and inactive when the SDHI is disabled
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true

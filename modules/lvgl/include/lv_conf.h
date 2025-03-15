@@ -12,40 +12,37 @@
 
 /* Memory manager settings */
 
-#define LV_MEMCPY_MEMSET_STD 1
-#define LV_MEM_CUSTOM        1
+#define LV_USE_STDLIB_MALLOC LV_STDLIB_CUSTOM
 
 #if defined(CONFIG_LV_Z_MEM_POOL_HEAP_LIB_C)
-
-#define LV_MEM_CUSTOM_INCLUDE "stdlib.h"
-#define LV_MEM_CUSTOM_ALLOC   malloc
-#define LV_MEM_CUSTOM_REALLOC realloc
-#define LV_MEM_CUSTOM_FREE    free
-
+#define LV_STDLIB_INCLUDE "stdlib.h"
+#define lv_malloc_core    malloc
+#define lv_realloc_core   realloc
+#define lv_free_core      free
 #else
-
-#define LV_MEM_CUSTOM_INCLUDE "lvgl_mem.h"
-#define LV_MEM_CUSTOM_ALLOC   lvgl_malloc
-#define LV_MEM_CUSTOM_REALLOC lvgl_realloc
-#define LV_MEM_CUSTOM_FREE    lvgl_free
-
+#define LV_STDLIB_INCLUDE "lvgl_mem.h"
+#define lv_malloc_core    lvgl_malloc
+#define lv_realloc_core   lvgl_realloc
+#define lv_free_core      lvgl_free
 #endif
 
-/* HAL settings */
-
-#define LV_TICK_CUSTOM               1
-#define LV_TICK_CUSTOM_INCLUDE       <zephyr/kernel.h>
-#define LV_TICK_CUSTOM_SYS_TIME_EXPR (k_uptime_get_32())
-
 /* Misc settings */
-
-#define LV_SPRINTF_CUSTOM  1
-#define LV_SPRINTF_INCLUDE "stdio.h"
-#define lv_snprintf        snprintf
-#define lv_vsnprintf       vsnprintf
+#define lv_snprintf               snprintf
+#define lv_vsnprintf              vsnprintf
+#define LV_ASSERT_HANDLER         __ASSERT_NO_MSG(false);
+#define LV_ASSERT_HANDLER_INCLUDE "zephyr/sys/__assert.h"
 
 /* Provide definition to align LVGL buffers */
 #define LV_ATTRIBUTE_MEM_ALIGN __aligned(CONFIG_LV_ATTRIBUTE_MEM_ALIGN_SIZE)
+
+#ifdef CONFIG_LV_COLOR_16_SWAP
+#define LV_COLOR_16_SWAP 1
+#endif /* CONFIG_LV_COLOR_16_SWAP */
+
+#ifdef CONFIG_LV_Z_USE_OSAL
+#define LV_USE_OS            LV_OS_CUSTOM
+#define LV_OS_CUSTOM_INCLUDE "lvgl_zephyr_osal.h"
+#endif /* CONFIG_LV_Z_USE_OSAL */
 
 /*
  * Needed because of a workaround for a GCC bug,

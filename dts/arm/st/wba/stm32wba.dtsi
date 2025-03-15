@@ -118,6 +118,13 @@
 		};
 	};
 
+	mcos {
+		mco1: mco1 {
+			compatible = "st,stm32-clock-mco";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32wba-flash-controller";
@@ -424,8 +431,9 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 4 8 13 20 40 80 815>;
 			num-sampling-time-common-channels = <2>;
-			st,adc-clock-source = <ASYNC>;
-			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "ASYNC";
+			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		lptim1: timers@46004400 {

@@ -24,6 +24,10 @@ this page <boards-shields>`.
      single field, selecting multiple options (such as two architectures) will show boards matching
      **either** option.
 
+   * The list of supported hardware features for each board is automatically generated using
+     information from the Devicetree. It may not be reflecting the full list of supported features
+     since some of them may not be enabled by default.
+
    * Can't find your exact board? Don't worry! If a similar board with the same or a closely related
      MCU exists, you can use it as a :ref:`starting point <create-your-board-directory>` for adding
      support for your own board.

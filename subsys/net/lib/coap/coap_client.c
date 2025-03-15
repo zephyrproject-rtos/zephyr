@@ -1013,14 +1013,12 @@ static void cancel_requests_with(struct coap_client *client, int error)
 			 * request was cancelled anyway.
 			 */
 			report_callback_error(&client->requests[i], error);
-			release_internal_request(&client->requests[i]);
 		}
-		/* If our socket has failed, clear all requests, even completed ones,
-		 * so that our handle_poll() does not poll() anymore for this socket.
+
+		/* Clear all requests, even completed ones, so that our
+		 * handle_poll() does not poll() anymore for this socket.
 		 */
-		if (error == -EIO) {
-			reset_internal_request(&client->requests[i]);
-		}
+		reset_internal_request(&client->requests[i]);
 	}
 	k_mutex_unlock(&client->lock);
 
@@ -1112,6 +1110,16 @@ int coap_client_init(struct coap_client *client, const char *info)
 	return 0;
 }
 
+struct coap_client_option coap_client_option_initial_block2(void)
+{
+	struct coap_client_option block2 = {
+		.code = COAP_OPTION_BLOCK2,
+		.len = 1,
+		.value[0] = coap_bytes_to_block_size(CONFIG_COAP_CLIENT_BLOCK_SIZE),
+	};
+
+	return block2;
+}
 
 K_THREAD_DEFINE(coap_client_recv_thread, CONFIG_COAP_CLIENT_STACK_SIZE,
 		coap_client_recv, NULL, NULL, NULL,

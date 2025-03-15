@@ -45,6 +45,7 @@ Sample Output
 =============
 
 When the sample runs successfully you should see following message on the screen:
+
 .. code-block:: console
 
   I: LittleFS version 2.4, disk version 2.0

@@ -50,6 +50,7 @@ static void *stepper_setup(void)
 			  &stepper_signal);
 	user_data_received = NULL;
 	zassert_not_null(fixture.dev);
+	(void)stepper_enable(fixture.dev, true);
 	return &fixture;
 }
 
@@ -82,7 +83,7 @@ ZTEST_F(stepper, test_target_position)
 {
 	int32_t pos = 100u;
 
-	(void)stepper_set_max_velocity(fixture->dev, 100u);
+	(void)stepper_set_microstep_interval(fixture->dev, 10000);
 
 	/* Pass the function name as user data */
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, &fixture);

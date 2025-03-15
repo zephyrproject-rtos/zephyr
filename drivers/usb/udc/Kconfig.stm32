@@ -13,3 +13,34 @@ config UDC_STM32
 	default y
 	help
 	  STM32 USB device controller driver.
+
+if UDC_STM32
+
+config UDC_STM32_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 512
+	help
+	  STM32 USB device controller driver internal thread stack size.
+
+config UDC_STM32_THREAD_PRIORITY
+	int "STM32 USB controller driver thread priority"
+	default 8
+	help
+	  STM32 USB device controller driver thread priority.
+
+config UDC_STM32_MAX_QMESSAGES
+	int "STM32 UDC driver maximum number of ISR event messages"
+	range 4 64
+	default 8
+	help
+	  Maximum number of messages for handling of STM32 USBD ISR events.
+
+config UDC_STM32_CLOCK_CHECK
+	bool "Runtime USB 48MHz clock check"
+	default y if !(SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32U5X)
+	help
+	  Enable USB clock 48MHz configuration runtime check.
+	  In specific cases, this check might provide wrong verdict and should
+	  be disabled.
+
+endif

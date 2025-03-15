@@ -38,6 +38,7 @@
 
 /* NPCX4 FIU register fields */
 #define NPCX_FIU_EXT_CFG_SPI1_2DEV	6
+#define NPCX_FIU_EXT_CFG_LOW_DEV_NUM	7
 
 /* NPCX4 supported group mask of DEVALT_LK */
 #define NPCX_DEVALT_LK_GROUP_MASK \

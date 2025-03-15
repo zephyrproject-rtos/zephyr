@@ -36,10 +36,11 @@ static inline int init_vlan(void)
  */
 int main(void)
 {
+	init_vlan();
+
 	wait_for_network();
 
 	LOG_INF("Waiting mDNS queries...");
-	init_vlan();
 	service();
 	return 0;
 }

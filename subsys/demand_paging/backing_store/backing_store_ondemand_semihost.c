@@ -34,7 +34,7 @@ void k_mem_paging_backing_store_location_free(uintptr_t location)
 
 void k_mem_paging_backing_store_page_out(uintptr_t location)
 {
-	__ASSERT(true, "not ever supposed to be called");
+	__ASSERT(false, "not ever supposed to be called");
 	k_panic();
 }
 

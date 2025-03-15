@@ -1,7 +1,9 @@
+# Copyright (c) 2020-2025, Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 CONFIG_ARM_MPU=y
 CONFIG_HW_STACK_PROTECTION=y
+CONFIG_WDT_DISABLE_AT_BOOT=y
 
 CONFIG_CONSOLE=y
 CONFIG_SERIAL=y

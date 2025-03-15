@@ -146,6 +146,7 @@ endif # MODEM_CONTEXT
 
 config MODEM_SOCKET
 	bool "Generic modem socket support layer"
+	depends on NET_SOCKETS
 	help
 	  This layer provides much of the groundwork for keeping track of
 	  modem "sockets" throughout their lifecycle (from the initial offload

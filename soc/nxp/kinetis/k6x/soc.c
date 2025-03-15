@@ -87,7 +87,7 @@ static const sim_clock_config_t simConfig = {
  * clock.
  *
  */
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 	CLOCK_SetSimSafeDivs();
 
@@ -105,10 +105,10 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetLpuartClock(LPUART0SRC_OSCERCLK);
 #endif
 
-#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
+#if CONFIG_ETH_NXP_ENET
 	CLOCK_SetEnetTime0Clock(TIMESRC_OSCERCLK);
 #endif
-#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+#if CONFIG_ETH_NXP_ENET_RMII_EXT_CLK
 	CLOCK_SetRmii0Clock(1);
 #endif
 #if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS

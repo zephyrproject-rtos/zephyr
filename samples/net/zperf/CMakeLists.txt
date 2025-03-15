@@ -26,3 +26,9 @@ endif()
 if (CONFIG_USB_DEVICE_STACK_NEXT)
   include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
 endif()
+
+if (CONFIG_SOC_NRF5340_CPUAPP)
+  target_sources(app PRIVATE
+    src/nrf5340_cpu_boost.c
+    )
+endif()

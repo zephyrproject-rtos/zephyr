@@ -70,7 +70,7 @@ struct queue_item {
 };
 
 /* Minimal ring buffer implementation */
-struct ring_buf {
+struct ring_buffer {
 	struct queue_item *buf;
 	uint16_t len;
 	uint16_t head;
@@ -81,7 +81,7 @@ struct stream {
 	int32_t state;
 	struct k_sem sem;
 	struct i2s_config cfg;
-	struct ring_buf mem_block_queue;
+	struct ring_buffer mem_block_queue;
 	void *mem_block;
 };
 

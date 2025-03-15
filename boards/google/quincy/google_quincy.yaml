@@ -1,0 +1,19 @@
+identifier: google_quincy
+name: Google Quincy Development Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 1024
+vendor: google
+supported:
+  - clock
+  - gpio
+  - i2c
+  - pm
+  - pwm
+  - spi
+  - uart
+  - watchdog

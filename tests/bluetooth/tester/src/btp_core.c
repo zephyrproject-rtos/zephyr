@@ -107,6 +107,9 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_TMAP)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_TMAP);
 #endif /* CONFIG_BT_TMAP */
+#if defined(CONFIG_BT_PBP)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_PBP);
+#endif /* CONFIG_BT_PBP */
 
 	*rsp_len = sizeof(*rp) + 2;
 
@@ -250,6 +253,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_ots();
 		break;
 #endif /* CONFIG_BT_OTS */
+#if defined(CONFIG_BT_PBP)
+	case BTP_SERVICE_ID_PBP:
+		status = tester_init_pbp();
+		break;
+#endif /* CONFIG_BT_PBP */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -397,6 +405,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_ots();
 		break;
 #endif /* CONFIG_BT_OTS */
+#if defined(CONFIG_BT_PBP)
+	case BTP_SERVICE_ID_PBP:
+		status = tester_unregister_pbp();
+		break;
+#endif /* CONFIG_BT_PBP */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;

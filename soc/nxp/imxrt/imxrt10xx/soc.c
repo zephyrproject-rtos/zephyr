@@ -51,7 +51,7 @@ const clock_sys_pll_config_t sysPllConfig = {
 #endif
 
 #if CONFIG_USB_DC_NXP_EHCI
-/* USB PHY condfiguration */
+/* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL (0x0CU)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
@@ -66,7 +66,7 @@ const clock_enet_pll_config_t ethPllConfig = {
 	defined(CONFIG_SOC_MIMXRT1024)
 	.enableClkOutput500M = true,
 #endif
-#if defined(CONFIG_ETH_NXP_ENET) || defined(CONFIG_ETH_MCUX)
+#if defined(CONFIG_ETH_NXP_ENET)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	.enableClkOutput = true,
 #endif
@@ -74,7 +74,7 @@ const clock_enet_pll_config_t ethPllConfig = {
 	.enableClkOutput1 = true,
 #endif
 #endif
-#if defined(CONFIG_PTP_CLOCK_MCUX) || defined(CONFIG_PTP_CLOCK_NXP_ENET)
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	.enableClkOutput25M = true,
 #else
 	.enableClkOutput25M = false,
@@ -135,7 +135,7 @@ const __imx_boot_ivt_section ivt image_vector_table = {
 /**
  * @brief Initialize the system clock
  */
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 	/* Boot ROM did initialize the XTAL, here we only sets external XTAL
 	 * OSC freq
@@ -227,7 +227,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)) && CONFIG_NET_L2_ETHERNET
-#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+#if CONFIG_ETH_NXP_ENET_RMII_EXT_CLK
 	/* Enable clock input for ENET1 */
 	IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1TxClkOutputDir, false);
 #else

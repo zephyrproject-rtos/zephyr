@@ -35,7 +35,7 @@ bool z_arm_debug_monitor_event_error_check(void)
 			printk("Null-pointer exception?\n");
 		}
 		__ASSERT((DWT->FUNCTION0 & DWT_FUNCTION_MATCHED_Msk) == 0,
-			"MATCHED flag should have been cleared on read.");
+			 "MATCHED flag should have been cleared on read.");
 
 		return true;
 	}
@@ -55,8 +55,8 @@ bool z_arm_debug_monitor_event_error_check(void)
  * so we add a build assert that catches it.
  */
 BUILD_ASSERT(!(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE &
-	(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1)),
-	"the size of the partition must be power of 2");
+	       (CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1)),
+	     "the size of the partition must be power of 2");
 
 int z_arm_debug_enable_null_pointer_detection(void)
 {
@@ -81,20 +81,12 @@ int z_arm_debug_enable_null_pointer_detection(void)
 	DWT->COMP0 = 0;
 	DWT->COMP1 = CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1;
 
-	DWT->FUNCTION0 =
-		((0x4 << DWT_FUNCTION_MATCH_Pos) & DWT_FUNCTION_MATCH_Msk)
-		|
-		((0x1 << DWT_FUNCTION_ACTION_Pos) & DWT_FUNCTION_ACTION_Msk)
-		|
-		((0x0 << DWT_FUNCTION_DATAVSIZE_Pos) & DWT_FUNCTION_DATAVSIZE_Msk)
-		;
-	DWT->FUNCTION1 =
-		((0x7 << DWT_FUNCTION_MATCH_Pos) & DWT_FUNCTION_MATCH_Msk)
-		|
-		((0x1 << DWT_FUNCTION_ACTION_Pos) & DWT_FUNCTION_ACTION_Msk)
-		|
-		((0x0 << DWT_FUNCTION_DATAVSIZE_Pos) & DWT_FUNCTION_DATAVSIZE_Msk)
-		;
+	DWT->FUNCTION0 = ((0x4 << DWT_FUNCTION_MATCH_Pos) & DWT_FUNCTION_MATCH_Msk) |
+			 ((0x1 << DWT_FUNCTION_ACTION_Pos) & DWT_FUNCTION_ACTION_Msk) |
+			 ((0x0 << DWT_FUNCTION_DATAVSIZE_Pos) & DWT_FUNCTION_DATAVSIZE_Msk);
+	DWT->FUNCTION1 = ((0x7 << DWT_FUNCTION_MATCH_Pos) & DWT_FUNCTION_MATCH_Msk) |
+			 ((0x1 << DWT_FUNCTION_ACTION_Pos) & DWT_FUNCTION_ACTION_Msk) |
+			 ((0x0 << DWT_FUNCTION_DATAVSIZE_Pos) & DWT_FUNCTION_DATAVSIZE_Msk);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 
 	/* ASSERT that we have the comparator needed for the implementation */
@@ -106,13 +98,10 @@ int z_arm_debug_enable_null_pointer_detection(void)
 	/* Use comparator 0, R/W access check */
 	DWT->COMP0 = 0;
 
-	DWT->FUNCTION0 = (0x7 << DWT_FUNCTION_FUNCTION_Pos) &
-		DWT_FUNCTION_FUNCTION_Msk;
-
+	DWT->FUNCTION0 = (0x7 << DWT_FUNCTION_FUNCTION_Pos) & DWT_FUNCTION_FUNCTION_Msk;
 
 	/* Set mask according to the desired size */
-	DWT->MASK0 = 32 - __builtin_clzl(
-		CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1);
+	DWT->MASK0 = 32 - __builtin_clzl(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1);
 #endif
 
 	return 0;

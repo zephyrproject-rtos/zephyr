@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_RENESAS_RA
+	bool "Renesas RA PWM driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_PWM_ENABLED
+	select USE_RA_FSP_GPT
+	select PINCTRL
+	help
+	  Enable Renesas RA PWM Driver.

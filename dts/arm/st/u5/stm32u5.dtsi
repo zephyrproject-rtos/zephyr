@@ -304,7 +304,7 @@
 			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
 			reg = <0x40036400 DT_SIZE_K(2)>;
 			/* BKPSRAMEN and RAMCFGEN clock enable */
-			clocks = <&rcc STM32_CLOCK(AHB1, 28U)>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 ((1 << 28) | (1 << 17))>;
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
 		};
@@ -696,7 +696,7 @@
 			};
 		};
 
-		octospi1: octospi@420d1400 {
+		octospi1: spi@420d1400 {
 			compatible = "st,stm32-ospi";
 			reg = <0x420d1400 0x400>;
 			interrupts = <76 0>;
@@ -709,7 +709,7 @@
 			status = "disabled";
 		};
 
-		octospi2: octospi@420d2400 {
+		octospi2: spi@420d2400 {
 			compatible = "st,stm32-ospi";
 			reg = <0x420d2400 0x400>;
 			interrupts = <120 0>;
@@ -791,8 +791,9 @@
 				       STM32_ADC_RES(10, 0x02)
 				       STM32_ADC_RES(8, 0x03)>;
 			sampling-times = <5 6 12 20 36 68 391 814>;
-			st,adc-clock-source = <ASYNC>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "ASYNC";
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		adc4: adc@46021000 {
@@ -809,8 +810,9 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 4 8 13 20 40 80 815>;
 			num-sampling-time-common-channels = <2>;
-			st,adc-clock-source = <ASYNC>;
-			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "ASYNC";
+			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		fdcan1: can@4000a400 {
@@ -957,6 +959,7 @@
 		compatible = "st,stm32-vref";
 		vrefint-cal-addr = <0x0BFA07A5>;
 		vrefint-cal-mv = <3000>;
+		vrefint-cal-resolution = <14>;
 		io-channels = <&adc1 0>;
 		status = "disabled";
 	};
@@ -965,6 +968,7 @@
 		compatible = "st,stm32-vref";
 		vrefint-cal-addr = <0x0BFA07A5>;
 		vrefint-cal-mv = <3000>;
+		vrefint-cal-resolution = <14>;
 		io-channels = <&adc4 0>;
 		status = "disabled";
 	};

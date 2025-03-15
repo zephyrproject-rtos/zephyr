@@ -46,7 +46,7 @@ static void SOC_RdcInit(void)
 	CLOCK_ControlGate(kCLOCK_VideoPll2Gate, kCLOCK_ClockNeededAll);
 }
 
-static void SOC_ClockInit(void)
+__weak void SOC_ClockInit(void)
 {
 	/*
 	 * Switch AHB NOC root to 25M first in order to configure

@@ -242,9 +242,9 @@ uint32_t flash_area_align(const struct flash_area *fa);
  * Retrieve info about sectors within the area.
  *
  * @param[in]  fa_id    Given flash area ID
- * @param[out] sectors  buffer for sectors data
  * @param[in,out] count On input Capacity of @p sectors, on output number of
  * sectors Retrieved.
+ * @param[out] sectors  buffer for sectors data
  *
  * @return  0 on success, negative errno code on fail. Especially returns
  * -ENOMEM if There are too many flash pages on the flash_area to fit in the
@@ -257,9 +257,9 @@ int flash_area_get_sectors(int fa_id, uint32_t *count,
  * Retrieve info about sectors within the area.
  *
  * @param[in]  fa       pointer to flash area object.
- * @param[out] sectors  buffer for sectors data
  * @param[in,out] count On input Capacity of @p sectors, on output number of
  * sectors retrieved.
+ * @param[out] sectors  buffer for sectors data
  *
  * @return  0 on success, negative errno code on fail. Especially returns
  * -ENOMEM if There are too many flash pages on the flash_area to fit in the
@@ -419,11 +419,21 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  * @return Pointer to flash_area type object representing partition
  */
 #define FIXED_PARTITION(label)	FIXED_PARTITION_1(DT_NODELABEL(label))
+
+/**
+ * Get pointer to flash_area object by partition node in DTS
+ *
+ * @param node DTS node of a partition
+ *
+ * @return Pointer to flash_area type object representing partition
+ */
+#define FIXED_PARTITION_BY_NODE(node)	FIXED_PARTITION_1(node)
+
+/** @cond INTERNAL_HIDDEN */
 #define FIXED_PARTITION_1(node)	FIXED_PARTITION_0(DT_DEP_ORD(node))
 #define FIXED_PARTITION_0(ord)							\
 	((const struct flash_area *)&DT_CAT(global_fixed_partition_ORD_, ord))
 
-/** @cond INTERNAL_HIDDEN */
 #define DECLARE_PARTITION(node) DECLARE_PARTITION_0(DT_DEP_ORD(node))
 #define DECLARE_PARTITION_0(ord)						\
 	extern const struct flash_area DT_CAT(global_fixed_partition_ORD_, ord);

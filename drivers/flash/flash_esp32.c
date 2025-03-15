@@ -19,6 +19,7 @@
 #include <soc/spi_struct.h>
 #include <esp_flash_encrypt.h>
 #include <esp_flash_internal.h>
+#include <bootloader_flash_priv.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -69,21 +70,89 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 
 #endif /* CONFIG_MULTITHREADING */
 
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+#include <stdint.h>
+#include <string.h>
+
+#ifdef CONFIG_MCUBOOT
+#define READ_BUFFER_SIZE 32
+static bool flash_esp32_is_aligned(off_t address, void *buffer, size_t length)
+{
+	/* check if address, buffer pointer, and length are 4-byte aligned */
+	return ((address & 3) == 0) && (((uintptr_t)buffer & 3) == 0) && ((length & 3) == 0);
+}
+#endif
+
 static int flash_esp32_read(const struct device *dev, off_t address, void *buffer, size_t length)
 {
 	int ret = 0;
 
-	flash_esp32_sem_take(dev);
-	if (!esp_flash_encryption_enabled()) {
-		ret = esp_flash_read(NULL, buffer, address, length);
-	} else {
-		ret = esp_flash_read_encrypted(NULL, address, buffer, length);
+#ifdef CONFIG_MCUBOOT
+	uint8_t *dest_ptr = (uint8_t *)buffer;
+	size_t remaining = length;
+	size_t copy_size = 0;
+	size_t aligned_size = 0;
+	bool allow_decrypt = esp_flash_encryption_enabled();
+
+	if (flash_esp32_is_aligned(address, buffer, length)) {
+		ret = esp_rom_flash_read(address, buffer, length, allow_decrypt);
+		return (ret == ESP_OK) ? 0 : -EIO;
 	}
+
+	/* handle unaligned reading */
+	uint8_t __aligned(4) temp_buf[READ_BUFFER_SIZE + 8];
+	while (remaining > 0) {
+		size_t addr_offset = address & 3;
+		size_t buf_offset = (uintptr_t)dest_ptr & 3;
+
+		copy_size = (remaining > READ_BUFFER_SIZE) ? READ_BUFFER_SIZE : remaining;
+
+		if (addr_offset == 0 && buf_offset == 0 && copy_size >= 4) {
+			aligned_size = copy_size & ~3;
+			ret = esp_rom_flash_read(address, dest_ptr, aligned_size, allow_decrypt);
+			if (ret != ESP_OK) {
+				return -EIO;
+			}
+
+			address += aligned_size;
+			dest_ptr += aligned_size;
+			remaining -= aligned_size;
+		} else {
+			size_t start_addr = address - addr_offset;
+
+			aligned_size = (copy_size + addr_offset + 3) & ~3;
+
+			ret = esp_rom_flash_read(start_addr, temp_buf, aligned_size, allow_decrypt);
+			if (ret != ESP_OK) {
+				return -EIO;
+			}
+
+			memcpy(dest_ptr, temp_buf + addr_offset, copy_size);
+
+			address += copy_size;
+			dest_ptr += copy_size;
+			remaining -= copy_size;
+		}
+	}
+#else
+	flash_esp32_sem_take(dev);
+
+	if (esp_flash_encryption_enabled()) {
+		ret = esp_flash_read_encrypted(NULL, address, buffer, length);
+	} else {
+		ret = esp_flash_read(NULL, buffer, address, length);
+	}
+
 	flash_esp32_sem_give(dev);
+#endif
+
 	if (ret != 0) {
-		LOG_ERR("esp_flash_read failed %d", ret);
+		LOG_ERR("Flash read error: %d", ret);
 		return -EIO;
 	}
+
 	return 0;
 }
 
@@ -94,28 +163,48 @@ static int flash_esp32_write(const struct device *dev,
 {
 	int ret = 0;
 
-	flash_esp32_sem_take(dev);
-	if (!esp_flash_encryption_enabled()) {
-		ret = esp_flash_write(NULL, buffer, address, length);
-	} else {
-		ret = esp_flash_write_encrypted(NULL, address, buffer, length);
+#ifdef CONFIG_MCUBOOT
+	if (!flash_esp32_is_aligned(address, (void *)buffer, length)) {
+		LOG_ERR("Unaligned flash write is not supported");
+		return -EINVAL;
 	}
+
+	bool encrypt = esp_flash_encryption_enabled();
+
+	ret = esp_rom_flash_write(address, (void *)buffer, length, encrypt);
+#else
+	flash_esp32_sem_take(dev);
+
+	if (esp_flash_encryption_enabled()) {
+		ret = esp_flash_write_encrypted(NULL, address, buffer, length);
+	} else {
+		ret = esp_flash_write(NULL, buffer, address, length);
+	}
+
 	flash_esp32_sem_give(dev);
+#endif
 
 	if (ret != 0) {
-		LOG_ERR("esp_flash_write failed %d", ret);
+		LOG_ERR("Flash write error: %d", ret);
 		return -EIO;
 	}
+
 	return 0;
 }
 
 static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 {
+	int ret = 0;
+
+#ifdef CONFIG_MCUBOOT
+	ret = esp_rom_flash_erase_range(start, len);
+#else
 	flash_esp32_sem_take(dev);
-	int ret = esp_flash_erase_region(NULL, start, len);
+	ret = esp_flash_erase_region(NULL, start, len);
 	flash_esp32_sem_give(dev);
+#endif
 	if (ret != 0) {
-		LOG_ERR("esp_flash_erase_region failed %d", ret);
+		LOG_ERR("Flash erase error: %d", ret);
 		return -EIO;
 	}
 	return 0;
@@ -146,18 +235,12 @@ flash_esp32_get_parameters(const struct device *dev)
 
 static int flash_esp32_init(const struct device *dev)
 {
-	uint32_t ret = 0;
-
 #ifdef CONFIG_MULTITHREADING
 	struct flash_esp32_dev_data *const dev_data = dev->data;
 
 	k_sem_init(&dev_data->sem, 1, 1);
 #endif /* CONFIG_MULTITHREADING */
-	ret = esp_flash_init_default_chip();
-	if (ret != 0) {
-		LOG_ERR("esp_flash_init_default_chip failed %d", ret);
-		return 0;
-	}
+
 	return 0;
 }
 

@@ -8,4 +8,12 @@ config DUAL_UART_TEST
 config SETUP_MISMATCH_TEST
 	bool "Enable mismatched configuration in dual UART test"
 
+config UART_BAUDRATE_MISMATCH
+	int "UART baudrate for DUT_AUX to test mismatch case"
+	depends on SETUP_MISMATCH_TEST
+	default 9600
+	help
+	  UART baudrate for DUT_AUX that is intentionally different from DUT
+	  to test error detection.
+
 source "Kconfig.zephyr"

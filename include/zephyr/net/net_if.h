@@ -96,6 +96,11 @@ struct net_if_addr {
 		struct {
 			/** Duplicate address detection (DAD) timer */
 			sys_snode_t dad_node;
+
+			/** DAD needed list node */
+			sys_snode_t dad_need_node;
+
+			/** DAD start time */
 			uint32_t dad_start;
 
 			/** How many times we have done DAD */
@@ -106,6 +111,11 @@ struct net_if_addr {
 		struct {
 			/** Address conflict detection (ACD) timer. */
 			sys_snode_t acd_node;
+
+			/** ACD needed list node */
+			sys_snode_t acd_need_node;
+
+			/** ACD timeout value. */
 			k_timepoint_t acd_timeout;
 
 			/** ACD probe/announcement counter. */
@@ -136,7 +146,10 @@ struct net_if_addr {
 	 */
 	uint8_t is_temporary : 1;
 
-	uint8_t _unused : 4;
+	/** Was this address added or not */
+	uint8_t is_added : 1;
+
+	uint8_t _unused : 3;
 };
 
 /**
@@ -147,6 +160,9 @@ struct net_if_addr {
 struct net_if_mcast_addr {
 	/** IP address */
 	struct net_addr address;
+
+	/** Rejoining multicast groups list node */
+	sys_snode_t rejoin_node;
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	/** Sources to filter on */
@@ -613,6 +629,12 @@ struct net_if_config {
 struct net_traffic_class {
 	/** Fifo for handling this Tx or Rx packet */
 	struct k_fifo fifo;
+
+#if NET_TC_COUNT > 1 || defined(CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO) \
+	|| defined(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO)
+	/** Semaphore for tracking the available slots in the fifo */
+	struct k_sem fifo_slot;
+#endif
 
 	/** Traffic class handler thread */
 	struct k_thread handler;
@@ -1211,9 +1233,10 @@ int net_if_set_link_addr_locked(struct net_if *iface,
 extern int net_if_addr_unref_debug(struct net_if *iface,
 				   sa_family_t family,
 				   const void *addr,
+				   struct net_if_addr **ifaddr,
 				   const char *caller, int line);
-#define net_if_addr_unref(iface, family, addr) \
-	net_if_addr_unref_debug(iface, family, addr, __func__, __LINE__)
+#define net_if_addr_unref(iface, family, addr, ifaddr)			\
+	net_if_addr_unref_debug(iface, family, addr, ifaddr, __func__, __LINE__)
 
 extern struct net_if_addr *net_if_addr_ref_debug(struct net_if *iface,
 						 sa_family_t family,
@@ -1225,7 +1248,8 @@ extern struct net_if_addr *net_if_addr_ref_debug(struct net_if *iface,
 #else
 extern int net_if_addr_unref(struct net_if *iface,
 			     sa_family_t family,
-			     const void *addr);
+			     const void *addr,
+			     struct net_if_addr **ifaddr);
 extern struct net_if_addr *net_if_addr_ref(struct net_if *iface,
 					   sa_family_t family,
 					   const void *addr);
@@ -3269,7 +3293,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
 		       NET_IF_GET_NAME(dev_id, sfx)[_num_configs]	\
-		       __used __in_section(_net_if, static,		\
+		       __used __noasan __in_section(_net_if, static,	\
 					   dev_id) = {			\
 		[0 ... (_num_configs - 1)] = {				\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\

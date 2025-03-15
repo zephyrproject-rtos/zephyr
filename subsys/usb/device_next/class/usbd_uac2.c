@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -209,9 +213,49 @@ static int terminal_to_as_interface(const struct device *dev, uint8_t terminal)
 void usbd_uac2_set_ops(const struct device *dev,
 		       const struct uac2_ops *ops, void *user_data)
 {
+	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
 
 	__ASSERT(ops->sof_cb, "SOF callback is mandatory");
+	__ASSERT(ops->terminal_update_cb, "terminal_update_cb is mandatory");
+
+	for (uint8_t i = 0U; i < cfg->num_ifaces; i++) {
+		const uint16_t ep_idx = cfg->ep_indexes[i];
+
+		if (cfg->fb_indexes[i] != 0U) {
+			__ASSERT(ops->feedback_cb, "feedback_cb is mandatory");
+		}
+
+		if (ep_idx) {
+			const struct usb_ep_descriptor *desc = NULL;
+
+			if (cfg->fs_descriptors != NULL) {
+				/* If fs_descriptors is non-NULL and ep_idx is non-zero then
+				 * cfg->fs_descriptors[ep_idx] is non-NULL
+				 */
+				desc = (const struct usb_ep_descriptor *)
+					       cfg->fs_descriptors[ep_idx];
+			} else if (cfg->hs_descriptors != NULL) {
+				/* If hs_descriptors is non-NULL and ep_idx is non-zero then
+				 * cfg->hs_descriptors[ep_idx] is non-NULL
+				 */
+				desc = (const struct usb_ep_descriptor *)
+					       cfg->hs_descriptors[ep_idx];
+			}
+
+			if (desc != NULL) {
+				if (USB_EP_DIR_IS_OUT(desc->bEndpointAddress)) {
+					__ASSERT(ops->get_recv_buf, "get_recv_buf is mandatory");
+					__ASSERT(ops->data_recv_cb, "data_recv_cb is mandatory");
+				}
+
+				if (USB_EP_DIR_IS_IN(desc->bEndpointAddress)) {
+					__ASSERT(ops->buf_release_cb,
+						 "buf_release_cb is mandatory");
+				}
+			}
+		}
+	}
 
 	ctx->ops = ops;
 	ctx->user_data = user_data;
@@ -231,7 +275,6 @@ uac2_buf_alloc(const uint8_t ep, void *data, uint16_t size)
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
@@ -285,7 +328,6 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		 */
 		LOG_ERR("No netbuf for send");
 		atomic_clear_bit(queued_bits, as_idx);
-		ctx->ops->buf_release_cb(dev, terminal, data, ctx->user_data);
 		return -ENOMEM;
 	}
 
@@ -294,7 +336,6 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 		atomic_clear_bit(queued_bits, as_idx);
-		ctx->ops->buf_release_cb(dev, terminal, data, ctx->user_data);
 	}
 
 	return ret;
@@ -378,7 +419,6 @@ static void write_explicit_feedback(struct usbd_class_data *const c_data,
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	fb_value = ctx->ops->feedback_cb(dev, terminal, ctx->user_data);

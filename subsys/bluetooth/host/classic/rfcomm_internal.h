@@ -133,15 +133,6 @@ struct bt_rfcomm_rpn {
 #define BT_RFCOMM_CHECK_MTU(mtu) (!!((mtu) >= BT_RFCOMM_SIG_MIN_MTU && \
 				     (mtu) <= BT_RFCOMM_SIG_MAX_MTU))
 
-/* Helper to calculate needed outgoing buffer size.
- * Length in rfcomm header can be two bytes depending on user data length.
- * One byte in the tail should be reserved for FCS.
- */
-#define BT_RFCOMM_BUF_SIZE(mtu) (BT_BUF_RESERVE + \
-				 BT_HCI_ACL_HDR_SIZE + BT_L2CAP_HDR_SIZE + \
-				 sizeof(struct bt_rfcomm_hdr) + 1 + (mtu) + \
-				 BT_RFCOMM_FCS_SIZE)
-
 #define BT_RFCOMM_GET_DLCI(addr)                  (((addr) & 0xfc) >> 2)
 #define BT_RFCOMM_GET_FRAME_TYPE(ctrl)            ((ctrl) & 0xef)
 #define BT_RFCOMM_GET_MSG_TYPE(type)              (((type) & 0xfc) >> 2)
@@ -192,7 +183,6 @@ struct bt_rfcomm_rpn {
 
 /* Length can be 2 bytes depending on data size */
 #define BT_RFCOMM_HDR_SIZE  (sizeof(struct bt_rfcomm_hdr) + 1)
-#define BT_RFCOMM_FCS_SIZE  1
 
 #define BT_RFCOMM_FCS_LEN_UIH      2
 #define BT_RFCOMM_FCS_LEN_NON_UIH  3

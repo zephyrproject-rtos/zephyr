@@ -41,6 +41,9 @@ support in these samples, build them with ``overlay-ot.conf`` overlay config fil
 See :zephyr:code-sample:`sockets-echo-server` and :zephyr:code-sample:`sockets-echo-client`
 samples for details.
 
+Zephyr also provides an :zephyr:code-sample:`openthread-shell`, which is useful for
+testing and debugging Thread and its underlying IEEE 802.15.4 drivers.
+
 Thread related APIs
 *******************
 

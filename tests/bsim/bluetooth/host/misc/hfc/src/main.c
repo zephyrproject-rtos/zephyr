@@ -19,14 +19,14 @@
 #include "testlib/att_read.h"
 
 #include <argparse.h>		/* For get_device_nbr() */
-#include "utils.h"
-#include "bstests.h"
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
-DEFINE_FLAG(is_connected);
-DEFINE_FLAG(is_subscribed);
+DEFINE_FLAG_STATIC(is_connected);
+DEFINE_FLAG_STATIC(is_subscribed);
 
 /* Default connection */
 static struct bt_conn *dconn;
@@ -47,7 +47,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (conn_err) {
-		FAIL("Failed to connect to %s (%u)", addr, conn_err);
+		TEST_FAIL("Failed to connect to %s (%u)", addr, conn_err);
 		return;
 	}
 
@@ -90,7 +90,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 	err = bt_le_scan_stop();
 	if (err) {
-		FAIL("Stop LE scan failed (err %d)", err);
+		TEST_FAIL("Stop LE scan failed (err %d)", err);
 		return;
 	}
 
@@ -101,7 +101,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, param, &conn);
 	if (err) {
 		k_oops();
-		FAIL("Create conn failed (err %d)", err);
+		TEST_FAIL("Create conn failed (err %d)", err);
 		return;
 	}
 }
@@ -114,7 +114,7 @@ static struct bt_conn *connect_as_peripheral(void)
 	UNSET_FLAG(is_connected);
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, NULL, 0);
-	ASSERT(!err, "Adving failed to start (err %d)\n", err);
+	TEST_ASSERT(!err, "Adving failed to start (err %d)", err);
 
 	LOG_DBG("advertising");
 	WAIT_FOR_FLAG(is_connected);
@@ -140,7 +140,7 @@ static struct bt_conn *connect_as_central(void)
 	UNSET_FLAG(is_connected);
 
 	err = bt_le_scan_start(&scan_param, device_found);
-	ASSERT(!err, "Scanning failed to start (err %d)\n", err);
+	TEST_ASSERT(!err, "Scanning failed to start (err %d)", err);
 
 	LOG_DBG("Central initiating connection...");
 	WAIT_FOR_FLAG(is_connected);
@@ -163,14 +163,14 @@ static void find_the_chrc(struct bt_conn *conn,
 	int err;
 
 	err = bt_testlib_gatt_discover_primary(&svc_handle, &svc_end_handle, conn, svc, 1, 0xffff);
-	ASSERT(!err, "Failed to discover service %d");
+	TEST_ASSERT(!err, "Failed to discover service %d");
 
 	LOG_DBG("svc_handle: %u, svc_end_handle: %u", svc_handle, svc_end_handle);
 
 	err = bt_testlib_gatt_discover_characteristic(chrc_value_handle, &chrc_end_handle,
 						      NULL, conn, chrc, (svc_handle + 1),
 						      svc_end_handle);
-	ASSERT(!err, "Failed to get value handle %d");
+	TEST_ASSERT(!err, "Failed to get value handle %d");
 
 	LOG_DBG("chrc_value_handle: %u, chrc_end_handle: %u", *chrc_value_handle, chrc_end_handle);
 }
@@ -199,9 +199,9 @@ static void subscribed(struct bt_conn *conn,
 		       uint8_t err,
 		       struct bt_gatt_subscribe_params *params)
 {
-	ASSERT(!err, "Subscribe failed (err %d)\n", err);
+	TEST_ASSERT(!err, "Subscribe failed (err %d)", err);
 
-	ASSERT(params, "params is NULL\n");
+	TEST_ASSERT(params, "params is NULL");
 
 	SET_FLAG(is_subscribed);
 
@@ -222,7 +222,7 @@ static void subscribe(struct bt_conn *conn,
 	params.ccc_handle = handle + 1;
 
 	err = bt_gatt_subscribe(conn, &params);
-	ASSERT(!err, "Subscribe failed (err %d)\n", err);
+	TEST_ASSERT(!err, "Subscribe failed (err %d)", err);
 
 	WAIT_FOR_FLAG(is_subscribed);
 }
@@ -269,7 +269,7 @@ static bool is_disconnected(struct bt_conn *conn)
 	struct bt_conn_info info;
 
 	err = bt_conn_get_info(conn, &info);
-	ASSERT(err == 0, "Failed to get info for %p\n", conn);
+	TEST_ASSERT(err == 0, "Failed to get info for %p", conn);
 
 	/* Return if fully disconnected */
 	return info.state == BT_CONN_STATE_DISCONNECTED;
@@ -322,7 +322,7 @@ static void entrypoint_dut(void)
 	s->rx = 0;
 
 	err = bt_enable(NULL);
-	ASSERT(err == 0, "Can't enable Bluetooth (err %d)\n", err);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
 	LOG_DBG("Central: Bluetooth initialized.");
 
 	s->conn = connect_and_subscribe();
@@ -350,7 +350,7 @@ static void entrypoint_dut(void)
 	/* linux will "unref" the conn :p */
 	disconnect(s->conn);
 
-	PASS("DUT done\n");
+	TEST_PASS("DUT done");
 }
 
 static void entrypoint_peer(void)
@@ -364,7 +364,7 @@ static void entrypoint_peer(void)
 	LOG_DBG("Test start: peer 0");
 
 	err = bt_enable(NULL);
-	ASSERT(err == 0, "Can't enable Bluetooth (err %d)\n", err);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
 	LOG_DBG("Bluetooth initialized.");
 
 	/* prepare data for notifications */
@@ -372,14 +372,15 @@ static void entrypoint_peer(void)
 	memset(data, 0xfe, sizeof(data));
 
 	/* Pass unless something else errors out later */
-	PASS("peer 0 done\n");
+	TEST_PASS("peer 0 done");
 
 	tx = 0;
 	while (true) {
+		UNSET_FLAG(is_subscribed);
+
 		conn = connect_as_peripheral();
 
 		LOG_INF("wait until DUT subscribes");
-		UNSET_FLAG(is_subscribed);
 		WAIT_FOR_FLAG(is_subscribed);
 
 		LOG_INF("send notifications");
@@ -396,38 +397,19 @@ static void entrypoint_peer(void)
 
 		LOG_INF("disconnect");
 		err = disconnect(conn);
-		ASSERT(!err, "Failed to initate disconnect (err %d)", err);
+		TEST_ASSERT(!err, "Failed to initate disconnect (err %d)", err);
 		bt_conn_unref(conn);
 		conn = NULL;
 	}
 }
 
-static void test_tick(bs_time_t HW_device_time)
-{
-	bs_trace_debug_time(0, "Simulation ends now.\n");
-	if (bst_result != Passed) {
-		bst_result = Failed;
-		bs_trace_error("Test did not pass before simulation ended.\n");
-	}
-}
-
-static void test_init(void)
-{
-	bst_ticker_set_next_tick_absolute(TEST_TIMEOUT_SIMULATED);
-	bst_result = In_progress;
-}
-
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "dut",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = entrypoint_dut,
 	},
 	{
 		.test_id = "peer",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = entrypoint_peer,
 	},
 	BSTEST_END_MARKER,

@@ -195,6 +195,12 @@ config OPENTHREAD_DEFAULT_TX_POWER
 	help
 	  Set the default TX output power [dBm] in radio driver for OpenThread purpose.
 
+config OPENTHREAD_TCAT_MULTIRADIO_CAPABILITIES
+	bool "Openthread multiradio capability"
+	default y if OPENTHREAD_BLE_TCAT
+	help
+	  Openthread multiradio capability.
+
 config OPENTHREAD_BLE_TCAT_THREAD_STACK_SIZE
 	int "Openthread default TCAT stack size"
 	default 5120 if OPENTHREAD_CRYPTO_PSA

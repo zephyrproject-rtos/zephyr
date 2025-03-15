@@ -423,8 +423,8 @@ Dedicated image build targets
 Not all build targets for images are given equivalent prefixed build targets
 when sysbuild is used, for example build targets like ``ram_report``,
 ``rom_report``, ``footprint``, ``puncover`` and ``pahole`` are not exposed.
-When using :ref:`Trusted Firmware <tfm_build_system>`, this includes build
-targets prefix with ``tfm_`` and ``bl2_``, for example: ``tfm_rom_report``
+When using :ref:`Trusted Firmware <tfm_build_system>`, the build targets prefixed
+with ``tfm_`` and ``bl2_`` are also not exposed, for example: ``tfm_rom_report``
 and ``bl2_ram_report``. To run these build targets, the build directory of the
 image can be provided to west/ninja/make along with the name of the build
 target to execute and it will run.
@@ -442,6 +442,13 @@ target to execute and it will run.
 
          west build -d build/mcuboot -t rom_report
 
+      For TF-M projects using TF-M targets, the application build directory is
+      used like so:
+
+      .. code-block:: shell
+
+         west build -d build/<app_name> -t tfm_rom_report
+
    .. group-tab:: ``ninja``
 
       Assuming that a project has been configured using ``cmake`` and built
@@ -452,6 +459,13 @@ target to execute and it will run.
 
          ninja -C mcuboot rom_report
 
+      For TF-M projects using TF-M targets, the application build directory is
+      used like so:
+
+      .. code-block:: shell
+
+         ninja -C <app_name> -t tfm_rom_report
+
    .. group-tab:: ``make``
 
       Assuming that a project has been configured using ``cmake`` and built
@@ -461,6 +475,13 @@ target to execute and it will run.
       .. code-block:: shell
 
          make -C mcuboot rom_report
+
+      For TF-M projects using TF-M targets, the application build directory is
+      used like so:
+
+      .. code-block:: shell
+
+         make -C <app_name> -t tfm_rom_report
 
 .. _sysbuild_zephyr_application:
 
@@ -780,6 +801,46 @@ debug the application.
 .. _MCUboot with Zephyr: https://docs.mcuboot.com/readme-zephyr
 .. _ExternalProject: https://cmake.org/cmake/help/latest/module/ExternalProject.html
 
+.. _sysbuild_var_override:
+
+Configuring sysbuild internal state
+***********************************
+
+Because sysbuild is a CMake project in it's own right, it runs and sets up itself similar to a
+Zephyr application but using it's own CMake code. This means that some features, for example
+specifying variables in an application ``CMakeLists.txt`` (such as ``BOARD_ROOT``) will not work,
+instead these must be set by using a :ref:`a module <modules_build_settings>` or by using a custom
+sysbuild project file as ``<application>/sysbuild/CMakeLists.txt``, for example:
+
+.. code-block:: cmake
+
+   # Place pre-sysbuild configuration items here
+
+   # For changing configuration that sysbuild itself uses:
+   # set(<var> <value>)
+   # list(APPEND <list> <value>)
+
+   # For changing configuration of other images:
+   # set(<image>_<var> <value> CACHE INTERNAL "<description>")
+
+   # Finds the sysbuild project and includes it with the new configuration
+   find_package(Sysbuild REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+   project(sysbuild LANGUAGES)
+
+An example of adding a ``BOARD_ROOT``:
+
+.. code-block:: cmake
+
+   list(APPEND BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../<extra-board-root>)
+
+   find_package(Sysbuild REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+   project(sysbuild LANGUAGES)
+
+This will pass the board root on to all images as part of a project, it does not need to be
+repeated in each image's ``CMakeLists.txt`` file.
+
 Extending sysbuild
 ******************
 
@@ -794,3 +855,9 @@ each image that is part of a project. Alternatively, there are
 which can be used to include CMake and Kconfig files for the overall sysbuild
 image itself, this is where e.g. a custom image for a particular board or SoC
 can be added.
+
+
+.. toctree::
+    :maxdepth: 1
+
+    images.rst

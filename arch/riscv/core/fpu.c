@@ -36,8 +36,8 @@ static void DBG(char *msg, struct k_thread *th)
 
 	strcpy(buf, "CPU# exc# ");
 	buf[3] = '0' + _current_cpu->id;
-	buf[8] = '0' + arch_current_thread()->arch.exception_depth;
-	strcat(buf, arch_current_thread()->name);
+	buf[8] = '0' + _current->arch.exception_depth;
+	strcat(buf, _current->name);
 	strcat(buf, ": ");
 	strcat(buf, msg);
 	strcat(buf, " ");
@@ -82,12 +82,12 @@ static void z_riscv_fpu_load(void)
 		 "must be called with FPU access disabled");
 
 	/* become new owner */
-	atomic_ptr_set(&_current_cpu->arch.fpu_owner, arch_current_thread());
+	atomic_ptr_set(&_current_cpu->arch.fpu_owner, _current);
 
 	/* restore our content */
 	csr_set(mstatus, MSTATUS_FS_INIT);
-	z_riscv_fpu_restore(&arch_current_thread()->arch.saved_fp_context);
-	DBG("restore", arch_current_thread());
+	z_riscv_fpu_restore(&_current->arch.saved_fp_context);
+	DBG("restore", _current);
 }
 
 /*
@@ -168,7 +168,7 @@ static void flush_owned_fpu(struct k_thread *thread)
 		 * replace it, and this avoids a deadlock where
 		 * two CPUs want to pull each other's FPU context.
 		 */
-		if (thread == arch_current_thread()) {
+		if (thread == _current) {
 			z_riscv_fpu_disable();
 			arch_flush_local_fpu();
 			do {
@@ -213,7 +213,7 @@ void z_riscv_fpu_trap(struct arch_esf *esf)
 	/* save current owner's content  if any */
 	arch_flush_local_fpu();
 
-	if (arch_current_thread()->arch.exception_depth > 0) {
+	if (_current->arch.exception_depth > 0) {
 		/*
 		 * We were already in exception when the FPU access trapped.
 		 * We give it access and prevent any further IRQ recursion
@@ -233,7 +233,7 @@ void z_riscv_fpu_trap(struct arch_esf *esf)
 	 * Make sure the FPU context we need isn't live on another CPU.
 	 * The current CPU's FPU context is NULL at this point.
 	 */
-	flush_owned_fpu(arch_current_thread());
+	flush_owned_fpu(_current);
 #endif
 
 	/* make it accessible and clean to the returning context */
@@ -256,13 +256,13 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
 	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0,
 		 "must be called with IRQs disabled");
 
-	if (arch_current_thread()->arch.exception_depth == exc_update_level) {
+	if (_current->arch.exception_depth == exc_update_level) {
 		/* We're about to execute non-exception code */
-		if (_current_cpu->arch.fpu_owner == arch_current_thread()) {
+		if (_current_cpu->arch.fpu_owner == _current) {
 			/* everything is already in place */
 			return true;
 		}
-		if (arch_current_thread()->arch.fpu_recently_used) {
+		if (_current->arch.fpu_recently_used) {
 			/*
 			 * Before this thread was context-switched out,
 			 * it made active use of the FPU, but someone else
@@ -273,7 +273,7 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
 			z_riscv_fpu_disable();
 			arch_flush_local_fpu();
 #ifdef CONFIG_SMP
-			flush_owned_fpu(arch_current_thread());
+			flush_owned_fpu(_current);
 #endif
 			z_riscv_fpu_load();
 			_current_cpu->arch.fpu_state = MSTATUS_FS_CLEAN;

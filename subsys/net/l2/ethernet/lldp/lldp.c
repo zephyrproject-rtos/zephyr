@@ -114,6 +114,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	}
 
 	net_pkt_set_lldp(pkt, true);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_LLDP);
 
 	ret = net_pkt_write(pkt, (uint8_t *)lldp->lldpdu,
 			    sizeof(struct net_lldpdu));
@@ -264,11 +265,18 @@ static int lldp_start(struct net_if *iface, uint32_t mgmt_event)
 	return 0;
 }
 
-enum net_verdict net_lldp_recv(struct net_if *iface, struct net_pkt *pkt)
+static enum net_verdict net_lldp_recv(struct net_if *iface, uint16_t ptype, struct net_pkt *pkt)
 {
 	struct ethernet_context *ctx;
 	net_lldp_recv_cb_t recv_cb;
 	int ret;
+
+	ARG_UNUSED(ptype);
+
+	if (!net_eth_is_addr_lldp_multicast(
+		    (struct net_eth_addr *)net_pkt_lladdr_dst(pkt)->addr)) {
+		return NET_DROP;
+	}
 
 	ret = lldp_check_iface(iface);
 	if (ret < 0) {
@@ -289,6 +297,8 @@ enum net_verdict net_lldp_recv(struct net_if *iface, struct net_pkt *pkt)
 
 	return NET_DROP;
 }
+
+ETH_NET_L3_REGISTER(LLDP, NET_ETH_PTYPE_LLDP, net_lldp_recv);
 
 int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t recv_cb)
 {

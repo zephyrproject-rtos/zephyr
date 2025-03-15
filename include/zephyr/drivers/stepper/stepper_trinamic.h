@@ -159,8 +159,19 @@ struct tmc_ramp_generator_data {
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-int tmc5041_stepper_set_ramp(const struct device *dev,
+int tmc50xx_stepper_set_ramp(const struct device *dev,
 			     const struct tmc_ramp_generator_data *ramp_data);
+
+/**
+ * @brief Set the maximum velocity of the stepper motor
+ *
+ * @param dev Pointer to the stepper motor controller instance
+ * @param velocity Maximum velocity in microsteps per second.
+ *
+ * @retval -EIO General input / output error
+ * @retval 0 Success
+ */
+int tmc50xx_stepper_set_max_velocity(const struct device *dev, uint32_t velocity);
 
 /**
  * @}

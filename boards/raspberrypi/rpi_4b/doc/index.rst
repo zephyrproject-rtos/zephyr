@@ -10,29 +10,8 @@ see <https://www.raspberrypi.com/documentation/computers/raspberry-pi.html>
 
 Supported Features
 ==================
-The Raspberry Pi 4 Model B board configuration supports the following
-hardware features:
 
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - GIC-400
-     - N/A
-     - :dtcompatible:`arm,gic-v2`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`brcm,bcm2711-gpio`
-   * - UART (Mini UART)
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`brcm,bcm2711-aux-uart`
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration can be found in
-:zephyr_file:`boards/raspberrypi/rpi_4b/rpi_4b_defconfig`
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
