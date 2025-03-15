@@ -41,44 +41,6 @@ description: |
 compatible: "adi,max22190-gpio"
 
 properties:
-  "#gpio-cells":
-    const: 2
-  ngpios:
-    type: int
-    required: true
-    const: 8
-    description: Number of gpios supported
-  drdy-gpios:
-    description: Ready pin which show when chip is ready
-    type: phandle-array
-  fault-gpios:
-    description: |
-      Fault pin indicates when there is Fault state in either FAULT1 or FAULT2
-      bothe of which are cleaned on read once problem is not persistent
-    type: phandle-array
-  latch-gpios:
-    description: |
-      Latch the data so it could be read (partially duplicate CS)
-    type: phandle-array
-  max22190-mode:
-    type: int
-    required: true
-    enum:
-      - 0
-      - 1
-      - 2
-      - 3
-    description: |
-      Default mode set to 1, because in MAX22190PMB devkit this is hardwired
-      mode set by manufacturer.
-      max22190 mode is configured from M0 and M1 pins with
-      pull up or down resistors.
-      MODE| M1| M0| FRAME  | CRC | DAISY CHAIN
-      ----+---+---+--------+-----+------------
-        0 | 0 | 0 | 24-bit | yes | no
-        1 | 0 | 1 | 16-bit | no  | no
-        2 | 1 | 0 | 24-bit | yes | yes
-        3 | 1 | 1 | 16-bit | no  | yes
   filter-wbes:
     type: array
     default: [0, 0, 0, 0, 0, 0, 0, 0]
@@ -92,27 +54,9 @@ properties:
       - 1 wire break enable
       - 0 wire break disable
       channels indentation start from CH0...CH7
-  filter-fbps:
-    type: array
-    default: [1, 1, 1, 1, 1, 1, 1, 1]
-    description: |
-      The default value corresponds to the default value of the hardware.
-      All channels are in bypass.
-      Enable or disable filter
-      - 1 mean bypass
-      - 0 mean filter is used
-      channels indentation start from CH0...CH7
-  filter-delays:
-    type: array
-    default: [50, 50, 50, 50, 50, 50, 50, 50]
-    description: |
-      The default value corresponds to the default value of the hardware.
-      Used to setup filter delay. Values are set in us. Default value is 50 = 50 us.
-      Value : 50, 100, 400, 800, 1600, 3200, 12800, 20000
-      channels indentation start from CH0...CH7
 
 gpio-cells:
   - pin
   - flags
 
-include: [gpio-controller.yaml, spi-device.yaml]
+include: adi,max2219x-base-gpio.yaml

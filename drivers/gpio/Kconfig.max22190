@@ -8,7 +8,7 @@ menuconfig GPIO_MAX22190
 	bool "MAX22190 GPIO driver"
 	default y
 	depends on SPI
-	depends on DT_HAS_ADI_MAX22190_GPIO_ENABLED
+	depends on DT_HAS_ADI_MAX22190_GPIO_ENABLED || DT_HAS_ADI_MAX22199_GPIO_ENABLED
 	help
 	  Enabe MAX22190 Octal industrial digital
 	  input with diagnostics
