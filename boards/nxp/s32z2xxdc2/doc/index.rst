@@ -68,6 +68,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | PIT       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| SRX       | on-chip    | saej2716                            |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
