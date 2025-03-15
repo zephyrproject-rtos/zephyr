@@ -92,26 +92,28 @@ config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 	bool "ECDHE-RSA based ciphersuite modes"
-	depends on MBEDTLS_ECDH_C
+	depends on MBEDTLS_ECDH_C || PSA_CAN_ECDH
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 	bool "ECDHE-ECDSA based ciphersuite modes"
-	depends on MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
+	depends on (MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C) || \
+		   (PSA_CAN_ECDH && PSA_CAN_ECDSA)
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 	bool "ECDH-ECDSA based ciphersuite modes"
-	depends on (MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C) || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
+	depends on (MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C) || \
+		   (PSA_CAN_ECDH && PSA_CAN_ECDSA)
 
 config MBEDTLS_ECDSA_DETERMINISTIC
 	bool "Deterministic ECDSA (RFC 6979)"
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 	bool "ECDH-RSA based ciphersuite modes"
-	depends on MBEDTLS_ECDH_C
+	depends on MBEDTLS_ECDH_C || PSA_CAN_ECDH
 
 config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 	bool "ECJPAKE based ciphersuite modes"
-	depends on MBEDTLS_ECJPAKE_C
+	depends on MBEDTLS_ECJPAKE_C || PSA_CAN_ECJPAKE
 
 if MBEDTLS_TLS_VERSION_1_3
 
