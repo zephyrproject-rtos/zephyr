@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 #
 # This binding file allows a property which is not blocked
 # in simple_blocklist.yaml: we should end up with this property.

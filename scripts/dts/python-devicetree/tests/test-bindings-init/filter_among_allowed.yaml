@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 #
 # This binding file allows only properties that are not allowed
 # in simple_allowlist.yaml: we should end up with no property at all.
