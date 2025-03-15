@@ -95,6 +95,10 @@ New APIs and options
 
   * :c:func:`display_clear`
 
+* Counter
+
+  * :c:func:`counter_reset`
+
 New Boards
 **********
 

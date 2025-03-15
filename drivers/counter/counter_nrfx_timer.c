@@ -152,6 +152,14 @@ static int get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+static int reset(const struct device *dev)
+{
+	const struct counter_nrfx_config *config = dev->config;
+
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_CLEAR);
+	return 0;
+}
+
 static uint32_t ticks_add(uint32_t val1, uint32_t val2, uint32_t top)
 {
 	uint32_t to_top;
@@ -446,6 +454,7 @@ static DEVICE_API(counter, counter_nrfx_driver_api) = {
 	.start = start,
 	.stop = stop,
 	.get_value = get_value,
+	.reset = reset,
 	.set_alarm = set_alarm,
 	.cancel_alarm = cancel_alarm,
 	.set_top_value = set_top_value,
