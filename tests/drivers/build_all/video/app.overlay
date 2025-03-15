@@ -66,6 +66,11 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
+			test_i2c_imx219: imx219@6 {
+				compatible = "sony,imx219";
+				reg = <0x6>;
+			};
+
 			test_i2c_video_emul_imager: video_emul_imager@6 {
 				compatible = "zephyr,video-emul-imager";
 				reg = <0x6>;
