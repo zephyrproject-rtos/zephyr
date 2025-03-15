@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2025 Arduino SA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_mipi_dsi {
+	st7701: st7701@0 {
+		status = "okay";
+		compatible = "sitronix,st7701";
+		reg = <0x0>;
+		height = <800>;
+		width = <480>;
+		data-lanes = <2>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
+		rotation = <0>;
+		gip-e0 = [E0 00 00 02];
+		gip-e1 = [E1 08 00 0A 00 07 00 09 00 00 33 33];
+		gip-e2 = [E2 00 00 00 00 00 00 00 00 00 00 00 00 00];
+		gip-e3 = [E3 00 00 33 33];
+		gip-e4 = [E4 44 44];
+		gip-e5 = [E5 0E 60 A0 A0 10 60 A0 A0 0A 60 A0 A0 0C 60 A0 A0];
+		gip-e6 = [E6 00 00 33 33];
+		gip-e7 = [E7 44 44];
+		gip-e8 = [E8 0D 60 A0 A0 0F 60 A0 A0 09 60 A0 A0 0B 60 A0 A0];
+		gip-eb = [EB 02 01 E4 E4 44 00 40];
+		gip-ec = [EC 02 01];
+		gip-ed = [ED AB 89 76 54 01 FF FF FF FF FF FF 10 45 67 98 BA];
+		gip-ed = [ED AB 89 76 54 01 FF FF FF FF FF FF 10 45 67 98 BA];
+		pvgamctrl = [B0 40 C9 91 0D 12 07 02 09 09 1F 04 50 0F E4 29 DF];
+		nvgamctrl = [B1 40 CB D0 11 92 07 00 08 07 1C 06 53 12 63 EB DF];
+
+		display-timings {
+			compatible = "zephyr,panel-timing";
+			hsync-active = <1>;
+			vsync-active = <0>;
+			de-active = <0>;
+			pixelclk-active = <0>;
+			hback-porch = <40>;
+			hsync-len = <32>;
+			hfront-porch = <8>;
+			vback-porch = <6>;
+			vsync-len = <8>;
+			vfront-porch = <9>;
+		};
+	};
+};
