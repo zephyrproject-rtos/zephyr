@@ -15,6 +15,7 @@ supported:
   - gpio
   - spi
   - uart
+  - usb_device
 variants:
   stm32n6570_dk/stm32n657xx:
     twister: false
