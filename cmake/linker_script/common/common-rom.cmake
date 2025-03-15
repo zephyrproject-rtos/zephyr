@@ -26,7 +26,7 @@ if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_DYNAMIC_INTERRUPTS)
 endif()
 
 zephyr_linker_section(NAME initlevel_error KVMA RAM_REGION GROUP RODATA_REGION NOINPUT)
-zephyr_linker_section_configure(SECTION initlevel_error INPUT ".z_init_[_A-Z0-9]*" KEEP SORT NAME)
+zephyr_linker_section_configure(SECTION initlevel_error INPUT ".z_init_*" KEEP SORT NAME)
 # How to do cross linker ?
 # ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
