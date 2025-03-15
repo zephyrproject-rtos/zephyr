@@ -21,7 +21,7 @@ properties:
   interrupts:
     required: true
 
-  dma_channels:
+  dma-channels:
     type: int
     required: true
 
