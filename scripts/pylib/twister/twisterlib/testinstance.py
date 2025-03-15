@@ -30,10 +30,10 @@ from twisterlib.handlers import (
     QEMUWinHandler,
     SimulationHandler,
 )
-from twisterlib.platform import Platform
 from twisterlib.size_calc import SizeCalculator
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuite import TestCase, TestSuite
+from twisterlib.twister_platform import Platform
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)

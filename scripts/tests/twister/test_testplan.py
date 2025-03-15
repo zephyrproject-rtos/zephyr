@@ -20,7 +20,7 @@ from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan, change_skip_to_error_if_integration
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite
-from twisterlib.platform import Platform
+from twisterlib.twister_platform import Platform
 from twisterlib.quarantine import Quarantine
 from twisterlib.error import TwisterRuntimeError
 
