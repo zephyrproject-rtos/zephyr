@@ -15,5 +15,6 @@ supported:
   - gpio
   - i2c
   - pwm
+  - watchdog
   - wifi
 vendor: silabs
