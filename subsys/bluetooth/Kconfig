@@ -182,8 +182,7 @@ config BT_PATH_LOSS_MONITORING
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.32.
 
 config BT_SUBRATING
-	bool "LE Connection Subrating [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "LE Connection Subrating"
 	depends on !HAS_BT_CTLR || BT_CTLR_SUBRATING_SUPPORT
 	help
 	  Enable support for LE Connection Subrating feature that is defined in the
