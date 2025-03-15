@@ -194,15 +194,13 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	return 0;
 }
 
-static int video_stm32_dcmi_set_fmt(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_format *fmt)
+static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
 	unsigned int bpp = video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 
-	if (bpp == 0 || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
+	if (bpp == 0) {
 		return -EINVAL;
 	}
 
@@ -215,27 +213,25 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev,
 	data->height = fmt->height;
 	data->width = fmt->width;
 
-	if (video_set_format(config->sensor_dev, ep, fmt)) {
+	if (video_set_format(config->sensor_dev, fmt)) {
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int video_stm32_dcmi_get_fmt(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_format *fmt)
+static int video_stm32_dcmi_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
 
-	if (fmt == NULL || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
+	if (fmt == NULL) {
 		return -EINVAL;
 	}
 
-	if (!video_get_format(config->sensor_dev, ep, fmt)) {
+	if (!video_get_format(config->sensor_dev, fmt)) {
 		/* align DCMI with sensor fmt */
-		return video_stm32_dcmi_set_fmt(dev, ep, fmt);
+		return video_stm32_dcmi_set_fmt(dev, fmt);
 	}
 
 	fmt->pixelformat = data->pixel_format;
@@ -246,14 +242,15 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
+static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
+				       enum video_buf_type type)
 {
 	int err;
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
 
 	if (!enable) {
-		if (video_stream_stop(config->sensor_dev)) {
+		if (video_stream_stop(config->sensor_dev, type)) {
 			return -EIO;
 		}
 
@@ -283,23 +280,17 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
 		return -EIO;
 	}
 
-	if (video_stream_start(config->sensor_dev)) {
+	if (video_stream_start(config->sensor_dev, type)) {
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int video_stm32_dcmi_enqueue(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_buffer *vbuf)
+static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const uint32_t buffer_size = data->pitch * data->height;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	if (buffer_size > vbuf->size) {
 		return -EINVAL;
@@ -313,16 +304,10 @@ static int video_stm32_dcmi_enqueue(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_dequeue(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_buffer **vbuf,
-				  k_timeout_t timeout)
+static int video_stm32_dcmi_dequeue(const struct device *dev, struct video_buffer **vbuf,
+				    k_timeout_t timeout)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	*vbuf = k_fifo_get(&data->fifo_out, timeout);
 	if (*vbuf == NULL) {
@@ -332,22 +317,16 @@ static int video_stm32_dcmi_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_get_caps(const struct device *dev,
-				   enum video_endpoint_id ep,
-				   struct video_caps *caps)
+static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	int ret = -ENODEV;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	/* DCMI produces full frames */
 	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	/* Forward the message to the sensor device */
-	ret = video_get_caps(config->sensor_dev, ep, caps);
+	ret = video_get_caps(config->sensor_dev, caps);
 
 	return ret;
 }
