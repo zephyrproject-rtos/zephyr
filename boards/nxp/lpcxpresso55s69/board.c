@@ -8,7 +8,7 @@
 #include <fsl_common.h>
 #include <soc.h>
 
-static int lpcxpresso_55s69_board_init(void)
+void board_early_init_hook(void)
 {
 
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay)) && \
@@ -47,8 +47,4 @@ static int lpcxpresso_55s69_board_init(void)
 #endif
 
 #endif
-
-	return 0;
 }
-
-SYS_INIT(lpcxpresso_55s69_board_init,  PRE_KERNEL_1, 0);
