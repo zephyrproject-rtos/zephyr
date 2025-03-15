@@ -1,0 +1,25 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_IT515XX_EVB
+
+if PM
+
+config PM_DEVICE
+	default y
+
+choice PM_POLICY
+	default PM_POLICY_CUSTOM
+endchoice
+
+endif # PM
+
+if VCMP_IT51XXX
+
+choice VCMP_IT51XXX_SCAN_PERIOD
+	default VCMP_IT51XXX_SCAN_PERIOD_1MS
+endchoice
+
+endif # VCMP_IT51XXX
+
+endif # BOARD_IT515XX_EVB

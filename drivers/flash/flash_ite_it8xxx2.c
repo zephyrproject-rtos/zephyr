@@ -93,6 +93,7 @@ static const struct flash_parameters flash_it8xxx2_parameters = {
 
 void __soc_ram_code ramcode_reset_i_cache(void)
 {
+#ifdef CONFIG_SOC_SERIES_IT8XXX2
 	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
 
 	/* I-Cache tag sram reset */
@@ -102,6 +103,9 @@ void __soc_ram_code ramcode_reset_i_cache(void)
 
 	gctrl_regs->GCTRL_MCCR &= ~IT8XXX2_GCTRL_ICACHE_RESET;
 	__asm__ volatile ("fence.i" ::: "memory");
+#else
+	custom_reset_instr_cache();
+#endif
 }
 
 void __soc_ram_code ramcode_flash_follow_mode(void)
