@@ -650,6 +650,7 @@
 		#size-cells = <0>;
 		reg = <0x31000 0x1000>;
 		interrupts = <71 0>;
+		phy-clock = <748154880>;
 		clocks = <&clkctl1 MCUX_MIPI_DSI_DPHY_CLK>,
 			<&clkctl1 MCUX_MIPI_DSI_ESC_CLK>,
 			<&clkctl1 MCUX_LCDIF_PIXEL_CLK>;
