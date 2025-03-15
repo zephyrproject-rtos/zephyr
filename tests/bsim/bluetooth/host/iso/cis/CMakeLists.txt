@@ -3,7 +3,8 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(bsim_test_l2cap_send_on_connect)
+
+project(bsim_test_iso_cis)
 
 target_sources(app PRIVATE
   src/common.c
