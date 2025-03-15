@@ -3,6 +3,7 @@
 sphinx<8.2.0
 sphinx_rtd_theme~=3.0
 sphinx-tabs
+sphinxcontrib-moderncmakedomain
 sphinxcontrib-svg2pdfconverter
 pygments>=2.9,!=2.19.0
 sphinx-notfound-page
