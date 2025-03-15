@@ -26,7 +26,6 @@ struct cmsis_rtos_thread_cb {
 	struct k_poll_signal poll_signal;
 	struct k_poll_event poll_event;
 	uint32_t signal_results;
-	char name[CMSIS_OBJ_NAME_MAX_LEN];
 	uint32_t attr_bits;
 };
 
