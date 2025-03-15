@@ -1,5 +1,5 @@
 tests:
-  bluetooth.host.att.read_fill_buf.server:
+  bluetooth.host.att.read_fill_buf.build_server:
     build_only: true
     tags:
       - bluetooth

@@ -1,5 +1,5 @@
 tests:
-  bluetooth.host.att.pipeline.tester:
+  bluetooth.host.att.pipeline.build_tester:
     build_only: true
     tags:
       - bluetooth

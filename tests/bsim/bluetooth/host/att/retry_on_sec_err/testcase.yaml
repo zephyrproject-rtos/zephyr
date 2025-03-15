@@ -1,0 +1,30 @@
+common:
+  no_build: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+  timeout: 30
+  harness_config:
+    bsim_verbosity: 2
+    bsim_sim_length: 60e6
+    bsim_options:
+      - -RealEncryption=1
+
+tests:
+  bluetooth.host.att.retry_on_sec_err.retry_on_sec_err:
+    harness_config:
+      bsim_devices:
+        - test_id: test_client
+          exe: tests_bsim_bluetooth_host_att_retry_on_sec_err_client_prj_conf
+        - test_id: test_server
+          exe: tests_bsim_bluetooth_host_att_retry_on_sec_err_server_prj_conf
+
+  bluetooth.host.att.retry_on_sec_err.retry_on_sec_err_sec_request:
+    harness_config:
+      bsim_devices:
+        - test_id: test_client_security_request
+          exe: tests_bsim_bluetooth_host_att_retry_on_sec_err_client_prj_conf
+        - test_id: test_server_security_request
+          exe: tests_bsim_bluetooth_host_att_retry_on_sec_err_server_prj_conf

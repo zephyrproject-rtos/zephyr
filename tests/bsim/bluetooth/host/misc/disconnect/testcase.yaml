@@ -1,0 +1,19 @@
+tests:
+  bluetooth.host.misc.disconnect.test:
+    no_build: true
+    tags:
+      - bluetooth
+    platform_allow:
+      - nrf52_bsim/native
+    timeout: 30
+    harness: bsim
+    harness_config:
+      bsim_verbosity: 2
+      bsim_sim_length: 10e6
+      bsim_devices:
+        - test_id: dut
+          exe: tests_bsim_bluetooth_host_misc_disconnect_dut_prj_conf
+        - test_id: tester
+          exe: tests_bsim_bluetooth_host_misc_disconnect_tester_prj_conf
+      bsim_options:
+        - -RealEncryption=0

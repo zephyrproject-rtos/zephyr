@@ -1,5 +1,5 @@
 tests:
-  bluetooth.host.att.retry_on_sec_err.server:
+  bluetooth.host.att.retry_on_sec_err.build_server:
     build_only: true
     tags:
       - bluetooth

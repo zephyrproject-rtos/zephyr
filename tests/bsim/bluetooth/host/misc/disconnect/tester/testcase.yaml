@@ -1,5 +1,5 @@
 tests:
-  bluetooth.host.misc.disconnect.tester:
+  bluetooth.host.misc.disconnect.build_tester:
     build_only: true
     tags:
       - bluetooth

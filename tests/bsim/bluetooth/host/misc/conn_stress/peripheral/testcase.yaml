@@ -1,5 +1,5 @@
 tests:
-  bluetooth.host.misc.conn_stress.peripheral:
+  bluetooth.host.misc.conn_stress.build_peripheral:
     build_only: true
     tags:
       - bluetooth

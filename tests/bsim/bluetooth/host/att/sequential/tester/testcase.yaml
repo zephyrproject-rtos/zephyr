@@ -1,5 +1,5 @@
 tests:
-  bluetooth.host.att.sequential.tester:
+  bluetooth.host.att.sequential.build_tester:
     build_only: true
     tags:
       - bluetooth

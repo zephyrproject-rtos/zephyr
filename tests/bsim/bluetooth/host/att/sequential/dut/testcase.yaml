@@ -1,5 +1,5 @@
 tests:
-  bluetooth.host.att.sequential.dut:
+  bluetooth.host.att.sequential.build_dut:
     build_only: true
     tags:
       - bluetooth

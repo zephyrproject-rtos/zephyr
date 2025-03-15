@@ -1,0 +1,19 @@
+tests:
+  bluetooth.host.l2cap.split.test:
+    no_build: true
+    tags:
+      - bluetooth
+    platform_allow:
+      - nrf52_bsim/native
+    timeout: 30
+    harness: bsim
+    harness_config:
+      bsim_verbosity: 2
+      bsim_sim_length: 30e6
+      bsim_devices:
+        - test_id: test_0
+          exe: tests_bsim_bluetooth_host_l2cap_split_dut_prj_conf
+        - test_id: test_0
+          exe: tests_bsim_bluetooth_host_l2cap_split_tester_prj_conf
+      bsim_options:
+        - -RealEncryption=1
