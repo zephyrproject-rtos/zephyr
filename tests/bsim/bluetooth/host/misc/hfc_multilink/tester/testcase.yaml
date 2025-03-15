@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.misc.hfc_multilink.tester:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:

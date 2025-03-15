@@ -1,6 +1,5 @@
 tests:
   bluetooth.host.privacy.device:
-    build_only: true
     tags:
       - bluetooth
     platform_allow:
