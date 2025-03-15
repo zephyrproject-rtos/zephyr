@@ -2804,6 +2804,12 @@ struct bt_hci_evt_remote_name_req_complete {
 	uint8_t   name[248];
 } __packed;
 
+/* Encryption Value */
+#define BT_HCI_ENCRYPTION_OFF           0x00
+#define BT_HCI_ENCRYPTION_ON_LE_AES_CCM 0x01
+#define BT_HCI_ENCRYPTION_ON_BR_E0      0x01
+#define BT_HCI_ENCRYPTION_ON_BR_AES_CCM 0x02
+
 #define BT_HCI_EVT_ENCRYPT_CHANGE               0x08
 struct bt_hci_evt_encrypt_change {
 	uint8_t  status;
