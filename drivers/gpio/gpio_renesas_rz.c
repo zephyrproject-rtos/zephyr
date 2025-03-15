@@ -13,6 +13,7 @@
 #include "r_ioport.h"
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/sys/util_macro_expr.h>
 #include "gpio_renesas_rz.h"
 #include <zephyr/logging/log.h>
 #if defined(CONFIG_SOC_SERIES_RZN2L)
