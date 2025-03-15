@@ -641,6 +641,8 @@ static void local_input_complete(void)
 	}
 }
 
+static bool pb_adv_disabled_pb_gatt;
+
 static void prov_link_closed(enum prov_bearer_link_status status)
 {
 	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV) &&
@@ -657,6 +659,12 @@ static void prov_link_closed(enum prov_bearer_link_status status)
 	}
 
 	bt_mesh_prov_reset_state();
+
+	/* Re-enable PB-GATT advs if they were stopped due to a PB-ADV link. */
+	if (pb_adv_disabled_pb_gatt && !bt_mesh_is_provisioned()) {
+		bt_mesh_prov_enable(BT_MESH_PROV_GATT);
+	}
+	pb_adv_disabled_pb_gatt = false;
 }
 
 static void prov_link_opened(void)
@@ -664,6 +672,15 @@ static void prov_link_opened(void)
 	bt_mesh_prov_link.expect = PROV_INVITE;
 	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV) && bt_mesh_is_provisioned()) {
 		atomic_set_bit(bt_mesh_prov_link.flags, REPROVISION);
+	}
+
+	/* Stop sending PB-GATT unprovisioned advs if a prov link is opened over PB-ADV. */
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) && !is_pb_gatt()) {
+		int err = bt_mesh_pb_gatt_srv_disable();
+
+		if (err != -EALREADY) {
+			pb_adv_disabled_pb_gatt = true;
+		}
 	}
 }
 
