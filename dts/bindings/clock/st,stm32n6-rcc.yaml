@@ -120,6 +120,16 @@ properties:
       - 64
       - 128
 
+  timg-prescaler:
+    type: int
+    description: |
+        TIMG timer group domain prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+
 
 clock-cells:
   - bus
