@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,6 @@
 #include <soc.h>
 #include <fsl_smartdma.h>
 #include <fsl_inputmux.h>
-#include <fsl_power.h>
 
 #define DT_DRV_COMPAT nxp_smartdma
 
