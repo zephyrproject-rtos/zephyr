@@ -28,7 +28,9 @@ static int siwg917_nwp_init(void)
 			.oper_mode = SL_SI91X_CLIENT_MODE,
 			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
 			.ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID,
+#ifdef CONFIG_SIWX91X_ENHANCED_MAX_PSP
 			.config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP,
+#endif
 			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID,
 			.ext_custom_feature_bit_map =
 				MEMORY_CONFIG |
