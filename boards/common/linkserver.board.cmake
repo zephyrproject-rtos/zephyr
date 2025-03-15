@@ -3,4 +3,4 @@
 
 board_set_flasher_ifnset(linkserver)
 board_set_debugger_ifnset(linkserver)
-board_finalize_runner_args(linkserver "--dt-flash=y")
+board_finalize_runner_args(linkserver)
