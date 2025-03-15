@@ -643,7 +643,7 @@ config NRFX_SPIS30
 
 config NRFX_SPIS120
 	bool "SPIS120 driver instance"
-	depends on $(dt_nodelabel_exists,spi120)
+	depends on $(dt_nodelabel_exists,spis120)
 	select NRFX_SPIS
 
 config NRFX_SPIS130
