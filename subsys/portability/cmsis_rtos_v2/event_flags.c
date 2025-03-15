@@ -12,7 +12,6 @@ K_MEM_SLAB_DEFINE(cmsis_rtos_event_cb_slab, sizeof(struct cmsis_rtos_event_cb),
 		  CONFIG_CMSIS_V2_EVT_FLAGS_MAX_COUNT, 4);
 
 static const osEventFlagsAttr_t init_event_flags_attrs = {
-	.name = "ZephyrEvent",
 	.attr_bits = 0,
 	.cb_mem = NULL,
 	.cb_size = 0,
@@ -49,12 +48,7 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 	k_poll_event_init(&events->poll_event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
 			  &events->poll_signal);
 	events->signal_results = 0U;
-
-	if (attr->name == NULL) {
-		strncpy(events->name, init_event_flags_attrs.name, sizeof(events->name) - 1);
-	} else {
-		strncpy(events->name, attr->name, sizeof(events->name) - 1);
-	}
+	events->name = attr->name;
 
 	return (osEventFlagsId_t)events;
 }
@@ -207,16 +201,16 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags, uint32_t optio
 
 /**
  * @brief Get name of an Event Flags object.
+ * This function may be called from Interrupt Service Routines.
  */
 const char *osEventFlagsGetName(osEventFlagsId_t ef_id)
 {
 	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
 
-	if (!k_is_in_isr() && (ef_id != NULL)) {
-		return events->name;
-	} else {
+	if (ef_id == NULL) {
 		return NULL;
 	}
+	return events->name;
 }
 
 /**

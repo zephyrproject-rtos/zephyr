@@ -13,7 +13,6 @@ K_MEM_SLAB_DEFINE(cmsis_rtos_mutex_cb_slab, sizeof(struct cmsis_rtos_mutex_cb),
 		  CONFIG_CMSIS_V2_MUTEX_MAX_COUNT, 4);
 
 static const osMutexAttr_t init_mutex_attrs = {
-	.name = "ZephyrMutex",
 	.attr_bits = osMutexPrioInherit,
 	.cb_mem = NULL,
 	.cb_size = 0,
@@ -50,12 +49,7 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
 
 	k_mutex_init(&mutex->z_mutex);
 	mutex->state = attr->attr_bits;
-
-	if (attr->name == NULL) {
-		strncpy(mutex->name, init_mutex_attrs.name, sizeof(mutex->name) - 1);
-	} else {
-		strncpy(mutex->name, attr->name, sizeof(mutex->name) - 1);
-	}
+	mutex->name = attr->name;
 
 	return (osMutexId_t)mutex;
 }
@@ -160,9 +154,8 @@ const char *osMutexGetName(osMutexId_t mutex_id)
 {
 	struct cmsis_rtos_mutex_cb *mutex = (struct cmsis_rtos_mutex_cb *)mutex_id;
 
-	if (k_is_in_isr() || (mutex == NULL)) {
+	if (mutex == NULL) {
 		return NULL;
 	}
-
 	return mutex->name;
 }

@@ -13,7 +13,6 @@ K_MEM_SLAB_DEFINE(cmsis_rtos_msgq_cb_slab, sizeof(struct cmsis_rtos_msgq_cb),
 		  CONFIG_CMSIS_V2_MSGQ_MAX_COUNT, 4);
 
 static const osMessageQueueAttr_t init_msgq_attrs = {
-	.name = "ZephyrMsgQ",
 	.attr_bits = 0,
 	.cb_mem = NULL,
 	.cb_size = 0,
@@ -78,12 +77,7 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 	}
 
 	k_msgq_init(&msgq->z_msgq, msgq->pool, msg_size, msg_count);
-
-	if (attr->name == NULL) {
-		strncpy(msgq->name, init_msgq_attrs.name, sizeof(msgq->name) - 1);
-	} else {
-		strncpy(msgq->name, attr->name, sizeof(msgq->name) - 1);
-	}
+	msgq->name = attr->name;
 
 	return (osMessageQueueId_t)(msgq);
 }
@@ -222,16 +216,16 @@ uint32_t osMessageQueueGetSpace(osMessageQueueId_t msgq_id)
 
 /**
  * @brief Get name of a Message Queue object.
+ * This function may be called from Interrupt Service Routines.
  */
 const char *osMessageQueueGetName(osMessageQueueId_t msgq_id)
 {
 	struct cmsis_rtos_msgq_cb *msgq = (struct cmsis_rtos_msgq_cb *)msgq_id;
 
-	if (!k_is_in_isr() && (msgq_id != NULL)) {
-		return msgq->name;
-	} else {
+	if (msgq == NULL) {
 		return NULL;
 	}
+	return msgq->name;
 }
 
 /**
