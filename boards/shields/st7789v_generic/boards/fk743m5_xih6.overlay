@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025 Honbo He <hehongbo918@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &st7789v_320x240;
+	};
+
+	mipi_dbi_st7789v {
+		spi-dev = <&spi5>;
+		dc-gpios = <&gpioj 11 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi5 {
+	pinctrl-0 = <&spi5_sck_pk0 &spi5_mosi_pj10>;
+	cs-gpios = <&gpioh 5 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpioh {
+	status = "okay";
+
+	lcd_led {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_HIGH>; /* Back Light */
+		output-high;
+	};
+};
