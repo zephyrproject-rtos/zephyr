@@ -1,0 +1,17 @@
+sample:
+  description: Pixel Stats sample, collect statistics of an input buffer
+  name: pixel stats
+common:
+  min_ram: 32
+  tags: pixel
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "RGB histogram of the image"
+      - "RGB channel averages of the image"
+tests:
+  sample.pixel.stats:
+    tags: pixel
