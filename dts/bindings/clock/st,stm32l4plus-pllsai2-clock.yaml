@@ -1,0 +1,40 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+include: st,stm32l4-pllsai2-clock.yaml
+
+description: |
+  PLLSAI2 node binding for STM32L4+ device
+
+  It describes the PLLSAI2 PLL.
+
+  These PLL could take one of clk_hse, clk_hsi or clk_msi as input clock, with
+  an input frequency from 4 to 16 MHz. PLLSAIM factor is used to set the input
+  clock in this acceptable range.
+
+  The PLL can have up to 3 output clocks and for each output clock, the
+  frequency can be computed with the following formulae:
+
+    f(PLLSAI2_P) = f(VCO clock) / PLLSAIP  --> PLLSAI2CLK
+    f(PLLSAI2_Q) = f(VCO clock) / PLLSAIQ  --> PLLDSICLK
+    f(PLLSAI2_R) = f(VCO clock) / PLLSAIR  --> PLLLCDCLK
+    f(PLLSAI2_LTDC) = f(PLLSAI2_R) / PLLSAI2_DIVR  --> PLLSAI2_LTDC
+
+      with f(VCO clock) = f(PLL clock input) × (PLLSAIN / PLLSAIM)
+
+  The VCO input frequency must be between 2.66 to 8 MHz and its output frequency
+  must be between 64 and 344 MHz.
+
+
+compatible: "st,stm32l4plus-pllsai2-clock"
+
+properties:
+  div-divr:
+    type: int
+    description: |
+        PLLSAI2DIVR division factor for LTDC clock
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
