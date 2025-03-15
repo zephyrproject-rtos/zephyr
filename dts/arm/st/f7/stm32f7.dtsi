@@ -894,6 +894,7 @@
 	otghs_fs_phy: otghs_fs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+		clocks = <&rcc STM32_CLOCK(AHB1, 30U)>;
 	};
 
 	otgfs_phy: otgfs_phy {
