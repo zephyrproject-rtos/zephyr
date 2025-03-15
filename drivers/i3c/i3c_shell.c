@@ -1476,8 +1476,8 @@ static int cmd_i3c_ccc_getcaps(const struct shell *sh, size_t argc, char **argv)
 	if (argc > 3) {
 		fmt = GETCAPS_FORMAT_2;
 		defbyte = strtol(argv[3], NULL, 16);
-		if (defbyte != GETCAPS_FORMAT_2_TGTCAPS || defbyte != GETCAPS_FORMAT_2_TESTPAT ||
-		    defbyte != GETCAPS_FORMAT_2_CRCAPS || defbyte != GETCAPS_FORMAT_2_VTCAPS ||
+		if (defbyte != GETCAPS_FORMAT_2_TGTCAPS && defbyte != GETCAPS_FORMAT_2_TESTPAT &&
+		    defbyte != GETCAPS_FORMAT_2_CRCAPS && defbyte != GETCAPS_FORMAT_2_VTCAPS &&
 		    defbyte != GETCAPS_FORMAT_2_DBGCAPS) {
 			shell_error(sh, "Invalid defining byte.");
 			return -EINVAL;
@@ -1711,7 +1711,7 @@ static int cmd_i3c_ccc_getmxds(const struct shell *sh, size_t argc, char **argv)
 	if (argc > 3) {
 		fmt = GETMXDS_FORMAT_3;
 		defbyte = strtol(argv[3], NULL, 16);
-		if (defbyte != GETMXDS_FORMAT_3_CRHDLY || defbyte != GETMXDS_FORMAT_3_WRRDTURN) {
+		if (defbyte != GETMXDS_FORMAT_3_CRHDLY && defbyte != GETMXDS_FORMAT_3_WRRDTURN) {
 			shell_error(sh, "Invalid defining byte.");
 			return -EINVAL;
 		}
