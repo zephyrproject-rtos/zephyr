@@ -21,46 +21,10 @@ env:
   JOB_COUNT: 4
 
 jobs:
-  doc-file-check:
-    name: Check for doc changes
-    runs-on: ubuntu-24.04
-    if: >
-      github.repository_owner == 'zephyrproject-rtos'
-    outputs:
-      file_check: ${{ steps.check-doc-files.outputs.any_modified }}
-    steps:
-    - name: checkout
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
-        fetch-depth: 0
-    - name: Check if Documentation related files changed
-      uses: tj-actions/changed-files@v45
-      id: check-doc-files
-      with:
-        files: |
-          doc/
-          boards/**/doc/
-          **.rst
-          include/
-          kernel/include/kernel_arch_interface.h
-          lib/libc/**
-          subsys/testsuite/ztest/include/**
-          tests/
-          **/Kconfig*
-          west.yml
-          scripts/dts/
-          doc/requirements.txt
-          .github/workflows/doc-build.yml
-          scripts/pylib/pytest-twister-harness/src/twister_harness/device/device_adapter.py
-          scripts/pylib/pytest-twister-harness/src/twister_harness/helpers/shell.py
-
   doc-build-html:
     name: "Documentation Build (HTML)"
-    needs: [doc-file-check]
     if: >
-      github.repository_owner == 'zephyrproject-rtos' &&
-        ( needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request' )
+      github.repository_owner == 'zephyrproject-rtos'
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     concurrency:
@@ -181,7 +145,6 @@ jobs:
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
-    needs: [doc-file-check]
     if: |
       github.event_name != 'pull_request' &&
       github.repository_owner == 'zephyrproject-rtos'
@@ -257,7 +220,6 @@ jobs:
     name: "Documentation Build Status"
     needs:
     - doc-build-pdf
-    - doc-file-check
     - doc-build-html
     uses: ./.github/workflows/ready-to-merge.yml
     with:
