@@ -11,6 +11,10 @@
 
 /delete-node/ &sw_pwm;
 
+/* Domain IDs. Can be used to specify channel links in IPCT nodes. */
+#define NRF_DOMAIN_ID_APPLICATION 0
+#define NRF_DOMAIN_ID_FLPR 1
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -32,6 +36,14 @@
 				reg = <0xe0000000 0x1000>;
 				swo-ref-frequency = <DT_FREQ_M(128)>;
 			};
+		};
+
+		cpuflpr: cpu@1 {
+			compatible = "nordic,vpr";
+			reg = <1>;
+			device_type = "cpu";
+			riscv,isa = "rv32emc";
+			nordic,bus-width = <64>;
 		};
 	};
 
@@ -78,10 +90,18 @@
 
 		cpuapp_sram: memory@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(511)>;
+			reg = <0x20000000 DT_SIZE_K(447)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x20000000 0x7fc00>;
+			ranges = <0x0 0x20000000 0x6fc00>;
+		};
+
+		cpuflpr_sram: memory@2006fc00 {
+			compatible = "mmio-sram";
+			reg = <0x2006fc00 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2006fc00 0x10000>;
 		};
 
 		global_peripherals: peripheral@50000000 {
@@ -105,6 +125,24 @@
 				compatible = "nordic,nrf-ppib";
 				reg = <0x45000 0x1000>;
 				status = "disabled";
+			};
+
+			cpuflpr_vpr: vpr@4c000 {
+				compatible = "nordic,nrf-vpr-coprocessor";
+				reg = <0x4c000 0x1000>;
+				ranges = <0x0 0x4c000 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				status = "disabled";
+
+				cpuflpr_clic: interrupt-controller@f0000000 {
+					compatible = "nordic,nrf-clic";
+					reg = <0xf0000000 0x143c>;
+					interrupt-controller;
+					#interrupt-cells = <2>;
+					#address-cells = <1>;
+					status = "disabled";
+				};
 			};
 
 			spi00: spi@4d000 {
@@ -737,7 +775,14 @@
 
 			cpuapp_rram: rram@0 {
 				compatible = "soc-nv-flash";
-				reg = <0x0 DT_SIZE_K(2028)>;
+				reg = <0x0 DT_SIZE_K(1972)>;
+				erase-block-size = <4096>;
+				write-block-size = <16>;
+			};
+
+			cpuflpr_rram: rram@1ed000 {
+				compatible = "soc-nv-flash";
+				reg = <0x1ed000 DT_SIZE_K(64)>;
 				erase-block-size = <4096>;
 				write-block-size = <16>;
 			};
