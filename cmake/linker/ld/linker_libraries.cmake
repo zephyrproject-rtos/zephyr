@@ -4,7 +4,11 @@
 
 set_linker_property(NO_CREATE PROPERTY c_library    "-lc")
 set_linker_property(NO_CREATE PROPERTY rt_library   "-lgcc")
-set_linker_property(NO_CREATE PROPERTY c++_library  "-lstdc++")
+if (CONFIG_PICOLIBC_LIBCXX_NOEXCEPT)
+  set_linker_property(NO_CREATE PROPERTY c++_library  "-lstdc++_noexcept")
+else()
+  set_linker_property(NO_CREATE PROPERTY c++_library  "-lstdc++")
+endif()
 set_linker_property(NO_CREATE PROPERTY math_library "-lm")
 # Keeping default include dir empty. The linker will then select libraries
 # from its default search path. The toolchain may adjust the value to a

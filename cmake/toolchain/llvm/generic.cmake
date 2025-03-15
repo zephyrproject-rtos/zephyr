@@ -39,6 +39,7 @@ if(NOT LLVM_TOOLCHAIN_PATH STREQUAL "")
   if(picolibc_header)
     set(TOOLCHAIN_HAS_PICOLIBC ON CACHE BOOL "True if toolchain supports picolibc")
   endif()
+  #TODO: ?
 endif()
 
 message(STATUS "Found toolchain: llvm (clang/ld)")
