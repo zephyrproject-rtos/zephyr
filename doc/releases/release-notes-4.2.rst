@@ -63,6 +63,9 @@ Deprecated APIs and options
 
 ===========================
 
+* ``arduino_uno_r4_minima`` and ``arduino_uno_r4_wifi`` board targets have been deprecated in favor
+  of ``arduino_uno_r4/r7fa4m1ab3cfm/minima`` and ``arduino_uno_r4/r7fa4m1ab3cfm/wifi`` respectively.
+
 New APIs and options
 ====================
 
