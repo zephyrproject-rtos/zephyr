@@ -531,6 +531,20 @@ def test_bus():
     assert str(edt.get_node("/buses/foo-bus/node1/nested").binding_path) == \
         hpath("test-bindings/device-on-foo-bus.yaml")
 
+def test_binding_top_key():
+    fname2path = {'include.yaml': 'test-bindings-include/include.yaml',
+                  'include-2.yaml': 'test-bindings-include/include-2.yaml'}
+
+    with from_here():
+        binding = edtlib.Binding("test-bindings/defaults.yaml", fname2path)
+    title = binding.title
+    description = binding.description
+    compatible = binding.compatible
+
+    assert title == "Test binding"
+    assert description == "Property default value test"
+    assert compatible == "defaults"
+
 def test_child_binding():
     '''Test 'child-binding:' in bindings'''
     with from_here():
