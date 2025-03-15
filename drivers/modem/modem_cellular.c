@@ -90,8 +90,8 @@ struct modem_cellular_data {
 
 	/* CMUX */
 	struct modem_cmux cmux;
-	uint8_t cmux_receive_buf[CONFIG_MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE];
-	uint8_t cmux_transmit_buf[2 * CONFIG_MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE];
+	uint8_t cmux_receive_buf[CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE];
+	uint8_t cmux_transmit_buf[2 * CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE];
 
 	struct modem_cmux_dlci dlci1;
 	struct modem_cmux_dlci dlci2;
@@ -99,7 +99,7 @@ struct modem_cellular_data {
 	struct modem_pipe *dlci2_pipe;
 	/* Points to dlci2_pipe or NULL. Used for shutdown script if not NULL */
 	struct modem_pipe *cmd_pipe;
-	uint8_t dlci1_receive_buf[CONFIG_MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE];
+	uint8_t dlci1_receive_buf[CONFIG_MODEM_CELLULAR_CHAT_BUFFER_SIZES];
 	/* DLCI 2 is only used for chat scripts. */
 	uint8_t dlci2_receive_buf[CONFIG_MODEM_CELLULAR_CHAT_BUFFER_SIZES];
 
