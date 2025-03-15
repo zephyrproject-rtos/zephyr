@@ -1,0 +1,17 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+mainmenu "Bluetooth: GroupChat Primary"
+
+source "samples/bluetooth/iso_group_chat/common/Kconfig"
+
+config BT_ISO_GROUPCHAT_PRIMARY
+    bool "Enable code specific to the groupchat primary device"
+    default n
+	help
+	  When enabled, additional features and modifications will be compiled
+	  into the project. This option can be used to include or exclude code
+	  blocks guarded by `#ifdef CONFIG_BT_ISO_GROUPCHAT_PRIMARY` in shared .c
+	  and .h files.
