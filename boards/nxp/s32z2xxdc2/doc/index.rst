@@ -68,6 +68,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | PIT       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| PSI5      | on-chip    | psi5                                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
