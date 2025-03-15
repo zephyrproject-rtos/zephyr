@@ -40,6 +40,14 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_IRQ		DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq)
 #define UDC_STM32_IRQ_PRI	DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority)
 
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHY)
+#define HIGH_SPEED             1U
+#else
+#define HIGH_SPEED             0U
+#endif
+#define FULL_SPEED             3U
+
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
 	const struct device *dev;
@@ -964,48 +972,6 @@ static const struct udc_stm32_config udc0_cfg  = {
 	.speed_idx = DT_ENUM_IDX_OR(DT_DRV_INST(0), maximum_speed, 1),
 };
 
-#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
-static uint32_t usb_dc_stm32_get_maximum_speed(void)
-{
-/*
- * STM32L4 series USB LL API doesn't provide HIGH and HIGH_IN_FULL speed
- * defines.
- */
-#if defined(CONFIG_SOC_SERIES_STM32L4X)
-#define USB_OTG_SPEED_HIGH                     0U
-#define USB_OTG_SPEED_HIGH_IN_FULL             1U
-#endif /* CONFIG_SOC_SERIES_STM32L4X */
-/*
- * If max-speed is not passed via DT, set it to USB controller's
- * maximum hardware capability.
- */
-#if USB_OTG_HS_EMB_PHY || USB_OTG_HS_ULPI_PHY
-	uint32_t speed = USB_OTG_SPEED_HIGH;
-#else
-	uint32_t speed = USB_OTG_SPEED_FULL;
-#endif
-
-#ifdef USB_MAXIMUM_SPEED
-
-	if (!strncmp(USB_MAXIMUM_SPEED, "high-speed", 10)) {
-		speed = USB_OTG_SPEED_HIGH;
-	} else if (!strncmp(USB_MAXIMUM_SPEED, "full-speed", 10)) {
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHY)
-		speed = USB_OTG_SPEED_HIGH_IN_FULL;
-#else
-		speed = USB_OTG_SPEED_FULL;
-#endif
-	} else {
-		LOG_DBG("Unsupported maximum speed defined in device tree. "
-			"USB controller will default to its maximum HW "
-			"capability");
-	}
-#endif
-
-	return speed;
-}
-#endif /* USB_OTG_FS || USB_OTG_HS */
-
 static void priv_pcd_prepare(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -1016,7 +982,7 @@ static void priv_pcd_prepare(const struct device *dev)
 	/* Default values */
 	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
 	priv->pcd.Init.ep0_mps = cfg->ep0_mps;
-	priv->pcd.Init.speed = PCD_SPEED_FULL;
+	priv->pcd.Init.speed = DT_INST_STRING_UPPER_TOKEN(0, maximum_speed);
 
 	/* Per controller/Phy values */
 #if defined(USB)
@@ -1024,7 +990,6 @@ static void priv_pcd_prepare(const struct device *dev)
 #elif defined(USB_DRD_FS)
 	priv->pcd.Instance = USB_DRD_FS;
 #elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
-	priv->pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 	priv->pcd.Instance = USB_OTG_HS;
 #else
