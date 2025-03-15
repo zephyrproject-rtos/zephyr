@@ -3,14 +3,26 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stddef.h>
+#include <errno.h>
 
+#include <zephyr/kernel.h>
+#include <zephyr/types.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
+
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
 #include "common.h"
 
 extern enum bst_result_t bst_result;
 
-CREATE_FLAG(flag_is_connected);
-CREATE_FLAG(flag_short_subscribe);
-CREATE_FLAG(flag_long_subscribe);
+DEFINE_FLAG_STATIC(flag_is_connected);
+DEFINE_FLAG_STATIC(flag_short_subscribe);
+DEFINE_FLAG_STATIC(flag_long_subscribe);
 
 static struct bt_conn *g_conn;
 
@@ -25,7 +37,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
+		TEST_FAIL("Failed to connect to %s (%u)", addr, err);
 		return;
 	}
 
@@ -137,7 +149,7 @@ static void short_notify(enum bt_att_chan_opt opt)
 		if (err == -ENOMEM) {
 			k_sleep(K_MSEC(10));
 		} else if (err) {
-			FAIL("Short notify failed (err %d)\n", err);
+			TEST_FAIL("Short notify failed (err %d)", err);
 		}
 	} while (err);
 }
@@ -163,7 +175,7 @@ static void long_notify(enum bt_att_chan_opt opt)
 		if (err == -ENOMEM) {
 			k_sleep(K_MSEC(10));
 		} else if (err) {
-			FAIL("Long notify failed (err %d)\n", err);
+			TEST_FAIL("Long notify failed (err %d)", err);
 		}
 	} while (err);
 }
@@ -177,7 +189,7 @@ static void setup(void)
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		FAIL("Bluetooth init failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth init failed (err %d)", err);
 		return;
 	}
 
@@ -185,7 +197,7 @@ static void setup(void)
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)\n", err);
+		TEST_FAIL("Advertising failed to start (err %d)", err);
 		return;
 	}
 
@@ -215,7 +227,7 @@ static void test_main_none(void)
 		k_sleep(K_MSEC(100));
 	}
 
-	PASS("GATT server passed\n");
+	TEST_PASS("GATT server passed");
 }
 
 static void test_main_enhanced(void)
@@ -231,7 +243,7 @@ static void test_main_enhanced(void)
 		k_sleep(K_MSEC(100));
 	}
 
-	PASS("GATT server passed\n");
+	TEST_PASS("GATT server passed");
 }
 
 static void test_main_unenhanced(void)
@@ -247,7 +259,7 @@ static void test_main_unenhanced(void)
 		k_sleep(K_MSEC(100));
 	}
 
-	PASS("GATT server passed\n");
+	TEST_PASS("GATT server passed");
 }
 
 static void test_main_mixed(void)
@@ -263,32 +275,24 @@ static void test_main_mixed(void)
 		k_sleep(K_MSEC(100));
 	}
 
-	PASS("GATT server passed\n");
+	TEST_PASS("GATT server passed");
 }
 
 static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server_none",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main_none,
 	},
 	{
 		.test_id = "gatt_server_unenhanced",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main_unenhanced,
 	},
 	{
 		.test_id = "gatt_server_enhanced",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main_enhanced,
 	},
 	{
 		.test_id = "gatt_server_mixed",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main_mixed,
 	},
 	BSTEST_END_MARKER,

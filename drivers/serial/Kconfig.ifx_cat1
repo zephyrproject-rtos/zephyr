@@ -10,7 +10,9 @@ config UART_INFINEON_CAT1
 	depends on DT_HAS_INFINEON_CAT1_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC
 	select USE_INFINEON_UART
 	select PINCTRL
+	select DMA if UART_ASYNC_API
 	help
 	  This option enables the UART driver for Infineon CAT1 family.

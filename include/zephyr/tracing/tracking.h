@@ -73,8 +73,8 @@ extern struct k_event *_track_list_k_event;
 #define sys_port_track_k_queue_cancel_wait(queue)
 #define sys_port_track_k_queue_init(queue) \
 	sys_track_k_queue_init(queue)
-#define sys_port_track_k_pipe_init(pipe) \
-	sys_track_k_pipe_init(pipe)
+#define sys_port_track_k_pipe_init(pipe, buffer, buffer_size) \
+	sys_track_k_pipe_init(pipe, buffer, buffer_size)
 #define sys_port_track_k_condvar_init(condvar, ret)
 #define sys_port_track_k_stack_init(stack) \
 	sys_track_k_stack_init(stack)
@@ -105,7 +105,7 @@ void sys_track_k_mutex_init(struct k_mutex *mutex);
 void sys_track_k_stack_init(struct k_stack *stack);
 void sys_track_k_msgq_init(struct k_msgq *msgq);
 void sys_track_k_mbox_init(struct k_mbox *mbox);
-void sys_track_k_pipe_init(struct k_pipe *pipe);
+void sys_track_k_pipe_init(struct k_pipe *pipe, void *buffer, size_t size);
 void sys_track_k_queue_init(struct k_queue *queue);
 void sys_track_k_event_init(struct k_event *event);
 void sys_track_socket_init(int sock, int family, int type, int proto);
@@ -132,7 +132,7 @@ void sys_track_socket_init(int sock, int family, int type, int proto);
 #define sys_port_track_k_queue_peek_head(queue, ret)
 #define sys_port_track_k_queue_cancel_wait(queue)
 #define sys_port_track_k_queue_init(queue)
-#define sys_port_track_k_pipe_init(pipe)
+#define sys_port_track_k_pipe_init(pipe, buffer, buffer_size)
 #define sys_port_track_k_condvar_init(condvar, ret)
 #define sys_port_track_k_stack_init(stack)
 #define sys_port_track_k_thread_name_set(thread, ret)

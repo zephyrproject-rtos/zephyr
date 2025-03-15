@@ -172,7 +172,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		 * The last 2 bytes contain LQI or FCS, depending if
 		 * automatic CRC handling is enabled or not, respectively.
 		 */
-		if (IS_ENABLED(CONFIG_IEEE802154_NRF5_FCS_IN_LENGTH)) {
+		if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 			pkt_len = rx_frame->psdu[0];
 		} else {
 			pkt_len = rx_frame->psdu[0] -  IEEE802154_FCS_LENGTH;
@@ -419,7 +419,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	}
 #endif
 
-	if (IS_ENABLED(CONFIG_IEEE802154_NRF5_FCS_IN_LENGTH)) {
+	if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 		ack_len = nrf5_radio->ack_frame.psdu[0];
 	} else {
 		ack_len = nrf5_radio->ack_frame.psdu[0] - IEEE802154_FCS_LENGTH;
@@ -585,7 +585,7 @@ static int nrf5_tx(const struct device *dev,
 		return -EMSGSIZE;
 	}
 
-	LOG_DBG("%p (%u)", payload, payload_len);
+	LOG_DBG("%p (%u)", (void *)payload, payload_len);
 
 	nrf5_radio->tx_psdu[0] = payload_len + IEEE802154_FCS_LENGTH;
 	memcpy(nrf5_radio->tx_psdu + 1, payload, payload_len);

@@ -22,5 +22,5 @@ config MCUX_KINETIS_LPTMR
 	select DEPRECATED
 	help
 	  The compatible string "nxp,kinetis-lptmr" should
-	  be swiched to "nxp,lptmr" in DT. The former will
+	  be switched to "nxp,lptmr" in DT. The former will
 	  be removed eventually.

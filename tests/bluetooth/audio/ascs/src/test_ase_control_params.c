@@ -9,25 +9,28 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
+#include <sys/types.h>
 
 #include "bap_unicast_server.h"
-#include "bap_unicast_server_expects.h"
 #include "bap_stream.h"
-#include "bap_stream_expects.h"
 #include "conn.h"
-#include "gatt.h"
 #include "gatt_expects.h"
 #include "iso.h"
 
 #include "test_common.h"
-#include "ztest_assert.h"
 
 struct test_ase_control_params_fixture {
 	struct bt_conn conn;

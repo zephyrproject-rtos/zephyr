@@ -107,10 +107,6 @@ static int max149x6_reg_transceive(const struct device *dev, uint8_t addr, uint8
 	};
 	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
 
-	if (config->crc_en & 0) {
-		rx_buf.len++;
-	}
-
 	local_tx_buff[0] = FIELD_PREP(MAX149x6_ADDR_MASK, addr) |
 			   FIELD_PREP(MAX149x6_CHIP_ADDR_MASK, config->spi_addr) |
 			   FIELD_PREP(MAX149x6_RW_MASK, rw & 0x1);

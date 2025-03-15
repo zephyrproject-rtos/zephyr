@@ -111,3 +111,4 @@ WhitespaceSensitiveMacros:
   - LISTIFY
   - STRINGIFY
   - Z_STRINGIFY
+  - DT_FOREACH_PROP_ELEM_SEP

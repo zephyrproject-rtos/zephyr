@@ -3,6 +3,7 @@
 
 zephyr_sources(soc.c)
 zephyr_sources(app_header.c)
+zephyr_sources(mpu_regions.c)
 zephyr_include_directories(.)
 
 zephyr_sources_ifdef(CONFIG_PM power.c)

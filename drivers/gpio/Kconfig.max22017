@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MAX22017
+	bool "Analog Devices MAX22017 GPIO support"
+	default y
+	depends on DT_HAS_ADI_MAX22017_GPIO_ENABLED
+	select MFD
+	help
+	  Enable GPIO support for the Analog Devices MAX22017
+
+if GPIO_MAX22017
+
+config GPIO_MAX22017_INIT_PRIORITY
+	int "Init priority"
+	default 81
+	help
+	  Analog Devices MAX22017 gpio device driver initialization priority.
+
+config GPIO_MAX22017_INT_QUIRK
+	bool "MAX22017 GPIO Interrupt quirk"
+	help
+	  The GPIO controller will not report any new GPI interrupt as long as its interrupt status
+	  register hasn't been read.
+	  Reading the interrupt status register happens on a falling edge of the INT pin.
+	  There seems to be a condition when the GPIO controller detects an interrupt but it's INT
+	  pin stays high which masks any subsequent interrupts.
+	  To avoid being stuck in that state, fire a timer to periodically check the interrupt status
+	  register.
+
+endif # GPIO_MAX22017

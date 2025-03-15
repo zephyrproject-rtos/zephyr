@@ -55,7 +55,7 @@
 			status = "okay";
 		};
 
-		sram0: memory@20100000 {
+		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
 
@@ -230,6 +230,15 @@
 			#size-cells = <0>;
 			#io-channel-cells = <1>;
 			status = "disabled";
+		};
+
+		dacc: dacc@4003c000 {
+			compatible = "atmel,sam-dac";
+			reg = <0x4003c000 0x4000>;
+			interrupts = <30 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 30>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		rstc: rstc@400e1400 {

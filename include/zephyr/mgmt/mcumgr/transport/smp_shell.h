@@ -11,6 +11,7 @@
 #ifndef ZEPHYR_INCLUDE_MGMT_SMP_SHELL_H_
 #define ZEPHYR_INCLUDE_MGMT_SMP_SHELL_H_
 
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

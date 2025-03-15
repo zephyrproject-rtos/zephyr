@@ -20,7 +20,7 @@ ${ZEPHYR_BASE}/scripts/twister -T tests/drivers/uart/ --force-color --inline-log
 echo " nRF54L15:"
 ${ZEPHYR_BASE}/scripts/twister -T tests/drivers/uart/ --force-color --inline-logs -v -M \
   -p nrf54l15bsim/nrf54l15/cpuapp --fixture gpio_loopback \
-  -- -uart2_loopback
+  -- -uart0_loopback -uart2_loopback
 
 echo "UART: Multi device tests"
 WORK_DIR=${ZEPHYR_BASE}/bsim_uart nice tests/bsim/drivers/uart/compile.sh

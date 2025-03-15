@@ -324,7 +324,7 @@ specifier space ``foo``. For example:
      pwms:
        type: phandle-array
 
-The ``dmas`` property's specifier space is "dma". The ``pwm`` property's
+The ``dmas`` property's specifier space is "dma". The ``pwms`` property's
 specifier space is ``pwm``.
 
 Special case: GPIO

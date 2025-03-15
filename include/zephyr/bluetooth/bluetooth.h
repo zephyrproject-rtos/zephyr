@@ -268,7 +268,7 @@ bool bt_is_ready(void);
  *
  * @sa @kconfig{CONFIG_BT_DEVICE_NAME_MAX}.
  *
- * @param name New name
+ * @param name New name, must be null terminated
  *
  * @return Zero on success or (negative) error code otherwise.
  */
@@ -784,6 +784,40 @@ enum {
 	 * @note Mutually exclusive with BT_LE_ADV_OPT_USE_IDENTITY.
 	 */
 	BT_LE_ADV_OPT_USE_NRPA = BIT(19),
+
+	/**
+	 * @brief Configures the advertiser to use the S=2 coding scheme for
+	 * LE Coded PHY.
+	 *
+	 * Sets the advertiser's required coding scheme to S=2, which is one
+	 * of the coding options available for LE Coded PHY. The S=2 coding
+	 * scheme offers higher data rates compared to S=8, with a trade-off
+	 * of reduced range. The coding scheme will only be set if both the
+	 * primary and secondary advertising channels indicate LE Coded Phy.
+	 * Additionally, the Controller must support the LE Feature Advertising
+	 * Coding Selection. If these conditions are not met, it will default to
+	 * no required coding scheme.
+	 *
+	 * @note Requires @kconfig{BT_EXT_ADV_CODING_SELECTION}
+	 */
+	BT_LE_ADV_OPT_REQUIRE_S2_CODING = BIT(20),
+
+	/**
+	 * @brief Configures the advertiser to use the S=8 coding scheme for
+	 * LE Coded PHY.
+	 *
+	 * Sets the advertiser's required coding scheme to S=8, which is one
+	 * of the coding options available for LE Coded PHY. The S=8 coding
+	 * scheme offers increased range compared to S=2, with a trade-off
+	 * of lower data rates. The coding scheme will only be set if both the
+	 * primary and secondary advertising channels indicate LE Coded Phy.
+	 * Additionally, the Controller must support the LE Feature Advertising
+	 * Coding Selection. If these conditions are not met, it will default to
+	 * no required coding scheme.
+	 *
+	 * @note Requires @kconfig{BT_EXT_ADV_CODING_SELECTION}
+	 */
+	BT_LE_ADV_OPT_REQUIRE_S8_CODING = BIT(21),
 };
 
 /** LE Advertising Parameters. */
@@ -2134,8 +2168,6 @@ enum {
 	 */
 	BT_LE_SCAN_OPT_NO_1M = BIT(3),
 };
-
-#define BT_LE_SCAN_OPT_FILTER_WHITELIST __DEPRECATED_MACRO BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST
 
 enum {
 	/** Scan without requesting additional information from advertisers. */

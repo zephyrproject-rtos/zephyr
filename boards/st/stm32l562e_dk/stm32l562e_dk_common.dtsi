@@ -42,6 +42,12 @@
 	chosen {
 		zephyr,bt-hci = &hci_spi;
 	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
+		invert-y;
+	};
 };
 
 &fmc {
@@ -177,6 +183,13 @@ stm32_lp_tick_source: &lptim1 {
 		reg = <0x6a>;
 		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
 	};
+
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpiof 1 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpiof 15 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &rng {
@@ -277,7 +290,7 @@ stm32_lp_tick_source: &lptim1 {
 &adc1 {
 	pinctrl-0 = <&adc1_in13_pc4>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };

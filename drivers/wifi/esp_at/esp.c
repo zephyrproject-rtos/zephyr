@@ -811,9 +811,11 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 	}
 
 	*sock = esp_socket_ref_from_link_id(dev, link_id);
-	if (!sock) {
+
+	if (!*sock) {
 		LOG_ERR("No socket for link %ld", link_id);
-		return str - ipd_buf;
+		*data_offset = (str - ipd_buf);
+		return -ENOTCONN;
 	}
 
 	if (!ESP_PROTO_PASSIVE(esp_socket_ip_proto(*sock)) &&
@@ -823,7 +825,13 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 		char *remote_ip;
 		long port;
 
-		err = esp_pull_quoted(&str, str_end, &remote_ip);
+		if (IS_ENABLED(CONFIG_WIFI_ESP_AT_VERSION_1_7)) {
+			/* NOT quoted per AT version 1.7.0 */
+			err = esp_pull_raw(&str, str_end, &remote_ip);
+		} else {
+			/* Quoted per AT version 2.1.0/2.2.0 */
+			err = esp_pull_quoted(&str, str_end, &remote_ip);
+		}
 		if (err) {
 			if (err == -EAGAIN && match_len >= MAX_IPD_LEN) {
 				LOG_ERR("Failed to pull remote_ip");

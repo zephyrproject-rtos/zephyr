@@ -18,11 +18,12 @@ from twisterlib.platform import Platform
 def testinstance() -> TestInstance:
     testsuite = TestSuite('.', 'samples/hello', 'unit.test')
     testsuite.harness_config = {}
+    testsuite.harness = 'pytest'
     testsuite.ignore_faults = False
     testsuite.sysbuild = False
     platform = Platform()
 
-    testinstance = TestInstance(testsuite, platform, 'outdir')
+    testinstance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
     testinstance.handler = mock.Mock()
     testinstance.handler.options = mock.Mock()
     testinstance.handler.options.verbose = 1

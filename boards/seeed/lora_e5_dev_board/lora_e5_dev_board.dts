@@ -157,7 +157,7 @@ stm32_lp_tick_source: &lptim1 {
 &adc1 {
 	pinctrl-0 = <&adc_in2_pb3>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };

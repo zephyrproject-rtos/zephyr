@@ -12,7 +12,6 @@ config BT_BAP_UNICAST
 config BT_BAP_UNICAST_SERVER
 	bool "Bluetooth Unicast Audio Server Support"
 	depends on BT_GATT_DYNAMIC_DB
-	depends on BT_GATT_CACHING
 	depends on BT_PERIPHERAL
 	depends on BT_ISO_PERIPHERAL
 	depends on BT_ASCS
@@ -171,9 +170,8 @@ if BT_BAP_BROADCAST_SINK
 
 config BT_BAP_BROADCAST_SNK_SUBGROUP_COUNT
 	int "Basic Audio Profile Broadcast Sink subgroup count"
-	default 1
-	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
-	range 1 31
+	default BT_BAP_BASS_MAX_SUBGROUPS
+	range 1 BT_BAP_BASS_MAX_SUBGROUPS
 	help
 	  This option sets the maximum number of subgroups per broadcast sink
 	  to support.

@@ -860,14 +860,14 @@ int i3c_ccc_do_getmxds(const struct i3c_device_desc *target,
 		len = ccc_tgt_payload.num_xfer;
 
 		if ((fmt == GETMXDS_FORMAT_1) || (fmt == GETMXDS_FORMAT_2)) {
-			if (len == sizeof(((union i3c_ccc_getmxds *)0)->fmt1)) {
+			if (len == SIZEOF_FIELD(union i3c_ccc_getmxds, fmt1)) {
 				mxds->fmt1.maxwr = data[0];
 				mxds->fmt1.maxrd = data[1];
 				/* It is unknown wither format 1 or format 2 is returned ahead of
 				 * time
 				 */
 				memset(&mxds->fmt2.maxrdturn, 0, sizeof(mxds->fmt2.maxrdturn));
-			} else if (len == sizeof(((union i3c_ccc_getmxds *)0)->fmt2)) {
+			} else if (len == SIZEOF_FIELD(union i3c_ccc_getmxds, fmt2)) {
 				mxds->fmt2.maxwr = data[0];
 				mxds->fmt2.maxrd = data[1];
 				memcpy(&mxds->fmt2.maxrdturn, &data[2],
@@ -909,4 +909,29 @@ int i3c_ccc_do_setbuscon(const struct device *controller,
 	ccc_payload.ccc.data_len = length;
 
 	return i3c_do_ccc(controller, &ccc_payload);
+}
+
+int i3c_ccc_do_getacccr(const struct i3c_device_desc *target,
+			 struct i3c_ccc_address *handoff_address)
+{
+	struct i3c_ccc_payload ccc_payload;
+	struct i3c_ccc_target_payload ccc_tgt_payload;
+	int ret;
+
+	__ASSERT_NO_MSG(target != NULL);
+	__ASSERT_NO_MSG(handoff_address != NULL);
+
+	ccc_tgt_payload.addr = target->dynamic_addr;
+	ccc_tgt_payload.rnw = 1;
+	ccc_tgt_payload.data = &handoff_address->addr;
+	ccc_tgt_payload.data_len = 1;
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_GETACCCR;
+	ccc_payload.targets.payloads = &ccc_tgt_payload;
+	ccc_payload.targets.num_targets = 1;
+
+	ret = i3c_do_ccc(target->bus, &ccc_payload);
+
+	return ret;
 }

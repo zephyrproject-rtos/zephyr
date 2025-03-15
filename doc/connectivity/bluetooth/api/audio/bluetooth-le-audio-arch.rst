@@ -294,6 +294,7 @@ GAF and the top layer profiles gave been implemented in Zephyr with the followin
                cluster=true;
                label="CCP";
                style=solid;
+               CCP_H [label="ccp.h"];
                TBS_H [label="tbs.h"];
             }
          }
@@ -331,6 +332,7 @@ GAF and the top layer profiles gave been implemented in Zephyr with the followin
       CAP_H -> MCS_H;
       CAP_H -> MCC_H;
       CAP_H -> MP_H;
+      CAP_H -> CCP_H;
       CAP_H -> TBS_H;
       CAP_H -> BAP_H;
       CAP_H -> BAP_PRESET_H;
@@ -341,6 +343,7 @@ GAF and the top layer profiles gave been implemented in Zephyr with the followin
       CSIP_H -> MCS_H;
       CSIP_H -> MCC_H;
       CSIP_H -> MP_H;
+      CSIP_H -> CCP_H;
       CSIP_H -> TBS_H;
       CSIP_H -> BAP_H;
       CSIP_H -> BAP_PRESET_H;
@@ -719,12 +722,12 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | CCP    | Call Control Server           | 1.0     | 3.0              | - Feature complete    | - API refactor                                   |
-   |        |                               |         |                  | - Shell Module        | - Sample Application                             |
+   | CCP    | Call Control Server           | 1.0     | 3.0              | - Feature complete    | - API refactor (in progress)                     |
+   |        |                               |         |                  | - Shell Module        | - Sample Application (in progress)               |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Call Control Client           | 1.0     | 3.0              | - Feature complete    | - API refactor                                   |
-   |        |                               |         |                  | - Shell Module        | - Sample Application                             |
+   |        | Call Control Client           | 1.0     | 3.0              | - Feature complete    | - API refactor (in progress)                     |
+   |        |                               |         |                  | - Shell Module        | - Sample Application (in progress)               |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
    | MCP    | Media Control Server          | 1.0     | 3.0              | - Feature complete    | - API refactor                                   |
@@ -1235,10 +1238,10 @@ The LE audio channel on Discord
 
 Zephyr has a specific Discord channel for LE Audio development, which is open to all.
 Find it here at https://discordapp.com/channels/720317445772017664/1207326649591271434 or simply
-search for "ble-audio" from within Discord.
-Since the ``#ble-audio`` channel is open for all,
+search for "bt-audio" from within Discord.
+Since the ``#bt-audio`` channel is open for all,
 we cannot discuss any specifications that are in development in that channel.
-For discussions that require a Bluetooth SIG membership we refer to the ``#bluetooth-sig``
+For discussions that require a Bluetooth SIG membership we refer to the ``#bt-sig``
 Discord channel found at https://discordapp.com/channels/720317445772017664/869172014018097162.
 
 Zephyr weekly meetings

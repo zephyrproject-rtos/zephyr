@@ -29,7 +29,7 @@
 		/* Assign GPIO24 to SIO (GPIO) for use as an interrupt source */
 		group1 {
 			/* Lacking a specific SIO pin definition, use the RP2040_PINMUX macro */
-			pinmux = <RP2040_PINMUX(24, RP2_PINCTRL_GPIO_FUNC_SIO)>;
+			pinmux = <RP2XXX_PINMUX(24, RP2_PINCTRL_GPIO_FUNC_SIO)>;
 			input-enable;
 		};
 	};

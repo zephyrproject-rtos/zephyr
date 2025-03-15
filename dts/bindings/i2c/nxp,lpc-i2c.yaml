@@ -1,8 +1,21 @@
 # Copyright (c) 2019 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: LPC I2C node
+description: LPC I2C
 
 compatible: "nxp,lpc-i2c"
 
 include: [i2c-controller.yaml, "nxp,lpc-flexcomm.yaml"]
+
+properties:
+  scl-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SCL signal is routed. This is only needed for I2C bus recovery
+      support.
+
+  sda-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SDA signal is routed. This is only needed for I2C bus recovery
+      support.

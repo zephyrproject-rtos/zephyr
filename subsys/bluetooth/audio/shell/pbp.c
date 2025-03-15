@@ -23,7 +23,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
-#include "host/shell/bt.h"
+#include "common/bt_shell_private.h"
 
 #define PBS_DEMO                'P', 'B', 'P'
 
@@ -35,7 +35,6 @@ const uint8_t pba_metadata[] = {
 NET_BUF_SIMPLE_DEFINE_STATIC(pbp_ad_buf, BT_PBP_MIN_PBA_SIZE + ARRAY_SIZE(pba_metadata));
 
 enum bt_pbp_announcement_feature pbp_features;
-extern const struct shell *ctx_shell;
 
 static int cmd_pbp_set_features(const struct shell *sh, size_t argc, char **argv)
 {
@@ -66,9 +65,9 @@ size_t pbp_ad_data_add(struct bt_data data[], size_t data_size)
 				      &pbp_ad_buf);
 
 	if (err != 0) {
-		shell_info(ctx_shell, "Create Public Broadcast Announcement");
+		bt_shell_info("Create Public Broadcast Announcement");
 	} else {
-		shell_error(ctx_shell, "Failed to create Public Broadcast Announcement: %d", err);
+		bt_shell_error("Failed to create Public Broadcast Announcement: %d", err);
 	}
 
 	__ASSERT(data_size > 0, "No space for Public Broadcast Announcement");

@@ -1,0 +1,6 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MCXW72_EVK
+	select SOC_MCXW727C_CPU0 if BOARD_MCXW72_EVK_MCXW727C_CPU0
+	select SOC_PART_NUMBER_MCXW727CMFTA

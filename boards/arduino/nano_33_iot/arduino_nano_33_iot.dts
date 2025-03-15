@@ -48,6 +48,13 @@
 	clock-frequency = <48000000>;
 };
 
+&adc {
+	status = "okay";
+
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+};
+
 &sercom1 {
 	status = "okay";
 	compatible = "atmel,sam0-spi";

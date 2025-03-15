@@ -37,12 +37,12 @@
 			#interrupt-cells = <3>;
 		};
 
-		intc2: intc@10680010 {
+		intc2: intc@10680050 {
 			compatible = "mediatek,adsp_intc";
 			interrupt-controller;
 			#interrupt-cells = <3>;
-			reg = <0x10680010 4>;
-			status-reg = <0x10680050>;
+			reg = <0x10680050 4>;
+			status-reg = <0x10680010>;
 			interrupts = <2 0 0>;
 			mask = <0x3f>;
 			interrupt-parent = <&core_intc>;

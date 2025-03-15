@@ -402,7 +402,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	switch (config->channel_direction) {
 	case MEMORY_TO_MEMORY:
 		is_periph = false;
-		if (block_config->source_gather_en) {
+		if (block_config->source_gather_en && (block_config->source_gather_interval != 0)) {
 			src_inc = block_config->source_gather_interval / width;
 			/* The current controller only supports incrementing the
 			 * source and destination up to 4 time transfer width
@@ -412,7 +412,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 			}
 		}
 
-		if (block_config->dest_scatter_en) {
+		if (block_config->dest_scatter_en && (block_config->dest_scatter_interval != 0)) {
 			dst_inc = block_config->dest_scatter_interval / width;
 			/* The current controller only supports incrementing the
 			 * source and destination up to 4 time transfer width

@@ -83,8 +83,7 @@ connected through the IPC instance:
    memory.
 #. It then sends a signal to the other domain or CPU, informing that the data
    has been written. Sending the signal to the other domain or CPU is repeated
-   with timeout specified by
-   :kconfig:option:`CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS` option.
+   with timeout.
 #. When the signal from the other domain or CPU is received, the magic number
    is read from ``rx-region``. If it is correct, the bonding process is finished
    and the backend informs the application by calling

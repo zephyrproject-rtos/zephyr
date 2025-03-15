@@ -49,27 +49,7 @@ Kit Contents:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | GPIO                  |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port-polling;  |
-|           |            | serial port-interrupt |
-+-----------+------------+-----------------------+
-
-
-The default configuration can be found in the Kconfig
-
-:zephyr_file:`boards/infineon/cy8cproto_062_4343w/cy8cproto_062_4343w_defconfig`
-
+.. zephyr:board-supported-hw::
 
 System Clock
 ============

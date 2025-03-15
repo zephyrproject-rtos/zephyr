@@ -22,7 +22,10 @@
 
 	leds {
 		compatible = "gpio-leds";
-		/* N.B. LD1 (orange) is not wired to MCU */
+		orange_led: led_1 {
+			gpios = <&mfx 0 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
 		green_led: led_2 {
 			gpios = <&gpioh 4 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
@@ -36,11 +39,36 @@
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_ENTER>;
 		};
+		joy_up: joystick_up {
+			label = "joystick up";
+			gpios = <&mfx 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+		joy_down: joystick_down {
+			label = "joystick down";
+			gpios = <&mfx 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+		joy_right: joystick_right {
+			label = "joystick right";
+			gpios = <&mfx 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+		joy_left: joystick_left {
+			label = "joystick left";
+			gpios = <&mfx 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
 	};
 
 	aliases {
 		led0 = &green_led;
+		led1 = &orange_led;
 		sw0 = &joy_sel;
+		sw1 = &joy_up;
+		sw2 = &joy_down;
+		sw3 = &joy_right;
+		sw4 = &joy_left;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
@@ -155,6 +183,15 @@
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pg13>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	mfx: gpio@42 {
+		compatible = "st,mfxstm32l152";
+		reg = <0x42>;
+		ngpios = <24>;
+		int-gpios = <&gpioi 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
 };
 
 &i2c3 {
@@ -190,7 +227,7 @@
 	pinctrl-0 = <&adc1_in5_pa0 &adc1_in12_pa7 &adc1_in15_pb0
 			&adc1_in4_pc3 &adc1_in13_pc4>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <1>;
 };
 

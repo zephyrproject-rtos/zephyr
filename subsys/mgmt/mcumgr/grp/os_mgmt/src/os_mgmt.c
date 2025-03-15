@@ -430,7 +430,10 @@ os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 #define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_SCRATCH
 #elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY)
 #define BOOTLOADER_MODE MCUBOOT_MODE_UPGRADE_ONLY
-#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET)
+#define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_OFFSET
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE) || \
+defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH)
 #define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_MOVE
 #elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP)
 #define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP
@@ -450,7 +453,7 @@ os_mgmt_bootloader_info(struct smp_streamer *ctxt)
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	struct zcbor_string query = { 0 };
 	size_t decoded;
-	bool ok;
+	bool ok = true;
 	bool has_output = false;
 
 #if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK)
@@ -1053,6 +1056,7 @@ static int os_mgmt_translate_error_code(uint16_t err)
 
 	case OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER:
 	case OS_MGMT_ERR_RTC_NOT_SET:
+	case OS_MGMT_ERR_QUERY_RESPONSE_VALUE_NOT_VALID:
 		rc = MGMT_ERR_ENOENT;
 		break;
 

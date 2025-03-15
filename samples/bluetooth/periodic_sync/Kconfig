@@ -12,4 +12,10 @@ config PER_ADV_NAME
 	help
 	  Name of target advertising for Periodic Advertising Synchronization.
 
+config PER_BLINK_LED0
+	bool "Blink led0"
+	depends on $(dt_alias_enabled,led0)
+	select GPIO
+	default y
+
 source "Kconfig.zephyr"

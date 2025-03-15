@@ -6,11 +6,28 @@
 
 menuconfig STREAM_FLASH
 	bool "Stream to flash"
-	select FLASH_PAGE_LAYOUT
 	help
 	  Enable support of stream to flash API
 
 if STREAM_FLASH
+
+config STREAM_FLASH_INSPECT
+	bool "Check whether device layout is OK with Stream Flash definition"
+	default y
+	select FLASH_PAGE_LAYOUT
+	help
+	  Runs simple check to find whether provided device can be used for
+	  stream flash by verifying that buffer size will fit into page.
+	  Once correct configuration has been established and tested it is
+	  worth to disable the option to cut out some unneeded code.
+
+config STREAM_FLASH_POST_WRITE_CALLBACK
+	bool "Write complete callback"
+	default y
+	help
+	  Enable callback that will be invoked once data is synchronized from
+	  stream to device. When callback is not used, disabling the option
+	  allows to save some code storage and RAM.
 
 config STREAM_FLASH_ERASE
 	bool "Perform erase operations"
@@ -18,6 +35,20 @@ config STREAM_FLASH_ERASE
 	help
 	  If disabled an external actor must erase the flash area being written
 	  to.
+	  Option available only if there is at least one device in, a configuration,
+	  that requires erase prior to write.
+
+config STREAM_FLASH_ERASE_ONLY_WHEN_SUPPORTED
+	bool "Check if device supports erase prior to attempting one"
+	depends on STREAM_FLASH_ERASE
+	depends on FLASH_HAS_NO_EXPLICIT_ERASE
+	help
+	  This is used in stream flash code to exclude invocation of erase on devices that do not
+	  have such requirement prior to write nor support rase as a way to increase write speed.
+	  Option is available only if there is a mix of devices, in a configuration, where some
+	  support erase and some do not. If user is sure to not use Stream Flash with devices that
+	  have no support for erase, this option may be disabled to discard small amount of code
+	  from final application.
 
 config STREAM_FLASH_PROGRESS
 	bool "Persistent stream write progress"

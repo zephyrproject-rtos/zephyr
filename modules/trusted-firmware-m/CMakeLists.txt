@@ -210,10 +210,6 @@ if (CONFIG_BUILD_WITH_TFM)
     set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
     set(TFM_TOOLCHAIN_PREFIX "arm-none-eabi")
     set(TFM_TOOLCHAIN_PATH ${GNUARMEMB_TOOLCHAIN_PATH}/bin)
-  elseif(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "xtools")
-    set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
-    set(TFM_TOOLCHAIN_PREFIX "arm-zephyr-eabi")
-    set(TFM_TOOLCHAIN_PATH ${XTOOLS_TOOLCHAIN_PATH}/arm-zephyr-eabi/bin)
   else()
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
@@ -256,6 +252,8 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
 
   list(APPEND TFM_CMAKE_ARGS -DTFM_TESTS_REVISION_CHECKS=OFF)
+
+  list(APPEND TFM_CMAKE_ARGS -DETHOS_DRIVER_PATH=${CONFIG_TFM_ETHOS_DRIVER_PATH_LOCAL})
 
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake

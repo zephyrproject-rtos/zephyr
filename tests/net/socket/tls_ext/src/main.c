@@ -399,6 +399,8 @@ static void test_common(int peer_verify)
 
 	r = k_thread_join(&server_thread, K_FOREVER);
 	zassert_equal(0, r, "k_thread_join() failed (%d)", r);
+
+	k_yield();
 }
 
 ZTEST(net_socket_tls_api_extension, test_tls_peer_verify_none)

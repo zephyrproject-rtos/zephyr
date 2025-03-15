@@ -1,0 +1,82 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt7xx_cm33_cpu1.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "mimxrt700_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP MIMXRT700-EVK board";
+	compatible = "nxp,mimxrt798s";
+
+	aliases {
+		led0 = &red_led;
+		sw0 = &user_button_1;
+	};
+
+	chosen {
+		zephyr,flash = &sram_code;
+		zephyr,sram = &sram0;
+		zephyr,console = &flexcomm19_lpuart19;
+		zephyr,shell-uart = &flexcomm19_lpuart19;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			status = "okay";
+			gpios = <&gpio8 6 GPIO_ACTIVE_HIGH>;
+			label = "User LED_RED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User SW6";
+			gpios = <&gpio8 5 (GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
+		};
+	};
+};
+
+&ctimer5 {
+	status = "okay";
+};
+
+&lpadc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+/*
+ * RT700-EVK board cm33_cpu1 uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer_cpu1 {
+	status = "okay";
+	wakeup-source;
+};
+
+&flexcomm19{
+	status = "okay";
+};
+
+&flexcomm19_lpuart19 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm19_lpuart>;
+	pinctrl-names = "default";
+};
+
+&gpio8 {
+	status = "okay";
+};

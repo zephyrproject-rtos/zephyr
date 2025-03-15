@@ -127,6 +127,10 @@
 	gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
 };
 
+&radio {
+	pa-voltage-mv = <1800>;
+};
+
 &bt_hci_silabs {
 	status = "okay";
 };

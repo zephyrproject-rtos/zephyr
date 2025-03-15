@@ -30,7 +30,7 @@
 /* Zephyr Logging */
 
 #define LOG_MODULE_NAME net_openthread_tcat
-#define LOG_LEVEL       CONFIG_OPENTHREAD_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -406,7 +406,7 @@ bool otPlatBleSupportsMultiRadio(otInstance *aInstance)
 {
 	OT_UNUSED_VARIABLE(aInstance);
 
-	return false;
+	return IS_ENABLED(CONFIG_OPENTHREAD_TCAT_MULTIRADIO_CAPABILITIES);
 }
 
 otError otPlatBleGetAdvertisementBuffer(otInstance *aInstance, uint8_t **aAdvertisementBuffer)
@@ -438,7 +438,7 @@ otError otPlatBleGapAdvStart(otInstance *aInstance, uint16_t aInterval)
 	ARG_UNUSED(aInstance);
 	ARG_UNUSED(aInterval);
 
-	int err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	int err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_2, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 
 	if (err != 0 && err != -EALREADY) {
 		LOG_WRN("Advertising failed to start (err %d)", err);
@@ -476,7 +476,7 @@ otError otPlatBleEnable(otInstance *aInstance)
 		LOG_WRN("BLE enable failed with error code %d", err);
 		return OT_ERROR_FAILED;
 	} else if (err == -EALREADY) {
-		err = k_sem_take(&ot_plat_ble_init_semaphore, K_MSEC(500));
+		bt_conn_cb_register(&conn_callbacks);
 		return OT_ERROR_NONE;
 	}
 

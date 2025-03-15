@@ -1,0 +1,19 @@
+identifier: mcxw72_evk/mcxw727c/cpu0
+name: NXP MCXW72_EVK
+type: mcu
+arch: arm
+ram: 264
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - can
+  - counter
+  - gpio
+  - i2c
+  - pinctrl
+  - pwm
+  - spi
+  - uart

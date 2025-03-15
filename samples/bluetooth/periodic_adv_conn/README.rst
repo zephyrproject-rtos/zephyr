@@ -7,7 +7,7 @@
 Overview
 ********
 
-A simple application demonstrating the initiator side of the BLE
+A simple application demonstrating the initiator side of the Bluetooth LE
 Periodic Advertising Connection Procedure.
 
 How the initiator decides the address of the synced device to connect to

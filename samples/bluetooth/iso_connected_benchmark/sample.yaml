@@ -1,5 +1,5 @@
 sample:
-  name: BLE ISO Connected
+  name: Bluetooth LE ISO Connected
   description: Bluetooth Low Energy ISO Connected Benchmark sample
 tests:
   sample.bluetooth.iso_connected_benchmark:

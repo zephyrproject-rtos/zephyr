@@ -21,7 +21,7 @@
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/buf.h>
 
-#include "../host/hci_ecc.h"
+#include "common/hci_common_internal.h"
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -184,13 +184,13 @@ static uint8_t sf_curr;
 #endif
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-int32_t    hci_hbuf_total;
-uint32_t    hci_hbuf_sent;
-uint32_t    hci_hbuf_acked;
-uint16_t    hci_hbuf_pend[CONFIG_BT_MAX_CONN];
+int32_t  hci_hbuf_total;
+uint32_t hci_hbuf_sent;
+uint32_t hci_hbuf_acked;
+uint16_t hci_hbuf_pend[CONFIG_BT_MAX_CONN];
 atomic_t hci_state_mask;
 static struct k_poll_signal *hbuf_signal;
-#endif
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 #if defined(CONFIG_BT_CONN)
 static uint32_t conn_count;
@@ -475,7 +475,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 		atomic_set_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
 		k_poll_signal_raise(hbuf_signal, 0x0);
 	}
-#endif
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 	hci_recv_fifo_reset();
 }
@@ -523,6 +523,22 @@ static void set_ctl_to_host_flow(struct net_buf *buf, struct net_buf **evt)
 	hci_hbuf_total = -hci_hbuf_total;
 }
 
+/* Host Number of Completed Packets command does not follow normal flow
+ * control of HCI commands and the Controller side HCI drivers that
+ * allocates HCI command buffers with K_NO_WAIT can end up running out
+ * of command buffers.
+ *
+ * Host will generate up to acl_pkts number of Host Number of Completed
+ * Packets command plus a number of normal HCI commands.
+ *
+ * Normal HCI commands follow the HCI command flow control using
+ * Num_HCI_Command_Packets return in HCI command complete and status.
+ *
+ * Note: Zephyr Controller does not support Num_HCI_Command_Packets > 1.
+ */
+BUILD_ASSERT(BT_BUF_HCI_ACL_RX_COUNT < BT_BUF_CMD_TX_COUNT,
+	     "Too low HCI command buffers compare to ACL Rx buffers.");
+
 static void host_buffer_size(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_host_buffer_size *cmd = (void *)buf->data;
@@ -536,15 +552,38 @@ static void host_buffer_size(struct net_buf *buf, struct net_buf **evt)
 		ccst->status = BT_HCI_ERR_CMD_DISALLOWED;
 		return;
 	}
-	/* fragmentation from controller to host not supported, require
+
+	/* Fragmentation from Controller to Host not supported, require
 	 * ACL MTU to be at least the LL MTU
 	 */
 	if (acl_mtu < LL_LENGTH_OCTETS_RX_MAX) {
+		LOG_ERR("FC: Require Host ACL MTU (%u) >= LL Max Data Length (%u)", acl_mtu,
+			LL_LENGTH_OCTETS_RX_MAX);
 		ccst->status = BT_HCI_ERR_INVALID_PARAM;
 		return;
 	}
 
-	LOG_DBG("FC: host buf size: %d", acl_pkts);
+	/* Host Number of Completed Packets command does not follow normal flow
+	 * control of HCI commands and the Controller side HCI drivers that
+	 * allocates HCI command buffers with K_NO_WAIT can end up running out
+	 * of command buffers.
+	 *
+	 * Host will generate up to acl_pkts number of Host Number of Completed
+	 * Packets command plus a number of normal HCI commands.
+	 *
+	 * Normal HCI commands follow the HCI command flow control using
+	 * Num_HCI_Command_Packets return in HCI command complete and status.
+	 *
+	 * Note: Zephyr Controller does not support Num_HCI_Command_Packets > 1.
+	 */
+	if (acl_pkts >= BT_BUF_CMD_TX_COUNT) {
+		LOG_WRN("FC: Host ACL packets (%u), BT_BUF_CMD_TX_COUNT (%u)", acl_pkts,
+			BT_BUF_CMD_TX_COUNT);
+		acl_pkts = BT_BUF_CMD_TX_COUNT - CONFIG_BT_CTLR_HCI_NUM_CMD_PKT_MAX;
+	}
+
+	LOG_DBG("FC: host buf size %u count %u", acl_mtu, acl_pkts);
+
 	hci_hbuf_total = -acl_pkts;
 }
 
@@ -586,7 +625,7 @@ static void host_num_completed_packets(struct net_buf *buf,
 	hci_hbuf_acked += count;
 	k_poll_signal_raise(hbuf_signal, 0x0);
 }
-#endif
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 static void read_auth_payload_timeout(struct net_buf *buf, struct net_buf **evt)
@@ -747,7 +786,7 @@ static int ctrl_bb_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS):
 		host_num_completed_packets(cmd, evt);
 		break;
-#endif
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case BT_OCF(BT_HCI_OP_READ_AUTH_PAYLOAD_TIMEOUT):
@@ -1048,10 +1087,6 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Set Default Periodic Advertising Sync Transfer Parameters */
 	rp->commands[41] |= BIT(1);
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
-
-#if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_SEND_ECC_EMULATION)
-	bt_hci_ecc_supported_commands(rp->commands);
-#endif /* CONFIG_BT_HCI_RAW && CONFIG_BT_SEND_ECC_EMULATION */
 
 	/* LE Read TX Power. */
 	rp->commands[38] |= BIT(7);
@@ -8158,8 +8193,11 @@ static void le_big_complete(struct pdu_data *pdu_data,
 			    struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_complete *sep;
+	uint32_t transport_latency_big;
 	struct ll_adv_iso_set *adv_iso;
+	uint32_t iso_interval_us;
 	struct lll_adv_iso *lll;
+	uint32_t big_sync_delay;
 	size_t evt_size;
 
 	adv_iso = node_rx->rx_ftr.param;
@@ -8176,9 +8214,36 @@ static void le_big_complete(struct pdu_data *pdu_data,
 		return;
 	}
 
-	/* FIXME: Fill sync delay and latency */
-	sys_put_le24(0, sep->sync_delay);
-	sys_put_le24(0, sep->latency);
+	/* BT Core v5.4 - Vol 6, Part B, Section 4.4.6.4:
+	 * BIG_Sync_Delay = (Num_BIS – 1) × BIS_Spacing + (NSE – 1) × Sub_Interval + MPT.
+	 *
+	 * BT Core v5.4 - Vol 6, Part G, Section 3.2.1: (Framed)
+	 * Transport_Latenct_BIG = BIG_Sync_Delay + PTO × (NSE / BN – IRC) * ISO_Interval +
+	 *                             ISO_Interval + SDU_Interval
+	 *
+	 * BT Core v5.4 - Vol 6, Part G, Section 3.2.2: (Unframed)
+	 * Transport_Latenct_BIG = BIG_Sync_Delay + (PTO × (NSE / BN – IRC) + 1) * ISO_Interval -
+	 *                             SDU_Interval
+	 */
+	iso_interval_us = lll->iso_interval * ISO_INT_UNIT_US;
+	big_sync_delay = ull_iso_big_sync_delay(lll->num_bis, lll->bis_spacing, lll->nse,
+						lll->sub_interval, lll->phy, lll->max_pdu,
+						lll->enc);
+	sys_put_le24(big_sync_delay, sep->sync_delay);
+
+	if (lll->framing) {
+		/* Framed */
+		transport_latency_big = big_sync_delay +
+					lll->pto * (lll->nse / lll->bn - lll->irc) *
+					iso_interval_us + iso_interval_us + lll->sdu_interval;
+	} else {
+		/* Unframed */
+		transport_latency_big = big_sync_delay +
+					(lll->pto * (lll->nse / lll->bn - lll->irc) + 1) *
+					iso_interval_us - lll->sdu_interval;
+	}
+
+	sys_put_le24(transport_latency_big, sep->latency);
 
 	sep->phy = find_lsb_set(lll->phy);
 	sep->nse = lll->nse;
@@ -8186,6 +8251,7 @@ static void le_big_complete(struct pdu_data *pdu_data,
 	sep->pto = lll->pto;
 	sep->irc = lll->irc;
 	sep->max_pdu = sys_cpu_to_le16(lll->max_pdu);
+	sep->iso_interval = sys_cpu_to_le16(lll->iso_interval);
 	sep->num_bis = lll->num_bis;
 
 	/* Connection handle list of all BISes in the BIG */
@@ -9094,7 +9160,7 @@ void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 			LL_ASSERT(handle < ARRAY_SIZE(hci_hbuf_pend));
 			hci_hbuf_pend[handle]++;
 		}
-#endif
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 		break;
 
 	default:
@@ -9300,6 +9366,7 @@ void hci_init(struct k_poll_signal *signal_host_buf)
 {
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	hbuf_signal = signal_host_buf;
-#endif
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
 	reset(NULL, NULL);
 }

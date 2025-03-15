@@ -13,8 +13,7 @@ config POSIX_PAGE_SIZE
 	  This option is not user-configurable.
 
 config POSIX_SHARED_MEMORY_OBJECTS
-	bool "POSIX shared memory objects [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "POSIX shared memory objects"
 	select SYS_HASH_FUNC32
 	select SYS_HASH_FUNC32_DJB2
 	select FDTABLE
@@ -27,11 +26,12 @@ config POSIX_SHARED_MEMORY_OBJECTS
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html#tag_24_03_04
 
 config POSIX_MAPPED_FILES
-	bool "POSIX memory-mapped files [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	imply MMU
+	bool "POSIX memory-mapped files"
 	help
 	  Select 'y' here and Zephyr will provide support for mmap(), msync(), and munmap().
+
+	  Note: This feature depends on hardware MMU support. If the underlying platform does not
+	  support an MMU, then affected POSIX API functions may return -1 and set errno to ENOTSUP.
 
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html
@@ -40,22 +40,26 @@ config POSIX_MAPPED_FILES
 if POSIX_MAPPED_FILES
 
 config POSIX_MEMLOCK
-	bool "POSIX memory locking [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "POSIX memory locking"
 	help
 	  Select 'y' here and Zephyr will provide support for mlockall() and munlockall().
+
+	  Note: This feature depends on hardware MMU support as well as DEMAND_PAGING. If the
+	  underlying platform does not support an MMU or DEMAND_PAGING, then affected POSIX API
+	  functions will return -1 and set errno to ENOTSUP.
 
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html#tag_24_03_04
 
 config POSIX_MEMLOCK_RANGE
-	bool "POSIX range memory locking [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	imply MMU
+	bool "POSIX range memory locking"
 	imply DEMAND_PAGING
 	help
 	  Select 'y' here and Zephyr will provide support for mlock() and munlock().
+
+	  Note: This feature depends on hardware MMU support. If the underlying platform does not
+	  support an MMU, then affected POSIX API functions will return -1 and set errno to ENOTSUP.
 
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html
@@ -64,8 +68,7 @@ config POSIX_MEMLOCK_RANGE
 endif
 
 config POSIX_MEMORY_PROTECTION
-	bool "POSIX memory protection [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "POSIX memory protection"
 	help
 	  Select 'y' here and Zephyr will provide support for mprotect().
 

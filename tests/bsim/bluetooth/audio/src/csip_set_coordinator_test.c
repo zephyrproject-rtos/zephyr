@@ -185,7 +185,8 @@ static bool is_discovered(const bt_addr_le_t *addr)
 
 static bool csip_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csip_set_coordinator_is_set_member(primary_inst->info.sirk, data)) {
+	if (primary_inst == NULL ||
+	    bt_csip_set_coordinator_is_set_member(primary_inst->info.sirk, data)) {
 		const bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
@@ -200,7 +201,7 @@ static bool csip_found(struct bt_data *data, void *user_data)
 
 		bt_addr_le_copy(&addr_found[members_found++], addr);
 
-		if (primary_inst->info.set_size == 0) {
+		if (primary_inst == NULL || primary_inst->info.set_size == 0) {
 			printk("Found member %u\n", members_found);
 		} else {
 			printk("Found member (%u / %u)\n", members_found,
@@ -218,16 +219,9 @@ static void csip_set_coordinator_scan_recv(const struct bt_le_scan_recv_info *in
 					   struct net_buf_simple *ad)
 {
 	/* We're only interested in connectable events */
-	if (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
-		if (primary_inst == NULL) {
-			/* Scanning for the first device */
-			if (members_found == 0) {
-				bt_addr_le_copy(&addr_found[members_found++],
-						info->addr);
-			}
-		} else { /* Scanning for set members */
-			bt_data_parse(ad, csip_found, (void *)info->addr);
-		}
+	if ((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0U &&
+	    (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0U) {
+		bt_data_parse(ad, csip_found, (void *)info->addr);
 	}
 }
 

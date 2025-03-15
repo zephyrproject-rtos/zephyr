@@ -12,6 +12,7 @@ tests:
       - cc3220sf_launchxl
       - disco_l475_iot1
       - reel_board
+      - siwx917_rb4338a
     integration_platforms:
       - cc3220sf_launchxl
   sample.net.wifi.mikroe_wifi_bt_click:
@@ -43,7 +44,7 @@ tests:
       - frdm_k64f
   sample.net.wifi.nrf70dk:
     extra_args:
-      - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
       - CONFIG_WIFI_CREDENTIALS=y
       - CONFIG_FLASH=y
       - CONFIG_FLASH_MAP=y
@@ -57,7 +58,7 @@ tests:
       - nrf7002dk/nrf5340/cpuapp/nrf7001
   sample.net.wifi.nrf7002ek:
     extra_args:
-      - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
       - SHIELD=nrf7002ek
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
@@ -68,7 +69,7 @@ tests:
   sample.net.wifi.nrf7002eb:
     extra_args:
       - CONFIG_NRF70_UTIL=y
-      - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
       - SHIELD=nrf7002eb
     platform_allow:
       - thingy53/nrf5340/cpuapp
@@ -76,7 +77,22 @@ tests:
       - thingy53/nrf5340/cpuapp
   sample.net.wifi.nxp_wifi:
     extra_args:
-      - CONFIG_NXP_WIFI_BUILD_ONLY_MODE=y
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
     platform_allow:
       - frdm_rw612
       - rd_rw612_bga
+  sample.net.wifi.esp32:
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - esp32_devkitc_wroom/esp32/procpu
+      - esp32s2_saola
+      - esp32c3_devkitm
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp8684_devkitm
+      - esp32c6_devkitc
+  sample.net.wifi.siwx91x_offloaded:
+    extra_args:
+      - CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD=y
+    platform_allow:
+      - siwx917_rb4338a

@@ -201,10 +201,12 @@ static bool drop_item_locked(struct mpsc_pbuf_buffer *buffer,
 
 	uint32_t rd_wlen = buffer->get_wlen(item);
 
-	/* If packet is busy need to be ommited. */
+	/* If packet is busy need to be omitted. */
 	if (!is_valid(item)) {
 		return false;
 	} else if (item->hdr.busy) {
+		bool ret = true;
+
 		MPSC_PBUF_DBG(buffer, "no space: Found busy packet %p (len:%d)", item, rd_wlen);
 		/* Add skip packet before claimed packet. */
 		if (free_wlen) {
@@ -215,15 +217,18 @@ static bool drop_item_locked(struct mpsc_pbuf_buffer *buffer,
 		buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, rd_wlen);
 
 		/* If allocation wrapped around the buffer and found busy packet
-		 * that was already ommited, skip it again.
+		 * that was already omitted, skip it again and indicate that no
+		 * packet was dropped.
 		 */
 		if (buffer->rd_idx == buffer->tmp_rd_idx) {
 			buffer->tmp_rd_idx = idx_inc(buffer, buffer->tmp_rd_idx, rd_wlen);
+			ret = false;
 		}
 
 		buffer->tmp_wr_idx = buffer->tmp_rd_idx;
 		buffer->rd_idx = buffer->tmp_rd_idx;
 		buffer->flags |= MPSC_PBUF_FULL;
+		return ret;
 	} else {
 		/* Prepare packet dropping. */
 		rd_idx_inc(buffer, rd_wlen);
@@ -373,7 +378,7 @@ union mpsc_pbuf_generic *mpsc_pbuf_alloc(struct mpsc_pbuf_buffer *buffer,
 			add_skip_item(buffer, free_wlen);
 			cont = true;
 		} else if (IS_ENABLED(CONFIG_MULTITHREADING) && !K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-			   !k_is_in_isr()) {
+			   !k_is_in_isr() && arch_irq_unlocked(key.key)) {
 			int err;
 
 			k_spin_unlock(&buffer->lock, key);
@@ -622,18 +627,28 @@ bool mpsc_pbuf_is_pending(struct mpsc_pbuf_buffer *buffer)
 void mpsc_pbuf_get_utilization(struct mpsc_pbuf_buffer *buffer,
 			       uint32_t *size, uint32_t *now)
 {
+	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
+
 	/* One byte is left for full/empty distinction. */
 	*size = (buffer->size - 1) * sizeof(int);
 	*now = get_usage(buffer) * sizeof(int);
+
+	k_spin_unlock(&buffer->lock, key);
 }
 
 int mpsc_pbuf_get_max_utilization(struct mpsc_pbuf_buffer *buffer, uint32_t *max)
 {
+	int rc;
+	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
 
-	if (!(buffer->flags & MPSC_PBUF_MAX_UTILIZATION)) {
-		return -ENOTSUP;
+	if (buffer->flags & MPSC_PBUF_MAX_UTILIZATION) {
+		*max = buffer->max_usage * sizeof(int);
+		rc = 0;
+	} else {
+		rc = -ENOTSUP;
 	}
 
-	*max = buffer->max_usage * sizeof(int);
-	return 0;
+	k_spin_unlock(&buffer->lock, key);
+
+	return rc;
 }

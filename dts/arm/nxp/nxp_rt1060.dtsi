@@ -16,23 +16,6 @@
 	};
 
 	flexram,num-ram-banks = <16>;
-	/* default fuse */
-	flexram,bank-spec = <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_ITCM>,
-			     <FLEXRAM_ITCM>,
-			     <FLEXRAM_ITCM>,
-			     <FLEXRAM_ITCM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>;
 };
 
 &ccm {
@@ -57,7 +40,7 @@
 				interrupts = <152 0>;
 				interrupt-names = "COMMON";
 				nxp,mdio = <&enet2_mdio>;
-				nxp,ptp-clock = <&enet_ptp_clock>;
+				nxp,ptp-clock = <&enet2_ptp_clock>;
 				status = "disabled";
 			};
 			enet2_mdio: mdio {

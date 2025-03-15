@@ -40,7 +40,7 @@ static void lvgl_keypad_process_event(struct input_event *evt, void *user_data)
 		return;
 	}
 
-	data->pending_event.state = evt->value ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
+	data->pending_event.state = evt->value ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
 	if (k_msgq_put(cfg->common_config.event_msgq, &data->pending_event, K_NO_WAIT) != 0) {
 		LOG_WRN("Could not put input data into keypad queue");
 	}

@@ -45,6 +45,12 @@ static void soc_rdc_init(void)
 	periphConfig.policy = RDC_DT_VAL(enet);
 	RDC_SetPeriphAccessConfig(rdc_inst, &periphConfig);
 #endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c3)) && DT_NODE_HAS_PROP(DT_NODELABEL(i2c3), rdc)
+	periphConfig.periph = kRDC_Periph_I2C3;
+	periphConfig.policy = RDC_DT_VAL(i2c3);
+	RDC_SetPeriphAccessConfig(rdc_inst, &periphConfig);
+#endif
 }
 #else
 
@@ -52,7 +58,19 @@ static void soc_rdc_init(void)
 
 #endif
 
+__weak void soc_clock_init(void)
+{
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c3))
+	/* Set I2C source to SysPLL1 Div5 160MHZ */
+	CLOCK_SetRootMux(kCLOCK_RootI2c3, kCLOCK_I2cRootmuxSysPll1Div5);
+	/* Set root clock to 160MHZ / 10 = 16MHZ */
+	CLOCK_SetRootDivider(kCLOCK_RootI2c3, 1U, 10U);
+	CLOCK_EnableClock(kCLOCK_I2c3);
+#endif
+}
+
 void soc_prep_hook(void)
 {
 	soc_rdc_init();
+	soc_clock_init();
 }

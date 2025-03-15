@@ -93,7 +93,12 @@ int z_impl_k_condvar_broadcast(struct k_condvar *condvar)
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_condvar, broadcast, condvar, woken);
 
-	z_reschedule(&lock, key);
+
+	if (woken == 0) {
+		k_spin_unlock(&lock, key);
+	} else {
+		z_reschedule(&lock, key);
+	}
 
 	return woken;
 }

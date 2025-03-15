@@ -81,7 +81,7 @@ static const scg_firc_config_t scg_firc_config = {
 	.trimConfig = NULL
 };
 
-static ALWAYS_INLINE void clk_init(void)
+__weak void clk_init(void)
 {
 	const scg_sys_clk_config_t scg_sys_clk_config_safe = {
 		.divSlow = kSCG_SysClkDivBy4,

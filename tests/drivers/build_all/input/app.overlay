@@ -269,34 +269,19 @@
 				rst-gpios = <&test_gpio 1 0>;
 			};
 
-			it8801_mfd: it8801@38 {
-				compatible = "ite,it8801-mfd";
-				reg = <0x38>;
-				irq-gpios = <&test_gpio 1 0>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				ioex_it8801_kbd: it8801_kbd@40  {
-					compatible = "ite,it8801-kbd";
-					reg = <0x40 1
-					       0x41 1
-					       0x42 1
-					       0x43 1>;
-					mfdctrl = <>;
-					kso-mapping = <0 1 20 3 4 5 6
-						       17 18 16 15 11 12>;
-					row-size = <8>;
-					col-size = <13>;
-
-					kscan_input: kscan-input {
-						compatible = "zephyr,kscan-input";
-					};
-				};
-			};
-
 			nunchuk@a {
 				reg = <0xa>;
 				compatible= "nintendo,nunchuk";
+			};
+
+			cy8cmbr3xxx@b {
+				compatible = "cypress,cy8cmbr3xxx";
+				status= "okay";
+				reg = <0xb>;
+				int-gpios = <&test_gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+				rst-gpios = <&test_gpio 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+				input-codes = <0 1 2 3 4 5 6 7>;
+				proximity-codes = <8>;
 			};
 		};
 

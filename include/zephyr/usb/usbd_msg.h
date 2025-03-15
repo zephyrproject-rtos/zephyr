@@ -52,6 +52,10 @@ enum usbd_msg_type {
 	USBD_MSG_CDC_ACM_LINE_CODING,
 	/** CDC ACM Line State update */
 	USBD_MSG_CDC_ACM_CONTROL_LINE_STATE,
+	/** USB DFU class detach request */
+	USBD_MSG_DFU_APP_DETACH,
+	/** USB DFU class download completed */
+	USBD_MSG_DFU_DOWNLOAD_COMPLETED,
 	/** Maximum number of message types */
 	USBD_MSG_MAX_NUMBER,
 };
@@ -70,6 +74,8 @@ static const char *const usbd_msg_type_list[] = {
 	"Stack error",
 	"CDC ACM line coding",
 	"CDC ACM control line state",
+	"DFU detach request",
+	"DFU download completed",
 };
 
 BUILD_ASSERT(ARRAY_SIZE(usbd_msg_type_list) == USBD_MSG_MAX_NUMBER,

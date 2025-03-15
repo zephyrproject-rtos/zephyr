@@ -1,0 +1,54 @@
+# Copyright (c), 2024 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP PF1550 PMIC
+
+  The PMIC has two buck converters and three LDOs. All need to be defined as
+  children nodes, strictly following the BUCK1..3, LDO1..3 node names. For
+  example:
+
+  pmic@8 {
+    reg = <0x8>;
+    ...
+    regulators {
+      compatible = nxp,pf1550-regulator";
+
+      BUCK1 {
+        /* all properties for BUCK1 */
+      };
+      BUCK2 {
+        /* all properties for BUCK2 */
+      };
+      BUCK3 {
+        /* all properties for BUCK3 */
+      };
+      LDO1 {
+        /* all properties for LDO1 */
+      };
+      LDO2 {
+        /* all properties for LDO2 */
+      };
+      LDO3 {
+        /* all properties for LDO3 */
+      };
+    };
+  };
+
+compatible: "nxp,pf1550-regulator"
+
+include: base.yaml
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-init-microvolt
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-init-microamp
+        - regulator-max-microamp
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-initial-mode
+        - regulator-allowed-modes

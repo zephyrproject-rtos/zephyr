@@ -197,6 +197,13 @@ wakeup_request_error:
 	return ret;
 }
 
+void usbd_self_powered(struct usbd_context *uds_ctx, const bool status)
+{
+	usbd_device_lock(uds_ctx);
+	uds_ctx->status.self_powered = status;
+	usbd_device_unlock(uds_ctx);
+}
+
 bool usbd_is_suspended(struct usbd_context *uds_ctx)
 {
 	return uds_ctx->status.suspended;
@@ -249,6 +256,7 @@ int usbd_enable(struct usbd_context *const uds_ctx)
 {
 	int ret;
 
+	k_sched_lock();
 	usbd_device_lock(uds_ctx);
 
 	if (!usbd_is_initialized(uds_ctx)) {
@@ -279,6 +287,8 @@ int usbd_enable(struct usbd_context *const uds_ctx)
 
 enable_exit:
 	usbd_device_unlock(uds_ctx);
+	k_sched_unlock();
+
 	return ret;
 }
 

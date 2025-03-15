@@ -61,10 +61,10 @@ config GNSS_INIT_PRIORITY
 	  Driver initialization priority for GNSS drivers.
 
 config GNSS_U_BLOX_PROTOCOL
-	bool "GNSS U-BLOX protocol"
+	bool
 	select MODEM_UBX
 	help
-	  Enable gnss u-blox protocol.
+	  Hidden option that enables gnss u-blox protocol.
 
 choice GNSS_REFERENCE_FRAME
 	bool "GNSS reference frame datum"

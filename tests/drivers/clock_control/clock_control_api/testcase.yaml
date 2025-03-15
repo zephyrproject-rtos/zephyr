@@ -13,6 +13,7 @@ tests:
       - sltb010a@0
       - xg24_dk2601b
       - xg27_dk2602a
+      - xg29_rb4412a
     integration_platforms:
       - esp32_devkitc_wroom/esp32/procpu
   drivers.clock.clock_control_nrf5:
@@ -21,6 +22,7 @@ tests:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
       - nrf9160dk/nrf9160
+      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
     integration_platforms:
@@ -30,6 +32,7 @@ tests:
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
+      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
     integration_platforms:

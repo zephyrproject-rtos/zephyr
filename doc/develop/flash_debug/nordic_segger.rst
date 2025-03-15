@@ -109,13 +109,13 @@ temporarily disable ModemManager by running these commands:
    systemctl stop ModemManager.service
    systemctl disable ModemManager.service
 
-You can also `blacklist Segger devices by editing udev rules`_ so ModemManager
+You can also `blocklist Segger devices by editing udev rules`_ so ModemManager
 ignores them, by running:
 
 .. code-block:: bash
 
    sudo sh -c 'echo "ATTRS{idVendor}==\"1366\", ENV{ID_MM_DEVICE_IGNORE}=\"1\" " \
-     >> /etc/udev/rules.d/99-segger-modemmanager-blacklist.rules'
+     >> /etc/udev/rules.d/99-segger-modemmanager-blocklist.rules'
    sudo service udev restart
 
 A fix for this is expected in ModemManager 1.8 and new firmware for the Segger IMCUs.
@@ -245,6 +245,6 @@ References
 .. _Segger Ozone Download: https://www.segger.com/downloads/jlink#Ozone
 
 .. _ModemManager send AT commands to TTY-like devices: https://bugs.freedesktop.org/show_bug.cgi?id=85007
-.. _blacklist Segger devices by editing udev rules: http://www.at91.com/linux4sam/bin/view/Linux4SAM/SoftwareTools#Device_or_resource_busy_dev_ttyA
+.. _blocklist Segger devices by editing udev rules: http://www.at91.com/linux4sam/bin/view/Linux4SAM/SoftwareTools#Device_or_resource_busy_dev_ttyA
 
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html

@@ -6,9 +6,10 @@ simulation:
 arch: riscv
 toolchain:
   - zephyr
-  - xtools
 supported:
   - netif
+ram: 262144
+flash: 32768
 testing:
   default: true
   ignore_tags:

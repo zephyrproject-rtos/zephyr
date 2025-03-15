@@ -28,6 +28,13 @@ config ARM_SCMI_PINCTRL_HELPERS
 	help
 	  Enable support for SCMI pinctrl protocol helper functions.
 
+config ARM_SCMI_POWER_DOMAIN_HELPERS
+	bool "Helper functions for SCMI power domain protocol"
+	default y
+	depends on DT_HAS_ARM_SCMI_POWER_ENABLED
+	help
+	  Enable support for SCMI power domain protocol helper functions.
+
 config ARM_SCMI_SHMEM
 	bool "SCMI shared memory (SHMEM) driver"
 	default y

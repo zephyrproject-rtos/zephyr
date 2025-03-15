@@ -103,6 +103,10 @@
 #define FUNC_ALIAS(real_func, new_alias, return_type) \
 	return_type new_alias() ALIAS_OF(real_func)
 
+#if TOOLCHAIN_GCC_VERSION < 40500
+#define __builtin_unreachable() __builtin_trap()
+#endif
+
 #if defined(CONFIG_ARCH_POSIX) && !defined(_ASMLANGUAGE)
 #include <zephyr/arch/posix/posix_trace.h>
 
@@ -683,4 +687,19 @@ do {                                                                    \
 	_Pragma("GCC diagnostic pop")
 
 #endif /* !_LINKER */
+
+#define _TOOLCHAIN_DISABLE_WARNING(compiler, warning)                                              \
+	TOOLCHAIN_PRAGMA(compiler diagnostic push)                                                 \
+	TOOLCHAIN_PRAGMA(compiler diagnostic ignored warning)
+
+#define _TOOLCHAIN_ENABLE_WARNING(compiler, warning) TOOLCHAIN_PRAGMA(compiler diagnostic pop)
+
+#define TOOLCHAIN_DISABLE_WARNING(warning) _TOOLCHAIN_DISABLE_WARNING(GCC, warning)
+#define TOOLCHAIN_ENABLE_WARNING(warning) _TOOLCHAIN_ENABLE_WARNING(GCC, warning)
+
+#if defined(__GNUC__) && !defined(__clang__)
+#define TOOLCHAIN_DISABLE_GCC_WARNING(warning) _TOOLCHAIN_DISABLE_WARNING(GCC, warning)
+#define TOOLCHAIN_ENABLE_GCC_WARNING(warning)  _TOOLCHAIN_ENABLE_WARNING(GCC, warning)
+#endif
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

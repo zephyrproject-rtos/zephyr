@@ -23,6 +23,7 @@ menuconfig NRF_802154_RADIO_DRIVER
 	depends on HAS_HW_NRF_RADIO_IEEE802154
 	select DYNAMIC_INTERRUPTS
 	select ENTROPY_GENERATOR
+	select CLOCK_CONTROL
 	depends on !$(dt_nodelabel_enabled,timer1)
 	help
 	  This option enables nRF IEEE 802.15.4 radio driver in Zephyr. Note,
@@ -108,7 +109,7 @@ if NRF_802154_SER_RADIO
 
 config NRF_802154_SER_RADIO_INIT_PRIO
 	int "nRF52 IEEE 802.15.4 serialization initialization priority"
-	default 51
+	default 53
 	help
 	  Set the initialization priority number. Do not mess with it unless
 	  you know what you are doing.

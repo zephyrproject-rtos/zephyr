@@ -17,7 +17,6 @@ extern "C" {
 #endif
 
 /* Some stm32 devices do not have all the LL_PWR_WAKEUP_PINx */
-#define LL_PWR_WAKEUP_PIN0 0
 #ifndef LL_PWR_WAKEUP_PIN3
 #define LL_PWR_WAKEUP_PIN3 0
 #endif /* LL_PWR_WAKEUP_PIN3 */

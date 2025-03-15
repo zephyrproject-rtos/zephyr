@@ -5,13 +5,13 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/emul.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/adltc2990.h>
 #include <zephyr/ztest.h>
 
-#include "adltc2990.h"
 #include "adltc2990_emul.h"
 #include "adltc2990_reg.h"
+#include "adltc2990_internal.h"
 
 /* Colllection of common assertion macros */
 #define CHECK_SINGLE_ENDED_VOLTAGE(sensor_val, index, pin_voltage, r1, r2)                         \
@@ -385,12 +385,16 @@ ZTEST_F(adltc2990_7_3, test_available_channels)
 ZTEST_F(adltc2990_7_3, test_is_device_busy)
 {
 	uint8_t is_busy = BIT(0);
+	bool result;
 
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_STATUS, &is_busy);
-	zassert_equal(-EBUSY, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_ALL));
+	adltc2990_is_busy(fixture->dev, &result);
+	zassert_equal(1, result, "expected 1, got %d", result);
+
 	is_busy = 0;
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_STATUS, &is_busy);
-	zassert_equal(0, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_ALL));
+	adltc2990_is_busy(fixture->dev, &result);
+	zassert_equal(0, result, "expected 0, got %d", result);
 }
 
 ZTEST_F(adltc2990_7_3, test_die_temperature)

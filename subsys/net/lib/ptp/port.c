@@ -89,8 +89,8 @@ static int port_msg_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_so
 static void port_timer_set_timeout(struct k_timer *timer, uint8_t factor, int8_t log_seconds)
 {
 	uint64_t timeout = log_seconds < 0 ?
-		(uint64_t)((NSEC_PER_SEC * factor) >> (log_seconds * -1)) :
-		(uint64_t)((NSEC_PER_SEC * factor) << log_seconds);
+		((uint64_t)NSEC_PER_SEC * factor) >> -log_seconds :
+		((uint64_t)NSEC_PER_SEC * factor) << log_seconds;
 
 	k_timer_start(timer, K_NSEC(timeout), K_NO_WAIT);
 }
@@ -103,11 +103,11 @@ static void port_timer_set_timeout_random(struct k_timer *timer,
 	uint64_t timeout, random_ns;
 
 	if (log_seconds < 0) {
-		timeout = (uint64_t)((NSEC_PER_SEC * min_factor) >> -log_seconds);
-		random_ns = (uint64_t)(NSEC_PER_SEC >> -log_seconds);
+		timeout = ((uint64_t)NSEC_PER_SEC * min_factor) >> -log_seconds;
+		random_ns = (uint64_t)NSEC_PER_SEC >> -log_seconds;
 	} else {
-		timeout = (uint64_t)((NSEC_PER_SEC * min_factor) << log_seconds);
-		random_ns = (uint64_t)((span * NSEC_PER_SEC) << log_seconds);
+		timeout = ((uint64_t)NSEC_PER_SEC * min_factor) << log_seconds;
+		random_ns = ((uint64_t)span * NSEC_PER_SEC) << log_seconds;
 	}
 
 	timeout = (uint64_t)(timeout + (random_ns * (sys_rand32_get() % (1 << 15) + 1) >> 15));
@@ -1010,7 +1010,7 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	if (dds->n_ports > CONFIG_PTP_NUM_PORTS) {
+	if (dds->n_ports >= CONFIG_PTP_NUM_PORTS) {
 		LOG_WRN("Exceeded number of PTP Ports.");
 		return;
 	}

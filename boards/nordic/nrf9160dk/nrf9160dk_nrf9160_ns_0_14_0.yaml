@@ -4,7 +4,6 @@ type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
-  - xtools
   - zephyr
 ram: 128
 flash: 192
@@ -19,3 +18,4 @@ supported:
   - netif:modem
   - gpio
 vendor: nordic
+sysbuild: true

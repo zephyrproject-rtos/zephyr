@@ -13,6 +13,8 @@ schema;append-schema:
       type: str
     EXTRA_CONF_FILE:
       type: str
+    SB_EXTRA_CONF_FILE:
+      type: str
     DTS_EXTRA_CPPFLAGS:
       type: str
 

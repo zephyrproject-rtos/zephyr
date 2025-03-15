@@ -1135,23 +1135,22 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_val_new)
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_unset_val)
 {
-	struct bt_audio_codec_cap codec_cap =
-		BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000,
-				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_FREQ,
-							BT_AUDIO_CODEC_CFG_FREQ_16KHZ)},
-				   {});
-	const uint8_t expected_data = BT_AUDIO_CODEC_CFG_FREQ_16KHZ;
+	struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP(
+		BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000,
+		{BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CAP_TYPE_FREQ, BT_AUDIO_CODEC_CAP_FREQ_16KHZ)},
+		{});
+	const uint8_t expected_data = BT_AUDIO_CODEC_CAP_FREQ_16KHZ;
 	const uint8_t *data;
 	int ret;
 
-	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CFG_FREQ, &data);
+	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FREQ, &data);
 	zassert_equal(ret, sizeof(expected_data), "Unexpected return value %d", ret);
 	zassert_equal(data[0], expected_data, "Unexpected return value %d", ret);
 
-	ret = bt_audio_codec_cap_unset_val(&codec_cap, BT_AUDIO_CODEC_CFG_FREQ);
+	ret = bt_audio_codec_cap_unset_val(&codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FREQ);
 	zassert_true(ret >= 0, "Unexpected return value %d", ret);
 
-	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CFG_FREQ, &data);
+	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FREQ, &data);
 	zassert_equal(ret, -ENODATA, "Unexpected return value %d", ret);
 }
 

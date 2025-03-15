@@ -722,12 +722,6 @@ Given the following example project layout:
 * If this is build with ``FILE_SUFFIX`` set to ``mouse`` for ``qemu_cortex_m3`` then
   ``prj_mouse.conf`` will be used and ``boards/qemu_cortex_m3_mouse.overlay`` will be used.
 
-.. note::
-
-   When ``CONF_FILE`` is set in the form of ``prj_X.conf`` then the ``X`` will be used as the
-   build type. If this is combined with ``FILE_SUFFIX`` then the file suffix option will take
-   priority over the build type.
-
 Application-Specific Code
 *************************
 
@@ -1202,6 +1196,11 @@ boilerplate with ``find_package(Zephyr ...)``.
    be provided, for example ``list(APPEND BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/<extra-board-root>)``.
    When using ``-DBOARD_ROOT=<board-root>`` both absolute and relative paths can
    be used. Relative paths are treated relatively to the application directory.
+
+.. note::
+
+   When using sysbuild, then ``BOARD_ROOT`` must defined in a module or in the sysbuild
+   ``CMakeLists.txt`` file, see :ref:`sysbuild_var_override` for details.
 
 SOC Definitions
 ===============

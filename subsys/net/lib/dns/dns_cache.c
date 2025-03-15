@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/net_ip.h>
 #include "dns_cache.h"
 
 LOG_MODULE_REGISTER(net_dns_cache, CONFIG_DNS_RESOLVER_LOG_LEVEL);
@@ -97,13 +98,21 @@ int dns_cache_remove(struct dns_cache *cache, char const *query)
 	return 0;
 }
 
-int dns_cache_find(struct dns_cache const *cache, const char *query, struct dns_addrinfo *addrinfo,
-		   size_t addrinfo_array_len)
+int dns_cache_find(struct dns_cache const *cache, const char *query, enum dns_query_type type,
+		   struct dns_addrinfo *addrinfo, size_t addrinfo_array_len)
 {
 	size_t found = 0;
+	sa_family_t family;
 
 	NET_DBG("Find \"%s\"", query);
 	if (cache == NULL || query == NULL || addrinfo == NULL || addrinfo_array_len <= 0) {
+		return -EINVAL;
+	}
+	if (type == DNS_QUERY_TYPE_A) {
+		family = AF_INET;
+	} else if (type == DNS_QUERY_TYPE_AAAA) {
+		family = AF_INET6;
+	} else {
 		return -EINVAL;
 	}
 	if (strlen(query) >= CONFIG_DNS_RESOLVER_MAX_QUERY_LEN) {
@@ -122,6 +131,9 @@ int dns_cache_find(struct dns_cache const *cache, const char *query, struct dns_
 			continue;
 		}
 		if (strcmp(cache->entries[i].query, query) != 0) {
+			continue;
+		}
+		if (cache->entries[i].data.ai_family != family) {
 			continue;
 		}
 		if (found >= addrinfo_array_len) {

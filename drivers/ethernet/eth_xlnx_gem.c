@@ -45,6 +45,9 @@ static int  eth_xlnx_gem_start_device(const struct device *dev);
 static int  eth_xlnx_gem_stop_device(const struct device *dev);
 static enum ethernet_hw_caps
 	eth_xlnx_gem_get_capabilities(const struct device *dev);
+static int  eth_xlnx_gem_get_config(const struct device *dev,
+				    enum ethernet_config_type type,
+				    struct ethernet_config *config);
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *eth_xlnx_gem_stats(const struct device *dev);
 #endif
@@ -69,6 +72,7 @@ static const struct ethernet_api eth_xlnx_gem_apis = {
 	.send		  = eth_xlnx_gem_send,
 	.start		  = eth_xlnx_gem_start_device,
 	.stop		  = eth_xlnx_gem_stop_device,
+	.get_config	  = eth_xlnx_gem_get_config,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats	  = eth_xlnx_gem_stats,
 #endif
@@ -652,6 +656,58 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
 	}
 
 	return caps;
+}
+
+/**
+ * @brief GEM hardware configuration data request function
+ * Returns hardware configuration details of the specified device
+ * instance. Multiple hardware configuration items can be queried
+ * depending on the type parameter. The range of configuration items
+ * that can be queried is specified by the Ethernet subsystem.
+ * The queried configuration data is returned via a struct which can
+ * accommodate for all supported configuration items, to which the
+ * caller must provide a valid pointer.
+ * Currently only supports querying the RX and TX hardware checksum
+ * capabilities of the specified device instance.
+ *
+ * @param dev Pointer to the device data
+ * @param type The hardware configuration item to be queried
+ * @param config Pointer to the struct into which the queried
+ *               configuration data is written.
+ * @return 0 if the specified configuration item was successfully
+ *         queried, -ENOTSUP if the specified configuration item
+ *         is not supported by this function.
+ */
+static int eth_xlnx_gem_get_config(const struct device *dev,
+				   enum ethernet_config_type type,
+				   struct ethernet_config *config)
+{
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
+		if (dev_conf->enable_rx_chksum_offload) {
+			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
+						 ETHERNET_CHECKSUM_SUPPORT_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_UDP;
+		} else {
+			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_NONE;
+		}
+		return 0;
+	case ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT:
+		if (dev_conf->enable_tx_chksum_offload) {
+			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
+						 ETHERNET_CHECKSUM_SUPPORT_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_UDP;
+		} else {
+			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_NONE;
+		}
+		return 0;
+	default:
+		return -ENOTSUP;
+	};
 }
 
 #ifdef CONFIG_NET_STATISTICS_ETHERNET

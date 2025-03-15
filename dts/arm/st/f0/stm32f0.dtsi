@@ -348,7 +348,8 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 8 14 29 42 56 72 240>;
 			num-sampling-time-common-channels = <1>;
-			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_NONE";
 		};
 
 		dma1: dma@40020000 {

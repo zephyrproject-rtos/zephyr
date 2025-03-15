@@ -745,14 +745,13 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value,
 	int size;
 
 	/* Get the TLV header only on first read. */
-	if (opaque->remaining == 0) {
+	if (opaque->offset == 0) {
 		size = oma_tlv_get(&tlv, in, false);
 		if (size < 0) {
 			return size;
 		}
 
 		opaque->len = tlv.length;
-		opaque->remaining = tlv.length;
 	}
 
 	return lwm2m_engine_get_opaque_more(in, value, buflen,

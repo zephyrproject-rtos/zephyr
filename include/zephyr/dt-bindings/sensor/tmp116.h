@@ -26,6 +26,16 @@
 #define TMP116_DT_ODR_16000_MS 0x380
 /** @} */
 
+/**
+ * @defgroup TMP116_OS Temperature average sample count
+ * @{
+ */
+#define TMP116_DT_OVERSAMPLING_1   0
+#define TMP116_DT_OVERSAMPLING_8   0x20
+#define TMP116_DT_OVERSAMPLING_32  0x40
+#define TMP116_DT_OVERSAMPLING_64  0x60
+/** @} */
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_TI_TMP116_H_ */

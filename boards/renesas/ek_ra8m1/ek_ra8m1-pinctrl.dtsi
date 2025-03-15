@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -68,6 +68,14 @@
 		};
 	};
 
+	dac0_default: dac0_default {
+		group1 {
+			/* output */
+			psels = <RA_PSEL(RA_PSEL_DAC, 0, 14)>;
+			renesas,analog-enable;
+		};
+	};
+
 	spi1_default: spi1_default {
 		group1 {
 			/* MISO MOSI RSPCK SSL*/
@@ -118,6 +126,33 @@
 	usbhs_default: usbhs_default {
 		group1 {
 			psels = <RA_PSEL(RA_PSEL_USBHS, 11, 1)>; /* VBUS */
+			drive-strength = "high";
+		};
+	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 6)>, /* SDCD */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 7)>, /* SDCMD */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 4)>, /* SDDATA0 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 3)>, /* SDDATA1 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 2)>, /* SDDATA2 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 1)>, /* SDDATA3 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 5)>; /* SDWP */
+			drive-strength = "high";
+		};
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 8)>; /* SDCLK */
+			drive-strength = "highspeed-high";
+		};
+	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			/* USBP USBN */
+			psels = <RA_PSEL(RA_PSEL_USBFS, 8, 15)>,
+				<RA_PSEL(RA_PSEL_USBFS, 8, 14)>,
+				<RA_PSEL(RA_PSEL_USBFS, 4, 7)>;
 			drive-strength = "high";
 		};
 	};

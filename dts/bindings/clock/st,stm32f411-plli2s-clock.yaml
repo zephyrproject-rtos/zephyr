@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32F411 PLL I2S node binding:
+  STM32F411 PLL I2S.
 
   Fully configurable I2S dedicated PLL.
 

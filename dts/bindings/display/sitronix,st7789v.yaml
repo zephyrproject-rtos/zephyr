@@ -96,5 +96,13 @@ properties:
     required: true
     description: RGB Interface Control Parameter
 
+  ready-time-ms:
+    type: int
+    default: 40
+    description: |
+      Time it takes for the device from power up to become responsive and
+      accepting commands. Defaults to 40ms (found by trial and error) if not
+      provided.
+
   mipi-mode:
     required: true

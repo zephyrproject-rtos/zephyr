@@ -1,0 +1,57 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# This file contains Kconfig options and defaults for configuring the USB
+# device stack and CDC ACM instance to be used as the default serial backend
+# for logging or shell.
+
+
+menuconfig CDC_ACM_SERIAL_INITIALIZE_AT_BOOT
+	bool "Initialize USB device and CDC ACM UART at boot"
+	depends on USBD_CDC_ACM_CLASS
+	help
+	  This is intended for use with cdc-acm-snippet or as a default serial
+	  backend only in applications where no other USB features are
+	  required, configured, and enabled.
+
+if CDC_ACM_SERIAL_INITIALIZE_AT_BOOT
+
+config CDC_ACM_SERIAL_MANUFACTURER_STRING
+	string "USB device manufacturer string descriptor"
+	default "Zephyr Project"
+	help
+	  USB device manufacturer string descriptor.
+
+config CDC_ACM_SERIAL_PRODUCT_STRING
+	string "USB device product string descriptor"
+	default "CDC ACM serial backend"
+	help
+	  USB device product string descriptor.
+
+config CDC_ACM_SERIAL_VID
+	hex "USB device Vendor ID"
+	default 0x2fe3
+	help
+	  You must use your own VID for samples and applications outside of
+	  Zephyr Project.
+
+config CDC_ACM_SERIAL_PID
+	hex "USB device Product ID"
+	default 0x0004
+	help
+	  You must use your own PID for samples and applications outside of
+	  Zephyr Project.
+
+config CDC_ACM_SERIAL_SELF_POWERED
+	bool "USB device Self-powered attribute"
+	help
+	  Set the Self-powered attribute in the configuration.
+
+config CDC_ACM_SERIAL_MAX_POWER
+	int "USB device bMaxPower value"
+	default 125
+	range 0 250
+	help
+	  bMaxPower value in the configuration in 2 mA units.
+
+endif #CDC_ACM_SERIAL_INITIALIZE_AT_BOOT

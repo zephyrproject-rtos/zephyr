@@ -93,9 +93,9 @@
 				/* read-only; */
 			};
 
-			test_spi_mb85rsxx: mb85rsxx@0 {
+			test_spi_mb85rsxx: mb85rsxx@1 {
 				compatible = "fujitsu,mb85rsxx";
-				reg = <0x0>;
+				reg = <0x1>;
 				spi-max-frequency = <DT_FREQ_M(25)>;
 				size = <DT_SIZE_K(128)>;
 			};

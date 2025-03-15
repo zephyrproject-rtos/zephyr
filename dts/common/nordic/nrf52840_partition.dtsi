@@ -22,10 +22,12 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x0000C000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x00077000>;
 		};
+
 		slot1_partition: partition@83000 {
 			label = "image-1";
 			reg = <0x00083000 0x00075000>;

@@ -4,16 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <errno.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/types.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
 #include "common.h"
 
-CREATE_FLAG(flag_is_connected);
-CREATE_FLAG(flag_is_encrypted);
-CREATE_FLAG(flag_discover_complete);
-CREATE_FLAG(flag_short_subscribed);
-CREATE_FLAG(flag_long_subscribed);
+DEFINE_FLAG_STATIC(flag_is_connected);
+DEFINE_FLAG_STATIC(flag_is_encrypted);
+DEFINE_FLAG_STATIC(flag_discover_complete);
+DEFINE_FLAG_STATIC(flag_short_subscribed);
+DEFINE_FLAG_STATIC(flag_long_subscribed);
 
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;
@@ -27,7 +37,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
+		TEST_FAIL("Failed to connect to %s (%u)", addr, err);
 		return;
 	}
 
@@ -57,9 +67,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
 	if (err) {
-		FAIL("Encryption failer (%d)\n", err);
+		TEST_FAIL("Encryption failure (%d)", err);
 	} else if (level < BT_SECURITY_L2) {
-		FAIL("Insufficient sec level (%d)\n", level);
+		TEST_FAIL("Insufficient sec level (%d)", level);
 	} else {
 		SET_FLAG(flag_is_encrypted);
 	}
@@ -91,13 +101,13 @@ void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct ne
 	printk("Stopping scan\n");
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		FAIL("Could not stop scan: %d");
+		TEST_FAIL("Could not stop scan: %d");
 		return;
 	}
 
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &g_conn);
 	if (err != 0) {
-		FAIL("Could not connect to peer: %d", err);
+		TEST_FAIL("Could not connect to peer: %d", err);
 	}
 }
 
@@ -108,7 +118,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 	if (attr == NULL) {
 		if (chrc_handle == 0 || long_chrc_handle == 0) {
-			FAIL("Did not discover chrc (%x) or long_chrc (%x)", chrc_handle,
+			TEST_FAIL("Did not discover chrc (%x) or long_chrc (%x)", chrc_handle,
 			     long_chrc_handle);
 		}
 
@@ -130,7 +140,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 		err = bt_gatt_discover(conn, params);
 		if (err != 0) {
-			FAIL("Discover failed (err %d)\n", err);
+			TEST_FAIL("Discover failed (err %d)", err);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -165,7 +175,7 @@ static void gatt_discover(enum bt_att_chan_opt opt)
 
 	err = bt_gatt_discover(g_conn, &discover_params);
 	if (err != 0) {
-		FAIL("Discover failed(err %d)\n", err);
+		TEST_FAIL("Discover failed(err %d)", err);
 	}
 
 	WAIT_FOR_FLAG(flag_discover_complete);
@@ -176,7 +186,7 @@ static void test_short_subscribed(struct bt_conn *conn, uint8_t err,
 				  struct bt_gatt_subscribe_params *params)
 {
 	if (err) {
-		FAIL("Subscribe failed (err %d)\n", err);
+		TEST_FAIL("Subscribe failed (err %d)", err);
 	}
 
 	SET_FLAG(flag_short_subscribed);
@@ -189,7 +199,7 @@ static void test_short_subscribed(struct bt_conn *conn, uint8_t err,
 	if (params->value_handle == chrc_handle) {
 		printk("Subscribed to short characteristic\n");
 	} else {
-		FAIL("Unknown handle %d\n", params->value_handle);
+		TEST_FAIL("Unknown handle %d", params->value_handle);
 	}
 }
 
@@ -197,7 +207,7 @@ static void test_long_subscribed(struct bt_conn *conn, uint8_t err,
 				 struct bt_gatt_subscribe_params *params)
 {
 	if (err) {
-		FAIL("Subscribe failed (err %d)\n", err);
+		TEST_FAIL("Subscribe failed (err %d)", err);
 	}
 
 	SET_FLAG(flag_long_subscribed);
@@ -210,7 +220,7 @@ static void test_long_subscribed(struct bt_conn *conn, uint8_t err,
 	if (params->value_handle == long_chrc_handle) {
 		printk("Subscribed to long characteristic\n");
 	} else {
-		FAIL("Unknown handle %d\n", params->value_handle);
+		TEST_FAIL("Unknown handle %d", params->value_handle);
 	}
 }
 
@@ -250,7 +260,7 @@ static void gatt_subscribe_short(enum bt_att_chan_opt opt)
 	sub_params_short.chan_opt = opt;
 	err = bt_gatt_subscribe(g_conn, &sub_params_short);
 	if (err < 0) {
-		FAIL("Failed to subscribe\n");
+		TEST_FAIL("Failed to subscribe");
 	} else {
 		printk("Subscribe request sent\n");
 	}
@@ -264,7 +274,7 @@ static void gatt_unsubscribe_short(enum bt_att_chan_opt opt)
 	sub_params_short.chan_opt = opt;
 	err = bt_gatt_unsubscribe(g_conn, &sub_params_short);
 	if (err < 0) {
-		FAIL("Failed to unsubscribe\n");
+		TEST_FAIL("Failed to unsubscribe");
 	} else {
 		printk("Unsubscribe request sent\n");
 	}
@@ -279,7 +289,7 @@ static void gatt_subscribe_long(enum bt_att_chan_opt opt)
 	sub_params_long.chan_opt = opt;
 	err = bt_gatt_subscribe(g_conn, &sub_params_long);
 	if (err < 0) {
-		FAIL("Failed to subscribe\n");
+		TEST_FAIL("Failed to subscribe");
 	} else {
 		printk("Subscribe request sent\n");
 	}
@@ -294,7 +304,7 @@ static void gatt_unsubscribe_long(enum bt_att_chan_opt opt)
 	sub_params_long.chan_opt = opt;
 	err = bt_gatt_unsubscribe(g_conn, &sub_params_long);
 	if (err < 0) {
-		FAIL("Failed to unsubscribe\n");
+		TEST_FAIL("Failed to unsubscribe");
 	} else {
 		printk("Unsubscribe request sent\n");
 	}
@@ -306,12 +316,12 @@ static void setup(void)
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		FAIL("Bluetooth discover failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth discover failed (err %d)", err);
 	}
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err != 0) {
-		FAIL("Scanning failed to start (err %d)\n", err);
+		TEST_FAIL("Scanning failed to start (err %d)", err);
 	}
 
 	printk("Scanning successfully started\n");
@@ -320,7 +330,7 @@ static void setup(void)
 
 	err = bt_conn_set_security(g_conn, BT_SECURITY_L2);
 	if (err) {
-		FAIL("Starting encryption procedure failed (%d)\n", err);
+		TEST_FAIL("Starting encryption procedure failed (%d)", err);
 	}
 
 	WAIT_FOR_FLAG(flag_is_encrypted);
@@ -354,7 +364,7 @@ static void test_main_none(void)
 
 	printk("Unsubscribed\n");
 
-	PASS("GATT client Passed\n");
+	TEST_PASS("GATT client Passed");
 }
 
 static void test_main_unenhanced(void)
@@ -380,7 +390,7 @@ static void test_main_unenhanced(void)
 
 	printk("Unsubscribed\n");
 
-	PASS("GATT client Passed\n");
+	TEST_PASS("GATT client Passed");
 }
 
 static void test_main_enhanced(void)
@@ -406,7 +416,7 @@ static void test_main_enhanced(void)
 
 	printk("Unsubscribed\n");
 
-	PASS("GATT client Passed\n");
+	TEST_PASS("GATT client Passed");
 }
 
 static void test_main_mixed(void)
@@ -432,32 +442,24 @@ static void test_main_mixed(void)
 
 	printk("Unsubscribed\n");
 
-	PASS("GATT client Passed\n");
+	TEST_PASS("GATT client Passed");
 }
 
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_none",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main_none,
 	},
 	{
 		.test_id = "gatt_client_unenhanced",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main_unenhanced,
 	},
 	{
 		.test_id = "gatt_client_enhanced",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main_enhanced,
 	},
 	{
 		.test_id = "gatt_client_mixed",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main_mixed,
 	},
 	BSTEST_END_MARKER,

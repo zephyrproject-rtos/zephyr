@@ -4,6 +4,7 @@
 
 #include <atmel/sam3x.dtsi>
 #include "arduino_due-pinctrl.dtsi"
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "Arduino Due with an Atmel SAM3X8E SoC";

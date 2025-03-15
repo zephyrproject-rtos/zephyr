@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+config GPIO_RTS5912
+	bool "Realtek embedded controller (EC) gpio driver"
+	depends on SOC_SERIES_RTS5912
+	default y if DT_HAS_REALTEK_RTS5912_GPIO_ENABLED
+	help
+	  Enable support for Realtek GPIO controller.

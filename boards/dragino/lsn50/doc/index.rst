@@ -78,24 +78,7 @@ More information about STM32L072CZ can be found here:
 Supported Features
 ==================
 
-The Zephyr Dragino LSN50 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/dragino/lsn50/dragino_lsn50_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

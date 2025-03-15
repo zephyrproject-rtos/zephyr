@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: esp32 LCD CAM Peripheral interface
+description: ESP32 LCD CAM Peripheral interface
 
 compatible: "espressif,esp32-lcd-cam"
 

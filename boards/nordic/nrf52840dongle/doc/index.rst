@@ -126,7 +126,10 @@ Option 1: Using the Built-In Bootloader Only
 The board is factory-programmed with Nordic's bootloader from Nordic's nRF5
 SDK. With this option, you'll use Nordic's `nrfutil`_ program to create
 firmware packages supported by this bootloader and flash them to the
-device. Make sure ``nrfutil`` is installed before proceeding.
+device. Before proceeding make sure:
+
+* ``nrfutil`` is installed.
+* The ``nrf5sdk-tools`` command is installed within ``nrfutil``.
 
 #. Reset the board into the Nordic bootloader by pressing the RESET button.
 
@@ -151,16 +154,19 @@ device. Make sure ``nrfutil`` is installed before proceeding.
 
    .. code-block:: console
 
-      nrfutil pkg generate --hw-version 52 --sd-req=0x00 \
-              --application build/zephyr/zephyr.hex \
-              --application-version 1 blinky.zip
+      nrfutil nrf5sdk-tools pkg generate \
+               --hw-version 52 \
+               --sd-req=0x00 \
+               --application build/zephyr/zephyr.hex \
+               --application-version 1 \
+               blinky.zip
 
 #. Flash it onto the board. Note :file:`/dev/ttyACM0` is for Linux; it will be
    something like ``COMx`` on Windows, and something else on macOS.
 
    .. code-block:: console
 
-      nrfutil dfu usb-serial -pkg blinky.zip -p /dev/ttyACM0
+      nrfutil nrf5sdk-tools dfu usb-serial -pkg blinky.zip -p /dev/ttyACM0
 
    When this command exits, observe the green LED on the board blinking,
    instead of the red LED used by the bootloader.
@@ -198,16 +204,19 @@ to the zephyr repository on your computer.
 
    .. code-block:: console
 
-      nrfutil pkg generate --hw-version 52 --sd-req=0x00 \
-              --application build/mcuboot/zephyr/zephyr.hex \
-              --application-version 1 mcuboot.zip
+      nrfutil nrf5sdk-tools pkg generate \
+               --hw-version 52 \
+               --sd-req=0x00 \
+               --application build/mcuboot/zephyr/zephyr.hex \
+               --application-version 1 \
+               mcuboot.zip
 
 #. Flash it onto the board. Note :file:`/dev/ttyACM0` is for Linux; it will be
    something like ``COMx`` on Windows, and something else on macOS.
 
    .. code-block:: console
 
-      nrfutil dfu usb-serial -pkg mcuboot.zip -p /dev/ttyACM0
+      nrfutil nrf5sdk-tools dfu usb-serial -pkg mcuboot.zip -p /dev/ttyACM0
 
 You can now flash a Zephyr application to the board using MCUboot's serial
 recovery mode. We'll use the :zephyr:code-sample:`smp-svr` sample since it's ready to be
@@ -341,7 +350,7 @@ References
 .. _Nordic Semiconductor USB DFU:
    https://docs.nordicsemi.com/bundle/sdk_nrf5_v17.1.0/page/sdk_app_serial_dfu_bootloader.html
 .. _nrfutil:
-   https://github.com/NordicSemiconductor/pc-nrfutil
+   https://www.nordicsemi.com/Products/Development-tools/nrf-util
 .. _MCUboot:
    https://github.com/JuulLabs-OSS/mcuboot
 .. _mcumgr:

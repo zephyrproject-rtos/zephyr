@@ -126,13 +126,12 @@ static void monitor_send(const void *data, size_t len)
 	}
 
 	if (!drop) {
-		if (!panic_mode) {
-			SEGGER_RTT_LOCK();
-		}
-		cnt = SEGGER_RTT_WriteNoLock(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
-					     rtt_buf, rtt_buf_offset);
-		if (!panic_mode) {
-			SEGGER_RTT_UNLOCK();
+		if (panic_mode) {
+			cnt = SEGGER_RTT_WriteNoLock(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
+						     rtt_buf, rtt_buf_offset);
+		} else {
+			cnt = SEGGER_RTT_Write(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
+					       rtt_buf, rtt_buf_offset);
 		}
 	}
 

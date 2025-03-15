@@ -13,10 +13,6 @@ config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 
-config ADC_MCUX_12B1MSPS_SAR
-	default y if HAS_MCUX_12B1MSPS_SAR
-	depends on ADC
-
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 7500000
 	depends on LOG_BACKEND_SWO
@@ -80,10 +76,6 @@ choice SEGGER_SYSVIEW_SECTION
 	default SEGGER_SYSVIEW_SECTION_DTCM if $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
 	depends on SEGGER_SYSTEMVIEW
 endchoice
-
-config MBEDTLS
-	default y if CSPRNG_ENABLED
-	depends on ENTROPY_GENERATOR
 
 if MBEDTLS
 #

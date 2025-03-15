@@ -1053,7 +1053,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 			break;
 		}
-#if defined(CONFIG_DNS_RESOLVER)
+#if defined(CONFIG_NET_DHCPV4_OPTION_DNS_ADDRESS)
 #define MAX_DNS_SERVERS CONFIG_DNS_RESOLVER_MAX_SERVERS
 		case DHCPV4_OPTIONS_DNS_SERVER: {
 			struct dns_resolve_context *ctx;
@@ -1885,8 +1885,7 @@ int net_dhcpv4_init(void)
 	 * all dhcpv4 related incoming packets.
 	 */
 	ret = net_udp_register(AF_INET, NULL, &local_addr,
-			       DHCPV4_SERVER_PORT,
-			       DHCPV4_CLIENT_PORT,
+			       0, DHCPV4_CLIENT_PORT,
 			       NULL, net_dhcpv4_input, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("UDP callback registration failed");

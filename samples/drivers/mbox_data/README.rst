@@ -54,6 +54,15 @@ Building the application for lpcxpresso55s69_cpu1
    :goals: debug
    :west-args: --sysbuild
 
+Building the application for frdm_mcxn947/mcxn947/cpu0
+======================================================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mbox_data/
+   :board: frdm_mcxn947/mcxn947/cpu0
+   :goals: debug
+   :west-args: --sysbuild
+
 Sample Output
 =============
 

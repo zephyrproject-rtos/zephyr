@@ -779,17 +779,25 @@ To view all available options Renode supports, use::
 
   west simulate --runner=renode --renode-help
 
+Out of tree runners
+*******************
+
+:ref:`Zephyr modules <modules>` can have external runners discovered by adding python
+files in their :ref:`module.yml <modules-runners>`. Create an external runner class by
+inheriting from ``ZephyrBinaryRunner`` and implement all abstract methods.
+
+.. note::
+
+   Support for custom out-of-tree runners makes the ``runners.core`` module part of
+   the public API and backwards incompatible changes need to undergo the
+   :ref:`deprecation process <breaking_api_changes>`.
+
 Hacking
 *******
 
 This section documents the ``runners.core`` module used by the
 flash and debug commands. This is the core abstraction used to implement
 support for these features.
-
-.. warning::
-
-   These APIs are provided for reference, but they are more "shared code" used
-   to implement multiple extension commands than a stable API.
 
 Developers can add support for new ways to flash and debug Zephyr programs by
 implementing additional runners. To get this support into upstream Zephyr, the

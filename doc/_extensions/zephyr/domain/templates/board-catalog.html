@@ -1,5 +1,5 @@
 {#
-  Copyright (c) 2024, The Linux Foundation.
+  Copyright (c) 2024-2025, The Linux Foundation.
   SPDX-License-Identifier: Apache-2.0
 #}
 
@@ -58,6 +58,20 @@
   <div class="form-group">
     <label for="soc">SoC</label>
     <select id="soc" name="soc" size="10" multiple></select>
+  </div>
+
+  <div class="form-group" style="flex-basis: 100%">
+    <label for="hw-capabilities">Supported Hardware Capabilities</label>
+    <div class="tag-container" id="tag-container">
+      <input list="tag-list" class="tag-input" id="tag-input"
+             placeholder="{% if hw_features_present -%}
+               Type a tag...
+             {%- else -%}
+               List of supported hardware capabilities is not available
+             {%- endif %}"
+             {% if not hw_features_present %}disabled{% endif %}>
+      <datalist id="tag-list"></datalist>
+    </div>
   </div>
 
 </form>

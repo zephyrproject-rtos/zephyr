@@ -19,7 +19,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                  app_address, erase=False, reset=False, baud=921600,
                  flash_size='detect', flash_freq='40m', flash_mode='dio',
                  espidf='espidf', bootloader_bin=None, partition_table_bin=None,
-                 no_stub=False):
+                 encrypt=False, no_stub=False):
         super().__init__(cfg)
         self.elf = cfg.elf_file
         self.app_bin = cfg.bin_file
@@ -36,6 +36,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         self.espidf = espidf
         self.bootloader_bin = bootloader_bin
         self.partition_table_bin = partition_table_bin
+        self.encrypt = encrypt
         self.no_stub = no_stub
 
     @classmethod
@@ -78,6 +79,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                             help='Bootloader image to flash')
         parser.add_argument('--esp-flash-partition_table',
                             help='Partition table to flash')
+        parser.add_argument('--esp-encrypt', default=False, action='store_true',
+                            help='Encrypt firmware while flashing (correct efuses required)')
         parser.add_argument('--esp-no-stub', default=False, action='store_true',
                             help='Disable launching the flasher stub, only talk to ROM bootloader')
 
@@ -99,7 +102,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             flash_freq=args.esp_flash_freq, flash_mode=args.esp_flash_mode,
             espidf=espidf, bootloader_bin=args.esp_flash_bootloader,
             partition_table_bin=args.esp_flash_partition_table,
-            no_stub=args.esp_no_stub)
+            encrypt=args.esp_encrypt, no_stub=args.esp_no_stub)
 
     def do_run(self, command, **kwargs):
         self.require(self.espidf)
@@ -123,6 +126,9 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         cmd_flash.extend(['--flash_mode', self.flash_mode])
         cmd_flash.extend(['--flash_freq', self.flash_freq])
         cmd_flash.extend(['--flash_size', self.flash_size])
+
+        if self.encrypt:
+            cmd_flash.extend(['--encrypt'])
 
         if self.bootloader_bin:
             cmd_flash.extend([self.boot_address, self.bootloader_bin])

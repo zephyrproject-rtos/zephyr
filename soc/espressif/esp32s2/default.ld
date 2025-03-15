@@ -23,12 +23,22 @@ user_iram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
 #endif
 
 /* User available SRAM memory segments */
-user_iram_seg_org = SRAM_IRAM_START + SRAM_CACHE_SIZE;
-user_dram_seg_org = SRAM_DRAM_START + SRAM_CACHE_SIZE;
+user_iram_org = SRAM_IRAM_START + SRAM_CACHE_SIZE;
+user_dram_org = SRAM_DRAM_START + SRAM_CACHE_SIZE;
 user_dram_end = user_iram_end - IRAM_DRAM_OFFSET;
-user_sram_size = (user_dram_end - user_dram_seg_org);
-user_iram_seg_len = user_sram_size;
-user_dram_seg_len = user_sram_size;
+user_sram_size = (user_dram_end - user_dram_org);
+user_iram_len = user_sram_size;
+user_dram_len = user_sram_size;
+
+user_irom_org = ICACHE0_START;
+user_irom_len = ICACHE0_SIZE;
+user_drom_org = DCACHE0_START;
+user_drom_len = DCACHE0_SIZE;
+
+#if defined(CONFIG_ESP_SPIRAM)
+ext_ram_org = DCACHE1_START;
+ext_ram_len = DCACHE1_SIZE;
+#endif
 
 /* Aliases */
 #define FLASH_CODE_REGION irom0_0_seg
@@ -55,40 +65,42 @@ user_dram_seg_len = user_sram_size;
 #undef SECTION_PROLOGUE
 #define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
 
-#define RESERVE_RTC_MEM 0
-
 MEMORY
 {
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
   mcuboot_hdr (R): org = 0x0, len = 0x20
-  metadata (R):    org = 0x20, len = 0x20
-  FLASH (R):       org = 0x40, len = FLASH_SIZE
+  metadata (R):    org = 0x20, len = 0x60
+  FLASH (R):       org = 0x80, len = FLASH_SIZE - 0x80
 #else
   /* Make safety margin in the FLASH memory size so the
    * (esp_img_header + (n*esp_seg_headers)) would fit */
   FLASH (R): org = 0x0, len = FLASH_SIZE - 0x100
 #endif
 
-  iram0_0_seg(RX): org = user_iram_seg_org, len = user_iram_seg_len
-  dram0_0_seg(RW): org = user_dram_seg_org, len = user_dram_seg_len
+  iram0_0_seg(RX): org = user_iram_org, len = user_iram_len
+  dram0_0_seg(RW): org = user_dram_org, len = user_dram_len
 
-  irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
-  drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
+  irom0_0_seg(RX): org = user_irom_org, len = user_irom_len
+  drom0_0_seg(R):  org = user_drom_org, len = user_drom_len
 
-  rtc_iram_seg(RWX): org = 0x40070000, len = 0x2000 - RESERVE_RTC_MEM
+  rtc_iram_seg(RWX): org = 0x40070000, len = 0x2000 - CONFIG_RESERVE_RTC_MEM
   rtc_slow_seg(RW):  org = 0x50000000, len = 0x2000
-  /* RTC fast memory (same block as above, rtc_iram_seg), viewed from data bus */
-  rtc_data_seg(RW) : org = 0x3ff9e000, len = 0x2000 - RESERVE_RTC_MEM
-  /* We reduced the size of rtc_data_seg and rtc_iram_seg by RESERVE_RTC_MEM value.
-   * It reserves the amount of RTC fast memory that we use for this memory segment.
-   * This segment is intended for keeping:
-   *  - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
-   *  - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
-   * The aim of this is to keep data that will not be moved around and have a fixed address.
-   */
-  rtc_reserved_seg(RW) : org = 0x3ff9e000 + 0x2000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
+  rtc_data_seg(RW) : org = 0x3ff9e000, len = 0x2000 - CONFIG_RESERVE_RTC_MEM
+
+  /* We reduced the size of rtc_data_seg and rtc_iram_seg by CONFIG_RESERVE_RTC_MEM value.
+     It reserves the amount of RTC fast memory that we use for this memory segment.
+     This segment is intended for keeping:
+       - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
+       - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
+     The aim of this is to keep data that will not be moved around and have a fixed address.
+  */
+#if (CONFIG_RESERVE_RTC_MEM > 0)
+  rtc_reserved_seg(RW): org = 0x3ff9e000 + 0x2000 - CONFIG_RESERVE_RTC_MEM,
+                        len = CONFIG_RESERVE_RTC_MEM
+#endif
+
 #ifdef CONFIG_ESP_SPIRAM
-  ext_data_ram_seg(RW): org = 0x3f800000, len = CONFIG_ESP_SPIRAM_SIZE /* OR 0x780000 */
+  ext_ram_seg(RW): org = ext_ram_org, len = ext_ram_len
 #endif /* CONFIG_ESP_SPIRAM */
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -103,6 +115,7 @@ _rom_store_table = 0;
 
 /* Used as a pointer to the heap end */
 _heap_sentry = DRAM_RESERVED_START;
+_libc_heap_size = _heap_sentry - _end;
 
 SECTIONS
 {
@@ -142,6 +155,42 @@ SECTIONS
     LONG(ADDR(.dram0.data))
     LONG(LOADADDR(.dram0.data))
     LONG(LOADADDR(.dram0.data_end) - LOADADDR(.dram0.data))
+
+    /* RTC_IRAM metadata:
+     * 8. Destination address (VMA) for RTC_IRAM region
+     * 9. Flash offset (LMA) for start of RTC_IRAM region
+     * 10. Size of RTC_IRAM region
+     */
+    LONG(ADDR(.rtc.text))
+    LONG(LOADADDR(.rtc.text))
+    LONG(SIZEOF(.rtc.text))
+
+    /* RTC_DRAM metadata:
+     * 11. Destination address (VMA) for RTC_DRAM region
+     * 12. Flash offset (LMA) for start of RTC_DRAM region
+     * 13. Size of RTC_DRAM region
+     */
+    LONG(ADDR(.rtc.data))
+    LONG(LOADADDR(.rtc.data))
+    LONG(SIZEOF(.rtc.data))
+
+    /* IROM metadata:
+     * 14. Destination address (VMA) for IROM region
+     * 15. Flash offset (LMA) for start of IROM region
+     * 16. Size of IROM region
+     */
+    LONG(ADDR(.flash.text))
+    LONG(LOADADDR(.flash.text))
+    LONG(SIZEOF(.flash.text))
+
+    /* DROM metadata:
+     * 17. Destination address (VMA) for DROM region
+     * 18. Flash offset (LMA) for start of DROM region
+     * 19. Size of DROM region
+     */
+    LONG(ADDR(.flash.rodata))
+    LONG(LOADADDR(.flash.rodata))
+    LONG(LOADADDR(.flash.rodata_end) - LOADADDR(.flash.rodata))
   } > metadata
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
@@ -154,128 +203,90 @@ SECTIONS
 
   /* --- START OF RTC --- */
 
-  /* RTC fast memory holds RTC wake stub code,
-   * including from any source file named rtc_wake_stub*.c
-   */
   .rtc.text :
   {
-    _rtc_text_start = ABSOLUTE(.);
     . = ALIGN(4);
-
-    _rtc_code_start = .;
-
-    /* mapping[rtc_text] */
-
-    *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
-    _rtc_code_end = .;
-
-    /* possibly align + add 16B for CPU dummy speculative instr. fetch */
-    . = ((_rtc_code_end - _rtc_code_start) == 0) ? ALIGN(0) : ALIGN(4) + 16;
-
-    _rtc_text_end = ABSOLUTE(.);
+    *(.rtc.literal .rtc.literal.*)
+    *(.rtc.text .rtc.text.*)
+    . = ALIGN(4);
   } GROUP_DATA_LINK_IN(rtc_iram_seg, ROMABLE_REGION)
 
   /*
-   * This section is required to skip rtc.text area because rtc_iram_seg and
-   * rtc_data_seg are reflect the same address space on different buses.
-   */
+    This section is required to skip rtc.text area because rtc_iram_seg and
+    rtc_data_seg reflect the same address space on different buses.
+  */
   .rtc.dummy :
   {
-    _rtc_dummy_start = ABSOLUTE(.);
-    _rtc_fast_start = ABSOLUTE(.);
     . = SIZEOF(.rtc.text);
-    _rtc_dummy_end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(rtc_iram_seg, ROMABLE_REGION)
+  } GROUP_DATA_LINK_IN(rtc_data_seg, ROMABLE_REGION)
 
   /* This section located in RTC FAST Memory area.
-   *  It holds data marked with RTC_FAST_ATTR attribute.
-   *  See the file "esp_attr.h" for more information.
-   */
+     It holds data marked with RTC_FAST_ATTR attribute.
+     See the file "esp_attr.h" for more information.
+  */
   .rtc.force_fast :
   {
     . = ALIGN(4);
-    _rtc_force_fast_start = ABSOLUTE(.);
-
-    /* mapping[rtc_force_fast] */
-
     *(.rtc.force_fast .rtc.force_fast.*)
-    . = ALIGN(4) ;
-    _rtc_force_fast_end = ABSOLUTE(.);
-  } > rtc_data_seg
+    . = ALIGN(4);
+  } GROUP_DATA_LINK_IN(rtc_data_seg, ROMABLE_REGION)
 
   /* RTC data section holds RTC wake stub
-   *  data/rodata, including from any source file
-   *  named rtc_wake_stub*.c and the data marked with
-   *  RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
-   */
+     data/rodata, including from any source file
+     named rtc_wake_stub*.c and the data marked with
+     RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
+  */
   .rtc.data :
   {
+    . = ALIGN(4);
     _rtc_data_start = ABSOLUTE(.);
+    *(.rtc.data .rtc.data.*)
+    *(.rtc.rodata .rtc.rodata.*)
+    . = ALIGN(4);
+  } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
 
-    /* mapping[rtc_data] */
-
-    *rtc_wake_stub*.*(.data .rodata .data.* .rodata.*)
-    _rtc_data_end = ABSOLUTE(.);
-  } > rtc_data_seg
-
-  /* RTC bss, from any source file named rtc_wake_stub*.c */
   .rtc.bss (NOLOAD) :
   {
     _rtc_bss_start = ABSOLUTE(.);
-    *rtc_wake_stub*.*(.bss .bss.*)
-    *rtc_wake_stub*.*(COMMON)
-
-    /* mapping[rtc_bss] */
-
+    *(.rtc.bss .rtc.bss.*)
     _rtc_bss_end = ABSOLUTE(.);
-  } > rtc_data_seg
+  } GROUP_LINK_IN(rtc_slow_seg)
 
-  /* This section holds data that should not be initialized at power up
-   *  and will be retained during deep sleep.
-   *  User data marked with RTC_NOINIT_ATTR will be placed
-   *  into this section. See the file "esp_attr.h" for more information.
-   */
-  .rtc_noinit (NOLOAD):
+  .rtc_noinit (NOLOAD) :
   {
     . = ALIGN(4);
-    _rtc_noinit_start = ABSOLUTE(.);
     *(.rtc_noinit .rtc_noinit.*)
     . = ALIGN(4) ;
-    _rtc_noinit_end = ABSOLUTE(.);
-  } > rtc_data_seg
+  } GROUP_LINK_IN(rtc_slow_seg)
 
   /* This section located in RTC SLOW Memory area.
-   *  It holds data marked with RTC_SLOW_ATTR attribute.
-   *  See the file "esp_attr.h" for more information.
+   * It holds data marked with RTC_SLOW_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
    */
   .rtc.force_slow :
   {
     . = ALIGN(4);
-    _rtc_force_slow_start = ABSOLUTE(.);
     *(.rtc.force_slow .rtc.force_slow.*)
-    . = ALIGN(4) ;
+    . = ALIGN(4);
     _rtc_force_slow_end = ABSOLUTE(.);
-  } > rtc_slow_seg
+  } GROUP_DATA_LINK_IN(rtc_iram_seg, ROMABLE_REGION)
+
+  /* Get size of rtc slow data */
+  _rtc_slow_length = (_rtc_force_slow_end - _rtc_data_start);
 
   /**
    * This section holds RTC data that should have fixed addresses.
    * The data are not initialized at power-up and are retained during deep sleep.
    */
-  .rtc_reserved (NOLOAD):
+#if (CONFIG_RESERVE_RTC_MEM > 0)
+  .rtc_reserved (NOLOAD) :
   {
     . = ALIGN(4);
     _rtc_reserved_start = ABSOLUTE(.);
-    /* New data can only be added here to ensure existing data are not moved.
-       Because data have adhered to the end of the segment and code is relied on it.
-       >> put new data here << */
-
     *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
-    KEEP(*(.bootloader_data_rtc_mem .bootloader_data_rtc_mem.*))
     _rtc_reserved_end = ABSOLUTE(.);
-  } > rtc_reserved_seg
-
-  /* Get size of rtc slow data */
-  _rtc_slow_length = (_rtc_force_slow_end - _rtc_data_start);
+  } GROUP_LINK_IN(rtc_reserved_seg)
+#endif
 
   /* --- END OF RTC --- */
 
@@ -367,6 +378,7 @@ SECTIONS
     *libzephyr.a:esp_psram_impl_octal.*(.literal .literal.* .text .text.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cache_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cache_utils.*(.literal .text .literal.* .text.*)
@@ -449,7 +461,7 @@ SECTIONS
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:(.wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
     *libpp.a:(.wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.* .wifiextrairam .wifiextrairam.*)
-    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.*)
+    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
 
     /* [mapping:esp_wifi] */
     *(.literal.wifi_clock_enable_wrapper .text.wifi_clock_enable_wrapper)
@@ -499,7 +511,6 @@ SECTIONS
     *libzephyr.a:secure_boot.*(.literal .text .literal.* .text.*)
     *libzephyr.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*)
     *libzephyr.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_table.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_fields.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_api.*(.literal .text .literal.* .text.*)
@@ -550,7 +561,7 @@ SECTIONS
     /* This section is required to skip .iram0.text area because iram0_0_seg and
      * dram0_0_seg reflect the same address space on different buses.
      */
-    . = ORIGIN(dram0_0_seg) + MAX(_iram_end, user_iram_seg_org) - user_iram_seg_org;
+    . = ORIGIN(dram0_0_seg) + MAX(_iram_end, user_iram_org) - user_iram_org;
     . = ALIGN(4) + 16;
   } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -608,6 +619,7 @@ SECTIONS
     *libzephyr.a:esp_psram_impl_quad.*(.rodata .rodata.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.rodata .rodata.*)
     *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.*)
@@ -725,8 +737,6 @@ SECTIONS
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_spi_init.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
-    *libzephyr.a:efuse_hal.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-
     . = ALIGN(4);
     _loader_data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
@@ -779,30 +789,35 @@ SECTIONS
 
 #ifdef CONFIG_ESP_SPIRAM
   /* This section holds .ext_ram.bss data, and will be put in PSRAM */
-  .ext_ram.bss (NOLOAD):
+  .ext_ram (NOLOAD):
   {
-    _ext_ram_data_start = ABSOLUTE(.);
-    _ext_ram_bss_start = ABSOLUTE(.);
-    *(.ext_ram.bss*)
-    . = ALIGN(4);
-    _ext_ram_bss_end = ABSOLUTE(.);
-  } > ext_data_ram_seg
+    _ext_ram_start = ABSOLUTE(.);
+    _ext_ram_noinit_start = ABSOLUTE(.);
 
-  .ext_ram_noinit (NOLOAD) :
-  {
 #ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
     *libdrivers__wifi.a:(.noinit .noinit.*)
     *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
     *libsubsys__net__lib__config.a:(.noinit .noinit.*)
     *libsubsys__net__ip.a:(.noinit .noinit.*)
     *libsubsys__net.a:(.noinit .noinit.*)
-#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+#endif
+    . = ALIGN(16);
+    *(.ext_ram_noinit*)
+    . = ALIGN(16);
+    _ext_ram_noinit_end = ABSOLUTE(.);
 
-    _spiram_heap_start = ABSOLUTE(.);
+    _ext_ram_bss_start = ABSOLUTE(.);
+    *(.ext_ram.bss*)
+    . = ALIGN(16);
+    _ext_ram_bss_end = ABSOLUTE(.);
+
+    _ext_ram_heap_start = ABSOLUTE(.);
     . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
+    . = ALIGN(16);
+    _ext_ram_heap_end = ABSOLUTE(.);
 
-    _ext_ram_data_end = ABSOLUTE(.);
-  } > ext_data_ram_seg
+    _ext_ram_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(ext_ram_seg)
 #endif /* CONFIG_ESP_SPIRAM */
 
   .dram0.noinit (NOLOAD) :
@@ -843,7 +858,7 @@ SECTIONS
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.* .wifiextrairam .wifiextrairam.*)
-
+    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
 #endif
 
 #if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
@@ -1002,6 +1017,6 @@ SECTIONS
   /* --- XTENSA GLUE AND DEBUG END --- */
 
 #ifdef CONFIG_ESP_SPIRAM
-ASSERT(((_ext_ram_data_end - _ext_ram_data_start) <= CONFIG_ESP_SPIRAM_SIZE),
+ASSERT(((_ext_ram_end - _ext_ram_start) <= CONFIG_ESP_SPIRAM_SIZE),
           "External SPIRAM overflowed.")
 #endif /* CONFIG_ESP_SPIRAM */

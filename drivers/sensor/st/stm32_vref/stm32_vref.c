@@ -19,6 +19,9 @@
 
 LOG_MODULE_REGISTER(stm32_vref, CONFIG_SENSOR_LOG_LEVEL);
 
+/* Resolution used to perform the Vref measurement */
+#define MEAS_RES	(12U)
+
 struct stm32_vref_data {
 	const struct device *adc;
 	const struct adc_channel_cfg adc_cfg;
@@ -32,6 +35,7 @@ struct stm32_vref_data {
 struct stm32_vref_config {
 	uint16_t *cal_addr;
 	int cal_mv;
+	uint8_t cal_shift;
 };
 
 static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -103,16 +107,7 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	/* Calculate VREF+ using VREFINT bandgap voltage and calibration data */
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
-	/*
-	 * The VREF CALIBRATION value is acquired on 14 bits
-	 * and the data acquired is on 12 bits
-	 * since the adc_sequence.resolution is 12
-	 */
-	vref = (cfg->cal_mv * (*cfg->cal_addr) >> 2) / data->raw;
-#else
-	vref = cfg->cal_mv * (*cfg->cal_addr) / data->raw;
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+	vref = (cfg->cal_mv * ((*cfg->cal_addr) >> cfg->cal_shift)) / data->raw;
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_ICACHE_Enable();
@@ -142,7 +137,7 @@ static int stm32_vref_init(const struct device *dev)
 		.channels = BIT(data->adc_cfg.channel_id),
 		.buffer = &data->sample_buffer,
 		.buffer_size = sizeof(data->sample_buffer),
-		.resolution = 12U,
+		.resolution = MEAS_RES,
 	};
 
 	return 0;
@@ -178,7 +173,12 @@ static struct stm32_vref_data stm32_vref_dev_data = {
 static const struct stm32_vref_config stm32_vref_dev_config = {
 	.cal_addr = (uint16_t *)DT_INST_PROP(0, vrefint_cal_addr),
 	.cal_mv = DT_INST_PROP(0, vrefint_cal_mv),
+	.cal_shift = (DT_INST_PROP(0, vrefint_cal_resolution) - MEAS_RES),
 };
+
+/* Make sure no series with unsupported configuration can be added silently */
+BUILD_ASSERT(DT_INST_PROP(0, vrefint_cal_resolution) >= MEAS_RES,
+	"VREFINT calibration resolution is too low");
 
 SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_vref_init, NULL, &stm32_vref_dev_data, &stm32_vref_dev_config,
 			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &stm32_vref_driver_api);

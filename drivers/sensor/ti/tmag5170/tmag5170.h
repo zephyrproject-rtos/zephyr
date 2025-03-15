@@ -19,7 +19,7 @@ struct tmag5170_dev_config {
 	uint8_t y_range;
 	uint8_t z_range;
 	uint8_t oversampling;
-	bool tempeature_measurement;
+	bool temperature_measurement;
 	uint8_t magnet_type;
 	uint8_t angle_measurement;
 	bool disable_temperature_oversampling;

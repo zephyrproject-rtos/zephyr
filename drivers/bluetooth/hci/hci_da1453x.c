@@ -41,7 +41,7 @@ int bt_hci_transport_setup(const struct device *h4)
 	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
 
 	/* Release the DA1453x from reset */
-	err = gpio_pin_set_dt(&bt_reset, 0);
+	err = gpio_pin_configure_dt(&bt_reset, GPIO_OUTPUT_INACTIVE);
 	if (err) {
 		return err;
 	}

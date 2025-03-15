@@ -6,6 +6,7 @@ tests:
     tags: sensors
     filter: dt_alias_exists("magn0")
     harness_config:
+      fixture: fixture_sensor_magn_int
       type: one_line
       regex:
         - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\(x, y, z\\):    \

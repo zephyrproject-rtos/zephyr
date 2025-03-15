@@ -21,21 +21,6 @@
 #define AVRCP_SUBUNIT_EXTENSION_COED (7) /* Fixed value according to TA Document 2001012 */
 
 typedef enum __packed {
-	BT_AVRCP_CTYPE_CONTROL = 0x0,
-	BT_AVRCP_CTYPE_STATUS = 0x1,
-	BT_AVRCP_CTYPE_SPECIFIC_INQUIRY = 0x2,
-	BT_AVRCP_CTYPE_NOTIFY = 0x3,
-	BT_AVRCP_CTYPE_GENERAL_INQUIRY = 0x4,
-	BT_AVRCP_CTYPE_NOT_IMPLEMENTED = 0x8,
-	BT_AVRCP_CTYPE_ACCEPTED = 0x9,
-	BT_AVRCP_CTYPE_REJECTED = 0xA,
-	BT_AVRCP_CTYPE_IN_TRANSITION = 0xB,
-	BT_AVRCP_CTYPE_IMPLEMENTED_STABLE = 0xC,
-	BT_AVRCP_CTYPE_CHANGED = 0xD,
-	BT_AVRCP_CTYPE_INTERIM = 0xF,
-} bt_avrcp_ctype_t;
-
-typedef enum __packed {
 	BT_AVRCP_SUBUNIT_ID_ZERO = 0x0,
 	BT_AVRCP_SUBUNIT_ID_IGNORE = 0x7,
 } bt_avrcp_subunit_id_t;
@@ -65,7 +50,7 @@ struct bt_avrcp_header {
 } __packed;
 
 /** The 4-bit command type or the 4-bit response code. */
-#define BT_AVRCP_HDR_GET_CTYPE(hdr)        FIELD_GET(GENMASK(3, 0), ((hdr)->byte0))
+#define BT_AVRCP_HDR_GET_CTYPE_OR_RSP(hdr)        FIELD_GET(GENMASK(3, 0), ((hdr)->byte0))
 /** Taken together, the subunit_type and subunit_ID fields define the command recipient’s  address
  *  within the target. These fields enable the target to determine  whether the command is
  *  addressed to the target  unit, or to a specific subunit within the target. The values in these
@@ -80,7 +65,7 @@ struct bt_avrcp_header {
 #define BT_AVRCP_HDR_GET_SUBUNIT_TYPE(hdr) FIELD_GET(GENMASK(7, 3), ((hdr)->byte1))
 
 /** The 4-bit command type or the 4-bit response code. */
-#define BT_AVRCP_HDR_SET_CTYPE(hdr, ctype)                                                         \
+#define BT_AVRCP_HDR_SET_CTYPE_OR_RSP(hdr, ctype)                                                  \
 	(hdr)->byte0 = (((hdr)->byte0) & ~GENMASK(3, 0)) | FIELD_PREP(GENMASK(3, 0), (ctype))
 /** Taken together, the subunit_type and subunit_ID fields define the command recipient’s  address
  *  within the target. These fields enable the target to determine  whether the command is
@@ -97,7 +82,7 @@ struct bt_avrcp_header {
 #define BT_AVRCP_HDR_SET_SUBUNIT_TYPE(hdr, subunit_type)                                           \
 	(hdr)->byte1 = (((hdr)->byte1) & ~GENMASK(7, 3)) | FIELD_PREP(GENMASK(7, 3), (subunit_type))
 
-struct bt_avrcp_unit_info_cmd {
+struct bt_avrcp_frame {
 	struct bt_avrcp_header hdr;
 	uint8_t data[0];
 } __packed;

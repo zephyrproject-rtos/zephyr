@@ -117,6 +117,7 @@ endif # I2C_RTIO
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 source "drivers/i2c/target/Kconfig"
+# zephyr-keep-sorted-start
 source "drivers/i2c/Kconfig.ambiq"
 source "drivers/i2c/Kconfig.andes_atciic100"
 source "drivers/i2c/Kconfig.b91"
@@ -127,10 +128,10 @@ source "drivers/i2c/Kconfig.ene"
 source "drivers/i2c/Kconfig.esp32"
 source "drivers/i2c/Kconfig.gd32"
 source "drivers/i2c/Kconfig.gpio"
+source "drivers/i2c/Kconfig.i2c_emul"
 source "drivers/i2c/Kconfig.ifx_cat1"
 source "drivers/i2c/Kconfig.ifx_xmc4"
 source "drivers/i2c/Kconfig.it8xxx2"
-source "drivers/i2c/Kconfig.i2c_emul"
 source "drivers/i2c/Kconfig.litex"
 source "drivers/i2c/Kconfig.lpc11u6x"
 source "drivers/i2c/Kconfig.max32"
@@ -139,8 +140,9 @@ source "drivers/i2c/Kconfig.mcux"
 source "drivers/i2c/Kconfig.npcx"
 source "drivers/i2c/Kconfig.nrfx"
 source "drivers/i2c/Kconfig.numaker"
-source "drivers/i2c/Kconfig.renesas_ra"
+source "drivers/i2c/Kconfig.omap"
 source "drivers/i2c/Kconfig.rcar"
+source "drivers/i2c/Kconfig.renesas_ra"
 source "drivers/i2c/Kconfig.sam0"
 source "drivers/i2c/Kconfig.sam_twihs"
 source "drivers/i2c/Kconfig.sbcon"
@@ -149,11 +151,11 @@ source "drivers/i2c/Kconfig.sedi"
 source "drivers/i2c/Kconfig.sifive"
 source "drivers/i2c/Kconfig.smartbond"
 source "drivers/i2c/Kconfig.stm32"
-
 source "drivers/i2c/Kconfig.tca954x"
 source "drivers/i2c/Kconfig.test"
 source "drivers/i2c/Kconfig.xec"
 source "drivers/i2c/Kconfig.xilinx_axi"
+# zephyr-keep-sorted-stop
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
@@ -258,5 +260,12 @@ config GPIO_I2C_SWITCH
 	depends on DT_HAS_GPIO_I2C_SWITCH_ENABLED
 	help
 	  Enable GPIO controlled I2C bus switch driver.
+
+config I2C_NXP_II2C
+	bool "NXP i.MX8M serial I2C driver"
+	default y
+	depends on DT_HAS_NXP_II2C_ENABLED
+	help
+	  Enable the NXP II2C driver.
 
 endif # I2C

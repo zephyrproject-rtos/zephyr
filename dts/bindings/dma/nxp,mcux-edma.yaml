@@ -1,4 +1,4 @@
-# Copyright (c) 2020, NXP
+# Copyright (c) 2020,2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP MCUX EDMA controller
@@ -64,6 +64,19 @@ properties:
       - 4
     description: |
       eDMA IP revision number.
+
+  channels-shared-irq-mask:
+    type: array
+    description: |
+      Describes channel enabled mask value on every IRQ.
+      The channel number is mapped to the bit value of array element value.
+      If the interrupt is shared on one channel number, the correspongding
+      bit is set to 1.
+      Please note each element of the array must be 32-bit. If there are more
+      than 32 channels, add one or more 32-bit elements in array(elements
+      should be contiguous). The software will determine the mask value of
+      several elements corresponding to the same interrupt according to the
+      number of channels.
 
   "#dma-cells":
     type: int

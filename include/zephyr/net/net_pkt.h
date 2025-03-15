@@ -1257,11 +1257,6 @@ static inline void net_pkt_set_stats_tick(struct net_pkt *pkt, uint32_t tick)
 #endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
 	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 
-static inline size_t net_pkt_get_len(struct net_pkt *pkt)
-{
-	return net_buf_frags_len(pkt->frags);
-}
-
 static inline uint8_t *net_pkt_data(struct net_pkt *pkt)
 {
 	return pkt->frags->data;
@@ -1907,6 +1902,18 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
 	net_pkt_rx_alloc_with_buffer_debug(_iface, _size, _family,	\
 					   _proto, _timeout,		\
 					   __func__, __LINE__)
+
+int net_pkt_alloc_buffer_with_reserve_debug(struct net_pkt *pkt,
+					    size_t size,
+					    size_t reserve,
+					    enum net_ip_protocol proto,
+					    k_timeout_t timeout,
+					    const char *caller,
+					    int line);
+#define net_pkt_alloc_buffer_with_reserve(_pkt, _size, _reserve, _proto, _timeout) \
+	net_pkt_alloc_buffer_with_reserve_debug(_pkt, _size, _reserve, _proto, \
+						_timeout, __func__, __LINE__)
+
 #endif /* NET_PKT_DEBUG_ENABLED */
 /** @endcond */
 
@@ -2001,6 +2008,31 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 #endif
 
 #if !defined(NET_PKT_DEBUG_ENABLED)
+/**
+ * @brief Allocate buffer for a net_pkt and reserve some space in the first net_buf.
+ *
+ * @details: such allocator will take into account space necessary for headers,
+ *           MTU, and existing buffer (if any). Beware that, due to all these
+ *           criteria, the allocated size might be smaller/bigger than
+ *           requested one.
+ *
+ * @param pkt     The network packet requiring buffer to be allocated.
+ * @param size    The size of buffer being requested.
+ * @param reserve The L2 header size to reserve. This can be 0, in which case
+ *                the L2 header is placed into a separate net_buf.
+ * @param proto   The IP protocol type (can be 0 for none).
+ * @param timeout Maximum time to wait for an allocation.
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+#if !defined(NET_PKT_DEBUG_ENABLED)
+int net_pkt_alloc_buffer_with_reserve(struct net_pkt *pkt,
+				      size_t size,
+				      size_t reserve,
+				      enum net_ip_protocol proto,
+				      k_timeout_t timeout);
+#endif
+
 /**
  * @brief Allocate buffer for a net_pkt, of specified size, w/o any additional
  *        preconditions
@@ -2438,6 +2470,18 @@ static inline int net_pkt_write_le16(struct net_pkt *pkt, uint16_t data)
  * @return Amount of data which can be read from current pkt cursor
  */
 size_t net_pkt_remaining_data(struct net_pkt *pkt);
+
+/**
+ * @brief Get the total amount of bytes stored in a packet.
+ *
+ * @param pkt Network packet
+ *
+ * @return Total amount of bytes stored in a packet.
+ */
+static inline size_t net_pkt_get_len(struct net_pkt *pkt)
+{
+	return net_buf_frags_len(pkt->frags);
+}
 
 /**
  * @brief Update the overall length of a packet

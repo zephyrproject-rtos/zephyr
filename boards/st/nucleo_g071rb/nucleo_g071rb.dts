@@ -147,7 +147,7 @@
 		 <&rcc STM32_SRC_SYSCLK ADC_SEL(0)>;
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 	vref-mv = <3300>;

@@ -171,14 +171,8 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t sirk[BT_
 
 	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIP_SIRK_SIZE));
 
-	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
-		/* Swap because aes_cmac is big endian
-		 * and we are little endian
-		 */
-		sys_memcpy_swap(k1_tmp, k, sizeof(k1_tmp));
-	} else {
-		(void)memcpy(k1_tmp, k, sizeof(k1_tmp));
-	}
+	/* Swap because aes_cmac is big endian and k is little endian */
+	sys_memcpy_swap(k1_tmp, k, sizeof(k1_tmp));
 	LOG_DBG("BE: k %s", bt_hex(k1_tmp, sizeof(k1_tmp)));
 
 	err = s1(m, sizeof(m), s1_out);
@@ -195,10 +189,8 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t sirk[BT_
 
 	LOG_DBG("BE: k1 result %s", bt_hex(k1_out, sizeof(k1_out)));
 
-	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
-		/* Swap result back to little endian */
-		sys_mem_swap(k1_out, sizeof(k1_out));
-	}
+	/* Get result back to little endian. */
+	sys_mem_swap(k1_out, sizeof(k1_out));
 
 	mem_xor_128(out_sirk, k1_out, sirk);
 	LOG_DBG("out %s", bt_hex(out_sirk, BT_CSIP_SIRK_SIZE));

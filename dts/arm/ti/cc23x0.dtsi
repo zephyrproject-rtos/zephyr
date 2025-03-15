@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ * Copyright (c) 2024 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &flash_controller;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			clock-frequency = <DT_FREQ_M(48)>;
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(48)>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		flash_controller: flash-controller@40021000 {
+			compatible = "ti,cc23x0-flash-controller";
+			reg = <0x40021000 0x408>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Main flash sector */
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(2)>;
+				write-block-size = <0x10>;
+			};
+
+			/* CCFG flash sector */
+			flash1: flash@4e020000 {
+				compatible = "ti,cc23x0-ccfg-flash", "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(2)>;
+				write-block-size = <0x10>;
+			};
+		};
+
+		pinctrl: pinctrl@40003000 {
+			compatible = "ti,cc23x0-pinctrl";
+			reg = <0x40003000 0xc14>;
+		};
+
+		gpio0: gpio@40023000 {
+			compatible = "ti,cc23x0-gpio";
+			reg = <0x40023000 0x804>;
+			interrupts = <5 0>;	/* GPIO combined on CPUIRQ5 */
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;	/* Pin (ID), and flags */
+			ngpios = <26>;		/* Only [DIO0, DIO25] are available */
+		};
+
+		uart0: uart@40034000 {
+			compatible = "ti,cc23x0-uart";
+			reg = <0x40034000 0x52>;
+			interrupts = <11 0>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>; /* Interrupt levels are 0-192 in steps of 64 */
+};
+
+&systick {
+	status = "disabled";
+};

@@ -50,14 +50,14 @@ static struct http_resource_detail detail[] = {
  * the paths (and implementation-specific details) are known at compile time.
  */
 static const uint16_t service_A_port = 4242;
-HTTP_SERVICE_DEFINE(service_A, "a.service.com", &service_A_port, 4, 2, DETAIL(0));
+HTTP_SERVICE_DEFINE(service_A, "a.service.com", &service_A_port, 4, 2, DETAIL(0), NULL);
 HTTP_RESOURCE_DEFINE(resource_0, service_A, "/", RES(0));
 HTTP_RESOURCE_DEFINE(resource_1, service_A, "/index.html", RES(1));
 HTTP_RESOURCE_DEFINE(resource_2, service_A, "/fs/*", RES(5));
 
 /* ephemeral port of 0 */
 static uint16_t service_B_port;
-HTTP_SERVICE_DEFINE(service_B, "b.service.com", &service_B_port, 7, 3, DETAIL(1));
+HTTP_SERVICE_DEFINE(service_B, "b.service.com", &service_B_port, 7, 3, DETAIL(1), NULL);
 HTTP_RESOURCE_DEFINE(resource_3, service_B, "/foo.htm", RES(2));
 HTTP_RESOURCE_DEFINE(resource_4, service_B, "/bar/baz.php", RES(3));
 
@@ -67,16 +67,21 @@ HTTP_RESOURCE_DEFINE(resource_4, service_B, "/bar/baz.php", RES(3));
  * runtime.
  */
 static const uint16_t service_C_port = 5959;
-HTTP_SERVICE_DEFINE_EMPTY(service_C, "192.168.1.1", &service_C_port, 5, 9, DETAIL(2));
+HTTP_SERVICE_DEFINE_EMPTY(service_C, "192.168.1.1", &service_C_port, 5, 9, DETAIL(2), NULL);
 
 /* Wildcard resources */
 static uint16_t service_D_port = service_A_port + 1;
-HTTP_SERVICE_DEFINE(service_D, "2001:db8::1", &service_D_port, 7, 3, DETAIL(3));
+HTTP_SERVICE_DEFINE(service_D, "2001:db8::1", &service_D_port, 7, 3, DETAIL(3), NULL);
 HTTP_RESOURCE_DEFINE(resource_5, service_D, "/foo1.htm*", RES(0));
 HTTP_RESOURCE_DEFINE(resource_6, service_D, "/fo*", RES(1));
 HTTP_RESOURCE_DEFINE(resource_7, service_D, "/f[ob]o3.html", RES(1));
 HTTP_RESOURCE_DEFINE(resource_8, service_D, "/fb?3.htm", RES(0));
 HTTP_RESOURCE_DEFINE(resource_9, service_D, "/f*4.html", RES(3));
+
+/* Default resource in case of no match */
+static uint16_t service_E_port = 8080;
+HTTP_SERVICE_DEFINE(service_E, "192.0.2.1", &service_E_port, 0, 0, NULL, DETAIL(0));
+HTTP_RESOURCE_DEFINE(resource_10, service_E, "/index.html", RES(4));
 
 ZTEST(http_service, test_HTTP_SERVICE_DEFINE)
 {
@@ -110,7 +115,7 @@ ZTEST(http_service, test_HTTP_SERVICE_COUNT)
 
 	n_svc = 4273;
 	HTTP_SERVICE_COUNT(&n_svc);
-	zassert_equal(n_svc, 4);
+	zassert_equal(n_svc, 5);
 }
 
 ZTEST(http_service, test_HTTP_SERVICE_RESOURCE_COUNT)
@@ -127,6 +132,7 @@ ZTEST(http_service, test_HTTP_SERVICE_FOREACH)
 	size_t have_service_B = 0;
 	size_t have_service_C = 0;
 	size_t have_service_D = 0;
+	size_t have_service_E = 0;
 
 	HTTP_SERVICE_FOREACH(svc) {
 		if (svc == &service_A) {
@@ -137,17 +143,21 @@ ZTEST(http_service, test_HTTP_SERVICE_FOREACH)
 			have_service_C = 1;
 		} else if (svc == &service_D) {
 			have_service_D = 1;
+		} else if (svc == &service_E) {
+			have_service_E = 1;
 		} else {
-			zassert_unreachable("svc (%p) not equal to &service_A (%p), &service_B "
-					    "(%p), or &service_C (%p)",
-					    svc, &service_A, &service_B, &service_C);
+			zassert_unreachable("svc (%p) not equal to any defined service", svc);
 		}
 
 		n_svc++;
 	}
 
-	zassert_equal(n_svc, 4);
-	zassert_equal(have_service_A + have_service_B + have_service_C + have_service_D, n_svc);
+	zassert_equal(n_svc, 5);
+	zassert_equal(have_service_A, 1);
+	zassert_equal(have_service_B, 1);
+	zassert_equal(have_service_C, 1);
+	zassert_equal(have_service_D, 1);
+	zassert_equal(have_service_E, 1);
 }
 
 ZTEST(http_service, test_HTTP_RESOURCE_FOREACH)
@@ -296,55 +306,98 @@ ZTEST(http_service, test_HTTP_RESOURCE_DEFINE)
 	}
 }
 
-extern struct http_resource_detail *get_resource_detail(const char *path,
+extern struct http_resource_detail *get_resource_detail(const struct http_service_desc *service,
+							const char *path,
 							int *path_len,
 							bool is_websocket);
 
-#define CHECK_PATH(path, len) ({ *len = 0; get_resource_detail(path, len, false); })
+#define CHECK_PATH(svc, path, len) ({ *len = 0; get_resource_detail(&svc, path, len, false); })
 
 ZTEST(http_service, test_HTTP_RESOURCE_WILDCARD)
 {
 	struct http_resource_detail *res;
 	int len;
 
-	res = CHECK_PATH("/", &len);
+	res = CHECK_PATH(service_A, "/", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(0), "Resource mismatch");
 
-	res = CHECK_PATH("/f", &len);
+	res = CHECK_PATH(service_D, "/f", &len);
 	zassert_is_null(res, "Resource found");
 	zassert_equal(len, 0, "Length set");
 
-	res = CHECK_PATH("/foo1.html", &len);
+	res = CHECK_PATH(service_D, "/foo1.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(0), "Resource mismatch");
 
-	res = CHECK_PATH("/foo2222.html", &len);
+	res = CHECK_PATH(service_D, "/foo2222.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(1), "Resource mismatch");
 
-	res = CHECK_PATH("/fbo3.html", &len);
+	res = CHECK_PATH(service_D, "/fbo3.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(1), "Resource mismatch");
 
-	res = CHECK_PATH("/fbo3.htm", &len);
+	res = CHECK_PATH(service_D, "/fbo3.htm", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(0), "Resource mismatch");
 
-	res = CHECK_PATH("/fbo4.html", &len);
+	res = CHECK_PATH(service_D, "/fbo4.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(3), "Resource mismatch");
 
-	res = CHECK_PATH("/fs/index.html", &len);
+	res = CHECK_PATH(service_D, "/fb", &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
+	res = CHECK_PATH(service_A, "/fs/index.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(5), "Resource mismatch");
+
+	/* Resources that only exist on one service should not be found on another */
+	res = CHECK_PATH(service_A, "/foo1.htm", &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
+	res = CHECK_PATH(service_A, "/foo2222.html", &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
+	res = CHECK_PATH(service_A, "/fbo3.htm", &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+}
+
+ZTEST(http_service, test_HTTP_RESOURCE_DEFAULT)
+{
+#define NON_EXISTING_PATH "/this_path_is_not_registered"
+	struct http_resource_detail *res;
+	int len;
+
+	/* For a path that does exist, the correct resource should be returned */
+	res = CHECK_PATH(service_E, "/index.html", &len);
+	zassert_not_null(res, "Cannot find resource");
+	zassert_true(len > 0, "Length not set");
+	zassert_equal(res, RES(4), "Resource mismatch");
+
+	/* For a path that does not exist, the default resource should be returned */
+	res = CHECK_PATH(service_E, NON_EXISTING_PATH, &len);
+	zassert_not_null(res, "Cannot find resource");
+	zassert_equal(len, strlen(NON_EXISTING_PATH), "Length incorrect");
+	zassert_equal(res, RES(0), "Resource mismatch");
+
+	/* If query params are present, length should not include them */
+	res = CHECK_PATH(service_E, NON_EXISTING_PATH "?param=value", &len);
+	zassert_not_null(res, "Cannot find resource");
+	zassert_equal(len, strlen(NON_EXISTING_PATH), "Length incorrect");
+	zassert_equal(res, RES(0), "Resource mismatch");
 }
 
 extern void http_server_get_content_type_from_extension(char *url, char *content_type,

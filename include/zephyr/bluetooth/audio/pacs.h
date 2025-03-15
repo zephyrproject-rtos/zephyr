@@ -41,8 +41,47 @@ struct bt_pacs_cap {
 	/** Codec capability reference */
 	const struct bt_audio_codec_cap *codec_cap;
 
-	/** @internal Internally used list node */
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used field for list handling */
 	sys_snode_t _node;
+	/** @endcond */
+};
+
+/** Structure for registering PACS */
+struct bt_pacs_register_param {
+#if defined(CONFIG_BT_PAC_SNK) || defined(__DOXYGEN__)
+	/**
+	 * @brief Enables or disables registration of Sink PAC Characteristic.
+	 */
+	bool snk_pac;
+#endif /* CONFIG_BT_PAC_SNK */
+
+#if defined(CONFIG_BT_PAC_SNK_LOC) || defined(__DOXYGEN__)
+	/**
+	 * @brief Enables or disables registration of Sink Location Characteristic.
+	 *
+	 * Registration of Sink Location is dependent on @ref bt_pacs_register_param.snk_pac
+	 * also being set.
+	 */
+	bool snk_loc;
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+
+#if defined(CONFIG_BT_PAC_SRC) || defined(__DOXYGEN__)
+	/**
+	 * @brief Enables or disables registration of Source PAC Characteristic.
+	 */
+	bool src_pac;
+#endif /* CONFIG_BT_PAC_SRC */
+
+#if defined(CONFIG_BT_PAC_SRC_LOC) || defined(__DOXYGEN__)
+	/**
+	 * @brief Enables or disables registration of Source Location Characteristic.
+	 *
+	 * Registration of Source Location is dependent on @ref bt_pacs_register_param.src_pac
+	 * also being set.
+	 */
+	bool src_loc;
+#endif /* CONFIG_BT_PAC_SRC_LOC */
 };
 
 /**
@@ -70,6 +109,25 @@ typedef bool (*bt_pacs_cap_foreach_func_t)(const struct bt_pacs_cap *cap,
 void bt_pacs_cap_foreach(enum bt_audio_dir dir,
 			 bt_pacs_cap_foreach_func_t func,
 			 void *user_data);
+
+/**
+ * @brief Register the Published Audio Capability Service instance.
+ *
+ * @param param PACS register parameters.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p param is NULL or bad combination of values in @p param
+ * @retval -EALREADY Already registered
+ * @retval -ENOEXEC Request was rejected by GATT
+ */
+int bt_pacs_register(const struct bt_pacs_register_param *param);
+
+/**
+ * @brief Unregister the Published Audio Capability Service instance.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_pacs_unregister(void);
 
 /**
  * @brief Register Published Audio Capability.

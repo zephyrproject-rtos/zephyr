@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+#	Andrew Davis <afd@ti.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BEAGLEY_AI
+	select SOC_J722S_MAIN_R5F0_0 if BOARD_BEAGLEY_AI_J722S_MAIN_R5F0_0
+	select SOC_J722S_MCU_R5F0_0 if BOARD_BEAGLEY_AI_J722S_MCU_R5F0_0

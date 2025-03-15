@@ -27,9 +27,11 @@
 #ifdef CONFIG_NRF70_STA_MODE
 #include <drivers/driver_zephyr.h>
 #endif /* CONFIG_NRF70_STA_MODE */
+#include <system/fmac_api.h>
+#else
+#include <radio_test/fmac_api.h>
 #endif /* !CONFIG_NRF70_RADIO_TEST */
 
-#include <fmac_api.h>
 #include <host_rpu_umac_if.h>
 
 #define NRF70_DRIVER_VERSION "1."KERNEL_VERSION_STRING
@@ -142,7 +144,7 @@ void nrf_wifi_rpu_recovery_cb(void *vif_ctx,
 		unsigned int event_len);
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 #endif /* !CONFIG_NRF70_OFFLOADED_RAW_TX */
-#ifdef CONFIG_NRF_WIFI_BUILD_ONLY_MODE
+#ifdef CONFIG_BUILD_ONLY_NO_BLOBS
 inline enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 {
 	(void)rpu_ctx;
@@ -151,5 +153,5 @@ inline enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 }
 #else
 enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx);
-#endif /* CONFIG_NRF_WIFI_BUILD_ONLY_MODE */
+#endif /* CONFIG_BUILD_ONLY_NO_BLOBS */
 #endif /* __ZEPHYR_FMAC_MAIN_H__ */

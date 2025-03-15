@@ -1,10 +1,10 @@
 sample:
-  description: native_posix-based libfuzzer example
+  description: native_sim-based libfuzzer example
   name: fuzz
 tests:
   sample.debug.fuzz:
     toolchain_allow: llvm
-    platform_allow: native_posix/native/64
+    platform_allow: native_sim/native/64
     harness: console
     harness_config:
       type: one_line

@@ -41,7 +41,7 @@ config MAX_CODEC_FRAMES_PER_SDU
 	range 1 255
 	help
 	  Maximum number of codec frames per SDU supported by this device. Increasing this value
-	  allows support for a greater variaty of broadcasts, but also increases memory usage.
+	  allows support for a greater variety of broadcasts, but also increases memory usage.
 
 config ENABLE_LC3
 	bool "Enable the LC3 codec"
@@ -79,5 +79,12 @@ config TARGET_BROADCAST_CHANNEL
 	help
 	  Channel Audio Location to sync to. These corresponds to the bt_audio_location,
 	  supporting mono, left and right channels
+
+config INFO_REPORTING_INTERVAL
+	int "Number of SDUs received between each information report"
+	default 1000
+	help
+	  Determines how often information about received data is logged.
+	  Set to 0 to disable reporting.
 
 source "Kconfig.zephyr"

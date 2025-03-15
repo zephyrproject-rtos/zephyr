@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2025 NXP
+ */
+
+
+&fxls8974 {
+	status = "okay";
+	int1-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+	int2-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+};

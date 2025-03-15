@@ -68,6 +68,15 @@ config SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
 	  result in significant flash savings if this driver is the only user
 	  of "k_sleep". This can be the case when building as a bootloader.
 
+config SPI_NOR_SLEEP_ERASE_MS
+	int "Delay between polls while waiting for an erase operation in ms"
+	default 50
+	depends on SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
+	help
+	  The delay between polling while waiting for the flash to finish
+	  an erase operation.
+
+
 config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	int "Page size to use for FLASH_LAYOUT feature"
 	default 65536

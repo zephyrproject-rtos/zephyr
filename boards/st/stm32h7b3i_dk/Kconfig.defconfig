@@ -9,9 +9,6 @@ if BOARD_STM32H7B3I_DK
 config INPUT
 	default y if LVGL
 
-config INPUT_FT5336_INTERRUPT
-	default y if INPUT_FT5336
-
 # MEMC needs to be enabled in order to store
 # display buffer to external SDRAM connected to FMC
 config MEMC
@@ -22,11 +19,8 @@ if LVGL
 config CACHE_MANAGEMENT
 	default y
 
-config LV_USE_GPU_STM32_DMA2D
+config LV_USE_DRAW_DMA2D
 	default y
-
-config LV_GPU_DMA2D_CMSIS_INCLUDE
-	default "stm32h7xx.h"
 
 config STM32_LTDC_FB_NUM
 	default 2
@@ -40,7 +34,7 @@ config LV_Z_DOUBLE_VDB
 config LV_Z_FULL_REFRESH
 	default y
 
-config LV_Z_VBD_CUSTOM_SECTION
+config LV_Z_VDB_CUSTOM_SECTION
 	default y
 
 config LV_Z_FLUSH_THREAD

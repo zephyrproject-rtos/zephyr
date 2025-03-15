@@ -46,7 +46,7 @@
 #endif /* __GNUC__ */
 #elif defined(CONFIG_ARM)
 #if defined(CONFIG_ARMV7_M_ARMV8_M_FP) || defined(CONFIG_ARMV7_R_FP) || defined(CONFIG_CPU_HAS_VFP)
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__ICCARM__)
 #include "float_regs_arm_gcc.h"
 #else
 #include "float_regs_arm_other.h"

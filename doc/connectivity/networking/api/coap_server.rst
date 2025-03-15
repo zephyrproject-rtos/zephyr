@@ -173,7 +173,7 @@ of CoAP services. An example using a temperature sensor can look like:
         coap_append_option_int(&response, COAP_OPTION_CONTENT_FORMAT,
                                COAP_CONTENT_FORMAT_TEXT_PLAIN);
 
-        /* Get the sensor date */
+        /* Get the sensor data */
         sensor_sample_fetch_chan(dev, SENSOR_CHAN_AMBIENT_TEMP);
         sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &value);
         temp = sensor_value_to_double(&value);

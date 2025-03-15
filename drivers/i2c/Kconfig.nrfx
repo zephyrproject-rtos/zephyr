@@ -49,4 +49,33 @@ config I2C_NRFX_TRANSFER_TIMEOUT
 	  0 means that the driver should use the K_FOREVER value,
 	  i.e. it should wait as long as necessary.
 
+config I2C_NRFX_TWIS
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_TWIS_ENABLED
+	depends on I2C_TARGET
+	depends on I2C_TARGET_BUFFER_MODE
+	select NRFX_TWIS0 if HAS_HW_NRF_TWIS0
+	select NRFX_TWIS1 if HAS_HW_NRF_TWIS1
+	select NRFX_TWIS2 if HAS_HW_NRF_TWIS2
+	select NRFX_TWIS3 if HAS_HW_NRF_TWIS3
+	select NRFX_TWIS20 if HAS_HW_NRF_TWIS20
+	select NRFX_TWIS21 if HAS_HW_NRF_TWIS21
+	select NRFX_TWIS22 if HAS_HW_NRF_TWIS22
+	select NRFX_TWIS30 if HAS_HW_NRF_TWIS30
+	select NRFX_TWIS130 if HAS_HW_NRF_TWIS130
+	select NRFX_TWIS131 if HAS_HW_NRF_TWIS131
+	select NRFX_TWIS133 if HAS_HW_NRF_TWIS133
+	select NRFX_TWIS134 if HAS_HW_NRF_TWIS134
+	select NRFX_TWIS135 if HAS_HW_NRF_TWIS135
+	select NRFX_TWIS136 if HAS_HW_NRF_TWIS136
+	select NRFX_TWIS137 if HAS_HW_NRF_TWIS137
+
+if I2C_NRFX_TWIS
+
+config I2C_NRFX_TWIS_BUF_SIZE
+	int "DMA buffer size in bytes"
+	default 64
+
+endif # I2C_NRFX_TWIS
+
 endif # I2C_NRFX

@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config POSIX_ASYNCHRONOUS_IO
-	bool "POSIX asynchronous I/O [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "POSIX asynchronous I/O"
 	help
 	  Enable this option for asynchronous I/O. This option is present for conformance purposes
 	  only. All functions listed in <aio.h> return -1 and set errno to ENOSYS.

@@ -89,8 +89,8 @@ int bmi08x_trigger_set_acc(const struct device *dev, const struct sensor_trigger
 	struct bmi08x_accel_data *data = dev->data;
 
 	if ((trig->chan == SENSOR_CHAN_ACCEL_XYZ) && (trig->type == SENSOR_TRIG_DATA_READY)) {
-		data->handler_drdy_acc = handler;
 		data->drdy_trig_acc = trig;
+		data->handler_drdy_acc = handler;
 		return 0;
 	}
 

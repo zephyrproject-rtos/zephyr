@@ -5,14 +5,6 @@ if SHIELD_BUYDISPLAY_2_8_TFT_TOUCH_ARDUINO
 
 if DISPLAY
 
-if INPUT
-
-# NOTE: Enable if IRQ line is available (requires to solder jumper)
-config INPUT_FT5336_INTERRUPT
-	default n
-
-endif # INPUT
-
 if LVGL
 
 config LV_Z_VDB_SIZE

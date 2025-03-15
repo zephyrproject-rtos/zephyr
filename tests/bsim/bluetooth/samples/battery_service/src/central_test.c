@@ -57,9 +57,9 @@ static struct bt_gatt_subscribe_params battery_critical_status_sub_params;
 #define BAS_BLS_IND_RECEIVED_COUNT 20
 #define BAS_BLS_NTF_RECEIVED_COUNT 20
 
-static DEFINE_FLAG(notification_count_reached);
-static DEFINE_FLAG(indication_count_reached);
-static DEFINE_FLAG(bcs_char_read);
+DEFINE_FLAG_STATIC(notification_count_reached);
+DEFINE_FLAG_STATIC(indication_count_reached);
+DEFINE_FLAG_STATIC(bcs_char_read);
 
 /* Callback for handling Battery Critical Status Read Response */
 static uint8_t battery_critical_status_read_cb(struct bt_conn *conn, uint8_t err,

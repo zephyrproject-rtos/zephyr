@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "promicro_nrf52840_nrf52840_common.dts"
+#include <nordic/nrf52840_partition.dtsi>

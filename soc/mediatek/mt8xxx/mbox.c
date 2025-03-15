@@ -57,7 +57,6 @@ struct mtk_mbox {
 
 struct mbox_cfg {
 	volatile struct mtk_mbox *mbox;
-	uint32_t irq;
 };
 
 struct mbox_data {
@@ -85,7 +84,12 @@ void mtk_adsp_mbox_signal(const struct device *mbox, uint32_t chan)
 	}
 }
 
-static void mbox_isr(const void *arg)
+#define DEF_DEVPTR(N) DEVICE_DT_INST_GET(N),
+const struct device * const mbox_devs[] = {
+	DT_INST_FOREACH_STATUS_OKAY(DEF_DEVPTR)
+};
+
+static void mbox_handle(const void *arg)
 {
 	const struct mbox_cfg *cfg = ((struct device *)arg)->config;
 	struct mbox_data *data = ((struct device *)arg)->data;
@@ -101,10 +105,16 @@ static void mbox_isr(const void *arg)
 	cfg->mbox->in_cmd_clr = cfg->mbox->in_cmd; /* ACK */
 }
 
+static void mbox_isr(const void *arg)
+{
+	for (int i = 0; i < ARRAY_SIZE(mbox_devs); i++) {
+		mbox_handle(mbox_devs[i]);
+	}
+}
+
 #define DEF_IRQ(N)							\
 	{ IRQ_CONNECT(DT_INST_IRQN(N), 0, mbox_isr, DEVICE_DT_INST_GET(N), 0); \
 	  irq_enable(DT_INST_IRQN(N)); }
-
 
 static int mbox_init(void)
 {
@@ -117,7 +127,7 @@ SYS_INIT(mbox_init, POST_KERNEL, 0);
 #define DEF_DEV(N)							\
 	static struct mbox_data dev_data##N;				\
 	static const struct mbox_cfg dev_cfg##N =			\
-		{ .irq  = DT_INST_IRQN(N), .mbox = (void *)DT_INST_REG_ADDR(N), }; \
+		{ .mbox = (void *)DT_INST_REG_ADDR(N), };		\
 	DEVICE_DT_INST_DEFINE(N, NULL, NULL, &dev_data##N, &dev_cfg##N,	\
 			      POST_KERNEL, 0, NULL);
 

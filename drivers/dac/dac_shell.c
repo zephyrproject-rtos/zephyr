@@ -36,7 +36,7 @@ static int cmd_setup(const struct shell *sh, size_t argc, char **argv)
 	int argidx;
 	int err;
 
-	dac = device_get_binding(argv[args_indx.device]);
+	dac = shell_device_get_binding(argv[args_indx.device]);
 	if (!dac) {
 		shell_error(sh, "DAC device not found");
 		return -EINVAL;
@@ -76,7 +76,7 @@ static int cmd_write_value(const struct shell *sh, size_t argc, char **argv)
 	uint32_t value;
 	int err;
 
-	dac = device_get_binding(argv[args_indx.device]);
+	dac = shell_device_get_binding(argv[args_indx.device]);
 	if (!dac) {
 		shell_error(sh, "DAC device not found");
 		return -EINVAL;
@@ -94,14 +94,31 @@ static int cmd_write_value(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static bool device_is_dac(const struct device *dev)
+{
+	return DEVICE_API_IS(dac, dev);
+}
+
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_filter(idx, device_is_dac);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(dac_cmds,
-	SHELL_CMD_ARG(setup, NULL,
+	SHELL_CMD_ARG(setup, &dsub_device_name,
 		      "Setup DAC channel\n"
 		      "Usage: setup <device> <channel> <resolution> [-b] [-i]\n"
 		      "-b Enable output buffer\n"
 		      "-i Connect internally",
 		      cmd_setup, 4, 2),
-	SHELL_CMD_ARG(write_value, NULL,
+	SHELL_CMD_ARG(write_value, &dsub_device_name,
 		      "Write DAC value\n"
 		      "Usage: write <device> <channel> <value>",
 		      cmd_write_value, 4, 0),

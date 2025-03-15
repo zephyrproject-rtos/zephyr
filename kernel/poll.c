@@ -87,13 +87,9 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 			return true;
 		}
 		break;
-#ifdef CONFIG_PIPES
 	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
-		if (k_pipe_read_avail(event->pipe)) {
-			*state = K_POLL_STATE_PIPE_DATA_AVAILABLE;
-			return true;
-		}
-#endif /* CONFIG_PIPES */
+		*state = K_POLL_STATE_PIPE_DATA_AVAILABLE;
+		return true;
 	case K_POLL_TYPE_IGNORE:
 		break;
 	default:
@@ -154,12 +150,10 @@ static inline void register_event(struct k_poll_event *event,
 		__ASSERT(event->msgq != NULL, "invalid message queue\n");
 		add_event(&event->msgq->poll_events, event, poller);
 		break;
-#ifdef CONFIG_PIPES
 	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
 		__ASSERT(event->pipe != NULL, "invalid pipe\n");
 		add_event(&event->pipe->poll_events, event, poller);
 		break;
-#endif /* CONFIG_PIPES */
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
@@ -195,12 +189,10 @@ static inline void clear_event_registration(struct k_poll_event *event)
 		__ASSERT(event->msgq != NULL, "invalid message queue\n");
 		remove_event = true;
 		break;
-#ifdef CONFIG_PIPES
 	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
 		__ASSERT(event->pipe != NULL, "invalid pipe\n");
 		remove_event = true;
 		break;
-#endif /* CONFIG_PIPES */
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
@@ -290,7 +282,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events,
 {
 	int events_registered;
 	k_spinlock_key_t key;
-	struct z_poller *poller = &arch_current_thread()->poller;
+	struct z_poller *poller = &_current->poller;
 
 	poller->is_polling = true;
 	poller->mode = MODE_POLL;
@@ -413,11 +405,9 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 		case K_POLL_TYPE_MSGQ_DATA_AVAILABLE:
 			K_OOPS(K_SYSCALL_OBJ(e->msgq, K_OBJ_MSGQ));
 			break;
-#ifdef CONFIG_PIPES
 		case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
 			K_OOPS(K_SYSCALL_OBJ(e->pipe, K_OBJ_PIPE));
 			break;
-#endif /* CONFIG_PIPES */
 		default:
 			ret = -EINVAL;
 			goto out_free;
@@ -464,7 +454,7 @@ static int signal_poll_event(struct k_poll_event *event, uint32_t state)
 	return retcode;
 }
 
-void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state)
+bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state)
 {
 	struct k_poll_event *poll_event;
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -475,6 +465,8 @@ void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state)
 	}
 
 	k_spin_unlock(&lock, key);
+
+	return (poll_event != NULL);
 }
 
 void z_impl_k_poll_signal_init(struct k_poll_signal *sig)
@@ -675,7 +667,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 	__ASSERT(work_q != NULL, "NULL work_q\n");
 	__ASSERT(work != NULL, "NULL work\n");
 	__ASSERT(events != NULL, "NULL events\n");
-	__ASSERT(num_events > 0, "zero events\n");
+	__ASSERT(num_events >= 0, "<0 events\n");
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_work_poll, submit_to_queue, work_q, work, timeout);
 

@@ -72,7 +72,7 @@ const clock_frg_clk_config_t g_frg12Config_clock_init = {
 	.num = 12, .sfg_clock_src = kCLOCK_FrgMainClk, .divider = 255U, .mult = 167};
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
-/* USB PHY condfiguration */
+/* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL     (0x0CU)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
@@ -177,7 +177,7 @@ static void usb_device_clock_init(void)
 	while (SYSCTL0->USB0CLKSTAT & SYSCTL0_USB0CLKSTAT_HOST_NEED_CLKST_MASK) {
 		__ASM("nop");
 	}
-	/* According to reference mannual, device mode setting has to be set by access
+	/* According to reference manual, device mode setting has to be set by access
 	 * usb host register
 	 */
 	USBHSH->PORTMODE |= USBHSH_PORTMODE_DEV_ENABLE_MASK;
@@ -318,6 +318,10 @@ void __weak rt5xx_clock_init(void)
 	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM16);
 #endif
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm12), nxp_lpc_usart, okay)
+	/* Switch FLEXCOMM12 to FRG */
+	CLOCK_AttachClk(kFRG_to_FLEXCOMM12);
+#endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm12), nxp_lpc_spi, okay)
 	/* Switch FLEXCOMM12 to FRG */
 	CLOCK_AttachClk(kFRG_to_FLEXCOMM12);
 #endif

@@ -1,0 +1,115 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# A pykwalify schema for basic validation of the patches.yml format.
+
+# The schema for individual patch objects
+schema;patch-schema:
+  type: seq
+  sequence:
+    - type: map
+      mapping:
+
+        # The path to the patch file, relative to patch-base
+        # E.g. zephyr/kernel-pipe-fix-not-k-no-wait-and-ge-min-xfer-bytes.patch
+        path:
+          required: true
+          type: str
+
+        # The SHA-256 checksum of the patch file
+        # e.g. e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        sha256sum:
+          required: true
+          type: str
+          pattern: "^[0-9a-f]{64}$"
+
+        # The path of the module the patch is for, relative to the west workspace
+        # e.g. zephyr, or bootloader/mcuboot
+        module:
+          required: true
+          type: str
+
+        # The name of the primary author of the patch, e.g. Kermit D. Frog
+        author:
+          required: true
+          type: str
+
+        # The email address of the primary author of the patch, e.g. itsnoteasy@being.gr
+        email:
+          required: true
+          type: str
+          pattern: ".+@.+"
+
+        # The date the patch was created, in ISO 8601 date format YYYY-MM-DD
+        date:
+          required: true
+          type: date
+          format: "%Y-%m-%d"
+
+        # Whether the patch should be submitted upstream
+        upstreamable:
+          type: bool
+          default: true
+
+        # The URL of the upstream pull request to merge the patch
+        # e.g. https://github.com/zephyrproject-rtos/zephyr/pull/24486
+        merge-pr:
+          type: str
+          pattern: "^https?://"
+
+        # The URL of the upstream issue associated with the patch, such as an enhancement issue
+        # or bug report, e.g. https://github.com/zephyrproject-rtos/zephyr/issues/24485
+        issue:
+          type: str
+          pattern: "^https?://"
+
+        # Whether the associated merge-pr has been merged
+        merge-status:
+          type: bool
+
+        # The SHA-1 hash of the upstream git commit incorporating the associated merge-pr
+        # e.g. af926ae728c78affa89cbc1de811ab4211ed0f69
+        merge-commit:
+          type: str
+          pattern: "^[0-9a-f]{40}"
+
+        # The date the associated merge-pr was merged, in ISO 8601 date format YYYY-MM-DD
+        merge-date:
+          type: date
+          format: "%Y-%m-%d"
+
+        # The command used to apply the change represented by the patch
+        apply-command:
+          type: str
+          default: "git apply"
+
+        # Comments useful to other developers about the patch,
+        # e.g. "This is a workaround for xyz and probably should not go upstream"
+        comments:
+          type: str
+
+        # Custom field that may be used for any purpose. For example, if the chosen apply-patch
+        # command is able to filter based on semantic versioning and a particular patch file
+        # only applies to version 1.2.3, one could specify e.g. custom: [1, 2, 3].
+        # This field may be of any type and is not validated.
+        custom:
+          type: any
+
+# The top-level schema for patches.yml files
+type: map
+mapping:
+
+  # The list of patch objects
+  patches:
+    include: patch-schema
+
+  # The command used to undo local changes to each module when "west patch clean" is run
+  checkout-command:
+    type: str
+    default: "git checkout ."
+
+  # The command used to clean each module when "west patch clean" is run
+  clean-command:
+    type: str
+    default: "git clean -d -f -x"

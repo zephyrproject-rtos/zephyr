@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2023 Antmicro
+ * Copyright (c) 2024 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/siwg917.dtsi>
+
+/ {
+	soc {
+		compatible = "silabs,siwg917m111mgtba", "silabs,siwg917",
+			     "silabs,siwx91x", "simple-bus";
+	};
+};
+
+&flash0 {
+	reg = <0x08202000 DT_SIZE_K(2048-8)>;
+};

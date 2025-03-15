@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/sam3XXh-pinctrl.h>
+#include <dt-bindings/pinctrl/sam3XXe-pinctrl.h>
 
 &pinctrl {
 	twi0_default: twi0_default {

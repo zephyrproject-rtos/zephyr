@@ -7,5 +7,4 @@ flash: 232
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 vendor: adafruit

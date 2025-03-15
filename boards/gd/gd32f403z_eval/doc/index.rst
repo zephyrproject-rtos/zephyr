@@ -43,27 +43,7 @@ For more information about the GD32F403 SoC and GD32F403Z-Eval board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| EXTI      | on-chip    | EXTI interrupt        |
-|           |            | controller            |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | gpio                  |
-+-----------+------------+-----------------------+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| PWM       | on-chip    | PWM                   |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port-polling   |
-+-----------+------------+-----------------------+
-| ADC       | on-chip    | ADC                   |
-+-----------+------------+-----------------------+
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========

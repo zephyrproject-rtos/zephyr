@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Download artifacts
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v8
         with:
           run_id: ${{ github.event.workflow_run.id }}
 

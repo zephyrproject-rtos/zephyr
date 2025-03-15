@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    STM32 Pin controller Node
+    STM32 Pin controller.
+
     Based on pincfg-node.yaml binding.
 
     Note: `bias-disable` and `drive-push-pull` are default pin configurations.
@@ -54,8 +55,8 @@ child-binding:
       description: |
         Reused from
         https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml
-        Integer array, represents gpio pin number and mux setting.
-        These defines are calculated as: ((port * 16 + line) << 8) | function
+        Integer represents gpio pin number and mux setting.
+        Each integer encodes a port, line and alternate function.
         With:
         - port: The gpio port index (PA = 0, PB = 1, ..., PK = 11)
         - line: The line offset within the port (PA0 = 0, PA1 = 1, ..., PA15 = 15)
@@ -74,7 +75,7 @@ child-binding:
 
         To simplify the usage, macro is available to generate "pinmux" field.
         This macro is available here:
-          -include/zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h
+          -include/zephyr/dt-bindings/pinctrl/stm32-pinctrl.h
         Some examples of macro usage:
            GPIO A9 set as alternate function 2
         ... {

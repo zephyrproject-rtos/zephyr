@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  PLL2 node binding for Connectivity line devices (STM32F105/STM32F107)
+  STM32F105/F107 PLL2.
 
   Takes clk_hse as input clock, using prediv as prescaler.
 

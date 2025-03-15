@@ -25,7 +25,7 @@ ZTEST(workqueue_api, test_k_work_queue_stop)
 {
 	size_t i;
 	struct k_work work;
-	struct k_work_q work_q;
+	struct k_work_q work_q = {0};
 	struct k_work works[NUM_TEST_ITEMS];
 	struct k_work_queue_config cfg = {
 		.name = "test_work_q",

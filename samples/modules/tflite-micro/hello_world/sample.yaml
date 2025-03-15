@@ -24,6 +24,6 @@ tests:
   sample.tensorflow.helloworld.cmsis_nn:
     tags: tensorflow
     platform_allow:
-      - mps3/corstone300/an547
+      - mps3/corstone300/fvp
     extra_configs:
       - CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y

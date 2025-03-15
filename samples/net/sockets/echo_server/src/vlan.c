@@ -107,6 +107,11 @@ int init_vlan(void)
 	struct ud ud;
 	int ret;
 
+	if (CONFIG_NET_VLAN_COUNT == 0) {
+		LOG_DBG("No VLAN interfaces defined.");
+		return 0;
+	}
+
 	memset(&ud, 0, sizeof(ud));
 
 	net_if_foreach(iface_cb, &ud);

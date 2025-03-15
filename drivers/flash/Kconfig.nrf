@@ -37,7 +37,7 @@ config SOC_FLASH_NRF_RADIO_SYNC_TICKER
 	depends on BT_LL_SW_SPLIT
 	help
 	  Enable synchronization between flash memory driver and radio using
-	  BLE LL controller ticker API.
+	  Bluetooth LE LL controller ticker API.
 
 config SOC_FLASH_NRF_RADIO_SYNC_NONE
 	bool "none"

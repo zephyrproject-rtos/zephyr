@@ -3,8 +3,7 @@
 # Copyright (c) 2024 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-DT_STM32_XSPI_1_HAS_DMA := $(dt_nodelabel_has_prop,xspi1,dmas)
-DT_STM32_XSPI_2_HAS_DMA := $(dt_nodelabel_has_prop,xspi2,dmas)
+DT_STM32_XSPI_HAS_DMA := $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_XSPI),dmas)
 
 config FLASH_STM32_XSPI
 	bool "STM32 XSPI Flash driver"
@@ -17,11 +16,9 @@ config FLASH_STM32_XSPI
 	select FLASH_PAGE_LAYOUT
 	select FLASH_HAS_PAGE_LAYOUT
 	select PINCTRL
-	select DMA if $(DT_STM32_XSPI_1_HAS_DMA) || $(DT_STM32_XSPI_2_HAS_DMA)
-	select USE_STM32_HAL_DMA if $(DT_STM32_XSPI_1_HAS_DMA) || \
-					$(DT_STM32_XSPI_2_HAS_DMA)
+	select DMA if $(DT_STM32_XSPI_HAS_DMA)
+	select USE_STM32_HAL_DMA if $(DT_STM32_XSPI_HAS_DMA)
 	select USE_STM32_HAL_DMA_EX if SOC_SERIES_STM32H5X && \
-					($(DT_STM32_XSPI_1_HAS_DMA) || \
-					 $(DT_STM32_XSPI_2_HAS_DMA))
+					$(DT_STM32_XSPI_HAS_DMA)
 	help
 	  Enable XSPI-NOR support on the STM32 family of processors.
