@@ -116,7 +116,7 @@ set_compiler_property(PROPERTY warning_error_misra_sane -Werror=vla)
 
 set_compiler_property(PROPERTY cstd -std=)
 
-if (NOT CONFIG_ARCMWDT_LIBC)
+if (NOT CONFIG_ARCMWDT_LIBC AND NOT CONFIG_PICOLIBC_USE_TOOLCHAIN)
   set_compiler_property(PROPERTY nostdinc -Hno_default_include -Hnoarcexlib -U__STDC_LIB_EXT1__)
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
@@ -125,12 +125,10 @@ endif()
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp98 "-std=c++98")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp11 "-std=c++11")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp14 "-std=c++14")
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 "-std=c++17")
-
-#no support of C++2a, C++20, C++2b
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "")
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "")
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 "-std=c++17" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "-std=c++2a" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "-std=c++20" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b" "-Wno-register")
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
@@ -202,7 +200,7 @@ set_compiler_property(PROPERTY no_global_merge "")
 # Required ASM flags when using mwdt
 set_property(TARGET asm PROPERTY required "-Hasmcpp")
 
-if(CONFIG_ARCMWDT_LIBC)
+if(CONFIG_ARCMWDT_LIBC OR CONFIG_PICOLIBC_USE_TOOLCHAIN)
   # We rely on the default C/C++ include locations which are provided by MWDT if we do build with
   # MW C / C++ libraries. However, for that case we still need to explicitly set header directory
   # to ASM builds (which may use 'stdbool.h').

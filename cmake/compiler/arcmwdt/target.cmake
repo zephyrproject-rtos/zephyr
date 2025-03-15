@@ -40,12 +40,13 @@ endif()
 # We can't rely on these functions presence if we don't use MWDT libc.
 # NOTE: the option name '-fno-builtin' is misleading a bit - we still can
 # manually call __builtin_** functions even if we specify it.
-if(NOT CONFIG_ARCMWDT_LIBC)
+if(NOT CONFIG_ARCMWDT_LIBC AND NOT CONFIG_PICOLIBC_USE_TOOLCHAIN)
   list(APPEND TOOLCHAIN_C_FLAGS -fno-builtin)
 endif()
 
-# The MWDT compiler requires different macro definitions for ARC and RISC-V
-# architectures. __MW_ASM_RV_MACRO__ allows to select appropriate compilation branch.
-if(CONFIG_RISCV)
-  list(APPEND TOOLCHAIN_C_FLAGS -D__MW_ASM_RV_MACRO__)
+# Set the default include path depending on the C library we're going to use
+if(CONFIG_ARCMWDT_LIBC)
+  list(APPEND TOOLCHAIN_C_FLAGS -Hlibc=mw)
+elseif(CONFIG_PICOLIBC_USE_TOOLCHAIN)
+  list(APPEND TOOLCHAIN_C_FLAGS -Hlibc=pico)
 endif()
