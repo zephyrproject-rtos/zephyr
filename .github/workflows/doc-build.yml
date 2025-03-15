@@ -10,6 +10,21 @@ on:
     tags:
     - v*
   pull_request:
+    paths:
+    - 'doc/**'
+    - 'boards/*/doc/**'
+    - '**/*.rst'
+    - 'include/**'
+    - 'kernel/include/kernel_arch_interface.h'
+    - 'lib/libc/**'
+    - 'subsys/testsuite/ztest/include/**'
+    - '**/Kconfig*'
+    - 'west.yml'
+    - 'scripts/dts/**'
+    - 'doc/requirements.txt'
+    - '.github/workflows/doc-build.yml'
+    - 'scripts/pylib/pytest-twister-harness/src/twister_harness/device/device_adapter.py'
+    - 'scripts/pylib/pytest-twister-harness/src/twister_harness/helpers/shell.py'
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
