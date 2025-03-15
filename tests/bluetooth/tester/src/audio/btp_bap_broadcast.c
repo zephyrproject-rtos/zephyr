@@ -25,7 +25,6 @@
 #define LOG_MODULE_NAME bttester_bap_broadcast
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #include "btp/btp.h"
-#include "btp_bap_audio_stream.h"
 #include "btp_bap_broadcast.h"
 
 static K_SEM_DEFINE(sem_stream_stopped, 0U,
