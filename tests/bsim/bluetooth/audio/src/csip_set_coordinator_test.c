@@ -40,6 +40,7 @@ static volatile bool ordered_access_locked;
 static volatile bool ordered_access_unlocked;
 static const struct bt_csip_set_coordinator_csis_inst *primary_inst;
 CREATE_FLAG(flag_sirk_changed);
+CREATE_FLAG(flag_size_changed);
 
 static uint8_t connected_member_count;
 static uint8_t members_found;
@@ -139,6 +140,14 @@ static void csip_sirk_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst)
 	SET_FLAG(flag_sirk_changed);
 }
 
+static void csip_size_changed_cb(struct bt_conn *conn,
+				 const struct bt_csip_set_coordinator_csis_inst *inst)
+{
+	printk("Inst %p size changed: %u\n", inst, inst->info.set_size);
+
+	SET_FLAG(flag_size_changed);
+}
+
 static void csip_set_coordinator_ordered_access_cb(
 	const struct bt_csip_set_coordinator_set_info *set_info, int err,
 	bool locked,  struct bt_csip_set_coordinator_set_member *member)
@@ -160,6 +169,7 @@ static struct bt_csip_set_coordinator_cb cbs = {
 	.discover = csip_discover_cb,
 	.lock_changed = csip_lock_changed_cb,
 	.sirk_changed = csip_sirk_changed_cb,
+	.size_changed = csip_size_changed_cb,
 	.ordered_access = csip_set_coordinator_ordered_access_cb,
 };
 
@@ -514,6 +524,24 @@ static void test_new_sirk(void)
 	PASS("All members disconnected\n");
 }
 
+static void test_new_size_and_rank(void)
+{
+	init();
+	connect_set();
+
+	backchannel_sync_send_all();
+	backchannel_sync_wait_all();
+
+	/* We won't get a new rank in a notification. For this test we only verify that we get a new
+	 * size
+	 */
+	WAIT_FOR_FLAG(flag_size_changed);
+
+	disconnect_set();
+
+	PASS("All members disconnected\n");
+}
+
 static void test_args(int argc, char *argv[])
 {
 	for (int argn = 0; argn < argc; argn++) {
@@ -544,6 +572,13 @@ static const struct bst_test_instance test_connect[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_new_sirk,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_coordinator_new_size_and_rank",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_new_size_and_rank,
 		.test_args_f = test_args,
 	},
 	BSTEST_END_MARKER,
