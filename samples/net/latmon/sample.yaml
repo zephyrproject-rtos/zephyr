@@ -1,0 +1,11 @@
+sample:
+  name: Latency Benchmarking Tool
+tests:
+  sample.basic.latmon
+    tags:
+      - gpio
+      - devicetree
+    integration_platforms:
+      - frdm_k64f
+    depends_on: gpio
+    harness: console
