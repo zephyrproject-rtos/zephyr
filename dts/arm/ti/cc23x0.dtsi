@@ -86,6 +86,15 @@
 			interrupts = <9 0>;
 			status = "disabled";
 		};
+
+		spi0: spi@40030000 {
+			compatible = "ti,cc23x0-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40030000 0x164>;
+			interrupts = <10 0>;
+			status = "disabled";
+		};
 	};
 };
 
