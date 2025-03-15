@@ -52,8 +52,10 @@ static int siwg917_nwp_init(void)
 	}
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
-	cfg->feature_bit_map |= SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE,
-	cfg->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
+	cfg->feature_bit_map |= SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE;
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_MFP)) {
+		cfg->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
+	}
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
 		cfg->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
 		cfg->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_TOTAL_SELECTS(10);
