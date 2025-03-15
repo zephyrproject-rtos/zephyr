@@ -90,6 +90,7 @@ New APIs and options
 
     * :c:func:`bt_le_get_local_features`
     * :c:func:`bt_le_bond_exists`
+    * :c:func:`bt_br_bond_exists`
 
 * Display
 
