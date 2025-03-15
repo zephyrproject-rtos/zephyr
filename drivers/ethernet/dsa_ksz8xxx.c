@@ -938,8 +938,8 @@ struct net_pkt *dsa_ksz8xxx_xmit_pkt(struct net_if *iface, struct net_pkt *pkt)
 	struct net_buf *buf;
 	size_t len, pad = 0;
 
-	lladst.len = sizeof(hdr->dst.addr);
-	lladst.addr = &hdr->dst.addr[0];
+	(void)net_linkaddr_create(&lladst, hdr->dst.addr, sizeof(hdr->dst.addr),
+				  NET_LINK_ETHERNET);
 
 	len = net_pkt_get_len(pkt);
 	/*

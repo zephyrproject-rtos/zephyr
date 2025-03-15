@@ -306,19 +306,20 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 
 		net_ipaddr_copy(&entry->ip, next_addr);
 
-		net_pkt_lladdr_src(pkt)->addr =
-			(uint8_t *)net_if_get_link_addr(entry->iface)->addr;
+		(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+				       net_if_get_link_addr(entry->iface)->addr,
+				       sizeof(struct net_eth_addr));
 
 		arp_entry_register_pending(entry);
 	} else {
-		net_pkt_lladdr_src(pkt)->addr =
-			(uint8_t *)net_if_get_link_addr(iface)->addr;
+		(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+				       net_if_get_link_addr(iface)->addr,
+				       sizeof(struct net_eth_addr));
 	}
 
-	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
-
-	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)net_eth_broadcast_addr();
-	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+			       (const uint8_t *)net_eth_broadcast_addr(),
+			       sizeof(struct net_eth_addr));
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
 	hdr->protocol = htons(NET_ETH_PTYPE_IP);
@@ -456,12 +457,12 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 
 	k_mutex_unlock(&arp_mutex);
 
-	net_pkt_lladdr_src(pkt)->addr =
-		(uint8_t *)net_if_get_link_addr(entry->iface)->addr;
-	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+			       net_if_get_link_addr(entry->iface)->addr,
+			       sizeof(struct net_eth_addr));
 
-	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)&entry->eth;
-	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+			       (const uint8_t *)&entry->eth, sizeof(struct net_eth_addr));
 
 	NET_DBG("ARP using ll %s for IP %s",
 		net_sprint_ll_addr(net_pkt_lladdr_dst(pkt)->addr,
@@ -523,11 +524,13 @@ static void arp_gratuitous_send(struct net_if *iface,
 	net_ipv4_addr_copy_raw(hdr->dst_ipaddr, (uint8_t *)ipaddr);
 	net_ipv4_addr_copy_raw(hdr->src_ipaddr, (uint8_t *)ipaddr);
 
-	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(iface)->addr;
-	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+			       net_if_get_link_addr(iface)->addr,
+			       sizeof(struct net_eth_addr));
 
-	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)net_eth_broadcast_addr();
-	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+			       (uint8_t *)net_eth_broadcast_addr(),
+			       sizeof(struct net_eth_addr));
 
 	NET_DBG("Sending gratuitous ARP pkt %p", pkt);
 
@@ -693,9 +696,9 @@ void net_arp_update(struct net_if *iface,
 		pkt = k_fifo_get(&entry->pending_queue, K_FOREVER);
 
 		/* Set the dst in the pending packet */
-		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
-		net_pkt_lladdr_dst(pkt)->addr =
-			(uint8_t *) &NET_ETH_HDR(pkt)->dst.addr;
+		(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+				       (const uint8_t *)&NET_ETH_HDR(pkt)->dst.addr,
+				       sizeof(struct net_eth_addr));
 
 		NET_DBG("iface %d (%p) dst %s pending %p frag %p ptype 0x%04x",
 			net_if_get_by_iface(iface), iface,
@@ -755,11 +758,13 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 	net_ipv4_addr_copy_raw(hdr->dst_ipaddr, query->src_ipaddr);
 	net_ipv4_addr_copy_raw(hdr->src_ipaddr, query->dst_ipaddr);
 
-	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(iface)->addr;
-	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+			       net_if_get_link_addr(iface)->addr,
+			       sizeof(struct net_eth_addr));
 
-	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)&hdr->dst_hwaddr.addr;
-	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+			       (uint8_t *)&hdr->dst_hwaddr.addr,
+			       sizeof(struct net_eth_addr));
 
 	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
 	net_pkt_set_family(pkt, AF_INET);
