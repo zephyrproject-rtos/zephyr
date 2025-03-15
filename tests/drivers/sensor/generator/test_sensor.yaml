@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "test_deps.yaml"
+compatible:
+  org: "zephyr"
+  part: "test-sensor"
+supported-buses: ["i2c"]
+attributes:
+  - attribute: "attr0"
+    channel: "foo"
+    units: "bars"
+  - attribute: "attr1"
+    channel: "foo"
+    units: "foos"
+  - attribute: "attr0"
+    channel: "bar"
+    units: "bars"
+channels:
+  foo: []
+  bar:
+    - name: "left"
+      description: "Left side of the bar"
+    - name: "right"
+      description: "Right side of the bar"
