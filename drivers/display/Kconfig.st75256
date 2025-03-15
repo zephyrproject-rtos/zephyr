@@ -1,0 +1,31 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ST75256
+	bool "ST75256 display controller"
+	default y
+	depends on DT_HAS_SITRONIX_ST75256_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for ST75256 display controller.
+
+if ST75256
+
+config ST75256_DEFAULT_CONTRAST
+	int "ST75256 default contrast"
+	default 155
+	range 0 255
+	help
+	  ST75256 default contrast.
+
+config ST75256_DEFAULT_GREYSCALE
+	bool "ST75256 default mode is greyscale"
+	help
+	  Sets greyscale mode as default mode
+
+config ST75256_CONV_BUFFER_LINES
+	int "How many lines can the conversion buffer hold"
+	default 16
+	range 1 162
+
+endif # ST75256
