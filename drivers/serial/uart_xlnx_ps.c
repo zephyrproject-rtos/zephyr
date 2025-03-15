@@ -25,7 +25,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/types.h>
-#include <soc.h>
 
 #include <zephyr/init.h>
 #include <zephyr/toolchain.h>
