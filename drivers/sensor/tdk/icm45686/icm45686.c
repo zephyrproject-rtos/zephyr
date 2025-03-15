@@ -22,6 +22,7 @@
 #include "icm45686_bus.h"
 #include "icm45686_decoder.h"
 #include "icm45686_trigger.h"
+#include "icm45686_stream.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM45686, CONFIG_SENSOR_LOG_LEVEL);
@@ -67,46 +68,46 @@ static int icm45686_channel_get(const struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.x,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.x, false,
 				  &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.y,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.y, false,
 				  &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.z,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.z, false,
 				  &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_GYRO_X:
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.x,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.x, false,
 				   &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_GYRO_Y:
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.y,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.y, false,
 				   &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_GYRO_Z:
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.z,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.z, false,
 				   &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		icm45686_temp_c(data->edata.payload.temp, &val->val1, &val->val2);
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.x,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.x, false,
 				  &val[0].val1, &val[0].val2);
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.y,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.y, false,
 				  &val[1].val1, &val[1].val2);
-		icm45686_accel_ms(&data->edata, data->edata.payload.accel.z,
+		icm45686_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.z, false,
 				  &val[2].val1, &val[2].val2);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.x,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.x, false,
 				   &val->val1, &val->val2);
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.y,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.y, false,
 				   &val[1].val1, &val[1].val2);
-		icm45686_gyro_rads(&data->edata, data->edata.payload.gyro.z,
+		icm45686_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.z, false,
 				   &val[2].val1, &val[2].val2);
 		break;
 	default:
@@ -214,6 +215,8 @@ static void icm45686_submit(const struct device *dev, struct rtio_iodev_sqe *iod
 
 	if (!cfg->is_streaming) {
 		icm45686_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_ICM45686_STREAM)) {
+		icm45686_stream_submit(dev, iodev_sqe);
 	} else {
 		LOG_ERR("Streaming not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
@@ -354,6 +357,12 @@ static int icm45686_init(const struct device *dev)
 			LOG_ERR("Failed to initialize triggers: %d", err);
 			return err;
 		}
+	} else if (IS_ENABLED(CONFIG_ICM45686_STREAM)) {
+		err = icm45686_stream_init(dev);
+		if (err) {
+			LOG_ERR("Failed to initialize streaming: %d", err);
+			return err;
+		}
 	}
 
 	LOG_DBG("Init OK");
@@ -393,12 +402,12 @@ static int icm45686_init(const struct device *dev)
 				.odr = DT_INST_PROP(inst, gyro_odr),				   \
 				.lpf = DT_INST_PROP_OR(inst, gyro_lpf, 0),			   \
 			},									   \
+			.fifo_watermark = DT_INST_PROP_OR(inst, fifo_watermark, 0),		   \
 		},										   \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \
 	};											   \
 	static struct icm45686_data icm45686_data_##inst = {					   \
 		.edata.header = {								   \
-			.is_fifo = false,							   \
 			.accel_fs = DT_INST_PROP(inst, accel_fs),				   \
 			.gyro_fs = DT_INST_PROP(inst, gyro_fs),					   \
 		},										   \

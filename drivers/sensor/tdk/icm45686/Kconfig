@@ -27,12 +27,14 @@ config ICM45686_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios)
+	depends on !ICM45686_STREAM
 	select ICM45686_TRIGGER
 
 config ICM45686_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios)
+	depends on !ICM45686_STREAM
 	select ICM45686_TRIGGER
 
 endchoice
@@ -53,5 +55,12 @@ config ICM45686_THREAD_STACK_SIZE
 	default 1024
 	help
 	  The thread stack size.
+
+config ICM45686_STREAM
+	bool "Streaming mode"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios)
+	help
+	  Enable streaming of sensor data.
 
 endif # ICM45686
