@@ -32,6 +32,7 @@ struct step_dir_stepper_common_config {
 	bool dual_edge;
 	const struct stepper_timing_source_api *timing_source;
 	const struct device *counter;
+	bool invert_direction;
 };
 
 /**
@@ -47,6 +48,7 @@ struct step_dir_stepper_common_config {
 		.dir_pin = GPIO_DT_SPEC_GET(node_id, dir_gpios),                                   \
 		.dual_edge = DT_PROP_OR(node_id, dual_edge_step, false),                           \
 		.counter = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, counter)),                    \
+		.invert_direction = DT_PROP(node_id, invert_direction),                            \
 		.timing_source = COND_CODE_1(DT_NODE_HAS_PROP(node_id, counter),                   \
 						(&step_counter_timing_source_api),                 \
 						(&step_work_timing_source_api)),                   \

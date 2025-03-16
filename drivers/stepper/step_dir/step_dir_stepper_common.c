@@ -16,10 +16,10 @@ static inline int step_dir_stepper_perform_step(const struct device *dev)
 
 	switch (data->direction) {
 	case STEPPER_DIRECTION_POSITIVE:
-		ret = gpio_pin_set_dt(&config->dir_pin, 1);
+		ret = gpio_pin_set_dt(&config->dir_pin, 1 ^ config->invert_direction);
 		break;
 	case STEPPER_DIRECTION_NEGATIVE:
-		ret = gpio_pin_set_dt(&config->dir_pin, 0);
+		ret = gpio_pin_set_dt(&config->dir_pin, 0 ^ config->invert_direction);
 		break;
 	default:
 		LOG_ERR("Unsupported direction: %d", data->direction);

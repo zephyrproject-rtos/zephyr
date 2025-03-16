@@ -19,12 +19,6 @@ compatible: "adi,tmc2209"
 
 include:
   - name: stepper-controller.yaml
-    property-allowlist:
-      - micro-step-res
-      - step-gpios
-      - dir-gpios
-      - en-gpios
-      - counter
 
 properties:
   msx-gpios:
