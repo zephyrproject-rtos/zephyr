@@ -504,7 +504,8 @@ static int sdl_display_clear(const struct device *dev)
 		size = config->width * config->height * 2U;
 		break;
 	default:
-		LOG_ERR("Pixel format not supported");
+		__ASSERT_MSG_INFO("Pixel format not supported");
+		return -EINVAL;
 	}
 	LOG_DBG("size: %zu, bgcolor: %hhu", size, bgcolor);
 	memset(disp_data->buf, bgcolor, size);
