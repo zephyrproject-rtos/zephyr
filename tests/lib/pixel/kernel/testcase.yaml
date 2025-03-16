@@ -1,0 +1,9 @@
+tests:
+  libraries.pixel.kernel:
+    tags:
+      - pixel
+    integration_platforms:
+      - qemu_cortex_m3
+      - native_sim
+    extra_configs:
+      - CONFIG_PIXEL_PRINT_NONE=y
