@@ -1,0 +1,7 @@
+tests:
+  libraries.pixel:
+    tags:
+      - pixel
+    integration_platforms:
+      - qemu_cortex_m3
+      - native_sim
