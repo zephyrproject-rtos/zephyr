@@ -65,6 +65,8 @@ int lvgl_encoder_input_init(const struct device *dev)
 			  lvgl_encoder_process_event);                                             \
 	static const struct lvgl_encoder_input_config lvgl_encoder_input_config_##inst = {         \
 		.common_config.event_msgq = &LVGL_INPUT_EVENT_MSGQ(inst, encoder),                 \
+		.common_config.display_dev =                                                       \
+			DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, display)),                     \
 		.rotation_input_code = ROTATION_CODE(inst),                                        \
 		.button_input_code = BUTTON_CODE(inst),                                            \
 	};                                                                                         \
