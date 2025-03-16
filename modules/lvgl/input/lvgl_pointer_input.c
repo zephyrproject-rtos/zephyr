@@ -10,6 +10,7 @@
 #include "lvgl_pointer_input.h"
 
 #include <lvgl_display.h>
+#include "lvgl_zephyr.h"
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
@@ -32,7 +33,7 @@ static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 	const struct device *dev = user_data;
 	const struct lvgl_pointer_input_config *cfg = dev->config;
 	struct lvgl_pointer_input_data *data = dev->data;
-	lv_display_t *disp = lv_display_get_default();
+	lv_display_t *disp = data->common_data.disp;
 	struct lvgl_disp_data *disp_data = (struct lvgl_disp_data *)lv_display_get_user_data(disp);
 	struct display_capabilities *cap = &disp_data->cap;
 	lv_point_t *point = &data->common_data.pending_event.point;
@@ -129,6 +130,11 @@ static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 
 int lvgl_pointer_input_init(const struct device *dev)
 {
+	const struct lvgl_pointer_input_config *cfg = dev->config;
+	struct lvgl_pointer_input_data *data = dev->data;
+
+	data->common_data.disp = lvgl_display[cfg->common_config.disp_idx];
+
 	return lvgl_input_register_driver(LV_INDEV_TYPE_POINTER, dev);
 }
 
@@ -137,6 +143,7 @@ int lvgl_pointer_input_init(const struct device *dev)
 			  lvgl_pointer_process_event);                                             \
 	static const struct lvgl_pointer_input_config lvgl_pointer_input_config_##inst = {         \
 		.common_config.event_msgq = &LVGL_INPUT_EVENT_MSGQ(inst, pointer),                 \
+		.common_config.disp_idx = DT_INST_PROP_OR(inst, display_idx, 0),                   \
 		.swap_xy = DT_INST_PROP(inst, swap_xy),                                            \
 		.invert_x = DT_INST_PROP(inst, invert_x),                                          \
 		.invert_y = DT_INST_PROP(inst, invert_y),                                          \
