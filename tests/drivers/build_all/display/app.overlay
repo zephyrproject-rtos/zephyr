@@ -174,6 +174,23 @@
 				dark-grey = <0>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
+
+			test_mipi_dbi_ssd1320: ssd1320@11 {
+				compatible = "solomon,ssd1320";
+				reg = <11>;
+				mipi-max-frequency = <10000000>;
+				width = <160>;
+				height = <160>;
+				oscillator-freq = <0x0>;
+				multiplex-ratio = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				remap-value = <0>;
+				precharge-voltage = <0>;
+				phase-length = <0>;
+				vcomh-voltage = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
@@ -410,6 +427,21 @@
 				column-offset = <0>;
 				line-offset = <0>;
 				regulation-ratio = <7>;
+			};
+
+			test_ssd1320: ssd1320@3 {
+				compatible = "solomon,ssd1320";
+				reg = <3>;
+				width = <160>;
+				height = <160>;
+				oscillator-freq = <0x0>;
+				multiplex-ratio = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				remap-value = <0>;
+				precharge-voltage = <0>;
+				phase-length = <0>;
+				vcomh-voltage = <0>;
 			};
 		};
 	};
