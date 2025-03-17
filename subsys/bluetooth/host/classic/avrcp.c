@@ -33,19 +33,14 @@ LOG_MODULE_REGISTER(bt_avrcp);
 
 struct bt_avrcp {
 	struct bt_avctp session;
-	uint8_t local_tid;
 };
 
 struct avrcp_handler {
 	bt_avrcp_opcode_t opcode;
-	void (*func)(struct bt_avrcp *avrcp, struct net_buf *buf, bt_avctp_cr_t cr);
+	void (*func)(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf, bt_avctp_cr_t cr);
 };
 
-#define AVRCP_TIMEOUT       K_SECONDS(3) /* Shall be greater than TMTP (1000ms) */
 #define AVRCP_AVCTP(_avctp) CONTAINER_OF(_avctp, struct bt_avrcp, session)
-#define AVRCP_KWORK(_work)                                                                         \
-	CONTAINER_OF(CONTAINER_OF(_work, struct k_work_delayable, work), struct bt_avrcp,          \
-		     timeout_work)
 
 static const struct bt_avrcp_cb *avrcp_cb;
 static struct bt_avrcp avrcp_connection[CONFIG_BT_MAX_CONN];
@@ -232,7 +227,7 @@ static void avrcp_disconnected(struct bt_avctp *session)
 	}
 }
 
-static void process_get_cap_rsp(struct bt_avrcp *avrcp, struct net_buf *buf)
+static void process_get_cap_rsp(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf)
 {
 	struct bt_avrcp_avc_pdu *pdu;
 	struct bt_avrcp_get_cap_rsp *rsp;
@@ -281,10 +276,10 @@ static void process_get_cap_rsp(struct bt_avrcp *avrcp, struct net_buf *buf)
 		return;
 	}
 
-	avrcp_cb->get_cap_rsp(avrcp, rsp);
+	avrcp_cb->get_cap_rsp(avrcp, tid, rsp);
 }
 
-static void avrcp_vendor_dependent_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
+static void avrcp_vendor_dependent_handler(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf,
 					   bt_avctp_cr_t cr)
 {
 	struct bt_avrcp_avc_pdu *pdu;
@@ -311,7 +306,7 @@ static void avrcp_vendor_dependent_handler(struct bt_avrcp *avrcp, struct net_bu
 	} else { /* BT_AVCTP_RESPONSE */
 		switch (pdu->pdu_id) {
 		case BT_AVRCP_PDU_ID_GET_CAPS:
-			process_get_cap_rsp(avrcp, buf);
+			process_get_cap_rsp(avrcp, tid, buf);
 			break;
 		default:
 			LOG_DBG("Unhandled response: 0x%02x", pdu->pdu_id);
@@ -320,7 +315,8 @@ static void avrcp_vendor_dependent_handler(struct bt_avrcp *avrcp, struct net_bu
 	}
 }
 
-static void avrcp_unit_info_handler(struct bt_avrcp *avrcp, struct net_buf *buf, bt_avctp_cr_t cr)
+static void avrcp_unit_info_handler(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf,
+				    bt_avctp_cr_t cr)
 {
 	struct bt_avrcp_header *avrcp_hdr;
 	struct bt_avrcp_unit_info_rsp rsp;
@@ -338,12 +334,12 @@ static void avrcp_unit_info_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
 			net_buf_pull_u8(buf); /* Always 0x07 */
 			rsp.unit_type = FIELD_GET(GENMASK(7, 3), net_buf_pull_u8(buf));
 			rsp.company_id = net_buf_pull_be24(buf);
-			avrcp_cb->unit_info_rsp(avrcp, &rsp);
+			avrcp_cb->unit_info_rsp(avrcp, tid, &rsp);
 		}
 	}
 }
 
-static void avrcp_subunit_info_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
+static void avrcp_subunit_info_handler(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf,
 					   bt_avctp_cr_t cr)
 {
 	struct bt_avrcp_header *avrcp_hdr;
@@ -370,12 +366,12 @@ static void avrcp_subunit_info_handler(struct bt_avrcp *avrcp, struct net_buf *b
 			}
 			rsp.extended_subunit_type = buf->data;
 			rsp.extended_subunit_id = rsp.extended_subunit_type + rsp.max_subunit_id;
-			avrcp_cb->subunit_info_rsp(avrcp, &rsp);
+			avrcp_cb->subunit_info_rsp(avrcp, tid, &rsp);
 		}
 	}
 }
 
-static void avrcp_pass_through_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
+static void avrcp_pass_through_handler(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf,
 					   bt_avctp_cr_t cr)
 {
 	struct bt_avrcp_header *avrcp_hdr;
@@ -396,16 +392,16 @@ static void avrcp_pass_through_handler(struct bt_avrcp *avrcp, struct net_buf *b
 			result = BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr);
 			rsp = (struct bt_avrcp_passthrough_rsp *)buf->data;
 
-			avrcp_cb->passthrough_rsp(avrcp, result, rsp);
+			avrcp_cb->passthrough_rsp(avrcp, tid, result, rsp);
 		}
 	}
 }
 
 static const struct avrcp_handler handler[] = {
-	{ BT_AVRCP_OPC_VENDOR_DEPENDENT, avrcp_vendor_dependent_handler },
-	{ BT_AVRCP_OPC_UNIT_INFO, avrcp_unit_info_handler },
-	{ BT_AVRCP_OPC_SUBUNIT_INFO, avrcp_subunit_info_handler },
-	{ BT_AVRCP_OPC_PASS_THROUGH, avrcp_pass_through_handler },
+	{BT_AVRCP_OPC_VENDOR_DEPENDENT, avrcp_vendor_dependent_handler},
+	{BT_AVRCP_OPC_UNIT_INFO, avrcp_unit_info_handler},
+	{BT_AVRCP_OPC_SUBUNIT_INFO, avrcp_subunit_info_handler},
+	{BT_AVRCP_OPC_PASS_THROUGH, avrcp_pass_through_handler},
 };
 
 /* An AVRCP message received */
@@ -442,7 +438,7 @@ static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
 
 	for (i = 0U; i < ARRAY_SIZE(handler); i++) {
 		if (avrcp_hdr->opcode == handler[i].opcode) {
-			handler[i].func(avrcp, buf, cr);
+			handler[i].func(avrcp, tid, buf, cr);
 			return 0;
 		}
 	}
@@ -537,23 +533,23 @@ int bt_avrcp_disconnect(struct bt_avrcp *avrcp)
 	return err;
 }
 
-static struct net_buf *avrcp_create_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr)
+static struct net_buf *avrcp_create_pdu(struct bt_avrcp *avrcp, uint8_t tid, bt_avctp_cr_t cr)
 {
 	struct net_buf *buf;
 
 	buf = bt_avctp_create_pdu(&(avrcp->session), cr, BT_AVCTP_PKT_TYPE_SINGLE,
-				  BT_AVCTP_IPID_NONE, &avrcp->local_tid,
+				  BT_AVCTP_IPID_NONE, tid,
 				  sys_cpu_to_be16(BT_SDP_AV_REMOTE_SVCLASS));
 
 	return buf;
 }
 
-static struct net_buf *avrcp_create_unit_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr)
+static struct net_buf *avrcp_create_unit_pdu(struct bt_avrcp *avrcp, uint8_t tid, bt_avctp_cr_t cr)
 {
 	struct net_buf *buf;
 	struct bt_avrcp_frame *cmd;
 
-	buf = avrcp_create_pdu(avrcp, cr);
+	buf = avrcp_create_pdu(avrcp, tid, cr);
 	if (!buf) {
 		return NULL;
 	}
@@ -569,12 +565,13 @@ static struct net_buf *avrcp_create_unit_pdu(struct bt_avrcp *avrcp, bt_avctp_cr
 	return buf;
 }
 
-static struct net_buf *avrcp_create_subunit_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr)
+static struct net_buf *avrcp_create_subunit_pdu(struct bt_avrcp *avrcp, uint8_t tid,
+						bt_avctp_cr_t cr)
 {
 	struct net_buf *buf;
 	struct bt_avrcp_frame *cmd;
 
-	buf = avrcp_create_pdu(avrcp, cr);
+	buf = avrcp_create_pdu(avrcp, tid, cr);
 	if (!buf) {
 		return NULL;
 	}
@@ -590,13 +587,13 @@ static struct net_buf *avrcp_create_subunit_pdu(struct bt_avrcp *avrcp, bt_avctp
 	return buf;
 }
 
-static struct net_buf *avrcp_create_passthrough_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr,
-						    uint8_t ctype_or_rsp)
+static struct net_buf *avrcp_create_passthrough_pdu(struct bt_avrcp *avrcp, uint8_t tid,
+						    bt_avctp_cr_t cr, uint8_t ctype_or_rsp)
 {
 	struct net_buf *buf;
 	struct bt_avrcp_frame *cmd;
 
-	buf = avrcp_create_pdu(avrcp, cr);
+	buf = avrcp_create_pdu(avrcp, tid, cr);
 	if (!buf) {
 		return NULL;
 	}
@@ -611,13 +608,13 @@ static struct net_buf *avrcp_create_passthrough_pdu(struct bt_avrcp *avrcp, bt_a
 	return buf;
 }
 
-static struct net_buf *avrcp_create_vendor_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr,
-					       uint8_t ctype_or_rsp)
+static struct net_buf *avrcp_create_vendor_pdu(struct bt_avrcp *avrcp, uint8_t tid,
+					       bt_avctp_cr_t cr, uint8_t ctype_or_rsp)
 {
 	struct net_buf *buf;
 	struct bt_avrcp_frame *cmd;
 
-	buf = avrcp_create_pdu(avrcp, cr);
+	buf = avrcp_create_pdu(avrcp, tid, cr);
 	if (!buf) {
 		return NULL;
 	}
@@ -654,12 +651,12 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
 	return 0;
 }
 
-int bt_avrcp_get_cap(struct bt_avrcp *avrcp, uint8_t cap_id)
+int bt_avrcp_get_cap(struct bt_avrcp *avrcp, uint8_t tid, uint8_t cap_id)
 {
 	struct net_buf *buf;
 	struct bt_avrcp_avc_pdu *pdu;
 
-	buf = avrcp_create_vendor_pdu(avrcp, BT_AVCTP_CMD, BT_AVRCP_CTYPE_STATUS);
+	buf = avrcp_create_vendor_pdu(avrcp, tid, BT_AVCTP_CMD, BT_AVRCP_CTYPE_STATUS);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -674,12 +671,12 @@ int bt_avrcp_get_cap(struct bt_avrcp *avrcp, uint8_t cap_id)
 	return avrcp_send(avrcp, buf);
 }
 
-int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp)
+int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp, uint8_t tid)
 {
 	struct net_buf *buf;
 	uint8_t param[5];
 
-	buf = avrcp_create_unit_pdu(avrcp, BT_AVCTP_CMD);
+	buf = avrcp_create_unit_pdu(avrcp, tid, BT_AVCTP_CMD);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -690,12 +687,12 @@ int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp)
 	return avrcp_send(avrcp, buf);
 }
 
-int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp)
+int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp, uint8_t tid)
 {
 	struct net_buf *buf;
 	uint8_t param[5];
 
-	buf = avrcp_create_subunit_pdu(avrcp, BT_AVCTP_CMD);
+	buf = avrcp_create_subunit_pdu(avrcp, tid, BT_AVCTP_CMD);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -708,12 +705,12 @@ int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp)
 	return avrcp_send(avrcp, buf);
 }
 
-int bt_avrcp_passthrough(struct bt_avrcp *avrcp, uint8_t opid, uint8_t state,
+int bt_avrcp_passthrough(struct bt_avrcp *avrcp, uint8_t tid, uint8_t opid, uint8_t state,
 			 const uint8_t *payload, uint8_t len)
 {
 	struct net_buf *buf;
 
-	buf = avrcp_create_passthrough_pdu(avrcp, BT_AVCTP_CMD, BT_AVRCP_CTYPE_CONTROL);
+	buf = avrcp_create_passthrough_pdu(avrcp, tid, BT_AVCTP_CMD, BT_AVRCP_CTYPE_CONTROL);
 	if (!buf) {
 		return -ENOMEM;
 	}
