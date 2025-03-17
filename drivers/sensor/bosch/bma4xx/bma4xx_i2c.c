@@ -29,9 +29,26 @@ static int bma4xx_i2c_write_data(const struct device *dev, uint8_t reg_addr,
 				  uint8_t *value, uint8_t len)
 {
 	const struct bma4xx_config *cfg = dev->config;
+	const struct bma4xx_data *bma4xx = dev->data;
+	int res = 0;
 
-	return i2c_burst_write_dt(&cfg->bus_cfg.i2c, reg_addr, value,
-				  len);
+	res = i2c_burst_write_dt(&cfg->bus_cfg.i2c, reg_addr, value, len);
+	if (res) {
+		LOG_ERR("Could not perform i2c write data");
+		return -ENOTSUP;
+	}
+
+	/* A 1.3us delay is required after write operation when device operates in
+	 * power performance mode whereas 1000us is required when the device operates
+	 * in low power mode.
+	 */
+	if (bma4xx->cfg.accel_pwr_mode) {
+		k_sleep(K_NSEC(1300));
+	} else {
+		k_sleep(K_USEC(1000));
+	}
+
+	return 0;
 }
 
 static int bma4xx_i2c_read_reg(const struct device *dev, uint8_t reg_addr,
@@ -46,16 +63,51 @@ static int bma4xx_i2c_write_reg(const struct device *dev, uint8_t reg_addr,
 				uint8_t value)
 {
 	const struct bma4xx_config *cfg = dev->config;
+	const struct bma4xx_data *bma4xx = dev->data;
+	int res = 0;
 
-	return i2c_reg_write_byte_dt(&cfg->bus_cfg.i2c, reg_addr, value);
+	res = i2c_reg_write_byte_dt(&cfg->bus_cfg.i2c, reg_addr, value);
+	if (res) {
+		LOG_ERR("Could not perform i2c write reg");
+		return -ENOTSUP;
+	}
+
+	/* A 1.3us delay is required after write operation when device operates in
+	 * power performance mode whereas 1000us is required when the device operates
+	 * in low power mode.
+	 */
+	if (bma4xx->cfg.accel_pwr_mode) {
+		k_sleep(K_NSEC(1300));
+	} else {
+		k_sleep(K_USEC(1000));
+	}
+
+	return 0;
 }
 
 static int bma4xx_i2c_update_reg(const struct device *dev, uint8_t reg_addr,
 				  uint8_t mask, uint8_t value)
 {
 	const struct bma4xx_config *cfg = dev->config;
+	const struct bma4xx_data *bma4xx = dev->data;
+	int res = 0;
 
-	return i2c_reg_update_byte_dt(&cfg->bus_cfg.i2c, reg_addr, mask, value);
+	res = i2c_reg_update_byte_dt(&cfg->bus_cfg.i2c, reg_addr, mask, value);
+	if (res) {
+		LOG_ERR("Could not perform i2c update data");
+		return -ENOTSUP;
+	}
+
+	/* A 1.3us delay is required after write operation when device operates in
+	 * power performance mode whereas 1000us is required when the device operates
+	 * in low power mode.
+	 */
+	if (bma4xx->cfg.accel_pwr_mode) {
+		k_sleep(K_NSEC(1300));
+	} else {
+		k_sleep(K_USEC(1000));
+	}
+	return 0;
 }
 
 static const struct bma4xx_hw_operations i2c_ops = {
