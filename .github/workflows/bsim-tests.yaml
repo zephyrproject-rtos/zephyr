@@ -91,7 +91,7 @@ jobs:
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Check common triggering files
-        uses: tj-actions/changed-files@v45
+        uses: tj-actions/changed-files@v46
         id: check-common-files
         with:
           files: |
@@ -110,7 +110,7 @@ jobs:
             modules/hal_nordic/**
 
       - name: Check if Bluethooth files changed
-        uses: tj-actions/changed-files@v45
+        uses: tj-actions/changed-files@v46
         id: check-bluetooth-files
         with:
           files: |
@@ -119,7 +119,7 @@ jobs:
             subsys/bluetooth/
 
       - name: Check if Networking files changed
-        uses: tj-actions/changed-files@v45
+        uses: tj-actions/changed-files@v46
         id: check-networking-files
         with:
           files: |
@@ -132,7 +132,7 @@ jobs:
             include/zephyr/net/ieee802154*
 
       - name: Check if UART files changed
-        uses: tj-actions/changed-files@v45
+        uses: tj-actions/changed-files@v46
         id: check-uart-files
         with:
           files: |
