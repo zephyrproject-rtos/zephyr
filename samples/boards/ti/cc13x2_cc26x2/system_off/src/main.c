@@ -14,9 +14,6 @@
 
 #include <driverlib/ioc.h>
 
-/* GPIO all DIOs mask */
-#define GPIO_DIO_ALL_MASK 0xFFFFFFFF
-
 static const struct gpio_dt_spec sw0_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 
 #define BUSY_WAIT_S 5U
@@ -59,8 +56,8 @@ int main(void)
 	printk("Powering off; press BUTTON1 to restart\n");
 
 	/* Clear GPIO interrupt */
-	status = HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_DIO_ALL_MASK;
-	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = status;
+	status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
+	GPIO_clearEventMultiDio(status);
 
 	sys_poweroff();
 
