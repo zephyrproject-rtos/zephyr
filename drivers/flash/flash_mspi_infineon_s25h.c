@@ -613,38 +613,12 @@ static int flash_mspi_infineon_s25h_switch_to_quad_transfer(const struct device 
 	return 0;
 }
 
-static int flash_mspi_infineon_s25h_init(const struct device *dev)
+static int flash_mspi_infineon_s25h_disable_hybrid_sector_mode(const struct device *dev)
 {
-	int ret = 0;
-	const struct flash_mspi_infineon_s25h_cfg *config = dev->config;
-
-	ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("Failed to apply pinctrl");
-		return ret;
-	}
-
-	ret = flash_mspi_infineon_s25h_prepare_mspi_bus(dev);
-	if (ret < 0) {
-		LOG_ERR("Error switching MSPI configuration to the requirements of the flash "
-			"device");
-		return ret;
-	}
-
-	ret = flash_mspi_infineon_s25h_reset(dev);
-	if (ret < 0) {
-		LOG_ERR("Error resetting flash device");
-		return ret;
-	}
-
-	ret = flash_mspi_infineon_s25h_verify_jedec_id(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
 	/* This driver needs the hybrid sector mode to be disabled. So if it's found to be turned on
 	 * it gets changed. This requires changing the non-volatile configuration and also a reset
 	 */
+	int ret = 0;
 	uint8_t conf3 = 0;
 
 	ret = flash_mspi_infineon_s25h_rw_any_register(dev, INF_MSPI_S25H_ADDRESS_VOLATILE_CFG_3,
@@ -699,6 +673,43 @@ static int flash_mspi_infineon_s25h_init(const struct device *dev)
 			LOG_ERR("Error re-enabling the write protection");
 			return ret;
 		}
+	}
+
+	return 0;
+}
+
+static int flash_mspi_infineon_s25h_init(const struct device *dev)
+{
+	int ret = 0;
+	const struct flash_mspi_infineon_s25h_cfg *config = dev->config;
+
+	ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("Failed to apply pinctrl");
+		return ret;
+	}
+
+	ret = flash_mspi_infineon_s25h_prepare_mspi_bus(dev);
+	if (ret < 0) {
+		LOG_ERR("Error switching MSPI configuration to the requirements of the flash "
+			"device");
+		return ret;
+	}
+
+	ret = flash_mspi_infineon_s25h_reset(dev);
+	if (ret < 0) {
+		LOG_ERR("Error resetting flash device");
+		return ret;
+	}
+
+	ret = flash_mspi_infineon_s25h_verify_jedec_id(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = flash_mspi_infineon_s25h_disable_hybrid_sector_mode(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	ret = flash_mspi_infineon_s25h_switch_to_quad_transfer(dev);
