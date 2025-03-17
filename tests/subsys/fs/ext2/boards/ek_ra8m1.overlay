@@ -4,6 +4,10 @@
  */
 
 &sdhc0 {
+	interrupt-names = "accs", "card", "dma-req";
+	interrupts = <94 12>, <95 12>, <96 12>;
+	status = "okay";
+
 	sdmmc {
 		partition {
 			compatible = "fixed-partitions";
