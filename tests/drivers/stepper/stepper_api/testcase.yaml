@@ -16,6 +16,15 @@ tests:
       - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
     platform_allow:
       - native_sim/native/64
+  drivers.stepper.stepper_api.allegro_a4979:
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_allegro_a4979.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+    platform_allow:
+      - native_sim/native/64
   drivers.stepper.stepper_api.ti_drv8424:
     extra_args:
       - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_ti_drv8424.overlay"
