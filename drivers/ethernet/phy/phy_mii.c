@@ -50,9 +50,14 @@ static inline int phy_mii_reg_read(const struct device *dev, uint16_t reg_addr,
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
 	/* if there is no mdio (fixed-link) it is not supported to read */
-	if (cfg->mdio == NULL) {
+	if (cfg->fixed) {
 		return -ENOTSUP;
 	}
+
+	if (cfg->mdio == NULL) {
+		return -ENODEV;
+	}
+
 	return mdio_read(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
 
@@ -62,9 +67,14 @@ static inline int phy_mii_reg_write(const struct device *dev, uint16_t reg_addr,
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
 	/* if there is no mdio (fixed-link) it is not supported to write */
-	if (cfg->mdio == NULL) {
+	if (cfg->fixed) {
 		return -ENOTSUP;
 	}
+
+	if (cfg->mdio == NULL) {
+		return -ENODEV;
+	}
+
 	return mdio_write(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
 
@@ -315,9 +325,19 @@ static int phy_mii_cfg_link(const struct device *dev,
 			    enum phy_link_speed adv_speeds)
 {
 	struct phy_mii_dev_data *const data = dev->data;
+	const struct phy_mii_dev_config *const cfg = dev->config;
 	uint16_t anar_reg;
 	uint16_t bmcr_reg;
 	uint16_t c1kt_reg;
+
+	/* if there is no mdio (fixed-link) it is not supported to configure link */
+	if (cfg->fixed) {
+		return -ENOTSUP;
+	}
+
+	if (cfg->mdio == NULL) {
+		return -ENODEV;
+	}
 
 	if (phy_mii_reg_read(dev, MII_ANAR, &anar_reg) < 0) {
 		return -EIO;
