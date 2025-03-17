@@ -6,8 +6,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	zephyr,user {
-		stepper-motors = <&drv8424 0>;
+	aliases {
+		stepper =  &ti_drv8424;
 	};
 };
 
@@ -38,7 +38,8 @@
 };
 
 / {
-	 drv8424: drv8424 {
+
+	ti_drv8424: ti_drv8424 {
 		status = "okay";
 		compatible = "ti,drv8424";
 
@@ -49,10 +50,6 @@
 		m0-gpios = <&mikroe_stepper_gpios 0 0>;
 		m1-gpios = <&mikroe_stepper_gpios 1 0>;
 		counter = <&counter2>;
-
-		#address-cells = <1>;
-		#size-cells = <0>;
-		#stepper-motor-cells = <0>;
 	};
 };
 

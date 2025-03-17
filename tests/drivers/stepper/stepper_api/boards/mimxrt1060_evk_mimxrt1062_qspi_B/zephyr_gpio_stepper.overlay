@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Navimatix GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		stepper =  &zephyr_gpio_stepper;
+	};
+};
+
+/ {
+
+	zephyr_gpio_stepper: zephyr_gpio_stepper {
+		compatible = "zephyr,gpio-stepper";
+		status = "okay";
+		micro-step-res = <1>;
+		gpios = <&arduino_header 8 0>, /* D2 */
+			<&arduino_header 9 0>, /* D3 */
+			<&arduino_header 10 0>, /* D4 */
+			<&arduino_header 11 0>; /* D5 */
+	};
+};
