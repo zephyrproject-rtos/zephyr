@@ -1256,3 +1256,11 @@ test_i2c_veml6031: veml6031@ab {
 	compatible = "vishay,veml6031";
 	reg = <0xab>;
 };
+
+test_i2c_icp201xx: icp201xx@ac {
+	compatible = "invensense,icp201xx";
+	reg = <0xac>;
+	int-gpios = <&test_gpio 0 0>;
+	op-mode = "mode0";
+	drive-strength = "current_12mA_1_8V";
+};
