@@ -43,3 +43,6 @@ set(mimxrt1060_evk_DEPRECATED
 set(mimxrt1060_evkb_DEPRECATED
     mimxrt1060_evk@B/mimxrt1062/qspi
 )
+set(neorv32_DEPRECATED
+    neorv32/neorv32/up5kdemo
+)
