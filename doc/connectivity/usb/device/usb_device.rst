@@ -212,7 +212,7 @@ DFU
 USB DFU class implementation is tightly coupled to :ref:`dfu` and :ref:`mcuboot_api`.
 This means that the target platform must support the :ref:`flash_img_api` API.
 
-See :zephyr:code-sample:`usb-dfu` sample for reference.
+See :zephyr:code-sample:`legacy-usb-dfu` sample for reference.
 
 USB Human Interface Devices (HID) support
 =========================================
