@@ -103,12 +103,11 @@ New APIs and options
     * :c:func:`bt_br_bond_exists`
     * :c:func:`bt_conn_lookup_addr_br`
     * :c:func:`bt_conn_get_dst_br`
+    * LE Connection Subrating is no longer experimental.
 
 * Display
 
   * :c:func:`display_clear`
-
-    * LE Connection Subrating is no longer experimental.
 
 * Networking:
 
