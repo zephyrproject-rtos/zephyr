@@ -159,6 +159,11 @@ config USE_RA_FSP_SDHI
 	help
 	  Enable RA FSP SDHI driver
 
+config USE_RA_FSP_CRC
+	bool
+	help
+	  Enable RA FSP CRC driver
+
 config USE_RA_FSP_DAC
 	bool
 	help
