@@ -10,7 +10,7 @@
 #include <mem.h>
 
 / {
-	model = "NEORV32";
+	model = "NEORV32 UP5KDemo";
 	compatible = "neorv32";
 
 	aliases {
@@ -86,4 +86,5 @@
 
 &gpio {
 	status = "okay";
+	ngpios = <32>;
 };
