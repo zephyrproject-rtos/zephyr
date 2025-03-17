@@ -1591,6 +1591,7 @@ struct k_timer {
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
 	.stop_fn = stop, \
+	.period = {}, \
 	.status = 0, \
 	.user_data = 0, \
 	}
@@ -2342,7 +2343,8 @@ struct k_event {
 #define Z_EVENT_INITIALIZER(obj) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	.events = 0 \
+	.events = 0, \
+	.lock = {}, \
 	}
 
 /**
@@ -4589,6 +4591,7 @@ struct k_msgq {
 #define Z_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
+	.lock = {}, \
 	.msg_size = q_msg_size, \
 	.max_msgs = q_max_msgs, \
 	.buffer_start = q_buffer, \
@@ -4597,6 +4600,7 @@ struct k_msgq {
 	.write_ptr = q_buffer, \
 	.used_msgs = 0, \
 	Z_POLL_EVENT_OBJ_INIT(obj) \
+	.flags = 0, \
 	}
 
 /**
