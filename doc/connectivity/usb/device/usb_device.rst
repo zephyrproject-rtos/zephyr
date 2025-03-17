@@ -389,7 +389,7 @@ The application should register descriptors such as Capability Descriptor
 using :c:func:`usb_bos_register_cap`. Registered descriptors are added to the root
 BOS descriptor and handled by the stack.
 
-See :zephyr:code-sample:`webusb` sample for reference.
+See :zephyr:code-sample:`legacy-webusb` sample for reference.
 
 Interface number and endpoint address assignment
 ************************************************
