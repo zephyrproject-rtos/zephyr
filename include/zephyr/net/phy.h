@@ -79,6 +79,15 @@ enum phy_link_speed {
  */
 #define PHY_LINK_IS_SPEED_100M(x) (x & (LINK_HALF_100BASE | LINK_FULL_100BASE))
 
+/**
+ * @brief Check if phy link speed is 10 Mbit/sec.
+ *
+ * @param x Link capabilities
+ *
+ * @return True if link is 10 Mbit/sec, false if not.
+ */
+#define PHY_LINK_IS_SPEED_10M(x) (x & (LINK_HALF_10BASE | LINK_FULL_10BASE))
+
 /** @brief Link state */
 struct phy_link_state {
 	/** Link speed */
