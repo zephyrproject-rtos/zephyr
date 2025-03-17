@@ -1,0 +1,154 @@
+/*
+ * Copyright (c) 2025 Lena Voytek <lena@voytek.dev>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32/esp32_pico_v3_02.dtsi>
+#include "adafruit_feather_esp32-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
+#include <espressif/partitions_0x1000_amp.dtsi>
+
+/ {
+	model = "Adafruit Feather ESP32 PROCPU";
+	compatible = "adafruit,adafruit_feather_esp32";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	aliases {
+		sw0 = &user_button_0;
+		watchdog0 = &wdt0;
+		i2c-0 = &i2c0;
+		led-strip = &led_strip;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led0: led_0 {
+			label = "Red-LED";
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_0: button_0 {
+			label = "User button 0";
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>; // GPIO 38
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+
+	neopixel_power_enable {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	sda-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 20 GPIO_OPEN_DRAIN>;
+
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+};
+
+/* used for SK6812 */
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	line-idle-low;
+	pinctrl-0 = <&spim3_ws2812_led>;
+	pinctrl-names = "default";
+
+	led_strip: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+		reg = <0>;
+		spi-max-frequency = <WS2812C_SPI_FREQ>;
+
+		chain-length = <1>;
+		color-mapping =	<LED_COLOR_ID_GREEN>,
+						<LED_COLOR_ID_RED>,
+						<LED_COLOR_ID_BLUE>;
+		spi-one-frame = <WS2812C_ONE_FRAME>;
+		spi-zero-frame = <WS2812C_ZERO_FRAME>;
+	};
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
