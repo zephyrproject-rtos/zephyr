@@ -193,24 +193,24 @@ static int phy_ti_dp83867_get_link(const struct device *dev, struct phy_link_sta
 			PHY_TI_DP83867_PHYSTS_LINKSPEED_SHIFT) {
 		case PHY_TI_DP83867_PHYSTS_LINKSPEED_1000M:
 			if (duplex) {
-				new_state.speed = LINK_FULL_1000BASE_T;
+				new_state.speed = LINK_FULL_1000BASE;
 			} else {
-				new_state.speed = LINK_HALF_1000BASE_T;
+				new_state.speed = LINK_HALF_1000BASE;
 			}
 			break;
 		case PHY_TI_DP83867_PHYSTS_LINKSPEED_100M:
 			if (duplex) {
-				new_state.speed = LINK_FULL_100BASE_T;
+				new_state.speed = LINK_FULL_100BASE;
 			} else {
-				new_state.speed = LINK_HALF_100BASE_T;
+				new_state.speed = LINK_HALF_100BASE;
 			}
 			break;
 		case PHY_TI_DP83867_PHYSTS_LINKSPEED_10M:
 		default:
 			if (duplex) {
-				new_state.speed = LINK_FULL_10BASE_T;
+				new_state.speed = LINK_FULL_10BASE;
 			} else {
-				new_state.speed = LINK_HALF_10BASE_T;
+				new_state.speed = LINK_HALF_10BASE;
 			}
 			break;
 		}
@@ -345,29 +345,29 @@ static int phy_ti_dp83867_cfg_link(const struct device *dev, enum phy_link_speed
 	}
 
 	/* Setup advertising register */
-	if (speeds & LINK_FULL_100BASE_T) {
+	if (speeds & LINK_FULL_100BASE) {
 		anar |= MII_ADVERTISE_100_FULL;
 	} else {
 		anar &= ~MII_ADVERTISE_100_FULL;
 	}
-	if (speeds & LINK_HALF_100BASE_T) {
+	if (speeds & LINK_HALF_100BASE) {
 		anar |= MII_ADVERTISE_100_HALF;
 	} else {
 		anar &= ~MII_ADVERTISE_100_HALF;
 	}
-	if (speeds & LINK_FULL_10BASE_T) {
+	if (speeds & LINK_FULL_10BASE) {
 		anar |= MII_ADVERTISE_10_FULL;
 	} else {
 		anar &= ~MII_ADVERTISE_10_FULL;
 	}
-	if (speeds & LINK_HALF_10BASE_T) {
+	if (speeds & LINK_HALF_10BASE) {
 		anar |= MII_ADVERTISE_10_HALF;
 	} else {
 		anar &= ~MII_ADVERTISE_10_HALF;
 	}
 
 	/* Setup 1000Base-T control register */
-	if (speeds & LINK_FULL_1000BASE_T) {
+	if (speeds & LINK_FULL_1000BASE) {
 		cfg1 |= MII_ADVERTISE_1000_FULL;
 	} else {
 		cfg1 &= ~MII_ADVERTISE_1000_FULL;
