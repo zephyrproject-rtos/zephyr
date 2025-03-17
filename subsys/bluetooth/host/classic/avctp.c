@@ -114,7 +114,7 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		if (cr == BT_AVCTP_CMD) {
 			rsp = bt_avctp_create_pdu(session, BT_AVCTP_RESPONSE,
 						  BT_AVCTP_PKT_TYPE_SINGLE, BT_AVCTP_IPID_INVALID,
-						  &tid, hdr->pid);
+						  tid, hdr->pid);
 			if (!rsp) {
 				return -ENOMEM;
 			}
@@ -165,7 +165,7 @@ int bt_avctp_disconnect(struct bt_avctp *session)
 
 struct net_buf *bt_avctp_create_pdu(struct bt_avctp *session, bt_avctp_cr_t cr,
 				    bt_avctp_pkt_type_t pkt_type, bt_avctp_ipid_t ipid,
-				    uint8_t *tid, uint16_t pid)
+				    uint8_t tid, uint16_t pid)
 {
 	struct net_buf *buf;
 	struct bt_avctp_header *hdr;
@@ -179,15 +179,11 @@ struct net_buf *bt_avctp_create_pdu(struct bt_avctp *session, bt_avctp_cr_t cr,
 	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
-	BT_AVCTP_HDR_SET_TRANSACTION_LABLE(hdr, *tid);
+	BT_AVCTP_HDR_SET_TRANSACTION_LABLE(hdr, tid);
 	BT_AVCTP_HDR_SET_PACKET_TYPE(hdr, pkt_type);
 	BT_AVCTP_HDR_SET_CR(hdr, cr);
 	BT_AVCTP_HDR_SET_IPID(hdr, ipid);
 	hdr->pid = pid;
-
-	if (cr == BT_AVCTP_CMD) {
-		*tid = (*tid + 1) & 0x0F; /* Incremented by one */
-	}
 
 	LOG_DBG("cr:0x%lX, tid:0x%02lX", BT_AVCTP_HDR_GET_CR(hdr),
 		BT_AVCTP_HDR_GET_TRANSACTION_LABLE(hdr));
