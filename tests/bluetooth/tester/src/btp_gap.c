@@ -223,26 +223,33 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 {
 	struct btp_gap_sec_level_changed_ev sec_ev;
 	struct btp_gap_bond_lost_ev bond_ev;
+	struct btp_gap_encryption_change_ev enc_ev;
 	struct bt_conn_info info;
 
-	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		const bt_addr_le_t *addr;
+	if (bt_conn_get_info(conn, &info) != 0) {
+		LOG_WRN("Failed to get connection info of %p", conn);
+		return;
+	}
 
-		addr = bt_conn_get_dst(conn);
-		bt_addr_le_copy(&sec_ev.address, addr);
-		bt_addr_le_copy(&bond_ev.address, addr);
-	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
-		const bt_addr_t *br_addr;
-
-		br_addr = bt_conn_get_dst_br(conn);
+	if (info.type == BT_CONN_TYPE_LE) {
+		bt_addr_le_copy(&sec_ev.address, info.le.dst);
+		bt_addr_le_copy(&bond_ev.address, info.le.dst);
+		bt_addr_le_copy(&enc_ev.address, info.le.dst);
+	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && (info.type == BT_CONN_TYPE_BR)) {
 		sec_ev.address.type = BTP_BR_ADDRESS_TYPE;
-		bt_addr_copy(&sec_ev.address.a, br_addr);
+		bt_addr_copy(&sec_ev.address.a, info.br.dst);
 		bond_ev.address.type = BTP_BR_ADDRESS_TYPE;
-		bt_addr_copy(&bond_ev.address.a, br_addr);
+		bt_addr_copy(&bond_ev.address.a, info.br.dst);
+		enc_ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&enc_ev.address.a, info.br.dst);
 	} else {
 		LOG_WRN("Unsupported transport");
 		return;
 	}
+
+	enc_ev.enabled = (err == BT_SECURITY_ERR_SUCCESS) ? true : false;
+	enc_ev.key_size = info.security.enc_key_size;
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_ENCRYPTION_CHANGE, &enc_ev, sizeof(enc_ev));
 
 	switch (err) {
 	case BT_SECURITY_ERR_SUCCESS:
@@ -258,8 +265,7 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 		 *
 		 * This means bond is lost and we restart pairing to re-bond
 		 */
-		if (bt_conn_get_info(conn, &info) == 0 &&
-		    info.role == BT_CONN_ROLE_CENTRAL) {
+		if (info.role == BT_CONN_ROLE_CENTRAL) {
 			LOG_DBG("Bond lost");
 
 			tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BOND_LOST,
