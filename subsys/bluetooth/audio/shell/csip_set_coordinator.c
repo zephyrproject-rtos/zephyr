@@ -151,11 +151,33 @@ static void csip_set_coordinator_ordered_access_cb(
 	}
 }
 
+static void csip_set_coordinator_lock_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst,
+						 bool locked)
+{
+	bt_shell_print("Inst %p %s\n", inst, locked ? "locked" : "released");
+}
+
+static void csip_set_coordinator_sirk_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst)
+{
+	bt_shell_print("Inst %p SIRK changed\n", inst);
+	bt_shell_hexdump(inst->info.sirk, BT_CSIP_SIRK_SIZE);
+}
+
+static void
+csip_set_coordinator_size_changed_cb(struct bt_conn *conn,
+				     const struct bt_csip_set_coordinator_csis_inst *inst)
+{
+	bt_shell_print("Inst %p size changed: %u\n", inst, inst->info.set_size);
+}
+
 static struct bt_csip_set_coordinator_cb cbs = {
 	.lock_set = csip_set_coordinator_lock_set_cb,
 	.release_set = csip_set_coordinator_release_set_cb,
 	.discover = csip_discover_cb,
-	.ordered_access = csip_set_coordinator_ordered_access_cb
+	.ordered_access = csip_set_coordinator_ordered_access_cb,
+	.lock_changed = csip_set_coordinator_lock_changed_cb,
+	.sirk_changed = csip_set_coordinator_sirk_changed_cb,
+	.size_changed = csip_set_coordinator_size_changed_cb,
 };
 
 static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set_info *set_info,
