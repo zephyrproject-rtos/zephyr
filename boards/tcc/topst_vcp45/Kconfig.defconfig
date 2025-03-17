@@ -1,0 +1,9 @@
+# Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_TOPST_VCP45
+
+config BUILD_OUTPUT_BIN
+	default y
+
+endif # BOARD_TOPST_VCP45
