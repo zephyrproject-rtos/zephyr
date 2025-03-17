@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc. (AMD)
+# SPDX-License-Identifier: Apache-2.0
+
+config XLNX_SDHC
+	bool "xlnx sdhc driver"
+	default y
+	depends on DT_HAS_XLNX_VERSAL_8_9A_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select SDHC_SUPPORTS_UHS
+	select EVENTS
+	select CLOCK_CONTROL
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK
+	help
+	  Enable xilinx SD/EMMC host controller driver
+
+if XLNX_SDHC
+
+# sdhc needs 32 byte aligned buffers
+config SDHC_BUFFER_ALIGNMENT
+	default 32
+
+config HOST_ADMA2_DESC_SIZE
+	int "Max discripter SIZE"
+	default 32
+	help
+	  Set max number of discriptor support
+
+endif
