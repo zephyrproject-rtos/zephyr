@@ -71,27 +71,27 @@ static inline struct net_if *get_iface(struct eth_nxp_s32_data *ctx)
 static void convert_phy_to_mac_config(Gmac_Ip_ConfigType *gmac_cfg, enum phy_link_speed phy_speed)
 {
 	switch (phy_speed) {
-	case LINK_HALF_10BASE_T:
+	case LINK_HALF_10BASE:
 		gmac_cfg->Speed = GMAC_SPEED_10M;
 		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
 		break;
-	case LINK_FULL_10BASE_T:
+	case LINK_FULL_10BASE:
 		gmac_cfg->Speed = GMAC_SPEED_10M;
 		gmac_cfg->Duplex = GMAC_FULL_DUPLEX;
 		break;
-	case LINK_HALF_100BASE_T:
+	case LINK_HALF_100BASE:
 		gmac_cfg->Speed = GMAC_SPEED_100M;
 		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
 		break;
-	case LINK_FULL_100BASE_T:
+	case LINK_FULL_100BASE:
 		gmac_cfg->Speed = GMAC_SPEED_100M;
 		gmac_cfg->Duplex = GMAC_FULL_DUPLEX;
 		break;
-	case LINK_HALF_1000BASE_T:
+	case LINK_HALF_1000BASE:
 		gmac_cfg->Speed = GMAC_SPEED_1G;
 		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
 		break;
-	case LINK_FULL_1000BASE_T:
+	case LINK_FULL_1000BASE:
 		__fallthrough;
 	default:
 		gmac_cfg->Speed = GMAC_SPEED_1G;
