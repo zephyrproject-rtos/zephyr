@@ -42,7 +42,7 @@ jobs:
         echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
@@ -111,13 +111,13 @@ jobs:
         tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
 
     - name: upload-build
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
         name: html-output
         path: zephyr/html-output.tar.xz
 
     - name: upload-api-coverage
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
         name: api-coverage
         path: zephyr/api-coverage.tar.xz
@@ -137,7 +137,7 @@ jobs:
         echo "API Coverage Report will be available shortly at: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
 
     - name: upload-pr-number
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       if: github.event_name == 'pull_request'
       with:
         name: pr_num
@@ -161,7 +161,7 @@ jobs:
         git config --global --add safe.directory ${GITHUB_WORKSPACE}
 
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
     - name: install-pkgs
       run: |
@@ -169,7 +169,7 @@ jobs:
         apt-get install -y python3-pip python3-venv ninja-build doxygen graphviz librsvg2-bin imagemagick
 
     - name: cache-pip
-      uses: actions/cache@v4
+      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
       with:
         path: ~/.cache/pip
         key: pip-${{ hashFiles('doc/requirements.txt') }}
@@ -207,7 +207,7 @@ jobs:
 
     - name: upload-build
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
         name: pdf-output
         if-no-files-found: ignore
