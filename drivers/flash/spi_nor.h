@@ -60,6 +60,8 @@
 #define SPI_NOR_CMD_PP_4B        0x12  /* Page Program 4 Byte Address */
 #define SPI_NOR_CMD_PP_1_1_4_4B  0x34  /* Quad Page program (1-1-4) 4 Byte Address */
 #define SPI_NOR_CMD_PP_1_4_4_4B  0x3e  /* Quad Page program (1-4-4) 4 Byte Address */
+#define SPI_NOR_CMD_EQIO         0x35  /* Enable QPI mode */
+#define SPI_NOR_CMD_RSTQIO       0xF5  /* Disable QPI mode */
 
 /* Flash octal opcodes */
 #define SPI_NOR_OCMD_SE         0x21DE  /* Octal Sector erase */

@@ -195,6 +195,14 @@ struct spi_nor_data {
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
+
+#ifdef CONFIG_SPI_EXTENDED_MODES
+	enum spi_nor_protocol nor_protocol;
+
+	uint8_t read_cmd;
+	uint8_t program_cmd;
+	uint8_t erase_cmd;
+#endif
 };
 
 #ifdef CONFIG_SPI_NOR_SFDP_MINIMAL
@@ -393,6 +401,7 @@ static int spi_nor_access(const struct device *const dev,
 		}
 	};
 
+#ifndef CONFIG_SPI_EXTENDED_MODES
 	buf[0] = opcode;
 	if (is_addressed) {
 		bool access_24bit = (access & NOR_ACCESS_24BIT_ADDR) != 0;
@@ -425,6 +434,131 @@ static int spi_nor_access(const struct device *const dev,
 		.buffers = spi_buf,
 		.count = 2,
 	};
+#else
+
+	spi_buf[0].spi_mem_op.cmd.opcode = opcode;
+	spi_buf[0].spi_mem_op.cmd.nbytes = 1;
+
+	if (is_addressed) {
+		bool access_24bit = (access & NOR_ACCESS_24BIT_ADDR) != 0;
+		bool access_32bit = (access & NOR_ACCESS_32BIT_ADDR) != 0;
+		bool use_32bit = (access_32bit
+				  || (!access_24bit
+				      && driver_data->flag_access_32bit));
+
+		spi_buf[0].spi_mem_op.addr.nbytes = use_32bit ? 4 : 3;
+	};
+	spi_buf[0].spi_mem_op.addr.val = addr;
+	spi_buf[0].spi_mem_op.addr.buswidth = SPI_LINES_SINGLE;
+	spi_buf[0].spi_mem_op.addr.dtr = 0;
+
+	spi_buf[0].spi_mem_op.data.nbytes = length;
+	spi_buf[0].spi_mem_op.data.buf = data;
+	spi_buf[0].spi_mem_op.data.buswidth = SPI_LINES_SINGLE;
+	spi_buf[0].spi_mem_op.data.dtr = 0;
+
+
+	switch (driver_data->nor_protocol) {
+	case PROTO_1_1_1:
+		spi_buf[0].spi_mem_op.cmd.buswidth = SPI_LINES_SINGLE;
+		spi_buf[0].spi_mem_op.cmd.dtr = 0;
+		break;
+	case PROTO_1_1_2:
+		spi_buf[0].spi_mem_op.cmd.buswidth = SPI_LINES_SINGLE;
+		spi_buf[0].spi_mem_op.addr.buswidth = SPI_LINES_SINGLE;
+		spi_buf[0].spi_mem_op.data.buswidth = SPI_LINES_DUAL;
+		break;
+	case PROTO_1_2_2:
+		spi_buf[0].spi_mem_op.cmd.buswidth = SPI_LINES_SINGLE;
+		spi_buf[0].spi_mem_op.addr.buswidth = SPI_LINES_DUAL;
+		spi_buf[0].spi_mem_op.data.buswidth = SPI_LINES_DUAL;
+		break;
+	case PROTO_1_1_4:
+		spi_buf[0].spi_mem_op.cmd.buswidth = SPI_LINES_SINGLE;
+		spi_buf[0].spi_mem_op.addr.buswidth = SPI_LINES_SINGLE;
+		spi_buf[0].spi_mem_op.data.buswidth = SPI_LINES_QUAD;
+		break;
+	case PROTO_1_4_4:
+		spi_buf[0].spi_mem_op.cmd.buswidth = SPI_LINES_SINGLE;
+		spi_buf[0].spi_mem_op.addr.buswidth = SPI_LINES_QUAD;
+		spi_buf[0].spi_mem_op.addr.dtr = 1;
+		spi_buf[0].spi_mem_op.data.buswidth = SPI_LINES_QUAD;
+		spi_buf[0].spi_mem_op.data.dtr = 1;
+		break;
+	case PROTO_1_4D_4D:
+		spi_buf[0].spi_mem_op.cmd.buswidth = SPI_LINES_SINGLE;
+		spi_buf[0].spi_mem_op.addr.buswidth = SPI_LINES_QUAD;
+		spi_buf[0].spi_mem_op.data.buswidth = SPI_LINES_QUAD;
+		break;
+	case PROTO_4_4_4:
+		spi_buf[0].spi_mem_op.cmd.buswidth = SPI_LINES_QUAD;
+		spi_buf[0].spi_mem_op.cmd.dtr = 0;
+		spi_buf[0].spi_mem_op.addr.buswidth = SPI_LINES_QUAD;
+		spi_buf[0].spi_mem_op.data.buswidth = SPI_LINES_QUAD;
+		if (opcode == SPI_NOR_CMD_4READ) {
+			spi_buf[0].spi_mem_op.dummy.nbytes = 6;
+		}
+		break;
+	case PROTO_8_8_8:
+		spi_buf[0].spi_mem_op.cmd.buswidth = SPI_LINES_OCTAL;
+		spi_buf[0].spi_mem_op.cmd.dtr = 0;
+		spi_buf[0].spi_mem_op.cmd.opcode = (opcode << 8) | (0xFF - opcode);
+		spi_buf[0].spi_mem_op.cmd.nbytes = 2;
+
+		spi_buf[0].spi_mem_op.addr.buswidth = SPI_LINES_OCTAL;
+		spi_buf[0].spi_mem_op.addr.dtr = 0;
+
+		if ((opcode == SPI_NOR_CMD_RDID) || (opcode == SPI_NOR_CMD_RDSR)) {
+			spi_buf[0].spi_mem_op.addr.val = 0;
+			spi_buf[0].spi_mem_op.addr.buswidth = SPI_LINES_OCTAL;
+			spi_buf[0].spi_mem_op.addr.nbytes = 4;
+
+			spi_buf[0].spi_mem_op.dummy.nbytes = 4;
+		}
+		if (opcode == 0xEC) {
+			spi_buf[0].spi_mem_op.dummy.nbytes = 20;
+		}
+		spi_buf[0].spi_mem_op.data.buswidth = SPI_LINES_OCTAL;
+		spi_buf[0].spi_mem_op.data.dtr = 0;
+		break;
+	case PROTO_8D_8D_8D:
+		spi_buf[0].spi_mem_op.cmd.buswidth = SPI_LINES_OCTAL;
+		spi_buf[0].spi_mem_op.cmd.dtr = 1;
+		spi_buf[0].spi_mem_op.cmd.opcode = (opcode << 8) | (0xFF - opcode);
+		spi_buf[0].spi_mem_op.cmd.nbytes = 2;
+
+		spi_buf[0].spi_mem_op.addr.buswidth = SPI_LINES_OCTAL;
+		spi_buf[0].spi_mem_op.addr.dtr = 1;
+
+		spi_buf[0].spi_mem_op.data.dtr = 1;
+
+		if ((opcode == SPI_NOR_CMD_RDID) || (opcode == SPI_NOR_CMD_RDSR)) {
+			spi_buf[0].spi_mem_op.addr.val = 0;
+			spi_buf[0].spi_mem_op.addr.buswidth = SPI_LINES_OCTAL;
+			spi_buf[0].spi_mem_op.addr.nbytes = 4;
+			spi_buf[0].spi_mem_op.dummy.nbytes = 6;
+			spi_buf[0].spi_mem_op.data.dtr = 0;
+		} else if (opcode == 0xEE) {
+			spi_buf[0].spi_mem_op.dummy.nbytes = 20;
+		}
+		spi_buf[0].spi_mem_op.data.buswidth = SPI_LINES_OCTAL;
+
+		break;
+	default:
+		break;
+	};
+
+	const struct spi_buf_set tx_set = {
+		.buffers = spi_buf,
+		.count = 1,
+	};
+
+	const struct spi_buf_set rx_set = {
+		.buffers = spi_buf,
+		.count = 1,
+	};
+
+#endif
 
 	if (is_write) {
 		return spi_write_dt(&driver_cfg->spi, &tx_set);
@@ -785,9 +919,121 @@ static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
 
 #endif /* ANY_INST_HAS_MXICY_MX25R_POWER_MODE */
 
+#ifdef CONFIG_SPI_EXTENDED_MODES
+/**
+ * @brief Write the configuration register2.
+ *
+ * @note The device must be externally acquired before invoking this
+ * function.
+ *
+ * @param dev Device struct
+ * @param sr The new value of the configuration register2
+ *
+ * @return 0 on success or a negative error code.
+ */
+static int spi_nor_wrcr2(const struct device *dev,
+			 uint8_t cr)
+{
+	int ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+
+	if (ret == 0) {
+
+		struct spi_nor_data *data = dev->data;
+
+		data->flag_access_32bit = true;
+
+		ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_WR_CFGREG2, 0, &cr, sizeof(cr));
+	}
+
+	return ret;
+}
+
+static int spi_nor_change_protocol(const struct device *dev,
+						enum spi_nor_protocol nor_protocol)
+{
+	struct spi_nor_data *data = dev->data;
+	uint8_t cr2;
+	int ret = 0;
+
+	switch (nor_protocol) {
+	case PROTO_1_1_1:
+		data->nor_protocol = PROTO_1_1_1;
+		data->flag_access_32bit = false;
+		data->read_cmd = SPI_NOR_CMD_READ;
+		data->program_cmd = SPI_NOR_CMD_PP;
+		data->erase_cmd = SPI_NOR_CMD_SE;
+		break;
+	case PROTO_1_1_2:
+		data->nor_protocol = PROTO_1_1_2;
+		data->flag_access_32bit = false;
+		data->read_cmd = SPI_NOR_CMD_READ;
+		data->program_cmd = SPI_NOR_CMD_PP;
+		data->erase_cmd = SPI_NOR_CMD_SE;
+		break;
+	case PROTO_1_2_2:
+		data->nor_protocol = PROTO_1_2_2;
+		data->flag_access_32bit = false;
+		data->read_cmd = SPI_NOR_CMD_READ;
+		data->program_cmd = SPI_NOR_CMD_PP;
+		data->erase_cmd = SPI_NOR_CMD_SE;
+		break;
+	case PROTO_1_1_4:
+		data->nor_protocol = PROTO_1_1_4;
+		data->flag_access_32bit = false;
+		data->read_cmd = SPI_NOR_CMD_READ;
+		data->program_cmd = SPI_NOR_CMD_PP;
+		data->erase_cmd = SPI_NOR_CMD_SE;
+		break;
+	case PROTO_1_4_4:
+		data->nor_protocol = PROTO_1_4_4;
+		data->flag_access_32bit = false;
+		data->read_cmd = SPI_NOR_CMD_READ;
+		data->program_cmd = SPI_NOR_CMD_PP;
+		data->erase_cmd = SPI_NOR_CMD_SE;
+		break;
+	case PROTO_1_4D_4D:
+		data->nor_protocol = PROTO_1_4D_4D;
+		data->flag_access_32bit = false;
+		data->read_cmd = SPI_NOR_CMD_READ;
+		data->program_cmd = SPI_NOR_CMD_PP;
+		data->erase_cmd = SPI_NOR_CMD_SE;
+		break;
+	case PROTO_4_4_4:
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_EQIO);
+		data->nor_protocol = PROTO_4_4_4;
+		data->flag_access_32bit = false;
+		data->read_cmd = SPI_NOR_CMD_4READ;
+		data->program_cmd = SPI_NOR_CMD_PP;
+		data->erase_cmd = SPI_NOR_CMD_SE;
+		break;
+	case PROTO_8_8_8:
+		data->flag_access_32bit = true;
+		data->read_cmd = SPI_NOR_OCMD_RD;
+		data->program_cmd = SPI_NOR_CMD_PP_4B;
+		data->erase_cmd = SPI_NOR_OCMD_SE;
+		cr2 = 0x01;
+		ret = spi_nor_wrcr2(dev, cr2);
+		data->nor_protocol = PROTO_8_8_8;
+		break;
+	case PROTO_8D_8D_8D:
+		data->flag_access_32bit = true;
+		data->read_cmd = SPI_NOR_OCMD_DTR_RD;
+		data->program_cmd = SPI_NOR_CMD_PP_4B;
+		data->erase_cmd = SPI_NOR_OCMD_SE;
+		cr2 = 0x02;
+		ret = spi_nor_wrcr2(dev, cr2);
+		data->nor_protocol = PROTO_8D_8D_8D;
+		break;
+	}
+
+	return ret;
+}
+#endif
+
 static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 			size_t size)
 {
+	struct spi_nor_data *data = dev->data;
 	const size_t flash_size = dev_flash_size(dev);
 	int ret;
 
@@ -803,14 +1049,19 @@ static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 
 	acquire_device(dev);
 
+	uint8_t read_cmd = SPI_NOR_CMD_READ;
+	#ifdef CONFIG_SPI_EXTENDED_MODES
+	read_cmd = data->read_cmd;
+	#endif
+
 	if (IS_ENABLED(ANY_INST_USE_4B_ADDR_OPCODES) && DEV_CFG(dev)->use_4b_addr_opcodes) {
 		if (addr > SPI_NOR_3B_ADDR_MAX) {
 			ret = spi_nor_cmd_addr_read_4b(dev, SPI_NOR_CMD_READ_4B, addr, dest, size);
 		} else {
-			ret = spi_nor_cmd_addr_read_3b(dev, SPI_NOR_CMD_READ, addr, dest, size);
+			ret = spi_nor_cmd_addr_read_3b(dev, read_cmd, addr, dest, size);
 		}
 	} else {
-		ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
+		ret = spi_nor_cmd_addr_read(dev, read_cmd, addr, dest, size);
 	}
 
 	release_device(dev);
@@ -857,6 +1108,7 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 			 const void *src,
 			 size_t size)
 {
+	struct spi_nor_data *data = dev->data;
 	const size_t flash_size = dev_flash_size(dev);
 	const uint16_t page_size = dev_page_size(dev);
 	int ret;
@@ -894,17 +1146,22 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 				break;
 			}
 
+			uint8_t program_cmd = SPI_NOR_CMD_PP;
+			#ifdef CONFIG_SPI_EXTENDED_MODES
+			program_cmd = data->program_cmd;
+			#endif
+
 			if (IS_ENABLED(ANY_INST_USE_4B_ADDR_OPCODES) &&
 			    DEV_CFG(dev)->use_4b_addr_opcodes) {
 				if (addr > SPI_NOR_3B_ADDR_MAX) {
 					ret = spi_nor_cmd_addr_write_4b(dev, SPI_NOR_CMD_PP_4B,
 									addr, src, to_write);
 				} else {
-					ret = spi_nor_cmd_addr_write_3b(dev, SPI_NOR_CMD_PP, addr,
-									src, to_write);
+					ret = spi_nor_cmd_addr_write_3b(dev, program_cmd,
+									addr, src, to_write);
 				}
 			} else {
-				ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr, src,
+				ret = spi_nor_cmd_addr_write(dev, program_cmd, addr, src,
 							     to_write);
 			}
 
@@ -1426,6 +1683,32 @@ static int setup_pages_layout(const struct device *dev)
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 
+#ifdef CONFIG_SPI_EXTENDED_MODES
+static enum spi_nor_protocol spi_config_get_lines(const struct spi_config *config)
+{
+	enum spi_nor_protocol nor_protocol;
+
+	switch (config->operation & SPI_LINES_MASK) {
+	case SPI_LINES_SINGLE:
+		nor_protocol = PROTO_1_1_1;
+		break;
+	case SPI_LINES_DUAL:
+		nor_protocol = PROTO_1_2_2;
+		break;
+	case SPI_LINES_QUAD:
+		nor_protocol = PROTO_4_4_4;
+		break;
+	case SPI_LINES_OCTAL:
+		nor_protocol = PROTO_8_8_8;
+		break;
+	default:
+		nor_protocol = PROTO_1_1_1;
+	}
+
+	return nor_protocol;
+}
+#endif
+
 /**
  * @brief Configure the flash
  *
@@ -1506,6 +1789,15 @@ static int spi_nor_configure(const struct device *dev)
 			jedec_id[0], jedec_id[1], jedec_id[2],
 			cfg->jedec_id[0], cfg->jedec_id[1], cfg->jedec_id[2]);
 		return -EINVAL;
+	}
+#endif
+
+#ifdef CONFIG_SPI_EXTENDED_MODES
+
+	rc = spi_nor_change_protocol(dev, spi_config_get_lines(&cfg->spi.config));
+	if (rc != 0) {
+		LOG_ERR("Change protocol failed: %d", rc);
+		return -ENODEV;
 	}
 #endif
 
