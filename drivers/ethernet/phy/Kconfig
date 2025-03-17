@@ -65,6 +65,12 @@ config PHY_ADIN2111
 	help
 	  Enable ADIN2111 PHY driver.
 
+config PHY_LITEX_LITEETH_1000BASEX
+	bool "LiteX LiteEth 1000BASE-X PHY driver"
+	default y
+	depends on DT_HAS_LITEX_LITEETH_1000BASEX_PHY_ENABLED
+	depends on ETH_LITEX_LITEETH
+
 config PHY_MICROCHIP_KSZ8081
 	bool "Microchip KSZ8081 PHY Driver"
 	default y
