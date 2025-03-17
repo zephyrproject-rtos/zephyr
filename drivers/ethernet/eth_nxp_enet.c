@@ -461,6 +461,8 @@ static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 {
 	enum phy_link_speed speeds = LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
 				       LINK_HALF_100BASE_T | LINK_FULL_100BASE_T;
+	int ret;
+	struct phy_link_state state;
 
 	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
 	   (phy_mode == NXP_ENET_RGMII_MODE), (0))) {
@@ -468,7 +470,27 @@ static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 	}
 
 	/* Configure the PHY */
-	return phy_configure_link(phy, speeds);
+	ret = phy_configure_link(phy, speeds);
+
+	if (ret == -ENOTSUP) {
+		phy_get_link_state(phy, &state);
+
+		if (state.is_up) {
+			LOG_WRN("phy_configure_link returned -ENOTSUP, but link is up. "
+				"Speed: %s, %s-duplex",
+				PHY_LINK_IS_SPEED_1000M(state.speed) ? "1 Gbits" :
+				PHY_LINK_IS_SPEED_100M(state.speed) ? "100 Mbits" : "10 Mbits",
+				PHY_LINK_IS_FULL_DUPLEX(state.speed) ? "full" : "half");
+		} else {
+			LOG_ERR("phy_configure_link returned -ENOTSUP and link is down.");
+			return -ENETDOWN;
+		}
+	} else if (ret) {
+		LOG_ERR("phy_configure_link failed with error: %d", ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 static void nxp_enet_phy_cb(const struct device *phy,
