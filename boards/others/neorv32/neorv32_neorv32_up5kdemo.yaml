@@ -1,5 +1,5 @@
-identifier: neorv32
-name: NEORV32 Processor (SoC)
+identifier: neorv32/neorv32/up5kdemo
+name: NEORV32 UP5KDemo
 type: mcu
 arch: riscv
 toolchain:
