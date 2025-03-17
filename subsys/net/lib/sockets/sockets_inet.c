@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2021 Nordic Semiconductor
  * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+ * Copyright (c) 2025 Aerlync Labs Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2080,6 +2081,18 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			return 0;
+
+		case IPV6_MULTICAST_LOOP:
+			ret = net_context_get_option(ctx,
+						     NET_OPT_IPV6_MCAST_LOOP,
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+
 		}
 
 		break;
@@ -2722,6 +2735,17 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			break;
+
+		case IPV6_MULTICAST_LOOP:
+			ret = net_context_set_option(ctx,
+						     NET_OPT_IPV6_MCAST_LOOP,
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
 		}
 
 		break;
