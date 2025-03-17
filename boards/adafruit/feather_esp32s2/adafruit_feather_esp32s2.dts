@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Philipp Steiner <philipp.steiner@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "adafruit_feather_esp32s2_common.dtsi"
+#include "feather_connector.dtsi"
+
+/ {
+	model = "Adafruit Feather ESP32-S2";
+	compatible = "espressif,esp32s2";
+};

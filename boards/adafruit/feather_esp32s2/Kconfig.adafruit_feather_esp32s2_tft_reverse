@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Philipp Steiner <philipp.steiner@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_FEATHER_ESP32S2_TFT_REVERSE
+	select SOC_ESP32S2_R2
