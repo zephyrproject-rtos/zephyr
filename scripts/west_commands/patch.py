@@ -549,6 +549,9 @@ class Patch(WestCommand):
         if (topdir / module_name_or_path).is_dir():
             return Path(module_name_or_path)
 
+        if module_name_or_path == "zephyr":
+            return ZEPHYR_BASE
+
         all_modules = zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest)
         for m in all_modules:
             if m.meta['name'] == module_name_or_path:
