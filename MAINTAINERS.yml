@@ -1304,6 +1304,19 @@ Release Notes:
   tests:
     - crypto
 
+"Drivers: CRC":
+  status: maintained
+  maintainers:
+    - thenguyenyf
+  files:
+    - drivers/crc/
+    - dts/bindings/crc/
+    - include/zephyr/drivers/crc.h
+    - samples/drivers/crc/
+    - tests/drivers/crc/
+  labels:
+    - "area: CRC"
+
 "Drivers: DAC":
   status: maintained
   maintainers:
