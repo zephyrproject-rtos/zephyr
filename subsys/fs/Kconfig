@@ -61,7 +61,7 @@ if FILE_SYSTEM_SHELL
 
 config FILE_SYSTEM_SHELL_MOUNT_COMMAND
 	bool "File system shell mount command"
-	depends on FAT_FILESYSTEM_ELM || FILE_SYSTEM_LITTLEFS
+	depends on FAT_FILESYSTEM_ELM || FILE_SYSTEM_LITTLEFS || FILE_SYSTEM_RPMSGFS
 	depends on HEAP_MEM_POOL_SIZE > 0
 	default y
 	help
@@ -139,6 +139,11 @@ config APP_LINK_WITH_FS
 	  Add FS header files to the 'app' include path. It may be
 	  disabled if the include paths for FS are causing aliasing
 	  issues for 'app'.
+
+config FILE_SYSTEM_RPMSGFS
+	bool "RPMSGFS file system support"
+	help
+	  Use RPMSGFS file system to mount remote directories.
 
 # Logging defined here as modules/fs/littlefs/lfs.c expects CONFIG_FS_LOG_LEVEL
 module = FS

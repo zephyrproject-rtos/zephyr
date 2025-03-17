@@ -64,6 +64,9 @@ enum {
 	/** Identifier for in-tree Virtiofs file system. */
 	FS_VIRTIOFS,
 
+	/** Identifier for in-tree RpMsgFS file system */
+	FS_RPMSGFS,
+
 	/** Base identifier for external file systems. */
 	FS_TYPE_EXTERNAL_BASE,
 };
