@@ -305,6 +305,13 @@ SPI
 Other subsystems
 ****************
 
+LoRa
+====
+
+* The :c:member:`lorawan_downlink_cb.cb` callback is now passed a pointer to the parent
+  :c:struct:`lorawan_downlink_cb` instance as the first parameter. This callback pointer can be used
+    to reference outer user-defined data structure using :c:macro:`CONTAINER_OF` macro.
+
 ZBus
 ====
 
