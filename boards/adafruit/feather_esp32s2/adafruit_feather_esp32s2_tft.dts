@@ -1,0 +1,119 @@
+/*
+ * Copyright (c) 2025 Philipp Steiner <philipp.steiner@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "adafruit_feather_esp32s2_common.dtsi"
+#include "feather_connector_tft.dtsi"
+
+/ {
+	model = "Adafruit Feather ESP32-S2 TFT";
+	compatible = "espressif,esp32s2";
+
+	chosen {
+		zephyr,display = &st7789v_tft;
+	};
+
+	aliases {
+		backlight = &led1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led1: led_1 {
+			label = "TFT Backlight";
+			gpios = <&gpio1 45 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	/*
+	 * On-board regulator powers I2C pull-ups and external devices connected
+	 * via the STEMMA QT connector.
+	 */
+	i2c_reg: i2c_reg {
+		label = "I2C Power";
+		compatible = "power-domain-gpio";
+		#power-domain-cells = <0>;
+		enable-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <10>;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio1 39 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio1 40 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7789v_tft: st7789v_tft@0 {
+			compatible = "sitronix,st7789v";
+			status = "disabled";
+
+			/* Also powered by i2c_reg */
+			power-domains = <&i2c_reg>;
+
+			mipi-max-frequency = <DT_FREQ_M(20)>;
+			reg = <0>;
+			width = <135>;
+			height = <240>;
+			x-offset = <52>;
+			y-offset = <40>;
+			vcom = <0x20>;
+			gctrl = <0x35>;
+			vrhs = <0x0b>;
+			vdvs = <0x20>;
+			mdac = <0x08>;
+			gamma = <0x01>;
+			colmod = <0x55>;
+			lcm = <0x2c>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 01];
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [70 2C 2E 15 10 09 48 33 53 0B 19 18 20 25];
+			nvgam-param = [70 2C 2E 15 10 09 48 33 53 0B 19 18 20 25];
+			ram-param = [00 F0];
+			rgb-param = [40 02 14];
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+
+	neopixel_power_enable {
+		gpio-hog;
+		gpios = <34 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&pinctrl {
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_GPIO1>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART1_RX_GPIO2>;
+			bias-pull-up;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO42>,
+				 <I2C0_SCL_GPIO41>;
+			drive-open-drain;
+			output-high;
+		};
+	};
+};
