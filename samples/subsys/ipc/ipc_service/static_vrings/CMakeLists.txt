@@ -9,7 +9,9 @@ cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
+if(CONFIG_INCLUDE_REMOTE_DIR)
 set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/../remote/zephyr)
+endif()
 
 if(NOT (CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP OR
         CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUAPP OR
@@ -20,8 +22,9 @@ if(NOT (CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP OR
         CONFIG_BOARD_MIMXRT1180_EVK_MIMXRT1189_CM33
        )
   )
-  message(FATAL_ERROR "${BOARD} is not supported for this sample")
+  message("${BOARD} is not supported for this sample")
 endif()
+
 
 project(ipc_service)
 
