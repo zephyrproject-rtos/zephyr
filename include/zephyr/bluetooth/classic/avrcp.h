@@ -191,37 +191,44 @@ struct bt_avrcp_cb {
 	 *  Called when the get capabilities process is completed.
 	 *
 	 *  @param avrcp AVRCP connection object.
+	 *  @param tid The transaction label of the response.
 	 *  @param rsp The response for Get Capabilities command.
 	 */
-	void (*get_cap_rsp)(struct bt_avrcp *avrcp, const struct bt_avrcp_get_cap_rsp *rsp);
+	void (*get_cap_rsp)(struct bt_avrcp *avrcp, uint8_t tid,
+			    const struct bt_avrcp_get_cap_rsp *rsp);
 
 	/** @brief Callback function for bt_avrcp_get_unit_info().
 	 *
 	 *  Called when the get unit info process is completed.
 	 *
 	 *  @param avrcp AVRCP connection object.
+	 *  @param tid The transaction label of the response.
 	 *  @param rsp The response for UNIT INFO command.
 	 */
-	void (*unit_info_rsp)(struct bt_avrcp *avrcp, struct bt_avrcp_unit_info_rsp *rsp);
+	void (*unit_info_rsp)(struct bt_avrcp *avrcp, uint8_t tid,
+			      struct bt_avrcp_unit_info_rsp *rsp);
 
 	/** @brief Callback function for bt_avrcp_get_subunit_info().
 	 *
 	 *  Called when the get subunit info process is completed.
 	 *
 	 *  @param avrcp AVRCP connection object.
+	 *  @param tid The transaction label of the response.
 	 *  @param rsp The response for SUBUNIT INFO command.
 	 */
-	void (*subunit_info_rsp)(struct bt_avrcp *avrcp, struct bt_avrcp_subunit_info_rsp *rsp);
+	void (*subunit_info_rsp)(struct bt_avrcp *avrcp, uint8_t tid,
+				 struct bt_avrcp_subunit_info_rsp *rsp);
 
 	/** @brief Callback function for bt_avrcp_passthrough().
 	 *
 	 *  Called when a passthrough response is received.
 	 *
 	 *  @param avrcp AVRCP connection object.
+	 *  @param tid The transaction label of the response.
 	 *  @param result The result of the operation.
 	 *  @param rsp The response for PASS THROUGH command.
 	 */
-	void (*passthrough_rsp)(struct bt_avrcp *avrcp, bt_avrcp_rsp_t result,
+	void (*passthrough_rsp)(struct bt_avrcp *avrcp, uint8_t tid, bt_avrcp_rsp_t result,
 				const struct bt_avrcp_passthrough_rsp *rsp);
 };
 
@@ -263,21 +270,23 @@ int bt_avrcp_register_cb(const struct bt_avrcp_cb *cb);
  *  This function gets the capabilities supported by remote device.
  *
  *  @param avrcp The AVRCP instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
  *  @param cap_id Specific capability requested, see @ref bt_avrcp_cap_t.
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_get_cap(struct bt_avrcp *avrcp, uint8_t cap_id);
+int bt_avrcp_get_cap(struct bt_avrcp *avrcp, uint8_t tid, uint8_t cap_id);
 
 /** @brief Get AVRCP Unit Info.
  *
  *  This function obtains information that pertains to the AV/C unit as a whole.
  *
  *  @param avrcp The AVRCP instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp);
+int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp, uint8_t tid);
 
 /** @brief Get AVRCP Subunit Info.
  *
@@ -285,10 +294,11 @@ int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp);
  *  may support other subunits than the panel subunit if other profiles co-exist in the device.
  *
  *  @param avrcp The AVRCP instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp);
+int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp, uint8_t tid);
 
 /** @brief Send AVRCP Pass Through command.
  *
@@ -296,6 +306,7 @@ int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp);
  *  to transfer user operation information from a CT to Panel subunit of TG.
  *
  *  @param avrcp The AVRCP instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
  *  @param opid The user operation id, see @ref bt_avrcp_opid_t.
  *  @param state The button state, see @ref bt_avrcp_button_state_t.
  *  @param payload The payload of the pass through command. Should not be NULL if len is not zero.
@@ -303,7 +314,7 @@ int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp);
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_passthrough(struct bt_avrcp *avrcp, uint8_t opid, uint8_t state,
+int bt_avrcp_passthrough(struct bt_avrcp *avrcp, uint8_t tid, uint8_t opid, uint8_t state,
 			 const uint8_t *payload, uint8_t len);
 
 #ifdef __cplusplus
