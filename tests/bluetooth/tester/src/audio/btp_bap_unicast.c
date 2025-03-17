@@ -258,7 +258,7 @@ static void btp_send_pac_codec_found_ev(struct bt_conn *conn,
 static void btp_send_ase_found_ev(struct bt_conn *conn, struct bt_bap_ep *ep)
 {
 	struct bt_bap_ep_info info;
-	struct btp_ascs_ase_found_ev ev;
+	struct btp_bap_ase_found_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
