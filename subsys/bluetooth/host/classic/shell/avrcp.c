@@ -31,19 +31,33 @@
 
 struct bt_avrcp *default_avrcp;
 static bool avrcp_registered;
+static uint8_t local_tid;
+
+static uint8_t get_next_tid(void)
+{
+	uint8_t ret = local_tid;
+
+	local_tid++;
+	local_tid &= 0x0F;
+
+	return ret;
+}
 
 static void avrcp_connected(struct bt_avrcp *avrcp)
 {
-	default_avrcp = avrcp;
 	bt_shell_print("AVRCP connected");
+	default_avrcp = avrcp;
+	local_tid = 0;
 }
 
 static void avrcp_disconnected(struct bt_avrcp *avrcp)
 {
 	bt_shell_print("AVRCP disconnected");
+	local_tid = 0;
 }
 
-static void avrcp_get_cap_rsp(struct bt_avrcp *avrcp, const struct bt_avrcp_get_cap_rsp *rsp)
+static void avrcp_get_cap_rsp(struct bt_avrcp *avrcp, uint8_t tid,
+			      const struct bt_avrcp_get_cap_rsp *rsp)
 {
 	uint8_t i;
 
@@ -62,13 +76,15 @@ static void avrcp_get_cap_rsp(struct bt_avrcp *avrcp, const struct bt_avrcp_get_
 	}
 }
 
-static void avrcp_unit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_unit_info_rsp *rsp)
+static void avrcp_unit_info_rsp(struct bt_avrcp *avrcp, uint8_t tid,
+				struct bt_avrcp_unit_info_rsp *rsp)
 {
 	bt_shell_print("AVRCP unit info received, unit type = 0x%02x, company_id = 0x%06x",
 		       rsp->unit_type, rsp->company_id);
 }
 
-static void avrcp_subunit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_subunit_info_rsp *rsp)
+static void avrcp_subunit_info_rsp(struct bt_avrcp *avrcp, uint8_t tid,
+				   struct bt_avrcp_subunit_info_rsp *rsp)
 {
 	int i;
 
@@ -80,7 +96,7 @@ static void avrcp_subunit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_subun
 	}
 }
 
-static void avrcp_passthrough_rsp(struct bt_avrcp *avrcp, bt_avrcp_rsp_t result,
+static void avrcp_passthrough_rsp(struct bt_avrcp *avrcp, uint8_t tid, bt_avrcp_rsp_t result,
 				  const struct bt_avrcp_passthrough_rsp *rsp)
 {
 	if (result == BT_AVRCP_RSP_ACCEPTED) {
@@ -183,7 +199,7 @@ static int cmd_get_unit_info(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	if (default_avrcp != NULL) {
-		bt_avrcp_get_unit_info(default_avrcp);
+		bt_avrcp_get_unit_info(default_avrcp, get_next_tid());
 	} else {
 		shell_error(sh, "AVRCP is not connected");
 	}
@@ -200,7 +216,7 @@ static int cmd_get_subunit_info(const struct shell *sh, int32_t argc, char *argv
 	}
 
 	if (default_avrcp != NULL) {
-		bt_avrcp_get_subunit_info(default_avrcp);
+		bt_avrcp_get_subunit_info(default_avrcp, get_next_tid());
 	} else {
 		shell_error(sh, "AVRCP is not connected");
 	}
@@ -218,8 +234,10 @@ static int cmd_passthrough(const struct shell *sh, bt_avrcp_opid_t opid, const u
 	}
 
 	if (default_avrcp != NULL) {
-		bt_avrcp_passthrough(default_avrcp, opid, BT_AVRCP_BUTTON_PRESSED, payload, len);
-		bt_avrcp_passthrough(default_avrcp, opid, BT_AVRCP_BUTTON_RELEASED, payload, len);
+		bt_avrcp_passthrough(default_avrcp, get_next_tid(), opid, BT_AVRCP_BUTTON_PRESSED,
+				     payload, len);
+		bt_avrcp_passthrough(default_avrcp, get_next_tid(), opid, BT_AVRCP_BUTTON_RELEASED,
+				     payload, len);
 	} else {
 		shell_error(sh, "AVRCP is not connected");
 	}
@@ -254,9 +272,9 @@ static int cmd_get_cap(const struct shell *sh, int32_t argc, char *argv[])
 
 	cap_id = argv[1];
 	if (!strcmp(cap_id, "company")) {
-		bt_avrcp_get_cap(default_avrcp, BT_AVRCP_CAP_COMPANY_ID);
+		bt_avrcp_get_cap(default_avrcp, get_next_tid(), BT_AVRCP_CAP_COMPANY_ID);
 	} else if (!strcmp(cap_id, "events")) {
-		bt_avrcp_get_cap(default_avrcp, BT_AVRCP_CAP_EVENTS_SUPPORTED);
+		bt_avrcp_get_cap(default_avrcp, get_next_tid(), BT_AVRCP_CAP_EVENTS_SUPPORTED);
 	}
 
 	return 0;

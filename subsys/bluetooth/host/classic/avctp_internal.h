@@ -103,7 +103,7 @@ int bt_avctp_disconnect(struct bt_avctp *session);
 /* Create AVCTP PDU */
 struct net_buf *bt_avctp_create_pdu(struct bt_avctp *session, bt_avctp_cr_t cr,
 				    bt_avctp_pkt_type_t pkt_type, bt_avctp_ipid_t ipid,
-				    uint8_t *tid, uint16_t pid);
+				    uint8_t tid, uint16_t pid);
 
 /* Send AVCTP PDU */
 int bt_avctp_send(struct bt_avctp *session, struct net_buf *buf);
