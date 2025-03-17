@@ -7,6 +7,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2025 Aerlync Labs Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -408,6 +409,30 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		ret = 0;
 		goto err;
 	}
+
+#if defined(CONFIG_NET_IPV6)
+	if (net_pkt_family(pkt) == AF_INET6) {
+		const struct in6_addr *dest = (const struct in6_addr *)&NET_IPV6_HDR(pkt)->dst;
+		struct net_context *ctx = net_pkt_context(pkt);
+
+		if (net_ipv6_is_addr_mcast(dest) && ctx != NULL &&
+		    net_context_get_ipv6_mcast_loop(ctx)) {
+			struct net_pkt *clone = net_pkt_clone(pkt, K_NO_WAIT);
+
+			if (clone != NULL) {
+				net_pkt_set_iface(clone, net_pkt_iface(pkt));
+				if (net_recv_data(net_pkt_iface(clone), clone) < 0) {
+					if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+						net_stats_update_ipv6_drop(net_pkt_iface(pkt));
+					}
+					net_pkt_unref(clone);
+				}
+			} else {
+				NET_DBG("Failed to clone multicast packet");
+			}
+		}
+	}
+#endif
 
 	if (net_if_try_send_data(net_pkt_iface(pkt), pkt, timeout) == NET_DROP) {
 		ret = -EIO;
