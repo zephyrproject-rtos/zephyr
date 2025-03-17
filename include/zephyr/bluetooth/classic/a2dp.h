@@ -616,6 +616,16 @@ int bt_a2dp_register_ep(struct bt_a2dp_ep *ep, uint8_t media_type, uint8_t sep_t
  */
 int bt_a2dp_register_cb(struct bt_a2dp_cb *cb);
 
+/** @brief Obtain the ACL connection corresponding to A2DP.
+ *
+ *  @param a2dp The A2DP instance.
+ *
+ *  @return Connection object associated with the A2DP context. The caller gets a new
+ *  reference to the connection object which must be released with bt_conn_unref()
+ *  once done using the object.
+ */
+struct bt_conn *bt_a2dp_get_conn(struct bt_a2dp *a2dp);
+
 /** @brief Discover remote endpoints.
  *
  *  @param a2dp The a2dp instance.
