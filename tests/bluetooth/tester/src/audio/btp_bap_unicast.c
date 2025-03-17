@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <errno.h>
 
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
@@ -32,7 +33,7 @@ static struct bt_bap_qos_cfg_pref qos_pref =
 static struct btp_bap_unicast_connection connections[CONFIG_BT_MAX_CONN];
 static struct btp_bap_unicast_group cigs[CONFIG_BT_ISO_MAX_CIG];
 
-static inline struct btp_bap_unicast_stream *stream_bap_to_unicast(struct bt_bap_stream *stream)
+static struct btp_bap_unicast_stream *stream_bap_to_unicast(const struct bt_bap_stream *stream)
 {
 	return CONTAINER_OF(CONTAINER_OF(CONTAINER_OF(stream, struct bt_cap_stream, bap_stream),
 		struct btp_bap_audio_stream, cap_stream),
@@ -501,7 +502,22 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.release = lc3_release,
 };
 
-static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
+static void stream_state_changed(struct bt_bap_stream *stream)
+{
+	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+	struct bt_bap_ep_info info;
+	int err;
+
+	err = bt_bap_ep_get_info(stream->ep, &info);
+	if (err != 0) {
+		LOG_ERR("Failed to get info: %d", err);
+	} else {
+		btp_send_ascs_ase_state_changed_ev(stream->conn, u_stream->ase_id, info.state);
+	}
+}
+
+static void stream_configured_cb(struct bt_bap_stream *stream,
+				 const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_bap_ep_info info;
 	struct btp_bap_unicast_connection *u_conn;
@@ -514,20 +530,22 @@ static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_
 	u_conn = &connections[u_stream->conn_id];
 	u_stream->ase_id = info.id;
 
-	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
-					     BT_ASCS_CONFIG_OP, BTP_ASCS_STATUS_SUCCESS);
+	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id, BT_ASCS_CONFIG_OP,
+					     BTP_ASCS_STATUS_SUCCESS);
+	stream_state_changed(stream);
 }
 
-static void stream_qos_set(struct bt_bap_stream *stream)
+static void stream_qos_set_cb(struct bt_bap_stream *stream)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 
 	LOG_DBG("QoS set stream %p", stream);
 	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
 					     BT_ASCS_QOS_OP, BTP_ASCS_STATUS_SUCCESS);
+	stream_state_changed(stream);
 }
 
-static void stream_enabled(struct bt_bap_stream *stream)
+static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 	struct bt_bap_ep_info info;
@@ -553,18 +571,20 @@ static void stream_enabled(struct bt_bap_stream *stream)
 
 	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
 					     BT_ASCS_ENABLE_OP, BTP_ASCS_STATUS_SUCCESS);
+	stream_state_changed(stream);
 }
 
-static void stream_metadata_updated(struct bt_bap_stream *stream)
+static void stream_metadata_updated_cb(struct bt_bap_stream *stream)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 
 	LOG_DBG("Metadata updated stream %p", stream);
 	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
 					     BT_ASCS_METADATA_OP, BTP_ASCS_STATUS_SUCCESS);
+	stream_state_changed(stream);
 }
 
-static void stream_disabled(struct bt_bap_stream *stream)
+static void stream_disabled_cb(struct bt_bap_stream *stream)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 
@@ -572,9 +592,10 @@ static void stream_disabled(struct bt_bap_stream *stream)
 
 	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
 					     BT_ASCS_DISABLE_OP, BTP_ASCS_STATUS_SUCCESS);
+	stream_state_changed(stream);
 }
 
-static void stream_released(struct bt_bap_stream *stream)
+static void stream_released_cb(struct bt_bap_stream *stream)
 {
 	uint8_t cig_id;
 	struct bt_bap_ep_info info;
@@ -593,6 +614,8 @@ static void stream_released(struct bt_bap_stream *stream)
 			u_conn->configured_source_stream_count--;
 		}
 	}
+
+	stream_state_changed(stream);
 
 	cig_id = u_stream->cig_id;
 	btp_bap_unicast_stream_free(u_stream);
@@ -617,10 +640,9 @@ static void stream_released(struct bt_bap_stream *stream)
 	}
 }
 
-static void stream_started(struct bt_bap_stream *stream)
+static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
-	struct bt_bap_ep_info info;
 
 	/* Callback called on transition to Streaming state */
 
@@ -636,11 +658,10 @@ static void stream_started(struct bt_bap_stream *stream)
 		}
 	}
 
-	(void)bt_bap_ep_get_info(stream->ep, &info);
-	btp_send_ascs_ase_state_changed_ev(stream->conn, u_stream->ase_id, info.state);
+	stream_state_changed(stream);
 }
 
-static void stream_connected(struct bt_bap_stream *stream)
+static void stream_connected_cb(struct bt_bap_stream *stream)
 {
 	struct bt_conn_info conn_info;
 	struct bt_bap_ep_info ep_info;
@@ -660,7 +681,7 @@ static void stream_connected(struct bt_bap_stream *stream)
 	}
 }
 
-static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
+static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 
@@ -677,6 +698,7 @@ static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 
 	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
 					     BT_ASCS_STOP_OP, BTP_STATUS_SUCCESS);
+	stream_state_changed(stream);
 }
 
 static void send_stream_received_ev(struct bt_conn *conn, struct bt_bap_ep *ep,
@@ -702,9 +724,8 @@ static void send_stream_received_ev(struct bt_conn *conn, struct bt_bap_ep *ep,
 	tester_rsp_buffer_unlock();
 }
 
-static void stream_recv(struct bt_bap_stream *stream,
-			const struct bt_iso_recv_info *info,
-			struct net_buf *buf)
+static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
+			   struct net_buf *buf)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 
@@ -723,17 +744,17 @@ static void stream_recv(struct bt_bap_stream *stream,
 }
 
 static struct bt_bap_stream_ops stream_ops = {
-	.configured = stream_configured,
-	.qos_set = stream_qos_set,
-	.enabled = stream_enabled,
-	.metadata_updated = stream_metadata_updated,
-	.disabled = stream_disabled,
-	.released = stream_released,
-	.started = stream_started,
-	.stopped = stream_stopped,
-	.recv = stream_recv,
+	.configured = stream_configured_cb,
+	.qos_set = stream_qos_set_cb,
+	.enabled = stream_enabled_cb,
+	.metadata_updated = stream_metadata_updated_cb,
+	.disabled = stream_disabled_cb,
+	.released = stream_released_cb,
+	.started = stream_started_cb,
+	.stopped = stream_stopped_cb,
+	.recv = stream_recv_cb,
 	.sent = btp_bap_audio_stream_sent_cb,
-	.connected = stream_connected,
+	.connected = stream_connected_cb,
 };
 
 struct btp_bap_unicast_stream *btp_bap_unicast_stream_alloc(
