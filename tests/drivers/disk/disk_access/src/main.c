@@ -28,6 +28,8 @@
 #define DISK_NAME_PHYS "NAND"
 #elif defined(CONFIG_NVME)
 #define DISK_NAME_PHYS "nvme0n0"
+#elif defined(CONFIG_DISK_DRIVER_UFS)
+#define DISK_NAME_PHYS "UFS"
 #elif defined(CONFIG_DISK_DRIVER_RAM)
 /* Since ramdisk is enabled by default on e.g. qemu boards, it needs to be checked last to not
  * override other backends.
@@ -43,8 +45,8 @@
 #define DISK_NAME DISK_NAME_PHYS
 #endif
 
-/* Assume the largest sector we will encounter is 512 bytes */
-#define SECTOR_SIZE 512
+/* Assume the largest sector we will encounter is 4096 bytes */
+#define SECTOR_SIZE 4096
 
 /* Sector counts to read */
 #define SECTOR_COUNT1 8
