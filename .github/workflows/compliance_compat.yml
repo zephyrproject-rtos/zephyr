@@ -1,0 +1,19 @@
+name: Compliance Checks (Compatibility mode)
+
+on:
+  pull_request:
+    types:
+    - edited
+    - opened
+    - reopened
+    - synchronize
+
+jobs:
+  check_compliance:
+    runs-on: ubuntu-22.04
+    name: Run compliance checks on patch series (PR)
+    steps:
+    - name: do nothing
+      run: |
+        echo "do nothing"
+        exit 0
