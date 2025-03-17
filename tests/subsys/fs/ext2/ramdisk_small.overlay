@@ -9,6 +9,6 @@
 		compatible = "zephyr,ram-disk";
 		disk-name = "RAM";
 		sector-size = <512>;
-		sector-count = <400>;
+		sector-count = <220>;
 	};
 };
