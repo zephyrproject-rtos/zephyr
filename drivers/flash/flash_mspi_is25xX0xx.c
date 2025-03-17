@@ -275,10 +275,46 @@ static int flash_mspi_is25xX0xx_write_disable(const struct device *flash)
 	return ret;
 }
 
+static int flash_mspi_is25xX0xx_is_ready(const struct device *flash)
+{
+	uint32_t flag_stat = 0;
+	uint32_t rx_dummy  = 0;
+	uint32_t timeout   = 400; /* max tSSE */
+	int      ret;
+
+	do {
+		LOG_DBG("Reading flag status register");
+		ret = flash_mspi_is25xX0xx_command_read(flash, 0x70, 0, 0, rx_dummy,
+							(uint8_t *)&flag_stat, 1);
+		if (ret) {
+			LOG_ERR("Could not read flag status");
+			return ret;
+		}
+
+		LOG_DBG("flag status: 0x%x", flag_stat);
+		if (flag_stat & BIT(7)) {
+			LOG_DBG("Device is ready");
+			break;
+		}
+
+		k_sleep(K_MSEC(1));
+		timeout--;
+	} while (timeout);
+
+	if (timeout == 0) {
+		LOG_ERR("Operation timed out");
+		return -ETIMEDOUT;
+	}
+
+	return ret;
+}
+
 static int flash_mspi_is25xX0xx_reset(const struct device *flash)
 {
 	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
 	int                                       ret;
+
+	LOG_DBG("RESETTING");
 
 	if (cfg->reset_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
@@ -307,24 +343,18 @@ static int flash_mspi_is25xX0xx_reset(const struct device *flash)
 		if (cfg->reset_recovery_us != 0) {
 			k_busy_wait(cfg->reset_recovery_us);
 		}
+	} else {
+		ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_RESET_EN, 0, 0, 0, NULL, 0);
+		if (ret) {
+			return ret;
+		}
+		ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_RESET_MEM, 0, 0, 0, NULL, 0);
+		if (ret) {
+			return ret;
+		}
 	}
 
-	ret = flash_mspi_is25xX0xx_write_enable(flash);
-	if (ret) {
-		return ret;
-	}
-
-	LOG_DBG("RESETTING");
-	ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_RESET_EN, 0, 0, 0, NULL, 0);
-	if (ret) {
-		return ret;
-	}
-	ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_RESET_MEM, 0, 0, 0, NULL, 0);
-	if (ret) {
-		return ret;
-	}
-
-	ret = flash_mspi_is25xX0xx_write_disable(flash);
+	ret = flash_mspi_is25xX0xx_is_ready(flash);
 	if (ret) {
 		return ret;
 	}

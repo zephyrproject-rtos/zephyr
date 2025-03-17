@@ -261,8 +261,8 @@ zephyr_udc0: &usb {
 		ambiq,timing-config-mask = <0x62>;
 		ambiq,timing-config = <0 16 1 0 0 5 20>;
 		reset-gpios = <&gpio32_63 22 GPIO_ACTIVE_LOW>;
-		t-reset-pulse = <10000000>; /* min tSHRH */
-		t-reset-recovery = <200000000>; /* typical tSSE */
+		t-reset-pulse = <10000>; /* min tSHRH */
+		t-reset-recovery = <1000000>; /* max tSE */
 	};
 };
 
