@@ -678,6 +678,49 @@ static int flash_mspi_infineon_s25h_disable_hybrid_sector_mode(const struct devi
 	return 0;
 }
 
+static int flash_mspi_infineon_s25h_enter_4_byte_address_mode(const struct device *dev)
+{
+	int ret = 0;
+	const struct flash_mspi_infineon_s25h_cfg *config = dev->config;
+	struct flash_mspi_infineon_s25h_data *data = dev->data;
+
+	const struct mspi_xfer_packet enter_4_byte_cmd = {
+		.dir = MSPI_TX,
+		.cmd = INF_MSPI_S25H_OPCODE_ENABLE_4_BYTE_ADDR_MODE,
+		.num_bytes = 0,
+	};
+
+	struct mspi_xfer xfer = {
+		INF_MSPI_S25H_DEFAULT_XFER_DATA,
+		.rx_dummy = 0,
+		.addr_length = 0,
+		.num_packet = 1,
+		.packets = &enter_4_byte_cmd,
+		.timeout = INF_MSPI_S25H_DEFAULT_MSPI_TIMEOUT,
+	};
+
+	ret = mspi_transceive(config->bus, &config->dev_id, &xfer);
+	if (ret < 0) {
+		LOG_ERR("Error sending command to enter 4 byte address mode");
+		return ret;
+	}
+
+	data->mspi_dev_cfg.addr_length = 4;
+
+	if (ret < 0) {
+		LOG_ERR("Error setting up MSPI bus after changing address length");
+		return ret;
+	}
+
+	ret = flash_mspi_infineon_s25h_verify_jedec_id(dev);
+	if (ret < 0) {
+		LOG_ERR("Error verifying JEDEC id after entering 4 byte address mode");
+		return ret;
+	}
+
+	return 0;
+}
+
 static int flash_mspi_infineon_s25h_init(const struct device *dev)
 {
 	int ret = 0;
@@ -708,6 +751,11 @@ static int flash_mspi_infineon_s25h_init(const struct device *dev)
 	}
 
 	ret = flash_mspi_infineon_s25h_disable_hybrid_sector_mode(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = flash_mspi_infineon_s25h_enter_4_byte_address_mode(dev);
 	if (ret < 0) {
 		return ret;
 	}
