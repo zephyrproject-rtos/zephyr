@@ -62,7 +62,6 @@ source "drivers/ethernet/Kconfig.stellaris"
 source "drivers/ethernet/Kconfig.litex"
 source "drivers/ethernet/Kconfig.gecko"
 source "drivers/ethernet/Kconfig.w5500"
-source "drivers/ethernet/Kconfig.dsa"
 source "drivers/ethernet/Kconfig.xlnx_gem"
 source "drivers/ethernet/Kconfig.cyclonev"
 source "drivers/ethernet/Kconfig.nxp_enet"
@@ -80,6 +79,7 @@ source "drivers/ethernet/Kconfig.sy1xx_mac"
 
 source "drivers/ethernet/eth_nxp_enet_qos/Kconfig"
 
+source "drivers/ethernet/dsa/Kconfig"
 source "drivers/ethernet/dwc_xgmac/Kconfig"
 source "drivers/ethernet/phy/Kconfig"
 
