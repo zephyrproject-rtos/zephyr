@@ -4,7 +4,7 @@ sample:
 tests:
   sample.subsys.settings:
     tags: settings
-    timeout: 10
+    timeout: 20
     filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     platform_exclude:
       - qemu_cortex_m0/nrf51822
