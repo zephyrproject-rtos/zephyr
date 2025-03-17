@@ -175,10 +175,10 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #define z_tmcvt_int_div_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
 	((uint64_t) (__t) <= 0xffffffffU -				\
 	 z_tmcvt_off_div(__from_hz, __to_hz, __round_up, __round_off) ?	\
-	 ((uint32_t)((__t) +						\
+	 ((uint32_t)(((__t) +						\
 		     z_tmcvt_off_div(__from_hz, __to_hz,		\
 				     __round_up, __round_off)) /	\
-	  z_tmcvt_divisor(__from_hz, __to_hz))				\
+	  z_tmcvt_divisor(__from_hz, __to_hz)))				\
 	 :								\
 	 (uint32_t) (((uint64_t) (__t) +				\
 		      z_tmcvt_off_div(__from_hz, __to_hz,		\
@@ -188,7 +188,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 
 /* Integer multiplication 32-bit conversion */
 #define z_tmcvt_int_mul_32(__t, __from_hz, __to_hz)	\
-	(uint32_t) (__t)*((__to_hz) / (__from_hz))
+	(uint32_t) ((__t)*((__to_hz) / (__from_hz)))
 
 /* General 32-bit conversion */
 #define z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
