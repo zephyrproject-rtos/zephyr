@@ -297,22 +297,22 @@ static int phy_mc_vsc8541_get_speed(const struct device *dev, struct phy_link_st
 
 	if ((status & (1 << 2)) == 0) {
 		/* no link */
-		state->speed = LINK_HALF_10BASE_T;
+		state->speed = LINK_HALF_10BASE;
 	}
 
 	if ((status & (1 << 5)) == 0) {
 		/* auto negotiation not yet complete */
-		state->speed = LINK_HALF_10BASE_T;
+		state->speed = LINK_HALF_10BASE;
 	}
 
 	if ((link1000_status & (1 << 12))) {
-		state->speed = LINK_FULL_1000BASE_T;
+		state->speed = LINK_FULL_1000BASE;
 	}
 	if (link100_status & (1 << 12)) {
-		state->speed = LINK_FULL_100BASE_T;
+		state->speed = LINK_FULL_100BASE;
 	}
 	if (link10_status & (1 << 6)) {
-		state->speed = LINK_FULL_10BASE_T;
+		state->speed = LINK_FULL_10BASE;
 	}
 
 	return 0;
@@ -329,7 +329,7 @@ static int phy_mc_vsc8541_init(const struct device *dev)
 	data->cb = NULL;
 	data->cb_data = NULL;
 	data->state.is_up = false;
-	data->state.speed = LINK_HALF_10BASE_T;
+	data->state.speed = LINK_HALF_10BASE;
 	data->active_page = -1;
 
 	/* Reset PHY */
@@ -392,7 +392,7 @@ static int phy_mc_vsc8541_get_link(const struct device *dev, struct phy_link_sta
 		}
 	} else {
 		state->is_up = 0;
-		state->speed = LINK_HALF_10BASE_T;
+		state->speed = LINK_HALF_10BASE;
 	}
 
 	return 0;
