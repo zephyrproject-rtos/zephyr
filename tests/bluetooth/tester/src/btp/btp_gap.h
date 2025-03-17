@@ -471,6 +471,13 @@ struct btp_gap_ev_periodic_transfer_received_ev {
 	uint8_t data[];
 } __packed;
 
+#define BTP_GAP_EV_ENCRYPTION_CHANGE		0x91
+struct btp_gap_encryption_change_ev {
+	bt_addr_le_t address;
+	uint8_t enabled;
+	uint8_t key_size;
+} __packed;
+
 #if defined(CONFIG_BT_EXT_ADV)
 struct bt_le_per_adv_param;
 struct bt_le_per_adv_sync_param;
