@@ -743,6 +743,115 @@ static int siwx91x_dev_init(const struct device *dev)
 	return 0;
 }
 
+static int convert_z_sl_req_type(enum wifi_twt_setup_cmd z_req_cmd)
+{
+	switch(z_req_cmd) {
+	case WIFI_TWT_SETUP_CMD_REQUEST:
+		return 0;
+	case WIFI_TWT_SETUP_CMD_SUGGEST:
+		return 1;
+	case WIFI_TWT_SETUP_CMD_DEMAND:
+		return 2;
+	default:
+		return -EINVAL;
+	}
+}
+
+/* Questions ?
+ * Shall we use selected twt in wiseconnect for zephyr quick setup twt command ?
+ * what is the case if user passing rest of the parameter which we dont support?
+ * What is the idea for tolerance member in SDK?
+ */
+
+/* Pending items
+ * ------- zephyr_params -------
+ * dialog_token(unique id for the session)
+ * responder
+ * interval
+ * info_disable
+ *
+ * ------- SDK params ---------
+ * wake_duration_tol
+ * wake_int_exp_tol
+ * wake_int_mantissa_tol
+ * twt_protection
+ * restrict_tx_outside_tsp
+ * twt_retry_limit
+ * twt_retry_interval
+ * ------------------------------  
+ */
+
+static int siwx91x_set_twt(const struct device *dev, struct wifi_twt_params *params)
+{
+	sl_status_t status = SL_STATUS_OK;
+	sl_wifi_twt_request_t twt_req;
+	int ret;
+
+	__ASSERT(params, "params cannot be a NULL");
+
+	if (params->negotiation_type != WIFI_TWT_INDIVIDUAL) {
+		params->fail_reason = WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
+		return -ENOTSUP;
+	}
+
+	ret = convert_z_sl_req_type(params->setup_cmd);
+	if (ret < 0) {
+		params->fail_reason = WIFI_TWT_FAIL_CMD_EXEC_FAIL;
+		return ret;
+	}
+
+	/*TODO we need this three params for both setup and teardown
+	 * Does it make sense to keep it here, if it is using when teardown all?
+	 */
+	twt_req.req_type = ret;
+	/*  Device supports Individual TWT only */
+	twt_req.twt_flow_id = params->flow_id;
+	twt_req.negotiation_type = 0;
+
+	if (params->operation == WIFI_TWT_SETUP) {
+		twt_req.wake_duration = params->setup.twt_wake_interval;
+		twt_req.un_announced_twt = !params->setup.announce;
+		twt_req.wake_int_mantissa = params->setup.twt_mantissa;
+		twt_req.wake_int_exp = params->setup.twt_exponent;
+		twt_req.triggered_twt = params->setup.trigger;
+		/* spec and zephyr following US */
+		twt_req.wake_duration_unit = 0;
+		twt_req.twt_enable = 1;
+
+		/* implicit -> wont do renegotiation
+		 * explicit -> must do renegotiation for each session
+		 */
+		if (params->setup.implicit) {
+			/* explicit twt is not supported */
+			twt_req.implicit_twt = 1;
+		}
+
+		status = sl_wifi_enable_target_wake_time(&twt_req);
+		if (status != SL_STATUS_OK) {
+			params->fail_reason = WIFI_TWT_FAIL_CMD_EXEC_FAIL;
+			return -EINVAL;
+		}
+
+	} else if (params->operation == WIFI_TWT_TEARDOWN) {
+		twt_req.twt_enable = 0;
+
+		if (params->teardown.teardown_all) {
+			twt_req.twt_flow_id = 0xFF;
+		}
+
+		status = sl_wifi_disable_target_wake_time(&twt_req);
+		if (status != SL_STATUS_OK) {
+			params->fail_reason = WIFI_TWT_FAIL_CMD_EXEC_FAIL;
+			params->teardown_status = WIFI_TWT_TEARDOWN_FAILED;
+			return -EINVAL;
+		}
+
+		params->teardown_status = WIFI_TWT_TEARDOWN_SUCCESS;
+	}
+
+		return 0;
+}
+
 static const struct wifi_mgmt_ops siwx91x_mgmt = {
 	.scan			= siwx91x_scan,
 	.connect		= siwx91x_connect,
@@ -752,6 +861,7 @@ static const struct wifi_mgmt_ops siwx91x_mgmt = {
 	.ap_sta_disconnect	= siwx91x_ap_sta_disconnect,
 	.iface_status		= siwx91x_status,
 	.mode			= siwx91x_mode,
+	.set_twt		= siwx91x_set_twt,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats		= siwx91x_stats,
 #endif
