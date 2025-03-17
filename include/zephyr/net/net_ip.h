@@ -1539,6 +1539,8 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 		}
 
 		break;
+	default:
+		return false;
 	}
 
 	return false;
