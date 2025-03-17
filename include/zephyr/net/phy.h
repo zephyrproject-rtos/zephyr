@@ -32,22 +32,22 @@ extern "C" {
 
 /** @brief Ethernet link speeds. */
 enum phy_link_speed {
-	/** 10Base-T Half-Duplex */
-	LINK_HALF_10BASE_T = BIT(0),
-	/** 10Base-T Full-Duplex */
-	LINK_FULL_10BASE_T = BIT(1),
-	/** 100Base-T Half-Duplex */
-	LINK_HALF_100BASE_T = BIT(2),
-	/** 100Base-T Full-Duplex */
-	LINK_FULL_100BASE_T = BIT(3),
-	/** 1000Base-T Half-Duplex */
-	LINK_HALF_1000BASE_T = BIT(4),
-	/** 1000Base-T Full-Duplex */
-	LINK_FULL_1000BASE_T = BIT(5),
-	/** 2.5GBase-T Full-Duplex */
-	LINK_FULL_2500BASE_T = BIT(6),
-	/** 5GBase-T Full-Duplex */
-	LINK_FULL_5000BASE_T = BIT(7),
+	/** 10Base Half-Duplex */
+	LINK_HALF_10BASE = BIT(0),
+	/** 10Base Full-Duplex */
+	LINK_FULL_10BASE = BIT(1),
+	/** 100Base Half-Duplex */
+	LINK_HALF_100BASE = BIT(2),
+	/** 100Base Full-Duplex */
+	LINK_FULL_100BASE = BIT(3),
+	/** 1000Base Half-Duplex */
+	LINK_HALF_1000BASE = BIT(4),
+	/** 1000Base Full-Duplex */
+	LINK_FULL_1000BASE = BIT(5),
+	/** 2.5GBase Full-Duplex */
+	LINK_FULL_2500BASE = BIT(6),
+	/** 5GBase Full-Duplex */
+	LINK_FULL_5000BASE = BIT(7),
 };
 
 /**
@@ -57,7 +57,9 @@ enum phy_link_speed {
  *
  * @return True if link is full duplex, false if not.
  */
-#define PHY_LINK_IS_FULL_DUPLEX(x) (x & (BIT(1) | BIT(3) | BIT(5) | BIT(6) | BIT(7)))
+#define PHY_LINK_IS_FULL_DUPLEX(x)                                                                 \
+	(x & (LINK_FULL_10BASE | LINK_FULL_100BASE | LINK_FULL_1000BASE | LINK_FULL_2500BASE |     \
+	      LINK_FULL_5000BASE))
 
 /**
  * @brief Check if phy link speed is 1 Gbit/sec.
@@ -66,16 +68,16 @@ enum phy_link_speed {
  *
  * @return True if link is 1 Gbit/sec, false if not.
  */
-#define PHY_LINK_IS_SPEED_1000M(x) (x & (BIT(4) | BIT(5)))
+#define PHY_LINK_IS_SPEED_1000M(x) (x & (LINK_HALF_1000BASE | LINK_FULL_1000BASE))
 
 /**
  * @brief Check if phy link speed is 100 Mbit/sec.
  *
  * @param x Link capabilities
  *
- * @return True if link is 1 Mbit/sec, false if not.
+ * @return True if link is 100 Mbit/sec, false if not.
  */
-#define PHY_LINK_IS_SPEED_100M(x) (x & (BIT(2) | BIT(3)))
+#define PHY_LINK_IS_SPEED_100M(x) (x & (LINK_HALF_100BASE | LINK_FULL_100BASE))
 
 /** @brief Link state */
 struct phy_link_state {
