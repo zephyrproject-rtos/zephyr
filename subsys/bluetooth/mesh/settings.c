@@ -104,10 +104,6 @@ static int mesh_commit(void)
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		(void)bt_mesh_pb_gatt_srv_disable();
-	}
-
 	bt_mesh_net_settings_commit();
 	bt_mesh_model_settings_commit();
 
