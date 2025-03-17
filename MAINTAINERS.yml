@@ -1259,6 +1259,19 @@ Documentation Infrastructure:
     - drivers.can
     - canbus
 
+"Drivers: CRC":
+  status: maintained
+  maintainers:
+    - thenguyenyf
+  files:
+    - drivers/crc/
+    - dts/bindings/crc/
+    - include/zephyr/drivers/crc.h
+    - samples/drivers/crc/
+    - tests/drivers/crc/
+  labels:
+    - "area: CRC"
+
 "Drivers: Charger":
   status: maintained
   maintainers:
