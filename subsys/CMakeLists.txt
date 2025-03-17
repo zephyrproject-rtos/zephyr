@@ -63,5 +63,6 @@ add_subdirectory_ifdef(CONFIG_SETTINGS settings)
 add_subdirectory_ifdef(CONFIG_SHELL shell)
 add_subdirectory_ifdef(CONFIG_TASK_WDT task_wdt)
 add_subdirectory_ifdef(CONFIG_TIMING_FUNCTIONS timing)
+add_subdirectory_ifdef(CONFIG_UFS_STACK ufs)
 add_subdirectory_ifdef(CONFIG_ZBUS zbus)
 # zephyr-keep-sorted-stop
