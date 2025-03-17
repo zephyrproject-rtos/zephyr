@@ -1085,7 +1085,7 @@ static bool is_valid_bap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BTP_BAP_EV_CODEC_CAP_FOUND:
 		return buf_simple->len == sizeof(struct btp_bap_codec_cap_found_ev);
 	case BTP_BAP_EV_ASE_FOUND:
-		return buf_simple->len == sizeof(struct btp_ascs_ase_found_ev);
+		return buf_simple->len == sizeof(struct btp_bap_ase_found_ev);
 	case BTP_BAP_EV_STREAM_RECEIVED:
 		if (hdr->len >= sizeof(struct btp_bap_stream_received_ev)) {
 			const struct btp_bap_stream_received_ev *ev = net_buf_simple_pull_mem(
