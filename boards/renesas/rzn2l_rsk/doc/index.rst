@@ -52,7 +52,7 @@ Detailed hardware features for the board can be found at `RZ/N2L-RSK Website`_
 Supported Features
 ==================
 
-.. zephyr: board-supported-hw::
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
