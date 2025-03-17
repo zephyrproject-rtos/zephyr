@@ -459,14 +459,14 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 
 static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 {
-	enum phy_link_speed speeds = LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
-				       LINK_HALF_100BASE_T | LINK_FULL_100BASE_T;
+	enum phy_link_speed speeds = LINK_HALF_10BASE | LINK_FULL_10BASE |
+				     LINK_HALF_100BASE | LINK_FULL_100BASE;
 	int ret;
 	struct phy_link_state state;
 
 	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
 	   (phy_mode == NXP_ENET_RGMII_MODE), (0))) {
-		speeds |= (LINK_HALF_1000BASE_T | LINK_FULL_1000BASE_T);
+		speeds |= (LINK_HALF_1000BASE | LINK_FULL_1000BASE);
 	}
 
 	/* Configure the PHY */

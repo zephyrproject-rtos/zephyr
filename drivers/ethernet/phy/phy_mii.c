@@ -261,18 +261,18 @@ static int check_autonegotiation_completion(const struct device *dev)
 
 	if (data->gigabit_supported &&
 			((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_FULL)) {
-		data->state.speed = LINK_FULL_1000BASE_T;
+		data->state.speed = LINK_FULL_1000BASE;
 	} else if (data->gigabit_supported &&
 			((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_HALF)) {
-		data->state.speed = LINK_HALF_1000BASE_T;
+		data->state.speed = LINK_HALF_1000BASE;
 	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_100_FULL) {
-		data->state.speed = LINK_FULL_100BASE_T;
+		data->state.speed = LINK_FULL_100BASE;
 	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_100_HALF) {
-		data->state.speed = LINK_HALF_100BASE_T;
+		data->state.speed = LINK_HALF_100BASE;
 	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_10_FULL) {
-		data->state.speed = LINK_FULL_10BASE_T;
+		data->state.speed = LINK_FULL_10BASE;
 	} else {
-		data->state.speed = LINK_HALF_10BASE_T;
+		data->state.speed = LINK_HALF_10BASE;
 	}
 
 	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex",
@@ -411,38 +411,38 @@ static int phy_mii_cfg_link(const struct device *dev,
 		}
 	}
 
-	if (adv_speeds & LINK_FULL_10BASE_T) {
+	if (adv_speeds & LINK_FULL_10BASE) {
 		anar_reg |= MII_ADVERTISE_10_FULL;
 	} else {
 		anar_reg &= ~MII_ADVERTISE_10_FULL;
 	}
 
-	if (adv_speeds & LINK_HALF_10BASE_T) {
+	if (adv_speeds & LINK_HALF_10BASE) {
 		anar_reg |= MII_ADVERTISE_10_HALF;
 	} else {
 		anar_reg &= ~MII_ADVERTISE_10_HALF;
 	}
 
-	if (adv_speeds & LINK_FULL_100BASE_T) {
+	if (adv_speeds & LINK_FULL_100BASE) {
 		anar_reg |= MII_ADVERTISE_100_FULL;
 	} else {
 		anar_reg &= ~MII_ADVERTISE_100_FULL;
 	}
 
-	if (adv_speeds & LINK_HALF_100BASE_T) {
+	if (adv_speeds & LINK_HALF_100BASE) {
 		anar_reg |= MII_ADVERTISE_100_HALF;
 	} else {
 		anar_reg &= ~MII_ADVERTISE_100_HALF;
 	}
 
 	if (data->gigabit_supported) {
-		if (adv_speeds & LINK_FULL_1000BASE_T) {
+		if (adv_speeds & LINK_FULL_1000BASE) {
 			c1kt_reg |= MII_ADVERTISE_1000_FULL;
 		} else {
 			c1kt_reg &= ~MII_ADVERTISE_1000_FULL;
 		}
 
-		if (adv_speeds & LINK_HALF_1000BASE_T) {
+		if (adv_speeds & LINK_HALF_1000BASE) {
 			c1kt_reg |= MII_ADVERTISE_1000_HALF;
 		} else {
 			c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
@@ -515,12 +515,12 @@ static int phy_mii_initialize(const struct device *dev)
 	 */
 	if (cfg->fixed) {
 		const static int speed_to_phy_link_speed[] = {
-			LINK_HALF_10BASE_T,
-			LINK_FULL_10BASE_T,
-			LINK_HALF_100BASE_T,
-			LINK_FULL_100BASE_T,
-			LINK_HALF_1000BASE_T,
-			LINK_FULL_1000BASE_T,
+			LINK_HALF_10BASE,
+			LINK_FULL_10BASE,
+			LINK_HALF_100BASE,
+			LINK_FULL_100BASE,
+			LINK_HALF_1000BASE,
+			LINK_FULL_1000BASE,
 		};
 
 		data->state.speed = speed_to_phy_link_speed[cfg->fixed_speed];
@@ -548,12 +548,12 @@ static int phy_mii_initialize(const struct device *dev)
 		data->gigabit_supported = is_gigabit_supported(dev);
 
 		/* Advertise all speeds */
-		phy_mii_cfg_link(dev, LINK_HALF_10BASE_T |
-				      LINK_FULL_10BASE_T |
-				      LINK_HALF_100BASE_T |
-				      LINK_FULL_100BASE_T |
-				      LINK_HALF_1000BASE_T |
-				      LINK_FULL_1000BASE_T);
+		phy_mii_cfg_link(dev, LINK_HALF_10BASE |
+				      LINK_FULL_10BASE |
+				      LINK_HALF_100BASE |
+				      LINK_FULL_100BASE |
+				      LINK_HALF_1000BASE |
+				      LINK_FULL_1000BASE);
 
 		k_work_init_delayable(&data->monitor_work,
 					monitor_work_handler);

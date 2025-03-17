@@ -193,7 +193,7 @@ static int phy_mc_t1s_get_link(const struct device *dev, struct phy_link_state *
 	}
 
 	state->is_up = value & MII_BMSR_LINK_STATUS;
-	state->speed = LINK_HALF_10BASE_T;
+	state->speed = LINK_HALF_10BASE;
 
 	if (memcmp(&old_state, state, sizeof(struct phy_link_state)) != 0) {
 		if (state->is_up) {
@@ -424,7 +424,7 @@ static int phy_mc_t1s_cfg_link(const struct device *dev, enum phy_link_speed spe
 {
 	ARG_UNUSED(dev);
 
-	if (speeds & LINK_HALF_10BASE_T) {
+	if (speeds & LINK_HALF_10BASE) {
 		return 0;
 	}
 
