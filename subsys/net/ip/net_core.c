@@ -393,6 +393,7 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		 * we just silently drop the packet by returning 0.
 		 */
 		if (status == -ENOMSG) {
+			net_pkt_unref(pkt);
 			ret = 0;
 			goto err;
 		}
