@@ -185,7 +185,7 @@ arduino_serial: &uart1 {
 };
 
 arduino_i2c: &i2c0 {
-	compatible = "nordic,nrf-twi";
+	compatible = "nordic,nrf-twim";
 	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
