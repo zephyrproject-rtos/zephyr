@@ -635,22 +635,37 @@ static int settings_zms_get_last_hash_ids(struct settings_zms *cf)
 		rc = zms_read(&cf->cf_zms, ll_last_hash_id, &settings_element,
 			      sizeof(settings_element));
 		if (rc == -ENOENT) {
-			/* header doesn't exist or linked list broken, reinitialize the header */
-			const struct settings_hash_linked_list settings_element = {
-				.previous_hash = 0, .next_hash = 0};
-			rc = zms_write(&cf->cf_zms, ZMS_LL_HEAD_HASH_ID, &settings_element,
-				       sizeof(struct settings_hash_linked_list));
-			if (rc < 0) {
-				return rc;
-			}
-			cf->last_hash_id = ZMS_LL_HEAD_HASH_ID;
-			cf->second_to_last_hash_id = 0;
+			/* header doesn't exist or linked list broken, reinitialize the header
+			 * if it doesn't exist and recover it if it is broken
+			 */
+			if (ll_last_hash_id == ZMS_LL_HEAD_HASH_ID) {
+				/* header doesn't exist */
+				const struct settings_hash_linked_list settings_element = {
+					.previous_hash = 0, .next_hash = 0};
+				rc = zms_write(&cf->cf_zms, ZMS_LL_HEAD_HASH_ID, &settings_element,
+					       sizeof(struct settings_hash_linked_list));
+				if (rc < 0) {
+					return rc;
+				}
+				cf->last_hash_id = ZMS_LL_HEAD_HASH_ID;
+				cf->second_to_last_hash_id = 0;
 #ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
-			/* store the LL header in cache */
-			cf->ll_cache_next = 0;
-			cf->ll_cache[cf->ll_cache_next] = settings_element;
-			cf->ll_cache_next = cf->ll_cache_next + 1;
+				/* store the LL header in cache */
+				cf->ll_cache_next = 0;
+				cf->ll_cache[cf->ll_cache_next] = settings_element;
+				cf->ll_cache_next = cf->ll_cache_next + 1;
 #endif
+			} else {
+				/* let's recover it by keeping all nodes until the last one */
+				const struct settings_hash_linked_list settings_element = {
+					.previous_hash = cf->second_to_last_hash_id,
+					.next_hash = 0};
+				rc = zms_write(&cf->cf_zms, cf->last_hash_id, &settings_element,
+					       sizeof(struct settings_hash_linked_list));
+				if (rc < 0) {
+					return rc;
+				}
+			}
 			return 0;
 		} else if (rc < 0) {
 			return rc;
