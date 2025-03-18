@@ -8,13 +8,14 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - bluetooth
-  - gpio
-  - uart
-  - dma
-  - watchdog
   - comparator
-testing:
-  ignore_tags:
-    - pm
+  - dma
+  - entropy
+  - gpio
+  - flash
+  - spi
+  - uart
+  - watchdog
 vendor: silabs
