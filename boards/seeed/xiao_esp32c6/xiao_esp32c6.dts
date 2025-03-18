@@ -76,3 +76,7 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 };
+
+&wifi {
+	status = "okay";
+};
