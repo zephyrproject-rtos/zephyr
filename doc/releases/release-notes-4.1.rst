@@ -957,7 +957,7 @@ New Samples
 * :zephyr:code-sample:`tmc50xx`
 * :zephyr:code-sample:`uart`
 * :zephyr:code-sample:`usb-midi2-device`
-* :zephyr:code-sample:`usbd-cdc-acm-console`
+* :zephyr:code-sample:`usb-cdc-acm-console`
 * :zephyr:code-sample:`webusb`
 
 Other notable changes

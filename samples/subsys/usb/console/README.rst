@@ -1,19 +1,19 @@
 .. zephyr:code-sample:: usb-cdc-acm-console
    :name: Console over USB CDC ACM
-   :relevant-api: _usb_device_core_api usbd_api
+   :relevant-api: usbd_api uart_interface
 
    Output "Hello World!" to the console over USB CDC ACM.
 
 Overview
 ********
 
-A simple Hello World sample, with console output coming via CDC ACM UART.
-Primarily intended to show the required config options.
+This example application shows how to use the CDC ACM UART provided by the new
+experimental USB device stack as a serial backend for the console.
 
 Requirements
 ************
 
-This project requires a USB device controller driver.
+This project requires an experimental USB device driver (UDC API).
 
 Building and Running
 ********************
@@ -28,8 +28,8 @@ for the reel_board board:
    :compact:
 
 Plug the board into a host device, for sample, a PC running Linux OS.
-The board will be detected as a CDC_ACM serial device. To see the console output
-from the sample, use a command similar to :command:`minicom -D /dev/ttyACM0`.
+The board will be detected as a CDC ACM serial device. To see the console output
+from the sample, use a command similar to :command:`minicom -D /dev/ttyACM1`.
 
 .. code-block:: console
 
@@ -37,9 +37,3 @@ from the sample, use a command similar to :command:`minicom -D /dev/ttyACM0`.
    Hello World! arm
    Hello World! arm
    Hello World! arm
-
-Troubleshooting
-===============
-
-You may need to stop :program:`modemmanager` via :command:`sudo stop modemmanager`, if it is
-trying to access the device in the background.
