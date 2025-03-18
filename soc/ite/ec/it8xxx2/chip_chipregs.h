@@ -922,6 +922,9 @@ struct smfi_it8xxx2_regs {
 
 /* Host RAM Window x Write Protect Enable (All protected) */
 #define SMFI_HRAMWXWPE_ALL (BIT(5) | BIT(4))
+/* 0x42: Scratch SRAM 0 address high byte */
+#define SCARH_ADDR_BIT19   BIT(7)
+#define SCARH_ENABLE       BIT(3)
 
 /**
  *
