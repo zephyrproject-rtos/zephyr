@@ -679,7 +679,6 @@ static DEVICE_API(gpio, gpio_stm32_driver) = {
 	.manage_callback = gpio_stm32_manage_callback,
 };
 
-#ifdef CONFIG_PM_DEVICE
 static int gpio_stm32_pm_action(const struct device *dev,
 				enum pm_device_action action)
 {
@@ -688,13 +687,15 @@ static int gpio_stm32_pm_action(const struct device *dev,
 		return gpio_stm32_clock_request(dev, true);
 	case PM_DEVICE_ACTION_SUSPEND:
 		return gpio_stm32_clock_request(dev, false);
+	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_TURN_ON:
+		break;
 	default:
 		return -ENOTSUP;
 	}
 
 	return 0;
 }
-#endif /* CONFIG_PM_DEVICE */
 
 
 /**
@@ -710,7 +711,6 @@ static int gpio_stm32_pm_action(const struct device *dev,
 static int gpio_stm32_init(const struct device *dev)
 {
 	struct gpio_stm32_data *data = dev->data;
-	int ret;
 
 	data->dev = dev;
 
@@ -726,18 +726,8 @@ static int gpio_stm32_init(const struct device *dev)
 	LL_PWR_EnableVddIO2();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif
-	/* enable port clock (if runtime PM is not enabled) */
-	ret = gpio_stm32_clock_request(dev, !IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME));
-	if (ret < 0) {
-		return ret;
-	}
 
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_init_suspended(dev);
-	}
-	(void)pm_device_runtime_enable(dev);
-
-	return 0;
+	return pm_device_driver_init(dev, gpio_stm32_pm_action);
 }
 
 #define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus) \
