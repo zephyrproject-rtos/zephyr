@@ -1,0 +1,16 @@
+sample:
+  description: Matrix Multiplication sample, the simplest Zephyr
+    application
+  name: Matrix Multiplication
+common:
+    tags: introduction
+    integration_platforms:
+      - native_posix
+    harness: console
+    harness_config:
+      type: few lines
+      regex:
+        - "(.*)"
+tests:
+  sample.basic.matrix-multiply:
+    tags: introduction
