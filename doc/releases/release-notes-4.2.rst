@@ -102,6 +102,12 @@ New APIs and options
 
     * LE Connection Subrating is no longer experimental.
 
+* Networking:
+
+  * IPv4
+
+    * :kconfig:option:`CONFIG_NET_IPV4_MTU`
+
 * Stepper
 
   * :c:func:`stepper_stop()`
