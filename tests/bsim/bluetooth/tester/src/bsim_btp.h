@@ -289,6 +289,225 @@ static inline void bsim_btp_wait_for_bap_discovered(void)
 
 	net_buf_unref(buf);
 }
+static inline void bsim_btp_bap_broadcast_adv_start(uint32_t broadcast_id)
+{
+	struct btp_bap_broadcast_adv_start_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_BAP;
+	cmd_hdr->opcode = BTP_BAP_BROADCAST_ADV_START;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	sys_put_le24(broadcast_id, cmd->broadcast_id);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_bap_broadcast_source_start(uint32_t broadcast_id)
+{
+	struct btp_bap_broadcast_source_start_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_BAP;
+	cmd_hdr->opcode = BTP_BAP_BROADCAST_SOURCE_START;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	sys_put_le24(broadcast_id, cmd->broadcast_id);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_bap_broadcast_sink_setup(void)
+{
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_BAP;
+	cmd_hdr->opcode = BTP_BAP_BROADCAST_SINK_SETUP;
+	cmd_hdr->index = BTP_INDEX;
+
+	/* The command for this is empty */
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_bap_broadcast_sink_release(void)
+{
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_BAP;
+	cmd_hdr->opcode = BTP_BAP_BROADCAST_SINK_RELEASE;
+	cmd_hdr->index = BTP_INDEX;
+
+	/* The command for this is empty */
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_bap_broadcast_scan_start(void)
+{
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_BAP;
+	cmd_hdr->opcode = BTP_BAP_BROADCAST_SCAN_START;
+	cmd_hdr->index = BTP_INDEX;
+
+	/* The command for this is empty */
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_bap_broadcast_scan_stop(void)
+{
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_BAP;
+	cmd_hdr->opcode = BTP_BAP_BROADCAST_SCAN_STOP;
+	cmd_hdr->index = BTP_INDEX;
+
+	/* The command for this is empty */
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_bap_broadcast_sink_sync(const bt_addr_le_t *address,
+						    uint32_t broadcast_id, uint8_t advertiser_sid,
+						    uint16_t skip, uint16_t sync_timeout,
+						    bool past_avail, uint8_t src_id)
+{
+	struct btp_bap_broadcast_sink_sync_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_BAP;
+	cmd_hdr->opcode = BTP_BAP_BROADCAST_SINK_SYNC;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+	sys_put_le24(broadcast_id, cmd->broadcast_id);
+	cmd->advertiser_sid = advertiser_sid;
+	cmd->skip = sys_cpu_to_le16(skip);
+	cmd->sync_timeout = sys_cpu_to_le16(sync_timeout);
+	cmd->past_avail = past_avail ? 1U : 0U;
+	cmd->src_id = src_id;
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_bap_broadcast_sink_stop(const bt_addr_le_t *address,
+						    uint32_t broadcast_id)
+{
+	struct btp_bap_broadcast_sink_stop_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_BAP;
+	cmd_hdr->opcode = BTP_BAP_BROADCAST_SINK_STOP;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+	sys_put_le24(broadcast_id, cmd->broadcast_id);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_bap_broadcast_sink_bis_sync(const bt_addr_le_t *address,
+							uint32_t broadcast_id,
+							uint32_t requested_bis_sync)
+{
+	struct btp_bap_broadcast_sink_bis_sync_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_BAP;
+	cmd_hdr->opcode = BTP_BAP_BROADCAST_SINK_BIS_SYNC;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+	sys_put_le24(broadcast_id, cmd->broadcast_id);
+	cmd->requested_bis_sync = sys_cpu_to_le32(requested_bis_sync);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_bap_broadcast_source_setup_v2(
+	uint32_t broadcast_id, uint8_t streams_per_subgroup, uint8_t subgroups,
+	uint32_t sdu_interval, uint8_t framing, uint16_t max_sdu, uint8_t rtn, uint16_t max_latency,
+	uint32_t presentation_delay, uint8_t coding_format, uint16_t vid, uint16_t cid,
+	uint8_t cc_ltvs_len, const uint8_t cc_ltvs[])
+{
+	struct btp_bap_broadcast_source_setup_v2_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_BAP;
+	cmd_hdr->opcode = BTP_BAP_BROADCAST_SOURCE_SETUP_V2;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	sys_put_le24(broadcast_id, cmd->broadcast_id);
+	cmd->streams_per_subgroup = streams_per_subgroup;
+	cmd->subgroups = subgroups;
+	sys_put_le24(sdu_interval, cmd->sdu_interval);
+	cmd->framing = framing;
+	cmd->max_sdu = sys_cpu_to_le16(max_sdu);
+	cmd->retransmission_num = rtn;
+	cmd->max_transport_latency = sys_cpu_to_le16(max_latency);
+	sys_put_le24(presentation_delay, cmd->presentation_delay);
+	cmd->coding_format = coding_format;
+	cmd->vid = sys_cpu_to_le16(vid);
+	cmd->cid = sys_cpu_to_le16(cid);
+	cmd->cc_ltvs_len = cc_ltvs_len;
+	if (cc_ltvs_len > 0U) {
+		(void)net_buf_simple_add_mem(&cmd_buffer, cc_ltvs, cc_ltvs_len);
+	}
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
 
 static inline void bsim_btp_wait_for_bap_ase_found(uint8_t *ase_id)
 {
@@ -301,6 +520,67 @@ static inline void bsim_btp_wait_for_bap_ase_found(uint8_t *ase_id)
 	if (ase_id != NULL) {
 		*ase_id = ev->ase_id;
 	}
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_wait_for_bap_baa_found(bt_addr_le_t *address, uint32_t *broadcast_id,
+						   uint8_t *advertiser_sid)
+{
+	struct btp_bap_baa_found_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_BAP, BTP_BAP_EV_BAA_FOUND, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	if (address != NULL) {
+		bt_addr_le_copy(address, &ev->address);
+	}
+
+	if (broadcast_id != NULL) {
+		*broadcast_id = sys_get_le24(ev->broadcast_id);
+	}
+
+	if (advertiser_sid != NULL) {
+		*advertiser_sid = ev->advertiser_sid;
+	}
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_wait_for_bap_bap_bis_found(uint8_t *bis_id)
+{
+	struct btp_bap_bis_found_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_BAP, BTP_BAP_EV_BIS_FOUND, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	if (bis_id != NULL) {
+		*bis_id = ev->bis_id;
+	}
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_wait_for_btp_bap_bis_synced(void)
+{
+	struct btp_bap_bis_synced_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_BAP, BTP_BAP_EV_BIS_SYNCED, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_wait_for_bap_bis_stream_received(void)
+{
+	struct btp_bap_bis_stream_received_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_BAP, BTP_BAP_EV_BIS_STREAM_RECEIVED, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
 
 	net_buf_unref(buf);
 }
