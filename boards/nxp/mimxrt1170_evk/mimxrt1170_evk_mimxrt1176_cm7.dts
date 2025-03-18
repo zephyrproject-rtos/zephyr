@@ -75,6 +75,16 @@
 		gpio-map =	<9 0 &gpio11 15 0>,	/* Pin 9, RESETB */
 				<17 0 &gpio9 25  0>;	/* Pin 17, PWDN */
 	};
+
+	zephyr,user {
+		dac = <&dac>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+&dac {
+	status = "okay";
 };
 
 zephyr_lcdif: &lcdif {};
