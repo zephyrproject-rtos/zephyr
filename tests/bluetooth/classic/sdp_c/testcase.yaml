@@ -1,5 +1,8 @@
 tests:
   sdp.c:
+    platform_allow:
+      - native_sim
+      - mimxrt1170_evk@B/mimxrt1176/cm7
     integration_platforms:
       - native_sim
     tags:
