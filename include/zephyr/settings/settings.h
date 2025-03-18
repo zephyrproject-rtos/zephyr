@@ -279,6 +279,17 @@ int settings_load(void);
 int settings_load_subtree(const char *subtree);
 
 /**
+ * Load one serialized item from registered persistence sources.
+ *
+ * @param[in]  name    Name/key of the settings item.
+ * @param[out] buf     Pointer to the buffer where the data is going to be loaded
+ * @param[in]  buf_len Length of the allocated buffer.
+ * @return     actual size of value that corresponds to name on success, negative
+ *             value on failure.
+ */
+ssize_t settings_load_one(const char *name, void *buf, size_t buf_len);
+
+/**
  * Callback function used for direct loading.
  * Used by @ref settings_load_subtree_direct function.
  *
@@ -455,6 +466,17 @@ struct settings_store_itf {
 	 * It means that if the backend does not contain any functionality to
 	 * really delete old keys, it has to filter out old entities and call
 	 * load callback only on the final entity.
+	 */
+
+	ssize_t (*csi_load_one)(struct settings_store *cs, const char *name,
+				char *buf, size_t buf_len);
+	/**< Loads one value from storage that corresponds to the key defined by name.
+	 *
+	 * Parameters:
+	 *  - cs - Corresponding backend handler node.
+	 *  - name - Key in string format.
+	 *  - buf - Buffer where data should be copied.
+	 *  - buf_len - Length of buf.
 	 */
 
 	int (*csi_save_start)(struct settings_store *cs);
