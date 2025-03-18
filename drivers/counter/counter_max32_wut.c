@@ -9,6 +9,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 #include <wut.h>
 #include <wrap_max32_lp.h>
@@ -230,6 +231,31 @@ static int counter_max32_wut_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int counter_max32_wut_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+
+		ret = counter_max32_wut_init(dev);
+		if (ret != 0) {
+			return ret;
+		}
+
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static const struct counter_driver_api counter_max32_wut_driver_api = {
 	.start = counter_max32_wut_start,
 	.stop = counter_max32_wut_stop,
@@ -271,8 +297,9 @@ static const struct counter_driver_api counter_max32_wut_driver_api = {
 		.wakeup_source = DT_PROP(TIMER(_num), wakeup_source),                              \
 	};                                                                                         \
 	static struct max32_wut_data max32_wut_data##_num;                                         \
-	DEVICE_DT_INST_DEFINE(_num, &counter_max32_wut_init, NULL, &max32_wut_data##_num,          \
-			      &max32_wut_config_##_num, PRE_KERNEL_1,                              \
+	PM_DEVICE_DT_INST_DEFINE(_num, counter_max32_wut_pm_action);                               \
+	DEVICE_DT_INST_DEFINE(_num, &counter_max32_wut_init, PM_DEVICE_DT_INST_GET(_num),          \
+			      &max32_wut_data##_num, &max32_wut_config_##_num, PRE_KERNEL_1,       \
 			      CONFIG_COUNTER_INIT_PRIORITY, &counter_max32_wut_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MAX32_WUT_DEFINE)
