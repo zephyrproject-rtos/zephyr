@@ -161,7 +161,7 @@ static void tx_dma_done(struct k_work *work)
 
 static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
 {
-	return ETHERNET_LINK_100BASE_T | ETHERNET_LINK_10BASE_T | ENET_MAC_PACKET_FILTER_PM_MASK;
+	return ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE | ENET_MAC_PACKET_FILTER_PM_MASK;
 }
 
 static void eth_nxp_enet_qos_rx(struct k_work *work)

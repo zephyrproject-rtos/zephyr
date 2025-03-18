@@ -153,13 +153,13 @@ enum ethernet_hw_caps {
 	ETHERNET_AUTO_NEGOTIATION_SET	= BIT(3),
 
 	/** 10 Mbits link supported */
-	ETHERNET_LINK_10BASE_T		= BIT(4),
+	ETHERNET_LINK_10BASE		= BIT(4),
 
 	/** 100 Mbits link supported */
-	ETHERNET_LINK_100BASE_T		= BIT(5),
+	ETHERNET_LINK_100BASE		= BIT(5),
 
 	/** 1 Gbits link supported */
-	ETHERNET_LINK_1000BASE_T	= BIT(6),
+	ETHERNET_LINK_1000BASE	= BIT(6),
 
 	/** Changing duplex (half/full) supported */
 	ETHERNET_DUPLEX_SET		= BIT(7),
@@ -204,10 +204,10 @@ enum ethernet_hw_caps {
 	ETHERNET_TXINJECTION_MODE	= BIT(20),
 
 	/** 2.5 Gbits link supported */
-	ETHERNET_LINK_2500BASE_T	= BIT(21),
+	ETHERNET_LINK_2500BASE	= BIT(21),
 
 	/** 5 Gbits link supported */
-	ETHERNET_LINK_5000BASE_T	= BIT(22),
+	ETHERNET_LINK_5000BASE	= BIT(22),
 };
 
 /** @cond INTERNAL_HIDDEN */

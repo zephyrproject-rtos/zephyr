@@ -1727,7 +1727,7 @@ static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device 
 	ARG_UNUSED(dev);
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 
-	caps = (ETHERNET_LINK_1000BASE_T | ETHERNET_LINK_100BASE_T | ETHERNET_LINK_10BASE_T |
+	caps = (ETHERNET_LINK_1000BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE |
 		ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_DUPLEX_SET);
 
 #ifdef CONFIG_ETH_DWC_XGMAC_RX_CS_OFFLOAD
