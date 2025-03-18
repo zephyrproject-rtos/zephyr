@@ -276,6 +276,7 @@ void tester_rsp_buffer_allocate(size_t len, uint8_t **data)
 	*data = net_buf_simple_add(rsp_buf, len);
 }
 
+K_MUTEX_DEFINE(uart_mutex);
 static void tester_send_with_index(uint8_t service, uint8_t opcode, uint8_t index,
 				   const uint8_t *data, size_t len)
 {
@@ -286,10 +287,12 @@ static void tester_send_with_index(uint8_t service, uint8_t opcode, uint8_t inde
 	msg.index = index;
 	msg.len = sys_cpu_to_le16(len);
 
+	k_mutex_lock(&uart_mutex, K_FOREVER);
 	uart_send((uint8_t *)&msg, sizeof(msg));
 	if (data && len) {
 		uart_send(data, len);
 	}
+	k_mutex_unlock(&uart_mutex);
 }
 
 static void tester_rsp_with_index(uint8_t service, uint8_t opcode, uint8_t index,
