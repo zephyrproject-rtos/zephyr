@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023,2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP DCNano LCDIF (LCD Interface) controller
@@ -32,3 +32,11 @@ properties:
       - "24-bit" # 24 Bit
     description:
       LCD data bus width. The default is set to the reset value of 24-bit
+
+  version:
+    type: string
+    description:
+      The version of the ip
+    enum:
+      - "DCnano"
+      - "DC8000"

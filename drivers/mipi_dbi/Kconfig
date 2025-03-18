@@ -1,6 +1,6 @@
 # MIPI DBI controller options
 
-# Copyright 2023 NXP
+# Copyright 2023,2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MIPI_DBI
@@ -27,5 +27,6 @@ source "drivers/mipi_dbi/Kconfig.smartbond"
 source "drivers/mipi_dbi/Kconfig.nxp_lcdic"
 source "drivers/mipi_dbi/Kconfig.nxp_flexio_lcdif"
 source "drivers/mipi_dbi/Kconfig.stm32_fmc"
+source "drivers/mipi_dbi/Kconfig.nxp_dcnano_lcdif"
 
 endif
