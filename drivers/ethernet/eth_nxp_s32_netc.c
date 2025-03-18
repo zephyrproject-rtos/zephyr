@@ -267,9 +267,9 @@ enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return (ETHERNET_LINK_10BASE_T
-		| ETHERNET_LINK_100BASE_T
-		| ETHERNET_LINK_1000BASE_T
+	return (ETHERNET_LINK_10BASE
+		| ETHERNET_LINK_100BASE
+		| ETHERNET_LINK_1000BASE
 		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
 		| ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_VLAN)

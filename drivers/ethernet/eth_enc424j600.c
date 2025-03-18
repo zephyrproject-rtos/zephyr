@@ -553,7 +553,7 @@ static enum ethernet_hw_caps enc424j600_get_capabilities(const struct device *de
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
 static int enc424j600_set_config(const struct device *dev,

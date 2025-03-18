@@ -615,7 +615,7 @@ static enum ethernet_hw_caps lan9250_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
 static void lan9250_iface_init(struct net_if *iface)

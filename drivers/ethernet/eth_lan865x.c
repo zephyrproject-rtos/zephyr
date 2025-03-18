@@ -112,7 +112,7 @@ static void lan865x_iface_init(struct net_if *iface)
 static enum ethernet_hw_caps lan865x_port_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	return ETHERNET_LINK_10BASE_T | ETHERNET_PROMISC_MODE;
+	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE;
 }
 
 static int lan865x_gpio_reset(const struct device *dev);
