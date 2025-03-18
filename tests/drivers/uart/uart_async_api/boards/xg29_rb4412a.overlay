@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2025, Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Connect EXP4 (PC0) and EXP6 (PC1) of the Expansion Pin header
+ */
+/ {
+	chosen {
+		zephyr,console = &eusart0;
+		zephyr,shell-uart = &eusart0;
+		zephyr,uart-pipe = &eusart0;
+	};
+};
+
+&pinctrl{
+	usart0_default: usart0_default {
+		group0 {
+			pins = <USART0_TX_PC0>; /* WPK EXP4 (PC0) */
+			drive-push-pull;
+			output-high;
+		};
+		group1 {
+			pins = <USART0_RX_PC1>; /* WPK EXP6 (PC1) */
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+	eusart0_default: eusart0_default {
+		group0 {
+			pins = <EUSART0_TX_PA5>;
+			drive-push-pull;
+			output-high;
+		};
+		group1 {
+			pins = <EUSART0_RX_PA6>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};
+
+dut: &usart0 {
+	dmas = <&dma0 DMA_REQSEL_USART0TXBL>,
+	       <&dma0 DMA_REQSEL_USART0RXDATAV>;
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&eusart0 {
+	compatible = "silabs,eusart-uart";
+	current-speed = <115200>;
+	pinctrl-0 = <&eusart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&eusart1 {
+	status = "disabled";
+};
+
+&usart1 {
+	status = "disabled";
+};
