@@ -146,6 +146,20 @@ Ethernet
   :zephyr_file:`include/zephyr/net/ethernet.h` have been renamed
   to ``ETHERNET_DSA_CONDUIT_PORT`` and ``ETHERNET_DSA_USER_PORT``.
 
+* Enums for the Ethernet speed have been renamed to be more indepedent of the used medium.
+  ``LINK_HALF_10BASE_T``, ``LINK_FULL_10BASE_T``, ``LINK_HALF_100BASE_T``, ``LINK_FULL_100BASE_T``,
+  ``LINK_HALF_1000BASE_T``, ``LINK_FULL_1000BASE_T``, ``LINK_FULL_2500BASE_T`` and
+  ``LINK_FULL_5000BASE_T`` have been renamed to :c:enumerator:`LINK_HALF_10BASE`,
+  :c:enumerator:`LINK_FULL_10BASE`, :c:enumerator:`LINK_HALF_100BASE`,
+  :c:enumerator:`LINK_FULL_100BASE`, :c:enumerator:`LINK_HALF_1000BASE`,
+  :c:enumerator:`LINK_FULL_1000BASE`, :c:enumerator:`LINK_FULL_2500BASE` and
+  :c:enumerator:`LINK_FULL_5000BASE`.
+  ``ETHERNET_LINK_10BASE_T``, ``ETHERNET_LINK_100BASE_T``, ``ETHERNET_LINK_1000BASE_T``,
+  ``ETHERNET_LINK_2500BASE_T`` and ``ETHERNET_LINK_5000BASE_T`` have been renamed to
+  :c:enumerator:`ETHERNET_LINK_10BASE`, :c:enumerator:`ETHERNET_LINK_100BASE`,
+  :c:enumerator:`ETHERNET_LINK_1000BASE`, :c:enumerator:`ETHERNET_LINK_2500BASE` and
+  :c:enumerator:`ETHERNET_LINK_5000BASE` respectively (:github:`87194`).
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
