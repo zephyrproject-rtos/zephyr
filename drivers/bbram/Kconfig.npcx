@@ -15,3 +15,12 @@ config BBRAM_NPCX_EMUL
 	depends on EMUL
 	help
 	  Enable the emulator for the NPCX BBRAM.
+
+config BBRAM_NPCX_STATUS_REG_WRITE_WORKAROUND
+	bool
+	default y if SOC_SERIES_NPCX4
+	help
+	  Workaround the issue documented in NPCX49nF errata rev1_5, No.2.30.
+	  A write operation to the BKUP_STS register might disable write to all
+	  the Battery-Backed RAM. The workaround is to read the BKUP_STS
+	  register after every write to this register.
