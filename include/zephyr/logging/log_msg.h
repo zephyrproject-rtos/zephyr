@@ -560,7 +560,7 @@ do { \
 
 /* Create local variable from input variable (expect for the first (fmt) argument). */
 #define Z_LOG_LOCAL_ARG_CREATE(idx, arg) \
-	COND_CODE_0(idx, (), (Z_AUTO_TYPE Z_LOG_LOCAL_ARG_NAME(idx, arg) = (arg) + 0))
+	COND_CODE_0(idx, (), (Z_AUTO_TYPE Z_LOG_LOCAL_ARG_NAME(idx, arg) = 0?(arg):(arg)))
 
 /* First level of processing creates stack variables to be passed for further processing.
  * This is done to prevent multiple evaluations of input arguments (in case argument
