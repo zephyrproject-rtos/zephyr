@@ -15,6 +15,9 @@ on:
     # Run at 17:00 UTC on every Saturday
     - cron: '0 17 * * 6'
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
@@ -213,6 +216,8 @@ jobs:
     needs:
       - twister-build
     runs-on: ubuntu-22.04
+    permissions:
+      checks: write # to create the check run entry with Twister test results
     # the build-and-test job might be skipped, we don't need to run this job then
     if: success() || failure()
 

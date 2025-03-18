@@ -13,6 +13,9 @@ on:
     types:
     - completed
 
+permissions:
+  contents: read
+
 jobs:
   doc-publish:
     name: Publish Documentation

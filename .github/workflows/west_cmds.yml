@@ -23,8 +23,11 @@ on:
     - 'scripts/west_commands/**'
     - '.github/workflows/west_cmds.yml'
 
+permissions:
+  contents: read
+
 jobs:
-  west-commnads:
+  west-commands:
     name: West Command Tests
     runs-on: ${{ matrix.os }}
     strategy:
