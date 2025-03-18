@@ -359,15 +359,15 @@ static int16_t modem_cmux_transmit_data_frame(struct modem_cmux *cmux,
 	space = ring_buf_space_get(&cmux->transmit_rb);
 
 	/*
-	 * Two command frames are reserved for command channel, and we shall prefer
+	 * One command frame is reserved for command channel, and we shall prefer
 	 * waiting for more than MODEM_CMUX_DATA_FRAME_SIZE_MIN bytes available in the
 	 * transmit buffer rather than transmitting a few bytes at a time. This avoids
 	 * excessive wrapping overhead, since transmitting a single byte will require 8
 	 * bytes of wrapping.
 	 */
-	if (space < ((MODEM_CMUX_CMD_FRAME_SIZE_MAX * 2) + MODEM_CMUX_DATA_FRAME_SIZE_MIN)) {
+	if (space < (MODEM_CMUX_CMD_FRAME_SIZE_MAX + MODEM_CMUX_DATA_FRAME_SIZE_MIN)) {
 		k_mutex_unlock(&cmux->transmit_rb_lock);
-		return -ENOMEM;
+		return 0;
 	}
 
 	modem_cmux_log_transmit_frame(frame);
