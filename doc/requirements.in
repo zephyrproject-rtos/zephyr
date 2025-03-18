@@ -24,3 +24,6 @@ doxmlparser
 
 # Used by the Zephyr domain to organize code samples
 anytree
+
+# Used to generate API coverage reports
+coverxygen
