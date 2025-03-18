@@ -3,11 +3,18 @@ on:
   schedule:
   - cron: "16 00 * * *"
 
+permissions:
+  contents: read
+
 jobs:
   stale:
     name: Find Stale issues and PRs
     runs-on: ubuntu-22.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
+    permissions:
+      pull-requests: write # to comment on stale pull requests
+      issues: write        # to comment on stale issues
+
     steps:
     - uses: actions/stale@5bef64f19d7facfb25b37b414482c7164d639639 # v9.1.0
       with:
