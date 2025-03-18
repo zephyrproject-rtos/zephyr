@@ -16,7 +16,6 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-#include <zephyr/sys/util.h>
 LOG_MODULE_REGISTER(adc_sam, CONFIG_ADC_LOG_LEVEL);
 
 #define SAM_ADC_NUM_CHANNELS 16
@@ -51,6 +50,18 @@ struct adc_sam_data {
 	/* Number of active channels to fill buffer */
 	uint8_t num_active_channels;
 };
+
+static uint8_t count_bits(uint32_t val)
+{
+	uint8_t res = 0;
+
+	while (val) {
+		res += val & 1U;
+		val >>= 1;
+	}
+
+	return res;
+}
 
 static int adc_sam_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
@@ -145,8 +156,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	const struct adc_sam_config *const cfg = data->dev->config;
 	Adc *const adc = cfg->regs;
 
-	data->num_active_channels =
-		count_bits(&ctx->sequence.channels, sizeof(ctx->sequence.channels));
+	data->num_active_channels = count_bits(ctx->sequence.channels);
 
 	/* Disable all */
 	adc->ADC_CHDR = 0xffff;
@@ -212,7 +222,7 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
-	data->num_active_channels = count_bits(&channels, sizeof(channels));
+	data->num_active_channels = count_bits(channels);
 
 	error = check_buffer_size(sequence, data->num_active_channels);
 	if (error) {
