@@ -20,6 +20,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+#define AUD_PLL_DIV_CLK0_LPCG UINT_TO_POINTER(0x59D20000)
+static sc_ipc_t ipc_handle;
+#endif
+
 #ifdef CONFIG_SPI_NXP_LPSPI
 static const clock_name_t lpspi_clocks[] = {
 	kCLOCK_Usb1PllPfd1Clk,
@@ -81,6 +86,15 @@ static const clock_ip_name_t sai_clocks[] = {
 #endif
 #endif /* CONFIG_DAI_NXP_SAI */
 
+#ifdef CONFIG_DAI_NXP_ESAI
+#if defined(CONFIG_SOC_MIMX8QX6_ADSP) || defined(CONFIG_SOC_MIMX8QM6_ADSP)
+static const clock_ip_name_t esai_clocks[] = {
+	kCLOCK_AUDIO_Esai0,
+	kCLOCK_AUDIO_Esai1,
+};
+#endif
+#endif /* CONFIG_DAI_NXP_ESAI */
+
 #if defined(CONFIG_I2C_NXP_II2C)
 static const clock_ip_name_t i2c_clk_root[] = {
 	kCLOCK_RootI2c1,
@@ -139,6 +153,27 @@ static int mcux_ccm_on(const struct device *dev,
 #endif
 #endif /* CONFIG_DAI_NXP_SAI */
 
+#ifdef CONFIG_DAI_NXP_ESAI
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+	case IMX_CCM_ESAI0_CLK:
+	case IMX_CCM_ESAI1_CLK:
+		CLOCK_EnableClock(esai_clocks[instance]);
+		return 0;
+#endif
+#endif /* CONFIG_DAI_NXP_ESAI */
+
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+	case IMX_CCM_AUD_PLL_DIV_CLK0:
+		/* ungate PLL parent */
+		sc_pm_clock_enable(ipc_handle, SC_R_AUDIO_PLL_0,
+				   SC_PM_CLK_MISC0, true, false);
+
+		/* ungate the clock itself */
+		CLOCK_SetLpcgGate(AUD_PLL_DIV_CLK0_LPCG, true, false, 0xa);
+
+		return 0;
+#endif
+
 #if defined(CONFIG_ETH_NXP_ENET)
 #ifdef CONFIG_SOC_SERIES_IMX8M
 #define ENET_CLOCK	kCLOCK_Enet1
@@ -180,6 +215,27 @@ static int mcux_ccm_off(const struct device *dev,
 		return 0;
 #endif
 #endif /* CONFIG_DAI_NXP_SAI */
+
+#ifdef CONFIG_DAI_NXP_ESAI
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+	case IMX_CCM_ESAI0_CLK:
+	case IMX_CCM_ESAI1_CLK:
+		CLOCK_DisableClock(esai_clocks[instance]);
+		return 0;
+#endif
+#endif /* CONFIG_DAI_NXP_ESAI */
+
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+	case IMX_CCM_AUD_PLL_DIV_CLK0:
+		/* gate the clock itself */
+		CLOCK_SetLpcgGate(AUD_PLL_DIV_CLK0_LPCG, false, false, 0xa);
+
+		/* gate PLL parent */
+		sc_pm_clock_enable(ipc_handle, SC_R_AUDIO_PLL_0,
+				   SC_PM_CLK_MISC0, false, false);
+
+		return 0;
+#endif
 	default:
 		(void)instance;
 		return 0;
@@ -540,7 +596,6 @@ static DEVICE_API(clock_control, mcux_ccm_driver_api) = {
 static int mcux_ccm_init(const struct device *dev)
 {
 #if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
-	sc_ipc_t ipc_handle;
 	int ret;
 
 	ret = sc_ipc_open(&ipc_handle, DT_REG_ADDR(DT_NODELABEL(scu_mu)));
