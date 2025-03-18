@@ -4,7 +4,7 @@
 
 # Smoketest for BAP BTP commands with the BT tester
 
-simulation_id="tester_bap"
+simulation_id="tester_bap_unicast"
 verbosity_level=2
 EXECUTE_TIMEOUT=100
 
