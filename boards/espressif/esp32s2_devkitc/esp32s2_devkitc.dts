@@ -123,3 +123,7 @@
 &dac {
 	status = "okay";
 };
+
+&wifi {
+	status = "okay";
+};

@@ -60,3 +60,7 @@
 &timer0 {
 	status = "disabled";
 };
+
+&wifi {
+	status = "okay";
+};
