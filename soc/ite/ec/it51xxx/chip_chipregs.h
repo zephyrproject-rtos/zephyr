@@ -69,6 +69,9 @@ struct smfi_it51xxx_regs {
 #define EC_INDIRECT_READ_INTERNAL_FLASH BIT(6)
 /* Enable EC-indirect page program command */
 #define IT51XXX_SMFI_MASK_ECINDPP       BIT(3)
+/* 0x42: Scratch SRAM 0 address high byte */
+#define SCARH_ENABLE                    BIT(7)
+#define SCARH_ADDR_BIT19                BIT(3)
 
 /**
  *
@@ -269,8 +272,14 @@ struct gctrl_it51xxx_regs {
 	volatile uint8_t reserved_21_37[23];
 	/* 0x38: Special Control 9 */
 	volatile uint8_t GCTRL_SPCTRL9;
-	/* 0x39-0x84: reserved_39_84 */
-	volatile uint8_t reserved_39_84[76];
+	/* 0x39-0x46: reserved_39_46 */
+	volatile uint8_t reserved_39_46[14];
+	/* 0x47: Scratch SRAM0 Base Address */
+	volatile uint8_t GCTRL_SCR0BAR;
+	/* 0x48: Scratch ROM 0 Size */
+	volatile uint8_t GCTRL_SCR0SZR;
+	/* 0x49-0x84: reserved_49_84 */
+	volatile uint8_t reserved_49_84[60];
 	/* 0x85: Chip ID Byte 1 */
 	volatile uint8_t GCTRL_ECHIPID1;
 	/* 0x86: Chip ID Byte 2 */
@@ -298,6 +307,8 @@ struct gctrl_it51xxx_regs {
 #define IT51XXX_GCTRL_LRSIPGWR    BIT(0)
 /* 0x38: Special Control 9 */
 #define IT51XXX_GCTRL_ALTIE       BIT(4)
+/* 0x48: Scratch ROM 0 Size */
+#define IT51XXX_GCTRL_SCRSIZE_4K  0x03
 
 /* Alias gpio_ite_ec_regs to gpio_it51xxx_regs for compatibility */
 #define gpio_ite_ec_regs      gpio_it51xxx_regs
