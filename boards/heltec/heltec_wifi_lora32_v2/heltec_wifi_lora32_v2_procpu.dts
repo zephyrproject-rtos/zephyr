@@ -115,5 +115,9 @@
 	status = "okay";
 };
 
+&wifi {
+	status = "okay";
+};
+
 /* Required by the ssd1306_128x64 shield which enables the OLED display */
 arduino_i2c: &i2c0 {};
