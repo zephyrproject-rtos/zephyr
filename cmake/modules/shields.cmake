@@ -81,6 +81,17 @@ if(DEFINED SHIELD)
 
     list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
 
+    # Add board-specific .conf and .overlay files to their
+    # respective output variables.
+    zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards
+                DTS   shield_dts_files
+                KCONF shield_conf_files
+    )
+    zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards/${s}
+                DTS   shield_dts_files
+                KCONF shield_conf_files
+    )
+
     # Add <shield>.overlay to the shield_dts_files output variable.
     list(APPEND
       shield_dts_files
@@ -100,17 +111,6 @@ if(DEFINED SHIELD)
         ${SHIELD_DIR_${s}}/${s}.conf
         )
     endif()
-
-    # Add board-specific .conf and .overlay files to their
-    # respective output variables.
-    zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards
-                DTS   shield_dts_files
-                KCONF shield_conf_files
-    )
-    zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards/${s}
-                DTS   shield_dts_files
-                KCONF shield_conf_files
-    )
   endforeach()
 endif()
 
