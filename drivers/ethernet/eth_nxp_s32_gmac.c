@@ -559,10 +559,10 @@ static enum ethernet_hw_caps eth_nxp_s32_get_capabilities(const struct device *d
 {
 	ARG_UNUSED(dev);
 
-	return (ETHERNET_LINK_10BASE_T
-		| ETHERNET_LINK_100BASE_T
+	return (ETHERNET_LINK_10BASE
+		| ETHERNET_LINK_100BASE
 #if (FEATURE_GMAC_RGMII_EN == 1U)
-		| ETHERNET_LINK_1000BASE_T
+		| ETHERNET_LINK_1000BASE
 #endif
 		| ETHERNET_DUPLEX_SET
 		| ETHERNET_HW_TX_CHKSUM_OFFLOAD

@@ -134,7 +134,7 @@ static enum ethernet_hw_caps renesas_ra_eth_get_capabilities(const struct device
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
 void renesas_ra_eth_callback(ether_callback_args_t *p_args)

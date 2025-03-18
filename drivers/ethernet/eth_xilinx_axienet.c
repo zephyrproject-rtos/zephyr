@@ -356,8 +356,8 @@ static void xilinx_axienet_isr(const struct device *dev)
 static enum ethernet_hw_caps xilinx_axienet_caps(const struct device *dev)
 {
 	const struct xilinx_axienet_config *config = dev->config;
-	enum ethernet_hw_caps ret = ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
-				    ETHERNET_LINK_1000BASE_T;
+	enum ethernet_hw_caps ret = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
+				    ETHERNET_LINK_1000BASE;
 
 	if (config->have_rx_csum_offload) {
 		ret |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
