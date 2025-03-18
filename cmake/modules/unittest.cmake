@@ -44,8 +44,6 @@ if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
   set(ZEPHYR_BASE ${ENV_ZEPHYR_BASE} CACHE PATH "Zephyr base")
 endif()
 
-find_package(Deprecated COMPONENTS SOURCES)
-
 if(NOT SOURCES AND EXISTS main.c)
   set(SOURCES main.c)
 endif()
