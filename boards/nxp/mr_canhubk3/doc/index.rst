@@ -327,6 +327,9 @@ Run the ``west debug`` command to start a GDB session using SEGGER J-Link.
 Alternatively, run ``west debug -r trace32`` or ``west debug -r pyocd``
 to launch the Lauterbach TRACE32 or pyOCD software debugging interface respectively.
 
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
+
 References
 **********
 

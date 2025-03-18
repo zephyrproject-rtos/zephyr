@@ -746,8 +746,11 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	__ASSERT_NO_MSG(dev_data != NULL);
 
 	while (1) {
-		res = k_sem_take(&dev_data->rx_int_sem,
-			K_MSEC(CONFIG_ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS));
+		res = k_sem_take(
+			&dev_data->rx_int_sem,
+			COND_CODE_1(CONFIG_ETH_STM32_CARRIER_CHECK,
+				(K_MSEC(CONFIG_ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS)),
+				(K_FOREVER)));
 		if (res == 0) {
 			/* semaphore taken, update link status and receive packets */
 			if (dev_data->link_up != true) {
@@ -768,7 +771,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 					net_pkt_unref(pkt);
 				}
 			}
-		} else if (res == -EAGAIN) {
+		} else if (IS_ENABLED(CONFIG_ETH_STM32_CARRIER_CHECK) && res == -EAGAIN) {
 			/* semaphore timeout period expired, check link status */
 			hal_ret = read_eth_phy_register(&dev_data->heth,
 				    PHY_ADDR, PHY_BSR, (uint32_t *) &status);

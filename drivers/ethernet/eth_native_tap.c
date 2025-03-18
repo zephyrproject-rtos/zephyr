@@ -202,8 +202,8 @@ static int eth_send(const struct device *dev, struct net_pkt *pkt)
 
 static struct net_linkaddr *eth_get_mac(struct eth_context *ctx)
 {
-	ctx->ll_addr.addr = ctx->mac_addr;
-	ctx->ll_addr.len = sizeof(ctx->mac_addr);
+	(void)net_linkaddr_set(&ctx->ll_addr, ctx->mac_addr,
+			       sizeof(ctx->mac_addr));
 
 	return &ctx->ll_addr;
 }

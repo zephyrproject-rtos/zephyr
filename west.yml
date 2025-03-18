@@ -231,7 +231,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 2ad0fd7d56a9142a0479f5745277fda8b21da0db
+      revision: 9d32354344f6c816410e2642c2f81677f8a60e96
       path: modules/hal/silabs
       groups:
         - hal
@@ -306,7 +306,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 1b2fc096d9a683a7481b13749d01ca8fa78e7afd
+      revision: c8470fb145f8aff92696d05396fb77c3b8068b32
       path: bootloader/mcuboot
       groups:
         - bootloader

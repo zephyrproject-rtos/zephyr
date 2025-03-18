@@ -9,6 +9,7 @@
 #include <zephyr/drivers/sensor_clock.h>
 
 #include "icm45686.h"
+#include "icm45686_reg.h"
 #include "icm45686_decoder.h"
 
 #include <zephyr/logging/log.h>
@@ -106,13 +107,13 @@ int icm45686_convert_raw_to_q31(struct icm45686_encoded_data *edata,
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-		icm45686_accel_ms(edata, reading, &whole, &fraction);
+		icm45686_accel_ms(edata->header.accel_fs, reading, false, &whole, &fraction);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-		icm45686_gyro_rads(edata, reading, &whole, &fraction);
+		icm45686_gyro_rads(edata->header.gyro_fs, reading, false, &whole, &fraction);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		icm45686_temp_c(reading, &whole, &fraction);
@@ -209,7 +210,7 @@ int icm45686_encode(const struct device *dev,
 		return err;
 	}
 
-	edata->header.is_fifo = false;
+	edata->header.events = 0;
 	edata->header.accel_fs = dev_config->settings.accel.fs;
 	edata->header.gyro_fs = dev_config->settings.gyro.fs;
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
@@ -229,12 +230,12 @@ static int icm45686_decoder_get_frame_count(const uint8_t *buffer,
 
 	uint8_t channel_request = icm45686_encode_channel(chan_spec.chan_type);
 
-	if ((!edata->header.is_fifo) &&
-	    (edata->header.channels & channel_request) != channel_request) {
+	if ((edata->header.channels & channel_request) != channel_request) {
 		return -ENODATA;
 	}
 
-	if (!edata->header.is_fifo) {
+	if (!edata->header.events ||
+	    (edata->header.events & REG_INT1_STATUS0_DRDY(true))) {
 		switch (chan_spec.chan_type) {
 		case SENSOR_CHAN_ACCEL_X:
 		case SENSOR_CHAN_ACCEL_Y:
@@ -252,7 +253,20 @@ static int icm45686_decoder_get_frame_count(const uint8_t *buffer,
 		}
 	}
 
-	LOG_ERR("FIFO Data frame not supported");
+	if (edata->header.events & REG_INT1_STATUS0_FIFO_THS(true) ||
+	    edata->header.events & REG_INT1_STATUS0_FIFO_FULL(true)) {
+		switch (chan_spec.chan_type) {
+		case SENSOR_CHAN_ACCEL_XYZ:
+		case SENSOR_CHAN_GYRO_XYZ:
+		case SENSOR_CHAN_DIE_TEMP:
+			*frame_count = edata->header.fifo_count;
+			return 0;
+		/** We're skipping individual axis for fifo packets */
+		default:
+			return -ENOTSUP;
+		}
+	}
+
 	return -1;
 }
 
@@ -369,6 +383,163 @@ static int icm45686_one_shot_decode(const uint8_t *buffer,
 	}
 }
 
+static q31_t icm45686_fifo_read_temp_from_packet(const uint8_t *pkt)
+{
+	struct icm45686_encoded_fifo_payload *fdata = (struct icm45686_encoded_fifo_payload *)pkt;
+
+	int32_t whole;
+	uint32_t fraction;
+	int64_t intermediate;
+	int8_t shift;
+	int err;
+
+	err = icm45686_get_shift(SENSOR_CHAN_DIE_TEMP, 0, 0, &shift);
+	if (err != 0) {
+		return -1;
+	}
+
+	icm45686_temp_c(fdata->temp, &whole, &fraction);
+
+	intermediate = ((int64_t)whole * INT64_C(1000000) + fraction);
+	if (shift < 0) {
+		intermediate =
+			intermediate * ((int64_t)INT32_MAX + 1) * (1 << -shift) / INT64_C(1000000);
+	} else if (shift > 0) {
+		intermediate =
+			intermediate * ((int64_t)INT32_MAX + 1) / ((1 << shift) * INT64_C(1000000));
+	}
+
+	return CLAMP(intermediate, INT32_MIN, INT32_MAX);
+}
+
+static int icm45686_fifo_read_imu_from_packet(const uint8_t *pkt,
+					      bool is_accel,
+					      uint8_t axis_offset,
+					      q31_t *out)
+{
+	uint32_t unsigned_value;
+	int32_t signed_value;
+	int offset = 1 + (axis_offset * 2)  + (is_accel ? 0 : 6);
+	uint32_t mask = is_accel ? GENMASK(7, 4) : GENMASK(3, 0);
+	uint8_t accel_fs = ICM45686_DT_ACCEL_FS_32;
+	uint8_t gyro_fs = ICM45686_DT_GYRO_FS_4000;
+
+	int32_t whole;
+	int32_t fraction;
+	int64_t intermediate;
+	int8_t shift;
+
+	unsigned_value = (pkt[offset] | (pkt[offset + 1] << 8));
+	if (unsigned_value == FIFO_NO_DATA) {
+		return -ENODATA;
+	}
+
+	unsigned_value = (unsigned_value << 4) |
+			 ((pkt[17 + axis_offset] & mask) >> (is_accel ? 4 : 0));
+	signed_value = sign_extend(unsigned_value, 19);
+
+	if (!is_accel) {
+		icm45686_get_shift(SENSOR_CHAN_GYRO_XYZ, accel_fs, gyro_fs, &shift);
+		icm45686_gyro_rads(gyro_fs, signed_value, true, &whole, &fraction);
+	} else {
+		icm45686_get_shift(SENSOR_CHAN_ACCEL_XYZ, accel_fs, gyro_fs, &shift);
+		icm45686_accel_ms(accel_fs, signed_value, true, &whole, &fraction);
+	}
+
+	intermediate = ((int64_t)whole * INT64_C(1000000) + fraction);
+	if (shift < 0) {
+		intermediate =
+			intermediate * ((int64_t)INT32_MAX + 1) * (1 << -shift) / INT64_C(1000000);
+	} else if (shift > 0) {
+		intermediate =
+			intermediate * ((int64_t)INT32_MAX + 1) / ((1 << shift) * INT64_C(1000000));
+	}
+
+	*out = CLAMP(intermediate, INT32_MIN, INT32_MAX);
+
+	return 0;
+}
+
+static int icm45686_fifo_decode(const uint8_t *buffer,
+				struct sensor_chan_spec chan_spec,
+				uint32_t *fit,
+				uint16_t max_count,
+				void *data_out)
+{
+	struct icm45686_encoded_data *edata = (struct icm45686_encoded_data *)buffer;
+	struct icm45686_encoded_fifo_payload *frame_begin = &edata->fifo_payload;
+	int count = 0;
+	int err;
+
+	if (*fit >= edata->header.fifo_count || chan_spec.chan_idx != 0) {
+		return 0;
+	}
+
+	while (count < max_count && (*fit < edata->header.fifo_count)) {
+		struct icm45686_encoded_fifo_payload *fdata = &frame_begin[*fit];
+
+		/** This driver assumes 20-byte fifo packets, with both accel and gyro,
+		 * and no auxiliary sensors.
+		 */
+		__ASSERT(!(fdata->header & FIFO_HEADER_EXT_HEADER_EN(true)) &&
+			(fdata->header & FIFO_HEADER_ACCEL_EN(true)) &&
+			(fdata->header & FIFO_HEADER_GYRO_EN(true)) &&
+			(fdata->header & FIFO_HEADER_HIRES_EN(true)),
+			"Unsupported FIFO packet format");
+
+		switch (chan_spec.chan_type) {
+		case SENSOR_CHAN_ACCEL_XYZ:
+		case SENSOR_CHAN_GYRO_XYZ: {
+			struct sensor_three_axis_data *out = data_out;
+			bool is_accel = chan_spec.chan_type == SENSOR_CHAN_ACCEL_XYZ;
+
+			icm45686_get_shift(chan_spec.chan_type,
+					   edata->header.accel_fs,
+					   edata->header.gyro_fs,
+					   &out->shift);
+
+			out->header.base_timestamp_ns = edata->header.timestamp;
+
+			err = icm45686_fifo_read_imu_from_packet((uint8_t *)fdata,
+								 is_accel,
+								 0,
+								 &out->readings[count].x);
+			err |= icm45686_fifo_read_imu_from_packet((uint8_t *)fdata,
+								  is_accel,
+								  1,
+								  &out->readings[count].y);
+			err |= icm45686_fifo_read_imu_from_packet((uint8_t *)fdata,
+								  is_accel,
+								  2,
+								  &out->readings[count].z);
+			if (err != 0) {
+				count--;
+			}
+			break;
+		}
+		case SENSOR_CHAN_DIE_TEMP: {
+			struct sensor_q31_data *out = data_out;
+
+			icm45686_get_shift(chan_spec.chan_type,
+					edata->header.accel_fs,
+					edata->header.gyro_fs,
+					&out->shift);
+
+			out->header.base_timestamp_ns = edata->header.timestamp;
+			out->readings[count].temperature =
+				icm45686_fifo_read_temp_from_packet((uint8_t *)fdata);
+			break;
+		}
+		default:
+			return 0;
+		}
+		*fit = *fit + 1;
+		count++;
+	}
+
+	return count;
+}
+
 static int icm45686_decoder_decode(const uint8_t *buffer,
 				   struct sensor_chan_spec chan_spec,
 				   uint32_t *fit,
@@ -377,8 +548,9 @@ static int icm45686_decoder_decode(const uint8_t *buffer,
 {
 	struct icm45686_encoded_data *edata = (struct icm45686_encoded_data *)buffer;
 
-	if (edata->header.is_fifo) {
-		return -ENOTSUP;
+	if (edata->header.events & REG_INT1_STATUS0_FIFO_THS(true) ||
+	    edata->header.events & REG_INT1_STATUS0_FIFO_FULL(true)) {
+		return icm45686_fifo_decode(buffer, chan_spec, fit, max_count, data_out);
 	} else {
 		return icm45686_one_shot_decode(buffer, chan_spec, fit, max_count, data_out);
 	}
@@ -386,6 +558,19 @@ static int icm45686_decoder_decode(const uint8_t *buffer,
 
 static bool icm45686_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
 {
+	struct icm45686_encoded_data *edata = (struct icm45686_encoded_data *)buffer;
+
+	switch (trigger) {
+	case SENSOR_TRIG_DATA_READY:
+		return edata->header.events & REG_INT1_STATUS0_DRDY(true);
+	case SENSOR_TRIG_FIFO_WATERMARK:
+		return edata->header.events & REG_INT1_STATUS0_FIFO_THS(true);
+	case SENSOR_TRIG_FIFO_FULL:
+		return edata->header.events & REG_INT1_STATUS0_FIFO_FULL(true);
+	default:
+		break;
+	}
+
 	return false;
 }
 

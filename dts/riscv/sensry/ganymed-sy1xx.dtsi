@@ -93,6 +93,50 @@
 			status = "okay";
 		};
 
+		i2c0: i2c@1a102500 {
+			compatible = "sensry,sy1xx-i2c";
+			reg = <0x1a102500 0x80>;
+			instance = <0>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		i2c1: i2c@1a102580 {
+			compatible = "sensry,sy1xx-i2c";
+			reg = <0x1a102580 0x80>;
+			instance = <1>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		i2c2: i2c@1a102600 {
+			compatible = "sensry,sy1xx-i2c";
+			reg = <0x1a102600 0x80>;
+			instance = <2>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		i2c3: i2c@1a102680 {
+			compatible = "sensry,sy1xx-i2c";
+			reg = <0x1a102680 0x80>;
+			instance = <3>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
 		trng: random@1d030100 {
 			compatible = "sensry,sy1xx-trng";
 			reg = <0x1d030100 0x100>;

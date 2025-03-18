@@ -261,6 +261,30 @@
 			dma-channels = <12>;
 			status = "disabled";
 		};
+
+		pwm: pwm@47070000 {
+			compatible = "silabs,siwx91x-pwm";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x47070000 0x14C>;
+			interrupts = <48 0>;
+			interrupt-names = "pwm";
+			clocks = <&clock0 SIWX91X_CLK_PWM>;
+			#pwm-cells = <2>;
+			silabs,ch_prescaler = <64 64 64 64>;
+			status = "disabled";
+		};
+
+		watchdog: wdt@24048300 {
+			compatible = "silabs,siwx91x-wdt";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24048300 0x1C>;
+			interrupts = <20 0>;
+			interrupt-names = "watchdog";
+			clocks = <&clock0 SIWX91X_CLK_WATCHDOG>;
+			status = "disabled";
+		};
 	};
 };
 
