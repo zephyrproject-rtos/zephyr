@@ -94,7 +94,7 @@ ZTEST(suite_deadline, test_deadline)
 	 * minimize aliasing with "now"
 	 */
 	for (i = 0; i < NUM_THREADS; i++) {
-		k_thread_deadline_set(&worker_threads[i], thread_deadlines[i]);
+		k_thread_deadline_set(&worker_threads[i], K_CYC(thread_deadlines[i]));
 	}
 
 	zassert_true(n_exec == 0, "threads ran too soon");
@@ -204,7 +204,7 @@ ZTEST(suite_deadline, test_unqueued)
 
 	for (i = 0; i < NUM_THREADS; i++) {
 		thread_deadlines[i] = sys_rand32_get() & 0x3fffff00;
-		k_thread_deadline_set(&worker_threads[i], thread_deadlines[i]);
+		k_thread_deadline_set(&worker_threads[i], K_CYC(thread_deadlines[i]));
 	}
 
 	k_sleep(K_MSEC(50));
@@ -251,7 +251,7 @@ static void test_reschedule_helper1(void *p1, void *p2, void *p3)
 
 	zassert_true(expected_thread == _current, "");
 
-	k_thread_deadline_set(_current, MSEC_TO_CYCLES(1000));
+	k_thread_deadline_set(_current, K_MSEC(1000));
 
 	/* 3. Deadline changed, but there was no reschedule */
 
@@ -284,8 +284,8 @@ ZTEST(suite_deadline, test_thread_reschedule)
 			K_LOWEST_APPLICATION_THREAD_PRIO,
 			0, K_NO_WAIT);
 
-	k_thread_deadline_set(&worker_threads[0], MSEC_TO_CYCLES(500));
-	k_thread_deadline_set(&worker_threads[1], MSEC_TO_CYCLES(10));
+	k_thread_deadline_set(&worker_threads[0], K_MSEC(500));
+	k_thread_deadline_set(&worker_threads[1], K_MSEC(10));
 
 	expected_thread = &worker_threads[1];
 
@@ -309,8 +309,8 @@ ZTEST(suite_deadline, test_thread_reschedule)
 			K_LOWEST_APPLICATION_THREAD_PRIO,
 			0, K_NO_WAIT);
 
-	k_thread_deadline_set(&worker_threads[0], MSEC_TO_CYCLES(500));
-	k_thread_deadline_set(&worker_threads[1], MSEC_TO_CYCLES(10));
+	k_thread_deadline_set(&worker_threads[0], K_MSEC(500));
+	k_thread_deadline_set(&worker_threads[1], K_MSEC(10));
 
 	expected_thread = &worker_threads[1];
 
