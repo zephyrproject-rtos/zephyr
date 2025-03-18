@@ -115,7 +115,6 @@ jobs:
       working-directory: zephyr
       run: |
         pip install -r doc/requirements.txt
-        pip install coverxygen
 
     - name: build-docs
       shell: bash
