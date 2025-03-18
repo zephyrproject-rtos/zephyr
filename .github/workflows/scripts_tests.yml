@@ -19,6 +19,9 @@ on:
       - 'scripts/build/**'
       - '.github/workflows/scripts_tests.yml'
 
+permissions:
+  contents: read
+
 jobs:
   scripts-tests:
     name: Scripts tests

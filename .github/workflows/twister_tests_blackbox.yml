@@ -15,6 +15,9 @@ on:
     - 'scripts/tests/twister_blackbox/**'
     - '.github/workflows/twister_tests_blackbox.yml'
 
+permissions:
+  contents: read
+
 jobs:
   twister-tests:
     name: Twister Black Box Tests

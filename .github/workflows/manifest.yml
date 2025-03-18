@@ -2,9 +2,14 @@ name: Manifest
 on:
   pull_request_target:
 
+permissions:
+  contents: read
+
 jobs:
   contribs:
     runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write # to create/update pull request comments
     name: Manifest
     steps:
       - name: Checkout the code

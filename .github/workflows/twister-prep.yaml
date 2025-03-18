@@ -13,6 +13,9 @@ on:
         description: fullrun
         value: ${{ jobs.prep_push.outputs.fullrun != '' && jobs.prep_push.outputs.fullrun || jobs.prep_pr.outputs.size }}
 
+permissions:
+  contents: read
+
 jobs:
   prep_pr:
     if: github.repository_owner == 'zephyrproject-rtos' && github.event_name == 'pull_request_target'

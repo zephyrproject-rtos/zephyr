@@ -10,6 +10,9 @@ on:
     branches:
     - refs/tags/*
 
+permissions:
+  contents: read
+
 jobs:
   get_version:
     runs-on: ubuntu-22.04

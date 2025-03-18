@@ -8,6 +8,9 @@ on:
     - reopened
     - synchronize
 
+permissions:
+  contents: read
+
 jobs:
   check_compliance:
     runs-on: ubuntu-22.04
