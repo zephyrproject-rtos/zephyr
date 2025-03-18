@@ -86,7 +86,15 @@
 #define HAL_TICKER_REMAINDER_RANGE \
 	HAL_TICKER_TICKS_TO_US(HAL_TICKER_PSEC_PER_USEC)
 
-/* Macro defining the margin for positioning re-scheduled nodes */
+/* Macro defining the margin for positioning re-scheduled nodes.
+ *
+ * NOTE: This is also used as the margin to detect short expire value and defer
+ *       the ticker_job from processing bottom-halves, management and inquire
+ *       requests.
+ *
+ * FIXME: Profile the application for worst-case ticker_resolve_collision() CPU
+ *        execution time and use it as the margin.
+ */
 #define HAL_TICKER_RESCHEDULE_MARGIN_US 150U
 #define HAL_TICKER_RESCHEDULE_MARGIN \
 	HAL_TICKER_US_TO_TICKS(HAL_TICKER_RESCHEDULE_MARGIN_US)

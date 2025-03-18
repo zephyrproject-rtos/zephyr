@@ -1224,6 +1224,14 @@ config BT_TICKER_LOW_LAT
 	  radio RX/TX. Enabling this option disables the ticker priority- and
 	  'must expire' features.
 
+config BT_TICKER_JOB_LOW_LAT
+	bool "Ticker Job low latency mode"
+	default y if BT_LLL_VENDOR_NORDIC
+	help
+	  This option enable Ticker Job implementation that defers itself if
+	  there is any expiry in the near future within the reschedule margin.
+	  Hence, reduced latency in executing the Ticker Worker at ticks expire.
+
 config BT_TICKER_UPDATE
 	bool "Ticker Update"
 	help
