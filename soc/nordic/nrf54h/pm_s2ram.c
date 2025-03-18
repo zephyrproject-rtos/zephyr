@@ -177,48 +177,25 @@ int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 	return ret;
 }
 
-void __attribute__((naked)) pm_s2ram_mark_set(void)
+void pm_s2ram_mark_set(void)
 {
 	/* empty */
-	__asm__ volatile("bx	lr\n");
 }
 
-bool __attribute__((naked)) pm_s2ram_mark_check_and_clear(void)
+bool pm_s2ram_mark_check_and_clear(void)
 {
-	__asm__ volatile(
-		/* Set return value to 0 */
-		"mov	r0, #0\n"
+	bool unretained_wake;
+	bool restore_valid;
+	uint32_t reset_reason = nrf_resetinfo_resetreas_local_get(NRF_RESETINFO);
 
-		/* Load and check RESETREAS register */
-		"ldr	r3, [%[resetinfo_addr], %[resetreas_offs]]\n"
-		"cmp	r3, %[resetreas_unretained_mask]\n"
+	if (reset_reason != NRF_RESETINFO_RESETREAS_LOCAL_UNRETAINED_MASK) {
+		return false;
+	}
+	unretained_wake = reset_reason & NRF_RESETINFO_RESETREAS_LOCAL_UNRETAINED_MASK;
+	nrf_resetinfo_resetreas_local_set(NRF_RESETINFO, 0);
 
-		"bne	exit\n"
+	restore_valid = nrf_resetinfo_restore_valid_check(NRF_RESETINFO);
+	nrf_resetinfo_restore_valid_set(NRF_RESETINFO, false);
 
-		/* Clear RESETREAS register */
-		"str	r0, [%[resetinfo_addr], %[resetreas_offs]]\n"
-
-		/* Load RESTOREVALID register */
-		"ldr	r3, [%[resetinfo_addr], %[restorevalid_offs]]\n"
-
-		/* Clear RESTOREVALID */
-		"str	r0, [%[resetinfo_addr], %[restorevalid_offs]]\n"
-
-		/* Check RESTOREVALID register */
-		"cmp	r3, %[restorevalid_present_mask]\n"
-		"bne	exit\n"
-
-		/* Set return value to 1 */
-		"mov	r0, #1\n"
-
-		"exit:\n"
-		"bx	lr\n"
-		:
-		: [resetinfo_addr] "r"(NRF_RESETINFO),
-		  [resetreas_offs] "r"(offsetof(NRF_RESETINFO_Type, RESETREAS.LOCAL)),
-		  [resetreas_unretained_mask] "r"(NRF_RESETINFO_RESETREAS_LOCAL_UNRETAINED_MASK),
-		  [restorevalid_offs] "r"(offsetof(NRF_RESETINFO_Type, RESTOREVALID)),
-		  [restorevalid_present_mask] "r"(RESETINFO_RESTOREVALID_RESTOREVALID_Msk)
-
-		: "r0", "r1", "r3", "r4", "memory");
+	return (unretained_wake & restore_valid) ? true : false;
 }
