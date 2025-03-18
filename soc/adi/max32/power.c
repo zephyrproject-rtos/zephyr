@@ -5,14 +5,21 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/platform/hooks.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/arch/common/pm_s2ram.h>
 
 #include <mxc_device.h>
+#include <mcr_regs.h>
 #include <wrap_max32_lp.h>
+#include <wrap_max32_sys.h>
 
 #include <zephyr/logging/log.h>
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
+
+extern uint8_t pm_get_s2ram_retention_mask(void);
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -35,6 +42,20 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_STANDBY:
 		LOG_DBG("entering PM state standby");
 		Wrap_MXC_LP_EnterStandbyMode();
+		break;
+	case PM_STATE_SUSPEND_TO_RAM:
+#ifdef CONFIG_PM_S2RAM
+		LOG_DBG("entering PM state suspend to ram");
+
+		/* SRAM retention configurable via Kconfig */
+		Wrap_MXC_LP_EnableRetentionReg();
+		Wrap_MXC_LP_EnableSramRetention(pm_get_s2ram_retention_mask());
+
+		/* Suspend to RAM */
+		arch_pm_s2ram_suspend(Wrap_MXC_LP_EnterBackupMode);
+#else
+		LOG_WRN("PM_STATE_SUSPEND_TO_RAM must be enabled by Kconfig option!");
+#endif /* CONFIG_PM_S2RAM */
 		break;
 	case PM_STATE_SOFT_OFF:
 		LOG_DBG("entering PM state powerdown");
@@ -59,6 +80,16 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:
 		LOG_DBG("exited PM state suspend to idle");
+		break;
+	case PM_STATE_SUSPEND_TO_RAM:
+#ifdef CONFIG_PM_S2RAM
+		max32xx_system_init();
+		Wrap_MXC_LP_DisableSramRetention();
+		Wrap_MXC_LP_ExitBackupMode();
+		LOG_DBG("exited PM state suspend to ram");
+#else
+		LOG_WRN("PM_STATE_SUSPEND_TO_RAM must be enabled by Kconfig option!");
+#endif /* CONFIG_PM_S2RAM */
 		break;
 	case PM_STATE_STANDBY:
 		LOG_DBG("exited PM state standby");
