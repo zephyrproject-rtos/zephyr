@@ -36,6 +36,7 @@ tests:
       - frdm_mcxc242
       - ucans32k1sic
       - xg24_rb4187c
+      - xg29_rb4412a
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840
