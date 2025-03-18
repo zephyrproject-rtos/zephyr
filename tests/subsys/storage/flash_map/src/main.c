@@ -16,6 +16,9 @@
 #define SLOT1_PARTITION_DEV	FIXED_PARTITION_DEVICE(SLOT1_PARTITION)
 #define SLOT1_PARTITION_NODE	DT_NODELABEL(SLOT1_PARTITION)
 #define SLOT1_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(SLOT1_PARTITION)
+#define SLOT1_PARTITION_SIZE	FIXED_PARTITION_SIZE(SLOT1_PARTITION)
+
+#define FLASH_AREA_COPY_SIZE	MIN((SLOT1_PARTITION_SIZE / 2), 128)
 
 extern int flash_map_entries;
 struct flash_sector fs_sectors[2048];
@@ -221,6 +224,36 @@ ZTEST(flash_map, test_flash_area_erase_and_flatten)
 	}
 	zassert_true(erased, "Flatten/Erase failed at dev absolute offset %d",
 		     i + fa->fa_off);
+}
+
+ZTEST(flash_map, test_flash_area_copy)
+{
+	const struct flash_area *fa;
+	uint8_t src_buf[FLASH_AREA_COPY_SIZE], dst_buf[FLASH_AREA_COPY_SIZE],
+		copy_buf[32];
+	int rc;
+
+	/* Get source and destination flash areas */
+	fa = FIXED_PARTITION(SLOT1_PARTITION);
+
+	/* First erase the area so it's ready for use. */
+	rc = flash_area_erase(fa, 0, fa->fa_size);
+	zassert_true(rc == 0, "flash area erase fail");
+
+	/* Fill source area with test data */
+	memset(src_buf, 0xAB, sizeof(src_buf));
+	rc = flash_area_write(fa, 0, src_buf, sizeof(src_buf));
+	zassert_true(rc == 0, "Failed to write to source flash area");
+
+	/* Perform the copy operation */
+	rc = flash_area_copy(fa, 0, fa, FLASH_AREA_COPY_SIZE, sizeof(src_buf), copy_buf,
+			     sizeof(copy_buf));
+	zassert_true(rc == 0, "flash_area_copy failed");
+
+	/* Verify the copied data */
+	rc = flash_area_read(fa, FLASH_AREA_COPY_SIZE, dst_buf, sizeof(dst_buf));
+	zassert_true(rc == 0, "Failed to read from destination flash area");
+	zassert_mem_equal(src_buf, dst_buf, sizeof(src_buf), "Data mismatch after copy");
 }
 
 ZTEST_SUITE(flash_map, NULL, NULL, NULL, NULL, NULL);
