@@ -179,6 +179,17 @@ SECTIONS
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
 #include <zephyr/linker/kobject-text.ld>
+		. = ALIGN(0x1000);
+		/* Mapping base address must be 4k-aligned */
+		__ilm_flash_start = .;
+		/* Specially-tagged functions in SoC sources */
+		KEEP(*(.__ram_code))
+		*(.__ram_code.*)
+		__ilm_flash_end = .;
+		/* ILM mapping is always a multiple of 4k size; ensure following
+		 * sections won't incorrectly redirect to RAM. */
+		. = ALIGN(0x1000);
+
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
     __text_region_end = .;
@@ -242,6 +253,17 @@ SECTIONS
     GROUP_START(RAMABLE_REGION)
 
 	. = RAM_BASE;
+
+    /* Claim RAM for ILM mappings; must be 4k-aligned and each mapping is 4k in size */
+    SECTION_PROLOGUE(ilm_ram,(NOLOAD),ALIGN(0x1000))
+	{
+		__ilm_ram_start = .;
+		. += __ilm_flash_end - __ilm_flash_start;
+		__ilm_ram_end = .;
+		/* Aligning 4k ensures ILM doesn't overwritte RAM. */
+		. = ALIGN(0x1000);
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
 	_image_ram_start = .;
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
