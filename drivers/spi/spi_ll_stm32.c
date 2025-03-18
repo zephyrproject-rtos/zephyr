@@ -1380,6 +1380,64 @@ static inline bool spi_stm32_is_subghzspi(const struct device *dev)
 #endif /* st_stm32_spi_subghz */
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int spi_stm32_pm_action(const struct device *dev,
+			       enum pm_device_action action)
+{
+	const struct spi_stm32_config *config = dev->config;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	int err;
+
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		if (!spi_stm32_is_subghzspi(dev)) {
+			/* Set pins to active state */
+			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+			if (err < 0) {
+				return err;
+			}
+		}
+
+		/* enable clock */
+		err = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
+		if (err != 0) {
+			LOG_ERR("Could not enable SPI clock");
+			return err;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Stop device clock. */
+		err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
+		if (err != 0) {
+			LOG_ERR("Could not disable SPI clock");
+			return err;
+		}
+
+		if (!spi_stm32_is_subghzspi(dev)) {
+			/* Move pins to sleep state */
+			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+			if ((err < 0) && (err != -ENOENT)) {
+				/*
+				 * If returning -ENOENT, no pins where defined for sleep mode :
+				 * Do not output on console (might sleep already) when going to
+				 * sleep,
+				 * "SPI pinctrl sleep state not available"
+				 * and don't block PM suspend.
+				 * Else return the error.
+				 */
+				return err;
+			}
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static int spi_stm32_init(const struct device *dev)
 {
 	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
@@ -1447,64 +1505,6 @@ static int spi_stm32_init(const struct device *dev)
 
 	return pm_device_runtime_enable(dev);
 }
-
-#ifdef CONFIG_PM_DEVICE
-static int spi_stm32_pm_action(const struct device *dev,
-			       enum pm_device_action action)
-{
-	const struct spi_stm32_config *config = dev->config;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	int err;
-
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		if (!spi_stm32_is_subghzspi(dev)) {
-			/* Set pins to active state */
-			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-			if (err < 0) {
-				return err;
-			}
-		}
-
-		/* enable clock */
-		err = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
-		if (err != 0) {
-			LOG_ERR("Could not enable SPI clock");
-			return err;
-		}
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		/* Stop device clock. */
-		err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
-		if (err != 0) {
-			LOG_ERR("Could not disable SPI clock");
-			return err;
-		}
-
-		if (!spi_stm32_is_subghzspi(dev)) {
-			/* Move pins to sleep state */
-			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-			if ((err < 0) && (err != -ENOENT)) {
-				/*
-				 * If returning -ENOENT, no pins where defined for sleep mode :
-				 * Do not output on console (might sleep already) when going to
-				 * sleep,
-				 * "SPI pinctrl sleep state not available"
-				 * and don't block PM suspend.
-				 * Else return the error.
-				 */
-				return err;
-			}
-		}
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #define STM32_SPI_IRQ_HANDLER_DECL(id)					\
