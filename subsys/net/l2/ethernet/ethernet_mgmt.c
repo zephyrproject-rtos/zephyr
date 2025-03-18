@@ -57,22 +57,19 @@ static int ethernet_set_config(uint32_t mgmt_request,
 		type = ETHERNET_CONFIG_TYPE_AUTO_NEG;
 	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_LINK) {
 		if (params->l.link_10bt) {
-			if (!is_hw_caps_supported(dev,
-						  ETHERNET_LINK_10BASE_T)) {
+			if (!is_hw_caps_supported(dev, ETHERNET_LINK_10BASE)) {
 				return -ENOTSUP;
 			}
 
 			config.l.link_10bt = true;
 		} else if (params->l.link_100bt) {
-			if (!is_hw_caps_supported(dev,
-						  ETHERNET_LINK_100BASE_T)) {
+			if (!is_hw_caps_supported(dev, ETHERNET_LINK_100BASE)) {
 				return -ENOTSUP;
 			}
 
 			config.l.link_100bt = true;
 		} else if (params->l.link_1000bt) {
-			if (!is_hw_caps_supported(dev,
-						  ETHERNET_LINK_1000BASE_T)) {
+			if (!is_hw_caps_supported(dev, ETHERNET_LINK_1000BASE)) {
 				return -ENOTSUP;
 			}
 

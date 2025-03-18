@@ -1264,7 +1264,7 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif

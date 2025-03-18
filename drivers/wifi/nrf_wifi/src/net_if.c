@@ -331,8 +331,8 @@ static bool is_eapol(struct net_pkt *pkt)
 
 enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev)
 {
-	enum ethernet_hw_caps caps = (ETHERNET_LINK_10BASE_T |
-			ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T);
+	enum ethernet_hw_caps caps = (ETHERNET_LINK_10BASE |
+			ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE);
 
 #ifdef CONFIG_NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD |
