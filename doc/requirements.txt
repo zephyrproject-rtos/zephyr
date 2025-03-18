@@ -128,6 +128,9 @@ colorama==0.4.6 \
     --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
     # via sphinx-autobuild
+coverxygen==1.8.1 \
+    --hash=sha256:d1c2f6569e8df8823ae313b1f7876e88ff20b4372c6d02f04c51fb5dc424576f
+    # via -r requirements.in
 docopt==0.6.2 \
     --hash=sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491
     # via pykwalify
