@@ -104,16 +104,29 @@ uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint32_t baud_rate)
 #endif
 
 #ifdef CONFIG_PM
+static void uart_stm32_pm_policy_state_lock_get_unconditional(void)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+}
+
 static void uart_stm32_pm_policy_state_lock_get(const struct device *dev)
 {
 	struct uart_stm32_data *data = dev->data;
 
 	if (!data->pm_policy_state_on) {
 		data->pm_policy_state_on = true;
-		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
-			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		}
+		uart_stm32_pm_policy_state_lock_get_unconditional();
+	}
+}
+
+static void uart_stm32_pm_policy_state_lock_put_unconditional(void)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
 
@@ -123,10 +136,7 @@ static void uart_stm32_pm_policy_state_lock_put(const struct device *dev)
 
 	if (data->pm_policy_state_on) {
 		data->pm_policy_state_on = false;
-		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		}
+		uart_stm32_pm_policy_state_lock_put_unconditional();
 	}
 }
 #endif /* CONFIG_PM */
@@ -1300,6 +1310,26 @@ static void uart_stm32_isr(const struct device *dev)
 	}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE) \
+	&& defined(USART_CR3_WUFIE)
+	if (LL_USART_IsEnabledIT_WKUP(usart) &&
+		LL_USART_IsActiveFlag_WKUP(usart)) {
+
+		LL_USART_ClearFlag_WKUP(usart);
+
+		if (!data->rx_woken) {
+			/* Prevent SoC from entering STOP mode until RX goes IDLE */
+			uart_stm32_pm_policy_state_lock_get_unconditional();
+			data->rx_woken = true;
+		}
+
+#ifdef USART_ISR_REACK
+		while (LL_USART_IsActiveFlag_REACK(usart) == 0) {
+		}
+#endif
+	}
+#endif
+
 #ifdef CONFIG_UART_ASYNC_API
 	if (LL_USART_IsEnabledIT_IDLE(usart) &&
 			LL_USART_IsActiveFlag_IDLE(usart)) {
@@ -1307,6 +1337,14 @@ static void uart_stm32_isr(const struct device *dev)
 		LL_USART_ClearFlag_IDLE(usart);
 
 		LOG_DBG("idle interrupt occurred");
+
+#ifdef CONFIG_PM
+		if (data->rx_woken) {
+			/* Allow SoC to enter STOP mode now that RX is IDLE */
+			uart_stm32_pm_policy_state_lock_put_unconditional();
+			data->rx_woken = false;
+		}
+#endif
 
 		if (data->dma_rx.timeout == 0) {
 			uart_stm32_dma_rx_flush(dev, STM32_ASYNC_STATUS_TIMEOUT);
@@ -1340,18 +1378,6 @@ static void uart_stm32_isr(const struct device *dev)
 	uart_stm32_err_check(dev);
 #endif /* CONFIG_UART_ASYNC_API */
 
-#if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE) \
-	&& defined(USART_CR3_WUFIE)
-	if (LL_USART_IsEnabledIT_WKUP(usart) &&
-		LL_USART_IsActiveFlag_WKUP(usart)) {
-
-		LL_USART_ClearFlag_WKUP(usart);
-#ifdef USART_ISR_REACK
-		while (LL_USART_IsActiveFlag_REACK(usart) == 0) {
-		}
-#endif
-	}
-#endif
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM */
 
