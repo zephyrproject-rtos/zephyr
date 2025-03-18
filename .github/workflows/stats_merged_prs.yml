@@ -6,6 +6,10 @@ on:
       - main
       - v*-branch
     types: [closed]
+
+permissions:
+  contents: read
+
 jobs:
   record_merged:
     if: github.event.pull_request.merged == true && github.repository == 'zephyrproject-rtos/zephyr'

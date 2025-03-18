@@ -28,6 +28,9 @@ on:
       - "drivers/serial/*nrfx*"
       - "tests/drivers/uart/**"
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
@@ -45,6 +48,9 @@ jobs:
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       EDTT_PATH: ../tools/edtt
+    permissions:
+      checks: write # to create the check run entry with test results
+
     steps:
       - name: Apply container owner mismatch workaround
         run: |

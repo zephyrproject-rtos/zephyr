@@ -10,6 +10,9 @@ on:
     branches:
       - v*-branch
 
+permissions:
+  contents: read
+
 jobs:
   backport:
     name: Backport Issue Check
@@ -18,6 +21,8 @@ jobs:
       cancel-in-progress: true
     runs-on: ubuntu-22.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
+    permissions:
+      issues: read # to check if associated issue exists for backport
 
     steps:
       - name: Check out source code

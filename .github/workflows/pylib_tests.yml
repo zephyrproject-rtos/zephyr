@@ -19,6 +19,9 @@ on:
     - 'scripts/pylib/build_helpers/**'
     - '.github/workflows/pylib_tests.yml'
 
+permissions:
+  contents: read
+
 jobs:
   pylib-tests:
     name: Misc. Pylib Unit Tests

@@ -11,6 +11,9 @@ on:
     - v*
   pull_request:
 
+permissions:
+  contents: read
+
 env:
   # NOTE: west docstrings will be extracted from the version listed here
   WEST_VERSION: 1.2.0

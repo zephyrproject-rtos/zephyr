@@ -6,9 +6,14 @@ on:
       - 'v*'
       - '!v*rc*'
 
+permissions:
+  contents: read
+
 jobs:
   release:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write # to create GitHub release entry
     steps:
       - uses: actions/checkout@v4
         with:

@@ -20,6 +20,9 @@ on:
     - 'scripts/dts/**'
     - '.github/workflows/devicetree_checks.yml'
 
+permissions:
+  contents: read
+
 jobs:
   devicetree-checks:
     name: Devicetree script tests

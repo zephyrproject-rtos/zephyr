@@ -6,6 +6,9 @@ on:
       - 'lib/libc/minimal/include/errno.h'
       - 'scripts/ci/errno.py'
 
+permissions:
+  contents: read
+
 jobs:
   check-errno:
     runs-on: ubuntu-22.04
