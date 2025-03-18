@@ -72,11 +72,39 @@ static int settings_zms_unlink_ll_node(struct settings_zms *cf, uint32_t name_ha
 	struct settings_hash_linked_list settings_update_element;
 
 	/* let's update the linked list */
-	rc = zms_read(&cf->cf_zms, name_hash | 1, &settings_element,
+	rc = zms_read(&cf->cf_zms, ZMS_LL_NODE_FROM_NAME_ID(name_hash), &settings_element,
 		      sizeof(struct settings_hash_linked_list));
 	if (rc < 0) {
 		return rc;
 	}
+
+	/* update the previous element */
+	if (settings_element.previous_hash) {
+		rc = zms_read(&cf->cf_zms, settings_element.previous_hash, &settings_update_element,
+			      sizeof(struct settings_hash_linked_list));
+		if (rc < 0) {
+			return rc;
+		}
+		if (!settings_element.next_hash) {
+			/* we are deleting the last element of the linked list,
+			 * let's update the second_to_last_hash_id
+			 */
+			cf->second_to_last_hash_id = settings_update_element.previous_hash;
+		}
+		settings_update_element.next_hash = settings_element.next_hash;
+		rc = zms_write(&cf->cf_zms, settings_element.previous_hash,
+			       &settings_update_element, sizeof(struct settings_hash_linked_list));
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	/* Now delete the current linked list element */
+	rc = zms_delete(&cf->cf_zms, ZMS_LL_NODE_FROM_NAME_ID(name_hash));
+	if (rc < 0) {
+		return rc;
+	}
+
 	/* update the next element */
 	if (settings_element.next_hash) {
 		rc = zms_read(&cf->cf_zms, settings_element.next_hash, &settings_update_element,
@@ -100,28 +128,8 @@ static int settings_zms_unlink_ll_node(struct settings_zms *cf, uint32_t name_ha
 		 */
 		cf->last_hash_id = settings_element.previous_hash;
 	}
-	/* update the previous element */
-	if (settings_element.previous_hash) {
-		rc = zms_read(&cf->cf_zms, settings_element.previous_hash, &settings_update_element,
-			      sizeof(struct settings_hash_linked_list));
-		if (rc < 0) {
-			return rc;
-		}
-		if (!settings_element.next_hash) {
-			/* we are deleting the last element of the linked list,
-			 * let's update the second_to_last_hash_id
-			 */
-			cf->second_to_last_hash_id = settings_update_element.previous_hash;
-		}
-		settings_update_element.next_hash = settings_element.next_hash;
-		rc = zms_write(&cf->cf_zms, settings_element.previous_hash,
-			       &settings_update_element, sizeof(struct settings_hash_linked_list));
-		if (rc < 0) {
-			return rc;
-		}
-	}
 
-	return rc;
+	return 0;
 }
 #endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
 
@@ -142,12 +150,6 @@ static int settings_zms_delete(struct settings_zms *cf, uint32_t name_hash)
 	cf->ll_has_changed = true;
 #endif
 	rc = settings_zms_unlink_ll_node(cf, name_hash);
-	if (rc < 0) {
-		return rc;
-	}
-
-	/* Now delete the current linked list element */
-	rc = zms_delete(&cf->cf_zms, name_hash | 1);
 	if (rc < 0) {
 		return rc;
 	}
@@ -468,13 +470,10 @@ no_hash_collision:
 
 	/* write the name if required */
 	if (write_name) {
-		rc = zms_write(&cf->cf_zms, name_hash, name, strlen(name));
-		if (rc < 0) {
-			return rc;
-		}
+		/* First let's update the linked list */
 #ifdef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
 		/* verify that the ll_node doesn't exist otherwise do not update it */
-		rc = zms_read(&cf->cf_zms, name_hash | 1, &settings_element,
+		rc = zms_read(&cf->cf_zms, ZMS_LL_NODE_FROM_NAME_ID(name_hash), &settings_element,
 			      sizeof(struct settings_hash_linked_list));
 		if (rc >= 0) {
 			goto no_ll_update;
@@ -496,14 +495,14 @@ no_hash_collision:
 			}
 		}
 		settings_element.previous_hash = cf->last_hash_id;
-		rc = zms_write(&cf->cf_zms, name_hash | 1, &settings_element,
+		rc = zms_write(&cf->cf_zms, ZMS_LL_NODE_FROM_NAME_ID(name_hash), &settings_element,
 			       sizeof(struct settings_hash_linked_list));
 		if (rc < 0) {
 			return rc;
 		}
 
 		/* Now update the previous linked list element */
-		settings_element.next_hash = name_hash | 1;
+		settings_element.next_hash = ZMS_LL_NODE_FROM_NAME_ID(name_hash);
 		settings_element.previous_hash = cf->second_to_last_hash_id;
 		rc = zms_write(&cf->cf_zms, cf->last_hash_id, &settings_element,
 			       sizeof(struct settings_hash_linked_list));
@@ -511,13 +510,21 @@ no_hash_collision:
 			return rc;
 		}
 		cf->second_to_last_hash_id = cf->last_hash_id;
-		cf->last_hash_id = name_hash | 1;
+		cf->last_hash_id = ZMS_LL_NODE_FROM_NAME_ID(name_hash);
 #ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
 		if (cf->ll_cache_next < CONFIG_SETTINGS_ZMS_LL_CACHE_SIZE) {
 			cf->ll_cache[cf->ll_cache_next] = settings_element;
 			cf->ll_cache_next = cf->ll_cache_next + 1;
 		}
 #endif
+#ifdef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
+no_ll_update:
+#endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
+		/* Now let's write the name */
+		rc = zms_write(&cf->cf_zms, name_hash, name, strlen(name));
+		if (rc < 0) {
+			return rc;
+		}
 	}
 #ifdef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
 no_ll_update:
@@ -529,6 +536,7 @@ static int settings_zms_get_last_hash_ids(struct settings_zms *cf)
 {
 	struct settings_hash_linked_list settings_element;
 	uint32_t ll_last_hash_id = ZMS_LL_HEAD_HASH_ID;
+	uint32_t previous_ll_hash_id = 0;
 	int rc = 0;
 
 #ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
@@ -553,6 +561,27 @@ static int settings_zms_get_last_hash_ids(struct settings_zms *cf)
 		} else if (rc < 0) {
 			return rc;
 		}
+
+		if (settings_element.previous_hash != previous_ll_hash_id) {
+			/* This is a special case that can happen when a power down occurred
+			 * when deleting a linked list node.
+			 * If the power down occurred after updating the previous linked list node,
+			 * then we would end up with a state where the previous_hash of the linked
+			 * list is broken. Let's recover from this
+			 */
+			rc = zms_delete(&cf->cf_zms, settings_element.previous_hash);
+			if (rc < 0) {
+				return rc;
+			}
+			/* Now recover the linked list */
+			settings_element.previous_hash = previous_ll_hash_id;
+			zms_write(&cf->cf_zms, ll_last_hash_id, &settings_element,
+				  sizeof(struct settings_hash_linked_list));
+			if (rc < 0) {
+				return rc;
+			}
+		}
+		previous_ll_hash_id = ll_last_hash_id;
 
 #ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
 		if ((cf->ll_cache_next < CONFIG_SETTINGS_ZMS_LL_CACHE_SIZE) &&
