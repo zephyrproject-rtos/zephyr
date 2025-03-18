@@ -63,6 +63,7 @@ extern "C" {
 
 /* some useful macros */
 #define ZMS_NAME_ID_FROM_LL_NODE(x) (x & ~BIT(0))
+#define ZMS_LL_NODE_FROM_NAME_ID(x) (x | BIT(0))
 #define ZMS_UPDATE_COLLISION_NUM(x, y)                                                             \
 	((x & ~ZMS_COLLISIONS_MASK) | ((y << 1) & ZMS_COLLISIONS_MASK))
 #define ZMS_COLLISION_NUM(x)     ((x & ZMS_COLLISIONS_MASK) >> 1)
