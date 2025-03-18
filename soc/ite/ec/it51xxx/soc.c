@@ -105,6 +105,9 @@ void soc_prep_hook(void)
 	/* Scratch ROM0 is 4kb size */
 	gctrl_regs->GCTRL_SCR0SZR = IT51XXX_GCTRL_SCRSIZE_4K;
 
+	/* Scratch ROM0 is 4kb size */
+	gctrl_regs->GCTRL_SCR0SZR = IT51XXX_GCTRL_SCRSIZE_4K;
+
 	/* bit4: wake up CPU if it is in low power mode and an interrupt is pending. */
 	gctrl_regs->GCTRL_SPCTRL9 |= IT51XXX_GCTRL_ALTIE;
 
