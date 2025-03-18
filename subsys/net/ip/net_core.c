@@ -215,7 +215,8 @@ static inline int check_ip(struct net_pkt *pkt)
 	family = net_pkt_family(pkt);
 	ret = 0;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6 &&
+	    net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IPV6) {
 		/* Drop IPv6 packet if hop limit is 0 */
 		if (NET_IPV6_HDR(pkt)->hop_limit == 0) {
 			NET_DBG("DROP: IPv6 hop limit");
@@ -288,7 +289,8 @@ static inline int check_ip(struct net_pkt *pkt)
 			goto drop;
 		}
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET &&
+		   net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP) {
 		/* Drop IPv4 packet if ttl is 0 */
 		if (NET_IPV4_HDR(pkt)->ttl == 0) {
 			NET_DBG("DROP: IPv4 ttl");
