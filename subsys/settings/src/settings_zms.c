@@ -526,9 +526,6 @@ no_ll_update:
 			return rc;
 		}
 	}
-#ifdef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
-no_ll_update:
-#endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
 	return 0;
 }
 
@@ -547,16 +544,31 @@ static int settings_zms_get_last_hash_ids(struct settings_zms *cf)
 		rc = zms_read(&cf->cf_zms, ll_last_hash_id, &settings_element,
 			      sizeof(settings_element));
 		if (rc == -ENOENT) {
-			/* header doesn't exist or linked list broken, reinitialize the header */
-			const struct settings_hash_linked_list settings_element = {
-				.previous_hash = 0, .next_hash = 0};
-			rc = zms_write(&cf->cf_zms, ZMS_LL_HEAD_HASH_ID, &settings_element,
-				       sizeof(struct settings_hash_linked_list));
-			if (rc < 0) {
-				return rc;
+			/* header doesn't exist or linked list broken, reinitialize the header
+			 * if it doesn't exist and recover it if it is broken
+			 */
+			if (ll_last_hash_id == ZMS_LL_HEAD_HASH_ID) {
+				/* header doesn't exist */
+				const struct settings_hash_linked_list settings_element = {
+					.previous_hash = 0, .next_hash = 0};
+				rc = zms_write(&cf->cf_zms, ZMS_LL_HEAD_HASH_ID, &settings_element,
+					       sizeof(struct settings_hash_linked_list));
+				if (rc < 0) {
+					return rc;
+				}
+				cf->last_hash_id = ZMS_LL_HEAD_HASH_ID;
+				cf->second_to_last_hash_id = 0;
+			} else {
+				/* let's recover it by keeping all nodes until the last one */
+				const struct settings_hash_linked_list settings_element = {
+					.previous_hash = cf->second_to_last_hash_id,
+					.next_hash = 0};
+				rc = zms_write(&cf->cf_zms, cf->last_hash_id, &settings_element,
+					       sizeof(struct settings_hash_linked_list));
+				if (rc < 0) {
+					return rc;
+				}
 			}
-			cf->last_hash_id = ZMS_LL_HEAD_HASH_ID;
-			cf->second_to_last_hash_id = 0;
 			return 0;
 		} else if (rc < 0) {
 			return rc;
