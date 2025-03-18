@@ -16,6 +16,8 @@
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_spi_nor)
 #elif defined(CONFIG_FLASH_MSPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_mspi_nor)
+#elif defined(CONFIG_FLASH_RENESAS_RA_QSPI)
+#define TEST_AREA_DEV_NODE DT_INST(0, renesas_ra_qspi_nor)
 #else
 #define TEST_AREA	storage_partition
 #endif
@@ -36,8 +38,10 @@
 
 #if DT_NODE_HAS_PROP(TEST_AREA_DEV_NODE, size_in_bytes)
 #define TEST_AREA_MAX DT_PROP(TEST_AREA_DEV_NODE, size_in_bytes)
-#else
+#elif DT_NODE_HAS_PROP(TEST_AREA_DEV_NODE, size)
 #define TEST_AREA_MAX (DT_PROP(TEST_AREA_DEV_NODE, size) / 8)
+#else
+#define TEST_AREA_MAX DT_REG_SIZE(TEST_AREA_DEV_NODE)
 #endif
 
 #else

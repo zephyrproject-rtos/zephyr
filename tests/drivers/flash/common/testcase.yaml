@@ -112,3 +112,11 @@ tests:
     extra_configs:
       - CONFIG_DMA=y
       - CONFIG_SOC_FLASH_SILABS_S2_DMA_READ=y
+  drivers.flash.common.ra6_qspi_nor:
+    platform_allow:
+      - ek_ra6m5
+      - ek_ra6m4
+      - ek_ra6m3
+      - ek_ra6e2
+    extra_args:
+      - DTC_OVERLAY_FILE=socs/ra6_qspi_nor.overlay
