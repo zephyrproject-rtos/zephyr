@@ -567,7 +567,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 	int i;
 
 	if (sizeof(*evt) + sizeof(evt->h[0]) * evt->num_handles > buf->len) {
-		LOG_ERR("evt num_handles (=%u) too large (%u > %u)",
+		LOG_ERR("evt num_handles (=%u) too large (%zu > %u)",
 			evt->num_handles,
 			sizeof(*evt) + sizeof(evt->h[0]) * evt->num_handles,
 			buf->len);

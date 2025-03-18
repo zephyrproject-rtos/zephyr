@@ -1008,7 +1008,7 @@ static uint16_t get_att_search_list(struct net_buf *buf, uint32_t *filter,
 
 	while (size) {
 		if (*num_filters >= max_filters) {
-			LOG_WRN("Exceeded maximum array length %u of %p", max_filters, filter);
+			LOG_WRN("Exceeded maximum array length %zu of %p", max_filters, filter);
 			return 0;
 		}
 
