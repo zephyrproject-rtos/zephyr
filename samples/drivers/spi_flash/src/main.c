@@ -21,14 +21,20 @@
 #elif defined(CONFIG_BOARD_NPCX9M6F_EVB) || \
 	defined(CONFIG_BOARD_NPCX7M6FB_EVB)
 #define SPI_FLASH_TEST_REGION_OFFSET 0x7F000
+#elif defined(CONFIG_BOARD_EK_RA8M1) || defined(CONFIG_BOARD_EK_RA8D1)
+#define SPI_FLASH_TEST_REGION_OFFSET 0x40000
 #else
 #define SPI_FLASH_TEST_REGION_OFFSET 0xff000
 #endif
+#if defined(CONFIG_BOARD_EK_RA8M1) || defined(CONFIG_BOARD_EK_RA8D1)
+#define SPI_FLASH_SECTOR_SIZE 262144
+#else
 #define SPI_FLASH_SECTOR_SIZE        4096
+#endif
 
-#if defined(CONFIG_FLASH_STM32_OSPI) || \
-	defined(CONFIG_FLASH_STM32_QSPI) || \
-	defined(CONFIG_FLASH_STM32_XSPI)
+#if defined(CONFIG_FLASH_STM32_OSPI) || defined(CONFIG_FLASH_STM32_QSPI) ||                        \
+	defined(CONFIG_FLASH_STM32_XSPI) || defined(CONFIG_FLASH_RENESAS_RA_OSPI_B)
+
 #define SPI_FLASH_MULTI_SECTOR_TEST
 #endif
 
@@ -44,15 +50,25 @@
 #define SPI_FLASH_COMPAT st_stm32_xspi_nor
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_qspi_nor)
 #define SPI_FLASH_COMPAT nordic_qspi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_ospi_b_nor)
+#define SPI_FLASH_COMPAT renesas_ra_ospi_b_nor
 #else
 #define SPI_FLASH_COMPAT invalid
 #endif
 
+#if defined(CONFIG_FLASH_RENESAS_RA_OSPI_B)
+const uint8_t erased[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+#else
 const uint8_t erased[] = { 0xff, 0xff, 0xff, 0xff };
+#endif
 
 void single_sector_test(const struct device *flash_dev)
 {
+#if defined(CONFIG_FLASH_RENESAS_RA_OSPI_B)
+	const uint8_t expected[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+#else
 	const uint8_t expected[] = { 0x55, 0xaa, 0x66, 0x99 };
+#endif
 	const size_t len = sizeof(expected);
 	uint8_t buf[sizeof(expected)];
 	int rc;
@@ -124,7 +140,11 @@ void single_sector_test(const struct device *flash_dev)
 #if defined SPI_FLASH_MULTI_SECTOR_TEST
 void multi_sector_test(const struct device *flash_dev)
 {
+#if defined(CONFIG_FLASH_RENESAS_RA_OSPI_B)
+	const uint8_t expected[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+#else
 	const uint8_t expected[] = { 0x55, 0xaa, 0x66, 0x99 };
+#endif
 	const size_t len = sizeof(expected);
 	uint8_t buf[sizeof(expected)];
 	int rc;
