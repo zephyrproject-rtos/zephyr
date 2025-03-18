@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Nuvoton NuMaker M55M1 board configuration
+#
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+
+config BOARD_NUMAKER_M55M1
+	select SOC_FLASH_NUMAKER
