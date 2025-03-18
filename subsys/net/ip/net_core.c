@@ -398,6 +398,7 @@ int net_send_data(struct net_pkt *pkt)
 		 * we just silently drop the packet by returning 0.
 		 */
 		if (status == -ENOMSG) {
+			net_pkt_unref(pkt);
 			return 0;
 		}
 
