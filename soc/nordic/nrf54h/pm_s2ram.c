@@ -184,18 +184,16 @@ void pm_s2ram_mark_set(void)
 
 bool pm_s2ram_mark_check_and_clear(void)
 {
-	bool unretained_wake;
 	bool restore_valid;
 	uint32_t reset_reason = nrf_resetinfo_resetreas_local_get(NRF_RESETINFO);
 
 	if (reset_reason != NRF_RESETINFO_RESETREAS_LOCAL_UNRETAINED_MASK) {
 		return false;
 	}
-	unretained_wake = reset_reason & NRF_RESETINFO_RESETREAS_LOCAL_UNRETAINED_MASK;
 	nrf_resetinfo_resetreas_local_set(NRF_RESETINFO, 0);
 
 	restore_valid = nrf_resetinfo_restore_valid_check(NRF_RESETINFO);
 	nrf_resetinfo_restore_valid_set(NRF_RESETINFO, false);
 
-	return (unretained_wake & restore_valid) ? true : false;
+	return restore_valid ? true : false;
 }
