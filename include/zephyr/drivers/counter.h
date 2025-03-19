@@ -427,7 +427,7 @@ static inline int z_impl_counter_get_value_64(const struct device *dev,
 				(struct counter_driver_api *)dev->api;
 
 	if (!api->get_value_64) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->get_value_64(dev, ticks);
@@ -650,7 +650,7 @@ static inline uint32_t z_impl_counter_get_top_value(const struct device *dev)
  * @param flags		See @ref COUNTER_GUARD_PERIOD_FLAGS.
  *
  * @retval 0 if successful.
- * @retval -ENOTSUP if function or flags are not supported.
+ * @retval -ENOSYS if function or flags are not supported.
  * @retval -EINVAL if ticks value is invalid.
  */
 __syscall int counter_set_guard_period(const struct device *dev,
@@ -664,7 +664,7 @@ static inline int z_impl_counter_set_guard_period(const struct device *dev,
 				(struct counter_driver_api *)dev->api;
 
 	if (!api->set_guard_period) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->set_guard_period(dev, ticks, flags);
