@@ -62,27 +62,29 @@ static int siwx91x_transfer_direction(uint32_t dir)
 	return -EINVAL;
 }
 
-static int siwx91x_data_width(uint32_t data_width)
+static bool siwx91x_is_data_width_valid(uint32_t data_width)
 {
 	switch (data_width) {
 	case 1:
-		return SRC_SIZE_8;
 	case 2:
-		return SRC_SIZE_16;
 	case 4:
-		return SRC_SIZE_32;
+		return true;
 	default:
-		return -EINVAL;
+		return false;
 	}
 }
 
-static bool siwx91x_is_burst_length_valid(uint32_t blen)
+static int siwx91x_burst_length(uint32_t blen)
 {
-	switch (blen / 8) {
+	switch (blen) {
 	case 1:
-		return true; /* 8-bit burst */
+		return SRC_INC_8;
+	case 2:
+		return SRC_INC_16;
+	case 4:
+		return SRC_INC_32;
 	default:
-		return false;
+		return -EINVAL;
 	}
 }
 
@@ -101,7 +103,7 @@ static int siwx91x_addr_adjustment(uint32_t adjustment)
 static int siwx91x_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_handle,
 				  uint32_t channel, const struct dma_config *config)
 {
-	uint32_t dma_transfer_num = config->head_block->block_size / config->source_data_size;
+	uint32_t dma_transfer_num = config->head_block->block_size / config->source_burst_length;
 	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
 	UDMA_RESOURCES udma_resources = {
@@ -140,30 +142,30 @@ static int siwx91x_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T ud
 		channel_control.totalNumOfDMATrans = dma_transfer_num;
 	}
 
-	if (siwx91x_data_width(config->source_data_size) < 0 ||
-	    siwx91x_data_width(config->dest_data_size) < 0) {
+	if (!siwx91x_is_data_width_valid(config->source_data_size) ||
+	    !siwx91x_is_data_width_valid(config->dest_data_size)) {
 		return -EINVAL;
 	}
-	if (siwx91x_is_burst_length_valid(config->source_burst_length) == false ||
-	    siwx91x_is_burst_length_valid(config->dest_burst_length) == false) {
+	if (siwx91x_burst_length(config->source_burst_length) < 0 ||
+	    siwx91x_burst_length(config->dest_burst_length) < 0) {
 		return -EINVAL;
 	}
 
-	channel_control.srcSize = siwx91x_data_width(config->source_data_size);
-	channel_control.dstSize = siwx91x_data_width(config->dest_data_size);
+	channel_control.srcSize = siwx91x_burst_length(config->source_burst_length);
+	channel_control.dstSize = siwx91x_burst_length(config->dest_burst_length);
 	if (siwx91x_addr_adjustment(config->head_block->source_addr_adj) < 0 ||
 	    siwx91x_addr_adjustment(config->head_block->dest_addr_adj) < 0) {
 		return -EINVAL;
 	}
 
 	if (siwx91x_addr_adjustment(config->head_block->source_addr_adj) == 0) {
-		channel_control.srcInc = channel_control.srcSize;
+		channel_control.srcInc = siwx91x_burst_length(config->source_burst_length);
 	} else {
 		channel_control.srcInc = UDMA_SRC_INC_NONE;
 	}
 
 	if (siwx91x_addr_adjustment(config->head_block->dest_addr_adj) == 0) {
-		channel_control.dstInc = channel_control.dstSize;
+		channel_control.dstInc = siwx91x_burst_length(config->dest_burst_length);
 	} else {
 		channel_control.dstInc = UDMA_DST_INC_NONE;
 	}
