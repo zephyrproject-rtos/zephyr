@@ -72,6 +72,12 @@ DAI
 * Renamed the devicetree property ``quad_ch`` to ``quad-ch``.
 * Renamed the devicetree property ``int_odd`` to ``int-odd``.
 
+DMA
+===
+
+* Renamed the devicetree property ``nxp,a_on`` to ``nxp,a-on``.
+* Renamed the devicetree property ``dma_channels`` to ``dma-channels``.
+
 Counter
 =======
 
