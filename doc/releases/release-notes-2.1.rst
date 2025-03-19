@@ -300,7 +300,7 @@ Drivers and Sensors
 
 * Video
 
-  * Added MCUX CSI and Aptina MT9M114 drivers
+  * Added MCUX CSI and Onsemi MT9M114 drivers
   * Added software video pattern generator driver
 
 * Watchdog

@@ -64,7 +64,6 @@ ap	Angst+Pfister
 apa	Apa Electronic Co., Ltd
 apm	Applied Micro Circuits Corporation (APM)
 apple	Apple Inc.
-aptina	Aptina Imaging
 arasan	Arasan Chip Systems
 arc	Synopsys, Inc. (formerly ARC International PLC)
 archermind	ArcherMind Technology (Nanjing) Co., Ltd.

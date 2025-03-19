@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT aptina_mt9m114
+#define DT_DRV_COMPAT onnn_mt9m114
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
