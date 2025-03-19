@@ -5,8 +5,7 @@ config SOC_SERIES
 	depends on SOC_RISCV64_SHAKTI
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
-	default 1000000000
+	default 100000000
 
 config RISCV_SOC_INTERRUPT_INIT
 	bool
