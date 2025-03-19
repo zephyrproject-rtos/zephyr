@@ -2139,7 +2139,7 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const uint8_t *tk)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -2157,7 +2157,7 @@ int bt_le_oob_set_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data *oobd_remote)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -2173,8 +2173,8 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_remote)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_ERR("Invalid connection: %p", conn);
-		LOG_ERR("Invalid connection type: %u for %p", conn->handle, conn);
+		LOG_ERR("Invalid connection: %p", (void *)conn);
+		LOG_ERR("Invalid connection type: %u for %p", conn->handle, (void *)conn);
 		return -EINVAL;
 	}
 

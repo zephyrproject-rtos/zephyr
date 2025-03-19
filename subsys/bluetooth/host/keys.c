@@ -147,7 +147,7 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 		keys->aging_counter = ++aging_counter_val;
 		last_keys_updated = keys;
 #endif  /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
-		LOG_DBG("created %p for %s", keys, bt_addr_le_str(addr));
+		LOG_DBG("created %p for %s", (void *)keys, bt_addr_le_str(addr));
 		return keys;
 	}
 

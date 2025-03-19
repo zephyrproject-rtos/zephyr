@@ -903,7 +903,7 @@ static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 
-	LOG_DBG("chan %p cid 0x%04x", chan,
+	LOG_DBG("chan %p cid 0x%04x", (void *)chan,
 		CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
 
 	atomic_set_bit(smp->flags, SMP_FLAG_BR_CONNECTED);
@@ -921,7 +921,7 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 
-	LOG_DBG("chan %p cid 0x%04x", chan,
+	LOG_DBG("chan %p cid 0x%04x", (void *)chan,
 		CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
 
 	/* Channel disconnected callback is always called from a work handler
@@ -1595,7 +1595,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		return -ENOTSUP;
 	}
 
-	LOG_DBG("conn %p handle %u", conn, conn->handle);
+	LOG_DBG("conn %p handle %u", (void *)conn, conn->handle);
 
 	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
 		struct bt_smp_br *smp = &bt_smp_br_pool[i];
@@ -1614,7 +1614,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		return 0;
 	}
 
-	LOG_ERR("No available SMP context for conn %p", conn);
+	LOG_ERR("No available SMP context for conn %p", (void *)conn);
 
 	return -ENOMEM;
 }
@@ -4733,7 +4733,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 
-	LOG_DBG("chan %p cid 0x%04x", chan,
+	LOG_DBG("chan %p cid 0x%04x", (void *)chan,
 		CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
 	k_work_init_delayable(&smp->work, smp_timeout);
@@ -4748,7 +4748,7 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 	struct bt_keys *keys = chan->conn->le.keys;
 
-	LOG_DBG("chan %p cid 0x%04x", chan,
+	LOG_DBG("chan %p cid 0x%04x", (void *)chan,
 		CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
 	/* Channel disconnected callback is always called from a work handler
@@ -4783,8 +4783,9 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 	struct bt_conn *conn = chan->conn;
 
-	LOG_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x %s", chan, conn,
-		conn->handle, conn->encrypt, hci_status, bt_hci_err_to_str(hci_status));
+	LOG_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x %s",
+		(void *)chan, (void *)conn, conn->handle, conn->encrypt, hci_status,
+		bt_hci_err_to_str(hci_status));
 
 	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
 		/* We where not waiting for encryption procedure.
@@ -5500,7 +5501,7 @@ int bt_conn_set_bondable(struct bt_conn *conn, bool enable)
 	struct bt_smp *smp;
 
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -6143,7 +6144,7 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.recv = bt_smp_recv,
 	};
 
-	LOG_DBG("conn %p handle %u", conn, conn->handle);
+	LOG_DBG("conn %p handle %u", (void *)conn, conn->handle);
 
 	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
 		struct bt_smp *smp = &bt_smp_pool[i];
@@ -6159,7 +6160,7 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		return 0;
 	}
 
-	LOG_ERR("No available SMP context for conn %p", conn);
+	LOG_ERR("No available SMP context for conn %p", (void *)conn);
 
 	return -ENOMEM;
 }

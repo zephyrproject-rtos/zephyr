@@ -323,7 +323,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 		return NULL;
 	}
 
-	LOG_DBG("buf %p", buf);
+	LOG_DBG("buf %p", (void *)buf);
 
 	net_buf_reserve(buf, BT_BUF_RESERVE);
 
@@ -393,7 +393,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		}
 	}
 
-	LOG_DBG("buf %p opcode 0x%04x len %u", buf, opcode, buf->len);
+	LOG_DBG("buf %p opcode 0x%04x len %u", (void *)buf, opcode, buf->len);
 
 	/* This local sem is just for suspending the current thread until the
 	 * command is processed by the LL. It is given (and we are awaken) by
@@ -416,7 +416,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 		do {
 			cmd = k_fifo_peek_head(&bt_dev.cmd_tx_queue);
-			LOG_DBG("process cmd %p want %p", cmd, buf);
+			LOG_DBG("process cmd %p want %p", (void *)cmd, (void *)buf);
 
 			/* Wait for a response from the Bluetooth Controller.
 			 * The Controller may fail to respond if:
@@ -460,7 +460,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		}
 	}
 
-	LOG_DBG("rsp %p opcode 0x%04x len %u", buf, opcode, buf->len);
+	LOG_DBG("rsp %p opcode 0x%04x len %u", (void *)buf, opcode, buf->len);
 
 	if (rsp) {
 		*rsp = buf;
@@ -630,7 +630,7 @@ static void hci_acl(struct net_buf *buf)
 	struct bt_conn *conn;
 	uint8_t flags;
 
-	LOG_DBG("buf %p", buf);
+	LOG_DBG("buf %p", (void *)buf);
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("Invalid HCI ACL packet size (%u)", buf->len);
 		net_buf_unref(buf);
@@ -2424,7 +2424,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	struct net_buf *buf = NULL;
 
 	LOG_DBG("opcode 0x%04x status 0x%02x %s buf %p", opcode,
-		status, bt_hci_err_to_str(status), evt_buf);
+		status, bt_hci_err_to_str(status), (void *)evt_buf);
 
 	/* Unsolicited cmd complete. This does not complete a command.
 	 * The controller can send these for effect of the `ncmd` field.
@@ -3057,7 +3057,7 @@ static void hci_core_send_cmd(void)
 
 	bt_dev.sent_cmd = net_buf_ref(buf);
 
-	LOG_DBG("Sending command 0x%04x (buf %p) to driver", cmd(buf)->opcode, buf);
+	LOG_DBG("Sending command 0x%04x (buf %p) to driver", cmd(buf)->opcode, (void *)buf);
 
 	err = bt_send(buf);
 	if (err) {
@@ -4045,7 +4045,7 @@ static int hci_init(void)
 
 int bt_send(struct net_buf *buf)
 {
-	LOG_DBG("buf %p len %u type %u", buf, buf->len, bt_buf_get_type(buf));
+	LOG_DBG("buf %p len %u type %u", (void *)buf, buf->len, bt_buf_get_type(buf));
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
@@ -4116,7 +4116,7 @@ static int bt_recv_unsafe(struct net_buf *buf)
 {
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
-	LOG_DBG("buf %p len %u", buf, buf->len);
+	LOG_DBG("buf %p len %u", (void *)buf, buf->len);
 
 	switch (bt_buf_get_type(buf)) {
 #if defined(CONFIG_BT_CONN)
@@ -4232,7 +4232,7 @@ static void rx_work_handler(struct k_work *work)
 		return;
 	}
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	LOG_DBG("buf %p type %u len %u", (void *)buf, bt_buf_get_type(buf), buf->len);
 
 	switch (bt_buf_get_type(buf)) {
 #if defined(CONFIG_BT_CONN)

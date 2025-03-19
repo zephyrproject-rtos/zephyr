@@ -1283,7 +1283,7 @@ populate:
 			return -EINVAL;
 		}
 
-		LOG_DBG("attr %p handle 0x%04x uuid %s perm 0x%02x", attrs, attrs->handle,
+		LOG_DBG("attr %p handle 0x%04x uuid %s perm 0x%02x", (void *)attrs, attrs->handle,
 			bt_uuid_str(attrs->uuid), attrs->perm);
 	}
 
@@ -2186,7 +2186,7 @@ static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
 		}
 	}
 
-	LOG_DBG("ccc %p value 0x%04x", ccc, value);
+	LOG_DBG("ccc %p value 0x%04x", (void *)ccc, value);
 
 	if (value != ccc->value) {
 		ccc->value = value;
@@ -2544,7 +2544,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 		return -ENOMEM;
 	}
 
-	LOG_DBG("conn %p handle 0x%04x", conn, handle);
+	LOG_DBG("conn %p handle 0x%04x", (void *)conn, handle);
 
 	nfy = net_buf_add(buf, sizeof(*nfy) + params->len);
 	nfy->handle = sys_cpu_to_le16(handle);
@@ -2716,7 +2716,7 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 	ind->handle = sys_cpu_to_le16(handle);
 	memcpy(ind->value, params->data, params->len);
 
-	LOG_DBG("conn %p handle 0x%04x", conn, handle);
+	LOG_DBG("conn %p handle 0x%04x", (void *)conn, handle);
 
 	req->buf = buf;
 
@@ -2870,7 +2870,7 @@ struct bt_gatt_attr *bt_gatt_find_by_uuid(const struct bt_gatt_attr *attr,
 		/* If start_handle is 0 then `attr` is not in our database, and should not be used
 		 * as a starting point for the search
 		 */
-		LOG_DBG("Could not find handle of attr %p", attr);
+		LOG_DBG("Could not find handle of attr %p", (void *)attr);
 		return NULL;
 	}
 
@@ -3346,7 +3346,7 @@ static uint8_t update_ccc(const struct bt_gatt_attr *attr, uint16_t handle,
 			bt_security_t sec;
 
 			if (err == BT_ATT_ERR_WRITE_NOT_PERMITTED) {
-				LOG_WRN("CCC %p not writable", attr);
+				LOG_WRN("CCC %p not writable", (void *)attr);
 				continue;
 			}
 
@@ -3443,7 +3443,7 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			ccc->cfg_changed(attr, ccc->value);
 		}
 
-		LOG_DBG("ccc %p reset", ccc);
+		LOG_DBG("ccc %p reset", (void *)ccc);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -3474,7 +3474,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 		/* The charactestic properties is the first byte of the attribute value */
 		len = attr->read(NULL, attr, &properties, sizeof(properties), 0);
 		if (len < 0) {
-			LOG_ERR("Failed to read attribute %p (err %zd)", attr, len);
+			LOG_ERR("Failed to read attribute %p (err %zd)", (void *)attr, len);
 			return false;
 		} else if (len != sizeof(properties)) {
 			LOG_ERR("Invalid read length: %zd", len);
@@ -3519,7 +3519,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 
 	len = attr->read(conn, attr, ccc_bits_encoded, sizeof(ccc_bits_encoded), 0);
 	if (len < 0) {
-		LOG_ERR("Failed to read attribute %p (err %zd)", attr, len);
+		LOG_ERR("Failed to read attribute %p (err %zd)", (void *)attr, len);
 		return false;
 	} else if (len != sizeof(ccc_bits_encoded)) {
 		LOG_ERR("Invalid read length: %zd", len);
@@ -5696,7 +5696,7 @@ static void add_subscriptions(struct bt_conn *conn)
 			err = gatt_resub_ccc(conn, params);
 			if (err < 0) {
 				LOG_WRN("conn %p params %p resub failed (err %d)",
-					(void *)conn, params, err);
+					(void *)conn, (void *)params, err);
 			}
 		}
 	}
@@ -5708,7 +5708,7 @@ static void gatt_exchange_mtu_func(struct bt_conn *conn, uint8_t err,
 				   struct bt_gatt_exchange_params *params)
 {
 	if (err) {
-		LOG_WRN("conn %p err 0x%02x", conn, err);
+		LOG_WRN("conn %p err 0x%02x", (void *)conn, err);
 	}
 }
 
@@ -5924,7 +5924,7 @@ void bt_gatt_connected(struct bt_conn *conn)
 {
 	struct conn_data data;
 
-	LOG_DBG("conn %p", conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	data.conn = conn;
 	data.sec = BT_SECURITY_L1;
@@ -6002,7 +6002,7 @@ void bt_gatt_encrypt_change(struct bt_conn *conn)
 {
 	struct conn_data data;
 
-	LOG_DBG("conn %p", conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	data.conn = conn;
 	data.sec = BT_SECURITY_L1;
@@ -6505,7 +6505,7 @@ int bt_gatt_clear(uint8_t id, const bt_addr_le_t *addr)
 
 void bt_gatt_disconnected(struct bt_conn *conn)
 {
-	LOG_DBG("conn %p", conn);
+	LOG_DBG("conn %p", (void *)conn);
 	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
 
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)

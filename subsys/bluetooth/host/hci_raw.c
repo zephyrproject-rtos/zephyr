@@ -194,7 +194,7 @@ int bt_hci_recv(const struct device *dev, struct net_buf *buf)
 {
 	ARG_UNUSED(dev);
 
-	LOG_DBG("buf %p len %u", buf, buf->len);
+	LOG_DBG("buf %p len %u", (void *)buf, buf->len);
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
@@ -296,7 +296,7 @@ static uint8_t bt_send_ext(struct net_buf *buf)
 
 int bt_send(struct net_buf *buf)
 {
-	LOG_DBG("buf %p len %u", buf, buf->len);
+	LOG_DBG("buf %p len %u", (void *)buf, buf->len);
 
 	if (buf->len == 0) {
 		return BT_HCI_ERR_INVALID_PARAM;

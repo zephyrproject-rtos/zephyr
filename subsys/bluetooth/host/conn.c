@@ -68,7 +68,7 @@ static void conn_tx_destroy(struct bt_conn *conn, struct bt_conn_tx *tx)
 	bt_conn_tx_cb_t cb = tx->cb;
 	void *user_data = tx->user_data;
 
-	LOG_DBG("conn %p tx %p cb %p ud %p", conn, tx, cb, user_data);
+	LOG_DBG("conn %p tx %p cb %p ud %p", (void *)conn, (void *)tx, (void *)cb, user_data);
 
 	/* Free up TX metadata before calling callback in case the callback
 	 * tries to allocate metadata
@@ -162,7 +162,8 @@ static struct net_buf *get_data_frag(struct net_buf *outside, size_t winsize)
 	window = bt_buf_make_view(window, outside,
 				  winsize, &get_frag_md(window)->view_meta);
 
-	LOG_DBG("get-acl-frag: outside %p window %p size %zu", outside, window, winsize);
+	LOG_DBG("get-acl-frag: outside %p window %p size %zu",
+		(void *)outside, (void *)window, winsize);
 
 	return window;
 }
@@ -254,7 +255,7 @@ static inline const char *state2str(bt_conn_state_t state)
 
 static void tx_free(struct bt_conn_tx *tx)
 {
-	LOG_DBG("%p", tx);
+	LOG_DBG("%p", (void *)tx);
 	tx->cb = NULL;
 	tx->user_data = NULL;
 	k_fifo_put(&free_tx, tx);
@@ -295,7 +296,7 @@ static void tx_notify_process(struct bt_conn *conn)
 			return;
 		}
 
-		LOG_DBG("tx %p cb %p user_data %p", tx, tx->cb, tx->user_data);
+		LOG_DBG("tx %p cb %p user_data %p", (void *)tx, (void *)tx->cb, tx->user_data);
 
 		/* Copy over the params */
 		cb = tx->cb;
@@ -509,7 +510,7 @@ static struct bt_conn_tx *conn_tx_alloc(void)
 {
 	struct bt_conn_tx *ret = k_fifo_get(&free_tx, K_NO_WAIT);
 
-	LOG_DBG("%p", ret);
+	LOG_DBG("%p", (void *)ret);
 
 	return ret;
 }
@@ -668,7 +669,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	}
 
 	LOG_DBG("conn %p buf %p len %zu buf->len %u cb %p ud %p",
-		conn, buf, len, buf->len, cb, ud);
+		(void *)conn, (void *)buf, len, buf->len, cb, ud);
 
 	/* Acquire the right to send 1 packet to the controller */
 	if (k_sem_take(bt_conn_get_pkts(conn), K_NO_WAIT)) {
@@ -700,10 +701,10 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	__ASSERT_NO_MSG(buf->ref == 1);
 
 	if (buf->len > frag_len) {
-		LOG_DBG("keep %p around", buf);
+		LOG_DBG("keep %p around", (void *)buf);
 		frag = get_data_frag(net_buf_ref(buf), frag_len);
 	} else {
-		LOG_DBG("move %p ref in", buf);
+		LOG_DBG("move %p ref in", (void *)buf);
 		/* Move the ref into `frag` for the last TX. That way `buf` will
 		 * get destroyed when `frag` is destroyed.
 		 */
@@ -722,13 +723,13 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		conn->next_is_frag = false;
 	}
 
-	LOG_DBG("send frag: buf %p len %d", buf, frag_len);
+	LOG_DBG("send frag: buf %p len %d", (void *)buf, frag_len);
 
 	/* At this point, the buffer is either a fragment or a full HCI packet.
 	 * The flags are also valid.
 	 */
 	LOG_DBG("conn %p buf %p len %u flags 0x%02x",
-		conn, frag, frag->len, flags);
+		(void *)conn, (void *)frag, frag->len, flags);
 
 	/* Keep track of sent buffers. We have to append _before_
 	 * sending, as we might get pre-empted if the HCI driver calls
@@ -815,7 +816,7 @@ static bool acl_has_data(struct bt_conn *conn)
  */
 static bool should_stop_tx(struct bt_conn *conn)
 {
-	LOG_DBG("%p", conn);
+	LOG_DBG("%p", (void *)conn);
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return true;
@@ -825,7 +826,7 @@ static bool should_stop_tx(struct bt_conn *conn)
 	 * should be able to provide their own heuristic.
 	 */
 	if (!conn->has_data(conn)) {
-		LOG_DBG("No more data for %p", conn);
+		LOG_DBG("No more data for %p", (void *)conn);
 		return true;
 	}
 
@@ -930,21 +931,22 @@ struct bt_conn *get_conn_ready(void)
 
 		if (cannot_send_to_controller(conn)) {
 			/* When buffers are full, try next connection. */
-			LOG_DBG("no LL bufs for %p", conn);
+			LOG_DBG("no LL bufs for %p", (void *)conn);
 			prev = &conn->_conn_ready;
 			continue;
 		}
 
 		if (dont_have_tx_context(conn)) {
 			/* When TX contexts are not available, try next connection. */
-			LOG_DBG("no TX contexts for %p", conn);
+			LOG_DBG("no TX contexts for %p", (void *)conn);
 			prev = &conn->_conn_ready;
 			continue;
 		}
 
 		CHECKIF(dont_have_methods(conn)) {
 			/* When a connection is missing mandatory methods, try next connection. */
-			LOG_DBG("conn %p (type %d) is missing mandatory methods", conn, conn->type);
+			LOG_DBG("conn %p (type %d) is missing mandatory methods",
+				(void *)conn, conn->type);
 			prev = &conn->_conn_ready;
 			continue;
 		}
@@ -957,7 +959,7 @@ struct bt_conn *get_conn_ready(void)
 
 			/* Append connection to list if it still has data */
 			if (conn->has_data(conn)) {
-				LOG_DBG("appending %p to back of TX queue", conn);
+				LOG_DBG("appending %p to back of TX queue", (void *)conn);
 				bt_conn_data_ready(conn);
 			}
 
@@ -1046,10 +1048,10 @@ void bt_conn_tx_processor(void)
 		return;
 	}
 
-	LOG_DBG("processing conn %p", conn);
+	LOG_DBG("processing conn %p", (void *)conn);
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		LOG_WRN("conn %p: not connected", conn);
+		LOG_WRN("conn %p: not connected", (void *)conn);
 
 		/* Call the user callbacks & destroy (final-unref) the buffers
 		 * we were supposed to send.
@@ -1089,7 +1091,7 @@ void bt_conn_tx_processor(void)
 	}
 
 	LOG_DBG("TX process: conn %p buf %p (%s)",
-		conn, buf, last_buf ? "last" : "frag");
+		(void *)conn, (void *)buf, last_buf ? "last" : "frag");
 
 	int err = send_buf(conn, buf, buf_len, cb, ud);
 
@@ -1106,7 +1108,7 @@ void bt_conn_tx_processor(void)
 		 *  In both cases, we destroy the buffer and mark the connection
 		 *  as dead.
 		 */
-		LOG_ERR("Fatal error (%d). Disconnecting %p", err, conn);
+		LOG_ERR("Fatal error (%d). Disconnecting %p", err, (void *)conn);
 		destroy_and_callback(conn, buf, cb, ud);
 		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
@@ -1125,7 +1127,7 @@ exit:
 
 static void process_unack_tx(struct bt_conn *conn)
 {
-	LOG_DBG("%p", conn);
+	LOG_DBG("%p", (void *)conn);
 
 	/* Return any unacknowledged packets */
 	while (1) {
@@ -1371,7 +1373,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			 * Beware of confusing higher layer errors. Anything that looks
 			 * like it's from the remote is synthetic.
 			 */
-			LOG_WRN("conn %p failed to establish. RF noise?", conn);
+			LOG_WRN("conn %p failed to establish. RF noise?", (void *)conn);
 		}
 
 		process_unack_tx(conn);
@@ -1747,7 +1749,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 
 	ARG_UNUSED(unused);
 
-	LOG_DBG("[%p] Running auto-initiated procedures", conn);
+	LOG_DBG("[%p] Running auto-initiated procedures", (void *)conn);
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		/* It is possible that connection was disconnected directly from
@@ -1812,7 +1814,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 		}
 	}
 
-	LOG_DBG("[%p] Successfully ran auto-initiated procedures", conn);
+	LOG_DBG("[%p] Successfully ran auto-initiated procedures", (void *)conn);
 }
 
 /* Executes procedures after a connection is established:
@@ -1832,7 +1834,7 @@ static K_WORK_DEFINE(procedures_on_connect, auto_initiated_procedures);
 
 static void schedule_auto_initiated_procedures(struct bt_conn *conn)
 {
-	LOG_DBG("[%p] Scheduling auto-init procedures", conn);
+	LOG_DBG("[%p] Scheduling auto-init procedures", (void *)conn);
 	k_work_submit(&procedures_on_connect);
 }
 
@@ -2083,8 +2085,9 @@ bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 static int send_conn_le_param_update(struct bt_conn *conn,
 				const struct bt_le_conn_param *param)
 {
-	LOG_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn, conn->le.features[0],
-		param->interval_min, param->interval_max, param->latency, param->timeout);
+	LOG_DBG("conn %p features 0x%02x params (%d-%d %d %d)",
+		(void *)conn, conn->le.features[0], param->interval_min, param->interval_max,
+		param->latency, param->timeout);
 
 	/* Proceed only if connection parameters contains valid values*/
 	if (!bt_le_conn_params_valid(param)) {
@@ -2171,7 +2174,7 @@ static void deferred_work(struct k_work *work)
 	struct bt_conn *conn = CONTAINER_OF(dwork, struct bt_conn, deferred_work);
 	const struct bt_le_conn_param *param;
 
-	LOG_DBG("conn %p", conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	if (conn->state == BT_CONN_DISCONNECTED) {
 #if defined(CONFIG_BT_ISO_UNICAST)
@@ -2592,7 +2595,7 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return 0;
 	}
 
@@ -2712,7 +2715,7 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 	int err;
 
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -2752,7 +2755,7 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 bt_security_t bt_conn_get_security(const struct bt_conn *conn)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return BT_SECURITY_L0;
 	}
 
@@ -2801,8 +2804,8 @@ bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
 		 * still has valid references. The last reference of the stack
 		 * is released after the disconnected callback.
 		 */
-		LOG_WRN("Found valid connection (%p) with address %s in %s state ", conn,
-			bt_addr_le_str(peer), state2str(conn->state));
+		LOG_WRN("Found valid connection (%p) with address %s in %s state ",
+			(void *)conn, bt_addr_le_str(peer), state2str(conn->state));
 		bt_conn_unref(conn);
 		return true;
 	}
@@ -2917,7 +2920,7 @@ struct bt_conn *bt_conn_lookup_state_le(uint8_t id, const bt_addr_le_t *peer,
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return NULL;
 	}
 
@@ -3028,7 +3031,7 @@ bool bt_conn_is_type(const struct bt_conn *conn, enum bt_conn_type type)
 int bt_conn_get_remote_info(const struct bt_conn *conn, struct bt_conn_remote_info *remote_info)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -3126,7 +3129,7 @@ int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
 	struct net_buf *buf;
 
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -3164,7 +3167,7 @@ int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
 	struct net_buf *buf;
 
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -3192,7 +3195,7 @@ int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
 	struct net_buf *buf;
 
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -3218,7 +3221,7 @@ int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 	int err;
 
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -3268,7 +3271,7 @@ int bt_conn_le_set_path_loss_mon_param(struct bt_conn *conn,
 	struct net_buf *buf;
 
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -3294,7 +3297,7 @@ int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool reporting_ena
 	struct net_buf *buf;
 
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -3395,7 +3398,7 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 	struct net_buf *buf;
 
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -3546,12 +3549,13 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
-	LOG_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn, conn->le.features[0],
-		param->interval_min, param->interval_max, param->latency, param->timeout);
+	LOG_DBG("conn %p features 0x%02x params (%d-%d %d %d)", (void *)conn,
+		conn->le.features[0], param->interval_min, param->interval_max, param->latency,
+		param->timeout);
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_CONN_ROLE_CENTRAL) {
@@ -3580,7 +3584,7 @@ int bt_conn_le_data_len_update(struct bt_conn *conn,
 			       const struct bt_conn_le_data_len_param *param)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -3600,7 +3604,7 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
 	uint8_t phy_opts, all_phys;
 
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -4079,7 +4083,7 @@ int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 int bt_conn_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *cb)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -4131,7 +4135,7 @@ int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb)
 int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -4155,7 +4159,7 @@ int bt_conn_auth_keypress_notify(struct bt_conn *conn,
 				 enum bt_conn_auth_keypress type)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -4171,7 +4175,7 @@ int bt_conn_auth_keypress_notify(struct bt_conn *conn,
 int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -4193,7 +4197,7 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 int bt_conn_auth_cancel(struct bt_conn *conn)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
@@ -4215,7 +4219,7 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, (void *)conn);
 		return -EINVAL;
 	}
 
