@@ -252,6 +252,7 @@ static DEVICE_API(stepper, a4979_stepper_api) = {
 	.get_actual_position = step_dir_stepper_common_get_actual_position,
 	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
 	.run = a4979_run,
+	.stop = step_dir_stepper_common_stop,
 	.set_micro_step_res = a4979_stepper_set_micro_step_res,
 	.get_micro_step_res = a4979_stepper_get_micro_step_res,
 	.set_event_callback = step_dir_stepper_common_set_event_callback,
