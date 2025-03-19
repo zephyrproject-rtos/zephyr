@@ -3,6 +3,7 @@ tests:
     tags: drivers
     platform_allow:
       - nrf54l09pdk/nrf54l09/cpuapp
+      - nrf54l09pdk/nrf54l09/cpuflpr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuflpr
       - nrf54l15bsim/nrf54l15/cpuapp
@@ -10,6 +11,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuflpr
       - ophelia4ev/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuflpr
     integration_platforms:
