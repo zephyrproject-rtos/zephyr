@@ -8,3 +8,10 @@ config VIDEO_MCUX_MIPI_CSI2RX
 	default y
 	depends on DT_HAS_NXP_MIPI_CSI2RX_ENABLED
 	select VIDEO_MCUX_CSI
+
+config VIDEO_MCUX_MIPI_CSI2RX_INIT_PRIORITY
+	int "NXP MCUX CSI-2 Rx init priority"
+	default 61
+	depends on VIDEO_MCUX_MIPI_CSI2RX
+	help
+	  Initialization priority for the MIPI CSI-2 Rx device.
