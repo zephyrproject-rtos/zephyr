@@ -119,6 +119,15 @@ ZTEST(vector_table, test_arm_irq_vector_table)
 #endif
 	}
 
+	/*
+	 * It is recommended to have a DSB followed by ISB while
+	 * enabling interrupts using NVIC. Also without this, the
+	 * test fails in scenarios where CONFIG_ROMSTART_RELOCATION_ROM is
+	 * enabled e.g. MPS3 Corstone310.
+	 */
+	__DSB(); /* Ensure write to NVIC completes before continuing */
+	__ISB(); /* Ensure that IRQ is executed */
+
 	zassert_false((k_sem_take(&sem[0], K_NO_WAIT) || k_sem_take(&sem[1], K_NO_WAIT) ||
 		       k_sem_take(&sem[2], K_NO_WAIT)),
 		      NULL);
