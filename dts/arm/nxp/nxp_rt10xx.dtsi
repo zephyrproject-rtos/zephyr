@@ -896,7 +896,7 @@
 			dma-channels = <32>;
 			dma-requests = <128>;
 			nxp,mem2mem;
-			nxp,a_on;
+			nxp,a-on;
 			reg = <0x400E8000 0x4000>,
 				<0x400EC000 0x4000>;
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
