@@ -129,7 +129,7 @@ int z_vrfy_devmux_select_set(struct device *dev, size_t index)
 #include <zephyr/syscalls/devmux_select_set_mrsh.c>
 #endif
 
-static int devmux_init(struct device *const dev)
+static int devmux_init(const struct device *dev)
 {
 	size_t inst = devmux_inst_get(dev);
 	struct devmux_data *const data = dev->data;
@@ -143,7 +143,7 @@ static int devmux_init(struct device *const dev)
 		return -ENODEV;
 	}
 
-	*dev = *config->devs[sel];
+	*(struct device *)dev = *config->devs[sel];
 
 	return 0;
 }

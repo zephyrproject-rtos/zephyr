@@ -6,7 +6,6 @@
 
 import argparse
 import collections
-from email.utils import parseaddr
 from itertools import takewhile
 import json
 import logging
@@ -1446,44 +1445,35 @@ class Identity(ComplianceTest):
 
     def run(self):
         for shaidx in get_shas(COMMIT_RANGE):
-            commit = git("log", "--decorate=short", "--no-use-mailmap", "-n 1", shaidx)
-            signed = []
-            author = ""
-            sha = ""
-            parsed_addr = None
-            for line in commit.split("\n"):
-                match = re.search(r"^commit\s([^\s]*)", line)
-                if match:
-                    sha = match.group(1)
-                match = re.search(r"^Author:\s(.*)", line)
-                if match:
-                    author = match.group(1)
-                    parsed_addr = parseaddr(author)
-                match = re.search(r"signed-off-by:\s(.*)", line, re.IGNORECASE)
-                if match:
-                    signed.append(match.group(1))
+            auth_name, auth_email, body = git(
+                'show', '-s', '--format=%an%n%ae%n%b', shaidx
+            ).split('\n', 2)
 
-            error1 = f"{sha}: author email ({author}) needs to match one of " \
-                     f"the signed-off-by entries."
-            error2 = f"{sha}: author email ({author}) does not follow the " \
-                     f"syntax: First Last <email>."
-            error3 = f"{sha}: author email ({author}) must be a real email " \
-                     f"and cannot end in @users.noreply.github.com"
-            failure = None
-            if author not in signed:
-                failure = error1
+            match_signoff = re.search(r"signed-off-by:\s(.*)", body,
+                                      re.IGNORECASE)
+            detailed_match = re.search(r"signed-off-by:\s(.*) <(.*)>", body,
+                                       re.IGNORECASE)
 
-            if not parsed_addr or len(parsed_addr[0].split(" ")) < 2:
-                if not failure:
+            failures = []
 
-                    failure = error2
-                else:
-                    failure = failure + "\n" + error2
-            elif parsed_addr[1].endswith("@users.noreply.github.com"):
-                failure = error3
+            if auth_email.endswith("@users.noreply.github.com"):
+                failures.append(f"{shaidx}: author email ({auth_email}) must "
+                                "be a real email and cannot end in "
+                                "@users.noreply.github.com")
 
-            if failure:
-                self.failure(failure)
+            if not match_signoff:
+                failures.append(f'{shaidx}: Missing signed-off-by line')
+            elif not detailed_match:
+                signoff = match_signoff.group(0)
+                failures.append(f"{shaidx}: Signed-off-by line ({signoff}) "
+                                "does not follow the syntax: First "
+                                "Last <email>.")
+            elif (auth_name, auth_email) != detailed_match.groups():
+                failures.append(f"{shaidx}: author email ({auth_email}) needs "
+                                "to match one of the signed-off-by entries.")
+
+            if failures:
+                self.failure('\n'.join(failures))
 
 
 class BinaryFiles(ComplianceTest):

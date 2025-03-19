@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    This is a representation of generic radio Front-End Module (FEM)
-    that has a two-pin control interface (CTX, CRX).
+    Generic radio Front-End Module (FEM) with a two-pin
+    control interface (CTX, CRX).
 
     The CTX control pin is used to enable the Power Amplifier (PA) in
     the transmit path. This is therefore sometimes referred to as

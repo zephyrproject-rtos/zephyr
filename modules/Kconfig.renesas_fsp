@@ -154,9 +154,19 @@ config USE_RA_FSP_DAC
 	help
 	  Enable RA FSP DAC driver
 
+config USE_RA_FSP_ACMPHS
+	bool
+	help
+	  Enable RA FSP ACMPHS driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
+
+config USE_RZ_FSP_ADC
+	bool
+	help
+	  Enable RZ FSP ADC driver
 
 config USE_RZ_FSP_IOPORT
 	bool
@@ -167,6 +177,11 @@ config USE_RZ_FSP_SCIF_UART
 	bool
 	help
 	  Enable RZ FSP SCIF UART driver
+
+config USE_RZ_FSP_RIIC_MASTER
+	bool
+	help
+	  Enable RZ FSP RIIC MASTER driver
 
 config USE_RZ_FSP_GTM
 	bool
@@ -182,6 +197,10 @@ config USE_RZ_FSP_EXT_IRQ
 	bool
 	help
 	  Enable RZ FSP External IRQ driver
+config USE_RZ_FSP_MHU
+	bool
+	help
+	  Enable RZ FSP MHU driver
 
 config USE_RZ_FSP_CPG
 	bool

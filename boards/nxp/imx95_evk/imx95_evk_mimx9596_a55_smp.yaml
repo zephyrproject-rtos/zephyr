@@ -13,7 +13,8 @@ toolchain:
   - cross-compile
 ram: 1024
 supported:
+  - counter
+  - i2c
   - smp
   - uart
-  - counter
 vendor: nxp

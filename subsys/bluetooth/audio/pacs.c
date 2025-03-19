@@ -37,7 +37,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "host/hci_core.h"
 #include "common/bt_str.h"
 
 #include "audio_internal.h"
@@ -1223,7 +1222,7 @@ static void pacs_security_changed(struct bt_conn *conn, bt_security_t level,
 		return;
 	}
 
-	if (!bt_addr_le_is_bonded(info.id, info.le.dst)) {
+	if (!bt_le_bond_exists(info.id, info.le.dst)) {
 		return;
 	}
 

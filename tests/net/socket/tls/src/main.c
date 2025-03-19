@@ -916,7 +916,7 @@ ZTEST(net_socket_tls, test_connect_closed_port)
 	zassert_equal(zsock_connect(c_sock, (struct sockaddr *)&s_saddr,
 				    sizeof(s_saddr)),
 		      -1, "connect succeed");
-	zassert_equal(errno, ETIMEDOUT,
+	zassert_equal(errno, ECONNREFUSED,
 		      "connect should fail, got %d", errno);
 
 	test_sockets_close();

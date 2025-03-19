@@ -1,8 +1,0 @@
-# Copyright 2023 Google LLC
-# SPDX-License-Identifier: Apache-2.0
-
-config KSCAN_INPUT
-	bool "Input subsystem to kscan adapter driver"
-	default y
-	depends on INPUT
-	depends on DT_HAS_ZEPHYR_KSCAN_INPUT_ENABLED

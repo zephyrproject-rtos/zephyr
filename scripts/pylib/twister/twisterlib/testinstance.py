@@ -152,7 +152,7 @@ class TestInstance:
             with open(run_id_file) as fp:
                 run_id = fp.read()
         else:
-            hash_object = hashlib.md5(self.name.encode())
+            hash_object = hashlib.md5(self.name.encode(), usedforsecurity=False)
             random_str = f"{random.getrandbits(64)}".encode()
             hash_object.update(random_str)
             run_id = hash_object.hexdigest()

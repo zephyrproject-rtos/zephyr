@@ -375,8 +375,8 @@
 				status = "disabled";
 			};
 
-			exmif: spi@95000 {
-				compatible = "nordic,nrf-exmif";
+			exmif: exmif@95000 {
+				compatible = "nordic,nrf-exmif", "snps,designware-ssi";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <0x95000 0x500 0x95500 0xb00>;
@@ -384,7 +384,6 @@
 				interrupts = <149 NRF_DEFAULT_IRQ_PRIORITY>;
 				clock-frequency = <DT_FREQ_M(400)>;
 				fifo-depth = <32>;
-				max-xfer-size = <16>;
 				status = "disabled";
 			};
 

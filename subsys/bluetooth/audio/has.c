@@ -34,7 +34,6 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
-#include "../bluetooth/host/hci_core.h"
 #include "../bluetooth/host/settings.h"
 
 #include "audio_internal.h"
@@ -270,7 +269,7 @@ static void client_free(struct has_client *client)
 	err = bt_conn_get_info(client->conn, &info);
 	__ASSERT_NO_MSG(err == 0);
 
-	if (client->context != NULL && !bt_addr_le_is_bonded(info.id, info.le.dst)) {
+	if (client->context != NULL && !bt_le_bond_exists(info.id, info.le.dst)) {
 		/* Free stored context of non-bonded client */
 		context_free(client->context);
 		client->context = NULL;
@@ -383,7 +382,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 		return;
 	}
 
-	if (!bt_addr_le_is_bonded(info.id, info.le.dst)) {
+	if (!bt_le_bond_exists(info.id, info.le.dst)) {
 		return;
 	}
 

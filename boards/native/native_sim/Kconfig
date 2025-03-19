@@ -5,7 +5,7 @@ config BOARD_NATIVE_SIM
 	bool
 	select POSIX_ARCH_CONSOLE
 	select NATIVE_LIBRARY
-	select NATIVE_POSIX_TIMER
+	select NATIVE_SIM_TIMER
 	select 64BIT if BOARD_NATIVE_SIM_NATIVE_64
 	imply BOARD_NATIVE_POSIX if NATIVE_SIM_NATIVE_POSIX_COMPAT
 	help
@@ -45,6 +45,7 @@ config BOARD_NATIVE_POSIX
 config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
 	bool "Slow down execution to real time (native_posix compat)"
 	select NATIVE_SIM_SLOWDOWN_TO_REAL_TIME
+	select DEPRECATED
 	help
 	  Transitional option which allows applications which targeted native_posix
 	  to set the correct native_sim option (CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)

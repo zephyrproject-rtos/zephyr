@@ -173,35 +173,45 @@ tests:
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=n
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma_and_interrupt.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma_no_dma_props.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pio_spi.loopback:
     extra_args:
       - DTC_OVERLAY_FILE="boards/rpi_pico_pio.overlay"
@@ -248,3 +258,17 @@ tests:
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_RUNTIME=y
     filter: CONFIG_SOC_FAMILY_NORDIC_NRF
+  drivers.spi.silabs_s2.loopback.no_async:
+    filter: CONFIG_SOC_FAMILY_SILABS_S2
+    platform_allow:
+      - xg24_rb4187c
+    extra_configs:
+      - CONFIG_SPI_SILABS_EUSART_DMA=n
+      - CONFIG_SPI_ASYNC=n
+  drivers.spi.silabs_s2.loopback.dma.no_async:
+    filter: CONFIG_SOC_FAMILY_SILABS_S2
+    platform_allow:
+      - xg24_rb4187c
+    extra_configs:
+      - CONFIG_SPI_SILABS_EUSART_DMA=y
+      - CONFIG_SPI_ASYNC=n

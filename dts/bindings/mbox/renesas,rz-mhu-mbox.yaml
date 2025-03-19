@@ -1,0 +1,45 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas MHU MBOX
+
+compatible: "renesas,rz-mhu-mbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+    description: the channel number of the underlying MHU unit used for MBOX.
+
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  tx-mask:
+    type: int
+    required: true
+    description: TX supported channels mask
+
+  rx-mask:
+    type: int
+    required: true
+    description: RX supported channels mask
+
+  channels-count:
+    type: int
+    required: true
+    description: number of channels supported for a MBOX instance.
+
+  shared-memory:
+    type: phandle
+    description: |
+      Reference to the shared memory region that is going
+      to be used for the buffer communication between
+      MHU units. No data will be transmitted if not set.
+
+mbox-cells:
+  - channel

@@ -147,4 +147,16 @@
 	};
 };
 
+zephyr_udc0: &usb0 {
+	status = "okay";
+	phy-handle = <&usbphy>;
+};
+
+&usbphy {
+	status = "okay";
+	tx-d-cal = <7>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
+};
+
 p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};

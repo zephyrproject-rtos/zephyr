@@ -99,7 +99,6 @@ static void micp_mic_ctlr_mute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr, int
 	struct bt_conn *conn;
 
 	bt_micp_mic_ctlr_conn_get(mic_ctlr, &conn);
-	btp_send_micp_mute_state_ev(conn, err, mute_state);
 
 	LOG_DBG("MICP Mute Written cb (%d))", err);
 }
@@ -109,7 +108,6 @@ static void micp_mic_ctlr_unmute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr, i
 	struct bt_conn *conn;
 
 	bt_micp_mic_ctlr_conn_get(mic_ctlr, &conn);
-	btp_send_micp_mute_state_ev(conn, err, mute_state);
 
 	LOG_DBG("MICP Mute Unwritten cb (%d))", err);
 }

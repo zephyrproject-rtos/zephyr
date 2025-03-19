@@ -8,3 +8,5 @@ tests:
     depends_on:
       - adc
       - dac
+    integration_platforms:
+      - nucleo_h563zi

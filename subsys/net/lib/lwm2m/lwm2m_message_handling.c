@@ -1403,9 +1403,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 		read_info = &msg->cache_info->read_info[msg->cache_info->entry_size];
 		/* Store original timeseries ring buffer get states for failure handling */
 		read_info->cache_data = cached_data;
-		read_info->original_get_base = cached_data->rb.get.base;
-		read_info->original_get_head = cached_data->rb.get.head;
-		read_info->original_get_tail = cached_data->rb.get.tail;
+		read_info->original_rb_get = cached_data->rb.get;
 		msg->cache_info->entry_size++;
 		if (msg->cache_info->entry_limit) {
 			length = MIN(length, msg->cache_info->entry_limit);
@@ -3079,12 +3077,8 @@ static bool lwm2m_timeseries_data_rebuild(struct lwm2m_message *msg, int error_c
 
 	/* Put Ring buffer back to original */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
-		cache_temp->read_info[i].cache_data->rb.get.head =
-			cache_temp->read_info[i].original_get_head;
-		cache_temp->read_info[i].cache_data->rb.get.tail =
-			cache_temp->read_info[i].original_get_tail;
-		cache_temp->read_info[i].cache_data->rb.get.base =
-			cache_temp->read_info[i].original_get_base;
+		cache_temp->read_info[i].cache_data->rb.get =
+			cache_temp->read_info[i].original_rb_get;
 	}
 
 	if (cache_temp->entry_limit) {
@@ -3501,7 +3495,6 @@ static void do_send_timeout_cb(struct lwm2m_message *msg)
 	LOG_WRN("Send Timeout");
 	lwm2m_rd_client_timeout(msg->ctx);
 }
-#endif
 
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cache_temp,
@@ -3535,7 +3528,8 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 	cache_temp->entry_limit = 0;
 	return true;
 }
-#endif
+#endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
+#endif /* CONFIG_LWM2M_VERSION_1_1 */
 
 int lwm2m_send_cb(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
 			 uint8_t path_list_size, lwm2m_send_cb_t reply_cb)

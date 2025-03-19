@@ -363,7 +363,8 @@ static const struct udc_api udc_skeleton_api = {
  * driver, even if your platform does not require it.
  */
 #define UDC_SKELETON_DEVICE_DEFINE(n)						\
-	K_THREAD_STACK_DEFINE(udc_skeleton_stack_##n, CONFIG_UDC_SKELETON);	\
+	K_THREAD_STACK_DEFINE(udc_skeleton_stack_##n,				\
+			      CONFIG_UDC_SKELETON_STACK_SIZE);			\
 										\
 	static void udc_skeleton_thread_##n(void *dev, void *arg1, void *arg2)	\
 	{									\

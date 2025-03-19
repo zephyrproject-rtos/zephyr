@@ -94,6 +94,8 @@ The Zephyr ``imx95_evk/mimx9596/m7`` board target supports the following hardwar
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
 
 The Zephyr ``imx95_evk/mimx9596/a55`` and ``imx95_evk/mimx9596/a55/smp`` board targets support
 the following hardware features:
@@ -111,7 +113,9 @@ the following hardware features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
-| TPM       | on-chip    | tpm                                 |
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| TPM       | on-chip    | TPM Counter                         |
 +-----------+------------+-------------------------------------+
 
 System Clock

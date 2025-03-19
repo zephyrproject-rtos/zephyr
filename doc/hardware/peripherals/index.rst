@@ -38,7 +38,6 @@ Peripherals
    i3c.rst
    i2c.rst
    ipm.rst
-   kscan.rst
    led.rst
    mdio.rst
    mipi_dbi.rst
