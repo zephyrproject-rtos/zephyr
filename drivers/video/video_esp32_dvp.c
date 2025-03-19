@@ -328,20 +328,6 @@ static int video_esp32_dequeue(const struct device *dev, enum video_endpoint_id 
 	return 0;
 }
 
-static int video_esp32_set_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_esp32_config *cfg = dev->config;
-
-	return video_set_ctrl(cfg->source_dev, cid, value);
-}
-
-static int video_esp32_get_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_esp32_config *cfg = dev->config;
-
-	return video_get_ctrl(cfg->source_dev, cid, value);
-}
-
 static int video_esp32_flush(const struct device *dev, enum video_endpoint_id ep, bool cancel)
 {
 	struct video_esp32_data *data = dev->data;
@@ -435,8 +421,6 @@ static DEVICE_API(video, esp32_driver_api) = {
 	.enqueue = video_esp32_enqueue,
 	.dequeue = video_esp32_dequeue,
 	.flush = video_esp32_flush,
-	.set_ctrl = video_esp32_set_ctrl,
-	.get_ctrl = video_esp32_get_ctrl,
 #ifdef CONFIG_POLL
 	.set_signal = video_esp32_set_signal,
 #endif
