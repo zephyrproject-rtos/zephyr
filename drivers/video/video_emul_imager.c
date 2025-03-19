@@ -27,13 +27,14 @@ LOG_MODULE_REGISTER(video_emul_imager, CONFIG_VIDEO_LOG_LEVEL);
 #define EMUL_IMAGER_REG_TIMING1   0x0004
 #define EMUL_IMAGER_REG_TIMING2   0x0005
 #define EMUL_IMAGER_REG_TIMING3   0x0006
-#define EMUL_IMAGER_REG_EXPOSURE  0x0007
-#define EMUL_IMAGER_REG_GAIN      0x0008
-#define EMUL_IMAGER_REG_PATTERN   0x0009
+#define EMUL_IMAGER_REG_CUSTOM    0x0007
 #define EMUL_IMAGER_REG_FORMAT    0x000a
 #define EMUL_IMAGER_PATTERN_OFF   0x00
 #define EMUL_IMAGER_PATTERN_BARS1 0x01
 #define EMUL_IMAGER_PATTERN_BARS2 0x02
+
+/* Custom control that is just an I2C write for example and test purpose */
+#define EMUL_IMAGER_CID_CUSTOM (VIDEO_CID_PRIVATE_BASE + 0x01)
 
 /* Emulated register bank */
 uint8_t emul_imager_fake_regs[10];
@@ -198,12 +199,8 @@ static int emul_imager_write_multi(const struct device *const dev,
 static int emul_imager_set_ctrl(const struct device *dev, unsigned int cid, void *value)
 {
 	switch (cid) {
-	case VIDEO_CID_EXPOSURE:
-		return emul_imager_write_reg(dev, EMUL_IMAGER_REG_EXPOSURE, (int)value);
-	case VIDEO_CID_GAIN:
-		return emul_imager_write_reg(dev, EMUL_IMAGER_REG_GAIN, (int)value);
-	case VIDEO_CID_TEST_PATTERN:
-		return emul_imager_write_reg(dev, EMUL_IMAGER_REG_PATTERN, (int)value);
+	case EMUL_IMAGER_CID_CUSTOM:
+		return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CUSTOM, (int)value);
 	default:
 		return -ENOTSUP;
 	}
@@ -211,18 +208,9 @@ static int emul_imager_set_ctrl(const struct device *dev, unsigned int cid, void
 
 static int emul_imager_get_ctrl(const struct device *dev, unsigned int cid, void *value)
 {
-	struct emul_imager_data *data = dev->data;
-
 	switch (cid) {
-	case VIDEO_CID_EXPOSURE:
-		return emul_imager_read_int(dev, EMUL_IMAGER_REG_EXPOSURE, value);
-	case VIDEO_CID_GAIN:
-		return emul_imager_read_int(dev, EMUL_IMAGER_REG_GAIN, value);
-	case VIDEO_CID_TEST_PATTERN:
-		return emul_imager_read_int(dev, EMUL_IMAGER_REG_PATTERN, value);
-	case VIDEO_CID_PIXEL_RATE:
-		*(int64_t *)value = (int64_t)data->fmt.width * data->fmt.pitch * data->mode->fps;
-		return 0;
+	case EMUL_IMAGER_CID_CUSTOM:
+		return emul_imager_read_int(dev, EMUL_IMAGER_REG_CUSTOM, value);
 	default:
 		return -ENOTSUP;
 	}
