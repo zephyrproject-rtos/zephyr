@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Modem device common bindings
+
+include: base.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+
+  mdm-power-pulse-ms:
+    type: int
+
+  mdm-reset-gpios:
+    type: phandle-array
+
+  mdm-reset-pulse-ms:
+    type: int
+
+  mdm-autostarts:
+    type: boolean
+
+  mdm-startup-time-ms:
+    type: int
+
+  mdm-shutdown-time-ms:
+    type: int
