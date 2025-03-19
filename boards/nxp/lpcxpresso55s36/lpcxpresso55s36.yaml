@@ -8,8 +8,8 @@ identifier: lpcxpresso55s36
 name: NXP LPCXpresso55S36
 type: mcu
 arch: arm
-ram: 96
-flash: 256
+ram: 112
+flash: 246
 toolchain:
   - zephyr
   - gnuarmemb

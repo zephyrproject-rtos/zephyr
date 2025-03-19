@@ -14,7 +14,7 @@ Hardware
 ********
 
 - LPC55S36 Arm® Cortex®-M33 microcontroller running at up to 150 MHz
-- 256 KB flash and 96 KB SRAM on-chip
+- 256 KB flash and 112 KB SRAM on-chip
 - LPC-Link2 debug high speed USB probe with VCOM port
 - I2C and SPI USB bridging to the LPC device via LPC-Link2 probe
 - MikroElektronika Click expansion option
