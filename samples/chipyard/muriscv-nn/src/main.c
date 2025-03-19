@@ -21,28 +21,10 @@
 #define FILTER_DEPTH     10   /* accumulation depth */
 #define OUTPUT_CHANNELS  5
 
-#define MSTATUS_VS          0x00000600
-#define MSTATUS_FS          0x00006000
-#define MSTATUS_XS          0x00018000
-
-static inline void enable_vector_operations(void) {
-    unsigned long mstatus;
-
-    /* Read current mstatus */
-    __asm__ volatile("csrr %0, mstatus" : "=r"(mstatus));
-
-    /* Set VS, FS, and XS fields to Dirty */
-    mstatus |= MSTATUS_VS | MSTATUS_FS | MSTATUS_XS;
-
-    /* Write back updated mstatus */
-    __asm__ volatile("csrw mstatus, %0" :: "r"(mstatus));
-}
 
 int main(void)
 {
     printf("Starting simple muRISCV-NN inference example\n");
-
-	enable_vector_operations();
 
     /* Allocate a context buffer.
      * In real usage, get the required size from:
