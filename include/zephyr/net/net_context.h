@@ -394,6 +394,7 @@ __net_socket struct net_context {
 		/** Flag to enable/disable multicast loop */
 		union {
 			bool ipv6_mcast_loop;  /**< IPv6 multicast loop */
+			bool ipv4_mcast_loop;  /**< IPv4 multicast loop */
 		};
 #endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
 
@@ -842,6 +843,38 @@ static inline void net_context_set_ipv4_mcast_ttl(struct net_context *context,
 {
 	context->ipv4_mcast_ttl = ttl;
 }
+
+#if defined(CONFIG_NET_IPV4)
+/**
+ * @brief Get IPv4 multicast loop value for this context.
+ *
+ * @details This function returns the IPv4 multicast loop value
+ *	    that is set to this context.
+ *
+ * @param context Network context.
+ *
+ * @return IPv4 multicast loop value
+ */
+static inline bool net_context_get_ipv4_mcast_loop(struct net_context *context)
+{
+	return context->options.ipv4_mcast_loop;
+}
+
+/**
+ * @brief Set IPv4 multicast loop value for this context.
+ *
+ * @details This function sets the IPv4 multicast loop value for
+ *	    this context.
+ *
+ * @param context Network context.
+ * @param ipv4_mcast_loop IPv4 multicast loop value.
+ */
+static inline void net_context_set_ipv4_mcast_loop(struct net_context *context,
+						   bool ipv4_mcast_loop)
+{
+	context->options.ipv4_mcast_loop = ipv4_mcast_loop;
+}
+#endif
 
 /**
  * @brief Get IPv6 hop limit value for this context.
@@ -1365,6 +1398,7 @@ enum net_context_option {
 	NET_OPT_MTU               = 20, /**< IPv4 socket path MTU */
 	NET_OPT_LOCAL_PORT_RANGE  = 21, /**< Clamp local port range */
 	NET_OPT_IPV6_MCAST_LOOP	  = 22, /**< IPV6 multicast loop */
+	NET_OPT_IPV4_MCAST_LOOP	  = 23, /**< IPV4 multicast loop */
 };
 
 /**
