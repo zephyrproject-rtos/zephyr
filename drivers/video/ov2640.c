@@ -14,6 +14,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 
 /* DSP register bank FF=0x00*/
@@ -1062,3 +1064,5 @@ DEVICE_DT_INST_DEFINE(0, &ov2640_init_0, NULL,
 			&ov2640_data_0, &ov2640_cfg_0,
 			POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 			&ov2640_driver_api);
+
+VIDEO_DEVICE_DEFINE(ov2640, DEVICE_DT_INST_GET(0), NULL);

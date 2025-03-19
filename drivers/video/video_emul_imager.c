@@ -17,6 +17,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_emul_imager, CONFIG_VIDEO_LOG_LEVEL);
 
 #define EMUL_IMAGER_REG_SENSOR_ID 0x0000
@@ -427,6 +429,8 @@ int emul_imager_init(const struct device *dev)
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &emul_imager_init, NULL, &emul_imager_data_##inst,             \
 			      &emul_imager_cfg_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,    \
-			      &emul_imager_driver_api);
+			      &emul_imager_driver_api);                                            \
+                                                                                                   \
+	VIDEO_DEVICE_DEFINE(emul_imager_##inst, DEVICE_DT_INST_GET(inst), NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_IMAGER_DEFINE)

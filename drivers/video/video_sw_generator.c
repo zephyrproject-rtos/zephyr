@@ -11,6 +11,8 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_PATTERN_COLOR_BAR 0
@@ -372,3 +374,5 @@ static int video_sw_generator_init(const struct device *dev)
 DEVICE_DEFINE(video_sw_generator, "VIDEO_SW_GENERATOR", &video_sw_generator_init, NULL,
 	      &video_sw_generator_data_0, NULL, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 	      &video_sw_generator_driver_api);
+
+VIDEO_DEVICE_DEFINE(video_sw_generator, DEVICE_GET(video_sw_generator), NULL);

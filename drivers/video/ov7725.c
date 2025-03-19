@@ -14,6 +14,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_ov7725, CONFIG_VIDEO_LOG_LEVEL);
 
 #define OV7725_REVISION  0x7721U
@@ -639,3 +641,5 @@ DEVICE_DT_INST_DEFINE(0, &ov7725_init_0, NULL,
 		    &ov7725_data_0, &ov7725_cfg_0,
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &ov7725_driver_api);
+
+VIDEO_DEVICE_DEFINE(ov7725, DEVICE_DT_INST_GET(0), NULL);

@@ -12,6 +12,8 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_ov7670, CONFIG_VIDEO_LOG_LEVEL);
 
 /* Initialization register structure */
@@ -598,6 +600,8 @@ static DEVICE_API(video, ov7670_api) = {
 	struct ov7670_data ov7670_data_##inst;                                                     \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, ov7670_init, NULL, &ov7670_data_##inst, &ov7670_config_##inst, \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov7670_api);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov7670_api);               \
+                                                                                                   \
+	VIDEO_DEVICE_DEFINE(ov7670_##inst, DEVICE_DT_INST_GET(inst), NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(OV7670_INIT)
