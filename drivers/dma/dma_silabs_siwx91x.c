@@ -30,6 +30,11 @@ enum {
 	TRANSFER_TO_OR_FROM_PER,
 };
 
+struct dma_siwx91x_channel_info {
+	dma_callback_t dma_callback; /* User callback */
+	void *cb_data;               /* User callback data */
+};
+
 struct dma_siwx91x_config {
 	UDMA0_Type *reg;                 /* UDMA register base address */
 	uint8_t irq_number;              /* IRQ number */
@@ -42,8 +47,7 @@ struct dma_siwx91x_config {
 struct dma_siwx91x_data {
 	struct dma_context dma_ctx;
 	UDMA_Channel_Info *chan_info;
-	dma_callback_t dma_callback;         /* User callback */
-	void *cb_data;                       /* User callback data */
+	struct dma_siwx91x_channel_info *zephyr_channel_info;
 	RSI_UDMA_DATACONTEXT_T udma_handle;  /* Buffer to store UDMA handle
 					      * related information
 					      */
@@ -212,8 +216,8 @@ static int siwx91x_dma_configure(const struct device *dev, uint32_t channel,
 		return status;
 	}
 
-	data->dma_callback = config->dma_callback;
-	data->cb_data = config->user_data;
+	data->zephyr_channel_info[channel].dma_callback = config->dma_callback;
+	data->zephyr_channel_info[channel].cb_data = config->user_data;
 
 	atomic_set_bit(data->dma_ctx.atomic, channel);
 
@@ -426,9 +430,10 @@ static void siwx91x_dma_isr(const struct device *dev)
 	channel -= 1;
 
 	if (data->chan_info[channel].Cnt == data->chan_info[channel].Size) {
-		if (data->dma_callback) {
+		if (data->zephyr_channel_info[channel].dma_callback) {
 			/* Transfer complete, call user callback */
-			data->dma_callback(dev, data->cb_data, channel, 0);
+			data->zephyr_channel_info[channel].dma_callback(
+				dev, data->zephyr_channel_info[channel].cb_data, channel, 0);
 		}
 		sys_write32(BIT(channel), (mem_addr_t)&cfg->reg->UDMA_DONE_STATUS_REG);
 	} else {
@@ -461,11 +466,14 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 #define SIWX91X_DMA_INIT(inst)                                                                     \
 	static ATOMIC_DEFINE(dma_channels_atomic_##inst, DT_INST_PROP(inst, dma_channels));        \
 	static UDMA_Channel_Info dma_channel_info_##inst[DT_INST_PROP(inst, dma_channels)];        \
+	static struct dma_siwx91x_channel_info                                                     \
+		zephyr_channel_info_##inst[DT_INST_PROP(inst, dma_channels)];                      \
 	static struct dma_siwx91x_data dma_data_##inst = {                                         \
 		.dma_ctx.magic = DMA_MAGIC,                                                        \
 		.dma_ctx.dma_channels = DT_INST_PROP(inst, dma_channels),                          \
 		.dma_ctx.atomic = dma_channels_atomic_##inst,                                      \
 		.chan_info = dma_channel_info_##inst,                                              \
+		.zephyr_channel_info = zephyr_channel_info_##inst,                                 \
 	};                                                                                         \
 	static void siwx91x_dma_irq_configure_##inst(void)                                         \
 	{                                                                                          \
