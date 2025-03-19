@@ -18,6 +18,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nxp_video_sdma);
 
+#include "video_device.h"
+
 struct nxp_video_sdma_config {
 	const struct device *dma_dev;
 	const struct device *sensor_dev;
@@ -363,24 +365,24 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 	.flush = nxp_video_sdma_flush
 };
 
-#define NXP_VIDEO_SDMA_INIT(inst)						\
-	PINCTRL_DT_INST_DEFINE(inst);						\
-	const struct nxp_video_sdma_config sdma_config_##inst = {		\
-		.dma_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),			\
-		.sensor_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, sensor)),	\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
-		.vsync_pin = DT_INST_PROP(inst, vsync_pin),			\
-		.hsync_pin = DT_INST_PROP(inst, hsync_pin),			\
-		.pclk_pin = DT_INST_PROP(inst, pclk_pin),			\
-	};									\
-	struct nxp_video_sdma_data sdma_data_##inst = {				\
-		.config = &sdma_config_##inst,					\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(inst, nxp_video_sdma_init, NULL,			\
-				&sdma_data_##inst, &sdma_config_##inst,		\
-				POST_KERNEL,					\
-				CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-				&nxp_video_sdma_api);
+#define NXP_VIDEO_SDMA_INIT(inst)                                                                  \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	const struct nxp_video_sdma_config sdma_config_##inst = {                                  \
+		.dma_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
+		.sensor_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, sensor)),                        \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
+		.vsync_pin = DT_INST_PROP(inst, vsync_pin),                                        \
+		.hsync_pin = DT_INST_PROP(inst, hsync_pin),                                        \
+		.pclk_pin = DT_INST_PROP(inst, pclk_pin),                                          \
+	};                                                                                         \
+	struct nxp_video_sdma_data sdma_data_##inst = {                                            \
+		.config = &sdma_config_##inst,                                                     \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, nxp_video_sdma_init, NULL, &sdma_data_##inst,                  \
+			      &sdma_config_##inst, POST_KERNEL,                                    \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &nxp_video_sdma_api);            \
+                                                                                                   \
+	VIDEO_DEVICE_DEFINE(sdma_##inst, DEVICE_DT_INST_GET(inst), sdma_config_##inst.sensor_dev);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_VIDEO_SDMA_INIT)
