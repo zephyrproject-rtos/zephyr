@@ -59,6 +59,7 @@ Removed APIs and options
   option became the default behavior.
 
 Deprecated APIs and options
+===========================
 
 * The scheduler Kconfig options CONFIG_SCHED_DUMB and CONFIG_WAITQ_DUMB were
   renamed and deprecated. Use :kconfig:option:`CONFIG_SCHED_SIMPLE` and
@@ -66,8 +67,6 @@ Deprecated APIs and options
 
 * TLS credential type ``TLS_CREDENTIAL_SERVER_CERTIFICATE`` was renamed and
   deprecated, use :c:enumerator:`TLS_CREDENTIAL_PUBLIC_CERTIFICATE` instead.
-
-===========================
 
 * ``arduino_uno_r4_minima`` and ``arduino_uno_r4_wifi`` board targets have been deprecated in favor
   of a new ``arduino_uno_r4`` board with revisions (``arduino_uno_r4@minima`` and
