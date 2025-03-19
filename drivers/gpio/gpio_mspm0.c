@@ -148,6 +148,8 @@ static int gpio_mspm0_pin_configure(const struct device *port,
 						  DL_GPIO_INVERSION_DISABLE,
 						  pull_res,
 						  DL_GPIO_DRIVE_STRENGTH_LOW,
+						  (flags & GPIO_OPEN_DRAIN) ?
+						  DL_GPIO_HIZ_ENABLE :
 						  DL_GPIO_HIZ_DISABLE);
 
 		/* Set initial state */
