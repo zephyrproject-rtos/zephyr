@@ -14,6 +14,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 
+#include "video_ctrls.h"
 #include "video_device.h"
 
 LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
@@ -441,7 +442,21 @@ struct ov2640_config {
 	uint8_t clock_rate_control;
 };
 
+struct ov2640_ctrls {
+	struct video_ctrl hflip;
+	struct video_ctrl vflip;
+	struct video_ctrl ae;
+	struct video_ctrl awb;
+	struct video_ctrl gain;
+	struct video_ctrl contrast;
+	struct video_ctrl brightness;
+	struct video_ctrl saturation;
+	struct video_ctrl jpeg;
+	struct video_ctrl test_pattern;
+};
+
 struct ov2640_data {
+	struct ov2640_ctrls ctrls;
 	struct video_format fmt;
 };
 
@@ -565,58 +580,13 @@ static int ov2640_set_level(const struct device *dev, int level,
 	int ret = 0;
 	const struct ov2640_config *cfg = dev->config;
 
-	level += (max_level / 2 + 1);
-	if (level < 0 || level > max_level) {
-		return -ENOTSUP;
-	}
+	level += max_level / 2 + 1;
 
 	/* Switch to DSP register bank */
 	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
 
 	for (int i = 0; i < (ARRAY_SIZE(regs[0]) / sizeof(regs[0][0])); i++)	{
 		ret |= ov2640_write_reg(&cfg->i2c, regs[0][i], regs[level][i]);
-	}
-
-	return ret;
-}
-
-static int ov2640_set_brightness(const struct device *dev, int level)
-{
-	int ret = 0;
-
-	ret = ov2640_set_level(dev, level, NUM_BRIGHTNESS_LEVELS,
-			ARRAY_SIZE(brightness_regs[0]), brightness_regs);
-
-	if (ret == -ENOTSUP) {
-		LOG_ERR("Brightness level %d not supported", level);
-	}
-
-	return ret;
-}
-
-static int ov2640_set_saturation(const struct device *dev, int level)
-{
-	int ret = 0;
-
-	ret = ov2640_set_level(dev, level, NUM_SATURATION_LEVELS,
-			ARRAY_SIZE(saturation_regs[0]), saturation_regs);
-
-	if (ret == -ENOTSUP) {
-		LOG_ERR("Saturation level %d not supported", level);
-	}
-
-	return ret;
-}
-
-static int ov2640_set_contrast(const struct device *dev, int level)
-{
-	int ret = 0;
-
-	ret = ov2640_set_level(dev, level, NUM_CONTRAST_LEVELS,
-			ARRAY_SIZE(contrast_regs[0]), contrast_regs);
-
-	if (ret == -ENOTSUP) {
-		LOG_ERR("Contrast level %d not supported", level);
 	}
 
 	return ret;
@@ -925,47 +895,35 @@ static int ov2640_get_caps(const struct device *dev,
 	return 0;
 }
 
-static int ov2640_set_ctrl(const struct device *dev,
-				unsigned int cid, void *value)
+static int ov2640_set_ctrl(const struct device *dev, struct video_control *ctrl)
 {
-	int ret = 0;
-
-	switch (cid) {
+	switch (ctrl->id) {
 	case VIDEO_CID_HFLIP:
-		ret |= ov2640_set_horizontal_mirror(dev, (int)value);
-		break;
+		return ov2640_set_horizontal_mirror(dev, ctrl->val);
 	case VIDEO_CID_VFLIP:
-		ret |= ov2640_set_vertical_flip(dev, (int)value);
-		break;
+		return ov2640_set_vertical_flip(dev, ctrl->val);
 	case VIDEO_CID_EXPOSURE:
-		ret |= ov2640_set_exposure_ctrl(dev, (int)value);
-		break;
-	case VIDEO_CID_GAIN:
-		ret |= ov2640_set_gain_ctrl(dev, (int)value);
-		break;
-	case VIDEO_CID_BRIGHTNESS:
-		ret |= ov2640_set_brightness(dev, (int)value);
-		break;
-	case VIDEO_CID_SATURATION:
-		ret |= ov2640_set_saturation(dev, (int)value);
-		break;
+		return ov2640_set_exposure_ctrl(dev, ctrl->val);
 	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
-		ret |= ov2640_set_white_bal(dev, (int)value);
-		break;
+		return ov2640_set_white_bal(dev, ctrl->val);
+	case VIDEO_CID_GAIN:
+		return ov2640_set_gain_ctrl(dev, ctrl->val);
+	case VIDEO_CID_BRIGHTNESS:
+		return ov2640_set_level(dev, ctrl->val, NUM_BRIGHTNESS_LEVELS,
+					ARRAY_SIZE(brightness_regs[0]), brightness_regs);
 	case VIDEO_CID_CONTRAST:
-		ret |= ov2640_set_contrast(dev, (int)value);
-		break;
-	case VIDEO_CID_TEST_PATTERN:
-		ret |= ov2640_set_colorbar(dev, (int)value);
-		break;
+		return ov2640_set_level(dev, ctrl->val, NUM_CONTRAST_LEVELS,
+					ARRAY_SIZE(contrast_regs[0]), contrast_regs);
+	case VIDEO_CID_SATURATION:
+		return ov2640_set_level(dev, ctrl->val, NUM_SATURATION_LEVELS,
+					ARRAY_SIZE(saturation_regs[0]), saturation_regs);
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
-		ret |= ov2640_set_quality(dev, (int)value);
-		break;
+		return ov2640_set_quality(dev, ctrl->val);
+	case VIDEO_CID_TEST_PATTERN:
+		return ov2640_set_colorbar(dev, ctrl->val);
 	default:
 		return -ENOTSUP;
 	}
-
-	return ret;
 }
 
 static DEVICE_API(video, ov2640_driver_api) = {
@@ -975,6 +933,60 @@ static DEVICE_API(video, ov2640_driver_api) = {
 	.set_stream = ov2640_set_stream,
 	.set_ctrl = ov2640_set_ctrl,
 };
+
+static int ov2640_init_controls(const struct device *dev)
+{
+	int ret;
+	struct ov2640_data *drv_data = dev->data;
+	struct ov2640_ctrls *ctrls = &drv_data->ctrls;
+
+	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP, 0, 1, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP, 0, 1, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_init_ctrl(&ctrls->ae, dev, VIDEO_CID_EXPOSURE, 0, 1, 1, 1);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_init_ctrl(&ctrls->awb, dev, VIDEO_CID_WHITE_BALANCE_TEMPERATURE, 0, 1, 1, 1);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_init_ctrl(&ctrls->gain, dev, VIDEO_CID_GAIN, 0, 1, 1, 1);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_init_ctrl(&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS, -2, 2, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_init_ctrl(&ctrls->contrast, dev, VIDEO_CID_CONTRAST, -2, 2, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_init_ctrl(&ctrls->saturation, dev, VIDEO_CID_SATURATION, -2, 2, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_init_ctrl(&ctrls->jpeg, dev, VIDEO_CID_JPEG_COMPRESSION_QUALITY, 5, 100, 1, 50);
+	if (ret) {
+		return ret;
+	}
+
+	return video_init_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0, 1, 1, 0);
+}
 
 static int ov2640_init(const struct device *dev)
 {
@@ -1020,7 +1032,12 @@ static int ov2640_init(const struct device *dev)
 	ret |= ov2640_set_exposure_ctrl(dev, 1);
 	ret |= ov2640_set_white_bal(dev, 1);
 
-	return ret;
+	if (ret) {
+		return ret;
+	}
+
+	/* Initialize controls */
+	return ov2640_init_controls(dev);
 }
 
 /* Unique Instance */
