@@ -14,6 +14,9 @@
 #include <zephyr/drivers/gpio.h>
 
 #include <zephyr/logging/log.h>
+
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 
 #define GC2145_REG_AMODE1               0x17
@@ -1208,3 +1211,5 @@ static int gc2145_init_0(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &gc2145_init_0, NULL, &gc2145_data_0, &gc2145_cfg_0, POST_KERNEL,
 		      CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);
+
+VIDEO_DEVICE_DEFINE(gc2145, DEVICE_DT_INST_GET(0), NULL);
