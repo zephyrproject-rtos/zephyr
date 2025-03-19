@@ -70,6 +70,8 @@ boot_first_core:
 	 */
 	li t0, MSTATUS_FS_INIT
 	csrs mstatus, t0
+	li t0, MSTATUS_VS_INIT
+	csrs mstatus, t0
 
 	/*
 	 * Floating-point rounding mode set to IEEE-754 default, and clear
