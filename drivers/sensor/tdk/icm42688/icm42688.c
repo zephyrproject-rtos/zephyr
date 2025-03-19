@@ -10,13 +10,14 @@
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "icm42688.h"
 #include "icm42688_decoder.h"
 #include "icm42688_reg.h"
 #include "icm42688_rtio.h"
-#include "icm42688_spi.h"
+#include "icm42688_bus.h"
 #include "icm42688_trigger.h"
 
 #include <zephyr/logging/log.h>
@@ -93,9 +94,8 @@ static int icm42688_sample_fetch(const struct device *dev, enum sensor_channel c
 {
 	uint8_t status;
 	struct icm42688_dev_data *data = dev->data;
-	const struct icm42688_dev_cfg *cfg = dev->config;
 
-	int res = icm42688_spi_read(&cfg->spi, REG_INT_STATUS, &status, 1);
+	int res = icm42688_bus_read(dev, REG_INT_STATUS, &status, 1);
 
 	if (res) {
 		return res;
@@ -250,13 +250,21 @@ static DEVICE_API(sensor, icm42688_driver_api) = {
 int icm42688_init(const struct device *dev)
 {
 	struct icm42688_dev_data *data = dev->data;
-	const struct icm42688_dev_cfg *cfg = dev->config;
 	int res;
 
-	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("SPI bus is not ready");
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	if (!spi_is_ready_iodev(data->rtio_iodev)) {
+		LOG_ERR("SPI bus not ready");
 		return -ENODEV;
 	}
+#endif
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	if (!i2c_is_ready_iodev(data->rtio_iodev)) {
+		LOG_ERR("I2C bus not ready");
+		return -ENODEV;
+	}
+#endif
 
 	if (icm42688_reset(dev)) {
 		LOG_ERR("could not initialize sensor");
@@ -296,41 +304,42 @@ void icm42688_unlock(const struct device *dev)
 	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
 #define ICM42688_RTIO_DEFINE(inst)                                                                 \
-	SPI_DT_IODEV_DEFINE(icm42688_spi_iodev_##inst, DT_DRV_INST(inst), ICM42688_SPI_CFG, 0U);   \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),                                                     \
+	(SPI_DT_IODEV_DEFINE(icm42688_rtio_iodev_##inst,                                           \
+						DT_DRV_INST(inst), ICM42688_SPI_CFG, 0U)),         \
+	(I2C_DT_IODEV_DEFINE(icm42688_rtio_iodev_##inst, DT_DRV_INST(inst))));      \
 	RTIO_DEFINE(icm42688_rtio_##inst, 8, 4);
 
-#define ICM42688_DT_CONFIG_INIT(inst)					\
-	{								\
-		.accel_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),	\
-		.accel_fs = DT_INST_PROP(inst, accel_fs),		\
-		.accel_odr = DT_INST_PROP(inst, accel_odr),		\
-		.gyro_pwr_mode = DT_INST_PROP(inst, gyro_pwr_mode),	\
-		.gyro_fs = DT_INST_PROP(inst, gyro_fs),		\
-		.gyro_odr = DT_INST_PROP(inst, gyro_odr),		\
-		.temp_dis = false,					\
-		.fifo_en = IS_ENABLED(CONFIG_ICM42688_STREAM),		\
-		.batch_ticks = 0,					\
-		.fifo_hires = false,					\
-		.interrupt1_drdy = false,				\
-		.interrupt1_fifo_ths = false,				\
-		.interrupt1_fifo_full = false				\
-	}
+#define ICM42688_DT_CONFIG_INIT(inst)                                                              \
+	{.accel_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),                                     \
+	 .accel_fs = DT_INST_PROP(inst, accel_fs),                                                 \
+	 .accel_odr = DT_INST_PROP(inst, accel_odr),                                               \
+	 .gyro_pwr_mode = DT_INST_PROP(inst, gyro_pwr_mode),                                       \
+	 .gyro_fs = DT_INST_PROP(inst, gyro_fs),                                                   \
+	 .gyro_odr = DT_INST_PROP(inst, gyro_odr),                                                 \
+	 .temp_dis = false,                                                                        \
+	 .fifo_en = IS_ENABLED(CONFIG_ICM42688_STREAM),                                            \
+	 .batch_ticks = 0,                                                                         \
+	 .fifo_hires = false,                                                                      \
+	 .interrupt1_drdy = false,                                                                 \
+	 .interrupt1_fifo_ths = false,                                                             \
+	 .interrupt1_fifo_full = false}
 
 #define ICM42688_DEFINE_DATA(inst)                                                                 \
-	IF_ENABLED(CONFIG_ICM42688_STREAM, (ICM42688_RTIO_DEFINE(inst)));                          \
+	ICM42688_RTIO_DEFINE(inst);                                                                \
 	static struct icm42688_dev_data icm42688_driver_##inst = {                                 \
 		.cfg = ICM42688_DT_CONFIG_INIT(inst),                                              \
-		IF_ENABLED(CONFIG_ICM42688_STREAM, (.r = &icm42688_rtio_##inst,                    \
-						    .spi_iodev = &icm42688_spi_iodev_##inst,))     \
+		.rtio_ctx = &icm42688_rtio_##inst,                                                 \
+		.rtio_iodev = &icm42688_rtio_iodev_##inst,                                         \
 	};
 
 #define ICM42688_INIT(inst)                                                                        \
 	ICM42688_DEFINE_DATA(inst);                                                                \
                                                                                                    \
 	static const struct icm42688_dev_cfg icm42688_cfg_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, ICM42688_SPI_CFG, 0U),                           \
 		.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                       \
-	};                                                                                         \
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (.inst_on_bus = ICM42688_BUS_SPI,),         \
+				(.inst_on_bus = ICM42688_BUS_I2C,)) };                   \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm42688_init, NULL, &icm42688_driver_##inst,           \
 				     &icm42688_cfg_##inst, POST_KERNEL,                            \

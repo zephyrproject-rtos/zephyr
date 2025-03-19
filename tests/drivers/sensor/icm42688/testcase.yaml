@@ -1,11 +1,16 @@
 # Copyright (c) 2023 Google LLC
 # SPDX-License-Identifier: Apache-2.0
 
+common:
+  tags:
+    - drivers
+    - sensor
+    - subsys
+  platform_allow:
+    - native_sim
+
 tests:
-  drivers.sensor.icm42688:
-    tags:
-      - drivers
-      - sensor
-      - subsys
-    platform_allow:
-      - native_sim
+  drivers.sensor.icm42688.spi: {}
+  drivers.sensor.icm42688.i2c:
+    extra_dtc_overlay_files:
+      - "./boards/native_sim_i2c.overlay"

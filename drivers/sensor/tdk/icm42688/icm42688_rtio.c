@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025 ZARM, University of Bremen
  * Copyright (c) 2023 Google LLC
  * Copyright (c) 2024 Croxel Inc.
  *
@@ -11,7 +12,7 @@
 #include "icm42688_decoder.h"
 #include "icm42688_reg.h"
 #include "icm42688_rtio.h"
-#include "icm42688_spi.h"
+#include "icm42688_bus.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM42688_RTIO, CONFIG_SENSOR_LOG_LEVEL);
@@ -19,10 +20,9 @@ LOG_MODULE_REGISTER(ICM42688_RTIO, CONFIG_SENSOR_LOG_LEVEL);
 static int icm42688_rtio_sample_fetch(const struct device *dev, int16_t readings[7])
 {
 	uint8_t status;
-	const struct icm42688_dev_cfg *cfg = dev->config;
 	uint8_t *buffer = (uint8_t *)readings;
 
-	int res = icm42688_spi_read(&cfg->spi, REG_INT_STATUS, &status, 1);
+	int res = icm42688_bus_read(dev, REG_INT_STATUS, &status, 1);
 
 	if (res) {
 		return res;
