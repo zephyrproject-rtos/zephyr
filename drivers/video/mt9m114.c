@@ -15,6 +15,7 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/drivers/i2c.h>
 
+#include "video_ctrls.h"
 #include "video_device.h"
 
 LOG_MODULE_REGISTER(video_mt9m114, CONFIG_VIDEO_LOG_LEVEL);
@@ -65,7 +66,13 @@ struct mt9m114_config {
 	struct i2c_dt_spec i2c;
 };
 
+struct mt9m114_ctrls {
+	struct video_ctrl hflip;
+	struct video_ctrl vflip;
+};
+
 struct mt9m114_data {
+	struct mt9m114_ctrls ctrls;
 	struct video_format fmt;
 };
 
@@ -466,20 +473,20 @@ static int mt9m114_get_caps(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int mt9m114_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+static int mt9m114_set_ctrl(const struct device *dev, struct video_control *ctrl)
 {
 	int ret = 0;
 
-	switch (cid) {
+	switch (ctrl->id) {
 	case VIDEO_CID_HFLIP:
 		ret = mt9m114_modify_reg(dev, MT9M114_CAM_SENSOR_CTRL_READ_MODE, 2,
 					MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN,
-					(int)value ? MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN : 0);
+					ctrl->val ? MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN : 0);
 		break;
 	case VIDEO_CID_VFLIP:
 		ret = mt9m114_modify_reg(dev, MT9M114_CAM_SENSOR_CTRL_READ_MODE, 2,
 					MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN,
-					(int)value ? MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN : 0);
+					ctrl->val ? MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN : 0);
 		break;
 	default:
 		return -ENOTSUP;
@@ -500,6 +507,21 @@ static DEVICE_API(video, mt9m114_driver_api) = {
 	.set_stream = mt9m114_set_stream,
 	.set_ctrl = mt9m114_set_ctrl,
 };
+
+static int mt9m114_init_controls(const struct device *dev)
+{
+	int ret;
+	struct mt9m114_data *drv_data = dev->data;
+	struct mt9m114_ctrls *ctrls = &drv_data->ctrls;
+
+
+	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP, 0, 1, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP, 0, 1, 1, 0);
+}
 
 static int mt9m114_init(const struct device *dev)
 {
@@ -546,7 +568,8 @@ static int mt9m114_init(const struct device *dev)
 	/* Suspend any stream */
 	mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_SUSPEND);
 
-	return 0;
+	/* Initialize controls */
+	return mt9m114_init_controls(dev);
 }
 
 #if 1 /* Unique Instance */

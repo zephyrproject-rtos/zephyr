@@ -300,32 +300,6 @@ static int video_mcux_csi_dequeue(const struct device *dev, enum video_endpoint_
 	return 0;
 }
 
-static inline int video_mcux_csi_set_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_mcux_csi_config *config = dev->config;
-	int ret = -ENOTSUP;
-
-	/* Forward to source dev if any */
-	if (config->source_dev) {
-		ret = video_set_ctrl(config->source_dev, cid, value);
-	}
-
-	return ret;
-}
-
-static inline int video_mcux_csi_get_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_mcux_csi_config *config = dev->config;
-	int ret = -ENOTSUP;
-
-	/* Forward to source dev if any */
-	if (config->source_dev) {
-		ret = video_get_ctrl(config->source_dev, cid, value);
-	}
-
-	return ret;
-}
-
 static int video_mcux_csi_get_caps(const struct device *dev, enum video_endpoint_id ep,
 				   struct video_caps *caps)
 {
@@ -470,8 +444,6 @@ static DEVICE_API(video, video_mcux_csi_driver_api) = {
 	.flush = video_mcux_csi_flush,
 	.enqueue = video_mcux_csi_enqueue,
 	.dequeue = video_mcux_csi_dequeue,
-	.set_ctrl = video_mcux_csi_set_ctrl,
-	.get_ctrl = video_mcux_csi_get_ctrl,
 	.get_caps = video_mcux_csi_get_caps,
 	.set_frmival = video_mcux_csi_set_frmival,
 	.get_frmival = video_mcux_csi_get_frmival,

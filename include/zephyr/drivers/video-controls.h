@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Linaro Limited.
  * Copyright (c) 2024 tinyVision.ai Inc.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +29,8 @@
  *
  * @{
  */
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -156,6 +159,29 @@ enum video_power_line_frequency {
  * @{
  */
 #define VIDEO_CID_PRIVATE_BASE 0x08000000
+
+/**
+ * @}
+ */
+
+/**
+ * @name Public video control structures
+ * @{
+ */
+
+/**
+ * @struct video_control
+ * @brief Video control structure
+ *
+ * Used to get/set a video control.
+ * @see video_ctrl for the struct used in the driver implementation
+ */
+struct video_control {
+	/** control id */
+	uint32_t id;
+	/** control value */
+	int32_t val;
+};
 
 /**
  * @}

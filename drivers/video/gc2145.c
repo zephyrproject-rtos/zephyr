@@ -15,6 +15,7 @@
 
 #include <zephyr/logging/log.h>
 
+#include "video_ctrls.h"
 #include "video_device.h"
 
 LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
@@ -692,7 +693,13 @@ struct gc2145_config {
 #endif
 };
 
+struct gc2145_ctrls {
+	struct video_ctrl hflip;
+	struct video_ctrl vflip;
+};
+
 struct gc2145_data {
+	struct gc2145_ctrls ctrls;
 	struct video_format fmt;
 };
 
@@ -1103,13 +1110,13 @@ static int gc2145_get_caps(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int gc2145_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+static int gc2145_set_ctrl(const struct device *dev, struct video_control *ctrl)
 {
-	switch (cid) {
+	switch (ctrl->id) {
 	case VIDEO_CID_HFLIP:
-		return gc2145_set_ctrl_hmirror(dev, (int)value);
+		return gc2145_set_ctrl_hmirror(dev, ctrl->val);
 	case VIDEO_CID_VFLIP:
-		return gc2145_set_ctrl_vflip(dev, (int)value);
+		return gc2145_set_ctrl_vflip(dev, ctrl->val);
 	default:
 		return -ENOTSUP;
 	}
@@ -1122,6 +1129,20 @@ static DEVICE_API(video, gc2145_driver_api) = {
 	.set_stream = gc2145_set_stream,
 	.set_ctrl = gc2145_set_ctrl,
 };
+
+static int gc2145_init_controls(const struct device *dev)
+{
+	int ret;
+	struct gc2145_data *drv_data = dev->data;
+	struct gc2145_ctrls *ctrls = &drv_data->ctrls;
+
+	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP, 0, 1, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP, 0, 1, 1, 0);
+}
 
 static int gc2145_init(const struct device *dev)
 {
@@ -1169,7 +1190,8 @@ static int gc2145_init(const struct device *dev)
 		return ret;
 	}
 
-	return 0;
+	/* Initialize controls */
+	return gc2145_init_controls(dev);
 }
 
 /* Unique Instance */

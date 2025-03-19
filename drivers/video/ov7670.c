@@ -12,6 +12,7 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 
+#include "video_ctrls.h"
 #include "video_device.h"
 
 LOG_MODULE_REGISTER(video_ov7670, CONFIG_VIDEO_LOG_LEVEL);
@@ -32,7 +33,13 @@ struct ov7670_config {
 #endif
 };
 
+struct ov7670_ctrls {
+	struct video_ctrl hflip;
+	struct video_ctrl vflip;
+};
+
 struct ov7670_data {
+	struct ov7670_ctrls ctrls;
 	struct video_format fmt;
 };
 
@@ -451,6 +458,20 @@ static int ov7670_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
+static int ov7670_init_controls(const struct device *dev)
+{
+	int ret;
+	struct ov7670_data *drv_data = dev->data;
+	struct ov7670_ctrls *ctrls = &drv_data->ctrls;
+
+	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP, 0, 1, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP, 0, 1, 1, 0);
+}
+
 static int ov7670_init(const struct device *dev)
 {
 	const struct ov7670_config *config = dev->config;
@@ -549,7 +570,8 @@ static int ov7670_init(const struct device *dev)
 		}
 	}
 
-	return 0;
+	/* Initialize controls */
+	return ov7670_init_controls(dev);
 }
 
 static int ov7670_set_stream(const struct device *dev, bool enable)
@@ -557,17 +579,17 @@ static int ov7670_set_stream(const struct device *dev, bool enable)
 	return 0;
 }
 
-static int ov7670_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+static int ov7670_set_ctrl(const struct device *dev, struct video_control *ctrl)
 {
 	const struct ov7670_config *config = dev->config;
 
-	switch (cid) {
+	switch (ctrl->id) {
 	case VIDEO_CID_HFLIP:
 		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP,
-			OV7670_MVFP_HFLIP, ((int)value) ? OV7670_MVFP_HFLIP : 0);
+			OV7670_MVFP_HFLIP, ctrl->val ? OV7670_MVFP_HFLIP : 0);
 	case VIDEO_CID_VFLIP:
 		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP,
-			OV7670_MVFP_VFLIP, ((int)value) ? OV7670_MVFP_VFLIP : 0);
+			OV7670_MVFP_VFLIP, ctrl->val ? OV7670_MVFP_VFLIP : 0);
 	default:
 		return -ENOTSUP;
 	}
