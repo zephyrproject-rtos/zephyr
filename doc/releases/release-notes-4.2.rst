@@ -131,6 +131,10 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_NET_IPV4_MTU`
 
+  * MQTT
+
+    * :kconfig:option:`CONFIG_MQTT_VERSION_5_0`
+
 * Stepper
 
   * :c:func:`stepper_stop()`
