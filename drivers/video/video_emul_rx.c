@@ -31,22 +31,6 @@ struct emul_rx_data {
 	struct k_fifo fifo_out;
 };
 
-static int emul_rx_set_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct emul_rx_config *cfg = dev->config;
-
-	/* Forward all controls to the source */
-	return video_set_ctrl(cfg->source_dev, cid, value);
-}
-
-static int emul_rx_get_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct emul_rx_config *cfg = dev->config;
-
-	/* Forward all controls to the source */
-	return video_get_ctrl(cfg->source_dev, cid, value);
-}
-
 static int emul_rx_set_frmival(const struct device *dev, enum video_endpoint_id ep,
 			       struct video_frmival *frmival)
 {
@@ -248,8 +232,6 @@ static int emul_rx_flush(const struct device *dev, enum video_endpoint_id ep, bo
 }
 
 static DEVICE_API(video, emul_rx_driver_api) = {
-	.set_ctrl = emul_rx_set_ctrl,
-	.get_ctrl = emul_rx_get_ctrl,
 	.set_frmival = emul_rx_set_frmival,
 	.get_frmival = emul_rx_get_frmival,
 	.enum_frmival = emul_rx_enum_frmival,
