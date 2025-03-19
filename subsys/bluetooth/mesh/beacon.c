@@ -471,6 +471,11 @@ static bool beacons_send_next(void)
 	struct bt_mesh_subnet *sub_first = bt_mesh_subnet_next(NULL);
 	struct bt_mesh_subnet *sub_next;
 
+	if (!sub_first) {
+		LOG_ERR("No network to send network beacon for!");
+		return false;
+	}
+
 	do {
 		sub_next = bt_mesh_subnet_next(beacon_send_sub_curr);
 		if (sub_next == sub_first && beacon_send_sub_curr != NULL) {
