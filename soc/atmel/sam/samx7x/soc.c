@@ -57,7 +57,9 @@ static ALWAYS_INLINE void clock_init(void)
 		 * this optimization is not deemed
 		 * critical now.
 		 */
-		soc_pmc_switch_mainck_to_xtal(false, 0xff);
+		bool bypass = IS_ENABLED(CONFIG_SOC_ATMEL_SAM_EXT_MAINCK_BYPASS);
+
+		soc_pmc_switch_mainck_to_xtal(bypass, 0xff);
 	}
 
 	/*
