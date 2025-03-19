@@ -236,6 +236,8 @@ Misc
   file can be included using ``<zephyr/drivers/misc/flexram/nxp_flexram.h>``.
   Modification to CMakeList.txt to use include this driver is no longer
   required.
+* All memc_flexram_* namespaced things including kconfigs and C API
+  have been changed to just flexram_*.
 
 Bluetooth
 *********
