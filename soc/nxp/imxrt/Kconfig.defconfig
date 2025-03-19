@@ -35,10 +35,6 @@ config PM_MCUX_GPC
 	default y if HAS_MCUX_GPC
 	depends on SOC_SERIES_IMXRT11XX && PM
 
-# Don't allow SOC to sleep after tests complete when PM is enabled
-config ZTEST_NO_YIELD
-	default y if (ZTEST && PM)
-
 if SOC_SERIES_IMXRT10XX && PM
 
 config CODE_DATA_RELOCATION
