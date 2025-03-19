@@ -176,6 +176,10 @@ Networking
   (because the addr is not a pointer) and must be changed to ``if (lladdr->len == 0)``
   if the code wants to check that the link address is not set.
 
+* TLS credential type ``TLS_CREDENTIAL_SERVER_CERTIFICATE`` was renamed to
+  more generic :c:enumerator:`TLS_CREDENTIAL_PUBLIC_CERTIFICATE` to better
+  reflect the purpose of this credential type.
+
 SPI
 ===
 
