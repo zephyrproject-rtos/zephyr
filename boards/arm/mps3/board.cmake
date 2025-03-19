@@ -37,6 +37,10 @@ elseif(CONFIG_BOARD_MPS3_CORSTONE310_FVP OR CONFIG_BOARD_MPS3_CORSTONE310_FVP_NS
     set(ARMFVP_FLAGS
       # default is '0x11000000' but should match cpu<i>.INITSVTOR which is 0.
       -C mps3_board.sse300.iotss3_systemcontrol.INITSVTOR_RST=0
+      # default is 0x8, this change is needed since we split flash into itcm
+      # and sram and it reduces the number of available mpu regions causing a
+      # few MPU tests to fail.
+      -C cpu0.MPU_S=16
     )
   endif()
 endif()
