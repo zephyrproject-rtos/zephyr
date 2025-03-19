@@ -1,0 +1,45 @@
+# Copyright (c) 2024 Wimansha Wijekoon <Wimanshahb@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog Device MAX31329 RTC
+
+compatible: "adi,max31329"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+  - name: pm.yaml
+    property-allowlist:
+      - wakeup-source
+
+properties:
+  rtc-inta-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the max31329 INTA interrupt output. This pin should be pull high to rtc_vcc
+  pvft:
+    type: int
+    enum:
+      - 0x0 # Threshold voltage disabled
+      - 0x1 # 1.85V
+      - 0x2 # 2.15V
+      - 0x3 # 2.40V
+    description: |
+      Power Fail Threshold to switch to Vbat.
+  trickle:
+    type: int
+    enum:
+      - 0x0 # 3kΩ in series with a Schottky diode
+      - 0x1 # 3kΩ in series with a Schottky diode
+      - 0x2 # 6kΩ in series with a Schottky diode
+      - 0x3 # 11kΩ in series with a Schottky diode
+      - 0x4 # 3kΩ in series with a diode + Schottky diode
+      - 0x5 # 3kΩ in series with a diode + Schottky diode
+      - 0x6 # 6kΩ in series with a diode + Schottky diode
+      - 0x7 # 11kΩ in series with a diode + Schottky diode
+    description: |
+      Sets Trickle charging path
+  digital-in-enable:
+    type: boolean
+    description: |
+      Enable the Digital IN (DIN)
