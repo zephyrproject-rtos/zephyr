@@ -310,3 +310,5 @@ dvp_fpc24_i2c: &lpi2c1 {};
 dvp_fpc24_interface: &csi {};
 
 m2_hci_bt_uart: &lpuart3 {};
+
+m2_wifi_sdio: &usdhc1 {};
