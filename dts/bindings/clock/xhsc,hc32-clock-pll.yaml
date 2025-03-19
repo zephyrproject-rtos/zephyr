@@ -1,0 +1,54 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PLL node binding for HC32 devices
+
+compatible: "xhsc,hc32-clock-pll"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+
+  clocks:
+    required: true
+
+  clock_frequency:
+    type: int
+    required: true
+
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for PLL
+        input clock
+        Valid range: 1 - 24
+
+  mul-n:
+    type: int
+    required: true
+    description: |
+        Main PLL multiplication factor for VCO
+        Valid range: 20 - 480
+
+  div-p:
+    type: int
+    description: |
+        PLL division factor for pll_p_ck
+        Valid range: 2 - 16
+
+  div-q:
+    type: int
+    description: |
+        PLL division factor for pll_q_ck
+        Valid range: 2 - 16
+
+  div-r:
+    type: int
+    description: |
+        PLL division factor for pll_r_ck
+        Valid range: 2 - 16
+
+  "#clock-cells":
+    const: 0

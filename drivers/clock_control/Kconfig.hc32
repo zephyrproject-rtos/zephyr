@@ -1,0 +1,34 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_HC32
+	bool "HC32 Clock Control"
+
+if CLOCK_CONTROL_HC32
+
+config HC32_LL_CLK
+	bool
+	default y
+
+choice HC32_XTAL32_DRV_SELECT
+	bool "Select XTAL32 driver power"
+	default HC32_XTAL32_DRV_M
+
+config HC32_XTAL32_DRV_H
+	bool "High Driver"
+	help
+	  Select High Driver for XTAL32
+
+config HC32_XTAL32_DRV_M
+	bool "medium Driver"
+	help
+	  Select medium Driver for XTAL32
+endchoice
+
+config HC32_XTAL32_DRV
+	int
+	default 0 if HC32_XTAL32_DRV_M
+	default 1 if HC32_XTAL32_DRV_H
+
+
+endif
