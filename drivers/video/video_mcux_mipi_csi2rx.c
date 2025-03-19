@@ -327,7 +327,8 @@ static int mipi_csi2rx_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &mipi_csi2rx_init, NULL, &mipi_csi2rx_data_##n,                   \
-			      &mipi_csi2rx_config_##n, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,    \
+			      &mipi_csi2rx_config_##n, POST_KERNEL,                                \
+			      CONFIG_VIDEO_MCUX_MIPI_CSI2RX_INIT_PRIORITY,                         \
 			      &mipi_csi2rx_driver_api);                                            \
                                                                                                    \
 	VIDEO_DEVICE_DEFINE(mipi_csi2rx_##n, DEVICE_DT_INST_GET(n), SOURCE_DEV(n));
