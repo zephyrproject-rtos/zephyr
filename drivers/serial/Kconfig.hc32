@@ -1,0 +1,24 @@
+# Kconfig.defconfig.series - xhsc hc32f460 configuration
+# options
+
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_HC32
+	bool "HC32 MCU serial driver"
+	default y
+	depends on DT_HAS_XHSC_HC32_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+    select HC32_LL_USART
+	# interrupt function depend on intc module
+	select SERIAL_SUPPORT_INTERRUPT if DT_HAS_XHSC_HC32_INTC_ENABLED
+	select UART_INTERRUPT_DRIVEN if SERIAL_SUPPORT_INTERRUPT
+	# the ASYNC implementation requires a DMA controller
+	select SERIAL_SUPPORT_ASYNC if DT_HAS_XHSC_HC32_DMA_ENABLED
+	select UART_ASYNC_API if SERIAL_SUPPORT_ASYNC
+	select DMA if UART_ASYNC_API
+
+	help
+	  This option enables the UART driver for HC32 family of
+	  processors.
+	  Set y if you wish to use serial port on HC32 MCU.
