@@ -567,6 +567,10 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 		/* By default IPv4 and IPv6 are in different port spaces */
 		contexts[i].options.ipv6_v6only = true;
 #endif
+#if defined(CONFIG_NET_IPV4)
+		contexts[i].options.ipv4_mcast_loop =
+			IS_ENABLED(CONFIG_NET_INITIAL_IPV4_MCAST_LOOP);
+#endif
 		if (IS_ENABLED(CONFIG_NET_IP)) {
 			(void)memset(&contexts[i].remote, 0, sizeof(struct sockaddr));
 			(void)memset(&contexts[i].local, 0, sizeof(struct sockaddr_ptr));
@@ -1779,6 +1783,19 @@ static int get_context_mcast_ttl(struct net_context *context,
 	ARG_UNUSED(value);
 	ARG_UNUSED(len);
 
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_ipv4_mcast_loop(struct net_context *context,
+				  void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV4)
+	return get_bool_option(context->options.ipv4_mcast_loop, value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
 	return -ENOTSUP;
 #endif
 }
@@ -3293,6 +3310,20 @@ static int set_context_mcast_ttl(struct net_context *context,
 #endif
 }
 
+static int set_context_ipv4_mcast_loop(struct net_context *context,
+				       const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV4)
+	return set_bool_option(&context->options.ipv4_mcast_loop, value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 static int set_context_mcast_hop_limit(struct net_context *context,
 				       const void *value, size_t len)
 {
@@ -3688,6 +3719,9 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_IPV6_MCAST_LOOP:
 		ret = set_context_ipv6_mcast_loop(context, value, len);
 		break;
+	case NET_OPT_IPV4_MCAST_LOOP:
+		ret = set_context_ipv4_mcast_loop(context, value, len);
+		break;
 	}
 
 	k_mutex_unlock(&context->lock);
@@ -3775,6 +3809,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_IPV6_MCAST_LOOP:
 		ret = get_context_ipv6_mcast_loop(context, value, len);
+		break;
+	case NET_OPT_IPV4_MCAST_LOOP:
+		ret = get_context_ipv4_mcast_loop(context, value, len);
 		break;
 	}
 
