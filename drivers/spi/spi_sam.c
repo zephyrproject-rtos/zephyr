@@ -115,17 +115,13 @@ static int spi_sam_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (config->slave > (SAM_SPI_CHIP_SELECT_COUNT - 1)) {
-		LOG_ERR("Slave %d is greater than %d",
-			config->slave, SAM_SPI_CHIP_SELECT_COUNT - 1);
-		return -EINVAL;
-	}
-
 	/* Set master mode, disable mode fault detection, set fixed peripheral
 	 * select mode.
 	 */
 	spi_mr |= (SPI_MR_MSTR | SPI_MR_MODFDIS);
-	spi_mr |= SPI_MR_PCS(spi_slave_to_mr_pcs(spi_csr_idx));
+	if (config->slave < SAM_SPI_CHIP_SELECT_COUNT) {
+		spi_mr |= SPI_MR_PCS(spi_slave_to_mr_pcs(spi_csr_idx));
+	}
 
 	if (cfg->loopback) {
 		spi_mr |= SPI_MR_LLB;
@@ -152,7 +148,9 @@ static int spi_sam_configure(const struct device *dev,
 
 	regs->SPI_CR = SPI_CR_SPIDIS; /* Disable SPI */
 	regs->SPI_MR = spi_mr;
-	regs->SPI_CSR[spi_csr_idx] = spi_csr;
+	if (config->slave < SAM_SPI_CHIP_SELECT_COUNT) {
+		regs->SPI_CSR[spi_csr_idx] = spi_csr;
+	}
 	regs->SPI_CR = SPI_CR_SPIEN; /* Enable SPI */
 
 	data->ctx.config = config;
