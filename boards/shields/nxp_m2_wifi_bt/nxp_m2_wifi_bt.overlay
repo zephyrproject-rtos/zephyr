@@ -28,3 +28,10 @@
 		};
 	};
 };
+
+&m2_wifi_sdio {
+	nxp_wifi {
+		compatible = "nxp,wifi";
+		status = "okay";
+	};
+};
