@@ -24,8 +24,6 @@ jobs:
   doc-file-check:
     name: Check for doc changes
     runs-on: ubuntu-24.04
-    if: >
-      github.repository_owner == 'zephyrproject-rtos'
     outputs:
       file_check: ${{ steps.check-doc-files.outputs.any_modified }}
     steps:
@@ -58,8 +56,7 @@ jobs:
     name: "Documentation Build (HTML)"
     needs: [doc-file-check]
     if: >
-      github.repository_owner == 'zephyrproject-rtos' &&
-        ( needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request' )
+      needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     concurrency:
@@ -182,8 +179,7 @@ jobs:
     name: "Documentation Build (PDF)"
     needs: [doc-file-check]
     if: |
-      github.event_name != 'pull_request' &&
-      github.repository_owner == 'zephyrproject-rtos'
+      github.event_name != 'pull_request'
     runs-on: ubuntu-22.04
     container: texlive/texlive:latest
     timeout-minutes: 120
