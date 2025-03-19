@@ -292,7 +292,7 @@ struct mqtt_connack_param {
 	 */
 	uint8_t return_code;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	struct {
 		/** MQTT 5.0, ch. 3.2.2.3.10 User Property. */
 		struct mqtt_utf8_pair user_prop[CONFIG_MQTT_USER_PROPERTIES_MAX];
@@ -389,7 +389,7 @@ struct mqtt_puback_param {
 	/** Message id of the PUBLISH message being acknowledged */
 	uint16_t message_id;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** MQTT 5.0 reason code. */
 	uint8_t reason_code;
 
@@ -403,7 +403,7 @@ struct mqtt_pubrec_param {
 	/** Message id of the PUBLISH message being acknowledged */
 	uint16_t message_id;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** MQTT 5.0 reason code. */
 	uint8_t reason_code;
 
@@ -417,7 +417,7 @@ struct mqtt_pubrel_param {
 	/** Message id of the PUBREC message being acknowledged */
 	uint16_t message_id;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** MQTT 5.0 reason code. */
 	uint8_t reason_code;
 
@@ -431,7 +431,7 @@ struct mqtt_pubcomp_param {
 	/** Message id of the PUBREL message being acknowledged */
 	uint16_t message_id;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** MQTT 5.0 reason code. */
 	uint8_t reason_code;
 
@@ -452,7 +452,7 @@ struct mqtt_suback_param {
 	 */
 	struct mqtt_binstr return_codes;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** MQTT 5.0 properties. */
 	struct mqtt_common_ack_properties prop;
 #endif /* CONFIG_MQTT_VERSION_5_0 */
@@ -463,7 +463,7 @@ struct mqtt_unsuback_param {
 	/** Message id of the UNSUBSCRIBE message being acknowledged */
 	uint16_t message_id;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** Reason codes corresponding to each topic in the unsubscription list. */
 	struct mqtt_binstr reason_codes;
 
@@ -492,7 +492,7 @@ struct mqtt_publish_param {
 	 */
 	uint8_t retain_flag : 1;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** MQTT 5.0 properties. */
 	struct {
 		/** MQTT 5.0, ch. 3.3.2.3.7 User Property. */
@@ -545,7 +545,7 @@ struct mqtt_subscription_list {
 	/** Message id used to identify subscription request. */
 	uint16_t message_id;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** MQTT 5.0 properties. */
 	struct {
 		/** MQTT 5.0, ch. 3.8.2.1.3 / 3.10.2.1.2 User Property. */
@@ -561,7 +561,7 @@ struct mqtt_subscription_list {
 
 /** @brief Parameters for disconnect message. */
 struct mqtt_disconnect_param {
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/* MQTT 5.0 Disconnect reason code. */
 	enum mqtt_disconnect_reason reason_code;
 
@@ -590,7 +590,7 @@ struct mqtt_disconnect_param {
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 struct mqtt_auth_param {
 	/* MQTT 5.0, ch. 3.15.2.1 Authenticate Reason Code */
 	enum mqtt_auth_reason reason_code;
@@ -653,7 +653,7 @@ union mqtt_evt_param {
 	/** Parameters accompanying MQTT_EVT_UNSUBACK event. */
 	struct mqtt_unsuback_param unsuback;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** Parameters accompanying MQTT_EVT_DISCONNECT event. */
 	struct mqtt_disconnect_param disconnect;
 
@@ -835,7 +835,7 @@ struct mqtt_internal {
 	/** Internal. Remaining payload length to read. */
 	uint32_t remaining_payload;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** Internal. MQTT 5.0 topic alias mapping. */
 	struct mqtt_topic_alias topic_aliases[CONFIG_MQTT_TOPIC_ALIAS_MAX];
 
@@ -874,7 +874,7 @@ struct mqtt_client {
 	 */
 	struct mqtt_utf8 *password;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** MQTT 5.0 Will properties. */
 	struct {
 		/** MQTT 5.0, ch. 3.1.3.2.8 User Property. */
@@ -935,7 +935,7 @@ struct mqtt_client {
 	/** Unanswered PINGREQ count on this connection. */
 	int8_t unacked_ping;
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** MQTT 5.0 properties. */
 	struct {
 		/** MQTT 5.0, ch. 3.1.2.11.8 User Property. */
@@ -1145,7 +1145,7 @@ int mqtt_ping(struct mqtt_client *client);
 int mqtt_disconnect(struct mqtt_client *client,
 		    const struct mqtt_disconnect_param *param);
 
-#if defined(CONFIG_MQTT_VERSION_5_0)
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 /**
  * @brief API to send an authentication packet to the server.
  *
