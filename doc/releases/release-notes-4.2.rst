@@ -129,6 +129,10 @@ New APIs and options
 
   * :c:func:`stepper_stop()`
 
+* Counter
+
+  * :c:func:`counter_reset`
+
 New Boards
 **********
 
