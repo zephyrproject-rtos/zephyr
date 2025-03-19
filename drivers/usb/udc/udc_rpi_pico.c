@@ -213,6 +213,7 @@ static void rpi_pico_ep_cancel(const struct device *dev, const uint8_t ep)
 	buf_ctrl = read_buf_ctrl_reg(dev, ep);
 	if (!(buf_ctrl & USB_BUF_CTRL_AVAIL)) {
 		/* The buffer is not used by the controller */
+		udc_ep_set_busy(dev, ep, false);
 		return;
 	}
 
@@ -229,6 +230,7 @@ static void rpi_pico_ep_cancel(const struct device *dev, const uint8_t ep)
 		rpi_pico_bit_clr(abort_reg, ep_mask);
 	}
 
+	udc_ep_set_busy(dev, ep, false);
 	LOG_INF("Canceled ep 0x%02x transaction", ep);
 }
 
