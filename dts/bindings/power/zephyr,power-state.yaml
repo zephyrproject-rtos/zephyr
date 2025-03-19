@@ -37,11 +37,3 @@ properties:
        Disable system managed device power management for this state. When set,
        the power management subsystem will not suspend devices before entering
        this state.
-  zephyr,pm-turn-on-off-action:
-    type: boolean
-    description: |
-      By default, system managed device power management invokes the
-      PM_DEVICE_ACTION_SUSPEND and PM_DEVICE_ACTION_RESUME actions.
-      Enabling this will make system managed device power management invoke
-      the PM_DEVICE_ACTION_TURN_OFF and PM_DEVICE_ACTION_TURN_ON actions in
-      this state.
