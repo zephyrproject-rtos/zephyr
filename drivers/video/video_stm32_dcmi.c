@@ -20,6 +20,8 @@
 
 #include <stm32_ll_dma.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_stm32_dcmi, CONFIG_VIDEO_LOG_LEVEL);
 
 #if CONFIG_VIDEO_BUFFER_POOL_NUM_MAX < 2
@@ -521,3 +523,5 @@ DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init,
 		    &video_stm32_dcmi_config_0,
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &video_stm32_dcmi_driver_api);
+
+VIDEO_DEVICE_DEFINE(dcmi, DEVICE_DT_INST_GET(0), video_stm32_dcmi_config_0.sensor_dev);

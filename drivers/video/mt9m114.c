@@ -15,6 +15,8 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/drivers/i2c.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_mt9m114, CONFIG_VIDEO_LOG_LEVEL);
 
 #define MT9M114_CHIP_ID_VAL 0x2481
@@ -569,4 +571,7 @@ static int mt9m114_init_0(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &mt9m114_init_0, NULL, &mt9m114_data_0, &mt9m114_cfg_0, POST_KERNEL,
 		      CONFIG_VIDEO_INIT_PRIORITY, &mt9m114_driver_api);
+
+VIDEO_DEVICE_DEFINE(mt9m114, DEVICE_DT_INST_GET(0), NULL);
+
 #endif
