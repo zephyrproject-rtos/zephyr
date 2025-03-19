@@ -312,7 +312,7 @@ static void setup_tls(void)
 	int err;
 
 	err = tls_credential_add(HTTP_SERVER_CERTIFICATE_TAG,
-				 TLS_CREDENTIAL_SERVER_CERTIFICATE,
+				 TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 				 server_certificate,
 				 sizeof(server_certificate));
 	if (err < 0) {

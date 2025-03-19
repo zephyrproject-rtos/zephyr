@@ -93,7 +93,7 @@ socket options.
 The following TLS credential types can be registered in the system:
 
 - ``TLS_CREDENTIAL_CA_CERTIFICATE``
-- ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
+- ``TLS_CREDENTIAL_PUBLIC_CERTIFICATE``
 - ``TLS_CREDENTIAL_PRIVATE_KEY``
 - ``TLS_CREDENTIAL_PSK``
 - ``TLS_CREDENTIAL_PSK_ID``

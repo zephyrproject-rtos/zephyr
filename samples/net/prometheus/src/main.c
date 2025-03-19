@@ -120,7 +120,7 @@ static void setup_tls(void)
 	}
 #endif /* defined(CONFIG_NET_SAMPLE_CERTS_WITH_SC) */
 
-	err = tls_credential_add(HTTP_SERVER_CERTIFICATE_TAG, TLS_CREDENTIAL_SERVER_CERTIFICATE,
+	err = tls_credential_add(HTTP_SERVER_CERTIFICATE_TAG, TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 				 server_certificate, sizeof(server_certificate));
 	if (err < 0) {
 		LOG_ERR("Failed to register public certificate: %d", err);
