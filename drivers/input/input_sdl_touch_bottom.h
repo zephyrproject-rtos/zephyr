@@ -22,6 +22,7 @@ extern "C" {
 
 struct sdl_input_data {
 	const void *dev; /* device structure pointer */
+	const void *display_dev;
 	void (*callback)(struct sdl_input_data *data);
 	int x;
 	int y;
