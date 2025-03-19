@@ -352,6 +352,21 @@ static int siwx91x_dma_get_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
+bool siwx91x_dma_chan_filter(const struct device *dev, int channel, void *filter_param)
+{
+	ARG_UNUSED(dev);
+
+	if (!filter_param) {
+		return false;
+	}
+
+	if (*(int *)filter_param == channel) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 /* Function to initialize DMA peripheral */
 static int siwx91x_dma_init(const struct device *dev)
 {
@@ -440,6 +455,7 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 	.start = siwx91x_dma_start,
 	.stop = siwx91x_dma_stop,
 	.get_status = siwx91x_dma_get_status,
+	.chan_filter = siwx91x_dma_chan_filter,
 };
 
 #define SIWX91X_DMA_INIT(inst)                                                                     \
