@@ -239,7 +239,7 @@ static void *setup(void)
 		zassert_equal(ret, 0, "failed to add CA Certificate (%d)", ret);
 
 		ret = tls_credential_add(SERVER_CERTIFICATE_TAG,
-					 TLS_CREDENTIAL_SERVER_CERTIFICATE,
+					 TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 					 server, sizeof(server));
 		zassert_equal(ret, 0, "failed to add Server Certificate (%d)", ret);
 
@@ -249,7 +249,7 @@ static void *setup(void)
 		zassert_equal(ret, 0, "failed to add Server Private Key (%d)", ret);
 
 		ret = tls_credential_add(CLIENT_CERTIFICATE_TAG,
-					 TLS_CREDENTIAL_SERVER_CERTIFICATE,
+					 TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 					 client, sizeof(client));
 		zassert_equal(ret, 0, "failed to add Client Certificate (%d)", ret);
 
