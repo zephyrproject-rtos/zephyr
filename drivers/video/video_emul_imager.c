@@ -260,45 +260,30 @@ err:
 	return ret;
 }
 
-static int emul_imager_set_frmival(const struct device *dev, enum video_endpoint_id ep,
-				   struct video_frmival *frmival)
+static int emul_imager_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	struct emul_imager_data *data = dev->data;
 	struct video_frmival_enum fie = {.format = &data->fmt, .discrete = *frmival};
 
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
-
-	video_closest_frmival(dev, ep, &fie);
+	video_closest_frmival(dev, &fie);
 	LOG_DBG("Applying frame interval number %u", fie.index);
 	return emul_imager_set_mode(dev, &emul_imager_modes[data->fmt_id][fie.index]);
 }
 
-static int emul_imager_get_frmival(const struct device *dev, enum video_endpoint_id ep,
-				   struct video_frmival *frmival)
+static int emul_imager_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	struct emul_imager_data *data = dev->data;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	frmival->numerator = 1;
 	frmival->denominator = data->mode->fps;
 	return 0;
 }
 
-static int emul_imager_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
-				    struct video_frmival_enum *fie)
+static int emul_imager_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct emul_imager_mode *mode;
 	size_t fmt_id;
 	int ret;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	ret = video_format_caps_index(fmts, fie->format, &fmt_id);
 	if (ret < 0) {
@@ -357,16 +342,11 @@ static void emul_imager_fill_framebuffer(const struct device *const dev, struct 
 	}
 }
 
-static int emul_imager_set_fmt(const struct device *const dev, enum video_endpoint_id ep,
-			       struct video_format *fmt)
+static int emul_imager_set_fmt(const struct device *const dev, struct video_format *fmt)
 {
 	struct emul_imager_data *data = dev->data;
 	size_t fmt_id;
 	int ret;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	if (fmt->pitch * fmt->height > CONFIG_VIDEO_EMUL_IMAGER_FRAMEBUFFER_SIZE) {
 		LOG_ERR("%s has %u bytes of memory, unable to support %x %ux%u (%u bytes)",
@@ -399,31 +379,21 @@ static int emul_imager_set_fmt(const struct device *const dev, enum video_endpoi
 	return 0;
 }
 
-static int emul_imager_get_fmt(const struct device *dev, enum video_endpoint_id ep,
-			       struct video_format *fmt)
+static int emul_imager_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct emul_imager_data *data = dev->data;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	*fmt = data->fmt;
 	return 0;
 }
 
-static int emul_imager_get_caps(const struct device *dev, enum video_endpoint_id ep,
-				struct video_caps *caps)
+static int emul_imager_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
-
 	caps->format_caps = fmts;
 	return 0;
 }
 
-static int emul_imager_set_stream(const struct device *dev, bool enable)
+static int emul_imager_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CTRL, enable ? 1 : 0);
 }
@@ -468,7 +438,7 @@ int emul_imager_init(const struct device *dev)
 	fmt.height = fmts[0].height_min;
 	fmt.pitch = fmt.width * 2;
 
-	ret = emul_imager_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = emul_imager_set_fmt(dev, &fmt);
 	if (ret < 0) {
 		LOG_ERR("Failed to set %s to default format %x %ux%u", dev->name, fmt.pixelformat,
 			fmt.width, fmt.height);

@@ -388,8 +388,7 @@ static int mt9m114_set_output_format(const struct device *dev, int pixel_format)
 	return ret;
 }
 
-static int mt9m114_set_fmt(const struct device *dev, enum video_endpoint_id ep,
-			   struct video_format *fmt)
+static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct mt9m114_data *drv_data = dev->data;
 	int ret;
@@ -441,8 +440,7 @@ static int mt9m114_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE);
 }
 
-static int mt9m114_get_fmt(const struct device *dev, enum video_endpoint_id ep,
-			   struct video_format *fmt)
+static int mt9m114_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct mt9m114_data *drv_data = dev->data;
 
@@ -451,14 +449,13 @@ static int mt9m114_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int mt9m114_set_stream(const struct device *dev, bool enable)
+static int mt9m114_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return enable ? mt9m114_set_state(dev, MT9M114_SYS_STATE_START_STREAMING)
 		      : mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_SUSPEND);
 }
 
-static int mt9m114_get_caps(const struct device *dev, enum video_endpoint_id ep,
-			    struct video_caps *caps)
+static int mt9m114_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
 	return 0;
@@ -535,7 +532,7 @@ static int mt9m114_init(const struct device *dev)
 	fmt.height = 272;
 	fmt.pitch = fmt.width * 2;
 
-	ret = mt9m114_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = mt9m114_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;
