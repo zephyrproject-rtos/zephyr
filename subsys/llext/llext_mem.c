@@ -95,7 +95,10 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 		}
 	}
 
-	if (ldr->storage == LLEXT_STORAGE_WRITABLE) {
+	if (ldr->storage == LLEXT_STORAGE_WRITABLE ||           /* writable storage         */
+	    (ldr->storage == LLEXT_STORAGE_PERSISTENT &&        /* || persistent storage    */
+	     !(region->sh_flags & SHF_WRITE) &&                 /*    && read-only region   */
+	     !(region->sh_flags & SHF_LLEXT_HAS_RELOCS))) {     /*    && no relocs to apply */
 		/*
 		 * Try to reuse data areas from the ELF buffer, if possible.
 		 * If any of the following tests fail, a normal allocation
