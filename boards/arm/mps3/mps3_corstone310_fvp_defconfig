@@ -1,4 +1,4 @@
-# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 CONFIG_RUNTIME_NMI=y
@@ -15,3 +15,5 @@ CONFIG_SERIAL=y
 
 # Build a Secure firmware image
 CONFIG_TRUSTED_EXECUTION_SECURE=y
+# ROMSTART_REGION address and size are defined in Kconfig.defconfig
+CONFIG_ROMSTART_RELOCATION_ROM=y
