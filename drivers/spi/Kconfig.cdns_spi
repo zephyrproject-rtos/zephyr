@@ -1,0 +1,19 @@
+# Copyright 2025 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_CDNS_SPI
+	bool "CADENCE SPI driver"
+	default y
+	depends on DT_HAS_CDNS_SPI_R1P6_ENABLED
+	help
+	  Enable Cadence SPI driver.
+
+if SPI_CDNS_SPI
+
+config CDNS_SPI_INTR
+	bool "Cadence SPI interrupt mode"
+	help
+	  Enable Interrupt support for the Cadence SPI Driver.
+
+endif
