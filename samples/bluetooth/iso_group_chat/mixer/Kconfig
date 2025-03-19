@@ -1,0 +1,26 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+mainmenu "Bluetooth: GroupChat Mixer"
+
+source "samples/bluetooth/iso_group_chat/common/Kconfig"
+
+config ISO_BLINK_LED0
+	bool "Blink led0"
+	depends on $(dt_alias_enabled,led0)
+	select GPIO
+	default y
+
+config BT_ISO_GROUPCHAT_MIXER
+    bool "Enable code specific to the groupchat mixer device"
+    default n
+	help
+	  When enabled, additional features and modifications will be compiled
+	  into the project. This option can be used to include or exclude code
+	  blocks guarded by `#ifdef CONFIG_BT_ISO_GROUPCHAT_MIXER` in shared .c
+	  and .h files.
+
+
+

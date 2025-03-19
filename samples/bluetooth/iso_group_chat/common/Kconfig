@@ -1,0 +1,46 @@
+# Copyright (c) 2025 Tailored Technology Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config ISO_PRINT_INTERVAL
+	int "Interval between each packet report"
+	range 1 360000
+	default 1
+	help
+	  Only print the packet report once in a given interval of ISO packets.
+
+config ISO_ALIGN_PRINT_INTERVALS
+	bool "Align report interval with incoming packets"
+	help
+	  Align interval-counter with packet number from incoming ISO packets.
+	  This may be needed if report printouts are to be synchronized between
+	  the iso_broadcast sample and the iso_receive sample.
+
+config BT_ISO_GROUPCHAT_COMMON
+    bool "Enable common code specific to the groupchat feature devices"
+    default n
+	help
+	  When enabled, additional features and modifications shared by all
+	  groupchat devices will be compiled into the project. This option can
+	  blocks guarded by `#ifdef CONFIG_BT_ISO_GROUPCHAT_COMMON` in shared .c
+	  and .h files.
+
+config GROUPCHAT_FUNCTION_DEBUG
+	bool "Enable function debug"
+    default n
+	help
+	  When enabled, functions which are conditionally marked with 
+	  __attribute__((optimize("O0"))) around this config will not be
+	  optimied by the compiler to enable debugging.
+
+config GROUPCHAT_PRINTMT_ENABLE
+    bool "Enable expansion of PRINTMT macro to printk"
+    default n
+	help
+	  This is to help debug controller source code. It will expand the PRINTMT
+	  macro to printk. And the following code MUST be added to any file that
+	  uses the PRINTMT macro:
+	    #define PRINTMT(fmt, ...)  printk(fmt, ##__VA_ARGS__)  /* HACK-MJT*/
+	    #else
+	    #define PRINTMT(fmt, ...)
+	    #endif
+
