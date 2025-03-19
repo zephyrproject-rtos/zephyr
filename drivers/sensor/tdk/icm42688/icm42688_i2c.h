@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2022 Intel Corporation
+ * Copyright (c) 2025 ZARM, University of Bremen
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_ICM42688_SPI_H_
-#define ZEPHYR_DRIVERS_SENSOR_ICM42688_SPI_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_ICM42688_I2C_H_
+#define ZEPHYR_DRIVERS_SENSOR_ICM42688_I2C_H_
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
 
 /**
- * @brief perform a single SPI write to a ICM42688 register
+ * @brief perform a single I2C write to a ICM42688 register
  *
  * this functions wraps all logic necessary to write to any of the ICM42688 registers, regardless
  * of which memory bank the register belongs to.
@@ -21,7 +21,7 @@
  * @param data data byte to write to register
  * @return int 0 on success, negative error code otherwise
  */
-int icm42688_spi_single_write(const struct device *dev, uint16_t reg, uint8_t data);
+int icm42688_i2c_single_write(const struct device *dev, uint16_t reg, uint8_t data);
 
 /**
  * @brief update a single ICM42688 register value
@@ -35,7 +35,7 @@ int icm42688_spi_single_write(const struct device *dev, uint16_t reg, uint8_t da
  * @param data new value to update register with, respecting the bitmask
  * @return int 0 on success, negative error code otherwise
  */
-int icm42688_spi_update_register(const struct device *dev, uint16_t reg, uint8_t mask,
+int icm42688_i2c_update_register(const struct device *dev, uint16_t reg, uint8_t mask,
 				 uint8_t data);
 
 /**
@@ -50,6 +50,6 @@ int icm42688_spi_update_register(const struct device *dev, uint16_t reg, uint8_t
  * @param len number of bytes to read from the device
  * @return int 0 on success, negative error code otherwise
  */
-int icm42688_spi_read(const struct device *dev, uint16_t reg, uint8_t *data, size_t len);
+int icm42688_i2c_read(const struct device *dev, uint16_t reg, uint8_t *data, size_t len);
 
-#endif /* ZEPHYR_DRIVERS_SENSOR_ICM42688_SPI_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_ICM42688_I2C_H_ */
