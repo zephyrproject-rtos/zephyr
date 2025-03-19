@@ -99,6 +99,7 @@ size_t log_format_table_size(void)
 
 K_SEM_DEFINE(log_process_thread_sem, 0, 1);
 
+static uint32_t activate_mask;
 static atomic_t initialized;
 static bool panic_mode;
 static bool backend_attached;
@@ -934,7 +935,6 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	__ASSERT_NO_MSG(log_backend_count_get() > 0);
 	uint32_t links_active_mask = 0xFFFFFFFF;
 	uint8_t domain_offset = 0;
-	uint32_t activate_mask = z_log_init(false, false);
 	/* If some backends are not activated yet set periodical thread wake up
 	 * to poll backends for readiness. Period is set arbitrary.
 	 * If all backends are ready periodic wake up is not needed.
@@ -979,22 +979,20 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 K_KERNEL_STACK_DEFINE(logging_stack, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE);
 struct k_thread logging_thread;
 
-static int enable_logger(void)
+static int init_logger(void)
 {
+	activate_mask = z_log_init(false, false);
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
 		k_timer_init(&log_process_thread_timer,
 				log_process_thread_timer_expiry_fn, NULL);
 		/* start logging thread */
-		k_thread_create(&logging_thread, logging_stack,
-				K_KERNEL_STACK_SIZEOF(logging_stack),
-				log_process_thread_func, NULL, NULL, NULL,
-				LOG_PROCESS_THREAD_PRIORITY, 0,
-				COND_CODE_1(CONFIG_LOG_PROCESS_THREAD,
-					K_MSEC(CONFIG_LOG_PROCESS_THREAD_STARTUP_DELAY_MS),
-					K_NO_WAIT));
+		k_thread_create(
+			&logging_thread, logging_stack, K_KERNEL_STACK_SIZEOF(logging_stack),
+			log_process_thread_func, NULL, NULL, NULL, LOG_PROCESS_THREAD_PRIORITY, 0,
+			COND_CODE_1(CONFIG_LOG_PROCESS_THREAD,
+				K_MSEC(CONFIG_LOG_PROCESS_THREAD_STARTUP_DELAY_MS),
+				K_NO_WAIT));
 		k_thread_name_set(&logging_thread, "logging");
-	} else {
-		(void)z_log_init(false, false);
 	}
 
 	return 0;
@@ -1015,4 +1013,4 @@ void log_flush(void)
 }
 #endif
 
-SYS_INIT(enable_logger, POST_KERNEL, CONFIG_LOG_CORE_INIT_PRIORITY);
+SYS_INIT(init_logger, POST_KERNEL, CONFIG_LOG_CORE_INIT_PRIORITY);
