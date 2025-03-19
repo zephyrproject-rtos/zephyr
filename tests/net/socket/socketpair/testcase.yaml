@@ -6,8 +6,6 @@ common:
   depends_on: netif
   min_ram: 21
   platform_exclude:
-    - native_posix/native/64
-    - native_posix
     # See #61246 for info about these next two excludes
     - vmu_rt1170/mimxrt1176/cm7
     - mimxrt1160_evk/mimxrt1166/cm7

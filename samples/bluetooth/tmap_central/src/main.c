@@ -188,8 +188,7 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 		return false;
 	}
 
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM_DEFAULT,
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
 				&default_conn);
 	if (err != 0) {
 		printk("Create conn to failed (%u)\n", err);

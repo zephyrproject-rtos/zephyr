@@ -1,0 +1,11 @@
+# Copyright 2025 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_CADENCE
+	bool "Cadence I2C driver"
+	default y
+	depends on DT_HAS_CDNS_I2C_ENABLED
+	select EVENTS
+	help
+	  Enable Cadence I2C driver.

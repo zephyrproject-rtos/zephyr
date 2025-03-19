@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RA GPIO IO port
+description: Renesas RA GPIO I/O Port
 
 compatible: "renesas,ra-gpio-ioport"
 

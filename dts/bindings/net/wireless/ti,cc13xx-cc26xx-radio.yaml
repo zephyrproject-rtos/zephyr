@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI SimpleLink CC13xx / CC26xx radio node
+description: TI SimpleLink CC13xx / CC26xx radio
 
 compatible: "ti,cc13xx-cc26xx-radio"
 

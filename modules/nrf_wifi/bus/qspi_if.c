@@ -24,6 +24,7 @@
 #include <hal/nrf_gpio.h>
 
 #include "spi_nor.h"
+#include "osal_api.h"
 
 /* The QSPI bus node which the NRF70 is on */
 #define QSPI_IF_BUS_NODE DT_NODELABEL(qspi)
@@ -1287,7 +1288,7 @@ int qspi_hl_readw(unsigned int addr, void *data)
 
 	len = len + (4 * qspi_cfg->qspi_slave_latency);
 
-	rxb = k_malloc(len);
+	rxb = nrf_wifi_osal_mem_alloc(len);
 
 	if (rxb == NULL) {
 		LOG_ERR("%s: ERROR ENOMEM line %d", __func__, __LINE__);
@@ -1306,7 +1307,7 @@ int qspi_hl_readw(unsigned int addr, void *data)
 
 	*(uint32_t *)data = *(uint32_t *)(rxb + (len - 4));
 
-	k_free(rxb);
+	nrf_wifi_osal_mem_free(rxb);
 
 	return status;
 }

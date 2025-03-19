@@ -15,8 +15,8 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
 		zephyr,flash = &flash0;
-		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	aliases {
@@ -31,8 +31,6 @@
 		/* For watchdog sample */
 		watchdog0 = &twd0;
 		peci-0 = &peci0;
-		/* For kscan test suites */
-		kscan0 = &kscan_input;
 	};
 
 	leds-pwm {
@@ -136,8 +134,4 @@
 	row-size = <8>;
 	col-size = <13>;
 	status = "okay";
-
-	kscan_input: kscan-input {
-		compatible = "zephyr,kscan-input";
-	};
 };

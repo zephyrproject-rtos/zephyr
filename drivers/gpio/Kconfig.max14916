@@ -7,7 +7,7 @@
 menuconfig GPIO_MAX14916
 	bool "MAX14916 GPIO driver"
 	default y
-	depends on DT_HAS_ADI_MAX14916_GPIO_ENABLED && SPI
+	depends on (DT_HAS_ADI_MAX14916_GPIO_ENABLED || DT_HAS_ADI_MAX14915_GPIO_ENABLED) && SPI
 	help
 	  Enabe MAX1416 octal industrial digital
 	  output with diagnostics

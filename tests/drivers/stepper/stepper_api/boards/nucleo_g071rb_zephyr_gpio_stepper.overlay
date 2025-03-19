@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		stepper =  &motor_1;
+	};
+};
+
+/ {
+	motor_1: motor_1 {
+		compatible = "zephyr,gpio-stepper";
+		status = "okay";
+		micro-step-res = <1>;
+		gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,
+			<&gpioc 7 GPIO_ACTIVE_HIGH>,
+			<&gpiob 0 GPIO_ACTIVE_HIGH>,
+			<&gpioa 7 GPIO_ACTIVE_HIGH>;
+	};
+};

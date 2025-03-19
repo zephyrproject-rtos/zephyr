@@ -271,3 +271,29 @@ ZTEST(xsi_realtime, test_mqueue_notify_errors)
 	zassert_ok(mq_close(mqd), "Unable to close message queue descriptor.");
 	zassert_ok(mq_unlink(queue), "Unable to unlink queue");
 }
+
+ZTEST(xsi_realtime, test_mqueue_open_and_unlink_multiple)
+{
+	const char *q1 = "q1";
+	const char *q2 = "q2";
+
+	mqd_t mqd1, mqd2;
+	struct mq_attr attrs = {
+		.mq_msgsize = MESSAGE_SIZE,
+		.mq_maxmsg = MESG_COUNT_PERMQ,
+	};
+
+	int32_t mode = 0600;
+	int flags = O_RDWR | O_CREAT;
+
+	mqd1 = mq_open(q1, flags, mode, &attrs);
+
+	zassert_ok(mq_unlink(q1), "Unable to unlink q1");
+
+	mqd2 = mq_open(q2, flags, mode, &attrs);
+
+	zassert_ok(mq_unlink(q2), "Unable to unlink q2");
+
+	zassert_ok(mq_close(mqd1), "Unable to close message queue 1 descriptor.");
+	zassert_ok(mq_close(mqd2), "Unable to close message queue 2 descriptor.");
+}

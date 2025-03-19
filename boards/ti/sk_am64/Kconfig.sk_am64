@@ -1,0 +1,8 @@
+# Texas Instruments SK-AM64
+#
+# Copyright (c) 2025 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SK_AM64
+	select SOC_AM6442_M4 if BOARD_SK_AM64_AM6442_M4

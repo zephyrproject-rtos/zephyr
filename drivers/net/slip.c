@@ -366,8 +366,8 @@ int slip_init(const struct device *dev)
 
 static inline struct net_linkaddr *slip_get_mac(struct slip_context *slip)
 {
-	slip->ll_addr.addr = slip->mac_addr;
-	slip->ll_addr.len = sizeof(slip->mac_addr);
+	(void)net_linkaddr_set(&slip->ll_addr, slip->mac_addr,
+			       sizeof(slip->mac_addr));
 
 	return &slip->ll_addr;
 }

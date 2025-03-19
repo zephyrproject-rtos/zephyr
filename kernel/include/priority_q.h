@@ -10,18 +10,16 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/dlist.h>
 
-bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
-
 /* Dumb Scheduling */
-#if defined(CONFIG_SCHED_DUMB)
-#define _priq_run_init		z_priq_dumb_init
-#define _priq_run_add		z_priq_dumb_add
-#define _priq_run_remove	z_priq_dumb_remove
-#define _priq_run_yield         z_priq_dumb_yield
+#if defined(CONFIG_SCHED_SIMPLE)
+#define _priq_run_init		z_priq_simple_init
+#define _priq_run_add		z_priq_simple_add
+#define _priq_run_remove	z_priq_simple_remove
+#define _priq_run_yield         z_priq_simple_yield
 # if defined(CONFIG_SCHED_CPU_MASK)
-#  define _priq_run_best	z_priq_dumb_mask_best
+#  define _priq_run_best	z_priq_simple_mask_best
 # else
-#  define _priq_run_best	z_priq_dumb_best
+#  define _priq_run_best	z_priq_simple_best
 # endif /* CONFIG_SCHED_CPU_MASK */
 /* Scalable Scheduling */
 #elif defined(CONFIG_SCHED_SCALABLE)
@@ -45,10 +43,10 @@ bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 #define _priq_wait_remove	z_priq_rb_remove
 #define _priq_wait_best		z_priq_rb_best
 /* Dumb Wait Queue */
-#elif defined(CONFIG_WAITQ_DUMB)
-#define _priq_wait_add		z_priq_dumb_add
-#define _priq_wait_remove	z_priq_dumb_remove
-#define _priq_wait_best		z_priq_dumb_best
+#elif defined(CONFIG_WAITQ_SIMPLE)
+#define _priq_wait_add		z_priq_simple_add
+#define _priq_wait_remove	z_priq_simple_remove
+#define _priq_wait_best		z_priq_simple_best
 #endif
 
 #if defined(CONFIG_64BIT)
@@ -59,7 +57,7 @@ bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 #define TRAILING_ZEROS u32_count_trailing_zeros
 #endif /* CONFIG_64BIT */
 
-static ALWAYS_INLINE void z_priq_dumb_init(sys_dlist_t *pq)
+static ALWAYS_INLINE void z_priq_simple_init(sys_dlist_t *pq)
 {
 	sys_dlist_init(pq);
 }
@@ -105,7 +103,7 @@ static ALWAYS_INLINE int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct 
 	return 0;
 }
 
-static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
+static ALWAYS_INLINE void z_priq_simple_add(sys_dlist_t *pq, struct k_thread *thread)
 {
 	struct k_thread *t;
 
@@ -119,14 +117,14 @@ static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thre
 	sys_dlist_append(pq, &thread->base.qnode_dlist);
 }
 
-static ALWAYS_INLINE void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
+static ALWAYS_INLINE void z_priq_simple_remove(sys_dlist_t *pq, struct k_thread *thread)
 {
 	ARG_UNUSED(pq);
 
 	sys_dlist_remove(&thread->base.qnode_dlist);
 }
 
-static ALWAYS_INLINE void z_priq_dumb_yield(sys_dlist_t *pq)
+static ALWAYS_INLINE void z_priq_simple_yield(sys_dlist_t *pq)
 {
 #ifndef CONFIG_SMP
 	sys_dnode_t *n;
@@ -157,7 +155,7 @@ static ALWAYS_INLINE void z_priq_dumb_yield(sys_dlist_t *pq)
 #endif
 }
 
-static ALWAYS_INLINE struct k_thread *z_priq_dumb_best(sys_dlist_t *pq)
+static ALWAYS_INLINE struct k_thread *z_priq_simple_best(sys_dlist_t *pq)
 {
 	struct k_thread *thread = NULL;
 	sys_dnode_t *n = sys_dlist_peek_head(pq);
@@ -169,7 +167,7 @@ static ALWAYS_INLINE struct k_thread *z_priq_dumb_best(sys_dlist_t *pq)
 }
 
 #ifdef CONFIG_SCHED_CPU_MASK
-static ALWAYS_INLINE struct k_thread *z_priq_dumb_mask_best(sys_dlist_t *pq)
+static ALWAYS_INLINE struct k_thread *z_priq_simple_mask_best(sys_dlist_t *pq)
 {
 	/* With masks enabled we need to be prepared to walk the list
 	 * looking for one we can run
@@ -185,8 +183,11 @@ static ALWAYS_INLINE struct k_thread *z_priq_dumb_mask_best(sys_dlist_t *pq)
 }
 #endif /* CONFIG_SCHED_CPU_MASK */
 
+#if defined(CONFIG_SCHED_SCALABLE) || defined(CONFIG_WAITQ_SCALABLE)
 static ALWAYS_INLINE void z_priq_rb_init(struct _priq_rb *pq)
 {
+	bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
+
 	*pq = (struct _priq_rb) {
 		.tree = {
 			.lessthan_fn = z_priq_rb_lessthan,
@@ -244,6 +245,7 @@ static ALWAYS_INLINE struct k_thread *z_priq_rb_best(struct _priq_rb *pq)
 	}
 	return thread;
 }
+#endif
 
 struct prio_info {
 	uint8_t offset_prio;

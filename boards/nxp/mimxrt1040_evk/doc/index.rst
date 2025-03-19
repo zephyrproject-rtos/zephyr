@@ -352,6 +352,8 @@ the M.2 WiFi module is interfering with the debug signals
 To resolve this, you may remove the M.2 WiFi module from the board when
 flashing or debugging it, or remove jumper J80.
 
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _MIMXRT1040-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1040-evaluation-kit:MIMXRT1040-EVK

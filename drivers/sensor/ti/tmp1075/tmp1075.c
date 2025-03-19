@@ -170,7 +170,7 @@ static int setup_interrupts(const struct device *dev)
 	int result;
 
 	if (!gpio_is_ready_dt(alert_gpio)) {
-		LOG_ERR("tmp1075: gpio controller %s not ready", alert_gpio->port->name);
+		LOG_ERR("gpio controller %s not ready", alert_gpio->port->name);
 		return -ENODEV;
 	}
 

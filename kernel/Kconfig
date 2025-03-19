@@ -121,14 +121,14 @@ config SCHED_DEADLINE
 
 config SCHED_CPU_MASK
 	bool "CPU mask affinity/pinning API"
-	depends on SCHED_DUMB
+	depends on SCHED_SIMPLE
 	help
 	  When true, the application will have access to the
 	  k_thread_cpu_mask_*() APIs which control per-CPU affinity masks in
 	  SMP mode, allowing applications to pin threads to specific CPUs or
 	  disallow threads from running on given CPUs.  Note that as currently
 	  implemented, this involves an inherent O(N) scaling in the number of
-	  idle-but-runnable threads, and thus works only with the DUMB
+	  idle-but-runnable threads, and thus works only with the simple
 	  scheduler (as SCALABLE and MULTIQ would see no benefit).
 
 	  Note that this setting does not technically depend on SMP and is
@@ -297,16 +297,23 @@ endchoice # DYNAMIC_THREAD_PREFER
 
 endif # DYNAMIC_THREADS
 
+config SCHED_DUMB
+	bool "Simple linked-list ready queue"
+	select DEPRECATED
+	help
+	  Deprecated in favour of SCHED_SIMPLE.
+
 choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
-	default SCHED_DUMB
+	default SCHED_SIMPLE if SCHED_DUMB
+	default SCHED_SIMPLE
 	help
 	  The kernel can be built with several choices for the
 	  ready queue implementation, offering different choices between
 	  code size, constant factor runtime overhead and performance
 	  scaling when many threads are added.
 
-config SCHED_DUMB
+config SCHED_SIMPLE
 	bool "Simple linked-list ready queue"
 	help
 	  When selected, the scheduler ready queue will be implemented
@@ -339,20 +346,27 @@ config SCHED_MULTIQ
 	  as the classic/textbook array of lists, one per priority.
 	  This corresponds to the scheduler algorithm used in Zephyr
 	  versions prior to 1.12.  It incurs only a tiny code size
-	  overhead vs. the "dumb" scheduler and runs in O(1) time
+	  overhead vs. the "simple" scheduler and runs in O(1) time
 	  in almost all circumstances with very low constant factor.
 	  But it requires a fairly large RAM budget to store those list
 	  heads, and the limited features make it incompatible with
 	  features like deadline scheduling that need to sort threads
 	  more finely, and SMP affinity which need to traverse the list
 	  of threads.  Typical applications with small numbers of runnable
-	  threads probably want the DUMB scheduler.
+	  threads probably want the simple scheduler.
 
 endchoice # SCHED_ALGORITHM
 
+config WAITQ_DUMB
+	bool "Simple linked-list wait_q"
+	select DEPRECATED
+	help
+	  Deprecated in favour of WAITQ_SIMPLE.
+
 choice WAITQ_ALGORITHM
 	prompt "Wait queue priority algorithm"
-	default WAITQ_DUMB
+	default WAITQ_SIMPLE if WAITQ_DUMB
+	default WAITQ_SIMPLE
 	help
 	  The wait_q abstraction used in IPC primitives to pend
 	  threads for later wakeup shares the same backend data
@@ -365,13 +379,13 @@ config WAITQ_SCALABLE
 	  When selected, the wait_q will be implemented with a
 	  balanced tree.  Choose this if you expect to have many
 	  threads waiting on individual primitives.  There is a ~2kb
-	  code size increase over WAITQ_DUMB (which may be shared with
+	  code size increase over WAITQ_SIMPLE (which may be shared with
 	  SCHED_SCALABLE) if the rbtree is not used elsewhere in the
 	  application, and pend/unpend operations on "small" queues
 	  will be somewhat slower (though this is not generally a
 	  performance path).
 
-config WAITQ_DUMB
+config WAITQ_SIMPLE
 	bool "Simple linked-list wait_q"
 	help
 	  When selected, the wait_q will be implemented with a
@@ -813,6 +827,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
+	default 0 if TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	help
 	  This option specifies the frequency of the hardware timer used for the
 	  system clock (in Hz). This option is set by the SOC's or board's Kconfig file
@@ -1060,7 +1075,7 @@ config BOOTARGS
 
 config DYNAMIC_BOOTARGS
 	bool "Support dynamic bootargs"
-	depends on BOOTARGS && (MULTIBOOT_INFO || BUILD_OUTPUT_EFI)
+	depends on BOOTARGS
 	help
 	  Enables dynamic bootargs support.
 

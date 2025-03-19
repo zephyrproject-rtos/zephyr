@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
@@ -363,6 +364,7 @@ static void gatt_read(uint16_t handle, uint8_t expect_att_err)
 
 static void test_main(void)
 {
+	struct bt_le_local_features local_features;
 	int err;
 
 	bt_conn_cb_register(&conn_callbacks);
@@ -371,6 +373,13 @@ static void test_main(void)
 	if (err != 0) {
 		TEST_FAIL("Bluetooth discover failed (err %d)", err);
 	}
+
+	err = bt_le_get_local_features(&local_features);
+	TEST_ASSERT(err == 0, "Failed to get local features");
+	TEST_ASSERT(local_features.acl_mtu > 0U, "Invalid ACL MTU");
+	TEST_ASSERT(local_features.acl_pkts > 0U, "Invalid ACL packet count");
+	TEST_ASSERT(sys_get_le64(local_features.features) > 0U, "Invalid features");
+	TEST_ASSERT(local_features.states > 0U, "Invalid states");
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err != 0) {

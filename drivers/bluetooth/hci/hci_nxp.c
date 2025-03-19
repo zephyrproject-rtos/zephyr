@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -507,19 +507,7 @@ static int bt_nxp_close(const struct device *dev)
 {
 	struct bt_nxp_data *hci = dev->data;
 	int ret = 0;
-	/* Reset the Controller */
-	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
-		ret = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
-		if (ret) {
-			LOG_ERR("Failed to reset BLE controller");
-		}
-		k_sleep(K_SECONDS(1));
 
-		ret = PLATFORM_TerminateBle();
-		if (ret < 0) {
-			LOG_ERR("Failed to shutdown BLE controller");
-		}
-	}
 	hci->recv = NULL;
 
 	return ret;

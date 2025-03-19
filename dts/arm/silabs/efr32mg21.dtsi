@@ -192,7 +192,7 @@
 		};
 
 		msc: flash-controller@50030000 {
-			compatible = "silabs,gecko-flash-controller";
+			compatible = "silabs,series2-flash-controller";
 			reg = <0x50030000 0x31a4>;
 			interrupts = <51 0>;
 

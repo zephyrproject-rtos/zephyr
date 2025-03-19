@@ -365,8 +365,6 @@ static uint8_t *compress_nh(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
 static uint8_t *compress_sa(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
 			 uint8_t *inline_ptr, uint16_t *iphc)
 {
-	NET_ASSERT(net_pkt_lladdr_src(pkt)->addr);
-
 	/* Address is fully elided */
 	if (net_ipv6_addr_based_on_ll((struct in6_addr *)ipv6->src,
 				      net_pkt_lladdr_src(pkt))) {
@@ -411,8 +409,6 @@ static uint8_t *compress_sa_ctx(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
 			     struct net_pkt *pkt, uint16_t *iphc,
 			     struct net_6lo_context *src)
 {
-	NET_ASSERT(net_pkt_lladdr_src(pkt)->addr);
-
 	NET_DBG("SAC_1 src address context based");
 	*iphc |= NET_6LO_IPHC_SAC_1;
 
@@ -510,8 +506,6 @@ static uint8_t *compress_da_mcast(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr
 static uint8_t *compress_da(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
 			 uint8_t *inline_ptr, uint16_t *iphc)
 {
-	NET_ASSERT(net_pkt_lladdr_dst(pkt)->addr);
-
 	/* Address is fully elided */
 	if (net_ipv6_addr_based_on_ll((struct in6_addr *)ipv6->dst,
 				      net_pkt_lladdr_dst(pkt))) {

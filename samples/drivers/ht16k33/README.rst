@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: ht16k33
    :name: HT16K33 LED driver with keyscan
-   :relevant-api: led_interface kscan_interface
+   :relevant-api: led_interface input_interface
 
    Control up to 128 LEDs connected to an HT16K33 LED driver and log keyscan events.
 

@@ -21,6 +21,7 @@
 
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
+#include "l2cap_br_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -161,11 +162,20 @@ static uint8_t ssp_pair_method(const struct bt_conn *conn)
 
 static uint8_t ssp_get_auth(const struct bt_conn *conn)
 {
+	bt_security_t max_sec_level;
+	uint8_t mitm = 0;
+
+	/* Check if the MITM is required by service */
+	max_sec_level = bt_l2cap_br_get_max_sec_level();
+	if ((max_sec_level > BT_SECURITY_L2) && (ssp_pair_method(conn) > JUST_WORKS)) {
+		mitm = BT_MITM;
+	}
+
 	/* Validate no bond auth request, and if valid use it. */
 	if ((conn->br.remote_auth == BT_HCI_NO_BONDING) ||
 	    ((conn->br.remote_auth == BT_HCI_NO_BONDING_MITM) &&
 	     (ssp_pair_method(conn) > JUST_WORKS))) {
-		return conn->br.remote_auth;
+		return conn->br.remote_auth | mitm;
 	}
 
 	/* Local & remote have enough IO capabilities to get MITM protection. */
@@ -676,20 +686,12 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 
 		err = bt_auth->pairing_accept(conn, NULL);
 		if (err != BT_SECURITY_ERR_SUCCESS) {
-			io_capa_neg_reply(&evt->bdaddr,
-					  BT_HCI_ERR_PAIRING_NOT_ALLOWED);
+			io_capa_neg_reply(&evt->bdaddr, BT_HCI_ERR_PAIRING_NOT_ALLOWED);
+			bt_conn_unref(conn);
 			return;
 		}
 	}
 #endif
-
-	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_REPLY,
-				     sizeof(*cp));
-	if (!resp_buf) {
-		LOG_ERR("Out of command buffers");
-		bt_conn_unref(conn);
-		return;
-	}
 
 	/*
 	 * Set authentication requirements when acting as pairing initiator to
@@ -718,11 +720,37 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 		}
 	} else {
 		auth = ssp_get_auth(conn);
+
+		/*
+		 * Core v6.0, Vol 3, Part C, Section 4.3.1 Non-bondable mode
+		 * When a Bluetooth device is in non-bondable mode it shall not accept a
+		 * pairing request that results in bonding. Devices in non-bondable mode
+		 * may accept connections that do not request or require bonding.
+		 *
+		 * If the peer supports bonding mode, but the local is in non-bondable
+		 * mode, it will send a negative response with error code
+		 * `BT_HCI_ERR_PAIRING_NOT_ALLOWED`.
+		 */
+		if (!atomic_test_bit(conn->flags, BT_CONN_BR_BONDABLE) &&
+		    (conn->br.remote_auth > BT_HCI_NO_BONDING_MITM)) {
+			LOG_WRN("Invalid remote bonding requirements");
+			io_capa_neg_reply(&evt->bdaddr,
+					  BT_HCI_ERR_PAIRING_NOT_ALLOWED);
+			bt_conn_unref(conn);
+			return;
+		}
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
 		/* If bondable is false, clear bonding flag. */
 		auth = BT_HCI_SET_NO_BONDING(auth);
+	}
+
+	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_REPLY, sizeof(*cp));
+	if (!resp_buf) {
+		LOG_ERR("Out of command buffers");
+		bt_conn_unref(conn);
+		return;
 	}
 
 	cp = net_buf_add(resp_buf, sizeof(*cp));

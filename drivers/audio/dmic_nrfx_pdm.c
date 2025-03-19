@@ -16,9 +16,11 @@
 LOG_MODULE_REGISTER(dmic_nrfx_pdm, CONFIG_AUDIO_DMIC_LOG_LEVEL);
 
 #if CONFIG_SOC_SERIES_NRF54HX
-#define DMIC_NRFX_CLOCK_FREQ 8*1000*1000UL
+#define DMIC_NRFX_CLOCK_FREQ MHZ(16)
+#define DMIC_NRFX_CLOCK_FACTOR 8192
 #else
-#define DMIC_NRFX_CLOCK_FREQ 32*1000*1000UL
+#define DMIC_NRFX_CLOCK_FREQ MHZ(32)
+#define DMIC_NRFX_CLOCK_FACTOR 4096
 #endif
 
 struct dmic_nrfx_pdm_drv_data {
@@ -26,8 +28,8 @@ struct dmic_nrfx_pdm_drv_data {
 	struct onoff_manager *clk_mgr;
 	struct onoff_client clk_cli;
 	struct k_mem_slab *mem_slab;
-	void *mem_slab_buffer;
 	uint32_t block_size;
+	struct k_msgq mem_slab_queue;
 	struct k_msgq rx_queue;
 	bool request_clock : 1;
 	bool configured    : 1;
@@ -47,10 +49,10 @@ struct dmic_nrfx_pdm_drv_cfg {
 	void *mem_reg;
 };
 
-static void free_buffer(struct dmic_nrfx_pdm_drv_data *drv_data)
+static void free_buffer(struct dmic_nrfx_pdm_drv_data *drv_data, void *buffer)
 {
-	k_mem_slab_free(drv_data->mem_slab, drv_data->mem_slab_buffer);
-	LOG_DBG("Freed buffer %p", drv_data->mem_slab_buffer);
+	k_mem_slab_free(drv_data->mem_slab, buffer);
+	LOG_DBG("Freed buffer %p", buffer);
 }
 
 static void stop_pdm(struct dmic_nrfx_pdm_drv_data *drv_data)
@@ -65,20 +67,29 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 	const struct dmic_nrfx_pdm_drv_cfg *drv_cfg = dev->config;
 	int ret;
 	bool stop = false;
+	void *mem_slab_buffer;
 
 	if (evt->buffer_requested) {
 		void *buffer;
 		nrfx_err_t err;
 
-		ret = k_mem_slab_alloc(drv_data->mem_slab, &drv_data->mem_slab_buffer, K_NO_WAIT);
+		ret = k_mem_slab_alloc(drv_data->mem_slab, &mem_slab_buffer, K_NO_WAIT);
 		if (ret < 0) {
 			LOG_ERR("Failed to allocate buffer: %d", ret);
 			stop = true;
 		} else {
-			ret = dmm_buffer_in_prepare(drv_cfg->mem_reg, drv_data->mem_slab_buffer,
+			ret = dmm_buffer_in_prepare(drv_cfg->mem_reg, mem_slab_buffer,
 						    drv_data->block_size, &buffer);
 			if (ret < 0) {
 				LOG_ERR("Failed to prepare buffer: %d", ret);
+				free_buffer(drv_data, mem_slab_buffer);
+				stop_pdm(drv_data);
+				return;
+			}
+			ret = k_msgq_put(&drv_data->mem_slab_queue, &mem_slab_buffer, K_NO_WAIT);
+			if (ret < 0) {
+				LOG_ERR("Unable to put mem slab in queue");
+				free_buffer(drv_data, mem_slab_buffer);
 				stop_pdm(drv_data);
 				return;
 			}
@@ -92,14 +103,18 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 
 	if (drv_data->stopping) {
 		if (evt->buffer_released) {
-			ret = dmm_buffer_in_release(drv_cfg->mem_reg, drv_data->mem_slab_buffer,
+			ret = k_msgq_get(&drv_data->mem_slab_queue, &mem_slab_buffer, K_NO_WAIT);
+			if (ret < 0) {
+				LOG_ERR("No buffers to free");
+				return;
+			}
+			ret = dmm_buffer_in_release(drv_cfg->mem_reg, mem_slab_buffer,
 						    drv_data->block_size, evt->buffer_released);
 			if (ret < 0) {
 				LOG_ERR("Failed to release buffer: %d", ret);
-				stop_pdm(drv_data);
 				return;
 			}
-			free_buffer(drv_data);
+			free_buffer(drv_data, mem_slab_buffer);
 		}
 
 		if (drv_data->active) {
@@ -109,7 +124,13 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 			}
 		}
 	} else if (evt->buffer_released) {
-		ret = dmm_buffer_in_release(drv_cfg->mem_reg, drv_data->mem_slab_buffer,
+		ret = k_msgq_get(&drv_data->mem_slab_queue, &mem_slab_buffer, K_NO_WAIT);
+		if (ret < 0) {
+			LOG_ERR("No buffers to free");
+			stop_pdm(drv_data);
+			return;
+		}
+		ret = dmm_buffer_in_release(drv_cfg->mem_reg, mem_slab_buffer,
 					    drv_data->block_size, evt->buffer_released);
 		if (ret < 0) {
 			LOG_ERR("Failed to release buffer: %d", ret);
@@ -117,12 +138,12 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 			return;
 		}
 		ret = k_msgq_put(&drv_data->rx_queue,
-				 &drv_data->mem_slab_buffer,
+				 &mem_slab_buffer,
 				 K_NO_WAIT);
 		if (ret < 0) {
 			LOG_ERR("No room in RX queue");
 			stop = true;
-			free_buffer(drv_data);
+			free_buffer(drv_data, mem_slab_buffer);
 		} else {
 			LOG_DBG("Queued buffer %p", evt->buffer_released);
 		}
@@ -234,7 +255,7 @@ static bool check_pdm_frequencies(const struct dmic_nrfx_pdm_drv_cfg *drv_cfg,
 
 		if (is_in_freq_range(act_freq, pdm_cfg) &&
 		    is_better(act_freq, ratio, req_rate, best_diff, best_rate, best_freq)) {
-			config->clock_freq = clk_factor * 4096;
+			config->clock_freq = clk_factor * DMIC_NRFX_CLOCK_FACTOR;
 
 			better_found = true;
 		}
@@ -403,7 +424,6 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 
 	channel->act_num_streams = 1;
 	channel->act_chan_map_hi = 0;
-	channel->act_chan_map_lo = def_map;
 
 	if (channel->req_num_streams != 1 ||
 	    channel->req_num_chan > 2 ||
@@ -434,9 +454,13 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	nrfx_cfg.mode = channel->req_num_chan == 1
 		      ? NRF_PDM_MODE_MONO
 		      : NRF_PDM_MODE_STEREO;
-	nrfx_cfg.edge = channel->req_chan_map_lo == def_map
-		      ? NRF_PDM_EDGE_LEFTFALLING
-		      : NRF_PDM_EDGE_LEFTRISING;
+	if (channel->req_chan_map_lo == def_map) {
+		nrfx_cfg.edge = NRF_PDM_EDGE_LEFTFALLING;
+		channel->act_chan_map_lo = def_map;
+	} else {
+		nrfx_cfg.edge = NRF_PDM_EDGE_LEFTRISING;
+		channel->act_chan_map_lo = alt_map;
+	}
 #if NRF_PDM_HAS_MCLKCONFIG
 	nrfx_cfg.mclksrc = drv_cfg->clk_src == ACLK
 			 ? NRF_PDM_MCLKSRC_ACLK
@@ -633,6 +657,7 @@ static const struct _dmic_ops dmic_ops = {
 
 #define PDM_NRFX_DEVICE(idx)						     \
 	static void *rx_msgs##idx[DT_PROP(PDM(idx), queue_size)];	     \
+	static void *mem_slab_msgs##idx[DT_PROP(PDM(idx), queue_size)];	     \
 	static struct dmic_nrfx_pdm_drv_data dmic_nrfx_pdm_data##idx;	     \
 	static const nrfx_pdm_t dmic_nrfx_pdm##idx = NRFX_PDM_INSTANCE(idx); \
 	static int pdm_nrfx_init##idx(const struct device *dev)		     \
@@ -649,6 +674,9 @@ static const struct _dmic_ops dmic_ops = {
 		k_msgq_init(&dmic_nrfx_pdm_data##idx.rx_queue,		     \
 			    (char *)rx_msgs##idx, sizeof(void *),	     \
 			    ARRAY_SIZE(rx_msgs##idx));			     \
+		k_msgq_init(&dmic_nrfx_pdm_data##idx.mem_slab_queue,	     \
+			    (char *)mem_slab_msgs##idx, sizeof(void *),	     \
+			    ARRAY_SIZE(mem_slab_msgs##idx));		     \
 		IF_ENABLED(CONFIG_CLOCK_CONTROL_NRF,			     \
 			   (init_clock_manager(dev);))			     \
 		return 0;						     \

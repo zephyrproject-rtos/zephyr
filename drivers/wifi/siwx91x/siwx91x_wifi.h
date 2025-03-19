@@ -18,6 +18,7 @@ struct siwx91x_dev {
 	struct net_if *iface;
 	sl_mac_address_t macaddr;
 	enum wifi_iface_state state;
+	enum wifi_iface_state scan_prev_state;
 	scan_result_cb_t scan_res_cb;
 	uint16_t scan_max_bss_cnt;
 

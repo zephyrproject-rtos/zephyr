@@ -25,6 +25,7 @@ add_subdirectory_ifdef(CONFIG_I2C_TARGET target)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_I2C_AMBIQ		i2c_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_ANDES_ATCIIC100	i2c_andes_atciic100.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_CADENCE         i2c_cdns.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_CC13XX_CC26XX	i2c_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_CC32XX		i2c_cc32xx.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_DW		i2c_dw.c)
@@ -52,6 +53,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_NXP_II2C	i2c_nxp_ii2c.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_OMAP		i2c_omap.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RCAR		i2c_rcar.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RENESAS_RA_IIC	i2c_renesas_ra_iic.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_RENESAS_RZ_RIIC i2c_renesas_rz_riic.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RV32M1_LPI2C	i2c_rv32m1_lpi2c.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SAM0		i2c_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SAM_TWI		i2c_sam_twi.c)
@@ -69,6 +71,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
 	i2c_ll_stm32_v2.c
 	i2c_ll_stm32.c
  )
+zephyr_library_sources_ifdef(CONFIG_I2C_SY1XX		i2c_sy1xx.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_TCA954X		i2c_tca954x.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_TELINK_B91	i2c_b91.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_XEC		i2c_mchp_xec.c)

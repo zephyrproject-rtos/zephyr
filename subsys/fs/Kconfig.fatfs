@@ -299,6 +299,14 @@ config FS_FATFS_CUSTOM_MOUNT_POINTS
 	   be used for mounting fatfs filesystems anymore.
 	depends on FS_FATFS_CUSTOM_MOUNT_POINT_COUNT > 0
 
+DT_COMPAT_ZEPHYR_FSTAB_FATFS := zephyr,fstab,fatfs
+config FS_FATFS_FSTAB_AUTOMOUNT
+	bool "Support for fstab auto-mounting"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_FSTAB_FATFS))
+	help
+	  This option enables fatfs support for the devicetree fstab auto-mounting
+	  functionality.
+
 endmenu
 
 endif # FAT_FILESYSTEM_ELM

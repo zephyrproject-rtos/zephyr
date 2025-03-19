@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Synopsys
 # SPDX-License-Identifier: Apache-2.0
 
-description: Cypress cy8c95xx GPIO port node
+description: Cypress cy8c95xx GPIO Port
 
 compatible: "cypress,cy8c95xx-gpio-port"
 

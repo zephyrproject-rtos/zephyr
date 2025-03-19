@@ -8,15 +8,9 @@ config SOC_NEORV32
 
 	  The NEORV32 CPU implementation must have the following RISC-V ISA
 	  extensions enabled in order to support Zephyr:
-	  - M (Integer Multiplication and Division)
-	  - Zicsr (Control and Status Register (CSR) Instructions)
-
-	  The following NEORV32 CPU ISA extensions are not currently supported
-	  by Zephyr and can safely be disabled:
-	  - A (Atomic Instructions)
-	  - E (Embedded, only 16 integer registers)
-	  - Zbb (Basic Bit Manipulation)
-	  - Zfinx (Floating Point in Integer Registers)
+	  - Zicsr (always enabled)
+	  - Zifencei (always enabled)
+	  - Zicntr
 
 config SOC
 	default "neorv32" if SOC_NEORV32

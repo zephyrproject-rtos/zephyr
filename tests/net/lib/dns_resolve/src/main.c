@@ -98,7 +98,7 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 		data->mac_addr[5] = sys_rand8_get();
 	}
 
-	data->ll_addr.addr = data->mac_addr;
+	memcpy(data->ll_addr.addr, data->mac_addr, sizeof(data->mac_addr));
 	data->ll_addr.len = 6U;
 
 	return data->mac_addr;
@@ -760,6 +760,57 @@ ZTEST(dns_resolve, test_dns_query_ipv6_numeric)
 	if (k_sem_take(&wait_data2, WAIT_TIME)) {
 		zassert_true(false, "Timeout while waiting data");
 	}
+}
+
+#define MDNS_IPV4_ADDR "224.0.0.251:5353"
+#define MDNS_IPV6_ADDR "[ff02::fb]:5353"
+
+ZTEST(dns_resolve, test_mdns_ipv4_igmp_group)
+{
+	struct net_if_mcast_addr *maddr;
+	struct sockaddr_in addr4;
+	bool st;
+
+	/* Skip this test if mDNS responder is enabled because it will join
+	 * multicast group automatically.
+	 */
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_IGMP);
+
+	st = net_ipaddr_parse(MDNS_IPV4_ADDR, sizeof(MDNS_IPV4_ADDR) - 1,
+			      (struct sockaddr *)&addr4);
+	zassert_true(st, "Cannot parse IPv4 address");
+
+	maddr = net_if_ipv4_maddr_lookup(&addr4.sin_addr, NULL);
+	zassert_not_null(maddr, "IPv4 mDNS address not found");
+
+	st = net_if_ipv4_maddr_is_joined(maddr);
+	zassert_true(st, "IPv4 mDNS group not joined");
+}
+
+ZTEST(dns_resolve, test_mdns_ipv6_mld_group)
+{
+	struct net_if_mcast_addr *maddr;
+	struct sockaddr_in6 addr6;
+	bool st;
+
+	/* Skip this test if mDNS responder is enabled because it will join
+	 * multicast group automatically.
+	 */
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_MLD);
+
+	st = net_ipaddr_parse(MDNS_IPV6_ADDR, sizeof(MDNS_IPV6_ADDR) - 1,
+			      (struct sockaddr *)&addr6);
+	zassert_true(st, "Cannot parse IPv6 address");
+
+	maddr = net_if_ipv6_maddr_lookup(&addr6.sin6_addr, NULL);
+	zassert_not_null(maddr, "IPv6 mDNS address not found");
+
+	st = net_if_ipv6_maddr_is_joined(maddr);
+	zassert_true(st, "IPv6 mDNS group not joined");
 }
 
 ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);

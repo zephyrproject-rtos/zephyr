@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
+#include <zephyr/net/http/server.h>
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -449,6 +450,7 @@ out:
 	return ret;
 }
 
+#if defined(CONFIG_FILE_SYSTEM)
 static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
 					   struct http2_frame *frame,
 					   struct http_client_ctx *client)
@@ -464,7 +466,7 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 		.path_len = static_fs_detail->common.path_len,
 		.type = static_fs_detail->common.type,
 	};
-	bool gzipped;
+	enum http_compression chosen_compression = 0;
 	int len;
 	int remaining;
 	char tmp[64];
@@ -490,7 +492,12 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	}
 
 	/* open file, if it exists */
-	ret = http_server_find_file(fname, sizeof(fname), &client->data_len, &gzipped);
+#ifdef CONFIG_HTTP_SERVER_COMPRESSION
+	ret = http_server_find_file(fname, sizeof(fname), &client->data_len,
+					client->supported_compression, &chosen_compression);
+#else
+	ret = http_server_find_file(fname, sizeof(fname), &client->data_len, 0, NULL);
+#endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
 
@@ -511,8 +518,8 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	}
 
 	/* send headers */
-	if (gzipped) {
-		res_detail.content_encoding = "gzip";
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
+		res_detail.content_encoding = http_compression_text(chosen_compression);
 	}
 	ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier, &res_detail, 0,
 				 NULL, 0);
@@ -547,6 +554,7 @@ out:
 
 	return ret;
 }
+#endif /* CONFIG_FILE_SYSTEM */
 
 static int http2_dynamic_response(struct http_client_ctx *client, struct http2_frame *frame,
 				  struct http_response_ctx *rsp, enum http_data_status data_status,
@@ -1094,12 +1102,14 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			if (ret < 0) {
 				goto error;
 			}
+#if defined(CONFIG_FILE_SYSTEM)
 		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
 			ret = handle_http2_static_fs_resource(
 				(struct http_resource_detail_static_fs *)detail, frame, client);
 			if (ret < 0) {
 				goto error;
 			}
+#endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,
@@ -1387,7 +1397,15 @@ static int process_header(struct http_client_ctx *client,
 		}
 
 		client->content_len = (size_t)len;
-	} else {
+	}
+#ifdef CONFIG_HTTP_SERVER_COMPRESSION
+	else if (header->name_len == (sizeof("accept-encoding") - 1) &&
+		 memcmp(header->name, "accept-encoding", header->name_len) == 0) {
+		http_compression_parse_accept_encoding(header->value, header->value_len,
+						       &client->supported_compression);
+	}
+#endif /* CONFIG_HTTP_SERVER_COMPRESSION */
+	else {
 		/* Just ignore for now. */
 		LOG_DBG("Ignoring field %.*s", (int)header->name_len, header->name);
 	}
@@ -1594,12 +1612,14 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 			if (ret < 0) {
 				goto error;
 			}
+#if defined(CONFIG_FILE_SYSTEM)
 		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
 			ret = handle_http2_static_fs_resource(
 				(struct http_resource_detail_static_fs *)detail, frame, client);
 			if (ret < 0) {
 				goto error;
 			}
+#endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,

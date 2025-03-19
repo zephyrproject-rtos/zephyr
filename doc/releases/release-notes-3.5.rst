@@ -1022,7 +1022,7 @@ Bindings
     * The ``riscv,isa`` property used by RISC-V CPU bindings no longer has an
       ``enum`` value.
 
-    * :dtcompatible:`neorv32-cpu`:
+    * :dtcompatible:`neorv32,cpu`:
 
           * new property: ``mmu-type``
           * new property: ``riscv,isa``
@@ -2180,7 +2180,7 @@ Libraries / Subsystems
     the heap.
   * Added a new type of observer called Message Subscriber. ZBus' VDED will send a copy of the
     message during the publication/notification process.
-  * Changed the VDED delivery sequence. Check the ref:`documentation<zbus delivery sequence>`.
+  * Changed the VDED delivery sequence. Check the :ref:`documentation <zbus delivery sequence>`.
   * ZBus runtime observers now rely on the heap instead of a memory pool.
   * Added new iterable section iterators APIs (for channels and observers) can now receive a
     ``user_data`` pointer to keep context between the function calls.
@@ -2322,8 +2322,8 @@ Documentation
 Tests and Samples
 *****************
 
-* Created common sample for file systems (`fs_sample`). It originates from sample for FAT
-  (`fat_fs`) and supports both FAT and ext2 file systems.
+* Created common sample for file systems (``fs_sample``). It originates from sample for FAT
+  (``fat_fs``) and supports both FAT and ext2 file systems.
 
 * Created the zbus confirmed channel sample to demonstrate how to implement a delivery-guaranteed
   channel using subscribers.

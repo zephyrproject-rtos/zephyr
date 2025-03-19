@@ -14,7 +14,7 @@
 
 #include "stubs.h"
 #if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
-#include "timer_model.h"
+#include "nsi_timer_model.h"
 #endif
 
 #define LOG_LEVEL	LOG_LEVEL_DBG

@@ -58,11 +58,13 @@ static inline int llext_get_region_info(const struct llext_loader *ldr,
 	if (hdr) {
 		*hdr = &ldr->sects[region];
 	}
+
+	/* address and size compensated for alignment prepad */
 	if (addr) {
-		*addr = ext->mem[region];
+		*addr = (void *)((uintptr_t)ext->mem[region] + ldr->sects[region].sh_info);
 	}
 	if (size) {
-		*size = ext->mem_size[region];
+		*size = ext->mem_size[region] - ldr->sects[region].sh_info;
 	}
 
 	return 0;
@@ -117,14 +119,18 @@ static inline int llext_get_section_info(const struct llext_loader *ldr,
 		return -ENOTSUP;
 	}
 
+	enum llext_mem mem_idx = ldr->sect_map[shndx].mem_idx;
+
 	if (hdr) {
 		*hdr = &ext->sect_hdrs[shndx];
 	}
 	if (region) {
-		*region = ldr->sect_map[shndx].mem_idx;
+		*region = mem_idx;
 	}
+
+	/* offset compensated for alignment prepad */
 	if (offset) {
-		*offset = ldr->sect_map[shndx].offset;
+		*offset = ldr->sect_map[shndx].offset - ldr->sects[mem_idx].sh_info;
 	}
 
 	return 0;

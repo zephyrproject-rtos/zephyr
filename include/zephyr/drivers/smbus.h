@@ -510,7 +510,7 @@ static inline void smbus_xfer_stats(const struct device *dev, uint8_t sent,
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
 			&UTIL_CAT(Z_DEVICE_DT_DEV_NAME(node_id), _init),\
-			pm_device,					\
+			NULL, Z_DEVICE_DT_FLAGS(node_id), pm_device,	\
 			data_ptr, cfg_ptr, level, prio,			\
 			api_ptr,					\
 			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME	\

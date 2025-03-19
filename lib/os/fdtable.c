@@ -550,9 +550,7 @@ static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 
 static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 {
-#if defined(CONFIG_BOARD_NATIVE_POSIX)
-	return zvfs_write(1, buffer, count, NULL);
-#elif defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
+#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
 	return z_impl_zephyr_write_stdout(buffer, count);
 #else
 	return 0;

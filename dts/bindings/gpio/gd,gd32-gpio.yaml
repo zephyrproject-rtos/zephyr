@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-description: GD32 GPIO node
+description: GD32 GPIO
 
 compatible: "gd,gd32-gpio"
 

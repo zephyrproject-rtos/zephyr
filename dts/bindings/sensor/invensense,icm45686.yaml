@@ -1,0 +1,170 @@
+# Copyright (c) 2024 Intel Corporation
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    ICM45686 High-precision 6-axis motion tracking device
+    When setting the accel-pm, accel-range, accel-odr, gyro-pm, gyro-range,
+    gyro-odr properties in a .dts or .dtsi file you may include icm45686.h
+    and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/icm45686.h>
+
+    icm42688: icm45686@0 {
+      ...
+
+      accel-pwr-mode = <ICM45686_DT_ACCEL_LN>;
+      accel-fs = <ICM45686_DT_ACCEL_FS_32>;
+      accel-odr = <ICM45686_DT_ACCEL_ODR_800>;
+      gyro-pwr-mode= <ICM45686_DT_GYRO_LN>;
+      gyro-fs = <ICM45686_DT_GYRO_FS_4000>;
+      gyro-odr = <ICM45686_DT_GYRO_ODR_800>;
+    };
+
+compatible: "invensense,icm45686"
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal default configuration is active-high. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+
+  accel-pwr-mode:
+    type: int
+    default: 0
+    description: |
+      Specify the default accelerometer power mode.
+      Default is power-up configuration.
+    enum:
+      - 0 # ICM45686_DT_ACCEL_OFF
+      - 2 # ICM45686_DT_ACCEL_LP
+      - 3 # ICM45686_DT_ACCEL_LN
+
+  accel-odr:
+    type: int
+    default: 6
+    description: |
+      Specify the default accelerometer output data rate expressed in samples per second (Hz).
+      Default is power-up configuration.
+    enum:
+      - 3 # ICM45686_DT_ACCEL_ODR_6400 (LN-mode only)
+      - 4 # ICM45686_DT_ACCEL_ODR_3200 (LN-mode only)
+      - 5 # ICM45686_DT_ACCEL_ODR_1600 (LN-mode only)
+      - 6 # ICM45686_DT_ACCEL_ODR_800 (LN-mode only)
+      - 7 # ICM45686_DT_ACCEL_ODR_400
+      - 8 # ICM45686_DT_ACCEL_ODR_200
+      - 9 # ICM45686_DT_ACCEL_ODR_100
+      - 10 # ICM45686_DT_ACCEL_ODR_50
+      - 11 # ICM45686_DT_ACCEL_ODR_25
+      - 12 # ICM45686_DT_ACCEL_ODR_12_5
+      - 13 # ICM45686_DT_ACCEL_ODR_6_25 (LP-mode only)
+      - 14 # ICM45686_DT_ACCEL_ODR_3_125 (LP-mode only)
+      - 15 # ICM45686_DT_ACCEL_ODR_1_5625 (LP-mode only)
+
+  accel-fs:
+    type: int
+    default: 0
+    description: |
+      Specify the accelerometer range in g.
+      Default is power-up configuration.
+    enum:
+      - 0 # ICM45686_DT_ACCEL_FS_32
+      - 1 # ICM45686_DT_ACCEL_FS_16
+      - 2 # ICM45686_DT_ACCEL_FS_8
+      - 3 # ICM45686_DT_ACCEL_FS_4
+      - 4 # ICM45686_DT_ACCEL_FS_2
+
+  accel-lpf:
+    type: int
+    default: 0
+    description: |
+      Specify the accelerometer low pass filter cut-off frequency
+      as a fraction of the output data rate.
+      Default is power-up configuration.
+    enum:
+      - 0 # ICM45686_DT_ACCEL_LPF_BW_OFF
+      - 1 # ICM45686_DT_ACCEL_LPF_BW_1_4
+      - 2 # ICM45686_DT_ACCEL_LPF_BW_1_8
+      - 3 # ICM45686_DT_ACCEL_LPF_BW_1_16
+      - 4 # ICM45686_DT_ACCEL_LPF_BW_1_32
+      - 5 # ICM45686_DT_ACCEL_LPF_BW_1_64
+      - 6 # ICM45686_DT_ACCEL_LPF_BW_1_128
+
+  gyro-pwr-mode:
+    type: int
+    default: 0
+    description: |
+      Specify the default gyro power mode.
+      Default is power-up configuration.
+    enum:
+      - 0 # ICM42688_DT_GYRO_OFF
+      - 1 # ICM42688_DT_GYRO_STANDBY
+      - 2 # ICM42688_DT_GYRO_LP
+      - 3 # ICM42688_DT_GYRO_LN
+
+  gyro-odr:
+    type: int
+    default: 6
+    description: |
+      Specify the default gyro output data rate expressed in samples per second (Hz).
+      Default is power-up configuration.
+    enum:
+      - 3 # ICM45686_DT_GYRO_ODR_6400 (LN-mode only)
+      - 4 # ICM45686_DT_GYRO_ODR_3200 (LN-mode only)
+      - 5 # ICM45686_DT_GYRO_ODR_1600 (LN-mode only)
+      - 6 # ICM45686_DT_GYRO_ODR_800 (LN-mode only)
+      - 7 # ICM45686_DT_GYRO_ODR_400
+      - 8 # ICM45686_DT_GYRO_ODR_200
+      - 9 # ICM45686_DT_GYRO_ODR_100
+      - 10 # ICM45686_DT_GYRO_ODR_50
+      - 11 # ICM45686_DT_GYRO_ODR_25
+      - 12 # ICM45686_DT_GYRO_ODR_12_5
+      - 13 # ICM45686_DT_GYRO_ODR_6_25 (LP-mode only)
+      - 14 # ICM45686_DT_GYRO_ODR_3_125 (LP-mode only)
+      - 15 # ICM45686_DT_GYRO_ODR_1_5625 (LP-mode only)
+
+  gyro-fs:
+    type: int
+    default: 0
+    description: |
+      Specify the gyro range in degrees per second.
+      Default is power-up configuration.
+    enum:
+      - 0 # ICM45686_DT_GYRO_FS_4000
+      - 1 # ICM45686_DT_GYRO_FS_2000
+      - 2 # ICM45686_DT_GYRO_FS_1000
+      - 3 # ICM45686_DT_GYRO_FS_500
+      - 4 # ICM45686_DT_GYRO_FS_250
+      - 5 # ICM45686_DT_GYRO_FS_125
+      - 6 # ICM45686_DT_GYRO_FS_62_5
+      - 7 # ICM45686_DT_GYRO_FS_31_25
+      - 8 # ICM45686_DT_GYRO_FS_15_625
+
+  gyro-lpf:
+    type: int
+    default: 0
+    description: |
+      Specify the gyro low pass filter cut-off frequency
+      as a fraction of the output data rate.
+      Default is power-up configuration.
+    enum:
+      - 0 # ICM45686_DT_GYRO_LPF_BW_OFF
+      - 1 # ICM45686_DT_GYRO_LPF_BW_1_4
+      - 2 # ICM45686_DT_GYRO_LPF_BW_1_8
+      - 3 # ICM45686_DT_GYRO_LPF_BW_1_16
+      - 4 # ICM45686_DT_GYRO_LPF_BW_1_32
+      - 5 # ICM45686_DT_GYRO_LPF_BW_1_64
+      - 6 # ICM45686_DT_GYRO_LPF_BW_1_128
+
+  fifo-watermark:
+    type: int
+    default: 0
+    description: |
+      Specify the FIFO watermark level in frame count.
+      Default is power-up configuration (disabled).
+      Valid range: 0 - 104

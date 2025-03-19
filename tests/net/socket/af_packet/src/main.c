@@ -337,8 +337,13 @@ ZTEST(socket_packet, test_packet_sockets_dgram)
 		      -errno);
 
 	k_msleep(10); /* Let the packet enter the system */
-	memset(&src, 0, sizeof(src));
 
+	ret = zsock_recvfrom(sock2, data_to_receive, sizeof(data_to_receive), 0,
+	(struct sockaddr *)&src, &addrlen);
+	zassert_equal(ret, -1, "Received something (%d)", ret);
+	zassert_equal(errno, EAGAIN, "Wrong errno (%d)", errno);
+
+	memset(&src, 0, sizeof(src));
 	errno = 0;
 	iter = 0;
 	do {
@@ -351,6 +356,21 @@ ZTEST(socket_packet, test_packet_sockets_dgram)
 	zassert_equal(ret, sizeof(data_to_send),
 		      "Cannot receive all data (%d vs %zd) (%d)",
 		      ret, sizeof(data_to_send), -errno);
+
+	zassert_equal(addrlen, sizeof(struct sockaddr_ll),
+		      "Invalid address length (%d)", addrlen);
+
+	struct sockaddr_ll src_expected = {
+		.sll_family = AF_PACKET,
+		.sll_protocol = dst.sll_protocol,
+		.sll_ifindex = net_if_get_by_iface(ud.first),
+		.sll_pkttype = PACKET_OTHERHOST,
+		.sll_hatype = ARPHRD_ETHER,
+		.sll_halen = sizeof(lladdr2),
+		.sll_addr = {0},
+	};
+	memcpy(&src_expected.sll_addr, lladdr2, ARRAY_SIZE(lladdr2));
+	zassert_mem_equal(&src, &src_expected, addrlen, "Invalid source address");
 
 	zassert_mem_equal(data_to_send, data_to_receive, sizeof(data_to_send),
 			  "Data mismatch");
@@ -386,7 +406,54 @@ ZTEST(socket_packet, test_packet_sockets_dgram)
 
 	zassert_equal(ret, sizeof(data_to_send), "Cannot receive all data (%d)",
 		      -errno);
+	zassert_equal(addrlen, sizeof(struct sockaddr_ll),
+		      "Invalid address length (%d)", addrlen);
+
+	src_expected = (struct sockaddr_ll){
+		.sll_family = AF_PACKET,
+		.sll_protocol = dst.sll_protocol,
+		.sll_ifindex = net_if_get_by_iface(ud.second),
+		.sll_pkttype = PACKET_OTHERHOST,
+		.sll_hatype = ARPHRD_ETHER,
+		.sll_halen = ARRAY_SIZE(lladdr2),
+		.sll_addr = {0},
+	};
+	memcpy(&src_expected.sll_addr, lladdr2, ARRAY_SIZE(lladdr2));
+	zassert_mem_equal(&src, &src_expected, addrlen, "Invalid source address");
+
 	zassert_mem_equal(data_to_send, data_to_receive, sizeof(data_to_send),
+			  "Data mismatch");
+
+	/* Send specially crafted payload to mimic IPv4 and IPv6 length field,
+	 * to ckeck correct length returned.
+	 */
+	uint8_t payload_ip_length[64], receive_ip_length[64];
+
+	memset(payload_ip_length, 0, sizeof(payload_ip_length));
+	/* Set ipv4 and ipv6 length fields to represent IP payload with the
+	 * length of 1 byte.
+	 */
+	payload_ip_length[3] = 21;
+	payload_ip_length[5] = 1;
+
+	ret = zsock_sendto(sock2, payload_ip_length, sizeof(payload_ip_length), 0,
+			   (const struct sockaddr *)&dst, sizeof(struct sockaddr_ll));
+	zassert_equal(ret, sizeof(payload_ip_length), "Cannot send all data (%d)", -errno);
+
+	k_msleep(10);
+
+	memset(&src, 0, sizeof(src));
+	errno = 0;
+	iter = 0;
+	do {
+		ret = zsock_recvfrom(sock2, receive_ip_length, sizeof(receive_ip_length), 0,
+				     (struct sockaddr *)&src, &addrlen);
+		k_msleep(10);
+		iter++;
+	} while (ret < 0 && errno == EAGAIN && iter < max_iter);
+
+	zassert_equal(ret, ARRAY_SIZE(payload_ip_length), "Cannot receive all data (%d)", -errno);
+	zassert_mem_equal(payload_ip_length, receive_ip_length, sizeof(payload_ip_length),
 			  "Data mismatch");
 
 	zsock_close(sock1);

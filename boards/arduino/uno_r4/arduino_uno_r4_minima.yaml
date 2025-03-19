@@ -1,4 +1,4 @@
-identifier: arduino_uno_r4_minima
+identifier: arduino_uno_r4@minima
 name: Arduino Uno R4 Minima
 type: mcu
 arch: arm

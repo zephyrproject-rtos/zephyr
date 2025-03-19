@@ -1,0 +1,6 @@
+tests:
+  drivers.input.stm32_tsc:
+    tags: drivers input stm32 tsc
+    filter: dt_compat_enabled("st,stm32-tsc")
+    depends_on: tsc
+    integration_platforms: [stm32u083c_dk]

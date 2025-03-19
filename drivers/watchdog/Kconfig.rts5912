@@ -1,0 +1,11 @@
+# Copyright (c) 2025, Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_RTS5912
+	bool "Realtek RTS5912 Embedded Controller Watchdog Driver"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  This option enables the WDT driver for Realtek RTS5912 family of
+	  processors.

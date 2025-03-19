@@ -19,6 +19,17 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,ocm = &ocm;
 	};
+
+	aliases {
+		eeprom-0 = &eeprom0;
+		eeprom-1 = &eeprom1;
+	};
+
+	i2c_ref_clk: i2c_ref_clk {
+		compatible = "fixed-clock";
+		clock-frequency = <100000000>;
+		#clock-cells = <0>;
+	};
 };
 
 &uart1 {
@@ -34,4 +45,30 @@
 
 &psgpio {
 	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	clocks = <&i2c_ref_clk>;
+	clock-frequency = <400000>;
+
+	eeprom0: eeprom@50 {
+		compatible = "st,24c64", "atmel,at24";
+		reg = <0x50>;
+		size = <DT_SIZE_K(8)>;
+		pagesize = <32>;
+		address-width = <16>;
+		timeout = <5>;
+		read-only;
+	};
+
+	eeprom1: eeprom@51 {
+		compatible = "st,24c64", "atmel,at24";
+		reg = <0x51>;
+		size = <DT_SIZE_K(8)>;
+		pagesize = <32>;
+		address-width = <16>;
+		timeout = <5>;
+		read-only;
+	};
 };

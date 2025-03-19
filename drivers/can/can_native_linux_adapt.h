@@ -5,7 +5,7 @@
  */
 
 /** @file
- * @brief Private functions for native posix canbus driver.
+ * @brief Private functions for native_linux canbus driver.
  */
 
 #ifndef ZEPHYR_DRIVERS_CAN_NATIVE_LINUX_ADAPT_H_

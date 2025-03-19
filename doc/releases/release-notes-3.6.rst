@@ -1301,9 +1301,9 @@ Additionally, the following changes in Zephyr were done:
 Tests and Samples
 *****************
 
-* :ref:`native_sim<native_sim>` has replaced :ref:`native_posix<native_posix>` as the default
+* :ref:`native_sim<native_sim>` has replaced ``native_posix`` as the default
   test platform.
-  :ref:`native_posix<native_posix>` remains supported and used in testing but will be deprecated
+  ``native_posix`` remains supported and used in testing but will be deprecated
   in a future release.
 
 * Bluetooth split stacks tests, where the BT host and controller are run in separate MCUs, are

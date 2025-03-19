@@ -1577,7 +1577,7 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 	static const struct ads1x4s0x_config config_##name##_##n = {                              \
 		.bus = SPI_DT_SPEC_INST_GET(                                                      \
 			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),              \
-		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n,))                        \
+		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##name##_##n,))               \
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                      \
 		.gpio_data_ready = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),                          \
 		.gpio_start_sync = GPIO_DT_SPEC_INST_GET_OR(n, start_sync_gpios, {0}),            \

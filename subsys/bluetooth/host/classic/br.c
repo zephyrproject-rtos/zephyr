@@ -155,7 +155,7 @@ bool bt_br_update_sec_level(struct bt_conn *conn)
 
 	if (conn->br.link_key) {
 		if (conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED) {
-			if (conn->encrypt == 0x02) {
+			if (conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
 				conn->sec_level = BT_SECURITY_L4;
 			} else {
 				conn->sec_level = BT_SECURITY_L3;
@@ -1057,8 +1057,128 @@ int bt_br_set_connectable(bool enable)
 	}
 }
 
-int bt_br_set_discoverable(bool enable)
+#define BT_LIAC 0x9e8b00
+#define BT_GIAC 0x9e8b33
+
+static int bt_br_write_current_iac_lap(bool limited)
 {
+	struct bt_hci_cp_write_current_iac_lap *iac_lap;
+	struct net_buf *buf;
+	uint8_t param_len;
+	uint8_t num_current_iac = limited ? 2 : 1;
+
+	LOG_DBG("limited discoverable mode? %s", limited ? "Yes" : "No");
+
+	param_len = sizeof(*iac_lap) + (num_current_iac * sizeof(struct bt_hci_iac_lap));
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_CURRENT_IAC_LAP, param_len);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	iac_lap = net_buf_add(buf, param_len);
+	iac_lap->num_current_iac = num_current_iac;
+	sys_put_le24(BT_GIAC, iac_lap->lap[0].iac);
+	if (num_current_iac > 1) {
+		sys_put_le24(BT_LIAC, iac_lap->lap[1].iac);
+	}
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CURRENT_IAC_LAP, buf, NULL);
+}
+
+#define BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER BIT(13)
+
+static int bt_br_read_cod(uint32_t *cod)
+{
+	struct net_buf *rsp;
+	struct bt_hci_rp_read_class_of_device *rp;
+	int err;
+
+	LOG_DBG("Read COD");
+
+	/* Read Class of device */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_CLASS_OF_DEVICE, NULL, &rsp);
+	if (err) {
+		LOG_WRN("Fail to read COD");
+		return err;
+	}
+
+	if (!rsp || (rsp->len < sizeof(*rp))) {
+		LOG_WRN("Invalid response");
+		return -EIO;
+	}
+
+	rp = (void *)rsp->data;
+	*cod = sys_get_le24(rp->class_of_device);
+
+	LOG_DBG("Current COD %06x", *cod);
+
+	net_buf_unref(rsp);
+
+	return 0;
+}
+
+static int bt_br_write_cod(uint32_t cod)
+{
+	struct net_buf *buf;
+
+	/* Set Class of device */
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_CLASS_OF_DEVICE,
+				sizeof(struct bt_hci_cp_write_class_of_device));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_le24(buf, cod);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, buf, NULL);
+}
+
+static int bt_br_update_cod(bool limited)
+{
+	int err;
+	uint32_t cod;
+
+	LOG_DBG("Update COD");
+
+	err = bt_br_read_cod(&cod);
+	if (err) {
+		return err;
+	}
+
+	if (limited) {
+		cod |= BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
+	} else {
+		cod &= ~BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
+	}
+
+	err = bt_br_write_cod(cod);
+	return err;
+}
+
+static void bt_br_limited_discoverable_timeout_handler(struct k_work *work)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
+		LOG_INF("Limited discoverable mode has been disabled");
+		return;
+	}
+
+	err = bt_br_set_discoverable(false, false);
+	if (err) {
+		LOG_WRN("Disable discoverable failure (err %d)", err);
+	}
+}
+
+/* Work used for limited discoverable mode time span */
+static K_WORK_DELAYABLE_DEFINE(bt_br_limited_discoverable_timeout,
+			       bt_br_limited_discoverable_timeout_handler);
+
+int bt_br_set_discoverable(bool enable, bool limited)
+{
+	int err;
+
 	if (enable) {
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
 			return -EALREADY;
@@ -1068,12 +1188,56 @@ int bt_br_set_discoverable(bool enable)
 			return -EPERM;
 		}
 
-		return write_scan_enable(BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE);
-	} else {
-		if (!atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
-			return -EALREADY;
+		err = bt_br_write_current_iac_lap(limited);
+		if (err) {
+			return err;
 		}
 
-		return write_scan_enable(BT_BREDR_SCAN_PAGE);
+		err = bt_br_update_cod(limited);
+		if (err) {
+			return err;
+		}
+
+		err = write_scan_enable(BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE);
+		if (!err && (limited == true)) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
+			k_work_reschedule(&bt_br_limited_discoverable_timeout,
+					  K_SECONDS(CONFIG_BT_LIMITED_DISCOVERABLE_DURATION));
+		}
+		return err;
 	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
+		return -EALREADY;
+	}
+
+	err = write_scan_enable(BT_BREDR_SCAN_PAGE);
+	if (err) {
+		return err;
+	}
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
+		err = bt_br_write_current_iac_lap(false);
+		if (err) {
+			return err;
+		}
+
+		err = bt_br_update_cod(false);
+		if (err) {
+			return err;
+		}
+
+		atomic_clear_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
+		k_work_cancel_delayable(&bt_br_limited_discoverable_timeout);
+	}
+
+	return 0;
+}
+
+bool bt_br_bond_exists(const bt_addr_t *addr)
+{
+	struct bt_keys_link_key *key = bt_keys_find_link_key(addr);
+
+	/* if there are any keys stored then device is bonded */
+	return key != NULL;
 }

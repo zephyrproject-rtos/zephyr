@@ -345,6 +345,12 @@ static inline int net_mgmt_event_wait(uint32_t mgmt_event_mask,
 				      size_t *info_length,
 				      k_timeout_t timeout)
 {
+	ARG_UNUSED(mgmt_event_mask);
+	ARG_UNUSED(raised_event);
+	ARG_UNUSED(iface);
+	ARG_UNUSED(info);
+	ARG_UNUSED(info_length);
+	ARG_UNUSED(timeout);
 	return 0;
 }
 #endif
@@ -383,6 +389,12 @@ static inline int net_mgmt_event_wait_on_iface(struct net_if *iface,
 					       size_t *info_length,
 					       k_timeout_t timeout)
 {
+	ARG_UNUSED(iface);
+	ARG_UNUSED(mgmt_event_mask);
+	ARG_UNUSED(raised_event);
+	ARG_UNUSED(info);
+	ARG_UNUSED(info_length);
+	ARG_UNUSED(timeout);
 	return 0;
 }
 #endif

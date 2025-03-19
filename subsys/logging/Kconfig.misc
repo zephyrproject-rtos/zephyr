@@ -19,6 +19,7 @@ config LOG_TEST_CLEAR_MESSAGE_SPACE
 config LOG_USE_VLA
 	bool "Using variable length arrays"
 	default y if !MISRA_SANE
+	depends on TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS
 	help
 	  Using VLA slightly decreases stack usage in some cases it may not be
 	  supported. Note that VLA are used for arrays which size is resolved at

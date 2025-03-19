@@ -8,6 +8,9 @@
  */
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/llext_internal.h>
+#include <zephyr/llext/loader.h>
+
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
@@ -59,7 +62,133 @@ static inline int riscv_relocation_fits(long long jump_target, long long max_dis
 	return 0;
 }
 
-static long long last_u_type_jump_target;
+static size_t riscv_last_rel_idx;
+
+/**
+ * @brief On RISC-V, PC-relative relocations (PCREL_LO12_I, PCREL_LO12_S) do not refer to
+ * the actual symbol. Instead, they refer to the location of a different instruction in the
+ * same section, which has a PCREL_HI20 relocation. The relocation offset is then computed based
+ * on the location and symbol from the HI20 relocation. 20 bits from the offset go into the
+ * instruction that has the HI20 relocation, and 12 bits go into the PCREL_LO12 instruction.
+ *
+ * @param[in] ldr llext loader
+ * @param[in] ext current extension
+ * @param[in] pcrel_lo12 the elf relocation structure for the PCREL_LO12I/S relocation.
+ * @param[in] shdr ELF section header for the relocation
+ * @param[in] sym ELF symbol for PCREL_LO12I
+ * @param[out] link_addr_out computed link address
+ *
+ */
+static int llext_riscv_find_sym_pcrel(struct llext_loader *ldr, struct llext *ext,
+				      const elf_rela_t *pcrel_lo12, const elf_shdr_t *shdr,
+				      const elf_sym_t *sym, intptr_t *link_addr_out)
+{
+	int ret;
+	elf_rela_t candidate;
+	uintptr_t candidate_loc;
+	elf_word reloc_type;
+	elf_sym_t candidate_sym;
+	uintptr_t link_addr;
+	const char *symbol_name;
+	int iteration_start = riscv_last_rel_idx;
+	bool is_first = true;
+	const elf_word rel_cnt = shdr->sh_size / shdr->sh_entsize;
+	const uintptr_t sect_base = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
+	bool found_candidate = false;
+
+	if (iteration_start >= rel_cnt) {
+		/* value left over from a different section */
+		iteration_start = 0;
+	}
+
+	reloc_type = ELF32_R_TYPE(pcrel_lo12->r_info);
+
+	if (reloc_type != R_RISCV_PCREL_LO12_I && reloc_type != R_RISCV_PCREL_LO12_S) {
+		/* this function does not apply - the symbol is already correct */
+		return 0;
+	}
+
+	for (int i = iteration_start; i != iteration_start || is_first; i++) {
+
+		is_first = false;
+
+		/* get each relocation entry */
+		ret = llext_seek(ldr, shdr->sh_offset + i * shdr->sh_entsize);
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = llext_read(ldr, &candidate, shdr->sh_entsize);
+		if (ret != 0) {
+			return ret;
+		}
+
+		/* FIXME currently, RISC-V relocations all fit in ELF_32_R_TYPE */
+		reloc_type = ELF32_R_TYPE(candidate.r_info);
+
+		candidate_loc = sect_base + candidate.r_offset;
+
+		/*
+		 * RISC-V ELF specification: "value" of the symbol for the PCREL_LO12 relocation
+		 * is actually the offset of the PCREL_HI20 relocation instruction from section
+		 * start
+		 */
+		if (candidate.r_offset == sym->st_value && reloc_type == R_RISCV_PCREL_HI20) {
+			found_candidate = true;
+
+			/*
+			 * start here in next iteration
+			 * it is fairly likely (albeit not guaranteed) that we require PCREL_HI20
+			 * relocations in order
+			 * we can safely write this even if an error occurs after the loop -
+			 * in that case,we can safely abort the execution anyway
+			 */
+			riscv_last_rel_idx = i;
+
+			break;
+		}
+
+		if (i + 1 >= rel_cnt) {
+			/* wrap around and search in previously processed indices as well */
+			i = -1;
+		}
+	}
+
+	if (!found_candidate) {
+		LOG_ERR("Could not find R_RISCV_PCREL_HI20 relocation for "
+			"R_RISCV_PCREL_LO12 relocation!");
+		return -ENOEXEC;
+	}
+
+	/* we found a match - need to compute the relocation for this instruction */
+	/* lower 12 bits go to the PCREL_LO12 relocation */
+
+	/* get corresponding / "actual" symbol */
+	ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset +
+			 ELF_R_SYM(candidate.r_info) * sizeof(elf_sym_t));
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = llext_read(ldr, &candidate_sym, sizeof(elf_sym_t));
+	if (ret != 0) {
+		return ret;
+	}
+
+	symbol_name = llext_symbol_name(ldr, ext, &candidate_sym);
+
+	ret = llext_lookup_symbol(ldr, ext, &link_addr, &candidate, &candidate_sym,
+				  symbol_name, shdr);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	*link_addr_out = (intptr_t)(link_addr + candidate.r_addend - candidate_loc); /* S + A - P */
+
+	/* found the matching entry */
+	return 0;
+}
 
 /**
  * @brief RISC-V specific function for relocating partially linked ELF binaries
@@ -68,11 +197,32 @@ static long long last_u_type_jump_target;
  * https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-elf.adoc
  *
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc_unsigned, uintptr_t sym_base_addr_unsigned,
-		      const char *sym_name, uintptr_t load_bias)
+int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr)
 {
 	/* FIXME currently, RISC-V relocations all fit in ELF_32_R_TYPE */
 	elf_word reloc_type = ELF32_R_TYPE(rel->r_info);
+	const uintptr_t load_bias = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
+	const uintptr_t loc_unsigned = llext_get_reloc_instruction_location(ldr, ext,
+									    shdr->sh_info, rel);
+	elf_sym_t sym;
+	uintptr_t sym_base_addr_unsigned;
+	const char *sym_name;
+	int ret;
+
+	ret = llext_read_symbol(ldr, ext, rel, &sym);
+	if (ret != 0) {
+		LOG_ERR("Could not read symbol from binary!");
+		return ret;
+	}
+
+	sym_name = llext_symbol_name(ldr, ext, &sym);
+	ret = llext_lookup_symbol(ldr, ext, &sym_base_addr_unsigned, rel, &sym, sym_name, shdr);
+
+	if (ret != 0) {
+		LOG_ERR("Could not find symbol %s!", sym_name);
+		return ret;
+	}
 	/*
 	 * The RISC-V specification uses the following symbolic names for the relocations:
 	 *
@@ -99,7 +249,22 @@ int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc_unsigned, uintptr_t sym_bas
 	long long original_imm8, jump_target;
 	int16_t compressed_imm8;
 	__typeof__(rel->r_addend) target_alignment = 1;
-	const intptr_t sym_base_addr = (intptr_t)sym_base_addr_unsigned;
+	intptr_t sym_base_addr = (intptr_t)sym_base_addr_unsigned;
+
+	/*
+	 * For HI20/LO12 ("PCREL") relocation pairs, we need a helper function to
+	 * determine the address for the LO12 relocation, as it depends on the
+	 * value in the HI20 relocation.
+	 */
+	ret = llext_riscv_find_sym_pcrel(ldr, ext, rel, shdr, &sym, &sym_base_addr);
+
+	if (ret != 0) {
+		LOG_ERR("Failed to resolve RISC-V PCREL relocation for symbol %s at %p "
+			"with base address %p load address %p type %" PRIu64,
+			sym_name, (void *)loc, (void *)sym_base_addr, (void *)load_bias,
+			(uint64_t)reloc_type);
+		return ret;
+	}
 
 	LOG_DBG("Relocating symbol %s at %p with base address %p load address %p type %" PRIu64,
 		sym_name, (void *)loc, (void *)sym_base_addr, (void *)load_bias,
@@ -176,43 +341,32 @@ int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc_unsigned, uintptr_t sym_bas
 			UNALIGNED_PUT(modified_operand, loc32);
 		}
 
-		last_u_type_jump_target = jump_target;
-
 		return riscv_relocation_fits(jump_target, RISCV_MAX_JUMP_DISTANCE_U_PLUS_I_TYPE,
 					     reloc_type);
 	case R_RISCV_PCREL_LO12_I:
-		/* need the same jump target as preceding U-type relocation */
-		if (last_u_type_jump_target == 0) {
-			LOG_ERR("R_RISCV_PCREL_LO12_I relocation without preceding U-type "
-				"relocation!");
-			return -ENOEXEC;
-		}
+		/*
+		 * Jump target is resolved in llext_riscv_find_sym_pcrel in llext_link.c
+		 * as it depends on other relocations.
+		 */
 		modified_operand = UNALIGNED_GET(loc32);
-		jump_target = last_u_type_jump_target; /* S - P */
-		last_u_type_jump_target = 0;
-		imm8 = jump_target;
+		imm8 = (int32_t)sym_base_addr; /* already computed */
 		modified_operand = R_RISCV_CLEAR_ITYPE_IMM8(modified_operand);
 		modified_operand = R_RISCV_SET_ITYPE_IMM8(modified_operand, imm8);
 		UNALIGNED_PUT(modified_operand, loc32);
-		return riscv_relocation_fits(jump_target, RISCV_MAX_JUMP_DISTANCE_U_PLUS_I_TYPE,
-					     reloc_type);
+		/* we have checked that this fits with the associated relocation */
 		break;
 	case R_RISCV_PCREL_LO12_S:
-		/* need the same jump target as preceding U-type relocation */
-		if (last_u_type_jump_target == 0) {
-			LOG_ERR("R_RISCV_PCREL_LO12_I relocation without preceding U-type "
-				"relocation!");
-			return -ENOEXEC;
-		}
+		/*
+		 * Jump target is resolved in llext_riscv_find_sym_pcrel in llext_link.c
+		 * as it depends on other relocations.
+		 */
 		modified_operand = UNALIGNED_GET(loc32);
-		jump_target = last_u_type_jump_target; /* S - P */
-		last_u_type_jump_target = 0;
-		imm8 = jump_target;
+		imm8 = (int32_t)sym_base_addr; /* already computed */
 		modified_operand = R_RISCV_CLEAR_STYPE_IMM8(modified_operand);
 		modified_operand = R_RISCV_SET_STYPE_IMM8(modified_operand, imm8);
 		UNALIGNED_PUT(modified_operand, loc32);
-		return riscv_relocation_fits(jump_target, RISCV_MAX_JUMP_DISTANCE_U_PLUS_I_TYPE,
-					     reloc_type);
+		/* we have checked that this fits with the associated relocation */
+		break;
 	case R_RISCV_HI20:
 		jump_target = sym_base_addr + rel->r_addend; /* S + A */
 		modified_operand = UNALIGNED_GET(loc32);

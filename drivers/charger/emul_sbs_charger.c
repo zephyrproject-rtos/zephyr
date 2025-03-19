@@ -17,7 +17,7 @@
 
 #include "sbs_charger.h"
 
-LOG_MODULE_REGISTER(sbs_sbs_charger);
+LOG_MODULE_REGISTER(sbs_sbs_charger, CONFIG_CHARGER_LOG_LEVEL);
 
 /** Static configuration for the emulator */
 struct sbs_charger_emul_cfg {

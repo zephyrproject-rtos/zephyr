@@ -18,7 +18,7 @@
 #include "zephyr/logging/log.h"
 #include <zephyr/drivers/gpio.h>
 
-LOG_MODULE_REGISTER(ti_bq24190);
+LOG_MODULE_REGISTER(ti_bq24190, CONFIG_CHARGER_LOG_LEVEL);
 
 struct bq24190_config {
 	struct i2c_dt_spec i2c;

@@ -51,6 +51,7 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
+		watchdog0 = &wdt;
 	};
 };
 
@@ -147,4 +148,8 @@
 			reg = <0X0 DT_SIZE_K(8)>;
 		};
 	};
+};
+
+&wdt {
+	status = "okay";
 };

@@ -48,6 +48,7 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
+		watchdog0 = &wdt;
 	};
 };
 
@@ -110,5 +111,9 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	interrupts = <10 1>, <11 1>, <12 1>, <13 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&wdt {
 	status = "okay";
 };

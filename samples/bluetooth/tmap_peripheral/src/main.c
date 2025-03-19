@@ -252,7 +252,7 @@ int main(void)
 	}
 	printk("BAP initialized\n");
 
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, &adv_cb, &adv);
+	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, &adv_cb, &adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
 		return err;

@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch32v20x_30x-pinctrl.h>
+
+&pinctrl {
+	usart2_default: usart2_default {
+		group1 {
+			pinmux = <USART2_TX_PA2_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-10mhz";
+		};
+		group2 {
+			pinmux = <USART2_RX_PA3_0>;
+			bias-pull-up;
+		};
+	};
+};

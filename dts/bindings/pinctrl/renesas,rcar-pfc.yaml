@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Renesas R-Car Pin Function Controller node
+    Renesas R-Car Pin Function Controller
+
     This binding gives a base representation of the R-Car pins configuration.
     The R-Car pin controller is a singleton node responsible for controlling
     pin function selection and pin properties. For example, you can use this

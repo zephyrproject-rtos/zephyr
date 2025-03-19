@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
+
 
 class JobHandle:
     """Small object to handle claim of a job."""

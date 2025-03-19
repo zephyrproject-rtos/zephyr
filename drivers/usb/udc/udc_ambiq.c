@@ -18,7 +18,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include "udc_common.h"
-#include <usb_dwc2_hw.h>
 
 LOG_MODULE_REGISTER(udc_ambiq, CONFIG_UDC_DRIVER_LOG_LEVEL);
 

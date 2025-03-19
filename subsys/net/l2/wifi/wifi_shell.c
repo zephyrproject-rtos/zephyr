@@ -208,7 +208,8 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 	   entry->rssi,
 	   ((entry->wpa3_ent_type) ?
 		wifi_wpa3_enterprise_txt(entry->wpa3_ent_type)
-		 : wifi_security_txt(entry->security)),
+		 : (entry->security == WIFI_SECURITY_TYPE_EAP ? "WPA2 Enterprise"
+		 : wifi_security_txt(entry->security))),
 	   ((entry->mac_length) ?
 		   net_sprint_ll_addr_buf(entry->mac, WIFI_MAC_ADDR_LEN,
 					  mac_string_buf,

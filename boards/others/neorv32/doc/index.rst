@@ -13,7 +13,7 @@ For more information about the NEORV32, see the following websites:
 - `The NEORV32 RISC-V Processor Datasheet`_
 - `The NEORV32 RISC-V Processor User Guide`_
 
-The currently supported version is 1.8.6.
+The currently supported version is NEORV32 v1.11.2.
 
 Supported Features
 ==================
@@ -27,9 +27,10 @@ using :ref:`devicetree overlays <use-dt-overlays>`.
 System Clock
 ============
 
-The default board configuration assumes a system clock of 100 MHz. The clock
-frequency can be overridden by changing the ``clock-frequency`` property of the
-``cpu0`` devicetree node.
+The default board configuration reads the system clock frequency from the NEORV32 SYSINFO module,
+which results in a small run-time overhead. If the clock frequency is known at build time, this
+behavior can be overridden by setting the ``clock-frequency`` property of the ``cpu0`` devicetree
+node.
 
 CPU
 ===
@@ -37,9 +38,10 @@ CPU
 The default board configuration assumes the NEORV32 CPU implementation has the
 following RISC-V ISA extensions enabled:
 
-- C (Compresses Instructions)
+- I (Base Integer Instruction Set, 32-bit)
 - M (Integer Multiplication and Division)
-- Zicsr (Control and Status Register (CSR) Instructions)
+- Zicsr (Control and Status Register (CSR) Instructions, always enabled)
+- Zifencei (Instruction-fetch fence, always enabled)
 
 Internal Instruction Memory
 ===========================
@@ -52,7 +54,7 @@ instruction memory can be overridden by changing the ``reg`` property of the
 Internal Data Memory
 ====================
 
-The default board configuration assumes the NEORV32 SoC implementation has a 32k
+The default board configuration assumes the NEORV32 SoC implementation has a 64k
 byte internal data memory (DMEM). The size of the data memory can be overridden
 by changing the ``reg`` property of the ``dmem`` devicetree node.
 
@@ -115,21 +117,21 @@ implementation with the On-Chip Debugger (OCD) and bootloader enabled.
 
 The default board configuration uses an :ref:`openocd-debug-host-tools`
 configuration similar to the example provided by the NEORV32 project. Other
-JTAGs can be used by providing further arguments when building. Here is an
-example for using the Flyswatter JTAG:
+JTAGs can be used by providing further arguments when flashing. Here is an
+example for using the Flyswatter JTAG @ 2 kHz:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: neorv32
    :goals: flash
-   :gen-args: -DBOARD_RUNNER_ARGS_openocd="--config;interface/ftdi/flyswatter.cfg;--config;neorv32.cfg;--cmd-pre-init;'adapter speed 2000'"
+   :flash-args: --config interface/ftdi/flyswatter.cfg --config neorv32.cfg --cmd-pre-init 'adapter speed 2000'
 
 After flashing, you should see message similar to the following in the terminal:
 
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-vn.n.nn  ***
-   Hello World! neorv32
+   Hello World! neorv32/neorv32
 
 Note, however, that the application was not persisted in flash memory by the
 above steps. It was merely written to internal block RAM in the FPGA. It will
@@ -176,7 +178,7 @@ similar to the following in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-vn.n.nn  ***
-   Hello World! neorv32
+   Hello World! neorv32/neorv32
 
 .. _The NEORV32 RISC-V Processor GitHub:
    https://github.com/stnolting/neorv32

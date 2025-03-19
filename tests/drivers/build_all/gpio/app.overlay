@@ -610,6 +610,22 @@
 					#gpio-cells = <2>;
 				};
 			};
+
+			test_max14915: max14915@c {
+				compatible = "adi,max14915-gpio";
+				status = "okay";
+				reg = <0x0c>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				crc-en;
+				spi-addr = <0>;
+				drdy-gpios = <&test_gpio 0 0>;
+				fault-gpios = <&test_gpio 0 0>;
+				sync-gpios = <&test_gpio 0 0>;
+				en-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };

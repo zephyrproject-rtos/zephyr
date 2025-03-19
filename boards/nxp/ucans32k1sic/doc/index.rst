@@ -173,6 +173,9 @@ Run the ``west debug`` command to start a GDB session using SEGGER J-Link.
 Alternatively, run ``west debug -r trace32`` to launch the Lauterbach TRACE32
 software debugging interface.
 
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
+
 References
 **********
 

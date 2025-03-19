@@ -1365,6 +1365,7 @@ int zms_mount(struct zms_fs *fs)
 	if (fs->sector_size < ZMS_MIN_ATE_NUM * fs->ate_size) {
 		LOG_ERR("Invalid sector size, should be at least %zu",
 			ZMS_MIN_ATE_NUM * fs->ate_size);
+		return -EINVAL;
 	}
 
 	/* check the number of sectors, it should be at least 2 */

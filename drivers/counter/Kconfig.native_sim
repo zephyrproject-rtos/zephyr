@@ -1,0 +1,29 @@
+# Copyright (c) 2020, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_NATIVE_SIM
+	bool "Counter on COUNTER_0"
+	default y
+	depends on (DT_HAS_ZEPHYR_NATIVE_SIM_COUNTER_ENABLED || DT_HAS_ZEPHYR_NATIVE_POSIX_COUNTER_ENABLED)
+
+config COUNTER_NATIVE_SIM_FREQUENCY
+	int "native_sim counter frequency in Hz"
+	default COUNTER_NATIVE_POSIX_FREQUENCY
+	depends on COUNTER_NATIVE_SIM
+
+config COUNTER_NATIVE_SIM_NBR_CHANNELS
+	int "native_sim counter: number of channels"
+	default COUNTER_NATIVE_POSIX_NBR_CHANNELS
+	depends on COUNTER_NATIVE_SIM
+
+config COUNTER_NATIVE_POSIX
+	bool "Counter on COUNTER_0 (deprecated)"
+	select DEPRECATED
+
+config COUNTER_NATIVE_POSIX_FREQUENCY
+	int "native_posix counter frequency in Hz (deprecated)"
+	default 1000
+
+config COUNTER_NATIVE_POSIX_NBR_CHANNELS
+	int "native counter, number of channels (deprecated)"
+	default 4

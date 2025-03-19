@@ -65,7 +65,10 @@ enum llext_mem {
 struct llext_loader;
 /** @endcond */
 
-/* Maximim number of dependency LLEXTs */
+/** Maximum length of an extension name */
+#define LLEXT_MAX_NAME_LEN 15
+
+/** Maximum number of dependency LLEXTs */
 #define LLEXT_MAX_DEPENDENCIES 8
 
 /**
@@ -86,7 +89,7 @@ struct llext {
 	/** @endcond */
 
 	/** Name of the llext */
-	char name[16];
+	char name[LLEXT_MAX_NAME_LEN + 1];
 
 	/** Lookup table of memory regions */
 	void *mem[LLEXT_MEM_COUNT];
@@ -125,6 +128,7 @@ struct llext {
 	unsigned int sect_cnt;
 	elf_shdr_t *sect_hdrs;
 	bool sect_hdrs_on_heap;
+	bool mmu_permissions_set;
 	/** @endcond */
 };
 
@@ -152,7 +156,8 @@ struct llext_load_param {
 	 * the memory buffer, when calculating relocation targets. It also
 	 * means, that the application will take care to place the extension at
 	 * those pre-defined addresses, so the LLEXT core doesn't have to do any
-	 * allocation and copying internally.
+	 * allocation and copying internally. Any MMU permission adjustment will
+	 * be done by the application too.
 	 */
 	bool pre_located;
 
@@ -354,18 +359,19 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
  * symbolic data such as a section, function, or object. These relocations
  * are architecture specific and each architecture supporting LLEXT must
  * implement this.
+ * Arguments sym_base_addr, sym_name can be computed from the sym parameter,
+ * but these parameters are provided redundantly to increase efficiency.
  *
+ * @param[in] ldr Extension loader
+ * @param[in] ext Extension being relocated refers to
  * @param[in] rel Relocation data provided by ELF
- * @param[in] loc Address of opcode to rewrite
- * @param[in] sym_base_addr Address of symbol referenced by relocation
- * @param[in] sym_name Name of symbol referenced by relocation
- * @param[in] load_bias `.text` load address
+ * @param[in] shdr Header of the ELF section currently being located
  * @retval 0 Success
  * @retval -ENOTSUP Unsupported relocation
  * @retval -ENOEXEC Invalid relocation
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
-			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias);
+int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr);
 
 /**
  * @brief Locates an ELF section in the file.

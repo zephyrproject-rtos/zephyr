@@ -363,8 +363,7 @@ drop:
 	return ret;
 }
 
-/* Called when data needs to be sent to network */
-int net_send_data(struct net_pkt *pkt)
+int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 {
 	int status;
 	int ret;
@@ -407,7 +406,7 @@ int net_send_data(struct net_pkt *pkt)
 		goto err;
 	}
 
-	if (net_if_send_data(net_pkt_iface(pkt), pkt) == NET_DROP) {
+	if (net_if_try_send_data(net_pkt_iface(pkt), pkt, timeout) == NET_DROP) {
 		ret = -EIO;
 		goto err;
 	}
@@ -570,9 +569,10 @@ static inline void l3_init(void)
 #else /* CONFIG_NET_NATIVE */
 #define l3_init(...)
 #define net_post_init(...)
-int net_send_data(struct net_pkt *pkt)
+int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 {
 	ARG_UNUSED(pkt);
+	ARG_UNUSED(timeout);
 
 	return -ENOTSUP;
 }

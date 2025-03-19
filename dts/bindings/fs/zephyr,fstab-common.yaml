@@ -12,12 +12,6 @@ properties:
     description: |
       The absolute path used as the file system mount point.
 
-  partition:
-    type: phandle
-    required: true
-    description: |
-      A reference to the file system's partition.
-
   automount:
     type: boolean
     description: |

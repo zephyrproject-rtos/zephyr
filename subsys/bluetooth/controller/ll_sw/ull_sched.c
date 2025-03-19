@@ -127,7 +127,7 @@ int ull_sched_after_cen_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 {
 	uint32_t ticks_to_expire;
 	uint32_t ticks_slot;
-	uint32_t remainder;
+	uint32_t remainder = 0U;
 	uint8_t ticker_id;
 
 	ticker_id = after_match_slot_get(user_id, ticks_slot_abs,

@@ -1,4 +1,4 @@
-description: NXP PORT pinmux node
+description: NXP PORT Pin Controller
 
 compatible: "nxp,port-pinmux"
 

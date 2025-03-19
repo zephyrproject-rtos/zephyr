@@ -1,0 +1,9 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PICO_PLUS2
+
+config USB_SELF_POWERED
+	default n
+
+endif # BOARD_PICO_PLUS2

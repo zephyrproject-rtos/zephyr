@@ -6,8 +6,6 @@ tests:
     tags: eeprom
     platform_allow:
       - gd32f450i_eval
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
     integration_platforms:

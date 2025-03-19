@@ -17,14 +17,14 @@
 #include <inttypes.h>
 #include <limits.h>
 
-#define STORAGE_PARTITION	storage_partition
-#define STORAGE_PARTITION_ID	FIXED_PARTITION_ID(STORAGE_PARTITION)
+#define STORAGE_PARTITION    storage_partition
+#define STORAGE_PARTITION_ID FIXED_PARTITION_ID(STORAGE_PARTITION)
 
 #ifdef CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND
 /* FAT */
 #ifdef CONFIG_FAT_FILESYSTEM_ELM
 #include <ff.h>
-#define FATFS_MNTP      "/RAM:"
+#define FATFS_MNTP "/RAM:"
 /* FatFs work area */
 FATFS fat_fs;
 /* mounting info */
@@ -77,11 +77,11 @@ static struct fs_mount_t littlefs_mnt = {
 
 #define BUF_CNT 64
 
-#define MAX_PATH_LEN 128
+#define MAX_PATH_LEN     128
 #define MAX_FILENAME_LEN 128
-#define MAX_INPUT_LEN 20
+#define MAX_INPUT_LEN    20
 
-#define SHELL_FS    "fs"
+#define SHELL_FS "fs"
 
 /* Maintenance guarantees this begins with '/' and is NUL-terminated. */
 static char cwd[MAX_PATH_LEN] = "/";
@@ -143,14 +143,14 @@ static int cmd_cd(const struct shell *sh, size_t argc, char **argv)
 	create_abs_path(argv[1], path, sizeof(path));
 
 	err = fs_stat(path, &entry);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "%s doesn't exist", path);
-		return -ENOEXEC;
+		return -ENOENT;
 	}
 
 	if (entry.type != FS_DIR_ENTRY_DIR) {
 		shell_error(sh, "%s is not a directory", path);
-		return -ENOEXEC;
+		return -ENOTDIR;
 	}
 
 	strncpy(cwd, path, sizeof(cwd));
@@ -175,16 +175,16 @@ static int cmd_ls(const struct shell *sh, size_t argc, char **argv)
 	fs_dir_t_init(&dir);
 
 	err = fs_opendir(&dir, path);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Unable to open %s (err %d)", path, err);
-		return -ENOEXEC;
+		return -EIO;
 	}
 
 	while (1) {
 		struct fs_dirent entry;
 
 		err = fs_readdir(&dir, &entry);
-		if (err) {
+		if (err != 0) {
 			shell_error(sh, "Unable to read directory");
 			break;
 		}
@@ -194,8 +194,7 @@ static int cmd_ls(const struct shell *sh, size_t argc, char **argv)
 			break;
 		}
 
-		shell_print(sh, "%s%s", entry.name,
-			      (entry.type == FS_DIR_ENTRY_DIR) ? "/" : "");
+		shell_print(sh, "%s%s", entry.name, (entry.type == FS_DIR_ENTRY_DIR) ? "/" : "");
 	}
 
 	fs_closedir(&dir);
@@ -227,15 +226,15 @@ static int cmd_trunc(const struct shell *sh, size_t argc, char **argv)
 
 	fs_file_t_init(&file);
 	err = fs_open(&file, path, FS_O_WRITE);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Failed to open %s (%d)", path, err);
-		return -ENOEXEC;;
+		return -EIO;
 	}
 
 	err = fs_truncate(&file, length);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Failed to truncate %s (%d)", path, err);
-		err = -ENOEXEC;
+		err = -EIO;
 	}
 
 	fs_close(&file);
@@ -251,9 +250,9 @@ static int cmd_mkdir(const struct shell *sh, size_t argc, char **argv)
 	create_abs_path(argv[1], path, sizeof(path));
 
 	err = fs_mkdir(path);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Error creating dir[%d]", err);
-		err = -ENOEXEC;
+		err = -EIO;
 	}
 
 	return err;
@@ -267,9 +266,9 @@ static int cmd_rm(const struct shell *sh, size_t argc, char **argv)
 	create_abs_path(argv[1], path, sizeof(path));
 
 	err = fs_unlink(path);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Failed to remove %s (%d)", path, err);
-		err = -ENOEXEC;
+		err = -EIO;
 	}
 
 	return err;
@@ -294,14 +293,14 @@ static int cmd_cp(const struct shell *sh, size_t argc, char **argv)
 	fs_file_t_init(&file_dst);
 
 	err = fs_open(&file_src, path_src, FS_O_READ);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Failed to open %s (%d)", path_src, err);
 		err = -EIO;
 		goto exit;
 	}
 
 	err = fs_open(&file_dst, path_dst, FS_O_CREATE | FS_O_TRUNC | FS_O_WRITE);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Failed to open %s (%d)", path_dst, err);
 		err = -EIO;
 		goto close_src;
@@ -333,14 +332,14 @@ static int cmd_cp(const struct shell *sh, size_t argc, char **argv)
 
 close:
 	close_err = fs_close(&file_dst);
-	if (close_err) {
+	if (close_err != 0) {
 		shell_error(sh, "Failed to close %s", path_dst);
 		err = -EIO;
 	}
 
 close_src:
 	close_err = fs_close(&file_src);
-	if (close_err) {
+	if (close_err != 0) {
 		shell_error(sh, "Failed to close %s", path_src);
 		err = -EIO;
 	}
@@ -376,38 +375,36 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	err = fs_stat(path, &dirent);
-	if (err) {
-		shell_error(sh, "Failed to obtain file %s (err: %d)",
-			    path, err);
-		return -ENOEXEC;
+	if (err != 0) {
+		shell_error(sh, "Failed to obtain file %s (err: %d)", path, err);
+		return -EIO;
 	}
 
 	if (dirent.type != FS_DIR_ENTRY_FILE) {
 		shell_error(sh, "Not a file %s", path);
-		return -ENOEXEC;
+		return -EIO;
 	}
 
 	shell_print(sh, "File size: %zd", dirent.size);
 
 	fs_file_t_init(&file);
 	err = fs_open(&file, path, FS_O_READ);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Failed to open %s (%d)", path, err);
-		return -ENOEXEC;
+		return -EIO;
 	}
 
 	if (offset > 0) {
 		err = fs_seek(&file, offset, FS_SEEK_SET);
-		if (err) {
-			shell_error(sh, "Failed to seek %s (%d)",
-				    path, err);
+		if (err != 0) {
+			shell_error(sh, "Failed to seek %s (%d)", path, err);
 			fs_close(&file);
-			return -ENOEXEC;
+			return -EIO;
 		}
 	}
 
+	ssize_t read;
 	while (count > 0) {
-		ssize_t read;
 		uint8_t buf[16];
 		int i;
 
@@ -425,17 +422,21 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 			shell_fprintf(sh, SHELL_NORMAL, "   ");
 		}
 		i = sizeof(buf) - i;
-		shell_fprintf(sh, SHELL_NORMAL, "%*c", i*3, ' ');
+		shell_fprintf(sh, SHELL_NORMAL, "%*c", i * 3, ' ');
 
 		for (i = 0; i < read; i++) {
-			shell_fprintf(sh, SHELL_NORMAL, "%c", buf[i] < 32 ||
-				      buf[i] > 127 ? '.' : buf[i]);
+			shell_fprintf(sh, SHELL_NORMAL, "%c",
+				      buf[i] < 32 || buf[i] > 127 ? '.' : buf[i]);
 		}
 
 		shell_print(sh, "");
 
 		offset += read;
 		count -= read;
+	}
+
+	if (read < 0) {
+		shell_error(sh, "Failed to read from file %s (err: %zd)", path, read);
 	}
 
 	fs_close(&file);
@@ -459,8 +460,7 @@ static int cmd_cat(const struct shell *sh, size_t argc, char **argv)
 
 		err = fs_stat(path, &dirent);
 		if (err < 0) {
-			shell_error(sh, "Failed to obtain file %s (err: %d)",
-					path, err);
+			shell_error(sh, "Failed to obtain file %s (err: %d)", path, err);
 			continue;
 		}
 
@@ -487,8 +487,7 @@ static int cmd_cat(const struct shell *sh, size_t argc, char **argv)
 		}
 
 		if (read < 0) {
-			shell_error(sh, "Failed to read from file %s (err: %zd)",
-				path, read);
+			shell_error(sh, "Failed to read from file %s (err: %zd)", path, read);
 		}
 
 		fs_close(&file);
@@ -508,11 +507,10 @@ static int cmd_statvfs(const struct shell *sh, size_t argc, char **argv)
 	err = fs_statvfs(path, &stat);
 	if (err < 0) {
 		shell_error(sh, "Failed to statvfs %s (%d)", path, err);
-		return -ENOEXEC;
+		return -EIO;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL,
-		      "bsize %lu, frsize %lu, blocks %lu, bfree %lu\n",
+	shell_fprintf(sh, SHELL_NORMAL, "bsize %lu, frsize %lu, blocks %lu, bfree %lu\n",
 		      stat.f_bsize, stat.f_frsize, stat.f_blocks, stat.f_bfree);
 
 	return 0;
@@ -533,7 +531,7 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	if (!strcmp(argv[2], "-o")) {
 		if (argc < 4) {
 			shell_error(sh, "Missing argument");
-			return -ENOEXEC;
+			return -EINVAL;
 		}
 
 		offset = strtol(argv[3], NULL, 0);
@@ -545,9 +543,9 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 
 	fs_file_t_init(&file);
 	err = fs_open(&file, path, FS_O_CREATE | FS_O_WRITE);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Failed to open %s (%d)", path, err);
-		return -ENOEXEC;
+		return -EIO;
 	}
 
 	if (offset < 0) {
@@ -555,10 +553,10 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	} else {
 		err = fs_seek(&file, offset, FS_SEEK_SET);
 	}
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Failed to seek %s (%d)", path, err);
 		fs_close(&file);
-		return -ENOEXEC;
+		return -EIO;
 	}
 
 	buf_len = 0U;
@@ -568,10 +566,9 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 		if ((buf_len == BUF_CNT) || (arg_offset == argc)) {
 			err = fs_write(&file, buf, buf_len);
 			if (err < 0) {
-				shell_error(sh, "Failed to write %s (%d)",
-					      path, err);
+				shell_error(sh, "Failed to write %s (%d)", path, err);
 				fs_close(&file);
-				return -ENOEXEC;
+				return -EIO;
 			}
 
 			buf_len = 0U;
@@ -584,7 +581,7 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 }
 
 #ifdef CONFIG_FILE_SYSTEM_SHELL_TEST_COMMANDS
-const static uint8_t speed_types[][4] = { "B", "KiB", "MiB", "GiB" };
+const static uint8_t speed_types[][4] = {"B", "KiB", "MiB", "GiB"};
 const static uint32_t speed_divisor = 1024;
 
 static void file_size_output(const struct shell *sh, double size)
@@ -596,8 +593,7 @@ static void file_size_output(const struct shell *sh, double size)
 		++speed_index;
 	}
 
-	shell_print(sh, "File size: %.1f%s",
-		    size, speed_types[speed_index]);
+	shell_print(sh, "File size: %.1f%s", size, speed_types[speed_index]);
 }
 
 static void speed_output(const struct shell *sh, uint64_t total_time, double loops, double size)
@@ -615,8 +611,8 @@ static void speed_output(const struct shell *sh, uint64_t total_time, double loo
 		++speed_index;
 	}
 
-	shell_print(sh, "Total: %llums, Per loop: ~%.0fms, Speed: ~%.1f%sps",
-		    total_time, time_per_loop, throughput, speed_types[speed_index]);
+	shell_print(sh, "Total: %llums, Per loop: ~%.0fms, Speed: ~%.1f%sps", total_time,
+		    time_per_loop, throughput, speed_types[speed_index]);
 }
 
 static int cmd_read_test(const struct shell *sh, size_t argc, char **argv)
@@ -668,9 +664,9 @@ static int cmd_read_test(const struct shell *sh, size_t argc, char **argv)
 
 		fs_file_t_init(&file);
 		err = fs_open(&file, path, FS_O_READ);
-		if (err) {
+		if (err != 0) {
 			shell_error(sh, "Failed to open %s (%d)", path, err);
-			return -ENOEXEC;
+			return -EIO;
 		}
 
 		/* Read data in chunk by chunk until the full size has been read */
@@ -678,27 +674,26 @@ static int cmd_read_test(const struct shell *sh, size_t argc, char **argv)
 		while (1) {
 			err = fs_read(&file, random_data, sizeof(random_data));
 			if (err < 0) {
-				shell_error(sh, "Failed to write %s (%d)",
-					      path, err);
+				shell_error(sh, "Failed to read %s (%d)", path, err);
 				fs_close(&file);
-				return -ENOEXEC;
+				return -EIO;
 			}
 
 			i += err;
 
-			if (err < sizeof(random_data)) {
+			if (err == 0) {
 				/* Read finished */
 				break;
 			}
 		}
 
-		/* Ensure file contents is fully written then close file */
+		/* Ensure file contents is fully read then close file */
 		fs_close(&file);
 
 		if (i != size) {
-			shell_error(sh, "File read error, expected %d bytes but only read %d",
-				    size, i);
-			return -EINVAL;
+			shell_error(sh, "File read error, expected %d bytes but only read %d", size,
+				    i);
+			return -EIO;
 		}
 
 		++loops;
@@ -757,9 +752,9 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char **argv
 
 		fs_file_t_init(&file);
 		err = fs_open(&file, path, FS_O_CREATE | FS_O_WRITE);
-		if (err) {
+		if (err != 0) {
 			shell_error(sh, "Failed to open %s (%d)", path, err);
-			return -ENOEXEC;
+			return -EIO;
 		}
 
 		/* Truncate the file size to 0 (if supported, erase if not) */
@@ -769,20 +764,20 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char **argv
 			fs_close(&file);
 
 			err = fs_unlink(path);
-			if (err) {
+			if (err != 0) {
 				shell_error(sh, "Failed to delete %s (%d)", path, err);
-				return -ENOEXEC;
+				return -EIO;
 			}
 
 			err = fs_open(&file, path, FS_O_CREATE | FS_O_WRITE);
-			if (err) {
+			if (err != 0) {
 				shell_error(sh, "Failed to open %s (%d)", path, err);
-				return -ENOEXEC;
+				return -EIO;
 			}
-		} else if (err) {
+		} else if (err != 0) {
 			shell_error(sh, "Failed to truncate %s (%d)", path, err);
 			fs_close(&file);
-			return -ENOEXEC;
+			return -EIO;
 		}
 
 		/* Write data out chunk by chunk until the full size has been written */
@@ -796,10 +791,9 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char **argv
 
 			err = fs_write(&file, random_data, write_size);
 			if (err < 0) {
-				shell_error(sh, "Failed to write %s (%d)",
-					      path, err);
+				shell_error(sh, "Failed to write %s (%d)", path, err);
 				fs_close(&file);
-				return -ENOEXEC;
+				return -EIO;
 			}
 
 			i += write_size;
@@ -828,7 +822,7 @@ static char *mntpt_prepare(char *mntpt)
 	char *cpy_mntpt;
 
 	cpy_mntpt = k_malloc(strlen(mntpt) + 1);
-	if (cpy_mntpt) {
+	if (cpy_mntpt != NULL) {
 		strcpy(cpy_mntpt, mntpt);
 	}
 	return cpy_mntpt;
@@ -841,24 +835,21 @@ static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
 	int res;
 
 	mntpt = mntpt_prepare(argv[1]);
-	if (!mntpt) {
-		shell_error(sh,
-			    "Failed to allocate  buffer for mount point");
-		return -ENOEXEC;
+	if (mntpt == NULL) {
+		shell_error(sh, "Failed to allocate buffer for mount point");
+		return -EIO;
 	}
 
 	fatfs_mnt.mnt_point = (const char *)mntpt;
 	res = fs_mount(&fatfs_mnt);
 	if (res != 0) {
-		shell_error(sh,
-			"Error mounting FAT fs. Error Code [%d]", res);
+		shell_error(sh, "Error mounting FAT fs. Error Code [%d]", res);
 		k_free((void *)fatfs_mnt.mnt_point);
 		fatfs_mnt.mnt_point = NULL;
-		return -ENOEXEC;
+		return -EIO;
 	}
 
-	shell_print(sh, "Successfully mounted fat fs:%s",
-			fatfs_mnt.mnt_point);
+	shell_print(sh, "Successfully mounted fat fs:%s", fatfs_mnt.mnt_point);
 
 	return 0;
 }
@@ -873,9 +864,9 @@ static int cmd_mount_littlefs(const struct shell *sh, size_t argc, char **argv)
 
 	char *mntpt = mntpt_prepare(argv[1]);
 
-	if (!mntpt) {
+	if (mntpt == NULL) {
 		shell_error(sh, "Failed to allocate mount point");
-		return -ENOEXEC; /* ?!? */
+		return -EIO;
 	}
 
 	littlefs_mnt.mnt_point = mntpt;
@@ -886,7 +877,7 @@ static int cmd_mount_littlefs(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "Error mounting as littlefs: %d", rc);
 		k_free((void *)littlefs_mnt.mnt_point);
 		littlefs_mnt.mnt_point = NULL;
-		return -ENOEXEC;
+		return -EIO;
 	}
 
 	return rc;
@@ -929,10 +920,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 	SHELL_CMD_ARG(trunc, NULL, "Truncate file", cmd_trunc, 2, 255),
 	SHELL_CMD_ARG(write, NULL, "Write file", cmd_write, 3, 255),
 #ifdef CONFIG_FILE_SYSTEM_SHELL_TEST_COMMANDS
-	SHELL_CMD_ARG(read_test, NULL, "Read file test",
-		      cmd_read_test, 2, 2),
-	SHELL_CMD_ARG(erase_write_test, NULL, "Erase/write file test",
-		      cmd_erase_write_test, 3, 3),
+	SHELL_CMD_ARG(read_test, NULL, "Read file test", cmd_read_test, 2, 2),
+	SHELL_CMD_ARG(erase_write_test, NULL, "Erase/write file test", cmd_erase_write_test, 3, 3),
 #endif
 	SHELL_SUBCMD_SET_END
 );

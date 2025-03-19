@@ -2,7 +2,7 @@
 # Copyright (c) 2021, Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-description: TCA9538 GPIO node
+description: TCA9538 GPIO
 
 compatible: "ti,tca9538"
 

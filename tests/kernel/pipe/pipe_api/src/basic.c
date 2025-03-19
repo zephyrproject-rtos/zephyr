@@ -17,9 +17,10 @@ static void mkrandom(uint8_t *buffer, size_t size)
 
 K_PIPE_DEFINE(test_define, 256, 4);
 
+static struct k_pipe pipe;
+
 ZTEST(k_pipe_basic, test_init)
 {
-	struct k_pipe pipe;
 	uint8_t buffer[10];
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
@@ -28,7 +29,6 @@ ZTEST(k_pipe_basic, test_init)
 
 ZTEST(k_pipe_basic, test_write_read_one)
 {
-	struct k_pipe pipe;
 	uint8_t buffer[10];
 	uint8_t data = 0x55;
 	uint8_t read_data;
@@ -43,7 +43,6 @@ ZTEST(k_pipe_basic, test_write_read_one)
 
 ZTEST(k_pipe_basic, test_write_read_multiple)
 {
-	struct k_pipe pipe;
 	uint8_t buffer[10];
 	uint8_t data = 0x55;
 	uint8_t read_data;
@@ -59,7 +58,6 @@ ZTEST(k_pipe_basic, test_write_read_multiple)
 
 ZTEST(k_pipe_basic, test_write_full)
 {
-	struct k_pipe pipe;
 	uint8_t buffer[10];
 	uint8_t data[10];
 
@@ -72,7 +70,6 @@ ZTEST(k_pipe_basic, test_write_full)
 
 ZTEST(k_pipe_basic, test_read_empty)
 {
-	struct k_pipe pipe;
 	uint8_t buffer[10];
 	uint8_t read_data;
 
@@ -83,7 +80,6 @@ ZTEST(k_pipe_basic, test_read_empty)
 
 ZTEST(k_pipe_basic, test_read_write_full)
 {
-	struct k_pipe pipe;
 	uint8_t buffer[10];
 	uint8_t input[10];
 	uint8_t res[10];
@@ -100,7 +96,6 @@ ZTEST(k_pipe_basic, test_read_write_full)
 
 ZTEST(k_pipe_basic, test_read_write_wrapp_around)
 {
-	struct k_pipe pipe;
 	uint8_t buffer[12];
 	uint8_t input[8];
 	uint8_t res[16];
@@ -126,7 +121,6 @@ ZTEST(k_pipe_basic, test_read_write_wrapp_around)
 
 ZTEST(k_pipe_basic, test_reset)
 {
-	struct k_pipe pipe;
 	uint8_t buffer[10];
 	uint8_t data = 0x55;
 	uint8_t read_data;
@@ -144,7 +138,6 @@ ZTEST(k_pipe_basic, test_reset)
 
 ZTEST(k_pipe_basic, test_close)
 {
-	struct k_pipe pipe;
 	uint8_t buffer[12];
 	uint8_t input[8];
 	uint8_t res[16];

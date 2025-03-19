@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <stdint.h>
@@ -306,7 +307,12 @@ static void iso_recv(struct bt_iso_chan *chan,
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
 	struct iso_chan_work *chan_work;
+	struct bt_iso_info iso_info;
 	int err;
 
 	LOG_INF("ISO Channel %p connected", chan);
@@ -325,6 +331,20 @@ static void iso_connected(struct bt_iso_chan *chan)
 	chan_work = CONTAINER_OF(chan, struct iso_chan_work, chan);
 	chan_work->seq_num = 0U;
 
+	if (iso_info.can_recv) {
+		err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
+		if (err != 0) {
+			LOG_ERR("Failed to setup ISO RX data path: %d", err);
+		}
+	}
+
+	if (iso_info.can_send) {
+		err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+		if (err != 0) {
+			LOG_ERR("Failed to setup ISO TX data path: %d", err);
+		}
+	}
+
 	k_sem_give(&sem_iso_connected);
 }
 
@@ -337,8 +357,10 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	 * of the last created CIS.
 	 */
 	static int64_t average_duration;
+	struct bt_iso_info iso_info;
 	uint64_t iso_conn_duration;
 	uint64_t total_duration;
+	int err;
 
 	if (iso_conn_start_time > 0) {
 		iso_conn_duration = k_uptime_get() - iso_conn_start_time;
@@ -354,6 +376,25 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		chan, reason, iso_conn_duration, average_duration);
 
 	k_sem_give(&sem_iso_disconnected);
+
+	err = bt_iso_chan_get_info(chan, &iso_info);
+	if (err != 0) {
+		LOG_ERR("Failed to get ISO info: %d\n", err);
+	} else if (iso_info.type == BT_ISO_CHAN_TYPE_CENTRAL) {
+		if (iso_info.can_recv) {
+			err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
+			if (err != 0) {
+				LOG_ERR("Failed to remove ISO RX data path: %d\n", err);
+			}
+		}
+
+		if (iso_info.can_send) {
+			err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+			if (err != 0) {
+				LOG_ERR("Failed to remove ISO TX data path: %d\n", err);
+			}
+		}
+	}
 }
 
 static struct bt_iso_chan_ops iso_ops = {

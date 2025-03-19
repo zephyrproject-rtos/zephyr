@@ -40,9 +40,26 @@ typedef struct {
 	uint32_t CTRL;
 } _mpu_context_t;
 
+typedef struct {
+	uint32_t ICSR;
+	uint32_t VTOR;
+	uint32_t AIRCR;
+	uint32_t SCR;
+	uint32_t CCR;
+	uint32_t SHPR[12U];
+	uint32_t SHCSR;
+	uint32_t CFSR;
+	uint32_t HFSR;
+	uint32_t DFSR;
+	uint32_t MMFAR;
+	uint32_t BFAR;
+	uint32_t AFSR;
+} _scb_context_t;
+
 struct backup {
 	_nvic_context_t nvic_context;
 	_mpu_context_t mpu_context;
+	_scb_context_t scb_context;
 };
 
 static __noinit struct backup backup_data;
@@ -107,10 +124,45 @@ static void nvic_resume(_nvic_context_t *backup)
 	memcpy((uint32_t *)NVIC->IPR, backup->IPR, sizeof(NVIC->IPR));
 }
 
+static void scb_suspend(_scb_context_t *backup)
+{
+	backup->ICSR = SCB->ICSR;
+	backup->VTOR = SCB->VTOR;
+	backup->AIRCR = SCB->AIRCR;
+	backup->SCR = SCB->SCR;
+	backup->CCR = SCB->CCR;
+	memcpy(backup->SHPR, (uint32_t *)SCB->SHPR, sizeof(SCB->SHPR));
+	backup->SHCSR = SCB->SHCSR;
+	backup->CFSR = SCB->CFSR;
+	backup->HFSR = SCB->HFSR;
+	backup->DFSR = SCB->DFSR;
+	backup->MMFAR = SCB->MMFAR;
+	backup->BFAR = SCB->BFAR;
+	backup->AFSR = SCB->AFSR;
+}
+
+static void scb_resume(_scb_context_t *backup)
+{
+	SCB->ICSR = backup->ICSR;
+	SCB->VTOR = backup->VTOR;
+	SCB->AIRCR = backup->AIRCR;
+	SCB->SCR = backup->SCR;
+	SCB->CCR = backup->CCR;
+	memcpy((uint32_t *)SCB->SHPR, backup->SHPR, sizeof(SCB->SHPR));
+	SCB->SHCSR = backup->SHCSR;
+	SCB->CFSR = backup->CFSR;
+	SCB->HFSR = backup->HFSR;
+	SCB->DFSR = backup->DFSR;
+	SCB->MMFAR = backup->MMFAR;
+	SCB->BFAR = backup->BFAR;
+	SCB->AFSR = backup->AFSR;
+}
+
 int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 {
 	int ret;
 
+	scb_suspend(&backup_data.scb_context);
 	nvic_suspend(&backup_data.nvic_context);
 	mpu_suspend(&backup_data.mpu_context);
 	ret = arch_pm_s2ram_suspend(system_off);
@@ -120,6 +172,7 @@ int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 
 	mpu_resume(&backup_data.mpu_context);
 	nvic_resume(&backup_data.nvic_context);
+	scb_resume(&backup_data.scb_context);
 
 	return ret;
 }

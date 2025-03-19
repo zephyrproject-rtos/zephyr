@@ -40,6 +40,32 @@ config BT_HCI_IPC
 	  Bluetooth HCI driver for communication with another CPU
 	  using the IPC subsystem.
 
+config BT_HCI_IPC_SEND_RETRY_COUNT
+	int "HCI IPC send retry count"
+	depends on BT_HCI_IPC
+	default 3
+	help
+	  Number of times to retry sending a message via IPC.
+	  The retries occur in case of a failure to send a message
+	  through IPC (-ENOMEM returned by ipc_service_send).
+
+config BT_HCI_IPC_SEND_RETRY_DELAY_US
+	int "HCI IPC send retry delay (us)"
+	depends on BT_HCI_IPC
+	default 75
+	help
+	  Delay in microseconds between retries when sending a message via IPC.
+	  When a single tick (CONFIG_SYS_CLOCK_TICKS_PER_SEC) is bigger then
+	  the retry delay the k_busy_wait function is used. Set with care.
+
+config BT_HCI_IPC_ENDPOINT_BOUND_TIMEOUT_MS
+	int "HCI IPC binding timeout value in milliseconds"
+	depends on BT_HCI_IPC
+	default 2000
+	help
+	  Timeout value that HCI will wait for an IPC endpoint to be bound,
+	  in milliseconds.
+
 config BT_SPI
 	bool
 	select SPI
@@ -154,13 +180,14 @@ config BT_SILABS_SIWX91X
 
 config BT_USERCHAN
 	bool
-	depends on (BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM)
+	depends on BOARD_NATIVE_SIM
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
+	select NATIVE_USE_NSI_ERRNO
 	help
 	  This driver provides access to the local Linux host's Bluetooth
 	  adapter using a User Channel HCI socket to the Linux kernel. It
-	  is only intended to be used with the native POSIX build of Zephyr.
+	  is only intended to be used with the native_sim[//64] build of Zephyr.
 	  The Bluetooth adapter must be powered off in order for Zephyr to
 	  be able to use it.
 
@@ -170,6 +197,7 @@ config BT_ESP32
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
 	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
 	select HAS_BT_CTLR
+	select BT_CTLR_ADV_EXT_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
 	help
 	  Espressif HCI bluetooth interface
 
@@ -224,6 +252,7 @@ config BT_AMBIQ_HCI
 	select GPIO if SOC_SERIES_APOLLO4X
 	select CLOCK_CONTROL if SOC_SERIES_APOLLO4X
 	select BT_HCI_SETUP
+	select AMBIQ_COMPONENT_USE_BT
 	help
 	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers.

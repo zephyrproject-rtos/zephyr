@@ -11,6 +11,12 @@ include: "zephyr,fstab-common.yaml"
 properties:
   # num-files and num-dirs are not filesystem-specific.
 
+  partition:
+    type: phandle
+    required: true
+    description: |
+      A reference to the file system's partition.
+
   read-size:
     type: int
     required: true

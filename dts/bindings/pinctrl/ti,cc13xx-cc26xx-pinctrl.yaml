@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    TI SimpleLink CC13xx / CC26xx pinctrl node.
+    TI SimpleLink CC13xx / CC26xx Pin Controller
 
     Device pin configuration should be placed in the child nodes of this node.
     Populate the 'pinmux' field with a pair consisting of a pin number and its IO

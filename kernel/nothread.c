@@ -36,7 +36,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 	}
 
 	ticks = timeout.ticks;
-	if (Z_TICK_ABS(ticks) <= 0) {
+	if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
 		/* ticks is delta timeout */
 		ticks_to_wait = ticks;
 	} else {

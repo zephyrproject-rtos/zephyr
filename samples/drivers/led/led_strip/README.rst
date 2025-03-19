@@ -65,6 +65,9 @@ Building and Running
 The sample updates the LED strip periodically. The update frequency can be
 modified by changing the :kconfig:option:`CONFIG_SAMPLE_LED_UPDATE_DELAY`.
 
+The brightness level of each LED can be adjusted by changing the
+:kconfig:option:`CONFIG_SAMPLE_LED_BRIGHTNESS` configuration option.
+
 Then build and flash the application:
 
 .. zephyr-app-commands::

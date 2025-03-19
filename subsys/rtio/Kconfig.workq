@@ -22,6 +22,7 @@ config RTIO_WORKQ_STACK_SIZE
 
 config RTIO_WORKQ_THREADS_POOL
 	int "Number of threads to use for processing work-items"
+	default 2 if SPI_RTIO || I2C_RTIO || I3C_RTIO
 	default 1
 
 config RTIO_WORKQ_POOL_ITEMS

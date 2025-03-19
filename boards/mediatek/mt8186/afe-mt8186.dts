@@ -1,7 +1,7 @@
 	afe_dl1: afe_dl1 {
 		compatible = "mediatek,afe";
-		afe_name = "DL1";
-		dai_id = <0>;
+		afe-name = "DL1";
+		dai-id = <0>;
 		downlink;
 		base = <0x11210050 0x11210054>;
 		cur = <0x11210058 0x1121005c>;
@@ -14,8 +14,8 @@
 
 	afe_dl2: afe_dl2 {
 		compatible = "mediatek,afe";
-		afe_name = "DL2";
-		dai_id = <1>;
+		afe-name = "DL2";
+		dai-id = <1>;
 		downlink;
 		base = <0x1121006c 0x11210070>;
 		cur = <0x11210074 0x11210078>;
@@ -28,22 +28,22 @@
 
 	afe_ul1: afe_ul1 {
 		compatible = "mediatek,afe";
-		afe_name = "UL1";
-		dai_id = <2>;
+		afe-name = "UL1";
+		dai-id = <2>;
 		base = <0x11210378 0x1121037c>;
 		cur = <0x11210380 0x11210384>;
 		end = <0x11210388 0x1121038c>;
 		fs = <0x11210374 24 4>;
 		mono = <0x11210374 8 1>;
-		quad_ch = <0x11210374 11 1>;
+		quad-ch = <0x11210374 11 1>;
 		enable = <0x11210010 31 1>;
 		hd = <0x11210374 0 1>;
 	};
 
 	afe_ul2: afe_ul2 {
 		compatible = "mediatek,afe";
-		afe_name = "UL2";
-		dai_id = <3>;
+		afe-name = "UL2";
+		dai-id = <3>;
 		base = <0x11210860 0x11210864>;
 		cur = <0x11210868 0x1121086c>;
 		end = <0x11210870 0x11210874>;

@@ -15,7 +15,7 @@
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
-static int frdm_mcxa156_init(void)
+void board_early_init_hook(void)
 {
 	uint32_t coreFreq;
 	spc_active_mode_core_ldo_option_t ldoOption;
@@ -199,13 +199,15 @@ static int frdm_mcxa156_init(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi0))
+	/* Configure input clock to be able to reach the datasheet specified band rate. */
 	CLOCK_SetClockDiv(kCLOCK_DivLPSPI0, 1u);
-	CLOCK_AttachClk(kFRO12M_to_LPSPI0);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_LPSPI0);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi1))
+	/* Configure input clock to be able to reach the datasheet specified band rate. */
 	CLOCK_SetClockDiv(kCLOCK_DivLPSPI1, 1u);
-	CLOCK_AttachClk(kFRO12M_to_LPSPI1);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_LPSPI1);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
@@ -238,8 +240,4 @@ static int frdm_mcxa156_init(void)
 
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
-
-	return 0;
 }
-
-SYS_INIT(frdm_mcxa156_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);

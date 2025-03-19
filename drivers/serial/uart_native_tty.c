@@ -48,6 +48,10 @@ struct native_tty_data {
 	uart_irq_callback_user_data_t callback;
 	/* IRQ callback data */
 	void *cb_data;
+	/* Instance-specific RX thread. */
+	struct k_thread rx_thread;
+	/* RX thread stack. */
+	K_KERNEL_STACK_MEMBER(rx_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 #endif
 };
 
@@ -56,8 +60,6 @@ struct native_tty_config {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static struct k_thread rx_thread;
-static K_KERNEL_STACK_DEFINE(rx_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 #define NATIVE_TTY_INIT_LEVEL POST_KERNEL
 #else
 #define NATIVE_TTY_INIT_LEVEL PRE_KERNEL_1
@@ -311,8 +313,10 @@ static void native_tty_uart_irq_callback_set(const struct device *dev,
 
 static void native_tty_irq_init(const struct device *dev)
 {
+	struct native_tty_data *data = dev->data;
+
 	/* Create a thread which will wait for data - replacement for IRQ */
-	k_thread_create(&rx_thread, rx_stack, K_KERNEL_STACK_SIZEOF(rx_stack),
+	k_thread_create(&data->rx_thread, data->rx_stack, K_KERNEL_STACK_SIZEOF(data->rx_stack),
 			native_tty_uart_irq_function,
 			(void *)dev, NULL, NULL,
 			K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);

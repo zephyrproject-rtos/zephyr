@@ -23,12 +23,13 @@ LOG_MODULE_REGISTER(explorir_m_sensor, CONFIG_SENSOR_LOG_LEVEL);
 
 #define EXPLORIR_M_BEGIN_CHAR ' '
 
-#define EXPLORIR_M_SET_FILTER_CHAR     'A'
-#define EXPLORIR_M_GET_FILTER_CHAR     'a'
-#define EXPLORIR_M_MODE_CHAR           'K'
-#define EXPLORIR_M_CO2_FILTERED_CHAR   'Z'
-#define EXPLORIR_M_SCALING_CHAR        '.'
-#define EXPLORIR_M_NOT_RECOGNISED_CHAR '?'
+#define EXPLORIR_M_SET_FILTER_CHAR       'A'
+#define EXPLORIR_M_GET_FILTER_CHAR       'a'
+#define EXPLORIR_M_MODE_CHAR             'K'
+#define EXPLORIR_M_ZERO_POINT_KNOWN_CHAR 'X'
+#define EXPLORIR_M_CO2_FILTERED_CHAR     'Z'
+#define EXPLORIR_M_SCALING_CHAR          '.'
+#define EXPLORIR_M_NOT_RECOGNISED_CHAR   '?'
 
 #define EXPLORIR_M_SEPARATOR_CHAR ' '
 #define EXPLORIR_M_PRE_END_CHAR   '\r'
@@ -39,7 +40,7 @@ LOG_MODULE_REGISTER(explorir_m_sensor, CONFIG_SENSOR_LOG_LEVEL);
 
 #define EXPLORIR_M_BUFFER_LENGTH 16
 
-#define EXPLORIR_M_MAX_RESPONSE_DELAY 200 /* Add margin to the specified 100 in datasheet */
+#define EXPLORIR_M_MAX_RESPONSE_DELAY 300 /* Add margin to the specified 100 in datasheet */
 #define EXPLORIR_M_CO2_VALID_DELAY    1200
 
 struct explorir_m_data {
@@ -130,6 +131,7 @@ static int explorir_m_buffer_process(struct explorir_m_data *data, char type,
 	switch (type) {
 	case EXPLORIR_M_SET_FILTER_CHAR:
 	case EXPLORIR_M_MODE_CHAR:
+	case EXPLORIR_M_ZERO_POINT_KNOWN_CHAR:
 		break;
 
 	case EXPLORIR_M_CO2_FILTERED_CHAR:
@@ -198,18 +200,6 @@ static void explorir_m_uart_terminate(const struct device *uart_dev)
 	uart_poll_out(uart_dev, EXPLORIR_M_END_CHAR);
 }
 
-static int explorir_m_await_receive(struct explorir_m_data *data)
-{
-	int rc = k_sem_take(&data->uart_rx_sem, K_MSEC(EXPLORIR_M_MAX_RESPONSE_DELAY));
-
-	/* Reset semaphore if sensor did not respond within maximum specified response time */
-	if (rc == -EAGAIN) {
-		k_sem_reset(&data->uart_rx_sem);
-	}
-
-	return rc;
-}
-
 static int explorir_m_uart_transceive(const struct device *dev, char type, struct sensor_value *val,
 				      enum explorir_m_uart_set_usage set)
 {
@@ -224,8 +214,6 @@ static int explorir_m_uart_transceive(const struct device *dev, char type, struc
 	}
 
 	k_mutex_lock(&data->uart_mutex, K_FOREVER);
-
-	explorir_m_buffer_reset(data);
 
 	uart_poll_out(cfg->uart_dev, type);
 
@@ -246,9 +234,12 @@ static int explorir_m_uart_transceive(const struct device *dev, char type, struc
 		uart_poll_out(cfg->uart_dev, buf[i]);
 	}
 
+	explorir_m_buffer_reset(data);
+	k_sem_reset(&data->uart_rx_sem);
+
 	explorir_m_uart_terminate(cfg->uart_dev);
 
-	rc = explorir_m_await_receive(data);
+	rc = k_sem_take(&data->uart_rx_sem, K_MSEC(EXPLORIR_M_MAX_RESPONSE_DELAY));
 	if (rc != 0) {
 		LOG_WRN("%c did not receive a response: %d", type, rc);
 	}
@@ -260,6 +251,52 @@ static int explorir_m_uart_transceive(const struct device *dev, char type, struc
 	k_mutex_unlock(&data->uart_mutex);
 
 	return rc;
+}
+
+/*
+ * This calibrate function uses a known gas concentration [ppm] via val->val1 to calibrate.
+ * Calibration should be done when temperature is stabile and gas is fully diffused into the sensor.
+ */
+static int explorir_m_calibrate(const struct device *dev, struct sensor_value *val)
+{
+	struct explorir_m_data *data = dev->data;
+	struct sensor_value original;
+	struct sensor_value tmp;
+	int restore_rc;
+	int rc;
+
+	/* Prevent sensor interaction while using calibration filter value */
+	k_mutex_lock(&data->uart_mutex, K_FOREVER);
+
+	rc = explorir_m_uart_transceive(dev, EXPLORIR_M_GET_FILTER_CHAR, &original,
+					EXPLORIR_M_SET_NONE);
+	if (rc != 0) {
+		goto unlock;
+	}
+
+	/*
+	 * From datasheet section "Zero point setting":
+	 * To improve zeroing accuracy, the recommended digital filter setting is 32.
+	 */
+	tmp.val1 = 32;
+	rc = explorir_m_uart_transceive(dev, EXPLORIR_M_SET_FILTER_CHAR, &tmp,
+					EXPLORIR_M_SET_VAL_ONE);
+	if (rc == 0) {
+		tmp.val1 = val->val1 / data->filtered;
+		rc = explorir_m_uart_transceive(dev, EXPLORIR_M_ZERO_POINT_KNOWN_CHAR, &tmp,
+						EXPLORIR_M_SET_VAL_ONE);
+	}
+
+	restore_rc = explorir_m_uart_transceive(dev, EXPLORIR_M_SET_FILTER_CHAR, &original,
+						EXPLORIR_M_SET_VAL_ONE);
+	if (restore_rc != 0) {
+		LOG_ERR("Could not restore filter value");
+	}
+
+unlock:
+	k_mutex_unlock(&data->uart_mutex);
+
+	return rc != 0 ? rc : restore_rc;
 }
 
 static int explorir_m_attr_get(const struct device *dev, enum sensor_channel chan,
@@ -286,6 +323,8 @@ static int explorir_m_attr_set(const struct device *dev, enum sensor_channel cha
 	}
 
 	switch (attr) {
+	case SENSOR_ATTR_CALIBRATION:
+		return explorir_m_calibrate(dev, (struct sensor_value *)val);
 	case SENSOR_ATTR_EXPLORIR_M_FILTER:
 		if (val->val1 < 0 || val->val1 > 255) {
 			return -ERANGE;

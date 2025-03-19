@@ -3,26 +3,31 @@
 Overview
 ********
 
-The new i.MX RT700 CPU architecture is composed of a high-performance main compute subsystem,
+The new i.MX RT700 CPU architecture is composed of a high-performance main-compute subsystem,
 a secondary “always-on” sense-compute subsystem and specialized coprocessors.
 
-The main compute subsystem uses a 325 MHz capable Arm® Cortex®-M33 (CM33).
-Similar to the i.MX RT600 crossover MCU, the i.MX RT700 includes a Cadence Tensilica® HiFi 4 DSP.
-The HiFi 4 is a high performance DSP core based upon a Very Long Instruction Word (VLIW) architecture,
+The main-compute subsystem has a primary Arm® Cortex®-M33 running at 325 MHz, with an integrated
+Cadence® Tensilica® HiFi 4 DSP for more demanding DSP and audio processing tasks.
+The sense-compute subsystem has a second Arm® Cortex®-M33 and an integrated Cadence® Tensilica®
+HiFi 1 DSP. This removes the need for an external sensor hub, reducing system design complexity,
+footprint and BOM costs.
+
+The HiFi4 is a high performance DSP core based upon a Very Long Instruction Word (VLIW) architecture,
 which is capable of processing up to eight 32x16 MACs per instruction cycle. It can be used for offloading
 high-performance numerical tasks such as audio and image processing and supports both fixed-point and
 floating-point operations.
+
+The i.MX RT700 also features NXP’s eIQ Neutron NPU, enabled with the eIQ machine learning software
+development environment.
 
 Hardware
 ********
 
 - Main Compute Subsystem:
-
    - Arm Cortex-M33 up to 325 MHz
    - HiFi 4 DSP up to 325 MHz
    - eIQ Neutron NPU up to 325 MHz
 - Sense Compute Subsystem:
-
    - Arm Cortex-M33 up to 250 MHz
    - HiFi 1 DSP up to 250 MHz
 - 7.5 MB on-chip SRAM
@@ -49,9 +54,9 @@ Supported Features
 ==================
 
 NXP considers the MIMXRT700-EVK as a superset board for the i.MX RT7xx
-family of MCUs.  This board is a focus for NXP's Full Platform Support for
-Zephyr, to better enable the entire RT7xx family.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The ``mimxrt700_evk/mimxrt798s
+family of MCUs. This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire RT7xx family. NXP prioritizes enabling
+this board with new support for Zephyr features. The ``mimxrt700_evk/mimxrt798s
 /cm33_cpu0`` and ``mimxrt700_evk/mimxrt798s/cm33_cpu1`` board targets support
 the hardware features below.
 
@@ -65,6 +70,8 @@ the hardware features below.
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
++-----------+------------+-------------------------------------+
+| SCTimer   | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 | IOCON     | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
@@ -82,6 +89,10 @@ the hardware features below.
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | OS_TIMER  | on-chip    | os timer                            |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
+| WWDT      | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -130,6 +141,34 @@ System Clock
 
 The MIMXRT700 EVK is configured to use the Systick
 as a source for the system clock.
+
+HiFi1 DSP Core
+==================
+
+One can build a Zephyr application for the i.MX RT700 HiFi 1  DSP core by targeting the HiFi 1
+SOC. Xtensa toolchain supporting RT700 DSP cores is included in Zephyr SDK.
+
+To build the hello_world sample for the i.MX RT700 HiFi 1 DSP core:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: mimxrt700_evk/mimxrt798s/hifi1
+   :goals: build
+
+HiFi4 DSP Core
+==================
+
+One can build a Zephyr application for the i.MX RT700 HiFi 4  DSP core by targeting the HiFi 4
+SOC. Xtensa toolchain supporting RT700 DSP cores is included in Zephyr SDK.
+
+To build the hello_world sample for the i.MX RT700 HiFi 4 DSP core:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: mimxrt700_evk/mimxrt798s/hifi4
+   :goals: build
 
 Programming and Debugging
 *************************
@@ -210,6 +249,9 @@ should see the following message in the terminal:
 
    *** Booting Zephyr OS v3.7.0 ***
    Hello World! mimxrt700_evk/mimxrt798s/cm33_cpu0
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _i.MX RT700 Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/i-mx-rt-crossover-mcus/i-mx-rt700-crossover-mcu-with-arm-cortex-m33-npu-dsp-and-gpu-cores:i.MX-RT700

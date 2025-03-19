@@ -545,9 +545,10 @@ __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
  *
  * @param timeout Desired duration of sleep.
  *
- * @return Zero if the requested time has elapsed or if the thread was woken up
- * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
- * millisecond.
+ * @return Zero if the requested time has elapsed or the time left to
+ * sleep rounded up to the nearest millisecond (e.g. if the thread was
+ * awoken by the \ref k_wakeup call).  Will be clamped to INT_MAX in
+ * the case where the remaining time is unrepresentable in an int32_t.
  */
 __syscall int32_t k_sleep(k_timeout_t timeout);
 
@@ -1590,6 +1591,7 @@ struct k_timer {
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
 	.stop_fn = stop, \
+	.period = {}, \
 	.status = 0, \
 	.user_data = 0, \
 	}
@@ -2341,7 +2343,8 @@ struct k_event {
 #define Z_EVENT_INITIALIZER(obj) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	.events = 0 \
+	.events = 0, \
+	.lock = {}, \
 	}
 
 /**
@@ -4588,6 +4591,7 @@ struct k_msgq {
 #define Z_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
+	.lock = {}, \
 	.msg_size = q_msg_size, \
 	.max_msgs = q_max_msgs, \
 	.buffer_start = q_buffer, \
@@ -4596,6 +4600,7 @@ struct k_msgq {
 	.write_ptr = q_buffer, \
 	.used_msgs = 0, \
 	Z_POLL_EVENT_OBJ_INIT(obj) \
+	.flags = 0, \
 	}
 
 /**

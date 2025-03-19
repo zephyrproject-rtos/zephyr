@@ -7,6 +7,9 @@
 #ifndef BOARDS_POSIX_NATIVE_SIM_TIMER_MODEL_H
 #define BOARDS_POSIX_NATIVE_SIM_TIMER_MODEL_H
 
+#warning "This transitional header is now deprecated and will be removed by v4.4. "\
+	 "Use nsi_timer_model.h instead."
+
 /*
  * To support the native_posix timer driver
  * we provide a header with the same name as in native_posix

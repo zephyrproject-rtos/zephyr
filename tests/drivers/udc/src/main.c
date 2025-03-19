@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(udc_test, LOG_LEVEL_INF);
  * connected to the host as this state is not covered by this test.
  */
 
+#define BULK_OUT_EP_ADDR	0x01U
+#define BULK_IN_EP_ADDR		0x81U
 #define FALSE_EP_ADDR		0x0FU
 
 K_MSGQ_DEFINE(test_msgq, sizeof(struct udc_event), 8, sizeof(uint32_t));
@@ -127,7 +129,7 @@ static void test_udc_ep_enable(const struct device *dev,
 	uint8_t ctrl_ep = USB_EP_DIR_IS_IN(ed->bEndpointAddress) ?
 			  USB_CONTROL_EP_IN : USB_CONTROL_EP_OUT;
 	/* Possible return values 0, -EINVAL, -ENODEV, -EALREADY, -EPERM. */
-	int err1, err2, err3, err4;
+	int err1, err2, err3;
 
 	err1 = udc_ep_enable(dev, ed->bEndpointAddress, ed->bmAttributes,
 			     sys_le16_to_cpu(ed->wMaxPacketSize),
@@ -135,28 +137,22 @@ static void test_udc_ep_enable(const struct device *dev,
 	err2 = udc_ep_enable(dev, ed->bEndpointAddress, ed->bmAttributes,
 			     sys_le16_to_cpu(ed->wMaxPacketSize),
 			     ed->bInterval);
-	err3 = udc_ep_enable(dev, FALSE_EP_ADDR, ed->bmAttributes,
-			     sys_le16_to_cpu(ed->wMaxPacketSize),
-			     ed->bInterval);
-	err4 = udc_ep_enable(dev, ctrl_ep, ed->bmAttributes,
+	err3 = udc_ep_enable(dev, ctrl_ep, ed->bmAttributes,
 			     sys_le16_to_cpu(ed->wMaxPacketSize),
 			     ed->bInterval);
 
 	if (!udc_is_initialized(dev) && !udc_is_enabled(dev)) {
 		zassert_equal(err1, -EPERM, "Not failed to enable endpoint");
 		zassert_equal(err2, -EPERM, "Not failed to enable endpoint");
-		zassert_equal(err3, -EPERM, "Not failed to enable endpoint");
-		zassert_equal(err4, -EINVAL, "Not failed to enable endpoint");
+		zassert_equal(err3, -EINVAL, "Not failed to enable endpoint");
 	} else if (udc_is_initialized(dev) && !udc_is_enabled(dev)) {
 		zassert_equal(err1, -EPERM, "Not failed to enable endpoint");
 		zassert_equal(err2, -EPERM, "Not failed to enable endpoint");
-		zassert_equal(err3, -EPERM, "Not failed to enable endpoint");
-		zassert_equal(err4, -EINVAL, "Not failed to enable endpoint");
+		zassert_equal(err3, -EINVAL, "Not failed to enable endpoint");
 	} else {
 		zassert_equal(err1, 0, "Failed to enable endpoint");
 		zassert_equal(err2, -EALREADY, "Not failed to enable endpoint");
-		zassert_equal(err3, -ENODEV, "Not failed to enable endpoint");
-		zassert_equal(err4, -EINVAL, "Not failed to enable endpoint");
+		zassert_equal(err3, -EINVAL, "Not failed to enable endpoint");
 	}
 }
 
@@ -166,28 +162,24 @@ static void test_udc_ep_disable(const struct device *dev,
 	uint8_t ctrl_ep = USB_EP_DIR_IS_IN(ed->bEndpointAddress) ?
 			  USB_CONTROL_EP_IN : USB_CONTROL_EP_OUT;
 	/* Possible return values 0, -EINVAL, -ENODEV, -EALREADY, -EPERM. */
-	int err1, err2, err3, err4;
+	int err1, err2, err3;
 
 	err1 = udc_ep_disable(dev, ed->bEndpointAddress);
 	err2 = udc_ep_disable(dev, ed->bEndpointAddress);
-	err3 = udc_ep_disable(dev, FALSE_EP_ADDR);
-	err4 = udc_ep_disable(dev, ctrl_ep);
+	err3 = udc_ep_disable(dev, ctrl_ep);
 
 	if (!udc_is_initialized(dev) && !udc_is_enabled(dev)) {
 		zassert_equal(err1, -EPERM, "Not failed to disable endpoint");
 		zassert_equal(err2, -EPERM, "Not failed to disable endpoint");
-		zassert_equal(err3, -EPERM, "Not failed to disable endpoint");
-		zassert_equal(err4, -EINVAL, "Not failed to disable endpoint");
+		zassert_equal(err3, -EINVAL, "Not failed to disable endpoint");
 	} else if (udc_is_initialized(dev) && !udc_is_enabled(dev)) {
 		zassert_equal(err1, -EALREADY, "Failed to disable endpoint");
 		zassert_equal(err2, -EALREADY, "Not failed to disable endpoint");
-		zassert_equal(err3, -ENODEV, "Not failed to disable endpoint");
-		zassert_equal(err4, -EINVAL, "Not failed to disable endpoint");
+		zassert_equal(err3, -EINVAL, "Not failed to disable endpoint");
 	} else {
 		zassert_equal(err1, 0, "Failed to disable endpoint");
 		zassert_equal(err2, -EALREADY, "Not failed to disable endpoint");
-		zassert_equal(err3, -ENODEV, "Not failed to disable endpoint");
-		zassert_equal(err4, -EINVAL, "Not failed to disable endpoint");
+		zassert_equal(err3, -EINVAL, "Not failed to disable endpoint");
 	}
 }
 
@@ -284,17 +276,14 @@ static void test_udc_ep_dequeue(const struct device *dev,
 				struct usb_ep_descriptor *ed)
 {
 	/* Possible return values 0, -EPERM, -ENODEV, -EACCES(TBD) */
-	int err1, err2;
+	int err;
 
-	err1 = udc_ep_dequeue(dev, ed->bEndpointAddress);
-	err2 = udc_ep_dequeue(dev, FALSE_EP_ADDR);
+	err = udc_ep_dequeue(dev, ed->bEndpointAddress);
 
 	if (!udc_is_initialized(dev)) {
-		zassert_equal(err1, -EPERM, "Not failed to dequeue");
-		zassert_equal(err2, -EPERM, "Not failed to dequeue");
+		zassert_equal(err, -EPERM, "Not failed to dequeue");
 	} else {
-		zassert_equal(err1, 0, "Failed to dequeue");
-		zassert_equal(err2, -ENODEV, "Not failed to dequeue");
+		zassert_equal(err, 0, "Failed to dequeue");
 	}
 }
 
@@ -462,7 +451,7 @@ static struct usb_ep_descriptor ed_ctrl_in = {
 static struct usb_ep_descriptor ed_bulk_out = {
 	.bLength = sizeof(struct usb_ep_descriptor),
 	.bDescriptorType = USB_DESC_ENDPOINT,
-	.bEndpointAddress = 0x01,
+	.bEndpointAddress = BULK_OUT_EP_ADDR,
 	.bmAttributes = USB_EP_TYPE_BULK,
 	.wMaxPacketSize = sys_cpu_to_le16(64),
 	.bInterval = 0,
@@ -471,7 +460,7 @@ static struct usb_ep_descriptor ed_bulk_out = {
 static struct usb_ep_descriptor ed_bulk_in = {
 	.bLength = sizeof(struct usb_ep_descriptor),
 	.bDescriptorType = USB_DESC_ENDPOINT,
-	.bEndpointAddress = 0x81,
+	.bEndpointAddress = BULK_IN_EP_ADDR,
 	.bmAttributes = USB_EP_TYPE_BULK,
 	.wMaxPacketSize = sys_cpu_to_le16(64),
 	.bInterval = 0,

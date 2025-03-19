@@ -32,6 +32,10 @@
 #define CONFIG_LOG_BACKEND_RTT_RETRY_CNT 10
 #endif
 
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY)
+static const uint8_t LOG_HEX_SEP[10] = "##ZLOGV1##";
+#endif
+
 #define DROP_MAX 99
 
 #define DROP_MSG "messages dropped:    \r\n"
@@ -247,12 +251,34 @@ static int data_out_overwrite_mode(uint8_t *data, size_t length, void *ctx)
 	return length;
 }
 
-LOG_OUTPUT_DEFINE(log_output_rtt,
-		  IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) ?
-		  data_out_block_mode :
-		  IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_OVERWRITE) ?
-		  data_out_overwrite_mode : data_out_drop_mode,
-		  char_buf, sizeof(char_buf));
+static const log_output_func_t logging_func =
+	IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK)       ? data_out_block_mode
+	: IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_OVERWRITE) ? data_out_overwrite_mode
+							    : data_out_drop_mode;
+
+static int data_out(uint8_t *data, size_t length, void *ctx)
+{
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY)
+	for (size_t i = 0; i < length; i++) {
+		char c[2];
+		uint8_t x[2];
+
+		/* upper 8-bit */
+		x[0] = data[i] >> 4;
+		(void)hex2char(x[0], &c[0]);
+
+		/* lower 8-bit */
+		x[1] = data[i] & 0x0FU;
+		(void)hex2char(x[1], &c[1]);
+		logging_func(c, sizeof(c), ctx);
+	}
+	return length;
+#endif
+
+	return logging_func(data, length, ctx);
+}
+
+LOG_OUTPUT_DEFINE(log_output_rtt, data_out, char_buf, sizeof(char_buf));
 
 static void log_backend_rtt_cfg(void)
 {
@@ -266,6 +292,10 @@ static void log_backend_rtt_init(struct log_backend const *const backend)
 	if (CONFIG_LOG_BACKEND_RTT_BUFFER > 0) {
 		log_backend_rtt_cfg();
 	}
+
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY)
+	logging_func((uint8_t *)LOG_HEX_SEP, sizeof(LOG_HEX_SEP), NULL);
+#endif
 
 	host_present = true;
 	line_pos = line_buf;

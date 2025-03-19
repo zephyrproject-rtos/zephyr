@@ -125,7 +125,7 @@ int main(void)
 	printf("Initialised DATA area     : [%p, %p)\n",
 		&__ccm_data_start, &__ccm_data_end);
 	printf("Start of DATA in FLASH    : %p\n",
-		&__ccm_data_rom_start);
+		&__ccm_data_load_start);
 
 	check_initial_var_values();
 

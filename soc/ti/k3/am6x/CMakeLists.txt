@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(.)
+zephyr_sources(common/ctrl_partitions.c)
 
 if(CONFIG_SOC_AM6234_A53)
   zephyr_sources_ifdef(CONFIG_ARM_MMU a53/mmu_regions.c)

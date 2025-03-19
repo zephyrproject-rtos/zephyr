@@ -805,11 +805,15 @@ ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 	zassert_true(sizeof(buf) - 6 == net_pkt_remaining_data(pkt),
 		     "Pkt remaining data mismatch");
 
-	net_pkt_lladdr_src(pkt)->addr = pkt->buffer->data;
+	memcpy(net_pkt_lladdr_src(pkt)->addr,
+	       pkt->buffer->data,
+	       NET_LINK_ADDR_MAX_LENGTH);
 	net_pkt_lladdr_src(pkt)->len = NET_LINK_ADDR_MAX_LENGTH;
 	net_pkt_lladdr_src(pkt)->type = NET_LINK_ETHERNET;
 	zassert_mem_equal(net_pkt_lladdr_src(pkt)->addr, buf, NET_LINK_ADDR_MAX_LENGTH);
-	net_pkt_lladdr_dst(pkt)->addr = net_pkt_cursor_get_pos(pkt);
+	memcpy(net_pkt_lladdr_dst(pkt)->addr,
+	       net_pkt_cursor_get_pos(pkt),
+	       NET_LINK_ADDR_MAX_LENGTH);
 	net_pkt_lladdr_dst(pkt)->len = NET_LINK_ADDR_MAX_LENGTH;
 	net_pkt_lladdr_dst(pkt)->type = NET_LINK_ETHERNET;
 	zassert_mem_equal(net_pkt_lladdr_dst(pkt)->addr, &buf[6], NET_LINK_ADDR_MAX_LENGTH);
@@ -875,11 +879,15 @@ ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 		     "Cloned pkt l2_processed flag mismatch");
 
 	zassert_mem_equal(net_pkt_lladdr_src(cloned_pkt)->addr, buf, NET_LINK_ADDR_MAX_LENGTH);
-	zassert_true(net_pkt_lladdr_src(cloned_pkt)->addr == cloned_pkt->buffer->data,
+	zassert_true(memcmp(net_pkt_lladdr_src(cloned_pkt)->addr,
+			    cloned_pkt->buffer->data,
+			    NET_LINK_ADDR_MAX_LENGTH) == 0,
 		     "Cloned pkt ll src addr mismatch");
 
 	zassert_mem_equal(net_pkt_lladdr_dst(cloned_pkt)->addr, &buf[6], NET_LINK_ADDR_MAX_LENGTH);
-	zassert_true(net_pkt_lladdr_dst(cloned_pkt)->addr == net_pkt_cursor_get_pos(cloned_pkt),
+	zassert_true(memcmp(net_pkt_lladdr_dst(cloned_pkt)->addr,
+			    net_pkt_cursor_get_pos(cloned_pkt),
+			    NET_LINK_ADDR_MAX_LENGTH) == 0,
 		     "Cloned pkt ll dst addr mismatch");
 
 	zassert_equal(net_pkt_ll_proto_type(cloned_pkt), ETH_P_IEEE802154,

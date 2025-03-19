@@ -25,8 +25,4 @@
 	kso-mapping = <0 1 20 3 4 5 6 17 18 16 15 11 12>;
 	row-size = <8>;
 	col-size = <13>;
-
-	kscan_input: kscan-input {
-		compatible = "zephyr,kscan-input";
-	};
 };

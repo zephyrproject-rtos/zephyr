@@ -1,7 +1,7 @@
 # Copyright (c) 2018-2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Intel GPIO node
+description: Intel GPIO
 
 compatible: "intel,gpio"
 

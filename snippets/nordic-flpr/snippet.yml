@@ -9,3 +9,6 @@ boards:
   /.*/nrf54h20/cpuapp/:
     append:
       EXTRA_DTC_OVERLAY_FILE: soc/nrf54h20_cpuapp.overlay
+  /.*/nrf54l20/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf54l20_cpuapp.overlay

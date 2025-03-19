@@ -1587,8 +1587,8 @@ function(pow2round n)
   set(${n} ${${n}} PARENT_SCOPE)
 endfunction()
 
-# Function to create a build string based on BOARD, BOARD_REVISION, and BUILD
-# type.
+# Function to create a build string based on BOARD, BOARD_REVISION, and
+# BOARD_QUALIFIER.
 #
 # This is a common function to ensure that build strings are always created
 # in a uniform way.

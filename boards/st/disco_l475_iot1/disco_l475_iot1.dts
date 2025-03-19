@@ -228,9 +228,9 @@
 			read-only;
 		};
 
-		slot0_partition: partition@1000 {
+		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x1000 DT_SIZE_K(928)>;
+			reg = <0x10000 DT_SIZE_K(928)>;
 		};
 
 		storage_partition: partition@f8000 {

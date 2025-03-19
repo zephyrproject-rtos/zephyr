@@ -31,6 +31,8 @@ Building and Running
 When building targeting an nrf52 series board with the Zephyr Bluetooth Controller,
 use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable the required ISO
 feature support.
+The sample defaults to sequential packing of BIS subevents, add
+``-DCONFIG_ISO_PACKING_INTERLEAVED=y`` to use interleaved packing.
 
 Building for an nrf5340dk
 -------------------------

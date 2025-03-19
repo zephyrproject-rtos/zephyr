@@ -15,8 +15,6 @@
 	compatible = "weact,mini-stm32h7b0";
 
 	chosen {
-		zephyr,console = &usb_cdc_acm_uart;
-		zephyr,shell-uart = &usb_cdc_acm_uart;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,display = &st7735r_160x80;
@@ -132,12 +130,9 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
-
-	usb_cdc_acm_uart: cdc_acm_uart {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };
 
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 &octospi1 {
 	pinctrl-names = "default";

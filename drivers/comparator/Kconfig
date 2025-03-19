@@ -24,5 +24,6 @@ rsource "Kconfig.mcux_acmp"
 rsource "Kconfig.nrf_comp"
 rsource "Kconfig.nrf_lpcomp"
 rsource "Kconfig.shell"
+rsource "Kconfig.renesas_ra"
 
 endif # COMPARATOR

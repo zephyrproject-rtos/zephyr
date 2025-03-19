@@ -7,9 +7,11 @@
  */
 #include <stdint.h>
 
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 #include <string.h>
 
@@ -522,18 +524,42 @@ static struct bt_data ad[10] = {
 };
 static struct bt_data sd[10];
 
-static struct bt_le_ext_adv *ext_adv;
+#if CONFIG_BT_EXT_ADV
+static struct bt_le_ext_adv *ext_adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
+#else
+static struct bt_le_ext_adv *ext_adv_sets[1];
+#endif
 
-struct bt_le_ext_adv *tester_gap_ext_adv_get(void)
+struct bt_le_ext_adv *tester_gap_ext_adv_get(uint8_t ext_adv_idx)
 {
 	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
 		return NULL;
 	}
 
-	return ext_adv;
+	if (ext_adv_idx >= ARRAY_SIZE(ext_adv_sets)) {
+		LOG_ERR("Invalid ext_adv_id: %d", ext_adv_idx);
+		return NULL;
+	}
+
+	return ext_adv_sets[ext_adv_idx];
 }
 
-int tester_gap_start_ext_adv(void)
+static int tester_gap_ext_adv_idx_free_get(void)
+{
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return -ENOTSUP;
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(ext_adv_sets); i++) {
+		if (ext_adv_sets[i] == NULL) {
+			return i;
+		}
+	}
+
+	return -ENOMEM;
+}
+
+int tester_gap_start_ext_adv(struct bt_le_ext_adv *ext_adv)
 {
 	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
 		return -ENOTSUP;
@@ -541,10 +567,14 @@ int tester_gap_start_ext_adv(void)
 
 	int err;
 
+	if (ext_adv == NULL) {
+		LOG_ERR("Invalid ext_adv");
+		return -EINVAL;
+	}
+
 	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
 		LOG_ERR("Failed to start advertising");
-
 		return -EINVAL;
 	}
 
@@ -553,13 +583,18 @@ int tester_gap_start_ext_adv(void)
 	return 0;
 }
 
-int tester_gap_stop_ext_adv(void)
+int tester_gap_stop_ext_adv(struct bt_le_ext_adv *ext_adv)
 {
 	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
 		return -ENOTSUP;
 	}
 
 	int err;
+
+	if (ext_adv == NULL) {
+		LOG_ERR("Invalid ext_adv");
+		return -EINVAL;
+	}
 
 	err = bt_le_ext_adv_stop(ext_adv);
 	if (err != 0) {
@@ -625,10 +660,10 @@ static uint8_t set_bondable(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_addr_type,
-				   const struct bt_data *ad, size_t ad_len,
-				   const struct bt_data *sd, size_t sd_len,
-				   uint32_t *settings)
+int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
+				   uint8_t own_addr_type, const struct bt_data *ad, size_t ad_len,
+				   const struct bt_data *sd, size_t sd_len, uint32_t *settings,
+				   struct bt_le_ext_adv **ext_adv)
 {
 	int err = 0;
 
@@ -678,27 +713,41 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_ad
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && atomic_test_bit(&current_settings,
 	    BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
+
 		param->options |= BT_LE_ADV_OPT_EXT_ADV;
-		if (ext_adv != NULL) {
-			err = bt_le_ext_adv_stop(ext_adv);
+		if (*ext_adv) {
+			err = bt_le_ext_adv_stop(*ext_adv);
 			if (err != 0) {
 				return err;
 			}
 
-			err = bt_le_ext_adv_delete(ext_adv);
+			err = bt_le_ext_adv_delete(*ext_adv);
 			if (err != 0) {
 				return err;
 			}
 
-			ext_adv = NULL;
+			*ext_adv = NULL;
 		}
 
-		err = bt_le_ext_adv_create(param, NULL, &ext_adv);
+		int index = tester_gap_ext_adv_idx_free_get();
+
+		if (index < 0) {
+			LOG_ERR("No free ext_adv index");
+			return -ENOMEM;
+		}
+
+		/* Set the set_id to be matching the index of the ext_adv set */
+		param->sid = index;
+
+		err = bt_le_ext_adv_create(param, NULL, &ext_adv_sets[index]);
 		if (err != 0) {
 			return BTP_STATUS_FAILED;
 		}
 
-		err = bt_le_ext_adv_set_data(ext_adv, ad, ad_len, sd_len ? sd : NULL, sd_len);
+		err = bt_le_ext_adv_set_data(ext_adv_sets[index], ad, ad_len, sd_len ?
+					     sd : NULL, sd_len);
+
+		*ext_adv = ext_adv_sets[index];
 	}
 
 	return err;
@@ -757,7 +806,10 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 		i += sd[sd_len].data_len;
 	}
 
-	err = tester_gap_create_adv_instance(&param, own_addr_type, ad, adv_len, sd, sd_len, NULL);
+	struct bt_le_ext_adv *ext_adv = NULL;
+
+	err = tester_gap_create_adv_instance(&param, own_addr_type, ad, adv_len, sd,
+					     sd_len, NULL, &ext_adv);
 	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
@@ -1010,20 +1062,21 @@ static uint8_t stop_discovery(const void *cmd, uint16_t cmd_len,
 static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		       void *rsp, uint16_t *rsp_len)
 {
-	/* The conn interval is set to 60ms (0x30). This is to better support test cases where we
-	 * need to connect to multiple peripherals (up to 3). The connection interval should also be
-	 * a multiple of 30ms, as that is ideal to support both 7.5ms and 10ms ISO intervals
-	 */
-	const uint16_t interval = BT_GAP_MS_TO_CONN_INTERVAL(60U);
-	const struct bt_le_conn_param *conn_param =
-		BT_LE_CONN_PARAM(interval, interval, 0U, BT_GAP_MS_TO_CONN_TIMEOUT(4000U));
+	struct bt_le_conn_param conn_param;
+
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST) || IS_ENABLED(CONFIG_BT_BAP_BROADCAST_ASSISTANT)) {
+		conn_param = *BT_BAP_CONN_PARAM_RELAXED;
+	} else {
+		conn_param = *BT_LE_CONN_PARAM_DEFAULT;
+	}
+
 	const struct btp_gap_connect_cmd *cp = cmd;
 	int err;
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
 		struct bt_conn *conn = NULL;
 
-		err = bt_conn_le_create(&cp->address, BT_CONN_LE_CREATE_CONN, conn_param, &conn);
+		err = bt_conn_le_create(&cp->address, BT_CONN_LE_CREATE_CONN, &conn_param, &conn);
 		if (err) {
 			LOG_ERR("Failed to create connection (%d)", err);
 			return BTP_STATUS_FAILED;
@@ -1031,7 +1084,7 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 
 		bt_conn_unref(conn);
 	} else {
-		err = bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN, conn_param);
+		err = bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN, &conn_param);
 		if (err) {
 			LOG_ERR("Failed to create auto connection (%d)", err);
 			return BTP_STATUS_FAILED;
@@ -1109,7 +1162,7 @@ enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
 	struct btp_gap_bond_lost_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
-	if (!bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
+	if (!bt_le_bond_exists(BT_ID_DEFAULT, addr)) {
 		return BT_SECURITY_ERR_SUCCESS;
 	}
 
@@ -1462,7 +1515,8 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb = {
 #if defined(CONFIG_BT_PER_ADV)
 static struct bt_data padv[10];
 
-int tester_gap_padv_configure(const struct bt_le_per_adv_param *param)
+int tester_gap_padv_configure(struct bt_le_ext_adv *ext_adv,
+			      const struct bt_le_per_adv_param *param)
 {
 	int err;
 	struct bt_le_adv_param ext_adv_param =
@@ -1471,8 +1525,9 @@ int tester_gap_padv_configure(const struct bt_le_per_adv_param *param)
 	if (ext_adv == NULL) {
 		current_settings = BIT(BTP_GAP_SETTINGS_DISCOVERABLE) |
 				   BIT(BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
-		err = tester_gap_create_adv_instance(&ext_adv_param, BTP_GAP_ADDR_TYPE_IDENTITY, ad,
-						     1, NULL, 0, NULL);
+		err = tester_gap_create_adv_instance(&ext_adv_param,
+						     BTP_GAP_ADDR_TYPE_IDENTITY, ad, 1, NULL, 0,
+						     NULL, &ext_adv);
 		if (err != 0) {
 			return -EINVAL;
 		}
@@ -1501,9 +1556,11 @@ static uint8_t padv_configure(const void *cmd, uint16_t cmd_len,
 		options |= BT_LE_PER_ADV_OPT_USE_TX_POWER;
 	}
 
-	err = tester_gap_padv_configure(BT_LE_PER_ADV_PARAM(sys_le16_to_cpu(cp->interval_min),
-							    sys_le16_to_cpu(cp->interval_max),
-							    options));
+	struct bt_le_ext_adv *ext_adv = tester_gap_ext_adv_get(0);
+
+	err = tester_gap_padv_configure(ext_adv,
+					BT_LE_PER_ADV_PARAM(sys_le16_to_cpu(cp->interval_min),
+					sys_le16_to_cpu(cp->interval_max), options));
 	if (err) {
 		return BTP_STATUS_FAILED;
 	}
@@ -1515,7 +1572,7 @@ static uint8_t padv_configure(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-int tester_gap_padv_start(void)
+int tester_gap_padv_start(struct bt_le_ext_adv *ext_adv)
 {
 	int err;
 
@@ -1524,7 +1581,7 @@ int tester_gap_padv_start(void)
 	}
 
 	if (!atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_ADVERTISING)) {
-		err = tester_gap_start_ext_adv();
+		err = tester_gap_start_ext_adv(ext_adv);
 		if (err != 0) {
 			return -EINVAL;
 		}
@@ -1545,7 +1602,9 @@ static uint8_t padv_start(const void *cmd, uint16_t cmd_len,
 	int err;
 	struct btp_gap_padv_start_rp *rp = rsp;
 
-	err = tester_gap_padv_start();
+	struct bt_le_ext_adv *ext_adv = tester_gap_ext_adv_get(0);
+
+	err = tester_gap_padv_start(ext_adv);
 
 	if (err) {
 		return BTP_STATUS_FAILED;
@@ -1558,7 +1617,7 @@ static uint8_t padv_start(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-int tester_gap_padv_stop(void)
+int tester_gap_padv_stop(struct bt_le_ext_adv *ext_adv)
 {
 	int err;
 
@@ -1581,8 +1640,9 @@ static uint8_t padv_stop(const void *cmd, uint16_t cmd_len,
 {
 	int err;
 	struct btp_gap_padv_stop_rp *rp = rsp;
+	struct bt_le_ext_adv *ext_adv = tester_gap_ext_adv_get(0);
 
-	err = tester_gap_padv_stop();
+	err = tester_gap_padv_stop(ext_adv);
 
 	if (err) {
 		return BTP_STATUS_FAILED;
@@ -1595,7 +1655,7 @@ static uint8_t padv_stop(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-int tester_gap_padv_set_data(struct bt_data *per_ad, uint8_t ad_len)
+int tester_gap_padv_set_data(struct bt_le_ext_adv *ext_adv, struct bt_data *per_ad, uint8_t ad_len)
 {
 	int err;
 
@@ -1616,8 +1676,9 @@ static uint8_t padv_set_data(const void *cmd, uint16_t cmd_len,
 			     void *rsp, uint16_t *rsp_len)
 {
 	int err;
-	uint8_t padv_len = 0U;
 	const struct btp_gap_padv_set_data_cmd *cp = cmd;
+
+	uint8_t padv_len = 0U;
 
 	for (uint8_t i = 0; i < cp->data_len; padv_len++) {
 		if (padv_len >= ARRAY_SIZE(padv)) {
@@ -1631,7 +1692,9 @@ static uint8_t padv_set_data(const void *cmd, uint16_t cmd_len,
 		i += padv[padv_len].data_len;
 	}
 
-	err = tester_gap_padv_set_data(padv, padv_len);
+	struct bt_le_ext_adv *ext_adv = tester_gap_ext_adv_get(0);
+
+	err = tester_gap_padv_set_data(ext_adv, padv, padv_len);
 
 	return BTP_STATUS_VAL(err);
 }

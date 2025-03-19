@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  NXP Synchronous Audio Interface (SAI) node
+  NXP Synchronous Audio Interface (SAI)
 
   Below you may find some configuration examples:
 

@@ -13,7 +13,7 @@ tests:
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
     integration_platforms:
-      - nrf52840dk/nrf52840
+      - native_sim
     tags:
       - settings
       - file

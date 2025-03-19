@@ -4,7 +4,4 @@ tests:
   sample.usb.loopback:
     depends_on: usb_device
     tags: usb
-    platform_exclude:
-      - native_posix
-      - native_posix/native/64
     harness: button

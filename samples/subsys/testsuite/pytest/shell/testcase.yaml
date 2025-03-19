@@ -5,7 +5,7 @@ common:
     - shell
   filter: CONFIG_SERIAL and not CONFIG_SMP and dt_chosen_enabled("zephyr,shell-uart")
   extra_configs:
-    - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+    - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
   min_ram: 40
   integration_platforms:
     - native_sim

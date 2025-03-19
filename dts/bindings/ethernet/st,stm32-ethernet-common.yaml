@@ -18,3 +18,5 @@ properties:
     required: true
   pinctrl-names:
     required: true
+  phy-connection-type:
+    required: true

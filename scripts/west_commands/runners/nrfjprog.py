@@ -31,6 +31,14 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
         return 'nrfjprog'
 
     @classmethod
+    def capabilities(cls):
+        return NrfBinaryRunner._capabilities()
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        return NrfBinaryRunner._dev_id_help()
+
+    @classmethod
     def tool_opt_help(cls) -> str:
         return 'Additional options for nrfjprog, e.g. "--clockspeed"'
 

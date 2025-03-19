@@ -1,0 +1,105 @@
+# Copyright (c) 2025, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_NATIVE_PTY
+	bool "PTY based UART driver for native_sim"
+	default y
+	depends on (DT_HAS_ZEPHYR_NATIVE_PTY_UART_ENABLED || DT_HAS_ZEPHYR_NATIVE_POSIX_UART_ENABLED)
+	select SERIAL_HAS_DRIVER
+	help
+	  This enables a PTY based UART driver for the POSIX ARCH with up to 2 UARTs.
+	  For the first UART port, the driver can be configured
+	  to either connect to the terminal from which the executable was run, or into
+	  one dedicated pseudoterminal for that UART.
+
+config UART_NATIVE_POSIX
+	bool "UART driver for native_sim (deprecated)"
+	select SERIAL_HAS_DRIVER
+	select DEPRECATED
+	select UART_NATIVE_PTY
+	help
+	  Deprecated option, use UART_NATIVE_PTY instead
+
+if (UART_NATIVE_PTY || UART_NATIVE_POSIX)
+
+choice UART_NATIVE_PTY_0
+	prompt "Native PTY Port 0 connection"
+	default UART_NATIVE_PTY_0_ON_STDINOUT if NATIVE_UART_0_ON_STDINOUT
+	default UART_NATIVE_PTY_0_ON_OWN_PTY
+
+config UART_NATIVE_PTY_0_ON_OWN_PTY
+	bool "Connect the first PTY UART to its own pseudo terminal"
+	help
+	  Connect this UART to its own pseudoterminal. This is the preferred
+	  option for users who want to use Zephyr's shell.
+	  Moreover this option does not conflict with any other native
+	  backend which may use the invoking shell standard input/output.
+	  Note it can be overridden from command line
+
+config UART_NATIVE_PTY_0_ON_STDINOUT
+	bool "Connect the first PTY UART to the invoking shell stdin/stdout"
+	help
+	  Connect this UART to the stdin & stdout of the calling shell/terminal
+	  which invoked the native executable. This is good enough for
+	  automated testing, or when feeding from a file/pipe.
+	  Note that other, non UART messages, will also be printed to the
+	  terminal.
+	  It is strongly discouraged to try to use this option with the new
+	  shell interactively, as the default terminal configuration is NOT
+	  appropriate for interactive use.
+
+endchoice
+
+choice NATIVE_UART_0
+	prompt "Native UART Port 0 connection (deprecated)"
+	default NATIVE_UART_0_ON_OWN_PTY
+
+config NATIVE_UART_0_ON_OWN_PTY
+	bool "Connect the UART to its own pseudo terminal (deprecated)"
+	help
+	  Deprecated, use UART_NATIVE_PTY_0_ON_OWN_PTY instead.
+
+config NATIVE_UART_0_ON_STDINOUT
+	bool "Connect the UART to the invoking shell stdin/stdout (deprecated)"
+	select DEPRECATED
+	help
+	  Deprecated, use UART_NATIVE_PTY_0_ON_STDINOUT instead.
+
+endchoice
+
+config UART_NATIVE_WAIT_PTS_READY_ENABLE
+	bool "Support waiting for pseudo terminal client readiness (deprecated)"
+	select DEPRECATED
+	help
+	  This option is deprecated and does not do anything anymore. (The command line
+	  option --wait_uart is always available).
+
+config UART_NATIVE_POSIX_PORT_1_ENABLE
+	bool "Second UART port (deprecated)"
+	select DEPRECATED
+	help
+	  This option does not do anything anymore. Use DTS to instantiate as many
+	  "zephyr,native-pty-uart" compatible nodes as you want.
+
+config UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD
+	string "Default command to attach a PTY UART to a new terminal"
+	default NATIVE_UART_AUTOATTACH_DEFAULT_CMD
+	help
+	  If the native executable is called with the --attach_uart
+	  command line option, this will be the default command which will be
+	  run to attach a new terminal to the 1st UART.
+	  Note that this command must have one, and only one, '%s' as
+	  placeholder for the pseudoterminal device name (e.g. /dev/pts/35)
+	  This is only applicable if the UART_0 is configured to use its own
+	  PTY with NATIVE_UART_0_ON_OWN_PTY.
+	  The 2nd UART will not be affected by this option.
+	  If you are using GNOME, then you can use this command string
+	  'gnome-terminal -- screen %s'
+
+config NATIVE_UART_AUTOATTACH_DEFAULT_CMD
+	string "Default command to attach the UART to a new terminal (deprecated)"
+	default "xterm -e screen %s &"
+	help
+	  Deprecated. Use UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD instead
+
+endif # UART_NATIVE_PTY || UART_NATIVE_POSIX

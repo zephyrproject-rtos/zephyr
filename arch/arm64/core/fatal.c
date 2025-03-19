@@ -17,9 +17,11 @@
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/kernel.h>
+#include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/poweroff.h>
 #include <kernel_arch_func.h>
+#include <kernel_arch_interface.h>
 
 #include "paging.h"
 
@@ -201,6 +203,33 @@ static void esf_dump(const struct arch_esf *esf)
 #ifdef CONFIG_ARCH_STACKWALK
 typedef bool (*arm64_stacktrace_cb)(void *cookie, unsigned long addr, void *fp);
 
+static bool is_address_mapped(uint64_t *addr)
+{
+	uintptr_t *phys = NULL;
+
+	if (*addr == 0U)
+		return false;
+
+	/* Check alignment. */
+	if ((*addr & (sizeof(uint32_t) - 1U)) != 0U)
+		return false;
+
+	return !arch_page_phys_get((void *) addr, phys);
+}
+
+static bool is_valid_jump_address(uint64_t *addr)
+{
+	if (*addr == 0U)
+		return false;
+
+	/* Check alignment. */
+	if ((*addr & (sizeof(uint32_t) - 1U)) != 0U)
+		return false;
+
+	return ((*addr >= (uint64_t)__text_region_start) &&
+		(*addr <= (uint64_t)(__text_region_end)));
+}
+
 static void walk_stackframe(arm64_stacktrace_cb cb, void *cookie, const struct arch_esf *esf,
 			    int max_frames)
 {
@@ -234,7 +263,11 @@ static void walk_stackframe(arm64_stacktrace_cb cb, void *cookie, const struct a
 	}
 
 	for (int i = 0; (fp != NULL) && (i < max_frames); i++) {
+		if (!is_address_mapped(fp))
+			break;
 		lr = fp[1];
+		if (!is_valid_jump_address(&lr))
+			break;
 		if (!cb(cookie, lr, fp)) {
 			break;
 		}

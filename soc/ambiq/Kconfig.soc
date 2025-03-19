@@ -8,4 +8,7 @@ config SOC_FAMILY_AMBIQ
 config SOC_FAMILY
 	default "ambiq" if SOC_FAMILY_AMBIQ
 
+config SOC_AMBIQ_BT_SUPPORTED
+	bool
+
 rsource "*/Kconfig.soc"

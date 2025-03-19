@@ -2417,6 +2417,10 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && conn->type == BT_CONN_TYPE_BR) {
+		return bt_l2cap_br_chan_recv_complete(chan);
+	}
+
 	if (conn->type != BT_CONN_TYPE_LE) {
 		return -ENOTSUP;
 	}
@@ -2450,7 +2454,7 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 {
 	int err;
 
-	LOG_DBG("chan %p len %zu", chan, buf->len);
+	LOG_DBG("chan %p len %u", chan, buf->len);
 
 	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
 	__ASSERT_NO_MSG(atomic_get(&chan->rx.credits) == 0);
@@ -2492,7 +2496,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 	/* Store received segments in user_data */
 	memcpy(net_buf_user_data(chan->_sdu), &seg, sizeof(seg));
 
-	LOG_DBG("chan %p seg %d len %zu", chan, seg, buf->len);
+	LOG_DBG("chan %p seg %d len %u", chan, seg, buf->len);
 
 	/* Append received segment to SDU */
 	len = net_buf_append_bytes(chan->_sdu, buf->len, buf->data, K_NO_WAIT,
@@ -3288,7 +3292,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	LOG_DBG("chan %p buf %p len %zu", chan, buf, buf->len);
+	LOG_DBG("chan %p buf %p len %u", chan, buf, buf->len);
 
 	if (buf->ref != 1) {
 		LOG_WRN("Expecting 1 ref, got %d", buf->ref);

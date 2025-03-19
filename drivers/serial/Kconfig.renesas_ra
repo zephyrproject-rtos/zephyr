@@ -2,16 +2,6 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config UART_RENESAS_RA
-	bool "Renesas RA Series UART Driver"
-	default y
-	depends on DT_HAS_RENESAS_RA_UART_SCI_ENABLED
-	select SERIAL_HAS_DRIVER
-	select SERIAL_SUPPORT_INTERRUPT
-	select PINCTRL
-	help
-	  Enable Renesas RA series UART driver.
-
 config UART_SCI_RA
 	bool "Renesas RA SCI UART"
 	default y

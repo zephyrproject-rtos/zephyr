@@ -47,7 +47,6 @@ except ImportError as capture_error:
         raise capture_error
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 
 def terminate_process(proc):

@@ -729,7 +729,7 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 		/* Use a timeout only when responding/confirming */
 		timeout = BT_ATT_TIMEOUT;
 		break;
-	default:
+	default: {
 		k_tid_t current_thread = k_current_get();
 
 		if (current_thread == k_work_queue_thread_get(&k_sys_work_q)) {
@@ -741,6 +741,7 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 		} else {
 			timeout = K_FOREVER;
 		}
+	}
 	}
 
 	/* This will reserve headspace for lower layers */

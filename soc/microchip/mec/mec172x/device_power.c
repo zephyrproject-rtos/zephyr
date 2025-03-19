@@ -92,10 +92,10 @@ void soc_deep_sleep_non_wake_dis(void)
 /* When MEC172x drivers are power-aware this should be move there */
 void soc_deep_sleep_wake_en(void)
 {
-#if defined(CONFIG_KSCAN) ||	\
+#if defined(INPUT_XEC_KBD) ||	\
 	(!defined(CONFIG_PM_DEVICE) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ps2_0)))
 	struct ecia_named_regs *regs = ECIA_XEC_REG_BASE;
-#if defined(CONFIG_KSCAN)
+#if defined(INPUT_XEC_KBD)
 	/* Enable PLL wake via KSCAN  */
 	regs->GIRQ21.SRC = MCHP_KEYSCAN_GIRQ_BIT;
 	regs->GIRQ21.EN_SET = MCHP_KEYSCAN_GIRQ_BIT;

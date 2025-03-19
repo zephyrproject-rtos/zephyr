@@ -95,6 +95,7 @@ config FILE_SYSTEM_MKFS
 config FUSE_FS_ACCESS
 	bool "FUSE based access to file system partitions"
 	depends on ARCH_POSIX
+	select NATIVE_USE_NSI_ERRNO
 	help
 	  Expose file system partitions to the host system through FUSE.
 

@@ -16,6 +16,12 @@
 set(adafruit_feather_DEPRECATED
     adafruit_feather_nrf52840/nrf52840
 )
+set(arduino_uno_r4_minima_DEPRECATED
+    arduino_uno_r4@minima
+)
+set(arduino_uno_r4_wifi_DEPRECATED
+    arduino_uno_r4@wifi
+)
 set(qemu_xtensa_DEPRECATED
     qemu_xtensa/dc233c
 )

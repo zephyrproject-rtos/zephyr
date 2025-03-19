@@ -5,7 +5,7 @@ tests:
     build_only: true
     depends_on:
       - arduino_gpio
-      - usb_device
+      - usbd
     platform_allow:
       - nrf52840dk/nrf52840
       - frdm_k64f

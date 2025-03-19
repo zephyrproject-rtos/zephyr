@@ -74,3 +74,15 @@ config LOG_DEFAULT_MINIMAL
 config LOG_MULTIDOMAIN
 	bool "Multi-domain logger"
 	select LOG_TIMESTAMP_64BIT
+
+if LOG_MODE_DEFERRED
+
+config LOG_FLUSH_SLEEP_US
+	int "Sleep time when flushing the log queue, microseconds"
+	range 100 100000
+	default 10000
+	help
+	  In deferred logging mode this is the time, used in
+	  log_flush() on each sleep iteration in microseconds.
+
+endif # LOG_MODE_DEFERRED

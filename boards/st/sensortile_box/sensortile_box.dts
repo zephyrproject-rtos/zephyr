@@ -72,7 +72,7 @@
 	div-m = <4>;
 	mul-n = <40>;
 	div-p = <7>;
-	div-q = <2>;
+	div-q = <4>;
 	div-r = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
@@ -243,4 +243,11 @@ zephyr_udc0: &usbotg_fs {
 			reg = <0x000fc000 DT_SIZE_K(24)>;
 		};
 	};
+};
+
+&rng {
+	/* Change clock source to avoid using MSI */
+	clocks = <&rcc STM32_CLOCK(AHB2, 18U)>,
+		 <&rcc STM32_SRC_PLL_Q CLK48_SEL(2)>;
+	status = "okay";
 };

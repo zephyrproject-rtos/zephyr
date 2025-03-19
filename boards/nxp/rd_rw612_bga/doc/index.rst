@@ -257,6 +257,9 @@ Remove resistors:
 
 Then, build for the board target ``rd_rw612_bga//ethernet``.
 
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
+
 Resources
 *********
 

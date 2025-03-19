@@ -147,6 +147,9 @@ Troubleshooting
 .. include:: ../../common/segger-ecc-systemview.rst
    :start-after: segger-ecc-systemview
 
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
+
 References
 **********
 

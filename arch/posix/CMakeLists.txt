@@ -75,6 +75,10 @@ if (CONFIG_NATIVE_APPLICATION)
   zephyr_compile_options(
     -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
   )
+  # About this -include directive: The reason to do it this way, is because in this
+  # manner it is transparent to the application. Otherwise posix_cheats.h needs to
+  # be included in all the applications' files which define main( ), and in any
+  # app file which uses any of the APIs renamed in that header.
 elseif (CONFIG_NATIVE_LIBRARY)
   zephyr_compile_options(
     -fvisibility=hidden
@@ -146,14 +150,6 @@ if (CONFIG_NATIVE_APPLICATION)
   )
 endif()
 
-# About the -include directive: The reason to do it this way, is because in this
-# manner it is transparent to the application. Otherwise posix_cheats.h needs to
-# be included in all the applications' files which define main( ), and in any
-# app file which uses the pthreads like API provided by Zephyr
-# ( include/posix/pthread.h / kernel/pthread.c ) [And any future API added to
-# Zephyr which will clash with the native POSIX API] . It would also need to
-# be included in a few zephyr kernel files.
-
 #
 # Support for the LLVM Sanitizer toolchain instrumentation frameworks
 # (supported by current gcc's as well)
@@ -199,4 +195,5 @@ if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
   target_compile_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
 endif()
 
+include(natsim_optional.cmake)
 add_subdirectory(core)

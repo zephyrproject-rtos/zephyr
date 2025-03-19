@@ -42,6 +42,14 @@ config NET_IPV4_DEFAULT_NETMASK
 
 if NET_NATIVE_IPV4
 
+config NET_IPV4_MTU
+	int "Initial IPv4 MTU value"
+	default 576
+	range 576 1500
+	help
+	  The value should normally be 576 which is the minimum IPv4 packet
+	  size that implementations need to support without fragmentation.
+
 config NET_INITIAL_TTL
 	int "Initial IPv4 time to live value for unicast packets"
 	default 64

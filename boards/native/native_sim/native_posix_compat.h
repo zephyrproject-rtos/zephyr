@@ -15,6 +15,9 @@
 #ifndef BOARDS_POSIX_NATIVE_SIM_NATIVE_POSIX_COMPAT_H
 #define BOARDS_POSIX_NATIVE_SIM_NATIVE_POSIX_COMPAT_H
 
+#warning "This transitional header is now deprecated and will be removed by v4.4. "\
+	 "Use nsi_hw_scheduler.h instead."
+
 #include <stdint.h>
 #include <zephyr/toolchain.h>
 #include "nsi_hw_scheduler.h"

@@ -7,7 +7,7 @@
 
 / {
 	zephyr,user {
-		io-channels = <&adc0 0>, <&adc0 2>;
+		io-channels = <&adc0 1>, <&adc0 2>;
 	};
 };
 
@@ -16,8 +16,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	channel@0 {
-		reg = <0>;
+	channel@1 {
+		reg = <1>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;

@@ -6,3 +6,5 @@ tests:
     tags: shield
     depends_on: arduino_i2c
     filter: dt_enabled_alias_with_parent_compat("sw0", "gpio-keys")
+    integration_platforms:
+      - nucleo_g431rb/stm32g431xx

@@ -172,11 +172,12 @@ static struct net_pkt *setup_gptp_frame(struct net_if *iface,
 	net_pkt_set_ptp(pkt, true);
 	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_PTP);
 
-	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(iface)->addr;
-	net_pkt_lladdr_src(pkt)->len = net_if_get_link_addr(iface)->len;
+	(void)net_linkaddr_copy(net_pkt_lladdr_src(pkt),
+				net_if_get_link_addr(iface));
 
-	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)&gptp_multicast_eth_addr;
-	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+			       (uint8_t *)&gptp_multicast_eth_addr,
+			       sizeof(struct net_eth_addr));
 
 	return pkt;
 }

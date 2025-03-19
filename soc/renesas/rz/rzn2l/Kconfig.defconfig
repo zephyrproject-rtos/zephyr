@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RZN2L
+
+config NUM_IRQS
+	default 480
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 25000000
+
+config FPU
+	default y
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+DT_CHOSEN_IMAGE_ZEPHYR = zephyr,code-partition
+
+config BUILD_OUTPUT_ADJUST_LMA
+	default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_ZEPHYR)) + \
+	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)))"
+
+config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
+	default "*;!.loader"
+
+endif # SOC_SERIES_RZN2L

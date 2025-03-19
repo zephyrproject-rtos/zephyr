@@ -11,6 +11,17 @@ struct lll_sync_iso_stream {
 	struct ll_iso_datapath *dp;
 };
 
+struct lll_sync_iso_data_chan {
+	uint16_t prn_s;
+	uint16_t remap_idx;
+};
+
+struct lll_sync_iso_data_chan_interleaved {
+	uint16_t prn_s;
+	uint16_t remap_idx;
+	uint16_t id;
+};
+
 struct lll_sync_iso {
 	struct lll_hdr hdr;
 
@@ -21,8 +32,15 @@ struct lll_sync_iso {
 
 	uint16_t latency_prepare;
 	uint16_t latency_event;
-	uint16_t data_chan_prn_s;
-	uint16_t data_chan_remap_idx;
+	union {
+		struct lll_sync_iso_data_chan data_chan;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_INTERLEAVED)
+		struct lll_sync_iso_data_chan_interleaved
+			interleaved_data_chan[BT_CTLR_SYNC_ISO_STREAM_MAX];
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_INTERLEAVED */
+	};
+	uint8_t  next_chan_use;
 
 	uint64_t payload_count:39;
 	uint64_t framing:1;
@@ -55,10 +73,7 @@ struct lll_sync_iso {
 	uint8_t bis_curr:5;
 
 	uint8_t stream_curr:5;
-
 	uint8_t establish_events:3;
-
-	uint8_t next_chan_use;
 
 	/* Encryption */
 	uint8_t giv[8];

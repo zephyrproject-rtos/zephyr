@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Si32 GPIO node
+description: Si32 GPIO
 
 compatible: "silabs,si32-gpio"
 

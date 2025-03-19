@@ -190,7 +190,7 @@
 	ft5336_touch: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		int-gpios = <&gpio1 7 0>;
+		int-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 	};
 };
 

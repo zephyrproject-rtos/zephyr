@@ -9,6 +9,7 @@ add_subdirectory(${ZEPHYR_NRF_WIFI_MODULE_DIR} nrf_wifi_osal)
 
 zephyr_library_named(nrf-wifi-shim)
 zephyr_include_directories(${CMAKE_CURRENT_LIST_DIR})
+zephyr_include_directories(${ZEPHYR_NRF_WIFI_MODULE_DIR}/os_if/inc)
 zephyr_library_sources(
   shim.c
   timer.c

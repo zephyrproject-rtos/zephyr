@@ -1,7 +1,7 @@
 # Copyright (c) 2024 sensry.io
 # SPDX-License-Identifier: Apache-2.0
 
-description: Sensry SY1XX GPIO PORT node
+description: Sensry SY1XX GPIO Port
 
 compatible: "sensry,sy1xx-gpio"
 

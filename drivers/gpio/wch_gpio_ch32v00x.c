@@ -53,7 +53,12 @@ static int gpio_ch32v00x_configure(const struct device *dev, gpio_pin_t pin, gpi
 		cnf_mode = 0x00;
 	}
 
-	regs->CFGLR = (regs->CFGLR & ~(0x0F << (4 * pin))) | (cnf_mode << (4 * pin));
+	if (pin < 8) {
+		regs->CFGLR = (regs->CFGLR & ~(0x0F << (4 * pin))) | (cnf_mode << (4 * pin));
+	} else {
+		regs->CFGHR =
+			(regs->CFGHR & ~(0x0F << ((pin - 8) * 4))) | (cnf_mode << ((pin - 8) * 4));
+	}
 	regs->BSHR = bshr;
 
 	return 0;

@@ -26,13 +26,13 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define HOCO_FREQ DT_PROP(DT_PATH(clocks, clock_hoco), clock_frequency)
 
 #if HOCO_FREQ == MHZ(24)
-#define OFS1_HOCO_FREQ		0
+#define OFS1_HOCO_FREQ 0
 #elif HOCO_FREQ == MHZ(32)
-#define OFS1_HOCO_FREQ		2
+#define OFS1_HOCO_FREQ 2
 #elif HOCO_FREQ == MHZ(48)
-#define OFS1_HOCO_FREQ		4
+#define OFS1_HOCO_FREQ 4
 #elif HOCO_FREQ == MHZ(64)
-#define OFS1_HOCO_FREQ		5
+#define OFS1_HOCO_FREQ 5
 #else
 #error "Unsupported HOCO frequency"
 #endif
@@ -93,38 +93,47 @@ struct opt_set_mem {
 };
 
 #ifdef CONFIG_SOC_OPTION_SETTING_MEMORY
-const struct opt_set_mem ops __attribute__((section(".rom_registers"))) = {
-	.ofs0 = {
-			/*
-			 * Initial settings for watchdog timers. Set all fields to 1,
-			 * disabling watchdog functionality as config options have not
-			 * yet been implemented.
-			 */
-			.RSVD1 = 0x1,       .IWDTSTRT = 0x1, /* Disable independent watchdog timer
-							      */
-			.IWDTTOPS = 0x3,    .IWDTCKS = 0xf,  .IWDTRPES = 0x3,   .IWDTRPSS = 0x3,
-			.IWDTRSTIRQS = 0x1, .RSVD2 = 0x1,    .IWDTSTPCTL = 0x1, .RSVD3 = 0x3,
-			.WDTSTRT = 0x1, /* Stop watchdog timer following reset */
-			.WDTTOPS = 0x3,     .WDTCKS = 0xf,   .WDTRPES = 0x3,    .WDTRPSS = 0x3,
-			.WDTRSTIRQS = 0x1,  .RSVD4 = 0x1,    .WDTSTPCTL = 0x1,  .RSVD5 = 0x1,
-		},
-	.ofs1 = {
-			.RSVD1 = 0x3,
-			.LVDAS = 0x1, /* Disable voltage monitor 0 following reset */
-			.VDSEL1 = 0x3,
-			.RSVD2 = 0x3,
-			.HOCOEN = !DT_NODE_HAS_STATUS(DT_PATH(clocks, clock_hoco), okay),
-			.RSVD3 = 0x7,
-			.HOCOFRQ1 = OFS1_HOCO_FREQ,
-			.RSVD4 = 0x1ffff,
-		},
-	.mpu = {
-		/*
-		 * Initial settings for MPU. Set all areas to maximum values
-		 * essentially disabling MPU functionality as config options
-		 * have not yet been implemented.
-		 */
-		.SECMPUPCSO = 0x00fffffc,
+Z_GENERIC_SECTION(".rom_registers")
+const struct opt_set_mem ops = {
+	/*
+	 * Initial settings for watchdog timers. Set all fields to 1,
+	 * disabling watchdog functionality as config options have not
+	 * yet been implemented.
+	 */
+	.ofs0 = {.RSVD1 = 0x1,
+		 .IWDTSTRT = 0x1, /* Disable independent watchdog timer */
+		 .IWDTTOPS = 0x3,
+		 .IWDTCKS = 0xf,
+		 .IWDTRPES = 0x3,
+		 .IWDTRPSS = 0x3,
+		 .IWDTRSTIRQS = 0x1,
+		 .RSVD2 = 0x1,
+		 .IWDTSTPCTL = 0x1,
+		 .RSVD3 = 0x3,
+		 /* Stop watchdog timer following reset */
+		 .WDTSTRT = !IS_ENABLED(CONFIG_WDT_RENESAS_RA_START_IN_BOOT),
+		 .WDTTOPS = 0x3,
+		 .WDTCKS = 0xf,
+		 .WDTRPES = 0x3,
+		 .WDTRPSS = 0x3,
+		 .WDTRSTIRQS = 0x1,
+		 .RSVD4 = 0x1,
+		 .WDTSTPCTL = 0x1,
+		 .RSVD5 = 0x1},
+	.ofs1 = {.RSVD1 = 0x3,
+		 .LVDAS = 0x1, /* Disable voltage monitor 0 following reset */
+		 .VDSEL1 = 0x3,
+		 .RSVD2 = 0x3,
+		 .HOCOEN = !DT_NODE_HAS_STATUS(DT_PATH(clocks, clock_hoco), okay),
+		 .RSVD3 = 0x7,
+		 .HOCOFRQ1 = OFS1_HOCO_FREQ,
+		 .RSVD4 = 0x1ffff},
+	/*
+	 * Initial settings for MPU. Set all areas to maximum values
+	 * essentially disabling MPU functionality as config options
+	 * have not yet been implemented.
+	 */
+	.mpu = {.SECMPUPCSO = 0x00fffffc,
 		.SECMPUPCEO = 0x00ffffff,
 		.SECMPUPCS1 = 0x00fffffc,
 		.SECMPUPCE1 = 0x00ffffff,
@@ -136,13 +145,17 @@ const struct opt_set_mem ops __attribute__((section(".rom_registers"))) = {
 		.SECMPUE2 = 0x407fffff,
 		.SECMPUS3 = 0x40dffffc,
 		.SECMPUE3 = 0x40dfffff,
-		.SECMPUAC = 0xffffffff,
-	}};
+		.SECMPUAC = 0xffffffff}};
 #endif
 
 uint32_t SystemCoreClock BSP_SECTION_EARLY_INIT;
 
 volatile uint32_t g_protect_pfswe_counter BSP_SECTION_EARLY_INIT;
+
+#ifdef CONFIG_RUNTIME_NMI
+extern bsp_grp_irq_cb_t g_bsp_group_irq_sources[];
+extern void NMI_Handler(void);
+#endif /* CONFIG_RUNTIME_NMI */
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -157,6 +170,14 @@ void soc_early_init_hook(void)
 
 	SystemCoreClock = BSP_MOCO_HZ;
 	g_protect_pfswe_counter = 0;
+
+#ifdef CONFIG_RUNTIME_NMI
+	for (uint32_t i = 0; i < 16; i++) {
+		g_bsp_group_irq_sources[i] = 0;
+	}
+
+	z_arm_nmi_set_handler(NMI_Handler);
+#endif /* CONFIG_RUNTIME_NMI */
 
 	irq_unlock(key);
 }

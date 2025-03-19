@@ -6,7 +6,7 @@
 #
 
 description: |
-    This is a representation of the Rohm BD8LB600FS SPI Gpio Expander.
+    Rohm BD8LB600FS SPI GPIO Expander.
     Multiple instances may be daisy chained, which can be configured
     via the number of supported GPIOs.
 

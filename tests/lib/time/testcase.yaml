@@ -4,6 +4,3 @@ tests:
     timeout: 180
     integration_platforms:
       - mps2/an385
-    platform_exclude:
-      - native_posix
-      - native_posix/native/64

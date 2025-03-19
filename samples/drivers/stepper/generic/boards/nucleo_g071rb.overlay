@@ -1,0 +1,17 @@
+/ {
+	aliases {
+		stepper = &gpio_stepper;
+	};
+};
+
+/ {
+	gpio_stepper: gpio_stepper {
+		compatible = "zephyr,gpio-stepper";
+		status = "okay";
+		micro-step-res = <2>;
+		gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,	/* D8 */
+			<&gpioc 7 GPIO_ACTIVE_HIGH>,	/* D9 */
+			<&gpiob 0 GPIO_ACTIVE_HIGH>,	/* D10 */
+			<&gpioa 7 GPIO_ACTIVE_HIGH>;	/* D11 */
+	};
+};
