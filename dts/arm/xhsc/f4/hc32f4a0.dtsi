@@ -1,0 +1,296 @@
+/*
+ * Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/hc32f4a0_clock.h>
+#include <zephyr/dt-bindings/interrupt-controller/hc32f4a0-intc.h>
+
+ / {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	flash-controller@40010400 {
+		compatible = "xhsc,hc32-flash-controller";
+		reg = <0x40010400 0x0400>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0 0x200000>;
+			erase-block-size = <8192>;
+			write-block-size = <4>;
+		};
+	};
+
+/* The on-chip SRAM is split into SRAM0 and SRAMH regions that form a
+	 * contiguous block in the memory map, however misaligned accesses
+	 * across the 0x2000_0000 boundary are not supported in the Arm
+	 * Cortex-M4 architecture.*/
+ 	sramh: memory@1ffe0000 {
+		device_type = "memory";
+		compatible ="zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAMH";
+		reg = <0x1ffe0000 DT_SIZE_K(128)>;
+	};
+
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(384)>;
+	};
+
+	sramb: memory@200F0000 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region","mmio-sram";
+		zephyr,memory-region = "SRAMB";
+		reg = <0x200F0000 DT_SIZE_K(4)>;
+	};
+
+	soc {
+		clocks: clock@40048400{
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = < 0x40048400 0x400 >;
+			compatible = "xhsc,hc32-clock-control";
+			clock-conf = <HC32_CLK_CONF_PERI HC32_CLK_CONF_USB
+						HC32_CLK_CONF_TPIU
+						HC32_CLK_CONF_SRC HC32_CLK_CONF_MCO>;
+
+			clk_xtal: clock_xtal {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = < 8000000 >;
+			};
+
+			clk_xtal32: clock_xtal32 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = < 32768 >;
+			};
+
+			clk_hrc: clock_hrc {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = < 16000000 >;
+			};
+
+			clk_mrc: clock_mrc {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = < 8000000 >;
+			};
+
+			clk_lrc: clock_lrc {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = < 32768 >;
+			};
+
+			clk_pll: clock_pll {
+				#clock-cells = <0>;
+				compatible = "xhsc,hc32-clock-pll";
+				clock_frequency = <240000000>;
+				clocks = <&clk_xtal>;
+				div-m = <1>;
+				mul-n = <120>;
+				div-p = <4>;
+				div-q = <4>;
+				div-r = <4>;
+			};
+
+			clk_sys: clock_system {
+				compatible = "xhsc,hc32-clock-sys";
+				clocks = < &clk_pll >;
+				div-hclk = <1>;
+				div-exclk = <2>;
+				div-pclk0 = <1>;
+				div-pclk1 = <2>;
+				div-pclk2 = <4>;
+				div-pclk3 = <4>;
+				div-pclk4 = <2>;
+			};
+
+			bus_fcg: pwc_fcg@40048000 {
+				#clock-cells = <3>;
+				compatible = "xhsc,hc32-bus-fcg";
+				reg = < 0x40048000 DT_SIZE_K(1) >;
+			};
+		};
+
+		pinctrl: pin-controller@40053c00 {
+			compatible = "xhsc,hc32-pinctrl";
+			reg = <0x40053c00 0x400>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			gpioa: gpio@40053c00 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053c00 0x40>;
+			};
+
+			gpiob: gpio@40053c40 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053c40 0x40>;
+			};
+
+			gpioc: gpio@40053c80 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053c80 0x40>;
+			};
+
+			gpiod: gpio@40053cc0 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053cc0 0x40>;
+			};
+
+			gpioe: gpio@40053d00 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053d00 0x40>;
+			};
+
+			gpiof: gpio@40053d40 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053d40 0x40>;
+			};
+
+			gpiog: gpio@40053d80 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053d80 0x40>;
+			};
+
+			gpioh: gpio@40053dc0 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053dc0 0x40>;
+			};
+
+			gpioi: gpio@40053e00 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053e00 0x40>;
+			};
+		};
+
+		intc: interrupt-controller@40051000 {
+			compatible = "xhsc,hc32-intc";
+			reg = <0x40051000 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			status = "okay";
+
+			extint {
+				compatible = "xhsc,hc32-extint";
+				interrupt-parent = <&intc>;
+				extint-nums = <16>;
+				extint-chs = <0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15>;
+				interrupts = <HC32_EXTINT0_IRQ_NUM  HC32_EXTINT0_IRQ_PRIO  INT_SRC_PORT_EIRQ0>,
+							 <HC32_EXTINT1_IRQ_NUM  HC32_EXTINT1_IRQ_PRIO  INT_SRC_PORT_EIRQ1>,
+							 <HC32_EXTINT2_IRQ_NUM  HC32_EXTINT2_IRQ_PRIO  INT_SRC_PORT_EIRQ2>,
+							 <HC32_EXTINT3_IRQ_NUM  HC32_EXTINT3_IRQ_PRIO  INT_SRC_PORT_EIRQ3>,
+							 <HC32_EXTINT4_IRQ_NUM  HC32_EXTINT4_IRQ_PRIO  INT_SRC_PORT_EIRQ4>,
+							 <HC32_EXTINT5_IRQ_NUM  HC32_EXTINT5_IRQ_PRIO  INT_SRC_PORT_EIRQ5>,
+							 <HC32_EXTINT6_IRQ_NUM  HC32_EXTINT6_IRQ_PRIO  INT_SRC_PORT_EIRQ6>,
+							 <HC32_EXTINT7_IRQ_NUM  HC32_EXTINT7_IRQ_PRIO  INT_SRC_PORT_EIRQ7>,
+							 <HC32_EXTINT8_IRQ_NUM  HC32_EXTINT8_IRQ_PRIO  INT_SRC_PORT_EIRQ8>,
+							 <HC32_EXTINT9_IRQ_NUM  HC32_EXTINT9_IRQ_PRIO  INT_SRC_PORT_EIRQ9>,
+							 <HC32_EXTINT10_IRQ_NUM HC32_EXTINT10_IRQ_PRIO INT_SRC_PORT_EIRQ10>,
+							 <HC32_EXTINT11_IRQ_NUM HC32_EXTINT11_IRQ_PRIO INT_SRC_PORT_EIRQ11>,
+							 <HC32_EXTINT12_IRQ_NUM HC32_EXTINT12_IRQ_PRIO INT_SRC_PORT_EIRQ12>,
+							 <HC32_EXTINT13_IRQ_NUM HC32_EXTINT13_IRQ_PRIO INT_SRC_PORT_EIRQ13>,
+							 <HC32_EXTINT14_IRQ_NUM HC32_EXTINT14_IRQ_PRIO INT_SRC_PORT_EIRQ14>,
+							 <HC32_EXTINT15_IRQ_NUM HC32_EXTINT15_IRQ_PRIO INT_SRC_PORT_EIRQ15>;
+				interrupt-names = "extint0",  "extint1",  "extint2",  "extint3",
+								  "extint4",  "extint5",  "extint6",  "extint7",
+								  "extint8",  "extint9",  "extint10", "extint11",
+								  "extint12", "extint13", "extint14", "extint15";
+				status = "okay";
+			};
+		};
+		usart1: serial@4001cc00 {
+			compatible = "xhsc,hc32-uart";
+			reg = <0x4001cc00 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART1>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_UART1_RXERR_IRQ_NUM		HC32_UART1_RXERR_IRQ_PRIO	INT_SRC_USART1_EI>,
+						 <HC32_UART1_RX_IRQ_NUM			HC32_UART1_RX_IRQ_PRIO		INT_SRC_USART1_RI>,
+						 <HC32_UART1_TX_IRQ_NUM			HC32_UART1_TX_IRQ_PRIO		INT_SRC_USART1_TI>,
+						 <HC32_UART1_TX_CPLT_IRQ_NUM	HC32_UART1_TX_CPLT_IRQ_PRIO	INT_SRC_USART1_TCI>;
+			interrupt-names = "ei", "ri", "ti", "tci";
+			status = "disabled";
+		};
+
+		usart2: serial@4001d000 {
+			compatible = "xhsc,hc32-uart";
+			reg = <0x4001d000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART2>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_UART2_RXERR_IRQ_NUM		HC32_UART2_RXERR_IRQ_PRIO	INT_SRC_USART2_EI>,
+						 <HC32_UART2_RX_IRQ_NUM			HC32_UART2_RX_IRQ_PRIO		INT_SRC_USART2_RI>,
+						 <HC32_UART2_TX_IRQ_NUM			HC32_UART2_TX_IRQ_PRIO		INT_SRC_USART2_TI>,
+						 <HC32_UART2_TX_CPLT_IRQ_NUM	HC32_UART2_TX_CPLT_IRQ_PRIO INT_SRC_USART2_TCI>;
+			interrupt-names = "ei", "ri", "ti", "tci";
+			status = "disabled";
+		};
+
+		usart3: serial@4001d400 {
+			compatible = "xhsc,hc32-uart";
+			reg = <0x4001d400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART3>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_UART3_RXERR_IRQ_NUM		HC32_UART3_RXERR_IRQ_PRIO	INT_SRC_USART3_EI>,
+						 <HC32_UART3_RX_IRQ_NUM			HC32_UART3_RX_IRQ_PRIO		INT_SRC_USART3_RI>,
+						 <HC32_UART3_TX_IRQ_NUM			HC32_UART3_TX_IRQ_PRIO		INT_SRC_USART3_TI>,
+						 <HC32_UART3_TX_CPLT_IRQ_NUM	HC32_UART3_TX_CPLT_IRQ_PRIO INT_SRC_USART3_TCI>;
+			interrupt-names = "ei", "ri", "ti", "tci";
+			status = "disabled";
+		};
+
+		usart4: serial@4001d800 {
+			compatible = "xhsc,hc32-uart";
+			reg = <0x4001d800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART4>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_UART4_RXERR_IRQ_NUM		HC32_UART4_RXERR_IRQ_PRIO	INT_SRC_USART4_EI>,
+						 <HC32_UART4_RX_IRQ_NUM			HC32_UART4_RX_IRQ_PRIO		INT_SRC_USART4_RI>,
+						 <HC32_UART4_TX_IRQ_NUM			HC32_UART4_TX_IRQ_PRIO		INT_SRC_USART4_TI>,
+						 <HC32_UART4_TX_CPLT_IRQ_NUM	HC32_UART4_TX_CPLT_IRQ_PRIO INT_SRC_USART4_TCI>;
+			interrupt-names = "ei", "ri", "ti", "tci";
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

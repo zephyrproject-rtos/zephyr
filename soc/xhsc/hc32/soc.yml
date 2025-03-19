@@ -1,0 +1,7 @@
+family:
+- name: xhsc_hc32
+  series:
+  - name: hc32f4xx
+    socs:
+    - name: hc32f460
+    - name: hc32f4a0

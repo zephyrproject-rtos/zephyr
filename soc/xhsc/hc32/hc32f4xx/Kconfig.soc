@@ -1,0 +1,26 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_HC32F4XX
+	bool
+	select SOC_FAMILY_XHSC_HC32
+	help
+	  Enable support for XHSC HC32F4XX MCU series
+
+config SOC_SERIES
+	default "hc32f4xx" if SOC_SERIES_HC32F4XX
+
+config SOC_HC32F460
+	bool
+	select SOC_SERIES_HC32F4XX
+	select SOC_RESET_HOOK
+	#SOC_RESET_HOOK uesed for set sram3 R/W cycles = 2
+
+config SOC_HC32F4A0
+	bool
+	select SOC_SERIES_HC32F4XX
+	select SOC_RESET_HOOK
+
+config SOC
+	default "hc32f460" if SOC_HC32F460
+	default "hc32f4a0" if SOC_HC32F4A0
