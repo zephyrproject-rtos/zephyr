@@ -1,5 +1,5 @@
 tests:
-  sdp.c:
+  bluetooth.classic.sdp.client:
     platform_allow:
       - native_sim
       - mimxrt1170_evk@B/mimxrt1176/cm7
