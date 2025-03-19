@@ -44,6 +44,11 @@ menu "Ciphersuite configuration"
 
 comment "Supported key exchange modes"
 
+config MBEDTLS_RSA_C
+	bool "RSA cryptosystem"
+	help
+	  Base support for RSA, without key x509 exchange enabled.
+
 config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 	bool "All available ciphersuite modes"
 	select MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
@@ -70,6 +75,7 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 	bool "RSA-PSK based ciphersuite modes"
+	select MBEDTLS_RSA_C
 
 config MBEDTLS_PSK_MAX_LEN
 	int "Max size of TLS pre-shared keys"
@@ -82,6 +88,7 @@ config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
 	default y if UOSCORE || UEDHOC
 	select MBEDTLS_MD
+	select MBEDTLS_RSA_C if !PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT if PSA_CRYPTO_CLIENT
@@ -89,9 +96,11 @@ config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "DHE-RSA based ciphersuite modes"
+	select MBEDTLS_RSA_C
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 	bool "ECDHE-RSA based ciphersuite modes"
+	select MBEDTLS_RSA_C
 	depends on MBEDTLS_ECDH_C
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
