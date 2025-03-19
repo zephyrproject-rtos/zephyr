@@ -19,6 +19,8 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_ov5640, CONFIG_VIDEO_LOG_LEVEL);
 
 #define CHIP_ID_REG 0x300a
@@ -1333,6 +1335,8 @@ static int ov5640_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &ov5640_init, NULL, &ov5640_data_##n, &ov5640_cfg_##n,            \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov5640_driver_api);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov5640_driver_api);        \
+                                                                                                   \
+	VIDEO_DEVICE_DEFINE(ov5640_##n, DEVICE_DT_INST_GET(n), NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(OV5640_INIT)
