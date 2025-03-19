@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54h20dk_nrf54h20_cpuapp.dts"
+
+/delete-node/&cpurad_rx_partitions;
+/delete-node/&cpuapp_rx_partitions;
+/delete-node/&cpusec_cpuapp_ipc;
+
+/* This is not yet an exhaustive memory map, and contain only a minimum required to boot
+ * the application core.
+ */
+
+&mram1x {
+	cpuapp_rx_partitions: cpuapp-rx-partitions {
+		compatible = "nordic,owned-partitions", "fixed-partitions";
+		nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RXS>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpuapp_slot0_partition: partition@2c000 {
+			reg = <0x2c000 DT_SIZE_K(480)>;
+		};
+
+		cpuppr_code_partition: partition@a4000 {
+			reg = <0xa4000 DT_SIZE_K(64)>;
+		};
+
+		cpuflpr_code_partition: partition@b4000 {
+			reg = <0xb4000 DT_SIZE_K(48)>;
+		};
+	};
+};
