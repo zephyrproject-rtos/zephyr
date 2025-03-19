@@ -55,6 +55,8 @@ Removed APIs and options
 
 * Removed the deprecated ``include/zephyr/net/buf.h`` header file.
 
+* Removed the deprecated ``kscan`` subsystem.
+
 Deprecated APIs and options
 ===========================
 
